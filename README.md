@@ -118,67 +118,99 @@ pnpm run build
 pnpm run generate -- --help
 ```
 
+日常生成迁移说明书时，不需要手动先执行 `pnpm run typecheck` 和 `pnpm run build`：
+
+- `pnpm run typecheck` 是开发校验命令，改代码后或提交前运行。
+- `pnpm run build` 是构建校验命令，改代码后或发布前运行。
+- `pnpm run generate` 已经会自动构建 core 和 cli，再执行生成流程。
+
 ## 五、最小使用步骤
 
-### 1. 确认两个工程路径
+### 1. 创建本地配置文件
 
-默认推荐路径：
+运行 `generate` 前，项目根目录必须存在：
 
 ```text
-prototypeRoot = /Users/lrq/work/youfi/TradeAppPrd
-flutterRoot   = /Users/lrq/work/youfi
+proto-bridge.config.json
 ```
 
-这两个路径不应该写死在代码里，而是通过 CLI 参数传入。
+如果没有这个文件，CLI 会直接提示并退出，不会继续执行后续分析流程。
+根目录的 `pnpm run generate` 会在构建 core/cli 前先做这个检查，因此缺少配置时不会继续跑 build。
 
-### 2. 使用 route 生成迁移上下文
+首次使用可以从示例复制：
 
-推荐先从 route 输入开始：
+```bash
+cp proto-bridge.config.example.json proto-bridge.config.json
+```
+
+然后改成你本机的路径：
+
+```json
+{
+  "prototypeRoot": "/Users/lrq/work/youfi/TradeAppPrd",
+  "flutterRoot": "/Users/lrq/work/youfi",
+  "target": "flutter",
+  "outDir": "./output",
+  "noCapture": true
+}
+```
+
+团队成员各自维护自己的 `proto-bridge.config.json`。这个文件只保存本机路径，默认不进入版本管理；仓库只保留 `proto-bridge.config.example.json` 作为模板。
+
+### 2. 使用完整原型 URL 生成迁移上下文
+
+推荐直接把浏览器里的原型 URL 传给 `--url`，CLI 会自动从 hash 中提取真实路由：
 
 ```bash
 pnpm run generate -- \
-  --prototype-root /Users/lrq/work/youfi/TradeAppPrd \
-  --flutter-root /Users/lrq/work/youfi \
-  --route /prototype/trade \
-  --target flutter \
-  --out ./output/stock-trade \
-  --no-capture
+  --url "http://localhost:5173/#/prototype/fund-profile?anchor=overview&is_mobile=1" \
+  --out ./output/fund-profile
+```
+
+上面的 URL 会被解析为：
+
+```text
+route = /prototype/fund-profile
+query = anchor=overview&is_mobile=1
 ```
 
 执行成功后会输出：
 
 ```text
-output/stock-trade/
+output/fund-profile/
 ├── migration-context.json
 └── migration-spec.md
 ```
 
-### 3. 使用 Vue 文件生成迁移上下文
+### 3. 使用 route 生成迁移上下文
+
+如果已经知道原型路由，也可以直接传 `--route`：
+
+```bash
+pnpm run generate -- \
+  --route /prototype/trade \
+  --out ./output/stock-trade
+```
+
+### 4. 使用 Vue 文件生成迁移上下文
 
 如果暂时不知道 route，也可以指定 Vue 文件：
 
 ```bash
 pnpm run generate -- \
-  --prototype-root /Users/lrq/work/youfi/TradeAppPrd \
-  --flutter-root /Users/lrq/work/youfi \
   --vue prototype/src/views/prototype/stock/StockTradePage.vue \
-  --target flutter \
-  --out ./output/stock-trade \
-  --no-capture
+  --out ./output/stock-trade
 ```
 
-### 4. 开启运行时截图和 DOM 提取
+### 5. 开启运行时截图和 DOM 提取
 
-如果原型 dev server 已经启动，可以传入 `--prototype-url` 并去掉 `--no-capture`：
+如果原型 dev server 已经启动，并且想生成 `screenshot.png` 和 `dom-snapshot.json`，可以使用 `--capture` 覆盖配置里的 `noCapture: true`：
 
 ```bash
 pnpm run generate -- \
-  --prototype-root /Users/lrq/work/youfi/TradeAppPrd \
-  --flutter-root /Users/lrq/work/youfi \
-  --route /prototype/trade \
-  --prototype-url http://127.0.0.1:5173/prototype/trade \
-  --target flutter \
-  --out ./output/stock-trade
+  --url "http://localhost:5173/#/prototype/fund-profile?anchor=overview&is_mobile=1" \
+  --out ./output/fund-profile \
+  --capture
 ```
 
 输出会额外包含：
@@ -195,16 +227,19 @@ output/stock-trade/
 
 | 参数 | 是否必填 | 说明 |
 | --- | --- | --- |
-| `--prototype-root` | 是 | TradeAppPrd 根目录 |
-| `--flutter-root` | 是 | YouFi Flutter App 根目录 |
-| `--route` | 二选一 | 原型或设计稿路由，例如 `/prototype/trade` |
-| `--vue` | 二选一 | Vue 文件路径，可为绝对路径或相对 `prototypeRoot` |
+| `--config` | 否 | 配置文件路径，默认读取执行目录下的 `proto-bridge.config.json` |
+| `--url` | 三选一 | 完整原型 URL，CLI 会自动提取 hash route |
+| `--route` | 三选一 | 原型或设计稿路由，例如 `/prototype/trade` |
+| `--vue` | 三选一 | Vue 文件路径，可为绝对路径或相对 `prototypeRoot` |
+| `--prototype-root` | 否 | 覆盖配置中的 TradeAppPrd 根目录 |
+| `--flutter-root` | 否 | 覆盖配置中的 YouFi Flutter App 根目录 |
 | `--prototype-url` | 否 | 运行中的原型页面 URL，用于 Playwright capture |
 | `--target` | 否 | 当前固定为 `flutter` |
 | `--out` | 否 | 输出目录，相对路径会按调用命令时的目录解析 |
 | `--no-capture` | 否 | 跳过截图和 DOM 提取 |
+| `--capture` | 否 | 覆盖配置中的 `noCapture: true`，执行截图和 DOM 提取 |
 
-`--route` 和 `--vue` 必须二选一，不能同时传。
+`--url`、`--route`、`--vue` 用来指定页面输入，三者选一个即可。CLI 参数优先级高于 `proto-bridge.config.json`。
 
 ## 七、输出文件说明
 
@@ -372,13 +407,11 @@ analyzePrototypePage
 pnpm run typecheck
 pnpm run build
 pnpm run generate -- \
-  --prototype-root /Users/lrq/work/youfi/TradeAppPrd \
-  --flutter-root /Users/lrq/work/youfi \
   --route /prototype/trade \
-  --target flutter \
-  --out ./output/stock-trade \
-  --no-capture
+  --out ./output/stock-trade
 ```
+
+其中 `typecheck` 和 `build` 是开发验证命令，不是每次使用 CLI 前都必须手动执行。普通生成只需要准备好 `proto-bridge.config.json` 后运行 `pnpm run generate -- ...`。
 
 验证页面：
 
@@ -607,3 +640,20 @@ ProtoBridge 的第一步是先生成迁移上下文，让实现者和 AI 都知�
 ### 相对 `--out` 路径按哪里解析？
 
 相对路径会按执行 `pnpm run generate` 时的目录解析，而不是 `packages/cli` 目录。这样在项目根目录执行命令时，输出会落到根目录的 `output/` 下。
+
+### `pnpm run typecheck` 和 `pnpm run build` 是必须的吗？
+
+日常生成迁移说明书时不是必须手动执行。
+
+推荐使用方式：
+
+```bash
+pnpm run generate -- --url "http://localhost:5173/#/prototype/fund-profile?anchor=overview&is_mobile=1" --out ./output/fund-profile
+```
+
+只有在改了 ProtoBridge 自身代码、提交前自检、或排查类型/构建问题时，再运行：
+
+```bash
+pnpm run typecheck
+pnpm run build
+```

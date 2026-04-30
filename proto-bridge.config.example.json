@@ -1,0 +1,7 @@
+{
+  "prototypeRoot": "/path/to/TradeAppPrd",
+  "flutterRoot": "/path/to/youfi",
+  "target": "flutter",
+  "outDir": "./output",
+  "noCapture": true
+}

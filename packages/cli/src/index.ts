@@ -1,12 +1,34 @@
 #!/usr/bin/env node
 
 import path from 'node:path';
+import { readFile } from 'node:fs/promises';
 import { generateMigrationSpec, type GenerateMigrationSpecInput, type TargetPlatform } from '@proto-bridge/core';
 
 type ParsedArgs = {
   command: string;
   values: Record<string, string | boolean>;
 };
+
+type ProtoBridgeConfig = {
+  prototypeRoot?: string | undefined;
+  flutterRoot?: string | undefined;
+  route?: string | undefined;
+  vue?: string | undefined;
+  url?: string | undefined;
+  prototypeUrl?: string | undefined;
+  target?: TargetPlatform | undefined;
+  out?: string | undefined;
+  outDir?: string | undefined;
+  noCapture?: boolean | undefined;
+};
+
+type LoadedConfig = {
+  path: string;
+  dir: string;
+  config: ProtoBridgeConfig;
+};
+
+const DEFAULT_CONFIG_FILE = 'proto-bridge.config.json';
 
 async function main(): Promise<void> {
   const parsed = parseArgs(process.argv.slice(2));
@@ -20,7 +42,7 @@ async function main(): Promise<void> {
     throw new Error(`Unknown command: ${parsed.command || '(missing)'}`);
   }
 
-  const input = buildGenerateInput(parsed.values);
+  const input = await buildGenerateInput(parsed.values);
   const result = await generateMigrationSpec(input);
 
   console.log(`screenId: ${result.context.source.screenId ?? 'unknown'}`);
@@ -33,32 +55,129 @@ async function main(): Promise<void> {
   }
 }
 
-function buildGenerateInput(values: Record<string, string | boolean>): GenerateMigrationSpecInput {
-  const prototypeRoot = readString(values, 'prototype-root');
-  const flutterRoot = readString(values, 'flutter-root');
-  const route = readString(values, 'route');
-  const vue = readString(values, 'vue');
-  const prototypeUrl = readString(values, 'prototype-url');
-  const target = (readString(values, 'target') ?? 'flutter') as TargetPlatform;
-  const noCapture = Boolean(values['no-capture']);
-  const outDir = resolveOutDir(readString(values, 'out') ?? defaultOutDir(route, vue));
+async function buildGenerateInput(values: Record<string, string | boolean>): Promise<GenerateMigrationSpecInput> {
+  const loadedConfig = await loadRequiredConfig(values);
+  const config = loadedConfig.config;
+  const invocationDir = process.env.INIT_CWD ?? process.cwd();
+
+  const prototypeRoot = resolveInputPath(
+    readString(values, 'prototype-root'),
+    config.prototypeRoot,
+    invocationDir,
+    loadedConfig.dir,
+  );
+  const flutterRoot = resolveInputPath(
+    readString(values, 'flutter-root'),
+    config.flutterRoot,
+    invocationDir,
+    loadedConfig.dir,
+  );
+  const pageInput = resolvePageInput(values, config);
+  const prototypeUrl = resolvePrototypeUrl(values, config, pageInput.url);
+  const target = (readString(values, 'target') ?? config.target ?? 'flutter') as TargetPlatform;
+  const noCapture = resolveNoCapture(values, config);
+  const outValue =
+    readString(values, 'out') ??
+    readString(values, 'out-dir') ??
+    config.out ??
+    config.outDir ??
+    defaultOutDir(pageInput.route, pageInput.vue);
+  const outDir = resolveOutDir(outValue);
 
   if (!prototypeRoot) throw new Error('--prototype-root is required');
   if (!flutterRoot) throw new Error('--flutter-root is required');
-  if (!route && !vue) throw new Error('Provide either --route or --vue');
-  if (route && vue) throw new Error('Use either --route or --vue, not both');
+  if (!pageInput.route && !pageInput.vue) throw new Error('Provide --url, --route, or --vue.');
+  if (pageInput.route && pageInput.vue) throw new Error('Use only one page input: --url, --route, or --vue.');
   if (target !== 'flutter') throw new Error('Phase 1 only supports --target flutter');
 
   return {
     prototypeRoot,
     flutterRoot,
-    route,
-    vue,
+    route: pageInput.route,
+    vue: pageInput.vue,
     prototypeUrl,
     target,
     outDir,
     noCapture,
   };
+}
+
+async function loadRequiredConfig(values: Record<string, string | boolean>): Promise<LoadedConfig> {
+  const invocationDir = process.env.INIT_CWD ?? process.cwd();
+  const configInput = readString(values, 'config') ?? DEFAULT_CONFIG_FILE;
+  const configPath = path.isAbsolute(configInput) ? configInput : path.resolve(invocationDir, configInput);
+
+  let text: string;
+  try {
+    text = await readFile(configPath, 'utf8');
+  } catch {
+    throw new Error(
+      [
+        `Missing required config file: ${configPath}`,
+        `Create it from the example first: cp proto-bridge.config.example.json ${DEFAULT_CONFIG_FILE}`,
+        'Then edit prototypeRoot and flutterRoot for your local machine.',
+      ].join('\n'),
+    );
+  }
+
+  try {
+    const parsed = JSON.parse(text) as unknown;
+    if (!isRecord(parsed)) throw new Error('config root must be a JSON object');
+    return {
+      path: configPath,
+      dir: path.dirname(configPath),
+      config: parsed as ProtoBridgeConfig,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Invalid config file ${configPath}: ${message}`);
+  }
+}
+
+function resolvePageInput(
+  values: Record<string, string | boolean>,
+  config: ProtoBridgeConfig,
+): { route?: string | undefined; vue?: string | undefined; url?: string | undefined } {
+  const cliUrl = readString(values, 'url');
+  if (cliUrl) return { route: extractRouteFromUrl(cliUrl), url: cliUrl };
+
+  const cliRoute = readString(values, 'route');
+  if (cliRoute) return { route: normalizeRoute(cliRoute) };
+
+  const cliVue = readString(values, 'vue');
+  if (cliVue) return { vue: cliVue };
+
+  if (config.url) return { route: extractRouteFromUrl(config.url), url: config.url };
+  if (config.route) return { route: normalizeRoute(config.route) };
+  if (config.vue) return { vue: config.vue };
+
+  return {};
+}
+
+function resolvePrototypeUrl(
+  values: Record<string, string | boolean>,
+  config: ProtoBridgeConfig,
+  pageUrl: string | undefined,
+): string | undefined {
+  return readString(values, 'prototype-url') ?? pageUrl ?? config.prototypeUrl ?? config.url;
+}
+
+function resolveNoCapture(values: Record<string, string | boolean>, config: ProtoBridgeConfig): boolean {
+  if (values.capture !== undefined) return false;
+  const cliNoCapture = readBoolean(values, 'no-capture');
+  if (cliNoCapture !== undefined) return cliNoCapture;
+  return config.noCapture ?? false;
+}
+
+function resolveInputPath(
+  cliValue: string | undefined,
+  configValue: string | undefined,
+  invocationDir: string,
+  configDir: string,
+): string | undefined {
+  if (cliValue) return path.isAbsolute(cliValue) ? cliValue : path.resolve(invocationDir, cliValue);
+  if (configValue) return path.isAbsolute(configValue) ? configValue : path.resolve(configDir, configValue);
+  return undefined;
 }
 
 function parseArgs(args: string[]): ParsedArgs {
@@ -103,6 +222,42 @@ function readString(values: Record<string, string | boolean>, key: string): stri
   return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
+function readBoolean(values: Record<string, string | boolean>, key: string): boolean | undefined {
+  const value = values[key];
+  if (value === undefined) return undefined;
+  if (typeof value === 'boolean') return value;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  throw new Error(`--${key} must be true or false when a value is provided`);
+}
+
+function extractRouteFromUrl(urlInput: string): string {
+  const routeWithQuery = routeWithQueryFromUrl(urlInput);
+  const route = routeWithQuery.split('?')[0]?.split('#')[0];
+  if (!route) throw new Error(`Unable to extract route from --url: ${urlInput}`);
+  return normalizeRoute(route);
+}
+
+function routeWithQueryFromUrl(urlInput: string): string {
+  if (urlInput.startsWith('/')) return urlInput;
+
+  try {
+    const parsed = new URL(urlInput);
+    if (parsed.hash.startsWith('#/')) return parsed.hash.slice(1);
+    if (parsed.pathname) return `${parsed.pathname}${parsed.search}`;
+  } catch {
+    throw new Error(`--url must be an absolute URL or a route path: ${urlInput}`);
+  }
+
+  throw new Error(`Unable to extract route from --url: ${urlInput}`);
+}
+
+function normalizeRoute(route: string): string {
+  const routeOnly = route.split('?')[0] ?? route;
+  const normalized = routeOnly.startsWith('/') ? routeOnly : `/${routeOnly}`;
+  return normalized.length > 1 ? normalized.replace(/\/+$/, '') : normalized;
+}
+
 function defaultOutDir(route: string | undefined, vue: string | undefined): string {
   const source = route ?? vue ?? 'migration';
   const slug = source
@@ -122,16 +277,30 @@ function resolveOutDir(outDir: string): string {
 
 function usage(): string {
   return `Usage:
-  pnpm run generate -- --prototype-root <TradeAppPrd> --flutter-root <YouFi> (--route <route> | --vue <file>) [options]
+  pnpm run generate -- --url <prototype-url> [options]
+  pnpm run generate -- --route <route> [options]
+  pnpm run generate -- --vue <file> [options]
+
+Required:
+  proto-bridge.config.json must exist in the directory where you run the command.
 
 Options:
+  --config <file>             Config path, defaults to ./proto-bridge.config.json
+  --url <url>                 Full prototype URL, hash route is extracted automatically
   --route <route>             Prototype or design route, for example /prototype/trade
   --vue <file>                Vue file path, absolute or relative to prototype root
+  --prototype-root <dir>      Override prototypeRoot from config
+  --flutter-root <dir>        Override flutterRoot from config
   --prototype-url <url>       Optional running prototype URL for Playwright capture
   --target flutter            Phase 1 target platform
   --out <dir>                 Output directory
   --no-capture                Skip screenshot and DOM capture
+  --capture                   Override config.noCapture and run Playwright capture
 `;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
 main().catch((error: unknown) => {
