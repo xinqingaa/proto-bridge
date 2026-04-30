@@ -1,0 +1,8 @@
+{
+  "prototypeRoot": "/Users/lrq/work/youfi/TradeAppPrd",
+  "flutterRoot": "/Users/lrq/work/youfi",
+  "route": "/prototype/trade",
+  "target": "flutter",
+  "outDir": "./output/stock-trade",
+  "noCapture": true
+}
