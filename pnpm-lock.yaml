@@ -37,6 +37,20 @@ importers:
         specifier: ^5.7.2
         version: 5.9.3
 
+  packages/cli:
+    dependencies:
+      '@proto-bridge/core':
+        specifier: workspace:*
+        version: link:../core
+
+  packages/core: {}
+
+  packages/mcp-server:
+    dependencies:
+      '@proto-bridge/core':
+        specifier: workspace:*
+        version: link:../core
+
 packages:
 
   '@esbuild/aix-ppc64@0.27.7':

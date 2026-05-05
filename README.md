@@ -73,6 +73,8 @@ proto-bridge/
 ├── docs/
 │   ├── migration-spec-template.md
 │   ├── context-schema.md
+│   ├── config-schema.md
+│   ├── architecture-roadmap.md
 │   └── mcp-tools.md
 ├── examples/
 │   └── stock-trade/
@@ -98,6 +100,40 @@ proto-bridge/
 - `packages/cli` 只负责参数解析和调用 core。
 - `packages/mcp-server` 后续只封装 core，不写复杂业务逻辑。
 - 输出结果要能被人工审查和修改，不把不确定信息伪装成确定结论。
+
+## 三点五、下一阶段架构规划
+
+ProtoBridge 后续会从“固定 Vue 原型到固定 Flutter 工程”的工具，升级为 A/B/C 模型：
+
+```text
+A = Source project，需求或原型所在项目
+B = Target project，真实实现所在项目
+C = ProtoBridge，读取 A 和 B 后生成实现说明书的桥接工具
+```
+
+当前第一阶段仍然明确服务于：
+
+```text
+Vue3 原型平台 -> Flutter App
+```
+
+但后续代码组织上会避免把 Vue 和 Flutter 直接耦合进主流程。Vue 原型分析和 Flutter 工程分析会分别沉到 adapter 中，core 只负责编排。
+
+下一阶段规划重点：
+
+- 配置从 `prototypeRoot` / `flutterRoot` 升级为 `source` / `target` 项目描述。
+- source 和 target 都支持 `local` 路径与 `remote` GitLab 仓库。
+- remote 第一版支持 branch/tag，默认依赖用户本机已有 GitLab 权限。
+- remote 仓库缓存到 `.proto-bridge/cache/repos`，该目录不进入版本管理。
+- C 项目不保存 A/B 的开发规范，而是读取 A/B 自己仓库内的 README、docs 和架构文件。
+- 输出保留三份文件：`migration-context.json`、`llm-prompt.md`、`migration-spec.md`。
+- 大模型调用先只预留 provider 接口，不绑定具体供应商；在此之前 `llm-prompt.md` 可手动交给 Cursor、Claude Code 或 Codex CLI 使用。
+- CLI 和 MCP 都保留，CLI 先稳定落地，MCP 后续作为 AI 工具协议入口。
+
+详细规划见：
+
+- `docs/architecture-roadmap.md`
+- `docs/config-schema.md`
 
 ## 四、安装
 
@@ -147,8 +183,8 @@ cp proto-bridge.config.example.json proto-bridge.config.json
 
 ```json
 {
-  "prototypeRoot": "/Users/lrq/work/youfi/TradeAppPrd",
-  "flutterRoot": "/Users/lrq/work/youfi",
+  "prototypeRoot": "~/work/youfi/TradeAppPrd",
+  "flutterRoot": "~/work/youfi",
   "target": "flutter",
   "outDir": "./output",
   "noCapture": true
@@ -179,8 +215,11 @@ query = anchor=overview&is_mobile=1
 ```text
 output/fund-profile/
 ├── migration-context.json
+├── llm-prompt.md
 └── migration-spec.md
 ```
+
+说明：`llm-prompt.md` 是下一阶段计划输出，目前文档先记录目标形态；当前实现仍以 `migration-context.json` 和 `migration-spec.md` 为主。
 
 ### 3. 使用 route 生成迁移上下文
 
@@ -270,6 +309,19 @@ output/stock-trade/
 - 原型 notes。
 - 人工确认项。
 - AI 实现提示词。
+
+### llm-prompt.md
+
+计划中的 LLM 提示词包。
+
+该文件会组合：
+
+- A 项目的目标页面上下文。
+- A 项目自身的 README、docs、notes、i18n 等规范和需求材料。
+- B 项目的 README、docs、模块结构、路由、主题、状态管理、资源、公共组件等工程上下文。
+- 生成 `migration-spec.md` 所需的结构化指令。
+
+在未接入具体模型供应商前，`llm-prompt.md` 可以作为人工复制到 Cursor、Claude Code、Codex CLI 或公司内部 AI 工具的交接文件。
 
 ## 八、实现原理
 
@@ -523,6 +575,21 @@ target   = order
   - `generateMigrationSpec`
 - 保持 MCP 层只做协议封装，不写业务逻辑。
 
+### Phase 7：A/B/C 通用架构规划
+
+状态：文档规划中。
+
+后续增强：
+
+- 引入 A/B/C 模型：A 为 source project，B 为 target project，C 为 ProtoBridge。
+- 配置升级为 `source` / `target` / `location` / `kind`。
+- 支持 local path 和 remote GitLab branch/tag。
+- remote 仓库缓存到 `.proto-bridge/cache/repos`。
+- 抽象 `ProjectResolver`、`SourceAdapter`、`TargetAdapter`、`SpecGenerator`。
+- 第一组 adapter 为 `vue3-prototype -> flutter-app`。
+- 生成 `llm-prompt.md`，作为未接入具体 LLM provider 前的 AI 交接文件。
+- 预留 LLM provider 接口，但不绑定具体供应商。
+
 ## 十一、未来优化方向
 
 ### 1. 配置解析升级
@@ -590,6 +657,8 @@ Playwright capture 后续可以服务于：
 
 未来可以增加：
 
+- 输出 `llm-prompt.md`，把 A/B 项目上下文组织成可直接交给 AI 的提示词包。
+- 预留 LLM provider 接口，但不在第一阶段绑定具体供应商。
 - 根据 spec 生成 Flutter TODO patch。
 - 自动检查实现中是否存在 raw color。
 - 自动检查 hardcoded text 是否进入 i18n。

@@ -12,6 +12,22 @@ ProtoBridge 是一个“原型到实现”的上下文桥接工具。
 - 目标端上下文：YouFi Flutter App
 - 输出：`migration-context.json` 和 `migration-spec.md`
 
+下一阶段规划会把项目抽象为 A/B/C 模型：
+
+```text
+A = Source project，需求或原型所在项目
+B = Target project，真实实现所在项目
+C = ProtoBridge，读取 A 和 B 后生成实现说明书的桥接工具
+```
+
+当前第一组 adapter 仍然是：
+
+```text
+Vue3 prototype -> Flutter app
+```
+
+但 core 主流程不应直接耦合 Vue 或 Flutter。Vue 原型分析、Flutter 工程分析、未来 React/Flutter/Vue 等组合都应通过 adapter 扩展。
+
 第一版明确不做：
 
 - 不直接生成 Dart 页面代码
@@ -19,26 +35,21 @@ ProtoBridge 是一个“原型到实现”的上下文桥接工具。
 - 不以 OCR 作为主输入
 - 不处理复杂 Figma 还原
 - 不把核心逻辑写死在 MCP 层
+- 不把 A/B 项目的开发规范存放在 ProtoBridge 中；规范应从 A/B 自己仓库的 README、docs 和架构文件读取
 
 ## 2. 推荐工程位置
 
 正式位置：
 
 ```text
-/Users/lrq/work/proto-bridge
+~/work/proto-bridge
 ```
 
-如果当前窗口或权限不方便，也可以先放在 YouFi 主项目内：
+通过配置指定两个项目路径：
 
 ```text
-/Users/lrq/work/youfi/proto-bridge
-```
-
-完成后迁移出去即可。工程内部不要依赖自身所在目录，应通过配置指定两个项目路径：
-
-```text
-prototypeRoot = /Users/lrq/work/youfi/TradeAppPrd
-flutterRoot   = /Users/lrq/work/youfi
+prototypeRoot = ~/work/TradeAppPrd
+flutterRoot   = ~/work/youfi
 ```
 
 ## 3. 总体架构
@@ -53,6 +64,8 @@ proto-bridge/
 ├── docs/
 │   ├── migration-spec-template.md
 │   ├── context-schema.md
+│   ├── config-schema.md
+│   ├── architecture-roadmap.md
 │   └── mcp-tools.md
 ├── examples/
 │   └── stock-trade/
@@ -83,6 +96,32 @@ proto-bridge/
 │       └── src/
 │           └── index.ts
 ```
+
+下一阶段架构应拆成以下公共模块：
+
+```text
+ProjectResolver
+  -> 解析 local 路径或 remote GitLab branch/tag
+  -> remote 缓存到 .proto-bridge/cache/repos
+  -> 输出 resolved local path 和版本元信息
+
+SourceAdapter
+  -> 读取 A 项目的需求、原型、页面、notes、i18n、README/docs
+  -> 第一版 adapter: vue3-prototype
+
+TargetAdapter
+  -> 读取 B 项目的模块、路由、状态管理、主题、资源、公共组件、README/docs
+  -> 第一版 adapter: flutter-app
+
+SpecGenerator
+  -> 汇总 A 上下文、B 上下文、A/B 规范
+  -> 生成 migration-context.json、llm-prompt.md、migration-spec.md
+
+Entrypoints
+  -> CLI 和 MCP 都只调用 core
+```
+
+大模型能力只预留 provider 接口，不在规划阶段绑定具体供应商。未接入 provider 前，`llm-prompt.md` 是手动交给 Cursor、Claude Code、Codex CLI 或公司内部 AI 工具的交接产物。
 
 ## 4. 第一版五个能力
 
@@ -417,8 +456,8 @@ Markdown 模板建议：
 
 ```bash
 npm run generate -- \
-  --prototype-root /Users/lrq/work/youfi/TradeAppPrd \
-  --flutter-root /Users/lrq/work/youfi \
+  --prototype-root ~/work/youfi/TradeAppPrd \
+  --flutter-root ~/work/youfi \
   --route /prototype/trade \
   --prototype-url http://127.0.0.1:5173/prototype/trade \
   --target flutter \
@@ -429,8 +468,8 @@ npm run generate -- \
 
 ```bash
 npm run generate -- \
-  --prototype-root /Users/lrq/work/youfi/TradeAppPrd \
-  --flutter-root /Users/lrq/work/youfi \
+  --prototype-root ~/work/youfi/TradeAppPrd \
+  --flutter-root ~/work/youfi \
   --vue prototype/src/views/prototype/stock/StockTradePage.vue \
   --prototype-url http://127.0.0.1:5173/prototype/trade \
   --target flutter \
@@ -470,7 +509,7 @@ generateMigrationSpec
 
 ```json
 {
-  "prototypeRoot": "/Users/lrq/work/youfi/TradeAppPrd",
+  "prototypeRoot": "~/work/youfi/TradeAppPrd",
   "route": "/prototype/trade"
 }
 ```
@@ -496,8 +535,8 @@ generateMigrationSpec
 
 ```json
 {
-  "prototypeRoot": "/Users/lrq/work/youfi/TradeAppPrd",
-  "flutterRoot": "/Users/lrq/work/youfi",
+  "prototypeRoot": "~/work/youfi/TradeAppPrd",
+  "flutterRoot": "~/work/youfi",
   "target": "flutter"
 }
 ```
@@ -510,7 +549,7 @@ generateMigrationSpec
 
 ```json
 {
-  "flutterRoot": "/Users/lrq/work/youfi",
+  "flutterRoot": "~/work/youfi",
   "prototypeModule": "stock",
   "screenId": "stock.trade"
 }
@@ -524,8 +563,8 @@ generateMigrationSpec
 
 ```json
 {
-  "prototypeRoot": "/Users/lrq/work/youfi/TradeAppPrd",
-  "flutterRoot": "/Users/lrq/work/youfi",
+  "prototypeRoot": "~/work/youfi/TradeAppPrd",
+  "flutterRoot": "~/work/youfi",
   "route": "/prototype/trade",
   "prototypeUrl": "http://127.0.0.1:5173/prototype/trade",
   "target": "flutter",
@@ -769,6 +808,30 @@ generateMigrationSpec
 ```
 
 并拿到生成文件路径。
+
+### Phase 7：A/B/C 通用架构规划
+
+目标：把当前固定的 `Vue3 prototype -> Flutter app` 流程抽象为可扩展的 A/B/C 模型。
+
+任务：
+
+- [ ] 新增 `source` / `target` 配置模型规划。
+- [ ] 保留旧 `prototypeRoot` / `flutterRoot` 配置兼容策略。
+- [ ] 设计 `ProjectResolver`，支持 local path 和 remote GitLab branch/tag。
+- [ ] 约定 remote 缓存目录为 `.proto-bridge/cache/repos`。
+- [ ] 设计 `SourceAdapter` 和 `TargetAdapter` 接口。
+- [ ] 将当前 Vue 原型分析规划为 `vue3-prototype` adapter。
+- [ ] 将当前 Flutter 工程分析规划为 `flutter-app` adapter。
+- [ ] 生成三份输出：`migration-context.json`、`llm-prompt.md`、`migration-spec.md`。
+- [ ] 预留 LLM provider 接口，但不绑定具体供应商。
+- [ ] 明确 A/B 的开发规范从 A/B 自身仓库读取，C 不保存这些规范。
+
+验收：
+
+- 文档能解释 A/B/C 模型。
+- 文档能解释 CLI 和 MCP 为什么都保留。
+- 文档能解释 local/remote 项目解析方式。
+- 文档能解释未来如何扩展 React、Flutter、Vue 等不同技术栈组合。
 
 ## 9. 第一版完成标准
 
