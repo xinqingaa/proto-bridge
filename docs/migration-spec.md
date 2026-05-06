@@ -31,7 +31,7 @@
 - 能给出基础 token 映射。
 - 能生成基础 Flutter Widget 拆分和人工确认项。
 
-### Silver：当前目标
+### Silver：标准输出
 
 - 能生成 Flutter 实现规划，包括文件拆分、Widget 组合树、输入契约和状态管理组合建议。
 - 能识别页面模式，例如 `quote-detail`、`detail`、`list`、`form`、`trade-ticket`、`portfolio`、`settings`、`auth`、`wizard`。
@@ -39,7 +39,7 @@
 - 能区分 UI 状态、业务数据、派生数据、生命周期副作用、图表/adapter 数据。
 - 能输出 P0/P1/P2 可执行确认项。
 
-### Gold：后续目标
+### Gold：增强输出
 
 - 能结合运行时截图和 computed style 校对布局。
 - 能识别目标 Flutter 模块内最相似页面并总结可复用写法。
@@ -140,7 +140,7 @@
 - “确认 fundCode 来自路由参数还是接口返回”。
 - “确认 empty 状态使用现有 CommonEmpty 还是模块自定义组件”。
 
-## 5. 当前 Markdown 模板
+## 5. Markdown 模板
 
 ```md
 # <页面名> Flutter 迁移说明书

@@ -97,8 +97,8 @@ async function buildGenerateInput(values: Record<string, string | boolean>): Pro
   if (!targetRoot) throw new Error('config.target.root is required');
   if (!pageInput.route && !pageInput.vue) throw new Error('Provide --url, --route, or --vue.');
   if (pageInput.route && pageInput.vue) throw new Error('Use only one page input: --url, --route, or --vue.');
-  if (sourceAdapter !== 'vue3-prototype') throw new Error('Phase 1 only supports --source-adapter vue3-prototype');
-  if (targetAdapter !== 'flutter-app') throw new Error('Phase 1 only supports --target-adapter flutter-app');
+  if (sourceAdapter !== 'vue3-prototype') throw new Error('Unsupported source adapter. Supported: vue3-prototype');
+  if (targetAdapter !== 'flutter-app') throw new Error('Unsupported target adapter. Supported: flutter-app');
 
   return {
     source: {

@@ -1,71 +1,62 @@
 # ProtoBridge 架构与数据模型
 
-本文档是 ProtoBridge 架构、配置、上下文 schema 的主维护入口。
-
 ## 1. 产品定位
 
-ProtoBridge 不是代码翻译器，也不是一键生成 Dart 的工具。
-
-它连接三个项目角色：
-
-- **A：Source project** - 需求或原型所在项目。
-- **B：Target project** - 功能最终落地的工程项目。
-- **C：ProtoBridge** - 读取 A 和 B 后，生成面向实现的说明书。
-
-第一阶段支持：
+ProtoBridge 是 A/B/C 模型下的上下文桥接工具：
 
 ```text
-A = Vue3 原型平台
-B = Flutter App
-C = ProtoBridge
+A = Source project，需求或原型所在项目
+B = Target project，真实实现所在项目
+C = ProtoBridge，读取 A 和 B 后生成实现说明书的桥接工具
 ```
 
-稳定目标是：读取 A 中的目标页面，结合 B 的真实工程结构、开发规范、主题、路由、资源和通用组件，生成一篇 Flutter-facing 的实现说明书。
+ProtoBridge 的输出是可审查、可修改、可交给 AI coding 工具继续实现的上下文包，而不是直接提交到目标 App 的业务代码。
+
+核心目标：
+
+- 从 source project 提取页面结构、交互、状态、路由、notes、i18n、资源和样式 token。
+- 从 target project 提取模块、路由、状态管理习惯、主题、资源目录、公共组件和相似实现。
+- 将 source facts 转成 target-facing 的实现规划。
+- 输出 `migration-context.json` 和 `migration-spec.md`。
 
 ## 2. 非目标
 
-ProtoBridge 不应该变成：
+ProtoBridge 不负责：
 
-- 源码到 Dart 的逐行翻译器。
-- 第一阶段直接生成完整 Dart 页面代码的工具。
-- 固化 A/B 项目业务规则的地方。
-- 人工 review 的替代品。
-- 只能通过 MCP 使用、无法脚本化或 CI 使用的工具。
+- 直接生成完整 Dart 页面代码。
+- 一键迁移并自动提交目标 App。
+- 把 Vue 模板、CSS class 或 DOM 结构逐层翻译成 Flutter Widget。
+- 以 OCR 作为主输入。
+- 处理复杂 Figma 高保真还原。
+- 在 ProtoBridge 中保存 A/B 项目的开发规范；规范应从 A/B 自身仓库读取。
 
-## 3. A/B/C 模型
-
-A/B/C 模型固定，但 A 和 B 的技术栈不固定。
+## 3. 总体架构
 
 ```text
-source project A
-  -> source adapter
-  -> source context
-
-target project B
-  -> target adapter
-  -> implementation context
-
-ProtoBridge C
-  -> project resolver
-  -> adapter orchestration
-  -> planner
-  -> spec generation
-  -> CLI and MCP entrypoints
+CLI / MCP
+  -> core generator
+    -> AdapterRegistry
+      -> SourceAdapter
+      -> TargetAdapter
+    -> optional Capture
+    -> Planner
+    -> SpecGenerator
 ```
 
-第一阶段：
+当前默认组合：
 
-- source adapter：`vue3-prototype`
-- target adapter：`flutter-app`
+```text
+SourceAdapter = vue3-prototype
+TargetAdapter = flutter-app
+```
 
-未来可能支持：
+扩展方式：
 
-- `react-prototype -> flutter-app`
-- `flutter-app -> vue-app`
-- `flutter-app -> react-app`
-- `figma-design -> flutter-app`
+- 新 source 技术栈新增 `SourceAdapter`。
+- 新 target 技术栈新增 `TargetAdapter`。
+- core 主流程只通过 registry 获取 adapter，不直接依赖具体技术栈实现。
 
-## 4. 当前工程结构
+## 4. 工程结构
 
 ```text
 packages/core/src/
@@ -82,70 +73,176 @@ packages/core/src/
 │           ├── flutter-implementation-plan.ts
 │           └── token-mapper.ts
 ├── capture/
-├── planners/
+│   └── playwright-capture.ts
 ├── generators/
+│   ├── migration-context.ts
+│   └── migration-spec.ts
+├── planners/
+│   ├── naming-strategy.ts
+│   ├── page-pattern-classifier.ts
+│   └── widget-blueprints.ts
 ├── types/
 └── utils/
 ```
 
-职责划分：
+模块职责：
 
-- `adapters`：承载具体 source/target 技术栈实现。
-- `adapters/registry.ts`：注册并解析默认 adapter 组合。
-- `generators/migration-context.ts`：只负责编排 adapter、capture、recommendation。
-- `planners`：保留跨 target 规划所需的页面模式与命名辅助，当前仍服务 Flutter plan。
-- `capture`：可选运行时截图、DOM、computed style 提取。
+- `adapters/types.ts`：定义 `SourceAdapter`、`TargetAdapter` 和 adapter project config。
+- `adapters/registry.ts`：注册并解析可用 adapter。
+- `adapters/source/vue3-prototype`：读取 Vue3 原型工程并产出 source facts。
+- `adapters/target/flutter-app`：读取 Flutter 工程上下文，执行 token mapping 和 Flutter implementation planning。
+- `capture`：通过 Playwright 提取运行时截图、DOM、bbox 和 computed style。
+- `generators`：组装 migration context 并渲染 Markdown spec。
+- `planners`：页面模式识别、Widget blueprint 和命名策略。
+- `types`：跨模块共享的数据结构。
+- `utils`：路径、文件和 JS literal 解析工具。
 
-## 5. Core 模块职责
+## 5. Adapter 接口
 
-### 5.1 Source 分析
+### SourceAdapter
 
-当前实现：`packages/core/src/adapters/source/vue3-prototype/prototype-page.ts`
+Source adapter 负责把 source project 转成统一的页面事实。
 
-职责：
+当前 `vue3-prototype` 输入：
 
-- 读取页面配置。
-- 根据 URL/route/source file 定位页面。
-- 读取 notes、i18n、页面源码。
-- 调用 SFC 分析器得到内部 source facts。
+- `source.root`
+- `route`
+- `vue`
 
-### 5.2 Source SFC 语义分析
+当前 `vue3-prototype` 输出：
 
-当前实现：`packages/core/src/adapters/source/vue3-prototype/vue-sfc.ts`
+- 页面元信息：route、screenId、module、label、title、owner、status、changelog。
+- 页面源码与相对路径。
+- notes 与 i18n。
+- SFC facts：sections、components、interactions、state、routes、lifecycle、layout、assets、styleTokens。
+- warnings。
 
-职责：抽取内部分析事实，包括：
+### TargetAdapter
 
-- sections / semantic components。
-- interactions。
-- state / constants / functions。
-- routes / query / back 行为。
-- lifecycle / event listener。
-- layout hints。
-- assets。
-- style token usage。
+Target adapter 负责把 target project 转成可落地的实现上下文和规划能力。
 
-这些内容进入 `migration-context.json`，用于调试和 planner。正式 `migration-spec.md` 不直接输出 source 技术栈、模板语法或 DOM/class 证据。
+当前 `flutter-app` 输入：
 
-### 5.3 Target 分析
+- `target.root`
+- source module
+- screenId
+- route
 
-当前实现：`packages/core/src/adapters/target/flutter-app/flutter-context.ts`
+当前 `flutter-app` 输出：
 
-职责：
+- Flutter modules。
+- 推荐目标模块。
+- routes 文件。
+- translation 文件。
+- asset 目录。
+- reusable widgets。
+- similar files。
+- token map。
+- Flutter implementation plan。
+- warnings。
 
-- 扫描 `lib/app/modules/**`。
-- 查找 `app_routes.dart` 和 `app_pages.dart`。
-- 查找翻译文件和资源目录。
-- 推荐 Flutter 模块。
-- 列出可复用 common widgets。
+## 6. Source 分析
 
-### 5.4 Planner
+入口：`packages/core/src/adapters/source/vue3-prototype/prototype-page.ts`
 
-当前入口：
+读取内容：
 
-- `packages/core/src/planners/page-pattern-classifier.ts`
-- `packages/core/src/planners/widget-blueprints.ts`
-- `packages/core/src/planners/naming-strategy.ts`
-- `packages/core/src/adapters/target/flutter-app/flutter-implementation-plan.ts`
+```text
+prototype/src/config/prototypeScreens.js
+prototype/src/config/designScreens.js
+prototype/notes/**
+prototype/src/i18n/prototype/**
+prototype/src/views/**
+```
+
+页面解析流程：
+
+1. 读取 prototype/design screen config。
+2. 用 route 或 Vue 文件匹配 screen config。
+3. 推断 page type、module、screenId、view path。
+4. 读取 Vue SFC 源码。
+5. 读取 notes 和 i18n。
+6. 调用 SFC analyzer 生成 source facts。
+7. 汇总 warnings。
+
+## 7. SFC 语义分析
+
+入口：`packages/core/src/adapters/source/vue3-prototype/vue-sfc.ts`
+
+分析内容：
+
+- `sections`：app-bar、tab-bar、section、list、chart、bottom-bar、modal。
+- `components`：header、tabs、summary、content-section、list、chart、bottom-actions、modal。
+- `interactions`：click、model、conditional、loop、state、computed、watch。
+- `state`：ui-state、mock-data、derived-data、navigation、lifecycle、chart-data、handler。
+- `routes`：navigate、back、read-query。
+- `lifecycle`：onMounted、onBeforeUnmount、watch、event-listener。
+- `layout`：fixed、sticky、scroll、safe-area、z-index、absolute、flex、grid、spacing。
+- `assets`：image、svg、icon、background、inline-svg。
+- `styleTokens`：CSS var、mixin 和 fallback。
+
+这些信息进入 `migration-context.json`，供 planner、调试和人工审查使用。`migration-spec.md` 只输出 target-facing 建议。
+
+## 8. Target 分析
+
+入口：`packages/core/src/adapters/target/flutter-app/flutter-context.ts`
+
+扫描内容：
+
+```text
+lib/app/modules/**
+lib/app/routes/app_routes.dart
+lib/app/routes/app_pages.dart
+lib/app/translations/*.dart
+assets/images
+assets/dark_images
+assets/svg
+assets/json
+lib/app/common/{widget,widgets,pop}/**/*.dart
+lib/app/widgets/**/*.dart
+```
+
+分析结果：
+
+- `existingModules`
+- `suggestedModule`
+- `routesFiles`
+- `translationFiles`
+- `assetDirectories`
+- `reusableWidgets`
+- `similarFiles`
+- `warnings`
+
+## 9. Token 映射
+
+入口：`packages/core/src/adapters/target/flutter-app/token-mapper.ts`
+
+输入来源：
+
+- Vue SFC style 中的 CSS var。
+- Vue SFC style 中的 typography mixin。
+- Playwright computed style fallback。
+
+输出结构：
+
+```ts
+type TokenMapResult = {
+  colors: TokenMapping[]
+  typography: TokenMapping[]
+  unresolved: TokenMapping[]
+}
+```
+
+映射目标：
+
+- `themeService.colors.*`
+- `themeService.textStyles.*`
+
+未命中项进入 `unresolved`，用于说明书和人工确认。
+
+## 10. Flutter Implementation Plan
+
+入口：`packages/core/src/adapters/target/flutter-app/flutter-implementation-plan.ts`
 
 规划流程：
 
@@ -157,7 +254,7 @@ source facts + target context
   -> FlutterImplementationPlan
 ```
 
-当前支持页面模式：
+页面模式：
 
 - `quote-detail`
 - `detail`
@@ -174,9 +271,45 @@ source facts + target context
 - `dashboard`
 - `unknown`
 
-## 6. 当前配置格式
+输出结构：
 
-当前推荐使用 adapter-aware 本地配置：
+```ts
+type FlutterImplementationPlan = {
+  complexity: 'simple' | 'moderate' | 'complex'
+  summary: string
+  fileTree: FlutterPlannedFile[]
+  widgetTree: FlutterWidgetPlan[]
+  stateStrategy: FlutterStateStrategy[]
+  controllerBoundaries: FlutterControllerBoundary[]
+  widgetContracts: FlutterWidgetContract[]
+  doNotTranslate: string[]
+  checklist: FlutterChecklistItem[]
+}
+```
+
+## 11. Migration Context
+
+TypeScript source of truth：`packages/core/src/types/index.ts`
+
+```ts
+type MigrationContext = {
+  source: PrototypePageAnalysis
+  capture?: CaptureResult
+  tokenMap: TokenMapResult
+  target: FlutterContextAnalysis
+  recommendations: MigrationRecommendations
+}
+```
+
+字段说明：
+
+- `source`：页面路由、screenId、页面配置、notes、i18n、源码和 source facts。
+- `capture`：可选截图、DOM snapshot、viewport、computed style。
+- `tokenMap`：颜色、字体和未命中 token。
+- `target`：Flutter 模块、路由、翻译、资源、可复用组件和相似文件。
+- `recommendations`：实现形态、实现规划、风险和人工确认项。
+
+## 12. 配置格式
 
 ```json
 {
@@ -194,91 +327,44 @@ source facts + target context
 }
 ```
 
-远程 GitLab / branch / tag 仍属于后续 ProjectResolver 范围。
+页面输入可来自：
 
-## 7. Migration Context 当前结构
+- `url`
+- `route`
+- `vue`
+- CLI 参数 `--url`、`--route`、`--vue`
 
-当前 TypeScript source of truth 是 `packages/core/src/types/index.ts`。
+## 13. 扩展点
 
-```ts
-type MigrationContext = {
-  source: PrototypePageAnalysis
-  capture?: CaptureResult
-  tokenMap: TokenMapResult
-  target: FlutterContextAnalysis
-  recommendations: MigrationRecommendations
-}
-```
+### 新增 SourceAdapter
 
-主要字段：
+需要实现：
 
-- `source`：页面路由、screenId、页面配置、notes、i18n、源码和内部 source facts。
-- `source.sfc`：内部调试和 planner 使用的 source facts。
-- `capture`：可选截图、DOM snapshot、viewport、computed style。
-- `tokenMap`：颜色、字体、未命中 token。
-- `target`：Flutter 模块、路由、翻译、资源、可复用组件。
-- `recommendations`：实现形态、实现规划、风险、人工确认项。
+- adapter id。
+- source root 解析。
+- 页面输入解析。
+- source facts 输出。
+- warnings。
 
-## 8. FlutterImplementationPlan 结构
+### 新增 TargetAdapter
 
-`recommendations.implementationPlan` 是正式说明书最重要的 planning payload。
+需要实现：
 
-```ts
-type FlutterImplementationPlan = {
-  complexity: 'simple' | 'moderate' | 'complex'
-  summary: string
-  fileTree: FlutterPlannedFile[]
-  widgetTree: FlutterWidgetPlan[]
-  stateStrategy: FlutterStateStrategy[]
-  controllerBoundaries: FlutterControllerBoundary[]
-  widgetContracts: FlutterWidgetContract[]
-  doNotTranslate: string[]
-  checklist: FlutterChecklistItem[]
-}
-```
+- adapter id。
+- target root 解析。
+- target context 输出。
+- token mapping。
+- implementation plan。
+- warnings。
 
-设计原则：
+### ProjectResolver
 
-- `migration-context.json` 可以保留 source facts 和调试证据。
-- `migration-spec.md` 应渲染 `FlutterImplementationPlan`，不渲染原始 source facts。
-- Widget 树通过 page pattern + blueprint 生成，不应针对单一业务页面写死。
+本地路径已经通过 `source.root` 和 `target.root` 表达。远程 Git、branch、tag、commit pinning 和本地缓存可以作为 resolver 能力接入，不应侵入 adapter 主流程。
 
-## 9. ProjectResolver / Adapter 规划
+## 14. 风险与边界
 
-后续需要引入 `ProjectResolver`：
-
-- 支持本地路径。
-- 支持远程 GitLab 仓库。
-- 支持 branch 或 tag ref。
-- 缓存到 `.proto-bridge/cache/repos`。
-- 输出 repo URL、ref、commit hash、本地路径等元信息。
-
-SourceAdapter / TargetAdapter 已从 core 主流程中抽象出来，当前链路为：
-
-```text
-ProjectResolver
-  -> SourceAdapter
-  -> TargetAdapter
-  -> Planner
-  -> SpecGenerator
-```
-
-## 10. Remote GitLab / Cache 规划
-
-远程仓库应该 clone 到：
-
-```text
-.proto-bridge/cache/repos
-```
-
-该目录应被 Git 忽略。
-
-第一版 remote 支持 branch/tag。commit pinning 可后续增加。
-
-## 11. 风险与边界
-
-- 配置解析目前是宽松文本解析，后续可升级为 AST 或受控动态 import。
-- Capture 输出可能包含原型容器、手机框、导航框架，需要过滤。
-- 页面模式分类是启发式，需要 confidence 和 fallback。
-- 正式说明书不应泄露 source 技术栈细节。
-- 缺少业务 notes、接口、风控或权限信息时，必须进入人工确认项。
+- `prototypeScreens.js` / `designScreens.js` 是 JS 文件，当前通过受控 literal 解析读取，复杂动态逻辑需要人工确认。
+- Runtime capture 依赖页面可访问、浏览器环境和运行时状态；capture 失败不应阻断静态上下文生成。
+- DOM tree 可能包含原型平台外壳，需要在 spec 中保留人工确认项。
+- Token 映射无法命中语义 token 时，必须进入 `unresolved`，不能伪装成确定映射。
+- Target adapter 输出的是实现建议，不应替代目标 App 的真实代码审查。

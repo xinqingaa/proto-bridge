@@ -1,10 +1,10 @@
 # 集成与工具入口
 
-本文档是 CLI、MCP、LLM Provider 和脚本化集成的主维护入口。
+本文档说明 ProtoBridge 的 CLI、MCP、脚本化调用和输出集成方式。
 
-## 1. CLI 当前入口
+## 1. CLI 入口
 
-当前主入口是 CLI：
+CLI 是当前主要入口：
 
 ```bash
 pnpm run generate -- --url "http://localhost:5173/#/prototype/etf-detail" --out ./output/etf-detail
@@ -12,62 +12,16 @@ pnpm run generate -- --route /prototype/etf-detail --out ./output/etf-detail
 pnpm run generate -- --vue prototype/src/views/prototype/etf/ETFDetailPage.vue --out ./output/etf-detail
 ```
 
-CLI 负责：
+CLI 职责：
 
-- 读取 `proto-bridge.config.json`，使用 `source` / `target` adapter 配置。
-- 解析参数。
-- 调用 core。
-- 写入输出文件。
+- 读取 `proto-bridge.config.json`。
+- 解析页面输入、输出目录和 capture 参数。
+- 调用 core `generateMigrationSpec`。
+- 输出生成文件路径和 warning 数量。
 
-CLI 不应该实现复杂业务逻辑。
+CLI 不实现 source/target 分析、planner 或 spec 渲染逻辑。
 
-## 2. MCP 当前状态
-
-MCP 是 Phase 6 入口，目前仍是骨架。
-
-原则：MCP 是薄协议层，应复用 CLI 调用的 core 能力，不复制 planner、analyzer 或 generator 逻辑。
-
-当前预期工具：
-
-- `analyzeSourceProject`
-- `capturePrototypePage`
-- `analyzeTargetProject`
-- `generateMigrationSpec`
-
-## 3. Core 当前能力
-
-CLI 和未来 MCP 都应调用 core。Core 当前通过 adapter registry 编排默认 `vue3-prototype -> flutter-app` 组合，负责：
-
-- source adapter analysis。
-- optional runtime capture。
-- target adapter token mapping。
-- target adapter context analysis。
-- page pattern classification。
-- widget blueprint planning。
-- target implementation plan generation。
-- `migration-context.json` 写入。
-- `migration-spec.md` 渲染。
-
-## 4. MCP 工具规划
-
-MCP 工具应使用 adapter-aware 名称，不再暴露旧的 Vue/Flutter 固定名称。
-
-规划工具：
-
-- `resolveProject`
-- `listSupportedAdapters`
-- `analyzeSourceProject`
-- `analyzeTargetProject`
-- `classifyPagePattern`
-- `generateImplementationPlan`
-- `generatePromptPackage`
-- `generateMigrationSpec`
-
-## 5. generateMigrationSpec
-
-这是最重要的 MCP 工具。
-
-当前输入示例：
+## 2. 配置
 
 ```json
 {
@@ -85,67 +39,137 @@ MCP 工具应使用 adapter-aware 名称，不再暴露旧的 Vue/Flutter 固定
 }
 ```
 
-规划输出：
-
-```json
-{
-  "files": {
-    "migrationContext": "output/stock-trade/migration-context.json",
-    "llmPrompt": "output/stock-trade/llm-prompt.md",
-    "migrationSpec": "output/stock-trade/migration-spec.md"
-  },
-  "warnings": []
-}
-```
-
-`migration-spec.md` 应保持 target-facing；source-specific evidence 留在 `migration-context.json`。
-
-## 6. LLM Provider 规划
-
-MCP 不应该在第一版强依赖具体 LLM provider。
-
-第一版可以通过 deterministic core generator 输出：
-
-- `migration-context.json`
-- `migration-spec.md`
-- 未来的 `llm-prompt.md`
-
-后续可在 core 中增加 provider 抽象：
-
-- provider/model 选择。
-- prompt 输入。
-- 结构化上下文附件。
-- response text。
-- token/cost metadata。
-- error/fallback mode。
-
-provider 配置不应硬编码在 MCP 层。
-
-## 7. Prompt Package 规划
-
-`llm-prompt.md` 是未来的 prompt package。它应该组合：
-
-- source context 摘要。
-- target context 摘要。
-- Flutter implementation plan。
-- 约束和禁止项。
-- 文件改动范围。
-- 验收 checklist。
-
-即使没有 LLM Provider，该文件也可以手动交给 Cursor、Claude Code、Codex CLI 或公司内部 AI 工具。
-
-## 8. CI / 脚本化使用建议
-
-CLI 应保持可重复运行：
+CLI 参数可以覆盖页面输入、输出目录和 capture 行为：
 
 ```bash
-pnpm run generate -- --route /prototype/xxx --out ./output/xxx
+pnpm run generate -- \
+  --config ./proto-bridge.config.json \
+  --route /prototype/trade \
+  --out ./output/stock-trade \
+  --no-capture
 ```
 
-建议 CI 或团队脚本关注：
+## 3. Core 调用
 
-- 命令是否成功。
-- `migration-context.json` 是否生成。
-- `migration-spec.md` 是否生成。
-- warnings 是否超过团队阈值。
-- 正式 spec 是否不包含 source 技术栈细节。
+CLI 和 MCP 都调用 core。核心调用入口：
+
+```ts
+import { generateMigrationSpec } from '@proto-bridge/core';
+
+await generateMigrationSpec({
+  source: {
+    adapter: 'vue3-prototype',
+    root: '/Users/name/work/TradeAppPrd',
+  },
+  target: {
+    adapter: 'flutter-app',
+    root: '/Users/name/work/youfi',
+  },
+  route: '/prototype/trade',
+  outDir: './output/stock-trade',
+  noCapture: true,
+});
+```
+
+Core 编排流程：
+
+```text
+generateMigrationSpec
+  -> createMigrationContext
+    -> AdapterRegistry.getSource
+    -> SourceAdapter.analyze
+    -> optional capturePrototypePage
+    -> TargetAdapter.mapTokens
+    -> TargetAdapter.analyze
+    -> TargetAdapter.buildImplementationPlan
+  -> write migration-context.json
+  -> write migration-spec.md
+```
+
+## 4. MCP 入口
+
+`packages/mcp-server` 是 MCP 协议入口包。它只导出 core 能力，不复制业务逻辑。
+
+当前导出：
+
+- `capturePrototypePage`
+- `defaultAdapterRegistry`
+- `generateMigrationSpec`
+- `GenerateMigrationSpecInput`
+- `SourceAdapter`
+- `TargetAdapter`
+
+MCP 工具命名应围绕 adapter 和项目语义，例如：
+
+- `listSupportedAdapters`
+- `analyzeSourceProject`
+- `analyzeTargetProject`
+- `generateMigrationSpec`
+
+## 5. 输出文件
+
+成功生成后，输出目录包含：
+
+```text
+output/<page>/
+├── migration-context.json
+├── migration-spec.md
+├── screenshot.png        # capture enabled
+└── dom-snapshot.json     # capture enabled
+```
+
+`migration-context.json` 是机器可读上下文。`migration-spec.md` 是面向 Flutter 实现者和 AI coding 工具的说明书。
+
+## 6. Capture 集成
+
+Capture 输入：
+
+```bash
+pnpm run generate -- \
+  --url "http://localhost:5173/#/prototype/trade" \
+  --prototype-url "http://localhost:5173/#/prototype/trade" \
+  --capture
+```
+
+要求：
+
+- 原型 dev server 已启动。
+- `prototype-url` 可在浏览器中访问。
+- 页面处于适合截图和 DOM 提取的状态。
+
+Capture 失败时，core 会把错误写入 warnings，不阻断静态上下文生成。
+
+## 7. AI 工具集成
+
+推荐把 `migration-spec.md` 作为主要提示材料，把 `migration-context.json` 作为补充上下文。
+
+使用原则：
+
+- 让 AI 按说明书中的 Flutter 实现规划落地。
+- 让 AI 优先复用说明书列出的 common widgets、routes、translations、assets 和 theme tokens。
+- 不要求 AI 逐层翻译 Vue 模板或 CSS class。
+- 对 warnings 和人工确认项保持显式处理。
+
+## 8. CI / 脚本化使用
+
+推荐检查命令：
+
+```bash
+pnpm run typecheck
+pnpm run build
+```
+
+推荐生成命令：
+
+```bash
+pnpm run generate -- --route /prototype/trade --out ./output/stock-trade --no-capture
+```
+
+脚本化调用时应固定：
+
+- config path。
+- page input。
+- output directory。
+- capture 开关。
+
+生成产物通常不需要提交到 ProtoBridge 仓库，除非它是示例或回归样本。
