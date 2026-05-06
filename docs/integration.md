@@ -7,9 +7,10 @@
 CLI 是当前主要入口：
 
 ```bash
-pnpm run generate -- --url "http://localhost:5173/#/prototype/etf-detail" --out ./output/etf-detail
-pnpm run generate -- --route /prototype/etf-detail --out ./output/etf-detail
-pnpm run generate -- --vue prototype/src/views/prototype/etf/ETFDetailPage.vue --out ./output/etf-detail
+pnpm run generate -- --url "http://localhost:5173/#/prototype/etf-detail"
+pnpm run generate -- --route /prototype/etf-detail
+pnpm run generate -- --vue prototype/src/views/prototype/etf/ETFDetailPage.vue
+pnpm run generate
 ```
 
 CLI 职责：
@@ -34,19 +35,19 @@ CLI 不实现 source/target 分析、planner 或 spec 渲染逻辑。
     "root": "/Users/name/work/youfi"
   },
   "route": "/prototype/trade",
-  "outDir": "./output/stock-trade",
-  "noCapture": true
+  "outputRoot": "./output",
+  "capture": false
 }
 ```
 
-CLI 参数可以覆盖页面输入、输出目录和 capture 行为：
+CLI 参数可以覆盖页面输入、单次输出目录和 capture 行为：
 
 ```bash
 pnpm run generate -- \
   --config ./proto-bridge.config.json \
   --route /prototype/trade \
-  --out ./output/stock-trade \
-  --no-capture
+  --output ./output/custom-trade \
+  --capture
 ```
 
 ## 3. 适用集成场景
@@ -84,7 +85,7 @@ await generateMigrationSpec({
   },
   route: '/prototype/trade',
   outDir: './output/stock-trade',
-  noCapture: true,
+  capture: false,
 });
 ```
 
@@ -107,7 +108,7 @@ generateMigrationSpec
 
 | 步骤 | 输入 | 处理 | 输出 |
 | --- | --- | --- | --- |
-| 1 | config + CLI args | 解析 source、target、page input、outDir、capture | `GenerateMigrationSpecInput` |
+| 1 | config + CLI args | 解析 source、target、page input、outputRoot/output、capture | `GenerateMigrationSpecInput` |
 | 2 | `source.adapter` | 从 registry 获取 SourceAdapter | source adapter 实例 |
 | 3 | source root + route/vue/url | 读取页面配置、源码、notes、i18n、source docs 线索 | `PrototypePageAnalysis` |
 | 4 | prototypeUrl | 截图和 DOM 提取 | `CaptureResult` |
@@ -207,7 +208,7 @@ pnpm run build
 推荐生成命令：
 
 ```bash
-pnpm run generate -- --route /prototype/trade --out ./output/stock-trade --no-capture
+pnpm run generate -- --route /prototype/trade
 ```
 
 脚本化调用时应固定：

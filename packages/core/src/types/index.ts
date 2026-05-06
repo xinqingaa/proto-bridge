@@ -337,7 +337,7 @@ export type GenerateMigrationSpecInput = {
   vue?: string | undefined;
   prototypeUrl?: string | undefined;
   outDir: string;
-  noCapture?: boolean | undefined;
+  capture?: boolean | undefined;
 };
 
 export type GenerateMigrationSpecResult = {

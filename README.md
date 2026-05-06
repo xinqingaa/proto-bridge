@@ -163,10 +163,10 @@ pnpm run generate -- --help
 proto-bridge.config.json
 ```
 
-可以从模板复制：
+可以通过 init 生成：
 
 ```bash
-cp proto-bridge.config.example.json proto-bridge.config.json
+pnpm run generate -- init
 ```
 
 配置示例：
@@ -181,8 +181,8 @@ cp proto-bridge.config.example.json proto-bridge.config.json
     "adapter": "flutter-app",
     "root": "/Users/name/work/youfi"
   },
-  "outDir": "./output",
-  "noCapture": true
+  "outputRoot": "./output",
+  "capture": false
 }
 ```
 
@@ -196,8 +196,8 @@ cp proto-bridge.config.example.json proto-bridge.config.json
 - `vue`：可选，默认 Vue 文件路径。
 - `url`：可选，默认原型页面 URL。
 - `prototypeUrl`：可选，Playwright capture 使用的运行时 URL。
-- `outDir`：默认输出目录。
-- `noCapture`：是否跳过截图和 DOM 提取。
+- `outputRoot`：输出根目录，默认页面输出为 `outputRoot/<页面名>`。
+- `capture`：是否默认执行截图和 DOM 提取。
 
 ## 七、使用方式
 
@@ -207,26 +207,21 @@ cp proto-bridge.config.example.json proto-bridge.config.json
 
 ```bash
 pnpm run generate -- \
-  --url "http://localhost:5173/#/prototype/fund-profile?anchor=overview&is_mobile=1" \
-  --out ./output/fund-profile
+  --url "http://localhost:5173/#/prototype/fund-profile?anchor=overview&is_mobile=1"
 ```
 
 ### 2. 使用 route
 
 ```bash
 pnpm run generate -- \
-  --route /prototype/trade \
-  --out ./output/stock-trade \
-  --no-capture
+  --route /prototype/trade
 ```
 
 ### 3. 使用 Vue 文件
 
 ```bash
 pnpm run generate -- \
-  --vue prototype/src/views/prototype/stock/StockTradePage.vue \
-  --out ./output/stock-trade \
-  --no-capture
+  --vue prototype/src/views/prototype/stock/StockTradePage.vue
 ```
 
 ### 4. 开启运行时截图和 DOM 提取
@@ -237,7 +232,6 @@ pnpm run generate -- \
 pnpm run generate -- \
   --url "http://localhost:5173/#/prototype/trade" \
   --prototype-url "http://localhost:5173/#/prototype/trade" \
-  --out ./output/stock-trade \
   --capture
 ```
 
@@ -260,11 +254,10 @@ output/stock-trade/
 | `--prototype-url` | 否 | 运行中的原型页面 URL，用于 Playwright capture |
 | `--source-adapter` | 否 | Source adapter，默认 `vue3-prototype` |
 | `--target-adapter` | 否 | Target adapter，默认 `flutter-app` |
-| `--out` | 否 | 输出目录，相对路径按调用命令时的目录解析 |
-| `--no-capture` | 否 | 跳过截图和 DOM 提取 |
-| `--capture` | 否 | 覆盖配置中的 `noCapture: true`，执行截图和 DOM 提取 |
+| `--output` | 否 | 覆盖本次生成的完整输出目录，相对路径按调用命令时的目录解析 |
+| `--capture` | 否 | 执行截图和 DOM 提取 |
 
-`--url`、`--route`、`--vue` 三选一。CLI 参数优先级高于 `proto-bridge.config.json` 中的页面输入和输出目录。
+`--url`、`--route`、`--vue` 三选一；如果在交互式终端中都不提供，CLI 会进入问答式流程。未传 `--output` 时，输出目录为 `outputRoot/<页面名>`。
 
 ## 九、输出文件
 
@@ -453,9 +446,9 @@ source facts + target context
 
 不是。warnings 表示需要人工确认或可进一步补充的信息，例如跳过 capture、某些 token 未命中语义映射、notes 缺失等。
 
-### 相对 `--out` 路径按哪里解析？
+### 相对 `--output` 路径按哪里解析？
 
-相对 `--out` 按调用命令时的目录解析，而不是按 `packages/cli` 目录解析。
+相对 `--output` 按调用命令时的目录解析，而不是按 `packages/cli` 目录解析。
 
 ### `pnpm run typecheck` 和 `pnpm run build` 是必须的吗？
 

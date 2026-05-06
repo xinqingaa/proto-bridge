@@ -64,7 +64,7 @@ export async function analyzePrototypePage(input: AnalyzePrototypePageInput): Pr
       : undefined);
 
   if (!matchedEntry && !input.vue) {
-    throw new Error(`Unable to find prototype screen for route: ${route ?? '(missing route)'}`);
+    throw new Error(formatMissingRouteError(prototypeRoot, route, entries, warnings));
   }
 
   const pageType = matchedEntry?.pageType ?? inferPageTypeFromVue(input.vue);
@@ -240,6 +240,34 @@ function viewMatchesCandidates(view: string | undefined, candidates: string[]): 
     const normalizedCandidate = toPosixPath(candidate);
     return normalizedCandidate === normalizedView || normalizedCandidate.endsWith(`/${normalizedView}`);
   });
+}
+
+function formatMissingRouteError(
+  prototypeRoot: string,
+  route: string | undefined,
+  entries: ScreenEntry[],
+  warnings: string[],
+): string {
+  const routeSamples = entries
+    .map((entry) => normalizeRoute(asString(entry.screen.path) ?? ''))
+    .filter((item) => item.length > 1)
+    .slice(0, 8);
+  const details = [
+    `Unable to find prototype screen for route: ${route ?? '(missing route)'}`,
+    `source.root: ${prototypeRoot}`,
+    `loaded screens: ${entries.length}`,
+  ];
+
+  if (routeSamples.length > 0) {
+    details.push(`available route examples: ${routeSamples.join(', ')}`);
+  }
+
+  if (warnings.length > 0) {
+    details.push(`source config warnings: ${warnings.slice(0, 4).join(' | ')}`);
+  }
+
+  details.push('Suggestions: check config.source.root, verify the route exists in prototypeScreens.js/designScreens.js, or use --vue <file>.');
+  return details.join('\n');
 }
 
 async function readNotes(

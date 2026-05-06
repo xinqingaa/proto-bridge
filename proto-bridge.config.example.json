@@ -7,6 +7,6 @@
     "adapter": "flutter-app",
     "root": "/path/to/youfi"
   },
-  "outDir": "./output",
-  "noCapture": true
+  "outputRoot": "./output",
+  "capture": false
 }

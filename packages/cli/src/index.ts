@@ -1,8 +1,14 @@
 #!/usr/bin/env node
 
 import path from 'node:path';
-import { readFile } from 'node:fs/promises';
-import { generateMigrationSpec, type GenerateMigrationSpecInput } from '@proto-bridge/core';
+import { access, readFile, stat, writeFile } from 'node:fs/promises';
+import * as readline from 'node:readline/promises';
+import { stdin as input, stdout as output } from 'node:process';
+import {
+  generateMigrationSpec,
+  type GenerateMigrationSpecInput,
+  type GenerateMigrationSpecResult,
+} from '@proto-bridge/core';
 
 type ParsedArgs = {
   command: string;
@@ -16,9 +22,8 @@ type ProtoBridgeConfig = {
   vue?: string | undefined;
   url?: string | undefined;
   prototypeUrl?: string | undefined;
-  out?: string | undefined;
-  outDir?: string | undefined;
-  noCapture?: boolean | undefined;
+  outputRoot?: string | undefined;
+  capture?: boolean | undefined;
 };
 
 type ProjectConfig = {
@@ -32,14 +37,36 @@ type LoadedConfig = {
   config: ProtoBridgeConfig;
 };
 
+type PageInput = {
+  route?: string | undefined;
+  vue?: string | undefined;
+  url?: string | undefined;
+  interactive?: boolean | undefined;
+};
+
 const DEFAULT_CONFIG_FILE = 'proto-bridge.config.json';
+const DEFAULT_OUTPUT_ROOT = './output';
+const ICON = {
+  info: 'ℹ',
+  step: '●',
+  success: '✔',
+  error: '✖',
+  warn: '⚠',
+};
+const COLOR = {
+  bold: '\x1b[1m',
+  red: '\x1b[31m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  cyan: '\x1b[36m',
+  dim: '\x1b[2m',
+  reset: '\x1b[0m',
+};
 const ALLOWED_FLAGS = new Set([
   'capture',
   'config',
   'help',
-  'no-capture',
-  'out',
-  'out-dir',
+  'output',
   'prototype-url',
   'route',
   'source-adapter',
@@ -47,6 +74,7 @@ const ALLOWED_FLAGS = new Set([
   'url',
   'vue',
 ]);
+const BOOLEAN_FLAGS = new Set(['capture', 'help']);
 
 async function main(): Promise<void> {
   const parsed = parseArgs(process.argv.slice(2));
@@ -56,45 +84,42 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (parsed.command === 'init') {
+    await initConfig(parsed.values);
+    return;
+  }
+
   if (parsed.command !== 'generate') {
     throw new Error(`Unknown command: ${parsed.command || '(missing)'}`);
   }
 
   const input = await buildGenerateInput(parsed.values);
+  step('Analyzing prototype and writing migration files...');
   const result = await generateMigrationSpec(input);
 
-  console.log(`screenId: ${result.context.source.screenId ?? 'unknown'}`);
-  console.log(`migration-context: ${result.files.migrationContext}`);
-  console.log(`migration-spec: ${result.files.migrationSpec}`);
-  if (result.files.screenshot) console.log(`screenshot: ${result.files.screenshot}`);
-  if (result.files.domSnapshot) console.log(`dom-snapshot: ${result.files.domSnapshot}`);
-  if (result.context.recommendations.risks.length > 0) {
-    console.log(`warnings: ${result.context.recommendations.risks.length}`);
-  }
+  printSuccess(input, result, parsed.values);
 }
 
 async function buildGenerateInput(values: Record<string, string | boolean>): Promise<GenerateMigrationSpecInput> {
+  step('Loading proto-bridge config...');
   const loadedConfig = await loadRequiredConfig(values);
   const config = loadedConfig.config;
   const invocationDir = process.env.INIT_CWD ?? process.cwd();
 
-  const sourceRoot = resolveInputPath(config.source?.root, invocationDir, loadedConfig.dir);
-  const targetRoot = resolveInputPath(config.target?.root, invocationDir, loadedConfig.dir);
+  const sourceRoot = resolveInputPath(config.source?.root, loadedConfig.dir);
+  const targetRoot = resolveInputPath(config.target?.root, loadedConfig.dir);
   const sourceAdapter = readString(values, 'source-adapter') ?? config.source?.adapter ?? 'vue3-prototype';
   const targetAdapter = readString(values, 'target-adapter') ?? config.target?.adapter ?? 'flutter-app';
-  const pageInput = resolvePageInput(values, config);
+  const pageInput = await resolvePageInput(values, config);
   const prototypeUrl = resolvePrototypeUrl(values, config, pageInput.url);
-  const noCapture = resolveNoCapture(values, config);
-  const outValue =
-    readString(values, 'out') ??
-    readString(values, 'out-dir') ??
-    config.out ??
-    config.outDir ??
-    defaultOutDir(pageInput.route, pageInput.vue);
-  const outDir = resolveOutDir(outValue);
+  const capture = resolveCapture(values, config);
+  const outDir = await resolveGenerateOutDir(values, config, pageInput, invocationDir);
 
   if (!sourceRoot) throw new Error('config.source.root is required');
   if (!targetRoot) throw new Error('config.target.root is required');
+  step('Checking project roots...');
+  await validateProjectRoot('config.source.root', sourceRoot);
+  await validateProjectRoot('config.target.root', targetRoot);
   if (!pageInput.route && !pageInput.vue) throw new Error('Provide --url, --route, or --vue.');
   if (pageInput.route && pageInput.vue) throw new Error('Use only one page input: --url, --route, or --vue.');
   if (sourceAdapter !== 'vue3-prototype') throw new Error('Unsupported source adapter. Supported: vue3-prototype');
@@ -113,7 +138,7 @@ async function buildGenerateInput(values: Record<string, string | boolean>): Pro
     vue: pageInput.vue,
     prototypeUrl,
     outDir,
-    noCapture,
+    capture,
   };
 }
 
@@ -128,9 +153,10 @@ async function loadRequiredConfig(values: Record<string, string | boolean>): Pro
   } catch {
     throw new Error(
       [
-        `Missing required config file: ${configPath}`,
-        `Create it from the example first: cp proto-bridge.config.example.json ${DEFAULT_CONFIG_FILE}`,
-        'Then edit source.root and target.root for your local machine.',
+        'Missing required config file.',
+        `Config path: ${configPath}`,
+        'Create one: pnpm run generate -- init',
+        'Or create proto-bridge.config.json manually with source.root, target.root, outputRoot, and capture.',
       ].join('\n'),
     );
   }
@@ -149,10 +175,54 @@ async function loadRequiredConfig(values: Record<string, string | boolean>): Pro
   }
 }
 
-function resolvePageInput(
-  values: Record<string, string | boolean>,
-  config: ProtoBridgeConfig,
-): { route?: string | undefined; vue?: string | undefined; url?: string | undefined } {
+async function initConfig(values: Record<string, string | boolean>): Promise<void> {
+  const invocationDir = process.env.INIT_CWD ?? process.cwd();
+  const configInput = readString(values, 'config') ?? DEFAULT_CONFIG_FILE;
+  const configPath = path.isAbsolute(configInput) ? configInput : path.resolve(invocationDir, configInput);
+
+  try {
+    await access(configPath);
+    throw new Error(`Config file already exists: ${configPath}`);
+  } catch (error) {
+    if (!isNodeError(error) || error.code !== 'ENOENT') throw error;
+  }
+
+  if (!isInteractive()) {
+    throw new Error('proto-bridge init requires an interactive terminal.');
+  }
+
+  const answers = await withReadline(async (rl) => {
+    const sourceRoot = await askRequired(rl, 'Source project root');
+    const targetRoot = await askRequired(rl, 'Target project root');
+    const outputRoot = (await ask(rl, `Output root (${DEFAULT_OUTPUT_ROOT})`)) || DEFAULT_OUTPUT_ROOT;
+    const captureAnswer = (await ask(rl, 'Enable runtime capture? (y/N)')).toLowerCase();
+    return {
+      sourceRoot,
+      targetRoot,
+      outputRoot,
+      capture: captureAnswer === 'y' || captureAnswer === 'yes',
+    };
+  });
+
+  const config: ProtoBridgeConfig = {
+    source: {
+      adapter: 'vue3-prototype',
+      root: answers.sourceRoot,
+    },
+    target: {
+      adapter: 'flutter-app',
+      root: answers.targetRoot,
+    },
+    outputRoot: answers.outputRoot,
+    capture: answers.capture,
+  };
+
+  await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, 'utf8');
+  success('Config created');
+  kv('config', configPath);
+}
+
+async function resolvePageInput(values: Record<string, string | boolean>, config: ProtoBridgeConfig): Promise<PageInput> {
   const cliUrl = readString(values, 'url');
   if (cliUrl) return { route: extractRouteFromUrl(cliUrl), url: cliUrl };
 
@@ -166,7 +236,16 @@ function resolvePageInput(
   if (config.route) return { route: normalizeRoute(config.route) };
   if (config.vue) return { vue: config.vue };
 
-  return {};
+  if (!isInteractive()) return {};
+
+  return withReadline(async (rl) => {
+    const inputType = await askChoice(rl, 'Page input type', ['url', 'route', 'vue']);
+    const value = await askRequired(rl, `Enter ${inputType}`);
+
+    if (inputType === 'url') return { route: extractRouteFromUrl(value), url: value, interactive: true };
+    if (inputType === 'route') return { route: normalizeRoute(value), interactive: true };
+    return { vue: value, interactive: true };
+  });
 }
 
 function resolvePrototypeUrl(
@@ -177,20 +256,49 @@ function resolvePrototypeUrl(
   return readString(values, 'prototype-url') ?? pageUrl ?? config.prototypeUrl ?? config.url;
 }
 
-function resolveNoCapture(values: Record<string, string | boolean>, config: ProtoBridgeConfig): boolean {
-  if (values.capture !== undefined) return false;
-  const cliNoCapture = readBoolean(values, 'no-capture');
-  if (cliNoCapture !== undefined) return cliNoCapture;
-  return config.noCapture ?? false;
+function resolveCapture(values: Record<string, string | boolean>, config: ProtoBridgeConfig): boolean {
+  if (values.capture !== undefined) return true;
+  return config.capture ?? false;
 }
 
-function resolveInputPath(
-  configValue: string | undefined,
+async function resolveGenerateOutDir(
+  values: Record<string, string | boolean>,
+  config: ProtoBridgeConfig,
+  pageInput: PageInput,
   invocationDir: string,
-  configDir: string,
-): string | undefined {
+): Promise<string> {
+  const output = readString(values, 'output');
+  if (output) return resolveFromDir(output, invocationDir);
+
+  const outputRoot = config.outputRoot ?? DEFAULT_OUTPUT_ROOT;
+  const defaultOutput = path.join(outputRoot, outputSlug(pageInput.route, pageInput.vue));
+  const selectedOutput = pageInput.interactive ? await confirmOutputDir(defaultOutput) : defaultOutput;
+  return resolveFromDir(selectedOutput, invocationDir);
+}
+
+async function confirmOutputDir(defaultOutput: string): Promise<string> {
+  return withReadline(async (rl) => {
+    const answer = await ask(rl, `Output directory (${defaultOutput})`);
+    return answer || defaultOutput;
+  });
+}
+
+function resolveInputPath(configValue: string | undefined, configDir: string): string | undefined {
   if (configValue) return path.isAbsolute(configValue) ? configValue : path.resolve(configDir, configValue);
   return undefined;
+}
+
+async function validateProjectRoot(label: string, root: string): Promise<void> {
+  try {
+    const stats = await stat(root);
+    if (stats.isDirectory()) return;
+    throw new Error(`${label} is not a directory: ${root}`);
+  } catch (error) {
+    if (isNodeError(error) && error.code === 'ENOENT') {
+      throw new Error(`${label} does not exist: ${root}\nRun proto-bridge init or edit proto-bridge.config.json with your local project path.`);
+    }
+    throw error;
+  }
 }
 
 function parseArgs(args: string[]): ParsedArgs {
@@ -211,18 +319,21 @@ function parseArgs(args: string[]): ParsedArgs {
     const key = inlineKey;
 
     if (!key) throw new Error(`Invalid flag: ${token}`);
-    if (!ALLOWED_FLAGS.has(key)) throw new Error(`Unknown flag: --${key}`);
+    if (!ALLOWED_FLAGS.has(key)) throw new Error(unknownFlagMessage(key));
 
     if (inlineValue !== undefined) {
+      if (BOOLEAN_FLAGS.has(key)) throw new Error(`--${key} does not accept a value.\nExample: pnpm run generate -- --capture`);
       values[key] = inlineValue;
       continue;
     }
 
     const next = tokens[index + 1];
-    if (!next || next.startsWith('--')) {
+    if (BOOLEAN_FLAGS.has(key)) {
       values[key] = true;
       continue;
     }
+
+    if (!next || next.startsWith('--')) throw new Error(missingFlagValueMessage(key));
 
     values[key] = next;
     index += 1;
@@ -236,13 +347,26 @@ function readString(values: Record<string, string | boolean>, key: string): stri
   return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
-function readBoolean(values: Record<string, string | boolean>, key: string): boolean | undefined {
-  const value = values[key];
-  if (value === undefined) return undefined;
-  if (typeof value === 'boolean') return value;
-  if (value === 'true') return true;
-  if (value === 'false') return false;
-  throw new Error(`--${key} must be true or false when a value is provided`);
+function unknownFlagMessage(key: string): string {
+  return [
+    `Unknown flag: --${key}`,
+    'Supported flags: --config, --url, --route, --vue, --prototype-url, --output, --capture.',
+    'Example: pnpm run generate -- --url "http://localhost:5173/#/prototype/etf-detail"',
+  ].join('\n');
+}
+
+function missingFlagValueMessage(key: string): string {
+  const examples: Record<string, string> = {
+    config: 'pnpm run generate -- --config ./proto-bridge.config.json --route /prototype/etf-detail',
+    output: 'pnpm run generate -- --route /prototype/etf-detail --output ./output/etf-detail',
+    route: 'pnpm run generate -- --route /prototype/etf-detail',
+    url: 'pnpm run generate -- --url "http://localhost:5173/#/prototype/etf-detail"',
+    vue: 'pnpm run generate -- --vue prototype/src/views/prototype/etf/ETFDetailPage.vue',
+    'prototype-url': 'pnpm run generate -- --route /prototype/etf-detail --prototype-url "http://localhost:5173/#/prototype/etf-detail" --capture',
+    'source-adapter': 'pnpm run generate -- --route /prototype/etf-detail --source-adapter vue3-prototype',
+    'target-adapter': 'pnpm run generate -- --route /prototype/etf-detail --target-adapter flutter-app',
+  };
+  return [`--${key} requires a value.`, `Example: ${examples[key] ?? 'pnpm run generate -- --help'}`].join('\n');
 }
 
 function extractRouteFromUrl(urlInput: string): string {
@@ -253,6 +377,10 @@ function extractRouteFromUrl(urlInput: string): string {
 }
 
 function routeWithQueryFromUrl(urlInput: string): string {
+  if (!urlInput.trim()) {
+    throw new Error('--url requires a non-empty URL or route path.\nExample: pnpm run generate -- --url "http://localhost:5173/#/prototype/etf-detail"');
+  }
+
   if (urlInput.startsWith('/')) return urlInput;
 
   try {
@@ -260,7 +388,11 @@ function routeWithQueryFromUrl(urlInput: string): string {
     if (parsed.hash.startsWith('#/')) return parsed.hash.slice(1);
     if (parsed.pathname) return `${parsed.pathname}${parsed.search}`;
   } catch {
-    throw new Error(`--url must be an absolute URL or a route path: ${urlInput}`);
+    throw new Error([
+      `--url must be an absolute URL or a route path: ${urlInput}`,
+      'If you only have the route, use: pnpm run generate -- --route /prototype/etf-detail',
+      'If your shell shows dquote>, press Ctrl+C and rerun with a closing quote.',
+    ].join('\n'));
   }
 
   throw new Error(`Unable to extract route from --url: ${urlInput}`);
@@ -272,31 +404,129 @@ function normalizeRoute(route: string): string {
   return normalized.length > 1 ? normalized.replace(/\/+$/, '') : normalized;
 }
 
-function defaultOutDir(route: string | undefined, vue: string | undefined): string {
+function outputSlug(route: string | undefined, vue: string | undefined): string {
   const source = route ?? vue ?? 'migration';
   const slug = source
     .replace(/\.vue$/i, '')
     .split(/[\\/]/)
     .filter(Boolean)
-    .join('-')
-    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .pop()
+    ?.replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .replace(/Page$/i, '')
     .toLowerCase();
-  return path.join('output', slug || 'migration');
+  return slug || 'migration';
 }
 
-function resolveOutDir(outDir: string): string {
-  if (path.isAbsolute(outDir)) return outDir;
-  return path.resolve(process.env.INIT_CWD ?? process.cwd(), outDir);
+function resolveFromDir(value: string, dir: string): string {
+  if (path.isAbsolute(value)) return value;
+  return path.resolve(dir, value);
+}
+
+function isInteractive(): boolean {
+  return Boolean(input.isTTY && output.isTTY);
+}
+
+async function withReadline<T>(callback: (rl: readline.Interface) => Promise<T>): Promise<T> {
+  const rl = readline.createInterface({ input, output });
+  try {
+    return await callback(rl);
+  } finally {
+    rl.close();
+  }
+}
+
+async function ask(rl: readline.Interface, question: string): Promise<string> {
+  return (await rl.question(`${question}: `)).trim();
+}
+
+async function askRequired(rl: readline.Interface, question: string): Promise<string> {
+  while (true) {
+    const answer = await ask(rl, question);
+    if (answer) return answer;
+    console.log('Value is required.');
+  }
+}
+
+async function askChoice(rl: readline.Interface, question: string, choices: string[]): Promise<string> {
+  const label = `${question} (${choices.join('/')})`;
+  while (true) {
+    const answer = (await ask(rl, label)).toLowerCase();
+    if (choices.includes(answer)) return answer;
+    console.log(`Choose one of: ${choices.join(', ')}`);
+  }
+}
+
+function printSuccess(
+  input: GenerateMigrationSpecInput,
+  result: GenerateMigrationSpecResult,
+  values: Record<string, string | boolean>,
+): void {
+  const warnings = result.context.recommendations.risks.length;
+  console.log();
+  success('Success! Migration spec generated.');
+  kv('input', describeInput(input, values));
+  kv('route', result.context.source.route ?? input.route ?? '(unknown)');
+  kv('screenId', result.context.source.screenId ?? 'unknown');
+  kv('output', input.outDir);
+  kv('migration spec', result.files.migrationSpec);
+  kv('migration context', result.files.migrationContext);
+  if (result.files.screenshot) kv('screenshot', result.files.screenshot);
+  if (result.files.domSnapshot) kv('dom snapshot', result.files.domSnapshot);
+  if (warnings > 0) warn(`${warnings} warning${warnings === 1 ? '' : 's'} found. Review migration-spec.md before implementation.`);
+}
+
+function describeInput(input: GenerateMigrationSpecInput, values: Record<string, string | boolean>): string {
+  const url = readString(values, 'url');
+  if (url) return `url ${url}`;
+  const route = readString(values, 'route') ?? input.route;
+  if (route) return `route ${route}`;
+  const vue = readString(values, 'vue') ?? input.vue;
+  if (vue) return `vue ${vue}`;
+  if (input.route) return `route ${input.route}`;
+  if (input.vue) return `vue ${input.vue}`;
+  return 'unknown';
+}
+
+function step(message: string): void {
+  console.log(`${color(ICON.step, COLOR.cyan)} ${color(message, COLOR.dim)}`);
+}
+
+function success(message: string): void {
+  console.log(`${color(ICON.success, COLOR.green)} ${color(message, COLOR.green, COLOR.bold)}`);
+}
+
+function warn(message: string): void {
+  console.log(`${color(ICON.warn, COLOR.yellow)} ${color(message, COLOR.yellow, COLOR.bold)}`);
+}
+
+function printError(message: string): void {
+  const lines = message.split('\n');
+  console.error();
+  console.error(`${color(ICON.error, COLOR.red)} ${color(lines[0] ?? 'Error', COLOR.red, COLOR.bold)}`);
+  for (const line of lines.slice(1)) {
+    console.error(`  ${line}`);
+  }
+}
+
+function kv(label: string, value: string): void {
+  console.log(`  ${color(label.padEnd(17), COLOR.bold)} ${value}`);
+}
+
+function color(text: string, ...styles: string[]): string {
+  if (!output.isTTY && !process.env.FORCE_COLOR) return text;
+  return `${styles.join('')}${text}${COLOR.reset}`;
 }
 
 function usage(): string {
   return `Usage:
-  pnpm run generate -- --url <prototype-url> [options]
-  pnpm run generate -- --route <route> [options]
-  pnpm run generate -- --vue <file> [options]
+  proto-bridge init [options]
+  proto-bridge generate --url <prototype-url> [options]
+  proto-bridge generate --route <route> [options]
+  proto-bridge generate --vue <file> [options]
+  proto-bridge generate
 
 Required:
-  proto-bridge.config.json must exist in the directory where you run the command.
+  proto-bridge.config.json must exist in the directory where you run generate.
 
 Options:
   --config <file>             Config path, defaults to ./proto-bridge.config.json
@@ -306,9 +536,8 @@ Options:
   --source-adapter <id>       Source adapter, defaults to vue3-prototype
   --target-adapter <id>       Target adapter, defaults to flutter-app
   --prototype-url <url>       Optional running prototype URL for Playwright capture
-  --out <dir>                 Output directory
-  --no-capture                Skip screenshot and DOM capture
-  --capture                   Override config.noCapture and run Playwright capture
+  --output <dir>              Override the generated output directory
+  --capture                   Run Playwright screenshot and DOM capture
 `;
 }
 
@@ -316,8 +545,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
+function isNodeError(error: unknown): error is NodeJS.ErrnoException {
+  return error instanceof Error && 'code' in error;
+}
+
 main().catch((error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);
-  console.error(`proto-bridge: ${message}`);
+  printError(message);
   process.exitCode = 1;
 });

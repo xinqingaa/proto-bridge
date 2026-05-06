@@ -40,13 +40,13 @@ export async function createMigrationContext(input: GenerateMigrationSpecInput):
       tokenMap,
       target,
       capture,
-      captureSkipped: Boolean(input.noCapture || !input.prototypeUrl),
+      captureSkipped: Boolean(!input.capture || !input.prototypeUrl),
     }),
   };
 }
 
 async function maybeCapture(input: GenerateMigrationSpecInput): Promise<CaptureResult | undefined> {
-  if (input.noCapture || !input.prototypeUrl) return undefined;
+  if (!input.capture || !input.prototypeUrl) return undefined;
 
   try {
     return await capturePrototypePage({
