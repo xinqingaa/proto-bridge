@@ -29,33 +29,33 @@ ProtoBridge 是一个“原型到实现”的上下文桥接工具。
 
 ## 二、当前能力
 
-当前基础闭环已经跑通：
+当前闭环已经从“读取原型并生成基础说明书”升级为“生成 Flutter 视角的实现规划”：
 
 ```text
-route 或 Vue 文件
-  -> 分析原型页面配置
-  -> 读取 Vue 源码
-  -> 读取 notes 文档
-  -> 读取 i18n JSON
-  -> 扫描样式 token
+route / URL / Vue 文件
+  -> 分析页面配置、notes、i18n 和源码结构
+  -> 抽取结构化 source context
+  -> 扫描样式 token、资源、状态、路由和布局线索
   -> 分析 YouFi Flutter 上下文
+  -> PagePatternClassifier 识别页面模式
+  -> WidgetBlueprintRegistry 生成 Flutter Widget 规划
   -> 生成 migration-context.json
-  -> 生成 migration-spec.md
+  -> 生成纯 Flutter 视角 migration-spec.md
 ```
 
 已支持能力：
 
 - 解析 `prototypeScreens.js` 和 `designScreens.js`。
-- 支持通过 `--route` 查找页面，例如 `/prototype/trade`。
-- 支持通过 `--vue` 指定 Vue 文件。
-- 自动读取页面 Vue 源码。
-- 自动查找 `prototype/notes/<module>/<ComponentName>.md`。
-- 自动读取 `prototype/src/i18n/prototype/<screenId>.json`。
+- 支持通过 `--url`、`--route` 或 `--vue` 定位页面。
+- 自动读取页面源码、notes 和 `prototype/src/i18n/prototype/<screenId>.json`。
+- 抽取页面区块、交互线索、状态线索、生命周期副作用、路由行为、布局特征、资源线索和样式 token 使用位置。
 - 内置 YouFi 颜色 token 到 Flutter `themeService.colors` 的映射。
 - 内置 YouFi typography mixin 到 Flutter `themeService.textStyles` 的映射。
 - 扫描 Flutter 工程中的模块、路由文件、翻译文件、资源目录和通用组件。
-- 根据原型模块推荐目标 Flutter 模块。
-- 输出结构化 JSON 和 Markdown 迁移说明书。
+- 根据 source 模块推荐目标 Flutter 模块。
+- 通过 `PagePatternClassifier` 识别 `quote-detail`、`detail`、`list`、`form`、`trade-ticket`、`portfolio`、`settings`、`auth`、`wizard` 等页面模式。
+- 通过 `WidgetBlueprintRegistry` 生成业务化 Flutter Widget 组合树、文件拆分、输入契约和状态管理组合建议。
+- 正式 `migration-spec.md` 不暴露 source 技术栈细节，只输出 Flutter 实现视角；source 侧证据保留在 `migration-context.json` 供工具调试。
 
 Playwright 截图和 DOM 提取的代码入口已预留并可通过 `--prototype-url` 使用，但第一阶段推荐先用 `--no-capture` 跑稳定闭环。
 
@@ -71,11 +71,10 @@ proto-bridge/
 ├── pnpm-workspace.yaml
 ├── tsconfig.base.json
 ├── docs/
-│   ├── migration-spec-template.md
-│   ├── context-schema.md
-│   ├── config-schema.md
-│   ├── architecture-roadmap.md
-│   └── mcp-tools.md
+│   ├── architecture.md
+│   ├── migration-spec.md
+│   ├── integration.md
+│   └── legacy redirect docs
 ├── examples/
 │   └── stock-trade/
 ├── packages/
@@ -84,6 +83,7 @@ proto-bridge/
 │   │       ├── analyzers/
 │   │       ├── capture/
 │   │       ├── generators/
+│   │       ├── planners/
 │   │       ├── tokens/
 │   │       ├── types/
 │   │       └── utils/
@@ -132,8 +132,9 @@ Vue3 原型平台 -> Flutter App
 
 详细规划见：
 
-- `docs/architecture-roadmap.md`
-- `docs/config-schema.md`
+- `docs/architecture.md`
+- `docs/migration-spec.md`
+- `docs/integration.md`
 
 ## 四、安装
 
@@ -286,29 +287,30 @@ output/stock-trade/
 
 机器可读的结构化上下文，主要包含：
 
-- `source`：原型路由、screenId、Vue 文件、页面配置、notes、i18n。
+- `source`：页面路由、screenId、页面配置、notes、i18n、源码分析结果。
+- `source.sfc`：内部调试用的结构化 source facts，包括 sections、interactions、state、routes、lifecycle、layout、assets、styleTokens 等。
 - `capture`：截图、viewport、DOM tree、computed style。使用 `--no-capture` 时为空。
 - `tokenMap`：颜色 token、字体 token、未命中 token。
 - `target`：Flutter 模块建议、路由文件、翻译文件、资源目录、可复用组件。
-- `recommendations`：推荐实现形态、Widget 拆分、风险和人工确认项。
+- `recommendations`：推荐实现形态、Flutter Widget 拆分、实现规划、风险和人工确认项。
 
 ### migration-spec.md
 
-给人和 AI 共同使用的迁移说明书，主要包含：
+给 Flutter 开发者和 AI coding 工具共同使用的迁移说明书。正式说明书只保留 Flutter 实现视角，不暴露 source 技术栈、模板语法或 DOM/class 证据。主要包含：
 
 - 页面元信息。
-- 迁移结论。
+- 迁移结论和 Flutter 实现复杂度。
+- Flutter 实现规划：目标文件拆分、Widget 组合树、Widget 输入契约、状态管理组合建议、Controller/Adapter 边界、禁止直译项。
 - 页面结构拆分。
 - Flutter Widget 拆分建议。
 - 状态与交互建议。
 - 路由与参数建议。
-- 主题 token 映射。
+- 布局模型。
+- 主题 token 映射和样式 token 使用位置。
 - i18n 文案表。
 - 资源迁移建议。
 - 可复用 Flutter 组件。
-- 原型 notes。
-- 人工确认项。
-- AI 实现提示词。
+- 人工确认项和 AI 实现提示词。
 
 ### llm-prompt.md
 
@@ -337,32 +339,39 @@ output/stock-trade/
 4. 将模块和页面配置展开成页面索引。
 5. 根据 `--route` 匹配 `path`，或根据 `--vue` 匹配 `view`。
 6. 找到页面的 `screenId`、`module`、`label`、`status`、`owner`、`changelog` 等元信息。
-7. 解析出实际 Vue 文件路径。
-8. 读取 Vue 源码。
-9. 按规则查找 notes 和 i18n。
+7. 解析出实际源码文件路径并读取源码。
+8. 按规则查找 notes 和 i18n。
+9. 调用 `analyzeVueSfc` 生成内部 source facts。
 
 第一版使用宽松 JS literal 提取方式解析配置文件，不要求配置文件是 JSON。解析逻辑封装在 `packages/core/src/utils/js-literal.ts`，后续可以替换为 AST 或动态 import。
 
-### 2. Notes 查找规则
+### 2. Source SFC 语义分析
+
+入口：`packages/core/src/analyzers/vue-sfc.ts`
+
+该模块只服务于内部上下文构建，正式 `migration-spec.md` 不直接输出 source 技术栈细节。当前可抽取：
+
+- template sections / semantic components。
+- interactions。
+- state / computed / constants / functions。
+- routes / route query / back 行为。
+- lifecycle / event listener。
+- layout hints：fixed、sticky、scroll、safe-area、z-index、flex、grid、spacing。
+- assets：图片、图标、内联矢量、背景图。
+- styleTokens：token、fallback、硬编码颜色值。
+
+### 3. Notes 查找规则
 
 优先级：
 
 1. 页面配置中显式声明的 notes 或 notesPath。
-2. 根据 Vue 文件名猜测：
+2. 根据源码文件名猜测：
 
 ```text
 prototype/notes/<module>/<ComponentName>.md
 ```
 
-例如：
-
-```text
-screenId = stock.trade
-view     = stock/StockTradePage.vue
-notes    = prototype/notes/stock/StockTradePage.md
-```
-
-### 3. i18n 查找规则
+### 4. i18n 查找规则
 
 根据 `screenId` 查找：
 
@@ -370,14 +379,7 @@ notes    = prototype/notes/stock/StockTradePage.md
 prototype/src/i18n/prototype/<screenId>.json
 ```
 
-例如：
-
-```text
-screenId = stock.trade
-i18n     = prototype/src/i18n/prototype/stock.trade.json
-```
-
-### 4. Token 映射
+### 5. Token 映射
 
 入口：`packages/core/src/tokens/token-mapper.ts`
 
@@ -386,18 +388,9 @@ i18n     = prototype/src/i18n/prototype/stock.trade.json
 - CSS 变量：`var(--color-text-secondary)`、`--color-bg-base` 等。
 - SCSS mixin：`@include small1-r`、`@include title-b` 等。
 
-内置映射示例：
-
-```text
---color-text-secondary -> themeService.colors.colorTextSecondary
---color-bg-base        -> themeService.colors.colorBgBase
-@include small1-r      -> themeService.textStyles.small1R
-@include title-b       -> themeService.textStyles.titleB
-```
-
 未命中的 token 会进入 `unresolved`，在 Markdown 中提示人工确认。
 
-### 5. Flutter 上下文分析
+### 6. Flutter 上下文分析
 
 入口：`packages/core/src/analyzers/flutter-context.ts`
 
@@ -406,30 +399,44 @@ i18n     = prototype/src/i18n/prototype/stock.trade.json
 - 扫描 `lib/app/modules/**` 获取已有模块。
 - 查找 `lib/app/routes/app_routes.dart`。
 - 查找 `lib/app/routes/app_pages.dart`。
-- 查找翻译文件：
-  - `lib/app/translations/en_US.dart`
-  - `lib/app/translations/zh_CN.dart`
-  - `lib/app/translations/zh_HK.dart`
-- 查找资源目录：
-  - `assets/images`
-  - `assets/dark_images`
-  - `assets/svg`
+- 查找翻译文件。
+- 查找资源目录。
 - 根据内置模块表推荐目标模块。
 - 尝试列出可复用公共组件。
 
-当前内置模块映射：
+### 7. Flutter 实现规划
+
+入口：
+
+- `packages/core/src/planners/page-pattern-classifier.ts`
+- `packages/core/src/planners/widget-blueprints.ts`
+- `packages/core/src/planners/naming-strategy.ts`
+- `packages/core/src/generators/flutter-implementation-plan.ts`
+
+规划流程：
 
 ```text
-stock         -> order
-options       -> option
-options-trade -> option
-account       -> account
-asset         -> account
-security      -> auth
-onboard       -> account
+source facts + target context
+  -> PagePatternClassifier
+  -> WidgetBlueprintRegistry
+  -> NamingStrategy
+  -> FlutterImplementationPlan
 ```
 
-### 6. 迁移文档生成
+当前支持页面模式包括：`quote-detail`、`detail`、`list`、`form`、`trade-ticket`、`portfolio`、`settings`、`auth`、`onboarding`、`wizard`、`article`、`dashboard`、`unknown`。
+
+规划结果包括：
+
+- Flutter 实现复杂度。
+- 目标文件拆分。
+- Widget 组合树。
+- Widget 输入契约。
+- 状态管理组合建议。
+- Controller/Adapter 边界。
+- 禁止直译项。
+- P0/P1/P2 checklist。
+
+### 8. 迁移文档生成
 
 入口：
 
@@ -443,13 +450,14 @@ analyzePrototypePage
   -> mapTokens
   -> analyzeFlutterContext
   -> optional capturePrototypePage
+  -> buildFlutterImplementationPlan
   -> createMigrationContext
   -> renderMigrationSpec
   -> write migration-context.json
   -> write migration-spec.md
 ```
 
-推荐实现形态会根据 Vue 源码中是否存在 `ref`、`reactive`、`computed`、`@click`、`v-model` 等交互迹象初步判断。当前只是启发式判断，不等价于完整业务语义分析。
+`migration-context.json` 可以保留 source 侧分析证据；`migration-spec.md` 面向 Flutter 实现者，只输出 Flutter 实现计划和必要确认项。
 
 ## 九、当前验证结果
 
@@ -550,15 +558,22 @@ target   = order
 
 ### Phase 5：迁移说明书增强
 
-状态：已生成第一版。
+状态：已完成 Flutter 实现规划第一版。
+
+已完成：
+
+- Source SFC 语义分析：区块、状态、路由、生命周期、布局、资源、style token。
+- PagePatternClassifier：识别 quote-detail、detail、list、form、trade-ticket、portfolio、settings、auth、wizard 等页面模式。
+- WidgetBlueprintRegistry：按页面模式生成 Flutter Widget 组合树。
+- FlutterImplementationPlan：生成目标文件拆分、Widget 输入契约、状态管理组合建议、Controller/Adapter 边界和 checklist。
+- 正式 migration-spec.md 只保留 Flutter 实现视角，不暴露 source 技术栈细节。
 
 后续增强：
 
-- 根据 Vue template 自动推断页面区块。
-- 根据 script 自动提取状态、事件、路由跳转和 mock 数据。
-- 自动提取资源引用。
-- 自动生成更精确的 Flutter Widget 拆分表。
-- 增加风险等级和实现优先级。
+- 为更多业务模块补充 page pattern 和 widget blueprint。
+- 从 YouFi 真实代码中学习 Controller、Binding、Repository、EventBus 使用模式。
+- 增强 common widget 匹配置信度和 import 路径推荐。
+- 为低置信度页面模式输出更明确的人工确认项。
 
 ### Phase 6：MCP 封装
 
@@ -603,19 +618,16 @@ target   = order
 - 使用受控动态 import 加载配置。
 - 为配置解析增加 fixture 测试。
 
-### 2. Vue SFC 深度分析
+### 2. Source 语义分析增强
 
-当前主要读取 Vue 源码并做启发式扫描。
+当前已能抽取结构、状态、路由、生命周期、布局、资源和 style token。
 
-后续可以进一步解析：
+后续可以进一步增强：
 
-- template AST。
-- script setup AST。
-- props、emits、ref、computed、watch。
-- `@click`、`v-model`、`v-if`、`v-for`。
-- 路由跳转和 query 参数。
-- mock 数据结构。
-- 图片、SVG、icon、背景图资源。
+- 使用 AST 解析 template/script，而不是继续扩展正则。
+- 将 source facts 与 runtime capture 的 bbox/computed style 合并。
+- 更准确识别 loading、empty、error、disabled、selected 等 UI 状态。
+- 将复杂图表、表单、交易流程抽象为稳定的 source facts。
 
 ### 3. 设计 token 智能映射
 
@@ -629,15 +641,19 @@ target   = order
 - 基于颜色值反查语义 token。
 - 标记 raw color、hardcoded spacing、非语义字号。
 
-### 4. Flutter 落地建议增强
+### 4. Flutter Planner 增强
 
-后续可以让 spec 更贴近 YouFi 的真实代码风格：
+当前已引入 PagePatternClassifier 和 WidgetBlueprintRegistry。
 
-- 推荐 View、Controller、Binding、Route 文件路径。
+后续可以增强为：
+
+- 为资产、交易、设置、登录、安全、记录、表单、消息等模块补充 blueprint。
+- 从 YouFi 真实代码读取 BaseGetView、Controller、Binding、Repository、EventBus 使用习惯。
+- 推荐 View、Controller、Binding、Route、Model、Widget、Adapter 文件路径。
 - 推荐 GetX 路由注册代码位置。
 - 推荐翻译文件新增 key 的位置。
 - 推荐资源迁移路径。
-- 推荐可复用 Widget 的 import。
+- 推荐可复用 Widget 的 import 和置信度。
 - 对不符合 YouFi 习惯的实现方式给出警告。
 
 ### 5. Capture 视觉上下文增强
@@ -694,7 +710,7 @@ Playwright capture 后续可以服务于：
 
 ### 为什么不直接生成 Dart？
 
-原型页面和 Flutter App 之间不只是语法差异，还涉及目标模块、路由、状态管理、主题、i18n、资源和已有公共组件。如果直接生成 Dart，AI 容易把 Vue DOM 直译成 Flutter Widget，反而增加返工成本。
+原型页面和 Flutter App 之间不只是语法差异，还涉及目标模块、路由、状态管理、主题、i18n、资源和已有公共组件。如果直接生成 Dart，AI 容易逐层照搬来源页面结构，反而增加返工成本。
 
 ProtoBridge 的第一步是先生成迁移上下文，让实现者和 AI 都知道应该怎么落地。
 

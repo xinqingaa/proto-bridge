@@ -62,11 +62,10 @@ proto-bridge/
 ├── tsconfig.base.json
 ├── README.md
 ├── docs/
-│   ├── migration-spec-template.md
-│   ├── context-schema.md
-│   ├── config-schema.md
-│   ├── architecture-roadmap.md
-│   └── mcp-tools.md
+│   ├── architecture.md
+│   ├── migration-spec.md
+│   ├── integration.md
+│   └── legacy redirect docs
 ├── examples/
 │   └── stock-trade/
 ├── packages/
@@ -83,7 +82,12 @@ proto-bridge/
 │   │       │   └── playwright-capture.ts
 │   │       ├── tokens/
 │   │       │   └── token-mapper.ts
+│   │       ├── planners/
+│   │       │   ├── page-pattern-classifier.ts
+│   │       │   ├── widget-blueprints.ts
+│   │       │   └── naming-strategy.ts
 │   │       ├── generators/
+│   │       │   ├── flutter-implementation-plan.ts
 │   │       │   ├── migration-context.ts
 │   │       │   └── migration-spec.ts
 │   │       └── utils/
@@ -377,7 +381,7 @@ const moduleMap = {
 
 ### 4.5 generateMigrationSpec
 
-用途：生成给人和 AI 共同使用的 Markdown。
+用途：生成给 Flutter 开发者和 AI coding 工具共同使用的 Markdown。
 
 输出：
 
@@ -387,68 +391,37 @@ output/<screenId>/migration-spec.md
 output/<screenId>/screenshot.png
 ```
 
-Markdown 模板建议：
+当前生成链路：
 
-```md
-# <页面名> Flutter 迁移说明书
-
-## 页面元信息
-- 原型路由：
-- screenId：
-- 原型文件：
-- 页面类型：
-- 推荐 Flutter 模块：
-- 推荐实现形态：
-
-## 一、迁移结论
-- 页面复杂度：
-- 建议是否直接实现：
-- 主要风险：
-
-## 二、页面结构拆分
-- Scaffold
-- AppBar
-- 主滚动区
-- 固定底部栏
-- Sheet/Dialog
-- 局部组件
-
-## 三、Flutter Widget 拆分建议
-| Widget | 类型 | 职责 | 备注 |
-| --- | --- | --- | --- |
-
-## 四、状态与交互
-| 原型状态/事件 | Flutter 建议 | 备注 |
-| --- | --- | --- |
-
-## 五、路由与参数
-| 原型 route/query | Flutter GetX 建议 |
-| --- | --- |
-
-## 六、主题 Token 映射
-| 原型样式 | Flutter 写法 | 命中情况 |
-| --- | --- | --- |
-
-## 七、文案与 i18n
-| key | zh_CN | zh_HK | en_US | Flutter 建议 |
-| --- | --- | --- | --- | --- |
-
-## 八、资源迁移
-| 资源 | 原型路径 | Flutter 建议路径 | 暗色模式 |
-| --- | --- | --- | --- |
-
-## 九、可复用 Flutter 组件
-| 场景 | 推荐组件 |
-| --- | --- |
-
-## 十、人工确认项
-- [ ] ...
-
-## 十一、AI 实现提示词
+```text
+analyzePrototypePage
+  -> mapTokens
+  -> analyzeFlutterContext
+  -> optional capturePrototypePage
+  -> PagePatternClassifier
+  -> WidgetBlueprintRegistry
+  -> FlutterImplementationPlan
+  -> renderMigrationSpec
 ```
-请基于本文档在 YouFi Flutter App 中实现该页面...
-```
-```
+
+正式 `migration-spec.md` 是 Flutter-facing 文档，不暴露 source 技术栈、模板语法或 DOM/class 证据。source 侧证据保留在 `migration-context.json` 中供工具调试。
+
+Markdown 模板和质量标准见 `docs/migration-spec.md`。当前主要章节：
+
+- 页面元信息。
+- 迁移结论。
+- Flutter 实现规划：目标文件拆分、Widget 组合树、输入契约、状态管理组合建议、Controller/Adapter 边界、禁止直译项。
+- 页面结构拆分。
+- Flutter Widget 拆分建议。
+- 状态与交互。
+- 路由与参数。
+- 布局模型。
+- 主题 Token 映射。
+- 文案与 i18n。
+- 资源迁移。
+- 可复用 Flutter 组件。
+- 人工确认项。
+- AI 实现提示词。
 
 ## 5. CLI 设计
 
@@ -591,12 +564,9 @@ type MigrationContext = {
     sourceCode?: string
     notes?: string
     i18n?: Record<string, unknown>
+    sfc?: VueSfcAnalysis
   }
-  capture?: {
-    screenshotPath?: string
-    viewport?: { width: number; height: number }
-    domTree?: DomNodeSnapshot[]
-  }
+  capture?: CaptureResult
   tokenMap: {
     colors: TokenMapping[]
     typography: TokenMapping[]
@@ -615,9 +585,24 @@ type MigrationContext = {
   recommendations: {
     implementationShape: 'StatelessWidget' | 'StatefulWidget' | 'BaseGetView'
     widgetBreakdown: WidgetRecommendation[]
+    implementationPlan: FlutterImplementationPlan
     risks: string[]
     manualQuestions: string[]
   }
+}
+
+// source.sfc 是内部调试事实；正式 migration-spec.md 应渲染 implementationPlan，
+// 不直接输出 source 技术栈、模板语法或 DOM/class 证据。
+type FlutterImplementationPlan = {
+  complexity: 'simple' | 'moderate' | 'complex'
+  summary: string
+  fileTree: FlutterPlannedFile[]
+  widgetTree: FlutterWidgetPlan[]
+  stateStrategy: FlutterStateStrategy[]
+  controllerBoundaries: FlutterControllerBoundary[]
+  widgetContracts: FlutterWidgetContract[]
+  doNotTranslate: string[]
+  checklist: FlutterChecklistItem[]
 }
 ```
 
@@ -874,9 +859,9 @@ output/stock-trade/
 - 或用 AST 解析
 - 或在 TradeAppPrd 中导出机器可读 JSON
 
-### 10.2 DOM 结构过深
+### 10.2 运行时结构过深
 
-Vue DOM 包含原型容器、手机框、导航框架。
+运行时页面结构可能包含原型容器、手机框、导航框架。
 
 capture 时需要过滤：
 
@@ -885,7 +870,7 @@ capture 时需要过滤：
 - phone frame 外壳
 - dev 工具按钮
 
-第一版可以先不过滤完整，只在 spec 中标注“需人工清理”。
+第一版可以先不过滤完整，只在 context warnings 或人工确认项中标注“需人工清理”。
 
 ### 10.3 目标端不止 Flutter
 
