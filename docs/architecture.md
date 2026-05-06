@@ -69,39 +69,38 @@ ProtoBridge C
 
 ```text
 packages/core/src/
-├── analyzers/
-│   ├── prototype-page.ts
-│   ├── vue-sfc.ts
-│   └── flutter-context.ts
+├── adapters/
+│   ├── registry.ts
+│   ├── types.ts
+│   ├── source/
+│   │   └── vue3-prototype/
+│   │       ├── prototype-page.ts
+│   │       └── vue-sfc.ts
+│   └── target/
+│       └── flutter-app/
+│           ├── flutter-context.ts
+│           ├── flutter-implementation-plan.ts
+│           └── token-mapper.ts
 ├── capture/
-│   └── playwright-capture.ts
 ├── planners/
-│   ├── page-pattern-classifier.ts
-│   ├── widget-blueprints.ts
-│   └── naming-strategy.ts
 ├── generators/
-│   ├── flutter-implementation-plan.ts
-│   ├── migration-context.ts
-│   └── migration-spec.ts
-├── tokens/
-│   └── token-mapper.ts
 ├── types/
 └── utils/
 ```
 
 职责划分：
 
-- `analyzers`：读取 source/target 项目并产出结构化事实。
-- `tokens`：做 source token 到 Flutter theme 写法的映射。
-- `planners`：将 source facts 和 target context 转成 Flutter 实现规划。
-- `generators`：生成 `migration-context.json` 和 `migration-spec.md`。
+- `adapters`：承载具体 source/target 技术栈实现。
+- `adapters/registry.ts`：注册并解析默认 adapter 组合。
+- `generators/migration-context.ts`：只负责编排 adapter、capture、recommendation。
+- `planners`：保留跨 target 规划所需的页面模式与命名辅助，当前仍服务 Flutter plan。
 - `capture`：可选运行时截图、DOM、computed style 提取。
 
 ## 5. Core 模块职责
 
 ### 5.1 Source 分析
 
-当前入口：`packages/core/src/analyzers/prototype-page.ts`
+当前实现：`packages/core/src/adapters/source/vue3-prototype/prototype-page.ts`
 
 职责：
 
@@ -112,7 +111,7 @@ packages/core/src/
 
 ### 5.2 Source SFC 语义分析
 
-当前入口：`packages/core/src/analyzers/vue-sfc.ts`
+当前实现：`packages/core/src/adapters/source/vue3-prototype/vue-sfc.ts`
 
 职责：抽取内部分析事实，包括：
 
@@ -129,7 +128,7 @@ packages/core/src/
 
 ### 5.3 Target 分析
 
-当前入口：`packages/core/src/analyzers/flutter-context.ts`
+当前实现：`packages/core/src/adapters/target/flutter-app/flutter-context.ts`
 
 职责：
 
@@ -146,7 +145,7 @@ packages/core/src/
 - `packages/core/src/planners/page-pattern-classifier.ts`
 - `packages/core/src/planners/widget-blueprints.ts`
 - `packages/core/src/planners/naming-strategy.ts`
-- `packages/core/src/generators/flutter-implementation-plan.ts`
+- `packages/core/src/adapters/target/flutter-app/flutter-implementation-plan.ts`
 
 规划流程：
 
@@ -177,81 +176,27 @@ source facts + target context
 
 ## 6. 当前配置格式
 
-当前配置文件仍支持第一阶段字段：
+当前推荐使用 adapter-aware 本地配置：
 
 ```json
 {
-  "prototypeRoot": "/path/to/TradeAppPrd",
-  "flutterRoot": "/path/to/youfi",
-  "target": "flutter",
-  "outDir": "./output",
+  "source": {
+    "adapter": "vue3-prototype",
+    "root": "/Users/name/work/TradeAppPrd"
+  },
+  "target": {
+    "adapter": "flutter-app",
+    "root": "/Users/name/work/youfi"
+  },
+  "route": "/prototype/trade",
+  "outDir": "./output/stock-trade",
   "noCapture": true
 }
 ```
 
-页面输入可以来自 CLI：
+远程 GitLab / branch / tag 仍属于后续 ProjectResolver 范围。
 
-```bash
-pnpm run generate -- --url "http://localhost:5173/#/prototype/etf-detail" --out ./output/etf-detail
-pnpm run generate -- --route /prototype/etf-detail --out ./output/etf-detail
-pnpm run generate -- --vue prototype/src/views/prototype/etf/ETFDetailPage.vue --out ./output/etf-detail
-```
-
-## 7. 规划配置格式
-
-下一阶段配置应升级为 A/B 项目描述：
-
-```json
-{
-  "source": {
-    "kind": "vue3-prototype",
-    "location": {
-      "type": "remote",
-      "repo": "git@gitlab.company.com:group/prototype.git",
-      "ref": "main"
-    }
-  },
-  "target": {
-    "kind": "flutter-app",
-    "location": {
-      "type": "remote",
-      "repo": "git@gitlab.company.com:group/mobile-app.git",
-      "ref": "develop"
-    }
-  },
-  "input": {
-    "route": "/prototype/trade"
-  },
-  "outputDir": "./output/stock-trade",
-  "capture": {
-    "enabled": false,
-    "url": "http://localhost:5173/#/prototype/trade"
-  }
-}
-```
-
-本地模式：
-
-```json
-{
-  "source": {
-    "kind": "vue3-prototype",
-    "location": {
-      "type": "local",
-      "path": "/Users/name/work/TradeAppPrd"
-    }
-  },
-  "target": {
-    "kind": "flutter-app",
-    "location": {
-      "type": "local",
-      "path": "/Users/name/work/youfi"
-    }
-  }
-}
-```
-
-## 8. Migration Context 当前结构
+## 7. Migration Context 当前结构
 
 当前 TypeScript source of truth 是 `packages/core/src/types/index.ts`。
 
@@ -274,7 +219,7 @@ type MigrationContext = {
 - `target`：Flutter 模块、路由、翻译、资源、可复用组件。
 - `recommendations`：实现形态、实现规划、风险、人工确认项。
 
-## 9. FlutterImplementationPlan 结构
+## 8. FlutterImplementationPlan 结构
 
 `recommendations.implementationPlan` 是正式说明书最重要的 planning payload。
 
@@ -298,7 +243,7 @@ type FlutterImplementationPlan = {
 - `migration-spec.md` 应渲染 `FlutterImplementationPlan`，不渲染原始 source facts。
 - Widget 树通过 page pattern + blueprint 生成，不应针对单一业务页面写死。
 
-## 10. ProjectResolver / Adapter 规划
+## 9. ProjectResolver / Adapter 规划
 
 后续需要引入 `ProjectResolver`：
 
@@ -308,7 +253,7 @@ type FlutterImplementationPlan = {
 - 缓存到 `.proto-bridge/cache/repos`。
 - 输出 repo URL、ref、commit hash、本地路径等元信息。
 
-SourceAdapter / TargetAdapter 后续应该从 core 主流程中抽象出来：
+SourceAdapter / TargetAdapter 已从 core 主流程中抽象出来，当前链路为：
 
 ```text
 ProjectResolver
@@ -318,7 +263,7 @@ ProjectResolver
   -> SpecGenerator
 ```
 
-## 11. Remote GitLab / Cache 规划
+## 10. Remote GitLab / Cache 规划
 
 远程仓库应该 clone 到：
 
@@ -330,7 +275,7 @@ ProjectResolver
 
 第一版 remote 支持 branch/tag。commit pinning 可后续增加。
 
-## 12. 风险与边界
+## 11. 风险与边界
 
 - 配置解析目前是宽松文本解析，后续可升级为 AST 或受控动态 import。
 - Capture 输出可能包含原型容器、手机框、导航框架，需要过滤。

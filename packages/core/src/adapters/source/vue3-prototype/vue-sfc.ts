@@ -9,7 +9,7 @@ import type {
   VueStateHint,
   VueStyleTokenHint,
   VueTemplateSection,
-} from '../types/index.js';
+} from '../../../types/index.js';
 
 export type VueSfcSections = {
   template?: string | undefined;

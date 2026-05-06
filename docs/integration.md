@@ -14,7 +14,7 @@ pnpm run generate -- --vue prototype/src/views/prototype/etf/ETFDetailPage.vue -
 
 CLI 负责：
 
-- 读取 `proto-bridge.config.json`。
+- 读取 `proto-bridge.config.json`，使用 `source` / `target` adapter 配置。
 - 解析参数。
 - 调用 core。
 - 写入输出文件。
@@ -29,29 +29,28 @@ MCP 是 Phase 6 入口，目前仍是骨架。
 
 当前预期工具：
 
-- `analyzePrototypePage`
+- `analyzeSourceProject`
 - `capturePrototypePage`
-- `mapTokens`
-- `analyzeFlutterContext`
+- `analyzeTargetProject`
 - `generateMigrationSpec`
 
 ## 3. Core 当前能力
 
-CLI 和未来 MCP 都应调用 core。Core 当前负责：
+CLI 和未来 MCP 都应调用 core。Core 当前通过 adapter registry 编排默认 `vue3-prototype -> flutter-app` 组合，负责：
 
-- source page analysis。
+- source adapter analysis。
 - optional runtime capture。
-- token mapping。
-- Flutter context analysis。
+- target adapter token mapping。
+- target adapter context analysis。
 - page pattern classification。
 - widget blueprint planning。
-- Flutter implementation plan generation。
+- target implementation plan generation。
 - `migration-context.json` 写入。
 - `migration-spec.md` 渲染。
 
 ## 4. MCP 工具规划
 
-下一阶段 MCP 工具应从固定技术栈名称迁移到 adapter-aware 名称，同时保留兼容别名。
+MCP 工具应使用 adapter-aware 名称，不再暴露旧的 Vue/Flutter 固定名称。
 
 规划工具：
 
@@ -68,30 +67,21 @@ CLI 和未来 MCP 都应调用 core。Core 当前负责：
 
 这是最重要的 MCP 工具。
 
-规划输入：
+当前输入示例：
 
 ```json
 {
   "source": {
-    "kind": "vue3-prototype",
-    "location": {
-      "type": "remote",
-      "repo": "git@gitlab.company.com:group/prototype.git",
-      "ref": "main"
-    }
+    "adapter": "vue3-prototype",
+    "root": "/Users/name/work/TradeAppPrd"
   },
   "target": {
-    "kind": "flutter-app",
-    "location": {
-      "type": "remote",
-      "repo": "git@gitlab.company.com:group/mobile-app.git",
-      "ref": "develop"
-    }
+    "adapter": "flutter-app",
+    "root": "/Users/name/work/youfi"
   },
-  "input": {
-    "route": "/prototype/trade"
-  },
-  "outputDir": "./output/stock-trade"
+  "route": "/prototype/trade",
+  "outDir": "./output/stock-trade",
+  "noCapture": true
 }
 ```
 

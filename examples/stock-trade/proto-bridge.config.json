@@ -1,8 +1,13 @@
 {
-  "prototypeRoot": "/Users/lrq/work/youfi/TradeAppPrd",
-  "flutterRoot": "/Users/lrq/work/youfi",
+  "source": {
+    "adapter": "vue3-prototype",
+    "root": "/Users/lrq/work/youfi/TradeAppPrd"
+  },
+  "target": {
+    "adapter": "flutter-app",
+    "root": "/Users/lrq/work/youfi"
+  },
   "route": "/prototype/trade",
-  "target": "flutter",
   "outDir": "./output/stock-trade",
   "noCapture": true
 }

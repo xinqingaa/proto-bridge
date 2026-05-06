@@ -9,30 +9,29 @@ import type {
   TokenMapResult,
   WidgetRecommendation,
 } from '../types/index.js';
-import { analyzeFlutterContext } from '../analyzers/flutter-context.js';
-import { analyzePrototypePage } from '../analyzers/prototype-page.js';
+import { defaultAdapterRegistry } from '../adapters/registry.js';
 import { capturePrototypePage } from '../capture/playwright-capture.js';
-import { mapTokens } from '../tokens/token-mapper.js';
-import { buildFlutterImplementationPlan } from './flutter-implementation-plan.js';
+
+const DEFAULT_SOURCE_ADAPTER = 'vue3-prototype';
+const DEFAULT_TARGET_ADAPTER = 'flutter-app';
 
 export async function createMigrationContext(input: GenerateMigrationSpecInput): Promise<MigrationContext> {
-  if (input.target && input.target !== 'flutter') {
-    throw new Error(`Unsupported target: ${input.target}. Phase 1 only supports flutter.`);
-  }
+  const sourceAdapter = defaultAdapterRegistry.getSource(input.source.adapter ?? DEFAULT_SOURCE_ADAPTER);
+  const targetAdapter = defaultAdapterRegistry.getTarget(input.target.adapter ?? DEFAULT_TARGET_ADAPTER);
 
-  const source = await analyzePrototypePage({
-    prototypeRoot: input.prototypeRoot,
+  const source = await sourceAdapter.analyze({
+    prototypeRoot: input.source.root,
     route: input.route,
     vue: input.vue,
   });
 
   const capture = await maybeCapture(input);
-  const tokenMap = mapTokens({
+  const tokenMap = targetAdapter.mapTokens({
     sourceCode: source.sourceCode,
     target: 'flutter',
   });
-  const target = await analyzeFlutterContext({
-    flutterRoot: input.flutterRoot,
+  const target = await targetAdapter.analyze({
+    flutterRoot: input.target.root,
     prototypeModule: source.module,
     screenId: source.screenId,
     route: source.route,
@@ -43,7 +42,7 @@ export async function createMigrationContext(input: GenerateMigrationSpecInput):
     capture,
     tokenMap,
     target,
-    recommendations: buildRecommendations(source, tokenMap, target, capture, input),
+    recommendations: buildRecommendations(source, tokenMap, target, capture, input, targetAdapter),
   };
 }
 
@@ -53,6 +52,7 @@ function buildRecommendations(
   target: FlutterContextAnalysis,
   capture: CaptureResult | undefined,
   input: GenerateMigrationSpecInput,
+  targetAdapter: ReturnType<typeof defaultAdapterRegistry.getTarget>,
 ): MigrationRecommendations {
   const implementationShape = inferImplementationShape(source);
   const widgetBreakdown = buildWidgetBreakdown(source, implementationShape);
@@ -81,7 +81,7 @@ function buildRecommendations(
   return {
     implementationShape,
     widgetBreakdown,
-    implementationPlan: buildFlutterImplementationPlan({ source, target, widgets: widgetBreakdown }),
+    implementationPlan: targetAdapter.buildImplementationPlan({ source, target, widgets: widgetBreakdown }),
     risks: dedupe(risks),
     manualQuestions,
   };

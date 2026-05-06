@@ -2,7 +2,7 @@
 
 import path from 'node:path';
 import { readFile } from 'node:fs/promises';
-import { generateMigrationSpec, type GenerateMigrationSpecInput, type TargetPlatform } from '@proto-bridge/core';
+import { generateMigrationSpec, type GenerateMigrationSpecInput } from '@proto-bridge/core';
 
 type ParsedArgs = {
   command: string;
@@ -10,16 +10,20 @@ type ParsedArgs = {
 };
 
 type ProtoBridgeConfig = {
-  prototypeRoot?: string | undefined;
-  flutterRoot?: string | undefined;
+  source?: ProjectConfig | undefined;
+  target?: ProjectConfig | undefined;
   route?: string | undefined;
   vue?: string | undefined;
   url?: string | undefined;
   prototypeUrl?: string | undefined;
-  target?: TargetPlatform | undefined;
   out?: string | undefined;
   outDir?: string | undefined;
   noCapture?: boolean | undefined;
+};
+
+type ProjectConfig = {
+  adapter?: string | undefined;
+  root?: string | undefined;
 };
 
 type LoadedConfig = {
@@ -29,6 +33,20 @@ type LoadedConfig = {
 };
 
 const DEFAULT_CONFIG_FILE = 'proto-bridge.config.json';
+const ALLOWED_FLAGS = new Set([
+  'capture',
+  'config',
+  'help',
+  'no-capture',
+  'out',
+  'out-dir',
+  'prototype-url',
+  'route',
+  'source-adapter',
+  'target-adapter',
+  'url',
+  'vue',
+]);
 
 async function main(): Promise<void> {
   const parsed = parseArgs(process.argv.slice(2));
@@ -60,21 +78,12 @@ async function buildGenerateInput(values: Record<string, string | boolean>): Pro
   const config = loadedConfig.config;
   const invocationDir = process.env.INIT_CWD ?? process.cwd();
 
-  const prototypeRoot = resolveInputPath(
-    readString(values, 'prototype-root'),
-    config.prototypeRoot,
-    invocationDir,
-    loadedConfig.dir,
-  );
-  const flutterRoot = resolveInputPath(
-    readString(values, 'flutter-root'),
-    config.flutterRoot,
-    invocationDir,
-    loadedConfig.dir,
-  );
+  const sourceRoot = resolveInputPath(config.source?.root, invocationDir, loadedConfig.dir);
+  const targetRoot = resolveInputPath(config.target?.root, invocationDir, loadedConfig.dir);
+  const sourceAdapter = readString(values, 'source-adapter') ?? config.source?.adapter ?? 'vue3-prototype';
+  const targetAdapter = readString(values, 'target-adapter') ?? config.target?.adapter ?? 'flutter-app';
   const pageInput = resolvePageInput(values, config);
   const prototypeUrl = resolvePrototypeUrl(values, config, pageInput.url);
-  const target = (readString(values, 'target') ?? config.target ?? 'flutter') as TargetPlatform;
   const noCapture = resolveNoCapture(values, config);
   const outValue =
     readString(values, 'out') ??
@@ -84,19 +93,25 @@ async function buildGenerateInput(values: Record<string, string | boolean>): Pro
     defaultOutDir(pageInput.route, pageInput.vue);
   const outDir = resolveOutDir(outValue);
 
-  if (!prototypeRoot) throw new Error('--prototype-root is required');
-  if (!flutterRoot) throw new Error('--flutter-root is required');
+  if (!sourceRoot) throw new Error('config.source.root is required');
+  if (!targetRoot) throw new Error('config.target.root is required');
   if (!pageInput.route && !pageInput.vue) throw new Error('Provide --url, --route, or --vue.');
   if (pageInput.route && pageInput.vue) throw new Error('Use only one page input: --url, --route, or --vue.');
-  if (target !== 'flutter') throw new Error('Phase 1 only supports --target flutter');
+  if (sourceAdapter !== 'vue3-prototype') throw new Error('Phase 1 only supports --source-adapter vue3-prototype');
+  if (targetAdapter !== 'flutter-app') throw new Error('Phase 1 only supports --target-adapter flutter-app');
 
   return {
-    prototypeRoot,
-    flutterRoot,
+    source: {
+      adapter: sourceAdapter,
+      root: sourceRoot,
+    },
+    target: {
+      adapter: targetAdapter,
+      root: targetRoot,
+    },
     route: pageInput.route,
     vue: pageInput.vue,
     prototypeUrl,
-    target,
     outDir,
     noCapture,
   };
@@ -115,7 +130,7 @@ async function loadRequiredConfig(values: Record<string, string | boolean>): Pro
       [
         `Missing required config file: ${configPath}`,
         `Create it from the example first: cp proto-bridge.config.example.json ${DEFAULT_CONFIG_FILE}`,
-        'Then edit prototypeRoot and flutterRoot for your local machine.',
+        'Then edit source.root and target.root for your local machine.',
       ].join('\n'),
     );
   }
@@ -170,12 +185,10 @@ function resolveNoCapture(values: Record<string, string | boolean>, config: Prot
 }
 
 function resolveInputPath(
-  cliValue: string | undefined,
   configValue: string | undefined,
   invocationDir: string,
   configDir: string,
 ): string | undefined {
-  if (cliValue) return path.isAbsolute(cliValue) ? cliValue : path.resolve(invocationDir, cliValue);
   if (configValue) return path.isAbsolute(configValue) ? configValue : path.resolve(configDir, configValue);
   return undefined;
 }
@@ -198,6 +211,7 @@ function parseArgs(args: string[]): ParsedArgs {
     const key = inlineKey;
 
     if (!key) throw new Error(`Invalid flag: ${token}`);
+    if (!ALLOWED_FLAGS.has(key)) throw new Error(`Unknown flag: --${key}`);
 
     if (inlineValue !== undefined) {
       values[key] = inlineValue;
@@ -288,11 +302,10 @@ Options:
   --config <file>             Config path, defaults to ./proto-bridge.config.json
   --url <url>                 Full prototype URL, hash route is extracted automatically
   --route <route>             Prototype or design route, for example /prototype/trade
-  --vue <file>                Vue file path, absolute or relative to prototype root
-  --prototype-root <dir>      Override prototypeRoot from config
-  --flutter-root <dir>        Override flutterRoot from config
+  --vue <file>                Vue file path, absolute or relative to source.root
+  --source-adapter <id>       Source adapter, defaults to vue3-prototype
+  --target-adapter <id>       Target adapter, defaults to flutter-app
   --prototype-url <url>       Optional running prototype URL for Playwright capture
-  --target flutter            Phase 1 target platform
   --out <dir>                 Output directory
   --no-capture                Skip screenshot and DOM capture
   --capture                   Override config.noCapture and run Playwright capture

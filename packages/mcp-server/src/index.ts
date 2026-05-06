@@ -1,17 +1,14 @@
 export {
-  analyzeFlutterContext,
-  analyzePrototypePage,
   capturePrototypePage,
+  defaultAdapterRegistry,
   generateMigrationSpec,
-  mapTokens,
 } from '@proto-bridge/core';
 
 export type {
-  AnalyzeFlutterContextInput,
-  AnalyzePrototypePageInput,
   CapturePrototypePageInput,
   GenerateMigrationSpecInput,
-  MapTokensInput,
+  SourceAdapter,
+  TargetAdapter,
 } from '@proto-bridge/core';
 
 if (import.meta.url === `file://${process.argv[1]}`) {

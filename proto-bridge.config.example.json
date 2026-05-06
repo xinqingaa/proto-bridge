@@ -1,7 +1,12 @@
 {
-  "prototypeRoot": "/path/to/TradeAppPrd",
-  "flutterRoot": "/path/to/youfi",
-  "target": "flutter",
+  "source": {
+    "adapter": "vue3-prototype",
+    "root": "/path/to/TradeAppPrd"
+  },
+  "target": {
+    "adapter": "flutter-app",
+    "root": "/path/to/youfi"
+  },
   "outDir": "./output",
   "noCapture": true
 }

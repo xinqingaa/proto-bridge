@@ -227,6 +227,11 @@ export type MapTokensInput = {
   target?: TargetPlatform | undefined;
 };
 
+export type AdapterProjectConfig = {
+  adapter: string;
+  root: string;
+};
+
 export type AnalyzeFlutterContextInput = {
   flutterRoot: string;
   prototypeModule?: string | undefined;
@@ -326,12 +331,11 @@ export type MigrationContext = {
 };
 
 export type GenerateMigrationSpecInput = {
-  prototypeRoot: string;
-  flutterRoot: string;
+  source: AdapterProjectConfig;
+  target: AdapterProjectConfig;
   route?: string | undefined;
   vue?: string | undefined;
   prototypeUrl?: string | undefined;
-  target?: TargetPlatform | undefined;
   outDir: string;
   noCapture?: boolean | undefined;
 };

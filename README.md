@@ -101,9 +101,9 @@ proto-bridge/
 - `packages/mcp-server` 后续只封装 core，不写复杂业务逻辑。
 - 输出结果要能被人工审查和修改，不把不确定信息伪装成确定结论。
 
-## 三点五、下一阶段架构规划
+## 三点五、Adapter 架构与 A/B/C 模型
 
-ProtoBridge 后续会从“固定 Vue 原型到固定 Flutter 工程”的工具，升级为 A/B/C 模型：
+ProtoBridge 当前已经引入 adapter 架构，用 A/B/C 模型描述 source、target 与桥接工具：
 
 ```text
 A = Source project，需求或原型所在项目
@@ -111,17 +111,18 @@ B = Target project，真实实现所在项目
 C = ProtoBridge，读取 A 和 B 后生成实现说明书的桥接工具
 ```
 
-当前第一阶段仍然明确服务于：
+当前已落地的默认 adapter 组合仍然是：
 
 ```text
-Vue3 原型平台 -> Flutter App
+source adapter = vue3-prototype
+target adapter = flutter-app
 ```
 
-但后续代码组织上会避免把 Vue 和 Flutter 直接耦合进主流程。Vue 原型分析和 Flutter 工程分析会分别沉到 adapter 中，core 只负责编排。
+Vue 原型分析和 Flutter 工程分析已经沉到 adapter 中，core 主流程只负责编排。后续扩展 React、Flutter、Vue、Android、iOS 等组合时，应新增 adapter，而不是改写主流程。
 
-下一阶段规划重点：
+后续规划重点：
 
-- 配置从 `prototypeRoot` / `flutterRoot` 升级为 `source` / `target` 项目描述。
+- 配置使用 `source` / `target` 项目描述；旧的 `prototypeRoot` / `flutterRoot` 已移除。
 - source 和 target 都支持 `local` 路径与 `remote` GitLab 仓库。
 - remote 第一版支持 branch/tag，默认依赖用户本机已有 GitLab 权限。
 - remote 仓库缓存到 `.proto-bridge/cache/repos`，该目录不进入版本管理。
@@ -180,13 +181,18 @@ proto-bridge.config.json
 cp proto-bridge.config.example.json proto-bridge.config.json
 ```
 
-然后改成你本机的路径：
+然后改成你本机的路径。推荐使用 adapter-aware 新格式：
 
 ```json
 {
-  "prototypeRoot": "~/work/youfi/TradeAppPrd",
-  "flutterRoot": "~/work/youfi",
-  "target": "flutter",
+  "source": {
+    "adapter": "vue3-prototype",
+    "root": "/Users/name/work/TradeAppPrd"
+  },
+  "target": {
+    "adapter": "flutter-app",
+    "root": "/Users/name/work/youfi"
+  },
   "outDir": "./output",
   "noCapture": true
 }
@@ -270,11 +276,10 @@ output/stock-trade/
 | `--config` | 否 | 配置文件路径，默认读取执行目录下的 `proto-bridge.config.json` |
 | `--url` | 三选一 | 完整原型 URL，CLI 会自动提取 hash route |
 | `--route` | 三选一 | 原型或设计稿路由，例如 `/prototype/trade` |
-| `--vue` | 三选一 | Vue 文件路径，可为绝对路径或相对 `prototypeRoot` |
-| `--prototype-root` | 否 | 覆盖配置中的 TradeAppPrd 根目录 |
-| `--flutter-root` | 否 | 覆盖配置中的 YouFi Flutter App 根目录 |
+| `--vue` | 三选一 | Vue 文件路径，可为绝对路径或相对 `source.root` |
 | `--prototype-url` | 否 | 运行中的原型页面 URL，用于 Playwright capture |
-| `--target` | 否 | 当前固定为 `flutter` |
+| `--source-adapter` | 否 | Source adapter，当前支持 `vue3-prototype` |
+| `--target-adapter` | 否 | Target adapter，当前支持 `flutter-app` |
 | `--out` | 否 | 输出目录，相对路径会按调用命令时的目录解析 |
 | `--no-capture` | 否 | 跳过截图和 DOM 提取 |
 | `--capture` | 否 | 覆盖配置中的 `noCapture: true`，执行截图和 DOM 提取 |
@@ -329,7 +334,7 @@ output/stock-trade/
 
 ### 1. 原型页面分析
 
-入口：`packages/core/src/analyzers/prototype-page.ts`
+入口：`packages/core/src/adapters/source/vue3-prototype/prototype-page.ts`
 
 分析过程：
 
@@ -347,7 +352,7 @@ output/stock-trade/
 
 ### 2. Source SFC 语义分析
 
-入口：`packages/core/src/analyzers/vue-sfc.ts`
+入口：`packages/core/src/adapters/source/vue3-prototype/vue-sfc.ts`
 
 该模块只服务于内部上下文构建，正式 `migration-spec.md` 不直接输出 source 技术栈细节。当前可抽取：
 
@@ -381,7 +386,7 @@ prototype/src/i18n/prototype/<screenId>.json
 
 ### 5. Token 映射
 
-入口：`packages/core/src/tokens/token-mapper.ts`
+入口：`packages/core/src/adapters/target/flutter-app/token-mapper.ts`
 
 当前做两类扫描：
 
@@ -392,7 +397,7 @@ prototype/src/i18n/prototype/<screenId>.json
 
 ### 6. Flutter 上下文分析
 
-入口：`packages/core/src/analyzers/flutter-context.ts`
+入口：`packages/core/src/adapters/target/flutter-app/flutter-context.ts`
 
 分析内容：
 
@@ -411,7 +416,7 @@ prototype/src/i18n/prototype/<screenId>.json
 - `packages/core/src/planners/page-pattern-classifier.ts`
 - `packages/core/src/planners/widget-blueprints.ts`
 - `packages/core/src/planners/naming-strategy.ts`
-- `packages/core/src/generators/flutter-implementation-plan.ts`
+- `packages/core/src/adapters/target/flutter-app/flutter-implementation-plan.ts`
 
 规划流程：
 
@@ -446,9 +451,9 @@ source facts + target context
 生成流程：
 
 ```text
-analyzePrototypePage
-  -> mapTokens
-  -> analyzeFlutterContext
+SourceAdapter.analyze
+  -> TargetAdapter.mapTokens
+  -> TargetAdapter.analyze
   -> optional capturePrototypePage
   -> buildFlutterImplementationPlan
   -> createMigrationContext
@@ -583,10 +588,10 @@ target   = order
 
 - 引入 MCP SDK。
 - 封装以下工具：
-  - `analyzePrototypePage`
+  - `analyzeSourceProject`
   - `capturePrototypePage`
-  - `mapTokens`
-  - `analyzeFlutterContext`
+  - `mapTargetTokens`
+  - `analyzeTargetProject`
   - `generateMigrationSpec`
 - 保持 MCP 层只做协议封装，不写业务逻辑。
 

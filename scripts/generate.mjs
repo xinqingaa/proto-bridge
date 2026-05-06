@@ -14,7 +14,7 @@ try {
 } catch {
   console.error(`proto-bridge: Missing required config file: ${configPath}`);
   console.error(`Create it from the example first: cp proto-bridge.config.example.json ${DEFAULT_CONFIG_FILE}`);
-  console.error('Then edit prototypeRoot and flutterRoot for your local machine.');
+  console.error('Then edit source.root and target.root for your local machine.');
   process.exit(1);
 }
 

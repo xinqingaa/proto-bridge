@@ -1,8 +1,8 @@
 import path from 'node:path';
 import { readdir } from 'node:fs/promises';
 import fg from 'fast-glob';
-import type { AnalyzeFlutterContextInput, FlutterContextAnalysis } from '../types/index.js';
-import { pathExists, toPosixPath } from '../utils/path.js';
+import type { AnalyzeFlutterContextInput, FlutterContextAnalysis } from '../../../types/index.js';
+import { pathExists, toPosixPath } from '../../../utils/path.js';
 
 const MODULE_MAP: Record<string, string> = {
   stock: 'order',

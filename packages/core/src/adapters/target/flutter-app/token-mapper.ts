@@ -1,4 +1,4 @@
-import type { MapTokensInput, TargetPlatform, TokenMapResult, TokenMapping } from '../types/index.js';
+import type { MapTokensInput, TargetPlatform, TokenMapResult, TokenMapping } from '../../../types/index.js';
 
 const COLOR_TOKEN_MAP: Record<string, string> = {
   '--color-text-normal': 'themeService.colors.colorTextNormal',

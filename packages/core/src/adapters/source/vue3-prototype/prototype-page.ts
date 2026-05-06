@@ -9,8 +9,8 @@ import {
   relativeOrAbsolute,
   resolveFrom,
   toPosixPath,
-} from '../utils/path.js';
-import { evaluateModuleArray, extractExportedArrayLiteral } from '../utils/js-literal.js';
+} from '../../../utils/path.js';
+import { evaluateModuleArray, extractExportedArrayLiteral } from '../../../utils/js-literal.js';
 import { analyzeVueSfc } from './vue-sfc.js';
 import type {
   AnalyzePrototypePageInput,
@@ -19,7 +19,7 @@ import type {
   PageType,
   PrototypePageAnalysis,
   ScreenConfig,
-} from '../types/index.js';
+} from '../../../types/index.js';
 
 type ConfigSource = {
   pageType: PageType;
