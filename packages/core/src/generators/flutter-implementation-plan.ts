@@ -8,6 +8,9 @@ import type {
   PrototypePageAnalysis,
   WidgetRecommendation,
 } from '../types/index.js';
+import { classifyPagePattern } from '../planners/page-pattern-classifier.js';
+import { instantiateWidgetBlueprint } from '../planners/widget-blueprints.js';
+import { toPascalCase, toSnakeCase } from '../planners/naming-strategy.js';
 
 type BuildFlutterImplementationPlanInput = {
   source: PrototypePageAnalysis;
@@ -20,7 +23,8 @@ export function buildFlutterImplementationPlan(input: BuildFlutterImplementation
   const pageName = toPascalCase(input.source.screenId ?? input.source.name ?? input.source.label ?? 'MigratedPage');
   const moduleName = input.target.suggestedModule ?? input.source.module ?? 'feature';
   const baseDir = `lib/app/modules/${moduleName}/${toSnakeCase(pageName)}`;
-  const widgetTree = buildWidgetTree(pageName, input.source, input.widgets, complexity);
+  const classifiedPattern = classifyPagePattern(input.source);
+  const widgetTree = buildWidgetTree(pageName, input.source, complexity, classifiedPattern);
   const fileTree = buildFileTree(baseDir, pageName, input.source, complexity, widgetTree);
   const stateStrategy = buildStateStrategy(input.source, complexity);
   const controllerBoundaries = buildControllerBoundaries(pageName, input.source, complexity);
@@ -28,7 +32,7 @@ export function buildFlutterImplementationPlan(input: BuildFlutterImplementation
 
   return {
     complexity,
-    summary: buildSummary(complexity, input.source),
+    summary: buildSummary(complexity, input.source, classifiedPattern.pattern, classifiedPattern.confidence),
     fileTree,
     widgetTree,
     stateStrategy,
@@ -55,16 +59,21 @@ function inferPlanComplexity(source: PrototypePageAnalysis): FlutterImplementati
   return 'simple';
 }
 
-function buildSummary(complexity: FlutterImplementationPlan['complexity'], source: PrototypePageAnalysis): string {
+function buildSummary(
+  complexity: FlutterImplementationPlan['complexity'],
+  source: PrototypePageAnalysis,
+  pattern: string,
+  confidence: string,
+): string {
   if (complexity === 'simple') {
-    return '该页面适合用一个页面 Widget + 少量私有子 Widget 实现；状态管理可以保持轻量，重点对齐 UI、文案和 token。';
+    return `该页面适合用一个页面 Widget + 少量私有子 Widget 实现；识别页面模式为 ${pattern}（${confidence}），状态管理可以保持轻量，重点对齐 UI、文案和 token。`;
   }
   if (complexity === 'moderate') {
-    return '该页面建议拆成父页面、Controller 和若干子 Widget；Controller 负责页面级 UI 状态，子 Widget 通过输入契约接收数据和回调。';
+    return `该页面建议拆成父页面、Controller 和若干子 Widget；识别页面模式为 ${pattern}（${confidence}），Controller 负责页面级 UI 状态，子 Widget 通过输入契约接收数据和回调。`;
   }
   const hasChart = source.sfc?.components.some((component) => component.role === 'chart') ?? false;
   const chartNote = hasChart ? '图表/指标计算应单独放入 adapter 或 service，避免在 Widget build 中复算。' : '';
-  return `该页面属于复杂页面，应使用父页面编排 + 多个子 Widget + Controller/adapter 分层实现；状态管理建议应服务于 Flutter 架构边界，避免把来源页面的临时状态逐项搬进 GetX。${chartNote}`;
+  return `该页面属于复杂页面，识别页面模式为 ${pattern}（${confidence}）；应使用父页面编排 + 多个子 Widget + Controller/adapter 分层实现；状态管理建议应服务于 Flutter 架构边界，避免把来源页面的临时状态逐项搬进 GetX。${chartNote}`;
 }
 
 function buildFileTree(
@@ -122,86 +131,10 @@ function buildFileTree(
 function buildWidgetTree(
   pageName: string,
   source: PrototypePageAnalysis,
-  widgets: WidgetRecommendation[],
   complexity: FlutterImplementationPlan['complexity'],
+  classifiedPattern: ReturnType<typeof classifyPagePattern>,
 ): FlutterWidgetPlan[] {
-  const pageWidget = `${pageName}Page`;
-  const plans: FlutterWidgetPlan[] = [
-    {
-      name: pageWidget,
-      role: 'route/page composition',
-      buildHint: source.sfc?.fixedBottom ? '建议使用 Scaffold/Stack 编排主内容和固定底部操作区。' : '建议只负责页面级布局和子 Widget 编排。',
-      stateAccess: complexity === 'simple' ? 'none' : 'controller',
-    },
-    {
-      name: `${pageName}Body`,
-      parent: pageWidget,
-      role: 'content composition',
-      buildHint: source.sfc?.layout.some((item) => item.kind === 'sticky') ? '建议使用 CustomScrollView/Sliver 或 ScrollController 组合吸顶区块。' : '按内容顺序组合私有 Widget。',
-      stateAccess: complexity === 'simple' ? 'props' : 'controller-slice',
-    },
-  ];
-
-  for (const component of businessWidgets(pageName, source, complexity)) {
-    plans.push(component);
-  }
-
-  if (plans.length <= 2) {
-    for (const widget of widgets.filter((item) => item.type === 'section').slice(0, 6)) {
-      plans.push({
-        name: widget.name,
-        parent: `${pageName}Body`,
-        role: widget.type,
-        buildHint: widget.responsibility,
-        stateAccess: 'props',
-      });
-    }
-  }
-
-  return dedupeBy(plans, (plan) => plan.name).slice(0, 24);
-}
-
-function businessWidgets(
-  pageName: string,
-  source: PrototypePageAnalysis,
-  complexity: FlutterImplementationPlan['complexity'],
-): FlutterWidgetPlan[] {
-  const components = source.sfc?.components ?? [];
-  const hasRole = (role: string): boolean => components.some((component) => component.role === role);
-  const hasName = (pattern: RegExp): boolean => components.some((component) => pattern.test(component.name));
-  const widgets: FlutterWidgetPlan[] = [];
-  const body = `${pageName}Body`;
-
-  if (hasRole('header')) {
-    widgets.push({ name: `${pageName}Header`, parent: `${pageName}Page`, role: 'header', buildHint: buildHintForRole('header'), stateAccess: 'props' });
-  }
-  if (hasRole('summary') || hasName(/Price|Info|Quote/i)) {
-    widgets.push({ name: `${pageName}QuoteSummary`, parent: body, role: 'summary', buildHint: '展示核心行情、涨跌幅、关键指标和收藏/更多入口状态。', stateAccess: 'props' });
-  }
-  if (hasRole('tabs')) {
-    widgets.push({ name: `${pageName}PrimaryTabs`, parent: body, role: 'tabs', buildHint: '展示一级页签和选中态，通过回调通知父级切换。', stateAccess: 'props' });
-  }
-  if (hasRole('section-tabs')) {
-    widgets.push({ name: `${pageName}SectionTabs`, parent: body, role: 'section-tabs', buildHint: '展示内容区锚点页签，通过回调触发滚动定位。', stateAccess: 'props' });
-  }
-  if (source.sfc?.state.some((state) => state.category === 'chart-data') || hasRole('chart')) {
-    widgets.push({ name: `${pageName}ChartPanel`, parent: body, role: 'chart', buildHint: buildHintForRole('chart'), stateAccess: 'props' });
-  }
-  if (hasName(/Profile|Objective|Fund/i)) {
-    widgets.push({ name: `${pageName}FundOverviewSection`, parent: body, role: 'content-section', buildHint: '展示基金概况、投资目标等内容区，数据由 UI model 提供。', stateAccess: 'props' });
-  }
-  if (hasName(/Holding|List|History|Metric|QuoteExpand/i) || hasRole('list')) {
-    widgets.push({ name: `${pageName}DataSections`, parent: body, role: 'list', buildHint: '展示持仓、历史、指标等数据区块；根据数据量选择 Column/ListView。', stateAccess: 'props' });
-  }
-  if (source.sfc?.fixedBottom) {
-    widgets.push({ name: `${pageName}BottomTradeBar`, parent: `${pageName}Page`, role: 'bottom-actions', buildHint: buildHintForRole('bottom-actions'), stateAccess: 'props' });
-  }
-
-  if (widgets.length === 0 && complexity === 'simple') {
-    widgets.push({ name: `${pageName}Content`, parent: body, role: 'content-section', buildHint: '展示页面主要内容，按卡片或信息行拆成私有方法。', stateAccess: 'props' });
-  }
-
-  return widgets;
+  return instantiateWidgetBlueprint(pageName, source, complexity, classifiedPattern);
 }
 
 function buildStateStrategy(
@@ -369,44 +302,6 @@ function inferWidgetInputs(widget: FlutterWidgetPlan, source: PrototypePageAnaly
   if (/bottom|trade/.test(lower)) inputs.push('trade action availability', 'quote symbol');
   if (inputs.length === 0 && source.sfc?.state.some((state) => state.category === 'mock-data')) inputs.push('section data model');
   return dedupe(inputs);
-}
-
-function widgetResponsibility(role: string, title: string | undefined): string {
-  const label = title ? `“${title}”` : '对应';
-  if (role === 'header') return '顶部导航、标题、返回/更多操作。';
-  if (role === 'tabs' || role === 'section-tabs') return `${label}页签展示、选中态和切换回调。`;
-  if (role === 'summary') return `${label}摘要信息、关键数值和状态展示。`;
-  if (role === 'chart') return `${label}图表 UI，消费 chart view model。`;
-  if (role === 'list') return `${label}列表/数据行展示和 item 点击回调。`;
-  if (role === 'bottom-actions') return '固定底部主操作，适配 SafeArea。';
-  return `${label}内容区 UI。`;
-}
-
-function buildHintForRole(role: string): string {
-  if (role === 'header') return '优先复用 CommonAppBar 或现有 header pattern。';
-  if (role === 'tabs' || role === 'section-tabs') return '仅负责展示和回调，不直接处理路由或滚动计算。';
-  if (role === 'chart') return '消费 chart adapter 输出，不在 build 内计算指标。';
-  if (role === 'bottom-actions') return '用 SafeArea + Row/Buttons 实现，确认 disabled/loading 状态。';
-  if (role === 'list') return '根据数据量选择 Column/ListView，确认空态。';
-  return '通过输入模型渲染 UI，避免直接依赖全局状态。';
-}
-
-function toPascalCase(value: string): string {
-  const normalized = value.replace(/[^a-zA-Z0-9]+/g, ' ');
-  const result = normalized
-    .split(' ')
-    .filter(Boolean)
-    .map((part) => `${part[0]?.toUpperCase() ?? ''}${part.slice(1)}`)
-    .join('');
-  return result || 'Migrated';
-}
-
-function toSnakeCase(value: string): string {
-  return value
-    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
-    .replace(/[^a-zA-Z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '')
-    .toLowerCase();
 }
 
 function dedupe(items: string[]): string[] {

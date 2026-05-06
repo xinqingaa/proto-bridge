@@ -4,5 +4,8 @@ export * from './analyzers/vue-sfc.js';
 export * from './analyzers/flutter-context.js';
 export * from './tokens/token-mapper.js';
 export * from './capture/playwright-capture.js';
+export * from './planners/page-pattern-classifier.js';
+export * from './planners/widget-blueprints.js';
+export * from './planners/naming-strategy.js';
 export * from './generators/migration-context.js';
 export * from './generators/migration-spec.js';
