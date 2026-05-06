@@ -47,10 +47,15 @@ packages/core/src/
 │       └── flutter-app/
 │           ├── flutter-context.ts
 │           ├── flutter-implementation-plan.ts
-│           └── token-mapper.ts
+│           ├── flutter-migration-spec.ts
+│           ├── flutter-recommendations.ts
+│           ├── token-mapper.ts
+│           └── planners/
+│               ├── naming-strategy.ts
+│               ├── page-pattern-classifier.ts
+│               └── widget-blueprints.ts
 ├── capture/
 ├── generators/
-├── planners/
 ├── types/
 └── utils/
 ```
@@ -58,10 +63,9 @@ packages/core/src/
 职责：
 
 - `adapters/source/vue3-prototype`：读取 Vue3 原型工程。
-- `adapters/target/flutter-app`：读取 Flutter 工程并生成 Flutter-facing 规划。
+- `adapters/target/flutter-app`：读取 Flutter 工程并生成 Flutter-facing 规划，包含 token、recommendations、implementation plan 和 planners。
 - `capture`：Playwright 运行时截图和 DOM 提取。
-- `generators`：生成 migration context 和 markdown spec。
-- `planners`：页面模式、Widget blueprint 和命名策略。
+- `generators`：编排 migration context，调用 target renderer 并写出文件。
 - `types`：共享数据模型。
 - `utils`：通用工具。
 
@@ -92,7 +96,37 @@ packages/core/src/
 - `vue`
 - CLI 参数 `--url`、`--route`、`--vue`
 
-## 5. Core 主流程
+## 5. 规范读取与约束原则
+
+ProtoBridge 不在自身仓库保存 A/B 项目的业务规范副本。需要规范时，应从 source/target 项目当前文件中读取。
+
+Source 侧可读取：
+
+- 页面配置。
+- notes。
+- i18n。
+- 页面源码。
+- source README/docs/架构说明/页面说明。
+
+Target 侧可读取：
+
+- 模块目录。
+- route 文件。
+- translation 文件。
+- asset 目录。
+- common widgets。
+- 相似页面。
+- target README/docs/架构说明/组件说明。
+
+约束规则：
+
+- source 信息约束“页面要表达什么”。
+- target 信息约束“目标工程应该怎么实现”。
+- source 与 target 冲突时，实现建议优先服从 target 工程习惯，同时在 context 中保留 source 证据。
+- 信息缺失时写 warnings 或人工确认项，不伪造确定结论。
+- Markdown 面向 target 实现者，不直接暴露 source 模板语法或 CSS class 作为实现要求。
+
+## 6. Core 主流程
 
 入口：`packages/core/src/generators/migration-context.ts`
 
@@ -106,13 +140,13 @@ GenerateMigrationSpecInput
   -> optional capturePrototypePage
   -> TargetAdapter.mapTokens
   -> TargetAdapter.analyze
-  -> TargetAdapter.buildImplementationPlan
+  -> TargetAdapter.buildRecommendations
   -> MigrationContext
 ```
 
-`packages/core/src/generators/migration-spec.ts` 负责把 `MigrationContext` 渲染成 Markdown。
+`packages/core/src/generators/migration-spec.ts` 负责写文件；target adapter 负责渲染 target-facing Markdown。
 
-## 6. SourceAdapter：vue3-prototype
+## 7. SourceAdapter：vue3-prototype
 
 入口：`packages/core/src/adapters/source/vue3-prototype/prototype-page.ts`
 
@@ -141,7 +175,7 @@ prototype/src/views/**
 - SFC facts。
 - warnings。
 
-## 7. SFC 语义分析
+## 8. SFC 语义分析
 
 入口：`packages/core/src/adapters/source/vue3-prototype/vue-sfc.ts`
 
@@ -158,7 +192,7 @@ prototype/src/views/**
 
 这些内容进入 `migration-context.json`，用于调试、planner 和人工审查。正式 `migration-spec.md` 不直接输出 Vue 模板语法或 DOM/class 证据。
 
-## 8. Runtime Capture
+## 9. Runtime Capture
 
 入口：`packages/core/src/capture/playwright-capture.ts`
 
@@ -183,7 +217,7 @@ prototype/src/views/**
 
 Capture 失败时写入 warnings，不阻断静态上下文生成。
 
-## 9. TargetAdapter：flutter-app
+## 10. TargetAdapter：flutter-app
 
 入口：`packages/core/src/adapters/target/flutter-app/flutter-context.ts`
 
@@ -213,7 +247,7 @@ lib/app/widgets/**/*.dart
 - similarFiles。
 - warnings。
 
-## 10. Token 映射
+## 11. Token 映射
 
 入口：`packages/core/src/adapters/target/flutter-app/token-mapper.ts`
 
@@ -231,7 +265,7 @@ lib/app/widgets/**/*.dart
 
 未命中 token 必须进入 unresolved，不要伪造确定映射。
 
-## 11. Flutter 实现规划
+## 12. Flutter 实现规划
 
 入口：`packages/core/src/adapters/target/flutter-app/flutter-implementation-plan.ts`
 
@@ -253,7 +287,7 @@ lib/app/widgets/**/*.dart
 - 不让每个子 Widget 都直接依赖整个 Controller。
 - 复杂页面先按 UI 状态、业务数据、派生状态和生命周期副作用归类。
 
-## 12. 输出文件
+## 13. 输出文件
 
 ### migration-context.json
 
@@ -278,7 +312,7 @@ Flutter-facing 迁移说明书，包含：
 - 人工确认项。
 - AI 实现提示词。
 
-## 13. CLI 使用
+## 14. CLI 使用
 
 ```bash
 pnpm run generate -- --route /prototype/trade --out ./output/stock-trade --no-capture
@@ -297,7 +331,7 @@ pnpm run generate -- --route /prototype/trade --out ./output/stock-trade --no-ca
 - `--no-capture`
 - `--capture`
 
-## 14. MCP 使用原则
+## 15. MCP 使用原则
 
 MCP 层只导出 core 能力，不写业务逻辑。MCP 工具命名应围绕 adapter 和项目语义，例如：
 
@@ -306,7 +340,7 @@ MCP 层只导出 core 能力，不写业务逻辑。MCP 工具命名应围绕 ad
 - `analyzeTargetProject`
 - `generateMigrationSpec`
 
-## 15. 质量标准
+## 16. 质量标准
 
 生成的 `migration-spec.md` 至少应做到：
 
@@ -320,7 +354,7 @@ MCP 层只导出 core 能力，不写业务逻辑。MCP 工具命名应围绕 ad
 - 明确可复用 Flutter 组件。
 - 明确人工确认项。
 
-## 16. 风险边界
+## 17. 风险边界
 
 - JS 配置解析可能无法覆盖复杂动态逻辑，遇到不确定信息应写 warnings。
 - Capture 依赖运行时环境，不应作为唯一输入。

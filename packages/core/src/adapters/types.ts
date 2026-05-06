@@ -4,9 +4,12 @@ import type {
   FlutterContextAnalysis,
   FlutterImplementationPlan,
   MapTokensInput,
+  MigrationRecommendations,
+  MigrationContext,
   PrototypePageAnalysis,
   TokenMapResult,
   WidgetRecommendation,
+  CaptureResult,
 } from '../types/index.js';
 
 export type AdapterProjectRef = {
@@ -49,4 +52,12 @@ export type TargetAdapter = {
     target: FlutterContextAnalysis;
     widgets: WidgetRecommendation[];
   }): FlutterImplementationPlan;
+  buildRecommendations(input: {
+    source: PrototypePageAnalysis;
+    tokenMap: TokenMapResult;
+    target: FlutterContextAnalysis;
+    capture?: CaptureResult | undefined;
+    captureSkipped: boolean;
+  }): MigrationRecommendations;
+  renderMigrationSpec(context: MigrationContext): string;
 };

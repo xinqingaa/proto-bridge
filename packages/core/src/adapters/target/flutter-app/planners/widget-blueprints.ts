@@ -1,4 +1,4 @@
-import type { FlutterImplementationPlan, FlutterWidgetPlan, PrototypePageAnalysis } from '../types/index.js';
+import type { FlutterImplementationPlan, FlutterWidgetPlan, PrototypePageAnalysis } from '../../../../types/index.js';
 import type { ClassifiedPagePattern, PagePattern } from './page-pattern-classifier.js';
 import { widgetName } from './naming-strategy.js';
 

@@ -33,10 +33,18 @@ target.adapter = flutter-app
 
 ProtoBridge 适合以下任务：
 
+- 原型项目和目标 App 分属不同仓库，需要把需求、页面事实和目标工程规范连接起来。
+- Source 页面已经能表达产品意图，但不能直接照搬到 target 技术栈。
+- Target App 已有模块、路由、主题、组件、资源和状态管理规范，需要让迁移说明书遵守这些约束。
+- 迁移任务需要交给人工、Cursor、Claude Code、Codex CLI 或其他 AI coding 工具继续实现。
+- 页面实现前需要明确风险、人工确认项、路由参数、i18n、资源和 token 对应关系。
+
+当前默认组合下，ProtoBridge 会：
+
 - 从 Vue3 原型页面提取页面结构、交互、状态、路由、notes、i18n 和资源线索。
 - 读取 Flutter App 中已有模块、路由、翻译、资源目录、公共组件和相似页面。
 - 将来源页面事实整理成 Flutter-facing 的实现规划。
-- 生成 `migration-context.json` 与 `migration-spec.md`，供开发者、Cursor、Claude Code、Codex CLI 等工具使用。
+- 生成 `migration-context.json` 与 `migration-spec.md`。
 
 ProtoBridge 不负责：
 
@@ -51,12 +59,32 @@ ProtoBridge 不负责：
 当前实现包含以下能力：
 
 - **Source 分析**：通过 route、URL 或 Vue 文件定位原型页面，读取页面配置、源码、notes、i18n 和页面元信息。
+- **Source 规范读取**：读取 source 仓库中的页面配置、notes、i18n、README/docs 线索和页面内显式说明，用于理解需求意图与原型约束。
 - **SFC 语义分析**：提取 sections、semantic components、interactions、state、routes、lifecycle、layout、assets 和 style token usage。
 - **Runtime Capture**：可选使用 Playwright 获取 screenshot、DOM tree、bounding box 和 computed style。
 - **Token 映射**：从 CSS var、mixin 和运行时样式中提取 token，并映射到 Flutter theme 写法。
 - **Target 分析**：扫描 Flutter 模块、routes、translations、assets、common widgets 和相似文件。
+- **Target 规范约束**：把 target 仓库中已经存在的目录结构、命名习惯、路由文件、翻译体系、资源目录、公共组件和相似页面作为 spec 约束来源。
 - **Implementation Planning**：生成 Flutter 文件拆分、Widget 树、Widget 输入契约、状态管理建议、Controller/Adapter 边界和人工确认项。
 - **Spec 生成**：输出 `migration-context.json` 与 `migration-spec.md`。
+
+端到端流转：
+
+```text
+CLI / MCP input
+  -> 解析 source/target adapter config
+  -> SourceAdapter 读取 source 页面事实和 source 侧说明
+  -> Capture 补充运行时布局信息
+  -> TargetAdapter 读取 target 工程结构和实现约束
+  -> TargetAdapter 映射 token 并生成 implementation plan
+  -> SpecGenerator 输出 context 与说明书
+```
+
+`migration-spec.md` 的生成会同时受三类信息约束：
+
+- **Source facts**：页面要表达什么，包括结构、交互、状态、路由、文案和资源线索。
+- **Target conventions**：目标 App 应该怎么写，包括模块、路由、组件、主题、资源、i18n 和相似实现。
+- **ProtoBridge rules**：说明书应该如何表达，包括 target-facing、禁止直译、保留人工确认项、不伪造确定结论。
 
 ## 四、工程结构
 
@@ -83,9 +111,14 @@ proto-bridge/
 │   │       │   │   └── vue3-prototype/
 │   │       │   └── target/
 │   │       │       └── flutter-app/
+│   │       │           ├── flutter-context.ts
+│   │       │           ├── flutter-implementation-plan.ts
+│   │       │           ├── flutter-migration-spec.ts
+│   │       │           ├── flutter-recommendations.ts
+│   │       │           ├── token-mapper.ts
+│   │       │           └── planners/
 │   │       ├── capture/
 │   │       ├── generators/
-│   │       ├── planners/
 │   │       ├── types/
 │   │       └── utils/
 │   ├── cli/
@@ -265,6 +298,16 @@ output/stock-trade/
 
 ## 十、实现原理
 
+ProtoBridge 的实现原理不是“把 source 代码翻译成 target 代码”，而是先把 source 和 target 都转成结构化事实，再由 target adapter 生成符合目标工程习惯的实现规划。
+
+完整流转分为五层：
+
+1. **入口层**：CLI/MCP 读取配置和页面输入，不做业务分析。
+2. **Source 层**：SourceAdapter 读取 source 页面事实、source 侧说明和原型约束。
+3. **Target 层**：TargetAdapter 读取 target 工程结构、组件、资源、路由、翻译和相似实现。
+4. **Planning 层**：根据 source facts 和 target conventions 生成实现形态、文件拆分、Widget 树、状态策略和人工确认项。
+5. **Spec 层**：把 planning payload 渲染成 target-facing Markdown，并把调试证据保留在 JSON context 中。
+
 ### 1. SourceAdapter：vue3-prototype
 
 入口：`packages/core/src/adapters/source/vue3-prototype/prototype-page.ts`
@@ -366,7 +409,7 @@ source facts + target context
 
 ### 8. Spec 生成
 
-入口：`packages/core/src/generators/migration-spec.ts`
+入口：`packages/core/src/adapters/target/flutter-app/flutter-migration-spec.ts`
 
 生成原则：
 

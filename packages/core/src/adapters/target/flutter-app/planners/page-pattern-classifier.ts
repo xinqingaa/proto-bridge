@@ -1,4 +1,4 @@
-import type { PrototypePageAnalysis } from '../types/index.js';
+import type { PrototypePageAnalysis } from '../../../../types/index.js';
 
 export type PagePattern =
   | 'detail'
