@@ -11,6 +11,7 @@ import {
   toPosixPath,
 } from '../utils/path.js';
 import { evaluateModuleArray, extractExportedArrayLiteral } from '../utils/js-literal.js';
+import { analyzeVueSfc } from './vue-sfc.js';
 import type {
   AnalyzePrototypePageInput,
   ChangelogItem,
@@ -79,6 +80,7 @@ export async function analyzePrototypePage(input: AnalyzePrototypePageInput): Pr
   if (!sourceCode) {
     warnings.push(`Vue source file not found: ${vuePath}`);
   }
+  const sfc = analyzeVueSfc(sourceCode);
 
   const screenId = asString(screen?.screenId);
   const moduleFromView = firstSegment(asString(screen?.view) ?? input.vue);
@@ -119,6 +121,7 @@ export async function analyzePrototypePage(input: AnalyzePrototypePageInput): Pr
     owner: asString(screen?.owner),
     changelog: normalizeChangelog(screen?.changelog),
     sourceCode,
+    sfc,
     notes: notesResult.notes,
     notesPath: notesResult.notesPath,
     i18n: i18nResult.i18n,

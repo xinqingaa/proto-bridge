@@ -69,12 +69,92 @@ export type PrototypePageAnalysis = {
   owner?: string | undefined;
   changelog: ChangelogItem[];
   sourceCode?: string | undefined;
+  sfc?: VueSfcAnalysis | undefined;
   notes?: string | undefined;
   notesPath?: string | undefined;
   i18n?: Record<string, unknown> | undefined;
   i18nPath?: string | undefined;
   config?: ScreenConfig | undefined;
   warnings: string[];
+};
+
+export type VueSfcAnalysis = {
+  template?: string | undefined;
+  script?: string | undefined;
+  styleBlocks: string[];
+  sections: VueTemplateSection[];
+  interactions: VueInteractionHint[];
+  components: VueSemanticComponent[];
+  state: VueStateHint[];
+  routes: VueRouteHint[];
+  lifecycle: VueLifecycleHint[];
+  layout: VueLayoutHint[];
+  assets: VueAssetHint[];
+  fixedBottom: boolean;
+};
+
+export type VueTemplateSection = {
+  name: string;
+  kind: 'app-bar' | 'tab-bar' | 'section' | 'list' | 'chart' | 'bottom-bar' | 'modal' | 'unknown';
+  selector?: string | undefined;
+  title?: string | undefined;
+  evidence: string;
+};
+
+export type VueInteractionHint = {
+  kind: 'click' | 'model' | 'conditional' | 'loop' | 'state' | 'computed' | 'watch';
+  target?: string | undefined;
+  evidence: string;
+};
+
+export type VueSemanticComponent = {
+  name: string;
+  role: 'header' | 'tabs' | 'section-tabs' | 'summary' | 'content-section' | 'list' | 'chart' | 'bottom-actions' | 'modal' | 'unknown';
+  selector?: string | undefined;
+  title?: string | undefined;
+  dataHints: string[];
+  interactionHints: string[];
+  tokenHints: string[];
+  layoutHints: string[];
+  evidence: string;
+};
+
+export type VueStateHint = {
+  name: string;
+  kind: 'ref' | 'reactive' | 'computed' | 'watch' | 'constant' | 'function';
+  category: 'ui-state' | 'mock-data' | 'derived-data' | 'navigation' | 'lifecycle' | 'chart-data' | 'handler' | 'unknown';
+  evidence: string;
+  migrationHint: string;
+};
+
+export type VueRouteHint = {
+  action: 'navigate' | 'back' | 'read-query';
+  target?: string | undefined;
+  params?: string | undefined;
+  evidence: string;
+  migrationHint: string;
+};
+
+export type VueLifecycleHint = {
+  hook: 'onMounted' | 'onBeforeUnmount' | 'watch' | 'event-listener' | 'unknown';
+  target?: string | undefined;
+  evidence: string;
+  migrationHint: string;
+};
+
+export type VueLayoutHint = {
+  selector: string;
+  kind: 'fixed' | 'sticky' | 'scroll' | 'safe-area' | 'z-index' | 'absolute' | 'flex' | 'grid' | 'overflow' | 'spacing';
+  evidence: string;
+  migrationHint: string;
+};
+
+export type VueAssetHint = {
+  kind: 'image' | 'svg' | 'icon' | 'background' | 'inline-svg';
+  source?: string | undefined;
+  selector?: string | undefined;
+  evidence: string;
+  migrationHint: string;
 };
 
 export type DomNodeSnapshot = {

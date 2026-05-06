@@ -103,7 +103,10 @@ async function maybeCapture(input: GenerateMigrationSpecInput): Promise<CaptureR
 
 function inferImplementationShape(source: PrototypePageAnalysis): ImplementationShape {
   const code = source.sourceCode ?? '';
-  const hasInteractiveState = /\b(ref|reactive|computed)\s*\(/.test(code) || /(@click|v-model|watch\s*\()/.test(code);
+  const hasInteractiveState =
+    (source.sfc?.interactions.some((interaction) =>
+      ['click', 'model', 'state', 'computed', 'watch'].includes(interaction.kind),
+    ) ?? false) || /\b(ref|reactive|computed)\s*\(/.test(code) || /(@click|v-model|watch\s*\()/.test(code);
   if (hasInteractiveState) return 'BaseGetView';
   return 'StatelessWidget';
 }
@@ -133,8 +136,19 @@ function buildWidgetBreakdown(
     },
   ];
 
-  const code = source.sourceCode ?? '';
-  if (/bottom|footer|submit|confirm|button|下单|确认|提交/i.test(code)) {
+  for (const section of source.sfc?.sections ?? []) {
+    if (section.kind === 'unknown') continue;
+    if (section.kind === 'app-bar') continue;
+    if (section.kind === 'bottom-bar') continue;
+    widgets.push({
+      name: `${pageName}${section.name}`,
+      type: section.kind === 'modal' ? 'dialog' : 'section',
+      responsibility: describeSection(section.kind, section.title),
+      notes: section.evidence,
+    });
+  }
+
+  if (source.sfc?.fixedBottom) {
     widgets.push({
       name: `${pageName}BottomBar`,
       type: 'section',
@@ -143,7 +157,7 @@ function buildWidgetBreakdown(
     });
   }
 
-  if (/sheet|dialog|modal|popup|弹窗|确认/i.test(code)) {
+  if (source.sfc?.sections.some((section) => section.kind === 'modal')) {
     widgets.push({
       name: `${pageName}Sheet`,
       type: 'sheet',
@@ -153,6 +167,15 @@ function buildWidgetBreakdown(
   }
 
   return widgets;
+}
+
+function describeSection(kind: string, title: string | undefined): string {
+  const label = title ? `“${title}”` : '该';
+  if (kind === 'tab-bar') return `迁移${label}页签切换、选中态和对应内容联动。`;
+  if (kind === 'list') return `迁移${label}列表/数据行，确认数据来源、空态和点击行为。`;
+  if (kind === 'chart') return `迁移${label}图表区域，确认 Flutter 侧图表组件或自绘方案。`;
+  if (kind === 'modal') return `迁移${label}弹层内容、打开关闭状态和确认动作。`;
+  return `迁移${label}内容区，按标题、字段和值映射到 Flutter 私有 Widget。`;
 }
 
 function toPascalCase(value: string): string {

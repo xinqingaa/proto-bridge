@@ -68,6 +68,17 @@ export function renderMigrationSpec(context: MigrationContext): string {
   }
   lines.push('');
 
+  if (source.sfc?.sections.length) {
+    lines.push('### Vue Template 识别依据');
+    lines.push(markdownTable(['区块', '类型', '选择器/标题', '证据'], source.sfc.sections.map((section) => [
+      section.name,
+      section.kind,
+      section.title ?? section.selector ?? '',
+      section.evidence,
+    ])));
+    lines.push('');
+  }
+
   lines.push('## 三、Flutter Widget 拆分建议');
   lines.push(markdownTable(['Widget', '类型', '职责', '备注'], context.recommendations.widgetBreakdown.map((widget) => [
     widget.name,
@@ -153,13 +164,22 @@ export function renderMigrationSpec(context: MigrationContext): string {
 
 function inferComplexity(context: MigrationContext): string {
   const source = context.source.sourceCode ?? '';
-  const interactionCount = (source.match(/@click|v-model|ref\(|reactive\(|computed\(/g) ?? []).length;
+  const interactionCount = context.source.sfc?.interactions.length ?? (source.match(/@click|v-model|ref\(|reactive\(|computed\(/g) ?? []).length;
   if (interactionCount > 8 || context.recommendations.widgetBreakdown.length >= 5) return '高';
   if (interactionCount > 2 || context.recommendations.widgetBreakdown.length >= 4) return '中';
   return '低';
 }
 
 function inferInteractionRows(context: MigrationContext): string[][] {
+  const sfcInteractions = context.source.sfc?.interactions ?? [];
+  if (sfcInteractions.length > 0) {
+    return sfcInteractions.slice(0, 20).map((interaction) => [
+      interaction.evidence,
+      suggestInteractionMigration(interaction.kind),
+      interaction.target ?? '',
+    ]);
+  }
+
   const rows: string[][] = [];
   const source = context.source.sourceCode ?? '';
 
@@ -174,6 +194,17 @@ function inferInteractionRows(context: MigrationContext): string[][] {
   }
 
   return rows.length > 0 ? rows : [['待确认', '阅读 Vue script 和 notes 后补充', 'Phase 1 未做完整交互语义分析']];
+}
+
+function suggestInteractionMigration(kind: string): string {
+  if (kind === 'click') return '迁移为 Controller 方法或 Widget callback，并确认路由/弹窗/埋点。';
+  if (kind === 'model') return '迁移为 TextEditingController、Rx 字段或表单状态。';
+  if (kind === 'conditional') return '迁移为 Obx/Visibility/条件渲染，确认默认状态。';
+  if (kind === 'loop') return '迁移为 ListView/Column map，确认数据模型和空态。';
+  if (kind === 'state') return '迁移为 Controller 中的 Rx/普通字段，避免写死 mock。';
+  if (kind === 'computed') return '迁移为 Controller getter 或派生状态。';
+  if (kind === 'watch') return '迁移为状态监听、生命周期或 worker。';
+  return '阅读 Vue template/script 后补充。';
 }
 
 function tokenTable(mappings: TokenMapping[]): string {
