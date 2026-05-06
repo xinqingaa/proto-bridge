@@ -90,6 +90,7 @@ export type VueSfcAnalysis = {
   lifecycle: VueLifecycleHint[];
   layout: VueLayoutHint[];
   assets: VueAssetHint[];
+  styleTokens: VueStyleTokenHint[];
   fixedBottom: boolean;
 };
 
@@ -155,6 +156,14 @@ export type VueAssetHint = {
   selector?: string | undefined;
   evidence: string;
   migrationHint: string;
+};
+
+export type VueStyleTokenHint = {
+  selector: string;
+  property: string;
+  token: string;
+  fallback?: string | undefined;
+  evidence: string;
 };
 
 export type DomNodeSnapshot = {
@@ -250,8 +259,62 @@ export type WidgetRecommendation = {
 export type MigrationRecommendations = {
   implementationShape: ImplementationShape;
   widgetBreakdown: WidgetRecommendation[];
+  implementationPlan: FlutterImplementationPlan;
   risks: string[];
   manualQuestions: string[];
+};
+
+export type FlutterImplementationPlan = {
+  complexity: 'simple' | 'moderate' | 'complex';
+  summary: string;
+  fileTree: FlutterPlannedFile[];
+  widgetTree: FlutterWidgetPlan[];
+  stateStrategy: FlutterStateStrategy[];
+  controllerBoundaries: FlutterControllerBoundary[];
+  widgetContracts: FlutterWidgetContract[];
+  doNotTranslate: string[];
+  checklist: FlutterChecklistItem[];
+};
+
+export type FlutterPlannedFile = {
+  path: string;
+  responsibility: string;
+  notes?: string | undefined;
+};
+
+export type FlutterWidgetPlan = {
+  name: string;
+  parent?: string | undefined;
+  role: string;
+  buildHint: string;
+  stateAccess: 'none' | 'props' | 'controller' | 'controller-slice';
+};
+
+export type FlutterStateStrategy = {
+  concern: string;
+  recommendation: string;
+  owner: 'controller' | 'service' | 'repository' | 'widget-local' | 'model-adapter' | 'manual';
+  evidence: string;
+};
+
+export type FlutterControllerBoundary = {
+  name: string;
+  responsibility: string;
+  owns: string[];
+  avoids: string[];
+};
+
+export type FlutterWidgetContract = {
+  widget: string;
+  inputs: string[];
+  callbacks: string[];
+  shouldReadController: boolean;
+  notes: string;
+};
+
+export type FlutterChecklistItem = {
+  priority: 'P0' | 'P1' | 'P2';
+  item: string;
 };
 
 export type MigrationContext = {

@@ -58,11 +58,66 @@ export function renderMigrationSpec(context: MigrationContext): string {
 
   lines.push('## 一、迁移结论');
   lines.push(`- 页面复杂度：${inferComplexity(context)}`);
+  lines.push(`- Flutter 实现复杂度：${context.recommendations.implementationPlan.complexity}`);
   lines.push(`- 建议是否直接实现：${context.recommendations.risks.length <= 2 ? '可以进入实现' : '先确认风险后实现'}`);
   lines.push(`- 主要风险：${context.recommendations.risks[0] ?? '暂无明显阻塞'}`);
+  lines.push(`- 实现规划：${context.recommendations.implementationPlan.summary}`);
   lines.push('');
 
-  lines.push('## 二、页面结构拆分');
+  lines.push('## 二、Flutter 实现规划');
+  lines.push('### 目标文件拆分');
+  lines.push(markdownTable(['文件', '职责', '备注'], context.recommendations.implementationPlan.fileTree.map((file) => [
+    file.path,
+    file.responsibility,
+    file.notes ?? '',
+  ])));
+  lines.push('');
+
+  lines.push('### Widget 组合树');
+  lines.push(markdownTable(['Widget', '父级', '角色', '构建建议', '状态访问'], context.recommendations.implementationPlan.widgetTree.map((widget) => [
+    widget.name,
+    widget.parent ?? 'root',
+    widget.role,
+    widget.buildHint,
+    widget.stateAccess,
+  ])));
+  lines.push('');
+
+  lines.push('### Widget 输入契约');
+  lines.push(markdownTable(['Widget', '输入', '回调', '是否直接读 Controller', '备注'], context.recommendations.implementationPlan.widgetContracts.map((contract) => [
+    contract.widget,
+    contract.inputs.join(', ') || '无 / 待确认',
+    contract.callbacks.join(', ') || '无',
+    contract.shouldReadController ? '是' : '否',
+    contract.notes,
+  ])));
+  lines.push('');
+
+  lines.push('### 状态管理组合建议');
+  lines.push(markdownTable(['关注点', '建议 owner', '建议', '证据'], context.recommendations.implementationPlan.stateStrategy.map((strategy) => [
+    strategy.concern,
+    strategy.owner,
+    strategy.recommendation,
+    strategy.evidence,
+  ])));
+  lines.push('');
+
+  lines.push('### Controller/Adapter 边界');
+  lines.push(markdownTable(['边界', '职责', '负责', '避免'], context.recommendations.implementationPlan.controllerBoundaries.map((boundary) => [
+    boundary.name,
+    boundary.responsibility,
+    boundary.owns.join(', '),
+    boundary.avoids.join(', '),
+  ])));
+  lines.push('');
+
+  lines.push('### 禁止直译项');
+  for (const item of context.recommendations.implementationPlan.doNotTranslate) {
+    lines.push(`- ${item}`);
+  }
+  lines.push('');
+
+  lines.push('## 三、页面结构拆分');
   for (const widget of context.recommendations.widgetBreakdown) {
     lines.push(`- ${widget.name}：${widget.responsibility}`);
   }
@@ -79,7 +134,7 @@ export function renderMigrationSpec(context: MigrationContext): string {
     lines.push('');
   }
 
-  lines.push('## 三、Flutter Widget 拆分建议');
+  lines.push('## 四、Flutter Widget 拆分建议');
   lines.push(markdownTable(['Widget', '类型', '职责', '备注'], context.recommendations.widgetBreakdown.map((widget) => [
     widget.name,
     widget.type,
@@ -88,11 +143,46 @@ export function renderMigrationSpec(context: MigrationContext): string {
   ])));
   lines.push('');
 
-  lines.push('## 四、状态与交互');
+  if (source.sfc?.components.length) {
+    lines.push('### 语义组件实现矩阵');
+    lines.push(markdownTable(['组件', '角色', '数据线索', '交互线索', '布局线索', '证据'], source.sfc.components.map((component) => [
+      component.name,
+      component.role,
+      component.dataHints.join(', ') || '待确认',
+      component.interactionHints.join('<br>') || '无直接交互',
+      component.layoutHints.join('<br>') || '按父布局确认',
+      component.evidence,
+    ])));
+    lines.push('');
+  }
+
+  lines.push('## 五、状态与交互');
+  if (source.sfc?.state.length) {
+    lines.push('### 状态模型');
+    lines.push(markdownTable(['名称', '类型', '分类', '迁移建议', '证据'], source.sfc.state.map((state) => [
+      state.name,
+      state.kind,
+      state.category,
+      state.migrationHint,
+      state.evidence,
+    ])));
+    lines.push('');
+  }
+  if (source.sfc?.lifecycle.length) {
+    lines.push('### 生命周期与副作用');
+    lines.push(markdownTable(['Hook/副作用', '目标', '迁移建议', '证据'], source.sfc.lifecycle.map((item) => [
+      item.hook,
+      item.target ?? '待确认',
+      item.migrationHint,
+      item.evidence,
+    ])));
+    lines.push('');
+  }
+  lines.push('### 交互事件');
   lines.push(markdownTable(['原型状态/事件', 'Flutter 建议', '备注'], inferInteractionRows(context)));
   lines.push('');
 
-  lines.push('## 五、路由与参数');
+  lines.push('## 六、路由与参数');
   lines.push(markdownTable(['原型 route/query', 'Flutter GetX 建议'], [
     [
       source.route ?? '待确认',
@@ -101,9 +191,41 @@ export function renderMigrationSpec(context: MigrationContext): string {
         : '确认 YouFi 路由文件位置后接入',
     ],
   ]));
+  if (source.sfc?.routes.length) {
+    lines.push('');
+    lines.push('### Vue 路由行为');
+    lines.push(markdownTable(['行为', '目标/参数', 'Flutter 迁移建议', '证据'], source.sfc.routes.map((route) => [
+      route.action,
+      [route.target, route.params].filter(Boolean).join(' / ') || '待确认',
+      route.migrationHint,
+      route.evidence,
+    ])));
+  }
   lines.push('');
 
-  lines.push('## 六、主题 Token 映射');
+  if (source.sfc?.layout.length) {
+    lines.push('## 七、布局模型');
+    lines.push(markdownTable(['选择器', '布局特征', 'Flutter 迁移建议', '证据'], source.sfc.layout.map((layout) => [
+      layout.selector,
+      layout.kind,
+      layout.migrationHint,
+      layout.evidence,
+    ])));
+    lines.push('');
+  }
+
+  lines.push('## 八、主题 Token 映射');
+  if (source.sfc?.styleTokens.length) {
+    lines.push('### Vue Token 使用位置');
+    lines.push(markdownTable(['选择器', '属性', 'Token/硬编码值', 'fallback', '证据'], source.sfc.styleTokens.map((token) => [
+      token.selector,
+      token.property,
+      token.token,
+      token.fallback ?? '',
+      token.evidence,
+    ])));
+    lines.push('');
+  }
   lines.push('### Colors');
   lines.push(tokenTable(context.tokenMap.colors));
   lines.push('');
@@ -116,22 +238,15 @@ export function renderMigrationSpec(context: MigrationContext): string {
     lines.push('');
   }
 
-  lines.push('## 七、文案与 i18n');
+  lines.push('## 九、文案与 i18n');
   lines.push(i18nTable(context.source.i18n));
   lines.push('');
 
-  lines.push('## 八、资源迁移');
-  lines.push(markdownTable(['资源', '原型路径', 'Flutter 建议路径', '暗色模式'], [
-    [
-      '待从 Vue template/style 中人工确认',
-      source.vueRelativePath ?? source.vuePath,
-      context.target.assetDirectories.join(', ') || 'assets/images',
-      '如存在 dark_images 等价资源则同步补齐',
-    ],
-  ]));
+  lines.push('## 十、资源迁移');
+  lines.push(assetTable(context));
   lines.push('');
 
-  lines.push('## 九、可复用 Flutter 组件');
+  lines.push('## 十一、可复用 Flutter 组件');
   lines.push(markdownTable(['场景', '推荐组件'], context.target.reusableWidgets.map((widget) => ['通用能力', widget])));
   lines.push('');
 
@@ -144,13 +259,16 @@ export function renderMigrationSpec(context: MigrationContext): string {
   lines.push(`- dom-snapshot：${context.capture?.domSnapshotPath ? relativeOrAbsolute(process.cwd(), context.capture.domSnapshotPath) : '未生成'}`);
   lines.push('');
 
-  lines.push('## 十、人工确认项');
+  lines.push('## 十二、人工确认项');
   for (const question of context.recommendations.manualQuestions) {
     lines.push(`- [ ] ${question}`);
   }
+  for (const checklist of context.recommendations.implementationPlan.checklist) {
+    lines.push(`- [ ] ${checklist.priority}：${checklist.item}`);
+  }
   lines.push('');
 
-  lines.push('## 十一、AI 实现提示词');
+  lines.push('## 十三、AI 实现提示词');
   lines.push('```text');
   lines.push(`请基于本文档在 YouFi Flutter App 中实现 ${title} 页面。`);
   lines.push(`目标模块优先放在 lib/app/modules/${context.target.suggestedModule ?? '<待确认模块>'}。`);
@@ -165,8 +283,13 @@ export function renderMigrationSpec(context: MigrationContext): string {
 function inferComplexity(context: MigrationContext): string {
   const source = context.source.sourceCode ?? '';
   const interactionCount = context.source.sfc?.interactions.length ?? (source.match(/@click|v-model|ref\(|reactive\(|computed\(/g) ?? []).length;
-  if (interactionCount > 8 || context.recommendations.widgetBreakdown.length >= 5) return '高';
-  if (interactionCount > 2 || context.recommendations.widgetBreakdown.length >= 4) return '中';
+  const semanticWeight =
+    (context.source.sfc?.state.length ?? 0) +
+    (context.source.sfc?.routes.length ?? 0) +
+    (context.source.sfc?.lifecycle.length ?? 0) +
+    (context.source.sfc?.layout.filter((item) => ['fixed', 'sticky', 'scroll'].includes(item.kind)).length ?? 0);
+  if (interactionCount > 8 || context.recommendations.widgetBreakdown.length >= 8 || semanticWeight > 20) return '高';
+  if (interactionCount > 2 || context.recommendations.widgetBreakdown.length >= 4 || semanticWeight > 8) return '中';
   return '低';
 }
 
@@ -213,6 +336,28 @@ function tokenTable(mappings: TokenMapping[]): string {
     mapping.source,
     mapping.target ?? '待确认',
     `${mapping.confidence}${mapping.reason ? `：${mapping.reason}` : ''}`,
+  ]));
+}
+
+function assetTable(context: MigrationContext): string {
+  const assets = context.source.sfc?.assets ?? [];
+  if (assets.length === 0) {
+    return markdownTable(['资源', '原型路径/选择器', 'Flutter 建议路径', '迁移建议'], [
+      [
+        '待从 Vue template/style 中人工确认',
+        context.source.vueRelativePath ?? context.source.vuePath,
+        context.target.assetDirectories.join(', ') || 'assets/images',
+        '如存在 dark_images 等价资源则同步补齐',
+      ],
+    ]);
+  }
+
+  return markdownTable(['类型', '原型资源/选择器', 'Flutter 建议路径', '迁移建议', '证据'], assets.map((asset) => [
+    asset.kind,
+    asset.source ?? asset.selector ?? 'inline / class based',
+    context.target.assetDirectories.join(', ') || 'assets/images',
+    asset.migrationHint,
+    asset.evidence,
   ]));
 }
 

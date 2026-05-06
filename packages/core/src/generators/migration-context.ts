@@ -13,6 +13,7 @@ import { analyzeFlutterContext } from '../analyzers/flutter-context.js';
 import { analyzePrototypePage } from '../analyzers/prototype-page.js';
 import { capturePrototypePage } from '../capture/playwright-capture.js';
 import { mapTokens } from '../tokens/token-mapper.js';
+import { buildFlutterImplementationPlan } from './flutter-implementation-plan.js';
 
 export async function createMigrationContext(input: GenerateMigrationSpecInput): Promise<MigrationContext> {
   if (input.target && input.target !== 'flutter') {
@@ -80,6 +81,7 @@ function buildRecommendations(
   return {
     implementationShape,
     widgetBreakdown,
+    implementationPlan: buildFlutterImplementationPlan({ source, target, widgets: widgetBreakdown }),
     risks: dedupe(risks),
     manualQuestions,
   };
