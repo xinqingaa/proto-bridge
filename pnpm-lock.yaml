@@ -43,7 +43,14 @@ importers:
         specifier: workspace:*
         version: link:../core
 
-  packages/core: {}
+  packages/core:
+    dependencies:
+      fast-glob:
+        specifier: ^3.3.2
+        version: 3.3.3
+      playwright:
+        specifier: ^1.49.1
+        version: 1.59.1
 
   packages/mcp-server:
     dependencies:

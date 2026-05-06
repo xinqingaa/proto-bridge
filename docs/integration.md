@@ -7,10 +7,10 @@
 CLI 是当前主要入口：
 
 ```bash
-pnpm run generate -- --url "http://localhost:5173/#/prototype/etf-detail"
-pnpm run generate -- --route /prototype/etf-detail
-pnpm run generate -- --vue prototype/src/views/prototype/etf/ETFDetailPage.vue
-pnpm run generate
+npx @proto-bridge/cli generate --url "http://localhost:5173/#/prototype/etf-detail"
+npx @proto-bridge/cli generate --route /prototype/etf-detail
+npx @proto-bridge/cli generate --vue prototype/src/views/prototype/etf/ETFDetailPage.vue
+npx @proto-bridge/cli generate
 ```
 
 CLI 职责：
@@ -43,7 +43,7 @@ CLI 不实现 source/target 分析、planner 或 spec 渲染逻辑。
 CLI 参数可以覆盖页面输入、单次输出目录和 capture 行为：
 
 ```bash
-pnpm run generate -- \
+npx @proto-bridge/cli generate \
   --config ./proto-bridge.config.json \
   --route /prototype/trade \
   --output ./output/custom-trade \
@@ -163,7 +163,7 @@ output/<page>/
 Capture 输入：
 
 ```bash
-pnpm run generate -- \
+npx @proto-bridge/cli generate \
   --url "http://localhost:5173/#/prototype/trade" \
   --prototype-url "http://localhost:5173/#/prototype/trade" \
   --capture
@@ -208,7 +208,7 @@ pnpm run build
 推荐生成命令：
 
 ```bash
-pnpm run generate -- --route /prototype/trade
+npx @proto-bridge/cli generate --route /prototype/trade
 ```
 
 脚本化调用时应固定：

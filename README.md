@@ -136,24 +136,26 @@ proto-bridge/
 - `docs`：架构、集成方式和迁移说明书质量标准。
 - `examples`：示例配置和可复现调用入口。
 
-## 五、安装
+## 五、安装与运行
 
-项目使用 pnpm workspace。
+团队使用者不需要 clone 本仓库，也不需要安装 pnpm；通过 npm 自带的 npx 运行 CLI：
 
 ```bash
-npm i -g pnpm
-pnpm install
+npx @proto-bridge/cli --help
+npx @proto-bridge/cli init
+npx @proto-bridge/cli generate
 ```
 
-常用命令：
+仓库开发者仍使用 pnpm workspace：
 
 ```bash
+pnpm install
 pnpm run typecheck
 pnpm run build
 pnpm run generate -- --help
 ```
 
-日常生成迁移说明书时，可以直接使用 `pnpm run generate`。该命令会先构建 core 和 cli，再执行生成流程。
+`pnpm run generate` 只是本仓库开发便利脚本；npm 发布后的用户入口是 `npx @proto-bridge/cli ...`。
 
 ## 六、配置
 
@@ -166,7 +168,7 @@ proto-bridge.config.json
 可以通过 init 生成：
 
 ```bash
-pnpm run generate -- init
+npx @proto-bridge/cli init
 ```
 
 配置示例：
@@ -206,21 +208,21 @@ pnpm run generate -- init
 推荐直接传浏览器里的原型 URL，CLI 会从 hash 或 pathname 中提取 route：
 
 ```bash
-pnpm run generate -- \
+npx @proto-bridge/cli generate \
   --url "http://localhost:5173/#/prototype/fund-profile?anchor=overview&is_mobile=1"
 ```
 
 ### 2. 使用 route
 
 ```bash
-pnpm run generate -- \
+npx @proto-bridge/cli generate \
   --route /prototype/trade
 ```
 
 ### 3. 使用 Vue 文件
 
 ```bash
-pnpm run generate -- \
+npx @proto-bridge/cli generate \
   --vue prototype/src/views/prototype/stock/StockTradePage.vue
 ```
 
@@ -229,7 +231,7 @@ pnpm run generate -- \
 先确保原型 dev server 正在运行，再执行：
 
 ```bash
-pnpm run generate -- \
+npx @proto-bridge/cli generate \
   --url "http://localhost:5173/#/prototype/trade" \
   --prototype-url "http://localhost:5173/#/prototype/trade" \
   --capture
@@ -452,4 +454,4 @@ source facts + target context
 
 ### `pnpm run typecheck` 和 `pnpm run build` 是必须的吗？
 
-修改代码后建议运行。日常生成说明书可以直接使用 `pnpm run generate`，脚本会自动构建 core 和 cli。
+只有开发 ProtoBridge 本仓库时需要。团队使用 npm 包时直接运行 `npx @proto-bridge/cli generate`，不需要 pnpm。

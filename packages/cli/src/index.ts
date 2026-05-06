@@ -155,7 +155,7 @@ async function loadRequiredConfig(values: Record<string, string | boolean>): Pro
       [
         'Missing required config file.',
         `Config path: ${configPath}`,
-        'Create one: pnpm run generate -- init',
+        'Create one: npx @proto-bridge/cli init',
         'Or create proto-bridge.config.json manually with source.root, target.root, outputRoot, and capture.',
       ].join('\n'),
     );
@@ -322,7 +322,7 @@ function parseArgs(args: string[]): ParsedArgs {
     if (!ALLOWED_FLAGS.has(key)) throw new Error(unknownFlagMessage(key));
 
     if (inlineValue !== undefined) {
-      if (BOOLEAN_FLAGS.has(key)) throw new Error(`--${key} does not accept a value.\nExample: pnpm run generate -- --capture`);
+      if (BOOLEAN_FLAGS.has(key)) throw new Error(`--${key} does not accept a value.\nExample: npx @proto-bridge/cli generate --capture`);
       values[key] = inlineValue;
       continue;
     }
@@ -351,22 +351,22 @@ function unknownFlagMessage(key: string): string {
   return [
     `Unknown flag: --${key}`,
     'Supported flags: --config, --url, --route, --vue, --prototype-url, --output, --capture.',
-    'Example: pnpm run generate -- --url "http://localhost:5173/#/prototype/etf-detail"',
+    'Example: npx @proto-bridge/cli generate --url "http://localhost:5173/#/prototype/etf-detail"',
   ].join('\n');
 }
 
 function missingFlagValueMessage(key: string): string {
   const examples: Record<string, string> = {
-    config: 'pnpm run generate -- --config ./proto-bridge.config.json --route /prototype/etf-detail',
-    output: 'pnpm run generate -- --route /prototype/etf-detail --output ./output/etf-detail',
-    route: 'pnpm run generate -- --route /prototype/etf-detail',
-    url: 'pnpm run generate -- --url "http://localhost:5173/#/prototype/etf-detail"',
-    vue: 'pnpm run generate -- --vue prototype/src/views/prototype/etf/ETFDetailPage.vue',
-    'prototype-url': 'pnpm run generate -- --route /prototype/etf-detail --prototype-url "http://localhost:5173/#/prototype/etf-detail" --capture',
-    'source-adapter': 'pnpm run generate -- --route /prototype/etf-detail --source-adapter vue3-prototype',
-    'target-adapter': 'pnpm run generate -- --route /prototype/etf-detail --target-adapter flutter-app',
+    config: 'npx @proto-bridge/cli generate --config ./proto-bridge.config.json --route /prototype/etf-detail',
+    output: 'npx @proto-bridge/cli generate --route /prototype/etf-detail --output ./output/etf-detail',
+    route: 'npx @proto-bridge/cli generate --route /prototype/etf-detail',
+    url: 'npx @proto-bridge/cli generate --url "http://localhost:5173/#/prototype/etf-detail"',
+    vue: 'npx @proto-bridge/cli generate --vue prototype/src/views/prototype/etf/ETFDetailPage.vue',
+    'prototype-url': 'npx @proto-bridge/cli generate --route /prototype/etf-detail --prototype-url "http://localhost:5173/#/prototype/etf-detail" --capture',
+    'source-adapter': 'npx @proto-bridge/cli generate --route /prototype/etf-detail --source-adapter vue3-prototype',
+    'target-adapter': 'npx @proto-bridge/cli generate --route /prototype/etf-detail --target-adapter flutter-app',
   };
-  return [`--${key} requires a value.`, `Example: ${examples[key] ?? 'pnpm run generate -- --help'}`].join('\n');
+  return [`--${key} requires a value.`, `Example: ${examples[key] ?? 'npx @proto-bridge/cli --help'}`].join('\n');
 }
 
 function extractRouteFromUrl(urlInput: string): string {
@@ -378,7 +378,7 @@ function extractRouteFromUrl(urlInput: string): string {
 
 function routeWithQueryFromUrl(urlInput: string): string {
   if (!urlInput.trim()) {
-    throw new Error('--url requires a non-empty URL or route path.\nExample: pnpm run generate -- --url "http://localhost:5173/#/prototype/etf-detail"');
+    throw new Error('--url requires a non-empty URL or route path.\nExample: npx @proto-bridge/cli generate --url "http://localhost:5173/#/prototype/etf-detail"');
   }
 
   if (urlInput.startsWith('/')) return urlInput;
@@ -390,7 +390,7 @@ function routeWithQueryFromUrl(urlInput: string): string {
   } catch {
     throw new Error([
       `--url must be an absolute URL or a route path: ${urlInput}`,
-      'If you only have the route, use: pnpm run generate -- --route /prototype/etf-detail',
+      'If you only have the route, use: npx @proto-bridge/cli generate --route /prototype/etf-detail',
       'If your shell shows dquote>, press Ctrl+C and rerun with a closing quote.',
     ].join('\n'));
   }
