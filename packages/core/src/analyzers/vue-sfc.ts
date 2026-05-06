@@ -229,7 +229,7 @@ function inferLifecycle(script: string): VueLifecycleHint[] {
     hook: 'onMounted' as const,
     target: lifecycleTarget(match[1] ?? ''),
     evidence: compactCode(`onMounted(${(match[1] ?? '').slice(0, 140)}`),
-    migrationHint: '迁移到 Controller.onReady 或页面首帧回调；涉及 DOM/滚动需绑定 ScrollController 后执行。',
+    migrationHint: '迁移到 Controller.onReady 或页面首帧回调；涉及滚动需绑定 ScrollController 后执行。',
   }), hints);
   collectMatches(script, /onBeforeUnmount\s*\(([\s\S]*?)\n\}\)/g, (match) => ({
     hook: 'onBeforeUnmount' as const,
@@ -281,7 +281,7 @@ function inferAssets(template: string, styleText: string): VueAssetHint[] {
   collectMatches(template, /<svg\b[\s\S]*?<\/svg>/gi, (match) => ({
     kind: 'inline-svg' as const,
     evidence: compactCode((match[0] ?? '').slice(0, 160)),
-    migrationHint: '优先抽成 Flutter SvgPicture asset 或 CustomPainter，复杂图表不要逐 DOM 直译。',
+    migrationHint: '优先抽成 Flutter SvgPicture asset 或 CustomPainter，复杂图表不要逐层照搬来源结构。',
   }), hints);
   collectMatches(template, /class\s*=\s*['"]([^'"]*(?:icon|logo)[^'"]*)['"]/gi, (match) => ({
     kind: /logo/i.test(match[1] ?? '') ? 'image' as const : 'icon' as const,

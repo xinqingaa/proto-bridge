@@ -7,7 +7,7 @@ import type {
   TokenMapping,
 } from '../types/index.js';
 import { createMigrationContext } from './migration-context.js';
-import { relativeOrAbsolute, writeJsonFile, writeTextFile } from '../utils/path.js';
+import { writeJsonFile, writeTextFile } from '../utils/path.js';
 
 export async function generateMigrationSpec(
   input: GenerateMigrationSpecInput,
@@ -45,14 +45,11 @@ export function renderMigrationSpec(context: MigrationContext): string {
   lines.push(`# ${title} Flutter 迁移说明书`);
   lines.push('');
   lines.push('## 页面元信息');
-  lines.push(`- 原型路由：${source.route ?? '待确认'}`);
+  lines.push(`- 目标路由来源：${source.route ?? '待确认'}`);
   lines.push(`- screenId：${source.screenId ?? '待确认'}`);
-  lines.push(`- 原型文件：${source.vueRelativePath ?? source.vuePath}`);
-  lines.push(`- 页面类型：${source.pageType}`);
-  lines.push(`- 原型模块：${source.moduleLabel ?? source.module ?? '待确认'}`);
   lines.push(`- 推荐 Flutter 模块：${context.target.suggestedModule ?? '待确认'}`);
   lines.push(`- 推荐实现形态：${context.recommendations.implementationShape}`);
-  lines.push(`- 原型状态：${source.status ?? '待确认'}`);
+  lines.push(`- 需求状态：${source.status ?? '待确认'}`);
   lines.push(`- 维护角色：${source.owner ?? '待确认'}`);
   lines.push('');
 
@@ -94,11 +91,10 @@ export function renderMigrationSpec(context: MigrationContext): string {
   lines.push('');
 
   lines.push('### 状态管理组合建议');
-  lines.push(markdownTable(['关注点', '建议 owner', '建议', '证据'], context.recommendations.implementationPlan.stateStrategy.map((strategy) => [
+  lines.push(markdownTable(['关注点', '建议 owner', '建议'], context.recommendations.implementationPlan.stateStrategy.map((strategy) => [
     strategy.concern,
     strategy.owner,
     strategy.recommendation,
-    strategy.evidence,
   ])));
   lines.push('');
 
@@ -118,68 +114,42 @@ export function renderMigrationSpec(context: MigrationContext): string {
   lines.push('');
 
   lines.push('## 三、页面结构拆分');
-  for (const widget of context.recommendations.widgetBreakdown) {
-    lines.push(`- ${widget.name}：${widget.responsibility}`);
+  for (const widget of context.recommendations.implementationPlan.widgetTree) {
+    lines.push(`- ${widget.name}：${widget.role}；${widget.buildHint}`);
   }
   lines.push('');
-
-  if (source.sfc?.sections.length) {
-    lines.push('### Vue Template 识别依据');
-    lines.push(markdownTable(['区块', '类型', '选择器/标题', '证据'], source.sfc.sections.map((section) => [
-      section.name,
-      section.kind,
-      section.title ?? section.selector ?? '',
-      section.evidence,
-    ])));
-    lines.push('');
-  }
 
   lines.push('## 四、Flutter Widget 拆分建议');
-  lines.push(markdownTable(['Widget', '类型', '职责', '备注'], context.recommendations.widgetBreakdown.map((widget) => [
+  lines.push(markdownTable(['Widget', '父级', '职责', '状态访问'], context.recommendations.implementationPlan.widgetTree.map((widget) => [
     widget.name,
-    widget.type,
-    widget.responsibility,
-    widget.suggestedFlutterWidget ?? widget.notes ?? '',
+    widget.parent ?? 'root',
+    widget.buildHint,
+    widget.stateAccess,
   ])));
   lines.push('');
-
-  if (source.sfc?.components.length) {
-    lines.push('### 语义组件实现矩阵');
-    lines.push(markdownTable(['组件', '角色', '数据线索', '交互线索', '布局线索', '证据'], source.sfc.components.map((component) => [
-      component.name,
-      component.role,
-      component.dataHints.join(', ') || '待确认',
-      component.interactionHints.join('<br>') || '无直接交互',
-      component.layoutHints.join('<br>') || '按父布局确认',
-      component.evidence,
-    ])));
-    lines.push('');
-  }
 
   lines.push('## 五、状态与交互');
   if (source.sfc?.state.length) {
     lines.push('### 状态模型');
-    lines.push(markdownTable(['名称', '类型', '分类', '迁移建议', '证据'], source.sfc.state.map((state) => [
+    lines.push(markdownTable(['状态/能力', '分类', 'Flutter owner 建议', '迁移建议'], source.sfc.state.map((state) => [
       state.name,
-      state.kind,
       state.category,
+      ownerForStateCategory(state.category),
       state.migrationHint,
-      state.evidence,
     ])));
     lines.push('');
   }
   if (source.sfc?.lifecycle.length) {
     lines.push('### 生命周期与副作用');
-    lines.push(markdownTable(['Hook/副作用', '目标', '迁移建议', '证据'], source.sfc.lifecycle.map((item) => [
-      item.hook,
+    lines.push(markdownTable(['副作用类型', '目标', '迁移建议'], source.sfc.lifecycle.map((item) => [
+      lifecycleLabel(item.hook),
       item.target ?? '待确认',
       item.migrationHint,
-      item.evidence,
     ])));
     lines.push('');
   }
   lines.push('### 交互事件');
-  lines.push(markdownTable(['原型状态/事件', 'Flutter 建议', '备注'], inferInteractionRows(context)));
+  lines.push(markdownTable(['交互类型', 'Flutter 建议', '目标状态/动作'], inferInteractionRows(context)));
   lines.push('');
 
   lines.push('## 六、路由与参数');
@@ -193,36 +163,28 @@ export function renderMigrationSpec(context: MigrationContext): string {
   ]));
   if (source.sfc?.routes.length) {
     lines.push('');
-    lines.push('### Vue 路由行为');
-    lines.push(markdownTable(['行为', '目标/参数', 'Flutter 迁移建议', '证据'], source.sfc.routes.map((route) => [
-      route.action,
+    lines.push('### 页面路由行为');
+    lines.push(markdownTable(['行为', '目标/参数', 'Flutter 迁移建议'], source.sfc.routes.map((route) => [
+      routeActionLabel(route.action),
       [route.target, route.params].filter(Boolean).join(' / ') || '待确认',
       route.migrationHint,
-      route.evidence,
     ])));
   }
   lines.push('');
 
   if (source.sfc?.layout.length) {
     lines.push('## 七、布局模型');
-    lines.push(markdownTable(['选择器', '布局特征', 'Flutter 迁移建议', '证据'], source.sfc.layout.map((layout) => [
-      layout.selector,
-      layout.kind,
-      layout.migrationHint,
-      layout.evidence,
-    ])));
+    lines.push(markdownTable(['布局特征', 'Flutter 迁移建议'], compactLayoutRows(context)));
     lines.push('');
   }
 
   lines.push('## 八、主题 Token 映射');
   if (source.sfc?.styleTokens.length) {
-    lines.push('### Vue Token 使用位置');
-    lines.push(markdownTable(['选择器', '属性', 'Token/硬编码值', 'fallback', '证据'], source.sfc.styleTokens.map((token) => [
-      token.selector,
+    lines.push('### 样式 Token 使用位置');
+    lines.push(markdownTable(['样式属性', 'Token/硬编码值', 'fallback'], source.sfc.styleTokens.map((token) => [
       token.property,
       token.token,
       token.fallback ?? '',
-      token.evidence,
     ])));
     lines.push('');
   }
@@ -250,15 +212,6 @@ export function renderMigrationSpec(context: MigrationContext): string {
   lines.push(markdownTable(['场景', '推荐组件'], context.target.reusableWidgets.map((widget) => ['通用能力', widget])));
   lines.push('');
 
-  lines.push('## 原型 Notes');
-  lines.push(source.notes ? source.notes.trim() : '未找到 notes 文档，需人工补充页面业务说明。');
-  lines.push('');
-
-  lines.push('## Capture');
-  lines.push(`- screenshot：${context.capture?.screenshotPath ? relativeOrAbsolute(process.cwd(), context.capture.screenshotPath) : '未生成'}`);
-  lines.push(`- dom-snapshot：${context.capture?.domSnapshotPath ? relativeOrAbsolute(process.cwd(), context.capture.domSnapshotPath) : '未生成'}`);
-  lines.push('');
-
   lines.push('## 十二、人工确认项');
   for (const question of context.recommendations.manualQuestions) {
     lines.push(`- [ ] ${question}`);
@@ -273,7 +226,7 @@ export function renderMigrationSpec(context: MigrationContext): string {
   lines.push(`请基于本文档在 YouFi Flutter App 中实现 ${title} 页面。`);
   lines.push(`目标模块优先放在 lib/app/modules/${context.target.suggestedModule ?? '<待确认模块>'}。`);
   lines.push('实现时优先复用本文档列出的 common widgets、themeService.colors、themeService.textStyles 和现有翻译体系。');
-  lines.push('不要直译 Vue DOM；请按 Flutter 页面、Controller、私有 Widget、i18n、资源几个部分拆分实现。');
+  lines.push('请按 Flutter 页面、Controller、私有 Widget、i18n、资源几个部分拆分实现；不要逐层照搬来源页面结构。');
   lines.push('```');
   lines.push('');
 
@@ -297,26 +250,87 @@ function inferInteractionRows(context: MigrationContext): string[][] {
   const sfcInteractions = context.source.sfc?.interactions ?? [];
   if (sfcInteractions.length > 0) {
     return sfcInteractions.slice(0, 20).map((interaction) => [
-      interaction.evidence,
+      interactionLabel(interaction.kind),
       suggestInteractionMigration(interaction.kind),
-      interaction.target ?? '',
+      interactionTargetLabel(interaction.target ?? ''),
     ]);
   }
 
-  const rows: string[][] = [];
-  const source = context.source.sourceCode ?? '';
+  return [['待确认', '根据业务需求补充 callback、表单状态或导航行为。', '待确认']];
+}
 
-  if (/@click/.test(source)) {
-    rows.push(['@click 事件', '放入 Controller 方法或 Widget callback', '需要确认是否涉及接口、弹窗或路由跳转']);
-  }
-  if (/v-model/.test(source)) {
-    rows.push(['v-model 表单状态', '使用 TextEditingController / Rx 字段管理', '注意输入校验和焦点状态']);
-  }
-  if (/\b(ref|reactive|computed)\s*\(/.test(source)) {
-    rows.push(['Vue reactive/computed 状态', '迁移为 GetX Controller 状态和 getter', '避免把 mock 状态写死在 Widget']);
-  }
+function ownerForStateCategory(category: string): string {
+  if (category === 'ui-state') return 'Controller 或局部 StatefulWidget';
+  if (category === 'mock-data') return 'Repository / UI model';
+  if (category === 'chart-data') return 'Adapter / Service';
+  if (category === 'navigation') return 'Controller';
+  if (category === 'handler') return 'Controller callback';
+  if (category === 'derived-data') return 'Controller getter / Adapter';
+  return '人工确认';
+}
 
-  return rows.length > 0 ? rows : [['待确认', '阅读 Vue script 和 notes 后补充', 'Phase 1 未做完整交互语义分析']];
+function lifecycleLabel(hook: string): string {
+  if (hook === 'onMounted') return '页面初始化';
+  if (hook === 'onBeforeUnmount') return '页面销毁清理';
+  if (hook === 'event-listener') return '事件监听';
+  if (hook === 'watch') return '状态监听';
+  return '副作用';
+}
+
+function routeActionLabel(action: string): string {
+  if (action === 'navigate') return '页面跳转';
+  if (action === 'back') return '返回上一页';
+  if (action === 'read-query') return '读取路由参数';
+  return '路由行为';
+}
+
+function compactLayoutRows(context: MigrationContext): string[][] {
+  const grouped = new Map<string, string[]>();
+  for (const item of context.source.sfc?.layout ?? []) {
+    const label = layoutKindLabel(item.kind);
+    const values = grouped.get(label) ?? [];
+    values.push(item.migrationHint);
+    grouped.set(label, values);
+  }
+  return [...grouped.entries()].map(([kind, hints]) => [kind, [...new Set(hints)].slice(0, 3).join('<br>')]);
+}
+
+function layoutKindLabel(kind: string): string {
+  if (kind === 'fixed') return '固定区域';
+  if (kind === 'sticky') return '吸顶区域';
+  if (kind === 'scroll') return '滚动容器';
+  if (kind === 'safe-area') return '安全区适配';
+  if (kind === 'z-index') return '层级遮挡';
+  if (kind === 'absolute') return '叠层定位';
+  if (kind === 'flex') return '弹性布局';
+  if (kind === 'grid') return '网格布局';
+  if (kind === 'spacing') return '间距系统';
+  return '布局约束';
+}
+
+function interactionLabel(kind: string): string {
+  if (kind === 'click') return '点击事件';
+  if (kind === 'model') return '表单输入';
+  if (kind === 'conditional') return '条件展示';
+  if (kind === 'loop') return '列表渲染';
+  if (kind === 'state') return '状态字段';
+  if (kind === 'computed') return '派生状态';
+  if (kind === 'watch') return '状态监听';
+  return '交互';
+}
+
+function interactionTargetLabel(target: string): string {
+  if (!target) return '待确认';
+  if (/pushPage|toNamed|Navigator|route/i.test(target)) return '页面跳转';
+  if (/history\.back|Get\.back|goBack|back/i.test(target)) return '返回上一页';
+  if (/handleTrade|buy|sell/i.test(target)) return '交易操作';
+  if (/option/i.test(target)) return '期权入口';
+  if (/favorite/i.test(target)) return '收藏状态';
+  const assignment = target.match(/^([a-zA-Z_$][\w$]*)\s*=/)?.[1];
+  if (assignment) return assignment;
+  const call = target.match(/^([a-zA-Z_$][\w$]*)\s*\(/)?.[1];
+  if (call) return call;
+  return sanitizeImplementationText(target);
 }
 
 function suggestInteractionMigration(kind: string): string {
@@ -325,14 +339,14 @@ function suggestInteractionMigration(kind: string): string {
   if (kind === 'conditional') return '迁移为 Obx/Visibility/条件渲染，确认默认状态。';
   if (kind === 'loop') return '迁移为 ListView/Column map，确认数据模型和空态。';
   if (kind === 'state') return '迁移为 Controller 中的 Rx/普通字段，避免写死 mock。';
-  if (kind === 'computed') return '迁移为 Controller getter 或派生状态。';
+  if (kind === 'computed') return '迁移为 Controller getter、Adapter 输出或派生状态。';
   if (kind === 'watch') return '迁移为状态监听、生命周期或 worker。';
-  return '阅读 Vue template/script 后补充。';
+  return '根据 Flutter 页面结构和业务需求补充。';
 }
 
 function tokenTable(mappings: TokenMapping[]): string {
   if (mappings.length === 0) return '暂无命中。';
-  return markdownTable(['原型样式', 'Flutter 写法', '命中情况'], mappings.map((mapping) => [
+  return markdownTable(['样式来源', 'Flutter 写法', '命中情况'], mappings.map((mapping) => [
     mapping.source,
     mapping.target ?? '待确认',
     `${mapping.confidence}${mapping.reason ? `：${mapping.reason}` : ''}`,
@@ -342,23 +356,40 @@ function tokenTable(mappings: TokenMapping[]): string {
 function assetTable(context: MigrationContext): string {
   const assets = context.source.sfc?.assets ?? [];
   if (assets.length === 0) {
-    return markdownTable(['资源', '原型路径/选择器', 'Flutter 建议路径', '迁移建议'], [
+    return markdownTable(['资源', 'Flutter 建议路径', '迁移建议'], [
       [
-        '待从 Vue template/style 中人工确认',
-        context.source.vueRelativePath ?? context.source.vuePath,
+        '待确认资源清单',
         context.target.assetDirectories.join(', ') || 'assets/images',
         '如存在 dark_images 等价资源则同步补齐',
       ],
     ]);
   }
 
-  return markdownTable(['类型', '原型资源/选择器', 'Flutter 建议路径', '迁移建议', '证据'], assets.map((asset) => [
+  return markdownTable(['类型', '资源线索', 'Flutter 建议路径', '迁移建议'], assets.map((asset) => [
     asset.kind,
-    asset.source ?? asset.selector ?? 'inline / class based',
+    asset.source ? sanitizeImplementationText(asset.source) : asset.kind === 'inline-svg' ? '内联矢量图' : '图标/图片资源',
     context.target.assetDirectories.join(', ') || 'assets/images',
-    asset.migrationHint,
-    asset.evidence,
+    sanitizeImplementationText(asset.migrationHint),
   ]));
+}
+
+function sanitizeImplementationText(value: string): string {
+  return value
+    .replace(/Vue\s*/gi, '')
+    .replace(/DOM/gi, '页面结构')
+    .replace(/@click=\"([^\"]+)\"/g, '$1')
+    .replace(/v-if=\"([^\"]+)\"/g, '$1')
+    .replace(/v-for=\"([^\"]+)\"/g, '$1')
+    .replace(/v-model=\"([^\"]+)\"/g, '$1')
+    .replace(/class=\"[^\"]+\"/g, '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/\b(ref|reactive|computed|watch)\b/g, (match) => {
+      if (match === 'ref' || match === 'reactive') return 'state';
+      if (match === 'computed') return 'derived state';
+      return 'state listener';
+    })
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function i18nTable(i18n: Record<string, unknown> | undefined): string {

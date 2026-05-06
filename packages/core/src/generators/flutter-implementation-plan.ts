@@ -20,8 +20,8 @@ export function buildFlutterImplementationPlan(input: BuildFlutterImplementation
   const pageName = toPascalCase(input.source.screenId ?? input.source.name ?? input.source.label ?? 'MigratedPage');
   const moduleName = input.target.suggestedModule ?? input.source.module ?? 'feature';
   const baseDir = `lib/app/modules/${moduleName}/${toSnakeCase(pageName)}`;
-  const fileTree = buildFileTree(baseDir, pageName, input.source, complexity);
   const widgetTree = buildWidgetTree(pageName, input.source, input.widgets, complexity);
+  const fileTree = buildFileTree(baseDir, pageName, input.source, complexity, widgetTree);
   const stateStrategy = buildStateStrategy(input.source, complexity);
   const controllerBoundaries = buildControllerBoundaries(pageName, input.source, complexity);
   const widgetContracts = buildWidgetContracts(pageName, input.source, widgetTree, complexity);
@@ -64,7 +64,7 @@ function buildSummary(complexity: FlutterImplementationPlan['complexity'], sourc
   }
   const hasChart = source.sfc?.components.some((component) => component.role === 'chart') ?? false;
   const chartNote = hasChart ? '图表/指标计算应单独放入 adapter 或 service，避免在 Widget build 中复算。' : '';
-  return `该页面属于复杂页面，应使用父页面编排 + 多个子 Widget + Controller/adapter 分层实现；说明书只给状态管理组合建议，不应把 Vue ref/computed/watch 直接翻译成 GetX。${chartNote}`;
+  return `该页面属于复杂页面，应使用父页面编排 + 多个子 Widget + Controller/adapter 分层实现；状态管理建议应服务于 Flutter 架构边界，避免把来源页面的临时状态逐项搬进 GetX。${chartNote}`;
 }
 
 function buildFileTree(
@@ -72,6 +72,7 @@ function buildFileTree(
   pageName: string,
   source: PrototypePageAnalysis,
   complexity: FlutterImplementationPlan['complexity'],
+  widgetTree: FlutterWidgetPlan[],
 ): FlutterPlannedFile[] {
   const files: FlutterPlannedFile[] = [
     {
@@ -85,7 +86,7 @@ function buildFileTree(
     files.push({
       path: `${baseDir}/${toSnakeCase(pageName)}_controller.dart`,
       responsibility: '管理页面级 UI 状态、路由参数、滚动控制和事件分发。',
-      notes: '不要一对一复制 Vue ref；按 UI 状态、业务数据、派生数据重新归类。',
+      notes: '按 UI 状态、业务数据、派生数据重新归类，不要把来源页面临时状态逐项搬迁。',
     });
     files.push({
       path: `${baseDir}/${toSnakeCase(pageName)}_binding.dart`,
@@ -93,12 +94,11 @@ function buildFileTree(
     });
   }
 
-  for (const component of source.sfc?.components.slice(0, complexity === 'complex' ? 12 : 6) ?? []) {
-    if (component.role === 'unknown') continue;
+  for (const widget of widgetTree.filter((item) => item.parent).slice(0, complexity === 'complex' ? 12 : 6)) {
     files.push({
-      path: `${baseDir}/widgets/${toSnakeCase(component.name)}.dart`,
-      responsibility: widgetResponsibility(component.role, component.title),
-      notes: component.evidence,
+      path: `${baseDir}/widgets/${toSnakeCase(widget.name)}.dart`,
+      responsibility: widget.buildHint,
+      notes: widget.role,
     });
   }
 
@@ -142,15 +142,8 @@ function buildWidgetTree(
     },
   ];
 
-  for (const component of source.sfc?.components ?? []) {
-    if (component.role === 'unknown') continue;
-    plans.push({
-      name: `${pageName}${component.name}`,
-      parent: component.role === 'bottom-actions' ? pageWidget : `${pageName}Body`,
-      role: component.role,
-      buildHint: buildHintForRole(component.role),
-      stateAccess: ['header', 'bottom-actions', 'tabs', 'section-tabs'].includes(component.role) ? 'props' : 'props',
-    });
+  for (const component of businessWidgets(pageName, source, complexity)) {
+    plans.push(component);
   }
 
   if (plans.length <= 2) {
@@ -166,6 +159,49 @@ function buildWidgetTree(
   }
 
   return dedupeBy(plans, (plan) => plan.name).slice(0, 24);
+}
+
+function businessWidgets(
+  pageName: string,
+  source: PrototypePageAnalysis,
+  complexity: FlutterImplementationPlan['complexity'],
+): FlutterWidgetPlan[] {
+  const components = source.sfc?.components ?? [];
+  const hasRole = (role: string): boolean => components.some((component) => component.role === role);
+  const hasName = (pattern: RegExp): boolean => components.some((component) => pattern.test(component.name));
+  const widgets: FlutterWidgetPlan[] = [];
+  const body = `${pageName}Body`;
+
+  if (hasRole('header')) {
+    widgets.push({ name: `${pageName}Header`, parent: `${pageName}Page`, role: 'header', buildHint: buildHintForRole('header'), stateAccess: 'props' });
+  }
+  if (hasRole('summary') || hasName(/Price|Info|Quote/i)) {
+    widgets.push({ name: `${pageName}QuoteSummary`, parent: body, role: 'summary', buildHint: '展示核心行情、涨跌幅、关键指标和收藏/更多入口状态。', stateAccess: 'props' });
+  }
+  if (hasRole('tabs')) {
+    widgets.push({ name: `${pageName}PrimaryTabs`, parent: body, role: 'tabs', buildHint: '展示一级页签和选中态，通过回调通知父级切换。', stateAccess: 'props' });
+  }
+  if (hasRole('section-tabs')) {
+    widgets.push({ name: `${pageName}SectionTabs`, parent: body, role: 'section-tabs', buildHint: '展示内容区锚点页签，通过回调触发滚动定位。', stateAccess: 'props' });
+  }
+  if (source.sfc?.state.some((state) => state.category === 'chart-data') || hasRole('chart')) {
+    widgets.push({ name: `${pageName}ChartPanel`, parent: body, role: 'chart', buildHint: buildHintForRole('chart'), stateAccess: 'props' });
+  }
+  if (hasName(/Profile|Objective|Fund/i)) {
+    widgets.push({ name: `${pageName}FundOverviewSection`, parent: body, role: 'content-section', buildHint: '展示基金概况、投资目标等内容区，数据由 UI model 提供。', stateAccess: 'props' });
+  }
+  if (hasName(/Holding|List|History|Metric|QuoteExpand/i) || hasRole('list')) {
+    widgets.push({ name: `${pageName}DataSections`, parent: body, role: 'list', buildHint: '展示持仓、历史、指标等数据区块；根据数据量选择 Column/ListView。', stateAccess: 'props' });
+  }
+  if (source.sfc?.fixedBottom) {
+    widgets.push({ name: `${pageName}BottomTradeBar`, parent: `${pageName}Page`, role: 'bottom-actions', buildHint: buildHintForRole('bottom-actions'), stateAccess: 'props' });
+  }
+
+  if (widgets.length === 0 && complexity === 'simple') {
+    widgets.push({ name: `${pageName}Content`, parent: body, role: 'content-section', buildHint: '展示页面主要内容，按卡片或信息行拆成私有方法。', stateAccess: 'props' });
+  }
+
+  return widgets;
 }
 
 function buildStateStrategy(
@@ -192,7 +228,7 @@ function buildStateStrategy(
     strategies.push({
       concern: '业务数据与 mock 数据',
       owner: 'repository',
-      recommendation: '不要把 Vue mock 数组直接写入 Widget；先定义 UI model，再由接口/repository/fixture 填充。',
+      recommendation: '不要把临时 mock 数组直接写入 Widget；先定义 UI model，再由接口/repository/fixture 填充。',
       evidence: mockData.slice(0, 16).join(', '),
     });
   }
@@ -251,7 +287,7 @@ function buildControllerBoundaries(
       name: `${pageName}Controller`,
       responsibility: '页面 orchestration controller；负责状态组合、生命周期和事件分发，不负责绘制细节。',
       owns,
-      avoids: ['逐 DOM 翻译 Vue 模板', '在 build 中做重计算', '让所有子 Widget 直接读整个 Controller'],
+      avoids: ['逐层照搬来源页面结构', '在 build 中做重计算', '让所有子 Widget 直接读整个 Controller'],
     },
     {
       name: `${pageName}Data/Chart Adapter`,
@@ -292,15 +328,15 @@ function buildWidgetContracts(
 
 function buildDoNotTranslate(source: PrototypePageAnalysis, complexity: FlutterImplementationPlan['complexity']): string[] {
   const rules = [
-    '不要把 Vue DOM/class 逐层翻译成 Flutter Widget；按业务区块和 Flutter 布局模型重组。',
-    '不要把 Vue mock 数据直接写在 Widget build 中；先确认接口/model/fixture 边界。',
+    '不要把来源页面结构逐层翻译成 Flutter Widget；按业务区块和 Flutter 布局模型重组。',
+    '不要把临时 mock 数据直接写在 Widget build 中；先确认接口/model/fixture 边界。',
     '不要让每个子 Widget 都直接依赖整个 Controller；优先 props + callbacks。',
   ];
   if (complexity === 'complex') {
-    rules.push('不要把所有 ref/computed/watch 一对一迁移为 Rx；先按 UI 状态、业务数据、派生数据、生命周期副作用分类。');
+    rules.push('不要把来源页面的临时状态一对一迁移为 Rx；先按 UI 状态、业务数据、派生数据、生命周期副作用分类。');
   }
   if (source.sfc?.state.some((state) => state.category === 'chart-data')) {
-    rules.push('不要逐行翻译 SVG/path/K 线指标计算；图表数据和绘制策略需要单独设计 adapter 或 CustomPainter。');
+    rules.push('不要逐行翻译矢量路径或 K 线指标计算；图表数据和绘制策略需要单独设计 adapter 或 CustomPainter。');
   }
   if (source.sfc?.layout.some((layout) => ['fixed', 'sticky', 'scroll'].includes(layout.kind))) {
     rules.push('不要忽略 fixed/sticky/scroll/safe-area；先确定 Scaffold、Stack、ScrollController/Sliver 的组合。');
