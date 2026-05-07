@@ -111,7 +111,7 @@ packages/core/src/
 | `adapters/target/flutter-app/flutter-context.ts` | 扫描 Flutter 模块、routes、translations、assets、common widgets 和相似文件 | target/flutter |
 | `adapters/target/flutter-app/token-mapper.ts` | 将 source token 和 computed style 映射到 Flutter theme 写法 | target/flutter |
 | `adapters/target/flutter-app/flutter-recommendations.ts` | 生成 Flutter recommendations、风险和人工确认项 | target/flutter |
-| `adapters/target/flutter-app/flutter-implementation-plan.ts` | 生成 Flutter 文件拆分、Widget 树、状态策略和 Controller/Adapter 边界 | target/flutter |
+| `adapters/target/flutter-app/flutter-implementation-plan.ts` | 生成 Flutter 文件拆分、Widget 组合、状态策略和 Controller/Adapter 边界 | target/flutter |
 | `adapters/target/flutter-app/flutter-migration-spec.ts` | 将 `MigrationContext` 渲染为 Flutter-facing Markdown spec | target/flutter |
 | `adapters/target/flutter-app/planners/page-pattern-classifier.ts` | 根据 source facts 判断页面模式，服务 Flutter implementation plan | target/flutter |
 | `adapters/target/flutter-app/planners/widget-blueprints.ts` | 根据页面模式生成 Flutter Widget blueprint | target/flutter |

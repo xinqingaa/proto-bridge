@@ -8,7 +8,7 @@
 
 - 页面应该落到哪个 Flutter 模块和哪些文件？
 - 页面应该拆成哪些父 Widget 和子 Widget？
-- 子 Widget 应该接收哪些输入和 callback？
+- 子 Widget 应该接收哪些输入数据、抛出哪些交互回调？
 - 哪些状态放 Controller，哪些放 Repository、Adapter、Model 或局部 Widget？
 - 路由、主题、i18n、资源和公共组件应该如何接入？
 - 哪些信息确定，哪些推断，哪些必须人工确认？
@@ -19,7 +19,7 @@
 - `migration-context.json` 可以保留调试证据，`migration-spec.md` 只保留实现计划。
 - 不要把来源页面结构逐层翻译成 Flutter Widget。
 - 不要把临时 mock 数据直接写在 Widget build 中。
-- 不要让每个子 Widget 都直接依赖整个 Controller；优先 props + callbacks。
+- 不要让每个子 Widget 都直接依赖整个 Controller；优先通过构造参数传入数据，并用回调上报交互。
 - 缺少上下文时，要说明缺口和下一步补齐方式。
 
 ## 3. 质量分级
@@ -33,7 +33,7 @@
 
 ### Silver：标准输出
 
-- 能生成 Flutter 实现规划，包括文件拆分、Widget 组合树、输入契约和状态管理组合建议。
+- 能生成 Flutter 实现规划，包括文件树、Widget 组合、输入数据/交互回调和状态管理建议。
 - 能识别页面模式，例如 `quote-detail`、`detail`、`list`、`form`、`trade-ticket`、`portfolio`、`settings`、`auth`、`wizard`。
 - 能把 source facts 消化为 Flutter 视角。
 - 能区分 UI 状态、业务数据、派生数据、生命周期副作用、图表/adapter 数据。
@@ -64,14 +64,12 @@
 
 必须包含：
 
-- 目标文件拆分。
-- Widget 组合树。
-- Widget 输入契约。
-- 状态管理组合建议。
-- Controller/Adapter 边界。
+- 目标文件拆分，优先用文件树呈现公共目录和层级。
+- Widget 组合，合并说明父子关系、职责、输入数据、交互回调和状态访问建议。
+- 状态管理与数据边界建议，简洁说明 Controller、Repository、Model/Adapter 的分工。
 - 禁止直译项。
 
-### 4.3 页面结构拆分
+### 4.3 Widget 组合
 
 必须从 Flutter 视角描述：
 
@@ -84,7 +82,9 @@
 - BottomActions。
 - Dialog / Sheet / Toast。
 
-### 4.4 状态与交互
+Widget 的“输入数据”指构造参数接收的展示模型或状态片段；“交互回调”指 Widget 对外抛出的用户操作，例如 `onTabChanged`、`onBuy`。
+
+### 4.4 状态与交互建议
 
 必须说明：
 
@@ -94,7 +94,7 @@
 - 交互事件。
 - 生命周期副作用。
 
-复杂页面不能把来源页面临时状态逐项搬进 GetX；必须先归类，再给 Flutter 架构建议。
+复杂页面不能把来源页面临时状态逐项搬进 GetX；必须先按分类摘要给 Flutter 架构建议。生命周期默认优先 `Controller.onInit` / `Controller.onClose`；只有依赖首帧布局、滚动定位或 `BuildContext` 时再考虑 `onReady` / 首帧回调。
 
 ### 4.5 路由与参数
 
@@ -113,13 +113,12 @@
 - Flutter 对应实现建议。
 - 复杂滚动、吸顶、底部栏遮挡和安全区风险。
 
-### 4.7 Token、i18n 和资源
+### 4.7 CSS 样式、i18n 和资源
 
 必须包含：
 
-- 已命中的颜色、字体 token。
-- 样式 token 使用位置。
-- 未命中的 token 和处理建议。
+- 颜色使用位置、CSS 变量名、Flutter 主题和最终色值。
+- 字体使用位置、CSS mixin 或反向匹配到的 mixin、Flutter textStyle 和原始样式。
 - i18n key 表。
 - Flutter `.tr` 使用建议。
 - 资源线索和 asset 目标目录。
@@ -155,112 +154,95 @@
 
 ## 一、迁移结论
 - 页面复杂度：
-- Flutter 实现复杂度：simple / moderate / complex
+- Flutter 实现复杂度：简单 / 中等 / 复杂
+- 页面模式：
+- 模式识别置信度：
 - 建议是否直接实现：
 - 主要风险：
 - 实现规划：
 
 ## 二、Flutter 实现规划
 ### 目标文件拆分
+```text
+lib/app/modules/<module>/<screen>/
+├── <screen>_page.dart
+└── widgets/
+    └── <screen>_body.dart
+```
+
 | 文件 | 职责 | 备注 |
 | --- | --- | --- |
 
-### Widget 组合树
-| Widget | 父级 | 角色 | 构建建议 | 状态访问 |
-| --- | --- | --- | --- | --- |
+### Widget 组合
+| Widget | 所属/父级 | 职责 | 输入数据 | 交互回调 | 状态访问建议 |
+| --- | --- | --- | --- | --- | --- |
 
-### Widget 输入契约
-| Widget | 输入 | 回调 | 是否直接读 Controller | 备注 |
-| --- | --- | --- | --- | --- |
-
-### 状态管理组合建议
+### 状态管理与数据边界建议
 | 关注点 | 建议 owner | 建议 |
 | --- | --- | --- |
-
-### Controller/Adapter 边界
-| 边界 | 职责 | 负责 | 避免 |
-| --- | --- | --- | --- |
 
 ### 禁止直译项
 - 不要把来源页面结构逐层翻译成 Flutter Widget；按业务区块和 Flutter 布局模型重组。
 - 不要把临时 mock 数据直接写在 Widget build 中；先确认接口/model/fixture 边界。
-- 不要让每个子 Widget 都直接依赖整个 Controller；优先 props + callbacks。
+- 不要让每个子 Widget 都直接依赖整个 Controller；优先通过构造参数传入数据，并用回调上报交互。
 
-## 三、页面结构拆分
-- <Page>：
-- <Body>：
-- <Header>：
-- <ContentSection>：
-- <BottomActions>：
-
-## 四、Flutter Widget 拆分建议
-| Widget | 父级 | 职责 | 状态访问 |
-| --- | --- | --- | --- |
-
-## 五、状态与交互
-### 状态模型
-| 状态/能力 | 分类 | Flutter owner 建议 | 迁移建议 |
-| --- | --- | --- | --- |
+## 三、状态与交互建议
+### 状态模型摘要
+| 分类 | 涉及状态/能力 | Flutter 建议 |
+| --- | --- | --- |
 
 ### 生命周期与副作用
-| 副作用类型 | 目标 | 迁移建议 |
+| 副作用类型 | 目标 | Flutter 建议 |
 | --- | --- | --- |
 
 ### 交互事件
-| 交互类型 | Flutter 建议 | 目标状态/动作 |
+| 交互类型 | 涉及目标 | Flutter 建议 |
 | --- | --- | --- |
 
-## 六、路由与参数
-| 目标路由来源 | Flutter GetX 建议 |
+## 四、路由与布局
+### 路由与参数
+| 原型 route/query | Flutter GetX 建议 |
 | --- | --- |
 
 ### 页面路由行为
 | 行为 | 目标/参数 | Flutter 迁移建议 |
 | --- | --- | --- |
 
-## 七、布局模型
+### 布局模型
 | 布局特征 | Flutter 迁移建议 |
 | --- | --- |
 
-## 八、主题 Token 映射
-### 样式 Token 使用位置
-| 样式属性 | Token/硬编码值 | fallback |
-| --- | --- | --- |
+## 五、CSS 样式到 Flutter 主题映射
+### 颜色
+| 使用位置 | 变量名 | Flutter 主题 | 色值 |
+| --- | --- | --- | --- |
 
-### Colors
-| 样式来源 | Flutter 写法 | 命中情况 |
-| --- | --- | --- |
+### 字体
+| 使用位置 | 变量名 / mixin | Flutter 文本主题 | 原始样式 |
+| --- | --- | --- | --- |
 
-### Typography
-| 样式来源 | Flutter 写法 | 命中情况 |
-| --- | --- | --- |
-
-### Unresolved
-| 样式来源 | Flutter 写法 | 命中情况 |
-| --- | --- | --- |
-
-## 九、文案与 i18n
+## 六、文案与 i18n
 | key | zh_CN | zh_HK | en_US | Flutter 建议 |
 | --- | --- | --- | --- | --- |
 
-## 十、资源迁移
+## 七、资源迁移
 | 类型 | 资源线索 | Flutter 建议路径 | 迁移建议 |
 | --- | --- | --- | --- |
 
-## 十一、可复用 Flutter 组件
+## 八、可复用 Flutter 组件
 | 场景 | 推荐组件 |
 | --- | --- |
 
-## 十二、人工确认项
+## 九、人工确认项
 - [ ] P0：
 - [ ] P1：
 - [ ] P2：
 
-## 十三、AI 实现提示词
+## 十、AI 实现提示词
 ```text
 请基于本文档在 YouFi Flutter App 中实现 <页面名> 页面。
 目标模块优先放在 lib/app/modules/<module>。
 实现时优先复用本文档列出的 common widgets、themeService.colors、themeService.textStyles 和现有翻译体系。
-请按 Flutter 页面、Controller、私有 Widget、i18n、资源几个部分拆分实现；不要逐层照搬来源页面结构。
+请按目标文件拆分、Widget 组合、状态建议、路由布局、CSS 样式映射、i18n 和资源几个部分实现；不要逐层照搬来源页面结构。
 ```
 ```

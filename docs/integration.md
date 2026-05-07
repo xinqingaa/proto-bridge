@@ -184,8 +184,8 @@ Capture 失败时，core 会把错误写入 warnings，不阻断静态上下文�
 推荐交付方式：
 
 1. 先让 AI 阅读 `migration-spec.md`。
-2. 要求 AI 按“目标文件拆分”和“Widget 组合树”实现。
-3. 要求 AI 对照“状态与交互”“路由与参数”“Token/i18n/资源”逐项处理。
+2. 要求 AI 按“目标文件拆分”和“Widget 组合”实现。
+3. 要求 AI 对照“状态与交互建议”“路由与布局”“CSS 样式/i18n/资源”逐项处理。
 4. 要求 AI 不处理未确认的 P0/P1 问题，或者显式留下 TODO。
 5. 需要追溯证据时，再查看 `migration-context.json` 中的 source/capture/target facts。
 

@@ -273,8 +273,8 @@ lib/app/widgets/**/*.dart
 
 - 判断页面复杂度。
 - 生成目标文件拆分。
-- 生成 Widget 组合树。
-- 生成 Widget 输入契约。
+- 生成 Widget 组合。
+- 生成 Widget 输入数据与交互回调建议。
 - 生成状态管理组合建议。
 - 生成 Controller/Adapter 边界。
 - 生成禁止直译项。
@@ -300,12 +300,12 @@ Flutter-facing 迁移说明书，包含：
 - 页面元信息。
 - 迁移结论。
 - Flutter 实现规划。
-- 页面结构拆分。
+- 目标文件树和 Widget 组合。
 - Widget 拆分建议。
 - 状态与交互。
 - 路由与参数。
 - 布局模型。
-- 主题 Token 映射。
+- CSS 样式到 Flutter 主题映射。
 - i18n。
 - 资源迁移。
 - 可复用 Flutter 组件。

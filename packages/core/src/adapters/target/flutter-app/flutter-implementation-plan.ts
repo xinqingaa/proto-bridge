@@ -65,15 +65,45 @@ function buildSummary(
   pattern: string,
   confidence: string,
 ): string {
+  const patternText = pagePatternLabel(pattern);
+  const confidenceText = confidenceLabel(confidence);
   if (complexity === 'simple') {
-    return `该页面适合用一个页面 Widget + 少量私有子 Widget 实现；识别页面模式为 ${pattern}（${confidence}），状态管理可以保持轻量，重点对齐 UI、文案和 token。`;
+    return `该页面适合用一个页面 Widget + 少量私有子 Widget 实现；页面模式识别为${patternText}，置信度${confidenceText}；状态管理可以保持轻量，重点对齐 UI、文案和主题样式。`;
   }
   if (complexity === 'moderate') {
-    return `该页面建议拆成父页面、Controller 和若干子 Widget；识别页面模式为 ${pattern}（${confidence}），Controller 负责页面级 UI 状态，子 Widget 通过输入契约接收数据和回调。`;
+    return `该页面建议拆成父页面、Controller 和若干子 Widget；页面模式识别为${patternText}，置信度${confidenceText}；Controller 负责页面级 UI 状态，子 Widget 通过构造参数接收数据并通过回调上报交互。`;
   }
   const hasChart = source.sfc?.components.some((component) => component.role === 'chart') ?? false;
   const chartNote = hasChart ? '图表/指标计算应单独放入 adapter 或 service，避免在 Widget build 中复算。' : '';
-  return `该页面属于复杂页面，识别页面模式为 ${pattern}（${confidence}）；应使用父页面编排 + 多个子 Widget + Controller/adapter 分层实现；状态管理建议应服务于 Flutter 架构边界，避免把来源页面的临时状态逐项搬进 GetX。${chartNote}`;
+  return `该页面属于复杂页面，页面模式识别为${patternText}，置信度${confidenceText}；建议使用父页面编排 + 多个子 Widget + Controller/数据适配层分层实现；状态管理只保留 Flutter 实现需要的页面状态，避免把来源页面的临时状态逐项搬进 GetX。${chartNote}`;
+}
+
+function pagePatternLabel(pattern: string): string {
+  const labels: Record<string, string> = {
+    detail: '详情页',
+    dashboard: '数据看板',
+    list: '列表页',
+    form: '表单页',
+    'trade-ticket': '交易下单页',
+    'quote-detail': '行情详情页',
+    portfolio: '资产/持仓页',
+    'record-list': '记录列表页',
+    settings: '设置页',
+    auth: '认证页',
+    onboarding: '引导页',
+    wizard: '步骤流程页',
+    article: '内容详情页',
+    'empty-state': '空状态页',
+    unknown: '通用页面',
+  };
+  return labels[pattern] ?? pattern;
+}
+
+function confidenceLabel(confidence: string): string {
+  if (confidence === 'high') return '高';
+  if (confidence === 'medium') return '中';
+  if (confidence === 'low') return '低';
+  return confidence;
 }
 
 function buildFileTree(
@@ -189,7 +219,7 @@ function buildStateStrategy(
     strategies.push({
       concern: '生命周期与副作用',
       owner: 'controller',
-      recommendation: 'ScrollController/listener/watch 副作用必须有明确注册和释放位置，优先 onReady/onClose 或 StatefulWidget dispose。',
+      recommendation: 'ScrollController/listener/watch 副作用必须有明确注册和释放位置；默认放 Controller.onInit/onClose，只有依赖首帧布局或滚动定位时再使用 onReady/首帧回调。',
       evidence: sfc?.lifecycle.map((item) => item.evidence).join(' | ') ?? '',
     });
   }
@@ -263,7 +293,7 @@ function buildDoNotTranslate(source: PrototypePageAnalysis, complexity: FlutterI
   const rules = [
     '不要把来源页面结构逐层翻译成 Flutter Widget；按业务区块和 Flutter 布局模型重组。',
     '不要把临时 mock 数据直接写在 Widget build 中；先确认接口/model/fixture 边界。',
-    '不要让每个子 Widget 都直接依赖整个 Controller；优先 props + callbacks。',
+    '不要让每个子 Widget 都直接依赖整个 Controller；优先通过构造参数传入数据，并用回调上报交互。',
   ];
   if (complexity === 'complex') {
     rules.push('不要把来源页面的临时状态一对一迁移为 Rx；先按 UI 状态、业务数据、派生数据、生命周期副作用分类。');

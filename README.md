@@ -65,7 +65,7 @@ ProtoBridge 不负责：
 - **Token 映射**：从 CSS var、mixin 和运行时样式中提取 token，并映射到 Flutter theme 写法。
 - **Target 分析**：扫描 Flutter 模块、routes、translations、assets、common widgets 和相似文件。
 - **Target 规范约束**：把 target 仓库中已经存在的目录结构、命名习惯、路由文件、翻译体系、资源目录、公共组件和相似页面作为 spec 约束来源。
-- **Implementation Planning**：生成 Flutter 文件拆分、Widget 树、Widget 输入契约、状态管理建议、Controller/Adapter 边界和人工确认项。
+- **Implementation Planning**：生成 Flutter 文件树、Widget 组合、输入数据/交互回调、状态管理与数据边界建议和人工确认项。
 - **Spec 生成**：输出 `migration-context.json` 与 `migration-spec.md`。
 
 端到端流转：
@@ -282,11 +282,11 @@ output/stock-trade/
 
 - 页面元信息和迁移结论。
 - Flutter 实现规划。
-- 页面结构拆分和 Widget 拆分建议。
+- 目标文件树和 Widget 组合建议。
 - 状态、交互、生命周期副作用。
 - 路由和参数建议。
 - 布局模型。
-- Token、i18n 和资源迁移建议。
+- CSS 样式到 Flutter 主题映射、i18n 和资源迁移建议。
 - 可复用 Flutter 组件。
 - 人工确认项。
 - AI 实现提示词。
@@ -393,12 +393,12 @@ source facts + target context
 
 规划结果包括：
 
-- `complexity`：simple / moderate / complex。
+- `complexity`：simple / moderate / complex，Markdown 中渲染为简单 / 中等 / 复杂。
 - `fileTree`：目标文件拆分。
-- `widgetTree`：Widget 组合树。
+- `widgetTree`：Widget 组合。
 - `stateStrategy`：状态管理组合建议。
 - `controllerBoundaries`：Controller、Adapter、Repository、Widget 的边界。
-- `widgetContracts`：Widget 输入、回调和是否可读 Controller。
+- `widgetContracts`：Widget 输入数据、交互回调和是否可读 Controller。
 - `doNotTranslate`：禁止直译项。
 - `checklist`：P0/P1/P2 人工确认项。
 

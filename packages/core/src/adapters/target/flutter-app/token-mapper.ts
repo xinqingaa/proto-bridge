@@ -1,18 +1,56 @@
 import type { MapTokensInput, TargetPlatform, TokenMapResult, TokenMapping } from '../../../types/index.js';
 
 const COLOR_TOKEN_MAP: Record<string, string> = {
+  '--color-primary-normal': 'themeService.colors.colorPrimaryNormal',
+  '--color-primary-pressed': 'themeService.colors.colorPrimaryPressed',
   '--color-text-normal': 'themeService.colors.colorTextNormal',
   '--color-text-title': 'themeService.colors.colorTextTitle',
+  '--color-text-regular': 'themeService.colors.colorTextRegular',
   '--color-text-description': 'themeService.colors.colorTextDescription',
   '--color-text-secondary': 'themeService.colors.colorTextSecondary',
   '--color-text-label': 'themeService.colors.colorTextLabel',
+  '--color-text-light': 'themeService.colors.colorTextLight',
+  '--color-text-light-1': 'themeService.colors.colorTextLight1',
   '--color-bg-base': 'themeService.colors.colorBgBase',
+  '--color-bg-1': 'themeService.colors.colorBg1',
   '--color-bg-surface-1': 'themeService.colors.colorBgSurface1',
   '--color-bg-surface-2': 'themeService.colors.colorBgSurface2',
+  '--color-sheet-bg': 'themeService.colors.colorSheetBg',
+  '--color-popup-bg': 'themeService.colors.colorPopupBg',
+  '--color-bg-mask-1': 'themeService.colors.colorBgMask1',
+  '--color-bg-mask-2': 'themeService.colors.colorBgMask2',
   '--color-light-line': 'themeService.colors.colorLightLine',
   '--color-heavy-line': 'themeService.colors.colorHeavyLine',
+  '--color-disabled': 'themeService.colors.colorDisabled',
+  '--color-warning': 'themeService.colors.colorWarning',
+  '--color-error': 'themeService.colors.colorError',
+  '--color-redpoint': 'themeService.colors.colorRedpoint',
+  '--color-succeed': 'themeService.colors.colorSucceed',
+  '--color-icon-brand': 'themeService.colors.colorIconBrand',
+  '--color-icon-default': 'themeService.colors.colorIconDefault',
+  '--color-icon-secondary': 'themeService.colors.colorIconSecondary',
+  '--color-icon-primary': 'themeService.colors.colorIconPrimary',
+  '--color-icon-disabled': 'themeService.colors.colorIconDisabled',
+  '--color-icon-purple': 'themeService.colors.colorIconPurple',
+  '--color-button-brand': 'themeService.colors.colorButtonBrand',
+  '--color-button-disabled': 'themeService.colors.colorButtonDisabled',
   '--color-trend-red-1': 'themeService.colors.colorTrendRed1',
+  '--color-trend-red-2': 'themeService.colors.colorTrendRed2',
+  '--color-trend-red-3': 'themeService.colors.colorTrendRed3',
   '--color-trend-green-1': 'themeService.colors.colorTrendGreen1',
+  '--color-trend-green-2': 'themeService.colors.colorTrendGreen2',
+  '--color-trend-green-3': 'themeService.colors.colorTrendGreen3',
+  '--color-trend-flat': 'themeService.colors.colorTrendFlat',
+  '--color-trend-up-disabled': 'themeService.colors.colorTrendUpDisabled',
+  '--color-trend-down-disabled': 'themeService.colors.colorTrendDownDisabled',
+  '--color-chart-line-1': 'themeService.colors.colorChartLine1',
+  '--color-chart-line-2': 'themeService.colors.colorChartLine2',
+  '--color-chart-line-3': 'themeService.colors.colorChartLine3',
+  '--color-chart-line-4': 'themeService.colors.colorChartLine4',
+  '--color-chart-line-5': 'themeService.colors.colorChartLine5',
+  '--color-chart-line-6': 'themeService.colors.colorChartLine6',
+  '--color-chart-line-7': 'themeService.colors.colorChartLine7',
+  '--color-favourite': 'themeService.colors.colorFavourite',
 };
 
 const TYPOGRAPHY_TOKEN_MAP: Record<string, string> = {
@@ -70,7 +108,7 @@ function collectColorTokenSources(sourceCode: string): string[] {
   for (const regex of regexes) {
     let match: RegExpExecArray | null;
     while ((match = regex.exec(sourceCode))) {
-      if (match[1]) tokens.add(match[1]);
+      if (match[1]?.startsWith('--color-')) tokens.add(match[1]);
     }
   }
 
