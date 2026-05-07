@@ -228,6 +228,13 @@ pnpm --filter @proto-bridge/mcp-server version patch
 
 如果 CLI 或 MCP server 依赖 core 的新能力，确认对应 `package.json` 中 `@proto-bridge/core` 的 `workspace:*` 依赖会在 pack/publish 时转换为当前版本。
 
+如果只修 MCP server 自身启动、文档或校验逻辑，且不依赖 core 新能力，可以只发布 `@proto-bridge/mcp-server` 的 patch 版本。例如 `0.2.0 -> 0.2.1`：
+
+```bash
+pnpm --filter @proto-bridge/mcp-server version patch
+pnpm --filter @proto-bridge/mcp-server publish --registry=https://registry.npmjs.org/
+```
+
 ### 3. 发布前 dry-run
 
 ```bash

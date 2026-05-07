@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
   capturePrototypePage,
@@ -31,5 +32,10 @@ if (isDirectRun()) {
 }
 
 function isDirectRun(): boolean {
-  return Boolean(process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]);
+  if (!process.argv[1]) return false;
+  try {
+    return realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1]);
+  } catch {
+    return fileURLToPath(import.meta.url) === process.argv[1];
+  }
 }

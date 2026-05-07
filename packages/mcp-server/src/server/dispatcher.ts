@@ -15,7 +15,7 @@ export async function dispatch(context: ToolContext, method: string, params: Jso
         },
         serverInfo: {
           name: 'proto-bridge',
-          version: '0.2.0',
+          version: '0.2.1',
         },
       };
     case 'notifications/initialized':
