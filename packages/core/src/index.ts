@@ -9,6 +9,7 @@ export * from './adapters/target/flutter-app/flutter-context.js';
 export * from './adapters/target/flutter-app/flutter-implementation-plan.js';
 export * from './adapters/target/flutter-app/flutter-migration-spec.js';
 export * from './adapters/target/flutter-app/flutter-recommendations.js';
+export * from './adapters/target/flutter-app/target-connect.js';
 export * from './adapters/target/flutter-app/token-mapper.js';
 export * from './capture/playwright-capture.js';
 export * from './generators/migration-context.js';
