@@ -143,27 +143,69 @@ generateMigrationSpec
 
 ## 6. MCP 入口
 
-`packages/mcp-server` 是 MCP 协议入口包。它只导出 core 能力，不复制业务逻辑。
+`packages/mcp-server` 是 MCP 协议入口包。它只调用 core 和 target connect 能力，不复制 source/target analyzer 逻辑。
 
-当前导出：
+当前发布入口：
 
-- `capturePrototypePage`
-- `defaultAdapterRegistry`
-- `generateMigrationSpec`
-- `GenerateMigrationSpecInput`
-- `SourceAdapter`
-- `TargetAdapter`
+```bash
+npx -y @proto-bridge/mcp-server --config /path/to/youfi/proto-bridge.config.json
+```
 
-MCP 工具命名应围绕 adapter 和项目语义，例如：
+当前 MCP tools：
 
-- `listSupportedAdapters`
-- `analyzeSourceProject`
-- `analyzeTargetProject`
-- `generateMigrationSpec`
-- `getMigrationBrief`
-- `findTargetExamples`
-- `getTargetConventions`
-- `validateTargetChanges`
+- `generate_migration_spec`
+- `get_migration_brief`
+- `read_migration_artifact`
+- `get_target_conventions`
+- `find_target_examples`
+- `validate_target_changes`
+
+Codex 项目级配置：
+
+```toml
+# /path/to/youfi/.codex/config.toml
+[mcp_servers.proto-bridge]
+command = "npx"
+args = [
+  "-y",
+  "@proto-bridge/mcp-server",
+  "--config",
+  "/path/to/youfi/proto-bridge.config.json"
+]
+```
+
+Cursor 项目级配置：
+
+```json
+{
+  "mcpServers": {
+    "proto-bridge": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@proto-bridge/mcp-server",
+        "--config",
+        "/path/to/youfi/proto-bridge.config.json"
+      ]
+    }
+  }
+}
+```
+
+保存为：
+
+```text
+/path/to/youfi/.cursor/mcp.json
+```
+
+Claude Code 项目级配置：
+
+```bash
+cd /path/to/youfi
+claude mcp add proto-bridge --scope project -- \
+  npx -y @proto-bridge/mcp-server \
+  --config /path/to/youfi/proto-bridge.config.json
+```
 
 ## 7. 输出文件
 

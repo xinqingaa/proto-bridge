@@ -1,6 +1,6 @@
 {
   "name": "@proto-bridge/cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Command-line interface for ProtoBridge.",
   "type": "module",
   "main": "./dist/index.js",
@@ -25,6 +25,9 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "license": "UNLICENSED"
 }
