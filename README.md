@@ -49,12 +49,29 @@ ProtoBridge 适合以下任务：
 ProtoBridge 不负责：
 
 - 直接生成完整 Dart 页面代码。
+- 在 CLI 中把 Vue 页面确定性翻译成 Dart 业务代码。
 - 直接提交业务代码到目标 App。
 - 用 OCR 作为主要输入。
 - 处理复杂 Figma 高保真还原。
 - 把 A/B 项目的开发规范复制存放在 C 项目中；规范应从 A/B 自身仓库读取。
 
-## 三、当前能力
+## 三、下一步方向：MCP + AI Agent
+
+团队日常使用的目标体验不是“先手动生成 md，再复制给 AI 工具”，而是类似 Figma MCP 的工作流：
+
+```text
+用户在 AI coding 工具中输入 route / url / vue 文件
+  -> ProtoBridge MCP 生成并提供 migration context/spec
+  -> AI agent 读取 target 工程、相似 Flutter 页面和实现约束
+  -> AI agent 在 target repo 中生成 Dart 页面
+  -> ProtoBridge MCP 提供结果校验和证据追踪
+```
+
+因此，CLI 的正式职责保持为生成 `migration-context.json` 和 `migration-spec.md`，用于调试、审查、归档和非 MCP 场景。自动化落地 Dart 代码应由具备代码检索、编辑、验证和自我修正能力的 AI agent 完成；ProtoBridge 后续通过 MCP 向 agent 提供上下文、约束、相似实现和校验工具。
+
+详见 [MCP Agent 工作流](docs/agent-mcp-workflow.md)。
+
+## 四、当前能力
 
 当前实现包含以下能力：
 
@@ -86,7 +103,7 @@ CLI / MCP input
 - **Target conventions**：目标 App 应该怎么写，包括模块、路由、组件、主题、资源、i18n 和相似实现。
 - **ProtoBridge rules**：说明书应该如何表达，包括 target-facing、禁止直译、保留人工确认项、不伪造确定结论。
 
-## 四、工程结构
+## 五、工程结构
 
 ```text
 proto-bridge/
@@ -97,6 +114,7 @@ proto-bridge/
 ├── tsconfig.base.json
 ├── docs/
 │   ├── architecture.md
+│   ├── agent-mcp-workflow.md
 │   ├── migration-spec.md
 │   └── integration.md
 ├── examples/
@@ -136,7 +154,7 @@ proto-bridge/
 - `docs`：架构、集成方式和迁移说明书质量标准。
 - `examples`：示例配置和可复现调用入口。
 
-## 五、安装与运行
+## 六、安装与运行
 
 团队使用者不需要 clone 本仓库，也不需要安装 pnpm；通过 npm 自带的 npx 运行 CLI：
 
@@ -157,7 +175,7 @@ pnpm run generate -- --help
 
 `pnpm run generate` 只是本仓库开发便利脚本；npm 发布后的用户入口是 `npx @proto-bridge/cli ...`。
 
-## 六、配置
+## 七、配置
 
 项目根目录需要本地配置文件：
 
@@ -201,7 +219,7 @@ npx @proto-bridge/cli init
 - `outputRoot`：输出根目录，默认页面输出为 `outputRoot/<页面名>`。
 - `capture`：是否默认执行截图和 DOM 提取。
 
-## 七、使用方式
+## 八、使用方式
 
 ### 1. 使用完整 URL
 
@@ -245,7 +263,7 @@ output/stock-trade/
 └── dom-snapshot.json
 ```
 
-## 八、CLI 参数
+## 九、CLI 参数
 
 | 参数 | 是否必填 | 说明 |
 | --- | --- | --- |
@@ -261,7 +279,7 @@ output/stock-trade/
 
 `--url`、`--route`、`--vue` 三选一；如果在交互式终端中都不提供，CLI 会进入问答式流程。未传 `--output` 时，输出目录为 `outputRoot/<页面名>`。
 
-## 九、输出文件
+## 十、输出文件
 
 ### migration-context.json
 
@@ -291,7 +309,7 @@ output/stock-trade/
 - 人工确认项。
 - AI 实现提示词。
 
-## 十、实现原理
+## 十一、实现原理
 
 ProtoBridge 的实现原理不是“把 source 代码翻译成 target 代码”，而是先把 source 和 target 都转成结构化事实，再由 target adapter 生成符合目标工程习惯的实现规划。
 
@@ -414,7 +432,7 @@ source facts + target context
 - 不把 mock 数据直接写入 Widget build。
 - 不让每个子 Widget 直接依赖整个 Controller。
 
-## 十一、验证结果
+## 十二、验证结果
 
 当前已用 `/prototype/trade` 做过生成验证，关键结果：
 
@@ -424,7 +442,7 @@ source facts + target context
 - `recommendations.implementationPlan.complexity = complex`
 - `migration-spec.md` 可生成页面元信息、Flutter 实现规划、Widget 拆分、状态与交互、路由参数、布局模型、Token 映射、i18n、资源迁移和人工确认项。
 
-## 十二、开发约定
+## 十三、开发约定
 
 - 新能力优先放在 `packages/core/src/adapters/**` 或 core 通用模块中。
 - 具体技术栈实现只放在 `packages/core/src/adapters/**`。
@@ -434,11 +452,13 @@ source facts + target context
 - 文档应描述当前架构和当前行为，不写历史迁移叙事。
 - 输出结果必须可人工审查和修改，不把不确定信息伪装成确定结论。
 
-## 十三、常见问题
+## 十四、常见问题
 
 ### 为什么不直接生成 Dart？
 
-因为当前最有价值的是稳定迁移上下文和实现说明书。直接生成完整页面容易把原型临时状态、mock 数据和 CSS 结构误当成目标端架构。
+因为 deterministic CLI 缺少 AI agent 的代码检索、取舍、编辑、验证和自我修正能力。把 Vue 确定性翻译成 Dart 会迫使 ProtoBridge 在 CLI 内硬编码大量 Flutter 业务规范，长期不可维护。
+
+后续自动化方向不是让 CLI 直接写 Dart，而是通过 MCP 把 `migration-context.json`、`migration-spec.md`、target 相似实现和工程约束提供给 AI coding agent，由 agent 在目标仓库中完成 Dart 实现。
 
 ### 为什么默认跳过 capture？
 

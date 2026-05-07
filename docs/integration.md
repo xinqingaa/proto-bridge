@@ -4,7 +4,7 @@
 
 ## 1. CLI 入口
 
-CLI 是当前主要入口：
+CLI 是当前稳定入口，主要用于生成可审查的迁移上下文和说明书：
 
 ```bash
 npx @proto-bridge/cli generate --url "http://localhost:5173/#/prototype/etf-detail"
@@ -20,7 +20,7 @@ CLI 职责：
 - 调用 core `generateMigrationSpec`。
 - 输出生成文件路径和 warning 数量。
 
-CLI 不实现 source/target 分析、planner 或 spec 渲染逻辑。
+CLI 不实现 source/target 分析、planner 或 spec 渲染逻辑，也不直接生成 Flutter Dart 业务文件。Dart 落地实现需要 AI coding agent 或人工开发完成。
 
 ## 2. 配置
 
@@ -52,7 +52,7 @@ npx @proto-bridge/cli generate \
 
 ## 3. 适用集成场景
 
-ProtoBridge 适合接入以下流程：
+ProtoBridge 当前适合接入以下流程：
 
 - **人工实现前的上下文准备**：开发者先生成说明书，再按目标 App 规范实现页面。
 - **AI coding 前的提示材料准备**：把 `migration-spec.md` 交给 Cursor、Claude Code、Codex CLI 等工具，把 `migration-context.json` 作为补充证据。
@@ -63,11 +63,28 @@ ProtoBridge 适合接入以下流程：
 不适合的场景：
 
 - 直接把 source 代码转换成 target 代码并自动提交。
+- 在 CLI 内确定性生成完整 Flutter 页面代码。
 - source 页面本身无法表达需求，且没有 notes、i18n 或人工说明。
 - target 仓库不可访问，无法读取模块、路由、资源和组件约束。
 - 需要像素级 Figma 还原但没有 target 工程上下文。
 
-## 4. Core 调用
+## 4. 下一步：MCP + AI Agent 自动化
+
+团队日常使用期望更接近 Figma MCP：用户只给 AI 工具一个 route、URL 或 Vue 文件，后续由 AI 工具自动完成 Flutter 实现。ProtoBridge 的下一步方向是把上下文生成能力接入 MCP，而不是在 CLI 中内置 Dart 代码生成器。
+
+推荐目标流程：
+
+```text
+用户在 AI coding 工具中输入 route / url / vue 文件
+  -> AI agent 调用 ProtoBridge MCP 生成 migration context/spec
+  -> AI agent 调用 MCP 获取 target 约束和相似 Flutter 实现
+  -> AI agent 在 target repo 中创建或修改目标页面文件
+  -> AI agent 调用 MCP 校验改动范围、缺失项和可追溯证据
+```
+
+这个流程中，`migration-spec.md` 仍然存在，但它是 MCP 提供给 agent 的上下文，不再要求用户手动复制给 AI 工具。详见 [MCP Agent 工作流](agent-mcp-workflow.md)。
+
+## 5. Core 调用
 
 CLI 和 MCP 都调用 core。核心调用入口：
 
@@ -124,7 +141,7 @@ generateMigrationSpec
 - Spec generator 负责把两边信息整理成 target-facing 文档。
 - warnings 和 checklist 负责保留不确定性，避免把推断内容写成确定结论。
 
-## 5. MCP 入口
+## 6. MCP 入口
 
 `packages/mcp-server` 是 MCP 协议入口包。它只导出 core 能力，不复制业务逻辑。
 
@@ -143,8 +160,12 @@ MCP 工具命名应围绕 adapter 和项目语义，例如：
 - `analyzeSourceProject`
 - `analyzeTargetProject`
 - `generateMigrationSpec`
+- `getMigrationBrief`
+- `findTargetExamples`
+- `getTargetConventions`
+- `validateTargetChanges`
 
-## 6. 输出文件
+## 7. 输出文件
 
 成功生成后，输出目录包含：
 
@@ -158,7 +179,7 @@ output/<page>/
 
 `migration-context.json` 是机器可读上下文。`migration-spec.md` 是面向 Flutter 实现者和 AI coding 工具的说明书。
 
-## 7. Capture 集成
+## 8. Capture 集成
 
 Capture 输入：
 
@@ -177,9 +198,11 @@ npx @proto-bridge/cli generate \
 
 Capture 失败时，core 会把错误写入 warnings，不阻断静态上下文生成。
 
-## 8. AI 工具集成
+## 9. AI 工具集成
 
-推荐把 `migration-spec.md` 作为主要提示材料，把 `migration-context.json` 作为补充上下文。
+在当前 CLI 流程下，推荐把 `migration-spec.md` 作为主要提示材料，把 `migration-context.json` 作为补充上下文。
+
+在后续 MCP 流程下，AI agent 应通过 MCP 自动获取这些上下文，用户不需要手动复制 Markdown。
 
 推荐交付方式：
 
@@ -196,7 +219,7 @@ Capture 失败时，core 会把错误写入 warnings，不阻断静态上下文�
 - 不要求 AI 逐层翻译 Vue 模板或 CSS class。
 - 对 warnings 和人工确认项保持显式处理。
 
-## 9. CI / 脚本化使用
+## 10. CI / 脚本化使用
 
 推荐检查命令：
 

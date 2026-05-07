@@ -18,12 +18,14 @@ ProtoBridge 的输出是可审查、可修改、可交给 AI coding 工具继续
 - 从 target project 提取模块、路由、状态管理习惯、主题、资源目录、公共组件和相似实现。
 - 将 source facts 转成 target-facing 的实现规划。
 - 输出 `migration-context.json` 和 `migration-spec.md`。
+- 下一阶段通过 MCP 把这些上下文直接提供给 AI coding agent，让 agent 在目标仓库中完成 Dart 实现。
 
 ## 2. 非目标
 
 ProtoBridge 不负责：
 
 - 直接生成完整 Dart 页面代码。
+- 在 CLI 中确定性翻译 Vue 到 Dart。
 - 一键迁移并自动提交目标 App。
 - 把 Vue 模板、CSS class 或 DOM 结构逐层翻译成 Flutter Widget。
 - 以 OCR 作为主输入。
@@ -55,6 +57,12 @@ TargetAdapter = flutter-app
 - 新 source 技术栈新增 `SourceAdapter`。
 - 新 target 技术栈新增 `TargetAdapter`。
 - core 主流程只通过 registry 获取 adapter，不直接依赖具体技术栈实现。
+
+入口定位：
+
+- CLI：稳定生成 context/spec，服务调试、审查、批处理和非 MCP 场景。
+- MCP：后续作为 AI coding agent 的上下文入口，负责提供页面事实、目标工程约束、相似实现和结果校验。
+- AI agent：负责真正的 Dart 文件编辑、跨文件调整、运行验证和错误修正。
 
 ## 4. 工程结构
 
