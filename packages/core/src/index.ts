@@ -12,5 +12,7 @@ export * from './adapters/target/flutter-app/flutter-recommendations.js';
 export * from './adapters/target/flutter-app/target-connect.js';
 export * from './adapters/target/flutter-app/token-mapper.js';
 export * from './capture/playwright-capture.js';
+export * from './snapshot/page-snapshot.js';
+export * from './snapshot/ui-implementation-plan.js';
 export * from './generators/migration-context.js';
 export * from './generators/migration-spec.js';

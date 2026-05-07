@@ -1,9 +1,8 @@
 import type { JsonObject, JsonValue, ToolContext } from '../types.js';
 import { readObject, readString } from '../utils/args.js';
-import { toolJson, toolText } from '../server/responses.js';
-import { generateMigrationSpecTool } from './generate-migration-spec.js';
-import { getMigrationBriefTool } from './get-migration-brief.js';
-import { readMigrationArtifactTool } from './read-migration-artifact.js';
+import { toolJson } from '../server/responses.js';
+import { capturePageSnapshotTool } from './capture-page-snapshot.js';
+import { buildUiImplementationPlanTool } from './build-ui-implementation-plan.js';
 import { getTargetConventionsTool } from './get-target-conventions.js';
 import { findTargetExamplesTool } from './find-target-examples.js';
 import { validateTargetChangesTool } from './validate-target-changes.js';
@@ -11,42 +10,37 @@ import { validateTargetChangesTool } from './validate-target-changes.js';
 export function toolsList(): JsonValue[] {
   return [
     {
-      name: 'generate_migration_spec',
-      description: 'Generate ProtoBridge migration context/spec from a prototype URL, route, or Vue file.',
+      name: 'capture_page_snapshot',
+      description: 'Capture a rendered URL into page-snapshot.json and screenshot artifacts for UI reconstruction.',
       inputSchema: {
         type: 'object',
         properties: {
-          config: { type: 'string', description: 'Path to proto-bridge.config.json. Defaults to server --config or ./proto-bridge.config.json.' },
-          url: { type: 'string', description: 'Prototype URL. Hash routes are extracted automatically.' },
-          route: { type: 'string', description: 'Prototype route, for example /prototype/etf-detail.' },
-          vue: { type: 'string', description: 'Vue SFC path, absolute or relative to source.root.' },
-          output: { type: 'string', description: 'Override output directory for this run.' },
-          outputRoot: { type: 'string', description: 'Override output root used to derive page output directory.' },
-          prototypeUrl: { type: 'string', description: 'Runtime URL for capture.' },
-          capture: { type: 'boolean', description: 'Run Playwright capture.' },
+          url: { type: 'string', description: 'Rendered page URL to capture.' },
+          targetRoot: { type: 'string', description: 'Target Flutter root. Defaults to current working directory.' },
+          output: { type: 'string', description: 'Override output directory. Defaults to .proto-bridge/snapshots/<page>.' },
+          viewport: {
+            type: 'object',
+            properties: {
+              width: { type: 'number' },
+              height: { type: 'number' },
+              deviceScaleFactor: { type: 'number' },
+            },
+          },
+          saveArtifacts: { type: 'boolean', description: 'Save screenshot and page-snapshot.json. Defaults to true.' },
         },
       },
     },
     {
-      name: 'get_migration_brief',
-      description: 'Return an agent-friendly brief from a generated run or migration-context.json.',
+      name: 'build_ui_implementation_plan',
+      description: 'Build ui-implementation-plan.json from a captured page snapshot and YouFi target conventions.',
       inputSchema: {
         type: 'object',
         properties: {
-          runId: { type: 'string' },
-          contextPath: { type: 'string' },
-        },
-      },
-    },
-    {
-      name: 'read_migration_artifact',
-      description: 'Read the generated migration spec or context for a run.',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          runId: { type: 'string' },
-          artifact: { type: 'string', enum: ['spec', 'context'] },
-          path: { type: 'string', description: 'Direct file path fallback.' },
+          snapshotId: { type: 'string' },
+          snapshotPath: { type: 'string', description: 'Direct page-snapshot.json path fallback.' },
+          targetRoot: { type: 'string', description: 'Target Flutter root. Defaults to current working directory.' },
+          targetModule: { type: 'string', description: 'Optional YouFi module override.' },
+          output: { type: 'string', description: 'Override output directory. Defaults beside the page snapshot.' },
         },
       },
     },
@@ -56,7 +50,7 @@ export function toolsList(): JsonValue[] {
       inputSchema: {
         type: 'object',
         properties: {
-          config: { type: 'string' },
+          targetRoot: { type: 'string', description: 'Target Flutter root. Defaults to current working directory.' },
           module: { type: 'string' },
           roles: { type: 'array', items: { type: 'string' } },
           symbols: { type: 'array', items: { type: 'string' } },
@@ -69,7 +63,7 @@ export function toolsList(): JsonValue[] {
       inputSchema: {
         type: 'object',
         properties: {
-          config: { type: 'string' },
+          targetRoot: { type: 'string', description: 'Target Flutter root. Defaults to current working directory.' },
           module: { type: 'string' },
           pattern: { type: 'string' },
           roles: { type: 'array', items: { type: 'string' } },
@@ -85,8 +79,8 @@ export function toolsList(): JsonValue[] {
       inputSchema: {
         type: 'object',
         properties: {
-          config: { type: 'string' },
-          runId: { type: 'string' },
+          targetRoot: { type: 'string', description: 'Target Flutter root. Defaults to current working directory.' },
+          planId: { type: 'string' },
           gitBase: { type: 'string', description: 'Optional git base ref for diff --name-only.' },
           allowedPaths: { type: 'array', items: { type: 'string' } },
         },
@@ -100,9 +94,8 @@ export async function callTool(context: ToolContext, params: JsonObject | undefi
   const args = readObject(params, 'arguments') ?? {};
   if (!name) throw new Error('tools/call requires params.name');
 
-  if (name === 'generate_migration_spec') return toolJson(await generateMigrationSpecTool(context, args));
-  if (name === 'get_migration_brief') return toolJson(await getMigrationBriefTool(context, args));
-  if (name === 'read_migration_artifact') return toolText(await readMigrationArtifactTool(context, args));
+  if (name === 'capture_page_snapshot') return toolJson(await capturePageSnapshotTool(context, args));
+  if (name === 'build_ui_implementation_plan') return toolJson(await buildUiImplementationPlanTool(context, args));
   if (name === 'get_target_conventions') return toolJson(await getTargetConventionsTool(context, args));
   if (name === 'find_target_examples') return toolJson(await findTargetExamplesTool(context, args));
   if (name === 'validate_target_changes') return toolJson(await validateTargetChangesTool(context, args));

@@ -1,38 +1,26 @@
 # @proto-bridge/mcp-server
 
-ProtoBridge MCP server exposes migration context, target Flutter conventions, similar YouFi examples, and validation helpers to AI coding agents.
+ProtoBridge MCP server exposes the URL Snapshot UI reconstruction workflow to AI coding agents.
 
-It does not write Dart files by itself. The AI coding tool calls ProtoBridge tools, reads the generated context/spec, edits the target Flutter repository, and validates the result.
+Phase 1 is intentionally snapshot-only:
+
+- It does not require `proto-bridge.config.json`.
+- It uses the current working directory as the YouFi Flutter target root.
+- It does not expose the old source-aware migration tools.
+- It does not write Dart files by itself. The AI coding tool captures a page snapshot, builds a UI implementation plan, edits the target Flutter repository, then validates the result.
 
 ## Requirements
 
 - Node.js 20 or newer.
-- A target Flutter repository with `proto-bridge.config.json`.
-- The source Vue prototype repository must be reachable from `proto-bridge.config.json`.
-
-Example `proto-bridge.config.json` in the YouFi repository:
-
-```json
-{
-  "source": {
-    "adapter": "vue3-prototype",
-    "root": "../TradeAppPrd"
-  },
-  "target": {
-    "adapter": "flutter-app",
-    "root": "."
-  },
-  "outputRoot": "./protoBridgeOutput",
-  "capture": false
-}
-```
+- Run the MCP server from the target YouFi Flutter repository, or pass `targetRoot` to tools.
+- The page URL must be reachable by Playwright in the MCP server environment.
 
 ## Published Package Usage
 
-After publishing, point your AI tool at the npm package:
+Point your AI tool at the npm package from the YouFi repository:
 
 ```bash
-npx -y @proto-bridge/mcp-server --config /path/to/youfi/proto-bridge.config.json
+npx -y @proto-bridge/mcp-server
 ```
 
 ## Local Source Usage
@@ -42,8 +30,8 @@ When developing ProtoBridge locally:
 ```bash
 cd /path/to/proto-bridge
 pnpm run build
-node /path/to/proto-bridge/packages/mcp-server/dist/index.js \
-  --config /path/to/youfi/proto-bridge.config.json
+cd /path/to/youfi
+node /path/to/proto-bridge/packages/mcp-server/dist/index.js
 ```
 
 ## Codex Configuration
@@ -56,9 +44,7 @@ Project-level Codex config in the YouFi repository:
 command = "npx"
 args = [
   "-y",
-  "@proto-bridge/mcp-server",
-  "--config",
-  "/path/to/youfi/proto-bridge.config.json"
+  "@proto-bridge/mcp-server"
 ]
 ```
 
@@ -68,9 +54,7 @@ Local source variant:
 [mcp_servers.proto-bridge]
 command = "node"
 args = [
-  "/path/to/proto-bridge/packages/mcp-server/dist/index.js",
-  "--config",
-  "/path/to/youfi/proto-bridge.config.json"
+  "/path/to/proto-bridge/packages/mcp-server/dist/index.js"
 ]
 ```
 
@@ -87,9 +71,7 @@ Project-level Cursor config in the YouFi repository:
       "command": "npx",
       "args": [
         "-y",
-        "@proto-bridge/mcp-server",
-        "--config",
-        "/path/to/youfi/proto-bridge.config.json"
+        "@proto-bridge/mcp-server"
       ]
     }
   }
@@ -102,25 +84,6 @@ Save it as:
 /path/to/youfi/.cursor/mcp.json
 ```
 
-Local source variant:
-
-```json
-{
-  "mcpServers": {
-    "proto-bridge": {
-      "command": "node",
-      "args": [
-        "/path/to/proto-bridge/packages/mcp-server/dist/index.js",
-        "--config",
-        "/path/to/youfi/proto-bridge.config.json"
-      ]
-    }
-  }
-}
-```
-
-Restart Cursor or reload MCP servers after changing the config.
-
 ## Claude Code Configuration
 
 Project-level Claude Code setup from the YouFi repository:
@@ -128,32 +91,30 @@ Project-level Claude Code setup from the YouFi repository:
 ```bash
 cd /path/to/youfi
 claude mcp add proto-bridge --scope project -- \
-  npx -y @proto-bridge/mcp-server \
-  --config /path/to/youfi/proto-bridge.config.json
-```
-
-Local source variant:
-
-```bash
-cd /path/to/youfi
-claude mcp add proto-bridge --scope project -- \
-  node /path/to/proto-bridge/packages/mcp-server/dist/index.js \
-  --config /path/to/youfi/proto-bridge.config.json
+  npx -y @proto-bridge/mcp-server
 ```
 
 ## Tools
 
-- `generate_migration_spec`: generate `migration-context.json` and `migration-spec.md` from a URL, route, or Vue file.
-- `get_migration_brief`: return a compact agent-friendly brief from a run or context file.
-- `read_migration_artifact`: read the generated spec or context.
+- `capture_page_snapshot`: capture a rendered URL into `page-snapshot.json` and `screenshot.png`.
+- `build_ui_implementation_plan`: build `ui-implementation-plan.json` from a snapshot and YouFi target conventions.
 - `get_target_conventions`: scan target Flutter conventions, reusable components, theme, routes, i18n, and assets.
 - `find_target_examples`: find similar target Dart files with matched symbols and snippets.
 - `validate_target_changes`: inspect target git changes for scope, placeholder UI, TODOs, and hard-coded colors.
 
+Not exposed in Phase 1:
+
+- `generate_migration_spec`
+- `get_migration_brief`
+- `read_migration_artifact`
+
+The old source-aware chain remains in `@proto-bridge/core` / `@proto-bridge/cli`, but it is not available through the MCP runtime.
+
 ## Example Prompt
 
 ```text
-Use ProtoBridge to migrate /prototype/trade into YouFi Flutter.
+Use ProtoBridge to reconstruct this page in YouFi Flutter:
+https://xiaofenhong.cc/TradeAppPrd/#/prototype/etf-detail?is_mobile=1
 ```
 
-The agent should call `generate_migration_spec`, read the brief, find target examples, inspect target conventions, implement Dart files, and then run validation.
+The agent should call `capture_page_snapshot`, then `build_ui_implementation_plan`, inspect target conventions/examples as needed, implement Dart UI, and finally call `validate_target_changes` with the returned `planId`.

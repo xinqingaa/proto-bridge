@@ -207,6 +207,136 @@ export type CaptureResult = {
   warnings: string[];
 };
 
+export type SnapshotSourceKind = 'url' | 'rendered-html' | 'screenshot';
+
+export type SnapshotNodeRole =
+  | 'app-bar'
+  | 'tab-bar'
+  | 'section'
+  | 'card'
+  | 'list'
+  | 'list-item'
+  | 'button'
+  | 'input'
+  | 'image'
+  | 'icon'
+  | 'bottom-bar'
+  | 'modal'
+  | 'text'
+  | 'unknown';
+
+export type SnapshotComputedStyle = {
+  display?: string | undefined;
+  position?: string | undefined;
+  flexDirection?: string | undefined;
+  alignItems?: string | undefined;
+  justifyContent?: string | undefined;
+  gap?: string | undefined;
+  padding?: string | undefined;
+  margin?: string | undefined;
+  color?: string | undefined;
+  backgroundColor?: string | undefined;
+  fontFamily?: string | undefined;
+  fontSize?: string | undefined;
+  fontWeight?: string | undefined;
+  lineHeight?: string | undefined;
+  borderRadius?: string | undefined;
+  border?: string | undefined;
+  boxShadow?: string | undefined;
+  overflow?: string | undefined;
+};
+
+export type PageSnapshot = {
+  id: string;
+  source: {
+    kind: SnapshotSourceKind;
+    url?: string | undefined;
+    capturedAt: string;
+    viewport: { width: number; height: number; deviceScaleFactor?: number | undefined };
+  };
+  screenshot?: {
+    path?: string | undefined;
+    width: number;
+    height: number;
+  } | undefined;
+  page: {
+    title?: string | undefined;
+    route?: string | undefined;
+    text: string[];
+  };
+  nodes: PageSnapshotNode[];
+  visualSections: VisualSection[];
+  tokens: VisualTokenEvidence[];
+  assets: AssetEvidence[];
+  interactions: InteractionEvidence[];
+  warnings: string[];
+};
+
+export type PageSnapshotNode = {
+  id: string;
+  parentId?: string | undefined;
+  role: SnapshotNodeRole;
+  tag?: string | undefined;
+  text?: string | undefined;
+  bbox: { x: number; y: number; width: number; height: number };
+  computedStyle?: SnapshotComputedStyle | undefined;
+  cssVarRefs?: string[] | undefined;
+  assetRefs?: string[] | undefined;
+  children: string[];
+  evidence: string[];
+};
+
+export type VisualSection = {
+  id: string;
+  role: SnapshotNodeRole;
+  title?: string | undefined;
+  bbox: { x: number; y: number; width: number; height: number };
+  nodeIds: string[];
+  evidence: string[];
+};
+
+export type VisualTokenEvidence = {
+  kind: 'color' | 'typography' | 'spacing' | 'radius' | 'shadow' | 'border';
+  source: string;
+  value: string;
+  cssVar?: string | undefined;
+  usage: string[];
+  candidateTarget?: string | undefined;
+  confidence: MappingConfidence;
+};
+
+export type AssetEvidence = {
+  id: string;
+  kind: 'image' | 'svg' | 'background' | 'icon' | 'unknown';
+  source?: string | undefined;
+  nodeId?: string | undefined;
+  bbox?: { x: number; y: number; width: number; height: number } | undefined;
+  evidence: string[];
+};
+
+export type InteractionEvidence = {
+  id: string;
+  kind: 'tap' | 'input' | 'link' | 'tab' | 'unknown';
+  nodeId: string;
+  label?: string | undefined;
+  evidence: string[];
+};
+
+export type CapturePageSnapshotInput = {
+  url: string;
+  outDir: string;
+  viewport?: { width: number; height: number; deviceScaleFactor?: number | undefined } | undefined;
+  saveArtifacts?: boolean | undefined;
+};
+
+export type CapturePageSnapshotResult = {
+  snapshot: PageSnapshot;
+  files: {
+    pageSnapshot: string;
+    screenshot?: string | undefined;
+  };
+};
+
 export type TokenMapping = {
   source: string;
   target?: string | undefined;
@@ -386,6 +516,90 @@ export type FindFlutterTargetExamplesInput = {
   symbols?: string[] | undefined;
   screenId?: string | undefined;
   limit?: number | undefined;
+};
+
+export type BuildUiImplementationPlanInput = {
+  snapshot: PageSnapshot;
+  targetRoot: string;
+  outDir: string;
+  targetModule?: string | undefined;
+};
+
+export type UiImplementationPlan = {
+  id: string;
+  snapshotId: string;
+  target: {
+    root: string;
+    module?: string | undefined;
+    existingModules: string[];
+    routesFiles: string[];
+    translationFiles: string[];
+    assetDirectories: string[];
+    reusableComponents: FlutterComponentRef[];
+    similarExamples: FlutterExampleRef[];
+    warnings: string[];
+  };
+  page: {
+    title?: string | undefined;
+    route?: string | undefined;
+    summary: string;
+    viewport: { width: number; height: number; deviceScaleFactor?: number | undefined };
+  };
+  fileTree: FlutterPlannedFile[];
+  widgetTree: FlutterWidgetPlan[];
+  componentMappings: ComponentMapping[];
+  themeMappings: ThemeMapping[];
+  i18nPlan: I18nPlan;
+  assetPlan: AssetPlan;
+  interactionPlan: InteractionPlan[];
+  businessQuestions: string[];
+  risks: string[];
+  validationHints: string[];
+};
+
+export type ComponentMapping = {
+  sourceRole: SnapshotNodeRole;
+  nodeIds: string[];
+  targetSymbol?: string | undefined;
+  confidence: MappingConfidence;
+  reason: string;
+};
+
+export type ThemeMapping = {
+  source: string;
+  value: string;
+  target?: string | undefined;
+  confidence: MappingConfidence;
+  reason: string;
+};
+
+export type I18nPlan = {
+  texts: Array<{ text: string; nodeIds: string[]; suggestedKey?: string | undefined }>;
+  recommendation: string;
+};
+
+export type AssetPlan = {
+  assets: Array<{
+    source?: string | undefined;
+    kind: AssetEvidence['kind'];
+    nodeId?: string | undefined;
+    recommendation: string;
+  }>;
+  recommendation: string;
+};
+
+export type InteractionPlan = {
+  kind: InteractionEvidence['kind'];
+  label?: string | undefined;
+  nodeId: string;
+  recommendation: string;
+};
+
+export type BuildUiImplementationPlanResult = {
+  plan: UiImplementationPlan;
+  files: {
+    uiImplementationPlan: string;
+  };
 };
 
 export type MigrationContext = {

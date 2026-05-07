@@ -4,12 +4,11 @@ import { readObject, readString } from '../utils/args.js';
 export function promptsList(): JsonValue[] {
   return [
     {
-      name: 'migrate_vue_prototype_to_youfi_flutter',
-      description: 'Use ProtoBridge to migrate a prototype URL/route/Vue file into the YouFi Flutter app.',
+      name: 'reconstruct_url_snapshot_ui',
+      description: 'Use ProtoBridge to reconstruct a URL snapshot as YouFi Flutter UI.',
       arguments: [
-        { name: 'url', description: 'Prototype URL.', required: false },
-        { name: 'route', description: 'Prototype route.', required: false },
-        { name: 'vue', description: 'Vue SFC path.', required: false },
+        { name: 'url', description: 'Rendered page URL.', required: true },
+        { name: 'targetModule', description: 'Optional YouFi module override.', required: false },
       ],
     },
   ];
@@ -17,22 +16,24 @@ export function promptsList(): JsonValue[] {
 
 export function getPrompt(params: JsonObject | undefined): JsonObject {
   const name = readString(params, 'name');
-  if (name !== 'migrate_vue_prototype_to_youfi_flutter') throw new Error(`Unknown prompt: ${name ?? '(missing)'}`);
+  if (name !== 'reconstruct_url_snapshot_ui') throw new Error(`Unknown prompt: ${name ?? '(missing)'}`);
   const args = readObject(params, 'arguments') ?? {};
-  const input = readString(args, 'url') ?? readString(args, 'route') ?? readString(args, 'vue') ?? '<url | route | vue>';
+  const input = readString(args, 'url') ?? '<url>';
+  const targetModule = readString(args, 'targetModule');
   return {
-    description: 'ProtoBridge YouFi Flutter migration workflow',
+    description: 'ProtoBridge URL Snapshot UI reconstruction workflow',
     messages: [
       {
         role: 'user',
         content: {
           type: 'text',
           text: [
-            `Use ProtoBridge to migrate ${input} into the YouFi Flutter app.`,
-            'Call generate_migration_spec first, then get_migration_brief, find_target_examples, and get_target_conventions.',
-            'Implement Dart files in the target repo according to the generated file tree, Widget contracts, state strategy, i18n/assets/routes guidance, and checklist.',
-            'Do not translate Vue template or CSS classes one-to-one. Prefer existing YouFi widgets, BaseGetView patterns, themeService colors/textStyles, .tr translations, and similar module examples.',
-            'Run formatting/static checks when possible, then call validate_target_changes and report changed files, verification, warnings, and unresolved P0/P1 items.',
+            `Use ProtoBridge to reconstruct the visible UI from ${input} into the YouFi Flutter app.`,
+            'Call capture_page_snapshot first, then build_ui_implementation_plan.',
+            targetModule ? `Use targetModule=${targetModule} when building the UI implementation plan.` : 'Let ProtoBridge infer the target module unless the user provides one.',
+            'Implement Dart UI from ui-implementation-plan.json, focusing on visual structure, text, component mapping, theme, i18n, and assets.',
+            'Do not invent APIs, permission checks, risk controls, tracking, or hidden business behavior. Keep those as TODOs or manual confirmations.',
+            'Run formatting/static checks when possible, then call validate_target_changes with the planId and report changed files, verification, warnings, and unresolved business questions.',
           ].join('\n'),
         },
       },

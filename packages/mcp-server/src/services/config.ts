@@ -20,6 +20,10 @@ export function resolveProjectRoot(config: ResolvedConfig, root: string | undefi
   return path.isAbsolute(root) ? root : path.resolve(config.configDir, root);
 }
 
+export function resolveRuntimeTargetRoot(targetRootInput: string | undefined): string {
+  return path.resolve(targetRootInput ?? process.cwd());
+}
+
 export function parseServerOptions(argv: string[]): ServerOptions {
   const options: ServerOptions = {};
   for (let index = 0; index < argv.length; index += 1) {

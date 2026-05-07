@@ -143,22 +143,29 @@ generateMigrationSpec
 
 ## 6. MCP 入口
 
-`packages/mcp-server` 是 MCP 协议入口包。它只调用 core 和 target connect 能力，不复制 source/target analyzer 逻辑。
+`packages/mcp-server` 是 MCP 协议入口包。Phase 1 只开放 URL Snapshot UI reconstruction 新链路，不暴露旧 source-aware migration tools。
 
 当前发布入口：
 
 ```bash
-npx -y @proto-bridge/mcp-server --config /path/to/youfi/proto-bridge.config.json
+npx -y @proto-bridge/mcp-server
 ```
 
 当前 MCP tools：
 
-- `generate_migration_spec`
-- `get_migration_brief`
-- `read_migration_artifact`
+- `capture_page_snapshot`
+- `build_ui_implementation_plan`
 - `get_target_conventions`
 - `find_target_examples`
 - `validate_target_changes`
+
+暂不开放：
+
+- `generate_migration_spec`
+- `get_migration_brief`
+- `read_migration_artifact`
+
+MCP 默认使用当前工作目录作为 `target.root`。旧 source-aware 链路继续保留在 CLI / core 中，但不从 MCP runtime 暴露。
 
 Codex 项目级配置：
 
@@ -168,9 +175,7 @@ Codex 项目级配置：
 command = "npx"
 args = [
   "-y",
-  "@proto-bridge/mcp-server",
-  "--config",
-  "/path/to/youfi/proto-bridge.config.json"
+  "@proto-bridge/mcp-server"
 ]
 ```
 
@@ -183,9 +188,7 @@ Cursor 项目级配置：
       "command": "npx",
       "args": [
         "-y",
-        "@proto-bridge/mcp-server",
-        "--config",
-        "/path/to/youfi/proto-bridge.config.json"
+        "@proto-bridge/mcp-server"
       ]
     }
   }
@@ -203,13 +206,12 @@ Claude Code 项目级配置：
 ```bash
 cd /path/to/youfi
 claude mcp add proto-bridge --scope project -- \
-  npx -y @proto-bridge/mcp-server \
-  --config /path/to/youfi/proto-bridge.config.json
+  npx -y @proto-bridge/mcp-server
 ```
 
 ## 7. 输出文件
 
-成功生成后，输出目录包含：
+CLI 旧 source-aware 链路成功生成后，输出目录包含：
 
 ```text
 output/<page>/
@@ -220,6 +222,17 @@ output/<page>/
 ```
 
 `migration-context.json` 是机器可读上下文。`migration-spec.md` 是面向 Flutter 实现者和 AI coding 工具的说明书。
+
+MCP Phase 1 新链路输出：
+
+```text
+.proto-bridge/snapshots/<page>/
+├── page-snapshot.json
+├── screenshot.png
+└── ui-implementation-plan.json
+```
+
+`page-snapshot.json` 是页面结构、视觉和文案证据。`ui-implementation-plan.json` 是 agent 直接消费的 YouFi UI 实现计划。
 
 ## 8. Capture 集成
 
@@ -244,7 +257,7 @@ Capture 失败时，core 会把错误写入 warnings，不阻断静态上下文�
 
 在当前 CLI 流程下，推荐把 `migration-spec.md` 作为主要提示材料，把 `migration-context.json` 作为补充上下文。
 
-在后续 MCP 流程下，AI agent 应通过 MCP 自动获取这些上下文，用户不需要手动复制 Markdown。
+在 MCP Phase 1 流程下，AI agent 应通过 `capture_page_snapshot` 和 `build_ui_implementation_plan` 获取 JSON 上下文，用户不需要手动复制 Markdown。
 
 推荐交付方式：
 

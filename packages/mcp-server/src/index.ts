@@ -2,29 +2,25 @@
 import { realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
-  capturePrototypePage,
-  defaultAdapterRegistry,
+  buildUiImplementationPlan,
+  capturePageSnapshot,
   findFlutterTargetExamples,
-  generateMigrationSpec,
   getFlutterTargetConventions,
 } from '@proto-bridge/core';
 import { parseServerOptions } from './services/config.js';
 import { startMcpServer } from './server/stdio-json-rpc.js';
 
 export {
-  capturePrototypePage,
-  defaultAdapterRegistry,
+  buildUiImplementationPlan,
+  capturePageSnapshot,
   findFlutterTargetExamples,
-  generateMigrationSpec,
   getFlutterTargetConventions,
 };
 
 export type {
-  CapturePrototypePageInput,
+  BuildUiImplementationPlanInput,
+  CapturePageSnapshotInput,
   FindFlutterTargetExamplesInput,
-  GenerateMigrationSpecInput,
-  SourceAdapter,
-  TargetAdapter,
 } from '@proto-bridge/core';
 
 if (isDirectRun()) {

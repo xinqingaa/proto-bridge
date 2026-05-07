@@ -1,5 +1,5 @@
 import type { JsonRpcRequest, ServerOptions, ToolContext } from '../types.js';
-import { RunStore } from '../services/runs.js';
+import { RunStore, SnapshotStore, UiPlanStore } from '../services/runs.js';
 import { dispatch } from './dispatcher.js';
 import { errorMessage, send, sendError } from './responses.js';
 
@@ -7,6 +7,8 @@ export function startMcpServer(options: ServerOptions): void {
   const context: ToolContext = {
     options,
     runs: new RunStore(),
+    snapshots: new SnapshotStore(),
+    plans: new UiPlanStore(),
   };
 
   process.stdin.setEncoding('utf8');

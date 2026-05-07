@@ -1,4 +1,9 @@
-import type { GenerateMigrationSpecResult, MigrationContext } from '@proto-bridge/core';
+import type {
+  BuildUiImplementationPlanResult,
+  CapturePageSnapshotResult,
+  GenerateMigrationSpecResult,
+  MigrationContext,
+} from '@proto-bridge/core';
 
 export type JsonValue = string | number | boolean | null | JsonObject | JsonValue[];
 export type JsonObject = { [key: string]: JsonValue | undefined };
@@ -34,6 +39,21 @@ export type GeneratedRun = {
   result: GenerateMigrationSpecResult;
 };
 
+export type GeneratedSnapshot = {
+  id: string;
+  createdAt: string;
+  targetRoot: string;
+  result: CapturePageSnapshotResult;
+};
+
+export type GeneratedUiPlan = {
+  id: string;
+  createdAt: string;
+  targetRoot: string;
+  snapshotId: string;
+  result: BuildUiImplementationPlanResult;
+};
+
 export type ServerOptions = {
   config?: string | undefined;
 };
@@ -45,6 +65,18 @@ export type ToolContext = {
     get(runId: string): GeneratedRun | undefined;
     require(runId: string): GeneratedRun;
     values(): GeneratedRun[];
+  };
+  snapshots: {
+    add(snapshot: GeneratedSnapshot): void;
+    get(snapshotId: string): GeneratedSnapshot | undefined;
+    require(snapshotId: string): GeneratedSnapshot;
+    values(): GeneratedSnapshot[];
+  };
+  plans: {
+    add(plan: GeneratedUiPlan): void;
+    get(planId: string): GeneratedUiPlan | undefined;
+    require(planId: string): GeneratedUiPlan;
+    values(): GeneratedUiPlan[];
   };
 };
 

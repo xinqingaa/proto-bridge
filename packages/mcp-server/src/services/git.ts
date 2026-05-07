@@ -58,6 +58,7 @@ export function buildValidationResult(input: {
   allowedPaths: string[];
   fileIssues: JsonValue[];
   run?: GeneratedRun | undefined;
+  validationHints?: string[] | undefined;
 }): JsonObject {
   const outsideAllowedPaths = input.allowedPaths.length
     ? input.changedFiles.filter((file) => !input.allowedPaths.some((allowedPath) => file === allowedPath || file.startsWith(ensureTrailingSlash(allowedPath))))
@@ -69,6 +70,7 @@ export function buildValidationResult(input: {
     outsideAllowedPaths,
     fileIssues: input.fileIssues,
     checklist: input.run?.result.context.recommendations.implementationPlan.checklist ?? [],
+    validationHints: input.validationHints ?? [],
     status: outsideAllowedPaths.length || input.fileIssues.length ? 'needs-review' : 'ok',
   } as unknown as JsonObject;
 }
