@@ -145,9 +145,9 @@ pnpm --filter @proto-bridge/core pack
 pnpm --filter @proto-bridge/cli pack
 pnpm --filter @proto-bridge/mcp-server pack
 
-npm publish ./proto-bridge-core-0.2.0.tgz --access public --registry=https://registry.npmjs.org/ --otp=123456
-npm publish ./proto-bridge-cli-0.2.0.tgz --access public --registry=https://registry.npmjs.org/ --otp=123456
-npm publish ./proto-bridge-mcp-server-0.2.0.tgz --access public --registry=https://registry.npmjs.org/ --otp=123456
+npm publish ./proto-bridge-core-0.3.0.tgz --access public --registry=https://registry.npmjs.org/ --otp=123456
+npm publish ./proto-bridge-cli-0.3.0.tgz --access public --registry=https://registry.npmjs.org/ --otp=123456
+npm publish ./proto-bridge-mcp-server-0.3.0.tgz --access public --registry=https://registry.npmjs.org/ --otp=123456
 ```
 
 ## 如果遇到 unclean working tree
