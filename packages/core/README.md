@@ -1,14 +1,14 @@
 # @proto-bridge/core
 
-Core library for ProtoBridge. It contains source and target adapters, runtime capture helpers, migration context generation, and migration spec rendering.
+Core library for ProtoBridge. It contains the two workflow entry points plus shared source, snapshot, and target capabilities.
 
-Most users should use the CLI package instead:
+Most users should use the CLI package for source-aware migration:
 
 ```bash
 npx @proto-bridge/cli generate
 ```
 
-Use `@proto-bridge/core` directly only when you want to embed ProtoBridge in another Node.js tool or service.
+Use `@proto-bridge/core` directly only when you want to embed ProtoBridge in another Node.js tool or service. Prefer the workflow subpath exports over the package root for new code.
 
 ## Requirements
 
@@ -21,10 +21,10 @@ Use `@proto-bridge/core` directly only when you want to embed ProtoBridge in ano
 npm install @proto-bridge/core
 ```
 
-## Basic Usage
+## Source-Aware Migration Usage
 
 ```ts
-import { generateMigrationSpec } from '@proto-bridge/core';
+import { generateMigrationSpec } from '@proto-bridge/core/workflows/source-aware-migration';
 
 const result = await generateMigrationSpec({
   source: {
@@ -43,9 +43,25 @@ const result = await generateMigrationSpec({
 console.log(result.files.migrationSpec);
 ```
 
-## Main API
+## Snapshot UI Reconstruction Usage
 
-### `generateMigrationSpec(input)`
+```ts
+import {
+  buildUiImplementationPlan,
+  capturePageSnapshot,
+} from '@proto-bridge/core/workflows/snapshot-ui-reconstruction';
+import {
+  getFlutterTargetConventions,
+} from '@proto-bridge/core/target/flutter-app';
+```
+
+The snapshot workflow is the MCP-facing path. Its primary artifacts are `screenshot.png`, `page-snapshot.json`, and `ui-implementation-plan.json`.
+
+## Main APIs
+
+### `@proto-bridge/core/workflows/source-aware-migration`
+
+#### `generateMigrationSpec(input)`
 
 Generates both machine-readable context and a Markdown implementation spec.
 
@@ -69,6 +85,28 @@ Returns:
 - `files.screenshot`: optional screenshot path.
 - `files.domSnapshot`: optional DOM snapshot path.
 
+### `@proto-bridge/core/workflows/snapshot-ui-reconstruction`
+
+Provides URL snapshot capture, OCR evidence, UI implementation plan generation, and optional review Markdown export.
+
+Primary outputs:
+
+- `screenshot.png`
+- `page-snapshot.json`
+- `ui-implementation-plan.json`
+- `ocr-result.json` when OCR is requested and available
+- `ui-review.md` when review export is requested
+
+### `@proto-bridge/core/target/flutter-app`
+
+Shared YouFi / Flutter target helpers:
+
+- conventions
+- examples
+- source-aware migration planner
+- snapshot UI reconstruction planner
+- validation
+
 ## Adapters
 
 Current built-in adapters:
@@ -76,7 +114,7 @@ Current built-in adapters:
 - Source: `vue3-prototype`
 - Target: `flutter-app`
 
-The adapter layer is intentionally separated from the CLI so future entry points, such as MCP or custom automation scripts, can reuse the same generation pipeline.
+The adapter layer is intentionally separated from entry packages. CLI and MCP do not share the same workflow, but they can reuse target and snapshot capabilities through stable core facades.
 
 ## Capture
 

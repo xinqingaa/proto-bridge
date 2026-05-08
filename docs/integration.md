@@ -1,6 +1,11 @@
 # 集成与工具入口
 
-本文档说明 ProtoBridge 的 CLI、MCP、脚本化调用和输出集成方式。
+本文档说明 ProtoBridge 的 CLI、MCP、脚本化调用和输出集成方式。当前入口边界是：
+
+```text
+CLI = source-aware migration，只生成迁移 context/spec。
+MCP = snapshot UI reconstruction，只生成 screenshot/page snapshot/UI plan 并辅助 agent 实现。
+```
 
 ## 1. CLI 入口
 
@@ -68,28 +73,29 @@ ProtoBridge 当前适合接入以下流程：
 - target 仓库不可访问，无法读取模块、路由、资源和组件约束。
 - 需要像素级 Figma 还原但没有 target 工程上下文。
 
-## 4. 下一步：MCP + AI Agent 自动化
+## 4. MCP + AI Agent 自动化
 
-团队日常使用期望更接近 Figma MCP：用户只给 AI 工具一个 route、URL 或 Vue 文件，后续由 AI 工具自动完成 Flutter 实现。ProtoBridge 的下一步方向是把上下文生成能力接入 MCP，而不是在 CLI 中内置 Dart 代码生成器。
+团队日常使用期望更接近 Figma MCP：用户只给 AI 工具一个 URL，后续由 AI 工具自动完成 Flutter UI 还原。ProtoBridge MCP 不走旧 source-aware migration，而是走 snapshot UI reconstruction。
 
 推荐目标流程：
 
 ```text
-用户在 AI coding 工具中输入 route / url / vue 文件
-  -> AI agent 调用 ProtoBridge MCP 生成 migration context/spec
+用户在 AI coding 工具中输入 URL
+  -> AI agent 调用 ProtoBridge MCP 生成 screenshot.png / page-snapshot.json
+  -> AI agent 调用 MCP 生成 ui-implementation-plan.json
   -> AI agent 调用 MCP 获取 target 约束和相似 Flutter 实现
   -> AI agent 在 target repo 中创建或修改目标页面文件
   -> AI agent 调用 MCP 校验改动范围、缺失项和可追溯证据
 ```
 
-这个流程中，`migration-spec.md` 仍然存在，但它是 MCP 提供给 agent 的上下文，不再要求用户手动复制给 AI 工具。详见 [MCP Agent 工作流](agent-mcp-workflow.md)。
+这个流程中，Markdown 不是必经产物；需要人工 review 时可以导出 `ui-review.md`。旧 `migration-spec.md` 仍由 CLI 生成，服务维护者调试、审查和归档。详见 [MCP Agent 工作流](agent-mcp-workflow.md)。
 
 ## 5. Core 调用
 
-CLI 和 MCP 都调用 core。核心调用入口：
+CLI 和 MCP 都调用 core，但调用不同 workflow。CLI source-aware migration 入口：
 
 ```ts
-import { generateMigrationSpec } from '@proto-bridge/core';
+import { generateMigrationSpec } from '@proto-bridge/core/workflows/source-aware-migration';
 
 await generateMigrationSpec({
   source: {
@@ -106,7 +112,7 @@ await generateMigrationSpec({
 });
 ```
 
-Core 编排流程：
+CLI 编排流程：
 
 ```text
 generateMigrationSpec
@@ -141,9 +147,24 @@ generateMigrationSpec
 - Spec generator 负责把两边信息整理成 target-facing 文档。
 - warnings 和 checklist 负责保留不确定性，避免把推断内容写成确定结论。
 
+MCP snapshot UI reconstruction 入口：
+
+```ts
+import {
+  buildUiImplementationPlan,
+  capturePageSnapshot,
+} from '@proto-bridge/core/workflows/snapshot-ui-reconstruction';
+import {
+  findFlutterTargetExamples,
+  getFlutterTargetConventions,
+} from '@proto-bridge/core/target/flutter-app';
+```
+
+MCP 不 import `workflows/source-aware-migration`，也不暴露旧工具。
+
 ## 6. MCP 入口
 
-`packages/mcp-server` 是 MCP 协议入口包。Phase 1 只开放 URL Snapshot UI reconstruction 新链路，不暴露旧 source-aware migration tools。
+`packages/mcp-server` 是 MCP 协议入口包。当前只开放 URL Snapshot UI reconstruction 新链路，不暴露旧 source-aware migration tools。
 
 当前发布入口：
 
@@ -225,7 +246,7 @@ output/<page>/
 
 `migration-context.json` 是机器可读上下文。`migration-spec.md` 是面向 Flutter 实现者和 AI coding 工具的说明书。
 
-MCP Phase 1 新链路输出：
+MCP 新链路输出：
 
 ```text
 .proto-bridge/snapshots/<page>/
@@ -261,7 +282,7 @@ Capture 失败时，core 会把错误写入 warnings，不阻断静态上下文�
 
 在当前 CLI 流程下，推荐把 `migration-spec.md` 作为主要提示材料，把 `migration-context.json` 作为补充上下文。
 
-在 MCP Phase 1 流程下，AI agent 应通过 `capture_page_snapshot` 和 `build_ui_implementation_plan` 获取 JSON 上下文，用户不需要手动复制 Markdown。
+在 MCP 流程下，AI agent 应通过 `capture_page_snapshot` 和 `build_ui_implementation_plan` 获取 JSON 上下文，用户不需要手动复制 Markdown。
 
 推荐交付方式：
 

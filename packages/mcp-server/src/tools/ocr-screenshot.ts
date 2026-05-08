@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { readFile, writeFile } from 'node:fs/promises';
-import { ocrScreenshot } from '@proto-bridge/core';
-import type { OcrTextBox, PageSnapshot } from '@proto-bridge/core';
+import { ocrScreenshot } from '@proto-bridge/core/workflows/snapshot-ui-reconstruction';
+import type { OcrTextBox, PageSnapshot } from '@proto-bridge/core/workflows/snapshot-ui-reconstruction';
 import type { JsonObject, ToolContext } from '../types.js';
 import { readString, readStringArray } from '../utils/args.js';
 import { resolveRuntimeTargetRoot } from '../services/config.js';
@@ -44,10 +44,10 @@ async function attachOcrToSnapshot(
 ): Promise<string | undefined> {
   const snapshotId = readString(args, 'snapshotId');
   if (snapshotId) {
-    const snapshotRun = context.snapshots.require(snapshotId);
-    snapshotRun.result.snapshot.ocr = ocr;
-    await writeFile(snapshotRun.result.files.pageSnapshot, `${JSON.stringify(snapshotRun.result.snapshot, null, 2)}\n`, 'utf8');
-    return snapshotRun.result.files.pageSnapshot;
+    const snapshotRecord = context.snapshots.require(snapshotId);
+    snapshotRecord.result.snapshot.ocr = ocr;
+    await writeFile(snapshotRecord.result.files.pageSnapshot, `${JSON.stringify(snapshotRecord.result.snapshot, null, 2)}\n`, 'utf8');
+    return snapshotRecord.result.files.pageSnapshot;
   }
 
   const snapshotPath = readString(args, 'snapshotPath');

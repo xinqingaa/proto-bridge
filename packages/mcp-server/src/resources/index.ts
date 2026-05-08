@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { getFlutterTargetConventions } from '@proto-bridge/core';
+import { getFlutterTargetConventions } from '@proto-bridge/core/target/flutter-app';
 import type { JsonObject, JsonValue, ToolContext } from '../types.js';
 import { readString } from '../utils/args.js';
 import { resolveRuntimeTargetRoot } from '../services/config.js';

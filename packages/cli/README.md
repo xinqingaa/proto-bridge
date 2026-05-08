@@ -1,6 +1,8 @@
 # @proto-bridge/cli
 
-ProtoBridge CLI generates migration context and implementation specs from a Vue prototype page to help Flutter developers or AI coding agents implement the corresponding target screen.
+ProtoBridge CLI runs the source-aware migration workflow. It generates migration context and implementation specs from a Vue prototype page to help Flutter developers or AI coding agents implement the corresponding target screen.
+
+It intentionally does not run the MCP snapshot UI reconstruction workflow. For URL screenshot/page snapshot/UI plan generation, use `@proto-bridge/mcp-server` from the YouFi target repository.
 
 ## Requirements
 

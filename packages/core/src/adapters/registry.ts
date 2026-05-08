@@ -1,6 +1,6 @@
 import type { SourceAdapter, TargetAdapter } from './types.js';
-import { vue3PrototypeSourceAdapter } from './source/vue3-prototype.js';
-import { flutterAppTargetAdapter } from './target/flutter-app.js';
+import { vue3PrototypeSourceAdapter } from '../source/vue3-prototype/adapter.js';
+import { flutterAppTargetAdapter } from '../target/flutter-app/adapter.js';
 
 export class AdapterRegistry {
   private readonly sourceAdapters = new Map<string, SourceAdapter>();

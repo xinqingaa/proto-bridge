@@ -10,15 +10,20 @@ B = Target project，真实实现所在项目
 C = ProtoBridge，读取 A 和 B 后生成实现说明书的桥接工具
 ```
 
-ProtoBridge 的输出是可审查、可修改、可交给 AI coding 工具继续实现的上下文包，而不是直接提交到目标 App 的业务代码。
+ProtoBridge 的输出是可审查、可修改、可交给 AI coding 工具继续实现的上下文包，而不是直接提交到目标 App 的业务代码。当前架构明确分成两条 workflow：
+
+```text
+CLI = Source-aware Migration
+MCP = Snapshot UI Reconstruction
+```
 
 核心目标：
 
-- 从 source project 提取页面结构、交互、状态、路由、notes、i18n、资源和样式 token。
-- 从 target project 提取模块、路由、状态管理习惯、主题、资源目录、公共组件和相似实现。
-- 将 source facts 转成 target-facing 的实现规划。
-- 输出 `migration-context.json` 和 `migration-spec.md`。
-- 下一阶段通过 MCP 把这些上下文直接提供给 AI coding agent，让 agent 在目标仓库中完成 Dart 实现。
+- CLI 从 source project 提取页面结构、交互、状态、路由、notes、i18n、资源和样式 token。
+- CLI 从 target project 提取模块、路由、状态管理习惯、主题、资源目录、公共组件和相似实现。
+- CLI 将 source facts 转成 target-facing 的实现规划，并输出 `migration-context.json` 和 `migration-spec.md`。
+- MCP 从 URL / rendered DOM / screenshot / OCR 生成 `screenshot.png`、`page-snapshot.json` 和 `ui-implementation-plan.json`。
+- MCP 把 snapshot evidence、YouFi target conventions、相似实现和校验工具提供给 AI coding agent，让 agent 在目标仓库中完成 Dart 实现。
 
 ## 2. 非目标
 
@@ -28,21 +33,26 @@ ProtoBridge 不负责：
 - 在 CLI 中确定性翻译 Vue 到 Dart。
 - 一键迁移并自动提交目标 App。
 - 把 Vue 模板、CSS class 或 DOM 结构逐层翻译成 Flutter Widget。
-- 以 OCR 作为主输入。
+- 在 CLI source-aware migration 中以 OCR 作为主输入。
+- 在 MCP runtime 中暴露旧 source-aware migration 工具。
 - 处理复杂 Figma 高保真还原。
 - 在 ProtoBridge 中保存 A/B 项目的开发规范；规范应从 A/B 自身仓库读取。
 
 ## 3. 总体架构
 
 ```text
-CLI / MCP
-  -> core generator
-    -> AdapterRegistry
-      -> SourceAdapter
-      -> TargetAdapter
-    -> optional Capture
-    -> Planner
-    -> SpecGenerator
+packages/cli
+  -> workflows/source-aware-migration
+    -> source/vue3-prototype
+    -> target/flutter-app migration planner
+    -> migration-context.json / migration-spec.md
+
+packages/mcp-server
+  -> workflows/snapshot-ui-reconstruction
+    -> snapshot/browser-capture
+    -> snapshot/ocr
+    -> target/flutter-app conventions / examples / UI reconstruction planner / validation
+    -> screenshot.png / page-snapshot.json / ui-implementation-plan.json
 ```
 
 当前默认组合：
@@ -61,7 +71,7 @@ TargetAdapter = flutter-app
 入口定位：
 
 - CLI：稳定生成 context/spec，服务调试、审查、批处理和非 MCP 场景。
-- MCP：后续作为 AI coding agent 的上下文入口，负责提供页面事实、目标工程约束、相似实现和结果校验。
+- MCP：snapshot-first 的 AI coding agent 入口，负责提供可见 UI evidence、目标工程约束、相似实现和结果校验。
 - AI agent：负责真正的 Dart 文件编辑、跨文件调整、运行验证和错误修正。
 
 ## 4. 工程结构
@@ -70,41 +80,54 @@ TargetAdapter = flutter-app
 packages/core/src/
 ├── adapters/
 │   ├── registry.ts
-│   ├── types.ts
-│   ├── source/
-│   │   └── vue3-prototype/
-│   │       ├── prototype-page.ts
-│   │       └── vue-sfc.ts
-│   └── target/
-│       └── flutter-app/
-│           ├── flutter-context.ts
-│           ├── flutter-implementation-plan.ts
-│           ├── flutter-migration-spec.ts
-│           ├── flutter-recommendations.ts
-│           ├── token-mapper.ts
-│           └── planners/
-│               ├── naming-strategy.ts
-│               ├── page-pattern-classifier.ts
-│               └── widget-blueprints.ts
-├── capture/
-│   └── playwright-capture.ts
-├── generators/
-│   ├── migration-context.ts
-│   └── migration-spec.ts
+│   └── types.ts
+├── artifacts/
+│   └── artifact-writer.ts
+├── shared/
+│   └── paths.ts
+├── source/
+│   └── vue3-prototype/
+│       ├── adapter.ts
+│       ├── prototype-page.ts
+│       ├── vue-sfc.ts
+│       └── types.ts
+├── snapshot/
+│   ├── browser-capture/
+│   │   ├── capture-rendered-page.ts
+│   │   └── rendered-page-snapshot.ts
+│   ├── ocr/
+│   │   └── external-ocr.ts
+│   └── types.ts
+├── target/
+│   └── flutter-app/
+│       ├── adapter.ts
+│       ├── context.ts
+│       ├── conventions.ts
+│       ├── examples.ts
+│       ├── migration-planner.ts
+│       ├── render-migration-markdown.ts
+│       ├── theme-mapping.ts
+│       ├── ui-reconstruction-planner.ts
+│       └── validation.ts
+├── workflows/
+│   ├── source-aware-migration/
+│   └── snapshot-ui-reconstruction/
 ├── types/
-└── utils/
+└── index.ts
 ```
 
 模块职责：
 
 - `adapters/types.ts`：定义 `SourceAdapter`、`TargetAdapter` 和 adapter project config。
 - `adapters/registry.ts`：注册并解析可用 adapter。
-- `adapters/source/vue3-prototype`：读取 Vue3 原型工程并产出 source facts。
-- `adapters/target/flutter-app`：读取 Flutter 工程上下文，执行 token mapping、recommendations、Flutter implementation planning 和 Flutter planners。
-- `capture`：通过 Playwright 提取运行时截图、DOM、bbox 和 computed style。
-- `generators`：组装 migration context，调用 target renderer 并写出文件。
+- `source/vue3-prototype`：读取 Vue3 原型工程并产出 source facts。
+- `snapshot`：URL/rendered DOM/screenshot/OCR evidence 能力，当前由 MCP 使用，未来 CLI 可复用。
+- `target/flutter-app`：YouFi target 能力，统一暴露 adapter、conventions、examples、migration planner、UI reconstruction planner、theme mapping 和 validation。
+- `workflows/source-aware-migration`：CLI 旧说明书链路编排。
+- `workflows/snapshot-ui-reconstruction`：MCP 新 UI 还原链路编排。
+- `artifacts`：产物写入能力。
+- `shared`：路径等通用工具。
 - `types`：跨模块共享的数据结构。
-- `utils`：路径、文件和 JS literal 解析工具。
 
 ## 5. 文件职责表
 
@@ -112,31 +135,36 @@ packages/core/src/
 | --- | --- | --- |
 | `adapters/registry.ts` | 注册并按 adapter id 获取 source/target adapter | core |
 | `adapters/types.ts` | 定义 adapter project、`SourceAdapter`、`TargetAdapter` 接口 | core |
-| `adapters/source/vue3-prototype.ts` | 注册 `vue3-prototype` source adapter | source/vue3 |
-| `adapters/source/vue3-prototype/prototype-page.ts` | 读取 Vue3 原型页面配置、源码、notes、i18n 和页面元信息 | source/vue3 |
-| `adapters/source/vue3-prototype/vue-sfc.ts` | 从 Vue SFC 中提取结构、状态、交互、路由、布局、资源和 token 线索 | source/vue3 |
-| `adapters/target/flutter-app.ts` | 注册 `flutter-app` target adapter | target/flutter |
-| `adapters/target/flutter-app/flutter-context.ts` | 扫描 Flutter 模块、routes、translations、assets、common widgets 和相似文件 | target/flutter |
-| `adapters/target/flutter-app/token-mapper.ts` | 将 source token 和 computed style 映射到 Flutter theme 写法 | target/flutter |
-| `adapters/target/flutter-app/flutter-recommendations.ts` | 生成 Flutter recommendations、风险和人工确认项 | target/flutter |
-| `adapters/target/flutter-app/flutter-implementation-plan.ts` | 生成 Flutter 文件拆分、Widget 组合、状态策略和 Controller/Adapter 边界 | target/flutter |
-| `adapters/target/flutter-app/flutter-migration-spec.ts` | 将 `MigrationContext` 渲染为 Flutter-facing Markdown spec | target/flutter |
-| `adapters/target/flutter-app/planners/page-pattern-classifier.ts` | 根据 source facts 判断页面模式，服务 Flutter implementation plan | target/flutter |
-| `adapters/target/flutter-app/planners/widget-blueprints.ts` | 根据页面模式生成 Flutter Widget blueprint | target/flutter |
-| `adapters/target/flutter-app/planners/naming-strategy.ts` | 提供 Flutter 文件和 Widget 命名策略 | target/flutter |
-| `capture/playwright-capture.ts` | 运行时截图、DOM tree、bbox 和 computed style 提取 | core/capture |
-| `generators/migration-context.ts` | 编排 source adapter、capture、target adapter 并生成 `MigrationContext` | core |
-| `generators/migration-spec.ts` | 调用 target renderer，写入 `migration-context.json` 和 `migration-spec.md` | core |
+| `source/vue3-prototype/adapter.ts` | 注册 `vue3-prototype` source adapter | source/vue3 |
+| `source/vue3-prototype/prototype-page.ts` | 读取 Vue3 原型页面配置、源码、notes、i18n 和页面元信息 | source/vue3 |
+| `source/vue3-prototype/vue-sfc.ts` | 从 Vue SFC 中提取结构、状态、交互、路由、布局、资源和 token 线索 | source/vue3 |
+| `snapshot/browser-capture/capture-rendered-page.ts` | CLI 可选运行时截图、DOM tree、bbox 和 computed style 提取 | snapshot |
+| `snapshot/browser-capture/rendered-page-snapshot.ts` | URL capture 底层能力，提取 screenshot 和 page snapshot evidence | snapshot |
+| `snapshot/ocr/external-ocr.ts` | OCR evidence 持久化或返回 provider 缺失提示 | snapshot |
+| `target/flutter-app/adapter.ts` | 注册 `flutter-app` target adapter | target/flutter |
+| `target/flutter-app/context.ts` | 扫描 Flutter 模块、routes、translations、assets、common widgets 和相似文件 | target/flutter |
+| `target/flutter-app/theme-mapping.ts` | 将 source token 和 computed style 映射到 Flutter theme 写法 | target/flutter |
+| `target/flutter-app/migration-recommendations.ts` | 生成 Flutter recommendations、风险和人工确认项 | target/flutter |
+| `target/flutter-app/migration-planner.ts` | 生成 Flutter 文件拆分、Widget 组合、状态策略和 Controller/Adapter 边界 | target/flutter |
+| `target/flutter-app/render-migration-markdown.ts` | 将 `MigrationContext` 渲染为 Flutter-facing Markdown spec | target/flutter |
+| `target/flutter-app/conventions.ts` | 读取 YouFi modules、routes、translations、assets、components 和 theme usage | target/flutter |
+| `target/flutter-app/examples.ts` | 查找相似 Dart 文件和组件使用片段 | target/flutter |
+| `target/flutter-app/ui-reconstruction-planner.ts` | MCP snapshot UI reconstruction 的 YouFi UI plan 生成 | target/flutter |
+| `target/flutter-app/validation.ts` | target Dart 改动范围和明显实现风险校验 | target/flutter |
+| `workflows/source-aware-migration/*` | 旧说明书链路编排，生成 migration context/spec | workflow/cli |
+| `workflows/snapshot-ui-reconstruction/*` | 新 snapshot 链路编排，生成 snapshot、UI plan 和 review markdown | workflow/mcp |
 | `types/index.ts` | 定义当前 context、source facts、target context、recommendations 和输出类型 | shared types |
-| `utils/js-literal.ts` | 受控解析 JS literal 配置 | core utils |
-| `utils/path.ts` | 路径、读写文件和 JSON 输出工具 | core utils |
+| `source/vue3-prototype/js-literal.ts` | 受控解析 JS literal 配置 | source/vue3 |
+| `shared/paths.ts` | 路径和读取工具 | shared |
+| `artifacts/artifact-writer.ts` | JSON / Markdown 写入工具 | artifacts |
 
 目录归属原则：
 
-- 技术栈专属逻辑放在对应 adapter 下。
-- Flutter 页面模式、Widget blueprint、命名策略属于 `flutter-app` target adapter。
-- `generators/migration-context.ts` 只做编排，不包含 Flutter recommendation 规则。
-- `generators/migration-spec.ts` 只调用 target adapter 的 renderer；target-specific Markdown 规则放在 target adapter 内。
+- 技术栈专属逻辑放在 `source/*` 或 `target/*` 下，`adapters` 只保留协议和 registry。
+- Flutter 页面模式、Widget blueprint、命名策略属于 source-aware migration planner。
+- Snapshot UI reconstruction 的 YouFi 文件树、Widget plan、component/theme/i18n/assets mapping 属于 `target/flutter-app/ui-reconstruction-planner.ts`。
+- 新代码应优先 import `workflows/source-aware-migration` 或 `workflows/snapshot-ui-reconstruction`。
+- Snapshot capture / OCR 不放进 MCP 私有目录，应留在 `snapshot/*` 方便未来 CLI 复用。
 
 ## 6. Adapter 接口
 
@@ -222,7 +250,7 @@ Target 侧信息进入 spec 的方式：
 
 ## 7. Source 分析
 
-入口：`packages/core/src/adapters/source/vue3-prototype/prototype-page.ts`
+入口：`packages/core/src/source/vue3-prototype/prototype-page.ts`
 
 读取内容：
 
@@ -246,7 +274,7 @@ prototype/src/views/**
 
 ## 8. SFC 语义分析
 
-入口：`packages/core/src/adapters/source/vue3-prototype/vue-sfc.ts`
+入口：`packages/core/src/source/vue3-prototype/vue-sfc.ts`
 
 分析内容：
 
@@ -264,7 +292,7 @@ prototype/src/views/**
 
 ## 9. Target 分析
 
-入口：`packages/core/src/adapters/target/flutter-app/flutter-context.ts`
+入口：`packages/core/src/target/flutter-app/context.ts`
 
 扫描内容：
 
@@ -294,7 +322,7 @@ lib/app/widgets/**/*.dart
 
 ## 10. Token 映射
 
-入口：`packages/core/src/adapters/target/flutter-app/token-mapper.ts`
+入口：`packages/core/src/target/flutter-app/theme-mapping.ts`
 
 输入来源：
 
@@ -321,7 +349,7 @@ type TokenMapResult = {
 
 ## 11. Flutter Implementation Plan
 
-入口：`packages/core/src/adapters/target/flutter-app/flutter-implementation-plan.ts`
+入口：`packages/core/src/target/flutter-app/migration-planner.ts`
 
 规划流程：
 

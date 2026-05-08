@@ -1,9 +1,9 @@
 import path from 'node:path';
-import { capturePageSnapshot } from '@proto-bridge/core';
+import { capturePageSnapshot } from '@proto-bridge/core/workflows/snapshot-ui-reconstruction';
 import type { JsonObject, ToolContext } from '../types.js';
 import { readBoolean, readNumber, readObject, readString } from '../utils/args.js';
 import { resolveRuntimeTargetRoot } from '../services/config.js';
-import { createSnapshotRunId } from '../services/runs.js';
+import { createSnapshotRecordId } from '../services/session-state.js';
 
 export async function capturePageSnapshotTool(context: ToolContext, args: JsonObject): Promise<JsonObject> {
   const url = readString(args, 'url');
@@ -16,16 +16,16 @@ export async function capturePageSnapshotTool(context: ToolContext, args: JsonOb
     viewport: readViewport(args),
     saveArtifacts: readBoolean(args, 'saveArtifacts') ?? true,
   });
-  const snapshotRun = {
-    id: createSnapshotRunId(result.snapshot.id),
+  const snapshotRecord = {
+    id: createSnapshotRecordId(result.snapshot.id),
     createdAt: new Date().toISOString(),
     targetRoot,
     result,
   };
-  context.snapshots.add(snapshotRun);
+  context.snapshots.add(snapshotRecord);
   return {
-    snapshotId: snapshotRun.id,
-    createdAt: snapshotRun.createdAt,
+    snapshotId: snapshotRecord.id,
+    createdAt: snapshotRecord.createdAt,
     targetRoot,
     files: result.files as unknown as JsonObject,
     summary: {

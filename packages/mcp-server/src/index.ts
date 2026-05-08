@@ -4,9 +4,11 @@ import { fileURLToPath } from 'node:url';
 import {
   buildUiImplementationPlan,
   capturePageSnapshot,
+} from '@proto-bridge/core/workflows/snapshot-ui-reconstruction';
+import {
   findFlutterTargetExamples,
   getFlutterTargetConventions,
-} from '@proto-bridge/core';
+} from '@proto-bridge/core/target/flutter-app';
 import { parseServerOptions } from './services/config.js';
 import { startMcpServer } from './server/stdio-json-rpc.js';
 
@@ -20,8 +22,10 @@ export {
 export type {
   BuildUiImplementationPlanInput,
   CapturePageSnapshotInput,
+} from '@proto-bridge/core/workflows/snapshot-ui-reconstruction';
+export type {
   FindFlutterTargetExamplesInput,
-} from '@proto-bridge/core';
+} from '@proto-bridge/core/target/flutter-app';
 
 if (isDirectRun()) {
   startMcpServer(parseServerOptions(process.argv.slice(2)));

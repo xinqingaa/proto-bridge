@@ -8,7 +8,7 @@ import {
   generateMigrationSpec,
   type GenerateMigrationSpecInput,
   type GenerateMigrationSpecResult,
-} from '@proto-bridge/core';
+} from '@proto-bridge/core/workflows/source-aware-migration';
 
 type ParsedArgs = {
   command: string;

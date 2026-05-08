@@ -1,13 +1,13 @@
 import path from 'node:path';
 import { access } from 'node:fs/promises';
+import {
+  buildFlutterTargetValidationResult,
+  scanFlutterTargetDartFiles,
+} from '@proto-bridge/core/target/flutter-app';
 import type { JsonObject, ToolContext } from '../types.js';
 import { readString, readStringArray } from '../utils/args.js';
 import { resolveRuntimeTargetRoot } from '../services/config.js';
-import {
-  buildValidationResult,
-  collectChangedFiles,
-  scanChangedDartFiles,
-} from '../services/git.js';
+import { collectChangedFiles } from '../services/git.js';
 
 export async function validateTargetChangesTool(context: ToolContext, args: JsonObject): Promise<JsonObject> {
   const targetRoot = resolveRuntimeTargetRoot(readString(args, 'targetRoot'));
@@ -18,8 +18,8 @@ export async function validateTargetChangesTool(context: ToolContext, args: Json
   const missingExpectedFiles = await collectMissingFiles(targetRoot, expectedFiles);
   const changedFiles = await collectChangedFiles(targetRoot, readString(args, 'gitBase'));
   const dartFiles = changedFiles.filter((file) => file.endsWith('.dart'));
-  const fileIssues = await scanChangedDartFiles(targetRoot, dartFiles);
-  return buildValidationResult({
+  const fileIssues = await scanFlutterTargetDartFiles(targetRoot, dartFiles);
+  return buildFlutterTargetValidationResult({
     targetRoot,
     changedFiles,
     allowedPaths,
@@ -27,7 +27,7 @@ export async function validateTargetChangesTool(context: ToolContext, args: Json
     validationHints: plan?.result.plan.validationHints,
     expectedFiles,
     missingExpectedFiles,
-  });
+  }) as unknown as JsonObject;
 }
 
 function allowedPathsFromPlan(plan: ReturnType<ToolContext['plans']['get']>): string[] {

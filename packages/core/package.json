@@ -9,6 +9,34 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./workflows/source-aware-migration": {
+      "types": "./dist/workflows/source-aware-migration/index.d.ts",
+      "import": "./dist/workflows/source-aware-migration/index.js"
+    },
+    "./workflows/snapshot-ui-reconstruction": {
+      "types": "./dist/workflows/snapshot-ui-reconstruction/index.d.ts",
+      "import": "./dist/workflows/snapshot-ui-reconstruction/index.js"
+    },
+    "./target/flutter-app": {
+      "types": "./dist/target/flutter-app/index.d.ts",
+      "import": "./dist/target/flutter-app/index.js"
+    },
+    "./source/vue3-prototype": {
+      "types": "./dist/source/vue3-prototype/index.d.ts",
+      "import": "./dist/source/vue3-prototype/index.js"
+    },
+    "./snapshot": {
+      "types": "./dist/snapshot/index.d.ts",
+      "import": "./dist/snapshot/index.js"
+    },
+    "./artifacts": {
+      "types": "./dist/artifacts/index.d.ts",
+      "import": "./dist/artifacts/index.js"
+    },
+    "./shared": {
+      "types": "./dist/shared/index.d.ts",
+      "import": "./dist/shared/index.js"
     }
   },
   "files": [

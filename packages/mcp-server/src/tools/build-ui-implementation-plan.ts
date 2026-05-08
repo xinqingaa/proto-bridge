@@ -1,11 +1,11 @@
 import path from 'node:path';
 import { readFile } from 'node:fs/promises';
-import { buildUiImplementationPlan } from '@proto-bridge/core';
-import type { PageSnapshot } from '@proto-bridge/core';
+import { buildUiImplementationPlan } from '@proto-bridge/core/workflows/snapshot-ui-reconstruction';
+import type { PageSnapshot } from '@proto-bridge/core/workflows/snapshot-ui-reconstruction';
 import type { JsonObject, ToolContext } from '../types.js';
 import { readString } from '../utils/args.js';
 import { resolveRuntimeTargetRoot } from '../services/config.js';
-import { createUiPlanRunId } from '../services/runs.js';
+import { createUiPlanRecordId } from '../services/session-state.js';
 
 export async function buildUiImplementationPlanTool(context: ToolContext, args: JsonObject): Promise<JsonObject> {
   const targetRoot = resolveRuntimeTargetRoot(readString(args, 'targetRoot'));
@@ -17,18 +17,18 @@ export async function buildUiImplementationPlanTool(context: ToolContext, args: 
     outDir,
     targetModule: readString(args, 'targetModule'),
   });
-  const planRun = {
-    id: createUiPlanRunId(result.plan.id),
+  const planRecord = {
+    id: createUiPlanRecordId(result.plan.id),
     createdAt: new Date().toISOString(),
     targetRoot,
     snapshotId,
     result,
   };
-  context.plans.add(planRun);
+  context.plans.add(planRecord);
   return {
-    planId: planRun.id,
+    planId: planRecord.id,
     snapshotId,
-    createdAt: planRun.createdAt,
+    createdAt: planRecord.createdAt,
     targetRoot,
     files: result.files as unknown as JsonObject,
     summary: {
@@ -49,11 +49,11 @@ async function resolveSnapshot(
 ): Promise<{ snapshot: PageSnapshot; snapshotId: string; defaultOutDir?: string | undefined }> {
   const snapshotId = readString(args, 'snapshotId');
   if (snapshotId) {
-    const snapshotRun = context.snapshots.require(snapshotId);
+    const snapshotRecord = context.snapshots.require(snapshotId);
     return {
-      snapshot: snapshotRun.result.snapshot,
+      snapshot: snapshotRecord.result.snapshot,
       snapshotId,
-      defaultOutDir: path.dirname(snapshotRun.result.files.pageSnapshot),
+      defaultOutDir: path.dirname(snapshotRecord.result.files.pageSnapshot),
     };
   }
 

@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { readFile } from 'node:fs/promises';
-import { exportReviewMarkdown } from '@proto-bridge/core';
-import type { PageSnapshot, UiImplementationPlan } from '@proto-bridge/core';
+import { exportReviewMarkdown } from '@proto-bridge/core/workflows/snapshot-ui-reconstruction';
+import type { PageSnapshot, UiImplementationPlan } from '@proto-bridge/core/workflows/snapshot-ui-reconstruction';
 import type { JsonObject, ToolContext } from '../types.js';
 import { readString } from '../utils/args.js';
 import { resolveRuntimeTargetRoot } from '../services/config.js';
@@ -43,9 +43,9 @@ async function resolveInputs(
   let plan: UiImplementationPlan | undefined;
   let planDir: string | undefined;
   if (planId) {
-    const planRun = context.plans.require(planId);
-    plan = planRun.result.plan;
-    planDir = path.dirname(planRun.result.files.uiImplementationPlan);
+    const planRecord = context.plans.require(planId);
+    plan = planRecord.result.plan;
+    planDir = path.dirname(planRecord.result.files.uiImplementationPlan);
   } else if (planPath) {
     const absolutePlanPath = path.resolve(planPath);
     plan = JSON.parse(await readFile(absolutePlanPath, 'utf8')) as UiImplementationPlan;
@@ -59,8 +59,8 @@ async function resolveInputs(
   } else if (snapshotPath) {
     snapshot = JSON.parse(await readFile(path.resolve(snapshotPath), 'utf8')) as PageSnapshot;
   } else {
-    const snapshotRun = context.snapshots.get(plan.snapshotId);
-    snapshot = snapshotRun?.result.snapshot;
+    const snapshotRecord = context.snapshots.get(plan.snapshotId);
+    snapshot = snapshotRecord?.result.snapshot;
   }
   if (!snapshot) throw new Error('export_review_markdown requires snapshotId/snapshotPath when the snapshot is not in MCP memory.');
 

@@ -9,7 +9,7 @@
 - 新工作流聚焦 **UI 还原**，不再把复杂业务迁移作为默认目标。
 - 新工作流默认运行在 YouFi 当前工作目录，`target.root = process.cwd()`。
 - 新工作流主输入优先级为 rendered HTML / DOM snapshot + screenshot，OCR 作为辅助证据。
-- 新工作流主产物是 JSON：`page-snapshot.json` 与 `ui-implementation-plan.json`。
+- 新工作流主产物是 `screenshot.png`、`page-snapshot.json` 与 `ui-implementation-plan.json`；截图是 UI 还原证据，不是调试附属物。
 - Markdown 只作为可选 review / 归档 / 讨论产物，不再是 agent 实现的必经路径。
 - 现有 `@proto-bridge/core`、`@proto-bridge/mcp-server`、`@proto-bridge/cli` 均保留，不删除。
 - 现有 source-aware 链路保留，用于需要 Vue 源码、notes、i18n、业务语义和可追溯说明书的场景。
@@ -369,8 +369,8 @@ lib/app/widgets/**/*.dart
 
 仍然高价值的部分：
 
-- `target-connect`。
-- `flutter-context`。
+- `target/flutter-app/target-connect`。
+- `target/flutter-app/context`。
 - common widgets 扫描。
 - routes / translations / assets 扫描。
 - theme usage 扫描。
@@ -379,8 +379,8 @@ lib/app/widgets/**/*.dart
 
 需要调整定位的部分：
 
-- `flutter-migration-spec` 不再是新链路默认输出，只作为 `export_review_markdown` renderer。
-- 依赖 `PrototypePageAnalysis` 的 planner 需要抽象到 `PageFacts` 或新增 `SnapshotUiPlanner`。
+- `render-migration-markdown` 不再是新链路默认输出；新链路 review Markdown 由 snapshot workflow 单独导出。
+- 依赖 `PrototypePageAnalysis` 的 migration planner 与 `ui-reconstruction-planner` 已拆开。
 - token mapping 输入需要从 Vue style token 扩展到 snapshot visual token。
 
 ### 9.3 `core`

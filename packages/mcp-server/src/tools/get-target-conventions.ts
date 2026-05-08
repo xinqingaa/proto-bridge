@@ -1,5 +1,5 @@
-import { getFlutterTargetConventions } from '@proto-bridge/core';
-import type { FlutterComponentRole } from '@proto-bridge/core';
+import { getFlutterTargetConventions } from '@proto-bridge/core/target/flutter-app';
+import type { FlutterComponentRole } from '@proto-bridge/core/target/flutter-app';
 import type { JsonObject, ToolContext } from '../types.js';
 import { readString, readStringArray } from '../utils/args.js';
 import { resolveRuntimeTargetRoot } from '../services/config.js';

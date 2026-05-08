@@ -48,7 +48,7 @@ export function toolsList(): JsonValue[] {
     },
     {
       name: 'ocr_screenshot',
-      description: 'Persist OCR evidence for a screenshot. Phase 2 stores external OCR input or returns a clear provider warning.',
+      description: 'Persist OCR evidence for a screenshot, or return a clear provider warning.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -108,7 +108,7 @@ export function toolsList(): JsonValue[] {
     },
     {
       name: 'validate_target_changes',
-      description: 'Inspect target git changes for scope, obvious placeholder UI, TODOs, and ProtoBridge checklist alignment.',
+      description: 'Inspect target git changes for scope, obvious placeholder UI, TODOs, and UI plan alignment.',
       inputSchema: {
         type: 'object',
         properties: {

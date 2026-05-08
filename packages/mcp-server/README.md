@@ -2,7 +2,7 @@
 
 ProtoBridge MCP server exposes the URL Snapshot UI reconstruction workflow to AI coding agents.
 
-Phase 1 is intentionally snapshot-only:
+The runtime is intentionally snapshot-only:
 
 - It does not require `proto-bridge.config.json`.
 - It uses the current working directory as the YouFi Flutter target root.
@@ -104,13 +104,15 @@ claude mcp add proto-bridge --scope project -- \
 - `find_target_examples`: find similar target Dart files with matched symbols and snippets.
 - `validate_target_changes`: inspect target git changes for scope, placeholder UI, TODOs, and hard-coded colors.
 
-Not exposed in Phase 1:
+Not exposed in the MCP runtime:
 
 - `generate_migration_spec`
 - `get_migration_brief`
 - `read_migration_artifact`
 
 The old source-aware chain remains in `@proto-bridge/core` / `@proto-bridge/cli`, but it is not available through the MCP runtime.
+
+The MCP package should only import `@proto-bridge/core/workflows/snapshot-ui-reconstruction` and `@proto-bridge/core/target/flutter-app`; source-aware migration remains a CLI/core workflow.
 
 ## Example Prompt
 
