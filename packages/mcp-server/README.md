@@ -98,6 +98,8 @@ claude mcp add proto-bridge --scope project -- \
 
 - `capture_page_snapshot`: capture a rendered URL into `page-snapshot.json` and `screenshot.png`.
 - `build_ui_implementation_plan`: build `ui-implementation-plan.json` from a snapshot and YouFi target conventions.
+- `ocr_screenshot`: persist OCR evidence for a screenshot, or return a clear warning when no OCR provider is configured.
+- `export_review_markdown`: export a human-readable `ui-review.md` from a snapshot and UI implementation plan.
 - `get_target_conventions`: scan target Flutter conventions, reusable components, theme, routes, i18n, and assets.
 - `find_target_examples`: find similar target Dart files with matched symbols and snippets.
 - `validate_target_changes`: inspect target git changes for scope, placeholder UI, TODOs, and hard-coded colors.
@@ -117,4 +119,4 @@ Use ProtoBridge to reconstruct this page in YouFi Flutter:
 https://xiaofenhong.cc/TradeAppPrd/#/prototype/etf-detail?is_mobile=1
 ```
 
-The agent should call `capture_page_snapshot`, then `build_ui_implementation_plan`, inspect target conventions/examples as needed, implement Dart UI, and finally call `validate_target_changes` with the returned `planId`.
+The agent should call `capture_page_snapshot`, then `build_ui_implementation_plan`, inspect target conventions/examples as needed, optionally call `export_review_markdown` for human review, implement Dart UI, and finally call `validate_target_changes` with the returned `planId`.

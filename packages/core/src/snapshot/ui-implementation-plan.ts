@@ -70,6 +70,7 @@ export async function buildUiImplementationPlan(
     validationHints: [
       'Compare the generated Flutter screen against the source screenshot before adding business behavior.',
       'Use YouFi themeService colors/textStyles instead of hard-coded visual values where a close token exists.',
+      'Check spacing, radius, border, and shadow values against reusable YouFi widgets before introducing local constants.',
       'Keep business data, API fields, permission checks, risk controls, and tracking as TODOs unless confirmed by YouFi examples.',
       'Prefer similar module examples and common widgets over one-to-one DOM translation.',
     ],
@@ -228,8 +229,9 @@ function buildThemeMappings(snapshot: PageSnapshot): ThemeMapping[] {
       : token.kind === 'color'
         ? 'themeService.colors.*'
         : undefined;
+    const source = token.cssVar ? `${token.source} (${token.cssVar})` : token.source;
     return {
-      source: token.source,
+      source,
       value: token.value,
       ...(target ? { target } : {}),
       confidence: target ? 'medium' : 'low',

@@ -48,6 +48,7 @@ export async function capturePageSnapshot(input: CapturePageSnapshotInput): Prom
       const interactions: InteractionEvidence[] = [];
       const textIndex = new Map<string, string[]>();
       const tokenIndex = new Map<string, VisualTokenEvidence>();
+      const cssVariables = collectCssVariables();
       let sequence = 0;
       let assetSequence = 0;
       let interactionSequence = 0;
@@ -64,14 +65,22 @@ export async function capturePageSnapshot(input: CapturePageSnapshotInput): Prom
       function directText(element: Element): string | undefined {
         const ariaLabel = element.getAttribute('aria-label')?.trim();
         const title = element.getAttribute('title')?.trim();
+        const before = pseudoText(element, '::before');
+        const after = pseudoText(element, '::after');
         const direct = Array.from(element.childNodes)
           .filter((node) => node.nodeType === Node.TEXT_NODE)
           .map((node) => node.textContent?.replace(/\s+/g, ' ').trim() ?? '')
           .filter(Boolean)
           .join(' ')
           .trim();
-        const text = direct || ariaLabel || title;
+        const text = direct || before || after || ariaLabel || title;
         return text ? text.slice(0, 240) : undefined;
+      }
+
+      function pseudoText(element: Element, pseudo: '::before' | '::after'): string | undefined {
+        const content = window.getComputedStyle(element, pseudo).content;
+        if (!content || content === 'none' || content === 'normal') return undefined;
+        return content.replace(/^['"]|['"]$/g, '').replace(/\s+/g, ' ').trim() || undefined;
       }
 
       function isVisible(element: Element, rect: DOMRect, style: CSSStyleDeclaration): boolean {
@@ -98,26 +107,48 @@ export async function capturePageSnapshot(input: CapturePageSnapshotInput): Prom
         if (tag === 'ul' || tag === 'ol' || marker.includes('list')) return 'list';
         if (tag === 'li' || marker.includes('item')) return 'list-item';
         if (marker.includes('card')) return 'card';
+        if (looksLikeCard(style, rect)) return 'card';
         if (style.position === 'fixed' || style.position === 'sticky') {
           if (rect.y <= 8 && rect.height <= 120) return 'app-bar';
           if (rect.y + rect.height >= window.innerHeight - 24) return 'bottom-bar';
         }
         if (tag === 'header' || marker.includes('app-bar') || marker.includes('navbar') || marker.includes('nav-bar')) return 'app-bar';
         if (tag === 'footer' || marker.includes('bottom')) return 'bottom-bar';
-        if (text) return 'text';
         if (tag === 'section' || tag === 'main' || marker.includes('section')) return 'section';
+        if (element.children.length > 1 && rect.width >= window.innerWidth * 0.6 && rect.height >= 48) return 'section';
+        if (text) return 'text';
         return 'unknown';
+      }
+
+      function looksLikeCard(style: CSSStyleDeclaration, rect: DOMRect): boolean {
+        const hasRadius = parseFloat(style.borderRadius) >= 6;
+        const hasShadow = Boolean(style.boxShadow && style.boxShadow !== 'none');
+        const hasBackground = Boolean(style.backgroundColor && style.backgroundColor !== 'rgba(0, 0, 0, 0)');
+        const reasonableSize = rect.width >= 80 && rect.height >= 40 && rect.width < window.innerWidth;
+        return reasonableSize && hasBackground && (hasRadius || hasShadow);
       }
 
       function cssVarRefs(element: Element): string[] {
         const inline = element.getAttribute('style') ?? '';
         const matches = inline.match(/var\((--[^),\s]+)/g) ?? [];
-        return [...new Set(matches.map((match) => match.replace(/^var\(/, '')))];
+        const style = window.getComputedStyle(element);
+        const matchedComputedVars = Object.entries(cssVariables)
+          .filter(([, value]) => value && (
+            value === style.color
+            || value === style.backgroundColor
+            || value === style.fontSize
+            || value === style.borderRadius
+          ))
+          .map(([name]) => name);
+        return [...new Set([
+          ...matches.map((match) => match.replace(/^var\(/, '')),
+          ...matchedComputedVars,
+        ])];
       }
 
-      function addToken(kind: VisualTokenEvidence['kind'], source: string, value: string, nodeId: string): void {
+      function addToken(kind: VisualTokenEvidence['kind'], source: string, value: string, nodeId: string, cssVar?: string): void {
         if (!value || value === 'none' || value === 'normal' || value === 'rgba(0, 0, 0, 0)') return;
-        const key = `${kind}:${source}:${value}`;
+        const key = `${kind}:${source}:${cssVar ?? value}`;
         const existing = tokenIndex.get(key);
         if (existing) {
           if (!existing.usage.includes(nodeId)) existing.usage.push(nodeId);
@@ -127,9 +158,35 @@ export async function capturePageSnapshot(input: CapturePageSnapshotInput): Prom
           kind,
           source,
           value,
+          cssVar,
           usage: [nodeId],
-          confidence: 'medium',
+          confidence: cssVar ? 'high' : 'medium',
         });
+      }
+
+      function collectCssVariables(): Record<string, string> {
+        const result: Record<string, string> = {};
+        const rootStyle = window.getComputedStyle(document.documentElement);
+        for (let index = 0; index < rootStyle.length; index += 1) {
+          const name = rootStyle.item(index);
+          if (name.startsWith('--')) result[name] = rootStyle.getPropertyValue(name).trim();
+        }
+        for (const styleSheet of Array.from(document.styleSheets)) {
+          let rules: CSSRuleList;
+          try {
+            rules = styleSheet.cssRules;
+          } catch {
+            continue;
+          }
+          for (const rule of Array.from(rules)) {
+            if (!(rule instanceof CSSStyleRule)) continue;
+            for (let index = 0; index < rule.style.length; index += 1) {
+              const name = rule.style.item(index);
+              if (name.startsWith('--') && !result[name]) result[name] = rule.style.getPropertyValue(name).trim();
+            }
+          }
+        }
+        return result;
       }
 
       function backgroundUrl(style: CSSStyleDeclaration): string | undefined {
@@ -253,10 +310,10 @@ export async function capturePageSnapshot(input: CapturePageSnapshotInput): Prom
         collectText(text, id);
         maybeAddAsset(element, style, node);
         maybeAddInteraction(element, style, node);
-        addToken('color', 'color', style.color, id);
-        addToken('color', 'backgroundColor', style.backgroundColor, id);
-        addToken('typography', 'font', `${style.fontSize}/${style.lineHeight}/${style.fontWeight}/${style.fontFamily}`, id);
-        addToken('radius', 'borderRadius', style.borderRadius, id);
+        addToken('color', 'color', style.color, id, cssVarForValue(style.color));
+        addToken('color', 'backgroundColor', style.backgroundColor, id, cssVarForValue(style.backgroundColor));
+        addToken('typography', 'font', `${style.fontSize}/${style.lineHeight}/${style.fontWeight}/${style.fontFamily}`, id, cssVarForValue(style.fontSize));
+        addToken('radius', 'borderRadius', style.borderRadius, id, cssVarForValue(style.borderRadius));
         addToken('border', 'border', style.border, id);
         addToken('shadow', 'boxShadow', style.boxShadow, id);
         addToken('spacing', 'padding', style.padding, id);
@@ -267,6 +324,10 @@ export async function capturePageSnapshot(input: CapturePageSnapshotInput): Prom
           if (childId) node.children.push(childId);
         }
         return id;
+      }
+
+      function cssVarForValue(value: string): string | undefined {
+        return Object.entries(cssVariables).find(([, cssValue]) => cssValue && cssValue === value)?.[0];
       }
 
       serialize(document.body);
@@ -288,7 +349,7 @@ export async function capturePageSnapshot(input: CapturePageSnapshotInput): Prom
           role: node.role,
           title: firstTextDescendant(node),
           bbox: node.bbox,
-          nodeIds: [node.id, ...node.children.slice(0, 24)],
+          nodeIds: [node.id, ...descendantIds(node).slice(0, 48)],
           evidence: node.evidence,
         }));
 
@@ -301,6 +362,16 @@ export async function capturePageSnapshot(input: CapturePageSnapshotInput): Prom
         return undefined;
       }
 
+      function descendantIds(node: PageSnapshotNode): string[] {
+        const result: string[] = [];
+        for (const childId of node.children) {
+          result.push(childId);
+          const child = nodes.find((item) => item.id === childId);
+          if (child) result.push(...descendantIds(child));
+        }
+        return result;
+      }
+
       return {
         title: document.title || undefined,
         route: location.hash.startsWith('#/') ? location.hash.slice(1).split('?')[0] : location.pathname,
@@ -308,6 +379,7 @@ export async function capturePageSnapshot(input: CapturePageSnapshotInput): Prom
         nodes,
         visualSections,
         tokens: [...tokenIndex.values()].slice(0, 400),
+        cssVariables,
         assets,
         interactions,
         documentSize: {
@@ -339,6 +411,7 @@ export async function capturePageSnapshot(input: CapturePageSnapshotInput): Prom
         route: extracted.route,
         text: extracted.text,
       },
+      cssVariables: extracted.cssVariables,
       nodes: extracted.nodes,
       visualSections: extracted.visualSections,
       tokens: extracted.tokens,

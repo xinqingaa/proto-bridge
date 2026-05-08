@@ -155,6 +155,8 @@ npx -y @proto-bridge/mcp-server
 
 - `capture_page_snapshot`
 - `build_ui_implementation_plan`
+- `ocr_screenshot`
+- `export_review_markdown`
 - `get_target_conventions`
 - `find_target_examples`
 - `validate_target_changes`
@@ -229,7 +231,9 @@ MCP Phase 1 新链路输出：
 .proto-bridge/snapshots/<page>/
 ├── page-snapshot.json
 ├── screenshot.png
-└── ui-implementation-plan.json
+├── ui-implementation-plan.json
+├── ocr-result.json      # optional OCR evidence
+└── ui-review.md         # optional human review export
 ```
 
 `page-snapshot.json` 是页面结构、视觉和文案证据。`ui-implementation-plan.json` 是 agent 直接消费的 YouFi UI 实现计划。

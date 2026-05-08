@@ -264,11 +264,13 @@ export type PageSnapshot = {
     route?: string | undefined;
     text: string[];
   };
+  cssVariables?: Record<string, string> | undefined;
   nodes: PageSnapshotNode[];
   visualSections: VisualSection[];
   tokens: VisualTokenEvidence[];
   assets: AssetEvidence[];
   interactions: InteractionEvidence[];
+  ocr?: OcrResult | undefined;
   warnings: string[];
 };
 
@@ -320,6 +322,34 @@ export type InteractionEvidence = {
   nodeId: string;
   label?: string | undefined;
   evidence: string[];
+};
+
+export type OcrTextBox = {
+  text: string;
+  bbox?: { x: number; y: number; width: number; height: number } | undefined;
+  confidence?: number | undefined;
+};
+
+export type OcrResult = {
+  provider: 'none' | 'external';
+  status: 'available' | 'unavailable';
+  text: string[];
+  boxes: OcrTextBox[];
+  warnings: string[];
+};
+
+export type OcrScreenshotInput = {
+  screenshotPath: string;
+  outDir: string;
+  externalText?: string[] | undefined;
+  externalBoxes?: OcrTextBox[] | undefined;
+};
+
+export type OcrScreenshotResult = {
+  ocr: OcrResult;
+  files: {
+    ocrResult: string;
+  };
 };
 
 export type CapturePageSnapshotInput = {
@@ -599,6 +629,19 @@ export type BuildUiImplementationPlanResult = {
   plan: UiImplementationPlan;
   files: {
     uiImplementationPlan: string;
+  };
+};
+
+export type ExportReviewMarkdownInput = {
+  snapshot: PageSnapshot;
+  plan: UiImplementationPlan;
+  outDir: string;
+};
+
+export type ExportReviewMarkdownResult = {
+  markdown: string;
+  files: {
+    reviewMarkdown: string;
   };
 };
 

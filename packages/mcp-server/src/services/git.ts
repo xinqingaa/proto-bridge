@@ -33,6 +33,18 @@ export async function scanChangedDartFiles(targetRoot: string, files: string[]):
     if (/Color\(\s*0x/i.test(text) && !/themeService\.colors/.test(text)) {
       issues.push({ file, issue: 'Hard-coded Color detected without themeService.colors nearby.' });
     }
+    if (/\bfontSize\s*:\s*\d/i.test(text) && !/themeService\.textStyles/.test(text)) {
+      issues.push({ file, issue: 'Hard-coded fontSize detected without themeService.textStyles nearby.' });
+    }
+    if (/BoxShadow\s*\(/.test(text) && !/themeService\.colors/.test(text)) {
+      issues.push({ file, issue: 'Local BoxShadow detected; confirm it matches snapshot evidence and YouFi component conventions.' });
+    }
+    if (/Image\.network\s*\(/.test(text)) {
+      issues.push({ file, issue: 'Network image usage detected; confirm source asset plan allows remote images.' });
+    }
+    if (/Get\.toNamed\s*\(/.test(text) && !/TODO|待确认|business/i.test(text)) {
+      issues.push({ file, issue: 'Navigation behavior detected without nearby TODO/confirmation marker.' });
+    }
   }
   return issues;
 }
@@ -59,6 +71,8 @@ export function buildValidationResult(input: {
   fileIssues: JsonValue[];
   run?: GeneratedRun | undefined;
   validationHints?: string[] | undefined;
+  expectedFiles?: string[] | undefined;
+  missingExpectedFiles?: string[] | undefined;
 }): JsonObject {
   const outsideAllowedPaths = input.allowedPaths.length
     ? input.changedFiles.filter((file) => !input.allowedPaths.some((allowedPath) => file === allowedPath || file.startsWith(ensureTrailingSlash(allowedPath))))
@@ -69,9 +83,11 @@ export function buildValidationResult(input: {
     allowedPaths: input.allowedPaths,
     outsideAllowedPaths,
     fileIssues: input.fileIssues,
+    expectedFiles: input.expectedFiles ?? [],
+    missingExpectedFiles: input.missingExpectedFiles ?? [],
     checklist: input.run?.result.context.recommendations.implementationPlan.checklist ?? [],
     validationHints: input.validationHints ?? [],
-    status: outsideAllowedPaths.length || input.fileIssues.length ? 'needs-review' : 'ok',
+    status: outsideAllowedPaths.length || input.fileIssues.length || input.missingExpectedFiles?.length ? 'needs-review' : 'ok',
   } as unknown as JsonObject;
 }
 

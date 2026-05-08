@@ -3,6 +3,8 @@ import { readObject, readString } from '../utils/args.js';
 import { toolJson } from '../server/responses.js';
 import { capturePageSnapshotTool } from './capture-page-snapshot.js';
 import { buildUiImplementationPlanTool } from './build-ui-implementation-plan.js';
+import { ocrScreenshotTool } from './ocr-screenshot.js';
+import { exportReviewMarkdownTool } from './export-review-markdown.js';
 import { getTargetConventionsTool } from './get-target-conventions.js';
 import { findTargetExamplesTool } from './find-target-examples.js';
 import { validateTargetChangesTool } from './validate-target-changes.js';
@@ -41,6 +43,37 @@ export function toolsList(): JsonValue[] {
           targetRoot: { type: 'string', description: 'Target Flutter root. Defaults to current working directory.' },
           targetModule: { type: 'string', description: 'Optional YouFi module override.' },
           output: { type: 'string', description: 'Override output directory. Defaults beside the page snapshot.' },
+        },
+      },
+    },
+    {
+      name: 'ocr_screenshot',
+      description: 'Persist OCR evidence for a screenshot. Phase 2 stores external OCR input or returns a clear provider warning.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          screenshotPath: { type: 'string' },
+          snapshotId: { type: 'string' },
+          snapshotPath: { type: 'string' },
+          targetRoot: { type: 'string', description: 'Target Flutter root. Defaults to current working directory.' },
+          output: { type: 'string', description: 'Override output directory. Defaults beside the screenshot.' },
+          externalText: { type: 'array', items: { type: 'string' } },
+          externalBoxes: { type: 'array', items: { type: 'object' } },
+        },
+      },
+    },
+    {
+      name: 'export_review_markdown',
+      description: 'Export a human-readable UI review Markdown file from a page snapshot and UI implementation plan.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          planId: { type: 'string' },
+          planPath: { type: 'string' },
+          snapshotId: { type: 'string' },
+          snapshotPath: { type: 'string' },
+          targetRoot: { type: 'string', description: 'Target Flutter root. Defaults to current working directory.' },
+          output: { type: 'string', description: 'Override output directory. Defaults beside the plan.' },
         },
       },
     },
@@ -96,6 +129,8 @@ export async function callTool(context: ToolContext, params: JsonObject | undefi
 
   if (name === 'capture_page_snapshot') return toolJson(await capturePageSnapshotTool(context, args));
   if (name === 'build_ui_implementation_plan') return toolJson(await buildUiImplementationPlanTool(context, args));
+  if (name === 'ocr_screenshot') return toolJson(await ocrScreenshotTool(context, args));
+  if (name === 'export_review_markdown') return toolJson(await exportReviewMarkdownTool(context, args));
   if (name === 'get_target_conventions') return toolJson(await getTargetConventionsTool(context, args));
   if (name === 'find_target_examples') return toolJson(await findTargetExamplesTool(context, args));
   if (name === 'validate_target_changes') return toolJson(await validateTargetChangesTool(context, args));

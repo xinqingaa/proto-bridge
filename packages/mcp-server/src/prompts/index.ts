@@ -32,6 +32,7 @@ export function getPrompt(params: JsonObject | undefined): JsonObject {
             'Call capture_page_snapshot first, then build_ui_implementation_plan.',
             targetModule ? `Use targetModule=${targetModule} when building the UI implementation plan.` : 'Let ProtoBridge infer the target module unless the user provides one.',
             'Implement Dart UI from ui-implementation-plan.json, focusing on visual structure, text, component mapping, theme, i18n, and assets.',
+            'Use export_review_markdown when a human-readable review artifact would help before implementation.',
             'Do not invent APIs, permission checks, risk controls, tracking, or hidden business behavior. Keep those as TODOs or manual confirmations.',
             'Run formatting/static checks when possible, then call validate_target_changes with the planId and report changed files, verification, warnings, and unresolved business questions.',
           ].join('\n'),
