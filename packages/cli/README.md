@@ -4,6 +4,8 @@ ProtoBridge CLI runs the source-aware migration workflow. It generates migration
 
 It intentionally does not run the MCP snapshot UI reconstruction workflow. For URL screenshot/page snapshot/UI plan generation, use `@proto-bridge/mcp-server` from the YouFi target repository.
 
+See `docs/workflows.md` in the repository for the full CLI/MCP workflow comparison.
+
 ## Requirements
 
 - Node.js 20 or newer.

@@ -73,9 +73,9 @@ ProtoBridge 当前适合接入以下流程：
 - target 仓库不可访问，无法读取模块、路由、资源和组件约束。
 - 需要像素级 Figma 还原但没有 target 工程上下文。
 
-## 4. MCP + AI Agent 自动化
+## 4. MCP 模式自动化
 
-团队日常使用期望更接近 Figma MCP：用户只给 AI 工具一个 URL，后续由 AI 工具自动完成 Flutter UI 还原。ProtoBridge MCP 不走旧 source-aware migration，而是走 snapshot UI reconstruction。
+团队日常使用期望更接近 Figma MCP：用户只给 AI 工具一个 URL，由 AI 工具自动完成 Flutter UI 还原。ProtoBridge MCP 模式只执行 snapshot UI reconstruction，不调用 CLI source-aware migration。
 
 推荐目标流程：
 
@@ -88,7 +88,7 @@ ProtoBridge 当前适合接入以下流程：
   -> AI agent 调用 MCP 校验改动范围、缺失项和可追溯证据
 ```
 
-这个流程中，Markdown 不是必经产物；需要人工 review 时可以导出 `ui-review.md`。旧 `migration-spec.md` 仍由 CLI 生成，服务维护者调试、审查和归档。详见 [MCP Agent 工作流](agent-mcp-workflow.md)。
+这个流程中，Markdown 不是必经产物；需要人工 review 时可以导出 `ui-review.md`。`migration-spec.md` 由 CLI 模式生成，服务维护者调试、审查和归档。详见 [ProtoBridge Workflows](workflows.md)。
 
 ## 5. Core 调用
 
@@ -160,11 +160,11 @@ import {
 } from '@proto-bridge/core/target/flutter-app';
 ```
 
-MCP 不 import `workflows/source-aware-migration`，也不暴露旧工具。
+MCP 不 import `workflows/source-aware-migration`，也不暴露 CLI 模式工具。
 
 ## 6. MCP 入口
 
-`packages/mcp-server` 是 MCP 协议入口包。当前只开放 URL Snapshot UI reconstruction 新链路，不暴露旧 source-aware migration tools。
+`packages/mcp-server` 是 MCP 协议入口包。当前开放 Snapshot UI Reconstruction 工具，不暴露 CLI source-aware migration tools。
 
 当前发布入口：
 
@@ -182,13 +182,13 @@ npx -y @proto-bridge/mcp-server
 - `find_target_examples`
 - `validate_target_changes`
 
-暂不开放：
+MCP 不开放：
 
 - `generate_migration_spec`
 - `get_migration_brief`
 - `read_migration_artifact`
 
-MCP 默认使用当前工作目录作为 `target.root`。旧 source-aware 链路继续保留在 CLI / core 中，但不从 MCP runtime 暴露。
+MCP 默认使用当前工作目录作为 `target.root`。Source-aware migration 保留在 CLI / core 中，但不从 MCP runtime 暴露。
 
 Codex 项目级配置：
 
@@ -234,7 +234,7 @@ claude mcp add proto-bridge --scope project -- \
 
 ## 7. 输出文件
 
-CLI 旧 source-aware 链路成功生成后，输出目录包含：
+CLI 模式成功生成后，输出目录包含：
 
 ```text
 output/<page>/
@@ -246,7 +246,7 @@ output/<page>/
 
 `migration-context.json` 是机器可读上下文。`migration-spec.md` 是面向 Flutter 实现者和 AI coding 工具的说明书。
 
-MCP 新链路输出：
+MCP 模式输出：
 
 ```text
 .proto-bridge/snapshots/<page>/

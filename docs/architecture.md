@@ -17,6 +17,8 @@ CLI = Source-aware Migration
 MCP = Snapshot UI Reconstruction
 ```
 
+两条 workflow 的配置、产物、使用场景和扩展方向详见 [ProtoBridge Workflows](workflows.md)。
+
 核心目标：
 
 - CLI 从 source project 提取页面结构、交互、状态、路由、notes、i18n、资源和样式 token。
@@ -34,7 +36,7 @@ ProtoBridge 不负责：
 - 一键迁移并自动提交目标 App。
 - 把 Vue 模板、CSS class 或 DOM 结构逐层翻译成 Flutter Widget。
 - 在 CLI source-aware migration 中以 OCR 作为主输入。
-- 在 MCP runtime 中暴露旧 source-aware migration 工具。
+- 在 MCP runtime 中暴露 CLI source-aware migration 工具。
 - 处理复杂 Figma 高保真还原。
 - 在 ProtoBridge 中保存 A/B 项目的开发规范；规范应从 A/B 自身仓库读取。
 
@@ -64,8 +66,8 @@ TargetAdapter = flutter-app
 
 扩展方式：
 
-- 新 source 技术栈新增 `SourceAdapter`。
-- 新 target 技术栈新增 `TargetAdapter`。
+- 扩展 source 技术栈时新增 `SourceAdapter`。
+- 扩展 target 技术栈时新增 `TargetAdapter`。
 - core 主流程只通过 registry 获取 adapter，不直接依赖具体技术栈实现。
 
 入口定位：
@@ -123,8 +125,8 @@ packages/core/src/
 - `source/vue3-prototype`：读取 Vue3 原型工程并产出 source facts。
 - `snapshot`：URL/rendered DOM/screenshot/OCR evidence 能力，当前由 MCP 使用，未来 CLI 可复用。
 - `target/flutter-app`：YouFi target 能力，统一暴露 adapter、conventions、examples、migration planner、UI reconstruction planner、theme mapping 和 validation。
-- `workflows/source-aware-migration`：CLI 旧说明书链路编排。
-- `workflows/snapshot-ui-reconstruction`：MCP 新 UI 还原链路编排。
+- `workflows/source-aware-migration`：CLI 模式编排。
+- `workflows/snapshot-ui-reconstruction`：MCP 模式编排。
 - `artifacts`：产物写入能力。
 - `shared`：路径等通用工具。
 - `types`：跨模块共享的数据结构。
@@ -151,8 +153,8 @@ packages/core/src/
 | `target/flutter-app/examples.ts` | 查找相似 Dart 文件和组件使用片段 | target/flutter |
 | `target/flutter-app/ui-reconstruction-planner.ts` | MCP snapshot UI reconstruction 的 YouFi UI plan 生成 | target/flutter |
 | `target/flutter-app/validation.ts` | target Dart 改动范围和明显实现风险校验 | target/flutter |
-| `workflows/source-aware-migration/*` | 旧说明书链路编排，生成 migration context/spec | workflow/cli |
-| `workflows/snapshot-ui-reconstruction/*` | 新 snapshot 链路编排，生成 snapshot、UI plan 和 review markdown | workflow/mcp |
+| `workflows/source-aware-migration/*` | CLI 模式编排，生成 migration context/spec | workflow/cli |
+| `workflows/snapshot-ui-reconstruction/*` | MCP 模式编排，生成 snapshot、UI plan 和 review markdown | workflow/mcp |
 | `types/index.ts` | 定义当前 context、source facts、target context、recommendations 和输出类型 | shared types |
 | `source/vue3-prototype/js-literal.ts` | 受控解析 JS literal 配置 | source/vue3 |
 | `shared/paths.ts` | 路径和读取工具 | shared |
@@ -163,7 +165,7 @@ packages/core/src/
 - 技术栈专属逻辑放在 `source/*` 或 `target/*` 下，`adapters` 只保留协议和 registry。
 - Flutter 页面模式、Widget blueprint、命名策略属于 source-aware migration planner。
 - Snapshot UI reconstruction 的 YouFi 文件树、Widget plan、component/theme/i18n/assets mapping 属于 `target/flutter-app/ui-reconstruction-planner.ts`。
-- 新代码应优先 import `workflows/source-aware-migration` 或 `workflows/snapshot-ui-reconstruction`。
+- 调用时应优先 import `workflows/source-aware-migration` 或 `workflows/snapshot-ui-reconstruction`。
 - Snapshot capture / OCR 不放进 MCP 私有目录，应留在 `snapshot/*` 方便未来 CLI 复用。
 
 ## 6. Adapter 接口
@@ -482,7 +484,7 @@ type MigrationContext = {
 
 ## 15. 扩展点
 
-### 新增 SourceAdapter
+### 扩展 SourceAdapter
 
 需要实现：
 
@@ -492,7 +494,7 @@ type MigrationContext = {
 - source facts 输出。
 - warnings。
 
-### 新增 TargetAdapter
+### 扩展 TargetAdapter
 
 需要实现：
 

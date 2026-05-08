@@ -2,11 +2,13 @@
 
 ProtoBridge MCP server exposes the URL Snapshot UI reconstruction workflow to AI coding agents.
 
-The runtime is intentionally snapshot-only:
+See `docs/workflows.md` in the repository for the full CLI/MCP workflow comparison.
+
+The runtime is intentionally scoped to the MCP workflow:
 
 - It does not require `proto-bridge.config.json`.
 - It uses the current working directory as the YouFi Flutter target root.
-- It does not expose the old source-aware migration tools.
+- It does not expose CLI source-aware migration tools.
 - It does not write Dart files by itself. The AI coding tool captures a page snapshot, builds a UI implementation plan, edits the target Flutter repository, then validates the result.
 
 ## Requirements
@@ -110,7 +112,7 @@ Not exposed in the MCP runtime:
 - `get_migration_brief`
 - `read_migration_artifact`
 
-The old source-aware chain remains in `@proto-bridge/core` / `@proto-bridge/cli`, but it is not available through the MCP runtime.
+Source-aware migration is available through `@proto-bridge/cli` and `@proto-bridge/core/workflows/source-aware-migration`, but it is not available through the MCP runtime.
 
 The MCP package should only import `@proto-bridge/core/workflows/snapshot-ui-reconstruction` and `@proto-bridge/core/target/flutter-app`; source-aware migration remains a CLI/core workflow.
 

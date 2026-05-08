@@ -8,7 +8,9 @@ Most users should use the CLI package for source-aware migration:
 npx @proto-bridge/cli generate
 ```
 
-Use `@proto-bridge/core` directly only when you want to embed ProtoBridge in another Node.js tool or service. Prefer the workflow subpath exports over the package root for new code.
+Use `@proto-bridge/core` directly only when you want to embed ProtoBridge in another Node.js tool or service. Prefer the workflow subpath exports over the package root.
+
+See `docs/workflows.md` in the repository for the full CLI/MCP workflow comparison.
 
 ## Requirements
 
