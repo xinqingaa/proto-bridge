@@ -151,6 +151,8 @@ CLI 工作流未来可以扩展：
 
 MCP 工作流适合 AI coding agent 快速还原页面可见 UI。它不读取 Vue source，不依赖 `proto-bridge.config.json`，默认当前工作目录就是 YouFi Flutter target。
 
+如果你需要完整理解 “URL / screenshot / OCR -> node -> PageEvidence -> UI plan -> AI agent -> Dart” 的详细链路，请结合阅读 [MCP UI Reconstruction 工作流](mcp-ui-reconstruction-workflow.md)。
+
 ### 3.1 特点
 
 - URL-first，优先从浏览器运行后的页面采集证据。

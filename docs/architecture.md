@@ -27,6 +27,8 @@ MCP = UI Reconstruction
 - MCP 从 URL / rendered DOM / screenshot / OCR / runtime metadata 生成 `screenshot.png`、`page-evidence.json` 和 `ui-implementation-plan.json`。
 - MCP 把 `PageEvidence`、YouFi target conventions、相似实现和校验工具提供给 AI coding agent，让 agent 在目标仓库中完成 Dart 实现。
 
+MCP 这条链路的详细分层、输入边界、node 抽取、样式映射、布局 hint 和 agent 生成 Dart 的过程，请看 [MCP UI Reconstruction 工作流](mcp-ui-reconstruction-workflow.md)。
+
 ## 2. 非目标
 
 ProtoBridge 不负责：

@@ -90,6 +90,8 @@ ProtoBridge 当前适合接入以下流程：
 
 这个流程中，Markdown 不是必经产物；需要人工 review 时可以导出 `ui-review.md`。`migration-spec.md` 由 CLI 模式生成，服务维护者调试、审查和归档。详见 [ProtoBridge Workflows](workflows.md)。
 
+如果你要从集成角度理解 MCP 如何生成 node、样式、布局、组件映射，以及 agent 如何根据 JSON 生成 Dart，请看 [MCP UI Reconstruction 工作流](mcp-ui-reconstruction-workflow.md)。
+
 ## 5. Core 调用
 
 CLI 和 MCP 都调用 core，但调用不同 workflow。CLI source-aware migration 入口：

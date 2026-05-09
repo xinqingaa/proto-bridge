@@ -81,6 +81,8 @@ ProtoBridge 不负责：
 
 两种 workflow 的配置、产物和使用场景详见 [ProtoBridge Workflows](docs/workflows.md)。
 
+如果你想系统理解 MCP 是如何从 URL / screenshot / OCR 走到 `page-evidence.json`、`ui-implementation-plan.json`，以及 node、字体、颜色、布局、组件映射和 AI agent 生成 Dart 的完整链路，请直接看 [MCP UI Reconstruction 工作流](docs/mcp-ui-reconstruction-workflow.md)。
+
 ## 四、当前能力
 
 当前实现包含以下能力：
@@ -352,6 +354,8 @@ MCP UI reconstruction 分为四层：
 2. **Evidence 层**：`snapshot/browser-capture`、`snapshot/capabilities` 和 `snapshot/enrichers` 共同构建 `PageEvidence`。
 3. **Target 层**：`target/flutter-app` 读取 YouFi conventions、examples、theme、routes、i18n、assets，并执行 UI reconstruction planning。
 4. **Artifact 层**：UI reconstruction workflow 写出 `screenshot.png`、`page-evidence.json`、`ui-implementation-plan.json`，可选写出 `ocr-result.json` 和 `ui-review.md`。
+
+MCP 四层的端到端细节、输入边界和代码索引见 [MCP UI Reconstruction 工作流](docs/mcp-ui-reconstruction-workflow.md)。
 
 ### 1. SourceAdapter：vue3-prototype
 
