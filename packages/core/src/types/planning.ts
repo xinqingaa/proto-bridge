@@ -119,9 +119,13 @@ export type ComponentMapping = {
 };
 
 export type ThemeMapping = {
+  kind?: 'color' | 'typography' | 'spacing' | 'radius' | 'shadow' | 'border' | undefined;
   source: string;
   value: string;
+  nodeIds?: string[] | undefined;
   target?: string | undefined;
+  candidateTargets?: string[] | undefined;
+  matchedBy?: 'css-var' | 'exact' | 'ambiguous' | 'family' | 'manual' | undefined;
   confidence: MappingConfidence;
   reason: string;
 };

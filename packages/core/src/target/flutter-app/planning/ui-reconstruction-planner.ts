@@ -13,6 +13,7 @@ import type {
 } from '../../../types/index.js';
 import { getFlutterTargetConventions } from '../conventions.js';
 import { findFlutterTargetExamples } from '../examples.js';
+import { resolveFlutterColorTarget, resolveFlutterTypographyTarget } from '../theme-mapping.js';
 import { toPascalCase, toSnakeCase } from './migration-planner.js';
 
 export type BuildFlutterUiReconstructionPlanInput = {
@@ -75,7 +76,8 @@ export async function buildFlutterUiReconstructionPlan(
     risks: buildRisks(input.evidence),
     validationHints: [
       'Compare the generated Flutter screen against the source screenshot before adding business behavior.',
-      'Use YouFi themeService colors/textStyles instead of hard-coded visual values where a close token exists.',
+      'Treat typography, CSS colors, spacing, and layout as P0 visual fidelity items; prefer exact evidence matches before approximate fallback.',
+      'Use node-level themeMappings first; when a theme token is resolved exactly, do not replace it with a larger or heavier nearby token.',
       'Check spacing, radius, border, and shadow values against reusable YouFi widgets before introducing local constants.',
       'Keep business data, API fields, permission checks, risk controls, and tracking as TODOs unless confirmed by YouFi examples.',
       'Prefer similar module examples and common widgets over one-to-one DOM translation.',
@@ -180,7 +182,7 @@ function buildWidgetTree(pageName: string, evidence: PageEvidence): FlutterWidge
       name: `${pageName}${nameHint || toPascalCase(section.role)}`,
       parent: rootName,
       role: section.role,
-      buildHint: `还原 ${section.role} 区块，bbox=${section.bbox.x},${section.bbox.y},${section.bbox.width},${section.bbox.height}。`,
+      buildHint: buildSectionHint(section, evidence),
       stateAccess: section.role === 'tab-bar' || section.role === 'bottom-bar' ? 'controller-slice' : 'props',
     });
   }
@@ -227,20 +229,34 @@ function bestComponentForRole(role: SnapshotNodeRole, components: FlutterCompone
 
 function buildThemeMappings(evidence: PageEvidence): ThemeMapping[] {
   return (evidence.tokens ?? []).slice(0, 80).map((token) => {
-    const target = token.kind === 'typography'
+    const resolution = token.kind === 'typography'
+      ? resolveFlutterTypographyTarget({ value: token.value })
+      : token.kind === 'color'
+        ? resolveFlutterColorTarget({
+          cssVar: token.cssVar,
+          value: token.value,
+          source: token.source,
+        })
+        : undefined;
+    const familyTarget = token.kind === 'typography'
       ? 'themeService.textStyles.*'
       : token.kind === 'color'
         ? 'themeService.colors.*'
         : undefined;
+    const target = resolution?.target ?? familyTarget;
     const source = token.cssVar ? `${token.source} (${token.cssVar})` : token.source;
     return {
+      kind: token.kind,
       source,
       value: token.value,
+      ...(token.usage.length > 0 ? { nodeIds: token.usage.slice(0, 24) } : {}),
       ...(target ? { target } : {}),
-      confidence: target ? 'medium' : 'low',
-      reason: target
+      ...(resolution?.candidateTargets?.length ? { candidateTargets: resolution.candidateTargets } : {}),
+      ...(resolution ? { matchedBy: resolution.matchedBy } : { matchedBy: 'manual' }),
+      confidence: resolution?.confidence ?? (target ? 'medium' : 'low'),
+      reason: resolution?.reason ?? (target
         ? `Map evidence ${token.kind} signal to the closest YouFi theme token during implementation.`
-        : `No direct YouFi token family is inferred for ${token.kind}; confirm manually.`,
+        : `No direct YouFi token family is inferred for ${token.kind}; confirm manually.`),
     };
   });
 }
@@ -303,11 +319,46 @@ function buildBusinessQuestions(evidence: PageEvidence): string[] {
 function buildRisks(evidence: PageEvidence): string[] {
   const risks = [
     'PageEvidence 只能证明当前采集到的可见 UI 与增强证据，不能证明隐藏状态或业务逻辑。',
-    'Computed style 与 YouFi 主题 token 之间可能存在语义差异，需要实现时二次确认。',
+    '少量 computed style 仍可能映射到多个 YouFi 语义 token，需结合 node 上下文和截图二次确认。',
   ];
   if (evidence.assets.length > 0) risks.push('图片、SVG 或背景资源需要确认是否已有 YouFi 本地资产可复用。');
   if (evidence.warnings.length > 0) risks.push(...evidence.warnings);
   return risks;
+}
+
+function buildSectionHint(section: PageEvidence['sections'][number], evidence: PageEvidence): string {
+  const rootNodeId = section.nodeIds[0];
+  const rootNode = evidence.nodes.find((node) => node.id === rootNodeId);
+  const computedStyle = rootNode?.computedStyle;
+  const layoutHints = [
+    computedStyle?.display && computedStyle.display !== 'block'
+      ? `display=${computedStyle.display}`
+      : '',
+    computedStyle?.flexDirection && computedStyle.flexDirection !== 'row'
+      ? `flexDirection=${computedStyle.flexDirection}`
+      : '',
+    computedStyle?.alignItems && computedStyle.alignItems !== 'normal'
+      ? `alignItems=${computedStyle.alignItems}`
+      : '',
+    computedStyle?.justifyContent && computedStyle.justifyContent !== 'normal'
+      ? `justifyContent=${computedStyle.justifyContent}`
+      : '',
+    computedStyle?.gap && computedStyle.gap !== 'normal' && computedStyle.gap !== '0px'
+      ? `gap=${computedStyle.gap}`
+      : '',
+    computedStyle?.padding && computedStyle.padding !== '0px'
+      ? `padding=${computedStyle.padding}`
+      : '',
+    computedStyle?.margin && computedStyle.margin !== '0px'
+      ? `margin=${computedStyle.margin}`
+      : '',
+    section.nodeIds.length > 1 ? `descendants=${section.nodeIds.length - 1}` : '',
+  ].filter(Boolean);
+
+  return [
+    `还原 ${section.role} 区块，bbox=${section.bbox.x},${section.bbox.y},${section.bbox.width},${section.bbox.height}。`,
+    layoutHints.length > 0 ? `布局特征：${layoutHints.join(', ')}。` : '',
+  ].filter(Boolean).join(' ');
 }
 
 function createPlanId(evidenceId: string): string {

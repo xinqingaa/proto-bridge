@@ -54,7 +54,14 @@ function renderReviewMarkdown(input: ExportReviewMarkdownInput): string {
     '## Theme Mapping',
     '',
     ...listOrFallback(plan.themeMappings.slice(0, 40).map((mapping) =>
-      `- ${mapping.source} = \`${mapping.value}\` -> ${mapping.target ?? '(manual)'} [${mapping.confidence}]`,
+      [
+        `- ${mapping.kind ?? 'style'} ${mapping.source} = \`${mapping.value}\` -> ${mapping.target ?? '(manual)'}`,
+        `[${mapping.confidence}${mapping.matchedBy ? `, ${mapping.matchedBy}` : ''}]`,
+        mapping.nodeIds?.length ? `(nodes=${mapping.nodeIds.length})` : '',
+        mapping.candidateTargets?.length && mapping.candidateTargets.length > 1
+          ? `candidates: ${mapping.candidateTargets.join(', ')}`
+          : '',
+      ].filter(Boolean).join(' '),
     )),
     '',
     '## Text / i18n',
