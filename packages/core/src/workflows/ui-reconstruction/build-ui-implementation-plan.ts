@@ -10,7 +10,7 @@ export async function buildUiImplementationPlan(
   input: BuildUiImplementationPlanInput,
 ): Promise<BuildUiImplementationPlanResult> {
   const plan = await buildFlutterUiReconstructionPlan({
-    snapshot: input.snapshot,
+    evidence: input.evidence,
     targetRoot: input.targetRoot,
     targetModule: input.targetModule,
   });

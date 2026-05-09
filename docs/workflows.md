@@ -4,14 +4,14 @@
 
 ```text
 CLI = Source-aware Migration
-MCP = Snapshot UI Reconstruction
+MCP = UI Reconstruction
 ```
 
 ## 1. 总览
 
 | 项 | CLI 工作流 | MCP 工作流 |
 | --- | --- | --- |
-| 推荐命名 | Source-aware Migration | Snapshot UI Reconstruction |
+| 推荐命名 | Source-aware Migration | UI Reconstruction |
 | 入口包 | `@proto-bridge/cli` | `@proto-bridge/mcp-server` |
 | 主要目标 | 生成可审查迁移说明书 | 快速还原可见 UI |
 | 主要使用者 | 维护者、开发者、批处理脚本 | AI coding agent、MCP client |
@@ -19,7 +19,7 @@ MCP = Snapshot UI Reconstruction
 | 是否读取 source 仓库 | 是 | 否 |
 | 是否需要 `proto-bridge.config.json` | 是 | 否 |
 | target root | config 中的 `target.root` | 默认 MCP 启动目录，也可传 `targetRoot` |
-| 主产物 | `migration-context.json`、`migration-spec.md` | `screenshot.png`、`page-snapshot.json`、`ui-implementation-plan.json` |
+| 主产物 | `migration-context.json`、`migration-spec.md` | `screenshot.png`、`page-evidence.json`、`ui-implementation-plan.json` |
 | 可选产物 | `screenshot.png`、`dom-snapshot.json` | `ocr-result.json`、`ui-review.md` |
 | 业务行为 | 从源码、notes、i18n 中提取并说明 | 只记录可见交互线索和待确认项 |
 | Dart 代码生成 | 不做 | MCP 不直接写，由 agent 写 |
@@ -147,7 +147,7 @@ CLI 工作流未来可以扩展：
 - 在需要时复用 `snapshot/browser-capture`，增强运行时布局证据。
 - 批处理命令和 CI 产物检查。
 
-## 3. MCP：Snapshot UI Reconstruction
+## 3. MCP：UI Reconstruction
 
 MCP 工作流适合 AI coding agent 快速还原页面可见 UI。它不读取 Vue source，不依赖 `proto-bridge.config.json`，默认当前工作目录就是 YouFi Flutter target。
 
@@ -155,7 +155,7 @@ MCP 工作流适合 AI coding agent 快速还原页面可见 UI。它不读取 V
 
 - URL-first，优先从浏览器运行后的页面采集证据。
 - `screenshot.png` 是主产物，不是调试附属文件。
-- `page-snapshot.json` 保存 rendered DOM、bbox、computed style、文案、资源和轻量交互线索。
+- `page-evidence.json` 保存 rendered DOM、bbox、computed style、文案、资源、轻量交互线索和 capability-based metadata。
 - `ui-implementation-plan.json` 面向 agent，描述 Flutter 文件落点、Widget 拆分、YouFi components、theme、i18n、assets 和 risks。
 - OCR 是辅助证据，用于补充 DOM 看不到的文字。
 - 业务接口、权限、风控、埋点、隐藏状态只能进入待确认项，不能写成确定结论。
@@ -171,7 +171,7 @@ https://xiaofenhong.cc/TradeAppPrd/#/prototype/etf-detail?is_mobile=1
 
 MCP tools 支持：
 
-- `capture_page_snapshot`：采集 URL，输出 screenshot 和 page snapshot。
+- `capture_page_evidence`：采集 URL，输出 screenshot 和 `PageEvidence`。
 - `build_ui_implementation_plan`：从 snapshot 生成 UI plan。
 - `ocr_screenshot`：持久化外部 OCR evidence，或返回 provider 缺失提示。
 - `export_review_markdown`：导出人工 review 用 Markdown。
@@ -243,23 +243,23 @@ claude mcp add proto-bridge --scope project -- \
 主产物：
 
 ```text
-.proto-bridge/snapshots/<page>/
+.proto-bridge/evidence/<page>/
 ├── screenshot.png
-├── page-snapshot.json
+├── page-evidence.json
 └── ui-implementation-plan.json
 ```
 
 可选产物：
 
 ```text
-.proto-bridge/snapshots/<page>/
+.proto-bridge/evidence/<page>/
 ├── ocr-result.json
 └── ui-review.md
 ```
 
 `screenshot.png` 是视觉还原的基准证据。
 
-`page-snapshot.json` 是页面结构、文案、视觉、资源和交互 evidence。
+`page-evidence.json` 是页面结构、文案、视觉、资源、交互和 capability metadata 的稳定中间模型。
 
 `ui-implementation-plan.json` 是 agent 直接消费的 YouFi UI 实现计划。
 
@@ -268,8 +268,8 @@ claude mcp add proto-bridge --scope project -- \
 ### 3.5 推荐 Agent 流程
 
 ```text
-1. 调用 capture_page_snapshot(url)
-2. 调用 build_ui_implementation_plan(snapshotId)
+1. 调用 capture_page_evidence(url)
+2. 调用 build_ui_implementation_plan(evidenceId)
 3. 按需调用 get_target_conventions()
 4. 按需调用 find_target_examples(module/pattern/roles)
 5. 在 target repo 中实现 Dart UI
@@ -317,7 +317,7 @@ workflows/source-aware-migration
   -> target/flutter-app
   -> artifacts/shared
 
-workflows/snapshot-ui-reconstruction
+workflows/ui-reconstruction
   -> snapshot/*
   -> target/flutter-app
   -> artifacts/shared
@@ -326,7 +326,7 @@ workflows/snapshot-ui-reconstruction
 依赖规则：
 
 - `packages/cli` 只 import `@proto-bridge/core/workflows/source-aware-migration`。
-- `packages/mcp-server` 只 import `@proto-bridge/core/workflows/snapshot-ui-reconstruction` 和 `@proto-bridge/core/target/flutter-app`。
+- `packages/mcp-server` 只 import `@proto-bridge/core/workflows/ui-reconstruction` 和 `@proto-bridge/core/target/flutter-app`。
 - 两个 workflow 不能互相 import。
 - `source/*` 不 import workflow。
 - `snapshot/*` 不 import workflow。

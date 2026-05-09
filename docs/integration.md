@@ -4,7 +4,7 @@
 
 ```text
 CLI = source-aware migration，只生成迁移 context/spec。
-MCP = snapshot UI reconstruction，只生成 screenshot/page snapshot/UI plan 并辅助 agent 实现。
+MCP = UI reconstruction，只生成 screenshot/page evidence/UI plan 并辅助 agent 实现。
 ```
 
 ## 1. CLI 入口
@@ -81,7 +81,7 @@ ProtoBridge 当前适合接入以下流程：
 
 ```text
 用户在 AI coding 工具中输入 URL
-  -> AI agent 调用 ProtoBridge MCP 生成 screenshot.png / page-snapshot.json
+  -> AI agent 调用 ProtoBridge MCP 生成 screenshot.png / page-evidence.json
   -> AI agent 调用 MCP 生成 ui-implementation-plan.json
   -> AI agent 调用 MCP 获取 target 约束和相似 Flutter 实现
   -> AI agent 在 target repo 中创建或修改目标页面文件
@@ -147,13 +147,13 @@ generateMigrationSpec
 - Spec generator 负责把两边信息整理成 target-facing 文档。
 - warnings 和 checklist 负责保留不确定性，避免把推断内容写成确定结论。
 
-MCP snapshot UI reconstruction 入口：
+MCP UI reconstruction 入口：
 
 ```ts
 import {
   buildUiImplementationPlan,
-  capturePageSnapshot,
-} from '@proto-bridge/core/workflows/snapshot-ui-reconstruction';
+  capturePageEvidence,
+} from '@proto-bridge/core/workflows/ui-reconstruction';
 import {
   findFlutterTargetExamples,
   getFlutterTargetConventions,
@@ -164,7 +164,7 @@ MCP 不 import `workflows/source-aware-migration`，也不暴露 CLI 模式工�
 
 ## 6. MCP 入口
 
-`packages/mcp-server` 是 MCP 协议入口包。当前开放 Snapshot UI Reconstruction 工具，不暴露 CLI source-aware migration tools。
+`packages/mcp-server` 是 MCP 协议入口包。当前开放 UI Reconstruction 工具，不暴露 CLI source-aware migration tools。
 
 当前发布入口：
 
@@ -174,7 +174,7 @@ npx -y @proto-bridge/mcp-server
 
 当前 MCP tools：
 
-- `capture_page_snapshot`
+- `capture_page_evidence`
 - `build_ui_implementation_plan`
 - `ocr_screenshot`
 - `export_review_markdown`
@@ -249,15 +249,15 @@ output/<page>/
 MCP 模式输出：
 
 ```text
-.proto-bridge/snapshots/<page>/
-├── page-snapshot.json
+.proto-bridge/evidence/<page>/
+├── page-evidence.json
 ├── screenshot.png
 ├── ui-implementation-plan.json
 ├── ocr-result.json      # optional OCR evidence
 └── ui-review.md         # optional human review export
 ```
 
-`page-snapshot.json` 是页面结构、视觉和文案证据。`ui-implementation-plan.json` 是 agent 直接消费的 YouFi UI 实现计划。
+`page-evidence.json` 是页面结构、视觉、文案和 capability-based metadata 的稳定证据模型。`ui-implementation-plan.json` 是 agent 直接消费的 YouFi UI 实现计划。
 
 ## 8. Capture 集成
 
@@ -282,7 +282,7 @@ Capture 失败时，core 会把错误写入 warnings，不阻断静态上下文�
 
 在当前 CLI 流程下，推荐把 `migration-spec.md` 作为主要提示材料，把 `migration-context.json` 作为补充上下文。
 
-在 MCP 流程下，AI agent 应通过 `capture_page_snapshot` 和 `build_ui_implementation_plan` 获取 JSON 上下文，用户不需要手动复制 Markdown。
+在 MCP 流程下，AI agent 应通过 `capture_page_evidence` 和 `build_ui_implementation_plan` 获取 JSON 上下文，用户不需要手动复制 Markdown。
 
 推荐交付方式：
 

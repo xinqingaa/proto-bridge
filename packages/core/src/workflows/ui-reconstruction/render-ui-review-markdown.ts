@@ -15,15 +15,15 @@ export async function exportReviewMarkdown(input: ExportReviewMarkdownInput): Pr
 }
 
 function renderReviewMarkdown(input: ExportReviewMarkdownInput): string {
-  const { snapshot, plan } = input;
+  const { evidence, plan } = input;
   return [
-    `# ${plan.page.title ?? snapshot.page.title ?? 'Snapshot UI'} Review`,
+    `# ${plan.page.title ?? evidence.page.title ?? 'Snapshot UI'} Review`,
     '',
     '## Summary',
     '',
-    `- Snapshot: \`${snapshot.id}\``,
+    `- Evidence: \`${evidence.id}\``,
     `- Plan: \`${plan.id}\``,
-    `- Route: ${plan.page.route ?? snapshot.page.route ?? '(unknown)'}`,
+    `- Route: ${plan.page.route ?? evidence.page.route ?? '(unknown)'}`,
     `- Target module: ${plan.target.module ?? '(unresolved)'}`,
     `- Viewport: ${plan.page.viewport.width}x${plan.page.viewport.height}`,
     '',
@@ -31,7 +31,7 @@ function renderReviewMarkdown(input: ExportReviewMarkdownInput): string {
     '',
     '## Visual Sections',
     '',
-    ...listOrFallback(snapshot.visualSections.slice(0, 24).map((section) =>
+    ...listOrFallback(evidence.sections.slice(0, 24).map((section) =>
       `- ${section.role}: ${section.title ?? section.id} (${section.bbox.x}, ${section.bbox.y}, ${section.bbox.width}, ${section.bbox.height})`,
     )),
     '',
@@ -86,6 +86,10 @@ function renderReviewMarkdown(input: ExportReviewMarkdownInput): string {
     '## Risks',
     '',
     ...listOrFallback(plan.risks.map((risk) => `- ${risk}`)),
+    '',
+    '## Provenance',
+    '',
+    ...listOrFallback(evidence.provenance.map((item) => `- ${item.source}: ${item.fields.join(', ')}`)),
     '',
     '## Validation Hints',
     '',

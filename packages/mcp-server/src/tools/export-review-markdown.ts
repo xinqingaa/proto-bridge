@@ -1,30 +1,30 @@
 import path from 'node:path';
 import { readFile } from 'node:fs/promises';
-import { exportReviewMarkdown } from '@proto-bridge/core/workflows/snapshot-ui-reconstruction';
-import type { PageSnapshot, UiImplementationPlan } from '@proto-bridge/core/workflows/snapshot-ui-reconstruction';
+import { exportReviewMarkdown } from '@proto-bridge/core/workflows/ui-reconstruction';
+import type { PageEvidence, UiImplementationPlan } from '@proto-bridge/core/workflows/ui-reconstruction';
 import type { JsonObject, ToolContext } from '../types.js';
 import { readString } from '../utils/args.js';
 import { resolveRuntimeTargetRoot } from '../services/config.js';
 
 export async function exportReviewMarkdownTool(context: ToolContext, args: JsonObject): Promise<JsonObject> {
   const targetRoot = resolveRuntimeTargetRoot(readString(args, 'targetRoot'));
-  const { snapshot, plan, defaultOutDir } = await resolveInputs(context, args);
+  const { evidence, plan, defaultOutDir } = await resolveInputs(context, args);
   const output = readString(args, 'output');
   const outDir = output
     ? path.isAbsolute(output) ? output : path.resolve(targetRoot, output)
     : defaultOutDir;
   const result = await exportReviewMarkdown({
-    snapshot,
+    evidence,
     plan,
     outDir,
   });
   return {
     files: result.files as unknown as JsonObject,
     summary: {
-      snapshotId: snapshot.id,
+      evidenceId: evidence.id,
       planId: plan.id,
-      title: plan.page.title ?? snapshot.page.title,
-      sectionCount: snapshot.visualSections.length,
+      title: plan.page.title ?? evidence.page.title,
+      sectionCount: evidence.sections.length,
       plannedFileCount: plan.fileTree.length,
       riskCount: plan.risks.length,
     },
@@ -34,11 +34,11 @@ export async function exportReviewMarkdownTool(context: ToolContext, args: JsonO
 async function resolveInputs(
   context: ToolContext,
   args: JsonObject,
-): Promise<{ snapshot: PageSnapshot; plan: UiImplementationPlan; defaultOutDir: string }> {
+): Promise<{ evidence: PageEvidence; plan: UiImplementationPlan; defaultOutDir: string }> {
   const planId = readString(args, 'planId');
   const planPath = readString(args, 'planPath');
-  const snapshotId = readString(args, 'snapshotId');
-  const snapshotPath = readString(args, 'snapshotPath');
+  const evidenceId = readString(args, 'evidenceId');
+  const evidencePath = readString(args, 'evidencePath');
 
   let plan: UiImplementationPlan | undefined;
   let planDir: string | undefined;
@@ -53,19 +53,19 @@ async function resolveInputs(
   }
   if (!plan) throw new Error('export_review_markdown requires planId or planPath.');
 
-  let snapshot: PageSnapshot | undefined;
-  if (snapshotId) {
-    snapshot = context.snapshots.require(snapshotId).result.snapshot;
-  } else if (snapshotPath) {
-    snapshot = JSON.parse(await readFile(path.resolve(snapshotPath), 'utf8')) as PageSnapshot;
+  let evidence: PageEvidence | undefined;
+  if (evidenceId) {
+    evidence = context.evidences.require(evidenceId).result.evidence;
+  } else if (evidencePath) {
+    evidence = JSON.parse(await readFile(path.resolve(evidencePath), 'utf8')) as PageEvidence;
   } else {
-    const snapshotRecord = context.snapshots.get(plan.snapshotId);
-    snapshot = snapshotRecord?.result.snapshot;
+    const evidenceRecord = context.evidences.get(plan.evidenceId);
+    evidence = evidenceRecord?.result.evidence;
   }
-  if (!snapshot) throw new Error('export_review_markdown requires snapshotId/snapshotPath when the snapshot is not in MCP memory.');
+  if (!evidence) throw new Error('export_review_markdown requires evidenceId/evidencePath when the evidence is not in MCP memory.');
 
   return {
-    snapshot,
+    evidence,
     plan,
     defaultOutDir: planDir ?? path.dirname(path.resolve(planPath ?? '.')),
   };

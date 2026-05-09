@@ -7,12 +7,12 @@ import type {
   FlutterWidgetPlan,
   PrototypePageAnalysis,
   WidgetRecommendation,
-} from '../../types/index.js';
-import { classifyPagePattern } from './planners/page-pattern-classifier.js';
-import { instantiateWidgetBlueprint } from './planners/widget-blueprints.js';
-import { toPascalCase, toSnakeCase } from './planners/naming-strategy.js';
+} from '../../../types/index.js';
+import { classifyPagePattern } from '../planners/page-pattern-classifier.js';
+import { instantiateWidgetBlueprint } from '../planners/widget-blueprints.js';
+import { toPascalCase, toSnakeCase } from '../planners/naming-strategy.js';
 
-export { toPascalCase, toSnakeCase } from './planners/naming-strategy.js';
+export { toPascalCase, toSnakeCase } from '../planners/naming-strategy.js';
 
 type BuildFlutterImplementationPlanInput = {
   source: PrototypePageAnalysis;

@@ -14,7 +14,7 @@ ProtoBridge 的输出是可审查、可修改、可交给 AI coding 工具继续
 
 ```text
 CLI = Source-aware Migration
-MCP = Snapshot UI Reconstruction
+MCP = UI Reconstruction
 ```
 
 两条 workflow 的配置、产物、使用场景和扩展方向详见 [ProtoBridge Workflows](workflows.md)。
@@ -24,8 +24,8 @@ MCP = Snapshot UI Reconstruction
 - CLI 从 source project 提取页面结构、交互、状态、路由、notes、i18n、资源和样式 token。
 - CLI 从 target project 提取模块、路由、状态管理习惯、主题、资源目录、公共组件和相似实现。
 - CLI 将 source facts 转成 target-facing 的实现规划，并输出 `migration-context.json` 和 `migration-spec.md`。
-- MCP 从 URL / rendered DOM / screenshot / OCR 生成 `screenshot.png`、`page-snapshot.json` 和 `ui-implementation-plan.json`。
-- MCP 把 snapshot evidence、YouFi target conventions、相似实现和校验工具提供给 AI coding agent，让 agent 在目标仓库中完成 Dart 实现。
+- MCP 从 URL / rendered DOM / screenshot / OCR / runtime metadata 生成 `screenshot.png`、`page-evidence.json` 和 `ui-implementation-plan.json`。
+- MCP 把 `PageEvidence`、YouFi target conventions、相似实现和校验工具提供给 AI coding agent，让 agent 在目标仓库中完成 Dart 实现。
 
 ## 2. 非目标
 
@@ -50,11 +50,13 @@ packages/cli
     -> migration-context.json / migration-spec.md
 
 packages/mcp-server
-  -> workflows/snapshot-ui-reconstruction
+  -> workflows/ui-reconstruction
     -> snapshot/browser-capture
+    -> snapshot/capabilities
+    -> snapshot/enrichers
     -> snapshot/ocr
-    -> target/flutter-app conventions / examples / UI reconstruction planner / validation
-    -> screenshot.png / page-snapshot.json / ui-implementation-plan.json
+    -> target/flutter-app conventions / examples / planning / validation
+    -> screenshot.png / page-evidence.json / ui-implementation-plan.json
 ```
 
 当前默认组合：
@@ -73,7 +75,7 @@ TargetAdapter = flutter-app
 入口定位：
 
 - CLI：稳定生成 context/spec，服务调试、审查、批处理和非 MCP 场景。
-- MCP：snapshot-first 的 AI coding agent 入口，负责提供可见 UI evidence、目标工程约束、相似实现和结果校验。
+- MCP：evidence-first 的 AI coding agent 入口，负责提供可见 UI evidence、目标工程约束、相似实现和结果校验。
 - AI agent：负责真正的 Dart 文件编辑、跨文件调整、运行验证和错误修正。
 
 ## 4. 工程结构
@@ -86,7 +88,10 @@ packages/core/src/
 ├── artifacts/
 │   └── artifact-writer.ts
 ├── shared/
-│   └── paths.ts
+│   ├── evidence/
+│   ├── paths.ts
+│   ├── protocols/
+│   └── index.ts
 ├── source/
 │   └── vue3-prototype/
 │       ├── adapter.ts
@@ -96,7 +101,9 @@ packages/core/src/
 ├── snapshot/
 │   ├── browser-capture/
 │   │   ├── capture-rendered-page.ts
-│   │   └── rendered-page-snapshot.ts
+│   │   └── rendered-page-evidence.ts
+│   ├── capabilities/
+│   ├── enrichers/
 │   ├── ocr/
 │   │   └── external-ocr.ts
 │   └── types.ts
@@ -106,14 +113,12 @@ packages/core/src/
 │       ├── context.ts
 │       ├── conventions.ts
 │       ├── examples.ts
-│       ├── migration-planner.ts
-│       ├── render-migration-markdown.ts
+│       ├── planning/
 │       ├── theme-mapping.ts
-│       ├── ui-reconstruction-planner.ts
-│       └── validation.ts
+│       └── validation/
 ├── workflows/
 │   ├── source-aware-migration/
-│   └── snapshot-ui-reconstruction/
+│   └── ui-reconstruction/
 ├── types/
 └── index.ts
 ```
@@ -124,9 +129,9 @@ packages/core/src/
 - `adapters/registry.ts`：注册并解析可用 adapter。
 - `source/vue3-prototype`：读取 Vue3 原型工程并产出 source facts。
 - `snapshot`：URL/rendered DOM/screenshot/OCR evidence 能力，当前由 MCP 使用，未来 CLI 可复用。
-- `target/flutter-app`：YouFi target 能力，统一暴露 adapter、conventions、examples、migration planner、UI reconstruction planner、theme mapping 和 validation。
+- `target/flutter-app`：YouFi target 能力，统一暴露 adapter、conventions、examples、planning、theme mapping 和 validation。
 - `workflows/source-aware-migration`：CLI 模式编排。
-- `workflows/snapshot-ui-reconstruction`：MCP 模式编排。
+- `workflows/ui-reconstruction`：MCP 模式编排。
 - `artifacts`：产物写入能力。
 - `shared`：路径等通用工具。
 - `types`：跨模块共享的数据结构。
@@ -141,21 +146,25 @@ packages/core/src/
 | `source/vue3-prototype/prototype-page.ts` | 读取 Vue3 原型页面配置、源码、notes、i18n 和页面元信息 | source/vue3 |
 | `source/vue3-prototype/vue-sfc.ts` | 从 Vue SFC 中提取结构、状态、交互、路由、布局、资源和 token 线索 | source/vue3 |
 | `snapshot/browser-capture/capture-rendered-page.ts` | CLI 可选运行时截图、DOM tree、bbox 和 computed style 提取 | snapshot |
-| `snapshot/browser-capture/rendered-page-snapshot.ts` | URL capture 底层能力，提取 screenshot 和 page snapshot evidence | snapshot |
+| `shared/evidence/*` | `PageEvidence` 归一化、patch merge 和共享 evidence 协议 | shared |
+| `shared/protocols/runtime-page.ts` | runtime metadata 协议定义 | shared |
+| `snapshot/browser-capture/rendered-page-evidence.ts` | URL capture 底层能力，提取 screenshot 并归一化为 `PageEvidence` | snapshot |
+| `snapshot/capabilities/detect-page-capabilities.ts` | 检测 runtime metadata、page list、tab traversal 等 capability | snapshot |
+| `snapshot/enrichers/*` | 按 capability 为 `PageEvidence` 增强 tabs、assets、OCR 和 runtime metadata | snapshot |
 | `snapshot/ocr/external-ocr.ts` | OCR evidence 持久化或返回 provider 缺失提示 | snapshot |
 | `target/flutter-app/adapter.ts` | 注册 `flutter-app` target adapter | target/flutter |
 | `target/flutter-app/context.ts` | 扫描 Flutter 模块、routes、translations、assets、common widgets 和相似文件 | target/flutter |
 | `target/flutter-app/theme-mapping.ts` | 将 source token 和 computed style 映射到 Flutter theme 写法 | target/flutter |
-| `target/flutter-app/migration-recommendations.ts` | 生成 Flutter recommendations、风险和人工确认项 | target/flutter |
-| `target/flutter-app/migration-planner.ts` | 生成 Flutter 文件拆分、Widget 组合、状态策略和 Controller/Adapter 边界 | target/flutter |
-| `target/flutter-app/render-migration-markdown.ts` | 将 `MigrationContext` 渲染为 Flutter-facing Markdown spec | target/flutter |
+| `target/flutter-app/planning/migration-recommendations.ts` | 生成 Flutter recommendations、风险和人工确认项 | target/flutter |
+| `target/flutter-app/planning/migration-planner.ts` | 生成 Flutter 文件拆分、Widget 组合、状态策略和 Controller/Adapter 边界 | target/flutter |
+| `target/flutter-app/planning/render-migration-markdown.ts` | 将 `MigrationContext` 渲染为 Flutter-facing Markdown spec | target/flutter |
 | `target/flutter-app/conventions.ts` | 读取 YouFi modules、routes、translations、assets、components 和 theme usage | target/flutter |
 | `target/flutter-app/examples.ts` | 查找相似 Dart 文件和组件使用片段 | target/flutter |
-| `target/flutter-app/ui-reconstruction-planner.ts` | MCP snapshot UI reconstruction 的 YouFi UI plan 生成 | target/flutter |
-| `target/flutter-app/validation.ts` | target Dart 改动范围和明显实现风险校验 | target/flutter |
+| `target/flutter-app/planning/ui-reconstruction-planner.ts` | MCP UI reconstruction 的 YouFi UI plan 生成 | target/flutter |
+| `target/flutter-app/validation/index.ts` | target Dart 改动范围和明显实现风险校验 | target/flutter |
 | `workflows/source-aware-migration/*` | CLI 模式编排，生成 migration context/spec | workflow/cli |
-| `workflows/snapshot-ui-reconstruction/*` | MCP 模式编排，生成 snapshot、UI plan 和 review markdown | workflow/mcp |
-| `types/index.ts` | 定义当前 context、source facts、target context、recommendations 和输出类型 | shared types |
+| `workflows/ui-reconstruction/*` | MCP 模式编排，生成 evidence、UI plan 和 review markdown | workflow/mcp |
+| `types/*.ts` | 按 common/source/evidence/planning 等领域拆分的共享类型 | shared types |
 | `source/vue3-prototype/js-literal.ts` | 受控解析 JS literal 配置 | source/vue3 |
 | `shared/paths.ts` | 路径和读取工具 | shared |
 | `artifacts/artifact-writer.ts` | JSON / Markdown 写入工具 | artifacts |
@@ -164,8 +173,8 @@ packages/core/src/
 
 - 技术栈专属逻辑放在 `source/*` 或 `target/*` 下，`adapters` 只保留协议和 registry。
 - Flutter 页面模式、Widget blueprint、命名策略属于 source-aware migration planner。
-- Snapshot UI reconstruction 的 YouFi 文件树、Widget plan、component/theme/i18n/assets mapping 属于 `target/flutter-app/ui-reconstruction-planner.ts`。
-- 调用时应优先 import `workflows/source-aware-migration` 或 `workflows/snapshot-ui-reconstruction`。
+- UI reconstruction 的 YouFi 文件树、Widget plan、component/theme/i18n/assets mapping 属于 `target/flutter-app/planning/ui-reconstruction-planner.ts`。
+- 调用时应优先 import `workflows/source-aware-migration` 或 `workflows/ui-reconstruction`。
 - Snapshot capture / OCR 不放进 MCP 私有目录，应留在 `snapshot/*` 方便未来 CLI 复用。
 
 ## 6. Adapter 接口
@@ -351,7 +360,7 @@ type TokenMapResult = {
 
 ## 11. Flutter Implementation Plan
 
-入口：`packages/core/src/target/flutter-app/migration-planner.ts`
+入口：`packages/core/src/target/flutter-app/planning/migration-planner.ts`
 
 规划流程：
 

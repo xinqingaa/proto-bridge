@@ -1,11 +1,11 @@
 import path from 'node:path';
 import { mkdir } from 'node:fs/promises';
+import type { Page } from 'playwright';
 import type {
   AssetEvidence,
-  CapturePageSnapshotInput,
-  CapturePageSnapshotResult,
+  CapturePageEvidenceInput,
+  CapturePageEvidenceResult,
   InteractionEvidence,
-  PageSnapshot,
   PageSnapshotNode,
   SnapshotComputedStyle,
   SnapshotNodeRole,
@@ -13,14 +13,26 @@ import type {
   VisualTokenEvidence,
 } from '../../types/index.js';
 import { writeJsonFile } from '../../artifacts/artifact-writer.js';
+import { mergePageEvidence } from '../../shared/evidence/merge.js';
+import { normalizeRuntimePageProtocolPayload } from '../../shared/protocols/runtime-page.js';
+import type { RuntimePageProtocolPayload } from '../../shared/protocols/runtime-page.js';
+import { detectPageCapabilities } from '../capabilities/detect-page-capabilities.js';
+import {
+  buildAnnotatedRuntimeEvidence,
+  buildAssetExtractionEvidence,
+  buildGenericDomEvidence,
+  buildOcrEvidence,
+  buildPageListEvidence,
+  buildTabTraversalEvidence,
+} from '../enrichers/index.js';
 
 const DEFAULT_VIEWPORT = { width: 390, height: 844, deviceScaleFactor: 1 };
 
-export async function captureRenderedPageSnapshot(input: CapturePageSnapshotInput): Promise<CapturePageSnapshotResult> {
+export async function captureRenderedPageEvidence(input: CapturePageEvidenceInput): Promise<CapturePageEvidenceResult> {
   const viewport = input.viewport ?? DEFAULT_VIEWPORT;
   const saveArtifacts = input.saveArtifacts ?? true;
   const capturedAt = new Date().toISOString();
-  const snapshotId = createSnapshotId(input.url, capturedAt);
+  const evidenceId = createEvidenceId(input.url, capturedAt);
 
   await mkdir(input.outDir, { recursive: true });
 
@@ -37,6 +49,10 @@ export async function captureRenderedPageSnapshot(input: CapturePageSnapshotInpu
     });
     await page.goto(input.url, { waitUntil: 'networkidle', timeout: 30_000 });
 
+    const capabilities = await detectPageCapabilities(page);
+    const runtime = capabilities.runtimeMetadata || capabilities.pageList
+      ? await readRuntimePageProtocol(page)
+      : undefined;
     const screenshotPath = saveArtifacts ? path.join(input.outDir, 'screenshot.png') : undefined;
     if (screenshotPath) await page.screenshot({ path: screenshotPath, fullPage: true });
 
@@ -389,14 +405,11 @@ export async function captureRenderedPageSnapshot(input: CapturePageSnapshotInpu
       };
     }, { viewport });
 
-    const snapshot: PageSnapshot = {
-      id: snapshotId,
-      source: {
-        kind: 'url',
-        url: input.url,
-        capturedAt,
-        viewport,
-      },
+    let evidence = buildGenericDomEvidence({
+      id: evidenceId,
+      url: input.url,
+      capturedAt,
+      viewport,
       ...(screenshotPath
         ? {
           screenshot: {
@@ -409,24 +422,37 @@ export async function captureRenderedPageSnapshot(input: CapturePageSnapshotInpu
       page: {
         title: extracted.title,
         route: extracted.route,
-        text: extracted.text,
       },
       cssVariables: extracted.cssVariables,
       nodes: extracted.nodes,
-      visualSections: extracted.visualSections,
-      tokens: extracted.tokens,
+      sections: extracted.visualSections,
+      text: extracted.text,
       assets: extracted.assets,
       interactions: extracted.interactions,
-      warnings: [],
-    };
+      tokens: extracted.tokens,
+      warnings: [...capabilities.warnings, ...(runtime?.warnings ?? [])],
+      capabilities,
+    });
+    evidence = mergePageEvidence(evidence, buildAnnotatedRuntimeEvidence({ evidence, runtime }));
+    evidence = mergePageEvidence(evidence, buildPageListEvidence({ runtime }));
+    evidence = mergePageEvidence(evidence, buildTabTraversalEvidence({
+      evidence,
+      existingTabStates: evidence.tabStates,
+    }));
+    evidence = mergePageEvidence(evidence, buildAssetExtractionEvidence({ evidence }));
+    evidence = mergePageEvidence(evidence, buildOcrEvidence({
+      evidence,
+      needsOcr: capabilities.needsOcr,
+    }));
 
-    const pageSnapshotPath = path.join(input.outDir, 'page-snapshot.json');
-    await writeJsonFile(pageSnapshotPath, snapshot);
+    const pageEvidencePath = path.join(input.outDir, 'page-evidence.json');
+    await writeJsonFile(pageEvidencePath, evidence);
 
     return {
-      snapshot,
+      evidence,
+      capabilities,
       files: {
-        pageSnapshot: pageSnapshotPath,
+        pageEvidence: pageEvidencePath,
         ...(screenshotPath ? { screenshot: screenshotPath } : {}),
       },
     };
@@ -435,9 +461,76 @@ export async function captureRenderedPageSnapshot(input: CapturePageSnapshotInpu
   }
 }
 
-function createSnapshotId(url: string, capturedAt: string): string {
+async function readRuntimePageProtocol(page: Page): Promise<RuntimePageProtocolPayload | undefined> {
+  const payload = await page.evaluate(async () => {
+    const scope = window as typeof window & {
+      __PROTO_BRIDGE__?: {
+        version?: string;
+        capabilities?: {
+          pageMetadata?: boolean;
+          pageList?: boolean;
+        };
+        getPageMetadata?: (() => unknown | Promise<unknown>) | undefined;
+        getPageList?: (() => unknown | Promise<unknown>) | undefined;
+      } | undefined;
+      __getPageMetadata?: (() => unknown | Promise<unknown>) | undefined;
+      __getPageList?: (() => unknown | Promise<unknown>) | undefined;
+    };
+
+    const protoBridge = scope.__PROTO_BRIDGE__;
+    const getPageMetadata = typeof protoBridge?.getPageMetadata === 'function'
+      ? protoBridge.getPageMetadata.bind(protoBridge)
+      : typeof scope.__getPageMetadata === 'function'
+        ? scope.__getPageMetadata.bind(scope)
+        : undefined;
+    const getPageList = typeof protoBridge?.getPageList === 'function'
+      ? protoBridge.getPageList.bind(protoBridge)
+      : typeof scope.__getPageList === 'function'
+        ? scope.__getPageList.bind(scope)
+        : undefined;
+
+    const warnings: string[] = [];
+    let metadata: unknown;
+    let pageList: unknown;
+
+    if (getPageMetadata) {
+      try {
+        metadata = await Promise.resolve(getPageMetadata());
+      } catch (error) {
+        warnings.push(`getPageMetadata failed: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+    if (getPageList) {
+      try {
+        pageList = await Promise.resolve(getPageList());
+      } catch (error) {
+        warnings.push(`getPageList failed: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
+    return {
+      protocol: protoBridge ? 'proto-bridge' : (getPageMetadata || getPageList) ? 'legacy' : 'none',
+      version: typeof protoBridge?.version === 'string' ? protoBridge.version : undefined,
+      capabilities: {
+        pageMetadata: Boolean(getPageMetadata),
+        pageList: Boolean(getPageList),
+      },
+      metadata,
+      pageList,
+      warnings,
+    };
+  });
+
+  const normalized = normalizeRuntimePageProtocolPayload(payload);
+  if (normalized.protocol === 'none' && !normalized.capabilities.pageMetadata && !normalized.capabilities.pageList) {
+    return undefined;
+  }
+  return normalized;
+}
+
+function createEvidenceId(url: string, capturedAt: string): string {
   const slug = slugFromUrl(url);
-  return `snapshot_${slug}_${Date.parse(capturedAt).toString(36)}`;
+  return `evidence_${slug}_${Date.parse(capturedAt).toString(36)}`;
 }
 
 function slugFromUrl(url: string): string {

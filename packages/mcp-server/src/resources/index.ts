@@ -5,9 +5,9 @@ import { readString } from '../utils/args.js';
 import { resolveRuntimeTargetRoot } from '../services/config.js';
 
 export function resourcesList(context: ToolContext): JsonValue[] {
-  const snapshotResources = context.snapshots.values().map((snapshot) => ({
-    uri: `proto-bridge://snapshots/${snapshot.id}/page-snapshot`,
-    name: `ProtoBridge page snapshot ${snapshot.id}`,
+  const evidenceResources = context.evidences.values().map((evidence) => ({
+    uri: `proto-bridge://evidences/${evidence.id}/page-evidence`,
+    name: `ProtoBridge page evidence ${evidence.id}`,
     mimeType: 'application/json',
   }));
   const planResources = context.plans.values().map((plan) => ({
@@ -21,7 +21,7 @@ export function resourcesList(context: ToolContext): JsonValue[] {
       name: 'ProtoBridge target conventions',
       mimeType: 'application/json',
     },
-    ...snapshotResources,
+    ...evidenceResources,
     ...planResources,
   ];
 }
@@ -39,11 +39,11 @@ export async function readResource(context: ToolContext, params: JsonObject | un
     };
   }
 
-  const snapshotMatch = uri.match(/^proto-bridge:\/\/snapshots\/([^/]+)\/page-snapshot$/);
-  if (snapshotMatch?.[1]) {
-    const snapshot = context.snapshots.require(snapshotMatch[1]);
+  const evidenceMatch = uri.match(/^proto-bridge:\/\/evidences\/([^/]+)\/page-evidence$/);
+  if (evidenceMatch?.[1]) {
+    const evidence = context.evidences.require(evidenceMatch[1]);
     return {
-      contents: [{ uri, mimeType: 'application/json', text: await readFile(snapshot.result.files.pageSnapshot, 'utf8') }],
+      contents: [{ uri, mimeType: 'application/json', text: await readFile(evidence.result.files.pageEvidence, 'utf8') }],
     };
   }
 

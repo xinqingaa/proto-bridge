@@ -6,17 +6,17 @@ import type {
   FlutterPlannedFile,
   FlutterWidgetPlan,
   InteractionPlan,
-  PageSnapshot,
+  PageEvidence,
   SnapshotNodeRole,
   ThemeMapping,
   UiImplementationPlan,
-} from '../../types/index.js';
-import { getFlutterTargetConventions } from './conventions.js';
-import { findFlutterTargetExamples } from './examples.js';
+} from '../../../types/index.js';
+import { getFlutterTargetConventions } from '../conventions.js';
+import { findFlutterTargetExamples } from '../examples.js';
 import { toPascalCase, toSnakeCase } from './migration-planner.js';
 
 export type BuildFlutterUiReconstructionPlanInput = {
-  snapshot: PageSnapshot;
+  evidence: PageEvidence;
   targetRoot: string;
   targetModule?: string | undefined;
 };
@@ -25,28 +25,28 @@ export async function buildFlutterUiReconstructionPlan(
   input: BuildFlutterUiReconstructionPlanInput,
 ): Promise<UiImplementationPlan> {
   const targetRoot = path.resolve(input.targetRoot);
-  const roles = rolesForSnapshot(input.snapshot);
+  const roles = rolesForEvidence(input.evidence);
   const conventions = await getFlutterTargetConventions({
     flutterRoot: targetRoot,
     module: input.targetModule,
     roles,
   });
-  const moduleName = input.targetModule ?? inferModule(input.snapshot, conventions.existingModules) ?? 'feature';
+  const moduleName = input.targetModule ?? inferModule(input.evidence, conventions.existingModules) ?? 'feature';
   const examples = await findFlutterTargetExamples({
     flutterRoot: targetRoot,
     module: moduleName,
-    pattern: inferPattern(input.snapshot),
+    pattern: inferPattern(input.evidence),
     roles,
-    screenId: input.snapshot.page.route,
+    screenId: input.evidence.page.route,
     limit: 8,
   });
-  const pageName = inferPageName(input.snapshot);
+  const pageName = inferPageName(input.evidence);
   const baseDir = `lib/app/modules/${moduleName}/${toSnakeCase(pageName)}`;
-  const widgetTree = buildWidgetTree(pageName, input.snapshot);
+  const widgetTree = buildWidgetTree(pageName, input.evidence);
 
   return {
-    id: createPlanId(input.snapshot.id),
-    snapshotId: input.snapshot.id,
+    id: createPlanId(input.evidence.id),
+    evidenceId: input.evidence.id,
     target: {
       root: targetRoot,
       module: moduleName,
@@ -59,20 +59,20 @@ export async function buildFlutterUiReconstructionPlan(
       warnings: conventions.warnings,
     },
     page: {
-      title: input.snapshot.page.title,
-      route: input.snapshot.page.route,
-      summary: buildSummary(input.snapshot),
-      viewport: input.snapshot.source.viewport,
+      title: input.evidence.page.title,
+      route: input.evidence.page.route,
+      summary: buildSummary(input.evidence),
+      viewport: input.evidence.viewport ?? { width: 0, height: 0 },
     },
     fileTree: buildFileTree(baseDir, pageName, widgetTree),
     widgetTree,
-    componentMappings: buildComponentMappings(input.snapshot, conventions.components),
-    themeMappings: buildThemeMappings(input.snapshot),
-    i18nPlan: buildI18nPlan(input.snapshot),
-    assetPlan: buildAssetPlan(input.snapshot),
-    interactionPlan: buildInteractionPlan(input.snapshot),
-    businessQuestions: buildBusinessQuestions(input.snapshot),
-    risks: buildRisks(input.snapshot),
+    componentMappings: buildComponentMappings(input.evidence, conventions.components),
+    themeMappings: buildThemeMappings(input.evidence),
+    i18nPlan: buildI18nPlan(input.evidence),
+    assetPlan: buildAssetPlan(input.evidence),
+    interactionPlan: buildInteractionPlan(input.evidence),
+    businessQuestions: buildBusinessQuestions(input.evidence),
+    risks: buildRisks(input.evidence),
     validationHints: [
       'Compare the generated Flutter screen against the source screenshot before adding business behavior.',
       'Use YouFi themeService colors/textStyles instead of hard-coded visual values where a close token exists.',
@@ -83,18 +83,18 @@ export async function buildFlutterUiReconstructionPlan(
   };
 }
 
-function rolesForSnapshot(snapshot: PageSnapshot): FlutterComponentRole[] {
+function rolesForEvidence(evidence: PageEvidence): FlutterComponentRole[] {
   const roles = new Set<FlutterComponentRole>(['page-base', 'theme', 'i18n']);
-  if (snapshot.nodes.some((node) => node.role === 'app-bar')) roles.add('app-bar');
-  if (snapshot.nodes.some((node) => node.role === 'button')) roles.add('button');
-  if (snapshot.nodes.some((node) => node.role === 'image' || node.role === 'icon')) roles.add('image');
-  if (snapshot.nodes.some((node) => node.role === 'modal')) roles.add('sheet');
-  if (snapshot.visualSections.some((section) => section.role === 'list')) roles.add('refresh');
+  if (evidence.nodes.some((node) => node.role === 'app-bar')) roles.add('app-bar');
+  if (evidence.nodes.some((node) => node.role === 'button')) roles.add('button');
+  if (evidence.nodes.some((node) => node.role === 'image' || node.role === 'icon')) roles.add('image');
+  if (evidence.nodes.some((node) => node.role === 'modal')) roles.add('sheet');
+  if (evidence.sections.some((section) => section.role === 'list')) roles.add('refresh');
   return [...roles];
 }
 
-function inferModule(snapshot: PageSnapshot, existingModules: string[]): string | undefined {
-  const route = snapshot.page.route ?? snapshot.source.url ?? '';
+function inferModule(evidence: PageEvidence, existingModules: string[]): string | undefined {
+  const route = evidence.page.route ?? evidence.source.route ?? evidence.source.url ?? '';
   const segments = route.split(/[/?#&.=_-]+/).filter((item) => item.length >= 3);
   for (const segment of segments) {
     if (existingModules.includes(segment)) return segment;
@@ -107,24 +107,30 @@ function inferModule(snapshot: PageSnapshot, existingModules: string[]): string 
   return existingModules[0];
 }
 
-function inferPattern(snapshot: PageSnapshot): string {
-  if (snapshot.visualSections.some((section) => section.role === 'list')) return 'list';
-  if (snapshot.nodes.some((node) => node.role === 'input')) return 'form';
-  if (snapshot.visualSections.length >= 6) return 'dashboard';
+function inferPattern(evidence: PageEvidence): string {
+  if (evidence.sections.some((section) => section.role === 'list')) return 'list';
+  if (evidence.nodes.some((node) => node.role === 'input')) return 'form';
+  if (evidence.sections.length >= 6) return 'dashboard';
   return 'detail';
 }
 
-function inferPageName(snapshot: PageSnapshot): string {
-  const route = snapshot.page.route ?? snapshot.source.url ?? snapshot.page.title ?? 'SnapshotPage';
+function inferPageName(evidence: PageEvidence): string {
+  const route = evidence.page.route ?? evidence.source.url ?? evidence.page.title ?? 'SnapshotPage';
   const lastSegment = route.split(/[/?#]/)[0]?.split('/').filter(Boolean).at(-1);
-  return toPascalCase(lastSegment ?? snapshot.page.title ?? 'SnapshotPage');
+  return toPascalCase(lastSegment ?? evidence.page.title ?? 'SnapshotPage');
 }
 
-function buildSummary(snapshot: PageSnapshot): string {
-  const sectionCount = snapshot.visualSections.length;
-  const textCount = snapshot.page.text.length;
-  const assetCount = snapshot.assets.length;
-  return `该计划来自 URL Snapshot，聚焦可见 UI 还原；识别到 ${sectionCount} 个视觉区块、${textCount} 条文案线索和 ${assetCount} 个资源线索。业务接口、权限、风控和埋点不在本计划中做确定性推断。`;
+function buildSummary(evidence: PageEvidence): string {
+  const sectionCount = evidence.sections.length;
+  const textCount = evidence.text.length;
+  const assetCount = evidence.assets.length;
+  const capabilityHints = [
+    evidence.capabilities.runtimeMetadata ? 'runtime metadata' : '',
+    evidence.capabilities.pageList ? 'page list' : '',
+    evidence.capabilities.tabTraversal ? 'tab traversal' : '',
+    evidence.capabilities.needsOcr ? 'ocr fallback' : '',
+  ].filter(Boolean);
+  return `该计划来自统一 PageEvidence，聚焦可见 UI 还原；识别到 ${sectionCount} 个视觉区块、${textCount} 条文案线索和 ${assetCount} 个资源线索。${capabilityHints.length > 0 ? `增强能力包括 ${capabilityHints.join('、')}。` : ''}业务接口、权限、风控和埋点不在本计划中做确定性推断。`;
 }
 
 function buildFileTree(baseDir: string, pageName: string, widgetTree: FlutterWidgetPlan[]): FlutterPlannedFile[] {
@@ -157,18 +163,18 @@ function buildFileTree(baseDir: string, pageName: string, widgetTree: FlutterWid
   return dedupeBy(files, (file) => file.path);
 }
 
-function buildWidgetTree(pageName: string, snapshot: PageSnapshot): FlutterWidgetPlan[] {
+function buildWidgetTree(pageName: string, evidence: PageEvidence): FlutterWidgetPlan[] {
   const rootName = `${pageName}Page`;
   const widgets: FlutterWidgetPlan[] = [
     {
       name: rootName,
       role: 'page',
-      buildHint: '使用 YouFi 页面基类承载整体结构，按 snapshot visualSections 编排子 Widget。',
+      buildHint: '使用 YouFi 页面基类承载整体结构，按 evidence sections 编排子 Widget。',
       stateAccess: 'controller',
     },
   ];
 
-  for (const section of snapshot.visualSections.slice(0, 12)) {
+  for (const section of evidence.sections.slice(0, 12)) {
     const nameHint = section.title ? toPascalCase(section.title).slice(0, 40) : toPascalCase(section.role);
     widgets.push({
       name: `${pageName}${nameHint || toPascalCase(section.role)}`,
@@ -182,9 +188,9 @@ function buildWidgetTree(pageName: string, snapshot: PageSnapshot): FlutterWidge
   return widgets;
 }
 
-function buildComponentMappings(snapshot: PageSnapshot, components: FlutterComponentRef[]): ComponentMapping[] {
+function buildComponentMappings(evidence: PageEvidence, components: FlutterComponentRef[]): ComponentMapping[] {
   const roles = new Map<SnapshotNodeRole, string[]>();
-  for (const node of snapshot.nodes) {
+  for (const node of evidence.nodes) {
     if (!roles.has(node.role)) roles.set(node.role, []);
     roles.get(node.role)?.push(node.id);
   }
@@ -199,8 +205,8 @@ function buildComponentMappings(snapshot: PageSnapshot, components: FlutterCompo
         ...(component ? { targetSymbol: component.symbol } : {}),
         confidence: component?.confidence ?? 'low',
         reason: component
-          ? `Snapshot role ${role} can likely use ${component.symbol}.`
-          : `No clear YouFi component was detected for snapshot role ${role}; implement with local Widget and target theme.`,
+          ? `Evidence role ${role} can likely use ${component.symbol}.`
+          : `No clear YouFi component was detected for evidence role ${role}; implement with local Widget and target theme.`,
       };
     });
 }
@@ -219,8 +225,8 @@ function bestComponentForRole(role: SnapshotNodeRole, components: FlutterCompone
   return components.find((component) => targetRoles.includes(component.role));
 }
 
-function buildThemeMappings(snapshot: PageSnapshot): ThemeMapping[] {
-  return snapshot.tokens.slice(0, 80).map((token) => {
+function buildThemeMappings(evidence: PageEvidence): ThemeMapping[] {
+  return (evidence.tokens ?? []).slice(0, 80).map((token) => {
     const target = token.kind === 'typography'
       ? 'themeService.textStyles.*'
       : token.kind === 'color'
@@ -233,19 +239,19 @@ function buildThemeMappings(snapshot: PageSnapshot): ThemeMapping[] {
       ...(target ? { target } : {}),
       confidence: target ? 'medium' : 'low',
       reason: target
-        ? `Map snapshot ${token.kind} evidence to the closest YouFi theme token during implementation.`
+        ? `Map evidence ${token.kind} signal to the closest YouFi theme token during implementation.`
         : `No direct YouFi token family is inferred for ${token.kind}; confirm manually.`,
     };
   });
 }
 
-function buildI18nPlan(snapshot: PageSnapshot): UiImplementationPlan['i18nPlan'] {
-  const texts = snapshot.page.text
+function buildI18nPlan(evidence: PageEvidence): UiImplementationPlan['i18nPlan'] {
+  const texts = evidence.text
     .filter((text) => text.length <= 120)
     .slice(0, 120)
     .map((text) => ({
       text,
-      nodeIds: snapshot.nodes.filter((node) => node.text === text).map((node) => node.id).slice(0, 8),
+      nodeIds: evidence.nodes.filter((node) => node.text === text).map((node) => node.id).slice(0, 8),
       ...suggestedKey(text),
     }));
   return {
@@ -259,9 +265,9 @@ function suggestedKey(text: string): { suggestedKey?: string } {
   return key ? { suggestedKey: key } : {};
 }
 
-function buildAssetPlan(snapshot: PageSnapshot): UiImplementationPlan['assetPlan'] {
+function buildAssetPlan(evidence: PageEvidence): UiImplementationPlan['assetPlan'] {
   return {
-    assets: snapshot.assets.slice(0, 80).map((asset) => ({
+    assets: evidence.assets.slice(0, 80).map((asset) => ({
       source: asset.source,
       kind: asset.kind,
       nodeId: asset.nodeId,
@@ -273,8 +279,8 @@ function buildAssetPlan(snapshot: PageSnapshot): UiImplementationPlan['assetPlan
   };
 }
 
-function buildInteractionPlan(snapshot: PageSnapshot): InteractionPlan[] {
-  return snapshot.interactions.slice(0, 80).map((interaction) => ({
+function buildInteractionPlan(evidence: PageEvidence): InteractionPlan[] {
+  return evidence.interactions.slice(0, 80).map((interaction) => ({
     kind: interaction.kind,
     label: interaction.label,
     nodeId: interaction.nodeId,
@@ -282,30 +288,30 @@ function buildInteractionPlan(snapshot: PageSnapshot): InteractionPlan[] {
   }));
 }
 
-function buildBusinessQuestions(snapshot: PageSnapshot): string[] {
+function buildBusinessQuestions(evidence: PageEvidence): string[] {
   const questions = [
     '确认页面真实数据来源、接口字段和加载/空态策略。',
     '确认点击、跳转、弹层、筛选和输入行为的业务规则。',
     '确认权限、风控、埋点和异常处理是否需要在本页面接入。',
   ];
-  if (snapshot.interactions.length > 0) {
-    questions.push(`Snapshot 识别到 ${snapshot.interactions.length} 个可交互区域，需要逐项确认业务动作。`);
+  if (evidence.interactions.length > 0) {
+    questions.push(`PageEvidence 识别到 ${evidence.interactions.length} 个可交互区域，需要逐项确认业务动作。`);
   }
   return questions;
 }
 
-function buildRisks(snapshot: PageSnapshot): string[] {
+function buildRisks(evidence: PageEvidence): string[] {
   const risks = [
-    'URL Snapshot 只能证明可见 UI，不能证明隐藏状态或业务逻辑。',
+    'PageEvidence 只能证明当前采集到的可见 UI 与增强证据，不能证明隐藏状态或业务逻辑。',
     'Computed style 与 YouFi 主题 token 之间可能存在语义差异，需要实现时二次确认。',
   ];
-  if (snapshot.assets.length > 0) risks.push('图片、SVG 或背景资源需要确认是否已有 YouFi 本地资产可复用。');
-  if (snapshot.warnings.length > 0) risks.push(...snapshot.warnings);
+  if (evidence.assets.length > 0) risks.push('图片、SVG 或背景资源需要确认是否已有 YouFi 本地资产可复用。');
+  if (evidence.warnings.length > 0) risks.push(...evidence.warnings);
   return risks;
 }
 
-function createPlanId(snapshotId: string): string {
-  return `plan_${snapshotId.replace(/^snapshot_/, '')}_${Date.now().toString(36)}`;
+function createPlanId(evidenceId: string): string {
+  return `plan_${evidenceId.replace(/^evidence_/, '')}_${Date.now().toString(36)}`;
 }
 
 function dedupeBy<T>(items: T[], key: (item: T) => string): T[] {

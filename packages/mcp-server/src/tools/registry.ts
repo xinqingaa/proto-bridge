@@ -1,7 +1,7 @@
 import type { JsonObject, JsonValue, ToolContext } from '../types.js';
 import { readObject, readString } from '../utils/args.js';
 import { toolJson } from '../server/responses.js';
-import { capturePageSnapshotTool } from './capture-page-snapshot.js';
+import { capturePageEvidenceTool } from './capture-page-evidence.js';
 import { buildUiImplementationPlanTool } from './build-ui-implementation-plan.js';
 import { ocrScreenshotTool } from './ocr-screenshot.js';
 import { exportReviewMarkdownTool } from './export-review-markdown.js';
@@ -12,14 +12,14 @@ import { validateTargetChangesTool } from './validate-target-changes.js';
 export function toolsList(): JsonValue[] {
   return [
     {
-      name: 'capture_page_snapshot',
-      description: 'Capture a rendered URL into page-snapshot.json and screenshot artifacts for UI reconstruction.',
+      name: 'capture_page_evidence',
+      description: 'Capture a rendered URL into page-evidence.json and screenshot artifacts for UI reconstruction.',
       inputSchema: {
         type: 'object',
         properties: {
           url: { type: 'string', description: 'Rendered page URL to capture.' },
           targetRoot: { type: 'string', description: 'Target Flutter root. Defaults to current working directory.' },
-          output: { type: 'string', description: 'Override output directory. Defaults to .proto-bridge/snapshots/<page>.' },
+          output: { type: 'string', description: 'Override output directory. Defaults to .proto-bridge/evidence/<page>.' },
           viewport: {
             type: 'object',
             properties: {
@@ -28,21 +28,21 @@ export function toolsList(): JsonValue[] {
               deviceScaleFactor: { type: 'number' },
             },
           },
-          saveArtifacts: { type: 'boolean', description: 'Save screenshot and page-snapshot.json. Defaults to true.' },
+          saveArtifacts: { type: 'boolean', description: 'Save screenshot artifact. JSON evidence files are always persisted. Defaults to true.' },
         },
       },
     },
     {
       name: 'build_ui_implementation_plan',
-      description: 'Build ui-implementation-plan.json from a captured page snapshot and YouFi target conventions.',
+      description: 'Build ui-implementation-plan.json from captured page evidence and YouFi target conventions.',
       inputSchema: {
         type: 'object',
         properties: {
-          snapshotId: { type: 'string' },
-          snapshotPath: { type: 'string', description: 'Direct page-snapshot.json path fallback.' },
+          evidenceId: { type: 'string' },
+          evidencePath: { type: 'string', description: 'Direct page-evidence.json path fallback.' },
           targetRoot: { type: 'string', description: 'Target Flutter root. Defaults to current working directory.' },
           targetModule: { type: 'string', description: 'Optional YouFi module override.' },
-          output: { type: 'string', description: 'Override output directory. Defaults beside the page snapshot.' },
+          output: { type: 'string', description: 'Override output directory. Defaults beside the evidence artifact.' },
         },
       },
     },
@@ -53,8 +53,8 @@ export function toolsList(): JsonValue[] {
         type: 'object',
         properties: {
           screenshotPath: { type: 'string' },
-          snapshotId: { type: 'string' },
-          snapshotPath: { type: 'string' },
+          evidenceId: { type: 'string' },
+          evidencePath: { type: 'string' },
           targetRoot: { type: 'string', description: 'Target Flutter root. Defaults to current working directory.' },
           output: { type: 'string', description: 'Override output directory. Defaults beside the screenshot.' },
           externalText: { type: 'array', items: { type: 'string' } },
@@ -64,14 +64,14 @@ export function toolsList(): JsonValue[] {
     },
     {
       name: 'export_review_markdown',
-      description: 'Export a human-readable UI review Markdown file from a page snapshot and UI implementation plan.',
+      description: 'Export a human-readable UI review Markdown file from page evidence and a UI implementation plan.',
       inputSchema: {
         type: 'object',
         properties: {
           planId: { type: 'string' },
           planPath: { type: 'string' },
-          snapshotId: { type: 'string' },
-          snapshotPath: { type: 'string' },
+          evidenceId: { type: 'string' },
+          evidencePath: { type: 'string' },
           targetRoot: { type: 'string', description: 'Target Flutter root. Defaults to current working directory.' },
           output: { type: 'string', description: 'Override output directory. Defaults beside the plan.' },
         },
@@ -127,7 +127,7 @@ export async function callTool(context: ToolContext, params: JsonObject | undefi
   const args = readObject(params, 'arguments') ?? {};
   if (!name) throw new Error('tools/call requires params.name');
 
-  if (name === 'capture_page_snapshot') return toolJson(await capturePageSnapshotTool(context, args));
+  if (name === 'capture_page_evidence') return toolJson(await capturePageEvidenceTool(context, args));
   if (name === 'build_ui_implementation_plan') return toolJson(await buildUiImplementationPlanTool(context, args));
   if (name === 'ocr_screenshot') return toolJson(await ocrScreenshotTool(context, args));
   if (name === 'export_review_markdown') return toolJson(await exportReviewMarkdownTool(context, args));

@@ -1,13 +1,13 @@
 export type {
   BuildUiImplementationPlanInput,
   BuildUiImplementationPlanResult,
-  CapturePageSnapshotInput,
-  CapturePageSnapshotResult,
+  CapturePageEvidenceInput,
+  CapturePageEvidenceResult,
   ExportReviewMarkdownInput,
   ExportReviewMarkdownResult,
   OcrScreenshotInput,
   OcrScreenshotResult,
   OcrTextBox,
-  PageSnapshot,
+  PageEvidence,
   UiImplementationPlan,
 } from '../../types/index.js';

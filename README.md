@@ -1,6 +1,6 @@
 # ProtoBridge
 
-ProtoBridge 是一个“原型到实现”的上下文桥接工具。它提供两套 workflow：CLI 模式是 source-aware migration，用源码、notes、i18n 和 target 约束生成迁移说明书；MCP 模式是 snapshot UI reconstruction，用 URL/rendered HTML/screenshot/OCR 生成可见 UI 还原计划。
+ProtoBridge 是一个“原型到实现”的上下文桥接工具。它提供两套 workflow：CLI 模式是 source-aware migration，用源码、notes、i18n 和 target 约束生成迁移说明书；MCP 模式是 UI reconstruction，用 URL/rendered HTML/screenshot/OCR/runtime metadata 生成 `PageEvidence` 并产出可见 UI 还原计划。
 
 它不是 Vue 转 Dart 工具，也不追求一键完美迁移。核心目标是把来源页面和目标工程之间最容易丢失的上下文结构化，降低后续实现和审查成本。
 
@@ -25,8 +25,8 @@ target.adapter = flutter-app
 
 - `core` 通过 workflow 编排能力，不让 CLI 与 MCP 共用同一条流程。
 - Source 能力放在 `SourceAdapter` 中，例如 `vue3-prototype`。
-- Snapshot/capture 能力放在 `snapshot/*`，当前服务 MCP，未来 CLI 也可以复用。
-- Target 能力通过 `target/flutter-app` facade 暴露，例如 conventions、examples、migration planner、UI reconstruction planner 和 validation。
+- Capability detection、capture 和 enrichers 放在 `snapshot/*`，当前服务 MCP，未来 CLI 也可以复用。
+- Target 能力通过 `target/flutter-app` facade 暴露，例如 conventions、examples、planning 和 validation。
 - 新增 React、Figma、Android、iOS 或其他目标端时，应新增 adapter，并保持 core 编排层稳定。
 - CLI 和 MCP 都是入口层，但分别只调用自己的 workflow，不复制 analyzer、planner 或 generator 逻辑。
 
@@ -47,9 +47,9 @@ CLI source-aware migration 默认组合下，ProtoBridge 会：
 - 将来源页面事实整理成 Flutter-facing 的实现规划。
 - 生成 `migration-context.json` 与 `migration-spec.md`。
 
-MCP snapshot UI reconstruction 会：
+MCP UI reconstruction 会：
 
-- 通过 URL capture 保存 `screenshot.png` 和 `page-snapshot.json`。
+- 通过 URL capture 保存 `screenshot.png` 和 `page-evidence.json`。
 - 读取 YouFi Flutter target conventions、相似页面、主题、路由、i18n 和资源线索。
 - 生成面向 AI coding agent 的 `ui-implementation-plan.json`。
 - 可选导出 `ocr-result.json` 与 `ui-review.md`。
@@ -64,20 +64,20 @@ ProtoBridge 不负责：
 - 处理复杂 Figma 高保真还原。
 - 把 A/B 项目的开发规范复制存放在 C 项目中；规范应从 A/B 自身仓库读取。
 
-## 三、MCP 模式：Snapshot UI Reconstruction
+## 三、MCP 模式：UI Reconstruction
 
-团队日常使用的目标体验不是“先手动生成 md，再复制给 AI 工具”，而是类似 Figma MCP 的 snapshot-first 工作流：
+团队日常使用的目标体验不是“先手动生成 md，再复制给 AI 工具”，而是类似 Figma MCP 的 evidence-first 工作流：
 
 ```text
 用户在 AI coding 工具中输入 URL
-  -> ProtoBridge MCP capture 页面并生成 page-snapshot.json / screenshot.png
+  -> ProtoBridge MCP capture 页面并生成 page-evidence.json / screenshot.png
   -> ProtoBridge MCP 生成 ui-implementation-plan.json
   -> AI agent 读取 target 工程、相似 Flutter 页面和实现约束
   -> AI agent 在 target repo 中生成 Dart 页面
   -> ProtoBridge MCP 提供结果校验和证据追踪
 ```
 
-因此，CLI 模式的职责是生成 `migration-context.json` 和 `migration-spec.md`，用于调试、审查、归档和 source-aware migration 场景。MCP 模式的职责是 snapshot UI reconstruction，不暴露 `generate_migration_spec`、`get_migration_brief`、`read_migration_artifact` 这类 CLI 模式工具。自动化落地 Dart 代码应由具备代码检索、编辑、验证和自我修正能力的 AI agent 完成。
+因此，CLI 模式的职责是生成 `migration-context.json` 和 `migration-spec.md`，用于调试、审查、归档和 source-aware migration 场景。MCP 模式的职责是 UI reconstruction，不暴露 `generate_migration_spec`、`get_migration_brief`、`read_migration_artifact` 这类 CLI 模式工具。自动化落地 Dart 代码应由具备代码检索、编辑、验证和自我修正能力的 AI agent 完成。
 
 两种 workflow 的配置、产物和使用场景详见 [ProtoBridge Workflows](docs/workflows.md)。
 
@@ -94,7 +94,7 @@ ProtoBridge 不负责：
 - **Target 规范约束**：把 target 仓库中已经存在的目录结构、命名习惯、路由文件、翻译体系、资源目录、公共组件和相似页面作为 spec 约束来源。
 - **Implementation Planning**：生成 Flutter 文件树、Widget 组合、输入数据/交互回调、状态管理与数据边界建议和人工确认项。
 - **Spec 生成**：输出 `migration-context.json` 与 `migration-spec.md`。
-- **Snapshot UI Reconstruction**：MCP 从 URL 捕获 `screenshot.png`、`page-snapshot.json`，再结合 YouFi target conventions 生成 `ui-implementation-plan.json`。
+- **UI Reconstruction**：MCP 从 URL 捕获 `screenshot.png`、`page-evidence.json`，再结合 YouFi target conventions 生成 `ui-implementation-plan.json`。
 
 端到端流转：
 
@@ -110,10 +110,10 @@ CLI input
 
 ```text
 MCP input
-  -> URL capture / rendered DOM / screenshot / OCR
-  -> Snapshot workflow 输出 screenshot.png 与 page-snapshot.json
+  -> URL capture / rendered DOM / screenshot / OCR / runtime metadata
+  -> UI reconstruction workflow 输出 screenshot.png 与 page-evidence.json
   -> target/flutter-app 读取 YouFi conventions/examples
-  -> Snapshot workflow 输出 ui-implementation-plan.json
+  -> UI reconstruction workflow 输出 ui-implementation-plan.json
 ```
 
 `migration-spec.md` 的生成会同时受三类信息约束：
@@ -147,14 +147,21 @@ proto-bridge/
 │   │       │   ├── types.ts
 │   │       ├── artifacts/
 │   │       ├── shared/
+│   │       │   ├── evidence/
+│   │       │   └── protocols/
 │   │       ├── source/
 │   │       │   └── vue3-prototype/
 │   │       ├── snapshot/
+│   │       │   ├── browser-capture/
+│   │       │   ├── capabilities/
+│   │       │   └── enrichers/
 │   │       ├── target/
 │   │       │   └── flutter-app/
+│   │       │       ├── planning/
+│   │       │       └── validation/
 │   │       ├── workflows/
 │   │       │   ├── source-aware-migration/
-│   │       │   └── snapshot-ui-reconstruction/
+│   │       │   └── ui-reconstruction/
 │   │       ├── types/
 │   │       └── index.ts
 │   ├── cli/
@@ -329,7 +336,7 @@ output/stock-trade/
 
 ## 十一、实现原理
 
-ProtoBridge 的实现原理不是“把 source 代码翻译成 target 代码”。CLI 模式先把 source 和 target 都转成结构化事实，再生成 target-facing 说明书；MCP 模式先把运行时页面转成 snapshot evidence，再生成符合 YouFi 工程习惯的 UI 还原计划。
+ProtoBridge 的实现原理不是“把 source 代码翻译成 target 代码”。CLI 模式先把 source 和 target 都转成结构化事实，再生成 target-facing 说明书；MCP 模式先把运行时页面转成 `PageEvidence`，再生成符合 YouFi 工程习惯的 UI 还原计划。
 
 CLI source-aware migration 分为五层：
 
@@ -339,12 +346,12 @@ CLI source-aware migration 分为五层：
 4. **Planning 层**：根据 source facts 和 target conventions 生成实现形态、文件拆分、Widget 树、状态策略和人工确认项。
 5. **Spec 层**：把 planning payload 渲染成 target-facing Markdown，并把调试证据保留在 JSON context 中。
 
-MCP snapshot UI reconstruction 分为四层：
+MCP UI reconstruction 分为四层：
 
 1. **入口层**：MCP tool 读取 URL、viewport、输出目录和 target root。
-2. **Snapshot 层**：`snapshot/browser-capture` 采集 screenshot、DOM、bbox、computed style 和资源线索。
+2. **Evidence 层**：`snapshot/browser-capture`、`snapshot/capabilities` 和 `snapshot/enrichers` 共同构建 `PageEvidence`。
 3. **Target 层**：`target/flutter-app` 读取 YouFi conventions、examples、theme、routes、i18n、assets，并执行 UI reconstruction planning。
-4. **Artifact 层**：snapshot workflow 写出 `screenshot.png`、`page-snapshot.json`、`ui-implementation-plan.json`，可选写出 `ocr-result.json` 和 `ui-review.md`。
+4. **Artifact 层**：UI reconstruction workflow 写出 `screenshot.png`、`page-evidence.json`、`ui-implementation-plan.json`，可选写出 `ocr-result.json` 和 `ui-review.md`。
 
 ### 1. SourceAdapter：vue3-prototype
 
@@ -422,7 +429,7 @@ prototype/src/i18n/prototype/<screenId>.json
 
 ### 7. Flutter 实现规划
 
-入口：`packages/core/src/target/flutter-app/migration-planner.ts`
+入口：`packages/core/src/target/flutter-app/planning/migration-planner.ts`
 
 规划流程：
 
@@ -447,7 +454,7 @@ source facts + target context
 
 ### 8. Spec 生成
 
-入口：`packages/core/src/target/flutter-app/render-migration-markdown.ts`
+入口：`packages/core/src/target/flutter-app/planning/render-migration-markdown.ts`
 
 生成原则：
 
@@ -457,18 +464,18 @@ source facts + target context
 - 不把 mock 数据直接写入 Widget build。
 - 不让每个子 Widget 直接依赖整个 Controller。
 
-### 9. Snapshot UI Reconstruction
+### 9. UI Reconstruction
 
 入口：
 
-- `packages/core/src/workflows/snapshot-ui-reconstruction/capture-page-snapshot.ts`
-- `packages/core/src/workflows/snapshot-ui-reconstruction/build-ui-implementation-plan.ts`
-- `packages/core/src/target/flutter-app/ui-reconstruction-planner.ts`
+- `packages/core/src/workflows/ui-reconstruction/capture-page-evidence.ts`
+- `packages/core/src/workflows/ui-reconstruction/build-ui-implementation-plan.ts`
+- `packages/core/src/target/flutter-app/planning/ui-reconstruction-planner.ts`
 
 生成原则：
 
 - `screenshot.png` 是主证据，不是调试附属文件。
-- `page-snapshot.json` 保留 rendered DOM、视觉区块、文案、样式、资源和交互线索。
+- `page-evidence.json` 作为稳定中间模型，保留 rendered DOM、视觉区块、文案、样式、资源、交互线索和 capability-based metadata。
 - `ui-implementation-plan.json` 面向 AI agent，聚焦可见 UI、文件落点、Widget 拆分、YouFi 组件/主题/i18n/assets 约束。
 - 业务接口、权限、风控、埋点和隐藏状态只进入 TODO、risks 或 manual confirmations。
 
@@ -485,7 +492,7 @@ source facts + target context
 ## 十三、开发约定
 
 - CLI 模式能力优先放在 `workflows/source-aware-migration`、`source/**` 或 `target/**`。
-- MCP 模式能力优先放在 `workflows/snapshot-ui-reconstruction` 或 `snapshot/**`。
+- MCP 模式能力优先放在 `workflows/ui-reconstruction` 或 `snapshot/**`。
 - YouFi / Flutter target 能力优先放在 `target/flutter-app`，必要时再下沉到 adapter 内部实现。
 - CLI/MCP 只做入口封装，并分别只调用自己的 workflow。
 - 扩展 source 技术栈时实现 `SourceAdapter`。
@@ -499,7 +506,7 @@ source facts + target context
 
 因为 deterministic CLI 缺少 AI agent 的代码检索、取舍、编辑、验证和自我修正能力。把 Vue 确定性翻译成 Dart 会迫使 ProtoBridge 在 CLI 内硬编码大量 Flutter 业务规范，长期不可维护。
 
-自动化落地方式不是让 CLI 直接写 Dart，而是通过 MCP 把 `screenshot.png`、`page-snapshot.json`、`ui-implementation-plan.json`、target 相似实现和工程约束提供给 AI coding agent，由 agent 在目标仓库中完成 Dart 实现。需要 source-aware 说明书时使用 CLI 模式。
+自动化落地方式不是让 CLI 直接写 Dart，而是通过 MCP 把 `screenshot.png`、`page-evidence.json`、`ui-implementation-plan.json`、target 相似实现和工程约束提供给 AI coding agent，由 agent 在目标仓库中完成 Dart 实现。需要 source-aware 说明书时使用 CLI 模式。
 
 ### 为什么默认跳过 capture？
 

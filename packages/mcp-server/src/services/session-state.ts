@@ -1,24 +1,24 @@
-import type { GeneratedSnapshot, GeneratedUiPlan } from '../types.js';
+import type { GeneratedEvidence, GeneratedUiPlan } from '../types.js';
 
-export class SnapshotStore {
-  private readonly snapshots = new Map<string, GeneratedSnapshot>();
+export class EvidenceStore {
+  private readonly evidences = new Map<string, GeneratedEvidence>();
 
-  add(snapshot: GeneratedSnapshot): void {
-    this.snapshots.set(snapshot.id, snapshot);
+  add(evidence: GeneratedEvidence): void {
+    this.evidences.set(evidence.id, evidence);
   }
 
-  get(snapshotId: string): GeneratedSnapshot | undefined {
-    return this.snapshots.get(snapshotId);
+  get(evidenceId: string): GeneratedEvidence | undefined {
+    return this.evidences.get(evidenceId);
   }
 
-  require(snapshotId: string): GeneratedSnapshot {
-    const snapshot = this.get(snapshotId);
-    if (!snapshot) throw new Error(`Unknown snapshotId: ${snapshotId}`);
-    return snapshot;
+  require(evidenceId: string): GeneratedEvidence {
+    const evidence = this.get(evidenceId);
+    if (!evidence) throw new Error(`Unknown evidenceId: ${evidenceId}`);
+    return evidence;
   }
 
-  values(): GeneratedSnapshot[] {
-    return [...this.snapshots.values()];
+  values(): GeneratedEvidence[] {
+    return [...this.evidences.values()];
   }
 }
 
@@ -44,8 +44,8 @@ export class UiPlanStore {
   }
 }
 
-export function createSnapshotRecordId(snapshotId: string): string {
-  return snapshotId;
+export function createEvidenceRecordId(evidenceId: string): string {
+  return evidenceId;
 }
 
 export function createUiPlanRecordId(planId: string): string {

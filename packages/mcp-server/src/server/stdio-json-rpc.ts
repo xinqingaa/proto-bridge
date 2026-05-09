@@ -1,12 +1,12 @@
 import type { JsonRpcRequest, ServerOptions, ToolContext } from '../types.js';
-import { SnapshotStore, UiPlanStore } from '../services/session-state.js';
+import { EvidenceStore, UiPlanStore } from '../services/session-state.js';
 import { dispatch } from './dispatcher.js';
 import { errorMessage, send, sendError } from './responses.js';
 
 export function startMcpServer(options: ServerOptions): void {
   const context: ToolContext = {
     options,
-    snapshots: new SnapshotStore(),
+    evidences: new EvidenceStore(),
     plans: new UiPlanStore(),
   };
 

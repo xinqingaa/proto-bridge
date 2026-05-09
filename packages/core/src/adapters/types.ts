@@ -10,6 +10,7 @@ import type {
   TokenMapResult,
   WidgetRecommendation,
   CaptureResult,
+  PageEvidence,
 } from '../types/index.js';
 
 export type AdapterProjectRef = {
@@ -57,6 +58,7 @@ export type TargetAdapter = {
     tokenMap: TokenMapResult;
     target: FlutterContextAnalysis;
     capture?: CaptureResult | undefined;
+    pageEvidence?: PageEvidence | undefined;
     captureSkipped: boolean;
   }): MigrationRecommendations;
   renderMigrationSpec(context: MigrationContext): string;

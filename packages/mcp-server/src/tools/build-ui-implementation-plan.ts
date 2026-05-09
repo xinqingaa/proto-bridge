@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { readFile } from 'node:fs/promises';
-import { buildUiImplementationPlan } from '@proto-bridge/core/workflows/snapshot-ui-reconstruction';
-import type { PageSnapshot } from '@proto-bridge/core/workflows/snapshot-ui-reconstruction';
+import { buildUiImplementationPlan } from '@proto-bridge/core/workflows/ui-reconstruction';
+import type { PageEvidence } from '@proto-bridge/core/workflows/ui-reconstruction';
 import type { JsonObject, ToolContext } from '../types.js';
 import { readString } from '../utils/args.js';
 import { resolveRuntimeTargetRoot } from '../services/config.js';
@@ -9,10 +9,10 @@ import { createUiPlanRecordId } from '../services/session-state.js';
 
 export async function buildUiImplementationPlanTool(context: ToolContext, args: JsonObject): Promise<JsonObject> {
   const targetRoot = resolveRuntimeTargetRoot(readString(args, 'targetRoot'));
-  const { snapshot, snapshotId, defaultOutDir } = await resolveSnapshot(context, args);
+  const { evidence, evidenceId, defaultOutDir } = await resolveEvidence(context, args);
   const outDir = resolvePlanOutputDir(args, targetRoot, defaultOutDir);
   const result = await buildUiImplementationPlan({
-    snapshot,
+    evidence,
     targetRoot,
     outDir,
     targetModule: readString(args, 'targetModule'),
@@ -21,13 +21,13 @@ export async function buildUiImplementationPlanTool(context: ToolContext, args: 
     id: createUiPlanRecordId(result.plan.id),
     createdAt: new Date().toISOString(),
     targetRoot,
-    snapshotId,
+    evidenceId,
     result,
   };
   context.plans.add(planRecord);
   return {
     planId: planRecord.id,
-    snapshotId,
+    evidenceId,
     createdAt: planRecord.createdAt,
     targetRoot,
     files: result.files as unknown as JsonObject,
@@ -43,27 +43,27 @@ export async function buildUiImplementationPlanTool(context: ToolContext, args: 
   };
 }
 
-async function resolveSnapshot(
+async function resolveEvidence(
   context: ToolContext,
   args: JsonObject,
-): Promise<{ snapshot: PageSnapshot; snapshotId: string; defaultOutDir?: string | undefined }> {
-  const snapshotId = readString(args, 'snapshotId');
-  if (snapshotId) {
-    const snapshotRecord = context.snapshots.require(snapshotId);
+): Promise<{ evidence: PageEvidence; evidenceId: string; defaultOutDir?: string | undefined }> {
+  const evidenceId = readString(args, 'evidenceId');
+  if (evidenceId) {
+    const evidenceRecord = context.evidences.require(evidenceId);
     return {
-      snapshot: snapshotRecord.result.snapshot,
-      snapshotId,
-      defaultOutDir: path.dirname(snapshotRecord.result.files.pageSnapshot),
+      evidence: evidenceRecord.result.evidence,
+      evidenceId,
+      defaultOutDir: path.dirname(evidenceRecord.result.files.pageEvidence),
     };
   }
 
-  const snapshotPath = readString(args, 'snapshotPath');
-  if (!snapshotPath) throw new Error('build_ui_implementation_plan requires snapshotId or snapshotPath.');
-  const absolutePath = path.resolve(snapshotPath);
-  const snapshot = JSON.parse(await readFile(absolutePath, 'utf8')) as PageSnapshot;
+  const evidencePath = readString(args, 'evidencePath');
+  if (!evidencePath) throw new Error('build_ui_implementation_plan requires evidenceId or evidencePath.');
+  const absolutePath = path.resolve(evidencePath);
+  const evidenceFromFile = JSON.parse(await readFile(absolutePath, 'utf8')) as PageEvidence;
   return {
-    snapshot,
-    snapshotId: snapshot.id,
+    evidence: evidenceFromFile,
+    evidenceId: evidenceFromFile.id,
     defaultOutDir: path.dirname(absolutePath),
   };
 }

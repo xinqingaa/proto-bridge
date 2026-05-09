@@ -12,9 +12,9 @@ import type {
   VueLifecycleHint,
   VueStateHint,
   VueStyleTokenHint,
-} from '../../types/index.js';
-import { classifyPagePattern } from './planners/page-pattern-classifier.js';
-import { getKnownTokenMaps } from './theme-mapping.js';
+} from '../../../types/index.js';
+import { classifyPagePattern } from '../planners/page-pattern-classifier.js';
+import { getKnownTokenMaps } from '../theme-mapping.js';
 
 type DesignToken = {
   name: string;

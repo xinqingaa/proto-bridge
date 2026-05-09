@@ -20,7 +20,7 @@ ProtoBridge 使用 pnpm workspace 开发，但 npm 用户通过 npx 使用 CLI�
 npx @proto-bridge/cli init
 npx @proto-bridge/cli generate --url "http://localhost:5173/#/prototype/etf-detail"
 npx @proto-bridge/cli generate
-npx -y @proto-bridge/mcp-server --config /path/to/youfi/proto-bridge.config.json
+npx -y @proto-bridge/mcp-server
 ```
 
 ## 首次发布前准备
@@ -190,7 +190,7 @@ npm view @proto-bridge/mcp-server version
 cd /tmp
 npx @proto-bridge/cli --help
 npx @proto-bridge/cli generate
-npx -y @proto-bridge/mcp-server --config /path/to/youfi/proto-bridge.config.json
+npx -y @proto-bridge/mcp-server
 ```
 
 如果必须在 monorepo 里验证，使用带版本或显式 package 的命令：
@@ -198,7 +198,7 @@ npx -y @proto-bridge/mcp-server --config /path/to/youfi/proto-bridge.config.json
 ```bash
 npx @proto-bridge/cli@latest --help
 npm exec --package @proto-bridge/cli@latest -- proto-bridge --help
-npm exec --package @proto-bridge/mcp-server@latest -- proto-bridge-mcp --config /path/to/youfi/proto-bridge.config.json
+npm exec --package @proto-bridge/mcp-server@latest -- proto-bridge-mcp
 ```
 
 ## 后续更新发布

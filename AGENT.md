@@ -6,7 +6,7 @@ ProtoBridge 是一个“原型到实现”的上下文桥接工具。当前项�
 
 ```text
 CLI 模式 = Source-aware Migration
-MCP 模式 = Snapshot UI Reconstruction
+MCP 模式 = UI Reconstruction
 ```
 
 CLI 模式读取 source project 和 target project，生成可审查、可归档、可交给人工或 AI coding 工具继续实现的迁移上下文与说明书。
@@ -25,7 +25,7 @@ target.adapter = flutter-app
 ## 2. 工作原则
 
 - `packages/cli` 只调用 `@proto-bridge/core/workflows/source-aware-migration`。
-- `packages/mcp-server` 只调用 `@proto-bridge/core/workflows/snapshot-ui-reconstruction` 和 `@proto-bridge/core/target/flutter-app`。
+- `packages/mcp-server` 只调用 `@proto-bridge/core/workflows/ui-reconstruction` 和 `@proto-bridge/core/target/flutter-app`。
 - CLI 与 MCP 是两套 workflow，不通过参数切换成同一个流程。
 - `adapters/` 只保留 adapter 协议和 registry，不承载具体技术栈实现。
 - source 技术栈实现放在 `source/*`。
@@ -47,7 +47,9 @@ packages/core/src/
 │   ├── artifact-writer.ts
 │   └── index.ts
 ├── shared/
+│   ├── evidence/
 │   ├── paths.ts
+│   ├── protocols/
 │   └── index.ts
 ├── source/
 │   └── vue3-prototype/
@@ -60,7 +62,9 @@ packages/core/src/
 ├── snapshot/
 │   ├── browser-capture/
 │   │   ├── capture-rendered-page.ts
-│   │   └── rendered-page-snapshot.ts
+│   │   └── rendered-page-evidence.ts
+│   ├── capabilities/
+│   ├── enrichers/
 │   ├── ocr/
 │   │   └── external-ocr.ts
 │   ├── types.ts
@@ -73,11 +77,8 @@ packages/core/src/
 │       ├── conventions.ts
 │       ├── examples.ts
 │       ├── theme-mapping.ts
-│       ├── migration-planner.ts
-│       ├── migration-recommendations.ts
-│       ├── render-migration-markdown.ts
-│       ├── ui-reconstruction-planner.ts
-│       ├── validation.ts
+│       ├── planning/
+│       ├── validation/
 │       ├── planners/
 │       ├── types.ts
 │       └── index.ts
@@ -87,14 +88,21 @@ packages/core/src/
 │   │   ├── generate-migration-spec.ts
 │   │   ├── types.ts
 │   │   └── index.ts
-│   └── snapshot-ui-reconstruction/
-│       ├── capture-page-snapshot.ts
+│   └── ui-reconstruction/
+│       ├── capture-page-evidence.ts
 │       ├── ocr-screenshot.ts
 │       ├── build-ui-implementation-plan.ts
 │       ├── render-ui-review-markdown.ts
 │       ├── types.ts
 │       └── index.ts
 ├── types/
+│   ├── common.ts
+│   ├── evidence.ts
+│   ├── migration.ts
+│   ├── planning.ts
+│   ├── source.ts
+│   ├── target-flutter.ts
+│   ├── tokens.ts
 │   └── index.ts
 └── index.ts
 ```
@@ -102,10 +110,10 @@ packages/core/src/
 职责：
 
 - `workflows/source-aware-migration`：CLI 模式编排，生成 `migration-context.json` 和 `migration-spec.md`。
-- `workflows/snapshot-ui-reconstruction`：MCP 模式编排，生成 `screenshot.png`、`page-snapshot.json`、`ui-implementation-plan.json`，可选生成 `ocr-result.json` 和 `ui-review.md`。
+- `workflows/ui-reconstruction`：MCP 模式编排，生成 `screenshot.png`、`page-evidence.json`、`ui-implementation-plan.json`，可选生成 `ocr-result.json` 和 `ui-review.md`。
 - `source/vue3-prototype`：读取 Vue3 原型工程、页面配置、notes、i18n、Vue SFC facts。
-- `snapshot/*`：浏览器运行时页面证据、截图、DOM snapshot、OCR evidence。
-- `target/flutter-app`：读取 YouFi / Flutter 工程约束，提供 conventions、examples、theme mapping、migration planner、UI reconstruction planner 和 validation。
+- `snapshot/*`：浏览器运行时页面证据、capability detection、evidence enrichers、截图和 OCR evidence。
+- `target/flutter-app`：读取 YouFi / Flutter 工程约束，提供 conventions、examples、theme mapping、planning 和 validation。
 - `adapters`：定义并注册 SourceAdapter / TargetAdapter。
 - `artifacts`：JSON / Markdown 文件写入。
 - `shared`：路径等通用工具。
@@ -176,7 +184,7 @@ CLI 模式适合：
 - 需要迁移前梳理业务风险、人工确认项和 target 落点。
 - 需要批量生成页面迁移材料。
 
-## 5. MCP 模式：Snapshot UI Reconstruction
+## 5. MCP 模式：UI Reconstruction
 
 MCP 模式不读取 source 仓库，也不需要 `proto-bridge.config.json`。MCP 应从 YouFi target 仓库启动，默认 `process.cwd()` 就是 target root。
 
@@ -184,9 +192,9 @@ MCP 模式不读取 source 仓库，也不需要 `proto-bridge.config.json`。MC
 
 ```text
 URL / rendered page / screenshot / OCR evidence
-  -> capture_page_snapshot
+  -> capture_page_evidence
   -> screenshot.png
-  -> page-snapshot.json
+  -> page-evidence.json
   -> build_ui_implementation_plan
   -> ui-implementation-plan.json
   -> AI coding agent implements Dart UI
@@ -196,23 +204,23 @@ URL / rendered page / screenshot / OCR evidence
 主产物：
 
 ```text
-.proto-bridge/snapshots/<page>/
+.proto-bridge/evidence/<page>/
 ├── screenshot.png
-├── page-snapshot.json
+├── page-evidence.json
 └── ui-implementation-plan.json
 ```
 
 可选产物：
 
 ```text
-.proto-bridge/snapshots/<page>/
+.proto-bridge/evidence/<page>/
 ├── ocr-result.json
 └── ui-review.md
 ```
 
 MCP tools：
 
-- `capture_page_snapshot`
+- `capture_page_evidence`
 - `build_ui_implementation_plan`
 - `ocr_screenshot`
 - `export_review_markdown`
@@ -231,7 +239,7 @@ MCP 模式适合：
 - 用户只给 URL，希望快速还原可见 UI。
 - AI coding agent 在 YouFi target repo 中实现页面。
 - 页面业务行为暂时不要求完整迁移。
-- 需要 screenshot + JSON evidence 支撑 UI 还原。
+- 需要 `PageEvidence` 支撑 UI 还原。
 
 ## 6. 规范读取与约束原则
 
@@ -258,7 +266,7 @@ Target 侧可读取：
 约束规则：
 
 - source 信息约束“页面要表达什么”。
-- snapshot evidence 约束“页面可见 UI 是什么”。
+- page evidence 约束“页面可见 UI 是什么”。
 - target 信息约束“目标工程应该怎么实现”。
 - source/snapshot 与 target 习惯冲突时，实现建议优先服从 target 工程习惯，同时保留证据和人工确认项。
 - 信息缺失时写 warnings、risks 或 manual confirmations，不伪造确定结论。
@@ -280,13 +288,13 @@ CLI 生成的 `migration-spec.md` 至少应做到：
 
 MCP 生成的 `ui-implementation-plan.json` 至少应做到：
 
-- 明确 snapshot id、目标模块、页面 route/title 和 viewport。
+- 明确 evidence id、目标模块、页面 route/title 和 viewport。
 - 明确 planned file tree。
 - 明确 Widget tree。
 - 明确 component mappings、theme mappings、i18n plan、asset plan。
 - 明确 visible interactions。
 - 明确 business questions、risks 和 validation hints。
-- 不把 URL snapshot 看不到的接口、权限、风控、埋点写成确定结论。
+- 不把 URL 页面证据看不到的接口、权限、风控、埋点写成确定结论。
 
 ## 8. 风险边界
 

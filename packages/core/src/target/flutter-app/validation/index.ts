@@ -43,7 +43,7 @@ export async function scanFlutterTargetDartFiles(
       issues.push({ file, issue: 'Hard-coded fontSize detected without themeService.textStyles nearby.' });
     }
     if (/BoxShadow\s*\(/.test(text) && !/themeService\.colors/.test(text)) {
-      issues.push({ file, issue: 'Local BoxShadow detected; confirm it matches snapshot evidence and YouFi component conventions.' });
+      issues.push({ file, issue: 'Local BoxShadow detected; confirm it matches captured page evidence and YouFi component conventions.' });
     }
     if (/Image\.network\s*\(/.test(text)) {
       issues.push({ file, issue: 'Network image usage detected; confirm source asset plan allows remote images.' });

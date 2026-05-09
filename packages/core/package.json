@@ -14,9 +14,9 @@
       "types": "./dist/workflows/source-aware-migration/index.d.ts",
       "import": "./dist/workflows/source-aware-migration/index.js"
     },
-    "./workflows/snapshot-ui-reconstruction": {
-      "types": "./dist/workflows/snapshot-ui-reconstruction/index.d.ts",
-      "import": "./dist/workflows/snapshot-ui-reconstruction/index.js"
+    "./workflows/ui-reconstruction": {
+      "types": "./dist/workflows/ui-reconstruction/index.d.ts",
+      "import": "./dist/workflows/ui-reconstruction/index.js"
     },
     "./target/flutter-app": {
       "types": "./dist/target/flutter-app/index.d.ts",

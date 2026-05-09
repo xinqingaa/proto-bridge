@@ -1,7 +1,7 @@
 import type {
   BuildUiImplementationPlanResult,
-  CapturePageSnapshotResult,
-} from '@proto-bridge/core/workflows/snapshot-ui-reconstruction';
+  CapturePageEvidenceResult,
+} from '@proto-bridge/core/workflows/ui-reconstruction';
 
 export type JsonValue = string | number | boolean | null | JsonObject | JsonValue[];
 export type JsonObject = { [key: string]: JsonValue | undefined };
@@ -13,18 +13,18 @@ export type JsonRpcRequest = {
   params?: JsonObject | undefined;
 };
 
-export type GeneratedSnapshot = {
+export type GeneratedEvidence = {
   id: string;
   createdAt: string;
   targetRoot: string;
-  result: CapturePageSnapshotResult;
+  result: CapturePageEvidenceResult;
 };
 
 export type GeneratedUiPlan = {
   id: string;
   createdAt: string;
   targetRoot: string;
-  snapshotId: string;
+  evidenceId: string;
   result: BuildUiImplementationPlanResult;
 };
 
@@ -32,11 +32,11 @@ export type ServerOptions = Record<string, never>;
 
 export type ToolContext = {
   options: ServerOptions;
-  snapshots: {
-    add(snapshot: GeneratedSnapshot): void;
-    get(snapshotId: string): GeneratedSnapshot | undefined;
-    require(snapshotId: string): GeneratedSnapshot;
-    values(): GeneratedSnapshot[];
+  evidences: {
+    add(evidence: GeneratedEvidence): void;
+    get(evidenceId: string): GeneratedEvidence | undefined;
+    require(evidenceId: string): GeneratedEvidence;
+    values(): GeneratedEvidence[];
   };
   plans: {
     add(plan: GeneratedUiPlan): void;

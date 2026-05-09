@@ -3,8 +3,8 @@ import { realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
   buildUiImplementationPlan,
-  capturePageSnapshot,
-} from '@proto-bridge/core/workflows/snapshot-ui-reconstruction';
+  capturePageEvidence,
+} from '@proto-bridge/core/workflows/ui-reconstruction';
 import {
   findFlutterTargetExamples,
   getFlutterTargetConventions,
@@ -14,15 +14,15 @@ import { startMcpServer } from './server/stdio-json-rpc.js';
 
 export {
   buildUiImplementationPlan,
-  capturePageSnapshot,
+  capturePageEvidence,
   findFlutterTargetExamples,
   getFlutterTargetConventions,
 };
 
 export type {
   BuildUiImplementationPlanInput,
-  CapturePageSnapshotInput,
-} from '@proto-bridge/core/workflows/snapshot-ui-reconstruction';
+  CapturePageEvidenceInput,
+} from '@proto-bridge/core/workflows/ui-reconstruction';
 export type {
   FindFlutterTargetExamplesInput,
 } from '@proto-bridge/core/target/flutter-app';
