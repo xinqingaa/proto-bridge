@@ -1,6 +1,6 @@
 # @proto-bridge/mcp-server
 
-ProtoBridge MCP server exposes the URL Snapshot UI reconstruction workflow to AI coding agents.
+ProtoBridge MCP server exposes the URL UI reconstruction workflow to AI coding agents.
 
 See `docs/workflows.md` in the repository for the full CLI/MCP workflow comparison.
 
@@ -9,7 +9,7 @@ The runtime is intentionally scoped to the MCP workflow:
 - It does not require `proto-bridge.config.json`.
 - It uses the current working directory as the YouFi Flutter target root.
 - It does not expose CLI source-aware migration tools.
-- It does not write Dart files by itself. The AI coding tool captures a page snapshot, builds a UI implementation plan, edits the target Flutter repository, then validates the result.
+- It does not write Dart files by itself. The AI coding tool captures page evidence, builds a UI implementation plan, edits the target Flutter repository, then validates the result.
 
 ## Requirements
 
@@ -98,10 +98,10 @@ claude mcp add proto-bridge --scope project -- \
 
 ## Tools
 
-- `capture_page_snapshot`: capture a rendered URL into `page-snapshot.json` and `screenshot.png`.
-- `build_ui_implementation_plan`: build `ui-implementation-plan.json` from a snapshot and YouFi target conventions.
+- `capture_page_evidence`: capture a rendered URL into `page-evidence.json` and `screenshot.png`.
+- `build_ui_implementation_plan`: build `ui-implementation-plan.json` from `PageEvidence` and YouFi target conventions.
 - `ocr_screenshot`: persist OCR evidence for a screenshot, or return a clear warning when no OCR provider is configured.
-- `export_review_markdown`: export a human-readable `ui-review.md` from a snapshot and UI implementation plan.
+- `export_review_markdown`: export a human-readable `ui-review.md` from `PageEvidence` and a UI implementation plan.
 - `get_target_conventions`: scan target Flutter conventions, reusable components, theme, routes, i18n, and assets.
 - `find_target_examples`: find similar target Dart files with matched symbols and snippets.
 - `validate_target_changes`: inspect target git changes for scope, placeholder UI, TODOs, and hard-coded colors.
@@ -114,7 +114,7 @@ Not exposed in the MCP runtime:
 
 Source-aware migration is available through `@proto-bridge/cli` and `@proto-bridge/core/workflows/source-aware-migration`, but it is not available through the MCP runtime.
 
-The MCP package should only import `@proto-bridge/core/workflows/snapshot-ui-reconstruction` and `@proto-bridge/core/target/flutter-app`; source-aware migration remains a CLI/core workflow.
+The MCP package should only import `@proto-bridge/core/workflows/ui-reconstruction` and `@proto-bridge/core/target/flutter-app`; source-aware migration remains a CLI/core workflow.
 
 ## Example Prompt
 
@@ -123,4 +123,4 @@ Use ProtoBridge to reconstruct this page in YouFi Flutter:
 https://xiaofenhong.cc/TradeAppPrd/#/prototype/etf-detail?is_mobile=1
 ```
 
-The agent should call `capture_page_snapshot`, then `build_ui_implementation_plan`, inspect target conventions/examples as needed, optionally call `export_review_markdown` for human review, implement Dart UI, and finally call `validate_target_changes` with the returned `planId`.
+The agent should call `capture_page_evidence`, then `build_ui_implementation_plan`, inspect target conventions/examples as needed, optionally call `export_review_markdown` for human review, implement Dart UI, and finally call `validate_target_changes` with the returned `planId`.

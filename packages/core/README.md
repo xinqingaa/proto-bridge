@@ -45,19 +45,19 @@ const result = await generateMigrationSpec({
 console.log(result.files.migrationSpec);
 ```
 
-## Snapshot UI Reconstruction Usage
+## UI Reconstruction Usage
 
 ```ts
 import {
   buildUiImplementationPlan,
-  capturePageSnapshot,
-} from '@proto-bridge/core/workflows/snapshot-ui-reconstruction';
+  capturePageEvidence,
+} from '@proto-bridge/core/workflows/ui-reconstruction';
 import {
   getFlutterTargetConventions,
 } from '@proto-bridge/core/target/flutter-app';
 ```
 
-The snapshot workflow is the MCP-facing path. Its primary artifacts are `screenshot.png`, `page-snapshot.json`, and `ui-implementation-plan.json`.
+The UI reconstruction workflow is the MCP-facing path. Its primary artifacts are `screenshot.png`, `page-evidence.json`, and `ui-implementation-plan.json`.
 
 ## Main APIs
 
@@ -87,14 +87,14 @@ Returns:
 - `files.screenshot`: optional screenshot path.
 - `files.domSnapshot`: optional DOM snapshot path.
 
-### `@proto-bridge/core/workflows/snapshot-ui-reconstruction`
+### `@proto-bridge/core/workflows/ui-reconstruction`
 
-Provides URL snapshot capture, OCR evidence, UI implementation plan generation, and optional review Markdown export.
+Provides URL evidence capture, OCR evidence, UI implementation plan generation, and optional review Markdown export.
 
 Primary outputs:
 
 - `screenshot.png`
-- `page-snapshot.json`
+- `page-evidence.json`
 - `ui-implementation-plan.json`
 - `ocr-result.json` when OCR is requested and available
 - `ui-review.md` when review export is requested
@@ -106,7 +106,7 @@ Shared YouFi / Flutter target helpers:
 - conventions
 - examples
 - source-aware migration planner
-- snapshot UI reconstruction planner
+- UI reconstruction planner
 - validation
 
 ## Adapters

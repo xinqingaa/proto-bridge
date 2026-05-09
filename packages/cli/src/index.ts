@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { access, readFile, stat, writeFile } from 'node:fs/promises';
 import * as readline from 'node:readline/promises';
@@ -271,7 +272,7 @@ async function resolveGenerateOutDir(
   if (output) return resolveFromDir(output, invocationDir);
 
   const outputRoot = config.outputRoot ?? DEFAULT_OUTPUT_ROOT;
-  const defaultOutput = path.join(outputRoot, outputSlug(pageInput.route, pageInput.vue));
+  const defaultOutput = path.join(outputRoot, createOutputDirectoryName(pageInput.route, pageInput.vue));
   const selectedOutput = pageInput.interactive ? await confirmOutputDir(defaultOutput) : defaultOutput;
   return resolveFromDir(selectedOutput, invocationDir);
 }
@@ -415,6 +416,16 @@ function outputSlug(route: string | undefined, vue: string | undefined): string 
     .replace(/Page$/i, '')
     .toLowerCase();
   return slug || 'migration';
+}
+
+function createOutputDirectoryName(route: string | undefined, vue: string | undefined): string {
+  const slug = outputSlug(route, vue);
+  const timestamp = Date.now().toString(36);
+  const digest = createHash('sha1')
+    .update(`${route ?? vue ?? 'migration'}:${timestamp}`)
+    .digest('hex')
+    .slice(0, 6);
+  return `${slug}-${timestamp}-${digest}`;
 }
 
 function resolveFromDir(value: string, dir: string): string {

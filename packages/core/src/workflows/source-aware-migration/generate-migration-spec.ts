@@ -24,13 +24,9 @@ export async function generateMigrationSpec(
 
   const migrationContext = path.join(outDir, 'migration-context.json');
   const migrationSpec = path.join(outDir, 'migration-spec.md');
-  const pageEvidence = context.pageEvidence ? path.join(outDir, 'page-evidence.json') : undefined;
 
   await writeJsonFile(migrationContext, context);
   await writeTextFile(migrationSpec, targetAdapter.renderMigrationSpec(context));
-  if (pageEvidence && context.pageEvidence) {
-    await writeJsonFile(pageEvidence, context.pageEvidence);
-  }
 
   return {
     context,
@@ -39,7 +35,6 @@ export async function generateMigrationSpec(
       migrationSpec,
       screenshot: context.capture?.screenshotPath,
       domSnapshot: context.capture?.domSnapshotPath,
-      ...(pageEvidence ? { pageEvidence } : {}),
     },
   };
 }

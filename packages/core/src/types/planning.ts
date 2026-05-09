@@ -171,7 +171,6 @@ export type ExportReviewMarkdownResult = {
 export type MigrationContext = {
   source: import('./source.js').PrototypePageAnalysis;
   capture?: import('./evidence.js').CaptureResult | undefined;
-  pageEvidence?: PageEvidence | undefined;
   tokenMap: import('./tokens.js').TokenMapResult;
   target: FlutterContextAnalysis;
   recommendations: MigrationRecommendations;

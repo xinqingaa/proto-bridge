@@ -25,7 +25,7 @@ target.adapter = flutter-app
 
 - `core` 通过 workflow 编排能力，不让 CLI 与 MCP 共用同一条流程。
 - Source 能力放在 `SourceAdapter` 中，例如 `vue3-prototype`。
-- Capability detection、capture 和 enrichers 放在 `snapshot/*`，当前服务 MCP，未来 CLI 也可以复用。
+- Capability detection、`PageEvidence` capture 和 enrichers 放在 `snapshot/*`，当前主服务 MCP；CLI 只保留基础 screenshot / DOM capture。
 - Target 能力通过 `target/flutter-app` facade 暴露，例如 conventions、examples、planning 和 validation。
 - 新增 React、Figma、Android、iOS 或其他目标端时，应新增 adapter，并保持 core 编排层稳定。
 - CLI 和 MCP 都是入口层，但分别只调用自己的 workflow，不复制 analyzer、planner 或 generator 逻辑。
@@ -241,7 +241,7 @@ npx @proto-bridge/cli init
 - `vue`：可选，默认 Vue 文件路径。
 - `url`：可选，默认原型页面 URL。
 - `prototypeUrl`：可选，Playwright capture 使用的运行时 URL。
-- `outputRoot`：输出根目录，默认页面输出为 `outputRoot/<页面名>`。
+- `outputRoot`：输出根目录，默认页面输出为 `outputRoot/<页面名>-<时间戳hash>`，避免同路由重复运行时覆盖旧结果。
 - `capture`：是否默认执行截图和 DOM 提取。
 
 ## 八、使用方式
@@ -302,7 +302,7 @@ output/stock-trade/
 | `--output` | 否 | 覆盖本次生成的完整输出目录，相对路径按调用命令时的目录解析 |
 | `--capture` | 否 | 执行截图和 DOM 提取 |
 
-`--url`、`--route`、`--vue` 三选一；如果在交互式终端中都不提供，CLI 会进入问答式流程。未传 `--output` 时，输出目录为 `outputRoot/<页面名>`。
+`--url`、`--route`、`--vue` 三选一；如果在交互式终端中都不提供，CLI 会进入问答式流程。未传 `--output` 时，输出目录为 `outputRoot/<页面名>-<时间戳hash>`。
 
 ## 十、输出文件
 

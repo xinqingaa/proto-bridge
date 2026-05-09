@@ -3,7 +3,6 @@ import type {
   FlutterContextAnalysis,
   ImplementationShape,
   MigrationRecommendations,
-  PageEvidence,
   PrototypePageAnalysis,
   TokenMapResult,
   WidgetRecommendation,
@@ -16,7 +15,6 @@ export type BuildFlutterRecommendationsInput = {
   tokenMap: TokenMapResult;
   target: FlutterContextAnalysis;
   capture?: CaptureResult | undefined;
-  pageEvidence?: PageEvidence | undefined;
   captureSkipped: boolean;
 };
 
@@ -27,7 +25,6 @@ export function buildFlutterRecommendations(input: BuildFlutterRecommendationsIn
     ...input.source.warnings,
     ...input.target.warnings,
     ...(input.capture?.warnings ?? []),
-    ...(input.pageEvidence?.warnings ?? []),
     ...(input.captureSkipped
       ? ['Runtime capture skipped; layout and computed style still need manual review.']
       : []),
@@ -44,11 +41,6 @@ export function buildFlutterRecommendations(input: BuildFlutterRecommendationsIn
 
   if (!input.capture?.screenshotPath) {
     manualQuestions.push('补一次运行时截图，校对首屏布局、底部栏和弹层位置。');
-  }
-  if (!input.pageEvidence) {
-    manualQuestions.push('补一次统一 PageEvidence 采集，确认 runtime metadata / page list / OCR 回退是否可用。');
-  } else if (input.pageEvidence.capabilities.needsOcr && !input.pageEvidence.ocr) {
-    manualQuestions.push('页面可能需要 OCR 补充文本证据，请确认是否补录 OCR 结果。');
   }
 
   return {

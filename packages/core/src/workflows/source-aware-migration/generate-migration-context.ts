@@ -1,13 +1,10 @@
-import path from 'node:path';
 import type {
   CaptureResult,
-  CapturePageEvidenceResult,
   GenerateMigrationSpecInput,
   MigrationContext,
 } from '../../types/index.js';
 import { defaultAdapterRegistry } from '../../adapters/registry.js';
 import { capturePrototypePage } from '../../snapshot/browser-capture/capture-rendered-page.js';
-import { capturePageEvidence } from '../ui-reconstruction/capture-page-evidence.js';
 
 const DEFAULT_SOURCE_ADAPTER = 'vue3-prototype';
 const DEFAULT_TARGET_ADAPTER = 'flutter-app';
@@ -22,10 +19,7 @@ export async function createMigrationContext(input: GenerateMigrationSpecInput):
     vue: input.vue,
   });
 
-  const [capture, pageCapture] = await Promise.all([
-    maybeCapture(input),
-    maybeCapturePageEvidence(input),
-  ]);
+  const capture = await maybeCapture(input);
   const tokenMap = targetAdapter.mapTokens({
     sourceCode: source.sourceCode,
   });
@@ -39,7 +33,6 @@ export async function createMigrationContext(input: GenerateMigrationSpecInput):
   return {
     source,
     capture,
-    pageEvidence: pageCapture?.evidence,
     tokenMap,
     target,
     recommendations: targetAdapter.buildRecommendations({
@@ -47,7 +40,6 @@ export async function createMigrationContext(input: GenerateMigrationSpecInput):
       tokenMap,
       target,
       capture,
-      pageEvidence: pageCapture?.evidence,
       captureSkipped: Boolean(!input.capture || !input.prototypeUrl),
     }),
   };
@@ -66,19 +58,5 @@ async function maybeCapture(input: GenerateMigrationSpecInput): Promise<CaptureR
     return {
       warnings: [`Playwright capture failed: ${message}`],
     };
-  }
-}
-
-async function maybeCapturePageEvidence(input: GenerateMigrationSpecInput): Promise<CapturePageEvidenceResult | undefined> {
-  if (!input.capture || !input.prototypeUrl) return undefined;
-
-  try {
-    return await capturePageEvidence({
-      url: input.prototypeUrl,
-      outDir: path.join(input.outDir, 'page-evidence'),
-      saveArtifacts: true,
-    });
-  } catch {
-    return undefined;
   }
 }

@@ -2,7 +2,7 @@
 
 ProtoBridge CLI runs the source-aware migration workflow. It generates migration context and implementation specs from a Vue prototype page to help Flutter developers or AI coding agents implement the corresponding target screen.
 
-It intentionally does not run the MCP snapshot UI reconstruction workflow. For URL screenshot/page snapshot/UI plan generation, use `@proto-bridge/mcp-server` from the YouFi target repository.
+It intentionally does not run the MCP UI reconstruction workflow. For URL screenshot/page evidence/UI plan generation, use `@proto-bridge/mcp-server` from the YouFi target repository.
 
 See `docs/workflows.md` in the repository for the full CLI/MCP workflow comparison.
 
@@ -34,7 +34,7 @@ Or start the interactive flow:
 npx @proto-bridge/cli generate
 ```
 
-By default, output is written to `outputRoot/<page-name>`, for example `./output/etf-detail`.
+By default, output is written to `outputRoot/<page-name>-<timestamp-hash>`, for example `./output/etf-detail-moy123-1a2b3c`.
 
 ## Config
 
@@ -60,6 +60,7 @@ Fields:
 - `source.root`: local path to the Vue prototype project.
 - `target.root`: local path to the Flutter app project.
 - `outputRoot`: root directory for generated files.
+- Default directory names are timestamp-hashed to avoid overwriting repeated runs of the same route.
 - `capture`: whether to run browser screenshot and DOM capture by default.
 
 ## Commands
@@ -96,9 +97,11 @@ output/<page>/
 
 - `migration-spec.md` is the human-readable implementation brief.
 - `migration-context.json` is structured evidence for AI coding tools or debugging.
+- `screenshot.png` and `dom-snapshot.json` are optional capture artifacts for layout review.
 
 ## Notes
 
 - If your shell shows `dquote>`, the command quote is not closed; press `Ctrl+C` and rerun, or use interactive mode.
 - If the route cannot be matched, the CLI prints available route examples and suggests using `--vue`.
 - Runtime capture is optional and defaults to disabled because it depends on a running prototype dev server.
+- CLI stays source-aware by design; normalized `PageEvidence` and UI reconstruction artifacts belong to the MCP workflow.

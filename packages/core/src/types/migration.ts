@@ -18,6 +18,5 @@ export type GenerateMigrationSpecResult = {
     migrationSpec: string;
     screenshot?: string | undefined;
     domSnapshot?: string | undefined;
-    pageEvidence?: string | undefined;
   };
 };

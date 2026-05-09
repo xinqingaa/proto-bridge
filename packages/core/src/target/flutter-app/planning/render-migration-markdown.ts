@@ -541,19 +541,18 @@ function lifecycleMigrationAdvice(item: VueLifecycleHint): string {
 }
 
 function compactInteractionRows(context: MigrationContext): string[][] {
-  const interactions = context.source.sfc?.interactions ?? [];
-  if (interactions.length === 0) {
-    return [['待确认', '待确认', '根据业务需求补充 callback、表单状态或导航行为。']];
-  }
-
   const grouped = new Map<string, { label: string; targets: Set<string>; suggestion: string }>();
-  for (const interaction of interactions) {
+  for (const interaction of context.source.sfc?.interactions ?? []) {
     const label = interactionLabel(interaction.kind);
     const suggestion = suggestInteractionMigration(interaction.kind);
     const key = `${label}:${suggestion}`;
     const group = grouped.get(key) ?? { label, targets: new Set<string>(), suggestion };
     group.targets.add(interactionTargetLabel(interaction.target ?? ''));
     grouped.set(key, group);
+  }
+
+  if (grouped.size === 0) {
+    return [['待确认', '待确认', '根据业务需求补充 callback、表单状态或导航行为。']];
   }
 
   return [...grouped.values()].slice(0, 10).map((group) => [
@@ -912,8 +911,8 @@ function normalizeHex(value: string): string {
 }
 
 function assetTable(context: MigrationContext): string {
-  const assets = context.source.sfc?.assets ?? [];
-  if (assets.length === 0) {
+  const sourceAssets = context.source.sfc?.assets ?? [];
+  if (sourceAssets.length === 0) {
     return markdownTable(['资源', 'Flutter 建议路径', '迁移建议'], [
       [
         '待确认资源清单',
@@ -923,12 +922,16 @@ function assetTable(context: MigrationContext): string {
     ]);
   }
 
-  return markdownTable(['类型', '资源线索', 'Flutter 建议路径', '迁移建议'], assets.map((asset) => [
-    asset.kind,
-    asset.source ? sanitizeImplementationText(asset.source) : asset.kind === 'inline-svg' ? '内联矢量图' : '图标/图片资源',
-    context.target.assetDirectories.join(', ') || 'assets/images',
-    sanitizeImplementationText(asset.migrationHint),
-  ]));
+  const rows = [
+    ...sourceAssets.map((asset) => [
+      asset.kind,
+      asset.source ? sanitizeImplementationText(asset.source) : asset.kind === 'inline-svg' ? '内联矢量图' : '图标/图片资源',
+      context.target.assetDirectories.join(', ') || 'assets/images',
+      sanitizeImplementationText(asset.migrationHint),
+    ]),
+  ];
+
+  return markdownTable(['类型', '资源线索', 'Flutter 建议路径', '迁移建议'], dedupeRows(rows));
 }
 
 function sanitizeImplementationText(value: string): string {

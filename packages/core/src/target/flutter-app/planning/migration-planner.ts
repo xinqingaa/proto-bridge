@@ -166,7 +166,7 @@ function buildWidgetTree(
   complexity: FlutterImplementationPlan['complexity'],
   classifiedPattern: ReturnType<typeof classifyPagePattern>,
 ): FlutterWidgetPlan[] {
-  return instantiateWidgetBlueprint(pageName, source, complexity, classifiedPattern);
+  return dedupeBy(instantiateWidgetBlueprint(pageName, source, complexity, classifiedPattern), (plan) => plan.name).slice(0, 24);
 }
 
 function buildStateStrategy(
@@ -309,7 +309,10 @@ function buildDoNotTranslate(source: PrototypePageAnalysis, complexity: FlutterI
   return rules;
 }
 
-function buildChecklist(source: PrototypePageAnalysis, complexity: FlutterImplementationPlan['complexity']): FlutterImplementationPlan['checklist'] {
+function buildChecklist(
+  source: PrototypePageAnalysis,
+  complexity: FlutterImplementationPlan['complexity'],
+): FlutterImplementationPlan['checklist'] {
   const checklist: FlutterImplementationPlan['checklist'] = [
     { priority: 'P0', item: '确认目标 Flutter route、Binding、Controller 文件位置符合 YouFi 模块规范。' },
     { priority: 'P0', item: '确认 UI 首屏结构、颜色、字号、间距和 i18n 文案与原型一致。' },
@@ -324,7 +327,10 @@ function buildChecklist(source: PrototypePageAnalysis, complexity: FlutterImplem
   return checklist;
 }
 
-function inferWidgetInputs(widget: FlutterWidgetPlan, source: PrototypePageAnalysis): string[] {
+function inferWidgetInputs(
+  widget: FlutterWidgetPlan,
+  source: PrototypePageAnalysis,
+): string[] {
   const lower = widget.name.toLowerCase();
   const inputs: string[] = [];
   if (/header|info|price|quote/.test(lower)) inputs.push('quote/ui summary model');
