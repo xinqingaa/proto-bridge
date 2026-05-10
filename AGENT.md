@@ -1,306 +1,248 @@
 # ProtoBridge Agent 工作指南
 
+本文档面向在本仓库中协作的 AI agent 和开发者。它不是用户入门 README 的副本，而是“如何理解这个项目、如何判断该走哪条 workflow、以及修改代码时该遵守什么边界”的工作指南。
+
+如果你第一次进入仓库，建议先读 [README.md](README.md) 建立整体认知；如果你已经要开始改代码、改 workflow 或补文档，请继续读本文件。
+
 ## 1. 项目定位
 
-ProtoBridge 是一个“原型到实现”的上下文桥接工具。当前项目有两套明确的工作模式：
+ProtoBridge 是一个“原型到实现”的上下文桥接工具。当前项目有两套并列的一等工作模式：
 
 ```text
-CLI 模式 = Source-aware Migration
-MCP 模式 = UI Reconstruction
+CLI = Source-aware Migration
+MCP = UI Reconstruction
 ```
 
-CLI 模式读取 source project 和 target project，生成可审查、可归档、可交给人工或 AI coding 工具继续实现的迁移上下文与说明书。
+它们不是同一条流程的参数切换，而是两条不同入口、不同输入模型、不同产物、不同使用场景的 workflow。
 
-MCP 模式读取 URL / rendered page / screenshot / OCR evidence，生成可见 UI 还原证据和 YouFi Flutter 实现计划，由 AI coding agent 在 target repo 中落地 Dart UI。
+项目核心价值：
 
-ProtoBridge 不定位为 Vue 转 Dart，也不追求一键完美迁移。它的核心价值是把页面事实、视觉证据、设计 token、资源、路由、notes、i18n 和目标端工程约束整理成稳定、可追溯的实现上下文。
+- 把 source 页面事实、视觉证据、设计 token、资源、路由、notes、i18n 和 target 工程约束整理成稳定上下文。
+- 把“不确定信息”保留为 warnings、risks、business questions 或人工确认项。
+- 让人工或 AI coding agent 在 target repo 中继续实现时，不必从零重新理解页面。
 
-当前默认技术栈：
+项目不做：
+
+- 直接生成完整 Dart 业务页面。
+- 在 CLI 中确定性翻译 Vue 到 Dart。
+- 在 MCP 中从纯截图直接反推完整 rendered DOM 级别的 node tree。
+- 在 ProtoBridge 中保存 source/target 项目的规范副本。
+
+## 2. 整体架构心智模型
+
+先用 A/B/C 模型理解：
+
+```text
+A = Source project
+B = Target project
+C = ProtoBridge
+```
+
+默认 adapter 组合：
 
 ```text
 source.adapter = vue3-prototype
 target.adapter = flutter-app
 ```
 
-## 2. 工作原则
+核心分层：
 
-- `packages/cli` 只调用 `@proto-bridge/core/workflows/source-aware-migration`。
-- `packages/mcp-server` 只调用 `@proto-bridge/core/workflows/ui-reconstruction` 和 `@proto-bridge/core/target/flutter-app`。
-- CLI 与 MCP 是两套 workflow，不通过参数切换成同一个流程。
-- `adapters/` 只保留 adapter 协议和 registry，不承载具体技术栈实现。
-- source 技术栈实现放在 `source/*`。
-- snapshot / OCR / browser capture 能力放在 `snapshot/*`。
-- target 技术栈实现和 YouFi / Flutter 能力放在 `target/*`。
-- workflow 负责编排，不能把 source、snapshot、target 规则硬写进入口包。
-- `artifacts` 只处理产物写入，不理解业务语义。
-- `shared` 只放真正通用的小工具。
-- 文档描述当前架构和当前行为，不写历史迁移叙事。
+- `source/*`：回答“source 页面要表达什么”。
+- `snapshot/*`：回答“页面可见 UI 是什么”。
+- `target/*`：回答“目标工程应该怎么实现”。
+- `workflows/*`：把上面三类能力编排成 CLI 或 MCP。
+- `artifacts/*`：写出 JSON / Markdown 产物。
+- `shared/*`：放小型通用能力，不承载业务语义。
 
-## 3. 工程结构
+最重要的判断原则：
 
-```text
-packages/core/src/
-├── adapters/
-│   ├── registry.ts
-│   └── types.ts
-├── artifacts/
-│   ├── artifact-writer.ts
-│   └── index.ts
-├── shared/
-│   ├── evidence/
-│   ├── paths.ts
-│   ├── protocols/
-│   └── index.ts
-├── source/
-│   └── vue3-prototype/
-│       ├── adapter.ts
-│       ├── prototype-page.ts
-│       ├── vue-sfc.ts
-│       ├── js-literal.ts
-│       ├── types.ts
-│       └── index.ts
-├── snapshot/
-│   ├── browser-capture/
-│   │   ├── capture-rendered-page.ts
-│   │   └── rendered-page-evidence.ts
-│   ├── capabilities/
-│   ├── enrichers/
-│   ├── ocr/
-│   │   └── external-ocr.ts
-│   ├── types.ts
-│   └── index.ts
-├── target/
-│   └── flutter-app/
-│       ├── adapter.ts
-│       ├── context.ts
-│       ├── target-connect.ts
-│       ├── conventions.ts
-│       ├── examples.ts
-│       ├── theme-mapping.ts
-│       ├── planning/
-│       ├── validation/
-│       ├── planners/
-│       ├── types.ts
-│       └── index.ts
-├── workflows/
-│   ├── source-aware-migration/
-│   │   ├── generate-migration-context.ts
-│   │   ├── generate-migration-spec.ts
-│   │   ├── types.ts
-│   │   └── index.ts
-│   └── ui-reconstruction/
-│       ├── capture-page-evidence.ts
-│       ├── ocr-screenshot.ts
-│       ├── build-ui-implementation-plan.ts
-│       ├── render-ui-review-markdown.ts
-│       ├── types.ts
-│       └── index.ts
-├── types/
-│   ├── common.ts
-│   ├── evidence.ts
-│   ├── migration.ts
-│   ├── planning.ts
-│   ├── source.ts
-│   ├── target-flutter.ts
-│   ├── tokens.ts
-│   └── index.ts
-└── index.ts
-```
+- CLI 看的是 source-aware 文档链路。
+- MCP 看的是 evidence-first UI reconstruction 链路。
+- 不要试图把两者揉成同一条 workflow。
 
-职责：
+## 3. 什么时候用 CLI 视角，什么时候用 MCP 视角
 
-- `workflows/source-aware-migration`：CLI 模式编排，生成 `migration-context.json` 和 `migration-spec.md`。
-- `workflows/ui-reconstruction`：MCP 模式编排，生成 `screenshot.png`、`page-evidence.json`、`ui-implementation-plan.json`，可选生成 `ocr-result.json` 和 `ui-review.md`。
-- `source/vue3-prototype`：读取 Vue3 原型工程、页面配置、notes、i18n、Vue SFC facts。
-- `snapshot/*`：浏览器运行时页面证据、capability detection、evidence enrichers、截图和 OCR evidence。
-- `target/flutter-app`：读取 YouFi / Flutter 工程约束，提供 conventions、examples、theme mapping、planning 和 validation。
-- `adapters`：定义并注册 SourceAdapter / TargetAdapter。
-- `artifacts`：JSON / Markdown 文件写入。
-- `shared`：路径等通用工具。
-- `types`：跨模块共享数据结构。
+当任务涉及以下内容时，应优先用 CLI 视角理解问题：
 
-## 4. CLI 模式：Source-aware Migration
+- `migration-context.json`
+- `migration-spec.md`
+- source route / Vue SFC / notes / i18n / 页面配置
+- target-facing 的实现说明书
+- source 和 target 跨仓库上下文整理
 
-CLI 模式需要 `proto-bridge.config.json`，并读取 source 与 target 两个项目。
+当任务涉及以下内容时，应优先用 MCP 视角理解问题：
 
-配置示例：
+- `page-evidence.json`
+- `ui-implementation-plan.json`
+- URL capture
+- screenshot / OCR / runtime metadata
+- target conventions / target examples / target validation
+- AI coding agent 在 target repo 中落地 Dart UI
 
-```json
-{
-  "source": {
-    "adapter": "vue3-prototype",
-    "root": "/Users/name/work/TradeAppPrd"
-  },
-  "target": {
-    "adapter": "flutter-app",
-    "root": "/Users/name/work/youfi"
-  },
-  "outputRoot": "./output",
-  "capture": false
-}
-```
+如果一个需求同时提到两边，先问自己：
 
-页面输入可以来自：
+1. 它要解决的是 source-aware 说明书问题，还是 visible UI reconstruction 问题？
+2. 它的主输入是 source 仓库内容，还是 URL capture 出来的 evidence？
+3. 它的主产物是 Markdown 说明书，还是 JSON evidence / JSON UI plan？
 
-- `--url <prototype-url>`
-- `--route <route>`
-- `--vue <file>`
+## 4. 两种 workflow 的边界
 
-核心流程：
+### CLI：Source-aware Migration
+
+CLI 的职责：
+
+- 读取 source project 和 target project。
+- 分析页面配置、源码、notes、i18n、source docs 线索。
+- 读取 target modules、routes、translations、assets、common widgets 和相似页面。
+- 生成 `migration-context.json` 与 `migration-spec.md`。
+
+CLI 不应该承担：
+
+- 直接暴露 MCP tools。
+- 把 OCR 当成主输入。
+- 直接写 target 业务代码。
+
+### MCP：UI Reconstruction
+
+MCP 的职责：
+
+- 以 URL capture 为主入口生成 `PageEvidence`。
+- 用 screenshot、rendered DOM、runtime metadata、optional OCR 组织 visible UI evidence。
+- 读取 target conventions 和 target examples。
+- 生成 `ui-implementation-plan.json`，并提供 validate 工具给 agent 使用。
+
+MCP 不应该承担：
+
+- 读取 source 仓库中的 notes / i18n / Vue 语义作为主路径。
+- 暴露 CLI 的 `generate_migration_spec` 一类能力。
+- 把纯图片 OCR 夸大成 rendered DOM 等级的结构推断。
+
+当前真实边界：
+
+- `capture_page_evidence` 当前只接受 `url`。
+- `ocr_screenshot` 只补充 OCR 文字证据。
+- rendered HTML / DOM snapshot 直接输入是未来扩展方向，不是当前公开 MCP API。
+
+## 5. 目录职责与修改边界
+
+核心目录：
 
 ```text
-GenerateMigrationSpecInput
-  -> AdapterRegistry.getSource(input.source.adapter)
-  -> AdapterRegistry.getTarget(input.target.adapter)
-  -> SourceAdapter.analyze
-  -> optional capturePrototypePage
-  -> TargetAdapter.mapTokens
-  -> TargetAdapter.analyze
-  -> TargetAdapter.buildRecommendations
-  -> write migration-context.json
-  -> write migration-spec.md
+packages/
+├── core/
+├── cli/
+└── mcp-server/
 ```
 
-主产物：
+修改时应遵守：
 
-```text
-output/<page>/
-├── migration-context.json
-└── migration-spec.md
-```
+- `packages/cli` 只做 CLI 入口、参数、配置、输出展示，不承载 source/target 业务规则。
+- `packages/mcp-server` 只做 MCP 入口、tools、resources、prompts、session state，不承载 source-aware migration 逻辑。
+- `packages/core/workflows/source-aware-migration` 只编排 CLI 模式。
+- `packages/core/workflows/ui-reconstruction` 只编排 MCP 模式。
+- `packages/core/source/*` 放 source 技术栈实现。
+- `packages/core/snapshot/*` 放 URL capture、rendered DOM、OCR、evidence enrichers。
+- `packages/core/target/*` 放 target 技术栈实现、planning、validation。
+- `packages/core/artifacts/*` 只负责写文件。
+- `packages/core/shared/*` 只放真正通用的小工具和协议。
 
-可选产物：
+不要做的事情：
 
-```text
-output/<page>/
-├── screenshot.png
-└── dom-snapshot.json
-```
+- 不要把 source 规则硬写进 CLI 入口包。
+- 不要把 target 规则硬写进 MCP 入口包。
+- 不要让 workflow 相互 import。
+- 不要把 source/target 项目的说明副本保存进 ProtoBridge 仓库。
 
-CLI 模式适合：
+## 6. 规范读取与证据原则
 
-- 需要读取 Vue 源码、notes、i18n 和页面配置。
-- 需要可归档、可审查的迁移说明书。
-- 需要迁移前梳理业务风险、人工确认项和 target 落点。
-- 需要批量生成页面迁移材料。
-
-## 5. MCP 模式：UI Reconstruction
-
-MCP 模式不读取 source 仓库，也不需要 `proto-bridge.config.json`。MCP 应从 YouFi target 仓库启动，默认 `process.cwd()` 就是 target root。
-
-核心流程：
-
-```text
-URL / rendered page / screenshot / OCR evidence
-  -> capture_page_evidence
-  -> screenshot.png
-  -> page-evidence.json
-  -> build_ui_implementation_plan
-  -> ui-implementation-plan.json
-  -> AI coding agent implements Dart UI
-  -> validate_target_changes
-```
-
-主产物：
-
-```text
-.proto-bridge/evidence/<page>/
-├── screenshot.png
-├── page-evidence.json
-└── ui-implementation-plan.json
-```
-
-可选产物：
-
-```text
-.proto-bridge/evidence/<page>/
-├── ocr-result.json
-└── ui-review.md
-```
-
-MCP tools：
-
-- `capture_page_evidence`
-- `build_ui_implementation_plan`
-- `ocr_screenshot`
-- `export_review_markdown`
-- `get_target_conventions`
-- `find_target_examples`
-- `validate_target_changes`
-
-MCP 模式不暴露：
-
-- `generate_migration_spec`
-- `get_migration_brief`
-- `read_migration_artifact`
-
-MCP 模式适合：
-
-- 用户只给 URL，希望快速还原可见 UI。
-- AI coding agent 在 YouFi target repo 中实现页面。
-- 页面业务行为暂时不要求完整迁移。
-- 需要 `PageEvidence` 支撑 UI 还原。
-
-## 6. 规范读取与约束原则
-
-ProtoBridge 不在自身仓库保存 source/target 项目的业务规范副本。需要规范时，应从 source/target 项目当前文件中读取。
+ProtoBridge 的一个重要原则是：规范来自 source/target 当前仓库，而不是来自 ProtoBridge 自己的记忆。
 
 Source 侧可读取：
 
-- 页面配置。
-- notes。
-- i18n。
-- 页面源码。
-- source README/docs/架构说明/页面说明。
+- 页面配置
+- notes
+- i18n
+- 页面源码
+- source README / docs / 架构说明 / 页面说明
 
 Target 侧可读取：
 
-- 模块目录。
-- route 文件。
-- translation 文件。
-- asset 目录。
-- common widgets。
-- 相似页面。
-- target README/docs/架构说明/组件说明。
+- 模块目录
+- route 文件
+- translation 文件
+- asset 目录
+- common widgets
+- 相似页面
+- target README / docs / 架构说明 / 组件说明
 
-约束规则：
+证据优先级判断：
 
 - source 信息约束“页面要表达什么”。
 - page evidence 约束“页面可见 UI 是什么”。
 - target 信息约束“目标工程应该怎么实现”。
 - source/snapshot 与 target 习惯冲突时，实现建议优先服从 target 工程习惯，同时保留证据和人工确认项。
-- 信息缺失时写 warnings、risks 或 manual confirmations，不伪造确定结论。
-- Markdown 面向 target 实现者，不直接暴露 source 模板语法或 CSS class 作为实现要求。
+- 看不到的接口、权限、风控、埋点、隐藏状态不能伪装成确定结论。
 
-## 7. 质量标准
+## 7. 修改代码时的决策规则
+
+当你要改代码时，优先遵守下面这些规则：
+
+1. 先判断改动属于哪条 workflow。
+2. 只在该 workflow 对应的层里改逻辑。
+3. 如果是通用能力，再下沉到 `source`、`snapshot`、`target`、`artifacts` 或 `shared`。
+4. 如果一个改动让 CLI 和 MCP 都要受益，优先把共享能力放进 `core`，不要在两个入口各写一份。
+5. 如果文档描述和代码行为不一致，优先让文档描述“当前行为”，不要写历史叙事。
+
+一些常见判断：
+
+- 新增页面 capture 能力：优先看 `snapshot/*` 或 `workflows/ui-reconstruction/*`。
+- 新增 source 分析能力：优先看 `source/vue3-prototype/*`。
+- 新增 target 规划或校验能力：优先看 `target/flutter-app/*`。
+- 新增 CLI 参数：只在 `packages/cli` 增加入口逻辑，并把业务实现放在 `core`。
+- 新增 MCP tool：只在 `packages/mcp-server` 增加工具入口，并把业务实现放在 `core`。
+
+## 8. 文档职责分工
+
+本仓库文档分工应保持稳定：
+
+- `README.md`：总览入口。先讲项目定位、整体架构、两种模式，再讲目录结构和深入阅读路径。
+- `AGENT.md`：协作指南。强调 workflow 判断、目录边界、证据原则和修改约束。
+- `docs/workflows.md`：两种 workflow 的详细对照、使用细节和产物。
+- `docs/architecture.md`：模块边界、数据模型、目录职责和扩展点。
+- `docs/mcp-ui-reconstruction-workflow.md`：MCP 详细工作流拆解。
+- `docs/migration-spec.md`：CLI 产出的 Markdown 质量标准。
+- `docs/integration.md`：CLI / MCP / core 的集成方式。
+
+当你更新文档时：
+
+- 总览入口放在 `README.md`。
+- 协作规则放在 `AGENT.md`。
+- 细节展开放到 `docs/`。
+- 不要让 `README.md` 和 `AGENT.md` 同时承担全部详细说明。
+
+## 9. 输出质量标准
 
 CLI 生成的 `migration-spec.md` 至少应做到：
 
 - 明确页面名称、route、screenId 和目标模块。
 - 明确 Flutter 实现复杂度。
-- 明确目标文件拆分和 Widget 树。
-- 明确状态、交互和生命周期副作用。
-- 明确路由参数和跳转行为。
-- 明确布局风险：fixed、sticky、scroll、safe-area、z-index 等。
-- 明确 token、i18n 和资源迁移建议。
-- 明确可复用 Flutter 组件。
+- 明确文件拆分、Widget 树、状态与交互建议。
+- 明确 token、i18n、资源和可复用组件建议。
 - 明确人工确认项。
 
 MCP 生成的 `ui-implementation-plan.json` 至少应做到：
 
-- 明确 evidence id、目标模块、页面 route/title 和 viewport。
-- 明确 planned file tree。
-- 明确 Widget tree。
-- 明确 component mappings、theme mappings、i18n plan、asset plan。
-- 明确 visible interactions。
+- 明确 evidence id、目标模块、route/title 和 viewport。
+- 明确 planned file tree 和 widget tree。
+- 明确 component mappings、theme mappings、i18n plan、asset plan、visible interactions。
 - 明确 business questions、risks 和 validation hints。
-- 不把 URL 页面证据看不到的接口、权限、风控、埋点写成确定结论。
+- 不把 evidence 看不到的业务行为写成确定结论。
 
-## 8. 风险边界
+## 10. 风险边界
 
-- JS 配置解析可能无法覆盖复杂动态逻辑，遇到不确定信息应写 warnings。
+- JS 配置解析无法覆盖所有复杂动态逻辑，遇到不确定内容要写 warnings。
 - Capture 依赖浏览器环境、页面可访问性和页面运行状态。
 - OCR 是辅助 evidence，不应覆盖 rendered DOM 和 screenshot evidence。
 - Target context 是实现建议，不替代目标 App 的代码审查。
-- 交易类页面涉及接口、权限、风控、埋点和异常态，需要保留人工确认项。
+- 交易类页面涉及接口、权限、风控、埋点和异常态时，应显式保留人工确认项。
 - 输出结果必须可审查，不把推断内容伪装成确定事实。

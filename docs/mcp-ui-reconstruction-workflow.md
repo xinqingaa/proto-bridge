@@ -1,6 +1,8 @@
 # MCP UI Reconstruction 工作流
 
-本文档专门解释 ProtoBridge 的 MCP 模式是如何从 `URL`、运行态页面、截图、OCR 和 target 工程约束，一步步生成：
+本文档是 ProtoBridge MCP 模式的深度实现拆解文档。它不承担项目总览职责，也不重复解释 CLI workflow；如果你还没建立整体认知，请先读 [README.md](../README.md)、[workflows.md](workflows.md) 和 [architecture.md](architecture.md)。
+
+本文档专门解释 ProtoBridge 的 MCP 模式是如何以 `URL` 为主输入，并结合运行态页面、截图、OCR 和 target 工程约束，一步步生成：
 
 - `screenshot.png`
 - `page-evidence.json`

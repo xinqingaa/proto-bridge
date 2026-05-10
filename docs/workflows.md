@@ -1,6 +1,6 @@
 # ProtoBridge Workflows
 
-本文档是 ProtoBridge 当前最重要的使用说明：项目同时保留两条 workflow，但它们不是同一流程的两个参数，而是两个不同入口、不同输入模型、不同产物和不同使用场景的工作流。
+本文档是 ProtoBridge 的 workflow 说明书。它承接 [README.md](../README.md) 的总览，专门解释两条工作流各自的设计目标、输入模型、使用方式、工作模式、工作流、产物和能力边界。
 
 ```text
 CLI = Source-aware Migration
@@ -13,38 +13,41 @@ MCP = UI Reconstruction
 | --- | --- | --- |
 | 推荐命名 | Source-aware Migration | UI Reconstruction |
 | 入口包 | `@proto-bridge/cli` | `@proto-bridge/mcp-server` |
-| 主要目标 | 生成可审查迁移说明书 | 快速还原可见 UI |
-| 主要使用者 | 维护者、开发者、批处理脚本 | AI coding agent、MCP client |
-| 输入 | Vue route / URL / Vue SFC + source config | URL / rendered page / screenshot / OCR evidence |
+| 主要目标 | 生成可审查、可归档的迁移说明书 | 生成 evidence-first UI 还原上下文 |
+| 主要输入 | Vue route / URL / Vue SFC + source config | URL 为主输入，辅以 screenshot/OCR/runtime metadata |
 | 是否读取 source 仓库 | 是 | 否 |
 | 是否需要 `proto-bridge.config.json` | 是 | 否 |
-| target root | config 中的 `target.root` | 默认 MCP 启动目录，也可传 `targetRoot` |
+| target root 来源 | `config.target.root` | MCP 启动目录或 `targetRoot` 参数 |
 | 主产物 | `migration-context.json`、`migration-spec.md` | `screenshot.png`、`page-evidence.json`、`ui-implementation-plan.json` |
 | 可选产物 | `screenshot.png`、`dom-snapshot.json` | `ocr-result.json`、`ui-review.md` |
-| 业务行为 | 从源码、notes、i18n 中提取并说明 | 只记录可见交互线索和待确认项 |
-| Dart 代码生成 | 不做 | MCP 不直接写，由 agent 写 |
+| 主要使用者 | 维护者、开发者、批处理脚本 | AI coding agent、MCP client |
+| 代码生成职责 | 不直接写 Dart | 不直接写 Dart，由 agent 实现 |
 
-核心边界：
+如何快速选择：
 
-- CLI 保留 source-aware 文档链路。
-- MCP 只走 snapshot UI reconstruction。
-- MCP 不暴露 `generate_migration_spec`、`get_migration_brief`、`read_migration_artifact`。
-- 两条 workflow 可以共享 `target/flutter-app`、`snapshot/*`、`artifacts`、`shared`，但 workflow 之间不互相 import。
+- 需要 source 语义、notes、i18n、页面配置和 target-facing 说明书时，用 CLI。
+- 只给 URL，希望快速还原可见 UI 并让 agent 实现时，用 MCP。
 
-## 2. CLI：Source-Aware Migration
+## 2. CLI：Source-aware Migration
 
-CLI 工作流适合需要“业务语义和可追溯说明书”的场景。它会读取 source 仓库和 target 仓库，把页面事实、notes、i18n、target conventions 汇总为面向 Flutter 实现者的迁移说明。
+### 2.1 设计目标
 
-### 2.1 特点
+CLI 的目标是把 source 页面事实和 target 工程约束整理成可审查的迁移说明书，而不是直接生成目标端业务代码。
 
-- 从 Vue 原型工程读取 route、Vue SFC、页面配置、notes、i18n。
-- 从 Flutter target 工程读取 modules、routes、translations、assets、common widgets、similar files。
-- 生成 target-facing 的 Flutter 实现规划。
-- 保留 `migration-context.json` 作为机器可读证据。
-- 输出 `migration-spec.md` 作为人工和 AI coding 工具可读说明书。
-- 可选执行 Playwright capture，补充截图和 DOM evidence。
+适合：
 
-### 2.2 输入模式
+- source 和 target 分属不同仓库。
+- 需要读取 Vue 源码、notes、i18n、页面配置。
+- 需要实现前先明确风险、人工确认项、路由参数、资源和 token 对应关系。
+- 需要批量生成迁移材料，供开发、评审或归档使用。
+
+不适合：
+
+- 用户只给一个 URL，希望快速还原可见 UI。
+- 不想配置 source 仓库路径。
+- 期望工具直接生成完整 Dart 页面代码。
+
+### 2.2 输入模型
 
 CLI 支持三种页面输入：
 
@@ -60,9 +63,7 @@ npx @proto-bridge/cli generate --vue prototype/src/views/prototype/etf/ETFDetail
 npx @proto-bridge/cli generate
 ```
 
-### 2.3 配置方式
-
-CLI 需要在执行目录下准备 `proto-bridge.config.json`，也可以用 `--config` 指定。
+配置文件示例：
 
 ```json
 {
@@ -79,16 +80,26 @@ CLI 需要在执行目录下准备 `proto-bridge.config.json`，也可以用 `--
 }
 ```
 
-常用字段：
+### 2.3 使用方式
 
-- `source.adapter`：当前默认 `vue3-prototype`。
-- `source.root`：Vue 原型工程根目录。
-- `target.adapter`：当前默认 `flutter-app`。
-- `target.root`：Flutter target 工程根目录。
-- `outputRoot`：输出根目录。
-- `capture`：是否默认执行 Playwright capture。
+发布包使用：
 
-单次执行可以覆盖配置：
+```bash
+npx @proto-bridge/cli --help
+npx @proto-bridge/cli init
+npx @proto-bridge/cli generate --route /prototype/trade
+```
+
+本地仓库开发：
+
+```bash
+pnpm install
+pnpm run typecheck
+pnpm run build
+pnpm run generate -- --help
+```
+
+常见覆盖参数：
 
 ```bash
 npx @proto-bridge/cli generate \
@@ -98,12 +109,37 @@ npx @proto-bridge/cli generate \
   --capture
 ```
 
-### 2.4 产物
+### 2.4 工作模式
+
+CLI 是 source-aware 文档链路：
+
+```text
+页面输入
+  -> 读取 source project
+  -> 读取 target project
+  -> 生成 migration context
+  -> 渲染 migration spec
+  -> 交给人工或 AI coding 工具继续实现
+```
+
+### 2.5 工作流
+
+```text
+CLI input
+  -> 解析 source/target adapter config
+  -> SourceAdapter 读取 source 页面事实和 source 侧说明
+  -> optional Playwright capture 补充运行时布局证据
+  -> TargetAdapter 读取 target 工程结构和实现约束
+  -> TargetAdapter 映射 token 并生成 implementation plan
+  -> source-aware workflow 输出 context 与说明书
+```
+
+### 2.6 产物
 
 默认产物：
 
 ```text
-output/<page>/
+output/<page>-<timestamp-hash>/
 ├── migration-context.json
 └── migration-spec.md
 ```
@@ -111,79 +147,70 @@ output/<page>/
 开启 capture 后额外产出：
 
 ```text
-output/<page>/
+output/<page>-<timestamp-hash>/
 ├── screenshot.png
 └── dom-snapshot.json
 ```
 
-`migration-context.json` 包含 source facts、capture evidence、token map、target context 和 recommendations。
+### 2.7 当前能力
 
-`migration-spec.md` 是面向 Flutter 开发者和 AI coding 工具的说明书，重点描述目标文件拆分、Widget 组合、状态与交互建议、路由、i18n、资源、主题映射和人工确认项。
-
-### 2.5 使用场景
-
-适合：
-
-- 需要读取 Vue 源码、notes、i18n 和页面配置。
-- 需要生成可归档、可审查的迁移说明书。
-- 需要批量梳理多个页面的迁移复杂度。
-- 需要在真正实现前明确业务风险、人工确认项和 target 落点。
-- source 和 target 分属不同仓库，需要固定跨仓库证据。
-
-不适合：
-
-- 只想快速还原一个线上/原型 URL 的可见 UI。
-- 不想配置 source 仓库路径。
-- 期望工具直接生成完整 Dart 业务代码。
-- 主要输入是截图、OCR 或 rendered DOM。
-
-### 2.6 扩展方向
-
-CLI 工作流未来可以扩展：
-
-- 扩展 source adapter，例如 React prototype、Figma export、静态 HTML。
-- 更强的 Vue SFC / notes / i18n 分析。
-- 更细的 migration spec 章节和质量校验。
-- 在需要时复用 `snapshot/browser-capture`，增强运行时布局证据。
-- 批处理命令和 CI 产物检查。
+- 通过 route、URL 或 Vue 文件定位原型页面。
+- 读取页面配置、源码、notes、i18n 和页面元信息。
+- 从 Vue SFC 中提取 sections、semantic components、interactions、state、routes、lifecycle、layout、assets 和 style token usage。
+- 扫描 Flutter modules、routes、translations、assets、common widgets 和相似文件。
+- 生成 Flutter 文件树、Widget 组合、状态管理建议和人工确认项。
 
 ## 3. MCP：UI Reconstruction
 
-MCP 工作流适合 AI coding agent 快速还原页面可见 UI。它不读取 Vue source，不依赖 `proto-bridge.config.json`，默认当前工作目录就是 YouFi Flutter target。
+### 3.1 设计目标
 
-如果你需要完整理解 “URL / screenshot / OCR -> node -> PageEvidence -> UI plan -> AI agent -> Dart” 的详细链路，请结合阅读 [MCP UI Reconstruction 工作流](mcp-ui-reconstruction-workflow.md)。
+MCP 的目标是走 evidence-first 工作模式：先 capture 页面证据，再生成 UI 实现计划，再由 agent 在 target repo 中落地代码。
 
-### 3.1 特点
+适合：
 
-- URL-first，优先从浏览器运行后的页面采集证据。
-- `screenshot.png` 是主产物，不是调试附属文件。
-- `page-evidence.json` 保存 rendered DOM、bbox、computed style、文案、资源、轻量交互线索和 capability-based metadata。
-- `ui-implementation-plan.json` 面向 agent，描述 Flutter 文件落点、Widget 拆分、YouFi components、theme、i18n、assets 和 risks。
-- OCR 是辅助证据，用于补充 DOM 看不到的文字。
-- 业务接口、权限、风控、埋点、隐藏状态只能进入待确认项，不能写成确定结论。
+- 用户只给一个 URL，希望快速还原页面可见 UI。
+- 不想配置 source 仓库路径。
+- 希望通过 Codex、Cursor、Claude Code 等 MCP client 驱动实现。
+- 需要 `PageEvidence` 和 `ui-implementation-plan.json` 作为 agent 的主要上下文。
 
-### 3.2 输入模式
+不适合：
 
-最常见输入是 URL：
+- 需要从 Vue 源码、notes、i18n 中提取完整业务语义。
+- 需要确定接口字段、权限、风控、埋点或复杂交易规则。
+- 页面 URL 无法被 Playwright 访问。
+
+### 3.2 输入模型
+
+当前 MCP 工作流的主输入是 URL：
 
 ```text
 用 ProtoBridge 还原这个页面到 YouFi Flutter：
 https://xiaofenhong.cc/TradeAppPrd/#/prototype/etf-detail?is_mobile=1
 ```
 
-MCP tools 支持：
+当前公开 tools：
 
-- `capture_page_evidence`：采集 URL，输出 screenshot 和 `PageEvidence`。
-- `build_ui_implementation_plan`：从 snapshot 生成 UI plan。
-- `ocr_screenshot`：持久化外部 OCR evidence，或返回 provider 缺失提示。
-- `export_review_markdown`：导出人工 review 用 Markdown。
-- `get_target_conventions`：读取 YouFi target conventions。
-- `find_target_examples`：查找相似 Dart 示例。
-- `validate_target_changes`：检查 agent 生成后的 target 改动。
+- `capture_page_evidence`
+- `build_ui_implementation_plan`
+- `ocr_screenshot`
+- `export_review_markdown`
+- `get_target_conventions`
+- `find_target_examples`
+- `validate_target_changes`
 
-### 3.3 配置方式
+当前真实边界：
 
-MCP 不需要 `proto-bridge.config.json`。推荐从 YouFi target 仓库启动 MCP，让 `process.cwd()` 成为默认 `targetRoot`。
+- `capture_page_evidence` 当前只接受 `url` 作为 capture 输入。
+- `ocr_screenshot` 只补充 OCR 文字证据，不会单独生成和 rendered DOM 同等级的 node tree。
+- rendered HTML / DOM snapshot 直接输入属于未来扩展方向，不是当前公开 MCP API。
+
+### 3.3 使用方式
+
+发布包接入：
+
+```bash
+npx -y @proto-bridge/mcp-server
+```
 
 本地源码开发：
 
@@ -194,58 +221,42 @@ cd /path/to/youfi
 node /path/to/proto-bridge/packages/mcp-server/dist/index.js
 ```
 
-Codex 项目级配置：
+MCP 不需要 `proto-bridge.config.json`。推荐从 target 仓库启动，让 `process.cwd()` 成为默认 `targetRoot`。
 
-```toml
-# /path/to/youfi/.codex/config.toml
-[mcp_servers.proto-bridge]
-command = "npx"
-args = [
-  "-y",
-  "@proto-bridge/mcp-server"
-]
+如果需要 Codex、Cursor、Claude Code 的具体 MCP client 配置，统一查看 [integration.md](integration.md)。
+
+### 3.4 工作模式
+
+MCP 是 URL-first 的 evidence-first 链路：
+
+```text
+用户 / agent 给出 URL
+  -> MCP capture 页面
+  -> 生成 screenshot + page evidence
+  -> 生成 UI implementation plan
+  -> agent 读取 target 工程并实现 Dart UI
+  -> MCP 校验改动范围和显式风险
 ```
 
-本地源码配置：
+### 3.5 工作流
 
-```toml
-[mcp_servers.proto-bridge]
-command = "node"
-args = [
-  "/path/to/proto-bridge/packages/mcp-server/dist/index.js"
-]
+```text
+MCP input
+  -> URL capture
+  -> UI reconstruction workflow 输出 screenshot.png 与 page-evidence.json
+  -> optional OCR / runtime metadata / capability enrichers
+  -> target/flutter-app 读取 conventions/examples/theme/routes/i18n/assets
+  -> UI reconstruction workflow 输出 ui-implementation-plan.json
+  -> AI coding agent 在 target repo 中生成 Dart 页面
+  -> validate_target_changes 做结果校验
 ```
 
-Cursor 项目级配置：
-
-```json
-{
-  "mcpServers": {
-    "proto-bridge": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@proto-bridge/mcp-server"
-      ]
-    }
-  }
-}
-```
-
-Claude Code 项目级配置：
-
-```bash
-cd /path/to/youfi
-claude mcp add proto-bridge --scope project -- \
-  npx -y @proto-bridge/mcp-server
-```
-
-### 3.4 产物
+### 3.6 产物
 
 主产物：
 
 ```text
-.proto-bridge/evidence/<page>/
+.proto-bridge/evidence/<page>-<timestamp>/
 ├── screenshot.png
 ├── page-evidence.json
 └── ui-implementation-plan.json
@@ -254,60 +265,27 @@ claude mcp add proto-bridge --scope project -- \
 可选产物：
 
 ```text
-.proto-bridge/evidence/<page>/
+.proto-bridge/evidence/<page>-<timestamp>/
 ├── ocr-result.json
 └── ui-review.md
 ```
 
-`screenshot.png` 是视觉还原的基准证据。
+### 3.7 Agent 推荐流程
 
-`page-evidence.json` 是页面结构、文案、视觉、资源、交互和 capability metadata 的稳定中间模型。
+1. 调用 `capture_page_evidence(url)`。
+2. 调用 `build_ui_implementation_plan(evidenceId)`。
+3. 按需调用 `get_target_conventions()` 和 `find_target_examples(...)`。
+4. 在 target repo 中实现 Dart UI。
+5. 运行 analyzer/test 或至少做静态检查。
+6. 调用 `validate_target_changes(planId)`。
+7. 向用户汇报改动文件、验证结果和待确认项。
 
-`ui-implementation-plan.json` 是 agent 直接消费的 YouFi UI 实现计划。
+### 3.8 当前能力
 
-`ui-review.md` 只用于人工讨论和归档，不是 agent 实现的必经路径。
-
-### 3.5 推荐 Agent 流程
-
-```text
-1. 调用 capture_page_evidence(url)
-2. 调用 build_ui_implementation_plan(evidenceId)
-3. 按需调用 get_target_conventions()
-4. 按需调用 find_target_examples(module/pattern/roles)
-5. 在 target repo 中实现 Dart UI
-6. 运行 analyzer/test 或至少做静态检查
-7. 调用 validate_target_changes(planId)
-8. 向用户汇报改动文件、验证结果和待确认项
-```
-
-### 3.6 使用场景
-
-适合：
-
-- 用户只给一个 URL，希望快速还原可见 UI。
-- 不想配置 source 仓库路径。
-- 页面业务行为暂时不要求完整迁移。
-- AI agent 在 YouFi target 仓库中执行实现。
-- 需要 screenshot + JSON evidence 支撑 UI 还原。
-
-不适合：
-
-- 需要从 Vue notes、i18n、源码中提取完整业务语义。
-- 需要确定接口字段、权限、风控、埋点或复杂交易规则。
-- 页面 URL 无法被 Playwright 访问。
-- 页面状态需要登录、复杂操作或隐藏弹层才能看到，但没有额外 evidence。
-
-### 3.7 扩展方向
-
-MCP 工作流未来可以扩展：
-
-- rendered HTML / DOM snapshot 直接输入。
-- OCR provider 接入。
-- `snapshot/html-snapshot` 分析能力。
-- `snapshot/visual-analysis`：视觉区块分类、token evidence、asset evidence。
-- 更强的 YouFi component matching。
-- UI diff / screenshot review。
-- agent prompt 模板和实现后自动校验。
+- 采集 URL，生成 screenshot 和 `PageEvidence`。
+- 读取 target conventions、theme、routes、i18n、assets 和相似页面。
+- 生成文件落点、Widget tree、component mappings、theme mappings、i18n plan、asset plan、visible interactions、risks 和 validation hints。
+- 校验 target 改动范围、明显占位实现、TODO 和文件落点问题。
 
 ## 4. 共享能力与依赖边界
 
@@ -316,6 +294,7 @@ MCP 工作流未来可以扩展：
 ```text
 workflows/source-aware-migration
   -> source/vue3-prototype
+  -> optional snapshot/browser-capture
   -> target/flutter-app
   -> artifacts/shared
 
@@ -330,23 +309,10 @@ workflows/ui-reconstruction
 - `packages/cli` 只 import `@proto-bridge/core/workflows/source-aware-migration`。
 - `packages/mcp-server` 只 import `@proto-bridge/core/workflows/ui-reconstruction` 和 `@proto-bridge/core/target/flutter-app`。
 - 两个 workflow 不能互相 import。
-- `source/*` 不 import workflow。
-- `snapshot/*` 不 import workflow。
-- `target/*` 不 import CLI 或 MCP。
-- `artifacts` 和 `shared` 不 import source、snapshot、target 或 workflow。
+- `source/*`、`snapshot/*`、`target/*` 不 import CLI 或 MCP 入口包。
 
-## 5. 如何选择
+## 5. 深入阅读
 
-选择 CLI，当你需要：
-
-- source 仓库参与分析。
-- Markdown 迁移说明书。
-- notes / i18n / Vue SFC 业务语义。
-- 批处理、归档、审查、迁移前准备。
-
-选择 MCP，当你需要：
-
-- AI agent 直接在 YouFi 中实现可见 UI。
-- URL / screenshot / rendered DOM 作为主要证据。
-- 更短路径、更少配置。
-- 先还原 UI，再人工或 agent 逐步补业务。
+- 想看模块边界、数据模型和目录职责：读 [architecture.md](architecture.md)。
+- 想看 MCP 从 URL 到 `ui-implementation-plan.json` 的细节：读 [mcp-ui-reconstruction-workflow.md](mcp-ui-reconstruction-workflow.md)。
+- 想看 CLI 说明书质量要求：读 [migration-spec.md](migration-spec.md)。
