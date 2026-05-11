@@ -467,6 +467,167 @@ screenshot -> section / node / token -> themeMappings / componentMappings / widg
 - 当前产物是否足以高效定位问题。
 - 是否需要额外的 debug index、trace 或 review artifact。
 
+### 12.6 MCP Discoverability 与能力暴露面
+
+新观察：
+
+当前在 MCP client 中看到的 server 摘要过于单薄：
+
+```text
+MCP Tools
+
+• proto-bridge
+  • Auth: Unsupported
+  • Tools: build_ui_implementation_plan, capture_page_evidence, export_review_markdown,
+    find_target_examples, get_target_conventions, ocr_screenshot, validate_target_changes
+```
+
+这会让第一次使用 ProtoBridge 的 agent 或人类维护者很难判断：
+
+- 这些 tool 的完整职责是什么。
+- 每个 tool 应该在 workflow 的哪一步调用。
+- tool 输入 schema 里哪些字段必填、哪些字段可选。
+- tool 输出里哪些 artifact、resource、id 后续应该继续使用。
+- server 是否支持 resources、prompts、sampling、elicitation、roots、resource templates 等 MCP 能力。
+- Playwright 当前只是截图，还是还可以提供 DOM、网络、console、trace、交互状态、可访问性树等证据。
+
+#### 12.6.1 当前代码事实
+
+`code fact`：
+
+- `packages/mcp-server/src/server/dispatcher.ts` 的 `initialize` 当前声明了 `tools`、`resources`、`prompts` 三类 server capability。
+- 当前没有声明 `logging`、`completions`、`experimental` 或其他扩展 capability。
+- 当前没有处理 `roots/list`、`sampling/createMessage`、`elicitation/create` 等 client capability 相关请求。
+- `packages/mcp-server/src/tools/registry.ts` 已注册 7 个 tool，并为每个 tool 提供了 `description` 和 `inputSchema`。
+- 当前 tool schema 没有显式 `required` 字段，也没有 `additionalProperties: false`、`annotations`、`outputSchema` 或面向 workflow 的长描述。
+- `packages/mcp-server/src/resources/index.ts` 已暴露 `proto-bridge://target/conventions`，并在 session 内动态暴露 captured evidence 与 UI plan 资源。
+- 当前没有 resource templates，因此 client 很难在 capture 前知道可以通过 URI 模板读取哪些 artifact。
+- `packages/mcp-server/src/prompts/index.ts` 当前只暴露一个 prompt：`reconstruct_url_ui`。
+- 当前 stdio server 是自写 JSON-RPC line protocol，不是基于官方 TypeScript SDK 的 `McpServer` 封装。
+- 当前只支持本地 stdio 接入，没有 Streamable HTTP、OAuth/auth 或远程部署形态。
+
+`inference`：
+
+- client 摘要只显示 tool 名称，并不等于 server 没有 resources/prompts；但当前资源和 prompt 对第一次使用者确实不可发现性弱。
+- 现有 tool 能力已经足够支撑 URL-first UI reconstruction，但缺少让 agent 自动理解 workflow、artifact 关系和安全边界的描述层。
+- 如果继续只增加 tool 数量而不改描述、schema、resource template 和 prompt，MCP 面板会更像“函数名列表”，不会真正提升可用性。
+
+`unknown`：
+
+- Codex、Cursor、Claude Code 等不同 MCP client 是否展示 tool description、annotations、resource templates、prompts 的方式不完全一致，需要分别验证。
+- 当前客户端是否会使用 prompts/list 或 resources/list 的展示信息，需要用真实 client 做一次兼容性检查。
+
+#### 12.6.2 MCP 协议能力评估
+
+官方 MCP 能力可以按当前项目相关性分层：
+
+**第一层：应该尽快补强**
+
+- Tools：继续作为主操作入口，但要补全 schema 质量、调用顺序说明、输入输出示例、artifact id 说明和风险说明。
+- Resources：不只暴露 session 内 evidence/plan，还应暴露稳定的只读上下文，例如 target conventions、workflow guide、artifact index、latest evidence、latest plan、debug index。
+- Prompts：增加可复用 workflow prompt，例如 capture-only、review-only、implementation-with-validation、visual-diff-investigation。
+- Resource templates：用于表达 `proto-bridge://evidences/{evidenceId}/page-evidence`、`proto-bridge://plans/{planId}/ui-implementation-plan`、`proto-bridge://reviews/{planId}/ui-review` 这类可参数化资源。
+
+**第二层：适合中期研究**
+
+- Roots：让 client 明确告知 server 当前 target repo / allowed roots，减少依赖 `process.cwd()` 和手填 `targetRoot` 的不确定性。
+- Elicitation：当缺少 targetModule、页面账号、viewport、业务确认项时，让 server 请求结构化补充信息，而不是只抛错或让 agent 猜。
+- Logging：把 capture 阶段、artifact 路径、截断、warning、heuristic 推断输出成 client 可观察日志。
+- Completions：为 prompt 参数或 tool 参数提供 target module、artifact id、resource uri 补全。
+
+**第三层：谨慎或暂不建议作为主线**
+
+- Sampling：server 请求 client 代调用模型可以用于总结 evidence、生成 review 或归纳风险，但会让 server 变得更像 agent 编排器。ProtoBridge 当前定位是 evidence/provider，不建议在没有明确安全与成本边界前把 sampling 放进 P0。
+- 远程 Streamable HTTP / auth：适合团队共享服务或云端部署，但当前 URL capture 和 target repo 扫描都偏本地开发流，先把 stdio 的 discoverability 补强更划算。
+
+#### 12.6.3 当前 Playwright 使用过窄
+
+当前 Playwright 主要承担：
+
+- 打开 URL。
+- 等待 `networkidle`。
+- 截 fullPage screenshot。
+- 在页面内 `evaluate` 抽取 rendered DOM、computed style、asset、interaction。
+
+但 Playwright 还可以成为更强的证据采集层，而不只是截图工具：
+
+- Interaction state capture：自动点击 tab、dropdown、filter、accordion、modal trigger，采集多状态 evidence。
+- Scroll segmentation：按 viewport 分段滚动截图和 DOM 抽取，标注每段 scroll offset，避免长页面只靠 fullPage screenshot。
+- Network evidence：记录主要 API、静态资源、失败请求、response content-type，帮助判断内容是否懒加载或接口失败。
+- Console/pageerror evidence：记录运行时报错和 console warning，区分页面未渲染与抽取失败。
+- Trace artifact：保存 Playwright trace，方便复盘 capture 期间的 DOM、network、console、screenshot 时间线。
+- Locator / accessibility evidence：补充 role、name、aria-selected、aria-expanded、aria-controls、disabled 等交互语义，减少只靠 className 和 heuristic 推断。
+- Visual assertions / diff：将原始 screenshot 与实现后的目标页面 screenshot 做像素或区域级对比，为 `validate_target_changes` 增加视觉校验入口。
+- Route / mock support：允许注入 auth、cookie、localStorage、请求 mock 或 fixture，提升需要登录和稳定数据页面的 capture 成功率。
+
+#### 12.6.4 可能新增或改造的 MCP 能力
+
+优先不建议一口气增加很多 tool。更合理的演进是：
+
+1. 先增强现有 `tools/list` 信息质量。
+   - 为每个 tool 增加更长、更明确的 description。
+   - 在 schema 中标出 required 字段。
+   - 增加参数说明、默认值、安全边界、输出 artifact 说明。
+   - 如 client 支持，增加 tool annotations，例如 read-only、destructive、idempotent、open-world 等调用提示。
+
+2. 增加 MCP 元信息资源。
+   - `proto-bridge://workflow/ui-reconstruction-guide`
+   - `proto-bridge://workflow/tool-catalog`
+   - `proto-bridge://artifacts/latest`
+   - `proto-bridge://target/conventions`
+   - `proto-bridge://target/component-risk-index`
+
+3. 增加 resource templates。
+   - `proto-bridge://evidences/{evidenceId}/page-evidence`
+   - `proto-bridge://evidences/{evidenceId}/screenshot`
+   - `proto-bridge://evidences/{evidenceId}/visual-debug-index`
+   - `proto-bridge://plans/{planId}/ui-implementation-plan`
+   - `proto-bridge://plans/{planId}/review-markdown`
+
+4. 增加 prompts。
+   - `reconstruct_url_ui`：现有 prompt，继续保留。
+   - `capture_url_evidence`：只采集证据，不实现代码。
+   - `investigate_visual_mismatch`：按 A/B/C/D 归因框架定位偏差。
+   - `implement_from_existing_plan`：已有 plan 时直接实现。
+   - `validate_ui_reconstruction`：实现后校验 target diff 与视觉风险。
+
+5. 再考虑新增 Playwright 证据 tool。
+   - `capture_interaction_states`：围绕 tab/dropdown/modal 等交互态采集 state evidence。
+   - `capture_scroll_segments`：长页面分段截图与分段 DOM evidence。
+   - `capture_runtime_diagnostics`：network、console、pageerror、资源失败、trace。
+   - `compare_page_screenshots`：源 URL 与 target preview URL 的截图对比。
+
+6. 对 client capability 做兼容适配。
+   - 在 `initialize` 中记录 client capabilities。
+   - 如果 client 支持 roots，优先使用 roots 推断 target root。
+   - 如果 client 支持 elicitation，在缺参时请求结构化输入。
+   - 如果 client 不支持，则保持现有 tool 参数模式。
+
+#### 12.6.5 风险与边界
+
+- 不能为了“看起来能力很多”把 CLI source-aware migration 暴露进 MCP runtime；这会破坏当前 CLI / MCP workflow 边界。
+- Sampling 不应替代 agent 的实现职责，否则 server 会承担模型调用、成本、安全和提示词漂移问题。
+- Elicitation 和 roots 依赖 client 支持，必须做 capability detection 和 fallback。
+- Playwright trace、network、fullPage screenshot、分段截图可能产生大量 artifact，需要输出开关和保留策略。
+- 视觉 diff 需要目标实现可运行且有稳定 preview URL，不能作为所有场景的强制步骤。
+
+#### 12.6.6 推荐结论
+
+该问题应该新增为一个独立专题：
+
+```text
+MCP server discoverability / capability surface is too thin.
+```
+
+它和前面视觉保真问题不是同一层，但会直接影响 agent 是否能正确使用 ProtoBridge。
+
+建议优先级：
+
+- P0：补 tools/list 描述、required schema、workflow resource、prompts、artifact index。
+- P1：补 resource templates、debug index resource、client compatibility matrix。
+- P2：研究 roots、elicitation、logging、completions。
+- P3：再评估 sampling 与 Streamable HTTP/auth，除非已有明确远程部署需求。
+
 ---
 
 ## 13. 分阶段待办
@@ -478,6 +639,10 @@ screenshot -> section / node / token -> themeMappings / componentMappings / widg
 - [ ] 给每个样本打归因标签：A / B / C / D。
 - [ ] 统计问题主要集中在哪一层。
 - [ ] 为复杂页面建立统一排查记录。
+- [ ] 新增 MCP discoverability 样本：记录 Codex / Cursor / Claude Code 中 `proto-bridge` 当前展示出的 tools、resources、prompts 信息。
+- [ ] 补全 7 个 MCP tool 的 description、required schema、默认值、输出 artifact 说明和调用顺序说明。
+- [ ] 新增稳定 resource：`proto-bridge://workflow/ui-reconstruction-guide` 和 `proto-bridge://workflow/tool-catalog`。
+- [ ] 新增 prompt：`capture_url_evidence`、`investigate_visual_mismatch`、`implement_from_existing_plan`、`validate_ui_reconstruction`。
 
 ### 13.2 P1：先确认问题主要集中在哪个专题
 
@@ -487,6 +652,11 @@ screenshot -> section / node / token -> themeMappings / componentMappings / widg
 - [ ] 确认颜色缺失问题发生在 token 抽取、theme mapping，还是 Flutter 实现层。
 - [ ] 评估长滚动页是否存在状态覆盖不足或虚拟内容遗漏。
 - [ ] 评估 plan 层压缩是否会丢失关键节点、关键 section 或关键 token。
+- [ ] 增加 resource templates，用于 evidence、screenshot、plan、review、visual-debug-index 的参数化读取。
+- [ ] 增加 artifact index resource，记录 latest evidence、latest plan、相关 screenshot、review markdown 和 debug index。
+- [ ] 调研 Playwright interaction state capture：tab、dropdown、modal、accordion、filter 的自动触发策略和失败回退。
+- [ ] 调研 Playwright runtime diagnostics：network、console、pageerror、trace 是否应该进入 evidence 或单独 artifact。
+- [ ] 建立 MCP client compatibility matrix，记录不同 client 对 descriptions、prompts、resources、templates、roots、elicitation 的支持情况。
 
 ### 13.3 P2：再决定是否进入方案设计
 
@@ -495,6 +665,11 @@ screenshot -> section / node / token -> themeMappings / componentMappings / widg
 - [ ] 如果 C 类最多，优先研究 target component 风险清单和复用策略。
 - [ ] 如果 D 类最多，优先研究更强的实现约束与验证方式。
 - [ ] 只有在样本归因稳定后，才进入具体代码改造方案。
+- [ ] 评估 roots capability 是否能替代或补强 `targetRoot` / `process.cwd()` 推断。
+- [ ] 评估 elicitation 是否适合用于 targetModule、viewport、登录态、业务确认项等结构化补充信息。
+- [ ] 评估 logging / completions 是否能提升 MCP client 内的可观察性和参数选择体验。
+- [ ] 评估 `compare_page_screenshots` 是否可作为实现后视觉验证 tool。
+- [ ] 暂缓 sampling 和 Streamable HTTP/auth，除非出现明确远程部署或 server-side LLM 总结需求。
 
 ---
 
