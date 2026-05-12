@@ -1,53 +1,29 @@
-import type { GeneratedEvidence, GeneratedUiPlan } from '../types.js';
+import type { GeneratedPage } from '../types.js';
 
-export class EvidenceStore {
-  private readonly evidences = new Map<string, GeneratedEvidence>();
+export class PageStore {
+  private readonly pages = new Map<string, GeneratedPage>();
+  private latestPageId: string | undefined;
 
-  add(evidence: GeneratedEvidence): void {
-    this.evidences.set(evidence.id, evidence);
+  add(page: GeneratedPage): void {
+    this.pages.set(page.id, page);
+    this.latestPageId = page.id;
   }
 
-  get(evidenceId: string): GeneratedEvidence | undefined {
-    return this.evidences.get(evidenceId);
+  get(pageId: string): GeneratedPage | undefined {
+    return this.pages.get(pageId);
   }
 
-  require(evidenceId: string): GeneratedEvidence {
-    const evidence = this.get(evidenceId);
-    if (!evidence) throw new Error(`Unknown evidenceId: ${evidenceId}`);
-    return evidence;
+  require(pageId: string): GeneratedPage {
+    const page = this.get(pageId);
+    if (!page) throw new Error(`Unknown pageId: ${pageId}`);
+    return page;
   }
 
-  values(): GeneratedEvidence[] {
-    return [...this.evidences.values()];
-  }
-}
-
-export class UiPlanStore {
-  private readonly plans = new Map<string, GeneratedUiPlan>();
-
-  add(plan: GeneratedUiPlan): void {
-    this.plans.set(plan.id, plan);
+  latest(): GeneratedPage | undefined {
+    return this.latestPageId ? this.pages.get(this.latestPageId) : undefined;
   }
 
-  get(planId: string): GeneratedUiPlan | undefined {
-    return this.plans.get(planId);
+  values(): GeneratedPage[] {
+    return [...this.pages.values()];
   }
-
-  require(planId: string): GeneratedUiPlan {
-    const plan = this.get(planId);
-    if (!plan) throw new Error(`Unknown planId: ${planId}`);
-    return plan;
-  }
-
-  values(): GeneratedUiPlan[] {
-    return [...this.plans.values()];
-  }
-}
-
-export function createEvidenceRecordId(evidenceId: string): string {
-  return evidenceId;
-}
-
-export function createUiPlanRecordId(planId: string): string {
-  return planId;
 }

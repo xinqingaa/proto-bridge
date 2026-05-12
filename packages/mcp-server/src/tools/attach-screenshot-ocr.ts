@@ -1,34 +1,52 @@
 import path from 'node:path';
-import { readFile, writeFile } from 'node:fs/promises';
-import { ocrScreenshot } from '@proto-bridge/core/workflows/ui-reconstruction';
-import type { OcrTextBox, PageEvidence } from '@proto-bridge/core/workflows/ui-reconstruction';
+import { writeFile } from 'node:fs/promises';
+import { attachScreenshotOcr } from '@proto-bridge/core/workflows/ui-reconstruction';
+import type { OcrTextBox, PageCanonical } from '@proto-bridge/core/workflows/ui-reconstruction';
 import type { JsonObject, ToolContext } from '../types.js';
 import { readString, readStringArray } from '../utils/args.js';
 import { resolveRuntimeTargetRoot } from '../services/config.js';
+import {
+  artifactSetId,
+  createArtifactToolResponse,
+  pageResources,
+} from '../artifacts/contracts.js';
 
-export async function ocrScreenshotTool(context: ToolContext, args: JsonObject): Promise<JsonObject> {
-  const screenshotPath = readString(args, 'screenshotPath');
-  if (!screenshotPath) throw new Error('ocr_screenshot requires screenshotPath.');
+export async function attachScreenshotOcrTool(context: ToolContext, args: JsonObject): Promise<JsonObject> {
+  const pageId = readString(args, 'pageId');
+  if (!pageId) throw new Error('attach_screenshot_ocr requires pageId.');
+  const pageRecord = context.pages.require(pageId);
+  const screenshotPath = readString(args, 'screenshotPath') ?? pageRecord.page.screenshots[0]?.path;
+  if (!screenshotPath) throw new Error(`Page ${pageId} has no screenshot. Pass screenshotPath explicitly.`);
   const targetRoot = resolveRuntimeTargetRoot(readString(args, 'targetRoot'));
   const outDir = resolveOutputDir(args, targetRoot, screenshotPath);
-  const result = await ocrScreenshot({
+  const result = await attachScreenshotOcr({
     screenshotPath: path.resolve(targetRoot, screenshotPath),
     outDir,
     externalText: readStringArray(args, 'externalText'),
     externalBoxes: readExternalBoxes(args),
   });
-  const updatedSnapshotPath = await attachOcrToSnapshot(context, args, result.ocr);
-  return {
+  pageRecord.ocr = result;
+  pageRecord.files.ocrResult = result.files.ocrResult;
+  pageRecord.page = attachOcrToPage(pageRecord.page, result.ocr);
+  await writeFile(pageRecord.files.pageCanonical, `${JSON.stringify(pageRecord.page, null, 2)}\n`, 'utf8');
+  context.pages.add(pageRecord);
+  return createArtifactToolResponse({
+    pageId: pageRecord.id,
+    artifactSetId: artifactSetId(pageRecord.id, 'ocr'),
     files: result.files as unknown as JsonObject,
+    resources: pageResources(pageRecord),
+    warnings: result.ocr.warnings,
+    nextActions: [
+      'Call build_ui_plan to rebuild the plan if OCR changed important visible text.',
+    ],
     summary: {
       provider: result.ocr.provider,
       status: result.ocr.status,
       textCount: result.ocr.text.length,
       boxCount: result.ocr.boxes.length,
-      updatedSnapshotPath,
-      warnings: result.ocr.warnings,
+      pageCanonical: pageRecord.files.pageCanonical,
     },
-  };
+  });
 }
 
 function resolveOutputDir(args: JsonObject, targetRoot: string, screenshotPath: string): string {
@@ -37,40 +55,19 @@ function resolveOutputDir(args: JsonObject, targetRoot: string, screenshotPath: 
   return path.dirname(path.resolve(targetRoot, screenshotPath));
 }
 
-async function attachOcrToSnapshot(
-  context: ToolContext,
-  args: JsonObject,
-  ocr: Awaited<ReturnType<typeof ocrScreenshot>>['ocr'],
-): Promise<string | undefined> {
-  const evidenceId = readString(args, 'evidenceId');
-  if (evidenceId) {
-    const evidenceRecord = context.evidences.require(evidenceId);
-    evidenceRecord.result.evidence = attachOcrToEvidence(evidenceRecord.result.evidence, ocr);
-    await writeFile(evidenceRecord.result.files.pageEvidence, `${JSON.stringify(evidenceRecord.result.evidence, null, 2)}\n`, 'utf8');
-    return evidenceRecord.result.files.pageEvidence;
-  }
-
-  const evidencePath = readString(args, 'evidencePath');
-  if (!evidencePath) return undefined;
-  const absoluteSnapshotPath = path.resolve(evidencePath);
-  const evidence = attachOcrToEvidence(JSON.parse(await readFile(absoluteSnapshotPath, 'utf8')) as PageEvidence, ocr);
-  await writeFile(absoluteSnapshotPath, `${JSON.stringify(evidence, null, 2)}\n`, 'utf8');
-  return absoluteSnapshotPath;
-}
-
-function attachOcrToEvidence(
-  evidence: PageEvidence,
-  ocr: Awaited<ReturnType<typeof ocrScreenshot>>['ocr'],
-): PageEvidence {
-  const text = [...new Set([...evidence.text, ...ocr.text])];
-  const provenance = evidence.provenance.some((item) => item.source === 'ocr')
-    ? evidence.provenance
-    : [...evidence.provenance, { source: 'ocr' as const, fields: ['ocr', 'text'] }];
+function attachOcrToPage(
+  page: PageCanonical,
+  ocr: Awaited<ReturnType<typeof attachScreenshotOcr>>['ocr'],
+): PageCanonical {
+  const text = [...new Set([...page.text, ...ocr.text])];
+  const provenance = page.provenance.some((item) => item.source === 'ocr')
+    ? page.provenance
+    : [...page.provenance, { source: 'ocr' as const, fields: ['ocr', 'text'] }];
   return {
-    ...evidence,
+    ...page,
     text,
     ocr,
-    warnings: [...evidence.warnings, ...ocr.warnings],
+    warnings: [...page.warnings, ...ocr.warnings],
     provenance,
   };
 }

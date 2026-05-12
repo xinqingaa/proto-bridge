@@ -35,12 +35,24 @@ export function createPageEvidence(input: {
   runtime?: RuntimePageProtocolPayload | undefined;
   ocr?: PageEvidence['ocr'] | undefined;
   warnings?: string[] | undefined;
+  artifacts?: Partial<PageEvidence['artifacts']> | undefined;
 }): PageEvidence {
   const capabilities = input.capabilities ?? DEFAULT_CAPABILITIES;
+  const screenshot = input.screenshot?.path
+    ? [{
+      name: 'full-page',
+      path: input.screenshot.path,
+      width: input.screenshot.width,
+      height: input.screenshot.height,
+      kind: 'full-page' as const,
+    }]
+    : [];
   return {
     id: input.id,
+    pageId: input.id,
     source: input.source,
     ...(input.screenshot ? { screenshot: input.screenshot } : {}),
+    screenshots: input.artifacts?.screenshots ?? screenshot,
     ...(input.viewport ? { viewport: input.viewport } : {}),
     page: input.page,
     ...(input.cssVariables ? { cssVariables: input.cssVariables } : {}),
@@ -58,6 +70,15 @@ export function createPageEvidence(input: {
       ...capabilities.warnings,
       ...(input.runtime?.warnings ?? []),
     ],
+    mismatches: [],
+    artifacts: {
+      rootDir: input.artifacts?.rootDir ?? '',
+      pageCanonical: input.artifacts?.pageCanonical ?? '',
+      pageDebugIndex: input.artifacts?.pageDebugIndex,
+      uiBuildPlan: input.artifacts?.uiBuildPlan,
+      uiBuildReview: input.artifacts?.uiBuildReview,
+      screenshots: input.artifacts?.screenshots ?? screenshot,
+    },
     provenance: [
       {
         source: 'dom',
@@ -78,6 +99,8 @@ export function isPageEvidence(value: unknown): value is PageEvidence {
     && Array.isArray(value.assets)
     && Array.isArray(value.interactions)
     && Array.isArray(value.provenance)
+    && Array.isArray(value.screenshots)
+    && Array.isArray(value.mismatches)
     && isRecord(value.capabilities);
 }
 

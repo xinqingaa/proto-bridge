@@ -11,10 +11,10 @@ import { collectChangedFiles } from '../services/git.js';
 
 export async function validateTargetChangesTool(context: ToolContext, args: JsonObject): Promise<JsonObject> {
   const targetRoot = resolveRuntimeTargetRoot(readString(args, 'targetRoot'));
-  const planId = readString(args, 'planId');
-  const plan = planId ? context.plans.require(planId) : undefined;
-  const allowedPaths = readStringArray(args, 'allowedPaths') ?? allowedPathsFromPlan(plan);
-  const expectedFiles = plan?.result.plan.fileTree.map((file) => file.path) ?? [];
+  const pageId = readString(args, 'pageId');
+  const page = pageId ? context.pages.require(pageId) : undefined;
+  const allowedPaths = readStringArray(args, 'allowedPaths') ?? allowedPathsFromPlan(page);
+  const expectedFiles = page?.plan?.fileTree.map((file) => file.path) ?? [];
   const missingExpectedFiles = await collectMissingFiles(targetRoot, expectedFiles);
   const changedFiles = await collectChangedFiles(targetRoot, readString(args, 'gitBase'));
   const dartFiles = changedFiles.filter((file) => file.endsWith('.dart'));
@@ -24,23 +24,23 @@ export async function validateTargetChangesTool(context: ToolContext, args: Json
     changedFiles,
     allowedPaths,
     fileIssues,
-    validationHints: plan?.result.plan.validationHints,
+    validationHints: page?.plan?.validationHints,
     expectedFiles,
     missingExpectedFiles,
   }) as unknown as JsonObject;
 }
 
-function allowedPathsFromPlan(plan: ReturnType<ToolContext['plans']['get']>): string[] {
-  if (!plan) return [];
-  const plannedDirs = plan.result.plan.fileTree
+function allowedPathsFromPlan(page: ReturnType<ToolContext['pages']['get']>): string[] {
+  if (!page?.plan) return [];
+  const plannedDirs = page.plan.fileTree
     .map((file) => file.path.split('/').slice(0, -1).join('/'))
     .filter(Boolean);
-  const module = plan.result.plan.target.module;
+  const module = page.plan.target.module;
   return [...new Set([
     ...(module ? [`lib/app/modules/${module}`] : []),
     ...plannedDirs,
-    ...plan.result.plan.target.routesFiles,
-    ...plan.result.plan.target.translationFiles,
+    ...page.plan.target.routesFiles,
+    ...page.plan.target.translationFiles,
   ])];
 }
 

@@ -1,5 +1,7 @@
 export type {
   AssetEvidence,
+  CapturePageCanonicalInput,
+  CapturePageCanonicalResult,
   CapturePageEvidenceInput,
   CapturePageEvidenceResult,
   CapturePrototypePageInput,
@@ -11,6 +13,7 @@ export type {
   OcrScreenshotInput,
   OcrScreenshotResult,
   OcrTextBox,
+  PageCanonical,
   PageEvidence,
   PageSnapshotNode,
   SnapshotComputedStyle,

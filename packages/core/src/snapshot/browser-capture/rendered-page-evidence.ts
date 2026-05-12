@@ -1,22 +1,24 @@
 import path from 'node:path';
 import { mkdir } from 'node:fs/promises';
-import type { CapturePageEvidenceInput, CapturePageEvidenceResult } from '../../types/index.js';
+import type { CapturePageCanonicalInput, CapturePageCanonicalResult, PageCanonical } from '../../types/index.js';
 import { writeJsonFile } from '../../artifacts/artifact-writer.js';
 import { detectPageCapabilities } from '../capabilities/detect-page-capabilities.js';
 import { buildCapturedPageEvidence } from './build-page-evidence.js';
-import { createEvidenceId } from './evidence-id.js';
+import { createPageId } from './evidence-id.js';
 import { extractRenderedPage } from './extract-rendered-page.js';
 import { readRuntimePageProtocol } from './runtime-page-protocol.js';
 
 const DEFAULT_VIEWPORT = { width: 390, height: 844, deviceScaleFactor: 1 };
 
-export async function captureRenderedPageEvidence(input: CapturePageEvidenceInput): Promise<CapturePageEvidenceResult> {
+export async function captureRenderedPageCanonical(input: CapturePageCanonicalInput): Promise<CapturePageCanonicalResult> {
   const viewport = input.viewport ?? DEFAULT_VIEWPORT;
   const saveArtifacts = input.saveArtifacts ?? true;
   const capturedAt = new Date().toISOString();
-  const evidenceId = createEvidenceId(input.url, capturedAt);
+  const pageId = createPageId(input.url, capturedAt);
 
   await mkdir(input.outDir, { recursive: true });
+  const screenshotsDir = path.join(input.outDir, 'screenshots');
+  if (saveArtifacts) await mkdir(screenshotsDir, { recursive: true });
 
   const { chromium } = await import('playwright');
   const browser = await chromium.launch({ headless: true });
@@ -35,12 +37,23 @@ export async function captureRenderedPageEvidence(input: CapturePageEvidenceInpu
     const runtime = capabilities.runtimeMetadata || capabilities.pageList
       ? await readRuntimePageProtocol(page)
       : undefined;
-    const screenshotPath = saveArtifacts ? path.join(input.outDir, 'screenshot.png') : undefined;
+    const screenshotPath = saveArtifacts ? path.join(screenshotsDir, 'full-page.png') : undefined;
     if (screenshotPath) await page.screenshot({ path: screenshotPath, fullPage: true });
 
     const extracted = await extractRenderedPage(page, viewport);
-    const evidence = buildCapturedPageEvidence({
-      id: evidenceId,
+    const pageCanonicalPath = path.join(input.outDir, 'page-canonical.json');
+    const pageDebugIndexPath = path.join(input.outDir, 'page-debug-index.json');
+    const screenshotArtifacts = screenshotPath
+      ? [{
+        name: 'full-page',
+        path: screenshotPath,
+        width: extracted.documentSize.width,
+        height: extracted.documentSize.height,
+        kind: 'full-page' as const,
+      }]
+      : [];
+    const pageCanonical = withArtifacts(buildCapturedPageEvidence({
+      id: pageId,
       url: input.url,
       capturedAt,
       viewport,
@@ -48,20 +61,69 @@ export async function captureRenderedPageEvidence(input: CapturePageEvidenceInpu
       extracted,
       capabilities,
       runtime,
+    }), {
+      rootDir: input.outDir,
+      pageCanonical: pageCanonicalPath,
+      pageDebugIndex: pageDebugIndexPath,
+      screenshots: screenshotArtifacts,
     });
 
-    const pageEvidencePath = path.join(input.outDir, 'page-evidence.json');
-    await writeJsonFile(pageEvidencePath, evidence);
+    await writeJsonFile(pageCanonicalPath, pageCanonical);
+    await writeJsonFile(pageDebugIndexPath, buildPageDebugIndex(pageCanonical));
 
     return {
-      evidence,
+      page: pageCanonical,
       capabilities,
       files: {
-        pageEvidence: pageEvidencePath,
-        ...(screenshotPath ? { screenshot: screenshotPath } : {}),
+        pageCanonical: pageCanonicalPath,
+        pageDebugIndex: pageDebugIndexPath,
+        screenshots: screenshotPath ? [screenshotPath] : [],
       },
     };
   } finally {
     await browser.close();
   }
+}
+
+export const captureRenderedPageEvidence = captureRenderedPageCanonical;
+
+function withArtifacts(
+  page: PageCanonical,
+  artifacts: PageCanonical['artifacts'],
+): PageCanonical {
+  return {
+    ...page,
+    pageId: page.id,
+    screenshots: artifacts.screenshots,
+    artifacts,
+  };
+}
+
+function buildPageDebugIndex(page: PageCanonical): Record<string, unknown> {
+  return {
+    pageId: page.pageId,
+    title: page.page.title,
+    route: page.page.route,
+    source: page.source,
+    viewport: page.viewport,
+    counts: {
+      sections: page.sections.length,
+      nodes: page.nodes.length,
+      text: page.text.length,
+      assets: page.assets.length,
+      interactions: page.interactions.length,
+      screenshots: page.screenshots.length,
+    },
+    sections: page.sections.map((section) => ({
+      id: section.id,
+      role: section.role,
+      title: section.title,
+      bbox: section.bbox,
+      nodeCount: section.nodeIds.length,
+    })),
+    capabilities: page.capabilities,
+    warnings: page.warnings,
+    mismatches: page.mismatches,
+    artifacts: page.artifacts,
+  };
 }

@@ -1,13 +1,12 @@
 import type { JsonRpcRequest, ServerOptions, ToolContext } from '../types.js';
-import { EvidenceStore, UiPlanStore } from '../services/session-state.js';
+import { PageStore } from '../services/session-state.js';
 import { dispatch } from './dispatcher.js';
 import { errorMessage, send, sendError } from './responses.js';
 
 export function startMcpServer(options: ServerOptions): void {
   const context: ToolContext = {
     options,
-    evidences: new EvidenceStore(),
-    plans: new UiPlanStore(),
+    pages: new PageStore(),
   };
 
   process.stdin.setEncoding('utf8');

@@ -1,6 +1,9 @@
 import type {
-  BuildUiImplementationPlanResult,
-  CapturePageEvidenceResult,
+  BuildUiPlanResult,
+  CapturePageCanonicalResult,
+  ExportUiReviewResult,
+  AttachScreenshotOcrResult,
+  PageCanonical,
 } from '@proto-bridge/core/workflows/ui-reconstruction';
 
 export type JsonValue = string | number | boolean | null | JsonObject | JsonValue[];
@@ -13,35 +16,31 @@ export type JsonRpcRequest = {
   params?: JsonObject | undefined;
 };
 
-export type GeneratedEvidence = {
+export type GeneratedPage = {
   id: string;
   createdAt: string;
   targetRoot: string;
-  result: CapturePageEvidenceResult;
-};
-
-export type GeneratedUiPlan = {
-  id: string;
-  createdAt: string;
-  targetRoot: string;
-  evidenceId: string;
-  result: BuildUiImplementationPlanResult;
+  page: PageCanonical;
+  files: CapturePageCanonicalResult['files'] & {
+    uiBuildPlan?: string | undefined;
+    uiBuildReview?: string | undefined;
+    ocrResult?: string | undefined;
+  };
+  capabilities: CapturePageCanonicalResult['capabilities'];
+  plan?: BuildUiPlanResult['plan'] | undefined;
+  review?: ExportUiReviewResult | undefined;
+  ocr?: AttachScreenshotOcrResult | undefined;
 };
 
 export type ServerOptions = Record<string, never>;
 
 export type ToolContext = {
   options: ServerOptions;
-  evidences: {
-    add(evidence: GeneratedEvidence): void;
-    get(evidenceId: string): GeneratedEvidence | undefined;
-    require(evidenceId: string): GeneratedEvidence;
-    values(): GeneratedEvidence[];
-  };
-  plans: {
-    add(plan: GeneratedUiPlan): void;
-    get(planId: string): GeneratedUiPlan | undefined;
-    require(planId: string): GeneratedUiPlan;
-    values(): GeneratedUiPlan[];
+  pages: {
+    add(page: GeneratedPage): void;
+    get(pageId: string): GeneratedPage | undefined;
+    require(pageId: string): GeneratedPage;
+    latest(): GeneratedPage | undefined;
+    values(): GeneratedPage[];
   };
 };

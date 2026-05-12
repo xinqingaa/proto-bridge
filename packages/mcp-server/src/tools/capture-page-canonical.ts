@@ -1,46 +1,57 @@
 import path from 'node:path';
-import { capturePageEvidence } from '@proto-bridge/core/workflows/ui-reconstruction';
+import { capturePageCanonical } from '@proto-bridge/core/workflows/ui-reconstruction';
 import type { JsonObject, ToolContext } from '../types.js';
 import { readBoolean, readNumber, readObject, readString } from '../utils/args.js';
 import { resolveRuntimeTargetRoot } from '../services/config.js';
-import { createEvidenceRecordId } from '../services/session-state.js';
+import {
+  artifactSetId,
+  createArtifactToolResponse,
+  pageResources,
+} from '../artifacts/contracts.js';
 
-export async function capturePageEvidenceTool(context: ToolContext, args: JsonObject): Promise<JsonObject> {
+export async function capturePageCanonicalTool(context: ToolContext, args: JsonObject): Promise<JsonObject> {
   const url = readString(args, 'url');
-  if (!url) throw new Error('capture_page_evidence requires url.');
+  if (!url) throw new Error('capture_page_canonical requires url.');
   const targetRoot = resolveRuntimeTargetRoot(readString(args, 'targetRoot'));
   const outDir = resolveSnapshotOutputDir(args, targetRoot, url);
-  const result = await capturePageEvidence({
+  const result = await capturePageCanonical({
     url,
     outDir,
     viewport: readViewport(args),
     saveArtifacts: readBoolean(args, 'saveArtifacts') ?? true,
   });
-  const evidenceRecord = {
-    id: createEvidenceRecordId(result.evidence.id),
+  const pageRecord = {
+    id: result.page.pageId,
     createdAt: new Date().toISOString(),
     targetRoot,
-    result,
+    page: result.page,
+    files: result.files,
+    capabilities: result.capabilities,
   };
-  context.evidences.add(evidenceRecord);
-  return {
-    evidenceId: evidenceRecord.id,
-    createdAt: evidenceRecord.createdAt,
-    targetRoot,
+  context.pages.add(pageRecord);
+  return createArtifactToolResponse({
+    pageId: pageRecord.id,
+    artifactSetId: artifactSetId(pageRecord.id, 'capture'),
     files: result.files as unknown as JsonObject,
+    resources: pageResources(pageRecord),
+    warnings: result.page.warnings,
+    nextActions: [
+      'Call build_ui_plan with pageId to create ui-build-plan.json.',
+      'Call attach_screenshot_ocr if screenshot text needs OCR reinforcement.',
+    ],
     summary: {
       url,
-      route: result.evidence.page.route,
-      title: result.evidence.page.title,
-      nodeCount: result.evidence.nodes.length,
-      visualSectionCount: result.evidence.sections.length,
-      textCount: result.evidence.text.length,
-      assetCount: result.evidence.assets.length,
-      interactionCount: result.evidence.interactions.length,
+      route: result.page.page.route,
+      title: result.page.page.title,
+      nodeCount: result.page.nodes.length,
+      visualSectionCount: result.page.sections.length,
+      textCount: result.page.text.length,
+      assetCount: result.page.assets.length,
+      interactionCount: result.page.interactions.length,
+      screenshotCount: result.page.screenshots.length,
       capabilities: result.capabilities as unknown as JsonObject,
-      warnings: result.evidence.warnings,
     },
-  };
+  });
 }
 
 function readViewport(args: JsonObject): { width: number; height: number; deviceScaleFactor?: number | undefined } | undefined {
@@ -61,7 +72,7 @@ function resolveSnapshotOutputDir(args: JsonObject, targetRoot: string, url: str
   const output = readString(args, 'output');
   if (output) return path.isAbsolute(output) ? output : path.resolve(targetRoot, output);
   const slug = slugFromUrl(url);
-  return path.join(targetRoot, '.proto-bridge', 'evidence', `${slug}-${Date.now().toString(36)}`);
+  return path.join(targetRoot, '.proto-bridge', 'pages', `${slug}-${Date.now().toString(36)}`);
 }
 
 function slugFromUrl(url: string): string {

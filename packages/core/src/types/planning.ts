@@ -1,5 +1,5 @@
 import type { ImplementationShape, MappingConfidence, WidgetRecommendationType } from './common.js';
-import type { AssetEvidence, InteractionEvidence, PageEvidence, SnapshotNodeRole } from './evidence.js';
+import type { AssetEvidence, InteractionEvidence, PageCanonical, SnapshotNodeRole } from './evidence.js';
 import type { FlutterComponentRef, FlutterContextAnalysis, FlutterExampleRef } from './target-flutter.js';
 
 export type WidgetRecommendation = {
@@ -71,16 +71,16 @@ export type FlutterChecklistItem = {
   item: string;
 };
 
-export type BuildUiImplementationPlanInput = {
-  evidence: PageEvidence;
+export type BuildUiPlanInput = {
+  page: PageCanonical;
   targetRoot: string;
   outDir: string;
   targetModule?: string | undefined;
 };
 
-export type UiImplementationPlan = {
+export type UiBuildPlan = {
   id: string;
-  evidenceId: string;
+  pageId: string;
   target: {
     root: string;
     module?: string | undefined;
@@ -152,25 +152,31 @@ export type InteractionPlan = {
   recommendation: string;
 };
 
-export type BuildUiImplementationPlanResult = {
-  plan: UiImplementationPlan;
+export type BuildUiPlanResult = {
+  plan: UiBuildPlan;
   files: {
-    uiImplementationPlan: string;
+    uiBuildPlan: string;
   };
 };
 
-export type ExportReviewMarkdownInput = {
-  evidence: PageEvidence;
-  plan: UiImplementationPlan;
+export type ExportUiReviewInput = {
+  page: PageCanonical;
+  plan: UiBuildPlan;
   outDir: string;
 };
 
-export type ExportReviewMarkdownResult = {
+export type ExportUiReviewResult = {
   markdown: string;
   files: {
-    reviewMarkdown: string;
+    uiBuildReview: string;
   };
 };
+
+export type BuildUiImplementationPlanInput = BuildUiPlanInput;
+export type BuildUiImplementationPlanResult = BuildUiPlanResult;
+export type ExportReviewMarkdownInput = ExportUiReviewInput;
+export type ExportReviewMarkdownResult = ExportUiReviewResult;
+export type UiImplementationPlan = UiBuildPlan;
 
 export type MigrationContext = {
   source: import('./source.js').PrototypePageAnalysis;

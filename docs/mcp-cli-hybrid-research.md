@@ -1,19 +1,25 @@
-# ProtoBridge CLI / MCP Hybrid Research Notes
+# ProtoBridge CLI / MCP Hybrid Research
 
-本文档用于沉淀 2026-05-11 这一天围绕 ProtoBridge 演进方向的核心讨论结论。
+本文档用于沉淀 ProtoBridge CLI / MCP hybrid 演进方向的核心结论、讨论方向和未决问题。
 
-目标不是逐字记录聊天，而是让后续在另一台设备上继续思考时，能够快速恢复：
+目标是让后续推进时能够快速恢复：
 
-- 今天已经形成了哪些判断。
+- 已经形成了哪些判断。
 - 哪些问题已经有初步结论。
 - 哪些问题仍然未决。
 - 接下来应该按什么顺序继续推进。
 
+与 [todo.md](todo.md) 的关系：
+
+- 本文档给出长期架构方向：从 workflow-first 演进到 capability-first。
+- `todo.md` 负责把这个方向拆成当前可执行优先级。
+- 当前最直接的落点是 `todo.md` 的 P0：先定统一产物模型与 MCP 契约。
+
 ---
 
-## 1. 今日核心结论
+## 1. 核心结论
 
-今天最重要的结论有五条：
+当前最重要的结论有五条：
 
 1. `CLI` 和 `MCP` 作为两个 mode 本身是合理的，不需要推翻。
 2. 当前真正的问题不在 mode，而在于每个 mode 绑定了一条过于固定的 workflow。
@@ -24,7 +30,7 @@
 一句话概括：
 
 ```text
-今天的讨论已经从“某些页面样式不一致”扩展成了
+当前讨论已经从“某些页面样式不一致”扩展成了
 “ProtoBridge 是否要从 workflow-first 演进成 capability-first”。
 ```
 
@@ -52,7 +58,7 @@
 - 明明本地同时有源码和 URL/runtime，但 MCP 仍然只按 URL-first 方式工作。
 - 明明 source-aware 路径可能更强，但 CLI 又主要停留在产出 JSON / Markdown，而不是被 agent 直接调度到更后面的 Dart 生成阶段。
 
-今天形成的产品判断是：
+产品判断是：
 
 ```text
 mode 合理，workflow 过于固化。
@@ -60,9 +66,9 @@ mode 合理，workflow 过于固化。
 
 ---
 
-## 3. 今天形成的目标系统形态
+## 3. 目标系统形态
 
-今天形成的理想系统目标，不是合并 CLI 和 MCP，而是重新定义它们之间的关系。
+理想系统目标，不是合并 CLI 和 MCP，而是重新定义它们之间的关系。
 
 更理想的关系应是：
 
@@ -80,7 +86,7 @@ capability = 通用底层能力
 - source、snapshot、target、planning、validation 都应逐步变成共享 capability。
 - system 应能根据“是否有源码 / 是否有 URL / 是否有 screenshot / 是否有 target repo”决定调用哪些能力。
 
-更准确地说，今天想推动的不是：
+更准确地说，这里想推动的不是：
 
 ```text
 CLI vs MCP
@@ -97,7 +103,7 @@ CLI + MCP
 
 ## 4. 关于“源码是不是最好用”的结论
 
-今天有一个很关键的前提讨论：源码是不是最好的信息源。
+这里有一个很关键的前提讨论：源码是不是最好的信息源。
 
 结论不是简单的“是”或“不是”，而是要区分问题类型。
 
@@ -133,7 +139,7 @@ screenshot / OCR 更适合做：
 - 人工 review
 - 发现 runtime 结构和视觉不一致时的补充证据
 
-### 4.4 今日最终判断
+### 4.4 最终判断
 
 不建议把前提写成：
 
@@ -156,9 +162,9 @@ screenshot 优先表达最终视觉对照和补证。
 
 ---
 
-## 5. 今天对当前系统的重新理解
+## 5. 对当前系统的重新理解
 
-今天一个重要的认知变化是：
+一个重要的认知变化是：
 
 ### 5.1 `ui-implementation-plan.json` 不是确定性翻译结果
 
@@ -207,16 +213,16 @@ evidence -> implementation guidance -> agent judgment -> Flutter code
 
 ---
 
-## 6. 今天对“skill 调 CLI 再自动生成 Dart”的判断
+## 6. 对“skill 调 CLI 再自动生成 Dart”的判断
 
-今天讨论了一个现实可行的过渡方向：
+一个现实可行的过渡方向是：
 
 ```text
 skill -> 调 CLI -> 生成 migration-context.json / migration-spec.md
 -> 再继续自动生成 Dart
 ```
 
-### 6.1 今日判断：短期可行
+### 6.1 短期判断：可行
 
 这条线是合理的短期方案，原因是：
 
@@ -234,7 +240,7 @@ skill -> 调 CLI -> 生成 migration-context.json / migration-spec.md
 - 局部重试、局部增量更新、动态编排不如直接调用能力灵活。
 - 随着 hybrid workflow 变复杂，“skill 包一层 CLI 黑盒”的方式会越来越绕。
 
-### 6.3 今日最终判断
+### 6.3 最终判断
 
 可以把它理解成：
 
@@ -244,11 +250,9 @@ skill -> 调 CLI -> 生成 migration-context.json / migration-spec.md
 
 ---
 
-## 7. 今天对实现难度的评估
+## 7. 对实现难度的评估
 
-今天讨论了“这件事到底有多难”。
-
-结论不是“非常困难”，而是分阶段看。
+实现难度需要分阶段看。
 
 ### 7.1 如果目标只是先做 hybrid 调度
 
@@ -296,9 +300,9 @@ skill -> 调 CLI -> 生成 migration-context.json / migration-spec.md
 
 ---
 
-## 8. 今天形成的统一产物方向草案
+## 8. 统一产物方向草案
 
-今天已经开始形成统一产物模型的方向。
+统一产物模型的方向已经基本形成。
 
 初步草案包括：
 
@@ -317,7 +321,7 @@ skill -> 调 CLI -> 生成 migration-context.json / migration-spec.md
 - code generation / implementation plan
 - debugging / traceability
 
-### 8.2 今日额外整理出的结构化思路
+### 8.2 结构化思路
 
 可以把产物分成两类：
 
@@ -348,7 +352,7 @@ skill -> 调 CLI -> 生成 migration-context.json / migration-spec.md
 - `ui-build-plan.json`
 - `ui-build-review.md`
 
-### 8.3 今日建议的产物模型方向
+### 8.3 建议的产物模型方向
 
 更收敛的表达可以是：
 
@@ -369,9 +373,9 @@ skill -> 调 CLI -> 生成 migration-context.json / migration-spec.md
 
 ---
 
-## 9. 今天明确识别出的核心技术难点
+## 9. 核心技术难点
 
-今天已经明确识别出 hybrid 方向里最关键的几个难点。
+hybrid 方向里最关键的技术难点包括：
 
 ### 9.1 Source facts 和 runtime evidence 怎么合并
 
@@ -383,7 +387,7 @@ skill -> 调 CLI -> 生成 migration-context.json / migration-spec.md
 
 ### 9.2 当 source 和 runtime 不一致时，谁优先
 
-今天的结论是：
+结论是：
 
 - 不应整体讨论谁优先
 - 应按字段类型决定优先级
@@ -399,9 +403,9 @@ skill -> 调 CLI -> 生成 migration-context.json / migration-spec.md
 
 ---
 
-## 10. 今天讨论出的“冲突会发生在哪些真实场景”
+## 10. Source / Runtime 冲突场景
 
-今天特意把 source / runtime 冲突可能出现的真实情景展开了。
+source / runtime 冲突可能出现在以下真实场景。
 
 ### 10.1 多状态分支页面
 
@@ -481,9 +485,9 @@ skill -> 调 CLI -> 生成 migration-context.json / migration-spec.md
 
 ---
 
-## 11. 今天形成的字段级优先级思路
+## 11. 字段级优先级思路
 
-虽然今天还没有写成正式规则表，但方向已经很明确。
+虽然还没有写成正式规则表，但方向已经很明确。
 
 建议未来按字段类型决定优先级：
 
@@ -499,7 +503,7 @@ skill -> 调 CLI -> 生成 migration-context.json / migration-spec.md
 - `component reuse / theme target / file tree / route placement`
   优先 target repo conventions
 
-今天的关键判断是：
+关键判断是：
 
 ```text
 不要先问“整体谁优先”，
@@ -510,7 +514,7 @@ skill -> 调 CLI -> 生成 migration-context.json / migration-spec.md
 
 ## 12. 对现有项目的总体架构判断
 
-今天没有形成“要不要重做项目”的结论，反而形成了更明确的判断：
+当前不需要形成“要不要重做项目”的结论，已有判断是：
 
 - 当前不是“项目已经不可维护”。
 - 当前更像是“core 分层已有基础，但 workflow 暴露面还不够灵活”。
@@ -524,9 +528,9 @@ skill -> 调 CLI -> 生成 migration-context.json / migration-spec.md
 
 ---
 
-## 13. 明天继续思考时，建议的顺序
+## 13. 推进顺序建议
 
-明天继续推进时，建议按下面顺序思考，而不是直接跳进代码。
+继续推进时，建议按下面顺序思考，而不是直接跳进代码。
 
 ### 第一步：先定统一产物模型
 
@@ -566,7 +570,7 @@ skill -> 调 CLI -> 生成 migration-context.json / migration-spec.md
 
 ## 14. 当前未决问题
 
-今天已经讨论出很多方向，但下面这些问题仍然没有定论：
+当前已经形成很多方向，但下面这些问题仍然没有定论：
 
 - 是否需要一个统一的 `page-canonical.json`
 - source 与 runtime 的 merge 规则是否要显式版本化
@@ -577,9 +581,9 @@ skill -> 调 CLI -> 生成 migration-context.json / migration-spec.md
 
 ---
 
-## 15. 今天的最重要一句话
+## 15. 最重要一句话
 
-如果明天只想先记住一句话，那就是：
+如果只记住一句话，那就是：
 
 ```text
 ProtoBridge 的下一个阶段，不是决定“选 CLI 还是选 MCP”，

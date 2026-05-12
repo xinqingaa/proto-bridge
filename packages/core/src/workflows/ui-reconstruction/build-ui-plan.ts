@@ -1,25 +1,27 @@
 import path from 'node:path';
 import type {
-  BuildUiImplementationPlanInput,
-  BuildUiImplementationPlanResult,
+  BuildUiPlanInput,
+  BuildUiPlanResult,
 } from '../../types/index.js';
 import { buildFlutterUiReconstructionPlan } from '../../target/flutter-app/index.js';
 import { writeJsonFile } from '../../artifacts/artifact-writer.js';
 
-export async function buildUiImplementationPlan(
-  input: BuildUiImplementationPlanInput,
-): Promise<BuildUiImplementationPlanResult> {
+export async function buildUiPlan(
+  input: BuildUiPlanInput,
+): Promise<BuildUiPlanResult> {
   const plan = await buildFlutterUiReconstructionPlan({
-    evidence: input.evidence,
+    evidence: input.page,
     targetRoot: input.targetRoot,
     targetModule: input.targetModule,
   });
-  const planPath = path.join(input.outDir, 'ui-implementation-plan.json');
+  const planPath = path.join(input.outDir, 'ui-build-plan.json');
   await writeJsonFile(planPath, plan);
   return {
     plan,
     files: {
-      uiImplementationPlan: planPath,
+      uiBuildPlan: planPath,
     },
   };
 }
+
+export const buildUiImplementationPlan = buildUiPlan;

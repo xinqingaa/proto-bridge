@@ -6,10 +6,10 @@ import type {
   FlutterPlannedFile,
   FlutterWidgetPlan,
   InteractionPlan,
-  PageEvidence,
+  PageCanonical,
   SnapshotNodeRole,
   ThemeMapping,
-  UiImplementationPlan,
+  UiBuildPlan,
 } from '../../../types/index.js';
 import { getFlutterTargetConventions } from '../conventions.js';
 import { findFlutterTargetExamples } from '../examples.js';
@@ -17,14 +17,14 @@ import { resolveFlutterColorTarget, resolveFlutterTypographyTarget } from '../th
 import { toPascalCase, toSnakeCase } from './migration-planner.js';
 
 export type BuildFlutterUiReconstructionPlanInput = {
-  evidence: PageEvidence;
+  evidence: PageCanonical;
   targetRoot: string;
   targetModule?: string | undefined;
 };
 
 export async function buildFlutterUiReconstructionPlan(
   input: BuildFlutterUiReconstructionPlanInput,
-): Promise<UiImplementationPlan> {
+): Promise<UiBuildPlan> {
   const targetRoot = path.resolve(input.targetRoot);
   const roles = rolesForEvidence(input.evidence);
   const conventions = await getFlutterTargetConventions({
@@ -47,7 +47,7 @@ export async function buildFlutterUiReconstructionPlan(
 
   return {
     id: createPlanId(input.evidence.id),
-    evidenceId: input.evidence.id,
+    pageId: input.evidence.id,
     target: {
       root: targetRoot,
       module: moduleName,
@@ -85,7 +85,7 @@ export async function buildFlutterUiReconstructionPlan(
   };
 }
 
-function rolesForEvidence(evidence: PageEvidence): FlutterComponentRole[] {
+function rolesForEvidence(evidence: PageCanonical): FlutterComponentRole[] {
   const roles = new Set<FlutterComponentRole>(['page-base', 'theme', 'i18n']);
   if (evidence.nodes.some((node) => node.role === 'app-bar')) roles.add('app-bar');
   if (evidence.nodes.some((node) => node.role === 'button')) roles.add('button');
@@ -95,7 +95,7 @@ function rolesForEvidence(evidence: PageEvidence): FlutterComponentRole[] {
   return [...roles];
 }
 
-function inferModule(evidence: PageEvidence, existingModules: string[]): string | undefined {
+function inferModule(evidence: PageCanonical, existingModules: string[]): string | undefined {
   const route = evidence.page.route ?? evidence.source.route ?? evidence.source.url ?? '';
   const segments = route.split(/[/?#&.=_-]+/).filter((item) => item.length >= 3);
   for (const segment of segments) {
@@ -109,20 +109,20 @@ function inferModule(evidence: PageEvidence, existingModules: string[]): string 
   return existingModules[0];
 }
 
-function inferPattern(evidence: PageEvidence): string {
+function inferPattern(evidence: PageCanonical): string {
   if (evidence.sections.some((section) => section.role === 'list')) return 'list';
   if (evidence.nodes.some((node) => node.role === 'input')) return 'form';
   if (evidence.sections.length >= 6) return 'dashboard';
   return 'detail';
 }
 
-function inferPageName(evidence: PageEvidence): string {
+function inferPageName(evidence: PageCanonical): string {
   const route = evidence.page.route ?? evidence.source.url ?? evidence.page.title ?? 'SnapshotPage';
   const lastSegment = route.split(/[/?#]/)[0]?.split('/').filter(Boolean).at(-1);
   return toPascalCase(lastSegment ?? evidence.page.title ?? 'SnapshotPage');
 }
 
-function buildSummary(evidence: PageEvidence): string {
+function buildSummary(evidence: PageCanonical): string {
   const sectionCount = evidence.sections.length;
   const textCount = evidence.text.length;
   const assetCount = evidence.assets.length;
@@ -132,7 +132,7 @@ function buildSummary(evidence: PageEvidence): string {
     evidence.capabilities.tabTraversal ? 'tab traversal' : '',
     evidence.capabilities.needsOcr ? 'ocr fallback' : '',
   ].filter(Boolean);
-  return `该计划来自统一 PageEvidence，聚焦可见 UI 还原；识别到 ${sectionCount} 个视觉区块、${textCount} 条文案线索和 ${assetCount} 个资源线索。${capabilityHints.length > 0 ? `增强能力包括 ${capabilityHints.join('、')}。` : ''}业务接口、权限、风控和埋点不在本计划中做确定性推断。`;
+  return `该计划来自统一 PageCanonical，聚焦可见 UI 还原；识别到 ${sectionCount} 个视觉区块、${textCount} 条文案线索和 ${assetCount} 个资源线索。${capabilityHints.length > 0 ? `增强能力包括 ${capabilityHints.join('、')}。` : ''}业务接口、权限、风控和埋点不在本计划中做确定性推断。`;
 }
 
 function buildFileTree(baseDir: string, pageName: string, widgetTree: FlutterWidgetPlan[]): FlutterPlannedFile[] {
@@ -165,7 +165,7 @@ function buildFileTree(baseDir: string, pageName: string, widgetTree: FlutterWid
   return dedupeBy(files, (file) => file.path);
 }
 
-function buildWidgetTree(pageName: string, evidence: PageEvidence): FlutterWidgetPlan[] {
+function buildWidgetTree(pageName: string, evidence: PageCanonical): FlutterWidgetPlan[] {
   const rootName = `${pageName}Page`;
   const widgets: FlutterWidgetPlan[] = [
     {
@@ -190,7 +190,7 @@ function buildWidgetTree(pageName: string, evidence: PageEvidence): FlutterWidge
   return widgets;
 }
 
-function buildComponentMappings(evidence: PageEvidence, components: FlutterComponentRef[]): ComponentMapping[] {
+function buildComponentMappings(evidence: PageCanonical, components: FlutterComponentRef[]): ComponentMapping[] {
   const roles = new Map<SnapshotNodeRole, string[]>();
   for (const node of evidence.nodes) {
     if (!roles.has(node.role)) roles.set(node.role, []);
@@ -227,7 +227,7 @@ function bestComponentForRole(role: SnapshotNodeRole, components: FlutterCompone
   return components.find((component) => targetRoles.includes(component.role));
 }
 
-function buildThemeMappings(evidence: PageEvidence): ThemeMapping[] {
+function buildThemeMappings(evidence: PageCanonical): ThemeMapping[] {
   return (evidence.tokens ?? []).slice(0, 80).map((token) => {
     const resolution = token.kind === 'typography'
       ? resolveFlutterTypographyTarget({ value: token.value })
@@ -261,7 +261,7 @@ function buildThemeMappings(evidence: PageEvidence): ThemeMapping[] {
   });
 }
 
-function buildI18nPlan(evidence: PageEvidence): UiImplementationPlan['i18nPlan'] {
+function buildI18nPlan(evidence: PageCanonical): UiBuildPlan['i18nPlan'] {
   const texts = evidence.text
     .filter((text) => text.length <= 120)
     .slice(0, 120)
@@ -281,7 +281,7 @@ function suggestedKey(text: string): { suggestedKey?: string } {
   return key ? { suggestedKey: key } : {};
 }
 
-function buildAssetPlan(evidence: PageEvidence): UiImplementationPlan['assetPlan'] {
+function buildAssetPlan(evidence: PageCanonical): UiBuildPlan['assetPlan'] {
   return {
     assets: evidence.assets.slice(0, 80).map((asset) => ({
       source: asset.source,
@@ -295,7 +295,7 @@ function buildAssetPlan(evidence: PageEvidence): UiImplementationPlan['assetPlan
   };
 }
 
-function buildInteractionPlan(evidence: PageEvidence): InteractionPlan[] {
+function buildInteractionPlan(evidence: PageCanonical): InteractionPlan[] {
   return evidence.interactions.slice(0, 80).map((interaction) => ({
     kind: interaction.kind,
     label: interaction.label,
@@ -304,21 +304,21 @@ function buildInteractionPlan(evidence: PageEvidence): InteractionPlan[] {
   }));
 }
 
-function buildBusinessQuestions(evidence: PageEvidence): string[] {
+function buildBusinessQuestions(evidence: PageCanonical): string[] {
   const questions = [
     '确认页面真实数据来源、接口字段和加载/空态策略。',
     '确认点击、跳转、弹层、筛选和输入行为的业务规则。',
     '确认权限、风控、埋点和异常处理是否需要在本页面接入。',
   ];
   if (evidence.interactions.length > 0) {
-    questions.push(`PageEvidence 识别到 ${evidence.interactions.length} 个可交互区域，需要逐项确认业务动作。`);
+    questions.push(`PageCanonical 识别到 ${evidence.interactions.length} 个可交互区域，需要逐项确认业务动作。`);
   }
   return questions;
 }
 
-function buildRisks(evidence: PageEvidence): string[] {
+function buildRisks(evidence: PageCanonical): string[] {
   const risks = [
-    'PageEvidence 只能证明当前采集到的可见 UI 与增强证据，不能证明隐藏状态或业务逻辑。',
+    'PageCanonical 只能证明当前采集到的可见 UI 与增强证据，不能证明隐藏状态或业务逻辑。',
     '少量 computed style 仍可能映射到多个 YouFi 语义 token，需结合 node 上下文和截图二次确认。',
   ];
   if (evidence.assets.length > 0) risks.push('图片、SVG 或背景资源需要确认是否已有 YouFi 本地资产可复用。');
@@ -326,7 +326,7 @@ function buildRisks(evidence: PageEvidence): string[] {
   return risks;
 }
 
-function buildSectionHint(section: PageEvidence['sections'][number], evidence: PageEvidence): string {
+function buildSectionHint(section: PageCanonical['sections'][number], evidence: PageCanonical): string {
   const rootNodeId = section.nodeIds[0];
   const rootNode = evidence.nodes.find((node) => node.id === rootNodeId);
   const computedStyle = rootNode?.computedStyle;
@@ -361,8 +361,8 @@ function buildSectionHint(section: PageEvidence['sections'][number], evidence: P
   ].filter(Boolean).join(' ');
 }
 
-function createPlanId(evidenceId: string): string {
-  return `plan_${evidenceId.replace(/^evidence_/, '')}_${Date.now().toString(36)}`;
+function createPlanId(pageId: string): string {
+  return `plan_${pageId.replace(/^evidence_/, '')}_${Date.now().toString(36)}`;
 }
 
 function dedupeBy<T>(items: T[], key: (item: T) => string): T[] {

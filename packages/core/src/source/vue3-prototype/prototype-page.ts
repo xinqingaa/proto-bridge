@@ -59,6 +59,7 @@ export async function analyzePrototypePage(input: AnalyzePrototypePageInput): Pr
 
   const matchedEntry =
     (route ? entries.find((entry) => normalizeRoute(asString(entry.screen.path) ?? '') === route) : undefined) ??
+    (route ? findEntryByRouteLastSegment(entries, route) : undefined) ??
     (vueCandidates.length > 0
       ? entries.find((entry) => viewMatchesCandidates(asString(entry.screen.view), vueCandidates))
       : undefined);
@@ -240,6 +241,18 @@ function viewMatchesCandidates(view: string | undefined, candidates: string[]): 
     const normalizedCandidate = toPosixPath(candidate);
     return normalizedCandidate === normalizedView || normalizedCandidate.endsWith(`/${normalizedView}`);
   });
+}
+
+function findEntryByRouteLastSegment(entries: ScreenEntry[], route: string): ScreenEntry | undefined {
+  const lastSegment = routeLastSegment(route);
+  if (!lastSegment) return undefined;
+  const matches = entries.filter((entry) => routeLastSegment(asString(entry.screen.path)) === lastSegment);
+  return matches.length === 1 ? matches[0] : undefined;
+}
+
+function routeLastSegment(route: string | undefined): string | undefined {
+  const normalized = route ? normalizeRoute(route) : '';
+  return normalized.split('?')[0]?.split('/').filter(Boolean).at(-1);
 }
 
 function formatMissingRouteError(

@@ -1,7 +1,9 @@
-export function createEvidenceId(url: string, capturedAt: string): string {
+export function createPageId(url: string, capturedAt: string): string {
   const slug = slugFromUrl(url);
-  return `evidence_${slug}_${Date.parse(capturedAt).toString(36)}`;
+  return `page_${slug}_${Date.parse(capturedAt).toString(36)}`;
 }
+
+export const createEvidenceId = createPageId;
 
 function slugFromUrl(url: string): string {
   try {

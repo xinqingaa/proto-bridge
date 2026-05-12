@@ -2,8 +2,8 @@
 import { realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
-  buildUiImplementationPlan,
-  capturePageEvidence,
+  buildUiPlan,
+  capturePageCanonical,
 } from '@proto-bridge/core/workflows/ui-reconstruction';
 import {
   findFlutterTargetExamples,
@@ -13,15 +13,15 @@ import { parseServerOptions } from './services/config.js';
 import { startMcpServer } from './server/stdio-json-rpc.js';
 
 export {
-  buildUiImplementationPlan,
-  capturePageEvidence,
+  buildUiPlan,
+  capturePageCanonical,
   findFlutterTargetExamples,
   getFlutterTargetConventions,
 };
 
 export type {
-  BuildUiImplementationPlanInput,
-  CapturePageEvidenceInput,
+  BuildUiPlanInput,
+  CapturePageCanonicalInput,
 } from '@proto-bridge/core/workflows/ui-reconstruction';
 export type {
   FindFlutterTargetExamplesInput,

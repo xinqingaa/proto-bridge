@@ -167,6 +167,30 @@ export type PageEvidenceProvenance = {
   fields: string[];
 };
 
+export type PageScreenshotArtifact = {
+  name: string;
+  path: string;
+  width: number;
+  height: number;
+  kind: 'viewport' | 'full-page' | 'state' | 'unknown';
+};
+
+export type PageCanonicalMismatch = {
+  kind: 'source-runtime' | 'runtime-visual' | 'ocr-visual' | 'target-convention' | 'unknown';
+  message: string;
+  severity: 'info' | 'warning' | 'error';
+  evidence: string[];
+};
+
+export type PageCanonicalArtifactIndex = {
+  rootDir: string;
+  pageCanonical: string;
+  pageDebugIndex?: string | undefined;
+  uiBuildPlan?: string | undefined;
+  uiBuildReview?: string | undefined;
+  screenshots: PageScreenshotArtifact[];
+};
+
 export type PageComponentHint = {
   kind: 'runtime-metadata' | 'page-list' | 'heuristic';
   hint: string;
@@ -182,14 +206,16 @@ export type PageTabState = {
   evidence: string[];
 };
 
-export type PageEvidence = {
+export type PageCanonical = {
   id: string;
+  pageId: string;
   source: PageEvidenceSource;
   screenshot?: {
     path?: string | undefined;
     width: number;
     height: number;
   } | undefined;
+  screenshots: PageScreenshotArtifact[];
   viewport?: {
     width: number;
     height: number;
@@ -212,8 +238,12 @@ export type PageEvidence = {
   runtime?: RuntimePageProtocolPayload | undefined;
   ocr?: OcrResult | undefined;
   warnings: string[];
+  mismatches: PageCanonicalMismatch[];
+  artifacts: PageCanonicalArtifactIndex;
   provenance: PageEvidenceProvenance[];
 };
+
+export type PageEvidence = PageCanonical;
 
 export type OcrScreenshotInput = {
   screenshotPath: string;
@@ -229,18 +259,25 @@ export type OcrScreenshotResult = {
   };
 };
 
-export type CapturePageEvidenceInput = {
+export type AttachScreenshotOcrInput = OcrScreenshotInput;
+export type AttachScreenshotOcrResult = OcrScreenshotResult;
+
+export type CapturePageCanonicalInput = {
   url: string;
   outDir: string;
   viewport?: { width: number; height: number; deviceScaleFactor?: number | undefined } | undefined;
   saveArtifacts?: boolean | undefined;
 };
 
-export type CapturePageEvidenceResult = {
-  evidence: PageEvidence;
+export type CapturePageCanonicalResult = {
+  page: PageCanonical;
   capabilities: DetectedCapabilities;
   files: {
-    pageEvidence: string;
-    screenshot?: string | undefined;
+    pageCanonical: string;
+    pageDebugIndex: string;
+    screenshots: string[];
   };
 };
+
+export type CapturePageEvidenceInput = CapturePageCanonicalInput;
+export type CapturePageEvidenceResult = CapturePageCanonicalResult;

@@ -19,31 +19,141 @@
 更合理的推进顺序是：
 
 ```text
-P0 MCP 可用性与问题归因基础
-  -> P1 Evidence / Artifact 可观察性
-  -> P2 Playwright Capture 增强
-  -> P3 Planner / Target Mapping 约束增强
-  -> P4 MCP 高级协议能力
+P0 统一产物模型与 MCP 契约
+  -> P1 MCP 可用性与问题归因基础
+  -> P2 Evidence / Artifact 可观察性
+  -> P3 Playwright Capture 增强
+  -> P4 Planner / Target Mapping 约束增强
+  -> P5 Hybrid Capability-first 演进
+  -> P6 MCP 高级协议能力
 ```
 
 解释：
 
-- 先让 MCP client 和 agent 知道 ProtoBridge 怎么用。
-- 再让视觉偏差能被稳定定位和归因。
+- 先定 artifact、resource URI、tool output 和命名契约，避免后续 debug index、artifact index、hybrid 产物各做各的。
+- 再让 MCP client 和 agent 知道 ProtoBridge 怎么用。
+- 再让 evidence / plan / review / debug artifact 可查、可读、可复盘。
 - 再增强 Playwright capture 覆盖面。
 - 再收紧 planner / mapping 的实现约束。
-- 最后才评估 roots、elicitation、sampling、Streamable HTTP/auth 等高级能力。
+- 再进入 CLI / MCP capability-first 的长期演进。
+- 最后才评估 roots、elicitation、sampling、Streamable HTTP/auth 等高级协议能力。
 
 ---
 
-## 2. P0：MCP 可用性与问题归因基础
+## 2. P0：统一产物模型与 MCP 契约
+
+目标：
+
+- 先定义 ProtoBridge 后续所有产物的命名、层级和关系。
+- 让 MCP tools、resources、prompts、artifact index 和未来 hybrid 产物共享同一套契约。
+- 避免在 `page-debug-index`、`artifact index`、`resource templates` 和 hybrid `page-canonical` 之间反复改名和返工。
+
+### 2.1 Canonical Artifact 与 Projection Artifacts
+
+已按 page-centric 模型落地，产物分成两类：
+
+#### A. Canonical artifact
+
+系统内部真正可信、最完整的标准上下文。
+
+- `page-canonical.json`
+
+它应尽量完整地保留：
+
+- source facts
+- runtime facts
+- screenshot refs
+- provenance
+- merge result
+- mismatch warnings
+
+当前实现：
+
+- `page-canonical.json` 是 URL-first 场景的 runtime canonical。
+- canonical 内固定保留 `source`、`runtime`、`visual` 相关证据、`ocr`、`screenshots`、`provenance`、`warnings`、`mismatches` 和 `artifacts`。
+- 未来 hybrid 引入 source facts 时继续扩展 `page-canonical.json`。
+
+#### B. Projection artifacts
+
+不同阶段、不同对象需要阅读的投影视图。
+
+- `page-debug-index.json`
+- `ui-build-plan.json`
+- `ui-build-review.md`
+- `screenshots/`
+
+旧产物名已退出主流程，仅作为历史背景保留：
+
+- `page-evidence.json`
+- `ui-implementation-plan.json`
+- `ui-review.md`
+- `visual-debug-index.json`
+
+### 2.2 MCP Tool Output Contract
+
+每个会产生 artifact 的 tool 统一返回：
+
+- `pageId`
+- `artifactSetId`
+- `planId`
+- `files`
+- `resources`
+- `warnings`
+- `nextActions`
+- `summary`
+
+`planId` 只在 plan/review 阶段出现。agent 应优先用 `pageId` 读取 page-centric resources。
+
+### 2.3 MCP Resource URI Contract
+
+已稳定以下 URI：
+
+- `proto-bridge://workflow/ui-reconstruction-guide`
+- `proto-bridge://workflow/tool-catalog`
+- `proto-bridge://artifacts/latest`
+- `proto-bridge://pages/{pageId}/page-canonical`
+- `proto-bridge://pages/{pageId}/page-debug-index`
+- `proto-bridge://pages/{pageId}/screenshot/{name}`
+- `proto-bridge://pages/{pageId}/ui-build-plan`
+- `proto-bridge://pages/{pageId}/ui-build-review`
+
+### 2.4 Artifact Lifecycle
+
+```text
+capture
+  -> page-canonical.json
+  -> page-debug-index.json
+  -> screenshots/full-page.png
+
+plan
+  -> ui-build-plan.json
+
+review
+  -> ui-build-review.md
+
+validate
+  -> validation result
+```
+
+### 2.5 P0 待办
+
+- [x] 制定 canonical / projection artifact 分层。
+- [x] 明确当前 MCP 产物与未来 hybrid 产物的兼容关系。
+- [x] 制定 MCP tool 返回结构规范。
+- [x] 制定 MCP resource URI 命名规范。
+- [x] 制定 artifact lifecycle：capture、plan、review、validate 之间如何关联。
+- [x] 明确短期不做 source/runtime merge，只预留字段和命名空间。
+
+---
+
+## 3. P1：MCP 可用性与问题归因基础
 
 目标：
 
 - 让 agent 第一次看到 ProtoBridge MCP server 时，能理解完整 workflow，而不是只看到一串 tool 名。
 - 让任意视觉偏差都能按统一链路定位到 capture/evidence、plan、target component 或 Flutter implementation。
 
-### 2.1 MCP Discoverability 与能力暴露面
+### 3.1 MCP Discoverability 与能力暴露面
 
 新观察：
 
@@ -54,8 +164,8 @@ MCP Tools
 
 • proto-bridge
   • Auth: Unsupported
-  • Tools: build_ui_implementation_plan, capture_page_evidence, export_review_markdown,
-    find_target_examples, get_target_conventions, ocr_screenshot, validate_target_changes
+  • Tools: capture_page_canonical, build_ui_plan, attach_screenshot_ocr,
+    export_ui_review, read_target_conventions, find_target_examples, validate_ui_build
 ```
 
 这会让第一次使用 ProtoBridge 的 agent 或人类维护者很难判断：
@@ -67,16 +177,16 @@ MCP Tools
 - server 是否支持 resources、prompts、sampling、elicitation、roots、resource templates 等 MCP 能力。
 - Playwright 当前只是截图，还是还可以提供 DOM、网络、console、trace、交互状态、可访问性树等证据。
 
-#### 2.1.1 当前代码事实
+#### 3.1.1 当前代码事实
 
 `code fact`：
 
 - `packages/mcp-server/src/server/dispatcher.ts` 的 `initialize` 当前声明了 `tools`、`resources`、`prompts` 三类 server capability。
 - 当前没有声明 `logging`、`completions`、`experimental` 或其他扩展 capability。
 - 当前没有处理 `roots/list`、`sampling/createMessage`、`elicitation/create` 等 client capability 相关请求。
-- `packages/mcp-server/src/tools/registry.ts` 已注册 7 个 tool，并为每个 tool 提供了 `description` 和 `inputSchema`。
-- 当前 tool schema 没有显式 `required` 字段，也没有 `additionalProperties: false`、`annotations`、`outputSchema` 或面向 workflow 的长描述。
-- `packages/mcp-server/src/resources/index.ts` 已暴露 `proto-bridge://target/conventions`，并在 session 内动态暴露 captured evidence 与 UI plan 资源。
+- `packages/mcp-server/src/tools/registry.ts` 已注册 7 个 tool：`capture_page_canonical`、`build_ui_plan`、`attach_screenshot_ocr`、`export_ui_review`、`read_target_conventions`、`find_target_examples`、`validate_ui_build`。
+- 当前 tool schema 已补 `required` 与 `additionalProperties: false`，但还没有 `annotations`、`outputSchema` 或更完整的 client 展示验证。
+- `packages/mcp-server/src/resources/index.ts` 已暴露 workflow guide、tool catalog、latest artifacts、target conventions，并在 session 内动态暴露 page-centric artifacts。
 - 当前没有 resource templates，因此 client 很难在 capture 前知道可以通过 URI 模板读取哪些 artifact。
 - `packages/mcp-server/src/prompts/index.ts` 当前只暴露一个 prompt：`reconstruct_url_ui`。
 - 当前 stdio server 是自写 JSON-RPC line protocol，不是基于官方 TypeScript SDK 的 `McpServer` 封装。
@@ -93,7 +203,7 @@ MCP Tools
 - Codex、Cursor、Claude Code 等不同 MCP client 是否展示 tool description、annotations、resource templates、prompts 的方式不完全一致，需要分别验证。
 - 当前客户端是否会使用 prompts/list 或 resources/list 的展示信息，需要用真实 client 做一次兼容性检查。
 
-#### 2.1.2 推荐结论
+#### 3.1.2 推荐结论
 
 该问题应该新增为一个独立专题：
 
@@ -105,12 +215,12 @@ MCP server discoverability / capability surface is too thin.
 
 建议优先级：
 
-- P0：补 tools/list 描述、required schema、workflow resource、prompts、artifact index。
-- P1：补 resource templates、debug index resource、client compatibility matrix。
-- P2：研究 roots、elicitation、logging、completions。
-- P3：再评估 sampling 与 Streamable HTTP/auth，除非已有明确远程部署需求。
+- P0：已定 artifact / resource / tool output 契约。
+- P1：补 tools/list 长描述、annotations、outputSchema、client 展示验证。
+- P2：补 resource templates、client compatibility matrix，以及更细的 evidence/debug 切片资源。
+- P6：再研究 roots、elicitation、logging、completions、sampling、Streamable HTTP/auth。
 
-#### 2.1.3 可能新增或改造的 MCP 能力
+#### 3.1.3 可能新增或改造的 MCP 能力
 
 优先不建议一口气增加很多 tool。更合理的演进是：
 
@@ -128,11 +238,11 @@ MCP server discoverability / capability surface is too thin.
    - `proto-bridge://target/component-risk-index`
 
 3. 增加 resource templates。
-   - `proto-bridge://evidences/{evidenceId}/page-evidence`
-   - `proto-bridge://evidences/{evidenceId}/screenshot`
-   - `proto-bridge://evidences/{evidenceId}/visual-debug-index`
-   - `proto-bridge://plans/{planId}/ui-implementation-plan`
-   - `proto-bridge://plans/{planId}/review-markdown`
+   - `proto-bridge://pages/{pageId}/page-canonical`
+   - `proto-bridge://pages/{pageId}/page-debug-index`
+   - `proto-bridge://pages/{pageId}/screenshot/{name}`
+   - `proto-bridge://pages/{pageId}/ui-build-plan`
+   - `proto-bridge://pages/{pageId}/ui-build-review`
 
 4. 增加 prompts。
    - `reconstruct_url_ui`：现有 prompt，继续保留。
@@ -153,7 +263,7 @@ MCP server discoverability / capability surface is too thin.
    - 如果 client 支持 elicitation，在缺参时请求结构化输入。
    - 如果 client 不支持，则保持现有 tool 参数模式。
 
-### 2.2 问题归因框架
+### 3.2 问题归因框架
 
 每个视觉问题建议落入以下四类之一：
 
@@ -169,7 +279,7 @@ MCP server discoverability / capability surface is too thin.
 - C 类：planner 建议复用某个 target 组件，但该组件默认样式本身带偏。
 - D 类：evidence 和 plan 都基本正确，但最终 Flutter 代码没有照着落地。
 
-### 2.3 标准排查链路
+### 3.3 标准排查链路
 
 后续排查视觉问题时，建议固定使用下面的链路：
 
@@ -190,9 +300,9 @@ MCP server discoverability / capability surface is too thin.
 screenshot -> section / node / token -> themeMappings / componentMappings / widgetTree -> Flutter 实现
 ```
 
-### 2.4 复杂 JSON 的定位方案
+### 3.4 复杂 JSON 的定位方案
 
-不要直接阅读完整几千行 `page-evidence.json`，建议按问题切片定位：
+不要直接阅读完整几千行 `page-canonical.json`，建议按问题切片定位：
 
 - 先从截图中圈定问题区域。
 - 记录问题类型、文本锚点、预期效果、实际效果。
@@ -203,7 +313,7 @@ screenshot -> section / node / token -> themeMappings / componentMappings / widg
 - 如果 evidence 正确但 plan 不正确，问题大概率在 planner。
 - 如果 evidence 和 plan 都正确，问题大概率在 Flutter 落地。
 
-### 2.5 需要补齐的定位能力
+### 3.5 需要补齐的定位能力
 
 当前最需要补的是一类问题定位能力：
 
@@ -214,14 +324,14 @@ screenshot -> section / node / token -> themeMappings / componentMappings / widg
 建议规划一个轻量调试索引产物，例如：
 
 ```text
-.proto-bridge/evidence/<page>-<timestamp>/
-├── screenshot.png
-├── page-evidence.json
-├── ui-implementation-plan.json
-└── visual-debug-index.json
+.proto-bridge/pages/<page>-<timestamp>/
+├── screenshots/full-page.png
+├── page-canonical.json
+├── ui-build-plan.json
+└── page-debug-index.json
 ```
 
-`visual-debug-index.json` 的可能内容：
+`page-debug-index.json` 的可能内容：
 
 - section index：`sectionId`、区域 bbox、标题文本、主要 nodeIds。
 - node style index：`nodeId`、文本锚点、bbox、background、color、border、radius、shadow、font。
@@ -231,11 +341,15 @@ screenshot -> section / node / token -> themeMappings / componentMappings / widg
 
 这个索引的价值不是“生成更多内容”，而是减少排查时必须通读几千行 JSON 的成本。
 
-### 2.6 P0 待办
+### 3.6 P1 待办
 
 - [ ] 新增 MCP discoverability 样本：记录 Codex / Cursor / Claude Code 中 `proto-bridge` 当前展示出的 tools、resources、prompts 信息。
-- [ ] 补全 7 个 MCP tool 的 description、required schema、默认值、输出 artifact 说明和调用顺序说明。
-- [ ] 新增稳定 resource：`proto-bridge://workflow/ui-reconstruction-guide` 和 `proto-bridge://workflow/tool-catalog`。
+- [ ] 补全 7 个 MCP tool 的长 description、默认值、安全边界、输出 artifact 说明和调用顺序说明。
+- [x] 补全 7 个 MCP tool 的 required schema 与 `additionalProperties: false`。
+- [x] 新增稳定 resource：`proto-bridge://workflow/ui-reconstruction-guide` 和 `proto-bridge://workflow/tool-catalog`。
+- [ ] 强化 `proto-bridge://workflow/ui-reconstruction-guide`，让首次使用者能按 capture -> plan -> review -> validate 执行。
+- [ ] 强化 `proto-bridge://workflow/tool-catalog`，让它不只是裸 schema dump，而是可读的 workflow tool 目录。
+- [ ] 增加 MCP tool `annotations` 与 `outputSchema`。
 - [ ] 新增 prompt：`capture_url_evidence`、`investigate_visual_mismatch`、`implement_from_existing_plan`、`validate_ui_reconstruction`。
 - [ ] 选择 5 个典型视觉问题作为样本。
 - [ ] 每个样本都按 `screenshot -> evidence -> plan -> Flutter` 做一次链路追踪。
@@ -245,16 +359,16 @@ screenshot -> section / node / token -> themeMappings / componentMappings / widg
 
 ---
 
-## 3. P1：Evidence 与 Artifact 可观察性
+## 4. P2：Evidence 与 Artifact 可观察性
 
 目标：
 
 - 让 capture 产物更容易读、查、复盘。
 - 让 evidence、plan、review、debug artifact 能通过稳定入口被 MCP client 和 agent 找到。
 
-### 3.1 可观察性不足
+### 4.1 可观察性不足
 
-目前 `page-evidence.json` 和 `ui-implementation-plan.json` 信息量很大，但缺少适合人和 AI 快速定位问题的索引。
+目前 `page-canonical.json` 和 `ui-build-plan.json` 信息量很大，但缺少适合人和 AI 快速定位问题的索引。
 
 风险：
 
@@ -262,7 +376,7 @@ screenshot -> section / node / token -> themeMappings / componentMappings / widg
 - 很难快速回答“这个偏差发生在哪一层”。
 - 很难系统复盘某类问题到底主要来自 capture、plan，还是 Flutter 实现。
 
-### 3.2 Visual Debuggability
+### 4.2 Visual Debuggability
 
 目标：
 
@@ -273,7 +387,7 @@ screenshot -> section / node / token -> themeMappings / componentMappings / widg
 - 当前产物是否足以高效定位问题。
 - 是否需要额外的 debug index、trace 或 review artifact。
 
-### 3.3 P1 待办
+### 4.3 P2 待办
 
 - [ ] 确认页面整体背景问题是否发生在 evidence 层。
 - [ ] 确认 tab 选中态信息是否主要依赖 runtime metadata，还是当前仅靠 heuristic。
@@ -281,20 +395,20 @@ screenshot -> section / node / token -> themeMappings / componentMappings / widg
 - [ ] 确认颜色缺失问题发生在 token 抽取、theme mapping，还是 Flutter 实现层。
 - [ ] 评估长滚动页是否存在状态覆盖不足或虚拟内容遗漏。
 - [ ] 评估 plan 层压缩是否会丢失关键节点、关键 section 或关键 token。
-- [ ] 增加 resource templates，用于 evidence、screenshot、plan、review、visual-debug-index 的参数化读取。
-- [ ] 增加 artifact index resource，记录 latest evidence、latest plan、相关 screenshot、review markdown 和 debug index。
+- [ ] 增加 resource templates，用于 page canonical、screenshot、plan、review、page-debug-index 的参数化读取。
+- [x] 增加 artifact index resource，记录 latest page、相关 screenshot、plan、review markdown 和 debug index。
 - [ ] 建立 MCP client compatibility matrix，记录不同 client 对 descriptions、prompts、resources、templates、roots、elicitation 的支持情况。
 
 ---
 
-## 4. P2：Playwright Capture 增强
+## 5. P3：Playwright Capture 增强
 
 目标：
 
 - 从“单状态页面采样”升级为“多状态运行态证据采集”。
 - 判断状态缺失到底是没渲染、没触发、没抽取，还是被压缩。
 
-### 4.1 State Coverage
+### 5.1 State Coverage
 
 目标：
 
@@ -311,7 +425,7 @@ screenshot -> section / node / token -> themeMappings / componentMappings / widg
 
 - 当前 capture 丢失的是“页面未渲染的状态”，还是“已渲染但未被抽取的状态”。
 
-### 4.2 当前 Playwright 使用过窄
+### 5.2 当前 Playwright 使用过窄
 
 当前 Playwright 主要承担：
 
@@ -328,10 +442,10 @@ screenshot -> section / node / token -> themeMappings / componentMappings / widg
 - Console/pageerror evidence：记录运行时报错和 console warning，区分页面未渲染与抽取失败。
 - Trace artifact：保存 Playwright trace，方便复盘 capture 期间的 DOM、network、console、screenshot 时间线。
 - Locator / accessibility evidence：补充 role、name、aria-selected、aria-expanded、aria-controls、disabled 等交互语义，减少只靠 className 和 heuristic 推断。
-- Visual assertions / diff：将原始 screenshot 与实现后的目标页面 screenshot 做像素或区域级对比，为 `validate_target_changes` 增加视觉校验入口。
+- Visual assertions / diff：将原始 screenshot 与实现后的目标页面 screenshot 做像素或区域级对比，为 `validate_ui_build` 增加视觉校验入口。
 - Route / mock support：允许注入 auth、cookie、localStorage、请求 mock 或 fixture，提升需要登录和稳定数据页面的 capture 成功率。
 
-### 4.3 P2 待办
+### 5.3 P3 待办
 
 - [ ] 调研 Playwright interaction state capture：tab、dropdown、modal、accordion、filter 的自动触发策略和失败回退。
 - [ ] 调研 Playwright runtime diagnostics：network、console、pageerror、trace 是否应该进入 evidence 或单独 artifact。
@@ -339,14 +453,14 @@ screenshot -> section / node / token -> themeMappings / componentMappings / widg
 
 ---
 
-## 5. P3：Planner 与 Target Mapping 约束增强
+## 6. P4：Planner 与 Target Mapping 约束增强
 
 目标：
 
 - 减少 agent 在 Flutter 落地时的猜测空间。
 - 把 plan 中的事实、建议、歧义、人工确认项分清楚。
 
-### 5.1 `ui-implementation-plan.json` 更像“实现说明书”，不是“确定性翻译结果”
+### 6.1 `ui-build-plan.json` 更像“实现说明书”，不是“确定性翻译结果”
 
 不要把它理解成：
 
@@ -375,7 +489,7 @@ evidence -> implementation guidance -> agent judgment -> Flutter code
 - 这个颜色候选里一定该选哪一个 target token。
 - 这个 tab、sheet、card 一定该复用哪个 YouFi 组件。
 
-### 5.2 Flutter 落地阶段仍然依赖 agent 做大量判断
+### 6.2 Flutter 落地阶段仍然依赖 agent 做大量判断
 
 当前 Flutter 落地不是“照抄 plan”，而是 agent 继续做实现判断，例如：
 
@@ -390,7 +504,7 @@ evidence -> implementation guidance -> agent judgment -> Flutter code
 - 同一份 evidence 和 plan，两个 agent 可能都能产出“看起来合理”的 Flutter。
 - 当前系统的还原精度不只取决于 evidence，也取决于 planner 的表达力和 agent 的实现判断。
 
-### 5.3 Role Taxonomy
+### 6.3 Role Taxonomy
 
 目标：
 
@@ -402,7 +516,7 @@ evidence -> implementation guidance -> agent judgment -> Flutter code
 - role 是否应该从单值改成多轴标签模型。
 - 哪些 component mapping 偏差本质上来自 role 设计不稳。
 
-### 5.4 Compression Loss
+### 6.4 Compression Loss
 
 目标：
 
@@ -414,7 +528,7 @@ evidence -> implementation guidance -> agent judgment -> Flutter code
 - 压缩是否发生得太早。
 - 压缩是否缺少“关键样式优先保留”的排序策略。
 
-### 5.5 Mapping Determinism
+### 6.5 Mapping Determinism
 
 目标：
 
@@ -426,7 +540,7 @@ evidence -> implementation guidance -> agent judgment -> Flutter code
 - 哪些 target component 应谨慎复用。
 - 哪些视觉事实必须从 hint 升级为 explicit constraint。
 
-### 5.6 P3 待办
+### 6.6 P4 待办
 
 - [ ] 如果 B 类最多，优先研究 role / planner / mapping / compression 演进方案。
 - [ ] 如果 C 类最多，优先研究 target component 风险清单和复用策略。
@@ -436,25 +550,124 @@ evidence -> implementation guidance -> agent judgment -> Flutter code
 
 ---
 
-## 6. P4：MCP 高级协议能力
+## 7. P5：Hybrid Capability-first 演进
+
+目标：
+
+- 保留 CLI / MCP 作为入口形态，但逐步把 source、snapshot、target、planning、validation 提升成可编排 capability。
+- 为 source + runtime + screenshot + target repo 的字段级合并预留架构路径。
+- 避免短期 MCP 修复和长期 hybrid 演进互相打架。
+
+### 7.1 Mode / Workflow / Capability 关系
+
+建议明确区分：
+
+```text
+mode = 入口形态
+workflow = 预设编排
+capability = 通用底层能力
+```
+
+目标形态：
+
+- `CLI` 继续存在，作为终端入口。
+- `MCP` 继续存在，作为 agent / tool 调用入口。
+- 两者都不再只绑定一条固定 workflow。
+- source、snapshot、target、planning、validation 都应逐步变成共享 capability。
+- system 应能根据“是否有源码 / 是否有 URL / 是否有 screenshot / 是否有 target repo”决定调用哪些能力。
+
+### 7.2 字段级优先级方向
+
+不建议把前提写成：
+
+```text
+源码绝对优先
+```
+
+更建议写成：
+
+```text
+源码优先表达结构、语义、状态空间和设计意图；
+runtime 优先表达当前真实渲染结果；
+screenshot 优先表达最终视觉对照和补证。
+```
+
+建议未来按字段类型决定优先级：
+
+- `module / screenId / semantic section / interaction intent / state space`
+  优先 source
+
+- `visible / bbox / computed style / actual active state / actual open modal / actual visible text`
+  优先 runtime
+
+- `pixel appearance / OCR text / visual comparison`
+  优先 screenshot / OCR
+
+- `component reuse / theme target / file tree / route placement`
+  优先 target repo conventions
+
+### 7.3 Source / Runtime 冲突处理方向
+
+冲突可能出现在：
+
+- 多状态分支页面。
+- 源码有语义 token，但 runtime 被覆盖。
+- 数据不同导致结构不同。
+- modal / tab 存在，但当前未触发。
+- source 和 runtime 版本不一致。
+- source 更语义化，runtime 更扁平事实化。
+
+这些冲突不应靠整体优先级解决，而应保留 provenance、mismatch warning 和人工确认入口。
+
+### 7.4 过渡方案
+
+`skill -> 调 CLI -> 生成 migration-context.json / migration-spec.md -> 再继续自动生成 Dart` 是合理的短期桥接方案。
+
+短期价值：
+
+- CLI 已经具备 source-aware 能力。
+- CLI 产物已经比较完整。
+- 这条路径能够让 agent 利用 source 侧更强的结构语义。
+- 工程上容易先跑通。
+
+中长期限制：
+
+- CLI 颗粒度偏粗，更像固定 workflow，不像可细粒度组合的 capability。
+- shell 调 CLI 后，artifact 文件会变成主要接口，agent 需要再读文件、再解析、再转语义。
+- 局部重试、局部增量更新、动态编排不如直接调用能力灵活。
+- 随着 hybrid workflow 变复杂，“skill 包一层 CLI 黑盒”的方式会越来越绕。
+
+### 7.5 P5 待办
+
+- [ ] 定义 mode / workflow / capability 的关系。
+- [ ] 制定字段级优先级表。
+- [ ] 设计 source facts 与 runtime evidence 的 merge provenance。
+- [ ] 设计 mismatch warning / manual confirmation 机制。
+- [ ] 评估短期 `skill -> CLI -> Dart` 作为过渡方案。
+- [ ] 评估是否把 source-aware 能力暴露为 MCP / core capability。
+- [ ] 评估 role / section / component mapping 是否要纳入 hybrid 设计一起重构。
+
+---
+
+## 8. P6：MCP 高级协议能力
 
 目标：
 
 - 只在有明确收益时引入高级 MCP 能力。
 - 保持 ProtoBridge MCP 的定位：evidence provider + workflow guide，而不是替代 coding agent。
 
-### 6.1 MCP 协议能力评估
+### 8.1 MCP 协议能力评估
 
 官方 MCP 能力可以按当前项目相关性分层：
 
-**第一层：应该尽快补强**
+**第一层：已在 P1 / P2 承接**
 
 - Tools：继续作为主操作入口，但要补全 schema 质量、调用顺序说明、输入输出示例、artifact id 说明和风险说明。
-- Resources：不只暴露 session 内 evidence/plan，还应暴露稳定的只读上下文，例如 target conventions、workflow guide、artifact index、latest evidence、latest plan、debug index。
+- Resources：不只暴露 session 内 page/plan，还应暴露稳定的只读上下文，例如 target conventions、workflow guide、artifact index、latest page、latest plan、debug index。
 - Prompts：增加可复用 workflow prompt，例如 capture-only、review-only、implementation-with-validation、visual-diff-investigation。
-- Resource templates：用于表达 `proto-bridge://evidences/{evidenceId}/page-evidence`、`proto-bridge://plans/{planId}/ui-implementation-plan`、`proto-bridge://reviews/{planId}/ui-review` 这类可参数化资源。
+- Resource templates：用于表达 `proto-bridge://pages/{pageId}/page-canonical`、`proto-bridge://pages/{pageId}/ui-build-plan`、`proto-bridge://pages/{pageId}/ui-build-review` 这类可参数化资源。
 
-**第二层：适合中期研究**
+**第二层：适合在 P6 研究**
 
 - Roots：让 client 明确告知 server 当前 target repo / allowed roots，减少依赖 `process.cwd()` 和手填 `targetRoot` 的不确定性。
 - Elicitation：当缺少 targetModule、页面账号、viewport、业务确认项时，让 server 请求结构化补充信息，而不是只抛错或让 agent 猜。
@@ -466,7 +679,7 @@ evidence -> implementation guidance -> agent judgment -> Flutter code
 - Sampling：server 请求 client 代调用模型可以用于总结 evidence、生成 review 或归纳风险，但会让 server 变得更像 agent 编排器。ProtoBridge 当前定位是 evidence/provider，不建议在没有明确安全与成本边界前把 sampling 放进 P0。
 - 远程 Streamable HTTP / auth：适合团队共享服务或云端部署，但当前 URL capture 和 target repo 扫描都偏本地开发流，先把 stdio 的 discoverability 补强更划算。
 
-### 6.2 风险与边界
+### 8.2 风险与边界
 
 - 不能为了“看起来能力很多”把 CLI source-aware migration 暴露进 MCP runtime；这会破坏当前 CLI / MCP workflow 边界。
 - Sampling 不应替代 agent 的实现职责，否则 server 会承担模型调用、成本、安全和提示词漂移问题。
@@ -474,7 +687,7 @@ evidence -> implementation guidance -> agent judgment -> Flutter code
 - Playwright trace、network、fullPage screenshot、分段截图可能产生大量 artifact，需要输出开关和保留策略。
 - 视觉 diff 需要目标实现可运行且有稳定 preview URL，不能作为所有场景的强制步骤。
 
-### 6.3 P4 待办
+### 8.3 P6 待办
 
 - [ ] 评估 roots capability 是否能替代或补强 `targetRoot` / `process.cwd()` 推断。
 - [ ] 评估 elicitation 是否适合用于 targetModule、viewport、登录态、业务确认项等结构化补充信息。
@@ -483,9 +696,9 @@ evidence -> implementation guidance -> agent judgment -> Flutter code
 
 ---
 
-## 7. 当前判断与调研背景
+## 9. 当前判断与调研背景
 
-### 7.1 执行摘要
+### 9.1 执行摘要
 
 本轮调研的总体判断：
 
@@ -502,7 +715,7 @@ evidence -> implementation guidance -> agent judgment -> Flutter code
 而是在评估 MCP workflow 是否具备高保真 UI 还原所需的基础能力。
 ```
 
-### 7.2 调研范围
+### 9.2 调研范围
 
 本轮调研从几个局部问题出发：
 
@@ -519,43 +732,45 @@ evidence -> implementation guidance -> agent judgment -> Flutter code
 - role 设计是否过粗，导致 component mapping 和 planner 失真。
 - Flutter 落地是否仍然依赖过多 agent 猜测。
 
-### 7.3 当前确认的事实
+### 9.3 当前确认的事实
 
 以下内容属于当前已能从代码或文档中确认的 `code fact`。
 
-#### 7.3.1 输入与 capture 边界
+#### 9.3.1 输入与 capture 边界
 
 - MCP 当前主输入是 `URL`，不是“URL 或截图二选一”。
-- `capture_page_evidence` 会用 Playwright 打开 URL，使用给定 viewport 或默认 viewport 进行 capture。
+- `capture_page_canonical` 会用 Playwright 打开 URL，使用给定 viewport 或默认 viewport 进行 capture。
 - 当前默认 viewport 为 `390 x 844`，这会直接影响截图、bbox、section 和样式判断。
-- 页面截图 `screenshot.png` 是视觉基准证据，但当前 node tree 主要来自 rendered DOM，而不是来自截图本身。
-- `ocr_screenshot` 当前主要补充 OCR 文字证据，不能替代 URL capture，也不能单独生成和 DOM 同等级的 node tree。
+- 页面截图 `screenshots/full-page.png` 是视觉基准证据，但当前 node tree 主要来自 rendered DOM，而不是来自截图本身。
+- `attach_screenshot_ocr` 当前主要补充 OCR 文字证据，不能替代 URL capture，也不能单独生成和 DOM 同等级的 node tree。
+- 当前 CLI 仍是 source-aware migration workflow：`--url` 会先抽取 route，并要求该 route 能在 `proto-bridge.config.json` 的 source project 中解析到源码页面。
+- 当前 CLI 不能把任意 URL-only design page 直接转成 `page-canonical.json` / `ui-build-plan.json`；这属于 P5 hybrid capability-first 后才应解决的编排能力。
 
-#### 7.3.2 Evidence 生成边界
+#### 9.3.2 Evidence 生成边界
 
-- `PageEvidence` 的基础数据来自 rendered DOM 抽取。
-- `PageEvidence` 不是原始 DOM dump，而是经过可见性过滤、role 推断、token 抽取和 section 归纳后的证据模型。
-- `PageEvidence` 还会叠加 runtime metadata、page list、tab traversal、asset extraction、OCR 等增强信息。
+- `PageCanonical` 的基础数据来自 rendered DOM 抽取。
+- `PageCanonical` 不是原始 DOM dump，而是经过可见性过滤、role 推断、token 抽取和 section 归纳后的证据模型。
+- `PageCanonical` 还会叠加 runtime metadata、page list、tab traversal、asset extraction、OCR 等增强信息。
 - evidence 抽取当前从 `document.body` 开始，不是从 `html` 开始。
 
-#### 7.3.3 Plan 与 Flutter 落地边界
+#### 9.3.3 Plan 与 Flutter 落地边界
 
-- `ui-implementation-plan.json` 不是 node 到 Flutter 的确定性翻译结果。
+- `ui-build-plan.json` 不是 node 到 Flutter 的确定性翻译结果。
 - 它更像是基于 evidence 生成的 section、widget、component、theme、asset、interaction 计划。
 - Flutter 落地阶段仍然依赖 agent 根据 evidence 和 plan 继续实现。
 - 当前 component mapping 的输入主要是 evidence role，不是 HTML tag，也不是节点级严格语义树。
 
-#### 7.3.4 当前可确认的压缩点
+#### 9.3.4 当前可确认的压缩点
 
 - node 抽取有上限，复杂页面可能被截断。
 - section 抽取和 plan 生成都存在数量截断和摘要压缩。
 - 当前 chain 中至少存在 evidence 层压缩和 plan 层压缩这两段。
 
-### 7.4 从局部问题到总体问题
+### 9.4 从局部问题到总体问题
 
 当前暴露出来的不是单点 bug，而是一组系统性问题。
 
-#### 7.4.1 状态覆盖不足
+#### 9.4.1 状态覆盖不足
 
 单次 URL capture 更像“当前页面状态的一次采样”，不是“页面状态空间的完整采集”。
 
@@ -567,7 +782,7 @@ evidence -> implementation guidance -> agent judgment -> Flutter code
 - modal / sheet / dropdown / filter / popover 没有进入 evidence。
 - 条件渲染、折叠态、展开态、选中态信息不完整。
 
-#### 7.4.2 Role 设计过粗
+#### 9.4.2 Role 设计过粗
 
 当前 role 同时承担了多种职责：
 
@@ -582,7 +797,7 @@ evidence -> implementation guidance -> agent judgment -> Flutter code
 - role 一旦直接驱动 component mapping，就容易过早收敛。
 - 某些复杂容器和特殊组件会被粗暴映射到过泛的 role。
 
-#### 7.4.3 Plan 不是确定性翻译
+#### 9.4.3 Plan 不是确定性翻译
 
 当前 plan 更偏“实现建议”，而不是严格约束。
 
@@ -592,7 +807,7 @@ evidence -> implementation guidance -> agent judgment -> Flutter code
 - target 组件自带默认背景、边框、圆角、内边距时，容易带偏结果。
 - 某些 style fact 在 plan 中只是 hint，而不是强约束。
 
-#### 7.4.4 压缩可能过早发生
+#### 9.4.4 压缩可能过早发生
 
 当前 chain 中存在多层压缩。
 
@@ -605,11 +820,11 @@ evidence -> implementation guidance -> agent judgment -> Flutter code
 
 ---
 
-## 8. 当前 Workflow 的问题地图
+## 10. 当前 Workflow 的问题地图
 
 下面按流水线分层记录问题。
 
-### 8.1 Capture 层
+### 10.1 Capture 层
 
 已知风险：
 
@@ -630,7 +845,7 @@ evidence -> implementation guidance -> agent judgment -> Flutter code
 
 - 某个具体页面的缺失，究竟是 DOM 未渲染、capture 未触发状态，还是后续 evidence 压缩导致。
 
-### 8.2 Evidence 层
+### 10.2 Evidence 层
 
 已知风险：
 
@@ -652,7 +867,7 @@ evidence -> implementation guidance -> agent judgment -> Flutter code
 
 - 某个具体样式丢失，是没抽到、抽到了但没索引到，还是后续没被消费。
 
-### 8.3 Planning 层
+### 10.3 Planning 层
 
 已知风险：
 
@@ -673,7 +888,7 @@ evidence -> implementation guidance -> agent judgment -> Flutter code
 
 - 在典型问题样本里，plan 层究竟是不是偏差的主要来源。
 
-### 8.4 Target Component 层
+### 10.4 Target Component 层
 
 已知风险：
 
@@ -692,7 +907,7 @@ evidence -> implementation guidance -> agent judgment -> Flutter code
 
 - 哪些 target component 是高风险组件，需要在 plan 中显式提示“谨慎复用”。
 
-### 8.5 Flutter Implementation 层
+### 10.5 Flutter Implementation 层
 
 已知风险：
 
@@ -713,9 +928,9 @@ evidence -> implementation guidance -> agent judgment -> Flutter code
 
 ---
 
-## 9. 问题池与 Case 模板
+## 11. 问题池与 Case 模板
 
-### 9.1 当前已观察到的典型问题
+### 11.1 当前已观察到的典型问题
 
 - 页面整体背景不一致。
 - 某些 tab 的背景和边框不一致。
@@ -724,7 +939,7 @@ evidence -> implementation guidance -> agent judgment -> Flutter code
 
 这些问题当前更适合作为“样本入口”，而不是直接认定为单点 bug。
 
-### 9.2 Case 记录模板
+### 11.2 Case 记录模板
 
 后续可以按下面模板持续补充 case：
 
@@ -747,7 +962,7 @@ evidence -> implementation guidance -> agent judgment -> Flutter code
 
 ---
 
-## 10. 决策门槛
+## 12. 决策门槛
 
 后续是否改 workflow、改 role、改压缩策略，不应凭个别 case 决定，而应基于样本统计。
 
@@ -762,7 +977,7 @@ evidence -> implementation guidance -> agent judgment -> Flutter code
 
 ---
 
-## 11. 面向 AI 的防幻觉要求
+## 13. 面向 AI 的防幻觉要求
 
 后续让 AI 审查 MCP 流程、定位视觉问题或提出方案时，要求它把判断拆成三类：
 
@@ -780,14 +995,14 @@ inference:
 如果页面背景主要挂在 html 或 body 的特殊样式上，整体背景不一致可能发生在 evidence 层。
 
 unknown:
-具体页面是否因此丢失背景，需要查看该页面的 screenshot、page-evidence.json 和相关 node style。
+具体页面是否因此丢失背景，需要查看该页面的 screenshot、page-canonical.json 和相关 node style。
 ```
 
 这个约束可以减少 AI 在大 JSON 和多段 pipeline 中靠猜测下结论，也能让每次排查更容易复盘。
 
 ---
 
-## 12. 当前平台与架构判断
+## 14. 当前平台与架构判断
 
 当前阶段的产品与架构判断如下：
 

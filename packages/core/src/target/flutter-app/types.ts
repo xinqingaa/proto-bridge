@@ -1,7 +1,7 @@
 export type {
   AnalyzeFlutterContextInput,
   AnalyzeFlutterTargetConventionsInput,
-  BuildUiImplementationPlanInput,
+  BuildUiPlanInput,
   ComponentMapping,
   FindFlutterTargetExamplesInput,
   FlutterChecklistItem,
@@ -24,5 +24,5 @@ export type {
   ThemeMapping,
   TokenMapResult,
   TokenMapping,
-  UiImplementationPlan,
+  UiBuildPlan,
 } from '../../types/index.js';
