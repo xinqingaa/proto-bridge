@@ -187,7 +187,7 @@ MCP Tools
 - `packages/mcp-server/src/tools/registry.ts` 已注册 7 个 tool：`capture_page_canonical`、`build_ui_plan`、`attach_screenshot_ocr`、`export_ui_review`、`read_target_conventions`、`find_target_examples`、`validate_ui_build`。
 - 当前 tool schema 已补 `required`、`additionalProperties: false`、`annotations` 和 `outputSchema`，并已通过 stdio `tools/list` 验证描述可返回。
 - `packages/mcp-server/src/resources/index.ts` 已暴露强化后的 workflow guide、tool catalog、latest artifacts、target conventions，并在 session 内动态暴露 page-centric artifacts。
-- 当前没有 resource templates，因此 client 很难在 capture 前知道可以通过 URI 模板读取哪些 artifact。
+- 当前已提供 resource templates，因此 client 可在 capture 前知道 page canonical、debug index、screenshot、plan、review 的 URI 模板。
 - `packages/mcp-server/src/prompts/index.ts` 当前暴露 5 个 prompt：`reconstruct_url_ui`、`capture_url_evidence`、`investigate_visual_mismatch`、`implement_from_existing_plan`、`validate_ui_reconstruction`。
 - 当前 stdio server 是自写 JSON-RPC line protocol，不是基于官方 TypeScript SDK 的 `McpServer` 封装。
 - 当前只支持本地 stdio 接入，没有 Streamable HTTP、OAuth/auth 或远程部署形态。
@@ -217,7 +217,7 @@ MCP server discoverability / capability surface is too thin.
 
 - P0：已定 artifact / resource / tool output 契约。
 - P1：已补 tools/list 中文长描述、annotations、outputSchema、workflow resources、prompts、client 展示样本和第一轮视觉归因样本。
-- P2：补 resource templates、client compatibility matrix，以及更细的 evidence/debug 切片资源。
+- P2：已补 resource templates 和增强 debug index；剩余 client compatibility matrix，以及更细的 evidence/debug 切片资源。
 - P6：再研究 roots、elicitation、logging、completions、sampling、Streamable HTTP/auth。
 
 #### 3.1.3 可能新增或改造的 MCP 能力
@@ -469,17 +469,37 @@ screenshot -> section / node / token -> themeMappings / componentMappings / widg
 - 当前产物是否足以高效定位问题。
 - 是否需要额外的 debug index、trace 或 review artifact。
 
-### 4.3 P2 待办
+### 4.3 P2 第一轮落地方向
 
-- [ ] 确认页面整体背景问题是否发生在 evidence 层。
-- [ ] 确认 tab 选中态信息是否主要依赖 runtime metadata，还是当前仅靠 heuristic。
-- [ ] 确认有背景的组件是否被错误映射到了自带背景的 YouFi 组件。
-- [ ] 确认颜色缺失问题发生在 token 抽取、theme mapping，还是 Flutter 实现层。
-- [ ] 评估长滚动页是否存在状态覆盖不足或虚拟内容遗漏。
-- [ ] 评估 plan 层压缩是否会丢失关键节点、关键 section 或关键 token。
-- [ ] 增加 resource templates，用于 page canonical、screenshot、plan、review、page-debug-index 的参数化读取。
+先不新增 MCP tool，也不提前进入 Playwright 多状态采集。第一轮聚焦两件事：
+
+- 让 MCP client 在 capture 前也能发现 page artifact URI 模板。
+- 让 `page-debug-index.json` 从 counts/sections 摘要升级为可排查索引。
+
+当前 `page-debug-index.json` 应承载：
+
+- section index：section bbox、role、title、keyNodeIds、text anchors。
+- criticalNodes：仅保留关键 node 的 bbox、text、关键 style、assetRefs、interactionIds、sectionIds。
+- tokenSummary / mappingSummary：只放统计、低置信和歧义项指针，不重复展开完整 plan。
+- diagnostics：承接背景、tab、组件背景、颜色、滚动覆盖、plan 压缩六类排查结论。
+- riskIndex：只放 layer、kind、severity、nodeIds、sectionIds、mappingId/tokenId 等定位指针。
+
+体积目标：
+
+- `page-debug-index.json` 应明显小于 `page-canonical.json`。
+- debug index 只回答“风险在哪、去哪查、下一步查什么”；详情仍回到 `page-canonical.json` / `ui-build-plan.json`。
+
+### 4.4 P2 待办
+
+- [x] 确认页面整体背景问题是否发生在 evidence 层：由 `diagnostics.background` 输出 evidence-present / not-observed 与下一步检查。
+- [x] 确认 tab 选中态信息是否主要依赖 runtime metadata，还是当前仅靠 heuristic：由 `diagnostics.tabStates` 输出 runtime-or-explicit / heuristic-only。
+- [x] 确认有背景的组件是否被错误映射到了自带背景的 YouFi 组件：由 `diagnostics.componentBackgroundRisks` 输出带背景节点与目标组件复用风险。
+- [x] 确认颜色缺失问题发生在 token 抽取、theme mapping，还是 Flutter 实现层：由 `diagnostics.colorTrace` 串联 visibleColors 与 themeMappings。
+- [x] 评估长滚动页是否存在状态覆盖不足或虚拟内容遗漏：由 `diagnostics.scrollCoverage` 输出 screenshot/viewport 高度与首屏外 section。
+- [x] 评估 plan 层压缩是否会丢失关键节点、关键 section 或关键 token：由 `diagnostics.compression` 输出 critical node 覆盖情况。
+- [x] 增加 resource templates，用于 page canonical、screenshot、plan、review、page-debug-index 的参数化读取。
 - [x] 增加 artifact index resource，记录 latest page、相关 screenshot、plan、review markdown 和 debug index。
-- [ ] 建立 MCP client compatibility matrix，记录不同 client 对 descriptions、prompts、resources、templates、roots、elicitation 的支持情况。
+- [x] 增强并瘦身 `page-debug-index.json`，加入 section、critical node、diagnostics、mapping summary 和 risk 指针索引。
 
 ---
 

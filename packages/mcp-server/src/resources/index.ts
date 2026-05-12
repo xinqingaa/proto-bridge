@@ -16,6 +16,41 @@ import {
 } from '../artifacts/contracts.js';
 import { toolCatalog } from '../tools/registry.js';
 
+export function resourceTemplatesList(): JsonValue[] {
+  return [
+    {
+      uriTemplate: 'proto-bridge://pages/{pageId}/page-canonical',
+      name: '页面标准上下文',
+      description: '读取指定 pageId 的 `page-canonical.json`，用于查看完整 evidence、节点、样式、资产和 provenance。',
+      mimeType: 'application/json',
+    },
+    {
+      uriTemplate: 'proto-bridge://pages/{pageId}/page-debug-index',
+      name: '页面调试索引',
+      description: '读取指定 pageId 的 `page-debug-index.json`，用于按 section、node、style、mapping 和 risk 快速定位视觉问题。',
+      mimeType: 'application/json',
+    },
+    {
+      uriTemplate: 'proto-bridge://pages/{pageId}/screenshot/{name}',
+      name: '页面截图',
+      description: '读取指定 pageId 的截图资源。常用 name 为 `full-page`。',
+      mimeType: 'image/png',
+    },
+    {
+      uriTemplate: 'proto-bridge://pages/{pageId}/ui-build-plan',
+      name: 'UI 构建计划',
+      description: '读取指定 pageId 的 `ui-build-plan.json`，用于实现、复核 component/theme mapping 与 widget tree。',
+      mimeType: 'application/json',
+    },
+    {
+      uriTemplate: 'proto-bridge://pages/{pageId}/ui-build-review',
+      name: 'UI Review 文档',
+      description: '读取指定 pageId 的 `ui-build-review.md`，用于人类 review 或实现交接。',
+      mimeType: 'text/markdown',
+    },
+  ];
+}
+
 export function resourcesList(context: ToolContext): JsonValue[] {
   return [
     {
@@ -159,6 +194,7 @@ function renderWorkflowGuide(): string {
     '',
     '## Resource 映射',
     '',
+    '- `resources/templates/list`：读取可参数化 resource 模板，capture 前也能知道 page artifact URI 形态。',
     '- `proto-bridge://workflow/tool-catalog`：结构化工具目录，包含阶段、schema、annotations 和 outputSchema。',
     '- `proto-bridge://artifacts/latest`：最新 page id、文件路径和 resource 描述。',
     '- `proto-bridge://pages/{pageId}/page-canonical`：页面标准上下文 JSON。',

@@ -5,6 +5,7 @@ import type {
 } from '../../types/index.js';
 import { buildFlutterUiReconstructionPlan } from '../../target/flutter-app/index.js';
 import { writeJsonFile } from '../../artifacts/artifact-writer.js';
+import { buildPageDebugIndex } from '../../snapshot/browser-capture/rendered-page-evidence.js';
 
 export async function buildUiPlan(
   input: BuildUiPlanInput,
@@ -16,6 +17,9 @@ export async function buildUiPlan(
   });
   const planPath = path.join(input.outDir, 'ui-build-plan.json');
   await writeJsonFile(planPath, plan);
+  if (input.page.artifacts.pageDebugIndex) {
+    await writeJsonFile(input.page.artifacts.pageDebugIndex, buildPageDebugIndex(input.page, plan));
+  }
   return {
     plan,
     files: {

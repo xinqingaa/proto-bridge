@@ -1,6 +1,6 @@
 import type { JsonObject, ToolContext } from '../types.js';
 import { callTool, toolsList } from '../tools/registry.js';
-import { readResource, resourcesList } from '../resources/index.js';
+import { readResource, resourcesList, resourceTemplatesList } from '../resources/index.js';
 import { getPrompt, promptsList } from '../prompts/index.js';
 
 export async function dispatch(context: ToolContext, method: string, params: JsonObject | undefined): Promise<JsonObject> {
@@ -27,6 +27,8 @@ export async function dispatch(context: ToolContext, method: string, params: Jso
       return callTool(context, params);
     case 'resources/list':
       return { resources: resourcesList(context) };
+    case 'resources/templates/list':
+      return { resourceTemplates: resourceTemplatesList() };
     case 'resources/read':
       return readResource(context, params);
     case 'prompts/list':
