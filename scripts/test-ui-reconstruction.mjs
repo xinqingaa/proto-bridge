@@ -6,7 +6,7 @@ import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const DEFAULT_URL = 'https://prd.yfcenter.com/design/asset/etf-detail?is_mobile=1';
+const DEFAULT_URL = 'https://prd.yfcenter.com/prototype/asset/pnl-analysis?is_mobile=1';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const mode = readMode(process.argv[2]);
 const args = parseArgs(process.argv.slice(3));

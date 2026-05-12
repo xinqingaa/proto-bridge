@@ -185,10 +185,10 @@ MCP Tools
 - 当前没有声明 `logging`、`completions`、`experimental` 或其他扩展 capability。
 - 当前没有处理 `roots/list`、`sampling/createMessage`、`elicitation/create` 等 client capability 相关请求。
 - `packages/mcp-server/src/tools/registry.ts` 已注册 7 个 tool：`capture_page_canonical`、`build_ui_plan`、`attach_screenshot_ocr`、`export_ui_review`、`read_target_conventions`、`find_target_examples`、`validate_ui_build`。
-- 当前 tool schema 已补 `required` 与 `additionalProperties: false`，但还没有 `annotations`、`outputSchema` 或更完整的 client 展示验证。
-- `packages/mcp-server/src/resources/index.ts` 已暴露 workflow guide、tool catalog、latest artifacts、target conventions，并在 session 内动态暴露 page-centric artifacts。
+- 当前 tool schema 已补 `required`、`additionalProperties: false`、`annotations` 和 `outputSchema`，并已通过 stdio `tools/list` 验证描述可返回。
+- `packages/mcp-server/src/resources/index.ts` 已暴露强化后的 workflow guide、tool catalog、latest artifacts、target conventions，并在 session 内动态暴露 page-centric artifacts。
 - 当前没有 resource templates，因此 client 很难在 capture 前知道可以通过 URI 模板读取哪些 artifact。
-- `packages/mcp-server/src/prompts/index.ts` 当前只暴露一个 prompt：`reconstruct_url_ui`。
+- `packages/mcp-server/src/prompts/index.ts` 当前暴露 5 个 prompt：`reconstruct_url_ui`、`capture_url_evidence`、`investigate_visual_mismatch`、`implement_from_existing_plan`、`validate_ui_reconstruction`。
 - 当前 stdio server 是自写 JSON-RPC line protocol，不是基于官方 TypeScript SDK 的 `McpServer` 封装。
 - 当前只支持本地 stdio 接入，没有 Streamable HTTP、OAuth/auth 或远程部署形态。
 
@@ -216,7 +216,7 @@ MCP server discoverability / capability surface is too thin.
 建议优先级：
 
 - P0：已定 artifact / resource / tool output 契约。
-- P1：补 tools/list 长描述、annotations、outputSchema、client 展示验证。
+- P1：已补 tools/list 中文长描述、annotations、outputSchema、workflow resources、prompts、client 展示样本和第一轮视觉归因样本。
 - P2：补 resource templates、client compatibility matrix，以及更细的 evidence/debug 切片资源。
 - P6：再研究 roots、elicitation、logging、completions、sampling、Streamable HTTP/auth。
 
@@ -341,21 +341,103 @@ screenshot -> section / node / token -> themeMappings / componentMappings / widg
 
 这个索引的价值不是“生成更多内容”，而是减少排查时必须通读几千行 JSON 的成本。
 
-### 3.6 P1 待办
+### 3.6 P1 第一轮实测记录
 
-- [ ] 新增 MCP discoverability 样本：记录 Codex / Cursor / Claude Code 中 `proto-bridge` 当前展示出的 tools、resources、prompts 信息。
-- [ ] 补全 7 个 MCP tool 的长 description、默认值、安全边界、输出 artifact 说明和调用顺序说明。
+#### 3.6.1 MCP discoverability 样本
+
+样本时间：2026-05-12。
+
+样本来源：
+
+- 用户在 Codex CLI `/mcp` 面板中观察到：面板只展示 server、auth、command 和工具名列表。
+- 本地 stdio JSON-RPC 验证：`tools/list`、`prompts/list`、`resources/list`、`resources/read` 均能返回中文 title / description / prompt / guide。
+
+结论：
+
+- server 侧的 P1 discoverability contract 已具备：工具描述、参数描述、annotations、outputSchema、workflow guide、tool catalog、prompts 都能通过协议返回。
+- Codex CLI `/mcp` 面板当前只显示 tool names，不显示 tool description / resources / prompts；这是 client 展示层限制，不是 ProtoBridge server 没有暴露描述。
+- Cursor / Claude Code 等 client 的展示行为不在 P1 内逐个适配，后续进入 P2 compatibility matrix。
+
+#### 3.6.2 视觉归因样本
+
+样本 artifact：
+
+- `output/test-p1-zh/mcp-pnl-analysis-2026-05-12T07-15-40-954Z/page-canonical.json`
+- `output/test-p1-zh/mcp-pnl-analysis-2026-05-12T07-15-40-954Z/page-debug-index.json`
+- `output/test-p1-zh/mcp-pnl-analysis-2026-05-12T07-15-40-954Z/ui-build-plan.json`
+- `output/test-p1-zh/mcp-pnl-analysis-2026-05-12T07-15-40-954Z/ui-build-review.md`
+- `output/test-p1-zh/mcp-pnl-analysis-2026-05-12T07-15-40-954Z/screenshots/full-page.png`
+
+样本 1：顶部导航与 tab 选中态
+
+- screenshot：顶部为 `Account Detail`，一级 tab 中 `P/L Analysis` 处于选中态，并有下方小三角。
+- evidence：`section_node_15` 覆盖 app-bar，`section_node_24/26/28/29/31` 覆盖 tab-bar；`section_node_28` title=`P/L Analysis`，`section_node_29` title=`▼`。
+- plan：tab-bar 被保留为本地 widget，component mapping 对 `tab-bar` confidence=low，说明没有稳定目标组件。
+- 归因：主要风险是 B / D。B 是选中态依赖文本、颜色、位置和三角节点组合；D 是 Flutter 实现阶段容易只做文字 tab 而漏掉三角、间距或选中颜色。
+
+样本 2：分段按钮与 pill 圆角
+
+- screenshot：`Account P/L` 与 `Symbol P/L` 是上方圆角分段按钮，选中项浅灰底。
+- evidence：`section_node_32` 覆盖分段区域；`node_33` 是 `Account P/L` button，bbox=`16,98,98.11,28`，background=`rgb(241,241,241)`，borderRadius=`9999px`，padding=`6px 14px`。
+- plan：button role 映射到 `CommonButton`，但 9999px 圆角、浅灰底、紧凑 padding 仍主要依赖 themeMappings/manual facts。
+- 归因：主要风险是 C / D。C 是 `CommonButton` 默认高度、字体、圆角可能带偏；D 是实现阶段需要显式控制 pill 尺寸和选中态。
+
+样本 3：收益数字与红色趋势样式
+
+- screenshot：`+$12,240.52` 与 `+2.23%` 使用强红色，大小和字重明显不同。
+- evidence：text 中保留 `+$12,240.52`、`+2.23%`，theme mapping 中 `rgb(244,28,83)` 精确匹配 `themeService.colors.colorTrendRed1`。
+- plan：颜色有 high/exact token，但金额、百分比的字号和横向对齐仍需要从 node-level typography 与 bbox 落地。
+- 归因：主要风险是 D。evidence 与 token mapping 已较完整，后续偏差大概率来自 Flutter 文本层级、baseline 或 spacing 实现。
+
+样本 4：Trend Analysis 折线图
+
+- screenshot：趋势图包含红色折线、淡红面积填充、横向虚线网格、右侧刻度与底部日期。
+- evidence：`section_node_54` 覆盖图表卡片，`section_node_61` 覆盖图表主体，bbox=`16,330,358,252`；text 保留 `12.9K`、`6,147.91`、`-721.26` 和三段日期。
+- plan：图表主体没有专用 chart capability，主要被当作普通 section/card 处理，图形路径与面积填充难以直接进入 widget tree。
+- 归因：主要风险是 A / B。A 是当前 capture 对 canvas/svg/chart 语义不足；B 是 plan 无法把折线、面积、网格压成可执行图表规范。
+
+样本 5：P/L Calendar 长滚动内容
+
+- screenshot：首屏底部露出 `P/L Calendar`，实际 section 继续向下滚动，fullPage 截图高度超过 viewport。
+- evidence：`section_node_94` bbox=`16,754,358,444.59`，`section_node_112` bbox=`16,902,358,280.59`，text 保留日历 weekday、日期与百分比。
+- plan：calendar 区域进入 fileTree/widgetTree，但首屏 viewport 只展示一部分，滚动态、月份切换与具体日期格子仍需要人工实现约束。
+- 归因：主要风险是 A / D。A 是单次状态采集无法证明月份切换、滚动边界和隐藏日期状态；D 是 Flutter 实现必须复刻长内容和局部滚动，不应只做首屏。
+
+第一轮统计：
+
+- A capture/evidence 缺失：2 个风险样本，集中在图表语义、长滚动/隐藏状态。
+- B plan 压缩或映射歧义：2 个风险样本，集中在 tab 选中态、chart 规范和 manual style。
+- C target component 默认样式带偏：1 个风险样本，集中在分段按钮复用 `CommonButton`。
+- D Flutter 实现问题：4 个样本都需要实现后验证，尤其是 tab、pill、金额层级和 calendar 长内容。
+
+统一排查记录格式：
+
+```text
+问题描述
+  -> screenshot 区域 / 文本锚点
+  -> page-debug-index section
+  -> page-canonical nodeIds / computedStyle / assetRefs / interactions
+  -> ui-build-plan themeMappings / componentMappings / widgetTree
+  -> target Flutter file / component default style / diff
+  -> 归因标签 A / B / C / D
+  -> 最小修复动作
+```
+
+### 3.7 P1 待办
+
+- [x] 新增 MCP discoverability 样本：记录 Codex CLI `/mcp` 面板与 stdio 协议中 `proto-bridge` 当前展示出的 tools、resources、prompts 信息。
+- [x] 补全 7 个 MCP tool 的长 description、默认值、安全边界、输出 artifact 说明和调用顺序说明。
 - [x] 补全 7 个 MCP tool 的 required schema 与 `additionalProperties: false`。
 - [x] 新增稳定 resource：`proto-bridge://workflow/ui-reconstruction-guide` 和 `proto-bridge://workflow/tool-catalog`。
-- [ ] 强化 `proto-bridge://workflow/ui-reconstruction-guide`，让首次使用者能按 capture -> plan -> review -> validate 执行。
-- [ ] 强化 `proto-bridge://workflow/tool-catalog`，让它不只是裸 schema dump，而是可读的 workflow tool 目录。
-- [ ] 增加 MCP tool `annotations` 与 `outputSchema`。
-- [ ] 新增 prompt：`capture_url_evidence`、`investigate_visual_mismatch`、`implement_from_existing_plan`、`validate_ui_reconstruction`。
-- [ ] 选择 5 个典型视觉问题作为样本。
-- [ ] 每个样本都按 `screenshot -> evidence -> plan -> Flutter` 做一次链路追踪。
-- [ ] 给每个样本打归因标签：A / B / C / D。
-- [ ] 统计问题主要集中在哪一层。
-- [ ] 为复杂页面建立统一排查记录。
+- [x] 强化 `proto-bridge://workflow/ui-reconstruction-guide`，让首次使用者能按 capture -> plan -> review -> validate 执行。
+- [x] 强化 `proto-bridge://workflow/tool-catalog`，让它不只是裸 schema dump，而是可读的 workflow tool 目录。
+- [x] 增加 MCP tool `annotations` 与 `outputSchema`。
+- [x] 新增 prompt：`capture_url_evidence`、`investigate_visual_mismatch`、`implement_from_existing_plan`、`validate_ui_reconstruction`。
+- [x] 选择 5 个典型视觉问题作为样本。
+- [x] 每个样本都按 `screenshot -> evidence -> plan -> Flutter` 做一次链路追踪。
+- [x] 给每个样本打归因标签：A / B / C / D。
+- [x] 统计问题主要集中在哪一层。
+- [x] 为复杂页面建立统一排查记录。
 
 ---
 

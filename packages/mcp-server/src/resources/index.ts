@@ -14,28 +14,28 @@ import {
   uiBuildPlanUri,
   uiBuildReviewUri,
 } from '../artifacts/contracts.js';
-import { toolsList } from '../tools/registry.js';
+import { toolCatalog } from '../tools/registry.js';
 
 export function resourcesList(context: ToolContext): JsonValue[] {
   return [
     {
       uri: WORKFLOW_GUIDE_URI,
-      name: 'ProtoBridge UI reconstruction guide',
+      name: 'ProtoBridge UI 还原指南',
       mimeType: 'text/markdown',
     },
     {
       uri: TOOL_CATALOG_URI,
-      name: 'ProtoBridge tool catalog',
+      name: 'ProtoBridge 工具目录',
       mimeType: 'application/json',
     },
     {
       uri: LATEST_ARTIFACTS_URI,
-      name: 'ProtoBridge latest artifact set',
+      name: 'ProtoBridge 最新产物集',
       mimeType: 'application/json',
     },
     {
       uri: 'proto-bridge://target/conventions',
-      name: 'ProtoBridge target conventions',
+      name: 'ProtoBridge 目标工程规范',
       mimeType: 'application/json',
     },
     ...context.pages.values().flatMap(pageResources),
@@ -51,7 +51,7 @@ export async function readResource(context: ToolContext, params: JsonObject | un
   }
 
   if (uri === TOOL_CATALOG_URI) {
-    return textContent(uri, 'application/json', JSON.stringify({ tools: toolsList() }, null, 2));
+    return textContent(uri, 'application/json', JSON.stringify(toolCatalog(), null, 2));
   }
 
   if (uri === LATEST_ARTIFACTS_URI) {
@@ -122,16 +122,66 @@ function textContent(uri: string, mimeType: string, text: string): JsonObject {
 
 function renderWorkflowGuide(): string {
   return [
-    '# ProtoBridge UI Reconstruction',
+    '# ProtoBridge UI 还原',
     '',
-    'Canonical flow:',
+    '本文档说明 ProtoBridge MCP server 当前暴露的 URL-first UI 还原工作流。',
     '',
-    '1. `capture_page_canonical` creates `page-canonical.json`, `page-debug-index.json`, and `screenshots/`.',
-    '2. `attach_screenshot_ocr` optionally enriches the page canonical with OCR evidence.',
-    '3. `build_ui_plan` creates `ui-build-plan.json` from the page canonical and target conventions.',
-    '4. `export_ui_review` creates `ui-build-review.md` for human review and handoff.',
-    '5. `validate_ui_build` checks target git changes against the active page plan.',
+    '## 产物契约',
     '',
-    'Use `proto-bridge://artifacts/latest` to discover the latest page-centric artifact set.',
+    '- 主 ID：`pageId`',
+    '- 标准上下文产物：`page-canonical.json`',
+    '- 调试索引产物：`page-debug-index.json`',
+    '- UI 构建计划产物：`ui-build-plan.json`',
+    '- 人类可读评审产物：`ui-build-review.md`',
+    '- 截图产物：`screenshots/full-page.png`',
+    '',
+    '使用 `proto-bridge://artifacts/latest` 查询当前 MCP session 中最新的 page-centric 产物集。',
+    '',
+    '## 标准流程',
+    '',
+    '1. 采集：使用 `url` 调用 `capture_page_canonical`。',
+    '   - 产出 `page-canonical.json`、`page-debug-index.json` 和截图 artifact。',
+    '   - 保存返回的 `pageId`；后续工具调用和资源读取都用它作为句柄。',
+    '',
+    '2. 可选 OCR 增强：当可见文字缺失、图片/canvas 文字重要时，使用 `pageId` 调用 `attach_screenshot_ocr`。',
+    '   - 产出 `ocr-result.json` 并更新 `page-canonical.json`。',
+    '   - 如果 OCR 改变了重要文字证据，应重新生成 UI plan。',
+    '',
+    '3. 计划：使用 `pageId` 调用 `build_ui_plan`。',
+    '   - 读取目标工程规范并产出 `ui-build-plan.json`。',
+    '   - plan 是实现指导，不是已生成的 Dart 代码。',
+    '',
+    '4. 评审：使用 `pageId` 调用 `export_ui_review`。',
+    '   - 产出 `ui-build-review.md`，用于人工评审或实现交接。',
+    '',
+    '5. 验证：目标代码修改后，使用 `pageId` 和 `targetRoot` 调用 `validate_ui_build`。',
+    '   - 报告变更文件、范围问题、占位实现、缺失的预期文件，以及 plan 对齐风险。',
+    '',
+    '## Resource 映射',
+    '',
+    '- `proto-bridge://workflow/tool-catalog`：结构化工具目录，包含阶段、schema、annotations 和 outputSchema。',
+    '- `proto-bridge://artifacts/latest`：最新 page id、文件路径和 resource 描述。',
+    '- `proto-bridge://pages/{pageId}/page-canonical`：页面标准上下文 JSON。',
+    '- `proto-bridge://pages/{pageId}/page-debug-index`：紧凑调试索引 JSON。',
+    '- `proto-bridge://pages/{pageId}/screenshot/{name}`：截图图片，通常为 `full-page`。',
+    '- `proto-bridge://pages/{pageId}/ui-build-plan`：UI 构建计划 JSON。',
+    '- `proto-bridge://pages/{pageId}/ui-build-review`：人类可读的 review Markdown。',
+    '',
+    '## 问题归因',
+    '',
+    '视觉输出不正确时，先归因再改代码：',
+    '',
+    '- A. capture / evidence 缺失：关键事实没有进入 `page-canonical.json`。',
+    '- B. plan 压缩或映射歧义：事实存在于 page canonical，但在 `ui-build-plan.json` 中缺失或被弱化。',
+    '- C. target component 默认样式带偏：plan 指向的可复用组件默认样式与源页面不一致。',
+    '- D. Flutter 实现问题：evidence 和 plan 足够，但目标代码没有照着落地。',
+    '',
+    '推荐链路：截图区域 -> section -> node ids -> node style facts -> theme/component mappings -> widget tree -> target implementation。',
+    '',
+    '## 边界',
+    '',
+    '- ProtoBridge 提供 evidence、plan、review、示例和验证提示；Dart 代码仍由 coding agent 实现。',
+    '- 不要从视觉证据中编造 API、权限、风控、埋点或隐藏业务行为。',
+    '- CLI `generate` 仍是 source-aware migration；任意已渲染 URL 当前走 MCP URL-first reconstruction。',
   ].join('\n');
 }
