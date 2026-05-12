@@ -5,6 +5,7 @@ import type {
   AttachScreenshotOcrResult,
   PageCanonical,
 } from '@proto-bridge/core/workflows/ui-reconstruction';
+import type { ReconstructPageContextResult } from '@proto-bridge/core/workflows/capability-first';
 
 export type JsonValue = string | number | boolean | null | JsonObject | JsonValue[];
 export type JsonObject = { [key: string]: JsonValue | undefined };
@@ -30,6 +31,7 @@ export type GeneratedPage = {
   plan?: BuildUiPlanResult['plan'] | undefined;
   review?: ExportUiReviewResult | undefined;
   ocr?: AttachScreenshotOcrResult | undefined;
+  reconstruction?: ReconstructPageContextResult | undefined;
 };
 
 export type ServerOptions = Record<string, never>;

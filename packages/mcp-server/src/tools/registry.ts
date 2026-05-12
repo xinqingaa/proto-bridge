@@ -1,6 +1,7 @@
 import type { JsonObject, JsonValue, ToolContext } from '../types.js';
 import { readObject, readString } from '../utils/args.js';
 import { toolJson } from '../server/responses.js';
+import { reconstructPageContextTool } from './reconstruct-page-context.js';
 import { capturePageCanonicalTool } from './capture-page-canonical.js';
 import { buildUiPlanTool } from './build-ui-plan.js';
 import { attachScreenshotOcrTool } from './attach-screenshot-ocr.js';
@@ -61,6 +62,56 @@ const validationOutputSchema = {
 };
 
 const toolDefinitions: JsonValue[] = [
+  {
+    name: 'reconstruct_page_context',
+    title: '重建页面统一上下文',
+    description: [
+      'Capability-first UI 重构入口。根据输入自动组合 source.analyze、runtime.capture、target.inspect、page.merge、ui.plan 和 ui.review。',
+      '有源码时生成增强版 `ui-build-review.md`；有源码 + runtime 时 review 展示 merged evidence；`migration-spec.md` 仅作为 source-aware implementation brief。',
+      '无源码但有 URL 时退化为 URL/runtime-first，并仍产出统一 `page-canonical.json`、`page-debug-index.json`、`ui-build-plan.json`、`ui-build-review.md` 和截图。',
+      '安全边界：只读取 source/target/URL 并写 artifact，不修改目标 Flutter 应用。',
+    ].join('\n'),
+    annotations: {
+      title: '重建页面统一上下文',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true,
+    },
+    inputSchema: {
+      ...baseObjectSchema,
+      properties: {
+        sourceRoot: { type: 'string', description: '可选 prototype/source 根目录。有源码时传入。相对路径按 targetRoot 解析。' },
+        sourceAdapter: { type: 'string', description: 'source adapter。默认 vue3-prototype。' },
+        targetRoot: { type: 'string', description: '目标 Flutter 根目录。默认当前工作目录。' },
+        targetAdapter: { type: 'string', description: 'target adapter。默认 flutter-app。' },
+        route: { type: 'string', description: '可选 source route。' },
+        vuePath: { type: 'string', description: '可选 Vue SFC 路径。' },
+        vue: { type: 'string', description: 'vuePath 的兼容别名。P5 完成后会删除。' },
+        url: { type: 'string', description: '可选运行时 URL。有 URL 时默认 capture=true。' },
+        prototypeUrl: { type: 'string', description: '可选 capture URL；当 source route 与 runtime URL 分离时使用。' },
+        output: { type: 'string', description: '产物输出目录。默认 `<targetRoot>/.proto-bridge/pages/<page>-<timestamp>`。' },
+        capture: { type: 'boolean', description: '是否执行 runtime.capture。默认有 url 时 true。' },
+        saveArtifacts: { type: 'boolean', description: '是否保存截图 artifact。默认 true。' },
+        buildPlan: { type: 'boolean', description: '是否生成 `ui-build-plan.json`。默认 true。' },
+        buildReview: { type: 'boolean', description: '是否生成 `ui-build-review.md`。默认 true。' },
+        sourceBrief: { type: 'boolean', description: '有源码时是否额外生成 `migration-spec.md` source-aware brief。默认 true。' },
+        trace: { type: 'boolean', description: '是否在 summary 中返回临时 capability orchestration trace。默认 false；trace 总会写入 page-canonical.json。' },
+        targetModule: { type: 'string', description: '可选目标模块覆盖值。' },
+        viewport: {
+          type: 'object',
+          description: '采集 viewport。默认 width=390、height=844、deviceScaleFactor=1。',
+          additionalProperties: false,
+          properties: {
+            width: { type: 'number' },
+            height: { type: 'number' },
+            deviceScaleFactor: { type: 'number' },
+          },
+        },
+      },
+    },
+    outputSchema: artifactToolOutputSchema,
+  },
   {
     name: 'capture_page_canonical',
     title: '采集页面标准上下文',
@@ -268,7 +319,7 @@ const toolDefinitions: JsonValue[] = [
 ];
 
 const workflowCatalog: JsonObject = {
-  name: 'ProtoBridge URL-first UI 还原',
+  name: 'ProtoBridge Capability-first UI 重构',
   currentContract: {
     canonicalArtifact: 'page-canonical.json',
     debugArtifact: 'page-debug-index.json',
@@ -278,6 +329,13 @@ const workflowCatalog: JsonObject = {
     primaryId: 'pageId',
   },
   phases: [
+    {
+      phase: '统一编排',
+      tool: 'reconstruct_page_context',
+      requiredInput: ['sourceRoot/route/vuePath 或 url，targetRoot 可选但推荐'],
+      emits: ['page-canonical.json', 'page-debug-index.json', 'ui-build-plan.json', 'ui-build-review.md', 'screenshots/full-page.png'],
+      next: ['实现', 'validate_ui_build'],
+    },
     {
       phase: '采集',
       tool: 'capture_page_canonical',
@@ -331,6 +389,7 @@ export async function callTool(context: ToolContext, params: JsonObject | undefi
   const args = readObject(params, 'arguments') ?? {};
   if (!name) throw new Error('tools/call requires params.name');
 
+  if (name === 'reconstruct_page_context') return toolJson(await reconstructPageContextTool(context, args));
   if (name === 'capture_page_canonical') return toolJson(await capturePageCanonicalTool(context, args));
   if (name === 'build_ui_plan') return toolJson(await buildUiPlanTool(context, args));
   if (name === 'attach_screenshot_ocr') return toolJson(await attachScreenshotOcrTool(context, args));

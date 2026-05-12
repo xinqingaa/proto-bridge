@@ -1,0 +1,58 @@
+import type {
+  AdapterProjectConfig,
+  PageCanonical,
+  PageOrchestrationTrace,
+  UiBuildPlan,
+} from '../../types/index.js';
+import type {
+  PageMergeCapabilityResult,
+  RuntimeCaptureCapabilityResult,
+  SourceAnalyzeCapabilityResult,
+  TargetInspectCapabilityResult,
+  UiPlanCapabilityResult,
+  UiReviewCapabilityResult,
+} from '../../capabilities/index.js';
+
+export type ReconstructPageContextInput = {
+  source?: AdapterProjectConfig | undefined;
+  target?: AdapterProjectConfig | undefined;
+  route?: string | undefined;
+  vue?: string | undefined;
+  url?: string | undefined;
+  prototypeUrl?: string | undefined;
+  outDir: string;
+  capture?: boolean | undefined;
+  viewport?: { width: number; height: number; deviceScaleFactor?: number | undefined } | undefined;
+  saveArtifacts?: boolean | undefined;
+  targetModule?: string | undefined;
+  buildPlan?: boolean | undefined;
+  buildReview?: boolean | undefined;
+  sourceBrief?: boolean | undefined;
+  trace?: boolean | undefined;
+  writeLegacyMigrationContext?: boolean | undefined;
+};
+
+export type ReconstructPageContextResult = {
+  page: PageCanonical;
+  plan?: UiBuildPlan | undefined;
+  markdown?: string | undefined;
+  capabilities: {
+    source?: SourceAnalyzeCapabilityResult | undefined;
+    runtime?: RuntimeCaptureCapabilityResult | undefined;
+    target?: TargetInspectCapabilityResult | undefined;
+    merge: PageMergeCapabilityResult;
+    plan?: UiPlanCapabilityResult | undefined;
+    review?: UiReviewCapabilityResult | undefined;
+  };
+  files: {
+    pageCanonical: string;
+    pageDebugIndex: string;
+    screenshots: string[];
+    uiBuildPlan?: string | undefined;
+    uiBuildReview?: string | undefined;
+    migrationSpec?: string | undefined;
+  };
+  warnings: string[];
+  nextActions: string[];
+  trace: PageOrchestrationTrace;
+};

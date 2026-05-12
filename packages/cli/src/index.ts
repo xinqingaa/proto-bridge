@@ -6,10 +6,10 @@ import { access, readFile, stat, writeFile } from 'node:fs/promises';
 import * as readline from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
 import {
-  generateMigrationSpec,
-  type GenerateMigrationSpecInput,
-  type GenerateMigrationSpecResult,
-} from '@proto-bridge/core/workflows/source-aware-migration';
+  reconstructPageContext,
+  type ReconstructPageContextInput,
+  type ReconstructPageContextResult,
+} from '@proto-bridge/core/workflows/capability-first';
 
 type ParsedArgs = {
   command: string;
@@ -72,10 +72,11 @@ const ALLOWED_FLAGS = new Set([
   'route',
   'source-adapter',
   'target-adapter',
+  'trace',
   'url',
   'vue',
 ]);
-const BOOLEAN_FLAGS = new Set(['capture', 'help']);
+const BOOLEAN_FLAGS = new Set(['capture', 'help', 'trace']);
 
 async function main(): Promise<void> {
   const parsed = parseArgs(process.argv.slice(2));
@@ -95,13 +96,14 @@ async function main(): Promise<void> {
   }
 
   const input = await buildGenerateInput(parsed.values);
-  step('Analyzing prototype and writing migration files...');
-  const result = await generateMigrationSpec(input);
+  step('Reconstructing page context with capability-first workflow...');
+  const result = await reconstructPageContext(input);
+  if (parsed.values.trace) printTrace(result);
 
   printSuccess(input, result, parsed.values);
 }
 
-async function buildGenerateInput(values: Record<string, string | boolean>): Promise<GenerateMigrationSpecInput> {
+async function buildGenerateInput(values: Record<string, string | boolean>): Promise<ReconstructPageContextInput> {
   step('Loading proto-bridge config...');
   const loadedConfig = await loadRequiredConfig(values);
   const config = loadedConfig.config;
@@ -137,9 +139,14 @@ async function buildGenerateInput(values: Record<string, string | boolean>): Pro
     },
     route: pageInput.route,
     vue: pageInput.vue,
+    url: pageInput.url,
     prototypeUrl,
     outDir,
     capture,
+    buildPlan: true,
+    buildReview: true,
+    sourceBrief: true,
+    trace: Boolean(values.trace),
   };
 }
 
@@ -351,7 +358,7 @@ function readString(values: Record<string, string | boolean>, key: string): stri
 function unknownFlagMessage(key: string): string {
   return [
     `Unknown flag: --${key}`,
-    'Supported flags: --config, --url, --route, --vue, --prototype-url, --output, --capture.',
+    'Supported flags: --config, --url, --route, --vue, --prototype-url, --output, --capture, --trace.',
     'Example: npx @proto-bridge/cli generate --url "http://localhost:5173/#/prototype/etf-detail"',
   ].join('\n');
 }
@@ -468,25 +475,27 @@ async function askChoice(rl: readline.Interface, question: string, choices: stri
 }
 
 function printSuccess(
-  input: GenerateMigrationSpecInput,
-  result: GenerateMigrationSpecResult,
+  input: ReconstructPageContextInput,
+  result: ReconstructPageContextResult,
   values: Record<string, string | boolean>,
 ): void {
-  const warnings = result.context.recommendations.risks.length;
+  const warnings = result.warnings.length;
   console.log();
-  success('Success! Migration spec generated.');
+  success('Success! Page context reconstructed.');
   kv('input', describeInput(input, values));
-  kv('route', result.context.source.route ?? input.route ?? '(unknown)');
-  kv('screenId', result.context.source.screenId ?? 'unknown');
+  kv('route', result.page.sourceFacts?.analysis.route ?? result.page.page.route ?? input.route ?? '(unknown)');
+  kv('screenId', result.page.sourceFacts?.analysis.screenId ?? 'unknown');
   kv('output', input.outDir);
-  kv('migration spec', result.files.migrationSpec);
-  kv('migration context', result.files.migrationContext);
-  if (result.files.screenshot) kv('screenshot', result.files.screenshot);
-  if (result.files.domSnapshot) kv('dom snapshot', result.files.domSnapshot);
-  if (warnings > 0) warn(`${warnings} warning${warnings === 1 ? '' : 's'} found. Review migration-spec.md before implementation.`);
+  kv('page canonical', result.files.pageCanonical);
+  kv('debug index', result.files.pageDebugIndex);
+  if (result.files.uiBuildPlan) kv('ui build plan', result.files.uiBuildPlan);
+  if (result.files.uiBuildReview) kv('ui build review', result.files.uiBuildReview);
+  if (result.files.migrationSpec) kv('source brief', result.files.migrationSpec);
+  for (const screenshot of result.files.screenshots) kv('screenshot', screenshot);
+  if (warnings > 0) warn(`${warnings} warning${warnings === 1 ? '' : 's'} found. Review ui-build-review.md before implementation.`);
 }
 
-function describeInput(input: GenerateMigrationSpecInput, values: Record<string, string | boolean>): string {
+function describeInput(input: ReconstructPageContextInput, values: Record<string, string | boolean>): string {
   const url = readString(values, 'url');
   if (url) return `url ${url}`;
   const route = readString(values, 'route') ?? input.route;
@@ -549,7 +558,23 @@ Options:
   --prototype-url <url>       Optional running prototype URL for Playwright capture
   --output <dir>              Override the generated output directory
   --capture                   Run Playwright screenshot and DOM capture
+  --trace                     Print temporary capability orchestration trace
+
+Artifacts:
+  Always writes page-canonical.json and page-debug-index.json.
+  With target config, writes ui-build-plan.json and ui-build-review.md.
+  With source config, ui-build-review.md includes a source-aware implementation brief.
+  migration-spec.md is only a source-aware brief projection during P5-A, not the primary handoff.
 `;
+}
+
+function printTrace(result: ReconstructPageContextResult): void {
+  console.log();
+  step('Capability trace...');
+  for (const traceStep of result.trace.steps) {
+    const marker = traceStep.status === 'skipped' ? '-' : traceStep.status === 'completed' ? '✓' : '+';
+    console.log(`  ${marker} ${traceStep.capability} [${traceStep.status}] ${traceStep.reason}`);
+  }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

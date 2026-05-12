@@ -12,19 +12,19 @@
 
 ## 1. 优先级总览
 
-当前阶段先不重写 workflow，也不盲目增加 MCP tool 数量。
+当前阶段已经完成 P0 / P1 / P2，下一步最高优先级调整为 P5：Capability-first 工作流重构。
 
-后续不建议直接跳进改代码，建议先分专题调研。
+现在不继续沿旧的 URL-first / source-aware 两条固定 workflow 做 P3 / P4 增强。P3 / P4 暂停作为主线，但不废弃；它们应在 P5 完成后分别作为 `runtime.capture`、`ui.plan` / `target.inspect` capability 的增强继续推进。
 
-更合理的推进顺序是：
+新的推进顺序是：
 
 ```text
-P0 统一产物模型与 MCP 契约
-  -> P1 MCP 可用性与问题归因基础
-  -> P2 Evidence / Artifact 可观察性
-  -> P3 Playwright Capture 增强
-  -> P4 Planner / Target Mapping 约束增强
-  -> P5 Hybrid Capability-first 演进
+P0 统一产物模型与 MCP 契约（已完成）
+  -> P1 MCP 可用性与问题归因基础（已完成）
+  -> P2 Evidence / Artifact 可观察性（已完成）
+  -> P5 Capability-first 工作流重构（当前最高优先级）
+  -> P3 Runtime Capture capability 增强
+  -> P4 Planning / Target Mapping capability 增强
   -> P6 MCP 高级协议能力
 ```
 
@@ -33,10 +33,31 @@ P0 统一产物模型与 MCP 契约
 - 先定 artifact、resource URI、tool output 和命名契约，避免后续 debug index、artifact index、hybrid 产物各做各的。
 - 再让 MCP client 和 agent 知道 ProtoBridge 怎么用。
 - 再让 evidence / plan / review / debug artifact 可查、可读、可复盘。
-- 再增强 Playwright capture 覆盖面。
-- 再收紧 planner / mapping 的实现约束。
-- 再进入 CLI / MCP capability-first 的长期演进。
+- 当前应优先打破 CLI / MCP 两条固定 workflow 的壁垒，把底层能力提升为共享 capability。
+- P5 完成后，再增强 Playwright capture 覆盖面，此时它会作为 `runtime.capture` capability 同时服务 CLI 和 MCP。
+- 再收紧 planner / mapping 的实现约束，此时它会作为 `ui.plan` / `target.inspect` capability 同时服务 CLI 和 MCP。
 - 最后才评估 roots、elicitation、sampling、Streamable HTTP/auth 等高级协议能力。
+
+### 1.1 当前已完成成果压缩说明
+
+P0 已完成统一产物模型与 MCP 契约：
+
+- 稳定 page-centric artifact：`page-canonical.json`、`page-debug-index.json`、`ui-build-plan.json`、`ui-build-review.md`、screenshots。
+- 稳定 MCP tool output：`pageId`、`artifactSetId`、`files`、`resources`、`warnings`、`nextActions`、`summary`。
+- 稳定 page resource URI：`proto-bridge://pages/{pageId}/...`。
+
+P1 已完成 MCP 可用性基础：
+
+- 7 个 MCP tools 已补中文 title / description / 参数说明 / annotations / outputSchema。
+- 已暴露 workflow guide、tool catalog、latest artifacts、prompts。
+- 已确认 Codex CLI `/mcp` 面板只显示 tool names，但协议层能返回完整描述。
+
+P2 已完成 Evidence / Artifact 可观察性基础：
+
+- 已增加 resource templates，用于 capture 前发现 page artifact URI。
+- 已增加 artifact index resource。
+- 已增强并瘦身 `page-debug-index.json`。
+- `page-debug-index.json` 定位为“索引和诊断卡片”，不是 `page-canonical.json` 的副本；它负责指向 section / node / mapping / risk，完整证据仍回到 `page-canonical.json` / `ui-build-plan.json`。
 
 ---
 
@@ -505,6 +526,10 @@ screenshot -> section / node / token -> themeMappings / componentMappings / widg
 
 ## 5. P3：Playwright Capture 增强
 
+当前状态：延后。
+
+P3 不再作为 P2 之后的直接主线。它将在 P5 capability-first 工作流重构完成后，作为 `runtime.capture` capability 的增强继续推进。这样 interaction state、scroll segmentation、network / console / trace 等能力不会只服务 MCP URL-first，而会同时服务 CLI 和 MCP 的统一工作流。
+
 目标：
 
 - 从“单状态页面采样”升级为“多状态运行态证据采集”。
@@ -556,6 +581,10 @@ screenshot -> section / node / token -> themeMappings / componentMappings / widg
 ---
 
 ## 6. P4：Planner 与 Target Mapping 约束增强
+
+当前状态：延后。
+
+P4 不再作为 P2 之后的直接主线。它将在 P5 capability-first 工作流重构完成后，作为 `ui.plan` / `target.inspect` capability 的增强继续推进。这样 role taxonomy、mapping determinism、component risk、visual validation 等优化会作用于统一 canonical，而不是只补强旧的 URL-first plan。
 
 目标：
 
@@ -652,13 +681,31 @@ evidence -> implementation guidance -> agent judgment -> Flutter code
 
 ---
 
-## 7. P5：Hybrid Capability-first 演进
+## 7. P5：Capability-first 工作流重构（当前最高优先级）
 
 目标：
 
-- 保留 CLI / MCP 作为入口形态，但逐步把 source、snapshot、target、planning、validation 提升成可编排 capability。
-- 为 source + runtime + screenshot + target repo 的字段级合并预留架构路径。
-- 避免短期 MCP 修复和长期 hybrid 演进互相打架。
+- 保留 CLI / MCP 作为入口形态，但彻底打破两者各自绑定固定 workflow 的现状。
+- 将 source、runtime/snapshot、screenshot/OCR、target、planning、review、validation 提升成共享 capability。
+- 让 CLI 和 MCP 在同等输入条件下调用同一套 core orchestrator，并产出同一套 artifacts。
+- 让 system 根据“是否有源码 / 是否有 URL / 是否有 screenshot / 是否有 target repo”决定调用哪些能力。
+- P5 完成后，P3 / P4 的增强都应落在 capability 上，而不是落在某条旧 workflow 上。
+
+### 7.0 当前必须解决的问题
+
+当前典型问题：
+
+- 明明本地同时有 source 和 URL/runtime，但 MCP 仍然只按 URL-first 方式工作。
+- 明明 source-aware 路径可能更强，但 CLI 又主要停留在 JSON / Markdown 产出，而不是被 agent 继续调度到统一 plan / review / validation。
+- CLI 与 MCP 作为 mode 是合理的，但 mode 绑定了过于固定的 workflow。
+
+P5 的目标不是合并 CLI 和 MCP，而是：
+
+```text
+CLI / MCP = 入口
+workflow = 预设编排
+capability = 可复用底层能力
+```
 
 ### 7.1 Mode / Workflow / Capability 关系
 
@@ -677,6 +724,91 @@ capability = 通用底层能力
 - 两者都不再只绑定一条固定 workflow。
 - source、snapshot、target、planning、validation 都应逐步变成共享 capability。
 - system 应能根据“是否有源码 / 是否有 URL / 是否有 screenshot / 是否有 target repo”决定调用哪些能力。
+
+P5 完成后的目标形态：
+
+```text
+input
+  -> reconstructPageContext(input)
+  -> capability selection
+  -> source/runtime/screenshot/target facts
+  -> page.merge
+  -> page-canonical.json
+  -> page-debug-index.json
+  -> ui-build-plan.json
+  -> ui-build-review.md
+  -> validate result
+```
+
+CLI 和 MCP 只负责接收输入、调用 orchestrator、返回 artifact handles；不再各自维护一条固定 workflow。
+
+### 7.1.1 共享 capability 边界
+
+P5 需要把现有能力拆成可编排 capability：
+
+- `source.analyze`：从 source root、route、vuePath 中提取 source facts。
+- `runtime.capture`：从 URL / rendered page 中提取 runtime facts、computed style、bbox、assets、interactions、screenshot。
+- `screenshot.attach` / `ocr.attach`：从 screenshot / OCR 补充视觉证据。
+- `target.inspect`：读取 target Flutter repo 的 module、route、theme、component、i18n、asset conventions。
+- `page.merge`：按字段级优先级合并 source facts、runtime facts、screenshot facts、target facts。
+- `ui.plan`：从统一 canonical 生成 `ui-build-plan.json`。
+- `ui.review`：从统一 canonical + plan 生成 `ui-build-review.md`。
+- `ui.validate`：根据 canonical / plan / target diff 验证实现范围与风险。
+
+### 7.1.2 统一 orchestrator
+
+新增统一编排入口：
+
+```text
+reconstructPageContext(input)
+```
+
+它根据输入自动选择 capability：
+
+- 有 `sourceRoot` + `route` / `vuePath`：调用 `source.analyze`。
+- 有 `url`：调用 `runtime.capture`。
+- 有 `screenshotPath` / OCR 输入：调用 `screenshot.attach` / `ocr.attach`。
+- 有 `targetRoot`：调用 `target.inspect`。
+- source / runtime / screenshot / target facts 同时存在：调用 `page.merge`。
+- 有 canonical：调用 `ui.plan`、`ui.review`、`ui.validate`。
+
+### 7.1.3 统一 artifact 产物
+
+P5 后，CLI 和 MCP 在同等输入下都应产出同一套 artifacts：
+
+- `page-canonical.json`
+- `page-debug-index.json`
+- `ui-build-plan.json`
+- `ui-build-review.md`
+- `screenshots/`
+
+旧的 CLI `migration-context.json` / `migration-spec.md` 可以短期保留为兼容投影，但不能继续作为 source-aware 主产物模型。
+
+重要补充：
+
+- 当前 CLI 生成的 `migration-spec.md` 在有源码场景下质量明显高于 MCP 当前的 `ui-build-review.md`。
+- P5 重构不能直接删除或弱化 `migration-spec.md` 的生成逻辑。
+- 更合理的方向是把 `migration-spec.md` 背后的高质量 source-aware review / implementation instruction 生成能力提升成共享 projection capability。
+- 当输入包含 source facts 时，MCP 也应能产出接近或等同 `migration-spec.md` 质量的人类可读 MD。
+- 统一产物后，可以将其命名为 `ui-build-review.md`、`migration-spec.md` 兼容投影，或同时产出二者；但 source-aware 的高质量说明能力必须保留。
+
+### 7.1.4 CLI / MCP 入口关系
+
+CLI：
+
+- 继续作为终端入口。
+- 支持统一 reconstruct 命令或改造现有 generate 入口。
+- 输入可以是 source、URL、screenshot、target repo 的任意组合。
+- 内部调用 `reconstructPageContext(input)`。
+
+MCP：
+
+- 继续作为 agent / tool 调用入口。
+- 增加或切换到统一工具，例如 `reconstruct_page_context`。
+- 输入可以是 `url`、`sourceRoot`、`route`、`vuePath`、`screenshotPath`、`targetRoot`、`output`。
+- 内部调用同一个 `reconstructPageContext(input)`。
+
+现有 URL-first MCP tools 可以作为兼容层保留，但它们不应继续拥有独立 workflow 逻辑。
 
 ### 7.2 字段级优先级方向
 
@@ -741,17 +873,49 @@ screenshot 优先表达最终视觉对照和补证。
 
 ### 7.5 P5 待办
 
-- [ ] 定义 mode / workflow / capability 的关系。
-- [ ] 制定字段级优先级表。
-- [ ] 设计 source facts 与 runtime evidence 的 merge provenance。
-- [ ] 设计 mismatch warning / manual confirmation 机制。
-- [ ] 评估短期 `skill -> CLI -> Dart` 作为过渡方案。
-- [ ] 评估是否把 source-aware 能力暴露为 MCP / core capability。
-- [ ] 评估 role / section / component mapping 是否要纳入 hybrid 设计一起重构。
+P5-A 已选择方案 C：
+
+- 无源码：默认生成 `ui-build-review.md`。
+- 有源码：生成增强版 `ui-build-review.md`。
+- 有源码 + runtime：`ui-build-review.md` 展示 merged review。
+- `migration-spec.md` 暂作为 source-aware implementation brief 和质量对照物保留；当前 `ui-build-review.md` 尚未完全达到 `docs/migration-spec.md` 的质量标准。
+- P5-A 允许保留 CLI/MCP 旧入口作为过渡兼容层；P5 完成时必须删除所有旧 workflow 兼容层和 projection 兼容输出。
+
+- [x] 定义 mode / workflow / capability 的关系，并在代码结构中体现 CLI / MCP 只是入口。
+- [x] 定义共享 capability 边界：`source.analyze`、`runtime.capture`、`screenshot.attach`、`target.inspect`、`page.merge`、`ui.plan`、`ui.review`、`ui.validate`。
+- [x] 新增统一 orchestrator：`reconstructPageContext(input)`。
+- [x] 重构 `page-canonical.json` 为 hybrid canonical，支持 `sourceFacts`、`runtimeFacts`、`screenshotFacts`、`targetFacts`、`merge`、`provenance`、`mismatches`、`fieldPriority`。
+- [x] 制定 source / runtime / screenshot / target 的字段级优先级表，并写入 canonical merge 逻辑。
+- [x] 设计 source/runtime mismatch warning 与 manual confirmation 机制。
+- [x] CLI 改为调用统一 orchestrator，终端入口不再只绑定 source-aware migration workflow。
+- [x] MCP 增加统一 orchestrator 工具 `reconstruct_page_context`；旧 URL-first tools 暂作为 P5-A 兼容层保留，P5 完成后删除。
+- [x] CLI / MCP 在同等输入条件下产出同一套主 artifacts：`page-canonical.json`、`page-debug-index.json`、`ui-build-plan.json`、`ui-build-review.md`、screenshots。
+- [x] `build_ui_plan` 只消费统一 canonical，不关心 canonical 来源是 source、runtime、screenshot 还是 hybrid。
+- [x] 能力化旧 CLI `migration-spec.md` 背后的 source-aware 说明生成逻辑；有 source facts 时，主产物为增强版 `ui-build-review.md`，`migration-spec.md` 仅作为 source-aware implementation brief。
+- [x] 旧 CLI `migration-context.json` 降级为 source-aware projection；主链路改用统一 artifacts。P5-C 起默认不再输出 `migration-context.json`，仅保留内部兼容开关。
+- [x] P5-B：增强 `ui.plan` 对 source-only / hybrid canonical 的消费；source-only 时也能从 SFC sections/components/interactions/style tokens 生成 widget tree、component/theme/asset/interaction plan。
+- [x] P5-B：将 `ui-build-review.md` 的 source-aware 内容改成结构化 projection，不再整篇嵌入旧 `migration-spec.md`。
+- [x] 更新测试脚本，验证 CLI 和 MCP 在相同 source/url/target 输入下产物契约一致。
+- [x] P5-C：增加临时 orchestration trace，写入 `page-canonical.json`，CLI 可用 `--trace` 打印，MCP 可用 `trace=true` 返回 `summary.trace`。
+- [x] P5-C：测试脚本改成 source-only / runtime-only / hybrid case 矩阵；默认 case 改为 hybrid，runtime-only / hybrid 强制要求 screenshot 和 `runtimeFacts`。
+- [x] P5-C：修复测试脚本默认 URL 与默认 route 不一致的问题；route 默认从 URL 推断，避免 DEFAULT_URL 被闲置。
+- [x] P5-D：以 `docs/migration-spec.md` 为标准做 review quality parity，确保 `ui-build-review.md` 覆盖页面元信息、迁移结论、文件树、Widget contracts、状态/生命周期、路由布局、主题/i18n/资源、可复用组件和可执行人工确认项。
+- [x] P5-D：为 `ui-build-review.md` 增加 parity checklist，并在测试脚本中断言关键章节存在且不能整篇嵌入旧 `migration-spec.md`。
+- [ ] P5-D follow-up：压缩过长的 source layout/style evidence，避免 review 在复杂页面中过度冗长。
+- [ ] P5-final：删除旧 URL-first MCP tool 主路径，只保留 capability-first `reconstruct_page_context` 与必要只读/验证工具。
+- [ ] P5-final：删除旧 source-aware workflow 主路径，CLI 只保留 capability-first generate。
+- [ ] P5-final：删除 `migration-context.json` 内部兼容开关。
+- [ ] P5-final：删除 `migration-spec.md` 作为顶层主产物的所有描述；如仍需 source-aware brief，必须作为 `ui.review` projection 的内部章节或显式可选导出。
+- [ ] P5 完成后，再回到 P3 增强 `runtime.capture` capability。
+- [ ] P5 完成后，再回到 P4 增强 `ui.plan` / `target.inspect` capability。
 
 ---
 
 ## 8. P6：MCP 高级协议能力
+
+当前状态：最后评估。
+
+P6 不进入当前 P5 工作流重构主线。roots、elicitation、logging、completions、sampling、Streamable HTTP/auth、client compatibility matrix 等能力，只有在 capability-first 主链路稳定后再评估。
 
 目标：
 

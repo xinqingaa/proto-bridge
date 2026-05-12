@@ -1,5 +1,8 @@
 import type { RuntimePageProtocolPayload } from '../shared/protocols/runtime-page.js';
 import type { MappingConfidence } from './common.js';
+import type { MigrationContext } from './planning.js';
+import type { PrototypePageAnalysis } from './source.js';
+import type { FlutterContextAnalysis } from './target-flutter.js';
 
 export type DomNodeSnapshot = {
   tag: string;
@@ -43,6 +46,18 @@ export type CaptureResult = {
 };
 
 export type SnapshotSourceKind = 'url' | 'rendered-html' | 'screenshot';
+
+export type PageFactKind = 'source' | 'runtime' | 'screenshot' | 'target';
+
+export type PageCapabilityName =
+  | 'source.analyze'
+  | 'runtime.capture'
+  | 'screenshot.attach'
+  | 'target.inspect'
+  | 'page.merge'
+  | 'ui.plan'
+  | 'ui.review'
+  | 'ui.validate';
 
 export type SnapshotNodeRole =
   | 'app-bar'
@@ -155,7 +170,7 @@ export type DetectedCapabilities = {
 };
 
 export type PageEvidenceSource = {
-  kind: 'url' | 'route' | 'vue' | 'rendered-html' | 'screenshot';
+  kind: 'url' | 'route' | 'vue' | 'rendered-html' | 'screenshot' | 'hybrid';
   url?: string | undefined;
   route?: string | undefined;
   vuePath?: string | undefined;
@@ -163,7 +178,17 @@ export type PageEvidenceSource = {
 };
 
 export type PageEvidenceProvenance = {
-  source: 'dom' | 'runtime-metadata' | 'page-list' | 'ocr' | 'heuristic';
+  source:
+    | 'dom'
+    | 'runtime-metadata'
+    | 'page-list'
+    | 'ocr'
+    | 'heuristic'
+    | 'source-analysis'
+    | 'runtime-capture'
+    | 'screenshot-attach'
+    | 'target-inspect'
+    | 'page-merge';
   fields: string[];
 };
 
@@ -180,6 +205,94 @@ export type PageCanonicalMismatch = {
   message: string;
   severity: 'info' | 'warning' | 'error';
   evidence: string[];
+};
+
+export type PageFieldPriorityRule = {
+  field: string;
+  priority: PageFactKind[];
+  reason: string;
+};
+
+export type PageManualConfirmation = {
+  id: string;
+  question: string;
+  severity: 'info' | 'warning' | 'error';
+  evidence: string[];
+  status: 'open' | 'resolved';
+};
+
+export type HybridPageSourceFacts = {
+  adapter: string;
+  root: string;
+  route?: string | undefined;
+  vuePath?: string | undefined;
+  analyzedAt: string;
+  analysis: PrototypePageAnalysis;
+  migrationContext?: MigrationContext | undefined;
+  warnings: string[];
+};
+
+export type HybridPageRuntimeFacts = {
+  url: string;
+  capturedAt?: string | undefined;
+  viewport?: {
+    width: number;
+    height: number;
+    deviceScaleFactor?: number | undefined;
+  } | undefined;
+  screenshotPaths: string[];
+  sectionCount: number;
+  nodeCount: number;
+  textCount: number;
+  assetCount: number;
+  interactionCount: number;
+  warnings: string[];
+};
+
+export type HybridPageScreenshotFacts = {
+  screenshotPaths: string[];
+  ocr?: OcrResult | undefined;
+  warnings: string[];
+};
+
+export type HybridPageTargetFacts = {
+  adapter: string;
+  root: string;
+  inspectedAt: string;
+  analysis: FlutterContextAnalysis;
+  warnings: string[];
+};
+
+export type PageMergeSummary = {
+  strategy: 'source-only' | 'runtime-only' | 'source-runtime' | 'screenshot-only' | 'hybrid';
+  selectedCapabilities: PageCapabilityName[];
+  mergedAt: string;
+  sources: Partial<Record<PageFactKind, boolean>>;
+  warnings: string[];
+  manualConfirmations: PageManualConfirmation[];
+  trace?: PageOrchestrationTrace | undefined;
+};
+
+export type PageOrchestrationTraceStep = {
+  capability: PageCapabilityName;
+  status: 'selected' | 'skipped' | 'completed';
+  reason: string;
+};
+
+export type PageOrchestrationTrace = {
+  temporary: true;
+  input: {
+    hasSource: boolean;
+    hasRoute: boolean;
+    hasVue: boolean;
+    hasUrl: boolean;
+    hasPrototypeUrl: boolean;
+    hasTarget: boolean;
+    captureRequested: boolean;
+    runtimeUrl?: string | undefined;
+  };
+  steps: PageOrchestrationTraceStep[];
+  artifacts: string[];
 };
 
 export type PageCanonicalArtifactIndex = {
@@ -207,9 +320,18 @@ export type PageTabState = {
 };
 
 export type PageCanonical = {
+  schemaVersion?: number | undefined;
   id: string;
   pageId: string;
   source: PageEvidenceSource;
+  sourceFacts?: HybridPageSourceFacts | undefined;
+  runtimeFacts?: HybridPageRuntimeFacts | undefined;
+  screenshotFacts?: HybridPageScreenshotFacts | undefined;
+  targetFacts?: HybridPageTargetFacts | undefined;
+  merge?: PageMergeSummary | undefined;
+  orchestrationTrace?: PageOrchestrationTrace | undefined;
+  fieldPriority?: PageFieldPriorityRule[] | undefined;
+  manualConfirmations?: PageManualConfirmation[] | undefined;
   screenshot?: {
     path?: string | undefined;
     width: number;

@@ -163,6 +163,84 @@ export type ExportUiReviewInput = {
   page: PageCanonical;
   plan: UiBuildPlan;
   outDir: string;
+  sourceBriefMarkdown?: string | undefined;
+  sourceReview?: SourceAwareReviewProjection | undefined;
+};
+
+export type SourceAwareReviewProjection = {
+  title: string;
+  parityChecklist: Array<{
+    section: string;
+    status: 'covered' | 'partial' | 'missing';
+    evidence: string[];
+  }>;
+  metadata: {
+    route?: string | undefined;
+    screenId?: string | undefined;
+    sourceModule?: string | undefined;
+    targetModule?: string | undefined;
+    implementationShape: string;
+    status?: string | undefined;
+    owner?: string | undefined;
+  };
+  summary: string[];
+  implementation: {
+    complexity: string;
+    shape: string;
+    targetModule?: string | undefined;
+    pattern?: string | undefined;
+    patternConfidence?: string | undefined;
+    directImplementation: string;
+    summary: string;
+    risks: string[];
+  };
+  files: FlutterPlannedFile[];
+  widgets: FlutterWidgetPlan[];
+  widgetContracts: FlutterWidgetContract[];
+  controllerBoundaries: FlutterControllerBoundary[];
+  stateStrategy: FlutterStateStrategy[];
+  doNotTranslate: string[];
+  routes: Array<{
+    action: string;
+    target?: string | undefined;
+    params?: string | undefined;
+    migrationHint: string;
+  }>;
+  lifecycle: Array<{
+    hook: string;
+    target?: string | undefined;
+    migrationHint: string;
+  }>;
+  layout: Array<{
+    selector: string;
+    kind: string;
+    migrationHint: string;
+  }>;
+  interactions: Array<{
+    kind: string;
+    target?: string | undefined;
+    migrationHint: string;
+  }>;
+  styleTokens: Array<{
+    selector: string;
+    property: string;
+    token: string;
+    fallback?: string | undefined;
+  }>;
+  i18n: Record<string, unknown>;
+  assets: Array<{
+    kind: string;
+    source?: string | undefined;
+    migrationHint: string;
+  }>;
+  reusable: {
+    widgets: string[];
+    routesFiles: string[];
+    translationFiles: string[];
+    assetDirectories: string[];
+    similarFiles: string[];
+  };
+  manualQuestions: string[];
 };
 
 export type ExportUiReviewResult = {

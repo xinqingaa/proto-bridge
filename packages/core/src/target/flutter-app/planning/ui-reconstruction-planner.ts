@@ -10,6 +10,8 @@ import type {
   SnapshotNodeRole,
   ThemeMapping,
   UiBuildPlan,
+  VueSemanticComponent,
+  VueTemplateSection,
 } from '../../../types/index.js';
 import { getFlutterTargetConventions } from '../conventions.js';
 import { findFlutterTargetExamples } from '../examples.js';
@@ -92,10 +94,22 @@ function rolesForEvidence(evidence: PageCanonical): FlutterComponentRole[] {
   if (evidence.nodes.some((node) => node.role === 'image' || node.role === 'icon')) roles.add('image');
   if (evidence.nodes.some((node) => node.role === 'modal')) roles.add('sheet');
   if (evidence.sections.some((section) => section.role === 'list')) roles.add('refresh');
+  for (const section of sourceSections(evidence)) {
+    const role = sourceSectionRole(section);
+    if (role === 'app-bar') roles.add('app-bar');
+    if (role === 'button') roles.add('button');
+    if (role === 'image' || role === 'icon') roles.add('image');
+    if (role === 'modal') roles.add('sheet');
+    if (role === 'list') roles.add('refresh');
+  }
   return [...roles];
 }
 
 function inferModule(evidence: PageCanonical, existingModules: string[]): string | undefined {
+  const sourceModule = evidence.sourceFacts?.analysis.module;
+  if (sourceModule && existingModules.includes(sourceModule)) return sourceModule;
+  const targetModule = evidence.targetFacts?.analysis.suggestedModule;
+  if (targetModule && existingModules.includes(targetModule)) return targetModule;
   const route = evidence.page.route ?? evidence.source.route ?? evidence.source.url ?? '';
   const segments = route.split(/[/?#&.=_-]+/).filter((item) => item.length >= 3);
   for (const segment of segments) {
@@ -110,6 +124,11 @@ function inferModule(evidence: PageCanonical, existingModules: string[]): string
 }
 
 function inferPattern(evidence: PageCanonical): string {
+  const source = evidence.sourceFacts?.analysis;
+  const components = source?.sfc?.components ?? [];
+  if (components.some((component) => component.role === 'chart')) return 'dashboard';
+  if (components.some((component) => component.role === 'list')) return 'list';
+  if (source?.sfc?.interactions.some((interaction) => interaction.kind === 'model')) return 'form';
   if (evidence.sections.some((section) => section.role === 'list')) return 'list';
   if (evidence.nodes.some((node) => node.role === 'input')) return 'form';
   if (evidence.sections.length >= 6) return 'dashboard';
@@ -117,22 +136,27 @@ function inferPattern(evidence: PageCanonical): string {
 }
 
 function inferPageName(evidence: PageCanonical): string {
-  const route = evidence.page.route ?? evidence.source.url ?? evidence.page.title ?? 'SnapshotPage';
+  const source = evidence.sourceFacts?.analysis;
+  const route = evidence.page.route ?? source?.route ?? evidence.source.url ?? evidence.page.title ?? 'SnapshotPage';
   const lastSegment = route.split(/[/?#]/)[0]?.split('/').filter(Boolean).at(-1);
-  return toPascalCase(lastSegment ?? evidence.page.title ?? 'SnapshotPage');
+  return toPascalCase(source?.screenId ?? source?.name ?? lastSegment ?? evidence.page.title ?? 'SnapshotPage');
 }
 
 function buildSummary(evidence: PageCanonical): string {
   const sectionCount = evidence.sections.length;
   const textCount = evidence.text.length;
   const assetCount = evidence.assets.length;
+  const source = evidence.sourceFacts?.analysis;
+  const sourceSummary = source?.sfc
+    ? `source facts 包含 ${source.sfc.sections.length} 个语义区块、${source.sfc.components.length} 个语义组件、${source.sfc.interactions.length} 个交互线索和 ${source.sfc.state.length} 个状态线索。`
+    : '';
   const capabilityHints = [
     evidence.capabilities.runtimeMetadata ? 'runtime metadata' : '',
     evidence.capabilities.pageList ? 'page list' : '',
     evidence.capabilities.tabTraversal ? 'tab traversal' : '',
     evidence.capabilities.needsOcr ? 'ocr fallback' : '',
   ].filter(Boolean);
-  return `该计划来自统一 PageCanonical，聚焦可见 UI 还原；识别到 ${sectionCount} 个视觉区块、${textCount} 条文案线索和 ${assetCount} 个资源线索。${capabilityHints.length > 0 ? `增强能力包括 ${capabilityHints.join('、')}。` : ''}业务接口、权限、风控和埋点不在本计划中做确定性推断。`;
+  return `该计划来自统一 PageCanonical，聚焦可见 UI 还原；识别到 ${sectionCount} 个视觉区块、${textCount} 条文案线索和 ${assetCount} 个资源线索。${sourceSummary}${capabilityHints.length > 0 ? `增强能力包括 ${capabilityHints.join('、')}。` : ''}业务接口、权限、风控和埋点不在本计划中做确定性推断。`;
 }
 
 function buildFileTree(baseDir: string, pageName: string, widgetTree: FlutterWidgetPlan[]): FlutterPlannedFile[] {
@@ -187,7 +211,21 @@ function buildWidgetTree(pageName: string, evidence: PageCanonical): FlutterWidg
     });
   }
 
-  return widgets;
+  if (widgets.length === 1) {
+    for (const section of sourceSections(evidence).slice(0, 16)) {
+      const role = sourceSectionRole(section);
+      const nameHint = section.title ?? section.name ?? role;
+      widgets.push({
+        name: `${pageName}${toPascalCase(nameHint).slice(0, 40)}`,
+        parent: rootName,
+        role,
+        buildHint: sourceSectionHint(section),
+        stateAccess: role === 'tab-bar' || role === 'bottom-bar' ? 'controller-slice' : 'props',
+      });
+    }
+  }
+
+  return dedupeBy(widgets, (widget) => widget.name);
 }
 
 function buildComponentMappings(evidence: PageCanonical, components: FlutterComponentRef[]): ComponentMapping[] {
@@ -197,7 +235,7 @@ function buildComponentMappings(evidence: PageCanonical, components: FlutterComp
     roles.get(node.role)?.push(node.id);
   }
 
-  return [...roles.entries()]
+  const runtimeMappings = [...roles.entries()]
     .filter(([role]) => role !== 'unknown' && role !== 'text')
     .map(([role, nodeIds]) => {
       const component = bestComponentForRole(role, components);
@@ -211,6 +249,23 @@ function buildComponentMappings(evidence: PageCanonical, components: FlutterComp
           : `No clear YouFi component was detected for evidence role ${role}; implement with local Widget and target theme.`,
       };
     });
+
+  const sourceMappings = sourceComponents(evidence)
+    .map((component) => {
+      const role = sourceComponentRole(component);
+      const targetComponent = bestComponentForRole(role, components);
+      return {
+        sourceRole: role,
+        nodeIds: [`source:${component.name}`],
+        ...(targetComponent ? { targetSymbol: targetComponent.symbol } : {}),
+        confidence: targetComponent?.confidence ?? 'medium',
+        reason: targetComponent
+          ? `Source component ${component.name} (${component.role}) can likely use ${targetComponent.symbol}.`
+          : `Source component ${component.name} (${component.role}) should become a local widget unless target examples show a reusable component.`,
+      } satisfies ComponentMapping;
+    });
+
+  return dedupeBy([...runtimeMappings, ...sourceMappings], (mapping) => `${mapping.sourceRole}:${mapping.nodeIds.join(',')}`);
 }
 
 function bestComponentForRole(role: SnapshotNodeRole, components: FlutterComponentRef[]): FlutterComponentRef | undefined {
@@ -228,7 +283,7 @@ function bestComponentForRole(role: SnapshotNodeRole, components: FlutterCompone
 }
 
 function buildThemeMappings(evidence: PageCanonical): ThemeMapping[] {
-  return (evidence.tokens ?? []).slice(0, 80).map((token) => {
+  const runtimeMappings = (evidence.tokens ?? []).slice(0, 80).map((token) => {
     const resolution = token.kind === 'typography'
       ? resolveFlutterTypographyTarget({ value: token.value })
       : token.kind === 'color'
@@ -252,17 +307,43 @@ function buildThemeMappings(evidence: PageCanonical): ThemeMapping[] {
       ...(token.usage.length > 0 ? { nodeIds: token.usage.slice(0, 24) } : {}),
       ...(target ? { target } : {}),
       ...(resolution?.candidateTargets?.length ? { candidateTargets: resolution.candidateTargets } : {}),
-      ...(resolution ? { matchedBy: resolution.matchedBy } : { matchedBy: 'manual' }),
+      matchedBy: resolution?.matchedBy ?? 'manual',
       confidence: resolution?.confidence ?? (target ? 'medium' : 'low'),
       reason: resolution?.reason ?? (target
         ? `Map evidence ${token.kind} signal to the closest YouFi theme token during implementation.`
         : `No direct YouFi token family is inferred for ${token.kind}; confirm manually.`),
-    };
+    } satisfies ThemeMapping;
   });
+  const sourceMappings = (evidence.sourceFacts?.analysis.sfc?.styleTokens ?? []).slice(0, 80).map((token) => {
+    const colorResolution = token.property.toLowerCase().includes('color')
+      ? resolveFlutterColorTarget({
+        cssVar: token.token,
+        value: token.fallback ?? token.token,
+        source: token.selector,
+      })
+      : undefined;
+    return {
+      kind: token.property.toLowerCase().includes('color') ? 'color' : undefined,
+      source: `${token.selector}.${token.property}`,
+      value: token.fallback ?? token.token,
+      target: colorResolution?.target ?? (token.property.toLowerCase().includes('font') ? 'themeService.textStyles.*' : 'themeService.colors.*'),
+      candidateTargets: colorResolution?.candidateTargets,
+      matchedBy: colorResolution?.matchedBy ?? 'manual',
+      confidence: colorResolution?.confidence ?? 'medium',
+      reason: `Source style token ${token.token} preserves semantic design intent; runtime computed style should still confirm final rendered value when available.`,
+    } satisfies ThemeMapping;
+  });
+  return dedupeBy([...runtimeMappings, ...sourceMappings], (mapping) => `${mapping.source}:${mapping.value}`);
 }
 
 function buildI18nPlan(evidence: PageCanonical): UiBuildPlan['i18nPlan'] {
-  const texts = evidence.text
+  const sourceI18nTexts = Object.values(evidence.sourceFacts?.analysis.i18n ?? {})
+    .flatMap((value) => collectStrings(value))
+    .filter((text) => text.length <= 120);
+  const texts = dedupe([
+    ...evidence.text.filter((text) => text.length <= 120),
+    ...sourceI18nTexts,
+  ])
     .filter((text) => text.length <= 120)
     .slice(0, 120)
     .map((text) => ({
@@ -282,26 +363,41 @@ function suggestedKey(text: string): { suggestedKey?: string } {
 }
 
 function buildAssetPlan(evidence: PageCanonical): UiBuildPlan['assetPlan'] {
+  const sourceAssets = evidence.sourceFacts?.analysis.sfc?.assets ?? [];
   return {
-    assets: evidence.assets.slice(0, 80).map((asset) => ({
+    assets: [
+      ...evidence.assets.slice(0, 80).map((asset) => ({
       source: asset.source,
       kind: asset.kind,
       nodeId: asset.nodeId,
       recommendation: asset.source
         ? 'Match this source with an existing YouFi asset first; add a TODO if no local asset exists.'
         : 'Inline or generated visual asset detected; recreate with YouFi icon/SVG/image conventions.',
-    })),
+      })),
+      ...sourceAssets.slice(0, 80).map((asset) => ({
+        source: asset.source,
+        kind: sourceAssetKind(asset.kind),
+        recommendation: asset.migrationHint,
+      })),
+    ],
     recommendation: 'Prefer existing assets/images, assets/dark_images, assets/svg, and assets/json entries before adding new files.',
   };
 }
 
 function buildInteractionPlan(evidence: PageCanonical): InteractionPlan[] {
-  return evidence.interactions.slice(0, 80).map((interaction) => ({
+  const runtime = evidence.interactions.slice(0, 80).map((interaction) => ({
     kind: interaction.kind,
     label: interaction.label,
     nodeId: interaction.nodeId,
     recommendation: 'Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it.',
   }));
+  const source = (evidence.sourceFacts?.analysis.sfc?.interactions ?? []).slice(0, 80).map((interaction, index) => ({
+    kind: sourceInteractionKind(interaction.kind),
+    label: interaction.target,
+    nodeId: `source:interaction:${index}`,
+    recommendation: interaction.evidence,
+  }));
+  return [...runtime, ...source];
 }
 
 function buildBusinessQuestions(evidence: PageCanonical): string[] {
@@ -313,6 +409,10 @@ function buildBusinessQuestions(evidence: PageCanonical): string[] {
   if (evidence.interactions.length > 0) {
     questions.push(`PageCanonical 识别到 ${evidence.interactions.length} 个可交互区域，需要逐项确认业务动作。`);
   }
+  const source = evidence.sourceFacts?.analysis;
+  if (source?.sfc?.state.length) {
+    questions.push(`Source facts 识别到 ${source.sfc.state.length} 个状态线索，需要确认哪些属于真实业务状态、哪些只是 UI 临时状态。`);
+  }
   return questions;
 }
 
@@ -322,6 +422,9 @@ function buildRisks(evidence: PageCanonical): string[] {
     '少量 computed style 仍可能映射到多个 YouFi 语义 token，需结合 node 上下文和截图二次确认。',
   ];
   if (evidence.assets.length > 0) risks.push('图片、SVG 或背景资源需要确认是否已有 YouFi 本地资产可复用。');
+  if (evidence.sourceFacts && !evidence.runtimeFacts) risks.push('本次没有 runtime facts，bbox、computed style、当前可见状态和截图对照需要后续 capture 确认。');
+  if (evidence.runtimeFacts && !evidence.sourceFacts) risks.push('本次没有 source facts，隐藏状态、业务语义和完整交互空间不能从 runtime 直接推断。');
+  if ((evidence.manualConfirmations?.length ?? 0) > 0) risks.push(...(evidence.manualConfirmations ?? []).map((item) => item.question));
   if (evidence.warnings.length > 0) risks.push(...evidence.warnings);
   return risks;
 }
@@ -359,6 +462,86 @@ function buildSectionHint(section: PageCanonical['sections'][number], evidence: 
     `还原 ${section.role} 区块，bbox=${section.bbox.x},${section.bbox.y},${section.bbox.width},${section.bbox.height}。`,
     layoutHints.length > 0 ? `布局特征：${layoutHints.join(', ')}。` : '',
   ].filter(Boolean).join(' ');
+}
+
+function sourceSections(evidence: PageCanonical): VueTemplateSection[] {
+  return evidence.sourceFacts?.analysis.sfc?.sections ?? [];
+}
+
+function sourceComponents(evidence: PageCanonical): VueSemanticComponent[] {
+  return evidence.sourceFacts?.analysis.sfc?.components ?? [];
+}
+
+function sourceSectionRole(section: VueTemplateSection): SnapshotNodeRole {
+  const map: Record<VueTemplateSection['kind'], SnapshotNodeRole> = {
+    'app-bar': 'app-bar',
+    'tab-bar': 'tab-bar',
+    section: 'section',
+    list: 'list',
+    chart: 'section',
+    'bottom-bar': 'bottom-bar',
+    modal: 'modal',
+    unknown: 'unknown',
+  };
+  return map[section.kind] ?? 'section';
+}
+
+function sourceComponentRole(component: VueSemanticComponent): SnapshotNodeRole {
+  const map: Record<VueSemanticComponent['role'], SnapshotNodeRole> = {
+    header: 'app-bar',
+    tabs: 'tab-bar',
+    'section-tabs': 'tab-bar',
+    summary: 'section',
+    'content-section': 'section',
+    list: 'list',
+    chart: 'section',
+    'bottom-actions': 'bottom-bar',
+    modal: 'modal',
+    unknown: 'unknown',
+  };
+  return map[component.role] ?? 'section';
+}
+
+function sourceSectionHint(section: VueTemplateSection): string {
+  return [
+    `根据 source semantic section 迁移 ${section.kind} 区块。`,
+    section.title ? `标题/语义：${section.title}。` : '',
+    section.selector ? `来源 selector：${section.selector}。` : '',
+    section.evidence ? `证据：${section.evidence}` : '',
+  ].filter(Boolean).join(' ');
+}
+
+function sourceInteractionKind(kind: NonNullable<PageCanonical['sourceFacts']>['analysis']['sfc'] extends infer S
+  ? S extends { interactions: Array<infer I> }
+    ? I extends { kind: infer K }
+      ? K
+      : never
+    : never
+  : never): InteractionPlan['kind'] {
+  if (kind === 'model') return 'input';
+  if (kind === 'click') return 'tap';
+  return 'unknown';
+}
+
+function sourceAssetKind(kind: string): UiBuildPlan['assetPlan']['assets'][number]['kind'] {
+  if (kind === 'image') return 'image';
+  if (kind === 'svg' || kind === 'inline-svg') return 'svg';
+  if (kind === 'icon') return 'icon';
+  if (kind === 'background') return 'background';
+  return 'unknown';
+}
+
+function collectStrings(value: unknown): string[] {
+  if (typeof value === 'string') return [value];
+  if (Array.isArray(value)) return value.flatMap((item) => collectStrings(item));
+  if (value && typeof value === 'object') {
+    return Object.values(value).flatMap((item) => collectStrings(item));
+  }
+  return [];
+}
+
+function dedupe(items: string[]): string[] {
+  return [...new Set(items.filter(Boolean))];
 }
 
 function createPlanId(pageId: string): string {
