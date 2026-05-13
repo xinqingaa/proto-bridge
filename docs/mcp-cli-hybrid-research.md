@@ -166,7 +166,7 @@ screenshot 优先表达最终视觉对照和补证。
 
 一个重要的认知变化是：
 
-### 5.1 `ui-implementation-plan.json` 不是确定性翻译结果
+### 5.1 `ui-build-plan.json` 不是确定性翻译结果
 
 它不是：
 
@@ -218,7 +218,7 @@ evidence -> implementation guidance -> agent judgment -> Flutter code
 一个现实可行的过渡方向是：
 
 ```text
-skill -> 调 CLI -> 生成 migration-context.json / migration-spec.md
+skill -> 调 CLI -> 生成 page-canonical.json / ui-build-review.md
 -> 再继续自动生成 Dart
 ```
 

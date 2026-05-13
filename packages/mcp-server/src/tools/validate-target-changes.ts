@@ -6,11 +6,13 @@ import {
 } from '@proto-bridge/core/target/flutter-app';
 import type { JsonObject, ToolContext } from '../types.js';
 import { readString, readStringArray } from '../utils/args.js';
-import { resolveRuntimeTargetRoot } from '../services/config.js';
+import { resolveProjectRoot, resolveRuntimeConfig, resolveRuntimeTargetRoot } from '../services/config.js';
 import { collectChangedFiles } from '../services/git.js';
 
 export async function validateTargetChangesTool(context: ToolContext, args: JsonObject): Promise<JsonObject> {
-  const targetRoot = resolveRuntimeTargetRoot(readString(args, 'targetRoot'));
+  const config = await resolveRuntimeConfig(context.options);
+  const configTargetRoot = resolveProjectRoot(config?.target, context.options.configDir);
+  const targetRoot = resolveRuntimeTargetRoot(readString(args, 'targetRoot') ?? configTargetRoot);
   const pageId = readString(args, 'pageId');
   const page = pageId ? context.pages.require(pageId) : undefined;
   const allowedPaths = readStringArray(args, 'allowedPaths') ?? allowedPathsFromPlan(page);

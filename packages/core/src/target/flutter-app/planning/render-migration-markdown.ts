@@ -1019,7 +1019,7 @@ function limitRows(rows: string[][], max: number): string[][] {
   if (rows.length <= max) return rows;
   return [
     ...rows.slice(0, max),
-    [`其余 ${rows.length - max} 条样式`, '', '', '已省略重复或低优先级细节，必要时查看 migration-context.json'],
+    [`其余 ${rows.length - max} 条样式`, '', '', '已省略重复或低优先级细节，必要时查看 page-canonical.json'],
   ];
 }
 

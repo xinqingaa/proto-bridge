@@ -10,14 +10,6 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./workflows/source-aware-migration": {
-      "types": "./dist/workflows/source-aware-migration/index.d.ts",
-      "import": "./dist/workflows/source-aware-migration/index.js"
-    },
-    "./workflows/ui-reconstruction": {
-      "types": "./dist/workflows/ui-reconstruction/index.d.ts",
-      "import": "./dist/workflows/ui-reconstruction/index.js"
-    },
     "./workflows/capability-first": {
       "types": "./dist/workflows/capability-first/index.d.ts",
       "import": "./dist/workflows/capability-first/index.js"

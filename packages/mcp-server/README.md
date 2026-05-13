@@ -1,53 +1,38 @@
 # @proto-bridge/mcp-server
 
-ProtoBridge MCP server exposes the URL UI reconstruction workflow to AI coding agents.
+ProtoBridge MCP server exposes the capability-first UI reconstruction workflow to AI coding agents.
 
-See `docs/workflows.md` in the repository for the full CLI/MCP workflow comparison.
+## Configuration
 
-The runtime is intentionally scoped to the MCP workflow:
+MCP reads `proto-bridge.config.json` from the server working directory by default. Tool arguments override config values.
 
-- It does not require `proto-bridge.config.json`.
-- It uses the current working directory as the YouFi Flutter target root.
-- It does not expose CLI source-aware migration tools.
-- It does not write Dart files by itself. The AI coding tool captures page evidence, builds a UI implementation plan, edits the target Flutter repository, then validates the result.
-
-## Requirements
-
-- Node.js 20 or newer.
-- Run the MCP server from the target YouFi Flutter repository, or pass `targetRoot` to tools.
-- The page URL must be reachable by Playwright in the MCP server environment.
-
-## Published Package Usage
-
-Point your AI tool at the npm package from the YouFi repository:
-
-```bash
-npx -y @proto-bridge/mcp-server
+```json
+{
+  "source": {
+    "adapter": "vue3-prototype",
+    "root": "/path/to/TradeAppPrd"
+  },
+  "target": {
+    "adapter": "flutter-app",
+    "root": "/path/to/youfi"
+  },
+  "outputRoot": "./output",
+  "capture": false
+}
 ```
 
-## Local Source Usage
-
-When developing ProtoBridge locally:
+You can also pass a config path when starting the server:
 
 ```bash
-cd /path/to/proto-bridge
-pnpm run build
-cd /path/to/youfi
-node /path/to/proto-bridge/packages/mcp-server/dist/index.js
+npx -y @proto-bridge/mcp-server --config /path/to/proto-bridge.config.json
 ```
 
-## Codex Configuration
-
-Project-level Codex config in the YouFi repository:
+## Codex
 
 ```toml
-# /path/to/youfi/.codex/config.toml
 [mcp_servers.proto-bridge]
 command = "npx"
-args = [
-  "-y",
-  "@proto-bridge/mcp-server"
-]
+args = ["-y", "@proto-bridge/mcp-server"]
 ```
 
 Local source variant:
@@ -56,71 +41,50 @@ Local source variant:
 [mcp_servers.proto-bridge]
 command = "node"
 args = [
-  "/path/to/proto-bridge/packages/mcp-server/dist/index.js"
+  "/path/to/proto-bridge/packages/mcp-server/dist/index.js",
+  "--config",
+  "/path/to/youfi/proto-bridge.config.json"
 ]
 ```
 
-Restart Codex after changing MCP config.
+## Cursor
 
-## Cursor Configuration
-
-Project-level Cursor config in the YouFi repository:
+Save as `.cursor/mcp.json` in the target repo:
 
 ```json
 {
   "mcpServers": {
     "proto-bridge": {
       "command": "npx",
-      "args": [
-        "-y",
-        "@proto-bridge/mcp-server"
-      ]
+      "args": ["-y", "@proto-bridge/mcp-server"]
     }
   }
 }
 ```
 
-Save it as:
-
-```text
-/path/to/youfi/.cursor/mcp.json
-```
-
-## Claude Code Configuration
-
-Project-level Claude Code setup from the YouFi repository:
-
-```bash
-cd /path/to/youfi
-claude mcp add proto-bridge --scope project -- \
-  npx -y @proto-bridge/mcp-server
-```
-
 ## Tools
 
-- `capture_page_evidence`: capture a rendered URL into `page-evidence.json` and `screenshot.png`.
-- `build_ui_implementation_plan`: build `ui-implementation-plan.json` from `PageEvidence` and YouFi target conventions.
-- `ocr_screenshot`: persist OCR evidence for a screenshot, or return a clear warning when no OCR provider is configured.
-- `export_review_markdown`: export a human-readable `ui-review.md` from `PageEvidence` and a UI implementation plan.
-- `get_target_conventions`: scan target Flutter conventions, reusable components, theme, routes, i18n, and assets.
-- `find_target_examples`: find similar target Dart files with matched symbols and snippets.
-- `validate_target_changes`: inspect target git changes for scope, placeholder UI, TODOs, and hard-coded colors.
+- `reconstruct_page_context`: primary tool. It selects source/runtime/screenshot/target capabilities and writes unified artifacts.
+- `read_target_conventions`: read target Flutter conventions.
+- `find_target_examples`: find similar target Dart files/snippets.
+- `validate_ui_build`: validate target changes after implementation.
 
-Not exposed in the MCP runtime:
+Legacy public step-by-step URL tools have been removed. OCR and screenshot evidence now go through `reconstruct_page_context` arguments such as `screenshotPath`, `ocrText`, and `ocrBoxes`.
 
-- `generate_migration_spec`
-- `get_migration_brief`
-- `read_migration_artifact`
+## Main Output
 
-Source-aware migration is available through `@proto-bridge/cli` and `@proto-bridge/core/workflows/source-aware-migration`, but it is not available through the MCP runtime.
-
-The MCP package should only import `@proto-bridge/core/workflows/ui-reconstruction` and `@proto-bridge/core/target/flutter-app`; source-aware migration remains a CLI/core workflow.
+```text
+<outputRoot>/<page>-<timestamp>/
+├── page-canonical.json
+├── page-debug-index.json
+├── ui-build-plan.json
+├── ui-build-review.md
+└── screenshots/
+```
 
 ## Example Prompt
 
 ```text
-Use ProtoBridge to reconstruct this page in YouFi Flutter:
-https://xiaofenhong.cc/TradeAppPrd/#/prototype/etf-detail?is_mobile=1
+Use ProtoBridge reconstruct_page_context for this page and implement the resulting ui-build-plan in the target Flutter app:
+http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1
 ```
-
-The agent should call `capture_page_evidence`, then `build_ui_implementation_plan`, inspect target conventions/examples as needed, optionally call `export_review_markdown` for human review, implement Dart UI, and finally call `validate_target_changes` with the returned `planId`.

@@ -12,7 +12,7 @@
 
 ## 1. 优先级总览
 
-当前阶段已经完成 P0 / P1 / P2，下一步最高优先级调整为 P5：Capability-first 工作流重构。
+当前阶段已经完成 P0 / P1 / P2，P5 capability-first 主链路也已完成到 final cleanup：CLI/MCP 都走统一 `reconstructPageContext`，MCP 已读取 `proto-bridge.config.json`，旧 URL-first MCP tools 和旧 source-aware workflow 公开入口已删除。
 
 现在不继续沿旧的 URL-first / source-aware 两条固定 workflow 做 P3 / P4 增强。P3 / P4 暂停作为主线，但不废弃；它们应在 P5 完成后分别作为 `runtime.capture`、`ui.plan` / `target.inspect` capability 的增强继续推进。
 
@@ -22,7 +22,7 @@
 P0 统一产物模型与 MCP 契约（已完成）
   -> P1 MCP 可用性与问题归因基础（已完成）
   -> P2 Evidence / Artifact 可观察性（已完成）
-  -> P5 Capability-first 工作流重构（当前最高优先级）
+  -> P5 Capability-first 工作流重构（主链路已完成，剩余 review 压缩 follow-up）
   -> P3 Runtime Capture capability 增强
   -> P4 Planning / Target Mapping capability 增强
   -> P6 MCP 高级协议能力
@@ -48,7 +48,7 @@ P0 已完成统一产物模型与 MCP 契约：
 
 P1 已完成 MCP 可用性基础：
 
-- 7 个 MCP tools 已补中文 title / description / 参数说明 / annotations / outputSchema。
+- MCP tools 已收敛为 `reconstruct_page_context`、`read_target_conventions`、`find_target_examples`、`validate_ui_build`，并补中文 title / description / 参数说明 / annotations / outputSchema。
 - 已暴露 workflow guide、tool catalog、latest artifacts、prompts。
 - 已确认 Codex CLI `/mcp` 面板只显示 tool names，但协议层能返回完整描述。
 
@@ -103,12 +103,7 @@ P2 已完成 Evidence / Artifact 可观察性基础：
 - `ui-build-review.md`
 - `screenshots/`
 
-旧产物名已退出主流程，仅作为历史背景保留：
-
-- `page-evidence.json`
-- `ui-implementation-plan.json`
-- `ui-review.md`
-- `visual-debug-index.json`
+旧产物名已退出主流程，仅作为历史背景保留，不再作为当前接口或文档主路径。
 
 ### 2.2 MCP Tool Output Contract
 
@@ -178,15 +173,20 @@ validate
 
 新观察：
 
-当前在 MCP client 中看到的 server 摘要过于单薄：
+历史样本中，MCP client 看到的 server 摘要过于单薄：
 
 ```text
 MCP Tools
 
 • proto-bridge
   • Auth: Unsupported
-  • Tools: capture_page_canonical, build_ui_plan, attach_screenshot_ocr,
-    export_ui_review, read_target_conventions, find_target_examples, validate_ui_build
+  • Tools: 旧 URL-first 分步 tools 与 target helper tools
+```
+
+当前 P5-final cleanup 后，公开 tool 已收敛为：
+
+```text
+reconstruct_page_context, read_target_conventions, find_target_examples, validate_ui_build
 ```
 
 这会让第一次使用 ProtoBridge 的 agent 或人类维护者很难判断：
@@ -205,7 +205,7 @@ MCP Tools
 - `packages/mcp-server/src/server/dispatcher.ts` 的 `initialize` 当前声明了 `tools`、`resources`、`prompts` 三类 server capability。
 - 当前没有声明 `logging`、`completions`、`experimental` 或其他扩展 capability。
 - 当前没有处理 `roots/list`、`sampling/createMessage`、`elicitation/create` 等 client capability 相关请求。
-- `packages/mcp-server/src/tools/registry.ts` 已注册 7 个 tool：`capture_page_canonical`、`build_ui_plan`、`attach_screenshot_ocr`、`export_ui_review`、`read_target_conventions`、`find_target_examples`、`validate_ui_build`。
+- `packages/mcp-server/src/tools/registry.ts` 当前注册 4 个公开 tool：`reconstruct_page_context`、`read_target_conventions`、`find_target_examples`、`validate_ui_build`。
 - 当前 tool schema 已补 `required`、`additionalProperties: false`、`annotations` 和 `outputSchema`，并已通过 stdio `tools/list` 验证描述可返回。
 - `packages/mcp-server/src/resources/index.ts` 已暴露强化后的 workflow guide、tool catalog、latest artifacts、target conventions，并在 session 内动态暴露 page-centric artifacts。
 - 当前已提供 resource templates，因此 client 可在 capture 前知道 page canonical、debug index、screenshot、plan、review 的 URI 模板。
@@ -782,7 +782,7 @@ P5 后，CLI 和 MCP 在同等输入下都应产出同一套 artifacts：
 - `ui-build-review.md`
 - `screenshots/`
 
-旧的 CLI `migration-context.json` / `migration-spec.md` 可以短期保留为兼容投影，但不能继续作为 source-aware 主产物模型。
+旧的 CLI `migration-context.json` 已删除默认输出和内部兼容开关；`migration-spec.md` 仅在显式 `sourceBrief` / `--source-brief` 时作为可选 source-aware brief 输出，不能作为主产物模型。
 
 重要补充：
 
@@ -808,7 +808,7 @@ MCP：
 - 输入可以是 `url`、`sourceRoot`、`route`、`vuePath`、`screenshotPath`、`targetRoot`、`output`。
 - 内部调用同一个 `reconstructPageContext(input)`。
 
-现有 URL-first MCP tools 可以作为兼容层保留，但它们不应继续拥有独立 workflow 逻辑。
+旧 URL-first MCP tools 已从公开 tools 中删除；截图/OCR、plan、review 都通过 `reconstruct_page_context` 完成。
 
 ### 7.2 字段级优先级方向
 
@@ -855,7 +855,7 @@ screenshot 优先表达最终视觉对照和补证。
 
 ### 7.4 过渡方案
 
-`skill -> 调 CLI -> 生成 migration-context.json / migration-spec.md -> 再继续自动生成 Dart` 是合理的短期桥接方案。
+`skill -> 调 CLI -> 生成 page-canonical.json / ui-build-review.md -> 再继续自动生成 Dart` 是合理的短期桥接方案。
 
 短期价值：
 
@@ -888,11 +888,11 @@ P5-A 已选择方案 C：
 - [x] 制定 source / runtime / screenshot / target 的字段级优先级表，并写入 canonical merge 逻辑。
 - [x] 设计 source/runtime mismatch warning 与 manual confirmation 机制。
 - [x] CLI 改为调用统一 orchestrator，终端入口不再只绑定 source-aware migration workflow。
-- [x] MCP 增加统一 orchestrator 工具 `reconstruct_page_context`；旧 URL-first tools 暂作为 P5-A 兼容层保留，P5 完成后删除。
+- [x] MCP 增加统一 orchestrator 工具 `reconstruct_page_context`；旧 URL-first tools 已删除。
 - [x] CLI / MCP 在同等输入条件下产出同一套主 artifacts：`page-canonical.json`、`page-debug-index.json`、`ui-build-plan.json`、`ui-build-review.md`、screenshots。
-- [x] `build_ui_plan` 只消费统一 canonical，不关心 canonical 来源是 source、runtime、screenshot 还是 hybrid。
+- [x] `ui.plan` 只消费统一 canonical，不关心 canonical 来源是 source、runtime、screenshot 还是 hybrid。
 - [x] 能力化旧 CLI `migration-spec.md` 背后的 source-aware 说明生成逻辑；有 source facts 时，主产物为增强版 `ui-build-review.md`，`migration-spec.md` 仅作为 source-aware implementation brief。
-- [x] 旧 CLI `migration-context.json` 降级为 source-aware projection；主链路改用统一 artifacts。P5-C 起默认不再输出 `migration-context.json`，仅保留内部兼容开关。
+- [x] 旧 CLI `migration-context.json` 删除默认输出和内部兼容开关；主链路改用统一 artifacts。
 - [x] P5-B：增强 `ui.plan` 对 source-only / hybrid canonical 的消费；source-only 时也能从 SFC sections/components/interactions/style tokens 生成 widget tree、component/theme/asset/interaction plan。
 - [x] P5-B：将 `ui-build-review.md` 的 source-aware 内容改成结构化 projection，不再整篇嵌入旧 `migration-spec.md`。
 - [x] 更新测试脚本，验证 CLI 和 MCP 在相同 source/url/target 输入下产物契约一致。
@@ -906,10 +906,10 @@ P5-A 已选择方案 C：
 - [x] P5-final：`migration-spec.md` 默认不再输出；仅在显式 `--source-brief` / `sourceBrief=true` 时作为可选 source-aware brief 导出。
 - [x] P5-final：测试脚本增加 `--matrix`，覆盖 hybrid / source-only / runtime-only 主路径与无页面身份、无源码 route 等失败边界。
 - [ ] P5-D follow-up：压缩过长的 source layout/style evidence，避免 review 在复杂页面中过度冗长。
-- [ ] P5-final cleanup：删除旧 URL-first MCP tool 主路径，只保留 capability-first `reconstruct_page_context` 与必要只读/验证工具。
-- [ ] P5-final：删除旧 source-aware workflow 主路径，CLI 只保留 capability-first generate。
-- [ ] P5-final：删除 `migration-context.json` 内部兼容开关。
-- [ ] P5-final cleanup：删除 `migration-spec.md` 作为顶层主产物的残余文档描述；如仍需 source-aware brief，必须保持显式可选导出。
+- [x] P5-final cleanup：删除旧 URL-first MCP tool 主路径，只保留 capability-first `reconstruct_page_context` 与必要只读/验证工具。
+- [x] P5-final：删除旧 source-aware workflow 主路径，CLI 只保留 capability-first generate。
+- [x] P5-final：删除 `migration-context.json` 内部兼容开关。
+- [x] P5-final cleanup：删除 `migration-spec.md` 作为顶层主产物的残余文档描述；如仍需 source-aware brief，必须保持显式可选导出。
 - [ ] P5 完成后，再回到 P3 增强 `runtime.capture` capability。
 - [ ] P5 完成后，再回到 P4 增强 `ui.plan` / `target.inspect` capability。
 
@@ -1008,13 +1008,12 @@ P6 不进入当前 P5 工作流重构主线。roots、elicitation、logging、co
 
 #### 9.3.1 输入与 capture 边界
 
-- MCP 当前主输入是 `URL`，不是“URL 或截图二选一”。
-- `capture_page_canonical` 会用 Playwright 打开 URL，使用给定 viewport 或默认 viewport 进行 capture。
+- MCP 当前主输入由 `reconstruct_page_context` 统一承接：可以是 `sourceRoot + route/vuePath`、`url`、`screenshotPath/OCR` 或它们的组合。
+- `reconstruct_page_context` 在有 URL 且 capture 启用时，会通过 `runtime.capture` 用 Playwright 打开 URL，使用给定 viewport 或默认 viewport 进行 capture。
 - 当前默认 viewport 为 `390 x 844`，这会直接影响截图、bbox、section 和样式判断。
 - 页面截图 `screenshots/full-page.png` 是视觉基准证据，但当前 node tree 主要来自 rendered DOM，而不是来自截图本身。
-- `attach_screenshot_ocr` 当前主要补充 OCR 文字证据，不能替代 URL capture，也不能单独生成和 DOM 同等级的 node tree。
-- 当前 CLI 仍是 source-aware migration workflow：`--url` 会先抽取 route，并要求该 route 能在 `proto-bridge.config.json` 的 source project 中解析到源码页面。
-- 当前 CLI 不能把任意 URL-only design page 直接转成 `page-canonical.json` / `ui-build-plan.json`；这属于 P5 hybrid capability-first 后才应解决的编排能力。
+- `screenshotPath` / `ocrText` / `ocrBoxes` 当前主要补充截图/OCR 文字证据，不能替代 URL capture，也不能单独生成和 DOM 同等级的 node tree。
+- 当前 CLI 已走 capability-first：`--url` 可走 runtime-only，`--route` / `--vue` 可走 source-only，有 source + URL 时走 hybrid。
 
 #### 9.3.2 Evidence 生成边界
 

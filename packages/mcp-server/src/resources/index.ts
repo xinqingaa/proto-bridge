@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { getFlutterTargetConventions } from '@proto-bridge/core/target/flutter-app';
 import type { JsonObject, JsonValue, ToolContext } from '../types.js';
 import { readString } from '../utils/args.js';
-import { resolveRuntimeTargetRoot } from '../services/config.js';
+import { resolveProjectRoot, resolveRuntimeConfig, resolveRuntimeTargetRoot } from '../services/config.js';
 import {
   LATEST_ARTIFACTS_URI,
   TOOL_CATALOG_URI,
@@ -99,8 +99,10 @@ export async function readResource(context: ToolContext, params: JsonObject | un
   }
 
   if (uri === 'proto-bridge://target/conventions') {
+    const config = await resolveRuntimeConfig(context.options);
+    const configTargetRoot = resolveProjectRoot(config?.target, context.options.configDir);
     const conventions = await getFlutterTargetConventions({
-      flutterRoot: resolveRuntimeTargetRoot(undefined),
+      flutterRoot: resolveRuntimeTargetRoot(configTargetRoot),
     });
     return textContent(uri, 'application/json', JSON.stringify(conventions, null, 2));
   }
@@ -181,22 +183,10 @@ function renderWorkflowGuide(): string {
     '   - 产出统一 `page-canonical.json`、`page-debug-index.json`、`ui-build-plan.json`、`ui-build-review.md` 和截图 artifact。',
     '   - 有 source facts 时，`ui-build-review.md` 会包含 source-aware implementation brief；`migration-spec.md` 只是 P5-A 过渡 brief projection，不是主交付。',
     '',
-    '2. 可选 OCR 增强：当可见文字缺失、图片/canvas 文字重要时，使用 `pageId` 调用 `attach_screenshot_ocr`。',
-    '   - 产出 `ocr-result.json` 并更新 `page-canonical.json`。',
-    '   - 如果 OCR 改变了重要文字证据，应重新生成 UI plan。',
+    '2. 可选截图/OCR 输入：当可见文字缺失、图片/canvas 文字重要时，把 `screenshotPath`、`ocrText` 或 `ocrBoxes` 直接传给 `reconstruct_page_context`。',
+    '   - 这些证据会进入 `screenshotFacts` 和 `page-canonical.json`。',
     '',
-    '3. 兼容计划：旧 URL-first 工具仍可使用，但只是 P5-A 过渡层。',
-    '   - `capture_page_canonical`、`build_ui_plan`、`export_ui_review` 暂时保留。',
-    '   - P5 完成后会删除旧 workflow 兼容入口。',
-    '',
-    '4. 计划：使用 `pageId` 调用 `build_ui_plan`。',
-    '   - 读取目标工程规范并产出 `ui-build-plan.json`。',
-    '   - plan 是实现指导，不是已生成的 Dart 代码。',
-    '',
-    '5. 评审：使用 `pageId` 调用 `export_ui_review`。',
-    '   - 产出 `ui-build-review.md`，用于人工评审或实现交接。',
-    '',
-    '6. 验证：目标代码修改后，使用 `pageId` 和 `targetRoot` 调用 `validate_ui_build`。',
+    '3. 验证：目标代码修改后，使用 `pageId` 和 `targetRoot` 调用 `validate_ui_build`。',
     '   - 报告变更文件、范围问题、占位实现、缺失的预期文件，以及 plan 对齐风险。',
     '',
     '## Resource 映射',

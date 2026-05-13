@@ -1,10 +1,10 @@
-import { attachScreenshotOcr } from '../workflows/ui-reconstruction/attach-screenshot-ocr.js';
+import { persistExternalOcrEvidence } from '../snapshot/ocr/external-ocr.js';
 import type { ScreenshotAttachCapabilityInput, ScreenshotAttachCapabilityResult } from './types.js';
 
 export async function attachScreenshotCapability(
   input: ScreenshotAttachCapabilityInput,
 ): Promise<ScreenshotAttachCapabilityResult> {
-  const result = await attachScreenshotOcr(input);
+  const result = await persistExternalOcrEvidence(input);
   return {
     ...result,
     capability: 'screenshot.attach',

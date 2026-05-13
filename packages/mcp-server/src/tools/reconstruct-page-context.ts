@@ -3,7 +3,7 @@ import { reconstructPageContext } from '@proto-bridge/core/workflows/capability-
 import type { OcrTextBox } from '@proto-bridge/core';
 import type { JsonObject, ToolContext } from '../types.js';
 import { readBoolean, readNumber, readObject, readString, readStringArray } from '../utils/args.js';
-import { resolveRuntimeTargetRoot } from '../services/config.js';
+import { resolveProjectRoot, resolveRuntimeConfig, resolveRuntimeTargetRoot } from '../services/config.js';
 import {
   artifactSetId,
   createArtifactToolResponse,
@@ -11,42 +11,49 @@ import {
 } from '../artifacts/contracts.js';
 
 export async function reconstructPageContextTool(context: ToolContext, args: JsonObject): Promise<JsonObject> {
-  const sourceRoot = readString(args, 'sourceRoot');
-  const targetRoot = resolveRuntimeTargetRoot(readString(args, 'targetRoot'));
-  const route = readString(args, 'route');
-  const vue = readString(args, 'vuePath') ?? readString(args, 'vue');
-  const url = readString(args, 'url');
+  const config = await resolveRuntimeConfig(context.options);
+  const configSourceRoot = resolveProjectRoot(config?.source, context.options.configDir);
+  const configTargetRoot = resolveProjectRoot(config?.target, context.options.configDir);
+  const targetRoot = resolveRuntimeTargetRoot(readString(args, 'targetRoot') ?? configTargetRoot);
+  const sourceRootInput = readString(args, 'sourceRoot') ?? configSourceRoot;
+  const sourceRoot = sourceRootInput ? resolveRoot(sourceRootInput, targetRoot) : undefined;
+  const route = readString(args, 'route') ?? config?.route;
+  const vue = readString(args, 'vuePath') ?? readString(args, 'vue') ?? config?.vue;
+  const url = readString(args, 'url') ?? config?.url;
   const screenshotPath = readString(args, 'screenshotPath');
   const hasAnyPageInput = Boolean(sourceRoot || route || vue || url || screenshotPath);
   if (!hasAnyPageInput) {
     throw new Error('reconstruct_page_context requires at least one of sourceRoot, route, vuePath, url, or screenshotPath.');
   }
 
-  const outDir = resolveOutputDir(args, targetRoot, route ?? vue ?? url ?? 'page');
+  const outputRoot = config?.outputRoot
+    ? resolveRoot(config.outputRoot, context.options.configDir)
+    : undefined;
+  const outDir = resolveOutputDir(args, targetRoot, route ?? vue ?? url ?? 'page', outputRoot);
   const result = await reconstructPageContext({
     source: sourceRoot ? {
-      adapter: readString(args, 'sourceAdapter') ?? 'vue3-prototype',
-      root: path.resolve(targetRoot, sourceRoot),
+      adapter: readString(args, 'sourceAdapter') ?? config?.source?.adapter ?? 'vue3-prototype',
+      root: sourceRoot,
     } : undefined,
     target: {
-      adapter: readString(args, 'targetAdapter') ?? 'flutter-app',
+      adapter: readString(args, 'targetAdapter') ?? config?.target?.adapter ?? 'flutter-app',
       root: targetRoot,
     },
     route,
     vue,
     url,
-    prototypeUrl: readString(args, 'prototypeUrl'),
+    prototypeUrl: readString(args, 'prototypeUrl') ?? config?.prototypeUrl,
     screenshotPath: screenshotPath ? path.resolve(targetRoot, screenshotPath) : undefined,
     ocrText: readStringArray(args, 'ocrText') ?? readStringArray(args, 'externalText'),
     ocrBoxes: readExternalBoxes(args),
     outDir,
-    capture: readBoolean(args, 'capture') ?? Boolean(url),
+    capture: readBoolean(args, 'capture') ?? config?.capture ?? Boolean(url),
     viewport: readViewport(args),
     saveArtifacts: readBoolean(args, 'saveArtifacts') ?? true,
     targetModule: readString(args, 'targetModule'),
     buildPlan: readBoolean(args, 'buildPlan') ?? true,
     buildReview: readBoolean(args, 'buildReview') ?? true,
-    sourceBrief: readBoolean(args, 'sourceBrief') ?? false,
+    sourceBrief: readBoolean(args, 'sourceBrief') ?? config?.sourceBrief ?? false,
     trace: readBoolean(args, 'trace') ?? false,
   });
 
@@ -109,10 +116,15 @@ function readViewport(args: JsonObject): { width: number; height: number; device
   };
 }
 
-function resolveOutputDir(args: JsonObject, targetRoot: string, seed: string): string {
+function resolveOutputDir(args: JsonObject, targetRoot: string, seed: string, outputRoot: string | undefined): string {
   const output = readString(args, 'output');
   if (output) return path.isAbsolute(output) ? output : path.resolve(targetRoot, output);
+  if (outputRoot) return path.join(outputRoot, `${slugFromSeed(seed)}-${Date.now().toString(36)}`);
   return path.join(targetRoot, '.proto-bridge', 'pages', `${slugFromSeed(seed)}-${Date.now().toString(36)}`);
+}
+
+function resolveRoot(input: string, base: string): string {
+  return path.isAbsolute(input) ? input : path.resolve(base, input);
 }
 
 function slugFromSeed(value: string): string {

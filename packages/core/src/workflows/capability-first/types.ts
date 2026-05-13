@@ -34,7 +34,6 @@ export type ReconstructPageContextInput = {
   buildReview?: boolean | undefined;
   sourceBrief?: boolean | undefined;
   trace?: boolean | undefined;
-  writeLegacyMigrationContext?: boolean | undefined;
 };
 
 export type ReconstructPageContextResult = {

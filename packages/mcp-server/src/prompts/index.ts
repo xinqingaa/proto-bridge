@@ -7,7 +7,7 @@ const promptDefinitions = [
     description: '运行完整 ProtoBridge capability-first 流程：统一重构上下文、可选 OCR、实现并验证。',
     arguments: [
       { name: 'url', description: '已渲染页面 URL。', required: true },
-      { name: 'targetModule', description: '可选目标模块覆盖值，用于 build_ui_plan。', required: false },
+      { name: 'targetModule', description: '可选目标模块覆盖值，用于 reconstruct_page_context。', required: false },
       { name: 'targetRoot', description: '可选目标 Flutter 根目录。', required: false },
     ],
   },
@@ -72,7 +72,7 @@ function reconstructUrlUiPrompt(args: JsonObject): string[] {
     `使用 ProtoBridge 将 ${url} 的可见 UI 还原到目标 Flutter 应用中。`,
     targetRoot ? `所有 ProtoBridge 工具调用都使用 targetRoot=${targetRoot}。` : '除非用户另行指定，否则使用当前 targetRoot。',
     '先调用 `reconstruct_page_context`，传入 url，并保存返回的 `pageId`。',
-    '如果页面存在可见文字缺失、图片/canvas 文字重要，或 OCR 相关 warning，请在 planning 前调用 `attach_screenshot_ocr`。',
+    '如果页面存在可见文字缺失、图片/canvas 文字重要，或 OCR 相关 warning，请把 screenshotPath、ocrText 或 ocrBoxes 直接传给 `reconstruct_page_context` 重新生成上下文。',
     targetModule ? `调用 reconstruct_page_context 时使用 targetModule=${targetModule}。` : '除非 evidence 表明自动模块推断错误，否则让 ProtoBridge 自动推断目标模块。',
     '优先读取 `ui-build-review.md` 作为人类可读交接文档，读取 `ui-build-plan.json` 作为机器可读实现计划。',
     '根据 `ui-build-plan.json` 实现 Dart UI，重点关注视觉结构、文案、组件映射、主题、i18n 和资产。',
@@ -88,7 +88,7 @@ function captureUrlEvidencePrompt(args: JsonObject): string[] {
   return [
     `为 ${url} 采集 ProtoBridge evidence。`,
     targetRoot ? `使用 targetRoot=${targetRoot}。` : '除非用户另行指定，否则使用当前 targetRoot。',
-    '只调用 `capture_page_canonical`。',
+    '只调用 `reconstruct_page_context`，传入 url、buildPlan=false、buildReview=false。',
     '采集后读取或总结 `proto-bridge://artifacts/latest`，报告 pageId、files、resources、warnings、截图路径、section/node/text 数量，以及是否可能需要 OCR。',
     '除非用户要求进入下一阶段，否则不要生成 UI plan、不要实现代码、不要验证目标变更。',
   ];

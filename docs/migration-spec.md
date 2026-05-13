@@ -1,6 +1,6 @@
 # 迁移说明书模板与质量标准
 
-本文档定义 CLI 产物 `migration-spec.md` 的目标、章节要求和质量标准。它不承担项目总览职责；项目整体入口见 [README.md](../README.md)，双 workflow 说明见 [workflows.md](workflows.md)。
+本文档定义可选 source-aware brief `migration-spec.md` 的目标、章节要求和质量标准。它不再是默认主产物；默认主交接文档是 `ui-build-review.md`。项目整体入口见 [README.md](../README.md)，workflow 说明见 [workflows.md](workflows.md)。
 
 ## 1. 说明书的目标
 
@@ -16,7 +16,7 @@
 ## 2. 输出原则
 
 - 说明书只面向 Flutter 实现，不输出 source 技术栈、模板语法或 DOM/class 证据。
-- `migration-context.json` 可以保留调试证据，`migration-spec.md` 只保留实现计划。
+- 调试证据应查看 `page-canonical.json` 和 `page-debug-index.json`；`migration-spec.md` 只保留实现计划。
 - 不要把来源页面结构逐层翻译成 Flutter Widget。
 - 不要把临时 mock 数据直接写在 Widget build 中。
 - 不要让每个子 Widget 都直接依赖整个 Controller；优先通过构造参数传入数据，并用回调上报交互。

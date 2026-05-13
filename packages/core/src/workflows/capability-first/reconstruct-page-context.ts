@@ -142,10 +142,6 @@ export async function reconstructPageContext(
     traceSteps.push(skipped('ui.review', !plan ? 'ui.plan did not run' : 'buildReview was disabled'));
   }
 
-  if (sourceBrief && input.writeLegacyMigrationContext) {
-    await writeJsonFile(path.join(outDir, 'migration-context.json'), sourceBrief.context);
-  }
-
   const page = review
     ? {
       ...merge.page,
@@ -171,7 +167,6 @@ export async function reconstructPageContext(
     ...(plan?.files.uiBuildPlan ? [plan.files.uiBuildPlan] : []),
     ...(review?.files.uiBuildReview ? [review.files.uiBuildReview] : []),
     ...(migrationSpecPath ? [migrationSpecPath] : []),
-    ...(sourceBrief && input.writeLegacyMigrationContext ? [path.join(outDir, 'migration-context.json')] : []),
   ];
   const trace = buildTrace(traceInput, traceSteps, artifacts);
   const pageWithTrace = {

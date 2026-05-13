@@ -443,7 +443,7 @@ function diagnoseComponentBackgroundRisks(
       confidence: 'low',
       finding: '需要生成 UI plan 后才能判断组件复用背景风险。',
       evidenceRefs: [],
-      nextCheck: '调用 build_ui_plan。',
+      nextCheck: '用 reconstruct_page_context 重新生成包含 ui-build-plan 的上下文。',
     };
   }
   const nodesById = new Map(page.nodes.map((node) => [node.id, node]));
@@ -528,7 +528,7 @@ function diagnoseCompression(page: PageCanonical, plan: UiBuildPlan | undefined)
       confidence: 'low',
       finding: '需要生成 UI plan 后才能判断 plan 压缩是否丢失关键节点。',
       evidenceRefs: [],
-      nextCheck: '调用 build_ui_plan。',
+      nextCheck: '用 reconstruct_page_context 重新生成包含 ui-build-plan 的上下文。',
     };
   }
   const componentNodeIds = new Set(plan.componentMappings.flatMap((mapping) => mapping.nodeIds));

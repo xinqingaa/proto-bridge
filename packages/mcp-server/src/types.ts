@@ -1,11 +1,12 @@
 import type {
-  BuildUiPlanResult,
-  CapturePageCanonicalResult,
-  ExportUiReviewResult,
-  AttachScreenshotOcrResult,
   PageCanonical,
-} from '@proto-bridge/core/workflows/ui-reconstruction';
-import type { ReconstructPageContextResult } from '@proto-bridge/core/workflows/capability-first';
+  ReconstructPageContextResult,
+  UiBuildPlan,
+} from '@proto-bridge/core';
+import type {
+  ScreenshotAttachCapabilityResult,
+  UiReviewCapabilityResult,
+} from '@proto-bridge/core/capabilities';
 
 export type JsonValue = string | number | boolean | null | JsonObject | JsonValue[];
 export type JsonObject = { [key: string]: JsonValue | undefined };
@@ -22,19 +23,44 @@ export type GeneratedPage = {
   createdAt: string;
   targetRoot: string;
   page: PageCanonical;
-  files: CapturePageCanonicalResult['files'] & {
+  files: {
+    pageCanonical: string;
+    pageDebugIndex: string;
+    screenshots: string[];
     uiBuildPlan?: string | undefined;
     uiBuildReview?: string | undefined;
     ocrResult?: string | undefined;
   };
-  capabilities: CapturePageCanonicalResult['capabilities'];
-  plan?: BuildUiPlanResult['plan'] | undefined;
-  review?: ExportUiReviewResult | undefined;
-  ocr?: AttachScreenshotOcrResult | undefined;
+  capabilities: PageCanonical['capabilities'];
+  plan?: UiBuildPlan | undefined;
+  review?: UiReviewCapabilityResult | undefined;
+  ocr?: ScreenshotAttachCapabilityResult | undefined;
   reconstruction?: ReconstructPageContextResult | undefined;
 };
 
-export type ServerOptions = Record<string, never>;
+export type ProjectConfig = {
+  adapter?: string | undefined;
+  root?: string | undefined;
+};
+
+export type ProtoBridgeConfig = {
+  source?: ProjectConfig | undefined;
+  target?: ProjectConfig | undefined;
+  route?: string | undefined;
+  vue?: string | undefined;
+  url?: string | undefined;
+  prototypeUrl?: string | undefined;
+  outputRoot?: string | undefined;
+  capture?: boolean | undefined;
+  sourceBrief?: boolean | undefined;
+};
+
+export type ServerOptions = {
+  configPath: string;
+  configDir: string;
+  configLoaded: boolean;
+  config?: ProtoBridgeConfig | undefined;
+};
 
 export type ToolContext = {
   options: ServerOptions;

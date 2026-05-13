@@ -47,6 +47,9 @@ async function main() {
       report.matrix.push(await runCaseForMode(caseName));
     }
     report.failures = await runFailureCases();
+    if (mode.kind === 'mcp' || mode.kind === 'all') {
+      report.mcpConfig = await runMcpConfigCase();
+    }
   } else {
     Object.assign(report, await runCaseForMode(testCase));
   }
@@ -140,15 +143,19 @@ async function runMcpCase(caseName) {
     const toolNames = new Set((tools.tools ?? []).map((tool) => tool.name));
     for (const tool of [
       'reconstruct_page_context',
-      'capture_page_canonical',
-      'build_ui_plan',
-      'attach_screenshot_ocr',
-      'export_ui_review',
       'read_target_conventions',
       'find_target_examples',
       'validate_ui_build',
     ]) {
       if (!toolNames.has(tool)) throw new Error(`MCP tools/list is missing ${tool}`);
+    }
+    for (const removedTool of [
+      'capture_page_canonical',
+      'build_ui_plan',
+      'attach_screenshot_ocr',
+      'export_ui_review',
+    ]) {
+      if (toolNames.has(removedTool)) throw new Error(`MCP tools/list should not expose removed tool ${removedTool}`);
     }
 
     const sourceAvailable = await directoryExists(sourceRoot);
@@ -205,6 +212,42 @@ async function runMcpCase(caseName) {
     return {
       case: caseName,
       pageId,
+      output: outDir,
+      files,
+    };
+  } finally {
+    await client.close();
+  }
+}
+
+async function runMcpConfigCase() {
+  step('Running MCP config fallback test...');
+  await requireDirectory(targetRoot);
+  const outDir = path.join(outputRoot, `mcp-config-${caseSlug('hybrid')}-${timestamp}`);
+  await mkdir(outDir, { recursive: true });
+  const configPath = await writeHybridConfig(outDir);
+  const client = await startMcpClient({ cwd: repoRoot, args: ['--config', configPath] });
+  try {
+    const reconstruct = parseToolJson(await client.request('tools/call', {
+      name: 'reconstruct_page_context',
+      arguments: {
+        output: outDir,
+        viewport: { width: 390, height: 844, deviceScaleFactor: 1 },
+        trace: true,
+      },
+    }));
+    const files = {
+      pageCanonical: requireString(reconstruct.files?.pageCanonical, 'reconstruct.files.pageCanonical'),
+      pageDebugIndex: requireString(reconstruct.files?.pageDebugIndex, 'reconstruct.files.pageDebugIndex'),
+      uiBuildPlan: requireString(reconstruct.files?.uiBuildPlan, 'reconstruct.files.uiBuildPlan'),
+      uiBuildReview: requireString(reconstruct.files?.uiBuildReview, 'reconstruct.files.uiBuildReview'),
+      screenshots: Array.isArray(reconstruct.files?.screenshots) ? reconstruct.files.screenshots.map(String) : [],
+    };
+    await requireUnifiedArtifacts(files, expectedContract('hybrid', 'mcp-config'));
+    ok('MCP config fallback test passed.');
+    return {
+      case: 'config-hybrid',
+      pageId: requireString(reconstruct.pageId, 'reconstruct.pageId'),
       output: outDir,
       files,
     };
@@ -282,7 +325,7 @@ async function expectMcpFailure(name, toolArgs, expectedMessage) {
 }
 
 async function startMcpClient(options) {
-  const child = spawn('node', [path.join(repoRoot, 'packages/mcp-server/dist/index.js')], {
+  const child = spawn('node', [path.join(repoRoot, 'packages/mcp-server/dist/index.js'), ...(options.args ?? [])], {
     cwd: options.cwd,
     env: process.env,
     stdio: ['pipe', 'pipe', 'pipe'],
@@ -345,9 +388,30 @@ function expectedFiles(outDir) {
     pageDebugIndex: path.join(outDir, 'page-debug-index.json'),
     uiBuildPlan: path.join(outDir, 'ui-build-plan.json'),
     uiBuildReview: path.join(outDir, 'ui-build-review.md'),
-  migrationSpec: path.join(outDir, 'migration-spec.md'),
+    migrationSpec: path.join(outDir, 'migration-spec.md'),
     screenshots: [],
   };
+}
+
+async function writeHybridConfig(outDir) {
+  await mkdir(outDir, { recursive: true });
+  const configPath = path.join(outDir, 'proto-bridge.hybrid.config.json');
+  const config = {
+    source: {
+      adapter: 'vue3-prototype',
+      root: sourceRoot,
+    },
+    target: {
+      adapter: 'flutter-app',
+      root: targetRoot,
+    },
+    route,
+    url,
+    outputRoot,
+    capture: true,
+  };
+  await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, 'utf8');
+  return configPath;
 }
 
 async function writeRuntimeOnlyConfig(outDir) {
@@ -572,6 +636,9 @@ function printReport(report) {
   }
   if (report.mcp) {
     appendEntry(lines, 'MCP', report.mcp);
+  }
+  if (report.mcpConfig) {
+    appendEntry(lines, 'MCP config', report.mcpConfig);
   }
   console.log(lines.join('\n'));
 }
