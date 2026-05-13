@@ -25,6 +25,7 @@ type ProtoBridgeConfig = {
   prototypeUrl?: string | undefined;
   outputRoot?: string | undefined;
   capture?: boolean | undefined;
+  sourceBrief?: boolean | undefined;
 };
 
 type ProjectConfig = {
@@ -70,13 +71,14 @@ const ALLOWED_FLAGS = new Set([
   'output',
   'prototype-url',
   'route',
+  'source-brief',
   'source-adapter',
   'target-adapter',
   'trace',
   'url',
   'vue',
 ]);
-const BOOLEAN_FLAGS = new Set(['capture', 'help', 'trace']);
+const BOOLEAN_FLAGS = new Set(['capture', 'help', 'source-brief', 'trace']);
 
 async function main(): Promise<void> {
   const parsed = parseArgs(process.argv.slice(2));
@@ -115,24 +117,26 @@ async function buildGenerateInput(values: Record<string, string | boolean>): Pro
   const targetAdapter = readString(values, 'target-adapter') ?? config.target?.adapter ?? 'flutter-app';
   const pageInput = await resolvePageInput(values, config);
   const prototypeUrl = resolvePrototypeUrl(values, config, pageInput.url);
-  const capture = resolveCapture(values, config);
+  const capture = resolveCapture(values, config, pageInput);
   const outDir = await resolveGenerateOutDir(values, config, pageInput, invocationDir);
 
-  if (!sourceRoot) throw new Error('config.source.root is required');
   if (!targetRoot) throw new Error('config.target.root is required');
   step('Checking project roots...');
-  await validateProjectRoot('config.source.root', sourceRoot);
+  if (sourceRoot) await validateProjectRoot('config.source.root', sourceRoot);
   await validateProjectRoot('config.target.root', targetRoot);
-  if (!pageInput.route && !pageInput.vue) throw new Error('Provide --url, --route, or --vue.');
+  if (!pageInput.url && !pageInput.route && !pageInput.vue) throw new Error('Provide --url, --route, or --vue.');
+  if (!sourceRoot && (pageInput.route || pageInput.vue) && !pageInput.url) {
+    throw new Error('config.source.root is required when using --route or --vue. Use --url for no-source runtime reconstruction.');
+  }
   if (pageInput.route && pageInput.vue) throw new Error('Use only one page input: --url, --route, or --vue.');
-  if (sourceAdapter !== 'vue3-prototype') throw new Error('Unsupported source adapter. Supported: vue3-prototype');
+  if (sourceRoot && sourceAdapter !== 'vue3-prototype') throw new Error('Unsupported source adapter. Supported: vue3-prototype');
   if (targetAdapter !== 'flutter-app') throw new Error('Unsupported target adapter. Supported: flutter-app');
 
   return {
-    source: {
+    source: sourceRoot ? {
       adapter: sourceAdapter,
       root: sourceRoot,
-    },
+    } : undefined,
     target: {
       adapter: targetAdapter,
       root: targetRoot,
@@ -145,7 +149,7 @@ async function buildGenerateInput(values: Record<string, string | boolean>): Pro
     capture,
     buildPlan: true,
     buildReview: true,
-    sourceBrief: true,
+    sourceBrief: Boolean(values['source-brief'] || config.sourceBrief),
     trace: Boolean(values.trace),
   };
 }
@@ -264,8 +268,9 @@ function resolvePrototypeUrl(
   return readString(values, 'prototype-url') ?? pageUrl ?? config.prototypeUrl ?? config.url;
 }
 
-function resolveCapture(values: Record<string, string | boolean>, config: ProtoBridgeConfig): boolean {
+function resolveCapture(values: Record<string, string | boolean>, config: ProtoBridgeConfig, pageInput: PageInput): boolean {
   if (values.capture !== undefined) return true;
+  if (pageInput.url) return true;
   return config.capture ?? false;
 }
 
@@ -358,7 +363,7 @@ function readString(values: Record<string, string | boolean>, key: string): stri
 function unknownFlagMessage(key: string): string {
   return [
     `Unknown flag: --${key}`,
-    'Supported flags: --config, --url, --route, --vue, --prototype-url, --output, --capture, --trace.',
+    'Supported flags: --config, --url, --route, --vue, --prototype-url, --output, --capture, --source-brief, --trace.',
     'Example: npx @proto-bridge/cli generate --url "http://localhost:5173/#/prototype/etf-detail"',
   ].join('\n');
 }
@@ -558,13 +563,14 @@ Options:
   --prototype-url <url>       Optional running prototype URL for Playwright capture
   --output <dir>              Override the generated output directory
   --capture                   Run Playwright screenshot and DOM capture
+  --source-brief              Also write migration-spec.md as an optional source-aware brief
   --trace                     Print temporary capability orchestration trace
 
 Artifacts:
   Always writes page-canonical.json and page-debug-index.json.
   With target config, writes ui-build-plan.json and ui-build-review.md.
   With source config, ui-build-review.md includes a source-aware implementation brief.
-  migration-spec.md is only a source-aware brief projection during P5-A, not the primary handoff.
+  migration-spec.md is only written when --source-brief is passed.
 `;
 }
 

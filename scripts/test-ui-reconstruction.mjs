@@ -2,23 +2,25 @@
 
 import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
-import { access, mkdir, readFile } from 'node:fs/promises';
+import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const DEFAULT_URL = 'http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1';
 const DEFAULT_ROUTE = '/prototype/asset/pnl-analysis';
+const BOOLEAN_FLAGS = new Set(['matrix', 'source-brief']);
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const mode = readMode(process.argv[2]);
 const args = parseArgs(process.argv.slice(mode.consumedArgs));
 const testCase = readCase(args.case);
+const matrix = readBooleanFlag(args, 'matrix');
 const url = readString(args, 'url') ?? DEFAULT_URL;
 const route = readString(args, 'route') ?? routeFromUrl(url) ?? DEFAULT_ROUTE;
 const sourceRoot = path.resolve(repoRoot, readString(args, 'source-root') ?? '../TradeAppPrd');
 const targetRoot = path.resolve(repoRoot, readString(args, 'target-root') ?? '../youfi');
 const outputRoot = path.resolve(repoRoot, readString(args, 'output-root') ?? './output/test-ui-reconstruction');
+const sourceBrief = readBooleanFlag(args, 'source-brief');
 const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-const slug = sanitizeSlug(`${testCase}-${route.split('/').filter(Boolean).at(-1) ?? slugFromUrl(url)}`);
 
 const ICON = {
   step: '●',
@@ -39,11 +41,14 @@ async function main() {
   await ensureBuild();
 
   const report = {};
-  if (mode.kind === 'cli' || mode.kind === 'all') {
-    report.cli = await runCliCase();
-  }
-  if (mode.kind === 'mcp' || mode.kind === 'all') {
-    report.mcp = await runMcpCase();
+  if (matrix) {
+    report.matrix = [];
+    for (const caseName of ['hybrid', 'source-only', 'runtime-only']) {
+      report.matrix.push(await runCaseForMode(caseName));
+    }
+    report.failures = await runFailureCases();
+  } else {
+    Object.assign(report, await runCaseForMode(testCase));
   }
 
   ok('UI reconstruction test completed.');
@@ -55,49 +60,64 @@ async function ensureBuild() {
   await run('pnpm', ['build'], { cwd: repoRoot });
 }
 
-async function runCliCase() {
-  step(`Running CLI capability-first ${testCase} test...`);
-  if (testCase === 'runtime-only') {
-    throw new Error('CLI runtime-only is not supported yet because CLI generate still requires config.source.root. Use MCP with --case runtime-only.');
+async function runCaseForMode(caseName) {
+  const report = {};
+  if (mode.kind === 'cli' || mode.kind === 'all') {
+    report.cli = await runCliCase(caseName);
   }
-  const outDir = path.join(outputRoot, `cli-${slug}-${timestamp}`);
+  if (mode.kind === 'mcp' || mode.kind === 'all') {
+    report.mcp = await runMcpCase(caseName);
+  }
+  return report;
+}
+
+async function runCliCase(caseName) {
+  step(`Running CLI capability-first ${caseName} test...`);
+  const outDir = path.join(outputRoot, `cli-${caseSlug(caseName)}-${timestamp}`);
+  const configPath = caseName === 'runtime-only'
+    ? await writeRuntimeOnlyConfig(outDir)
+    : path.join(repoRoot, 'proto-bridge.config.json');
   const commandArgs = [
     path.join(repoRoot, 'packages/cli/dist/index.js'),
     'generate',
     '--config',
-    path.join(repoRoot, 'proto-bridge.config.json'),
+    configPath,
     '--output',
     outDir,
     '--trace',
   ];
-  if (testCase === 'source-only') {
+  if (caseName === 'source-only') {
     commandArgs.push('--route', route);
   } else {
     commandArgs.push('--url', url);
   }
-  if (testCase === 'hybrid') commandArgs.push('--capture');
+  if (caseName === 'hybrid') commandArgs.push('--capture');
+  if (sourceBrief) commandArgs.push('--source-brief');
 
   try {
     await run('node', commandArgs, { cwd: repoRoot });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error([
-      `CLI ${testCase} test failed.`,
-      'CLI currently requires config.source.root and config.target.root.',
-      'For runtime-only coverage, use MCP with --case runtime-only.',
+      `CLI ${caseName} test failed.`,
+      'CLI should support source-only, runtime-only, and hybrid through reconstructPageContext.',
       message,
     ].join('\n'));
   }
 
   const expected = expectedFiles(outDir);
-  await requireUnifiedArtifacts(expected, expectedContract(testCase, 'cli'));
-  if (testCase !== 'runtime-only') await requireFile(expected.migrationSpec);
+  await requireUnifiedArtifacts(expected, expectedContract(caseName, 'cli'));
+  if (sourceBrief && caseName !== 'runtime-only') {
+    await requireFile(expected.migrationSpec);
+  } else {
+    await requireAbsent(expected.migrationSpec);
+  }
   await requireAbsent(path.join(outDir, 'migration-context.json'));
   expected.screenshots = await screenshotsFromCanonical(expected.pageCanonical);
 
-  ok(`CLI capability-first ${testCase} test passed.`);
+  ok(`CLI capability-first ${caseName} test passed.`);
   return {
-    case: testCase,
+    case: caseName,
     output: outDir,
     files: compactFiles(expected),
   };
@@ -108,10 +128,10 @@ async function screenshotsFromCanonical(pageCanonicalPath) {
   return (canonical.screenshots ?? []).map((screenshot) => screenshot.path).filter(Boolean);
 }
 
-async function runMcpCase() {
-  step(`Running MCP capability-first ${testCase} test...`);
+async function runMcpCase(caseName) {
+  step(`Running MCP capability-first ${caseName} test...`);
   await requireDirectory(targetRoot);
-  const outDir = path.join(outputRoot, `mcp-${slug}-${timestamp}`);
+  const outDir = path.join(outputRoot, `mcp-${caseSlug(caseName)}-${timestamp}`);
   await mkdir(outDir, { recursive: true });
 
   const client = await startMcpClient({ cwd: targetRoot });
@@ -132,20 +152,21 @@ async function runMcpCase() {
     }
 
     const sourceAvailable = await directoryExists(sourceRoot);
-    if ((testCase === 'source-only' || testCase === 'hybrid') && !sourceAvailable) {
-      throw new Error(`Source root is required for ${testCase}: ${sourceRoot}`);
+    if ((caseName === 'source-only' || caseName === 'hybrid') && !sourceAvailable) {
+      throw new Error(`Source root is required for ${caseName}: ${sourceRoot}`);
     }
 
     const reconstruct = parseToolJson(await client.request('tools/call', {
       name: 'reconstruct_page_context',
       arguments: {
-        ...(testCase !== 'runtime-only' ? { sourceRoot, route } : {}),
-        ...(testCase !== 'source-only' ? { url } : {}),
+        ...(caseName !== 'runtime-only' ? { sourceRoot, route } : {}),
+        ...(caseName !== 'source-only' ? { url } : {}),
         targetRoot,
         output: outDir,
-        capture: testCase !== 'source-only',
+        capture: caseName !== 'source-only',
         viewport: { width: 390, height: 844, deviceScaleFactor: 1 },
         saveArtifacts: true,
+        sourceBrief,
         trace: true,
       },
     }));
@@ -167,22 +188,94 @@ async function runMcpCase() {
       pageDebugIndex: requireString(reconstruct.files?.pageDebugIndex, 'reconstruct.files.pageDebugIndex'),
       uiBuildPlan: requireString(reconstruct.files?.uiBuildPlan, 'reconstruct.files.uiBuildPlan'),
       uiBuildReview: requireString(reconstruct.files?.uiBuildReview, 'reconstruct.files.uiBuildReview'),
-      migrationSpec: typeof reconstruct.files?.migrationSpec === 'string' ? reconstruct.files.migrationSpec : undefined,
+      ...(typeof reconstruct.files?.migrationSpec === 'string' ? { migrationSpec: reconstruct.files.migrationSpec } : {}),
       screenshots: Array.isArray(reconstruct.files?.screenshots) ? reconstruct.files.screenshots.map(String) : [],
     };
-    await requireUnifiedArtifacts(files, expectedContract(testCase, 'mcp'));
+    await requireUnifiedArtifacts(files, expectedContract(caseName, 'mcp'));
     await Promise.all(files.screenshots.map((screenshot) => requireFile(String(screenshot))));
-    if (testCase !== 'runtime-only') await requireFile(files.migrationSpec);
+    if (sourceBrief && caseName !== 'runtime-only') {
+      await requireFile(files.migrationSpec);
+    } else {
+      await requireAbsent(path.join(outDir, 'migration-spec.md'));
+    }
     await requireAbsent(path.join(outDir, 'migration-context.json'));
     if (!reconstruct.summary?.trace) throw new Error('MCP trace=true should return summary.trace.');
 
-    ok(`MCP capability-first ${testCase} test passed.`);
+    ok(`MCP capability-first ${caseName} test passed.`);
     return {
-      case: testCase,
+      case: caseName,
       pageId,
       output: outDir,
       files,
     };
+  } finally {
+    await client.close();
+  }
+}
+
+async function runFailureCases() {
+  const results = [];
+  if (mode.kind === 'cli' || mode.kind === 'all') {
+    results.push(await expectCliFailure('no-page-identity', [
+      path.join(repoRoot, 'packages/cli/dist/index.js'),
+      'generate',
+      '--config',
+      await writeRuntimeOnlyConfig(path.join(outputRoot, `cli-no-page-identity-${timestamp}`)),
+      '--output',
+      path.join(outputRoot, `cli-no-page-identity-${timestamp}`),
+    ], 'Provide --url, --route, or --vue.'));
+    results.push(await expectCliFailure('route-without-source', [
+      path.join(repoRoot, 'packages/cli/dist/index.js'),
+      'generate',
+      '--config',
+      await writeRuntimeOnlyConfig(path.join(outputRoot, `cli-route-without-source-${timestamp}`)),
+      '--route',
+      route,
+      '--output',
+      path.join(outputRoot, `cli-route-without-source-${timestamp}`),
+    ], 'config.source.root is required'));
+  }
+  if (mode.kind === 'mcp' || mode.kind === 'all') {
+    results.push(await expectMcpFailure('no-page-identity', {}, 'requires at least one'));
+  }
+  return results;
+}
+
+async function expectCliFailure(name, commandArgs, expectedMessage) {
+  try {
+    await run('node', commandArgs, { cwd: repoRoot, stdio: 'pipe' });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!message.includes(expectedMessage)) {
+      throw new Error(`CLI failure case ${name} did not include "${expectedMessage}". Got:\n${message}`);
+    }
+    ok(`CLI failure case ${name} passed.`);
+    return { entry: 'cli', case: name };
+  }
+  throw new Error(`CLI failure case ${name} unexpectedly succeeded.`);
+}
+
+async function expectMcpFailure(name, toolArgs, expectedMessage) {
+  const client = await startMcpClient({ cwd: targetRoot });
+  try {
+    try {
+      await client.request('tools/call', {
+        name: 'reconstruct_page_context',
+        arguments: {
+          targetRoot,
+          output: path.join(outputRoot, `mcp-${name}-${timestamp}`),
+          ...toolArgs,
+        },
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!message.includes(expectedMessage)) {
+        throw new Error(`MCP failure case ${name} did not include "${expectedMessage}". Got:\n${message}`);
+      }
+      ok(`MCP failure case ${name} passed.`);
+      return { entry: 'mcp', case: name };
+    }
+    throw new Error(`MCP failure case ${name} unexpectedly succeeded.`);
   } finally {
     await client.close();
   }
@@ -252,9 +345,24 @@ function expectedFiles(outDir) {
     pageDebugIndex: path.join(outDir, 'page-debug-index.json'),
     uiBuildPlan: path.join(outDir, 'ui-build-plan.json'),
     uiBuildReview: path.join(outDir, 'ui-build-review.md'),
-    migrationSpec: path.join(outDir, 'migration-spec.md'),
+  migrationSpec: path.join(outDir, 'migration-spec.md'),
     screenshots: [],
   };
+}
+
+async function writeRuntimeOnlyConfig(outDir) {
+  await mkdir(outDir, { recursive: true });
+  const configPath = path.join(outDir, 'proto-bridge.runtime-only.config.json');
+  const config = {
+    target: {
+      adapter: 'flutter-app',
+      root: targetRoot,
+    },
+    outputRoot,
+    capture: true,
+  };
+  await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, 'utf8');
+  return configPath;
 }
 
 function expectedContract(testCaseName, entry) {
@@ -293,25 +401,25 @@ async function requireUnifiedArtifacts(files, options) {
   if (!Array.isArray(plan.widgetTree) || plan.widgetTree.length === 0) throw new Error('ui-build-plan.json must include widgetTree.');
 
   const review = await readFile(files.uiBuildReview, 'utf8');
-  if (!review.includes('## Capability Context')) throw new Error('ui-build-review.md must include Capability Context.');
-  if (options.requireSourceFacts && !review.includes('## Source-Aware Implementation Handoff')) {
-    throw new Error('source review must include Source-Aware Implementation Handoff.');
+  if (!review.includes('## 能力上下文')) throw new Error('ui-build-review.md must include 能力上下文.');
+  if (options.requireSourceFacts && !review.includes('## 有源码实现交接')) {
+    throw new Error('source review must include 有源码实现交接.');
   }
   if (options.requireSourceFacts) requireReviewParitySections(review);
 }
 
 function requireReviewParitySections(review) {
   const required = [
-    '### Page Metadata',
-    '### Migration Conclusion',
-    '### Flutter Implementation Plan',
-    '#### Widget Contracts',
-    '#### Controller Boundaries',
-    '### State And Interaction',
-    '### Routing And Layout',
-    '### Theme, I18n And Assets',
-    '### Reusable Target Capabilities',
-    '### Manual Confirmation',
+    '### 页面元信息',
+    '### 迁移结论',
+    '### Flutter 实现规划',
+    '#### Widget 契约',
+    '#### Controller 边界',
+    '### 状态与交互',
+    '### 路由与布局',
+    '### 主题、I18n 与资源',
+    '### 目标工程可复用能力',
+    '### 人工确认',
   ];
   for (const section of required) {
     if (!review.includes(section)) throw new Error(`ui-build-review.md is missing parity section: ${section}`);
@@ -322,7 +430,11 @@ function requireReviewParitySections(review) {
 }
 
 function compactFiles(files) {
-  return Object.fromEntries(Object.entries(files).filter(([, value]) => value !== undefined));
+  return Object.fromEntries(Object.entries(files).filter(([key, value]) => {
+    if (value === undefined) return false;
+    if (!sourceBrief && key === 'migrationSpec') return false;
+    return true;
+  }));
 }
 
 function parseToolJson(result) {
@@ -355,6 +467,10 @@ function parseArgs(tokens) {
       values[key] = inlineValue;
       continue;
     }
+    if (BOOLEAN_FLAGS.has(key)) {
+      values[key] = true;
+      continue;
+    }
     const next = tokens[index + 1];
     if (!next || next.startsWith('--')) throw new Error(`--${key} requires a value.`);
     values[key] = next;
@@ -366,6 +482,10 @@ function parseArgs(tokens) {
 function readString(values, key) {
   const value = values[key];
   return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
+function readBooleanFlag(values, key) {
+  return values[key] === true || values[key] === 'true' || values[key] === '1';
 }
 
 function requireString(value, label) {
@@ -410,44 +530,62 @@ async function directoryExists(dirPath) {
 
 function run(command, commandArgs, options) {
   return new Promise((resolve, reject) => {
+    const outputChunks = [];
     const child = spawn(command, commandArgs, {
       cwd: options.cwd,
       env: process.env,
-      stdio: 'inherit',
+      stdio: options.stdio ?? 'inherit',
     });
+    if (options.stdio === 'pipe') {
+      child.stdout?.on('data', (chunk) => outputChunks.push(Buffer.from(chunk)));
+      child.stderr?.on('data', (chunk) => outputChunks.push(Buffer.from(chunk)));
+    }
     child.on('error', reject);
     child.on('exit', (code) => {
       if (code === 0) {
         resolve();
         return;
       }
-      reject(new Error(`${command} ${commandArgs.join(' ')} exited with code ${code ?? 'unknown'}`));
+      const outputText = outputChunks.length ? `\n${Buffer.concat(outputChunks).toString('utf8')}` : '';
+      reject(new Error(`${command} ${commandArgs.join(' ')} exited with code ${code ?? 'unknown'}${outputText}`));
     });
   });
 }
 
 function printReport(report) {
   const lines = [];
-  if (report.cli) {
-    lines.push('');
-    lines.push('CLI:');
-    lines.push(`  case: ${report.cli.case}`);
-    lines.push(`  output: ${report.cli.output}`);
-    for (const [label, filePath] of Object.entries(report.cli.files)) {
-      lines.push(`  ${label}: ${Array.isArray(filePath) ? (filePath.join(', ') || '(none)') : filePath}`);
+  if (report.matrix) {
+    for (const item of report.matrix) {
+      lines.push('');
+      lines.push('Matrix case:');
+      appendEntry(lines, 'CLI', item.cli);
+      appendEntry(lines, 'MCP', item.mcp);
     }
+  }
+  if (report.failures?.length) {
+    lines.push('');
+    lines.push('Failure cases:');
+    for (const item of report.failures) lines.push(`  ${item.entry}: ${item.case}`);
+  }
+  if (report.cli) {
+    appendEntry(lines, 'CLI', report.cli);
   }
   if (report.mcp) {
-    lines.push('');
-    lines.push('MCP:');
-    lines.push(`  case: ${report.mcp.case}`);
-    lines.push(`  pageId: ${report.mcp.pageId}`);
-    lines.push(`  output: ${report.mcp.output}`);
-    for (const [label, filePath] of Object.entries(report.mcp.files)) {
-      lines.push(`  ${label}: ${Array.isArray(filePath) ? (filePath.join(', ') || '(none)') : filePath}`);
-    }
+    appendEntry(lines, 'MCP', report.mcp);
   }
   console.log(lines.join('\n'));
+}
+
+function appendEntry(lines, label, entry) {
+  if (!entry) return;
+  lines.push('');
+  lines.push(`${label}:`);
+  lines.push(`  case: ${entry.case}`);
+  if (entry.pageId) lines.push(`  pageId: ${entry.pageId}`);
+  lines.push(`  output: ${entry.output}`);
+  for (const [fileLabel, filePath] of Object.entries(entry.files)) {
+    lines.push(`  ${fileLabel}: ${Array.isArray(filePath) ? (filePath.join(', ') || '(none)') : filePath}`);
+  }
 }
 
 function routeFromUrl(input) {
@@ -476,6 +614,10 @@ function sanitizeSlug(value) {
     .replace(/^-+|-+$/g, '')
     .slice(0, 48)
     || 'page';
+}
+
+function caseSlug(caseName) {
+  return sanitizeSlug(`${caseName}-${route.split('/').filter(Boolean).at(-1) ?? slugFromUrl(url)}`);
 }
 
 function step(message) {

@@ -16,6 +16,7 @@
     "generate": "node scripts/generate.mjs",
     "test:ui-reconstruction": "node scripts/test-ui-reconstruction.mjs all",
     "test:ui-reconstruction:cli": "node scripts/test-ui-reconstruction.mjs cli",
+    "test:ui-reconstruction:matrix": "node scripts/test-ui-reconstruction.mjs all --matrix",
     "test:ui-reconstruction:mcp": "node scripts/test-ui-reconstruction.mjs mcp"
   },
   "engines": {

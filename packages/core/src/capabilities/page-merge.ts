@@ -3,11 +3,13 @@ import { writeJsonFile } from '../artifacts/artifact-writer.js';
 import { buildPageDebugIndex } from '../snapshot/browser-capture/rendered-page-evidence.js';
 import type {
   DetectedCapabilities,
+  OcrResult,
   PageCanonical,
   PageCanonicalMismatch,
   PageEvidenceProvenance,
   PageFieldPriorityRule,
   PageManualConfirmation,
+  PageScreenshotArtifact,
 } from '../types/index.js';
 import type { PageMergeCapabilityInput, PageMergeCapabilityResult } from './types.js';
 
@@ -48,13 +50,16 @@ export async function mergePageCapability(input: PageMergeCapabilityInput): Prom
   const runtimePage = input.runtime?.page;
   const source = input.source?.source;
   const target = input.target?.target;
-  const pageId = runtimePage?.pageId ?? createSourcePageId(source?.route ?? source?.vuePath ?? target?.suggestedModule ?? 'page', mergedAt);
+  const screenshotArtifact = input.screenshot ? buildScreenshotArtifact(input.screenshot.screenshotPath) : undefined;
+  const pageId = runtimePage?.pageId ?? createSourcePageId(source?.route ?? source?.vuePath ?? screenshotArtifact?.path ?? target?.suggestedModule ?? 'page', mergedAt);
   const pageCanonicalPath = path.join(input.outDir, 'page-canonical.json');
   const pageDebugIndexPath = path.join(input.outDir, 'page-debug-index.json');
-  const screenshots = runtimePage?.screenshots ?? [];
+  const screenshots = mergeScreenshots(runtimePage?.screenshots ?? [], screenshotArtifact);
+  const ocr = mergeOcr(runtimePage?.ocr, input.screenshot?.ocr);
   const warnings = dedupe([
     ...(runtimePage?.warnings ?? []),
     ...(input.source?.warnings ?? []),
+    ...(input.screenshot?.ocr.warnings ?? []),
     ...(input.target?.warnings ?? []),
   ]);
   const mismatches = buildMismatches(input);
@@ -63,10 +68,11 @@ export async function mergePageCapability(input: PageMergeCapabilityInput): Prom
   const selectedCapabilities = [
     ...(input.source ? ['source.analyze' as const] : []),
     ...(input.runtime ? ['runtime.capture' as const] : []),
+    ...(input.screenshot ? ['screenshot.attach' as const] : []),
     ...(input.target ? ['target.inspect' as const] : []),
     'page.merge' as const,
   ];
-  const strategy = inferMergeStrategy(Boolean(input.source), Boolean(input.runtime), screenshots.length > 0);
+  const strategy = inferMergeStrategy(Boolean(input.source), Boolean(input.runtime), Boolean(input.screenshot));
 
   const page: PageCanonical = {
     ...(runtimePage ?? emptyPageCanonical(pageId, input.outDir)),
@@ -101,10 +107,10 @@ export async function mergePageCapability(input: PageMergeCapabilityInput): Prom
       interactionCount: input.runtime.page.interactions.length,
       warnings: input.runtime.page.warnings,
     } : undefined,
-    screenshotFacts: screenshots.length > 0 || runtimePage?.ocr ? {
+    screenshotFacts: screenshots.length > 0 || ocr ? {
       screenshotPaths: screenshots.map((screenshot) => screenshot.path),
-      ocr: runtimePage?.ocr,
-      warnings: runtimePage?.ocr?.warnings ?? [],
+      ocr,
+      warnings: ocr?.warnings ?? [],
     } : undefined,
     targetFacts: target ? {
       adapter: 'flutter-app',
@@ -118,6 +124,8 @@ export async function mergePageCapability(input: PageMergeCapabilityInput): Prom
       route: source?.route ?? runtimePage?.page.route,
     },
     capabilities: runtimePage?.capabilities ?? EMPTY_CAPABILITIES,
+    text: dedupe([...(runtimePage?.text ?? []), ...(input.screenshot?.ocr.text ?? [])]),
+    ocr,
     warnings,
     mismatches: [...(runtimePage?.mismatches ?? []), ...mismatches],
     artifacts: {
@@ -136,7 +144,7 @@ export async function mergePageCapability(input: PageMergeCapabilityInput): Prom
       sources: {
         source: Boolean(input.source),
         runtime: Boolean(input.runtime),
-        screenshot: screenshots.length > 0,
+        screenshot: screenshots.length > 0 || Boolean(input.screenshot),
         target: Boolean(input.target),
       },
       warnings,
@@ -197,6 +205,10 @@ function buildProvenance(input: PageMergeCapabilityInput): PageEvidenceProvenanc
     ...(input.runtime ? [{
       source: 'runtime-capture' as const,
       fields: ['runtimeFacts', 'sections', 'nodes', 'text', 'tokens', 'assets', 'interactions', 'screenshots'],
+    }] : []),
+    ...(input.screenshot ? [{
+      source: 'screenshot-attach' as const,
+      fields: ['screenshotFacts', 'ocr', 'text', 'screenshots'],
     }] : []),
     ...(input.target ? [{
       source: 'target-inspect' as const,
@@ -260,6 +272,39 @@ function inferMergeStrategy(
   if (hasRuntime) return 'runtime-only' as never;
   if (hasScreenshot) return 'screenshot-only' as never;
   return 'hybrid' as never;
+}
+
+function buildScreenshotArtifact(screenshotPath: string): PageScreenshotArtifact {
+  return {
+    name: path.basename(screenshotPath, path.extname(screenshotPath)) || 'attached-screenshot',
+    path: screenshotPath,
+    width: 0,
+    height: 0,
+    kind: 'unknown',
+  };
+}
+
+function mergeScreenshots(
+  runtimeScreenshots: PageScreenshotArtifact[],
+  attached: PageScreenshotArtifact | undefined,
+): PageScreenshotArtifact[] {
+  if (!attached) return runtimeScreenshots;
+  if (runtimeScreenshots.some((screenshot) => path.resolve(screenshot.path) === path.resolve(attached.path))) {
+    return runtimeScreenshots;
+  }
+  return [...runtimeScreenshots, attached];
+}
+
+function mergeOcr(runtimeOcr: OcrResult | undefined, attachedOcr: OcrResult | undefined): OcrResult | undefined {
+  if (!runtimeOcr) return attachedOcr;
+  if (!attachedOcr) return runtimeOcr;
+  return {
+    provider: attachedOcr.provider === 'external' ? attachedOcr.provider : runtimeOcr.provider,
+    status: runtimeOcr.status === 'available' || attachedOcr.status === 'available' ? 'available' : 'unavailable',
+    text: dedupe([...runtimeOcr.text, ...attachedOcr.text]),
+    boxes: [...runtimeOcr.boxes, ...attachedOcr.boxes],
+    warnings: dedupe([...runtimeOcr.warnings, ...attachedOcr.warnings]),
+  };
 }
 
 function createSourcePageId(seed: string, timestamp: string): string {

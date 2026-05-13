@@ -3,6 +3,7 @@ import { mkdir } from 'node:fs/promises';
 import { writeJsonFile, writeTextFile } from '../../artifacts/artifact-writer.js';
 import {
   analyzeSourceCapability,
+  attachScreenshotCapability,
   captureRuntimeCapability,
   inspectTargetCapability,
   mergePageCapability,
@@ -27,6 +28,8 @@ export async function reconstructPageContext(
     hasVue: Boolean(input.vue),
     hasUrl: Boolean(input.url),
     hasPrototypeUrl: Boolean(input.prototypeUrl),
+    hasScreenshot: Boolean(input.screenshotPath),
+    hasOcr: Boolean(input.ocrText?.length || input.ocrBoxes?.length),
     hasTarget: Boolean(input.target),
     captureRequested: Boolean(input.capture ?? Boolean(input.url)),
     runtimeUrl,
@@ -59,6 +62,22 @@ export async function reconstructPageContext(
     ));
   }
 
+  const screenshotPath = input.screenshotPath ?? runtime?.files.screenshots[0];
+  const shouldAttachScreenshot = Boolean(input.screenshotPath || input.ocrText?.length || input.ocrBoxes?.length);
+  const screenshot = shouldAttachScreenshot && screenshotPath
+    ? await runTraced(traceSteps, 'screenshot.attach', 'screenshot path or OCR input was provided', () => attachScreenshotCapability({
+      screenshotPath,
+      outDir,
+      externalText: input.ocrText,
+      externalBoxes: input.ocrBoxes,
+    }))
+    : undefined;
+  if (!shouldAttachScreenshot) {
+    traceSteps.push(skipped('screenshot.attach', 'screenshot/OCR input was not provided'));
+  } else if (!screenshotPath) {
+    traceSteps.push(skipped('screenshot.attach', 'screenshot/OCR input was provided but no screenshot path was available'));
+  }
+
   const target = targetInput
     ? await runTraced(traceSteps, 'target.inspect', 'target input was provided', () => inspectTargetCapability({
       target: targetInput,
@@ -77,6 +96,7 @@ export async function reconstructPageContext(
     outDir,
     source,
     runtime,
+    screenshot,
     target,
     trace: initialTrace,
   });
@@ -95,7 +115,7 @@ export async function reconstructPageContext(
     traceSteps.push(skipped('ui.plan', !shouldBuildPlan ? 'buildPlan was disabled' : 'target input was not provided'));
   }
 
-  const sourceBrief = source && target && (input.sourceBrief ?? true)
+  const sourceBrief = source && target
     ? renderSourceAwareBrief({
       source: source.source,
       target: target.target,
@@ -104,7 +124,7 @@ export async function reconstructPageContext(
     })
     : undefined;
 
-  const migrationSpecPath = sourceBrief ? path.join(outDir, 'migration-spec.md') : undefined;
+  const migrationSpecPath = sourceBrief && input.sourceBrief ? path.join(outDir, 'migration-spec.md') : undefined;
   if (migrationSpecPath && sourceBrief) {
     await writeTextFile(migrationSpecPath, sourceBrief.markdown);
   }
@@ -177,6 +197,7 @@ export async function reconstructPageContext(
     capabilities: {
       source,
       runtime,
+      screenshot,
       target,
       merge: {
         ...merge,
@@ -194,7 +215,7 @@ export async function reconstructPageContext(
       migrationSpec: migrationSpecPath,
     },
     warnings,
-    nextActions: buildNextActions(Boolean(plan), Boolean(review), Boolean(sourceBrief)),
+    nextActions: buildNextActions(Boolean(plan), Boolean(review), Boolean(migrationSpecPath)),
     trace,
   };
 }
@@ -244,11 +265,11 @@ function runtimeCaptureToLegacyCapture(runtime: NonNullable<ReconstructPageConte
   };
 }
 
-function buildNextActions(hasPlan: boolean, hasReview: boolean, hasSourceBrief: boolean): string[] {
+function buildNextActions(hasPlan: boolean, hasReview: boolean, hasMigrationSpec: boolean): string[] {
   return [
     ...(hasPlan ? ['Use ui-build-plan.json as the machine-readable implementation plan.'] : ['Provide targetRoot to generate ui-build-plan.json.']),
     ...(hasReview ? ['Use ui-build-review.md as the primary human-readable handoff.'] : ['Build a UI review after generating a plan.']),
-    ...(hasSourceBrief ? ['Treat migration-spec.md as the source-aware implementation brief, not the primary artifact.'] : []),
+    ...(hasMigrationSpec ? ['Treat migration-spec.md as the optional source-aware implementation brief, not the primary artifact.'] : []),
     'Resolve any manualConfirmations before implementing ambiguous source/runtime differences.',
   ];
 }

@@ -1,6 +1,8 @@
 import type {
   CapturePageCanonicalInput,
   CapturePageCanonicalResult,
+  OcrScreenshotInput,
+  OcrScreenshotResult,
   GenerateMigrationSpecInput,
   PageCanonical,
   PageCapabilityName,
@@ -31,6 +33,13 @@ export type RuntimeCaptureCapabilityResult = CapturePageCanonicalResult & {
   capability: 'runtime.capture';
 };
 
+export type ScreenshotAttachCapabilityInput = OcrScreenshotInput;
+
+export type ScreenshotAttachCapabilityResult = OcrScreenshotResult & {
+  capability: 'screenshot.attach';
+  screenshotPath: string;
+};
+
 export type TargetInspectCapabilityInput = {
   target: GenerateMigrationSpecInput['target'];
   prototypeModule?: string | undefined;
@@ -49,6 +58,7 @@ export type PageMergeCapabilityInput = {
   outDir: string;
   source?: SourceAnalyzeCapabilityResult | undefined;
   runtime?: RuntimeCaptureCapabilityResult | undefined;
+  screenshot?: ScreenshotAttachCapabilityResult | undefined;
   target?: TargetInspectCapabilityResult | undefined;
   trace?: import('../types/index.js').PageOrchestrationTrace | undefined;
 };

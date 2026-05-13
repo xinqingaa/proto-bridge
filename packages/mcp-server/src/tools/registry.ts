@@ -67,7 +67,7 @@ const toolDefinitions: JsonValue[] = [
     title: '重建页面统一上下文',
     description: [
       'Capability-first UI 重构入口。根据输入自动组合 source.analyze、runtime.capture、target.inspect、page.merge、ui.plan 和 ui.review。',
-      '有源码时生成增强版 `ui-build-review.md`；有源码 + runtime 时 review 展示 merged evidence；`migration-spec.md` 仅作为 source-aware implementation brief。',
+      '有源码时生成增强版 `ui-build-review.md`；有源码 + runtime 时 review 展示 merged evidence；`migration-spec.md` 仅在 sourceBrief=true 时作为可选 source-aware implementation brief 输出。',
       '无源码但有 URL 时退化为 URL/runtime-first，并仍产出统一 `page-canonical.json`、`page-debug-index.json`、`ui-build-plan.json`、`ui-build-review.md` 和截图。',
       '安全边界：只读取 source/target/URL 并写 artifact，不修改目标 Flutter 应用。',
     ].join('\n'),
@@ -95,7 +95,12 @@ const toolDefinitions: JsonValue[] = [
         saveArtifacts: { type: 'boolean', description: '是否保存截图 artifact。默认 true。' },
         buildPlan: { type: 'boolean', description: '是否生成 `ui-build-plan.json`。默认 true。' },
         buildReview: { type: 'boolean', description: '是否生成 `ui-build-review.md`。默认 true。' },
-        sourceBrief: { type: 'boolean', description: '有源码时是否额外生成 `migration-spec.md` source-aware brief。默认 true。' },
+        sourceBrief: { type: 'boolean', description: '有源码时是否额外生成 `migration-spec.md` source-aware brief。默认 false。' },
+        screenshotPath: { type: 'string', description: '可选外部截图路径。用于无 URL 或补充 OCR 的 screenshot.attach。' },
+        ocrText: { ...stringArraySchema, description: '可选 OCR 文本，写入 screenshotFacts 并参与 review。' },
+        externalText: { ...stringArraySchema, description: 'ocrText 的兼容别名。P5 完成后会删除。' },
+        ocrBoxes: { type: 'array', items: { type: 'object' }, description: '可选 OCR 文本框，格式为 `{ text, bbox?, confidence? }`。' },
+        externalBoxes: { type: 'array', items: { type: 'object' }, description: 'ocrBoxes 的兼容别名。P5 完成后会删除。' },
         trace: { type: 'boolean', description: '是否在 summary 中返回临时 capability orchestration trace。默认 false；trace 总会写入 page-canonical.json。' },
         targetModule: { type: 'string', description: '可选目标模块覆盖值。' },
         viewport: {
@@ -116,7 +121,7 @@ const toolDefinitions: JsonValue[] = [
     name: 'capture_page_canonical',
     title: '采集页面标准上下文',
     description: [
-      'URL-first UI 还原的第 1 步。使用 Playwright 打开已渲染 URL，并写入页面标准产物集。',
+      '[compat] 旧 URL-first UI 还原的第 1 步。P5 后默认使用 reconstruct_page_context；该工具暂保留用于调试和旧调用。',
       '在输出目录下生成 `page-canonical.json`、`page-debug-index.json` 和 `screenshots/full-page.png`。',
       '从 URL 开始时先调用它。返回的 `pageId` 是后续 `build_ui_plan`、`export_ui_review`、`validate_ui_build` 的主句柄。',
       '安全边界：只读取 URL 并写本地 artifact，不修改目标 Flutter 应用。',
@@ -154,7 +159,7 @@ const toolDefinitions: JsonValue[] = [
     name: 'build_ui_plan',
     title: '生成 UI 构建计划',
     description: [
-      'URL-first UI 还原的第 2 步。读取 page canonical 与目标 Flutter 规范，然后写入 `ui-build-plan.json`。',
+      '[compat] 旧 URL-first UI 还原的第 2 步。P5 后默认使用 reconstruct_page_context；该工具暂保留用于调试和旧调用。',
       '同一 MCP session 内优先使用 `capture_page_canonical` 返回的 `pageId`；从文件恢复时使用 `pageCanonicalPath`。',
       '该 plan 是实现指导，不是生成好的 Dart 代码；它保留文件树、widget 拆分、组件映射、主题映射、i18n、资产、交互、风险和验证提示。',
       '安全边界：只读取目标规范并写 plan artifact，不修改目标 Flutter 应用。',
@@ -182,7 +187,7 @@ const toolDefinitions: JsonValue[] = [
     name: 'attach_screenshot_ocr',
     title: '附加截图 OCR 证据',
     description: [
-      '可选证据增强步骤。把外部 OCR 文本/框信息附加到已有 page canonical artifact。',
+      '[compat] 可选证据增强步骤。P5 后截图/OCR 可直接传给 reconstruct_page_context；该工具暂保留用于已有 pageId 的后置调试。',
       '当截图文字缺失、canvas/图片文字重要，或 page canonical 提示需要 OCR 时使用。',
       '默认读取该页面记录的第一张截图。如果 OCR 来自 ProtoBridge 外部，可传入 `externalText` 或 `externalBoxes`。',
       '安全边界：会更新 `page-canonical.json` 并写入 `ocr-result.json`，不修改目标 Flutter 应用。',
@@ -212,7 +217,7 @@ const toolDefinitions: JsonValue[] = [
     name: 'export_ui_review',
     title: '导出 UI Review',
     description: [
-      '第 3 步交付产物。根据 page canonical 和 UI build plan 导出 `ui-build-review.md`。',
+      '[compat] 旧第 3 步交付产物。P5 后默认由 reconstruct_page_context 直接导出 `ui-build-review.md`；该工具暂保留用于重新导出 review。',
       '在 `build_ui_plan` 之后使用；当实现、评审或调试需要人类可读摘要时尤其有用。',
       'Review 会列出视觉区块、计划文件、widget tree、组件/主题映射、i18n/资产/交互、风险、provenance 和验证提示。',
       '安全边界：只写 Markdown artifact，不修改目标 Flutter 应用。',

@@ -901,11 +901,15 @@ P5-A 已选择方案 C：
 - [x] P5-C：修复测试脚本默认 URL 与默认 route 不一致的问题；route 默认从 URL 推断，避免 DEFAULT_URL 被闲置。
 - [x] P5-D：以 `docs/migration-spec.md` 为标准做 review quality parity，确保 `ui-build-review.md` 覆盖页面元信息、迁移结论、文件树、Widget contracts、状态/生命周期、路由布局、主题/i18n/资源、可复用组件和可执行人工确认项。
 - [x] P5-D：为 `ui-build-review.md` 增加 parity checklist，并在测试脚本中断言关键章节存在且不能整篇嵌入旧 `migration-spec.md`。
+- [x] P5-final：CLI `generate` 支持有源码 / 无源码输入模型；`--url` 可走 runtime-only，`--route` / `--vue` 在无源码时清晰报错。
+- [x] P5-final：`screenshot.attach` 接入统一 orchestrator，`screenshotPath` / OCR 文本和 boxes 可直接进入 `screenshotFacts` 与 trace。
+- [x] P5-final：`migration-spec.md` 默认不再输出；仅在显式 `--source-brief` / `sourceBrief=true` 时作为可选 source-aware brief 导出。
+- [x] P5-final：测试脚本增加 `--matrix`，覆盖 hybrid / source-only / runtime-only 主路径与无页面身份、无源码 route 等失败边界。
 - [ ] P5-D follow-up：压缩过长的 source layout/style evidence，避免 review 在复杂页面中过度冗长。
-- [ ] P5-final：删除旧 URL-first MCP tool 主路径，只保留 capability-first `reconstruct_page_context` 与必要只读/验证工具。
+- [ ] P5-final cleanup：删除旧 URL-first MCP tool 主路径，只保留 capability-first `reconstruct_page_context` 与必要只读/验证工具。
 - [ ] P5-final：删除旧 source-aware workflow 主路径，CLI 只保留 capability-first generate。
 - [ ] P5-final：删除 `migration-context.json` 内部兼容开关。
-- [ ] P5-final：删除 `migration-spec.md` 作为顶层主产物的所有描述；如仍需 source-aware brief，必须作为 `ui.review` projection 的内部章节或显式可选导出。
+- [ ] P5-final cleanup：删除 `migration-spec.md` 作为顶层主产物的残余文档描述；如仍需 source-aware brief，必须保持显式可选导出。
 - [ ] P5 完成后，再回到 P3 增强 `runtime.capture` capability。
 - [ ] P5 完成后，再回到 P4 增强 `ui.plan` / `target.inspect` capability。
 

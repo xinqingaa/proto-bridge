@@ -1,7 +1,8 @@
 import path from 'node:path';
 import { reconstructPageContext } from '@proto-bridge/core/workflows/capability-first';
+import type { OcrTextBox } from '@proto-bridge/core';
 import type { JsonObject, ToolContext } from '../types.js';
-import { readBoolean, readNumber, readObject, readString } from '../utils/args.js';
+import { readBoolean, readNumber, readObject, readString, readStringArray } from '../utils/args.js';
 import { resolveRuntimeTargetRoot } from '../services/config.js';
 import {
   artifactSetId,
@@ -15,9 +16,10 @@ export async function reconstructPageContextTool(context: ToolContext, args: Jso
   const route = readString(args, 'route');
   const vue = readString(args, 'vuePath') ?? readString(args, 'vue');
   const url = readString(args, 'url');
-  const hasAnyPageInput = Boolean(sourceRoot || route || vue || url);
+  const screenshotPath = readString(args, 'screenshotPath');
+  const hasAnyPageInput = Boolean(sourceRoot || route || vue || url || screenshotPath);
   if (!hasAnyPageInput) {
-    throw new Error('reconstruct_page_context requires at least one of sourceRoot, route, vuePath, or url.');
+    throw new Error('reconstruct_page_context requires at least one of sourceRoot, route, vuePath, url, or screenshotPath.');
   }
 
   const outDir = resolveOutputDir(args, targetRoot, route ?? vue ?? url ?? 'page');
@@ -34,6 +36,9 @@ export async function reconstructPageContextTool(context: ToolContext, args: Jso
     vue,
     url,
     prototypeUrl: readString(args, 'prototypeUrl'),
+    screenshotPath: screenshotPath ? path.resolve(targetRoot, screenshotPath) : undefined,
+    ocrText: readStringArray(args, 'ocrText') ?? readStringArray(args, 'externalText'),
+    ocrBoxes: readExternalBoxes(args),
     outDir,
     capture: readBoolean(args, 'capture') ?? Boolean(url),
     viewport: readViewport(args),
@@ -41,7 +46,7 @@ export async function reconstructPageContextTool(context: ToolContext, args: Jso
     targetModule: readString(args, 'targetModule'),
     buildPlan: readBoolean(args, 'buildPlan') ?? true,
     buildReview: readBoolean(args, 'buildReview') ?? true,
-    sourceBrief: readBoolean(args, 'sourceBrief') ?? true,
+    sourceBrief: readBoolean(args, 'sourceBrief') ?? false,
     trace: readBoolean(args, 'trace') ?? false,
   });
 
@@ -84,6 +89,7 @@ export async function reconstructPageContextTool(context: ToolContext, args: Jso
       nodeCount: result.page.nodes.length,
       sectionCount: result.page.sections.length,
       screenshotCount: result.page.screenshots.length,
+      hasScreenshotFacts: Boolean(result.page.screenshotFacts),
       trace: readBoolean(args, 'trace') ? result.trace as unknown as JsonObject : undefined,
     },
   });
@@ -119,4 +125,31 @@ function slugFromSeed(value: string): string {
     .replace(/^-+|-+$/g, '')
     .slice(0, 48)
     || 'page';
+}
+
+function readExternalBoxes(args: JsonObject): OcrTextBox[] | undefined {
+  const value = args.ocrBoxes ?? args.externalBoxes;
+  if (!Array.isArray(value)) return undefined;
+  const boxes = value
+    .filter((item): item is JsonObject => Boolean(item) && typeof item === 'object' && !Array.isArray(item))
+    .map((item) => {
+      const text = typeof item.text === 'string' ? item.text : '';
+      const bboxValue = item.bbox;
+      const bbox = bboxValue && typeof bboxValue === 'object' && !Array.isArray(bboxValue)
+        ? {
+          x: typeof bboxValue.x === 'number' ? bboxValue.x : 0,
+          y: typeof bboxValue.y === 'number' ? bboxValue.y : 0,
+          width: typeof bboxValue.width === 'number' ? bboxValue.width : 0,
+          height: typeof bboxValue.height === 'number' ? bboxValue.height : 0,
+        }
+        : undefined;
+      const confidence = typeof item.confidence === 'number' ? item.confidence : undefined;
+      return {
+        text,
+        ...(bbox ? { bbox } : {}),
+        ...(typeof confidence === 'number' ? { confidence } : {}),
+      };
+    })
+    .filter((box) => box.text.trim().length > 0);
+  return boxes.length ? boxes : undefined;
 }

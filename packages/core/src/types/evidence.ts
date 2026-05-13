@@ -287,6 +287,8 @@ export type PageOrchestrationTrace = {
     hasVue: boolean;
     hasUrl: boolean;
     hasPrototypeUrl: boolean;
+    hasScreenshot?: boolean | undefined;
+    hasOcr?: boolean | undefined;
     hasTarget: boolean;
     captureRequested: boolean;
     runtimeUrl?: string | undefined;

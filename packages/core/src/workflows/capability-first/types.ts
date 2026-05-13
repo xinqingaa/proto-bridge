@@ -1,5 +1,6 @@
 import type {
   AdapterProjectConfig,
+  OcrTextBox,
   PageCanonical,
   PageOrchestrationTrace,
   UiBuildPlan,
@@ -7,6 +8,7 @@ import type {
 import type {
   PageMergeCapabilityResult,
   RuntimeCaptureCapabilityResult,
+  ScreenshotAttachCapabilityResult,
   SourceAnalyzeCapabilityResult,
   TargetInspectCapabilityResult,
   UiPlanCapabilityResult,
@@ -20,6 +22,9 @@ export type ReconstructPageContextInput = {
   vue?: string | undefined;
   url?: string | undefined;
   prototypeUrl?: string | undefined;
+  screenshotPath?: string | undefined;
+  ocrText?: string[] | undefined;
+  ocrBoxes?: OcrTextBox[] | undefined;
   outDir: string;
   capture?: boolean | undefined;
   viewport?: { width: number; height: number; deviceScaleFactor?: number | undefined } | undefined;
@@ -39,6 +44,7 @@ export type ReconstructPageContextResult = {
   capabilities: {
     source?: SourceAnalyzeCapabilityResult | undefined;
     runtime?: RuntimeCaptureCapabilityResult | undefined;
+    screenshot?: ScreenshotAttachCapabilityResult | undefined;
     target?: TargetInspectCapabilityResult | undefined;
     merge: PageMergeCapabilityResult;
     plan?: UiPlanCapabilityResult | undefined;
