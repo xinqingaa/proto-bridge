@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="960" viewBox="0 0 1600 960">
+  <style>
+    .title { font: 700 48px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; fill: #ffffff; letter-spacing: 0; }
+    .subtitle { font: 400 24px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; fill: #8fa3bd; letter-spacing: 0; }
+    .label { font: 700 24px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; fill: #edf5ff; letter-spacing: 0; }
+    .body { font: 400 18px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; fill: #8fa3bd; letter-spacing: 0; }
+    .small { font: 400 18px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; fill: #8fa3bd; letter-spacing: 0; }
+    .mono { font: 600 17px "SFMono-Regular", Consolas, monospace; fill: #edf5ff; letter-spacing: 0; }
+  </style>
+  
+    <defs>
+      <linearGradient id="bgGlow" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#10294a"/>
+        <stop offset="58%" stop-color="#08111f"/>
+        <stop offset="100%" stop-color="#07101c"/>
+      </linearGradient>
+      <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#4f8cff"/>
+        <stop offset="100%" stop-color="#36d1dc"/>
+      </linearGradient>
+      <filter id="softShadow" x="-18%" y="-18%" width="136%" height="148%">
+        <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#000000" flood-opacity="0.24"/>
+      </filter>
+      <marker id="arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="9" markerHeight="9" orient="auto">
+        <path d="M2,2 L10,6 L2,10 Z" fill="#36d1dc"/>
+      </marker>
+    </defs>
+    <rect width="1600" height="960" fill="url(#bgGlow)"/>
+    <rect x="64" y="56" width="1472" height="848" rx="34" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.08)"/>
+    <text x="100" y="126" class="title">交付链路升级</text>
+    <text x="102" y="166" class="subtitle">从静态设计稿和人工走查，升级为交互原型、源码证据、AI 编排和可验证产物</text>
+    <rect x="100" y="194" width="260" height="5" rx="3" fill="url(#accent)"/>
+    
+      
+    <g>
+      <rect x="105" y="278" width="112" height="128" rx="18" fill="rgba(16,27,46,0.56)" stroke="#2b4164"/>
+      <rect x="105" y="278" width="7" height="128" rx="4" fill="#f4b860"/>
+      <text x="165" y="350" text-anchor="middle" class="label">传统链路</text>
+    </g>
+  
+      
+    <g>
+      <rect x="105" y="578" width="112" height="128" rx="18" fill="rgba(16,27,46,0.56)" stroke="#2b4164"/>
+      <rect x="105" y="578" width="7" height="128" rx="4" fill="#36d1dc"/>
+      <text x="165" y="650" text-anchor="middle" class="label">目标链路</text>
+    </g>
+  
+      
+    <g filter="url(#softShadow)">
+      <rect x="245" y="260" width="260" height="128" rx="18" fill="#101b2e" stroke="#2b4164"/>
+      <rect x="245" y="260" width="260" height="5" rx="3" fill="#f4b860"/>
+      <text x="375" y="307" text-anchor="middle" class="label">产品 PRD</text>
+      <text x="269" y="342" class="body">需求和业务说明</text>
+    </g>
+  
+    <g filter="url(#softShadow)">
+      <rect x="585" y="260" width="260" height="128" rx="18" fill="#101b2e" stroke="#2b4164"/>
+      <rect x="585" y="260" width="260" height="5" rx="3" fill="#f4b860"/>
+      <text x="715" y="307" text-anchor="middle" class="label">Figma 静态稿</text>
+      <text x="609" y="342" class="body">静态视觉与布局</text>
+    </g>
+  
+    <g filter="url(#softShadow)">
+      <rect x="925" y="260" width="260" height="128" rx="18" fill="#101b2e" stroke="#2b4164"/>
+      <rect x="925" y="260" width="260" height="5" rx="3" fill="#f4b860"/>
+      <text x="1055" y="307" text-anchor="middle" class="label">各端自行理解</text>
+      <text x="949" y="342" class="body">交互和状态靠补充解释</text>
+    </g>
+  
+    <g filter="url(#softShadow)">
+      <rect x="1265" y="260" width="260" height="128" rx="18" fill="#101b2e" stroke="#2b4164"/>
+      <rect x="1265" y="260" width="260" height="5" rx="3" fill="#f4b860"/>
+      <text x="1395" y="307" text-anchor="middle" class="label">联调 / UI 走查</text>
+      <text x="1289" y="342" class="body">事后发现偏差并返工</text>
+    </g>
+  
+      <line x1="521" y1="324" x2="563" y2="324" stroke="#36d1dc" stroke-width="3" stroke-opacity="0.78" marker-end="url(#arrow)"/><line x1="861" y1="324" x2="903" y2="324" stroke="#36d1dc" stroke-width="3" stroke-opacity="0.78" marker-end="url(#arrow)"/><line x1="1201" y1="324" x2="1243" y2="324" stroke="#36d1dc" stroke-width="3" stroke-opacity="0.78" marker-end="url(#arrow)"/>
+      
+    <g filter="url(#softShadow)">
+      <rect x="245" y="560" width="260" height="128" rx="18" fill="#101b2e" stroke="#2b4164"/>
+      <rect x="245" y="560" width="260" height="5" rx="3" fill="#36d1dc"/>
+      <text x="375" y="607" text-anchor="middle" class="label">交互原型平台</text>
+      <text x="269" y="642" class="body">产品 / UI + AI</text><text x="269" y="664" class="body"> 生成可运行页面</text>
+    </g>
+  
+    <g filter="url(#softShadow)">
+      <rect x="585" y="560" width="260" height="128" rx="18" fill="#101b2e" stroke="#2b4164"/>
+      <rect x="585" y="560" width="260" height="5" rx="3" fill="#36d1dc"/>
+      <text x="715" y="607" text-anchor="middle" class="label">源码与运行态证据</text>
+      <text x="609" y="642" class="body">结构、状态、token、</text><text x="609" y="664" class="body">bbox、截图</text>
+    </g>
+  
+    <g filter="url(#softShadow)">
+      <rect x="925" y="560" width="260" height="128" rx="18" fill="#101b2e" stroke="#2b4164"/>
+      <rect x="925" y="560" width="260" height="5" rx="3" fill="#4f8cff"/>
+      <text x="1055" y="607" text-anchor="middle" class="label">ProtoBridge 编排</text>
+      <text x="949" y="642" class="body">合并 evidence </text><text x="949" y="664" class="body">与 target con</text>
+    </g>
+  
+    <g filter="url(#softShadow)">
+      <rect x="1265" y="560" width="260" height="128" rx="18" fill="#101b2e" stroke="#2b4164"/>
+      <rect x="1265" y="560" width="260" height="5" rx="3" fill="#36d1dc"/>
+      <text x="1395" y="607" text-anchor="middle" class="label">可验证实现</text>
+      <text x="1289" y="642" class="body">plan / revie</text><text x="1289" y="664" class="body">w / validati</text>
+    </g>
+  
+      <line x1="521" y1="624" x2="563" y2="624" stroke="#36d1dc" stroke-width="3" stroke-opacity="0.78" marker-end="url(#arrow)"/><line x1="861" y1="624" x2="903" y2="624" stroke="#36d1dc" stroke-width="3" stroke-opacity="0.78" marker-end="url(#arrow)"/><line x1="1201" y1="624" x2="1243" y2="624" stroke="#36d1dc" stroke-width="3" stroke-opacity="0.78" marker-end="url(#arrow)"/>
+      
+    <g filter="url(#softShadow)">
+      <rect x="480" y="430" width="640" height="70" rx="30" fill="#0c1728" stroke="#62d394" stroke-opacity="0.8"/>
+      <text x="800" y="460" text-anchor="middle" class="label">核心变化：交互和证据前置</text><text x="800" y="486" text-anchor="middle" class="label">UI 走查从兜底变成确认</text>
+    </g>
+  
+    
+  
+</svg>
