@@ -1,29 +1,23 @@
 # ProtoBridge Agent 工作指南
 
-本文档面向在本仓库协作的 AI agent 和开发者。当前主线是 capability-first，不再维护旧的 CLI source-aware workflow 或旧 MCP URL-first 分步 workflow 作为公开路径。
+本文档面向在本仓库协作或使用 ProtoBridge 处理目标应用的 AI coding agent 和开发者。
 
-## 项目定位
+ProtoBridge 是团队把“PRD + Figma 静态稿 + 人工 UI 走查”升级为“交互原型 + 源码证据 + AI 编排 + 可验证产物”的上下文桥接工具。它负责准备证据、实现计划、review 文档和验证结果；它不替代真正修改目标 Flutter 应用的 coding agent。
 
-ProtoBridge 是原型到实现的上下文桥接工具。它整理 source facts、runtime evidence、screenshot/OCR、target conventions 和人工确认项，生成可追溯的页面上下文。
-
-ProtoBridge 不做：
-
-- 直接生成完整 Dart 业务页面。
-- 把 Vue 确定性翻译成 Flutter。
-- 从纯截图伪造 rendered DOM 等级的 node tree。
-- 在仓库内复制 source/target 项目的业务规范。
-
-## 当前主线
+## 操作模型
 
 ```text
-CLI / MCP = 入口
-capability = 可复用底层能力
-workflow = capability-first 编排
+可用输入
+  -> 重建页面上下文
+  -> 阅读产物
+  -> 必要时检查目标工程示例
+  -> 在 target repo 中实现
+  -> 验证目标变更
 ```
 
-主编排入口：
+主入口：
 
-- core：`reconstructPageContext`
+- Core：`reconstructPageContext`
 - CLI：`proto-bridge generate`
 - MCP：`reconstruct_page_context`
 
@@ -35,80 +29,139 @@ workflow = capability-first 编排
 - `ui-build-review.md`
 - `screenshots/full-page.png`
 
-`migration-spec.md` 只是显式开启 `sourceBrief` 时的可选 source-aware brief。默认不再输出 `migration-context.json`。
+## 实现前先判断输入
 
-## 输入场景
+先判断当前有哪些输入：
 
-三种场景都走同一条 capability-first 主链路：
+- 有 source route 或 Vue 文件：使用 source analysis。
+- 有运行中的 URL：使用 runtime capture。
+- 有 screenshot 或 OCR 文本：附加视觉和文字证据。
+- 有 target repository：读取 target conventions 并生成 plan。
 
-- source-only：`source.root + route/vue`
-- runtime-only：`url`
-- hybrid：`source.root + route/vue + url`
+不要要求用户同时提供 source 和 URL。它们是可组合证据源，不是共同必填项：
 
-CLI 和 MCP 当前阶段都读取 `proto-bridge.config.json`。MCP tool 参数优先于 config，config 优先于默认值。
+- 有 `source.root + route/vue`：可以跑 source-only。
+- 有 `url`：可以跑 runtime-only。
+- 两者都有：跑 hybrid。
+- 只有 screenshot/OCR：可以作为视觉和文字补证。
+- 没有 `source.root` 时，不要用 `route/vue` 强行跑 source analysis；改用 URL，或请用户补充 `sourceRoot`。
+- 没有 URL 时，不要强行 capture；先跑 source-only。
 
-## 能力边界
+MCP 场景调用 `reconstruct_page_context`，CLI 场景运行 `proto-bridge generate`。
 
-核心能力位于 `packages/core/src/capabilities`：
+source-only MCP 示例：
 
-- `source.analyze`：读取 source 语义、结构、状态、交互、资源、token intent。
-- `runtime.capture`：用浏览器采集可见 DOM、computed style、bbox、assets、interactions、screenshot。
-- `screenshot.attach`：附加截图/OCR 证据。
-- `target.inspect`：读取 Flutter target conventions、routes、theme、components、assets、examples。
-- `page.merge`：按字段级优先级合并 facts，保留 provenance 和 mismatch warnings。
-- `ui.plan`：从统一 canonical 生成 `ui-build-plan.json`。
-- `ui.review`：生成 `ui-build-review.md`。
-- `ui.validate`：实现后检查 target diff 和 plan 风险。
+```json
+{
+  "route": "/prototype/asset/pnl-analysis"
+}
+```
 
-## 目录边界
+runtime-only MCP 示例：
 
-- `packages/cli`：CLI 参数、配置、输出展示；不放业务规则。
-- `packages/mcp-server`：MCP tools/resources/prompts/session；不放 core 业务规则。
-- `packages/core/capabilities`：对外稳定能力 facade。
-- `packages/core/workflows/capability-first`：统一编排。
-- `packages/core/source`：source 技术栈实现。
-- `packages/core/snapshot`：runtime capture、OCR、evidence enrichers。
-- `packages/core/target`：target conventions、planning、validation。
-- `packages/core/artifacts`：文件写出。
+```json
+{
+  "url": "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1",
+  "capture": true
+}
+```
 
-不要新增旧 workflow 的公共出口。需要给 CLI 和 MCP 共用的能力，应下沉到 core capability。
+hybrid MCP 示例：
 
-## 证据原则
+```json
+{
+  "route": "/prototype/asset/pnl-analysis",
+  "url": "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1",
+  "capture": true,
+  "trace": true
+}
+```
 
-- source 优先表达结构、语义、状态空间、设计意图。
-- runtime 优先表达当前可见性、bbox、computed style、active/open state、可见文案。
-- screenshot/OCR 优先表达最终视觉对照和补证。
-- target repo 优先表达文件落点、组件复用、theme/i18n/asset conventions。
+## 产物阅读优先级
 
-不能从证据里编造 API、权限、风控、埋点或隐藏业务行为。无法确认的内容进入 warnings、risks、manual confirmations 或 TODO。
+根据任务优先读最高价值的产物：
 
-## 修改规则
+1. `ui-build-review.md`：人类可读实现交接。
+2. `ui-build-plan.json`：文件树、Widget 树、mapping、i18n、assets、interactions、risks、validation hints。
+3. `page-debug-index.json`：排查视觉偏差时的快速索引。
+4. `page-canonical.json`：完整 evidence、provenance、merge rules、mismatches 和 trace。
+5. `screenshots/`：runtime capture 存在时的视觉参考。
 
-1. 先判断改动属于入口层、capability 层、target/source/snapshot 实现层，还是文档层。
-2. 入口层只做协议和参数适配。
-3. 共享能力进 core capability。
-4. 删除旧路径时要同步删除公开 exports、tools/list、prompts、README 和 docs 叙述。
-5. 文档必须描述当前行为，不保留会误导用户的旧工具名作为主路径。
+不要把 `migration-spec.md` 当主产物。它只是在显式请求时导出的可选 source-aware brief。
 
-常见判断：
+## 证据规则
 
-- MCP 新增主要行为：优先扩展 `reconstruct_page_context` 输入或 core capability，不新增分步旧 tool。
-- CLI 新增主要行为：扩展 `generate` 参数并调用 `reconstructPageContext`。
-- 视觉证据问题：看 `snapshot` 和 `page-debug-index`。
-- target mapping 问题：看 `target/flutter-app` 和 `ui.plan` capability。
-- 配置问题：CLI/MCP 都应对齐 `proto-bridge.config.json`，再评估 env/roots/elicitation 等方案。
+- Source 最适合表达结构、语义区块、状态空间、交互意图和设计意图。
+- Runtime 最适合表达实际可见性、bbox、computed style、active/open state 和可见文案。
+- Screenshot/OCR 最适合表达视觉对照和补充文字证据。
+- Target repository conventions 最适合表达文件落点、组件复用、routes、theme、i18n 和 assets。
+
+在本团队场景中，原型平台与客户端的组件、主题和布局规范应尽量一一对应。Source evidence 的价值不只是“看源码”，而是提取交互原型平台中的结构、状态、组件意图和 token intent；target evidence 则用于把这些意图映射到客户端工程可复用能力。
+
+如果证据缺失或互相冲突，要记录 risk 或 manual confirmation。不要编造隐藏 API、权限、埋点、风控、业务流或数据归属。
+
+## 目标应用实现流程
+
+1. 用 `reconstruct_page_context` 或 `proto-bridge generate` 生成上下文。
+2. 阅读 `ui-build-review.md`。
+3. 阅读 `ui-build-plan.json`。
+4. 目标复用方式不明确时，调用 `read_target_conventions` 或 `find_target_examples`。
+5. 只编辑 plan 需要的目标文件，除非用户明确要求扩大范围。
+6. 优先沿用 target app 的 patterns、theme tokens、i18n conventions、routing conventions 和 reusable components。
+7. 无法确认的业务行为保留为明确 TODO 或 manual confirmation，不要猜。
+8. 能运行时，执行目标应用的 format、analyze 和 tests。
+9. 调用 `validate_ui_build`。
+10. 汇报 changed files、validation status、warnings 和 unresolved confirmations。
 
 ## 验证
 
-常规改动至少运行：
+MCP validation 示例：
 
-```bash
-pnpm run typecheck
-pnpm run build
+```json
+{
+  "name": "validate_ui_build",
+  "arguments": {
+    "pageId": "page-pnl-analysis-20260514T05343",
+    "targetRoot": "/Users/name/work/youfi"
+  }
+}
 ```
 
-涉及 workflow、MCP tool、artifact contract 的改动还要运行：
+Validation 会检查：
 
-```bash
-pnpm run test:ui-reconstruction:matrix
-```
+- git diff、staged changes 和 untracked files。
+- 是否有文件超出 allowed paths。
+- plan 预期文件是否缺失。
+- placeholder text 和 TODO markers。
+- hard-coded colors 和 font sizes。
+- local shadows、network images 和 navigation risk markers。
+- plan validation hints。
+
+Validation 是 review 辅助，不等于证明视觉和业务完全正确。
+
+## 仓库修改边界
+
+修改 ProtoBridge 本身时按下面边界判断：
+
+- `packages/cli`：命令参数、config 读取、终端输出。
+- `packages/mcp-server`：MCP 协议、tools、resources、prompts、session state。
+- `packages/core/capabilities`：共享 capability facade。
+- `packages/core/workflows/capability-first`：统一编排。
+- `packages/core/source`：source adapters。
+- `packages/core/snapshot`：browser capture、OCR、evidence enrichment。
+- `packages/core/target`：target conventions、examples、planning、validation。
+- `packages/core/artifacts`：文件写出。
+
+共享行为应进入 core capabilities。入口包只做参数适配和输出适配，不承载产品逻辑。
+
+## 文档规则
+
+正式文档应描述稳定行为和当前命令：
+
+- 项目背景：`docs/background.md`
+- 架构说明：`docs/architecture.md`
+- 工作流：`docs/workflows.md`
+- 安装与示例：`docs/quickstart.md`
+- 输出产物：`docs/artifacts.md`
+
+不要在正式文档里加入阶段标签、研究台账口吻，或不属于支持路径的工具名。

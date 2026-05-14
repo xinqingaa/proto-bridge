@@ -99,20 +99,20 @@
 
 ## 4. 质量分级
 
-### Bronze：基础可生成
+### 铜级：基础可生成
 
 - 能定位页面 route、screenId 和目标 Flutter 模块。
 - 能读取 notes 和 i18n。
 - 能给出基础 token 映射。
 - 能生成基础 Widget 拆分和人工确认项。
 
-### Silver：标准输出
+### 银级：标准输出
 
 - 能生成文件树、Widget 组合、输入数据/交互回调和状态管理建议。
 - 能把 source facts 消化为 Flutter 视角的说明。
-- 能输出 P0/P1/P2 可执行确认项。
+- 能输出按 Critical / High / Normal 分级的可执行确认项。
 
-### Gold：增强输出
+### 金级：增强输出
 
 - 能结合运行时截图和 computed style 校对布局。
 - 能识别 target Flutter 模块内相似页面并总结复用写法。
@@ -225,7 +225,7 @@ lib/app/modules/<module>/<screen>/
 | --- | --- |
 
 ## 九、人工确认项
-- [ ] P0：
-- [ ] P1：
-- [ ] P2：
+- [ ] Critical：
+- [ ] High：
+- [ ] Normal：
 ````

@@ -1,8 +1,10 @@
 # @proto-bridge/core
 
-Core library for ProtoBridge capability-first reconstruction. Most users should use `@proto-bridge/cli` or `@proto-bridge/mcp-server`; use core directly only when embedding ProtoBridge in another Node.js tool.
+ProtoBridge core library。
 
-## Main API
+大多数用户应优先使用 `@proto-bridge/cli` 或 `@proto-bridge/mcp-server`。当需要把 ProtoBridge 嵌入另一个 Node.js 工具，或围绕共享 capabilities 做自定义编排时，再直接使用本包。
+
+## Workflow 接口
 
 ```ts
 import { reconstructPageContext } from '@proto-bridge/core/workflows/capability-first';
@@ -28,7 +30,20 @@ console.log(result.files.pageCanonical);
 console.log(result.files.uiBuildPlan);
 ```
 
-## Outputs
+## Capability 接口
+
+```ts
+import { validateUiCapability } from '@proto-bridge/core/capabilities';
+
+const validation = await validateUiCapability({
+  targetRoot: '/path/to/youfi',
+  allowedPaths: ['lib/app/modules/asset'],
+});
+
+console.log(validation.status);
+```
+
+## 输出
 
 ```text
 <outDir>/
@@ -39,9 +54,7 @@ console.log(result.files.uiBuildPlan);
 └── screenshots/
 ```
 
-`migration-spec.md` is only emitted when `sourceBrief: true`. `migration-context.json` is no longer emitted by the capability-first workflow.
-
-## Public Subpaths
+## 公开 Subpaths
 
 - `@proto-bridge/core/workflows/capability-first`
 - `@proto-bridge/core/capabilities`
@@ -51,9 +64,7 @@ console.log(result.files.uiBuildPlan);
 - `@proto-bridge/core/artifacts`
 - `@proto-bridge/core/shared`
 
-Legacy public workflow subpaths for source-aware migration and URL-first UI reconstruction have been removed. Their reusable behavior now lives behind capability-first facades.
+## 环境要求
 
-## Requirements
-
-- Node.js 20 or newer.
-- ESM runtime.
+- Node.js 20 或更高版本。
+- ESM runtime。

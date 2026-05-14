@@ -1,66 +1,45 @@
-# 集成与工具入口
+# 集成方式
 
-本文档说明 ProtoBridge 的三种接入方式：CLI、MCP server 和 core library。当前推荐统一走 capability-first。
+ProtoBridge 支持 CLI、MCP 和 core library 三种接入方式。终端和批处理优先用 CLI，AI coding agent 优先用 MCP，需要嵌入到其他 Node.js 工具时使用 core。
 
-## 1. CLI
+## CLI
+
+安装并初始化：
 
 ```bash
 npx @proto-bridge/cli init
+```
+
+生成产物：
+
+```bash
 npx @proto-bridge/cli generate --route /prototype/asset/pnl-analysis
-npx @proto-bridge/cli generate --url "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1" --capture
 ```
 
-配置文件：
+Runtime capture：
 
-```json
-{
-  "source": {
-    "adapter": "vue3-prototype",
-    "root": "/Users/name/work/TradeAppPrd"
-  },
-  "target": {
-    "adapter": "flutter-app",
-    "root": "/Users/name/work/youfi"
-  },
-  "outputRoot": "./output",
-  "capture": false
-}
+```bash
+npx @proto-bridge/cli generate \
+  --url "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1" \
+  --capture
 ```
 
-输出：
+本地仓库：
 
-```text
-output/<page>-<timestamp>/
-├── page-canonical.json
-├── page-debug-index.json
-├── ui-build-plan.json
-├── ui-build-review.md
-└── screenshots/
+```bash
+cd /Users/name/work/proto-bridge
+pnpm install
+pnpm run build
+pnpm run generate -- --route /prototype/asset/pnl-analysis
 ```
 
-## 2. MCP
+## MCP
 
-发布包入口：
+发布包：
 
 ```bash
 npx -y @proto-bridge/mcp-server
 ```
-
-本地源码入口：
-
-```bash
-cd /path/to/proto-bridge
-pnpm run build
-cd /path/to/youfi
-node /path/to/proto-bridge/packages/mcp-server/dist/index.js --config /path/to/youfi/proto-bridge.config.json
-```
-
-公开 tools：
-
-- `reconstruct_page_context`
-- `read_target_conventions`
-- `find_target_examples`
-- `validate_ui_build`：MCP 入口，内部调用 core `ui.validate` capability。
 
 Codex：
 
@@ -68,6 +47,31 @@ Codex：
 [mcp_servers.proto-bridge]
 command = "npx"
 args = ["-y", "@proto-bridge/mcp-server"]
+```
+
+Codex 显式指定 config：
+
+```toml
+[mcp_servers.proto-bridge]
+command = "npx"
+args = [
+  "-y",
+  "@proto-bridge/mcp-server",
+  "--config",
+  "/Users/name/work/youfi/proto-bridge.config.json"
+]
+```
+
+本地构建：
+
+```toml
+[mcp_servers.proto-bridge]
+command = "node"
+args = [
+  "/Users/name/work/proto-bridge/packages/mcp-server/dist/index.js",
+  "--config",
+  "/Users/name/work/youfi/proto-bridge.config.json"
+]
 ```
 
 Cursor：
@@ -86,17 +90,24 @@ Cursor：
 Claude Code：
 
 ```bash
-cd /path/to/youfi
+cd /Users/name/work/youfi
 claude mcp add proto-bridge --scope project -- \
   npx -y @proto-bridge/mcp-server
 ```
 
-## 3. Core
+MCP tools：
+
+- `reconstruct_page_context`
+- `read_target_conventions`
+- `find_target_examples`
+- `validate_ui_build`
+
+## Core Library
 
 ```ts
 import { reconstructPageContext } from '@proto-bridge/core/workflows/capability-first';
 
-await reconstructPageContext({
+const result = await reconstructPageContext({
   source: {
     adapter: 'vue3-prototype',
     root: '/Users/name/work/TradeAppPrd',
@@ -112,35 +123,53 @@ await reconstructPageContext({
   buildPlan: true,
   buildReview: true,
 });
+
+console.log(result.files.uiBuildReview);
 ```
 
-## 4. 常见场景
+需要自定义编排时，可以直接使用 capability APIs：
 
-source-only：
+```ts
+import { validateUiCapability } from '@proto-bridge/core/capabilities';
 
-```bash
-npx @proto-bridge/cli generate --route /prototype/asset/pnl-analysis
+const result = await validateUiCapability({
+  targetRoot: '/Users/name/work/youfi',
+  allowedPaths: ['lib/app/modules/asset'],
+});
+
+console.log(result.status);
 ```
 
-runtime-only：
+## Config
 
-```bash
-npx @proto-bridge/cli generate --url "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1" --capture
+```json
+{
+  "source": {
+    "adapter": "vue3-prototype",
+    "root": "/Users/name/work/TradeAppPrd"
+  },
+  "target": {
+    "adapter": "flutter-app",
+    "root": "/Users/name/work/youfi"
+  },
+  "outputRoot": "./output",
+  "capture": false
+}
 ```
 
-hybrid：
+优先级：
 
-```bash
-npx @proto-bridge/cli generate \
-  --route /prototype/asset/pnl-analysis \
-  --url "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1" \
-  --capture
+```text
+CLI args / MCP tool args > proto-bridge.config.json > defaults
 ```
 
-发布前基础检查：
+## 输出
 
-```bash
-pnpm run typecheck
-pnpm run build
-pnpm run test:ui-reconstruction:matrix
+```text
+output/<page>-<timestamp>/
+├── page-canonical.json
+├── page-debug-index.json
+├── ui-build-plan.json
+├── ui-build-review.md
+└── screenshots/
 ```
