@@ -126,7 +126,7 @@ CLI args / MCP tool args > proto-bridge.config.json > defaults
 - `reconstruct_page_context`
 - `read_target_conventions`
 - `find_target_examples`
-- `validate_ui_build`
+- `validate_ui_build`：MCP 入口，内部调用 core `ui.validate` capability。
 
 旧 URL-first 分步 tools 已从公开 MCP tools 移除；不要在新文档或 prompt 中继续推荐旧工具名。
 

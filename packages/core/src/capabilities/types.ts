@@ -11,6 +11,7 @@ import type {
   FlutterContextAnalysis,
   PrototypePageAnalysis,
 } from '../types/index.js';
+import type { FlutterTargetValidationResult } from '../target/flutter-app/index.js';
 
 export type CapabilityDescriptor = {
   name: PageCapabilityName;
@@ -85,6 +86,19 @@ export type UiPlanCapabilityResult = {
 
 export type UiReviewCapabilityResult = ExportUiReviewResult & {
   capability: 'ui.review';
+  warnings: string[];
+};
+
+export type UiValidateCapabilityInput = {
+  targetRoot: string;
+  gitBase?: string | undefined;
+  allowedPaths?: string[] | undefined;
+  expectedFiles?: string[] | undefined;
+  validationHints?: string[] | undefined;
+};
+
+export type UiValidateCapabilityResult = FlutterTargetValidationResult & {
+  capability: 'ui.validate';
   warnings: string[];
 };
 

@@ -60,7 +60,7 @@ node /path/to/proto-bridge/packages/mcp-server/dist/index.js --config /path/to/y
 - `reconstruct_page_context`
 - `read_target_conventions`
 - `find_target_examples`
-- `validate_ui_build`
+- `validate_ui_build`：MCP 入口，内部调用 core `ui.validate` capability。
 
 Codex：
 

@@ -208,6 +208,19 @@ async function runMcpCase(caseName) {
     await requireAbsent(path.join(outDir, 'migration-context.json'));
     if (!reconstruct.summary?.trace) throw new Error('MCP trace=true should return summary.trace.');
 
+    const validation = parseToolJson(await client.request('tools/call', {
+      name: 'validate_ui_build',
+      arguments: {
+        targetRoot,
+        pageId,
+      },
+    }));
+    if (validation.capability !== 'ui.validate') {
+      throw new Error(`validate_ui_build should return ui.validate capability, got ${validation.capability ?? '(missing)'}.`);
+    }
+    if (!Array.isArray(validation.changedFiles)) throw new Error('validate_ui_build must return changedFiles.');
+    if (!Array.isArray(validation.validationHints)) throw new Error('validate_ui_build must return validationHints.');
+
     ok(`MCP capability-first ${caseName} test passed.`);
     return {
       case: caseName,

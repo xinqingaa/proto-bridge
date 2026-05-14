@@ -12,7 +12,7 @@
 
 ## 1. 优先级总览
 
-当前阶段已经完成 P0 / P1 / P2，P5 capability-first 主链路也已完成到 final cleanup：CLI/MCP 都走统一 `reconstructPageContext`，MCP 已读取 `proto-bridge.config.json`，旧 URL-first MCP tools 和旧 source-aware workflow 公开入口已删除。
+当前阶段已经完成 P0 / P1 / P2，P5 capability-first 主链路也已完成到 final cleanup：CLI/MCP 都走统一 `reconstructPageContext`，MCP 已读取 `proto-bridge.config.json`，旧 URL-first MCP tools 和旧 source-aware workflow 公开入口已删除；`ui.validate` 已落为 core capability，MCP `validate_ui_build` 调用同一个 `validateUiCapability`。
 
 现在不继续沿旧的 URL-first / source-aware 两条固定 workflow 做 P3 / P4 增强。P3 / P4 暂停作为主线，但不废弃；它们应在 P5 完成后分别作为 `runtime.capture`、`ui.plan` / `target.inspect` capability 的增强继续推进。
 
@@ -48,7 +48,7 @@ P0 已完成统一产物模型与 MCP 契约：
 
 P1 已完成 MCP 可用性基础：
 
-- MCP tools 已收敛为 `reconstruct_page_context`、`read_target_conventions`、`find_target_examples`、`validate_ui_build`，并补中文 title / description / 参数说明 / annotations / outputSchema。
+- MCP tools 已收敛为 `reconstruct_page_context`、`read_target_conventions`、`find_target_examples`、`validate_ui_build`，并补中文 title / description / 参数说明 / annotations / outputSchema；其中 `validate_ui_build` 已作为 `ui.validate` core capability 的 MCP 入口。
 - 已暴露 workflow guide、tool catalog、latest artifacts、prompts。
 - 已确认 Codex CLI `/mcp` 面板只显示 tool names，但协议层能返回完整描述。
 
@@ -910,6 +910,7 @@ P5-A 已选择方案 C：
 - [x] P5-final：删除旧 source-aware workflow 主路径，CLI 只保留 capability-first generate。
 - [x] P5-final：删除 `migration-context.json` 内部兼容开关。
 - [x] P5-final cleanup：删除 `migration-spec.md` 作为顶层主产物的残余文档描述；如仍需 source-aware brief，必须保持显式可选导出。
+- [x] P5-final follow-up：将 `ui.validate` 落为 core capability，MCP `validate_ui_build` 改为调用 `validateUiCapability`，为未来 CLI validate 入口预留共享实现。
 - [ ] P5 完成后，再回到 P3 增强 `runtime.capture` capability。
 - [ ] P5 完成后，再回到 P4 增强 `ui.plan` / `target.inspect` capability。
 
