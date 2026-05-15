@@ -1,0 +1,139 @@
+{
+  "diagram": {
+    "schemaVersion": 1,
+    "kind": "artifact-loop",
+    "title": "ProtoBridge 产物闭环",
+    "subtitle": "让实现前、实现中、实现后都有依据",
+    "style": "proto-bridge",
+    "nodes": [
+      {
+        "id": "artifact-1",
+        "title": "页面事实底稿",
+        "subtitle": "完整记录页面证据、来源和冲突",
+        "group": "产物闭环",
+        "kind": "step",
+        "tags": [
+          "page-canonical.json"
+        ],
+        "weight": 1
+      },
+      {
+        "id": "artifact-2",
+        "title": "快速定位索引",
+        "subtitle": "按区块、文字和样式查证据",
+        "group": "产物闭环",
+        "kind": "step",
+        "tags": [
+          "page-debug-index.json"
+        ],
+        "weight": 1
+      },
+      {
+        "id": "artifact-3",
+        "title": "实现计划",
+        "subtitle": "说明目标文件、组件和复用建议",
+        "group": "产物闭环",
+        "kind": "step",
+        "tags": [
+          "ui-build-plan.json"
+        ],
+        "weight": 1
+      },
+      {
+        "id": "artifact-4",
+        "title": "交接说明",
+        "subtitle": "给开发者和 AI 助手看的任务书",
+        "group": "产物闭环",
+        "kind": "step",
+        "tags": [
+          "ui-build-review.md"
+        ],
+        "weight": 1
+      },
+      {
+        "id": "artifact-5",
+        "title": "视觉证据",
+        "subtitle": "用于实现前后核对页面",
+        "group": "产物闭环",
+        "kind": "step",
+        "tags": [
+          "screenshots/full-page.png"
+        ],
+        "weight": 1
+      },
+      {
+        "id": "artifact-6",
+        "title": "实现后检查",
+        "subtitle": "检查改动范围和常见风险",
+        "group": "产物闭环",
+        "kind": "step",
+        "tags": [
+          "validation result"
+        ],
+        "weight": 1
+      }
+    ],
+    "edges": [
+      {
+        "from": "artifact-1",
+        "to": "artifact-2",
+        "label": "",
+        "kind": "flow"
+      },
+      {
+        "from": "artifact-2",
+        "to": "artifact-3",
+        "label": "",
+        "kind": "flow"
+      },
+      {
+        "from": "artifact-3",
+        "to": "artifact-4",
+        "label": "",
+        "kind": "flow"
+      },
+      {
+        "from": "artifact-4",
+        "to": "artifact-5",
+        "label": "",
+        "kind": "flow"
+      },
+      {
+        "from": "artifact-5",
+        "to": "artifact-6",
+        "label": "",
+        "kind": "flow"
+      }
+    ],
+    "groups": [
+      {
+        "id": "产物闭环",
+        "title": "产物闭环"
+      }
+    ],
+    "notes": [
+      "检查结果回到计划和交接说明，修正后再次验证。"
+    ],
+    "metadata": {
+      "generatedBy": "scripts/generate-ai-diagram.mjs",
+      "sourceFiles": [
+        "README.md",
+        "docs/artifacts.md",
+        "docs/workflows.md"
+      ],
+      "inputSummary": {
+        "files": 3,
+        "markdownFiles": 3,
+        "codeFiles": 0,
+        "bytes": 18407
+      },
+      "headingCount": 27,
+      "capabilityCount": 8,
+      "artifactCount": 6
+    }
+  },
+  "check": {
+    "ok": true,
+    "issues": []
+  }
+}

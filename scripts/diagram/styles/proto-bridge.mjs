@@ -1,0 +1,28 @@
+export const protoBridgeStyle = {
+  width: 1600,
+  height: 960,
+  colors: {
+    page: '#f3f7fb',
+    ink: '#152234',
+    title: '#101827',
+    body: '#516277',
+    faint: '#73849a',
+    white: '#ffffff',
+    blue: '#3d7cff',
+    sky: '#20a8d8',
+    teal: '#19b6a3',
+    green: '#58b978',
+    amber: '#f0a23a',
+    coral: '#ee6d66',
+    violet: '#7b6cff',
+  },
+  groupColors: {
+    入口: '#3d7cff',
+    输入: '#3d7cff',
+    共享处理: '#19b6a3',
+    处理: '#19b6a3',
+    主流程: '#19b6a3',
+    产物闭环: '#58b978',
+    输出: '#58b978',
+  },
+};

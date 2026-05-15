@@ -1,0 +1,127 @@
+{
+  "diagram": {
+    "schemaVersion": 1,
+    "kind": "workflow",
+    "title": "工作流 工作流",
+    "subtitle": "手上有什么证据，就组合什么能力",
+    "style": "proto-bridge",
+    "nodes": [
+      {
+        "id": "input",
+        "title": "准备材料",
+        "subtitle": "源码、网页、截图或目标工程",
+        "group": "主流程",
+        "kind": "step",
+        "tags": [],
+        "weight": 1
+      },
+      {
+        "id": "capture",
+        "title": "采集证据",
+        "subtitle": "读取结构、运行画面和规范",
+        "group": "主流程",
+        "kind": "step",
+        "tags": [],
+        "weight": 1
+      },
+      {
+        "id": "merge",
+        "title": "合并上下文",
+        "subtitle": "保留来源、冲突和人工确认项",
+        "group": "主流程",
+        "kind": "step",
+        "tags": [],
+        "weight": 1
+      },
+      {
+        "id": "plan",
+        "title": "生成交接",
+        "subtitle": "实现计划和 review 文档",
+        "group": "主流程",
+        "kind": "step",
+        "tags": [],
+        "weight": 1
+      },
+      {
+        "id": "implement",
+        "title": "落地实现",
+        "subtitle": "按目标工程规范修改",
+        "group": "主流程",
+        "kind": "step",
+        "tags": [],
+        "weight": 1
+      },
+      {
+        "id": "validate",
+        "title": "实现后检查",
+        "subtitle": "检查范围和常见风险",
+        "group": "主流程",
+        "kind": "step",
+        "tags": [],
+        "weight": 1
+      }
+    ],
+    "edges": [
+      {
+        "from": "input",
+        "to": "capture",
+        "label": "",
+        "kind": "flow"
+      },
+      {
+        "from": "capture",
+        "to": "merge",
+        "label": "",
+        "kind": "flow"
+      },
+      {
+        "from": "merge",
+        "to": "plan",
+        "label": "",
+        "kind": "flow"
+      },
+      {
+        "from": "plan",
+        "to": "implement",
+        "label": "",
+        "kind": "flow"
+      },
+      {
+        "from": "implement",
+        "to": "validate",
+        "label": "",
+        "kind": "flow"
+      }
+    ],
+    "groups": [
+      {
+        "id": "主流程",
+        "title": "主流程"
+      }
+    ],
+    "notes": [
+      "-> source.analyze / runtime.capture / screenshot.attach / target.inspect",
+      "-> page.merge",
+      "-> ui.plan"
+    ],
+    "metadata": {
+      "generatedBy": "scripts/generate-ai-diagram.mjs",
+      "sourceFiles": [
+        "docs/workflows.md"
+      ],
+      "inputSummary": {
+        "files": 1,
+        "markdownFiles": 1,
+        "codeFiles": 0,
+        "bytes": 6329
+      },
+      "headingCount": 10,
+      "capabilityCount": 8,
+      "artifactCount": 6
+    }
+  },
+  "check": {
+    "ok": true,
+    "issues": []
+  }
+}
