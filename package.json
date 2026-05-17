@@ -15,10 +15,9 @@
     "dev": "pnpm --filter @proto-bridge/cli dev",
     "generate": "node scripts/generate.mjs",
     "test:config": "pnpm --filter @proto-bridge/core build && node scripts/test-config.mjs",
-    "test:ui-reconstruction": "node scripts/test-ui-reconstruction.mjs all",
-    "test:ui-reconstruction:cli": "node scripts/test-ui-reconstruction.mjs cli",
-    "test:ui-reconstruction:matrix": "node scripts/test-ui-reconstruction.mjs all --matrix",
-    "test:ui-reconstruction:mcp": "node scripts/test-ui-reconstruction.mjs mcp"
+    "test:e2e": "node scripts/test-e2e.mjs",
+    "test:e2e:cli": "node scripts/test-e2e.mjs cli",
+    "test:e2e:mcp": "node scripts/test-e2e.mjs mcp"
   },
   "engines": {
     "node": ">=20"
