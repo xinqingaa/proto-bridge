@@ -1,2 +1,3 @@
 packages:
   - packages/*
+  - examples/vue3-to-flutter/source-vue3

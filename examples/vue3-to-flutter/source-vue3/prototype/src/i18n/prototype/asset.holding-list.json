@@ -1,0 +1,9 @@
+{
+  "title": "Portfolio Holdings",
+  "subtitle": "Realtime snapshot for long-term positions",
+  "empty": "No holdings match current filter",
+  "actions": {
+    "rebalance": "Rebalance",
+    "detail": "View detail"
+  }
+}

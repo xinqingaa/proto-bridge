@@ -1,0 +1,14 @@
+{
+  "title": "P&L Analysis",
+  "subtitle": "Break down realized and unrealized returns",
+  "tabs": {
+    "overview": "Overview",
+    "realized": "Realized",
+    "risk": "Risk"
+  },
+  "actions": {
+    "filter": "Filter",
+    "export": "Export",
+    "close": "Close"
+  }
+}

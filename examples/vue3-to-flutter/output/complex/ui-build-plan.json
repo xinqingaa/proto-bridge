@@ -1,0 +1,2336 @@
+{
+  "id": "plan_page_pnl-analysis_mp9owcn4_mp9owd96",
+  "pageId": "page_pnl-analysis_mp9owcn4",
+  "target": {
+    "root": "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/target-flutter",
+    "module": "account",
+    "existingModules": [
+      "account"
+    ],
+    "routesFiles": [
+      "lib/app/routes/app_routes.dart",
+      "lib/app/routes/app_pages.dart"
+    ],
+    "translationFiles": [
+      "lib/app/translations/en_US.dart",
+      "lib/app/translations/zh_CN.dart"
+    ],
+    "assetDirectories": [
+      "assets/images",
+      "assets/svg",
+      "assets/json"
+    ],
+    "reusableComponents": [
+      {
+        "symbol": "CommonAppBar",
+        "role": "app-bar",
+        "path": "lib/app/common/widgets/common_app_bar.dart",
+        "importPath": "package:proto_bridge_target/app/common/widgets/common_app_bar.dart",
+        "usageSnippets": [
+          "lib/app/common/widgets/common_app_bar.dart\n4: import '../../theme/theme_service.dart';\n5: \n6: class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {\n7:   const CommonAppBar({\n8:     required this.title,",
+          "lib/app/modules/account/presentation/pages/holding_list_page.dart\n37:   Widget build(BuildContext context) {\n38:     return Scaffold(\n39:       appBar: CommonAppBar(\n40:         title: 'asset.holdings.title'.tr,\n41:         eyebrow: 'Asset Center',",
+          "lib/app/modules/account/presentation/pages/pnl_analysis_page.dart\n57:       builder: (context, state) {\n58:         return Scaffold(\n59:           appBar: CommonAppBar(\n60:             title: 'asset.pnl.title'.tr,\n61:             eyebrow: 'Asset Center',"
+        ],
+        "propsHints": [
+          "appBar",
+          "title",
+          "eyebrow",
+          "builder"
+        ],
+        "confidence": "high",
+        "reason": "YouFi common app bar candidate. Definition or direct usage was found in the target repo."
+      },
+      {
+        "symbol": "CommonButton",
+        "role": "button",
+        "path": "lib/app/common/widgets/common_button.dart",
+        "importPath": "package:proto_bridge_target/app/common/widgets/common_button.dart",
+        "usageSnippets": [
+          "lib/app/common/widgets/common_button.dart\n4: import '../../theme/theme_service.dart';\n5: \n6: class CommonButton extends StatelessWidget {\n7:   const CommonButton({\n8:     required this.label,",
+          "lib/app/modules/account/presentation/pages/holding_list_page.dart\n105:                 children: [\n106:                   Expanded(\n107:                     child: CommonButton(\n108:                       label: 'asset.action.analysis'.tr,\n109:                       onPressed: () =>"
+        ],
+        "propsHints": [
+          "children",
+          "child",
+          "label",
+          "onPressed"
+        ],
+        "confidence": "high",
+        "reason": "YouFi common button candidate. Definition or direct usage was found in the target repo."
+      },
+      {
+        "symbol": "CommonImage",
+        "role": "image",
+        "usageSnippets": [],
+        "propsHints": [],
+        "confidence": "low",
+        "reason": "YouFi common image candidate. Known fallback; no direct usage was detected."
+      },
+      {
+        "symbol": "CommonSvg",
+        "role": "image",
+        "usageSnippets": [],
+        "propsHints": [],
+        "confidence": "low",
+        "reason": "YouFi common SVG candidate. Known fallback; no direct usage was detected."
+      },
+      {
+        "symbol": "CommonNetImage",
+        "role": "image",
+        "usageSnippets": [],
+        "propsHints": [],
+        "confidence": "low",
+        "reason": "YouFi common network image candidate. Known fallback; no direct usage was detected."
+      },
+      {
+        "symbol": "Pop.sheet",
+        "role": "sheet",
+        "usageSnippets": [],
+        "propsHints": [],
+        "confidence": "low",
+        "reason": "YouFi sheet/popup candidate. Known fallback; no direct usage was detected."
+      },
+      {
+        "symbol": "YouFiPop",
+        "role": "sheet",
+        "usageSnippets": [],
+        "propsHints": [],
+        "confidence": "low",
+        "reason": "YouFi popup candidate. Known fallback; no direct usage was detected."
+      },
+      {
+        "symbol": "BaseGetView",
+        "role": "page-base",
+        "usageSnippets": [],
+        "propsHints": [],
+        "confidence": "low",
+        "reason": "YouFi page base class candidate. Known fallback; no direct usage was detected."
+      },
+      {
+        "symbol": "BaseGetPullView",
+        "role": "page-base",
+        "usageSnippets": [],
+        "propsHints": [],
+        "confidence": "low",
+        "reason": "YouFi pull-to-refresh page base candidate. Known fallback; no direct usage was detected."
+      },
+      {
+        "symbol": "SmartRefresher",
+        "role": "refresh",
+        "usageSnippets": [],
+        "propsHints": [],
+        "confidence": "low",
+        "reason": "Refresh/list paging candidate. Known fallback; no direct usage was detected."
+      },
+      {
+        "symbol": "themeService.colors",
+        "role": "theme",
+        "path": "lib/app/common/widgets/common_app_bar.dart",
+        "importPath": "package:proto_bridge_target/app/common/widgets/common_app_bar.dart",
+        "usageSnippets": [
+          "lib/app/common/widgets/common_app_bar.dart\n41:                       eyebrow!,\n42:                       style: themeService.textStyles.caption.copyWith(\n43:                         color: themeService.colors.muted,\n44:                         letterSpacing: 0,\n45:                       ),",
+          "lib/app/common/widgets/common_button.dart\n25:         ),\n26:         backgroundColor: primary\n27:             ? themeService.colors.primary\n28:             : themeService.colors.primarySoft,\n29:         foregroundColor: primary ? Colors.white : themeService.colors.primary,",
+          "lib/app/common/widgets/common_empty.dart\n16:         child: Text(\n17:           message,\n18:           style: TextStyle(color: themeService.colors.muted),\n19:         ),\n20:       ),",
+          "lib/app/common/widgets/common_loading.dart\n16:         child: Text(\n17:           message,\n18:           style: TextStyle(color: themeService.colors.muted),\n19:         ),\n20:       ),"
+        ],
+        "propsHints": [
+          "style",
+          "color",
+          "letterSpacing",
+          "backgroundColor",
+          "foregroundColor",
+          "white",
+          "child"
+        ],
+        "confidence": "high",
+        "reason": "YouFi color token usage. Definition or direct usage was found in the target repo."
+      },
+      {
+        "symbol": "themeService.textStyles",
+        "role": "theme",
+        "path": "lib/app/common/widgets/common_app_bar.dart",
+        "importPath": "package:proto_bridge_target/app/common/widgets/common_app_bar.dart",
+        "usageSnippets": [
+          "lib/app/common/widgets/common_app_bar.dart\n40:                     Text(\n41:                       eyebrow!,\n42:                       style: themeService.textStyles.caption.copyWith(\n43:                         color: themeService.colors.muted,\n44:                         letterSpacing: 0,",
+          "lib/app/modules/account/presentation/pages/pnl_analysis_page.dart\n162:               Text(\n163:                 'Filter by risk',\n164:                 style: themeService.textStyles.sectionTitle,\n165:               ),\n166:               const SizedBox(height: AppSpacing.md),",
+          "lib/app/modules/account/presentation/widgets/asset_summary_card.dart\n66:           Text(\n67:             value,\n68:             style: themeService.textStyles.bodyStrong.copyWith(color: color),\n69:             overflow: TextOverflow.ellipsis,\n70:           ),",
+          "lib/app/modules/account/presentation/widgets/holding_tile.dart\n67:         Text(\n68:           title,\n69:           style: themeService.textStyles.bodyStrong.copyWith(color: color),\n70:           overflow: TextOverflow.ellipsis,\n71:         ),"
+        ],
+        "propsHints": [
+          "style",
+          "color",
+          "letterSpacing",
+          "height",
+          "overflow"
+        ],
+        "confidence": "high",
+        "reason": "YouFi text style usage. Definition or direct usage was found in the target repo."
+      },
+      {
+        "symbol": ".tr",
+        "role": "i18n",
+        "path": "lib/app/modules/account/application/asset_state.dart",
+        "importPath": "package:proto_bridge_target/app/modules/account/application/asset_state.dart",
+        "usageSnippets": [
+          "lib/app/modules/account/application/asset_state.dart\n9:     required this.metrics,\n10:     required this.records,\n11:     required this.trendPoints,\n12:     this.holdingFilter = 'All',\n13:     this.activePnlTab = 'overview',",
+          "lib/app/modules/account/presentation/pages/holding_list_page.dart\n38:     return Scaffold(\n39:       appBar: CommonAppBar(\n40:         title: 'asset.holdings.title'.tr,\n41:         eyebrow: 'Asset Center',\n42:         action: IconButton.filledTonal(",
+          "lib/app/modules/account/presentation/pages/pnl_analysis_page.dart\n58:         return Scaffold(\n59:           appBar: CommonAppBar(\n60:             title: 'asset.pnl.title'.tr,\n61:             eyebrow: 'Asset Center',\n62:             action: IconButton.filledTonal("
+        ],
+        "propsHints": [
+          "appBar",
+          "title",
+          "eyebrow",
+          "action"
+        ],
+        "confidence": "high",
+        "reason": "GetX translation usage. Definition or direct usage was found in the target repo."
+      }
+    ],
+    "similarExamples": [
+      {
+        "path": "lib/app/modules/account/presentation/pages/pnl_analysis_page.dart",
+        "reason": "module=account; roles=theme, i18n, app-bar, button, sheet; symbols=themeService.colors, themeService.textStyles, .tr, CommonAppBar, TextButton, showModalBottomSheet; keywords=asset, pnl, analysis, account, theme, button; has Flutter page structure/theme/i18n signals",
+        "matchedRoles": [
+          "theme",
+          "i18n",
+          "app-bar",
+          "button",
+          "sheet"
+        ],
+        "matchedSymbols": [
+          "themeService.colors",
+          "themeService.textStyles",
+          ".tr",
+          "CommonAppBar",
+          "TextButton",
+          "showModalBottomSheet"
+        ],
+        "snippets": [
+          "57:       builder: (context, state) {\n58:         return Scaffold(\n59:           appBar: CommonAppBar(\n60:             title: 'asset.pnl.title'.tr,\n61:             eyebrow: 'Asset Center',",
+          "58:         return Scaffold(\n59:           appBar: CommonAppBar(\n60:             title: 'asset.pnl.title'.tr,\n61:             eyebrow: 'Asset Center',\n62:             action: IconButton.filledTonal(",
+          "103:                     ),\n104:                     const SizedBox(height: AppSpacing.md),\n105:                     TrendChart(points: state.trendPoints),\n106:                   ],\n107:                 ),"
+        ],
+        "score": 59
+      },
+      {
+        "path": "lib/app/modules/account/presentation/pages/holding_list_page.dart",
+        "reason": "module=account; roles=i18n, app-bar, button; symbols=.tr, CommonAppBar, CommonButton; keywords=asset, pnl, analysis, account, theme, button; has Flutter page structure/theme/i18n signals",
+        "matchedRoles": [
+          "i18n",
+          "app-bar",
+          "button"
+        ],
+        "matchedSymbols": [
+          ".tr",
+          "CommonAppBar",
+          "CommonButton"
+        ],
+        "snippets": [
+          "37:   Widget build(BuildContext context) {\n38:     return Scaffold(\n39:       appBar: CommonAppBar(\n40:         title: 'asset.holdings.title'.tr,\n41:         eyebrow: 'Asset Center',",
+          "38:     return Scaffold(\n39:       appBar: CommonAppBar(\n40:         title: 'asset.holdings.title'.tr,\n41:         eyebrow: 'Asset Center',\n42:         action: IconButton.filledTonal(",
+          "105:                 children: [\n106:                   Expanded(\n107:                     child: CommonButton(\n108:                       label: 'asset.action.analysis'.tr,\n109:                       onPressed: () =>"
+        ],
+        "score": 38
+      },
+      {
+        "path": "lib/app/modules/account/presentation/widgets/asset_summary_card.dart",
+        "reason": "module=account; roles=theme; symbols=themeService.colors, themeService.textStyles; keywords=asset, pnl, account, theme; has Flutter page structure/theme/i18n signals",
+        "matchedRoles": [
+          "theme"
+        ],
+        "matchedSymbols": [
+          "themeService.colors",
+          "themeService.textStyles"
+        ],
+        "snippets": [
+          "52:   Widget build(BuildContext context) {\n53:     final color = positive\n54:         ? themeService.colors.positive\n55:         : themeService.colors.text;\n56:     return Padding(",
+          "53:     final color = positive\n54:         ? themeService.colors.positive\n55:         : themeService.colors.text;\n56:     return Padding(\n57:       padding: const EdgeInsets.only(right: AppSpacing.xs),",
+          "61:           Text(\n62:             label,\n63:             style: TextStyle(color: themeService.colors.muted, fontSize: 12),\n64:           ),\n65:           const SizedBox(height: AppSpacing.xxs),"
+        ],
+        "score": 22
+      },
+      {
+        "path": "lib/app/modules/account/presentation/widgets/holding_tile.dart",
+        "reason": "module=account; roles=theme; symbols=themeService.colors, themeService.textStyles; keywords=asset, pnl, account, theme; has Flutter page structure/theme/i18n signals",
+        "matchedRoles": [
+          "theme"
+        ],
+        "matchedSymbols": [
+          "themeService.colors",
+          "themeService.textStyles"
+        ],
+        "snippets": [
+          "13:   Widget build(BuildContext context) {\n14:     final pnlColor = holding.isPositive\n15:         ? themeService.colors.positive\n16:         : themeService.colors.negative;\n17:     return Padding(",
+          "14:     final pnlColor = holding.isPositive\n15:         ? themeService.colors.positive\n16:         : themeService.colors.negative;\n17:     return Padding(\n18:       padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),",
+          "67:         Text(\n68:           title,\n69:           style: themeService.textStyles.bodyStrong.copyWith(color: color),\n70:           overflow: TextOverflow.ellipsis,\n71:         ),"
+        ],
+        "score": 22
+      },
+      {
+        "path": "lib/app/modules/account/presentation/widgets/pnl_metric_card.dart",
+        "reason": "module=account; roles=theme; symbols=themeService.colors, themeService.textStyles; keywords=asset, pnl, account, theme; has Flutter page structure/theme/i18n signals",
+        "matchedRoles": [
+          "theme"
+        ],
+        "matchedSymbols": [
+          "themeService.colors",
+          "themeService.textStyles"
+        ],
+        "snippets": [
+          "14:   Widget build(BuildContext context) {\n15:     final color = switch (metric.tone) {\n16:       MetricTone.positive => themeService.colors.positive,\n17:       MetricTone.negative => themeService.colors.negative,\n18:       MetricTone.neutral => themeService.colors.text,",
+          "15:     final color = switch (metric.tone) {\n16:       MetricTone.positive => themeService.colors.positive,\n17:       MetricTone.negative => themeService.colors.negative,\n18:       MetricTone.neutral => themeService.colors.text,\n19:     };",
+          "16:       MetricTone.positive => themeService.colors.positive,\n17:       MetricTone.negative => themeService.colors.negative,\n18:       MetricTone.neutral => themeService.colors.text,\n19:     };\n20:     return SectionPanel("
+        ],
+        "score": 22
+      },
+      {
+        "path": "lib/app/modules/account/presentation/widgets/pnl_record_tile.dart",
+        "reason": "module=account; roles=theme; symbols=themeService.colors, themeService.textStyles; keywords=asset, pnl, account, theme; has Flutter page structure/theme/i18n signals",
+        "matchedRoles": [
+          "theme"
+        ],
+        "matchedSymbols": [
+          "themeService.colors",
+          "themeService.textStyles"
+        ],
+        "snippets": [
+          "14:   Widget build(BuildContext context) {\n15:     final amountColor = record.isPositive\n16:         ? themeService.colors.positive\n17:         : themeService.colors.negative;\n18:     return InkWell(",
+          "15:     final amountColor = record.isPositive\n16:         ? themeService.colors.positive\n17:         : themeService.colors.negative;\n18:     return InkWell(\n19:       onTap: onTap,",
+          "28:                   Text(\n29:                     record.symbol,\n30:                     style: themeService.textStyles.bodyStrong,\n31:                   ),\n32:                   const SizedBox(height: AppSpacing.xxs),"
+        ],
+        "score": 22
+      },
+      {
+        "path": "lib/app/modules/account/application/asset_state.dart",
+        "reason": "module=account; roles=i18n; symbols=.tr; keywords=asset, pnl, account, sheet",
+        "matchedRoles": [
+          "i18n"
+        ],
+        "matchedSymbols": [
+          ".tr"
+        ],
+        "snippets": [
+          "9:     required this.metrics,\n10:     required this.records,\n11:     required this.trendPoints,\n12:     this.holdingFilter = 'All',\n13:     this.activePnlTab = 'overview',",
+          "59:       metrics: metrics ?? this.metrics,\n60:       records: records ?? this.records,\n61:       trendPoints: trendPoints ?? this.trendPoints,\n62:       holdingFilter: holdingFilter ?? this.holdingFilter,\n63:       activePnlTab: activePnlTab ?? this.activePnlTab,"
+        ],
+        "score": 15
+      },
+      {
+        "path": "lib/app/modules/account/presentation/widgets/filter_chip_bar.dart",
+        "reason": "module=account; roles=theme; symbols=themeService.colors; keywords=account, theme; has Flutter page structure/theme/i18n signals",
+        "matchedRoles": [
+          "theme"
+        ],
+        "matchedSymbols": [
+          "themeService.colors"
+        ],
+        "snippets": [
+          "35:               label: Text(option),\n36:               onSelected: (_) => onSelected(option),\n37:               selectedColor: themeService.colors.primarySoft,\n38:               shape: RoundedRectangleBorder(\n39:                 side: BorderSide(",
+          "39:                 side: BorderSide(\n40:                   color: active\n41:                       ? themeService.colors.primary\n42:                       : themeService.colors.border,\n43:                 ),",
+          "40:                   color: active\n41:                       ? themeService.colors.primary\n42:                       : themeService.colors.border,\n43:                 ),\n44:                 borderRadius: BorderRadius.circular(AppRadii.chip),"
+        ],
+        "score": 14
+      }
+    ],
+    "warnings": [
+      "Unable to suggest a Flutter module from prototype module or screenId."
+    ]
+  },
+  "page": {
+    "title": "P&L Analysis",
+    "route": "/prototype/asset/pnl-analysis",
+    "summary": "该计划来自统一 PageCanonical，聚焦可见 UI 还原；识别到 19 个视觉区块、40 条文案线索和 0 个资源线索。source facts 包含 17 个语义区块、17 个语义组件、17 个交互线索和 2 个状态线索。增强能力包括 tab traversal。业务接口、权限、风控和埋点不在本计划中做确定性推断。",
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 2
+    }
+  },
+  "fileTree": [
+    {
+      "path": "lib/app/modules/account/asset_pnl_analysis/asset_pnl_analysis_page.dart",
+      "responsibility": "页面入口，按 YouFi 页面基类、Scaffold/SafeArea 和可见区块编排 UI。",
+      "notes": "只实现可见 UI；业务数据和接口接入保留 TODO。"
+    },
+    {
+      "path": "lib/app/modules/account/asset_pnl_analysis/asset_pnl_analysis_controller.dart",
+      "responsibility": "承载轻量 UI 状态，例如 tab、选中项、展开态和点击事件占位。",
+      "notes": "不得在 Phase 1 中伪造接口字段、权限或交易规则。"
+    },
+    {
+      "path": "lib/app/modules/account/asset_pnl_analysis/asset_pnl_analysis_binding.dart",
+      "responsibility": "注册页面 Controller，保持与 YouFi 模块内相似页面一致。"
+    },
+    {
+      "path": "lib/app/modules/account/asset_pnl_analysis/widgets/asset_pnl_analysis_section.dart",
+      "responsibility": "还原 section 区块，bbox=0,0,390,949.11。 布局特征：descendants=48。",
+      "notes": "section"
+    },
+    {
+      "path": "lib/app/modules/account/asset_pnl_analysis/widgets/asset_pnl_analysis_analysis_tabs.dart",
+      "responsibility": "还原 section 区块，bbox=0,0,390,949.11。 布局特征：padding=18px 18px 28px, descendants=48。",
+      "notes": "section"
+    },
+    {
+      "path": "lib/app/modules/account/asset_pnl_analysis/widgets/asset_pnl_analysis_migrated.dart",
+      "responsibility": "还原 app-bar 区块，bbox=18,18,354,48.11。 布局特征：display=flex, alignItems=center, justifyContent=space-between, gap=12px, margin=0px 0px 16px, descendants=4。",
+      "notes": "app-bar"
+    },
+    {
+      "path": "lib/app/modules/account/asset_pnl_analysis/widgets/asset_pnl_analysis_total_pl.dart",
+      "responsibility": "还原 card 区块，bbox=18,140.11,172,96。 布局特征：padding=14px, descendants=3。",
+      "notes": "card"
+    },
+    {
+      "path": "lib/app/modules/account/asset_pnl_analysis/widgets/asset_pnl_analysis_realized.dart",
+      "responsibility": "还原 card 区块，bbox=200,140.11,172,96。 布局特征：padding=14px, descendants=3。",
+      "notes": "card"
+    },
+    {
+      "path": "lib/app/modules/account/asset_pnl_analysis/widgets/asset_pnl_analysis_unrealized.dart",
+      "responsibility": "还原 card 区块，bbox=18,246.11,172,96。 布局特征：padding=14px, descendants=3。",
+      "notes": "card"
+    },
+    {
+      "path": "lib/app/modules/account/asset_pnl_analysis/widgets/asset_pnl_analysis_risk_budget.dart",
+      "responsibility": "还原 card 区块，bbox=200,246.11,172,96。 布局特征：padding=14px, descendants=3。",
+      "notes": "card"
+    },
+    {
+      "path": "lib/app/modules/account/asset_pnl_analysis/widgets/asset_pnl_analysis_pltrend_chart.dart",
+      "responsibility": "还原 card 区块，bbox=18,354.11,354,220。 布局特征：padding=16px, margin=12px 0px 0px, descendants=14。",
+      "notes": "card"
+    },
+    {
+      "path": "lib/app/modules/account/asset_pnl_analysis/widgets/asset_pnl_analysis_refresh.dart",
+      "responsibility": "还原 section 区块，bbox=35,371.11,320,38。 布局特征：display=flex, alignItems=center, justifyContent=space-between, gap=12px, descendants=4。",
+      "notes": "section"
+    }
+  ],
+  "widgetTree": [
+    {
+      "name": "AssetPnlAnalysisPage",
+      "role": "page",
+      "buildHint": "使用 YouFi 页面基类承载整体结构，按 evidence sections 编排子 Widget。",
+      "stateAccess": "controller"
+    },
+    {
+      "name": "AssetPnlAnalysisSection",
+      "parent": "AssetPnlAnalysisPage",
+      "role": "section",
+      "buildHint": "还原 section 区块，bbox=0,0,390,949.11。 布局特征：descendants=48。",
+      "stateAccess": "props"
+    },
+    {
+      "name": "AssetPnlAnalysisAnalysisTabs",
+      "parent": "AssetPnlAnalysisPage",
+      "role": "section",
+      "buildHint": "还原 section 区块，bbox=0,0,390,949.11。 布局特征：padding=18px 18px 28px, descendants=48。",
+      "stateAccess": "props"
+    },
+    {
+      "name": "AssetPnlAnalysisMigrated",
+      "parent": "AssetPnlAnalysisPage",
+      "role": "app-bar",
+      "buildHint": "还原 app-bar 区块，bbox=18,18,354,48.11。 布局特征：display=flex, alignItems=center, justifyContent=space-between, gap=12px, margin=0px 0px 16px, descendants=4。",
+      "stateAccess": "props"
+    },
+    {
+      "name": "AssetPnlAnalysisTotalPL",
+      "parent": "AssetPnlAnalysisPage",
+      "role": "card",
+      "buildHint": "还原 card 区块，bbox=18,140.11,172,96。 布局特征：padding=14px, descendants=3。",
+      "stateAccess": "props"
+    },
+    {
+      "name": "AssetPnlAnalysisRealized",
+      "parent": "AssetPnlAnalysisPage",
+      "role": "card",
+      "buildHint": "还原 card 区块，bbox=200,140.11,172,96。 布局特征：padding=14px, descendants=3。",
+      "stateAccess": "props"
+    },
+    {
+      "name": "AssetPnlAnalysisUnrealized",
+      "parent": "AssetPnlAnalysisPage",
+      "role": "card",
+      "buildHint": "还原 card 区块，bbox=18,246.11,172,96。 布局特征：padding=14px, descendants=3。",
+      "stateAccess": "props"
+    },
+    {
+      "name": "AssetPnlAnalysisRiskBudget",
+      "parent": "AssetPnlAnalysisPage",
+      "role": "card",
+      "buildHint": "还原 card 区块，bbox=200,246.11,172,96。 布局特征：padding=14px, descendants=3。",
+      "stateAccess": "props"
+    },
+    {
+      "name": "AssetPnlAnalysisPLTrendChart",
+      "parent": "AssetPnlAnalysisPage",
+      "role": "card",
+      "buildHint": "还原 card 区块，bbox=18,354.11,354,220。 布局特征：padding=16px, margin=12px 0px 0px, descendants=14。",
+      "stateAccess": "props"
+    },
+    {
+      "name": "AssetPnlAnalysisRefresh",
+      "parent": "AssetPnlAnalysisPage",
+      "role": "section",
+      "buildHint": "还原 section 区块，bbox=35,371.11,320,38。 布局特征：display=flex, alignItems=center, justifyContent=space-between, gap=12px, descendants=4。",
+      "stateAccess": "props"
+    }
+  ],
+  "componentMappings": [
+    {
+      "sourceRole": "section",
+      "nodeIds": [
+        "node_1",
+        "node_3",
+        "node_4",
+        "node_14",
+        "node_32",
+        "node_47",
+        "node_52",
+        "node_59",
+        "node_66",
+        "node_73"
+      ],
+      "confidence": "low",
+      "reason": "No clear YouFi component was detected for evidence role section; implement with local Widget and target theme."
+    },
+    {
+      "sourceRole": "app-bar",
+      "nodeIds": [
+        "node_5"
+      ],
+      "targetSymbol": "CommonAppBar",
+      "confidence": "high",
+      "reason": "Evidence role app-bar can likely use CommonAppBar."
+    },
+    {
+      "sourceRole": "icon",
+      "nodeIds": [
+        "node_9"
+      ],
+      "targetSymbol": "CommonImage",
+      "confidence": "low",
+      "reason": "Evidence role icon can likely use CommonImage."
+    },
+    {
+      "sourceRole": "tab-bar",
+      "nodeIds": [
+        "node_10"
+      ],
+      "confidence": "low",
+      "reason": "No clear YouFi component was detected for evidence role tab-bar; implement with local Widget and target theme."
+    },
+    {
+      "sourceRole": "button",
+      "nodeIds": [
+        "node_11",
+        "node_12",
+        "node_13",
+        "node_36",
+        "node_51"
+      ],
+      "targetSymbol": "CommonButton",
+      "confidence": "high",
+      "reason": "Evidence role button can likely use CommonButton."
+    },
+    {
+      "sourceRole": "card",
+      "nodeIds": [
+        "node_15",
+        "node_19",
+        "node_23",
+        "node_27",
+        "node_31",
+        "node_37",
+        "node_46"
+      ],
+      "confidence": "low",
+      "reason": "No clear YouFi component was detected for evidence role card; implement with local Widget and target theme."
+    },
+    {
+      "sourceRole": "modal",
+      "nodeIds": [
+        "source:FilterByRiskModal"
+      ],
+      "targetSymbol": "Pop.sheet",
+      "confidence": "low",
+      "reason": "Source component FilterByRiskModal (modal) can likely use Pop.sheet."
+    },
+    {
+      "sourceRole": "modal",
+      "nodeIds": [
+        "source:DetailModal"
+      ],
+      "targetSymbol": "Pop.sheet",
+      "confidence": "low",
+      "reason": "Source component DetailModal (modal) can likely use Pop.sheet."
+    },
+    {
+      "sourceRole": "tab-bar",
+      "nodeIds": [
+        "source:TabBar"
+      ],
+      "confidence": "medium",
+      "reason": "Source component TabBar (tabs) should become a local widget unless target examples show a reusable component."
+    },
+    {
+      "sourceRole": "tab-bar",
+      "nodeIds": [
+        "source:TabButtonTabBar"
+      ],
+      "confidence": "medium",
+      "reason": "Source component TabButtonTabBar (tabs) should become a local widget unless target examples show a reusable component."
+    },
+    {
+      "sourceRole": "list",
+      "nodeIds": [
+        "source:PanelList"
+      ],
+      "targetSymbol": "SmartRefresher",
+      "confidence": "low",
+      "reason": "Source component PanelList (list) can likely use SmartRefresher."
+    },
+    {
+      "sourceRole": "section",
+      "nodeIds": [
+        "source:ReturnTrendChart"
+      ],
+      "confidence": "medium",
+      "reason": "Source component ReturnTrendChart (chart) should become a local widget unless target examples show a reusable component."
+    },
+    {
+      "sourceRole": "section",
+      "nodeIds": [
+        "source:TrendChart"
+      ],
+      "confidence": "medium",
+      "reason": "Source component TrendChart (chart) should become a local widget unless target examples show a reusable component."
+    },
+    {
+      "sourceRole": "list",
+      "nodeIds": [
+        "source:TradeRecordsList"
+      ],
+      "targetSymbol": "SmartRefresher",
+      "confidence": "low",
+      "reason": "Source component TradeRecordsList (list) can likely use SmartRefresher."
+    },
+    {
+      "sourceRole": "section",
+      "nodeIds": [
+        "source:TradeRecordsSection"
+      ],
+      "confidence": "medium",
+      "reason": "Source component TradeRecordsSection (content-section) should become a local widget unless target examples show a reusable component."
+    },
+    {
+      "sourceRole": "section",
+      "nodeIds": [
+        "source:FilterByRiskSection"
+      ],
+      "confidence": "medium",
+      "reason": "Source component FilterByRiskSection (content-section) should become a local widget unless target examples show a reusable component."
+    },
+    {
+      "sourceRole": "modal",
+      "nodeIds": [
+        "source:SheetOptionModal"
+      ],
+      "targetSymbol": "Pop.sheet",
+      "confidence": "low",
+      "reason": "Source component SheetOptionModal (modal) can likely use Pop.sheet."
+    },
+    {
+      "sourceRole": "section",
+      "nodeIds": [
+        "source:DetailSection"
+      ],
+      "confidence": "medium",
+      "reason": "Source component DetailSection (content-section) should become a local widget unless target examples show a reusable component."
+    },
+    {
+      "sourceRole": "app-bar",
+      "nodeIds": [
+        "source:PLAnalysisAppBar"
+      ],
+      "targetSymbol": "CommonAppBar",
+      "confidence": "high",
+      "reason": "Source component PLAnalysisAppBar (header) can likely use CommonAppBar."
+    }
+  ],
+  "themeMappings": [
+    {
+      "kind": "color",
+      "source": "color",
+      "value": "rgb(23, 32, 42)",
+      "nodeIds": [
+        "node_1",
+        "node_2",
+        "node_3",
+        "node_4",
+        "node_5",
+        "node_6",
+        "node_8",
+        "node_9",
+        "node_10",
+        "node_14",
+        "node_15",
+        "node_19",
+        "node_23",
+        "node_27",
+        "node_29",
+        "node_30",
+        "node_31",
+        "node_32",
+        "node_33",
+        "node_34",
+        "node_37",
+        "node_38",
+        "node_39",
+        "node_40"
+      ],
+      "target": "themeService.colors.*",
+      "matchedBy": "family",
+      "confidence": "low",
+      "reason": "No exact YouFi color token found for captured color #17202a; fall back to the closest theme family."
+    },
+    {
+      "kind": "color",
+      "source": "backgroundColor",
+      "value": "rgb(238, 243, 248)",
+      "nodeIds": [
+        "node_1",
+        "node_3"
+      ],
+      "target": "themeService.colors.*",
+      "matchedBy": "family",
+      "confidence": "low",
+      "reason": "No exact YouFi color token found for captured color #eef3f8; fall back to the closest theme family."
+    },
+    {
+      "kind": "typography",
+      "source": "font",
+      "value": "16px/normal/400/Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+      "nodeIds": [
+        "node_1",
+        "node_2",
+        "node_3",
+        "node_4",
+        "node_5",
+        "node_6",
+        "node_9",
+        "node_10",
+        "node_14",
+        "node_15",
+        "node_19",
+        "node_23",
+        "node_27",
+        "node_31",
+        "node_32",
+        "node_33",
+        "node_37",
+        "node_38",
+        "node_39",
+        "node_40",
+        "node_41",
+        "node_42",
+        "node_43",
+        "node_44"
+      ],
+      "target": "themeService.textStyles.*",
+      "matchedBy": "family",
+      "confidence": "low",
+      "reason": "Could not normalize captured typography value; fall back to theme family selection."
+    },
+    {
+      "kind": "radius",
+      "source": "borderRadius",
+      "value": "0px",
+      "nodeIds": [
+        "node_1",
+        "node_2",
+        "node_3",
+        "node_4",
+        "node_5",
+        "node_6",
+        "node_7",
+        "node_8",
+        "node_14",
+        "node_16",
+        "node_17",
+        "node_18",
+        "node_20",
+        "node_21",
+        "node_22",
+        "node_24",
+        "node_25",
+        "node_26",
+        "node_28",
+        "node_29",
+        "node_30",
+        "node_32",
+        "node_33",
+        "node_34"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for radius; confirm manually."
+    },
+    {
+      "kind": "border",
+      "source": "border",
+      "value": "0px none rgb(23, 32, 42)",
+      "nodeIds": [
+        "node_1",
+        "node_2",
+        "node_3",
+        "node_4",
+        "node_5",
+        "node_6",
+        "node_8",
+        "node_9",
+        "node_14",
+        "node_29",
+        "node_30",
+        "node_32",
+        "node_33",
+        "node_34",
+        "node_37",
+        "node_38",
+        "node_39",
+        "node_40",
+        "node_41",
+        "node_42",
+        "node_43",
+        "node_44",
+        "node_45",
+        "node_47"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for border; confirm manually."
+    },
+    {
+      "kind": "spacing",
+      "source": "padding",
+      "value": "0px",
+      "nodeIds": [
+        "node_1",
+        "node_2",
+        "node_3",
+        "node_5",
+        "node_6",
+        "node_7",
+        "node_8",
+        "node_14",
+        "node_16",
+        "node_17",
+        "node_18",
+        "node_20",
+        "node_21",
+        "node_22",
+        "node_24",
+        "node_25",
+        "node_26",
+        "node_28",
+        "node_29",
+        "node_30",
+        "node_32",
+        "node_33",
+        "node_34",
+        "node_35"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for spacing; confirm manually."
+    },
+    {
+      "kind": "spacing",
+      "source": "margin",
+      "value": "0px",
+      "nodeIds": [
+        "node_1",
+        "node_2",
+        "node_3",
+        "node_4",
+        "node_6",
+        "node_8",
+        "node_9",
+        "node_11",
+        "node_12",
+        "node_13",
+        "node_15",
+        "node_16",
+        "node_19",
+        "node_20",
+        "node_23",
+        "node_24",
+        "node_27",
+        "node_28",
+        "node_32",
+        "node_33",
+        "node_34",
+        "node_36",
+        "node_38",
+        "node_39"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for spacing; confirm manually."
+    },
+    {
+      "kind": "spacing",
+      "source": "padding",
+      "value": "18px 18px 28px",
+      "nodeIds": [
+        "node_4"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for spacing; confirm manually."
+    },
+    {
+      "kind": "spacing",
+      "source": "margin",
+      "value": "0px 0px 16px",
+      "nodeIds": [
+        "node_5"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for spacing; confirm manually."
+    },
+    {
+      "kind": "color",
+      "source": "color",
+      "value": "rgb(107, 120, 134)",
+      "nodeIds": [
+        "node_7",
+        "node_12",
+        "node_13",
+        "node_16",
+        "node_20",
+        "node_24",
+        "node_28",
+        "node_35",
+        "node_50",
+        "node_55",
+        "node_58",
+        "node_62",
+        "node_65",
+        "node_69",
+        "node_72",
+        "node_76",
+        "node_79"
+      ],
+      "target": "themeService.colors.*",
+      "matchedBy": "family",
+      "confidence": "low",
+      "reason": "No exact YouFi color token found for captured color #6b7886; fall back to the closest theme family."
+    },
+    {
+      "kind": "typography",
+      "source": "font",
+      "value": "12px/normal/700/Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+      "nodeIds": [
+        "node_7"
+      ],
+      "target": "themeService.textStyles.*",
+      "matchedBy": "family",
+      "confidence": "low",
+      "reason": "Could not normalize captured typography value; fall back to theme family selection."
+    },
+    {
+      "kind": "border",
+      "source": "border",
+      "value": "0px none rgb(107, 120, 134)",
+      "nodeIds": [
+        "node_7",
+        "node_12",
+        "node_13",
+        "node_16",
+        "node_20",
+        "node_24",
+        "node_28",
+        "node_35",
+        "node_50",
+        "node_55",
+        "node_58",
+        "node_62",
+        "node_65",
+        "node_69",
+        "node_72",
+        "node_76",
+        "node_79"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for border; confirm manually."
+    },
+    {
+      "kind": "spacing",
+      "source": "margin",
+      "value": "0px 0px 4px",
+      "nodeIds": [
+        "node_7"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for spacing; confirm manually."
+    },
+    {
+      "kind": "typography",
+      "source": "font",
+      "value": "26px/29.12px/700/Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+      "nodeIds": [
+        "node_8"
+      ],
+      "target": "themeService.textStyles.*",
+      "matchedBy": "family",
+      "confidence": "low",
+      "reason": "No exact YouFi text style found for captured typography 26px/29.12px/700; fall back to the closest textStyles family."
+    },
+    {
+      "kind": "color",
+      "source": "backgroundColor",
+      "value": "rgb(255, 255, 255)",
+      "nodeIds": [
+        "node_9",
+        "node_15",
+        "node_19",
+        "node_23",
+        "node_27",
+        "node_31",
+        "node_46"
+      ],
+      "target": "themeService.colors.colorBgBase",
+      "candidateTargets": [
+        "themeService.colors.colorBgBase",
+        "themeService.colors.colorPopupBg",
+        "themeService.colors.colorSheetBg",
+        "themeService.colors.colorTextLight",
+        "themeService.colors.colorTextLight1"
+      ],
+      "matchedBy": "ambiguous",
+      "confidence": "medium",
+      "reason": "Captured color #ffffff matches multiple YouFi color tokens; prefer the first candidate and keep the others for review."
+    },
+    {
+      "kind": "radius",
+      "source": "borderRadius",
+      "value": "8px",
+      "nodeIds": [
+        "node_9",
+        "node_10",
+        "node_15",
+        "node_19",
+        "node_23",
+        "node_27",
+        "node_31",
+        "node_36",
+        "node_37",
+        "node_46",
+        "node_51"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for radius; confirm manually."
+    },
+    {
+      "kind": "shadow",
+      "source": "boxShadow",
+      "value": "rgba(32, 48, 66, 0.08) 0px 8px 20px 0px",
+      "nodeIds": [
+        "node_9"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for shadow; confirm manually."
+    },
+    {
+      "kind": "spacing",
+      "source": "padding",
+      "value": "1px 6px",
+      "nodeIds": [
+        "node_9",
+        "node_11",
+        "node_12",
+        "node_13"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for spacing; confirm manually."
+    },
+    {
+      "kind": "color",
+      "source": "backgroundColor",
+      "value": "rgba(255, 255, 255, 0.78)",
+      "nodeIds": [
+        "node_10"
+      ],
+      "target": "themeService.colors.*",
+      "matchedBy": "family",
+      "confidence": "low",
+      "reason": "No exact YouFi color token found for captured color #ffffffc7; fall back to the closest theme family."
+    },
+    {
+      "kind": "border",
+      "source": "border",
+      "value": "1px solid rgb(216, 225, 234)",
+      "nodeIds": [
+        "node_10",
+        "node_15",
+        "node_19",
+        "node_23",
+        "node_27",
+        "node_31",
+        "node_46"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for border; confirm manually."
+    },
+    {
+      "kind": "spacing",
+      "source": "padding",
+      "value": "4px",
+      "nodeIds": [
+        "node_10"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for spacing; confirm manually."
+    },
+    {
+      "kind": "spacing",
+      "source": "margin",
+      "value": "0px 0px 14px",
+      "nodeIds": [
+        "node_10"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for spacing; confirm manually."
+    },
+    {
+      "kind": "color",
+      "source": "color",
+      "value": "rgb(255, 255, 255)",
+      "nodeIds": [
+        "node_11"
+      ],
+      "target": "themeService.colors.colorTextLight",
+      "candidateTargets": [
+        "themeService.colors.colorTextLight",
+        "themeService.colors.colorTextLight1",
+        "themeService.colors.colorBgBase",
+        "themeService.colors.colorPopupBg",
+        "themeService.colors.colorSheetBg"
+      ],
+      "matchedBy": "ambiguous",
+      "confidence": "medium",
+      "reason": "Captured color #ffffff matches multiple YouFi color tokens; prefer the first candidate and keep the others for review."
+    },
+    {
+      "kind": "color",
+      "source": "backgroundColor",
+      "value": "rgb(23, 107, 135)",
+      "nodeIds": [
+        "node_11"
+      ],
+      "target": "themeService.colors.*",
+      "matchedBy": "family",
+      "confidence": "low",
+      "reason": "No exact YouFi color token found for captured color #176b87; fall back to the closest theme family."
+    },
+    {
+      "kind": "typography",
+      "source": "font",
+      "value": "13px/normal/800/Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+      "nodeIds": [
+        "node_11",
+        "node_12",
+        "node_13"
+      ],
+      "target": "themeService.textStyles.*",
+      "matchedBy": "family",
+      "confidence": "low",
+      "reason": "Could not normalize captured typography value; fall back to theme family selection."
+    },
+    {
+      "kind": "radius",
+      "source": "borderRadius",
+      "value": "7px",
+      "nodeIds": [
+        "node_11",
+        "node_12",
+        "node_13"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for radius; confirm manually."
+    },
+    {
+      "kind": "border",
+      "source": "border",
+      "value": "0px none rgb(255, 255, 255)",
+      "nodeIds": [
+        "node_11"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for border; confirm manually."
+    },
+    {
+      "kind": "spacing",
+      "source": "margin",
+      "value": "0px 0px 12px",
+      "nodeIds": [
+        "node_14"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for spacing; confirm manually."
+    },
+    {
+      "kind": "shadow",
+      "source": "boxShadow",
+      "value": "rgba(32, 48, 66, 0.08) 0px 8px 24px 0px",
+      "nodeIds": [
+        "node_15",
+        "node_19",
+        "node_23",
+        "node_27",
+        "node_31",
+        "node_46"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for shadow; confirm manually."
+    },
+    {
+      "kind": "spacing",
+      "source": "padding",
+      "value": "14px",
+      "nodeIds": [
+        "node_15",
+        "node_19",
+        "node_23",
+        "node_27"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for spacing; confirm manually."
+    },
+    {
+      "kind": "typography",
+      "source": "font",
+      "value": "12px/normal/400/Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+      "nodeIds": [
+        "node_16",
+        "node_20",
+        "node_24",
+        "node_28",
+        "node_35",
+        "node_50",
+        "node_55",
+        "node_58",
+        "node_62",
+        "node_65",
+        "node_69",
+        "node_72",
+        "node_76",
+        "node_79"
+      ],
+      "target": "themeService.textStyles.*",
+      "matchedBy": "family",
+      "confidence": "low",
+      "reason": "Could not normalize captured typography value; fall back to theme family selection."
+    },
+    {
+      "kind": "color",
+      "source": "color",
+      "value": "rgb(22, 133, 91)",
+      "nodeIds": [
+        "node_17",
+        "node_18",
+        "node_21",
+        "node_22",
+        "node_25",
+        "node_26",
+        "node_57",
+        "node_64",
+        "node_78"
+      ],
+      "target": "themeService.colors.*",
+      "matchedBy": "family",
+      "confidence": "low",
+      "reason": "No exact YouFi color token found for captured color #16855b; fall back to the closest theme family."
+    },
+    {
+      "kind": "typography",
+      "source": "font",
+      "value": "21px/normal/700/Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+      "nodeIds": [
+        "node_17",
+        "node_21",
+        "node_25",
+        "node_29"
+      ],
+      "target": "themeService.textStyles.*",
+      "matchedBy": "family",
+      "confidence": "low",
+      "reason": "Could not normalize captured typography value; fall back to theme family selection."
+    },
+    {
+      "kind": "border",
+      "source": "border",
+      "value": "0px none rgb(22, 133, 91)",
+      "nodeIds": [
+        "node_17",
+        "node_18",
+        "node_21",
+        "node_22",
+        "node_25",
+        "node_26",
+        "node_57",
+        "node_64",
+        "node_78"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for border; confirm manually."
+    },
+    {
+      "kind": "spacing",
+      "source": "margin",
+      "value": "8px 0px 0px",
+      "nodeIds": [
+        "node_17",
+        "node_21",
+        "node_25",
+        "node_29"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for spacing; confirm manually."
+    },
+    {
+      "kind": "typography",
+      "source": "font",
+      "value": "12px/normal/800/Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+      "nodeIds": [
+        "node_18",
+        "node_22",
+        "node_26",
+        "node_30"
+      ],
+      "target": "themeService.textStyles.*",
+      "matchedBy": "family",
+      "confidence": "low",
+      "reason": "Could not normalize captured typography value; fall back to theme family selection."
+    },
+    {
+      "kind": "spacing",
+      "source": "margin",
+      "value": "4px 0px 0px",
+      "nodeIds": [
+        "node_18",
+        "node_22",
+        "node_26",
+        "node_30",
+        "node_55",
+        "node_58",
+        "node_62",
+        "node_65",
+        "node_69",
+        "node_72",
+        "node_76",
+        "node_79"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for spacing; confirm manually."
+    },
+    {
+      "kind": "spacing",
+      "source": "padding",
+      "value": "16px",
+      "nodeIds": [
+        "node_31",
+        "node_46"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for spacing; confirm manually."
+    },
+    {
+      "kind": "spacing",
+      "source": "margin",
+      "value": "12px 0px 0px",
+      "nodeIds": [
+        "node_31",
+        "node_46"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for spacing; confirm manually."
+    },
+    {
+      "kind": "typography",
+      "source": "font",
+      "value": "17px/normal/700/Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+      "nodeIds": [
+        "node_34",
+        "node_49"
+      ],
+      "target": "themeService.textStyles.*",
+      "matchedBy": "family",
+      "confidence": "low",
+      "reason": "Could not normalize captured typography value; fall back to theme family selection."
+    },
+    {
+      "kind": "spacing",
+      "source": "margin",
+      "value": "3px 0px 0px",
+      "nodeIds": [
+        "node_35",
+        "node_50"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for spacing; confirm manually."
+    },
+    {
+      "kind": "color",
+      "source": "color",
+      "value": "rgb(23, 107, 135)",
+      "nodeIds": [
+        "node_36",
+        "node_51"
+      ],
+      "target": "themeService.colors.*",
+      "matchedBy": "family",
+      "confidence": "low",
+      "reason": "No exact YouFi color token found for captured color #176b87; fall back to the closest theme family."
+    },
+    {
+      "kind": "color",
+      "source": "backgroundColor",
+      "value": "rgb(216, 238, 243)",
+      "nodeIds": [
+        "node_36",
+        "node_51"
+      ],
+      "target": "themeService.colors.*",
+      "matchedBy": "family",
+      "confidence": "low",
+      "reason": "No exact YouFi color token found for captured color #d8eef3; fall back to the closest theme family."
+    },
+    {
+      "kind": "typography",
+      "source": "font",
+      "value": "16px/normal/700/Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+      "nodeIds": [
+        "node_36",
+        "node_51",
+        "node_54",
+        "node_57",
+        "node_61",
+        "node_64",
+        "node_68",
+        "node_71",
+        "node_75",
+        "node_78"
+      ],
+      "target": "themeService.textStyles.*",
+      "matchedBy": "family",
+      "confidence": "low",
+      "reason": "Could not normalize captured typography value; fall back to theme family selection."
+    },
+    {
+      "kind": "border",
+      "source": "border",
+      "value": "0px none rgb(23, 107, 135)",
+      "nodeIds": [
+        "node_36",
+        "node_51"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for border; confirm manually."
+    },
+    {
+      "kind": "spacing",
+      "source": "padding",
+      "value": "0px 14px",
+      "nodeIds": [
+        "node_36",
+        "node_51"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for spacing; confirm manually."
+    },
+    {
+      "kind": "color",
+      "source": "backgroundColor",
+      "value": "rgb(247, 250, 252)",
+      "nodeIds": [
+        "node_37"
+      ],
+      "target": "themeService.colors.*",
+      "matchedBy": "family",
+      "confidence": "low",
+      "reason": "No exact YouFi color token found for captured color #f7fafc; fall back to the closest theme family."
+    },
+    {
+      "kind": "spacing",
+      "source": "padding",
+      "value": "12px",
+      "nodeIds": [
+        "node_37"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for spacing; confirm manually."
+    },
+    {
+      "kind": "spacing",
+      "source": "margin",
+      "value": "16px 0px 0px",
+      "nodeIds": [
+        "node_37"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for spacing; confirm manually."
+    },
+    {
+      "kind": "radius",
+      "source": "borderRadius",
+      "value": "6px 6px 3px 3px",
+      "nodeIds": [
+        "node_38",
+        "node_39",
+        "node_40",
+        "node_41",
+        "node_42",
+        "node_43",
+        "node_44",
+        "node_45"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for radius; confirm manually."
+    },
+    {
+      "kind": "spacing",
+      "source": "padding",
+      "value": "14px 0px",
+      "nodeIds": [
+        "node_52",
+        "node_59",
+        "node_66",
+        "node_73"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for spacing; confirm manually."
+    },
+    {
+      "kind": "color",
+      "source": "color",
+      "value": "rgb(196, 69, 60)",
+      "nodeIds": [
+        "node_71"
+      ],
+      "target": "themeService.colors.*",
+      "matchedBy": "family",
+      "confidence": "low",
+      "reason": "No exact YouFi color token found for captured color #c4453c; fall back to the closest theme family."
+    },
+    {
+      "kind": "border",
+      "source": "border",
+      "value": "0px none rgb(196, 69, 60)",
+      "nodeIds": [
+        "node_71"
+      ],
+      "matchedBy": "manual",
+      "confidence": "low",
+      "reason": "No direct YouFi token family is inferred for border; confirm manually."
+    },
+    {
+      "source": ".pnl-page.background",
+      "value": "--pb-bg",
+      "target": "themeService.colors.*",
+      "matchedBy": "manual",
+      "confidence": "medium",
+      "reason": "Source style token --pb-bg preserves semantic design intent; runtime computed style should still confirm final rendered value when available."
+    },
+    {
+      "source": ".tab-bar.border",
+      "value": "--pb-border",
+      "target": "themeService.colors.*",
+      "matchedBy": "manual",
+      "confidence": "medium",
+      "reason": "Source style token --pb-border preserves semantic design intent; runtime computed style should still confirm final rendered value when available."
+    },
+    {
+      "kind": "color",
+      "source": ".metric-card span.color",
+      "value": "--pb-muted",
+      "target": "themeService.colors.*",
+      "matchedBy": "family",
+      "confidence": "low",
+      "reason": "Source style token --pb-muted preserves semantic design intent; runtime computed style should still confirm final rendered value when available."
+    },
+    {
+      "kind": "color",
+      "source": ".section-heading p.color",
+      "value": "--pb-muted",
+      "target": "themeService.colors.*",
+      "matchedBy": "family",
+      "confidence": "low",
+      "reason": "Source style token --pb-muted preserves semantic design intent; runtime computed style should still confirm final rendered value when available."
+    },
+    {
+      "source": ".trend-chart.background",
+      "value": "--pb-surface-soft",
+      "target": "themeService.colors.*",
+      "matchedBy": "manual",
+      "confidence": "medium",
+      "reason": "Source style token --pb-surface-soft preserves semantic design intent; runtime computed style should still confirm final rendered value when available."
+    },
+    {
+      "source": ".trend-bar.background",
+      "value": "#176b87",
+      "target": "themeService.colors.*",
+      "matchedBy": "manual",
+      "confidence": "medium",
+      "reason": "Source style token #176b87 preserves semantic design intent; runtime computed style should still confirm final rendered value when available."
+    },
+    {
+      "source": ".record-row.border-bottom",
+      "value": "--pb-border",
+      "target": "themeService.colors.*",
+      "matchedBy": "manual",
+      "confidence": "medium",
+      "reason": "Source style token --pb-border preserves semantic design intent; runtime computed style should still confirm final rendered value when available."
+    },
+    {
+      "kind": "color",
+      "source": ".record-row span, .record-value span.color",
+      "value": "--pb-muted",
+      "target": "themeService.colors.*",
+      "matchedBy": "family",
+      "confidence": "low",
+      "reason": "Source style token --pb-muted preserves semantic design intent; runtime computed style should still confirm final rendered value when available."
+    },
+    {
+      "kind": "color",
+      "source": ".loading-state, .empty-state.color",
+      "value": "--pb-muted",
+      "target": "themeService.colors.*",
+      "matchedBy": "family",
+      "confidence": "low",
+      "reason": "Source style token --pb-muted preserves semantic design intent; runtime computed style should still confirm final rendered value when available."
+    },
+    {
+      "source": ".sheet-option.border",
+      "value": "--pb-border",
+      "target": "themeService.colors.*",
+      "matchedBy": "manual",
+      "confidence": "medium",
+      "reason": "Source style token --pb-border preserves semantic design intent; runtime computed style should still confirm final rendered value when available."
+    },
+    {
+      "source": ".sheet-option.background",
+      "value": "--pb-surface",
+      "target": "themeService.colors.*",
+      "matchedBy": "manual",
+      "confidence": "medium",
+      "reason": "Source style token --pb-surface preserves semantic design intent; runtime computed style should still confirm final rendered value when available."
+    },
+    {
+      "kind": "color",
+      "source": ".sheet-option.color",
+      "value": "--pb-text",
+      "target": "themeService.colors.*",
+      "matchedBy": "family",
+      "confidence": "low",
+      "reason": "Source style token --pb-text preserves semantic design intent; runtime computed style should still confirm final rendered value when available."
+    },
+    {
+      "kind": "color",
+      "source": ".sheet-option.active.border-color",
+      "value": "--pb-primary",
+      "target": "themeService.colors.*",
+      "matchedBy": "family",
+      "confidence": "low",
+      "reason": "Source style token --pb-primary preserves semantic design intent; runtime computed style should still confirm final rendered value when available."
+    },
+    {
+      "source": ".sheet-option.active.background",
+      "value": "--pb-primary-soft",
+      "target": "themeService.colors.*",
+      "matchedBy": "manual",
+      "confidence": "medium",
+      "reason": "Source style token --pb-primary-soft preserves semantic design intent; runtime computed style should still confirm final rendered value when available."
+    },
+    {
+      "kind": "color",
+      "source": ".sheet-option.active.color",
+      "value": "--pb-primary",
+      "target": "themeService.colors.*",
+      "matchedBy": "family",
+      "confidence": "low",
+      "reason": "Source style token --pb-primary preserves semantic design intent; runtime computed style should still confirm final rendered value when available."
+    },
+    {
+      "source": ".detail-grid div.background",
+      "value": "--pb-surface-soft",
+      "target": "themeService.colors.*",
+      "matchedBy": "manual",
+      "confidence": "medium",
+      "reason": "Source style token --pb-surface-soft preserves semantic design intent; runtime computed style should still confirm final rendered value when available."
+    },
+    {
+      "kind": "color",
+      "source": ".detail-grid dt.color",
+      "value": "--pb-muted",
+      "target": "themeService.colors.*",
+      "matchedBy": "family",
+      "confidence": "low",
+      "reason": "Source style token --pb-muted preserves semantic design intent; runtime computed style should still confirm final rendered value when available."
+    }
+  ],
+  "i18nPlan": {
+    "texts": [
+      {
+        "text": "Asset Center",
+        "nodeIds": [
+          "node_7"
+        ],
+        "suggestedKey": "asset_center"
+      },
+      {
+        "text": "P&L Analysis",
+        "nodeIds": [
+          "node_8"
+        ],
+        "suggestedKey": "p_l_analysis"
+      },
+      {
+        "text": "⌘",
+        "nodeIds": [
+          "node_9"
+        ]
+      },
+      {
+        "text": "Analysis tabs",
+        "nodeIds": [
+          "node_10"
+        ],
+        "suggestedKey": "analysis_tabs"
+      },
+      {
+        "text": "Overview",
+        "nodeIds": [
+          "node_11"
+        ],
+        "suggestedKey": "overview"
+      },
+      {
+        "text": "Realized",
+        "nodeIds": [
+          "node_12",
+          "node_20"
+        ],
+        "suggestedKey": "realized"
+      },
+      {
+        "text": "Risk",
+        "nodeIds": [
+          "node_13"
+        ],
+        "suggestedKey": "risk"
+      },
+      {
+        "text": "Total P&L",
+        "nodeIds": [
+          "node_16"
+        ],
+        "suggestedKey": "total_p_l"
+      },
+      {
+        "text": "+$18,206",
+        "nodeIds": [
+          "node_17"
+        ],
+        "suggestedKey": "18_206"
+      },
+      {
+        "text": "+12.8%",
+        "nodeIds": [
+          "node_18"
+        ],
+        "suggestedKey": "12_8"
+      },
+      {
+        "text": "+$7,418",
+        "nodeIds": [
+          "node_21"
+        ],
+        "suggestedKey": "7_418"
+      },
+      {
+        "text": "+4.6%",
+        "nodeIds": [
+          "node_22"
+        ],
+        "suggestedKey": "4_6"
+      },
+      {
+        "text": "Unrealized",
+        "nodeIds": [
+          "node_24"
+        ],
+        "suggestedKey": "unrealized"
+      },
+      {
+        "text": "+$10,788",
+        "nodeIds": [
+          "node_25"
+        ],
+        "suggestedKey": "10_788"
+      },
+      {
+        "text": "+8.2%",
+        "nodeIds": [
+          "node_26"
+        ],
+        "suggestedKey": "8_2"
+      },
+      {
+        "text": "Risk Budget",
+        "nodeIds": [
+          "node_28"
+        ],
+        "suggestedKey": "risk_budget"
+      },
+      {
+        "text": "63%",
+        "nodeIds": [
+          "node_29"
+        ],
+        "suggestedKey": "63"
+      },
+      {
+        "text": "-5 pts",
+        "nodeIds": [
+          "node_30"
+        ],
+        "suggestedKey": "5_pts"
+      },
+      {
+        "text": "Return Trend",
+        "nodeIds": [
+          "node_34"
+        ],
+        "suggestedKey": "return_trend"
+      },
+      {
+        "text": "8 sessions, current tab: overview",
+        "nodeIds": [
+          "node_35"
+        ],
+        "suggestedKey": "8_sessions_current_tab_overview"
+      },
+      {
+        "text": "Refresh",
+        "nodeIds": [
+          "node_36"
+        ],
+        "suggestedKey": "refresh"
+      },
+      {
+        "text": "P&L trend chart",
+        "nodeIds": [
+          "node_37"
+        ],
+        "suggestedKey": "p_l_trend_chart"
+      },
+      {
+        "text": "Trade Records",
+        "nodeIds": [
+          "node_49"
+        ],
+        "suggestedKey": "trade_records"
+      },
+      {
+        "text": "Risk filter: All",
+        "nodeIds": [
+          "node_50"
+        ],
+        "suggestedKey": "risk_filter_all"
+      },
+      {
+        "text": "Filter",
+        "nodeIds": [
+          "node_51"
+        ],
+        "suggestedKey": "filter"
+      },
+      {
+        "text": "NVDA",
+        "nodeIds": [
+          "node_54"
+        ],
+        "suggestedKey": "nvda"
+      },
+      {
+        "text": "Take Profit · 09:42",
+        "nodeIds": [
+          "node_55"
+        ],
+        "suggestedKey": "take_profit_09_42"
+      },
+      {
+        "text": "+$2,180.00",
+        "nodeIds": [
+          "node_57"
+        ],
+        "suggestedKey": "2_180_00"
+      },
+      {
+        "text": "Medium",
+        "nodeIds": [
+          "node_58",
+          "node_79"
+        ],
+        "suggestedKey": "medium"
+      },
+      {
+        "text": "AAPL",
+        "nodeIds": [
+          "node_61"
+        ],
+        "suggestedKey": "aapl"
+      },
+      {
+        "text": "Covered Call · 10:18",
+        "nodeIds": [
+          "node_62"
+        ],
+        "suggestedKey": "covered_call_10_18"
+      },
+      {
+        "text": "+$620.40",
+        "nodeIds": [
+          "node_64"
+        ],
+        "suggestedKey": "620_40"
+      },
+      {
+        "text": "Low",
+        "nodeIds": [
+          "node_65"
+        ],
+        "suggestedKey": "low"
+      },
+      {
+        "text": "TSLA",
+        "nodeIds": [
+          "node_68"
+        ],
+        "suggestedKey": "tsla"
+      },
+      {
+        "text": "Stop Loss · 11:05",
+        "nodeIds": [
+          "node_69"
+        ],
+        "suggestedKey": "stop_loss_11_05"
+      },
+      {
+        "text": "-$430.20",
+        "nodeIds": [
+          "node_71"
+        ],
+        "suggestedKey": "430_20"
+      },
+      {
+        "text": "High",
+        "nodeIds": [
+          "node_72"
+        ],
+        "suggestedKey": "high"
+      },
+      {
+        "text": "MSFT",
+        "nodeIds": [
+          "node_75"
+        ],
+        "suggestedKey": "msft"
+      },
+      {
+        "text": "Add Position · 13:24",
+        "nodeIds": [
+          "node_76"
+        ],
+        "suggestedKey": "add_position_13_24"
+      },
+      {
+        "text": "+$780.90",
+        "nodeIds": [
+          "node_78"
+        ],
+        "suggestedKey": "780_90"
+      },
+      {
+        "text": "Break down realized and unrealized returns",
+        "nodeIds": [],
+        "suggestedKey": "break_down_realized_and_unrealized_returns"
+      },
+      {
+        "text": "Export",
+        "nodeIds": [],
+        "suggestedKey": "export"
+      },
+      {
+        "text": "Close",
+        "nodeIds": [],
+        "suggestedKey": "close"
+      }
+    ],
+    "recommendation": "Visible text should use YouFi .tr conventions when the target module already has translations; otherwise keep local constants with TODO for translation keys."
+  },
+  "assetPlan": {
+    "assets": [
+      {
+        "kind": "icon",
+        "recommendation": "确认是否已有 CommonSvg/IconFont/本地 asset 可复用。"
+      }
+    ],
+    "recommendation": "Prefer existing assets/images, assets/dark_images, assets/svg, and assets/json entries before adding new files."
+  },
+  "interactionPlan": [
+    {
+      "kind": "tap",
+      "label": "⌘",
+      "nodeId": "node_9",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "label": "Overview",
+      "nodeId": "node_11",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "label": "Realized",
+      "nodeId": "node_12",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "label": "Risk",
+      "nodeId": "node_13",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "label": "Refresh",
+      "nodeId": "node_36",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "label": "Filter",
+      "nodeId": "node_51",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "nodeId": "node_52",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "nodeId": "node_53",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "label": "NVDA",
+      "nodeId": "node_54",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "label": "Take Profit · 09:42",
+      "nodeId": "node_55",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "nodeId": "node_56",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "label": "+$2,180.00",
+      "nodeId": "node_57",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "label": "Medium",
+      "nodeId": "node_58",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "nodeId": "node_59",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "nodeId": "node_60",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "label": "AAPL",
+      "nodeId": "node_61",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "label": "Covered Call · 10:18",
+      "nodeId": "node_62",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "nodeId": "node_63",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "label": "+$620.40",
+      "nodeId": "node_64",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "label": "Low",
+      "nodeId": "node_65",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "nodeId": "node_66",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "nodeId": "node_67",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "label": "TSLA",
+      "nodeId": "node_68",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "label": "Stop Loss · 11:05",
+      "nodeId": "node_69",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "nodeId": "node_70",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "label": "-$430.20",
+      "nodeId": "node_71",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "label": "High",
+      "nodeId": "node_72",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "nodeId": "node_73",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "nodeId": "node_74",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "label": "MSFT",
+      "nodeId": "node_75",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "label": "Add Position · 13:24",
+      "nodeId": "node_76",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "nodeId": "node_77",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "label": "+$780.90",
+      "nodeId": "node_78",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "label": "Medium",
+      "nodeId": "node_79",
+      "recommendation": "Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it."
+    },
+    {
+      "kind": "tap",
+      "label": "store.openFilterSheet",
+      "nodeId": "source:interaction:0",
+      "recommendation": "@click=\"store.openFilterSheet\""
+    },
+    {
+      "kind": "tap",
+      "label": "store.setPnlTab(tab.value)",
+      "nodeId": "source:interaction:1",
+      "recommendation": "@click=\"store.setPnlTab(tab.value)\""
+    },
+    {
+      "kind": "tap",
+      "label": "store.refreshPage",
+      "nodeId": "source:interaction:2",
+      "recommendation": "@click=\"store.refreshPage\""
+    },
+    {
+      "kind": "tap",
+      "label": "store.openRecord(record)",
+      "nodeId": "source:interaction:3",
+      "recommendation": "@click=\"store.openRecord(record)\""
+    },
+    {
+      "kind": "tap",
+      "label": "store.closeFilterSheet",
+      "nodeId": "source:interaction:4",
+      "recommendation": "@click=\"store.closeFilterSheet\""
+    },
+    {
+      "kind": "tap",
+      "label": "store.setRiskFilter(risk)",
+      "nodeId": "source:interaction:5",
+      "recommendation": "@click=\"store.setRiskFilter(risk)\""
+    },
+    {
+      "kind": "tap",
+      "label": "store.closeRecord",
+      "nodeId": "source:interaction:6",
+      "recommendation": "@click=\"store.closeRecord\""
+    },
+    {
+      "kind": "tap",
+      "label": "store.pushPage('/prototype/asset/holding-list', { symbol: store.selectedRecord.symbol })",
+      "nodeId": "source:interaction:7",
+      "recommendation": "@click=\"store.pushPage('/prototype/asset/holding-list', { symbol: store.selectedRecord.symbol })\""
+    },
+    {
+      "kind": "unknown",
+      "label": "store.loading",
+      "nodeId": "source:interaction:8",
+      "recommendation": "v-if=\"store.loading\""
+    },
+    {
+      "kind": "unknown",
+      "label": "store.filterSheetOpen",
+      "nodeId": "source:interaction:9",
+      "recommendation": "v-if=\"store.filterSheetOpen\""
+    },
+    {
+      "kind": "unknown",
+      "label": "store.selectedRecord",
+      "nodeId": "source:interaction:10",
+      "recommendation": "v-if=\"store.selectedRecord\""
+    },
+    {
+      "kind": "unknown",
+      "label": "tab in tabs",
+      "nodeId": "source:interaction:11",
+      "recommendation": "v-for=\"tab in tabs\""
+    },
+    {
+      "kind": "unknown",
+      "label": "metric in store.pnlMetrics",
+      "nodeId": "source:interaction:12",
+      "recommendation": "v-for=\"metric in store.pnlMetrics\""
+    },
+    {
+      "kind": "unknown",
+      "label": "(point, index) in store.trendPoints",
+      "nodeId": "source:interaction:13",
+      "recommendation": "v-for=\"(point, index) in store.trendPoints\""
+    },
+    {
+      "kind": "unknown",
+      "label": "record in store.filteredRecords",
+      "nodeId": "source:interaction:14",
+      "recommendation": "v-for=\"record in store.filteredRecords\""
+    },
+    {
+      "kind": "unknown",
+      "label": "risk in riskOptions",
+      "nodeId": "source:interaction:15",
+      "recommendation": "v-for=\"risk in riskOptions\""
+    },
+    {
+      "kind": "unknown",
+      "nodeId": "source:interaction:16",
+      "recommendation": "watch(...)"
+    }
+  ],
+  "businessQuestions": [
+    "确认页面真实数据来源、接口字段和加载/空态策略。",
+    "确认点击、跳转、弹层、筛选和输入行为的业务规则。",
+    "确认权限、风控、埋点和异常处理是否需要在本页面接入。",
+    "PageCanonical 识别到 34 个可交互区域，需要逐项确认业务动作。",
+    "Source facts 识别到 2 个状态线索，需要确认哪些属于真实业务状态、哪些只是 UI 临时状态。"
+  ],
+  "risks": [
+    "PageCanonical 只能证明当前采集到的可见 UI 与增强证据，不能证明隐藏状态或业务逻辑。",
+    "少量 computed style 仍可能映射到多个 YouFi 语义 token，需结合 node 上下文和截图二次确认。",
+    "Target suggested module (account) differs from source module (asset)."
+  ],
+  "validationHints": [
+    "Compare the generated Flutter screen against the source screenshot before adding business behavior.",
+    "Treat typography, CSS colors, spacing, and layout as P0 visual fidelity items; prefer exact evidence matches before approximate fallback.",
+    "Use node-level themeMappings first; when a theme token is resolved exactly, do not replace it with a larger or heavier nearby token.",
+    "Check spacing, radius, border, and shadow values against reusable YouFi widgets before introducing local constants.",
+    "Keep business data, API fields, permission checks, risk controls, and tracking as TODOs unless confirmed by YouFi examples.",
+    "Prefer similar module examples and common widgets over one-to-one DOM translation."
+  ]
+}

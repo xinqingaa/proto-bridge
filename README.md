@@ -101,6 +101,62 @@ npx @proto-bridge/cli generate \
   --route /prototype/asset/pnl-analysis
 ```
 
+## 开源示例
+
+仓库内提供一个完整示例：[Vue3 source 到 Flutter target](examples/vue3-to-flutter/README.md)。
+
+```bash
+pnpm run example
+```
+
+只想本地打开 Vue 原型和 Flutter 还原效果：
+
+```bash
+pnpm run example:dev
+```
+
+打开：
+
+```text
+Vue prototype:  http://127.0.0.1:5173/
+Flutter target: http://127.0.0.1:5599/
+```
+
+如果默认端口被占用，脚本会自动顺延到可用端口，请以终端输出的地址为准。
+
+示例包含一个 Vue3 + Pinia 原型工程、一个 Flutter + bloc target 工程、两套 ProtoBridge artifacts，以及原型/Flutter 还原效果截图。它展示的是当前内置适配重点：
+
+```text
+source: vue3-prototype
+target: flutter-app
+```
+
+效果预览：
+
+| Prototype | Flutter restored effect |
+| --- | --- |
+| ![Prototype simple](examples/vue3-to-flutter/screenshots/prototype-simple.png) | ![Flutter simple](examples/vue3-to-flutter/screenshots/flutter-simple.png) |
+
+<details>
+<summary>产物片段</summary>
+
+`ui-build-review.md` 会把 source/runtime/target evidence 合并成实现交接：
+
+```text
+Capabilities: source.analyze, runtime.capture, target.inspect, page.merge
+Facts: source=true, runtime=true, screenshot=true, target=true
+Target module: account
+```
+
+完整产物见：
+
+```text
+examples/vue3-to-flutter/output/simple
+examples/vue3-to-flutter/output/complex
+```
+
+</details>
+
 ## 输出产物
 
 ```text

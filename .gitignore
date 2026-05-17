@@ -9,6 +9,8 @@ packages/*/dist/
 output/
 packages/*/output/
 examples/*/output/
+!examples/vue3-to-flutter/output/
+!examples/vue3-to-flutter/output/**
 
 # Runtime capture artifacts
 playwright-report/
@@ -27,6 +29,7 @@ yarn-error.log*
 !.env.example
 proto-bridge.config.json
 !proto-bridge.config.example.json
+!examples/vue3-to-flutter/proto-bridge.config.json
 
 # OS / editor
 .DS_Store

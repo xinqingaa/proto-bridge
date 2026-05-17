@@ -1,0 +1,4671 @@
+{
+  "id": "page_holding-list_mp9owbtw",
+  "pageId": "page_holding-list_mp9owbtw",
+  "source": {
+    "kind": "hybrid",
+    "url": "http://127.0.0.1:5173/#/prototype/asset/holding-list",
+    "route": "/prototype/asset/holding-list",
+    "vuePath": "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/source-vue3/prototype/src/views/prototype/asset/HoldingList.vue",
+    "capturedAt": "2026-05-17T11:26:23.204Z"
+  },
+  "screenshot": {
+    "path": "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/output/simple/screenshots/full-page.png",
+    "width": 390,
+    "height": 844
+  },
+  "screenshots": [
+    {
+      "name": "full-page",
+      "path": "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/output/simple/screenshots/full-page.png",
+      "width": 390,
+      "height": 844,
+      "kind": "full-page"
+    }
+  ],
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "deviceScaleFactor": 2
+  },
+  "page": {
+    "title": "Portfolio Holdings",
+    "route": "/prototype/asset/holding-list"
+  },
+  "cssVariables": {
+    "--pb-surface-soft": "#f7fafc",
+    "--pb-surface": "#ffffff",
+    "--pb-muted": "#6b7886",
+    "--pb-text": "#17202a",
+    "--pb-warning": "#a66b00",
+    "--pb-negative": "#c4453c",
+    "--pb-border": "#d8e1ea",
+    "--pb-bg": "#eef3f8",
+    "--pb-primary": "#176b87",
+    "--pb-shadow": "0 14px 36px rgba(28, 45, 64, 0.12)",
+    "--pb-primary-soft": "#d8eef3",
+    "--pb-positive": "#16855b"
+  },
+  "sections": [
+    {
+      "id": "section_node_1",
+      "role": "section",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844
+      },
+      "nodeIds": [
+        "node_1",
+        "node_2",
+        "node_3",
+        "node_4",
+        "node_5",
+        "node_6",
+        "node_7",
+        "node_8",
+        "node_9",
+        "node_10",
+        "node_11",
+        "node_12",
+        "node_13",
+        "node_14",
+        "node_15",
+        "node_16",
+        "node_17",
+        "node_18",
+        "node_19",
+        "node_20",
+        "node_21",
+        "node_22",
+        "node_23",
+        "node_24",
+        "node_25",
+        "node_26",
+        "node_27",
+        "node_28",
+        "node_29",
+        "node_30",
+        "node_31",
+        "node_32",
+        "node_33",
+        "node_34",
+        "node_35",
+        "node_36",
+        "node_37",
+        "node_38",
+        "node_39",
+        "node_40",
+        "node_41",
+        "node_42",
+        "node_43",
+        "node_44",
+        "node_45",
+        "node_46",
+        "node_47",
+        "node_48",
+        "node_49"
+      ],
+      "evidence": [
+        "body section"
+      ]
+    },
+    {
+      "id": "section_node_3",
+      "role": "section",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844
+      },
+      "nodeIds": [
+        "node_3",
+        "node_4",
+        "node_5",
+        "node_6",
+        "node_7",
+        "node_8",
+        "node_9",
+        "node_10",
+        "node_11",
+        "node_12",
+        "node_13",
+        "node_14",
+        "node_15",
+        "node_16",
+        "node_17",
+        "node_18",
+        "node_19",
+        "node_20",
+        "node_21",
+        "node_22",
+        "node_23",
+        "node_24",
+        "node_25",
+        "node_26",
+        "node_27",
+        "node_28",
+        "node_29",
+        "node_30",
+        "node_31",
+        "node_32",
+        "node_33",
+        "node_34",
+        "node_35",
+        "node_36",
+        "node_37",
+        "node_38",
+        "node_39",
+        "node_40",
+        "node_41",
+        "node_42",
+        "node_43",
+        "node_44",
+        "node_45",
+        "node_46",
+        "node_47",
+        "node_48",
+        "node_49",
+        "node_50",
+        "node_51"
+      ],
+      "evidence": [
+        "main section"
+      ]
+    },
+    {
+      "id": "section_node_4",
+      "role": "section",
+      "title": "Holding filters",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 572.11
+      },
+      "nodeIds": [
+        "node_4",
+        "node_5",
+        "node_6",
+        "node_7",
+        "node_8",
+        "node_9",
+        "node_10",
+        "node_11",
+        "node_12",
+        "node_13",
+        "node_14",
+        "node_15",
+        "node_16",
+        "node_17",
+        "node_18",
+        "node_19",
+        "node_20",
+        "node_21",
+        "node_22",
+        "node_23",
+        "node_24",
+        "node_25",
+        "node_26",
+        "node_27",
+        "node_28",
+        "node_29",
+        "node_30",
+        "node_31",
+        "node_32",
+        "node_33",
+        "node_34",
+        "node_35",
+        "node_36",
+        "node_37",
+        "node_38",
+        "node_39",
+        "node_40",
+        "node_41",
+        "node_42",
+        "node_43",
+        "node_44",
+        "node_45",
+        "node_46",
+        "node_47",
+        "node_48",
+        "node_49",
+        "node_50",
+        "node_51",
+        "node_52"
+      ],
+      "evidence": [
+        "section section"
+      ]
+    },
+    {
+      "id": "section_node_5",
+      "role": "app-bar",
+      "title": "↻",
+      "bbox": {
+        "x": 18,
+        "y": 18,
+        "width": 354,
+        "height": 48.11
+      },
+      "nodeIds": [
+        "node_5",
+        "node_6",
+        "node_7",
+        "node_8",
+        "node_9"
+      ],
+      "evidence": [
+        "header app-bar"
+      ]
+    },
+    {
+      "id": "section_node_10",
+      "role": "card",
+      "bbox": {
+        "x": 18,
+        "y": 82.11,
+        "width": 354,
+        "height": 91
+      },
+      "nodeIds": [
+        "node_10",
+        "node_11",
+        "node_12",
+        "node_13",
+        "node_14",
+        "node_15",
+        "node_16",
+        "node_17",
+        "node_18",
+        "node_19",
+        "node_20"
+      ],
+      "evidence": [
+        "section card"
+      ]
+    },
+    {
+      "id": "section_node_21",
+      "role": "section",
+      "title": "Holding filters",
+      "bbox": {
+        "x": 18,
+        "y": 189.11,
+        "width": 354,
+        "height": 36
+      },
+      "nodeIds": [
+        "node_21",
+        "node_22",
+        "node_23",
+        "node_24",
+        "node_25"
+      ],
+      "evidence": [
+        "section section"
+      ]
+    },
+    {
+      "id": "section_node_26",
+      "role": "list",
+      "bbox": {
+        "x": 18,
+        "y": 241.11,
+        "width": 354,
+        "height": 249
+      },
+      "nodeIds": [
+        "node_26",
+        "node_27",
+        "node_28",
+        "node_29",
+        "node_30",
+        "node_31",
+        "node_32",
+        "node_33",
+        "node_34",
+        "node_35",
+        "node_36",
+        "node_37",
+        "node_38",
+        "node_39",
+        "node_40",
+        "node_41",
+        "node_42",
+        "node_43",
+        "node_44",
+        "node_45",
+        "node_46",
+        "node_47",
+        "node_48",
+        "node_49",
+        "node_50",
+        "node_51",
+        "node_52",
+        "node_53",
+        "node_54",
+        "node_55",
+        "node_56",
+        "node_57",
+        "node_58",
+        "node_59"
+      ],
+      "evidence": [
+        "section list"
+      ]
+    },
+    {
+      "id": "section_node_27",
+      "role": "list",
+      "title": "Positions",
+      "bbox": {
+        "x": 19,
+        "y": 242.11,
+        "width": 352,
+        "height": 53
+      },
+      "nodeIds": [
+        "node_27",
+        "node_28",
+        "node_29"
+      ],
+      "evidence": [
+        "div list"
+      ]
+    },
+    {
+      "id": "section_node_30",
+      "role": "section",
+      "bbox": {
+        "x": 19,
+        "y": 295.11,
+        "width": 352,
+        "height": 65
+      },
+      "nodeIds": [
+        "node_30",
+        "node_31",
+        "node_32",
+        "node_33",
+        "node_34",
+        "node_35",
+        "node_36",
+        "node_37",
+        "node_38",
+        "node_39"
+      ],
+      "evidence": [
+        "article section"
+      ]
+    },
+    {
+      "id": "section_node_40",
+      "role": "section",
+      "bbox": {
+        "x": 19,
+        "y": 360.11,
+        "width": 352,
+        "height": 65
+      },
+      "nodeIds": [
+        "node_40",
+        "node_41",
+        "node_42",
+        "node_43",
+        "node_44",
+        "node_45",
+        "node_46",
+        "node_47",
+        "node_48",
+        "node_49"
+      ],
+      "evidence": [
+        "article section"
+      ]
+    },
+    {
+      "id": "section_node_50",
+      "role": "section",
+      "bbox": {
+        "x": 19,
+        "y": 425.11,
+        "width": 352,
+        "height": 64
+      },
+      "nodeIds": [
+        "node_50",
+        "node_51",
+        "node_52",
+        "node_53",
+        "node_54",
+        "node_55",
+        "node_56",
+        "node_57",
+        "node_58",
+        "node_59"
+      ],
+      "evidence": [
+        "article section"
+      ]
+    },
+    {
+      "id": "section_node_60",
+      "role": "bottom-bar",
+      "title": "View analysis",
+      "bbox": {
+        "x": 18,
+        "y": 506.11,
+        "width": 354,
+        "height": 38
+      },
+      "nodeIds": [
+        "node_60",
+        "node_61",
+        "node_62"
+      ],
+      "evidence": [
+        "footer bottom-bar"
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node_1",
+      "role": "section",
+      "tag": "body",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgb(238, 243, 248)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [
+        "node_2"
+      ],
+      "evidence": [
+        "body section"
+      ]
+    },
+    {
+      "id": "node_2",
+      "parentId": "node_1",
+      "role": "unknown",
+      "tag": "div",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [
+        "node_3"
+      ],
+      "evidence": [
+        "div unknown"
+      ]
+    },
+    {
+      "id": "node_3",
+      "parentId": "node_2",
+      "role": "section",
+      "tag": "main",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgb(238, 243, 248)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [
+        "node_4"
+      ],
+      "evidence": [
+        "main section"
+      ]
+    },
+    {
+      "id": "node_4",
+      "parentId": "node_3",
+      "role": "section",
+      "tag": "section",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 572.11
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "18px 18px 28px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [
+        "node_5",
+        "node_10",
+        "node_21",
+        "node_26",
+        "node_60"
+      ],
+      "evidence": [
+        "section section"
+      ]
+    },
+    {
+      "id": "node_5",
+      "parentId": "node_4",
+      "role": "app-bar",
+      "tag": "header",
+      "bbox": {
+        "x": 18,
+        "y": 18,
+        "width": 354,
+        "height": 48.11
+      },
+      "computedStyle": {
+        "display": "flex",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "flex-start",
+        "justifyContent": "space-between",
+        "gap": "12px",
+        "padding": "0px",
+        "margin": "0px 0px 16px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [
+        "node_6",
+        "node_9"
+      ],
+      "evidence": [
+        "header app-bar"
+      ]
+    },
+    {
+      "id": "node_6",
+      "parentId": "node_5",
+      "role": "unknown",
+      "tag": "div",
+      "bbox": {
+        "x": 18,
+        "y": 18,
+        "width": 217.34,
+        "height": 48.11
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [
+        "node_7",
+        "node_8"
+      ],
+      "evidence": [
+        "div unknown"
+      ]
+    },
+    {
+      "id": "node_7",
+      "parentId": "node_6",
+      "role": "text",
+      "tag": "p",
+      "text": "Asset Center",
+      "bbox": {
+        "x": 18,
+        "y": 18,
+        "width": 217.34,
+        "height": 15
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px 0px 4px",
+        "color": "rgb(107, 120, 134)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "12px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(107, 120, 134)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "p text"
+      ]
+    },
+    {
+      "id": "node_8",
+      "parentId": "node_6",
+      "role": "text",
+      "tag": "h1",
+      "text": "Portfolio Holdings",
+      "bbox": {
+        "x": 18,
+        "y": 37,
+        "width": 217.34,
+        "height": 29.11
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "26px",
+        "fontWeight": "700",
+        "lineHeight": "29.12px",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "h1 text"
+      ]
+    },
+    {
+      "id": "node_9",
+      "parentId": "node_5",
+      "role": "icon",
+      "tag": "button",
+      "text": "↻",
+      "bbox": {
+        "x": 334,
+        "y": 18,
+        "width": 38,
+        "height": 38
+      },
+      "computedStyle": {
+        "display": "flex",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "gap": "normal",
+        "padding": "1px 6px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgb(255, 255, 255)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "8px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "rgba(32, 48, 66, 0.08) 0px 8px 20px 0px",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "button icon"
+      ]
+    },
+    {
+      "id": "node_10",
+      "parentId": "node_4",
+      "role": "card",
+      "tag": "section",
+      "bbox": {
+        "x": 18,
+        "y": 82.11,
+        "width": 354,
+        "height": 91
+      },
+      "computedStyle": {
+        "display": "grid",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "12px",
+        "padding": "16px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgb(255, 255, 255)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "8px",
+        "border": "1px solid rgb(216, 225, 234)",
+        "boxShadow": "rgba(32, 48, 66, 0.08) 0px 8px 24px 0px",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [
+        "node_11",
+        "node_14",
+        "node_18"
+      ],
+      "evidence": [
+        "section card"
+      ]
+    },
+    {
+      "id": "node_11",
+      "parentId": "node_10",
+      "role": "unknown",
+      "tag": "div",
+      "bbox": {
+        "x": 35,
+        "y": 99.11,
+        "width": 116.8,
+        "height": 57
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [
+        "node_12",
+        "node_13"
+      ],
+      "evidence": [
+        "div unknown"
+      ]
+    },
+    {
+      "id": "node_12",
+      "parentId": "node_11",
+      "role": "text",
+      "tag": "p",
+      "text": "Market value",
+      "bbox": {
+        "x": 35,
+        "y": 99.11,
+        "width": 116.8,
+        "height": 15
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(107, 120, 134)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "12px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(107, 120, 134)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "p text"
+      ]
+    },
+    {
+      "id": "node_13",
+      "parentId": "node_11",
+      "role": "text",
+      "tag": "strong",
+      "text": "$128,420.36",
+      "bbox": {
+        "x": 35,
+        "y": 116.11,
+        "width": 116.8,
+        "height": 22
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "2px 0px 0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "19px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "strong text"
+      ]
+    },
+    {
+      "id": "node_14",
+      "parentId": "node_10",
+      "role": "unknown",
+      "tag": "div",
+      "bbox": {
+        "x": 163.8,
+        "y": 99.11,
+        "width": 108.44,
+        "height": 57
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [
+        "node_15",
+        "node_16",
+        "node_17"
+      ],
+      "evidence": [
+        "div unknown"
+      ]
+    },
+    {
+      "id": "node_15",
+      "parentId": "node_14",
+      "role": "text",
+      "tag": "p",
+      "text": "Today P&L",
+      "bbox": {
+        "x": 163.8,
+        "y": 99.11,
+        "width": 108.44,
+        "height": 15
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(107, 120, 134)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "12px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(107, 120, 134)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "p text"
+      ]
+    },
+    {
+      "id": "node_16",
+      "parentId": "node_14",
+      "role": "text",
+      "tag": "strong",
+      "text": "+$2,364.20",
+      "bbox": {
+        "x": 163.8,
+        "y": 116.11,
+        "width": 108.44,
+        "height": 22
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "2px 0px 0px",
+        "color": "rgb(22, 133, 91)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "19px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(22, 133, 91)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "strong text"
+      ]
+    },
+    {
+      "id": "node_17",
+      "parentId": "node_14",
+      "role": "text",
+      "tag": "span",
+      "text": "+1.87%",
+      "bbox": {
+        "x": 163.8,
+        "y": 141.11,
+        "width": 108.44,
+        "height": 15
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "3px 0px 0px",
+        "color": "rgb(22, 133, 91)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "12px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(22, 133, 91)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "span text"
+      ]
+    },
+    {
+      "id": "node_18",
+      "parentId": "node_10",
+      "role": "unknown",
+      "tag": "div",
+      "bbox": {
+        "x": 284.23,
+        "y": 99.11,
+        "width": 83.84,
+        "height": 57
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [
+        "node_19",
+        "node_20"
+      ],
+      "evidence": [
+        "div unknown"
+      ]
+    },
+    {
+      "id": "node_19",
+      "parentId": "node_18",
+      "role": "text",
+      "tag": "p",
+      "text": "Risk",
+      "bbox": {
+        "x": 284.23,
+        "y": 99.11,
+        "width": 83.84,
+        "height": 15
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(107, 120, 134)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "12px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(107, 120, 134)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "p text"
+      ]
+    },
+    {
+      "id": "node_20",
+      "parentId": "node_18",
+      "role": "text",
+      "tag": "strong",
+      "text": "Balanced",
+      "bbox": {
+        "x": 284.23,
+        "y": 116.11,
+        "width": 83.84,
+        "height": 22
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "2px 0px 0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "19px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "strong text"
+      ]
+    },
+    {
+      "id": "node_21",
+      "parentId": "node_4",
+      "role": "section",
+      "tag": "section",
+      "text": "Holding filters",
+      "bbox": {
+        "x": 18,
+        "y": 189.11,
+        "width": 354,
+        "height": 36
+      },
+      "computedStyle": {
+        "display": "flex",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "8px",
+        "padding": "0px 0px 2px",
+        "margin": "16px 0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "auto"
+      },
+      "cssVarRefs": [],
+      "children": [
+        "node_22",
+        "node_23",
+        "node_24",
+        "node_25"
+      ],
+      "evidence": [
+        "section section"
+      ]
+    },
+    {
+      "id": "node_22",
+      "parentId": "node_21",
+      "role": "button",
+      "tag": "button",
+      "text": "All",
+      "bbox": {
+        "x": 18,
+        "y": 189.11,
+        "width": 42.97,
+        "height": 34
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px 12px",
+        "margin": "0px",
+        "color": "rgb(23, 107, 135)",
+        "backgroundColor": "rgb(216, 238, 243)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "13px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "borderRadius": "8px",
+        "border": "1px solid rgb(23, 107, 135)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "button button"
+      ]
+    },
+    {
+      "id": "node_23",
+      "parentId": "node_21",
+      "role": "button",
+      "tag": "button",
+      "text": "Semiconductor",
+      "bbox": {
+        "x": 68.97,
+        "y": 189.11,
+        "width": 124.66,
+        "height": 34
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px 12px",
+        "margin": "0px",
+        "color": "rgb(107, 120, 134)",
+        "backgroundColor": "rgb(255, 255, 255)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "13px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "borderRadius": "8px",
+        "border": "1px solid rgb(216, 225, 234)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "button button"
+      ]
+    },
+    {
+      "id": "node_24",
+      "parentId": "node_21",
+      "role": "button",
+      "tag": "button",
+      "text": "Consumer Electronics",
+      "bbox": {
+        "x": 201.63,
+        "y": 189.11,
+        "width": 168.03,
+        "height": 34
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px 12px",
+        "margin": "0px",
+        "color": "rgb(107, 120, 134)",
+        "backgroundColor": "rgb(255, 255, 255)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "13px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "borderRadius": "8px",
+        "border": "1px solid rgb(216, 225, 234)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "button button"
+      ]
+    },
+    {
+      "id": "node_25",
+      "parentId": "node_21",
+      "role": "button",
+      "tag": "button",
+      "text": "EV",
+      "bbox": {
+        "x": 377.66,
+        "y": 189.11,
+        "width": 43.31,
+        "height": 34
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px 12px",
+        "margin": "0px",
+        "color": "rgb(107, 120, 134)",
+        "backgroundColor": "rgb(255, 255, 255)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "13px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "borderRadius": "8px",
+        "border": "1px solid rgb(216, 225, 234)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "button button"
+      ]
+    },
+    {
+      "id": "node_26",
+      "parentId": "node_4",
+      "role": "list",
+      "tag": "section",
+      "bbox": {
+        "x": 18,
+        "y": 241.11,
+        "width": 354,
+        "height": 249
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgb(255, 255, 255)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "8px",
+        "border": "1px solid rgb(216, 225, 234)",
+        "boxShadow": "rgba(32, 48, 66, 0.08) 0px 8px 24px 0px",
+        "overflow": "hidden"
+      },
+      "cssVarRefs": [],
+      "children": [
+        "node_27",
+        "node_30",
+        "node_40",
+        "node_50"
+      ],
+      "evidence": [
+        "section list"
+      ]
+    },
+    {
+      "id": "node_27",
+      "parentId": "node_26",
+      "role": "list",
+      "tag": "div",
+      "bbox": {
+        "x": 19,
+        "y": 242.11,
+        "width": 352,
+        "height": 53
+      },
+      "computedStyle": {
+        "display": "flex",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "center",
+        "justifyContent": "space-between",
+        "gap": "normal",
+        "padding": "16px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [
+        "node_28",
+        "node_29"
+      ],
+      "evidence": [
+        "div list"
+      ]
+    },
+    {
+      "id": "node_28",
+      "parentId": "node_27",
+      "role": "text",
+      "tag": "h2",
+      "text": "Positions",
+      "bbox": {
+        "x": 35,
+        "y": 258.11,
+        "width": 75.09,
+        "height": 20
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "17px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "h2 text"
+      ]
+    },
+    {
+      "id": "node_29",
+      "parentId": "node_27",
+      "role": "text",
+      "tag": "span",
+      "text": "3 items",
+      "bbox": {
+        "x": 313.28,
+        "y": 260.61,
+        "width": 41.72,
+        "height": 15
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(107, 120, 134)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "12px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(107, 120, 134)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "span text"
+      ]
+    },
+    {
+      "id": "node_30",
+      "parentId": "node_26",
+      "role": "section",
+      "tag": "article",
+      "bbox": {
+        "x": 19,
+        "y": 295.11,
+        "width": 352,
+        "height": 65
+      },
+      "computedStyle": {
+        "display": "grid",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "center",
+        "justifyContent": "normal",
+        "gap": "10px",
+        "padding": "14px 16px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [
+        "node_31",
+        "node_34",
+        "node_37"
+      ],
+      "evidence": [
+        "article section"
+      ]
+    },
+    {
+      "id": "node_31",
+      "parentId": "node_30",
+      "role": "unknown",
+      "tag": "div",
+      "bbox": {
+        "x": 35,
+        "y": 309.11,
+        "width": 120,
+        "height": 36
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [
+        "node_32",
+        "node_33"
+      ],
+      "evidence": [
+        "div unknown"
+      ]
+    },
+    {
+      "id": "node_32",
+      "parentId": "node_31",
+      "role": "text",
+      "tag": "strong",
+      "text": "NVDA",
+      "bbox": {
+        "x": 35,
+        "y": 309.11,
+        "width": 120,
+        "height": 18
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "strong text"
+      ]
+    },
+    {
+      "id": "node_33",
+      "parentId": "node_31",
+      "role": "text",
+      "tag": "span",
+      "text": "NVIDIA Corp.",
+      "bbox": {
+        "x": 35,
+        "y": 330.11,
+        "width": 120,
+        "height": 15
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "3px 0px 0px",
+        "color": "rgb(107, 120, 134)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "12px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(107, 120, 134)",
+        "boxShadow": "none",
+        "overflow": "hidden"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "span text"
+      ]
+    },
+    {
+      "id": "node_34",
+      "parentId": "node_30",
+      "role": "unknown",
+      "tag": "div",
+      "bbox": {
+        "x": 165,
+        "y": 309.11,
+        "width": 100,
+        "height": 36
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [
+        "node_35",
+        "node_36"
+      ],
+      "evidence": [
+        "div unknown"
+      ]
+    },
+    {
+      "id": "node_35",
+      "parentId": "node_34",
+      "role": "text",
+      "tag": "strong",
+      "text": "$42,300.00",
+      "bbox": {
+        "x": 165,
+        "y": 309.11,
+        "width": 100,
+        "height": 18
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "strong text"
+      ]
+    },
+    {
+      "id": "node_36",
+      "parentId": "node_34",
+      "role": "text",
+      "tag": "span",
+      "text": "120 shares",
+      "bbox": {
+        "x": 165,
+        "y": 330.11,
+        "width": 100,
+        "height": 15
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "3px 0px 0px",
+        "color": "rgb(107, 120, 134)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "12px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(107, 120, 134)",
+        "boxShadow": "none",
+        "overflow": "hidden"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "span text"
+      ]
+    },
+    {
+      "id": "node_37",
+      "parentId": "node_30",
+      "role": "unknown",
+      "tag": "div",
+      "bbox": {
+        "x": 275,
+        "y": 309.11,
+        "width": 80,
+        "height": 36
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(22, 133, 91)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(22, 133, 91)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [
+        "node_38",
+        "node_39"
+      ],
+      "evidence": [
+        "div unknown"
+      ]
+    },
+    {
+      "id": "node_38",
+      "parentId": "node_37",
+      "role": "text",
+      "tag": "strong",
+      "text": "+$6,830.20",
+      "bbox": {
+        "x": 275,
+        "y": 309.11,
+        "width": 80,
+        "height": 18
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(22, 133, 91)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(22, 133, 91)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "strong text"
+      ]
+    },
+    {
+      "id": "node_39",
+      "parentId": "node_37",
+      "role": "text",
+      "tag": "span",
+      "text": "+19.2%",
+      "bbox": {
+        "x": 275,
+        "y": 330.11,
+        "width": 80,
+        "height": 15
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "3px 0px 0px",
+        "color": "rgb(22, 133, 91)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "12px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(22, 133, 91)",
+        "boxShadow": "none",
+        "overflow": "hidden"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "span text"
+      ]
+    },
+    {
+      "id": "node_40",
+      "parentId": "node_26",
+      "role": "section",
+      "tag": "article",
+      "bbox": {
+        "x": 19,
+        "y": 360.11,
+        "width": 352,
+        "height": 65
+      },
+      "computedStyle": {
+        "display": "grid",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "center",
+        "justifyContent": "normal",
+        "gap": "10px",
+        "padding": "14px 16px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [
+        "node_41",
+        "node_44",
+        "node_47"
+      ],
+      "evidence": [
+        "article section"
+      ]
+    },
+    {
+      "id": "node_41",
+      "parentId": "node_40",
+      "role": "unknown",
+      "tag": "div",
+      "bbox": {
+        "x": 35,
+        "y": 374.11,
+        "width": 120,
+        "height": 36
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [
+        "node_42",
+        "node_43"
+      ],
+      "evidence": [
+        "div unknown"
+      ]
+    },
+    {
+      "id": "node_42",
+      "parentId": "node_41",
+      "role": "text",
+      "tag": "strong",
+      "text": "AAPL",
+      "bbox": {
+        "x": 35,
+        "y": 374.11,
+        "width": 120,
+        "height": 18
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "strong text"
+      ]
+    },
+    {
+      "id": "node_43",
+      "parentId": "node_41",
+      "role": "text",
+      "tag": "span",
+      "text": "Apple Inc.",
+      "bbox": {
+        "x": 35,
+        "y": 395.11,
+        "width": 120,
+        "height": 15
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "3px 0px 0px",
+        "color": "rgb(107, 120, 134)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "12px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(107, 120, 134)",
+        "boxShadow": "none",
+        "overflow": "hidden"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "span text"
+      ]
+    },
+    {
+      "id": "node_44",
+      "parentId": "node_40",
+      "role": "unknown",
+      "tag": "div",
+      "bbox": {
+        "x": 165,
+        "y": 374.11,
+        "width": 100,
+        "height": 36
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [
+        "node_45",
+        "node_46"
+      ],
+      "evidence": [
+        "div unknown"
+      ]
+    },
+    {
+      "id": "node_45",
+      "parentId": "node_44",
+      "role": "text",
+      "tag": "strong",
+      "text": "$28,740.80",
+      "bbox": {
+        "x": 165,
+        "y": 374.11,
+        "width": 100,
+        "height": 18
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "strong text"
+      ]
+    },
+    {
+      "id": "node_46",
+      "parentId": "node_44",
+      "role": "text",
+      "tag": "span",
+      "text": "160 shares",
+      "bbox": {
+        "x": 165,
+        "y": 395.11,
+        "width": 100,
+        "height": 15
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "3px 0px 0px",
+        "color": "rgb(107, 120, 134)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "12px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(107, 120, 134)",
+        "boxShadow": "none",
+        "overflow": "hidden"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "span text"
+      ]
+    },
+    {
+      "id": "node_47",
+      "parentId": "node_40",
+      "role": "unknown",
+      "tag": "div",
+      "bbox": {
+        "x": 275,
+        "y": 374.11,
+        "width": 80,
+        "height": 36
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(22, 133, 91)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(22, 133, 91)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [
+        "node_48",
+        "node_49"
+      ],
+      "evidence": [
+        "div unknown"
+      ]
+    },
+    {
+      "id": "node_48",
+      "parentId": "node_47",
+      "role": "text",
+      "tag": "strong",
+      "text": "+$1,420.10",
+      "bbox": {
+        "x": 275,
+        "y": 374.11,
+        "width": 80,
+        "height": 18
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(22, 133, 91)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(22, 133, 91)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "strong text"
+      ]
+    },
+    {
+      "id": "node_49",
+      "parentId": "node_47",
+      "role": "text",
+      "tag": "span",
+      "text": "+5.2%",
+      "bbox": {
+        "x": 275,
+        "y": 395.11,
+        "width": 80,
+        "height": 15
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "3px 0px 0px",
+        "color": "rgb(22, 133, 91)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "12px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(22, 133, 91)",
+        "boxShadow": "none",
+        "overflow": "hidden"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "span text"
+      ]
+    },
+    {
+      "id": "node_50",
+      "parentId": "node_26",
+      "role": "section",
+      "tag": "article",
+      "bbox": {
+        "x": 19,
+        "y": 425.11,
+        "width": 352,
+        "height": 64
+      },
+      "computedStyle": {
+        "display": "grid",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "center",
+        "justifyContent": "normal",
+        "gap": "10px",
+        "padding": "14px 16px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [
+        "node_51",
+        "node_54",
+        "node_57"
+      ],
+      "evidence": [
+        "article section"
+      ]
+    },
+    {
+      "id": "node_51",
+      "parentId": "node_50",
+      "role": "unknown",
+      "tag": "div",
+      "bbox": {
+        "x": 35,
+        "y": 439.11,
+        "width": 120,
+        "height": 36
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [
+        "node_52",
+        "node_53"
+      ],
+      "evidence": [
+        "div unknown"
+      ]
+    },
+    {
+      "id": "node_52",
+      "parentId": "node_51",
+      "role": "text",
+      "tag": "strong",
+      "text": "TSLA",
+      "bbox": {
+        "x": 35,
+        "y": 439.11,
+        "width": 120,
+        "height": 18
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "strong text"
+      ]
+    },
+    {
+      "id": "node_53",
+      "parentId": "node_51",
+      "role": "text",
+      "tag": "span",
+      "text": "Tesla Inc.",
+      "bbox": {
+        "x": 35,
+        "y": 460.11,
+        "width": 120,
+        "height": 15
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "3px 0px 0px",
+        "color": "rgb(107, 120, 134)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "12px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(107, 120, 134)",
+        "boxShadow": "none",
+        "overflow": "hidden"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "span text"
+      ]
+    },
+    {
+      "id": "node_54",
+      "parentId": "node_50",
+      "role": "unknown",
+      "tag": "div",
+      "bbox": {
+        "x": 165,
+        "y": 439.11,
+        "width": 100,
+        "height": 36
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [
+        "node_55",
+        "node_56"
+      ],
+      "evidence": [
+        "div unknown"
+      ]
+    },
+    {
+      "id": "node_55",
+      "parentId": "node_54",
+      "role": "text",
+      "tag": "strong",
+      "text": "$18,620.60",
+      "bbox": {
+        "x": 165,
+        "y": 439.11,
+        "width": 100,
+        "height": 18
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "strong text"
+      ]
+    },
+    {
+      "id": "node_56",
+      "parentId": "node_54",
+      "role": "text",
+      "tag": "span",
+      "text": "48 shares",
+      "bbox": {
+        "x": 165,
+        "y": 460.11,
+        "width": 100,
+        "height": 15
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "3px 0px 0px",
+        "color": "rgb(107, 120, 134)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "12px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(107, 120, 134)",
+        "boxShadow": "none",
+        "overflow": "hidden"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "span text"
+      ]
+    },
+    {
+      "id": "node_57",
+      "parentId": "node_50",
+      "role": "unknown",
+      "tag": "div",
+      "bbox": {
+        "x": 275,
+        "y": 439.11,
+        "width": 80,
+        "height": 36
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(196, 69, 60)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(196, 69, 60)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [
+        "node_58",
+        "node_59"
+      ],
+      "evidence": [
+        "div unknown"
+      ]
+    },
+    {
+      "id": "node_58",
+      "parentId": "node_57",
+      "role": "text",
+      "tag": "strong",
+      "text": "-$840.30",
+      "bbox": {
+        "x": 275,
+        "y": 439.11,
+        "width": 80,
+        "height": 18
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "color": "rgb(196, 69, 60)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(196, 69, 60)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "strong text"
+      ]
+    },
+    {
+      "id": "node_59",
+      "parentId": "node_57",
+      "role": "text",
+      "tag": "span",
+      "text": "-4.3%",
+      "bbox": {
+        "x": 275,
+        "y": 460.11,
+        "width": 80,
+        "height": 15
+      },
+      "computedStyle": {
+        "display": "block",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "3px 0px 0px",
+        "color": "rgb(196, 69, 60)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "12px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(196, 69, 60)",
+        "boxShadow": "none",
+        "overflow": "hidden"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "span text"
+      ]
+    },
+    {
+      "id": "node_60",
+      "parentId": "node_4",
+      "role": "bottom-bar",
+      "tag": "footer",
+      "bbox": {
+        "x": 18,
+        "y": 506.11,
+        "width": 354,
+        "height": 38
+      },
+      "computedStyle": {
+        "display": "grid",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "normal",
+        "justifyContent": "normal",
+        "gap": "10px",
+        "padding": "0px",
+        "margin": "16px 0px 0px",
+        "color": "rgb(23, 32, 42)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "borderRadius": "0px",
+        "border": "0px none rgb(23, 32, 42)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [
+        "node_61",
+        "node_62"
+      ],
+      "evidence": [
+        "footer bottom-bar"
+      ]
+    },
+    {
+      "id": "node_61",
+      "parentId": "node_60",
+      "role": "button",
+      "tag": "button",
+      "text": "View analysis",
+      "bbox": {
+        "x": 18,
+        "y": 506.11,
+        "width": 172,
+        "height": 38
+      },
+      "computedStyle": {
+        "display": "flex",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "gap": "normal",
+        "padding": "0px 14px",
+        "margin": "0px",
+        "color": "rgb(23, 107, 135)",
+        "backgroundColor": "rgb(216, 238, 243)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "borderRadius": "8px",
+        "border": "0px none rgb(23, 107, 135)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "button button"
+      ]
+    },
+    {
+      "id": "node_62",
+      "parentId": "node_60",
+      "role": "button",
+      "tag": "button",
+      "text": "Rebalance",
+      "bbox": {
+        "x": 200,
+        "y": 506.11,
+        "width": 172,
+        "height": 38
+      },
+      "computedStyle": {
+        "display": "flex",
+        "position": "static",
+        "flexDirection": "row",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "gap": "normal",
+        "padding": "0px 16px",
+        "margin": "0px",
+        "color": "rgb(255, 255, 255)",
+        "backgroundColor": "rgb(23, 107, 135)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "borderRadius": "8px",
+        "border": "0px none rgb(255, 255, 255)",
+        "boxShadow": "none",
+        "overflow": "visible"
+      },
+      "cssVarRefs": [],
+      "children": [],
+      "evidence": [
+        "button button"
+      ]
+    }
+  ],
+  "text": [
+    "Asset Center",
+    "Portfolio Holdings",
+    "↻",
+    "Market value",
+    "$128,420.36",
+    "Today P&L",
+    "+$2,364.20",
+    "+1.87%",
+    "Risk",
+    "Balanced",
+    "Holding filters",
+    "All",
+    "Semiconductor",
+    "Consumer Electronics",
+    "EV",
+    "Positions",
+    "3 items",
+    "NVDA",
+    "NVIDIA Corp.",
+    "$42,300.00",
+    "120 shares",
+    "+$6,830.20",
+    "+19.2%",
+    "AAPL",
+    "Apple Inc.",
+    "$28,740.80",
+    "160 shares",
+    "+$1,420.10",
+    "+5.2%",
+    "TSLA",
+    "Tesla Inc.",
+    "$18,620.60",
+    "48 shares",
+    "-$840.30",
+    "-4.3%",
+    "View analysis",
+    "Rebalance"
+  ],
+  "assets": [],
+  "interactions": [
+    {
+      "id": "interaction_1",
+      "kind": "tap",
+      "nodeId": "node_9",
+      "label": "↻",
+      "evidence": [
+        "clickable button node_9"
+      ]
+    },
+    {
+      "id": "interaction_2",
+      "kind": "tap",
+      "nodeId": "node_22",
+      "label": "All",
+      "evidence": [
+        "clickable button node_22"
+      ]
+    },
+    {
+      "id": "interaction_3",
+      "kind": "tap",
+      "nodeId": "node_23",
+      "label": "Semiconductor",
+      "evidence": [
+        "clickable button node_23"
+      ]
+    },
+    {
+      "id": "interaction_4",
+      "kind": "tap",
+      "nodeId": "node_24",
+      "label": "Consumer Electronics",
+      "evidence": [
+        "clickable button node_24"
+      ]
+    },
+    {
+      "id": "interaction_5",
+      "kind": "tap",
+      "nodeId": "node_25",
+      "label": "EV",
+      "evidence": [
+        "clickable button node_25"
+      ]
+    },
+    {
+      "id": "interaction_6",
+      "kind": "tap",
+      "nodeId": "node_61",
+      "label": "View analysis",
+      "evidence": [
+        "clickable button node_61"
+      ]
+    },
+    {
+      "id": "interaction_7",
+      "kind": "tap",
+      "nodeId": "node_62",
+      "label": "Rebalance",
+      "evidence": [
+        "clickable button node_62"
+      ]
+    }
+  ],
+  "tokens": [
+    {
+      "kind": "color",
+      "source": "color",
+      "value": "rgb(23, 32, 42)",
+      "usage": [
+        "node_1",
+        "node_2",
+        "node_3",
+        "node_4",
+        "node_5",
+        "node_6",
+        "node_8",
+        "node_9",
+        "node_10",
+        "node_11",
+        "node_13",
+        "node_14",
+        "node_18",
+        "node_20",
+        "node_21",
+        "node_26",
+        "node_27",
+        "node_28",
+        "node_30",
+        "node_31",
+        "node_32",
+        "node_34",
+        "node_35",
+        "node_40",
+        "node_41",
+        "node_42",
+        "node_44",
+        "node_45",
+        "node_50",
+        "node_51",
+        "node_52",
+        "node_54",
+        "node_55",
+        "node_60"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "color",
+      "source": "backgroundColor",
+      "value": "rgb(238, 243, 248)",
+      "usage": [
+        "node_1",
+        "node_3"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "typography",
+      "source": "font",
+      "value": "16px/normal/400/Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+      "usage": [
+        "node_1",
+        "node_2",
+        "node_3",
+        "node_4",
+        "node_5",
+        "node_6",
+        "node_9",
+        "node_10",
+        "node_11",
+        "node_14",
+        "node_18",
+        "node_21",
+        "node_26",
+        "node_27",
+        "node_30",
+        "node_31",
+        "node_34",
+        "node_37",
+        "node_40",
+        "node_41",
+        "node_44",
+        "node_47",
+        "node_50",
+        "node_51",
+        "node_54",
+        "node_57",
+        "node_60"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "radius",
+      "source": "borderRadius",
+      "value": "0px",
+      "usage": [
+        "node_1",
+        "node_2",
+        "node_3",
+        "node_4",
+        "node_5",
+        "node_6",
+        "node_7",
+        "node_8",
+        "node_11",
+        "node_12",
+        "node_13",
+        "node_14",
+        "node_15",
+        "node_16",
+        "node_17",
+        "node_18",
+        "node_19",
+        "node_20",
+        "node_21",
+        "node_27",
+        "node_28",
+        "node_29",
+        "node_30",
+        "node_31",
+        "node_32",
+        "node_33",
+        "node_34",
+        "node_35",
+        "node_36",
+        "node_37",
+        "node_38",
+        "node_39",
+        "node_40",
+        "node_41",
+        "node_42",
+        "node_43",
+        "node_44",
+        "node_45",
+        "node_46",
+        "node_47",
+        "node_48",
+        "node_49",
+        "node_50",
+        "node_51",
+        "node_52",
+        "node_53",
+        "node_54",
+        "node_55",
+        "node_56",
+        "node_57",
+        "node_58",
+        "node_59",
+        "node_60"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "border",
+      "source": "border",
+      "value": "0px none rgb(23, 32, 42)",
+      "usage": [
+        "node_1",
+        "node_2",
+        "node_3",
+        "node_4",
+        "node_5",
+        "node_6",
+        "node_8",
+        "node_9",
+        "node_11",
+        "node_13",
+        "node_14",
+        "node_18",
+        "node_20",
+        "node_21",
+        "node_28",
+        "node_31",
+        "node_32",
+        "node_34",
+        "node_35",
+        "node_41",
+        "node_42",
+        "node_44",
+        "node_45",
+        "node_50",
+        "node_51",
+        "node_52",
+        "node_54",
+        "node_55",
+        "node_60"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "spacing",
+      "source": "padding",
+      "value": "0px",
+      "usage": [
+        "node_1",
+        "node_2",
+        "node_3",
+        "node_5",
+        "node_6",
+        "node_7",
+        "node_8",
+        "node_11",
+        "node_12",
+        "node_13",
+        "node_14",
+        "node_15",
+        "node_16",
+        "node_17",
+        "node_18",
+        "node_19",
+        "node_20",
+        "node_26",
+        "node_28",
+        "node_29",
+        "node_31",
+        "node_32",
+        "node_33",
+        "node_34",
+        "node_35",
+        "node_36",
+        "node_37",
+        "node_38",
+        "node_39",
+        "node_41",
+        "node_42",
+        "node_43",
+        "node_44",
+        "node_45",
+        "node_46",
+        "node_47",
+        "node_48",
+        "node_49",
+        "node_51",
+        "node_52",
+        "node_53",
+        "node_54",
+        "node_55",
+        "node_56",
+        "node_57",
+        "node_58",
+        "node_59",
+        "node_60"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "spacing",
+      "source": "margin",
+      "value": "0px",
+      "usage": [
+        "node_1",
+        "node_2",
+        "node_3",
+        "node_4",
+        "node_6",
+        "node_8",
+        "node_9",
+        "node_10",
+        "node_11",
+        "node_12",
+        "node_14",
+        "node_15",
+        "node_18",
+        "node_19",
+        "node_22",
+        "node_23",
+        "node_24",
+        "node_25",
+        "node_26",
+        "node_27",
+        "node_28",
+        "node_29",
+        "node_30",
+        "node_31",
+        "node_32",
+        "node_34",
+        "node_35",
+        "node_37",
+        "node_38",
+        "node_40",
+        "node_41",
+        "node_42",
+        "node_44",
+        "node_45",
+        "node_47",
+        "node_48",
+        "node_50",
+        "node_51",
+        "node_52",
+        "node_54",
+        "node_55",
+        "node_57",
+        "node_58",
+        "node_61",
+        "node_62"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "spacing",
+      "source": "padding",
+      "value": "18px 18px 28px",
+      "usage": [
+        "node_4"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "spacing",
+      "source": "margin",
+      "value": "0px 0px 16px",
+      "usage": [
+        "node_5"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "color",
+      "source": "color",
+      "value": "rgb(107, 120, 134)",
+      "usage": [
+        "node_7",
+        "node_12",
+        "node_15",
+        "node_19",
+        "node_23",
+        "node_24",
+        "node_25",
+        "node_29",
+        "node_33",
+        "node_36",
+        "node_43",
+        "node_46",
+        "node_53",
+        "node_56"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "typography",
+      "source": "font",
+      "value": "12px/normal/700/Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+      "usage": [
+        "node_7",
+        "node_17"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "border",
+      "source": "border",
+      "value": "0px none rgb(107, 120, 134)",
+      "usage": [
+        "node_7",
+        "node_12",
+        "node_15",
+        "node_19",
+        "node_29",
+        "node_33",
+        "node_36",
+        "node_43",
+        "node_46",
+        "node_53",
+        "node_56"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "spacing",
+      "source": "margin",
+      "value": "0px 0px 4px",
+      "usage": [
+        "node_7"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "typography",
+      "source": "font",
+      "value": "26px/29.12px/700/Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+      "usage": [
+        "node_8"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "color",
+      "source": "backgroundColor",
+      "value": "rgb(255, 255, 255)",
+      "usage": [
+        "node_9",
+        "node_10",
+        "node_23",
+        "node_24",
+        "node_25",
+        "node_26"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "radius",
+      "source": "borderRadius",
+      "value": "8px",
+      "usage": [
+        "node_9",
+        "node_10",
+        "node_22",
+        "node_23",
+        "node_24",
+        "node_25",
+        "node_26",
+        "node_61",
+        "node_62"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "shadow",
+      "source": "boxShadow",
+      "value": "rgba(32, 48, 66, 0.08) 0px 8px 20px 0px",
+      "usage": [
+        "node_9"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "spacing",
+      "source": "padding",
+      "value": "1px 6px",
+      "usage": [
+        "node_9"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "border",
+      "source": "border",
+      "value": "1px solid rgb(216, 225, 234)",
+      "usage": [
+        "node_10",
+        "node_23",
+        "node_24",
+        "node_25",
+        "node_26"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "shadow",
+      "source": "boxShadow",
+      "value": "rgba(32, 48, 66, 0.08) 0px 8px 24px 0px",
+      "usage": [
+        "node_10",
+        "node_26"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "spacing",
+      "source": "padding",
+      "value": "16px",
+      "usage": [
+        "node_10",
+        "node_27"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "typography",
+      "source": "font",
+      "value": "12px/normal/400/Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+      "usage": [
+        "node_12",
+        "node_15",
+        "node_19",
+        "node_29",
+        "node_33",
+        "node_36",
+        "node_39",
+        "node_43",
+        "node_46",
+        "node_49",
+        "node_53",
+        "node_56",
+        "node_59"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "typography",
+      "source": "font",
+      "value": "19px/normal/700/Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+      "usage": [
+        "node_13",
+        "node_16",
+        "node_20"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "spacing",
+      "source": "margin",
+      "value": "2px 0px 0px",
+      "usage": [
+        "node_13",
+        "node_16",
+        "node_20"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "color",
+      "source": "color",
+      "value": "rgb(22, 133, 91)",
+      "usage": [
+        "node_16",
+        "node_17",
+        "node_37",
+        "node_38",
+        "node_39",
+        "node_47",
+        "node_48",
+        "node_49"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "border",
+      "source": "border",
+      "value": "0px none rgb(22, 133, 91)",
+      "usage": [
+        "node_16",
+        "node_17",
+        "node_37",
+        "node_38",
+        "node_39",
+        "node_47",
+        "node_48",
+        "node_49"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "spacing",
+      "source": "margin",
+      "value": "3px 0px 0px",
+      "usage": [
+        "node_17",
+        "node_33",
+        "node_36",
+        "node_39",
+        "node_43",
+        "node_46",
+        "node_49",
+        "node_53",
+        "node_56",
+        "node_59"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "spacing",
+      "source": "padding",
+      "value": "0px 0px 2px",
+      "usage": [
+        "node_21"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "spacing",
+      "source": "margin",
+      "value": "16px 0px",
+      "usage": [
+        "node_21"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "color",
+      "source": "color",
+      "value": "rgb(23, 107, 135)",
+      "usage": [
+        "node_22",
+        "node_61"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "color",
+      "source": "backgroundColor",
+      "value": "rgb(216, 238, 243)",
+      "usage": [
+        "node_22",
+        "node_61"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "typography",
+      "source": "font",
+      "value": "13px/normal/700/Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+      "usage": [
+        "node_22",
+        "node_23",
+        "node_24",
+        "node_25"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "border",
+      "source": "border",
+      "value": "1px solid rgb(23, 107, 135)",
+      "usage": [
+        "node_22"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "spacing",
+      "source": "padding",
+      "value": "0px 12px",
+      "usage": [
+        "node_22",
+        "node_23",
+        "node_24",
+        "node_25"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "typography",
+      "source": "font",
+      "value": "17px/normal/700/Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+      "usage": [
+        "node_28"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "spacing",
+      "source": "padding",
+      "value": "14px 16px",
+      "usage": [
+        "node_30",
+        "node_40",
+        "node_50"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "typography",
+      "source": "font",
+      "value": "15px/normal/700/Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+      "usage": [
+        "node_32",
+        "node_35",
+        "node_38",
+        "node_42",
+        "node_45",
+        "node_48",
+        "node_52",
+        "node_55",
+        "node_58"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "color",
+      "source": "color",
+      "value": "rgb(196, 69, 60)",
+      "usage": [
+        "node_57",
+        "node_58",
+        "node_59"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "border",
+      "source": "border",
+      "value": "0px none rgb(196, 69, 60)",
+      "usage": [
+        "node_57",
+        "node_58",
+        "node_59"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "spacing",
+      "source": "margin",
+      "value": "16px 0px 0px",
+      "usage": [
+        "node_60"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "typography",
+      "source": "font",
+      "value": "16px/normal/700/Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+      "usage": [
+        "node_61"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "border",
+      "source": "border",
+      "value": "0px none rgb(23, 107, 135)",
+      "usage": [
+        "node_61"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "spacing",
+      "source": "padding",
+      "value": "0px 14px",
+      "usage": [
+        "node_61"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "color",
+      "source": "color",
+      "value": "rgb(255, 255, 255)",
+      "usage": [
+        "node_62"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "color",
+      "source": "backgroundColor",
+      "value": "rgb(23, 107, 135)",
+      "usage": [
+        "node_62"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "typography",
+      "source": "font",
+      "value": "16px/normal/800/Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+      "usage": [
+        "node_62"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "border",
+      "source": "border",
+      "value": "0px none rgb(255, 255, 255)",
+      "usage": [
+        "node_62"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "kind": "spacing",
+      "source": "padding",
+      "value": "0px 16px",
+      "usage": [
+        "node_62"
+      ],
+      "confidence": "medium"
+    }
+  ],
+  "capabilities": {
+    "runtimeMetadata": false,
+    "pageList": false,
+    "tabTraversal": false,
+    "assetExtraction": false,
+    "needsOcr": false,
+    "warnings": []
+  },
+  "warnings": [],
+  "mismatches": [
+    {
+      "kind": "target-convention",
+      "severity": "info",
+      "message": "Target suggested module (account) differs from source module (asset).",
+      "evidence": [
+        "target.suggestedModule",
+        "source.module"
+      ]
+    }
+  ],
+  "artifacts": {
+    "rootDir": "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/output/simple",
+    "pageCanonical": "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/output/simple/page-canonical.json",
+    "pageDebugIndex": "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/output/simple/page-debug-index.json",
+    "uiBuildPlan": "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/output/simple/ui-build-plan.json",
+    "uiBuildReview": "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/output/simple/ui-build-review.md",
+    "screenshots": [
+      {
+        "name": "full-page",
+        "path": "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/output/simple/screenshots/full-page.png",
+        "width": 390,
+        "height": 844,
+        "kind": "full-page"
+      }
+    ]
+  },
+  "provenance": [
+    {
+      "source": "source-analysis",
+      "fields": [
+        "sourceFacts",
+        "page.title",
+        "page.route",
+        "semantic structure",
+        "state space",
+        "interactions"
+      ]
+    },
+    {
+      "source": "runtime-capture",
+      "fields": [
+        "runtimeFacts",
+        "sections",
+        "nodes",
+        "text",
+        "tokens",
+        "assets",
+        "interactions",
+        "screenshots"
+      ]
+    },
+    {
+      "source": "target-inspect",
+      "fields": [
+        "targetFacts",
+        "module",
+        "routes",
+        "theme",
+        "components",
+        "examples"
+      ]
+    },
+    {
+      "source": "page-merge",
+      "fields": [
+        "fieldPriority",
+        "mismatches",
+        "manualConfirmations"
+      ]
+    }
+  ],
+  "schemaVersion": 3,
+  "sourceFacts": {
+    "adapter": "vue3-prototype",
+    "root": "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/source-vue3",
+    "route": "/prototype/asset/holding-list",
+    "vuePath": "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/source-vue3/prototype/src/views/prototype/asset/HoldingList.vue",
+    "analyzedAt": "2026-05-17T11:26:24.134Z",
+    "analysis": {
+      "prototypeRoot": "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/source-vue3",
+      "pageType": "prototype",
+      "route": "/prototype/asset/holding-list",
+      "vuePath": "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/source-vue3/prototype/src/views/prototype/asset/HoldingList.vue",
+      "vueRelativePath": "prototype/src/views/prototype/asset/HoldingList.vue",
+      "screenId": "asset.holding-list",
+      "module": "asset",
+      "moduleLabel": "asset",
+      "label": "持仓列表",
+      "title": "Portfolio Holdings",
+      "view": "asset/HoldingList.vue",
+      "key": "asset_holding_list",
+      "name": "AssetHoldingList",
+      "status": "ready",
+      "completed": true,
+      "owner": "ProtoBridge Example",
+      "changelog": [
+        {
+          "date": "2026-05-17"
+        }
+      ],
+      "sourceCode": "<template>\n  <main class=\"phone-page holding-page\">\n    <section class=\"page-shell\">\n      <header class=\"top-bar holding-header\">\n        <div>\n          <p class=\"eyebrow\">Asset Center</p>\n          <h1 class=\"page-title\">Portfolio Holdings</h1>\n        </div>\n        <button class=\"icon-button\" aria-label=\"Refresh holdings\" @click=\"store.refreshPage\">↻</button>\n      </header>\n\n      <section class=\"panel summary-card\">\n        <div>\n          <p class=\"summary-label\">Market value</p>\n          <strong>{{ store.holdingSummary.marketValue }}</strong>\n        </div>\n        <div>\n          <p class=\"summary-label\">Today P&L</p>\n          <strong class=\"positive\">{{ store.holdingSummary.dayPnl }}</strong>\n          <span class=\"rate\">{{ store.holdingSummary.dayPnlRate }}</span>\n        </div>\n        <div>\n          <p class=\"summary-label\">Risk</p>\n          <strong>{{ store.holdingSummary.riskLevel }}</strong>\n        </div>\n      </section>\n\n      <section class=\"filter-row\" aria-label=\"Holding filters\">\n        <button\n          v-for=\"filter in filters\"\n          :key=\"filter\"\n          class=\"filter-chip\"\n          :class=\"{ active: store.holdingFilter === filter }\"\n          @click=\"store.setHoldingFilter(filter)\"\n        >\n          {{ filter }}\n        </button>\n      </section>\n\n      <section class=\"panel holding-list\">\n        <div class=\"list-header\">\n          <h2>Positions</h2>\n          <span>{{ store.filteredHoldings.length }} items</span>\n        </div>\n\n        <div v-if=\"store.loading\" class=\"loading-state\">Refreshing positions...</div>\n        <div v-else-if=\"store.filteredHoldings.length === 0\" class=\"empty-state\">No holdings match current filter</div>\n        <article v-for=\"item in store.filteredHoldings\" v-else :key=\"item.symbol\" class=\"holding-row\">\n          <div class=\"symbol-block\">\n            <strong>{{ item.symbol }}</strong>\n            <span>{{ item.name }}</span>\n          </div>\n          <div class=\"amount-block\">\n            <strong>{{ item.amount }}</strong>\n            <span>{{ item.shares }} shares</span>\n          </div>\n          <div class=\"pnl-block\" :class=\"item.tone\">\n            <strong>{{ item.pnl }}</strong>\n            <span>{{ item.pnlRate }}</span>\n          </div>\n        </article>\n      </section>\n\n      <footer class=\"bottom-actions\">\n        <button class=\"text-button\" @click=\"store.pushPage('/prototype/asset/pnl-analysis', { source: 'holding-list' })\">\n          View analysis\n        </button>\n        <button class=\"primary-button\">Rebalance</button>\n      </footer>\n    </section>\n  </main>\n</template>\n\n<script setup>\nimport { useRoute } from 'vue-router';\nimport { onMounted } from 'vue';\nimport { useAssetPrototypeStore } from '../../../stores/assetPrototype.js';\n\nconst route = useRoute();\nconst store = useAssetPrototypeStore();\nconst filters = ['All', 'Semiconductor', 'Consumer Electronics', 'EV'];\n\nonMounted(() => {\n  if (route.query.sector) {\n    store.setHoldingFilter(String(route.query.sector));\n  }\n});\n</script>\n\n<style scoped>\n.holding-page {\n  background:\n    linear-gradient(180deg, rgba(23, 107, 135, 0.12), rgba(238, 243, 248, 0) 240px),\n    var(--pb-bg);\n}\n\n.holding-header {\n  align-items: flex-start;\n}\n\n.summary-card {\n  display: grid;\n  grid-template-columns: 1.35fr 1fr 0.8fr;\n  gap: 12px;\n  padding: 16px;\n}\n\n.summary-card strong {\n  display: block;\n  margin-top: 2px;\n  font-size: 19px;\n}\n\n.summary-label {\n  margin: 0;\n  color: var(--pb-muted);\n  font-size: 12px;\n}\n\n.rate {\n  display: block;\n  margin-top: 3px;\n  color: var(--pb-positive);\n  font-size: 12px;\n  font-weight: 700;\n}\n\n.filter-row {\n  display: flex;\n  gap: 8px;\n  margin: 16px 0;\n  overflow-x: auto;\n  padding-bottom: 2px;\n}\n\n.filter-chip {\n  flex: 0 0 auto;\n  min-height: 34px;\n  padding: 0 12px;\n  border: 1px solid var(--pb-border);\n  border-radius: 8px;\n  background: var(--pb-surface);\n  color: var(--pb-muted);\n  font-size: 13px;\n  font-weight: 700;\n}\n\n.filter-chip.active {\n  border-color: var(--pb-primary);\n  background: var(--pb-primary-soft);\n  color: var(--pb-primary);\n}\n\n.holding-list {\n  overflow: hidden;\n}\n\n.list-header {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 16px;\n  border-bottom: 1px solid var(--pb-border);\n}\n\n.list-header h2 {\n  margin: 0;\n  font-size: 17px;\n}\n\n.list-header span {\n  color: var(--pb-muted);\n  font-size: 12px;\n}\n\n.holding-row {\n  display: grid;\n  grid-template-columns: 1.2fr 1fr 0.8fr;\n  gap: 10px;\n  align-items: center;\n  padding: 14px 16px;\n  border-bottom: 1px solid var(--pb-border);\n}\n\n.holding-row:last-child {\n  border-bottom: 0;\n}\n\n.symbol-block,\n.amount-block,\n.pnl-block {\n  min-width: 0;\n}\n\n.symbol-block strong,\n.amount-block strong,\n.pnl-block strong {\n  display: block;\n  font-size: 15px;\n}\n\n.symbol-block span,\n.amount-block span,\n.pnl-block span {\n  display: block;\n  margin-top: 3px;\n  color: var(--pb-muted);\n  font-size: 12px;\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n\n.pnl-block {\n  text-align: right;\n}\n\n.pnl-block.positive strong,\n.pnl-block.positive span {\n  color: var(--pb-positive);\n}\n\n.pnl-block.negative strong,\n.pnl-block.negative span {\n  color: var(--pb-negative);\n}\n\n.loading-state,\n.empty-state {\n  padding: 32px 16px;\n  color: var(--pb-muted);\n  text-align: center;\n}\n\n.bottom-actions {\n  display: grid;\n  grid-template-columns: 1fr 1fr;\n  gap: 10px;\n  margin-top: 16px;\n}\n</style>\n",
+      "sfc": {
+        "template": "<main class=\"phone-page holding-page\">\n    <section class=\"page-shell\">\n      <header class=\"top-bar holding-header\">\n        <div>\n          <p class=\"eyebrow\">Asset Center</p>\n          <h1 class=\"page-title\">Portfolio Holdings</h1>\n        </div>\n        <button class=\"icon-button\" aria-label=\"Refresh holdings\" @click=\"store.refreshPage\">↻</button>\n      </header>\n\n      <section class=\"panel summary-card\">\n        <div>\n          <p class=\"summary-label\">Market value</p>\n          <strong>{{ store.holdingSummary.marketValue }}</strong>\n        </div>\n        <div>\n          <p class=\"summary-label\">Today P&L</p>\n          <strong class=\"positive\">{{ store.holdingSummary.dayPnl }}</strong>\n          <span class=\"rate\">{{ store.holdingSummary.dayPnlRate }}</span>\n        </div>\n        <div>\n          <p class=\"summary-label\">Risk</p>\n          <strong>{{ store.holdingSummary.riskLevel }}</strong>\n        </div>\n      </section>\n\n      <section class=\"filter-row\" aria-label=\"Holding filters\">\n        <button\n          v-for=\"filter in filters\"\n          :key=\"filter\"\n          class=\"filter-chip\"\n          :class=\"{ active: store.holdingFilter === filter }\"\n          @click=\"store.setHoldingFilter(filter)\"\n        >\n          {{ filter }}\n        </button>\n      </section>\n\n      <section class=\"panel holding-list\">\n        <div class=\"list-header\">\n          <h2>Positions</h2>\n          <span>{{ store.filteredHoldings.length }} items</span>\n        </div>\n\n        <div v-if=\"store.loading\" class=\"loading-state\">Refreshing positions...</div>\n        <div v-else-if=\"store.filteredHoldings.length === 0\" class=\"empty-state\">No holdings match current filter</div>\n        <article v-for=\"item in store.filteredHoldings\" v-else :key=\"item.symbol\" class=\"holding-row\">\n          <div class=\"symbol-block\">\n            <strong>{{ item.symbol }}</strong>\n            <span>{{ item.name }}</span>\n          </div>\n          <div class=\"amount-block\">\n            <strong>{{ item.amount }}</strong>\n            <span>{{ item.shares }} shares</span>\n          </div>\n          <div class=\"pnl-block\" :class=\"item.tone\">\n            <strong>{{ item.pnl }}</strong>\n            <span>{{ item.pnlRate }}</span>\n          </div>\n        </article>\n      </section>\n\n      <footer class=\"bottom-actions\">\n        <button class=\"text-button\" @click=\"store.pushPage('/prototype/asset/pnl-analysis', { source: 'holding-list' })\">\n          View analysis\n        </button>\n        <button class=\"primary-button\">Rebalance</button>\n      </footer>\n    </section>\n  </main>",
+        "script": "import { useRoute } from 'vue-router';\nimport { onMounted } from 'vue';\nimport { useAssetPrototypeStore } from '../../../stores/assetPrototype.js';\n\nconst route = useRoute();\nconst store = useAssetPrototypeStore();\nconst filters = ['All', 'Semiconductor', 'Consumer Electronics', 'EV'];\n\nonMounted(() => {\n  if (route.query.sector) {\n    store.setHoldingFilter(String(route.query.sector));\n  }\n});",
+        "styleBlocks": [
+          ".holding-page {\n  background:\n    linear-gradient(180deg, rgba(23, 107, 135, 0.12), rgba(238, 243, 248, 0) 240px),\n    var(--pb-bg);\n}\n\n.holding-header {\n  align-items: flex-start;\n}\n\n.summary-card {\n  display: grid;\n  grid-template-columns: 1.35fr 1fr 0.8fr;\n  gap: 12px;\n  padding: 16px;\n}\n\n.summary-card strong {\n  display: block;\n  margin-top: 2px;\n  font-size: 19px;\n}\n\n.summary-label {\n  margin: 0;\n  color: var(--pb-muted);\n  font-size: 12px;\n}\n\n.rate {\n  display: block;\n  margin-top: 3px;\n  color: var(--pb-positive);\n  font-size: 12px;\n  font-weight: 700;\n}\n\n.filter-row {\n  display: flex;\n  gap: 8px;\n  margin: 16px 0;\n  overflow-x: auto;\n  padding-bottom: 2px;\n}\n\n.filter-chip {\n  flex: 0 0 auto;\n  min-height: 34px;\n  padding: 0 12px;\n  border: 1px solid var(--pb-border);\n  border-radius: 8px;\n  background: var(--pb-surface);\n  color: var(--pb-muted);\n  font-size: 13px;\n  font-weight: 700;\n}\n\n.filter-chip.active {\n  border-color: var(--pb-primary);\n  background: var(--pb-primary-soft);\n  color: var(--pb-primary);\n}\n\n.holding-list {\n  overflow: hidden;\n}\n\n.list-header {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 16px;\n  border-bottom: 1px solid var(--pb-border);\n}\n\n.list-header h2 {\n  margin: 0;\n  font-size: 17px;\n}\n\n.list-header span {\n  color: var(--pb-muted);\n  font-size: 12px;\n}\n\n.holding-row {\n  display: grid;\n  grid-template-columns: 1.2fr 1fr 0.8fr;\n  gap: 10px;\n  align-items: center;\n  padding: 14px 16px;\n  border-bottom: 1px solid var(--pb-border);\n}\n\n.holding-row:last-child {\n  border-bottom: 0;\n}\n\n.symbol-block,\n.amount-block,\n.pnl-block {\n  min-width: 0;\n}\n\n.symbol-block strong,\n.amount-block strong,\n.pnl-block strong {\n  display: block;\n  font-size: 15px;\n}\n\n.symbol-block span,\n.amount-block span,\n.pnl-block span {\n  display: block;\n  margin-top: 3px;\n  color: var(--pb-muted);\n  font-size: 12px;\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n\n.pnl-block {\n  text-align: right;\n}\n\n.pnl-block.positive strong,\n.pnl-block.positive span {\n  color: var(--pb-positive);\n}\n\n.pnl-block.negative strong,\n.pnl-block.negative span {\n  color: var(--pb-negative);\n}\n\n.loading-state,\n.empty-state {\n  padding: 32px 16px;\n  color: var(--pb-muted);\n  text-align: center;\n}\n\n.bottom-actions {\n  display: grid;\n  grid-template-columns: 1fr 1fr;\n  gap: 10px;\n  margin-top: 16px;\n}"
+        ],
+        "sections": [
+          {
+            "name": "PortfolioHoldingsAppBar",
+            "kind": "app-bar",
+            "selector": ".top-bar",
+            "title": "Portfolio Holdings",
+            "evidence": "header class=\"top-bar holding-header\" title=\"Portfolio Holdings\""
+          },
+          {
+            "name": "PanelSection",
+            "kind": "section",
+            "selector": ".panel",
+            "evidence": "section class=\"panel summary-card\""
+          },
+          {
+            "name": "PositionsList",
+            "kind": "list",
+            "selector": ".panel",
+            "title": "Positions",
+            "evidence": "section class=\"panel holding-list\" title=\"Positions\""
+          },
+          {
+            "name": "PositionsAppBar",
+            "kind": "app-bar",
+            "selector": ".list-header",
+            "title": "Positions",
+            "evidence": "div class=\"list-header\" title=\"Positions\""
+          },
+          {
+            "name": "HoldingRowList",
+            "kind": "list",
+            "selector": ".holding-row",
+            "evidence": "article class=\"holding-row\""
+          },
+          {
+            "name": "PortfolioHoldingsList",
+            "kind": "list",
+            "selector": "div",
+            "title": "Portfolio Holdings",
+            "evidence": "div title=\"Portfolio Holdings\""
+          }
+        ],
+        "interactions": [
+          {
+            "kind": "click",
+            "target": "store.refreshPage",
+            "evidence": "@click=\"store.refreshPage\""
+          },
+          {
+            "kind": "click",
+            "target": "store.setHoldingFilter(filter)",
+            "evidence": "@click=\"store.setHoldingFilter(filter)\""
+          },
+          {
+            "kind": "click",
+            "target": "store.pushPage('/prototype/asset/pnl-analysis', { source: 'holding-list' })",
+            "evidence": "@click=\"store.pushPage('/prototype/asset/pnl-analysis', { source: 'holding-list' })\""
+          },
+          {
+            "kind": "conditional",
+            "target": "store.loading",
+            "evidence": "v-if=\"store.loading\""
+          },
+          {
+            "kind": "loop",
+            "target": "filter in filters",
+            "evidence": "v-for=\"filter in filters\""
+          },
+          {
+            "kind": "loop",
+            "target": "item in store.filteredHoldings",
+            "evidence": "v-for=\"item in store.filteredHoldings\""
+          }
+        ],
+        "components": [
+          {
+            "name": "PortfolioHoldingsAppBar",
+            "role": "header",
+            "selector": ".top-bar",
+            "title": "Portfolio Holdings",
+            "dataHints": [
+              "holdings list"
+            ],
+            "interactionHints": [
+              "@click=\"store.setHoldingFilter(filter)\"",
+              "@click=\"store.pushPage('/prototype/asset/pnl-analysis', { source: 'holding-list' })\"",
+              "v-for=\"item in store.filteredHoldings\""
+            ],
+            "tokenHints": [],
+            "layoutHints": [],
+            "evidence": "header class=\"top-bar holding-header\" title=\"Portfolio Holdings\""
+          },
+          {
+            "name": "PanelSection",
+            "role": "content-section",
+            "selector": ".panel",
+            "dataHints": [],
+            "interactionHints": [],
+            "tokenHints": [],
+            "layoutHints": [],
+            "evidence": "section class=\"panel summary-card\""
+          },
+          {
+            "name": "PositionsList",
+            "role": "list",
+            "selector": ".panel",
+            "title": "Positions",
+            "dataHints": [],
+            "interactionHints": [],
+            "tokenHints": [],
+            "layoutHints": [],
+            "evidence": "section class=\"panel holding-list\" title=\"Positions\""
+          },
+          {
+            "name": "PositionsAppBar",
+            "role": "header",
+            "selector": ".list-header",
+            "title": "Positions",
+            "dataHints": [],
+            "interactionHints": [],
+            "tokenHints": [
+              "border-bottom: --pb-border",
+              "color: --pb-muted"
+            ],
+            "layoutHints": [
+              ".list-header { display: flex; align-items: center; justify-content: space-between }",
+              ".list-header { padding: 16px }",
+              ".list-header h2 { margin: 0 }"
+            ],
+            "evidence": "div class=\"list-header\" title=\"Positions\""
+          },
+          {
+            "name": "HoldingRowList",
+            "role": "list",
+            "selector": ".holding-row",
+            "dataHints": [
+              "holdings list"
+            ],
+            "interactionHints": [
+              "@click=\"store.setHoldingFilter(filter)\"",
+              "@click=\"store.pushPage('/prototype/asset/pnl-analysis', { source: 'holding-list' })\"",
+              "v-for=\"item in store.filteredHoldings\""
+            ],
+            "tokenHints": [
+              "border-bottom: --pb-border"
+            ],
+            "layoutHints": [
+              ".holding-row { display: grid; gap: 10px; align-items: center }",
+              ".holding-row { display: grid; grid-template-columns: 1.2fr 1fr 0.8fr; gap: 10px }",
+              ".holding-row { gap: 10px; padding: 14px 16px }"
+            ],
+            "evidence": "article class=\"holding-row\""
+          },
+          {
+            "name": "PortfolioHoldingsList",
+            "role": "list",
+            "selector": "div",
+            "title": "Portfolio Holdings",
+            "dataHints": [
+              "holdings list"
+            ],
+            "interactionHints": [
+              "@click=\"store.setHoldingFilter(filter)\"",
+              "@click=\"store.pushPage('/prototype/asset/pnl-analysis', { source: 'holding-list' })\"",
+              "v-for=\"item in store.filteredHoldings\""
+            ],
+            "tokenHints": [],
+            "layoutHints": [],
+            "evidence": "div title=\"Portfolio Holdings\""
+          }
+        ],
+        "state": [
+          {
+            "name": "filters",
+            "kind": "constant",
+            "category": "mock-data",
+            "evidence": "filters = ['All', 'Semiconductor', 'Consumer Electronics', 'EV']",
+            "migrationHint": "不要硬编码到 Widget；确认真实接口、模型字段或临时 fixture。"
+          }
+        ],
+        "routes": [
+          {
+            "action": "navigate",
+            "target": "/prototype/asset/pnl-analysis",
+            "params": "{ source: 'holding-list' }",
+            "evidence": "pushPage('/prototype/asset/pnl-analysis', { source: 'holding-list' })",
+            "migrationHint": "映射到 Get.toNamed/AppRoutes，确认 /prototype/asset/pnl-analysis 对应 Flutter route 和参数。"
+          },
+          {
+            "action": "read-query",
+            "target": "sector",
+            "evidence": "route.query.sector",
+            "migrationHint": "从 Get.parameters/Get.arguments 读取 sector，确认默认值和来源页面。"
+          }
+        ],
+        "lifecycle": [
+          {
+            "hook": "onMounted",
+            "target": "route query initialization",
+            "evidence": "onMounted(() => { if (route.query.sector) { store.setHoldingFilter(String(route.query.sector)); }",
+            "migrationHint": "迁移到 Controller.onReady 或页面首帧回调；涉及滚动需绑定 ScrollController 后执行。"
+          }
+        ],
+        "layout": [
+          {
+            "selector": ".holding-header",
+            "kind": "flex",
+            "evidence": ".holding-header { align-items: flex-start }",
+            "migrationHint": "迁移为 Row/Column/Flex，确认主轴、间距和对齐。"
+          },
+          {
+            "selector": ".summary-card",
+            "kind": "grid",
+            "evidence": ".summary-card { display: grid; grid-template-columns: 1.35fr 1fr 0.8fr; gap: 12px }",
+            "migrationHint": "迁移为 GridView/Wrap 或自定义布局。"
+          },
+          {
+            "selector": ".summary-card",
+            "kind": "spacing",
+            "evidence": ".summary-card { gap: 12px; padding: 16px }",
+            "migrationHint": "将间距抽成 EdgeInsets/SizedBox，优先复用设计间距 token。"
+          },
+          {
+            "selector": ".summary-card strong",
+            "kind": "spacing",
+            "evidence": ".summary-card strong { margin-top: 2px }",
+            "migrationHint": "将间距抽成 EdgeInsets/SizedBox，优先复用设计间距 token。"
+          },
+          {
+            "selector": ".summary-label",
+            "kind": "spacing",
+            "evidence": ".summary-label { margin: 0 }",
+            "migrationHint": "将间距抽成 EdgeInsets/SizedBox，优先复用设计间距 token。"
+          },
+          {
+            "selector": ".rate",
+            "kind": "spacing",
+            "evidence": ".rate { margin-top: 3px }",
+            "migrationHint": "将间距抽成 EdgeInsets/SizedBox，优先复用设计间距 token。"
+          },
+          {
+            "selector": ".filter-row",
+            "kind": "scroll",
+            "evidence": ".filter-row { overflow-x: auto }",
+            "migrationHint": "使用 SingleChildScrollView/ListView/CustomScrollView，并保留滚动方向。"
+          },
+          {
+            "selector": ".filter-row",
+            "kind": "flex",
+            "evidence": ".filter-row { display: flex; gap: 8px }",
+            "migrationHint": "迁移为 Row/Column/Flex，确认主轴、间距和对齐。"
+          },
+          {
+            "selector": ".filter-row",
+            "kind": "spacing",
+            "evidence": ".filter-row { gap: 8px; margin: 16px 0; padding-bottom: 2px }",
+            "migrationHint": "将间距抽成 EdgeInsets/SizedBox，优先复用设计间距 token。"
+          },
+          {
+            "selector": ".filter-chip",
+            "kind": "spacing",
+            "evidence": ".filter-chip { padding: 0 12px }",
+            "migrationHint": "将间距抽成 EdgeInsets/SizedBox，优先复用设计间距 token。"
+          },
+          {
+            "selector": ".list-header",
+            "kind": "flex",
+            "evidence": ".list-header { display: flex; align-items: center; justify-content: space-between }",
+            "migrationHint": "迁移为 Row/Column/Flex，确认主轴、间距和对齐。"
+          },
+          {
+            "selector": ".list-header",
+            "kind": "spacing",
+            "evidence": ".list-header { padding: 16px }",
+            "migrationHint": "将间距抽成 EdgeInsets/SizedBox，优先复用设计间距 token。"
+          },
+          {
+            "selector": ".list-header h2",
+            "kind": "spacing",
+            "evidence": ".list-header h2 { margin: 0 }",
+            "migrationHint": "将间距抽成 EdgeInsets/SizedBox，优先复用设计间距 token。"
+          },
+          {
+            "selector": ".holding-row",
+            "kind": "flex",
+            "evidence": ".holding-row { display: grid; gap: 10px; align-items: center }",
+            "migrationHint": "迁移为 Row/Column/Flex，确认主轴、间距和对齐。"
+          },
+          {
+            "selector": ".holding-row",
+            "kind": "grid",
+            "evidence": ".holding-row { display: grid; grid-template-columns: 1.2fr 1fr 0.8fr; gap: 10px }",
+            "migrationHint": "迁移为 GridView/Wrap 或自定义布局。"
+          },
+          {
+            "selector": ".holding-row",
+            "kind": "spacing",
+            "evidence": ".holding-row { gap: 10px; padding: 14px 16px }",
+            "migrationHint": "将间距抽成 EdgeInsets/SizedBox，优先复用设计间距 token。"
+          },
+          {
+            "selector": ".symbol-block span, .amount-block span, .pnl-block span",
+            "kind": "spacing",
+            "evidence": ".symbol-block span, .amount-block span, .pnl-block span { margin-top: 3px }",
+            "migrationHint": "将间距抽成 EdgeInsets/SizedBox，优先复用设计间距 token。"
+          },
+          {
+            "selector": ".loading-state, .empty-state",
+            "kind": "spacing",
+            "evidence": ".loading-state, .empty-state { padding: 32px 16px }",
+            "migrationHint": "将间距抽成 EdgeInsets/SizedBox，优先复用设计间距 token。"
+          }
+        ],
+        "assets": [
+          {
+            "kind": "icon",
+            "selector": ".icon-button",
+            "evidence": "class=\"icon-button\"",
+            "migrationHint": "确认是否已有 CommonSvg/IconFont/本地 asset 可复用。"
+          }
+        ],
+        "styleTokens": [
+          {
+            "selector": ".holding-page",
+            "property": "background",
+            "token": "--pb-bg",
+            "evidence": ".holding-page { background: linear-gradient(180deg, rgba(23, 107, 135, 0.12), rgba(238, 243, 248, 0) 240px), var(--pb-bg) }"
+          },
+          {
+            "selector": ".summary-label",
+            "property": "color",
+            "token": "--pb-muted",
+            "evidence": ".summary-label { color: var(--pb-muted) }"
+          },
+          {
+            "selector": ".rate",
+            "property": "color",
+            "token": "--pb-positive",
+            "evidence": ".rate { color: var(--pb-positive) }"
+          },
+          {
+            "selector": ".filter-chip",
+            "property": "border",
+            "token": "--pb-border",
+            "evidence": ".filter-chip { border: 1px solid var(--pb-border) }"
+          },
+          {
+            "selector": ".filter-chip",
+            "property": "background",
+            "token": "--pb-surface",
+            "evidence": ".filter-chip { background: var(--pb-surface) }"
+          },
+          {
+            "selector": ".filter-chip",
+            "property": "color",
+            "token": "--pb-muted",
+            "evidence": ".filter-chip { color: var(--pb-muted) }"
+          },
+          {
+            "selector": ".filter-chip.active",
+            "property": "border-color",
+            "token": "--pb-primary",
+            "evidence": ".filter-chip.active { border-color: var(--pb-primary) }"
+          },
+          {
+            "selector": ".filter-chip.active",
+            "property": "background",
+            "token": "--pb-primary-soft",
+            "evidence": ".filter-chip.active { background: var(--pb-primary-soft) }"
+          },
+          {
+            "selector": ".filter-chip.active",
+            "property": "color",
+            "token": "--pb-primary",
+            "evidence": ".filter-chip.active { color: var(--pb-primary) }"
+          },
+          {
+            "selector": ".list-header",
+            "property": "border-bottom",
+            "token": "--pb-border",
+            "evidence": ".list-header { border-bottom: 1px solid var(--pb-border) }"
+          },
+          {
+            "selector": ".list-header span",
+            "property": "color",
+            "token": "--pb-muted",
+            "evidence": ".list-header span { color: var(--pb-muted) }"
+          },
+          {
+            "selector": ".holding-row",
+            "property": "border-bottom",
+            "token": "--pb-border",
+            "evidence": ".holding-row { border-bottom: 1px solid var(--pb-border) }"
+          },
+          {
+            "selector": ".symbol-block span, .amount-block span, .pnl-block span",
+            "property": "color",
+            "token": "--pb-muted",
+            "evidence": ".symbol-block span, .amount-block span, .pnl-block span { color: var(--pb-muted) }"
+          },
+          {
+            "selector": ".pnl-block.positive strong, .pnl-block.positive span",
+            "property": "color",
+            "token": "--pb-positive",
+            "evidence": ".pnl-block.positive strong, .pnl-block.positive span { color: var(--pb-positive) }"
+          },
+          {
+            "selector": ".pnl-block.negative strong, .pnl-block.negative span",
+            "property": "color",
+            "token": "--pb-negative",
+            "evidence": ".pnl-block.negative strong, .pnl-block.negative span { color: var(--pb-negative) }"
+          },
+          {
+            "selector": ".loading-state, .empty-state",
+            "property": "color",
+            "token": "--pb-muted",
+            "evidence": ".loading-state, .empty-state { color: var(--pb-muted) }"
+          }
+        ],
+        "fixedBottom": false
+      },
+      "notes": "# Portfolio Holdings Notes\n\n- Simple reconstruction page for common asset list flows.\n- The summary card maps to Flutter metric widgets and uses stable asset vocabulary.\n- The bottom actions intentionally include a navigation hint to the complex analysis page.\n- Empty and loading states should reuse target common widgets instead of bespoke page-only code.\n",
+      "notesPath": "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/source-vue3/prototype/notes/asset/HoldingList.md",
+      "i18n": {
+        "title": "Portfolio Holdings",
+        "subtitle": "Realtime snapshot for long-term positions",
+        "empty": "No holdings match current filter",
+        "actions": {
+          "rebalance": "Rebalance",
+          "detail": "View detail"
+        }
+      },
+      "i18nPath": "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/source-vue3/prototype/src/i18n/prototype/asset.holding-list.json",
+      "config": {
+        "screenId": "asset.holding-list",
+        "path": "/prototype/asset/holding-list",
+        "view": "asset/HoldingList.vue",
+        "label": "持仓列表",
+        "title": "Portfolio Holdings",
+        "key": "asset_holding_list",
+        "name": "AssetHoldingList",
+        "status": "ready",
+        "completed": true,
+        "owner": "ProtoBridge Example",
+        "changelog": [
+          {
+            "date": "2026-05-17",
+            "text": "Add a compact list page for low-complexity reconstruction evidence."
+          }
+        ]
+      },
+      "warnings": []
+    },
+    "warnings": []
+  },
+  "runtimeFacts": {
+    "url": "http://127.0.0.1:5173/#/prototype/asset/holding-list",
+    "capturedAt": "2026-05-17T11:26:23.204Z",
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 2
+    },
+    "screenshotPaths": [
+      "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/output/simple/screenshots/full-page.png"
+    ],
+    "sectionCount": 12,
+    "nodeCount": 62,
+    "textCount": 37,
+    "assetCount": 0,
+    "interactionCount": 7,
+    "warnings": []
+  },
+  "screenshotFacts": {
+    "screenshotPaths": [
+      "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/output/simple/screenshots/full-page.png"
+    ],
+    "warnings": []
+  },
+  "targetFacts": {
+    "adapter": "flutter-app",
+    "root": "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/target-flutter",
+    "inspectedAt": "2026-05-17T11:26:24.134Z",
+    "analysis": {
+      "platform": "flutter",
+      "flutterRoot": "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/target-flutter",
+      "suggestedModule": "account",
+      "existingModules": [
+        "account"
+      ],
+      "reusableWidgets": [
+        "CommonAppBar",
+        "CommonButton",
+        "CommonEmpty",
+        "CommonLoading"
+      ],
+      "routesFiles": [
+        "lib/app/routes/app_routes.dart",
+        "lib/app/routes/app_pages.dart"
+      ],
+      "translationFiles": [
+        "lib/app/translations/en_US.dart",
+        "lib/app/translations/zh_CN.dart"
+      ],
+      "assetDirectories": [
+        "assets/images",
+        "assets/svg",
+        "assets/json"
+      ],
+      "similarFiles": [
+        "lib/app/modules/account/presentation/pages/holding_list_page.dart",
+        "lib/app/modules/account/application/asset_cubit.dart",
+        "lib/app/modules/account/application/asset_state.dart",
+        "lib/app/modules/account/data/asset_repository.dart",
+        "lib/app/modules/account/domain/asset_models.dart",
+        "lib/app/modules/account/presentation/widgets/asset_summary_card.dart",
+        "lib/app/modules/account/presentation/widgets/holding_tile.dart",
+        "lib/app/modules/account/presentation/pages/pnl_analysis_page.dart",
+        "lib/app/modules/account/presentation/widgets/filter_chip_bar.dart",
+        "lib/app/modules/account/presentation/widgets/pnl_metric_card.dart",
+        "lib/app/modules/account/presentation/widgets/pnl_record_tile.dart",
+        "lib/app/modules/account/presentation/widgets/trend_chart.dart"
+      ],
+      "warnings": []
+    },
+    "warnings": []
+  },
+  "merge": {
+    "strategy": "source-runtime",
+    "selectedCapabilities": [
+      "source.analyze",
+      "runtime.capture",
+      "target.inspect",
+      "page.merge"
+    ],
+    "mergedAt": "2026-05-17T11:26:24.134Z",
+    "sources": {
+      "source": true,
+      "runtime": true,
+      "screenshot": true,
+      "target": true
+    },
+    "warnings": [],
+    "manualConfirmations": [
+      {
+        "id": "confirm-1",
+        "question": "Target suggested module (account) differs from source module (asset).",
+        "severity": "info",
+        "evidence": [
+          "target.suggestedModule",
+          "source.module"
+        ],
+        "status": "open"
+      }
+    ],
+    "trace": {
+      "temporary": true,
+      "input": {
+        "hasSource": true,
+        "hasRoute": true,
+        "hasVue": false,
+        "hasUrl": true,
+        "hasScreenshot": false,
+        "hasOcr": false,
+        "hasTarget": true,
+        "captureRequested": true,
+        "runtimeUrl": "http://127.0.0.1:5173/#/prototype/asset/holding-list"
+      },
+      "steps": [
+        {
+          "capability": "source.analyze",
+          "status": "selected",
+          "reason": "source input was provided"
+        },
+        {
+          "capability": "source.analyze",
+          "status": "completed",
+          "reason": "capability completed successfully"
+        },
+        {
+          "capability": "runtime.capture",
+          "status": "selected",
+          "reason": "runtime URL and capture request were provided"
+        },
+        {
+          "capability": "runtime.capture",
+          "status": "completed",
+          "reason": "capability completed successfully"
+        },
+        {
+          "capability": "screenshot.attach",
+          "status": "skipped",
+          "reason": "screenshot/OCR input was not provided"
+        },
+        {
+          "capability": "target.inspect",
+          "status": "selected",
+          "reason": "target input was provided"
+        },
+        {
+          "capability": "target.inspect",
+          "status": "completed",
+          "reason": "capability completed successfully"
+        },
+        {
+          "capability": "page.merge",
+          "status": "selected",
+          "reason": "canonical merge always runs after fact collection"
+        },
+        {
+          "capability": "page.merge",
+          "status": "completed",
+          "reason": "hybrid canonical was written"
+        },
+        {
+          "capability": "ui.plan",
+          "status": "selected",
+          "reason": "buildPlan is enabled and target input was provided"
+        },
+        {
+          "capability": "ui.plan",
+          "status": "completed",
+          "reason": "capability completed successfully"
+        },
+        {
+          "capability": "ui.review",
+          "status": "selected",
+          "reason": "buildReview is enabled and ui.plan completed"
+        },
+        {
+          "capability": "ui.review",
+          "status": "completed",
+          "reason": "capability completed successfully"
+        }
+      ],
+      "artifacts": [
+        "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/output/simple/page-canonical.json",
+        "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/output/simple/page-debug-index.json",
+        "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/output/simple/screenshots/full-page.png",
+        "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/output/simple/ui-build-plan.json",
+        "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/output/simple/ui-build-review.md",
+        "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/output/simple/migration-spec.md"
+      ]
+    }
+  },
+  "orchestrationTrace": {
+    "temporary": true,
+    "input": {
+      "hasSource": true,
+      "hasRoute": true,
+      "hasVue": false,
+      "hasUrl": true,
+      "hasScreenshot": false,
+      "hasOcr": false,
+      "hasTarget": true,
+      "captureRequested": true,
+      "runtimeUrl": "http://127.0.0.1:5173/#/prototype/asset/holding-list"
+    },
+    "steps": [
+      {
+        "capability": "source.analyze",
+        "status": "selected",
+        "reason": "source input was provided"
+      },
+      {
+        "capability": "source.analyze",
+        "status": "completed",
+        "reason": "capability completed successfully"
+      },
+      {
+        "capability": "runtime.capture",
+        "status": "selected",
+        "reason": "runtime URL and capture request were provided"
+      },
+      {
+        "capability": "runtime.capture",
+        "status": "completed",
+        "reason": "capability completed successfully"
+      },
+      {
+        "capability": "screenshot.attach",
+        "status": "skipped",
+        "reason": "screenshot/OCR input was not provided"
+      },
+      {
+        "capability": "target.inspect",
+        "status": "selected",
+        "reason": "target input was provided"
+      },
+      {
+        "capability": "target.inspect",
+        "status": "completed",
+        "reason": "capability completed successfully"
+      },
+      {
+        "capability": "page.merge",
+        "status": "selected",
+        "reason": "canonical merge always runs after fact collection"
+      },
+      {
+        "capability": "page.merge",
+        "status": "completed",
+        "reason": "hybrid canonical was written"
+      },
+      {
+        "capability": "ui.plan",
+        "status": "selected",
+        "reason": "buildPlan is enabled and target input was provided"
+      },
+      {
+        "capability": "ui.plan",
+        "status": "completed",
+        "reason": "capability completed successfully"
+      },
+      {
+        "capability": "ui.review",
+        "status": "selected",
+        "reason": "buildReview is enabled and ui.plan completed"
+      },
+      {
+        "capability": "ui.review",
+        "status": "completed",
+        "reason": "capability completed successfully"
+      }
+    ],
+    "artifacts": [
+      "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/output/simple/page-canonical.json",
+      "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/output/simple/page-debug-index.json",
+      "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/output/simple/screenshots/full-page.png",
+      "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/output/simple/ui-build-plan.json",
+      "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/output/simple/ui-build-review.md",
+      "/Users/linruiqiang/work/proto-bridge/examples/vue3-to-flutter/output/simple/migration-spec.md"
+    ]
+  },
+  "fieldPriority": [
+    {
+      "field": "module / screenId / semantic section / interaction intent / state space",
+      "priority": [
+        "source",
+        "runtime",
+        "screenshot",
+        "target"
+      ],
+      "reason": "Source is best at expressing design intent, semantic structure, and latent states."
+    },
+    {
+      "field": "visible / bbox / computed style / actual active state / actual visible text",
+      "priority": [
+        "runtime",
+        "screenshot",
+        "source",
+        "target"
+      ],
+      "reason": "Runtime capture reflects the current rendered page and viewport-specific facts."
+    },
+    {
+      "field": "pixel appearance / OCR text / visual comparison",
+      "priority": [
+        "screenshot",
+        "runtime",
+        "source",
+        "target"
+      ],
+      "reason": "Screenshot and OCR are the final visual evidence and text fallback."
+    },
+    {
+      "field": "component reuse / theme target / file tree / route placement",
+      "priority": [
+        "target",
+        "source",
+        "runtime",
+        "screenshot"
+      ],
+      "reason": "Target repo conventions decide what should be reused or where new Flutter code should live."
+    }
+  ],
+  "manualConfirmations": [
+    {
+      "id": "confirm-1",
+      "question": "Target suggested module (account) differs from source module (asset).",
+      "severity": "info",
+      "evidence": [
+        "target.suggestedModule",
+        "source.module"
+      ],
+      "status": "open"
+    }
+  ]
+}
