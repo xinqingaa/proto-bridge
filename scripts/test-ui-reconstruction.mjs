@@ -79,7 +79,7 @@ async function runCliCase(caseName) {
   const outDir = path.join(outputRoot, `cli-${caseSlug(caseName)}-${timestamp}`);
   const configPath = caseName === 'runtime-only'
     ? await writeRuntimeOnlyConfig(outDir)
-    : path.join(repoRoot, 'proto-bridge.config.json');
+    : await writeSourceTargetConfig(outDir, caseName === 'hybrid');
   const commandArgs = [
     path.join(repoRoot, 'packages/cli/dist/index.js'),
     'generate',
@@ -410,6 +410,7 @@ async function writeHybridConfig(outDir) {
   await mkdir(outDir, { recursive: true });
   const configPath = path.join(outDir, 'proto-bridge.hybrid.config.json');
   const config = {
+    schemaVersion: 1,
     source: {
       adapter: 'vue3-prototype',
       root: sourceRoot,
@@ -418,10 +419,44 @@ async function writeHybridConfig(outDir) {
       adapter: 'flutter-app',
       root: targetRoot,
     },
-    route,
-    url,
-    outputRoot,
-    capture: true,
+    page: {
+      route,
+      url,
+    },
+    output: {
+      root: outputRoot,
+    },
+    runtime: {
+      capture: true,
+    },
+  };
+  await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, 'utf8');
+  return configPath;
+}
+
+async function writeSourceTargetConfig(outDir, includeUrl) {
+  await mkdir(outDir, { recursive: true });
+  const configPath = path.join(outDir, 'proto-bridge.source-target.config.json');
+  const config = {
+    schemaVersion: 1,
+    source: {
+      adapter: 'vue3-prototype',
+      root: sourceRoot,
+    },
+    target: {
+      adapter: 'flutter-app',
+      root: targetRoot,
+    },
+    page: {
+      route,
+      ...(includeUrl ? { url } : {}),
+    },
+    output: {
+      root: outputRoot,
+    },
+    runtime: {
+      capture: includeUrl,
+    },
   };
   await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, 'utf8');
   return configPath;
@@ -431,12 +466,17 @@ async function writeRuntimeOnlyConfig(outDir) {
   await mkdir(outDir, { recursive: true });
   const configPath = path.join(outDir, 'proto-bridge.runtime-only.config.json');
   const config = {
+    schemaVersion: 1,
     target: {
       adapter: 'flutter-app',
       root: targetRoot,
     },
-    outputRoot,
-    capture: true,
+    output: {
+      root: outputRoot,
+    },
+    runtime: {
+      capture: true,
+    },
   };
   await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, 'utf8');
   return configPath;

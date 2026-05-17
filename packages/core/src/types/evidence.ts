@@ -286,7 +286,6 @@ export type PageOrchestrationTrace = {
     hasRoute: boolean;
     hasVue: boolean;
     hasUrl: boolean;
-    hasPrototypeUrl: boolean;
     hasScreenshot?: boolean | undefined;
     hasOcr?: boolean | undefined;
     hasTarget: boolean;

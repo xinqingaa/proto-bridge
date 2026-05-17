@@ -50,6 +50,7 @@ args = [
 
 ```json
 {
+  "schemaVersion": 1,
   "source": {
     "adapter": "vue3-prototype",
     "root": "/path/to/TradeAppPrd"
@@ -58,14 +59,21 @@ args = [
     "adapter": "flutter-app",
     "root": "/path/to/youfi"
   },
-  "outputRoot": "./output",
-  "capture": false
+  "page": {
+    "url": "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1"
+  },
+  "runtime": {
+    "capture": true
+  },
+  "output": {
+    "root": "./output"
+  }
 }
 ```
 
 Tool arguments 会覆盖 config values。
 
-Runtime-only 场景可以只在 config 中提供 `target.root`，tool 调用时传 `url` 和 `capture=true`。
+URL 是主入口。配置了 `source.root` 时会从 URL 推导 route 并自动补源码证据；配置了 `target.root` 时会生成 plan/review。
 
 ## Tools
 
@@ -112,7 +120,7 @@ http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1
 ## 输出
 
 ```text
-<outputRoot>/<page>-<timestamp>/
+<output.root>/<page>-<timestamp>/
 ├── page-canonical.json
 ├── page-debug-index.json
 ├── ui-build-plan.json

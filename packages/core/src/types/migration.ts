@@ -6,7 +6,6 @@ export type GenerateMigrationSpecInput = {
   target: AdapterProjectConfig;
   route?: string | undefined;
   vue?: string | undefined;
-  prototypeUrl?: string | undefined;
   outDir: string;
   capture?: boolean | undefined;
 };

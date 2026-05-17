@@ -1,9 +1,10 @@
 import path from 'node:path';
+import { resolveProtoBridgeInput } from '@proto-bridge/core/config';
 import { reconstructPageContext } from '@proto-bridge/core/workflows/capability-first';
 import type { OcrTextBox } from '@proto-bridge/core';
 import type { JsonObject, ToolContext } from '../types.js';
 import { readBoolean, readNumber, readObject, readString, readStringArray } from '../utils/args.js';
-import { resolveProjectRoot, resolveRuntimeConfig, resolveRuntimeTargetRoot } from '../services/config.js';
+import { resolveProjectRoot, resolveRuntimeConfig } from '../services/config.js';
 import {
   artifactSetId,
   createArtifactToolResponse,
@@ -12,55 +13,49 @@ import {
 
 export async function reconstructPageContextTool(context: ToolContext, args: JsonObject): Promise<JsonObject> {
   const config = await resolveRuntimeConfig(context.options);
-  const configSourceRoot = resolveProjectRoot(config?.source, context.options.configDir);
   const configTargetRoot = resolveProjectRoot(config?.target, context.options.configDir);
-  const targetRoot = resolveRuntimeTargetRoot(readString(args, 'targetRoot') ?? configTargetRoot);
-  const sourceRootInput = readString(args, 'sourceRoot') ?? configSourceRoot;
-  const sourceRoot = sourceRootInput ? resolveRoot(sourceRootInput, targetRoot) : undefined;
-  const route = readString(args, 'route') ?? config?.route;
-  const vue = readString(args, 'vuePath') ?? readString(args, 'vue') ?? config?.vue;
-  const url = readString(args, 'url') ?? config?.url;
-  const screenshotPath = readString(args, 'screenshotPath');
-  const hasAnyPageInput = Boolean(sourceRoot || route || vue || url || screenshotPath);
+  const viewport = readViewport(args);
+  const targetRootInput = readString(args, 'targetRoot') ?? configTargetRoot;
+  const targetRoot = targetRootInput ? path.resolve(targetRootInput) : undefined;
+  const resolved = resolveProtoBridgeInput({
+    config,
+    configDir: context.options.configDir,
+    cwd: process.cwd(),
+    outputBaseDir: targetRoot ?? process.cwd(),
+    overrides: {
+      sourceRoot: readString(args, 'sourceRoot'),
+      sourceAdapter: readString(args, 'sourceAdapter'),
+      targetRoot: readString(args, 'targetRoot'),
+      targetAdapter: readString(args, 'targetAdapter'),
+      route: readString(args, 'route'),
+      vue: readString(args, 'vuePath') ?? readString(args, 'vue'),
+      url: readString(args, 'url'),
+      output: readString(args, 'output'),
+      capture: readBoolean(args, 'capture'),
+      viewport,
+      saveArtifacts: readBoolean(args, 'saveArtifacts'),
+      sourceBrief: readBoolean(args, 'sourceBrief'),
+      trace: readBoolean(args, 'trace'),
+      screenshotPath: readString(args, 'screenshotPath'),
+      ocrText: readStringArray(args, 'ocrText') ?? readStringArray(args, 'externalText'),
+      ocrBoxes: readExternalBoxes(args),
+      targetModule: readString(args, 'targetModule'),
+      buildPlan: readBoolean(args, 'buildPlan'),
+      buildReview: readBoolean(args, 'buildReview'),
+    },
+    requirePageInput: false,
+  });
+  const hasAnyPageInput = Boolean(resolved.page.route || resolved.page.vue || resolved.page.url || readString(args, 'screenshotPath'));
   if (!hasAnyPageInput) {
-    throw new Error('reconstruct_page_context requires at least one of sourceRoot, route, vuePath, url, or screenshotPath.');
+    throw new Error('reconstruct_page_context requires at least one of url, route, vuePath, or screenshotPath.');
   }
 
-  const outputRoot = config?.outputRoot
-    ? resolveRoot(config.outputRoot, context.options.configDir)
-    : undefined;
-  const outDir = resolveOutputDir(args, targetRoot, route ?? vue ?? url ?? 'page', outputRoot);
-  const result = await reconstructPageContext({
-    source: sourceRoot ? {
-      adapter: readString(args, 'sourceAdapter') ?? config?.source?.adapter ?? 'vue3-prototype',
-      root: sourceRoot,
-    } : undefined,
-    target: {
-      adapter: readString(args, 'targetAdapter') ?? config?.target?.adapter ?? 'flutter-app',
-      root: targetRoot,
-    },
-    route,
-    vue,
-    url,
-    prototypeUrl: readString(args, 'prototypeUrl') ?? config?.prototypeUrl,
-    screenshotPath: screenshotPath ? path.resolve(targetRoot, screenshotPath) : undefined,
-    ocrText: readStringArray(args, 'ocrText') ?? readStringArray(args, 'externalText'),
-    ocrBoxes: readExternalBoxes(args),
-    outDir,
-    capture: readBoolean(args, 'capture') ?? config?.capture ?? Boolean(url),
-    viewport: readViewport(args),
-    saveArtifacts: readBoolean(args, 'saveArtifacts') ?? true,
-    targetModule: readString(args, 'targetModule'),
-    buildPlan: readBoolean(args, 'buildPlan') ?? true,
-    buildReview: readBoolean(args, 'buildReview') ?? true,
-    sourceBrief: readBoolean(args, 'sourceBrief') ?? config?.sourceBrief ?? false,
-    trace: readBoolean(args, 'trace') ?? false,
-  });
+  const result = await reconstructPageContext(resolved.input);
 
   const pageRecord = {
     id: result.page.pageId,
     createdAt: new Date().toISOString(),
-    targetRoot,
+    targetRoot: resolved.targetRoot ?? process.cwd(),
     page: result.page,
     files: {
       pageCanonical: result.files.pageCanonical,
@@ -114,29 +109,6 @@ function readViewport(args: JsonObject): { width: number; height: number; device
     height,
     ...(deviceScaleFactor ? { deviceScaleFactor } : {}),
   };
-}
-
-function resolveOutputDir(args: JsonObject, targetRoot: string, seed: string, outputRoot: string | undefined): string {
-  const output = readString(args, 'output');
-  if (output) return path.isAbsolute(output) ? output : path.resolve(targetRoot, output);
-  if (outputRoot) return path.join(outputRoot, `${slugFromSeed(seed)}-${Date.now().toString(36)}`);
-  return path.join(targetRoot, '.proto-bridge', 'pages', `${slugFromSeed(seed)}-${Date.now().toString(36)}`);
-}
-
-function resolveRoot(input: string, base: string): string {
-  return path.isAbsolute(input) ? input : path.resolve(base, input);
-}
-
-function slugFromSeed(value: string): string {
-  return value
-    .replace(/\.vue$/i, '')
-    .split(/[\\/]/)
-    .filter(Boolean)
-    .pop()
-    ?.replace(/[^a-zA-Z0-9-_]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 48)
-    || 'page';
 }
 
 function readExternalBoxes(args: JsonObject): OcrTextBox[] | undefined {

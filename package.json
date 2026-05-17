@@ -14,6 +14,7 @@
     "lint": "pnpm run typecheck",
     "dev": "pnpm --filter @proto-bridge/cli dev",
     "generate": "node scripts/generate.mjs",
+    "test:config": "pnpm --filter @proto-bridge/core build && node scripts/test-config.mjs",
     "test:ui-reconstruction": "node scripts/test-ui-reconstruction.mjs all",
     "test:ui-reconstruction:cli": "node scripts/test-ui-reconstruction.mjs cli",
     "test:ui-reconstruction:matrix": "node scripts/test-ui-reconstruction.mjs all --matrix",

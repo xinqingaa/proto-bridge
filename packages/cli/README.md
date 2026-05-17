@@ -20,6 +20,7 @@ npx @proto-bridge/cli generate \
 
 ```json
 {
+  "schemaVersion": 1,
   "source": {
     "adapter": "vue3-prototype",
     "root": "/path/to/TradeAppPrd"
@@ -28,18 +29,25 @@ npx @proto-bridge/cli generate \
     "adapter": "flutter-app",
     "root": "/path/to/youfi"
   },
-  "outputRoot": "./output",
-  "capture": false
+  "page": {
+    "url": "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1"
+  },
+  "runtime": {
+    "capture": true
+  },
+  "output": {
+    "root": "./output"
+  }
 }
 ```
 
-Runtime-only 场景可以只配置 `target`，然后在命令中传 `--url --capture`。
+URL 是主入口。配置了 `source.root` 时会从 URL 推导 route 并自动补源码证据；配置了 `target.root` 时会生成 plan/review。
 
 ## Commands
 
 ```bash
 npx @proto-bridge/cli init
-npx @proto-bridge/cli generate --url <prototype-url>
+npx @proto-bridge/cli generate --url <url>
 npx @proto-bridge/cli generate --route <route>
 npx @proto-bridge/cli generate --vue <file>
 npx @proto-bridge/cli generate
@@ -48,23 +56,23 @@ npx @proto-bridge/cli generate
 常见模式：
 
 ```bash
-# source-only：需要 source.root + target.root
-npx @proto-bridge/cli generate --route /prototype/asset/pnl-analysis
+# URL-only：不需要 config
+npx @proto-bridge/cli generate --url "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1"
 
-# runtime-only：需要 target.root + url，不需要 source.root
-npx @proto-bridge/cli generate --url "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1" --capture
+# target + URL：配置 target.root 或传 --target-root
 
-# hybrid：需要 source.root + target.root + url
-npx @proto-bridge/cli generate --route /prototype/asset/pnl-analysis --url "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1" --capture
+# source + target + URL：配置 source.root 和 target.root，URL 自动推导 route
+npx @proto-bridge/cli generate
 ```
 
 Options：
 
 - `--config <file>`：config path，默认 `./proto-bridge.config.json`。
-- `--url <url>`：运行中的 prototype URL。
-- `--route <route>`：source route。
-- `--vue <file>`：Vue SFC path。
-- `--prototype-url <url>`：capture URL 与 source identity 不同时使用。
+- `--url <url>`：主页面输入，自动推导 route。
+- `--route <route>`：高级 source route 覆盖。
+- `--vue <file>`：高级 Vue SFC 覆盖。
+- `--source-root <dir>`：可选 prototype/source 根目录。
+- `--target-root <dir>`：可选目标工程根目录。
 - `--output <dir>`：本次运行的完整输出目录。
 - `--capture`：本次运行执行 runtime capture。
 - `--source-brief`：额外输出可选 `migration-spec.md`。

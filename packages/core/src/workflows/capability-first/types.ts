@@ -21,7 +21,6 @@ export type ReconstructPageContextInput = {
   route?: string | undefined;
   vue?: string | undefined;
   url?: string | undefined;
-  prototypeUrl?: string | undefined;
   screenshotPath?: string | undefined;
   ocrText?: string[] | undefined;
   ocrBoxes?: OcrTextBox[] | undefined;

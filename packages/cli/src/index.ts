@@ -1,10 +1,17 @@
 #!/usr/bin/env node
 
-import { createHash } from 'node:crypto';
 import path from 'node:path';
-import { access, readFile, stat, writeFile } from 'node:fs/promises';
+import { access, stat, writeFile } from 'node:fs/promises';
 import * as readline from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
+import {
+  DEFAULT_CONFIG_FILE,
+  readProtoBridgeConfigFile,
+  resolveConfigPath,
+  resolveProtoBridgeInput,
+  type ProtoBridgeConfig,
+  type ProtoBridgeInputOverrides,
+} from '@proto-bridge/core/config';
 import {
   reconstructPageContext,
   type ReconstructPageContextInput,
@@ -16,38 +23,12 @@ type ParsedArgs = {
   values: Record<string, string | boolean>;
 };
 
-type ProtoBridgeConfig = {
-  source?: ProjectConfig | undefined;
-  target?: ProjectConfig | undefined;
-  route?: string | undefined;
-  vue?: string | undefined;
-  url?: string | undefined;
-  prototypeUrl?: string | undefined;
-  outputRoot?: string | undefined;
-  capture?: boolean | undefined;
-  sourceBrief?: boolean | undefined;
-};
-
-type ProjectConfig = {
-  adapter?: string | undefined;
-  root?: string | undefined;
-};
-
 type LoadedConfig = {
   path: string;
   dir: string;
-  config: ProtoBridgeConfig;
+  config?: ProtoBridgeConfig | undefined;
 };
 
-type PageInput = {
-  route?: string | undefined;
-  vue?: string | undefined;
-  url?: string | undefined;
-  interactive?: boolean | undefined;
-};
-
-const DEFAULT_CONFIG_FILE = 'proto-bridge.config.json';
-const DEFAULT_OUTPUT_ROOT = './output';
 const ICON = {
   info: 'ℹ',
   step: '●',
@@ -69,11 +50,12 @@ const ALLOWED_FLAGS = new Set([
   'config',
   'help',
   'output',
-  'prototype-url',
   'route',
   'source-brief',
   'source-adapter',
+  'source-root',
   'target-adapter',
+  'target-root',
   'trace',
   'url',
   'vue',
@@ -107,84 +89,74 @@ async function main(): Promise<void> {
 
 async function buildGenerateInput(values: Record<string, string | boolean>): Promise<ReconstructPageContextInput> {
   step('Loading proto-bridge config...');
-  const loadedConfig = await loadRequiredConfig(values);
-  const config = loadedConfig.config;
+  const loadedConfig = await loadOptionalConfig(values);
   const invocationDir = process.env.INIT_CWD ?? process.cwd();
+  const overrides: ProtoBridgeInputOverrides = {
+    sourceRoot: readString(values, 'source-root'),
+    sourceAdapter: readString(values, 'source-adapter'),
+    targetRoot: readString(values, 'target-root'),
+    targetAdapter: readString(values, 'target-adapter'),
+    url: readString(values, 'url'),
+    route: readString(values, 'route'),
+    vue: readString(values, 'vue'),
+    output: readString(values, 'output'),
+    capture: values.capture === true ? true : undefined,
+    sourceBrief: values['source-brief'] === true ? true : undefined,
+    trace: values.trace === true,
+  };
 
-  const sourceRoot = resolveInputPath(config.source?.root, loadedConfig.dir);
-  const targetRoot = resolveInputPath(config.target?.root, loadedConfig.dir);
-  const sourceAdapter = readString(values, 'source-adapter') ?? config.source?.adapter ?? 'vue3-prototype';
-  const targetAdapter = readString(values, 'target-adapter') ?? config.target?.adapter ?? 'flutter-app';
-  const pageInput = await resolvePageInput(values, config);
-  const prototypeUrl = resolvePrototypeUrl(values, config, pageInput.url);
-  const capture = resolveCapture(values, config, pageInput);
-  const outDir = await resolveGenerateOutDir(values, config, pageInput, invocationDir);
-
-  if (!targetRoot) throw new Error('config.target.root is required');
-  step('Checking project roots...');
-  if (sourceRoot) await validateProjectRoot('config.source.root', sourceRoot);
-  await validateProjectRoot('config.target.root', targetRoot);
-  if (!pageInput.url && !pageInput.route && !pageInput.vue) throw new Error('Provide --url, --route, or --vue.');
-  if (!sourceRoot && (pageInput.route || pageInput.vue) && !pageInput.url) {
-    throw new Error('config.source.root is required when using --route or --vue. Use --url for no-source runtime reconstruction.');
+  if (!hasPageInput(overrides, loadedConfig.config) && isInteractive()) {
+    Object.assign(overrides, await askPageInput());
   }
-  if (pageInput.route && pageInput.vue) throw new Error('Use only one page input: --url, --route, or --vue.');
-  if (sourceRoot && sourceAdapter !== 'vue3-prototype') throw new Error('Unsupported source adapter. Supported: vue3-prototype');
-  if (targetAdapter !== 'flutter-app') throw new Error('Unsupported target adapter. Supported: flutter-app');
 
+  const resolved = resolveProtoBridgeInput({
+    config: loadedConfig.config,
+    configDir: loadedConfig.dir,
+    cwd: invocationDir,
+    overrides,
+    requirePageInput: true,
+  });
+
+  step('Checking project roots...');
+  if (resolved.sourceRoot) await validateProjectRoot('source.root', resolved.sourceRoot);
+  if (resolved.targetRoot) await validateProjectRoot('target.root', resolved.targetRoot);
+  if (resolved.input.source && resolved.input.source.adapter !== 'vue3-prototype') throw new Error('Unsupported source adapter. Supported: vue3-prototype');
+  if (resolved.input.target && resolved.input.target.adapter !== 'flutter-app') throw new Error('Unsupported target adapter. Supported: flutter-app');
+
+  return resolved.input;
+}
+
+async function loadOptionalConfig(values: Record<string, string | boolean>): Promise<LoadedConfig> {
+  const invocationDir = process.env.INIT_CWD ?? process.cwd();
+  const configPath = resolveConfigPath(readString(values, 'config'), invocationDir);
+  const required = Boolean(readString(values, 'config'));
+  const config = await readProtoBridgeConfigFile(configPath, { required });
   return {
-    source: sourceRoot ? {
-      adapter: sourceAdapter,
-      root: sourceRoot,
-    } : undefined,
-    target: {
-      adapter: targetAdapter,
-      root: targetRoot,
-    },
-    route: pageInput.route,
-    vue: pageInput.vue,
-    url: pageInput.url,
-    prototypeUrl,
-    outDir,
-    capture,
-    buildPlan: true,
-    buildReview: true,
-    sourceBrief: Boolean(values['source-brief'] || config.sourceBrief),
-    trace: Boolean(values.trace),
+    path: configPath,
+    dir: path.dirname(configPath),
+    config,
   };
 }
 
-async function loadRequiredConfig(values: Record<string, string | boolean>): Promise<LoadedConfig> {
-  const invocationDir = process.env.INIT_CWD ?? process.cwd();
-  const configInput = readString(values, 'config') ?? DEFAULT_CONFIG_FILE;
-  const configPath = path.isAbsolute(configInput) ? configInput : path.resolve(invocationDir, configInput);
+function hasPageInput(overrides: ProtoBridgeInputOverrides, config: ProtoBridgeConfig | undefined): boolean {
+  return Boolean(
+    overrides.url ||
+    overrides.route ||
+    overrides.vue ||
+    config?.page?.url ||
+    config?.page?.route ||
+    config?.page?.vue,
+  );
+}
 
-  let text: string;
-  try {
-    text = await readFile(configPath, 'utf8');
-  } catch {
-    throw new Error(
-      [
-        'Missing required config file.',
-        `Config path: ${configPath}`,
-        'Create one: npx @proto-bridge/cli init',
-        'Or create proto-bridge.config.json manually with source.root, target.root, outputRoot, and capture.',
-      ].join('\n'),
-    );
-  }
-
-  try {
-    const parsed = JSON.parse(text) as unknown;
-    if (!isRecord(parsed)) throw new Error('config root must be a JSON object');
-    return {
-      path: configPath,
-      dir: path.dirname(configPath),
-      config: parsed as ProtoBridgeConfig,
-    };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Invalid config file ${configPath}: ${message}`);
-  }
+async function askPageInput(): Promise<Pick<ProtoBridgeInputOverrides, 'url' | 'route' | 'vue'>> {
+  return withReadline(async (rl) => {
+    const inputType = await askChoice(rl, 'Page input type', ['url', 'route', 'vue']);
+    const value = await askRequired(rl, `Enter ${inputType}`);
+    if (inputType === 'url') return { url: value };
+    if (inputType === 'route') return { route: value };
+    return { vue: value };
+  });
 }
 
 async function initConfig(values: Record<string, string | boolean>): Promise<void> {
@@ -204,101 +176,39 @@ async function initConfig(values: Record<string, string | boolean>): Promise<voi
   }
 
   const answers = await withReadline(async (rl) => {
-    const sourceRoot = await askRequired(rl, 'Source project root');
-    const targetRoot = await askRequired(rl, 'Target project root');
-    const outputRoot = (await ask(rl, `Output root (${DEFAULT_OUTPUT_ROOT})`)) || DEFAULT_OUTPUT_ROOT;
+    const sourceRoot = await ask(rl, 'Source project root (optional)');
+    const targetRoot = await ask(rl, 'Target project root (optional)');
+    const outputRootAnswer = (await ask(rl, 'Output root (./output)')) || './output';
     const captureAnswer = (await ask(rl, 'Enable runtime capture? (y/N)')).toLowerCase();
     return {
       sourceRoot,
       targetRoot,
-      outputRoot,
+      outputRootAnswer,
       capture: captureAnswer === 'y' || captureAnswer === 'yes',
     };
   });
 
   const config: ProtoBridgeConfig = {
-    source: {
+    schemaVersion: 1,
+    source: answers.sourceRoot ? {
       adapter: 'vue3-prototype',
       root: answers.sourceRoot,
-    },
-    target: {
+    } : undefined,
+    target: answers.targetRoot ? {
       adapter: 'flutter-app',
       root: answers.targetRoot,
+    } : undefined,
+    runtime: {
+      capture: answers.capture,
     },
-    outputRoot: answers.outputRoot,
-    capture: answers.capture,
+    output: {
+      root: answers.outputRootAnswer,
+    },
   };
 
   await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, 'utf8');
   success('Config created');
   kv('config', configPath);
-}
-
-async function resolvePageInput(values: Record<string, string | boolean>, config: ProtoBridgeConfig): Promise<PageInput> {
-  const cliUrl = readString(values, 'url');
-  if (cliUrl) return { route: extractRouteFromUrl(cliUrl), url: cliUrl };
-
-  const cliRoute = readString(values, 'route');
-  if (cliRoute) return { route: normalizeRoute(cliRoute) };
-
-  const cliVue = readString(values, 'vue');
-  if (cliVue) return { vue: cliVue };
-
-  if (config.url) return { route: extractRouteFromUrl(config.url), url: config.url };
-  if (config.route) return { route: normalizeRoute(config.route) };
-  if (config.vue) return { vue: config.vue };
-
-  if (!isInteractive()) return {};
-
-  return withReadline(async (rl) => {
-    const inputType = await askChoice(rl, 'Page input type', ['url', 'route', 'vue']);
-    const value = await askRequired(rl, `Enter ${inputType}`);
-
-    if (inputType === 'url') return { route: extractRouteFromUrl(value), url: value, interactive: true };
-    if (inputType === 'route') return { route: normalizeRoute(value), interactive: true };
-    return { vue: value, interactive: true };
-  });
-}
-
-function resolvePrototypeUrl(
-  values: Record<string, string | boolean>,
-  config: ProtoBridgeConfig,
-  pageUrl: string | undefined,
-): string | undefined {
-  return readString(values, 'prototype-url') ?? pageUrl ?? config.prototypeUrl ?? config.url;
-}
-
-function resolveCapture(values: Record<string, string | boolean>, config: ProtoBridgeConfig, pageInput: PageInput): boolean {
-  if (values.capture !== undefined) return true;
-  if (pageInput.url) return true;
-  return config.capture ?? false;
-}
-
-async function resolveGenerateOutDir(
-  values: Record<string, string | boolean>,
-  config: ProtoBridgeConfig,
-  pageInput: PageInput,
-  invocationDir: string,
-): Promise<string> {
-  const output = readString(values, 'output');
-  if (output) return resolveFromDir(output, invocationDir);
-
-  const outputRoot = config.outputRoot ?? DEFAULT_OUTPUT_ROOT;
-  const defaultOutput = path.join(outputRoot, createOutputDirectoryName(pageInput.route, pageInput.vue));
-  const selectedOutput = pageInput.interactive ? await confirmOutputDir(defaultOutput) : defaultOutput;
-  return resolveFromDir(selectedOutput, invocationDir);
-}
-
-async function confirmOutputDir(defaultOutput: string): Promise<string> {
-  return withReadline(async (rl) => {
-    const answer = await ask(rl, `Output directory (${defaultOutput})`);
-    return answer || defaultOutput;
-  });
-}
-
-function resolveInputPath(configValue: string | undefined, configDir: string): string | undefined {
-  if (configValue) return path.isAbsolute(configValue) ? configValue : path.resolve(configDir, configValue);
-  return undefined;
 }
 
 async function validateProjectRoot(label: string, root: string): Promise<void> {
@@ -363,7 +273,7 @@ function readString(values: Record<string, string | boolean>, key: string): stri
 function unknownFlagMessage(key: string): string {
   return [
     `Unknown flag: --${key}`,
-    'Supported flags: --config, --url, --route, --vue, --prototype-url, --output, --capture, --source-brief, --trace.',
+    'Supported flags: --config, --url, --route, --vue, --output, --capture, --source-brief, --trace, --source-root, --target-root.',
     'Example: npx @proto-bridge/cli generate --url "http://localhost:5173/#/prototype/etf-detail"',
   ].join('\n');
 }
@@ -375,74 +285,12 @@ function missingFlagValueMessage(key: string): string {
     route: 'npx @proto-bridge/cli generate --route /prototype/etf-detail',
     url: 'npx @proto-bridge/cli generate --url "http://localhost:5173/#/prototype/etf-detail"',
     vue: 'npx @proto-bridge/cli generate --vue prototype/src/views/prototype/etf/ETFDetailPage.vue',
-    'prototype-url': 'npx @proto-bridge/cli generate --route /prototype/etf-detail --prototype-url "http://localhost:5173/#/prototype/etf-detail" --capture',
     'source-adapter': 'npx @proto-bridge/cli generate --route /prototype/etf-detail --source-adapter vue3-prototype',
+    'source-root': 'npx @proto-bridge/cli generate --url "http://localhost:5173/#/prototype/etf-detail" --source-root /path/to/source',
     'target-adapter': 'npx @proto-bridge/cli generate --route /prototype/etf-detail --target-adapter flutter-app',
+    'target-root': 'npx @proto-bridge/cli generate --url "http://localhost:5173/#/prototype/etf-detail" --target-root /path/to/target',
   };
   return [`--${key} requires a value.`, `Example: ${examples[key] ?? 'npx @proto-bridge/cli --help'}`].join('\n');
-}
-
-function extractRouteFromUrl(urlInput: string): string {
-  const routeWithQuery = routeWithQueryFromUrl(urlInput);
-  const route = routeWithQuery.split('?')[0]?.split('#')[0];
-  if (!route) throw new Error(`Unable to extract route from --url: ${urlInput}`);
-  return normalizeRoute(route);
-}
-
-function routeWithQueryFromUrl(urlInput: string): string {
-  if (!urlInput.trim()) {
-    throw new Error('--url requires a non-empty URL or route path.\nExample: npx @proto-bridge/cli generate --url "http://localhost:5173/#/prototype/etf-detail"');
-  }
-
-  if (urlInput.startsWith('/')) return urlInput;
-
-  try {
-    const parsed = new URL(urlInput);
-    if (parsed.hash.startsWith('#/')) return parsed.hash.slice(1);
-    if (parsed.pathname) return `${parsed.pathname}${parsed.search}`;
-  } catch {
-    throw new Error([
-      `--url must be an absolute URL or a route path: ${urlInput}`,
-      'If you only have the route, use: npx @proto-bridge/cli generate --route /prototype/etf-detail',
-      'If your shell shows dquote>, press Ctrl+C and rerun with a closing quote.',
-    ].join('\n'));
-  }
-
-  throw new Error(`Unable to extract route from --url: ${urlInput}`);
-}
-
-function normalizeRoute(route: string): string {
-  const routeOnly = route.split('?')[0] ?? route;
-  const normalized = routeOnly.startsWith('/') ? routeOnly : `/${routeOnly}`;
-  return normalized.length > 1 ? normalized.replace(/\/+$/, '') : normalized;
-}
-
-function outputSlug(route: string | undefined, vue: string | undefined): string {
-  const source = route ?? vue ?? 'migration';
-  const slug = source
-    .replace(/\.vue$/i, '')
-    .split(/[\\/]/)
-    .filter(Boolean)
-    .pop()
-    ?.replace(/[^a-zA-Z0-9._-]+/g, '-')
-    .replace(/Page$/i, '')
-    .toLowerCase();
-  return slug || 'migration';
-}
-
-function createOutputDirectoryName(route: string | undefined, vue: string | undefined): string {
-  const slug = outputSlug(route, vue);
-  const timestamp = Date.now().toString(36);
-  const digest = createHash('sha1')
-    .update(`${route ?? vue ?? 'migration'}:${timestamp}`)
-    .digest('hex')
-    .slice(0, 6);
-  return `${slug}-${timestamp}-${digest}`;
-}
-
-function resolveFromDir(value: string, dir: string): string {
-  if (path.isAbsolute(value)) return value;
-  return path.resolve(dir, value);
 }
 
 function isInteractive(): boolean {
@@ -545,22 +393,20 @@ function color(text: string, ...styles: string[]): string {
 function usage(): string {
   return `Usage:
   proto-bridge init [options]
-  proto-bridge generate --url <prototype-url> [options]
+  proto-bridge generate --url <url> [options]
   proto-bridge generate --route <route> [options]
   proto-bridge generate --vue <file> [options]
   proto-bridge generate
 
-Required:
-  proto-bridge.config.json must exist in the directory where you run generate.
-
 Options:
   --config <file>             Config path, defaults to ./proto-bridge.config.json
-  --url <url>                 Full prototype URL, hash route is extracted automatically
-  --route <route>             Prototype or design route, for example /prototype/trade
-  --vue <file>                Vue file path, absolute or relative to source.root
+  --url <url>                 Primary page input. Hash route is extracted automatically
+  --route <route>             Advanced source route override, for example /prototype/trade
+  --vue <file>                Advanced Vue file override, absolute or relative to source.root
+  --source-root <dir>         Optional prototype/source root
   --source-adapter <id>       Source adapter, defaults to vue3-prototype
+  --target-root <dir>         Optional target Flutter root
   --target-adapter <id>       Target adapter, defaults to flutter-app
-  --prototype-url <url>       Optional running prototype URL for Playwright capture
   --output <dir>              Override the generated output directory
   --capture                   Run Playwright screenshot and DOM capture
   --source-brief              Also write migration-spec.md as an optional source-aware brief
@@ -568,8 +414,8 @@ Options:
 
 Artifacts:
   Always writes page-canonical.json and page-debug-index.json.
-  With target config, writes ui-build-plan.json and ui-build-review.md.
-  With source config, ui-build-review.md includes a source-aware implementation brief.
+  With target config or --target-root, writes ui-build-plan.json and ui-build-review.md.
+  With source config or --source-root, URL-derived route enables source-aware evidence.
   migration-spec.md is only written when --source-brief is passed.
 `;
 }
@@ -581,10 +427,6 @@ function printTrace(result: ReconstructPageContextResult): void {
     const marker = traceStep.status === 'skipped' ? '-' : traceStep.status === 'completed' ? '✓' : '+';
     console.log(`  ${marker} ${traceStep.capability} [${traceStep.status}] ${traceStep.reason}`);
   }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
 function isNodeError(error: unknown): error is NodeJS.ErrnoException {

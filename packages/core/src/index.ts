@@ -3,6 +3,7 @@ export * from './adapters/types.js';
 export * from './adapters/registry.js';
 export * from './artifacts/index.js';
 export * from './capabilities/index.js';
+export * from './config/index.js';
 export * from './shared/index.js';
 export * from './source/vue3-prototype/index.js';
 export * from './snapshot/index.js';

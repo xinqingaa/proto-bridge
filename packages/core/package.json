@@ -18,6 +18,10 @@
       "types": "./dist/capabilities/index.d.ts",
       "import": "./dist/capabilities/index.js"
     },
+    "./config": {
+      "types": "./dist/config/index.d.ts",
+      "import": "./dist/config/index.js"
+    },
     "./target/flutter-app": {
       "types": "./dist/target/flutter-app/index.d.ts",
       "import": "./dist/target/flutter-app/index.js"

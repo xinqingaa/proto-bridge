@@ -144,6 +144,7 @@ console.log(result.status);
 
 ```json
 {
+  "schemaVersion": 1,
   "source": {
     "adapter": "vue3-prototype",
     "root": "/Users/name/work/TradeAppPrd"
@@ -152,8 +153,15 @@ console.log(result.status);
     "adapter": "flutter-app",
     "root": "/Users/name/work/youfi"
   },
-  "outputRoot": "./output",
-  "capture": false
+  "page": {
+    "url": "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1"
+  },
+  "runtime": {
+    "capture": true
+  },
+  "output": {
+    "root": "./output"
+  }
 }
 ```
 

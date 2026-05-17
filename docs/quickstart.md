@@ -27,14 +27,15 @@ pnpm run build
 
 ## 配置
 
-在运行 ProtoBridge 的目录创建 `proto-bridge.config.json`。不同输入模式需要的最小配置不同，`source.root` 和 `url` 都不是所有场景必填。
+在运行 ProtoBridge 的目录创建 `proto-bridge.config.json`。ProtoBridge 采用 URL-first 配置：`page.url` 是主入口；`source.root` 和 `target.root` 都是增强项。
 
-### Source-only / Hybrid 常用配置
+### Source + Target 常用配置
 
-有 prototype/source repository 时配置 `source` 和 `target`：
+有 prototype/source repository 和 Flutter target repository 时配置 `source` 和 `target`，运行时通常只需要 URL：
 
 ```json
 {
+  "schemaVersion": 1,
   "source": {
     "adapter": "vue3-prototype",
     "root": "/Users/name/work/TradeAppPrd"
@@ -43,59 +44,73 @@ pnpm run build
     "adapter": "flutter-app",
     "root": "/Users/name/work/youfi"
   },
-  "outputRoot": "./output",
-  "capture": false
+  "page": {
+    "url": "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1"
+  },
+  "runtime": {
+    "capture": true
+  },
+  "output": {
+    "root": "./output"
+  }
 }
 ```
 
-这种配置可以直接跑 source-only；如果命令再传 `--url --capture`，就会变成 hybrid。
+这种配置会从 URL 推导 route；有 `source.root` 时自动补 source evidence，有 `target.root` 时生成 plan/review。
 
-### Runtime-only 最小配置
+### Target + URL 最小配置
 
 如果没有源码，只有运行中的 URL，可以只配置 target：
 
 ```json
 {
+  "schemaVersion": 1,
   "target": {
     "adapter": "flutter-app",
     "root": "/Users/name/work/youfi"
   },
-  "outputRoot": "./output",
-  "capture": false
+  "page": {
+    "url": "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1"
+  },
+  "runtime": {
+    "capture": true
+  },
+  "output": {
+    "root": "./output"
+  }
 }
 ```
 
-然后在命令里传 `--url` 和 `--capture`。
+这会生成 runtime evidence、target conventions、`ui-build-plan.json` 和 `ui-build-review.md`。
 
-### 完整配置示例
+### URL-only 配置
 
-如果团队希望把常用页面身份也写入 config，可以额外写入 `route`、`url` 或 `prototypeUrl`：
+没有 source 和 target 时也可以只采集 URL evidence：
 
 ```json
 {
-  "source": {
-    "adapter": "vue3-prototype",
-    "root": "/Users/name/work/TradeAppPrd"
+  "schemaVersion": 1,
+  "page": {
+    "url": "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1"
   },
-  "target": {
-    "adapter": "flutter-app",
-    "root": "/Users/name/work/youfi"
+  "runtime": {
+    "capture": true
   },
-  "route": "/prototype/asset/pnl-analysis",
-  "url": "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1",
-  "outputRoot": "./output",
-  "capture": true
+  "output": {
+    "root": "./output"
+  }
 }
 ```
 
 字段说明：
 
-- `source.root`：prototype/source repository 路径。只有使用 `--route` 或 `--vue` 做 source analysis 时需要。
-- `target.root`：Flutter target repository 路径。生成 `ui-build-plan.json`、`ui-build-review.md` 和 validation 时通常需要。
-- `outputRoot`：输出根目录。
-- `capture`：默认 runtime capture 开关。
-- `url`：运行中的 prototype URL。只有 runtime capture 时需要。
-- `route`、`vue`、`url`、`prototypeUrl` 可以写在 config 中，也可以通过 command/tool arguments 传入。
+- `page.url`：主页面输入。通常只维护这个字段。
+- `page.route`、`page.vue`：高级覆盖字段。只有 URL 自动映射不够时才需要。
+- `source.root`：prototype/source repository 路径。配置后会根据 URL 推导 route 并自动补源码证据。
+- `target.root`：目标工程路径。配置后生成 `ui-build-plan.json`、`ui-build-review.md` 和 validation hints。
+- `runtime.capture`：默认 runtime capture 开关。
+- `runtime.viewport`：可选采集 viewport。
+- `output.root`：输出根目录。
 
 CLI 和 MCP 的优先级：
 

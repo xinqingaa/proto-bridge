@@ -1,4 +1,5 @@
 {
+  "schemaVersion": 1,
   "source": {
     "adapter": "vue3-prototype",
     "root": "/path/to/TradeAppPrd"
@@ -7,6 +8,18 @@
     "adapter": "flutter-app",
     "root": "/path/to/youfi"
   },
-  "outputRoot": "./output",
-  "capture": false
+  "page": {
+    "url": "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1"
+  },
+  "runtime": {
+    "capture": true,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1
+    }
+  },
+  "output": {
+    "root": "./output"
+  }
 }

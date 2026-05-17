@@ -19,7 +19,7 @@ export async function reconstructPageContext(
 ): Promise<ReconstructPageContextResult> {
   const outDir = path.resolve(input.outDir);
   await mkdir(outDir, { recursive: true });
-  const runtimeUrl = input.url ?? input.prototypeUrl;
+  const runtimeUrl = input.url;
   const shouldCapture = Boolean(runtimeUrl && (input.capture ?? Boolean(input.url)));
   const traceSteps: PageOrchestrationTraceStep[] = [];
   const traceInput = {
@@ -27,7 +27,6 @@ export async function reconstructPageContext(
     hasRoute: Boolean(input.route),
     hasVue: Boolean(input.vue),
     hasUrl: Boolean(input.url),
-    hasPrototypeUrl: Boolean(input.prototypeUrl),
     hasScreenshot: Boolean(input.screenshotPath),
     hasOcr: Boolean(input.ocrText?.length || input.ocrBoxes?.length),
     hasTarget: Boolean(input.target),

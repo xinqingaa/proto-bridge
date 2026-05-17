@@ -1,8 +1,10 @@
 import type {
   PageCanonical,
+  ProtoBridgeConfig,
   ReconstructPageContextResult,
   UiBuildPlan,
 } from '@proto-bridge/core';
+export type { ProtoBridgeConfig } from '@proto-bridge/core';
 import type {
   ScreenshotAttachCapabilityResult,
   UiReviewCapabilityResult,
@@ -36,23 +38,6 @@ export type GeneratedPage = {
   review?: UiReviewCapabilityResult | undefined;
   ocr?: ScreenshotAttachCapabilityResult | undefined;
   reconstruction?: ReconstructPageContextResult | undefined;
-};
-
-export type ProjectConfig = {
-  adapter?: string | undefined;
-  root?: string | undefined;
-};
-
-export type ProtoBridgeConfig = {
-  source?: ProjectConfig | undefined;
-  target?: ProjectConfig | undefined;
-  route?: string | undefined;
-  vue?: string | undefined;
-  url?: string | undefined;
-  prototypeUrl?: string | undefined;
-  outputRoot?: string | undefined;
-  capture?: boolean | undefined;
-  sourceBrief?: boolean | undefined;
 };
 
 export type ServerOptions = {

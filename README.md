@@ -58,10 +58,11 @@ Source 和 URL 都不是绝对必填。按你手头已有的证据选择模式�
 npx @proto-bridge/cli init
 ```
 
-`proto-bridge.config.json` 常用 source + target 示例：
+`proto-bridge.config.json` 常用 URL-first 示例：
 
 ```json
 {
+  "schemaVersion": 1,
   "source": {
     "adapter": "vue3-prototype",
     "root": "/Users/name/work/TradeAppPrd"
@@ -70,32 +71,37 @@ npx @proto-bridge/cli init
     "adapter": "flutter-app",
     "root": "/Users/name/work/youfi"
   },
-  "outputRoot": "./output",
-  "capture": false
+  "page": {
+    "url": "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1"
+  },
+  "runtime": {
+    "capture": true
+  },
+  "output": {
+    "root": "./output"
+  }
 }
 ```
 
-基于源码生成上下文：
+URL 是主入口；配置了 `source.root` 时会自动从 URL 推导 route 并补充源码证据：
 
 ```bash
-npx @proto-bridge/cli generate --route /prototype/asset/pnl-analysis
+npx @proto-bridge/cli generate
 ```
 
-从运行中的原型采集 runtime evidence：
+也可以在命令里直接传 URL：
+
+```bash
+npx @proto-bridge/cli generate \
+  --url "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1"
+```
+
+`--route` 和 `--vue` 是高级覆盖入口，通常不需要传：
 
 ```bash
 npx @proto-bridge/cli generate \
   --url "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1" \
-  --capture
-```
-
-同时使用 source 和 runtime evidence：
-
-```bash
-npx @proto-bridge/cli generate \
-  --route /prototype/asset/pnl-analysis \
-  --url "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1" \
-  --capture
+  --route /prototype/asset/pnl-analysis
 ```
 
 ## 输出产物
