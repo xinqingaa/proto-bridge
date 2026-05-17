@@ -8,9 +8,6 @@
     "adapter": "flutter-app",
     "root": "/Users/lrq/work/youfi"
   },
-  "page": {
-    "url": "http://localhost:5173/#/prototype/trade"
-  },
   "runtime": {
     "capture": true
   },

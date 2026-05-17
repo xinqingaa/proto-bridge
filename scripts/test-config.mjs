@@ -22,9 +22,6 @@ const fullConfig = {
     adapter: 'flutter-app',
     root: './target-app',
   },
-  page: {
-    url: 'http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1',
-  },
   runtime: {
     capture: true,
     viewport: {
@@ -37,16 +34,20 @@ const fullConfig = {
     root: './output',
   },
 };
+const pageUrl = 'http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1';
 
 {
   const resolved = resolveProtoBridgeInput({
     config: fullConfig,
     configDir,
     cwd: repoRoot,
+    overrides: {
+      url: pageUrl,
+    },
     requirePageInput: true,
   });
   assert.equal(resolved.page.route, '/prototype/asset/pnl-analysis');
-  assert.equal(resolved.input.url, fullConfig.page.url);
+  assert.equal(resolved.input.url, pageUrl);
   assert.equal(resolved.input.source?.root, path.join(configDir, 'source-app'));
   assert.equal(resolved.input.target?.root, path.join(configDir, 'target-app'));
   assert.equal(resolved.input.capture, true);
@@ -60,12 +61,14 @@ const fullConfig = {
     config: {
       schemaVersion: 1,
       target: fullConfig.target,
-      page: fullConfig.page,
       runtime: fullConfig.runtime,
       output: fullConfig.output,
     },
     configDir,
     cwd: repoRoot,
+    overrides: {
+      url: pageUrl,
+    },
     requirePageInput: true,
   });
   assert.equal(resolved.input.source, undefined);
@@ -78,7 +81,7 @@ const fullConfig = {
     configDir,
     cwd: repoRoot,
     overrides: {
-      url: fullConfig.page.url,
+      url: pageUrl,
     },
     requirePageInput: true,
   });
@@ -95,12 +98,13 @@ const fullConfig = {
     configDir,
     cwd: repoRoot,
     overrides: {
+      url: pageUrl,
       route: '/prototype/override',
     },
     requirePageInput: true,
   });
   assert.equal(resolved.page.route, '/prototype/override');
-  assert.equal(resolved.page.url, fullConfig.page.url);
+  assert.equal(resolved.page.url, pageUrl);
 }
 
 assert.equal(extractRouteFromUrl('/prototype/foo?x=1'), '/prototype/foo');
@@ -113,6 +117,10 @@ assert.throws(
 );
 assert.throws(
   () => parseProtoBridgeConfig(JSON.stringify({ prototypeUrl: 'http://localhost' })),
+  /Unknown config field/,
+);
+assert.throws(
+  () => parseProtoBridgeConfig(JSON.stringify({ page: { url: pageUrl } })),
   /Unknown config field/,
 );
 assert.throws(

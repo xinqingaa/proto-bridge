@@ -8,9 +8,6 @@
     "adapter": "flutter-app",
     "root": "/path/to/youfi"
   },
-  "page": {
-    "url": "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1"
-  },
   "runtime": {
     "capture": true,
     "viewport": {

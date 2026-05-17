@@ -29,9 +29,6 @@ npx @proto-bridge/cli generate \
     "adapter": "flutter-app",
     "root": "/path/to/youfi"
   },
-  "page": {
-    "url": "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1"
-  },
   "runtime": {
     "capture": true
   },
@@ -41,7 +38,7 @@ npx @proto-bridge/cli generate \
 }
 ```
 
-URL 是主入口。配置了 `source.root` 时会从 URL 推导 route 并自动补源码证据；配置了 `target.root` 时会生成 plan/review。
+配置文件只放稳定环境信息。每次通过 CLI 参数或交互输入传 URL；配置了 `source.root` 时会从 URL 推导 route 并自动补源码证据，配置了 `target.root` 时会生成 plan/review。
 
 ## Commands
 

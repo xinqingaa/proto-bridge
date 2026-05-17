@@ -84,7 +84,7 @@ const toolDefinitions: JsonValue[] = [
         route: { type: 'string', description: '高级 source route 覆盖值。通常只传 url，系统会自动从 url 推导 route。' },
         vuePath: { type: 'string', description: '高级 Vue SFC 覆盖路径。通常只传 url。' },
         vue: { type: 'string', description: 'vuePath 的兼容别名。P5 完成后会删除。' },
-        url: { type: 'string', description: '主页面输入。未传时读取 config.page.url；有 URL 时默认 capture=true，除非 runtime.capture/tool capture 覆盖。' },
+        url: { type: 'string', description: '主页面输入。每次调用时传入；有 URL 时默认 capture=true，除非 runtime.capture/tool capture 覆盖。' },
         output: { type: 'string', description: '产物输出目录。默认 config.output.root 下的页面目录；无 config 时使用当前工作目录下的 output。' },
         capture: { type: 'boolean', description: '是否执行 runtime.capture。默认读取 config.runtime.capture，再回退有 url 时 true。' },
         saveArtifacts: { type: 'boolean', description: '是否保存截图 artifact。默认 true。' },
@@ -209,7 +209,7 @@ const workflowCatalog: JsonObject = {
     {
       phase: '统一编排',
       tool: 'reconstruct_page_context',
-      requiredInput: ['url，或 proto-bridge.config.json 中的 page.url；route/vuePath 仅作高级覆盖'],
+      requiredInput: ['url；route/vuePath 仅作高级覆盖'],
       emits: ['page-canonical.json', 'page-debug-index.json', 'ui-build-plan.json', 'ui-build-review.md', 'screenshots/full-page.png'],
       next: ['实现', 'validate_ui_build'],
     },

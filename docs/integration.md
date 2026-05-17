@@ -153,9 +153,6 @@ console.log(result.status);
     "adapter": "flutter-app",
     "root": "/Users/name/work/youfi"
   },
-  "page": {
-    "url": "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1"
-  },
   "runtime": {
     "capture": true
   },

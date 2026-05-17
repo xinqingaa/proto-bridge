@@ -138,14 +138,11 @@ async function loadOptionalConfig(values: Record<string, string | boolean>): Pro
   };
 }
 
-function hasPageInput(overrides: ProtoBridgeInputOverrides, config: ProtoBridgeConfig | undefined): boolean {
+function hasPageInput(overrides: ProtoBridgeInputOverrides, _config: ProtoBridgeConfig | undefined): boolean {
   return Boolean(
     overrides.url ||
     overrides.route ||
-    overrides.vue ||
-    config?.page?.url ||
-    config?.page?.route ||
-    config?.page?.vue,
+    overrides.vue,
   );
 }
 

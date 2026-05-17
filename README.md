@@ -58,7 +58,7 @@ Source 和 URL 都不是绝对必填。按你手头已有的证据选择模式�
 npx @proto-bridge/cli init
 ```
 
-`proto-bridge.config.json` 常用 URL-first 示例：
+`proto-bridge.config.json` 只放稳定环境信息，不写本次要还原的页面：
 
 ```json
 {
@@ -71,9 +71,6 @@ npx @proto-bridge/cli init
     "adapter": "flutter-app",
     "root": "/Users/name/work/youfi"
   },
-  "page": {
-    "url": "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1"
-  },
   "runtime": {
     "capture": true
   },
@@ -83,17 +80,17 @@ npx @proto-bridge/cli init
 }
 ```
 
-URL 是主入口；配置了 `source.root` 时会自动从 URL 推导 route 并补充源码证据：
-
-```bash
-npx @proto-bridge/cli generate
-```
-
-也可以在命令里直接传 URL：
+每次运行时通过 CLI 参数或交互输入告诉 ProtoBridge 要还原哪个页面。配置了 `source.root` 时会自动从 URL 推导 route 并补充源码证据：
 
 ```bash
 npx @proto-bridge/cli generate \
   --url "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1"
+```
+
+不传页面参数时，CLI 会询问 `url/route/vue`：
+
+```bash
+npx @proto-bridge/cli generate
 ```
 
 `--route` 和 `--vue` 是高级覆盖入口，通常不需要传：

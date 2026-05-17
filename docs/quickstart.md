@@ -27,11 +27,11 @@ pnpm run build
 
 ## 配置
 
-在运行 ProtoBridge 的目录创建 `proto-bridge.config.json`。ProtoBridge 采用 URL-first 配置：`page.url` 是主入口；`source.root` 和 `target.root` 都是增强项。
+在运行 ProtoBridge 的目录创建 `proto-bridge.config.json`。配置文件只放稳定环境信息；每次要还原哪个页面，通过 CLI 参数或 MCP tool arguments 传入。
 
 ### Source + Target 常用配置
 
-有 prototype/source repository 和 Flutter target repository 时配置 `source` 和 `target`，运行时通常只需要 URL：
+有 prototype/source repository 和 Flutter target repository 时配置 `source` 和 `target`：
 
 ```json
 {
@@ -44,9 +44,6 @@ pnpm run build
     "adapter": "flutter-app",
     "root": "/Users/name/work/youfi"
   },
-  "page": {
-    "url": "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1"
-  },
   "runtime": {
     "capture": true
   },
@@ -56,11 +53,11 @@ pnpm run build
 }
 ```
 
-这种配置会从 URL 推导 route；有 `source.root` 时自动补 source evidence，有 `target.root` 时生成 plan/review。
+运行时传入 URL 后会推导 route；有 `source.root` 时自动补 source evidence，有 `target.root` 时生成 plan/review。
 
-### Target + URL 最小配置
+### Target 最小配置
 
-如果没有源码，只有运行中的 URL，可以只配置 target：
+如果没有源码，可以只配置 target：
 
 ```json
 {
@@ -69,9 +66,6 @@ pnpm run build
     "adapter": "flutter-app",
     "root": "/Users/name/work/youfi"
   },
-  "page": {
-    "url": "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1"
-  },
   "runtime": {
     "capture": true
   },
@@ -81,36 +75,25 @@ pnpm run build
 }
 ```
 
-这会生成 runtime evidence、target conventions、`ui-build-plan.json` 和 `ui-build-review.md`。
+运行时传 URL 后会生成 runtime evidence、target conventions、`ui-build-plan.json` 和 `ui-build-review.md`。
 
-### URL-only 配置
+### URL-only
 
-没有 source 和 target 时也可以只采集 URL evidence：
+没有 source 和 target 时可以不写配置，直接传 URL 采集 evidence：
 
-```json
-{
-  "schemaVersion": 1,
-  "page": {
-    "url": "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1"
-  },
-  "runtime": {
-    "capture": true
-  },
-  "output": {
-    "root": "./output"
-  }
-}
+```bash
+npx @proto-bridge/cli generate \
+  --url "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1"
 ```
 
 字段说明：
 
-- `page.url`：主页面输入。通常只维护这个字段。
-- `page.route`、`page.vue`：高级覆盖字段。只有 URL 自动映射不够时才需要。
 - `source.root`：prototype/source repository 路径。配置后会根据 URL 推导 route 并自动补源码证据。
 - `target.root`：目标工程路径。配置后生成 `ui-build-plan.json`、`ui-build-review.md` 和 validation hints。
 - `runtime.capture`：默认 runtime capture 开关。
 - `runtime.viewport`：可选采集 viewport。
 - `output.root`：输出根目录。
+- `url`、`route`、`vue`：页面输入，只通过 CLI 参数或 MCP tool arguments 传入，不写在 config 中。
 
 CLI 和 MCP 的优先级：
 

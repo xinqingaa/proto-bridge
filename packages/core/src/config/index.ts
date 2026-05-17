@@ -12,12 +12,6 @@ export type ProtoBridgeProjectConfig = {
   root?: string | undefined;
 };
 
-export type ProtoBridgePageConfig = {
-  url?: string | undefined;
-  route?: string | undefined;
-  vue?: string | undefined;
-};
-
 export type ProtoBridgeRuntimeConfig = {
   capture?: boolean | undefined;
   viewport?: ProtoBridgeViewport | undefined;
@@ -37,7 +31,6 @@ export type ProtoBridgeConfig = {
   schemaVersion?: 1 | undefined;
   source?: ProtoBridgeProjectConfig | undefined;
   target?: ProtoBridgeProjectConfig | undefined;
-  page?: ProtoBridgePageConfig | undefined;
   runtime?: ProtoBridgeRuntimeConfig | undefined;
   output?: ProtoBridgeOutputConfig | undefined;
   sourceBrief?: boolean | undefined;
@@ -90,7 +83,6 @@ const TOP_LEVEL_KEYS = new Set([
   'schemaVersion',
   'source',
   'target',
-  'page',
   'runtime',
   'output',
   'sourceBrief',
@@ -133,7 +125,6 @@ export function parseProtoBridgeConfig(text: string, configPath = 'proto-bridge.
     ...(schemaVersion === 1 ? { schemaVersion: 1 } : {}),
     source: parseProjectConfig(parsed.source, 'source', configPath),
     target: parseProjectConfig(parsed.target, 'target', configPath),
-    page: parsePageConfig(parsed.page, configPath),
     runtime: parseRuntimeConfig(parsed.runtime, configPath),
     output: parseOutputConfig(parsed.output, configPath),
     sourceBrief: parseOptionalBoolean(parsed.sourceBrief, 'sourceBrief', configPath),
@@ -143,7 +134,7 @@ export function parseProtoBridgeConfig(text: string, configPath = 'proto-bridge.
 export function resolveProtoBridgeInput(options: ResolveProtoBridgeInputOptions): ResolvedProtoBridgeInput {
   const config = options.config;
   const overrides = options.overrides ?? {};
-  const page = resolvePageInput(config?.page, overrides);
+  const page = resolvePageInput(overrides);
   if (options.requirePageInput && !page.url && !page.route && !page.vue && !overrides.screenshotPath) {
     throw new Error('Provide --url, --route, --vue, or screenshotPath.');
   }
@@ -215,12 +206,11 @@ export function normalizePageRoute(route: string): string {
 }
 
 function resolvePageInput(
-  configPage: ProtoBridgePageConfig | undefined,
   overrides: ProtoBridgeInputOverrides,
 ): { url?: string | undefined; route?: string | undefined; vue?: string | undefined } {
-  const url = overrides.url ?? configPage?.url;
-  const explicitRoute = overrides.route ?? configPage?.route;
-  const vue = overrides.vue ?? configPage?.vue;
+  const url = overrides.url;
+  const explicitRoute = overrides.route;
+  const vue = overrides.vue;
   const route = explicitRoute
     ? normalizePageRoute(explicitRoute)
     : url
@@ -298,17 +288,6 @@ function parseProjectConfig(value: unknown, label: string, configPath: string): 
   return {
     adapter: parseOptionalString(value.adapter, `${label}.adapter`, configPath),
     root: parseOptionalString(value.root, `${label}.root`, configPath),
-  };
-}
-
-function parsePageConfig(value: unknown, configPath: string): ProtoBridgePageConfig | undefined {
-  if (value === undefined) return undefined;
-  if (!isRecord(value)) throw new Error(`Invalid config file ${configPath}: page must be an object`);
-  assertAllowedKeys(value, new Set(['url', 'route', 'vue']), `page in ${configPath}`);
-  return {
-    url: parseOptionalString(value.url, 'page.url', configPath),
-    route: parseOptionalString(value.route, 'page.route', configPath),
-    vue: parseOptionalString(value.vue, 'page.vue', configPath),
   };
 }
 
