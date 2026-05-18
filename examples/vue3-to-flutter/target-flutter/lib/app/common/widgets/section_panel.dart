@@ -23,8 +23,8 @@ class SectionPanel extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF203042).withValues(alpha: 0.08),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
           ),
         ],
       ),

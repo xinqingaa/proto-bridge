@@ -7,12 +7,14 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
   const CommonAppBar({
     required this.title,
     this.eyebrow,
+    this.leading,
     this.action,
     super.key,
   });
 
   final String title;
   final String? eyebrow;
+  final Widget? leading;
   final Widget? action;
 
   @override
@@ -31,6 +33,10 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
         child: Row(
           children: [
+            if (leading != null) ...[
+              leading!,
+              const SizedBox(width: AppSpacing.sm),
+            ],
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

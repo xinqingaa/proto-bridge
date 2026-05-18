@@ -11,12 +11,12 @@ class AppPages {
       case Routes.pnlAnalysis:
         return MaterialPageRoute<void>(
           settings: settings,
-          builder: (_) => const ProtoFallbackPage(title: 'P&L Analysis'),
+          builder: (_) => const ProtoFallbackPage(title: '盈亏分析'),
         );
       case Routes.holdingList:
         return MaterialPageRoute<void>(
           settings: settings,
-          builder: (_) => const ProtoFallbackPage(title: 'Portfolio Holdings'),
+          builder: (_) => const ProtoFallbackPage(title: '持仓列表'),
         );
       case Routes.home:
       default:

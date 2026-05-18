@@ -1,12 +1,13 @@
 <template>
   <main class="phone-page pnl-page">
     <section class="page-shell">
-      <header class="top-bar">
-        <div>
-          <p class="eyebrow">Asset Center</p>
-          <h1 class="page-title">P&L Analysis</h1>
+      <header class="app-bar">
+        <button class="icon-button" :aria-label="prefs.t('nav.back')" @click="router.push('/')">‹</button>
+        <div class="app-bar-title">
+          <strong>{{ prefs.t('pnl.title') }}</strong>
+          <span>{{ prefs.t('nav.asset') }}</span>
         </div>
-        <button class="icon-button" aria-label="Open filters" @click="store.openFilterSheet">⌘</button>
+        <button class="icon-button" :aria-label="prefs.t('pnl.filter')" @click="store.openFilterSheet">⌘</button>
       </header>
 
       <section class="tab-bar" aria-label="Analysis tabs">
@@ -17,82 +18,138 @@
           :class="{ active: store.activePnlTab === tab.value }"
           @click="store.setPnlTab(tab.value)"
         >
-          {{ tab.label }}
+          <span>{{ tab.label }}</span>
+          <small>{{ tab.hint }}</small>
         </button>
       </section>
 
-      <section class="metrics-grid">
-        <article v-for="metric in store.pnlMetrics" :key="metric.label" class="panel metric-card">
-          <span>{{ metric.label }}</span>
-          <strong :class="metric.tone">{{ metric.value }}</strong>
-          <small :class="metric.tone">{{ metric.delta }}</small>
-        </article>
+      <section v-if="store.activePnlTab === 'overview'" class="tab-content overview-content">
+        <section class="metrics-grid">
+          <article v-for="metric in localizedMetrics" :key="metric.label" class="panel metric-card">
+            <span>{{ metric.label }}</span>
+            <strong :class="metric.tone">{{ metric.value }}</strong>
+            <small :class="metric.tone">{{ metric.delta }}</small>
+          </article>
+        </section>
+
+        <section class="panel trend-panel">
+          <div class="section-heading">
+            <div>
+              <h2>{{ prefs.t('pnl.trend') }}</h2>
+              <p>{{ prefs.t('pnl.trendHint') }}</p>
+            </div>
+            <button class="text-button" @click="store.refreshPage">{{ prefs.t('pnl.refresh') }}</button>
+          </div>
+          <div class="trend-chart" aria-label="P&L trend chart">
+            <span
+              v-for="(point, index) in store.trendPoints"
+              :key="index"
+              class="trend-bar"
+              :style="{ height: `${point}%` }"
+            />
+          </div>
+        </section>
+
+        <RecordPanel
+          :title="prefs.t('pnl.records')"
+          :subtitle="`${prefs.t('pnl.riskFilter')}: ${riskLabel(store.riskFilter)}`"
+          :records="store.filteredRecords"
+          :loading="store.loading"
+          @filter="store.openFilterSheet"
+          @open="store.openRecord"
+        />
       </section>
 
-      <section class="panel trend-panel">
-        <div class="section-heading">
-          <div>
-            <h2>Return Trend</h2>
-            <p>8 sessions, current tab: {{ store.activePnlTab }}</p>
+      <section v-else-if="store.activePnlTab === 'realized'" class="tab-content realized-content">
+        <section class="panel realized-summary">
+          <div class="section-heading">
+            <div>
+              <h2>{{ prefs.t('pnl.realizedTitle') }}</h2>
+              <p>{{ prefs.t('pnl.cashflow') }}</p>
+            </div>
+            <strong class="positive">+$7,418</strong>
           </div>
-          <button class="text-button" @click="store.refreshPage">Refresh</button>
-        </div>
-        <div class="trend-chart" aria-label="P&L trend chart">
-          <span
-            v-for="(point, index) in store.trendPoints"
-            :key="index"
-            class="trend-bar"
-            :style="{ height: `${point}%` }"
-          />
-        </div>
+          <div class="breakdown-list">
+            <div v-for="item in realizedBreakdown" :key="item.label">
+              <span>{{ item.label }}</span>
+              <strong :class="item.tone">{{ item.value }}</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel fee-panel">
+          <div>
+            <span>{{ prefs.t('pnl.fees') }}</span>
+            <strong>-$184.22</strong>
+          </div>
+          <div>
+            <span>{{ prefs.t('pnl.cashflow') }}</span>
+            <strong>+$12,600</strong>
+          </div>
+        </section>
+
+        <RecordPanel
+          :title="prefs.t('pnl.records')"
+          subtitle="+4 realized trades"
+          :records="realizedRecords"
+          :loading="false"
+          @filter="store.openFilterSheet"
+          @open="store.openRecord"
+        />
       </section>
 
-      <section class="panel record-panel">
-        <div class="section-heading">
+      <section v-else class="tab-content risk-content">
+        <section class="panel risk-budget">
           <div>
-            <h2>Trade Records</h2>
-            <p>Risk filter: {{ store.riskFilter }}</p>
+            <span>{{ prefs.t('pnl.riskBudget') }}</span>
+            <strong>63%</strong>
+            <small>-5 pts</small>
           </div>
-          <button class="text-button" @click="store.openFilterSheet">Filter</button>
-        </div>
+          <div class="risk-meter">
+            <span style="width: 63%" />
+          </div>
+        </section>
 
-        <div v-if="store.loading" class="loading-state">Syncing latest trades...</div>
-        <div v-else-if="store.filteredRecords.length === 0" class="empty-state">No records for this risk level</div>
-        <article
-          v-for="record in store.filteredRecords"
-          v-else
-          :key="record.id"
-          class="record-row"
-          @click="store.openRecord(record)"
-        >
-          <div>
-            <strong>{{ record.symbol }}</strong>
-            <span>{{ record.action }} · {{ record.time }}</span>
+        <section class="panel exposure-panel">
+          <div class="section-heading">
+            <div>
+              <h2>{{ prefs.t('pnl.riskTitle') }}</h2>
+              <p>{{ prefs.t('pnl.alerts') }}</p>
+            </div>
           </div>
-          <div class="record-value">
-            <strong :class="{ negative: record.amount.startsWith('-'), positive: !record.amount.startsWith('-') }">
-              {{ record.amount }}
-            </strong>
-            <span>{{ record.risk }}</span>
+          <div class="exposure-list">
+            <div v-for="item in exposureItems" :key="item.label">
+              <span>{{ item.label }}</span>
+              <strong>{{ item.value }}</strong>
+            </div>
           </div>
-        </article>
+        </section>
+
+        <RecordPanel
+          :title="prefs.t('pnl.records')"
+          :subtitle="`${prefs.t('pnl.riskFilter')}: ${riskLabel(store.riskFilter)}`"
+          :records="store.filteredRecords"
+          :loading="store.loading"
+          @filter="store.openFilterSheet"
+          @open="store.openRecord"
+        />
       </section>
     </section>
 
     <section v-if="store.filterSheetOpen" class="sheet-backdrop" @click.self="store.closeFilterSheet">
       <div class="filter-sheet panel">
         <div class="section-heading">
-          <h2>Filter by risk</h2>
-          <button class="icon-button" aria-label="Close filters" @click="store.closeFilterSheet">×</button>
+          <h2>{{ prefs.t('pnl.riskFilter') }}</h2>
+          <button class="icon-button" :aria-label="prefs.t('pnl.close')" @click="store.closeFilterSheet">×</button>
         </div>
         <button
           v-for="risk in riskOptions"
-          :key="risk"
+          :key="risk.value"
           class="sheet-option"
-          :class="{ active: store.riskFilter === risk }"
-          @click="store.setRiskFilter(risk)"
+          :class="{ active: store.riskFilter === risk.value }"
+          @click="store.setRiskFilter(risk.value)"
         >
-          {{ risk }}
+          {{ risk.label }}
         </button>
       </div>
     </section>
@@ -102,9 +159,9 @@
         <div class="section-heading">
           <div>
             <h2>{{ store.selectedRecord.symbol }} detail</h2>
-            <p>{{ store.selectedRecord.action }} at {{ store.selectedRecord.time }}</p>
+            <p>{{ actionLabel(store.selectedRecord.action) }} · {{ store.selectedRecord.time }}</p>
           </div>
-          <button class="icon-button" aria-label="Close detail" @click="store.closeRecord">×</button>
+          <button class="icon-button" :aria-label="prefs.t('pnl.close')" @click="store.closeRecord">×</button>
         </div>
         <dl class="detail-grid">
           <div>
@@ -112,12 +169,12 @@
             <dd>{{ store.selectedRecord.amount }}</dd>
           </div>
           <div>
-            <dt>Risk</dt>
-            <dd>{{ store.selectedRecord.risk }}</dd>
+            <dt>{{ prefs.t('holding.risk') }}</dt>
+            <dd>{{ riskLabel(store.selectedRecord.risk) }}</dd>
           </div>
         </dl>
-        <button class="primary-button" @click="store.pushPage('/prototype/asset/holding-list', { symbol: store.selectedRecord.symbol })">
-          Open holding
+        <button class="primary-button" @click="router.push('/prototype/asset/holding-list')">
+          {{ prefs.t('pnl.openHolding') }}
         </button>
       </div>
     </section>
@@ -125,19 +182,109 @@
 </template>
 
 <script setup>
-import { useRoute } from 'vue-router';
-import { onMounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { computed, defineComponent, h, onMounted, watch } from 'vue';
 import { useAssetPrototypeStore } from '../../../stores/assetPrototype.js';
+import { usePreferenceStore } from '../../../stores/preferences.js';
 
 const route = useRoute();
+const router = useRouter();
 const store = useAssetPrototypeStore();
+const prefs = usePreferenceStore();
 
-const tabs = [
-  { label: 'Overview', value: 'overview' },
-  { label: 'Realized', value: 'realized' },
-  { label: 'Risk', value: 'risk' },
-];
-const riskOptions = ['All', 'Low', 'Medium', 'High'];
+const tabs = computed(() => [
+  { label: prefs.t('pnl.tab.overview'), value: 'overview', hint: '+12.8%' },
+  { label: prefs.t('pnl.tab.realized'), value: 'realized', hint: '+$7.4k' },
+  { label: prefs.t('pnl.tab.risk'), value: 'risk', hint: '63%' },
+]);
+
+const riskOptions = computed(() => [
+  { label: prefs.t('risk.all'), value: 'All' },
+  { label: prefs.t('risk.low'), value: 'Low' },
+  { label: prefs.t('risk.medium'), value: 'Medium' },
+  { label: prefs.t('risk.high'), value: 'High' },
+]);
+
+const metricLabels = computed(() => ({
+  'Total P&L': prefs.t('pnl.total'),
+  Realized: prefs.t('pnl.realized'),
+  Unrealized: prefs.t('pnl.unrealized'),
+  'Risk Budget': prefs.t('pnl.riskBudget'),
+}));
+
+const localizedMetrics = computed(() =>
+  store.pnlMetrics.map((metric) => ({
+    ...metric,
+    label: metricLabels.value[metric.label] ?? metric.label,
+  })),
+);
+
+const realizedBreakdown = computed(() => [
+  { label: 'NVDA', value: '+$2,180.00', tone: 'positive' },
+  { label: 'AAPL', value: '+$620.40', tone: 'positive' },
+  { label: 'MSFT', value: '+$780.90', tone: 'positive' },
+  { label: 'Fees', value: '-$184.22', tone: 'negative' },
+]);
+
+const realizedRecords = computed(() => store.pnlRecords.filter((record) => !record.amount.startsWith('-')));
+
+const exposureItems = computed(() => [
+  { label: prefs.t('sector.semiconductor'), value: '38%' },
+  { label: prefs.t('sector.consumer'), value: '26%' },
+  { label: prefs.t('sector.ev'), value: '14%' },
+]);
+
+function riskLabel(value) {
+  return {
+    All: prefs.t('risk.all'),
+    Low: prefs.t('risk.low'),
+    Medium: prefs.t('risk.medium'),
+    High: prefs.t('risk.high'),
+  }[value] ?? value;
+}
+
+function actionLabel(value) {
+  if (prefs.locale === 'en-US') return value;
+  return {
+    'Take Profit': '止盈',
+    'Covered Call': '备兑开仓',
+    'Stop Loss': '止损',
+    'Add Position': '加仓',
+  }[value] ?? value;
+}
+
+const RecordPanel = defineComponent({
+  props: {
+    title: { type: String, required: true },
+    subtitle: { type: String, required: true },
+    records: { type: Array, required: true },
+    loading: { type: Boolean, required: true },
+  },
+  emits: ['filter', 'open'],
+  setup(props, { emit }) {
+    return () => h('section', { class: 'panel record-panel' }, [
+      h('div', { class: 'section-heading' }, [
+        h('div', [h('h2', props.title), h('p', props.subtitle)]),
+        h('button', { class: 'text-button', onClick: () => emit('filter') }, prefs.t('pnl.filter')),
+      ]),
+      props.loading
+        ? h('div', { class: 'loading-state' }, prefs.t('pnl.loading'))
+        : props.records.length === 0
+          ? h('div', { class: 'empty-state' }, prefs.t('pnl.empty'))
+          : props.records.map((record) => h('article', {
+            key: record.id,
+            class: 'record-row',
+            onClick: () => emit('open', record),
+          }, [
+            h('div', [h('strong', record.symbol), h('span', `${actionLabel(record.action)} · ${record.time}`)]),
+            h('div', { class: 'record-value' }, [
+              h('strong', { class: { negative: record.amount.startsWith('-'), positive: !record.amount.startsWith('-') } }, record.amount),
+              h('span', riskLabel(record.risk)),
+            ]),
+          ])),
+    ]);
+  },
+});
 
 onMounted(() => {
   if (route.query.tab) {
@@ -153,42 +300,49 @@ watch(() => store.activePnlTab, (tab) => {
 </script>
 
 <style scoped>
-.pnl-page {
-  background:
-    linear-gradient(180deg, rgba(22, 133, 91, 0.12), rgba(238, 243, 248, 0) 260px),
-    var(--pb-bg);
-}
-
 .tab-bar {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+  gap: 8px;
   margin-bottom: 14px;
-  padding: 4px;
-  border: 1px solid var(--pb-border);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.78);
 }
 
 .tab-button {
-  min-height: 34px;
-  border-radius: 7px;
-  background: transparent;
+  display: grid;
+  gap: 3px;
+  min-height: 58px;
+  padding: 9px 8px;
+  border: 1px solid var(--pb-border);
+  border-radius: 8px;
+  background: var(--pb-surface);
   color: var(--pb-muted);
-  font-size: 13px;
   font-weight: 800;
 }
 
+.tab-button small {
+  color: var(--pb-muted);
+  font-size: 11px;
+}
+
 .tab-button.active {
-  background: var(--pb-primary);
-  color: #ffffff;
+  border-color: var(--pb-accent);
+  background: var(--pb-accent-soft);
+  color: var(--pb-text);
+}
+
+.tab-button.active small {
+  color: var(--pb-accent);
+}
+
+.tab-content {
+  display: grid;
+  gap: 12px;
 }
 
 .metrics-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
-  margin-bottom: 12px;
 }
 
 .metric-card {
@@ -215,8 +369,11 @@ watch(() => store.activePnlTab, (tab) => {
 }
 
 .trend-panel,
-.record-panel {
-  margin-top: 12px;
+.record-panel,
+.realized-summary,
+.fee-panel,
+.risk-budget,
+.exposure-panel {
   padding: 16px;
 }
 
@@ -253,7 +410,7 @@ watch(() => store.activePnlTab, (tab) => {
 .trend-bar {
   min-height: 18px;
   border-radius: 6px 6px 3px 3px;
-  background: linear-gradient(180deg, #176b87, #48a6a7);
+  background: linear-gradient(180deg, var(--pb-accent), color-mix(in srgb, var(--pb-accent) 38%, var(--pb-primary)));
 }
 
 .record-row {
@@ -286,6 +443,65 @@ watch(() => store.activePnlTab, (tab) => {
   text-align: right;
 }
 
+.breakdown-list,
+.exposure-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.breakdown-list div,
+.exposure-list div,
+.fee-panel {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.breakdown-list div,
+.exposure-list div {
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--pb-surface-soft);
+}
+
+.fee-panel {
+  grid-template-columns: 1fr 1fr;
+}
+
+.fee-panel span,
+.risk-budget span,
+.breakdown-list span,
+.exposure-list span {
+  display: block;
+  color: var(--pb-muted);
+  font-size: 12px;
+}
+
+.fee-panel strong,
+.risk-budget strong,
+.breakdown-list strong,
+.exposure-list strong {
+  display: block;
+  margin-top: 4px;
+}
+
+.risk-meter {
+  height: 9px;
+  margin-top: 14px;
+  border-radius: 999px;
+  background: var(--pb-surface-soft);
+  overflow: hidden;
+}
+
+.risk-meter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--pb-accent);
+}
+
 .loading-state,
 .empty-state {
   padding: 26px 0;
@@ -300,7 +516,7 @@ watch(() => store.activePnlTab, (tab) => {
   align-items: flex-end;
   justify-content: center;
   padding: 14px;
-  background: rgba(20, 30, 42, 0.42);
+  background: rgba(16, 16, 14, 0.55);
 }
 
 .filter-sheet,
@@ -323,9 +539,9 @@ watch(() => store.activePnlTab, (tab) => {
 }
 
 .sheet-option.active {
-  border-color: var(--pb-primary);
-  background: var(--pb-primary-soft);
-  color: var(--pb-primary);
+  border-color: var(--pb-accent);
+  background: var(--pb-accent-soft);
+  color: var(--pb-accent);
 }
 
 .detail-grid {

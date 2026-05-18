@@ -1,21 +1,42 @@
 :root {
-  color: #17202a;
-  background: #eef3f8;
+  color: #111111;
+  background: #f7f7f5;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  --pb-bg: #eef3f8;
+  --pb-bg: #f7f7f5;
   --pb-surface: #ffffff;
-  --pb-surface-soft: #f7fafc;
-  --pb-text: #17202a;
-  --pb-muted: #6b7886;
-  --pb-border: #d8e1ea;
-  --pb-primary: #176b87;
-  --pb-primary-soft: #d8eef3;
-  --pb-positive: #16855b;
-  --pb-negative: #c4453c;
-  --pb-warning: #a66b00;
-  --pb-shadow: 0 14px 36px rgba(28, 45, 64, 0.12);
+  --pb-surface-soft: #f0efeb;
+  --pb-text: #111111;
+  --pb-muted: #6b6b63;
+  --pb-border: #d8d6cf;
+  --pb-primary: #2f2f2c;
+  --pb-primary-soft: #ebe8e1;
+  --pb-accent: #c56a2a;
+  --pb-accent-soft: #f4dfcf;
+  --pb-positive: #3f7b55;
+  --pb-negative: #a54b42;
+  --pb-warning: #b2752d;
+  --pb-shadow: 0 14px 34px rgba(35, 34, 30, 0.08);
+}
+
+:root[data-theme="dark"] {
+  color: #f4f1ea;
+  background: #10100e;
+  --pb-bg: #10100e;
+  --pb-surface: #191916;
+  --pb-surface-soft: #22211d;
+  --pb-text: #f4f1ea;
+  --pb-muted: #aaa59a;
+  --pb-border: #34322d;
+  --pb-primary: #f4f1ea;
+  --pb-primary-soft: #2b2924;
+  --pb-accent: #e08a3e;
+  --pb-accent-soft: #3a281d;
+  --pb-positive: #7fb98b;
+  --pb-negative: #d9867d;
+  --pb-warning: #d59b4c;
+  --pb-shadow: 0 18px 36px rgba(0, 0, 0, 0.24);
 }
 
 * {
@@ -43,7 +64,33 @@ button {
 }
 
 .page-shell {
-  padding: 18px 18px 28px;
+  padding: 16px 18px 28px;
+}
+
+.app-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  margin-bottom: 14px;
+}
+
+.app-bar-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-bar-title strong {
+  display: block;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.app-bar-title span {
+  display: block;
+  margin-top: 2px;
+  color: var(--pb-muted);
+  font-size: 12px;
 }
 
 .top-bar {
@@ -84,13 +131,14 @@ button {
   width: 38px;
   background: var(--pb-surface);
   color: var(--pb-text);
-  box-shadow: 0 8px 20px rgba(32, 48, 66, 0.08);
+  border: 1px solid var(--pb-border);
+  box-shadow: none;
 }
 
 .text-button {
   padding: 0 14px;
   background: var(--pb-primary-soft);
-  color: var(--pb-primary);
+  color: var(--pb-text);
   font-weight: 700;
 }
 
@@ -101,11 +149,15 @@ button {
   font-weight: 800;
 }
 
+:root[data-theme="dark"] .primary-button {
+  color: #10100e;
+}
+
 .panel {
   border: 1px solid var(--pb-border);
   border-radius: 8px;
   background: var(--pb-surface);
-  box-shadow: 0 8px 24px rgba(32, 48, 66, 0.08);
+  box-shadow: var(--pb-shadow);
 }
 
 .muted {

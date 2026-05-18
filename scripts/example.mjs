@@ -304,7 +304,7 @@ class ProtoAccountRepository {
       marketValue: r'$128,420.36',
       dayPnl: r'+$2,364.20',
       dayPnlRate: '+1.87%',
-      riskLevel: 'Balanced',
+      riskLevel: '平衡',
     );
   }
 
@@ -346,25 +346,25 @@ class ProtoAccountRepository {
   List<ProtoPnlMetric> loadMetrics() {
     return const [
       ProtoPnlMetric(
-        label: 'Total P&L',
+        label: '总收益',
         value: r'+$18,206',
         delta: '+12.8%',
         tone: ProtoMetricTone.positive,
       ),
       ProtoPnlMetric(
-        label: 'Realized',
+        label: '已实现',
         value: r'+$7,418',
         delta: '+4.6%',
         tone: ProtoMetricTone.positive,
       ),
       ProtoPnlMetric(
-        label: 'Unrealized',
+        label: '未实现',
         value: r'+$10,788',
         delta: '+8.2%',
         tone: ProtoMetricTone.positive,
       ),
       ProtoPnlMetric(
-        label: 'Risk Budget',
+        label: '风险预算',
         value: '63%',
         delta: '-5 pts',
         tone: ProtoMetricTone.neutral,
@@ -376,28 +376,28 @@ class ProtoAccountRepository {
     return const [
       ProtoPnlRecord(
         symbol: 'NVDA',
-        action: 'Take Profit',
+        action: '止盈',
         time: '09:42',
         amount: r'+$2,180.00',
         risk: 'Medium',
       ),
       ProtoPnlRecord(
         symbol: 'AAPL',
-        action: 'Covered Call',
+        action: '备兑开仓',
         time: '10:18',
         amount: r'+$620.40',
         risk: 'Low',
       ),
       ProtoPnlRecord(
         symbol: 'TSLA',
-        action: 'Stop Loss',
+        action: '止损',
         time: '11:05',
         amount: r'-$430.20',
         risk: 'High',
       ),
       ProtoPnlRecord(
         symbol: 'MSFT',
-        action: 'Add Position',
+        action: '加仓',
         time: '13:24',
         amount: r'+$780.90',
         risk: 'Medium',
@@ -430,16 +430,16 @@ class ProtoSummaryCard extends StatelessWidget {
     return SectionPanel(
       child: Row(
         children: [
-          Expanded(child: _Metric(label: 'Market value', value: summary.marketValue)),
+          Expanded(child: _Metric(label: '市值', value: summary.marketValue)),
           Expanded(
             child: _Metric(
-              label: 'Today P&L',
+              label: '今日收益',
               value: summary.dayPnl,
               caption: summary.dayPnlRate,
               positive: true,
             ),
           ),
-          Expanded(child: _Metric(label: 'Risk', value: summary.riskLevel)),
+          Expanded(child: _Metric(label: '风险', value: summary.riskLevel)),
         ],
       ),
     );
@@ -474,10 +474,10 @@ class ProtoFilterBar extends StatelessWidget {
               labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
               label: Text(option),
               onSelected: (_) => onSelected(option),
-              selectedColor: themeService.colors.primarySoft,
+              selectedColor: themeService.colors.accentSoft,
               shape: RoundedRectangleBorder(
                 side: BorderSide(
-                  color: active ? themeService.colors.primary : themeService.colors.border,
+                  color: active ? themeService.colors.accent : themeService.colors.border,
                 ),
                 borderRadius: BorderRadius.circular(AppRadii.chip),
               ),
@@ -693,7 +693,7 @@ class _TrendChartPainter extends CustomPainter {
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [themeService.colors.primary, const Color(0xFF48A6A7)],
+        colors: [themeService.colors.accent, themeService.colors.primary],
       ).createShader(Offset.zero & size);
     const gap = 8.0;
     final width = (size.width - gap * (points.length - 1)) / points.length;
@@ -739,7 +739,7 @@ class ProtoHoldingListPage extends StatefulWidget {
 }
 
 class _ProtoHoldingListPageState extends State<ProtoHoldingListPage> {
-  static const filters = ['All', 'Semiconductor', 'Consumer Electronics', 'EV'];
+  static const filters = ['全部', '半导体', '消费电子', '新能源车'];
   final repository = const ProtoAccountRepository();
   late final summary = repository.loadSummary();
   late final holdings = repository.loadHoldings();
@@ -747,16 +747,21 @@ class _ProtoHoldingListPageState extends State<ProtoHoldingListPage> {
   var loading = false;
 
   List<ProtoHolding> get filteredHoldings {
-    if (selectedFilter == 'All') return holdings;
-    return holdings.where((item) => item.sector == selectedFilter).toList();
+    if (selectedFilter == '全部') return holdings;
+    final sectorMap = {'半导体': 'Semiconductor', '消费电子': 'Consumer Electronics', '新能源车': 'EV'};
+    return holdings.where((item) => item.sector == sectorMap[selectedFilter]).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CommonAppBar(
-        title: 'Portfolio Holdings',
+        title: '持仓列表',
         eyebrow: 'Generated _proto',
+        leading: IconButton.filledTonal(
+          icon: const Icon(Icons.chevron_left),
+          onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(Routes.home, (_) => false),
+        ),
         action: IconButton.filledTonal(
           icon: const Icon(Icons.refresh),
           onPressed: _refresh,
@@ -792,18 +797,18 @@ class _ProtoHoldingListPageState extends State<ProtoHoldingListPage> {
                   children: [
                     const Expanded(
                       child: Text(
-                        'Positions',
+                        '持仓明细',
                         style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
                       ),
                     ),
-                    Text(filteredHoldings.length.toString() + ' items'),
+                    Text(filteredHoldings.length.toString() + ' 项'),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 if (loading)
-                  const CommonLoading(message: 'Refreshing positions...')
+                  const CommonLoading(message: '正在刷新持仓...')
                 else if (filteredHoldings.isEmpty)
-                  const CommonEmpty(message: 'No holdings match current filter')
+                  const CommonEmpty(message: '当前筛选下暂无持仓')
                 else
                   ...filteredHoldings.map((holding) => ProtoHoldingTile(holding: holding)),
               ],
@@ -814,14 +819,14 @@ class _ProtoHoldingListPageState extends State<ProtoHoldingListPage> {
             children: [
               Expanded(
                 child: CommonButton(
-                  label: 'View analysis',
+                  label: '查看分析',
                   onPressed: () => Navigator.of(context).pushNamed(Routes.pnlAnalysis),
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: CommonButton(
-                  label: 'Rebalance',
+                  label: '再平衡',
                   primary: true,
                   onPressed: () {},
                 ),
@@ -849,11 +854,11 @@ class ProtoPnlAnalysisPage extends StatefulWidget {
 
 class _ProtoPnlAnalysisPageState extends State<ProtoPnlAnalysisPage> {
   static const tabs = {
-    'overview': 'Overview',
-    'realized': 'Realized',
-    'risk': 'Risk',
+    'overview': '总览',
+    'realized': '已实现',
+    'risk': '风险',
   };
-  static const riskOptions = ['All', 'Low', 'Medium', 'High'];
+  static const riskOptions = ['全部', '低', '中', '高'];
   final repository = const ProtoAccountRepository();
   late final metrics = repository.loadMetrics();
   late final records = repository.loadRecords();
@@ -863,16 +868,21 @@ class _ProtoPnlAnalysisPageState extends State<ProtoPnlAnalysisPage> {
   var loading = false;
 
   List<ProtoPnlRecord> get filteredRecords {
-    if (riskFilter == 'All') return records;
-    return records.where((item) => item.risk == riskFilter).toList();
+    if (riskFilter == '全部') return records;
+    final riskMap = {'低': 'Low', '中': 'Medium', '高': 'High'};
+    return records.where((item) => item.risk == riskMap[riskFilter]).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CommonAppBar(
-        title: 'P&L Analysis',
+        title: '盈亏分析',
         eyebrow: 'Generated _proto',
+        leading: IconButton.filledTonal(
+          icon: const Icon(Icons.chevron_left),
+          onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(Routes.home, (_) => false),
+        ),
         action: IconButton.filledTonal(
           icon: const Icon(Icons.tune),
           onPressed: _showRiskFilterSheet,
@@ -892,62 +902,147 @@ class _ProtoPnlAnalysisPageState extends State<ProtoPnlAnalysisPage> {
             onSelected: (value) {
               setState(() {
                 activeTab = value;
-                if (value == 'risk') riskFilter = 'High';
+                if (value == 'risk') riskFilter = '高';
               });
             },
           ),
           const SizedBox(height: AppSpacing.md),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: AppSpacing.sm,
-            crossAxisSpacing: AppSpacing.sm,
-            childAspectRatio: 1.55,
-            children: metrics.map((metric) => ProtoMetricCard(metric: metric)).toList(),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          SectionPanel(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _SectionHeading(
-                  title: 'Return Trend',
-                  subtitle: '8 sessions, current tab: $activeTab',
-                  actionLabel: 'Refresh',
-                  onAction: _refresh,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                ProtoTrendChart(points: trendPoints),
-              ],
+          if (activeTab == 'overview') ..._buildOverview(),
+          if (activeTab == 'realized') ..._buildRealized(),
+          if (activeTab == 'risk') ..._buildRisk(),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildOverview() {
+    return [
+      GridView.count(
+        crossAxisCount: 2,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        mainAxisSpacing: AppSpacing.sm,
+        crossAxisSpacing: AppSpacing.sm,
+        childAspectRatio: 1.55,
+        children: metrics.map((metric) => ProtoMetricCard(metric: metric)).toList(),
+      ),
+      const SizedBox(height: AppSpacing.md),
+      SectionPanel(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SectionHeading(
+              title: '收益趋势',
+              subtitle: '近 8 个交易时段',
+              actionLabel: '刷新',
+              onAction: _refresh,
             ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          SectionPanel(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _SectionHeading(
-                  title: 'Trade Records',
-                  subtitle: 'Risk filter: $riskFilter',
-                  actionLabel: 'Filter',
-                  onAction: _showRiskFilterSheet,
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                if (loading)
-                  const CommonLoading(message: 'Syncing latest trades...')
-                else if (filteredRecords.isEmpty)
-                  const CommonEmpty(message: 'No records for this risk level')
-                else
-                  ...filteredRecords.map(
-                    (record) => ProtoRecordTile(
-                      record: record,
-                      onTap: () => _showRecordSheet(record),
-                    ),
-                  ),
-              ],
+            const SizedBox(height: AppSpacing.md),
+            ProtoTrendChart(points: trendPoints),
+          ],
+        ),
+      ),
+      const SizedBox(height: AppSpacing.md),
+      _recordsPanel('交易记录', '风险筛选: $riskFilter'),
+    ];
+  }
+
+  List<Widget> _buildRealized() {
+    final realizedRecords = records.where((record) => record.isPositive).toList();
+    return [
+      SectionPanel(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SectionHeading(
+              title: '已实现收益拆解',
+              subtitle: '现金流动作',
+              actionLabel: '刷新',
+              onAction: _refresh,
             ),
+            const SizedBox(height: AppSpacing.md),
+            const _DetailCell(label: '已实现', value: r'+$7,418'),
+            const SizedBox(height: AppSpacing.sm),
+            const _DetailCell(label: '费用与税费', value: r'-$184.22'),
+          ],
+        ),
+      ),
+      const SizedBox(height: AppSpacing.md),
+      _recordsPanel('交易记录', '+3 realized trades', source: realizedRecords),
+    ];
+  }
+
+  List<Widget> _buildRisk() {
+    return [
+      SectionPanel(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('风险预算', style: themeService.textStyles.sectionTitle),
+            const SizedBox(height: AppSpacing.xs),
+            Text('63%', style: themeService.textStyles.metric.copyWith(color: themeService.colors.accent)),
+            const SizedBox(height: AppSpacing.md),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                value: 0.63,
+                minHeight: 9,
+                backgroundColor: themeService.colors.surfaceSoft,
+                valueColor: AlwaysStoppedAnimation<Color>(themeService.colors.accent),
+              ),
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: AppSpacing.md),
+      SectionPanel(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SectionHeading(
+              title: '风险暴露',
+              subtitle: '风险提示',
+              actionLabel: '筛选',
+              onAction: _showRiskFilterSheet,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            const _DetailCell(label: '半导体', value: '38%'),
+            const SizedBox(height: AppSpacing.sm),
+            const _DetailCell(label: '消费电子', value: '26%'),
+            const SizedBox(height: AppSpacing.sm),
+            const _DetailCell(label: '新能源车', value: '14%'),
+          ],
+        ),
+      ),
+      const SizedBox(height: AppSpacing.md),
+      _recordsPanel('交易记录', '风险筛选: $riskFilter'),
+    ];
+  }
+
+  Widget _recordsPanel(String title, String subtitle, {List<ProtoPnlRecord>? source}) {
+    final visibleRecords = source ?? filteredRecords;
+    return SectionPanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionHeading(
+            title: title,
+            subtitle: subtitle,
+            actionLabel: '筛选',
+            onAction: _showRiskFilterSheet,
           ),
+          const SizedBox(height: AppSpacing.xs),
+          if (loading)
+            const CommonLoading(message: '正在同步交易...')
+          else if (visibleRecords.isEmpty)
+            const CommonEmpty(message: '当前风险等级暂无记录')
+          else
+            ...visibleRecords.map(
+              (record) => ProtoRecordTile(
+                record: record,
+                onTap: () => _showRecordSheet(record),
+              ),
+            ),
         ],
       ),
     );
@@ -975,7 +1070,7 @@ class _ProtoPnlAnalysisPageState extends State<ProtoPnlAnalysisPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Filter by risk', style: themeService.textStyles.sectionTitle),
+              Text('风险筛选', style: themeService.textStyles.sectionTitle),
               const SizedBox(height: AppSpacing.md),
               ProtoFilterBar(
                 options: riskOptions,
@@ -1011,15 +1106,15 @@ class _ProtoPnlAnalysisPageState extends State<ProtoPnlAnalysisPage> {
               Text(record.symbol + ' detail', style: themeService.textStyles.sectionTitle),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                record.action + ' at ' + record.time,
+                record.action + ' · ' + record.time,
                 style: TextStyle(color: themeService.colors.muted),
               ),
               const SizedBox(height: AppSpacing.md),
               Row(
                 children: [
-                  Expanded(child: _DetailCell(label: 'Amount', value: record.amount)),
+                  Expanded(child: _DetailCell(label: '金额', value: record.amount)),
                   const SizedBox(width: AppSpacing.sm),
-                  Expanded(child: _DetailCell(label: 'Risk', value: record.risk)),
+                  Expanded(child: _DetailCell(label: '风险', value: record.risk)),
                 ],
               ),
             ],
@@ -1043,30 +1138,38 @@ class _TabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.xxs),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.78),
-        border: Border.all(color: themeService.colors.border),
-        borderRadius: BorderRadius.circular(AppRadii.panel),
-      ),
-      child: Row(
-        children: tabs.entries.map((entry) {
-          final active = entry.key == selected;
-          return Expanded(
-            child: FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: active ? themeService.colors.primary : Colors.transparent,
-                foregroundColor: active ? Colors.white : themeService.colors.muted,
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
+    return Row(
+      children: tabs.entries.map((entry) {
+        final active = entry.key == selected;
+        final hint = switch (entry.key) {
+          'overview' => '+12.8%',
+          'realized' => r'+$7.4k',
+          'risk' => '63%',
+          _ => '',
+        };
+        return Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.xs),
+            child: OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(58),
+                backgroundColor: active ? themeService.colors.accentSoft : themeService.colors.surface,
+                foregroundColor: active ? themeService.colors.text : themeService.colors.muted,
+                side: BorderSide(color: active ? themeService.colors.accent : themeService.colors.border),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.panel)),
               ),
               onPressed: () => onSelected(entry.key),
-              child: Text(entry.value, overflow: TextOverflow.ellipsis),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(entry.value, overflow: TextOverflow.ellipsis),
+                  Text(hint, style: TextStyle(color: themeService.colors.muted, fontSize: 11)),
+                ],
+              ),
             ),
-          );
-        }).toList(),
-      ),
+          ),
+        );
+      }).toList(),
     );
   }
 }

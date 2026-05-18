@@ -2,20 +2,24 @@ import 'package:flutter/material.dart';
 
 import 'theme_service.dart';
 
-ThemeData buildAppTheme() {
+ThemeData buildAppTheme({Brightness brightness = Brightness.light}) {
+  final service = ThemeService(brightness);
+  final colors = service.colors;
   return ThemeData(
     useMaterial3: true,
-    scaffoldBackgroundColor: themeService.colors.background,
+    brightness: brightness,
+    scaffoldBackgroundColor: colors.background,
     colorScheme: ColorScheme.fromSeed(
-      seedColor: themeService.colors.primary,
-      primary: themeService.colors.primary,
-      surface: themeService.colors.surface,
+      seedColor: colors.accent,
+      brightness: brightness,
+      primary: colors.primary,
+      surface: colors.surface,
     ),
     textTheme: TextTheme(
-      headlineLarge: themeService.textStyles.title,
-      titleMedium: themeService.textStyles.sectionTitle,
-      bodyMedium: TextStyle(color: themeService.colors.text),
-      labelSmall: themeService.textStyles.caption,
+      headlineLarge: service.textStyles.title.copyWith(color: colors.text),
+      titleMedium: service.textStyles.sectionTitle.copyWith(color: colors.text),
+      bodyMedium: TextStyle(color: colors.text),
+      labelSmall: service.textStyles.caption.copyWith(color: colors.muted),
     ),
   );
 }

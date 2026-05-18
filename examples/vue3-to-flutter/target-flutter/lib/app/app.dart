@@ -13,6 +13,8 @@ class ProtoBridgeTargetApp extends StatelessWidget {
       title: 'ProtoBridge Target',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
+      darkTheme: buildAppTheme(brightness: Brightness.dark),
+      themeMode: ThemeMode.system,
       initialRoute: Routes.home,
       onGenerateRoute: AppPages.onGenerateRoute,
     );

@@ -25,8 +25,8 @@ class CommonButton extends StatelessWidget {
         ),
         backgroundColor: primary
             ? themeService.colors.primary
-            : themeService.colors.primarySoft,
-        foregroundColor: primary ? Colors.white : themeService.colors.primary,
+            : themeService.colors.accentSoft,
+        foregroundColor: primary ? Colors.white : themeService.colors.accent,
       ),
       onPressed: onPressed,
       child: Text(label, overflow: TextOverflow.ellipsis),

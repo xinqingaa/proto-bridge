@@ -1,50 +1,51 @@
 <template>
   <main class="phone-page holding-page">
     <section class="page-shell">
-      <header class="top-bar holding-header">
-        <div>
-          <p class="eyebrow">Asset Center</p>
-          <h1 class="page-title">Portfolio Holdings</h1>
+      <header class="app-bar">
+        <button class="icon-button" :aria-label="prefs.t('nav.back')" @click="router.push('/')">‹</button>
+        <div class="app-bar-title">
+          <strong>{{ prefs.t('holding.title') }}</strong>
+          <span>{{ prefs.t('holding.subtitle') }}</span>
         </div>
         <button class="icon-button" aria-label="Refresh holdings" @click="store.refreshPage">↻</button>
       </header>
 
       <section class="panel summary-card">
         <div>
-          <p class="summary-label">Market value</p>
+          <p class="summary-label">{{ prefs.t('holding.marketValue') }}</p>
           <strong>{{ store.holdingSummary.marketValue }}</strong>
         </div>
         <div>
-          <p class="summary-label">Today P&L</p>
+          <p class="summary-label">{{ prefs.t('holding.todayPnl') }}</p>
           <strong class="positive">{{ store.holdingSummary.dayPnl }}</strong>
           <span class="rate">{{ store.holdingSummary.dayPnlRate }}</span>
         </div>
         <div>
-          <p class="summary-label">Risk</p>
-          <strong>{{ store.holdingSummary.riskLevel }}</strong>
+          <p class="summary-label">{{ prefs.t('holding.risk') }}</p>
+          <strong>{{ riskLevelText }}</strong>
         </div>
       </section>
 
       <section class="filter-row" aria-label="Holding filters">
         <button
           v-for="filter in filters"
-          :key="filter"
+          :key="filter.value"
           class="filter-chip"
-          :class="{ active: store.holdingFilter === filter }"
-          @click="store.setHoldingFilter(filter)"
+          :class="{ active: store.holdingFilter === filter.value }"
+          @click="store.setHoldingFilter(filter.value)"
         >
-          {{ filter }}
+          {{ filter.label }}
         </button>
       </section>
 
       <section class="panel holding-list">
         <div class="list-header">
-          <h2>Positions</h2>
-          <span>{{ store.filteredHoldings.length }} items</span>
+          <h2>{{ prefs.t('holding.positions') }}</h2>
+          <span>{{ store.filteredHoldings.length }} {{ prefs.t('holding.items') }}</span>
         </div>
 
-        <div v-if="store.loading" class="loading-state">Refreshing positions...</div>
-        <div v-else-if="store.filteredHoldings.length === 0" class="empty-state">No holdings match current filter</div>
+        <div v-if="store.loading" class="loading-state">{{ prefs.t('holding.loading') }}</div>
+        <div v-else-if="store.filteredHoldings.length === 0" class="empty-state">{{ prefs.t('holding.empty') }}</div>
         <article v-for="item in store.filteredHoldings" v-else :key="item.symbol" class="holding-row">
           <div class="symbol-block">
             <strong>{{ item.symbol }}</strong>
@@ -52,7 +53,7 @@
           </div>
           <div class="amount-block">
             <strong>{{ item.amount }}</strong>
-            <span>{{ item.shares }} shares</span>
+            <span>{{ item.shares }} {{ prefs.t('holding.shares') }}</span>
           </div>
           <div class="pnl-block" :class="item.tone">
             <strong>{{ item.pnl }}</strong>
@@ -62,23 +63,32 @@
       </section>
 
       <footer class="bottom-actions">
-        <button class="text-button" @click="store.pushPage('/prototype/asset/pnl-analysis', { source: 'holding-list' })">
-          View analysis
+        <button class="text-button" @click="router.push('/prototype/asset/pnl-analysis?tab=overview')">
+          {{ prefs.t('holding.analysis') }}
         </button>
-        <button class="primary-button">Rebalance</button>
+        <button class="primary-button">{{ prefs.t('holding.rebalance') }}</button>
       </footer>
     </section>
   </main>
 </template>
 
 <script setup>
-import { useRoute } from 'vue-router';
-import { onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { computed, onMounted } from 'vue';
 import { useAssetPrototypeStore } from '../../../stores/assetPrototype.js';
+import { usePreferenceStore } from '../../../stores/preferences.js';
 
 const route = useRoute();
+const router = useRouter();
 const store = useAssetPrototypeStore();
-const filters = ['All', 'Semiconductor', 'Consumer Electronics', 'EV'];
+const prefs = usePreferenceStore();
+const filters = computed(() => [
+  { label: prefs.t('filter.all'), value: 'All' },
+  { label: prefs.t('sector.semiconductor'), value: 'Semiconductor' },
+  { label: prefs.t('sector.consumer'), value: 'Consumer Electronics' },
+  { label: prefs.t('sector.ev'), value: 'EV' },
+]);
+const riskLevelText = computed(() => prefs.locale === 'zh-CN' ? '平衡' : store.holdingSummary.riskLevel);
 
 onMounted(() => {
   if (route.query.sector) {
@@ -88,26 +98,16 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.holding-page {
-  background:
-    linear-gradient(180deg, rgba(23, 107, 135, 0.12), rgba(238, 243, 248, 0) 240px),
-    var(--pb-bg);
-}
-
-.holding-header {
-  align-items: flex-start;
-}
-
 .summary-card {
   display: grid;
-  grid-template-columns: 1.35fr 1fr 0.8fr;
+  grid-template-columns: 1.2fr 1fr 0.78fr;
   gap: 12px;
   padding: 16px;
 }
 
 .summary-card strong {
   display: block;
-  margin-top: 2px;
+  margin-top: 4px;
   font-size: 19px;
 }
 
@@ -146,9 +146,9 @@ onMounted(() => {
 }
 
 .filter-chip.active {
-  border-color: var(--pb-primary);
-  background: var(--pb-primary-soft);
-  color: var(--pb-primary);
+  border-color: var(--pb-accent);
+  background: var(--pb-accent-soft);
+  color: var(--pb-accent);
 }
 
 .holding-list {

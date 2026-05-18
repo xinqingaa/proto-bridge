@@ -19,19 +19,71 @@ class AppRadii {
 }
 
 class AppPalette {
-  const AppPalette();
+  const AppPalette({
+    required this.background,
+    required this.surface,
+    required this.surfaceSoft,
+    required this.text,
+    required this.muted,
+    required this.border,
+    required this.primary,
+    required this.primarySoft,
+    required this.accent,
+    required this.accentSoft,
+    required this.positive,
+    required this.negative,
+    required this.warning,
+  });
 
-  Color get background => const Color(0xFFEEF3F8);
-  Color get surface => Colors.white;
-  Color get surfaceSoft => const Color(0xFFF7FAFC);
-  Color get text => const Color(0xFF17202A);
-  Color get muted => const Color(0xFF6B7886);
-  Color get border => const Color(0xFFD8E1EA);
-  Color get primary => const Color(0xFF176B87);
-  Color get primarySoft => const Color(0xFFD8EEF3);
-  Color get positive => const Color(0xFF16855B);
-  Color get negative => const Color(0xFFC4453C);
-  Color get warning => const Color(0xFFA66B00);
+  factory AppPalette.light() {
+    return const AppPalette(
+      background: Color(0xFFF7F7F5),
+      surface: Colors.white,
+      surfaceSoft: Color(0xFFF0EFEB),
+      text: Color(0xFF111111),
+      muted: Color(0xFF6B6B63),
+      border: Color(0xFFD8D6CF),
+      primary: Color(0xFF2F2F2C),
+      primarySoft: Color(0xFFEBE8E1),
+      accent: Color(0xFFC56A2A),
+      accentSoft: Color(0xFFF4DFCF),
+      positive: Color(0xFF3F7B55),
+      negative: Color(0xFFA54B42),
+      warning: Color(0xFFB2752D),
+    );
+  }
+
+  factory AppPalette.dark() {
+    return const AppPalette(
+      background: Color(0xFF10100E),
+      surface: Color(0xFF191916),
+      surfaceSoft: Color(0xFF22211D),
+      text: Color(0xFFF4F1EA),
+      muted: Color(0xFFAAA59A),
+      border: Color(0xFF34322D),
+      primary: Color(0xFFF4F1EA),
+      primarySoft: Color(0xFF2B2924),
+      accent: Color(0xFFE08A3E),
+      accentSoft: Color(0xFF3A281D),
+      positive: Color(0xFF7FB98B),
+      negative: Color(0xFFD9867D),
+      warning: Color(0xFFD59B4C),
+    );
+  }
+
+  final Color background;
+  final Color surface;
+  final Color surfaceSoft;
+  final Color text;
+  final Color muted;
+  final Color border;
+  final Color primary;
+  final Color primarySoft;
+  final Color accent;
+  final Color accentSoft;
+  final Color positive;
+  final Color negative;
+  final Color warning;
 }
 
 class AppTextStyles {
