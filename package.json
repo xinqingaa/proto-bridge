@@ -16,6 +16,7 @@
     "dev": "pnpm --filter @proto-bridge/cli dev",
     "generate": "node scripts/generate.mjs",
     "example": "node scripts/example.mjs",
+    "example:clean": "node scripts/example-clean.mjs",
     "example:dev": "node scripts/example-dev.mjs",
     "example:android": "node scripts/example-android.mjs",
     "test:config": "pnpm --filter @proto-bridge/core build && node scripts/test-config.mjs",

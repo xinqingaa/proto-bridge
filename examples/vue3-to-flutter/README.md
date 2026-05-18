@@ -27,6 +27,7 @@ examples/vue3-to-flutter/
 | 命令 | 做什么 | 何时使用 |
 | --- | --- | --- |
 | `pnpm run example` | 生成 simple 与 complex 三个 tab 状态的 artifacts，并校验 Flutter `_proto` agent 产物入口。 | 想体验 ProtoBridge artifacts 到 Flutter 页面还原的完整示例。 |
+| `pnpm run example:clean` | 清理安装到 Flutter target 的 `_proto` 入口文件。 | 想让 Flutter target 回到 fallback 状态，或确认安装产物来自下一次 example。 |
 | `pnpm run example:dev` | 启动 Vue 原型和 Flutter Web 静态预览。 | 想在浏览器里查看原型和生成页。 |
 | `pnpm run example:android` | 运行 Flutter target 到 Android 设备或模拟器。 | 想在 Android 上查看生成页。 |
 
@@ -69,6 +70,14 @@ target-flutter/lib/app/modules/account/_proto/
 
 `target-flutter/lib/main_proto.dart` 是本示例判断“是否使用 `_proto` 页面”的标记。存在这个文件时，预览命令会使用 `-t lib/main_proto.dart` 运行 agent 产物页。
 
+如果需要清理安装产物，让 Flutter target 回到 fallback 状态：
+
+```bash
+pnpm run example:clean
+```
+
+这个命令只删除 target 下的 `_proto` 入口和页面文件，不删除 `output/` 或 `agent-output/`。
+
 ## Agent 工作流产物
 
 ProtoBridge 本体生成的是页面上下文 artifacts，不是 Vue 到 Dart 编译器。本示例里的 Flutter 页面是按真实 agent 工作流生成后保存为静态文本包；运行 `pnpm run example` 时再安装到 target 的 `_proto` 入口：
@@ -108,7 +117,7 @@ Vue prototype:  http://127.0.0.1:5173/
 Flutter target: http://127.0.0.1:5599/
 ```
 
-如果默认端口被占用，脚本会自动使用后续可用端口，请以终端输出为准。Flutter 入口是 build 后的静态预览，更适合稳定查看效果。`example:dev` 会优先运行 `pnpm run example` 生成的 `_proto` 页面；如果还没有生成，会显示兜底提示页。
+如果默认端口被占用，脚本会自动使用后续可用端口，请以终端输出为准。Flutter 入口是 build 后的静态预览，更适合稳定查看效果。`example:dev` 会优先运行 `pnpm run example` 安装的 `_proto` 页面；如果执行过 `pnpm run example:clean` 或还没有安装，会显示兜底提示页。
 
 两个入口页都会提供 simple 和 complex 两个页面的跳转。
 
