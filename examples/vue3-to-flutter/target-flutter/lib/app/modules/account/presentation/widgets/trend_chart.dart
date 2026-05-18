@@ -39,7 +39,7 @@ class _TrendChartPainter extends CustomPainter {
         end: Alignment.bottomCenter,
         colors: [themeService.colors.primary, const Color(0xFF48A6A7)],
       ).createShader(Offset.zero & size);
-    final gap = 8.0;
+    const gap = 8.0;
     final width = (size.width - gap * (points.length - 1)) / points.length;
     for (var i = 0; i < points.length; i++) {
       final height = size.height * (points[i].clamp(0, 100) / 100);

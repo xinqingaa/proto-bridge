@@ -5,7 +5,7 @@ const _locale = 'en_US';
 
 extension AppTranslate on String {
   String get tr {
-    final table = _locale == 'zh_CN' ? zhCN : enUS;
+    const table = _locale == 'zh_CN' ? zhCN : enUS;
     return table[this] ?? this;
   }
 }
