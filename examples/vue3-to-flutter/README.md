@@ -25,7 +25,7 @@ examples/vue3-to-flutter/
 
 | 命令 | 做什么 | 何时使用 |
 | --- | --- | --- |
-| `pnpm run example` | 生成 `output/simple`、`output/complex`，并生成 Flutter `_proto` 页面入口。 | 想体验 ProtoBridge artifacts 到 Flutter 页面还原的完整示例。 |
+| `pnpm run example` | 生成 simple 与 complex 三个 tab 状态的 artifacts，并校验 Flutter `_proto` agent 产物入口。 | 想体验 ProtoBridge artifacts 到 Flutter 页面还原的完整示例。 |
 | `pnpm run example:dev` | 启动 Vue 原型和 Flutter Web 静态预览。 | 想在浏览器里查看原型和生成页。 |
 | `pnpm run example:android` | 运行 Flutter target 到 Android 设备或模拟器。 | 想在 Android 上查看生成页。 |
 
@@ -42,25 +42,51 @@ pnpm run example
 - 构建 ProtoBridge packages。
 - 构建 Vue3 source prototype。
 - 启动 Vue3 prototype runtime。
-- 分别生成 simple 和 complex 两套 artifacts。
-- 根据 artifacts 在 Flutter target 中生成 `_proto` 页面和 route registry。
+- 生成 simple 页面 artifacts。
+- 分别生成 complex 页面 overview、realized、risk 三个 tab 状态 artifacts。
+- 校验 Flutter target 中已经落地的 `_proto` agent 工作流产物和 route registry。
 
-`pnpm run example` 一次性完成 output 和 Flutter `_proto` 页面生成，是为了降低首次体验心智负担。真实项目中仍然可以按页面使用 CLI/MCP 生成上下文，再由开发者或 coding agent 在目标工程中实现。
+`pnpm run example` 会刷新 ProtoBridge artifacts，并使用仓库内已经落地的 Flutter `_proto` agent 产物，是为了降低首次体验心智负担。真实项目中仍然可以按页面使用 CLI/MCP 生成上下文，再由开发者或 coding agent 在目标工程中实现。
 
-`output/` 和 Flutter `_proto` 代码都会被 git 忽略。这样每个用户 clone 仓库后，都可以自己运行示例命令，体验从 ProtoBridge artifacts 到 Flutter 页面还原的完整过程。
+`output/` 会被 git 忽略；Flutter `_proto` 代码会随示例提交。这样没有配置 AI agent 的阅读者也能直接运行预览，同时可以查看 `_proto` 如何对应 artifacts。
 
 生成完成后，会出现这些本地文件：
 
 ```text
 output/simple/
-output/complex/
+output/complex-overview/
+output/complex-realized/
+output/complex-risk/
 target-flutter/lib/main_proto.dart
 target-flutter/lib/app/app_proto.dart
 target-flutter/lib/app/routes/app_pages_proto.dart
 target-flutter/lib/app/modules/account/_proto/
 ```
 
-`target-flutter/lib/main_proto.dart` 是本示例判断“是否已经生成 Flutter 页面”的标记。没有这个文件时，预览命令会运行默认入口并显示兜底提示页；有这个文件时，预览命令会使用 `-t lib/main_proto.dart` 运行生成页。
+`target-flutter/lib/main_proto.dart` 是本示例判断“是否使用 `_proto` 页面”的标记。存在这个文件时，预览命令会使用 `-t lib/main_proto.dart` 运行 agent 产物页。
+
+## Agent 工作流产物
+
+ProtoBridge 本体生成的是页面上下文 artifacts，不是 Vue 到 Dart 编译器。本示例里的 Flutter `_proto` 页面是按真实 agent 工作流生成后落地的产物：
+
+```text
+输入：Vue3 source facts + runtime/screenshots + target Flutter 工程约定
+输出：target-flutter/lib/app/modules/account/_proto/
+```
+
+agent 生成时读取了：
+
+```text
+output/simple/{ui-build-review.md,ui-build-plan.json,page-canonical.json}
+output/complex-overview/{ui-build-review.md,ui-build-plan.json,page-canonical.json}
+output/complex-realized/{ui-build-review.md,ui-build-plan.json,page-canonical.json}
+output/complex-risk/{ui-build-review.md,ui-build-plan.json,page-canonical.json}
+target-flutter/lib/app/theme/
+target-flutter/lib/app/common/widgets/
+target-flutter/lib/app/routes/
+```
+
+落地约束是：使用 target 的主题 token、`CommonAppBar`、`CommonButton`、`SectionPanel` 等组件；simple 页默认展示全部数据；complex 页分别还原 overview、realized、risk 三个 tab 的结构。为了开源快速体验，这版 agent 结果直接提交在 `_proto` 中，`pnpm run example` 负责刷新 artifacts 并校验这些入口文件存在。
 
 ## Web 预览
 
@@ -105,10 +131,20 @@ output/simple/ui-build-plan.json
 output/simple/page-debug-index.json
 output/simple/page-canonical.json
 
-output/complex/ui-build-review.md
-output/complex/ui-build-plan.json
-output/complex/page-debug-index.json
-output/complex/page-canonical.json
+output/complex-overview/ui-build-review.md
+output/complex-overview/ui-build-plan.json
+output/complex-overview/page-debug-index.json
+output/complex-overview/page-canonical.json
+
+output/complex-realized/ui-build-review.md
+output/complex-realized/ui-build-plan.json
+output/complex-realized/page-debug-index.json
+output/complex-realized/page-canonical.json
+
+output/complex-risk/ui-build-review.md
+output/complex-risk/ui-build-plan.json
+output/complex-risk/page-debug-index.json
+output/complex-risk/page-canonical.json
 ```
 
 `ui-build-review.md` 适合人工先读；`ui-build-plan.json` 适合交给 coding agent；`page-debug-index.json` 用来排查证据合并；`page-canonical.json` 是完整上下文。
@@ -122,7 +158,7 @@ target-flutter/lib/app/app_proto.dart
 target-flutter/lib/main_proto.dart
 ```
 
-这些文件属于 example harness 的生成结果，不代表 ProtoBridge 本体是 Vue 到 Dart 的编译器。
+这些文件属于 agent 工作流产物，不代表 ProtoBridge 本体是 Vue 到 Dart 的编译器。
 
 ## 截图
 
@@ -148,7 +184,7 @@ URL-first 输入示例：
 pnpm run generate -- \
   --config examples/vue3-to-flutter/proto-bridge.config.json \
   --url "http://127.0.0.1:5173/#/prototype/asset/pnl-analysis?tab=overview" \
-  --output examples/vue3-to-flutter/output/complex
+  --output examples/vue3-to-flutter/output/complex-overview
 ```
 
 ## Target 工程
@@ -159,7 +195,7 @@ pnpm run generate -- \
 - `lib/app/routes` 提供目标路由。
 - `lib/app/theme` 提供色板、文本样式和 spacing tokens。
 - `lib/app/common/widgets` 提供 `CommonAppBar`、`CommonButton`、`CommonEmpty`、`CommonLoading` 和 `SectionPanel`。
-- `lib/app/modules/account/_proto` 由 `pnpm run example` 生成，用来展示还原页面的模块化落点。
+- `lib/app/modules/account/_proto` 是 agent 工作流生成后落地的示例实现，用来展示还原页面的模块化落点。
 
 示例里的 source module 是 `asset`，target module 是 `account`。产物中出现“Target suggested module (account) differs from source module (asset)”是预期的人工确认项，用来展示 ProtoBridge 如何把原型域名映射到客户端模块。
 

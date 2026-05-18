@@ -17,16 +17,20 @@ class CommonButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.pbColors;
     return FilledButton(
       style: FilledButton.styleFrom(
         minimumSize: const Size.fromHeight(42),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.panel),
         ),
-        backgroundColor: primary
-            ? themeService.colors.primary
-            : themeService.colors.accentSoft,
-        foregroundColor: primary ? Colors.white : themeService.colors.accent,
+        backgroundColor: primary ? colors.primary : colors.accentSoft,
+        foregroundColor:
+            primary && Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFF10100E)
+                : primary
+                    ? Colors.white
+                    : colors.accent,
       ),
       onPressed: onPressed,
       child: Text(label, overflow: TextOverflow.ellipsis),

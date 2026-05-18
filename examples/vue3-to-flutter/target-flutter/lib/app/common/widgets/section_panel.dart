@@ -15,14 +15,17 @@ class SectionPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.pbColors;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: themeService.colors.surface,
-        border: Border.all(color: themeService.colors.border),
+        color: colors.surface,
+        border: Border.all(color: colors.border),
         borderRadius: BorderRadius.circular(AppRadii.panel),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF203042).withValues(alpha: 0.08),
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black.withValues(alpha: 0.22)
+                : const Color(0xFF203042).withValues(alpha: 0.08),
             blurRadius: 18,
             offset: const Offset(0, 10),
           ),

@@ -10,12 +10,13 @@ class CommonLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.pbColors;
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.xl),
       child: Center(
         child: Text(
           message,
-          style: TextStyle(color: themeService.colors.muted),
+          style: TextStyle(color: colors.muted),
         ),
       ),
     );

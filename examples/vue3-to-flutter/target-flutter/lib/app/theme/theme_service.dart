@@ -13,3 +13,9 @@ class ThemeService {
 }
 
 const themeService = ThemeService();
+
+extension ProtoThemeContext on BuildContext {
+  ThemeService get pbTheme => ThemeService(Theme.of(this).brightness);
+  AppPalette get pbColors => pbTheme.colors;
+  AppTextStyles get pbTextStyles => pbTheme.textStyles;
+}

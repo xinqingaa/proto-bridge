@@ -1,0 +1,7 @@
+import 'package:flutter/material.dart';
+
+import 'app/app_proto.dart';
+
+void main() {
+  runApp(const ProtoBridgeGeneratedApp());
+}

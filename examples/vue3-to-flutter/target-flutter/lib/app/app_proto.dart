@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'preferences/app_preferences_cubit.dart';
-import 'routes/app_pages.dart';
+import 'routes/app_pages_proto.dart';
 import 'routes/app_routes.dart';
 import 'theme/app_theme.dart';
 
-class ProtoBridgeTargetApp extends StatelessWidget {
-  const ProtoBridgeTargetApp({super.key});
+class ProtoBridgeGeneratedApp extends StatelessWidget {
+  const ProtoBridgeGeneratedApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,13 +16,13 @@ class ProtoBridgeTargetApp extends StatelessWidget {
       child: BlocBuilder<AppPreferencesCubit, AppPreferencesState>(
         builder: (context, preferences) {
           return MaterialApp(
-            title: 'ProtoBridge Target',
+            title: 'ProtoBridge Generated Target',
             debugShowCheckedModeBanner: false,
             theme: buildAppTheme(),
             darkTheme: buildAppTheme(brightness: Brightness.dark),
             themeMode: preferences.themeMode,
             initialRoute: Routes.home,
-            onGenerateRoute: AppPages.onGenerateRoute,
+            onGenerateRoute: AppPagesProto.onGenerateRoute,
           );
         },
       ),

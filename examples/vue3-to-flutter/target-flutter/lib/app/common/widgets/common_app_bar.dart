@@ -22,6 +22,8 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.pbColors;
+    final textStyles = context.pbTextStyles;
     return SafeArea(
       bottom: false,
       child: Padding(
@@ -45,12 +47,12 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
                   if (eyebrow != null)
                     Text(
                       eyebrow!,
-                      style: themeService.textStyles.caption.copyWith(
-                        color: themeService.colors.muted,
+                      style: textStyles.caption.copyWith(
+                        color: colors.muted,
                         letterSpacing: 0,
                       ),
                     ),
-                  Text(title, style: themeService.textStyles.title),
+                  Text(title, style: textStyles.title),
                 ],
               ),
             ),
