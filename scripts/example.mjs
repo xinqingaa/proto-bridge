@@ -2,6 +2,7 @@
 
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -12,6 +13,8 @@ const sourceRoot = path.join(exampleRoot, 'source-vue3');
 const targetRoot = path.join(exampleRoot, 'target-flutter');
 const configPath = path.join(exampleRoot, 'proto-bridge.config.json');
 const cliPath = path.join(repoRoot, 'packages/cli/dist/index.js');
+const agentOutputRoot = path.join(exampleRoot, 'agent-output');
+const agentManifestPath = path.join(agentOutputRoot, 'flutter-proto-manifest.json');
 const protoModuleRoot = path.join(targetRoot, 'lib/app/modules/account/_proto');
 const devPort = await findAvailablePort(5173);
 const baseUrl = `http://127.0.0.1:${devPort}`;
@@ -87,16 +90,23 @@ async function main() {
       ], { cwd: repoRoot });
     }
 
-    step('Checking agent-generated Flutter _proto files...');
+    step('Installing agent-generated Flutter _proto files...');
+    const installedFiles = await installAgentProtoFiles();
+
+    step('Checking installed Flutter _proto files...');
     validateAgentProtoFiles();
 
     step('Example output and agent-generated Flutter pages are ready.');
     console.log();
     console.log('Generated but git-ignored:');
     console.log(`  ${path.relative(repoRoot, path.join(exampleRoot, 'output'))}`);
+    console.log(`  ${path.relative(repoRoot, path.join(targetRoot, 'lib/main_proto.dart'))}`);
+    console.log(`  ${path.relative(repoRoot, path.join(targetRoot, 'lib/app/app_proto.dart'))}`);
+    console.log(`  ${path.relative(repoRoot, path.join(targetRoot, 'lib/app/routes/app_pages_proto.dart'))}`);
+    console.log(`  ${path.relative(repoRoot, protoModuleRoot)}`);
     console.log();
-    console.log('Agent workflow Flutter files:');
-    for (const file of agentProtoFiles) {
+    console.log('Installed from committed agent workflow text package:');
+    for (const file of installedFiles) {
       console.log(`  ${path.relative(repoRoot, file)}`);
     }
     console.log();
@@ -115,6 +125,54 @@ async function main() {
       await new Promise((resolve) => setTimeout(resolve, 300));
     }
   }
+}
+
+async function installAgentProtoFiles() {
+  const manifest = await readAgentManifest();
+  await rm(path.join(targetRoot, 'lib/main_proto.dart'), { force: true });
+  await rm(path.join(targetRoot, 'lib/app/app_proto.dart'), { force: true });
+  await rm(path.join(targetRoot, 'lib/app/routes/app_pages_proto.dart'), { force: true });
+  await rm(protoModuleRoot, { recursive: true, force: true });
+
+  const installedFiles = [];
+  for (const file of manifest.files) {
+    const source = path.join(agentOutputRoot, file.source);
+    const target = path.join(exampleRoot, file.target);
+    if (!existsSync(source)) {
+      throw new Error(`Missing committed agent workflow text file: ${path.relative(repoRoot, source)}`);
+    }
+    const content = await readFile(source, 'utf8');
+    await mkdir(path.dirname(target), { recursive: true });
+    await writeFile(target, content);
+    installedFiles.push(target);
+  }
+  return installedFiles;
+}
+
+async function readAgentManifest() {
+  const content = await readFile(agentManifestPath, 'utf8');
+  const manifest = JSON.parse(content);
+  if (manifest.kind !== 'proto-bridge-agent-output') {
+    throw new Error(`Invalid agent output manifest kind in ${path.relative(repoRoot, agentManifestPath)}`);
+  }
+  if (!Array.isArray(manifest.files) || manifest.files.length === 0) {
+    throw new Error(`Agent output manifest must include a non-empty files array.`);
+  }
+  for (const file of manifest.files) {
+    if (typeof file.source !== 'string' || typeof file.target !== 'string') {
+      throw new Error('Each agent output manifest file entry must include source and target strings.');
+    }
+    if (path.isAbsolute(file.source) || path.isAbsolute(file.target)) {
+      throw new Error('Agent output manifest paths must be relative.');
+    }
+    if (!file.source.endsWith('.dart.txt')) {
+      throw new Error(`Agent output source must be a .dart.txt file: ${file.source}`);
+    }
+    if (!file.target.startsWith('target-flutter/')) {
+      throw new Error(`Agent output target must stay inside target-flutter: ${file.target}`);
+    }
+  }
+  return manifest;
 }
 
 function validateAgentProtoFiles() {

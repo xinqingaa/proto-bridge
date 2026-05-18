@@ -1,0 +1,48 @@
+{
+  "kind": "proto-bridge-agent-output",
+  "version": 1,
+  "description": "Static AI agent workflow output installed by pnpm run example into the Flutter target _proto entry.",
+  "generatedFrom": [
+    "output/simple",
+    "output/complex-overview",
+    "output/complex-realized",
+    "output/complex-risk"
+  ],
+  "targetRoot": "target-flutter",
+  "notes": [
+    "ProtoBridge generates page artifacts, not Dart code directly.",
+    "This package stores one reviewed agent implementation as static text for fast open-source example runs.",
+    "The implementation is based on ProtoBridge artifacts and target Flutter conventions.",
+    "Integration fixes were applied for target flutter_bloc theme and locale wiring."
+  ],
+  "files": [
+    {
+      "source": "flutter-proto-files/main_proto.dart.txt",
+      "target": "target-flutter/lib/main_proto.dart"
+    },
+    {
+      "source": "flutter-proto-files/app_proto.dart.txt",
+      "target": "target-flutter/lib/app/app_proto.dart"
+    },
+    {
+      "source": "flutter-proto-files/app_pages_proto.dart.txt",
+      "target": "target-flutter/lib/app/routes/app_pages_proto.dart"
+    },
+    {
+      "source": "flutter-proto-files/account_proto_models.dart.txt",
+      "target": "target-flutter/lib/app/modules/account/_proto/account_proto_models.dart"
+    },
+    {
+      "source": "flutter-proto-files/account_proto_repository.dart.txt",
+      "target": "target-flutter/lib/app/modules/account/_proto/account_proto_repository.dart"
+    },
+    {
+      "source": "flutter-proto-files/account_proto_widgets.dart.txt",
+      "target": "target-flutter/lib/app/modules/account/_proto/account_proto_widgets.dart"
+    },
+    {
+      "source": "flutter-proto-files/account_proto_pages.dart.txt",
+      "target": "target-flutter/lib/app/modules/account/_proto/account_proto_pages.dart"
+    }
+  ]
+}
