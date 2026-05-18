@@ -105,19 +105,19 @@ npx @proto-bridge/cli generate \
 
 仓库内提供一个完整示例：[Vue3 source 到 Flutter target](examples/vue3-to-flutter/README.md)。
 
+示例命令分三类：
+
+| 命令 | 作用 | 适合场景 |
+| --- | --- | --- |
+| `pnpm run example` | 生成示例 `output/` artifacts，并在 Flutter target 中生成 `_proto` 页面代码。 | 首次体验完整示例闭环。 |
+| `pnpm run example:dev` | 启动 Vue 原型和 Flutter Web 预览。 | 在浏览器查看原型和生成页。 |
+| `pnpm run example:android` | 运行 Flutter target 到 Android 设备或模拟器。 | 在 Android 上查看生成页。 |
+
+推荐顺序：
+
 ```bash
 pnpm run example
-```
-
-本地打开 Vue 原型和 Flutter 生成页面：
-
-```bash
 pnpm run example:dev
-```
-
-运行到 Android 设备或模拟器：
-
-```bash
 pnpm run example:android
 ```
 
@@ -130,7 +130,7 @@ Flutter target: http://127.0.0.1:5599/
 
 如果默认端口被占用，脚本会自动顺延到可用端口，请以终端输出的地址为准。
 
-示例包含一个 Vue3 + Pinia 原型工程、一个 Flutter target 工程，以及可本地生成的 ProtoBridge artifacts 和 Flutter `_proto` 页面。`output/` 和 `_proto` 生成代码不会提交到仓库，便于每个用户重新体验生成过程。它展示的是当前内置适配重点：
+示例包含一个 Vue3 + Pinia 原型工程、一个 Flutter target 工程，以及可本地生成的 ProtoBridge artifacts 和 Flutter `_proto` 页面。`output/` 和 `_proto` 生成代码不会提交到仓库，便于每个用户重新体验生成过程。`main_proto.dart` 存在表示已经运行过 `pnpm run example`；不存在时，预览命令会显示兜底提示页。这个示例展示的是当前内置适配重点：
 
 ```text
 source: vue3-prototype
@@ -223,6 +223,7 @@ docs/
 ├── architecture.md
 ├── workflows.md
 ├── quickstart.md
+├── development.md
 ├── artifacts.md
 ├── integration.md
 ├── migration-spec.md
@@ -235,6 +236,7 @@ docs/
 - [架构说明](docs/architecture.md)：mode、workflow、capability、artifact 和包边界。
 - [工作流](docs/workflows.md)：source-only、runtime-only、hybrid、screenshot/OCR 和 validation。
 - [快速开始](docs/quickstart.md)：安装、配置、CLI、MCP 和最小示例。
+- [开发命令](docs/development.md)：仓库脚本、示例命令、测试命令和生成目录规则。
 - [产物说明](docs/artifacts.md)：输出文件结构和阅读方式。
 - [集成方式](docs/integration.md)：CLI、MCP 和 core 嵌入参考。
 - [迁移说明书标准](docs/migration-spec.md)：可选 source brief 的质量标准。

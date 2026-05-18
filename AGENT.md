@@ -154,6 +154,37 @@ Validation 是 review 辅助，不等于证明视觉和业务完全正确。
 
 共享行为应进入 core capabilities。入口包只做参数适配和输出适配，不承载产品逻辑。
 
+## 仓库脚本使用
+
+根目录脚本分为四类：
+
+- 开发回归：`pnpm run build`、`pnpm run typecheck`、`pnpm run lint`。
+- 本地 CLI：`pnpm run generate -- ...`，用于验证 monorepo 当前源码下的 `proto-bridge generate`。
+- 示例体验：`pnpm run example`、`pnpm run example:dev`、`pnpm run example:android`，只服务 `examples/vue3-to-flutter`。
+- 测试回归：`pnpm run test:config`、`pnpm run test:e2e:cli`、`pnpm run test:e2e:mcp`、`pnpm run test:e2e`。
+
+`pnpm run example` 是 example harness，会一次性生成示例 artifacts 和 Flutter `_proto` 页面，用来降低首次体验心智负担。不要把它当成 ProtoBridge 正式产品能力等同于“自动生成生产 Dart 页面”的证明。
+
+`example:dev` 和 `example:android` 会优先运行 `pnpm run example` 生成的 `target-flutter/lib/main_proto.dart`。没有 `main_proto.dart` 时运行默认兜底入口，提示用户先生成示例。
+
+根据修改范围选择验证：
+
+- 只改文档：检查相关链接和命令名即可。
+- 改 TypeScript 源码：至少跑 `pnpm run typecheck`，必要时跑 `pnpm run build`。
+- 改 config 解析：跑 `pnpm run test:config`。
+- 改 CLI 入口或 artifact contract：跑 `pnpm run test:e2e:cli`，并按需传 `--source-root`、`--target-root`、`--url`。
+- 改 MCP tools 或 validation：跑 `pnpm run test:e2e:mcp`。
+- 改示例脚本或 Flutter target：跑对应 `pnpm run example` / `pnpm run example:dev` / `flutter analyze` / `flutter test`。
+
+不要提交这些生成内容：
+
+- `examples/vue3-to-flutter/output/`
+- `examples/vue3-to-flutter/target-flutter/lib/main_proto.dart`
+- `examples/vue3-to-flutter/target-flutter/lib/app/app_proto.dart`
+- `examples/vue3-to-flutter/target-flutter/lib/app/routes/app_pages_proto.dart`
+- `examples/vue3-to-flutter/target-flutter/lib/app/modules/**/_proto/`
+- Flutter `build/`、`.dart_tool/` 和本地设备配置。
+
 ## 文档规则
 
 正式文档应描述稳定行为和当前命令：
@@ -162,6 +193,7 @@ Validation 是 review 辅助，不等于证明视觉和业务完全正确。
 - 架构说明：`docs/architecture.md`
 - 工作流：`docs/workflows.md`
 - 安装与示例：`docs/quickstart.md`
+- 开发命令：`docs/development.md`
 - 输出产物：`docs/artifacts.md`
 
 不要在正式文档里加入阶段标签、研究台账口吻，或不属于支持路径的工具名。

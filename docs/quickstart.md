@@ -25,6 +25,8 @@ pnpm install
 pnpm run build
 ```
 
+本仓库的脚本说明见 [development.md](development.md)。如果只是想体验内置 Vue3-to-Flutter 示例，优先从根 README 的“开源示例”或 [examples/vue3-to-flutter/README.md](../examples/vue3-to-flutter/README.md) 开始。
+
 ## 配置
 
 在运行 ProtoBridge 的目录创建 `proto-bridge.config.json`。配置文件只放稳定环境信息；每次要还原哪个页面，通过 CLI 参数或 MCP tool arguments 传入。
@@ -154,6 +156,13 @@ npx @proto-bridge/cli generate \
 npx @proto-bridge/cli generate \
   --route /prototype/asset/pnl-analysis \
   --source-brief
+```
+
+在 monorepo 内验证本地源码改动时，可以用根目录包装命令：
+
+```bash
+pnpm run generate -- \
+  --url "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1"
 ```
 
 ## MCP 配置

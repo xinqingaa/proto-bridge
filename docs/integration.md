@@ -33,6 +33,8 @@ pnpm run build
 pnpm run generate -- --route /prototype/asset/pnl-analysis
 ```
 
+根目录下更多开发、示例和测试脚本见 [development.md](development.md)。示例脚本 `pnpm run example`、`pnpm run example:dev` 和 `pnpm run example:android` 只用于仓库内置 Vue3-to-Flutter 示例，不是正式 CLI/MCP/Core 接入方式。
+
 ## MCP
 
 发布包：

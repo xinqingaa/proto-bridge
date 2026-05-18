@@ -2,7 +2,7 @@
 
 import { spawn } from 'node:child_process';
 import { createReadStream } from 'node:fs';
-import { stat } from 'node:fs/promises';
+import { rm, stat } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import net from 'node:net';
 import path from 'node:path';
@@ -17,6 +17,7 @@ const vuePort = await findAvailablePort(5173);
 const flutterPort = await findAvailablePort(5599);
 const children = [];
 let flutterServer;
+let stopping = false;
 
 console.log('● Starting Vue prototype and Flutter target previews...');
 if (vuePort !== 5173 || flutterPort !== 5599) {
@@ -47,7 +48,8 @@ start('vue', 'pnpm', [
 ]);
 
 console.log('[flutter] Building web preview...');
-const flutterBuildArgs = ['build', 'web'];
+await rm(path.join(targetRoot, 'build/web'), { recursive: true, force: true });
+const flutterBuildArgs = ['build', 'web', '--pwa-strategy=none'];
 if (await exists(protoMain)) {
   flutterBuildArgs.push('-t', 'lib/main_proto.dart');
 } else {
@@ -57,12 +59,21 @@ await run('flutter', flutterBuildArgs, targetRoot, 'flutter');
 flutterServer = await startStaticServer(path.join(targetRoot, 'build/web'), flutterPort);
 console.log(`[flutter] Flutter target is being served at http://127.0.0.1:${flutterPort}/`);
 
-process.on('SIGINT', stopAll);
-process.on('SIGTERM', stopAll);
+process.on('SIGINT', () => stopAll('SIGINT'));
+process.on('SIGTERM', () => stopAll('SIGTERM'));
+process.on('SIGHUP', () => stopAll('SIGHUP'));
+process.on('uncaughtException', (error) => {
+  console.error(error);
+  process.exitCode = 1;
+  void stopAll('uncaughtException');
+});
+process.on('unhandledRejection', (error) => {
+  console.error(error);
+  process.exitCode = 1;
+  void stopAll('unhandledRejection');
+});
 process.on('exit', () => {
-  for (const child of children) {
-    if (!child.killed) child.kill('SIGTERM');
-  }
+  killChildren('SIGTERM');
 });
 
 await new Promise(() => {});
@@ -119,14 +130,66 @@ function prefix(label, chunk) {
   }
 }
 
-async function stopAll() {
-  for (const child of children) {
-    if (!child.killed) child.kill('SIGTERM');
-  }
+async function stopAll(reason = 'exit') {
+  if (stopping) return;
+  stopping = true;
+  console.log(`\n● Stopping example preview (${reason})...`);
+
+  killChildren('SIGTERM');
   if (flutterServer) {
-    await new Promise((resolve) => flutterServer.close(resolve));
+    await closeServer(flutterServer);
   }
-  setTimeout(() => process.exit(process.exitCode ?? 0), 250);
+
+  await new Promise((resolve) => setTimeout(resolve, 250));
+  await releasePort(vuePort);
+  await releasePort(flutterPort);
+  process.exit(process.exitCode ?? 0);
+}
+
+function killChildren(signal) {
+  for (const child of children) {
+    if (!child.killed) child.kill(signal);
+  }
+}
+
+function closeServer(server) {
+  server.closeIdleConnections?.();
+  server.closeAllConnections?.();
+  return Promise.race([
+    new Promise((resolve) => {
+      server.close(() => resolve());
+    }),
+    new Promise((resolve) => setTimeout(resolve, 500)),
+  ]);
+}
+
+async function releasePort(port) {
+  const pids = await listPortPids(port);
+  const ownPid = String(process.pid);
+  for (const pid of pids) {
+    if (pid === ownPid) continue;
+    try {
+      process.kill(Number(pid), 'SIGTERM');
+    } catch {
+      // Process already exited.
+    }
+  }
+}
+
+function listPortPids(port) {
+  return new Promise((resolve) => {
+    const child = spawn('lsof', ['-ti', `tcp:${port}`], {
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    let output = '';
+    child.stdout.on('data', (chunk) => {
+      output += String(chunk);
+    });
+    child.on('error', () => resolve([]));
+    child.on('exit', () => {
+      resolve(output.split(/\s+/).filter(Boolean));
+    });
+  });
 }
 
 async function findAvailablePort(startPort) {
@@ -148,6 +211,7 @@ function isPortAvailable(port) {
 }
 
 function startStaticServer(root, port) {
+  const sockets = new Set();
   const server = createServer(async (request, response) => {
     try {
       const requestPath = decodeURIComponent(new URL(request.url ?? '/', 'http://127.0.0.1').pathname);
@@ -173,6 +237,14 @@ function startStaticServer(root, port) {
       response.writeHead(500);
       response.end(error instanceof Error ? error.message : String(error));
     }
+  });
+  server.on('connection', (socket) => {
+    sockets.add(socket);
+    socket.on('close', () => sockets.delete(socket));
+  });
+  server.on('close', () => {
+    for (const socket of sockets) socket.destroy();
+    sockets.clear();
   });
 
   return new Promise((resolve, reject) => {

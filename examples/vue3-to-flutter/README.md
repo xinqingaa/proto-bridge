@@ -21,7 +21,15 @@ examples/vue3-to-flutter/
 └── README.md
 ```
 
-## 生成示例
+## 命令总览
+
+| 命令 | 做什么 | 何时使用 |
+| --- | --- | --- |
+| `pnpm run example` | 生成 `output/simple`、`output/complex`，并生成 Flutter `_proto` 页面入口。 | 想体验 ProtoBridge artifacts 到 Flutter 页面还原的完整示例。 |
+| `pnpm run example:dev` | 启动 Vue 原型和 Flutter Web 静态预览。 | 想在浏览器里查看原型和生成页。 |
+| `pnpm run example:android` | 运行 Flutter target 到 Android 设备或模拟器。 | 想在 Android 上查看生成页。 |
+
+## 生成 artifacts 和 Flutter 页面
 
 在仓库根目录执行：
 
@@ -41,7 +49,20 @@ pnpm run example
 
 `output/` 和 Flutter `_proto` 代码都会被 git 忽略。这样每个用户 clone 仓库后，都可以自己运行示例命令，体验从 ProtoBridge artifacts 到 Flutter 页面还原的完整过程。
 
-如果只是想打开页面看效果：
+生成完成后，会出现这些本地文件：
+
+```text
+output/simple/
+output/complex/
+target-flutter/lib/main_proto.dart
+target-flutter/lib/app/app_proto.dart
+target-flutter/lib/app/routes/app_pages_proto.dart
+target-flutter/lib/app/modules/account/_proto/
+```
+
+`target-flutter/lib/main_proto.dart` 是本示例判断“是否已经生成 Flutter 页面”的标记。没有这个文件时，预览命令会运行默认入口并显示兜底提示页；有这个文件时，预览命令会使用 `-t lib/main_proto.dart` 运行生成页。
+
+## Web 预览
 
 ```bash
 pnpm run example:dev
@@ -58,7 +79,9 @@ Flutter target: http://127.0.0.1:5599/
 
 两个入口页都会提供 simple 和 complex 两个页面的跳转。
 
-运行到 Android 设备或模拟器：
+`example:dev` 会在退出时关闭 Vue dev server 和 Flutter 静态服务，并释放本次使用的端口。脚本还会在构建前清理旧的 `build/web`，并禁用 Flutter Web service worker，避免浏览器加载旧的生成页缓存。
+
+## Android 预览
 
 ```bash
 pnpm run example:android
@@ -71,6 +94,8 @@ pnpm run example:android -- -d emulator-5554
 ```
 
 `example:android` 会在缺少 Android 平台目录时执行 `flutter create --platforms=android .`。Android 平台工程可以作为 Flutter 示例工程的一部分提交；真正的 build 目录仍由 Flutter 默认规则忽略。
+
+没有显式传 `-d` 时，脚本会读取 `flutter devices --machine`，自动选择第一个可用 Android 设备。存在 `main_proto.dart` 时，脚本会使用 `-t lib/main_proto.dart` 运行生成页；不存在时会运行默认兜底入口。
 
 ## 推荐阅读顺序
 
