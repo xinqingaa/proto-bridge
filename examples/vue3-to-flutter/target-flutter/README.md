@@ -8,10 +8,7 @@
 lib/app/
 ├── common/widgets
 ├── modules/account
-│   ├── application
-│   ├── data
-│   ├── domain
-│   └── presentation
+│   └── _proto      # pnpm run example 生成，git ignored
 ├── routes
 ├── theme
 └── translations
@@ -26,4 +23,4 @@ flutter test
 flutter run -d chrome
 ```
 
-状态管理使用 `flutter_bloc`。页面实现保留了 route、theme、common widgets、feature 分层和 mock repository，方便 ProtoBridge 的 target inspector 读取真实约定。
+稳定工程保留 route、theme、common widgets 和兜底页面，方便 ProtoBridge 的 target inspector 读取真实约定。运行仓库根目录的 `pnpm run example` 后，会生成 `_proto` 页面、route registry 和 `main_proto.dart`；这些生成内容默认不提交。

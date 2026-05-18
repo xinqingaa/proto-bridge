@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const sourceRoot = path.join(repoRoot, 'examples/vue3-to-flutter/source-vue3');
 const targetRoot = path.join(repoRoot, 'examples/vue3-to-flutter/target-flutter');
+const protoMain = path.join(targetRoot, 'lib/main_proto.dart');
 
 const vuePort = await findAvailablePort(5173);
 const flutterPort = await findAvailablePort(5599);
@@ -46,7 +47,13 @@ start('vue', 'pnpm', [
 ]);
 
 console.log('[flutter] Building web preview...');
-await run('flutter', ['build', 'web'], targetRoot, 'flutter');
+const flutterBuildArgs = ['build', 'web'];
+if (await exists(protoMain)) {
+  flutterBuildArgs.push('-t', 'lib/main_proto.dart');
+} else {
+  console.log('[flutter] Generated _proto entry not found. Run pnpm run example to generate pages; showing fallback app.');
+}
+await run('flutter', flutterBuildArgs, targetRoot, 'flutter');
 flutterServer = await startStaticServer(path.join(targetRoot, 'build/web'), flutterPort);
 console.log(`[flutter] Flutter target is being served at http://127.0.0.1:${flutterPort}/`);
 
@@ -95,6 +102,15 @@ function run(command, args, cwd, label) {
       else reject(new Error(`${command} ${args.join(' ')} exited with ${code ?? 1}`));
     });
   });
+}
+
+async function exists(filePath) {
+  try {
+    await stat(filePath);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function prefix(label, chunk) {

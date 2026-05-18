@@ -109,10 +109,16 @@ npx @proto-bridge/cli generate \
 pnpm run example
 ```
 
-只想本地打开 Vue 原型和 Flutter 还原效果：
+本地打开 Vue 原型和 Flutter 生成页面：
 
 ```bash
 pnpm run example:dev
+```
+
+运行到 Android 设备或模拟器：
+
+```bash
+pnpm run example:android
 ```
 
 打开：
@@ -124,7 +130,7 @@ Flutter target: http://127.0.0.1:5599/
 
 如果默认端口被占用，脚本会自动顺延到可用端口，请以终端输出的地址为准。
 
-示例包含一个 Vue3 + Pinia 原型工程、一个 Flutter + bloc target 工程、两套 ProtoBridge artifacts，以及原型/Flutter 还原效果截图。它展示的是当前内置适配重点：
+示例包含一个 Vue3 + Pinia 原型工程、一个 Flutter target 工程，以及可本地生成的 ProtoBridge artifacts 和 Flutter `_proto` 页面。`output/` 和 `_proto` 生成代码不会提交到仓库，便于每个用户重新体验生成过程。它展示的是当前内置适配重点：
 
 ```text
 source: vue3-prototype
@@ -133,7 +139,7 @@ target: flutter-app
 
 效果预览：
 
-| Prototype | Flutter restored effect |
+| Prototype | Generated Flutter page |
 | --- | --- |
 | ![Prototype simple](examples/vue3-to-flutter/screenshots/prototype-simple.png) | ![Flutter simple](examples/vue3-to-flutter/screenshots/flutter-simple.png) |
 
@@ -148,7 +154,7 @@ Facts: source=true, runtime=true, screenshot=true, target=true
 Target module: account
 ```
 
-完整产物见：
+运行 `pnpm run example` 后会生成完整产物：
 
 ```text
 examples/vue3-to-flutter/output/simple

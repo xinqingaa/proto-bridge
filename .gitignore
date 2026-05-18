@@ -9,8 +9,10 @@ packages/*/dist/
 output/
 packages/*/output/
 examples/*/output/
-!examples/vue3-to-flutter/output/
-!examples/vue3-to-flutter/output/**
+examples/vue3-to-flutter/target-flutter/lib/main_proto.dart
+examples/vue3-to-flutter/target-flutter/lib/app/app_proto.dart
+examples/vue3-to-flutter/target-flutter/lib/app/routes/app_pages_proto.dart
+examples/vue3-to-flutter/target-flutter/lib/app/modules/**/_proto/
 
 # Runtime capture artifacts
 playwright-report/

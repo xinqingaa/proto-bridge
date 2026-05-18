@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../example_home_page.dart';
-import '../modules/account/presentation/pages/holding_list_page.dart';
-import '../modules/account/presentation/pages/pnl_analysis_page.dart';
 import 'app_routes.dart';
 
 class AppPages {
@@ -13,12 +11,12 @@ class AppPages {
       case Routes.pnlAnalysis:
         return MaterialPageRoute<void>(
           settings: settings,
-          builder: (_) => const PnlAnalysisPage(),
+          builder: (_) => const ProtoFallbackPage(title: 'P&L Analysis'),
         );
       case Routes.holdingList:
         return MaterialPageRoute<void>(
           settings: settings,
-          builder: (_) => const HoldingListPage(),
+          builder: (_) => const ProtoFallbackPage(title: 'Portfolio Holdings'),
         );
       case Routes.home:
       default:

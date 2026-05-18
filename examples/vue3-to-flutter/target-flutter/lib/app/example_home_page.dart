@@ -24,12 +24,12 @@ class ExampleHomePage extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              'Flutter Restored Effect',
+              'Generated Flutter Preview',
               style: themeService.textStyles.title,
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Open the Flutter pages reconstructed from the Vue3 prototype evidence.',
+              'Run pnpm run example at the repository root to generate the ProtoBridge output and Flutter _proto pages.',
               style: TextStyle(color: themeService.colors.muted, height: 1.5),
             ),
             const SizedBox(height: AppSpacing.lg),
@@ -49,6 +49,41 @@ class ExampleHomePage extends StatelessWidget {
               onTap: () => Navigator.of(context).pushNamed(Routes.pnlAnalysis),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class ProtoFallbackPage extends StatelessWidget {
+  const ProtoFallbackPage({required this.title, super.key});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Proto page is not generated yet',
+                  style: themeService.textStyles.sectionTitle),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Run pnpm run example at the repository root, then start pnpm run example:dev or pnpm run example:android again.',
+                style: TextStyle(color: themeService.colors.muted, height: 1.5),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Back'),
+              ),
+            ],
+          ),
         ),
       ),
     );
