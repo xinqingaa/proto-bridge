@@ -122,6 +122,18 @@ function inferSemanticComponents(
 function inferStyleTokens(styleText: string): VueStyleTokenHint[] {
   const hints: VueStyleTokenHint[] = [];
   for (const block of cssBlocks(styleText)) {
+    for (const include of [...block.body.matchAll(/@include\s+([\w-]+)/g)].map((match) => match[1]).filter(Boolean)) {
+      hints.push({
+        selector: block.selector,
+        property: 'font',
+        token: `@include ${include}`,
+        kind: 'typography',
+        lockToken: true,
+        doNotOverride: ['fontSize', 'fontWeight', 'height', 'fontFamily'],
+        evidence: compactCode(`${block.selector} { @include ${include}; }`),
+      });
+    }
+
     const declarations = block.body.split(';').map((item) => item.trim()).filter(Boolean);
     for (const declaration of declarations) {
       const [rawProperty, ...rawValueParts] = declaration.split(':');
@@ -135,6 +147,7 @@ function inferStyleTokens(styleText: string): VueStyleTokenHint[] {
           property,
           token: varMatch[1],
           fallback: varMatch[2]?.trim(),
+          kind: /(font|text)/i.test(property) ? 'typography' : 'color',
           evidence: compactCode(`${block.selector} { ${property}: ${value} }`),
         });
         continue;
@@ -145,6 +158,7 @@ function inferStyleTokens(styleText: string): VueStyleTokenHint[] {
           selector: block.selector,
           property,
           token: hexMatch[0],
+          kind: 'color',
           evidence: compactCode(`${block.selector} { ${property}: ${value} }`),
         });
       }

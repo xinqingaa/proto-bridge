@@ -69,6 +69,10 @@ function renderReviewMarkdown(input: ExportUiReviewInput): string {
       [
         `- ${mapping.kind ?? 'style'} ${mapping.source} = \`${mapping.value}\` -> ${mapping.target ?? '(manual)'}`,
         `[${mapping.confidence}${mapping.matchedBy ? `, ${mapping.matchedBy}` : ''}]`,
+        mapping.sourceSelector ? `selector=${mapping.sourceSelector}` : '',
+        mapping.sourceMixin ? `mixin=${mapping.sourceMixin}` : '',
+        mapping.lockToken ? 'lockToken=true' : '',
+        mapping.doNotOverride?.length ? `doNotOverride=${mapping.doNotOverride.join('/')}` : '',
         mapping.nodeIds?.length ? `(nodes=${mapping.nodeIds.length})` : '',
         mapping.candidateTargets?.length && mapping.candidateTargets.length > 1
           ? `candidates: ${mapping.candidateTargets.join(', ')}`
@@ -249,7 +253,11 @@ function renderSourceAwareProjection(input: ExportUiReviewInput): string[] {
     '#### 源码样式 Token',
     '',
     ...listOrFallback(sourceReview.styleTokens.slice(0, 40).map((token) =>
-      `- ${token.selector}.${token.property}: ${token.token}${token.fallback ? ` (${token.fallback})` : ''}`,
+      [
+        `- ${token.selector}.${token.property}: ${token.token}${token.fallback ? ` (${token.fallback})` : ''}`,
+        token.lockToken ? 'lockToken=true' : '',
+        token.doNotOverride?.length ? `doNotOverride=${token.doNotOverride.join('/')}` : '',
+      ].filter(Boolean).join(' '),
     )),
     '',
     '#### I18n',

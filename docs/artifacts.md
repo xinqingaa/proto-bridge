@@ -135,8 +135,8 @@ Validation result 由 `validate_ui_build` 或直接调用 `ui.validate` capabili
 
 Validation 能发现常见实现风险，但不能覆盖所有视觉或业务错误。即使 validation 结果干净，仍应结合人工或 agent review 处理 unresolved confirmations。
 
-## 可选 migration-spec.md
+## migration-spec.md
 
-`migration-spec.md` 只会在传入 `--source-brief` 或 `sourceBrief=true` 时输出。
+`migration-spec.md` 在同时具备 source 和 target facts 时默认输出。传入 `sourceBrief=false` 可关闭。
 
-它可作为 source-heavy migration 的额外实现质量参考。主交接文档仍然是 `ui-build-review.md`。
+它作为 source-heavy migration 的实现质量参考。主交接文档仍然是 `ui-build-review.md`。

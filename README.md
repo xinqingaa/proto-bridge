@@ -239,5 +239,5 @@ docs/
 - [开发命令](docs/development.md)：仓库脚本、示例命令、测试命令和生成目录规则。
 - [产物说明](docs/artifacts.md)：输出文件结构和阅读方式。
 - [集成方式](docs/integration.md)：CLI、MCP 和 core 嵌入参考。
-- [迁移说明书标准](docs/migration-spec.md)：可选 source brief 的质量标准。
+- [迁移说明书标准](docs/migration-spec.md)：source-aware brief 的质量标准。
 - [npm 发布指南](docs/npm-publish.md)：发布检查清单。

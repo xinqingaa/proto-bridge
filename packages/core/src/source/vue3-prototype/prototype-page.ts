@@ -42,6 +42,12 @@ const CONFIG_SOURCES: ConfigSource[] = [
     viewsRoot: 'prototype/src/views/prototype',
   },
   {
+    pageType: 'prototype',
+    exportName: 'prdPageModules',
+    configPath: 'prototype/src/config/prdPageRegistry.js',
+    viewsRoot: 'prototype/src/views/prototype',
+  },
+  {
     pageType: 'design',
     exportName: 'designModules',
     configPath: 'prototype/src/config/designScreens.js',
@@ -134,18 +140,19 @@ export async function analyzePrototypePage(input: AnalyzePrototypePageInput): Pr
 
 async function loadScreenEntries(prototypeRoot: string, warnings: string[]): Promise<ScreenEntry[]> {
   const entries: ScreenEntry[] = [];
+  const optionalConfigWarnings: string[] = [];
 
   for (const source of CONFIG_SOURCES) {
     const filePath = path.join(prototypeRoot, source.configPath);
     const text = await readTextIfExists(filePath);
     if (!text) {
-      warnings.push(`Config file not found: ${filePath}`);
+      optionalConfigWarnings.push(`Config file not found: ${filePath}`);
       continue;
     }
 
     const literal = extractExportedArrayLiteral(text, source.exportName);
     if (!literal) {
-      warnings.push(`Unable to find export ${source.exportName} in ${filePath}`);
+      optionalConfigWarnings.push(`Unable to find export ${source.exportName} in ${filePath}`);
       continue;
     }
 
@@ -158,6 +165,7 @@ async function loadScreenEntries(prototypeRoot: string, warnings: string[]): Pro
     }
   }
 
+  if (entries.length === 0) warnings.push(...optionalConfigWarnings);
   return entries;
 }
 
@@ -279,7 +287,7 @@ function formatMissingRouteError(
     details.push(`source config warnings: ${warnings.slice(0, 4).join(' | ')}`);
   }
 
-  details.push('Suggestions: check config.source.root, verify the route exists in prototypeScreens.js/designScreens.js, or use --vue <file>.');
+  details.push('Suggestions: check config.source.root, verify the route exists in prototypeScreens.js/prdPageRegistry.js/designScreens.js, or use --vue <file>.');
   return details.join('\n');
 }
 

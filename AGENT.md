@@ -87,7 +87,7 @@ hybrid MCP 示例：
 4. `page-canonical.json`：完整 evidence、provenance、merge rules、mismatches 和 trace。
 5. `screenshots/`：runtime capture 存在时的视觉参考。
 
-不要把 `migration-spec.md` 当主产物。它只是在显式请求时导出的可选 source-aware brief。
+不要把 `migration-spec.md` 当唯一主产物。有 source + target facts 时它会和 `ui-build-review.md` 一起输出；实现时仍先读 `ui-build-review.md`，再用 `migration-spec.md` 补充 source-aware 细节。
 
 ## 证据规则
 

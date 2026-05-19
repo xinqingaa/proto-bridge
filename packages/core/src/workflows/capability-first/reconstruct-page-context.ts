@@ -123,7 +123,8 @@ export async function reconstructPageContext(
     })
     : undefined;
 
-  const migrationSpecPath = sourceBrief && input.sourceBrief ? path.join(outDir, 'migration-spec.md') : undefined;
+  const shouldWriteMigrationSpec = Boolean(sourceBrief && (input.sourceBrief ?? true));
+  const migrationSpecPath = shouldWriteMigrationSpec ? path.join(outDir, 'migration-spec.md') : undefined;
   if (migrationSpecPath && sourceBrief) {
     await writeTextFile(migrationSpecPath, sourceBrief.markdown);
   }
@@ -263,7 +264,7 @@ function buildNextActions(hasPlan: boolean, hasReview: boolean, hasMigrationSpec
   return [
     ...(hasPlan ? ['Use ui-build-plan.json as the machine-readable implementation plan.'] : ['Provide targetRoot to generate ui-build-plan.json.']),
     ...(hasReview ? ['Use ui-build-review.md as the primary human-readable handoff.'] : ['Build a UI review after generating a plan.']),
-    ...(hasMigrationSpec ? ['Treat migration-spec.md as the optional source-aware implementation brief, not the primary artifact.'] : []),
+    ...(hasMigrationSpec ? ['Use migration-spec.md as the source-aware implementation brief alongside ui-build-review.md.'] : []),
     'Resolve any manualConfirmations before implementing ambiguous source/runtime differences.',
   ];
 }

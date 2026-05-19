@@ -406,14 +406,14 @@ Options:
   --target-adapter <id>       Target adapter, defaults to flutter-app
   --output <dir>              Override the generated output directory
   --capture                   Run Playwright screenshot and DOM capture
-  --source-brief              Also write migration-spec.md as an optional source-aware brief
+  --source-brief              Force writing migration-spec.md when source and target facts are available
   --trace                     Print temporary capability orchestration trace
 
 Artifacts:
   Always writes page-canonical.json and page-debug-index.json.
   With target config or --target-root, writes ui-build-plan.json and ui-build-review.md.
   With source config or --source-root, URL-derived route enables source-aware evidence.
-  migration-spec.md is only written when --source-brief is passed.
+  With source and target facts, writes migration-spec.md alongside ui-build-review.md by default.
 `;
 }
 

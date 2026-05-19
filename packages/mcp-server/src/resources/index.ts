@@ -181,7 +181,7 @@ function renderWorkflowGuide(): string {
     '   - 有源码时传 `sourceRoot` 或在 config 中配置 `source.root`，用于自动补充 source evidence。',
     '   - 有目标工程时传 `targetRoot` 或在 config 中配置 `target.root`，用于 target.inspect、ui.plan 和 ui.review。',
     '   - 没有 target 时只产出 evidence 类 artifact；不会强行生成 Flutter 实现计划。',
-    '   - 有 source facts 时，`ui-build-review.md` 会包含 source-aware implementation brief；`migration-spec.md` 只是 P5-A 过渡 brief projection，不是主交付。',
+    '   - 有 source + target facts 时，会同时输出 `ui-build-review.md` 和 `migration-spec.md`；实现时先读 review，再用 spec 补充 source-aware 细节。',
     '',
     '2. 可选截图/OCR 输入：当可见文字缺失、图片/canvas 文字重要时，把 `screenshotPath`、`ocrText` 或 `ocrBoxes` 直接传给 `reconstruct_page_context`。',
     '   - 这些证据会进入 `screenshotFacts` 和 `page-canonical.json`。',

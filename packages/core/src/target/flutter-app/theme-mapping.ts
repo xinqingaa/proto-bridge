@@ -158,7 +158,7 @@ const TYPOGRAPHY_VALUE_INDEX = buildReverseTokenIndex(TYPOGRAPHY_TOKEN_VALUES, T
 export type RuntimeThemeResolution = {
   target?: string | undefined;
   candidateTargets?: string[] | undefined;
-  matchedBy: 'css-var' | 'exact' | 'ambiguous' | 'family' | 'manual';
+  matchedBy: 'css-var' | 'source-mixin' | 'exact' | 'ambiguous' | 'family' | 'manual';
   confidence: MappingConfidence;
   reason: string;
 };
@@ -188,6 +188,25 @@ export function getKnownTokenMaps(): {
   return {
     colors: { ...COLOR_TOKEN_MAP },
     typography: { ...TYPOGRAPHY_TOKEN_MAP },
+  };
+}
+
+export function resolveFlutterTypographyMixinTarget(mixin: string): RuntimeThemeResolution {
+  const normalized = mixin.trim().replace(/^@include\s+/, '');
+  const target = TYPOGRAPHY_TOKEN_MAP[normalized];
+  if (target) {
+    return {
+      target,
+      candidateTargets: [target],
+      matchedBy: 'source-mixin',
+      confidence: 'high',
+      reason: `Source typography mixin @include ${normalized} maps to a built-in YouFi text style.`,
+    };
+  }
+  return {
+    matchedBy: 'family',
+    confidence: 'low',
+    reason: `No built-in YouFi text style mapping found for source typography mixin @include ${normalized}.`,
   };
 }
 

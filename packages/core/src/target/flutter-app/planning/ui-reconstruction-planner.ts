@@ -15,7 +15,7 @@ import type {
 } from '../../../types/index.js';
 import { getFlutterTargetConventions } from '../conventions.js';
 import { findFlutterTargetExamples } from '../examples.js';
-import { resolveFlutterColorTarget, resolveFlutterTypographyTarget } from '../theme-mapping.js';
+import { resolveFlutterColorTarget, resolveFlutterTypographyMixinTarget, resolveFlutterTypographyTarget } from '../theme-mapping.js';
 import { toPascalCase, toSnakeCase } from './migration-planner.js';
 
 export type BuildFlutterUiReconstructionPlanInput = {
@@ -80,6 +80,7 @@ export async function buildFlutterUiReconstructionPlan(
       'Compare the generated Flutter screen against the source screenshot before adding business behavior.',
       'Treat typography, CSS colors, spacing, and layout as P0 visual fidelity items; prefer exact evidence matches before approximate fallback.',
       'Use node-level themeMappings first; when a theme token is resolved exactly, do not replace it with a larger or heavier nearby token.',
+      'If a typography themeMapping has lockToken=true, use the target textStyles token directly and do not override fontSize, height, fontWeight, or fontFamily unless the plan explicitly lists a source override.',
       'Check spacing, radius, border, and shadow values against reusable YouFi widgets before introducing local constants.',
       'Keep business data, API fields, permission checks, risk controls, and tracking as TODOs unless confirmed by YouFi examples.',
       'Prefer similar module examples and common widgets over one-to-one DOM translation.',
@@ -315,22 +316,36 @@ function buildThemeMappings(evidence: PageCanonical): ThemeMapping[] {
     } satisfies ThemeMapping;
   });
   const sourceMappings = (evidence.sourceFacts?.analysis.sfc?.styleTokens ?? []).slice(0, 80).map((token) => {
-    const colorResolution = token.property.toLowerCase().includes('color')
+    const property = token.property.toLowerCase();
+    const isTypography = token.kind === 'typography' || property.includes('font');
+    const isColor = token.kind === 'color' || property.includes('color');
+    const typographyResolution = isTypography && token.token.startsWith('@include ')
+      ? resolveFlutterTypographyMixinTarget(token.token)
+      : undefined;
+    const colorResolution = isColor
       ? resolveFlutterColorTarget({
         cssVar: token.token,
         value: token.fallback ?? token.token,
         source: token.selector,
       })
       : undefined;
+    const target = typographyResolution?.target ?? colorResolution?.target ?? (isTypography ? 'themeService.textStyles.*' : 'themeService.colors.*');
+    const hasExactTypographyTarget = Boolean(isTypography && typographyResolution?.target && typographyResolution.confidence === 'high');
+    const lockToken = Boolean(hasExactTypographyTarget);
     return {
-      kind: token.property.toLowerCase().includes('color') ? 'color' : undefined,
+      kind: isTypography ? 'typography' : isColor ? 'color' : undefined,
       source: `${token.selector}.${token.property}`,
+      ...(token.selector ? { sourceSelector: token.selector } : {}),
+      ...(isTypography && token.token.startsWith('@include ') ? { sourceMixin: token.token.replace(/^@include\s+/, '') } : {}),
       value: token.fallback ?? token.token,
-      target: colorResolution?.target ?? (token.property.toLowerCase().includes('font') ? 'themeService.textStyles.*' : 'themeService.colors.*'),
-      candidateTargets: colorResolution?.candidateTargets,
-      matchedBy: colorResolution?.matchedBy ?? 'manual',
-      confidence: colorResolution?.confidence ?? 'medium',
-      reason: `Source style token ${token.token} preserves semantic design intent; runtime computed style should still confirm final rendered value when available.`,
+      target,
+      candidateTargets: typographyResolution?.candidateTargets ?? colorResolution?.candidateTargets,
+      matchedBy: typographyResolution?.matchedBy ?? colorResolution?.matchedBy ?? 'manual',
+      confidence: typographyResolution?.confidence ?? colorResolution?.confidence ?? 'medium',
+      ...(lockToken ? { lockToken: true, doNotOverride: token.doNotOverride ?? ['fontSize', 'fontWeight', 'height', 'fontFamily'] } : {}),
+      reason: lockToken
+        ? `Source typography token ${token.token} is an exact semantic design token; generated Flutter must use ${target} without overriding fontSize, height, fontWeight, or fontFamily.`
+        : `Source style token ${token.token} preserves semantic design intent; runtime computed style should still confirm final rendered value when available.`,
     } satisfies ThemeMapping;
   });
   return dedupeBy([...runtimeMappings, ...sourceMappings], (mapping) => `${mapping.source}:${mapping.value}`);

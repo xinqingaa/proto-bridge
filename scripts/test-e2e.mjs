@@ -209,7 +209,7 @@ async function requireArtifacts(files, contract) {
 }
 
 async function requireSourceBriefState(files, caseName) {
-  if (sourceBrief && caseName === 'hybrid') {
+  if (caseName === 'hybrid') {
     await requireFile(files.migrationSpec);
     return;
   }
@@ -363,7 +363,7 @@ function parseToolJson(result) {
 function compactFiles(files, contract) {
   return Object.fromEntries(Object.entries(files).filter(([key, value]) => {
     if (value === undefined) return false;
-    if (key === 'migrationSpec' && !sourceBrief) return false;
+    if (key === 'migrationSpec' && !value) return false;
     if ((key === 'uiBuildPlan' || key === 'uiBuildReview') && !contract.requirePlan) return false;
     return true;
   }));

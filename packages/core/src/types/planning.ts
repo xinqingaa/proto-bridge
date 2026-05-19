@@ -122,11 +122,15 @@ export type ThemeMapping = {
   kind?: 'color' | 'typography' | 'spacing' | 'radius' | 'shadow' | 'border' | undefined;
   source: string;
   value: string;
+  sourceSelector?: string | undefined;
+  sourceMixin?: string | undefined;
   nodeIds?: string[] | undefined;
   target?: string | undefined;
   candidateTargets?: string[] | undefined;
-  matchedBy?: 'css-var' | 'exact' | 'ambiguous' | 'family' | 'manual' | undefined;
+  matchedBy?: 'css-var' | 'source-mixin' | 'exact' | 'ambiguous' | 'family' | 'manual' | undefined;
   confidence: MappingConfidence;
+  lockToken?: boolean | undefined;
+  doNotOverride?: string[] | undefined;
   reason: string;
 };
 
@@ -226,6 +230,9 @@ export type SourceAwareReviewProjection = {
     property: string;
     token: string;
     fallback?: string | undefined;
+    kind?: 'color' | 'typography' | undefined;
+    lockToken?: boolean | undefined;
+    doNotOverride?: string[] | undefined;
   }>;
   i18n: Record<string, unknown>;
   assets: Array<{

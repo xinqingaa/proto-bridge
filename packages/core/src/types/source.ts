@@ -155,5 +155,8 @@ export type VueStyleTokenHint = {
   property: string;
   token: string;
   fallback?: string | undefined;
+  kind?: 'color' | 'typography' | undefined;
+  lockToken?: boolean | undefined;
+  doNotOverride?: string[] | undefined;
   evidence: string;
 };

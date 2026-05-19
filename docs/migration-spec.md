@@ -1,6 +1,6 @@
 # 迁移说明书模板与质量标准
 
-本文档定义可选 source-aware brief `migration-spec.md` 的目标、章节要求和质量标准。它不再是默认主产物；默认主交接文档是 `ui-build-review.md`。项目整体入口见 [README.md](../README.md)，workflow 说明见 [workflows.md](workflows.md)。
+本文档定义 source-aware brief `migration-spec.md` 的目标、章节要求和质量标准。有 source + target facts 时它会和默认主交接文档 `ui-build-review.md` 一起产出；`ui-build-review.md` 仍是优先阅读的人类交接文档。项目整体入口见 [README.md](../README.md)，workflow 说明见 [workflows.md](workflows.md)。
 
 ## 1. 说明书的目标
 
@@ -80,6 +80,7 @@
 
 - 颜色映射
 - 字体映射
+- 字体 token 锁定规则：来源为 `@include <typography-token>` 且能映射到 `themeService.textStyles.*` 时，必须标明不得覆盖 `fontSize`、`height`、`fontWeight`、`fontFamily`
 - i18n key 和 `.tr` 建议
 - 资源线索和 asset 目标目录
 
@@ -127,6 +128,7 @@
 - 是否明确文件拆分和 Widget 树。
 - 是否明确状态 owner 和交互边界。
 - 是否明确路由参数、布局特征、theme / i18n / assets 建议。
+- 是否把 exact typography token 写成约束，而不是普通建议。
 - 是否明确可复用 Flutter 组件。
 - 是否明确人工确认项。
 - 是否避免 source 技术栈泄漏。

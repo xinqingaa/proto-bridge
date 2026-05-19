@@ -150,13 +150,7 @@ npx @proto-bridge/cli generate \
   --trace
 ```
 
-额外导出可选 source brief：
-
-```bash
-npx @proto-bridge/cli generate \
-  --route /prototype/asset/pnl-analysis \
-  --source-brief
-```
+同时具备 source 和 target facts 时会默认导出 `migration-spec.md`。需要显式确认时仍可传 `--source-brief`。
 
 在 monorepo 内验证本地源码改动时，可以用根目录包装命令：
 

@@ -177,7 +177,7 @@ export function resolveProtoBridgeInput(options: ResolveProtoBridgeInputOptions)
       targetModule: overrides.targetModule,
       buildPlan: overrides.buildPlan ?? Boolean(target),
       buildReview: overrides.buildReview ?? Boolean(target),
-      sourceBrief: overrides.sourceBrief ?? config?.sourceBrief ?? false,
+      sourceBrief: overrides.sourceBrief ?? config?.sourceBrief,
       trace: overrides.trace ?? false,
     },
     page,

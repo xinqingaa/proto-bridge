@@ -148,6 +148,8 @@ export function renderFlutterMigrationSpec(context: MigrationContext): string {
   }
 
   lines.push('## 五、CSS 样式到 Flutter 主题映射');
+  lines.push('实现约束：当来源样式是 `@include <typography-token>` 且能映射到 `themeService.textStyles.*` 时，Flutter 必须直接使用对应 textStyles token；除非来源 CSS 有额外覆盖证据，不得再覆盖 `fontSize`、`height`、`fontWeight`、`fontFamily`。');
+  lines.push('');
   lines.push('### 颜色');
   lines.push(markdownTable(
     ['使用位置', '变量名', 'Flutter 主题', '色值'],
@@ -156,7 +158,7 @@ export function renderFlutterMigrationSpec(context: MigrationContext): string {
   lines.push('');
   lines.push('### 字体');
   lines.push(markdownTable(
-    ['使用位置', '变量名 / mixin', 'Flutter 文本主题', '原始样式'],
+    ['使用位置', '变量名 / mixin', 'Flutter 文本主题', '原始样式', '实现约束'],
     typographyUsageRows(source.sfc?.styleBlocks ?? [], typographyMixins),
   ));
   lines.push('');
@@ -781,6 +783,7 @@ function typographyRowsForBlock(block: CssBlock, mixins: Map<string, TypographyM
       `@mixin ${include}`,
       mixin?.target ?? '',
       mixin?.styleText ?? typographyStyleText(block.declarations),
+      mixin?.target ? '锁定 token；不要覆盖 fontSize/height/fontWeight/fontFamily' : '',
     ]);
   }
 
@@ -792,6 +795,7 @@ function typographyRowsForBlock(block: CssBlock, mixins: Map<string, TypographyM
       matchedMixin ? `匹配 @mixin ${matchedMixin.name}` : '',
       matchedMixin?.target ?? '',
       directStyle,
+      matchedMixin?.target ? '锁定 token；不要覆盖 fontSize/height/fontWeight/fontFamily' : '',
     ]);
   }
 

@@ -110,6 +110,9 @@ function buildSourceAwareReview(context: MigrationContext): SourceAwareReviewPro
       property: token.property,
       token: token.token,
       fallback: token.fallback,
+      kind: token.kind,
+      lockToken: token.lockToken,
+      doNotOverride: token.doNotOverride,
     })),
     i18n: source.i18n ?? {},
     assets: (source.sfc?.assets ?? []).map((asset) => ({
