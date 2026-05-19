@@ -70,7 +70,7 @@ args = [
 
 Tool arguments 会覆盖 config values。
 
-配置文件只放稳定环境信息。每次通过 tool arguments 传 URL；配置了 `source.root` 时会从 URL 推导 route 并自动补源码证据，配置了 `target.root` 时会生成 plan/review。
+配置文件只放稳定环境信息。每次通过 tool arguments 传 URL；配置了 `source.root` 时会从 URL 推导 route 并自动补源码证据，配置了 `target.root` 时会生成 plan/review。有 source + target facts 时会默认生成 `migration-spec.md`。
 
 ## Tools
 
@@ -110,7 +110,7 @@ Runtime-only：
 ## Agent 提示词示例
 
 ```text
-请使用 ProtoBridge 的 reconstruct_page_context 处理这个页面，阅读 ui-build-review.md 和 ui-build-plan.json，在目标 Flutter 应用中实现 UI，然后调用 validate_ui_build：
+请使用 ProtoBridge 的 reconstruct_page_context 处理这个页面，阅读 ui-build-review.md、ui-build-plan.json，如有 migration-spec.md 也一起阅读；在目标 Flutter 应用中实现 UI，然后调用 validate_ui_build：
 http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1
 ```
 
@@ -122,5 +122,6 @@ http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1
 ├── page-debug-index.json
 ├── ui-build-plan.json
 ├── ui-build-review.md
+├── migration-spec.md
 └── screenshots/
 ```

@@ -74,6 +74,8 @@ ui.validate
 | `ui.review` | canonical page、UI plan | `ui-build-review.md` |
 | `ui.validate` | target diff、plan expectations | validation result |
 
+`migration-spec.md` 是 workflow 在 source + target facts 同时存在时导出的 source-aware projection。它复用 source analysis、target conventions 和 implementation recommendations，不是独立 capability。
+
 Capability 的粒度小于完整 workflow。CLI 命令或 MCP tool 可以根据可用输入组合它们。
 
 ## 字段级优先级
@@ -98,6 +100,7 @@ Projection 产物：
 - `page-debug-index.json`：面向调试的紧凑索引。
 - `ui-build-plan.json`：机器可读 target implementation plan。
 - `ui-build-review.md`：人类可读 implementation handoff。
+- `migration-spec.md`：source + target facts 可用时默认生成的 source-aware implementation brief。
 - `screenshots/`：runtime visual evidence。
 - validation result：CLI/MCP/core validation caller 返回的结构化结果。
 

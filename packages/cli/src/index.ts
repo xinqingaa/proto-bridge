@@ -406,7 +406,7 @@ Options:
   --target-adapter <id>       Target adapter, defaults to flutter-app
   --output <dir>              Override the generated output directory
   --capture                   Run Playwright screenshot and DOM capture
-  --source-brief              Force writing migration-spec.md when source and target facts are available
+  --source-brief              Explicitly enable migration-spec.md when source and target facts are available
   --trace                     Print temporary capability orchestration trace
 
 Artifacts:

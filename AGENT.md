@@ -27,6 +27,7 @@ ProtoBridge 是团队把“PRD + Figma 静态稿 + 人工 UI 走查”升级为�
 - `page-debug-index.json`
 - `ui-build-plan.json`
 - `ui-build-review.md`
+- `migration-spec.md`
 - `screenshots/full-page.png`
 
 ## 实现前先判断输入
@@ -88,6 +89,19 @@ hybrid MCP 示例：
 5. `screenshots/`：runtime capture 存在时的视觉参考。
 
 不要把 `migration-spec.md` 当唯一主产物。有 source + target facts 时它会和 `ui-build-review.md` 一起输出；实现时仍先读 `ui-build-review.md`，再用 `migration-spec.md` 补充 source-aware 细节。
+
+## 样式 Token 约束
+
+Source 中明确出现 typography mixin 时，output 会把它提升为实现约束，而不是普通建议。例如：
+
+```text
+.hero-amount { @include number2-b; }
+  -> themeService.textStyles.number2B
+  -> lockToken=true
+  -> doNotOverride=fontSize/fontWeight/height/fontFamily
+```
+
+实现 Flutter 时必须直接使用锁定的 `themeService.textStyles.*` token。除非 `ui-build-plan.json` 明确给出来源 CSS 的额外覆盖证据，不要再覆盖 `fontSize`、`height`、`fontWeight` 或 `fontFamily`；颜色、`maxLines`、`overflow` 这类非 typography token 属性可以按 plan 补充。
 
 ## 证据规则
 

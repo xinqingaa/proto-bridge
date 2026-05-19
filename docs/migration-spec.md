@@ -17,6 +17,7 @@
 
 - 说明书只面向 Flutter 实现，不输出 source 技术栈、模板语法或 DOM/class 证据。
 - 调试证据应查看 `page-canonical.json` 和 `page-debug-index.json`；`migration-spec.md` 只保留实现计划。
+- 结构化实现约束以 `ui-build-plan.json` 为准；`migration-spec.md` 需要同步呈现关键约束，方便人工阅读。
 - 不要把来源页面结构逐层翻译成 Flutter Widget。
 - 不要把临时 mock 数据直接写在 Widget build 中。
 - 不要让每个子 Widget 都直接依赖整个 Controller；优先通过构造参数传入数据，并用回调上报交互。

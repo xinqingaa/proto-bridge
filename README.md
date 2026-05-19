@@ -10,6 +10,7 @@ source / URL / screenshot / target repo
   -> page-canonical.json
   -> ui-build-plan.json
   -> ui-build-review.md
+  -> migration-spec.md
   -> implementation + validation
 ```
 
@@ -26,7 +27,7 @@ source / URL / screenshot / target repo
 | Mode | 入口形态。CLI 面向终端和批处理，MCP 面向 agent/tool 调用，core 面向嵌入式调用。 |
 | Workflow | 面向常见输入组合的预设编排，例如 source-only、runtime-only、hybrid。 |
 | Capability | 可复用的 core 能力，例如 `source.analyze`、`runtime.capture`、`target.inspect`、`ui.plan`、`ui.validate`。 |
-| Artifact | 可持久化的输出产物，例如 `page-canonical.json`、`ui-build-plan.json`、`ui-build-review.md`。 |
+| Artifact | 可持久化的输出产物，例如 `page-canonical.json`、`ui-build-plan.json`、`ui-build-review.md`、`migration-spec.md`。 |
 
 CLI 和 MCP 是同一套 core capabilities 的不同入口：
 
@@ -154,11 +155,15 @@ Facts: source=true, runtime=true, screenshot=true, target=true
 Target module: account
 ```
 
+有 source + target facts 时还会生成 `migration-spec.md`，用于补充 source-aware 实现说明。
+
 运行 `pnpm run example` 后会生成完整产物：
 
 ```text
 examples/vue3-to-flutter/output/simple
-examples/vue3-to-flutter/output/complex
+examples/vue3-to-flutter/output/complex-overview
+examples/vue3-to-flutter/output/complex-realized
+examples/vue3-to-flutter/output/complex-risk
 ```
 
 </details>
@@ -171,6 +176,7 @@ output/<page>-<timestamp>/
 ├── page-debug-index.json
 ├── ui-build-plan.json
 ├── ui-build-review.md
+├── migration-spec.md
 └── screenshots/
     └── full-page.png
 ```
@@ -179,6 +185,7 @@ output/<page>-<timestamp>/
 - `page-debug-index.json`：面向调试的紧凑索引，帮助定位 section、node、style、mapping 和 risk。
 - `ui-build-plan.json`：机器可读实现计划。
 - `ui-build-review.md`：人类可读实现交接文档。
+- `migration-spec.md`：source + target facts 可用时默认生成的 source-aware 实现说明。
 - `screenshots/`：runtime capture 生成的视觉证据。
 
 ## MCP

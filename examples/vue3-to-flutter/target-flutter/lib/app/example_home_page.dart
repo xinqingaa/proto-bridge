@@ -111,9 +111,8 @@ class _HomeSwitch extends StatelessWidget {
             ),
             Switch.adaptive(
               value: value,
-              activeThumbColor: colors.accent,
+              activeColor: colors.accent,
               activeTrackColor: colors.accentSoft,
-              inactiveThumbColor: colors.muted,
               inactiveTrackColor: colors.surfaceSoft,
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               onChanged: onChanged,

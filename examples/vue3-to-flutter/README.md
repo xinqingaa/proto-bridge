@@ -68,6 +68,17 @@ target-flutter/lib/app/routes/app_pages_proto.dart
 target-flutter/lib/app/modules/account/_proto/
 ```
 
+每个 `output/<case>/` 目录都会包含：
+
+```text
+page-canonical.json
+page-debug-index.json
+ui-build-plan.json
+ui-build-review.md
+migration-spec.md
+screenshots/full-page.png
+```
+
 `target-flutter/lib/main_proto.dart` 是本示例判断“是否使用 `_proto` 页面”的标记。存在这个文件时，预览命令会使用 `-t lib/main_proto.dart` 运行 agent 产物页。
 
 如果需要清理安装产物，让 Flutter target 回到 fallback 状态：
@@ -91,16 +102,16 @@ ProtoBridge 本体生成的是页面上下文 artifacts，不是 Vue 到 Dart �
 agent 生成时读取了：
 
 ```text
-output/simple/{ui-build-review.md,ui-build-plan.json,page-canonical.json}
-output/complex-overview/{ui-build-review.md,ui-build-plan.json,page-canonical.json}
-output/complex-realized/{ui-build-review.md,ui-build-plan.json,page-canonical.json}
-output/complex-risk/{ui-build-review.md,ui-build-plan.json,page-canonical.json}
+output/simple/{ui-build-review.md,ui-build-plan.json,migration-spec.md,page-canonical.json}
+output/complex-overview/{ui-build-review.md,ui-build-plan.json,migration-spec.md,page-canonical.json}
+output/complex-realized/{ui-build-review.md,ui-build-plan.json,migration-spec.md,page-canonical.json}
+output/complex-risk/{ui-build-review.md,ui-build-plan.json,migration-spec.md,page-canonical.json}
 target-flutter/lib/app/theme/
 target-flutter/lib/app/common/widgets/
 target-flutter/lib/app/routes/
 ```
 
-落地约束是：使用 target 的主题 token、`flutter_bloc` 全局偏好状态、`CommonAppBar`、`CommonButton`、`SectionPanel` 等组件；simple 页默认展示全部数据；complex 页分别还原 overview、realized、risk 三个 tab 的结构。为了开源快速体验，这版 agent 结果会随仓库提交为 `.dart.txt` 静态文本，`pnpm run example` 负责刷新 artifacts 并按 manifest 安装到 `_proto`。
+落地约束是：使用 target 的主题 token、`flutter_bloc` 全局偏好状态、`CommonAppBar`、`CommonButton`、`SectionPanel` 等组件；simple 页默认展示全部数据；complex 页分别还原 overview、realized、risk 三个 tab 的结构。`ui-build-plan.json` 中带 `lockToken=true` 的 typography mapping 必须直接落到对应 `themeService.textStyles.*`，不要再覆盖 `fontSize`、`height`、`fontWeight` 或 `fontFamily`。为了开源快速体验，这版 agent 结果会随仓库提交为 `.dart.txt` 静态文本，`pnpm run example` 负责刷新 artifacts 并按 manifest 安装到 `_proto`。
 
 这份 agent 产物不是“纯机械从 output 直接吐出的 Dart”。它以 output 为主要页面事实来源，同时结合 target 工程规范做了必要工程化修正，例如接入 Flutter target 的 bloc 主题/多语言状态。后续如果要提升自动化程度，应继续评估 output 质量和 agent 指令质量，让这类修正尽量前移到工作流中。
 
@@ -144,26 +155,30 @@ pnpm run example:android -- -d emulator-5554
 ```text
 output/simple/ui-build-review.md
 output/simple/ui-build-plan.json
+output/simple/migration-spec.md
 output/simple/page-debug-index.json
 output/simple/page-canonical.json
 
 output/complex-overview/ui-build-review.md
 output/complex-overview/ui-build-plan.json
+output/complex-overview/migration-spec.md
 output/complex-overview/page-debug-index.json
 output/complex-overview/page-canonical.json
 
 output/complex-realized/ui-build-review.md
 output/complex-realized/ui-build-plan.json
+output/complex-realized/migration-spec.md
 output/complex-realized/page-debug-index.json
 output/complex-realized/page-canonical.json
 
 output/complex-risk/ui-build-review.md
 output/complex-risk/ui-build-plan.json
+output/complex-risk/migration-spec.md
 output/complex-risk/page-debug-index.json
 output/complex-risk/page-canonical.json
 ```
 
-`ui-build-review.md` 适合人工先读；`ui-build-plan.json` 适合交给 coding agent；`page-debug-index.json` 用来排查证据合并；`page-canonical.json` 是完整上下文。
+`ui-build-review.md` 适合人工先读；`ui-build-plan.json` 适合交给 coding agent；`migration-spec.md` 是 source-aware 补充说明；`page-debug-index.json` 用来排查证据合并；`page-canonical.json` 是完整上下文。
 
 提交的 agent 产物位于：
 
@@ -190,6 +205,8 @@ target-flutter/lib/main_proto.dart
 这些文件属于 agent 工作流安装结果，不代表 ProtoBridge 本体是 Vue 到 Dart 的编译器。
 
 ## 截图
+
+截图由当前 `pnpm run example` 生成的 output 和 `_proto` Flutter Web 预览刷新而来。
 
 | Prototype | Generated Flutter page |
 | --- | --- |

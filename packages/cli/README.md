@@ -72,7 +72,7 @@ Options：
 - `--target-root <dir>`：可选目标工程根目录。
 - `--output <dir>`：本次运行的完整输出目录。
 - `--capture`：本次运行执行 runtime capture。
-- `--source-brief`：有 source 和 target facts 时强制输出 `migration-spec.md`；默认也会输出，可用于显式确认。
+- `--source-brief`：有 source 和 target facts 时显式开启 `migration-spec.md` 输出；默认也会输出，可用于命令中明确表达期望。
 - `--trace`：打印 capability orchestration trace。
 
 ## 输出
@@ -88,4 +88,4 @@ output/<page>-<timestamp>/
     └── full-page.png
 ```
 
-优先阅读 `ui-build-review.md`，再读 `ui-build-plan.json`。深入排查时使用 `page-debug-index.json` 和 `page-canonical.json`。
+优先阅读 `ui-build-review.md`，再读 `ui-build-plan.json`。有 `migration-spec.md` 时把它作为 source-aware 补充说明。深入排查时使用 `page-debug-index.json` 和 `page-canonical.json`。

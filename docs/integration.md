@@ -127,6 +127,7 @@ const result = await reconstructPageContext({
 });
 
 console.log(result.files.uiBuildReview);
+console.log(result.files.migrationSpec);
 ```
 
 需要自定义编排时，可以直接使用 capability APIs：
@@ -178,5 +179,6 @@ output/<page>-<timestamp>/
 ├── page-debug-index.json
 ├── ui-build-plan.json
 ├── ui-build-review.md
+├── migration-spec.md
 └── screenshots/
 ```

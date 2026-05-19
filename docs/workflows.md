@@ -89,6 +89,7 @@ page-canonical.json
 page-debug-index.json
 ui-build-plan.json
 ui-build-review.md
+migration-spec.md
 ```
 
 ## Runtime-only 工作流
@@ -158,6 +159,7 @@ MCP arguments：
 ```
 
 Hybrid 输出会在 `page-canonical.json` 中记录 field priority、provenance 和 mismatches。
+同时具备 source + target facts 时，Hybrid 也会默认输出 `migration-spec.md`。
 
 ## Screenshot / OCR 工作流
 
@@ -213,11 +215,14 @@ Validation 会报告：
 1. 调用 `reconstruct_page_context`。
 2. 阅读 `ui-build-review.md`，获取人类可读实现交接。
 3. 阅读 `ui-build-plan.json`，获取 file tree、widget tree、mappings、assets、i18n、interactions、risks 和 validation hints。
-4. target pattern 不明确时调用 `read_target_conventions` 或 `find_target_examples`。
-5. 在 target Flutter repository 中实现。
-6. 运行目标应用的 format、static analysis 和 tests。
-7. 调用 `validate_ui_build`。
-8. 汇报 changed files、validation status、warnings 和 manual confirmations。
+4. 有 `migration-spec.md` 时阅读 source-aware 补充说明。
+5. target pattern 不明确时调用 `read_target_conventions` 或 `find_target_examples`。
+6. 在 target Flutter repository 中实现。
+7. 运行目标应用的 format、static analysis 和 tests。
+8. 调用 `validate_ui_build`。
+9. 汇报 changed files、validation status、warnings 和 manual confirmations。
+
+实现时优先遵守 `ui-build-plan.json` 的结构化约束。Typography mapping 如果带 `lockToken=true`，说明 source token 和 target `themeService.textStyles.*` 已 exact 对齐，不要再手动覆盖字号、行高、字重或字体族。
 
 ## 排查视觉问题
 

@@ -77,7 +77,7 @@ pnpm run build
 }
 ```
 
-运行时传 URL 后会生成 runtime evidence、target conventions、`ui-build-plan.json` 和 `ui-build-review.md`。
+运行时传 URL 后会生成 runtime evidence、target conventions、`ui-build-plan.json` 和 `ui-build-review.md`。没有 source facts 时不会生成 `migration-spec.md`。
 
 ### URL-only
 
@@ -91,7 +91,7 @@ npx @proto-bridge/cli generate \
 字段说明：
 
 - `source.root`：prototype/source repository 路径。配置后会根据 URL 推导 route 并自动补源码证据。
-- `target.root`：目标工程路径。配置后生成 `ui-build-plan.json`、`ui-build-review.md` 和 validation hints。
+- `target.root`：目标工程路径。配置后生成 `ui-build-plan.json`、`ui-build-review.md` 和 validation hints；同时具备 source facts 时默认生成 `migration-spec.md`。
 - `runtime.capture`：默认 runtime capture 开关。
 - `runtime.viewport`：可选采集 viewport。
 - `output.root`：输出根目录。
@@ -272,5 +272,8 @@ Validation：
 
 1. `ui-build-review.md`：实现指导。
 2. `ui-build-plan.json`：精确 file/widget/mapping 细节。
-3. `page-debug-index.json`：排查视觉 mismatch。
-4. `page-canonical.json`：查看完整 provenance 和 source/runtime/screenshot/target facts。
+3. `migration-spec.md`：source + target facts 可用时的 source-aware 补充说明。
+4. `page-debug-index.json`：排查视觉 mismatch。
+5. `page-canonical.json`：查看完整 provenance 和 source/runtime/screenshot/target facts。
+
+Typography token 注意事项：如果 `ui-build-plan.json` 中某条 typography mapping 带 `lockToken=true`，实现时直接使用该 `themeService.textStyles.*` token，不要再覆盖 `fontSize`、`height`、`fontWeight` 或 `fontFamily`。

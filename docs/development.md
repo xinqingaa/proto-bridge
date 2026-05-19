@@ -18,7 +18,7 @@
 pnpm run generate -- \
   --config examples/vue3-to-flutter/proto-bridge.config.json \
   --url "http://127.0.0.1:5173/#/prototype/asset/pnl-analysis?tab=overview" \
-  --output examples/vue3-to-flutter/output/complex
+  --output examples/vue3-to-flutter/output/complex-overview
 ```
 
 ## 示例命令

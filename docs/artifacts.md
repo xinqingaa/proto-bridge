@@ -8,6 +8,7 @@ output/<page>-<timestamp>/
 ├── page-debug-index.json
 ├── ui-build-plan.json
 ├── ui-build-review.md
+├── migration-spec.md
 └── screenshots/
     └── full-page.png
 ```
@@ -71,6 +72,7 @@ UI build plan 是机器可读 target implementation guidance。
 - `widgetTree`：建议 Widget 拆分。
 - `componentMappings`：target component 复用候选和 confidence。
 - `themeMappings`：color、typography、spacing、radius、border、shadow 和 token candidates。
+  Typography exact mapping 可能包含 `sourceSelector`、`sourceMixin`、`lockToken` 和 `doNotOverride`。当 `lockToken=true` 时，生成 Flutter 必须直接使用对应 `themeService.textStyles.*`，不得额外覆盖 `fontSize`、`height`、`fontWeight` 或 `fontFamily`，除非 plan 明确列出来源 CSS 覆盖证据。
 - `i18nPlan`：文案抽取和 translation-key 建议。
 - `assetPlan`：asset evidence 和 target 建议。
 - `interactionPlan`：tap、tab、input、navigation、modal 和 confirmation needs。
@@ -99,6 +101,7 @@ Review 文档是主要人类可读交接材料。
 - target files 和 widgets。
 - state、lifecycle、interactions、route、layout、theme、i18n、assets、reusable components。
 - business questions、risks、evidence sources 和 validation hints。
+- 锁定的 theme token 约束，例如 typography mixin 到 `themeService.textStyles.*` 的 exact mapping。
 
 人类或 coding agent 开始实现时，优先读这个文件。
 
@@ -139,4 +142,4 @@ Validation 能发现常见实现风险，但不能覆盖所有视觉或业务错
 
 `migration-spec.md` 在同时具备 source 和 target facts 时默认输出。传入 `sourceBrief=false` 可关闭。
 
-它作为 source-heavy migration 的实现质量参考。主交接文档仍然是 `ui-build-review.md`。
+它作为 source-heavy migration 的实现质量参考。主交接文档仍然是 `ui-build-review.md`。其中的字体映射章节会同步说明 locked typography token 的实现规则。

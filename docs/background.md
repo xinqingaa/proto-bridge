@@ -65,6 +65,7 @@ target repository
   -> page-debug-index.json
   -> ui-build-plan.json
   -> ui-build-review.md
+  -> migration-spec.md
   -> validation result
 ```
 
@@ -110,6 +111,7 @@ ProtoBridge 给 agent 一组稳定产物：实现前可阅读、实现中可追�
 
 - 有人类可读的 `ui-build-review.md` 指导实现。
 - 有机器可读的 `ui-build-plan.json` 描述 file tree、widget tree、mappings、assets、interactions、risks 和 validation hints。
+- 有 source + target facts 时，`migration-spec.md` 会补充 source-aware 实现说明。
 - 出现偏差时，可以回到 `page-canonical.json` 和 `page-debug-index.json` 查完整证据和定位索引。
 
 ## ProtoBridge 不做什么

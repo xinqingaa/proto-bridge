@@ -28,6 +28,7 @@ const result = await reconstructPageContext({
 
 console.log(result.files.pageCanonical);
 console.log(result.files.uiBuildPlan);
+console.log(result.files.migrationSpec);
 ```
 
 ## Capability 接口
@@ -51,6 +52,7 @@ console.log(validation.status);
 ├── page-debug-index.json
 ├── ui-build-plan.json
 ├── ui-build-review.md
+├── migration-spec.md
 └── screenshots/
 ```
 
