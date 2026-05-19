@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../example_home_page.dart';
+import '../modules/account/_proto/account_proto_models.dart';
 import '../modules/account/_proto/account_proto_pages.dart';
 import 'app_routes.dart';
 
@@ -12,12 +13,14 @@ class AppPagesProto {
       case Routes.pnlAnalysis:
         return MaterialPageRoute<void>(
           settings: settings,
-          builder: (_) => const ProtoPnlAnalysisPage(),
+          builder: (_) => AccountPnlProtoPage(
+            initialTab: _tabFromArguments(settings.arguments),
+          ),
         );
       case Routes.holdingList:
         return MaterialPageRoute<void>(
           settings: settings,
-          builder: (_) => const ProtoHoldingListPage(),
+          builder: (_) => const AccountHoldingProtoPage(),
         );
       case Routes.home:
       default:
@@ -26,5 +29,18 @@ class AppPagesProto {
           builder: (_) => const ExampleHomePage(),
         );
     }
+  }
+
+  static PnlProtoTab _tabFromArguments(Object? arguments) {
+    if (arguments is PnlProtoTab) {
+      return arguments;
+    }
+    if (arguments is String) {
+      return PnlProtoTab.values.firstWhere(
+        (tab) => tab.name == arguments,
+        orElse: () => PnlProtoTab.overview,
+      );
+    }
+    return PnlProtoTab.overview;
   }
 }

@@ -1,77 +1,85 @@
-enum ProtoMetricTone { positive, negative, neutral }
+enum ProtoTone { positive, negative, neutral }
 
-class ProtoHoldingSummary {
-  const ProtoHoldingSummary({
+enum HoldingProtoFilter { all, semiconductor, consumer, ev }
+
+enum PnlProtoTab { overview, realized, risk }
+
+enum RiskProtoFilter { all, low, medium, high }
+
+class HoldingProtoSummary {
+  const HoldingProtoSummary({
     required this.marketValue,
     required this.dayPnl,
     required this.dayPnlRate,
-    required this.riskLevel,
+    required this.riskKey,
   });
 
   final String marketValue;
   final String dayPnl;
   final String dayPnlRate;
-  final String riskLevel;
+  final String riskKey;
 }
 
-class ProtoHolding {
-  const ProtoHolding({
+class HoldingProtoPosition {
+  const HoldingProtoPosition({
     required this.symbol,
     required this.name,
-    required this.sector,
     required this.amount,
     required this.shares,
     required this.pnl,
     required this.pnlRate,
-    required this.isPositive,
+    required this.filter,
+    required this.risk,
+    required this.tone,
   });
 
   final String symbol;
   final String name;
-  final String sector;
   final String amount;
-  final String shares;
+  final int shares;
   final String pnl;
   final String pnlRate;
-  final bool isPositive;
+  final HoldingProtoFilter filter;
+  final RiskProtoFilter risk;
+  final ProtoTone tone;
 }
 
-class ProtoPnlMetric {
-  const ProtoPnlMetric({
-    required this.label,
+class PnlProtoMetric {
+  const PnlProtoMetric({
+    required this.labelKey,
     required this.value,
     required this.delta,
     required this.tone,
   });
 
-  final String label;
+  final String labelKey;
   final String value;
   final String delta;
-  final ProtoMetricTone tone;
+  final ProtoTone tone;
 }
 
-class ProtoPnlRecord {
-  const ProtoPnlRecord({
+class PnlProtoRecord {
+  const PnlProtoRecord({
     required this.id,
     required this.symbol,
-    required this.action,
+    required this.actionKey,
     required this.time,
     required this.amount,
     required this.risk,
+    required this.tone,
   });
 
   final String id;
   final String symbol;
-  final String action;
+  final String actionKey;
   final String time;
   final String amount;
-  final String risk;
-
-  bool get isPositive => !amount.startsWith('-');
+  final RiskProtoFilter risk;
+  final ProtoTone tone;
 }
 
-class ProtoBreakdownItem {
-  const ProtoBreakdownItem({
+class RealizedProtoBreakdown {
+  const RealizedProtoBreakdown({
     required this.label,
     required this.value,
     required this.tone,
@@ -79,15 +87,15 @@ class ProtoBreakdownItem {
 
   final String label;
   final String value;
-  final ProtoMetricTone tone;
+  final ProtoTone tone;
 }
 
-class ProtoExposureItem {
-  const ProtoExposureItem({
-    required this.label,
+class ExposureProtoItem {
+  const ExposureProtoItem({
+    required this.labelKey,
     required this.value,
   });
 
-  final String label;
+  final String labelKey;
   final String value;
 }

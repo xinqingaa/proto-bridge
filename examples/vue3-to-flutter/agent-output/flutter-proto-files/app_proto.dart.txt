@@ -6,21 +6,24 @@ import 'routes/app_pages_proto.dart';
 import 'routes/app_routes.dart';
 import 'theme/app_theme.dart';
 
-class ProtoBridgeGeneratedApp extends StatelessWidget {
-  const ProtoBridgeGeneratedApp({super.key});
+class ProtoBridgeApp extends StatelessWidget {
+  const ProtoBridgeApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => AppPreferencesCubit(),
       child: BlocBuilder<AppPreferencesCubit, AppPreferencesState>(
-        builder: (context, preferences) {
+        builder: (context, state) {
           return MaterialApp(
-            title: 'ProtoBridge Generated Target',
             debugShowCheckedModeBanner: false,
+            title: 'ProtoBridge',
             theme: buildAppTheme(),
             darkTheme: buildAppTheme(brightness: Brightness.dark),
-            themeMode: preferences.themeMode,
+            themeMode: state.themeMode,
+            locale: state.isEnglish
+                ? const Locale('en', 'US')
+                : const Locale('zh', 'CN'),
             initialRoute: Routes.home,
             onGenerateRoute: AppPagesProto.onGenerateRoute,
           );

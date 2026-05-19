@@ -1,152 +1,159 @@
 import 'account_proto_models.dart';
 
-class ProtoAccountRepository {
-  const ProtoAccountRepository();
+class AccountProtoRepository {
+  const AccountProtoRepository();
 
-  ProtoHoldingSummary loadSummary() {
-    return const ProtoHoldingSummary(
+  HoldingProtoSummary get holdingSummary {
+    return const HoldingProtoSummary(
       marketValue: r'$128,420.36',
       dayPnl: r'+$2,364.20',
       dayPnlRate: '+1.87%',
-      riskLevel: '平衡',
+      riskKey: 'risk.balanced',
     );
   }
 
-  List<ProtoHolding> loadHoldings() {
+  List<HoldingProtoPosition> get holdings {
     return const [
-      ProtoHolding(
+      HoldingProtoPosition(
         symbol: 'NVDA',
         name: 'NVIDIA Corp.',
-        sector: 'Semiconductor',
         amount: r'$42,300.00',
-        shares: '120',
+        shares: 120,
         pnl: r'+$6,830.20',
         pnlRate: '+19.2%',
-        isPositive: true,
+        filter: HoldingProtoFilter.semiconductor,
+        risk: RiskProtoFilter.medium,
+        tone: ProtoTone.positive,
       ),
-      ProtoHolding(
+      HoldingProtoPosition(
         symbol: 'AAPL',
         name: 'Apple Inc.',
-        sector: 'Consumer Electronics',
         amount: r'$28,740.80',
-        shares: '160',
+        shares: 160,
         pnl: r'+$1,420.10',
         pnlRate: '+5.2%',
-        isPositive: true,
+        filter: HoldingProtoFilter.consumer,
+        risk: RiskProtoFilter.low,
+        tone: ProtoTone.positive,
       ),
-      ProtoHolding(
+      HoldingProtoPosition(
         symbol: 'TSLA',
         name: 'Tesla Inc.',
-        sector: 'EV',
         amount: r'$18,620.60',
-        shares: '48',
+        shares: 48,
         pnl: r'-$840.30',
         pnlRate: '-4.3%',
-        isPositive: false,
+        filter: HoldingProtoFilter.ev,
+        risk: RiskProtoFilter.high,
+        tone: ProtoTone.negative,
       ),
     ];
   }
 
-  List<ProtoPnlMetric> loadMetrics() {
+  List<PnlProtoMetric> get pnlMetrics {
     return const [
-      ProtoPnlMetric(
-        label: '总收益',
+      PnlProtoMetric(
+        labelKey: 'pnl.metric.total',
         value: r'+$18,206',
         delta: '+12.8%',
-        tone: ProtoMetricTone.positive,
+        tone: ProtoTone.positive,
       ),
-      ProtoPnlMetric(
-        label: '已实现',
+      PnlProtoMetric(
+        labelKey: 'pnl.metric.realized',
         value: r'+$7,418',
         delta: '+4.6%',
-        tone: ProtoMetricTone.positive,
+        tone: ProtoTone.positive,
       ),
-      ProtoPnlMetric(
-        label: '未实现',
+      PnlProtoMetric(
+        labelKey: 'pnl.metric.unrealized',
         value: r'+$10,788',
         delta: '+8.2%',
-        tone: ProtoMetricTone.positive,
+        tone: ProtoTone.positive,
       ),
-      ProtoPnlMetric(
-        label: '风险预算',
+      PnlProtoMetric(
+        labelKey: 'pnl.metric.riskBudget',
         value: '63%',
         delta: '-5 pts',
-        tone: ProtoMetricTone.neutral,
+        tone: ProtoTone.neutral,
       ),
     ];
   }
 
-  List<ProtoPnlRecord> loadRecords() {
+  List<double> get trendPoints {
+    return const [34, 47, 43, 70, 66, 94, 88, 112];
+  }
+
+  List<PnlProtoRecord> get records {
     return const [
-      ProtoPnlRecord(
-        id: 'trade-nvda-0942',
+      PnlProtoRecord(
+        id: 'nvda-take-profit',
         symbol: 'NVDA',
-        action: '止盈',
+        actionKey: 'record.takeProfit',
         time: '09:42',
         amount: r'+$2,180.00',
-        risk: 'Medium',
+        risk: RiskProtoFilter.medium,
+        tone: ProtoTone.positive,
       ),
-      ProtoPnlRecord(
-        id: 'trade-aapl-1018',
+      PnlProtoRecord(
+        id: 'aapl-covered-call',
         symbol: 'AAPL',
-        action: '备兑开仓',
+        actionKey: 'record.coveredCall',
         time: '10:18',
         amount: r'+$620.40',
-        risk: 'Low',
+        risk: RiskProtoFilter.low,
+        tone: ProtoTone.positive,
       ),
-      ProtoPnlRecord(
-        id: 'trade-tsla-1105',
+      PnlProtoRecord(
+        id: 'tsla-stop-loss',
         symbol: 'TSLA',
-        action: '止损',
+        actionKey: 'record.stopLoss',
         time: '11:05',
         amount: r'-$430.20',
-        risk: 'High',
+        risk: RiskProtoFilter.high,
+        tone: ProtoTone.negative,
       ),
-      ProtoPnlRecord(
-        id: 'trade-msft-1324',
+      PnlProtoRecord(
+        id: 'msft-add-position',
         symbol: 'MSFT',
-        action: '加仓',
+        actionKey: 'record.addPosition',
         time: '13:24',
         amount: r'+$780.90',
-        risk: 'Medium',
+        risk: RiskProtoFilter.medium,
+        tone: ProtoTone.positive,
       ),
     ];
   }
 
-  List<double> loadTrendPoints() {
-    return const [22, 31, 28, 45, 43, 61, 57, 74];
-  }
-
-  List<ProtoBreakdownItem> loadRealizedBreakdown() {
+  List<RealizedProtoBreakdown> get realizedBreakdown {
     return const [
-      ProtoBreakdownItem(
+      RealizedProtoBreakdown(
         label: 'NVDA',
         value: r'+$2,180.00',
-        tone: ProtoMetricTone.positive,
+        tone: ProtoTone.positive,
       ),
-      ProtoBreakdownItem(
+      RealizedProtoBreakdown(
         label: 'AAPL',
         value: r'+$620.40',
-        tone: ProtoMetricTone.positive,
+        tone: ProtoTone.positive,
       ),
-      ProtoBreakdownItem(
+      RealizedProtoBreakdown(
         label: 'MSFT',
         value: r'+$780.90',
-        tone: ProtoMetricTone.positive,
+        tone: ProtoTone.positive,
       ),
-      ProtoBreakdownItem(
+      RealizedProtoBreakdown(
         label: 'Fees',
         value: r'-$184.22',
-        tone: ProtoMetricTone.negative,
+        tone: ProtoTone.negative,
       ),
     ];
   }
 
-  List<ProtoExposureItem> loadExposureItems() {
+  List<ExposureProtoItem> get exposureItems {
     return const [
-      ProtoExposureItem(label: '半导体', value: '38%'),
-      ProtoExposureItem(label: '消费电子', value: '26%'),
-      ProtoExposureItem(label: '新能源车', value: '14%'),
+      ExposureProtoItem(labelKey: 'sector.semiconductor', value: '38%'),
+      ExposureProtoItem(labelKey: 'sector.consumer', value: '26%'),
+      ExposureProtoItem(labelKey: 'sector.ev', value: '14%'),
     ];
   }
 }

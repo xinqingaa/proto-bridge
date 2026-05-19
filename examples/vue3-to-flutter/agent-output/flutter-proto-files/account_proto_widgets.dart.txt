@@ -1,214 +1,245 @@
-// ignore_for_file: prefer_interpolation_to_compose_strings
-
 import 'package:flutter/material.dart';
 
+import '../../../common/widgets/common_button.dart';
+import '../../../common/widgets/common_empty.dart';
+import '../../../common/widgets/common_loading.dart';
 import '../../../common/widgets/section_panel.dart';
 import '../../../preferences/app_preferences_cubit.dart';
 import '../../../theme/app_tokens.dart';
 import '../../../theme/theme_service.dart';
 import 'account_proto_models.dart';
 
-class ProtoSummaryCard extends StatelessWidget {
-  const ProtoSummaryCard({required this.summary, super.key});
-
-  final ProtoHoldingSummary summary;
-
-  @override
-  Widget build(BuildContext context) {
-    return SectionPanel(
-      child: Row(
-        children: [
-          Expanded(
-            child: _Metric(
-              label: context.t('asset.holdings.marketValue'),
-              value: summary.marketValue,
-            ),
-          ),
-          Expanded(
-            child: _Metric(
-              label: context.t('asset.todayPnl'),
-              value: summary.dayPnl,
-              caption: summary.dayPnlRate,
-              positive: true,
-            ),
-          ),
-          Expanded(
-            child: _Metric(
-              label: context.t('asset.holdings.risk'),
-              value: context.t('risk.balanced'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+Color protoToneColor(BuildContext context, ProtoTone tone) {
+  final colors = context.pbColors;
+  return switch (tone) {
+    ProtoTone.positive => colors.positive,
+    ProtoTone.negative => colors.negative,
+    ProtoTone.neutral => colors.text,
+  };
 }
 
-class ProtoFilterOption {
-  const ProtoFilterOption({required this.value, required this.labelKey});
-
-  final String value;
-  final String labelKey;
+String riskProtoLabel(BuildContext context, RiskProtoFilter risk) {
+  return switch (risk) {
+    RiskProtoFilter.all => context.t('risk.all'),
+    RiskProtoFilter.low => context.t('risk.low'),
+    RiskProtoFilter.medium => context.t('risk.medium'),
+    RiskProtoFilter.high => context.t('risk.high'),
+  };
 }
 
-class ProtoFilterBar extends StatelessWidget {
-  const ProtoFilterBar({
-    required this.options,
-    required this.selected,
-    required this.onSelected,
+class ProtoIconButton extends StatelessWidget {
+  const ProtoIconButton({
+    required this.icon,
+    required this.onPressed,
+    this.tooltip,
     super.key,
   });
 
-  final List<ProtoFilterOption> options;
-  final String selected;
-  final ValueChanged<String> onSelected;
+  final IconData icon;
+  final VoidCallback onPressed;
+  final String? tooltip;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.pbColors;
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: options.map((option) {
-          final active = option.value == selected;
-          return Padding(
-            padding: const EdgeInsets.only(right: AppSpacing.xs),
-            child: ChoiceChip(
-              selected: active,
-              showCheckmark: false,
-              visualDensity: VisualDensity.compact,
-              labelStyle: TextStyle(
-                color: active ? colors.accent : colors.muted,
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-              ),
-              label: Text(context.t(option.labelKey)),
-              onSelected: (_) => onSelected(option.value),
-              selectedColor: colors.accentSoft,
-              backgroundColor: colors.surface,
-              shape: RoundedRectangleBorder(
-                side: BorderSide(color: active ? colors.accent : colors.border),
-                borderRadius: BorderRadius.circular(AppRadii.chip),
-              ),
-            ),
-          );
-        }).toList(),
+    return SizedBox.square(
+      dimension: 38,
+      child: IconButton(
+        tooltip: tooltip,
+        style: IconButton.styleFrom(
+          backgroundColor: colors.surface,
+          foregroundColor: colors.text,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.panel),
+            side: BorderSide(color: colors.border),
+          ),
+        ),
+        onPressed: onPressed,
+        icon: Icon(icon, size: 20),
       ),
     );
   }
 }
 
-class ProtoHoldingTile extends StatelessWidget {
-  const ProtoHoldingTile({required this.holding, super.key});
+class ProtoFilterChip extends StatelessWidget {
+  const ProtoFilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    super.key,
+  });
 
-  final ProtoHolding holding;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.pbColors;
-    final pnlColor = holding.isPositive ? colors.positive : colors.negative;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 12,
-            child: _TextStack(title: holding.symbol, subtitle: holding.name),
-          ),
-          Expanded(
-            flex: 10,
-            child: _TextStack(
-              title: holding.amount,
-              subtitle:
-                  holding.shares + ' ' + context.t('asset.holdings.shares'),
+    return Material(
+      color: selected ? colors.accentSoft : colors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadii.chip),
+        side: BorderSide(color: selected ? colors.accent : colors.border),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadii.chip),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selected ? colors.accent : colors.muted,
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
             ),
           ),
-          Expanded(
-            flex: 8,
-            child: _TextStack(
-              title: holding.pnl,
-              subtitle: holding.pnlRate,
-              alignEnd: true,
-              color: pnlColor,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
 class ProtoMetricCard extends StatelessWidget {
-  const ProtoMetricCard({required this.metric, super.key});
+  const ProtoMetricCard({
+    required this.label,
+    required this.value,
+    this.delta,
+    this.tone = ProtoTone.neutral,
+    super.key,
+  });
 
-  final ProtoPnlMetric metric;
+  final String label;
+  final String value;
+  final String? delta;
+  final ProtoTone tone;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.pbColors;
-    final color = switch (metric.tone) {
-      ProtoMetricTone.positive => colors.positive,
-      ProtoMetricTone.negative => colors.negative,
-      ProtoMetricTone.neutral => colors.text,
-    };
     return SectionPanel(
+      padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            _metricLabel(context, metric.label),
-            style: TextStyle(color: colors.muted, fontSize: 12),
+            label,
+            style: context.pbTextStyles.caption.copyWith(color: colors.muted),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            metric.value,
-            style: context.pbTextStyles.metric.copyWith(color: color),
-          ),
-          const SizedBox(height: AppSpacing.xxs),
-          Text(
-            metric.delta,
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
+            value,
+            style: context.pbTextStyles.metric.copyWith(
+              color: protoToneColor(context, tone),
+              fontSize: 28,
             ),
           ),
+          if (delta != null) ...[
+            const SizedBox(height: AppSpacing.xxs),
+            Text(
+              delta!,
+              style: context.pbTextStyles.bodyStrong.copyWith(
+                color: protoToneColor(context, tone),
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 }
 
-class ProtoRecordTile extends StatelessWidget {
-  const ProtoRecordTile({required this.record, required this.onTap, super.key});
+class ProtoTabBar extends StatelessWidget {
+  const ProtoTabBar({
+    required this.activeTab,
+    required this.onChanged,
+    super.key,
+  });
 
-  final ProtoPnlRecord record;
+  final PnlProtoTab activeTab;
+  final ValueChanged<PnlProtoTab> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _ProtoTabButton(
+          label: context.t('pnl.tab.overview'),
+          hint: '+12.8%',
+          selected: activeTab == PnlProtoTab.overview,
+          onTap: () => onChanged(PnlProtoTab.overview),
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        _ProtoTabButton(
+          label: context.t('pnl.tab.realized'),
+          hint: r'+$7.4k',
+          selected: activeTab == PnlProtoTab.realized,
+          onTap: () => onChanged(PnlProtoTab.realized),
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        _ProtoTabButton(
+          label: context.t('pnl.tab.risk'),
+          hint: '63%',
+          selected: activeTab == PnlProtoTab.risk,
+          onTap: () => onChanged(PnlProtoTab.risk),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProtoTabButton extends StatelessWidget {
+  const _ProtoTabButton({
+    required this.label,
+    required this.hint,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final String hint;
+  final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.pbColors;
-    final amountColor = record.isPositive ? colors.positive : colors.negative;
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-        child: Row(
-          children: [
-            Expanded(
-              child: _TextStack(
-                title: record.symbol,
-                subtitle:
-                    _recordAction(context, record.action) + ' · ' + record.time,
-              ),
+    return Expanded(
+      child: Material(
+        color: selected ? colors.accentSoft : colors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.panel),
+          side: BorderSide(color: selected ? colors.accent : colors.border),
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadii.panel),
+          onTap: onTap,
+          child: SizedBox(
+            height: 58,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.pbTextStyles.sectionTitle.copyWith(
+                    color: selected ? colors.text : colors.muted,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  hint,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.pbTextStyles.caption.copyWith(
+                    color: selected ? colors.accent : colors.muted,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
             ),
-            _TextStack(
-              title: record.amount,
-              subtitle: _riskLabel(context, record.risk),
-              alignEnd: true,
-              color: amountColor,
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -223,249 +254,178 @@ class ProtoTrendChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.pbColors;
-    return Container(
-      height: 132,
-      padding: const EdgeInsets.all(AppSpacing.sm),
+    final maxPoint = points.reduce((a, b) => a > b ? a : b);
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: colors.surfaceSoft,
         borderRadius: BorderRadius.circular(AppRadii.panel),
       ),
-      child: CustomPaint(
-        painter: _TrendChartPainter(points, colors),
-        child: const SizedBox.expand(),
-      ),
-    );
-  }
-}
-
-class ProtoBreakdownTile extends StatelessWidget {
-  const ProtoBreakdownTile({required this.item, super.key});
-
-  final ProtoBreakdownItem item;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.pbColors;
-    final color = switch (item.tone) {
-      ProtoMetricTone.positive => colors.positive,
-      ProtoMetricTone.negative => colors.negative,
-      ProtoMetricTone.neutral => colors.text,
-    };
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: colors.surfaceSoft,
-        borderRadius: BorderRadius.circular(AppRadii.panel),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              item.label,
-              style: TextStyle(color: colors.muted, fontSize: 12),
-            ),
+      child: SizedBox(
+        height: 132,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              for (final point in points) ...[
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: FractionallySizedBox(
+                      heightFactor: (point / maxPoint).clamp(0.16, 1),
+                      widthFactor: 0.78,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(6),
+                            bottom: Radius.circular(3),
+                          ),
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [colors.accent, colors.primary],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                if (point != points.last) const SizedBox(width: AppSpacing.xs),
+              ],
+            ],
           ),
-          Text(
-            item.value,
-            style: context.pbTextStyles.bodyStrong.copyWith(color: color),
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class ProtoExposureTile extends StatelessWidget {
-  const ProtoExposureTile({required this.item, super.key});
-
-  final ProtoExposureItem item;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.pbColors;
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: colors.surfaceSoft,
-        borderRadius: BorderRadius.circular(AppRadii.panel),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              _exposureLabel(context, item.label),
-              style: TextStyle(color: colors.muted, fontSize: 12),
-            ),
-          ),
-          Text(item.value, style: context.pbTextStyles.bodyStrong),
-        ],
-      ),
-    );
-  }
-}
-
-class ProtoRiskMeter extends StatelessWidget {
-  const ProtoRiskMeter({required this.value, super.key});
-
-  final double value;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.pbColors;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(999),
-      child: LinearProgressIndicator(
-        value: value,
-        minHeight: 9,
-        backgroundColor: colors.surfaceSoft,
-        valueColor: AlwaysStoppedAnimation<Color>(colors.accent),
-      ),
-    );
-  }
-}
-
-class _Metric extends StatelessWidget {
-  const _Metric({
-    required this.label,
-    required this.value,
-    this.caption,
-    this.positive = false,
-  });
-
-  final String label;
-  final String value;
-  final String? caption;
-  final bool positive;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.pbColors;
-    final color = positive ? colors.positive : colors.text;
-    return Padding(
-      padding: const EdgeInsets.only(right: AppSpacing.xs),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: TextStyle(color: colors.muted, fontSize: 12)),
-          const SizedBox(height: AppSpacing.xxs),
-          Text(
-            value,
-            style: context.pbTextStyles.bodyStrong.copyWith(color: color),
-            overflow: TextOverflow.ellipsis,
-          ),
-          if (caption != null)
-            Text(caption!,
-                style: TextStyle(color: colors.positive, fontSize: 12)),
-        ],
-      ),
-    );
-  }
-}
-
-class _TextStack extends StatelessWidget {
-  const _TextStack({
+class ProtoSectionHeading extends StatelessWidget {
+  const ProtoSectionHeading({
     required this.title,
-    required this.subtitle,
-    this.alignEnd = false,
-    this.color,
+    this.subtitle,
+    this.trailing,
+    super.key,
   });
 
   final String title;
-  final String subtitle;
-  final bool alignEnd;
-  final Color? color;
+  final String? subtitle;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.pbColors;
-    return Column(
-      crossAxisAlignment:
-          alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: context.pbTextStyles.bodyStrong.copyWith(color: color),
-          overflow: TextOverflow.ellipsis,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: context.pbTextStyles.sectionTitle),
+              if (subtitle != null) ...[
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  subtitle!,
+                  style: context.pbTextStyles.caption.copyWith(
+                    color: colors.muted,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
-        const SizedBox(height: AppSpacing.xxs),
-        Text(
-          subtitle,
-          style: TextStyle(color: color ?? colors.muted, fontSize: 12),
-          overflow: TextOverflow.ellipsis,
-        ),
+        if (trailing != null) trailing!,
       ],
     );
   }
 }
 
-class _TrendChartPainter extends CustomPainter {
-  const _TrendChartPainter(this.points, this.colors);
+class ProtoRecordPanel extends StatelessWidget {
+  const ProtoRecordPanel({
+    required this.title,
+    required this.subtitle,
+    required this.records,
+    required this.onFilter,
+    required this.onRecordTap,
+    this.loading = false,
+    super.key,
+  });
 
-  final List<double> points;
-  final AppPalette colors;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (points.isEmpty) return;
-    final paint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [colors.accent, colors.primary],
-      ).createShader(Offset.zero & size);
-    const gap = 8.0;
-    final width = (size.width - gap * (points.length - 1)) / points.length;
-    for (var i = 0; i < points.length; i++) {
-      final height = size.height * (points[i].clamp(0, 100) / 100);
-      final left = i * (width + gap);
-      final rect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(left, size.height - height, width, height),
-        const Radius.circular(6),
-      );
-      canvas.drawRRect(rect, paint);
-    }
-  }
+  final String title;
+  final String subtitle;
+  final List<PnlProtoRecord> records;
+  final bool loading;
+  final VoidCallback onFilter;
+  final ValueChanged<PnlProtoRecord> onRecordTap;
 
   @override
-  bool shouldRepaint(covariant _TrendChartPainter oldDelegate) {
-    return oldDelegate.points != points || oldDelegate.colors != colors;
+  Widget build(BuildContext context) {
+    return SectionPanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ProtoSectionHeading(title: title, subtitle: subtitle),
+          const SizedBox(height: AppSpacing.md),
+          SizedBox(
+            width: 96,
+            child: CommonButton(
+              label: context.t('asset.action.filter'),
+              onPressed: onFilter,
+            ),
+          ),
+          if (loading)
+            CommonLoading(message: context.t('pnl.loading'))
+          else if (records.isEmpty)
+            CommonEmpty(message: context.t('pnl.empty'))
+          else
+            for (final record in records)
+              _ProtoRecordRow(record: record, onTap: () => onRecordTap(record)),
+        ],
+      ),
+    );
   }
 }
 
-String _metricLabel(BuildContext context, String label) {
-  return switch (label) {
-    '总收益' => context.t('pnl.metric.total'),
-    '已实现' => context.t('pnl.metric.realized'),
-    '未实现' => context.t('pnl.metric.unrealized'),
-    '风险预算' => context.t('pnl.metric.riskBudget'),
-    _ => label,
-  };
-}
+class _ProtoRecordRow extends StatelessWidget {
+  const _ProtoRecordRow({required this.record, required this.onTap});
 
-String _recordAction(BuildContext context, String action) {
-  return switch (action) {
-    '止盈' => context.t('record.takeProfit'),
-    '备兑开仓' => context.t('record.coveredCall'),
-    '止损' => context.t('record.stopLoss'),
-    '加仓' => context.t('record.addPosition'),
-    _ => action,
-  };
-}
+  final PnlProtoRecord record;
+  final VoidCallback onTap;
 
-String _riskLabel(BuildContext context, String risk) {
-  return switch (risk) {
-    'Low' => context.t('risk.low'),
-    'Medium' => context.t('risk.medium'),
-    'High' => context.t('risk.high'),
-    _ => risk,
-  };
-}
-
-String _exposureLabel(BuildContext context, String label) {
-  return switch (label) {
-    '半导体' => context.t('sector.semiconductor'),
-    '消费电子' => context.t('sector.consumer'),
-    '新能源车' => context.t('sector.ev'),
-    _ => label,
-  };
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.pbColors;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${record.symbol}${context.t(record.actionKey)} · '
+                    '${record.time}',
+                    style: context.pbTextStyles.bodyStrong,
+                  ),
+                  const SizedBox(height: AppSpacing.xxs),
+                  Text(
+                    '${record.amount}${riskProtoLabel(context, record.risk)}',
+                    style: context.pbTextStyles.bodyStrong.copyWith(
+                      color: protoToneColor(context, record.tone),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: colors.muted, size: 18),
+          ],
+        ),
+      ),
+    );
+  }
 }
