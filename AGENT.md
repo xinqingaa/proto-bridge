@@ -82,26 +82,28 @@ hybrid MCP 示例：
 
 根据任务优先读最高价值的产物：
 
-1. `ui-build-review.md`：人类可读实现交接。
-2. `ui-build-plan.json`：文件树、Widget 树、mapping、i18n、assets、interactions、risks、validation hints。
+1. `ui-build-plan.json`：唯一机器契约。优先看 `targetConventions`、`implementationContract`、`implementationContract.sourceSemantics`、`visualPlan`、mappings、risks 和 validation hints。
+2. `ui-build-review.md`：从 plan 渲染的中文人类阅读视图，适合快速扫目标工程约定、实现契约、视觉计划、字体锁定和风险。
 3. `page-debug-index.json`：排查视觉偏差时的快速索引。
 4. `page-canonical.json`：完整 evidence、provenance、merge rules、mismatches 和 trace。
 5. `screenshots/`：runtime capture 存在时的视觉参考。
 
-不要把 `migration-spec.md` 当唯一主产物。有 source + target facts 时它会和 `ui-build-review.md` 一起输出；实现时仍先读 `ui-build-review.md`，再用 `migration-spec.md` 补充 source-aware 细节。
+`migration-spec.md` 是兼容/过渡产物，不是最终实现裁判。source-aware 的业务区块、状态意图、Widget contract 和禁止直译建议已经进入 `implementationContract.sourceSemantics`；如果 `migration-spec.md` 与 `ui-build-plan.json` 冲突，以 `ui-build-plan.json` 的 target conventions 和 implementation contract 为准。
+
+实现时不得引入 `targetConventions` 没有证据支持的新 state、routing、i18n 或 theme 框架。GetX、flutter_bloc、Riverpod、Provider、Navigator、go_router、context.t、AppLocalizations、themeService、context.pbColors、CommonAppBar 等都只能作为 target 扫描证据出现，不能当作 ProtoBridge 默认偏好。扫不到时保留抽象建议，并写入 warnings/manual questions。
 
 ## 样式 Token 约束
 
-Source 中明确出现 typography mixin 时，output 会把它提升为实现约束，而不是普通建议。例如：
+Source 中明确出现 typography mixin，且 target 扫描或映射能证明对应 target text style token 时，output 会把它提升为实现约束，而不是普通建议。例如：
 
 ```text
 .hero-amount { @include number2-b; }
-  -> themeService.textStyles.number2B
+  -> <detected target text style token>
   -> lockToken=true
   -> doNotOverride=fontSize/fontWeight/height/fontFamily
 ```
 
-实现 Flutter 时必须直接使用锁定的 `themeService.textStyles.*` token。除非 `ui-build-plan.json` 明确给出来源 CSS 的额外覆盖证据，不要再覆盖 `fontSize`、`height`、`fontWeight` 或 `fontFamily`；颜色、`maxLines`、`overflow` 这类非 typography token 属性可以按 plan 补充。
+实现 Flutter 时必须直接使用锁定的 target text style token。除非 `ui-build-plan.json` 明确给出来源 CSS 的额外覆盖证据，不要再覆盖 `fontSize`、`height`、`fontWeight` 或 `fontFamily`；颜色、`maxLines`、`overflow` 这类非 typography token 属性可以按 plan 补充。
 
 ## 证据规则
 
@@ -117,15 +119,17 @@ Source 中明确出现 typography mixin 时，output 会把它提升为实现约
 ## 目标应用实现流程
 
 1. 用 `reconstruct_page_context` 或 `proto-bridge generate` 生成上下文。
-2. 阅读 `ui-build-review.md`。
-3. 阅读 `ui-build-plan.json`。
+2. 阅读 `ui-build-plan.json` 的 `targetConventions`、`implementationContract` 和 `visualPlan`。
+3. 阅读 `ui-build-review.md`，用于快速核对中文 human brief。
 4. 目标复用方式不明确时，调用 `read_target_conventions` 或 `find_target_examples`。
-5. 只编辑 plan 需要的目标文件，除非用户明确要求扩大范围。
-6. 优先沿用 target app 的 patterns、theme tokens、i18n conventions、routing conventions 和 reusable components。
-7. 无法确认的业务行为保留为明确 TODO 或 manual confirmation，不要猜。
-8. 能运行时，执行目标应用的 format、analyze 和 tests。
-9. 调用 `validate_ui_build`。
-10. 汇报 changed files、validation status、warnings 和 unresolved confirmations。
+5. 按 `implementationContract.fileTree/widgetTree/widgetContracts` 实现，避免把 runtime DOM section 机械翻译成文件或 Widget。
+6. 用 `visualPlan`、`themeMappings`、`componentMappings` 和截图证据做视觉还原。
+7. 只编辑 plan 需要的目标文件，除非用户明确要求扩大范围。
+8. 优先沿用 target app 扫描出的 patterns、theme tokens、i18n conventions、routing conventions 和 reusable components。
+9. 无法确认的业务行为保留为明确 TODO 或 manual confirmation，不要猜。
+10. 能运行时，执行目标应用的 format、analyze 和 tests。
+11. 调用 `validate_ui_build`。
+12. 汇报 changed files、validation status、warnings 和 unresolved confirmations。
 
 ## 验证
 
@@ -150,6 +154,9 @@ Validation 会检查：
 - hard-coded colors 和 font sizes。
 - local shadows、network images 和 navigation risk markers。
 - plan validation hints。
+- 是否引入了 `targetConventions` 没有证据支持的新 state、routing、i18n 或 theme 模式。
+- 是否偏离高置信度识别出的 architecture profile。
+- 是否额外生成 runtime DOM section 风格文件导致 architecture drift。
 
 Validation 是 review 辅助，不等于证明视觉和业务完全正确。
 

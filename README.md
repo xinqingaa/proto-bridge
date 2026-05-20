@@ -10,7 +10,7 @@ source / URL / screenshot / target repo
   -> page-canonical.json
   -> ui-build-plan.json
   -> ui-build-review.md
-  -> migration-spec.md
+  -> migration-spec.md (legacy compatibility)
   -> implementation + validation
 ```
 
@@ -147,15 +147,15 @@ target: flutter-app
 <details>
 <summary>产物片段</summary>
 
-`ui-build-review.md` 会把 source/runtime/target evidence 合并成实现交接：
+`ui-build-plan.json` 是唯一机器契约。它把 source semantics、target conventions 和 runtime/screenshot 视觉事实拆到不同职责区：
 
 ```text
-Capabilities: source.analyze, runtime.capture, target.inspect, page.merge
-Facts: source=true, runtime=true, screenshot=true, target=true
-Target module: account
+targetConventions         # target repo 扫描出的 state/routing/i18n/theme/component/file organization 证据
+implementationContract   # 文件、Widget、状态边界、source semantics 和 contract rules
+visualPlan               # runtime/screenshot 视觉事实、section、bbox、截图引用
 ```
 
-有 source + target facts 时还会生成 `migration-spec.md`，用于补充 source-aware 实现说明。
+`ui-build-review.md` 只从 `ui-build-plan.json` 渲染，是中文优先的人类阅读视图；`migration-spec.md` 在一个版本周期内继续输出，但仅作为兼容入口，不再作为最终实现裁判。
 
 运行 `pnpm run example` 后会生成完整产物：
 
@@ -183,9 +183,9 @@ output/<page>-<timestamp>/
 
 - `page-canonical.json`：完整页面上下文，包含事实、provenance、merge 决策、warnings 和 trace。
 - `page-debug-index.json`：面向调试的紧凑索引，帮助定位 section、node、style、mapping 和 risk。
-- `ui-build-plan.json`：机器可读实现计划。
-- `ui-build-review.md`：人类可读实现交接文档。
-- `migration-spec.md`：source + target facts 可用时默认生成的 source-aware 实现说明。
+- `ui-build-plan.json`：唯一机器契约，包含 `targetConventions`、`implementationContract` 和 `visualPlan`。
+- `ui-build-review.md`：从 `ui-build-plan.json` 渲染的中文人类阅读视图，用表格展示目标工程约定、实现契约、视觉计划、字体锁定、风险和校验提示。
+- `migration-spec.md`：兼容/过渡产物。source semantics 已进入 `implementationContract.sourceSemantics`；当两者冲突时以 `ui-build-plan.json` 为准。
 - `screenshots/`：runtime capture 生成的视觉证据。
 
 ## MCP
@@ -244,7 +244,7 @@ docs/
 - [工作流](docs/workflows.md)：source-only、runtime-only、hybrid、screenshot/OCR 和 validation。
 - [快速开始](docs/quickstart.md)：安装、配置、CLI、MCP 和最小示例。
 - [开发命令](docs/development.md)：仓库脚本、示例命令、测试命令和生成目录规则。
-- [产物说明](docs/artifacts.md)：输出文件结构和阅读方式。
+- [产物说明](docs/artifacts.md)：输出文件结构、契约权威链和阅读方式。
 - [集成方式](docs/integration.md)：CLI、MCP 和 core 嵌入参考。
-- [迁移说明书标准](docs/migration-spec.md)：source-aware brief 的质量标准。
+- [迁移说明书兼容说明](docs/migration-spec.md)：`migration-spec.md` 的 legacy/compat 角色。
 - [npm 发布指南](docs/npm-publish.md)：发布检查清单。

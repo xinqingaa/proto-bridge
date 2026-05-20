@@ -26,6 +26,7 @@ pnpm run generate -- \
 | 命令 | 作用 | 生成内容 |
 | --- | --- | --- |
 | `pnpm run example` | 跑完整 Vue3-to-Flutter 示例生成流程。 | `examples/vue3-to-flutter/output/**` 和 Flutter `_proto` 文件。 |
+| `pnpm run example:clean` | 清理示例生成产物。 | 删除 Flutter `_proto` 入口/页面文件，并清空 `examples/vue3-to-flutter/output/`。 |
 | `pnpm run example:dev` | 启动 Vue 原型和 Flutter Web 预览。 | `target-flutter/build/web/**`。 |
 | `pnpm run example:android` | 运行 Flutter target 到 Android 设备或模拟器。 | Android/Flutter build 缓存。 |
 

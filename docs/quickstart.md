@@ -91,7 +91,7 @@ npx @proto-bridge/cli generate \
 字段说明：
 
 - `source.root`：prototype/source repository 路径。配置后会根据 URL 推导 route 并自动补源码证据。
-- `target.root`：目标工程路径。配置后生成 `ui-build-plan.json`、`ui-build-review.md` 和 validation hints；同时具备 source facts 时默认生成 `migration-spec.md`。
+- `target.root`：目标工程路径。配置后生成 `ui-build-plan.json`、`ui-build-review.md` 和 validation hints；同时具备 source facts 时默认生成兼容/过渡产物 `migration-spec.md`。
 - `runtime.capture`：默认 runtime capture 开关。
 - `runtime.viewport`：可选采集 viewport。
 - `output.root`：输出根目录。
@@ -150,7 +150,7 @@ npx @proto-bridge/cli generate \
   --trace
 ```
 
-同时具备 source 和 target facts 时会默认导出 `migration-spec.md`。需要显式确认时仍可传 `--source-brief`。
+同时具备 source 和 target facts 时会默认导出 `migration-spec.md`。需要显式确认时仍可传 `--source-brief`。它是兼容/过渡产物；实现时以 `ui-build-plan.json` 为准。
 
 在 monorepo 内验证本地源码改动时，可以用根目录包装命令：
 
@@ -270,10 +270,10 @@ Validation：
 
 建议阅读顺序：
 
-1. `ui-build-review.md`：实现指导。
-2. `ui-build-plan.json`：精确 file/widget/mapping 细节。
-3. `migration-spec.md`：source + target facts 可用时的 source-aware 补充说明。
+1. `ui-build-plan.json`：唯一机器契约，重点看 `targetConventions`、`implementationContract`、`sourceSemantics`、`visualPlan`、mappings 和 validation hints。
+2. `ui-build-review.md`：从 plan 渲染的中文人类阅读视图。
+3. `migration-spec.md`：source + target facts 可用时的兼容参考；如果与 plan 冲突，以 plan 为准。
 4. `page-debug-index.json`：排查视觉 mismatch。
 5. `page-canonical.json`：查看完整 provenance 和 source/runtime/screenshot/target facts。
 
-Typography token 注意事项：如果 `ui-build-plan.json` 中某条 typography mapping 带 `lockToken=true`，实现时直接使用该 `themeService.textStyles.*` token，不要再覆盖 `fontSize`、`height`、`fontWeight` 或 `fontFamily`。
+Typography token 注意事项：如果 `ui-build-plan.json` 中某条 typography mapping 带 `lockToken=true`，实现时直接使用扫描或映射得到的 target text style token，不要再覆盖 `fontSize`、`height`、`fontWeight` 或 `fontFamily`。

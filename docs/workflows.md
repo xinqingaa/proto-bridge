@@ -159,7 +159,7 @@ MCP arguments：
 ```
 
 Hybrid 输出会在 `page-canonical.json` 中记录 field priority、provenance 和 mismatches。
-同时具备 source + target facts 时，Hybrid 也会默认输出 `migration-spec.md`。
+同时具备 source + target facts 时，Hybrid 也会默认输出 `migration-spec.md`；它是兼容/过渡产物，最终实现契约仍以 `ui-build-plan.json` 为准。
 
 ## Screenshot / OCR 工作流
 
@@ -209,20 +209,25 @@ Validation 会报告：
 - plan 预期但缺失的 files。
 - changed Dart files 中的 placeholder text、TODO markers、hard-coded colors、hard-coded font sizes、local shadows、network images 和 navigation risk markers。
 - 传入 `pageId` 时来自 `ui-build-plan.json` 的 validation hints。
+- 基于 `targetConventions` 和 `implementationContract` 的架构契约偏离，例如引入未被 target profile 证明的新 state/routing/i18n/theme 模式、缺失预期文件，或生成 runtime DOM section 风格文件。
+
+如果 target architecture profile 是 `unknown`，validation 应输出 warnings/manual questions，不应把未知模式当成硬错误。
 
 ## Agent 实现流程
 
 1. 调用 `reconstruct_page_context`。
-2. 阅读 `ui-build-review.md`，获取人类可读实现交接。
-3. 阅读 `ui-build-plan.json`，获取 file tree、widget tree、mappings、assets、i18n、interactions、risks 和 validation hints。
-4. 有 `migration-spec.md` 时阅读 source-aware 补充说明。
+2. 阅读 `ui-build-plan.json`，获取唯一机器契约，重点看 `targetConventions`、`implementationContract`、`sourceSemantics`、`visualPlan`、mappings、risks 和 validation hints。
+3. 阅读 `ui-build-review.md`，用中文 human brief 快速核对 contract、视觉计划、字体锁定和风险。
+4. 有 `migration-spec.md` 时只把它当兼容参考；如果它与 plan 冲突，以 `ui-build-plan.json` 为准。
 5. target pattern 不明确时调用 `read_target_conventions` 或 `find_target_examples`。
 6. 在 target Flutter repository 中实现。
 7. 运行目标应用的 format、static analysis 和 tests。
 8. 调用 `validate_ui_build`。
 9. 汇报 changed files、validation status、warnings 和 manual confirmations。
 
-实现时优先遵守 `ui-build-plan.json` 的结构化约束。Typography mapping 如果带 `lockToken=true`，说明 source token 和 target `themeService.textStyles.*` 已 exact 对齐，不要再手动覆盖字号、行高、字重或字体族。
+实现时优先遵守 `ui-build-plan.json` 的结构化约束。`implementationContract.fileTree/widgetTree/widgetContracts` 决定工程拆分，`visualPlan` 和 mappings 决定可见布局与样式证据。Typography mapping 如果带 `lockToken=true`，说明 source token 和 target text style token 已 exact 对齐，不要再手动覆盖字号、行高、字重或字体族。
+
+不要引入 `targetConventions` 没有证据支持的新 state、routing、i18n 或 theme 框架。GetX、flutter_bloc、Riverpod、Provider、Navigator、go_router、context.t、AppLocalizations、themeService、context.pbColors、CommonAppBar 等都只能作为 target 扫描结果影响实现；扫不到时保留抽象建议并记录待确认问题。
 
 ## 排查视觉问题
 

@@ -65,7 +65,7 @@ target repository
   -> page-debug-index.json
   -> ui-build-plan.json
   -> ui-build-review.md
-  -> migration-spec.md
+  -> migration-spec.md (legacy compatibility)
   -> validation result
 ```
 
@@ -109,9 +109,9 @@ ProtoBridge 给 agent 一组稳定产物：实现前可阅读、实现中可追�
 
 对 AI agent：
 
-- 有人类可读的 `ui-build-review.md` 指导实现。
-- 有机器可读的 `ui-build-plan.json` 描述 file tree、widget tree、mappings、assets、interactions、risks 和 validation hints。
-- 有 source + target facts 时，`migration-spec.md` 会补充 source-aware 实现说明。
+- 有唯一机器契约 `ui-build-plan.json` 描述 target conventions、implementation contract、source semantics、visual plan、mappings、risks 和 validation hints。
+- 有中文人类阅读视图 `ui-build-review.md` 帮助快速 review contract、视觉计划、字体锁定和风险。
+- 有 source + target facts 时，`migration-spec.md` 继续作为兼容/过渡产物输出，但不再作为最终实现裁判。
 - 出现偏差时，可以回到 `page-canonical.json` 和 `page-debug-index.json` 查完整证据和定位索引。
 
 ## ProtoBridge 不做什么

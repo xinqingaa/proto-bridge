@@ -28,7 +28,7 @@ const result = await reconstructPageContext({
 
 console.log(result.files.pageCanonical);
 console.log(result.files.uiBuildPlan);
-console.log(result.files.migrationSpec);
+console.log(result.files.uiBuildReview);
 ```
 
 ## Capability 接口
@@ -55,6 +55,8 @@ console.log(validation.status);
 ├── migration-spec.md
 └── screenshots/
 ```
+
+`ui-build-plan.json` 是唯一机器契约，包含 `targetConventions`、`implementationContract` 和 `visualPlan`。`ui-build-review.md` 是从 plan 渲染的人类可读 brief。`migration-spec.md` 是 source + target facts 可用时的兼容/过渡产物。
 
 ## 公开 Subpaths
 

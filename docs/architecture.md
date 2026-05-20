@@ -74,7 +74,9 @@ ui.validate
 | `ui.review` | canonical page、UI plan | `ui-build-review.md` |
 | `ui.validate` | target diff、plan expectations | validation result |
 
-`migration-spec.md` 是 workflow 在 source + target facts 同时存在时导出的 source-aware projection。它复用 source analysis、target conventions 和 implementation recommendations，不是独立 capability。
+`ui-build-plan.json` 是唯一机器契约。它把 source semantics 收进 `implementationContract.sourceSemantics`，把 target repo 扫描结果收进 `targetConventions`，把 runtime/screenshot 视觉事实收进 `visualPlan`。`ui-build-review.md` 只从 plan 渲染成人类可读 brief。
+
+`migration-spec.md` 是 workflow 在 source + target facts 同时存在时导出的兼容/过渡 projection。它不是独立 capability，也不是最终实现裁判；若与 `ui-build-plan.json` 冲突，以 plan 的 `targetConventions` 和 `implementationContract` 为准。
 
 Capability 的粒度小于完整 workflow。CLI 命令或 MCP tool 可以根据可用输入组合它们。
 
@@ -98,13 +100,13 @@ Canonical 产物：
 Projection 产物：
 
 - `page-debug-index.json`：面向调试的紧凑索引。
-- `ui-build-plan.json`：机器可读 target implementation plan。
-- `ui-build-review.md`：人类可读 implementation handoff。
-- `migration-spec.md`：source + target facts 可用时默认生成的 source-aware implementation brief。
+- `ui-build-plan.json`：唯一机器可读 target implementation contract。
+- `ui-build-review.md`：从 plan 渲染的人类可读 implementation brief。
+- `migration-spec.md`：source + target facts 可用时默认生成的 legacy/compat brief。
 - `screenshots/`：runtime visual evidence。
 - validation result：CLI/MCP/core validation caller 返回的结构化结果。
 
-Canonical artifact 是真相源。Projection artifacts 针对具体读者和任务优化。
+Canonical artifact 是完整证据真相源；`ui-build-plan.json` 是实现机器契约；其他 projection artifacts 针对具体读者和任务优化。
 
 ## Core 目录
 
