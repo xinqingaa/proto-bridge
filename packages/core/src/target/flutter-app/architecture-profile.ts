@@ -46,7 +46,16 @@ const STATE_PACKAGE_PATTERNS: Array<{ pattern: string; needles: RegExp[] }> = [
 
 const PAGE_STATE_PATTERNS: Array<{ pattern: string; needles: RegExp[] }> = [
   { pattern: 'flutter_bloc', needles: [/\bclass\s+\w+(Cubit|Bloc)\s+extends\s+(Cubit|Bloc)\b/, /\bBlocProvider\s*<\s*\w+(Cubit|Bloc)\s*>/, /\bBlocBuilder\s*<\s*\w+(Cubit|Bloc)\s*,/] },
-  { pattern: 'getx', needles: [/\bclass\s+\w+Controller\s+extends\s+GetxController\b/, /\bextends\s+GetView\s*<\s*\w+Controller\s*>/, /\bObx\s*\(/] },
+  {
+    pattern: 'getx',
+    needles: [
+      /\bclass\s+\w+Controller\s+extends\s+GetxController\b/,
+      /\bextends\s+(?:BaseGetView|BaseGetPullView|GetView)\s*<\s*[\w.]+\s*>/,
+      /\bclass\s+\w+Binding\s+extends\s+Bindings\b/,
+      /\bGet\.(?:lazyPut|put|create)\s*</,
+      /\bObx\s*\(/,
+    ],
+  },
   { pattern: 'riverpod', needles: [/\bConsumerWidget\b/, /\bWidgetRef\b/, /\b(ref\.watch|ref\.read)\s*\(/] },
   { pattern: 'provider', needles: [/\bclass\s+\w+\s+extends\s+ChangeNotifier\b/, /\bChangeNotifierProvider\s*<\s*\w+>/] },
   { pattern: 'stateful_widget', needles: [/\bStatefulWidget\b/, /\bsetState\s*\(/] },
@@ -135,6 +144,8 @@ export async function detectFlutterTargetConventions(input: {
   const nonGeneratedFiles = files.filter((file) => !file.generated);
   const nonGeneratedCommonFiles = commonFiles.filter((file) => !file.generated);
   const nonGeneratedModuleFiles = moduleFiles.filter((file) => !file.generated);
+  const moduleExampleFiles = selectModuleExampleFiles(nonGeneratedFiles, input.module);
+  const pageStateFiles = dedupeFiles([...nonGeneratedModuleFiles, ...moduleExampleFiles]);
   const scopedFiles = nonGeneratedModuleFiles.length > 0 ? [...nonGeneratedModuleFiles, ...nonGeneratedCommonFiles] : nonGeneratedFiles;
   const packageSignals = pubspecToSignals(pubspec);
   const unresolved: string[] = [];
@@ -142,7 +153,10 @@ export async function detectFlutterTargetConventions(input: {
   const state = buildStateFacet({
     packageSignals: collectPubspecPatternSignals(pubspec, STATE_PACKAGE_PATTERNS),
     globalSignals: collectPatternSignals(appFiles.filter((file) => !file.generated), GLOBAL_STATE_PATTERNS),
-    pageSignals: collectPatternSignals(nonGeneratedModuleFiles, PAGE_STATE_PATTERNS),
+    pageSignals: [
+      ...collectPatternSignals(pageStateFiles, PAGE_STATE_PATTERNS),
+      ...detectModulePageStateSignals(pageStateFiles, input.module),
+    ],
     fallbackSignals: [
       ...packageSignals.state,
       ...collectPatternSignals(scopedFiles, STATE_PATTERNS),
@@ -165,7 +179,7 @@ export async function detectFlutterTargetConventions(input: {
   const fileOrganization = detectFileOrganization(nonGeneratedFiles, input.module);
 
   if (state.pattern === 'unknown') unresolved.push('state pattern was not detected from pubspec.yaml or Dart usage.');
-  if (state.page?.pattern === 'unknown') unresolved.push('page-level state pattern was not detected from target module files.');
+  if (state.page?.pattern === 'unknown') unresolved.push('page-level state pattern was not detected from target module or similar module files.');
   if (routing.pattern === 'unknown') unresolved.push('routing pattern was not detected from route files or Dart usage.');
   if (routing.navigation?.pattern === 'unknown') unresolved.push('navigation call pattern was not detected from non-generated Dart usage.');
   if (i18n.pattern === 'unknown') unresolved.push('i18n pattern was not detected from translations or Dart usage.');
@@ -327,6 +341,57 @@ function collectPatternSignals(
     .filter((signal) => signal.evidence.length > 0);
 }
 
+function detectModulePageStateSignals(files: DartFile[], module: string | undefined): PatternSignal[] {
+  const getxEvidence = getxModulePageStateEvidence(files, module);
+  return getxEvidence.length > 0 ? [{ pattern: 'getx', evidence: getxEvidence }] : [];
+}
+
+function getxModulePageStateEvidence(files: DartFile[], module: string | undefined): FlutterArchitectureEvidence[] {
+  const evidence: FlutterArchitectureEvidence[] = [];
+  const moduleFiles = module
+    ? files.filter((file) => file.path.includes(`/modules/${module}/`))
+    : files.filter((file) => file.path.includes('/modules/'));
+
+  const viewEvidence = collectNeedleEvidence(moduleFiles, 'getx-page-view', [
+    /\bextends\s+(?:BaseGetView|BaseGetPullView|GetView)\s*<\s*[\w.]+\s*>/,
+  ]);
+  evidence.push(...viewEvidence);
+
+  const controllerEvidence = collectNeedleEvidence(moduleFiles, 'getx-page-controller', [
+    /\bclass\s+\w+Controller\s+extends\s+GetxController\b/,
+  ]);
+  evidence.push(...controllerEvidence);
+
+  const bindingEvidence = collectNeedleEvidence(moduleFiles, 'getx-page-binding', [
+    /\bclass\s+\w+Binding\s+extends\s+Bindings\b/,
+    /\bGet\.(?:lazyPut|put|create)\s*</,
+  ]);
+  evidence.push(...bindingEvidence);
+
+  const paths = moduleFiles.map((file) => file.path);
+  const hasViews = paths.some((filePath) => /\/views?\/.+\.dart$/.test(filePath));
+  const hasControllers = paths.some((filePath) => /\/controllers?\/.+_controller\.dart$/.test(filePath));
+  const hasBindings = paths.some((filePath) => /\/bindings?\/.+_binding\.dart$/.test(filePath));
+  const hasGetxSyntax = evidence.length > 0 || moduleFiles.some((file) => /\b(package:get\/get\.dart|GetxController|GetView|BaseGetView|BaseGetPullView|Bindings|Get\.(?:lazyPut|put|create))\b/.test(file.text));
+
+  if (hasViews && hasControllers && hasBindings && hasGetxSyntax) {
+    const structureExamples = [
+      paths.find((filePath) => /\/views?\/.+\.dart$/.test(filePath)),
+      paths.find((filePath) => /\/controllers?\/.+_controller\.dart$/.test(filePath)),
+      paths.find((filePath) => /\/bindings?\/.+_binding\.dart$/.test(filePath)),
+    ].filter((item): item is string => Boolean(item));
+    for (const filePath of structureExamples) {
+      evidence.push({
+        file: filePath,
+        symbol: 'getx-module-structure',
+        snippet: `${module ? `module ${module}` : 'module'} contains views/controllers/bindings with GetX page evidence.`,
+      });
+    }
+  }
+
+  return dedupeEvidence(evidence).slice(0, 12);
+}
+
 function collectComponentSignals(
   files: DartFile[],
   definitions: Array<{ symbol: string; needles: RegExp[] }>,
@@ -359,6 +424,31 @@ function collectNeedleEvidence(
     }
   }
   return evidence;
+}
+
+function selectModuleExampleFiles(files: DartFile[], module: string | undefined): DartFile[] {
+  const moduleFiles = module ? files.filter((file) => file.path.includes(`/modules/${module}/`)) : [];
+  if (moduleFiles.length > 0) return moduleFiles;
+  const scored = files
+    .filter((file) => file.path.includes('/modules/'))
+    .map((file) => ({
+      file,
+      score: scoreModuleExample(file),
+    }))
+    .filter((item) => item.score > 0)
+    .sort((left, right) => right.score - left.score || left.file.path.localeCompare(right.file.path));
+  return scored.slice(0, 40).map((item) => item.file);
+}
+
+function scoreModuleExample(file: DartFile): number {
+  let score = 0;
+  if (/\/views?\/.+\.dart$/.test(file.path)) score += 2;
+  if (/\/controllers?\/.+_controller\.dart$/.test(file.path)) score += 2;
+  if (/\/bindings?\/.+_binding\.dart$/.test(file.path)) score += 2;
+  if (/\bextends\s+(?:BaseGetView|BaseGetPullView|GetView)\s*<\s*[\w.]+\s*>/.test(file.text)) score += 4;
+  if (/\bclass\s+\w+Controller\s+extends\s+GetxController\b/.test(file.text)) score += 4;
+  if (/\bclass\s+\w+Binding\s+extends\s+Bindings\b|\bGet\.(?:lazyPut|put|create)\s*</.test(file.text)) score += 4;
+  return score;
 }
 
 function confidenceForEvidence(evidence: FlutterArchitectureEvidence[]): FlutterArchitectureConfidence {
@@ -474,6 +564,17 @@ function detectFileOrganization(files: DartFile[], module: string | undefined): 
     symbol: 'fileOrganization',
     snippet: filePath,
   }));
+  const hasViews = modulePaths.some((filePath) => /lib\/app\/modules\/[^/]+\/views?\/.+\.dart$/.test(filePath));
+  const hasControllers = modulePaths.some((filePath) => /lib\/app\/modules\/[^/]+\/controllers?\/.+_controller\.dart$/.test(filePath));
+  const hasBindings = modulePaths.some((filePath) => /lib\/app\/modules\/[^/]+\/bindings?\/.+_binding\.dart$/.test(filePath));
+  if (hasViews && hasControllers && hasBindings) {
+    return {
+      pattern: 'module_views_controllers_bindings',
+      confidence: confidenceForEvidence(examples),
+      evidence: ['Dart files are organized under lib/app/modules/<module>/{views,controllers,bindings}.'],
+      examples,
+    };
+  }
   if (modulePaths.some((filePath) => /lib\/app\/modules\/[^/]+\/[^/]+\/widgets\/.+\.dart$/.test(filePath))) {
     return {
       pattern: 'module_feature_with_widgets',
@@ -499,6 +600,29 @@ function detectFileOrganization(files: DartFile[], module: string | undefined): 
     };
   }
   return unknownFacet();
+}
+
+function dedupeEvidence(evidence: FlutterArchitectureEvidence[]): FlutterArchitectureEvidence[] {
+  const seen = new Set<string>();
+  const result: FlutterArchitectureEvidence[] = [];
+  for (const item of evidence) {
+    const key = `${item.file}:${item.line ?? ''}:${item.symbol}:${item.snippet}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(item);
+  }
+  return result;
+}
+
+function dedupeFiles(files: DartFile[]): DartFile[] {
+  const seen = new Set<string>();
+  const result: DartFile[] = [];
+  for (const file of files) {
+    if (seen.has(file.path)) continue;
+    seen.add(file.path);
+    result.push(file);
+  }
+  return result;
 }
 
 function escapeRegExp(value: string): string {

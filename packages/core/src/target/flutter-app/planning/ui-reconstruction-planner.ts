@@ -37,12 +37,19 @@ export async function buildFlutterUiReconstructionPlan(
 ): Promise<UiBuildPlan> {
   const targetRoot = path.resolve(input.targetRoot);
   const roles = rolesForEvidence(input.evidence);
-  const conventions = await getFlutterTargetConventions({
+  const initialConventions = await getFlutterTargetConventions({
     flutterRoot: targetRoot,
     module: input.targetModule,
     roles,
   });
-  const moduleName = input.targetModule ?? inferModule(input.evidence, conventions.existingModules) ?? 'feature';
+  const moduleName = input.targetModule ?? inferModule(input.evidence, initialConventions.existingModules) ?? 'feature';
+  const conventions = initialConventions.module === moduleName
+    ? initialConventions
+    : await getFlutterTargetConventions({
+      flutterRoot: targetRoot,
+      module: moduleName,
+      roles,
+    });
   const examples = await findFlutterTargetExamples({
     flutterRoot: targetRoot,
     module: moduleName,
@@ -353,10 +360,27 @@ function normalizeFileTree(
 
 function normalizeFilePath(filePath: string, targetConventions: FlutterTargetConventionProfile): string {
   const fileOrganization = targetConventions.architectureProfile.fileOrganization.pattern;
+  if (fileOrganization === 'module_views_controllers_bindings') {
+    return normalizeModuleMvcFilePath(filePath);
+  }
   if (fileOrganization !== 'module_proto_bucket') return filePath;
   const match = filePath.match(/^lib\/app\/modules\/([^/]+)\/([^/]+)\/(.+)$/);
   if (!match?.[1] || !match[2] || !match[3]) return filePath;
   return `lib/app/modules/${match[1]}/_proto/${match[2]}/${match[3]}`;
+}
+
+function normalizeModuleMvcFilePath(filePath: string): string {
+  const match = filePath.match(/^lib\/app\/modules\/([^/]+)\/([^/]+)\/(.+)$/);
+  if (!match?.[1] || !match[2] || !match[3]) return filePath;
+  const [, moduleName, featureName, rest] = match;
+  if (!moduleName || !featureName || !rest) return filePath;
+  const base = `lib/app/modules/${moduleName}`;
+  const featurePrefix = `${featureName}_`;
+  if (/_controller\.dart$/.test(rest)) return `${base}/controllers/${featurePrefix}controller.dart`;
+  if (/_binding\.dart$/.test(rest)) return `${base}/bindings/${featurePrefix}binding.dart`;
+  if (/^widgets\//.test(rest)) return `${base}/widget/${rest.slice('widgets/'.length)}`;
+  if (/_page\.dart$|_view\.dart$/.test(rest)) return `${base}/views/${rest.replace(/_page\.dart$/, '_view.dart')}`;
+  return filePath;
 }
 
 function normalizeWidget(widget: FlutterWidgetPlan, targetConventions: FlutterTargetConventionProfile): FlutterWidgetPlan {
