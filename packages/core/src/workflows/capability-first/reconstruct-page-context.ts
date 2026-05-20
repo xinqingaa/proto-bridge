@@ -101,19 +101,6 @@ export async function reconstructPageContext(
   });
   traceSteps.push(completed('page.merge', 'hybrid canonical was written'));
 
-  const shouldBuildPlan = Boolean(input.buildPlan ?? targetInput);
-  const plan = shouldBuildPlan && targetInput
-    ? await runTraced(traceSteps, 'ui.plan', 'buildPlan is enabled and target input was provided', () => planUiCapability({
-      page: merge.page,
-      targetRoot: targetInput.root,
-      outDir,
-      targetModule: input.targetModule,
-    }))
-    : undefined;
-  if (!shouldBuildPlan || !targetInput) {
-    traceSteps.push(skipped('ui.plan', !shouldBuildPlan ? 'buildPlan was disabled' : 'target input was not provided'));
-  }
-
   const sourceBrief = source && target
     ? renderSourceAwareBrief({
       source: source.source,
@@ -122,6 +109,21 @@ export async function reconstructPageContext(
       targetAdapter: input.target?.adapter,
     })
     : undefined;
+
+  const shouldBuildPlan = Boolean(input.buildPlan ?? targetInput);
+  const plan = shouldBuildPlan && targetInput
+    ? await runTraced(traceSteps, 'ui.plan', 'buildPlan is enabled and target input was provided', () => planUiCapability({
+      page: merge.page,
+      targetRoot: targetInput.root,
+      outDir,
+      targetModule: input.targetModule,
+      sourceAwareImplementationPlan: sourceBrief?.context.recommendations.implementationPlan,
+      sourceReview: sourceBrief?.review,
+    }))
+    : undefined;
+  if (!shouldBuildPlan || !targetInput) {
+    traceSteps.push(skipped('ui.plan', !shouldBuildPlan ? 'buildPlan was disabled' : 'target input was not provided'));
+  }
 
   const shouldWriteMigrationSpec = Boolean(sourceBrief && (input.sourceBrief ?? true));
   const migrationSpecPath = shouldWriteMigrationSpec ? path.join(outDir, 'migration-spec.md') : undefined;

@@ -74,8 +74,10 @@ function reconstructUrlUiPrompt(args: JsonObject): string[] {
     '先调用 `reconstruct_page_context`，传入 url，并保存返回的 `pageId`。',
     '如果页面存在可见文字缺失、图片/canvas 文字重要，或 OCR 相关 warning，请把 screenshotPath、ocrText 或 ocrBoxes 直接传给 `reconstruct_page_context` 重新生成上下文。',
     targetModule ? `调用 reconstruct_page_context 时使用 targetModule=${targetModule}。` : '除非 evidence 表明自动模块推断错误，否则让 ProtoBridge 自动推断目标模块。',
-    '优先读取 `ui-build-review.md` 作为人类可读交接文档，读取 `ui-build-plan.json` 作为机器可读实现计划。',
-    '根据 `ui-build-plan.json` 实现 Dart UI，重点关注视觉结构、文案、组件映射、主题、i18n 和资产。',
+    '先读取 `ui-build-plan.json`，尤其是 `implementationContract` 和 `targetConventions`；`ui-build-review.md` 只是该 JSON 的人类可读投影。',
+    '如存在 `migration-spec.md`，它是 source-aware 参考，不是最终 target 工程表达裁判。',
+    '根据 `implementationContract` 实现 Dart UI；根据 `visualPlan`、`themeMappings`、`componentMappings` 和截图还原可见视觉。',
+    '不得引入 `targetConventions` 没有证据支持的新 state/routing/i18n/theme 框架。',
     '字体、CSS 颜色、间距和布局属于 P0 视觉保真要求。优先使用精确 evidence 和 node-level mapping，避免过早使用宽泛 theme family 猜测。',
     '不要编造 API、权限、风控、埋点或隐藏业务行为；未确认内容保留 TODO 或人工确认项。',
     '尽可能运行格式化/静态检查，然后用 pageId 调用 `validate_ui_build`，报告变更文件、验证结果、warnings 和未解决业务问题。',
@@ -115,8 +117,10 @@ function implementFromExistingPlanPrompt(args: JsonObject): string[] {
   return [
     `根据 pageId=${pageId} 的已有 ProtoBridge plan 实现目标 Flutter UI。`,
     targetRoot ? `使用 targetRoot=${targetRoot}。` : '除非用户另行指定，否则使用当前 targetRoot。',
-    '读取 `proto-bridge://pages/{pageId}/ui-build-plan`，如有 `proto-bridge://pages/{pageId}/ui-build-review` 也一起读取。',
+    '读取 `proto-bridge://pages/{pageId}/ui-build-plan`，优先遵守 `implementationContract` 和 `targetConventions`；如有 `ui-build-review`，只把它当作 JSON 的人类可读投影。',
+    '如存在 migration-spec.md，它只补充 source-aware 语义，不覆盖 targetConventions 中有证据的工程表达。',
     '创建新的本地模式前，先用 `find_target_examples` 查找相似模块/页面/组件模式。',
+    '不得引入 targetConventions 没有证据支持的新 state/routing/i18n/theme 框架。',
     '只实现可见 UI 和已确认的 callback 边界。业务数据、API 字段、权限、风控和埋点除非由目标示例确认，否则保留 TODO。',
     '编辑后尽可能运行格式化/静态检查，并用 pageId 调用 `validate_ui_build`。',
   ];
@@ -130,7 +134,7 @@ function validateUiReconstructionPrompt(args: JsonObject): string[] {
     `验证 pageId=${pageId} 的 UI 还原结果。`,
     targetRoot ? `使用 targetRoot=${targetRoot}。` : '除非用户另行指定，否则使用当前 targetRoot。',
     gitBase ? `使用 gitBase=${gitBase} 检测变更文件。` : '除非用户提供 gitBase，否则使用默认变更文件检测。',
-    '调用 `validate_ui_build`，检查 changed files、allowed paths、缺失的预期文件、placeholder、TODO 和 validation hints。',
+    '调用 `validate_ui_build`，检查 changed files、allowed paths、缺失的预期文件、placeholder、TODO、validation hints 和 architecture contract violations。',
     '先按严重程度报告 findings；如有文件引用则附上。最后补充剩余风险和仍需人工确认的业务问题。',
   ];
 }

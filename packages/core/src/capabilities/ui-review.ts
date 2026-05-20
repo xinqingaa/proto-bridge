@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { writeTextFile } from '../artifacts/artifact-writer.js';
-import type { ExportUiReviewInput, ExportUiReviewResult } from '../types/index.js';
+import type { ExportUiReviewInput, ExportUiReviewResult, UiBuildPlan } from '../types/index.js';
 import type { UiReviewCapabilityResult } from './types.js';
 
 export async function reviewUiCapability(input: ExportUiReviewInput): Promise<UiReviewCapabilityResult> {
@@ -13,7 +13,7 @@ export async function reviewUiCapability(input: ExportUiReviewInput): Promise<Ui
 }
 
 async function exportUiReview(input: ExportUiReviewInput): Promise<ExportUiReviewResult> {
-  const markdown = renderReviewMarkdown(input);
+  const markdown = renderReviewMarkdown(input.plan);
   const reviewMarkdownPath = path.join(input.outDir, 'ui-build-review.md');
   await writeTextFile(reviewMarkdownPath, markdown);
   return {
@@ -24,63 +24,92 @@ async function exportUiReview(input: ExportUiReviewInput): Promise<ExportUiRevie
   };
 }
 
-function renderReviewMarkdown(input: ExportUiReviewInput): string {
-  const { page, plan } = input;
+function renderReviewMarkdown(plan: UiBuildPlan): string {
   return [
-    `# ${plan.page.title ?? page.page.title ?? 'Snapshot UI'} Review`,
+    `# ${plan.page.title ?? 'Snapshot UI'} Build Brief`,
     '',
-    ...renderHybridSummary(page),
-    ...renderSourceAwareProjection(input),
-    '## 重构摘要',
+    '## Contract authority',
     '',
-    `- Page: \`${page.pageId}\``,
     `- Plan: \`${plan.id}\``,
-    `- Route: ${plan.page.route ?? page.page.route ?? '(unknown)'}`,
+    `- Page: \`${plan.pageId}\``,
+    `- Route: ${plan.page.route ?? '(unknown)'}`,
     `- Target module: ${plan.target.module ?? '(unresolved)'}`,
-    `- Viewport: ${plan.page.viewport.width}x${plan.page.viewport.height}`,
+    `- Logical source: ${plan.implementationContract.logicalPlanSource}`,
+    '- `ui-build-plan.json` is the machine contract. This review is only a human-readable projection of that JSON.',
+    '- Source semantics define logical decomposition; targetConventions define engineering expression; visualPlan defines visual facts.',
+    '- If target conventions are unknown, keep recommendations abstract and resolve manual questions before introducing frameworks.',
     '',
-    plan.page.summary,
+    '## Detected target conventions',
     '',
-    '## 视觉区块',
+    ...renderArchitectureProfile(plan),
     '',
-    ...listOrFallback(page.sections.slice(0, 24).map((section) =>
-      `- ${section.role}: ${section.title ?? section.id} (${section.bbox.x}, ${section.bbox.y}, ${section.bbox.width}, ${section.bbox.height})`,
+    '## Implementation contract',
+    '',
+    '### Files',
+    '',
+    ...listOrFallback(plan.implementationContract.fileTree.map((file) =>
+      `- \`${file.path}\`: ${file.responsibility}${file.notes ? ` (${file.notes})` : ''}`,
     )),
     '',
-    '## 计划文件',
+    '### Widget tree',
     '',
-    ...listOrFallback(plan.fileTree.map((file) => `- \`${file.path}\`: ${file.responsibility}${file.notes ? ` (${file.notes})` : ''}`)),
-    '',
-    '## Widget 树',
-    '',
-    ...listOrFallback(plan.widgetTree.map((widget) =>
-      `- ${widget.name}${widget.parent ? ` -> ${widget.parent}` : ''}: ${widget.role}; ${widget.buildHint}`,
+    ...listOrFallback(plan.implementationContract.widgetTree.map((widget) =>
+      `- ${widget.name}${widget.parent ? ` -> ${widget.parent}` : ''}: ${widget.role}; ${widget.buildHint}; stateAccess=${widget.stateAccess}`,
     )),
     '',
-    '## 组件映射',
+    '### State strategy',
+    '',
+    ...listOrFallback(plan.implementationContract.stateStrategy.map((strategy) =>
+      `- ${strategy.concern} (${strategy.owner}): ${strategy.recommendation}${strategy.evidence ? ` [${strategy.evidence}]` : ''}`,
+    )),
+    '',
+    '### Controller/state boundaries',
+    '',
+    ...listOrFallback(plan.implementationContract.controllerBoundaries.map((boundary) =>
+      `- ${boundary.name}: ${boundary.responsibility}; owns=[${boundary.owns.join(', ') || 'none'}]; avoids=[${boundary.avoids.join(', ') || 'none'}]`,
+    )),
+    '',
+    '### Widget contracts',
+    '',
+    ...listOrFallback(plan.implementationContract.widgetContracts.map((contract) =>
+      `- ${contract.widget}: inputs=[${contract.inputs.join(', ') || 'none'}], callbacks=[${contract.callbacks.join(', ') || 'none'}], shouldReadController=${contract.shouldReadController}; ${contract.notes}`,
+    )),
+    '',
+    '### Contract rules',
+    '',
+    ...listOrFallback(plan.implementationContract.rules.map((rule) => `- ${rule}`)),
+    '',
+    '## Visual plan',
+    '',
+    `- Viewport: ${plan.visualPlan.viewport.width}x${plan.visualPlan.viewport.height}`,
+    `- Screenshots: ${plan.visualPlan.screenshotRefs.join(', ') || '(none)'}`,
+    '',
+    '### Section evidence',
+    '',
+    ...listOrFallback(plan.visualPlan.sections.slice(0, 40).map((section) =>
+      `- ${section.role}: ${section.title ?? section.id} (${section.bbox.x}, ${section.bbox.y}, ${section.bbox.width}, ${section.bbox.height}); nodes=${section.nodeIds.length}`,
+    )),
+    '',
+    '### Component mappings',
     '',
     ...listOrFallback(plan.componentMappings.map((mapping) =>
       `- ${mapping.sourceRole}: ${mapping.targetSymbol ?? '(local widget)'} [${mapping.confidence}] - ${mapping.reason}`,
     )),
     '',
-    '## 主题映射',
+    '### Theme mappings',
     '',
     ...listOrFallback(plan.themeMappings.slice(0, 40).map((mapping) =>
       [
         `- ${mapping.kind ?? 'style'} ${mapping.source} = \`${mapping.value}\` -> ${mapping.target ?? '(manual)'}`,
         `[${mapping.confidence}${mapping.matchedBy ? `, ${mapping.matchedBy}` : ''}]`,
-        mapping.sourceSelector ? `selector=${mapping.sourceSelector}` : '',
-        mapping.sourceMixin ? `mixin=${mapping.sourceMixin}` : '',
         mapping.lockToken ? 'lockToken=true' : '',
         mapping.doNotOverride?.length ? `doNotOverride=${mapping.doNotOverride.join('/')}` : '',
-        mapping.nodeIds?.length ? `(nodes=${mapping.nodeIds.length})` : '',
-        mapping.candidateTargets?.length && mapping.candidateTargets.length > 1
-          ? `candidates: ${mapping.candidateTargets.join(', ')}`
-          : '',
       ].filter(Boolean).join(' '),
     )),
     '',
-    '## 文案 / i18n',
+    '## I18n, assets, interactions',
+    '',
+    '### I18n',
     '',
     plan.i18nPlan.recommendation,
     '',
@@ -88,7 +117,7 @@ function renderReviewMarkdown(input: ExportUiReviewInput): string {
       `- ${item.suggestedKey ? `\`${item.suggestedKey}\`` : '(key TBD)'}: ${item.text}`,
     )),
     '',
-    '## 资源',
+    '### Assets',
     '',
     plan.assetPlan.recommendation,
     '',
@@ -96,218 +125,64 @@ function renderReviewMarkdown(input: ExportUiReviewInput): string {
       `- ${asset.kind}: ${asset.source ?? asset.nodeId ?? '(inline)'} - ${asset.recommendation}`,
     )),
     '',
-    '## 交互',
+    '### Interactions',
     '',
     ...listOrFallback(plan.interactionPlan.map((interaction) =>
       `- ${interaction.kind}: ${interaction.label ?? interaction.nodeId} - ${interaction.recommendation}`,
     )),
     '',
-    '## 业务问题',
+    '## Risks and validation',
     '',
-    ...listOrFallback(plan.businessQuestions.map((question) => `- ${question}`)),
+    '### Contract warnings',
     '',
-    '## 风险',
+    ...listOrFallback(plan.implementationContract.contractWarnings.map((warning) => `- ${warning}`)),
+    '',
+    '### Manual questions',
+    '',
+    ...listOrFallback([
+      ...plan.implementationContract.manualQuestions,
+      ...plan.businessQuestions,
+    ].map((question) => `- ${question}`)),
+    '',
+    '### Risks',
     '',
     ...listOrFallback(plan.risks.map((risk) => `- ${risk}`)),
     '',
-    '## 证据来源',
-    '',
-    ...listOrFallback(page.provenance.map((item) => `- ${item.source}: ${item.fields.join(', ')}`)),
-    '',
-    '## 验证提示',
+    '### Validation hints',
     '',
     ...listOrFallback(plan.validationHints.map((hint) => `- ${hint}`)),
     '',
   ].join('\n');
 }
 
-function renderHybridSummary(page: ExportUiReviewInput['page']): string[] {
-  if (!page.merge && !page.sourceFacts && !page.targetFacts) return [];
+function renderArchitectureProfile(plan: UiBuildPlan): string[] {
+  const profile = plan.targetConventions.architectureProfile;
   return [
-    '## 能力上下文',
-    '',
-    `- Merge strategy: ${page.merge?.strategy ?? '(not merged)'}`,
-    `- Capabilities: ${page.merge?.selectedCapabilities.join(', ') ?? '(unknown)'}`,
-    `- Facts: source=${Boolean(page.sourceFacts)}, runtime=${Boolean(page.runtimeFacts)}, screenshot=${Boolean(page.screenshotFacts)}, target=${Boolean(page.targetFacts)}`,
-    '',
-    '### 字段优先级',
-    '',
-    ...listOrFallback((page.fieldPriority ?? []).map((rule) =>
-      `- ${rule.field}: ${rule.priority.join(' > ')} - ${rule.reason}`,
-    )),
-    '',
-    '### 人工确认项',
-    '',
-    ...listOrFallback((page.manualConfirmations ?? []).map((item) =>
-      `- [ ] ${item.id} [${item.severity}]: ${item.question}`,
-    )),
-    '',
+    `- State: ${profile.state.pattern} [${profile.state.confidence}]`,
+    ...profile.state.examples.slice(0, 4).map(formatEvidence),
+    `- Routing: ${profile.routing.pattern} [${profile.routing.confidence}]`,
+    ...profile.routing.examples.slice(0, 4).map(formatEvidence),
+    `- I18n: ${profile.i18n.pattern} [${profile.i18n.confidence}]`,
+    ...profile.i18n.examples.slice(0, 4).map(formatEvidence),
+    `- Theme: ${profile.theme.patterns.join(', ') || 'unknown'} [${profile.theme.confidence}]`,
+    ...profile.theme.examples.slice(0, 4).map(formatEvidence),
+    `- Components: ${profile.components.detectedSymbols.join(', ') || 'none detected'} [${profile.components.confidence}]`,
+    ...profile.components.examples.slice(0, 6).map(formatEvidence),
+    `- File organization: ${profile.fileOrganization.pattern} [${profile.fileOrganization.confidence}]`,
+    ...profile.fileOrganization.examples.slice(0, 4).map(formatEvidence),
+    ...(plan.targetConventions.unresolved.length
+      ? ['- Unresolved:', ...plan.targetConventions.unresolved.map((item) => `  - ${item}`)]
+      : []),
   ];
 }
 
-function renderSourceAwareProjection(input: ExportUiReviewInput): string[] {
-  const sourceReview = input.sourceReview;
-  if (!sourceReview) return [];
-  return [
-    '## 有源码实现交接',
-    '',
-    '### 对齐检查清单',
-    '',
-    ...sourceReview.parityChecklist.map((item) =>
-      `- ${item.section}: ${item.status} (${item.evidence.join(', ')})`,
-    ),
-    '',
-    '### 页面元信息',
-    '',
-    `- Page: ${sourceReview.title}`,
-    `- Route: ${sourceReview.metadata.route ?? '(unknown)'}`,
-    `- screenId: ${sourceReview.metadata.screenId ?? '(unknown)'}`,
-    `- Source module: ${sourceReview.metadata.sourceModule ?? '(unknown)'}`,
-    `- Target module: ${sourceReview.metadata.targetModule ?? '(unresolved)'}`,
-    `- Implementation shape: ${sourceReview.metadata.implementationShape}`,
-    `- Status: ${sourceReview.metadata.status ?? '(unknown)'}`,
-    `- Owner: ${sourceReview.metadata.owner ?? '(unknown)'}`,
-    '',
-    '### 迁移结论',
-    '',
-    `- Flutter complexity: ${sourceReview.implementation.complexity}`,
-    `- Page pattern: ${sourceReview.implementation.pattern ?? '(unknown)'}`,
-    `- Pattern confidence: ${sourceReview.implementation.patternConfidence ?? '(unknown)'}`,
-    `- Recommended shape: ${sourceReview.implementation.shape}`,
-    `- Target module: ${sourceReview.implementation.targetModule ?? '(unresolved)'}`,
-    `- Direct implementation: ${sourceReview.implementation.directImplementation}`,
-    `- Implementation summary: ${sourceReview.implementation.summary}`,
-    `- Top risks: ${sourceReview.implementation.risks.slice(0, 3).join('；') || '(none)'}`,
-    '',
-    '### Flutter 实现规划',
-    '',
-    '#### 目标文件',
-    '',
-    ...listOrFallback(sourceReview.files.map((file) =>
-      `- \`${file.path}\`: ${file.responsibility}${file.notes ? ` (${file.notes})` : ''}`,
-    )),
-    '',
-    '#### Widget 组成',
-    '',
-    ...listOrFallback(sourceReview.widgets.slice(0, 24).map((widget) =>
-      `- ${widget.name}${widget.parent ? ` -> ${widget.parent}` : ''}: ${widget.role}; ${widget.buildHint}`,
-    )),
-    '',
-    '#### Widget 契约',
-    '',
-    ...listOrFallback(sourceReview.widgetContracts.map((contract) =>
-      `- ${contract.widget}: inputs=[${contract.inputs.join(', ') || 'none'}], callbacks=[${contract.callbacks.join(', ') || 'none'}], readsController=${contract.shouldReadController}; ${contract.notes}`,
-    )),
-    '',
-    '#### Controller 边界',
-    '',
-    ...listOrFallback(sourceReview.controllerBoundaries.map((boundary) =>
-      `- ${boundary.name}: ${boundary.responsibility}; owns=[${boundary.owns.join(', ') || 'none'}]; avoids=[${boundary.avoids.join(', ') || 'none'}]`,
-    )),
-    '',
-    '#### 不要直译',
-    '',
-    ...listOrFallback(sourceReview.doNotTranslate.map((item) => `- ${item}`)),
-    '',
-    '### 状态与交互',
-    '',
-    '#### 状态策略',
-    '',
-    ...listOrFallback(sourceReview.stateStrategy.map((strategy) =>
-      `- ${strategy.concern} (${strategy.owner}): ${strategy.recommendation}`,
-    )),
-    '',
-    '#### 生命周期与副作用',
-    '',
-    ...listOrFallback(sourceReview.lifecycle.map((item) =>
-      `- ${item.hook}: ${item.target ?? '(unknown)'} - ${item.migrationHint}`,
-    )),
-    '',
-    '#### 交互事件',
-    '',
-    ...listOrFallback(sourceReview.interactions.slice(0, 40).map((interaction) =>
-      `- ${interaction.kind}: ${interaction.target ?? '(unknown)'} - ${interaction.migrationHint}`,
-    )),
-    '',
-    '### 路由与布局',
-    '',
-    '#### 路由与参数',
-    '',
-    `- Source route: ${sourceReview.metadata.route ?? '(unknown)'}`,
-    `- Target route files: ${sourceReview.reusable.routesFiles.join(', ') || '(unresolved)'}`,
-    '',
-    '#### 路由行为',
-    '',
-    ...listOrFallback(sourceReview.routes.map((route) =>
-      `- ${route.action}: ${[route.target, route.params].filter(Boolean).join(' / ') || '(unknown)'} - ${route.migrationHint}`,
-    )),
-    '',
-    '#### 布局模型',
-    '',
-    ...listOrFallback(sourceReview.layout.map((layout) =>
-      `- ${layout.kind} ${layout.selector}: ${layout.migrationHint}`,
-    )),
-    '',
-    '### 主题、I18n 与资源',
-    '',
-    '#### 源码样式 Token',
-    '',
-    ...listOrFallback(sourceReview.styleTokens.slice(0, 40).map((token) =>
-      [
-        `- ${token.selector}.${token.property}: ${token.token}${token.fallback ? ` (${token.fallback})` : ''}`,
-        token.lockToken ? 'lockToken=true' : '',
-        token.doNotOverride?.length ? `doNotOverride=${token.doNotOverride.join('/')}` : '',
-      ].filter(Boolean).join(' '),
-    )),
-    '',
-    '#### I18n',
-    '',
-    ...listOrFallback(formatI18n(sourceReview.i18n).slice(0, 40)),
-    '',
-    '#### Assets',
-    '',
-    ...listOrFallback(sourceReview.assets.slice(0, 40).map((asset) =>
-      `- ${asset.kind}: ${asset.source ?? '(inline)'} - ${asset.migrationHint}`,
-    )),
-    '',
-    '### 目标工程可复用能力',
-    '',
-    `- Widgets: ${sourceReview.reusable.widgets.join(', ') || '(none detected)'}`,
-    `- Route files: ${sourceReview.reusable.routesFiles.join(', ') || '(none detected)'}`,
-    `- Translation files: ${sourceReview.reusable.translationFiles.join(', ') || '(none detected)'}`,
-    `- Asset directories: ${sourceReview.reusable.assetDirectories.join(', ') || '(none detected)'}`,
-    `- Similar files: ${sourceReview.reusable.similarFiles.slice(0, 12).join(', ') || '(none detected)'}`,
-    '',
-    '### 人工确认',
-    '',
-    ...listOrFallback([
-      ...sourceReview.manualQuestions,
-      ...sourceReview.implementation.risks,
-    ].map((item) => `- ${item}`)),
-    '',
-  ];
-}
-
-function formatI18n(value: Record<string, unknown>): string[] {
-  const rows: string[] = [];
-  collectI18n(value, '', rows);
-  return rows;
-}
-
-function collectI18n(value: unknown, prefix: string, rows: string[]): void {
-  if (typeof value === 'string') {
-    rows.push(`- ${prefix || '(text)'}: ${value}`);
-    return;
-  }
-  if (Array.isArray(value)) {
-    value.forEach((item, index) => collectI18n(item, `${prefix}[${index}]`, rows));
-    return;
-  }
-  if (value && typeof value === 'object') {
-    for (const [key, nested] of Object.entries(value)) {
-      collectI18n(nested, prefix ? `${prefix}.${key}` : key, rows);
-    }
-  }
+function formatEvidence(evidence: {
+  file: string;
+  line?: number | undefined;
+  symbol: string;
+  snippet: string;
+}): string {
+  return `  - ${evidence.symbol}: \`${evidence.file}${evidence.line ? `:${evidence.line}` : ''}\` ${evidence.snippet}`;
 }
 
 function listOrFallback(items: string[]): string[] {

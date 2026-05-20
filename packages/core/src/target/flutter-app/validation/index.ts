@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { readFile } from 'node:fs/promises';
+import type { UiBuildPlan } from '../../../types/index.js';
 
 export type FlutterTargetFileIssue = {
   file: string;
@@ -21,8 +22,10 @@ export type FlutterTargetValidationResult = {
 export async function scanFlutterTargetDartFiles(
   targetRoot: string,
   files: string[],
+  plan?: UiBuildPlan | undefined,
 ): Promise<FlutterTargetFileIssue[]> {
   const issues: FlutterTargetFileIssue[] = [];
+  const contract = plan ? buildArchitectureContract(plan) : undefined;
   for (const file of files) {
     let text = '';
     try {
@@ -50,6 +53,10 @@ export async function scanFlutterTargetDartFiles(
     }
     if (/Get\.toNamed\s*\(/.test(text) && !/TODO|待确认|business/i.test(text)) {
       issues.push({ file, issue: 'Navigation behavior detected without nearby TODO/confirmation marker.' });
+    }
+    if (contract) {
+      issues.push(...scanArchitectureContract(file, text, contract));
+      if (plan) issues.push(...scanWidgetContract(file, text, plan));
     }
   }
   return issues;
@@ -83,4 +90,111 @@ export function buildFlutterTargetValidationResult(input: {
 
 function ensureTrailingSlash(value: string): string {
   return value.endsWith('/') ? value : `${value}/`;
+}
+
+type ArchitectureContract = {
+  statePattern: string;
+  routingPattern: string;
+  i18nPattern: string;
+  themePatterns: string[];
+  expectedWidgetFileStems: Set<string>;
+};
+
+function buildArchitectureContract(plan: UiBuildPlan): ArchitectureContract {
+  return {
+    statePattern: plan.targetConventions.architectureProfile.state.pattern,
+    routingPattern: plan.targetConventions.architectureProfile.routing.pattern,
+    i18nPattern: plan.targetConventions.architectureProfile.i18n.pattern,
+    themePatterns: plan.targetConventions.architectureProfile.theme.patterns,
+    expectedWidgetFileStems: new Set(plan.implementationContract.fileTree.map((file) => path.basename(file.path, '.dart'))),
+  };
+}
+
+function scanArchitectureContract(
+  file: string,
+  text: string,
+  contract: ArchitectureContract,
+): FlutterTargetFileIssue[] {
+  const issues: FlutterTargetFileIssue[] = [];
+  const unsupported = unsupportedFrameworkPatterns(contract);
+  for (const item of unsupported) {
+    if (item.pattern.test(text)) {
+      issues.push({
+        file,
+        issue: `Architecture contract violation: ${item.label} is not supported by targetConventions evidence.`,
+      });
+    }
+  }
+
+  if (contract.routingPattern !== 'unknown' && contract.routingPattern !== 'getx' && /\bGet\.(toNamed|offNamed|back|parameters|arguments)\b/.test(text)) {
+    issues.push({ file, issue: `Architecture contract violation: routing pattern is ${contract.routingPattern}, but GetX routing usage was introduced.` });
+  }
+  if (contract.routingPattern !== 'unknown' && contract.routingPattern !== 'go_router' && /package:go_router\/go_router\.dart|\bGoRouter\b|\bcontext\.(go|push|replace)\s*\(/.test(text)) {
+    issues.push({ file, issue: `Architecture contract violation: routing pattern is ${contract.routingPattern}, but go_router usage was introduced.` });
+  }
+  if (contract.i18nPattern !== 'unknown' && contract.i18nPattern !== 'getx_tr' && /\.tr\b/.test(text)) {
+    issues.push({ file, issue: `Architecture contract violation: i18n pattern is ${contract.i18nPattern}, but GetX .tr usage was introduced.` });
+  }
+  if (contract.i18nPattern !== 'unknown' && contract.i18nPattern !== 'build_context_t_extension' && /\bcontext\.t\s*\(/.test(text)) {
+    issues.push({ file, issue: `Architecture contract violation: i18n pattern is ${contract.i18nPattern}, but context.t usage was introduced.` });
+  }
+  if (contract.themePatterns.length > 0 && !hasThemePattern(contract, 'themeService.colors') && /\bthemeService\.colors\b/.test(text)) {
+    issues.push({ file, issue: 'Architecture contract violation: themeService.colors was introduced without targetConventions theme evidence.' });
+  }
+  if (contract.themePatterns.length > 0 && !hasThemePattern(contract, 'context.pbColors') && /\bcontext\.pbColors\b/.test(text)) {
+    issues.push({ file, issue: 'Architecture contract violation: context.pbColors was introduced without targetConventions theme evidence.' });
+  }
+
+  const stem = path.basename(file, '.dart');
+  if (/widgets\/.+_section(?:_\d+)?\.dart$/.test(file) && !contract.expectedWidgetFileStems.has(stem)) {
+    issues.push({ file, issue: 'Architecture drift: generated widget file looks like a runtime DOM section translation and is not in implementationContract.fileTree.' });
+  }
+
+  return issues;
+}
+
+function unsupportedFrameworkPatterns(contract: ArchitectureContract): Array<{ label: string; pattern: RegExp }> {
+  const patterns: Array<{ label: string; pattern: RegExp }> = [];
+  if (contract.statePattern !== 'unknown' && contract.statePattern !== 'getx') {
+    patterns.push({ label: 'GetX state framework', pattern: /package:get\/get\.dart|\bGetxController\b|\bGetView\b|\bObx\s*\(|\bGetBuilder\s*</ });
+  }
+  if (contract.statePattern !== 'unknown' && contract.statePattern !== 'flutter_bloc') {
+    patterns.push({ label: 'flutter_bloc state framework', pattern: /package:flutter_bloc\/flutter_bloc\.dart|\bBlocProvider\b|\bBlocBuilder\b|\bBlocListener\b|\bCubit\s*</ });
+  }
+  if (contract.statePattern !== 'unknown' && contract.statePattern !== 'riverpod') {
+    patterns.push({ label: 'Riverpod state framework', pattern: /package:flutter_riverpod\/flutter_riverpod\.dart|package:riverpod\/riverpod\.dart|\bConsumerWidget\b|\bWidgetRef\b|\bProviderScope\b/ });
+  }
+  if (contract.statePattern !== 'unknown' && contract.statePattern !== 'provider' && contract.statePattern !== 'flutter_bloc') {
+    patterns.push({ label: 'Provider state framework', pattern: /package:provider\/provider\.dart|\bChangeNotifierProvider\b|\bConsumer\s*</ });
+  }
+  return patterns;
+}
+
+function hasThemePattern(contract: ArchitectureContract, pattern: string): boolean {
+  if (contract.themePatterns.includes(pattern)) return true;
+  if (pattern === 'themeService.colors' && contract.themePatterns.includes('themeService.textStyles')) return true;
+  if (pattern === 'context.pbColors' && contract.themePatterns.includes('context.pbTextStyles')) return true;
+  return false;
+}
+
+function scanWidgetContract(file: string, text: string, plan: UiBuildPlan): FlutterTargetFileIssue[] {
+  const issues: FlutterTargetFileIssue[] = [];
+  const stem = path.basename(file, '.dart');
+  const contract = plan.implementationContract.widgetContracts.find((item) => toSnakeCase(item.widget) === stem);
+  if (!contract || contract.shouldReadController) return issues;
+  if (/\b(context\.(watch|read)\s*<|BlocProvider\.of\s*<|Get\.find\s*<|Provider\.of\s*<|ref\.watch\s*\(|ref\.read\s*\()/.test(text)) {
+    issues.push({
+      file,
+      issue: `Widget contract violation: ${contract.widget} should receive props/callbacks and not read the page controller/cubit/provider directly.`,
+    });
+  }
+  return issues;
+}
+
+function toSnakeCase(value: string): string {
+  return value
+    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+    .replace(/[^a-zA-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toLowerCase();
 }

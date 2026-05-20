@@ -1,6 +1,6 @@
 import type { ImplementationShape, MappingConfidence, WidgetRecommendationType } from './common.js';
 import type { AssetEvidence, InteractionEvidence, PageCanonical, SnapshotNodeRole } from './evidence.js';
-import type { FlutterComponentRef, FlutterContextAnalysis, FlutterExampleRef } from './target-flutter.js';
+import type { FlutterComponentRef, FlutterContextAnalysis, FlutterExampleRef, FlutterTargetConventionProfile } from './target-flutter.js';
 
 export type WidgetRecommendation = {
   name: string;
@@ -76,6 +76,41 @@ export type BuildUiPlanInput = {
   targetRoot: string;
   outDir: string;
   targetModule?: string | undefined;
+  sourceAwareImplementationPlan?: FlutterImplementationPlan | undefined;
+  sourceReview?: SourceAwareReviewProjection | undefined;
+};
+
+export type UiVisualPlan = {
+  viewport: { width: number; height: number; deviceScaleFactor?: number | undefined };
+  sections: Array<{
+    id: string;
+    role: SnapshotNodeRole;
+    title?: string | undefined;
+    bbox: { x: number; y: number; width: number; height: number };
+    nodeIds: string[];
+    evidence: string[];
+    buildHint?: string | undefined;
+  }>;
+  layoutEvidence: string[];
+  screenshotRefs: string[];
+};
+
+export type UiImplementationContract = {
+  logicalPlanSource: string;
+  fileTree: FlutterPlannedFile[];
+  widgetTree: FlutterWidgetPlan[];
+  stateStrategy: FlutterStateStrategy[];
+  controllerBoundaries: FlutterControllerBoundary[];
+  widgetContracts: FlutterWidgetContract[];
+  targetBindings: {
+    pageBase: { patternRef: string; pattern?: string | undefined };
+    routing: { patternRef: string; pattern?: string | undefined };
+    i18n: { patternRef: string; pattern?: string | undefined };
+    theme: { patternRef: string; patterns?: string[] | undefined };
+  };
+  rules: string[];
+  contractWarnings: string[];
+  manualQuestions: string[];
 };
 
 export type UiBuildPlan = {
@@ -98,6 +133,9 @@ export type UiBuildPlan = {
     summary: string;
     viewport: { width: number; height: number; deviceScaleFactor?: number | undefined };
   };
+  targetConventions: FlutterTargetConventionProfile;
+  implementationContract: UiImplementationContract;
+  visualPlan: UiVisualPlan;
   fileTree: FlutterPlannedFile[];
   widgetTree: FlutterWidgetPlan[];
   componentMappings: ComponentMapping[];

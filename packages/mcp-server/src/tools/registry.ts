@@ -63,7 +63,7 @@ const toolDefinitions: JsonValue[] = [
     title: '重建页面统一上下文',
     description: [
       'Capability-first UI 重构入口。根据输入自动组合 source.analyze、runtime.capture、target.inspect、page.merge、ui.plan 和 ui.review。',
-      '有源码时生成增强版 `ui-build-review.md`；有源码 + target 时默认同时生成 `migration-spec.md` source-aware implementation brief；有源码 + runtime 时 review 展示 merged evidence。',
+      '`ui-build-plan.json` 是机器契约；`ui-build-review.md` 是 plan 的人类可读投影；有源码 + target 时默认同时生成 `migration-spec.md` source-aware 参考。',
       '无源码但有 URL 时退化为 URL/runtime-first，并仍产出统一 `page-canonical.json`、`page-debug-index.json`、`ui-build-plan.json`、`ui-build-review.md` 和截图。',
       '安全边界：只读取 source/target/URL 并写 artifact，不修改目标 Flutter 应用。',
     ].join('\n'),

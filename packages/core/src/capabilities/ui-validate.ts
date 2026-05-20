@@ -16,7 +16,7 @@ export async function validateUiCapability(input: UiValidateCapabilityInput): Pr
   const missingExpectedFiles = await collectMissingFiles(targetRoot, expectedFiles);
   const changedFiles = await collectChangedFiles(targetRoot, input.gitBase);
   const dartFiles = changedFiles.filter((file) => file.endsWith('.dart'));
-  const fileIssues = await scanFlutterTargetDartFiles(targetRoot, dartFiles);
+  const fileIssues = await scanFlutterTargetDartFiles(targetRoot, dartFiles, input.plan);
   const result = buildFlutterTargetValidationResult({
     targetRoot,
     changedFiles,

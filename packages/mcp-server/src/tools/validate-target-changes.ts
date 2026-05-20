@@ -17,7 +17,8 @@ export async function validateTargetChangesTool(context: ToolContext, args: Json
     allowedPaths,
     validationHints: page?.plan?.validationHints,
     expectedFiles,
-  }) as unknown as JsonObject;
+    plan: page?.plan,
+  } as Parameters<typeof validateUiCapability>[0] & { plan?: unknown }) as unknown as JsonObject;
 }
 
 function allowedPathsFromPlan(page: ReturnType<ToolContext['pages']['get']>): string[] {

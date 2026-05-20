@@ -1,5 +1,49 @@
 import type { MappingConfidence, TargetPlatform } from './common.js';
 
+export type FlutterArchitectureConfidence = 'high' | 'medium' | 'low';
+
+export type FlutterArchitectureEvidence = {
+  file: string;
+  line?: number | undefined;
+  symbol: string;
+  snippet: string;
+};
+
+export type FlutterArchitectureFacet = {
+  pattern: string;
+  confidence: FlutterArchitectureConfidence;
+  evidence: string[];
+  examples: FlutterArchitectureEvidence[];
+};
+
+export type FlutterArchitectureThemeFacet = {
+  patterns: string[];
+  confidence: FlutterArchitectureConfidence;
+  evidence: string[];
+  examples: FlutterArchitectureEvidence[];
+};
+
+export type FlutterArchitectureComponentsFacet = {
+  detectedSymbols: string[];
+  confidence: FlutterArchitectureConfidence;
+  evidence: string[];
+  examples: FlutterArchitectureEvidence[];
+};
+
+export type FlutterArchitectureProfile = {
+  state: FlutterArchitectureFacet;
+  routing: FlutterArchitectureFacet;
+  i18n: FlutterArchitectureFacet;
+  theme: FlutterArchitectureThemeFacet;
+  components: FlutterArchitectureComponentsFacet;
+  fileOrganization: FlutterArchitectureFacet;
+};
+
+export type FlutterTargetConventionProfile = {
+  architectureProfile: FlutterArchitectureProfile;
+  unresolved: string[];
+};
+
 export type AnalyzeFlutterContextInput = {
   flutterRoot: string;
   prototypeModule?: string | undefined;
@@ -18,6 +62,7 @@ export type FlutterContextAnalysis = {
   translationFiles: string[];
   assetDirectories: string[];
   similarFiles: string[];
+  targetConventions?: FlutterTargetConventionProfile | undefined;
   warnings: string[];
 };
 
@@ -64,6 +109,7 @@ export type FlutterTargetConventions = {
   translationFiles: string[];
   assetDirectories: string[];
   components: FlutterComponentRef[];
+  targetConventions: FlutterTargetConventionProfile;
   themeUsages: string[];
   routeUsages: string[];
   i18nUsages: string[];

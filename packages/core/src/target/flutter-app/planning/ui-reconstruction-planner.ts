@@ -3,13 +3,20 @@ import type {
   ComponentMapping,
   FlutterComponentRef,
   FlutterComponentRole,
+  FlutterControllerBoundary,
+  FlutterImplementationPlan,
   FlutterPlannedFile,
+  FlutterStateStrategy,
+  FlutterTargetConventionProfile,
+  FlutterWidgetContract,
   FlutterWidgetPlan,
   InteractionPlan,
   PageCanonical,
   SnapshotNodeRole,
   ThemeMapping,
   UiBuildPlan,
+  UiImplementationContract,
+  UiVisualPlan,
   VueSemanticComponent,
   VueTemplateSection,
 } from '../../../types/index.js';
@@ -22,6 +29,7 @@ export type BuildFlutterUiReconstructionPlanInput = {
   evidence: PageCanonical;
   targetRoot: string;
   targetModule?: string | undefined;
+  sourceAwareImplementationPlan?: FlutterImplementationPlan | undefined;
 };
 
 export async function buildFlutterUiReconstructionPlan(
@@ -45,7 +53,14 @@ export async function buildFlutterUiReconstructionPlan(
   });
   const pageName = inferPageName(input.evidence);
   const baseDir = `lib/app/modules/${moduleName}/${toSnakeCase(pageName)}`;
-  const widgetTree = buildWidgetTree(pageName, input.evidence);
+  const runtimeWidgetTree = buildRuntimeWidgetTree(pageName, input.evidence);
+  const fallbackPlan = buildFallbackImplementationPlan(baseDir, pageName, runtimeWidgetTree);
+  const implementationContract = buildImplementationContract({
+    sourceAwarePlan: input.sourceAwareImplementationPlan,
+    fallbackPlan,
+    targetConventions: conventions.targetConventions,
+  });
+  const visualPlan = buildVisualPlan(input.evidence);
 
   return {
     id: createPlanId(input.evidence.id),
@@ -61,16 +76,19 @@ export async function buildFlutterUiReconstructionPlan(
       similarExamples: examples,
       warnings: conventions.warnings,
     },
+    targetConventions: conventions.targetConventions,
+    implementationContract,
+    visualPlan,
     page: {
       title: input.evidence.page.title,
       route: input.evidence.page.route,
       summary: buildSummary(input.evidence),
       viewport: input.evidence.viewport ?? { width: 0, height: 0 },
     },
-    fileTree: buildFileTree(baseDir, pageName, widgetTree),
-    widgetTree,
+    fileTree: implementationContract.fileTree,
+    widgetTree: implementationContract.widgetTree,
     componentMappings: buildComponentMappings(input.evidence, conventions.components),
-    themeMappings: buildThemeMappings(input.evidence),
+    themeMappings: buildThemeMappings(input.evidence, conventions.targetConventions),
     i18nPlan: buildI18nPlan(input.evidence),
     assetPlan: buildAssetPlan(input.evidence),
     interactionPlan: buildInteractionPlan(input.evidence),
@@ -81,8 +99,8 @@ export async function buildFlutterUiReconstructionPlan(
       'Treat typography, CSS colors, spacing, and layout as P0 visual fidelity items; prefer exact evidence matches before approximate fallback.',
       'Use node-level themeMappings first; when a theme token is resolved exactly, do not replace it with a larger or heavier nearby token.',
       'If a typography themeMapping has lockToken=true, use the target textStyles token directly and do not override fontSize, height, fontWeight, or fontFamily unless the plan explicitly lists a source override.',
-      'Check spacing, radius, border, and shadow values against reusable YouFi widgets before introducing local constants.',
-      'Keep business data, API fields, permission checks, risk controls, and tracking as TODOs unless confirmed by YouFi examples.',
+      'Check spacing, radius, border, and shadow values against reusable target widgets before introducing local constants.',
+      'Keep business data, API fields, permission checks, risk controls, and tracking as TODOs unless confirmed by target examples.',
       'Prefer similar module examples and common widgets over one-to-one DOM translation.',
     ],
   };
@@ -160,22 +178,22 @@ function buildSummary(evidence: PageCanonical): string {
   return `该计划来自统一 PageCanonical，聚焦可见 UI 还原；识别到 ${sectionCount} 个视觉区块、${textCount} 条文案线索和 ${assetCount} 个资源线索。${sourceSummary}${capabilityHints.length > 0 ? `增强能力包括 ${capabilityHints.join('、')}。` : ''}业务接口、权限、风控和埋点不在本计划中做确定性推断。`;
 }
 
-function buildFileTree(baseDir: string, pageName: string, widgetTree: FlutterWidgetPlan[]): FlutterPlannedFile[] {
+function buildRuntimeFileTree(baseDir: string, pageName: string, widgetTree: FlutterWidgetPlan[]): FlutterPlannedFile[] {
   const pageSnake = toSnakeCase(pageName);
   const files: FlutterPlannedFile[] = [
     {
       path: `${baseDir}/${pageSnake}_page.dart`,
-      responsibility: '页面入口，按 YouFi 页面基类、Scaffold/SafeArea 和可见区块编排 UI。',
+      responsibility: '页面入口，按目标工程页面模式、Scaffold/SafeArea 和可见区块编排 UI。',
       notes: '只实现可见 UI；业务数据和接口接入保留 TODO。',
     },
     {
       path: `${baseDir}/${pageSnake}_controller.dart`,
-      responsibility: '承载轻量 UI 状态，例如 tab、选中项、展开态和点击事件占位。',
+      responsibility: '承载轻量 UI 状态，例如 tab、选中项、展开态和点击事件占位；具体状态表达以 targetConventions 为准。',
       notes: '不得在 Phase 1 中伪造接口字段、权限或交易规则。',
     },
     {
       path: `${baseDir}/${pageSnake}_binding.dart`,
-      responsibility: '注册页面 Controller，保持与 YouFi 模块内相似页面一致。',
+      responsibility: '注册页面状态/依赖边界，保持与目标模块内相似页面一致。',
     },
   ];
 
@@ -190,13 +208,13 @@ function buildFileTree(baseDir: string, pageName: string, widgetTree: FlutterWid
   return dedupeBy(files, (file) => file.path);
 }
 
-function buildWidgetTree(pageName: string, evidence: PageCanonical): FlutterWidgetPlan[] {
+function buildRuntimeWidgetTree(pageName: string, evidence: PageCanonical): FlutterWidgetPlan[] {
   const rootName = `${pageName}Page`;
   const widgets: FlutterWidgetPlan[] = [
     {
       name: rootName,
       role: 'page',
-      buildHint: '使用 YouFi 页面基类承载整体结构，按 evidence sections 编排子 Widget。',
+      buildHint: '使用目标工程页面模式承载整体结构，按 visualPlan.sections 编排可见 UI。',
       stateAccess: 'controller',
     },
   ];
@@ -229,6 +247,176 @@ function buildWidgetTree(pageName: string, evidence: PageCanonical): FlutterWidg
   return dedupeBy(widgets, (widget) => widget.name);
 }
 
+function buildFallbackImplementationPlan(
+  baseDir: string,
+  pageName: string,
+  runtimeWidgetTree: FlutterWidgetPlan[],
+): Pick<FlutterImplementationPlan, 'fileTree' | 'widgetTree' | 'stateStrategy' | 'controllerBoundaries' | 'widgetContracts'> {
+  return {
+    fileTree: buildRuntimeFileTree(baseDir, pageName, runtimeWidgetTree),
+    widgetTree: runtimeWidgetTree,
+    stateStrategy: [],
+    controllerBoundaries: [],
+    widgetContracts: runtimeWidgetTree
+      .filter((widget) => widget.parent)
+      .map((widget) => ({
+        widget: widget.name,
+        inputs: ['visible layout/content props'],
+        callbacks: [],
+        shouldReadController: widget.stateAccess === 'controller',
+        notes: 'Fallback contract generated from visual evidence because source-aware implementation plan was unavailable.',
+      })),
+  };
+}
+
+function buildImplementationContract(input: {
+  sourceAwarePlan?: FlutterImplementationPlan | undefined;
+  fallbackPlan: Pick<FlutterImplementationPlan, 'fileTree' | 'widgetTree' | 'stateStrategy' | 'controllerBoundaries' | 'widgetContracts'>;
+  targetConventions: FlutterTargetConventionProfile;
+}): UiImplementationContract {
+  const logical = input.sourceAwarePlan ?? input.fallbackPlan;
+  const contractWarnings = normalizeContractWarnings(input.targetConventions);
+  return {
+    logicalPlanSource: input.sourceAwarePlan
+      ? 'source-aware implementation plan normalized by target conventions'
+      : 'visual evidence fallback normalized by target conventions; source-aware implementation plan unavailable',
+    fileTree: logical.fileTree.map((file) => normalizeFile(file, input.targetConventions)),
+    widgetTree: logical.widgetTree.map((widget) => normalizeWidget(widget, input.targetConventions)),
+    stateStrategy: (logical.stateStrategy ?? []).map((strategy) => normalizeStateStrategy(strategy, input.targetConventions)),
+    controllerBoundaries: (logical.controllerBoundaries ?? []).map((boundary) => normalizeControllerBoundary(boundary, input.targetConventions)),
+    widgetContracts: (logical.widgetContracts ?? []).map((contract) => normalizeWidgetContract(contract, input.targetConventions)),
+    targetBindings: {
+      pageBase: {
+        patternRef: 'targetConventions.architectureProfile.state/routing',
+        pattern: input.targetConventions.architectureProfile.state.pattern,
+      },
+      routing: {
+        patternRef: 'targetConventions.architectureProfile.routing',
+        pattern: input.targetConventions.architectureProfile.routing.pattern,
+      },
+      i18n: {
+        patternRef: 'targetConventions.architectureProfile.i18n',
+        pattern: input.targetConventions.architectureProfile.i18n.pattern,
+      },
+      theme: {
+        patternRef: 'targetConventions.architectureProfile.theme',
+        patterns: input.targetConventions.architectureProfile.theme.patterns,
+      },
+    },
+    rules: [
+      'Do not introduce a new state/routing/i18n/theme framework unless target conventions or user config explicitly support it.',
+      'Use source-aware widget contracts for decomposition.',
+      'Use visualPlan for visible layout and styling evidence.',
+      'If target conventions are unknown, report warnings instead of guessing.',
+    ],
+    contractWarnings,
+    manualQuestions: contractWarnings.map((warning) => `Confirm target convention: ${warning}`),
+  };
+}
+
+function normalizeFile(file: FlutterPlannedFile, targetConventions: FlutterTargetConventionProfile): FlutterPlannedFile {
+  return {
+    ...file,
+    responsibility: normalizeTargetLanguage(file.responsibility, targetConventions),
+    ...(file.notes ? { notes: normalizeTargetLanguage(file.notes, targetConventions) } : {}),
+  };
+}
+
+function normalizeWidget(widget: FlutterWidgetPlan, targetConventions: FlutterTargetConventionProfile): FlutterWidgetPlan {
+  return {
+    ...widget,
+    buildHint: normalizeTargetLanguage(widget.buildHint, targetConventions),
+  };
+}
+
+function normalizeStateStrategy(
+  strategy: FlutterStateStrategy,
+  targetConventions: FlutterTargetConventionProfile,
+): FlutterStateStrategy {
+  return {
+    ...strategy,
+    recommendation: normalizeTargetLanguage(strategy.recommendation, targetConventions),
+  };
+}
+
+function normalizeControllerBoundary(
+  boundary: FlutterControllerBoundary,
+  targetConventions: FlutterTargetConventionProfile,
+): FlutterControllerBoundary {
+  return {
+    ...boundary,
+    name: normalizeTargetLanguage(boundary.name, targetConventions),
+    responsibility: normalizeTargetLanguage(boundary.responsibility, targetConventions),
+    owns: boundary.owns.map((item) => normalizeTargetLanguage(item, targetConventions)),
+    avoids: boundary.avoids.map((item) => normalizeTargetLanguage(item, targetConventions)),
+  };
+}
+
+function normalizeWidgetContract(
+  contract: FlutterWidgetContract,
+  targetConventions: FlutterTargetConventionProfile,
+): FlutterWidgetContract {
+  return {
+    ...contract,
+    notes: normalizeTargetLanguage(contract.notes, targetConventions),
+  };
+}
+
+function normalizeTargetLanguage(value: string, targetConventions: FlutterTargetConventionProfile): string {
+  const statePattern = targetConventions.architectureProfile.state.pattern;
+  const routingPattern = targetConventions.architectureProfile.routing.pattern;
+  let result = value;
+  if (statePattern !== 'getx') {
+    result = result
+      .replace(/\bBaseGetView\b/g, 'target page pattern')
+      .replace(/\bBaseGetPullView\b/g, 'target pull/refresh page pattern')
+      .replace(/\bGetX\b/g, 'target state pattern')
+      .replace(/\bGet\.find\b/g, 'target dependency lookup')
+      .replace(/\bObx\b/g, 'target reactive builder')
+      .replace(/\bRx\b/g, 'target state primitive')
+      .replace(/\bever\/worker\b/g, 'target state listener');
+  }
+  if (routingPattern !== 'getx') {
+    result = result
+      .replace(/\bGet\.toNamed\/AppRoutes\b/g, 'target routing API')
+      .replace(/\bGet\.toNamed\b/g, 'target routing API')
+      .replace(/\bGet\.parameters\/Get\.arguments\b/g, 'target route settings/arguments')
+      .replace(/\bGet\.parameters\b/g, 'target route parameters')
+      .replace(/\bGet\.arguments\b/g, 'target route arguments');
+  }
+  return result;
+}
+
+function normalizeContractWarnings(targetConventions: FlutterTargetConventionProfile): string[] {
+  const warnings = [...targetConventions.unresolved];
+  const profile = targetConventions.architectureProfile;
+  if (profile.state.pattern === 'unknown') warnings.push('state pattern is unknown; keep state recommendations abstract.');
+  if (profile.routing.pattern === 'unknown') warnings.push('routing pattern is unknown; keep navigation recommendations abstract.');
+  if (profile.i18n.pattern === 'unknown') warnings.push('i18n pattern is unknown; do not invent translation API.');
+  if (profile.theme.patterns.length === 0) warnings.push('theme pattern is unknown; use visualPlan/themeMappings evidence and ask for confirmation.');
+  return dedupe(warnings);
+}
+
+function buildVisualPlan(evidence: PageCanonical): UiVisualPlan {
+  return {
+    viewport: evidence.viewport ?? { width: 0, height: 0 },
+    sections: evidence.sections.slice(0, 80).map((section) => ({
+      id: section.id,
+      role: section.role,
+      ...(section.title ? { title: section.title } : {}),
+      bbox: section.bbox,
+      nodeIds: section.nodeIds,
+      evidence: section.evidence,
+      buildHint: buildSectionHint(section, evidence),
+    })),
+    layoutEvidence: evidence.sections.slice(0, 80).map((section) => {
+      const title = section.title ? ` ${section.title}` : '';
+      return `${section.role}${title}: bbox=${section.bbox.x},${section.bbox.y},${section.bbox.width},${section.bbox.height}; nodes=${section.nodeIds.length}`;
+    }),
+    screenshotRefs: evidence.screenshots.map((screenshot) => screenshot.path),
+  };
+}
+
 function buildComponentMappings(evidence: PageCanonical, components: FlutterComponentRef[]): ComponentMapping[] {
   const roles = new Map<SnapshotNodeRole, string[]>();
   for (const node of evidence.nodes) {
@@ -247,7 +435,7 @@ function buildComponentMappings(evidence: PageCanonical, components: FlutterComp
         confidence: component?.confidence ?? 'low',
         reason: component
           ? `Evidence role ${role} can likely use ${component.symbol}.`
-          : `No clear YouFi component was detected for evidence role ${role}; implement with local Widget and target theme.`,
+          : `No clear target component was detected for evidence role ${role}; implement with local Widget and target theme.`,
       };
     });
 
@@ -283,7 +471,8 @@ function bestComponentForRole(role: SnapshotNodeRole, components: FlutterCompone
   return components.find((component) => targetRoles.includes(component.role));
 }
 
-function buildThemeMappings(evidence: PageCanonical): ThemeMapping[] {
+function buildThemeMappings(evidence: PageCanonical, targetConventions: FlutterTargetConventionProfile): ThemeMapping[] {
+  const themeFamily = themeFallbackFamilies(targetConventions);
   const runtimeMappings = (evidence.tokens ?? []).slice(0, 80).map((token) => {
     const resolution = token.kind === 'typography'
       ? resolveFlutterTypographyTarget({ value: token.value })
@@ -295,11 +484,13 @@ function buildThemeMappings(evidence: PageCanonical): ThemeMapping[] {
         })
         : undefined;
     const familyTarget = token.kind === 'typography'
-      ? 'themeService.textStyles.*'
+      ? themeFamily.typography
       : token.kind === 'color'
-        ? 'themeService.colors.*'
+        ? themeFamily.color
         : undefined;
-    const target = resolution?.target ?? familyTarget;
+    const target = supportedThemeTarget(resolution?.target, familyTarget, targetConventions);
+    const candidateTargets = supportedThemeCandidates(resolution?.candidateTargets, targetConventions);
+    const matchedBy = resolution?.target && !target ? 'manual' : resolution?.matchedBy ?? 'manual';
     const source = token.cssVar ? `${token.source} (${token.cssVar})` : token.source;
     return {
       kind: token.kind,
@@ -307,12 +498,12 @@ function buildThemeMappings(evidence: PageCanonical): ThemeMapping[] {
       value: token.value,
       ...(token.usage.length > 0 ? { nodeIds: token.usage.slice(0, 24) } : {}),
       ...(target ? { target } : {}),
-      ...(resolution?.candidateTargets?.length ? { candidateTargets: resolution.candidateTargets } : {}),
-      matchedBy: resolution?.matchedBy ?? 'manual',
-      confidence: resolution?.confidence ?? (target ? 'medium' : 'low'),
-      reason: resolution?.reason ?? (target
-        ? `Map evidence ${token.kind} signal to the closest YouFi theme token during implementation.`
-        : `No direct YouFi token family is inferred for ${token.kind}; confirm manually.`),
+      ...(candidateTargets.length ? { candidateTargets } : {}),
+      matchedBy,
+      confidence: target ? (resolution?.confidence ?? 'medium') : 'low',
+      reason: target
+        ? `Map evidence ${token.kind} signal to the closest detected target theme token during implementation.`
+        : `No target-supported theme token family is inferred for ${token.kind}; confirm manually.`,
     } satisfies ThemeMapping;
   });
   const sourceMappings = (evidence.sourceFacts?.analysis.sfc?.styleTokens ?? []).slice(0, 80).map((token) => {
@@ -329,8 +520,11 @@ function buildThemeMappings(evidence: PageCanonical): ThemeMapping[] {
         source: token.selector,
       })
       : undefined;
-    const target = typographyResolution?.target ?? colorResolution?.target ?? (isTypography ? 'themeService.textStyles.*' : 'themeService.colors.*');
-    const hasExactTypographyTarget = Boolean(isTypography && typographyResolution?.target && typographyResolution.confidence === 'high');
+    const rawTarget = typographyResolution?.target ?? colorResolution?.target;
+    const fallbackTarget = isTypography ? themeFamily.typography : isColor ? themeFamily.color : undefined;
+    const target = supportedThemeTarget(rawTarget, fallbackTarget, targetConventions);
+    const candidateTargets = supportedThemeCandidates(typographyResolution?.candidateTargets ?? colorResolution?.candidateTargets, targetConventions);
+    const hasExactTypographyTarget = Boolean(isTypography && rawTarget === target && typographyResolution?.confidence === 'high');
     const lockToken = Boolean(hasExactTypographyTarget);
     return {
       kind: isTypography ? 'typography' : isColor ? 'color' : undefined,
@@ -338,10 +532,10 @@ function buildThemeMappings(evidence: PageCanonical): ThemeMapping[] {
       ...(token.selector ? { sourceSelector: token.selector } : {}),
       ...(isTypography && token.token.startsWith('@include ') ? { sourceMixin: token.token.replace(/^@include\s+/, '') } : {}),
       value: token.fallback ?? token.token,
-      target,
-      candidateTargets: typographyResolution?.candidateTargets ?? colorResolution?.candidateTargets,
-      matchedBy: typographyResolution?.matchedBy ?? colorResolution?.matchedBy ?? 'manual',
-      confidence: typographyResolution?.confidence ?? colorResolution?.confidence ?? 'medium',
+      ...(target ? { target } : {}),
+      ...(candidateTargets.length ? { candidateTargets } : {}),
+      matchedBy: rawTarget && !target ? 'manual' : typographyResolution?.matchedBy ?? colorResolution?.matchedBy ?? 'manual',
+      confidence: target ? (typographyResolution?.confidence ?? colorResolution?.confidence ?? 'medium') : 'low',
       ...(lockToken ? { lockToken: true, doNotOverride: token.doNotOverride ?? ['fontSize', 'fontWeight', 'height', 'fontFamily'] } : {}),
       reason: lockToken
         ? `Source typography token ${token.token} is an exact semantic design token; generated Flutter must use ${target} without overriding fontSize, height, fontWeight, or fontFamily.`
@@ -349,6 +543,55 @@ function buildThemeMappings(evidence: PageCanonical): ThemeMapping[] {
     } satisfies ThemeMapping;
   });
   return dedupeBy([...runtimeMappings, ...sourceMappings], (mapping) => `${mapping.source}:${mapping.value}`);
+}
+
+function supportedThemeTarget(
+  target: string | undefined,
+  fallback: string | undefined,
+  targetConventions: FlutterTargetConventionProfile,
+): string | undefined {
+  if (target && isThemeTargetSupported(target, targetConventions)) return target;
+  return fallback;
+}
+
+function supportedThemeCandidates(
+  targets: string[] | undefined,
+  targetConventions: FlutterTargetConventionProfile,
+): string[] {
+  return (targets ?? []).filter((target) => isThemeTargetSupported(target, targetConventions));
+}
+
+function isThemeTargetSupported(target: string, targetConventions: FlutterTargetConventionProfile): boolean {
+  const patterns = targetConventions.architectureProfile.theme.patterns;
+  if (target.startsWith('themeService.colors')) return patterns.includes('themeService.colors');
+  if (target.startsWith('themeService.textStyles')) return patterns.includes('themeService.textStyles');
+  if (target.startsWith('context.pbColors')) return patterns.includes('context.pbColors');
+  if (target.startsWith('context.pbTextStyles')) return patterns.includes('context.pbTextStyles');
+  if (target.startsWith('Theme.of(context)')) return patterns.includes('Theme.of(context)');
+  return true;
+}
+
+function themeFallbackFamilies(targetConventions: FlutterTargetConventionProfile): {
+  color?: string | undefined;
+  typography?: string | undefined;
+} {
+  const patterns = targetConventions.architectureProfile.theme.patterns;
+  return {
+    color: patterns.includes('context.pbColors')
+      ? 'context.pbColors.*'
+      : patterns.includes('themeService.colors')
+        ? 'themeService.colors.*'
+        : patterns.includes('Theme.of(context)')
+          ? 'Theme.of(context).colorScheme.*'
+          : undefined,
+    typography: patterns.includes('context.pbTextStyles')
+      ? 'context.pbTextStyles.*'
+      : patterns.includes('themeService.textStyles')
+        ? 'themeService.textStyles.*'
+        : patterns.includes('Theme.of(context)')
+          ? 'Theme.of(context).textTheme.*'
+          : undefined,
+  };
 }
 
 function buildI18nPlan(evidence: PageCanonical): UiBuildPlan['i18nPlan'] {
@@ -368,7 +611,7 @@ function buildI18nPlan(evidence: PageCanonical): UiBuildPlan['i18nPlan'] {
     }));
   return {
     texts,
-    recommendation: 'Visible text should use YouFi .tr conventions when the target module already has translations; otherwise keep local constants with TODO for translation keys.',
+    recommendation: 'Visible text should use the i18n API detected in targetConventions when available; otherwise keep local constants with TODO for translation keys.',
   };
 }
 
@@ -386,8 +629,8 @@ function buildAssetPlan(evidence: PageCanonical): UiBuildPlan['assetPlan'] {
       kind: asset.kind,
       nodeId: asset.nodeId,
       recommendation: asset.source
-        ? 'Match this source with an existing YouFi asset first; add a TODO if no local asset exists.'
-        : 'Inline or generated visual asset detected; recreate with YouFi icon/SVG/image conventions.',
+        ? 'Match this source with an existing target asset first; add a TODO if no local asset exists.'
+        : 'Inline or generated visual asset detected; recreate with detected target icon/SVG/image conventions.',
       })),
       ...sourceAssets.slice(0, 80).map((asset) => ({
         source: asset.source,
@@ -404,7 +647,7 @@ function buildInteractionPlan(evidence: PageCanonical): InteractionPlan[] {
     kind: interaction.kind,
     label: interaction.label,
     nodeId: interaction.nodeId,
-    recommendation: 'Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar YouFi example confirms it.',
+    recommendation: 'Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar target example confirms it.',
   }));
   const source = (evidence.sourceFacts?.analysis.sfc?.interactions ?? []).slice(0, 80).map((interaction, index) => ({
     kind: sourceInteractionKind(interaction.kind),
@@ -434,9 +677,9 @@ function buildBusinessQuestions(evidence: PageCanonical): string[] {
 function buildRisks(evidence: PageCanonical): string[] {
   const risks = [
     'PageCanonical 只能证明当前采集到的可见 UI 与增强证据，不能证明隐藏状态或业务逻辑。',
-    '少量 computed style 仍可能映射到多个 YouFi 语义 token，需结合 node 上下文和截图二次确认。',
+    '少量 computed style 仍可能映射到多个目标语义 token，需结合 node 上下文和截图二次确认。',
   ];
-  if (evidence.assets.length > 0) risks.push('图片、SVG 或背景资源需要确认是否已有 YouFi 本地资产可复用。');
+  if (evidence.assets.length > 0) risks.push('图片、SVG 或背景资源需要确认是否已有目标本地资产可复用。');
   if (evidence.sourceFacts && !evidence.runtimeFacts) risks.push('本次没有 runtime facts，bbox、computed style、当前可见状态和截图对照需要后续 capture 确认。');
   if (evidence.runtimeFacts && !evidence.sourceFacts) risks.push('本次没有 source facts，隐藏状态、业务语义和完整交互空间不能从 runtime 直接推断。');
   if ((evidence.manualConfirmations?.length ?? 0) > 0) risks.push(...(evidence.manualConfirmations ?? []).map((item) => item.question));

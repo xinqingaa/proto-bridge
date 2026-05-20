@@ -3,6 +3,7 @@ import { readdir } from 'node:fs/promises';
 import fg from 'fast-glob';
 import type { AnalyzeFlutterContextInput, FlutterContextAnalysis } from '../../types/index.js';
 import { pathExists, toPosixPath } from '../../shared/paths.js';
+import { detectFlutterTargetConventions } from './architecture-profile.js';
 
 const MODULE_MAP: Record<string, string> = {
   stock: 'order',
@@ -56,6 +57,10 @@ export async function analyzeFlutterContext(input: AnalyzeFlutterContextInput): 
   ]);
   const reusableWidgets = await collectReusableWidgets(flutterRoot);
   const similarFiles = suggestedModule ? await collectSimilarFiles(flutterRoot, suggestedModule, input.screenId) : [];
+  const targetConventions = await detectFlutterTargetConventions({
+    flutterRoot,
+    module: suggestedModule,
+  });
 
   if (!suggestedModule) {
     warnings.push('Unable to suggest a Flutter module from prototype module or screenId.');
@@ -71,6 +76,7 @@ export async function analyzeFlutterContext(input: AnalyzeFlutterContextInput): 
     translationFiles,
     assetDirectories,
     similarFiles,
+    targetConventions,
     warnings,
   };
 }
@@ -126,7 +132,7 @@ async function collectReusableWidgets(flutterRoot: string): Promise<string[]> {
     },
   );
 
-  if (commonFiles.length === 0) return [...IMPORTANT_COMMON_WIDGETS];
+  if (commonFiles.length === 0) return [];
 
   const fileStemIndex = new Set(
     commonFiles.map((filePath) =>
@@ -141,7 +147,7 @@ async function collectReusableWidgets(flutterRoot: string): Promise<string[]> {
     fileStemIndex.has(widget.replace('.', '').toLowerCase()),
   );
 
-  return detected.length > 0 ? detected : [...IMPORTANT_COMMON_WIDGETS];
+  return detected;
 }
 
 async function collectSimilarFiles(

@@ -12,6 +12,7 @@ import type {
 } from '../../types/index.js';
 import { pathExists, toPosixPath } from '../../shared/paths.js';
 import { analyzeFlutterContext } from './context.js';
+import { detectFlutterTargetConventions } from './architecture-profile.js';
 
 type KnownFlutterSymbol = {
   symbol: string;
@@ -25,21 +26,21 @@ type DartFile = {
 };
 
 const KNOWN_SYMBOLS: KnownFlutterSymbol[] = [
-  { symbol: 'CommonAppBar', role: 'app-bar', reason: 'YouFi common app bar candidate.' },
-  { symbol: 'CommonButton', role: 'button', reason: 'YouFi common button candidate.' },
-  { symbol: 'CommonImage', role: 'image', reason: 'YouFi common image candidate.' },
-  { symbol: 'CommonSvg', role: 'image', reason: 'YouFi common SVG candidate.' },
-  { symbol: 'CommonNetImage', role: 'image', reason: 'YouFi common network image candidate.' },
-  { symbol: 'CommonEmpty', role: 'empty', reason: 'YouFi common empty-state candidate.' },
-  { symbol: 'CommonLoading', role: 'loading', reason: 'YouFi common loading candidate.' },
-  { symbol: 'CommonToast', role: 'toast', reason: 'YouFi common toast candidate.' },
-  { symbol: 'Pop.sheet', role: 'sheet', reason: 'YouFi sheet/popup candidate.' },
-  { symbol: 'YouFiPop', role: 'sheet', reason: 'YouFi popup candidate.' },
-  { symbol: 'BaseGetView', role: 'page-base', reason: 'YouFi page base class candidate.' },
-  { symbol: 'BaseGetPullView', role: 'page-base', reason: 'YouFi pull-to-refresh page base candidate.' },
+  { symbol: 'CommonAppBar', role: 'app-bar', reason: 'Target app bar candidate.' },
+  { symbol: 'CommonButton', role: 'button', reason: 'Target button candidate.' },
+  { symbol: 'CommonImage', role: 'image', reason: 'Target image candidate.' },
+  { symbol: 'CommonSvg', role: 'image', reason: 'Target SVG candidate.' },
+  { symbol: 'CommonNetImage', role: 'image', reason: 'Target network image candidate.' },
+  { symbol: 'CommonEmpty', role: 'empty', reason: 'Target empty-state candidate.' },
+  { symbol: 'CommonLoading', role: 'loading', reason: 'Target loading candidate.' },
+  { symbol: 'CommonToast', role: 'toast', reason: 'Target toast candidate.' },
+  { symbol: 'Pop.sheet', role: 'sheet', reason: 'Target sheet/popup candidate.' },
+  { symbol: 'YouFiPop', role: 'sheet', reason: 'Target popup candidate.' },
+  { symbol: 'BaseGetView', role: 'page-base', reason: 'Target page base class candidate.' },
+  { symbol: 'BaseGetPullView', role: 'page-base', reason: 'Target pull-to-refresh page base candidate.' },
   { symbol: 'SmartRefresher', role: 'refresh', reason: 'Refresh/list paging candidate.' },
-  { symbol: 'themeService.colors', role: 'theme', reason: 'YouFi color token usage.' },
-  { symbol: 'themeService.textStyles', role: 'theme', reason: 'YouFi text style usage.' },
+  { symbol: 'themeService.colors', role: 'theme', reason: 'Target color token usage.' },
+  { symbol: 'themeService.textStyles', role: 'theme', reason: 'Target text style usage.' },
   { symbol: '.tr', role: 'i18n', reason: 'GetX translation usage.' },
   { symbol: 'Get.toNamed', role: 'route', reason: 'GetX named route navigation usage.' },
   { symbol: 'Get.back', role: 'route', reason: 'GetX back navigation usage.' },
@@ -71,6 +72,10 @@ export async function getFlutterTargetConventions(
     flutterRoot,
     targetModule: input.module,
   });
+  const targetConventions = context.targetConventions ?? await detectFlutterTargetConventions({
+    flutterRoot,
+    module: input.module,
+  });
   const components = await collectFlutterComponents({
     flutterRoot,
     symbols: input.symbols,
@@ -85,6 +90,7 @@ export async function getFlutterTargetConventions(
     translationFiles: context.translationFiles,
     assetDirectories: context.assetDirectories,
     components,
+    targetConventions,
     themeUsages: await collectUsageLines(flutterRoot, ['themeService.colors', 'themeService.textStyles'], input.module),
     routeUsages: await collectUsageLines(flutterRoot, ['Get.toNamed', 'Get.back', 'Routes.'], input.module),
     i18nUsages: await collectUsageLines(flutterRoot, ['.tr'], input.module),
@@ -157,13 +163,14 @@ async function collectFlutterComponents(input: {
     'lib/app/modules/**/*.dart',
   ]);
 
-  return known.map((knownSymbol) => {
+  return known.flatMap((knownSymbol) => {
     const definition = findDefinition(files, knownSymbol.symbol);
     const usageFiles = files.filter((file) => includesSymbol(file.text, knownSymbol.symbol));
+    if (!definition && usageFiles.length === 0) return [];
     const snippets = usageFiles.flatMap((file) => extractSnippets(file.text, [knownSymbol.symbol], 1, file.path)).slice(0, 4);
     const propsHints = inferPropsHints(knownSymbol.symbol, snippets);
     const confidence = componentConfidence(definition, usageFiles);
-    return {
+    return [{
       symbol: knownSymbol.symbol,
       role: knownSymbol.role,
       ...(definition ? { path: definition.path } : {}),
@@ -172,7 +179,7 @@ async function collectFlutterComponents(input: {
       propsHints,
       confidence,
       reason: componentReason(knownSymbol, confidence),
-    };
+    }];
   });
 }
 
@@ -242,6 +249,7 @@ function findDefinition(files: DartFile[], symbol: string): DartFile | undefined
 
 function includesSymbol(text: string, symbol: string): boolean {
   if (!symbol) return false;
+  if (symbol === '.tr') return /\.tr\b/.test(text);
   if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(symbol)) {
     return new RegExp(`\\b${escapeRegExp(symbol)}\\b`).test(text);
   }
@@ -254,7 +262,7 @@ function extractSnippets(text: string, needles: string[], maxSnippets: number, l
   const snippets: string[] = [];
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index] ?? '';
-    if (!needles.some((needle) => needle && line.toLowerCase().includes(needle.toLowerCase()))) continue;
+    if (!needles.some((needle) => needle && includesSymbol(line, needle))) continue;
     const start = Math.max(0, index - 2);
     const end = Math.min(lines.length, index + 3);
     const snippetLines = lines.slice(start, end).map((snippetLine, offset) => {
@@ -290,7 +298,7 @@ function componentConfidence(definition: DartFile | undefined, usageFiles: DartF
 function componentReason(known: KnownFlutterSymbol, confidence: MappingConfidence): string {
   if (confidence === 'high') return `${known.reason} Definition or direct usage was found in the target repo.`;
   if (confidence === 'medium') return `${known.reason} Usage was found in the target repo.`;
-  return `${known.reason} Known fallback; no direct usage was detected.`;
+  return `${known.reason} No direct usage was detected.`;
 }
 
 function toDartImportPath(relativePath: string, packageName: string | undefined): string | undefined {
@@ -310,9 +318,9 @@ async function readPubspecPackageName(flutterRoot: string): Promise<string | und
 function symbolsForPattern(pattern: string | undefined): string[] {
   if (!pattern) return [];
   if (/record|list|history/.test(pattern)) return ['SmartRefresher', 'ListView', 'CommonEmpty', 'CommonLoading'];
-  if (/quote|detail|trade/.test(pattern)) return ['CommonAppBar', 'BaseGetView', 'themeService.colors', 'themeService.textStyles'];
-  if (/form|ticket|auth/.test(pattern)) return ['CommonButton', 'BaseGetView', 'Pop.sheet'];
-  return ['CommonAppBar', 'BaseGetView'];
+  if (/quote|detail|trade/.test(pattern)) return ['CommonAppBar', 'AppBar', 'Scaffold'];
+  if (/form|ticket|auth/.test(pattern)) return ['CommonButton', 'TextButton', 'showModalBottomSheet'];
+  return ['CommonAppBar', 'AppBar', 'Scaffold'];
 }
 
 function rolesForSymbols(symbols: string[]): FlutterComponentRole[] {
@@ -331,11 +339,11 @@ function rolesForSymbols(symbols: string[]): FlutterComponentRole[] {
 
 function scoreFlutterStructure(text: string): number {
   let score = 0;
-  if (/\bextends\s+(BaseGetView|BaseGetPullView|GetView)\b/.test(text)) score += 3;
+  if (/\bextends\s+(StatelessWidget|StatefulWidget|GetView|BaseGetView|BaseGetPullView)\b/.test(text)) score += 3;
   if (/\bWidget\s+build\s*\(/.test(text)) score += 2;
-  if (/\bController\b/.test(text)) score += 1;
-  if (/themeService\.(colors|textStyles)/.test(text)) score += 1;
-  if (/\.tr\b/.test(text)) score += 1;
+  if (/\b(Controller|Cubit|Bloc|Provider)\b/.test(text)) score += 1;
+  if (/(themeService\.(colors|textStyles)|context\.pb(Colors|TextStyles)|Theme\.of\s*\(\s*context\s*\))/.test(text)) score += 1;
+  if (/(\.tr\b|context\.t\s*\(|AppLocalizations\.of\s*\()/.test(text)) score += 1;
   return score;
 }
 

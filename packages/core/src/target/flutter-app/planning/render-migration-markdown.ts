@@ -50,6 +50,8 @@ export function renderFlutterMigrationSpec(context: MigrationContext): string {
 
   lines.push(`# ${title} Flutter 迁移说明书`);
   lines.push('');
+  lines.push('> 说明：本文档保留 source-aware 迁移分析和逻辑拆分。具体目标工程表达以 `ui-build-plan.json` 的 `targetConventions` 与 `implementationContract` 为准；若二者冲突，应优先遵守目标扫描证据和 implementationContract。');
+  lines.push('');
   lines.push('## 页面元信息');
   lines.push(`- 目标路由来源：${source.route ?? '待确认'}`);
   lines.push(`- screenId：${source.screenId ?? '待确认'}`);

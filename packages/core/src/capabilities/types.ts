@@ -95,6 +95,7 @@ export type UiValidateCapabilityInput = {
   allowedPaths?: string[] | undefined;
   expectedFiles?: string[] | undefined;
   validationHints?: string[] | undefined;
+  plan?: UiBuildPlan | undefined;
 };
 
 export type UiValidateCapabilityResult = FlutterTargetValidationResult & {
@@ -141,7 +142,7 @@ export const capabilityDescriptors: CapabilityDescriptor[] = [
   },
   {
     name: 'ui.review',
-    description: 'Build ui-build-review.md as the primary human-readable projection, enhanced by source facts when present.',
+    description: 'Build ui-build-review.md as a human-readable projection of ui-build-plan.json.',
     reads: ['page-canonical.json', 'ui-build-plan.json'],
     writes: ['ui-build-review.md'],
   },
