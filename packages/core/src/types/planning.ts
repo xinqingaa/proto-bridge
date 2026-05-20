@@ -260,7 +260,6 @@ export type ExportUiReviewInput = {
   page: PageCanonical;
   plan: UiBuildPlan;
   outDir: string;
-  sourceBriefMarkdown?: string | undefined;
   sourceReview?: SourceAwareReviewProjection | undefined;
 };
 

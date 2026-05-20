@@ -18,9 +18,25 @@ input
 | --- | --- | --- |
 | Source + target | `source.analyze`、`target.inspect`、`page.merge`、`ui.plan`、`ui.review` | 语义和实现规划较强，没有截图证据。 |
 | URL + target | `runtime.capture`、`target.inspect`、`page.merge`、`ui.plan`、`ui.review` | 当前视觉和运行时证据较强，source intent 较少。 |
-| Source + URL + target | source、runtime、target、merge、plan、review | 同时利用 source intent 和 runtime facts。 |
+| Source + URL + target | source、runtime、target、merge、plan、review | 同时利用 source intent 和 runtime facts，推荐用于完整重建。 |
 | Screenshot/OCR + target | `screenshot.attach`、`target.inspect`、`page.merge`、`ui.plan`、`ui.review` | 补充视觉和文字证据，不具备 DOM 级 runtime evidence。 |
-| 已实现 target diff | `ui.validate` | 检查 changed files、placeholder、hard-coded style risks、expected files 和 plan hints。 |
+| 已实现 target diff | `ui.validate` | 检查 changed files、placeholder、hard-coded style risks、expected files、architecture contract violations 和 plan hints。 |
+
+不要为了运行 ProtoBridge 强行要求用户同时提供 source 和 URL。二者是可组合证据源，不是共同必填项。
+
+## 证据如何进入契约
+
+`ui-build-plan.json` 是唯一机器契约。它不是简单把 DOM section 翻译成 Flutter 文件，而是把证据按职责拆开：
+
+| 证据 | 落点 | 说明 |
+| --- | --- | --- |
+| Source semantics | `implementationContract.sourceSemantics` | 业务区块、状态意图、Widget contract、交互/生命周期意图、禁止直译项。 |
+| Target conventions | `targetConventions.architectureProfile` | state、routing、i18n、theme、components、file organization 的目标工程证据。 |
+| Runtime/screenshot facts | `visualPlan` | viewport、section、bbox、layout evidence、screenshot refs。 |
+| Token/component evidence | `themeMappings`、`componentMappings` | 主题 token、字体锁定、组件复用候选。 |
+| Validation expectations | `implementationContract.fileTree`、`validationHints` | 预期文件、架构规则和实现后校验提示。 |
+
+冲突时遵循：source semantics 负责逻辑架构，target conventions 负责工程表达，runtime/screenshot 负责视觉事实。target profile unknown 时保留抽象建议并输出 warnings/manual questions，不猜测具体框架。
 
 ## 如何选择工作流
 
@@ -40,8 +56,6 @@ source 和 url 都有?
 已经实现 target 代码?
   -> 跑 validation
 ```
-
-不要为了运行 ProtoBridge 强行要求用户同时提供 source 和 URL。二者是可组合证据源，不是共同必填项。
 
 ## Source-only 工作流
 
@@ -89,7 +103,6 @@ page-canonical.json
 page-debug-index.json
 ui-build-plan.json
 ui-build-review.md
-migration-spec.md
 ```
 
 ## Runtime-only 工作流
@@ -123,7 +136,7 @@ MCP arguments：
 }
 ```
 
-预期产物包含 `screenshots/full-page.png`。
+预期产物包含 `screenshots/full-page.png`。如果没有 source facts，`implementationContract` 会使用视觉证据 fallback，并在 warnings/manual questions 中标出语义不足。
 
 ## Hybrid 工作流
 
@@ -158,8 +171,7 @@ MCP arguments：
 }
 ```
 
-Hybrid 输出会在 `page-canonical.json` 中记录 field priority、provenance 和 mismatches。
-同时具备 source + target facts 时，Hybrid 也会默认输出 `migration-spec.md`；它是兼容/过渡产物，最终实现契约仍以 `ui-build-plan.json` 为准。
+Hybrid 输出会在 `page-canonical.json` 中记录 field priority、provenance 和 mismatches。它通常是实现前最完整的输入组合。
 
 ## Screenshot / OCR 工作流
 
@@ -210,6 +222,7 @@ Validation 会报告：
 - changed Dart files 中的 placeholder text、TODO markers、hard-coded colors、hard-coded font sizes、local shadows、network images 和 navigation risk markers。
 - 传入 `pageId` 时来自 `ui-build-plan.json` 的 validation hints。
 - 基于 `targetConventions` 和 `implementationContract` 的架构契约偏离，例如引入未被 target profile 证明的新 state/routing/i18n/theme 模式、缺失预期文件，或生成 runtime DOM section 风格文件。
+- 子 Widget 是否违反 `widgetContracts`，例如不该读取整页状态却直接依赖 controller/cubit/provider。
 
 如果 target architecture profile 是 `unknown`，validation 应输出 warnings/manual questions，不应把未知模式当成硬错误。
 
@@ -218,12 +231,11 @@ Validation 会报告：
 1. 调用 `reconstruct_page_context`。
 2. 阅读 `ui-build-plan.json`，获取唯一机器契约，重点看 `targetConventions`、`implementationContract`、`sourceSemantics`、`visualPlan`、mappings、risks 和 validation hints。
 3. 阅读 `ui-build-review.md`，用中文 human brief 快速核对 contract、视觉计划、字体锁定和风险。
-4. 有 `migration-spec.md` 时只把它当兼容参考；如果它与 plan 冲突，以 `ui-build-plan.json` 为准。
-5. target pattern 不明确时调用 `read_target_conventions` 或 `find_target_examples`。
-6. 在 target Flutter repository 中实现。
-7. 运行目标应用的 format、static analysis 和 tests。
-8. 调用 `validate_ui_build`。
-9. 汇报 changed files、validation status、warnings 和 manual confirmations。
+4. target pattern 不明确时调用 `read_target_conventions` 或 `find_target_examples`。
+5. 在 target Flutter repository 中实现。
+6. 运行目标应用的 format、static analysis 和 tests。
+7. 调用 `validate_ui_build`。
+8. 汇报 changed files、validation status、warnings 和 manual confirmations。
 
 实现时优先遵守 `ui-build-plan.json` 的结构化约束。`implementationContract.fileTree/widgetTree/widgetContracts` 决定工程拆分，`visualPlan` 和 mappings 决定可见布局与样式证据。Typography mapping 如果带 `lockToken=true`，说明 source token 和 target text style token 已 exact 对齐，不要再手动覆盖字号、行高、字重或字体族。
 
@@ -237,7 +249,8 @@ Validation 会报告：
 screenshot region or text anchor
   -> page-debug-index section
   -> page-canonical node ids and style facts
-  -> ui-build-plan theme/component/widget mappings
+  -> ui-build-plan visualPlan/theme/component/widget mappings
+  -> implementationContract widget tree
   -> target Flutter implementation
   -> validation result
 ```

@@ -1,26 +1,27 @@
 # 架构说明
 
-ProtoBridge 采用 capability-first 架构。CLI、MCP 和 core API 是不同入口；source 分析、runtime capture、target inspect、planning、review 和 validation 都沉淀为共享 core capabilities。
+ProtoBridge 采用 capability-first 架构。CLI、MCP 和 core API 只是入口；真正的产品逻辑沉淀在 core capabilities、source adapters、target adapters、planning 和 validation 中。
 
 ```text
 CLI / MCP / Core API
   -> capability orchestration
-  -> unified page context
-  -> implementation artifacts
-  -> target implementation
-  -> validation
+  -> canonical evidence model
+  -> UI implementation contract
+  -> human review projection
+  -> target validation
 ```
 
-## 核心术语
+## 核心设计
 
-| 术语 | 定义 |
+ProtoBridge 不做一对一代码翻译。它做的是证据归一和契约生成。
+
+| 设计点 | 含义 |
 | --- | --- |
-| Mode | 入口形态。CLI 是终端入口，MCP 是 agent/tool 入口，core 是嵌入式库入口。 |
-| Workflow | 面向输入组合的预设能力编排，例如 source-only、runtime-only、hybrid、screenshot/OCR 或 validation。 |
-| Capability | 有稳定职责和数据边界的可复用 core 操作。 |
-| Artifact | 给人、agent 或工具继续消费的持久化输出。 |
-
-这组边界让入口保持简单，同时避免每个入口都被锁死在一条固定 workflow 上。
+| Capability-first | source、runtime、target、plan、review、validate 都是可复用能力。 |
+| Evidence preserving | canonical 保留 provenance、mismatches 和 manual confirmations。 |
+| Contract centered | `ui-build-plan.json` 是唯一机器契约。 |
+| Target-grounded | 工程表达来自 target repo 扫描，不来自 ProtoBridge 默认偏好。 |
+| Visual separated | runtime/screenshot 只负责视觉事实，不决定架构拆分。 |
 
 ## 包边界
 
@@ -35,86 +36,86 @@ packages/
 - `packages/cli`：命令解析、config 读取、终端输出，以及调用 core。
 - `packages/mcp-server`：MCP stdio 协议、tools、resources、prompts、session state，以及调用 core。
 
-入口包负责输入输出适配。产品逻辑应放在 `packages/core`。
+入口包只做输入输出适配。共享行为应进入 `packages/core`。
 
-## 原型平台与客户端对应关系
+## Capability 数据流
 
-ProtoBridge 的核心假设之一是：交互原型平台不是一次性 demo，而是产品、UI 和客户端共同认可的工程化输入。
+| Capability | 输入 | 输出 |
+| --- | --- | --- |
+| `source.analyze` | source root、route、Vue SFC path | source facts：页面身份、sections、state space、interactions、assets、style intent。 |
+| `runtime.capture` | URL、viewport | runtime facts：visible nodes、bbox、computed style、assets、interactions、screenshots。 |
+| `screenshot.attach` | screenshot path、OCR text/boxes | screenshot facts 和 OCR evidence。 |
+| `target.inspect` | Flutter target root | target facts：modules、routes、theme、components、assets、examples、architecture profile evidence。 |
+| `page.merge` | source/runtime/screenshot/target facts | `page-canonical.json`、`page-debug-index.json`。 |
+| `ui.plan` | canonical page、target facts、source-aware implementation draft | `ui-build-plan.json`。 |
+| `ui.review` | UI plan | `ui-build-review.md`。 |
+| `ui.validate` | target diff、plan expectations | validation result。 |
 
-在理想模式下：
+Source-aware planner、migration planner 和 widget blueprint 是 `implementationContract` 的内部语义来源，用于生成 source semantics、文件/Widget 拆分和状态边界建议。
 
-- 原型组件与客户端组件存在明确对应关系。
-- 原型主题 token 与客户端 theme token 存在明确对应关系。
-- 原型页面结构、状态和交互能通过源码或运行时证据被采集。
-- 客户端 target repo 中的 modules、routes、components、theme、i18n 和 assets 是落地实现的约束。
+## 契约模型
 
-因此，`source.analyze` 的价值不只是读取源码文件，而是提取原型平台里的结构、状态、组件和 token 意图；`target.inspect` 和 `ui.plan` 则负责把这些意图映射到客户端工程规范中。
-
-## Capability 分层
+`ui-build-plan.json` 是实现契约，核心结构是：
 
 ```text
-source.analyze
-runtime.capture
-screenshot.attach
-target.inspect
-page.merge
-ui.plan
-ui.review
-ui.validate
+ui-build-plan.json
+├── targetConventions
+│   └── architectureProfile
+├── implementationContract
+│   ├── sourceSemantics
+│   ├── fileTree
+│   ├── widgetTree
+│   ├── stateStrategy
+│   ├── controllerBoundaries
+│   ├── widgetContracts
+│   └── targetBindings
+├── visualPlan
+├── componentMappings
+├── themeMappings
+├── i18nPlan
+├── interactionPlan
+└── validationHints
 ```
 
-| Capability | 读取 | 写入 |
-| --- | --- | --- |
-| `source.analyze` | source root、route、Vue SFC path | source facts：页面身份、sections、state space、interactions、assets、style intent |
-| `runtime.capture` | running URL、viewport | runtime facts：visible nodes、bbox、computed style、assets、interactions、screenshots |
-| `screenshot.attach` | screenshot path、OCR text/boxes | screenshot facts 和 OCR evidence |
-| `target.inspect` | Flutter target root | target facts：modules、routes、theme、components、assets、examples |
-| `page.merge` | source/runtime/screenshot/target facts | `page-canonical.json`、`page-debug-index.json` |
-| `ui.plan` | canonical page、target facts | `ui-build-plan.json` |
-| `ui.review` | canonical page、UI plan | `ui-build-review.md` |
-| `ui.validate` | target diff、plan expectations | validation result |
+冲突规则：
 
-`ui-build-plan.json` 是唯一机器契约。它把 source semantics 收进 `implementationContract.sourceSemantics`，把 target repo 扫描结果收进 `targetConventions`，把 runtime/screenshot 视觉事实收进 `visualPlan`。`ui-build-review.md` 只从 plan 渲染成人类可读 brief。
+1. Source semantics 负责逻辑架构：业务区块、状态意图、Widget contract、哪些不要直译。
+2. Target conventions 负责工程表达：当前 target repo 到底使用什么 state/routing/i18n/theme/component/file organization 模式。
+3. Runtime/screenshot 负责视觉事实：bbox、可见文案、section 顺序、computed style 和截图证据。
+4. Normalizer 只把抽象角色绑定到 target profile 已识别的模式；target profile unknown 时保留抽象建议并输出 warnings/manual questions。
 
-`migration-spec.md` 是 workflow 在 source + target facts 同时存在时导出的兼容/过渡 projection。它不是独立 capability，也不是最终实现裁判；若与 `ui-build-plan.json` 冲突，以 plan 的 `targetConventions` 和 `implementationContract` 为准。
+## Target conventions
 
-Capability 的粒度小于完整 workflow。CLI 命令或 MCP tool 可以根据可用输入组合它们。
+Target detector 读取 target root 中的 `pubspec.yaml` 和 Dart 文件，结合相似示例、模块结构和符号使用，归纳 architecture profile。
 
-## 字段级优先级
+字段形状固定，但字段值必须来自证据：
 
-ProtoBridge 不把某一类证据源整体视为绝对优先，而是按字段类型决定优先级：
+- `state.pattern`
+- `routing.pattern`
+- `i18n.pattern`
+- `theme.patterns`
+- `components.detectedSymbols`
+- `fileOrganization.pattern`
 
-- Source 更适合表达结构、语义、状态空间、交互意图和设计意图。
-- Runtime 更适合表达实际可见性、bbox、computed style、active/open state 和可见文案。
-- Screenshot/OCR 更适合表达最终视觉对照和补充文字证据。
-- Target repository conventions 更适合表达文件落点、可复用组件、theme tokens、i18n、assets 和 route integration。
+GetX、flutter_bloc、Riverpod、Provider、Navigator、go_router、context.t、AppLocalizations、themeService、context.pbColors、CommonAppBar 等都不是默认值。它们只有被扫描到时才能影响 contract。
 
-证据冲突时，canonical artifact 会保留 provenance，并暴露 mismatches 或 manual confirmations，而不是隐藏冲突。
+README/doc scanning 是后续增强方向；当前主证据来自 `pubspec.yaml`、`lib/**/*.dart`、相似示例和模块上下文。
 
-## 产物
+## Projection artifacts
 
-Canonical 产物：
+默认 projection 只有两类：
 
-- `page-canonical.json`：完整页面事实模型，包含 facts、merge metadata、provenance、trace、warnings、nodes、sections、screenshots 和 artifact references。
+- `ui-build-plan.json`：机器契约。
+- `ui-build-review.md`：从 plan 渲染的人类 brief。
 
-Projection 产物：
-
-- `page-debug-index.json`：面向调试的紧凑索引。
-- `ui-build-plan.json`：唯一机器可读 target implementation contract。
-- `ui-build-review.md`：从 plan 渲染的人类可读 implementation brief。
-- `migration-spec.md`：source + target facts 可用时默认生成的 legacy/compat brief。
-- `screenshots/`：runtime visual evidence。
-- validation result：CLI/MCP/core validation caller 返回的结构化结果。
-
-Canonical artifact 是完整证据真相源；`ui-build-plan.json` 是实现机器契约；其他 projection artifacts 针对具体读者和任务优化。
+`page-canonical.json` 是完整证据真相源；`page-debug-index.json` 是调试索引；`ui-build-plan.json` 是实现机器契约；`ui-build-review.md` 是人类阅读视图。
 
 ## Core 目录
 
 ```text
 packages/core/src/
 ├── capabilities/
-├── workflows/
-│   └── capability-first/
+├── workflows/capability-first/
 ├── source/
 ├── snapshot/
 ├── target/
@@ -129,12 +130,11 @@ packages/core/src/
 - `snapshot`：browser capture、OCR attachment 和 evidence enrichment。
 - `target`：Flutter conventions、examples、planning 和 validation。
 - `artifacts`：JSON 和 Markdown 写出。
-- `shared`：跨层工具。
 - `types`：共享数据契约。
 
 ## 公开 API
 
-推荐使用的 package subpaths：
+推荐 package subpaths：
 
 - `@proto-bridge/core/workflows/capability-first`
 - `@proto-bridge/core/capabilities`
@@ -143,5 +143,3 @@ packages/core/src/
 - `@proto-bridge/core/snapshot`
 - `@proto-bridge/core/artifacts`
 - `@proto-bridge/core/shared`
-
-需要标准编排时使用 workflow API；需要自定义编排时直接使用 capability APIs。

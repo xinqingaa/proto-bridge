@@ -179,8 +179,7 @@ output/<page>-<timestamp>/
 ├── page-debug-index.json
 ├── ui-build-plan.json
 ├── ui-build-review.md
-├── migration-spec.md
 └── screenshots/
 ```
 
-`ui-build-plan.json` 是实现侧唯一机器契约，包含 `targetConventions`、`implementationContract` 和 `visualPlan`。`ui-build-review.md` 是从 plan 渲染的人类可读 brief。`migration-spec.md` 是 source + target facts 可用时的兼容/过渡产物；如果它与 plan 冲突，以 plan 为准。
+`ui-build-plan.json` 是实现侧唯一机器契约，包含 `targetConventions`、`implementationContract` 和 `visualPlan`。`ui-build-review.md` 是从 plan 渲染的人类可读 brief。

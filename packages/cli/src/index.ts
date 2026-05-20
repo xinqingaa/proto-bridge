@@ -51,7 +51,6 @@ const ALLOWED_FLAGS = new Set([
   'help',
   'output',
   'route',
-  'source-brief',
   'source-adapter',
   'source-root',
   'target-adapter',
@@ -60,7 +59,7 @@ const ALLOWED_FLAGS = new Set([
   'url',
   'vue',
 ]);
-const BOOLEAN_FLAGS = new Set(['capture', 'help', 'source-brief', 'trace']);
+const BOOLEAN_FLAGS = new Set(['capture', 'help', 'trace']);
 
 async function main(): Promise<void> {
   const parsed = parseArgs(process.argv.slice(2));
@@ -101,7 +100,6 @@ async function buildGenerateInput(values: Record<string, string | boolean>): Pro
     vue: readString(values, 'vue'),
     output: readString(values, 'output'),
     capture: values.capture === true ? true : undefined,
-    sourceBrief: values['source-brief'] === true ? true : undefined,
     trace: values.trace === true,
   };
 
@@ -270,7 +268,7 @@ function readString(values: Record<string, string | boolean>, key: string): stri
 function unknownFlagMessage(key: string): string {
   return [
     `Unknown flag: --${key}`,
-    'Supported flags: --config, --url, --route, --vue, --output, --capture, --source-brief, --trace, --source-root, --target-root.',
+    'Supported flags: --config, --url, --route, --vue, --output, --capture, --trace, --source-root, --target-root.',
     'Example: npx @proto-bridge/cli generate --url "http://localhost:5173/#/prototype/etf-detail"',
   ].join('\n');
 }
@@ -340,7 +338,6 @@ function printSuccess(
   kv('debug index', result.files.pageDebugIndex);
   if (result.files.uiBuildPlan) kv('ui build plan', result.files.uiBuildPlan);
   if (result.files.uiBuildReview) kv('ui build review', result.files.uiBuildReview);
-  if (result.files.migrationSpec) kv('source brief', result.files.migrationSpec);
   for (const screenshot of result.files.screenshots) kv('screenshot', screenshot);
   if (warnings > 0) warn(`${warnings} warning${warnings === 1 ? '' : 's'} found. Review ui-build-review.md before implementation.`);
 }
@@ -406,14 +403,12 @@ Options:
   --target-adapter <id>       Target adapter, defaults to flutter-app
   --output <dir>              Override the generated output directory
   --capture                   Run Playwright screenshot and DOM capture
-  --source-brief              Explicitly enable migration-spec.md when source and target facts are available
   --trace                     Print temporary capability orchestration trace
 
 Artifacts:
   Always writes page-canonical.json and page-debug-index.json.
   With target config or --target-root, writes ui-build-plan.json and ui-build-review.md.
   With source config or --source-root, URL-derived route enables source-aware evidence.
-  With source and target facts, writes migration-spec.md alongside ui-build-review.md by default.
 `;
 }
 

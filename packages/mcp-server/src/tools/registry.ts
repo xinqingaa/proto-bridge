@@ -63,7 +63,7 @@ const toolDefinitions: JsonValue[] = [
     title: '重建页面统一上下文',
     description: [
       'Capability-first UI 重构入口。根据输入自动组合 source.analyze、runtime.capture、target.inspect、page.merge、ui.plan 和 ui.review。',
-      '`ui-build-plan.json` 是机器契约；`ui-build-review.md` 是 plan 的人类可读投影；有源码 + target 时 source semantics 写入 `implementationContract.sourceSemantics`，同时默认生成兼容保留的 `migration-spec.md`。',
+      '`ui-build-plan.json` 是机器契约；`ui-build-review.md` 是 plan 的人类可读投影；有源码 + target 时 source semantics 写入 `implementationContract.sourceSemantics`。',
       '无源码但有 URL 时退化为 URL/runtime-first，并仍产出统一 `page-canonical.json`、`page-debug-index.json`、`ui-build-plan.json`、`ui-build-review.md` 和截图。',
       '安全边界：只读取 source/target/URL 并写 artifact，不修改目标 Flutter 应用。',
     ].join('\n'),
@@ -90,7 +90,6 @@ const toolDefinitions: JsonValue[] = [
         saveArtifacts: { type: 'boolean', description: '是否保存截图 artifact。默认 true。' },
         buildPlan: { type: 'boolean', description: '是否生成 `ui-build-plan.json`。默认 true。' },
         buildReview: { type: 'boolean', description: '是否生成 `ui-build-review.md`。默认 true。' },
-        sourceBrief: { type: 'boolean', description: '有源码和 target 时是否生成兼容保留的 `migration-spec.md`。source semantics 始终以 `ui-build-plan.json#/implementationContract/sourceSemantics` 为准；默认 true，传 false 可关闭。' },
         screenshotPath: { type: 'string', description: '可选外部截图路径。用于无 URL 或补充 OCR 的 screenshot.attach。' },
         ocrText: { ...stringArraySchema, description: '可选 OCR 文本，写入 screenshotFacts 并参与 review。' },
         externalText: { ...stringArraySchema, description: 'ocrText 的兼容别名。P5 完成后会删除。' },

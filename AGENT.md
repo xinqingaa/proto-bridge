@@ -1,15 +1,15 @@
 # ProtoBridge Agent 工作指南
 
-本文档面向在本仓库协作或使用 ProtoBridge 处理目标应用的 AI coding agent 和开发者。
+本文档面向在本仓库协作或使用 ProtoBridge 处理目标 Flutter 应用的 AI coding agent 和开发者。
 
-ProtoBridge 是团队把“PRD + Figma 静态稿 + 人工 UI 走查”升级为“交互原型 + 源码证据 + AI 编排 + 可验证产物”的上下文桥接工具。它负责准备证据、实现计划、review 文档和验证结果；它不替代真正修改目标 Flutter 应用的 coding agent。
+ProtoBridge 是团队把“PRD + Figma 静态稿 + 人工 UI 走查”升级为“交互原型 + 源码证据 + AI 编排 + 可验证产物”的上下文桥接工具。它负责准备证据、实现契约、review 文档和验证结果；它不替代真正修改目标 Flutter 应用的 coding agent。
 
 ## 操作模型
 
 ```text
 可用输入
   -> 重建页面上下文
-  -> 阅读产物
+  -> 阅读 ui-build-plan.json
   -> 必要时检查目标工程示例
   -> 在 target repo 中实现
   -> 验证目标变更
@@ -27,7 +27,6 @@ ProtoBridge 是团队把“PRD + Figma 静态稿 + 人工 UI 走查”升级为�
 - `page-debug-index.json`
 - `ui-build-plan.json`
 - `ui-build-review.md`
-- `migration-spec.md`
 - `screenshots/full-page.png`
 
 ## 实现前先判断输入
@@ -88,9 +87,30 @@ hybrid MCP 示例：
 4. `page-canonical.json`：完整 evidence、provenance、merge rules、mismatches 和 trace。
 5. `screenshots/`：runtime capture 存在时的视觉参考。
 
-`migration-spec.md` 是兼容/过渡产物，不是最终实现裁判。source-aware 的业务区块、状态意图、Widget contract 和禁止直译建议已经进入 `implementationContract.sourceSemantics`；如果 `migration-spec.md` 与 `ui-build-plan.json` 冲突，以 `ui-build-plan.json` 的 target conventions 和 implementation contract 为准。
-
 实现时不得引入 `targetConventions` 没有证据支持的新 state、routing、i18n 或 theme 框架。GetX、flutter_bloc、Riverpod、Provider、Navigator、go_router、context.t、AppLocalizations、themeService、context.pbColors、CommonAppBar 等都只能作为 target 扫描证据出现，不能当作 ProtoBridge 默认偏好。扫不到时保留抽象建议，并写入 warnings/manual questions。
+
+## 证据规则
+
+- Source 最适合表达结构、语义区块、状态空间、交互意图、生命周期意图和设计意图。
+- Runtime 最适合表达实际可见性、bbox、computed style、active/open state 和可见文案。
+- Screenshot/OCR 最适合表达视觉对照和补充文字证据。
+- Target repository conventions 最适合表达文件落点、组件复用、routes、theme、i18n 和 assets。
+
+在本团队场景中，原型平台与客户端的组件、主题和布局规范应尽量一一对应。Source evidence 的价值不只是“看源码”，而是提取交互原型平台中的结构、状态、组件意图和 token intent；target evidence 则用于把这些意图映射到客户端工程可复用能力。
+
+如果证据缺失或互相冲突，要记录 risk 或 manual confirmation。不要编造隐藏 API、权限、埋点、风控、业务流或数据归属。
+
+## 冲突处理
+
+实现时按下面规则裁决：
+
+| 冲突 | 裁决 |
+| --- | --- |
+| source semantics 与 target conventions 冲突 | 业务意图看 source semantics；工程表达看 target conventions。 |
+| runtime section 与 implementation contract 冲突 | runtime 只作为视觉事实，不决定文件拆分或状态边界。 |
+| target profile unknown | 不猜框架，不引入新模式，输出 warnings/manual questions。 |
+| review 与 plan 理解不一致 | 以 `ui-build-plan.json` 为机器契约。 |
+| target 高置信度示例与自动推断不一致 | 优先查目标示例，必要时调整实现并报告确认项。 |
 
 ## 样式 Token 约束
 
@@ -104,17 +124,6 @@ Source 中明确出现 typography mixin，且 target 扫描或映射能证明对
 ```
 
 实现 Flutter 时必须直接使用锁定的 target text style token。除非 `ui-build-plan.json` 明确给出来源 CSS 的额外覆盖证据，不要再覆盖 `fontSize`、`height`、`fontWeight` 或 `fontFamily`；颜色、`maxLines`、`overflow` 这类非 typography token 属性可以按 plan 补充。
-
-## 证据规则
-
-- Source 最适合表达结构、语义区块、状态空间、交互意图和设计意图。
-- Runtime 最适合表达实际可见性、bbox、computed style、active/open state 和可见文案。
-- Screenshot/OCR 最适合表达视觉对照和补充文字证据。
-- Target repository conventions 最适合表达文件落点、组件复用、routes、theme、i18n 和 assets。
-
-在本团队场景中，原型平台与客户端的组件、主题和布局规范应尽量一一对应。Source evidence 的价值不只是“看源码”，而是提取交互原型平台中的结构、状态、组件意图和 token intent；target evidence 则用于把这些意图映射到客户端工程可复用能力。
-
-如果证据缺失或互相冲突，要记录 risk 或 manual confirmation。不要编造隐藏 API、权限、埋点、风控、业务流或数据归属。
 
 ## 目标应用实现流程
 
@@ -157,6 +166,7 @@ Validation 会检查：
 - 是否引入了 `targetConventions` 没有证据支持的新 state、routing、i18n 或 theme 模式。
 - 是否偏离高置信度识别出的 architecture profile。
 - 是否额外生成 runtime DOM section 风格文件导致 architecture drift。
+- 子 Widget 是否违反 `widgetContracts`，例如不该读取整页状态却直接依赖 controller/cubit/provider。
 
 Validation 是 review 辅助，不等于证明视觉和业务完全正确。
 
@@ -199,12 +209,14 @@ Validation 是 review 辅助，不等于证明视觉和业务完全正确。
 
 不要提交这些生成内容：
 
-- `examples/vue3-to-flutter/output/`
-- `examples/vue3-to-flutter/target-flutter/lib/main_proto.dart`
-- `examples/vue3-to-flutter/target-flutter/lib/app/app_proto.dart`
-- `examples/vue3-to-flutter/target-flutter/lib/app/routes/app_pages_proto.dart`
-- `examples/vue3-to-flutter/target-flutter/lib/app/modules/**/_proto/`
-- Flutter `build/`、`.dart_tool/` 和本地设备配置。
+```text
+examples/vue3-to-flutter/output/
+examples/vue3-to-flutter/target-flutter/lib/main_proto.dart
+examples/vue3-to-flutter/target-flutter/lib/app/app_proto.dart
+examples/vue3-to-flutter/target-flutter/lib/app/routes/app_pages_proto.dart
+examples/vue3-to-flutter/target-flutter/lib/app/modules/**/_proto/
+Flutter build/、.dart_tool/ 和本地设备配置
+```
 
 ## 文档规则
 

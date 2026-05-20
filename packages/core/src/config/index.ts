@@ -33,7 +33,6 @@ export type ProtoBridgeConfig = {
   target?: ProtoBridgeProjectConfig | undefined;
   runtime?: ProtoBridgeRuntimeConfig | undefined;
   output?: ProtoBridgeOutputConfig | undefined;
-  sourceBrief?: boolean | undefined;
 };
 
 export type ProtoBridgeInputOverrides = {
@@ -47,7 +46,6 @@ export type ProtoBridgeInputOverrides = {
   output?: string | undefined;
   capture?: boolean | undefined;
   viewport?: ProtoBridgeViewport | undefined;
-  sourceBrief?: boolean | undefined;
   buildPlan?: boolean | undefined;
   buildReview?: boolean | undefined;
   saveArtifacts?: boolean | undefined;
@@ -85,7 +83,6 @@ const TOP_LEVEL_KEYS = new Set([
   'target',
   'runtime',
   'output',
-  'sourceBrief',
 ]);
 
 export async function readProtoBridgeConfigFile(
@@ -127,7 +124,6 @@ export function parseProtoBridgeConfig(text: string, configPath = 'proto-bridge.
     target: parseProjectConfig(parsed.target, 'target', configPath),
     runtime: parseRuntimeConfig(parsed.runtime, configPath),
     output: parseOutputConfig(parsed.output, configPath),
-    sourceBrief: parseOptionalBoolean(parsed.sourceBrief, 'sourceBrief', configPath),
   };
 }
 
@@ -177,7 +173,6 @@ export function resolveProtoBridgeInput(options: ResolveProtoBridgeInputOptions)
       targetModule: overrides.targetModule,
       buildPlan: overrides.buildPlan ?? Boolean(target),
       buildReview: overrides.buildReview ?? Boolean(target),
-      sourceBrief: overrides.sourceBrief ?? config?.sourceBrief,
       trace: overrides.trace ?? false,
     },
     page,

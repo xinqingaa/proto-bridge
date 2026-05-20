@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const DEFAULT_URL = 'http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1';
-const BOOLEAN_FLAGS = new Set(['source-brief']);
+const BOOLEAN_FLAGS = new Set();
 const CASES = ['hybrid', 'target-url', 'url-only'];
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const mode = readMode(process.argv[2]);
@@ -16,7 +16,6 @@ const url = readString(args, 'url') ?? DEFAULT_URL;
 const sourceRoot = path.resolve(repoRoot, readString(args, 'source-root') ?? '../TradeAppPrd');
 const targetRoot = path.resolve(repoRoot, readString(args, 'target-root') ?? '../youfi');
 const outputRoot = path.resolve(repoRoot, readString(args, 'output-root') ?? './output/test-e2e');
-const sourceBrief = readBooleanFlag(args, 'source-brief');
 const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
 
 const ICON = {
@@ -80,13 +79,10 @@ async function runCliCase(caseName) {
   } else if (caseName === 'target-url') {
     commandArgs.push('--target-root', targetRoot);
   }
-  if (sourceBrief) commandArgs.push('--source-brief');
-
   await run('node', commandArgs, { cwd: repoRoot });
   const files = expectedFiles(outDir);
   files.screenshots = await screenshotsFromCanonical(files.pageCanonical);
   await requireArtifacts(files, expectedContract(caseName));
-  await requireSourceBriefState(files, caseName);
   ok(`CLI ${caseName} test passed.`);
   return { output: outDir, files: compactFiles(files, expectedContract(caseName)) };
 }
@@ -109,14 +105,12 @@ async function runMcpCase(caseName) {
         output: outDir,
         viewport: { width: 390, height: 844, deviceScaleFactor: 1 },
         saveArtifacts: true,
-        sourceBrief,
         trace: true,
       },
     }));
     const pageId = requireString(reconstruct.pageId, 'reconstruct.pageId');
     const files = filesFromToolResult(reconstruct);
     await requireArtifacts(files, expectedContract(caseName));
-    await requireSourceBriefState(files, caseName);
     if (!reconstruct.summary?.trace) throw new Error('MCP trace=true should return summary.trace.');
 
     if (caseName !== 'url-only') {
@@ -191,6 +185,9 @@ async function requireArtifacts(files, contract) {
     const plan = JSON.parse(await readFile(files.uiBuildPlan, 'utf8'));
     if (!Array.isArray(plan.fileTree) || plan.fileTree.length === 0) throw new Error('ui-build-plan.json must include fileTree.');
     if (!Array.isArray(plan.widgetTree) || plan.widgetTree.length === 0) throw new Error('ui-build-plan.json must include widgetTree.');
+    if (!plan.implementationContract) throw new Error('ui-build-plan.json must include implementationContract.');
+    if (!plan.targetConventions?.architectureProfile) throw new Error('ui-build-plan.json must include targetConventions.architectureProfile.');
+    if (!plan.visualPlan) throw new Error('ui-build-plan.json must include visualPlan.');
   } else {
     await requireAbsent(files.uiBuildPlan);
   }
@@ -198,21 +195,15 @@ async function requireArtifacts(files, contract) {
   if (contract.requireReview) {
     await requireFile(files.uiBuildReview);
     const review = await readFile(files.uiBuildReview, 'utf8');
-    if (!review.includes('## 能力上下文')) throw new Error('ui-build-review.md must include 能力上下文.');
-    if (contract.requireSourceFacts && !review.includes('## 有源码实现交接')) throw new Error('source review must include 有源码实现交接.');
+    if (!review.includes('## 契约权威')) throw new Error('ui-build-review.md must include 契约权威.');
+    if (!review.includes('## 实现契约')) throw new Error('ui-build-review.md must include 实现契约.');
+    if (contract.requireSourceFacts && !review.includes('## 来源语义')) throw new Error('source review must include 来源语义.');
   } else {
     await requireAbsent(files.uiBuildReview);
   }
 
   await Promise.all(files.screenshots.map((screenshot) => requireFile(String(screenshot))));
   await requireAbsent(path.join(path.dirname(files.pageCanonical), 'migration-context.json'));
-}
-
-async function requireSourceBriefState(files, caseName) {
-  if (caseName === 'hybrid') {
-    await requireFile(files.migrationSpec);
-    return;
-  }
   await requireAbsent(files.migrationSpec);
 }
 
@@ -291,7 +282,7 @@ function filesFromToolResult(reconstruct) {
     pageDebugIndex: requireString(reconstruct.files?.pageDebugIndex, 'reconstruct.files.pageDebugIndex'),
     uiBuildPlan: typeof reconstruct.files?.uiBuildPlan === 'string' ? reconstruct.files.uiBuildPlan : path.join(path.dirname(String(reconstruct.files?.pageCanonical)), 'ui-build-plan.json'),
     uiBuildReview: typeof reconstruct.files?.uiBuildReview === 'string' ? reconstruct.files.uiBuildReview : path.join(path.dirname(String(reconstruct.files?.pageCanonical)), 'ui-build-review.md'),
-    migrationSpec: typeof reconstruct.files?.migrationSpec === 'string' ? reconstruct.files.migrationSpec : path.join(path.dirname(String(reconstruct.files?.pageCanonical)), 'migration-spec.md'),
+    migrationSpec: path.join(path.dirname(String(reconstruct.files?.pageCanonical)), 'migration-spec.md'),
     screenshots: Array.isArray(reconstruct.files?.screenshots) ? reconstruct.files.screenshots.map(String) : [],
   };
 }
@@ -363,7 +354,7 @@ function parseToolJson(result) {
 function compactFiles(files, contract) {
   return Object.fromEntries(Object.entries(files).filter(([key, value]) => {
     if (value === undefined) return false;
-    if (key === 'migrationSpec' && !value) return false;
+    if (key === 'migrationSpec') return false;
     if ((key === 'uiBuildPlan' || key === 'uiBuildReview') && !contract.requirePlan) return false;
     return true;
   }));
@@ -402,10 +393,6 @@ function parseArgs(tokens) {
 function readString(values, key) {
   const value = values[key];
   return typeof value === 'string' && value.length > 0 ? value : undefined;
-}
-
-function readBooleanFlag(values, key) {
-  return values[key] === true || values[key] === 'true' || values[key] === '1';
 }
 
 function requireString(value, label) {

@@ -3,7 +3,7 @@ import type {
   CapturePageCanonicalResult,
   OcrScreenshotInput,
   OcrScreenshotResult,
-  GenerateMigrationSpecInput,
+  AdapterProjectConfig,
   PageCanonical,
   PageCapabilityName,
   UiBuildPlan,
@@ -20,7 +20,11 @@ export type CapabilityDescriptor = {
   writes: string[];
 };
 
-export type SourceAnalyzeCapabilityInput = Pick<GenerateMigrationSpecInput, 'source' | 'route' | 'vue'>;
+export type SourceAnalyzeCapabilityInput = {
+  source: AdapterProjectConfig;
+  route?: string | undefined;
+  vue?: string | undefined;
+};
 
 export type SourceAnalyzeCapabilityResult = {
   capability: 'source.analyze';
@@ -42,7 +46,7 @@ export type ScreenshotAttachCapabilityResult = OcrScreenshotResult & {
 };
 
 export type TargetInspectCapabilityInput = {
-  target: GenerateMigrationSpecInput['target'];
+  target: AdapterProjectConfig;
   prototypeModule?: string | undefined;
   screenId?: string | undefined;
   route?: string | undefined;

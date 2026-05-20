@@ -34,7 +34,6 @@ export async function reconstructPageContextTool(context: ToolContext, args: Jso
       capture: readBoolean(args, 'capture'),
       viewport,
       saveArtifacts: readBoolean(args, 'saveArtifacts'),
-      sourceBrief: readBoolean(args, 'sourceBrief'),
       trace: readBoolean(args, 'trace'),
       screenshotPath: readString(args, 'screenshotPath'),
       ocrText: readStringArray(args, 'ocrText') ?? readStringArray(args, 'externalText'),

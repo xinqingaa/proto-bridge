@@ -70,7 +70,7 @@ args = [
 
 Tool arguments 会覆盖 config values。
 
-配置文件只放稳定环境信息。每次通过 tool arguments 传 URL；配置了 `source.root` 时会从 URL 推导 route 并自动补源码证据，配置了 `target.root` 时会生成 plan/review。有 source + target facts 时会默认生成兼容产物 `migration-spec.md`。
+配置文件只放稳定环境信息。每次通过 tool arguments 传 URL；配置了 `source.root` 时会从 URL 推导 route 并自动补 source semantics，配置了 `target.root` 时会生成 plan/review。
 
 ## Tools
 
@@ -110,7 +110,7 @@ Runtime-only：
 ## Agent 提示词示例
 
 ```text
-请使用 ProtoBridge 的 reconstruct_page_context 处理这个页面，先阅读 ui-build-plan.json 的 targetConventions、implementationContract 和 visualPlan，再用 ui-build-review.md 做中文核对；migration-spec.md 如存在仅作兼容参考。实现时不要引入 targetConventions 没有证据支持的新 state/routing/i18n/theme 框架。完成后调用 validate_ui_build：
+请使用 ProtoBridge 的 reconstruct_page_context 处理这个页面，先阅读 ui-build-plan.json 的 targetConventions、implementationContract 和 visualPlan，再用 ui-build-review.md 做中文核对。实现时不要引入 targetConventions 没有证据支持的新 state/routing/i18n/theme 框架。完成后调用 validate_ui_build：
 http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1
 ```
 
@@ -122,8 +122,7 @@ http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1
 ├── page-debug-index.json
 ├── ui-build-plan.json
 ├── ui-build-review.md
-├── migration-spec.md
 └── screenshots/
 ```
 
-`ui-build-plan.json` 是唯一机器契约。`ui-build-review.md` 是从 plan 渲染的人类可读 brief。`migration-spec.md` 是兼容/过渡产物；如果它与 plan 冲突，以 plan 的 `targetConventions` 和 `implementationContract` 为准。
+`ui-build-plan.json` 是唯一机器契约。`ui-build-review.md` 是从 plan 渲染的人类可读 brief。

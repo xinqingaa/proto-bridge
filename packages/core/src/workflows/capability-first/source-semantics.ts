@@ -10,12 +10,12 @@ import { classifyPagePattern } from '../../target/flutter-app/planners/page-patt
 
 const DEFAULT_TARGET_ADAPTER = 'flutter-app';
 
-export function renderSourceAwareBrief(input: {
+export function buildSourceAwareSemantics(input: {
   source: PrototypePageAnalysis;
   target: FlutterContextAnalysis;
   capture?: CaptureResult | undefined;
   targetAdapter?: string | undefined;
-}): { context: MigrationContext; markdown: string; review: SourceAwareReviewProjection } {
+}): { context: MigrationContext; review: SourceAwareReviewProjection } {
   const targetAdapter = defaultAdapterRegistry.getTarget(input.targetAdapter ?? DEFAULT_TARGET_ADAPTER);
   const tokenMap = targetAdapter.mapTokens({
     sourceCode: input.source.sourceCode,
@@ -36,7 +36,6 @@ export function renderSourceAwareBrief(input: {
   };
   return {
     context,
-    markdown: targetAdapter.renderMigrationSpec(context),
     review: buildSourceAwareReview(context),
   };
 }

@@ -52,11 +52,10 @@ console.log(validation.status);
 ├── page-debug-index.json
 ├── ui-build-plan.json
 ├── ui-build-review.md
-├── migration-spec.md
 └── screenshots/
 ```
 
-`ui-build-plan.json` 是唯一机器契约，包含 `targetConventions`、`implementationContract` 和 `visualPlan`。`ui-build-review.md` 是从 plan 渲染的人类可读 brief。`migration-spec.md` 是 source + target facts 可用时的兼容/过渡产物。
+`ui-build-plan.json` 是唯一机器契约，包含 `targetConventions`、`implementationContract` 和 `visualPlan`。`ui-build-review.md` 是从 plan 渲染的人类可读 brief。
 
 ## 公开 Subpaths
 

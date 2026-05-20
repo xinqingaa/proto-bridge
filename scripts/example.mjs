@@ -77,6 +77,7 @@ async function main() {
 
     for (const page of pages) {
       step(`Generating ${page.label} ProtoBridge output...`);
+      await rm(page.output, { recursive: true, force: true });
       await run('node', [
         cliPath,
         'generate',
@@ -86,7 +87,6 @@ async function main() {
         page.url,
         '--output',
         page.output,
-        '--source-brief',
       ], { cwd: repoRoot });
     }
 

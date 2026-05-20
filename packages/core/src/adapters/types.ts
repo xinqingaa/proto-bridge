@@ -5,7 +5,6 @@ import type {
   FlutterImplementationPlan,
   MapTokensInput,
   MigrationRecommendations,
-  MigrationContext,
   PrototypePageAnalysis,
   TokenMapResult,
   WidgetRecommendation,
@@ -59,5 +58,4 @@ export type TargetAdapter = {
     capture?: CaptureResult | undefined;
     captureSkipped: boolean;
   }): MigrationRecommendations;
-  renderMigrationSpec(context: MigrationContext): string;
 };

@@ -72,7 +72,6 @@ Options：
 - `--target-root <dir>`：可选目标工程根目录。
 - `--output <dir>`：本次运行的完整输出目录。
 - `--capture`：本次运行执行 runtime capture。
-- `--source-brief`：有 source 和 target facts 时显式开启兼容产物 `migration-spec.md` 输出；默认也会输出，可用于命令中明确表达期望。
 - `--trace`：打印 capability orchestration trace。
 
 ## 输出
@@ -83,9 +82,8 @@ output/<page>-<timestamp>/
 ├── page-debug-index.json
 ├── ui-build-plan.json
 ├── ui-build-review.md
-├── migration-spec.md
 └── screenshots/
     └── full-page.png
 ```
 
-优先阅读 `ui-build-plan.json`，它是唯一机器契约，重点看 `targetConventions`、`implementationContract`、`sourceSemantics` 和 `visualPlan`。`ui-build-review.md` 是从 plan 渲染的人类可读 brief。`migration-spec.md` 是兼容/过渡产物；如果它与 plan 冲突，以 plan 为准。深入排查时使用 `page-debug-index.json` 和 `page-canonical.json`。
+优先阅读 `ui-build-plan.json`，它是唯一机器契约，重点看 `targetConventions`、`implementationContract`、`sourceSemantics` 和 `visualPlan`。`ui-build-review.md` 是从 plan 渲染的人类可读 brief。深入排查时使用 `page-debug-index.json` 和 `page-canonical.json`。

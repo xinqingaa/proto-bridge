@@ -31,7 +31,6 @@ export type ReconstructPageContextInput = {
   targetModule?: string | undefined;
   buildPlan?: boolean | undefined;
   buildReview?: boolean | undefined;
-  sourceBrief?: boolean | undefined;
   trace?: boolean | undefined;
 };
 
@@ -54,7 +53,6 @@ export type ReconstructPageContextResult = {
     screenshots: string[];
     uiBuildPlan?: string | undefined;
     uiBuildReview?: string | undefined;
-    migrationSpec?: string | undefined;
   };
   warnings: string[];
   nextActions: string[];

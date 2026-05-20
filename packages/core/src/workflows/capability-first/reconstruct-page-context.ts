@@ -1,6 +1,6 @@
 import path from 'node:path';
-import { mkdir } from 'node:fs/promises';
-import { writeJsonFile, writeTextFile } from '../../artifacts/artifact-writer.js';
+import { mkdir, rm } from 'node:fs/promises';
+import { writeJsonFile } from '../../artifacts/artifact-writer.js';
 import {
   analyzeSourceCapability,
   attachScreenshotCapability,
@@ -11,7 +11,7 @@ import {
   reviewUiCapability,
 } from '../../capabilities/index.js';
 import type { CaptureResult, PageCapabilityName, PageOrchestrationTrace, PageOrchestrationTraceStep } from '../../types/index.js';
-import { renderSourceAwareBrief } from './source-brief.js';
+import { buildSourceAwareSemantics } from './source-semantics.js';
 import type { ReconstructPageContextInput, ReconstructPageContextResult } from './types.js';
 
 export async function reconstructPageContext(
@@ -19,6 +19,7 @@ export async function reconstructPageContext(
 ): Promise<ReconstructPageContextResult> {
   const outDir = path.resolve(input.outDir);
   await mkdir(outDir, { recursive: true });
+  await rm(path.join(outDir, 'migration-spec.md'), { force: true });
   const runtimeUrl = input.url;
   const shouldCapture = Boolean(runtimeUrl && (input.capture ?? Boolean(input.url)));
   const traceSteps: PageOrchestrationTraceStep[] = [];
@@ -101,8 +102,8 @@ export async function reconstructPageContext(
   });
   traceSteps.push(completed('page.merge', 'hybrid canonical was written'));
 
-  const sourceBrief = source && target
-    ? renderSourceAwareBrief({
+  const sourceSemantics = source && target
+    ? buildSourceAwareSemantics({
       source: source.source,
       target: target.target,
       capture: runtime ? runtimeCaptureToLegacyCapture(runtime) : undefined,
@@ -117,22 +118,12 @@ export async function reconstructPageContext(
       targetRoot: targetInput.root,
       outDir,
       targetModule: input.targetModule,
-      sourceAwareImplementationPlan: sourceBrief?.context.recommendations.implementationPlan,
-      sourceReview: sourceBrief?.review,
+      sourceAwareImplementationPlan: sourceSemantics?.context.recommendations.implementationPlan,
+      sourceReview: sourceSemantics?.review,
     }))
     : undefined;
   if (!shouldBuildPlan || !targetInput) {
     traceSteps.push(skipped('ui.plan', !shouldBuildPlan ? 'buildPlan was disabled' : 'target input was not provided'));
-  }
-
-  const shouldWriteMigrationSpec = Boolean(sourceBrief && (input.sourceBrief ?? true));
-  const migrationSpecPath = shouldWriteMigrationSpec ? path.join(outDir, 'migration-spec.md') : undefined;
-  if (migrationSpecPath && sourceBrief) {
-    await writeTextFile(migrationSpecPath, renderMigrationSpecRedirect({
-      title: sourceBrief.review.title,
-      hasPlan: Boolean(plan),
-      hasReview: Boolean(input.buildReview ?? true),
-    }));
   }
 
   const review = plan && (input.buildReview ?? true)
@@ -140,8 +131,7 @@ export async function reconstructPageContext(
       page: merge.page,
       plan: plan.plan,
       outDir,
-      sourceBriefMarkdown: sourceBrief?.markdown,
-      sourceReview: sourceBrief?.review,
+      sourceReview: sourceSemantics?.review,
     }))
     : undefined;
   if (!plan || !(input.buildReview ?? true)) {
@@ -172,7 +162,6 @@ export async function reconstructPageContext(
     ...merge.files.screenshots,
     ...(plan?.files.uiBuildPlan ? [plan.files.uiBuildPlan] : []),
     ...(review?.files.uiBuildReview ? [review.files.uiBuildReview] : []),
-    ...(migrationSpecPath ? [migrationSpecPath] : []),
   ];
   const trace = buildTrace(traceInput, traceSteps, artifacts);
   const pageWithTrace = {
@@ -213,10 +202,9 @@ export async function reconstructPageContext(
       screenshots: merge.files.screenshots,
       uiBuildPlan: plan?.files.uiBuildPlan,
       uiBuildReview: review?.files.uiBuildReview,
-      migrationSpec: migrationSpecPath,
     },
     warnings,
-    nextActions: buildNextActions(Boolean(plan), Boolean(review), Boolean(migrationSpecPath)),
+    nextActions: buildNextActions(Boolean(plan), Boolean(review)),
     trace,
   };
 }
@@ -266,46 +254,10 @@ function runtimeCaptureToLegacyCapture(runtime: NonNullable<ReconstructPageConte
   };
 }
 
-function renderMigrationSpecRedirect(input: {
-  title: string;
-  hasPlan: boolean;
-  hasReview: boolean;
-}): string {
-  return [
-    `# ${input.title} 迁移说明`,
-    '',
-    '> 本文件是兼容保留入口，不再承载最终实现契约。',
-    '',
-    'ProtoBridge 现在把 source-aware 语义、目标工程扫描结果和视觉证据统一写入 `ui-build-plan.json`：',
-    '',
-    '- 机器契约：`ui-build-plan.json#/implementationContract`',
-    '- 来源语义：`ui-build-plan.json#/implementationContract/sourceSemantics`',
-    '- 目标工程表达：`ui-build-plan.json#/targetConventions`',
-    '- 视觉证据：`ui-build-plan.json#/visualPlan`',
-    '',
-    input.hasReview
-      ? '人工审查请阅读 `ui-build-review.md`，它是 `ui-build-plan.json` 的中文投影。'
-      : '本次未生成 `ui-build-review.md`；请直接审查 `ui-build-plan.json`。',
-    '',
-    '冲突解决规则：',
-    '',
-    '1. source semantics 只负责业务区块、状态意图、交互、生命周期、资源和禁止直译项。',
-    '2. targetConventions 只负责 state/routing/i18n/theme/component/file organization 等工程表达。',
-    '3. visualPlan 只负责 bbox、section 顺序、截图、样式和可见内容证据。',
-    '4. 如果旧文档或人工描述与 `ui-build-plan.json` 冲突，以 `ui-build-plan.json` 为准。',
-    '',
-    input.hasPlan
-      ? '状态：已生成统一计划。'
-      : '状态：本次未生成 ui-build-plan.json；需要提供 targetRoot 后再生成统一计划。',
-    '',
-  ].join('\n');
-}
-
-function buildNextActions(hasPlan: boolean, hasReview: boolean, hasMigrationSpec: boolean): string[] {
+function buildNextActions(hasPlan: boolean, hasReview: boolean): string[] {
   return [
     ...(hasPlan ? ['Use ui-build-plan.json as the machine-readable implementation plan.'] : ['Provide targetRoot to generate ui-build-plan.json.']),
     ...(hasReview ? ['Use ui-build-review.md as a human-readable projection of ui-build-plan.json.'] : ['Build a UI review after generating a plan.']),
-    ...(hasMigrationSpec ? ['Treat migration-spec.md as a compatibility entry only; source semantics, target engineering expression, and visual evidence are governed by ui-build-plan.json.'] : []),
     'Resolve any manualConfirmations before implementing ambiguous source/runtime differences.',
   ];
 }
