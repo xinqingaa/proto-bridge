@@ -66,28 +66,18 @@ function renderReviewMarkdown(plan: UiBuildPlan): string {
       ]),
     ),
     '',
-    '### Widget 树',
+    '### Widget 与契约',
     '',
-    ...markdownTable(
-      ['Widget', '父级', '角色', '状态访问', '构建提示'],
-      plan.implementationContract.widgetTree.map((widget) => [
-        widget.name,
-        widget.parent ?? '页面入口',
-        widget.role,
-        stateAccessLabel(widget.stateAccess),
-        widget.buildHint,
-      ]),
-    ),
+    ...renderWidgetContractTable(plan),
     '',
     '### 状态与边界',
     '',
     ...markdownTable(
-      ['关注点', 'Owner', '建议', '证据'],
+      ['关注点', 'Owner', '建议'],
       plan.implementationContract.stateStrategy.map((strategy) => [
         strategy.concern,
         ownerLabel(strategy.owner),
         strategy.recommendation,
-        strategy.evidence ?? '',
       ]),
     ),
     '',
@@ -98,19 +88,6 @@ function renderReviewMarkdown(plan: UiBuildPlan): string {
         boundary.responsibility,
         boundary.owns.join('、') || '无',
         boundary.avoids.join('、') || '无',
-      ]),
-    ),
-    '',
-    '### Widget 契约',
-    '',
-    ...markdownTable(
-      ['Widget', '输入', '回调', '状态读取', '备注'],
-      plan.implementationContract.widgetContracts.map((contract) => [
-        contract.widget,
-        contract.inputs.join('、') || '无',
-        contract.callbacks.join('、') || '无',
-        contract.shouldReadController ? '可读取页面状态边界' : '应通过参数/回调通信',
-        contract.notes,
       ]),
     ),
     '',
@@ -174,9 +151,9 @@ function renderReviewMarkdown(plan: UiBuildPlan): string {
       ]),
     ),
     '',
-    '## 文案、资源与交互',
+    '## 文案与交互',
     '',
-    '_JSON 来源：`ui-build-plan.json#/i18nPlan`、`#/assetPlan`、`#/interactionPlan`_',
+    '_JSON 来源：`ui-build-plan.json#/i18nPlan`、`#/interactionPlan`_',
     '',
     '### 文案',
     '',
@@ -188,19 +165,6 @@ function renderReviewMarkdown(plan: UiBuildPlan): string {
         item.suggestedKey ? codeCell(item.suggestedKey) : '待定 key',
         item.text,
         item.nodeIds.slice(0, 6).join('、'),
-      ]),
-    ),
-    '',
-    '### 资源',
-    '',
-    translateRecommendation(plan.assetPlan.recommendation),
-    '',
-    ...markdownTable(
-      ['类型', '来源/节点', '建议'],
-      plan.assetPlan.assets.slice(0, 60).map((asset) => [
-        asset.kind,
-        asset.source ?? asset.nodeId ?? 'inline',
-        translateRecommendation(asset.recommendation),
       ]),
     ),
     '',
@@ -236,7 +200,10 @@ function renderReviewMarkdown(plan: UiBuildPlan): string {
     '',
     '### 校验提示',
     '',
-    ...listOrFallback(plan.validationHints.map((hint) => `- ${translateWarning(hint)}`)),
+    ...markdownTable(
+      ['类别', '提示'],
+      plan.validationHints.map((hint) => validationHintRow(hint)),
+    ),
     '',
   ].join('\n');
 }
@@ -251,23 +218,62 @@ function renderSourceSemantics(plan: UiBuildPlan): string[] {
     '',
     '### 业务区块',
     '',
-    ...listOrFallback(semantics.businessSections.slice(0, 16).map((section) =>
-      `- ${section.name}${section.parent ? ` ← ${section.parent}` : ''}：${section.role}；${section.responsibility}；输入=${section.inputs.join('、') || '无'}；回调=${section.callbacks.join('、') || '无'}`,
-    )),
+    ...markdownTable(
+      ['区块', '父级', '角色', '职责', '输入', '回调'],
+      semantics.businessSections.slice(0, 20).map((section) => [
+        section.name,
+        section.parent ?? '页面入口',
+        section.role,
+        section.responsibility,
+        section.inputs.join('、') || '无',
+        section.callbacks.join('、') || '无',
+      ]),
+    ),
     '',
     '### 状态意图',
     '',
-    ...listOrFallback(semantics.stateIntent.slice(0, 12).map((item) =>
-      `- ${item.concern}（${ownerLabel(item.owner)}）：${item.recommendation}${item.evidence ? `；证据：${item.evidence}` : ''}`,
-    )),
+    ...markdownTable(
+      ['关注点', 'Owner', '建议'],
+      semantics.stateIntent.slice(0, 16).map((item) => [
+        item.concern,
+        ownerLabel(item.owner),
+        item.recommendation,
+      ]),
+    ),
     '',
-    '### 路由/生命周期/交互意图',
+    '### 路由意图',
     '',
-    ...listOrFallback([
-      ...semantics.routeIntent.slice(0, 8).map((item) => `- 路由 ${item.action}：${[item.target, item.params].filter(Boolean).join(' / ') || '待确认'}${item.evidence ? `；证据：${item.evidence}` : ''}`),
-      ...semantics.lifecycleIntent.slice(0, 8).map((item) => `- 生命周期 ${item.hook}：${item.target ?? '待确认'}${item.evidence ? `；证据：${item.evidence}` : ''}`),
-      ...semantics.interactionIntent.slice(0, 10).map((item) => `- 交互 ${item.kind}：${item.target ?? '待确认'}${item.evidence ? `；证据：${item.evidence}` : ''}`),
-    ]),
+    ...markdownTable(
+      ['动作', '目标', '参数', '迁移意图'],
+      semantics.routeIntent.slice(0, 12).map((item) => [
+        item.action,
+        item.target ?? '待确认',
+        item.params ?? '',
+        item.evidence ?? '',
+      ]),
+    ),
+    '',
+    '### 生命周期意图',
+    '',
+    ...markdownTable(
+      ['Hook', '目标', '迁移意图'],
+      semantics.lifecycleIntent.slice(0, 12).map((item) => [
+        item.hook,
+        item.target ?? '待确认',
+        item.evidence ?? '',
+      ]),
+    ),
+    '',
+    '### 交互意图',
+    '',
+    ...markdownTable(
+      ['类型', '目标', '来源证据'],
+      semantics.interactionIntent.slice(0, 16).map((item) => [
+        item.kind,
+        item.target ?? '待确认',
+        item.evidence ?? '',
+      ]),
+    ),
     '',
     '### 禁止直译',
     '',
@@ -279,33 +285,35 @@ function renderArchitectureProfile(plan: UiBuildPlan): string[] {
   const profile = plan.targetConventions.architectureProfile;
   return [
     ...markdownTable(
-      ['维度', '模式', '置信度', '证据摘要'],
+      ['维度', '识别结果', '置信度', '来源'],
       [
-        ['状态 overall', profile.state.pattern, confidenceLabel(profile.state.confidence), profile.state.evidence.join('；')],
-        ['状态 package', profile.state.package?.pattern ?? 'unknown', confidenceLabel(profile.state.package?.confidence ?? 'low'), profile.state.package?.evidence.join('；') ?? ''],
-        ['状态 global', profile.state.global?.pattern ?? 'unknown', confidenceLabel(profile.state.global?.confidence ?? 'low'), profile.state.global?.evidence.join('；') ?? ''],
-        ['状态 page', profile.state.page?.pattern ?? 'unknown', confidenceLabel(profile.state.page?.confidence ?? 'low'), profile.state.page?.evidence.join('；') ?? ''],
-        ['路由 overall', profile.routing.pattern, confidenceLabel(profile.routing.confidence), profile.routing.evidence.join('；')],
-        ['路由注册', profile.routing.registration?.pattern ?? 'unknown', confidenceLabel(profile.routing.registration?.confidence ?? 'low'), profile.routing.registration?.evidence.join('；') ?? ''],
-        ['路由调用', profile.routing.navigation?.pattern ?? 'unknown', confidenceLabel(profile.routing.navigation?.confidence ?? 'low'), profile.routing.navigation?.evidence.join('；') ?? ''],
-        ['i18n lookup', profile.i18n.lookup?.pattern ?? profile.i18n.pattern, confidenceLabel(profile.i18n.lookup?.confidence ?? profile.i18n.confidence), profile.i18n.lookup?.evidence.join('；') ?? profile.i18n.evidence.join('；')],
-        ['主题', profile.theme.patterns.join('、') || 'unknown', confidenceLabel(profile.theme.confidence), profile.theme.evidence.join('；')],
-        ['组件', profile.components.detectedSymbols.join('、') || '未识别', confidenceLabel(profile.components.confidence), profile.components.evidence.join('；')],
-        ['文件组织', profile.fileOrganization.pattern, confidenceLabel(profile.fileOrganization.confidence), profile.fileOrganization.evidence.join('；')],
+        ['状态 overall', profile.state.pattern, confidenceLabel(profile.state.confidence), 'page/global/package evidence'],
+        ['状态 package', profile.state.package?.pattern ?? 'unknown', confidenceLabel(profile.state.package?.confidence ?? 'low'), 'pubspec.yaml'],
+        ['状态 global', profile.state.global?.pattern ?? 'unknown', confidenceLabel(profile.state.global?.confidence ?? 'low'), 'main/app/preferences Dart usage'],
+        ['状态 page', profile.state.page?.pattern ?? 'unknown', confidenceLabel(profile.state.page?.confidence ?? 'low'), 'target module / similar module Dart usage'],
+        ['路由 overall', profile.routing.pattern, confidenceLabel(profile.routing.confidence), 'route files / navigation calls'],
+        ['路由注册', profile.routing.registration?.pattern ?? 'unknown', confidenceLabel(profile.routing.registration?.confidence ?? 'low'), 'lib/app/routes/**/*.dart'],
+        ['路由调用', profile.routing.navigation?.pattern ?? 'unknown', confidenceLabel(profile.routing.navigation?.confidence ?? 'low'), 'non-generated Dart usage'],
+        ['i18n lookup', profile.i18n.lookup?.pattern ?? profile.i18n.pattern, confidenceLabel(profile.i18n.lookup?.confidence ?? profile.i18n.confidence), 'translations / Dart usage'],
+        ['主题', profile.theme.patterns.join('、') || 'unknown', confidenceLabel(profile.theme.confidence), 'module/common Dart usage'],
+        ['组件', profile.components.detectedSymbols.join('、') || '未识别', confidenceLabel(profile.components.confidence), 'common widgets / module usage'],
+        ['文件组织', profile.fileOrganization.pattern, confidenceLabel(profile.fileOrganization.confidence), 'lib/app/modules structure'],
       ],
     ),
     '',
-    '### 扫描证据样例',
+    '### 代码扫描证据样例',
+    '',
+    '当前版本证据来自 `pubspec.yaml` 和 Dart 文件扫描；README/架构文档将在后续流程优化中作为更高层级输入。',
     '',
     ...markdownTable(
       ['维度', '符号', '文件', '片段'],
       [
-        ...profile.state.examples.slice(0, 4).map((item) => evidenceRow('状态', item)),
-        ...profile.routing.examples.slice(0, 4).map((item) => evidenceRow('路由', item)),
-        ...profile.i18n.examples.slice(0, 4).map((item) => evidenceRow('i18n', item)),
-        ...profile.theme.examples.slice(0, 4).map((item) => evidenceRow('主题', item)),
-        ...profile.components.examples.slice(0, 8).map((item) => evidenceRow('组件', item)),
-        ...profile.fileOrganization.examples.slice(0, 4).map((item) => evidenceRow('文件组织', item)),
+        ...profile.state.examples.slice(0, 2).map((item) => evidenceRow('状态', item)),
+        ...profile.routing.examples.slice(0, 2).map((item) => evidenceRow('路由', item)),
+        ...profile.i18n.examples.slice(0, 2).map((item) => evidenceRow('i18n', item)),
+        ...profile.theme.examples.slice(0, 2).map((item) => evidenceRow('主题', item)),
+        ...profile.components.examples.slice(0, 3).map((item) => evidenceRow('组件', item)),
+        ...profile.fileOrganization.examples.slice(0, 1).map((item) => evidenceRow('文件组织', item)),
       ],
     ),
     '',
@@ -344,6 +352,27 @@ function renderTypographyLockTable(plan: UiBuildPlan): string[] {
   );
 }
 
+function renderWidgetContractTable(plan: UiBuildPlan): string[] {
+  const contracts = new Map(plan.implementationContract.widgetContracts.map((contract) => [contract.widget, contract]));
+  return markdownTable(
+    ['Widget', '父级', '角色', '状态访问', '输入', '回调', '构建提示'],
+    plan.implementationContract.widgetTree.map((widget) => {
+      const contract = contracts.get(widget.name);
+      return [
+        widget.name,
+        widget.parent ?? '页面入口',
+        widget.role,
+        contract?.shouldReadController
+          ? '可读取页面状态边界'
+          : stateAccessLabel(widget.stateAccess),
+        contract?.inputs.join('、') || '无',
+        contract?.callbacks.join('、') || '无',
+        widget.buildHint,
+      ];
+    }),
+  );
+}
+
 function markdownTable(headers: string[], rows: string[][]): string[] {
   if (rows.length === 0) return ['- 无'];
   return [
@@ -366,10 +395,6 @@ function codeCell(value: string): string {
   return `\`${normalized}\``;
 }
 
-/*
- * Legacy formatter kept for small list contexts. Most review sections should use
- * markdownTable so large artifacts remain scannable.
- */
 function stateAccessLabel(access: string): string {
   const labels: Record<string, string> = {
     none: '不直接访问状态',
@@ -438,6 +463,31 @@ function translateWarning(value: string): string {
     .replace('page-level state-boundary registration files from the source-aware draft were omitted until target page state conventions are confirmed.', 'source-aware 初稿中的页面级状态边界注册文件已省略，直到确认目标页面级状态约定。')
     .replace('i18n pattern is unknown; do not invent translation API.', 'i18n 模式未知；不要发明翻译 API。')
     .replace(/^Confirm target convention: /, '确认目标约定：');
+}
+
+function validationHintRow(hint: string): string[] {
+  const translated = translateValidationHint(hint);
+  const category = validationHintCategory(hint);
+  return [category, translated];
+}
+
+function validationHintCategory(hint: string): string {
+  if (/typography|CSS colors|spacing|layout|theme|fontSize|fontWeight|textStyles/i.test(hint)) return '视觉/主题';
+  if (/business data|API|permission|risk|tracking/i.test(hint)) return '业务边界';
+  if (/similar module|common widgets|one-to-one DOM/i.test(hint)) return '工程复用';
+  if (/screenshot|source screenshot/i.test(hint)) return '视觉校验';
+  return '校验';
+}
+
+function translateValidationHint(hint: string): string {
+  return translateWarning(hint)
+    .replace('Compare the generated Flutter screen against the source screenshot before adding business behavior.', '添加业务行为前，先把生成的 Flutter 页面与来源截图对齐。')
+    .replace('Treat typography, CSS colors, spacing, and layout as P0 visual fidelity items; prefer exact evidence matches before approximate fallback.', '字体、CSS 颜色、间距和布局是 P0 视觉保真项；优先使用精确证据匹配，再考虑近似 fallback。')
+    .replace('Use node-level themeMappings first; when a theme token is resolved exactly, do not replace it with a larger or heavier nearby token.', '优先使用节点级 themeMappings；当 token 精确命中时，不要替换成更大或更粗的相近 token。')
+    .replace('If a typography themeMapping has lockToken=true, use the target textStyles token directly and do not override fontSize, height, fontWeight, or fontFamily unless the plan explicitly lists a source override.', '如果 typography themeMapping 标记 lockToken=true，必须直接使用目标 textStyles token；除非 plan 明确列出来源覆盖证据，不得覆盖 fontSize、height、fontWeight、fontFamily。')
+    .replace('Check spacing, radius, border, and shadow values against reusable target widgets before introducing local constants.', '新增本地常量前，先用目标可复用组件核对 spacing、radius、border、shadow。')
+    .replace('Keep business data, API fields, permission checks, risk controls, and tracking as TODOs unless confirmed by target examples.', '业务数据、API 字段、权限、风控和埋点，除非目标示例已确认，否则保留 TODO。')
+    .replace('Prefer similar module examples and common widgets over one-to-one DOM translation.', '优先参考相似模块示例和公共组件，不要逐层翻译 DOM。');
 }
 
 function listOrFallback(items: string[]): string[] {
