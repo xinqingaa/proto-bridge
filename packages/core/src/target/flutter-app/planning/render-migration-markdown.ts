@@ -50,7 +50,7 @@ export function renderFlutterMigrationSpec(context: MigrationContext): string {
 
   lines.push(`# ${title} Flutter 迁移说明书`);
   lines.push('');
-  lines.push('> 说明：本文档保留 source-aware 迁移分析和逻辑拆分。具体目标工程表达以 `ui-build-plan.json` 的 `targetConventions` 与 `implementationContract` 为准；若二者冲突，应优先遵守目标扫描证据和 implementationContract。');
+  lines.push('> 说明：本文档保留 source-aware 迁移分析和逻辑拆分。文中如出现 GetX、BaseGetView、Rx、themeService、`.tr` 等具体工程表达，只表示旧版 source-aware 表述或历史示例表达，不是 ProtoBridge 默认偏好。具体目标工程表达以 `ui-build-plan.json` 的 `targetConventions` 与 `implementationContract` 为准；若二者冲突，应优先遵守目标扫描证据和 implementationContract。');
   lines.push('');
   lines.push('## 页面元信息');
   lines.push(`- 目标路由来源：${source.route ?? '待确认'}`);
@@ -124,12 +124,12 @@ export function renderFlutterMigrationSpec(context: MigrationContext): string {
 
   lines.push('## 四、路由与布局');
   lines.push('### 路由与参数');
-  lines.push(markdownTable(['原型 route/query', 'Flutter GetX 建议'], [
+  lines.push(markdownTable(['原型 route/query', 'Flutter 路由建议'], [
     [
       source.route ?? '待确认',
       context.target.routesFiles.length > 0
         ? `在 ${context.target.routesFiles.join(', ')} 中补充或复用路由`
-        : '确认 YouFi 路由文件位置后接入',
+        : '确认目标路由文件位置后接入',
     ],
   ]));
   if (source.sfc?.routes.length) {
@@ -150,7 +150,7 @@ export function renderFlutterMigrationSpec(context: MigrationContext): string {
   }
 
   lines.push('## 五、CSS 样式到 Flutter 主题映射');
-  lines.push('实现约束：当来源样式是 `@include <typography-token>` 且能映射到 `themeService.textStyles.*` 时，Flutter 必须直接使用对应 textStyles token；除非来源 CSS 有额外覆盖证据，不得再覆盖 `fontSize`、`height`、`fontWeight`、`fontFamily`。');
+  lines.push('实现约束：当来源样式是 `@include <typography-token>` 且能映射到目标工程已扫描到的文本主题 token 时，Flutter 应直接使用对应 text style；除非来源 CSS 有额外覆盖证据，不得再覆盖 `fontSize`、`height`、`fontWeight`、`fontFamily`。具体 token 名称以 `ui-build-plan.json` 的 themeMappings/targetConventions 为准。');
   lines.push('');
   lines.push('### 颜色');
   lines.push(markdownTable(
@@ -188,9 +188,9 @@ export function renderFlutterMigrationSpec(context: MigrationContext): string {
 
   lines.push('## 十、AI 实现提示词');
   lines.push('```text');
-  lines.push(`请基于本文档在 YouFi Flutter App 中实现 ${title} 页面。`);
+  lines.push(`请基于本文档的 source-aware 语义，并以 ui-build-plan.json 的 implementationContract 为机器契约，实现 ${title} 页面。`);
   lines.push(`目标模块优先放在 lib/app/modules/${context.target.suggestedModule ?? '<待确认模块>'}。`);
-  lines.push('实现时优先复用本文档列出的 common widgets、themeService.colors、themeService.textStyles 和现有翻译体系。');
+  lines.push('实现时优先复用 ui-build-plan.json targetConventions 中有证据的组件、主题、i18n、路由和状态模式；不得引入 targetConventions 未支持的新框架。');
   lines.push('请按目标文件拆分、Widget 组合、状态建议、路由布局、CSS 样式映射、i18n 和资源几个部分实现；不要逐层照搬来源页面结构。');
   lines.push('```');
   lines.push('');
@@ -540,7 +540,7 @@ function lifecycleMigrationAdvice(item: VueLifecycleHint): string {
   }
   if (item.hook === 'onBeforeUnmount') return '放在 Controller.onClose，释放 ScrollController、listener、timer 等资源。';
   if (item.hook === 'event-listener') return 'Flutter 侧用 ScrollController/listener 等等价机制，并在 onClose/dispose 中移除。';
-  if (item.hook === 'watch') return '迁移为 ever/worker、Rx 监听，或在明确的 setter/Controller 方法中触发副作用。';
+  if (item.hook === 'watch') return '迁移为目标状态模式支持的监听机制，或在明确的 setter/状态 owner 方法中触发副作用。';
   return item.migrationHint;
 }
 
@@ -624,8 +624,8 @@ function interactionTargetLabel(target: string): string {
 
 function suggestInteractionMigration(kind: string): string {
   if (kind === 'click') return '迁移为 Controller 方法或 Widget 回调，并确认路由、弹窗和埋点。';
-  if (kind === 'model') return '迁移为 TextEditingController、Rx 字段或表单状态。';
-  if (kind === 'conditional') return '迁移为 Obx/Visibility/条件渲染，确认默认状态。';
+  if (kind === 'model') return '迁移为 TextEditingController 或目标状态模式支持的表单状态。';
+  if (kind === 'conditional') return '迁移为目标状态 builder、Visibility 或条件渲染，确认默认状态。';
   if (kind === 'loop') return '迁移为 ListView/Column map，确认数据模型和空态。';
   if (kind === 'state') return '作为状态线索参考，最终按状态模型摘要归类。';
   if (kind === 'computed') return '迁移为 Controller getter、数据适配层输出或派生状态。';

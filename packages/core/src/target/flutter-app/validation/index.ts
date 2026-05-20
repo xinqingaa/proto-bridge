@@ -39,14 +39,14 @@ export async function scanFlutterTargetDartFiles(
     if (/\bTODO\b|待确认|待实现/.test(text)) {
       issues.push({ file, issue: 'TODO or pending confirmation marker found.' });
     }
-    if (/Color\(\s*0x/i.test(text) && !/themeService\.colors/.test(text)) {
-      issues.push({ file, issue: 'Hard-coded Color detected without themeService.colors nearby.' });
+    if (/Color\(\s*0x/i.test(text) && !usesDetectedColorTheme(text, contract)) {
+      issues.push({ file, issue: 'Hard-coded Color detected without a detected target theme accessor nearby.' });
     }
-    if (/\bfontSize\s*:\s*\d/i.test(text) && !/themeService\.textStyles/.test(text)) {
-      issues.push({ file, issue: 'Hard-coded fontSize detected without themeService.textStyles nearby.' });
+    if (/\bfontSize\s*:\s*\d/i.test(text) && !usesDetectedTextTheme(text, contract)) {
+      issues.push({ file, issue: 'Hard-coded fontSize detected without a detected target text style accessor nearby.' });
     }
-    if (/BoxShadow\s*\(/.test(text) && !/themeService\.colors/.test(text)) {
-      issues.push({ file, issue: 'Local BoxShadow detected; confirm it matches captured page evidence and YouFi component conventions.' });
+    if (/BoxShadow\s*\(/.test(text) && !usesDetectedColorTheme(text, contract)) {
+      issues.push({ file, issue: 'Local BoxShadow detected; confirm it matches captured page evidence and target theme conventions.' });
     }
     if (/Image\.network\s*\(/.test(text)) {
       issues.push({ file, issue: 'Network image usage detected; confirm source asset plan allows remote images.' });
@@ -94,17 +94,24 @@ function ensureTrailingSlash(value: string): string {
 
 type ArchitectureContract = {
   statePattern: string;
+  pageStatePattern: string;
+  stateScope: 'page' | 'global' | 'package' | 'unknown';
   routingPattern: string;
+  navigationPattern: string;
   i18nPattern: string;
   themePatterns: string[];
   expectedWidgetFileStems: Set<string>;
 };
 
 function buildArchitectureContract(plan: UiBuildPlan): ArchitectureContract {
+  const stateBinding = plan.implementationContract.targetBindings.state;
   return {
     statePattern: plan.targetConventions.architectureProfile.state.pattern,
+    pageStatePattern: plan.targetConventions.architectureProfile.state.page?.pattern ?? 'unknown',
+    stateScope: stateBinding?.scope ?? 'unknown',
     routingPattern: plan.targetConventions.architectureProfile.routing.pattern,
-    i18nPattern: plan.targetConventions.architectureProfile.i18n.pattern,
+    navigationPattern: plan.targetConventions.architectureProfile.routing.navigation?.pattern ?? 'unknown',
+    i18nPattern: plan.targetConventions.architectureProfile.i18n.lookup?.pattern ?? plan.targetConventions.architectureProfile.i18n.pattern,
     themePatterns: plan.targetConventions.architectureProfile.theme.patterns,
     expectedWidgetFileStems: new Set(plan.implementationContract.fileTree.map((file) => path.basename(file.path, '.dart'))),
   };
@@ -126,11 +133,12 @@ function scanArchitectureContract(
     }
   }
 
-  if (contract.routingPattern !== 'unknown' && contract.routingPattern !== 'getx' && /\bGet\.(toNamed|offNamed|back|parameters|arguments)\b/.test(text)) {
-    issues.push({ file, issue: `Architecture contract violation: routing pattern is ${contract.routingPattern}, but GetX routing usage was introduced.` });
+  const routingPattern = contract.navigationPattern !== 'unknown' ? contract.navigationPattern : contract.routingPattern;
+  if (routingPattern !== 'unknown' && routingPattern !== 'getx' && /\bGet\.(toNamed|offNamed|back|parameters|arguments)\b/.test(text)) {
+    issues.push({ file, issue: `Architecture contract violation: routing pattern is ${routingPattern}, but GetX routing usage was introduced.` });
   }
-  if (contract.routingPattern !== 'unknown' && contract.routingPattern !== 'go_router' && /package:go_router\/go_router\.dart|\bGoRouter\b|\bcontext\.(go|push|replace)\s*\(/.test(text)) {
-    issues.push({ file, issue: `Architecture contract violation: routing pattern is ${contract.routingPattern}, but go_router usage was introduced.` });
+  if (routingPattern !== 'unknown' && routingPattern !== 'go_router' && /package:go_router\/go_router\.dart|\bGoRouter\b|\bcontext\.(go|push|replace)\s*\(/.test(text)) {
+    issues.push({ file, issue: `Architecture contract violation: routing pattern is ${routingPattern}, but go_router usage was introduced.` });
   }
   if (contract.i18nPattern !== 'unknown' && contract.i18nPattern !== 'getx_tr' && /\.tr\b/.test(text)) {
     issues.push({ file, issue: `Architecture contract violation: i18n pattern is ${contract.i18nPattern}, but GetX .tr usage was introduced.` });
@@ -155,19 +163,38 @@ function scanArchitectureContract(
 
 function unsupportedFrameworkPatterns(contract: ArchitectureContract): Array<{ label: string; pattern: RegExp }> {
   const patterns: Array<{ label: string; pattern: RegExp }> = [];
-  if (contract.statePattern !== 'unknown' && contract.statePattern !== 'getx') {
+  const statePattern = contract.pageStatePattern !== 'unknown'
+    ? contract.pageStatePattern
+    : contract.stateScope === 'global' || contract.stateScope === 'package'
+      ? 'unknown'
+      : contract.statePattern;
+  if (statePattern !== 'unknown' && statePattern !== 'getx') {
     patterns.push({ label: 'GetX state framework', pattern: /package:get\/get\.dart|\bGetxController\b|\bGetView\b|\bObx\s*\(|\bGetBuilder\s*</ });
   }
-  if (contract.statePattern !== 'unknown' && contract.statePattern !== 'flutter_bloc') {
+  if (statePattern !== 'unknown' && statePattern !== 'flutter_bloc') {
     patterns.push({ label: 'flutter_bloc state framework', pattern: /package:flutter_bloc\/flutter_bloc\.dart|\bBlocProvider\b|\bBlocBuilder\b|\bBlocListener\b|\bCubit\s*</ });
   }
-  if (contract.statePattern !== 'unknown' && contract.statePattern !== 'riverpod') {
+  if (statePattern !== 'unknown' && statePattern !== 'riverpod') {
     patterns.push({ label: 'Riverpod state framework', pattern: /package:flutter_riverpod\/flutter_riverpod\.dart|package:riverpod\/riverpod\.dart|\bConsumerWidget\b|\bWidgetRef\b|\bProviderScope\b/ });
   }
-  if (contract.statePattern !== 'unknown' && contract.statePattern !== 'provider' && contract.statePattern !== 'flutter_bloc') {
+  if (statePattern !== 'unknown' && statePattern !== 'provider' && statePattern !== 'flutter_bloc') {
     patterns.push({ label: 'Provider state framework', pattern: /package:provider\/provider\.dart|\bChangeNotifierProvider\b|\bConsumer\s*</ });
   }
   return patterns;
+}
+
+function usesDetectedColorTheme(text: string, contract: ArchitectureContract | undefined): boolean {
+  if (!contract) return /themeService\.colors|context\.pbColors|Theme\.of\s*\(\s*context\s*\)\.colorScheme/.test(text);
+  return (hasThemePattern(contract, 'themeService.colors') && /\bthemeService\.colors\b/.test(text))
+    || (hasThemePattern(contract, 'context.pbColors') && /\bcontext\.pbColors\b/.test(text))
+    || (contract.themePatterns.includes('Theme.of(context)') && /\bTheme\.of\s*\(\s*context\s*\)\.colorScheme\b/.test(text));
+}
+
+function usesDetectedTextTheme(text: string, contract: ArchitectureContract | undefined): boolean {
+  if (!contract) return /themeService\.textStyles|context\.pbTextStyles|Theme\.of\s*\(\s*context\s*\)\.textTheme/.test(text);
+  return (hasThemePattern(contract, 'themeService.textStyles') && /\bthemeService\.textStyles\b/.test(text))
+    || (hasThemePattern(contract, 'context.pbTextStyles') && /\bcontext\.pbTextStyles\b/.test(text))
+    || (contract.themePatterns.includes('Theme.of(context)') && /\bTheme\.of\s*\(\s*context\s*\)\.textTheme\b/.test(text));
 }
 
 function hasThemePattern(contract: ArchitectureContract, pattern: string): boolean {

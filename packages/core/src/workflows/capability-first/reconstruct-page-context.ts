@@ -265,8 +265,8 @@ function runtimeCaptureToLegacyCapture(runtime: NonNullable<ReconstructPageConte
 function buildNextActions(hasPlan: boolean, hasReview: boolean, hasMigrationSpec: boolean): string[] {
   return [
     ...(hasPlan ? ['Use ui-build-plan.json as the machine-readable implementation plan.'] : ['Provide targetRoot to generate ui-build-plan.json.']),
-    ...(hasReview ? ['Use ui-build-review.md as the primary human-readable handoff.'] : ['Build a UI review after generating a plan.']),
-    ...(hasMigrationSpec ? ['Use migration-spec.md as the source-aware implementation brief alongside ui-build-review.md.'] : []),
+    ...(hasReview ? ['Use ui-build-review.md as a human-readable projection of ui-build-plan.json.'] : ['Build a UI review after generating a plan.']),
+    ...(hasMigrationSpec ? ['Use migration-spec.md only as a source-aware reference; target engineering expression is governed by ui-build-plan.json targetConventions and implementationContract.'] : []),
     'Resolve any manualConfirmations before implementing ambiguous source/runtime differences.',
   ];
 }

@@ -35,7 +35,7 @@ export function buildFlutterRecommendations(input: BuildFlutterRecommendationsIn
 
   const manualQuestions = [
     '确认静态 mock 数据对应真实接口、Controller 字段或本地状态。',
-    '确认页面路由参数、返回行为和埋点是否与 YouFi 现有模块一致。',
+    '确认页面路由参数、返回行为和埋点是否与当前 target conventions 一致。',
     '确认来源资源是否已有 Flutter 侧等价图片或 SVG，可复用时避免重复迁移。',
   ];
 
@@ -62,7 +62,7 @@ function inferImplementationShape(source: PrototypePageAnalysis): Implementation
     (source.sfc?.interactions.some((interaction) =>
       ['click', 'model', 'state', 'computed', 'watch'].includes(interaction.kind),
     ) ?? false) || /\b(ref|reactive|computed)\s*\(/.test(code) || /(@click|v-model|watch\s*\()/.test(code);
-  if (hasInteractiveState) return 'BaseGetView';
+  if (hasInteractiveState) return 'StatefulWidget';
   return 'StatelessWidget';
 }
 

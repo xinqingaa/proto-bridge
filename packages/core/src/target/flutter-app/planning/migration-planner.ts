@@ -77,7 +77,7 @@ function buildSummary(
   }
   const hasChart = source.sfc?.components.some((component) => component.role === 'chart') ?? false;
   const chartNote = hasChart ? '图表/指标计算应单独放入 adapter 或 service，避免在 Widget build 中复算。' : '';
-  return `该页面属于复杂页面，页面模式识别为${patternText}，置信度${confidenceText}；建议使用父页面编排 + 多个子 Widget + Controller/数据适配层分层实现；状态管理只保留 Flutter 实现需要的页面状态，避免把来源页面的临时状态逐项搬进 GetX。${chartNote}`;
+  return `该页面属于复杂页面，页面模式识别为${patternText}，置信度${confidenceText}；建议使用父页面编排 + 多个子 Widget + 状态 owner/数据适配层分层实现；状态管理只保留 Flutter 实现需要的页面状态，避免把来源页面的临时状态逐项搬进目标状态模式。${chartNote}`;
 }
 
 function pagePatternLabel(pattern: string): string {
@@ -182,7 +182,7 @@ function buildStateStrategy(
       concern: '页面级 UI 状态',
       owner: complexity === 'simple' ? 'widget-local' : 'controller',
       recommendation: complexity === 'simple'
-        ? '简单交互可放局部 StatefulWidget；若页面已有 BaseGetView，则统一放 Controller。'
+        ? '简单交互可放局部 StatefulWidget；若目标页面已有统一状态 owner 约定，则统一放入该边界。'
         : `建议放入页面 Controller，按 tab/展开/选择态分组管理：${uiStates.slice(0, 12).join(', ')}。`,
       evidence: uiStates.slice(0, 16).join(', '),
     });
@@ -237,7 +237,7 @@ function buildControllerBoundaries(
     return [
       {
         name: `${pageName}Controller（可选）`,
-        responsibility: '简单页面可不建 Controller；如项目规范要求 BaseGetView，则只承载初始化和轻量状态。',
+        responsibility: '简单页面可不建状态 owner；如目标项目规范要求页面级状态边界，则只承载初始化和轻量状态。',
         owns: ['页面初始化', '必要路由参数'],
         avoids: ['静态 UI 布局', '硬编码 mock 数据', '子 Widget 内部展示细节'],
       },
@@ -298,7 +298,7 @@ function buildDoNotTranslate(source: PrototypePageAnalysis, complexity: FlutterI
     '不要让每个子 Widget 都直接依赖整个 Controller；优先通过构造参数传入数据，并用回调上报交互。',
   ];
   if (complexity === 'complex') {
-    rules.push('不要把来源页面的临时状态一对一迁移为 Rx；先按 UI 状态、业务数据、派生数据、生命周期副作用分类。');
+    rules.push('不要把来源页面的临时状态一对一迁移为目标状态字段；先按 UI 状态、业务数据、派生数据、生命周期副作用分类。');
   }
   if (source.sfc?.state.some((state) => state.category === 'chart-data')) {
     rules.push('不要逐行翻译矢量路径或 K 线指标计算；图表数据和绘制策略需要单独设计 adapter 或 CustomPainter。');
@@ -314,7 +314,7 @@ function buildChecklist(
   complexity: FlutterImplementationPlan['complexity'],
 ): FlutterImplementationPlan['checklist'] {
   const checklist: FlutterImplementationPlan['checklist'] = [
-    { priority: 'P0', item: '确认目标 Flutter route、Binding、Controller 文件位置符合 YouFi 模块规范。' },
+    { priority: 'P0', item: '确认目标 Flutter route、状态边界和文件位置符合当前 target conventions。' },
     { priority: 'P0', item: '确认 UI 首屏结构、颜色、字号、间距和 i18n 文案与原型一致。' },
   ];
   if (source.sfc?.fixedBottom) checklist.push({ priority: 'P0', item: '确认底部操作栏不遮挡滚动内容，并适配 SafeArea。' });

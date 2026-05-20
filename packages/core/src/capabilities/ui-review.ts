@@ -159,10 +159,16 @@ function renderArchitectureProfile(plan: UiBuildPlan): string[] {
   const profile = plan.targetConventions.architectureProfile;
   return [
     `- State: ${profile.state.pattern} [${profile.state.confidence}]`,
+    `  - package: ${profile.state.package?.pattern ?? 'unknown'} [${profile.state.package?.confidence ?? 'low'}]`,
+    `  - global: ${profile.state.global?.pattern ?? 'unknown'} [${profile.state.global?.confidence ?? 'low'}]`,
+    `  - page: ${profile.state.page?.pattern ?? 'unknown'} [${profile.state.page?.confidence ?? 'low'}]`,
     ...profile.state.examples.slice(0, 4).map(formatEvidence),
     `- Routing: ${profile.routing.pattern} [${profile.routing.confidence}]`,
+    `  - registration: ${profile.routing.registration?.pattern ?? 'unknown'} [${profile.routing.registration?.confidence ?? 'low'}]`,
+    `  - navigation: ${profile.routing.navigation?.pattern ?? 'unknown'} [${profile.routing.navigation?.confidence ?? 'low'}]`,
     ...profile.routing.examples.slice(0, 4).map(formatEvidence),
     `- I18n: ${profile.i18n.pattern} [${profile.i18n.confidence}]`,
+    `  - lookup: ${profile.i18n.lookup?.pattern ?? 'unknown'} [${profile.i18n.lookup?.confidence ?? 'low'}]`,
     ...profile.i18n.examples.slice(0, 4).map(formatEvidence),
     `- Theme: ${profile.theme.patterns.join(', ') || 'unknown'} [${profile.theme.confidence}]`,
     ...profile.theme.examples.slice(0, 4).map(formatEvidence),

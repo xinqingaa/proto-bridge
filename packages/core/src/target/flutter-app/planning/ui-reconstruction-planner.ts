@@ -276,11 +276,12 @@ function buildImplementationContract(input: {
 }): UiImplementationContract {
   const logical = input.sourceAwarePlan ?? input.fallbackPlan;
   const contractWarnings = normalizeContractWarnings(input.targetConventions);
+  const stateBinding = stateBindingFor(input.targetConventions);
   return {
     logicalPlanSource: input.sourceAwarePlan
       ? 'source-aware implementation plan normalized by target conventions'
       : 'visual evidence fallback normalized by target conventions; source-aware implementation plan unavailable',
-    fileTree: logical.fileTree.map((file) => normalizeFile(file, input.targetConventions)),
+    fileTree: normalizeFileTree(logical.fileTree, input.targetConventions),
     widgetTree: logical.widgetTree.map((widget) => normalizeWidget(widget, input.targetConventions)),
     stateStrategy: (logical.stateStrategy ?? []).map((strategy) => normalizeStateStrategy(strategy, input.targetConventions)),
     controllerBoundaries: (logical.controllerBoundaries ?? []).map((boundary) => normalizeControllerBoundary(boundary, input.targetConventions)),
@@ -290,17 +291,30 @@ function buildImplementationContract(input: {
         patternRef: 'targetConventions.architectureProfile.state/routing',
         pattern: input.targetConventions.architectureProfile.state.pattern,
       },
+      state: {
+        patternRef: stateBinding.patternRef,
+        pattern: stateBinding.pattern,
+        scope: stateBinding.scope,
+      },
       routing: {
-        patternRef: 'targetConventions.architectureProfile.routing',
-        pattern: input.targetConventions.architectureProfile.routing.pattern,
+        patternRef: input.targetConventions.architectureProfile.routing.registration?.pattern !== 'unknown'
+          ? 'targetConventions.architectureProfile.routing.registration'
+          : 'targetConventions.architectureProfile.routing',
+        pattern: input.targetConventions.architectureProfile.routing.registration?.pattern !== 'unknown'
+          ? input.targetConventions.architectureProfile.routing.registration?.pattern
+          : input.targetConventions.architectureProfile.routing.pattern,
       },
       i18n: {
-        patternRef: 'targetConventions.architectureProfile.i18n',
-        pattern: input.targetConventions.architectureProfile.i18n.pattern,
+        patternRef: 'targetConventions.architectureProfile.i18n.lookup',
+        pattern: input.targetConventions.architectureProfile.i18n.lookup?.pattern ?? input.targetConventions.architectureProfile.i18n.pattern,
       },
       theme: {
         patternRef: 'targetConventions.architectureProfile.theme',
         patterns: input.targetConventions.architectureProfile.theme.patterns,
+      },
+      fileOrganization: {
+        patternRef: 'targetConventions.architectureProfile.fileOrganization',
+        pattern: input.targetConventions.architectureProfile.fileOrganization.pattern,
       },
     },
     rules: [
@@ -317,9 +331,32 @@ function buildImplementationContract(input: {
 function normalizeFile(file: FlutterPlannedFile, targetConventions: FlutterTargetConventionProfile): FlutterPlannedFile {
   return {
     ...file,
+    path: normalizeFilePath(file.path, targetConventions),
     responsibility: normalizeTargetLanguage(file.responsibility, targetConventions),
     ...(file.notes ? { notes: normalizeTargetLanguage(file.notes, targetConventions) } : {}),
   };
+}
+
+function normalizeFileTree(
+  files: FlutterPlannedFile[],
+  targetConventions: FlutterTargetConventionProfile,
+): FlutterPlannedFile[] {
+  const stateBinding = stateBindingFor(targetConventions);
+  return files
+    .filter((file) => {
+      if (stateBinding.scope === 'page') return true;
+      if (/_controller\.dart$|_binding\.dart$/.test(file.path)) return false;
+      return true;
+    })
+    .map((file) => normalizeFile(file, targetConventions));
+}
+
+function normalizeFilePath(filePath: string, targetConventions: FlutterTargetConventionProfile): string {
+  const fileOrganization = targetConventions.architectureProfile.fileOrganization.pattern;
+  if (fileOrganization !== 'module_proto_bucket') return filePath;
+  const match = filePath.match(/^lib\/app\/modules\/([^/]+)\/([^/]+)\/(.+)$/);
+  if (!match?.[1] || !match[2] || !match[3]) return filePath;
+  return `lib/app/modules/${match[1]}/_proto/${match[2]}/${match[3]}`;
 }
 
 function normalizeWidget(widget: FlutterWidgetPlan, targetConventions: FlutterTargetConventionProfile): FlutterWidgetPlan {
@@ -363,8 +400,10 @@ function normalizeWidgetContract(
 }
 
 function normalizeTargetLanguage(value: string, targetConventions: FlutterTargetConventionProfile): string {
-  const statePattern = targetConventions.architectureProfile.state.pattern;
-  const routingPattern = targetConventions.architectureProfile.routing.pattern;
+  const stateBinding = stateBindingFor(targetConventions);
+  const statePattern = stateBinding.scope === 'page' ? stateBinding.pattern : 'unknown';
+  const routingPattern = targetConventions.architectureProfile.routing.navigation?.pattern
+    ?? targetConventions.architectureProfile.routing.pattern;
   let result = value;
   if (statePattern !== 'getx') {
     result = result
@@ -387,11 +426,50 @@ function normalizeTargetLanguage(value: string, targetConventions: FlutterTarget
   return result;
 }
 
+function stateBindingFor(targetConventions: FlutterTargetConventionProfile): {
+  patternRef: string;
+  pattern: string;
+  scope: 'page' | 'global' | 'package' | 'unknown';
+} {
+  const state = targetConventions.architectureProfile.state;
+  if (state.page?.pattern && state.page.pattern !== 'unknown') {
+    return {
+      patternRef: 'targetConventions.architectureProfile.state.page',
+      pattern: state.page.pattern,
+      scope: 'page',
+    };
+  }
+  if (state.global?.pattern && state.global.pattern !== 'unknown') {
+    return {
+      patternRef: 'targetConventions.architectureProfile.state.global',
+      pattern: state.global.pattern,
+      scope: 'global',
+    };
+  }
+  if (state.package?.pattern && state.package.pattern !== 'unknown') {
+    return {
+      patternRef: 'targetConventions.architectureProfile.state.package',
+      pattern: state.package.pattern,
+      scope: 'package',
+    };
+  }
+  return {
+    patternRef: 'targetConventions.architectureProfile.state',
+    pattern: state.pattern,
+    scope: 'unknown',
+  };
+}
+
 function normalizeContractWarnings(targetConventions: FlutterTargetConventionProfile): string[] {
   const warnings = [...targetConventions.unresolved];
   const profile = targetConventions.architectureProfile;
   if (profile.state.pattern === 'unknown') warnings.push('state pattern is unknown; keep state recommendations abstract.');
+  if (profile.state.page?.pattern === 'unknown' && profile.state.global?.pattern !== 'unknown') {
+    warnings.push(`only global/app-level ${profile.state.global?.pattern} state evidence was detected; page-level state expression remains unresolved.`);
+    warnings.push('page-level controller/binding files from the source-aware draft were omitted until target page state conventions are confirmed.');
+  }
   if (profile.routing.pattern === 'unknown') warnings.push('routing pattern is unknown; keep navigation recommendations abstract.');
+  if (profile.routing.navigation?.pattern === 'unknown') warnings.push('navigation call pattern is unknown; keep route action recommendations abstract.');
   if (profile.i18n.pattern === 'unknown') warnings.push('i18n pattern is unknown; do not invent translation API.');
   if (profile.theme.patterns.length === 0) warnings.push('theme pattern is unknown; use visualPlan/themeMappings evidence and ask for confirmation.');
   return dedupe(warnings);

@@ -107,6 +107,8 @@ export type UiImplementationContract = {
     routing: { patternRef: string; pattern?: string | undefined };
     i18n: { patternRef: string; pattern?: string | undefined };
     theme: { patternRef: string; patterns?: string[] | undefined };
+    state?: { patternRef: string; pattern?: string | undefined; scope?: 'page' | 'global' | 'package' | 'unknown' | undefined } | undefined;
+    fileOrganization?: { patternRef: string; pattern?: string | undefined } | undefined;
   };
   rules: string[];
   contractWarnings: string[];

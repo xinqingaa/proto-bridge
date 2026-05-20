@@ -16,6 +16,21 @@ export type FlutterArchitectureFacet = {
   examples: FlutterArchitectureEvidence[];
 };
 
+export type FlutterStateArchitectureFacet = FlutterArchitectureFacet & {
+  package?: FlutterArchitectureFacet | undefined;
+  global?: FlutterArchitectureFacet | undefined;
+  page?: FlutterArchitectureFacet | undefined;
+};
+
+export type FlutterRoutingArchitectureFacet = FlutterArchitectureFacet & {
+  registration?: FlutterArchitectureFacet | undefined;
+  navigation?: FlutterArchitectureFacet | undefined;
+};
+
+export type FlutterI18nArchitectureFacet = FlutterArchitectureFacet & {
+  lookup?: FlutterArchitectureFacet | undefined;
+};
+
 export type FlutterArchitectureThemeFacet = {
   patterns: string[];
   confidence: FlutterArchitectureConfidence;
@@ -31,9 +46,9 @@ export type FlutterArchitectureComponentsFacet = {
 };
 
 export type FlutterArchitectureProfile = {
-  state: FlutterArchitectureFacet;
-  routing: FlutterArchitectureFacet;
-  i18n: FlutterArchitectureFacet;
+  state: FlutterStateArchitectureFacet;
+  routing: FlutterRoutingArchitectureFacet;
+  i18n: FlutterI18nArchitectureFacet;
   theme: FlutterArchitectureThemeFacet;
   components: FlutterArchitectureComponentsFacet;
   fileOrganization: FlutterArchitectureFacet;
