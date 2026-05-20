@@ -34,7 +34,7 @@ export function buildFlutterRecommendations(input: BuildFlutterRecommendationsIn
   ];
 
   const manualQuestions = [
-    '确认静态 mock 数据对应真实接口、Controller 字段或本地状态。',
+    '确认静态 mock 数据对应真实接口、页面状态边界字段或本地状态。',
     '确认页面路由参数、返回行为和埋点是否与当前 target conventions 一致。',
     '确认来源资源是否已有 Flutter 侧等价图片或 SVG，可复用时避免重复迁移。',
   ];
@@ -75,14 +75,14 @@ function buildWidgetBreakdown(
     {
       name: `${pageName}Page`,
       type: 'page',
-      responsibility: '承载页面路由、Controller 绑定、主题和整体 Scaffold。',
+      responsibility: '承载页面路由、状态边界接入、主题和整体 Scaffold。',
       suggestedFlutterWidget: implementationShape,
     },
     {
       name: `${pageName}AppBar`,
       type: 'section',
       responsibility: '迁移顶部导航标题、返回按钮和右侧动作入口。',
-      suggestedFlutterWidget: 'CommonAppBar',
+      suggestedFlutterWidget: 'target app-bar component',
     },
     {
       name: `${pageName}Body`,
@@ -108,7 +108,7 @@ function buildWidgetBreakdown(
       name: `${pageName}BottomBar`,
       type: 'section',
       responsibility: '承载固定底部操作按钮、金额汇总或提交确认入口。',
-      suggestedFlutterWidget: 'CommonButton',
+      suggestedFlutterWidget: 'target button component',
     });
   }
 
@@ -117,7 +117,7 @@ function buildWidgetBreakdown(
       name: `${pageName}Sheet`,
       type: 'sheet',
       responsibility: '承载原型里的底部弹层、确认弹窗或二次选择交互。',
-      suggestedFlutterWidget: 'Pop.sheet / YouFiPop',
+      suggestedFlutterWidget: 'target sheet/dialog component',
     });
   }
 

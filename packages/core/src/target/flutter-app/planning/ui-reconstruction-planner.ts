@@ -16,9 +16,11 @@ import type {
   ThemeMapping,
   UiBuildPlan,
   UiImplementationContract,
+  UiSourceSemantics,
   UiVisualPlan,
   VueSemanticComponent,
   VueTemplateSection,
+  SourceAwareReviewProjection,
 } from '../../../types/index.js';
 import { getFlutterTargetConventions } from '../conventions.js';
 import { findFlutterTargetExamples } from '../examples.js';
@@ -30,6 +32,7 @@ export type BuildFlutterUiReconstructionPlanInput = {
   targetRoot: string;
   targetModule?: string | undefined;
   sourceAwareImplementationPlan?: FlutterImplementationPlan | undefined;
+  sourceReview?: SourceAwareReviewProjection | undefined;
 };
 
 export async function buildFlutterUiReconstructionPlan(
@@ -64,6 +67,7 @@ export async function buildFlutterUiReconstructionPlan(
   const fallbackPlan = buildFallbackImplementationPlan(baseDir, pageName, runtimeWidgetTree);
   const implementationContract = buildImplementationContract({
     sourceAwarePlan: input.sourceAwareImplementationPlan,
+    sourceReview: input.sourceReview,
     fallbackPlan,
     targetConventions: conventions.targetConventions,
   });
@@ -278,6 +282,7 @@ function buildFallbackImplementationPlan(
 
 function buildImplementationContract(input: {
   sourceAwarePlan?: FlutterImplementationPlan | undefined;
+  sourceReview?: SourceAwareReviewProjection | undefined;
   fallbackPlan: Pick<FlutterImplementationPlan, 'fileTree' | 'widgetTree' | 'stateStrategy' | 'controllerBoundaries' | 'widgetContracts'>;
   targetConventions: FlutterTargetConventionProfile;
 }): UiImplementationContract {
@@ -288,6 +293,7 @@ function buildImplementationContract(input: {
     logicalPlanSource: input.sourceAwarePlan
       ? 'source-aware implementation plan normalized by target conventions'
       : 'visual evidence fallback normalized by target conventions; source-aware implementation plan unavailable',
+    sourceSemantics: buildSourceSemantics(input.sourceReview, logical),
     fileTree: normalizeFileTree(logical.fileTree, input.targetConventions),
     widgetTree: logical.widgetTree.map((widget) => normalizeWidget(widget, input.targetConventions)),
     stateStrategy: (logical.stateStrategy ?? []).map((strategy) => normalizeStateStrategy(strategy, input.targetConventions)),
@@ -333,6 +339,119 @@ function buildImplementationContract(input: {
     contractWarnings,
     manualQuestions: contractWarnings.map((warning) => `Confirm target convention: ${warning}`),
   };
+}
+
+function buildSourceSemantics(
+  sourceReview: SourceAwareReviewProjection | undefined,
+  logical: Pick<FlutterImplementationPlan, 'fileTree' | 'widgetTree' | 'stateStrategy' | 'controllerBoundaries' | 'widgetContracts'>,
+): UiSourceSemantics | undefined {
+  if (!sourceReview) {
+    return {
+      summary: [],
+      businessSections: logical.widgetTree.map((widget) => ({
+        name: widget.name,
+        role: widget.role,
+        ...(widget.parent ? { parent: widget.parent } : {}),
+        responsibility: normalizeSourceSemanticsLanguage(widget.buildHint),
+        inputs: (logical.widgetContracts.find((contract) => contract.widget === widget.name)?.inputs ?? []).map(normalizeSourceSemanticsLanguage),
+        callbacks: (logical.widgetContracts.find((contract) => contract.widget === widget.name)?.callbacks ?? []).map(normalizeSourceSemanticsLanguage),
+      })),
+      stateIntent: logical.stateStrategy.map((strategy) => ({
+        concern: normalizeSourceSemanticsLanguage(strategy.concern),
+        owner: normalizeSourceSemanticsLanguage(strategy.owner),
+        recommendation: normalizeSourceSemanticsLanguage(strategy.recommendation),
+        ...(strategy.evidence ? { evidence: normalizeSourceSemanticsLanguage(strategy.evidence) } : {}),
+      })),
+      routeIntent: [],
+      lifecycleIntent: [],
+      interactionIntent: [],
+      layoutIntent: [],
+      styleIntent: [],
+      assetIntent: [],
+      doNotTranslate: [],
+    };
+  }
+
+  return {
+    summary: sourceReview.summary.map(normalizeSourceSemanticsLanguage),
+    businessSections: sourceReview.widgets.map((widget) => {
+      const contract = sourceReview.widgetContracts.find((item) => item.widget === widget.name);
+      return {
+        name: widget.name,
+        role: widget.role,
+        ...(widget.parent ? { parent: widget.parent } : {}),
+        responsibility: normalizeSourceSemanticsLanguage(widget.buildHint),
+        inputs: (contract?.inputs ?? []).map(normalizeSourceSemanticsLanguage),
+        callbacks: (contract?.callbacks ?? []).map(normalizeSourceSemanticsLanguage),
+      };
+    }),
+    stateIntent: sourceReview.stateStrategy.map((strategy) => ({
+      concern: normalizeSourceSemanticsLanguage(strategy.concern),
+      owner: normalizeSourceSemanticsLanguage(strategy.owner),
+      recommendation: normalizeSourceSemanticsLanguage(strategy.recommendation),
+      ...(strategy.evidence ? { evidence: normalizeSourceSemanticsLanguage(strategy.evidence) } : {}),
+    })),
+    routeIntent: sourceReview.routes.map((route) => ({
+      action: route.action,
+      ...(route.target ? { target: normalizeSourceSemanticsLanguage(route.target) } : {}),
+      ...(route.params ? { params: normalizeSourceSemanticsLanguage(route.params) } : {}),
+      ...(route.migrationHint ? { evidence: normalizeSourceSemanticsLanguage(route.migrationHint) } : {}),
+    })),
+    lifecycleIntent: sourceReview.lifecycle.map((item) => ({
+      hook: item.hook,
+      ...(item.target ? { target: normalizeSourceSemanticsLanguage(item.target) } : {}),
+      ...(item.migrationHint ? { evidence: normalizeSourceSemanticsLanguage(item.migrationHint) } : {}),
+    })),
+    interactionIntent: sourceReview.interactions.map((interaction) => ({
+      kind: interaction.kind,
+      ...(interaction.target ? { target: normalizeSourceSemanticsLanguage(interaction.target) } : {}),
+      ...(interaction.migrationHint ? { evidence: normalizeSourceSemanticsLanguage(interaction.migrationHint) } : {}),
+    })),
+    layoutIntent: sourceReview.layout.map((layout) => ({
+      selector: layout.selector,
+      kind: layout.kind,
+      ...(layout.migrationHint ? { evidence: normalizeSourceSemanticsLanguage(layout.migrationHint) } : {}),
+    })),
+    styleIntent: sourceReview.styleTokens.map((token) => ({
+      selector: token.selector,
+      property: token.property,
+      token: token.token,
+      ...(token.fallback ? { fallback: token.fallback } : {}),
+      ...(token.kind ? { kind: token.kind } : {}),
+    })),
+    assetIntent: sourceReview.assets.map((asset) => ({
+      kind: asset.kind,
+      ...(asset.source ? { source: asset.source } : {}),
+      ...(asset.migrationHint ? { evidence: normalizeSourceSemanticsLanguage(asset.migrationHint) } : {}),
+    })),
+    doNotTranslate: sourceReview.doNotTranslate.map(normalizeSourceSemanticsLanguage),
+  };
+}
+
+function normalizeSourceSemanticsLanguage(value: string): string {
+  return value
+    .replace(/\bBaseGetView\b/g, 'target page pattern')
+    .replace(/\bBaseGetPullView\b/g, 'target pull/refresh page pattern')
+    .replace(/\bGetX\b/g, 'target state pattern')
+    .replace(/\bGetxController\b/g, 'target state owner')
+    .replace(/\bGet\.find\b/g, 'target dependency lookup')
+    .replace(/\bGet\.toNamed\/AppRoutes\b/g, 'target routing API')
+    .replace(/\bGet\.toNamed\b/g, 'target routing API')
+    .replace(/\bGet\.parameters\/Get\.arguments\b/g, 'target route settings/arguments')
+    .replace(/\bGet\.parameters\b/g, 'target route parameters')
+    .replace(/\bGet\.arguments\b/g, 'target route arguments')
+    .replace(/\bObx\b/g, 'target reactive builder')
+    .replace(/\bGetBuilder\b/g, 'target reactive builder')
+    .replace(/\bRx\b/g, 'target state primitive')
+    .replace(/\bever\/worker\b/g, 'target state listener')
+    .replace(/\bController\.onInit\/onClose\b/g, 'target lifecycle boundary')
+    .replace(/\bController\.onInit\b/g, 'target initialization boundary')
+    .replace(/\bController\.onReady\b/g, 'target ready/first-frame boundary')
+    .replace(/\bController\.onClose\b/g, 'target dispose boundary')
+    .replace(/\bonReady\b/g, 'target ready/first-frame boundary')
+    .replace(/\bonClose\b/g, 'target dispose boundary')
+    .replace(/\bController\b/g, 'state boundary')
+    .replace(/\bcontroller\b/g, 'state boundary');
 }
 
 function normalizeFile(file: FlutterPlannedFile, targetConventions: FlutterTargetConventionProfile): FlutterPlannedFile {
@@ -386,16 +505,33 @@ function normalizeModuleMvcFilePath(filePath: string): string {
 function normalizeWidget(widget: FlutterWidgetPlan, targetConventions: FlutterTargetConventionProfile): FlutterWidgetPlan {
   return {
     ...widget,
+    stateAccess: normalizeStateAccess(widget.stateAccess, targetConventions),
     buildHint: normalizeTargetLanguage(widget.buildHint, targetConventions),
   };
+}
+
+function normalizeStateAccess(
+  stateAccess: FlutterWidgetPlan['stateAccess'],
+  targetConventions: FlutterTargetConventionProfile,
+): FlutterWidgetPlan['stateAccess'] {
+  const stateBinding = stateBindingFor(targetConventions);
+  if (stateBinding.scope === 'page') return stateAccess;
+  if (stateAccess === 'controller') return 'state-owner';
+  if (stateAccess === 'controller-slice') return 'state-slice';
+  return stateAccess;
 }
 
 function normalizeStateStrategy(
   strategy: FlutterStateStrategy,
   targetConventions: FlutterTargetConventionProfile,
 ): FlutterStateStrategy {
+  const stateBinding = stateBindingFor(targetConventions);
+  const owner = strategy.owner === 'controller' && stateBinding.scope !== 'page'
+    ? 'state-boundary'
+    : strategy.owner;
   return {
     ...strategy,
+    owner,
     recommendation: normalizeTargetLanguage(strategy.recommendation, targetConventions),
   };
 }
@@ -404,9 +540,11 @@ function normalizeControllerBoundary(
   boundary: FlutterControllerBoundary,
   targetConventions: FlutterTargetConventionProfile,
 ): FlutterControllerBoundary {
+  const stateBinding = stateBindingFor(targetConventions);
+  const abstractName = stateBinding.scope === 'page' ? boundary.name : boundary.name.replace(/Controller/g, 'StateBoundary');
   return {
     ...boundary,
-    name: normalizeTargetLanguage(boundary.name, targetConventions),
+    name: normalizeTargetLanguage(abstractName, targetConventions),
     responsibility: normalizeTargetLanguage(boundary.responsibility, targetConventions),
     owns: boundary.owns.map((item) => normalizeTargetLanguage(item, targetConventions)),
     avoids: boundary.avoids.map((item) => normalizeTargetLanguage(item, targetConventions)),
@@ -434,10 +572,20 @@ function normalizeTargetLanguage(value: string, targetConventions: FlutterTarget
       .replace(/\bBaseGetView\b/g, 'target page pattern')
       .replace(/\bBaseGetPullView\b/g, 'target pull/refresh page pattern')
       .replace(/\bGetX\b/g, 'target state pattern')
+      .replace(/\bGetxController\b/g, 'target state owner')
       .replace(/\bGet\.find\b/g, 'target dependency lookup')
       .replace(/\bObx\b/g, 'target reactive builder')
+      .replace(/\bGetBuilder\b/g, 'target reactive builder')
       .replace(/\bRx\b/g, 'target state primitive')
-      .replace(/\bever\/worker\b/g, 'target state listener');
+      .replace(/\bever\/worker\b/g, 'target state listener')
+      .replace(/\bController\.onInit\/onClose\b/g, 'target lifecycle boundary')
+      .replace(/\bController\.onInit\b/g, 'target initialization boundary')
+      .replace(/\bController\.onReady\b/g, 'target ready/first-frame boundary')
+      .replace(/\bController\.onClose\b/g, 'target dispose boundary')
+      .replace(/\bonReady\b/g, 'target ready/first-frame boundary')
+      .replace(/\bonClose\b/g, 'target dispose boundary')
+      .replace(/\bController\b/g, 'state boundary')
+      .replace(/\bcontroller\b/g, 'state boundary');
   }
   if (routingPattern !== 'getx') {
     result = result
@@ -490,7 +638,7 @@ function normalizeContractWarnings(targetConventions: FlutterTargetConventionPro
   if (profile.state.pattern === 'unknown') warnings.push('state pattern is unknown; keep state recommendations abstract.');
   if (profile.state.page?.pattern === 'unknown' && profile.state.global?.pattern !== 'unknown') {
     warnings.push(`only global/app-level ${profile.state.global?.pattern} state evidence was detected; page-level state expression remains unresolved.`);
-    warnings.push('page-level controller/binding files from the source-aware draft were omitted until target page state conventions are confirmed.');
+    warnings.push('page-level state-boundary registration files from the source-aware draft were omitted until target page state conventions are confirmed.');
   }
   if (profile.routing.pattern === 'unknown') warnings.push('routing pattern is unknown; keep navigation recommendations abstract.');
   if (profile.routing.navigation?.pattern === 'unknown') warnings.push('navigation call pattern is unknown; keep route action recommendations abstract.');

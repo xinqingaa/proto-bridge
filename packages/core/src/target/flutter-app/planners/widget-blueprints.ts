@@ -61,7 +61,7 @@ function blueprintFor(pattern: PagePattern): WidgetBlueprintItem[] {
     nameHint: 'Header',
     parent: 'page',
     stateAccess: 'props',
-    buildHint: '优先复用 CommonAppBar 或现有 header pattern。',
+    buildHint: '优先复用目标工程扫描到的 app-bar/header pattern。',
     when: hasHeaderLike,
   };
 

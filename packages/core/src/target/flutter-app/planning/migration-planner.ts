@@ -73,7 +73,7 @@ function buildSummary(
     return `该页面适合用一个页面 Widget + 少量私有子 Widget 实现；页面模式识别为${patternText}，置信度${confidenceText}；状态管理可以保持轻量，重点对齐 UI、文案和主题样式。`;
   }
   if (complexity === 'moderate') {
-    return `该页面建议拆成父页面、Controller 和若干子 Widget；页面模式识别为${patternText}，置信度${confidenceText}；Controller 负责页面级 UI 状态，子 Widget 通过构造参数接收数据并通过回调上报交互。`;
+    return `该页面建议拆成父页面、页面状态边界和若干子 Widget；页面模式识别为${patternText}，置信度${confidenceText}；状态边界负责页面级 UI 状态，子 Widget 通过构造参数接收数据并通过回调上报交互。`;
   }
   const hasChart = source.sfc?.components.some((component) => component.role === 'chart') ?? false;
   const chartNote = hasChart ? '图表/指标计算应单独放入 adapter 或 service，避免在 Widget build 中复算。' : '';
@@ -118,7 +118,7 @@ function buildFileTree(
   const files: FlutterPlannedFile[] = [
     {
       path: `${baseDir}/${toSnakeCase(pageName)}_page.dart`,
-      responsibility: '父页面入口，绑定 route、Controller、Scaffold/SafeArea，并编排子 Widget。',
+      responsibility: '父页面入口，接入 route、页面状态边界、Scaffold/SafeArea，并编排子 Widget。',
       notes: '父页面不直接承载复杂业务计算。',
     },
   ];
@@ -131,7 +131,7 @@ function buildFileTree(
     });
     files.push({
       path: `${baseDir}/${toSnakeCase(pageName)}_binding.dart`,
-      responsibility: '注册 Controller 及必要 service/repository 依赖。',
+      responsibility: '注册页面状态边界及必要 service/repository 依赖；具体文件是否保留以 target conventions 为准。',
     });
   }
 
@@ -180,10 +180,10 @@ function buildStateStrategy(
   if (uiStates.length > 0) {
     strategies.push({
       concern: '页面级 UI 状态',
-      owner: complexity === 'simple' ? 'widget-local' : 'controller',
+      owner: complexity === 'simple' ? 'widget-local' : 'state-boundary',
       recommendation: complexity === 'simple'
         ? '简单交互可放局部 StatefulWidget；若目标页面已有统一状态 owner 约定，则统一放入该边界。'
-        : `建议放入页面 Controller，按 tab/展开/选择态分组管理：${uiStates.slice(0, 12).join(', ')}。`,
+        : `建议放入页面状态边界，按 tab/展开/选择态分组管理：${uiStates.slice(0, 12).join(', ')}。`,
       evidence: uiStates.slice(0, 16).join(', '),
     });
   }
@@ -211,8 +211,8 @@ function buildStateStrategy(
   if ((sfc?.routes.length ?? 0) > 0) {
     strategies.push({
       concern: '路由与参数',
-      owner: 'controller',
-      recommendation: 'Controller 统一读取 route 参数并暴露页面初始状态；子 Widget 只通过 callback 触发导航。',
+      owner: 'state-boundary',
+      recommendation: '页面状态边界统一读取 route 参数并暴露页面初始状态；子 Widget 只通过 callback 触发导航。',
       evidence: sfc?.routes.map((route) => route.evidence).join(' | ') ?? '',
     });
   }
@@ -220,8 +220,8 @@ function buildStateStrategy(
   if ((sfc?.lifecycle.length ?? 0) > 0) {
     strategies.push({
       concern: '生命周期与副作用',
-      owner: 'controller',
-      recommendation: 'ScrollController/listener/watch 副作用必须有明确注册和释放位置；默认放 Controller.onInit/onClose，只有依赖首帧布局或滚动定位时再使用 onReady/首帧回调。',
+      owner: 'state-boundary',
+      recommendation: 'ScrollController/listener/watch 副作用必须有明确注册和释放位置；默认放入目标状态模式的初始化/释放边界，只有依赖首帧布局或滚动定位时再使用首帧回调。',
       evidence: sfc?.lifecycle.map((item) => item.evidence).join(' | ') ?? '',
     });
   }
@@ -236,7 +236,7 @@ function buildControllerBoundaries(
   if (complexity === 'simple') {
     return [
       {
-        name: `${pageName}Controller（可选）`,
+        name: `${pageName}StateBoundary（可选）`,
         responsibility: '简单页面可不建状态 owner；如目标项目规范要求页面级状态边界，则只承载初始化和轻量状态。',
         owns: ['页面初始化', '必要路由参数'],
         avoids: ['静态 UI 布局', '硬编码 mock 数据', '子 Widget 内部展示细节'],
@@ -249,10 +249,10 @@ function buildControllerBoundaries(
   if (source.sfc?.routes.length) owns.push('导航行为');
   return [
     {
-      name: `${pageName}Controller`,
-      responsibility: '页面 orchestration controller；负责状态组合、生命周期和事件分发，不负责绘制细节。',
+      name: `${pageName}StateBoundary`,
+      responsibility: '页面编排状态边界；负责状态组合、生命周期和事件分发，不负责绘制细节。',
       owns,
-      avoids: ['逐层照搬来源页面结构', '在 build 中做重计算', '让所有子 Widget 直接读整个 Controller'],
+      avoids: ['逐层照搬来源页面结构', '在 build 中做重计算', '让所有子 Widget 直接读整个页面状态边界'],
     },
     {
       name: `${pageName}Data/Chart Adapter`,
@@ -286,7 +286,7 @@ function buildWidgetContracts(
         inputs: inferWidgetInputs(widget, source),
         callbacks,
         shouldReadController: false,
-        notes: '默认通过构造参数传入数据和 callback；除父页面/组合层外，不建议子 Widget 直接 Get.find 整个 Controller。',
+        notes: '默认通过构造参数传入数据和 callback；除父页面/组合层外，不建议子 Widget 直接读取整个页面状态边界。',
       };
     });
 }
@@ -295,7 +295,7 @@ function buildDoNotTranslate(source: PrototypePageAnalysis, complexity: FlutterI
   const rules = [
     '不要把来源页面结构逐层翻译成 Flutter Widget；按业务区块和 Flutter 布局模型重组。',
     '不要把临时 mock 数据直接写在 Widget build 中；先确认接口/model/fixture 边界。',
-    '不要让每个子 Widget 都直接依赖整个 Controller；优先通过构造参数传入数据，并用回调上报交互。',
+    '不要让每个子 Widget 都直接依赖整个页面状态边界；优先通过构造参数传入数据，并用回调上报交互。',
   ];
   if (complexity === 'complex') {
     rules.push('不要把来源页面的临时状态一对一迁移为目标状态字段；先按 UI 状态、业务数据、派生数据、生命周期副作用分类。');
@@ -319,7 +319,7 @@ function buildChecklist(
   ];
   if (source.sfc?.fixedBottom) checklist.push({ priority: 'P0', item: '确认底部操作栏不遮挡滚动内容，并适配 SafeArea。' });
   if (source.sfc?.routes.length) checklist.push({ priority: 'P0', item: '确认所有跳转目标和参数映射到 Flutter routes。' });
-  if (source.sfc?.lifecycle.length) checklist.push({ priority: 'P0', item: '确认 ScrollController/listener/watch 在 dispose/onClose 中释放。' });
+  if (source.sfc?.lifecycle.length) checklist.push({ priority: 'P0', item: '确认 ScrollController/listener/watch 在目标生命周期释放边界中释放。' });
   if (source.sfc?.layout.some((item) => item.kind === 'sticky')) checklist.push({ priority: 'P1', item: '确认吸顶 Header/Tab 的滚动行为和层级遮挡。' });
   if (source.sfc?.state.some((state) => state.category === 'chart-data')) checklist.push({ priority: 'P1', item: '确认图表实现方案、性能和数据缓存策略。' });
   if (source.sfc?.assets.length) checklist.push({ priority: 'P1', item: '确认图片、SVG、icon、暗色模式资源是否复用现有 assets。' });

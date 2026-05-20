@@ -41,13 +41,13 @@ export type FlutterWidgetPlan = {
   parent?: string | undefined;
   role: string;
   buildHint: string;
-  stateAccess: 'none' | 'props' | 'controller' | 'controller-slice';
+  stateAccess: 'none' | 'props' | 'controller' | 'controller-slice' | 'state-owner' | 'state-slice';
 };
 
 export type FlutterStateStrategy = {
   concern: string;
   recommendation: string;
-  owner: 'controller' | 'service' | 'repository' | 'widget-local' | 'model-adapter' | 'manual';
+  owner: 'controller' | 'state-boundary' | 'service' | 'repository' | 'widget-local' | 'model-adapter' | 'manual';
   evidence: string;
 };
 
@@ -97,6 +97,7 @@ export type UiVisualPlan = {
 
 export type UiImplementationContract = {
   logicalPlanSource: string;
+  sourceSemantics?: UiSourceSemantics | undefined;
   fileTree: FlutterPlannedFile[];
   widgetTree: FlutterWidgetPlan[];
   stateStrategy: FlutterStateStrategy[];
@@ -113,6 +114,58 @@ export type UiImplementationContract = {
   rules: string[];
   contractWarnings: string[];
   manualQuestions: string[];
+};
+
+export type UiSourceSemantics = {
+  summary: string[];
+  businessSections: Array<{
+    name: string;
+    role: string;
+    parent?: string | undefined;
+    responsibility: string;
+    inputs: string[];
+    callbacks: string[];
+  }>;
+  stateIntent: Array<{
+    concern: string;
+    owner: string;
+    recommendation: string;
+    evidence?: string | undefined;
+  }>;
+  routeIntent: Array<{
+    action: string;
+    target?: string | undefined;
+    params?: string | undefined;
+    evidence?: string | undefined;
+  }>;
+  lifecycleIntent: Array<{
+    hook: string;
+    target?: string | undefined;
+    evidence?: string | undefined;
+  }>;
+  interactionIntent: Array<{
+    kind: string;
+    target?: string | undefined;
+    evidence?: string | undefined;
+  }>;
+  layoutIntent: Array<{
+    selector: string;
+    kind: string;
+    evidence?: string | undefined;
+  }>;
+  styleIntent: Array<{
+    selector: string;
+    property: string;
+    token: string;
+    fallback?: string | undefined;
+    kind?: 'color' | 'typography' | undefined;
+  }>;
+  assetIntent: Array<{
+    kind: string;
+    source?: string | undefined;
+    evidence?: string | undefined;
+  }>;
+  doNotTranslate: string[];
 };
 
 export type UiBuildPlan = {

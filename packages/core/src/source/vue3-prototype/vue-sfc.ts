@@ -220,18 +220,18 @@ function inferRoutes(template: string, script: string): VueRouteHint[] {
     target: match[1],
     params: compactCode(match[2]),
     evidence: compactCode(match[0]),
-    migrationHint: `映射到 Get.toNamed/AppRoutes，确认 ${match[1]} 对应 Flutter route 和参数。`,
+    migrationHint: `映射到目标工程路由 API，确认 ${match[1]} 对应 Flutter route 和参数。`,
   }), routes);
   collectMatches(text, /history\.back\s*\(\s*\)/g, (match) => ({
     action: 'back' as const,
     evidence: compactCode(match[0]),
-    migrationHint: '迁移为 Get.back() 或 Navigator.pop，确认返回栈和埋点。',
+    migrationHint: '迁移为目标工程返回 API，确认返回栈和埋点。',
   }), routes);
   collectMatches(text, /route\.query\.(\w+)/g, (match) => ({
     action: 'read-query' as const,
     target: match[1],
     evidence: compactCode(match[0]),
-    migrationHint: `从 Get.parameters/Get.arguments 读取 ${match[1]}，确认默认值和来源页面。`,
+    migrationHint: `从目标工程路由参数入口读取 ${match[1]}，确认默认值和来源页面。`,
   }), routes);
 
   return dedupeBy(routes, (item) => `${item.action}:${item.target ?? ''}:${item.params ?? ''}`).slice(0, 40);
@@ -243,25 +243,25 @@ function inferLifecycle(script: string): VueLifecycleHint[] {
     hook: 'onMounted' as const,
     target: lifecycleTarget(match[1] ?? ''),
     evidence: compactCode(`onMounted(${(match[1] ?? '').slice(0, 140)}`),
-    migrationHint: '迁移到 Controller.onReady 或页面首帧回调；涉及滚动需绑定 ScrollController 后执行。',
+    migrationHint: '迁移到目标状态模式的初始化边界或页面首帧回调；涉及滚动需绑定 ScrollController 后执行。',
   }), hints);
   collectMatches(script, /onBeforeUnmount\s*\(([\s\S]*?)\n\}\)/g, (match) => ({
     hook: 'onBeforeUnmount' as const,
     target: lifecycleTarget(match[1] ?? ''),
     evidence: compactCode(`onBeforeUnmount(${(match[1] ?? '').slice(0, 140)}`),
-    migrationHint: '迁移到 Controller.onClose，释放 ScrollController、listener、timer 等资源。',
+    migrationHint: '迁移到目标生命周期释放边界，释放 ScrollController、listener、timer 等资源。',
   }), hints);
   collectMatches(script, /watch\s*\(([^,]+),/g, (match) => ({
     hook: 'watch' as const,
     target: compactCode(match[1]),
     evidence: compactCode(match[0]),
-    migrationHint: '迁移为 ever/worker、Rx 监听或在 setter 中触发副作用。',
+    migrationHint: '迁移为目标状态模式支持的监听机制，或在明确的 setter/状态边界方法中触发副作用。',
   }), hints);
   collectMatches(script, /(addEventListener|removeEventListener)\s*\(\s*['"]([^'"]+)['"]/g, (match) => ({
     hook: 'event-listener' as const,
     target: match[2],
     evidence: compactCode(match[0]),
-    migrationHint: match[1] === 'addEventListener' ? 'Flutter 侧用 ScrollController/listener 注册。' : '确保在 onClose/dispose 中移除 listener。',
+    migrationHint: match[1] === 'addEventListener' ? 'Flutter 侧用 ScrollController/listener 注册。' : '确保在目标生命周期释放边界中移除 listener。',
   }), hints);
 
   return dedupeBy(hints, (item) => `${item.hook}:${item.target ?? ''}:${item.evidence}`).slice(0, 30);
@@ -583,12 +583,12 @@ function categorizeFunction(name: string): VueStateHint['category'] {
 }
 
 function migrationHintForState(kind: VueStateHint['kind'], category: VueStateHint['category']): string {
-  if (category === 'ui-state') return '放入 GetX Controller 的 Rx 字段，Widget 通过 Obx/GetBuilder 订阅。';
+  if (category === 'ui-state') return '放入页面状态边界；Widget 通过目标状态模式支持的方式订阅或接收属性。';
   if (category === 'mock-data') return '不要硬编码到 Widget；确认真实接口、模型字段或临时 fixture。';
   if (category === 'chart-data') return '拆到图表数据 adapter/getter，避免 UI build 中重复计算重数据。';
   if (category === 'navigation') return '迁移为路由参数、ScrollController 或导航方法。';
-  if (category === 'lifecycle') return '迁移到 Controller 生命周期并确保释放资源。';
-  if (category === 'handler') return '迁移为 Controller 方法或 Widget callback。';
+  if (category === 'lifecycle') return '迁移到目标生命周期边界并确保释放资源。';
+  if (category === 'handler') return '迁移为状态边界方法或 Widget callback。';
   if (kind === 'computed') return '迁移为 getter/派生状态，确认缓存策略。';
   return '人工确认所属状态模型。';
 }

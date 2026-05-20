@@ -22,6 +22,7 @@ async function buildUiPlan(
     targetRoot: input.targetRoot,
     targetModule: input.targetModule,
     sourceAwareImplementationPlan: input.sourceAwareImplementationPlan,
+    sourceReview: input.sourceReview,
   });
   const planPath = path.join(input.outDir, 'ui-build-plan.json');
   await writeJsonFile(planPath, plan);

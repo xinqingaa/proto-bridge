@@ -50,7 +50,7 @@ export function renderFlutterMigrationSpec(context: MigrationContext): string {
 
   lines.push(`# ${title} Flutter 迁移说明书`);
   lines.push('');
-  lines.push('> 说明：本文档保留 source-aware 迁移分析和逻辑拆分。文中如出现 GetX、BaseGetView、Rx、themeService、`.tr` 等具体工程表达，只表示旧版 source-aware 表述或历史示例表达，不是 ProtoBridge 默认偏好。具体目标工程表达以 `ui-build-plan.json` 的 `targetConventions` 与 `implementationContract` 为准；若二者冲突，应优先遵守目标扫描证据和 implementationContract。');
+  lines.push('> 说明：本文档保留 source-aware 迁移分析和逻辑拆分。文中如出现具体工程表达，只表示旧版 source-aware 表述或历史示例表达，不是 ProtoBridge 默认偏好。具体目标工程表达以 `ui-build-plan.json` 的 `targetConventions` 与 `implementationContract` 为准；若二者冲突，应优先遵守目标扫描证据和 implementationContract。');
   lines.push('');
   lines.push('## 页面元信息');
   lines.push(`- 目标路由来源：${source.route ?? '待确认'}`);
@@ -402,13 +402,14 @@ function callbackLabel(callback: string): string {
 function stateAccessLabel(access: FlutterWidgetPlan['stateAccess']): string {
   if (access === 'none') return '不直接访问状态';
   if (access === 'props') return '通过构造参数接收数据';
-  if (access === 'controller') return '页面入口读取 Controller';
-  return '组合层只订阅必要 Controller 状态';
+  if (access === 'controller' || access === 'state-owner') return '页面入口读取页面状态边界';
+  return '组合层只订阅必要状态片段';
 }
 
 function ownerLabel(owner: FlutterStateStrategy['owner']): string {
   const labels: Record<FlutterStateStrategy['owner'], string> = {
-    controller: 'Controller',
+    controller: '页面状态边界',
+    'state-boundary': '页面状态边界',
     service: 'Service',
     repository: 'Repository / UI model',
     'widget-local': '局部 StatefulWidget',
@@ -447,7 +448,7 @@ function localizeBoundaryName(name: string): string {
 
 function localizeBoundaryText(text: string): string {
   return text
-    .replace(/orchestration controller/g, '编排层 Controller')
+    .replace(/orchestration controller/g, '页面编排状态边界')
     .replace(/mock 到 model/g, 'mock 数据到 UI model')
     .replace(/series 计算/g, '序列数据计算')
     .replace(/series/g, '序列数据')
@@ -499,13 +500,13 @@ function stateCategoryLabel(category: VueStateHint['category']): string {
 
 function stateCategoryAdvice(category: VueStateHint['category']): string {
   const advice: Record<VueStateHint['category'], string> = {
-    'ui-state': '放在页面 Controller；只影响单个私有 Widget 的轻量状态可局部管理。',
+    'ui-state': '放在页面状态边界；只影响单个私有 Widget 的轻量状态可局部管理。',
     'mock-data': '先收敛成 UI model，由 Repository、接口或 fixture 填充，不要写进 Widget build。',
-    'derived-data': '用 Controller getter 或数据适配层输出；重计算内容需要缓存策略。',
-    navigation: '由 Controller 统一读取路由参数并封装跳转/滚动方法。',
-    lifecycle: '放入 Controller.onInit/onClose；依赖首帧布局时再使用 onReady/首帧回调。',
+    'derived-data': '用状态边界 getter 或数据适配层输出；重计算内容需要缓存策略。',
+    navigation: '由页面状态边界统一读取路由参数并封装跳转/滚动方法。',
+    lifecycle: '放入目标状态模式的初始化/释放边界；依赖首帧布局时再使用目标首帧回调。',
     'chart-data': '放入图表数据适配层或 painter 输入模型，Widget 只消费绘制结果。',
-    handler: '实现为 Controller 方法，再通过 Widget 回调触发。',
+    handler: '实现为状态边界方法，再通过 Widget 回调触发。',
     unknown: '需要人工确认它属于业务数据、UI 状态还是临时实现细节。',
   };
   return advice[category];
@@ -536,10 +537,10 @@ function lifecycleLabel(hook: string): string {
 
 function lifecycleMigrationAdvice(item: VueLifecycleHint): string {
   if (item.hook === 'onMounted') {
-    return '优先放在 Controller.onInit；如果依赖首帧尺寸、滚动定位或 BuildContext，再放 onReady/WidgetsBinding.addPostFrameCallback。';
+    return '优先放在目标状态模式的初始化边界；如果依赖首帧尺寸、滚动定位或 BuildContext，再放目标首帧回调。';
   }
-  if (item.hook === 'onBeforeUnmount') return '放在 Controller.onClose，释放 ScrollController、listener、timer 等资源。';
-  if (item.hook === 'event-listener') return 'Flutter 侧用 ScrollController/listener 等等价机制，并在 onClose/dispose 中移除。';
+  if (item.hook === 'onBeforeUnmount') return '放在目标状态模式的释放边界，释放 ScrollController、listener、timer 等资源。';
+  if (item.hook === 'event-listener') return 'Flutter 侧用 ScrollController/listener 等等价机制，并在目标释放边界或 dispose 中移除。';
   if (item.hook === 'watch') return '迁移为目标状态模式支持的监听机制，或在明确的 setter/状态 owner 方法中触发副作用。';
   return item.migrationHint;
 }
@@ -623,12 +624,12 @@ function interactionTargetLabel(target: string): string {
 }
 
 function suggestInteractionMigration(kind: string): string {
-  if (kind === 'click') return '迁移为 Controller 方法或 Widget 回调，并确认路由、弹窗和埋点。';
+  if (kind === 'click') return '迁移为状态边界方法或 Widget 回调，并确认路由、弹窗和埋点。';
   if (kind === 'model') return '迁移为 TextEditingController 或目标状态模式支持的表单状态。';
   if (kind === 'conditional') return '迁移为目标状态 builder、Visibility 或条件渲染，确认默认状态。';
   if (kind === 'loop') return '迁移为 ListView/Column map，确认数据模型和空态。';
   if (kind === 'state') return '作为状态线索参考，最终按状态模型摘要归类。';
-  if (kind === 'computed') return '迁移为 Controller getter、数据适配层输出或派生状态。';
+  if (kind === 'computed') return '迁移为状态边界 getter、数据适配层输出或派生状态。';
   if (kind === 'watch') return '迁移为状态监听、生命周期或 worker。';
   return '根据 Flutter 页面结构和业务需求补充。';
 }

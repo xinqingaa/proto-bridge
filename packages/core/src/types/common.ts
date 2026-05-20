@@ -2,7 +2,7 @@ export type TargetPlatform = 'flutter';
 
 export type PageType = 'prototype' | 'design';
 
-export type ImplementationShape = 'StatelessWidget' | 'StatefulWidget' | 'BaseGetView';
+export type ImplementationShape = 'StatelessWidget' | 'StatefulWidget' | 'TargetPagePattern';
 
 export type WidgetRecommendationType = 'page' | 'section' | 'component' | 'sheet' | 'dialog';
 
