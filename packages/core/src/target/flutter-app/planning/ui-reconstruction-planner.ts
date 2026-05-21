@@ -12,8 +12,14 @@ import type {
   FlutterWidgetPlan,
   InteractionPlan,
   PageCanonical,
+  PageSnapshotNode,
   SnapshotNodeRole,
   ThemeMapping,
+  UiNodeAudit,
+  UiNodeAuditChild,
+  UiNodeAuditControl,
+  UiNodeAuditKind,
+  UiNodeAuditStyle,
   UiBuildPlan,
   UiImplementationContract,
   UiSourceSemantics,
@@ -72,6 +78,7 @@ export async function buildFlutterUiReconstructionPlan(
     targetConventions: conventions.targetConventions,
   });
   const visualPlan = buildVisualPlan(input.evidence);
+  const nodeAuditHints = buildNodeAuditValidationHints(visualPlan.nodeAudits);
 
   return {
     id: createPlanId(input.evidence.id),
@@ -107,12 +114,17 @@ export async function buildFlutterUiReconstructionPlan(
     risks: buildRisks(input.evidence),
     validationHints: [
       'Compare the generated Flutter screen against the source screenshot before adding business behavior.',
+      'Before implementing repeated cards, list items, tabs, filters, buttons, chips, appbar actions, or bottom actions, read visualPlan.nodeAudits and preserve its row order, visible fields, padding, radius, and control evidence.',
+      'Do not add display fields that are absent from the representative nodeAudits unless sourceSemantics or user confirmation explicitly requires them.',
+      'For count labels beside section headers, derive the value from the backing UI model/list length when available instead of hard-coding a translation key with a fixed number.',
       'Treat typography, CSS colors, spacing, and layout as P0 visual fidelity items; prefer exact evidence matches before approximate fallback.',
       'Use node-level themeMappings first; when a theme token is resolved exactly, do not replace it with a larger or heavier nearby token.',
       'If a typography themeMapping has lockToken=true, use the target textStyles token directly and do not override fontSize, height, fontWeight, or fontFamily unless the plan explicitly lists a source override.',
       'Check spacing, radius, border, and shadow values against reusable target widgets before introducing local constants.',
+      'When a nodeAudit control provides padding and borderRadius evidence, prefer padding-driven Flutter layout over fixed height unless the target component API requires a fixed extent.',
       'Keep business data, API fields, permission checks, risk controls, and tracking as TODOs unless confirmed by target examples.',
       'Prefer similar module examples and common widgets over one-to-one DOM translation.',
+      ...nodeAuditHints,
     ],
   };
 }
@@ -659,12 +671,286 @@ function buildVisualPlan(evidence: PageCanonical): UiVisualPlan {
       evidence: section.evidence,
       buildHint: buildSectionHint(section, evidence),
     })),
+    nodeAudits: buildNodeAudits(evidence),
     layoutEvidence: evidence.sections.slice(0, 80).map((section) => {
       const title = section.title ? ` ${section.title}` : '';
       return `${section.role}${title}: bbox=${section.bbox.x},${section.bbox.y},${section.bbox.width},${section.bbox.height}; nodes=${section.nodeIds.length}`;
     }),
     screenshotRefs: evidence.screenshots.map((screenshot) => screenshot.path),
   };
+}
+
+function buildNodeAudits(evidence: PageCanonical): UiNodeAudit[] {
+  const byId = new Map(evidence.nodes.map((node) => [node.id, node]));
+  const candidates = selectNodeAuditCandidates(evidence, byId);
+  return candidates.map((node) => buildNodeAudit(node, byId)).filter((audit): audit is UiNodeAudit => Boolean(audit));
+}
+
+function selectNodeAuditCandidates(evidence: PageCanonical, byId: Map<string, PageSnapshotNode>): PageSnapshotNode[] {
+  const sectionRoots = evidence.sections
+    .map((section) => section.nodeIds[0])
+    .map((nodeId) => nodeId ? byId.get(nodeId) : undefined)
+    .filter((node): node is PageSnapshotNode => Boolean(node));
+  const directCandidates = evidence.nodes.filter((node) =>
+    ['card', 'list-item', 'button', 'tab-bar', 'app-bar', 'bottom-bar', 'modal'].includes(node.role),
+  );
+  const selected = dedupeBy([...sectionRoots, ...directCandidates], (node) => node.id)
+    .filter((node) => shouldAuditNode(node))
+    .sort((left, right) => priorityForAuditRole(left.role) - priorityForAuditRole(right.role)
+      || left.bbox.y - right.bbox.y
+      || left.bbox.x - right.bbox.x);
+  const perKind = new Map<UiNodeAuditKind, number>();
+  const result: PageSnapshotNode[] = [];
+  for (const node of selected) {
+    const kind = auditKindForNode(node);
+    const count = perKind.get(kind) ?? 0;
+    const limit = kind === 'button' || kind === 'chip' ? 6 : 3;
+    if (count >= limit) continue;
+    perKind.set(kind, count + 1);
+    result.push(node);
+    if (result.length >= 24) break;
+  }
+  return result;
+}
+
+function shouldAuditNode(node: PageSnapshotNode): boolean {
+  if (node.bbox.width <= 0 || node.bbox.height <= 0) return false;
+  if (node.role === 'unknown' || node.role === 'text' || node.role === 'icon' || node.role === 'image') return false;
+  if (node.role === 'section' && node.children.length === 0) return false;
+  return node.children.length > 0 || Boolean(node.text?.trim()) || Boolean(node.assetRefs?.length);
+}
+
+function priorityForAuditRole(role: SnapshotNodeRole): number {
+  const priority: Partial<Record<SnapshotNodeRole, number>> = {
+    card: 1,
+    'list-item': 2,
+    'tab-bar': 3,
+    'bottom-bar': 4,
+    'app-bar': 5,
+    button: 6,
+    modal: 7,
+    section: 8,
+  };
+  return priority[role] ?? 99;
+}
+
+function buildNodeAudit(node: PageSnapshotNode, byId: Map<string, PageSnapshotNode>): UiNodeAudit | undefined {
+  const descendants = collectDescendants(node, byId).filter((item) => item.id !== node.id);
+  const visibleChildren = descendants
+    .filter((item) => isAuditVisibleChild(item))
+    .sort((left, right) => left.bbox.y - right.bbox.y || left.bbox.x - right.bbox.x);
+  const controls = descendants
+    .filter((item) => isAuditControl(item))
+    .sort((left, right) => left.bbox.y - right.bbox.y || left.bbox.x - right.bbox.x)
+    .slice(0, 12)
+    .map((item) => toAuditControl(item));
+  const kind = auditKindForNode(node);
+  return {
+    id: `audit-${kind}-${node.id}`,
+    kind,
+    sourceNodeId: node.id,
+    role: node.role,
+    ...(node.text ? { title: node.text.slice(0, 80) } : {}),
+    bbox: node.bbox,
+    containerStyle: pickAuditStyle(node, { includeBox: true }),
+    rows: groupAuditRows(visibleChildren.map((item) => toAuditChild(item))).slice(0, 12),
+    controls,
+    assetRefs: dedupe([
+      ...(node.assetRefs ?? []),
+      ...descendants.flatMap((item) => item.assetRefs ?? []),
+    ]).slice(0, 24),
+    absenceHints: buildAbsenceHints(node, visibleChildren),
+    implementationHints: buildNodeAuditImplementationHints(node, controls),
+  };
+}
+
+function collectDescendants(root: PageSnapshotNode, byId: Map<string, PageSnapshotNode>): PageSnapshotNode[] {
+  const result: PageSnapshotNode[] = [];
+  const stack = [root];
+  const seen = new Set<string>();
+  while (stack.length > 0) {
+    const node = stack.shift();
+    if (!node || seen.has(node.id)) continue;
+    seen.add(node.id);
+    result.push(node);
+    for (const childId of node.children) {
+      const child = byId.get(childId);
+      if (child) stack.push(child);
+    }
+  }
+  return result;
+}
+
+function isAuditVisibleChild(node: PageSnapshotNode): boolean {
+  const hasText = Boolean(node.text?.trim());
+  const hasAsset = Boolean(node.assetRefs?.length);
+  const semanticRole = ['button', 'icon', 'image', 'input'].includes(node.role);
+  if (!hasText && !hasAsset && !semanticRole) return false;
+  if (node.bbox.width <= 0 || node.bbox.height <= 0) return false;
+  return true;
+}
+
+function isAuditControl(node: PageSnapshotNode): boolean {
+  if (node.role === 'button' || node.role === 'input' || node.role === 'icon' || node.role === 'image') return true;
+  return isLikelyChip(node);
+}
+
+function isLikelyChip(node: PageSnapshotNode): boolean {
+  const style = node.computedStyle;
+  const text = node.text?.trim();
+  if (!text || text.length > 24) return false;
+  const radius = parseCssNumber(style?.borderRadius);
+  const height = node.bbox.height;
+  const hasPillRadius = radius >= 8 || radius >= height / 2 - 2;
+  const hasBackground = Boolean(style?.backgroundColor && style.backgroundColor !== 'rgba(0, 0, 0, 0)' && style.backgroundColor !== 'transparent');
+  return hasPillRadius && hasBackground && height <= 36;
+}
+
+function toAuditChild(node: PageSnapshotNode): UiNodeAuditChild {
+  return {
+    nodeId: node.id,
+    role: node.role,
+    ...(node.text?.trim() ? { text: node.text.trim() } : {}),
+    ...(node.assetRefs?.length ? { assetRefs: node.assetRefs } : {}),
+    bbox: node.bbox,
+    style: pickAuditStyle(node, { includeText: true }),
+  };
+}
+
+function toAuditControl(node: PageSnapshotNode): UiNodeAuditControl {
+  const style = node.computedStyle;
+  return {
+    ...toAuditChild(node),
+    kind: node.role === 'button'
+      ? 'button'
+      : isLikelyChip(node)
+        ? 'chip'
+        : node.role === 'icon'
+          ? 'icon'
+          : node.role === 'image'
+            ? 'image'
+            : 'unknown',
+    ...(style?.padding ? { padding: style.padding } : {}),
+    height: `${roundCssNumber(node.bbox.height)}px`,
+    ...(style?.borderRadius ? { borderRadius: style.borderRadius } : {}),
+  };
+}
+
+function groupAuditRows(children: UiNodeAuditChild[]): UiNodeAudit['rows'] {
+  const rows: UiNodeAudit['rows'] = [];
+  for (const child of children) {
+    const centerY = child.bbox.y + child.bbox.height / 2;
+    const existing = rows.find((row) => centerY >= row.yRange.min - 4 && centerY <= row.yRange.max + 4);
+    if (existing) {
+      existing.children.push(child);
+      existing.yRange.min = Math.min(existing.yRange.min, child.bbox.y);
+      existing.yRange.max = Math.max(existing.yRange.max, child.bbox.y + child.bbox.height);
+      continue;
+    }
+    rows.push({
+      index: rows.length + 1,
+      yRange: { min: child.bbox.y, max: child.bbox.y + child.bbox.height },
+      children: [child],
+    });
+  }
+  return rows
+    .map((row, index) => ({
+      ...row,
+      index: index + 1,
+      yRange: {
+        min: roundCssNumber(row.yRange.min),
+        max: roundCssNumber(row.yRange.max),
+      },
+      children: row.children.sort((left, right) => left.bbox.x - right.bbox.x),
+    }))
+    .sort((left, right) => left.yRange.min - right.yRange.min);
+}
+
+function auditKindForNode(node: PageSnapshotNode): UiNodeAuditKind {
+  if (node.role === 'card') return 'card';
+  if (node.role === 'list-item') return 'list-item';
+  if (node.role === 'button') return isLikelyChip(node) ? 'chip' : 'button';
+  if (node.role === 'tab-bar') return 'tab';
+  if (node.role === 'bottom-bar') return 'bottom-action';
+  if (node.role === 'app-bar') return 'appbar-action';
+  if (node.role === 'section') return inferSectionAuditKind(node);
+  return 'unknown';
+}
+
+function inferSectionAuditKind(node: PageSnapshotNode): UiNodeAuditKind {
+  const text = node.text?.toLowerCase() ?? '';
+  if (text.includes('sort')) return 'sort-control';
+  if (text.includes('filter')) return 'filter';
+  return 'section';
+}
+
+function pickAuditStyle(node: PageSnapshotNode, options: { includeBox?: boolean; includeText?: boolean }): UiNodeAuditStyle {
+  const style = node.computedStyle ?? {};
+  return {
+    ...(style.display ? { display: style.display } : {}),
+    ...(style.flexDirection ? { flexDirection: style.flexDirection } : {}),
+    ...(style.alignItems ? { alignItems: style.alignItems } : {}),
+    ...(style.justifyContent ? { justifyContent: style.justifyContent } : {}),
+    ...(style.gap ? { gap: style.gap } : {}),
+    ...(style.padding ? { padding: style.padding } : {}),
+    ...(style.margin ? { margin: style.margin } : {}),
+    ...(options.includeBox ? { width: `${roundCssNumber(node.bbox.width)}px`, height: `${roundCssNumber(node.bbox.height)}px` } : {}),
+    ...(style.color ? { color: style.color } : {}),
+    ...(style.backgroundColor ? { backgroundColor: style.backgroundColor } : {}),
+    ...(options.includeText && style.fontSize ? { fontSize: style.fontSize } : {}),
+    ...(options.includeText && style.fontWeight ? { fontWeight: style.fontWeight } : {}),
+    ...(options.includeText && style.lineHeight ? { lineHeight: style.lineHeight } : {}),
+    ...(style.borderRadius ? { borderRadius: style.borderRadius } : {}),
+    ...(style.border ? { border: style.border } : {}),
+    ...(style.boxShadow ? { boxShadow: style.boxShadow } : {}),
+  };
+}
+
+function buildAbsenceHints(node: PageSnapshotNode, visibleChildren: PageSnapshotNode[]): string[] {
+  const hints = [
+    'Representative node rows list the visible display fields; do not add extra sibling fields unless sourceSemantics or user confirmation requires them.',
+  ];
+  const text = visibleChildren.map((child) => child.text ?? '').join(' ').toLowerCase();
+  const quantityLike = /\bheld\b|\bposition\b|\bquantity\b|\bshares\b|\bqty\b|持股|持仓|可行权/.test(text);
+  if ((node.role === 'card' || node.role === 'list-item') && quantityLike && !/\bavail(?:able)?\b|可用/.test(text)) {
+    hints.push('No available quantity field is visible in this representative card/list item.');
+  }
+  return hints;
+}
+
+function buildNodeAuditImplementationHints(node: PageSnapshotNode, controls: UiNodeAuditControl[]): string[] {
+  const hints = [
+    'Restore row order and visible text/icon order from rows before applying target component abstractions.',
+  ];
+  if (controls.some((control) => control.padding || control.borderRadius)) {
+    hints.push('Controls include padding/radius evidence; prefer padding-driven layout over fixed height when target APIs allow it.');
+  }
+  if (node.role === 'card' || node.role === 'list-item') {
+    hints.push('Use this representative item as the contract for repeated item widgets.');
+  }
+  return hints;
+}
+
+function buildNodeAuditValidationHints(audits: UiNodeAudit[]): string[] {
+  if (audits.length === 0) return [];
+  const hints = [`visualPlan.nodeAudits contains ${audits.length} representative node audit(s) for repeated or high-risk UI units.`];
+  if (audits.some((audit) => audit.controls.some((control) => control.kind === 'button' || control.kind === 'chip'))) {
+    hints.push('Review visualPlan.nodeAudits[*].controls before implementing buttons or chips; preserve padding, radius, and text order where present.');
+  }
+  if (audits.some((audit) => audit.kind === 'card' || audit.kind === 'list-item')) {
+    hints.push('Review visualPlan.nodeAudits card/list rows before writing repeated item widgets; absenceHints identify fields that should not be invented.');
+  }
+  return hints;
+}
+
+function parseCssNumber(value: string | undefined): number {
+  if (!value) return 0;
+  const match = value.match(/-?\d+(?:\.\d+)?/);
+  return match ? Number(match[0]) : 0;
+}
+
+function roundCssNumber(value: number): number {
+  return Math.round(value * 100) / 100;
 }
 
 function buildComponentMappings(evidence: PageCanonical, components: FlutterComponentRef[]): ComponentMapping[] {

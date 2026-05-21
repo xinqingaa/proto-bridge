@@ -86,7 +86,7 @@ ui-build-plan.json
 
 ## Target conventions
 
-Target detector 读取 target root 中的 `pubspec.yaml` 和 Dart 文件，结合相似示例、模块结构和符号使用，归纳 architecture profile。
+Target detector 读取 target root 中的 `pubspec.yaml`、Dart 文件和可用的 target 文档，结合相似示例、模块结构和符号使用，归纳 architecture profile。
 
 字段形状固定，但字段值必须来自证据：
 
@@ -96,10 +96,13 @@ Target detector 读取 target root 中的 `pubspec.yaml` 和 Dart 文件，结�
 - `theme.patterns`
 - `components.detectedSymbols`
 - `fileOrganization.pattern`
+- `documentation.files / architectureHints / conflicts`
 
 GetX、flutter_bloc、Riverpod、Provider、Navigator、go_router、context.t、AppLocalizations、themeService、context.pbColors、CommonAppBar 等都不是默认值。它们只有被扫描到时才能影响 contract。
 
-README/doc scanning 是后续增强方向；当前主证据来自 `pubspec.yaml`、`lib/**/*.dart`、相似示例和模块上下文。
+真实代码扫描仍是最高优先级证据；README、AGENT、CLAUDE、Cursor rules 和 `docs/**/*.md` 等文档证据只作为补充。如果文档与 Dart 扫描冲突，产物会保留冲突提示，但不会用文档覆盖代码事实。
+
+`visualPlan.nodeAudits` 会把 page-canonical 中的代表性节点细节提升到 plan：重复卡片、列表项、按钮、chip、tab、appbar action 和 bottom action 会包含行结构、文本顺序、关键 computed style、控件 padding/radius/height、assetRefs 和 absence hints。它的目的不是推荐 target asset，而是让实现者不必深挖 canonical 才能拿到高风险细节证据。
 
 ## Projection artifacts
 

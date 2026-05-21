@@ -12,6 +12,7 @@ import type {
   FlutterTargetConventionProfile,
 } from '../../types/index.js';
 import { pathExists, toPosixPath } from '../../shared/paths.js';
+import { scanFlutterTargetDocumentation } from './documentation.js';
 
 type DartFile = {
   path: string;
@@ -187,26 +188,33 @@ export async function detectFlutterTargetConventions(input: {
   if (components.length === 0) unresolved.push('reusable component symbols were not detected from common widgets or module usage.');
   if (fileOrganization.pattern === 'unknown') unresolved.push('file organization pattern was not detected from lib/app/modules.');
 
-  return {
-    architectureProfile: {
-      state,
-      routing,
-      i18n,
-      theme: {
-        patterns: themeSignals.map((signal) => signal.pattern),
-        confidence: confidenceForEvidence(themeSignals.flatMap((signal) => signal.evidence)),
-        evidence: themeSignals.map((signal) => `${signal.pattern} detected from target usage.`),
-        examples: themeSignals.flatMap((signal) => signal.evidence).slice(0, 12),
-      },
-      components: {
-        detectedSymbols: components.map((signal) => signal.symbol),
-        confidence: confidenceForEvidence(components.flatMap((signal) => signal.evidence)),
-        evidence: components.map((signal) => `${signal.symbol} detected from target usage or definition.`),
-        examples: components.flatMap((signal) => signal.evidence).slice(0, 12),
-      },
-      fileOrganization,
+  const architectureProfile: FlutterArchitectureProfile = {
+    state,
+    routing,
+    i18n,
+    theme: {
+      patterns: themeSignals.map((signal) => signal.pattern),
+      confidence: confidenceForEvidence(themeSignals.flatMap((signal) => signal.evidence)),
+      evidence: themeSignals.map((signal) => `${signal.pattern} detected from target usage.`),
+      examples: themeSignals.flatMap((signal) => signal.evidence).slice(0, 12),
     },
-    unresolved,
+    components: {
+      detectedSymbols: components.map((signal) => signal.symbol),
+      confidence: confidenceForEvidence(components.flatMap((signal) => signal.evidence)),
+      evidence: components.map((signal) => `${signal.symbol} detected from target usage or definition.`),
+      examples: components.flatMap((signal) => signal.evidence).slice(0, 12),
+    },
+    fileOrganization,
+  };
+  const documentation = await scanFlutterTargetDocumentation({
+    flutterRoot,
+    architectureProfile,
+  });
+
+  return {
+    architectureProfile,
+    documentation,
+    unresolved: [...unresolved, ...documentation.conflicts],
   };
 }
 

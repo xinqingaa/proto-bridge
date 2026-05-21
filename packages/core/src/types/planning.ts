@@ -91,8 +91,79 @@ export type UiVisualPlan = {
     evidence: string[];
     buildHint?: string | undefined;
   }>;
+  nodeAudits: UiNodeAudit[];
   layoutEvidence: string[];
   screenshotRefs: string[];
+};
+
+export type UiNodeAuditKind =
+  | 'card'
+  | 'list-item'
+  | 'button'
+  | 'chip'
+  | 'sort-control'
+  | 'appbar-action'
+  | 'bottom-action'
+  | 'tab'
+  | 'filter'
+  | 'section'
+  | 'unknown';
+
+export type UiNodeAuditStyle = {
+  display?: string | undefined;
+  flexDirection?: string | undefined;
+  alignItems?: string | undefined;
+  justifyContent?: string | undefined;
+  gap?: string | undefined;
+  padding?: string | undefined;
+  margin?: string | undefined;
+  width?: string | undefined;
+  height?: string | undefined;
+  color?: string | undefined;
+  backgroundColor?: string | undefined;
+  fontSize?: string | undefined;
+  fontWeight?: string | undefined;
+  lineHeight?: string | undefined;
+  borderRadius?: string | undefined;
+  border?: string | undefined;
+  boxShadow?: string | undefined;
+};
+
+export type UiNodeAuditChild = {
+  nodeId: string;
+  role: SnapshotNodeRole;
+  text?: string | undefined;
+  assetRefs?: string[] | undefined;
+  bbox: { x: number; y: number; width: number; height: number };
+  style: UiNodeAuditStyle;
+};
+
+export type UiNodeAuditRow = {
+  index: number;
+  yRange: { min: number; max: number };
+  children: UiNodeAuditChild[];
+};
+
+export type UiNodeAuditControl = UiNodeAuditChild & {
+  kind: 'button' | 'chip' | 'icon' | 'image' | 'unknown';
+  padding?: string | undefined;
+  height?: string | undefined;
+  borderRadius?: string | undefined;
+};
+
+export type UiNodeAudit = {
+  id: string;
+  kind: UiNodeAuditKind;
+  sourceNodeId: string;
+  role: SnapshotNodeRole;
+  title?: string | undefined;
+  bbox: { x: number; y: number; width: number; height: number };
+  containerStyle: UiNodeAuditStyle;
+  rows: UiNodeAuditRow[];
+  controls: UiNodeAuditControl[];
+  assetRefs: string[];
+  absenceHints: string[];
+  implementationHints: string[];
 };
 
 export type UiImplementationContract = {

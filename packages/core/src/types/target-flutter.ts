@@ -54,8 +54,26 @@ export type FlutterArchitectureProfile = {
   fileOrganization: FlutterArchitectureFacet;
 };
 
+export type FlutterTargetDocumentationEvidence = {
+  files: Array<{
+    path: string;
+    size: number;
+    summary: string[];
+  }>;
+  architectureHints: Array<{
+    kind: 'state' | 'routing' | 'i18n' | 'theme' | 'component' | 'file-organization' | 'workflow' | 'unknown';
+    pattern: string;
+    confidence: FlutterArchitectureConfidence;
+    evidence: string;
+    file: string;
+  }>;
+  conflicts: string[];
+  warnings: string[];
+};
+
 export type FlutterTargetConventionProfile = {
   architectureProfile: FlutterArchitectureProfile;
+  documentation?: FlutterTargetDocumentationEvidence | undefined;
   unresolved: string[];
 };
 

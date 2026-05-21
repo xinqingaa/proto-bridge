@@ -1,6 +1,7 @@
 export * from './adapter.js';
 export * from './context.js';
 export * from './conventions.js';
+export * from './documentation.js';
 export * from './examples.js';
 export * from './planning/index.js';
 export * from './theme-mapping.js';

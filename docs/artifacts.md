@@ -79,8 +79,11 @@ screenshot region / text anchor
 | `theme` | 主题、颜色、字体、spacing token 模式。 |
 | `components` | 可复用组件符号和证据。 |
 | `fileOrganization` | 模块目录、页面文件、widgets、bindings/controllers 等组织方式。 |
+| `documentation` | README、AGENT、CLAUDE、Cursor rules 和 `docs/**/*.md` 等 target 文档补充证据。它只补充理解，不覆盖代码扫描结果。 |
 
 GetX、flutter_bloc、Riverpod、Provider、Navigator、go_router、context.t、AppLocalizations、themeService、context.pbColors、CommonAppBar 等都不是默认值。它们只能在 target 扫描到证据时出现。
+
+`targetConventions.documentation` 会记录读取到的文档文件、架构 hints、文档与代码扫描冲突，以及文件过大或读取失败等警告。证据优先级为：真实业务代码扫描高于 target 文档，target 文档高于 ProtoBridge 的保守默认推断。
 
 ### implementationContract
 
@@ -109,10 +112,13 @@ GetX、flutter_bloc、Riverpod、Provider、Navigator、go_router、context.t、
 | --- | --- |
 | `viewport` | capture viewport。 |
 | `sections` | runtime/screenshot 观察到的 section、bbox、node ids 和 build hints。 |
+| `nodeAudits` | 代表性高风险节点的还原证据，例如重复卡片、列表项、按钮、chip、tab、appbar action 和 bottom action。它记录容器样式、按 y 分组的行结构、文本/icon 顺序、控件 padding/radius/height、assetRefs 和 absence hints。 |
 | `layoutEvidence` | 布局证据摘要。 |
 | `screenshotRefs` | 截图引用。 |
 
 实现时用它还原可见布局和样式，不用它决定文件拆分或状态架构。
+
+实现重复 UI 单元时，应优先读取 `visualPlan.nodeAudits`。如果代表性节点中没有某个展示字段，不应自行补充，除非 `sourceSemantics` 或用户确认明确要求。`nodeAudits` 不负责推荐目标 asset；它只保留 source 节点上的 `assetRefs` 和视觉证据。
 
 ### mappings 和 plans
 
@@ -134,7 +140,7 @@ Typography mapping 如果带 `lockToken=true`，实现必须直接使用扫描�
 2. 来源语义：业务区块、状态意图、路由/生命周期/交互意图。
 3. 目标工程扫描结果。
 4. 实现契约：文件、Widget 与契约、状态与边界。
-5. 视觉计划：section evidence、组件映射、字体锁定、主题映射。
+5. 视觉计划：section evidence、节点级还原证据、组件映射、字体锁定、主题映射。
 6. 文案与交互。
 7. 风险、人工确认和校验提示。
 

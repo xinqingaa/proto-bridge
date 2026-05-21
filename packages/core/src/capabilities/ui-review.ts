@@ -102,6 +102,12 @@ function renderReviewMarkdown(plan: UiBuildPlan): string {
     `- 视口：${plan.visualPlan.viewport.width}x${plan.visualPlan.viewport.height}`,
     `- 截图：${plan.visualPlan.screenshotRefs.join('、') || '无'}`,
     '',
+    '### 节点级还原证据',
+    '',
+    '_JSON 来源：`ui-build-plan.json#/visualPlan/nodeAudits`_',
+    '',
+    ...renderNodeAudits(plan),
+    '',
     '### 区块证据',
     '',
     ...markdownTable(
@@ -303,7 +309,7 @@ function renderArchitectureProfile(plan: UiBuildPlan): string[] {
     '',
     '### 代码扫描证据样例',
     '',
-    '当前版本证据来自 `pubspec.yaml` 和 Dart 文件扫描；README/架构文档将在后续流程优化中作为更高层级输入。',
+    '代码扫描仍是 targetConventions 的最高优先级证据；文档证据只作为补充，不能覆盖真实代码扫描结果。',
     '',
     ...markdownTable(
       ['维度', '符号', '文件', '片段'],
@@ -317,10 +323,112 @@ function renderArchitectureProfile(plan: UiBuildPlan): string[] {
       ],
     ),
     '',
+    '### Target 文档证据',
+    '',
+    ...renderTargetDocumentation(plan),
+    '',
     ...(plan.targetConventions.unresolved.length
       ? ['### 未解析项', '', ...plan.targetConventions.unresolved.map((item) => `- ${translateWarning(item)}`)]
       : []),
   ];
+}
+
+function renderTargetDocumentation(plan: UiBuildPlan): string[] {
+  const docs = plan.targetConventions.documentation;
+  if (!docs || docs.files.length === 0) return ['- 未发现 README/AGENT/CLAUDE/Cursor rules/docs 等 target 文档证据。'];
+  return [
+    ...markdownTable(
+      ['文件', '大小', '摘要'],
+      docs.files.slice(0, 12).map((file) => [
+        codeCell(file.path),
+        `${file.size} bytes`,
+        file.summary.join('；') || '无摘要',
+      ]),
+    ),
+    '',
+    ...markdownTable(
+      ['类型', '模式/关键词', '置信度', '文件', '证据'],
+      docs.architectureHints.slice(0, 24).map((hint) => [
+        hint.kind,
+        hint.pattern,
+        confidenceLabel(hint.confidence),
+        codeCell(hint.file),
+        hint.evidence,
+      ]),
+    ),
+    '',
+    ...(docs.conflicts.length
+      ? ['文档与代码扫描冲突：', '', ...docs.conflicts.map((item) => `- ${translateWarning(item)}`), '']
+      : []),
+    ...(docs.warnings.length
+      ? ['文档扫描警告：', '', ...docs.warnings.map((item) => `- ${translateWarning(item)}`)]
+      : []),
+  ];
+}
+
+function renderNodeAudits(plan: UiBuildPlan): string[] {
+  const audits = plan.visualPlan.nodeAudits;
+  if (!audits.length) return ['- 未生成节点级还原证据；请回退查看 `page-canonical.json`。'];
+  return audits.slice(0, 16).flatMap((audit) => [
+    `#### ${audit.kind} · ${audit.sourceNodeId}`,
+    '',
+    ...markdownTable(
+      ['字段', '证据'],
+      [
+        ['bbox', `${audit.bbox.x},${audit.bbox.y},${audit.bbox.width},${audit.bbox.height}`],
+        ['容器样式', styleSummary(audit.containerStyle)],
+        ['assetRefs', audit.assetRefs.join('、') || '无'],
+      ],
+    ),
+    '',
+    ...markdownTable(
+      ['行', 'Y 范围', '文本 / 图标顺序'],
+      audit.rows.map((row) => [
+        String(row.index),
+        `${row.yRange.min}-${row.yRange.max}`,
+        row.children.map((child) => auditChildSummary(child)).join(' → ') || '无',
+      ]),
+    ),
+    '',
+    ...markdownTable(
+      ['控件', '类型', 'padding', 'height', 'radius', '样式'],
+      audit.controls.map((control) => [
+        auditChildSummary(control),
+        control.kind,
+        control.padding ?? '',
+        control.height ?? '',
+        control.borderRadius ?? '',
+        styleSummary(control.style),
+      ]),
+    ),
+    '',
+    ...listOrFallback([
+      ...audit.absenceHints.map((hint) => `- ${translateWarning(hint)}`),
+      ...audit.implementationHints.map((hint) => `- ${translateWarning(hint)}`),
+    ]),
+    '',
+  ]);
+}
+
+function auditChildSummary(child: {
+  nodeId: string;
+  role: string;
+  text?: string | undefined;
+  assetRefs?: string[] | undefined;
+}): string {
+  const label = child.text
+    ? child.text
+    : child.assetRefs?.length
+      ? child.assetRefs.join(',')
+      : child.role;
+  return `${codeCell(child.nodeId)} ${child.role}${label ? `: ${label}` : ''}`;
+}
+
+function styleSummary(style: Record<string, string | undefined>): string {
+  const entries = Object.entries(style)
+    .filter(([, value]) => Boolean(value))
+    .map(([key, value]) => `${key}=${value}`);
+  return entries.length ? entries.join(', ') : '无';
 }
 
 function evidenceRow(dimension: string, evidence: {
