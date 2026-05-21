@@ -104,6 +104,10 @@ GetX、flutter_bloc、Riverpod、Provider、Navigator、go_router、context.t、
 
 `visualPlan.nodeAudits` 会把 page-canonical 中的代表性节点细节提升到 plan：重复卡片、列表项、按钮、chip、tab、appbar action 和 bottom action 会包含行结构、文本顺序、关键 computed style、控件 padding/radius/height、assetRefs 和 absence hints。它的目的不是推荐 target asset，而是让实现者不必深挖 canonical 才能拿到高风险细节证据。
 
+节点审查遵循保真优先：`ui-build-plan.json` 可以标注 priority、noiseLevel、displayInReview、coverageReason 和 implementationSummary，但这些字段只帮助实现者和 reviewer 排序阅读，不应有损删除真实 UI 证据。额外重复卡片/列表项可以保留在 plan 中并设置 `displayInReview=false`；重复 wrapper、全页容器、已被父卡片覆盖的从属控件等会记录在 `visualPlan.nodeAuditSummary.suppressed`，用于解释为什么 `ui-build-review.md` 不展开它们。
+
+`visualPlan.dynamicTextHints` 与 `i18nPlan.texts[*].dynamic` 会标出列表数量、金额、百分比、日期、数量等动态值。实现时这些值应从 target UI model 派生并格式化，不能因为它们出现在原型文本中就写成固定翻译 key。
+
 ## Projection artifacts
 
 默认 projection 只有两类：

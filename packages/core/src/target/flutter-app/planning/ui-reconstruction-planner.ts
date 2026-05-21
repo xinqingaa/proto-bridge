@@ -19,8 +19,11 @@ import type {
   UiNodeAuditChild,
   UiNodeAuditControl,
   UiNodeAuditKind,
+  UiNodeAuditNoiseLevel,
+  UiNodeAuditPriority,
   UiNodeAuditStyle,
   UiBuildPlan,
+  UiDynamicTextHint,
   UiImplementationContract,
   UiSourceSemantics,
   UiVisualPlan,
@@ -660,6 +663,8 @@ function normalizeContractWarnings(targetConventions: FlutterTargetConventionPro
 }
 
 function buildVisualPlan(evidence: PageCanonical): UiVisualPlan {
+  const nodeAuditResult = buildNodeAudits(evidence);
+  const dynamicTextHints = buildDynamicTextHints(evidence);
   return {
     viewport: evidence.viewport ?? { width: 0, height: 0 },
     sections: evidence.sections.slice(0, 80).map((section) => ({
@@ -671,7 +676,12 @@ function buildVisualPlan(evidence: PageCanonical): UiVisualPlan {
       evidence: section.evidence,
       buildHint: buildSectionHint(section, evidence),
     })),
-    nodeAudits: buildNodeAudits(evidence),
+    nodeAudits: nodeAuditResult.audits,
+    nodeAuditSummary: {
+      generated: nodeAuditResult.audits.length,
+      suppressed: nodeAuditResult.suppressed,
+    },
+    dynamicTextHints,
     layoutEvidence: evidence.sections.slice(0, 80).map((section) => {
       const title = section.title ? ` ${section.title}` : '';
       return `${section.role}${title}: bbox=${section.bbox.x},${section.bbox.y},${section.bbox.width},${section.bbox.height}; nodes=${section.nodeIds.length}`;
@@ -680,37 +690,82 @@ function buildVisualPlan(evidence: PageCanonical): UiVisualPlan {
   };
 }
 
-function buildNodeAudits(evidence: PageCanonical): UiNodeAudit[] {
+function buildNodeAudits(evidence: PageCanonical): {
+  audits: UiNodeAudit[];
+  suppressed: Array<{ nodeId: string; reason: string }>;
+} {
   const byId = new Map(evidence.nodes.map((node) => [node.id, node]));
-  const candidates = selectNodeAuditCandidates(evidence, byId);
-  return candidates.map((node) => buildNodeAudit(node, byId)).filter((audit): audit is UiNodeAudit => Boolean(audit));
+  const selected = selectNodeAuditCandidates(evidence, byId);
+  const audits = selected.candidates
+    .map((candidate) => buildNodeAudit(candidate.node, byId, candidate.coverageReason, candidate.displayInReview))
+    .filter((audit): audit is UiNodeAudit => Boolean(audit));
+  return { audits, suppressed: selected.suppressed };
 }
 
-function selectNodeAuditCandidates(evidence: PageCanonical, byId: Map<string, PageSnapshotNode>): PageSnapshotNode[] {
-  const sectionRoots = evidence.sections
-    .map((section) => section.nodeIds[0])
-    .map((nodeId) => nodeId ? byId.get(nodeId) : undefined)
-    .filter((node): node is PageSnapshotNode => Boolean(node));
+function selectNodeAuditCandidates(
+  evidence: PageCanonical,
+  byId: Map<string, PageSnapshotNode>,
+): {
+  candidates: Array<{ node: PageSnapshotNode; coverageReason: string; displayInReview?: boolean | undefined }>;
+  suppressed: Array<{ nodeId: string; reason: string }>;
+} {
+  const suppressed: Array<{ nodeId: string; reason: string }> = [];
+  const sectionRoots = evidence.sections.flatMap((section) => {
+    const nodeId = section.nodeIds[0];
+    const node = nodeId ? byId.get(nodeId) : undefined;
+    if (!node) return [];
+    const decision = shouldIncludeSectionRoot(section, node, byId, evidence);
+    if (!decision.include) {
+      if (decision.reason) suppressed.push({ nodeId: node.id, reason: decision.reason });
+      return [];
+    }
+    return [{ node, coverageReason: decision.reason ?? `representative ${section.role} section` }];
+  });
   const directCandidates = evidence.nodes.filter((node) =>
     ['card', 'list-item', 'button', 'tab-bar', 'app-bar', 'bottom-bar', 'modal'].includes(node.role),
-  );
-  const selected = dedupeBy([...sectionRoots, ...directCandidates], (node) => node.id)
-    .filter((node) => shouldAuditNode(node))
-    .sort((left, right) => priorityForAuditRole(left.role) - priorityForAuditRole(right.role)
-      || left.bbox.y - right.bbox.y
-      || left.bbox.x - right.bbox.x);
+  ).flatMap((node) => {
+    if (node.role === 'bottom-bar' && hasAncestorRole(node, byId, ['card', 'list-item'])) {
+      suppressed.push({ nodeId: node.id, reason: 'bottom action row is covered by parent card/list-item nodeAudit controls.' });
+      return [];
+    }
+    if ((node.role === 'button' || isLikelyChip(node)) && hasAncestorRole(node, byId, ['card', 'list-item'])) {
+      suppressed.push({ nodeId: node.id, reason: 'control is covered by a parent card/list-item nodeAudit.' });
+      return [];
+    }
+    if (isMisleadingWrapper(node, byId, evidence)) {
+      suppressed.push({ nodeId: node.id, reason: 'wrapper is covered by more specific child nodeAudits.' });
+      return [];
+    }
+    return [{ node, coverageReason: coverageReasonForNode(node) }];
+  });
+  const selected = dedupeBy([...sectionRoots, ...directCandidates], (candidate) => candidate.node.id)
+    .filter((candidate) => shouldAuditNode(candidate.node))
+    .sort((left, right) => priorityForAuditRole(left.node.role) - priorityForAuditRole(right.node.role)
+      || left.node.bbox.y - right.node.bbox.y
+      || left.node.bbox.x - right.node.bbox.x);
   const perKind = new Map<UiNodeAuditKind, number>();
-  const result: PageSnapshotNode[] = [];
-  for (const node of selected) {
-    const kind = auditKindForNode(node);
+  const result: Array<{ node: PageSnapshotNode; coverageReason: string; displayInReview?: boolean | undefined }> = [];
+  for (const candidate of selected) {
+    const kind = auditKindForNode(candidate.node);
     const count = perKind.get(kind) ?? 0;
-    const limit = kind === 'button' || kind === 'chip' ? 6 : 3;
-    if (count >= limit) continue;
+    const limit = auditLimitForKind(kind);
+    if (count >= limit) {
+      if (kind === 'card' || kind === 'list-item') {
+        suppressed.push({ nodeId: candidate.node.id, reason: `additional ${kind} audit retained in plan but omitted from review after representative coverage.` });
+        result.push({
+          ...candidate,
+          coverageReason: `additional ${kind} audit retained in plan for full-fidelity repeated item evidence`,
+          displayInReview: false,
+        });
+        continue;
+      }
+      suppressed.push({ nodeId: candidate.node.id, reason: `additional ${kind} audit omitted after representative coverage.` });
+      continue;
+    }
     perKind.set(kind, count + 1);
-    result.push(node);
-    if (result.length >= 24) break;
+    result.push(candidate);
   }
-  return result;
+  return { candidates: result, suppressed: dedupeBy(suppressed, (item) => item.nodeId) };
 }
 
 function shouldAuditNode(node: PageSnapshotNode): boolean {
@@ -718,6 +773,100 @@ function shouldAuditNode(node: PageSnapshotNode): boolean {
   if (node.role === 'unknown' || node.role === 'text' || node.role === 'icon' || node.role === 'image') return false;
   if (node.role === 'section' && node.children.length === 0) return false;
   return node.children.length > 0 || Boolean(node.text?.trim()) || Boolean(node.assetRefs?.length);
+}
+
+function shouldIncludeSectionRoot(
+  section: PageCanonical['sections'][number],
+  node: PageSnapshotNode,
+  byId: Map<string, PageSnapshotNode>,
+  evidence: PageCanonical,
+): { include: boolean; reason?: string | undefined } {
+  if (isMisleadingWrapper(node, byId, evidence)) {
+    return { include: false, reason: 'large wrapper is covered by more specific child nodeAudits.' };
+  }
+  if (section.role === 'bottom-bar' && hasAncestorRole(node, byId, ['card', 'list-item'])) {
+    return { include: false, reason: 'bottom action row is covered by parent card/list-item nodeAudit controls.' };
+  }
+  if (section.role === 'list') {
+    return hasDescendantRole(node, byId, ['card', 'list-item'])
+      ? { include: false, reason: 'list wrapper is covered by child card/list-item nodeAudits.' }
+      : { include: true, reason: 'list section has no child card/list-item audit candidate.' };
+  }
+  if (['app-bar', 'tab-bar', 'bottom-bar', 'modal', 'card', 'list-item'].includes(section.role)) {
+    return { include: true, reason: `representative ${section.role} section` };
+  }
+  if (section.role === 'section') {
+    const text = node.text ?? section.title ?? '';
+    const focusedText = /sort|filter|排序|筛选|history|record|help|positions|持仓|可行权|行权|到期|value|expiration/i.test(text);
+    const compact = section.bbox.height <= 180 && section.nodeIds.length <= 28;
+    const hasDisplayEvidence = collectDescendants(node, byId).some((child) => isAuditVisibleChild(child) || isAuditControl(child));
+    if ((focusedText || compact) && hasDisplayEvidence) {
+      return { include: true, reason: focusedText ? 'focused header/sort/filter/action section' : 'compact semantic section with visible evidence' };
+    }
+  }
+  if (node.role === 'unknown') {
+    const compact = node.bbox.height <= 160 && node.children.length <= 20;
+    const hasSpecificChildren = hasDescendantRole(node, byId, ['card', 'list-item', 'button', 'tab-bar', 'app-bar', 'bottom-bar', 'modal']);
+    if (compact && !hasSpecificChildren) return { include: true, reason: 'compact unknown section with independent visible evidence' };
+    return { include: false, reason: 'unknown wrapper is covered by specific child nodeAudits or has no independent evidence.' };
+  }
+  return { include: false };
+}
+
+function isMisleadingWrapper(
+  node: PageSnapshotNode,
+  byId: Map<string, PageSnapshotNode>,
+  evidence: PageCanonical,
+): boolean {
+  const viewport = evidence.viewport;
+  const viewportArea = viewport ? viewport.width * viewport.height : 0;
+  const nodeArea = node.bbox.width * node.bbox.height;
+  const coversViewport = Boolean(viewportArea && nodeArea >= viewportArea * 0.72);
+  const largeMultiSection = node.bbox.height >= 360 && hasDescendantRole(node, byId, ['card', 'list-item', 'app-bar', 'tab-bar', 'bottom-bar', 'modal']);
+  const wrapperRole = node.role === 'unknown' || node.role === 'section' || (node.role === 'bottom-bar' && coversViewport);
+  return wrapperRole && (coversViewport || largeMultiSection);
+}
+
+function hasAncestorRole(
+  node: PageSnapshotNode,
+  byId: Map<string, PageSnapshotNode>,
+  roles: SnapshotNodeRole[],
+): boolean {
+  let parentId = node.parentId;
+  const seen = new Set<string>();
+  while (parentId && !seen.has(parentId)) {
+    seen.add(parentId);
+    const parent = byId.get(parentId);
+    if (!parent) return false;
+    if (roles.includes(parent.role)) return true;
+    parentId = parent.parentId;
+  }
+  return false;
+}
+
+function hasDescendantRole(
+  node: PageSnapshotNode,
+  byId: Map<string, PageSnapshotNode>,
+  roles: SnapshotNodeRole[],
+): boolean {
+  return collectDescendants(node, byId).some((child) => child.id !== node.id && roles.includes(child.role));
+}
+
+function auditLimitForKind(kind: UiNodeAuditKind): number {
+  if (kind === 'card' || kind === 'list-item') return 4;
+  if (kind === 'button' || kind === 'chip') return 4;
+  if (kind === 'section') return 6;
+  return 3;
+}
+
+function coverageReasonForNode(node: PageSnapshotNode): string {
+  const kind = auditKindForNode(node);
+  if (kind === 'card' || kind === 'list-item') return 'representative repeated item';
+  if (kind === 'button' || kind === 'chip') return 'standalone control evidence';
+  if (kind === 'appbar-action') return 'page app bar action evidence';
+  if (kind === 'bottom-action') return 'bottom action evidence';
+  if (kind === 'tab') return 'tab/filter control evidence';
+  return `representative ${kind} evidence`;
 }
 
 function priorityForAuditRole(role: SnapshotNodeRole): number {
@@ -734,7 +883,12 @@ function priorityForAuditRole(role: SnapshotNodeRole): number {
   return priority[role] ?? 99;
 }
 
-function buildNodeAudit(node: PageSnapshotNode, byId: Map<string, PageSnapshotNode>): UiNodeAudit | undefined {
+function buildNodeAudit(
+  node: PageSnapshotNode,
+  byId: Map<string, PageSnapshotNode>,
+  coverageReason: string,
+  displayInReviewOverride?: boolean | undefined,
+): UiNodeAudit | undefined {
   const descendants = collectDescendants(node, byId).filter((item) => item.id !== node.id);
   const visibleChildren = descendants
     .filter((item) => isAuditVisibleChild(item))
@@ -745,22 +899,39 @@ function buildNodeAudit(node: PageSnapshotNode, byId: Map<string, PageSnapshotNo
     .slice(0, 12)
     .map((item) => toAuditControl(item));
   const kind = auditKindForNode(node);
+  const rows = groupAuditRows(visibleChildren.map((item) => toAuditChild(item))).slice(0, 12);
+  const absenceHints = buildAbsenceHints(node, visibleChildren);
+  const implementationHints = buildNodeAuditImplementationHints(node, controls);
+  const priority = priorityForAudit(node, kind, rows, controls, absenceHints);
+  const noiseLevel = noiseLevelForAudit(node, kind);
   return {
     id: `audit-${kind}-${node.id}`,
     kind,
+    priority,
+    noiseLevel,
+    displayInReview: displayInReviewOverride ?? shouldDisplayAuditInReview(priority, noiseLevel),
+    coverageReason,
     sourceNodeId: node.id,
     role: node.role,
     ...(node.text ? { title: node.text.slice(0, 80) } : {}),
+    implementationSummary: buildAuditImplementationSummary({
+      node,
+      kind,
+      rows,
+      controls,
+      absenceHints,
+      implementationHints,
+    }),
     bbox: node.bbox,
     containerStyle: pickAuditStyle(node, { includeBox: true }),
-    rows: groupAuditRows(visibleChildren.map((item) => toAuditChild(item))).slice(0, 12),
+    rows,
     controls,
     assetRefs: dedupe([
       ...(node.assetRefs ?? []),
       ...descendants.flatMap((item) => item.assetRefs ?? []),
     ]).slice(0, 24),
-    absenceHints: buildAbsenceHints(node, visibleChildren),
-    implementationHints: buildNodeAuditImplementationHints(node, controls),
+    absenceHints,
+    implementationHints,
   };
 }
 
@@ -869,12 +1040,105 @@ function groupAuditRows(children: UiNodeAuditChild[]): UiNodeAudit['rows'] {
 function auditKindForNode(node: PageSnapshotNode): UiNodeAuditKind {
   if (node.role === 'card') return 'card';
   if (node.role === 'list-item') return 'list-item';
-  if (node.role === 'button') return isLikelyChip(node) ? 'chip' : 'button';
+  if (node.role === 'button') return 'button';
   if (node.role === 'tab-bar') return 'tab';
   if (node.role === 'bottom-bar') return 'bottom-action';
   if (node.role === 'app-bar') return 'appbar-action';
   if (node.role === 'section') return inferSectionAuditKind(node);
+  if (isLikelyChip(node)) return 'chip';
   return 'unknown';
+}
+
+function priorityForAudit(
+  node: PageSnapshotNode,
+  kind: UiNodeAuditKind,
+  rows: UiNodeAudit['rows'],
+  controls: UiNodeAuditControl[],
+  absenceHints: string[],
+): UiNodeAuditPriority {
+  if (kind === 'card' || kind === 'list-item') return 'p0';
+  if (kind === 'sort-control' || kind === 'filter' || kind === 'appbar-action' || kind === 'bottom-action' || kind === 'tab') return 'p0';
+  if (controls.length > 0 && (controls.some((control) => control.padding || control.borderRadius) || kind === 'button')) return 'p1';
+  if (absenceHints.length > 1) return 'p1';
+  if (rows.length >= 2 || node.assetRefs?.length) return 'p1';
+  return 'p2';
+}
+
+function noiseLevelForAudit(node: PageSnapshotNode, kind: UiNodeAuditKind): UiNodeAuditNoiseLevel {
+  if (kind === 'unknown') return 'high';
+  if ((kind === 'section' || kind === 'bottom-action') && node.bbox.height >= 300) return 'medium';
+  if (kind === 'button' || kind === 'chip') return 'medium';
+  return 'low';
+}
+
+function shouldDisplayAuditInReview(priority: UiNodeAuditPriority, noiseLevel: UiNodeAuditNoiseLevel): boolean {
+  if (noiseLevel === 'high') return false;
+  if (priority === 'p0') return true;
+  return priority === 'p1' && noiseLevel === 'low';
+}
+
+function buildAuditImplementationSummary(input: {
+  node: PageSnapshotNode;
+  kind: UiNodeAuditKind;
+  rows: UiNodeAudit['rows'];
+  controls: UiNodeAuditControl[];
+  absenceHints: string[];
+  implementationHints: string[];
+}): UiNodeAudit['implementationSummary'] {
+  const rowSummaries = input.rows.map((row) => row.children.map((child) => child.text ?? child.assetRefs?.join(',') ?? child.role).join(' -> '));
+  const mustPreserve = [
+    ...rowSummaries.map((summary, index) => `第 ${index + 1} 行：${summary}`),
+    ...input.implementationHints,
+  ].filter(Boolean).slice(0, 10);
+  const doNotInvent = input.absenceHints
+    .filter((hint) => /do not|No available|不存在|不要|absent/i.test(hint))
+    .slice(0, 6);
+  const controlSummary = input.controls
+    .map((control) => [
+      control.text ?? control.assetRefs?.join(',') ?? control.nodeId,
+      control.padding ? `padding ${control.padding}` : '',
+      control.height ? `height ${control.height}` : '',
+      control.borderRadius ? `radius ${control.borderRadius}` : '',
+    ].filter(Boolean).join(', '))
+    .slice(0, 8);
+  return {
+    targetWidgetHint: targetWidgetHintForAudit(input.kind),
+    layoutSummary: layoutSummaryForAudit(input.kind, input.rows),
+    mustPreserve,
+    doNotInvent,
+    controlSummary,
+    riskLevel: input.kind === 'card' || input.kind === 'list-item' || input.kind === 'sort-control' || input.kind === 'filter'
+      ? 'high'
+      : input.controls.length > 0
+        ? 'medium'
+        : 'low',
+  };
+}
+
+function targetWidgetHintForAudit(kind: UiNodeAuditKind): string | undefined {
+  const hints: Partial<Record<UiNodeAuditKind, string>> = {
+    card: '重复项卡片 Widget',
+    'list-item': '重复列表项 Widget',
+    button: '独立操作按钮',
+    chip: '状态标签 / pill',
+    'sort-control': '排序/筛选头部控件',
+    filter: '筛选控件组',
+    'appbar-action': 'AppBar 操作区',
+    'bottom-action': '底部操作区',
+    tab: 'Tab/筛选选择器',
+    section: '语义区块 Widget',
+  };
+  return hints[kind];
+}
+
+function layoutSummaryForAudit(kind: UiNodeAuditKind, rows: UiNodeAudit['rows']): string {
+  if (rows.length === 0) return `${kind} 视觉证据，无直接文本行。`;
+  if ((kind === 'card' || kind === 'list-item') && rows.length === 3) {
+    return '3 行卡片：主信息行 / 价格或主值行 / 数量与操作行。';
+  }
+  if (kind === 'appbar-action') return `${rows.length} 行 AppBar 结构。`;
+  if (kind === 'sort-control' || kind === 'filter') return `${rows.length} 行排序/筛选控件结构。`;
+  return `${rows.length} 行 ${kind} 结构。`;
 }
 
 function inferSectionAuditKind(node: PageSnapshotNode): UiNodeAuditKind {
@@ -1131,6 +1395,8 @@ function themeFallbackFamilies(targetConventions: FlutterTargetConventionProfile
 }
 
 function buildI18nPlan(evidence: PageCanonical): UiBuildPlan['i18nPlan'] {
+  const dynamicHints = buildDynamicTextHints(evidence);
+  const dynamicByText = new Map(dynamicHints.map((hint) => [hint.text, hint]));
   const sourceI18nTexts = Object.values(evidence.sourceFacts?.analysis.i18n ?? {})
     .flatMap((value) => collectStrings(value))
     .filter((text) => text.length <= 120);
@@ -1140,15 +1406,85 @@ function buildI18nPlan(evidence: PageCanonical): UiBuildPlan['i18nPlan'] {
   ])
     .filter((text) => text.length <= 120)
     .slice(0, 120)
-    .map((text) => ({
-      text,
-      nodeIds: evidence.nodes.filter((node) => node.text === text).map((node) => node.id).slice(0, 8),
-      ...suggestedKey(text),
-    }));
+    .map((text) => {
+      const dynamic = dynamicByText.get(text);
+      const nodeIds = evidence.nodes.filter((node) => node.text === text).map((node) => node.id).slice(0, 8);
+      return {
+        text,
+        nodeIds,
+        ...(dynamic ? { dynamic: true, dynamicKind: dynamic.kind } : suggestedKey(text)),
+      };
+    });
   return {
     texts,
-    recommendation: 'Visible text should use the i18n API detected in targetConventions when available; otherwise keep local constants with TODO for translation keys.',
+    recommendation: 'Visible static text should use the i18n API detected in targetConventions when available; dynamic values such as counts, prices, percentages, dates, and quantities should be formatted from UI model data instead of becoming fixed translation keys.',
   };
+}
+
+function buildDynamicTextHints(evidence: PageCanonical): UiDynamicTextHint[] {
+  return evidence.nodes
+    .filter((node) => node.text?.trim())
+    .flatMap((node) => {
+      const text = node.text?.trim() ?? '';
+      const kind = dynamicTextKind(text, node, evidence);
+      if (!kind) return [];
+      return [{
+        nodeId: node.id,
+        text,
+        kind,
+        ...relatedNodeForDynamicText(kind, node, evidence),
+        recommendation: recommendationForDynamicText(kind),
+      }];
+    })
+    .slice(0, 120);
+}
+
+function dynamicTextKind(
+  text: string,
+  node: PageSnapshotNode,
+  evidence: PageCanonical,
+): UiDynamicTextHint['kind'] | undefined {
+  if (/^（\d+）$|^\(\d+\)$/.test(text) && isNearListHeading(node, evidence)) return 'list-count';
+  if (/^[+-]?\$[\d,]+(?:\.\d+)?$|^[+-]?[\d,]+(?:\.\d+)?\s?(USD|HKD|CNY)$/i.test(text)) return 'money';
+  if (/^[+-]?\d+(?:\.\d+)?%$/.test(text)) return 'percent';
+  if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/.test(text)) return 'date';
+  if (/^(Held|Qty|Quantity|Shares)\s+\d+/i.test(text) || /^(持股|持仓|数量|可用)\s*\d+/.test(text)) return 'quantity';
+  return undefined;
+}
+
+function isNearListHeading(node: PageSnapshotNode, evidence: PageCanonical): boolean {
+  return evidence.nodes.some((candidate) => {
+    if (candidate.id === node.id || !candidate.text) return false;
+    const sameRow = Math.abs(candidate.bbox.y - node.bbox.y) <= 8;
+    const near = Math.abs(candidate.bbox.x + candidate.bbox.width - node.bbox.x) <= 80 || Math.abs(candidate.bbox.x - node.bbox.x) <= 240;
+    return sameRow && near && /positions|records|history|orders|list|持仓|记录|历史|列表|可行权|行权/i.test(candidate.text);
+  });
+}
+
+function relatedNodeForDynamicText(
+  kind: UiDynamicTextHint['kind'],
+  node: PageSnapshotNode,
+  evidence: PageCanonical,
+): { relatedNodeId?: string } {
+  if (kind !== 'list-count') return {};
+  const related = evidence.sections.find((section) =>
+    section.role === 'list'
+    && section.bbox.y >= node.bbox.y
+    && section.bbox.y - node.bbox.y <= 120,
+  );
+  return related?.nodeIds[0] ? { relatedNodeId: related.nodeIds[0] } : {};
+}
+
+function recommendationForDynamicText(kind: UiDynamicTextHint['kind']): string {
+  const recommendations: Record<UiDynamicTextHint['kind'], string> = {
+    'list-count': 'Derive this count from the backing list/model length instead of hard-coding it in a translation key.',
+    money: 'Format this value from UI model data with the target currency/number formatter.',
+    percent: 'Format this percentage from UI model data instead of treating it as static copy.',
+    date: 'Format this date from UI model data with the target date formatter.',
+    quantity: 'Format this quantity from UI model data; translate only the label portion.',
+    'dynamic-value': 'Render this value from UI model data instead of static copy.',
+  };
+  return recommendations[kind];
 }
 
 function suggestedKey(text: string): { suggestedKey?: string } {

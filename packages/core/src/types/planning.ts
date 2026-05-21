@@ -92,9 +92,20 @@ export type UiVisualPlan = {
     buildHint?: string | undefined;
   }>;
   nodeAudits: UiNodeAudit[];
+  nodeAuditSummary: {
+    generated: number;
+    suppressed: Array<{
+      nodeId: string;
+      reason: string;
+    }>;
+  };
+  dynamicTextHints: UiDynamicTextHint[];
   layoutEvidence: string[];
   screenshotRefs: string[];
 };
+
+export type UiNodeAuditPriority = 'p0' | 'p1' | 'p2';
+export type UiNodeAuditNoiseLevel = 'low' | 'medium' | 'high';
 
 export type UiNodeAuditKind =
   | 'card'
@@ -154,9 +165,21 @@ export type UiNodeAuditControl = UiNodeAuditChild & {
 export type UiNodeAudit = {
   id: string;
   kind: UiNodeAuditKind;
+  priority: UiNodeAuditPriority;
+  noiseLevel: UiNodeAuditNoiseLevel;
+  displayInReview: boolean;
+  coverageReason: string;
   sourceNodeId: string;
   role: SnapshotNodeRole;
   title?: string | undefined;
+  implementationSummary: {
+    targetWidgetHint?: string | undefined;
+    layoutSummary: string;
+    mustPreserve: string[];
+    doNotInvent: string[];
+    controlSummary: string[];
+    riskLevel: 'high' | 'medium' | 'low';
+  };
   bbox: { x: number; y: number; width: number; height: number };
   containerStyle: UiNodeAuditStyle;
   rows: UiNodeAuditRow[];
@@ -164,6 +187,14 @@ export type UiNodeAudit = {
   assetRefs: string[];
   absenceHints: string[];
   implementationHints: string[];
+};
+
+export type UiDynamicTextHint = {
+  nodeId: string;
+  text: string;
+  kind: 'list-count' | 'money' | 'percent' | 'date' | 'quantity' | 'dynamic-value';
+  relatedNodeId?: string | undefined;
+  recommendation: string;
 };
 
 export type UiImplementationContract = {
@@ -299,7 +330,13 @@ export type ThemeMapping = {
 };
 
 export type I18nPlan = {
-  texts: Array<{ text: string; nodeIds: string[]; suggestedKey?: string | undefined }>;
+  texts: Array<{
+    text: string;
+    nodeIds: string[];
+    suggestedKey?: string | undefined;
+    dynamic?: boolean | undefined;
+    dynamicKind?: UiDynamicTextHint['kind'] | undefined;
+  }>;
   recommendation: string;
 };
 

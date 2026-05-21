@@ -108,11 +108,17 @@ function renderReviewMarkdown(plan: UiBuildPlan): string {
     '',
     ...renderNodeAudits(plan),
     '',
+    '### 动态文案提示',
+    '',
+    '_JSON 来源：`ui-build-plan.json#/visualPlan/dynamicTextHints`、`#/i18nPlan/texts[*].dynamic`_',
+    '',
+    ...renderDynamicTextHints(plan),
+    '',
     '### 区块证据',
     '',
     ...markdownTable(
       ['角色', '标题/ID', 'bbox', '节点数', '提示'],
-      plan.visualPlan.sections.slice(0, 60).map((section) => [
+      reviewVisualSections(plan).map((section) => [
         section.role,
         section.title ?? section.id,
         `${section.bbox.x},${section.bbox.y},${section.bbox.width},${section.bbox.height}`,
@@ -336,19 +342,19 @@ function renderArchitectureProfile(plan: UiBuildPlan): string[] {
 function renderTargetDocumentation(plan: UiBuildPlan): string[] {
   const docs = plan.targetConventions.documentation;
   if (!docs || docs.files.length === 0) return ['- 未发现 README/AGENT/CLAUDE/Cursor rules/docs 等 target 文档证据。'];
+  const visibleHints = docs.architectureHints.filter((hint) => hint.confidence !== 'low');
   return [
     ...markdownTable(
-      ['文件', '大小', '摘要'],
+      ['文件', '摘要'],
       docs.files.slice(0, 12).map((file) => [
         codeCell(file.path),
-        `${file.size} bytes`,
-        file.summary.join('；') || '无摘要',
+        file.summary.slice(0, 3).join('；') || `${file.size} bytes`,
       ]),
     ),
     '',
     ...markdownTable(
       ['类型', '模式/关键词', '置信度', '文件', '证据'],
-      docs.architectureHints.slice(0, 24).map((hint) => [
+      visibleHints.slice(0, 16).map((hint) => [
         hint.kind,
         hint.pattern,
         confidenceLabel(hint.confidence),
@@ -367,47 +373,109 @@ function renderTargetDocumentation(plan: UiBuildPlan): string[] {
 }
 
 function renderNodeAudits(plan: UiBuildPlan): string[] {
-  const audits = plan.visualPlan.nodeAudits;
+  const audits = plan.visualPlan.nodeAudits ?? [];
+  const visibleAudits = audits.filter((audit) => audit.displayInReview);
   if (!audits.length) return ['- 未生成节点级还原证据；请回退查看 `page-canonical.json`。'];
-  return audits.slice(0, 16).flatMap((audit) => [
-    `#### ${audit.kind} · ${audit.sourceNodeId}`,
-    '',
+  const suppressed = plan.visualPlan.nodeAuditSummary?.suppressed ?? [];
+  return [
     ...markdownTable(
-      ['字段', '证据'],
-      [
-        ['bbox', `${audit.bbox.x},${audit.bbox.y},${audit.bbox.width},${audit.bbox.height}`],
-        ['容器样式', styleSummary(audit.containerStyle)],
-        ['assetRefs', audit.assetRefs.join('、') || '无'],
-      ],
-    ),
-    '',
-    ...markdownTable(
-      ['行', 'Y 范围', '文本 / 图标顺序'],
-      audit.rows.map((row) => [
-        String(row.index),
-        `${row.yRange.min}-${row.yRange.max}`,
-        row.children.map((child) => auditChildSummary(child)).join(' → ') || '无',
+      ['优先级', '单元', '实现提示', '布局摘要', '必须保留', '不要补/注意'],
+      visibleAudits.slice(0, 16).map((audit) => [
+        audit.priority.toUpperCase(),
+        `${audit.kind} ${codeCell(audit.sourceNodeId)}`,
+        audit.implementationSummary.targetWidgetHint ?? audit.coverageReason,
+        audit.implementationSummary.layoutSummary,
+        audit.implementationSummary.mustPreserve.slice(0, 3).map((item) => translateWarning(item)).join('；'),
+        [
+          ...audit.implementationSummary.doNotInvent.slice(0, 2).map((item) => translateWarning(item)),
+          audit.noiseLevel !== 'low' ? `审查噪音=${audit.noiseLevel}` : '',
+        ].filter(Boolean).join('；'),
       ]),
     ),
     '',
+    ...visibleAudits
+      .filter((audit) => audit.priority === 'p0')
+      .slice(0, 8)
+      .flatMap((audit) => renderNodeAuditDetail(audit)),
+    '',
+    ...(suppressed.length
+      ? [
+        '未展开的辅助/重复节点：',
+        '',
+        ...suppressed.slice(0, 8).map((item) => `- ${codeCell(item.nodeId)}：${translateWarning(item.reason)}`),
+        ...(suppressed.length > 8 ? [`- 另有 ${suppressed.length - 8} 条折叠记录保留在 plan 中。`] : []),
+      ]
+      : []),
+  ];
+}
+
+function reviewVisualSections(plan: UiBuildPlan): UiBuildPlan['visualPlan']['sections'] {
+  const suppressed = new Set((plan.visualPlan.nodeAuditSummary?.suppressed ?? []).map((item) => item.nodeId));
+  const roleCounts = new Map<string, number>();
+  const result: UiBuildPlan['visualPlan']['sections'] = [];
+  for (const section of plan.visualPlan.sections) {
+    const rootNodeId = section.nodeIds[0];
+    if (rootNodeId && suppressed.has(rootNodeId)) continue;
+    const count = roleCounts.get(section.role) ?? 0;
+    const limit = section.role === 'card'
+      ? 4
+      : section.role === 'bottom-bar'
+        ? 2
+        : section.role === 'section'
+          ? 10
+          : section.role === 'list'
+            ? 2
+            : 4;
+    if (count >= limit) continue;
+    roleCounts.set(section.role, count + 1);
+    result.push(section);
+    if (result.length >= 32) break;
+  }
+  return result;
+}
+
+function renderNodeAuditDetail(audit: UiBuildPlan['visualPlan']['nodeAudits'][number]): string[] {
+  return [
+    `#### ${audit.priority.toUpperCase()} ${audit.kind} · ${audit.sourceNodeId}`,
+    '',
+    `- 布局：${audit.implementationSummary.layoutSummary}`,
+    ...audit.rows.slice(0, 6).map((row) =>
+      `- 第 ${row.index} 行：${row.children.map((child) => auditChildSummary(child)).join(' → ') || '无'}`,
+    ),
+    ...(audit.implementationSummary.controlSummary.length
+      ? [`- 控件：${audit.implementationSummary.controlSummary.join('；')}`]
+      : []),
+    ...(audit.implementationSummary.doNotInvent.length
+      ? [`- 不要补：${audit.implementationSummary.doNotInvent.map((item) => translateWarning(item)).join('；')}`]
+      : []),
+    ...(audit.assetRefs.length ? [`- 资源线索：${audit.assetRefs.join('、')}`] : []),
+    '',
+  ];
+}
+
+function renderDynamicTextHints(plan: UiBuildPlan): string[] {
+  const hints = plan.visualPlan.dynamicTextHints ?? [];
+  if (!hints.length) return ['- 未识别到需要从数据模型派生的动态文案。'];
+  const groups = new Map<string, typeof hints>();
+  for (const hint of hints) {
+    groups.set(hint.kind, [...(groups.get(hint.kind) ?? []), hint]);
+  }
+  return [
     ...markdownTable(
-      ['控件', '类型', 'padding', 'height', 'radius', '样式'],
-      audit.controls.map((control) => [
-        auditChildSummary(control),
-        control.kind,
-        control.padding ?? '',
-        control.height ?? '',
-        control.borderRadius ?? '',
-        styleSummary(control.style),
+      ['类型', '数量', '示例', '关联节点', '建议'],
+      [...groups.entries()].map(([kind, items]) => [
+        kind,
+        String(items.length),
+        items.slice(0, 4).map((hint) => `${codeCell(hint.nodeId)} ${hint.text}`).join('；'),
+        items.map((hint) => hint.relatedNodeId).filter(Boolean).slice(0, 3).map((nodeId) => codeCell(nodeId as string)).join('、'),
+        translateRecommendation(items[0]?.recommendation ?? ''),
       ]),
     ),
     '',
-    ...listOrFallback([
-      ...audit.absenceHints.map((hint) => `- ${translateWarning(hint)}`),
-      ...audit.implementationHints.map((hint) => `- ${translateWarning(hint)}`),
-    ]),
-    '',
-  ]);
+    ...(hints.length > 12
+      ? [`_完整 ${hints.length} 条动态文案证据保留在 \`ui-build-plan.json#/visualPlan/dynamicTextHints\`。_`, '']
+      : []),
+  ];
 }
 
 function auditChildSummary(child: {
@@ -422,13 +490,6 @@ function auditChildSummary(child: {
       ? child.assetRefs.join(',')
       : child.role;
   return `${codeCell(child.nodeId)} ${child.role}${label ? `: ${label}` : ''}`;
-}
-
-function styleSummary(style: Record<string, string | undefined>): string {
-  const entries = Object.entries(style)
-    .filter(([, value]) => Boolean(value))
-    .map(([key, value]) => `${key}=${value}`);
-  return entries.length ? entries.join(', ') : '无';
 }
 
 function evidenceRow(dimension: string, evidence: {
@@ -553,6 +614,12 @@ function translateReason(reason: string): string {
 function translateRecommendation(value: string): string {
   return value
     .replace('Visible text should use the i18n API detected in targetConventions when available; otherwise keep local constants with TODO for translation keys.', '可见文案应使用 targetConventions 中识别到的 i18n API；若未识别，则先保留本地常量并标记翻译 key TODO。')
+    .replace('Derive this count from the backing list/model length instead of hard-coding it in a translation key.', '该数量应从列表或 UI model 长度派生，不要写死到翻译 key。')
+    .replace('Format this value from UI model data with the target currency/number formatter.', '该金额应来自 UI model，并使用目标工程的货币/数字格式化。')
+    .replace('Format this percentage from UI model data instead of treating it as static copy.', '该百分比应来自 UI model，不要当作静态文案。')
+    .replace('Format this date from UI model data with the target date formatter.', '该日期应来自 UI model，并使用目标工程的日期格式化。')
+    .replace('Format this quantity from UI model data; translate only the label portion.', '该数量应来自 UI model，只翻译标签部分。')
+    .replace('Render this value from UI model data instead of static copy.', '该值应来自 UI model，不要当作静态文案。')
     .replace('Prefer existing assets/images, assets/dark_images, assets/svg, and assets/json entries before adding new files.', '新增资源前优先复用现有 assets/images、assets/dark_images、assets/svg、assets/json。')
     .replace(/Implement only the visible UI response or callback boundary in Phase 1; leave business behavior as TODO unless a similar target example confirms it\./g, 'Phase 1 只实现可见 UI 响应或回调边界；业务行为除非有相似目标示例，否则保留 TODO。')
     .replace(/\(local widget\)/g, '本地 Widget')
@@ -564,6 +631,18 @@ function translateRecommendation(value: string): string {
 
 function translateWarning(value: string): string {
   return translateRecommendation(value)
+    .replace('Representative node rows list the visible display fields; do not add extra sibling fields unless sourceSemantics or user confirmation requires them.', '代表节点行结构只列出可见展示字段；除非 sourceSemantics 或用户确认要求，不要额外补同级字段。')
+    .replace('No available quantity field is visible in this representative card/list item.', '该代表卡片/列表项没有可见的可用数量字段。')
+    .replace('Restore row order and visible text/icon order from rows before applying target component abstractions.', '先保留行顺序和文本/图标顺序，再套目标组件抽象。')
+    .replace('Controls include padding/radius evidence; prefer padding-driven layout over fixed height when target APIs allow it.', '控件已有 padding/radius 证据；目标 API 允许时优先用 padding 撑开，而不是固定高度。')
+    .replace('Use this representative item as the contract for repeated item widgets.', '将该代表项作为重复项 Widget 的还原契约。')
+    .replace(/^Row (\d+): /, '第 $1 行：')
+    .replace('large wrapper is covered by more specific child nodeAudits.', '大 wrapper 已由更具体的子节点审查覆盖。')
+    .replace('list wrapper is covered by child card/list-item nodeAudits.', '列表 wrapper 已由子 card/list-item 审查覆盖。')
+    .replace('bottom action row is covered by parent card/list-item nodeAudit controls.', '底部操作行已由父级 card/list-item 的 controls 覆盖。')
+    .replace(/^additional (.+) audit retained in plan but omitted from review after representative coverage\.$/, '额外 $1 审查已保留在 plan 中，review 按代表项折叠。')
+    .replace(/^additional (.+) audit omitted after representative coverage\.$/, '额外 $1 审查已由代表项覆盖，未在 review 展开。')
+    .replace('control is covered by a parent card/list-item nodeAudit.', '控件已由父级 card/list-item 审查覆盖。')
     .replace('page-level state pattern was not detected from target module or similar module files.', '未从目标模块或相似模块文件识别到页面级状态模式。')
     .replace('i18n pattern was not detected from translations or Dart usage.', '未从翻译文件或 Dart 使用中识别到 i18n 模式。')
     .replace(/only global\/app-level (.+) state evidence was detected; page-level state expression remains unresolved\./, '只识别到全局/应用级 $1 状态证据；页面级状态表达仍未确认。')

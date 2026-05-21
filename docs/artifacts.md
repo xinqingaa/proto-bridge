@@ -113,12 +113,18 @@ GetX、flutter_bloc、Riverpod、Provider、Navigator、go_router、context.t、
 | `viewport` | capture viewport。 |
 | `sections` | runtime/screenshot 观察到的 section、bbox、node ids 和 build hints。 |
 | `nodeAudits` | 代表性高风险节点的还原证据，例如重复卡片、列表项、按钮、chip、tab、appbar action 和 bottom action。它记录容器样式、按 y 分组的行结构、文本/icon 顺序、控件 padding/radius/height、assetRefs 和 absence hints。 |
+| `nodeAuditSummary` | 节点审查的摘要信息，包括生成数量和 review 中折叠的 wrapper/重复/从属节点及原因。它只影响人类审查视图，不表示 plan 丢弃了原始证据。 |
+| `dynamicTextHints` | 从视觉节点识别出的动态文案线索，例如列表数量、金额、百分比、日期和数量标签，提示实现者从 UI model 派生这些值。 |
 | `layoutEvidence` | 布局证据摘要。 |
 | `screenshotRefs` | 截图引用。 |
 
 实现时用它还原可见布局和样式，不用它决定文件拆分或状态架构。
 
 实现重复 UI 单元时，应优先读取 `visualPlan.nodeAudits`。如果代表性节点中没有某个展示字段，不应自行补充，除非 `sourceSemantics` 或用户确认明确要求。`nodeAudits` 不负责推荐目标 asset；它只保留 source 节点上的 `assetRefs` 和视觉证据。
+
+`nodeAudits` 的压缩原则是保真优先：代表性重复项会保留行结构、控件尺寸和 absence hints；额外重复卡片/列表项也可以保留在 plan 中但设置 `displayInReview=false`；大 wrapper、list 容器、已被父卡片覆盖的按钮等噪音节点只在 `nodeAuditSummary.suppressed` 标明折叠原因。完整原始证据仍在 `page-canonical.json`，plan 中的 section evidence 和 audit summary 不能作为删除视觉事实的理由。
+
+`dynamicTextHints` 会同步影响 `i18nPlan.texts[*].dynamic/dynamicKind`。被标为 dynamic 的文本不应生成固定 translation key；实现时应把标签文案和数值拆开，数值来自 controller/model/repository，并使用 target 工程已有 formatter。
 
 ### mappings 和 plans
 
@@ -140,7 +146,7 @@ Typography mapping 如果带 `lockToken=true`，实现必须直接使用扫描�
 2. 来源语义：业务区块、状态意图、路由/生命周期/交互意图。
 3. 目标工程扫描结果。
 4. 实现契约：文件、Widget 与契约、状态与边界。
-5. 视觉计划：section evidence、节点级还原证据、组件映射、字体锁定、主题映射。
+5. 视觉计划：section evidence、节点级还原证据、动态文案提示、组件映射、字体锁定、主题映射。review 会折叠重复 wrapper 和重复动态值，但折叠原因与完整证据仍保留在 plan。
 6. 文案与交互。
 7. 风险、人工确认和校验提示。
 
