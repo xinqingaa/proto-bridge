@@ -30,7 +30,9 @@ ProtoBridge 的产物体系按证据职责分工，而不是让某一个来源�
 | Target conventions | 目标 Flutter 工程实际使用的 state、routing、i18n、theme、component、file organization 模式。 | 不补造 source 中没有的业务语义，也不替代 runtime 视觉事实。 |
 | Runtime / screenshot | 当前可见文案、bbox、section 顺序、computed style、截图、OCR 和视觉对照。 | 不反向决定文件拆分、状态 owner 或架构边界。 |
 
-这三类证据最终汇入 `ui-build-plan.json`。它是唯一机器契约；`ui-build-review.md` 是从这份 JSON 渲染出来的中文人类审查视图。
+这三类证据最终汇入 `ui-build-plan.json`。它是实现蓝图，是 agent 默认执行的主文档；`ui-build-review.md` 是从这份 JSON 渲染出来的中文审查视图。
+
+`page-canonical.json` 是证据原档，用于追溯来源、排查冲突和补查细节。`ui-build-plan.json` 会把实现时最容易被漏读的高价值证据提升成结构化契约，例如目标工程约定、文件/Widget 边界、重复 UI 单元的节点级行结构、控件 padding/radius/height、absence hints、动态文案提示和 validation hints。agent 默认应先执行 plan，而不是自行从 canonical 或截图里重新猜页面结构。
 
 ## 核心概念
 
@@ -67,16 +69,16 @@ Source 和 URL 都不是绝对必填。按你手头已有的证据选择模式�
 
 ```text
 page-canonical.json
-  完整页面上下文，保留 source/runtime/screenshot/target facts、provenance、warnings、trace
+  证据原档，用于追溯来源、排查冲突和补查细节
 
 page-debug-index.json
-  面向排查的紧凑索引，帮助从视觉问题跳到 section、node、style、mapping 和 risk
+  调试索引，方便从截图/文本快速定位到证据
 
 ui-build-plan.json
-  唯一机器契约，包含 targetConventions、implementationContract、visualPlan 和 mappings
+  实现蓝图，是 agent 默认执行的主文档
 
 ui-build-review.md
-  从 ui-build-plan.json 渲染的中文人类审查视图
+  审查视图，方便人快速阅读实现蓝图
 ```
 
 `ui-build-plan.json` 的主结构：
@@ -85,11 +87,15 @@ ui-build-review.md
 | --- | --- |
 | `targetConventions.architectureProfile` | 目标工程扫描出的 state/routing/i18n/theme/component/file organization 模式。字段值必须来自证据；扫不到就是 `unknown` 或空集合。 |
 | `implementationContract` | 文件、Widget、状态策略、边界、Widget contract、source semantics、target bindings、warnings 和 manual questions。 |
-| `visualPlan` | viewport、section、bbox、layout evidence、screenshot refs。用于视觉还原，不决定架构拆分。 |
+| `visualPlan` | viewport、section、bbox、layout evidence、screenshot refs、节点级还原证据和动态文案提示。用于视觉还原，不决定架构拆分。 |
 | `themeMappings` / `componentMappings` | 主题 token、字体锁定、组件复用候选和映射依据。 |
 | `i18nPlan` / `interactionPlan` / `validationHints` | 文案、交互和实现后验证提示。 |
 
 顶层 `fileTree` / `widgetTree` 会镜像 `implementationContract.fileTree/widgetTree`，用于现有消费者读取；主架构来源仍是 `implementationContract`。
+
+`visualPlan.nodeAudits` 是重复卡片、列表项、按钮、chip、tab、appbar action 和 bottom action 的节点级还原契约。它保留行结构、文本/icon 顺序、控件尺寸、assetRefs 和“不要补不存在字段”的 absence hints。额外重复项可以保留在 plan 中但不展开到 review，确保实现蓝图保真，人类文档可读。
+
+`visualPlan.dynamicTextHints` 会把列表数量、金额、百分比、日期和数量标签标成动态值，并同步到 `i18nPlan.texts[*].dynamic`。实现时这些值应来自 UI model 和 formatter，不应被写成固定翻译 key。
 
 ## 架构约束
 
@@ -164,7 +170,7 @@ output/<page>-<timestamp>/
 
 阅读顺序：
 
-1. `ui-build-plan.json`：给 agent 和自动校验使用的机器契约。
+1. `ui-build-plan.json`：给 agent 和自动校验使用的实现蓝图。
 2. `ui-build-review.md`：给人快速 review 的中文视图。
 3. `page-debug-index.json`：排查视觉偏差时的索引。
 4. `page-canonical.json`：完整证据、provenance 和 trace。
@@ -216,7 +222,7 @@ target: flutter-app
 <details>
 <summary>产物片段</summary>
 
-`ui-build-plan.json` 是唯一机器契约。它把 source semantics、target conventions 和 runtime/screenshot 视觉事实拆到不同职责区：
+`ui-build-plan.json` 是实现蓝图。它把 source semantics、target conventions 和 runtime/screenshot 视觉事实拆到不同职责区：
 
 ```text
 targetConventions         # target repo 扫描出的 state/routing/i18n/theme/component/file organization 证据
@@ -224,7 +230,7 @@ implementationContract   # 文件、Widget、状态边界、source semantics 和
 visualPlan               # runtime/screenshot 视觉事实、section、bbox、截图引用
 ```
 
-`ui-build-review.md` 从 `ui-build-plan.json` 渲染，是中文优先的人类阅读视图。它会把目标工程扫描结果、实现契约、来源语义、视觉计划、字体锁定、风险和校验提示整理成适合人工 review 的表格与摘要。
+`ui-build-review.md` 从 `ui-build-plan.json` 渲染，是中文优先的审查视图。它会把目标工程扫描结果、实现契约、来源语义、视觉计划、字体锁定、风险和校验提示整理成适合人工 review 的表格与摘要。
 
 运行 `pnpm run example` 后会生成完整产物：
 

@@ -20,10 +20,10 @@ Source-aware 语义统一写入 `ui-build-plan.json#/implementationContract/sour
 
 | 产物 | 读者 | 权威范围 |
 | --- | --- | --- |
-| `page-canonical.json` | 调试者、工具 | 完整事实池：source/runtime/screenshot/target facts、provenance、mismatches、trace。 |
-| `page-debug-index.json` | 调试者、agent | 紧凑索引：section、node、style、mapping 和 risk pointers。 |
-| `ui-build-plan.json` | agent、validator、开发者 | 唯一机器契约：工程表达、实现契约和视觉事实。 |
-| `ui-build-review.md` | 人类 reviewer、开发者 | 从 plan 渲染的中文审查视图。 |
+| `page-canonical.json` | 调试者、工具 | 证据原档：source/runtime/screenshot/target facts、provenance、mismatches、trace。 |
+| `page-debug-index.json` | 调试者、agent | 调试索引：section、node、style、mapping 和 risk pointers。 |
+| `ui-build-plan.json` | agent、validator、开发者 | 实现蓝图：工程表达、实现契约和视觉事实。 |
+| `ui-build-review.md` | 人类 reviewer、开发者 | 审查视图：从实现蓝图渲染的中文阅读视图。 |
 | `screenshots/` | 人类、视觉排查 | runtime capture 的视觉对照。 |
 
 ## page-canonical.json
@@ -65,7 +65,7 @@ screenshot region / text anchor
 
 ## ui-build-plan.json
 
-`ui-build-plan.json` 是唯一机器契约。它把三类证据放在不同区域，避免职责重叠。
+`ui-build-plan.json` 是实现蓝图。它把不同证据放在各自负责的区域，避免职责重叠，同时把实现阶段必须遵守的高风险细节从 canonical 提升为结构化 plan 字段。
 
 ### targetConventions
 
@@ -112,15 +112,15 @@ GetX、flutter_bloc、Riverpod、Provider、Navigator、go_router、context.t、
 | --- | --- |
 | `viewport` | capture viewport。 |
 | `sections` | runtime/screenshot 观察到的 section、bbox、node ids 和 build hints。 |
-| `nodeAudits` | 代表性高风险节点的还原证据，例如重复卡片、列表项、按钮、chip、tab、appbar action 和 bottom action。它记录容器样式、按 y 分组的行结构、文本/icon 顺序、控件 padding/radius/height、assetRefs 和 absence hints。 |
-| `nodeAuditSummary` | 节点审查的摘要信息，包括生成数量和 review 中折叠的 wrapper/重复/从属节点及原因。它只影响人类审查视图，不表示 plan 丢弃了原始证据。 |
+| `nodeAudits` | 代表性高风险节点的还原证据，例如重复卡片、列表项、按钮、chip、tab、appbar action 和 bottom action。它记录容器样式、按 y 分组的行结构、文本/icon 顺序、控件 padding/radius/height、assetRefs、absence hints 和实现摘要。 |
+| `nodeAuditSummary` | 节点审查的摘要信息，包括生成数量和 review 中折叠的 wrapper/重复/从属节点及原因。它只影响审查视图，不表示 plan 丢弃了原始证据。 |
 | `dynamicTextHints` | 从视觉节点识别出的动态文案线索，例如列表数量、金额、百分比、日期和数量标签，提示实现者从 UI model 派生这些值。 |
 | `layoutEvidence` | 布局证据摘要。 |
 | `screenshotRefs` | 截图引用。 |
 
 实现时用它还原可见布局和样式，不用它决定文件拆分或状态架构。
 
-实现重复 UI 单元时，应优先读取 `visualPlan.nodeAudits`。如果代表性节点中没有某个展示字段，不应自行补充，除非 `sourceSemantics` 或用户确认明确要求。`nodeAudits` 不负责推荐目标 asset；它只保留 source 节点上的 `assetRefs` 和视觉证据。
+实现重复 UI 单元时，应优先读取 `visualPlan.nodeAudits`。如果代表性节点中没有某个展示字段，不应自行补充，除非 `sourceSemantics` 或用户确认明确要求。`nodeAudits.rows` 是局部布局顺序契约，`controls` 是按钮、chip 和图标控件的尺寸契约，`absenceHints` / `implementationSummary.doNotInvent` 是负向契约。`nodeAudits` 不负责推荐目标 asset；它只保留 source 节点上的 `assetRefs` 和视觉证据。
 
 `nodeAudits` 的压缩原则是保真优先：代表性重复项会保留行结构、控件尺寸和 absence hints；额外重复卡片/列表项也可以保留在 plan 中但设置 `displayInReview=false`；大 wrapper、list 容器、已被父卡片覆盖的按钮等噪音节点只在 `nodeAuditSummary.suppressed` 标明折叠原因。完整原始证据仍在 `page-canonical.json`，plan 中的 section evidence 和 audit summary 不能作为删除视觉事实的理由。
 
@@ -138,7 +138,7 @@ Typography mapping 如果带 `lockToken=true`，实现必须直接使用扫描�
 
 ## ui-build-review.md
 
-`ui-build-review.md` 是从 `ui-build-plan.json` 渲染的人类可读 brief，不拥有独立裁判权。
+`ui-build-review.md` 是从 `ui-build-plan.json` 渲染的审查视图，不拥有独立裁判权。
 
 它按 review 视角组织：
 

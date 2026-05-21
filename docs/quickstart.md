@@ -157,6 +157,18 @@ pnpm run generate -- \
   --url "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1"
 ```
 
+## 生成后阅读顺序
+
+生成目录中的 `ui-build-plan.json` 是 agent、validator 和实现者默认执行的实现蓝图。实现前先读：
+
+- `targetConventions`：目标工程真实使用的 state、routing、i18n、theme、component 和文件组织。
+- `implementationContract`：文件落点、Widget 拆分、状态边界、Widget contract 和 source semantics。
+- `visualPlan.nodeAudits`：重复卡片、列表项、按钮、chip、tab、appbar action 和 bottom action 的节点级行结构、控件尺寸和 absence hints。
+- `visualPlan.dynamicTextHints` 与 `i18nPlan.texts[*].dynamic`：需要从 UI model 派生的数量、金额、日期、百分比和持仓数量。
+- `themeMappings` / `componentMappings`：主题 token、字体锁定和可复用组件候选。
+
+`ui-build-review.md` 是中文审查视图，适合人工快速扫整体契约；它可以折叠重复节点和重复动态值。需要完整事实、provenance 或冲突排查时，再读 `page-canonical.json` 和 `page-debug-index.json`。
+
 ## MCP 配置
 
 Codex：
@@ -268,8 +280,8 @@ Validation：
 
 建议阅读顺序：
 
-1. `ui-build-plan.json`：唯一机器契约，重点看 `targetConventions`、`implementationContract`、`sourceSemantics`、`visualPlan`、mappings 和 validation hints。
-2. `ui-build-review.md`：从 plan 渲染的中文人类阅读视图。
+1. `ui-build-plan.json`：实现蓝图，重点看 `targetConventions`、`implementationContract`、`sourceSemantics`、`visualPlan.nodeAudits`、`visualPlan.dynamicTextHints`、mappings 和 validation hints。
+2. `ui-build-review.md`：审查视图。
 3. `page-debug-index.json`：排查视觉 mismatch。
 4. `page-canonical.json`：查看完整 provenance 和 source/runtime/screenshot/target facts。
 

@@ -81,13 +81,17 @@ hybrid MCP 示例：
 
 根据任务优先读最高价值的产物：
 
-1. `ui-build-plan.json`：唯一机器契约。优先看 `targetConventions`、`implementationContract`、`implementationContract.sourceSemantics`、`visualPlan`、mappings、risks 和 validation hints。
-2. `ui-build-review.md`：从 plan 渲染的中文人类阅读视图，适合快速扫目标工程约定、实现契约、视觉计划、字体锁定和风险。
+1. `ui-build-plan.json`：实现蓝图。优先看 `targetConventions`、`implementationContract`、`implementationContract.sourceSemantics`、`visualPlan.nodeAudits`、`visualPlan.dynamicTextHints`、mappings、risks 和 validation hints。
+2. `ui-build-review.md`：审查视图，适合快速扫目标工程约定、实现契约、视觉计划、字体锁定和风险。
 3. `page-debug-index.json`：排查视觉偏差时的快速索引。
-4. `page-canonical.json`：完整 evidence、provenance、merge rules、mismatches 和 trace。
+4. `page-canonical.json`：证据原档，用于追溯来源、排查冲突和补查细节。
 5. `screenshots/`：runtime capture 存在时的视觉参考。
 
 实现时不得引入 `targetConventions` 没有证据支持的新 state、routing、i18n 或 theme 框架。GetX、flutter_bloc、Riverpod、Provider、Navigator、go_router、context.t、AppLocalizations、themeService、context.pbColors、CommonAppBar 等都只能作为 target 扫描证据出现，不能当作 ProtoBridge 默认偏好。扫不到时保留抽象建议，并写入 warnings/manual questions。
+
+实现重复卡片、列表项、表格行、tab、filter、按钮、chip、appbar action 或 bottom action 时，必须优先读取 `visualPlan.nodeAudits`，不得只凭 `visualPlan.sections`、截图或业务直觉搭结构。`nodeAudits.rows` 决定可见行结构和文本/icon 顺序，`nodeAudits.controls` 决定控件 padding/radius/height 等关键尺寸，`absenceHints` 和 `implementationSummary.doNotInvent` 是负向契约：代表节点里没有的展示字段不能自行补入。
+
+实现文案和 mock/model 时必须读取 `visualPlan.dynamicTextHints` 和 `i18nPlan.texts[*].dynamic`。列表数量、价格、日期、百分比、持仓数量等动态值应从 UI model、controller 或 formatter 派生；只翻译稳定标签，不要把动态值写成固定 translation key。
 
 ## 证据规则
 
@@ -109,7 +113,7 @@ hybrid MCP 示例：
 | source semantics 与 target conventions 冲突 | 业务意图看 source semantics；工程表达看 target conventions。 |
 | runtime section 与 implementation contract 冲突 | runtime 只作为视觉事实，不决定文件拆分或状态边界。 |
 | target profile unknown | 不猜框架，不引入新模式，输出 warnings/manual questions。 |
-| review 与 plan 理解不一致 | 以 `ui-build-plan.json` 为机器契约。 |
+| review 与 plan 理解不一致 | 以 `ui-build-plan.json` 这份实现蓝图为准。 |
 | target 高置信度示例与自动推断不一致 | 优先查目标示例，必要时调整实现并报告确认项。 |
 
 ## 样式 Token 约束
@@ -129,7 +133,7 @@ Source 中明确出现 typography mixin，且 target 扫描或映射能证明对
 
 1. 用 `reconstruct_page_context` 或 `proto-bridge generate` 生成上下文。
 2. 阅读 `ui-build-plan.json` 的 `targetConventions`、`implementationContract` 和 `visualPlan`。
-3. 阅读 `ui-build-review.md`，用于快速核对中文 human brief。
+3. 阅读 `ui-build-review.md`，用于快速核对中文审查视图。
 4. 目标复用方式不明确时，调用 `read_target_conventions` 或 `find_target_examples`。
 5. 按 `implementationContract.fileTree/widgetTree/widgetContracts` 实现，避免把 runtime DOM section 机械翻译成文件或 Widget。
 6. 用 `visualPlan`、`themeMappings`、`componentMappings` 和截图证据做视觉还原。
@@ -200,7 +204,7 @@ Validation 是 review 辅助，不等于证明视觉和业务完全正确。
 
 根据修改范围选择验证：
 
-- 只改文档：检查相关链接和命令名即可。
+- 只改文档：检查相关链接、命令名、artifact 字段名和叙事一致性；不要引入历史补丁口吻。
 - 改 TypeScript 源码：至少跑 `pnpm run typecheck`，必要时跑 `pnpm run build`。
 - 改 config 解析：跑 `pnpm run test:config`。
 - 改 CLI 入口或 artifact contract：跑 `pnpm run test:e2e:cli`，并按需传 `--source-root`、`--target-root`、`--url`。
@@ -220,7 +224,7 @@ Flutter build/、.dart_tool/ 和本地设备配置
 
 ## 文档规则
 
-正式文档应描述稳定行为和当前命令：
+正式文档应描述稳定行为、当前命令和当前契约模型：
 
 - 项目背景：`docs/background.md`
 - 架构说明：`docs/architecture.md`
@@ -229,4 +233,8 @@ Flutter build/、.dart_tool/ 和本地设备配置
 - 开发命令：`docs/development.md`
 - 输出产物：`docs/artifacts.md`
 
-不要在正式文档里加入阶段标签、研究台账口吻，或不属于支持路径的工具名。
+修改文档时按整体叙事处理，不做局部补丁式说明。每次文档改动都要先判断 README、AGENT、docs 和相关 skill 是否需要一起调整；同一个概念应在最合适的位置详述，其他位置保持一致摘要或引用。
+
+不要在正式文档里加入阶段标签、研究台账口吻、历史演进口吻，或不属于支持路径的工具名。避免“本轮优化”“新增了某块”“之前没有”“为了解决某次问题”这类叙事，除非用户明确要求记录历史。文档应直接描述当前系统应如何工作、agent 应如何读取产物、开发者应如何验证结果。
+
+不要为了简洁而降低文档密度。已有章节、命令、artifact 字段、约束和示例如果仍然有效，应保留或整合到当前体系叙事中；可以删除的是低价值重复、不一致表述和过时路径，而不是核心信息。

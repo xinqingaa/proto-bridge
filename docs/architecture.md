@@ -18,10 +18,11 @@ ProtoBridge 不做一对一代码翻译。它做的是证据归一和契约生�
 | 设计点 | 含义 |
 | --- | --- |
 | Capability-first | source、runtime、target、plan、review、validate 都是可复用能力。 |
-| Evidence preserving | canonical 保留 provenance、mismatches 和 manual confirmations。 |
-| Contract centered | `ui-build-plan.json` 是唯一机器契约。 |
+| Evidence preserving | `page-canonical.json` 作为证据原档，保留 facts、provenance、mismatches 和 manual confirmations。 |
+| Contract centered | `ui-build-plan.json` 是实现蓝图，并承载实现者默认必须读取的高价值证据。 |
 | Target-grounded | 工程表达来自 target repo 扫描，不来自 ProtoBridge 默认偏好。 |
 | Visual separated | runtime/screenshot 只负责视觉事实，不决定架构拆分。 |
+| Review projected | `ui-build-review.md` 是审查视图，可以折叠噪音，但不改变实现蓝图。 |
 
 ## 包边界
 
@@ -112,10 +113,10 @@ GetX、flutter_bloc、Riverpod、Provider、Navigator、go_router、context.t、
 
 默认 projection 只有两类：
 
-- `ui-build-plan.json`：机器契约。
-- `ui-build-review.md`：从 plan 渲染的人类 brief。
+- `ui-build-plan.json`：实现蓝图。
+- `ui-build-review.md`：审查视图。
 
-`page-canonical.json` 是完整证据真相源；`page-debug-index.json` 是调试索引；`ui-build-plan.json` 是实现机器契约；`ui-build-review.md` 是人类阅读视图。
+`page-canonical.json` 是证据原档，用于追溯来源、排查冲突和补查细节；`page-debug-index.json` 是调试索引，方便从截图/文本快速定位到证据；`ui-build-plan.json` 是实现蓝图，是 agent 默认执行的主文档；`ui-build-review.md` 是审查视图，方便人快速阅读实现蓝图。planner 的职责不是复制 canonical 的全部字段，而是把实现阶段最容易被漏读、最容易造成还原偏差的证据提升成稳定契约，让 agent 不必先深挖 canonical 才能知道重复项行结构、控件尺寸、absence hints 和动态值边界。
 
 ## Core 目录
 

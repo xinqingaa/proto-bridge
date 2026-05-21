@@ -7,14 +7,14 @@ description: Use when restoring Flutter pages from ProtoBridge UI build outputs 
 
 ## 核心原则
 
-`ui-build-plan.json` 是唯一机器契约。  
-`ui-build-review.md` 只是人类审查视图。  
+`ui-build-plan.json` 是实现蓝图。
+`ui-build-review.md` 只是审查视图。
 截图用于视觉核对。  
-`page-canonical.json` 用于还原节点级布局、文本顺序、bbox、样式和 asset 证据。  
+`page-canonical.json` 是证据原档，用于追溯 provenance、解决冲突和补查 plan 未提升的证据。
 `page-debug-index.json` 用于快速查找文本锚点、assetRefs、风险和索引信息。
 
 不要只根据 `visualPlan.sections` 实现页面。  
-对重复卡片、列表项、表格行、tab、filter、按钮、chip、appbar action，必须先做 node-level audit。
+对重复卡片、列表项、表格行、tab、filter、按钮、chip、appbar action，必须先读取 `visualPlan.nodeAudits`。如果 plan 已经提供 node audit，不得绕过它重新凭截图、section role 或业务直觉猜结构。
 
 ## 输入读取顺序
 
@@ -31,11 +31,20 @@ description: Use when restoring Flutter pages from ProtoBridge UI build outputs 
 - `targetConventions`
 - `implementationContract`
 - `implementationContract.sourceSemantics`
-- `visualPlan`
+- `visualPlan.nodeAudits`
+- `visualPlan.nodeAuditSummary`
+- `visualPlan.dynamicTextHints`
 - `themeMappings`
 - `componentMappings`
 - `i18nPlan`
 - `validationHints`
+
+读取 `page-canonical.json` 的触发条件：
+
+- plan 没有覆盖正在实现的关键节点。
+- `ui-build-review.md` 与 `ui-build-plan.json` 的理解不一致。
+- 需要追溯某个 bbox、computedStyle、assetRefs 或 provenance。
+- 用户指出视觉还原偏差，需要确认采集证据是否存在。
 
 ## 目标工程扫描
 
@@ -53,7 +62,7 @@ description: Use when restoring Flutter pages from ProtoBridge UI build outputs 
 
 ## Node-Level Audit 强制规则
 
-实现任何重复 UI 单元前，必须先审第一个代表性节点。
+实现任何重复 UI 单元前，必须先审 `visualPlan.nodeAudits` 中对应的代表性节点。
 
 重复 UI 单元包括：
 
@@ -69,11 +78,11 @@ description: Use when restoring Flutter pages from ProtoBridge UI build outputs 
 
 审查步骤：
 
-1. 在 `page-canonical.json` 找到第一个代表性节点。
-2. 读取该节点的 direct children。
-3. 按 `bbox.y` 对 children 分组，还原真实行结构。
-4. 记录每行的文本顺序和 icon 顺序。
-5. 记录关键 `computedStyle`：
+1. 在 `ui-build-plan.json#/visualPlan/nodeAudits` 找到对应 `kind` 和 `sourceNodeId`。
+2. 读取 `rows`，按行还原真实文本和 icon 顺序。
+3. 读取 `controls`，保留按钮、chip、图标的 padding、height、borderRadius、style 和文本。
+4. 读取 `containerStyle`、`assetRefs`、`absenceHints`、`implementationHints` 和 `implementationSummary`。
+5. 记录关键视觉证据：
    - `padding`
    - `margin`
    - `gap`
@@ -86,10 +95,10 @@ description: Use when restoring Flutter pages from ProtoBridge UI build outputs 
    - `fontSize`
    - `fontWeight`
    - `lineHeight`
-6. 记录 `assetRefs`。
-7. Flutter widget 必须从这个节点表还原，而不是从 section role 猜测。
+6. 遵守 `implementationSummary.mustPreserve` 和 `implementationSummary.doNotInvent`。
+7. Flutter widget 必须从 node audit 还原，而不是从 section role 猜测。
 
-如果 `visualPlan.sections` 与 `page-canonical.json` 的细节存在差异，局部 widget 结构优先以 `page-canonical.json` 为准。
+如果 `visualPlan.sections` 与 `visualPlan.nodeAudits` 的细节存在差异，局部 widget 结构优先以 `nodeAudits` 为准。只有当 plan 缺少对应节点或用户要求追溯时，才回到 `page-canonical.json`。
 
 ## 重复单元审查模板
 
@@ -125,6 +134,8 @@ Buttons/chips:
 
 首个代表节点里不存在的展示字段，不得自行添加。  
 例如首卡没有 `Avail.`，就不能为了业务完整性加 `Avail.`。
+
+`visualPlan.nodeAuditSummary.suppressed` 只说明 review 为什么折叠 wrapper、从属控件或重复节点，不代表实现蓝图丢失。额外重复卡片/列表项可能仍保留在 `nodeAudits` 中但 `displayInReview=false`，实现时可直接读取。
 
 ## Flutter 实现规则
 
@@ -198,17 +209,18 @@ themeService.textStyles.small1R.copyWith(
 
 每个 icon 都按以下顺序处理：
 
-1. 查 `page-canonical.json` 的 `assetRefs`。
-2. 查 `page-debug-index.json` 的 `assetIndex`。
-3. 搜目标工程 assets，例如：
+1. 查 `ui-build-plan.json` 的 `visualPlan.nodeAudits[*].assetRefs`、`rows[*].children[*].assetRefs` 和 `controls[*].assetRefs`。
+2. 必要时查 `page-canonical.json` 的 `assetRefs`。
+3. 必要时查 `page-debug-index.json` 的 `assetIndex`。
+4. 搜目标工程 assets，例如：
    - `find assets -iname '*sort*'`
    - `find assets -iname '*filter*'`
    - `find assets -iname '*help*'`
    - `find assets -iname '*record*'`
    - `find assets -iname '*arrow*'`
-4. 优先用目标工程已有 asset 和 `CommonImage.asset`。
-5. 找不到目标 asset 时，才允许使用占位。
-6. 使用占位必须在最终说明中列出。
+5. 优先用目标工程已有 asset 和 `CommonImage.asset`。
+6. 找不到目标 asset 时，才允许使用占位。
+7. 使用占位必须在最终说明中列出。
 
 不要直接用 Material icon 替代 source icon，除非确认目标工程没有可用 asset。
 
@@ -263,6 +275,8 @@ Container(
 
 稳定可见 UI 文案使用目标工程 i18n API。
 
+实现前必须读取 `visualPlan.dynamicTextHints` 和 `i18nPlan.texts[*].dynamic`。
+
 不要给动态值创建翻译 key，例如：
 
 - 数量
@@ -284,6 +298,8 @@ Text('（${model.count}）')
 'option_exercise_count_11': '（11）'
 ```
 
+如果一个文本同时包含标签和数值，优先拆成稳定标签翻译和模型数值格式化。例如 `Held 5` 应由标签文案和 `model.heldQuantity` 组合，不要把完整字符串写死。
+
 ## 路由规则
 
 路由以目标工程风格为准。
@@ -302,7 +318,8 @@ Text('（${model.count}）')
 - route 映射
 - 目标工程 conventions 证据
 - 文件落点
-- 需要 node-level audit 的重复 UI 单元
+- 已读取的 `visualPlan.nodeAudits`，以及需要重点遵守的 rows、controls、absence hints
+- 已读取的 `visualPlan.dynamicTextHints`
 - 交互占位范围
 - 可能的 asset 缺口
 
@@ -320,6 +337,8 @@ Text('（${model.count}）')
 - 是否有写死数量
 - 是否有 Material icon 代替 source/target asset
 - 是否有 source node 中不存在的字段
+- 是否忽略了 `implementationSummary.doNotInvent`
+- 是否忽略了 `dynamicTextHints`
 - 是否有文本按钮/chip 被错误固定高度
 - 是否覆盖了 locked typography token
 - 是否把 mock 数据写进 widget build
@@ -343,7 +362,8 @@ Text('（${model.count}）')
 
 避免以下错误：
 
-- 只看 `visualPlan.sections`，不查 `page-canonical.json`
+- 只看 `visualPlan.sections`，不读 `visualPlan.nodeAudits`
+- `nodeAudits` 已经给出三行结构，却按业务想象重排布局
 - 把 DOM section 机械拆成一堆 Flutter 文件
 - 首卡没有的字段被自行补进 UI
 - 把动态数量写成 i18n key
@@ -352,4 +372,3 @@ Text('（${model.count}）')
 - typography lockToken 后又覆盖字号或字重
 - 子 widget 全部直接读 controller
 - 第一轮就编造接口或业务字段
-```

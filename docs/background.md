@@ -108,8 +108,8 @@ ProtoBridge 给 agent 一组稳定产物：实现前可阅读、实现中可追�
 
 对 AI agent：
 
-- 有唯一机器契约 `ui-build-plan.json` 描述 target conventions、implementation contract、source semantics、visual plan、mappings、risks 和 validation hints。
-- 有中文人类阅读视图 `ui-build-review.md` 帮助快速 review contract、视觉计划、字体锁定和风险。
+- 有实现蓝图 `ui-build-plan.json` 描述 target conventions、implementation contract、source semantics、visual plan、node audits、dynamic text hints、mappings、risks 和 validation hints。
+- 有中文审查视图 `ui-build-review.md` 帮助快速 review contract、视觉计划、字体锁定和风险。
 - 出现偏差时，可以回到 `page-canonical.json` 和 `page-debug-index.json` 查完整证据和定位索引。
 
 ## ProtoBridge 不做什么

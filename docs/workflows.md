@@ -26,17 +26,19 @@ input
 
 ## 证据如何进入契约
 
-`ui-build-plan.json` 是唯一机器契约。它不是简单把 DOM section 翻译成 Flutter 文件，而是把证据按职责拆开：
+`ui-build-plan.json` 是实现蓝图。它不是简单把 DOM section 翻译成 Flutter 文件，而是把证据按职责拆开：
 
 | 证据 | 落点 | 说明 |
 | --- | --- | --- |
 | Source semantics | `implementationContract.sourceSemantics` | 业务区块、状态意图、Widget contract、交互/生命周期意图、禁止直译项。 |
 | Target conventions | `targetConventions.architectureProfile` | state、routing、i18n、theme、components、file organization 的目标工程证据。 |
-| Runtime/screenshot facts | `visualPlan` | viewport、section、bbox、layout evidence、screenshot refs。 |
+| Runtime/screenshot facts | `visualPlan` | viewport、section、bbox、layout evidence、screenshot refs、nodeAudits、dynamicTextHints。 |
 | Token/component evidence | `themeMappings`、`componentMappings` | 主题 token、字体锁定、组件复用候选。 |
 | Validation expectations | `implementationContract.fileTree`、`validationHints` | 预期文件、架构规则和实现后校验提示。 |
 
 冲突时遵循：source semantics 负责逻辑架构，target conventions 负责工程表达，runtime/screenshot 负责视觉事实。target profile unknown 时保留抽象建议并输出 warnings/manual questions，不猜测具体框架。
+
+重复 UI 单元和动态值是实现偏差高发区。planner 会把 canonical 中的节点级视觉事实提升到 `visualPlan.nodeAudits`，把列表数量、金额、百分比、日期、数量标签等提升到 `visualPlan.dynamicTextHints` 并同步到 `i18nPlan.texts[*].dynamic`。实现阶段应直接消费这些 plan 字段；只有需要追溯 provenance、解决冲突或补查未提升字段时，才回到 `page-canonical.json` 和 `page-debug-index.json`。
 
 ## 如何选择工作流
 
@@ -229,8 +231,8 @@ Validation 会报告：
 ## Agent 实现流程
 
 1. 调用 `reconstruct_page_context`。
-2. 阅读 `ui-build-plan.json`，获取唯一机器契约，重点看 `targetConventions`、`implementationContract`、`sourceSemantics`、`visualPlan`、mappings、risks 和 validation hints。
-3. 阅读 `ui-build-review.md`，用中文 human brief 快速核对 contract、视觉计划、字体锁定和风险。
+2. 阅读 `ui-build-plan.json`，获取实现蓝图，重点看 `targetConventions`、`implementationContract`、`sourceSemantics`、`visualPlan.nodeAudits`、`visualPlan.dynamicTextHints`、mappings、risks 和 validation hints。
+3. 阅读 `ui-build-review.md`，用中文审查视图快速核对 contract、视觉计划、字体锁定和风险。
 4. target pattern 不明确时调用 `read_target_conventions` 或 `find_target_examples`。
 5. 在 target Flutter repository 中实现。
 6. 运行目标应用的 format、static analysis 和 tests。
@@ -238,6 +240,8 @@ Validation 会报告：
 8. 汇报 changed files、validation status、warnings 和 manual confirmations。
 
 实现时优先遵守 `ui-build-plan.json` 的结构化约束。`implementationContract.fileTree/widgetTree/widgetContracts` 决定工程拆分，`visualPlan` 和 mappings 决定可见布局与样式证据。Typography mapping 如果带 `lockToken=true`，说明 source token 和 target text style token 已 exact 对齐，不要再手动覆盖字号、行高、字重或字体族。
+
+不要只看 `visualPlan.sections` 就实现重复卡片或列表项。`sections` 用于页面区域定位，`nodeAudits` 才是重复项、控件和关键行结构的还原契约。`dynamicTextHints` 和 `i18nPlan.texts[*].dynamic` 用于区分稳定翻译文案和模型派生值，避免把数量、价格、日期、百分比等写死到翻译 key 或 mock 文案中。
 
 不要引入 `targetConventions` 没有证据支持的新 state、routing、i18n 或 theme 框架。GetX、flutter_bloc、Riverpod、Provider、Navigator、go_router、context.t、AppLocalizations、themeService、context.pbColors、CommonAppBar 等都只能作为 target 扫描结果影响实现；扫不到时保留抽象建议并记录待确认问题。
 

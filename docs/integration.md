@@ -182,4 +182,4 @@ output/<page>-<timestamp>/
 └── screenshots/
 ```
 
-`ui-build-plan.json` 是实现侧唯一机器契约，包含 `targetConventions`、`implementationContract` 和 `visualPlan`。`ui-build-review.md` 是从 plan 渲染的人类可读 brief。
+`ui-build-plan.json` 是实现蓝图，包含 `targetConventions`、`implementationContract`、`visualPlan`、mappings、i18n/interaction plan 和 validation hints。实现 agent 应优先读取其中的 `visualPlan.nodeAudits`、`visualPlan.dynamicTextHints`、`implementationContract.widgetContracts` 和 `targetConventions.architectureProfile`。`ui-build-review.md` 是审查视图，可以折叠重复证据，但不替代 plan。
