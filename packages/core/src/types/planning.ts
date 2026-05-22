@@ -289,6 +289,7 @@ export type UiImplementationContract = {
   stateStrategy: FlutterStateStrategy[];
   controllerBoundaries: FlutterControllerBoundary[];
   widgetContracts: FlutterWidgetContract[];
+  implementationIndex: UiImplementationIndex;
   conflicts: UiPlanLayoutConflict[];
   overlayPlan: UiOverlayPlan[];
   targetBindings: {
@@ -302,6 +303,24 @@ export type UiImplementationContract = {
   rules: string[];
   contractWarnings: string[];
   manualQuestions: string[];
+};
+
+export type UiImplementationIndex = {
+  mainScreenNodes: string[];
+  repeatedItemNodes: string[];
+  appBarNodes: string[];
+  layoutConflictNodes: string[];
+  overlayRefs: string[];
+  sourceOnlyDeferred: string[];
+  highRiskFirst: Array<{
+    ref: string;
+    reason: string;
+  }>;
+  phaseHints: Array<{
+    phase: 'pre-implementation-decision' | 'main-screen' | 'deferred-overlay-ui-shell';
+    refs: string[];
+    guidance: string;
+  }>;
 };
 
 export type UiSourceSemantics = {
@@ -383,6 +402,7 @@ export type UiBuildPlan = {
   widgetTree: FlutterWidgetPlan[];
   componentMappings: ComponentMapping[];
   themeMappings: ThemeMapping[];
+  themeMappingGroups: ThemeMappingGroups;
   i18nPlan: I18nPlan;
   assetPlan: AssetPlan;
   interactionPlan: InteractionPlan[];
@@ -397,6 +417,12 @@ export type ComponentMapping = {
   targetSymbol?: string | undefined;
   confidence: MappingConfidence;
   reason: string;
+};
+
+export type ThemeMappingGroups = {
+  resolved: ThemeMapping[];
+  candidates: ThemeMapping[];
+  familyOnly: ThemeMapping[];
 };
 
 export type ThemeMapping = {

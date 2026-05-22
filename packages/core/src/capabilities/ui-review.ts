@@ -39,6 +39,12 @@ function renderReviewMarkdown(plan: UiBuildPlan): string {
     '- 冲突规则：sourceSemantics 负责来源语义；targetConventions 负责工程表达；visualPlan 负责视觉事实。',
     '- 若目标约定未知，不得引入新的 state/routing/i18n/theme 框架，先处理人工确认项。',
     '',
+    '### 实现索引',
+    '',
+    '_JSON 来源：`ui-build-plan.json#/implementationContract/implementationIndex`_',
+    '',
+    ...renderImplementationIndex(plan),
+    '',
     '## 来源语义',
     '',
     '_JSON 来源：`ui-build-plan.json#/implementationContract/sourceSemantics`_',
@@ -156,9 +162,11 @@ function renderReviewMarkdown(plan: UiBuildPlan): string {
     '',
     '### 主题映射',
     '',
+    ...renderThemeMappingGroups(plan),
+    '',
     ...markdownTable(
       ['类型', '来源', '值', '目标', '匹配', '置信度', '锁定'],
-      plan.themeMappings.slice(0, 80).map((mapping) => [
+      plan.themeMappings.slice(0, 40).map((mapping) => [
         mapping.kind ?? 'style',
         mapping.source,
         codeCell(mapping.value),
@@ -224,6 +232,38 @@ function renderReviewMarkdown(plan: UiBuildPlan): string {
     ),
     '',
   ].join('\n');
+}
+
+function renderImplementationIndex(plan: UiBuildPlan): string[] {
+  const index = plan.implementationContract.implementationIndex;
+  return [
+    ...markdownTable(
+      ['类别', '引用'],
+      [
+        ['先决冲突', index.layoutConflictNodes.map(codeCell).join('、') || '无'],
+        ['主屏节点', index.mainScreenNodes.slice(0, 20).map(codeCell).join('、') || '无'],
+        ['重复项节点', index.repeatedItemNodes.slice(0, 20).map(codeCell).join('、') || '无'],
+        ['AppBar 节点', index.appBarNodes.map(codeCell).join('、') || '无'],
+        ['Overlay', index.overlayRefs.map(codeCell).join('、') || '无'],
+        ['Source-only deferred', index.sourceOnlyDeferred.map(codeCell).join('、') || '无'],
+      ],
+    ),
+    '',
+    'Phase 提示：',
+    '',
+    ...markdownTable(
+      ['阶段', '引用', '说明'],
+      index.phaseHints.map((hint) => [
+        hint.phase,
+        hint.refs.slice(0, 16).map(codeCell).join('、'),
+        translateImplementationGuidance(hint.guidance),
+      ]),
+    ),
+    '',
+    '高风险优先项：',
+    '',
+    ...listOrFallback(index.highRiskFirst.slice(0, 12).map((item) => `- ${codeCell(item.ref)}：${translateImplementationGuidance(item.reason)}`)),
+  ];
 }
 
 function renderSourceSemantics(plan: UiBuildPlan): string[] {
@@ -297,6 +337,28 @@ function renderSourceSemantics(plan: UiBuildPlan): string[] {
     '',
     ...listOrFallback(semantics.doNotTranslate.map((item) => `- ${item}`)),
   ];
+}
+
+function renderThemeMappingGroups(plan: UiBuildPlan): string[] {
+  const groups = plan.themeMappingGroups;
+  return [
+    '分层规则：`resolved` 可作为默认实现强提示；`candidates` 需要对照节点证据后使用；`familyOnly` 只说明目标工程有该 token 家族，不参与默认实现决策。',
+    '',
+    ...markdownTable(
+      ['分层', '数量', '示例'],
+      [
+        ['resolved', String(groups.resolved.length), themeMappingExamples(groups.resolved)],
+        ['candidates', String(groups.candidates.length), themeMappingExamples(groups.candidates)],
+        ['familyOnly', String(groups.familyOnly.length), themeMappingExamples(groups.familyOnly)],
+      ],
+    ),
+  ];
+}
+
+function themeMappingExamples(mappings: UiBuildPlan['themeMappings']): string {
+  return mappings.slice(0, 5).map((mapping) =>
+    `${mapping.source} → ${mapping.target ?? '人工确认'} (${confidenceLabel(mapping.confidence)})`,
+  ).join('；') || '无';
 }
 
 function renderArchitectureProfile(plan: UiBuildPlan): string[] {
@@ -696,6 +758,16 @@ function translateRule(rule: string): string {
     .replace('When source structure and runtime layout disagree, treat implementationContract.conflicts as a required decision before coding the container layout.', 'source 结构与 runtime 布局不一致时，先处理 implementationContract.conflicts，再实现容器布局。')
     .replace('When implementationContract.overlayPlan marks uiShellRequired=true, implement the overlay shell even if business behavior remains TODO.', 'implementationContract.overlayPlan 标记 uiShellRequired=true 时，即使业务行为 TODO，也要实现弹层 UI shell。')
     .replace('If target conventions are unknown, report warnings instead of guessing.', '目标约定未知时输出警告，不要猜。');
+}
+
+function translateImplementationGuidance(value: string): string {
+  return value
+    .replace('Resolve source/runtime layout conflicts before coding affected containers.', '实现受影响容器前，先解决 source/runtime 布局冲突。')
+    .replace('Implement app bar, section/filter structure, repeated cards/list items, and visible controls first.', '先实现 AppBar、section/filter 结构、重复卡片/列表项和可见控件。')
+    .replace('Overlay evidence is retained and UI shells are required, but source-only visual fidelity may be implemented after the main screen pass.', 'Overlay 证据已保留且 UI shell 必须实现；source-only 视觉细节可在主屏之后处理。')
+    .replace('source-structure-vs-runtime-layout: resolve source/runtime layout decision before coding.', 'source 结构与 runtime 布局不一致：编码前先做布局决策。')
+    .replace('Visible controls have source-bound action mappings; preserve callback semantics and visual order.', '可见控件已有 source action 绑定；保留 callback 语义和视觉顺序。')
+    .replace('Source-only overlay UI shell is required even when business behavior remains TODO.', '即使业务行为保留 TODO，也需要实现 source-only overlay UI shell。');
 }
 
 function translateReason(reason: string): string {

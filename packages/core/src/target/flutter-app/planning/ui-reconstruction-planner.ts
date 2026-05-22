@@ -15,6 +15,7 @@ import type {
   PageSnapshotNode,
   SnapshotNodeRole,
   ThemeMapping,
+  ThemeMappingGroups,
   UiNodeAudit,
   UiNodeAuditChild,
   UiNodeAuditControl,
@@ -28,6 +29,7 @@ import type {
   UiBuildPlan,
   UiDynamicTextHint,
   UiImplementationContract,
+  UiImplementationIndex,
   UiInteractionTarget,
   UiOverlayPlan,
   UiPlanLayoutConflict,
@@ -97,6 +99,7 @@ export async function buildFlutterUiReconstructionPlan(
     visualPlan,
   });
   const nodeAuditHints = buildNodeAuditValidationHints(visualPlan.nodeAudits);
+  const themeMappings = buildThemeMappings(input.evidence, conventions.targetConventions);
 
   return {
     id: createPlanId(input.evidence.id),
@@ -124,7 +127,8 @@ export async function buildFlutterUiReconstructionPlan(
     fileTree: implementationContract.fileTree,
     widgetTree: implementationContract.widgetTree,
     componentMappings,
-    themeMappings: buildThemeMappings(input.evidence, conventions.targetConventions),
+    themeMappings,
+    themeMappingGroups: buildThemeMappingGroups(themeMappings),
     i18nPlan: buildI18nPlan(input.evidence),
     assetPlan: buildAssetPlan(input.evidence),
     interactionPlan: buildInteractionPlan(input.evidence),
@@ -351,6 +355,7 @@ function buildImplementationContract(input: {
   );
   const conflicts = buildPlanLayoutConflicts(input.evidence, input.visualPlan);
   const overlayPlan = buildOverlayPlan(input.evidence, input.targetComponents);
+  const implementationIndex = buildImplementationIndex(input.visualPlan, conflicts, overlayPlan);
   return {
     logicalPlanSource: input.sourceAwarePlan
       ? 'source-aware implementation plan normalized by target conventions'
@@ -366,6 +371,7 @@ function buildImplementationContract(input: {
       visualPlan: input.visualPlan,
       sourceSemantics,
     }),
+    implementationIndex,
     conflicts,
     overlayPlan,
     targetBindings: {
@@ -416,6 +422,76 @@ function buildImplementationContract(input: {
         `Resolve ${conflict.type} for ${conflict.sourceNodeId}: ${conflict.decisionOptions.join(' / ')}`,
       ),
     ],
+  };
+}
+
+function buildImplementationIndex(
+  visualPlan: UiVisualPlan,
+  conflicts: UiPlanLayoutConflict[],
+  overlayPlan: UiOverlayPlan[],
+): UiImplementationIndex {
+  const appBarNodes = visualPlan.nodeAudits
+    .filter((audit) => audit.kind === 'app-bar' || audit.kind === 'appbar-action')
+    .map((audit) => audit.sourceNodeId);
+  const repeatedItemNodes = visualPlan.nodeAudits
+    .filter((audit) => audit.kind === 'card' || audit.kind === 'list-item')
+    .map((audit) => audit.sourceNodeId);
+  const mainScreenNodes = dedupe([
+    ...appBarNodes,
+    ...visualPlan.nodeAudits
+      .filter((audit) => ['section', 'filter', 'sort-control', 'list', 'card', 'list-item', 'button', 'chip', 'tab', 'bottom-action'].includes(audit.kind))
+      .map((audit) => audit.sourceNodeId),
+  ]);
+  const layoutConflictNodes = dedupe(conflicts.map((conflict) => conflict.sourceNodeId));
+  const overlayRefs = overlayPlan.map((overlay) => overlay.id);
+  const sourceOnlyDeferred = overlayPlan
+    .filter((overlay) => overlay.visualEvidence === 'source-only')
+    .map((overlay) => overlay.id);
+  const highRiskFirst = [
+    ...conflicts.filter((conflict) => conflict.requiresDecision).map((conflict) => ({
+      ref: conflict.sourceNodeId,
+      reason: `${conflict.type}: resolve source/runtime layout decision before coding.`,
+    })),
+    ...visualPlan.nodeAudits
+      .filter((audit) => audit.actionMappings.length > 0)
+      .map((audit) => ({
+        ref: audit.sourceNodeId,
+        reason: 'Visible controls have source-bound action mappings; preserve callback semantics and visual order.',
+      })),
+    ...overlayPlan
+      .filter((overlay) => overlay.uiShellRequired)
+      .map((overlay) => ({
+        ref: overlay.id,
+        reason: 'Source-only overlay UI shell is required even when business behavior remains TODO.',
+      })),
+  ];
+  const phaseHintCandidates: UiImplementationIndex['phaseHints'] = [
+    {
+      phase: 'pre-implementation-decision',
+      refs: layoutConflictNodes,
+      guidance: 'Resolve source/runtime layout conflicts before coding affected containers.',
+    },
+    {
+      phase: 'main-screen',
+      refs: mainScreenNodes,
+      guidance: 'Implement app bar, section/filter structure, repeated cards/list items, and visible controls first.',
+    },
+    {
+      phase: 'deferred-overlay-ui-shell',
+      refs: overlayRefs,
+      guidance: 'Overlay evidence is retained and UI shells are required, but source-only visual fidelity may be implemented after the main screen pass.',
+    },
+  ];
+  const phaseHints: UiImplementationIndex['phaseHints'] = phaseHintCandidates.filter((hint) => hint.refs.length > 0);
+  return {
+    mainScreenNodes,
+    repeatedItemNodes,
+    appBarNodes,
+    layoutConflictNodes,
+    overlayRefs,
+    sourceOnlyDeferred,
+    highRiskFirst: dedupeBy(highRiskFirst, (item) => item.ref),
+    phaseHints,
   };
 }
 
@@ -2242,6 +2318,30 @@ function buildThemeMappings(evidence: PageCanonical, targetConventions: FlutterT
     } satisfies ThemeMapping;
   });
   return dedupeBy([...runtimeMappings, ...sourceMappings], (mapping) => `${mapping.source}:${mapping.value}`);
+}
+
+function buildThemeMappingGroups(themeMappings: ThemeMapping[]): ThemeMappingGroups {
+  const resolved: ThemeMapping[] = [];
+  const candidates: ThemeMapping[] = [];
+  const familyOnly: ThemeMapping[] = [];
+  for (const mapping of themeMappings) {
+    if (isFamilyOnlyThemeMapping(mapping)) {
+      familyOnly.push(mapping);
+      continue;
+    }
+    if (mapping.confidence === 'high' && (mapping.target || mapping.lockToken)) {
+      resolved.push(mapping);
+      continue;
+    }
+    candidates.push(mapping);
+  }
+  return { resolved, candidates, familyOnly };
+}
+
+function isFamilyOnlyThemeMapping(mapping: ThemeMapping): boolean {
+  if (mapping.confidence === 'low') return true;
+  if (!mapping.target) return true;
+  return /\.\*$/.test(mapping.target);
 }
 
 function supportedThemeTarget(
