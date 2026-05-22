@@ -143,6 +143,29 @@ Buttons/chips:
 子 widget 优先通过构造参数接收 UI model 和 callback。  
 不要让所有子 widget 直接读取整个 controller。
 
+### 目标工程强约定组件优先
+
+如果 `componentMappings` 或 `targetConventions` 对目标工程公共组件给出高置信映射，必须优先复用该公共组件，例如：
+
+- `CommonAppBar`
+- `CommonButton`
+- `CommonImage`
+- `CommonSvg`
+- `Pop.sheet` / `YouFiPop.sheet`
+- `CommonEmpty`
+- `CommonLoading`
+
+只要公共组件的语义槽位可以表达 source/runtime 证据，就不要因为轻微高度、padding、spacing、默认 text style 差异而直接 fallback 到自建 Widget。
+
+允许 fallback 到自建 Widget 的条件：
+
+- 公共组件缺少必要槽位，无法表达 source action、title、leading、actions、body 或 footer。
+- 公共组件会破坏 `visualPlan.nodeAudits[*].implementationSummary.mustPreserve` 中的文本/icon 顺序或交互语义。
+- 公共组件 API 强制带入 source 明确不存在的字段或控件。
+- 公共组件导致严重视觉错位，且无法通过公开参数或外层布局修正。
+
+如果选择 fallback 到自建 Widget，最终说明必须列出放弃公共组件的具体证据和原因。轻微像素差异本身不是充分理由。
+
 临时 mock 数据必须放在：
 
 - controller
@@ -277,6 +300,14 @@ Container(
 
 实现前必须读取 `visualPlan.dynamicTextHints` 和 `i18nPlan.texts[*].dynamic`。
 
+新增翻译 key 前必须先检查目标工程已有翻译文件，避免重复 key 导致 const map 编译失败。例如：
+
+```text
+rg "'candidate_key'" lib/app/translations
+```
+
+已存在的稳定文案 key 必须复用，不要在文件其他位置重复声明。新增 key 应使用当前模块或页面前缀，避免使用过宽泛的通用 key。
+
 不要给动态值创建翻译 key，例如：
 
 - 数量
@@ -335,6 +366,7 @@ Text('（${model.count}）')
 还要反查以下风险：
 
 - 是否有写死数量
+- 是否在 translation map 中新增了重复 key
 - 是否有 Material icon 代替 source/target asset
 - 是否有 source node 中不存在的字段
 - 是否忽略了 `implementationSummary.doNotInvent`
@@ -367,7 +399,9 @@ Text('（${model.count}）')
 - 把 DOM section 机械拆成一堆 Flutter 文件
 - 首卡没有的字段被自行补进 UI
 - 把动态数量写成 i18n key
+- 新增翻译前不查已有 key，导致 const map 重复 key 编译失败
 - 用 Material icon 顶替已有 asset
+- 高置信映射到 `CommonAppBar` / `CommonButton` 等公共组件时，仅因轻微像素差异就自建 Widget
 - 固定按钮高度导致翻译后布局不自然
 - typography lockToken 后又覆盖字号或字重
 - 子 widget 全部直接读 controller
