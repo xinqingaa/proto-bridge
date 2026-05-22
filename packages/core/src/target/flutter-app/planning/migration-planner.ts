@@ -8,7 +8,6 @@ import type {
   PrototypePageAnalysis,
   WidgetRecommendation,
 } from '../../../types/index.js';
-import { classifyPagePattern } from '../planners/page-pattern-classifier.js';
 import { instantiateWidgetBlueprint } from '../planners/widget-blueprints.js';
 import { toPascalCase, toSnakeCase } from '../planners/naming-strategy.js';
 
@@ -25,8 +24,7 @@ export function buildFlutterImplementationPlan(input: BuildFlutterImplementation
   const pageName = toPascalCase(input.source.screenId ?? input.source.name ?? input.source.label ?? 'MigratedPage');
   const moduleName = input.target.suggestedModule ?? input.source.module ?? 'feature';
   const baseDir = `lib/app/modules/${moduleName}/${toSnakeCase(pageName)}`;
-  const classifiedPattern = classifyPagePattern(input.source);
-  const widgetTree = buildWidgetTree(pageName, input.source, complexity, classifiedPattern);
+  const widgetTree = buildWidgetTree(pageName, input.source, complexity);
   const fileTree = buildFileTree(baseDir, pageName, input.source, complexity, widgetTree);
   const stateStrategy = buildStateStrategy(input.source, complexity);
   const controllerBoundaries = buildControllerBoundaries(pageName, input.source, complexity);
@@ -34,7 +32,7 @@ export function buildFlutterImplementationPlan(input: BuildFlutterImplementation
 
   return {
     complexity,
-    summary: buildSummary(complexity, input.source, classifiedPattern.pattern, classifiedPattern.confidence),
+    summary: buildSummary(complexity),
     fileTree,
     widgetTree,
     stateStrategy,
@@ -63,49 +61,14 @@ function inferPlanComplexity(source: PrototypePageAnalysis): FlutterImplementati
 
 function buildSummary(
   complexity: FlutterImplementationPlan['complexity'],
-  source: PrototypePageAnalysis,
-  pattern: string,
-  confidence: string,
 ): string {
-  const patternText = pagePatternLabel(pattern);
-  const confidenceText = confidenceLabel(confidence);
   if (complexity === 'simple') {
-    return `该页面适合用一个页面 Widget + 少量私有子 Widget 实现；页面模式识别为${patternText}，置信度${confidenceText}；状态管理可以保持轻量，重点对齐 UI、文案和主题样式。`;
+    return '该页面适合用一个页面 Widget + 少量 source/runtime 证据支撑的子 Widget 实现；状态管理保持轻量，重点对齐 UI、文案和主题样式。';
   }
   if (complexity === 'moderate') {
-    return `该页面建议拆成父页面、页面状态边界和若干子 Widget；页面模式识别为${patternText}，置信度${confidenceText}；状态边界负责页面级 UI 状态，子 Widget 通过构造参数接收数据并通过回调上报交互。`;
+    return '该页面建议拆成父页面、页面状态边界和若干 source/runtime 证据支撑的子 Widget；状态边界负责页面级 UI 状态，子 Widget 通过构造参数接收数据并通过回调上报交互。';
   }
-  const hasChart = source.sfc?.components.some((component) => component.role === 'chart') ?? false;
-  const chartNote = hasChart ? '图表/指标计算应单独放入 adapter 或 service，避免在 Widget build 中复算。' : '';
-  return `该页面属于复杂页面，页面模式识别为${patternText}，置信度${confidenceText}；建议使用父页面编排 + 多个子 Widget + 状态 owner/数据适配层分层实现；状态管理只保留 Flutter 实现需要的页面状态，避免把来源页面的临时状态逐项搬进目标状态模式。${chartNote}`;
-}
-
-function pagePatternLabel(pattern: string): string {
-  const labels: Record<string, string> = {
-    detail: '详情页',
-    dashboard: '数据看板',
-    list: '列表页',
-    form: '表单页',
-    'trade-ticket': '交易下单页',
-    'quote-detail': '行情详情页',
-    portfolio: '资产/持仓页',
-    'record-list': '记录列表页',
-    settings: '设置页',
-    auth: '认证页',
-    onboarding: '引导页',
-    wizard: '步骤流程页',
-    article: '内容详情页',
-    'empty-state': '空状态页',
-    unknown: '通用页面',
-  };
-  return labels[pattern] ?? pattern;
-}
-
-function confidenceLabel(confidence: string): string {
-  if (confidence === 'high') return '高';
-  if (confidence === 'medium') return '中';
-  if (confidence === 'low') return '低';
-  return confidence;
+  return '该页面属于复杂页面；建议使用父页面编排 + 多个 source/runtime 证据支撑的子 Widget + 状态 owner 分层实现；状态管理只保留 Flutter 实现需要的页面状态，避免把来源页面的临时状态逐项搬进目标状态模式。';
 }
 
 function buildFileTree(
@@ -143,13 +106,6 @@ function buildFileTree(
     });
   }
 
-  if (source.sfc?.state.some((state) => state.category === 'chart-data')) {
-    files.push({
-      path: `${baseDir}/adapters/${toSnakeCase(pageName)}_chart_adapter.dart`,
-      responsibility: '承载图表数据转换、指标计算和 path/series 构造，避免 Widget build 中重复计算。',
-    });
-  }
-
   if (source.sfc?.state.some((state) => state.category === 'mock-data')) {
     files.push({
       path: `${baseDir}/models/${toSnakeCase(pageName)}_ui_model.dart`,
@@ -164,9 +120,8 @@ function buildWidgetTree(
   pageName: string,
   source: PrototypePageAnalysis,
   complexity: FlutterImplementationPlan['complexity'],
-  classifiedPattern: ReturnType<typeof classifyPagePattern>,
 ): FlutterWidgetPlan[] {
-  return dedupeBy(instantiateWidgetBlueprint(pageName, source, complexity, classifiedPattern), (plan) => plan.name).slice(0, 24);
+  return dedupeBy(instantiateWidgetBlueprint(pageName, source, complexity), (plan) => plan.name).slice(0, 24);
 }
 
 function buildStateStrategy(
@@ -199,7 +154,7 @@ function buildStateStrategy(
   }
 
   const chartData = sfc?.state.filter((state) => state.category === 'chart-data').map((state) => state.name) ?? [];
-  if (chartData.length > 0) {
+  if (chartData.length > 0 && hasVisibleChartEvidence(source)) {
     strategies.push({
       concern: '图表与派生计算',
       owner: 'model-adapter',
@@ -254,12 +209,6 @@ function buildControllerBoundaries(
       owns,
       avoids: ['逐层照搬来源页面结构', '在 build 中做重计算', '让所有子 Widget 直接读整个页面状态边界'],
     },
-    {
-      name: `${pageName}Data/Chart Adapter`,
-      responsibility: '将接口或 mock 数据整理成 UI/图表绘制模型。',
-      owns: ['mock 到 model 的转换', '派生数据和图表 series 计算', '缓存策略'],
-      avoids: ['直接依赖 BuildContext', '触发导航', '持有 Widget 状态'],
-    },
   ];
 }
 
@@ -275,11 +224,10 @@ function buildWidgetContracts(
     .map((widget) => {
       const lower = widget.name.toLowerCase();
       const callbacks: string[] = [];
-      if (/tab/.test(lower)) callbacks.push('onTabChanged');
-      if (/bottom|trade/.test(lower)) callbacks.push('onBuy', 'onSell', 'onOptions');
-      if (/header|appbar/.test(lower)) callbacks.push('onBack', 'onMore');
-      if (/list|holding/.test(lower)) callbacks.push('onItemTap');
-      if (/chart/.test(lower)) callbacks.push('onPeriodChanged', 'onIndicatorChanged');
+      if (/tab/.test(lower) && hasInteractionEvidence(source, /tab|active|select|change/i)) callbacks.push('onTabChanged');
+      if (/header|appbar/.test(lower) && hasInteractionEvidence(source, /back|return|pushPage|router|navigate/i)) callbacks.push('onBack');
+      if (/list|card|item/.test(lower) && hasInteractionEvidence(source, /item|detail|select|open/i)) callbacks.push('onItemTap');
+      if (/bottom|action/.test(lower) && hasInteractionEvidence(source, /submit|confirm|next|continue|cancel/i)) callbacks.push('onAction');
 
       return {
         widget: widget.name,
@@ -300,7 +248,7 @@ function buildDoNotTranslate(source: PrototypePageAnalysis, complexity: FlutterI
   if (complexity === 'complex') {
     rules.push('不要把来源页面的临时状态一对一迁移为目标状态字段；先按 UI 状态、业务数据、派生数据、生命周期副作用分类。');
   }
-  if (source.sfc?.state.some((state) => state.category === 'chart-data')) {
+  if (hasVisibleChartEvidence(source)) {
     rules.push('不要逐行翻译矢量路径或 K 线指标计算；图表数据和绘制策略需要单独设计 adapter 或 CustomPainter。');
   }
   if (source.sfc?.layout.some((layout) => ['fixed', 'sticky', 'scroll'].includes(layout.kind))) {
@@ -321,7 +269,7 @@ function buildChecklist(
   if (source.sfc?.routes.length) checklist.push({ priority: 'P0', item: '确认所有跳转目标和参数映射到 Flutter routes。' });
   if (source.sfc?.lifecycle.length) checklist.push({ priority: 'P0', item: '确认 ScrollController/listener/watch 在目标生命周期释放边界中释放。' });
   if (source.sfc?.layout.some((item) => item.kind === 'sticky')) checklist.push({ priority: 'P1', item: '确认吸顶 Header/Tab 的滚动行为和层级遮挡。' });
-  if (source.sfc?.state.some((state) => state.category === 'chart-data')) checklist.push({ priority: 'P1', item: '确认图表实现方案、性能和数据缓存策略。' });
+  if (hasVisibleChartEvidence(source)) checklist.push({ priority: 'P1', item: '确认图表实现方案、性能和数据缓存策略。' });
   if (source.sfc?.assets.length) checklist.push({ priority: 'P1', item: '确认图片、SVG、icon、暗色模式资源是否复用现有 assets。' });
   if (complexity === 'complex') checklist.push({ priority: 'P2', item: '为核心子 Widget 保留可独立调试入口或最小 fixture。' });
   return checklist;
@@ -333,13 +281,22 @@ function inferWidgetInputs(
 ): string[] {
   const lower = widget.name.toLowerCase();
   const inputs: string[] = [];
-  if (/header|info|price|quote/.test(lower)) inputs.push('quote/ui summary model');
   if (/tab/.test(lower)) inputs.push('tabs', 'activeKey');
-  if (/chart/.test(lower)) inputs.push('chartViewModel', 'selectedPeriod', 'selectedIndicator');
-  if (/list|holding|profile|history|metric/.test(lower)) inputs.push('items / section model');
-  if (/bottom|trade/.test(lower)) inputs.push('trade action availability', 'quote symbol');
+  if (/list|card|item/.test(lower)) inputs.push('items / section model');
+  if (/form/.test(lower)) inputs.push('form fields / validation state');
+  if (/bottom|action/.test(lower)) inputs.push('action availability');
   if (inputs.length === 0 && source.sfc?.state.some((state) => state.category === 'mock-data')) inputs.push('section data model');
   return dedupe(inputs);
+}
+
+function hasInteractionEvidence(source: PrototypePageAnalysis, pattern: RegExp): boolean {
+  return Boolean(source.sfc?.interactions.some((interaction) => pattern.test(`${interaction.target ?? ''} ${interaction.evidence}`)))
+    || Boolean(source.sfc?.routes.some((route) => pattern.test(`${route.action} ${route.target ?? ''} ${route.evidence}`)));
+}
+
+function hasVisibleChartEvidence(source: PrototypePageAnalysis): boolean {
+  return Boolean(source.sfc?.sections.some((section) => section.kind === 'chart'))
+    || Boolean(source.sfc?.components.some((component) => component.role === 'chart'));
 }
 
 function dedupe(items: string[]): string[] {

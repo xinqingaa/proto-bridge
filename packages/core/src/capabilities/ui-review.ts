@@ -691,6 +691,7 @@ function translateRule(rule: string): string {
     .replace('Do not introduce a new state/routing/i18n/theme framework unless target conventions or user config explicitly support it.', '除非 targetConventions 或用户配置有证据支持，不得引入新的 state/routing/i18n/theme 框架。')
     .replace('Use source-aware widget contracts for decomposition.', '使用 source-aware widget contract 做业务拆分。')
     .replace('Use visualPlan for visible layout and styling evidence.', '可见布局和样式以 visualPlan 为证据。')
+    .replace('Do not create implementation widgets, files, inputs, or callbacks from fixed business page templates; contracts must be backed by source structure, runtime evidence, or target conventions.', '不得从固定业务页面模板生成实现 widget、文件、输入或回调；合同必须由 source 结构、runtime 证据或 targetConventions 支撑。')
     .replace('For app-bar/header actions, bind each visible action to source interactions before naming callbacks or choosing icons.', 'AppBar/header 操作必须先绑定 source interaction，再命名 callback 或选择图标。')
     .replace('When source structure and runtime layout disagree, treat implementationContract.conflicts as a required decision before coding the container layout.', 'source 结构与 runtime 布局不一致时，先处理 implementationContract.conflicts，再实现容器布局。')
     .replace('When implementationContract.overlayPlan marks uiShellRequired=true, implement the overlay shell even if business behavior remains TODO.', 'implementationContract.overlayPlan 标记 uiShellRequired=true 时，即使业务行为 TODO，也要实现弹层 UI shell。')

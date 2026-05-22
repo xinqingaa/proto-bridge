@@ -1,5 +1,4 @@
 import type { FlutterImplementationPlan, FlutterWidgetPlan, PrototypePageAnalysis } from '../../../types/index.js';
-import type { ClassifiedPagePattern, PagePattern } from './page-pattern-classifier.js';
 import { widgetName } from './naming-strategy.js';
 
 export type WidgetBlueprintItem = {
@@ -16,7 +15,6 @@ export function instantiateWidgetBlueprint(
   pageName: string,
   source: PrototypePageAnalysis,
   complexity: FlutterImplementationPlan['complexity'],
-  classified: ClassifiedPagePattern,
 ): FlutterWidgetPlan[] {
   const pageWidget = `${pageName}Page`;
   const bodyWidget = `${pageName}Body`;
@@ -36,9 +34,7 @@ export function instantiateWidgetBlueprint(
     },
   ];
 
-  const blueprint = blueprintFor(classified.pattern);
-  for (const item of blueprint) {
-    if (item.when && !item.when(source)) continue;
+  for (const item of sourceBackedBlueprint(source)) {
     plans.push({
       name: widgetName(pageName, item.nameHint),
       parent: item.parent === 'page' ? pageWidget : bodyWidget,
@@ -55,98 +51,107 @@ export function instantiateWidgetBlueprint(
   return dedupeBy(plans, (plan) => plan.name).slice(0, 24);
 }
 
-function blueprintFor(pattern: PagePattern): WidgetBlueprintItem[] {
-  const commonHeader: WidgetBlueprintItem = {
-    role: 'header',
-    nameHint: 'Header',
-    parent: 'page',
-    stateAccess: 'props',
-    buildHint: '优先复用目标工程扫描到的 app-bar/header pattern。',
-    when: hasHeaderLike,
+function sourceBackedBlueprint(source: PrototypePageAnalysis): WidgetBlueprintItem[] {
+  const items: WidgetBlueprintItem[] = [];
+  const sections = source.sfc?.sections ?? [];
+  const components = source.sfc?.components ?? [];
+  const hasSectionKind = (kind: string) => sections.some((section) => section.kind === kind);
+  const hasComponentRole = (role: string) => components.some((component) => component.role === role);
+  const add = (item: WidgetBlueprintItem): void => {
+    items.push(item);
   };
 
-  const blueprints: Record<PagePattern, WidgetBlueprintItem[]> = {
-    'quote-detail': [
-      commonHeader,
-      { role: 'summary', nameHint: 'QuoteSummary', parent: 'body', stateAccess: 'props', buildHint: '展示核心行情、涨跌幅、关键指标和收藏/更多入口状态。' },
-      { role: 'tabs', nameHint: 'PrimaryTabs', parent: 'body', stateAccess: 'props', buildHint: '展示一级页签和选中态，通过回调通知父级切换。', when: hasTabs },
-      { role: 'section-tabs', nameHint: 'SectionTabs', parent: 'body', stateAccess: 'props', buildHint: '展示内容区锚点页签，通过回调触发滚动定位。', when: hasSectionTabs },
-      { role: 'chart', nameHint: 'ChartPanel', parent: 'body', stateAccess: 'props', buildHint: '消费 chart adapter 输出，不在 build 内计算指标。', when: hasChartData },
-      { role: 'list', nameHint: 'DataSections', parent: 'body', stateAccess: 'props', buildHint: '展示持仓、历史、指标等数据区块；根据数据量选择 Column/ListView。' },
-      { role: 'bottom-actions', nameHint: 'BottomTradeBar', parent: 'page', stateAccess: 'props', buildHint: '用 SafeArea + Row/Buttons 实现，确认 disabled/loading 状态。', when: hasBottomActions },
-    ],
-    'trade-ticket': [
-      commonHeader,
-      { role: 'summary', nameHint: 'TradeSummary', parent: 'body', stateAccess: 'props', buildHint: '展示交易标的、价格、账户或可用额度摘要。' },
-      { role: 'form-section', nameHint: 'OrderForm', parent: 'body', stateAccess: 'props', buildHint: '承载价格、数量、订单类型等输入项和校验提示。' },
-      { role: 'bottom-actions', nameHint: 'SubmitBar', parent: 'page', stateAccess: 'props', buildHint: '承载提交/预览/确认按钮，适配 SafeArea 和 loading/disabled 状态。' },
-    ],
-    form: [
-      commonHeader,
-      { role: 'form-section', nameHint: 'Form', parent: 'body', stateAccess: 'props', buildHint: '按字段组组织输入项、校验信息和错误提示。' },
-      { role: 'bottom-actions', nameHint: 'SubmitBar', parent: 'page', stateAccess: 'props', buildHint: '承载主提交按钮，确认 disabled/loading 状态。', when: hasBottomActions },
-    ],
-    list: [
-      commonHeader,
-      { role: 'filter-bar', nameHint: 'FilterBar', parent: 'body', stateAccess: 'props', buildHint: '展示筛选、排序或时间范围入口。', when: hasFilterLike },
-      { role: 'data-list', nameHint: 'List', parent: 'body', stateAccess: 'props', buildHint: '展示列表主体，确认分页、空态、加载态和错误态。' },
-    ],
-    'record-list': [
-      commonHeader,
-      { role: 'filter-bar', nameHint: 'FilterBar', parent: 'body', stateAccess: 'props', buildHint: '展示记录筛选条件和时间范围。', when: hasFilterLike },
-      { role: 'data-list', nameHint: 'RecordList', parent: 'body', stateAccess: 'props', buildHint: '展示记录列表，确认分页、空态和详情跳转。' },
-    ],
-    portfolio: [
-      commonHeader,
-      { role: 'summary', nameHint: 'AssetSummary', parent: 'body', stateAccess: 'props', buildHint: '展示资产、收益、账户摘要等关键指标。' },
-      { role: 'data-list', nameHint: 'PositionList', parent: 'body', stateAccess: 'props', buildHint: '展示持仓或资产明细，确认空态和刷新策略。' },
-    ],
-    settings: [
-      commonHeader,
-      { role: 'data-list', nameHint: 'SettingsGroupList', parent: 'body', stateAccess: 'props', buildHint: '按分组展示设置项、开关、跳转入口和危险操作。' },
-    ],
-    auth: [
-      { role: 'header', nameHint: 'Header', parent: 'page', stateAccess: 'props', buildHint: '展示认证流程标题、返回和帮助入口。' },
-      { role: 'form-section', nameHint: 'AuthForm', parent: 'body', stateAccess: 'props', buildHint: '展示账号、验证码、密码或安全输入项。' },
-      { role: 'bottom-actions', nameHint: 'SubmitBar', parent: 'page', stateAccess: 'props', buildHint: '承载继续、登录或验证按钮。' },
-    ],
-    onboarding: [
-      { role: 'section', nameHint: 'StepContent', parent: 'body', stateAccess: 'props', buildHint: '展示当前步骤内容、说明和插图。' },
-      { role: 'bottom-actions', nameHint: 'StepActions', parent: 'page', stateAccess: 'props', buildHint: '承载下一步、返回和跳过操作。' },
-    ],
-    wizard: [
-      commonHeader,
-      { role: 'section', nameHint: 'StepIndicator', parent: 'body', stateAccess: 'props', buildHint: '展示步骤进度和当前状态。' },
-      { role: 'section', nameHint: 'StepContent', parent: 'body', stateAccess: 'props', buildHint: '展示当前步骤的主要内容。' },
-      { role: 'bottom-actions', nameHint: 'StepActions', parent: 'page', stateAccess: 'props', buildHint: '承载上一步/下一步/提交操作。' },
-    ],
-    article: [
-      commonHeader,
-      { role: 'section', nameHint: 'Content', parent: 'body', stateAccess: 'props', buildHint: '展示标题、正文、说明文字和辅助信息。' },
-    ],
-    detail: [
-      commonHeader,
-      { role: 'summary', nameHint: 'Summary', parent: 'body', stateAccess: 'props', buildHint: '展示页面核心摘要信息。', when: hasSummaryLike },
-      { role: 'section', nameHint: 'ContentSections', parent: 'body', stateAccess: 'props', buildHint: '展示详情内容区块，按字段组或卡片组织。' },
-      { role: 'bottom-actions', nameHint: 'BottomActions', parent: 'page', stateAccess: 'props', buildHint: '承载页面主操作。', when: hasBottomActions },
-    ],
-    dashboard: [
-      commonHeader,
-      { role: 'summary', nameHint: 'SummaryCards', parent: 'body', stateAccess: 'props', buildHint: '展示多个核心指标卡片。' },
-      { role: 'section', nameHint: 'DashboardSections', parent: 'body', stateAccess: 'props', buildHint: '展示图表、列表和快捷入口等组合区块。' },
-    ],
-    'empty-state': [
-      commonHeader,
-      { role: 'empty-state', nameHint: 'EmptyState', parent: 'body', stateAccess: 'props', buildHint: '展示空态插图、说明和主操作。' },
-    ],
-    unknown: [
-      commonHeader,
-      { role: 'section', nameHint: 'Content', parent: 'body', stateAccess: 'props', buildHint: '展示页面主要内容，按卡片或字段组拆分。' },
-      { role: 'bottom-actions', nameHint: 'BottomActions', parent: 'page', stateAccess: 'props', buildHint: '承载页面主操作。', when: hasBottomActions },
-    ],
-  };
+  if (hasSectionKind('app-bar') || hasComponentRole('header')) {
+    add({
+      role: 'header',
+      nameHint: 'Header',
+      parent: 'page',
+      stateAccess: 'props',
+      buildHint: '由 source/runtime header 证据驱动；优先复用目标工程扫描到的 app-bar/header pattern。',
+    });
+  }
 
-  return blueprints[pattern] ?? blueprints.unknown;
+  if (hasSectionKind('tab-bar') || hasComponentRole('tabs') || hasComponentRole('section-tabs')) {
+    add({
+      role: 'tab-bar',
+      nameHint: 'TabBar',
+      parent: 'body',
+      stateAccess: 'props',
+      buildHint: '由 source/runtime tab 证据驱动；只实现可见页签、选中态和已解析交互。',
+    });
+  }
+
+  if (hasFilterLike(source)) {
+    add({
+      role: 'filter-bar',
+      nameHint: 'FilterBar',
+      parent: 'body',
+      stateAccess: 'props',
+      buildHint: '由 source/runtime filter/sort 证据驱动；只实现可见筛选、排序或搜索控件。',
+    });
+  }
+
+  if (hasSectionKind('list') || hasComponentRole('list')) {
+    add({
+      role: 'data-list',
+      nameHint: 'List',
+      parent: 'body',
+      stateAccess: 'props',
+      buildHint: '由 source/runtime list 证据驱动；按可见列表项、空态、刷新或分页证据实现。',
+    });
+  }
+
+  if (hasSectionKind('chart') || hasComponentRole('chart')) {
+    add({
+      role: 'chart',
+      nameHint: 'ChartSection',
+      parent: 'body',
+      stateAccess: 'props',
+      buildHint: '由 source/runtime 可见 chart 证据驱动；没有可见证据时不得生成图表 UI。',
+    });
+  }
+
+  if (hasFormLike(source) && !isOverlayOnlyForm(source)) {
+    add({
+      role: 'form-section',
+      nameHint: 'Form',
+      parent: 'body',
+      stateAccess: 'props',
+      buildHint: '由 source/runtime 表单或 v-model 证据驱动；只实现可见字段和校验提示。',
+    });
+  }
+
+  if (hasContentSection(source)) {
+    add({
+      role: 'content-section',
+      nameHint: 'ContentSection',
+      parent: 'body',
+      stateAccess: 'props',
+      buildHint: '由 source/runtime 内容区块证据驱动；按可见文本、控件和布局组织。',
+    });
+  }
+
+  if (source.sfc?.fixedBottom || hasSectionKind('bottom-bar') || hasComponentRole('bottom-actions')) {
+    add({
+      role: 'bottom-actions',
+      nameHint: 'BottomActions',
+      parent: 'page',
+      stateAccess: 'props',
+      buildHint: '由 source/runtime fixed bottom 或 bottom action 证据驱动；适配 SafeArea 和可见按钮状态。',
+    });
+  }
+
+  if (hasSectionKind('modal') || hasComponentRole('modal')) {
+    add({
+      role: 'overlay-shell',
+      nameHint: 'OverlayShell',
+      parent: 'page',
+      stateAccess: 'props',
+      buildHint: '由 source modal/sheet 证据驱动；默认只规划 UI shell，业务副作用待确认。',
+    });
+  }
+
+  return dedupeBy(items, (item) => `${item.role}:${item.nameHint}`);
 }
 
 function genericContentWidgets(pageName: string, source: PrototypePageAnalysis): FlutterWidgetPlan[] {
@@ -163,32 +168,29 @@ function genericContentWidgets(pageName: string, source: PrototypePageAnalysis):
   ];
 }
 
-function hasHeaderLike(source: PrototypePageAnalysis): boolean {
-  return Boolean(source.sfc?.components.some((component) => component.role === 'header')) || true;
-}
-
-function hasTabs(source: PrototypePageAnalysis): boolean {
-  return Boolean(source.sfc?.components.some((component) => component.role === 'tabs'));
-}
-
-function hasSectionTabs(source: PrototypePageAnalysis): boolean {
-  return Boolean(source.sfc?.components.some((component) => component.role === 'section-tabs'));
-}
-
-function hasChartData(source: PrototypePageAnalysis): boolean {
-  return Boolean(source.sfc?.components.some((component) => component.role === 'chart')) || Boolean(source.sfc?.state.some((state) => state.category === 'chart-data'));
-}
-
-function hasBottomActions(source: PrototypePageAnalysis): boolean {
-  return Boolean(source.sfc?.fixedBottom) || Boolean(source.sfc?.components.some((component) => component.role === 'bottom-actions'));
-}
-
 function hasFilterLike(source: PrototypePageAnalysis): boolean {
-  return Boolean(source.sfc?.state.some((state) => /filter|search|sort|tab|period|active/i.test(state.name)));
+  return Boolean(source.sfc?.state.some((state) => /filter|search|sort|active/i.test(state.name)))
+    || Boolean(source.sfc?.interactions.some((interaction) => /filter|search|sort/i.test(`${interaction.target ?? ''} ${interaction.evidence}`)));
 }
 
-function hasSummaryLike(source: PrototypePageAnalysis): boolean {
-  return Boolean(source.sfc?.components.some((component) => component.role === 'summary'));
+function hasFormLike(source: PrototypePageAnalysis): boolean {
+  return Boolean(source.sfc?.interactions.some((interaction) => interaction.kind === 'model'))
+    || Boolean(source.sfc?.state.some((state) => /input|form|field|amount|quantity|qty|price/i.test(state.name)));
+}
+
+function isOverlayOnlyForm(source: PrototypePageAnalysis): boolean {
+  const modelTargets = source.sfc?.interactions
+    .filter((interaction) => interaction.kind === 'model')
+    .map((interaction) => interaction.target ?? interaction.evidence) ?? [];
+  if (!modelTargets.length) return false;
+  const hasModalEvidence = Boolean(source.sfc?.sections.some((section) => section.kind === 'modal'))
+    || Boolean(source.sfc?.components.some((component) => component.role === 'modal'));
+  return hasModalEvidence && modelTargets.every((target) => /sheet|modal|popup|dialog|rules|warn|success/i.test(target));
+}
+
+function hasContentSection(source: PrototypePageAnalysis): boolean {
+  return Boolean(source.sfc?.sections.some((section) => section.kind === 'section' || section.kind === 'unknown'))
+    || Boolean(source.sfc?.components.some((component) => component.role === 'content-section' || component.role === 'summary' || component.role === 'unknown'));
 }
 
 function dedupeBy<T>(items: T[], keyOf: (item: T) => string): T[] {

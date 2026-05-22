@@ -403,6 +403,7 @@ function buildImplementationContract(input: {
       'Do not introduce a new state/routing/i18n/theme framework unless target conventions or user config explicitly support it.',
       'Use source-aware widget contracts for decomposition.',
       'Use visualPlan for visible layout and styling evidence.',
+      'Do not create implementation widgets, files, inputs, or callbacks from fixed business page templates; contracts must be backed by source structure, runtime evidence, or target conventions.',
       'For app-bar/header actions, bind each visible action to source interactions before naming callbacks or choosing icons.',
       'When source structure and runtime layout disagree, treat implementationContract.conflicts as a required decision before coding the container layout.',
       'When implementationContract.overlayPlan marks uiShellRequired=true, implement the overlay shell even if business behavior remains TODO.',

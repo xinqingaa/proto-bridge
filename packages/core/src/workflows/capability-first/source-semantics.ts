@@ -6,7 +6,6 @@ import type {
   FlutterContextAnalysis,
   SourceAwareReviewProjection,
 } from '../../types/index.js';
-import { classifyPagePattern } from '../../target/flutter-app/planners/page-pattern-classifier.js';
 
 const DEFAULT_TARGET_ADAPTER = 'flutter-app';
 
@@ -44,7 +43,6 @@ function buildSourceAwareReview(context: MigrationContext): SourceAwareReviewPro
   const source = context.source;
   const plan = context.recommendations.implementationPlan;
   const title = source.label ?? source.title ?? source.screenId ?? source.name ?? '未命名页面';
-  const classified = classifyPagePattern(source);
   return {
     title,
     parityChecklist: buildParityChecklist(context),
@@ -71,8 +69,6 @@ function buildSourceAwareReview(context: MigrationContext): SourceAwareReviewPro
       complexity: plan.complexity,
       shape: context.recommendations.implementationShape,
       targetModule: context.target.suggestedModule,
-      pattern: classified.pattern,
-      patternConfidence: classified.confidence,
       directImplementation: context.recommendations.risks.length <= 2 ? '可以进入实现' : '先确认风险后实现',
       summary: plan.summary,
       risks: context.recommendations.risks,
