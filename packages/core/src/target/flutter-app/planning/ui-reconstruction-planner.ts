@@ -19,6 +19,8 @@ import type {
   UiNodeAudit,
   UiNodeAuditChild,
   UiNodeAuditControl,
+  UiNodeAuditInstance,
+  UiNodeAuditInstanceDelta,
   UiNodeAuditLayoutConflict,
   UiNodeAuditKind,
   UiNodeAuditNoiseLevel,
@@ -435,7 +437,14 @@ function buildImplementationIndex(
     .map((audit) => audit.sourceNodeId);
   const repeatedItemNodes = visualPlan.nodeAudits
     .filter((audit) => audit.kind === 'card' || audit.kind === 'list-item')
-    .map((audit) => audit.sourceNodeId);
+    .flatMap((audit) => audit.repeatedGroup?.instanceNodeIds ?? [audit.sourceNodeId]);
+  const repeatedGroups = visualPlan.nodeAudits
+    .filter((audit) => audit.repeatedGroup)
+    .map((audit) => ({
+      groupId: audit.repeatedGroup?.groupId ?? audit.sourceNodeId,
+      representativeNodeId: audit.repeatedGroup?.representativeNodeId ?? audit.sourceNodeId,
+      instanceNodeIds: audit.repeatedGroup?.instanceNodeIds ?? [audit.sourceNodeId],
+    }));
   const mainScreenNodes = dedupe([
     ...appBarNodes,
     ...visualPlan.nodeAudits
@@ -485,7 +494,8 @@ function buildImplementationIndex(
   const phaseHints: UiImplementationIndex['phaseHints'] = phaseHintCandidates.filter((hint) => hint.refs.length > 0);
   return {
     mainScreenNodes,
-    repeatedItemNodes,
+    repeatedItemNodes: dedupe(repeatedItemNodes),
+    repeatedGroups,
     appBarNodes,
     layoutConflictNodes,
     overlayRefs,
@@ -1132,7 +1142,11 @@ function buildNodeAudits(evidence: PageCanonical, targetContext: {
     .map((candidate) => buildNodeAudit(candidate.node, byId, candidate.coverageReason, candidate.displayInReview, actionTargetByNodeId))
     .filter((audit): audit is UiNodeAudit => Boolean(audit))
     .map((audit) => enrichNodeAuditWithTargetComponents(audit, byId, evidence, targetContext));
-  return { audits, suppressed: selected.suppressed };
+  const compressed = compressRepeatedNodeAudits(audits);
+  return {
+    audits: compressed.audits,
+    suppressed: dedupeBy([...compressed.suppressed, ...selected.suppressed], (item) => item.nodeId),
+  };
 }
 
 function selectNodeAuditCandidates(
@@ -1206,6 +1220,266 @@ function shouldAuditNode(node: PageSnapshotNode): boolean {
   if (node.role === 'unknown' || node.role === 'text' || node.role === 'icon' || node.role === 'image') return false;
   if (node.role === 'section' && node.children.length === 0) return false;
   return node.children.length > 0 || Boolean(node.text?.trim()) || Boolean(node.assetRefs?.length);
+}
+
+function compressRepeatedNodeAudits(audits: UiNodeAudit[]): {
+  audits: UiNodeAudit[];
+  suppressed: Array<{ nodeId: string; reason: string }>;
+} {
+  const groups = new Map<string, UiNodeAudit[]>();
+  for (const audit of audits) {
+    if (audit.kind !== 'card' && audit.kind !== 'list-item') continue;
+    const key = repeatedAuditGroupKey(audit);
+    const current = groups.get(key) ?? [];
+    current.push(audit);
+    groups.set(key, current);
+  }
+  const compressedIds = new Set<string>();
+  const suppressed: Array<{ nodeId: string; reason: string }> = [];
+  const representatives = new Map<string, UiNodeAudit>();
+  let groupIndex = 1;
+  for (const group of groups.values()) {
+    if (group.length < 2) continue;
+    const sorted = [...group].sort((left, right) => left.bbox.y - right.bbox.y || left.bbox.x - right.bbox.x);
+    const representative = sorted[0];
+    if (!representative) continue;
+    const groupId = `${representative.kind}-group-${groupIndex}`;
+    groupIndex += 1;
+    const instances = sorted.map((audit) => buildRepeatedAuditInstance(audit, representative));
+    const instanceNodeIds = sorted.map((audit) => audit.sourceNodeId);
+    for (const audit of sorted.slice(1)) {
+      compressedIds.add(audit.sourceNodeId);
+      suppressed.push({
+        nodeId: audit.sourceNodeId,
+        reason: `covered by repeated node audit group ${groupId}; instance deltas are stored on representative ${representative.sourceNodeId}.`,
+      });
+    }
+    representatives.set(representative.sourceNodeId, {
+      ...representative,
+      displayInReview: true,
+      coverageReason: `${representative.coverageReason}; representative for repeated group ${groupId}.`,
+      repeatedGroup: {
+        groupId,
+        mode: 'representative',
+        instanceCount: sorted.length,
+        representativeNodeId: representative.sourceNodeId,
+        instanceNodeIds,
+        commonSignature: repeatedAuditCommonSignature(representative),
+      },
+      instances,
+    });
+  }
+  return {
+    audits: audits
+      .filter((audit) => !compressedIds.has(audit.sourceNodeId))
+      .map((audit) => representatives.get(audit.sourceNodeId) ?? audit),
+    suppressed,
+  };
+}
+
+function repeatedAuditGroupKey(audit: UiNodeAudit): string {
+  return [
+    audit.kind,
+    audit.rows.length,
+    ...audit.rows.map((row) => row.children.map((child) => childStructureSignature(child)).join(',')),
+    `controls:${audit.controls.map((control) => `${control.kind}:${semanticTextClass(control.text)}`).join(',')}`,
+    `container:${styleSignature(audit.containerStyle, ['display', 'flexDirection', 'alignItems', 'justifyContent'])}`,
+    `size:${Math.round(audit.bbox.width / 8) * 8}x${Math.round(audit.bbox.height / 8) * 8}`,
+  ].join('|');
+}
+
+function childStructureSignature(child: UiNodeAuditChild): string {
+  return [
+    child.role,
+    semanticTextClass(child.text),
+  ].join(':');
+}
+
+function childRoleSignature(child: UiNodeAuditChild): string {
+  return [
+    child.role,
+    semanticTextClass(child.text),
+    styleSignature(child.style, ['fontSize', 'fontWeight', 'lineHeight', 'padding', 'borderRadius', 'border', 'height']),
+  ].join(':');
+}
+
+function styleSignature(style: UiNodeAuditStyle, fields: Array<keyof UiNodeAuditStyle>): string {
+  return fields.map((field) => `${field}=${style[field] ?? ''}`).join(';');
+}
+
+function repeatedAuditCommonSignature(audit: UiNodeAudit): NonNullable<UiNodeAudit['repeatedGroup']>['commonSignature'] {
+  return {
+    kind: audit.kind,
+    rowCount: audit.rows.length,
+    rowRoleSignature: audit.rows.map((row) => row.children.map((child) => childRoleSignature(child)).join(' | ')),
+    controlSignature: audit.controls.map((control) => `${control.kind}:${styleSignature(control.style, ['fontSize', 'fontWeight', 'lineHeight', 'padding', 'borderRadius', 'height'])}`),
+    styleSignature: Object.fromEntries(
+      (['display', 'flexDirection', 'alignItems', 'justifyContent', 'padding', 'borderRadius', 'border', 'boxShadow'] as Array<keyof UiNodeAuditStyle>)
+        .map((field) => [field, audit.containerStyle[field] ?? '']),
+    ),
+  };
+}
+
+function buildRepeatedAuditInstance(audit: UiNodeAudit, base: UiNodeAudit): UiNodeAuditInstance {
+  const rowText = audit.rows.map((row) => row.children.map((child) => child.text ?? child.assetRefs?.join(',') ?? child.role));
+  const baseRowText = base.rows.map((row) => row.children.map((child) => child.text ?? child.assetRefs?.join(',') ?? child.role));
+  const fieldValues = repeatedAuditFieldValues(audit);
+  const baseFieldValues = repeatedAuditFieldValues(base);
+  const textDeltas = Object.entries(fieldValues)
+    .filter(([field, value]) => baseFieldValues[field] !== value)
+    .map(([field, value]) => ({
+      field,
+      base: baseFieldValues[field],
+      actual: value,
+      risk: deltaRiskForField(field, baseFieldValues[field], value),
+    }));
+  return {
+    nodeId: audit.sourceNodeId,
+    bbox: audit.bbox,
+    rowText,
+    fieldValues,
+    semanticHints: Object.fromEntries(Object.keys(fieldValues).map((field) => [field, semanticHintForField(field, fieldValues[field] ?? '')])),
+    textDeltas,
+    styleDeltas: styleDeltasForAudit(audit, base),
+    controlDeltas: controlDeltasForAudit(audit, base),
+    stateDeltas: stateDeltasForValues(fieldValues, baseFieldValues),
+    layoutDeltas: layoutDeltasForAudit(audit, base, baseRowText, rowText),
+    missingEvidence: missingEvidenceForInstance(audit, base),
+  };
+}
+
+function repeatedAuditFieldValues(audit: UiNodeAudit): Record<string, string> {
+  const values: Record<string, string> = {};
+  for (const row of audit.rows) {
+    row.children.forEach((child, index) => {
+      const key = `row${row.index}_col${index + 1}`;
+      values[key] = child.text ?? child.assetRefs?.join(',') ?? child.role;
+    });
+  }
+  return values;
+}
+
+function semanticTextClass(text: string | undefined): string {
+  if (!text) return 'non-text';
+  if (/^\$?\d+(?:\.\d+)?%?$/.test(text) || /^\$/.test(text)) return 'numeric';
+  if (/^(ITM|OTM|ATM)$/i.test(text)) return 'status';
+  if (/^\d+D$/i.test(text)) return 'time-badge';
+  if (/^(Held|Qty|Quantity|Shares)\s+\d+/i.test(text)) return 'quantity';
+  if (/^[A-Z]{1,6}$/.test(text)) return 'symbol-like';
+  if (/\d{4}-\d{2}-\d{2}/.test(text)) return 'contract-like';
+  return 'text';
+}
+
+function semanticHintForField(field: string, value: string): string {
+  const cls = semanticTextClass(value);
+  if (cls !== 'text' && cls !== 'non-text') return cls;
+  if (/row1_col1/.test(field)) return 'primary-text';
+  if (/row3_col/.test(field)) return 'action-or-quantity';
+  return cls;
+}
+
+function deltaRiskForField(field: string, base: string | undefined, actual: string): string | undefined {
+  if (/ITM|OTM|ATM/i.test(`${base ?? ''} ${actual}`)) return 'Do not hard-code one status text or style for all repeated items.';
+  if (/\dD/i.test(`${base ?? ''} ${actual}`)) return 'Do not hard-code one time badge value for all repeated items.';
+  if (/Held|Qty|Quantity|Shares/i.test(`${base ?? ''} ${actual}`)) return 'Quantity-like text should be data-driven per repeated item.';
+  if (/^\$/.test(base ?? '') || /^\$/.test(actual)) return 'Price/value text should be data-driven per repeated item.';
+  return undefined;
+}
+
+function styleDeltasForAudit(audit: UiNodeAudit, base: UiNodeAudit): UiNodeAuditInstanceDelta[] {
+  const deltas: UiNodeAuditInstanceDelta[] = [];
+  const fields: Array<keyof UiNodeAuditStyle> = ['fontSize', 'fontWeight', 'lineHeight', 'color', 'backgroundColor', 'padding', 'border', 'borderRadius', 'height'];
+  audit.rows.forEach((row, rowIndex) => {
+    const baseRow = base.rows[rowIndex];
+    row.children.forEach((child, childIndex) => {
+      const baseChild = baseRow?.children[childIndex];
+      if (!baseChild) return;
+      for (const field of fields) {
+        const actual = child.style[field];
+        const expected = baseChild.style[field];
+        if (actual !== expected) {
+          deltas.push({
+            field: `row${row.index}_col${childIndex + 1}.${field}`,
+            base: expected,
+            actual,
+            risk: 'Style differs from representative; implement as data-driven style variant or keep separate widget style.',
+          });
+        }
+      }
+    });
+  });
+  return deltas.slice(0, 40);
+}
+
+function controlDeltasForAudit(audit: UiNodeAudit, base: UiNodeAudit): UiNodeAuditInstanceDelta[] {
+  const deltas: UiNodeAuditInstanceDelta[] = [];
+  const max = Math.max(audit.controls.length, base.controls.length);
+  for (let index = 0; index < max; index += 1) {
+    const control = audit.controls[index];
+    const baseControl = base.controls[index];
+    if (!control || !baseControl) {
+      deltas.push({
+        field: `control${index + 1}`,
+        base: baseControl ? baseControl.kind : undefined,
+        actual: control ? control.kind : undefined,
+        risk: 'Control presence differs across repeated items; verify before sharing one widget implementation.',
+      });
+      continue;
+    }
+    const controlText = control.text ?? control.assetRefs?.join(',') ?? control.kind;
+    const baseText = baseControl.text ?? baseControl.assetRefs?.join(',') ?? baseControl.kind;
+    if (controlText !== baseText) {
+      deltas.push({ field: `control${index + 1}.text`, base: baseText, actual: controlText });
+    }
+    const styleDelta = styleSignature(control.style, ['fontSize', 'fontWeight', 'color', 'backgroundColor', 'padding', 'border', 'borderRadius', 'height'])
+      !== styleSignature(baseControl.style, ['fontSize', 'fontWeight', 'color', 'backgroundColor', 'padding', 'border', 'borderRadius', 'height']);
+    if (styleDelta) {
+      deltas.push({
+        field: `control${index + 1}.style`,
+        base: styleSignature(baseControl.style, ['fontSize', 'fontWeight', 'color', 'backgroundColor', 'padding', 'border', 'borderRadius', 'height']),
+        actual: styleSignature(control.style, ['fontSize', 'fontWeight', 'color', 'backgroundColor', 'padding', 'border', 'borderRadius', 'height']),
+        risk: 'Control style differs across repeated items; implement an explicit variant if shared.',
+      });
+    }
+  }
+  return deltas.slice(0, 24);
+}
+
+function stateDeltasForValues(values: Record<string, string>, baseValues: Record<string, string>): UiNodeAuditInstanceDelta[] {
+  return Object.entries(values)
+    .filter(([field, value]) => semanticTextClass(value) !== semanticTextClass(baseValues[field]))
+    .map(([field, value]) => ({
+      field,
+      base: baseValues[field],
+      actual: value,
+      risk: 'Semantic text class differs from representative; verify state-specific rendering.',
+    }));
+}
+
+function layoutDeltasForAudit(
+  audit: UiNodeAudit,
+  base: UiNodeAudit,
+  baseRowText: string[][],
+  rowText: string[][],
+): UiNodeAuditInstanceDelta[] {
+  const deltas: UiNodeAuditInstanceDelta[] = [];
+  if (Math.abs(audit.bbox.width - base.bbox.width) > 2) {
+    deltas.push({ field: 'bbox.width', base: String(base.bbox.width), actual: String(audit.bbox.width) });
+  }
+  if (Math.abs(audit.bbox.height - base.bbox.height) > 2) {
+    deltas.push({ field: 'bbox.height', base: String(base.bbox.height), actual: String(audit.bbox.height) });
+  }
+  if (rowText.length !== baseRowText.length) {
+    deltas.push({ field: 'rowCount', base: String(baseRowText.length), actual: String(rowText.length), risk: 'Row count differs; this instance may need a separate layout.' });
+  }
+  return deltas;
+}
+
+function missingEvidenceForInstance(audit: UiNodeAudit, base: UiNodeAudit): string[] {
+  const missing: string[] = [];
+  if (audit.rows.length < base.rows.length) missing.push('fewer rows than representative');
+  if (audit.controls.length < base.controls.length) missing.push('fewer controls than representative');
+  return missing;
 }
 
 function shouldIncludeSectionRoot(

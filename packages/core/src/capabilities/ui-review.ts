@@ -243,6 +243,7 @@ function renderImplementationIndex(plan: UiBuildPlan): string[] {
         ['先决冲突', index.layoutConflictNodes.map(codeCell).join('、') || '无'],
         ['主屏节点', index.mainScreenNodes.slice(0, 20).map(codeCell).join('、') || '无'],
         ['重复项节点', index.repeatedItemNodes.slice(0, 20).map(codeCell).join('、') || '无'],
+        ['重复项组', index.repeatedGroups.map((group) => `${group.groupId}: ${codeCell(group.representativeNodeId)} (${group.instanceNodeIds.length})`).join('；') || '无'],
         ['AppBar 节点', index.appBarNodes.map(codeCell).join('、') || '无'],
         ['Overlay', index.overlayRefs.map(codeCell).join('、') || '无'],
         ['Source-only deferred', index.sourceOnlyDeferred.map(codeCell).join('、') || '无'],
@@ -443,9 +444,18 @@ function renderTargetDocumentation(plan: UiBuildPlan): string[] {
 function renderNodeAudits(plan: UiBuildPlan): string[] {
   const audits = plan.visualPlan.nodeAudits ?? [];
   const visibleAudits = audits.filter((audit) => audit.displayInReview);
+  const repeatedAudits = visibleAudits.filter((audit) => audit.repeatedGroup);
   if (!audits.length) return ['- 未生成节点级还原证据；请回退查看 `page-canonical.json`。'];
   const suppressed = plan.visualPlan.nodeAuditSummary?.suppressed ?? [];
   return [
+    ...(repeatedAudits.length
+      ? [
+        '### 重复节点组',
+        '',
+        ...renderRepeatedNodeAuditGroups(repeatedAudits),
+        '',
+      ]
+      : []),
     ...markdownTable(
       ['优先级', '单元', '实现提示', '目标组件', '布局摘要', '必须保留', '不要补/注意'],
       visibleAudits.slice(0, 16).map((audit) => [
@@ -477,6 +487,69 @@ function renderNodeAudits(plan: UiBuildPlan): string[] {
       ]
       : []),
   ];
+}
+
+function renderRepeatedNodeAuditGroups(audits: UiBuildPlan['visualPlan']['nodeAudits']): string[] {
+  return [
+    ...markdownTable(
+      ['Group', '代表节点', '实例数', '结构', '主要差异'],
+      audits.map((audit) => [
+        audit.repeatedGroup?.groupId ?? audit.sourceNodeId,
+        codeCell(audit.repeatedGroup?.representativeNodeId ?? audit.sourceNodeId),
+        String(audit.repeatedGroup?.instanceCount ?? audit.instances?.length ?? 1),
+        audit.implementationSummary.layoutSummary,
+        repeatedAuditDeltaSummary(audit),
+      ]),
+    ),
+    '',
+    ...audits.flatMap((audit) => renderRepeatedNodeAuditDetail(audit)),
+  ];
+}
+
+function renderRepeatedNodeAuditDetail(audit: UiBuildPlan['visualPlan']['nodeAudits'][number]): string[] {
+  const instances = audit.instances ?? [];
+  return [
+    `#### ${audit.repeatedGroup?.groupId ?? audit.sourceNodeId} instances`,
+    '',
+    ...markdownTable(
+      ['节点', 'bbox', 'Row text', 'Deltas'],
+      instances.slice(0, 24).map((instance) => [
+        codeCell(instance.nodeId),
+        `${instance.bbox.x},${instance.bbox.y},${instance.bbox.width},${instance.bbox.height}`,
+        instance.rowText.map((row) => row.join(' → ')).join(' / '),
+        [
+          ...instance.textDeltas.slice(0, 4).map((delta) => deltaSummary(delta)),
+          ...instance.stateDeltas.slice(0, 2).map((delta) => deltaSummary(delta)),
+          ...instance.controlDeltas.slice(0, 2).map((delta) => deltaSummary(delta)),
+        ].join('；') || '代表项',
+      ]),
+    ),
+    '',
+  ];
+}
+
+function repeatedAuditDeltaSummary(audit: UiBuildPlan['visualPlan']['nodeAudits'][number]): string {
+  const instances = audit.instances ?? [];
+  const fields = new Map<string, Set<string>>();
+  for (const instance of instances) {
+    for (const [field, value] of Object.entries(instance.fieldValues)) {
+      if (!fields.has(field)) fields.set(field, new Set());
+      fields.get(field)?.add(value);
+    }
+  }
+  return [...fields.entries()]
+    .filter(([, values]) => values.size > 1)
+    .slice(0, 6)
+    .map(([field, values]) => `${field}: ${[...values].slice(0, 5).join('/')}`)
+    .join('；') || '无主要文本差异';
+}
+
+function deltaSummary(delta: {
+  field: string;
+  base?: string | undefined;
+  actual?: string | undefined;
+}): string {
+  return `${delta.field}: ${delta.base ?? '无'} -> ${delta.actual ?? '无'}`;
 }
 
 function reviewVisualSections(plan: UiBuildPlan): UiBuildPlan['visualPlan']['sections'] {

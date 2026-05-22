@@ -212,6 +212,48 @@ export type UiNodeAudit = {
   absenceHints: string[];
   implementationHints: string[];
   targetComponentCandidates?: UiTargetComponentCandidate[] | undefined;
+  repeatedGroup?: UiNodeAuditRepeatedGroup | undefined;
+  instances?: UiNodeAuditInstance[] | undefined;
+};
+
+export type UiNodeAuditRepeatedGroup = {
+  groupId: string;
+  mode: 'representative';
+  instanceCount: number;
+  representativeNodeId: string;
+  instanceNodeIds: string[];
+  commonSignature: {
+    kind: UiNodeAuditKind;
+    rowCount: number;
+    rowRoleSignature: string[];
+    controlSignature: string[];
+    styleSignature: Record<string, string>;
+  };
+  excludedInstances?: Array<{
+    nodeId: string;
+    reason: string;
+  }> | undefined;
+};
+
+export type UiNodeAuditInstanceDelta = {
+  field: string;
+  base?: string | undefined;
+  actual?: string | undefined;
+  risk?: string | undefined;
+};
+
+export type UiNodeAuditInstance = {
+  nodeId: string;
+  bbox: { x: number; y: number; width: number; height: number };
+  rowText: string[][];
+  fieldValues: Record<string, string>;
+  semanticHints: Record<string, string>;
+  textDeltas: UiNodeAuditInstanceDelta[];
+  styleDeltas: UiNodeAuditInstanceDelta[];
+  controlDeltas: UiNodeAuditInstanceDelta[];
+  stateDeltas: UiNodeAuditInstanceDelta[];
+  layoutDeltas: UiNodeAuditInstanceDelta[];
+  missingEvidence: string[];
 };
 
 export type UiInteractionTarget = {
@@ -308,6 +350,11 @@ export type UiImplementationContract = {
 export type UiImplementationIndex = {
   mainScreenNodes: string[];
   repeatedItemNodes: string[];
+  repeatedGroups: Array<{
+    groupId: string;
+    representativeNodeId: string;
+    instanceNodeIds: string[];
+  }>;
   appBarNodes: string[];
   layoutConflictNodes: string[];
   overlayRefs: string[];
