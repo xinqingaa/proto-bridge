@@ -95,6 +95,12 @@ function renderReviewMarkdown(plan: UiBuildPlan): string {
     '',
     ...listOrFallback(plan.implementationContract.rules.map((rule) => `- ${translateRule(rule)}`)),
     '',
+    '### P0 冲突与覆盖层契约',
+    '',
+    ...renderImplementationConflicts(plan),
+    '',
+    ...renderOverlayPlan(plan),
+    '',
     '## 视觉计划',
     '',
     '_JSON 来源：`ui-build-plan.json#/visualPlan`、`#/componentMappings`、`#/themeMappings`_',
@@ -379,15 +385,17 @@ function renderNodeAudits(plan: UiBuildPlan): string[] {
   const suppressed = plan.visualPlan.nodeAuditSummary?.suppressed ?? [];
   return [
     ...markdownTable(
-      ['优先级', '单元', '实现提示', '布局摘要', '必须保留', '不要补/注意'],
+      ['优先级', '单元', '实现提示', '目标组件', '布局摘要', '必须保留', '不要补/注意'],
       visibleAudits.slice(0, 16).map((audit) => [
         audit.priority.toUpperCase(),
         `${audit.kind} ${codeCell(audit.sourceNodeId)}`,
         audit.implementationSummary.targetWidgetHint ?? audit.coverageReason,
+        targetComponentSummary(audit),
         audit.implementationSummary.layoutSummary,
         audit.implementationSummary.mustPreserve.slice(0, 3).map((item) => translateWarning(item)).join('；'),
         [
           ...audit.implementationSummary.doNotInvent.slice(0, 2).map((item) => translateWarning(item)),
+          ...audit.layoutConflicts.slice(0, 1).map((conflict) => translateWarning(conflict.message)),
           audit.noiseLevel !== 'low' ? `审查噪音=${audit.noiseLevel}` : '',
         ].filter(Boolean).join('；'),
       ]),
@@ -445,12 +453,94 @@ function renderNodeAuditDetail(audit: UiBuildPlan['visualPlan']['nodeAudits'][nu
     ...(audit.implementationSummary.controlSummary.length
       ? [`- 控件：${audit.implementationSummary.controlSummary.join('；')}`]
       : []),
+    ...(audit.actionMappings.length
+      ? [
+        '- Action 绑定：',
+        ...audit.actionMappings.slice(0, 8).map((mapping) =>
+          `  - ${codeCell(mapping.nodeId)}${mapping.assetRef ? ` / ${mapping.assetRef}` : ''}：${mapping.semanticName ?? '未命名'} → ${mapping.sourceInteraction ?? 'runtime interaction'}，callback=${mapping.suggestedCallback ?? '人工确认'}，置信度=${confidenceLabel(mapping.confidence)}`,
+        ),
+      ]
+      : []),
+    ...(audit.targetComponentCandidates?.length
+      ? [
+        '- 目标组件候选：',
+        ...audit.targetComponentCandidates.slice(0, 4).map((candidate) =>
+          `  - ${candidate.symbol}（${candidate.role}，${candidate.recommendation}）：${candidate.fitChecks.join('；') || '检查目标组件 API 是否能承载本节点视觉约束。'}${candidate.risks.length ? ` 风险：${candidate.risks.join('；')}` : ''}`,
+        ),
+      ]
+      : []),
+    ...(audit.layoutConflicts.length
+      ? [
+        '- 布局冲突：',
+        ...audit.layoutConflicts.slice(0, 4).map((conflict) =>
+          `  - ${conflict.kind}：${translateWarning(conflict.message)} ${translateWarning(conflict.manualConfirmation)}`,
+        ),
+        ...(audit.directChildren.length
+          ? [`- 直接子节点：${audit.directChildren.slice(0, 8).map((child) => `${codeCell(child.nodeId)} ${child.text ?? child.assetRefs?.join(',') ?? child.role}`).join(' → ')}`]
+          : []),
+      ]
+      : []),
     ...(audit.implementationSummary.doNotInvent.length
       ? [`- 不要补：${audit.implementationSummary.doNotInvent.map((item) => translateWarning(item)).join('；')}`]
       : []),
     ...(audit.assetRefs.length ? [`- 资源线索：${audit.assetRefs.join('、')}`] : []),
     '',
   ];
+}
+
+function renderImplementationConflicts(plan: UiBuildPlan): string[] {
+  const conflicts = plan.implementationContract.conflicts ?? [];
+  if (!conflicts.length) return ['- 未识别到 source 结构与 runtime 布局的顶层冲突。'];
+  return [
+    ...markdownTable(
+      ['级别', '节点', '冲突', 'source 意图', 'runtime 观察', '决策项'],
+      conflicts.map((conflict) => [
+        conflict.severity.toUpperCase(),
+        codeCell(conflict.sourceNodeId),
+        conflict.type,
+        conflict.sourceIntentLayout ?? conflict.sourceStructure,
+        conflict.runtimeObservation,
+        conflict.decisionOptions.join(' / '),
+      ]),
+    ),
+  ];
+}
+
+function renderOverlayPlan(plan: UiBuildPlan): string[] {
+  const overlays = plan.implementationContract.overlayPlan ?? [];
+  if (!overlays.length) return ['- 未识别到需要实现 UI shell 的 source-only overlay。'];
+  return [
+    'Overlay 规则：`uiShellRequired=true` 表示需要实现弹层/Sheet UI；`businessBehaviorRequired=false` 表示提交、接口、真实副作用保留 TODO。',
+    '',
+    ...markdownTable(
+      ['Overlay', '触发', '来源组件/状态', '目标组件', '视觉证据', '实现级别', '风险'],
+      overlays.map((overlay) => [
+        overlay.id,
+        overlay.trigger ?? '人工确认',
+        [overlay.sourceComponent, overlay.sourceState].filter(Boolean).join(' / '),
+        overlay.targetComponent ?? '本地 Widget/人工确认',
+        overlay.visualEvidence,
+        overlay.uiShellRequired ? `${overlay.implementationLevel}; UI shell required` : overlay.implementationLevel,
+        overlay.visualFidelityRisk,
+      ]),
+    ),
+  ];
+}
+
+function targetComponentSummary(audit: UiBuildPlan['visualPlan']['nodeAudits'][number]): string {
+  const candidates = audit.targetComponentCandidates ?? [];
+  if (!candidates.length) return '';
+  return candidates
+    .slice(0, 2)
+    .map((candidate) => {
+      const prefix = candidate.recommendation === 'prefer-target-component'
+        ? '优先'
+        : candidate.recommendation === 'manual-check'
+          ? '检查'
+          : '回退';
+      return `${prefix} ${candidate.symbol}`;
+    })
+    .join('；');
 }
 
 function renderDynamicTextHints(plan: UiBuildPlan): string[] {
@@ -601,6 +691,9 @@ function translateRule(rule: string): string {
     .replace('Do not introduce a new state/routing/i18n/theme framework unless target conventions or user config explicitly support it.', '除非 targetConventions 或用户配置有证据支持，不得引入新的 state/routing/i18n/theme 框架。')
     .replace('Use source-aware widget contracts for decomposition.', '使用 source-aware widget contract 做业务拆分。')
     .replace('Use visualPlan for visible layout and styling evidence.', '可见布局和样式以 visualPlan 为证据。')
+    .replace('For app-bar/header actions, bind each visible action to source interactions before naming callbacks or choosing icons.', 'AppBar/header 操作必须先绑定 source interaction，再命名 callback 或选择图标。')
+    .replace('When source structure and runtime layout disagree, treat implementationContract.conflicts as a required decision before coding the container layout.', 'source 结构与 runtime 布局不一致时，先处理 implementationContract.conflicts，再实现容器布局。')
+    .replace('When implementationContract.overlayPlan marks uiShellRequired=true, implement the overlay shell even if business behavior remains TODO.', 'implementationContract.overlayPlan 标记 uiShellRequired=true 时，即使业务行为 TODO，也要实现弹层 UI shell。')
     .replace('If target conventions are unknown, report warnings instead of guessing.', '目标约定未知时输出警告，不要猜。');
 }
 
@@ -649,6 +742,9 @@ function translateWarning(value: string): string {
     .replace('page-level controller/binding files from the source-aware draft were omitted until target page state conventions are confirmed.', 'source-aware 初稿中的页面级状态边界文件已省略，直到确认目标页面级状态约定。')
     .replace('page-level state-boundary registration files from the source-aware draft were omitted until target page state conventions are confirmed.', 'source-aware 初稿中的页面级状态边界注册文件已省略，直到确认目标页面级状态约定。')
     .replace('i18n pattern is unknown; do not invent translation API.', 'i18n 模式未知；不要发明翻译 API。')
+    .replace('Widget callbacks include source-bound actions; do not replace them with generic onMore/onTap names or hide visible app-bar/header actions.', 'Widget callbacks 已包含 source 绑定动作；不要替换成泛化 onMore/onTap，也不要隐藏可见 AppBar/header action。')
+    .replace('Resolve implementationContract.conflicts before coding affected layout containers; these are source-structure versus runtime-layout decisions, not ordinary visual hints.', '实现受影响布局容器前，先解决 implementationContract.conflicts；这是 source 结构与 runtime 布局决策，不是普通视觉提示。')
+    .replace('Implement overlay UI shells listed in implementationContract.overlayPlan even when businessBehaviorRequired=false; keep API submission and real business side effects as TODO.', '即使 businessBehaviorRequired=false，也要实现 implementationContract.overlayPlan 中列出的 overlay UI shell；接口提交和真实业务副作用保留 TODO。')
     .replace(/^Confirm target convention: /, '确认目标约定：');
 }
 
@@ -662,6 +758,9 @@ function validationHintCategory(hint: string): string {
   if (/typography|CSS colors|spacing|layout|theme|fontSize|fontWeight|textStyles/i.test(hint)) return '视觉/主题';
   if (/business data|API|permission|risk|tracking/i.test(hint)) return '业务边界';
   if (/similar module|common widgets|one-to-one DOM/i.test(hint)) return '工程复用';
+  if (/callbacks|source-bound|app-bar|header actions/i.test(hint)) return '交互绑定';
+  if (/overlay|uiShell|businessBehaviorRequired/i.test(hint)) return 'Overlay';
+  if (/conflicts|source-structure|runtime-layout/i.test(hint)) return '冲突决策';
   if (/screenshot|source screenshot/i.test(hint)) return '视觉校验';
   return '校验';
 }

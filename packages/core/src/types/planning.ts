@@ -100,6 +100,7 @@ export type UiVisualPlan = {
     }>;
   };
   dynamicTextHints: UiDynamicTextHint[];
+  layoutConflicts: UiPlanLayoutConflict[];
   layoutEvidence: string[];
   screenshotRefs: string[];
 };
@@ -108,7 +109,9 @@ export type UiNodeAuditPriority = 'p0' | 'p1' | 'p2';
 export type UiNodeAuditNoiseLevel = 'low' | 'medium' | 'high';
 
 export type UiNodeAuditKind =
+  | 'app-bar'
   | 'card'
+  | 'list'
   | 'list-item'
   | 'button'
   | 'chip'
@@ -123,6 +126,7 @@ export type UiNodeAuditKind =
 export type UiNodeAuditStyle = {
   display?: string | undefined;
   flexDirection?: string | undefined;
+  flexWrap?: string | undefined;
   alignItems?: string | undefined;
   justifyContent?: string | undefined;
   gap?: string | undefined;
@@ -138,6 +142,10 @@ export type UiNodeAuditStyle = {
   borderRadius?: string | undefined;
   border?: string | undefined;
   boxShadow?: string | undefined;
+  overflow?: string | undefined;
+  whiteSpace?: string | undefined;
+  minWidth?: string | undefined;
+  maxWidth?: string | undefined;
 };
 
 export type UiNodeAuditChild = {
@@ -160,6 +168,19 @@ export type UiNodeAuditControl = UiNodeAuditChild & {
   padding?: string | undefined;
   height?: string | undefined;
   borderRadius?: string | undefined;
+  interactionTarget?: UiInteractionTarget | undefined;
+  semanticName?: string | undefined;
+  suggestedCallback?: string | undefined;
+};
+
+export type UiNodeAuditLayoutConflict = {
+  kind: 'row-flex-multiple-y-bands';
+  severity: 'info' | 'warning' | 'error';
+  message: string;
+  parentStyle: UiNodeAuditStyle;
+  directChildren: UiNodeAuditChild[];
+  observedBands: UiNodeAuditRow[];
+  manualConfirmation: string;
 };
 
 export type UiNodeAudit = {
@@ -183,10 +204,73 @@ export type UiNodeAudit = {
   bbox: { x: number; y: number; width: number; height: number };
   containerStyle: UiNodeAuditStyle;
   rows: UiNodeAuditRow[];
+  directChildren: UiNodeAuditChild[];
+  layoutConflicts: UiNodeAuditLayoutConflict[];
   controls: UiNodeAuditControl[];
+  actionMappings: UiActionMapping[];
   assetRefs: string[];
   absenceHints: string[];
   implementationHints: string[];
+  targetComponentCandidates?: UiTargetComponentCandidate[] | undefined;
+};
+
+export type UiInteractionTarget = {
+  kind: string;
+  target?: string | undefined;
+  evidence?: string | undefined;
+  confidence: MappingConfidence;
+};
+
+export type UiActionMapping = {
+  nodeId: string;
+  assetRef?: string | undefined;
+  role: UiNodeAuditKind;
+  semanticName?: string | undefined;
+  sourceInteraction?: string | undefined;
+  interactionEvidence?: string | undefined;
+  suggestedCallback?: string | undefined;
+  confidence: MappingConfidence;
+  reason: string;
+};
+
+export type UiPlanLayoutConflict = {
+  type: 'source-structure-vs-runtime-layout';
+  sourceNodeId: string;
+  sourceStructure: string;
+  runtimeObservation: string;
+  sourceIntentLayout?: string | undefined;
+  risk: string;
+  requiresDecision: boolean;
+  decisionOptions: string[];
+  evidence: string[];
+  severity: 'info' | 'warning' | 'error';
+};
+
+export type UiOverlayPlan = {
+  id: string;
+  trigger?: string | undefined;
+  sourceComponent: string;
+  sourceState?: string | undefined;
+  visualEvidence: 'runtime' | 'source-only' | 'unknown';
+  targetComponent?: string | undefined;
+  uiShellRequired: boolean;
+  businessBehaviorRequired: boolean;
+  implementationLevel: 'ui-shell' | 'full' | 'entry-only';
+  visualFidelityRisk: 'high' | 'medium' | 'low';
+  evidence: string[];
+};
+
+export type UiTargetComponentCandidate = {
+  symbol: string;
+  role: FlutterComponentRef['role'];
+  confidence: MappingConfidence;
+  recommendation: 'prefer-target-component' | 'manual-check' | 'fallback-to-local-widget';
+  evidence: string[];
+  importPath?: string | undefined;
+  propsHints?: string[] | undefined;
+  sourceMappingNodeIds?: string[] | undefined;
+  fitChecks: string[];
+  risks: string[];
 };
 
 export type UiDynamicTextHint = {
@@ -205,6 +289,8 @@ export type UiImplementationContract = {
   stateStrategy: FlutterStateStrategy[];
   controllerBoundaries: FlutterControllerBoundary[];
   widgetContracts: FlutterWidgetContract[];
+  conflicts: UiPlanLayoutConflict[];
+  overlayPlan: UiOverlayPlan[];
   targetBindings: {
     pageBase: { patternRef: string; pattern?: string | undefined };
     routing: { patternRef: string; pattern?: string | undefined };

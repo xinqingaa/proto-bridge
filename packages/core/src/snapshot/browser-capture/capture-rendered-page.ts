@@ -64,6 +64,7 @@ export async function capturePrototypePage(input: CapturePrototypePageInput): Pr
             display: style.display,
             position: style.position,
             flexDirection: style.flexDirection,
+            flexWrap: style.flexWrap,
             alignItems: style.alignItems,
             justifyContent: style.justifyContent,
             gap: style.gap,
@@ -76,6 +77,9 @@ export async function capturePrototypePage(input: CapturePrototypePageInput): Pr
             lineHeight: style.lineHeight,
             borderRadius: style.borderRadius,
             overflow: style.overflow,
+            whiteSpace: style.whiteSpace,
+            minWidth: style.minWidth,
+            maxWidth: style.maxWidth,
           },
           children: children.length > 0 ? children : undefined,
         };

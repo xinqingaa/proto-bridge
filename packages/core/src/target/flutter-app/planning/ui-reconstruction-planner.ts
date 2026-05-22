@@ -18,18 +18,26 @@ import type {
   UiNodeAudit,
   UiNodeAuditChild,
   UiNodeAuditControl,
+  UiNodeAuditLayoutConflict,
   UiNodeAuditKind,
   UiNodeAuditNoiseLevel,
   UiNodeAuditPriority,
   UiNodeAuditStyle,
+  UiTargetComponentCandidate,
+  UiActionMapping,
   UiBuildPlan,
   UiDynamicTextHint,
   UiImplementationContract,
+  UiInteractionTarget,
+  UiOverlayPlan,
+  UiPlanLayoutConflict,
   UiSourceSemantics,
   UiVisualPlan,
   VueSemanticComponent,
+  VueInteractionHint,
   VueTemplateSection,
   SourceAwareReviewProjection,
+  MappingConfidence,
 } from '../../../types/index.js';
 import { getFlutterTargetConventions } from '../conventions.js';
 import { findFlutterTargetExamples } from '../examples.js';
@@ -73,14 +81,21 @@ export async function buildFlutterUiReconstructionPlan(
   const pageName = inferPageName(input.evidence);
   const baseDir = `lib/app/modules/${moduleName}/${toSnakeCase(pageName)}`;
   const runtimeWidgetTree = buildRuntimeWidgetTree(pageName, input.evidence);
+  const componentMappings = buildComponentMappings(input.evidence, conventions.components);
+  const visualPlan = buildVisualPlan(input.evidence, {
+    components: conventions.components,
+    componentMappings,
+  });
   const fallbackPlan = buildFallbackImplementationPlan(baseDir, pageName, runtimeWidgetTree);
   const implementationContract = buildImplementationContract({
+    evidence: input.evidence,
     sourceAwarePlan: input.sourceAwareImplementationPlan,
     sourceReview: input.sourceReview,
     fallbackPlan,
     targetConventions: conventions.targetConventions,
+    targetComponents: conventions.components,
+    visualPlan,
   });
-  const visualPlan = buildVisualPlan(input.evidence);
   const nodeAuditHints = buildNodeAuditValidationHints(visualPlan.nodeAudits);
 
   return {
@@ -108,7 +123,7 @@ export async function buildFlutterUiReconstructionPlan(
     },
     fileTree: implementationContract.fileTree,
     widgetTree: implementationContract.widgetTree,
-    componentMappings: buildComponentMappings(input.evidence, conventions.components),
+    componentMappings,
     themeMappings: buildThemeMappings(input.evidence, conventions.targetConventions),
     i18nPlan: buildI18nPlan(input.evidence),
     assetPlan: buildAssetPlan(input.evidence),
@@ -128,8 +143,23 @@ export async function buildFlutterUiReconstructionPlan(
       'Keep business data, API fields, permission checks, risk controls, and tracking as TODOs unless confirmed by target examples.',
       'Prefer similar module examples and common widgets over one-to-one DOM translation.',
       ...nodeAuditHints,
+      ...buildContractValidationHints(implementationContract),
     ],
   };
+}
+
+function buildContractValidationHints(contract: UiImplementationContract): string[] {
+  const hints: string[] = [];
+  if (contract.widgetContracts.some((contractItem) => contractItem.callbacks.some((callback) => /^on(History|Rules|Back|Navigate|Exercise|Dne)/.test(callback)))) {
+    hints.push('Widget callbacks include source-bound actions; do not replace them with generic onMore/onTap names or hide visible app-bar/header actions.');
+  }
+  if (contract.conflicts.length) {
+    hints.push('Resolve implementationContract.conflicts before coding affected layout containers; these are source-structure versus runtime-layout decisions, not ordinary visual hints.');
+  }
+  if (contract.overlayPlan.some((overlay) => overlay.uiShellRequired)) {
+    hints.push('Implement overlay UI shells listed in implementationContract.overlayPlan even when businessBehaviorRequired=false; keep API submission and real business side effects as TODO.');
+  }
+  return hints;
 }
 
 function rolesForEvidence(evidence: PageCanonical): FlutterComponentRole[] {
@@ -141,6 +171,14 @@ function rolesForEvidence(evidence: PageCanonical): FlutterComponentRole[] {
   if (evidence.sections.some((section) => section.role === 'list')) roles.add('refresh');
   for (const section of sourceSections(evidence)) {
     const role = sourceSectionRole(section);
+    if (role === 'app-bar') roles.add('app-bar');
+    if (role === 'button') roles.add('button');
+    if (role === 'image' || role === 'icon') roles.add('image');
+    if (role === 'modal') roles.add('sheet');
+    if (role === 'list') roles.add('refresh');
+  }
+  for (const component of sourceComponents(evidence)) {
+    const role = sourceComponentRole(component);
     if (role === 'app-bar') roles.add('app-bar');
     if (role === 'button') roles.add('button');
     if (role === 'image' || role === 'icon') roles.add('image');
@@ -296,24 +334,40 @@ function buildFallbackImplementationPlan(
 }
 
 function buildImplementationContract(input: {
+  evidence: PageCanonical;
   sourceAwarePlan?: FlutterImplementationPlan | undefined;
   sourceReview?: SourceAwareReviewProjection | undefined;
   fallbackPlan: Pick<FlutterImplementationPlan, 'fileTree' | 'widgetTree' | 'stateStrategy' | 'controllerBoundaries' | 'widgetContracts'>;
   targetConventions: FlutterTargetConventionProfile;
+  targetComponents: FlutterComponentRef[];
+  visualPlan: UiVisualPlan;
 }): UiImplementationContract {
   const logical = input.sourceAwarePlan ?? input.fallbackPlan;
   const contractWarnings = normalizeContractWarnings(input.targetConventions);
   const stateBinding = stateBindingFor(input.targetConventions);
+  const sourceSemantics = enhanceSourceSemanticsWithVisualActions(
+    buildSourceSemantics(input.sourceReview, logical),
+    input.visualPlan,
+  );
+  const conflicts = buildPlanLayoutConflicts(input.evidence, input.visualPlan);
+  const overlayPlan = buildOverlayPlan(input.evidence, input.targetComponents);
   return {
     logicalPlanSource: input.sourceAwarePlan
       ? 'source-aware implementation plan normalized by target conventions'
       : 'visual evidence fallback normalized by target conventions; source-aware implementation plan unavailable',
-    sourceSemantics: buildSourceSemantics(input.sourceReview, logical),
+    sourceSemantics,
     fileTree: normalizeFileTree(logical.fileTree, input.targetConventions),
     widgetTree: logical.widgetTree.map((widget) => normalizeWidget(widget, input.targetConventions)),
     stateStrategy: (logical.stateStrategy ?? []).map((strategy) => normalizeStateStrategy(strategy, input.targetConventions)),
     controllerBoundaries: (logical.controllerBoundaries ?? []).map((boundary) => normalizeControllerBoundary(boundary, input.targetConventions)),
-    widgetContracts: (logical.widgetContracts ?? []).map((contract) => normalizeWidgetContract(contract, input.targetConventions)),
+    widgetContracts: normalizeWidgetContractsWithEvidence({
+      contracts: logical.widgetContracts ?? [],
+      targetConventions: input.targetConventions,
+      visualPlan: input.visualPlan,
+      sourceSemantics,
+    }),
+    conflicts,
+    overlayPlan,
     targetBindings: {
       pageBase: {
         patternRef: 'targetConventions.architectureProfile.state/routing',
@@ -349,10 +403,18 @@ function buildImplementationContract(input: {
       'Do not introduce a new state/routing/i18n/theme framework unless target conventions or user config explicitly support it.',
       'Use source-aware widget contracts for decomposition.',
       'Use visualPlan for visible layout and styling evidence.',
+      'For app-bar/header actions, bind each visible action to source interactions before naming callbacks or choosing icons.',
+      'When source structure and runtime layout disagree, treat implementationContract.conflicts as a required decision before coding the container layout.',
+      'When implementationContract.overlayPlan marks uiShellRequired=true, implement the overlay shell even if business behavior remains TODO.',
       'If target conventions are unknown, report warnings instead of guessing.',
     ],
     contractWarnings,
-    manualQuestions: contractWarnings.map((warning) => `Confirm target convention: ${warning}`),
+    manualQuestions: [
+      ...contractWarnings.map((warning) => `Confirm target convention: ${warning}`),
+      ...conflicts.filter((conflict) => conflict.requiresDecision).map((conflict) =>
+        `Resolve ${conflict.type} for ${conflict.sourceNodeId}: ${conflict.decisionOptions.join(' / ')}`,
+      ),
+    ],
   };
 }
 
@@ -441,6 +503,231 @@ function buildSourceSemantics(
     })),
     doNotTranslate: sourceReview.doNotTranslate.map(normalizeSourceSemanticsLanguage),
   };
+}
+
+function buildPlanLayoutConflicts(
+  evidence: PageCanonical,
+  visualPlan: Pick<UiVisualPlan, 'nodeAudits'>,
+): UiPlanLayoutConflict[] {
+  return visualPlan.nodeAudits
+    .filter((audit) => audit.layoutConflicts.some((conflict) => conflict.kind === 'row-flex-multiple-y-bands'))
+    .flatMap((audit) => {
+      const sourceIntent = sourceLayoutIntentForAudit(evidence, audit);
+      if (!sourceIntent) return [];
+      const conflict = audit.layoutConflicts.find((item) => item.kind === 'row-flex-multiple-y-bands');
+      if (!conflict) return [];
+      return [{
+        type: 'source-structure-vs-runtime-layout' as const,
+        sourceNodeId: audit.sourceNodeId,
+        sourceStructure: sourceIntent.structure,
+        runtimeObservation: `${conflict.message} flexWrap=${audit.containerStyle.flexWrap ?? 'unknown'}; observedBands=${conflict.observedBands.length}.`,
+        sourceIntentLayout: sourceIntent.intent,
+        risk: 'Implementation may incorrectly split one semantic source container into independent Flutter rows, or may ignore a runtime wrap that was actually intended.',
+        requiresDecision: true,
+        decisionOptions: [
+          'preserve runtime visual multi-band layout',
+          'preserve source sibling structure in one semantic header/container row and resolve width/overflow constraints',
+        ],
+        evidence: dedupe([
+          ...sourceIntent.evidence,
+          conflict.message,
+          conflict.manualConfirmation,
+        ]),
+        severity: 'warning' as const,
+      }];
+    });
+}
+
+function sourceLayoutIntentForAudit(
+  evidence: PageCanonical,
+  audit: UiNodeAudit,
+): { structure: string; intent: string; evidence: string[] } | undefined {
+  const node = evidence.nodes.find((item) => item.id === audit.sourceNodeId);
+  if (!node) return undefined;
+  const directLabels = audit.directChildren.map((child) => child.text ?? child.assetRefs?.join(',') ?? child.role).filter(Boolean);
+  const sourceHeader = sourceSections(evidence).find((section) =>
+    section.kind === 'app-bar'
+    && /header|nav|filter|section/i.test(`${section.name} ${section.selector ?? ''} ${section.evidence}`)
+  );
+  const template = evidence.sourceFacts?.analysis.sfc?.template ?? '';
+  const hasSectionHeader = /\.ee-section__header|class=["'][^"']*section__header|class=["'][^"']*header/.test(template);
+  const hasFilters = /\.ee-filters|class=["'][^"']*filters/.test(template);
+  const isRowFlexWrap = audit.containerStyle.display === 'flex'
+    && audit.containerStyle.flexDirection === 'row'
+    && audit.containerStyle.flexWrap === 'wrap';
+  if (!isRowFlexWrap || (!sourceHeader && !hasSectionHeader)) return undefined;
+  const structure = directLabels.length
+    ? `direct children are source siblings: ${directLabels.join(' / ')}`
+    : 'source header container has sibling children';
+  return {
+    structure: hasFilters
+      ? `${structure}; source template includes title/count/filter siblings in a header container.`
+      : structure,
+    intent: 'single semantic header/container with sibling children; runtime may wrap into multiple visual bands depending on width.',
+    evidence: [
+      sourceHeader?.evidence ?? 'source template contains a header-like container',
+      hasFilters ? 'source template contains filters inside the header container' : '',
+      `runtime node ${audit.sourceNodeId} is row flex with flexWrap=${audit.containerStyle.flexWrap ?? 'unknown'}`,
+    ].filter(Boolean),
+  };
+}
+
+function buildOverlayPlan(
+  evidence: PageCanonical,
+  targetComponents: FlutterComponentRef[],
+): UiOverlayPlan[] {
+  const source = evidence.sourceFacts?.analysis.sfc;
+  if (!source) return [];
+  const template = source.template ?? '';
+  const sheetComponent = bestComponentForRole('modal', targetComponents);
+  const overlays: UiOverlayPlan[] = [];
+  const modalStates = source.state.filter((state) =>
+    state.category === 'ui-state'
+    && /show|visible|open/i.test(state.name)
+    && /sheet|modal|rules|warn|success|popup/i.test(state.name)
+  );
+  const sourceModalSections = source.sections.filter((section) =>
+    section.kind === 'modal' && isStandaloneOverlaySource(section.name, section.selector, section.evidence),
+  );
+  const sourceModalComponents = source.components.filter((component) =>
+    component.role === 'modal' && isStandaloneOverlaySource(component.name, component.selector, component.evidence),
+  );
+  const bottomSheetModels = [...template.matchAll(/<([A-Za-z][\w-]*(?:Sheet|Modal|Popup|Dialog)[\w-]*)\b[^>]*(?:v-model|:model-value)\s*=\s*"([^"]+)"/g)]
+    .map((match) => ({
+      component: match[1] ?? 'Overlay',
+      state: match[2] ?? undefined,
+      evidence: match[0] ?? '',
+    }));
+  for (const model of bottomSheetModels) {
+    overlays.push(createOverlayPlan({
+      id: overlayId(model.state ?? model.component),
+      sourceComponent: model.component,
+      sourceState: model.state,
+      targetComponent: sheetComponent?.symbol,
+      trigger: triggerForOverlayState(model.state, source.interactions),
+      evidence: [model.evidence],
+      visualEvidence: hasRuntimeModalEvidence(evidence) ? 'runtime' : 'source-only',
+    }));
+  }
+  for (const state of modalStates) {
+    if (overlays.some((overlay) => overlay.sourceState === state.name)) continue;
+    overlays.push(createOverlayPlan({
+      id: overlayId(state.name),
+      sourceComponent: inferOverlaySourceComponent(state.name, sourceModalSections, sourceModalComponents),
+      sourceState: state.name,
+      targetComponent: sheetComponent?.symbol,
+      trigger: triggerForOverlayState(state.name, source.interactions),
+      evidence: [state.evidence, state.migrationHint],
+      visualEvidence: hasRuntimeModalEvidence(evidence) ? 'runtime' : 'source-only',
+    }));
+  }
+  for (const section of sourceModalSections) {
+    const id = overlayId(section.name);
+    if (overlays.some((overlay) => overlay.id === id)) continue;
+    overlays.push(createOverlayPlan({
+      id,
+      sourceComponent: section.name,
+      targetComponent: sheetComponent?.symbol,
+      evidence: [section.evidence],
+      visualEvidence: hasRuntimeModalEvidence(evidence) ? 'runtime' : 'source-only',
+    }));
+  }
+  return dedupeBy(overlays, (overlay) => `${overlay.id}:${overlay.sourceState ?? overlay.sourceComponent}`).slice(0, 12);
+}
+
+function createOverlayPlan(input: {
+  id: string;
+  sourceComponent: string;
+  sourceState?: string | undefined;
+  targetComponent?: string | undefined;
+  trigger?: string | undefined;
+  evidence: string[];
+  visualEvidence: UiOverlayPlan['visualEvidence'];
+}): UiOverlayPlan {
+  return {
+    id: input.id,
+    ...(input.trigger ? { trigger: input.trigger } : {}),
+    sourceComponent: input.sourceComponent,
+    ...(input.sourceState ? { sourceState: input.sourceState } : {}),
+    visualEvidence: input.visualEvidence,
+    ...(input.targetComponent ? { targetComponent: input.targetComponent } : {}),
+    uiShellRequired: true,
+    businessBehaviorRequired: false,
+    implementationLevel: 'ui-shell',
+    visualFidelityRisk: input.visualEvidence === 'runtime' ? 'medium' : 'high',
+    evidence: dedupe(input.evidence),
+  };
+}
+
+function isStandaloneOverlaySource(name: string, selector: string | undefined, evidence: string | undefined): boolean {
+  const normalized = toSnakeCase(name).replace(/_/g, '-');
+  const source = `${selector ?? ''} ${evidence ?? ''}`;
+  if (/__/.test(source)) return false;
+  if (/^sheet-[^-]+/.test(normalized)) return false;
+  return /^(bottom-)?sheet$|modal$|popup$|dialog$|rules-modal$|warning-modal$|success-modal$/i.test(normalized);
+}
+
+function overlayId(value: string): string {
+  return toSnakeCase(value.replace(/^show/, '')).replace(/_/g, '-').replace(/^-+|-+$/g, '') || 'overlay';
+}
+
+function triggerForOverlayState(
+  state: string | undefined,
+  interactions: VueInteractionHint[],
+): string | undefined {
+  if (!state) return undefined;
+  const lowered = state.toLowerCase();
+  const direct = interactions.find((interaction) =>
+    interaction.kind === 'click'
+    && interaction.target
+    && interaction.target.toLowerCase().includes(lowered)
+  );
+  if (direct?.target) return direct.target;
+  if (/submitsheet|sheet/.test(lowered)) {
+    const sheetTriggers = interactions
+      .filter((interaction) => /open.*sheet/i.test(interaction.target ?? ''))
+      .map((interaction) => interaction.target)
+      .filter((target): target is string => Boolean(target));
+    return dedupe(sheetTriggers).join(' | ') || undefined;
+  }
+  if (/rules/.test(lowered)) {
+    return interactions.find((interaction) => /rules/i.test(interaction.target ?? ''))?.target;
+  }
+  if (/success/.test(lowered)) {
+    return interactions.find((interaction) => /success/i.test(interaction.target ?? ''))?.target;
+  }
+  if (/otm|warn/.test(lowered)) {
+    return interactions.find((interaction) => /otm|warn/i.test(interaction.target ?? ''))?.target;
+  }
+  return undefined;
+}
+
+function inferOverlaySourceComponent(
+  stateName: string,
+  sections: VueTemplateSection[],
+  components: VueSemanticComponent[],
+): string {
+  const lowered = stateName.toLowerCase();
+  const source = [...sections.map((section) => section.name), ...components.map((component) => component.name)]
+    .find((name) => lowered.includes(name.toLowerCase()) || name.toLowerCase().includes(lowered.replace(/^show/, '')));
+  if (source) return source;
+  if (/sheet/.test(lowered)) return 'BottomSheet';
+  if (/rules/.test(lowered)) return 'RulesModal';
+  if (/success/.test(lowered)) return 'SuccessModal';
+  if (/otm|warn/.test(lowered)) return 'WarningModal';
+  return 'Modal';
+}
+
+function hasRuntimeModalEvidence(evidence: PageCanonical): boolean {
+  const byId = new Map(evidence.nodes.map((node) => [node.id, node]));
+  return evidence.nodes.some((node) =>
+    node.role === 'modal'
+    && node.bbox.width > 0
+    && node.bbox.height > 0
+    && collectDescendants(node, byId).some((child) =>
+      child.id !== node.id && (Boolean(child.text?.trim()) || Boolean(child.assetRefs?.length)),
+    ),
+  );
 }
 
 function normalizeSourceSemanticsLanguage(value: string): string {
@@ -576,6 +863,65 @@ function normalizeWidgetContract(
   };
 }
 
+function normalizeWidgetContractsWithEvidence(input: {
+  contracts: FlutterWidgetContract[];
+  targetConventions: FlutterTargetConventionProfile;
+  visualPlan: UiVisualPlan;
+  sourceSemantics?: UiSourceSemantics | undefined;
+}): FlutterWidgetContract[] {
+  const actionCallbacks = appBarActionCallbacks(input.visualPlan);
+  const normalized = input.contracts.map((contract) => {
+    const isHeader = /header|appbar|app-bar/i.test(contract.widget);
+    const callbacks = isHeader && actionCallbacks.length
+      ? mergeCallbacksReplacingGenericMore(contract.callbacks, actionCallbacks)
+      : contract.callbacks;
+    return normalizeWidgetContract({ ...contract, callbacks }, input.targetConventions);
+  });
+  if (normalized.length === 0) return normalized;
+  if (!actionCallbacks.length) return normalized;
+  const hasHeader = normalized.some((contract) => /header|appbar|app-bar/i.test(contract.widget));
+  if (hasHeader) return normalized;
+  const pageContract = normalized[0];
+  if (!pageContract) return normalized;
+  return [
+    {
+      ...pageContract,
+      callbacks: mergeCallbacksReplacingGenericMore(pageContract.callbacks, actionCallbacks),
+    },
+    ...normalized.slice(1),
+  ];
+}
+
+function enhanceSourceSemanticsWithVisualActions(
+  sourceSemantics: UiSourceSemantics | undefined,
+  visualPlan: UiVisualPlan,
+): UiSourceSemantics | undefined {
+  if (!sourceSemantics) return sourceSemantics;
+  const actionCallbacks = appBarActionCallbacks(visualPlan);
+  if (!actionCallbacks.length) return sourceSemantics;
+  return {
+    ...sourceSemantics,
+    businessSections: sourceSemantics.businessSections.map((section) => {
+      if (!/header|appbar|app-bar/i.test(`${section.name} ${section.role}`)) return section;
+      return {
+        ...section,
+        callbacks: mergeCallbacksReplacingGenericMore(section.callbacks, actionCallbacks),
+      };
+    }),
+  };
+}
+
+function appBarActionCallbacks(visualPlan: UiVisualPlan): string[] {
+  return visualPlan.nodeAudits
+    .filter((audit) => audit.kind === 'app-bar' || audit.kind === 'appbar-action')
+    .flatMap((audit) => audit.actionMappings.map((mapping) => mapping.suggestedCallback).filter((callback): callback is string => Boolean(callback)));
+}
+
+function mergeCallbacksReplacingGenericMore(callbacks: string[], actionCallbacks: string[]): string[] {
+  const meaningfulExisting = callbacks.filter((callback) => !/^onMore$/i.test(callback));
+  return dedupe([...meaningfulExisting, ...actionCallbacks]).slice(0, 12);
+}
+
 function normalizeTargetLanguage(value: string, targetConventions: FlutterTargetConventionProfile): string {
   const stateBinding = stateBindingFor(targetConventions);
   const statePattern = stateBinding.scope === 'page' ? stateBinding.pattern : 'unknown';
@@ -662,9 +1008,13 @@ function normalizeContractWarnings(targetConventions: FlutterTargetConventionPro
   return dedupe(warnings);
 }
 
-function buildVisualPlan(evidence: PageCanonical): UiVisualPlan {
-  const nodeAuditResult = buildNodeAudits(evidence);
+function buildVisualPlan(evidence: PageCanonical, targetContext: {
+  components: FlutterComponentRef[];
+  componentMappings: ComponentMapping[];
+}): UiVisualPlan {
+  const nodeAuditResult = buildNodeAudits(evidence, targetContext);
   const dynamicTextHints = buildDynamicTextHints(evidence);
+  const layoutConflicts = buildPlanLayoutConflicts(evidence, { nodeAudits: nodeAuditResult.audits } as UiVisualPlan);
   return {
     viewport: evidence.viewport ?? { width: 0, height: 0 },
     sections: evidence.sections.slice(0, 80).map((section) => ({
@@ -682,6 +1032,7 @@ function buildVisualPlan(evidence: PageCanonical): UiVisualPlan {
       suppressed: nodeAuditResult.suppressed,
     },
     dynamicTextHints,
+    layoutConflicts,
     layoutEvidence: evidence.sections.slice(0, 80).map((section) => {
       const title = section.title ? ` ${section.title}` : '';
       return `${section.role}${title}: bbox=${section.bbox.x},${section.bbox.y},${section.bbox.width},${section.bbox.height}; nodes=${section.nodeIds.length}`;
@@ -690,15 +1041,20 @@ function buildVisualPlan(evidence: PageCanonical): UiVisualPlan {
   };
 }
 
-function buildNodeAudits(evidence: PageCanonical): {
+function buildNodeAudits(evidence: PageCanonical, targetContext: {
+  components: FlutterComponentRef[];
+  componentMappings: ComponentMapping[];
+}): {
   audits: UiNodeAudit[];
   suppressed: Array<{ nodeId: string; reason: string }>;
 } {
   const byId = new Map(evidence.nodes.map((node) => [node.id, node]));
+  const actionTargetByNodeId = buildActionTargetBindings(evidence, byId);
   const selected = selectNodeAuditCandidates(evidence, byId);
   const audits = selected.candidates
-    .map((candidate) => buildNodeAudit(candidate.node, byId, candidate.coverageReason, candidate.displayInReview))
-    .filter((audit): audit is UiNodeAudit => Boolean(audit));
+    .map((candidate) => buildNodeAudit(candidate.node, byId, candidate.coverageReason, candidate.displayInReview, actionTargetByNodeId))
+    .filter((audit): audit is UiNodeAudit => Boolean(audit))
+    .map((audit) => enrichNodeAuditWithTargetComponents(audit, byId, evidence, targetContext));
   return { audits, suppressed: selected.suppressed };
 }
 
@@ -888,6 +1244,7 @@ function buildNodeAudit(
   byId: Map<string, PageSnapshotNode>,
   coverageReason: string,
   displayInReviewOverride?: boolean | undefined,
+  actionTargetByNodeId: Map<string, UiInteractionTarget> = new Map(),
 ): UiNodeAudit | undefined {
   const descendants = collectDescendants(node, byId).filter((item) => item.id !== node.id);
   const visibleChildren = descendants
@@ -897,11 +1254,18 @@ function buildNodeAudit(
     .filter((item) => isAuditControl(item))
     .sort((left, right) => left.bbox.y - right.bbox.y || left.bbox.x - right.bbox.x)
     .slice(0, 12)
-    .map((item) => toAuditControl(item));
+    .map((item) => toAuditControl(item, actionTargetByNodeId));
   const kind = auditKindForNode(node);
+  const directChildren = node.children
+    .map((childId) => byId.get(childId))
+    .filter((item): item is PageSnapshotNode => Boolean(item))
+    .filter((item) => isAuditVisibleChild(item) || hasDescendantVisibleEvidence(item, byId))
+    .map((item) => toAuditChild(item));
   const rows = groupAuditRows(visibleChildren.map((item) => toAuditChild(item))).slice(0, 12);
+  const layoutConflicts = detectLayoutConflicts(node, directChildren, rows);
   const absenceHints = buildAbsenceHints(node, visibleChildren);
-  const implementationHints = buildNodeAuditImplementationHints(node, controls);
+  const implementationHints = buildNodeAuditImplementationHints(node, controls, layoutConflicts);
+  const actionMappings = buildActionMappingsForAudit(node, kind, controls);
   const priority = priorityForAudit(node, kind, rows, controls, absenceHints);
   const noiseLevel = noiseLevelForAudit(node, kind);
   return {
@@ -921,11 +1285,15 @@ function buildNodeAudit(
       controls,
       absenceHints,
       implementationHints,
+      layoutConflicts,
     }),
     bbox: node.bbox,
     containerStyle: pickAuditStyle(node, { includeBox: true }),
     rows,
+    directChildren,
+    layoutConflicts,
     controls,
+    actionMappings,
     assetRefs: dedupe([
       ...(node.assetRefs ?? []),
       ...descendants.flatMap((item) => item.assetRefs ?? []),
@@ -933,6 +1301,298 @@ function buildNodeAudit(
     absenceHints,
     implementationHints,
   };
+}
+
+function enrichNodeAuditWithTargetComponents(
+  audit: UiNodeAudit,
+  byId: Map<string, PageSnapshotNode>,
+  evidence: PageCanonical,
+  targetContext: {
+    components: FlutterComponentRef[];
+    componentMappings: ComponentMapping[];
+  },
+): UiNodeAudit {
+  const semanticRole = semanticRoleForAudit(audit, byId, evidence, targetContext.componentMappings);
+  if (!semanticRole) return audit;
+
+  const candidates = targetComponentCandidatesForAudit(audit, semanticRole, targetContext);
+  if (candidates.length === 0) return audit;
+
+  const preferred = candidates.some((candidate) => candidate.recommendation === 'prefer-target-component');
+  const nextKind = semanticRole === 'app-bar' && (audit.kind === 'section' || audit.kind === 'appbar-action')
+    ? 'app-bar'
+    : audit.kind;
+  const targetWidgetHint = preferred
+    ? `${candidates[0]?.symbol ?? semanticRole} candidate`
+    : audit.implementationSummary.targetWidgetHint;
+  const layoutSummary = preferred
+    ? targetComponentLayoutSummary(audit, semanticRole, candidates[0])
+    : audit.implementationSummary.layoutSummary;
+  const componentHints = candidates
+    .slice(0, 2)
+    .map((candidate) => targetComponentMustPreserve(candidate));
+
+  return {
+    ...audit,
+    kind: nextKind,
+    priority: preferred ? promoteAuditPriority(audit.priority, nextKind) : audit.priority,
+    coverageReason: preferred
+      ? `${audit.coverageReason}; target ${semanticRole} component candidate detected.`
+      : audit.coverageReason,
+    implementationSummary: {
+      ...audit.implementationSummary,
+      targetWidgetHint,
+      layoutSummary,
+      mustPreserve: dedupe([
+        ...componentHints,
+        ...audit.implementationSummary.mustPreserve,
+      ]).slice(0, 10),
+      riskLevel: preferred ? 'high' : audit.implementationSummary.riskLevel,
+    },
+    implementationHints: dedupe([
+      ...candidates.flatMap((candidate) => [
+        candidate.recommendation === 'prefer-target-component'
+          ? `Prefer target ${candidate.role} component ${candidate.symbol}; use row and style evidence as fit checks before falling back to a local Widget.`
+          : '',
+        ...candidate.fitChecks.map((check) => `Fit check for ${candidate.symbol}: ${check}`),
+        ...candidate.risks,
+      ]),
+      ...audit.implementationHints,
+    ].filter(Boolean)).slice(0, 16),
+    actionMappings: audit.actionMappings.map((mapping) => ({
+      ...mapping,
+      role: actionRoleForAudit(nextKind, audit.controls.find((control) => control.nodeId === mapping.nodeId) ?? {
+        ...mapping,
+        kind: 'unknown',
+        role: audit.role,
+        bbox: audit.bbox,
+        style: audit.containerStyle,
+      } as UiNodeAuditControl),
+    })),
+    targetComponentCandidates: candidates,
+  };
+}
+
+function semanticRoleForAudit(
+  audit: UiNodeAudit,
+  byId: Map<string, PageSnapshotNode>,
+  evidence: PageCanonical,
+  componentMappings: ComponentMapping[],
+): FlutterComponentRole | undefined {
+  if (isLikelyAppBarAudit(audit, byId, evidence, componentMappings)) return 'app-bar';
+  const mappedRole = componentMappedRoleForAudit(audit, componentMappings);
+  if (mappedRole) return mappedRole;
+  if (audit.kind === 'app-bar' || audit.kind === 'appbar-action' || audit.role === 'app-bar') return 'app-bar';
+  if (audit.kind === 'button') return 'button';
+  if (audit.kind === 'bottom-action') return 'button';
+  if (audit.role === 'image' || audit.role === 'icon') return 'image';
+  if (audit.role === 'modal') return 'sheet';
+  if (audit.role === 'list') return 'refresh';
+  return undefined;
+}
+
+function componentMappedRoleForAudit(
+  audit: UiNodeAudit,
+  componentMappings: ComponentMapping[],
+): FlutterComponentRole | undefined {
+  const runtimeMapping = componentMappings.find((mapping) =>
+    mapping.targetSymbol
+    && mapping.nodeIds.includes(audit.sourceNodeId)
+    && componentRoleForSnapshotRole(mapping.sourceRole),
+  );
+  if (runtimeMapping) return componentRoleForSnapshotRole(runtimeMapping.sourceRole);
+
+  const sourceMappings = componentMappings.filter((mapping) =>
+    mapping.targetSymbol
+    && mapping.nodeIds.some((nodeId) => nodeId.startsWith('source:'))
+    && componentRoleForSnapshotRole(mapping.sourceRole)
+  );
+  if (
+    isHeaderSizedAudit(audit)
+    && sourceMappings.some((mapping) => componentRoleForSnapshotRole(mapping.sourceRole) === 'app-bar')
+  ) {
+    return 'app-bar';
+  }
+  return undefined;
+}
+
+function componentRoleForSnapshotRole(role: SnapshotNodeRole): FlutterComponentRole | undefined {
+  if (role === 'app-bar') return 'app-bar';
+  if (role === 'button' || role === 'bottom-bar') return 'button';
+  if (role === 'image' || role === 'icon') return 'image';
+  if (role === 'modal') return 'sheet';
+  if (role === 'list') return 'refresh';
+  return undefined;
+}
+
+function isLikelyAppBarAudit(
+  audit: UiNodeAudit,
+  byId: Map<string, PageSnapshotNode>,
+  evidence: PageCanonical,
+  componentMappings: ComponentMapping[],
+): boolean {
+  if (!isHeaderSizedAudit(audit)) return false;
+  const viewportWidth = evidence.viewport?.width ?? audit.bbox.width;
+  const fullWidth = viewportWidth <= 0 || audit.bbox.width >= viewportWidth * 0.88;
+  const style = audit.containerStyle;
+  const flexHeader = style.display === 'flex' && style.alignItems === 'center';
+  const hasTitle = audit.rows.some((row) => row.children.some((child) => Boolean(child.text?.trim())));
+  const hasIcon = audit.rows.some((row) => row.children.some((child) => child.role === 'icon' || Boolean(child.assetRefs?.length)));
+  const sourceHeaderMapped = componentMappings.some((mapping) =>
+    mapping.targetSymbol
+    && mapping.sourceRole === 'app-bar'
+    && mapping.nodeIds.some((nodeId) => nodeId.startsWith('source:')),
+  );
+  const node = byId.get(audit.sourceNodeId);
+  const nearTopSection = node?.role === 'section' && audit.bbox.y <= 8;
+  return fullWidth && flexHeader && hasTitle && (hasIcon || sourceHeaderMapped) && (nearTopSection || sourceHeaderMapped);
+}
+
+function isHeaderSizedAudit(audit: UiNodeAudit): boolean {
+  return audit.bbox.y <= 8 && audit.bbox.height >= 40 && audit.bbox.height <= 88;
+}
+
+function targetComponentCandidatesForAudit(
+  audit: UiNodeAudit,
+  role: FlutterComponentRole,
+  targetContext: {
+    components: FlutterComponentRef[];
+    componentMappings: ComponentMapping[];
+  },
+): UiTargetComponentCandidate[] {
+  const components = targetContext.components.filter((component) => component.role === role);
+  if (components.length === 0) return [];
+  const mapped = targetContext.componentMappings.filter((mapping) =>
+    mapping.targetSymbol
+    && componentRoleForSnapshotRole(mapping.sourceRole) === role,
+  );
+  return components
+    .map((component) => {
+      const sourceMappingNodeIds = mapped
+        .filter((mapping) => mapping.targetSymbol === component.symbol)
+        .flatMap((mapping) => mapping.nodeIds);
+      const recommendation = sourceMappingNodeIds.length > 0 || audit.role === snapshotRoleForComponentRole(role)
+        ? 'prefer-target-component'
+        : 'manual-check';
+      return {
+        symbol: component.symbol,
+        role: component.role,
+        confidence: component.confidence,
+        recommendation,
+        evidence: dedupe([
+          component.reason,
+          ...component.usageSnippets.slice(0, 3),
+          ...sourceMappingNodeIds.map((nodeId) => `component mapping evidence: ${nodeId}`),
+        ]),
+        ...(component.importPath ? { importPath: component.importPath } : {}),
+        ...(component.propsHints.length ? { propsHints: component.propsHints } : {}),
+        ...(sourceMappingNodeIds.length ? { sourceMappingNodeIds: dedupe(sourceMappingNodeIds).slice(0, 8) } : {}),
+        fitChecks: componentFitChecks(audit, role),
+        risks: componentFitRisks(audit, role, component),
+      } satisfies UiTargetComponentCandidate;
+    })
+    .sort((left, right) => recommendationRank(left.recommendation) - recommendationRank(right.recommendation)
+      || confidenceRank(right.confidence) - confidenceRank(left.confidence)
+      || left.symbol.localeCompare(right.symbol))
+    .slice(0, 4);
+}
+
+function snapshotRoleForComponentRole(role: FlutterComponentRole): SnapshotNodeRole | undefined {
+  if (role === 'app-bar') return 'app-bar';
+  if (role === 'button') return 'button';
+  if (role === 'image') return 'image';
+  if (role === 'sheet') return 'modal';
+  if (role === 'refresh') return 'list';
+  return undefined;
+}
+
+function recommendationRank(value: UiTargetComponentCandidate['recommendation']): number {
+  if (value === 'prefer-target-component') return 0;
+  if (value === 'manual-check') return 1;
+  return 2;
+}
+
+function confidenceRank(value: MappingConfidence): number {
+  if (value === 'high') return 3;
+  if (value === 'medium') return 2;
+  return 1;
+}
+
+function componentFitChecks(audit: UiNodeAudit, role: FlutterComponentRole): string[] {
+  const checks: string[] = [];
+  if (role === 'app-bar') {
+    checks.push(`height/preferredSize should match ${roundCssNumber(audit.bbox.height)}px.`);
+    const leading = firstRowChildren(audit).find((child) => child.role === 'icon' || Boolean(child.assetRefs?.length));
+    const title = firstRowChildren(audit).find((child) => child.text?.trim());
+    const actions = firstRowChildren(audit).filter((child) =>
+      (child.role === 'icon' || Boolean(child.assetRefs?.length)) && child.nodeId !== leading?.nodeId,
+    );
+    if (leading) checks.push(`leading slot should preserve ${auditChildLabel(leading)} at bbox ${bboxText(leading.bbox)}.`);
+    if (title) checks.push(`title slot should preserve ${auditChildLabel(title)} at bbox ${bboxText(title.bbox)}.`);
+    if (actions.length) checks.push(`actions should preserve ${actions.map(auditChildLabel).join(' -> ')} and their visual order.`);
+    checks.push('titleSpacing/centerTitle/backgroundColor should be checked against source bbox and style evidence.');
+  } else if (role === 'button') {
+    checks.push(`button height should match ${roundCssNumber(audit.bbox.height)}px when this audit is a standalone control.`);
+    if (audit.controls.length) checks.push(`control padding/radius should preserve ${audit.controls.map((control) => control.padding || control.borderRadius).filter(Boolean).join(', ')}.`);
+  } else if (role === 'image') {
+    if (audit.assetRefs.length) checks.push(`asset source/order should preserve ${audit.assetRefs.join(' -> ')}.`);
+  } else if (role === 'sheet') {
+    checks.push(`sheet container should match bbox ${bboxText(audit.bbox)} and visible controls.`);
+  } else if (role === 'refresh') {
+    checks.push('refresh/list component should wrap the repeated list without inventing fields absent from nodeAudits.');
+  }
+  return dedupe(checks).slice(0, 8);
+}
+
+function componentFitRisks(
+  audit: UiNodeAudit,
+  role: FlutterComponentRole,
+  component: FlutterComponentRef,
+): string[] {
+  const risks: string[] = [];
+  if (role === 'app-bar') {
+    risks.push(`Use a local header only if ${component.symbol} cannot expose height/preferredSize, leading, title, actions, or title spacing needed by this audit.`);
+  }
+  if (component.propsHints.length === 0) {
+    risks.push(`${component.symbol} props were not inferred from target examples; inspect similar target usage before custom implementation.`);
+  }
+  if (audit.kind === 'section' && role !== 'app-bar') {
+    risks.push('Runtime role is generic section; target component recommendation depends on source/target semantic mapping.');
+  }
+  return dedupe(risks).slice(0, 6);
+}
+
+function targetComponentLayoutSummary(
+  audit: UiNodeAudit,
+  role: FlutterComponentRole,
+  candidate: UiTargetComponentCandidate | undefined,
+): string {
+  if (!candidate) return audit.implementationSummary.layoutSummary;
+  const fitChecks = candidate.fitChecks.length ? ` Fit checks: ${candidate.fitChecks.join(' ')}` : '';
+  return `Prefer target ${role} component ${candidate.symbol}; keep node visual evidence as adaptation checks.${fitChecks}`;
+}
+
+function targetComponentMustPreserve(candidate: UiTargetComponentCandidate): string {
+  return candidate.recommendation === 'prefer-target-component'
+    ? `优先复用目标 ${candidate.role} 组件 ${candidate.symbol}；若关键槽位或尺寸无法匹配，再回退本地 Widget。`
+    : `检查目标 ${candidate.role} 组件 ${candidate.symbol} 是否适配本节点，再决定是否复用。`;
+}
+
+function promoteAuditPriority(priority: UiNodeAuditPriority, kind: UiNodeAuditKind): UiNodeAuditPriority {
+  if (kind === 'app-bar') return 'p0';
+  return priority === 'p2' ? 'p1' : priority;
+}
+
+function firstRowChildren(audit: UiNodeAudit): UiNodeAuditChild[] {
+  return audit.rows[0]?.children ?? [];
+}
+
+function auditChildLabel(child: UiNodeAuditChild): string {
+  return child.text?.trim() || child.assetRefs?.join(',') || child.nodeId;
+}
+
+function bboxText(bbox: { x: number; y: number; width: number; height: number }): string {
+  return `${roundCssNumber(bbox.x)},${roundCssNumber(bbox.y)},${roundCssNumber(bbox.width)},${roundCssNumber(bbox.height)}`;
 }
 
 function collectDescendants(root: PageSnapshotNode, byId: Map<string, PageSnapshotNode>): PageSnapshotNode[] {
@@ -966,6 +1626,10 @@ function isAuditControl(node: PageSnapshotNode): boolean {
   return isLikelyChip(node);
 }
 
+function hasDescendantVisibleEvidence(node: PageSnapshotNode, byId: Map<string, PageSnapshotNode>): boolean {
+  return collectDescendants(node, byId).some((child) => child.id !== node.id && isAuditVisibleChild(child));
+}
+
 function isLikelyChip(node: PageSnapshotNode): boolean {
   const style = node.computedStyle;
   const text = node.text?.trim();
@@ -975,6 +1639,114 @@ function isLikelyChip(node: PageSnapshotNode): boolean {
   const hasPillRadius = radius >= 8 || radius >= height / 2 - 2;
   const hasBackground = Boolean(style?.backgroundColor && style.backgroundColor !== 'rgba(0, 0, 0, 0)' && style.backgroundColor !== 'transparent');
   return hasPillRadius && hasBackground && height <= 36;
+}
+
+function buildActionTargetBindings(
+  evidence: PageCanonical,
+  byId: Map<string, PageSnapshotNode>,
+): Map<string, UiInteractionTarget> {
+  const result = new Map<string, UiInteractionTarget>();
+  const sourceClicks = extractSourceClickTargets(evidence);
+  const runtimeClickNodes = canonicalRuntimeClickNodes(evidence, byId);
+  const pairCount = Math.min(sourceClicks.length, runtimeClickNodes.length);
+  for (let index = 0; index < pairCount; index += 1) {
+    const runtime = runtimeClickNodes[index];
+    const source = sourceClicks[index];
+    if (!runtime || !source) continue;
+    result.set(runtime.id, {
+      kind: 'click',
+      target: source.target,
+      evidence: source.evidence,
+      confidence: source.confidence,
+    });
+  }
+
+  for (const interaction of evidence.interactions) {
+    if (result.has(interaction.nodeId)) continue;
+    const node = byId.get(interaction.nodeId);
+    if (!node || isNestedClickableDuplicate(node, evidence, byId)) continue;
+    result.set(interaction.nodeId, {
+      kind: interaction.kind,
+      ...(interaction.label ? { target: interaction.label } : {}),
+      evidence: interaction.evidence.join(' | '),
+      confidence: interaction.label ? 'medium' : 'low',
+    });
+  }
+
+  return result;
+}
+
+function extractSourceClickTargets(evidence: PageCanonical): Array<{
+  target: string;
+  evidence: string;
+  confidence: MappingConfidence;
+}> {
+  const template = evidence.sourceFacts?.analysis.sfc?.template ?? '';
+  const matches = [...template.matchAll(/@click(?:\.[\w-]+)*\s*=\s*"([^"]+)"/g)]
+    .map((match) => match[1]?.trim())
+    .filter((target): target is string => Boolean(target));
+  const fromTemplate = matches.map((target) => ({
+    target,
+    evidence: `@click="${target}"`,
+    confidence: 'high' as const,
+  }));
+  if (fromTemplate.length) return fromTemplate;
+  return (evidence.sourceFacts?.analysis.sfc?.interactions ?? [])
+    .filter((interaction) => interaction.kind === 'click' && interaction.target)
+    .map((interaction) => ({
+      target: interaction.target as string,
+      evidence: interaction.evidence,
+      confidence: 'medium' as const,
+    }));
+}
+
+function canonicalRuntimeClickNodes(
+  evidence: PageCanonical,
+  byId: Map<string, PageSnapshotNode>,
+): PageSnapshotNode[] {
+  return evidence.interactions
+    .filter((interaction) => interaction.kind === 'tap')
+    .map((interaction) => byId.get(interaction.nodeId))
+    .filter((node): node is PageSnapshotNode => Boolean(node))
+    .filter((node) => !isNestedClickableDuplicate(node, evidence, byId))
+    .sort((left, right) => left.bbox.y - right.bbox.y || left.bbox.x - right.bbox.x);
+}
+
+function isNestedClickableDuplicate(
+  node: PageSnapshotNode,
+  evidence: PageCanonical,
+  byId: Map<string, PageSnapshotNode>,
+): boolean {
+  if (!node.parentId) return false;
+  const interactionNodeIds = new Set(evidence.interactions.map((interaction) => interaction.nodeId));
+  let parentId: string | undefined = node.parentId;
+  while (parentId) {
+    if (interactionNodeIds.has(parentId)) return true;
+    const parent = byId.get(parentId);
+    parentId = parent?.parentId;
+  }
+  return false;
+}
+
+function semanticNameForInteraction(target: string): string | undefined {
+  const normalized = target.toLowerCase();
+  const routeMatch = target.match(/['"]([^'"]+)['"]/);
+  const route = routeMatch?.[1]?.toLowerCase() ?? '';
+  if (/\bhistory\b|历史|record/.test(normalized) || /history|record/.test(route)) return 'history';
+  if (/rules?|showrules|提示|规则|help/.test(normalized) || /rules?|help/.test(route)) return 'rules';
+  if (/all-features|feature|back|返回/.test(normalized) || /all-features|feature/.test(route)) return 'back';
+  if (/dnesheet|dne|do\s*not\s*exercise/.test(normalized)) return 'dne';
+  if (/exercisesheet|exercise/.test(normalized)) return 'exercise';
+  if (/pricesort|value|sortprice/.test(normalized)) return 'sortValue';
+  if (/expsort|expiration|sortexp/.test(normalized)) return 'sortExpiration';
+  if (/adjustqty|qty|quantity/.test(normalized)) return 'adjustQuantity';
+  if (/setmax|max/.test(normalized)) return 'max';
+  const functionName = target.match(/^([A-Za-z_$][\w$]*)/)?.[1];
+  return functionName;
+}
+
+function suggestedCallbackForSemanticName(semanticName: string): string {
+  return `on${toPascalCase(semanticName)}`;
 }
 
 function toAuditChild(node: PageSnapshotNode): UiNodeAuditChild {
@@ -988,8 +1760,11 @@ function toAuditChild(node: PageSnapshotNode): UiNodeAuditChild {
   };
 }
 
-function toAuditControl(node: PageSnapshotNode): UiNodeAuditControl {
+function toAuditControl(node: PageSnapshotNode, actionTargetByNodeId: Map<string, UiInteractionTarget> = new Map()): UiNodeAuditControl {
   const style = node.computedStyle;
+  const interactionTarget = actionTargetByNodeId.get(node.id);
+  const semanticName = interactionTarget?.target ? semanticNameForInteraction(interactionTarget.target) : undefined;
+  const suggestedCallback = semanticName ? suggestedCallbackForSemanticName(semanticName) : undefined;
   return {
     ...toAuditChild(node),
     kind: node.role === 'button'
@@ -1004,7 +1779,41 @@ function toAuditControl(node: PageSnapshotNode): UiNodeAuditControl {
     ...(style?.padding ? { padding: style.padding } : {}),
     height: `${roundCssNumber(node.bbox.height)}px`,
     ...(style?.borderRadius ? { borderRadius: style.borderRadius } : {}),
+    ...(interactionTarget ? { interactionTarget } : {}),
+    ...(semanticName ? { semanticName } : {}),
+    ...(suggestedCallback ? { suggestedCallback } : {}),
   };
+}
+
+function buildActionMappingsForAudit(
+  node: PageSnapshotNode,
+  kind: UiNodeAuditKind,
+  controls: UiNodeAuditControl[],
+): UiActionMapping[] {
+  return controls
+    .filter((control) => control.interactionTarget)
+    .map((control) => ({
+      nodeId: control.nodeId,
+      ...(control.assetRefs?.[0] ? { assetRef: control.assetRefs[0] } : {}),
+      role: actionRoleForAudit(kind, control),
+      ...(control.semanticName ? { semanticName: control.semanticName } : {}),
+      ...(control.interactionTarget?.target ? { sourceInteraction: control.interactionTarget.target } : {}),
+      ...(control.interactionTarget?.evidence ? { interactionEvidence: control.interactionTarget.evidence } : {}),
+      ...(control.suggestedCallback ? { suggestedCallback: control.suggestedCallback } : {}),
+      confidence: control.interactionTarget?.confidence ?? 'low',
+      reason: control.interactionTarget?.target
+        ? `Visible control ${control.nodeId} is bound to source interaction ${control.interactionTarget.target}.`
+        : `Visible control ${control.nodeId} has runtime interaction evidence but no resolved source target.`,
+    }));
+}
+
+function actionRoleForAudit(kind: UiNodeAuditKind, control: UiNodeAuditControl): UiNodeAuditKind {
+  if (kind === 'app-bar' || kind === 'appbar-action') return 'appbar-action';
+  if (kind === 'bottom-action') return 'bottom-action';
+  if (kind === 'filter' || kind === 'sort-control') return 'sort-control';
+  if (control.kind === 'chip') return 'chip';
+  if (control.kind === 'button') return 'button';
+  return kind;
 }
 
 function groupAuditRows(children: UiNodeAuditChild[]): UiNodeAudit['rows'] {
@@ -1037,6 +1846,27 @@ function groupAuditRows(children: UiNodeAuditChild[]): UiNodeAudit['rows'] {
     .sort((left, right) => left.yRange.min - right.yRange.min);
 }
 
+function detectLayoutConflicts(
+  node: PageSnapshotNode,
+  directChildren: UiNodeAuditChild[],
+  rows: UiNodeAudit['rows'],
+): UiNodeAuditLayoutConflict[] {
+  const style = node.computedStyle;
+  if (style?.display !== 'flex' || style.flexDirection !== 'row') return [];
+  if (directChildren.length < 2 || rows.length < 2) return [];
+  const directRows = groupAuditRows(directChildren);
+  if (directRows.length < 2) return [];
+  return [{
+    kind: 'row-flex-multiple-y-bands',
+    severity: 'warning',
+    message: `Parent is row flex (${style.alignItems ? `alignItems=${style.alignItems}` : 'alignItems unknown'}) but direct children occupy ${directRows.length} visual bands.`,
+    parentStyle: pickAuditStyle(node, { includeBox: true }),
+    directChildren: directChildren.slice(0, 12),
+    observedBands: directRows.slice(0, 6),
+    manualConfirmation: 'Confirm whether this source section is intentionally wrapped into multiple visual bands or should be implemented as one row with overflow/width/text constraints fixed.',
+  }];
+}
+
 function auditKindForNode(node: PageSnapshotNode): UiNodeAuditKind {
   if (node.role === 'card') return 'card';
   if (node.role === 'list-item') return 'list-item';
@@ -1057,7 +1887,7 @@ function priorityForAudit(
   absenceHints: string[],
 ): UiNodeAuditPriority {
   if (kind === 'card' || kind === 'list-item') return 'p0';
-  if (kind === 'sort-control' || kind === 'filter' || kind === 'appbar-action' || kind === 'bottom-action' || kind === 'tab') return 'p0';
+  if (kind === 'sort-control' || kind === 'filter' || kind === 'app-bar' || kind === 'appbar-action' || kind === 'bottom-action' || kind === 'tab') return 'p0';
   if (controls.length > 0 && (controls.some((control) => control.padding || control.borderRadius) || kind === 'button')) return 'p1';
   if (absenceHints.length > 1) return 'p1';
   if (rows.length >= 2 || node.assetRefs?.length) return 'p1';
@@ -1084,6 +1914,7 @@ function buildAuditImplementationSummary(input: {
   controls: UiNodeAuditControl[];
   absenceHints: string[];
   implementationHints: string[];
+  layoutConflicts: UiNodeAuditLayoutConflict[];
 }): UiNodeAudit['implementationSummary'] {
   const rowSummaries = input.rows.map((row) => row.children.map((child) => child.text ?? child.assetRefs?.join(',') ?? child.role).join(' -> '));
   const mustPreserve = [
@@ -1101,13 +1932,18 @@ function buildAuditImplementationSummary(input: {
       control.borderRadius ? `radius ${control.borderRadius}` : '',
     ].filter(Boolean).join(', '))
     .slice(0, 8);
+  const layoutSummary = input.layoutConflicts.length
+    ? layoutSummaryWithConflicts(input.kind, input.rows, input.layoutConflicts)
+    : layoutSummaryForAudit(input.kind, input.rows);
   return {
     targetWidgetHint: targetWidgetHintForAudit(input.kind),
-    layoutSummary: layoutSummaryForAudit(input.kind, input.rows),
+    layoutSummary,
     mustPreserve,
     doNotInvent,
     controlSummary,
-    riskLevel: input.kind === 'card' || input.kind === 'list-item' || input.kind === 'sort-control' || input.kind === 'filter'
+    riskLevel: input.layoutConflicts.some((conflict) => conflict.severity === 'warning' || conflict.severity === 'error')
+      ? 'high'
+      : input.kind === 'card' || input.kind === 'list-item' || input.kind === 'sort-control' || input.kind === 'filter'
       ? 'high'
       : input.controls.length > 0
         ? 'medium'
@@ -1118,12 +1954,14 @@ function buildAuditImplementationSummary(input: {
 function targetWidgetHintForAudit(kind: UiNodeAuditKind): string | undefined {
   const hints: Partial<Record<UiNodeAuditKind, string>> = {
     card: '重复项卡片 Widget',
+    'app-bar': 'AppBar / 目标导航栏组件',
+    list: '列表 / 刷新列表组件',
     'list-item': '重复列表项 Widget',
     button: '独立操作按钮',
     chip: '状态标签 / pill',
     'sort-control': '排序/筛选头部控件',
     filter: '筛选控件组',
-    'appbar-action': 'AppBar 操作区',
+    'appbar-action': 'AppBar 操作按钮',
     'bottom-action': '底部操作区',
     tab: 'Tab/筛选选择器',
     section: '语义区块 Widget',
@@ -1136,9 +1974,22 @@ function layoutSummaryForAudit(kind: UiNodeAuditKind, rows: UiNodeAudit['rows'])
   if ((kind === 'card' || kind === 'list-item') && rows.length === 3) {
     return '3 行卡片：主信息行 / 价格或主值行 / 数量与操作行。';
   }
+  if (kind === 'app-bar') return `${rows.length} 行 AppBar/header 结构。`;
   if (kind === 'appbar-action') return `${rows.length} 行 AppBar 结构。`;
   if (kind === 'sort-control' || kind === 'filter') return `${rows.length} 行排序/筛选控件结构。`;
   return `${rows.length} 行 ${kind} 结构。`;
+}
+
+function layoutSummaryWithConflicts(
+  kind: UiNodeAuditKind,
+  rows: UiNodeAudit['rows'],
+  conflicts: UiNodeAuditLayoutConflict[],
+): string {
+  const flexBandConflict = conflicts.find((conflict) => conflict.kind === 'row-flex-multiple-y-bands');
+  if (flexBandConflict) {
+    return `parent row flex; observed children occupy ${flexBandConflict.observedBands.length} visual bands. Do not treat this as a confirmed ${rows.length}-row ${kind} layout until flex-wrap/overflow/width/text constraints are confirmed.`;
+  }
+  return layoutSummaryForAudit(kind, rows);
 }
 
 function inferSectionAuditKind(node: PageSnapshotNode): UiNodeAuditKind {
@@ -1153,6 +2004,7 @@ function pickAuditStyle(node: PageSnapshotNode, options: { includeBox?: boolean;
   return {
     ...(style.display ? { display: style.display } : {}),
     ...(style.flexDirection ? { flexDirection: style.flexDirection } : {}),
+    ...(style.flexWrap ? { flexWrap: style.flexWrap } : {}),
     ...(style.alignItems ? { alignItems: style.alignItems } : {}),
     ...(style.justifyContent ? { justifyContent: style.justifyContent } : {}),
     ...(style.gap ? { gap: style.gap } : {}),
@@ -1167,6 +2019,10 @@ function pickAuditStyle(node: PageSnapshotNode, options: { includeBox?: boolean;
     ...(style.borderRadius ? { borderRadius: style.borderRadius } : {}),
     ...(style.border ? { border: style.border } : {}),
     ...(style.boxShadow ? { boxShadow: style.boxShadow } : {}),
+    ...(style.overflow ? { overflow: style.overflow } : {}),
+    ...(style.whiteSpace ? { whiteSpace: style.whiteSpace } : {}),
+    ...(style.minWidth ? { minWidth: style.minWidth } : {}),
+    ...(style.maxWidth ? { maxWidth: style.maxWidth } : {}),
   };
 }
 
@@ -1182,10 +2038,17 @@ function buildAbsenceHints(node: PageSnapshotNode, visibleChildren: PageSnapshot
   return hints;
 }
 
-function buildNodeAuditImplementationHints(node: PageSnapshotNode, controls: UiNodeAuditControl[]): string[] {
+function buildNodeAuditImplementationHints(
+  node: PageSnapshotNode,
+  controls: UiNodeAuditControl[],
+  layoutConflicts: UiNodeAuditLayoutConflict[],
+): string[] {
   const hints = [
     'Restore row order and visible text/icon order from rows before applying target component abstractions.',
   ];
+  for (const conflict of layoutConflicts) {
+    hints.push(`${conflict.message} ${conflict.manualConfirmation}`);
+  }
   if (controls.some((control) => control.padding || control.borderRadius)) {
     hints.push('Controls include padding/radius evidence; prefer padding-driven layout over fixed height when target APIs allow it.');
   }
@@ -1204,6 +2067,12 @@ function buildNodeAuditValidationHints(audits: UiNodeAudit[]): string[] {
   if (audits.some((audit) => audit.kind === 'card' || audit.kind === 'list-item')) {
     hints.push('Review visualPlan.nodeAudits card/list rows before writing repeated item widgets; absenceHints identify fields that should not be invented.');
   }
+  if (audits.some((audit) => audit.targetComponentCandidates?.some((candidate) => candidate.recommendation === 'prefer-target-component'))) {
+    hints.push('When visualPlan.nodeAudits includes targetComponentCandidates with prefer-target-component, try the detected target component first and use rows/controls/bbox as fit checks before falling back to a local Widget.');
+  }
+  if (audits.some((audit) => audit.layoutConflicts.some((conflict) => conflict.kind === 'row-flex-multiple-y-bands'))) {
+    hints.push('When a nodeAudit reports row-flex-multiple-y-bands, preserve directChildren structure and confirm whether the visual bands are intentional wrap before implementing as multiple Flutter rows.');
+  }
   return hints;
 }
 
@@ -1219,9 +2088,12 @@ function roundCssNumber(value: number): number {
 
 function buildComponentMappings(evidence: PageCanonical, components: FlutterComponentRef[]): ComponentMapping[] {
   const roles = new Map<SnapshotNodeRole, string[]>();
+  const byId = new Map(evidence.nodes.map((node) => [node.id, node]));
+  const hasSourceAppBar = sourceComponents(evidence).some((component) => sourceComponentRole(component) === 'app-bar');
   for (const node of evidence.nodes) {
-    if (!roles.has(node.role)) roles.set(node.role, []);
-    roles.get(node.role)?.push(node.id);
+    const role = componentMappingRoleForNode(node, byId, evidence, hasSourceAppBar);
+    if (!roles.has(role)) roles.set(role, []);
+    roles.get(role)?.push(node.id);
   }
 
   const runtimeMappings = [...roles.entries()]
@@ -1255,6 +2127,32 @@ function buildComponentMappings(evidence: PageCanonical, components: FlutterComp
     });
 
   return dedupeBy([...runtimeMappings, ...sourceMappings], (mapping) => `${mapping.sourceRole}:${mapping.nodeIds.join(',')}`);
+}
+
+function componentMappingRoleForNode(
+  node: PageSnapshotNode,
+  byId: Map<string, PageSnapshotNode>,
+  evidence: PageCanonical,
+  hasSourceAppBar: boolean,
+): SnapshotNodeRole {
+  if (node.role === 'section' && hasSourceAppBar && isLikelyTopAppBarNode(node, byId, evidence)) return 'app-bar';
+  return node.role;
+}
+
+function isLikelyTopAppBarNode(
+  node: PageSnapshotNode,
+  byId: Map<string, PageSnapshotNode>,
+  evidence: PageCanonical,
+): boolean {
+  const viewportWidth = evidence.viewport?.width ?? node.bbox.width;
+  const fullWidth = viewportWidth <= 0 || node.bbox.width >= viewportWidth * 0.88;
+  const style = node.computedStyle;
+  if (!fullWidth || node.bbox.y > 8 || node.bbox.height < 40 || node.bbox.height > 88) return false;
+  if (style?.display !== 'flex' || style.alignItems !== 'center') return false;
+  const descendants = collectDescendants(node, byId).filter((item) => item.id !== node.id);
+  const hasTitle = descendants.some((item) => item.text?.trim());
+  const hasIcon = descendants.some((item) => item.role === 'icon' || Boolean(item.assetRefs?.length));
+  return hasTitle && hasIcon;
 }
 
 function bestComponentForRole(role: SnapshotNodeRole, components: FlutterComponentRef[]): FlutterComponentRef | undefined {

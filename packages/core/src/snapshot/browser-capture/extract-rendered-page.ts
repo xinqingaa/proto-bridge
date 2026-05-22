@@ -266,6 +266,7 @@ export async function extractRenderedPage(
         display: style.display,
         position: style.position,
         flexDirection: style.flexDirection,
+        flexWrap: style.flexWrap,
         alignItems: style.alignItems,
         justifyContent: style.justifyContent,
         gap: style.gap,
@@ -281,6 +282,9 @@ export async function extractRenderedPage(
         border: style.border,
         boxShadow: style.boxShadow,
         overflow: style.overflow,
+        whiteSpace: style.whiteSpace,
+        minWidth: style.minWidth,
+        maxWidth: style.maxWidth,
       };
       const node: PageSnapshotNode = {
         id,

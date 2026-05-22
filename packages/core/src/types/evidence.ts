@@ -15,6 +15,7 @@ export type DomNodeSnapshot = {
     display?: string | undefined;
     position?: string | undefined;
     flexDirection?: string | undefined;
+    flexWrap?: string | undefined;
     alignItems?: string | undefined;
     justifyContent?: string | undefined;
     gap?: string | undefined;
@@ -27,6 +28,9 @@ export type DomNodeSnapshot = {
     lineHeight?: string | undefined;
     borderRadius?: string | undefined;
     overflow?: string | undefined;
+    whiteSpace?: string | undefined;
+    minWidth?: string | undefined;
+    maxWidth?: string | undefined;
   } | undefined;
   children?: DomNodeSnapshot[] | undefined;
 };
@@ -79,6 +83,7 @@ export type SnapshotComputedStyle = {
   display?: string | undefined;
   position?: string | undefined;
   flexDirection?: string | undefined;
+  flexWrap?: string | undefined;
   alignItems?: string | undefined;
   justifyContent?: string | undefined;
   gap?: string | undefined;
@@ -94,6 +99,9 @@ export type SnapshotComputedStyle = {
   border?: string | undefined;
   boxShadow?: string | undefined;
   overflow?: string | undefined;
+  whiteSpace?: string | undefined;
+  minWidth?: string | undefined;
+  maxWidth?: string | undefined;
 };
 
 export type PageSnapshotNode = {
