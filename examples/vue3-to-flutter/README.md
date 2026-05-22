@@ -4,6 +4,26 @@
 
 它不是 Vue 到 Dart 编译器。示例里的 Flutter 页面来自一次 agent 工作流输出，仓库把这份输出保存为 `.dart.txt` 静态文本，`pnpm run example` 会把它安装到 target 的 `_proto` 入口，方便本地预览。
 
+```mermaid
+flowchart TD
+  A["Vue3 + Pinia 原型工程"] --> B["生成页面上下文"]
+  C["Flutter 目标工程"] --> B
+  B --> D["简单持仓页产物"]
+  B --> E["盈亏分析：总览态产物"]
+  B --> F["盈亏分析：已实现态产物"]
+  B --> G["盈亏分析：风险态产物"]
+
+  D --> H["实现蓝图 / 中文审查视图"]
+  E --> H
+  F --> H
+  G --> H
+
+  H --> I["保存过的一次 agent 实现输出"]
+  I --> J["安装到 Flutter 示例工程"]
+  J --> K["Web / Android 预览"]
+  K --> L["原型截图 vs Flutter 截图对照"]
+```
+
 ## 示例页面
 
 | Case | Vue route | Flutter route | 覆盖点 |

@@ -14,6 +14,23 @@ source / URL / screenshot / target repo
   -> implementation + validation
 ```
 
+```mermaid
+flowchart LR
+  A["PRD"] --> B["Figma 静态稿"]
+  B --> C["客户端各自理解实现"]
+  C --> D["联调后 UI 走查"]
+  D --> E["返工修正"]
+
+  A2["产品 / UI / AI 交互原型"] --> B2["源码证据"]
+  C2["运行时页面"] --> D2["运行时证据"]
+  E2["目标 Flutter 工程"] --> F2["目标工程规范"]
+  B2 --> G["ProtoBridge"]
+  D2 --> G
+  F2 --> G
+  G --> H["可审查产物"]
+  H --> I["AI agent / 开发者实现"]
+  I --> J["实现后验证"]
+```
 ## 为什么需要它
 
 原来的链路通常是：产品输出 PRD，UI 在 Figma 出静态设计稿，前后端和客户端根据各自理解实现，联调后再由 UI 走查。痛点是 Figma 稿是静态的，无法完整表达交互、状态、滚动、弹窗、tab、空态和异常态；客户端需要自己补交互理解，组件、主题和状态样式也经常依赖人工解释和事后走查。
@@ -294,7 +311,7 @@ docs/
 ## 文档导航
 
 - [项目背景](docs/background.md)：产品背景、协作问题和目标收益。
-- [架构说明](docs/architecture.md)：mode、workflow、capability、artifact 和包边界。
+- [架构说明](docs/architecture.md)：架构图组、证据分层、capability、artifact 和包边界。
 - [工作流](docs/workflows.md)：source-only、runtime-only、hybrid、screenshot/OCR 和 validation。
 - [快速开始](docs/quickstart.md)：安装、配置、CLI、MCP 和最小示例。
 - [开发命令](docs/development.md)：仓库脚本、示例命令、测试命令和生成目录规则。

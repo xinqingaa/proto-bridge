@@ -2,14 +2,94 @@
 
 ProtoBridge 采用 capability-first 架构。CLI、MCP 和 core API 只是入口；真正的产品逻辑沉淀在 core capabilities、source adapters、target adapters、planning 和 validation 中。
 
-```text
-CLI / MCP / Core API
-  -> capability orchestration
-  -> canonical evidence model
-  -> UI implementation contract
-  -> human review projection
-  -> target validation
+
+## 交付链路
+
+```mermaid
+flowchart LR
+  A["PRD"] --> B["Figma 静态稿"]
+  B --> C["客户端各自理解实现"]
+  C --> D["联调后 UI 走查"]
+  D --> E["返工修正"]
+
+  A2["产品 / UI / AI 交互原型"] --> B2["源码证据"]
+  C2["运行时页面"] --> D2["运行时证据"]
+  E2["目标 Flutter 工程"] --> F2["目标工程规范"]
+  B2 --> G["ProtoBridge"]
+  D2 --> G
+  F2 --> G
+  G --> H["可审查产物"]
+  H --> I["AI agent / 开发者实现"]
+  I --> J["实现后验证"]
 ```
+
+解释 ProtoBridge 存在的意义，传统链路的关键问题是静态稿和人工理解之间的信息损耗；ProtoBridge 试图把交互原型、源码证据、运行时证据和目标工程规范提前整理成可审查产物，让实现和验证都有证据依据。
+
+## 证据到蓝图
+
+```mermaid
+flowchart LR
+  A["源码语义<br/>结构 / 状态 / 交互意图"] --> D["实现契约里的源码语义"]
+  B["运行时 / 截图证据<br/>可见文本 / 位置 / 样式 / 截图"] --> E["视觉还原计划"]
+  C["目标工程规范<br/>状态 / 路由 / 国际化 / 主题 / 组件"] --> F["目标工程画像"]
+
+  D --> G["实现蓝图"]
+  E --> G
+  F --> G
+
+  G --> H["文件与 Widget 边界"]
+  G --> I["视觉还原依据"]
+  G --> J["组件 / 主题 / 国际化映射"]
+  G --> K["实现后验证提示"]
+```
+
+架构的核心设计 ProtoBridge 不让某一种证据统治全部字段。source semantics 进入实现契约，runtime/screenshot facts 进入视觉还原计划，target conventions 进入目标工程画像，最终合并为 `ui-build-plan.json`。
+
+## Capability 编排
+
+```mermaid
+flowchart TD
+  A["CLI / MCP / Core API<br/>不同入口"] --> B["页面上下文重建编排"]
+  B --> C["分析原型源码<br/>source.analyze"]
+  B --> D["采集运行时页面<br/>runtime.capture"]
+  B --> E["附加截图 / OCR<br/>screenshot.attach"]
+  B --> F["扫描目标工程规范<br/>target.inspect"]
+
+  C --> G["合并页面证据<br/>page.merge"]
+  D --> G
+  E --> G
+  F --> G
+
+  G --> H["证据原档<br/>page-canonical.json"]
+  G --> I["调试索引<br/>page-debug-index.json"]
+  H --> J["生成实现蓝图<br/>ui.plan"]
+  I --> J
+  J --> K["实现蓝图<br/>ui-build-plan.json"]
+  K --> L["生成审查视图<br/>ui.review"]
+  L --> M["中文审查视图<br/>ui-build-review.md"]
+  K --> N["AI agent / 开发者实现"]
+  N --> O["实现后验证<br/>ui.validate"]
+```
+
+对应 core 的 capability-first 结构。CLI、MCP 和 Core API 只负责入口适配；source、runtime、screenshot、target、merge、plan、review、validate 才是可复用能力。
+
+## 产物流转
+
+```mermaid
+flowchart TD
+  A["多源证据<br/>源码 / 运行时 / 截图 / 目标工程"] --> B["证据原档<br/>page-canonical.json"]
+  B --> C["调试索引<br/>page-debug-index.json"]
+  B --> D["实现蓝图<br/>ui-build-plan.json"]
+  D --> E["中文审查视图<br/>ui-build-review.md"]
+  D --> F["AI agent / 开发者实现"]
+  F --> G["实现后验证<br/>validate_ui_build"]
+```
+
+对应产物链。
+- `page-canonical.json` 保留完整证据和 provenance；
+- `ui-build-plan.json` 是实现蓝图；
+- `ui-build-review.md` 是从 plan 渲染出来的中文审查视图；
+- validation 应回到 plan 和 target diff 做实现后检查。
 
 ## 核心设计
 
