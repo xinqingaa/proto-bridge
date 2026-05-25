@@ -1449,18 +1449,18 @@ function buildNodeAuditImplementationHints(
 
 export function buildNodeAuditValidationHints(audits: UiNodeAudit[]): string[] {
   if (audits.length === 0) return [];
-  const hints = [`visualPlan.nodeAudits contains ${audits.length} representative node audit(s) for repeated or high-risk UI units.`];
+  const hints = [`visualPlan.nodeAudits 中有 ${audits.length} 个代表性节点审计，覆盖重复列表或高风险 UI 单元。`];
   if (audits.some((audit) => audit.controls.some((control) => control.kind === 'button' || control.kind === 'chip'))) {
-    hints.push('Review visualPlan.nodeAudits[*].controls before implementing buttons or chips; preserve padding, radius, and text order where present.');
+    hints.push('实现按钮或标签前，先查看 visualPlan.nodeAudits[*].controls；如果存在 padding、radius 和文字顺序证据，需要保持一致。');
   }
   if (audits.some((audit) => audit.kind === 'card' || audit.kind === 'list-item')) {
-    hints.push('Review visualPlan.nodeAudits card/list rows before writing repeated item widgets; absenceHints identify fields that should not be invented.');
+    hints.push('编写重复卡片或列表项 Widget 前，先查看 visualPlan.nodeAudits 中的 card/list 行结构；absenceHints 表示不应臆造的字段。');
   }
   if (audits.some((audit) => audit.targetComponentCandidates?.some((candidate) => candidate.recommendation === 'prefer-target-component'))) {
-    hints.push('When visualPlan.nodeAudits includes targetComponentCandidates with prefer-target-component, try the detected target component first and use rows/controls/bbox as fit checks before falling back to a local Widget.');
+    hints.push('当 visualPlan.nodeAudits 的 targetComponentCandidates 标记为 prefer-target-component 时，先尝试已检测到的目标组件，并用 rows、controls、bbox 作为适配检查；不匹配时再回退到本地 Widget。');
   }
   if (audits.some((audit) => audit.layoutConflicts.some((conflict) => conflict.kind === 'row-flex-multiple-y-bands'))) {
-    hints.push('When a nodeAudit reports row-flex-multiple-y-bands, preserve directChildren structure and confirm whether the visual bands are intentional wrap before implementing as multiple Flutter rows.');
+    hints.push('当 nodeAudit 报告 row-flex-multiple-y-bands 时，需要保留 directChildren 结构，并确认这些视觉分带是否为有意换行，再决定是否实现为多行 Flutter 布局。');
   }
   return hints;
 }

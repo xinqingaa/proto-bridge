@@ -909,15 +909,21 @@ function validationHintCategory(hint: string): string {
   if (/typography|CSS colors|spacing|layout|theme|fontSize|fontWeight|textStyles/i.test(hint)) return '视觉/主题';
   if (/business data|API|permission|risk|tracking/i.test(hint)) return '业务边界';
   if (/similar module|common widgets|one-to-one DOM/i.test(hint)) return '工程复用';
-  if (/callbacks|source-bound|app-bar|header actions/i.test(hint)) return '交互绑定';
+  if (/callbacks|source-bound|app-bar|header actions|controls|buttons|chips|按钮|标签/i.test(hint)) return '交互绑定';
   if (/overlay|uiShell|businessBehaviorRequired/i.test(hint)) return 'Overlay';
-  if (/conflicts|source-structure|runtime-layout/i.test(hint)) return '冲突决策';
+  if (/conflicts|source-structure|runtime-layout|row-flex-multiple-y-bands|视觉分带/i.test(hint)) return '冲突决策';
   if (/screenshot|source screenshot/i.test(hint)) return '视觉校验';
+  if (/nodeAudits|代表性节点审计|repeated|high-risk|重复|高风险/i.test(hint)) return '业务边界';
   return '校验';
 }
 
 function translateValidationHint(hint: string): string {
   return translateWarning(hint)
+    .replace(/^visualPlan\.nodeAudits contains (\d+) representative node audit\(s\) for repeated or high-risk UI units\.$/, 'visualPlan.nodeAudits 中有 $1 个代表性节点审计，覆盖重复列表或高风险 UI 单元。')
+    .replace('Review visualPlan.nodeAudits[*].controls before implementing buttons or chips; preserve padding, radius, and text order where present.', '实现按钮或标签前，先查看 visualPlan.nodeAudits[*].controls；如果存在 padding、radius 和文字顺序证据，需要保持一致。')
+    .replace('Review visualPlan.nodeAudits card/list rows before writing repeated item widgets; absenceHints identify fields that should not be invented.', '编写重复卡片或列表项 Widget 前，先查看 visualPlan.nodeAudits 中的 card/list 行结构；absenceHints 表示不应臆造的字段。')
+    .replace('When visualPlan.nodeAudits includes targetComponentCandidates with prefer-target-component, try the detected target component first and use rows/controls/bbox as fit checks before falling back to a local Widget.', '当 visualPlan.nodeAudits 的 targetComponentCandidates 标记为 prefer-target-component 时，先尝试已检测到的目标组件，并用 rows、controls、bbox 作为适配检查；不匹配时再回退到本地 Widget。')
+    .replace('When a nodeAudit reports row-flex-multiple-y-bands, preserve directChildren structure and confirm whether the visual bands are intentional wrap before implementing as multiple Flutter rows.', '当 nodeAudit 报告 row-flex-multiple-y-bands 时，需要保留 directChildren 结构，并确认这些视觉分带是否为有意换行，再决定是否实现为多行 Flutter 布局。')
     .replace('Compare the generated Flutter screen against the source screenshot before adding business behavior.', '添加业务行为前，先把生成的 Flutter 页面与来源截图对齐。')
     .replace('Treat typography, CSS colors, spacing, and layout as P0 visual fidelity items; prefer exact evidence matches before approximate fallback.', '字体、CSS 颜色、间距和布局是 P0 视觉保真项；优先使用精确证据匹配，再考虑近似 fallback。')
     .replace('Use node-level themeMappings first; when a theme token is resolved exactly, do not replace it with a larger or heavier nearby token.', '优先使用节点级 themeMappings；当 token 精确命中时，不要替换成更大或更粗的相近 token。')
