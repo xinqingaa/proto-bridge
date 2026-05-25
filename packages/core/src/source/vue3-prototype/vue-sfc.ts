@@ -228,14 +228,31 @@ function inferState(script: string, profile: RestorationProfile): VueStateHint[]
 function inferRoutes(template: string, script: string): VueRouteHint[] {
   const text = `${template}\n${script}`;
   const routes: VueRouteHint[] = [];
-  collectMatches(text, /pushPage\s*\(\s*['"]([^'"]+)['"]\s*(?:,\s*([^\)]+))?\)/g, (match) => ({
+  collectMatches(text, /\b(?:pushPage|replacePage)\s*\(\s*['"]([^'"]+)['"]\s*(?:,\s*([^\)]+))?\)/g, (match) => ({
     action: 'navigate' as const,
     target: match[1],
     params: compactCode(match[2]),
     evidence: compactCode(match[0]),
     migrationHint: `映射到目标工程路由 API，确认 ${match[1]} 对应 Flutter route 和参数。`,
   }), routes);
+  collectMatches(text, /\brouter\.(?:push|replace)\s*\(\s*['"]([^'"]+)['"]\s*\)/g, (match) => ({
+    action: 'navigate' as const,
+    target: match[1],
+    evidence: compactCode(match[0]),
+    migrationHint: `映射到目标工程路由 API，确认 ${match[1]} 对应 Flutter route 和参数。`,
+  }), routes);
+  collectMatches(text, /\brouter\.(?:push|replace)\s*\(\s*\{\s*path\s*:\s*['"]([^'"]+)['"][\s\S]*?\}\s*\)/g, (match) => ({
+    action: 'navigate' as const,
+    target: match[1],
+    evidence: compactCode(match[0]),
+    migrationHint: `映射到目标工程路由 API，确认 ${match[1]} 对应 Flutter route 和参数。`,
+  }), routes);
   collectMatches(text, /history\.back\s*\(\s*\)/g, (match) => ({
+    action: 'back' as const,
+    evidence: compactCode(match[0]),
+    migrationHint: '迁移为目标工程返回 API，确认返回栈和埋点。',
+  }), routes);
+  collectMatches(text, /\bgoBack\s*\(\s*\)/g, (match) => ({
     action: 'back' as const,
     evidence: compactCode(match[0]),
     migrationHint: '迁移为目标工程返回 API，确认返回栈和埋点。',

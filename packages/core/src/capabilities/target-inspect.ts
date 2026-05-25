@@ -13,6 +13,8 @@ export async function inspectTargetCapability(
     screenId: input.screenId,
     route: input.route,
     targetModule: input.targetModule,
+    sourceRoutes: input.sourceRoutes,
+    sourceRouteRegistry: input.sourceRouteRegistry,
     restorationProfile: input.restorationProfile,
   });
   return {

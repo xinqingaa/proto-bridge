@@ -88,6 +88,7 @@ async function main() {
         '--output',
         page.output,
       ], { cwd: repoRoot });
+      await validateGeneratedPlan(page.output);
     }
 
     step('Installing agent-generated Flutter _proto files...');
@@ -124,6 +125,39 @@ async function main() {
       devServer.kill('SIGTERM');
       await new Promise((resolve) => setTimeout(resolve, 300));
     }
+  }
+}
+
+async function validateGeneratedPlan(outputDir) {
+  const planPath = path.join(outputDir, 'ui-build-plan.json');
+  const plan = JSON.parse(await readFile(planPath, 'utf8'));
+  const targetModule = plan.target?.module;
+  if (!targetModule) return;
+
+  if (plan.routeMapping?.targetModule && plan.routeMapping.targetModule !== targetModule) {
+    throw new Error(`routeMapping.targetModule=${plan.routeMapping.targetModule} does not match target.module=${targetModule}.`);
+  }
+
+  const invalidFiles = (plan.fileTree ?? [])
+    .map((file) => file.path)
+    .filter((filePath) =>
+      typeof filePath === 'string'
+      && filePath.startsWith('lib/app/modules/')
+      && !filePath.startsWith(`lib/app/modules/${targetModule}/`),
+    );
+  if (invalidFiles.length > 0) {
+    throw new Error(`Generated fileTree module does not match target.module=${targetModule}:\n${invalidFiles.map((filePath) => `  - ${filePath}`).join('\n')}`);
+  }
+
+  const summary = plan.implementationContract?.sourceSemantics?.summary ?? [];
+  if (summary.some((line) => /^Target module:/i.test(line) && line !== `Target module: ${targetModule}`)) {
+    throw new Error(`sourceSemantics summary target module does not match target.module=${targetModule}.`);
+  }
+
+  const invalidRouteIntents = (plan.routeIntentMappings ?? [])
+    .filter((mapping) => !mapping.unresolved && !mapping.targetRoute && !mapping.targetRouteSymbol);
+  if (invalidRouteIntents.length > 0) {
+    throw new Error(`Route intent mappings must resolve to a target route or route symbol:\n${invalidRouteIntents.map((mapping) => `  - ${mapping.sourceRoute ?? 'unknown'}`).join('\n')}`);
   }
 }
 

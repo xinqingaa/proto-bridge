@@ -67,8 +67,23 @@ export type PrototypePageAnalysis = {
   notesPath?: string | undefined;
   i18n?: Record<string, unknown> | undefined;
   i18nPath?: string | undefined;
+  routeRegistry: SourceRouteEntry[];
   config?: ScreenConfig | undefined;
   warnings: string[];
+};
+
+export type SourceRouteEntry = {
+  route: string;
+  pageType: PageType;
+  module?: string | undefined;
+  moduleLabel?: string | undefined;
+  screenId?: string | undefined;
+  view?: string | undefined;
+  title?: string | undefined;
+  label?: string | undefined;
+  key?: string | undefined;
+  sourceFile?: string | undefined;
+  evidence: string[];
 };
 
 export type VueSfcAnalysis = {

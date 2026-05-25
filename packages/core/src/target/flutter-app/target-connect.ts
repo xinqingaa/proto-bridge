@@ -56,6 +56,7 @@ export async function getFlutterTargetConventions(
     targetConventions,
     themeUsages: await collectUsageLines(flutterRoot, profile.usageSymbols?.theme ?? [], input.module),
     routeUsages: await collectUsageLines(flutterRoot, profile.usageSymbols?.route ?? [], input.module),
+    routeRegistry: context.routeRegistry,
     i18nUsages: await collectUsageLines(flutterRoot, profile.usageSymbols?.i18n ?? [], input.module),
     warnings: [...warnings, ...context.warnings],
   };

@@ -34,6 +34,8 @@ function renderReviewMarkdown(plan: UiBuildPlan): string {
     `- 页面 ID：\`${plan.pageId}\``,
     `- 原型路由：${plan.page.route ?? 'unknown'}`,
     `- 目标模块：${plan.target.module ?? 'unknown'}`,
+    ...(plan.routeMapping ? [`- 路由映射：${plan.routeMapping.sourceRoute ?? 'unknown'} → ${plan.routeMapping.targetRouteSymbol ?? plan.routeMapping.targetRoute ?? 'unresolved'} (${confidenceLabel(plan.routeMapping.confidence)})`] : []),
+    ...(plan.routeIntentMappings?.length ? [`- 跳转映射：${plan.routeIntentMappings.length} 个 source 跳转目标已匹配 target 路由配置`] : []),
     `- 逻辑来源：${plan.implementationContract.logicalPlanSource}`,
     '- 机器契约只看 `ui-build-plan.json`；本文档只是该 JSON 的中文审查视图。',
     '- 冲突规则：sourceSemantics 负责来源语义；targetConventions 负责工程表达；visualPlan 负责视觉事实。',
@@ -303,10 +305,13 @@ function renderSourceSemantics(plan: UiBuildPlan): string[] {
     '### 路由意图',
     '',
     ...markdownTable(
-      ['动作', '目标', '参数', '迁移意图'],
+      ['动作', '目标', '目标路由', '参数', '迁移意图'],
       semantics.routeIntent.slice(0, 12).map((item) => [
         item.action,
         item.target ?? '待确认',
+        item.routeMapping
+          ? `${item.routeMapping.targetRouteSymbol ?? item.routeMapping.targetRoute ?? 'unresolved'} (${confidenceLabel(item.routeMapping.confidence)})`
+          : '',
         item.params ?? '',
         item.evidence ?? '',
       ]),

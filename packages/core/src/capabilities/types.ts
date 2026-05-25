@@ -10,6 +10,8 @@ import type {
   ExportUiReviewResult,
   FlutterContextAnalysis,
   PrototypePageAnalysis,
+  SourceRouteEntry,
+  VueRouteHint,
 } from '../types/index.js';
 import type { FlutterTargetValidationResult } from '../target/flutter-app/index.js';
 import type { ResolvedRestorationProfile } from '../profile/index.js';
@@ -52,7 +54,9 @@ export type TargetInspectCapabilityInput = {
   prototypeModule?: string | undefined;
   screenId?: string | undefined;
   route?: string | undefined;
+  sourceRoutes?: VueRouteHint[] | undefined;
   targetModule?: string | undefined;
+  sourceRouteRegistry?: SourceRouteEntry[] | undefined;
   restorationProfile?: ResolvedRestorationProfile | undefined;
 };
 

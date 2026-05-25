@@ -86,6 +86,8 @@ export async function reconstructPageContext(
       screenId: source?.source.screenId,
       route: source?.source.route ?? input.route,
       targetModule: input.targetModule,
+      sourceRoutes: source?.source.sfc?.routes,
+      sourceRouteRegistry: source?.source.routeRegistry,
       restorationProfile: input.restorationProfile,
     }))
     : undefined;

@@ -249,6 +249,31 @@ function buildMismatches(input: PageMergeCapabilityInput): PageCanonicalMismatch
       evidence: ['target.suggestedModule', 'source.module'],
     });
   }
+  const routeMapping = input.target?.target.routeMapping;
+  if (routeMapping?.unresolved) {
+    mismatches.push({
+      kind: 'route-mapping',
+      severity: 'warning',
+      message: `No target route registry entry matched source route (${routeMapping.sourceRoute ?? source?.route ?? 'unknown'}).`,
+      evidence: routeMapping.evidence,
+    });
+  } else if (routeMapping?.targetModule && source?.module && routeMapping.targetModule !== source.module) {
+    mismatches.push({
+      kind: 'route-mapping',
+      severity: 'info',
+      message: `Target route module (${routeMapping.targetModule}) differs from source module (${source.module}).`,
+      evidence: routeMapping.evidence,
+    });
+  }
+  for (const intentMapping of input.target?.target.routeIntentMappings ?? []) {
+    if (!intentMapping.unresolved) continue;
+    mismatches.push({
+      kind: 'route-mapping',
+      severity: 'warning',
+      message: `No target route registry entry matched source navigation target (${intentMapping.sourceRoute ?? 'unknown'}).`,
+      evidence: intentMapping.evidence,
+    });
+  }
   return mismatches;
 }
 

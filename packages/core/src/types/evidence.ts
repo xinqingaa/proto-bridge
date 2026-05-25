@@ -209,7 +209,7 @@ export type PageScreenshotArtifact = {
 };
 
 export type PageCanonicalMismatch = {
-  kind: 'source-runtime' | 'runtime-visual' | 'ocr-visual' | 'target-convention' | 'unknown';
+  kind: 'source-runtime' | 'runtime-visual' | 'ocr-visual' | 'target-convention' | 'route-mapping' | 'unknown';
   message: string;
   severity: 'info' | 'warning' | 'error';
   evidence: string[];

@@ -5,6 +5,7 @@ import type { AnalyzeFlutterContextInput, FlutterContextAnalysis } from '../../t
 import { pathExists, toPosixPath } from '../../shared/paths.js';
 import { detectFlutterTargetConventions } from './architecture-profile.js';
 import { restorationProfileArtifact } from '../../profile/index.js';
+import { matchFlutterRoute, matchFlutterRouteIntents, scanFlutterRouteRegistry } from './route-registry.js';
 
 export async function analyzeFlutterContext(input: AnalyzeFlutterContextInput): Promise<FlutterContextAnalysis> {
   const flutterRoot = path.resolve(input.flutterRoot);
@@ -15,7 +16,22 @@ export async function analyzeFlutterContext(input: AnalyzeFlutterContextInput): 
   }
 
   const existingModules = await listModuleDirectories(flutterRoot);
-  const suggestedModule = suggestModule(input, existingModules);
+  const routeRegistry = await scanFlutterRouteRegistry(flutterRoot);
+  const routeMapping = matchFlutterRoute({
+    sourceRoute: input.route,
+    sourceModule: input.prototypeModule ?? input.screenId?.split('.')[0],
+    sourceRegistry: input.sourceRouteRegistry,
+    targetRoutes: routeRegistry,
+    existingModules,
+  });
+  const routeIntentMappings = matchFlutterRouteIntents({
+    routes: input.sourceRoutes ?? [],
+    sourceModule: input.prototypeModule ?? input.screenId?.split('.')[0],
+    sourceRegistry: input.sourceRouteRegistry,
+    targetRoutes: routeRegistry,
+    existingModules,
+  });
+  const suggestedModule = suggestModule(input, existingModules, routeMapping?.targetModule);
   const routesFiles = await existingPaths(flutterRoot, [
     'lib/app/routes/app_routes.dart',
     'lib/app/routes/app_pages.dart',
@@ -46,6 +62,9 @@ export async function analyzeFlutterContext(input: AnalyzeFlutterContextInput): 
     platform: 'flutter',
     flutterRoot,
     suggestedModule,
+    routeRegistry,
+    ...(routeMapping ? { routeMapping } : {}),
+    ...(routeIntentMappings.length ? { routeIntentMappings } : {}),
     ...(input.restorationProfile ? { restorationProfile: restorationProfileArtifact(input.restorationProfile) } : {}),
     existingModules,
     reusableWidgets,
@@ -62,8 +81,13 @@ export function getFlutterModuleMap(): Record<string, string> {
   return {};
 }
 
-function suggestModule(input: AnalyzeFlutterContextInput, existingModules: string[]): string | undefined {
+function suggestModule(
+  input: AnalyzeFlutterContextInput,
+  existingModules: string[],
+  routeMappedModule: string | undefined,
+): string | undefined {
   if (input.targetModule) return input.targetModule;
+  if (routeMappedModule && existingModules.includes(routeMappedModule)) return routeMappedModule;
 
   const candidates = [
     input.prototypeModule,

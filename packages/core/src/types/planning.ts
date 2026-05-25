@@ -1,6 +1,6 @@
 import type { ImplementationShape, MappingConfidence, WidgetRecommendationType } from './common.js';
 import type { AssetEvidence, InteractionEvidence, PageCanonical, SnapshotNodeRole } from './evidence.js';
-import type { FlutterComponentRef, FlutterContextAnalysis, FlutterExampleRef, FlutterTargetConventionProfile } from './target-flutter.js';
+import type { FlutterComponentRef, FlutterContextAnalysis, FlutterExampleRef, FlutterRouteIntentMapping, FlutterRouteMapping, FlutterTargetConventionProfile } from './target-flutter.js';
 
 export type WidgetRecommendation = {
   name: string;
@@ -392,6 +392,7 @@ export type UiSourceSemantics = {
     target?: string | undefined;
     params?: string | undefined;
     evidence?: string | undefined;
+    routeMapping?: FlutterRouteIntentMapping | undefined;
   }>;
   lifecycleIntent: Array<{
     hook: string;
@@ -427,6 +428,8 @@ export type UiBuildPlan = {
   id: string;
   pageId: string;
   restorationProfile?: import('../profile/index.js').RestorationProfileArtifact | undefined;
+  routeMapping?: FlutterRouteMapping | undefined;
+  routeIntentMappings?: FlutterRouteIntentMapping[] | undefined;
   target: {
     root: string;
     module?: string | undefined;

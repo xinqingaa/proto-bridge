@@ -83,6 +83,8 @@ export type AnalyzeFlutterContextInput = {
   screenId?: string | undefined;
   route?: string | undefined;
   targetModule?: string | undefined;
+  sourceRoutes?: import('./source.js').VueRouteHint[] | undefined;
+  sourceRouteRegistry?: import('./source.js').SourceRouteEntry[] | undefined;
   restorationProfile?: import('../profile/index.js').ResolvedRestorationProfile | undefined;
 };
 
@@ -90,6 +92,9 @@ export type FlutterContextAnalysis = {
   platform: TargetPlatform;
   flutterRoot: string;
   suggestedModule?: string | undefined;
+  routeRegistry: FlutterRouteEntry[];
+  routeMapping?: FlutterRouteMapping | undefined;
+  routeIntentMappings?: FlutterRouteIntentMapping[] | undefined;
   restorationProfile?: import('../profile/index.js').RestorationProfileArtifact | undefined;
   existingModules: string[];
   reusableWidgets: string[];
@@ -99,6 +104,36 @@ export type FlutterContextAnalysis = {
   similarFiles: string[];
   targetConventions?: FlutterTargetConventionProfile | undefined;
   warnings: string[];
+};
+
+export type FlutterRouteEntry = {
+  route: string;
+  routeSymbol?: string | undefined;
+  routeApiPattern: 'getx' | 'material_on_generate_route' | 'go_router' | 'navigator_routes' | 'unknown';
+  pageWidget?: string | undefined;
+  binding?: string | undefined;
+  file: string;
+  module?: string | undefined;
+  confidence: MappingConfidence;
+  evidence: string[];
+};
+
+export type FlutterRouteMapping = {
+  sourceRoute?: string | undefined;
+  targetRoute?: string | undefined;
+  targetRouteSymbol?: string | undefined;
+  sourceModule?: string | undefined;
+  targetModule?: string | undefined;
+  pageWidget?: string | undefined;
+  confidence: MappingConfidence;
+  reason: string;
+  evidence: string[];
+  candidates: FlutterRouteEntry[];
+  unresolved?: boolean | undefined;
+};
+
+export type FlutterRouteIntentMapping = FlutterRouteMapping & {
+  action?: string | undefined;
 };
 
 export type FlutterComponentRole =
@@ -147,6 +182,7 @@ export type FlutterTargetConventions = {
   targetConventions: FlutterTargetConventionProfile;
   themeUsages: string[];
   routeUsages: string[];
+  routeRegistry?: FlutterRouteEntry[] | undefined;
   i18nUsages: string[];
   warnings: string[];
 };

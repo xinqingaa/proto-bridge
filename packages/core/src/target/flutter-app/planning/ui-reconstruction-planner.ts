@@ -101,11 +101,16 @@ export async function buildFlutterUiReconstructionPlan(
     restorationProfile: input.restorationProfile,
   });
   const fallbackPlan = buildFallbackImplementationPlan(baseDir, pageName, runtimeWidgetTree);
+  const routeMapping = input.evidence.targetFacts?.analysis.routeMapping;
+  const routeIntentMappings = input.evidence.targetFacts?.analysis.routeIntentMappings ?? [];
   const implementationContract = buildImplementationContract({
     evidence: input.evidence,
     sourceAwarePlan: input.sourceAwareImplementationPlan,
     sourceReview: input.sourceReview,
     fallbackPlan,
+    targetModule: moduleName,
+    routeMapping,
+    routeIntentMappings,
     targetConventions: conventions.targetConventions,
     targetComponents: conventions.components,
     visualPlan,
@@ -117,6 +122,8 @@ export async function buildFlutterUiReconstructionPlan(
     id: createPlanId(input.evidence.id),
     pageId: input.evidence.id,
     ...(input.restorationProfile ? { restorationProfile: restorationProfileArtifact(input.restorationProfile) } : {}),
+    ...(routeMapping ? { routeMapping } : {}),
+    ...(routeIntentMappings.length ? { routeIntentMappings } : {}),
     target: {
       root: targetRoot,
       module: moduleName,
@@ -197,6 +204,8 @@ function inferModule(
   restorationProfile: ResolvedRestorationProfile | undefined,
 ): string | undefined {
   const sourceModule = evidence.sourceFacts?.analysis.module;
+  const routeMappedModule = evidence.targetFacts?.analysis.routeMapping?.targetModule;
+  if (routeMappedModule && existingModules.includes(routeMappedModule)) return routeMappedModule;
   if (sourceModule && existingModules.includes(sourceModule)) return sourceModule;
   const targetModule = evidence.targetFacts?.analysis.suggestedModule;
   if (targetModule && existingModules.includes(targetModule)) return targetModule;

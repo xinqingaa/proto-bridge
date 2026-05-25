@@ -19,6 +19,7 @@ import type {
   PageType,
   PrototypePageAnalysis,
   ScreenConfig,
+  SourceRouteEntry,
 } from '../../types/index.js';
 
 type ConfigSource = {
@@ -31,6 +32,7 @@ type ConfigSource = {
 type ScreenEntry = {
   pageType: PageType;
   moduleLabel?: string | undefined;
+  sourceFile?: string | undefined;
   screen: ScreenConfig;
 };
 
@@ -133,6 +135,7 @@ export async function analyzePrototypePage(input: AnalyzePrototypePageInput): Pr
     notesPath: notesResult.notesPath,
     i18n: i18nResult.i18n,
     i18nPath: i18nResult.i18nPath,
+    routeRegistry: buildSourceRouteRegistry(entries),
     config: screen,
     warnings,
   };
@@ -158,7 +161,7 @@ async function loadScreenEntries(prototypeRoot: string, warnings: string[]): Pro
 
     try {
       const modules = evaluateModuleArray(literal, source.exportName);
-      collectScreens(source.pageType, modules, entries);
+      collectScreens(source.pageType, modules, entries, source.configPath);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       warnings.push(message);
@@ -169,10 +172,10 @@ async function loadScreenEntries(prototypeRoot: string, warnings: string[]): Pro
   return entries;
 }
 
-function collectScreens(pageType: PageType, modules: ModuleConfig[], entries: ScreenEntry[]): void {
+function collectScreens(pageType: PageType, modules: ModuleConfig[], entries: ScreenEntry[], sourceFile: string): void {
   for (const moduleConfig of modules) {
     const moduleLabel = asString(moduleConfig.module);
-    collectScreenItems(pageType, moduleLabel, moduleConfig.items ?? [], entries);
+    collectScreenItems(pageType, moduleLabel, moduleConfig.items ?? [], entries, sourceFile);
   }
 }
 
@@ -181,13 +184,41 @@ function collectScreenItems(
   moduleLabel: string | undefined,
   items: ScreenConfig[],
   entries: ScreenEntry[],
+  sourceFile: string,
 ): void {
   for (const item of items) {
-    entries.push({ pageType, moduleLabel, screen: item });
+    entries.push({ pageType, moduleLabel, sourceFile, screen: item });
     if (Array.isArray(item.children)) {
-      collectScreenItems(pageType, moduleLabel, item.children, entries);
+      collectScreenItems(pageType, moduleLabel, item.children, entries, sourceFile);
     }
   }
+}
+
+function buildSourceRouteRegistry(entries: ScreenEntry[]): SourceRouteEntry[] {
+  return entries.flatMap((entry) => {
+    const route = asString(entry.screen.path);
+    if (!route) return [];
+    const screenId = asString(entry.screen.screenId);
+    const view = asString(entry.screen.view);
+    const moduleName = firstSegment(view) ?? screenId?.split('.')[0];
+    return [{
+      route: normalizeRoute(route),
+      pageType: entry.pageType,
+      ...(moduleName ? { module: moduleName } : {}),
+      ...(entry.moduleLabel ? { moduleLabel: entry.moduleLabel } : {}),
+      ...(screenId ? { screenId } : {}),
+      ...(view ? { view } : {}),
+      ...(asString(entry.screen.title) ? { title: asString(entry.screen.title) } : {}),
+      ...(asString(entry.screen.label) ? { label: asString(entry.screen.label) } : {}),
+      ...(asString(entry.screen.key) ? { key: asString(entry.screen.key) } : {}),
+      ...(entry.sourceFile ? { sourceFile: entry.sourceFile } : {}),
+      evidence: [
+        entry.sourceFile ? `${entry.sourceFile}: ${route}` : route,
+        ...(screenId ? [`screenId=${screenId}`] : []),
+        ...(view ? [`view=${view}`] : []),
+      ],
+    }];
+  });
 }
 
 async function resolveVuePath(

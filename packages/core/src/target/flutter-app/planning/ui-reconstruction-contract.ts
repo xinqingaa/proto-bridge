@@ -5,6 +5,8 @@ import type {
   FlutterControllerBoundary,
   FlutterImplementationPlan,
   FlutterPlannedFile,
+  FlutterRouteIntentMapping,
+  FlutterRouteMapping,
   FlutterStateStrategy,
   FlutterTargetConventionProfile,
   FlutterWidgetContract,
@@ -54,15 +56,18 @@ export function buildImplementationContract(input: {
   sourceAwarePlan?: FlutterImplementationPlan | undefined;
   sourceReview?: SourceAwareReviewProjection | undefined;
   fallbackPlan: Pick<FlutterImplementationPlan, 'fileTree' | 'widgetTree' | 'stateStrategy' | 'controllerBoundaries' | 'widgetContracts'>;
+  targetModule?: string | undefined;
+  routeMapping?: FlutterRouteMapping | undefined;
+  routeIntentMappings?: FlutterRouteIntentMapping[] | undefined;
   targetConventions: FlutterTargetConventionProfile;
   targetComponents: FlutterComponentRef[];
   visualPlan: UiVisualPlan;
 }): UiImplementationContract {
-  const logical = input.sourceAwarePlan ?? input.fallbackPlan;
+  const logical = rebaseLogicalPlanModule(input.sourceAwarePlan ?? input.fallbackPlan, input.targetModule);
   const contractWarnings = normalizeContractWarnings(input.targetConventions);
   const stateBinding = stateBindingFor(input.targetConventions);
   const sourceSemantics = enhanceSourceSemanticsWithVisualActions(
-    buildSourceSemantics(input.sourceReview, logical),
+    buildSourceSemantics(input.sourceReview, logical, input.targetModule, input.routeMapping, input.routeIntentMappings ?? []),
     input.visualPlan,
   );
   const conflicts = buildPlanLayoutConflicts(input.evidence, input.visualPlan);
@@ -218,6 +223,9 @@ function buildImplementationIndex(
 function buildSourceSemantics(
   sourceReview: SourceAwareReviewProjection | undefined,
   logical: Pick<FlutterImplementationPlan, 'fileTree' | 'widgetTree' | 'stateStrategy' | 'controllerBoundaries' | 'widgetContracts'>,
+  targetModule?: string | undefined,
+  routeMapping?: FlutterRouteMapping | undefined,
+  routeIntentMappings: FlutterRouteIntentMapping[] = [],
 ): UiSourceSemantics | undefined {
   if (!sourceReview) {
     return {
@@ -247,7 +255,7 @@ function buildSourceSemantics(
   }
 
   return {
-    summary: sourceReview.summary.map(normalizeSourceSemanticsLanguage),
+    summary: normalizeSourceSummary(sourceReview.summary, targetModule),
     businessSections: sourceReview.widgets.map((widget) => {
       const contract = sourceReview.widgetContracts.find((item) => item.widget === widget.name);
       return {
@@ -269,7 +277,8 @@ function buildSourceSemantics(
       action: route.action,
       ...(route.target ? { target: normalizeSourceSemanticsLanguage(route.target) } : {}),
       ...(route.params ? { params: normalizeSourceSemanticsLanguage(route.params) } : {}),
-      ...(route.migrationHint ? { evidence: normalizeSourceSemanticsLanguage(route.migrationHint) } : {}),
+      evidence: routeIntentEvidence(route.migrationHint, route.target, routeMapping, routeIntentMappings),
+      ...routeIntentMappingField(route.target, routeIntentMappings),
     })),
     lifecycleIntent: sourceReview.lifecycle.map((item) => ({
       hook: item.hook,
@@ -300,6 +309,98 @@ function buildSourceSemantics(
     })),
     doNotTranslate: sourceReview.doNotTranslate.map(normalizeSourceSemanticsLanguage),
   };
+}
+
+function routeIntentEvidence(
+  migrationHint: string | undefined,
+  sourceTarget: string | undefined,
+  routeMapping: FlutterRouteMapping | undefined,
+  routeIntentMappings: FlutterRouteIntentMapping[] = [],
+): string | undefined {
+  const normalizedHint = migrationHint ? normalizeSourceSemanticsLanguage(migrationHint) : undefined;
+  if (!sourceTarget || !sourceTarget.includes('/')) {
+    return normalizedHint;
+  }
+  const intentMapping = routeIntentMappingFor(sourceTarget, routeIntentMappings);
+  if (intentMapping && !intentMapping.unresolved) {
+    return routeMappingEvidence(normalizedHint, intentMapping);
+  }
+  if (!routeMapping || routeMapping.unresolved) {
+    return intentMapping?.unresolved
+      ? [normalizedHint, `No target route registry entry matched source route ${sourceTarget}.`, ...intentMapping.evidence.slice(0, 2)].filter(Boolean).join(' ')
+      : normalizedHint;
+  }
+  if (intentMapping?.unresolved) {
+    return [normalizedHint, `No target route registry entry matched source route ${sourceTarget}.`, ...intentMapping.evidence.slice(0, 2)].filter(Boolean).join(' ');
+  }
+  const sourceLeaf = sourceTarget.split(/[/?#]/)[0]?.split('/').filter(Boolean).at(-1);
+  const mappingLeaf = routeMapping.sourceRoute?.split(/[/?#]/)[0]?.split('/').filter(Boolean).at(-1);
+  if (sourceLeaf && mappingLeaf && sourceLeaf !== mappingLeaf) return normalizedHint;
+  return routeMappingEvidence(normalizedHint, routeMapping);
+}
+
+function routeMappingEvidence(
+  normalizedHint: string | undefined,
+  routeMapping: FlutterRouteMapping,
+): string | undefined {
+  const target = routeMapping.targetRouteSymbol ?? routeMapping.targetRoute;
+  if (!target) return normalizedHint;
+  return [
+    normalizedHint,
+    `Matched target route ${target} via target route registry (${routeMapping.confidence}).`,
+    ...routeMapping.evidence.slice(0, 2),
+  ].filter(Boolean).join(' ');
+}
+
+function routeIntentMappingFor(
+  sourceTarget: string | undefined,
+  routeIntentMappings: FlutterRouteIntentMapping[],
+): FlutterRouteIntentMapping | undefined {
+  if (!sourceTarget) return undefined;
+  const normalizedTarget = normalizeRoute(sourceTarget);
+  return routeIntentMappings.find((mapping) => normalizeRoute(mapping.sourceRoute) === normalizedTarget);
+}
+
+function routeIntentMappingField(
+  sourceTarget: string | undefined,
+  routeIntentMappings: FlutterRouteIntentMapping[],
+): { routeMapping?: FlutterRouteIntentMapping | undefined } {
+  const mapping = routeIntentMappingFor(sourceTarget, routeIntentMappings);
+  return mapping ? { routeMapping: mapping } : {};
+}
+
+function normalizeRoute(value: string | undefined): string {
+  if (!value) return '';
+  const route = value.split('?')[0]?.split('#')[0] ?? value;
+  return route.startsWith('/') ? route : `/${route}`;
+}
+
+function rebaseLogicalPlanModule<T extends Pick<FlutterImplementationPlan, 'fileTree' | 'widgetTree' | 'stateStrategy' | 'controllerBoundaries' | 'widgetContracts'>>(
+  logical: T,
+  targetModule: string | undefined,
+): T {
+  if (!targetModule) return logical;
+  return {
+    ...logical,
+    fileTree: logical.fileTree.map((file) => ({
+      ...file,
+      path: rebaseModulePath(file.path, targetModule),
+    })),
+  };
+}
+
+function rebaseModulePath(filePath: string, targetModule: string): string {
+  const match = filePath.match(/^(lib\/app\/modules\/)([^/]+)(\/[^/]+\/.+)$/);
+  if (!match?.[1] || !match[3]) return filePath;
+  return `${match[1]}${targetModule}${match[3]}`;
+}
+
+function normalizeSourceSummary(summary: string[], targetModule: string | undefined): string[] {
+  return summary.map((item) => {
+    const normalized = normalizeSourceSemanticsLanguage(item);
+    if (!targetModule) return normalized;
+    return normalized.replace(/^Target module:\s*.+$/i, `Target module: ${targetModule}`);
+  });
 }
 
 function buildOverlayPlan(
