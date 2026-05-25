@@ -14,6 +14,25 @@ type ImportRef = {
   module?: string | undefined;
 };
 
+const WEAK_ROUTE_TOKENS = new Set([
+  'add',
+  'all',
+  'center',
+  'detail',
+  'edit',
+  'history',
+  'home',
+  'index',
+  'list',
+  'manage',
+  'page',
+  'record',
+  'records',
+  'setting',
+  'settings',
+  'view',
+]);
+
 export async function scanFlutterRouteRegistry(flutterRoot: string): Promise<FlutterRouteEntry[]> {
   const files = await readDartFiles(flutterRoot, [
     'lib/app/routes/**/*.dart',
@@ -285,13 +304,16 @@ function routeScore(route: FlutterRouteEntry, sourceCandidates: string[], source
     const normalized = normalizeComparableRoute(candidate);
     if (normalizeTargetRoute(candidate) === normalizeTargetRoute(route.route)) score = Math.max(score, 100);
     if (normalized && target && normalized === target) score = Math.max(score, 100);
-    if (lastPart(candidate) && lastPart(candidate) === lastPart(route.route)) score = Math.max(score, 70);
+    const candidateLeaf = leafSegment(candidate);
+    const targetLeaf = leafSegment(route.route);
+    if (candidateLeaf && targetLeaf && candidateLeaf === targetLeaf) score = Math.max(score, 70);
     const candidateParts = routeParts(candidate);
     const overlap = candidateParts.filter((part) => targetParts.includes(part)).length;
-    if (overlap >= 2) score = Math.max(score, 40 + overlap * 8);
-    if (overlap === 1) score = Math.max(score, 25);
+    const strongOverlap = candidateParts.filter((part) => targetParts.includes(part) && !isWeakRouteToken(part)).length;
+    if (overlap >= 2 && strongOverlap >= 1) score = Math.max(score, 40 + overlap * 8 + strongOverlap * 4);
+    if (strongOverlap >= 2) score = Math.max(score, 52 + strongOverlap * 8);
   }
-  if (sourceModule && route.module && sourceModule === route.module) score += 12;
+  if (score > 0 && sourceModule && route.module && sourceModule === route.module) score += 12;
   return score;
 }
 
@@ -339,8 +361,15 @@ function routeParts(value: string | undefined): string[] {
     .filter((part) => part.length >= 3 && !['design', 'prototype', 'page', 'view'].includes(part));
 }
 
-function lastPart(value: string | undefined): string | undefined {
-  return routeParts(value).at(-1);
+function leafSegment(value: string | undefined): string | undefined {
+  const comparable = normalizeComparableRoute(value);
+  if (!comparable) return undefined;
+  const leaf = comparable.split('-').filter(Boolean).at(-1);
+  return leaf && !isWeakRouteToken(leaf) ? leaf : undefined;
+}
+
+function isWeakRouteToken(value: string): boolean {
+  return WEAK_ROUTE_TOKENS.has(value.toLowerCase());
 }
 
 function normalizeComparableRoute(value: string | undefined): string {

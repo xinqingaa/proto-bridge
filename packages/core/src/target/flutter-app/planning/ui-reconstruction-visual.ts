@@ -682,7 +682,7 @@ function enrichNodeAuditWithTargetComponents(
     ? 'app-bar'
     : audit.kind;
   const targetWidgetHint = preferred
-    ? `${candidates[0]?.symbol ?? semanticRole} candidate`
+    ? `${candidates[0]?.symbol ?? semanticRole} 候选组件`
     : audit.implementationSummary.targetWidgetHint;
   const layoutSummary = preferred
     ? targetComponentLayoutSummary(audit, semanticRole, candidates[0])
@@ -711,9 +711,9 @@ function enrichNodeAuditWithTargetComponents(
     implementationHints: dedupe([
       ...candidates.flatMap((candidate) => [
         candidate.recommendation === 'prefer-target-component'
-          ? `Prefer target ${candidate.role} component ${candidate.symbol}; use row and style evidence as fit checks before falling back to a local Widget.`
+          ? `优先尝试目标 ${candidate.role} 组件 ${candidate.symbol}；回退本地 Widget 前，先用行结构和样式证据做适配检查。`
           : '',
-        ...candidate.fitChecks.map((check) => `Fit check for ${candidate.symbol}: ${check}`),
+        ...candidate.fitChecks.map((check) => `${candidate.symbol} 适配检查：${check}`),
         ...candidate.risks,
       ]),
       ...audit.implementationHints,
@@ -880,25 +880,25 @@ function confidenceRank(value: MappingConfidence): number {
 function componentFitChecks(audit: UiNodeAudit, role: FlutterComponentRole): string[] {
   const checks: string[] = [];
   if (role === 'app-bar') {
-    checks.push(`height/preferredSize should match ${roundCssNumber(audit.bbox.height)}px.`);
+    checks.push(`height/preferredSize 需要匹配 ${roundCssNumber(audit.bbox.height)}px。`);
     const leading = firstRowChildren(audit).find((child) => child.role === 'icon' || Boolean(child.assetRefs?.length));
     const title = firstRowChildren(audit).find((child) => child.text?.trim());
     const actions = firstRowChildren(audit).filter((child) =>
       (child.role === 'icon' || Boolean(child.assetRefs?.length)) && child.nodeId !== leading?.nodeId,
     );
-    if (leading) checks.push(`leading slot should preserve ${auditChildLabel(leading)} at bbox ${bboxText(leading.bbox)}.`);
-    if (title) checks.push(`title slot should preserve ${auditChildLabel(title)} at bbox ${bboxText(title.bbox)}.`);
-    if (actions.length) checks.push(`actions should preserve ${actions.map(auditChildLabel).join(' -> ')} and their visual order.`);
-    checks.push('titleSpacing/centerTitle/backgroundColor should be checked against source bbox and style evidence.');
+    if (leading) checks.push(`leading 槽位需要保留 ${auditChildLabel(leading)}，bbox=${bboxText(leading.bbox)}。`);
+    if (title) checks.push(`title 槽位需要保留 ${auditChildLabel(title)}，bbox=${bboxText(title.bbox)}。`);
+    if (actions.length) checks.push(`actions 需要保留 ${actions.map(auditChildLabel).join(' -> ')} 及其视觉顺序。`);
+    checks.push('titleSpacing、centerTitle、backgroundColor 需要对照 source bbox 和样式证据确认。');
   } else if (role === 'button') {
-    checks.push(`button height should match ${roundCssNumber(audit.bbox.height)}px when this audit is a standalone control.`);
-    if (audit.controls.length) checks.push(`control padding/radius should preserve ${audit.controls.map((control) => control.padding || control.borderRadius).filter(Boolean).join(', ')}.`);
+    checks.push(`当该审计是独立控件时，button 高度需要匹配 ${roundCssNumber(audit.bbox.height)}px。`);
+    if (audit.controls.length) checks.push(`控件 padding/radius 需要保留 ${audit.controls.map((control) => control.padding || control.borderRadius).filter(Boolean).join(', ')}。`);
   } else if (role === 'image') {
-    if (audit.assetRefs.length) checks.push(`asset source/order should preserve ${audit.assetRefs.join(' -> ')}.`);
+    if (audit.assetRefs.length) checks.push(`asset 来源和顺序需要保留 ${audit.assetRefs.join(' -> ')}。`);
   } else if (role === 'sheet') {
-    checks.push(`sheet container should match bbox ${bboxText(audit.bbox)} and visible controls.`);
+    checks.push(`sheet 容器需要匹配 bbox=${bboxText(audit.bbox)} 和可见控件。`);
   } else if (role === 'refresh') {
-    checks.push('refresh/list component should wrap the repeated list without inventing fields absent from nodeAudits.');
+    checks.push('refresh/list 组件应包住重复列表，不要臆造 nodeAudits 中不存在的字段。');
   }
   return dedupe(checks).slice(0, 8);
 }
@@ -910,13 +910,13 @@ function componentFitRisks(
 ): string[] {
   const risks: string[] = [];
   if (role === 'app-bar') {
-    risks.push(`Use a local header only if ${component.symbol} cannot expose height/preferredSize, leading, title, actions, or title spacing needed by this audit.`);
+    risks.push(`仅当 ${component.symbol} 无法暴露本审计需要的 height/preferredSize、leading、title、actions 或标题间距时，才使用本地 header。`);
   }
   if (component.propsHints.length === 0) {
-    risks.push(`${component.symbol} props were not inferred from target examples; inspect similar target usage before custom implementation.`);
+    risks.push(`尚未从目标示例推断 ${component.symbol} 的 props；自定义实现前先检查相似目标用法。`);
   }
   if (audit.kind === 'section' && role !== 'app-bar') {
-    risks.push('Runtime role is generic section; target component recommendation depends on source/target semantic mapping.');
+    risks.push('runtime role 是泛化 section；目标组件推荐依赖 source/target 语义映射，需要人工确认适配性。');
   }
   return dedupe(risks).slice(0, 6);
 }
@@ -927,8 +927,8 @@ function targetComponentLayoutSummary(
   candidate: UiTargetComponentCandidate | undefined,
 ): string {
   if (!candidate) return audit.implementationSummary.layoutSummary;
-  const fitChecks = candidate.fitChecks.length ? ` Fit checks: ${candidate.fitChecks.join(' ')}` : '';
-  return `Prefer target ${role} component ${candidate.symbol}; keep node visual evidence as adaptation checks.${fitChecks}`;
+  const fitChecks = candidate.fitChecks.length ? ` 适配检查：${candidate.fitChecks.join(' ')}` : '';
+  return `优先尝试目标 ${role} 组件 ${candidate.symbol}；保留节点视觉证据作为适配检查。${fitChecks}`;
 }
 
 function targetComponentMustPreserve(candidate: UiTargetComponentCandidate): string {
