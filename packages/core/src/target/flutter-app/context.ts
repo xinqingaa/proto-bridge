@@ -4,31 +4,7 @@ import fg from 'fast-glob';
 import type { AnalyzeFlutterContextInput, FlutterContextAnalysis } from '../../types/index.js';
 import { pathExists, toPosixPath } from '../../shared/paths.js';
 import { detectFlutterTargetConventions } from './architecture-profile.js';
-
-const MODULE_MAP: Record<string, string> = {
-  stock: 'order',
-  options: 'option',
-  'options-trade': 'option',
-  account: 'account',
-  asset: 'account',
-  security: 'auth',
-  onboard: 'account',
-};
-
-const IMPORTANT_COMMON_WIDGETS = [
-  'CommonAppBar',
-  'CommonButton',
-  'CommonImage',
-  'CommonSvg',
-  'CommonNetImage',
-  'CommonToast',
-  'CommonEmpty',
-  'CommonLoading',
-  'Pop.sheet',
-  'YouFiPop',
-  'BaseGetView',
-  'BaseGetPullView',
-];
+import { restorationProfileArtifact } from '../../profile/index.js';
 
 export async function analyzeFlutterContext(input: AnalyzeFlutterContextInput): Promise<FlutterContextAnalysis> {
   const flutterRoot = path.resolve(input.flutterRoot);
@@ -55,7 +31,7 @@ export async function analyzeFlutterContext(input: AnalyzeFlutterContextInput): 
     'assets/svg',
     'assets/json',
   ]);
-  const reusableWidgets = await collectReusableWidgets(flutterRoot);
+  const reusableWidgets = await collectReusableWidgets(flutterRoot, input);
   const similarFiles = suggestedModule ? await collectSimilarFiles(flutterRoot, suggestedModule, input.screenId) : [];
   const targetConventions = await detectFlutterTargetConventions({
     flutterRoot,
@@ -70,6 +46,7 @@ export async function analyzeFlutterContext(input: AnalyzeFlutterContextInput): 
     platform: 'flutter',
     flutterRoot,
     suggestedModule,
+    ...(input.restorationProfile ? { restorationProfile: restorationProfileArtifact(input.restorationProfile) } : {}),
     existingModules,
     reusableWidgets,
     routesFiles,
@@ -82,7 +59,7 @@ export async function analyzeFlutterContext(input: AnalyzeFlutterContextInput): 
 }
 
 export function getFlutterModuleMap(): Record<string, string> {
-  return { ...MODULE_MAP };
+  return {};
 }
 
 function suggestModule(input: AnalyzeFlutterContextInput, existingModules: string[]): string | undefined {
@@ -95,11 +72,11 @@ function suggestModule(input: AnalyzeFlutterContextInput, existingModules: strin
   ].filter((candidate): candidate is string => Boolean(candidate));
 
   for (const candidate of candidates) {
-    const mapped = MODULE_MAP[candidate] ?? candidate;
+    const mapped = resolveModuleAlias(candidate, input, existingModules);
     if (existingModules.length === 0 || existingModules.includes(mapped)) return mapped;
   }
 
-  return candidates[0] ? (MODULE_MAP[candidates[0]] ?? candidates[0]) : undefined;
+  return candidates[0] ? resolveModuleAlias(candidates[0], input, existingModules) : undefined;
 }
 
 async function listModuleDirectories(flutterRoot: string): Promise<string[]> {
@@ -121,7 +98,7 @@ async function existingPaths(root: string, relativePaths: string[]): Promise<str
   return result;
 }
 
-async function collectReusableWidgets(flutterRoot: string): Promise<string[]> {
+async function collectReusableWidgets(flutterRoot: string, input: AnalyzeFlutterContextInput): Promise<string[]> {
   const commonFiles = await fg(
     ['lib/app/common/{widget,widgets,pop}/**/*.dart', 'lib/app/widgets/**/*.dart'],
     {
@@ -143,11 +120,18 @@ async function collectReusableWidgets(flutterRoot: string): Promise<string[]> {
     ),
   );
 
-  const detected = IMPORTANT_COMMON_WIDGETS.filter((widget) =>
-    fileStemIndex.has(widget.replace('.', '').toLowerCase()),
+  const profileSymbols = input.restorationProfile?.profile.targetSymbols ?? [];
+  const detected = profileSymbols.map((item) => item.symbol).filter((widget) =>
+    fileStemIndex.has(widget.replace('.', '').replace(/\(context\)/, '').toLowerCase()),
   );
 
   return detected;
+}
+
+function resolveModuleAlias(candidate: string, input: AnalyzeFlutterContextInput, existingModules: string[]): string {
+  const mapped = input.restorationProfile?.profile.moduleAliases?.[candidate] ?? candidate;
+  if (mapped !== candidate && existingModules.includes(mapped)) return mapped;
+  return candidate;
 }
 
 async function collectSimilarFiles(

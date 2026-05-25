@@ -76,6 +76,7 @@ export type BuildUiPlanInput = {
   targetRoot: string;
   outDir: string;
   targetModule?: string | undefined;
+  restorationProfile?: import('../profile/index.js').ResolvedRestorationProfile | undefined;
   sourceAwareImplementationPlan?: FlutterImplementationPlan | undefined;
   sourceReview?: SourceAwareReviewProjection | undefined;
 };
@@ -425,6 +426,7 @@ export type UiSourceSemantics = {
 export type UiBuildPlan = {
   id: string;
   pageId: string;
+  restorationProfile?: import('../profile/index.js').RestorationProfileArtifact | undefined;
   target: {
     root: string;
     module?: string | undefined;

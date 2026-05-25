@@ -83,12 +83,14 @@ export type AnalyzeFlutterContextInput = {
   screenId?: string | undefined;
   route?: string | undefined;
   targetModule?: string | undefined;
+  restorationProfile?: import('../profile/index.js').ResolvedRestorationProfile | undefined;
 };
 
 export type FlutterContextAnalysis = {
   platform: TargetPlatform;
   flutterRoot: string;
   suggestedModule?: string | undefined;
+  restorationProfile?: import('../profile/index.js').RestorationProfileArtifact | undefined;
   existingModules: string[];
   reusableWidgets: string[];
   routesFiles: string[];
@@ -154,6 +156,7 @@ export type AnalyzeFlutterTargetConventionsInput = {
   module?: string | undefined;
   symbols?: string[] | undefined;
   roles?: FlutterComponentRole[] | undefined;
+  restorationProfile?: import('../profile/index.js').ResolvedRestorationProfile | undefined;
 };
 
 export type FindFlutterTargetExamplesInput = {
@@ -164,4 +167,5 @@ export type FindFlutterTargetExamplesInput = {
   symbols?: string[] | undefined;
   screenId?: string | undefined;
   limit?: number | undefined;
+  restorationProfile?: import('../profile/index.js').ResolvedRestorationProfile | undefined;
 };

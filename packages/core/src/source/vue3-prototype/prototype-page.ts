@@ -87,7 +87,7 @@ export async function analyzePrototypePage(input: AnalyzePrototypePageInput): Pr
   if (!sourceCode) {
     warnings.push(`Vue source file not found: ${vuePath}`);
   }
-  const sfc = analyzeVueSfc(sourceCode);
+  const sfc = analyzeVueSfc(sourceCode, input.restorationProfile);
 
   const screenId = asString(screen?.screenId);
   const moduleFromView = firstSegment(asString(screen?.view) ?? input.vue);

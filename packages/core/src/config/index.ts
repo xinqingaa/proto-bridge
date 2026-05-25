@@ -3,6 +3,8 @@ import path from 'node:path';
 import { readFile } from 'node:fs/promises';
 import type { AdapterProjectConfig } from '../types/index.js';
 import type { ReconstructPageContextInput } from '../workflows/capability-first/types.js';
+import { resolveRestorationProfile } from '../profile/index.js';
+import type { ResolvedRestorationProfile, RestorationProfileConfig } from '../profile/index.js';
 
 export const DEFAULT_CONFIG_FILE = 'proto-bridge.config.json';
 export const DEFAULT_OUTPUT_ROOT = './output';
@@ -31,6 +33,7 @@ export type ProtoBridgeConfig = {
   schemaVersion?: 1 | undefined;
   source?: ProtoBridgeProjectConfig | undefined;
   target?: ProtoBridgeProjectConfig | undefined;
+  profile?: RestorationProfileConfig | undefined;
   runtime?: ProtoBridgeRuntimeConfig | undefined;
   output?: ProtoBridgeOutputConfig | undefined;
 };
@@ -54,6 +57,7 @@ export type ProtoBridgeInputOverrides = {
   ocrText?: string[] | undefined;
   ocrBoxes?: import('../types/index.js').OcrTextBox[] | undefined;
   targetModule?: string | undefined;
+  profile?: RestorationProfileConfig | undefined;
 };
 
 export type ResolveProtoBridgeInputOptions = {
@@ -74,6 +78,7 @@ export type ResolvedProtoBridgeInput = {
   };
   sourceRoot?: string | undefined;
   targetRoot?: string | undefined;
+  restorationProfile: ResolvedRestorationProfile;
   warnings: string[];
 };
 
@@ -81,6 +86,7 @@ const TOP_LEVEL_KEYS = new Set([
   'schemaVersion',
   'source',
   'target',
+  'profile',
   'runtime',
   'output',
 ]);
@@ -122,6 +128,7 @@ export function parseProtoBridgeConfig(text: string, configPath = 'proto-bridge.
     ...(schemaVersion === 1 ? { schemaVersion: 1 } : {}),
     source: parseProjectConfig(parsed.source, 'source', configPath),
     target: parseProjectConfig(parsed.target, 'target', configPath),
+    profile: parseProfileConfig(parsed.profile, configPath),
     runtime: parseRuntimeConfig(parsed.runtime, configPath),
     output: parseOutputConfig(parsed.output, configPath),
   };
@@ -147,6 +154,10 @@ export function resolveProtoBridgeInput(options: ResolveProtoBridgeInputOptions)
   const target = targetRoot
     ? projectToAdapterConfig(overrides.targetAdapter ?? config?.target?.adapter ?? 'flutter-app', targetRoot)
     : undefined;
+  const restorationProfile = resolveRestorationProfile({
+    configured: overrides.profile ?? config?.profile ?? 'auto',
+    targetRoot,
+  });
   const outDir = resolveOutputDir({
     output: overrides.output,
     configuredOutputRoot: config?.output?.root,
@@ -171,6 +182,7 @@ export function resolveProtoBridgeInput(options: ResolveProtoBridgeInputOptions)
       viewport: overrides.viewport ?? config?.runtime?.viewport,
       saveArtifacts: overrides.saveArtifacts,
       targetModule: overrides.targetModule,
+      restorationProfile,
       buildPlan: overrides.buildPlan ?? Boolean(target),
       buildReview: overrides.buildReview ?? Boolean(target),
       trace: overrides.trace ?? false,
@@ -178,7 +190,8 @@ export function resolveProtoBridgeInput(options: ResolveProtoBridgeInputOptions)
     page,
     sourceRoot,
     targetRoot,
-    warnings: [],
+    restorationProfile,
+    warnings: [...restorationProfile.warnings],
   };
 }
 
@@ -303,6 +316,16 @@ function parseOutputConfig(value: unknown, configPath: string): ProtoBridgeOutpu
   return {
     root: parseOptionalString(value.root, 'output.root', configPath),
   };
+}
+
+function parseProfileConfig(value: unknown, configPath: string): RestorationProfileConfig | undefined {
+  if (value === undefined) return undefined;
+  if (value === false) return false;
+  if (typeof value !== 'string') {
+    throw new Error(`Invalid config file ${configPath}: profile must be a string or false`);
+  }
+  if (!value.trim()) throw new Error(`Invalid config file ${configPath}: profile must not be empty`);
+  return value;
 }
 
 function parseViewport(value: unknown, configPath: string): ProtoBridgeViewport | undefined {

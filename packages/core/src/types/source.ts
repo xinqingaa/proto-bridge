@@ -40,6 +40,7 @@ export type AnalyzePrototypePageInput = {
   prototypeRoot: string;
   route?: string | undefined;
   vue?: string | undefined;
+  restorationProfile?: import('../profile/index.js').ResolvedRestorationProfile | undefined;
 };
 
 export type PrototypePageAnalysis = {

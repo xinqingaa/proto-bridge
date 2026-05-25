@@ -43,6 +43,7 @@ export async function reconstructPageContext(
       source: sourceInput,
       route: input.route,
       vue: input.vue,
+      restorationProfile: input.restorationProfile,
     }))
     : undefined;
   if (!sourceInput) traceSteps.push(skipped('source.analyze', 'source input was not provided'));
@@ -85,6 +86,7 @@ export async function reconstructPageContext(
       screenId: source?.source.screenId,
       route: source?.source.route ?? input.route,
       targetModule: input.targetModule,
+      restorationProfile: input.restorationProfile,
     }))
     : undefined;
   if (!targetInput) traceSteps.push(skipped('target.inspect', 'target input was not provided'));
@@ -108,6 +110,7 @@ export async function reconstructPageContext(
       target: target.target,
       capture: runtime ? runtimeCaptureToLegacyCapture(runtime) : undefined,
       targetAdapter: input.target?.adapter,
+      restorationProfile: input.restorationProfile,
     })
     : undefined;
 
@@ -118,6 +121,7 @@ export async function reconstructPageContext(
       targetRoot: targetInput.root,
       outDir,
       targetModule: input.targetModule,
+      restorationProfile: input.restorationProfile,
       sourceAwareImplementationPlan: sourceSemantics?.context.recommendations.implementationPlan,
       sourceReview: sourceSemantics?.review,
     }))

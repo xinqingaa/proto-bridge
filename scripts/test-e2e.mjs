@@ -16,6 +16,7 @@ const url = readString(args, 'url') ?? DEFAULT_URL;
 const sourceRoot = path.resolve(repoRoot, readString(args, 'source-root') ?? '../TradeAppPrd');
 const targetRoot = path.resolve(repoRoot, readString(args, 'target-root') ?? '../youfi');
 const outputRoot = path.resolve(repoRoot, readString(args, 'output-root') ?? './output/test-e2e');
+const e2eConfigPath = path.join(outputRoot, 'proto-bridge.config.json');
 const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
 
 const ICON = {
@@ -33,6 +34,7 @@ try {
 
 async function main() {
   await mkdir(outputRoot, { recursive: true });
+  await writeFile(e2eConfigPath, `${JSON.stringify({ schemaVersion: 1 }, null, 2)}\n`, 'utf8');
   await ensureBuild();
 
   const results = [];
@@ -68,6 +70,8 @@ async function runCliCase(caseName) {
   const commandArgs = [
     path.join(repoRoot, 'packages/cli/dist/index.js'),
     'generate',
+    '--config',
+    e2eConfigPath,
     '--url',
     url,
     '--output',
@@ -92,7 +96,7 @@ async function runMcpCase(caseName) {
   await requireExternalRoots(caseName);
   const outDir = path.join(outputRoot, `mcp-${caseSlug(caseName)}-${timestamp}`);
   await mkdir(outDir, { recursive: true });
-  const client = await startMcpClient({ cwd: repoRoot });
+  const client = await startMcpClient({ cwd: repoRoot, args: ['--config', e2eConfigPath] });
 
   try {
     await requireMcpTools(client);
@@ -140,6 +144,8 @@ async function runFailureCases() {
     results.push(await expectCliFailure('no-page-input', [
       path.join(repoRoot, 'packages/cli/dist/index.js'),
       'generate',
+      '--config',
+      e2eConfigPath,
       '--output',
       path.join(outputRoot, `cli-no-page-input-${timestamp}`),
     ], 'Provide --url, --route, --vue'));
@@ -238,7 +244,7 @@ async function expectCliFailure(name, commandArgs, expectedMessage) {
 }
 
 async function expectMcpFailure(name, toolArgs, expectedMessage) {
-  const client = await startMcpClient({ cwd: repoRoot });
+  const client = await startMcpClient({ cwd: repoRoot, args: ['--config', e2eConfigPath] });
   try {
     try {
       await client.request('tools/call', {

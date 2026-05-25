@@ -11,6 +11,7 @@ export async function analyzeSourceCapability(
     prototypeRoot: input.source.root,
     route: input.route,
     vue: input.vue,
+    restorationProfile: input.restorationProfile,
   });
   return {
     capability: 'source.analyze',

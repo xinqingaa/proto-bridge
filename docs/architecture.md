@@ -101,6 +101,7 @@ ProtoBridge 不做一对一代码翻译。它做的是证据归一和契约生�
 | Evidence preserving | `page-canonical.json` 作为证据原档，保留 facts、provenance、mismatches 和 manual confirmations。 |
 | Contract centered | `ui-build-plan.json` 是实现蓝图，并承载实现者默认必须读取的高价值证据。 |
 | Target-grounded | 工程表达来自 target repo 扫描，不来自 ProtoBridge 默认偏好。 |
+| Profile-enhanced | 项目增强集中在 restoration profile 中，只提供候选、别名、词表和 token 映射，不伪造 target evidence。 |
 | Visual separated | runtime/screenshot 只负责视觉事实，不决定架构拆分。 |
 | Review projected | `ui-build-review.md` 是审查视图，可以折叠噪音，但不改变实现蓝图。 |
 
@@ -163,7 +164,20 @@ ui-build-plan.json
 1. Source semantics 负责逻辑架构：业务区块、状态意图、Widget contract、哪些不要直译。
 2. Target conventions 负责工程表达：当前 target repo 到底使用什么 state/routing/i18n/theme/component/file organization 模式。
 3. Runtime/screenshot 负责视觉事实：bbox、可见文案、section 顺序、computed style 和截图证据。
-4. Normalizer 只把抽象角色绑定到 target profile 已识别的模式；target profile unknown 时保留抽象建议并输出 warnings/manual questions。
+4. Normalizer 只把抽象角色绑定到 target architecture profile 已识别的模式；target architecture profile unknown 时保留抽象建议并输出 warnings/manual questions。
+
+## Restoration profile
+
+Restoration profile 是 source / target 之外的项目增强层。配置字段叫 `profile`，代码和产物中使用 `RestorationProfile` / `restorationProfile`，避免和 target 扫描出的 `architectureProfile` 混淆。
+
+解析规则：
+
+1. 显式配置 `"youfi"` 等已注册 id 时强制启用对应 profile。
+2. 显式配置 `"generic"` 或 `false` 时禁用业务增强。
+3. 配置 `"auto"` 或不配置时，按 `target.root` 的目录名推断，例如 `../youfi` -> `youfi`。
+4. 推断不到已注册 profile 时回退 `generic`。
+
+profile 可以提供 module aliases、target symbols、role symbols、pattern symbols、usage symbols、theme tokens 和 source lexicon。它的职责是提高候选质量和召回，不是替代证据：target symbol 要成为高置信组件、theme token 要成为高置信映射、route/i18n/theme 要成为实现建议，都必须被 target repo 扫描或 target conventions 证明。
 
 ## Target conventions
 
@@ -179,7 +193,7 @@ Target detector 读取 target root 中的 `pubspec.yaml`、Dart 文件和可用�
 - `fileOrganization.pattern`
 - `documentation.files / architectureHints / conflicts`
 
-GetX、flutter_bloc、Riverpod、Provider、Navigator、go_router、context.t、AppLocalizations、themeService、context.pbColors、CommonAppBar 等都不是默认值。它们只有被扫描到时才能影响 contract。
+GetX、flutter_bloc、Riverpod、Provider、Navigator、go_router、context.t、AppLocalizations、themeService、context.pbColors、CommonAppBar 等都不是通用默认值。它们可以由 restoration profile 纳入候选池，但只有被扫描到时才能以高置信方式影响 contract。
 
 真实代码扫描仍是最高优先级证据；README、AGENT、CLAUDE、Cursor rules 和 `docs/**/*.md` 等文档证据只作为补充。如果文档与 Dart 扫描冲突，产物会保留冲突提示，但不会用文档覆盖代码事实。
 
@@ -204,6 +218,7 @@ GetX、flutter_bloc、Riverpod、Provider、Navigator、go_router、context.t、
 packages/core/src/
 ├── capabilities/
 ├── workflows/capability-first/
+├── profile/
 ├── source/
 ├── snapshot/
 ├── target/
@@ -214,6 +229,7 @@ packages/core/src/
 
 - `capabilities`：共享能力 facade。
 - `workflows/capability-first`：围绕 capabilities 的统一编排。
+- `profile`：restoration profile，集中维护项目增强，例如模块别名、项目组件候选、业务词表和设计 token 映射。
 - `source`：source adapters，例如 Vue prototype analysis。
 - `snapshot`：browser capture、OCR attachment 和 evidence enrichment。
 - `target`：Flutter conventions、examples、planning 和 validation。

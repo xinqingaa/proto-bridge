@@ -462,3 +462,46 @@ pnpm run test:e2e:mcp
 - 过度配置化风险：如果 profile 变成大型配置系统，会增加用户心智负担；因此优先使用内置 profile + auto resolution。
 - profile 滥用风险：profile 只能提供候选和增强，不能绕过 target evidence。
 - 回归风险：每迁移一类强绑定逻辑，都要用 early-exercise 基准检查 plan 质量。
+
+## 执行结果记录
+
+已完成：
+
+- 新增 `packages/core/src/profile/`，集中放置 `genericProfile` 和 `youfiProfile`。
+- 顶层 `profile` 配置已接入 config / CLI / MCP；不配置或 `"auto"` 会按 `target.root` 目录名推断，`../youfi` 命中 `youfi`。
+- `resolveProtoBridgeInput`、workflow、source analyze、target inspect、source-aware semantics、ui plan 已贯通同一个 resolved restoration profile。
+- YouFi module aliases、target symbols、role / pattern / usage symbols、theme token maps、source lexicon 已从通用 core 迁入 `youfiProfile`。
+- `genericProfile` 保留 Flutter / Material 和通用 source 结构词表，不默认包含 `CommonAppBar`、`themeService`、`BaseGetView` 等 YouFi 经验。
+- `ui-build-plan.json` 顶层新增轻量 `restorationProfile` provenance，只记录 `id/mode/inferredFrom/warnings`，不写入完整 profile 词表或 token 表。
+- target symbol 和 theme mapping 仍受 target evidence 约束；profile 只提供候选和增强。
+- README、AGENT、docs、CLI / MCP / core README 和 config example 已同步 profile 边界。
+
+最新真实回归产物：
+
+```text
+../youfi/output/early-exercise-mpkn6b5z-7a2af4
+```
+
+回归结论：
+
+- `restorationProfile = { id: "youfi", mode: "auto", inferredFrom: "youfi", warnings: [] }`
+- `target.module = option`
+- architecture profile 仍为 GetX / GetX routing / GetX `.tr`，theme patterns 包含 `themeService.colors`、`themeService.textStyles` 和 `Theme.of(context)`。
+- reusable components 保留 `CommonAppBar`、`CommonButton`、`CommonImage`、`CommonSvg`、`Pop.sheet`、`YouFiPop`、`BaseGetView`。
+- component mappings 保持 YouFi 组件优先：`CommonAppBar`、`CommonButton`、`SmartRefresher`、`Pop.sheet`。
+- theme mapping 数量与基准一致：128 条，其中 high confidence 62 条。
+- `visualPlan.nodeAudits` 保持 3 个；dynamic hints 保持 `list-count=1`、`money=11`、`quantity=11`。
+- overlay plan 保留 `submit-sheet`、`otm-warn`、`success-modal`、`rules`。
+- repeated groups 保持 1 个；layout conflict / implementation conflict 仍保留 1 个，没有静默吞掉。
+
+已验证：
+
+```bash
+pnpm run typecheck
+pnpm run test:config
+pnpm run generate --url "http://localhost:5173/design/option/early-exercise?is_mobile=1"
+pnpm run test:e2e:cli -- --url "http://localhost:5173/design/option/early-exercise?is_mobile=1"
+pnpm run test:e2e:mcp -- --url "http://localhost:5173/design/option/early-exercise?is_mobile=1"
+```
+
+补充说明：`scripts/test-e2e.mjs` 已改为使用隔离的空 config，避免仓库根目录真实 `proto-bridge.config.json` 污染 target-url / url-only case 的输入组合。

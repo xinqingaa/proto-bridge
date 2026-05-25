@@ -58,6 +58,7 @@ ProtoBridge 的产物体系按证据职责分工，而不是让某一个来源�
 | Mode | 入口形态。CLI 面向终端和批处理，MCP 面向 agent/tool 调用，core 面向嵌入式调用。 |
 | Workflow | 面向常见输入组合的预设编排，例如 source-only、runtime-only、hybrid、screenshot/OCR 和 validation。 |
 | Capability | 可复用的 core 能力，例如 `source.analyze`、`runtime.capture`、`target.inspect`、`ui.plan`、`ui.validate`。 |
+| Restoration profile | source / target 之外的项目增强层。它提供模块别名、项目组件候选、业务词表和 token 映射，但不能伪造 target 扫描证据。 |
 | Artifact | 可持久化的输出产物，例如 `page-canonical.json`、`ui-build-plan.json`、`ui-build-review.md`。 |
 
 CLI 和 MCP 是同一套 core capabilities 的不同入口：
@@ -103,6 +104,7 @@ ui-build-review.md
 | 区域 | 作用 |
 | --- | --- |
 | `targetConventions.architectureProfile` | 目标工程扫描出的 state/routing/i18n/theme/component/file organization 模式。字段值必须来自证据；扫不到就是 `unknown` 或空集合。 |
+| `restorationProfile` | 本次启用的项目增强来源，例如 `generic` 或自动推断出的 `youfi`。它只解释候选和增强来自哪里，不改变 target evidence 语义。 |
 | `implementationContract` | 文件、Widget、状态策略、边界、Widget contract、source semantics、target bindings、warnings 和 manual questions。 |
 | `visualPlan` | viewport、section、bbox、layout evidence、screenshot refs、节点级还原证据和动态文案提示。用于视觉还原，不决定架构拆分。 |
 | `themeMappings` / `componentMappings` | 主题 token、字体锁定、组件复用候选和映射依据。 |
@@ -116,9 +118,9 @@ ui-build-review.md
 
 ## 架构约束
 
-ProtoBridge 没有内置某个 Flutter 架构偏好。GetX、flutter_bloc、Riverpod、Provider、Navigator、go_router、context.t、AppLocalizations、themeService、context.pbColors、CommonAppBar 等都只能作为 target 扫描证据出现，不能作为默认模板或默认禁止项。
+ProtoBridge 通用 core 没有内置某个 Flutter 架构偏好。Restoration profile 可以把 GetX、themeService、CommonAppBar 这类项目经验放进候选池，但高置信 plan 仍必须有 target 扫描证据支撑；扫不到时只能保留抽象建议、低置信候选或人工确认项。
 
-如果 target profile unknown，产物会保留抽象建议，并写入 `contractWarnings` 或 `manualQuestions`。实现者不应该猜测或引入一个新框架。
+`restorationProfile` 与 `targetConventions.architectureProfile` 是两个概念：前者是项目增强配置，后者是 target repo 扫描出来的工程事实。如果 target architecture profile unknown，产物会保留抽象建议，并写入 `contractWarnings` 或 `manualQuestions`。实现者不应该猜测或引入一个新框架。
 
 Typography lock 是 P0 视觉约束：如果 typography mapping 带 `lockToken=true`，实现时必须直接使用扫描或映射得到的 target text style token；除非 plan 明确列出来源覆盖证据，不要再覆盖 `fontSize`、`fontWeight`、`height` 或 `fontFamily`。
 
@@ -143,6 +145,7 @@ npx @proto-bridge/cli init
     "adapter": "flutter-app",
     "root": "/Users/name/work/youfi"
   },
+  "profile": "auto",
   "runtime": {
     "capture": true
   },
@@ -151,6 +154,8 @@ npx @proto-bridge/cli init
   }
 }
 ```
+
+`profile` 是可选字段；不配置或配置为 `"auto"` 时，会用 `target.root` 的目录名自动推断，例如 `/Users/name/work/youfi` 会启用内置 `youfi` profile。配置 `"generic"` 或 `false` 会禁用业务增强，只保留通用能力；显式配置 `"youfi"` 会强制使用 YouFi profile。
 
 每次运行时通过 CLI 参数或交互输入告诉 ProtoBridge 要还原哪个页面。配置了 `source.root` 时会自动从 URL 推导 route 并补充源码证据：
 

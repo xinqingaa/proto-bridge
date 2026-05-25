@@ -23,6 +23,8 @@ import type {
   MappingConfidence,
   UiVisualPlan,
 } from '../../../types/index.js';
+import { genericProfile } from '../../../profile/index.js';
+import type { ResolvedRestorationProfile, RestorationProfile } from '../../../profile/index.js';
 import { toPascalCase } from './migration-planner.js';
 import { buildDynamicTextHints, buildSectionHint } from './ui-reconstruction-content.js';
 import { collectDescendants, dedupe, dedupeBy, parseCssNumber, roundCssNumber, sourceComponents, sourceComponentRole, sourceSections } from './ui-reconstruction-shared.js';
@@ -97,9 +99,11 @@ function sourceLayoutIntentForAudit(
 export function buildVisualPlan(evidence: PageCanonical, targetContext: {
   components: FlutterComponentRef[];
   componentMappings: ComponentMapping[];
+  restorationProfile?: ResolvedRestorationProfile | undefined;
 }): UiVisualPlan {
+  const profile = targetContext.restorationProfile?.profile ?? genericProfile;
   const nodeAuditResult = buildNodeAudits(evidence, targetContext);
-  const dynamicTextHints = buildDynamicTextHints(evidence);
+  const dynamicTextHints = buildDynamicTextHints(evidence, targetContext.restorationProfile);
   const layoutConflicts = buildPlanLayoutConflicts(evidence, { nodeAudits: nodeAuditResult.audits } as UiVisualPlan);
   return {
     viewport: evidence.viewport ?? { width: 0, height: 0 },
@@ -130,18 +134,20 @@ export function buildVisualPlan(evidence: PageCanonical, targetContext: {
 function buildNodeAudits(evidence: PageCanonical, targetContext: {
   components: FlutterComponentRef[];
   componentMappings: ComponentMapping[];
+  restorationProfile?: ResolvedRestorationProfile | undefined;
 }): {
   audits: UiNodeAudit[];
   suppressed: Array<{ nodeId: string; reason: string }>;
 } {
   const byId = new Map(evidence.nodes.map((node) => [node.id, node]));
+  const profile = targetContext.restorationProfile?.profile ?? genericProfile;
   const actionTargetByNodeId = buildActionTargetBindings(evidence, byId);
-  const selected = selectNodeAuditCandidates(evidence, byId);
+  const selected = selectNodeAuditCandidates(evidence, byId, profile);
   const audits = selected.candidates
-    .map((candidate) => buildNodeAudit(candidate.node, byId, candidate.coverageReason, candidate.displayInReview, actionTargetByNodeId))
+    .map((candidate) => buildNodeAudit(candidate.node, byId, candidate.coverageReason, candidate.displayInReview, actionTargetByNodeId, profile))
     .filter((audit): audit is UiNodeAudit => Boolean(audit))
     .map((audit) => enrichNodeAuditWithTargetComponents(audit, byId, evidence, targetContext));
-  const compressed = compressRepeatedNodeAudits(audits);
+  const compressed = compressRepeatedNodeAudits(audits, profile);
   return {
     audits: compressed.audits,
     suppressed: dedupeBy([...compressed.suppressed, ...selected.suppressed], (item) => item.nodeId),
@@ -151,6 +157,7 @@ function buildNodeAudits(evidence: PageCanonical, targetContext: {
 function selectNodeAuditCandidates(
   evidence: PageCanonical,
   byId: Map<string, PageSnapshotNode>,
+  profile: RestorationProfile,
 ): {
   candidates: Array<{ node: PageSnapshotNode; coverageReason: string; displayInReview?: boolean | undefined }>;
   suppressed: Array<{ nodeId: string; reason: string }>;
@@ -160,7 +167,7 @@ function selectNodeAuditCandidates(
     const nodeId = section.nodeIds[0];
     const node = nodeId ? byId.get(nodeId) : undefined;
     if (!node) return [];
-    const decision = shouldIncludeSectionRoot(section, node, byId, evidence);
+    const decision = shouldIncludeSectionRoot(section, node, byId, evidence, profile);
     if (!decision.include) {
       if (decision.reason) suppressed.push({ nodeId: node.id, reason: decision.reason });
       return [];
@@ -221,14 +228,14 @@ function shouldAuditNode(node: PageSnapshotNode): boolean {
   return node.children.length > 0 || Boolean(node.text?.trim()) || Boolean(node.assetRefs?.length);
 }
 
-function compressRepeatedNodeAudits(audits: UiNodeAudit[]): {
+function compressRepeatedNodeAudits(audits: UiNodeAudit[], profile = genericProfile): {
   audits: UiNodeAudit[];
   suppressed: Array<{ nodeId: string; reason: string }>;
 } {
   const groups = new Map<string, UiNodeAudit[]>();
   for (const audit of audits) {
     if (audit.kind !== 'card' && audit.kind !== 'list-item') continue;
-    const key = repeatedAuditGroupKey(audit);
+    const key = repeatedAuditGroupKey(audit, profile);
     const current = groups.get(key) ?? [];
     current.push(audit);
     groups.set(key, current);
@@ -244,7 +251,7 @@ function compressRepeatedNodeAudits(audits: UiNodeAudit[]): {
     if (!representative) continue;
     const groupId = `${representative.kind}-group-${groupIndex}`;
     groupIndex += 1;
-    const instances = sorted.map((audit) => buildRepeatedAuditInstance(audit, representative));
+    const instances = sorted.map((audit) => buildRepeatedAuditInstance(audit, representative, profile));
     const instanceNodeIds = sorted.map((audit) => audit.sourceNodeId);
     for (const audit of sorted.slice(1)) {
       compressedIds.add(audit.sourceNodeId);
@@ -263,7 +270,7 @@ function compressRepeatedNodeAudits(audits: UiNodeAudit[]): {
         instanceCount: sorted.length,
         representativeNodeId: representative.sourceNodeId,
         instanceNodeIds,
-        commonSignature: repeatedAuditCommonSignature(representative),
+        commonSignature: repeatedAuditCommonSignature(representative, profile),
       },
       instances,
     });
@@ -276,28 +283,28 @@ function compressRepeatedNodeAudits(audits: UiNodeAudit[]): {
   };
 }
 
-function repeatedAuditGroupKey(audit: UiNodeAudit): string {
+function repeatedAuditGroupKey(audit: UiNodeAudit, profile = genericProfile): string {
   return [
     audit.kind,
     audit.rows.length,
-    ...audit.rows.map((row) => row.children.map((child) => childStructureSignature(child)).join(',')),
-    `controls:${audit.controls.map((control) => `${control.kind}:${semanticTextClass(control.text)}`).join(',')}`,
+    ...audit.rows.map((row) => row.children.map((child) => childStructureSignature(child, profile)).join(',')),
+    `controls:${audit.controls.map((control) => `${control.kind}:${semanticTextClass(control.text, profile)}`).join(',')}`,
     `container:${styleSignature(audit.containerStyle, ['display', 'flexDirection', 'alignItems', 'justifyContent'])}`,
     `size:${Math.round(audit.bbox.width / 8) * 8}x${Math.round(audit.bbox.height / 8) * 8}`,
   ].join('|');
 }
 
-function childStructureSignature(child: UiNodeAuditChild): string {
+function childStructureSignature(child: UiNodeAuditChild, profile = genericProfile): string {
   return [
     child.role,
-    semanticTextClass(child.text),
+    semanticTextClass(child.text, profile),
   ].join(':');
 }
 
-function childRoleSignature(child: UiNodeAuditChild): string {
+function childRoleSignature(child: UiNodeAuditChild, profile = genericProfile): string {
   return [
     child.role,
-    semanticTextClass(child.text),
+    semanticTextClass(child.text, profile),
     styleSignature(child.style, ['fontSize', 'fontWeight', 'lineHeight', 'padding', 'borderRadius', 'border', 'height']),
   ].join(':');
 }
@@ -306,11 +313,11 @@ function styleSignature(style: UiNodeAuditStyle, fields: Array<keyof UiNodeAudit
   return fields.map((field) => `${field}=${style[field] ?? ''}`).join(';');
 }
 
-function repeatedAuditCommonSignature(audit: UiNodeAudit): NonNullable<UiNodeAudit['repeatedGroup']>['commonSignature'] {
+function repeatedAuditCommonSignature(audit: UiNodeAudit, profile = genericProfile): NonNullable<UiNodeAudit['repeatedGroup']>['commonSignature'] {
   return {
     kind: audit.kind,
     rowCount: audit.rows.length,
-    rowRoleSignature: audit.rows.map((row) => row.children.map((child) => childRoleSignature(child)).join(' | ')),
+    rowRoleSignature: audit.rows.map((row) => row.children.map((child) => childRoleSignature(child, profile)).join(' | ')),
     controlSignature: audit.controls.map((control) => `${control.kind}:${styleSignature(control.style, ['fontSize', 'fontWeight', 'lineHeight', 'padding', 'borderRadius', 'height'])}`),
     styleSignature: Object.fromEntries(
       (['display', 'flexDirection', 'alignItems', 'justifyContent', 'padding', 'borderRadius', 'border', 'boxShadow'] as Array<keyof UiNodeAuditStyle>)
@@ -319,7 +326,7 @@ function repeatedAuditCommonSignature(audit: UiNodeAudit): NonNullable<UiNodeAud
   };
 }
 
-function buildRepeatedAuditInstance(audit: UiNodeAudit, base: UiNodeAudit): UiNodeAuditInstance {
+function buildRepeatedAuditInstance(audit: UiNodeAudit, base: UiNodeAudit, profile = genericProfile): UiNodeAuditInstance {
   const rowText = audit.rows.map((row) => row.children.map((child) => child.text ?? child.assetRefs?.join(',') ?? child.role));
   const baseRowText = base.rows.map((row) => row.children.map((child) => child.text ?? child.assetRefs?.join(',') ?? child.role));
   const fieldValues = repeatedAuditFieldValues(audit);
@@ -330,18 +337,18 @@ function buildRepeatedAuditInstance(audit: UiNodeAudit, base: UiNodeAudit): UiNo
       field,
       base: baseFieldValues[field],
       actual: value,
-      risk: deltaRiskForField(field, baseFieldValues[field], value),
+      risk: deltaRiskForField(field, baseFieldValues[field], value, profile),
     }));
   return {
     nodeId: audit.sourceNodeId,
     bbox: audit.bbox,
     rowText,
     fieldValues,
-    semanticHints: Object.fromEntries(Object.keys(fieldValues).map((field) => [field, semanticHintForField(field, fieldValues[field] ?? '')])),
+    semanticHints: Object.fromEntries(Object.keys(fieldValues).map((field) => [field, semanticHintForField(field, fieldValues[field] ?? '', profile)])),
     textDeltas,
     styleDeltas: styleDeltasForAudit(audit, base),
     controlDeltas: controlDeltasForAudit(audit, base),
-    stateDeltas: stateDeltasForValues(fieldValues, baseFieldValues),
+    stateDeltas: stateDeltasForValues(fieldValues, baseFieldValues, profile),
     layoutDeltas: layoutDeltasForAudit(audit, base, baseRowText, rowText),
     missingEvidence: missingEvidenceForInstance(audit, base),
   };
@@ -358,29 +365,29 @@ function repeatedAuditFieldValues(audit: UiNodeAudit): Record<string, string> {
   return values;
 }
 
-function semanticTextClass(text: string | undefined): string {
+function semanticTextClass(text: string | undefined, profile = genericProfile): string {
   if (!text) return 'non-text';
   if (/^\$?\d+(?:\.\d+)?%?$/.test(text) || /^\$/.test(text)) return 'numeric';
-  if (/^(ITM|OTM|ATM)$/i.test(text)) return 'status';
-  if (/^\d+D$/i.test(text)) return 'time-badge';
-  if (/^(Held|Qty|Quantity|Shares)\s+\d+/i.test(text)) return 'quantity';
+  if (profileStatusPattern(profile).test(text)) return 'status';
+  if (profileTimeBadgePattern(profile).test(text)) return 'time-badge';
+  if (profileQuantityPattern(profile).test(text)) return 'quantity';
   if (/^[A-Z]{1,6}$/.test(text)) return 'symbol-like';
   if (/\d{4}-\d{2}-\d{2}/.test(text)) return 'contract-like';
   return 'text';
 }
 
-function semanticHintForField(field: string, value: string): string {
-  const cls = semanticTextClass(value);
+function semanticHintForField(field: string, value: string, profile = genericProfile): string {
+  const cls = semanticTextClass(value, profile);
   if (cls !== 'text' && cls !== 'non-text') return cls;
   if (/row1_col1/.test(field)) return 'primary-text';
   if (/row3_col/.test(field)) return 'action-or-quantity';
   return cls;
 }
 
-function deltaRiskForField(field: string, base: string | undefined, actual: string): string | undefined {
-  if (/ITM|OTM|ATM/i.test(`${base ?? ''} ${actual}`)) return 'Do not hard-code one status text or style for all repeated items.';
-  if (/\dD/i.test(`${base ?? ''} ${actual}`)) return 'Do not hard-code one time badge value for all repeated items.';
-  if (/Held|Qty|Quantity|Shares/i.test(`${base ?? ''} ${actual}`)) return 'Quantity-like text should be data-driven per repeated item.';
+function deltaRiskForField(field: string, base: string | undefined, actual: string, profile = genericProfile): string | undefined {
+  if (profileStatusPattern(profile).test(`${base ?? ''} ${actual}`)) return 'Do not hard-code one status text or style for all repeated items.';
+  if (profileTimeBadgePattern(profile).test(`${base ?? ''} ${actual}`)) return 'Do not hard-code one time badge value for all repeated items.';
+  if (profileQuantityPattern(profile).test(`${base ?? ''} ${actual}`)) return 'Quantity-like text should be data-driven per repeated item.';
   if (/^\$/.test(base ?? '') || /^\$/.test(actual)) return 'Price/value text should be data-driven per repeated item.';
   return undefined;
 }
@@ -444,9 +451,9 @@ function controlDeltasForAudit(audit: UiNodeAudit, base: UiNodeAudit): UiNodeAud
   return deltas.slice(0, 24);
 }
 
-function stateDeltasForValues(values: Record<string, string>, baseValues: Record<string, string>): UiNodeAuditInstanceDelta[] {
+function stateDeltasForValues(values: Record<string, string>, baseValues: Record<string, string>, profile = genericProfile): UiNodeAuditInstanceDelta[] {
   return Object.entries(values)
-    .filter(([field, value]) => semanticTextClass(value) !== semanticTextClass(baseValues[field]))
+    .filter(([field, value]) => semanticTextClass(value, profile) !== semanticTextClass(baseValues[field], profile))
     .map(([field, value]) => ({
       field,
       base: baseValues[field],
@@ -486,6 +493,7 @@ function shouldIncludeSectionRoot(
   node: PageSnapshotNode,
   byId: Map<string, PageSnapshotNode>,
   evidence: PageCanonical,
+  profile: RestorationProfile,
 ): { include: boolean; reason?: string | undefined } {
   if (isMisleadingWrapper(node, byId, evidence)) {
     return { include: false, reason: 'large wrapper is covered by more specific child nodeAudits.' };
@@ -503,7 +511,7 @@ function shouldIncludeSectionRoot(
   }
   if (section.role === 'section') {
     const text = node.text ?? section.title ?? '';
-    const focusedText = /sort|filter|排序|筛选|history|record|help|positions|持仓|可行权|行权|到期|value|expiration/i.test(text);
+    const focusedText = focusedSectionPattern(profile).test(text);
     const compact = section.bbox.height <= 180 && section.nodeIds.length <= 28;
     const hasDisplayEvidence = collectDescendants(node, byId).some((child) => isAuditVisibleChild(child) || isAuditControl(child));
     if ((focusedText || compact) && hasDisplayEvidence) {
@@ -595,6 +603,7 @@ function buildNodeAudit(
   coverageReason: string,
   displayInReviewOverride?: boolean | undefined,
   actionTargetByNodeId: Map<string, UiInteractionTarget> = new Map(),
+  profile: RestorationProfile = genericProfile,
 ): UiNodeAudit | undefined {
   const descendants = collectDescendants(node, byId).filter((item) => item.id !== node.id);
   const visibleChildren = descendants
@@ -613,7 +622,7 @@ function buildNodeAudit(
     .map((item) => toAuditChild(item));
   const rows = groupAuditRows(visibleChildren.map((item) => toAuditChild(item))).slice(0, 12);
   const layoutConflicts = detectLayoutConflicts(node, directChildren, rows);
-  const absenceHints = buildAbsenceHints(node, visibleChildren);
+  const absenceHints = buildAbsenceHints(node, visibleChildren, profile);
   const implementationHints = buildNodeAuditImplementationHints(node, controls, layoutConflicts);
   const actionMappings = buildActionMappingsForAudit(node, kind, controls);
   const priority = priorityForAudit(node, kind, rows, controls, absenceHints);
@@ -1359,16 +1368,63 @@ function pickAuditStyle(node: PageSnapshotNode, options: { includeBox?: boolean;
   };
 }
 
-function buildAbsenceHints(node: PageSnapshotNode, visibleChildren: PageSnapshotNode[]): string[] {
+function buildAbsenceHints(
+  node: PageSnapshotNode,
+  visibleChildren: PageSnapshotNode[],
+  profile: RestorationProfile,
+): string[] {
   const hints = [
     'Representative node rows list the visible display fields; do not add extra sibling fields unless sourceSemantics or user confirmation requires them.',
   ];
   const text = visibleChildren.map((child) => child.text ?? '').join(' ').toLowerCase();
-  const quantityLike = /\bheld\b|\bposition\b|\bquantity\b|\bshares\b|\bqty\b|持股|持仓|可行权/.test(text);
+  const quantityLike = profileQuantityTermPattern(profile).test(text);
   if ((node.role === 'card' || node.role === 'list-item') && quantityLike && !/\bavail(?:able)?\b|可用/.test(text)) {
     hints.push('No available quantity field is visible in this representative card/list item.');
   }
   return hints;
+}
+
+function focusedSectionPattern(profile: RestorationProfile): RegExp {
+  const terms = [
+    'sort',
+    'filter',
+    '排序',
+    '筛选',
+    'history',
+    'record',
+    'help',
+    'value',
+    ...(profile.sourceLexicon?.listHeadingTerms ?? []),
+  ];
+  return termsPattern(terms);
+}
+
+function profileQuantityPattern(profile: RestorationProfile): RegExp {
+  const terms = profile.sourceLexicon?.dynamicQuantityTerms ?? [];
+  const pattern = terms.map(escapeRegExp).join('|');
+  return pattern ? new RegExp(`(?:${pattern})\\s*\\d+`, 'i') : /$a/;
+}
+
+function profileQuantityTermPattern(profile: RestorationProfile): RegExp {
+  return termsPattern(profile.sourceLexicon?.dynamicQuantityTerms ?? []);
+}
+
+function profileStatusPattern(profile: RestorationProfile): RegExp {
+  return termsPattern(profile.sourceLexicon?.statusTerms ?? []);
+}
+
+function profileTimeBadgePattern(profile: RestorationProfile): RegExp {
+  const pattern = profile.sourceLexicon?.timeBadgePattern;
+  return pattern ? new RegExp(pattern, 'i') : /$a/;
+}
+
+function termsPattern(terms: string[]): RegExp {
+  const pattern = terms.filter(Boolean).map(escapeRegExp).join('|');
+  return pattern ? new RegExp(pattern, 'i') : /$a/;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function buildNodeAuditImplementationHints(

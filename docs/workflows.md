@@ -33,10 +33,11 @@ input
 | Source semantics | `implementationContract.sourceSemantics` | 业务区块、状态意图、Widget contract、交互/生命周期意图、禁止直译项。 |
 | Target conventions | `targetConventions.architectureProfile` | state、routing、i18n、theme、components、file organization 的目标工程证据。 |
 | Runtime/screenshot facts | `visualPlan` | viewport、section、bbox、layout evidence、screenshot refs、nodeAudits、dynamicTextHints。 |
+| Restoration profile | `restorationProfile`、`themeMappings`、`componentMappings`、source semantics 增强 | 项目增强候选、模块别名、业务词表和 token 映射；不替代 target 扫描证据。 |
 | Token/component evidence | `themeMappings`、`componentMappings` | 主题 token、字体锁定、组件复用候选。 |
 | Validation expectations | `implementationContract.fileTree`、`validationHints` | 预期文件、架构规则和实现后校验提示。 |
 
-冲突时遵循：source semantics 负责逻辑架构，target conventions 负责工程表达，runtime/screenshot 负责视觉事实。target profile unknown 时保留抽象建议并输出 warnings/manual questions，不猜测具体框架。
+冲突时遵循：source semantics 负责逻辑架构，target conventions 负责工程表达，runtime/screenshot 负责视觉事实。restoration profile 只提供增强候选，target architecture profile unknown 时保留抽象建议并输出 warnings/manual questions，不猜测具体框架。
 
 重复 UI 单元和动态值是实现偏差高发区。planner 会把 canonical 中的节点级视觉事实提升到 `visualPlan.nodeAudits`，把列表数量、金额、百分比、日期、数量标签等提升到 `visualPlan.dynamicTextHints` 并同步到 `i18nPlan.texts[*].dynamic`。实现阶段应直接消费这些 plan 字段；只有需要追溯 provenance、解决冲突或补查未提升字段时，才回到 `page-canonical.json` 和 `page-debug-index.json`。
 
@@ -223,7 +224,7 @@ Validation 会报告：
 - plan 预期但缺失的 files。
 - changed Dart files 中的 placeholder text、TODO markers、hard-coded colors、hard-coded font sizes、local shadows、network images 和 navigation risk markers。
 - 传入 `pageId` 时来自 `ui-build-plan.json` 的 validation hints。
-- 基于 `targetConventions` 和 `implementationContract` 的架构契约偏离，例如引入未被 target profile 证明的新 state/routing/i18n/theme 模式、缺失预期文件，或生成 runtime DOM section 风格文件。
+- 基于 `targetConventions` 和 `implementationContract` 的架构契约偏离，例如引入未被 target architecture profile 证明的新 state/routing/i18n/theme 模式、缺失预期文件，或生成 runtime DOM section 风格文件。
 - 子 Widget 是否违反 `widgetContracts`，例如不该读取整页状态却直接依赖 controller/cubit/provider。
 
 如果 target architecture profile 是 `unknown`，validation 应输出 warnings/manual questions，不应把未知模式当成硬错误。
@@ -243,7 +244,7 @@ Validation 会报告：
 
 不要只看 `visualPlan.sections` 就实现重复卡片或列表项。`sections` 用于页面区域定位，`nodeAudits` 才是重复项、控件和关键行结构的还原契约。`dynamicTextHints` 和 `i18nPlan.texts[*].dynamic` 用于区分稳定翻译文案和模型派生值，避免把数量、价格、日期、百分比等写死到翻译 key 或 mock 文案中。
 
-不要引入 `targetConventions` 没有证据支持的新 state、routing、i18n 或 theme 框架。GetX、flutter_bloc、Riverpod、Provider、Navigator、go_router、context.t、AppLocalizations、themeService、context.pbColors、CommonAppBar 等都只能作为 target 扫描结果影响实现；扫不到时保留抽象建议并记录待确认问题。
+不要引入 `targetConventions` 没有证据支持的新 state、routing、i18n 或 theme 框架。GetX、flutter_bloc、Riverpod、Provider、Navigator、go_router、context.t、AppLocalizations、themeService、context.pbColors、CommonAppBar 等可以由 restoration profile 纳入候选，但仍只能作为 target 扫描结果影响高置信实现；扫不到时保留抽象建议并记录待确认问题。
 
 ## 排查视觉问题
 

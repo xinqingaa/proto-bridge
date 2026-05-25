@@ -5,155 +5,8 @@ import type {
   TokenMapResult,
   TokenMapping,
 } from '../../types/index.js';
-
-const COLOR_TOKEN_MAP: Record<string, string> = {
-  '--color-primary-normal': 'themeService.colors.colorPrimaryNormal',
-  '--color-primary-pressed': 'themeService.colors.colorPrimaryPressed',
-  '--color-text-normal': 'themeService.colors.colorTextNormal',
-  '--color-text-title': 'themeService.colors.colorTextTitle',
-  '--color-text-regular': 'themeService.colors.colorTextRegular',
-  '--color-text-description': 'themeService.colors.colorTextDescription',
-  '--color-text-secondary': 'themeService.colors.colorTextSecondary',
-  '--color-text-label': 'themeService.colors.colorTextLabel',
-  '--color-text-light': 'themeService.colors.colorTextLight',
-  '--color-text-light-1': 'themeService.colors.colorTextLight1',
-  '--color-bg-base': 'themeService.colors.colorBgBase',
-  '--color-bg-1': 'themeService.colors.colorBg1',
-  '--color-bg-surface-1': 'themeService.colors.colorBgSurface1',
-  '--color-bg-surface-2': 'themeService.colors.colorBgSurface2',
-  '--color-sheet-bg': 'themeService.colors.colorSheetBg',
-  '--color-popup-bg': 'themeService.colors.colorPopupBg',
-  '--color-bg-mask-1': 'themeService.colors.colorBgMask1',
-  '--color-bg-mask-2': 'themeService.colors.colorBgMask2',
-  '--color-light-line': 'themeService.colors.colorLightLine',
-  '--color-heavy-line': 'themeService.colors.colorHeavyLine',
-  '--color-disabled': 'themeService.colors.colorDisabled',
-  '--color-warning': 'themeService.colors.colorWarning',
-  '--color-error': 'themeService.colors.colorError',
-  '--color-redpoint': 'themeService.colors.colorRedpoint',
-  '--color-succeed': 'themeService.colors.colorSucceed',
-  '--color-icon-brand': 'themeService.colors.colorIconBrand',
-  '--color-icon-default': 'themeService.colors.colorIconDefault',
-  '--color-icon-secondary': 'themeService.colors.colorIconSecondary',
-  '--color-icon-primary': 'themeService.colors.colorIconPrimary',
-  '--color-icon-disabled': 'themeService.colors.colorIconDisabled',
-  '--color-icon-purple': 'themeService.colors.colorIconPurple',
-  '--color-button-brand': 'themeService.colors.colorButtonBrand',
-  '--color-button-disabled': 'themeService.colors.colorButtonDisabled',
-  '--color-trend-red-1': 'themeService.colors.colorTrendRed1',
-  '--color-trend-red-2': 'themeService.colors.colorTrendRed2',
-  '--color-trend-red-3': 'themeService.colors.colorTrendRed3',
-  '--color-trend-green-1': 'themeService.colors.colorTrendGreen1',
-  '--color-trend-green-2': 'themeService.colors.colorTrendGreen2',
-  '--color-trend-green-3': 'themeService.colors.colorTrendGreen3',
-  '--color-trend-flat': 'themeService.colors.colorTrendFlat',
-  '--color-trend-up-disabled': 'themeService.colors.colorTrendUpDisabled',
-  '--color-trend-down-disabled': 'themeService.colors.colorTrendDownDisabled',
-  '--color-chart-line-1': 'themeService.colors.colorChartLine1',
-  '--color-chart-line-2': 'themeService.colors.colorChartLine2',
-  '--color-chart-line-3': 'themeService.colors.colorChartLine3',
-  '--color-chart-line-4': 'themeService.colors.colorChartLine4',
-  '--color-chart-line-5': 'themeService.colors.colorChartLine5',
-  '--color-chart-line-6': 'themeService.colors.colorChartLine6',
-  '--color-chart-line-7': 'themeService.colors.colorChartLine7',
-  '--color-favourite': 'themeService.colors.colorFavourite',
-};
-
-const TYPOGRAPHY_TOKEN_MAP: Record<string, string> = {
-  'headline-b': 'themeService.textStyles.headlineB',
-  'headline-m': 'themeService.textStyles.headlineM',
-  'title-b': 'themeService.textStyles.titleB',
-  'title-m': 'themeService.textStyles.titleM',
-  'body-m': 'themeService.textStyles.bodyM',
-  'body-r': 'themeService.textStyles.bodyR',
-  'small1-m': 'themeService.textStyles.small1M',
-  'small1-r': 'themeService.textStyles.small1R',
-  'small2-r': 'themeService.textStyles.small2R',
-  'small3-r': 'themeService.textStyles.small3R',
-  'small4-r': 'themeService.textStyles.small4R',
-  'small4-m': 'themeService.textStyles.small4M',
-  'number1-b': 'themeService.textStyles.number1B',
-  'number2-b': 'themeService.textStyles.number2B',
-  'number3-b': 'themeService.textStyles.number3B',
-  'tab-b': 'themeService.textStyles.tabB',
-  'tab-m': 'themeService.textStyles.tabM',
-};
-
-const COLOR_TOKEN_VALUES: Record<string, string> = {
-  '--color-primary-normal': '#1a2028',
-  '--color-primary-pressed': '#0f1217',
-  '--color-text-normal': '#1a2028',
-  '--color-text-title': '#1a2028',
-  '--color-text-regular': '#1a2028',
-  '--color-text-description': '#6b707f',
-  '--color-text-secondary': '#9a9fa5',
-  '--color-text-label': '#c6c8cb',
-  '--color-text-light': '#ffffff',
-  '--color-text-light-1': '#ffffff',
-  '--color-bg-base': '#ffffff',
-  '--color-bg-1': '#f1f1f1',
-  '--color-bg-surface-1': '#f8f8f9',
-  '--color-bg-surface-2': '#f8f8f9',
-  '--color-sheet-bg': '#ffffff',
-  '--color-popup-bg': '#ffffff',
-  '--color-bg-mask-1': '#1a20288c',
-  '--color-bg-mask-2': '#1a20282d',
-  '--color-light-line': '#f1f1f1',
-  '--color-heavy-line': '#eeeeee',
-  '--color-disabled': '#bfc1c5',
-  '--color-warning': '#ff175266',
-  '--color-error': '#ff1752',
-  '--color-redpoint': '#ff1752',
-  '--color-succeed': '#00b98b',
-  '--color-icon-brand': '#1a2028',
-  '--color-icon-default': '#5e00ff',
-  '--color-icon-secondary': '#6d7279',
-  '--color-icon-primary': '#6d7279',
-  '--color-icon-disabled': '#bfc1c5',
-  '--color-icon-purple': '#5e00ff',
-  '--color-button-brand': '#1a2028',
-  '--color-button-disabled': '#bfc1c5',
-  '--color-trend-red-1': '#f41c53',
-  '--color-trend-red-2': '#f41c5314',
-  '--color-trend-red-3': '#f41c531e',
-  '--color-trend-green-1': '#00ac6d',
-  '--color-trend-green-2': '#00ac6d14',
-  '--color-trend-green-3': '#00ac6d1e',
-  '--color-trend-flat': '#616f85',
-  '--color-trend-up-disabled': '#f2b1cb',
-  '--color-trend-down-disabled': '#b2e6d3',
-  '--color-chart-line-1': '#7e3eff',
-  '--color-chart-line-2': '#ec00ff',
-  '--color-chart-line-3': '#f47927',
-  '--color-chart-line-4': '#ffbf00',
-  '--color-chart-line-5': '#e8d639',
-  '--color-chart-line-6': '#8bbb11',
-  '--color-chart-line-7': '#349dff',
-  '--color-favourite': '#ff7300',
-};
-
-const TYPOGRAPHY_TOKEN_VALUES: Record<string, string> = {
-  'headline-b': '17px/22px/700',
-  'headline-m': '17px/22px/500',
-  'title-b': '20px/28px/700',
-  'title-m': '20px/28px/500',
-  'body-m': '15px/20px/500',
-  'body-r': '15px/20px/400',
-  'small1-m': '13px/16px/500',
-  'small1-r': '13px/16px/400',
-  'small2-r': '12px/16px/400',
-  'small3-r': '11px/14px/400',
-  'small4-r': '10px/14px/400',
-  'small4-m': '10px/14px/500',
-  'number1-b': '34px/46px/700',
-  'number2-b': '30px/40px/700',
-  'number3-b': '24px/32px/700',
-  'tab-b': '18px/24px/700',
-  'tab-m': '18px/24px/500',
-};
-
-const COLOR_VALUE_INDEX = buildReverseTokenIndex(COLOR_TOKEN_VALUES, COLOR_TOKEN_MAP);
-const TYPOGRAPHY_VALUE_INDEX = buildReverseTokenIndex(TYPOGRAPHY_TOKEN_VALUES, TYPOGRAPHY_TOKEN_MAP);
+import { genericProfile } from '../../profile/index.js';
+import type { ResolvedRestorationProfile, RestorationProfile } from '../../profile/index.js';
 
 export type RuntimeThemeResolution = {
   target?: string | undefined;
@@ -166,8 +19,9 @@ export type RuntimeThemeResolution = {
 export function mapTokens(input: MapTokensInput): TokenMapResult {
   const target = input.target ?? 'flutter';
   const sourceCode = input.sourceCode ?? '';
-  const colors = mapColorTokens(collectColorTokenSources(sourceCode), target);
-  const typography = mapTypographyTokens(collectTypographyTokenSources(sourceCode), target);
+  const profile = currentProfile(input.restorationProfile);
+  const colors = mapColorTokens(collectColorTokenSources(sourceCode), target, profile);
+  const typography = mapTypographyTokens(collectTypographyTokenSources(sourceCode), target, profile);
   const unresolved = [
     ...colors.filter((mapping) => !mapping.target),
     ...typography.filter((mapping) => !mapping.target),
@@ -185,28 +39,34 @@ export function getKnownTokenMaps(): {
   colors: Record<string, string>;
   typography: Record<string, string>;
 } {
+  const tokens = themeTokens(genericProfile);
   return {
-    colors: { ...COLOR_TOKEN_MAP },
-    typography: { ...TYPOGRAPHY_TOKEN_MAP },
+    colors: { ...tokens.colors },
+    typography: { ...tokens.typography },
   };
 }
 
-export function resolveFlutterTypographyMixinTarget(mixin: string): RuntimeThemeResolution {
+export function resolveFlutterTypographyMixinTarget(
+  mixin: string,
+  restorationProfile?: ResolvedRestorationProfile | undefined,
+): RuntimeThemeResolution {
+  const profile = currentProfile(restorationProfile);
+  const tokens = themeTokens(profile);
   const normalized = mixin.trim().replace(/^@include\s+/, '');
-  const target = TYPOGRAPHY_TOKEN_MAP[normalized];
+  const target = tokens.typography[normalized];
   if (target) {
     return {
       target,
       candidateTargets: [target],
       matchedBy: 'source-mixin',
       confidence: 'high',
-      reason: `Source typography mixin @include ${normalized} maps to a built-in YouFi text style.`,
+      reason: `Source typography mixin @include ${normalized} maps to ${profile.id} profile text style.`,
     };
   }
   return {
     matchedBy: 'family',
     confidence: 'low',
-    reason: `No built-in YouFi text style mapping found for source typography mixin @include ${normalized}.`,
+    reason: `No ${profile.id} profile text style mapping found for source typography mixin @include ${normalized}.`,
   };
 }
 
@@ -214,13 +74,16 @@ export function resolveFlutterColorTarget(input: {
   cssVar?: string | undefined;
   value: string;
   source?: string | undefined;
+  restorationProfile?: ResolvedRestorationProfile | undefined;
 }): RuntimeThemeResolution {
-  if (input.cssVar && COLOR_TOKEN_MAP[input.cssVar]) {
+  const profile = currentProfile(input.restorationProfile);
+  const tokens = themeTokens(profile);
+  if (input.cssVar && tokens.colors[input.cssVar]) {
     return {
-      target: COLOR_TOKEN_MAP[input.cssVar],
+      target: tokens.colors[input.cssVar],
       matchedBy: 'css-var',
       confidence: 'high',
-      reason: `Matched captured color css variable ${input.cssVar} to a built-in YouFi color token.`,
+      reason: `Matched captured color css variable ${input.cssVar} to ${profile.id} profile color token.`,
     };
   }
 
@@ -233,14 +96,15 @@ export function resolveFlutterColorTarget(input: {
     };
   }
 
-  const matches = rankColorTargets(COLOR_VALUE_INDEX.get(normalized) ?? [], input.source);
+  const colorValueIndex = buildReverseTokenIndex(tokens.colorValues, tokens.colors);
+  const matches = rankColorTargets(colorValueIndex.get(normalized) ?? [], input.source);
   if (matches.length === 1) {
     return {
       target: matches[0],
       candidateTargets: matches,
       matchedBy: 'exact',
       confidence: 'high',
-      reason: `Captured color ${normalized} exactly matches a built-in YouFi color token.`,
+      reason: `Captured color ${normalized} exactly matches ${profile.id} profile color token.`,
     };
   }
   if (matches.length > 1) {
@@ -249,19 +113,22 @@ export function resolveFlutterColorTarget(input: {
       candidateTargets: matches,
       matchedBy: 'ambiguous',
       confidence: 'medium',
-      reason: `Captured color ${normalized} matches multiple YouFi color tokens; prefer the first candidate and keep the others for review.`,
+      reason: `Captured color ${normalized} matches multiple ${profile.id} profile color tokens; prefer the first candidate and keep the others for review.`,
     };
   }
   return {
     matchedBy: 'family',
     confidence: 'low',
-    reason: `No exact YouFi color token found for captured color ${normalized}; fall back to the closest theme family.`,
+    reason: `No exact ${profile.id} profile color token found for captured color ${normalized}; fall back to the closest theme family.`,
   };
 }
 
 export function resolveFlutterTypographyTarget(input: {
   value: string;
+  restorationProfile?: ResolvedRestorationProfile | undefined;
 }): RuntimeThemeResolution {
+  const profile = currentProfile(input.restorationProfile);
+  const tokens = themeTokens(profile);
   const normalized = normalizeTypographyValue(input.value);
   if (!normalized) {
     return {
@@ -271,14 +138,15 @@ export function resolveFlutterTypographyTarget(input: {
     };
   }
 
-  const matches = TYPOGRAPHY_VALUE_INDEX.get(normalized) ?? [];
+  const typographyValueIndex = buildReverseTokenIndex(tokens.typographyValues, tokens.typography);
+  const matches = typographyValueIndex.get(normalized) ?? [];
   if (matches.length === 1) {
     return {
       target: matches[0],
       candidateTargets: matches,
       matchedBy: 'exact',
       confidence: 'high',
-      reason: `Captured typography ${normalized} exactly matches a built-in YouFi text style.`,
+      reason: `Captured typography ${normalized} exactly matches ${profile.id} profile text style.`,
     };
   }
   if (matches.length > 1) {
@@ -287,13 +155,13 @@ export function resolveFlutterTypographyTarget(input: {
       candidateTargets: matches,
       matchedBy: 'ambiguous',
       confidence: 'medium',
-      reason: `Captured typography ${normalized} matches multiple YouFi text styles; prefer the first candidate and keep the others for review.`,
+      reason: `Captured typography ${normalized} matches multiple ${profile.id} profile text styles; prefer the first candidate and keep the others for review.`,
     };
   }
   return {
     matchedBy: 'family',
     confidence: 'low',
-    reason: `No exact YouFi text style found for captured typography ${normalized}; fall back to the closest textStyles family.`,
+    reason: `No exact ${profile.id} profile text style found for captured typography ${normalized}; fall back to the closest textStyles family.`,
   };
 }
 
@@ -321,30 +189,50 @@ function collectTypographyTokenSources(sourceCode: string): string[] {
   return [...tokens].sort();
 }
 
-function mapColorTokens(tokens: string[], target: TargetPlatform): TokenMapping[] {
+function mapColorTokens(tokens: string[], target: TargetPlatform, profile: RestorationProfile): TokenMapping[] {
+  const profileTokens = themeTokens(profile);
   return tokens.map((token) => {
-    const mapped = COLOR_TOKEN_MAP[token];
+    const mapped = profileTokens.colors[token];
     return {
       source: token,
       target: mapped,
       targetPlatform: target,
       confidence: mapped ? 'high' : 'low',
-      reason: mapped ? 'Built-in YouFi color token mapping.' : 'No built-in Flutter color token mapping.',
+      reason: mapped ? `${profile.id} profile color token mapping.` : 'No profile Flutter color token mapping.',
     };
   });
 }
 
-function mapTypographyTokens(tokens: string[], target: TargetPlatform): TokenMapping[] {
+function mapTypographyTokens(tokens: string[], target: TargetPlatform, profile: RestorationProfile): TokenMapping[] {
+  const profileTokens = themeTokens(profile);
   return tokens.map((token) => {
-    const mapped = TYPOGRAPHY_TOKEN_MAP[token];
+    const mapped = profileTokens.typography[token];
     return {
       source: `@include ${token}`,
       target: mapped,
       targetPlatform: target,
       confidence: mapped ? 'high' : 'low',
-      reason: mapped ? 'Built-in YouFi typography token mapping.' : 'No built-in Flutter text style mapping.',
+      reason: mapped ? `${profile.id} profile typography token mapping.` : 'No profile Flutter text style mapping.',
     };
   });
+}
+
+function currentProfile(input: ResolvedRestorationProfile | undefined): RestorationProfile {
+  return input?.profile ?? genericProfile;
+}
+
+function themeTokens(profile: RestorationProfile): {
+  colors: Record<string, string>;
+  colorValues: Record<string, string>;
+  typography: Record<string, string>;
+  typographyValues: Record<string, string>;
+} {
+  return {
+    colors: profile.themeTokens?.colors ?? {},
+    colorValues: profile.themeTokens?.colorValues ?? {},
+    typography: profile.themeTokens?.typography ?? {},
+    typographyValues: profile.themeTokens?.typographyValues ?? {},
+  };
 }
 
 function mapComputedStyleFallbacks(

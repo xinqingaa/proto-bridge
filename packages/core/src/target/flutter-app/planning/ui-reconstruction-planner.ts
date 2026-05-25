@@ -44,6 +44,8 @@ import type {
 import path from 'node:path';
 import { getFlutterTargetConventions } from '../conventions.js';
 import { findFlutterTargetExamples } from '../examples.js';
+import { restorationProfileArtifact } from '../../../profile/index.js';
+import type { ResolvedRestorationProfile } from '../../../profile/index.js';
 import { toPascalCase, toSnakeCase } from './migration-planner.js';
 import { buildAssetPlan, buildBusinessQuestions, buildI18nPlan, buildInteractionPlan, buildRisks, buildSectionHint } from './ui-reconstruction-content.js';
 import { buildImplementationContract, buildContractValidationHints } from './ui-reconstruction-contract.js';
@@ -55,6 +57,7 @@ export type BuildFlutterUiReconstructionPlanInput = {
   evidence: PageCanonical;
   targetRoot: string;
   targetModule?: string | undefined;
+  restorationProfile?: ResolvedRestorationProfile | undefined;
   sourceAwareImplementationPlan?: FlutterImplementationPlan | undefined;
   sourceReview?: SourceAwareReviewProjection | undefined;
 };
@@ -68,14 +71,16 @@ export async function buildFlutterUiReconstructionPlan(
     flutterRoot: targetRoot,
     module: input.targetModule,
     roles,
+    restorationProfile: input.restorationProfile,
   });
-  const moduleName = input.targetModule ?? inferModule(input.evidence, initialConventions.existingModules) ?? 'feature';
+  const moduleName = input.targetModule ?? inferModule(input.evidence, initialConventions.existingModules, input.restorationProfile) ?? 'feature';
   const conventions = initialConventions.module === moduleName
     ? initialConventions
     : await getFlutterTargetConventions({
       flutterRoot: targetRoot,
       module: moduleName,
       roles,
+      restorationProfile: input.restorationProfile,
     });
   const examples = await findFlutterTargetExamples({
     flutterRoot: targetRoot,
@@ -84,6 +89,7 @@ export async function buildFlutterUiReconstructionPlan(
     roles,
     screenId: input.evidence.page.route,
     limit: 8,
+    restorationProfile: input.restorationProfile,
   });
   const pageName = inferPageName(input.evidence);
   const baseDir = `lib/app/modules/${moduleName}/${toSnakeCase(pageName)}`;
@@ -92,6 +98,7 @@ export async function buildFlutterUiReconstructionPlan(
   const visualPlan = buildVisualPlan(input.evidence, {
     components: conventions.components,
     componentMappings,
+    restorationProfile: input.restorationProfile,
   });
   const fallbackPlan = buildFallbackImplementationPlan(baseDir, pageName, runtimeWidgetTree);
   const implementationContract = buildImplementationContract({
@@ -104,11 +111,12 @@ export async function buildFlutterUiReconstructionPlan(
     visualPlan,
   });
   const nodeAuditHints = buildNodeAuditValidationHints(visualPlan.nodeAudits);
-  const themeMappings = buildThemeMappings(input.evidence, conventions.targetConventions);
+  const themeMappings = buildThemeMappings(input.evidence, conventions.targetConventions, input.restorationProfile);
 
   return {
     id: createPlanId(input.evidence.id),
     pageId: input.evidence.id,
+    ...(input.restorationProfile ? { restorationProfile: restorationProfileArtifact(input.restorationProfile) } : {}),
     target: {
       root: targetRoot,
       module: moduleName,
@@ -134,7 +142,7 @@ export async function buildFlutterUiReconstructionPlan(
     componentMappings,
     themeMappings,
     themeMappingGroups: buildThemeMappingGroups(themeMappings),
-    i18nPlan: buildI18nPlan(input.evidence),
+    i18nPlan: buildI18nPlan(input.evidence, input.restorationProfile),
     assetPlan: buildAssetPlan(input.evidence),
     interactionPlan: buildInteractionPlan(input.evidence),
     businessQuestions: buildBusinessQuestions(input.evidence),
@@ -183,7 +191,11 @@ function rolesForEvidence(evidence: PageCanonical): FlutterComponentRole[] {
   return [...roles];
 }
 
-function inferModule(evidence: PageCanonical, existingModules: string[]): string | undefined {
+function inferModule(
+  evidence: PageCanonical,
+  existingModules: string[],
+  restorationProfile: ResolvedRestorationProfile | undefined,
+): string | undefined {
   const sourceModule = evidence.sourceFacts?.analysis.module;
   if (sourceModule && existingModules.includes(sourceModule)) return sourceModule;
   const targetModule = evidence.targetFacts?.analysis.suggestedModule;
@@ -192,13 +204,19 @@ function inferModule(evidence: PageCanonical, existingModules: string[]): string
   const segments = route.split(/[/?#&.=_-]+/).filter((item) => item.length >= 3);
   for (const segment of segments) {
     if (existingModules.includes(segment)) return segment;
+    const mapped = resolveModuleAlias(segment, existingModules, restorationProfile);
+    if (mapped) return mapped;
   }
-  const lowered = route.toLowerCase();
-  if (lowered.includes('stock') && existingModules.includes('order')) return 'order';
-  if (lowered.includes('option') && existingModules.includes('option')) return 'option';
-  if ((lowered.includes('asset') || lowered.includes('account')) && existingModules.includes('account')) return 'account';
-  if (lowered.includes('auth') && existingModules.includes('auth')) return 'auth';
   return existingModules[0];
+}
+
+function resolveModuleAlias(
+  candidate: string,
+  existingModules: string[],
+  restorationProfile: ResolvedRestorationProfile | undefined,
+): string | undefined {
+  const mapped = restorationProfile?.profile.moduleAliases?.[candidate.toLowerCase()];
+  return mapped && existingModules.includes(mapped) ? mapped : undefined;
 }
 
 function inferPattern(evidence: PageCanonical): string {

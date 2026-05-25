@@ -13,52 +13,12 @@ import type {
 import { pathExists, toPosixPath } from '../../shared/paths.js';
 import { analyzeFlutterContext } from './context.js';
 import { detectFlutterTargetConventions } from './architecture-profile.js';
-
-type KnownFlutterSymbol = {
-  symbol: string;
-  role: FlutterComponentRole;
-  reason: string;
-};
+import { genericProfile } from '../../profile/index.js';
+import type { ResolvedRestorationProfile, RestorationProfile, RestorationTargetSymbol } from '../../profile/index.js';
 
 type DartFile = {
   path: string;
   text: string;
-};
-
-const KNOWN_SYMBOLS: KnownFlutterSymbol[] = [
-  { symbol: 'CommonAppBar', role: 'app-bar', reason: 'Target app bar candidate.' },
-  { symbol: 'CommonButton', role: 'button', reason: 'Target button candidate.' },
-  { symbol: 'CommonImage', role: 'image', reason: 'Target image candidate.' },
-  { symbol: 'CommonSvg', role: 'image', reason: 'Target SVG candidate.' },
-  { symbol: 'CommonNetImage', role: 'image', reason: 'Target network image candidate.' },
-  { symbol: 'CommonEmpty', role: 'empty', reason: 'Target empty-state candidate.' },
-  { symbol: 'CommonLoading', role: 'loading', reason: 'Target loading candidate.' },
-  { symbol: 'CommonToast', role: 'toast', reason: 'Target toast candidate.' },
-  { symbol: 'Pop.sheet', role: 'sheet', reason: 'Target sheet/popup candidate.' },
-  { symbol: 'YouFiPop', role: 'sheet', reason: 'Target popup candidate.' },
-  { symbol: 'BaseGetView', role: 'page-base', reason: 'Target page base class candidate.' },
-  { symbol: 'BaseGetPullView', role: 'page-base', reason: 'Target pull-to-refresh page base candidate.' },
-  { symbol: 'SmartRefresher', role: 'refresh', reason: 'Refresh/list paging candidate.' },
-  { symbol: 'themeService.colors', role: 'theme', reason: 'Target color token usage.' },
-  { symbol: 'themeService.textStyles', role: 'theme', reason: 'Target text style usage.' },
-  { symbol: '.tr', role: 'i18n', reason: 'GetX translation usage.' },
-  { symbol: 'Get.toNamed', role: 'route', reason: 'GetX named route navigation usage.' },
-  { symbol: 'Get.back', role: 'route', reason: 'GetX back navigation usage.' },
-];
-
-const ROLE_SYMBOLS: Partial<Record<FlutterComponentRole, string[]>> = {
-  'app-bar': ['CommonAppBar', 'AppBar'],
-  button: ['CommonButton', 'TextButton', 'GestureDetector'],
-  image: ['CommonImage', 'CommonSvg', 'CommonNetImage', 'Image.asset'],
-  empty: ['CommonEmpty'],
-  loading: ['CommonLoading'],
-  sheet: ['Pop.sheet', 'YouFiPop', 'showModalBottomSheet'],
-  toast: ['CommonToast'],
-  'page-base': ['BaseGetView', 'BaseGetPullView', 'GetView'],
-  refresh: ['SmartRefresher', 'RefreshController'],
-  theme: ['themeService.colors', 'themeService.textStyles'],
-  i18n: ['.tr'],
-  route: ['Get.toNamed', 'Get.back', 'Routes.'],
 };
 
 export async function getFlutterTargetConventions(
@@ -71,6 +31,7 @@ export async function getFlutterTargetConventions(
   const context = await analyzeFlutterContext({
     flutterRoot,
     targetModule: input.module,
+    restorationProfile: input.restorationProfile,
   });
   const targetConventions = context.targetConventions ?? await detectFlutterTargetConventions({
     flutterRoot,
@@ -80,7 +41,9 @@ export async function getFlutterTargetConventions(
     flutterRoot,
     symbols: input.symbols,
     roles: input.roles,
+    restorationProfile: input.restorationProfile,
   });
+  const profile = currentProfile(input.restorationProfile);
 
   return {
     flutterRoot,
@@ -91,9 +54,9 @@ export async function getFlutterTargetConventions(
     assetDirectories: context.assetDirectories,
     components,
     targetConventions,
-    themeUsages: await collectUsageLines(flutterRoot, ['themeService.colors', 'themeService.textStyles'], input.module),
-    routeUsages: await collectUsageLines(flutterRoot, ['Get.toNamed', 'Get.back', 'Routes.'], input.module),
-    i18nUsages: await collectUsageLines(flutterRoot, ['.tr'], input.module),
+    themeUsages: await collectUsageLines(flutterRoot, profile.usageSymbols?.theme ?? [], input.module),
+    routeUsages: await collectUsageLines(flutterRoot, profile.usageSymbols?.route ?? [], input.module),
+    i18nUsages: await collectUsageLines(flutterRoot, profile.usageSymbols?.i18n ?? [], input.module),
     warnings: [...warnings, ...context.warnings],
   };
 }
@@ -103,10 +66,11 @@ export async function findFlutterTargetExamples(input: FindFlutterTargetExamples
   const limit = clamp(input.limit ?? 8, 1, 20);
   const files = await readDartFiles(flutterRoot, moduleFilePatterns(input.module));
   const roles = input.roles ?? [];
+  const profile = currentProfile(input.restorationProfile);
   const requestedSymbols = dedupe([
     ...(input.symbols ?? []),
-    ...roles.flatMap((role) => ROLE_SYMBOLS[role] ?? []),
-    ...symbolsForPattern(input.pattern),
+    ...roles.flatMap((role) => profile.roleSymbols?.[role] ?? []),
+    ...symbolsForPattern(input.pattern, profile),
   ]);
   const keywords = dedupe([
     ...(input.screenId ?? '').split(/[._/-]+/),
@@ -121,9 +85,9 @@ export async function findFlutterTargetExamples(input: FindFlutterTargetExamples
     const lowerPath = file.path.toLowerCase();
     const lowerText = file.text.toLowerCase();
     const matchedSymbols = requestedSymbols.filter((symbol) => includesSymbol(file.text, symbol));
-    const matchedRoles = rolesForSymbols(matchedSymbols);
+    const matchedRoles = rolesForSymbols(matchedSymbols, profile);
     const keywordMatches = keywords.filter((keyword) => lowerPath.includes(keyword) || lowerText.includes(keyword));
-    const structuralScore = scoreFlutterStructure(file.text);
+    const structuralScore = scoreFlutterStructure(file.text, profile);
     const score = matchedSymbols.length * 4 + matchedRoles.length * 3 + keywordMatches.length * 2 + structuralScore;
     const snippetNeedles = (matchedSymbols.length ? matchedSymbols : keywordMatches).slice(0, 8);
     return {
@@ -154,8 +118,10 @@ async function collectFlutterComponents(input: {
   flutterRoot: string;
   symbols?: string[] | undefined;
   roles?: FlutterComponentRole[] | undefined;
+  restorationProfile?: ResolvedRestorationProfile | undefined;
 }): Promise<FlutterComponentRef[]> {
-  const known = selectKnownSymbols(input.symbols, input.roles);
+  const profile = currentProfile(input.restorationProfile);
+  const known = selectKnownSymbols(input.symbols, input.roles, profile);
   const packageName = await readPubspecPackageName(input.flutterRoot);
   const files = await readDartFiles(input.flutterRoot, [
     'lib/app/common/{widget,widgets,pop}/**/*.dart',
@@ -186,8 +152,10 @@ async function collectFlutterComponents(input: {
 function selectKnownSymbols(
   symbols: string[] | undefined,
   roles: FlutterComponentRole[] | undefined,
-): KnownFlutterSymbol[] {
-  const selected = KNOWN_SYMBOLS.filter((item) => {
+  profile: RestorationProfile,
+): RestorationTargetSymbol[] {
+  const profileSymbols = profile.targetSymbols ?? [];
+  const selected = profileSymbols.filter((item) => {
     const symbolMatch = !symbols?.length || symbols.includes(item.symbol);
     const roleMatch = !roles?.length || roles.includes(item.role);
     return symbolMatch && roleMatch;
@@ -295,7 +263,7 @@ function componentConfidence(definition: DartFile | undefined, usageFiles: DartF
   return 'low';
 }
 
-function componentReason(known: KnownFlutterSymbol, confidence: MappingConfidence): string {
+function componentReason(known: RestorationTargetSymbol, confidence: MappingConfidence): string {
   if (confidence === 'high') return `${known.reason} Definition or direct usage was found in the target repo.`;
   if (confidence === 'medium') return `${known.reason} Usage was found in the target repo.`;
   return `${known.reason} No direct usage was detected.`;
@@ -315,20 +283,20 @@ async function readPubspecPackageName(flutterRoot: string): Promise<string | und
   }
 }
 
-function symbolsForPattern(pattern: string | undefined): string[] {
+function symbolsForPattern(pattern: string | undefined, profile: RestorationProfile): string[] {
   if (!pattern) return [];
-  if (/record|list|history/.test(pattern)) return ['SmartRefresher', 'ListView', 'CommonEmpty', 'CommonLoading'];
-  if (/quote|detail|trade/.test(pattern)) return ['CommonAppBar', 'AppBar', 'Scaffold'];
-  if (/form|ticket|auth/.test(pattern)) return ['CommonButton', 'TextButton', 'showModalBottomSheet'];
-  return ['CommonAppBar', 'AppBar', 'Scaffold'];
+  for (const entry of profile.patternSymbols ?? []) {
+    if (entry.pattern.test(pattern)) return entry.symbols;
+  }
+  return profile.roleSymbols?.['page-base'] ?? [];
 }
 
-function rolesForSymbols(symbols: string[]): FlutterComponentRole[] {
+function rolesForSymbols(symbols: string[], profile: RestorationProfile): FlutterComponentRole[] {
   const roles = new Set<FlutterComponentRole>();
   for (const symbol of symbols) {
-    const known = KNOWN_SYMBOLS.find((item) => item.symbol === symbol);
+    const known = profile.targetSymbols?.find((item) => item.symbol === symbol);
     if (known) roles.add(known.role);
-    for (const [role, roleSymbols] of Object.entries(ROLE_SYMBOLS)) {
+    for (const [role, roleSymbols] of Object.entries(profile.roleSymbols ?? {})) {
       if (roleSymbols?.some((roleSymbol) => symbol.includes(roleSymbol) || roleSymbol.includes(symbol))) {
         roles.add(role as FlutterComponentRole);
       }
@@ -337,14 +305,23 @@ function rolesForSymbols(symbols: string[]): FlutterComponentRole[] {
   return [...roles];
 }
 
-function scoreFlutterStructure(text: string): number {
+function scoreFlutterStructure(text: string, profile: RestorationProfile): number {
   let score = 0;
-  if (/\bextends\s+(StatelessWidget|StatefulWidget|GetView|BaseGetView|BaseGetPullView)\b/.test(text)) score += 3;
+  if (/\bextends\s+(StatelessWidget|StatefulWidget)\b/.test(text)) score += 3;
+  if (includesAnyProfileUsage(text, profile.roleSymbols?.['page-base'] ?? [])) score += 3;
   if (/\bWidget\s+build\s*\(/.test(text)) score += 2;
   if (/\b(Controller|Cubit|Bloc|Provider)\b/.test(text)) score += 1;
-  if (/(themeService\.(colors|textStyles)|context\.pb(Colors|TextStyles)|Theme\.of\s*\(\s*context\s*\))/.test(text)) score += 1;
-  if (/(\.tr\b|context\.t\s*\(|AppLocalizations\.of\s*\()/.test(text)) score += 1;
+  if (includesAnyProfileUsage(text, profile.usageSymbols?.theme ?? [])) score += 1;
+  if (includesAnyProfileUsage(text, profile.usageSymbols?.i18n ?? [])) score += 1;
   return score;
+}
+
+function includesAnyProfileUsage(text: string, symbols: string[]): boolean {
+  return symbols.some((symbol) => includesSymbol(text, symbol));
+}
+
+function currentProfile(input: ResolvedRestorationProfile | undefined): RestorationProfile {
+  return input?.profile ?? genericProfile;
 }
 
 function buildExampleReason(input: {

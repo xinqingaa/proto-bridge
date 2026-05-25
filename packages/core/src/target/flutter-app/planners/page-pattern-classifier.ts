@@ -1,4 +1,6 @@
 import type { PrototypePageAnalysis } from '../../../types/index.js';
+import { genericProfile } from '../../../profile/index.js';
+import type { ResolvedRestorationProfile, RestorationProfile } from '../../../profile/index.js';
 
 export type PagePattern =
   | 'detail'
@@ -23,8 +25,12 @@ export type ClassifiedPagePattern = {
   reasons: string[];
 };
 
-export function classifyPagePattern(source: PrototypePageAnalysis): ClassifiedPagePattern {
-  const facts = collectFacts(source);
+export function classifyPagePattern(
+  source: PrototypePageAnalysis,
+  restorationProfile?: ResolvedRestorationProfile | undefined,
+): ClassifiedPagePattern {
+  const profile = restorationProfile?.profile ?? genericProfile;
+  const facts = collectFacts(source, profile);
   const candidates: Array<{ pattern: PagePattern; score: number; reasons: string[] }> = [
     scoreQuoteDetail(facts),
     scoreTradeTicket(facts),
@@ -48,7 +54,7 @@ export function classifyPagePattern(source: PrototypePageAnalysis): ClassifiedPa
   };
 }
 
-function collectFacts(source: PrototypePageAnalysis): PageFacts {
+function collectFacts(source: PrototypePageAnalysis, profile: RestorationProfile): PageFacts {
   const text = [source.screenId, source.name, source.label, source.title, source.route, source.module, source.moduleLabel]
     .filter(Boolean)
     .join(' ')
@@ -57,6 +63,8 @@ function collectFacts(source: PrototypePageAnalysis): PageFacts {
   const stateCategories = source.sfc?.state.map((state) => state.category) ?? [];
   const stateNames = source.sfc?.state.map((state) => state.name.toLowerCase()) ?? [];
   const has = (pattern: RegExp): boolean => pattern.test(text) || stateNames.some((name) => pattern.test(name));
+  const hasTerms = (terms: string[]): boolean => termsPattern(terms).test(text) || stateNames.some((name) => termsPattern(terms).test(name));
+  const lexicon = profile.sourceLexicon ?? {};
   return {
     text,
     roles,
@@ -67,15 +75,20 @@ function collectFacts(source: PrototypePageAnalysis): PageFacts {
     hasBottomActions: Boolean(source.sfc?.fixedBottom) || roles.includes('bottom-actions'),
     hasRoutes: Boolean(source.sfc?.routes.length),
     hasLifecycle: Boolean(source.sfc?.lifecycle.length),
-    hasFormState: has(/input|form|field|password|email|phone|amount|quantity|qty|price/),
-    hasTradeTerms: has(/trade|order|buy|sell|option|quote|ticker|price|kline|holding|fund|etf|stock/),
+    hasFormState: has(/input|form|field|password|email|phone|amount|quantity|qty/),
+    hasTradeTerms: hasTerms(lexicon.tradeTerms ?? []),
     hasSettingsTerms: has(/setting|settings|preference|switch|toggle|notification|language|theme/),
-    hasPortfolioTerms: has(/asset|portfolio|position|balance|holding|funds|account/),
-    hasAuthTerms: has(/login|auth|password|otp|verify|security|onboard|kyc/),
-    hasListTerms: has(/list|record|history|rows|table|search|filter/),
-    hasWizardTerms: has(/step|wizard|next|previous|progress|onboard/),
-    hasArticleTerms: has(/article|news|notice|message|detail|profile|objective/),
+    hasPortfolioTerms: hasTerms(lexicon.portfolioTerms ?? []),
+    hasAuthTerms: hasTerms(lexicon.authTerms ?? []),
+    hasListTerms: hasTerms(['list', 'record', 'history', 'rows', 'table', 'search', 'filter', ...(lexicon.listTerms ?? [])]),
+    hasWizardTerms: hasTerms(lexicon.wizardTerms ?? []),
+    hasArticleTerms: hasTerms(lexicon.articleTerms ?? []),
   };
+}
+
+function termsPattern(terms: string[]): RegExp {
+  const pattern = terms.filter(Boolean).map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+  return pattern ? new RegExp(pattern, 'i') : /$a/;
 }
 
 function scoreQuoteDetail(facts: PageFacts) {
@@ -91,7 +104,7 @@ function scoreQuoteDetail(facts: PageFacts) {
 function scoreTradeTicket(facts: PageFacts) {
   const reasons: string[] = [];
   let score = 0;
-  if (/trade|order|buy|sell/.test(facts.text)) { score += 3; reasons.push('页面与交易/下单相关。'); }
+  if (facts.hasTradeTerms) { score += 3; reasons.push('页面与交易/下单相关。'); }
   if (facts.hasFormState) { score += 2; reasons.push('包含表单输入或价格数量字段。'); }
   if (facts.hasBottomActions) { score += 1; reasons.push('包含底部提交操作。'); }
   return { pattern: 'trade-ticket' as const, score, reasons };
@@ -113,7 +126,7 @@ function scorePortfolio(facts: PageFacts) {
 }
 
 function scoreRecordList(facts: PageFacts) {
-  const score = /record|history/.test(facts.text) || facts.stateNames.some((name) => /record|history/.test(name)) ? 4 : 0;
+  const score = facts.hasListTerms ? 4 : 0;
   return { pattern: 'record-list' as const, score, reasons: score ? ['页面包含记录或历史列表。'] : [] };
 }
 
@@ -138,7 +151,7 @@ function scoreArticle(facts: PageFacts) {
 }
 
 function scoreDetail(facts: PageFacts) {
-  let score = /detail|profile|objective/.test(facts.text) ? 4 : 0;
+  let score = facts.hasArticleTerms ? 4 : 0;
   if (facts.hasTabs || facts.hasChart) score -= 2;
   return { pattern: 'detail' as const, score, reasons: score > 0 ? ['页面是详情类信息展示。'] : [] };
 }

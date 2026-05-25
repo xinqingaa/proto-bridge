@@ -14,6 +14,7 @@ import type {
   UiPlanCapabilityResult,
   UiReviewCapabilityResult,
 } from '../../capabilities/index.js';
+import type { ResolvedRestorationProfile } from '../../profile/index.js';
 
 export type ReconstructPageContextInput = {
   source?: AdapterProjectConfig | undefined;
@@ -29,6 +30,7 @@ export type ReconstructPageContextInput = {
   viewport?: { width: number; height: number; deviceScaleFactor?: number | undefined } | undefined;
   saveArtifacts?: boolean | undefined;
   targetModule?: string | undefined;
+  restorationProfile?: ResolvedRestorationProfile | undefined;
   buildPlan?: boolean | undefined;
   buildReview?: boolean | undefined;
   trace?: boolean | undefined;

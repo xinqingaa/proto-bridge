@@ -67,6 +67,19 @@ screenshot region / text anchor
 
 `ui-build-plan.json` 是实现蓝图。它把不同证据放在各自负责的区域，避免职责重叠，同时把实现阶段必须遵守的高风险细节从 canonical 提升为结构化 plan 字段。
 
+### restorationProfile
+
+`restorationProfile` 描述本次启用的项目增强来源。它是轻量 provenance，不包含完整词表或 token 表。
+
+| 字段 | 说明 |
+| --- | --- |
+| `id` | 已解析的 profile id，例如 `generic` 或 `youfi`。 |
+| `mode` | `explicit`、`auto` 或 `generic`。 |
+| `inferredFrom` | auto 模式下用于推断的 target 目录名。 |
+| `warnings` | 未知 profile、回退等解析警告。 |
+
+该字段只能解释“为什么纳入某些候选或映射”，不能替代 `targetConventions` 的扫描证据。
+
 ### targetConventions
 
 `targetConventions.architectureProfile` 描述当前 target repo 扫描到的工程表达。
@@ -81,7 +94,7 @@ screenshot region / text anchor
 | `fileOrganization` | 模块目录、页面文件、widgets、bindings/controllers 等组织方式。 |
 | `documentation` | README、AGENT、CLAUDE、Cursor rules 和 `docs/**/*.md` 等 target 文档补充证据。它只补充理解，不覆盖代码扫描结果。 |
 
-GetX、flutter_bloc、Riverpod、Provider、Navigator、go_router、context.t、AppLocalizations、themeService、context.pbColors、CommonAppBar 等都不是默认值。它们只能在 target 扫描到证据时出现。
+GetX、flutter_bloc、Riverpod、Provider、Navigator、go_router、context.t、AppLocalizations、themeService、context.pbColors、CommonAppBar 等都不是通用默认值。它们可以由 restoration profile 纳入候选池，但只能在 target 扫描到证据时成为高置信 plan。
 
 `targetConventions.documentation` 会记录读取到的文档文件、架构 hints、文档与代码扫描冲突，以及文件过大或读取失败等警告。证据优先级为：真实业务代码扫描高于 target 文档，target 文档高于 ProtoBridge 的保守默认推断。
 
@@ -98,7 +111,7 @@ GetX、flutter_bloc、Riverpod、Provider、Navigator、go_router、context.t、
 | `stateStrategy` | 状态关注点、owner 和建议。 |
 | `controllerBoundaries` | 页面级状态/控制边界。名称保持抽象，具体工程表达由 targetConventions 决定。 |
 | `widgetContracts` | 子 Widget 输入、回调和状态访问约束。 |
-| `targetBindings` | 抽象角色到 target profile 的证据引用。 |
+| `targetBindings` | 抽象角色到 target architecture profile 的证据引用。 |
 | `rules` | 实现规则。 |
 | `contractWarnings` / `manualQuestions` | 未确认或冲突点。 |
 
@@ -160,10 +173,10 @@ Typography mapping 如果带 `lockToken=true`，实现必须直接使用扫描�
 
 - changed files、allowed paths 和 outside allowed paths。
 - `implementationContract.fileTree` 预期文件是否缺失。
-- 是否引入 target profile 没有证据支持的新 state/routing/i18n/theme 模式。
+- 是否引入 target architecture profile 没有证据支持的新 state/routing/i18n/theme 模式。
 - 是否偏离高置信度识别出的主模式。
 - 是否生成 runtime DOM section 风格文件导致 architecture drift。
 - 子 Widget 是否违反 `widgetContracts`。
 - placeholder、TODO、hard-coded colors/font sizes、local shadows、network images 和 navigation risks。
 
-如果 target profile unknown，validation 应输出 warnings/manual questions，不应把未知模式当成硬错误。
+如果 target architecture profile unknown，validation 应输出 warnings/manual questions，不应把未知模式当成硬错误。

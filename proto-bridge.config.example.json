@@ -8,6 +8,7 @@
     "adapter": "flutter-app",
     "root": "/path/to/youfi"
   },
+  "profile": "auto",
   "runtime": {
     "capture": true,
     "viewport": {

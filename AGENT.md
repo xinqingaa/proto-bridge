@@ -29,6 +29,14 @@ ProtoBridge 是团队把“PRD + Figma 静态稿 + 人工 UI 走查”升级为�
 - `ui-build-review.md`
 - `screenshots/full-page.png`
 
+## Profile 边界
+
+`profile` 是 source / target 之外的 restoration profile 配置，用来集中维护项目增强逻辑。它可以提供模块别名、项目组件候选、业务词表和主题 token 映射，例如内置 `youfi` profile；不配置或配置 `"auto"` 时会按 `target.root` 目录名推断，配置 `"generic"` 或 `false` 时只使用通用能力。
+
+实现或修改 ProtoBridge 时，不要把项目组件、业务词表、模块别名或设计 token 写回 source adapter、target planner 或通用 core 深处。新增业务经验应优先放在 `packages/core/src/profile/`，再通过统一的 `restorationProfile` 入参传到 source、target、merge 和 plan 链路。
+
+profile 只能提供候选和增强，不能伪造 target evidence。`CommonAppBar`、`themeService.colors`、`.tr`、`Get.toNamed` 等符号只有被 target repo 扫描到定义或使用，才应成为高置信 plan；扫不到时保留抽象建议或人工确认项。
+
 ## 实现前先判断输入
 
 先判断当前有哪些输入：
@@ -87,7 +95,7 @@ hybrid MCP 示例：
 4. `page-canonical.json`：证据原档，用于追溯来源、排查冲突和补查细节。
 5. `screenshots/`：runtime capture 存在时的视觉参考。
 
-实现时不得引入 `targetConventions` 没有证据支持的新 state、routing、i18n 或 theme 框架。GetX、flutter_bloc、Riverpod、Provider、Navigator、go_router、context.t、AppLocalizations、themeService、context.pbColors、CommonAppBar 等都只能作为 target 扫描证据出现，不能当作 ProtoBridge 默认偏好。扫不到时保留抽象建议，并写入 warnings/manual questions。
+实现时不得引入 `targetConventions` 没有证据支持的新 state、routing、i18n 或 theme 框架。GetX、flutter_bloc、Riverpod、Provider、Navigator、go_router、context.t、AppLocalizations、themeService、context.pbColors、CommonAppBar 等可以由 profile 纳入候选，但仍必须以 target 扫描证据为准。扫不到时保留抽象建议，并写入 warnings/manual questions。
 
 实现重复卡片、列表项、表格行、tab、filter、按钮、chip、appbar action 或 bottom action 时，必须优先读取 `visualPlan.nodeAudits`，不得只凭 `visualPlan.sections`、截图或业务直觉搭结构。`nodeAudits.rows` 决定可见行结构和文本/icon 顺序，`nodeAudits.controls` 决定控件 padding/radius/height 等关键尺寸，`absenceHints` 和 `implementationSummary.doNotInvent` 是负向契约：代表节点里没有的展示字段不能自行补入。
 
@@ -112,7 +120,7 @@ hybrid MCP 示例：
 | --- | --- |
 | source semantics 与 target conventions 冲突 | 业务意图看 source semantics；工程表达看 target conventions。 |
 | runtime section 与 implementation contract 冲突 | runtime 只作为视觉事实，不决定文件拆分或状态边界。 |
-| target profile unknown | 不猜框架，不引入新模式，输出 warnings/manual questions。 |
+| target architecture profile unknown | 不猜框架，不引入新模式，输出 warnings/manual questions。 |
 | review 与 plan 理解不一致 | 以 `ui-build-plan.json` 这份实现蓝图为准。 |
 | target 高置信度示例与自动推断不一致 | 优先查目标示例，必要时调整实现并报告确认项。 |
 

@@ -10,6 +10,8 @@ import type {
   VueStyleTokenHint,
   VueTemplateSection,
 } from '../../types/index.js';
+import { genericProfile } from '../../profile/index.js';
+import type { ResolvedRestorationProfile, RestorationProfile } from '../../profile/index.js';
 
 export type VueSfcSections = {
   template?: string | undefined;
@@ -27,15 +29,19 @@ export function extractVueSfcSections(sourceCode: string | undefined): VueSfcSec
   };
 }
 
-export function analyzeVueSfc(sourceCode: string | undefined): VueSfcAnalysis {
+export function analyzeVueSfc(
+  sourceCode: string | undefined,
+  restorationProfile?: ResolvedRestorationProfile | undefined,
+): VueSfcAnalysis {
+  const profile = currentProfile(restorationProfile);
   const sections = extractVueSfcSections(sourceCode);
   const template = sections.template ?? '';
   const script = sections.script ?? '';
   const styleText = sections.styleBlocks.join('\n');
   const tags = allTags(template);
-  const templateSections = inferTemplateSections(template, styleText, tags);
+  const templateSections = inferTemplateSections(template, styleText, profile, tags);
   const interactions = inferInteractions(template, script);
-  const state = inferState(script);
+  const state = inferState(script, profile);
   const routes = inferRoutes(template, script);
   const lifecycle = inferLifecycle(script);
   const layout = inferLayout(styleText);
@@ -46,38 +52,44 @@ export function analyzeVueSfc(sourceCode: string | undefined): VueSfcAnalysis {
     ...sections,
     sections: templateSections,
     interactions,
-    components: inferSemanticComponents(templateSections, interactions, layout, styleTokens),
+    components: inferSemanticComponents(templateSections, interactions, layout, styleTokens, profile),
     state,
     routes,
     lifecycle,
     layout,
     assets,
     styleTokens,
-    fixedBottom: hasFixedBottomBar(template, styleText),
+    fixedBottom: hasFixedBottomBar(template, styleText, profile),
   };
 }
 
-function inferTemplateSections(template: string, styleText: string, tags = allTags(template)): VueTemplateSection[] {
+function inferTemplateSections(
+  template: string,
+  styleText: string,
+  profile: RestorationProfile,
+  tags = allTags(template),
+): VueTemplateSection[] {
   const sections: VueTemplateSection[] = [];
   const seen = new Set<string>();
+  const sectionClassPattern = termBoundaryPattern(profile.sourceLexicon?.sectionClassTerms ?? []);
 
   for (const tag of topLevelTags(template, tags)) {
-    addSection(sections, seen, sectionFromTag(tag));
+    addSection(sections, seen, sectionFromTag(tag, profile));
   }
 
-  for (const tag of tags.filter((item) => item.attrs.className && /(?:^|[-_\s])(section|card|panel|list|chart|tab|tabs|header|nav|bottom-bar|footer|modal|popup|sheet|quote|price|holding|profile|history|metric)(?:[-_\s]|$)/i.test(item.attrs.className))) {
-    addSection(sections, seen, sectionFromTag(tag));
+  for (const tag of tags.filter((item) => item.attrs.className && sectionClassPattern.test(item.attrs.className))) {
+    addSection(sections, seen, sectionFromTag(tag, profile));
   }
 
   for (const tag of tags.filter((item) => extractSectionTitle(item.inner) && !/page\b|screen\b/i.test(item.attrs.className ?? ''))) {
-    addSection(sections, seen, sectionFromTag(tag));
+    addSection(sections, seen, sectionFromTag(tag, profile));
   }
 
-  if (hasFixedBottomBar(template, styleText)) {
+  if (hasFixedBottomBar(template, styleText, profile)) {
     addSection(sections, seen, {
       name: 'BottomBar',
       kind: 'bottom-bar',
-      selector: findBottomSelector(template, styleText),
+      selector: findBottomSelector(template, styleText, profile),
       evidence: 'template/style contains an explicit fixed bottom action area',
     });
   }
@@ -90,20 +102,21 @@ function inferSemanticComponents(
   interactions: VueInteractionHint[],
   layout: VueLayoutHint[],
   styleTokens: VueStyleTokenHint[],
+  profile: RestorationProfile,
 ): VueSemanticComponent[] {
   return sections
     .filter((section) => section.kind !== 'unknown')
     .map((section) => {
-      const role = componentRole(section);
+      const role = componentRole(section, profile);
       const selectorKey = section.selector?.replace(/^\./, '') ?? section.name;
       return {
         name: section.name,
         role,
         selector: section.selector,
         title: section.title,
-        dataHints: inferDataHints(section),
+        dataHints: inferDataHints(section, profile),
         interactionHints: interactions
-          .filter((interaction) => interaction.target && componentMayUseInteraction(section, interaction.target))
+          .filter((interaction) => interaction.target && componentMayUseInteraction(section, interaction.target, profile))
           .slice(0, 6)
           .map((interaction) => interaction.evidence),
         tokenHints: styleTokens
@@ -167,28 +180,28 @@ function inferStyleTokens(styleText: string): VueStyleTokenHint[] {
   return dedupeBy(hints, (item) => `${item.selector}:${item.property}:${item.token}:${item.fallback ?? ''}`).slice(0, 120);
 }
 
-function inferState(script: string): VueStateHint[] {
+function inferState(script: string, profile: RestorationProfile): VueStateHint[] {
   const hints: VueStateHint[] = [];
   collectMatches(script, /const\s+(\w+)\s*=\s*ref\s*\(([\s\S]*?)\)/g, (match) => ({
     name: match[1] ?? 'unknown',
     kind: 'ref',
-    category: categorizeState(match[1] ?? '', match[2] ?? ''),
+    category: categorizeState(match[1] ?? '', match[2] ?? '', profile),
     evidence: compactCode(match[0]),
-    migrationHint: migrationHintForState('ref', categorizeState(match[1] ?? '', match[2] ?? '')),
+    migrationHint: migrationHintForState('ref', categorizeState(match[1] ?? '', match[2] ?? '', profile)),
   }), hints);
   collectMatches(script, /const\s+(\w+)\s*=\s*reactive\s*\(([\s\S]*?)\)/g, (match) => ({
     name: match[1] ?? 'unknown',
     kind: 'reactive',
-    category: categorizeState(match[1] ?? '', match[2] ?? ''),
+    category: categorizeState(match[1] ?? '', match[2] ?? '', profile),
     evidence: compactCode(match[0]),
-    migrationHint: migrationHintForState('reactive', categorizeState(match[1] ?? '', match[2] ?? '')),
+    migrationHint: migrationHintForState('reactive', categorizeState(match[1] ?? '', match[2] ?? '', profile)),
   }), hints);
   collectMatches(script, /const\s+(\w+)\s*=\s*computed\s*\(/g, (match) => ({
     name: match[1] ?? 'unknown',
     kind: 'computed' as const,
-    category: categorizeComputed(match[1] ?? ''),
+    category: categorizeComputed(match[1] ?? '', profile),
     evidence: compactCode(match[0]),
-    migrationHint: migrationHintForState('computed', categorizeComputed(match[1] ?? '')),
+    migrationHint: migrationHintForState('computed', categorizeComputed(match[1] ?? '', profile)),
   }), hints);
   collectMatches(script, /const\s+(\w+)\s*=\s*(\[[\s\S]*?\]|\{[\s\S]*?\})/g, (match) => {
     const name = match[1] ?? 'unknown';
@@ -196,17 +209,17 @@ function inferState(script: string): VueStateHint[] {
     return {
       name,
       kind: 'constant',
-      category: categorizeConstant(name, match[2] ?? ''),
+      category: categorizeConstant(name, match[2] ?? '', profile),
       evidence: compactCode(`${name} = ${(match[2] ?? '').slice(0, 100)}`),
-      migrationHint: migrationHintForState('constant', categorizeConstant(name, match[2] ?? '')),
+      migrationHint: migrationHintForState('constant', categorizeConstant(name, match[2] ?? '', profile)),
     };
   }, hints);
   collectMatches(script, /function\s+(\w+)\s*\(/g, (match) => ({
     name: match[1] ?? 'unknown',
     kind: 'function',
-    category: categorizeFunction(match[1] ?? ''),
+    category: categorizeFunction(match[1] ?? '', profile),
     evidence: compactCode(match[0]),
-    migrationHint: migrationHintForState('function', categorizeFunction(match[1] ?? '')),
+    migrationHint: migrationHintForState('function', categorizeFunction(match[1] ?? '', profile)),
   }), hints);
 
   return dedupeBy(hints, (item) => `${item.kind}:${item.name}`).slice(0, 80);
@@ -290,7 +303,7 @@ function inferAssets(template: string, styleText: string): VueAssetHint[] {
     kind: 'image' as const,
     source: match[1],
     evidence: compactCode(match[0]),
-    migrationHint: '迁移到 assets/images 或 CommonImage/CommonNetImage，确认暗色图和分辨率。',
+    migrationHint: '迁移到目标工程 asset/image 组件，确认暗色图和分辨率。',
   }), hints);
   collectMatches(template, /<svg\b[\s\S]*?<\/svg>/gi, (match) => ({
     kind: 'inline-svg' as const,
@@ -301,7 +314,7 @@ function inferAssets(template: string, styleText: string): VueAssetHint[] {
     kind: /logo/i.test(match[1] ?? '') ? 'image' as const : 'icon' as const,
     selector: `.${firstClass(match[1] ?? '')}`,
     evidence: compactCode(match[0]),
-    migrationHint: '确认是否已有 CommonSvg/IconFont/本地 asset 可复用。',
+    migrationHint: '确认是否已有目标 SVG、IconFont 或本地 asset 可复用。',
   }), hints);
   collectMatches(styleText, /([^{}]+)\{[^{}]*background(?:-image)?\s*:\s*url\(([^\)]+)\)/gi, (match) => ({
     kind: 'background' as const,
@@ -314,10 +327,10 @@ function inferAssets(template: string, styleText: string): VueAssetHint[] {
   return dedupeBy(hints, (item) => `${item.kind}:${item.source ?? ''}:${item.selector ?? ''}:${item.evidence}`).slice(0, 80);
 }
 
-function sectionFromTag(tag: TemplateTag): VueTemplateSection {
+function sectionFromTag(tag: TemplateTag, profile: RestorationProfile): VueTemplateSection {
   const className = tag.attrs.className;
   const title = extractSectionTitle(tag.inner);
-  const kind = inferSectionKind(tag, title);
+  const kind = inferSectionKind(tag, title, profile);
   const name = title ? toPascalCase(title) : selectorToName(className ?? tag.name);
   const selector = className ? `.${firstClass(className)}` : tag.name;
 
@@ -330,8 +343,13 @@ function sectionFromTag(tag: TemplateTag): VueTemplateSection {
   };
 }
 
-function inferSectionKind(tag: TemplateTag, title: string | undefined): VueTemplateSection['kind'] {
+function inferSectionKind(
+  tag: TemplateTag,
+  title: string | undefined,
+  profile: RestorationProfile,
+): VueTemplateSection['kind'] {
   const haystack = `${tag.name} ${tag.attrs.className ?? ''} ${title ?? ''}`.toLowerCase();
+  const lexicon = profile.sourceLexicon ?? {};
   if (/page\b|screen\b/.test(haystack)) return 'unknown';
   if (/section-title|divider|kv-(?:row|label|value|group)/.test(haystack)) return 'unknown';
   if (/bottom-bar|footer/.test(haystack)) return 'bottom-bar';
@@ -339,9 +357,9 @@ function inferSectionKind(tag: TemplateTag, title: string | undefined): VueTempl
   if (/app-bar|navbar|nav-bar|header|toolbar/.test(haystack)) return 'app-bar';
   if (/section-tabs|section-chip/.test(haystack)) return 'tab-bar';
   if (/tabs?|tab-bar/.test(haystack)) return 'tab-bar';
-  if (/chart|kline|donut|bar-chart|trend|indicator/.test(haystack)) return 'chart';
-  if (/list|rows?|table|holdings?|order-book|flow/.test(haystack) || /\bv-for\b/.test(tag.raw)) return 'list';
-  if (/section|card|panel|profile|objective|history|metrics?|info|quote|price/.test(haystack)) return 'section';
+  if (termsPattern(lexicon.chartTerms).test(haystack)) return 'chart';
+  if (termsPattern(lexicon.listTerms).test(haystack) || /\bv-for\b/.test(tag.raw)) return 'list';
+  if (termsPattern(lexicon.sectionTerms).test(haystack)) return 'section';
   return 'unknown';
 }
 
@@ -384,8 +402,9 @@ function inferInteractions(template: string, script: string): VueInteractionHint
   return dedupeInteractions(interactions).slice(0, 80);
 }
 
-function componentRole(section: VueTemplateSection): VueSemanticComponent['role'] {
+function componentRole(section: VueTemplateSection, profile: RestorationProfile): VueSemanticComponent['role'] {
   const text = `${section.name} ${section.selector ?? ''} ${section.title ?? ''}`.toLowerCase();
+  const lexicon = profile.sourceLexicon ?? {};
   if (section.kind === 'app-bar' || /header/.test(text)) return 'header';
   if (section.kind === 'bottom-bar') return 'bottom-actions';
   if (section.kind === 'modal') return 'modal';
@@ -393,43 +412,52 @@ function componentRole(section: VueTemplateSection): VueSemanticComponent['role'
   if (section.kind === 'tab-bar') return 'tabs';
   if (section.kind === 'chart') return 'chart';
   if (section.kind === 'list') return 'list';
-  if (/price|summary|info/.test(text)) return 'summary';
+  if (termsPattern(lexicon.summaryTerms).test(text)) return 'summary';
   if (section.kind === 'section') return 'content-section';
   return 'unknown';
 }
 
-function inferDataHints(section: VueTemplateSection): string[] {
+function inferDataHints(section: VueTemplateSection, profile: RestorationProfile): string[] {
   const text = `${section.name} ${section.selector ?? ''} ${section.title ?? ''}`.toLowerCase();
+  const lexicon = profile.sourceLexicon ?? {};
   const hints: string[] = [];
   if (/tab/.test(text)) hints.push('active tab key/list');
-  if (/price|quote|summary|info/.test(text)) hints.push('quote summary data');
-  if (/chart|kline|indicator/.test(text)) hints.push('chart series / indicator data');
-  if (/holding/.test(text)) hints.push('holdings list');
-  if (/profile/.test(text)) hints.push('fund profile fields');
+  if (termsPattern(lexicon.summaryTerms).test(text)) hints.push('summary data');
+  if (termsPattern(lexicon.chartTerms).test(text)) hints.push('chart series / indicator data');
+  if (termsPattern(lexicon.portfolioTerms).test(text)) hints.push('portfolio/list data');
+  if (termsPattern(lexicon.articleTerms).test(text)) hints.push('detail fields');
   if (/history|dividend|nav/.test(text)) hints.push('history rows');
   return hints;
 }
 
-function componentMayUseInteraction(section: VueTemplateSection, target: string): boolean {
+function componentMayUseInteraction(
+  section: VueTemplateSection,
+  target: string,
+  profile: RestorationProfile,
+): boolean {
   const text = `${section.name} ${section.selector ?? ''} ${section.title ?? ''}`.toLowerCase();
   const normalizedTarget = target.toLowerCase();
+  const lexicon = profile.sourceLexicon ?? {};
   if (/tab/.test(text) && /tab|section|scroll/.test(normalizedTarget)) return true;
-  if (/chart/.test(text) && /chart|period|indicator|rsi|macd|kdj/.test(normalizedTarget)) return true;
-  if (/bottom|trade/.test(text) && /trade|buy|sell|option/.test(normalizedTarget)) return true;
-  if (/profile/.test(text) && /profile/.test(normalizedTarget)) return true;
-  if (/holding/.test(text) && /stock|ticker|holding/.test(normalizedTarget)) return true;
+  if (/chart/.test(text) && termsPattern([...(lexicon.chartDataTerms ?? []), 'period', 'indicator']).test(normalizedTarget)) return true;
+  if (/bottom/.test(text) && termsPattern(lexicon.bottomActionTerms).test(normalizedTarget)) return true;
+  if (termsPattern(lexicon.articleTerms).test(text) && termsPattern(lexicon.articleTerms).test(normalizedTarget)) return true;
+  if (termsPattern(lexicon.portfolioTerms).test(text) && termsPattern([...(lexicon.tradeTerms ?? []), ...(lexicon.portfolioTerms ?? [])]).test(normalizedTarget)) return true;
   return false;
 }
 
-function hasFixedBottomBar(template: string, styleText: string): boolean {
-  if (/class\s*=\s*"[^"]*(?:bottom-bar|footer-action|fixed-footer|trade-action)[^"]*"/i.test(template)) return true;
-  return /\.(?:[\w-]*bottom-bar|[\w-]*footer-action|[\w-]*fixed-footer|[\w-]*trade-action)[\s\S]*?position\s*:\s*fixed[\s\S]*?bottom\s*:\s*0/i.test(styleText);
+function hasFixedBottomBar(template: string, styleText: string, profile: RestorationProfile): boolean {
+  const terms = profile.sourceLexicon?.bottomActionTerms ?? [];
+  const classPattern = termClassPattern(terms);
+  if (new RegExp(`class\\s*=\\s*"[^"]*(?:${classPattern})[^"]*"`, 'i').test(template)) return true;
+  return new RegExp(`\\.(?:[\\w-]*(?:${classPattern})[\\w-]*)[\\s\\S]*?position\\s*:\\s*fixed[\\s\\S]*?bottom\\s*:\\s*0`, 'i').test(styleText);
 }
 
-function findBottomSelector(template: string, styleText: string): string | undefined {
-  const classMatch = template.match(/class\s*=\s*"([^"]*(?:bottom-bar|footer-action|fixed-footer|trade-action)[^"]*)"/i);
+function findBottomSelector(template: string, styleText: string, profile = genericProfile): string | undefined {
+  const classPattern = termClassPattern(profile.sourceLexicon?.bottomActionTerms ?? []);
+  const classMatch = template.match(new RegExp(`class\\s*=\\s*"([^"]*(?:${classPattern})[^"]*)"`, 'i'));
   if (classMatch?.[1]) return `.${firstClass(classMatch[1])}`;
-  const styleMatch = styleText.match(/\.([\w-]*(?:bottom-bar|footer-action|fixed-footer|trade-action)[\w-]*)/i);
+  const styleMatch = styleText.match(new RegExp(`\\.([\\w-]*(?:${classPattern})[\\w-]*)`, 'i'));
   return styleMatch?.[1] ? `.${styleMatch[1]}` : undefined;
 }
 
@@ -557,28 +585,29 @@ function cssBlocks(styleText: string): Array<{ selector: string; body: string }>
   return blocks;
 }
 
-function categorizeState(name: string, initializer: string): VueStateHint['category'] {
+function categorizeState(name: string, initializer: string, profile = genericProfile): VueStateHint['category'] {
   const text = `${name} ${initializer}`.toLowerCase();
+  const lexicon = profile.sourceLexicon ?? {};
   if (/tab|expanded|active|selected|open|visible|show|period|indicator/.test(text)) return 'ui-state';
-  if (/route|query|anchor|ticker/.test(text)) return 'navigation';
-  if (/chart|kline|rsi|macd|kdj|ma\d|donut|bar/.test(text)) return 'chart-data';
-  if (/\[|\{|mock|data|list|rows|holdings|sectors|history|metrics|profile|quote|book|flow/.test(text)) return 'mock-data';
+  if (termsPattern(lexicon.navigationTerms).test(text)) return 'navigation';
+  if (termsPattern(lexicon.chartDataTerms).test(text)) return 'chart-data';
+  if (/\[|\{/.test(text) || termsPattern(lexicon.mockDataTerms).test(text)) return 'mock-data';
   return 'unknown';
 }
 
-function categorizeComputed(name: string): VueStateHint['category'] {
-  if (/chart|kline|rsi|macd|kdj|ma\d|donut|path|data|limit|min|max/.test(name.toLowerCase())) return 'chart-data';
+function categorizeComputed(name: string, profile = genericProfile): VueStateHint['category'] {
+  if (termsPattern([...(profile.sourceLexicon?.chartDataTerms ?? []), 'path', 'data', 'limit', 'min', 'max']).test(name.toLowerCase())) return 'chart-data';
   return 'derived-data';
 }
 
-function categorizeConstant(name: string, initializer: string): VueStateHint['category'] {
-  return categorizeState(name, initializer);
+function categorizeConstant(name: string, initializer: string, profile = genericProfile): VueStateHint['category'] {
+  return categorizeState(name, initializer, profile);
 }
 
-function categorizeFunction(name: string): VueStateHint['category'] {
+function categorizeFunction(name: string, profile = genericProfile): VueStateHint['category'] {
   if (/go|push|route|scroll|back|open/.test(name.toLowerCase())) return 'navigation';
   if (/handle|toggle|set/.test(name.toLowerCase())) return 'handler';
-  if (/chart|path|calculate|get[xy]|ma|kdj|macd|rsi/.test(name.toLowerCase())) return 'chart-data';
+  if (termsPattern([...(profile.sourceLexicon?.chartDataTerms ?? []), 'path', 'calculate', 'getx', 'gety']).test(name.toLowerCase())) return 'chart-data';
   return 'handler';
 }
 
@@ -673,6 +702,28 @@ function firstClass(className: string): string {
 function compactCode(value: string | undefined): string {
   return (value ?? '').replace(/\s+/g, ' ').trim();
 }
+
+function currentProfile(input: ResolvedRestorationProfile | undefined): RestorationProfile {
+  return input?.profile ?? genericProfile;
+}
+
+function termsPattern(terms: string[] | undefined): RegExp {
+  const pattern = termClassPattern(terms ?? []);
+  return pattern ? new RegExp(pattern, 'i') : /$a/;
+}
+
+function termBoundaryPattern(terms: string[]): RegExp {
+  const pattern = termClassPattern(terms);
+  return pattern ? new RegExp(`(?:^|[-_\\s])(?:${pattern})(?:[-_\\s]|$)`, 'i') : /$a/;
+}
+
+function termClassPattern(terms: string[]): string {
+  return terms
+    .filter(Boolean)
+    .map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .join('|');
+}
+
 
 function ensureSectionSuffix(name: string, kind: VueTemplateSection['kind']): string {
   if (kind === 'bottom-bar') return /BottomBar$/.test(name) ? name : `${name}BottomBar`;

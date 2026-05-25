@@ -59,6 +59,7 @@ args = [
     "adapter": "flutter-app",
     "root": "/path/to/youfi"
   },
+  "profile": "auto",
   "runtime": {
     "capture": true
   },
@@ -71,6 +72,8 @@ args = [
 Tool arguments 会覆盖 config values。
 
 配置文件只放稳定环境信息。每次通过 tool arguments 传 URL；配置了 `source.root` 时会从 URL 推导 route 并自动补 source semantics，配置了 `target.root` 时会生成 plan/review。
+
+`profile` 是可选 restoration profile。`"auto"` 或不配置时按 `target.root` 目录名推断，例如 `youfi`；`"generic"` 或 `false` 禁用业务增强；tool argument `profile` 可覆盖 config。
 
 ## Tools
 
@@ -102,6 +105,7 @@ Runtime-only：
   "arguments": {
     "url": "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1",
     "targetRoot": "/path/to/youfi",
+    "profile": "auto",
     "capture": true
   }
 }
@@ -110,7 +114,7 @@ Runtime-only：
 ## Agent 提示词示例
 
 ```text
-请使用 ProtoBridge 的 reconstruct_page_context 处理这个页面，先阅读 ui-build-plan.json 的 targetConventions、implementationContract 和 visualPlan，再用 ui-build-review.md 做中文核对。实现时不要引入 targetConventions 没有证据支持的新 state/routing/i18n/theme 框架。完成后调用 validate_ui_build：
+请使用 ProtoBridge 的 reconstruct_page_context 处理这个页面，先阅读 ui-build-plan.json 的 targetConventions、restorationProfile、implementationContract 和 visualPlan，再用 ui-build-review.md 做中文核对。实现时不要引入 targetConventions 没有证据支持的新 state/routing/i18n/theme 框架。完成后调用 validate_ui_build：
 http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1
 ```
 

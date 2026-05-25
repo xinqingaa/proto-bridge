@@ -4,19 +4,25 @@ import type {
   ThemeMappingGroups,
   FlutterTargetConventionProfile,
 } from '../../../types/index.js';
+import type { ResolvedRestorationProfile } from '../../../profile/index.js';
 import { resolveFlutterColorTarget, resolveFlutterTypographyMixinTarget, resolveFlutterTypographyTarget } from '../theme-mapping.js';
 import { dedupeBy } from './ui-reconstruction-shared.js';
 
-export function buildThemeMappings(evidence: PageCanonical, targetConventions: FlutterTargetConventionProfile): ThemeMapping[] {
+export function buildThemeMappings(
+  evidence: PageCanonical,
+  targetConventions: FlutterTargetConventionProfile,
+  restorationProfile?: ResolvedRestorationProfile | undefined,
+): ThemeMapping[] {
   const themeFamily = themeFallbackFamilies(targetConventions);
   const runtimeMappings = (evidence.tokens ?? []).slice(0, 80).map((token) => {
     const resolution = token.kind === 'typography'
-      ? resolveFlutterTypographyTarget({ value: token.value })
+      ? resolveFlutterTypographyTarget({ value: token.value, restorationProfile })
       : token.kind === 'color'
         ? resolveFlutterColorTarget({
           cssVar: token.cssVar,
           value: token.value,
           source: token.source,
+          restorationProfile,
         })
         : undefined;
     const familyTarget = token.kind === 'typography'
@@ -47,13 +53,14 @@ export function buildThemeMappings(evidence: PageCanonical, targetConventions: F
     const isTypography = token.kind === 'typography' || property.includes('font');
     const isColor = token.kind === 'color' || property.includes('color');
     const typographyResolution = isTypography && token.token.startsWith('@include ')
-      ? resolveFlutterTypographyMixinTarget(token.token)
+      ? resolveFlutterTypographyMixinTarget(token.token, restorationProfile)
       : undefined;
     const colorResolution = isColor
       ? resolveFlutterColorTarget({
         cssVar: token.token,
         value: token.fallback ?? token.token,
         source: token.selector,
+        restorationProfile,
       })
       : undefined;
     const rawTarget = typographyResolution?.target ?? colorResolution?.target;
