@@ -5,7 +5,6 @@ import type {
   PageCanonical,
   PageSnapshotNode,
   SnapshotNodeRole,
-  ThemeMapping,
   UiActionMapping,
   UiNodeAudit,
   UiNodeAuditChild,
