@@ -223,3 +223,5 @@ pnpm run generate -- \
 | --- | --- |
 | ![Prototype simple](screenshots/prototype-simple.png) | ![Flutter simple](screenshots/flutter-simple.png) |
 | ![Prototype complex](screenshots/prototype-complex.png) | ![Flutter complex](screenshots/flutter-complex.png) |
+
+产品文档见仓库根目录 `docs/overview.md`、`docs/artifacts.md`、`docs/usage.md`。

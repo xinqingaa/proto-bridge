@@ -91,3 +91,5 @@ output/<page>-<timestamp>/
 ```
 
 优先阅读 `ui-build-plan.json`，它是唯一机器契约，重点看 `targetConventions`、`implementationContract`、`sourceSemantics` 和 `visualPlan`。`ui-build-review.md` 是从 plan 渲染的人类可读 brief。深入排查时使用 `page-debug-index.json` 和 `page-canonical.json`。
+
+完整用法与发布说明见仓库根目录 `docs/usage.md`；产物字段见 `docs/artifacts.md`。

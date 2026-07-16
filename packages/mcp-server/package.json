@@ -1,7 +1,7 @@
 {
   "name": "@proto-bridge/mcp-server",
   "version": "0.4.0",
-  "description": "MCP server for ProtoBridge migration context and YouFi Flutter target conventions.",
+  "description": "MCP server for ProtoBridge page context reconstruction, target conventions, and UI validation.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

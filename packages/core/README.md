@@ -68,11 +68,14 @@ Core 支持 `RestorationProfile`，用于把项目增强集中在 `packages/core
 
 - `@proto-bridge/core/workflows/capability-first`
 - `@proto-bridge/core/capabilities`
+- `@proto-bridge/core/config`
 - `@proto-bridge/core/target/flutter-app`
 - `@proto-bridge/core/source/vue3-prototype`
 - `@proto-bridge/core/snapshot`
 - `@proto-bridge/core/artifacts`
 - `@proto-bridge/core/shared`
+
+完整产品文档见仓库根目录 `docs/overview.md`、`docs/artifacts.md`、`docs/usage.md`。
 
 ## 环境要求
 

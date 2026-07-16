@@ -130,3 +130,5 @@ http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1
 ```
 
 `ui-build-plan.json` 是唯一机器契约。`ui-build-review.md` 是从 plan 渲染的人类可读 brief。
+
+完整用法见仓库根目录 `docs/usage.md`；产物字段见 `docs/artifacts.md`。YouFi 还原示例 skill：`skills/youfi-flutter-restore`。

@@ -2,7 +2,7 @@
   "name": "proto-bridge",
   "version": "0.1.0",
   "private": true,
-  "description": "Prototype-to-implementation context bridge for AI-assisted migration specs.",
+  "description": "Prototype-to-implementation context bridge: evidence, UI build plans, and validation for AI-assisted Flutter work.",
   "type": "module",
   "packageManager": "pnpm@10.33.2",
   "workspaces": [

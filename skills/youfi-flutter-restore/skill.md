@@ -1,9 +1,12 @@
 ---
-name: protobridge-flutter-restore
-description: Use when restoring Flutter pages from ProtoBridge UI build outputs such as ui-build-plan.json, ui-build-review.md, screenshots, page-canonical.json, and page-debug-index.json. Enforces contract-first implementation, node-level visual auditing, target-project convention matching, and Flutter fidelity validation.
+name: youfi-flutter-restore
+description: YouFi project restore standard. Use when implementing Flutter pages in the YouFi app from ProtoBridge outputs (ui-build-plan.json, ui-build-review.md, screenshots, page-canonical.json, page-debug-index.json). This is a real-project consumption example, not guidance for modifying the proto-bridge repository.
 ---
 
-# ProtoBridge Flutter Restore
+# YouFi Flutter Restore
+
+> 本 skill 是 **YouFi 真实项目**消费 ProtoBridge 产物的还原标准示例。  
+> 它不指导修改 `proto-bridge` 仓库本身。改本仓库请用 `skills/proto-bridge` 与 `AGENT.md`。
 
 ## 核心原则
 
@@ -440,7 +443,7 @@ Text('（${model.count}）')
 通用提示词模板：
 
 ```text
-请使用 protobridge-flutter-restore skill 还原 Flutter 页面。
+请使用 youfi-flutter-restore skill 还原 Flutter 页面。
 
 产物路径：<output/xxx>
 目标工程：<repo path>
