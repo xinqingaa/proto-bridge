@@ -87,6 +87,6 @@ output/<page>-<timestamp>/
     └── full-page.png
 ```
 
-优先阅读 `ui-build-review.md` 和截图理解页面，再按需读取 `ui-build-plan.json` 的 `implementationContract`、`sourceSemantics`、`visualPlan` 与 `stylePlan`。只有证据冲突时才深入读取 `page-canonical.json`。
+优先阅读 `ui-build-review.md` 和截图理解页面，并必读 `ui-build-plan.json` 的 `canonicalReadPolicy`、`implementationContract`、`sourceSemantics`、`visualPlan` 与 `stylePlan`。`canonicalReadPolicy.required=true` 时必须按 refs 读取 `page-canonical.json`；否则仅在证据冲突或采集异常时深入读取。
 
 完整用法与发布说明见仓库根目录 `docs/usage.md`；产物字段见 `docs/artifacts.md`。

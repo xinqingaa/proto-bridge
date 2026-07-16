@@ -15,8 +15,8 @@ output/<page>-<timestamp>/
 
 1. `ui-build-review.md` — 人类审查和实现交接
 2. `screenshots/` — 视觉对照
-3. `ui-build-plan.json` — Agent 按需读取的精确实现契约
-4. `page-canonical.json` — 只有证据冲突或采集异常时读取
+3. `ui-build-plan.json` — Agent 必读的精确实现契约
+4. `page-canonical.json` — 按 `ui-build-plan.json#/canonicalReadPolicy` 判断；存在未遍历隐藏状态、证据冲突或人工确认时必读
 
 ## 权威关系
 
@@ -38,6 +38,7 @@ Plan 使用紧凑 JSON 写出。它面向机器读取，人类不需要逐行阅
 ```text
 ui-build-plan
 ├── schemaVersion / id / pageId
+├── canonicalReadPolicy
 ├── artifactAuthority
 ├── page
 ├── implementationContract
@@ -63,6 +64,8 @@ ui-build-plan
 - `i18nPlan` / `assetPlan`：文案与资源事实
 
 `stylePlan.policy` 规定先保持 source/runtime 值，再由实现 Agent 阅读 B 的主题定义并选择工程表达。PB 不在单条样式事实中决定 B 的具体 theme token。
+
+`canonicalReadPolicy` 由 PB 根据证据覆盖率自动生成，不是配置项。`required=true` 时，Agent 必须在实现前读取 Canonical 中列出的 refs；典型原因是 Overlay 只有 source 证据、runtime 未遍历隐藏状态、source/runtime 不一致或仍有人工确认。
 
 ### B 接入建议
 
@@ -92,17 +95,18 @@ ui-build-plan
 
 `businessQuestions`、`risks` 和 `validationHints` 用于实现前确认和实现后校验。
 
+`overlayPlan` 不只标记弹层存在，还保留标题、状态/条件、触发动作、内部控件、选项集合、绑定与确认/重置/关闭动作。运行态没有打开过的弹层会标记为 `source-only`，并使 `canonicalReadPolicy.required=true`。
+
 ## ui-build-review.md
 
 Review 是 plan 的自然语言审查版，通常包含：
 
-1. 页面身份与权威边界
-2. source 业务语义、状态和交互
-3. B 架构摘要与接入建议
-4. 文件、Widget、状态与生命周期建议
-5. 视觉区块、代表性 UI 单元与样式归纳
-6. 文案、交互、风险和验收提示
-7. 人工修订区
+1. 页面总览与 Canonical 阅读结论
+2. 页面架构图与页面流程图
+3. source、runtime、视觉与样式还原事实
+4. 隐藏状态与 Overlay 交互契约
+5. B 架构摘要、接入建议、文件与 Widget 边界
+6. 风险、问题、验收提示与人工修订区
 
 Review 不展开全量节点、样式事实或 B 扫描结果。精确值通过 JSON 引用定位。
 
@@ -128,6 +132,8 @@ Canonical 保存完整证据：
 - `fieldPriority`
 - `mismatches` / `manualConfirmations`
 - `provenance` / `orchestrationTrace`
+
+Canonical 使用紧凑 JSON 写出。它面向证据追溯与遗漏诊断，不承担人类阅读职责。完整 `sourceCode` 与结构化 SFC 事实只保留一份原文：结构化 `template/script/styleBlocks` 不再重复写入；source 全局路由表只保留当前页面相关项。runtime、截图、交互、节点、样式及隐藏状态事实仍完整保留。
 
 Plan 或 review 出现明显遗漏时，回到 canonical 判断问题发生在采集、规划还是实现阶段。
 

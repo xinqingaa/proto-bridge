@@ -100,11 +100,13 @@ export async function buildFlutterUiReconstructionPlan(
     themeFamilies(conventions.targetConventions.architectureProfile.theme.patterns),
   );
   const compactVisualPlan = compactVisualPlanForArtifact(visualPlan);
+  const canonicalReadPolicy = buildCanonicalReadPolicy(input.evidence, implementationContract);
 
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: createPlanId(input.evidence.id),
     pageId: input.evidence.id,
+    canonicalReadPolicy,
     artifactAuthority: {
       pageReconstruction: {
         level: 'authoritative',
@@ -175,6 +177,33 @@ export async function buildFlutterUiReconstructionPlan(
       '优先参考相似模块示例和公共组件，不要逐层翻译 DOM。',
       ...nodeAuditHints,
       ...buildContractValidationHints(implementationContract),
+    ],
+  };
+}
+
+function buildCanonicalReadPolicy(
+  evidence: PageCanonical,
+  contract: UiBuildPlan['implementationContract'],
+): UiBuildPlan['canonicalReadPolicy'] {
+  const sourceOnlyOverlays = contract.overlayPlan.filter((overlay) => overlay.visualEvidence === 'source-only');
+  const reasons = [
+    ...(sourceOnlyOverlays.length
+      ? [`${sourceOnlyOverlays.length} overlay state(s) are source-only and were not visually traversed at runtime.`]
+      : []),
+    ...((evidence.manualConfirmations?.length ?? 0) > 0
+      ? ['Canonical contains unresolved source/runtime confirmations.']
+      : []),
+    ...(evidence.mismatches.length > 0
+      ? ['Canonical contains source/runtime mismatches that require evidence review.']
+      : []),
+  ];
+  return {
+    required: reasons.length > 0,
+    reasons,
+    refs: [
+      ...(sourceOnlyOverlays.length ? ['page-canonical.json#/sourceFacts/analysis/sfc/overlays'] : []),
+      ...(evidence.mismatches.length ? ['page-canonical.json#/mismatches'] : []),
+      ...((evidence.manualConfirmations?.length ?? 0) > 0 ? ['page-canonical.json#/manualConfirmations'] : []),
     ],
   };
 }

@@ -54,6 +54,8 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
+    "@vue/compiler-dom": "^3.5.34",
+    "@vue/compiler-sfc": "^3.5.34",
     "fast-glob": "^3.3.2",
     "playwright": "^1.49.1"
   },

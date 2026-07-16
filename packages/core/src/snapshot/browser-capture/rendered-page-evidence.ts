@@ -5,7 +5,7 @@ import type {
   CapturePageCanonicalResult,
   PageCanonical,
 } from '../../types/index.js';
-import { writeJsonFile } from '../../artifacts/artifact-writer.js';
+import { writePageCanonicalFile } from '../../artifacts/artifact-writer.js';
 import { detectPageCapabilities } from '../capabilities/detect-page-capabilities.js';
 import { buildCapturedPageEvidence } from './build-page-evidence.js';
 import { createPageId } from './evidence-id.js';
@@ -70,7 +70,7 @@ export async function captureRenderedPageCanonical(input: CapturePageCanonicalIn
       screenshots: screenshotArtifacts,
     });
 
-    await writeJsonFile(pageCanonicalPath, pageCanonical);
+    await writePageCanonicalFile(pageCanonicalPath, pageCanonical);
 
     return {
       page: pageCanonical,

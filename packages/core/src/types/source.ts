@@ -88,7 +88,8 @@ export type SourceRouteEntry = {
 export type VueSfcAnalysis = {
   template?: string | undefined;
   script?: string | undefined;
-  styleBlocks: string[];
+  styleBlocks?: string[] | undefined;
+  rawBlocksOmitted?: true | undefined;
   sections: VueTemplateSection[];
   interactions: VueInteractionHint[];
   components: VueSemanticComponent[];
@@ -98,7 +99,35 @@ export type VueSfcAnalysis = {
   layout: VueLayoutHint[];
   assets: VueAssetHint[];
   styleTokens: VueStyleTokenHint[];
+  overlays: VueOverlayHint[];
   fixedBottom: boolean;
+};
+
+export type VueOverlayOptionHint = {
+  value?: string | undefined;
+  label?: string | undefined;
+  description?: string | undefined;
+  evidence: string;
+};
+
+export type VueOverlayControlHint = {
+  kind: 'option' | 'action' | 'input' | 'picker' | 'toggle' | 'unknown';
+  tag: string;
+  label?: string | undefined;
+  action?: string | undefined;
+  model?: string | undefined;
+  sourceCollection?: string | undefined;
+  options?: VueOverlayOptionHint[] | undefined;
+  evidence: string;
+};
+
+export type VueOverlayHint = {
+  component: string;
+  state?: string | undefined;
+  condition?: string | undefined;
+  title?: string | undefined;
+  controls: VueOverlayControlHint[];
+  evidence: string[];
 };
 
 export type VueTemplateSection = {

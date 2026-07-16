@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { mkdir, rm } from 'node:fs/promises';
-import { writeJsonFile } from '../../artifacts/artifact-writer.js';
+import { writePageCanonicalFile } from '../../artifacts/artifact-writer.js';
 import {
   analyzeSourceCapability,
   attachScreenshotCapability,
@@ -173,7 +173,7 @@ export async function reconstructPageContext(
       trace,
     } : page.merge,
   };
-  await writeJsonFile(merge.files.pageCanonical, pageWithTrace);
+  await writePageCanonicalFile(merge.files.pageCanonical, pageWithTrace);
 
   const warnings = dedupe([
     ...merge.warnings,

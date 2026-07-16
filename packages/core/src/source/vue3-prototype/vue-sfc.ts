@@ -3,6 +3,9 @@ import type {
   VueInteractionHint,
   VueLayoutHint,
   VueLifecycleHint,
+  VueOverlayControlHint,
+  VueOverlayHint,
+  VueOverlayOptionHint,
   VueRouteHint,
   VueSemanticComponent,
   VueSfcAnalysis,
@@ -12,6 +15,8 @@ import type {
 } from '../../types/index.js';
 import { genericUiLexicon } from '../../shared/semantic-lexicon.js';
 import type { UiSemanticLexicon } from '../../shared/semantic-lexicon.js';
+import { baseParse, NodeTypes, type ElementNode, type TemplateChildNode } from '@vue/compiler-dom';
+import { parse as parseVueSfc } from '@vue/compiler-sfc';
 
 export type VueSfcSections = {
   template?: string | undefined;
@@ -22,11 +27,26 @@ export type VueSfcSections = {
 export function extractVueSfcSections(sourceCode: string | undefined): VueSfcSections {
   if (!sourceCode) return { styleBlocks: [] };
 
-  return {
-    template: firstBlock(sourceCode, 'template'),
-    script: firstBlock(sourceCode, 'script'),
-    styleBlocks: allBlocks(sourceCode, 'style'),
-  };
+  try {
+    const { descriptor } = parseVueSfc(sourceCode, {
+      filename: 'ProtoBridgeSource.vue',
+      sourceMap: false,
+    });
+    const script = [descriptor.script?.content, descriptor.scriptSetup?.content]
+      .filter((block): block is string => Boolean(block?.trim()))
+      .join('\n');
+    return {
+      template: descriptor.template?.content.trim(),
+      script: script || undefined,
+      styleBlocks: descriptor.styles.map((style) => style.content.trim()),
+    };
+  } catch {
+    return {
+      template: firstBlock(sourceCode, 'template'),
+      script: firstBlock(sourceCode, 'script'),
+      styleBlocks: allBlocks(sourceCode, 'style'),
+    };
+  }
 }
 
 export function analyzeVueSfc(
@@ -46,6 +66,7 @@ export function analyzeVueSfc(
   const layout = inferLayout(styleText);
   const assets = inferAssets(template, styleText);
   const styleTokens = inferStyleTokens(styleText);
+  const overlays = inferOverlays(template, script);
 
   return {
     ...sections,
@@ -58,8 +79,222 @@ export function analyzeVueSfc(
     layout,
     assets,
     styleTokens,
+    overlays,
     fixedBottom: hasFixedBottomBar(template, styleText, lexicon),
   };
+}
+
+function inferOverlays(template: string, script: string): VueOverlayHint[] {
+  if (!template.trim()) return [];
+  let root;
+  try {
+    root = baseParse(template);
+  } catch {
+    return [];
+  }
+  const elements: ElementNode[] = [];
+  walkElements(root.children, (element) => {
+    if (isOverlayRoot(element)) elements.push(element);
+  });
+  return dedupeBy(elements.map((element) => overlayFromElement(element, script)), (overlay) =>
+    `${overlay.component}:${overlay.state ?? overlay.condition ?? overlay.title ?? ''}`,
+  ).slice(0, 16);
+}
+
+function walkElements(nodes: TemplateChildNode[], visit: (element: ElementNode) => void): void {
+  for (const node of nodes) {
+    if (node.type !== NodeTypes.ELEMENT) continue;
+    visit(node);
+    walkElements(node.children, visit);
+  }
+}
+
+function isOverlayRoot(element: ElementNode): boolean {
+  const state = directiveExpression(element, 'model') ?? directiveExpression(element, 'if');
+  const className = staticAttribute(element, 'class') ?? '';
+  const semanticTag = /(?:sheet|modal|popup|dialog|drawer)$/i.test(element.tag);
+  const semanticClass = /(?:^|\s|[-_])(?:sheet-backdrop|modal|popup|dialog|drawer)(?:\s|$|[-_])/i.test(className);
+  return semanticTag || Boolean(state && semanticClass);
+}
+
+function overlayFromElement(element: ElementNode, script: string): VueOverlayHint {
+  const state = directiveExpression(element, 'model');
+  const condition = directiveExpression(element, 'if');
+  const controls: VueOverlayControlHint[] = [];
+  walkElements(element.children, (child) => {
+    if (!isOverlayControl(child)) return;
+    controls.push(overlayControlFromElement(child, script));
+  });
+  const titleNode = firstDescendant(element, (child) => /^h[1-6]$/i.test(child.tag));
+  const openingTag = element.loc.source.match(/^<[^>]+>/)?.[0] ?? `<${element.tag}>`;
+  return {
+    component: element.tag,
+    ...(state ? { state } : {}),
+    ...(condition ? { condition } : {}),
+    ...(titleNode ? { title: templateNodeText(titleNode) } : {}),
+    controls: dedupeBy(controls, (control) => `${control.tag}:${control.action ?? ''}:${control.model ?? ''}:${control.sourceCollection ?? ''}:${control.label ?? ''}`),
+    evidence: [compactCode(openingTag)],
+  };
+}
+
+function isOverlayControl(element: ElementNode): boolean {
+  return /^(?:button|input|select|textarea)$/i.test(element.tag)
+    || /(?:picker|switch|checkbox|radio)$/i.test(element.tag)
+    || Boolean(directiveExpression(element, 'model'))
+    || Boolean(directiveExpression(element, 'on', 'click'))
+    || Boolean(directiveExpression(element, 'on', 'change'))
+    || Boolean(directiveExpression(element, 'on', 'submit'));
+}
+
+function overlayControlFromElement(element: ElementNode, script: string): VueOverlayControlHint {
+  const loop = directiveExpression(element, 'for');
+  const sourceCollection = loop?.match(/\b(?:in|of)\s+([A-Za-z_$][\w$]*)/)?.[1];
+  const action = directiveExpression(element, 'on', 'click')
+    ?? directiveExpression(element, 'on', 'change')
+    ?? directiveExpression(element, 'on', 'submit');
+  const model = directiveExpression(element, 'model');
+  const label = staticAttribute(element, 'aria-label') ?? templateNodeText(element);
+  const tag = element.tag;
+  const kind: VueOverlayControlHint['kind'] = sourceCollection
+    ? 'option'
+    : /picker/i.test(tag)
+      ? 'picker'
+      : /switch|checkbox|radio/i.test(tag)
+        ? 'toggle'
+        : /^(?:input|select|textarea)$/i.test(tag)
+          ? 'input'
+          : action
+            ? 'action'
+            : 'unknown';
+  const openingTag = element.loc.source.match(/^<[^>]+>/)?.[0] ?? `<${tag}>`;
+  const options = sourceCollection ? resolveCollectionOptions(script, sourceCollection) : [];
+  return {
+    kind,
+    tag,
+    ...(label ? { label } : {}),
+    ...(action ? { action } : {}),
+    ...(model ? { model } : {}),
+    ...(sourceCollection ? { sourceCollection } : {}),
+    ...(options.length ? { options } : {}),
+    evidence: compactCode(openingTag),
+  };
+}
+
+function firstDescendant(element: ElementNode, predicate: (element: ElementNode) => boolean): ElementNode | undefined {
+  for (const child of element.children) {
+    if (child.type !== NodeTypes.ELEMENT) continue;
+    if (predicate(child)) return child;
+    const nested = firstDescendant(child, predicate);
+    if (nested) return nested;
+  }
+  return undefined;
+}
+
+function templateNodeText(element: ElementNode): string | undefined {
+  const parts: string[] = [];
+  const collect = (nodes: TemplateChildNode[]): void => {
+    for (const node of nodes) {
+      if (node.type === NodeTypes.TEXT) parts.push(node.content);
+      else if (node.type === NodeTypes.INTERPOLATION) {
+        const expression = node.content.type === NodeTypes.SIMPLE_EXPRESSION
+          ? node.content.content
+          : node.content.loc.source;
+        parts.push(readableExpression(expression));
+      }
+      else if (node.type === NodeTypes.ELEMENT) collect(node.children);
+    }
+  };
+  collect(element.children);
+  const text = parts.join(' ').replace(/\s+/g, ' ').trim();
+  return text || undefined;
+}
+
+function readableExpression(expression: string): string {
+  const literals = [...expression.matchAll(/(['"`])((?:\\.|(?!\1).)*)\1/g)]
+    .map((match) => match[2]?.trim())
+    .filter((value): value is string => Boolean(value));
+  return literals.join(' / ') || compactCode(expression);
+}
+
+function directiveExpression(element: ElementNode, name: string, argument?: string): string | undefined {
+  const directive = element.props.find((prop) =>
+    prop.type === NodeTypes.DIRECTIVE
+    && prop.name === name
+    && (!argument || (prop.arg?.type === NodeTypes.SIMPLE_EXPRESSION && prop.arg.content === argument)),
+  );
+  return directive?.type === NodeTypes.DIRECTIVE && directive.exp?.type === NodeTypes.SIMPLE_EXPRESSION
+    ? directive.exp.content.trim() || undefined
+    : undefined;
+}
+
+function staticAttribute(element: ElementNode, name: string): string | undefined {
+  const attribute = element.props.find((prop) => prop.type === NodeTypes.ATTRIBUTE && prop.name === name);
+  return attribute?.type === NodeTypes.ATTRIBUTE ? attribute.value?.content : undefined;
+}
+
+function resolveCollectionOptions(script: string, name: string): VueOverlayOptionHint[] {
+  const array = extractConstArray(script, name);
+  if (!array) return [];
+  const objects = [...array.matchAll(/\{([^{}]*)\}/g)].map((match) => match[1] ?? '');
+  if (objects.length) {
+    return objects.map((body) => {
+      const value = stringField(body, ['value', 'key', 'id']);
+      const label = stringField(body, ['label', 'title', 'name']);
+      const description = stringField(body, ['description', 'desc', 'subtitle', 'hint']);
+      return {
+        ...(value ? { value } : {}),
+        ...(label ? { label } : {}),
+        ...(description ? { description } : {}),
+        evidence: compactCode(`{${body}}`),
+      };
+    }).filter((option) => option.value || option.label || option.description).slice(0, 40);
+  }
+  return [...array.matchAll(/(['"`])((?:\\.|(?!\1).)*)\1/g)]
+    .map((match) => match[2]?.trim())
+    .filter((value): value is string => Boolean(value))
+    .slice(0, 40)
+    .map((value) => ({ value, label: value, evidence: value }));
+}
+
+function extractConstArray(script: string, name: string): string | undefined {
+  const assignment = new RegExp(`\\b(?:const|let)\\s+${escapeRegex(name)}\\s*=\\s*\\[`, 'g').exec(script);
+  if (!assignment) return undefined;
+  const start = script.indexOf('[', assignment.index);
+  if (start < 0) return undefined;
+  let depth = 0;
+  let quote = '';
+  let escaped = false;
+  for (let index = start; index < script.length; index += 1) {
+    const char = script[index] ?? '';
+    if (quote) {
+      if (escaped) escaped = false;
+      else if (char === '\\') escaped = true;
+      else if (char === quote) quote = '';
+      continue;
+    }
+    if (char === '"' || char === "'" || char === '`') {
+      quote = char;
+      continue;
+    }
+    if (char === '[') depth += 1;
+    else if (char === ']') {
+      depth -= 1;
+      if (depth === 0) return script.slice(start + 1, index);
+    }
+  }
+  return undefined;
+}
+
+function stringField(body: string, names: string[]): string | undefined {
+  for (const name of names) {
+    const match = new RegExp(`(?:^|[,\\s])${name}\\s*:\\s*(['"\`])((?:\\\\.|(?!\\1).)*)\\1`).exec(body);
+    if (match?.[2]) return match[2].trim();
+  }
+  return undefined;
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function inferTemplateSections(

@@ -63,6 +63,12 @@ importers:
 
   packages/core:
     dependencies:
+      '@vue/compiler-dom':
+        specifier: ^3.5.34
+        version: 3.5.34
+      '@vue/compiler-sfc':
+        specifier: ^3.5.34
+        version: 3.5.34
       fast-glob:
         specifier: ^3.3.2
         version: 3.3.3

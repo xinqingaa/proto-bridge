@@ -54,7 +54,7 @@ console.log(validation.status);
 └── screenshots/
 ```
 
-`ui-build-plan.json` 是唯一机器契约，包含 `targetConventions`、`implementationContract` 和 `visualPlan`。`ui-build-review.md` 是从 plan 渲染的人类可读 brief。
+`ui-build-plan.json` 是唯一机器契约，包含 `canonicalReadPolicy`、`targetConventions`、`implementationContract` 和 `visualPlan`。实现 agent 必读 plan；`canonicalReadPolicy.required=true` 时还必须按 refs 读取 Canonical。`ui-build-review.md` 是从 plan 渲染的人类可读 brief。
 
 ## 项目事实边界
 

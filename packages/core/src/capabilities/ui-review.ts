@@ -30,180 +30,110 @@ function renderReviewMarkdown(plan: UiBuildPlan, manualNotes: string): string {
   return [
     `# ${plan.page.title ?? 'Snapshot UI'} 构建审查`,
     '',
-    '## 契约权威',
+    '## 页面总览',
     '',
     `- 计划 ID：\`${plan.id}\``,
     `- 页面 ID：\`${plan.pageId}\``,
     `- 原型路由：${plan.page.route ?? 'unknown'}`,
+    `- 视口：${plan.visualPlan.viewport.width}x${plan.visualPlan.viewport.height}`,
+    `- 页面摘要：${plan.page.summary}`,
     `- 目标模块：${plan.target.module ?? 'unknown'}`,
     ...(plan.routeMapping ? [`- 路由映射：${plan.routeMapping.sourceRoute ?? 'unknown'} → ${plan.routeMapping.targetRouteSymbol ?? plan.routeMapping.targetRoute ?? 'unresolved'} (${confidenceLabel(plan.routeMapping.confidence)})`] : []),
-    ...(plan.routeIntentMappings?.length ? [`- 跳转映射：${plan.routeIntentMappings.length} 个 source 跳转目标已匹配 target 路由配置`] : []),
-    `- 逻辑来源：${plan.implementationContract.logicalPlanSource}`,
-    '- 机器契约只看 `ui-build-plan.json`；本文档只是该 JSON 的中文审查视图。',
-    '- 权威边界：page / sourceSemantics / visualPlan / stylePlan.facts 描述必须还原的页面；integrationGuidance 仅是 B 接入建议。',
-    '- 若目标约定未知，不得从名称相似度猜 route、module、component 或 theme token；实现 agent 应阅读 B 或询问用户。',
+    `- Canonical：${plan.canonicalReadPolicy.required ? '必读' : '诊断时读取'}${plan.canonicalReadPolicy.reasons.length ? `；${plan.canonicalReadPolicy.reasons.map(translateWarning).join('；')}` : ''}`,
+    `- 截图：${plan.visualPlan.screenshotRefs.join('、') || '无'}`,
     '',
-    '### B 接入建议（非页面事实）',
+    '> 页面、来源语义、视觉、样式和交互是还原权威；B 的模块、路由、组件和主题只是不具强制性的接入建议。精确字段以 `ui-build-plan.json` 为准。',
     '',
-    '_JSON 来源：`ui-build-plan.json#/integrationGuidance`_',
+    '## 页面架构图',
     '',
-    ...renderIntegrationGuidance(plan),
+    ...renderPageArchitectureDiagram(plan),
     '',
-    '## 来源语义',
+    '## 页面流程图',
     '',
-    '_JSON 来源：`ui-build-plan.json#/implementationContract/sourceSemantics`_',
+    ...renderPageFlowDiagram(plan),
+    '',
+    '## 页面还原事实（权威）',
+    '',
+    '_JSON 来源：`ui-build-plan.json#/implementationContract/sourceSemantics`、`#/visualPlan`、`#/stylePlan/facts`_',
     '',
     ...renderSourceSemantics(plan),
     '',
-    '## 目标工程扫描结果',
-    '',
-    '_JSON 来源：`ui-build-plan.json#/targetConventions/architectureProfile`_',
-    '',
-    ...renderArchitectureProfile(plan),
-    '',
-    '## 实现契约',
-    '',
-    '_JSON 来源：`ui-build-plan.json#/implementationContract`_',
-    '',
-    '### 文件',
+    '### 运行态区块',
     '',
     ...markdownTable(
-      ['文件', '职责', '备注'],
-      plan.implementationContract.fileTree.map((file) => [
-        codeCell(file.path),
-        file.responsibility,
-        file.notes ?? '',
+      ['角色', '标题/ID', 'bbox', '节点数'],
+      reviewVisualSections(plan).slice(0, 14).map((section) => [
+        section.role,
+        section.title ?? section.id,
+        `${section.bbox.x},${section.bbox.y},${section.bbox.width},${section.bbox.height}`,
+        String(section.nodeIds.length),
       ]),
     ),
     '',
-    '### Widget 与契约',
+    '### 代表性节点证据',
+    '',
+    ...renderNodeAuditSummary(plan),
+    '',
+    '### 样式摘要',
+    '',
+    `- 样式规则：${plan.stylePlan.policy.rule}`,
+    '',
+    ...renderStyleSummary(plan),
+    '',
+    '## 隐藏状态与交互（权威）',
+    '',
+    '_JSON 来源：`ui-build-plan.json#/implementationContract/overlayPlan`、`#/interactionPlan`_',
+    '',
+    ...renderOverlayPlan(plan),
+    '',
+    '### 交互摘要',
+    '',
+    ...renderInteractionSummary(plan),
+    '',
+    '## B 工程接入建议（非权威）',
+    '',
+    '_JSON 来源：`ui-build-plan.json#/integrationGuidance`、`#/targetConventions`、`#/implementationContract`_',
+    '',
+    ...renderIntegrationGuidance(plan),
+    '',
+    ...renderArchitectureProfile(plan),
+    '',
+    '### 文件与 Widget',
+    '',
+    ...markdownTable(
+      ['文件', '职责'],
+      plan.implementationContract.fileTree.slice(0, 10).map((file) => [codeCell(file.path), file.responsibility]),
+    ),
     '',
     ...renderWidgetContractTable(plan),
     '',
-    '### 状态与边界',
+    '### 状态边界',
     '',
     ...markdownTable(
       ['关注点', 'Owner', '建议'],
-      plan.implementationContract.stateStrategy.map((strategy) => [
+      plan.implementationContract.stateStrategy.slice(0, 10).map((strategy) => [
         strategy.concern,
         ownerLabel(strategy.owner),
         strategy.recommendation,
       ]),
     ),
     '',
-    ...markdownTable(
-      ['边界', '职责', '负责', '避免'],
-      plan.implementationContract.controllerBoundaries.map((boundary) => [
-        boundary.name,
-        boundary.responsibility,
-        boundary.owns.join('、') || '无',
-        boundary.avoids.join('、') || '无',
-      ]),
-    ),
+    '## 风险、问题与验收',
     '',
-    '### 契约规则',
-    '',
-    ...listOrFallback(plan.implementationContract.rules.map((rule) => `- ${translateRule(rule)}`)),
-    '',
-    '### P0 冲突与覆盖层契约',
+    '### Source/runtime 冲突',
     '',
     ...renderImplementationConflicts(plan),
     '',
-    ...renderOverlayPlan(plan),
-    '',
-    '## 页面视觉与样式事实',
-    '',
-    '_JSON 来源：`ui-build-plan.json#/visualPlan`、`#/stylePlan/facts`、`#/componentMappings`_',
-    '',
-    `- 视口：${plan.visualPlan.viewport.width}x${plan.visualPlan.viewport.height}`,
-    `- 截图：${plan.visualPlan.screenshotRefs.join('、') || '无'}`,
-    '',
-    '### 节点级还原证据',
-    '',
-    '_JSON 来源：`ui-build-plan.json#/visualPlan/nodeAudits`_',
-    '',
-    ...renderNodeAudits(plan),
-    '',
-    '### 动态文案提示',
-    '',
-    '_JSON 来源：`ui-build-plan.json#/visualPlan/dynamicTextHints`、`#/i18nPlan/texts[*].dynamic`_',
-    '',
-    ...renderDynamicTextHints(plan),
-    '',
-    '### 区块证据',
-    '',
-    ...markdownTable(
-      ['角色', '标题/ID', 'bbox', '节点数', '提示'],
-      reviewVisualSections(plan).map((section) => [
-        section.role,
-        section.title ?? section.id,
-        `${section.bbox.x},${section.bbox.y},${section.bbox.width},${section.bbox.height}`,
-        String(section.nodeIds.length),
-        section.buildHint ?? '',
-      ]),
-    ),
-    '',
-    '### 组件映射',
-    '',
-    ...markdownTable(
-      ['来源角色', '状态', '目标/候选组件', '置信度', '节点/来源', '下一步'],
-      plan.componentMappings.filter((mapping) => mapping.status !== 'unresolved').slice(0, 8).map((mapping) => [
-        mapping.sourceRole,
-        mapping.status,
-        mapping.targetSymbol ?? mapping.candidateSymbols?.join('、') ?? '未确认',
-        confidenceLabel(mapping.confidence),
-        mapping.nodeIds.slice(0, 6).join('、'),
-        mapping.nextAction,
-      ]),
-    ),
-    '',
-    '### 来源样式事实与目标主题提示',
-    '',
-    `- 样式规则：${plan.stylePlan.policy.rule}`,
-    '',
-    ...renderStyleSummary(plan),
-    '',
-    '## 文案与交互',
-    '',
-    '_JSON 来源：`ui-build-plan.json#/i18nPlan`、`#/interactionPlan`_',
-    '',
-    '### 文案',
-    '',
-    translateRecommendation(plan.i18nPlan.recommendation),
-    '',
-    ...markdownTable(
-      ['建议 key', '文案', '节点'],
-      plan.i18nPlan.texts.slice(0, 24).map((item) => [
-        item.suggestedKey ? codeCell(item.suggestedKey) : '待定 key',
-        item.text,
-        item.nodeIds.slice(0, 6).join('、'),
-      ]),
-    ),
-    '',
-    '### 交互',
-    '',
-    ...renderInteractionSummary(plan),
-    '',
-    '## 风险与确认',
-    '',
-    '_JSON 来源：`ui-build-plan.json#/implementationContract/contractWarnings`、`#/businessQuestions`、`#/validationHints`_',
-    '',
-    '### 契约警告',
-    '',
-    ...listOrFallback(plan.implementationContract.contractWarnings.map((warning) => `- ${translateWarning(warning)}`)),
-    '',
-    '### 人工确认',
+    '### 待确认与风险',
     '',
     ...listOrFallback([
+      ...plan.implementationContract.contractWarnings,
       ...plan.implementationContract.manualQuestions,
       ...plan.businessQuestions,
-    ].map((question) => `- ${translateWarning(question)}`)),
+      ...plan.risks,
+    ].map((item) => `- ${translateWarning(item)}`)),
     '',
-    '### 风险',
-    '',
-    ...listOrFallback(plan.risks.map((risk) => `- ${translateWarning(risk)}`)),
-    '',
-    '### 校验提示',
+    '### 验收重点',
     '',
     ...renderValidationSummary(plan),
     '',
@@ -225,6 +155,57 @@ async function readManualNotes(filePath: string): Promise<string> {
   } catch {
     return '';
   }
+}
+
+function renderPageArchitectureDiagram(plan: UiBuildPlan): string[] {
+  const sections = plan.implementationContract.sourceSemantics?.businessSections
+    .filter((section) => !['form-section', 'content-section', 'overlay-shell'].includes(section.role))
+    .slice(0, 10) ?? [];
+  const nodes = sections.length
+    ? sections.map((section) => ({ name: section.name, parent: section.parent, role: section.role }))
+    : plan.implementationContract.widgetTree.slice(0, 12).map((widget) => ({ name: widget.name, parent: widget.parent, role: widget.role }));
+  const ids = new Map(nodes.map((node, index) => [node.name, `N${index}`]));
+  const lines = ['```mermaid', 'flowchart TD', `  PAGE["${mermaidLabel(plan.page.title ?? 'Page')}"]`];
+  for (const [index, node] of nodes.entries()) {
+    lines.push(`  N${index}["${mermaidLabel(`${node.name} · ${node.role}`)}"]`);
+    lines.push(`  ${node.parent && ids.has(node.parent) ? ids.get(node.parent) : 'PAGE'} --> N${index}`);
+  }
+  for (const [index, overlay] of plan.implementationContract.overlayPlan.slice(0, 8).entries()) {
+    const overlayId = `O${index}`;
+    lines.push(`  ${overlayId}["${mermaidLabel(overlay.title ?? overlay.id)}"]`);
+    lines.push(`  PAGE -. "${mermaidLabel(overlay.trigger ?? overlay.sourceState ?? 'source state')}" .-> ${overlayId}`);
+  }
+  lines.push('```');
+  return lines;
+}
+
+function renderPageFlowDiagram(plan: UiBuildPlan): string[] {
+  const overlays = plan.implementationContract.overlayPlan.slice(0, 8);
+  const routeIntents = plan.implementationContract.sourceSemantics?.routeIntent ?? [];
+  const routes = [...new Map(routeIntents.map((route) => [
+    `${route.action}:${route.target ?? route.routeMapping?.targetRouteSymbol ?? route.routeMapping?.targetRoute ?? ''}`,
+    route,
+  ])).values()].slice(0, 6);
+  const lines = [
+    '```mermaid',
+    'flowchart LR',
+    '  ENTER["进入页面"] --> MAIN["浏览主页面"]',
+  ];
+  for (const [index, overlay] of overlays.entries()) {
+    lines.push(`  MAIN -->|"${mermaidLabel(overlay.trigger ?? '打开')}"| S${index}["${mermaidLabel(overlay.title ?? overlay.id)}"]`);
+    lines.push(`  S${index} -->|"选择 / 关闭 / 确认"| MAIN`);
+  }
+  for (const [index, route] of routes.entries()) {
+    const target = route.target ?? route.routeMapping?.targetRouteSymbol ?? route.routeMapping?.targetRoute;
+    if (!target) continue;
+    lines.push(`  MAIN -->|"${mermaidLabel(route.action)}"| R${index}["${mermaidLabel(target)}"]`);
+  }
+  lines.push('```');
+  return lines;
+}
+
+function mermaidLabel(value: string): string {
+  return value.replace(/["\n\r]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 function renderInteractionSummary(plan: UiBuildPlan): string[] {
@@ -305,25 +286,11 @@ function renderSourceSemantics(plan: UiBuildPlan): string[] {
   const semantics = plan.implementationContract.sourceSemantics;
   if (!semantics) return ['- 未提供 source-aware 语义；请以 implementationContract 和 visualPlan 为准。'];
   return [
-    '### 摘要',
+    '### Source 语义摘要',
     '',
     ...listOrFallback(semantics.summary.slice(0, 8).map((item) => `- ${item}`)),
     '',
-    '### 业务区块',
-    '',
-    ...markdownTable(
-      ['区块', '父级', '角色', '职责', '输入', '回调'],
-      semantics.businessSections.slice(0, 20).map((section) => [
-        section.name,
-        section.parent ?? '页面入口',
-        section.role,
-        section.responsibility,
-        section.inputs.join('、') || '无',
-        section.callbacks.join('、') || '无',
-      ]),
-    ),
-    '',
-    '### 状态意图',
+    '### 状态、路由与生命周期',
     '',
     ...markdownTable(
       ['关注点', 'Owner', '建议'],
@@ -334,42 +301,10 @@ function renderSourceSemantics(plan: UiBuildPlan): string[] {
       ]),
     ),
     '',
-    '### 路由意图',
-    '',
-    ...markdownTable(
-      ['动作', '目标', '目标路由', '参数', '迁移意图'],
-      semantics.routeIntent.slice(0, 12).map((item) => [
-        item.action,
-        item.target ?? '待确认',
-        item.routeMapping
-          ? `${item.routeMapping.targetRouteSymbol ?? item.routeMapping.targetRoute ?? 'unresolved'} (${confidenceLabel(item.routeMapping.confidence)})`
-          : '',
-        item.params ?? '',
-        item.evidence ?? '',
-      ]),
-    ),
-    '',
-    '### 生命周期意图',
-    '',
-    ...markdownTable(
-      ['Hook', '目标', '迁移意图'],
-      semantics.lifecycleIntent.slice(0, 12).map((item) => [
-        item.hook,
-        item.target ?? '待确认',
-        item.evidence ?? '',
-      ]),
-    ),
-    '',
-    '### 交互意图',
-    '',
-    ...markdownTable(
-      ['类型', '目标', '来源证据'],
-      semantics.interactionIntent.slice(0, 16).map((item) => [
-        item.kind,
-        item.target ?? '待确认',
-        item.evidence ?? '',
-      ]),
-    ),
+    ...listOrFallback([
+      ...semantics.routeIntent.slice(0, 8).map((item) => `- 路由：${item.action} → ${item.target ?? '待确认'}`),
+      ...semantics.lifecycleIntent.slice(0, 6).map((item) => `- 生命周期：${item.hook} → ${item.target ?? '待确认'}`),
+    ]),
     '',
     '### 禁止直译',
     '',
@@ -399,26 +334,6 @@ function renderArchitectureProfile(plan: UiBuildPlan): string[] {
       ],
     ),
     '',
-    '### 代码扫描证据样例',
-    '',
-    '代码扫描仍是 targetConventions 的最高优先级证据；文档证据只作为补充，不能覆盖真实代码扫描结果。',
-    '',
-    ...markdownTable(
-      ['维度', '符号', '文件', '片段'],
-      [
-        ...profile.state.examples.slice(0, 2).map((item) => evidenceRow('状态', item)),
-        ...profile.routing.examples.slice(0, 2).map((item) => evidenceRow('路由', item)),
-        ...profile.i18n.examples.slice(0, 2).map((item) => evidenceRow('i18n', item)),
-        ...profile.theme.examples.slice(0, 2).map((item) => evidenceRow('主题', item)),
-        ...profile.components.examples.slice(0, 3).map((item) => evidenceRow('组件', item)),
-        ...profile.fileOrganization.examples.slice(0, 1).map((item) => evidenceRow('文件组织', item)),
-      ],
-    ),
-    '',
-    '### Target 文档证据',
-    '',
-    ...renderTargetDocumentation(plan),
-    '',
     ...(plan.targetConventions.unresolved.length
       ? ['### 未解析项', '', ...plan.targetConventions.unresolved.map((item) => `- ${translateWarning(item)}`)]
       : []),
@@ -438,6 +353,28 @@ function renderTargetDocumentation(plan: UiBuildPlan): string[] {
     ...(docs.warnings.length
       ? ['文档扫描警告：', '', ...docs.warnings.map((item) => `- ${translateWarning(item)}`)]
       : []),
+  ];
+}
+
+function renderNodeAuditSummary(plan: UiBuildPlan): string[] {
+  const audits = (plan.visualPlan.nodeAudits ?? [])
+    .filter((audit) => audit.displayInReview)
+    .slice(0, 14);
+  if (!audits.length) return ['- 未生成代表性节点证据；按 canonicalReadPolicy 回退 Canonical。'];
+  return [
+    ...markdownTable(
+      ['优先级', '类型/角色', '节点与 bbox', '行/控件', '重复实例', '风险'],
+      audits.map((audit) => [
+        audit.priority.toUpperCase(),
+        `${audit.kind} / ${audit.role}`,
+        `${codeCell(audit.sourceNodeId)} · ${audit.bbox.x},${audit.bbox.y},${audit.bbox.width},${audit.bbox.height}`,
+        `${audit.rows.length} / ${audit.controls?.length ?? 0}`,
+        audit.repeatedGroup ? String(audit.repeatedGroup.instanceCount) : '1',
+        audit.implementationSummary.riskLevel,
+      ]),
+    ),
+    '',
+    `- 完整节点行结构、字段顺序、computed style、实例差异与控件证据：\`ui-build-plan.json#/visualPlan/nodeAudits\`。`,
   ];
 }
 
@@ -624,17 +561,37 @@ function renderOverlayPlan(plan: UiBuildPlan): string[] {
     'Overlay 规则：`uiShellRequired=true` 表示需要实现弹层/Sheet UI；`businessBehaviorRequired=false` 表示提交、接口、真实副作用保留 TODO。',
     '',
     ...markdownTable(
-      ['Overlay', '触发', '来源组件/状态', '目标组件', '视觉证据', '实现级别', '风险'],
+      ['Overlay', '标题', '触发', '来源状态', '视觉证据', '控件数', '风险'],
       overlays.map((overlay) => [
         overlay.id,
+        overlay.title ?? '待确认',
         overlay.trigger ?? '人工确认',
-        [overlay.sourceComponent, overlay.sourceState].filter(Boolean).join(' / '),
-        overlay.targetComponent ?? '本地 Widget/人工确认',
+        [overlay.sourceState, overlay.sourceCondition].filter(Boolean).join(' / ') || overlay.sourceComponent,
         overlay.visualEvidence,
-        overlay.uiShellRequired ? `${overlay.implementationLevel}; UI shell required` : overlay.implementationLevel,
+        String(overlay.controls.length),
         overlay.visualFidelityRisk,
       ]),
     ),
+    '',
+    ...overlays.flatMap((overlay) => [
+      `#### ${overlay.title ?? overlay.id}`,
+      '',
+      `- 来源：${overlay.sourceComponent}${overlay.sourceState ? ` / \`${overlay.sourceState}\`` : ''}${overlay.sourceCondition ? ` / 条件 \`${overlay.sourceCondition}\`` : ''}`,
+      `- 目标组件：${overlay.targetComponent ?? '本地 Widget/人工确认'}`,
+      '',
+      ...markdownTable(
+        ['类型', '标签/表达式', '绑定/动作', '来源集合与选项'],
+        overlay.controls.map((control) => [
+          control.kind,
+          control.label ?? '无可见标签',
+          control.action ?? control.model ?? '无',
+          control.sourceCollection
+            ? `${control.sourceCollection}: ${(control.options ?? []).map((option) => option.label ?? option.value).filter(Boolean).join('、') || '动态集合'}`
+            : '',
+        ]),
+      ),
+      '',
+    ]),
   ];
 }
 
@@ -852,6 +809,9 @@ function translateRecommendation(value: string): string {
 
 function translateWarning(value: string): string {
   return translateRecommendation(value)
+    .replace(/^(\d+) overlay state\(s\) are source-only and were not visually traversed at runtime\.$/, '$1 个 Overlay 状态只有 source 证据，runtime 未遍历其打开状态。')
+    .replace('Canonical contains unresolved source/runtime confirmations.', 'Canonical 中存在尚未确认的 source/runtime 差异。')
+    .replace('Canonical contains source/runtime mismatches that require evidence review.', 'Canonical 中存在需要复核的 source/runtime mismatch。')
     .replace('Representative node rows list the visible display fields; do not add extra sibling fields unless sourceSemantics or user confirmation requires them.', '代表节点行结构只列出可见展示字段；除非 sourceSemantics 或用户确认要求，不要额外补同级字段。')
     .replace('No available quantity field is visible in this representative card/list item.', '该代表卡片/列表项没有可见的可用数量字段。')
     .replace('Restore row order and visible text/icon order from rows before applying target component abstractions.', '先保留行顺序和文本/图标顺序，再套目标组件抽象。')

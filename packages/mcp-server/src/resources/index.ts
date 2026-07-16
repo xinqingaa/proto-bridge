@@ -168,7 +168,7 @@ function renderWorkflowGuide(): string {
     '   - 有目标工程时传 `targetRoot` 或在 config 中配置 `target.root`，用于 target.inspect、ui.plan 和 ui.review。',
     '   - 没有 target 时只产出 evidence 类 artifact；不会强行生成 Flutter 实现计划。',
     '   - 有 source + target facts 时，source semantics 会进入 `ui-build-plan.json#/implementationContract/sourceSemantics`，并由 `ui-build-review.md` 展示。',
-    '   - 实现时先读 `ui-build-review.md` 与截图，再按需读取 `ui-build-plan.json` 的 `implementationContract`、`visualPlan` 与 `stylePlan`；只有证据冲突时读取 canonical。',
+    '   - 实现时先读 `ui-build-review.md` 与截图，并必读 `ui-build-plan.json` 的 `canonicalReadPolicy`、`implementationContract`、`visualPlan` 与 `stylePlan`；required=true 时按 refs 必读 canonical，否则仅在证据冲突或采集异常时读取。',
     '',
     '2. 可选截图/OCR 输入：当可见文字缺失、图片/canvas 文字重要时，把 `screenshotPath`、`ocrText` 或 `ocrBoxes` 直接传给 `reconstruct_page_context`。',
     '   - 这些证据会进入 `screenshotFacts` 和 `page-canonical.json`。',

@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { writeJsonFile } from '../artifacts/artifact-writer.js';
+import { writePageCanonicalFile } from '../artifacts/artifact-writer.js';
 import type {
   DetectedCapabilities,
   OcrResult,
@@ -153,7 +153,7 @@ export async function mergePageCapability(input: PageMergeCapabilityInput): Prom
     manualConfirmations,
   };
 
-  await writeJsonFile(pageCanonicalPath, page);
+  await writePageCanonicalFile(pageCanonicalPath, page);
 
   return {
     capability: 'page.merge',

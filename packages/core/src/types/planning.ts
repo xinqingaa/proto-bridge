@@ -1,6 +1,7 @@
 import type { ImplementationShape, MappingConfidence, WidgetRecommendationType } from './common.js';
 import type { AssetEvidence, InteractionEvidence, PageCanonical, SnapshotNodeRole } from './evidence.js';
 import type { FlutterComponentRef, FlutterContextAnalysis, FlutterExampleRef, FlutterRouteIntentMapping, FlutterRouteMapping, FlutterTargetConventionProfile } from './target-flutter.js';
+import type { VueOverlayControlHint } from './source.js';
 
 export type WidgetRecommendation = {
   name: string;
@@ -293,6 +294,9 @@ export type UiOverlayPlan = {
   trigger?: string | undefined;
   sourceComponent: string;
   sourceState?: string | undefined;
+  sourceCondition?: string | undefined;
+  title?: string | undefined;
+  controls: VueOverlayControlHint[];
   visualEvidence: 'runtime' | 'source-only' | 'unknown';
   targetComponent?: string | undefined;
   uiShellRequired: boolean;
@@ -424,9 +428,14 @@ export type UiSourceSemantics = {
 };
 
 export type UiBuildPlan = {
-  schemaVersion: 2;
+  schemaVersion: 3;
   id: string;
   pageId: string;
+  canonicalReadPolicy: {
+    required: boolean;
+    reasons: string[];
+    refs: string[];
+  };
   artifactAuthority: {
     pageReconstruction: {
       level: 'authoritative';

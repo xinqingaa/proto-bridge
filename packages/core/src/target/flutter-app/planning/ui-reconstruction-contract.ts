@@ -417,13 +417,29 @@ function buildOverlayPlan(
       state: match[2] ?? undefined,
       evidence: match[0] ?? '',
     }));
+  for (const overlay of source.overlays ?? []) {
+    overlays.push(createOverlayPlan({
+      id: overlayId(overlay.state ?? overlay.condition ?? overlay.component),
+      sourceComponent: overlay.component,
+      sourceState: overlay.state,
+      sourceCondition: overlay.condition,
+      title: overlay.title,
+      controls: overlay.controls,
+      targetComponent: sheetComponent?.symbol,
+      trigger: triggerForOverlayState(overlay.state ?? overlay.condition, source.interactions),
+      evidence: overlay.evidence,
+      visualEvidence: hasRuntimeModalEvidence(evidence) ? 'runtime' : 'source-only',
+    }));
+  }
   for (const model of bottomSheetModels) {
+    if (overlays.some((overlay) => overlay.sourceState === model.state && overlay.sourceComponent === model.component)) continue;
     overlays.push(createOverlayPlan({
       id: overlayId(model.state ?? model.component),
       sourceComponent: model.component,
       sourceState: model.state,
       targetComponent: sheetComponent?.symbol,
       trigger: triggerForOverlayState(model.state, source.interactions),
+      controls: [],
       evidence: [model.evidence],
       visualEvidence: hasRuntimeModalEvidence(evidence) ? 'runtime' : 'source-only',
     }));
@@ -436,20 +452,24 @@ function buildOverlayPlan(
       sourceState: state.name,
       targetComponent: sheetComponent?.symbol,
       trigger: triggerForOverlayState(state.name, source.interactions),
+      controls: [],
       evidence: [state.evidence, state.migrationHint],
       visualEvidence: hasRuntimeModalEvidence(evidence) ? 'runtime' : 'source-only',
     }));
   }
-  for (const section of sourceModalSections) {
-    const id = overlayId(section.name);
-    if (overlays.some((overlay) => overlay.id === id)) continue;
-    overlays.push(createOverlayPlan({
-      id,
-      sourceComponent: section.name,
-      targetComponent: sheetComponent?.symbol,
-      evidence: [section.evidence],
-      visualEvidence: hasRuntimeModalEvidence(evidence) ? 'runtime' : 'source-only',
-    }));
+  if ((source.overlays?.length ?? 0) === 0) {
+    for (const section of sourceModalSections) {
+      const id = overlayId(section.name);
+      if (overlays.some((overlay) => overlay.id === id)) continue;
+      overlays.push(createOverlayPlan({
+        id,
+        sourceComponent: section.name,
+        targetComponent: sheetComponent?.symbol,
+        controls: [],
+        evidence: [section.evidence],
+        visualEvidence: hasRuntimeModalEvidence(evidence) ? 'runtime' : 'source-only',
+      }));
+    }
   }
   return dedupeBy(overlays, (overlay) => `${overlay.id}:${overlay.sourceState ?? overlay.sourceComponent}`).slice(0, 12);
 }
@@ -458,6 +478,9 @@ function createOverlayPlan(input: {
   id: string;
   sourceComponent: string;
   sourceState?: string | undefined;
+  sourceCondition?: string | undefined;
+  title?: string | undefined;
+  controls: UiOverlayPlan['controls'];
   targetComponent?: string | undefined;
   trigger?: string | undefined;
   evidence: string[];
@@ -468,6 +491,9 @@ function createOverlayPlan(input: {
     ...(input.trigger ? { trigger: input.trigger } : {}),
     sourceComponent: input.sourceComponent,
     ...(input.sourceState ? { sourceState: input.sourceState } : {}),
+    ...(input.sourceCondition ? { sourceCondition: input.sourceCondition } : {}),
+    ...(input.title ? { title: input.title } : {}),
+    controls: input.controls,
     visualEvidence: input.visualEvidence,
     ...(input.targetComponent ? { targetComponent: input.targetComponent } : {}),
     uiShellRequired: true,
@@ -496,19 +522,18 @@ function triggerForOverlayState(
 ): string | undefined {
   if (!state) return undefined;
   const lowered = state.toLowerCase();
+  const semanticState = lowered
+    .replace(/\.value\b/g, '')
+    .replace(/^(?:show|is)/, '')
+    .replace(/(?:open|visible|shown)$/, '')
+    .replace(/[^a-z0-9]/g, '');
   const direct = interactions.find((interaction) =>
     interaction.kind === 'click'
     && interaction.target
-    && interaction.target.toLowerCase().includes(lowered)
+    && interaction.target.toLowerCase().replace(/[^a-z0-9]/g, '').includes(semanticState)
   );
   if (direct?.target) return direct.target;
-  if (/submitsheet|sheet/.test(lowered)) {
-    const sheetTriggers = interactions
-      .filter((interaction) => /open.*sheet/i.test(interaction.target ?? ''))
-      .map((interaction) => interaction.target)
-      .filter((target): target is string => Boolean(target));
-    return dedupe(sheetTriggers).join(' | ') || undefined;
-  }
+  if (/submitsheet|sheet/.test(lowered)) return undefined;
   if (/rules/.test(lowered)) {
     return interactions.find((interaction) => /rules/i.test(interaction.target ?? ''))?.target;
   }

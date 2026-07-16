@@ -4,7 +4,7 @@ import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const DEFAULT_URL = 'http://127.0.0.1:5188/#/prototype/asset/pnl-analysis?is_mobile=1';
 const BOOLEAN_FLAGS = new Set();
@@ -36,6 +36,7 @@ async function main() {
   await mkdir(outputRoot, { recursive: true });
   await writeFile(e2eConfigPath, `${JSON.stringify({ schemaVersion: 1 }, null, 2)}\n`, 'utf8');
   await ensureBuild();
+  await requireNestedTemplateSourceContract();
   const runtime = readString(args, 'url') ? undefined : await startExampleRuntime();
   try {
     const results = [];
@@ -48,6 +49,34 @@ async function main() {
     printReport(results);
   } finally {
     runtime?.kill();
+  }
+}
+
+async function requireNestedTemplateSourceContract() {
+  const { analyzeVueSfc } = await import(pathToFileURL(path.join(repoRoot, 'packages/core/dist/source/vue3-prototype/vue-sfc.js')).href);
+  const source = `<template>
+  <main>
+    <template v-if="ready"><p>Visible content</p></template>
+    <BottomSheet v-model="filterSheetOpen">
+      <h2>Choose filter</h2>
+      <button v-for="option in filterOptions" :key="option.value" @click="selectFilter(option.value)">{{ option.label }}</button>
+      <ActionButton @click="applyFilter">Confirm</ActionButton>
+    </BottomSheet>
+  </main>
+</template>
+<script setup>
+const filterSheetOpen = ref(false)
+const filterOptions = [{ value: 'all', label: 'All' }, { value: 'active', label: 'Active' }]
+</script>`;
+  const analysis = analyzeVueSfc(source);
+  if (!analysis.template?.includes('<BottomSheet')) throw new Error('Nested template parsing must preserve siblings after an inner </template>.');
+  const overlay = analysis.overlays.find((item) => item.state === 'filterSheetOpen');
+  if (!overlay || overlay.title !== 'Choose filter') throw new Error('Source analysis must emit the hidden overlay title.');
+  if (!overlay.controls.some((control) => control.sourceCollection === 'filterOptions' && control.options?.length === 2)) {
+    throw new Error('Source analysis must emit hidden overlay option collections.');
+  }
+  if (!overlay.controls.some((control) => control.action === 'applyFilter' && control.label === 'Confirm')) {
+    throw new Error('Source analysis must emit hidden overlay actions.');
   }
 }
 
@@ -198,7 +227,9 @@ async function requireArtifacts(files, contract) {
   await requireFile(files.pageCanonical);
   await requireAbsent(path.join(path.dirname(files.pageCanonical), 'page-debug-index.json'));
 
-  const canonical = JSON.parse(await readFile(files.pageCanonical, 'utf8'));
+  const canonicalText = await readFile(files.pageCanonical, 'utf8');
+  const canonical = JSON.parse(canonicalText);
+  if (canonicalText.trim().includes('\n')) throw new Error('page-canonical.json must use compact JSON serialization.');
   if (canonical.schemaVersion !== 3) throw new Error('page-canonical.json must use schemaVersion=3.');
   if (!canonical.pageId) throw new Error('page-canonical.json must include pageId.');
   if (canonical.merge?.strategy !== contract.expectedStrategy) {
@@ -215,7 +246,8 @@ async function requireArtifacts(files, contract) {
   if (contract.requirePlan) {
     await requireFile(files.uiBuildPlan);
     const plan = JSON.parse(await readFile(files.uiBuildPlan, 'utf8'));
-    if (plan.schemaVersion !== 2) throw new Error('ui-build-plan.json must use schemaVersion=2.');
+    if (plan.schemaVersion !== 3) throw new Error('ui-build-plan.json must use schemaVersion=3.');
+    if (typeof plan.canonicalReadPolicy?.required !== 'boolean') throw new Error('ui-build-plan.json must include canonicalReadPolicy.');
     if (!plan.implementationContract) throw new Error('ui-build-plan.json must include implementationContract.');
     if (!Array.isArray(plan.implementationContract.fileTree)) throw new Error('ui-build-plan.json must include implementationContract.fileTree.');
     if (!Array.isArray(plan.implementationContract.widgetTree) || plan.implementationContract.widgetTree.length === 0) throw new Error('ui-build-plan.json must include implementationContract.widgetTree.');
@@ -243,10 +275,11 @@ async function requireArtifacts(files, contract) {
   if (contract.requireReview) {
     await requireFile(files.uiBuildReview);
     const review = await readFile(files.uiBuildReview, 'utf8');
-    if (!review.includes('## 契约权威')) throw new Error('ui-build-review.md must include 契约权威.');
+    if (!review.includes('## 页面总览')) throw new Error('ui-build-review.md must include 页面总览.');
+    if (!review.includes('## 页面架构图') || !review.includes('## 页面流程图')) throw new Error('ui-build-review.md must include architecture and flow diagrams.');
     if (!review.includes('## 人工修订（优先于自动接入建议）')) throw new Error('ui-build-review.md must include the preserved manual override section.');
-    if (!review.includes('## 实现契约')) throw new Error('ui-build-review.md must include 实现契约.');
-    if (contract.requireSourceFacts && !review.includes('## 来源语义')) throw new Error('source review must include 来源语义.');
+    if (!review.includes('## B 工程接入建议（非权威）')) throw new Error('ui-build-review.md must include non-authoritative target integration guidance.');
+    if (contract.requireSourceFacts && !review.includes('### Source 语义摘要')) throw new Error('source review must include Source 语义摘要.');
   } else {
     await requireAbsent(files.uiBuildReview);
   }
