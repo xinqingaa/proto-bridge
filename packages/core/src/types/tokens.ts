@@ -18,5 +18,4 @@ export type MapTokensInput = {
   sourceCode?: string | undefined;
   computedStyles?: Array<Record<string, string | undefined>> | undefined;
   target?: TargetPlatform | undefined;
-  restorationProfile?: import('../profile/index.js').ResolvedRestorationProfile | undefined;
 };

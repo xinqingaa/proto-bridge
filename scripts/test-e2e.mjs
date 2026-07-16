@@ -6,15 +6,15 @@ import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const DEFAULT_URL = 'http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1';
+const DEFAULT_URL = 'http://127.0.0.1:5188/#/prototype/asset/pnl-analysis?is_mobile=1';
 const BOOLEAN_FLAGS = new Set();
 const CASES = ['hybrid', 'target-url', 'url-only'];
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const mode = readMode(process.argv[2]);
 const args = parseArgs(process.argv.slice(mode.consumedArgs));
-const url = readString(args, 'url') ?? DEFAULT_URL;
-const sourceRoot = path.resolve(repoRoot, readString(args, 'source-root') ?? '../TradeAppPrd');
-const targetRoot = path.resolve(repoRoot, readString(args, 'target-root') ?? '../youfi');
+let url = readString(args, 'url') ?? DEFAULT_URL;
+const sourceRoot = path.resolve(repoRoot, readString(args, 'source-root') ?? 'examples/vue3-to-flutter/source-vue3');
+const targetRoot = path.resolve(repoRoot, readString(args, 'target-root') ?? 'examples/vue3-to-flutter/target-flutter');
 const outputRoot = path.resolve(repoRoot, readString(args, 'output-root') ?? './output/test-e2e');
 const e2eConfigPath = path.join(outputRoot, 'proto-bridge.config.json');
 const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -36,15 +36,41 @@ async function main() {
   await mkdir(outputRoot, { recursive: true });
   await writeFile(e2eConfigPath, `${JSON.stringify({ schemaVersion: 1 }, null, 2)}\n`, 'utf8');
   await ensureBuild();
+  const runtime = readString(args, 'url') ? undefined : await startExampleRuntime();
+  try {
+    const results = [];
+    for (const caseName of CASES) {
+      results.push(await runCaseForMode(caseName));
+    }
+    results.push({ failures: await runFailureCases() });
 
-  const results = [];
-  for (const caseName of CASES) {
-    results.push(await runCaseForMode(caseName));
+    ok('E2E test completed.');
+    printReport(results);
+  } finally {
+    runtime?.kill();
   }
-  results.push({ failures: await runFailureCases() });
+}
 
-  ok('E2E test completed.');
-  printReport(results);
+async function startExampleRuntime() {
+  step('Starting repository-local Vue example runtime...');
+  const child = spawn('pnpm', ['exec', 'vite', '--host', '127.0.0.1', '--port', '5188', '--strictPort'], {
+    cwd: sourceRoot,
+    env: process.env,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  const deadline = Date.now() + 30_000;
+  while (Date.now() < deadline) {
+    if (child.exitCode !== null) throw new Error(`Example runtime exited with code ${child.exitCode}.`);
+    try {
+      const response = await fetch('http://127.0.0.1:5188/');
+      if (response.ok) return child;
+    } catch {
+      // Runtime is still starting.
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  child.kill();
+  throw new Error('Timed out starting repository-local Vue example runtime.');
 }
 
 async function ensureBuild() {
@@ -194,6 +220,17 @@ async function requireArtifacts(files, contract) {
     if (!plan.implementationContract) throw new Error('ui-build-plan.json must include implementationContract.');
     if (!plan.targetConventions?.architectureProfile) throw new Error('ui-build-plan.json must include targetConventions.architectureProfile.');
     if (!plan.visualPlan) throw new Error('ui-build-plan.json must include visualPlan.');
+    if ('restorationProfile' in plan) throw new Error('ui-build-plan.json must not include project restorationProfile metadata.');
+    if (plan.fileTree.some((file) => file.path.includes('__proto_bridge__'))) {
+      throw new Error('Logical planner paths must be resolved from target scan evidence before artifact output.');
+    }
+    const reusable = plan.target?.reusableComponents ?? [];
+    if (contract.requireTargetFacts && !reusable.some((item) => item.symbol === 'CommonAppBar' && item.role === 'app-bar')) {
+      throw new Error('Target-defined reusable widgets must be discovered without a project profile.');
+    }
+    if (reusable.some((item) => item.symbol === 'ExampleHomePage')) {
+      throw new Error('Concrete target pages must not be reported as reusable components.');
+    }
   } else {
     await requireAbsent(files.uiBuildPlan);
   }

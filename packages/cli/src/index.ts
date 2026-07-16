@@ -56,7 +56,6 @@ const ALLOWED_FLAGS = new Set([
   'config',
   'help',
   'output',
-  'profile',
   'route',
   'source-adapter',
   'source-root',
@@ -106,7 +105,6 @@ async function buildGenerateInput(values: Record<string, string | boolean>): Pro
     route: readString(values, 'route'),
     vue: readString(values, 'vue'),
     output: readString(values, 'output'),
-    profile: readProfile(values),
     capture: values.capture === true ? true : undefined,
     trace: values.trace === true,
   };
@@ -204,7 +202,6 @@ async function initConfig(values: Record<string, string | boolean>): Promise<voi
     runtime: {
       capture: answers.capture,
     },
-    profile: 'auto',
     output: {
       root: answers.outputRootAnswer,
     },
@@ -277,7 +274,7 @@ function readString(values: Record<string, string | boolean>, key: string): stri
 function unknownFlagMessage(key: string): string {
   return [
     `Unknown flag: --${key}`,
-    'Supported flags: --config, --url, --route, --vue, --output, --profile, --capture, --trace, --source-root, --target-root.',
+    'Supported flags: --config, --url, --route, --vue, --output, --capture, --trace, --source-root, --target-root.',
     'Example: npx @proto-bridge/cli generate --url "http://localhost:5173/#/prototype/etf-detail"',
   ].join('\n');
 }
@@ -286,7 +283,6 @@ function missingFlagValueMessage(key: string): string {
   const examples: Record<string, string> = {
     config: 'npx @proto-bridge/cli generate --config ./proto-bridge.config.json --route /prototype/etf-detail',
     output: 'npx @proto-bridge/cli generate --route /prototype/etf-detail --output ./output/etf-detail',
-    profile: 'npx @proto-bridge/cli generate --route /prototype/etf-detail --profile auto',
     route: 'npx @proto-bridge/cli generate --route /prototype/etf-detail',
     url: 'npx @proto-bridge/cli generate --url "http://localhost:5173/#/prototype/etf-detail"',
     vue: 'npx @proto-bridge/cli generate --vue prototype/src/views/prototype/etf/ETFDetailPage.vue',
@@ -412,7 +408,6 @@ Options:
   --target-root <dir>         Optional target Flutter root
   --target-adapter <id>       Target adapter, defaults to flutter-app
   --output <dir>              Override the generated output directory
-  --profile <id>              Restoration profile: auto, generic, youfi, or false
   --capture                   Run Playwright screenshot and DOM capture
   --trace                     Print temporary capability orchestration trace
 
@@ -421,12 +416,6 @@ Artifacts:
   With target config or --target-root, writes ui-build-plan.json and ui-build-review.md.
   With source config or --source-root, URL-derived route enables source-aware evidence.
 `;
-}
-
-function readProfile(values: Record<string, string | boolean>): ProtoBridgeInputOverrides['profile'] {
-  const value = readString(values, 'profile');
-  if (!value) return undefined;
-  return value === 'false' ? false : value;
 }
 
 function printTrace(result: ReconstructPageContextResult): void {

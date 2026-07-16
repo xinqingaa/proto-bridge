@@ -53,13 +53,12 @@ args = [
   "schemaVersion": 1,
   "source": {
     "adapter": "vue3-prototype",
-    "root": "/path/to/TradeAppPrd"
+    "root": "/path/to/vue3-prototype"
   },
   "target": {
     "adapter": "flutter-app",
-    "root": "/path/to/youfi"
+    "root": "/path/to/flutter-project"
   },
-  "profile": "auto",
   "runtime": {
     "capture": true
   },
@@ -73,7 +72,7 @@ Tool arguments 会覆盖 config values。
 
 配置文件只放稳定环境信息。每次通过 tool arguments 传 URL；配置了 `source.root` 时会从 URL 推导 route 并自动补 source semantics，配置了 `target.root` 时会生成 plan/review。
 
-`profile` 是可选 restoration profile。`"auto"` 或不配置时按 `target.root` 目录名推断，例如 `youfi`；`"generic"` 或 `false` 禁用业务增强；tool argument `profile` 可覆盖 config。
+项目架构无需写进 config。Core 从 source / target 扫描项目事实，扫描不到时保持 `unknown`。
 
 ## Tools
 
@@ -90,9 +89,9 @@ Source-only：
 {
   "name": "reconstruct_page_context",
   "arguments": {
-    "sourceRoot": "/path/to/TradeAppPrd",
+    "sourceRoot": "/path/to/vue3-prototype",
     "route": "/prototype/asset/pnl-analysis",
-    "targetRoot": "/path/to/youfi"
+    "targetRoot": "/path/to/flutter-project"
   }
 }
 ```
@@ -104,8 +103,7 @@ Runtime-only：
   "name": "reconstruct_page_context",
   "arguments": {
     "url": "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1",
-    "targetRoot": "/path/to/youfi",
-    "profile": "auto",
+    "targetRoot": "/path/to/flutter-project",
     "capture": true
   }
 }
@@ -114,7 +112,7 @@ Runtime-only：
 ## Agent 提示词示例
 
 ```text
-请使用 ProtoBridge 的 reconstruct_page_context 处理这个页面，先阅读 ui-build-plan.json 的 targetConventions、restorationProfile、implementationContract 和 visualPlan，再用 ui-build-review.md 做中文核对。实现时不要引入 targetConventions 没有证据支持的新 state/routing/i18n/theme 框架。完成后调用 validate_ui_build：
+请使用 ProtoBridge 的 reconstruct_page_context 处理这个页面，先阅读 ui-build-plan.json 的 targetConventions、implementationContract 和 visualPlan，再用 ui-build-review.md 做中文核对。实现时不要引入 targetConventions 没有证据支持的新 state/routing/i18n/theme 框架。完成后调用 validate_ui_build：
 http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1
 ```
 
@@ -131,4 +129,4 @@ http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1
 
 `ui-build-plan.json` 是唯一机器契约。`ui-build-review.md` 是从 plan 渲染的人类可读 brief。
 
-完整用法见仓库根目录 `docs/usage.md`；产物字段见 `docs/artifacts.md`。YouFi 还原示例 skill：`skills/youfi-flutter-restore`。
+完整用法见仓库根目录 `docs/usage.md`；产物字段见 `docs/artifacts.md`。

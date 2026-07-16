@@ -14,7 +14,6 @@ import type {
   VueRouteHint,
 } from '../types/index.js';
 import type { FlutterTargetValidationResult } from '../target/flutter-app/index.js';
-import type { ResolvedRestorationProfile } from '../profile/index.js';
 
 export type CapabilityDescriptor = {
   name: PageCapabilityName;
@@ -27,7 +26,6 @@ export type SourceAnalyzeCapabilityInput = {
   source: AdapterProjectConfig;
   route?: string | undefined;
   vue?: string | undefined;
-  restorationProfile?: ResolvedRestorationProfile | undefined;
 };
 
 export type SourceAnalyzeCapabilityResult = {
@@ -57,7 +55,6 @@ export type TargetInspectCapabilityInput = {
   sourceRoutes?: VueRouteHint[] | undefined;
   targetModule?: string | undefined;
   sourceRouteRegistry?: SourceRouteEntry[] | undefined;
-  restorationProfile?: ResolvedRestorationProfile | undefined;
 };
 
 export type TargetInspectCapabilityResult = {

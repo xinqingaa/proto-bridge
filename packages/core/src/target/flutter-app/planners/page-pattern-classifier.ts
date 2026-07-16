@@ -1,6 +1,5 @@
 import type { PrototypePageAnalysis } from '../../../types/index.js';
-import { genericProfile } from '../../../profile/index.js';
-import type { ResolvedRestorationProfile, RestorationProfile } from '../../../profile/index.js';
+import { genericUiLexicon } from '../../../shared/semantic-lexicon.js';
 
 export type PagePattern =
   | 'detail'
@@ -27,10 +26,8 @@ export type ClassifiedPagePattern = {
 
 export function classifyPagePattern(
   source: PrototypePageAnalysis,
-  restorationProfile?: ResolvedRestorationProfile | undefined,
 ): ClassifiedPagePattern {
-  const profile = restorationProfile?.profile ?? genericProfile;
-  const facts = collectFacts(source, profile);
+  const facts = collectFacts(source);
   const candidates: Array<{ pattern: PagePattern; score: number; reasons: string[] }> = [
     scoreQuoteDetail(facts),
     scoreTradeTicket(facts),
@@ -54,7 +51,7 @@ export function classifyPagePattern(
   };
 }
 
-function collectFacts(source: PrototypePageAnalysis, profile: RestorationProfile): PageFacts {
+function collectFacts(source: PrototypePageAnalysis): PageFacts {
   const text = [source.screenId, source.name, source.label, source.title, source.route, source.module, source.moduleLabel]
     .filter(Boolean)
     .join(' ')
@@ -64,7 +61,7 @@ function collectFacts(source: PrototypePageAnalysis, profile: RestorationProfile
   const stateNames = source.sfc?.state.map((state) => state.name.toLowerCase()) ?? [];
   const has = (pattern: RegExp): boolean => pattern.test(text) || stateNames.some((name) => pattern.test(name));
   const hasTerms = (terms: string[]): boolean => termsPattern(terms).test(text) || stateNames.some((name) => termsPattern(terms).test(name));
-  const lexicon = profile.sourceLexicon ?? {};
+  const lexicon = genericUiLexicon;
   return {
     text,
     roles,
@@ -76,13 +73,13 @@ function collectFacts(source: PrototypePageAnalysis, profile: RestorationProfile
     hasRoutes: Boolean(source.sfc?.routes.length),
     hasLifecycle: Boolean(source.sfc?.lifecycle.length),
     hasFormState: has(/input|form|field|password|email|phone|amount|quantity|qty/),
-    hasTradeTerms: hasTerms(lexicon.tradeTerms ?? []),
+    hasTradeTerms: false,
     hasSettingsTerms: has(/setting|settings|preference|switch|toggle|notification|language|theme/),
-    hasPortfolioTerms: hasTerms(lexicon.portfolioTerms ?? []),
-    hasAuthTerms: hasTerms(lexicon.authTerms ?? []),
-    hasListTerms: hasTerms(['list', 'record', 'history', 'rows', 'table', 'search', 'filter', ...(lexicon.listTerms ?? [])]),
-    hasWizardTerms: hasTerms(lexicon.wizardTerms ?? []),
-    hasArticleTerms: hasTerms(lexicon.articleTerms ?? []),
+    hasPortfolioTerms: false,
+    hasAuthTerms: has(/login|auth|password|otp|verify/),
+    hasListTerms: hasTerms(['list', 'record', 'history', 'rows', 'table', 'search', 'filter', ...lexicon.listTerms]),
+    hasWizardTerms: has(/step|wizard|next|previous|progress/),
+    hasArticleTerms: has(/article|news|notice|message|detail/),
   };
 }
 

@@ -1,10 +1,9 @@
 import path from 'node:path';
-import { readdir } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import fg from 'fast-glob';
 import type { AnalyzeFlutterContextInput, FlutterContextAnalysis } from '../../types/index.js';
 import { pathExists, toPosixPath } from '../../shared/paths.js';
 import { detectFlutterTargetConventions } from './architecture-profile.js';
-import { restorationProfileArtifact } from '../../profile/index.js';
 import { matchFlutterRoute, matchFlutterRouteIntents, scanFlutterRouteRegistry } from './route-registry.js';
 
 export async function analyzeFlutterContext(input: AnalyzeFlutterContextInput): Promise<FlutterContextAnalysis> {
@@ -32,21 +31,14 @@ export async function analyzeFlutterContext(input: AnalyzeFlutterContextInput): 
     existingModules,
   });
   const suggestedModule = suggestModule(input, existingModules, routeMapping?.targetModule);
-  const routesFiles = await existingPaths(flutterRoot, [
-    'lib/app/routes/app_routes.dart',
-    'lib/app/routes/app_pages.dart',
+  const routesFiles = await discoverFiles(flutterRoot, [
+    'lib/**/*route*.dart', 'lib/**/*router*.dart', 'lib/**/*navigation*.dart',
   ]);
-  const translationFiles = await existingPaths(flutterRoot, [
-    'lib/app/translations/en_US.dart',
-    'lib/app/translations/zh_CN.dart',
-    'lib/app/translations/zh_HK.dart',
+  const translationFiles = await discoverFiles(flutterRoot, [
+    'lib/**/*translation*.dart', 'lib/**/*localization*.dart', 'lib/**/*l10n*.dart', 'lib/**/*i18n*.dart',
+    'lib/l10n/**/*.{arb,json}', 'assets/**/*.{arb,json}',
   ]);
-  const assetDirectories = await existingPaths(flutterRoot, [
-    'assets/images',
-    'assets/dark_images',
-    'assets/svg',
-    'assets/json',
-  ]);
+  const assetDirectories = await discoverAssetDirectories(flutterRoot);
   const reusableWidgets = await collectReusableWidgets(flutterRoot, input);
   const similarFiles = suggestedModule ? await collectSimilarFiles(flutterRoot, suggestedModule, input.screenId) : [];
   const targetConventions = await detectFlutterTargetConventions({
@@ -65,7 +57,6 @@ export async function analyzeFlutterContext(input: AnalyzeFlutterContextInput): 
     routeRegistry,
     ...(routeMapping ? { routeMapping } : {}),
     ...(routeIntentMappings.length ? { routeIntentMappings } : {}),
-    ...(input.restorationProfile ? { restorationProfile: restorationProfileArtifact(input.restorationProfile) } : {}),
     existingModules,
     reusableWidgets,
     routesFiles,
@@ -97,34 +88,69 @@ function suggestModule(
 
   for (const candidate of candidates) {
     const mapped = resolveModuleAlias(candidate, input, existingModules);
-    if (existingModules.length === 0 || existingModules.includes(mapped)) return mapped;
+    if (existingModules.includes(mapped)) return mapped;
   }
 
-  return candidates[0] ? resolveModuleAlias(candidates[0], input, existingModules) : undefined;
+  return undefined;
 }
 
 async function listModuleDirectories(flutterRoot: string): Promise<string[]> {
-  const modulesDir = path.join(flutterRoot, 'lib/app/modules');
-  try {
-    const entries = await readdir(modulesDir, { withFileTypes: true });
-    return entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
-  } catch {
-    return [];
+  const roots = [
+    'lib/app/modules', 'lib/features', 'lib/src/features', 'lib/modules',
+    'lib/screens', 'lib/pages', 'lib/presentation',
+  ];
+  const modules = new Set<string>();
+  for (const root of roots) {
+    try {
+      const entries = await readdir(path.join(flutterRoot, root), { withFileTypes: true });
+      for (const entry of entries) if (entry.isDirectory()) modules.add(entry.name);
+    } catch {
+      // Candidate topology root is absent.
+    }
   }
+  const dartFiles = await fg('lib/**/*.dart', {
+    cwd: flutterRoot,
+    onlyFiles: true,
+    absolute: false,
+    suppressErrors: true,
+  });
+  const structuralDirectories = new Set([
+    'lib', 'app', 'src', 'features', 'feature', 'modules', 'module', 'presentation',
+    'pages', 'page', 'screens', 'screen', 'views', 'view', 'widgets', 'components',
+    'common', 'shared', 'core', 'data', 'domain', 'infrastructure', 'routes', 'routing',
+  ]);
+  for (const dartFile of dartFiles) {
+    const normalized = toPosixPath(dartFile);
+    const parts = normalized.split('/');
+    const fileName = parts.at(-1) ?? '';
+    const namedFeature = fileName.match(/^(.+?)_(?:module|page|screen|view)\.dart$/)?.[1];
+    if (namedFeature && !structuralDirectories.has(namedFeature)) modules.add(namedFeature);
+    const candidate = parts.slice(1, -1).reverse().find((part) => !structuralDirectories.has(part));
+    if (candidate) modules.add(candidate);
+  }
+  return [...modules].sort();
 }
 
-async function existingPaths(root: string, relativePaths: string[]): Promise<string[]> {
-  const result: string[] = [];
-  for (const relativePath of relativePaths) {
-    const absolute = path.join(root, relativePath);
-    if (await pathExists(absolute)) result.push(relativePath);
-  }
-  return result;
+async function discoverFiles(root: string, patterns: string[]): Promise<string[]> {
+  return (await fg(patterns, { cwd: root, onlyFiles: true, absolute: false, suppressErrors: true }))
+    .map(toPosixPath)
+    .sort()
+    .slice(0, 120);
+}
+
+async function discoverAssetDirectories(root: string): Promise<string[]> {
+  const files = await fg(['assets/**/*', 'lib/assets/**/*'], {
+    cwd: root,
+    onlyFiles: true,
+    absolute: false,
+    suppressErrors: true,
+  });
+  return [...new Set(files.map((file) => toPosixPath(path.dirname(file))))].sort().slice(0, 80);
 }
 
 async function collectReusableWidgets(flutterRoot: string, input: AnalyzeFlutterContextInput): Promise<string[]> {
   const commonFiles = await fg(
-    ['lib/app/common/{widget,widgets,pop}/**/*.dart', 'lib/app/widgets/**/*.dart'],
+    ['lib/**/*.dart'],
     {
       cwd: flutterRoot,
       onlyFiles: true,
@@ -135,26 +161,22 @@ async function collectReusableWidgets(flutterRoot: string, input: AnalyzeFlutter
 
   if (commonFiles.length === 0) return [];
 
-  const fileStemIndex = new Set(
-    commonFiles.map((filePath) =>
-      path
-        .basename(filePath, '.dart')
-        .replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase())
-        .toLowerCase(),
-    ),
-  );
-
-  const profileSymbols = input.restorationProfile?.profile.targetSymbols ?? [];
-  const detected = profileSymbols.map((item) => item.symbol).filter((widget) =>
-    fileStemIndex.has(widget.replace('.', '').replace(/\(context\)/, '').toLowerCase()),
-  );
-
-  return detected;
+  const discovered = new Set<string>();
+  for (const filePath of commonFiles) {
+    if (!/\/(?:common|shared|widgets?|components?|design_system|ui)\//.test(toPosixPath(filePath))) continue;
+    try {
+      const text = await readFile(path.join(flutterRoot, filePath), 'utf8');
+      for (const match of text.matchAll(/\bclass\s+([A-Z]\w*)\s+extends\s+(?:StatelessWidget|StatefulWidget|ConsumerWidget|HookWidget|GetView\b)/g)) {
+        if (match[1]) discovered.add(match[1]);
+      }
+    } catch {
+      // Ignore unreadable advisory evidence.
+    }
+  }
+  return [...discovered].sort();
 }
 
 function resolveModuleAlias(candidate: string, input: AnalyzeFlutterContextInput, existingModules: string[]): string {
-  const mapped = input.restorationProfile?.profile.moduleAliases?.[candidate] ?? candidate;
-  if (mapped !== candidate && existingModules.includes(mapped)) return mapped;
   return candidate;
 }
 
@@ -163,8 +185,7 @@ async function collectSimilarFiles(
   suggestedModule: string,
   screenId: string | undefined,
 ): Promise<string[]> {
-  const modulePattern = `lib/app/modules/${suggestedModule}/**/*.dart`;
-  const files = await fg([modulePattern], {
+  const files = await fg(['lib/**/*.dart'], {
     cwd: flutterRoot,
     onlyFiles: true,
     absolute: false,
@@ -176,7 +197,8 @@ async function collectSimilarFiles(
     .filter((keyword) => keyword.length >= 3)
     .map((keyword) => keyword.toLowerCase());
 
-  const scored = files
+  const scopedFiles = files.filter((filePath) => toPosixPath(filePath).split('/').includes(suggestedModule));
+  const scored = scopedFiles
     .map((filePath) => {
       const normalized = toPosixPath(filePath).toLowerCase();
       const score = keywords.reduce((total, keyword) => total + (normalized.includes(keyword) ? 1 : 0), 0);

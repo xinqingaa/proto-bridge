@@ -383,7 +383,7 @@ function renderArchitectureProfile(plan: UiBuildPlan): string[] {
         ['i18n lookup', profile.i18n.lookup?.pattern ?? profile.i18n.pattern, confidenceLabel(profile.i18n.lookup?.confidence ?? profile.i18n.confidence), 'translations / Dart usage'],
         ['主题', profile.theme.patterns.join('、') || 'unknown', confidenceLabel(profile.theme.confidence), 'module/common Dart usage'],
         ['组件', profile.components.detectedSymbols.join('、') || '未识别', confidenceLabel(profile.components.confidence), 'common widgets / module usage'],
-        ['文件组织', profile.fileOrganization.pattern, confidenceLabel(profile.fileOrganization.confidence), 'lib/app/modules structure'],
+        ['文件组织', profile.fileOrganization.pattern, confidenceLabel(profile.fileOrganization.confidence), 'target Dart path structure'],
       ],
     ),
     '',

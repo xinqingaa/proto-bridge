@@ -146,11 +146,13 @@ function scanArchitectureContract(
   if (contract.i18nPattern !== 'unknown' && contract.i18nPattern !== 'build_context_t_extension' && /\bcontext\.t\s*\(/.test(text)) {
     issues.push({ file, issue: `Architecture contract violation: i18n pattern is ${contract.i18nPattern}, but context.t usage was introduced.` });
   }
-  if (contract.themePatterns.length > 0 && !hasThemePattern(contract, 'themeService.colors') && /\bthemeService\.colors\b/.test(text)) {
-    issues.push({ file, issue: 'Architecture contract violation: themeService.colors was introduced without targetConventions theme evidence.' });
-  }
-  if (contract.themePatterns.length > 0 && !hasThemePattern(contract, 'context.pbColors') && /\bcontext\.pbColors\b/.test(text)) {
-    issues.push({ file, issue: 'Architecture contract violation: context.pbColors was introduced without targetConventions theme evidence.' });
+  const introducedThemeAccess = [...text.matchAll(/\b([a-zA-Z_]\w*(?:\.[a-zA-Z_]\w*)*)\.(colors|textStyles|textTheme|colorScheme)\b/g)]
+    .map((match) => match[1] && match[2] ? `${match[1]}.${match[2]}` : undefined)
+    .filter((value): value is string => Boolean(value));
+  for (const access of introducedThemeAccess) {
+    if (contract.themePatterns.length > 0 && !contract.themePatterns.includes(access)) {
+      issues.push({ file, issue: `Architecture contract violation: ${access} was introduced without targetConventions theme evidence.` });
+    }
   }
 
   const stem = path.basename(file, '.dart');
@@ -184,24 +186,15 @@ function unsupportedFrameworkPatterns(contract: ArchitectureContract): Array<{ l
 }
 
 function usesDetectedColorTheme(text: string, contract: ArchitectureContract | undefined): boolean {
-  if (!contract) return /themeService\.colors|context\.pbColors|Theme\.of\s*\(\s*context\s*\)\.colorScheme/.test(text);
-  return (hasThemePattern(contract, 'themeService.colors') && /\bthemeService\.colors\b/.test(text))
-    || (hasThemePattern(contract, 'context.pbColors') && /\bcontext\.pbColors\b/.test(text))
+  if (!contract) return /\.(?:colors|colorScheme)\b|Theme\.of\s*\(\s*context\s*\)\.colorScheme/.test(text);
+  return contract.themePatterns.some((pattern) => /(?:colors|colorScheme)$/.test(pattern) && text.includes(pattern))
     || (contract.themePatterns.includes('Theme.of(context)') && /\bTheme\.of\s*\(\s*context\s*\)\.colorScheme\b/.test(text));
 }
 
 function usesDetectedTextTheme(text: string, contract: ArchitectureContract | undefined): boolean {
-  if (!contract) return /themeService\.textStyles|context\.pbTextStyles|Theme\.of\s*\(\s*context\s*\)\.textTheme/.test(text);
-  return (hasThemePattern(contract, 'themeService.textStyles') && /\bthemeService\.textStyles\b/.test(text))
-    || (hasThemePattern(contract, 'context.pbTextStyles') && /\bcontext\.pbTextStyles\b/.test(text))
+  if (!contract) return /\.(?:textStyles|textTheme)\b|Theme\.of\s*\(\s*context\s*\)\.textTheme/.test(text);
+  return contract.themePatterns.some((pattern) => /(?:textStyles|textTheme)$/.test(pattern) && text.includes(pattern))
     || (contract.themePatterns.includes('Theme.of(context)') && /\bTheme\.of\s*\(\s*context\s*\)\.textTheme\b/.test(text));
-}
-
-function hasThemePattern(contract: ArchitectureContract, pattern: string): boolean {
-  if (contract.themePatterns.includes(pattern)) return true;
-  if (pattern === 'themeService.colors' && contract.themePatterns.includes('themeService.textStyles')) return true;
-  if (pattern === 'context.pbColors' && contract.themePatterns.includes('context.pbTextStyles')) return true;
-  return false;
 }
 
 function scanWidgetContract(file: string, text: string, plan: UiBuildPlan): FlutterTargetFileIssue[] {

@@ -6,7 +6,6 @@ import type {
   FlutterContextAnalysis,
   SourceAwareReviewProjection,
 } from '../../types/index.js';
-import type { ResolvedRestorationProfile } from '../../profile/index.js';
 
 const DEFAULT_TARGET_ADAPTER = 'flutter-app';
 
@@ -15,12 +14,10 @@ export function buildSourceAwareSemantics(input: {
   target: FlutterContextAnalysis;
   capture?: CaptureResult | undefined;
   targetAdapter?: string | undefined;
-  restorationProfile?: ResolvedRestorationProfile | undefined;
 }): { context: MigrationContext; review: SourceAwareReviewProjection } {
   const targetAdapter = defaultAdapterRegistry.getTarget(input.targetAdapter ?? DEFAULT_TARGET_ADAPTER);
   const tokenMap = targetAdapter.mapTokens({
     sourceCode: input.source.sourceCode,
-    restorationProfile: input.restorationProfile,
   });
   const recommendations = targetAdapter.buildRecommendations({
     source: input.source,

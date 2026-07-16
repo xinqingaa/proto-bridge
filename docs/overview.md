@@ -31,7 +31,7 @@ source / URL / screenshot / target repo
 1. 逻辑架构看 source semantics。  
 2. 工程表达看 target conventions。  
 3. 视觉事实看 runtime / screenshot。  
-4. target architecture profile 为 `unknown` 时保留抽象建议，写入 warnings / manual questions，不猜测框架。
+4. target 扫描事实为 `unknown` 时保留抽象建议，写入 warnings / manual questions，不猜测框架。
 
 三类证据汇入 `ui-build-plan.json`（实现蓝图）。`ui-build-review.md` 是从 plan 渲染的中文审查视图。`page-canonical.json` 是证据原档。
 
@@ -53,7 +53,7 @@ source.analyze / runtime.capture / screenshot.attach / target.inspect
 | `source.analyze` | source root、route、Vue SFC | source facts |
 | `runtime.capture` | URL、viewport | runtime facts、screenshots |
 | `screenshot.attach` | screenshot、OCR text/boxes | screenshot facts |
-| `target.inspect` | Flutter target root | target facts、architecture profile |
+| `target.inspect` | Flutter target root | target facts、扫描出的 architecture profile |
 | `page.merge` | 各 facts | `page-canonical.json`、`page-debug-index.json` |
 | `ui.plan` | canonical、target、source-aware draft | `ui-build-plan.json` |
 | `ui.review` | plan | `ui-build-review.md` |
@@ -69,36 +69,32 @@ source.analyze / runtime.capture / screenshot.attach / target.inspect
 
 当前适配器：`source: vue3-prototype`，`target: flutter-app`。
 
-## Restoration profile
+## 通用规则与项目事实
 
-配置字段名是 `profile`；代码与产物字段是 `RestorationProfile` / `restorationProfile`，与 target 扫描出的 `architectureProfile` 区分。
+ProtoBridge 不提供项目 preset / restoration profile。配置只描述输入、运行时和输出，不承载 A / B 的架构知识。
 
-解析：
-
-1. 显式 `"youfi"` 等已注册 id → 强制该 profile  
-2. 显式 `"generic"` 或 `false` → 仅通用能力  
-3. `"auto"` 或不配置 → 按 `target.root` 目录名推断（如 `.../youfi` → `youfi`）  
-4. 推断不到 → `generic`
-
-Profile 可提供 module aliases、target symbols、role / pattern / usage symbols、theme tokens、source lexicon。只提高候选召回；高置信组件、token、路由与 i18n 建议仍须被 target 扫描证明。
+- Core 保留 Vue 3、Flutter、标准框架 API、语言语法与通用 UI 语义等技术规则。
+- 模块、目录、组件、主题访问器、路由、i18n 和资产位置均从本次 source / target 代码与文档扫描取得。
+- 扫描不到的项目事实保持 `unknown`，由消费产物并实现 B 的 agent 结合目标仓库继续确认。
+- 项目 README 可提高扫描质量，但不能覆盖代码证据。
 
 ## Target conventions
 
 Detector 读取 `pubspec.yaml`、Dart 与可用 target 文档，归纳 `architectureProfile`：`state` / `routing` / `i18n` / `theme` / `components` / `fileOrganization` / `documentation`。
 
-GetX、flutter_bloc、Riverpod、Provider、Navigator、go_router、`context.t`、AppLocalizations、`themeService`、`context.pbColors`、CommonAppBar 等**不是**通用默认值；可由 profile 进候选池，仅在扫描到时以高置信影响 contract。
+GetX、flutter_bloc、Riverpod、Provider、Navigator、go_router 和 AppLocalizations 可以作为 Flutter 生态识别规则；具体项目的扩展方法、基类与公共组件没有默认名单，只在扫描到定义或用法时影响 contract。
 
 代码扫描优先于 target 文档；文档与代码冲突时保留冲突提示，不以文档覆盖代码事实。
 
-## 工程布局假设
+## 工程布局
 
-Planning、module 枚举与相似文件检索默认关注 `lib/app/modules/<module>/...` 一类组织，并探测常见 routes / translations 路径。非该布局的 Flutter 工程仍可扫描部分架构信号，但文件落点与示例检索质量会下降。
+Planner 内部先生成不属于任何项目的逻辑文件树，再依据目标 Dart 路径样例重定位。无法识别文件组织时不生成猜测落点，而是留下 warning / manual question。
 
 ## 包边界
 
 ```text
 packages/
-├── core/          # capabilities、workflow、source/snapshot/target、profile、artifacts、types
+├── core/          # capabilities、workflow、source/snapshot/target、artifacts、types
 ├── cli/           # 命令解析、config、终端输出
 └── mcp-server/    # MCP stdio、tools、resources、prompts
 ```
@@ -109,7 +105,6 @@ Core 目录：
 packages/core/src/
 ├── capabilities/
 ├── workflows/capability-first/
-├── profile/
 ├── source/
 ├── snapshot/
 ├── target/
@@ -136,4 +131,3 @@ packages/core/src/
 - 产物契约：[artifacts.md](artifacts.md)
 - 使用与集成：[usage.md](usage.md)
 - 改本仓库：根目录 `AGENT.md`、`skills/proto-bridge`
-- YouFi 消费示例：`skills/youfi-flutter-restore`

@@ -1,4 +1,5 @@
 import path from 'node:path';
+import fg from 'fast-glob';
 import {
   basenameWithoutExt,
   firstSegment,
@@ -22,40 +23,12 @@ import type {
   SourceRouteEntry,
 } from '../../types/index.js';
 
-type ConfigSource = {
-  pageType: PageType;
-  exportName: string;
-  configPath: string;
-  viewsRoot: string;
-};
-
 type ScreenEntry = {
   pageType: PageType;
   moduleLabel?: string | undefined;
   sourceFile?: string | undefined;
   screen: ScreenConfig;
 };
-
-const CONFIG_SOURCES: ConfigSource[] = [
-  {
-    pageType: 'prototype',
-    exportName: 'prototypeModules',
-    configPath: 'prototype/src/config/prototypeScreens.js',
-    viewsRoot: 'prototype/src/views/prototype',
-  },
-  {
-    pageType: 'prototype',
-    exportName: 'prdPageModules',
-    configPath: 'prototype/src/config/prdPageRegistry.js',
-    viewsRoot: 'prototype/src/views/prototype',
-  },
-  {
-    pageType: 'design',
-    exportName: 'designModules',
-    configPath: 'prototype/src/config/designScreens.js',
-    viewsRoot: 'prototype/src/views/design',
-  },
-];
 
 export async function analyzePrototypePage(input: AnalyzePrototypePageInput): Promise<PrototypePageAnalysis> {
   const prototypeRoot = path.resolve(input.prototypeRoot);
@@ -89,7 +62,7 @@ export async function analyzePrototypePage(input: AnalyzePrototypePageInput): Pr
   if (!sourceCode) {
     warnings.push(`Vue source file not found: ${vuePath}`);
   }
-  const sfc = analyzeVueSfc(sourceCode, input.restorationProfile);
+  const sfc = analyzeVueSfc(sourceCode);
 
   const screenId = asString(screen?.screenId);
   const moduleFromView = firstSegment(asString(screen?.view) ?? input.vue);
@@ -143,37 +116,73 @@ export async function analyzePrototypePage(input: AnalyzePrototypePageInput): Pr
 
 async function loadScreenEntries(prototypeRoot: string, warnings: string[]): Promise<ScreenEntry[]> {
   const entries: ScreenEntry[] = [];
-  const optionalConfigWarnings: string[] = [];
+  const configFiles = await fg([
+    '**/*{screen,screens,page,pages,route,routes,registry,config}*.{js,ts,mjs,mts}',
+  ], {
+    cwd: prototypeRoot,
+    onlyFiles: true,
+    absolute: false,
+    suppressErrors: true,
+    caseSensitiveMatch: false,
+    ignore: ['**/node_modules/**', '**/dist/**', '**/build/**'],
+  });
 
-  for (const source of CONFIG_SOURCES) {
-    const filePath = path.join(prototypeRoot, source.configPath);
+  for (const configPath of configFiles.sort()) {
+    const filePath = path.join(prototypeRoot, configPath);
     const text = await readTextIfExists(filePath);
-    if (!text) {
-      optionalConfigWarnings.push(`Config file not found: ${filePath}`);
-      continue;
-    }
-
-    const literal = extractExportedArrayLiteral(text, source.exportName);
-    if (!literal) {
-      optionalConfigWarnings.push(`Unable to find export ${source.exportName} in ${filePath}`);
-      continue;
-    }
-
-    try {
-      const modules = evaluateModuleArray(literal, source.exportName);
-      collectScreens(source.pageType, modules, entries, source.configPath);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      warnings.push(message);
+    if (!text || !/\bpath\s*:/.test(text)) continue;
+    collectVueRouterEntries(text, configPath, entries);
+    const exportNames = [...text.matchAll(/export\s+const\s+([A-Za-z_$][\w$]*)\s*=\s*\[/g)]
+      .map((match) => match[1])
+      .filter((name): name is string => Boolean(name));
+    for (const exportName of exportNames) {
+      const literal = extractExportedArrayLiteral(text, exportName);
+      if (!literal) continue;
+      try {
+        const modules = evaluateModuleArray(literal, exportName);
+        collectScreens(inferPageTypeFromVue(configPath), modules, entries, toPosixPath(configPath));
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        warnings.push(message);
+      }
     }
   }
-
-  if (entries.length === 0) warnings.push(...optionalConfigWarnings);
+  if (entries.length === 0) warnings.push('No statically evaluable page registry was detected; provide a Vue file or runtime URL when route-to-component resolution is unavailable.');
   return entries;
+}
+
+function collectVueRouterEntries(text: string, sourceFile: string, entries: ScreenEntry[]): void {
+  const imports = new Map<string, string>();
+  for (const match of text.matchAll(/import\s+([A-Za-z_$][\w$]*)\s+from\s+['"]([^'"]+\.vue)['"]/g)) {
+    if (match[1] && match[2]) imports.set(match[1], match[2]);
+  }
+  const objectPattern = /\{([\s\S]*?\bpath\s*:\s*['"][^'"]+['"][\s\S]*?)\}/g;
+  for (const match of text.matchAll(objectPattern)) {
+    const body = match[1] ?? '';
+    const route = body.match(/\bpath\s*:\s*['"]([^'"]+)['"]/)?.[1];
+    if (!route) continue;
+    const lazyView = body.match(/\bcomponent\s*:\s*\(\s*\)\s*=>\s*import\s*\(\s*['"]([^'"]+\.vue)['"]\s*\)/)?.[1];
+    const componentName = body.match(/\bcomponent\s*:\s*([A-Za-z_$][\w$]*)/)?.[1];
+    const view = lazyView ?? (componentName ? imports.get(componentName) : undefined);
+    if (!view || entries.some((entry) => asString(entry.screen.path) === route && asString(entry.screen.view) === view)) continue;
+    entries.push({
+      pageType: inferPageTypeFromVue(view),
+      sourceFile,
+      screen: {
+        path: route,
+        view,
+        name: body.match(/\bname\s*:\s*['"]([^'"]+)['"]/)?.[1] ?? componentName,
+      },
+    });
+  }
 }
 
 function collectScreens(pageType: PageType, modules: ModuleConfig[], entries: ScreenEntry[], sourceFile: string): void {
   for (const moduleConfig of modules) {
+    if (asString(moduleConfig.path)) {
+      collectScreenItems(pageType, undefined, [moduleConfig as ScreenConfig], entries, sourceFile);
+      continue;
+    }
     const moduleLabel = asString(moduleConfig.module);
     collectScreenItems(pageType, moduleLabel, moduleConfig.items ?? [], entries, sourceFile);
   }
@@ -223,25 +232,28 @@ function buildSourceRouteRegistry(entries: ScreenEntry[]): SourceRouteEntry[] {
 
 async function resolveVuePath(
   prototypeRoot: string,
-  pageType: PageType,
+  _pageType: PageType,
   view: string,
   vueInput: string | undefined,
 ): Promise<string> {
   const candidates: string[] = [];
-  const viewsRoot = CONFIG_SOURCES.find((source) => source.pageType === pageType)?.viewsRoot;
 
   if (vueInput) {
     candidates.push(resolveFrom(prototypeRoot, vueInput));
-    candidates.push(path.join(prototypeRoot, 'prototype/src/views/prototype', vueInput));
-    candidates.push(path.join(prototypeRoot, 'prototype/src/views/design', vueInput));
-    candidates.push(path.join(prototypeRoot, 'prototype/src/views', vueInput));
   }
-
-  if (viewsRoot) {
-    candidates.push(path.join(prototypeRoot, viewsRoot, view));
-  }
-
   candidates.push(path.join(prototypeRoot, view));
+  const normalizedView = toPosixPath(view).replace(/^\.\//, '');
+  const matches = await fg([
+    `**/${normalizedView}`,
+    `**/${path.basename(normalizedView)}`,
+  ], {
+    cwd: prototypeRoot,
+    onlyFiles: true,
+    absolute: true,
+    suppressErrors: true,
+    ignore: ['**/node_modules/**', '**/dist/**', '**/build/**'],
+  });
+  candidates.push(...matches.sort());
 
   for (const candidate of dedupe(candidates)) {
     if (await pathExists(candidate)) return candidate;
@@ -255,21 +267,14 @@ function buildVueMatchCandidates(prototypeRoot: string, vueInput: string): strin
   const candidates = [
     vueInput,
     toPosixPath(vueInput),
-    toPosixPath(path.relative(path.join(prototypeRoot, 'prototype/src/views/prototype'), absolute)),
-    toPosixPath(path.relative(path.join(prototypeRoot, 'prototype/src/views/design'), absolute)),
-    toPosixPath(path.relative(path.join(prototypeRoot, 'prototype/src/views'), absolute)),
     toPosixPath(path.relative(prototypeRoot, absolute)),
+    path.basename(vueInput),
   ];
 
   return dedupe(
     candidates
       .filter((candidate) => candidate && !candidate.startsWith('..'))
-      .flatMap((candidate) => [
-        candidate,
-        candidate.replace(/^prototype\/src\/views\/prototype\//, ''),
-        candidate.replace(/^prototype\/src\/views\/design\//, ''),
-        candidate.replace(/^prototype\/src\/views\//, ''),
-      ]),
+      .flatMap((candidate) => [candidate, path.basename(candidate)]),
   );
 }
 
@@ -318,7 +323,7 @@ function formatMissingRouteError(
     details.push(`source config warnings: ${warnings.slice(0, 4).join(' | ')}`);
   }
 
-  details.push('Suggestions: check config.source.root, verify the route exists in prototypeScreens.js/prdPageRegistry.js/designScreens.js, or use --vue <file>.');
+  details.push('Suggestions: check config.source.root, verify a statically readable page registry contains the route, or use --vue <file>.');
   return details.join('\n');
 }
 
@@ -342,13 +347,21 @@ async function readNotes(
     context.module,
     context.screenId?.split('.')[0],
     firstSegment(context.view),
-    firstSegment(relativeOrAbsolute(path.join(prototypeRoot, 'prototype/src/views/prototype'), context.vuePath)),
+    firstSegment(relativeOrAbsolute(prototypeRoot, context.vuePath)),
   ]);
 
   const candidates = [
     explicit ? path.join(prototypeRoot, explicit) : undefined,
-    explicit ? path.join(prototypeRoot, 'prototype/notes', explicit) : undefined,
-    ...modules.map((moduleName) => path.join(prototypeRoot, 'prototype/notes', moduleName, basename)),
+    ...await fg([
+      `**/${basename}`,
+      ...modules.map((moduleName) => `**/${moduleName}/${basename}`),
+    ], {
+      cwd: prototypeRoot,
+      onlyFiles: true,
+      absolute: true,
+      suppressErrors: true,
+      ignore: ['**/node_modules/**', '**/dist/**', '**/build/**'],
+    }),
   ].filter((candidate): candidate is string => Boolean(candidate));
 
   for (const candidate of dedupe(candidates)) {
@@ -366,15 +379,23 @@ async function readI18n(
 ): Promise<{ i18n?: Record<string, unknown> | undefined; i18nPath?: string | undefined }> {
   if (!screenId) return {};
 
-  const i18nPath = path.join(prototypeRoot, 'prototype/src/i18n/prototype', `${screenId}.json`);
-  try {
-    const i18n = await readJsonIfExists(i18nPath);
-    return i18n ? { i18n, i18nPath } : {};
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    warnings.push(`Unable to parse i18n file ${i18nPath}: ${message}`);
-    return {};
+  const matches = await fg([`**/${screenId}.json`], {
+    cwd: prototypeRoot,
+    onlyFiles: true,
+    absolute: true,
+    suppressErrors: true,
+    ignore: ['**/node_modules/**', '**/dist/**', '**/build/**'],
+  });
+  for (const i18nPath of matches.sort()) {
+    try {
+      const i18n = await readJsonIfExists(i18nPath);
+      if (i18n) return { i18n, i18nPath };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      warnings.push(`Unable to parse i18n file ${i18nPath}: ${message}`);
+    }
   }
+  return {};
 }
 
 function inferPageTypeFromVue(vue: string | undefined): PageType {

@@ -22,8 +22,8 @@ import type {
   MappingConfidence,
   UiVisualPlan,
 } from '../../../types/index.js';
-import { genericProfile } from '../../../profile/index.js';
-import type { ResolvedRestorationProfile, RestorationProfile } from '../../../profile/index.js';
+import { genericUiLexicon } from '../../../shared/semantic-lexicon.js';
+import type { UiSemanticLexicon } from '../../../shared/semantic-lexicon.js';
 import { toPascalCase } from './migration-planner.js';
 import { buildDynamicTextHints, buildSectionHint } from './ui-reconstruction-content.js';
 import { collectDescendants, dedupe, dedupeBy, parseCssNumber, roundCssNumber, sourceComponents, sourceComponentRole, sourceSections } from './ui-reconstruction-shared.js';
@@ -98,11 +98,9 @@ function sourceLayoutIntentForAudit(
 export function buildVisualPlan(evidence: PageCanonical, targetContext: {
   components: FlutterComponentRef[];
   componentMappings: ComponentMapping[];
-  restorationProfile?: ResolvedRestorationProfile | undefined;
 }): UiVisualPlan {
-  const profile = targetContext.restorationProfile?.profile ?? genericProfile;
   const nodeAuditResult = buildNodeAudits(evidence, targetContext);
-  const dynamicTextHints = buildDynamicTextHints(evidence, targetContext.restorationProfile);
+  const dynamicTextHints = buildDynamicTextHints(evidence);
   const layoutConflicts = buildPlanLayoutConflicts(evidence, { nodeAudits: nodeAuditResult.audits } as UiVisualPlan);
   return {
     viewport: evidence.viewport ?? { width: 0, height: 0 },
@@ -133,13 +131,12 @@ export function buildVisualPlan(evidence: PageCanonical, targetContext: {
 function buildNodeAudits(evidence: PageCanonical, targetContext: {
   components: FlutterComponentRef[];
   componentMappings: ComponentMapping[];
-  restorationProfile?: ResolvedRestorationProfile | undefined;
 }): {
   audits: UiNodeAudit[];
   suppressed: Array<{ nodeId: string; reason: string }>;
 } {
   const byId = new Map(evidence.nodes.map((node) => [node.id, node]));
-  const profile = targetContext.restorationProfile?.profile ?? genericProfile;
+  const profile = genericUiLexicon;
   const actionTargetByNodeId = buildActionTargetBindings(evidence, byId);
   const selected = selectNodeAuditCandidates(evidence, byId, profile);
   const audits = selected.candidates
@@ -156,7 +153,7 @@ function buildNodeAudits(evidence: PageCanonical, targetContext: {
 function selectNodeAuditCandidates(
   evidence: PageCanonical,
   byId: Map<string, PageSnapshotNode>,
-  profile: RestorationProfile,
+  profile: UiSemanticLexicon,
 ): {
   candidates: Array<{ node: PageSnapshotNode; coverageReason: string; displayInReview?: boolean | undefined }>;
   suppressed: Array<{ nodeId: string; reason: string }>;
@@ -227,7 +224,7 @@ function shouldAuditNode(node: PageSnapshotNode): boolean {
   return node.children.length > 0 || Boolean(node.text?.trim()) || Boolean(node.assetRefs?.length);
 }
 
-function compressRepeatedNodeAudits(audits: UiNodeAudit[], profile = genericProfile): {
+function compressRepeatedNodeAudits(audits: UiNodeAudit[], profile = genericUiLexicon): {
   audits: UiNodeAudit[];
   suppressed: Array<{ nodeId: string; reason: string }>;
 } {
@@ -282,7 +279,7 @@ function compressRepeatedNodeAudits(audits: UiNodeAudit[], profile = genericProf
   };
 }
 
-function repeatedAuditGroupKey(audit: UiNodeAudit, profile = genericProfile): string {
+function repeatedAuditGroupKey(audit: UiNodeAudit, profile = genericUiLexicon): string {
   return [
     audit.kind,
     audit.rows.length,
@@ -293,14 +290,14 @@ function repeatedAuditGroupKey(audit: UiNodeAudit, profile = genericProfile): st
   ].join('|');
 }
 
-function childStructureSignature(child: UiNodeAuditChild, profile = genericProfile): string {
+function childStructureSignature(child: UiNodeAuditChild, profile = genericUiLexicon): string {
   return [
     child.role,
     semanticTextClass(child.text, profile),
   ].join(':');
 }
 
-function childRoleSignature(child: UiNodeAuditChild, profile = genericProfile): string {
+function childRoleSignature(child: UiNodeAuditChild, profile = genericUiLexicon): string {
   return [
     child.role,
     semanticTextClass(child.text, profile),
@@ -312,7 +309,7 @@ function styleSignature(style: UiNodeAuditStyle, fields: Array<keyof UiNodeAudit
   return fields.map((field) => `${field}=${style[field] ?? ''}`).join(';');
 }
 
-function repeatedAuditCommonSignature(audit: UiNodeAudit, profile = genericProfile): NonNullable<UiNodeAudit['repeatedGroup']>['commonSignature'] {
+function repeatedAuditCommonSignature(audit: UiNodeAudit, profile = genericUiLexicon): NonNullable<UiNodeAudit['repeatedGroup']>['commonSignature'] {
   return {
     kind: audit.kind,
     rowCount: audit.rows.length,
@@ -325,7 +322,7 @@ function repeatedAuditCommonSignature(audit: UiNodeAudit, profile = genericProfi
   };
 }
 
-function buildRepeatedAuditInstance(audit: UiNodeAudit, base: UiNodeAudit, profile = genericProfile): UiNodeAuditInstance {
+function buildRepeatedAuditInstance(audit: UiNodeAudit, base: UiNodeAudit, profile = genericUiLexicon): UiNodeAuditInstance {
   const rowText = audit.rows.map((row) => row.children.map((child) => child.text ?? child.assetRefs?.join(',') ?? child.role));
   const baseRowText = base.rows.map((row) => row.children.map((child) => child.text ?? child.assetRefs?.join(',') ?? child.role));
   const fieldValues = repeatedAuditFieldValues(audit);
@@ -364,7 +361,7 @@ function repeatedAuditFieldValues(audit: UiNodeAudit): Record<string, string> {
   return values;
 }
 
-function semanticTextClass(text: string | undefined, profile = genericProfile): string {
+function semanticTextClass(text: string | undefined, profile = genericUiLexicon): string {
   if (!text) return 'non-text';
   if (/^\$?\d+(?:\.\d+)?%?$/.test(text) || /^\$/.test(text)) return 'numeric';
   if (profileStatusPattern(profile).test(text)) return 'status';
@@ -375,7 +372,7 @@ function semanticTextClass(text: string | undefined, profile = genericProfile): 
   return 'text';
 }
 
-function semanticHintForField(field: string, value: string, profile = genericProfile): string {
+function semanticHintForField(field: string, value: string, profile = genericUiLexicon): string {
   const cls = semanticTextClass(value, profile);
   if (cls !== 'text' && cls !== 'non-text') return cls;
   if (/row1_col1/.test(field)) return 'primary-text';
@@ -383,7 +380,7 @@ function semanticHintForField(field: string, value: string, profile = genericPro
   return cls;
 }
 
-function deltaRiskForField(field: string, base: string | undefined, actual: string, profile = genericProfile): string | undefined {
+function deltaRiskForField(field: string, base: string | undefined, actual: string, profile = genericUiLexicon): string | undefined {
   if (profileStatusPattern(profile).test(`${base ?? ''} ${actual}`)) return 'Do not hard-code one status text or style for all repeated items.';
   if (profileTimeBadgePattern(profile).test(`${base ?? ''} ${actual}`)) return 'Do not hard-code one time badge value for all repeated items.';
   if (profileQuantityPattern(profile).test(`${base ?? ''} ${actual}`)) return 'Quantity-like text should be data-driven per repeated item.';
@@ -450,7 +447,7 @@ function controlDeltasForAudit(audit: UiNodeAudit, base: UiNodeAudit): UiNodeAud
   return deltas.slice(0, 24);
 }
 
-function stateDeltasForValues(values: Record<string, string>, baseValues: Record<string, string>, profile = genericProfile): UiNodeAuditInstanceDelta[] {
+function stateDeltasForValues(values: Record<string, string>, baseValues: Record<string, string>, profile = genericUiLexicon): UiNodeAuditInstanceDelta[] {
   return Object.entries(values)
     .filter(([field, value]) => semanticTextClass(value, profile) !== semanticTextClass(baseValues[field], profile))
     .map(([field, value]) => ({
@@ -492,7 +489,7 @@ function shouldIncludeSectionRoot(
   node: PageSnapshotNode,
   byId: Map<string, PageSnapshotNode>,
   evidence: PageCanonical,
-  profile: RestorationProfile,
+  profile: UiSemanticLexicon,
 ): { include: boolean; reason?: string | undefined } {
   if (isMisleadingWrapper(node, byId, evidence)) {
     return { include: false, reason: 'large wrapper is covered by more specific child nodeAudits.' };
@@ -602,7 +599,7 @@ function buildNodeAudit(
   coverageReason: string,
   displayInReviewOverride?: boolean | undefined,
   actionTargetByNodeId: Map<string, UiInteractionTarget> = new Map(),
-  profile: RestorationProfile = genericProfile,
+  profile: UiSemanticLexicon = genericUiLexicon,
 ): UiNodeAudit | undefined {
   const descendants = collectDescendants(node, byId).filter((item) => item.id !== node.id);
   const visibleChildren = descendants
@@ -1370,7 +1367,7 @@ function pickAuditStyle(node: PageSnapshotNode, options: { includeBox?: boolean;
 function buildAbsenceHints(
   node: PageSnapshotNode,
   visibleChildren: PageSnapshotNode[],
-  profile: RestorationProfile,
+  profile: UiSemanticLexicon,
 ): string[] {
   const hints = [
     'Representative node rows list the visible display fields; do not add extra sibling fields unless sourceSemantics or user confirmation requires them.',
@@ -1383,7 +1380,7 @@ function buildAbsenceHints(
   return hints;
 }
 
-function focusedSectionPattern(profile: RestorationProfile): RegExp {
+function focusedSectionPattern(profile: UiSemanticLexicon): RegExp {
   const terms = [
     'sort',
     'filter',
@@ -1393,27 +1390,27 @@ function focusedSectionPattern(profile: RestorationProfile): RegExp {
     'record',
     'help',
     'value',
-    ...(profile.sourceLexicon?.listHeadingTerms ?? []),
+    ...profile.listHeadingTerms,
   ];
   return termsPattern(terms);
 }
 
-function profileQuantityPattern(profile: RestorationProfile): RegExp {
-  const terms = profile.sourceLexicon?.dynamicQuantityTerms ?? [];
+function profileQuantityPattern(profile: UiSemanticLexicon): RegExp {
+  const terms = profile.dynamicQuantityTerms;
   const pattern = terms.map(escapeRegExp).join('|');
   return pattern ? new RegExp(`(?:${pattern})\\s*\\d+`, 'i') : /$a/;
 }
 
-function profileQuantityTermPattern(profile: RestorationProfile): RegExp {
-  return termsPattern(profile.sourceLexicon?.dynamicQuantityTerms ?? []);
+function profileQuantityTermPattern(profile: UiSemanticLexicon): RegExp {
+  return termsPattern(profile.dynamicQuantityTerms);
 }
 
-function profileStatusPattern(profile: RestorationProfile): RegExp {
-  return termsPattern(profile.sourceLexicon?.statusTerms ?? []);
+function profileStatusPattern(profile: UiSemanticLexicon): RegExp {
+  return termsPattern(profile.statusTerms);
 }
 
-function profileTimeBadgePattern(profile: RestorationProfile): RegExp {
-  const pattern = profile.sourceLexicon?.timeBadgePattern;
+function profileTimeBadgePattern(profile: UiSemanticLexicon): RegExp {
+  const pattern = profile.timeBadgePattern;
   return pattern ? new RegExp(pattern, 'i') : /$a/;
 }
 

@@ -29,13 +29,12 @@ npx @proto-bridge/cli generate \
   "schemaVersion": 1,
   "source": {
     "adapter": "vue3-prototype",
-    "root": "/Users/name/work/TradeAppPrd"
+    "root": "/path/to/vue3-prototype"
   },
   "target": {
     "adapter": "flutter-app",
-    "root": "/Users/name/work/youfi"
+    "root": "/path/to/flutter-project"
   },
-  "profile": "auto",
   "runtime": { "capture": true },
   "output": { "root": "./output" }
 }
@@ -55,7 +54,7 @@ args = ["-y", "@proto-bridge/mcp-server"]
 
 | 文档 | 内容 |
 | --- | --- |
-| [docs/overview.md](docs/overview.md) | 定位、证据分层、capability、profile、包边界 |
+| [docs/overview.md](docs/overview.md) | 定位、证据分层、扫描边界、包边界 |
 | [docs/artifacts.md](docs/artifacts.md) | 产物权威链与字段契约 |
 | [docs/usage.md](docs/usage.md) | 配置、CLI / MCP / Core、开发脚本、npm 发布 |
 
@@ -65,18 +64,17 @@ args = ["-y", "@proto-bridge/mcp-server"]
 | --- | --- |
 | [AGENT.md](AGENT.md) | Agent 硬约束与验证矩阵 |
 | [skills/proto-bridge](skills/proto-bridge/skill.md) | 改本仓库的操作 skill |
-| [skills/youfi-flutter-restore](skills/youfi-flutter-restore/skill.md) | YouFi 真实项目消费产物示例（非本仓改法） |
 
 ## 仓库结构
 
 ```text
 packages/
-├── core/          # capabilities、workflow、source/snapshot/target、profile
+├── core/          # capabilities、workflow、source/snapshot/target
 ├── cli/           # 终端入口
 └── mcp-server/    # MCP server
 
 docs/              # overview · artifacts · usage
-skills/            # proto-bridge · youfi-flutter-restore
+skills/            # proto-bridge 本仓开发规范
 examples/vue3-to-flutter/   # Vue3 source → Flutter target 示例
 ```
 

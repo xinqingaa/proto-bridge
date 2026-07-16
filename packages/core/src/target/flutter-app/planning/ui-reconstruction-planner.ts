@@ -10,8 +10,6 @@ import type {
 import path from 'node:path';
 import { getFlutterTargetConventions } from '../conventions.js';
 import { findFlutterTargetExamples } from '../examples.js';
-import { restorationProfileArtifact } from '../../../profile/index.js';
-import type { ResolvedRestorationProfile } from '../../../profile/index.js';
 import { toPascalCase, toSnakeCase } from './migration-planner.js';
 import { buildAssetPlan, buildBusinessQuestions, buildI18nPlan, buildInteractionPlan, buildRisks, buildSectionHint } from './ui-reconstruction-content.js';
 import { buildImplementationContract, buildContractValidationHints } from './ui-reconstruction-contract.js';
@@ -23,7 +21,6 @@ export type BuildFlutterUiReconstructionPlanInput = {
   evidence: PageCanonical;
   targetRoot: string;
   targetModule?: string | undefined;
-  restorationProfile?: ResolvedRestorationProfile | undefined;
   sourceAwareImplementationPlan?: FlutterImplementationPlan | undefined;
   sourceReview?: SourceAwareReviewProjection | undefined;
 };
@@ -37,16 +34,14 @@ export async function buildFlutterUiReconstructionPlan(
     flutterRoot: targetRoot,
     module: input.targetModule,
     roles,
-    restorationProfile: input.restorationProfile,
   });
-  const moduleName = input.targetModule ?? inferModule(input.evidence, initialConventions.existingModules, input.restorationProfile) ?? 'feature';
+  const moduleName = input.targetModule ?? inferModule(input.evidence, initialConventions.existingModules);
   const conventions = initialConventions.module === moduleName
     ? initialConventions
     : await getFlutterTargetConventions({
       flutterRoot: targetRoot,
       module: moduleName,
       roles,
-      restorationProfile: input.restorationProfile,
     });
   const examples = await findFlutterTargetExamples({
     flutterRoot: targetRoot,
@@ -55,16 +50,14 @@ export async function buildFlutterUiReconstructionPlan(
     roles,
     screenId: input.evidence.page.route,
     limit: 8,
-    restorationProfile: input.restorationProfile,
   });
   const pageName = inferPageName(input.evidence);
-  const baseDir = `lib/app/modules/${moduleName}/${toSnakeCase(pageName)}`;
+  const baseDir = moduleName ? `__proto_bridge__/${moduleName}/${toSnakeCase(pageName)}` : undefined;
   const runtimeWidgetTree = buildRuntimeWidgetTree(pageName, input.evidence);
   const componentMappings = buildComponentMappings(input.evidence, conventions.components);
   const visualPlan = buildVisualPlan(input.evidence, {
     components: conventions.components,
     componentMappings,
-    restorationProfile: input.restorationProfile,
   });
   const fallbackPlan = buildFallbackImplementationPlan(baseDir, pageName, runtimeWidgetTree);
   const routeMapping = input.evidence.targetFacts?.analysis.routeMapping;
@@ -82,12 +75,11 @@ export async function buildFlutterUiReconstructionPlan(
     visualPlan,
   });
   const nodeAuditHints = buildNodeAuditValidationHints(visualPlan.nodeAudits);
-  const themeMappings = buildThemeMappings(input.evidence, conventions.targetConventions, input.restorationProfile);
+  const themeMappings = buildThemeMappings(input.evidence, conventions.targetConventions);
 
   return {
     id: createPlanId(input.evidence.id),
     pageId: input.evidence.id,
-    ...(input.restorationProfile ? { restorationProfile: restorationProfileArtifact(input.restorationProfile) } : {}),
     ...(routeMapping ? { routeMapping } : {}),
     ...(routeIntentMappings.length ? { routeIntentMappings } : {}),
     target: {
@@ -115,8 +107,8 @@ export async function buildFlutterUiReconstructionPlan(
     componentMappings,
     themeMappings,
     themeMappingGroups: buildThemeMappingGroups(themeMappings),
-    i18nPlan: buildI18nPlan(input.evidence, input.restorationProfile),
-    assetPlan: buildAssetPlan(input.evidence),
+    i18nPlan: buildI18nPlan(input.evidence),
+    assetPlan: buildAssetPlan(input.evidence, conventions.assetDirectories),
     interactionPlan: buildInteractionPlan(input.evidence),
     businessQuestions: buildBusinessQuestions(input.evidence),
     risks: buildRisks(input.evidence),
@@ -167,7 +159,6 @@ function rolesForEvidence(evidence: PageCanonical): FlutterComponentRole[] {
 function inferModule(
   evidence: PageCanonical,
   existingModules: string[],
-  restorationProfile: ResolvedRestorationProfile | undefined,
 ): string | undefined {
   const sourceModule = evidence.sourceFacts?.analysis.module;
   const routeMappedModule = evidence.targetFacts?.analysis.routeMapping?.targetModule;
@@ -179,19 +170,8 @@ function inferModule(
   const segments = route.split(/[/?#&.=_-]+/).filter((item) => item.length >= 3);
   for (const segment of segments) {
     if (existingModules.includes(segment)) return segment;
-    const mapped = resolveModuleAlias(segment, existingModules, restorationProfile);
-    if (mapped) return mapped;
   }
-  return existingModules[0];
-}
-
-function resolveModuleAlias(
-  candidate: string,
-  existingModules: string[],
-  restorationProfile: ResolvedRestorationProfile | undefined,
-): string | undefined {
-  const mapped = restorationProfile?.profile.moduleAliases?.[candidate.toLowerCase()];
-  return mapped && existingModules.includes(mapped) ? mapped : undefined;
+  return undefined;
 }
 
 function inferPattern(evidence: PageCanonical): string {
@@ -230,7 +210,8 @@ function buildSummary(evidence: PageCanonical): string {
   return `该计划来自统一 PageCanonical，聚焦可见 UI 还原；识别到 ${sectionCount} 个视觉区块、${textCount} 条文案线索和 ${assetCount} 个资源线索。${sourceSummary}${capabilityHints.length > 0 ? `增强能力包括 ${capabilityHints.join('、')}。` : ''}业务接口、权限、风控和埋点不在本计划中做确定性推断。`;
 }
 
-function buildRuntimeFileTree(baseDir: string, pageName: string, widgetTree: FlutterWidgetPlan[]): FlutterPlannedFile[] {
+function buildRuntimeFileTree(baseDir: string | undefined, pageName: string, widgetTree: FlutterWidgetPlan[]): FlutterPlannedFile[] {
+  if (!baseDir) return [];
   const pageSnake = toSnakeCase(pageName);
   const files: FlutterPlannedFile[] = [
     {
@@ -300,7 +281,7 @@ function buildRuntimeWidgetTree(pageName: string, evidence: PageCanonical): Flut
 }
 
 function buildFallbackImplementationPlan(
-  baseDir: string,
+  baseDir: string | undefined,
   pageName: string,
   runtimeWidgetTree: FlutterWidgetPlan[],
 ): Pick<FlutterImplementationPlan, 'fileTree' | 'widgetTree' | 'stateStrategy' | 'controllerBoundaries' | 'widgetContracts'> {

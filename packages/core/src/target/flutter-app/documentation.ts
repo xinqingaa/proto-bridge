@@ -42,7 +42,7 @@ const HINT_PATTERNS: Array<{
   confidence: FlutterArchitectureConfidence;
   needles: RegExp[];
 }> = [
-  { kind: 'state', pattern: 'getx', confidence: 'medium', needles: [/\bGetxController\b/i, /\bBaseGetView\b/i, /\bGetView\b/i, /\bBindings\b/i] },
+  { kind: 'state', pattern: 'getx', confidence: 'medium', needles: [/\bGetxController\b/i, /\bGetView\b/i, /\bBindings\b/i] },
   { kind: 'state', pattern: 'flutter_bloc', confidence: 'medium', needles: [/\bBlocProvider\b/i, /\bBlocBuilder\b/i, /\bCubit\b/i, /\bflutter_bloc\b/i] },
   { kind: 'state', pattern: 'riverpod', confidence: 'medium', needles: [/\bConsumerWidget\b/i, /\bWidgetRef\b/i, /\briverpod\b/i] },
   { kind: 'state', pattern: 'provider', confidence: 'medium', needles: [/\bChangeNotifierProvider\b/i, /\bcontext\.(watch|read)\b/i, /\bprovider\b/i] },
@@ -52,16 +52,8 @@ const HINT_PATTERNS: Array<{
   { kind: 'i18n', pattern: 'getx_tr', confidence: 'medium', needles: [/['"`][^'"`]+['"`]\.tr\b/i, /\b\.tr\b/i] },
   { kind: 'i18n', pattern: 'build_context_t_extension', confidence: 'medium', needles: [/\bcontext\.t\s*\(/i] },
   { kind: 'i18n', pattern: 'app_localizations', confidence: 'medium', needles: [/\bAppLocalizations\.of\b/i, /\bflutter_gen\/gen_l10n\b/i] },
-  { kind: 'theme', pattern: 'themeService.colors', confidence: 'medium', needles: [/\bthemeService\.colors\b/i] },
-  { kind: 'theme', pattern: 'themeService.textStyles', confidence: 'medium', needles: [/\bthemeService\.textStyles\b/i] },
-  { kind: 'theme', pattern: 'context.pbColors', confidence: 'medium', needles: [/\bcontext\.pbColors\b/i] },
-  { kind: 'theme', pattern: 'context.pbTextStyles', confidence: 'medium', needles: [/\bcontext\.pbTextStyles\b/i] },
   { kind: 'theme', pattern: 'Theme.of(context)', confidence: 'low', needles: [/\bTheme\.of\s*\(\s*context\s*\)/i] },
-  { kind: 'component', pattern: 'CommonAppBar', confidence: 'medium', needles: [/\bCommonAppBar\b/i] },
-  { kind: 'component', pattern: 'CommonButton', confidence: 'medium', needles: [/\bCommonButton\b/i] },
-  { kind: 'component', pattern: 'CommonImage', confidence: 'medium', needles: [/\bCommonImage\b/i, /\bCommonSvg\b/i] },
-  { kind: 'component', pattern: 'BaseGetView', confidence: 'medium', needles: [/\bBaseGetView\b/i, /\bBaseGetPullView\b/i] },
-  { kind: 'file-organization', pattern: 'module_page_controller_binding', confidence: 'medium', needles: [/\bmodules\/[^/\s]+\/[^/\s]+_page\.dart\b/i, /\bcontroller\.dart\b/i, /\bbinding\.dart\b/i] },
+  { kind: 'file-organization', pattern: 'page_state_files', confidence: 'medium', needles: [/\b(?:features|modules)\/[^/\s]+\//i, /\b(?:controller|bloc|cubit|provider)\.dart\b/i] },
   { kind: 'workflow', pattern: 'architecture-doc', confidence: 'low', needles: [/\barchitecture\b/i, /\bconvention\b/i, /架构|约定|规范/] },
 ];
 
@@ -157,21 +149,21 @@ function summarizeDocument(text: string): string[] {
 
 function detectDocumentationConflicts(
   hints: DocumentationHint[],
-  profile: FlutterArchitectureProfile,
+  scannedArchitecture: FlutterArchitectureProfile,
 ): string[] {
   const conflicts: string[] = [];
   for (const hint of hints) {
     if (hint.confidence === 'low') continue;
-    if (hint.kind === 'state' && profile.state.pattern !== 'unknown' && profile.state.pattern !== hint.pattern) {
-      conflicts.push(`Target documentation ${hint.file} mentions state pattern ${hint.pattern}, but code scan detected ${profile.state.pattern}.`);
+    if (hint.kind === 'state' && scannedArchitecture.state.pattern !== 'unknown' && scannedArchitecture.state.pattern !== hint.pattern) {
+      conflicts.push(`Target documentation ${hint.file} mentions state pattern ${hint.pattern}, but code scan detected ${scannedArchitecture.state.pattern}.`);
     }
-    if (hint.kind === 'routing' && profile.routing.pattern !== 'unknown' && profile.routing.pattern !== hint.pattern) {
-      conflicts.push(`Target documentation ${hint.file} mentions routing pattern ${hint.pattern}, but code scan detected ${profile.routing.pattern}.`);
+    if (hint.kind === 'routing' && scannedArchitecture.routing.pattern !== 'unknown' && scannedArchitecture.routing.pattern !== hint.pattern) {
+      conflicts.push(`Target documentation ${hint.file} mentions routing pattern ${hint.pattern}, but code scan detected ${scannedArchitecture.routing.pattern}.`);
     }
-    if (hint.kind === 'i18n' && profile.i18n.pattern !== 'unknown' && profile.i18n.pattern !== hint.pattern) {
-      conflicts.push(`Target documentation ${hint.file} mentions i18n pattern ${hint.pattern}, but code scan detected ${profile.i18n.pattern}.`);
+    if (hint.kind === 'i18n' && scannedArchitecture.i18n.pattern !== 'unknown' && scannedArchitecture.i18n.pattern !== hint.pattern) {
+      conflicts.push(`Target documentation ${hint.file} mentions i18n pattern ${hint.pattern}, but code scan detected ${scannedArchitecture.i18n.pattern}.`);
     }
-    if (hint.kind === 'theme' && profile.theme.patterns.length > 0 && !profile.theme.patterns.includes(hint.pattern)) {
+    if (hint.kind === 'theme' && scannedArchitecture.theme.patterns.length > 0 && !scannedArchitecture.theme.patterns.includes(hint.pattern)) {
       conflicts.push(`Target documentation ${hint.file} mentions theme pattern ${hint.pattern}, but code scan did not detect it in target usage.`);
     }
   }

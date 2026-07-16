@@ -79,7 +79,6 @@ screenshot region / text anchor
 
 | 字段 | 作用 |
 | --- | --- |
-| `restorationProfile` | 本次启用的项目增强 provenance |
 | `routeMapping` / `routeIntentMappings` | source route 与 target route 的映射线索 |
 | `target` | 目标根、模块、routes / translations / assets、可复用组件、相似示例 |
 | `page` | 标题、route、摘要、viewport |
@@ -90,19 +89,6 @@ screenshot region / text anchor
 | `componentMappings` / `themeMappings` / `themeMappingGroups` | 组件与主题映射 |
 | `i18nPlan` / `assetPlan` / `interactionPlan` | 文案、资源、交互 |
 | `businessQuestions` / `risks` / `validationHints` | 风险与实现后校验提示 |
-
-### restorationProfile
-
-轻量 provenance，不含完整词表或 token 表。
-
-| 字段 | 说明 |
-| --- | --- |
-| `id` | 如 `generic`、`youfi` |
-| `mode` | `explicit` / `auto` / `generic` |
-| `inferredFrom` | auto 时用于推断的 target 目录名 |
-| `warnings` | 未知 profile、回退等 |
-
-只解释增强来源，不替代 `targetConventions` 扫描证据。
 
 ### targetConventions
 
@@ -207,4 +193,4 @@ screenshot region / text anchor
 - 子 Widget 是否违反 `widgetContracts`  
 - placeholder、TODO、硬编码颜色 / 字号、local shadow、network image、导航风险标记  
 
-architecture profile 为 `unknown` 时输出 warnings / manual questions，不把未知模式当成硬错误。Validation 是 review 辅助，不等于视觉或业务完全正确。
+扫描出的 architecture profile 为 `unknown` 时输出 warnings / manual questions，不把未知模式当成硬错误。Validation 是 review 辅助，不等于视觉或业务完全正确。

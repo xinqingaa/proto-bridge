@@ -10,7 +10,6 @@ import type {
   WidgetRecommendation,
   CaptureResult,
 } from '../types/index.js';
-import type { ResolvedRestorationProfile } from '../profile/index.js';
 
 export type AdapterProjectRef = {
   adapter: string;
@@ -39,13 +38,13 @@ export type BridgeInput = {
 export type SourceAdapter = {
   id: string;
   technology: string;
-  analyze(input: AnalyzePrototypePageInput & { restorationProfile?: ResolvedRestorationProfile | undefined }): Promise<PrototypePageAnalysis>;
+  analyze(input: AnalyzePrototypePageInput): Promise<PrototypePageAnalysis>;
 };
 
 export type TargetAdapter = {
   id: string;
   technology: string;
-  analyze(input: AnalyzeFlutterContextInput & { restorationProfile?: ResolvedRestorationProfile | undefined }): Promise<FlutterContextAnalysis>;
+  analyze(input: AnalyzeFlutterContextInput): Promise<FlutterContextAnalysis>;
   mapTokens(input: MapTokensInput): TokenMapResult;
   buildImplementationPlan(input: {
     source: PrototypePageAnalysis;

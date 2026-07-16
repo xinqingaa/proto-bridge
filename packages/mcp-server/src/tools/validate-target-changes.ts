@@ -26,9 +26,7 @@ function allowedPathsFromPlan(page: ReturnType<ToolContext['pages']['get']>): st
   const plannedDirs = page.plan.fileTree
     .map((file) => file.path.split('/').slice(0, -1).join('/'))
     .filter(Boolean);
-  const module = page.plan.target.module;
   return [...new Set([
-    ...(module ? [`lib/app/modules/${module}`] : []),
     ...plannedDirs,
     ...page.plan.target.routesFiles,
     ...page.plan.target.translationFiles,

@@ -551,8 +551,6 @@ function hasRuntimeModalEvidence(evidence: PageCanonical): boolean {
 
 function normalizeSourceSemanticsLanguage(value: string): string {
   return value
-    .replace(/\bBaseGetView\b/g, 'target page pattern')
-    .replace(/\bBaseGetPullView\b/g, 'target pull/refresh page pattern')
     .replace(/\bGetX\b/g, 'target state pattern')
     .replace(/\bGetxController\b/g, 'target state owner')
     .replace(/\bGet\.find\b/g, 'target dependency lookup')
@@ -588,6 +586,7 @@ function normalizeFileTree(
   files: FlutterPlannedFile[],
   targetConventions: FlutterTargetConventionProfile,
 ): FlutterPlannedFile[] {
+  if (targetConventions.architectureProfile.fileOrganization.pattern === 'unknown') return [];
   const stateBinding = stateBindingFor(targetConventions);
   return files
     .filter((file) => {
@@ -595,26 +594,79 @@ function normalizeFileTree(
       if (/_controller\.dart$|_binding\.dart$/.test(file.path)) return false;
       return true;
     })
-    .map((file) => normalizeFile(file, targetConventions));
+    .flatMap((file) => {
+      const normalized = normalizeFile(file, targetConventions);
+      return normalized.path ? [normalized] : [];
+    });
 }
 
 function normalizeFilePath(filePath: string, targetConventions: FlutterTargetConventionProfile): string {
   const fileOrganization = targetConventions.architectureProfile.fileOrganization.pattern;
+  const rebased = rebaseDetectedFeatureRoot(filePath, targetConventions);
+  if (!rebased) return '';
   if (fileOrganization === 'module_views_controllers_bindings') {
-    return normalizeModuleMvcFilePath(filePath);
+    return normalizeModuleMvcFilePath(rebased);
   }
-  if (fileOrganization !== 'module_proto_bucket') return filePath;
-  const match = filePath.match(/^lib\/app\/modules\/([^/]+)\/([^/]+)\/(.+)$/);
-  if (!match?.[1] || !match[2] || !match[3]) return filePath;
-  return `lib/app/modules/${match[1]}/_proto/${match[2]}/${match[3]}`;
+  if (fileOrganization === 'feature_presentation') return normalizeFeaturePresentationFilePath(rebased, targetConventions);
+  return rebased;
+}
+
+function rebaseDetectedFeatureRoot(
+  filePath: string,
+  targetConventions: FlutterTargetConventionProfile,
+): string | undefined {
+  const match = filePath.match(/^__proto_bridge__\/([^/]+)\/(.+)$/);
+  if (!match?.[1] || !match[2]) return filePath;
+  const moduleName = match[1];
+  const example = targetConventions.architectureProfile.fileOrganization.examples
+    .map((item) => item.file)
+    .find((candidate) => candidate.split('/').includes(moduleName));
+  if (!example) return undefined;
+  const parts = example.split('/');
+  const moduleIndex = parts.indexOf(moduleName);
+  if (moduleIndex < 0) return undefined;
+  return `${parts.slice(0, moduleIndex + 1).join('/')}/${match[2]}`;
+}
+
+function normalizeFeaturePresentationFilePath(
+  filePath: string,
+  targetConventions: FlutterTargetConventionProfile,
+): string {
+  const examples = targetConventions.architectureProfile.fileOrganization.examples.map((item) => item.file);
+  const featureBase = filePath.split('/').slice(0, findFeatureBoundary(filePath)).join('/');
+  const leaf = filePath.split('/').at(-1) ?? filePath;
+  if (/_page\.dart$|_view\.dart$/.test(leaf)) {
+    const pageDir = examples.some((item) => /\/presentation\/screens?\//.test(item)) ? 'presentation/screens' : 'presentation/pages';
+    return `${featureBase}/${pageDir}/${leaf}`;
+  }
+  if (/_controller\.dart$|_binding\.dart$/.test(leaf)) {
+    const stateDir = examples.some((item) => /\/presentation\/bloc\//.test(item))
+      ? 'presentation/bloc'
+      : examples.some((item) => /\/presentation\/cubit\//.test(item))
+        ? 'presentation/cubit'
+        : 'presentation/state';
+    return `${featureBase}/${stateDir}/${leaf}`;
+  }
+  if (filePath.includes('/widgets/')) return `${featureBase}/presentation/widgets/${leaf}`;
+  return filePath;
+}
+
+function findFeatureBoundary(filePath: string): number {
+  const parts = filePath.split('/');
+  const knownRoots = new Set(['features', 'modules']);
+  const rootIndex = parts.findIndex((part) => knownRoots.has(part));
+  if (rootIndex >= 0 && parts[rootIndex + 1]) return rootIndex + 2;
+  const appModules = parts.findIndex((part, index) => part === 'modules' && parts[index - 1] === 'app');
+  return appModules >= 0 ? appModules + 2 : Math.max(1, parts.length - 2);
 }
 
 function normalizeModuleMvcFilePath(filePath: string): string {
-  const match = filePath.match(/^lib\/app\/modules\/([^/]+)\/([^/]+)\/(.+)$/);
-  if (!match?.[1] || !match[2] || !match[3]) return filePath;
-  const [, moduleName, featureName, rest] = match;
-  if (!moduleName || !featureName || !rest) return filePath;
-  const base = `lib/app/modules/${moduleName}`;
+  const parts = filePath.split('/');
+  const boundary = findFeatureBoundary(filePath);
+  const featureName = parts[boundary];
+  const rest = parts.slice(boundary + 1).join('/');
+  if (!featureName || !rest) return filePath;
+  const base = parts.slice(0, boundary).join('/');
   const featurePrefix = `${featureName}_`;
   if (/_controller\.dart$/.test(rest)) return `${base}/controllers/${featurePrefix}controller.dart`;
   if (/_binding\.dart$/.test(rest)) return `${base}/bindings/${featurePrefix}binding.dart`;
@@ -749,8 +801,6 @@ function normalizeTargetLanguage(value: string, targetConventions: FlutterTarget
   let result = value;
   if (statePattern !== 'getx') {
     result = result
-      .replace(/\bBaseGetView\b/g, 'target page pattern')
-      .replace(/\bBaseGetPullView\b/g, 'target pull/refresh page pattern')
       .replace(/\bGetX\b/g, 'target state pattern')
       .replace(/\bGetxController\b/g, 'target state owner')
       .replace(/\bGet\.find\b/g, 'target dependency lookup')

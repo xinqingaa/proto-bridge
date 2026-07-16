@@ -31,7 +31,6 @@ export async function reconstructPageContextTool(context: ToolContext, args: Jso
       vue: readString(args, 'vuePath') ?? readString(args, 'vue'),
       url: readString(args, 'url'),
       output: readString(args, 'output'),
-      profile: readProfile(args),
       capture: readBoolean(args, 'capture'),
       viewport,
       saveArtifacts: readBoolean(args, 'saveArtifacts'),
@@ -95,12 +94,6 @@ export async function reconstructPageContextTool(context: ToolContext, args: Jso
       trace: readBoolean(args, 'trace') ? result.trace as unknown as JsonObject : undefined,
     },
   });
-}
-
-function readProfile(args: JsonObject): string | false | undefined {
-  const value = readString(args, 'profile');
-  if (!value) return undefined;
-  return value === 'false' ? false : value;
 }
 
 function readViewport(args: JsonObject): { width: number; height: number; deviceScaleFactor?: number | undefined } | undefined {
