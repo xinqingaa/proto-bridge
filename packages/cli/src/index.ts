@@ -341,7 +341,6 @@ function printSuccess(
   kv('screenId', result.page.sourceFacts?.analysis.screenId ?? 'unknown');
   kv('output', input.outDir);
   kv('page canonical', result.files.pageCanonical);
-  kv('debug index', result.files.pageDebugIndex);
   if (result.files.uiBuildPlan) kv('ui build plan', result.files.uiBuildPlan);
   if (result.files.uiBuildReview) kv('ui build review', result.files.uiBuildReview);
   for (const screenshot of result.files.screenshots) kv('screenshot', screenshot);
@@ -412,7 +411,7 @@ Options:
   --trace                     Print temporary capability orchestration trace
 
 Artifacts:
-  Always writes page-canonical.json and page-debug-index.json.
+  Always writes page-canonical.json.
   With target config or --target-root, writes ui-build-plan.json and ui-build-review.md.
   With source config or --source-root, URL-derived route enables source-aware evidence.
 `;

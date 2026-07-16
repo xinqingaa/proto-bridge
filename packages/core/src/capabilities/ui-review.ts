@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { readFile } from 'node:fs/promises';
 import { writeTextFile } from '../artifacts/artifact-writer.js';
 import type { ExportUiReviewInput, ExportUiReviewResult, UiBuildPlan } from '../types/index.js';
 import type { UiReviewCapabilityResult } from './types.js';
@@ -13,8 +14,9 @@ export async function reviewUiCapability(input: ExportUiReviewInput): Promise<Ui
 }
 
 async function exportUiReview(input: ExportUiReviewInput): Promise<ExportUiReviewResult> {
-  const markdown = renderReviewMarkdown(input.plan);
   const reviewMarkdownPath = path.join(input.outDir, 'ui-build-review.md');
+  const manualNotes = await readManualNotes(reviewMarkdownPath);
+  const markdown = renderReviewMarkdown(input.plan, manualNotes);
   await writeTextFile(reviewMarkdownPath, markdown);
   return {
     markdown,
@@ -24,7 +26,7 @@ async function exportUiReview(input: ExportUiReviewInput): Promise<ExportUiRevie
   };
 }
 
-function renderReviewMarkdown(plan: UiBuildPlan): string {
+function renderReviewMarkdown(plan: UiBuildPlan, manualNotes: string): string {
   return [
     `# ${plan.page.title ?? 'Snapshot UI'} 构建审查`,
     '',
@@ -46,12 +48,6 @@ function renderReviewMarkdown(plan: UiBuildPlan): string {
     '_JSON 来源：`ui-build-plan.json#/integrationGuidance`_',
     '',
     ...renderIntegrationGuidance(plan),
-    '',
-    '### 实现索引',
-    '',
-    '_JSON 来源：`ui-build-plan.json#/implementationContract/implementationIndex`_',
-    '',
-    ...renderImplementationIndex(plan),
     '',
     '## 来源语义',
     '',
@@ -151,7 +147,7 @@ function renderReviewMarkdown(plan: UiBuildPlan): string {
     '',
     ...markdownTable(
       ['来源角色', '状态', '目标/候选组件', '置信度', '节点/来源', '下一步'],
-      plan.componentMappings.map((mapping) => [
+      plan.componentMappings.filter((mapping) => mapping.status !== 'unresolved').slice(0, 8).map((mapping) => [
         mapping.sourceRole,
         mapping.status,
         mapping.targetSymbol ?? mapping.candidateSymbols?.join('、') ?? '未确认',
@@ -163,20 +159,9 @@ function renderReviewMarkdown(plan: UiBuildPlan): string {
     '',
     '### 来源样式事实与目标主题提示',
     '',
-    ...renderThemeMappingGroups(plan),
+    `- 样式规则：${plan.stylePlan.policy.rule}`,
     '',
-    ...markdownTable(
-      ['类型', '来源', '值', '事实来源', 'B 主题状态', '目标提示', '下一步'],
-      plan.stylePlan.facts.slice(0, 40).map((mapping) => [
-        mapping.kind ?? 'style',
-        mapping.source,
-        codeCell(mapping.value),
-        mapping.authority ?? 'source/runtime',
-        mapping.targetStatus ?? 'unresolved',
-        mapping.target ?? mapping.candidateTargets?.join('、') ?? '未确认',
-        mapping.nextAction ?? '',
-      ]),
-    ),
+    ...renderStyleSummary(plan),
     '',
     '## 文案与交互',
     '',
@@ -188,7 +173,7 @@ function renderReviewMarkdown(plan: UiBuildPlan): string {
     '',
     ...markdownTable(
       ['建议 key', '文案', '节点'],
-      plan.i18nPlan.texts.slice(0, 60).map((item) => [
+      plan.i18nPlan.texts.slice(0, 24).map((item) => [
         item.suggestedKey ? codeCell(item.suggestedKey) : '待定 key',
         item.text,
         item.nodeIds.slice(0, 6).join('、'),
@@ -197,14 +182,7 @@ function renderReviewMarkdown(plan: UiBuildPlan): string {
     '',
     '### 交互',
     '',
-    ...markdownTable(
-      ['类型', '目标/节点', '建议'],
-      plan.interactionPlan.map((interaction) => [
-        interaction.kind,
-        interaction.label ?? interaction.nodeId,
-        translateRecommendation(interaction.recommendation),
-      ]),
-    ),
+    ...renderInteractionSummary(plan),
     '',
     '## 风险与确认',
     '',
@@ -227,12 +205,42 @@ function renderReviewMarkdown(plan: UiBuildPlan): string {
     '',
     '### 校验提示',
     '',
-    ...markdownTable(
-      ['类别', '提示'],
-      plan.validationHints.map((hint) => validationHintRow(hint)),
-    ),
+    ...renderValidationSummary(plan),
+    '',
+    '## 人工修订（优先于自动接入建议）',
+    '',
+    '在下方标记之间记录人工确认。重新生成时该区域会被保留；明确写出的页面事实修正优先于自动结果。',
+    '',
+    '<!-- proto-bridge:manual:start -->',
+    manualNotes || '- 暂无人工修订。',
+    '<!-- proto-bridge:manual:end -->',
     '',
   ].join('\n');
+}
+
+async function readManualNotes(filePath: string): Promise<string> {
+  try {
+    const existing = await readFile(filePath, 'utf8');
+    return existing.match(/<!-- proto-bridge:manual:start -->([\s\S]*?)<!-- proto-bridge:manual:end -->/)?.[1]?.trim() ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function renderInteractionSummary(plan: UiBuildPlan): string[] {
+  const groups = new Map<string, typeof plan.interactionPlan>();
+  for (const interaction of plan.interactionPlan) {
+    groups.set(interaction.kind, [...(groups.get(interaction.kind) ?? []), interaction]);
+  }
+  return markdownTable(
+    ['类型', '数量', '代表目标/节点', '实现建议'],
+    [...groups.entries()].map(([kind, items]) => [
+      kind,
+      String(items.length),
+      items.slice(0, 5).map((item) => item.label ?? item.nodeId).join('、'),
+      translateRecommendation(items[0]?.recommendation ?? ''),
+    ]),
+  );
 }
 
 function renderIntegrationGuidance(plan: UiBuildPlan): string[] {
@@ -369,28 +377,6 @@ function renderSourceSemantics(plan: UiBuildPlan): string[] {
   ];
 }
 
-function renderThemeMappingGroups(plan: UiBuildPlan): string[] {
-  const groups = plan.themeMappingGroups;
-  return [
-    '分层规则：`resolved` 可作为默认实现强提示；`candidates` 需要对照节点证据后使用；`familyOnly` 只说明目标工程有该 token 家族，不参与默认实现决策。',
-    '',
-    ...markdownTable(
-      ['分层', '数量', '示例'],
-      [
-        ['resolved', String(groups.resolved.length), themeMappingExamples(groups.resolved)],
-        ['candidates', String(groups.candidates.length), themeMappingExamples(groups.candidates)],
-        ['familyOnly', String(groups.familyOnly.length), themeMappingExamples(groups.familyOnly)],
-      ],
-    ),
-  ];
-}
-
-function themeMappingExamples(mappings: UiBuildPlan['themeMappings']): string {
-  return mappings.slice(0, 5).map((mapping) =>
-    `${mapping.source} → ${mapping.target ?? '人工确认'} (${confidenceLabel(mapping.confidence)})`,
-  ).join('；') || '无';
-}
-
 function renderArchitectureProfile(plan: UiBuildPlan): string[] {
   const profile = plan.targetConventions.architectureProfile;
   const themeFamilies = plan.stylePlan.targetThemeGuidance.families;
@@ -442,26 +428,9 @@ function renderArchitectureProfile(plan: UiBuildPlan): string[] {
 function renderTargetDocumentation(plan: UiBuildPlan): string[] {
   const docs = plan.targetConventions.documentation;
   if (!docs || docs.files.length === 0) return ['- 未发现 README/AGENT/CLAUDE/Cursor rules/docs 等 target 文档证据。'];
-  const visibleHints = docs.architectureHints.filter((hint) => hint.confidence !== 'low');
   return [
-    ...markdownTable(
-      ['文件', '摘要'],
-      docs.files.slice(0, 12).map((file) => [
-        codeCell(file.path),
-        file.summary.slice(0, 3).join('；') || `${file.size} bytes`,
-      ]),
-    ),
-    '',
-    ...markdownTable(
-      ['类型', '模式/关键词', '置信度', '文件', '证据'],
-      visibleHints.slice(0, 16).map((hint) => [
-        hint.kind,
-        hint.pattern,
-        confidenceLabel(hint.confidence),
-        codeCell(hint.file),
-        hint.evidence,
-      ]),
-    ),
+    `- 已扫描文档：${docs.files.slice(0, 8).map((file) => codeCell(file.path)).join('、')}`,
+    `- 架构提示：${docs.architectureHints.filter((hint) => hint.confidence !== 'low').slice(0, 8).map((hint) => `${hint.kind}=${hint.pattern}`).join('、') || '无'}`,
     '',
     ...(docs.conflicts.length
       ? ['文档与代码扫描冲突：', '', ...docs.conflicts.map((item) => `- ${translateWarning(item)}`), '']
@@ -489,7 +458,7 @@ function renderNodeAudits(plan: UiBuildPlan): string[] {
       : []),
     ...markdownTable(
       ['优先级', '单元', '实现提示', '目标组件', '布局摘要', '必须保留', '不要补/注意'],
-      visibleAudits.slice(0, 16).map((audit) => [
+      visibleAudits.slice(0, 6).map((audit) => [
         audit.priority.toUpperCase(),
         `${audit.kind} ${codeCell(audit.sourceNodeId)}`,
         audit.implementationSummary.targetWidgetHint ?? audit.coverageReason,
@@ -506,15 +475,15 @@ function renderNodeAudits(plan: UiBuildPlan): string[] {
     '',
     ...visibleAudits
       .filter((audit) => audit.priority === 'p0')
-      .slice(0, 8)
+      .slice(0, 2)
       .flatMap((audit) => renderNodeAuditDetail(audit)),
     '',
     ...(suppressed.length
       ? [
         '未展开的辅助/重复节点：',
         '',
-        ...suppressed.slice(0, 8).map((item) => `- ${codeCell(item.nodeId)}：${translateWarning(item.reason)}`),
-        ...(suppressed.length > 8 ? [`- 另有 ${suppressed.length - 8} 条折叠记录保留在 plan 中。`] : []),
+        ...suppressed.slice(0, 4).map((item) => `- ${codeCell(item.nodeId)}：${translateWarning(item.reason)}`),
+        ...(suppressed.length > 4 ? [`- 另有 ${suppressed.length - 4} 条折叠记录保留在 plan 中。`] : []),
       ]
       : []),
   ];
@@ -532,30 +501,6 @@ function renderRepeatedNodeAuditGroups(audits: UiBuildPlan['visualPlan']['nodeAu
         repeatedAuditDeltaSummary(audit),
       ]),
     ),
-    '',
-    ...audits.flatMap((audit) => renderRepeatedNodeAuditDetail(audit)),
-  ];
-}
-
-function renderRepeatedNodeAuditDetail(audit: UiBuildPlan['visualPlan']['nodeAudits'][number]): string[] {
-  const instances = audit.instances ?? [];
-  return [
-    `#### ${audit.repeatedGroup?.groupId ?? audit.sourceNodeId} instances`,
-    '',
-    ...markdownTable(
-      ['节点', 'bbox', 'Row text', 'Deltas'],
-      instances.slice(0, 24).map((instance) => [
-        codeCell(instance.nodeId),
-        `${instance.bbox.x},${instance.bbox.y},${instance.bbox.width},${instance.bbox.height}`,
-        instance.rowText.map((row) => row.join(' → ')).join(' / '),
-        [
-          ...instance.textDeltas.slice(0, 4).map((delta) => deltaSummary(delta)),
-          ...instance.stateDeltas.slice(0, 2).map((delta) => deltaSummary(delta)),
-          ...instance.controlDeltas.slice(0, 2).map((delta) => deltaSummary(delta)),
-        ].join('；') || '代表项',
-      ]),
-    ),
-    '',
   ];
 }
 
@@ -603,7 +548,7 @@ function reviewVisualSections(plan: UiBuildPlan): UiBuildPlan['visualPlan']['sec
     if (count >= limit) continue;
     roleCounts.set(section.role, count + 1);
     result.push(section);
-    if (result.length >= 32) break;
+    if (result.length >= 12) break;
   }
   return result;
 }
@@ -641,8 +586,8 @@ function renderNodeAuditDetail(audit: UiBuildPlan['visualPlan']['nodeAudits'][nu
         ...audit.layoutConflicts.slice(0, 4).map((conflict) =>
           `  - ${conflict.kind}：${translateWarning(conflict.message)} ${translateWarning(conflict.manualConfirmation)}`,
         ),
-        ...(audit.directChildren.length
-          ? [`- 直接子节点：${audit.directChildren.slice(0, 8).map((child) => `${codeCell(child.nodeId)} ${child.text ?? child.assetRefs?.join(',') ?? child.role}`).join(' → ')}`]
+        ...((audit.directChildren ?? []).length
+          ? [`- 直接子节点：${(audit.directChildren ?? []).slice(0, 8).map((child) => `${codeCell(child.nodeId)} ${child.text ?? child.assetRefs?.join(',') ?? child.role}`).join(' → ')}`]
           : []),
       ]
       : []),
@@ -734,6 +679,27 @@ function renderDynamicTextHints(plan: UiBuildPlan): string[] {
   ];
 }
 
+function renderStyleSummary(plan: UiBuildPlan): string[] {
+  const groups = new Map<string, typeof plan.stylePlan.facts>();
+  for (const fact of plan.stylePlan.facts) {
+    const kind = fact.kind ?? 'style';
+    groups.set(kind, [...(groups.get(kind) ?? []), fact]);
+  }
+  return [
+    ...markdownTable(
+      ['类型', '事实数', '代表值', '来源示例'],
+      [...groups.entries()].map(([kind, facts]) => [
+        kind,
+        String(facts.length),
+        [...new Set(facts.map((fact) => fact.value))].slice(0, 6).map(codeCell).join('、'),
+        facts.slice(0, 4).map((fact) => fact.source).join('；'),
+      ]),
+    ),
+    '',
+    `- 完整 ${plan.stylePlan.facts.length} 条样式事实保留在 \`ui-build-plan.json#/stylePlan/facts\`。`,
+  ];
+}
+
 function auditChildSummary(child: {
   nodeId: string;
   role: string;
@@ -760,21 +726,6 @@ function evidenceRow(dimension: string, evidence: {
     codeCell(`${evidence.file}${evidence.line ? `:${evidence.line}` : ''}`),
     codeCell(evidence.snippet),
   ];
-}
-
-function renderTypographyLockTable(plan: UiBuildPlan): string[] {
-  const locked = plan.themeMappings.filter((mapping) => mapping.kind === 'typography' && mapping.lockToken);
-  return markdownTable(
-    ['Selector', 'Source token', 'Target textStyle', '匹配', '置信度', '不得覆盖'],
-    locked.map((mapping) => [
-      mapping.sourceSelector ?? mapping.source,
-      mapping.sourceMixin ? `@include ${mapping.sourceMixin}` : codeCell(mapping.value),
-      mapping.target ?? '人工确认',
-      mapping.matchedBy ?? 'manual',
-      confidenceLabel(mapping.confidence),
-      mapping.doNotOverride?.join('、') || 'fontSize、fontWeight、height、fontFamily',
-    ]),
-  );
 }
 
 function renderWidgetContractTable(plan: UiBuildPlan): string[] {
@@ -925,10 +876,16 @@ function translateWarning(value: string): string {
     .replace(/^Confirm target convention: /, '确认目标约定：');
 }
 
-function validationHintRow(hint: string): string[] {
-  const translated = translateValidationHint(hint);
-  const category = validationHintCategory(hint);
-  return [category, translated];
+function renderValidationSummary(plan: UiBuildPlan): string[] {
+  const groups = new Map<string, string[]>();
+  for (const hint of plan.validationHints) {
+    const category = validationHintCategory(hint);
+    groups.set(category, [...(groups.get(category) ?? []), translateValidationHint(hint)]);
+  }
+  return markdownTable(
+    ['类别', '数量', '重点'],
+    [...groups.entries()].map(([category, hints]) => [category, String(hints.length), hints.slice(0, 2).join('；')]),
+  );
 }
 
 function validationHintCategory(hint: string): string {
@@ -952,8 +909,7 @@ function translateValidationHint(hint: string): string {
     .replace('When a nodeAudit reports row-flex-multiple-y-bands, preserve directChildren structure and confirm whether the visual bands are intentional wrap before implementing as multiple Flutter rows.', '当 nodeAudit 报告 row-flex-multiple-y-bands 时，需要保留 directChildren 结构，并确认这些视觉分带是否为有意换行，再决定是否实现为多行 Flutter 布局。')
     .replace('Compare the generated Flutter screen against the source screenshot before adding business behavior.', '添加业务行为前，先把生成的 Flutter 页面与来源截图对齐。')
     .replace('Treat typography, CSS colors, spacing, and layout as P0 visual fidelity items; prefer exact evidence matches before approximate fallback.', '字体、CSS 颜色、间距和布局是 P0 视觉保真项；优先使用精确证据匹配，再考虑近似 fallback。')
-    .replace('Use node-level themeMappings first; when a theme token is resolved exactly, do not replace it with a larger or heavier nearby token.', '优先使用节点级 themeMappings；当 token 精确命中时，不要替换成更大或更粗的相近 token。')
-    .replace('If a typography themeMapping has lockToken=true, use the target textStyles token directly and do not override fontSize, height, fontWeight, or fontFamily unless the plan explicitly lists a source override.', '如果 typography themeMapping 标记 lockToken=true，必须直接使用目标 textStyles token；除非 plan 明确列出来源覆盖证据，不得覆盖 fontSize、height、fontWeight、fontFamily。')
+    .replace('Preserve stylePlan facts before selecting target theme expressions.', '选择目标主题表达前，必须先保留 stylePlan 中的页面样式事实。')
     .replace('Check spacing, radius, border, and shadow values against reusable target widgets before introducing local constants.', '新增本地常量前，先用目标可复用组件核对 spacing、radius、border、shadow。')
     .replace('Keep business data, API fields, permission checks, risk controls, and tracking as TODOs unless confirmed by target examples.', '业务数据、API 字段、权限、风控和埋点，除非目标示例已确认，否则保留 TODO。')
     .replace('Prefer similar module examples and common widgets over one-to-one DOM translation.', '优先参考相似模块示例和公共组件，不要逐层翻译 DOM。');

@@ -58,7 +58,6 @@ export async function reconstructPageContextTool(context: ToolContext, args: Jso
     page: result.page,
     files: {
       pageCanonical: result.files.pageCanonical,
-      pageDebugIndex: result.files.pageDebugIndex,
       screenshots: result.files.screenshots,
       uiBuildPlan: result.files.uiBuildPlan,
       uiBuildReview: result.files.uiBuildReview,

@@ -7,7 +7,6 @@ ProtoBridge 把交互原型、运行时页面、截图证据和目标 Flutter �
 ```text
 source / URL / screenshot / target repo
   -> page-canonical.json
-  -> page-debug-index.json
   -> ui-build-plan.json
   -> ui-build-review.md
   -> implementation + validation

@@ -185,9 +185,9 @@ Validation 示例：
 ### Agent 消费流程（目标工程实现）
 
 1. `reconstruct_page_context`  
-2. 读 `ui-build-plan.json`（`targetConventions`、`implementationContract`、`visualPlan.nodeAudits`、`dynamicTextHints`、mappings、risks）  
-3. 读 `ui-build-review.md` 做中文核对  
-4. 需要时 `read_target_conventions` / `find_target_examples`  
+2. 读 `ui-build-review.md` 和截图，确认页面、风险及人工修订
+3. 按需读取 `ui-build-plan.json` 的 `implementationContract`、`visualPlan`、`stylePlan` 和交互字段
+4. 只有证据冲突时读取 `page-canonical.json`；需要 B 细节时调用 `read_target_conventions` / `find_target_examples`
 5. 在 target Flutter 仓库实现  
 6. format / analyze / tests  
 7. `validate_ui_build`  

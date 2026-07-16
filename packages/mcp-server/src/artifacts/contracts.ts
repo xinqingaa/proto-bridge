@@ -14,10 +14,6 @@ export function pageCanonicalUri(pageId: string): string {
   return `proto-bridge://pages/${pageId}/page-canonical`;
 }
 
-export function pageDebugIndexUri(pageId: string): string {
-  return `proto-bridge://pages/${pageId}/page-debug-index`;
-}
-
 export function pageScreenshotUri(pageId: string, name: string): string {
   return `proto-bridge://pages/${pageId}/screenshot/${encodeURIComponent(name)}`;
 }
@@ -35,11 +31,6 @@ export function pageResources(page: GeneratedPage): ArtifactResource[] {
     {
       uri: pageCanonicalUri(page.id),
       name: `ProtoBridge page canonical ${page.id}`,
-      mimeType: 'application/json',
-    },
-    {
-      uri: pageDebugIndexUri(page.id),
-      name: `ProtoBridge page debug index ${page.id}`,
       mimeType: 'application/json',
     },
     ...page.page.screenshots.map((screenshot) => ({

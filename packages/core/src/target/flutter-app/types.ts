@@ -21,8 +21,8 @@ export type {
   MapTokensInput,
   MigrationRecommendations,
   TargetPlatform,
-  ThemeMapping,
   TokenMapResult,
   TokenMapping,
   UiBuildPlan,
+  UiStyleFact,
 } from '../../types/index.js';

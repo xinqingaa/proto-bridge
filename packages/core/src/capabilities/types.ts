@@ -77,7 +77,6 @@ export type PageMergeCapabilityResult = {
   page: PageCanonical;
   files: {
     pageCanonical: string;
-    pageDebugIndex: string;
     screenshots: string[];
   };
   warnings: string[];
@@ -140,7 +139,7 @@ export const capabilityDescriptors: CapabilityDescriptor[] = [
     name: 'page.merge',
     description: 'Merge source, runtime, screenshot, and target facts into the hybrid PageCanonical with field-level priority and mismatch warnings.',
     reads: ['sourceFacts', 'runtimeFacts', 'screenshotFacts', 'targetFacts'],
-    writes: ['page-canonical.json', 'page-debug-index.json'],
+    writes: ['page-canonical.json'],
   },
   {
     name: 'ui.plan',

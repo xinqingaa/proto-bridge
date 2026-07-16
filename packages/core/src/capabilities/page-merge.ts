@@ -1,6 +1,5 @@
 import path from 'node:path';
 import { writeJsonFile } from '../artifacts/artifact-writer.js';
-import { buildPageDebugIndex } from '../snapshot/browser-capture/rendered-page-evidence.js';
 import type {
   DetectedCapabilities,
   OcrResult,
@@ -53,7 +52,6 @@ export async function mergePageCapability(input: PageMergeCapabilityInput): Prom
   const screenshotArtifact = input.screenshot ? buildScreenshotArtifact(input.screenshot.screenshotPath) : undefined;
   const pageId = runtimePage?.pageId ?? createSourcePageId(source?.route ?? source?.vuePath ?? screenshotArtifact?.path ?? target?.suggestedModule ?? 'page', mergedAt);
   const pageCanonicalPath = path.join(input.outDir, 'page-canonical.json');
-  const pageDebugIndexPath = path.join(input.outDir, 'page-debug-index.json');
   const screenshots = mergeScreenshots(runtimePage?.screenshots ?? [], screenshotArtifact);
   const ocr = mergeOcr(runtimePage?.ocr, input.screenshot?.ocr);
   const warnings = dedupe([
@@ -131,7 +129,6 @@ export async function mergePageCapability(input: PageMergeCapabilityInput): Prom
     artifacts: {
       rootDir: input.outDir,
       pageCanonical: pageCanonicalPath,
-      pageDebugIndex: pageDebugIndexPath,
       uiBuildPlan: runtimePage?.artifacts.uiBuildPlan,
       uiBuildReview: runtimePage?.artifacts.uiBuildReview,
       screenshots,
@@ -157,14 +154,12 @@ export async function mergePageCapability(input: PageMergeCapabilityInput): Prom
   };
 
   await writeJsonFile(pageCanonicalPath, page);
-  await writeJsonFile(pageDebugIndexPath, buildPageDebugIndex(page));
 
   return {
     capability: 'page.merge',
     page,
     files: {
       pageCanonical: pageCanonicalPath,
-      pageDebugIndex: pageDebugIndexPath,
       screenshots: screenshots.map((screenshot) => screenshot.path),
     },
     warnings,
@@ -189,7 +184,6 @@ function emptyPageCanonical(pageId: string, outDir: string): PageCanonical {
     artifacts: {
       rootDir: outDir,
       pageCanonical: path.join(outDir, 'page-canonical.json'),
-      pageDebugIndex: path.join(outDir, 'page-debug-index.json'),
       screenshots: [],
     },
     provenance: [],

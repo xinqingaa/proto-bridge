@@ -49,7 +49,6 @@ export type ReconstructPageContextResult = {
   };
   files: {
     pageCanonical: string;
-    pageDebugIndex: string;
     screenshots: string[];
     uiBuildPlan?: string | undefined;
     uiBuildReview?: string | undefined;

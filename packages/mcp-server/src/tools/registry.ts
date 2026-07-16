@@ -64,7 +64,7 @@ const toolDefinitions: JsonValue[] = [
     description: [
       'Capability-first UI 重构入口。根据输入自动组合 source.analyze、runtime.capture、target.inspect、page.merge、ui.plan 和 ui.review。',
       '`ui-build-plan.json` 是机器契约；`ui-build-review.md` 是 plan 的人类可读投影；有源码 + target 时 source semantics 写入 `implementationContract.sourceSemantics`。',
-      '无源码但有 URL 时退化为 URL/runtime-first，并仍产出统一 `page-canonical.json`、`page-debug-index.json`、`ui-build-plan.json`、`ui-build-review.md` 和截图。',
+      '无源码但有 URL 时退化为 URL/runtime-first，并仍产出统一 `page-canonical.json`、`ui-build-plan.json`、`ui-build-review.md` 和截图。',
       '安全边界：只读取 source/target/URL 并写 artifact，不修改目标 Flutter 应用。',
     ].join('\n'),
     annotations: {
@@ -198,7 +198,6 @@ const workflowCatalog: JsonObject = {
   name: 'ProtoBridge Capability-first UI 重构',
   currentContract: {
     canonicalArtifact: 'page-canonical.json',
-    debugArtifact: 'page-debug-index.json',
     planArtifact: 'ui-build-plan.json',
     reviewArtifact: 'ui-build-review.md',
     screenshotArtifact: 'screenshots/full-page.png',
@@ -209,7 +208,7 @@ const workflowCatalog: JsonObject = {
       phase: '统一编排',
       tool: 'reconstruct_page_context',
       requiredInput: ['url；route/vuePath 仅作高级覆盖'],
-      emits: ['page-canonical.json', 'page-debug-index.json', 'ui-build-plan.json', 'ui-build-review.md', 'screenshots/full-page.png'],
+      emits: ['page-canonical.json', 'ui-build-plan.json', 'ui-build-review.md', 'screenshots/full-page.png'],
       next: ['实现', 'validate_ui_build'],
     },
     {

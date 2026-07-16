@@ -10,7 +10,7 @@ export async function validateTargetChangesTool(context: ToolContext, args: Json
   const pageId = readString(args, 'pageId');
   const page = pageId ? context.pages.require(pageId) : undefined;
   const allowedPaths = readStringArray(args, 'allowedPaths') ?? allowedPathsFromPlan(page);
-  const expectedFiles = page?.plan?.fileTree.map((file) => file.path) ?? [];
+  const expectedFiles = page?.plan?.implementationContract.fileTree.map((file) => file.path) ?? [];
   return await validateUiCapability({
     targetRoot,
     gitBase: readString(args, 'gitBase'),
@@ -23,7 +23,7 @@ export async function validateTargetChangesTool(context: ToolContext, args: Json
 
 function allowedPathsFromPlan(page: ReturnType<ToolContext['pages']['get']>): string[] {
   if (!page?.plan) return [];
-  const plannedDirs = page.plan.fileTree
+  const plannedDirs = page.plan.implementationContract.fileTree
     .map((file) => file.path.split('/').slice(0, -1).join('/'))
     .filter(Boolean);
   return [...new Set([

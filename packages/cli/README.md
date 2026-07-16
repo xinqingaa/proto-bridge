@@ -81,13 +81,12 @@ Options：
 ```text
 output/<page>-<timestamp>/
 ├── page-canonical.json
-├── page-debug-index.json
 ├── ui-build-plan.json
 ├── ui-build-review.md
 └── screenshots/
     └── full-page.png
 ```
 
-优先阅读 `ui-build-plan.json`，它是唯一机器契约，重点看 `targetConventions`、`implementationContract`、`sourceSemantics` 和 `visualPlan`。`ui-build-review.md` 是从 plan 渲染的人类可读 brief。深入排查时使用 `page-debug-index.json` 和 `page-canonical.json`。
+优先阅读 `ui-build-review.md` 和截图理解页面，再按需读取 `ui-build-plan.json` 的 `implementationContract`、`sourceSemantics`、`visualPlan` 与 `stylePlan`。只有证据冲突时才深入读取 `page-canonical.json`。
 
 完整用法与发布说明见仓库根目录 `docs/usage.md`；产物字段见 `docs/artifacts.md`。

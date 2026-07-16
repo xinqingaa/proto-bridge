@@ -121,7 +121,6 @@ http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1
 ```text
 <output.root>/<page>-<timestamp>/
 ├── page-canonical.json
-├── page-debug-index.json
 ├── ui-build-plan.json
 ├── ui-build-review.md
 └── screenshots/

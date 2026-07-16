@@ -8,7 +8,6 @@ ProtoBridge 把交互原型、运行时页面、截图证据和目标 Flutter �
 source / URL / screenshot / target repo
   -> capabilities
   -> page-canonical.json
-  -> page-debug-index.json
   -> ui-build-plan.json
   -> ui-build-review.md
   -> implementation + ui.validate
@@ -54,7 +53,7 @@ source.analyze / runtime.capture / screenshot.attach / target.inspect
 | `runtime.capture` | URL、viewport | runtime facts、screenshots |
 | `screenshot.attach` | screenshot、OCR text/boxes | screenshot facts |
 | `target.inspect` | Flutter target root | target facts、扫描出的 architecture profile |
-| `page.merge` | 各 facts | `page-canonical.json`、`page-debug-index.json` |
+| `page.merge` | 各 facts | `page-canonical.json` |
 | `ui.plan` | canonical、target、source-aware draft | `ui-build-plan.json` |
 | `ui.review` | plan | `ui-build-review.md` |
 | `ui.validate` | target diff、plan | validation result |

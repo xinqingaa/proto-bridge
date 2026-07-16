@@ -196,7 +196,7 @@ function expectedContract(caseName) {
 
 async function requireArtifacts(files, contract) {
   await requireFile(files.pageCanonical);
-  await requireFile(files.pageDebugIndex);
+  await requireAbsent(path.join(path.dirname(files.pageCanonical), 'page-debug-index.json'));
 
   const canonical = JSON.parse(await readFile(files.pageCanonical, 'utf8'));
   if (canonical.schemaVersion !== 3) throw new Error('page-canonical.json must use schemaVersion=3.');
@@ -215,13 +215,18 @@ async function requireArtifacts(files, contract) {
   if (contract.requirePlan) {
     await requireFile(files.uiBuildPlan);
     const plan = JSON.parse(await readFile(files.uiBuildPlan, 'utf8'));
-    if (!Array.isArray(plan.fileTree) || plan.fileTree.length === 0) throw new Error('ui-build-plan.json must include fileTree.');
-    if (!Array.isArray(plan.widgetTree) || plan.widgetTree.length === 0) throw new Error('ui-build-plan.json must include widgetTree.');
+    if (plan.schemaVersion !== 2) throw new Error('ui-build-plan.json must use schemaVersion=2.');
     if (!plan.implementationContract) throw new Error('ui-build-plan.json must include implementationContract.');
+    if (!Array.isArray(plan.implementationContract.fileTree)) throw new Error('ui-build-plan.json must include implementationContract.fileTree.');
+    if (!Array.isArray(plan.implementationContract.widgetTree) || plan.implementationContract.widgetTree.length === 0) throw new Error('ui-build-plan.json must include implementationContract.widgetTree.');
     if (!plan.targetConventions?.architectureProfile) throw new Error('ui-build-plan.json must include targetConventions.architectureProfile.');
     if (!plan.visualPlan) throw new Error('ui-build-plan.json must include visualPlan.');
+    if (!Array.isArray(plan.stylePlan?.facts) || plan.stylePlan.facts.length === 0) throw new Error('ui-build-plan.json must preserve stylePlan.facts.');
+    for (const duplicate of ['fileTree', 'widgetTree', 'themeMappings', 'themeMappingGroups']) {
+      if (duplicate in plan) throw new Error(`ui-build-plan.json must not duplicate ${duplicate}.`);
+    }
     if ('restorationProfile' in plan) throw new Error('ui-build-plan.json must not include project restorationProfile metadata.');
-    if (plan.fileTree.some((file) => file.path.includes('__proto_bridge__'))) {
+    if (plan.implementationContract.fileTree.some((file) => file.path.includes('__proto_bridge__'))) {
       throw new Error('Logical planner paths must be resolved from target scan evidence before artifact output.');
     }
     const reusable = plan.target?.reusableComponents ?? [];
@@ -239,6 +244,7 @@ async function requireArtifacts(files, contract) {
     await requireFile(files.uiBuildReview);
     const review = await readFile(files.uiBuildReview, 'utf8');
     if (!review.includes('## 契约权威')) throw new Error('ui-build-review.md must include 契约权威.');
+    if (!review.includes('## 人工修订（优先于自动接入建议）')) throw new Error('ui-build-review.md must include the preserved manual override section.');
     if (!review.includes('## 实现契约')) throw new Error('ui-build-review.md must include 实现契约.');
     if (contract.requireSourceFacts && !review.includes('## 来源语义')) throw new Error('source review must include 来源语义.');
   } else {
@@ -311,7 +317,6 @@ async function screenshotsFromCanonical(pageCanonicalPath) {
 function expectedFiles(outDir) {
   return {
     pageCanonical: path.join(outDir, 'page-canonical.json'),
-    pageDebugIndex: path.join(outDir, 'page-debug-index.json'),
     uiBuildPlan: path.join(outDir, 'ui-build-plan.json'),
     uiBuildReview: path.join(outDir, 'ui-build-review.md'),
     migrationSpec: path.join(outDir, 'migration-spec.md'),
@@ -322,7 +327,6 @@ function expectedFiles(outDir) {
 function filesFromToolResult(reconstruct) {
   return {
     pageCanonical: requireString(reconstruct.files?.pageCanonical, 'reconstruct.files.pageCanonical'),
-    pageDebugIndex: requireString(reconstruct.files?.pageDebugIndex, 'reconstruct.files.pageDebugIndex'),
     uiBuildPlan: typeof reconstruct.files?.uiBuildPlan === 'string' ? reconstruct.files.uiBuildPlan : path.join(path.dirname(String(reconstruct.files?.pageCanonical)), 'ui-build-plan.json'),
     uiBuildReview: typeof reconstruct.files?.uiBuildReview === 'string' ? reconstruct.files.uiBuildReview : path.join(path.dirname(String(reconstruct.files?.pageCanonical)), 'ui-build-review.md'),
     migrationSpec: path.join(path.dirname(String(reconstruct.files?.pageCanonical)), 'migration-spec.md'),

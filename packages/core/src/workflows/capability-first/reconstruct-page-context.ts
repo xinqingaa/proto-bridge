@@ -160,7 +160,6 @@ export async function reconstructPageContext(
       : merge.page;
   const artifacts = [
     merge.files.pageCanonical,
-    merge.files.pageDebugIndex,
     ...merge.files.screenshots,
     ...(plan?.files.uiBuildPlan ? [plan.files.uiBuildPlan] : []),
     ...(review?.files.uiBuildReview ? [review.files.uiBuildReview] : []),
@@ -200,7 +199,6 @@ export async function reconstructPageContext(
     },
     files: {
       pageCanonical: merge.files.pageCanonical,
-      pageDebugIndex: merge.files.pageDebugIndex,
       screenshots: merge.files.screenshots,
       uiBuildPlan: plan?.files.uiBuildPlan,
       uiBuildReview: review?.files.uiBuildReview,

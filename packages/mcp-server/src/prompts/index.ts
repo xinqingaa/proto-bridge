@@ -74,9 +74,9 @@ function reconstructUrlUiPrompt(args: JsonObject): string[] {
     '先调用 `reconstruct_page_context`，传入 url，并保存返回的 `pageId`。',
     '如果页面存在可见文字缺失、图片/canvas 文字重要，或 OCR 相关 warning，请把 screenshotPath、ocrText 或 ocrBoxes 直接传给 `reconstruct_page_context` 重新生成上下文。',
     targetModule ? `调用 reconstruct_page_context 时使用 targetModule=${targetModule}。` : '除非 evidence 表明自动模块推断错误，否则让 ProtoBridge 自动推断目标模块。',
-    '先读取 `ui-build-plan.json`，尤其是 `implementationContract` 和 `targetConventions`；`ui-build-review.md` 只是该 JSON 的人类可读投影。',
+    '先读取 `ui-build-review.md` 与截图，再按需读取 `ui-build-plan.json` 的 `implementationContract`、`visualPlan`、`stylePlan` 和 B 接入建议；只有证据冲突时读取 canonical。',
     'source-aware 语义读取 `implementationContract.sourceSemantics`，并由 `ui-build-review.md` 展示。',
-    '根据 `implementationContract` 实现 Dart UI；根据 `visualPlan`、`themeMappings`、`componentMappings` 和截图还原可见视觉。',
+    '根据 `implementationContract` 实现 Dart UI；根据 `visualPlan`、`stylePlan.facts`、`componentMappings` 和截图还原可见视觉。',
     '不得引入 `targetConventions` 没有证据支持的新 state/routing/i18n/theme 框架。',
     '字体、CSS 颜色、间距和布局属于 P0 视觉保真要求。优先使用精确 evidence 和 node-level mapping，避免过早使用宽泛 theme family 猜测。',
     '不要编造 API、权限、风控、埋点或隐藏业务行为；未确认内容保留 TODO 或人工确认项。',
@@ -106,7 +106,7 @@ function investigateVisualMismatchPrompt(args: JsonObject): string[] {
     targetRoot ? `需要检查目标工程时使用 targetRoot=${targetRoot}。` : '需要检查目标工程时使用当前 targetRoot。',
     '按归因链路排查：截图区域 -> section -> node ids -> node style facts -> theme/component mappings -> widget tree -> target implementation。',
     '将问题归类为 A capture/evidence 缺失、B plan 压缩或映射歧义、C target component 默认样式带偏、D Flutter 实现问题。',
-    '优先使用页面 resources：page-canonical、page-debug-index、ui-build-plan、ui-build-review。只有当目标组件行为相关时才使用 `find_target_examples` 或 `read_target_conventions`。',
+    '优先阅读 ui-build-review，再按需读取 ui-build-plan 的精确字段；只有证据冲突时读取 page-canonical。只有当目标组件行为相关时才使用 `find_target_examples` 或 `read_target_conventions`。',
     '返回具体 artifact 引用、归因标签，以及最小下一步修复建议。',
   ];
 }

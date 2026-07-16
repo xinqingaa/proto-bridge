@@ -115,7 +115,6 @@ async function main() {
     for (const page of pages) {
       console.log(`  ${page.label}: ${path.relative(repoRoot, page.output)}/ui-build-review.md`);
       console.log(`  ${page.label}: ${path.relative(repoRoot, page.output)}/ui-build-plan.json`);
-      console.log(`  ${page.label}: ${path.relative(repoRoot, page.output)}/page-debug-index.json`);
       console.log(`  ${page.label}: ${path.relative(repoRoot, page.output)}/page-canonical.json`);
     }
     console.log();
@@ -138,7 +137,7 @@ async function validateGeneratedPlan(outputDir) {
     throw new Error(`routeMapping.targetModule=${plan.routeMapping.targetModule} does not match target.module=${targetModule}.`);
   }
 
-  const invalidFiles = (plan.fileTree ?? [])
+  const invalidFiles = (plan.implementationContract?.fileTree ?? [])
     .map((file) => file.path)
     .filter((filePath) =>
       typeof filePath === 'string'

@@ -8,7 +8,6 @@ import {
   TOOL_CATALOG_URI,
   WORKFLOW_GUIDE_URI,
   pageCanonicalUri,
-  pageDebugIndexUri,
   pageResources,
   pageScreenshotUri,
   uiBuildPlanUri,
@@ -22,12 +21,6 @@ export function resourceTemplatesList(): JsonValue[] {
       uriTemplate: 'proto-bridge://pages/{pageId}/page-canonical',
       name: '页面标准上下文',
       description: '读取指定 pageId 的 `page-canonical.json`，用于查看完整 evidence、节点、样式、资产和 provenance。',
-      mimeType: 'application/json',
-    },
-    {
-      uriTemplate: 'proto-bridge://pages/{pageId}/page-debug-index',
-      name: '页面调试索引',
-      description: '读取指定 pageId 的 `page-debug-index.json`，用于按 section、node、style、mapping 和 risk 快速定位视觉问题。',
       mimeType: 'application/json',
     },
     {
@@ -113,12 +106,6 @@ export async function readResource(context: ToolContext, params: JsonObject | un
     return textContent(uri, 'application/json', await readFile(page.files.pageCanonical, 'utf8'));
   }
 
-  const debugIndexMatch = uri.match(/^proto-bridge:\/\/pages\/([^/]+)\/page-debug-index$/);
-  if (debugIndexMatch?.[1]) {
-    const page = context.pages.require(debugIndexMatch[1]);
-    return textContent(uri, 'application/json', await readFile(page.files.pageDebugIndex, 'utf8'));
-  }
-
   const screenshotMatch = uri.match(/^proto-bridge:\/\/pages\/([^/]+)\/screenshot\/([^/]+)$/);
   if (screenshotMatch?.[1] && screenshotMatch[2]) {
     const page = context.pages.require(screenshotMatch[1]);
@@ -167,7 +154,6 @@ function renderWorkflowGuide(): string {
     '',
     '- 主 ID：`pageId`',
     '- 标准上下文产物：`page-canonical.json`',
-    '- 调试索引产物：`page-debug-index.json`',
     '- UI 构建计划产物：`ui-build-plan.json`',
     '- 人类可读评审产物：`ui-build-review.md`',
     '- 截图产物：`screenshots/full-page.png`',
@@ -182,7 +168,7 @@ function renderWorkflowGuide(): string {
     '   - 有目标工程时传 `targetRoot` 或在 config 中配置 `target.root`，用于 target.inspect、ui.plan 和 ui.review。',
     '   - 没有 target 时只产出 evidence 类 artifact；不会强行生成 Flutter 实现计划。',
     '   - 有 source + target facts 时，source semantics 会进入 `ui-build-plan.json#/implementationContract/sourceSemantics`，并由 `ui-build-review.md` 展示。',
-    '   - 实现时先读 `ui-build-plan.json` 的 `implementationContract`、`implementationContract.sourceSemantics` 和 `targetConventions`。`ui-build-review.md` 是该 JSON 的人类可读投影。',
+    '   - 实现时先读 `ui-build-review.md` 与截图，再按需读取 `ui-build-plan.json` 的 `implementationContract`、`visualPlan` 与 `stylePlan`；只有证据冲突时读取 canonical。',
     '',
     '2. 可选截图/OCR 输入：当可见文字缺失、图片/canvas 文字重要时，把 `screenshotPath`、`ocrText` 或 `ocrBoxes` 直接传给 `reconstruct_page_context`。',
     '   - 这些证据会进入 `screenshotFacts` 和 `page-canonical.json`。',
@@ -196,7 +182,6 @@ function renderWorkflowGuide(): string {
     '- `proto-bridge://workflow/tool-catalog`：结构化工具目录，包含阶段、schema、annotations 和 outputSchema。',
     '- `proto-bridge://artifacts/latest`：最新 page id、文件路径和 resource 描述。',
     '- `proto-bridge://pages/{pageId}/page-canonical`：页面标准上下文 JSON。',
-    '- `proto-bridge://pages/{pageId}/page-debug-index`：紧凑调试索引 JSON。',
     '- `proto-bridge://pages/{pageId}/screenshot/{name}`：截图图片，通常为 `full-page`。',
     '- `proto-bridge://pages/{pageId}/ui-build-plan`：UI 构建计划 JSON。',
     '- `proto-bridge://pages/{pageId}/ui-build-review`：人类可读的 review Markdown。',
@@ -210,7 +195,7 @@ function renderWorkflowGuide(): string {
     '- C. target component 默认样式带偏：plan 指向的可复用组件默认样式与源页面不一致。',
     '- D. Flutter 实现问题：evidence 和 plan 足够，但目标代码没有照着落地。',
     '',
-    '推荐链路：截图区域 -> visualPlan section -> node ids -> node style facts -> theme/component mappings -> implementationContract widget tree -> target implementation。',
+    '推荐链路：review 摘要 -> 截图区域 -> visualPlan section / representative unit -> stylePlan facts -> implementationContract widget tree -> target implementation。',
     '',
     '## 边界',
     '',

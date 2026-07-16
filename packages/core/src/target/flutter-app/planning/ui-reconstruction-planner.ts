@@ -14,7 +14,7 @@ import { toPascalCase, toSnakeCase } from './migration-planner.js';
 import { buildAssetPlan, buildBusinessQuestions, buildI18nPlan, buildInteractionPlan, buildRisks, buildSectionHint } from './ui-reconstruction-content.js';
 import { buildImplementationContract, buildContractValidationHints } from './ui-reconstruction-contract.js';
 import { createPlanId, dedupeBy, sourceComponents, sourceComponentRole, sourceSections, sourceSectionHint, sourceSectionRole } from './ui-reconstruction-shared.js';
-import { buildThemeMappingGroups, buildThemeMappings } from './ui-reconstruction-theme.js';
+import { buildStyleFacts } from './ui-reconstruction-theme.js';
 import { buildComponentMappings, buildNodeAuditValidationHints, buildVisualPlan } from './ui-reconstruction-visual.js';
 
 export type BuildFlutterUiReconstructionPlanInput = {
@@ -75,7 +75,7 @@ export async function buildFlutterUiReconstructionPlan(
     visualPlan,
   });
   const nodeAuditHints = buildNodeAuditValidationHints(visualPlan.nodeAudits);
-  const themeMappings = buildThemeMappings(input.evidence, conventions.targetConventions);
+  const styleFacts = buildStyleFacts(input.evidence);
   const integrationGuidance = buildIntegrationGuidance({
     moduleName,
     routeMapping,
@@ -83,8 +83,26 @@ export async function buildFlutterUiReconstructionPlan(
     themePatterns: conventions.targetConventions.architectureProfile.theme.patterns,
     documentationFiles: conventions.targetConventions.documentation?.files.map((file) => file.path) ?? [],
   });
+  const relevantComponentSymbols = new Set([
+    ...componentMappings.flatMap((mapping) => mapping.targetSymbol ? [mapping.targetSymbol] : []),
+    ...componentMappings.flatMap((mapping) => mapping.candidateSymbols ?? []),
+  ]);
+  const relevantComponents = conventions.components
+    .filter((component) => relevantComponentSymbols.has(component.symbol))
+    .map((component) => ({
+      ...component,
+      usageSnippets: component.usageSnippets.slice(0, 1),
+      propsHints: component.propsHints.slice(0, 8),
+    }));
+  const compactConventions = compactTargetConventions(
+    conventions.targetConventions,
+    relevantComponentSymbols,
+    themeFamilies(conventions.targetConventions.architectureProfile.theme.patterns),
+  );
+  const compactVisualPlan = compactVisualPlanForArtifact(visualPlan);
 
   return {
+    schemaVersion: 2,
     id: createPlanId(input.evidence.id),
     pageId: input.evidence.id,
     artifactAuthority: {
@@ -102,7 +120,12 @@ export async function buildFlutterUiReconstructionPlan(
     integrationGuidance,
     stylePlan: {
       authority: 'source-runtime-evidence',
-      facts: themeMappings,
+      policy: {
+        preserveObservedValues: true,
+        targetTokenSelection: 'implementation-agent',
+        rule: 'Preserve source/runtime values. Resolve B-specific theme expressions during implementation without changing the observed appearance.',
+      },
+      facts: styleFacts,
       targetThemeGuidance: {
         status: conventions.targetConventions.architectureProfile.theme.patterns.length > 0 ? 'family-only' : 'unresolved',
         families: themeFamilies(conventions.targetConventions.architectureProfile.theme.patterns),
@@ -119,24 +142,20 @@ export async function buildFlutterUiReconstructionPlan(
       routesFiles: conventions.routesFiles,
       translationFiles: conventions.translationFiles,
       assetDirectories: conventions.assetDirectories,
-      reusableComponents: conventions.components,
-      similarExamples: examples,
+      reusableComponents: relevantComponents,
+      similarExamples: examples.slice(0, 3).map((example) => ({ ...example, snippets: example.snippets.slice(0, 1) })),
       warnings: conventions.warnings,
     },
-    targetConventions: conventions.targetConventions,
+    targetConventions: compactConventions,
     implementationContract,
-    visualPlan,
+    visualPlan: compactVisualPlan,
     page: {
       title: input.evidence.page.title,
       route: input.evidence.page.route,
       summary: buildSummary(input.evidence),
       viewport: input.evidence.viewport ?? { width: 0, height: 0 },
     },
-    fileTree: implementationContract.fileTree,
-    widgetTree: implementationContract.widgetTree,
     componentMappings,
-    themeMappings,
-    themeMappingGroups: buildThemeMappingGroups(themeMappings),
     i18nPlan: buildI18nPlan(input.evidence),
     assetPlan: buildAssetPlan(input.evidence, conventions.assetDirectories),
     interactionPlan: buildInteractionPlan(input.evidence),
@@ -230,6 +249,94 @@ function buildIntegrationGuidance(input: {
     components,
     theme,
     rule: `Page reconstruction does not depend on target integration guesses.${input.documentationFiles.length ? ` Consult scanned B documentation: ${input.documentationFiles.slice(0, 4).join(', ')}.` : ' No relevant B documentation was discovered; the implementation agent should inspect B or ask the user.'}`,
+  };
+}
+
+function compactVisualPlanForArtifact(visualPlan: UiBuildPlan['visualPlan']): UiBuildPlan['visualPlan'] {
+  return {
+    ...visualPlan,
+    nodeAudits: visualPlan.nodeAudits.map((audit) => {
+      const {
+        directChildren: _directChildren,
+        controls: _controls,
+        absenceHints: _absenceHints,
+        implementationHints: _implementationHints,
+        ...rest
+      } = audit;
+      return {
+        ...rest,
+        ...(audit.targetComponentCandidates?.length
+          ? {
+              targetComponentCandidates: audit.targetComponentCandidates.slice(0, 3).map((candidate) => ({
+                symbol: candidate.symbol,
+                role: candidate.role,
+                confidence: candidate.confidence,
+                recommendation: candidate.recommendation,
+                evidence: candidate.evidence.slice(0, 1),
+                ...(candidate.importPath ? { importPath: candidate.importPath } : {}),
+                ...(candidate.sourceMappingNodeIds?.length ? { sourceMappingNodeIds: candidate.sourceMappingNodeIds } : {}),
+                fitChecks: candidate.fitChecks.slice(0, 4),
+                risks: candidate.risks.slice(0, 3),
+              })),
+            }
+          : {}),
+      } as typeof audit;
+    }),
+  };
+}
+
+function compactTargetConventions(
+  conventions: UiBuildPlan['targetConventions'],
+  relevantComponentSymbols: Set<string>,
+  themeFamiliesForArtifact: string[],
+): UiBuildPlan['targetConventions'] {
+  const profile = conventions.architectureProfile;
+  const compactFacet = <T extends { evidence: string[]; examples: Array<unknown> }>(facet: T): T => ({
+    ...facet,
+    evidence: facet.evidence.slice(0, 4),
+    examples: facet.examples.slice(0, 3),
+  });
+  return {
+    architectureProfile: {
+      state: {
+        ...compactFacet(profile.state),
+        ...(profile.state.package ? { package: compactFacet(profile.state.package) } : {}),
+        ...(profile.state.global ? { global: compactFacet(profile.state.global) } : {}),
+        ...(profile.state.page ? { page: compactFacet(profile.state.page) } : {}),
+      },
+      routing: {
+        ...compactFacet(profile.routing),
+        ...(profile.routing.registration ? { registration: compactFacet(profile.routing.registration) } : {}),
+        ...(profile.routing.navigation ? { navigation: compactFacet(profile.routing.navigation) } : {}),
+      },
+      i18n: {
+        ...compactFacet(profile.i18n),
+        ...(profile.i18n.lookup ? { lookup: compactFacet(profile.i18n.lookup) } : {}),
+      },
+      theme: {
+        ...compactFacet(profile.theme),
+        patterns: themeFamiliesForArtifact,
+      },
+      components: {
+        ...compactFacet(profile.components),
+        detectedSymbols: profile.components.detectedSymbols.filter((symbol) => relevantComponentSymbols.has(symbol)),
+        evidence: profile.components.evidence
+          .filter((item) => [...relevantComponentSymbols].some((symbol) => item.includes(symbol)))
+          .slice(0, 8),
+      },
+      fileOrganization: compactFacet(profile.fileOrganization),
+    },
+    ...(conventions.documentation
+      ? {
+          documentation: {
+            files: conventions.documentation.files.slice(0, 12).map((file) => ({ ...file, summary: file.summary.slice(0, 1) })),
+            architectureHints: conventions.documentation.architectureHints.slice(0, 12),
+            conflicts: conventions.documentation.conflicts,
+            warnings: conventions.documentation.warnings,
+          },
+        }
+      : {}),
+    unresolved: conventions.unresolved,
   };
 }
 

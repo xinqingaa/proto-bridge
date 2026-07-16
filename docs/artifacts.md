@@ -4,209 +4,133 @@ ProtoBridge 默认输出：
 
 ```text
 output/<page>-<timestamp>/
-├── page-canonical.json
-├── page-debug-index.json
-├── ui-build-plan.json
 ├── ui-build-review.md
+├── ui-build-plan.json
+├── page-canonical.json
 └── screenshots/
     └── full-page.png
 ```
 
-阅读顺序：
+推荐阅读顺序：
 
-1. `ui-build-plan.json` — 实现蓝图（agent / validator 默认主文档）  
-2. `ui-build-review.md` — 中文审查视图  
-3. `page-debug-index.json` — 视觉排查索引  
-4. `page-canonical.json` — 完整证据与 provenance  
-5. `screenshots/` — 视觉对照  
+1. `ui-build-review.md` — 人类审查和实现交接
+2. `screenshots/` — 视觉对照
+3. `ui-build-plan.json` — Agent 按需读取的精确实现契约
+4. `page-canonical.json` — 只有证据冲突或采集异常时读取
 
 ## 权威关系
 
-| 产物 | 读者 | 权威范围 |
-| --- | --- | --- |
-| `page-canonical.json` | 调试者、工具 | 证据原档：source / runtime / screenshot / target facts、provenance、mismatches、trace |
-| `page-debug-index.json` | 调试者、agent | 调试索引：section、node、style、mapping、risk pointers |
-| `ui-build-plan.json` | agent、validator、开发者 | 实现蓝图：工程表达、实现契约、视觉事实与映射 |
-| `ui-build-review.md` | 人类 reviewer | 从 plan 渲染的审查视图；无独立裁判权 |
-| `screenshots/` | 人类、视觉排查 | runtime capture 对照 |
+| 产物 | 作用 |
+| --- | --- |
+| `ui-build-review.md` | 用自然语言解释页面、B 接入建议、风险和人工修订；人工修订区优先于自动接入建议 |
+| `ui-build-plan.json` | 页面还原与实现的机器契约 |
+| `page-canonical.json` | source/runtime/screenshot/target 原始证据、provenance、mismatches 和 trace |
+| `screenshots/` | runtime 视觉对照 |
 
-Source-aware 语义写入 `ui-build-plan.json#/implementationContract/sourceSemantics`，并由 review 展示。
-
----
-
-## page-canonical.json
-
-完整页面上下文：证据从哪来、如何合并、哪里冲突。
-
-常用字段：
-
-- `sourceFacts` — source adapter：页面身份、语义结构、状态、交互、style intent  
-- `runtimeFacts` — 浏览器：可见 DOM、bbox、computed style、assets、interactions  
-- `screenshotFacts` — 外部截图或 OCR  
-- `targetFacts` — target 扫描：modules、routes、theme、components、assets、examples  
-- `fieldPriority` — 字段级证据优先规则  
-- `mismatches` / `manualConfirmations` — 冲突与人工确认  
-- `orchestrationTrace` — capability selected / skipped / completed  
-- `sections` / `nodes` / `assets` / `interactions` / `provenance` — 合并后的页面级事实  
-
-plan 或 review 看起来不对时，回到 canonical 查原始证据。
-
----
-
-## page-debug-index.json
-
-Canonical 的压缩索引，适合从截图区域或文案锚点快速定位。
-
-通常包含 section index、critical nodes、token / mapping 摘要、risk pointers。
-
-典型链路：
-
-```text
-screenshot region / text anchor
-  -> page-debug-index section
-  -> page-canonical node / style facts
-  -> ui-build-plan visualPlan / stylePlan.facts / componentMappings
-  -> target implementation
-```
-
----
+页面身份、source semantics、runtime、视觉和样式事实是 authoritative。模块、路由、目标组件和主题表达是 advisory；证据不足时必须保持 candidate 或 unresolved。
 
 ## ui-build-plan.json
 
-实现蓝图。按职责分区，并把实现阶段高风险细节从 canonical 提升为结构化字段。
+Plan 使用紧凑 JSON 写出。它面向机器读取，人类不需要逐行阅读。
 
-顶层字段（与 `UiBuildPlan` 对齐）：
+顶层结构：
 
-| 字段 | 作用 |
-| --- | --- |
-| `artifactAuthority` | 声明页面事实是 authoritative、B 接入建议是 advisory |
-| `integrationGuidance` | module / route / component / theme 的证据、候选、状态与 agent 下一步动作 |
-| `stylePlan` | 来源 CSS token、最终值、computed style 与 target theme family 提示；不替 agent 决定项目 token |
-| `routeMapping` / `routeIntentMappings` | source route 与 target route 的映射线索 |
-| `target` | 目标根、模块、routes / translations / assets、可复用组件、相似示例 |
-| `page` | 标题、route、摘要、viewport |
-| `targetConventions` | 目标工程扫描结果（含 architectureProfile） |
-| `implementationContract` | 文件 / Widget / 状态 / 契约主区 |
-| `visualPlan` | 视觉事实与节点级还原契约 |
-| `fileTree` / `widgetTree` | 镜像 `implementationContract` 对应字段，供既有消费者读取 |
-| `componentMappings` / `themeMappings` / `themeMappingGroups` | 兼容字段：逻辑角色的目标候选，以及来源样式事实的分组投影 |
-| `i18nPlan` / `assetPlan` / `interactionPlan` | 文案、资源、交互 |
-| `businessQuestions` / `risks` / `validationHints` | 风险与实现后校验提示 |
+```text
+ui-build-plan
+├── schemaVersion / id / pageId
+├── artifactAuthority
+├── page
+├── implementationContract
+├── visualPlan
+├── stylePlan
+├── interactionPlan / i18nPlan / assetPlan
+├── integrationGuidance
+├── target / targetConventions
+├── componentMappings / routeMapping
+└── businessQuestions / risks / validationHints
+```
 
-### targetConventions
+### 页面还原事实
 
-`architectureProfile` 描述扫描到的工程表达；扫不到则为 `unknown` 或空集合。
+- `page`：标题、route、摘要、viewport
+- `implementationContract.sourceSemantics`：业务区块、状态、路由、生命周期、交互、布局、样式与资源意图
+- `visualPlan.sections`：运行态区块、bbox、节点和构建提示
+- `visualPlan.nodeAudits`：代表性卡片、列表项、按钮、Tab、AppBar 和其他高风险 UI 单元
+- `visualPlan.nodeAudits[*].rows`：局部行结构、文本/图标顺序、bbox 和 computed style
+- `visualPlan.nodeAudits[*].instances`：重复项的文本、状态、样式与布局差异
+- `stylePlan.facts`：颜色、字体、间距、圆角、边框、阴影、CSS variable 和最终值
+- `interactionPlan`：点击、切换、输入、导航、弹窗和确认需求
+- `i18nPlan` / `assetPlan`：文案与资源事实
 
-| 字段 | 说明 |
-| --- | --- |
-| `state` | 页面 / 全局状态模式 |
-| `routing` | 路由注册与跳转 |
-| `i18n` | 文案与翻译调用 |
-| `theme` | 颜色、字体、spacing 等 token 模式 |
-| `components` | 可复用符号与证据 |
-| `fileOrganization` | 模块与页面文件组织 |
-| `documentation` | README、AGENT、CLAUDE、Cursor rules、`docs/**/*.md` 等补充；不覆盖代码扫描 |
+`stylePlan.policy` 规定先保持 source/runtime 值，再由实现 Agent 阅读 B 的主题定义并选择工程表达。PB 不在单条样式事实中决定 B 的具体 theme token。
 
-`targetConventions.documentation` 记录读到的文档、架构 hints、文档与代码冲突及读取警告。证据优先级：业务代码扫描 > target 文档 > ProtoBridge 保守推断。
+### B 接入建议
 
-### authority 与 integrationGuidance
+`integrationGuidance` 分别描述 module、route、components 和 theme：
 
-`artifactAuthority.pageReconstruction` 指向必须保真的页面事实：`page`、`sourceSemantics`、`visualPlan`、`stylePlan.facts` 与交互。`artifactAuthority.targetIntegration` 明确 B 接入结果没有页面事实的权威性。
+- `status`：confirmed / candidate / unresolved
+- `confidence`：high / medium / low
+- `selected` / `candidates`
+- `evidence`
+- `nextAction`
 
-`integrationGuidance` 的每个维度包含 `status`、`confidence`、`selected`、`candidates`、`evidence` 与 `nextAction`。只有直接、可追溯的 B 证据才允许 `confirmed`；名称或路径相似只产生 candidate。unresolved 不阻止页面还原，实现 agent 应阅读 B 文档/代码或询问用户。
+`targetConventions` 只保留实现需要的架构摘要和少量证据；完整 target 扫描事实仍在 canonical，也可以通过 `read_target_conventions` 按需重读。
 
-### stylePlan
+`target.reusableComponents` 只包含与当前页面角色相关的候选，不是目标仓库的全量组件目录。
 
-`stylePlan.facts` 以 source/runtime evidence 为权威，保留 CSS variable、source token、fallback、computed value、node ids、字体、颜色、间距、圆角、边框和阴影。`targetThemeGuidance` 只报告扫描到的主题 family；没有明确等价证据时不选择具体 B token。
+### 实现辅助
 
-实现顺序是：先保持来源视觉值，再由实现 agent 读取 B 的主题定义和相邻用法，选择不改变外观的工程表达。
+`implementationContract` 包含：
 
-### implementationContract
+- `fileTree` / `widgetTree`
+- `stateStrategy` / `controllerBoundaries`
+- `widgetContracts`
+- `implementationIndex`
+- `overlayPlan` / `conflicts`
+- `targetBindings`
+- `rules` / `contractWarnings` / `manualQuestions`
 
-| 字段 | 说明 |
-| --- | --- |
-| `logicalPlanSource` | source-aware plan 或 visual fallback |
-| `sourceSemantics` | 业务区块、状态 / 路由 / 生命周期 / 交互意图、资源、禁止直译项 |
-| `fileTree` | 预期文件与职责 |
-| `widgetTree` | Widget 拆分与父子关系 |
-| `stateStrategy` | 状态关注点与 owner 建议 |
-| `controllerBoundaries` | 页面级状态 / 控制边界（名称抽象，工程表达由 targetConventions 决定） |
-| `widgetContracts` | 子 Widget 输入、回调、状态访问约束 |
-| `implementationIndex` | 主屏 / 重复组 / overlay / 高风险优先与阶段提示 |
-| `overlayPlan` | sheet / modal / popup 等 overlay 计划 |
-| `conflicts` | 布局或实现冲突 |
-| `targetBindings` | 抽象角色到 architecture profile 的证据引用 |
-| `rules` | 实现规则 |
-| `contractWarnings` / `manualQuestions` | 未确认或冲突点 |
-
-顶层 `fileTree` / `widgetTree` 镜像本区对应字段；它们不由 runtime section tree 生成。
-
-`sourceSemantics` 常见子字段：`summary`、`businessSections`、`stateIntent`、`routeIntent`、`lifecycleIntent`、`interactionIntent`、`layoutIntent`、`styleIntent`、`assetIntent`、`doNotTranslate`。
-
-### visualPlan
-
-只负责视觉事实，不决定文件拆分或状态架构。
-
-| 字段 | 说明 |
-| --- | --- |
-| `viewport` | capture viewport |
-| `sections` | 观察到的 section、bbox、node ids、build hints |
-| `nodeAudits` | 高风险节点还原契约：重复卡片、列表项、按钮、chip、tab、appbar / bottom action；含行结构、文本/icon 顺序、控件尺寸、assetRefs、absence hints |
-| `nodeAuditSummary` | 生成数量与 review 折叠的 wrapper / 重复 / 从属节点及原因；不影响 plan 保真 |
-| `dynamicTextHints` | 列表数量、金额、百分比、日期、数量等动态文案线索 |
-| `layoutEvidence` / `layoutConflicts` | 布局证据与冲突 |
-| `screenshotRefs` | 截图引用 |
-
-实现重复 UI 单元时优先读 `nodeAudits`。代表节点没有的展示字段不要自行补充，除非 `sourceSemantics` 或用户明确要求。`rows` 是局部顺序契约，`controls` 是控件尺寸契约，`absenceHints` / `implementationSummary.doNotInvent` 是负向契约。`nodeAudits` 不推荐 target asset，只保留 source 节点上的 `assetRefs` 与视觉证据。
-
-保真原则：额外重复项可留在 plan 且 `displayInReview=false`；噪音节点记在 `nodeAuditSummary.suppressed`。完整原始证据仍在 canonical。
-
-`dynamicTextHints` 同步影响 `i18nPlan.texts[*].dynamic` / `dynamicKind`。动态值应从 UI model / formatter 派生，不写固定 translation key。
-
-### mappings 与附属计划
-
-- `stylePlan.facts` — 颜色、字体、spacing、radius、border、shadow、CSS variable 与 computed value；这是页面外观事实
-- `themeMappings` — `stylePlan.facts` 的兼容投影，target 字段只代表 B theme family/candidate，不是自动 token 决策
-- `themeMappingGroups` — `resolved` / `candidates` / `familyOnly` 分组视图
-- `componentMappings` — target 组件复用候选
-- `i18nPlan` — 文案与 translation-key 建议
-- `assetPlan` — 资源计划
-- `interactionPlan` — tap、tab、input、navigation、modal 与确认需求
-- `routeMapping` / `routeIntentMappings` — 路由映射
-- `businessQuestions` / `risks` / `validationHints` — 风险与校验
-
----
+`businessQuestions`、`risks` 和 `validationHints` 用于实现前确认和实现后校验。
 
 ## ui-build-review.md
 
-从 `ui-build-plan.json` 渲染，可折叠重复节点与重复动态值；折叠原因与完整证据仍在 plan。
+Review 是 plan 的自然语言审查版，通常包含：
 
-常见组织：
+1. 页面身份与权威边界
+2. source 业务语义、状态和交互
+3. B 架构摘要与接入建议
+4. 文件、Widget、状态与生命周期建议
+5. 视觉区块、代表性 UI 单元与样式归纳
+6. 文案、交互、风险和验收提示
+7. 人工修订区
 
-1. 契约权威与冲突规则  
-2. 来源语义  
-3. 目标工程扫描结果  
-4. 实现契约：文件、Widget、状态与边界  
-5. 视觉计划：sections、nodeAudits、动态文案、组件 / 字体 / 主题映射  
-6. 文案与交互  
-7. 风险、人工确认、校验提示  
+Review 不展开全量节点、样式事实或 B 扫描结果。精确值通过 JSON 引用定位。
 
-人类可先看 review；agent 与 validator 以 plan 为准。
+以下标记之间的内容在重新生成时保留：
 
----
+```md
+<!-- proto-bridge:manual:start -->
+人工确认或修订
+<!-- proto-bridge:manual:end -->
+```
+
+人工修订优先于自动 B 接入建议。需要修改页面权威事实时，应明确写为“页面事实修正”。
+
+## page-canonical.json
+
+Canonical 保存完整证据：
+
+- `sourceFacts`
+- `runtimeFacts`
+- `screenshotFacts`
+- `targetFacts`
+- `sections` / `nodes` / `assets` / `interactions`
+- `fieldPriority`
+- `mismatches` / `manualConfirmations`
+- `provenance` / `orchestrationTrace`
+
+Plan 或 review 出现明显遗漏时，回到 canonical 判断问题发生在采集、规划还是实现阶段。
 
 ## Validation result
 
-`validate_ui_build`（capability `ui.validate`）读取 target diff 与 `ui-build-plan.json`，输出结构化结果。
-
-检查范围包括：
-
-- changed files、allowed paths、outside allowed paths  
-- `implementationContract.fileTree` 预期文件是否缺失  
-- 是否引入 architecture profile 无证据支持的新 state / routing / i18n / theme 模式  
-- 是否偏离已识别主模式  
-- 是否生成 runtime DOM section 风格文件导致 architecture drift  
-- 子 Widget 是否违反 `widgetContracts`  
-- placeholder、TODO、硬编码颜色 / 字号、local shadow、network image、导航风险标记  
-
-扫描出的 architecture profile 为 `unknown` 时输出 warnings / manual questions，不把未知模式当成硬错误。Validation 是 review 辅助，不等于视觉或业务完全正确。
+`validate_ui_build` 读取 target diff 与 plan，检查预期文件、允许路径、架构约定、Widget contract、占位实现、硬编码样式和导航风险。Target 架构未知时输出 warning 或人工确认，不把未知模式当作硬错误。

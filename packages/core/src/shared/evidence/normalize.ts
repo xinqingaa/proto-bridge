@@ -74,7 +74,6 @@ export function createPageEvidence(input: {
     artifacts: {
       rootDir: input.artifacts?.rootDir ?? '',
       pageCanonical: input.artifacts?.pageCanonical ?? '',
-      pageDebugIndex: input.artifacts?.pageDebugIndex,
       uiBuildPlan: input.artifacts?.uiBuildPlan,
       uiBuildReview: input.artifacts?.uiBuildReview,
       screenshots: input.artifacts?.screenshots ?? screenshot,

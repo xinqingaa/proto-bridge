@@ -49,7 +49,6 @@ console.log(validation.status);
 ```text
 <outDir>/
 ├── page-canonical.json
-├── page-debug-index.json
 ├── ui-build-plan.json
 ├── ui-build-review.md
 └── screenshots/

@@ -204,13 +204,13 @@ export type UiNodeAudit = {
   bbox: { x: number; y: number; width: number; height: number };
   containerStyle: UiNodeAuditStyle;
   rows: UiNodeAuditRow[];
-  directChildren: UiNodeAuditChild[];
+  directChildren?: UiNodeAuditChild[] | undefined;
   layoutConflicts: UiNodeAuditLayoutConflict[];
-  controls: UiNodeAuditControl[];
+  controls?: UiNodeAuditControl[] | undefined;
   actionMappings: UiActionMapping[];
   assetRefs: string[];
-  absenceHints: string[];
-  implementationHints: string[];
+  absenceHints?: string[] | undefined;
+  implementationHints?: string[] | undefined;
   targetComponentCandidates?: UiTargetComponentCandidate[] | undefined;
   repeatedGroup?: UiNodeAuditRepeatedGroup | undefined;
   instances?: UiNodeAuditInstance[] | undefined;
@@ -424,6 +424,7 @@ export type UiSourceSemantics = {
 };
 
 export type UiBuildPlan = {
+  schemaVersion: 2;
   id: string;
   pageId: string;
   artifactAuthority: {
@@ -441,7 +442,12 @@ export type UiBuildPlan = {
   integrationGuidance: UiIntegrationGuidance;
   stylePlan: {
     authority: 'source-runtime-evidence';
-    facts: ThemeMapping[];
+    policy: {
+      preserveObservedValues: true;
+      targetTokenSelection: 'implementation-agent';
+      rule: string;
+    };
+    facts: UiStyleFact[];
     targetThemeGuidance: {
       status: 'family-only' | 'unresolved';
       families: string[];
@@ -471,11 +477,7 @@ export type UiBuildPlan = {
   targetConventions: FlutterTargetConventionProfile;
   implementationContract: UiImplementationContract;
   visualPlan: UiVisualPlan;
-  fileTree: FlutterPlannedFile[];
-  widgetTree: FlutterWidgetPlan[];
   componentMappings: ComponentMapping[];
-  themeMappings: ThemeMapping[];
-  themeMappingGroups: ThemeMappingGroups;
   i18nPlan: I18nPlan;
   assetPlan: AssetPlan;
   interactionPlan: InteractionPlan[];
@@ -514,29 +516,16 @@ export type UiIntegrationGuidance = {
   rule: string;
 };
 
-export type ThemeMappingGroups = {
-  resolved: ThemeMapping[];
-  candidates: ThemeMapping[];
-  familyOnly: ThemeMapping[];
-};
-
-export type ThemeMapping = {
+export type UiStyleFact = {
   kind?: 'color' | 'typography' | 'spacing' | 'radius' | 'shadow' | 'border' | undefined;
   source: string;
   value: string;
   sourceSelector?: string | undefined;
   sourceMixin?: string | undefined;
   nodeIds?: string[] | undefined;
-  target?: string | undefined;
-  candidateTargets?: string[] | undefined;
-  matchedBy?: 'css-var' | 'source-mixin' | 'exact' | 'ambiguous' | 'family' | 'manual' | undefined;
   confidence: MappingConfidence;
   authority?: 'source-fact' | 'runtime-fact' | 'source-runtime-fact' | undefined;
-  targetStatus?: 'confirmed' | 'candidate' | 'family-only' | 'unresolved' | undefined;
-  nextAction?: string | undefined;
-  lockToken?: boolean | undefined;
   doNotOverride?: string[] | undefined;
-  reason: string;
 };
 
 export type I18nPlan = {

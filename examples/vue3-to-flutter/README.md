@@ -76,7 +76,6 @@ pnpm run example:dev
 
 ```text
 page-canonical.json
-page-debug-index.json
 ui-build-plan.json
 ui-build-review.md
 screenshots/full-page.png
@@ -93,12 +92,12 @@ Source-aware 信息统一进入 `ui-build-plan.json#/implementationContract/sour
 | `targetConventions.architectureProfile` | 扫描 `target-flutter` 的状态、路由、主题、组件和文件组织模式。 |
 | `implementationContract` | 给出页面文件、Widget 拆分、状态边界、Widget contract 和 source semantics。 |
 | `visualPlan` | 保留 runtime section、bbox、截图引用和布局证据。 |
-| `themeMappings` | 映射 source token 到 target theme/text style token，并保留 typography lock。 |
+| `stylePlan.facts` | 保留 source/runtime 样式事实；具体 target theme token 由实现 agent 决定。 |
 | `componentMappings` | 给出可复用 target component 候选。 |
 
 这个 target 工程里出现的 flutter_bloc、公共组件、主题 token 等都只是该 target 的扫描证据，不是 ProtoBridge 默认偏好。换成 GetX target 时，contract 应基于 GetX 证据生成；扫不到时应保持 unknown 并输出 warnings/manual questions。
 
-Typography mapping 如果带 `lockToken=true`，agent 必须直接使用扫描或映射得到的 target text style token，不再覆盖 `fontSize`、`fontWeight`、`height` 或 `fontFamily`。
+字体 token 与 fallback 保留在 `stylePlan.facts`。实现 agent 应先保持字体大小、字重、行高和字体族，再根据目标主题定义选择工程表达。
 
 ## Agent 工作流产物
 
@@ -124,7 +123,6 @@ target-flutter/lib/app/modules/account/_proto/
 output/<case>/ui-build-plan.json
 output/<case>/ui-build-review.md
 output/<case>/page-canonical.json
-output/<case>/page-debug-index.json
 target-flutter/lib/app/theme/
 target-flutter/lib/app/common/widgets/
 target-flutter/lib/app/routes/
@@ -135,22 +133,18 @@ target-flutter/lib/app/routes/
 ```text
 output/simple/ui-build-plan.json
 output/simple/ui-build-review.md
-output/simple/page-debug-index.json
 output/simple/page-canonical.json
 
 output/complex-overview/ui-build-plan.json
 output/complex-overview/ui-build-review.md
-output/complex-overview/page-debug-index.json
 output/complex-overview/page-canonical.json
 
 output/complex-realized/ui-build-plan.json
 output/complex-realized/ui-build-review.md
-output/complex-realized/page-debug-index.json
 output/complex-realized/page-canonical.json
 
 output/complex-risk/ui-build-plan.json
 output/complex-risk/ui-build-review.md
-output/complex-risk/page-debug-index.json
 output/complex-risk/page-canonical.json
 ```
 

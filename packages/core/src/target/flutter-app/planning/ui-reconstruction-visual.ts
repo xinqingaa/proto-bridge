@@ -67,7 +67,7 @@ function sourceLayoutIntentForAudit(
 ): { structure: string; intent: string; evidence: string[] } | undefined {
   const node = evidence.nodes.find((item) => item.id === audit.sourceNodeId);
   if (!node) return undefined;
-  const directLabels = audit.directChildren.map((child) => child.text ?? child.assetRefs?.join(',') ?? child.role).filter(Boolean);
+  const directLabels = (audit.directChildren ?? []).map((child) => child.text ?? child.assetRefs?.join(',') ?? child.role).filter(Boolean);
   const sourceHeader = sourceSections(evidence).find((section) =>
     section.kind === 'app-bar'
     && /header|nav|filter|section/i.test(`${section.name} ${section.selector ?? ''} ${section.evidence}`)
@@ -284,7 +284,7 @@ function repeatedAuditGroupKey(audit: UiNodeAudit, profile = genericUiLexicon): 
     audit.kind,
     audit.rows.length,
     ...audit.rows.map((row) => row.children.map((child) => childStructureSignature(child, profile)).join(',')),
-    `controls:${audit.controls.map((control) => `${control.kind}:${semanticTextClass(control.text, profile)}`).join(',')}`,
+    `controls:${(audit.controls ?? []).map((control) => `${control.kind}:${semanticTextClass(control.text, profile)}`).join(',')}`,
     `container:${styleSignature(audit.containerStyle, ['display', 'flexDirection', 'alignItems', 'justifyContent'])}`,
     `size:${Math.round(audit.bbox.width / 8) * 8}x${Math.round(audit.bbox.height / 8) * 8}`,
   ].join('|');
@@ -314,7 +314,7 @@ function repeatedAuditCommonSignature(audit: UiNodeAudit, profile = genericUiLex
     kind: audit.kind,
     rowCount: audit.rows.length,
     rowRoleSignature: audit.rows.map((row) => row.children.map((child) => childRoleSignature(child, profile)).join(' | ')),
-    controlSignature: audit.controls.map((control) => `${control.kind}:${styleSignature(control.style, ['fontSize', 'fontWeight', 'lineHeight', 'padding', 'borderRadius', 'height'])}`),
+    controlSignature: (audit.controls ?? []).map((control) => `${control.kind}:${styleSignature(control.style, ['fontSize', 'fontWeight', 'lineHeight', 'padding', 'borderRadius', 'height'])}`),
     styleSignature: Object.fromEntries(
       (['display', 'flexDirection', 'alignItems', 'justifyContent', 'padding', 'borderRadius', 'border', 'boxShadow'] as Array<keyof UiNodeAuditStyle>)
         .map((field) => [field, audit.containerStyle[field] ?? '']),
@@ -415,10 +415,12 @@ function styleDeltasForAudit(audit: UiNodeAudit, base: UiNodeAudit): UiNodeAudit
 
 function controlDeltasForAudit(audit: UiNodeAudit, base: UiNodeAudit): UiNodeAuditInstanceDelta[] {
   const deltas: UiNodeAuditInstanceDelta[] = [];
-  const max = Math.max(audit.controls.length, base.controls.length);
+  const controls = audit.controls ?? [];
+  const baseControls = base.controls ?? [];
+  const max = Math.max(controls.length, baseControls.length);
   for (let index = 0; index < max; index += 1) {
-    const control = audit.controls[index];
-    const baseControl = base.controls[index];
+    const control = controls[index];
+    const baseControl = baseControls[index];
     if (!control || !baseControl) {
       deltas.push({
         field: `control${index + 1}`,
@@ -480,7 +482,7 @@ function layoutDeltasForAudit(
 function missingEvidenceForInstance(audit: UiNodeAudit, base: UiNodeAudit): string[] {
   const missing: string[] = [];
   if (audit.rows.length < base.rows.length) missing.push('fewer rows than representative');
-  if (audit.controls.length < base.controls.length) missing.push('fewer controls than representative');
+  if ((audit.controls ?? []).length < (base.controls ?? []).length) missing.push('fewer controls than representative');
   return missing;
 }
 
@@ -712,11 +714,11 @@ function enrichNodeAuditWithTargetComponents(
         ...candidate.fitChecks.map((check) => `${candidate.symbol} 适配检查：${check}`),
         ...candidate.risks,
       ]),
-      ...audit.implementationHints,
+      ...(audit.implementationHints ?? []),
     ].filter(Boolean)).slice(0, 16),
     actionMappings: audit.actionMappings.map((mapping) => ({
       ...mapping,
-      role: actionRoleForAudit(nextKind, audit.controls.find((control) => control.nodeId === mapping.nodeId) ?? {
+      role: actionRoleForAudit(nextKind, (audit.controls ?? []).find((control) => control.nodeId === mapping.nodeId) ?? {
         ...mapping,
         kind: 'unknown',
         role: audit.role,
@@ -888,7 +890,7 @@ function componentFitChecks(audit: UiNodeAudit, role: FlutterComponentRole): str
     checks.push('titleSpacing、centerTitle、backgroundColor 需要对照 source bbox 和样式证据确认。');
   } else if (role === 'button') {
     checks.push(`当该审计是独立控件时，button 高度需要匹配 ${roundCssNumber(audit.bbox.height)}px。`);
-    if (audit.controls.length) checks.push(`控件 padding/radius 需要保留 ${audit.controls.map((control) => control.padding || control.borderRadius).filter(Boolean).join(', ')}。`);
+    if ((audit.controls ?? []).length) checks.push(`控件 padding/radius 需要保留 ${(audit.controls ?? []).map((control) => control.padding || control.borderRadius).filter(Boolean).join(', ')}。`);
   } else if (role === 'image') {
     if (audit.assetRefs.length) checks.push(`asset 来源和顺序需要保留 ${audit.assetRefs.join(' -> ')}。`);
   } else if (role === 'sheet') {
@@ -1446,7 +1448,7 @@ function buildNodeAuditImplementationHints(
 export function buildNodeAuditValidationHints(audits: UiNodeAudit[]): string[] {
   if (audits.length === 0) return [];
   const hints = [`visualPlan.nodeAudits 中有 ${audits.length} 个代表性节点审计，覆盖重复列表或高风险 UI 单元。`];
-  if (audits.some((audit) => audit.controls.some((control) => control.kind === 'button' || control.kind === 'chip'))) {
+  if (audits.some((audit) => (audit.controls ?? []).some((control) => control.kind === 'button' || control.kind === 'chip'))) {
     hints.push('实现按钮或标签前，先查看 visualPlan.nodeAudits[*].controls；如果存在 padding、radius 和文字顺序证据，需要保持一致。');
   }
   if (audits.some((audit) => audit.kind === 'card' || audit.kind === 'list-item')) {

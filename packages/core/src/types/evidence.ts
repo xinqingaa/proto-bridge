@@ -307,7 +307,6 @@ export type PageOrchestrationTrace = {
 export type PageCanonicalArtifactIndex = {
   rootDir: string;
   pageCanonical: string;
-  pageDebugIndex?: string | undefined;
   uiBuildPlan?: string | undefined;
   uiBuildReview?: string | undefined;
   screenshots: PageScreenshotArtifact[];
@@ -405,7 +404,6 @@ export type CapturePageCanonicalResult = {
   capabilities: DetectedCapabilities;
   files: {
     pageCanonical: string;
-    pageDebugIndex: string;
     screenshots: string[];
   };
 };
