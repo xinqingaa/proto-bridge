@@ -22,8 +22,8 @@ type BuildFlutterImplementationPlanInput = {
 export function buildFlutterImplementationPlan(input: BuildFlutterImplementationPlanInput): FlutterImplementationPlan {
   const complexity = inferPlanComplexity(input.source);
   const pageName = toPascalCase(input.source.screenId ?? input.source.name ?? input.source.label ?? 'MigratedPage');
-  const moduleName = input.target.suggestedModule ?? input.source.module ?? 'feature';
-  const baseDir = `lib/app/modules/${moduleName}/${toSnakeCase(pageName)}`;
+  const moduleName = input.target.suggestedModule ?? input.source.module ?? 'unresolved';
+  const baseDir = `__proto_bridge__/${moduleName}/${toSnakeCase(pageName)}`;
   const widgetTree = buildWidgetTree(pageName, input.source, complexity);
   const fileTree = buildFileTree(baseDir, pageName, input.source, complexity, widgetTree);
   const stateStrategy = buildStateStrategy(input.source, complexity);

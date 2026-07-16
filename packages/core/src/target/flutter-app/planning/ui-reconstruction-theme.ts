@@ -4,25 +4,22 @@ import type {
   ThemeMappingGroups,
   FlutterTargetConventionProfile,
 } from '../../../types/index.js';
-import type { ResolvedRestorationProfile } from '../../../profile/index.js';
 import { resolveFlutterColorTarget, resolveFlutterTypographyMixinTarget, resolveFlutterTypographyTarget } from '../theme-mapping.js';
 import { dedupeBy } from './ui-reconstruction-shared.js';
 
 export function buildThemeMappings(
   evidence: PageCanonical,
   targetConventions: FlutterTargetConventionProfile,
-  restorationProfile?: ResolvedRestorationProfile | undefined,
 ): ThemeMapping[] {
   const themeFamily = themeFallbackFamilies(targetConventions);
   const runtimeMappings = (evidence.tokens ?? []).slice(0, 80).map((token) => {
     const resolution = token.kind === 'typography'
-      ? resolveFlutterTypographyTarget({ value: token.value, restorationProfile })
+      ? resolveFlutterTypographyTarget({ value: token.value })
       : token.kind === 'color'
         ? resolveFlutterColorTarget({
           cssVar: token.cssVar,
           value: token.value,
           source: token.source,
-          restorationProfile,
         })
         : undefined;
     const familyTarget = token.kind === 'typography'
@@ -53,14 +50,13 @@ export function buildThemeMappings(
     const isTypography = token.kind === 'typography' || property.includes('font');
     const isColor = token.kind === 'color' || property.includes('color');
     const typographyResolution = isTypography && token.token.startsWith('@include ')
-      ? resolveFlutterTypographyMixinTarget(token.token, restorationProfile)
+      ? resolveFlutterTypographyMixinTarget(token.token)
       : undefined;
     const colorResolution = isColor
       ? resolveFlutterColorTarget({
         cssVar: token.token,
         value: token.fallback ?? token.token,
         source: token.selector,
-        restorationProfile,
       })
       : undefined;
     const rawTarget = typographyResolution?.target ?? colorResolution?.target;
@@ -130,12 +126,7 @@ function supportedThemeCandidates(
 
 function isThemeTargetSupported(target: string, targetConventions: FlutterTargetConventionProfile): boolean {
   const patterns = targetConventions.architectureProfile.theme.patterns;
-  if (target.startsWith('themeService.colors')) return patterns.includes('themeService.colors');
-  if (target.startsWith('themeService.textStyles')) return patterns.includes('themeService.textStyles');
-  if (target.startsWith('context.pbColors')) return patterns.includes('context.pbColors');
-  if (target.startsWith('context.pbTextStyles')) return patterns.includes('context.pbTextStyles');
-  if (target.startsWith('Theme.of(context)')) return patterns.includes('Theme.of(context)');
-  return true;
+  return patterns.some((pattern) => target.startsWith(pattern));
 }
 
 function themeFallbackFamilies(targetConventions: FlutterTargetConventionProfile): {
@@ -143,20 +134,14 @@ function themeFallbackFamilies(targetConventions: FlutterTargetConventionProfile
   typography?: string | undefined;
 } {
   const patterns = targetConventions.architectureProfile.theme.patterns;
+  const colorAccess = patterns.find((pattern) => /(?:colors|colorScheme)$/.test(pattern));
+  const typographyAccess = patterns.find((pattern) => /(?:textStyles|textTheme)$/.test(pattern));
   return {
-    color: patterns.includes('context.pbColors')
-      ? 'context.pbColors.*'
-      : patterns.includes('themeService.colors')
-        ? 'themeService.colors.*'
-        : patterns.includes('Theme.of(context)')
-          ? 'Theme.of(context).colorScheme.*'
-          : undefined,
-    typography: patterns.includes('context.pbTextStyles')
-      ? 'context.pbTextStyles.*'
-      : patterns.includes('themeService.textStyles')
-        ? 'themeService.textStyles.*'
-        : patterns.includes('Theme.of(context)')
-          ? 'Theme.of(context).textTheme.*'
-          : undefined,
+    color: colorAccess
+      ? `${colorAccess}.*`
+      : patterns.includes('Theme.of(context)') ? 'Theme.of(context).colorScheme.*' : undefined,
+    typography: typographyAccess
+      ? `${typographyAccess}.*`
+      : patterns.includes('Theme.of(context)') ? 'Theme.of(context).textTheme.*' : undefined,
   };
 }

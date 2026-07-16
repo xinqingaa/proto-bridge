@@ -23,13 +23,12 @@ npx @proto-bridge/cli generate \
   "schemaVersion": 1,
   "source": {
     "adapter": "vue3-prototype",
-    "root": "/path/to/TradeAppPrd"
+    "root": "/path/to/vue3-prototype"
   },
   "target": {
     "adapter": "flutter-app",
-    "root": "/path/to/youfi"
+    "root": "/path/to/flutter-project"
   },
-  "profile": "auto",
   "runtime": {
     "capture": true
   },
@@ -41,7 +40,7 @@ npx @proto-bridge/cli generate \
 
 配置文件只放稳定环境信息。每次通过 CLI 参数或交互输入传 URL；配置了 `source.root` 时会从 URL 推导 route 并自动补源码证据，配置了 `target.root` 时会生成 plan/review。
 
-`profile` 是可选 restoration profile。`"auto"` 或不配置时按 `target.root` 目录名推断，例如 `youfi`；`"generic"` 或 `false` 禁用业务增强；也可以用 `--profile <id>` 对单次运行覆盖。
+项目架构无需写进 config。CLI 会让 core 扫描 source / target；无法识别的项目事实会留作 warning 或人工确认项。
 
 ## Commands
 
@@ -74,7 +73,6 @@ Options：
 - `--source-root <dir>`：可选 prototype/source 根目录。
 - `--target-root <dir>`：可选目标工程根目录。
 - `--output <dir>`：本次运行的完整输出目录。
-- `--profile <id>`：本次运行的 restoration profile 覆盖值，支持 `auto`、`generic`、`youfi` 或 `false`。
 - `--capture`：本次运行执行 runtime capture。
 - `--trace`：打印 capability orchestration trace。
 

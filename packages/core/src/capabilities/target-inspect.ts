@@ -15,7 +15,6 @@ export async function inspectTargetCapability(
     targetModule: input.targetModule,
     sourceRoutes: input.sourceRoutes,
     sourceRouteRegistry: input.sourceRouteRegistry,
-    restorationProfile: input.restorationProfile,
   });
   return {
     capability: 'target.inspect',

@@ -4,7 +4,6 @@
 
 - 改 ProtoBridge：读本文 + `skills/proto-bridge`  
 - 产品是什么 / 产物字段 / 怎么调用：`docs/overview.md`、`docs/artifacts.md`、`docs/usage.md`  
-- 在 YouFi 按产物还原 Flutter 页：`skills/youfi-flutter-restore`（真实项目示例，不是本仓改法）
 
 ProtoBridge 产出证据与实现契约；它不替代在目标 Flutter 工程里写代码的 agent。
 
@@ -14,15 +13,14 @@ ProtoBridge 产出证据与实现契约；它不替代在目标 Flutter 工程�
 2. 相关 `docs/*`  
 3. `skills/proto-bridge`（落点与检查单）  
 
-不要用 `youfi-flutter-restore` 指导本仓库改动。
-
 ## 架构红线
 
 - Capability-first：共享行为进 `packages/core`；CLI / MCP 只做入口适配。  
 - 证据分层：source → 逻辑架构；target → 工程表达；runtime / screenshot → 视觉事实。  
 - `ui-build-plan.json` 是实现蓝图；`ui-build-review.md` 只是投影。  
-- Restoration profile（配置字段 `profile`）只提供候选与增强，**不能伪造** target 扫描证据。  
-- 项目 / 业务经验放进 `packages/core/src/profile/`，不要写回通用 source adapter、planner 或默认 token 表。  
+- Core 只保留 Vue 3 / Flutter 等技术通用解析规则，不包含真实项目名称、符号、目录、业务词表或 token 映射。
+- A / B 的模块、组件、主题、路由、i18n 与文件组织必须从本次 source / target 扫描取得；扫描不到就保持 `unknown`。
+- 不提供项目 preset / profile，也不通过配置补录项目架构。项目 README 和代码是扫描证据的一部分。
 - 高置信组件、theme、i18n、routing 必须以 target 扫描或 `targetConventions` 为证。
 
 ## 改动落点
@@ -31,7 +29,6 @@ ProtoBridge 产出证据与实现契约；它不替代在目标 Flutter 工程�
 | --- | --- |
 | 编排 | `packages/core/src/workflows/capability-first` |
 | Capabilities | `packages/core/src/capabilities` |
-| Profile | `packages/core/src/profile` |
 | Source | `packages/core/src/source` |
 | Snapshot | `packages/core/src/snapshot` |
 | Target / plan / validate | `packages/core/src/target` |
@@ -59,9 +56,8 @@ ProtoBridge 产出证据与实现契约；它不替代在目标 Flutter 工程�
 | --- | --- |
 | 契约字段 / 权威链 | `docs/artifacts.md` |
 | 入口参数 / 工作流 / 发布 | `docs/usage.md` |
-| 架构 / profile / 包边界 | `docs/overview.md` |
+| 架构 / 扫描边界 / 包边界 | `docs/overview.md` |
 | 本仓工作流 | 本文 + `skills/proto-bridge` |
-| YouFi 还原细则 | `skills/youfi-flutter-restore` |
 
 同一概念只在最合适处详述；README / AGENT / skill / docs 互相链接，不复制第二套说明书。
 

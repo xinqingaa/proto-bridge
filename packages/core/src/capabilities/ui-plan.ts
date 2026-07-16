@@ -21,7 +21,6 @@ async function buildUiPlan(
     evidence: input.page,
     targetRoot: input.targetRoot,
     targetModule: input.targetModule,
-    restorationProfile: input.restorationProfile,
     sourceAwareImplementationPlan: input.sourceAwareImplementationPlan,
     sourceReview: input.sourceReview,
   });

@@ -85,7 +85,6 @@ export type AnalyzeFlutterContextInput = {
   targetModule?: string | undefined;
   sourceRoutes?: import('./source.js').VueRouteHint[] | undefined;
   sourceRouteRegistry?: import('./source.js').SourceRouteEntry[] | undefined;
-  restorationProfile?: import('../profile/index.js').ResolvedRestorationProfile | undefined;
 };
 
 export type FlutterContextAnalysis = {
@@ -95,7 +94,6 @@ export type FlutterContextAnalysis = {
   routeRegistry: FlutterRouteEntry[];
   routeMapping?: FlutterRouteMapping | undefined;
   routeIntentMappings?: FlutterRouteIntentMapping[] | undefined;
-  restorationProfile?: import('../profile/index.js').RestorationProfileArtifact | undefined;
   existingModules: string[];
   reusableWidgets: string[];
   routesFiles: string[];
@@ -192,7 +190,6 @@ export type AnalyzeFlutterTargetConventionsInput = {
   module?: string | undefined;
   symbols?: string[] | undefined;
   roles?: FlutterComponentRole[] | undefined;
-  restorationProfile?: import('../profile/index.js').ResolvedRestorationProfile | undefined;
 };
 
 export type FindFlutterTargetExamplesInput = {
@@ -203,5 +200,4 @@ export type FindFlutterTargetExamplesInput = {
   symbols?: string[] | undefined;
   screenId?: string | undefined;
   limit?: number | undefined;
-  restorationProfile?: import('../profile/index.js').ResolvedRestorationProfile | undefined;
 };

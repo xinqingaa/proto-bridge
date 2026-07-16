@@ -35,9 +35,7 @@ const WEAK_ROUTE_TOKENS = new Set([
 
 export async function scanFlutterRouteRegistry(flutterRoot: string): Promise<FlutterRouteEntry[]> {
   const files = await readDartFiles(flutterRoot, [
-    'lib/app/routes/**/*.dart',
-    'lib/app/app*.dart',
-    'lib/main*.dart',
+    'lib/**/*.dart',
   ]);
   const constants = collectRouteConstants(files);
   const entries = files.flatMap((file) => [
@@ -285,15 +283,21 @@ function inferModuleForRoute(
 
 function resolveImportPath(fromFile: string, uri: string): string {
   if (uri.startsWith('package:')) {
-    const libIndex = uri.indexOf('/app/');
-    return libIndex >= 0 ? `lib${uri.slice(libIndex)}` : uri;
+    const packageRelative = uri.match(/^package:[^/]+\/(.+)$/)?.[1];
+    return packageRelative ? `lib/${packageRelative}` : uri;
   }
   if (!uri.startsWith('.')) return uri;
   return toPosixPath(path.normalize(path.join(path.dirname(fromFile), uri)));
 }
 
 function moduleFromPath(filePath: string): string | undefined {
-  return filePath.match(/lib\/app\/modules\/([^/]+)/)?.[1];
+  const structural = new Set([
+    'lib', 'app', 'src', 'features', 'feature', 'modules', 'module', 'domains', 'domain',
+    'presentation', 'pages', 'page', 'screens', 'screen', 'views', 'view', 'widgets',
+    'components', 'common', 'shared', 'core', 'data', 'infrastructure', 'routes', 'routing',
+  ]);
+  const directories = toPosixPath(filePath).split('/').slice(0, -1);
+  return directories.reverse().find((part) => !structural.has(part));
 }
 
 function routeScore(route: FlutterRouteEntry, sourceCandidates: string[], sourceModule: string | undefined): number {

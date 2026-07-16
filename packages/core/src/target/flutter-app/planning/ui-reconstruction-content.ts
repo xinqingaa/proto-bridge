@@ -5,16 +5,15 @@ import type {
   UiDynamicTextHint,
   InteractionPlan,
 } from '../../../types/index.js';
-import { genericProfile } from '../../../profile/index.js';
-import type { ResolvedRestorationProfile, RestorationProfile } from '../../../profile/index.js';
+import { genericUiLexicon } from '../../../shared/semantic-lexicon.js';
+import type { UiSemanticLexicon } from '../../../shared/semantic-lexicon.js';
 import { toSnakeCase } from './migration-planner.js';
 import { collectStrings, dedupe, sourceSections } from './ui-reconstruction-shared.js';
 
 export function buildI18nPlan(
   evidence: PageCanonical,
-  restorationProfile?: ResolvedRestorationProfile | undefined,
 ): UiBuildPlan['i18nPlan'] {
-  const dynamicHints = buildDynamicTextHints(evidence, restorationProfile);
+  const dynamicHints = buildDynamicTextHints(evidence);
   const dynamicByText = new Map(dynamicHints.map((hint) => [hint.text, hint]));
   const sourceI18nTexts = Object.values(evidence.sourceFacts?.analysis.i18n ?? {})
     .flatMap((value) => collectStrings(value))
@@ -42,14 +41,13 @@ export function buildI18nPlan(
 
 export function buildDynamicTextHints(
   evidence: PageCanonical,
-  restorationProfile?: ResolvedRestorationProfile | undefined,
 ): UiDynamicTextHint[] {
-  const profile = restorationProfile?.profile ?? genericProfile;
+  const lexicon = genericUiLexicon;
   return evidence.nodes
     .filter((node) => node.text?.trim())
     .flatMap((node) => {
       const text = node.text?.trim() ?? '';
-      const kind = dynamicTextKind(text, node, evidence, profile);
+      const kind = dynamicTextKind(text, node, evidence, lexicon);
       if (!kind) return [];
       return [{
         nodeId: node.id,
@@ -66,22 +64,22 @@ function dynamicTextKind(
   text: string,
   node: PageSnapshotNode,
   evidence: PageCanonical,
-  profile: RestorationProfile,
+  lexicon: UiSemanticLexicon,
 ): UiDynamicTextHint['kind'] | undefined {
-  if (/^（\d+）$|^\(\d+\)$/.test(text) && isNearListHeading(node, evidence, profile)) return 'list-count';
+  if (/^（\d+）$|^\(\d+\)$/.test(text) && isNearListHeading(node, evidence, lexicon)) return 'list-count';
   if (/^[+-]?\$[\d,]+(?:\.\d+)?$|^[+-]?[\d,]+(?:\.\d+)?\s?(USD|HKD|CNY)$/i.test(text)) return 'money';
   if (/^[+-]?\d+(?:\.\d+)?%$/.test(text)) return 'percent';
   if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/.test(text)) return 'date';
-  if (profileQuantityPattern(profile).test(text)) return 'quantity';
+  if (quantityPattern(lexicon).test(text)) return 'quantity';
   return undefined;
 }
 
 function isNearListHeading(
   node: PageSnapshotNode,
   evidence: PageCanonical,
-  profile = genericProfile,
+  lexicon = genericUiLexicon,
 ): boolean {
-  const headingPattern = profileListHeadingPattern(profile);
+  const headingPattern = listHeadingPattern(lexicon);
   return evidence.nodes.some((candidate) => {
     if (candidate.id === node.id || !candidate.text) return false;
     const sameRow = Math.abs(candidate.bbox.y - node.bbox.y) <= 8;
@@ -121,7 +119,10 @@ function suggestedKey(text: string): { suggestedKey?: string } {
   return key ? { suggestedKey: key } : {};
 }
 
-export function buildAssetPlan(evidence: PageCanonical): UiBuildPlan['assetPlan'] {
+export function buildAssetPlan(
+  evidence: PageCanonical,
+  targetAssetDirectories: string[] = [],
+): UiBuildPlan['assetPlan'] {
   const sourceAssets = evidence.sourceFacts?.analysis.sfc?.assets ?? [];
   return {
     assets: [
@@ -139,7 +140,9 @@ export function buildAssetPlan(evidence: PageCanonical): UiBuildPlan['assetPlan'
         recommendation: asset.migrationHint,
       })),
     ],
-    recommendation: 'Prefer existing assets/images, assets/dark_images, assets/svg, and assets/json entries before adding new files.',
+    recommendation: targetAssetDirectories.length > 0
+      ? `Prefer assets already discovered in the target project (${targetAssetDirectories.join(', ')}) before adding new files.`
+      : 'No target asset directory was discovered; inspect pubspec.yaml and the target project before choosing an asset location.',
   };
 }
 
@@ -243,14 +246,14 @@ function sourceAssetKind(kind: string): UiBuildPlan['assetPlan']['assets'][numbe
   return 'unknown';
 }
 
-function profileQuantityPattern(profile: RestorationProfile): RegExp {
-  const terms = profile.sourceLexicon?.dynamicQuantityTerms ?? [];
+function quantityPattern(lexicon: UiSemanticLexicon): RegExp {
+  const terms = lexicon.dynamicQuantityTerms;
   const pattern = terms.map(escapeRegExp).join('|');
   return pattern ? new RegExp(`^(?:${pattern})\\s*\\d+`, 'i') : /$a/;
 }
 
-function profileListHeadingPattern(profile: RestorationProfile): RegExp {
-  const terms = profile.sourceLexicon?.listHeadingTerms ?? [];
+function listHeadingPattern(lexicon: UiSemanticLexicon): RegExp {
+  const terms = lexicon.listHeadingTerms;
   const pattern = terms.map(escapeRegExp).join('|');
   return pattern ? new RegExp(pattern, 'i') : /$a/;
 }

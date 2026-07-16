@@ -51,7 +51,7 @@ const PAGE_STATE_PATTERNS: Array<{ pattern: string; needles: RegExp[] }> = [
     pattern: 'getx',
     needles: [
       /\bclass\s+\w+Controller\s+extends\s+GetxController\b/,
-      /\bextends\s+(?:BaseGetView|BaseGetPullView|GetView)\s*<\s*[\w.]+\s*>/,
+      /\bextends\s+GetView\s*<\s*[\w.]+\s*>/,
       /\bclass\s+\w+Binding\s+extends\s+Bindings\b/,
       /\bGet\.(?:lazyPut|put|create)\s*</,
       /\bObx\s*\(/,
@@ -99,29 +99,9 @@ const I18N_PATTERNS: Array<{ pattern: string; needles: RegExp[] }> = [
 const I18N_LOOKUP_PATTERNS = I18N_PATTERNS;
 
 const THEME_PATTERNS: Array<{ pattern: string; needles: RegExp[] }> = [
-  { pattern: 'context.pbColors', needles: [/\bcontext\.pbColors\b/, /\bAppPalette\b/] },
-  { pattern: 'context.pbTextStyles', needles: [/\bcontext\.pbTextStyles\b/] },
-  { pattern: 'themeService.colors', needles: [/\bthemeService\.colors\b/] },
-  { pattern: 'themeService.textStyles', needles: [/\bthemeService\.textStyles\b/] },
   { pattern: 'Theme.of(context)', needles: [/\bTheme\.of\s*\(\s*context\s*\)/] },
-  { pattern: 'AppSpacing', needles: [/\bAppSpacing\./] },
-  { pattern: 'AppRadii', needles: [/\bAppRadii\./] },
-];
-
-const COMPONENT_PATTERNS: Array<{ symbol: string; needles: RegExp[] }> = [
-  { symbol: 'CommonAppBar', needles: [/\bCommonAppBar\b/] },
-  { symbol: 'CommonButton', needles: [/\bCommonButton\b/] },
-  { symbol: 'CommonImage', needles: [/\bCommonImage\b/] },
-  { symbol: 'CommonSvg', needles: [/\bCommonSvg\b/] },
-  { symbol: 'CommonNetImage', needles: [/\bCommonNetImage\b/] },
-  { symbol: 'CommonEmpty', needles: [/\bCommonEmpty\b/] },
-  { symbol: 'CommonLoading', needles: [/\bCommonLoading\b/] },
-  { symbol: 'Pop.sheet', needles: [/\bPop\.sheet\b/] },
-  { symbol: 'YouFiPop', needles: [/\bYouFiPop\b/] },
-  { symbol: 'BaseGetView', needles: [/\bBaseGetView\b/] },
-  { symbol: 'BaseGetPullView', needles: [/\bBaseGetPullView\b/] },
-  { symbol: 'SmartRefresher', needles: [/\bSmartRefresher\b/] },
-  { symbol: 'SectionPanel', needles: [/\bSectionPanel\b/] },
+  { pattern: 'ColorScheme.of(context)', needles: [/\bColorScheme\.of\s*\(\s*context\s*\)/] },
+  { pattern: 'DefaultTextStyle.of(context)', needles: [/\bDefaultTextStyle\.of\s*\(\s*context\s*\)/] },
 ];
 
 export async function detectFlutterTargetConventions(input: {
@@ -133,14 +113,14 @@ export async function detectFlutterTargetConventions(input: {
     return unknownProfile([`Flutter root not found: ${flutterRoot}`]);
   }
 
-  const [pubspec, files, commonFiles, moduleFiles, routeFiles, appFiles] = await Promise.all([
+  const [pubspec, files] = await Promise.all([
     readPubspec(flutterRoot),
     readDartFiles(flutterRoot, ['lib/**/*.dart']),
-    readDartFiles(flutterRoot, ['lib/app/common/**/*.dart', 'lib/app/widgets/**/*.dart']),
-    input.module ? readDartFiles(flutterRoot, [`lib/app/modules/${input.module}/**/*.dart`]) : Promise.resolve([]),
-    readDartFiles(flutterRoot, ['lib/app/routes/**/*.dart']),
-    readDartFiles(flutterRoot, ['lib/main*.dart', 'lib/app/app*.dart', 'lib/app/preferences/**/*.dart']),
   ]);
+  const commonFiles = files.filter((file) => /\/(?:common|shared|widgets?|components?|design_system|ui)\//.test(file.path));
+  const moduleFiles = input.module ? files.filter((file) => file.path.split('/').includes(input.module ?? '')) : [];
+  const routeFiles = files.filter((file) => /(?:^|\/)(?:routes?|router|navigation)(?:\/|_|\.)/i.test(file.path) || /\b(?:GoRouter|GetPage|onGenerateRoute)\b/.test(file.text));
+  const appFiles = files.filter((file) => /(?:^|\/)(?:main|app|preferences?)(?:\/|_|\.)/i.test(file.path));
   const allFiles = files;
   const nonGeneratedFiles = files.filter((file) => !file.generated);
   const nonGeneratedCommonFiles = commonFiles.filter((file) => !file.generated);
@@ -175,8 +155,8 @@ export async function detectFlutterTargetConventions(input: {
     ...packageSignals.i18n,
     ...collectPatternSignals(scopedFiles, I18N_LOOKUP_PATTERNS),
   ]);
-  const themeSignals = collectPatternSignals(scopedFiles, THEME_PATTERNS);
-  const components = collectComponentSignals(scopedFiles, COMPONENT_PATTERNS);
+  const themeSignals = collectThemeSignals(scopedFiles);
+  const components = collectComponentSignals(scopedFiles);
   const fileOrganization = detectFileOrganization(nonGeneratedFiles, input.module);
 
   if (state.pattern === 'unknown') unresolved.push('state pattern was not detected from pubspec.yaml or Dart usage.');
@@ -186,7 +166,7 @@ export async function detectFlutterTargetConventions(input: {
   if (i18n.pattern === 'unknown') unresolved.push('i18n pattern was not detected from translations or Dart usage.');
   if (themeSignals.length === 0) unresolved.push('theme token/access pattern was not detected from Dart usage.');
   if (components.length === 0) unresolved.push('reusable component symbols were not detected from common widgets or module usage.');
-  if (fileOrganization.pattern === 'unknown') unresolved.push('file organization pattern was not detected from lib/app/modules.');
+  if (fileOrganization.pattern === 'unknown') unresolved.push('file organization pattern was not detected from target Dart paths.');
 
   const architectureProfile: FlutterArchitectureProfile = {
     state,
@@ -357,11 +337,11 @@ function detectModulePageStateSignals(files: DartFile[], module: string | undefi
 function getxModulePageStateEvidence(files: DartFile[], module: string | undefined): FlutterArchitectureEvidence[] {
   const evidence: FlutterArchitectureEvidence[] = [];
   const moduleFiles = module
-    ? files.filter((file) => file.path.includes(`/modules/${module}/`))
-    : files.filter((file) => file.path.includes('/modules/'));
+    ? files.filter((file) => file.path.split('/').includes(module))
+    : files;
 
   const viewEvidence = collectNeedleEvidence(moduleFiles, 'getx-page-view', [
-    /\bextends\s+(?:BaseGetView|BaseGetPullView|GetView)\s*<\s*[\w.]+\s*>/,
+    /\bextends\s+GetView\s*<\s*[\w.]+\s*>/,
   ]);
   evidence.push(...viewEvidence);
 
@@ -380,7 +360,7 @@ function getxModulePageStateEvidence(files: DartFile[], module: string | undefin
   const hasViews = paths.some((filePath) => /\/views?\/.+\.dart$/.test(filePath));
   const hasControllers = paths.some((filePath) => /\/controllers?\/.+_controller\.dart$/.test(filePath));
   const hasBindings = paths.some((filePath) => /\/bindings?\/.+_binding\.dart$/.test(filePath));
-  const hasGetxSyntax = evidence.length > 0 || moduleFiles.some((file) => /\b(package:get\/get\.dart|GetxController|GetView|BaseGetView|BaseGetPullView|Bindings|Get\.(?:lazyPut|put|create))\b/.test(file.text));
+  const hasGetxSyntax = evidence.length > 0 || moduleFiles.some((file) => /\b(package:get\/get\.dart|GetxController|GetView|Bindings|Get\.(?:lazyPut|put|create))\b/.test(file.text));
 
   if (hasViews && hasControllers && hasBindings && hasGetxSyntax) {
     const structureExamples = [
@@ -400,16 +380,43 @@ function getxModulePageStateEvidence(files: DartFile[], module: string | undefin
   return dedupeEvidence(evidence).slice(0, 12);
 }
 
-function collectComponentSignals(
-  files: DartFile[],
-  definitions: Array<{ symbol: string; needles: RegExp[] }>,
-): ComponentSignal[] {
-  return definitions
-    .map((definition) => ({
-      symbol: definition.symbol,
-      evidence: collectNeedleEvidence(files, definition.symbol, definition.needles),
-    }))
-    .filter((signal) => signal.evidence.length > 0);
+function collectThemeSignals(files: DartFile[]): PatternSignal[] {
+  const known = collectPatternSignals(files, THEME_PATTERNS);
+  const dynamicPatterns = new Set<string>();
+  for (const file of files) {
+    for (const match of file.text.matchAll(/\b([a-zA-Z_]\w*(?:\.[a-zA-Z_]\w*){1,3})\.[a-zA-Z_]\w*/g)) {
+      const accessRoot = match[1];
+      if (accessRoot && /color|style|theme|spacing|radius|radii|typograph/i.test(accessRoot)) dynamicPatterns.add(accessRoot);
+    }
+    for (const match of file.text.matchAll(/\b([A-Z]\w*(?:Color|Colors|Style|Styles|Theme|Spacing|Radius|Radii|Typography))\.[a-zA-Z_]\w*/g)) {
+      if (match[1]) dynamicPatterns.add(match[1]);
+    }
+  }
+  return [
+    ...known,
+    ...[...dynamicPatterns].map((pattern) => ({
+      pattern,
+      evidence: collectNeedleEvidence(files, pattern, [new RegExp(`\\b${escapeRegExp(pattern)}\\b`)]),
+    })),
+  ].filter((signal) => signal.evidence.length > 0);
+}
+
+function collectComponentSignals(files: DartFile[]): ComponentSignal[] {
+  const result: ComponentSignal[] = [];
+  for (const file of files) {
+    const lines = file.text.split(/\r?\n/);
+    for (const [index, line] of lines.entries()) {
+      const symbol = line.match(/\bclass\s+([A-Z]\w*)\s+extends\s+(?:StatelessWidget|StatefulWidget|ConsumerWidget|HookWidget|GetView\b)/)?.[1];
+      if (!symbol) continue;
+      const usageCount = files.filter((candidate) => candidate.path !== file.path && new RegExp(`\\b${escapeRegExp(symbol)}\\b`).test(candidate.text)).length;
+      if (usageCount === 0 && !/\/(?:common|shared|widgets?|components?|design_system|ui)\//.test(file.path)) continue;
+      result.push({
+        symbol,
+        evidence: [{ file: file.path, line: index + 1, symbol, snippet: line.trim() }],
+      });
+    }
+  }
+  return result;
 }
 
 function collectNeedleEvidence(
@@ -435,10 +442,10 @@ function collectNeedleEvidence(
 }
 
 function selectModuleExampleFiles(files: DartFile[], module: string | undefined): DartFile[] {
-  const moduleFiles = module ? files.filter((file) => file.path.includes(`/modules/${module}/`)) : [];
+  const moduleFiles = module ? files.filter((file) => file.path.split('/').includes(module)) : [];
   if (moduleFiles.length > 0) return moduleFiles;
   const scored = files
-    .filter((file) => file.path.includes('/modules/'))
+    .filter((file) => /\b(?:StatelessWidget|StatefulWidget|ConsumerWidget|GetView|Cubit|Bloc)\b/.test(file.text))
     .map((file) => ({
       file,
       score: scoreModuleExample(file),
@@ -453,7 +460,7 @@ function scoreModuleExample(file: DartFile): number {
   if (/\/views?\/.+\.dart$/.test(file.path)) score += 2;
   if (/\/controllers?\/.+_controller\.dart$/.test(file.path)) score += 2;
   if (/\/bindings?\/.+_binding\.dart$/.test(file.path)) score += 2;
-  if (/\bextends\s+(?:BaseGetView|BaseGetPullView|GetView)\s*<\s*[\w.]+\s*>/.test(file.text)) score += 4;
+  if (/\bextends\s+GetView\s*<\s*[\w.]+\s*>/.test(file.text)) score += 4;
   if (/\bclass\s+\w+Controller\s+extends\s+GetxController\b/.test(file.text)) score += 4;
   if (/\bclass\s+\w+Binding\s+extends\s+Bindings\b|\bGet\.(?:lazyPut|put|create)\s*</.test(file.text)) score += 4;
   return score;
@@ -481,7 +488,7 @@ async function readDartFiles(flutterRoot: string, patterns: string[]): Promise<D
       const normalizedPath = toPosixPath(filePath);
       files.push({ path: normalizedPath, text, generated: isGeneratedPath(normalizedPath) });
     } catch {
-      // Ignore unreadable target files; profile evidence is advisory.
+      // Ignore unreadable target files; partial scan evidence is advisory.
     }
   }
   return files;
@@ -565,45 +572,45 @@ function collectPubspecEvidence(
 function detectFileOrganization(files: DartFile[], module: string | undefined): FlutterArchitectureFacet {
   const paths = files.map((file) => file.path);
   const modulePaths = module
-    ? paths.filter((filePath) => filePath.includes(`/modules/${module}/`))
-    : paths.filter((filePath) => filePath.includes('/modules/'));
+    ? paths.filter((filePath) => filePath.split('/').includes(module))
+    : paths.filter((filePath) => /lib\/(?:app\/modules|features|src\/features|modules)\/[^/]+\//.test(filePath));
   const examples = modulePaths.slice(0, 8).map((filePath) => ({
     file: filePath,
     symbol: 'fileOrganization',
     snippet: filePath,
   }));
-  const hasViews = modulePaths.some((filePath) => /lib\/app\/modules\/[^/]+\/views?\/.+\.dart$/.test(filePath));
-  const hasControllers = modulePaths.some((filePath) => /lib\/app\/modules\/[^/]+\/controllers?\/.+_controller\.dart$/.test(filePath));
-  const hasBindings = modulePaths.some((filePath) => /lib\/app\/modules\/[^/]+\/bindings?\/.+_binding\.dart$/.test(filePath));
+  const hasViews = modulePaths.some((filePath) => /\/views?\/.+\.dart$/.test(filePath));
+  const hasControllers = modulePaths.some((filePath) => /\/controllers?\/.+_controller\.dart$/.test(filePath));
+  const hasBindings = modulePaths.some((filePath) => /\/bindings?\/.+_binding\.dart$/.test(filePath));
   if (hasViews && hasControllers && hasBindings) {
     return {
       pattern: 'module_views_controllers_bindings',
       confidence: confidenceForEvidence(examples),
-      evidence: ['Dart files are organized under lib/app/modules/<module>/{views,controllers,bindings}.'],
+      evidence: ['Target evidence contains sibling views/controllers/bindings directories for a feature.'],
       examples,
     };
   }
-  if (modulePaths.some((filePath) => /lib\/app\/modules\/[^/]+\/[^/]+\/widgets\/.+\.dart$/.test(filePath))) {
+  if (modulePaths.some((filePath) => /\/presentation\/(?:pages?|screens?|widgets?|bloc|cubit|providers?)\//.test(filePath))) {
     return {
-      pattern: 'module_feature_with_widgets',
+      pattern: 'feature_presentation',
       confidence: confidenceForEvidence(examples),
-      evidence: ['Dart files are organized under lib/app/modules/<module>/<feature>/widgets.'],
+      evidence: ['Target evidence uses a feature presentation layer with page/widget/state subdirectories.'],
       examples,
     };
   }
-  if (modulePaths.some((filePath) => /lib\/app\/modules\/[^/]+\/_proto\/.+\.dart$/.test(filePath))) {
+  if (modulePaths.some((filePath) => /\/[^/]+\/widgets?\/.+\.dart$/.test(filePath))) {
     return {
-      pattern: 'module_proto_bucket',
+      pattern: 'feature_with_widgets',
       confidence: confidenceForEvidence(examples),
-      evidence: ['Dart files are organized under lib/app/modules/<module>/_proto.'],
+      evidence: ['Target evidence places reusable widgets below feature directories.'],
       examples,
     };
   }
-  if (modulePaths.some((filePath) => /lib\/app\/modules\/[^/]+\/.+\.dart$/.test(filePath))) {
+  if (modulePaths.length > 0) {
     return {
-      pattern: 'module_flat_or_mixed',
+      pattern: 'feature_flat_or_mixed',
       confidence: confidenceForEvidence(examples),
-      evidence: ['Dart files are organized under lib/app/modules/<module>.'],
+      evidence: ['Target evidence groups Dart files below a detected feature root.'],
       examples,
     };
   }

@@ -38,13 +38,12 @@ pnpm run build
   "schemaVersion": 1,
   "source": {
     "adapter": "vue3-prototype",
-    "root": "/Users/name/work/TradeAppPrd"
+    "root": "/path/to/vue3-prototype"
   },
   "target": {
     "adapter": "flutter-app",
-    "root": "/Users/name/work/youfi"
+    "root": "/path/to/flutter-project"
   },
-  "profile": "auto",
   "runtime": {
     "capture": true
   },
@@ -54,7 +53,7 @@ pnpm run build
 }
 ```
 
-`profile`：`"auto"` / 省略 → 按 `target.root` 目录名推断；`"generic"` 或 `false` → 禁用业务增强；显式 `"youfi"` → 强制 YouFi profile。
+配置不描述项目架构，也不支持 project profile。模块、组件、主题、路由、i18n 和文件组织由运行时扫描 source / target 获得。
 
 仅 target + URL 也可运行（无 source 时 `sourceSemantics` 为空或 visual fallback）。
 
@@ -95,13 +94,12 @@ npx @proto-bridge/cli generate --route /prototype/asset/pnl-analysis
 
 npx @proto-bridge/cli generate \
   --url "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1" \
-  --capture \
-  --profile auto
+  --capture
 ```
 
 不传页面参数且终端可交互时，会询问 `url` / `route` / `vue`。
 
-常用 flag：`--config`、`--url`、`--route`、`--vue`、`--output`、`--profile`、`--capture`、`--trace`、`--source-root`、`--target-root`、`--source-adapter`、`--target-adapter`。
+常用 flag：`--config`、`--url`、`--route`、`--vue`、`--output`、`--capture`、`--trace`、`--source-root`、`--target-root`、`--source-adapter`、`--target-adapter`。
 
 本地源码：
 
@@ -130,7 +128,7 @@ args = [
   "-y",
   "@proto-bridge/mcp-server",
   "--config",
-  "/Users/name/work/youfi/proto-bridge.config.json"
+  "/path/to/proto-bridge.config.json"
 ]
 ```
 
@@ -142,7 +140,7 @@ command = "node"
 args = [
   "/Users/name/work/proto-bridge/packages/mcp-server/dist/index.js",
   "--config",
-  "/Users/name/work/youfi/proto-bridge.config.json"
+  "/path/to/proto-bridge.config.json"
 ]
 ```
 
@@ -171,7 +169,7 @@ Screenshot / OCR 示例：
 {
   "screenshotPath": "/Users/name/Desktop/page.png",
   "ocrText": ["Account Detail", "P/L Analysis"],
-  "targetRoot": "/Users/name/work/youfi"
+  "targetRoot": "/path/to/flutter-project"
 }
 ```
 
@@ -180,7 +178,7 @@ Validation 示例：
 ```json
 {
   "pageId": "page-pnl-analysis-20260514T05343",
-  "targetRoot": "/Users/name/work/youfi"
+  "targetRoot": "/path/to/flutter-project"
 }
 ```
 
@@ -194,8 +192,6 @@ Validation 示例：
 6. format / analyze / tests  
 7. `validate_ui_build`  
 
-YouFi 工程上的还原细则见 `skills/youfi-flutter-restore`。
-
 ---
 
 ## Core 嵌入
@@ -206,11 +202,11 @@ import { reconstructPageContext } from '@proto-bridge/core/workflows/capability-
 const result = await reconstructPageContext({
   source: {
     adapter: 'vue3-prototype',
-    root: '/Users/name/work/TradeAppPrd',
+    root: '/path/to/vue3-prototype',
   },
   target: {
     adapter: 'flutter-app',
-    root: '/Users/name/work/youfi',
+    root: '/path/to/flutter-project',
   },
   route: '/prototype/asset/pnl-analysis',
   url: 'http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1',
@@ -229,8 +225,8 @@ console.log(result.files.uiBuildPlan);
 import { validateUiCapability } from '@proto-bridge/core/capabilities';
 
 const result = await validateUiCapability({
-  targetRoot: '/Users/name/work/youfi',
-  allowedPaths: ['lib/app/modules/asset'],
+  targetRoot: '/path/to/flutter-project',
+  allowedPaths: ['lib/features/example'],
 });
 ```
 

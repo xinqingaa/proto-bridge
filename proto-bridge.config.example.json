@@ -2,13 +2,12 @@
   "schemaVersion": 1,
   "source": {
     "adapter": "vue3-prototype",
-    "root": "/path/to/TradeAppPrd"
+    "root": "/path/to/vue3-prototype"
   },
   "target": {
     "adapter": "flutter-app",
-    "root": "/path/to/youfi"
+    "root": "/path/to/flutter-project"
   },
-  "profile": "auto",
   "runtime": {
     "capture": true,
     "viewport": {
