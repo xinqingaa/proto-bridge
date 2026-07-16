@@ -65,7 +65,7 @@ Canonical 的压缩索引，适合从截图区域或文案锚点快速定位。
 screenshot region / text anchor
   -> page-debug-index section
   -> page-canonical node / style facts
-  -> ui-build-plan visualPlan / themeMappings / componentMappings
+  -> ui-build-plan visualPlan / stylePlan.facts / componentMappings
   -> target implementation
 ```
 
@@ -79,6 +79,9 @@ screenshot region / text anchor
 
 | 字段 | 作用 |
 | --- | --- |
+| `artifactAuthority` | 声明页面事实是 authoritative、B 接入建议是 advisory |
+| `integrationGuidance` | module / route / component / theme 的证据、候选、状态与 agent 下一步动作 |
+| `stylePlan` | 来源 CSS token、最终值、computed style 与 target theme family 提示；不替 agent 决定项目 token |
 | `routeMapping` / `routeIntentMappings` | source route 与 target route 的映射线索 |
 | `target` | 目标根、模块、routes / translations / assets、可复用组件、相似示例 |
 | `page` | 标题、route、摘要、viewport |
@@ -86,7 +89,7 @@ screenshot region / text anchor
 | `implementationContract` | 文件 / Widget / 状态 / 契约主区 |
 | `visualPlan` | 视觉事实与节点级还原契约 |
 | `fileTree` / `widgetTree` | 镜像 `implementationContract` 对应字段，供既有消费者读取 |
-| `componentMappings` / `themeMappings` / `themeMappingGroups` | 组件与主题映射 |
+| `componentMappings` / `themeMappings` / `themeMappingGroups` | 兼容字段：逻辑角色的目标候选，以及来源样式事实的分组投影 |
 | `i18nPlan` / `assetPlan` / `interactionPlan` | 文案、资源、交互 |
 | `businessQuestions` / `risks` / `validationHints` | 风险与实现后校验提示 |
 
@@ -105,6 +108,18 @@ screenshot region / text anchor
 | `documentation` | README、AGENT、CLAUDE、Cursor rules、`docs/**/*.md` 等补充；不覆盖代码扫描 |
 
 `targetConventions.documentation` 记录读到的文档、架构 hints、文档与代码冲突及读取警告。证据优先级：业务代码扫描 > target 文档 > ProtoBridge 保守推断。
+
+### authority 与 integrationGuidance
+
+`artifactAuthority.pageReconstruction` 指向必须保真的页面事实：`page`、`sourceSemantics`、`visualPlan`、`stylePlan.facts` 与交互。`artifactAuthority.targetIntegration` 明确 B 接入结果没有页面事实的权威性。
+
+`integrationGuidance` 的每个维度包含 `status`、`confidence`、`selected`、`candidates`、`evidence` 与 `nextAction`。只有直接、可追溯的 B 证据才允许 `confirmed`；名称或路径相似只产生 candidate。unresolved 不阻止页面还原，实现 agent 应阅读 B 文档/代码或询问用户。
+
+### stylePlan
+
+`stylePlan.facts` 以 source/runtime evidence 为权威，保留 CSS variable、source token、fallback、computed value、node ids、字体、颜色、间距、圆角、边框和阴影。`targetThemeGuidance` 只报告扫描到的主题 family；没有明确等价证据时不选择具体 B token。
+
+实现顺序是：先保持来源视觉值，再由实现 agent 读取 B 的主题定义和相邻用法，选择不改变外观的工程表达。
 
 ### implementationContract
 
@@ -150,14 +165,15 @@ screenshot region / text anchor
 
 ### mappings 与附属计划
 
-- `themeMappings` — 颜色、字体、spacing、radius、border、shadow 与 token candidates；`lockToken=true` 时不得覆盖 `fontSize` / `fontWeight` / `height` / `fontFamily`，除非 plan 给出覆盖证据  
-- `themeMappingGroups` — `resolved` / `candidates` / `familyOnly` 分组视图  
-- `componentMappings` — target 组件复用候选  
-- `i18nPlan` — 文案与 translation-key 建议  
-- `assetPlan` — 资源计划  
-- `interactionPlan` — tap、tab、input、navigation、modal 与确认需求  
-- `routeMapping` / `routeIntentMappings` — 路由映射  
-- `businessQuestions` / `risks` / `validationHints` — 风险与校验  
+- `stylePlan.facts` — 颜色、字体、spacing、radius、border、shadow、CSS variable 与 computed value；这是页面外观事实
+- `themeMappings` — `stylePlan.facts` 的兼容投影，target 字段只代表 B theme family/candidate，不是自动 token 决策
+- `themeMappingGroups` — `resolved` / `candidates` / `familyOnly` 分组视图
+- `componentMappings` — target 组件复用候选
+- `i18nPlan` — 文案与 translation-key 建议
+- `assetPlan` — 资源计划
+- `interactionPlan` — tap、tab、input、navigation、modal 与确认需求
+- `routeMapping` / `routeIntentMappings` — 路由映射
+- `businessQuestions` / `risks` / `validationHints` — 风险与校验
 
 ---
 

@@ -873,6 +873,6 @@ function normalizeContractWarnings(targetConventions: FlutterTargetConventionPro
   if (profile.routing.pattern === 'unknown') warnings.push('routing pattern is unknown; keep navigation recommendations abstract.');
   if (profile.routing.navigation?.pattern === 'unknown') warnings.push('navigation call pattern is unknown; keep route action recommendations abstract.');
   if (profile.i18n.pattern === 'unknown') warnings.push('i18n pattern is unknown; do not invent translation API.');
-  if (profile.theme.patterns.length === 0) warnings.push('theme pattern is unknown; use visualPlan/themeMappings evidence and ask for confirmation.');
+  if (profile.theme.patterns.length === 0) warnings.push('target theme family is unknown; preserve stylePlan facts and ask the implementation agent to read B theme conventions.');
   return dedupe(warnings);
 }

@@ -117,7 +117,7 @@ export async function detectFlutterTargetConventions(input: {
     readPubspec(flutterRoot),
     readDartFiles(flutterRoot, ['lib/**/*.dart']),
   ]);
-  const commonFiles = files.filter((file) => /\/(?:common|shared|widgets?|components?|design_system|ui)\//.test(file.path));
+  const commonFiles = files.filter((file) => isSharedArchitectureFile(file.path));
   const moduleFiles = input.module ? files.filter((file) => file.path.split('/').includes(input.module ?? '')) : [];
   const routeFiles = files.filter((file) => /(?:^|\/)(?:routes?|router|navigation)(?:\/|_|\.)/i.test(file.path) || /\b(?:GoRouter|GetPage|onGenerateRoute)\b/.test(file.text));
   const appFiles = files.filter((file) => /(?:^|\/)(?:main|app|preferences?)(?:\/|_|\.)/i.test(file.path));
@@ -196,6 +196,11 @@ export async function detectFlutterTargetConventions(input: {
     documentation,
     unresolved: [...unresolved, ...documentation.conflicts],
   };
+}
+
+function isSharedArchitectureFile(filePath: string): boolean {
+  if (/(?:^|\/)modules?(?:\/|$)/.test(filePath)) return false;
+  return /(?:^|\/)(?:common|shared|widgets?|components?|design_system|ui)(?:\/|$)/.test(filePath);
 }
 
 function unknownProfile(unresolved: string[]): FlutterTargetConventionProfile {

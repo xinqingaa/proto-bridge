@@ -40,10 +40,13 @@ skills/proto-bridge/             # 本 skill
 - Capability-first：新产品逻辑进 capability / workflow，不进 CLI/MCP 深处。
 - 证据分层：source 管语义架构，runtime/screenshot 管视觉事实，target 管工程表达。
 - `ui-build-plan.json` 是实现蓝图；`ui-build-review.md` 只是投影。
+- `visualPlan`、`stylePlan.facts` 与 source/runtime evidence 是页面还原权威；`integrationGuidance` 仅帮助实现 agent 接入目标工程。
+- Route/module/component/theme 无充分证据时必须 abstain，并给出 `nextAction`，不得用低置信名称相似度补全字段。
 - Core 只允许技术通用解析规则；禁止真实项目名称、符号、目录、业务词表或 token 映射。
 - 项目事实必须由 source / target / runtime 扫描得到；无法证明时输出 `unknown`、warning 或 manual question。
 - 不增加项目 preset / profile，也不靠扩张 config 描述 A / B 架构。
 - 高置信组件 / theme / i18n / routing 必须以 target repo 扫描或 `targetConventions` 为证。
+- gitignored `skills/private/` 可保存真实项目消费规范，但不得影响 Core 默认产物。
 
 ## 改动落点检查单
 

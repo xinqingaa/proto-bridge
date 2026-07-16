@@ -39,12 +39,14 @@ export async function scanFlutterRouteRegistry(flutterRoot: string): Promise<Flu
   ]);
   const constants = collectRouteConstants(files);
   const entries = files.flatMap((file) => [
-    ...parseGetPages(file, constants),
-    ...parseMaterialSwitchRoutes(file, constants),
-    ...parseNavigatorRoutesMap(file, constants),
-    ...parseGoRoutes(file, constants),
+    ...(file.text.includes('GetPage') ? parseGetPages(file, constants) : []),
+    ...(/\bonGenerateRoute\b|\bRoute<dynamic>\b/.test(file.text) ? parseMaterialSwitchRoutes(file, constants) : []),
+    ...(/\broutes\s*:|Map<String,\s*WidgetBuilder>/.test(file.text) ? parseNavigatorRoutesMap(file, constants) : []),
+    ...(file.text.includes('GoRoute') ? parseGoRoutes(file, constants) : []),
   ]);
-  return dedupeRouteEntries(entries).slice(0, 240);
+  return dedupeRouteEntries(entries)
+    .sort((left, right) => routeApiPriority(left.routeApiPattern) - routeApiPriority(right.routeApiPattern) || left.file.localeCompare(right.file))
+    .slice(0, 240);
 }
 
 export function matchFlutterRoute(input: {
@@ -83,6 +85,17 @@ export function matchFlutterRoute(input: {
 
   const confidence: MappingConfidence = best.score >= 80 ? 'high' : best.score >= 45 ? 'medium' : 'low';
   const candidates = scored.slice(0, 5).map((item) => item.route);
+  if (best.score < 100) {
+    return {
+      sourceRoute: input.sourceRoute,
+      sourceModule: input.sourceModule,
+      confidence: 'low',
+      reason: `Target route candidates were found, but none exactly match the source route; leave integration unresolved.`,
+      evidence: sourceCandidates.slice(0, 5),
+      candidates,
+      unresolved: true,
+    };
+  }
   const targetModule = best.route.module ?? moduleFromRoute(best.route.route, input.existingModules);
   return {
     sourceRoute: input.sourceRoute,
@@ -147,6 +160,7 @@ function parseMaterialSwitchRoutes(file: DartFile, constants: Map<string, string
   return [...file.text.matchAll(/case\s+([^:]+):([\s\S]*?)(?=\n\s*case\s+|\n\s*default\s*:|\n\s*}\s*$)/g)].flatMap((match) => {
     const routeRef = match[1]?.trim();
     const body = match[2] ?? '';
+    if (!/MaterialPageRoute|CupertinoPageRoute|PageRouteBuilder/.test(body)) return [];
     const pageWidget = body.match(/\bbuilder\s*:\s*\([^)]*\)\s*=>\s*(?:const\s+)?([A-Z]\w+)/)?.[1];
     return entryFromRouteRef({
       routeRef,
@@ -157,6 +171,13 @@ function parseMaterialSwitchRoutes(file: DartFile, constants: Map<string, string
       evidencePrefix: 'onGenerateRoute switch',
     });
   });
+}
+
+function routeApiPriority(pattern: FlutterRouteEntry['routeApiPattern']): number {
+  if (pattern === 'getx' || pattern === 'go_router') return 0;
+  if (pattern === 'navigator_routes') return 1;
+  if (pattern === 'material_on_generate_route') return 2;
+  return 3;
 }
 
 function parseNavigatorRoutesMap(file: DartFile, constants: Map<string, string>): FlutterRouteEntry[] {

@@ -35,11 +35,14 @@ export function buildThemeMappings(
       kind: token.kind,
       source,
       value: token.value,
+      authority: token.cssVar ? 'source-runtime-fact' : 'runtime-fact',
       ...(token.usage.length > 0 ? { nodeIds: token.usage.slice(0, 24) } : {}),
       ...(target ? { target } : {}),
       ...(candidateTargets.length ? { candidateTargets } : {}),
       matchedBy,
       confidence: target ? (resolution?.confidence ?? 'medium') : 'low',
+      targetStatus: target?.endsWith('.*') ? 'family-only' : target ? 'candidate' : 'unresolved',
+      nextAction: 'Preserve this observed value; select a B theme token only after comparing its definition and actual usage.',
       reason: target
         ? `Map evidence ${token.kind} signal to the closest detected target theme token during implementation.`
         : `No target-supported theme token family is inferred for ${token.kind}; confirm manually.`,
@@ -71,10 +74,13 @@ export function buildThemeMappings(
       ...(token.selector ? { sourceSelector: token.selector } : {}),
       ...(isTypography && token.token.startsWith('@include ') ? { sourceMixin: token.token.replace(/^@include\s+/, '') } : {}),
       value: token.fallback ?? token.token,
+      authority: 'source-fact',
       ...(target ? { target } : {}),
       ...(candidateTargets.length ? { candidateTargets } : {}),
       matchedBy: rawTarget && !target ? 'manual' : typographyResolution?.matchedBy ?? colorResolution?.matchedBy ?? 'manual',
       confidence: target ? (typographyResolution?.confidence ?? colorResolution?.confidence ?? 'medium') : 'low',
+      targetStatus: target?.endsWith('.*') ? 'family-only' : target ? 'candidate' : 'unresolved',
+      nextAction: 'Use the source token and fallback as reconstruction evidence; let the implementation agent resolve the B-specific theme expression.',
       ...(lockToken ? { lockToken: true, doNotOverride: token.doNotOverride ?? ['fontSize', 'fontWeight', 'height', 'fontFamily'] } : {}),
       reason: lockToken
         ? `Source typography token ${token.token} is an exact semantic design token; generated Flutter must use ${target} without overriding fontSize, height, fontWeight, or fontFamily.`

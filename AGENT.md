@@ -18,10 +18,13 @@ ProtoBridge 产出证据与实现契约；它不替代在目标 Flutter 工程�
 - Capability-first：共享行为进 `packages/core`；CLI / MCP 只做入口适配。  
 - 证据分层：source → 逻辑架构；target → 工程表达；runtime / screenshot → 视觉事实。  
 - `ui-build-plan.json` 是实现蓝图；`ui-build-review.md` 只是投影。  
+- 页面事实、来源语义、运行态与样式事实是权威契约；route/module/component/theme 等 B 接入结论默认只是 advisory guidance。
+- 低置信名称或路径相似度只能用于检索候选，不能自动成为 target route、module、component 或 token。
 - Core 只保留 Vue 3 / Flutter 等技术通用解析规则，不包含真实项目名称、符号、目录、业务词表或 token 映射。
 - A / B 的模块、组件、主题、路由、i18n 与文件组织必须从本次 source / target 扫描取得；扫描不到就保持 `unknown`。
 - 不提供项目 preset / profile，也不通过配置补录项目架构。项目 README 和代码是扫描证据的一部分。
 - 高置信组件、theme、i18n、routing 必须以 target 扫描或 `targetConventions` 为证。
+- 私有项目消费规范可放在 gitignored `skills/private/`，只能指导实现 agent，不能被 Core 读取为隐形 preset。
 
 ## 改动落点
 

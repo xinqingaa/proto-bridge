@@ -23,17 +23,17 @@ source / URL / screenshot / target repo
 | 证据来源 | 负责 | 不负责 |
 | --- | --- | --- |
 | Source semantics | 业务区块、状态意图、交互与生命周期意图、Widget contract、禁止直译项、资源与文案线索 | 不决定目标工程用哪种 state / routing / i18n / theme 框架 |
-| Target conventions | 目标 Flutter 工程实际使用的 state、routing、i18n、theme、component、file organization | 不补造 source 没有的业务语义，不替代 runtime 视觉事实 |
+| Target conventions | 目标 Flutter 工程中扫描到的 state、routing、i18n、theme family、component、file organization 证据 | 不决定页面必须接入哪个 route/module/component/token，不替代实现 agent 阅读 B |
 | Runtime / screenshot | 可见文案、bbox、section 顺序、computed style、截图、OCR | 不反向决定文件拆分、状态 owner 或架构边界 |
 
 冲突裁决：
 
-1. 逻辑架构看 source semantics。  
-2. 工程表达看 target conventions。  
-3. 视觉事实看 runtime / screenshot。  
+1. 逻辑架构看 source semantics。
+2. 工程表达优先看 B 文档与 target conventions；证据不足时保持 unresolved。
+3. 视觉事实看 runtime / screenshot。
 4. target 扫描事实为 `unknown` 时保留抽象建议，写入 warnings / manual questions，不猜测框架。
 
-三类证据汇入 `ui-build-plan.json`（实现蓝图）。`ui-build-review.md` 是从 plan 渲染的中文审查视图。`page-canonical.json` 是证据原档。
+三类证据汇入 `ui-build-plan.json`。页面事实与逻辑组件是还原权威；B 接入信息位于 `integrationGuidance`，默认是 advisory。`ui-build-review.md` 是中文审查投影，`page-canonical.json` 是证据原档。
 
 ## Capability 编排
 
@@ -77,6 +77,8 @@ ProtoBridge 不提供项目 preset / restoration profile。配置只描述输入
 - 模块、目录、组件、主题访问器、路由、i18n 和资产位置均从本次 source / target 代码与文档扫描取得。
 - 扫描不到的项目事实保持 `unknown`，由消费产物并实现 B 的 agent 结合目标仓库继续确认。
 - 项目 README 可提高扫描质量，但不能覆盖代码证据。
+- Route/module/component/theme token 命中率不是 PB 核心质量指标；错误建议率必须优先于命中率。
+- 私有项目 skill 可与产物一起交给实现 agent，但不进入 PB Core，也不改变页面事实。
 
 ## Target conventions
 

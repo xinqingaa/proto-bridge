@@ -14,6 +14,9 @@ examples/vue3-to-flutter/target-flutter/lib/app/app_proto.dart
 examples/vue3-to-flutter/target-flutter/lib/app/routes/app_pages_proto.dart
 examples/vue3-to-flutter/target-flutter/lib/app/modules/**/_proto/
 
+# Local project-consumption skills (may contain private target conventions)
+skills/private/
+
 # Runtime capture artifacts
 playwright-report/
 test-results/

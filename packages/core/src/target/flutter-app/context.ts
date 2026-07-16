@@ -31,12 +31,17 @@ export async function analyzeFlutterContext(input: AnalyzeFlutterContextInput): 
     existingModules,
   });
   const suggestedModule = suggestModule(input, existingModules, routeMapping?.targetModule);
-  const routesFiles = await discoverFiles(flutterRoot, [
-    'lib/**/*route*.dart', 'lib/**/*router*.dart', 'lib/**/*navigation*.dart',
-  ]);
+  const routesFiles = [...new Set([
+    ...routeRegistry.map((entry) => entry.file),
+    ...await discoverFiles(flutterRoot, [
+      'lib/**/routes/*.{dart,arb,json}', 'lib/**/routing/*.{dart,arb,json}',
+      'lib/**/*_routes.dart', 'lib/**/*_router.dart',
+    ]),
+  ])].sort();
   const translationFiles = await discoverFiles(flutterRoot, [
     'lib/**/*translation*.dart', 'lib/**/*localization*.dart', 'lib/**/*l10n*.dart', 'lib/**/*i18n*.dart',
-    'lib/l10n/**/*.{arb,json}', 'assets/**/*.{arb,json}',
+    'lib/**/translations/**/*.{dart,arb,json}', 'lib/**/l10n/**/*.{dart,arb,json}',
+    'assets/**/translations/**/*.{arb,json}', 'assets/**/l10n/**/*.{arb,json}',
   ]);
   const assetDirectories = await discoverAssetDirectories(flutterRoot);
   const reusableWidgets = await collectReusableWidgets(flutterRoot, input);
@@ -96,37 +101,17 @@ function suggestModule(
 
 async function listModuleDirectories(flutterRoot: string): Promise<string[]> {
   const roots = [
-    'lib/app/modules', 'lib/features', 'lib/src/features', 'lib/modules',
-    'lib/screens', 'lib/pages', 'lib/presentation',
+    'lib/app/modules', 'lib/features', 'lib/src/features', 'lib/modules', 'lib/src/modules',
+    'lib/domains', 'lib/src/domains',
   ];
   const modules = new Set<string>();
   for (const root of roots) {
     try {
       const entries = await readdir(path.join(flutterRoot, root), { withFileTypes: true });
-      for (const entry of entries) if (entry.isDirectory()) modules.add(entry.name);
+      for (const entry of entries) if (entry.isDirectory() && !entry.name.startsWith('_')) modules.add(entry.name);
     } catch {
       // Candidate topology root is absent.
     }
-  }
-  const dartFiles = await fg('lib/**/*.dart', {
-    cwd: flutterRoot,
-    onlyFiles: true,
-    absolute: false,
-    suppressErrors: true,
-  });
-  const structuralDirectories = new Set([
-    'lib', 'app', 'src', 'features', 'feature', 'modules', 'module', 'presentation',
-    'pages', 'page', 'screens', 'screen', 'views', 'view', 'widgets', 'components',
-    'common', 'shared', 'core', 'data', 'domain', 'infrastructure', 'routes', 'routing',
-  ]);
-  for (const dartFile of dartFiles) {
-    const normalized = toPosixPath(dartFile);
-    const parts = normalized.split('/');
-    const fileName = parts.at(-1) ?? '';
-    const namedFeature = fileName.match(/^(.+?)_(?:module|page|screen|view)\.dart$/)?.[1];
-    if (namedFeature && !structuralDirectories.has(namedFeature)) modules.add(namedFeature);
-    const candidate = parts.slice(1, -1).reverse().find((part) => !structuralDirectories.has(part));
-    if (candidate) modules.add(candidate);
   }
   return [...modules].sort();
 }

@@ -51,6 +51,7 @@ export async function getFlutterTargetConventions(
   });
   const components = await collectFlutterComponents({
     flutterRoot,
+    module: input.module,
     symbols: input.symbols,
     roles: input.roles,
   });
@@ -120,18 +121,22 @@ export async function findFlutterTargetExamples(input: FindFlutterTargetExamples
 
 async function collectFlutterComponents(input: {
   flutterRoot: string;
+  module?: string | undefined;
   symbols?: string[] | undefined;
   roles?: FlutterComponentRole[] | undefined;
 }): Promise<FlutterComponentRef[]> {
   const packageName = await readPubspecPackageName(input.flutterRoot);
   const files = await readDartFiles(input.flutterRoot, ['lib/**/*.dart']);
+  const scopedFiles = input.module
+    ? files.filter((file) => looksShared(file.path) || pathSegments(file.path).includes(input.module ?? ''))
+    : files;
   const requested = selectTechnicalCandidates(input.symbols, input.roles);
-  const discovered = discoverComponentCandidates(files, input.roles);
+  const discovered = discoverComponentCandidates(scopedFiles, input.roles, files);
   const candidates = dedupeBy([...requested, ...discovered], (candidate) => `${candidate.symbol}:${candidate.role}`);
 
   return candidates.flatMap((candidate) => {
     const definition = findDefinition(files, candidate.symbol);
-    const usageFiles = files.filter((file) => includesSymbol(file.text, candidate.symbol));
+    const usageFiles = scopedFiles.filter((file) => includesSymbol(file.text, candidate.symbol));
     if (!definition && usageFiles.length === 0) return [];
     const snippets = usageFiles
       .flatMap((file) => extractSnippets(file.text, [candidate.symbol], 1, file.path))
@@ -164,7 +169,11 @@ function selectTechnicalCandidates(
   return FLUTTER_TECHNICAL_COMPONENTS.filter((item) => !roles?.length || roles.includes(item.role));
 }
 
-function discoverComponentCandidates(files: DartFile[], requestedRoles?: FlutterComponentRole[]): ComponentCandidate[] {
+function discoverComponentCandidates(
+  files: DartFile[],
+  requestedRoles?: FlutterComponentRole[],
+  usageCorpus: DartFile[] = files,
+): ComponentCandidate[] {
   const candidates: ComponentCandidate[] = [];
   for (const file of files) {
     for (const match of file.text.matchAll(/\bclass\s+([A-Z]\w*)\s+extends\s+([A-Z]\w*(?:<[^>{}]+>)?)/g)) {
@@ -173,7 +182,7 @@ function discoverComponentCandidates(files: DartFile[], requestedRoles?: Flutter
       const role = inferComponentRole(symbol, file.path, file.text);
       if (role === 'unknown' || (requestedRoles?.length && !requestedRoles.includes(role))) continue;
       if (role === 'page-base' && !looksShared(file.path) && !/^(?:Base|Abstract)|(?:Shell|Layout)$/.test(symbol)) continue;
-      const usageCount = files.filter((candidate) => candidate.path !== file.path && includesSymbol(candidate.text, symbol)).length;
+      const usageCount = usageCorpus.filter((candidate) => candidate.path !== file.path && includesSymbol(candidate.text, symbol)).length;
       if (usageCount === 0 && !looksShared(file.path)) continue;
       candidates.push({
         symbol,
@@ -200,7 +209,8 @@ function inferComponentRole(symbol: string, filePath: string, text: string): Flu
 }
 
 function looksShared(filePath: string): boolean {
-  return /\/(?:common|shared|widgets?|components?|design_system|ui)\//.test(filePath);
+  if (/(?:^|\/)modules?(?:\/|$)/.test(filePath)) return false;
+  return /(?:^|\/)(?:common|shared|widgets?|components?|design_system|ui)(?:\/|$)/.test(filePath);
 }
 
 async function readDartFiles(flutterRoot: string, patterns: string[]): Promise<DartFile[]> {

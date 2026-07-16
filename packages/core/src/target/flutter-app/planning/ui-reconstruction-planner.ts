@@ -76,10 +76,40 @@ export async function buildFlutterUiReconstructionPlan(
   });
   const nodeAuditHints = buildNodeAuditValidationHints(visualPlan.nodeAudits);
   const themeMappings = buildThemeMappings(input.evidence, conventions.targetConventions);
+  const integrationGuidance = buildIntegrationGuidance({
+    moduleName,
+    routeMapping,
+    componentMappings,
+    themePatterns: conventions.targetConventions.architectureProfile.theme.patterns,
+    documentationFiles: conventions.targetConventions.documentation?.files.map((file) => file.path) ?? [],
+  });
 
   return {
     id: createPlanId(input.evidence.id),
     pageId: input.evidence.id,
+    artifactAuthority: {
+      pageReconstruction: {
+        level: 'authoritative',
+        refs: ['page', 'visualPlan', 'stylePlan.facts', 'interactionPlan', 'implementationContract.sourceSemantics'],
+        rule: 'Source/runtime/screenshot-backed page facts define what must be reconstructed.',
+      },
+      targetIntegration: {
+        level: 'advisory',
+        refs: ['integrationGuidance', 'targetConventions', 'target.similarExamples', 'componentMappings'],
+        rule: 'Target module, route, component, and theme choices require target evidence or implementation-agent confirmation.',
+      },
+    },
+    integrationGuidance,
+    stylePlan: {
+      authority: 'source-runtime-evidence',
+      facts: themeMappings,
+      targetThemeGuidance: {
+        status: conventions.targetConventions.architectureProfile.theme.patterns.length > 0 ? 'family-only' : 'unresolved',
+        families: themeFamilies(conventions.targetConventions.architectureProfile.theme.patterns),
+        evidence: conventions.targetConventions.architectureProfile.theme.examples.slice(0, 8).map((item) => `${item.file}: ${item.snippet}`),
+        nextAction: 'Preserve every source/runtime style value first; the implementation agent must read target theme definitions and choose the closest semantic token without changing the observed appearance.',
+      },
+    },
     ...(routeMapping ? { routeMapping } : {}),
     ...(routeIntentMappings.length ? { routeIntentMappings } : {}),
     target: {
@@ -118,8 +148,8 @@ export async function buildFlutterUiReconstructionPlan(
       '除非 sourceSemantics 或用户确认明确要求，不要添加代表性 nodeAudits 中不存在的展示字段。',
       'section 标题旁的数量文案应尽量从 UI model 或列表长度派生，不要写死到固定数字的翻译 key。',
       '字体、CSS 颜色、间距和布局是 P0 视觉保真项；优先使用精确证据匹配，再考虑近似 fallback。',
-      '优先使用节点级 themeMappings；当 token 精确命中时，不要替换成更大或更粗的相近 token。',
-      '如果 typography themeMapping 标记 lockToken=true，必须直接使用目标 textStyles token；除非 plan 明确列出来源覆盖证据，不得覆盖 fontSize、height、fontWeight、fontFamily。',
+      'stylePlan.facts 是页面外观事实；先保持 CSS 变量、最终颜色、字体、间距、圆角与阴影，再由实现 agent 依据 B 的主题定义选择表达方式。',
+      '不要因为 B token 名称相近而改变 stylePlan.facts 中的 fontSize、lineHeight、fontWeight、颜色或间距；无法证明等价时由实现 agent 保留视觉值并确认。',
       '新增本地常量前，先用目标可复用组件核对 spacing、radius、border、shadow。',
       '当 nodeAudit control 提供 padding 和 borderRadius 证据时，除非目标组件 API 要求固定尺寸，否则优先使用 padding 驱动 Flutter 布局，而不是固定高度。',
       '业务数据、API 字段、权限、风控和埋点，除非目标示例已确认，否则保留 TODO。',
@@ -128,6 +158,93 @@ export async function buildFlutterUiReconstructionPlan(
       ...buildContractValidationHints(implementationContract),
     ],
   };
+}
+
+function buildIntegrationGuidance(input: {
+  moduleName?: string | undefined;
+  routeMapping?: UiBuildPlan['routeMapping'];
+  componentMappings: UiBuildPlan['componentMappings'];
+  themePatterns: string[];
+  documentationFiles: string[];
+}): UiBuildPlan['integrationGuidance'] {
+  const confirmedComponents = input.componentMappings.flatMap((mapping) =>
+    mapping.status === 'confirmed' && mapping.targetSymbol ? [mapping.targetSymbol] : [],
+  );
+  const candidateComponents = input.componentMappings.flatMap((mapping) => mapping.candidateSymbols ?? []);
+  const routeSelected = input.routeMapping && !input.routeMapping.unresolved
+    ? input.routeMapping.targetRouteSymbol ?? input.routeMapping.targetRoute
+    : undefined;
+  const routeCandidates = input.routeMapping?.candidates.map((candidate) => candidate.routeSymbol ?? candidate.route) ?? [];
+  const module = input.moduleName
+    ? {
+        status: 'candidate' as const,
+        confidence: 'medium' as const,
+        selected: input.moduleName,
+        candidates: [input.moduleName],
+        evidence: ['The source module name exists under a detected target feature/module root.'],
+        nextAction: 'Confirm the target module against B documentation or ask the user before implementation when the task did not explicitly name it.',
+      }
+    : unresolvedGuidance('Read B module/file-organization documentation or ask the user where this page should be implemented.');
+  const route = routeSelected
+    ? {
+        status: 'confirmed' as const,
+        confidence: input.routeMapping?.confidence ?? 'high',
+        selected: routeSelected,
+        candidates: routeCandidates,
+        evidence: input.routeMapping?.evidence ?? [],
+        nextAction: 'Verify route parameters and registration scope in B before editing the registry.',
+      }
+    : routeCandidates.length > 0
+      ? {
+          status: 'candidate' as const,
+          confidence: 'low' as const,
+          candidates: routeCandidates,
+          evidence: input.routeMapping?.evidence ?? [],
+          nextAction: 'Do not register or reuse a route from name similarity alone; read B routing conventions or ask the user for the intended entry point.',
+        }
+      : unresolvedGuidance('Read B routing conventions or ask the user for the intended entry point; route matching is not required for page reconstruction.');
+  const components = confirmedComponents.length > 0
+    ? {
+        status: 'candidate' as const,
+        confidence: 'medium' as const,
+        candidates: dedupeBy([...confirmedComponents, ...candidateComponents], (item) => item).slice(0, 8),
+        evidence: input.componentMappings.flatMap((mapping) => mapping.evidence).slice(0, 12),
+        nextAction: 'Use logical component boundaries as the source of truth; verify each target component API and visual defaults in B before reuse.',
+      }
+    : unresolvedGuidance('Keep the logical component split and inspect B common/shared widgets during implementation.');
+  const families = themeFamilies(input.themePatterns);
+  const theme = families.length > 0
+    ? {
+        status: 'candidate' as const,
+        confidence: 'low' as const,
+        candidates: families,
+        evidence: input.themePatterns.slice(0, 12),
+        nextAction: 'Match raw style facts to B theme tokens during implementation; PB does not select exact project tokens without explicit equivalence evidence.',
+      }
+    : unresolvedGuidance('Preserve raw style facts and read B theme documentation before choosing tokens.');
+  const items = [module, route, components, theme];
+  return {
+    status: items.every((item) => item.status === 'confirmed') ? 'ready' : items.every((item) => item.status === 'unresolved') ? 'unresolved' : 'partial',
+    module,
+    route,
+    components,
+    theme,
+    rule: `Page reconstruction does not depend on target integration guesses.${input.documentationFiles.length ? ` Consult scanned B documentation: ${input.documentationFiles.slice(0, 4).join(', ')}.` : ' No relevant B documentation was discovered; the implementation agent should inspect B or ask the user.'}`,
+  };
+}
+
+function unresolvedGuidance(nextAction: string): UiBuildPlan['integrationGuidance']['route'] {
+  return { status: 'unresolved', confidence: 'low', candidates: [], evidence: [], nextAction };
+}
+
+function themeFamilies(patterns: string[]): string[] {
+  return [...new Set(patterns.flatMap((pattern) => {
+    if (pattern.startsWith('Theme.of(context)')) return ['Theme.of(context)'];
+    const access = pattern.match(/^(.+?\.(?:colors|textStyles|textTheme|colorScheme))(?:\.|$)/i)?.[1];
+    if (access) return [access];
+    if (/^[A-Z]\w*(?:Colors|Theme|FontStyles)$/.test(pattern)) return [pattern];
+    return [];
+  }))].slice(0, 8);
 }
 
 function rolesForEvidence(evidence: PageCanonical): FlutterComponentRole[] {

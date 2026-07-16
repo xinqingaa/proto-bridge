@@ -426,6 +426,29 @@ export type UiSourceSemantics = {
 export type UiBuildPlan = {
   id: string;
   pageId: string;
+  artifactAuthority: {
+    pageReconstruction: {
+      level: 'authoritative';
+      refs: string[];
+      rule: string;
+    };
+    targetIntegration: {
+      level: 'advisory';
+      refs: string[];
+      rule: string;
+    };
+  };
+  integrationGuidance: UiIntegrationGuidance;
+  stylePlan: {
+    authority: 'source-runtime-evidence';
+    facts: ThemeMapping[];
+    targetThemeGuidance: {
+      status: 'family-only' | 'unresolved';
+      families: string[];
+      evidence: string[];
+      nextAction: string;
+    };
+  };
   routeMapping?: FlutterRouteMapping | undefined;
   routeIntentMappings?: FlutterRouteIntentMapping[] | undefined;
   target: {
@@ -464,9 +487,31 @@ export type UiBuildPlan = {
 export type ComponentMapping = {
   sourceRole: SnapshotNodeRole;
   nodeIds: string[];
+  status: 'confirmed' | 'candidate' | 'unresolved';
   targetSymbol?: string | undefined;
+  candidateSymbols?: string[] | undefined;
   confidence: MappingConfidence;
+  evidence: string[];
+  nextAction: string;
   reason: string;
+};
+
+export type UiIntegrationGuidanceItem = {
+  status: 'confirmed' | 'candidate' | 'unresolved';
+  confidence: MappingConfidence;
+  selected?: string | undefined;
+  candidates: string[];
+  evidence: string[];
+  nextAction: string;
+};
+
+export type UiIntegrationGuidance = {
+  status: 'ready' | 'partial' | 'unresolved';
+  module: UiIntegrationGuidanceItem;
+  route: UiIntegrationGuidanceItem;
+  components: UiIntegrationGuidanceItem;
+  theme: UiIntegrationGuidanceItem;
+  rule: string;
 };
 
 export type ThemeMappingGroups = {
@@ -486,6 +531,9 @@ export type ThemeMapping = {
   candidateTargets?: string[] | undefined;
   matchedBy?: 'css-var' | 'source-mixin' | 'exact' | 'ambiguous' | 'family' | 'manual' | undefined;
   confidence: MappingConfidence;
+  authority?: 'source-fact' | 'runtime-fact' | 'source-runtime-fact' | undefined;
+  targetStatus?: 'confirmed' | 'candidate' | 'family-only' | 'unresolved' | undefined;
+  nextAction?: string | undefined;
   lockToken?: boolean | undefined;
   doNotOverride?: string[] | undefined;
   reason: string;

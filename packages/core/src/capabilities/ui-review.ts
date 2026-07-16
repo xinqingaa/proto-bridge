@@ -38,8 +38,14 @@ function renderReviewMarkdown(plan: UiBuildPlan): string {
     ...(plan.routeIntentMappings?.length ? [`- 跳转映射：${plan.routeIntentMappings.length} 个 source 跳转目标已匹配 target 路由配置`] : []),
     `- 逻辑来源：${plan.implementationContract.logicalPlanSource}`,
     '- 机器契约只看 `ui-build-plan.json`；本文档只是该 JSON 的中文审查视图。',
-    '- 冲突规则：sourceSemantics 负责来源语义；targetConventions 负责工程表达；visualPlan 负责视觉事实。',
-    '- 若目标约定未知，不得引入新的 state/routing/i18n/theme 框架，先处理人工确认项。',
+    '- 权威边界：page / sourceSemantics / visualPlan / stylePlan.facts 描述必须还原的页面；integrationGuidance 仅是 B 接入建议。',
+    '- 若目标约定未知，不得从名称相似度猜 route、module、component 或 theme token；实现 agent 应阅读 B 或询问用户。',
+    '',
+    '### B 接入建议（非页面事实）',
+    '',
+    '_JSON 来源：`ui-build-plan.json#/integrationGuidance`_',
+    '',
+    ...renderIntegrationGuidance(plan),
     '',
     '### 实现索引',
     '',
@@ -109,9 +115,9 @@ function renderReviewMarkdown(plan: UiBuildPlan): string {
     '',
     ...renderOverlayPlan(plan),
     '',
-    '## 视觉计划',
+    '## 页面视觉与样式事实',
     '',
-    '_JSON 来源：`ui-build-plan.json#/visualPlan`、`#/componentMappings`、`#/themeMappings`_',
+    '_JSON 来源：`ui-build-plan.json#/visualPlan`、`#/stylePlan/facts`、`#/componentMappings`_',
     '',
     `- 视口：${plan.visualPlan.viewport.width}x${plan.visualPlan.viewport.height}`,
     `- 截图：${plan.visualPlan.screenshotRefs.join('、') || '无'}`,
@@ -144,38 +150,31 @@ function renderReviewMarkdown(plan: UiBuildPlan): string {
     '### 组件映射',
     '',
     ...markdownTable(
-      ['来源角色', '目标组件', '置信度', '节点/来源', '原因'],
+      ['来源角色', '状态', '目标/候选组件', '置信度', '节点/来源', '下一步'],
       plan.componentMappings.map((mapping) => [
         mapping.sourceRole,
-        mapping.targetSymbol ?? '本地 Widget',
+        mapping.status,
+        mapping.targetSymbol ?? mapping.candidateSymbols?.join('、') ?? '未确认',
         confidenceLabel(mapping.confidence),
         mapping.nodeIds.slice(0, 6).join('、'),
-        translateReason(mapping.reason),
+        mapping.nextAction,
       ]),
     ),
     '',
-    '### 字体 Token 锁定表',
-    '',
-    '_JSON 来源：`ui-build-plan.json#/themeMappings[*].lockToken`_',
-    '',
-    'P0 约束：`lockToken=true` 的字体必须直接使用目标 textStyle token；除非 plan 明确列出来源覆盖证据，不得再覆盖 `fontSize`、`fontWeight`、`height`、`fontFamily`。',
-    '',
-    ...renderTypographyLockTable(plan),
-    '',
-    '### 主题映射',
+    '### 来源样式事实与目标主题提示',
     '',
     ...renderThemeMappingGroups(plan),
     '',
     ...markdownTable(
-      ['类型', '来源', '值', '目标', '匹配', '置信度', '锁定'],
-      plan.themeMappings.slice(0, 40).map((mapping) => [
+      ['类型', '来源', '值', '事实来源', 'B 主题状态', '目标提示', '下一步'],
+      plan.stylePlan.facts.slice(0, 40).map((mapping) => [
         mapping.kind ?? 'style',
         mapping.source,
         codeCell(mapping.value),
-        mapping.target ?? '人工确认',
-        mapping.matchedBy ?? 'manual',
-        confidenceLabel(mapping.confidence),
-        mapping.lockToken ? `是；不得覆盖 ${mapping.doNotOverride?.join('、') || '字体核心字段'}` : '',
+        mapping.authority ?? 'source/runtime',
+        mapping.targetStatus ?? 'unresolved',
+        mapping.target ?? mapping.candidateTargets?.join('、') ?? '未确认',
+        mapping.nextAction ?? '',
       ]),
     ),
     '',
@@ -234,6 +233,31 @@ function renderReviewMarkdown(plan: UiBuildPlan): string {
     ),
     '',
   ].join('\n');
+}
+
+function renderIntegrationGuidance(plan: UiBuildPlan): string[] {
+  const guidance = plan.integrationGuidance;
+  const rows = [
+    ['模块', guidance.module],
+    ['路由/页面入口', guidance.route],
+    ['目标组件', guidance.components],
+    ['目标主题', guidance.theme],
+  ] as const;
+  return [
+    `- 总体状态：${guidance.status}`,
+    `- 原则：${guidance.rule}`,
+    '',
+    ...markdownTable(
+      ['维度', '状态', '置信度', '已选/候选', '下一步'],
+      rows.map(([label, item]) => [
+        label,
+        item.status,
+        confidenceLabel(item.confidence),
+        item.selected ?? (item.candidates.join('、') || '无'),
+        item.nextAction,
+      ]),
+    ),
+  ];
 }
 
 function renderImplementationIndex(plan: UiBuildPlan): string[] {
@@ -369,6 +393,8 @@ function themeMappingExamples(mappings: UiBuildPlan['themeMappings']): string {
 
 function renderArchitectureProfile(plan: UiBuildPlan): string[] {
   const profile = plan.targetConventions.architectureProfile;
+  const themeFamilies = plan.stylePlan.targetThemeGuidance.families;
+  const scopedComponents = plan.target.reusableComponents.map((component) => component.symbol);
   return [
     ...markdownTable(
       ['维度', '识别结果', '置信度', '来源'],
@@ -381,8 +407,8 @@ function renderArchitectureProfile(plan: UiBuildPlan): string[] {
         ['路由注册', profile.routing.registration?.pattern ?? 'unknown', confidenceLabel(profile.routing.registration?.confidence ?? 'low'), 'lib/app/routes/**/*.dart'],
         ['路由调用', profile.routing.navigation?.pattern ?? 'unknown', confidenceLabel(profile.routing.navigation?.confidence ?? 'low'), 'non-generated Dart usage'],
         ['i18n lookup', profile.i18n.lookup?.pattern ?? profile.i18n.pattern, confidenceLabel(profile.i18n.lookup?.confidence ?? profile.i18n.confidence), 'translations / Dart usage'],
-        ['主题', profile.theme.patterns.join('、') || 'unknown', confidenceLabel(profile.theme.confidence), 'module/common Dart usage'],
-        ['组件', profile.components.detectedSymbols.join('、') || '未识别', confidenceLabel(profile.components.confidence), 'common widgets / module usage'],
+        ['主题 family', themeFamilies.join('、') || 'unknown', confidenceLabel(profile.theme.confidence), 'current module / shared Dart usage；完整表达保留在 JSON'],
+        ['组件候选范围', scopedComponents.join('、') || '未识别', confidenceLabel(profile.components.confidence), 'current module / true shared directories'],
         ['文件组织', profile.fileOrganization.pattern, confidenceLabel(profile.fileOrganization.confidence), 'target Dart path structure'],
       ],
     ),

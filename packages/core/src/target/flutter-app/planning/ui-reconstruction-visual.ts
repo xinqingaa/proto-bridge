@@ -1474,30 +1474,46 @@ export function buildComponentMappings(evidence: PageCanonical, components: Flut
   const runtimeMappings = [...roles.entries()]
     .filter(([role]) => role !== 'unknown' && role !== 'text')
     .map(([role, nodeIds]) => {
-      const component = bestComponentForRole(role, components);
+      const candidates = componentCandidatesForRole(role, components);
+      const component = candidates[0];
+      const confirmed = isConfirmedTargetComponent(component, role);
       return {
         sourceRole: role,
         nodeIds: nodeIds.slice(0, 20),
-        ...(component ? { targetSymbol: component.symbol } : {}),
-        confidence: component?.confidence ?? 'low',
+        status: confirmed ? 'confirmed' : component ? 'candidate' : 'unresolved',
+        ...(confirmed && component ? { targetSymbol: component.symbol } : {}),
+        ...(candidates.length ? { candidateSymbols: candidates.slice(0, 3).map((item) => item.symbol) } : {}),
+        confidence: confirmed ? 'high' : component ? 'low' : 'low',
+        evidence: componentEvidence(component),
+        nextAction: confirmed
+          ? `Verify ${component?.symbol} props and visual defaults in B before reuse.`
+          : 'Keep the logical component boundary; inspect B common/shared widgets or implement a local widget if no exact visual/API match exists.',
         reason: component
-          ? `Evidence role ${role} can likely use ${component.symbol}.`
-          : `No clear target component was detected for evidence role ${role}; implement with local Widget and target theme.`,
-      };
+          ? `${component.symbol} is target evidence for role ${role}, but it is ${confirmed ? 'confirmed by definition and usage' : 'only a candidate'}; page reconstruction does not depend on this binding.`
+          : `No target component evidence was detected for role ${role}; keep it as a logical/local component until the implementation agent reads B.`,
+      } satisfies ComponentMapping;
     });
 
   const sourceMappings = sourceComponents(evidence)
     .map((component) => {
       const role = sourceComponentRole(component);
-      const targetComponent = bestComponentForRole(role, components);
+      const candidates = componentCandidatesForRole(role, components);
+      const targetComponent = candidates[0];
+      const confirmed = isConfirmedTargetComponent(targetComponent, role);
       return {
         sourceRole: role,
         nodeIds: [`source:${component.name}`],
-        ...(targetComponent ? { targetSymbol: targetComponent.symbol } : {}),
-        confidence: targetComponent?.confidence ?? 'medium',
+        status: confirmed ? 'confirmed' : targetComponent ? 'candidate' : 'unresolved',
+        ...(confirmed && targetComponent ? { targetSymbol: targetComponent.symbol } : {}),
+        ...(candidates.length ? { candidateSymbols: candidates.slice(0, 3).map((item) => item.symbol) } : {}),
+        confidence: confirmed ? 'high' : targetComponent ? 'low' : 'low',
+        evidence: componentEvidence(targetComponent),
+        nextAction: confirmed
+          ? `Verify ${targetComponent?.symbol} props and visual defaults in B before reuse.`
+          : 'Preserve this source-backed logical component and inspect B during implementation; do not bind from name similarity alone.',
         reason: targetComponent
-          ? `Source component ${component.name} (${component.role}) can likely use ${targetComponent.symbol}.`
-          : `Source component ${component.name} (${component.role}) should become a local widget unless target examples show a reusable component.`,
+          ? `Source component ${component.name} (${component.role}) has ${targetComponent.symbol} as ${confirmed ? 'confirmed target evidence' : 'an advisory candidate'}.`
+          : `Source component ${component.name} (${component.role}) remains a logical component because B has no proven reusable match.`,
       } satisfies ComponentMapping;
     });
 
@@ -1531,6 +1547,10 @@ function isLikelyTopAppBarNode(
 }
 
 export function bestComponentForRole(role: SnapshotNodeRole, components: FlutterComponentRef[]): FlutterComponentRef | undefined {
+  return componentCandidatesForRole(role, components)[0];
+}
+
+function componentCandidatesForRole(role: SnapshotNodeRole, components: FlutterComponentRef[]): FlutterComponentRef[] {
   const preferred: Partial<Record<SnapshotNodeRole, FlutterComponentRole[]>> = {
     'app-bar': ['app-bar'],
     button: ['button'],
@@ -1541,5 +1561,28 @@ export function bestComponentForRole(role: SnapshotNodeRole, components: Flutter
     'bottom-bar': ['button'],
   };
   const targetRoles = preferred[role] ?? [];
-  return components.find((component) => targetRoles.includes(component.role));
+  return components
+    .filter((component) => targetRoles.includes(component.role))
+    .sort((left, right) => componentEvidenceScore(right) - componentEvidenceScore(left) || left.symbol.localeCompare(right.symbol));
+}
+
+function componentEvidenceScore(component: FlutterComponentRef): number {
+  const projectDefined = component.path ? 40 : 0;
+  const shared = component.path && /\/(?:common|shared|design_system|ui|components?|widgets?)\//.test(component.path) ? 35 : 0;
+  const confidence = component.confidence === 'high' ? 20 : component.confidence === 'medium' ? 10 : 0;
+  const usage = Math.min(component.usageSnippets.length, 4) * 3;
+  return projectDefined + shared + confidence + usage;
+}
+
+function isConfirmedTargetComponent(component: FlutterComponentRef | undefined, role: SnapshotNodeRole): boolean {
+  if (role === 'modal') return false;
+  return Boolean(component?.path && component.confidence === 'high' && component.usageSnippets.length > 0);
+}
+
+function componentEvidence(component: FlutterComponentRef | undefined): string[] {
+  if (!component) return [];
+  return [
+    ...(component.path ? [`definition: ${component.path}`] : []),
+    ...component.usageSnippets.slice(0, 3),
+  ];
 }
