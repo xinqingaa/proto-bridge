@@ -3,7 +3,7 @@
 > 状态：已定稿
 > 范围：`examples/` 内原型工作台的定位、信息架构、技术栈与首期展示范围
 > 非目标：本文件不设计 Flutter 实现链路、PB 产物消费方式或跨端验收流程
-> 当前 PB 可识别的原型写法见 [source-conventions.md](./source-conventions.md)
+> 当前 PB 可识别的原型写法见 [conventions.md](./conventions.md)
 
 ---
 
@@ -106,7 +106,7 @@ iframe 内的 overlay 即使挂载到 `body`，仍被限制在原型运行时边
 
 工作台属于新建原型平台，应同时做到：
 
-1. 按 [source-conventions.md](./source-conventions.md) 使用清晰的 tag / class，保证当前 PB 可以直接识别；
+1. 按 [conventions.md](./conventions.md) 使用清晰的 tag / class，保证当前 PB 可以直接识别；
 2. 在关键结构和临时层上增加 `data-pb-role` / `data-pb-shell`，为未来显式协议保留稳定标记；
 3. 不假设当前 PB 已经读取 `data-pb-*`，当前还原质量仍以现有启发式链路验证。
 
@@ -157,7 +157,7 @@ iframe 内的 overlay 即使挂载到 `body`，仍被限制在原型运行时边
 
 ## 相关文档
 
-- [source-conventions.md](./source-conventions.md) — 当前可执行的原型 Source 约定
+- [conventions.md](./conventions.md) — 当前可执行的原型 Source 约定
 - [overview.md](./overview.md) — PB 能力、证据分层与适配器
 - [artifacts.md](./artifacts.md) — PB 产物字段与权威关系
 - [usage.md](./usage.md) — CLI / MCP / Core 用法

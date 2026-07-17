@@ -57,7 +57,7 @@ args = ["-y", "@proto-bridge/mcp-server"]
 | [docs/artifacts.md](docs/artifacts.md) | 产物权威链与字段契约 |
 | [docs/usage.md](docs/usage.md) | 配置、CLI / MCP / Core、开发脚本、npm 发布 |
 | [docs/design.md](docs/design.md) | 原型工作台：范围、Vue/Vuetify 栈、三栏与展示标准 |
-| [docs/source-conventions.md](docs/source-conventions.md) | 当前 Vue 原型的 class/tag 结构与弹层约定 |
+| [docs/conventions.md](docs/conventions.md) | 当前 Vue 原型的 class/tag 结构与弹层约定 |
 
 ## 工程规范（改本仓库）
 

@@ -4,7 +4,7 @@
 
 - 改 ProtoBridge：读本文 + `skills/proto-bridge`  
 - 产品是什么 / 产物字段 / 怎么调用：`docs/overview.md`、`docs/artifacts.md`、`docs/usage.md`  
-- 原型工作台与当前源码约定：`docs/design.md`、`docs/source-conventions.md`
+- 原型工作台与当前源码约定：`docs/design.md`、`docs/conventions.md`
 
 ProtoBridge 产出证据与实现契约；它不替代在目标 Flutter 工程里写代码的 agent。
 
@@ -62,7 +62,7 @@ ProtoBridge 产出证据与实现契约；它不替代在目标 Flutter 工程�
 | 入口参数 / 工作流 / 发布 | `docs/usage.md` |
 | 架构 / 扫描边界 / 包边界 / 适配器 | `docs/overview.md` |
 | 原型工作台定稿 | `docs/design.md` |
-| 原型 Source 约定 | `docs/source-conventions.md` |
+| 原型 Source 约定 | `docs/conventions.md` |
 | 本仓工作流 | 本文 + `skills/proto-bridge` |
 
 同一概念只在最合适处详述；README / AGENT / skill / docs 互相链接，不复制第二套说明书。
