@@ -2,7 +2,8 @@
 
 安装、配置、CLI / MCP / Core 接入、仓库开发脚本与 npm 发布。
 
-产品定位与架构见 [overview.md](overview.md)；产物字段见 [artifacts.md](artifacts.md)。
+产品定位与架构见 [overview.md](overview.md)；产物字段见 [artifacts.md](artifacts.md)。  
+示例工作台定稿见 [design.md](design.md)；原型写法约定见 [source-conventions.md](source-conventions.md)。
 
 ## 环境
 

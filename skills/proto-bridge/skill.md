@@ -10,7 +10,7 @@ description: Use when modifying the proto-bridge repository itself — core capa
 ## 必读顺序
 
 1. `AGENT.md` — 本仓库硬约束与验证矩阵  
-2. 相关产品文档：`docs/overview.md` / `docs/artifacts.md` / `docs/usage.md`  
+2. 相关产品文档：`docs/overview.md` / `docs/artifacts.md` / `docs/usage.md` / `docs/design.md` / `docs/source-conventions.md`  
 3. 本 skill — 落点与检查单  
 
 ## 代码地图
@@ -29,7 +29,7 @@ packages/core/src/
 
 packages/cli/                    # 命令与终端适配
 packages/mcp-server/             # MCP tools / resources / prompts
-docs/                            # 产品文档（overview / artifacts / usage）
+docs/                            # 产品文档（overview / artifacts / usage / design / source-conventions）
 skills/proto-bridge/             # 本 skill
 ```
 
@@ -60,7 +60,8 @@ skills/proto-bridge/             # 本 skill
 | CLI 参数 / 交互 | `packages/cli` | `docs/usage.md`、CLI usage 文案 |
 | MCP tools / prompts | `packages/mcp-server` | `docs/usage.md` |
 | Config schema | `packages/core/src/config` | `docs/usage.md`、example config |
-| 示例 harness | `scripts/example*.mjs`、`examples/` | `docs/usage.md`、example README |
+| 示例 harness | `scripts/example*.mjs`、`examples/` | `docs/usage.md`、example README、`docs/design.md` |
+| 原型识别约定 | source/runtime 启发式或契约标记 | **`docs/source-conventions.md`** |
 | 本仓工作流规范 | `AGENT.md`、本 skill | README 导航 |
 
 ## 改产物契约时
@@ -86,6 +87,7 @@ skills/proto-bridge/             # 本 skill
 | CLI / artifact 写出 | `pnpm run test:e2e:cli` |
 | MCP / validate | `pnpm run test:e2e:mcp` |
 | 示例 | `pnpm run example` / `example:dev` |
+| 示例工作台 / 原型约定文档 | 同步 `docs/design.md`、`docs/source-conventions.md` |
 
 不要提交：
 

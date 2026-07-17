@@ -140,3 +140,10 @@ Plan 或 review 出现明显遗漏时，回到 canonical 判断问题发生在�
 ## Validation result
 
 `validate_ui_build` 读取 target diff 与 plan，检查预期文件、允许路径、架构约定、Widget contract、占位实现、硬编码样式和导航风险。Target 架构未知时输出 warning 或人工确认，不把未知模式当作硬错误。
+
+## 相关文档
+
+- 原型结构 / 弹层约定（生产者规范）：[source-conventions.md](source-conventions.md)
+- 示例工作台定稿：[design.md](design.md)
+- 能力与适配器：[overview.md](overview.md)
+- 用法：[usage.md](usage.md)
