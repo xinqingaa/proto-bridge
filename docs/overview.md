@@ -131,4 +131,5 @@ packages/core/src/
 
 - 产物契约：[artifacts.md](artifacts.md)
 - 使用与集成：[usage.md](usage.md)
+- 自建工作台与技术选型：[workbench.md](workbench.md)
 - 改本仓库：根目录 `AGENT.md`、`skills/proto-bridge`

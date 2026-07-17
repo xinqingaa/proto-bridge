@@ -56,6 +56,7 @@ args = ["-y", "@proto-bridge/mcp-server"]
 | [docs/overview.md](docs/overview.md) | 定位、证据分层、扫描边界、包边界 |
 | [docs/artifacts.md](docs/artifacts.md) | 产物权威链与字段契约 |
 | [docs/usage.md](docs/usage.md) | 配置、CLI / MCP / Core、开发脚本、npm 发布 |
+| [docs/workbench.md](docs/workbench.md) | 自建工作台产品形态、契约与 React 选型 |
 
 ## 工程规范（改本仓库）
 
@@ -72,7 +73,7 @@ packages/
 ├── cli/           # 终端入口
 └── mcp-server/    # MCP server
 
-docs/              # overview · artifacts · usage
+docs/              # overview · artifacts · usage · workbench
 skills/            # proto-bridge 本仓开发规范
 examples/vue3-to-flutter/   # Vue3 source → Flutter target 示例
 ```
