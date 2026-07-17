@@ -73,7 +73,7 @@ source.analyze / runtime.capture / screenshot.attach / target.inspect
 | Source | `vue3-prototype`；通过 tag、class、title、模板指令与源码结构进行启发式分析 | 显式 `data-pb-*` 协议、`react-prototype` 与中立 Source IR 统一设计 |
 | Target | `flutter-app` | 按需增加其它 target |
 
-原型工作台的技术栈与首期范围见 [design.md](design.md)；当前 Vue 原型的结构 / 弹层约定见 [conventions.md](conventions.md)。工作台同时写入未来 `data-pb-*` 标记，但当前 Core 仍以 tag / class 启发式为准。显式属性协议与 React adapter 后续映射到同一套 section / uiShell 语义，而不是另起业务词表。
+原型工作台的技术栈与首期范围见 [design.md](design.md)；当前 Vue 原型的结构 / 弹层约定见 [conventions.md](conventions.md)。工作台按 design §19 **强制**写入 `data-pb-*` 标记，但当前 Core 仍以 tag / class 启发式为准。显式属性协议与 React adapter 后续映射到同一套 section / uiShell 语义，而不是另起业务词表。
 
 ## 通用规则与项目事实
 

@@ -118,17 +118,23 @@ Source 有 `chart` kind；runtime 不一定有独立 `chart` role。细节词表
 
 ## 6. 组件库映射（当前写法）
 
-本规范不规定使用哪个组件库。当前对接某库时，组件的 tag 或 class 必须能够命中 §3–4；具体写法放在工作台设计文档或 example README：
+本规范不规定使用哪个组件库。当前对接某库时，组件的 tag 或 class 必须能够命中 §3–4；**PBWork（Vue + Vuetify）的具体写法与强制 `data-pb-*` 见 [design.md §19 PB 源码约定](./design.md#19-pb-源码约定)**。
 
-| 约定角色 / shell | 选用组件 | 如何满足当前识别面 | 备注 |
-|------------------|----------|--------------------|------|
-| `app-bar` | （库组件名） | tag / class 如何命中 §3 | |
-| `sheet` | （库组件名） | tag、显隐绑定与 class 如何满足 §4.2 | 显隐状态名 |
-| … | … | … | |
+| 约定角色 / shell | 选用组件（PBWork） | 如何满足当前识别面 | 备注 |
+|------------------|--------------------|--------------------|------|
+| `app-bar` | `v-app-bar` 或顶栏根 | class 含 `app-bar` / `navbar` / `toolbar` | 同时写 `data-pb-role` + `data-pb-id` |
+| `tab-bar` | `v-tabs` 外层 | class 含 `tab-bar` / `section-tabs` | `data-pb-role="tab-bar"` |
+| `list` | `v-list` 或列表容器 | class 含 `list`；行在源码循环中 | 行节点写 `data-pb-id` |
+| `section` | `v-card` / 面板根 | class 含 `section` / `card` / `panel` | `data-pb-role="section"` |
+| `chart` | 图表容器 | class 含 `chart` / `trend` 等 | `data-pb-role="chart"` |
+| `bottom-bar` | 底部操作区 | class 含 `bottom-bar` / `bottom-actions` | `data-pb-role="bottom-bar"` |
+| `sheet` | `v-bottom-sheet` 内容根 | 显隐绑定 + class 含 `sheet` | `data-pb-shell="sheet"` |
+| `dialog` / `modal` | `v-dialog` 内容根 | 显隐绑定 + class 含 `dialog` / `modal` | `data-pb-shell` |
+| `drawer` | 临时侧滑层 | 显隐绑定 + class 含 `drawer` | `data-pb-shell="drawer"` |
 
 规则：换库只换映射方式，不改本文的角色与 shell 定义。
 
-工作台使用 Vue + Vuetify，并主动增加 `data-pb-role` / `data-pb-shell` 作为未来兼容标记；当前 Core 尚不读取这些属性，因此工作台仍必须同时满足 tag / class 启发式。写法见 [design.md](./design.md)“PB 源码约定”。
+工作台使用 Vue + Vuetify，并**强制**写入 `data-pb-id` / `data-pb-role` / `data-pb-shell`；当前 Core 尚不读取这些属性，因此工作台仍必须同时满足 tag / class 启发式。完整规则见 [design.md](./design.md)“PB 源码约定”。
 
 ---
 
@@ -136,7 +142,7 @@ Source 有 `chart` kind；runtime 不一定有独立 `chart` role。细节词表
 
 | 项 | 说明 |
 |----|------|
-| 显式 `data-pb-role` / `data-pb-shell` | 用稳定属性替代 tag / class 角色猜测；工作台提前写入，当前 Core 不依赖 |
+| 显式 `data-pb-role` / `data-pb-shell` | 用稳定属性替代 tag / class 角色猜测；**PBWork 已强制写入**（见 design §19），当前 Core 仍不依赖 |
 | `react-prototype` | 读取 React 源码并映射到本文同一角色表 |
 | 中立 Source IR | 统一承载 `sections / state / interactions / routes / lifecycle / uiShells / tokens` |
 

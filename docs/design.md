@@ -1,8 +1,9 @@
 # PBWork 原型工作台设计
 
-> 状态：已定稿
+> 状态：已定稿（补丁：注册表、Runtime URL、Bridge、PB 源码约定、首期里程碑）
 > 范围：PBWork 的产品结构、页面布局、运行时边界、交互方式与首期验收标准
 > 非目标：本文不设计 Flutter 实现链路、PB 产物消费流程或多人协作系统
+> 文档同步：`docs/usage.md` 与旧 example 路径仍可能滞后；Runtime URL 与源码约定以本文为准，usage 在删除旧 example 后另行同步
 
 PBWork 是使用 Vue 3 与 Vuetify 3 建设的原型平台。它集中展示设计基础、主题、组件和真实交互原型，并为 PB 提供独立、干净、可复现的原型 Runtime URL。
 
@@ -149,6 +150,13 @@ Vue 与 Vuetify 是 PBWork 的主要实现技术。JSON Schema 用于描述原�
 
 首期只有一个 Workspace，不显示 Workspace 切换器。当前 Prototype、Screen、Variant、设备和原型主题属于画布上下文，不放进全局顶栏。
 
+首期 stub（有入口、不阻塞主闭环）：
+
+| 入口 | 首期行为 |
+|------|----------|
+| 全局搜索 | 可按注册表 ID / 名称做本地过滤跳转；不做模糊语义搜索、不做跨仓库索引 |
+| 设置 | 仅工作台偏好（壳主题已在顶栏；可放“清除本地评论”等说明）；不做账号、远程同步或权限 |
+
 ---
 
 ## 6. 导航结构
@@ -185,13 +193,13 @@ Vue 与 Vuetify 是 PBWork 的主要实现技术。JSON Schema 用于描述原�
 
 原型
 ├── 全部原型
-├── 进行中
-├── 待确认
-├── 已定稿
-└── 已归档
+├── 进行中        # lifecycle: active
+├── 待确认        # lifecycle: review
+├── 已定稿        # lifecycle: final
+└── 已归档        # lifecycle: archived
 ```
 
-原型按生命周期分类，不按 UI、PM、DE、QA 等职责重复归档。职责作为原型元数据与筛选条件，可以用 `v-chip` 展示负责人和参与方。
+原型按生命周期分类，不按 UI、PM、DE、QA 等职责重复归档。职责作为原型元数据与筛选条件，可以用 `v-chip` 展示负责人和参与方。生命周期枚举与注册表字段见 §13。
 
 选中某个生命周期后，二级面板继续展示 Prototype → Screen → Variant 树：
 
@@ -247,7 +255,16 @@ Device Frame：CSS 手机外框与 viewport 尺寸
 iframe：真实 Prototype Runtime URL
 ```
 
-手机外框使用中性 CSS 视觉，不绑定具体品牌。默认 viewport 为 390 × 844，并提供若干常用设备尺寸。缩放只影响画板显示，不改变 iframe viewport。
+手机外框使用中性 CSS 视觉，不绑定具体品牌。默认 viewport 为 390 × 844。缩放只影响画板显示，不改变 iframe viewport。
+
+首期设备尺寸（宽 × 高）：
+
+| 预设 | Viewport |
+|------|----------|
+| iPhone 14（默认） | 390 × 844 |
+| iPhone SE | 375 × 667 |
+| Android 常见 | 360 × 800 |
+| iPhone 14 Pro Max | 430 × 932 |
 
 iframe 使 Vuetify overlay 即使挂载到 `body`，仍被限制在手机运行时内部，不会飞出工作台画布。
 
@@ -255,7 +272,7 @@ iframe 使 Vuetify overlay 即使挂载到 `body`，仍被限制在手机运行�
 
 ## 8. 工作台 URL 与 Runtime URL
 
-PBWork 必须使用两套明确分离的路由布局。
+PBWork 必须使用两套明确分离的路由布局。路由模式固定为 **Vue Router history**（非 hash）。开发服务器与部署都按 history fallback 配置；复制给 PB 的链接不得依赖 `#/`。
 
 ### 8.1 工作台路由
 
@@ -266,17 +283,33 @@ PBWork 必须使用两套明确分离的路由布局。
 /workbench/foundations/themes/:themeId
 /workbench/components/:componentId
 /workbench/prototypes/:prototypeId/screens/:screenId
+/workbench/prototypes/:prototypeId/screens/:screenId?variant=:variantId
 ```
 
 工作台路由会挂载顶栏、导航、画布、检查器和评论工具，不得作为 PB 的页面输入。
 
 ### 8.2 原型 Runtime 路由
 
-Runtime 路由只挂载原型页面和必要运行时能力：
+Runtime 路由只挂载原型页面和必要运行时能力。这是 PBWork 对浏览器、评审与 PB capture 的**对外契约**：
 
 ```text
 /prototype/:prototypeId/:screenId?variant=:variantId&theme=:themeId
 ```
+
+权威示例（路径与 query 语义以此为准；host/port 随本地或部署变化）：
+
+```text
+http://127.0.0.1:5173/prototype/asset/pnl-analysis?variant=default&theme=light
+http://127.0.0.1:5173/prototype/asset/holding-list?variant=empty&theme=dark
+```
+
+| 部分 | 规则 |
+|------|------|
+| `prototypeId` / `screenId` | 与注册表 ID 一致，稳定、可读、可进 PB `--route` |
+| `variant` | 可选；缺省时使用该 Screen 的 `defaultVariantId` |
+| `theme` | 可选；缺省时使用原型默认主题 |
+| 业务 query | Variant 可声明额外 `query`；复制链接时一并带上，且必须可由注册表复现 |
+| 禁止 | 工作台专用 query（如 `inspect=1`、`fullscreen=1`）不得出现在交给 PB 的 URL 上 |
 
 Runtime Layout 包含：
 
@@ -295,6 +328,8 @@ Runtime Layout 不包含：
 - 工作台壳主题。
 
 iframe `src`、全屏预览、复制原型链接和 PB capture 必须使用同一个 Runtime URL。不得通过在工作台 URL 上增加 `fullscreen=1` 并隐藏工作台 DOM 的方式模拟纯原型页面。
+
+PB 侧用法约定：`--url` 指向完整 Runtime URL；`--route` 使用 `/prototype/:prototypeId/:screenId`（可带与注册表一致的 query）。具体 CLI 文案以日后同步的 `usage.md` 为准。
 
 ---
 
@@ -338,13 +373,34 @@ Component Playground 使用原型主题体系，可以在 Playground 内独立�
 
 ## 11. Runtime Bridge 与元素选择
 
-PBWork 与 iframe 通过轻量 Runtime Bridge 通信。即使首期同源，也使用 `postMessage` 保持工作台与原型运行时边界清晰。
+Runtime Bridge 只服务 **PBWork 壳 ↔ 原型 iframe** 的通信。它不是 PB Core / CLI / MCP 的通道；PB 只打开或 capture 同一个纯 Runtime URL，不经过 Bridge。
 
-### 11.1 消息方向
+即使首期同源，也使用 `postMessage` 保持工作台与原型运行时边界清晰。高亮层、尺寸标注与选择遮罩实现在 **Runtime Layout 内**，由 Bridge 指令开关；不得由工作台向任意第三方页面注入脚本。
+
+### 11.1 消息信封
+
+所有消息使用同一信封：
+
+```ts
+type BridgeEnvelope<TType extends string, TPayload> = {
+  source: 'pbwork' | 'pbwork-runtime'
+  protocolVersion: 1
+  type: TType
+  requestId?: string
+  prototypeId: string
+  screenId: string
+  variantId?: string
+  payload: TPayload
+}
+```
+
+PBWork 只接受：`source === 'pbwork-runtime'`、`protocolVersion` 匹配、origin 在允许列表、且 `prototypeId` / `screenId` / `variantId` 与当前 iframe 上下文一致的消息。
+
+### 11.2 消息方向与最小类型
 
 ```text
 Prototype iframe
-  ready / hover / select / route / state
+  ready / hover / select / clear-select / route / state
                 ↓ postMessage
 PBWork
   更新工具状态、选中对象和右侧检查面板
@@ -355,18 +411,33 @@ PBWork
 Prototype iframe
 ```
 
-消息必须包含来源标识、协议版本、prototypeId、screenId 和 variantId；PBWork 只接受来自当前 iframe 与允许 origin 的消息。
+| type | 方向 | 用途 |
+|------|------|------|
+| `ready` | runtime → workbench | iframe 可交互；携带当前 route、variant、theme |
+| `hover` | runtime → workbench | 悬停元素摘要（可选 bbox） |
+| `select` | runtime → workbench | 锁定元素：tag/class/text/bbox/path、`data-pb-*`、语义父节点 |
+| `clear-select` | runtime → workbench | 选择已清除 |
+| `route` / `state` | runtime → workbench | 页内导航或可序列化状态变化（用于检查面板摘要） |
+| `inspect-mode` | workbench → runtime | 开关选择模式；开启时拦截点击，不触发页面业务 |
+| `comment-mode` | workbench → runtime | 开关评论落点模式；与 inspect 互斥 |
+| `highlight` | workbench → runtime | 按 `data-pb-id` 或临时 handle 高亮/清除 |
+| `theme` / `variant` | workbench → runtime | 切换主题或 Variant；成功后 runtime 回 `ready` 或 `state` |
+| `reload` | workbench → runtime | 要求 runtime 按当前 URL 重载（也可由工作台直接重设 iframe `src`） |
 
-### 11.2 选择行为
+握手：工作台在 iframe `load` 后等待 `ready`；超时则提示刷新，不把过期消息写入检查面板。iframe 重载后必须重新 `ready`，旧 `requestId` 作废。
 
-1. 进入“选择元素”模式；
+### 11.3 选择行为
+
+1. 进入“选择元素”模式（关闭评论模式）；
 2. hover 元素时在 iframe 内显示高亮边框和尺寸；
-3. 点击后锁定元素；
+3. 点击后锁定元素，**不向页面业务处理器传递该次点击**；
 4. Runtime Bridge 返回元素信息和最近的语义父节点；
 5. 右侧检查面板切换到选中元素；
-6. `Esc` 清除选择。
+6. `Esc` 或再次点击空白/工具退出时清除选择。
 
-普通 DOM 可以被选择；带稳定标记的组件或区块提供更完整信息。工作台新建组件和关键页面区块应提供 `data-pb-id`，并按当前约定同时保留可被 PB 识别的 tag/class。`data-pb-role` / `data-pb-shell` 作为未来兼容标记写入，但当前 PB Core 不依赖这些属性。
+拖动画布模式下不向 iframe 发送指针事件用于选择。退出 inspect / comment 后，页面恢复正常交互。
+
+普通 DOM 可以被选择；带稳定标记的组件或区块提供更完整信息。标记与识别面要求见 [§19 PB 源码约定](#19-pb-源码约定)。
 
 ---
 
@@ -414,11 +485,44 @@ Prototype iframe
 
 ---
 
-## 13. Variant
+## 13. 注册表与 Variant
 
-Variant 默认由源码注册，工作台只负责切换和展示。每个 Variant 至少包含：
+导航树、Runtime URL、检查面板、Playground 写回与复制链接共用同一注册源，不得各写一份硬编码列表。
+
+### 13.1 唯一注册源
+
+| 资源 | 注册位置（约定） |
+|------|------------------|
+| Prototype / Screen / Variant | `prototypes/registry.ts` + 各原型 `metadata.ts` |
+| Component | `design-system/components` 注册表 |
+| Theme / Token | `design-system/themes`、`design-system/tokens` |
+
+工作台启动时加载注册表；高级写入成功后必须刷新注册表再更新预览。
+
+### 13.2 最小 schema
 
 ```ts
+type PrototypeLifecycle = 'active' | 'review' | 'final' | 'archived'
+
+type PrototypeRecord = {
+  id: string
+  label: string
+  lifecycle: PrototypeLifecycle
+  owners?: string[]
+  roles?: string[] // 参与职责，仅元数据与筛选，不作导航轴
+  defaultThemeId?: string
+  screens: ScreenRecord[]
+}
+
+type ScreenRecord = {
+  id: string
+  label: string
+  route: string // 与 Runtime path 对齐，如 /prototype/asset/pnl-analysis
+  entry: string // Vue SFC 相对路径
+  defaultVariantId: string
+  variants: PrototypeVariant[]
+}
+
 type PrototypeVariant = {
   id: string
   label: string
@@ -427,13 +531,28 @@ type PrototypeVariant = {
   query?: Record<string, string>
   fixture?: string
 }
+
+type ComponentRecord = {
+  id: string
+  label: string
+  category: 'basic' | 'complex'
+  entry: string
+  schema?: string // 复杂组件 JSON Schema 路径；首期仅描述 Props/State，不作页面渲染器
+  example?: Record<string, unknown>
+}
 ```
 
-典型 Variant 包括默认态、加载中、空态、错误态、指定 Tab、Sheet 打开和 Dialog 打开。
+二级导航的生命周期中文标签对应：`active` 进行中、`review` 待确认、`final` 已定稿、`archived` 已归档。
+
+### 13.3 Variant 行为
+
+Variant 默认由源码注册，工作台只负责切换和展示。典型 Variant 包括默认态、加载中、空态、错误态、指定 Tab、Sheet 打开和 Dialog 打开。
 
 页面仍可正常交互，但临时交互状态不会自动成为正式 Variant。“高级操作 → 保存为新 Variant”会读取当前可序列化状态，要求填写 ID、名称和说明，并在二次确认弹框中显示目标注册表、状态摘要与 diff。确认后才写入源码。
 
 工作台不得保存业务上无法恢复或无法序列化的状态；写入后必须能够通过 Runtime URL 独立打开。
+
+JSON Schema 首期只用于复杂组件 Props / State 描述与 Playground 校验，以及后续与 Flutter 共享定义的预备；**不**用 Schema 驱动整页渲染，也不等同于 PB 产物。
 
 ---
 
@@ -465,6 +584,12 @@ type LocalComment = {
 3. 保存时 bbox 作为视觉回退。
 
 元素找不到时，评论仍保留在评论列表，并标记为“定位失效”。评论支持新增、编辑、完成、重新打开和删除。清除浏览器数据会删除全部评论，界面应明确提示这一限制。
+
+按当前 Prototype / Screen 列出评论；切换 Variant 或原型 Theme 时：
+
+- 默认仍显示该 Screen 下全部评论；
+- 可用筛选只看当前 `variantId` / `themeId`；
+- 定位时优先匹配当前 Variant 下仍存在的 `data-pb-id`，否则标记定位失效而不删除。
 
 ---
 
@@ -502,33 +627,42 @@ type LocalComment = {
 
 本地服务可以提供“生成预览 patch”和“确认应用 patch”两个阶段的接口，确认令牌短时有效且只能使用一次。
 
+白名单示例（实现可收紧，不得放宽到仓库任意路径）：
+
+- 允许：`design-system/**/*.{ts,vue,json}`、`prototypes/**/*.{ts,vue,json}`
+- 拒绝：仓库根配置、`packages/**`、任意绝对路径、客户端传入的 shell
+
 ---
 
 ## 16. 推荐目录结构
 
+PBWork 作为本仓库内独立前端应用存在（建议路径 `apps/pbwork/` 或等价目录），**不**依赖即将删除的旧 example 原型树。Source adapter 与 capture 只消费该应用的 `prototypes/` 与 Runtime URL。
+
 ```text
-prototype/src/
-├── app/                    # Router、Pinia、Vuetify 入口
-├── workbench/              # PBWork 壳
-│   ├── layout/
-│   ├── navigation/
-│   ├── canvas/
-│   ├── inspector/
-│   ├── comments/
-│   └── source-actions/
-├── runtime/                # 纯原型 Layout 与 Runtime Bridge
-├── design-system/
-│   ├── tokens/
-│   ├── themes/
-│   ├── components/
-│   └── schemas/
-└── prototypes/
-    ├── registry.ts
-    └── <prototype>/
-        ├── screens/
-        ├── variants/
-        ├── fixtures/
-        └── metadata.ts
+apps/pbwork/   # 或仓库约定的等价根
+├── package.json
+└── src/
+    ├── app/                    # Router、Pinia、Vuetify 入口
+    ├── workbench/              # PBWork 壳
+    │   ├── layout/
+    │   ├── navigation/
+    │   ├── canvas/
+    │   ├── inspector/
+    │   ├── comments/
+    │   └── source-actions/
+    ├── runtime/                # 纯原型 Layout 与 Runtime Bridge
+    ├── design-system/
+    │   ├── tokens/
+    │   ├── themes/
+    │   ├── components/
+    │   └── schemas/
+    └── prototypes/
+        ├── registry.ts
+        └── <prototype>/
+            ├── screens/
+            ├── variants/
+            ├── fixtures/
+            └── metadata.ts
 ```
 
 推荐 Pinia store：
@@ -542,9 +676,26 @@ prototype/src/
 
 ---
 
-## 17. 首期验收标准
+## 17. 首期里程碑
 
-### 17.1 工作台结构
+按依赖顺序交付；后一阶段不阻塞前一阶段的可演示验收。
+
+| 阶段 | 目标 | 完成标准（摘要） |
+|------|------|------------------|
+| M1 壳与双路由 | 工作台布局 + Runtime Layout 分离 | 工作台 URL 与 Runtime URL 可分别打开；Runtime 无壳 DOM |
+| M2 注册表与导航 | Foundations / 组件 / 原型树 | 注册表驱动二级导航；至少一套多页原型可点选 |
+| M3 画布与设备 | 单手机 iframe 画板 | 缩放、拖动、适应、设备切换、主题与 Variant 切换、复制 Runtime URL |
+| M4 Bridge 与检查 | 选择元素 + 右侧检查 | inspect 模式、选中信息、`data-pb-*` 展示 |
+| M5 评论 | 本地评论 | 新增/完成/删除/刷新仍在/定位失效 |
+| M6 高级写入 | 开发环境写回 | Playground 更新示例与保存 Variant：diff + 二次确认 + 白名单 |
+
+全局搜索与设置按 §5 stub 实现即可，不单独占里程碑。
+
+---
+
+## 18. 首期验收标准
+
+### 18.1 工作台结构
 
 - 平台名称显示为 PBWork；
 - 顶栏、三栏内容结构和右侧检查面板布局稳定；
@@ -552,31 +703,31 @@ prototype/src/
 - 二级导航可折叠，原型可按生命周期过滤；
 - 1280px 及以上桌面窗口可正常使用。
 
-### 17.2 设计系统与组件
+### 18.2 设计系统与组件
 
 - Token 与 Theme 有完整视觉样本；
 - 工作台壳和原型主题可以独立切换；
 - 至少展示一组基础组件和一个复杂组件；
 - Playground 可以临时调参、重置，并完成一次受控源码更新预览。
 
-### 17.3 原型与画布
+### 18.3 原型与画布
 
 - 至少一套多页面原型；
 - 至少一个 Screen 包含两个以上源码注册 Variant；
 - 单手机画板支持缩放、拖动、适应画布和设备切换；
 - iframe overlay 不越过手机运行时边界；
-- 全屏与复制链接使用当前 iframe Runtime URL；
+- 全屏与复制链接使用当前 iframe Runtime URL（history，含 variant/theme）；
 - 将复制出的 URL 直接交给 PB 时，不包含任何工作台 DOM。
 
-### 17.4 检查与评论
+### 18.4 检查与评论
 
 - 选择模式可以 hover、选中和清除元素；
-- 右侧显示结构、样式和 PB 识别信息；
+- 右侧显示结构、样式和 PB 识别信息（含强制写入的 `data-pb-*`）；
 - 评论可以按元素保存、重新定位、完成和删除；
 - 刷新后本地评论仍存在；
 - 元素失效时评论不会丢失，并显示定位失效状态。
 
-### 17.5 高级操作
+### 18.5 高级操作
 
 - 默认浏览和 Playground 操作不修改源码；
 - 更新组件示例和保存 Variant 都必须显示 diff 并二次确认；
@@ -585,9 +736,58 @@ prototype/src/
 
 ---
 
-## 18. 后续方向
+## 19. PB 源码约定
 
-- 显式 `data-pb-*` 协议与 React source adapter；
+本节是 PBWork 作为 Vue / Vuetify 生产者的写法规范，与 [conventions.md](./conventions.md) 的角色 / shell 语义对齐。当前 PB Core **不读取** `data-pb-*`，但仍要求工作台源码强制写入，以便检查面板、评论锚点与未来显式协议无缝衔接；**同时**必须满足当前 tag / class 启发式，否则今天的 `source.analyze` / runtime 识别会失败。
+
+### 19.1 强制标记
+
+| 属性 | 谁必须写 | 值 |
+|------|----------|-----|
+| `data-pb-id` | 新建组件根、页面关键区块、列表行模板根、可评论的主要节点 | 稳定、页面内唯一，如 `pnl.summary`、`holding-list.row` |
+| `data-pb-role` | 逻辑区块根（对应 conventions section kind / 派生角色） | 如 `app-bar`、`list`、`section`、`tab-bar`、`bottom-bar`、`chart` |
+| `data-pb-shell` | Overlay / 临时层根 | `sheet` / `dialog` / `modal` / `drawer`（与 conventions shell kind 一致） |
+
+规则：
+
+1. 能被检查或评论的节点优先保证 `data-pb-id`；
+2. 区块根同时写 `data-pb-role`；shell 根同时写 `data-pb-shell`；
+3. 不发明 Core 角色表以外的业务词表；
+4. 属性是补充，**不能替代** tag / class / 显隐绑定等当前识别面。
+
+### 19.2 Vuetify → 当前识别面
+
+换库只换映射；角色与 shell 含义仍以 conventions 为准。
+
+| 约定 | Vuetify / 写法 | 如何命中当前启发式 | 同时写入 |
+|------|----------------|--------------------|----------|
+| `app-bar` | `v-app-bar` 或页面顶栏根 | 根节点 class 含 `app-bar`（或 `navbar` / `toolbar`） | `data-pb-role="app-bar"` + `data-pb-id` |
+| `tab-bar` | `v-tabs` / 分段控件外层 | class 含 `tab-bar` 或 `section-tabs` | `data-pb-role="tab-bar"` |
+| `list` | `v-list` 或列表容器 | class 含 `list`；行数据在源码循环中可见 | 容器 `data-pb-role="list"`；行 `data-pb-id` |
+| `section` | `v-card` / 面板根 | class 含 `section` / `card` / `panel` | `data-pb-role="section"` |
+| `chart` | 图表容器 | class 含 `chart` / `trend` 等 | `data-pb-role="chart"` |
+| `bottom-bar` | 底部操作区 | class 含 `bottom-bar` / `bottom-actions` | `data-pb-role="bottom-bar"` |
+| `sheet` | `v-bottom-sheet` 内容根 | `v-model` / `v-if` 显隐 + class 含 `sheet`（或标签名以 sheet 结尾） | `data-pb-shell="sheet"` |
+| `dialog` / `modal` | `v-dialog` 内容根 | 显隐绑定 + class 含 `dialog` / `modal` | `data-pb-shell="dialog"` 或 `modal` |
+| `drawer` | `v-navigation-drawer`（临时层场景） | 显隐绑定 + class 含 `drawer` | `data-pb-shell="drawer"` |
+
+Shell 显隐状态名建议 `*Open` / `*Visible` / `show*`，并与业务态字段分开。
+
+### 19.3 检查面板一致性
+
+选中元素的「PB」Tab 应同时显示：
+
+- 当前启发式推断的 role / shell（若有）；
+- 节点上的 `data-pb-id` / `data-pb-role` / `data-pb-shell`；
+- 不一致时的提示（例如 class 像 list 但缺少 `data-pb-role`）。
+
+首期只提示，不阻断预览；新建源码的 code review / 高级写入校验应尽量拒绝缺少关键 `data-pb-id` 的区块根。
+
+---
+
+## 20. 后续方向
+
+- 显式 `data-pb-*` 协议被 Core 正式消费，与 React source adapter、中立 Source IR 统一设计；
 - Flutter 共享主题、基础组件和复杂组件定义；
 - PB 产物在真实生产页面跟进中的使用方式；
 - 多人共享评论、在线状态和评审流程；
@@ -595,4 +795,4 @@ prototype/src/
 - 拖拽编排、版本历史、发布与回滚；
 - 跨端运行页面的视觉与交互验收。
 
-当前 PB 的 class/tag 约定以 [conventions.md](./conventions.md) 为准；PBWork 只需在新源码中同时预留未来 `data-pb-*` 标记。
+当前 PB 的 class/tag 约定以 [conventions.md](./conventions.md) 为准；PBWork 按 §19 强制预留 `data-pb-*`，并保持 tag / class 识别面可用。
