@@ -70,7 +70,7 @@ PBWork 默认是展示与检查工具。只有用户主动进入高级操作并�
 | 原型运行时 | 独立 Router Layout + iframe |
 | 手机外框 | CSS 绘制，不依赖图片 |
 | 本地评论 | `localStorage` |
-| 组件描述 | TypeScript 注册表 + JSON Schema Draft 2020-12；使用 Ajv 校验复杂组件 Props / State |
+| 组件描述 | TypeScript 注册表 + JSON Schema Draft 2020-12；使用 Ajv 校验 Token、Theme、组件 Contract 与 Playground 输入 |
 | 高级源码写入 | 仅开发环境启用的本地 Vite/Node 服务 |
 | 类型与格式 | `vue-tsc` + Prettier |
 | 测试 | Vitest + Vue Test Utils；仅工作台与 Runtime 闭环使用 Playwright |
@@ -300,8 +300,8 @@ PBWork 必须使用两套明确分离的路由布局。路由模式固定为 **V
 /workbench/foundations/tokens/colors
 /workbench/foundations/themes/:themeId
 /workbench/components/:componentId
-/workbench/prototypes/:prototypeId/screens/:screenId
-/workbench/prototypes/:prototypeId/screens/:screenId?variant=:variantId&theme=:themeId
+/workbench/prototypes/:prototypeId/screens/:screenSlug
+/workbench/prototypes/:prototypeId/screens/:screenSlug?variant=:variantId&theme=:themeId
 ```
 
 工作台路由会挂载顶栏、导航、画布、检查器和评论工具，不得作为 PB 的页面输入。
@@ -311,7 +311,7 @@ PBWork 必须使用两套明确分离的路由布局。路由模式固定为 **V
 Runtime 路由只挂载原型页面和必要运行时能力。这是 PBWork 对浏览器、评审与 PB capture 的**对外契约**：
 
 ```text
-/prototype/:prototypeId/:screenId?variant=:variantId&theme=:themeId
+/prototype/:prototypeId/:screenSlug?variant=:variantId&theme=:themeId
 ```
 
 权威示例（路径与 query 语义以此为准；host/port 随本地或部署变化）：
@@ -323,7 +323,8 @@ http://127.0.0.1:5173/prototype/project/task-detail?variant=sheet-open&theme=dar
 
 | 部分 | 规则 |
 |------|------|
-| `prototypeId` / `screenId` | 与注册表 ID 一致，稳定、可读、可进 PB `--route` |
+| `prototypeId` / `screenSlug` | 与注册表字段一致；二者共同定位 Screen，稳定、可读、可进 PB `--route` |
+| `screenId` | 不进入 URL；全局 Contract ID，如 `project.task-list`，供 PB、Bridge、评论和检查器使用 |
 | `variant` | 可选；缺省时使用该 Screen 的 `defaultVariantId` |
 | `theme` | 可选；缺省时使用原型默认主题 |
 | 业务 query | Variant 可声明额外 `query`；复制链接时一并带上，且必须可由注册表复现 |
@@ -347,7 +348,7 @@ Runtime Layout 不包含：
 
 iframe `src`、全屏预览、复制原型链接和 PB capture 必须使用同一个 Runtime URL。不得通过在工作台 URL 上增加 `fullscreen=1` 并隐藏工作台 DOM 的方式模拟纯原型页面。
 
-PB 侧用法约定：`--url` 指向完整 Runtime URL；`--route` 使用 `/prototype/:prototypeId/:screenId`（可带与注册表一致的 query）。具体 CLI 文案以日后同步的 `usage.md` 为准。
+PB 侧用法约定：`--url` 指向完整 Runtime URL；`--route` 使用 `/prototype/:prototypeId/:screenSlug`（可带与注册表一致的 query）。具体 CLI 文案以日后同步的 `usage.md` 为准。
 
 ### 8.3 URL 状态权威
 
@@ -415,16 +416,18 @@ Runtime Bridge 只服务 **PBWork 壳 ↔ 原型 iframe** 的通信。它不是 
 type BridgeEnvelope<TType extends string, TPayload> = {
   source: 'pbwork' | 'pbwork-runtime'
   protocolVersion: 1
+  runtimeId: string
   type: TType
   requestId?: string
   prototypeId: string
   screenId: string
   variantId?: string
+  themeId: string
   payload: TPayload
 }
 ```
 
-PBWork 只接受：`source === 'pbwork-runtime'`、`protocolVersion` 匹配、origin 在允许列表、且 `prototypeId` / `screenId` / `variantId` 与当前 iframe 上下文一致的消息。
+每次 iframe `load` 都生成新的 `runtimeId`。PBWork 只接受：`event.source === iframe.contentWindow`、`source === 'pbwork-runtime'`、`protocolVersion` 匹配、origin 在允许列表，且 `runtimeId`、`prototypeId`、`screenId`、`variantId`、`themeId` 与当前 iframe 上下文一致的消息。
 
 ### 11.2 消息方向与最小类型
 
@@ -436,13 +439,14 @@ PBWork
   更新工具状态、选中对象和右侧检查面板
 
 PBWork
-  inspect-mode / comment-mode / highlight / reload
+  init / inspect-mode / comment-mode / highlight / reload
                 ↓ postMessage
 Prototype iframe
 ```
 
 | type | 方向 | 用途 |
 |------|------|------|
+| `init` | workbench → runtime | iframe load 后下发本次 `runtimeId` 与当前 URL 上下文，启动握手 |
 | `ready` | runtime → workbench | iframe 可交互；携带当前 route、variant、theme |
 | `hover` | runtime → workbench | 悬停元素摘要（可选 bbox） |
 | `select` | runtime → workbench | 锁定元素：tag/class/text/bbox/path、`data-pb-*`、语义父节点 |
@@ -453,7 +457,7 @@ Prototype iframe
 | `highlight` | workbench → runtime | 按 `data-pb-id` 或临时 handle 高亮/清除 |
 | `reload` | workbench → runtime | 要求 runtime 按当前 URL 重载（也可由工作台直接重设 iframe `src`） |
 
-握手：工作台在 iframe `load` 后等待 `ready`；超时则提示刷新，不把过期消息写入检查面板。iframe 重载后必须重新 `ready`，旧 `requestId` 作废。
+握手：工作台在 iframe `load` 后创建 `runtimeId`，向当前 `contentWindow` 发送 `init`，Runtime 保存该 ID 并返回携带同一 ID 的 `ready`；超时则提示刷新，不把过期消息写入检查面板。Runtime 在收到 `init` 前不得发送选择或状态消息。iframe 重载后必须重新握手，旧 `runtimeId` 与 `requestId` 全部作废。
 
 ### 11.3 选择行为
 
@@ -561,12 +565,13 @@ type PrototypeRecord = {
   lifecycle: PrototypeLifecycle
   owners?: string[]
   roles?: string[] // 参与职责，仅元数据与筛选，不作导航轴
-  defaultThemeId?: string
+  defaultThemeId: string
 }
 
 type ScreenRecord = {
   prototypeId: string
-  screenId: string
+  screenId: string // 全局 Contract ID，如 project.task-list
+  screenSlug: string // Prototype 内 URL 段，如 task-list
   label: string
   title?: string
   path: string // Runtime path，如 /prototype/project/task-list
@@ -618,19 +623,30 @@ type ComponentRecord = {
   controls: PlaygroundControl[] // 显式声明控件；Schema 只负责校验
 }
 
+type ComponentContract = {
+  schemaVersion: 1
+  id: string
+  category: 'basic' | 'complex'
+  props: Record<string, unknown> // JSON Schema property definitions
+  states: string[]
+  slots: string[]
+  events: string[]
+  tokenBindings: Record<string, string> // semantic slot -> Token ID
+}
+
 export const prototypes = [] satisfies PrototypeRecord[]
 export const prototypeScreens = [] satisfies ScreenRecord[]
 ```
 
-Token、Theme 和可共享组件契约必须保持 JSON 可序列化，并分别通过 `schemas/token.schema.json`、`schemas/theme.schema.json`、`schemas/component.schema.json` 校验；TypeScript 类型由同一字段契约维护，不允许出现只存在于 UI store 的第二套定义。Theme JSON 必须转换为 Vuetify `ThemeDefinition`，保证 Token 样本、Playground 和 Runtime 使用同一套主题值。Playground 按 `controls` 渲染明确控件，JSON Schema 只校验输入，不生成通用表单。
+Token、Theme 和 `ComponentContract` 必须保持 JSON 可序列化，并分别通过 `schemas/token.schema.json`、`schemas/theme.schema.json`、`schemas/component.schema.json` 校验。共享 JSON Contract 是跨端权威；`ComponentRecord.view` 和 `controls` 只描述 PBWork 的 Vue 实现与 Playground，不得进入跨端 Contract。TypeScript 类型由同一字段契约维护，不允许出现只存在于 UI store 的第二套定义。Theme JSON 必须转换为 Vuetify `ThemeDefinition`，保证 Token 样本、Playground 和 Runtime 使用同一套主题值。Playground 按 `controls` 渲染明确控件，JSON Schema 只校验输入，不生成通用表单。
 
-Vue Router 与组件预览使用 `import.meta.glob` 建立静态模块映射，再通过 `view` 查找唯一 SFC。Screen 的 `view` 固定写为 `<prototypeId>/screens/<File>.vue`，例如 `project/screens/TaskList.vue`。当前 adapter 使用 TypeScript AST 静态读取导出的数组，支持类型标注、`satisfies` 和 `as const`，但禁止函数调用、展开语法和其他动态表达式，也不会执行注册表源码。精确路径无匹配时才允许唯一 basename 回退；多文件同名必须报错。启动校验必须拒绝：重复 ID/path、未知 prototypeId、缺失默认 Variant、`view` 无匹配或匹配多个文件、未知 Theme、非法 query 值。
+Vue Router 与组件预览使用 `import.meta.glob` 建立静态模块映射，再通过 `view` 查找唯一 SFC。Screen 的 `view` 固定写为 `<prototypeId>/screens/<File>.vue`，例如 `project/screens/TaskList.vue`。当前 adapter 使用 TypeScript AST 静态读取导出的数组，支持类型标注、`satisfies` 和 `as const`，但禁止函数调用、展开语法和其他动态表达式，也不会执行注册表源码。存在 `prototypeScreens` 时 adapter 只消费该数组；没有时才遍历其他导出数组，兼容现有项目。精确路径无匹配时才允许唯一 basename 回退；多文件同名必须报错。启动校验必须拒绝：重复 ID/path、同一 Prototype 内重复 screenSlug、`screenId !== ${prototypeId}.${screenSlug}`、`path !== /prototype/${prototypeId}/${screenSlug}`、未知 prototypeId、缺失默认 Variant、`view` 无匹配或匹配多个文件、未知或缺失默认 Theme、保留 query 被写入 Variant `query`、非法业务 query 值。
 
 二级导航的生命周期中文标签对应：`active` 进行中、`review` 待确认、`final` 已定稿、`archived` 已归档。
 
 ### 13.3 Variant 行为
 
-Variant 默认由源码注册，工作台只负责切换和展示。典型 Variant 包括默认态、加载中、空态、错误态、指定 Tab、Sheet 打开和 Dialog 打开。
+Variant 默认由源码注册，工作台只负责切换和展示。典型 Variant 包括默认态、加载中、空态、错误态、指定 Tab、Sheet 打开和 Dialog 打开。`variant` 与 `theme` 是 Runtime 保留 query，不得重复写入 `PrototypeVariant.query`；该字段只保存额外业务参数。`fixture` 固定为相对当前 Prototype 目录的路径，如 `fixtures/empty.json`。
 
 页面仍可正常交互，但临时交互状态不会自动成为正式 Variant。“高级操作 → 保存为新 Variant”会读取当前可序列化状态，要求填写 ID、名称和说明，并在二次确认弹框中显示目标注册表、状态摘要与 diff。确认后才写入源码。
 
@@ -699,7 +715,7 @@ type LocalComment = {
 ### 15.1 支持操作
 
 - `update-component-example`：只更新 `src/design-system/components/registry.ts` 中目标组件的 `example` / `defaultProps` 静态字段，不修改组件 `.vue` 实现；
-- `create-variant`：创建 `src/prototypes/<prototypeId>/fixtures/<variantId>.json`，并向 `src/prototypes/registry.ts` 的目标 Screen 追加 Variant；两个文件必须原子写入。
+- `create-variant`：创建 `src/prototypes/<prototypeId>/fixtures/<variantId>.json`，并向 `src/prototypes/registry.ts` 的目标 Screen 追加 `{ id, ..., fixture: 'fixtures/<variantId>.json' }`；两个文件必须原子写入。
 
 ### 15.2 确认流程
 

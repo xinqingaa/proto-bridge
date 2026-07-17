@@ -1,9 +1,9 @@
 <template>
-  <main class="task-page">
-    <header class="app-bar"><h1>任务列表</h1></header>
-    <section class="summary-card"><strong>3</strong><span>待处理任务</span></section>
-    <section class="task-list">
-      <article v-for="task in tasks" :key="task.id" class="task-card">
+  <main class="task-page" data-pb-id="task-list.page">
+    <header class="app-bar" data-pb-id="task-list.app-bar" data-pb-role="app-bar"><h1>任务列表</h1></header>
+    <section class="summary-card" data-pb-id="task-list.summary" data-pb-role="section"><strong>3</strong><span>待处理任务</span></section>
+    <section class="task-list" data-pb-id="task-list.items" data-pb-role="list">
+      <article v-for="task in tasks" :key="task.id" class="task-card" :data-pb-id="`task-list.row.${task.id}`">
         <h2>{{ task.title }}</h2>
         <p>{{ task.status }}</p>
       </article>

@@ -4,6 +4,7 @@ export type ScreenConfig = {
   prototypeId?: string | undefined;
   key?: string | undefined;
   screenId?: string | undefined;
+  screenSlug?: string | undefined;
   name?: string | undefined;
   path?: string | undefined;
   label?: string | undefined;

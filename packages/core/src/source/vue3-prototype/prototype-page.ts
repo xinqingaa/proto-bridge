@@ -11,7 +11,7 @@ import {
   resolveFrom,
   toPosixPath,
 } from '../../shared/paths.js';
-import { parseStaticExportedArrays } from './js-literal.js';
+import { parseStaticExportedArrays, type StaticExportParseResult } from './js-literal.js';
 import { analyzeVueSfc } from './vue-sfc.js';
 import type {
   AnalyzePrototypePageInput,
@@ -127,20 +127,57 @@ async function loadScreenEntries(prototypeRoot: string, warnings: string[]): Pro
     ignore: ['**/node_modules/**', '**/dist/**', '**/build/**'],
   });
 
+  const parsedFiles: Array<{
+    configPath: string;
+    text: string;
+    parsed: StaticExportParseResult;
+  }> = [];
+
   for (const configPath of configFiles.sort()) {
     const filePath = path.join(prototypeRoot, configPath);
     const text = await readTextIfExists(filePath);
     if (!text || !/\bpath\s*:/.test(text)) continue;
-    collectVueRouterEntries(text, configPath, entries);
     const parsed = parseStaticExportedArrays(text, configPath);
-    warnings.push(...parsed.warnings);
-    for (const exported of parsed.arrays) {
+    parsedFiles.push({ configPath, text, parsed });
+  }
+
+  const authoritativeDeclarations = parsedFiles.flatMap((file) =>
+    file.parsed.arrayNames
+      .filter((name) => name === 'prototypeScreens')
+      .map(() => file),
+  );
+  if (authoritativeDeclarations.length > 1) {
+    throw new Error([
+      'Multiple prototypeScreens registries were found. Keep exactly one authoritative page registry:',
+      ...authoritativeDeclarations.map((file) => `  - ${file.configPath}`),
+    ].join('\n'));
+  }
+
+  if (authoritativeDeclarations[0]) {
+    const file = authoritativeDeclarations[0];
+    warnings.push(...file.parsed.issues
+      .filter((issue) => issue.name === 'prototypeScreens')
+      .map((issue) => issue.message));
+    for (const exported of file.parsed.arrays.filter((item) => item.name === 'prototypeScreens')) {
       collectScreens(
-        inferPageTypeFromVue(configPath),
+        inferPageTypeFromVue(file.configPath),
         exported.value as ModuleConfig[],
         entries,
-        toPosixPath(configPath),
+        toPosixPath(file.configPath),
       );
+    }
+  } else {
+    for (const file of parsedFiles) {
+      collectVueRouterEntries(file.text, file.configPath, entries);
+      warnings.push(...file.parsed.warnings);
+      for (const exported of file.parsed.arrays) {
+        collectScreens(
+          inferPageTypeFromVue(file.configPath),
+          exported.value as ModuleConfig[],
+          entries,
+          toPosixPath(file.configPath),
+        );
+      }
     }
   }
   if (entries.length === 0) warnings.push('No statically evaluable page registry was detected; provide a Vue file or runtime URL when route-to-component resolution is unavailable.');

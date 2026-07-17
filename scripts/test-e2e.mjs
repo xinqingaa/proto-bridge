@@ -186,6 +186,18 @@ async function requireArtifacts(files, contract) {
   if (!canonical.merge?.selectedCapabilities?.includes('page.merge')) throw new Error('page-canonical.json must include page.merge.');
   if (contract.requireSourceFacts && !canonical.sourceFacts) throw new Error('page-canonical.json must include sourceFacts.');
   if (!contract.requireSourceFacts && canonical.sourceFacts) throw new Error('page-canonical.json should not include sourceFacts.');
+  if (contract.requireSourceFacts) {
+    const screen = canonical.sourceFacts?.analysis?.config;
+    if (screen?.screenId !== 'project.task-list' || screen?.screenSlug !== 'task-list') {
+      throw new Error('Source fixture must preserve global screenId and URL screenSlug separately.');
+    }
+    if (screen?.variants?.some((variant) => variant.query?.variant !== undefined || variant.query?.theme !== undefined)) {
+      throw new Error('Variant business query must not duplicate reserved variant/theme URL parameters.');
+    }
+    if (screen?.variants?.find((variant) => variant.id === 'empty')?.fixture !== 'fixtures/empty.json') {
+      throw new Error('Variant fixture must be relative to its prototype directory.');
+    }
+  }
   if (contract.requireTargetFacts && !canonical.targetFacts) throw new Error('page-canonical.json must include targetFacts.');
   if (!contract.requireTargetFacts && canonical.targetFacts) throw new Error('page-canonical.json should not include targetFacts.');
   if (contract.requireRuntimeFacts && !canonical.runtimeFacts) throw new Error('page-canonical.json must include runtimeFacts.');

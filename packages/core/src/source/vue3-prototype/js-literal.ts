@@ -5,8 +5,15 @@ export type StaticExportedArray = {
   value: unknown[];
 };
 
+export type StaticExportParseIssue = {
+  name: string;
+  message: string;
+};
+
 export type StaticExportParseResult = {
   arrays: StaticExportedArray[];
+  arrayNames: string[];
+  issues: StaticExportParseIssue[];
   warnings: string[];
 };
 
@@ -29,7 +36,8 @@ export function parseStaticExportedArrays(
     scriptKindFor(fileName),
   );
   const arrays: StaticExportedArray[] = [];
-  const warnings: string[] = [];
+  const arrayNames: string[] = [];
+  const issues: StaticExportParseIssue[] = [];
 
   for (const statement of sourceFile.statements) {
     if (!ts.isVariableStatement(statement) || !hasExportModifier(statement)) continue;
@@ -39,18 +47,22 @@ export function parseStaticExportedArrays(
       if (!ts.isIdentifier(declaration.name) || !declaration.initializer) continue;
       const initializer = unwrapExpression(declaration.initializer);
       if (!ts.isArrayLiteralExpression(initializer)) continue;
+      arrayNames.push(declaration.name.text);
 
       try {
         const value = evaluateStaticExpression(initializer, sourceFile, 0);
         if (Array.isArray(value)) arrays.push({ name: declaration.name.text, value });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        warnings.push(`Unable to statically parse ${fileName}#${declaration.name.text}: ${message}`);
+        issues.push({
+          name: declaration.name.text,
+          message: `Unable to statically parse ${fileName}#${declaration.name.text}: ${message}`,
+        });
       }
     }
   }
 
-  return { arrays, warnings };
+  return { arrays, arrayNames, issues, warnings: issues.map((issue) => issue.message) };
 }
 
 function evaluateStaticExpression(
