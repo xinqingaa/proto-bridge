@@ -70,10 +70,10 @@ source.analyze / runtime.capture / screenshot.attach / target.inspect
 
 | 方向 | 当前 | 后续 |
 |------|------|------|
-| Source | `vue3-prototype`（主路径；示例工作台与之对齐） | `react-prototype` + 中立 IR（扩展记录，不挡本期 example） |
+| Source | `vue3-prototype`；通过 tag、class、title、模板指令与源码结构进行启发式分析 | 显式 `data-pb-*` 协议、`react-prototype` 与中立 Source IR 统一设计 |
 | Target | `flutter-app` | 按需增加其它 target |
 
-示例工作台的技术栈与视觉定稿见 [design.md](design.md)（含 Vuetify → 约定映射附录）；框架无关的原型结构 / 弹层约定见 [source-conventions.md](source-conventions.md)。角色表跨框架共用，React adapter 应映射到同一套 section / uiShell 语义，而不是另起业务词表。
+原型工作台的技术栈与首期范围见 [design.md](design.md)；当前 Vue 原型的结构 / 弹层约定见 [source-conventions.md](source-conventions.md)。工作台同时写入未来 `data-pb-*` 标记，但当前 Core 仍以 tag / class 启发式为准。显式属性协议与 React adapter 后续映射到同一套 section / uiShell 语义，而不是另起业务词表。
 
 ## 通用规则与项目事实
 
@@ -138,6 +138,6 @@ packages/core/src/
 
 - 产物契约：[artifacts.md](artifacts.md)
 - 使用与集成：[usage.md](usage.md)
-- 示例工作台设计定稿：[design.md](design.md)
+- 原型工作台设计定稿：[design.md](design.md)
 - 原型 Source 约定：[source-conventions.md](source-conventions.md)
 - 改本仓库：根目录 `AGENT.md`、`skills/proto-bridge`

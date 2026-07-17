@@ -1,159 +1,163 @@
-# 示例工作台设计定稿
+# 原型工作台设计定稿
 
-> 状态：已定稿  
-> 范围：`examples/` 内可演示工作台的定位、视觉、技术栈与演示范围  
-> 非目标：不替代 [overview.md](./overview.md) / [artifacts.md](./artifacts.md) / [usage.md](./usage.md)  
-> 原型写法约定见 [source-conventions.md](./source-conventions.md)
+> 状态：已定稿
+> 范围：`examples/` 内原型工作台的定位、信息架构、技术栈与首期展示范围
+> 非目标：本文件不设计 Flutter 实现链路、PB 产物消费方式或跨端验收流程
+> 当前 PB 可识别的原型写法见 [source-conventions.md](./source-conventions.md)
 
 ---
 
 ## 1. 定位
 
-在 `examples/` 里做一套**可演示的工作台核心**：用约定好的交互原型对接 ProtoBridge（PB），跑通「编排 → 预览/变体 → 导出产物 → 对照 Flutter 落地」全流程。
+在 `examples/` 内建设一套可运行的**原型工作台**。工作台也是原型平台本身，用来集中展示和维护设计基础、组件与真实交互页面。
 
-- **可以少**：不做完整 SaaS（权限、多租户、协作后端、低代码画布等）。  
-- **必须精**：三栏壳、手机框原型、状态变体、PB 导出与审查入口都要能演示。  
-- **落点**：扩展现有 `examples/vue3-to-flutter/`（或同目录增壳），**不**新建顶层 `workbench/` 仓或目录产品线。
+工作台首期回答四个问题：
 
-```text
-设计系统 / Vuetify 组件
-    ↓ 编排（真源码原型）
-可交互手机原型（含 Variant）
-    ↓ 工作台：预览 / 选中 / 变体 / 截图
-    ↓ source + URL
-ProtoBridge
-    ↓
-page-canonical / ui-build-plan / ui-build-review
-    ↓
-Agent 按 Flutter target 约定实现与校验
-```
+1. 当前有哪些 Token 与主题；
+2. 当前有哪些基础组件与复杂组件；
+3. 一套业务原型包含哪些页面和状态变体；
+4. 组件或页面是否满足原型平台自身的契约与 PB 当前可识别的源码约定。
 
-分工：
+工作台不是低代码页面生成器。原型页面使用真实 Vue 源码编写，业务交互、状态和路由也保留在正常的 Vue 工程中。
 
-| 角色 | 负责 |
-|------|------|
-| 工作台（example） | 按约定产出可解析原型；触发 / 展示 PB |
-| PB | 采集 → 合并 → 规划 → 审查 |
-| 实现 Agent | 读产物，在 target Flutter 工程里写代码 |
+长期工作流中，原型平台领先建设主题、组件与页面；Flutter 使用共享的设计系统定义实现生产组件和页面；PB 提供比组件 Schema 更完整的页面源码、运行态、视觉与目标工程上下文。该链路不属于工作台首期展示范围。
 
 ---
 
-## 2. 视觉与产品原则
+## 2. 首期范围
 
-| 项 | 定稿 |
-|----|------|
-| 设计语言 | **Material Design**（Google 系） |
-| 明确告别 | 国区 H5 / Vant 默认脸；不为「像现网 App」牺牲栈统一 |
-| 原型原则 | 规范先于自由：只用可被 PB 稳定识别的结构（见 source-conventions） |
-| PB 原则 | PB **不承诺**任意原型完美还原；工作台 **承诺**按约定产出可解析原型 |
+### 必做
 
-超出约定的 UI：降级为 runtime 视觉证据 + 人工确认，不靠扩张 PB 启发式。
+| 能力 | 首期要求 |
+|------|----------|
+| 三栏工作台 | 左侧资源导航、中央预览画布、右侧检查面板 |
+| Tokens | 展示颜色、字体、间距、圆角等设计基础 |
+| Themes | 至少展示一套完整主题及其 Token 使用 |
+| Components | 展示基础组件和复杂组件，并提供独立 Playground |
+| Prototypes | 展示业务原型列表、页面列表与页面预览 |
+| Screens | 每个页面有稳定身份、路由与源码入口 |
+| Variants | 同一页面可以切换并恢复不同业务状态 |
+| 手机预览 | 使用手机外框承载真实原型运行时，支持缩放和设备尺寸切换 |
+| 契约检查 | 展示当前对象的组件信息、Props/State、Token 使用、Schema 错误与 PB 标记 |
+
+### 不做
+
+- Flutter 页面实现、Flutter 预览或跨端截图对照；
+- PB generate / reconstruct 的页面内触发和产物浏览；
+- Agent 实现、代码安装或目标工程验证；
+- JSON 驱动的页面渲染引擎；
+- 重型拖拽低代码画布；
+- 权限、多租户、评论协作后端。
+
+以上能力在真实工作流程明确后另行设计，不影响工作台建设。
 
 ---
 
-## 3. 技术栈（锁定）
+## 3. 技术栈
 
 | 层 | 选择 |
 |----|------|
 | 框架 | Vue 3 + Vite + Vue Router + Pinia |
-| UI | **Vuetify 3**（工作台壳 + 手机框内原型**同一库**） |
-| 手机框 | 外框自研；原型优先 **iframe**，或 overlay **contained**（禁止 sheet/dialog teleport 飞出手机框） |
-| 与 PB | 现有 `source: vue3-prototype`，本期**不改** Core 也能边搭边验 |
-| 备选退路 | 若框内交互/观感明显不够，再评估 **仅框内**换 Vant；壳仍可留 Vuetify。默认不走这条 |
+| UI | Vuetify 3 |
+| 工作台壳 | Vue + Vuetify |
+| 组件 Playground | Vue + Vuetify，展示平台组件的真实参考实现 |
+| 原型页面 | 真实 Vue 源码，优先使用平台组件与 Vuetify |
+| 手机预览 | 自研外框 + iframe |
+| 设计系统描述 | Token、Theme 与组件元数据；复杂组件可使用 JSON Schema 描述数据、Props 与状态契约 |
 
-不采用：React 本期主路径、shadcn/MUI、桌面壳与手机原型混用两套 UI 库（除非触发退路）。
+Vue 和 Vuetify 是原型平台的主要实现技术。组件元数据或 JSON Schema 不替代 Vue 页面源码，也不等同于 PB 产物。
+
+iframe 内的 overlay 即使挂载到 `body`，仍被限制在原型运行时边界内，因此首期不建设额外的 contained overlay 体系。
 
 ---
 
-## 4. 信息架构（三栏）
+## 4. 信息架构
 
 ```text
-┌─────────────┬──────────────────────────────┬─────────────┐
-│ 左侧导航    │ 中央画布                     │ 右侧工具    │
-│             │                              │             │
-│ · 设计系统  │  手机外框 + 原型运行时        │ · 选中/检查 │
-│ · 组件库    │  （可缩放、多机型尺寸）       │ · 截图      │
-│ · 原型列表  │                              │ · 状态/变体 │
-│ · 页面树    │                              │ · PB 导出   │
-│ · Token     │                              │ ·（评论可极简）│
-└─────────────┴──────────────────────────────┴─────────────┘
+┌────────────────┬─────────────────────────┬──────────────────┐
+│ 资源导航       │ 预览画布                │ 契约检查         │
+│                │                         │                  │
+│ · Tokens       │ 组件 Playground         │ · Contract ID    │
+│ · Themes       │ 或手机页面预览          │ · Props / State  │
+│ · Components   │                         │ · Parts          │
+│ · Prototypes   │                         │ · data-pb 标记   │
+│ · Screens      │                         │ · Schema 错误    │
+│ · Variants     │                         │ · Token 使用     │
+└────────────────┴─────────────────────────┴──────────────────┘
 ```
 
-同一 example 内：壳、组件预览、原型运行时统一 Vue + Vuetify。
-
-### 对象模型（必做）
+### 对象模型
 
 | 对象 | 含义 |
 |------|------|
-| Design tokens | 色、字、间距等（可先薄） |
-| Prototype | 一套业务原型（路由 + 多页）= `source.root` |
-| Screen / Page | 一个路由页 |
-| **Variant / State** | 同页业务态（空态、Tab、Sheet 开合…），支撑多次 capture |
-| Export Job | 触发 PB generate / reconstruct，展示 review / artifacts |
-
-### 编排策略
-
-- **先做**：真 Vue 源码原型 + 预览壳 + 变体切换 + PB Bridge。  
-- **不做（本期）**：纯 JSON 渲染引擎、重型拖拽低代码、独立协作后端。
+| Token | 颜色、字体、间距、圆角等最小设计值 |
+| Theme | 一组有语义的 Token 组合 |
+| Component | 基础组件或复杂组件的参考实现与元数据 |
+| Component Schema | 复杂组件的数据、Props、状态与组成描述；不承担页面渲染 |
+| Prototype | 一套包含多页面和多状态的业务原型 |
+| Screen / Page | 有稳定 ID、route 和源码入口的真实页面 |
+| Variant / State | 同页的空态、Tab、筛选、弹层开合等可恢复业务状态 |
 
 ---
 
-## 5. 演示清单（少而精）
+## 5. PB 源码约定
 
-| 能力 | 最低演示标准 |
-|------|----------------|
-| 三栏壳 | 左选原型/页，中见手机框，右切变体并导出 |
-| 约定组件页 | 至少 1 简单列表页 + 1 含 Tab/Sheet 的复杂页 |
-| Variant | 同一复杂页可切换 ≥2 态并分别出 PB 产物 |
-| PB Bridge | 一键或脚本触发；能打开 `ui-build-review.md` / plan |
-| Flutter 对照 | 沿用 example target；能对照预览（现有 `_proto` 路径即可） |
+当前 PB Core 使用 tag、class、title、模板指令和源码结构进行启发式分析。真实项目没有 `data-pb-*` 标记，现阶段不要求迁移，也不改变 Core 的现有识别规则。
+
+工作台属于新建原型平台，应同时做到：
+
+1. 按 [source-conventions.md](./source-conventions.md) 使用清晰的 tag / class，保证当前 PB 可以直接识别；
+2. 在关键结构和临时层上增加 `data-pb-role` / `data-pb-shell`，为未来显式协议保留稳定标记；
+3. 不假设当前 PB 已经读取 `data-pb-*`，当前还原质量仍以现有启发式链路验证。
+
+示例：
+
+```vue
+<v-app-bar class="app-bar" data-pb-role="app-bar" />
+
+<v-list class="holding-list" data-pb-role="list" />
+
+<v-bottom-sheet
+  v-model="filterSheetOpen"
+  class="filter-sheet"
+  data-pb-shell="sheet"
+/>
+```
+
+`data-pb-*` 与 React source adapter 属于同一阶段的后续 source 能力：未来由不同框架共享显式角色与 shell 协议，并映射到 PB 已有的 sections / overlays 语义。该方向不阻塞工作台首期建设。
 
 ---
 
-## 6. 绿灯田与现网
+## 6. 首期展示标准
 
-现网同类工作台（如 Element 壳 + Vant 手机）只提供产品直觉，**代码与资产不可用**。本 example 自建规范与实现，不 fork 现网。
-
----
-
-## 7. 后续（记录，不挡本期）
-
-| 项 | 说明 |
-|----|------|
-| React source adapter | 见 [overview.md](./overview.md)「适配器」；中立 IR + `react-prototype` 为后续增强 |
-| `data-pb-*` 稳定标记 | 见 [source-conventions.md](./source-conventions.md)；增强项，非开工前置 |
-| Token ↔ Flutter 硬映射表 | 首期不做；PB 保留 style facts，实现侧读 target |
-| 分仓独立工作台产品 | 不做；价值验证成功后再议 |
+| 能力 | 最低标准 |
+|------|----------|
+| 工作台壳 | 三栏可用，导航、画布与检查面板状态联动 |
+| 设计基础 | Token 与 Theme 页面可以直观看到最终视觉 |
+| 组件库 | 同时展示基础组件与至少一个复杂组件 |
+| Playground | 可修改代表性 Props / State 并看到组件变化 |
+| 原型 | 至少一套多页面业务原型 |
+| Variant | 至少一个复杂页面具有两个以上可恢复状态 |
+| 手机画布 | iframe 中运行真实路由页面，支持尺寸与缩放 |
+| 约定验证 | 工作台源码同时具备当前启发式识别面和未来 `data-pb-*` 标记 |
 
 ---
 
-## 附录：Vuetify → source-conventions 映射
+## 7. 后续 source 能力
 
-通用角色与 shell 定义见 [source-conventions.md](./source-conventions.md)。下表仅说明**本期用 Vuetify 3 如何满足该约定**；换库时替换本附录，不改约定正文。
+工作台首期完成后，再统一评估以下 source 能力，不在当前阶段拆成零散兼容改造：
 
-| 约定角色 / shell | Vuetify 组件 | 如何满足识别面 | 备注 |
-|------------------|--------------|----------------|------|
-| `app-bar` | `v-app-bar` | 标签名含 `app-bar` | |
-| `tab-bar` | `v-tabs` / `v-tab` | 含 `tab` | |
-| `list` | `v-list` / `v-list-item` | 含 `list`；行数据在源码中可分析 | |
-| `bottom-bar` | `v-bottom-navigation` 或底栏布局 | 必要时补 `bottom-bar` / `bottom-actions` class | |
-| `section` / 卡片 | `v-card` / `v-sheet` | 含 `card` / `sheet` 块级语义 | |
-| `sheet` | `v-bottom-sheet` + 显隐绑定 | 标签名以 `sheet` 结尾 | 状态名建议 `*Open` |
-| `dialog` / `modal` | `v-dialog` + 显隐绑定 | 标签名以 `dialog` 结尾 | |
-| `drawer`（临时层） | `v-navigation-drawer`（temporary） | 标签名含 `drawer` | 按页需要 |
-
-**手机框（实现约束，非 source 语义）**：原型优先放在 **iframe**，或强制 overlay **contained**，避免 `v-dialog` / `v-bottom-sheet` teleport 到 `body` 后飞出画布。
-
-**退路**：若仅框内改 Vant，另写一张「Vant → source-conventions」表（可包一层满足 §4 的契约组件）；壳仍可留 Vuetify。
-
-无组件库时的 class 参考写法见 source-conventions 附录 A.4 与现有 `examples/vue3-to-flutter/source-vue3`。
+| 能力 | 目标 |
+|------|------|
+| 显式 `data-pb-*` 协议 | 用稳定属性替代 tag / class 角色猜测，同时保留现有 sections / overlays 语义 |
+| React source adapter | 读取 React 源码，并映射到与 Vue 相同的中立语义 |
+| 中立 Source IR | 统一承载 sections、state、interactions、routes、lifecycle、uiShells 与 tokens |
 
 ---
 
 ## 相关文档
 
-- [source-conventions.md](./source-conventions.md) — 框架无关的原型结构 / 弹层约定  
-- [overview.md](./overview.md) — PB 能力与适配器  
-- [artifacts.md](./artifacts.md) — 产物字段  
-- [usage.md](./usage.md) — CLI / MCP  
-- [examples/vue3-to-flutter/README.md](../examples/vue3-to-flutter/README.md) — 现有示例 harness  
+- [source-conventions.md](./source-conventions.md) — 当前可执行的原型 Source 约定
+- [overview.md](./overview.md) — PB 能力、证据分层与适配器
+- [artifacts.md](./artifacts.md) — PB 产物字段与权威关系
+- [usage.md](./usage.md) — CLI / MCP / Core 用法

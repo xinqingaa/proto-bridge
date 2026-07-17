@@ -56,8 +56,8 @@ args = ["-y", "@proto-bridge/mcp-server"]
 | [docs/overview.md](docs/overview.md) | 定位、证据分层、扫描边界、包边界、适配器 |
 | [docs/artifacts.md](docs/artifacts.md) | 产物权威链与字段契约 |
 | [docs/usage.md](docs/usage.md) | 配置、CLI / MCP / Core、开发脚本、npm 发布 |
-| [docs/design.md](docs/design.md) | 示例工作台：视觉、Vuetify 栈、三栏、库映射附录 |
-| [docs/source-conventions.md](docs/source-conventions.md) | 框架无关的原型结构 / 弹层约定 |
+| [docs/design.md](docs/design.md) | 原型工作台：范围、Vue/Vuetify 栈、三栏与展示标准 |
+| [docs/source-conventions.md](docs/source-conventions.md) | 当前 Vue 原型的 class/tag 结构与弹层约定 |
 
 ## 工程规范（改本仓库）
 

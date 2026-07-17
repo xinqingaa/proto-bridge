@@ -61,7 +61,7 @@ skills/proto-bridge/             # 本 skill
 | MCP tools / prompts | `packages/mcp-server` | `docs/usage.md` |
 | Config schema | `packages/core/src/config` | `docs/usage.md`、example config |
 | 示例 harness | `scripts/example*.mjs`、`examples/` | `docs/usage.md`、example README、`docs/design.md` |
-| 原型识别约定 | source/runtime 启发式或契约标记 | **`docs/source-conventions.md`** |
+| 原型识别约定 | 当前 source/runtime 启发式或未来契约标记 | **`docs/source-conventions.md`**、`docs/design.md` |
 | 本仓工作流规范 | `AGENT.md`、本 skill | README 导航 |
 
 ## 改产物契约时
@@ -87,7 +87,7 @@ skills/proto-bridge/             # 本 skill
 | CLI / artifact 写出 | `pnpm run test:e2e:cli` |
 | MCP / validate | `pnpm run test:e2e:mcp` |
 | 示例 | `pnpm run example` / `example:dev` |
-| 示例工作台 / 原型约定文档 | 同步 `docs/design.md`、`docs/source-conventions.md` |
+| 原型工作台 / Source 约定文档 | 同步 `docs/design.md`、`docs/source-conventions.md` |
 
 不要提交：
 

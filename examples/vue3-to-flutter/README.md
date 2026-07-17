@@ -219,4 +219,4 @@ pnpm run generate -- \
 | ![Prototype complex](screenshots/prototype-complex.png) | ![Flutter complex](screenshots/flutter-complex.png) |
 
 产品文档见仓库根目录 `docs/overview.md`、`docs/artifacts.md`、`docs/usage.md`。  
-示例工作台与原型约定见 `docs/design.md`、`docs/source-conventions.md`。
+原型工作台规划见 `docs/design.md`；当前 example 的源码写法约定见 `docs/source-conventions.md`。

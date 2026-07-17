@@ -144,6 +144,6 @@ Plan 或 review 出现明显遗漏时，回到 canonical 判断问题发生在�
 ## 相关文档
 
 - 原型结构 / 弹层约定（生产者规范）：[source-conventions.md](source-conventions.md)
-- 示例工作台定稿：[design.md](design.md)
+- 原型工作台定稿：[design.md](design.md)
 - 能力与适配器：[overview.md](overview.md)
 - 用法：[usage.md](usage.md)
