@@ -29,7 +29,7 @@ packages/core/src/
 
 packages/cli/                    # 命令与终端适配
 packages/mcp-server/             # MCP tools / resources / prompts
-docs/                            # 产品文档（overview / artifacts / usage / design / source-conventions）
+docs/                            # 产品文档（overview / artifacts / usage / design / conventions）
 skills/proto-bridge/             # 本 skill
 ```
 
@@ -60,7 +60,7 @@ skills/proto-bridge/             # 本 skill
 | CLI 参数 / 交互 | `packages/cli` | `docs/usage.md`、CLI usage 文案 |
 | MCP tools / prompts | `packages/mcp-server` | `docs/usage.md` |
 | Config schema | `packages/core/src/config` | `docs/usage.md`、example config |
-| 示例 harness | `scripts/example*.mjs`、`examples/` | `docs/usage.md`、example README、`docs/design.md` |
+| PBWork 原型工作台 | `apps/pbwork/` | `docs/design.md` |
 | 原型识别约定 | 当前 source/runtime 启发式或未来契约标记 | **`docs/conventions.md`**、`docs/design.md` |
 | 本仓工作流规范 | `AGENT.md`、本 skill | README 导航 |
 
@@ -86,17 +86,11 @@ skills/proto-bridge/             # 本 skill
 | config | `pnpm run test:config` |
 | CLI / artifact 写出 | `pnpm run test:e2e:cli` |
 | MCP / validate | `pnpm run test:e2e:mcp` |
-| 示例 | `pnpm run example` / `example:dev` |
 | 原型工作台 / Source 约定文档 | 同步 `docs/design.md`、`docs/conventions.md` |
 
 不要提交：
 
 ```text
 output/
-examples/*/output/
-examples/vue3-to-flutter/target-flutter/lib/main_proto.dart
-examples/vue3-to-flutter/target-flutter/lib/app/app_proto.dart
-examples/vue3-to-flutter/target-flutter/lib/app/routes/app_pages_proto.dart
-examples/vue3-to-flutter/target-flutter/lib/app/modules/**/_proto/
 Flutter build/、.dart_tool/
 ```

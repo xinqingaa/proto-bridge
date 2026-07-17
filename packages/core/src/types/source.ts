@@ -1,6 +1,7 @@
 import type { PageType } from './common.js';
 
 export type ScreenConfig = {
+  prototypeId?: string | undefined;
   key?: string | undefined;
   screenId?: string | undefined;
   name?: string | undefined;

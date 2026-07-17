@@ -28,7 +28,7 @@ pnpm install
 pnpm run build
 ```
 
-内置示例优先看 [examples/vue3-to-flutter/README.md](../examples/vue3-to-flutter/README.md)。
+仓库不再维护内置 example；本地契约验证使用 `tests/fixtures/`，PBWork 的实现目标见 [design.md](design.md)。
 
 ## 配置
 
@@ -242,35 +242,13 @@ const result = await validateUiCapability({
 | `pnpm run lint` | 当前等同 typecheck |
 | `pnpm run dev` | CLI 源码开发入口 |
 | `pnpm run generate -- ...` | 构建后跑本地 `proto-bridge generate` |
-| `pnpm run example` | 生成示例 artifacts 与 Flutter `_proto` 页 |
-| `pnpm run example:clean` | 清理示例生成物 |
-| `pnpm run example:dev` | Vue 原型 + Flutter Web 预览 |
-| `pnpm run example:android` | Flutter target 到 Android |
-| `pnpm run test:config` | config 解析测试 |
-| `pnpm run test:e2e:cli` | CLI artifacts 契约 |
-| `pnpm run test:e2e:mcp` | MCP 协议与 tools |
-| `pnpm run test:e2e` | CLI + MCP |
+| `pnpm run test` | Core 必要单元测试 |
+| `pnpm run test:config` | Core config 解析测试 |
+| `pnpm run test:e2e:cli` | CLI hybrid artifacts 冒烟 |
+| `pnpm run test:e2e:mcp` | MCP hybrid 协议与 validation 冒烟 |
+| `pnpm run test:e2e` | CLI + MCP hybrid 冒烟 |
 
-`pnpm run example` 是体验 harness，不是「自动生成生产 Dart」的产品定义。生成路径默认 gitignore：
-
-```text
-examples/vue3-to-flutter/output/
-examples/vue3-to-flutter/target-flutter/lib/main_proto.dart
-examples/vue3-to-flutter/target-flutter/lib/app/app_proto.dart
-examples/vue3-to-flutter/target-flutter/lib/app/routes/app_pages_proto.dart
-examples/vue3-to-flutter/target-flutter/lib/app/modules/**/_proto/
-```
-
-推荐体验顺序：
-
-```bash
-pnpm run example
-pnpm run example:dev
-```
-
-Vue：`http://127.0.0.1:5173/`；Flutter Web：`http://127.0.0.1:5599/`（端口占用时顺延，以终端为准）。
-
-e2e 默认 url / sourceRoot / targetRoot 可用参数覆盖，见根 `package.json` 与 `scripts/test-e2e.mjs`。
+e2e 默认使用 `tests/fixtures/`；`url`、`sourceRoot`、`targetRoot` 可用参数覆盖，见根 `package.json` 与 `scripts/test-e2e.mjs`。
 
 改本仓库的约束与检查单：`AGENT.md`、`skills/proto-bridge`。
 

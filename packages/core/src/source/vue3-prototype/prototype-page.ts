@@ -11,7 +11,7 @@ import {
   resolveFrom,
   toPosixPath,
 } from '../../shared/paths.js';
-import { evaluateModuleArray, extractExportedArrayLiteral } from './js-literal.js';
+import { parseStaticExportedArrays } from './js-literal.js';
 import { analyzeVueSfc } from './vue-sfc.js';
 import type {
   AnalyzePrototypePageInput,
@@ -132,19 +132,15 @@ async function loadScreenEntries(prototypeRoot: string, warnings: string[]): Pro
     const text = await readTextIfExists(filePath);
     if (!text || !/\bpath\s*:/.test(text)) continue;
     collectVueRouterEntries(text, configPath, entries);
-    const exportNames = [...text.matchAll(/export\s+const\s+([A-Za-z_$][\w$]*)\s*=\s*\[/g)]
-      .map((match) => match[1])
-      .filter((name): name is string => Boolean(name));
-    for (const exportName of exportNames) {
-      const literal = extractExportedArrayLiteral(text, exportName);
-      if (!literal) continue;
-      try {
-        const modules = evaluateModuleArray(literal, exportName);
-        collectScreens(inferPageTypeFromVue(configPath), modules, entries, toPosixPath(configPath));
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        warnings.push(message);
-      }
+    const parsed = parseStaticExportedArrays(text, configPath);
+    warnings.push(...parsed.warnings);
+    for (const exported of parsed.arrays) {
+      collectScreens(
+        inferPageTypeFromVue(configPath),
+        exported.value as ModuleConfig[],
+        entries,
+        toPosixPath(configPath),
+      );
     }
   }
   if (entries.length === 0) warnings.push('No statically evaluable page registry was detected; provide a Vue file or runtime URL when route-to-component resolution is unavailable.');
@@ -236,30 +232,47 @@ async function resolveVuePath(
   view: string,
   vueInput: string | undefined,
 ): Promise<string> {
-  const candidates: string[] = [];
-
   if (vueInput) {
-    candidates.push(resolveFrom(prototypeRoot, vueInput));
+    const explicit = resolveFrom(prototypeRoot, vueInput);
+    if (await pathExists(explicit)) return explicit;
   }
-  candidates.push(path.join(prototypeRoot, view));
+
+  const direct = path.join(prototypeRoot, view);
+  if (await pathExists(direct)) return direct;
+
   const normalizedView = toPosixPath(view).replace(/^\.\//, '');
-  const matches = await fg([
-    `**/${normalizedView}`,
-    `**/${path.basename(normalizedView)}`,
-  ], {
+  const exactMatches = await fg([`**/${normalizedView}`], {
     cwd: prototypeRoot,
     onlyFiles: true,
     absolute: true,
     suppressErrors: true,
     ignore: ['**/node_modules/**', '**/dist/**', '**/build/**'],
   });
-  candidates.push(...matches.sort());
+  const exact = dedupe(exactMatches.sort());
+  if (exact.length === 1 && exact[0]) return exact[0];
+  if (exact.length > 1) throw ambiguousVuePathError(view, prototypeRoot, exact);
 
-  for (const candidate of dedupe(candidates)) {
-    if (await pathExists(candidate)) return candidate;
-  }
+  const basenameMatches = await fg([`**/${path.basename(normalizedView)}`], {
+    cwd: prototypeRoot,
+    onlyFiles: true,
+    absolute: true,
+    suppressErrors: true,
+    ignore: ['**/node_modules/**', '**/dist/**', '**/build/**'],
+  });
+  const basenameCandidates = dedupe(basenameMatches.sort());
+  if (basenameCandidates.length === 1 && basenameCandidates[0]) return basenameCandidates[0];
+  if (basenameCandidates.length > 1) throw ambiguousVuePathError(view, prototypeRoot, basenameCandidates);
 
-  return candidates[0] ?? path.join(prototypeRoot, view);
+  return vueInput ? resolveFrom(prototypeRoot, vueInput) : direct;
+}
+
+function ambiguousVuePathError(view: string, prototypeRoot: string, candidates: string[]): Error {
+  return new Error([
+    `Vue view path is ambiguous: ${view}`,
+    `source.root: ${prototypeRoot}`,
+    'Use a unique logical path such as <prototypeId>/screens/<File>.vue.',
+    ...candidates.slice(0, 8).map((candidate) => `  - ${relativeOrAbsolute(prototypeRoot, candidate)}`),
+  ].join('\n'));
 }
 
 function buildVueMatchCandidates(prototypeRoot: string, vueInput: string): string[] {

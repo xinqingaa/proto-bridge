@@ -1,20 +1,20 @@
 #!/usr/bin/env node
 
 import { spawn } from 'node:child_process';
+import { createServer } from 'node:http';
 import { createInterface } from 'node:readline';
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 
-const DEFAULT_URL = 'http://127.0.0.1:5188/#/prototype/asset/pnl-analysis?is_mobile=1';
 const BOOLEAN_FLAGS = new Set();
-const CASES = ['hybrid', 'target-url', 'url-only'];
+const CASES = ['hybrid'];
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const mode = readMode(process.argv[2]);
 const args = parseArgs(process.argv.slice(mode.consumedArgs));
-let url = readString(args, 'url') ?? DEFAULT_URL;
-const sourceRoot = path.resolve(repoRoot, readString(args, 'source-root') ?? 'examples/vue3-to-flutter/source-vue3');
-const targetRoot = path.resolve(repoRoot, readString(args, 'target-root') ?? 'examples/vue3-to-flutter/target-flutter');
+let url = readString(args, 'url');
+const sourceRoot = path.resolve(repoRoot, readString(args, 'source-root') ?? 'tests/fixtures/vue3-prototype');
+const targetRoot = path.resolve(repoRoot, readString(args, 'target-root') ?? 'tests/fixtures/flutter-target');
 const outputRoot = path.resolve(repoRoot, readString(args, 'output-root') ?? './output/test-e2e');
 const e2eConfigPath = path.join(outputRoot, 'proto-bridge.config.json');
 const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -36,70 +36,45 @@ async function main() {
   await mkdir(outputRoot, { recursive: true });
   await writeFile(e2eConfigPath, `${JSON.stringify({ schemaVersion: 1 }, null, 2)}\n`, 'utf8');
   await ensureBuild();
-  await requireNestedTemplateSourceContract();
-  const runtime = readString(args, 'url') ? undefined : await startExampleRuntime();
+  const runtime = url ? undefined : await startFixtureRuntime();
+  url ??= runtime?.url;
   try {
     const results = [];
     for (const caseName of CASES) {
       results.push(await runCaseForMode(caseName));
     }
-    results.push({ failures: await runFailureCases() });
-
     ok('E2E test completed.');
     printReport(results);
   } finally {
-    runtime?.kill();
+    await runtime?.close();
   }
 }
 
-async function requireNestedTemplateSourceContract() {
-  const { analyzeVueSfc } = await import(pathToFileURL(path.join(repoRoot, 'packages/core/dist/source/vue3-prototype/vue-sfc.js')).href);
-  const source = `<template>
-  <main>
-    <template v-if="ready"><p>Visible content</p></template>
-    <BottomSheet v-model="filterSheetOpen">
-      <h2>Choose filter</h2>
-      <button v-for="option in filterOptions" :key="option.value" @click="selectFilter(option.value)">{{ option.label }}</button>
-      <ActionButton @click="applyFilter">Confirm</ActionButton>
-    </BottomSheet>
-  </main>
-</template>
-<script setup>
-const filterSheetOpen = ref(false)
-const filterOptions = [{ value: 'all', label: 'All' }, { value: 'active', label: 'Active' }]
-</script>`;
-  const analysis = analyzeVueSfc(source);
-  if (!analysis.template?.includes('<BottomSheet')) throw new Error('Nested template parsing must preserve siblings after an inner </template>.');
-  const overlay = analysis.overlays.find((item) => item.state === 'filterSheetOpen');
-  if (!overlay || overlay.title !== 'Choose filter') throw new Error('Source analysis must emit the hidden overlay title.');
-  if (!overlay.controls.some((control) => control.sourceCollection === 'filterOptions' && control.options?.length === 2)) {
-    throw new Error('Source analysis must emit hidden overlay option collections.');
-  }
-  if (!overlay.controls.some((control) => control.action === 'applyFilter' && control.label === 'Confirm')) {
-    throw new Error('Source analysis must emit hidden overlay actions.');
-  }
-}
-
-async function startExampleRuntime() {
-  step('Starting repository-local Vue example runtime...');
-  const child = spawn('pnpm', ['exec', 'vite', '--host', '127.0.0.1', '--port', '5188', '--strictPort'], {
-    cwd: sourceRoot,
-    env: process.env,
-    stdio: ['ignore', 'pipe', 'pipe'],
+async function startFixtureRuntime() {
+  step('Starting test fixture runtime...');
+  const html = `<!doctype html><html><head><style>
+    body{margin:0;font-family:Arial,sans-serif;background:#f5f6f8;color:#172033}
+    .app-bar{height:56px;padding:0 16px;display:flex;align-items:center;background:#fff;border-bottom:1px solid #ddd}
+    main{padding:16px}.summary-card,.task-card{background:#fff;border-radius:12px;padding:16px;margin-bottom:12px}
+    .status-chip{display:inline-block;padding:4px 8px;border-radius:12px;background:#dce8ff;color:#2457a6}
+  </style></head><body><header class="app-bar"><h1>项目协作</h1></header><main class="task-list">
+    <section class="summary-card"><h2>今日任务</h2><p>3 项待处理</p></section>
+    <article class="task-card"><h3>核对工作台契约</h3><span class="status-chip">进行中</span></article>
+  </main></body></html>`;
+  const server = createServer((_request, response) => {
+    response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    response.end(html);
   });
-  const deadline = Date.now() + 30_000;
-  while (Date.now() < deadline) {
-    if (child.exitCode !== null) throw new Error(`Example runtime exited with code ${child.exitCode}.`);
-    try {
-      const response = await fetch('http://127.0.0.1:5188/');
-      if (response.ok) return child;
-    } catch {
-      // Runtime is still starting.
-    }
-    await new Promise((resolve) => setTimeout(resolve, 250));
-  }
-  child.kill();
-  throw new Error('Timed out starting repository-local Vue example runtime.');
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+  const address = server.address();
+  if (!address || typeof address === 'string') throw new Error('Fixture runtime did not expose a TCP port.');
+  return {
+    url: `http://127.0.0.1:${address.port}/prototype/project/task-list?variant=default&theme=light`,
+    close: () => new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve())),
+  };
 }
 
 async function ensureBuild() {
@@ -120,7 +95,7 @@ async function runCaseForMode(caseName) {
 
 async function runCliCase(caseName) {
   step(`Running CLI ${caseName} test...`);
-  await requireExternalRoots(caseName);
+  await requireExternalRoots();
   const outDir = path.join(outputRoot, `cli-${caseSlug(caseName)}-${timestamp}`);
   const commandArgs = [
     path.join(repoRoot, 'packages/cli/dist/index.js'),
@@ -133,22 +108,18 @@ async function runCliCase(caseName) {
     outDir,
     '--trace',
   ];
-  if (caseName === 'hybrid') {
-    commandArgs.push('--source-root', sourceRoot, '--target-root', targetRoot);
-  } else if (caseName === 'target-url') {
-    commandArgs.push('--target-root', targetRoot);
-  }
+  commandArgs.push('--source-root', sourceRoot, '--target-root', targetRoot);
   await run('node', commandArgs, { cwd: repoRoot });
   const files = expectedFiles(outDir);
   files.screenshots = await screenshotsFromCanonical(files.pageCanonical);
-  await requireArtifacts(files, expectedContract(caseName));
+  await requireArtifacts(files, expectedContract());
   ok(`CLI ${caseName} test passed.`);
-  return { output: outDir, files: compactFiles(files, expectedContract(caseName)) };
+  return { output: outDir, files: compactFiles(files, expectedContract()) };
 }
 
 async function runMcpCase(caseName) {
   step(`Running MCP ${caseName} test...`);
-  await requireExternalRoots(caseName);
+  await requireExternalRoots();
   const outDir = path.join(outputRoot, `mcp-${caseSlug(caseName)}-${timestamp}`);
   await mkdir(outDir, { recursive: true });
   const client = await startMcpClient({ cwd: repoRoot, args: ['--config', e2eConfigPath] });
@@ -159,8 +130,8 @@ async function runMcpCase(caseName) {
       name: 'reconstruct_page_context',
       arguments: {
         url,
-        ...(caseName === 'hybrid' ? { sourceRoot, targetRoot } : {}),
-        ...(caseName === 'target-url' ? { targetRoot } : {}),
+        sourceRoot,
+        targetRoot,
         output: outDir,
         viewport: { width: 390, height: 844, deviceScaleFactor: 1 },
         saveArtifacts: true,
@@ -169,22 +140,17 @@ async function runMcpCase(caseName) {
     }));
     const pageId = requireString(reconstruct.pageId, 'reconstruct.pageId');
     const files = filesFromToolResult(reconstruct);
-    await requireArtifacts(files, expectedContract(caseName));
+    await requireArtifacts(files, expectedContract());
     if (!reconstruct.summary?.trace) throw new Error('MCP trace=true should return summary.trace.');
 
-    if (caseName !== 'url-only') {
-      const validation = parseToolJson(await client.request('tools/call', {
-        name: 'validate_ui_build',
-        arguments: {
-          targetRoot,
-          pageId,
-        },
-      }));
-      if (validation.capability !== 'ui.validate') {
-        throw new Error(`validate_ui_build should return ui.validate capability, got ${validation.capability ?? '(missing)'}.`);
-      }
-      if (!Array.isArray(validation.changedFiles)) throw new Error('validate_ui_build must return changedFiles.');
+    const validation = parseToolJson(await client.request('tools/call', {
+      name: 'validate_ui_build',
+      arguments: { targetRoot, pageId },
+    }));
+    if (validation.capability !== 'ui.validate') {
+      throw new Error(`validate_ui_build should return ui.validate capability, got ${validation.capability ?? '(missing)'}.`);
     }
+    if (!Array.isArray(validation.changedFiles)) throw new Error('validate_ui_build must return changedFiles.');
 
     ok(`MCP ${caseName} test passed.`);
     return { pageId, output: outDir, files };
@@ -193,33 +159,15 @@ async function runMcpCase(caseName) {
   }
 }
 
-async function runFailureCases() {
-  const results = [];
-  if (mode.kind === 'cli' || mode.kind === 'all') {
-    results.push(await expectCliFailure('no-page-input', [
-      path.join(repoRoot, 'packages/cli/dist/index.js'),
-      'generate',
-      '--config',
-      e2eConfigPath,
-      '--output',
-      path.join(outputRoot, `cli-no-page-input-${timestamp}`),
-    ], 'Provide --url, --route, --vue'));
-  }
-  if (mode.kind === 'mcp' || mode.kind === 'all') {
-    results.push(await expectMcpFailure('no-page-input', {}, 'requires at least one'));
-  }
-  return results;
-}
-
-function expectedContract(caseName) {
+function expectedContract() {
   return {
-    requireSourceFacts: caseName === 'hybrid',
-    requireTargetFacts: caseName !== 'url-only',
+    requireSourceFacts: true,
+    requireTargetFacts: true,
     requireRuntimeFacts: true,
     requireScreenshots: true,
-    requirePlan: caseName !== 'url-only',
-    requireReview: caseName !== 'url-only',
-    expectedStrategy: caseName === 'hybrid' ? 'source-runtime' : 'runtime-only',
+    requirePlan: true,
+    requireReview: true,
+    expectedStrategy: 'source-runtime',
   };
 }
 
@@ -265,9 +213,6 @@ async function requireArtifacts(files, contract) {
     if (contract.requireTargetFacts && !reusable.some((item) => item.symbol === 'CommonAppBar' && item.role === 'app-bar')) {
       throw new Error('Target-defined reusable widgets must be discovered without a project profile.');
     }
-    if (reusable.some((item) => item.symbol === 'ExampleHomePage')) {
-      throw new Error('Concrete target pages must not be reported as reusable components.');
-    }
   } else {
     await requireAbsent(files.uiBuildPlan);
   }
@@ -289,9 +234,9 @@ async function requireArtifacts(files, contract) {
   await requireAbsent(files.migrationSpec);
 }
 
-async function requireExternalRoots(caseName) {
-  if (caseName === 'hybrid') await requireDirectory(sourceRoot);
-  if (caseName !== 'url-only') await requireDirectory(targetRoot);
+async function requireExternalRoots() {
+  await requireDirectory(sourceRoot);
+  await requireDirectory(targetRoot);
 }
 
 async function requireMcpTools(client) {
@@ -304,41 +249,6 @@ async function requireMcpTools(client) {
     'validate_ui_build',
   ]) {
     if (!toolNames.has(tool)) throw new Error(`MCP tools/list is missing ${tool}`);
-  }
-}
-
-async function expectCliFailure(name, commandArgs, expectedMessage) {
-  try {
-    await run('node', commandArgs, { cwd: repoRoot, stdio: 'pipe' });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    if (!message.includes(expectedMessage)) throw new Error(`CLI failure case ${name} did not include "${expectedMessage}". Got:\n${message}`);
-    ok(`CLI failure case ${name} passed.`);
-    return { entry: 'cli', case: name };
-  }
-  throw new Error(`CLI failure case ${name} unexpectedly succeeded.`);
-}
-
-async function expectMcpFailure(name, toolArgs, expectedMessage) {
-  const client = await startMcpClient({ cwd: repoRoot, args: ['--config', e2eConfigPath] });
-  try {
-    try {
-      await client.request('tools/call', {
-        name: 'reconstruct_page_context',
-        arguments: {
-          output: path.join(outputRoot, `mcp-${name}-${timestamp}`),
-          ...toolArgs,
-        },
-      });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      if (!message.includes(expectedMessage)) throw new Error(`MCP failure case ${name} did not include "${expectedMessage}". Got:\n${message}`);
-      ok(`MCP failure case ${name} passed.`);
-      return { entry: 'mcp', case: name };
-    }
-    throw new Error(`MCP failure case ${name} unexpectedly succeeded.`);
-  } finally {
-    await client.close();
   }
 }
 

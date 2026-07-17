@@ -7,7 +7,7 @@
   "packageManager": "pnpm@10.33.2",
   "workspaces": [
     "packages/*",
-    "examples/vue3-to-flutter/source-vue3"
+    "apps/*"
   ],
   "scripts": {
     "build": "pnpm --filter @proto-bridge/core build && pnpm --filter @proto-bridge/cli build && pnpm --filter @proto-bridge/mcp-server build",
@@ -15,11 +15,8 @@
     "lint": "pnpm run typecheck",
     "dev": "pnpm --filter @proto-bridge/cli dev",
     "generate": "node scripts/generate.mjs",
-    "example": "node scripts/example.mjs",
-    "example:clean": "node scripts/example-clean.mjs",
-    "example:dev": "node scripts/example-dev.mjs",
-    "example:android": "node scripts/example-android.mjs",
-    "test:config": "pnpm --filter @proto-bridge/core build && node scripts/test-config.mjs",
+    "test": "pnpm --filter @proto-bridge/core test",
+    "test:config": "pnpm --filter @proto-bridge/core exec vitest run test/config.test.ts",
     "test:e2e": "node scripts/test-e2e.mjs",
     "test:e2e:cli": "node scripts/test-e2e.mjs cli",
     "test:e2e:mcp": "node scripts/test-e2e.mjs mcp"

@@ -1,96 +1,140 @@
-import type { ModuleConfig } from '../../types/index.js';
+import ts from 'typescript';
 
-export function extractExportedArrayLiteral(source: string, exportName: string): string | undefined {
-  const marker = new RegExp(`export\\s+const\\s+${escapeRegExp(exportName)}\\s*=`);
-  const match = marker.exec(source);
-  if (!match) return undefined;
+export type StaticExportedArray = {
+  name: string;
+  value: unknown[];
+};
 
-  const start = source.indexOf('[', match.index + match[0].length);
-  if (start < 0) return undefined;
+export type StaticExportParseResult = {
+  arrays: StaticExportedArray[];
+  warnings: string[];
+};
 
-  const end = findMatchingBracket(source, start);
-  if (end < 0) return undefined;
+/**
+ * Reads exported const arrays without executing source code.
+ *
+ * Supported values intentionally match JSON-like registry data. TypeScript
+ * annotations, `as const`, `satisfies`, and parenthesized expressions are
+ * unwrapped before evaluation. Dynamic expressions are rejected.
+ */
+export function parseStaticExportedArrays(
+  source: string,
+  fileName = 'registry.ts',
+): StaticExportParseResult {
+  const sourceFile = ts.createSourceFile(
+    fileName,
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    scriptKindFor(fileName),
+  );
+  const arrays: StaticExportedArray[] = [];
+  const warnings: string[] = [];
 
-  return source.slice(start, end + 1);
-}
+  for (const statement of sourceFile.statements) {
+    if (!ts.isVariableStatement(statement) || !hasExportModifier(statement)) continue;
+    if ((statement.declarationList.flags & ts.NodeFlags.Const) === 0) continue;
 
-export function evaluateModuleArray(literal: string, label: string): ModuleConfig[] {
-  try {
-    const value = Function(`"use strict"; return (${literal});`)() as unknown;
-    if (!Array.isArray(value)) {
-      throw new Error(`${label} did not evaluate to an array`);
-    }
-    return value as ModuleConfig[];
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Unable to parse ${label}: ${message}`);
-  }
-}
+    for (const declaration of statement.declarationList.declarations) {
+      if (!ts.isIdentifier(declaration.name) || !declaration.initializer) continue;
+      const initializer = unwrapExpression(declaration.initializer);
+      if (!ts.isArrayLiteralExpression(initializer)) continue;
 
-function findMatchingBracket(source: string, start: number): number {
-  let depth = 0;
-  let quote: '"' | "'" | '`' | undefined;
-  let escaped = false;
-  let lineComment = false;
-  let blockComment = false;
-
-  for (let index = start; index < source.length; index += 1) {
-    const char = source[index];
-    const next = source[index + 1];
-
-    if (lineComment) {
-      if (char === '\n') lineComment = false;
-      continue;
-    }
-
-    if (blockComment) {
-      if (char === '*' && next === '/') {
-        blockComment = false;
-        index += 1;
+      try {
+        const value = evaluateStaticExpression(initializer, sourceFile, 0);
+        if (Array.isArray(value)) arrays.push({ name: declaration.name.text, value });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        warnings.push(`Unable to statically parse ${fileName}#${declaration.name.text}: ${message}`);
       }
-      continue;
-    }
-
-    if (quote) {
-      if (escaped) {
-        escaped = false;
-        continue;
-      }
-      if (char === '\\') {
-        escaped = true;
-        continue;
-      }
-      if (char === quote) quote = undefined;
-      continue;
-    }
-
-    if (char === '/' && next === '/') {
-      lineComment = true;
-      index += 1;
-      continue;
-    }
-
-    if (char === '/' && next === '*') {
-      blockComment = true;
-      index += 1;
-      continue;
-    }
-
-    if (char === '"' || char === "'" || char === '`') {
-      quote = char;
-      continue;
-    }
-
-    if (char === '[') depth += 1;
-    if (char === ']') {
-      depth -= 1;
-      if (depth === 0) return index;
     }
   }
 
-  return -1;
+  return { arrays, warnings };
 }
 
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function evaluateStaticExpression(
+  expression: ts.Expression,
+  sourceFile: ts.SourceFile,
+  depth: number,
+): unknown {
+  if (depth > 64) throw expressionError(expression, sourceFile, 'static value nesting exceeds 64 levels');
+  const node = unwrapExpression(expression);
+
+  if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) return node.text;
+  if (ts.isNumericLiteral(node)) return Number(node.text);
+  if (node.kind === ts.SyntaxKind.TrueKeyword) return true;
+  if (node.kind === ts.SyntaxKind.FalseKeyword) return false;
+  if (node.kind === ts.SyntaxKind.NullKeyword) return null;
+
+  if (ts.isPrefixUnaryExpression(node)) {
+    const value = evaluateStaticExpression(node.operand, sourceFile, depth + 1);
+    if (typeof value !== 'number' || (node.operator !== ts.SyntaxKind.PlusToken && node.operator !== ts.SyntaxKind.MinusToken)) {
+      throw expressionError(node, sourceFile, 'only unary + or - on numeric literals is supported');
+    }
+    return node.operator === ts.SyntaxKind.MinusToken ? -value : value;
+  }
+
+  if (ts.isArrayLiteralExpression(node)) {
+    return node.elements.map((element) => {
+      if (ts.isSpreadElement(element)) {
+        throw expressionError(element, sourceFile, 'spread elements are not statically supported');
+      }
+      if (ts.isOmittedExpression(element)) {
+        throw expressionError(element, sourceFile, 'array holes are not statically supported');
+      }
+      return evaluateStaticExpression(element, sourceFile, depth + 1);
+    });
+  }
+
+  if (ts.isObjectLiteralExpression(node)) {
+    const result: Record<string, unknown> = {};
+    for (const property of node.properties) {
+      if (ts.isSpreadAssignment(property)) {
+        throw expressionError(property, sourceFile, 'spread properties are not statically supported');
+      }
+      if (!ts.isPropertyAssignment(property)) {
+        throw expressionError(property, sourceFile, 'only explicit property assignments are statically supported');
+      }
+      const name = staticPropertyName(property.name, sourceFile);
+      result[name] = evaluateStaticExpression(property.initializer, sourceFile, depth + 1);
+    }
+    return result;
+  }
+
+  throw expressionError(node, sourceFile, `dynamic ${ts.SyntaxKind[node.kind]} expression is not supported`);
+}
+
+function unwrapExpression(expression: ts.Expression): ts.Expression {
+  let current = expression;
+  while (
+    ts.isParenthesizedExpression(current)
+    || ts.isAsExpression(current)
+    || ts.isTypeAssertionExpression(current)
+    || ts.isSatisfiesExpression(current)
+  ) {
+    current = current.expression;
+  }
+  return current;
+}
+
+function staticPropertyName(name: ts.PropertyName, sourceFile: ts.SourceFile): string {
+  if (ts.isIdentifier(name) || ts.isStringLiteral(name) || ts.isNumericLiteral(name)) return name.text;
+  throw expressionError(name, sourceFile, 'computed property names are not statically supported');
+}
+
+function hasExportModifier(statement: ts.VariableStatement): boolean {
+  return statement.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword) ?? false;
+}
+
+function expressionError(node: ts.Node, sourceFile: ts.SourceFile, message: string): Error {
+  const position = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+  return new Error(`${message} at ${position.line + 1}:${position.character + 1}`);
+}
+
+function scriptKindFor(fileName: string): ts.ScriptKind {
+  if (/\.tsx$/i.test(fileName)) return ts.ScriptKind.TSX;
+  if (/\.(?:js|mjs|cjs)$/i.test(fileName)) return ts.ScriptKind.JS;
+  if (/\.jsx$/i.test(fileName)) return ts.ScriptKind.JSX;
+  return ts.ScriptKind.TS;
 }

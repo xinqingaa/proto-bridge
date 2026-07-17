@@ -177,12 +177,10 @@ Source 有 `chart` kind；runtime 不一定有独立 `chart` role。细节词表
 
 ### A.4 无组件库时的参考写法
 
-现有 example 用纯 class 即可满足约定，例如：
+无组件库时，用稳定 class 和显隐绑定即可满足当前约定，例如：
 
 - `class="app-bar"`、`tab-bar`、`holding-list` + 列表循环；
 - `v-if="filterSheetOpen"` + `sheet-backdrop` + `filter-sheet`。
-
-见 `examples/vue3-to-flutter/source-vue3/.../PnlAnalysis.vue`、`HoldingList.vue`。
 
 ---
 

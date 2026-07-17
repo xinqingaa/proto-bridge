@@ -1,0 +1,7 @@
+name: proto_bridge_test_target
+description: Minimal target fixture for ProtoBridge smoke tests.
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter

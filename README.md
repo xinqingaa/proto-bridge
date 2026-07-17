@@ -74,33 +74,10 @@ packages/
 ├── cli/           # 终端入口
 └── mcp-server/    # MCP server
 
-docs/              # overview · artifacts · usage · design · source-conventions
+docs/              # overview · artifacts · usage · design · conventions
 skills/            # proto-bridge 本仓开发规范
-examples/vue3-to-flutter/   # Vue3 source → Flutter target 示例
+apps/              # PBWork 原型工作台（按 design.md 建设）
+tests/fixtures/    # CLI / MCP 核心冒烟夹具
 ```
 
 当前适配重点：`source: vue3-prototype`，`target: flutter-app`。
-
-## 开源示例
-
-```bash
-pnpm install
-pnpm run build
-pnpm run example
-pnpm run example:dev
-```
-
-说明：[examples/vue3-to-flutter/README.md](examples/vue3-to-flutter/README.md)。
-
-```text
-Vue prototype:  http://127.0.0.1:5173/
-Flutter target: http://127.0.0.1:5599/
-```
-
-端口占用时脚本会顺延，以终端输出为准。`output/` 与 `_proto` 生成代码不入库。
-
-效果预览：
-
-| Prototype | Generated Flutter page |
-| --- | --- |
-| ![Prototype simple](examples/vue3-to-flutter/screenshots/prototype-simple.png) | ![Flutter simple](examples/vue3-to-flutter/screenshots/flutter-simple.png) |

@@ -50,6 +50,7 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "pnpm run clean && tsc -p tsconfig.json",
+    "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "prepack": "pnpm run build"
   },
@@ -57,7 +58,8 @@
     "@vue/compiler-dom": "^3.5.34",
     "@vue/compiler-sfc": "^3.5.34",
     "fast-glob": "^3.3.2",
-    "playwright": "^1.49.1"
+    "playwright": "^1.49.1",
+    "typescript": "^5.7.2"
   },
   "engines": {
     "node": ">=20"
@@ -65,5 +67,8 @@
   "publishConfig": {
     "access": "public"
   },
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "vitest": "^3.2.7"
+  }
 }

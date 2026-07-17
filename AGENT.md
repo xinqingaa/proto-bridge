@@ -50,9 +50,9 @@ ProtoBridge 产出证据与实现契约；它不替代在目标 Flutter 工程�
 | Config | `pnpm run test:config` |
 | CLI / artifact 契约 | `pnpm run test:e2e:cli` |
 | MCP / validation | `pnpm run test:e2e:mcp` |
-| 示例脚本 / Flutter target | `pnpm run example` 等 |
+| PBWork | 按 `docs/design.md` 的测试边界执行 |
 
-不要提交：`output/`、示例 `output/`、`_proto` 生成文件、Flutter `build/` / `.dart_tool/`。
+不要提交：`output/`、Flutter `build/` / `.dart_tool/`。
 
 ## 文档与 skill 同步
 
