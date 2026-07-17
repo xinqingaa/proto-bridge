@@ -50,7 +50,11 @@ ProtoBridge 产出证据与实现契约；它不替代在目标 Flutter 工程�
 | Config | `pnpm run test:config` |
 | CLI / artifact 契约 | `pnpm run test:e2e:cli` |
 | MCP / validation | `pnpm run test:e2e:mcp` |
-| PBWork | 按 `docs/design.md` 的测试边界执行 |
+| PBWork 文档 / Contract | 检查 `docs/design.md` 的类型、Schema、错误码、固定内容与 README / usage / conventions 一致 |
+| PBWork TypeScript / Vue | `pnpm --filter @proto-bridge/pbwork typecheck` |
+| PBWork 注册表 / 单元 | `pnpm --filter @proto-bridge/pbwork test` |
+| PBWork Runtime / 写回 | `pnpm --filter @proto-bridge/pbwork test:e2e`，并按 `docs/design.md` §17.1 执行对应里程碑矩阵 |
+| PBWork → PB 闭环 | 根仓 `pnpm run test:e2e`，使用 canonical Runtime URL 验证 source + runtime capture |
 
 不要提交：`output/`、Flutter `build/` / `.dart_tool/`。
 

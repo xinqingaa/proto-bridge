@@ -89,12 +89,12 @@ CLI 支持 `--url` / `--route` / `--vue` 与 `--capture`；**不提供**独立 s
 npx @proto-bridge/cli init
 
 npx @proto-bridge/cli generate \
-  --url "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1"
+  --url "http://127.0.0.1:5173/prototype/project/task-list?variant=default&theme=light"
 
-npx @proto-bridge/cli generate --route /prototype/asset/pnl-analysis
+npx @proto-bridge/cli generate --route /prototype/project/task-list
 
 npx @proto-bridge/cli generate \
-  --url "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1" \
+  --url "http://127.0.0.1:5173/prototype/project/task-list?variant=default&theme=light" \
   --capture
 ```
 
@@ -105,8 +105,10 @@ npx @proto-bridge/cli generate \
 本地源码：
 
 ```bash
-pnpm run generate -- --route /prototype/asset/pnl-analysis
+pnpm run generate -- --route /prototype/project/task-list
 ```
+
+PBWork 使用 Vue Router history Runtime URL：`/prototype/:prototypeId/:screenSlug?variant=:variantId&theme=:themeId`。`--url` 保留完整 URL 用于浏览器 capture，同时提取 pathname 进行 source analysis；`--route` 是高级源码路由输入，即使传入 query 也只使用 pathname，不用 Variant 或 Theme 定位 Vue SFC。复制给 PB 的地址必须是 PBWork Runtime URL，不得使用 `/workbench/**` 地址。
 
 ---
 
@@ -158,8 +160,8 @@ Hybrid 示例：
 
 ```json
 {
-  "route": "/prototype/asset/pnl-analysis",
-  "url": "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1",
+  "route": "/prototype/project/task-list",
+  "url": "http://127.0.0.1:5173/prototype/project/task-list?variant=default&theme=light",
   "capture": true
 }
 ```
@@ -209,8 +211,8 @@ const result = await reconstructPageContext({
     adapter: 'flutter-app',
     root: '/path/to/flutter-project',
   },
-  route: '/prototype/asset/pnl-analysis',
-  url: 'http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1',
+  route: '/prototype/project/task-list',
+  url: 'http://127.0.0.1:5173/prototype/project/task-list?variant=default&theme=light',
   outDir: './output/pnl-analysis',
   capture: true,
   buildPlan: true,
@@ -263,7 +265,7 @@ e2e 默认使用 `tests/fixtures/`；`url`、`sourceRoot`、`targetRoot` 可用�
 
 ```bash
 npx @proto-bridge/cli init
-npx @proto-bridge/cli generate --route /prototype/trade
+npx @proto-bridge/cli generate --route /prototype/project/task-list
 npx -y @proto-bridge/mcp-server
 ```
 

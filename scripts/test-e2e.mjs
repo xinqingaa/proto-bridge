@@ -53,13 +53,16 @@ async function main() {
 async function startFixtureRuntime() {
   step('Starting test fixture runtime...');
   const html = `<!doctype html><html><head><style>
-    body{margin:0;font-family:Arial,sans-serif;background:#f5f6f8;color:#172033}
-    .app-bar{height:56px;padding:0 16px;display:flex;align-items:center;background:#fff;border-bottom:1px solid #ddd}
-    main{padding:16px}.summary-card,.task-card{background:#fff;border-radius:12px;padding:16px;margin-bottom:12px}
-    .status-chip{display:inline-block;padding:4px 8px;border-radius:12px;background:#dce8ff;color:#2457a6}
-  </style></head><body><header class="app-bar"><h1>项目协作</h1></header><main class="task-list">
-    <section class="summary-card"><h2>今日任务</h2><p>3 项待处理</p></section>
-    <article class="task-card"><h3>核对工作台契约</h3><span class="status-chip">进行中</span></article>
+    body{margin:0;font-family:Arial,sans-serif}.task-page{min-height:100vh;background:#f5f7fb;color:#172033}
+    .app-bar{position:sticky;top:0;padding:20px;background:#fff}.summary-card,.task-card{margin:16px;padding:16px;border-radius:16px;background:#fff}
+    .task-list{display:grid;gap:12px}
+  </style></head><body><main class="task-page" data-pb-id="task-list.page">
+    <header class="app-bar" data-pb-id="task-list.app-bar" data-pb-role="app-bar"><h1>任务列表</h1></header>
+    <section class="summary-card" data-pb-id="task-list.summary" data-pb-role="section"><strong>3</strong><span>待处理任务</span></section>
+    <section class="task-list" data-pb-id="task-list.items" data-pb-role="list">
+      <article class="task-card" data-pb-id="task-list.row.research"><h2>梳理需求</h2><p>进行中</p></article>
+      <article class="task-card" data-pb-id="task-list.row.review"><h2>评审原型</h2><p>待确认</p></article>
+    </section>
   </main></body></html>`;
   const server = createServer((_request, response) => {
     response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });

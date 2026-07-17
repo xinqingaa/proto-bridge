@@ -18,7 +18,8 @@ source / URL / screenshot / target repo
 npx @proto-bridge/cli init
 
 npx @proto-bridge/cli generate \
-  --url "http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1"
+  --url "http://127.0.0.1:5173/prototype/project/task-list?variant=default&theme=light" \
+  --capture
 ```
 
 配置示例（稳定环境写进 `proto-bridge.config.json`；页面参数每次传入）：
