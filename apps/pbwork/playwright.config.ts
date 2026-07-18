@@ -1,0 +1,17 @@
+import { defineConfig, devices } from "@playwright/test";
+
+const channel = process.env.PLAYWRIGHT_CHANNEL;
+
+export default defineConfig({
+  testDir: "./e2e",
+  use: {
+    baseURL: "http://127.0.0.1:4173",
+    ...devices["Desktop Chrome"],
+    ...(channel ? { channel } : {}),
+  },
+  webServer: {
+    command: "pnpm dev --host 127.0.0.1 --port 4173",
+    port: 4173,
+    reuseExistingServer: !process.env.CI,
+  },
+});
