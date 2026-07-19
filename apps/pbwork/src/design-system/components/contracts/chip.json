@@ -7,13 +7,31 @@
     "additionalProperties": false,
     "properties": {
       "label": { "type": "string" },
-      "color": { "type": "string" }
+      "tone": {
+        "type": "string",
+        "enum": ["primary", "secondary", "success", "warning", "error"]
+      },
+      "radius": {
+        "type": "string",
+        "enum": ["sm", "md", "lg", "full"]
+      },
+      "elevated": { "type": "boolean" }
     },
     "required": ["label"]
   },
-  "defaultProps": { "label": "进行中", "color": "primary" },
+  "defaultProps": {
+    "label": "进行中",
+    "tone": "primary",
+    "radius": "full",
+    "elevated": false
+  },
   "states": [],
   "slots": ["default"],
   "events": [],
-  "tokenBindings": { "background": "color.primary" }
+  "tokenBindings": {
+    "background": "color.primary",
+    "radius": "radius.full",
+    "elevation": "elevation.card",
+    "typography": "typography.caption"
+  }
 }

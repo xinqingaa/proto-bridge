@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/workbench/foundations/tokens/colors");
+  await page.goto("/workbench/foundations/tokens/color");
 });
 
 test("primary and secondary navigation update the URL and resource view", async ({
@@ -23,7 +23,7 @@ test("primary and secondary navigation update the URL and resource view", async 
   });
   await foundationsLink.focus();
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/\/workbench\/foundations\/tokens\/colors$/);
+  await expect(page).toHaveURL(/\/workbench\/foundations\/tokens\/color$/);
 
   await page.getByRole("link", { name: "浅色主题", exact: true }).click();
   await expect(page).toHaveURL(/\/workbench\/foundations\/themes\/light$/);

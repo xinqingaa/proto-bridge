@@ -24,6 +24,13 @@ const categoryLabels: Record<TokenCategory, string> = {
   radius: "圆角",
   elevation: "阴影",
 };
+
+function parseTypography(value: unknown): { weight: string; size: string } {
+  const text = String(value);
+  const match = text.match(/^(\d+)\s+(\d+(?:\.\d+)?px)/);
+  if (!match) return { weight: "—", size: "—" };
+  return { weight: match[1]!, size: match[2]! };
+}
 </script>
 
 <template>
@@ -31,6 +38,9 @@ const categoryLabels: Record<TokenCategory, string> = {
     <header>
       <p>设计令牌</p>
       <h1>{{ categoryLabels[category] }}</h1>
+      <p v-if="category === 'color'" class="lede">
+        颜色 key 与主题共用；切到「主题」页可对照 light / dark 的不同 value。
+      </p>
     </header>
 
     <div v-if="category === 'color'" class="swatch-grid">
@@ -46,11 +56,17 @@ const categoryLabels: Record<TokenCategory, string> = {
     </div>
 
     <div v-else-if="category === 'typography'" class="stack">
-      <article v-for="token in tokens" :key="token.id" class="row">
+      <article v-for="token in tokens" :key="token.id" class="row typo-row">
         <p :style="{ font: String(resolved[token.id]) }">
           {{ token.label }} — The quick brown fox
         </p>
-        <code>{{ token.id }}</code>
+        <div class="meta">
+          <code>{{ token.id }}</code>
+          <span
+            >fontWeight {{ parseTypography(resolved[token.id]).weight }} ·
+            fontSize {{ parseTypography(resolved[token.id]).size }}</span
+          >
+        </div>
       </article>
     </div>
 
@@ -60,8 +76,21 @@ const categoryLabels: Record<TokenCategory, string> = {
           class="metric-box"
           :style="
             category === 'spacing'
-              ? { width: typeof resolved[token.id] === 'number' ? `${resolved[token.id]}px` : String(resolved[token.id]), height: '16px' }
-              : { width: '64px', height: '64px', borderRadius: typeof resolved[token.id] === 'number' ? `${resolved[token.id]}px` : String(resolved[token.id]) }
+              ? {
+                  width:
+                    typeof resolved[token.id] === 'number'
+                      ? `${resolved[token.id]}px`
+                      : String(resolved[token.id]),
+                  height: '16px',
+                }
+              : {
+                  width: '64px',
+                  height: '64px',
+                  borderRadius:
+                    typeof resolved[token.id] === 'number'
+                      ? `${resolved[token.id]}px`
+                      : String(resolved[token.id]),
+                }
           "
         />
         <div>
@@ -98,8 +127,14 @@ header p {
   font-weight: 700;
 }
 header h1 {
-  margin: 0 0 24px;
+  margin: 0 0 8px;
   font-size: 1.75rem;
+}
+.lede {
+  margin: 0 0 24px !important;
+  color: rgba(var(--v-theme-on-surface), 0.62) !important;
+  font-size: 0.8125rem !important;
+  font-weight: 400 !important;
 }
 .swatch-grid {
   display: grid;
@@ -118,8 +153,7 @@ header h1 {
   gap: 6px;
 }
 .swatch-chip,
-.metric-box,
-.elevation-box {
+.metric-box {
   background: rgb(var(--v-theme-primary));
 }
 .swatch-chip {
@@ -144,6 +178,11 @@ header h1 {
   height: 72px;
   border-radius: 12px;
   background: rgb(var(--v-theme-surface));
+}
+.typo-row .meta {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
 }
 code,
 span {

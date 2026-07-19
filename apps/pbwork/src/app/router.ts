@@ -12,12 +12,12 @@ function isTokenCategory(value: string): value is TokenCategory {
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: "/", redirect: "/workbench/foundations/tokens/colors" },
+    { path: "/", redirect: "/workbench/foundations/tokens/color" },
     {
       path: "/workbench",
       component: WorkbenchLayout,
       children: [
-        { path: "", redirect: "/workbench/foundations/tokens/colors" },
+        { path: "", redirect: "/workbench/foundations/tokens/color" },
         {
           path: "foundations/tokens/:category",
           name: "foundation-tokens",
@@ -109,7 +109,7 @@ export const router = createRouter({
         },
         {
           path: ":pathMatch(.*)*",
-          redirect: "/workbench/foundations/tokens/colors",
+          redirect: "/workbench/foundations/tokens/color",
         },
       ],
     },
@@ -120,7 +120,7 @@ export const router = createRouter({
     },
     {
       path: "/:pathMatch(.*)*",
-      redirect: "/workbench/foundations/tokens/colors",
+      redirect: "/workbench/foundations/tokens/color",
     },
   ],
 });

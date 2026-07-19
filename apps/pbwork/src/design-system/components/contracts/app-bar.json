@@ -7,13 +7,19 @@
     "additionalProperties": false,
     "properties": {
       "title": { "type": "string" },
-      "dense": { "type": "boolean" }
+      "dense": { "type": "boolean" },
+      "elevated": { "type": "boolean" }
     },
     "required": ["title"]
   },
-  "defaultProps": { "title": "项目协作", "dense": false },
+  "defaultProps": { "title": "项目协作", "dense": false, "elevated": false },
   "states": [],
   "slots": ["append"],
   "events": [],
-  "tokenBindings": { "background": "color.surface" }
+  "tokenBindings": {
+    "surface": "color.surface",
+    "border": "color.border",
+    "elevation": "elevation.card",
+    "title": "typography.subtitle"
+  }
 }

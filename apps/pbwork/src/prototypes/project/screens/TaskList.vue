@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useRoute } from "vue-router";
+import AppBar from "@/design-system/components/complex/AppBar.vue";
 import DataList from "@/design-system/components/complex/DataList.vue";
 
 const route = useRoute();
@@ -20,10 +21,8 @@ const items = computed(() => {
 
 <template>
   <div class="screen" data-pb-id="task-list.root">
-    <header class="app-bar" data-pb-role="app-bar" data-pb-id="task-list.app-bar">
-      <h1>任务列表</h1>
-      <p>Variant：{{ variant }}</p>
-    </header>
+    <AppBar title="任务列表" />
+    <p class="variant-hint">Variant：{{ variant }}</p>
     <DataList
       class="list"
       :items="items"
@@ -39,21 +38,13 @@ const items = computed(() => {
   background: var(--pb-color-background, #f5f8fc);
   color: var(--pb-color-on-surface, #1f2937);
 }
-.app-bar {
-  padding: 20px 16px 12px;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-  background: var(--pb-color-surface, #fff);
-}
-.app-bar h1 {
-  margin: 0 0 4px;
-  font: var(--pb-typography-title, 650 20px/1.3 Inter, system-ui, sans-serif);
-}
-.app-bar p {
+.variant-hint {
   margin: 0;
-  opacity: 0.65;
-  font-size: 0.75rem;
+  padding: 8px 16px;
+  color: color-mix(in srgb, var(--pb-color-on-surface, #1f2937) 60%, transparent);
+  font: var(--pb-typography-caption, 400 12px/1.4 Inter, system-ui, sans-serif);
 }
 .list {
-  padding: 8px;
+  margin: 8px 12px 16px;
 }
 </style>

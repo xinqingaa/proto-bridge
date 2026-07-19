@@ -20,7 +20,9 @@
         }
       },
       "loading": { "type": "boolean" },
-      "emptyText": { "type": "string" }
+      "emptyText": { "type": "string" },
+      "radius": { "type": "string", "enum": ["sm", "md", "lg"] },
+      "elevated": { "type": "boolean" }
     },
     "required": ["items"]
   },
@@ -30,7 +32,9 @@
       { "id": "2", "title": "联调接口", "subtitle": "明日" }
     ],
     "loading": false,
-    "emptyText": "暂无任务"
+    "emptyText": "暂无任务",
+    "radius": "lg",
+    "elevated": false
   },
   "states": [
     {
@@ -46,5 +50,12 @@
   ],
   "slots": [],
   "events": ["select"],
-  "tokenBindings": { "surface": "color.surface" }
+  "tokenBindings": {
+    "surface": "color.surface",
+    "border": "color.border",
+    "radius": "radius.lg",
+    "elevation": "elevation.card",
+    "title": "typography.subtitle",
+    "subtitle": "typography.caption"
+  }
 }

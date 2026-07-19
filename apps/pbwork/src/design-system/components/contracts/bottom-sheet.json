@@ -18,5 +18,12 @@
   ],
   "slots": ["default"],
   "events": ["update:modelValue"],
-  "tokenBindings": { "surface": "color.surface" }
+  "tokenBindings": {
+    "surface": "color.surface",
+    "border": "color.border",
+    "radius": "radius.lg",
+    "elevation": "elevation.raised",
+    "title": "typography.subtitle",
+    "body": "typography.content"
+  }
 }

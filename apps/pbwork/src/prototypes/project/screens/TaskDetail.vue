@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
+import AppBar from "@/design-system/components/complex/AppBar.vue";
 import Tabs from "@/design-system/components/complex/Tabs.vue";
 import BottomSheet from "@/design-system/components/complex/BottomSheet.vue";
+import Button from "@/design-system/components/basic/Button.vue";
 
 const route = useRoute();
 const variant = computed(() =>
@@ -26,10 +28,8 @@ watch(
 
 <template>
   <div class="screen" data-pb-id="task-detail.root">
-    <header class="app-bar" data-pb-role="app-bar" data-pb-id="task-detail.app-bar">
-      <h1>任务详情</h1>
-      <p>Variant：{{ variant }}</p>
-    </header>
+    <AppBar title="任务详情" />
+    <p class="variant-hint">Variant：{{ variant }}</p>
 
     <Tabs
       v-model="tab"
@@ -49,9 +49,7 @@ watch(
     <section v-else class="panel section" data-pb-role="section">
       <h2>整理需求</h2>
       <p>对齐交互状态与验收标准，输出可演示原型。</p>
-      <v-btn color="primary" class="mt-3" @click="sheetOpen = true"
-        >打开操作</v-btn
-      >
+      <Button class="mt-3" label="打开操作" @click="sheetOpen = true" />
     </section>
 
     <BottomSheet v-model="sheetOpen" title="任务操作">
@@ -62,32 +60,32 @@ watch(
 
 <style scoped>
 .screen {
+  position: relative;
   min-height: 100vh;
   background: var(--pb-color-background, #f5f8fc);
   color: var(--pb-color-on-surface, #1f2937);
 }
-.app-bar {
-  padding: 20px 16px 12px;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-  background: var(--pb-color-surface, #fff);
-}
-.app-bar h1 {
-  margin: 0 0 4px;
-  font: var(--pb-typography-title, 650 20px/1.3 Inter, system-ui, sans-serif);
-}
-.app-bar p,
-.panel p {
+.variant-hint {
   margin: 0;
-  opacity: 0.75;
+  padding: 8px 16px;
+  color: color-mix(in srgb, var(--pb-color-on-surface, #1f2937) 60%, transparent);
+  font: var(--pb-typography-caption, 400 12px/1.4 Inter, system-ui, sans-serif);
 }
 .panel {
   padding: 16px;
 }
 .panel h2 {
   margin: 0 0 8px;
-  font-size: 1.125rem;
+  font: var(--pb-typography-subtitle, 600 16px/1.4 Inter, system-ui, sans-serif);
+}
+.panel p {
+  margin: 0 0 8px;
+  font: var(--pb-typography-content, 400 14px/1.5 Inter, system-ui, sans-serif);
 }
 .error {
-  color: #b42318;
+  color: var(--pb-color-error, #b42318);
+}
+.mt-3 {
+  margin-top: 12px;
 }
 </style>

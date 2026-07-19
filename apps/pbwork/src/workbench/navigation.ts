@@ -30,7 +30,7 @@ export const primaryNavigation: Array<
   {
     id: "foundations",
     label: "设计基础",
-    to: "/workbench/foundations/tokens/colors",
+    to: "/workbench/foundations/tokens/color",
   },
   {
     id: "components",

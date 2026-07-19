@@ -8,17 +8,25 @@
     "properties": {
       "label": { "type": "string" },
       "modelValue": { "type": "string" },
-      "disabled": { "type": "boolean" }
+      "disabled": { "type": "boolean" },
+      "radius": { "type": "string", "enum": ["sm", "md", "lg"] }
     },
     "required": ["label"]
   },
   "defaultProps": {
     "label": "标题",
     "modelValue": "",
-    "disabled": false
+    "disabled": false,
+    "radius": "md"
   },
   "states": [],
   "slots": [],
   "events": ["update:modelValue"],
-  "tokenBindings": { "border": "color.secondary" }
+  "tokenBindings": {
+    "border": "color.border",
+    "surface": "color.surface",
+    "radius": "radius.md",
+    "label": "typography.caption",
+    "input": "typography.content"
+  }
 }

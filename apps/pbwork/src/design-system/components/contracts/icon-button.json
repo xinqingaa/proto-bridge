@@ -7,13 +7,34 @@
     "additionalProperties": false,
     "properties": {
       "ariaLabel": { "type": "string" },
+      "icon": {
+        "type": "string",
+        "enum": ["more", "plus", "search", "settings"]
+      },
+      "size": { "type": "string", "enum": ["sm", "md"] },
+      "tone": {
+        "type": "string",
+        "enum": ["primary", "secondary", "neutral"]
+      },
+      "elevated": { "type": "boolean" },
       "disabled": { "type": "boolean" }
     },
     "required": ["ariaLabel"]
   },
-  "defaultProps": { "ariaLabel": "更多", "disabled": false },
+  "defaultProps": {
+    "ariaLabel": "更多",
+    "icon": "more",
+    "size": "md",
+    "tone": "neutral",
+    "elevated": false,
+    "disabled": false
+  },
   "states": [],
   "slots": [],
   "events": ["click"],
-  "tokenBindings": { "color": "color.primary" }
+  "tokenBindings": {
+    "color": "color.primary",
+    "radius": "radius.full",
+    "elevation": "elevation.card"
+  }
 }

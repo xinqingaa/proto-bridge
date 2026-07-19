@@ -122,3 +122,24 @@ describe("runtime url", () => {
     if (!resolved.ok) expect(resolved.code).toBe("UNKNOWN_SCREEN");
   });
 });
+
+describe("resolveLiveTokenBindings", () => {
+  it("updates radius, tone, and elevation from live props", async () => {
+    const { resolveLiveTokenBindings } = await import(
+      "@/design-system/resolveLiveTokenBindings"
+    );
+    const live = resolveLiveTokenBindings(
+      {
+        background: "color.primary",
+        radius: "radius.md",
+        elevation: "elevation.card",
+        typography: "typography.content",
+      },
+      { tone: "error", radius: "lg", elevated: false },
+    );
+    expect(live.background).toBe("color.error");
+    expect(live.radius).toBe("radius.lg");
+    expect(live.elevation).toBe("none");
+    expect(live.typography).toBe("typography.content");
+  });
+});
