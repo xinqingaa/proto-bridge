@@ -288,7 +288,9 @@ Device Frame：CSS 手机外框与 viewport 尺寸
 iframe：真实 Prototype Runtime URL
 ```
 
-手机外框使用中性 CSS 视觉，不绑定具体品牌。默认 viewport 为 390 × 844。缩放只影响画板显示，不改变 iframe viewport。
+手机外框使用中性 CSS 视觉，不绑定具体品牌。默认 viewport 为 390 × 844。外框外轮廓 = 薄 bezel + 设备 viewport，保持设备宽高比；缩放只影响画板显示（`transform: scale`），不改变 iframe viewport。
+
+状态栏时间 / Dynamic Island / Home Indicator 为**屏内装饰 overlay**，不增加外壳高度。嵌入工作台 iframe 时 Runtime 注入统一安全区 CSS 变量（`--pb-safe-top` / `--pb-safe-bottom`），供 AppBar 等顶栏避让；各设备安全区数值一致，仅装饰形态可不同。
 
 首期设备尺寸（宽 × 高）：
 
@@ -300,6 +302,8 @@ iframe：真实 Prototype Runtime URL
 | iPhone 14 Pro Max | 430 × 932 |
 
 iframe 使 Vuetify overlay 即使挂载到 `body`，仍被限制在手机运行时内部，不会飞出工作台画布。
+
+画布本地状态（设备、缩放、平移、拖动模式）保存在工作台 `localStorage`，**不得**写入 Runtime URL。
 
 ---
 
@@ -385,18 +389,20 @@ Screen/Variant 画布工具栏包含：
 
 | 工具 | 行为 |
 |------|------|
-| 选择元素 | 开启 iframe hover 与点击选择 |
-| 添加评论 | 选择元素或页面位置后创建评论 |
+| 选择元素 | 开启 iframe hover 与点击选择（M4；首期可灰显占位） |
+| 添加评论 | 选择元素或页面位置后创建评论（M5；首期可灰显占位） |
 | 拖动画布 | 平移中央画布，不操作原型页面 |
-| 缩小 / 放大 | 调整画板显示比例 |
-| 缩放比例 | 显示并选择常用比例 |
-| 适应画布 | 自动计算居中缩放比例 |
+| 缩小 / 放大 | 步进调整画板显示比例 |
+| 缩放滑块 | 在允许范围内连续自定义显示比例（如 35%–200%） |
+| 缩放比例 | 显示当前比例；可打开常用比例菜单 |
 | 设备尺寸 | 切换 iframe viewport |
 | 原型主题 | 切换原型自身主题，不影响工作台壳 |
 | Variant | 切换源码注册的可复现状态 |
 | 刷新 | 重载当前 iframe |
 | 全屏预览 | 在新标签页打开当前 iframe URL |
 | 复制原型链接 | 复制当前 iframe 完整 URL |
+
+不提供「适应画布」自动算缩放：缩放由用户通过步进、滑块、常用比例或修饰键+滚轮控制；拖动画布与缩放解耦。
 
 全屏预览不创建另一套页面，它直接打开当前 Runtime URL。复制链接必须包含当前 Prototype、Screen、Variant、原型 Theme 和当前 Variant 注册的全部业务 query，可以直接提供给浏览器、评审人员或 PB。
 
@@ -1177,7 +1183,7 @@ apps/pbwork/
 |------|------|------------------|
 | M1 壳与双路由 | 工作台布局 + Runtime Layout 分离 | 工作台 URL 与 Runtime URL 可分别打开；Runtime 无壳 DOM |
 | M2 注册表与导航 | Foundations / 组件 / 原型树 | 注册表驱动二级导航；至少一套多页原型可点选 |
-| M3 画布与设备 | 单手机 iframe 画板 | 缩放、拖动、适应、设备切换、主题与 Variant 切换、复制 Runtime URL |
+| M3 画布与设备 | 单手机 iframe 画板 | 缩放（步进/滑块/常用比例）、拖动、设备切换、主题与 Variant 切换、复制 Runtime URL |
 | M4 Bridge 与检查 | 选择元素 + 右侧检查 | inspect 模式、选中信息、`data-pb-*` 展示 |
 | M5 评论 | 本地评论 | 新增/完成/删除/刷新仍在/定位失效 |
 | M6 高级写入 | 开发环境写回 | Playground 更新示例与保存 Variant：diff + 二次确认 + 白名单 |
@@ -1224,11 +1230,12 @@ apps/pbwork/
 
 - 完整提供 §16.1 的“项目协作”原型：任务列表 3 个 Variant、任务详情 4 个 Variant；
 - 列表、Tab、错误态和 Bottom Sheet 均由真实 Vue 交互实现，不使用静态截图或占位页；
-- 单手机画板支持缩放、拖动、适应画布和设备切换；
+- 单手机画板支持缩放（步进、滑块、常用比例）、拖动和设备切换；
 - iframe overlay 不越过手机运行时边界；
 - 全屏与复制链接使用当前 iframe Runtime URL（history，含 variant/theme）；
 - 将复制出的 URL 直接交给 PB 时，不包含任何工作台 DOM。
 - 每个正式 Variant 的 canonical URL 在新标签页刷新后恢复相同 Theme、业务 query 和可见状态；未知或非法参数显示 §13.4 对应错误页。
+- 设备框外轮廓保持预设 viewport 宽高比；状态栏等装饰为屏内 overlay，并通过统一 `--pb-safe-*` 避让内容。
 
 ### 18.4 检查与评论
 

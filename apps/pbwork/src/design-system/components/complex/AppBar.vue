@@ -29,6 +29,8 @@ defineProps<{
 <style scoped>
 .pb-app-bar {
   width: 100%;
+  box-sizing: border-box;
+  padding-top: var(--pb-safe-top, 0px);
   border-bottom: 1px solid var(--pb-color-border, #d7dee8);
   background: var(--pb-color-surface, #fff);
   color: var(--pb-color-on-surface, #1f2937);

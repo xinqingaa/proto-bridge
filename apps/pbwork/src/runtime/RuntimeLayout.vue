@@ -2,6 +2,7 @@
 import {
   computed,
   defineAsyncComponent,
+  onBeforeUnmount,
   onMounted,
   shallowRef,
   watch,
@@ -13,11 +14,25 @@ import {
   resolveThemeTokens,
   tokensToCssVars,
 } from "@/design-system/resolveThemeTokens";
-import { resolveRuntimeRoute } from "@/runtime/url";
+import {
+  BRIDGE_PROTOCOL_VERSION,
+  isBridgeMessage,
+  type RuntimeBridgeMessage,
+  type WorkbenchBridgeMessage,
+} from "@/runtime/bridge";
+import {
+  buildCanonicalRuntimeUrl,
+  resolveRuntimeRoute,
+} from "@/runtime/url";
 
 const route = useRoute();
 const screenComponent = shallowRef<Component | null>(null);
 const loadError = shallowRef<string | null>(null);
+const runtimeId = shallowRef<string | null>(null);
+const lastPostedRoute = shallowRef<string | null>(null);
+const isEmbedded = shallowRef(
+  typeof window !== "undefined" && window.parent !== window,
+);
 
 const resolved = computed(() =>
   resolveRuntimeRoute({
@@ -44,6 +59,85 @@ const runtimeTheme = computed(() =>
   resolved.value.ok && resolved.value.theme.dark ? "pbworkDark" : "pbworkLight",
 );
 
+const canonicalRuntimeUrl = computed(() => {
+  if (!resolved.value.ok || typeof window === "undefined") return "";
+  const path = buildCanonicalRuntimeUrl({
+    prototypeId: resolved.value.prototype.id,
+    screenSlug: resolved.value.screen.screenSlug,
+    variantId: resolved.value.variant.id,
+    themeId: resolved.value.theme.id,
+    query: resolved.value.query,
+  });
+  return `${window.location.origin}${path}`;
+});
+
+function postToParent(message: RuntimeBridgeMessage) {
+  if (window.parent === window) return;
+  window.parent.postMessage(message, window.location.origin);
+}
+
+function buildEnvelope<TType extends RuntimeBridgeMessage["type"]>(
+  type: TType,
+  payload: Extract<RuntimeBridgeMessage, { type: TType }>["payload"],
+): Extract<RuntimeBridgeMessage, { type: TType }> | null {
+  if (!runtimeId.value || !resolved.value.ok) return null;
+  return {
+    source: "pbwork-runtime",
+    protocolVersion: BRIDGE_PROTOCOL_VERSION,
+    runtimeId: runtimeId.value,
+    type,
+    prototypeId: resolved.value.prototype.id,
+    screenId: resolved.value.screen.screenId,
+    variantId: resolved.value.variant.id,
+    themeId: resolved.value.theme.id,
+    payload,
+  } as Extract<RuntimeBridgeMessage, { type: TType }>;
+}
+
+function sendReady() {
+  const message = buildEnvelope("ready", {
+    canonicalRuntimeUrl: canonicalRuntimeUrl.value,
+    route: route.fullPath,
+    capabilities: ["route-sync"],
+  });
+  if (!message) return;
+  lastPostedRoute.value = canonicalRuntimeUrl.value;
+  postToParent(message);
+}
+
+function sendRouteIfChanged() {
+  if (!runtimeId.value || !resolved.value.ok || !canonicalRuntimeUrl.value) {
+    return;
+  }
+  if (lastPostedRoute.value === canonicalRuntimeUrl.value) return;
+  const fromRuntimeUrl = lastPostedRoute.value ?? canonicalRuntimeUrl.value;
+  const message = buildEnvelope("route", {
+    fromRuntimeUrl,
+    canonicalRuntimeUrl: canonicalRuntimeUrl.value,
+  });
+  if (!message) return;
+  lastPostedRoute.value = canonicalRuntimeUrl.value;
+  postToParent(message);
+}
+
+function onMessage(event: MessageEvent) {
+  if (event.origin !== window.location.origin) return;
+  if (event.source !== window.parent) return;
+  if (!isBridgeMessage(event.data)) return;
+  if (event.data.source !== "pbwork") return;
+
+  const msg = event.data as WorkbenchBridgeMessage;
+  if (msg.type === "init") {
+    runtimeId.value = msg.runtimeId;
+    sendReady();
+    return;
+  }
+  if (msg.type === "reload") {
+    if (runtimeId.value && msg.runtimeId !== runtimeId.value) return;
+    window.location.assign(msg.payload.canonicalRuntimeUrl);
+  }
+}
+
 async function loadScreen() {
   screenComponent.value = null;
   loadError.value = null;
@@ -67,12 +161,22 @@ watch(
   () => route.fullPath,
   () => {
     void loadScreen();
+    sendRouteIfChanged();
   },
   { immediate: true },
 );
 
 onMounted(() => {
+  window.addEventListener("message", onMessage);
+  if (window.parent !== window) {
+    document.documentElement.classList.add("pbwork-runtime-embedded");
+  }
   void loadScreen();
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("message", onMessage);
+  document.documentElement.classList.remove("pbwork-runtime-embedded");
 });
 </script>
 
@@ -80,6 +184,7 @@ onMounted(() => {
   <v-app
     :theme="runtimeTheme"
     class="runtime-app"
+    :class="{ 'is-embedded': isEmbedded }"
     :style="themeStyle"
     data-testid="runtime-root"
   >
@@ -111,6 +216,25 @@ onMounted(() => {
 .runtime-main {
   min-height: 100vh;
 }
+
+.runtime-app.is-embedded :deep(.v-main) {
+  --v-layout-top: 0px !important;
+  --v-layout-bottom: 0px !important;
+  --v-layout-left: 0px !important;
+  --v-layout-right: 0px !important;
+  padding: 0 !important;
+  min-height: 100% !important;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.runtime-app.is-embedded :deep(.v-main::-webkit-scrollbar) {
+  width: 0;
+  height: 0;
+}
+
 .runtime-error {
   min-height: 100vh;
   box-sizing: border-box;

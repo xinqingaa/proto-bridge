@@ -4,7 +4,7 @@ import TokenGallery from "@/workbench/views/TokenGallery.vue";
 import ThemePreview from "@/workbench/views/ThemePreview.vue";
 import ComponentPlayground from "@/workbench/views/ComponentPlayground.vue";
 import PrototypeOverview from "@/workbench/views/PrototypeOverview.vue";
-import ScreenRuntimeLinkView from "@/workbench/views/ScreenRuntimeLinkView.vue";
+import PhoneCanvasView from "@/workbench/canvas/PhoneCanvasView.vue";
 import { loadPrototypes } from "@/design-system/loaders";
 import { LIFECYCLE_LABELS, type PrototypeLifecycle, type TokenCategory } from "@/design-system/types";
 
@@ -42,7 +42,7 @@ const lifecyclePrototypes = computed(() => {
     v-else-if="kind === 'prototype' && prototypeId"
     :prototype-id="prototypeId"
   />
-  <ScreenRuntimeLinkView
+  <PhoneCanvasView
     v-else-if="kind === 'screen' && prototypeId && screenSlug"
     :prototype-id="prototypeId"
     :screen-slug="screenSlug"

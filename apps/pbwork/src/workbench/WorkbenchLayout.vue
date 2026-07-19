@@ -725,7 +725,12 @@ onBeforeUnmount(() => {
           </div>
         </aside>
 
-        <main class="content-canvas" tabindex="-1" data-testid="content-canvas">
+        <main
+          class="content-canvas"
+          :class="{ 'is-phone-canvas': route.meta.resourceKind === 'screen' }"
+          tabindex="-1"
+          data-testid="content-canvas"
+        >
           <RouterView />
         </main>
 
@@ -896,6 +901,7 @@ onBeforeUnmount(() => {
 .workbench-grid {
   display: grid;
   grid-template-columns: auto minmax(480px, 1fr) auto;
+  height: calc(100vh - 56px);
   min-height: calc(100vh - 56px);
 }
 .workbench-grid.is-resizing {
@@ -946,9 +952,22 @@ onBeforeUnmount(() => {
 }
 .content-canvas {
   min-width: 0;
+  min-height: 0;
   padding: 36px 40px;
   overflow: auto;
   background: rgb(var(--v-theme-background));
+}
+
+.content-canvas.is-phone-canvas {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.content-canvas.is-phone-canvas > * {
+  flex: 1;
+  min-height: 0;
 }
 
 .panel-heading {

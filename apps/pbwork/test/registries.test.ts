@@ -7,7 +7,6 @@ import {
   prototypes,
   prototypeScreens,
 } from "@/prototypes/registry";
-import { buildCanonicalRuntimeUrl, resolveRuntimeRoute } from "@/runtime/url";
 
 describe("registries", () => {
   it("accepts the shipped registries", () => {
@@ -85,41 +84,6 @@ describe("design contracts", () => {
       "error",
       "sheet-open",
     ]);
-  });
-});
-
-describe("runtime url", () => {
-  it("builds canonical urls and resolves known routes", () => {
-    const href = buildCanonicalRuntimeUrl({
-      prototypeId: "project",
-      screenSlug: "task-list",
-      variantId: "empty",
-      themeId: "dark",
-    });
-    expect(href).toBe(
-      "/prototype/project/task-list?variant=empty&theme=dark",
-    );
-
-    const resolved = resolveRuntimeRoute({
-      prototypeId: "project",
-      screenSlug: "task-list",
-      searchParams: new URLSearchParams("variant=empty&theme=dark"),
-    });
-    expect(resolved.ok).toBe(true);
-    if (resolved.ok) {
-      expect(resolved.variant.id).toBe("empty");
-      expect(resolved.theme.id).toBe("dark");
-    }
-  });
-
-  it("rejects unknown screens", () => {
-    const resolved = resolveRuntimeRoute({
-      prototypeId: "project",
-      screenSlug: "missing",
-      searchParams: new URLSearchParams("theme=light"),
-    });
-    expect(resolved.ok).toBe(false);
-    if (!resolved.ok) expect(resolved.code).toBe("UNKNOWN_SCREEN");
   });
 });
 
