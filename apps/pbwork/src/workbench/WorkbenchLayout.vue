@@ -270,10 +270,10 @@ function secondaryIconFor(id: string) {
 }
 
 const inspectorStubTabs = [
-  { id: "overview", label: "概览", icon: Info },
-  { id: "component", label: "组件", icon: ComponentIcon },
-  { id: "conventions", label: "约定", icon: Sparkles },
   { id: "styles", label: "样式", icon: Paintbrush },
+  { id: "component", label: "组件", icon: ComponentIcon },
+  { id: "overview", label: "结构", icon: Info },
+  { id: "conventions", label: "约定", icon: Sparkles },
   { id: "comments", label: "评论", icon: MessageSquareText },
 ] as const;
 
@@ -968,6 +968,8 @@ onBeforeUnmount(() => {
 }
 .panel-body {
   position: relative;
+  display: flex;
+  flex-direction: column;
   flex: 1;
   min-height: 0;
   width: 100%;
@@ -977,7 +979,12 @@ onBeforeUnmount(() => {
   min-width: calc(var(--resource-expanded-width) - 16px);
 }
 .inspector-panel .panel-expanded {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
   min-width: calc(var(--inspector-expanded-width) - 16px);
+  overflow: hidden;
 }
 .content-canvas {
   min-width: 0;
@@ -1253,8 +1260,11 @@ onBeforeUnmount(() => {
   background: color-mix(in srgb, rgb(var(--v-theme-primary)) 45%, transparent);
 }
 .inspector-body {
-  min-height: 0;
+  display: flex;
+  flex-direction: column;
   flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 .inspector-empty {
   display: grid;

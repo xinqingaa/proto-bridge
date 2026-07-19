@@ -66,12 +66,15 @@ test("collapsing side panels expands the content track", async ({ page }) => {
 test("element inspector is hidden outside the canvas", async ({ page }) => {
   await page.goto("/workbench/foundations/tokens/color");
   await expect(page.getByTestId("inspector-panel")).toHaveCount(0);
+  await expect(page.getByTestId("resource-page-shell")).toBeVisible();
 
   await page.goto(
     "/workbench/prototypes/project/screens/task-list?variant=default&theme=light",
   );
   await expect(page.getByTestId("inspector-panel")).toBeVisible();
-  await expect(page.getByText("元素检查", { exact: true })).toBeVisible();
+  await expect(page.locator(".inspector-panel .panel-title")).toHaveText(
+    "元素检查",
+  );
 });
 
 test("search and settings controls have usable behavior", async ({ page }) => {

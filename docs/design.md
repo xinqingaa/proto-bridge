@@ -27,24 +27,43 @@ PBWork 默认是展示与检查工具。只有用户主动进入高级操作并�
 
 长期目标是让原型平台领先维护主题、组件和业务页面，Flutter 使用共享的设计系统定义实现生产 UI，PB 负责组织更完整的源码、运行态、视觉与目标工程上下文。多人协作、拖拽编排、登录鉴权、权限控制和版本历史属于后续产品化能力。
 
+### 1.1 关联链路原则
+
+PBWork 的设计基础、组件、页面与原型不是四套互相独立的展示目录，也不是所有层级直接耦合的单体实现。它们通过稳定契约连接，形成“分层依赖、契约连接、允许反馈”的关联链路：
+
+```text
+Token / Theme
+  -> 基础组件
+  -> 复杂组件
+  -> 业务页面
+  -> 页面流转与 Variant
+  -> 原型交互
+```
+
+每一层只消费下一层所需的公开契约，不读取实现私有状态、不复制下层实现。设计基础定义视觉语义和跨端值；基础组件提供可组合的 Props / State / Events / Slots；复杂组件组合基础组件并表达通用交互；页面组织业务信息和业务状态；原型通过路由、页面和 Variant 复现完整业务流程。
+
+该依赖允许向上反馈，但不允许业务语义直接污染基础层。页面发现缺少能力时，必须先判断它是已有 Token、基础组件、复杂组件还是页面局部能力；只有能被两个及以上组件或页面复用的能力才提升到共享注册表。业务专用颜色、间距、组件和页面状态不得以业务名称写入共享 Token 或组件契约。
+
+PBWork 的检查器必须支持沿这条链路回溯：任意页面元素应能在可用时显示组件 Contract、Token ID、CSS Variable 与当前解析值，并区分显式绑定、值匹配和原始 CSS。注册表、Playground、Runtime 和原型导航共用同一份契约来源，不能为每层维护互相漂移的列表。
+
 ---
 
 ## 2. 首期边界
 
 ### 必做
 
-| 能力 | 首期要求 |
-|------|----------|
-| 工作台壳 | 顶栏、一级导航、二级导航、中央内容区和右侧检查区完整可用 |
-| 设计基础 | 展示颜色、字体、间距、圆角、阴影等 Token |
-| 双主题 | 工作台壳与原型运行时分别切换主题，互不影响 |
-| 组件库 | 展示基础组件、复杂组件和组件元数据 |
-| Playground | 按 Component Contract 的 `controls` 修改 Props / State、重置到 `defaultProps`，并提供受控源码写入 |
-| 原型 | 按生命周期展示原型、Screen 和 Variant |
-| 手机画布 | 单画板、缩放、拖动、设备尺寸、原型主题、全屏和刷新 |
-| 元素检查 | iframe 内 hover、选择、高亮，并在右侧显示检查信息 |
-| 评论 | 为选中元素添加本地评论，支持完成与删除 |
-| Runtime URL | iframe、全屏、复制链接和 PB 使用同一个纯原型 URL |
+| 能力        | 首期要求                                                                                          |
+| ----------- | ------------------------------------------------------------------------------------------------- |
+| 工作台壳    | 顶栏、一级导航、二级导航、中央内容区和右侧检查区完整可用                                          |
+| 设计基础    | 展示颜色、字体、间距、圆角、阴影等 Token                                                          |
+| 双主题      | 工作台壳与原型运行时分别切换主题，互不影响                                                        |
+| 组件库      | 展示基础组件、复杂组件和组件元数据                                                                |
+| Playground  | 按 Component Contract 的 `controls` 修改 Props / State、重置到 `defaultProps`，并提供受控源码写入 |
+| 原型        | 按生命周期展示原型、Screen 和 Variant                                                             |
+| 手机画布    | 单画板、缩放、拖动、设备尺寸、原型主题、全屏和刷新                                                |
+| 元素检查    | iframe 内 hover、选择、高亮，并在右侧显示检查信息                                                 |
+| 评论        | 为选中元素添加本地评论，支持完成与删除                                                            |
+| Runtime URL | iframe、全屏、复制链接和 PB 使用同一个纯原型 URL                                                  |
 
 ### 不做
 
@@ -60,20 +79,20 @@ PBWork 默认是展示与检查工具。只有用户主动进入高级操作并�
 
 ## 3. 技术选型
 
-| 层 | 选择 |
-|----|------|
-| 框架 | Vue 3 + Vite |
-| 路由 | Vue Router |
-| 状态 | Pinia |
-| UI | Vuetify 3 |
-| 工作台布局 | Vuetify App Layout + CSS Grid |
-| 原型运行时 | 独立 Router Layout + iframe |
-| 手机外框 | CSS 绘制，不依赖图片 |
-| 本地评论 | `localStorage` |
-| 资源契约 | TypeScript 注册表 + JSON Schema Draft 2020-12；使用 Ajv 校验 Token、Theme、组件 Contract、Screen fixture 与 Playground 输入 |
-| 高级源码写入 | 仅开发环境启用的本地 Vite/Node 服务 |
-| 类型与格式 | `vue-tsc` + Prettier |
-| 测试 | Vitest + Vue Test Utils；仅工作台与 Runtime 闭环使用 Playwright |
+| 层           | 选择                                                                                                                        |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| 框架         | Vue 3 + Vite                                                                                                                |
+| 路由         | Vue Router                                                                                                                  |
+| 状态         | Pinia                                                                                                                       |
+| UI           | Vuetify 3                                                                                                                   |
+| 工作台布局   | Vuetify App Layout + CSS Grid                                                                                               |
+| 原型运行时   | 独立 Router Layout + iframe                                                                                                 |
+| 手机外框     | CSS 绘制，不依赖图片                                                                                                        |
+| 本地评论     | `localStorage`                                                                                                              |
+| 资源契约     | TypeScript 注册表 + JSON Schema Draft 2020-12；使用 Ajv 校验 Token、Theme、组件 Contract、Screen fixture 与 Playground 输入 |
+| 高级源码写入 | 仅开发环境启用的本地 Vite/Node 服务                                                                                         |
+| 类型与格式   | `vue-tsc` + Prettier                                                                                                        |
+| 测试         | Vitest + Vue Test Utils；仅工作台与 Runtime 闭环使用 Playwright                                                             |
 
 Vue 与 Vuetify 是 PBWork 的主要实现技术。JSON Schema 用于描述原型平台与 Flutter 可共享的主题或组件定义，不替代真实 Vue 页面源码，也不等同于 PB 产物。首期以可提交的 JSON 定义为共享边界并由 Ajv 校验，PBWork 将其适配为 Vuetify 配置；Flutter 消费方式不在本文范围内。
 
@@ -81,13 +100,13 @@ Vue 与 Vuetify 是 PBWork 的主要实现技术。JSON Schema 用于描述原�
 
 PBWork 的应用根目录固定为 `apps/pbwork/`，包名固定为 `@proto-bridge/pbwork`。它加入 pnpm workspace，但不进入 Core、CLI 或 MCP 的发布包。
 
-| 命令 | 作用 |
-|------|------|
-| `pnpm --filter @proto-bridge/pbwork dev` | 启动工作台、Runtime 路由和开发环境源码写入服务 |
-| `pnpm --filter @proto-bridge/pbwork build` | 构建只读静态工作台与 Runtime |
-| `pnpm --filter @proto-bridge/pbwork typecheck` | Vue / TypeScript 类型检查 |
-| `pnpm --filter @proto-bridge/pbwork test` | 单元与组件测试 |
-| `pnpm --filter @proto-bridge/pbwork test:e2e` | 浏览器端工作台与 Runtime 闭环测试 |
+| 命令                                           | 作用                                           |
+| ---------------------------------------------- | ---------------------------------------------- |
+| `pnpm --filter @proto-bridge/pbwork dev`       | 启动工作台、Runtime 路由和开发环境源码写入服务 |
+| `pnpm --filter @proto-bridge/pbwork build`     | 构建只读静态工作台与 Runtime                   |
+| `pnpm --filter @proto-bridge/pbwork typecheck` | Vue / TypeScript 类型检查                      |
+| `pnpm --filter @proto-bridge/pbwork test`      | 单元与组件测试                                 |
+| `pnpm --filter @proto-bridge/pbwork test:e2e`  | 浏览器端工作台与 Runtime 闭环测试              |
 
 生产构建是纯静态应用，不包含源码写入 API。history fallback 是部署 PBWork 的硬要求，`/workbench/**` 与 `/prototype/**` 都必须回退到应用入口。
 
@@ -116,26 +135,27 @@ Prototype 内容同样不得破坏原生键盘语义，但其业务视觉是否�
 ├────────┬──────────────────┬─────────────────────────────┬──────────────────┤
 │ 一级   │ 二级资源导航     │ 中央内容 / 预览画布         │ 元素检查（仅画布）│
 │ 导航   │                  │                             │                  │
-│        │ 根据一级导航变化 │ Token / Theme               │ 概览             │
-│ 设计   │                  │ Component Playground        │ Props / State    │
-│ 基础   │                  │ Prototype Overview          │ Schema / Token   │
-│        │                  │ 单手机画板                  │ 约定 / 样式      │
-│ 组件   │                  │                             │ 评论             │
+│        │ 根据一级导航变化 │ Token / Theme               │ 样式（默认）     │
+│ 设计   │                  │ Component Playground        │ 组件             │
+│ 基础   │                  │ Prototype Overview          │ 结构             │
+│        │                  │ 单手机画板                  │ 约定 / 评论      │
+│ 组件   │                  │ ResourcePageShell 内容区    │                  │
 │        │                  │                             │                  │
 │ 原型   │                  │                             │                  │
 └────────┴──────────────────┴─────────────────────────────┴──────────────────┘
 ```
 
-右侧「元素检查」仅在原型 Screen 画布路由显示；Foundations / Components / Prototype Overview 不挂载该栏。
+右侧「元素检查」仅在原型 Screen 画布路由显示；Foundations / Components / Prototype Overview 不挂载该栏。普通资源页使用中央区 `ResourcePageShell`（最大宽度 1440px，宽屏 12 列，&lt;1280px 收为单列），并在页面内部提供上下文侧栏，不得把全局元素检查栏扩展到这些路由。
+
 ### 4.1 尺寸建议
 
-| 区域 | 默认尺寸 | 行为 |
-|------|----------|------|
-| 顶栏 | 56px 高 | 固定 |
-| 一级导航 | 72px 宽 | 固定 rail，可显示图标和短标签 |
-| 二级导航 | 264px 宽 | 可折叠 |
-| 右侧检查 | 360px 宽 | 仅 Screen 画布显示；可折叠，可在较窄窗口收为抽屉 |
-| 中央区域 | 剩余空间 | 最小宽度 480px，内容独立滚动 |
+| 区域     | 默认尺寸 | 行为                                                                       |
+| -------- | -------- | -------------------------------------------------------------------------- |
+| 顶栏     | 56px 高  | 固定                                                                       |
+| 一级导航 | 72px 宽  | 固定 rail，可显示图标和短标签                                              |
+| 二级导航 | 264px 宽 | 可折叠                                                                     |
+| 右侧检查 | 440px 宽 | 仅 Screen 画布显示；可折叠；最小 420px，样式检查允许拖拽扩展到 640px       |
+| 中央区域 | 剩余空间 | 最小宽度 480px；1280px 窗口下在检查栏展开时仍保留可用画布宽度；内容独立滚动 |
 
 首期不为平板或手机建设工作台布局。PBWork 是桌面工具，推荐最小窗口宽度 1280px。
 
@@ -175,20 +195,20 @@ Prototype 内容同样不得破坏原生键盘语义，但其业务视觉是否�
 
 顶栏只承载全局能力：
 
-| 区域 | 内容 |
-|------|------|
-| 左侧 | PBWork 名称与当前位置面包屑 |
+| 区域 | 内容                                                              |
+| ---- | ----------------------------------------------------------------- |
+| 左侧 | PBWork 名称与当前位置面包屑                                       |
 | 中间 | 全局搜索入口，可搜索 Token、Theme、Component、Prototype 和 Screen |
-| 右侧 | 工作台壳浅色/深色切换、设置入口 |
+| 右侧 | 工作台壳浅色/深色切换、设置入口                                   |
 
 首期只有一个 Workspace，不显示 Workspace 切换器。当前 Prototype、Screen、Variant、设备和原型主题属于画布上下文，不放进全局顶栏。
 
 首期 stub（有入口、不阻塞主闭环）：
 
-| 入口 | 首期行为 |
-|------|----------|
-| 全局搜索 | 可按注册表 ID / 名称做本地过滤跳转；不做模糊语义搜索、不做跨仓库索引 |
-| 设置 | 仅工作台偏好（壳主题已在顶栏；可放“清除本地评论”等说明）；不做账号、远程同步或权限 |
+| 入口     | 首期行为                                                                           |
+| -------- | ---------------------------------------------------------------------------------- |
+| 全局搜索 | 可按注册表 ID / 名称做本地过滤跳转；不做模糊语义搜索、不做跨仓库索引               |
+| 设置     | 仅工作台偏好（壳主题已在顶栏；可放“清除本地评论”等说明）；不做账号、远程同步或权限 |
 
 ---
 
@@ -257,14 +277,14 @@ Variant 是 Screen 的子节点，不作为一级导航或独立资源类型出�
 
 中央内容由当前选中的最末级资源决定：
 
-| 选中对象 | 中央内容 |
-|----------|----------|
+| 选中对象   | 中央内容                               |
+| ---------- | -------------------------------------- |
 | Token 分类 | Token 色板、字阶、间距、圆角或阴影样本 |
-| Theme | 完整主题样本和代表性组件矩阵 |
-| Component | Component Playground |
-| Prototype | 原型概要、页面列表、状态和负责人 |
-| Screen | 手机画板中的默认 Variant |
-| Variant | 手机画板中的指定状态 |
+| Theme      | 完整主题样本和代表性组件矩阵           |
+| Component  | Component Playground                   |
+| Prototype  | 原型概要、页面列表、状态和负责人       |
+| Screen     | 手机画板中的默认 Variant               |
+| Variant    | 手机画板中的指定状态                   |
 
 Foundations 和组件页面使用普通 Vue/Vuetify 内容布局。Screen 和 Variant 使用 iframe 运行独立原型页面。
 
@@ -295,11 +315,11 @@ iframe：真实 Prototype Runtime URL
 
 首期设备尺寸（宽 × 高）：
 
-| 预设 | Viewport |
-|------|----------|
+| 预设              | Viewport  |
+| ----------------- | --------- |
 | iPhone 14（默认） | 390 × 844 |
-| iPhone SE | 375 × 667 |
-| Android 常见 | 360 × 800 |
+| iPhone SE         | 375 × 667 |
+| Android 常见      | 360 × 800 |
 | iPhone 14 Pro Max | 430 × 932 |
 
 iframe 使 Vuetify overlay 即使挂载到 `body`，仍被限制在手机运行时内部，不会飞出工作台画布。
@@ -341,14 +361,14 @@ http://127.0.0.1:5173/prototype/project/task-list?variant=default&theme=light
 http://127.0.0.1:5173/prototype/project/task-detail?variant=sheet-open&theme=dark
 ```
 
-| 部分 | 规则 |
-|------|------|
-| `prototypeId` / `screenSlug` | 与注册表字段一致；二者共同定位 Screen，稳定、可读、可进 PB `--route` |
-| `screenId` | 不进入 URL；全局 Contract ID，如 `project.task-list`，供 PB、Bridge、评论和检查器使用 |
-| `variant` | 可选；缺省时使用该 Screen 的 `defaultVariantId` |
-| `theme` | 可选；缺省时使用原型默认主题 |
-| 业务 query | Variant 可声明额外 `query`；复制链接时一并带上，且必须可由注册表复现 |
-| 禁止 | 工作台专用 query（如 `inspect=1`、`fullscreen=1`）不得出现在交给 PB 的 URL 上 |
+| 部分                         | 规则                                                                                  |
+| ---------------------------- | ------------------------------------------------------------------------------------- |
+| `prototypeId` / `screenSlug` | 与注册表字段一致；二者共同定位 Screen，稳定、可读、可进 PB `--route`                  |
+| `screenId`                   | 不进入 URL；全局 Contract ID，如 `project.task-list`，供 PB、Bridge、评论和检查器使用 |
+| `variant`                    | 可选；缺省时使用该 Screen 的 `defaultVariantId`                                       |
+| `theme`                      | 可选；缺省时使用原型默认主题                                                          |
+| 业务 query                   | Variant 可声明额外 `query`；复制链接时一并带上，且必须可由注册表复现                  |
+| 禁止                         | 工作台专用 query（如 `inspect=1`、`fullscreen=1`）不得出现在交给 PB 的 URL 上         |
 
 Runtime Layout 包含：
 
@@ -388,20 +408,20 @@ Runtime URL 是当前 Screen、Variant、Theme 和可复现业务 query 的唯�
 
 Screen/Variant 画布工具栏包含：
 
-| 工具 | 行为 |
-|------|------|
-| 选择元素 | 开启 iframe hover 与点击选择（M4；首期可灰显占位） |
-| 添加评论 | 选择元素或页面位置后创建评论（M5；首期可灰显占位） |
-| 拖动画布 | 平移中央画布，不操作原型页面 |
-| 缩小 / 放大 | 步进调整画板显示比例 |
-| 缩放滑块 | 在允许范围内连续自定义显示比例（如 35%–200%） |
-| 缩放比例 | 显示当前比例；可打开常用比例菜单 |
-| 设备尺寸 | 切换 iframe viewport |
-| 原型主题 | 切换原型自身主题，不影响工作台壳 |
-| Variant | 切换源码注册的可复现状态 |
-| 刷新 | 重载当前 iframe |
-| 全屏预览 | 在新标签页打开当前 iframe URL |
-| 复制原型链接 | 复制当前 iframe 完整 URL |
+| 工具         | 行为                                               |
+| ------------ | -------------------------------------------------- |
+| 选择元素     | 开启 iframe hover 与点击选择（M4；首期可灰显占位） |
+| 添加评论     | 选择元素或页面位置后创建评论（M5；首期可灰显占位） |
+| 拖动画布     | 平移中央画布，不操作原型页面                       |
+| 缩小 / 放大  | 步进调整画板显示比例                               |
+| 缩放滑块     | 在允许范围内连续自定义显示比例（如 35%–200%）      |
+| 缩放比例     | 显示当前比例；可打开常用比例菜单                   |
+| 设备尺寸     | 切换 iframe viewport                               |
+| 原型主题     | 切换原型自身主题，不影响工作台壳                   |
+| Variant      | 切换源码注册的可复现状态                           |
+| 刷新         | 重载当前 iframe                                    |
+| 全屏预览     | 在新标签页打开当前 iframe URL                      |
+| 复制原型链接 | 复制当前 iframe 完整 URL                           |
 
 不提供「适应画布」自动算缩放：缩放由用户通过步进、滑块、常用比例或修饰键+滚轮控制；拖动画布与缩放解耦。
 
@@ -413,10 +433,10 @@ Screen/Variant 画布工具栏包含：
 
 PBWork 同时维护两套互不影响的主题状态：
 
-| 主题 | 控制范围 | 控制位置 | 持久化 |
-|------|----------|----------|--------|
-| 工作台壳主题 | 顶栏、导航、画布背景和检查面板 | 顶部全局栏 | `localStorage` |
-| 原型主题 | iframe 内的组件和页面 | 画布工具栏 | Runtime URL query + 当前会话 |
+| 主题         | 控制范围                       | 控制位置   | 持久化                       |
+| ------------ | ------------------------------ | ---------- | ---------------------------- |
+| 工作台壳主题 | 顶栏、导航、画布背景和检查面板 | 顶部全局栏 | `localStorage`               |
+| 原型主题     | iframe 内的组件和页面          | 画布工具栏 | Runtime URL query + 当前会话 |
 
 切换工作台壳主题不得重载或改变原型主题。切换原型主题必须更新工作台 URL 和 iframe Runtime URL，不改变 PBWork 壳。
 
@@ -436,17 +456,17 @@ Runtime Bridge 只服务 **PBWork 壳 ↔ 原型 iframe** 的通信。它不是 
 
 ```ts
 type BridgeEnvelope<TType extends string, TPayload> = {
-  source: 'pbwork' | 'pbwork-runtime'
-  protocolVersion: 1
-  runtimeId: string
-  type: TType
-  requestId?: string
-  prototypeId: string
-  screenId: string
-  variantId?: string
-  themeId: string
-  payload: TPayload
-}
+  source: "pbwork" | "pbwork-runtime";
+  protocolVersion: 1;
+  runtimeId: string;
+  type: TType;
+  requestId?: string;
+  prototypeId: string;
+  screenId: string;
+  variantId?: string;
+  themeId: string;
+  payload: TPayload;
+};
 ```
 
 每次 iframe `load` 都生成新的 `runtimeId`。PBWork 只接受：`event.source === iframe.contentWindow`、`source === 'pbwork-runtime'`、`protocolVersion` 匹配、origin 在允许列表，且 `runtimeId`、`prototypeId`、`screenId`、`variantId`、`themeId` 与当前 iframe 上下文一致的消息。
@@ -470,19 +490,19 @@ PBWork
 Prototype iframe
 ```
 
-| type | 方向 | 用途 |
-|------|------|------|
-| `init` | workbench → runtime | iframe load 后下发本次 `runtimeId` 与当前 URL 上下文，启动握手 |
-| `ready` | runtime → workbench | iframe 可交互；携带当前 route、variant、theme |
-| `hover` | runtime → workbench | 悬停元素摘要（可选 bbox） |
-| `select` | runtime → workbench | 锁定元素：tag/class/text/bbox/path、`data-pb-*`、语义父节点 |
-| `comment-target` | runtime → workbench | 评论模式点击后的元素或页面坐标落点；拦截该次业务点击 |
-| `clear-select` | runtime → workbench | 选择已清除 |
-| `route` / `state` | runtime → workbench | 页内导航或可序列化状态变化（用于检查面板摘要） |
-| `inspect-mode` | workbench → runtime | 开关选择模式；开启时拦截点击，不触发页面业务 |
-| `comment-mode` | workbench → runtime | 开关评论落点模式；与 inspect 互斥 |
-| `highlight` | workbench → runtime | 按 `data-pb-id` 或临时 handle 高亮/清除 |
-| `reload` | workbench → runtime | 要求 runtime 按当前 URL 重载（也可由工作台直接重设 iframe `src`） |
+| type              | 方向                | 用途                                                              |
+| ----------------- | ------------------- | ----------------------------------------------------------------- |
+| `init`            | workbench → runtime | iframe load 后下发本次 `runtimeId` 与当前 URL 上下文，启动握手    |
+| `ready`           | runtime → workbench | iframe 可交互；携带当前 route、variant、theme                     |
+| `hover`           | runtime → workbench | 悬停元素摘要（可选 bbox）                                         |
+| `select`          | runtime → workbench | 锁定元素：tag/class/text/bbox/path、`data-pb-*`、语义父节点       |
+| `comment-target`  | runtime → workbench | 评论模式点击后的元素或页面坐标落点；拦截该次业务点击              |
+| `clear-select`    | runtime → workbench | 选择已清除                                                        |
+| `route` / `state` | runtime → workbench | 页内导航或可序列化状态变化（用于检查面板摘要）                    |
+| `inspect-mode`    | workbench → runtime | 开关选择模式；开启时拦截点击，不触发页面业务                      |
+| `comment-mode`    | workbench → runtime | 开关评论落点模式；与 inspect 互斥                                 |
+| `highlight`       | workbench → runtime | 按 `data-pb-id` 或临时 handle 高亮/清除                           |
+| `reload`          | workbench → runtime | 要求 runtime 按当前 URL 重载（也可由工作台直接重设 iframe `src`） |
 
 握手：工作台在 iframe `load` 后创建 `runtimeId`，向当前 `contentWindow` 发送 `init`，Runtime 保存该 ID 并返回携带同一 ID 的 `ready`；超时则提示刷新，不把过期消息写入检查面板。Runtime 在收到 `init` 前不得发送选择或状态消息。iframe 重载后必须重新握手，旧 `runtimeId` 与 `requestId` 全部作废。
 
@@ -491,65 +511,103 @@ Prototype iframe
 实现使用判别联合，不允许业务代码直接构造无类型的 `BridgeEnvelope<string, unknown>`：
 
 ```ts
-type JsonRecord = Record<string, unknown>
+type JsonRecord = Record<string, unknown>;
 type BridgeErrorCode =
-  | 'PROTOCOL_MISMATCH'
-  | 'INVALID_ORIGIN'
-  | 'STALE_RUNTIME'
-  | 'INVALID_CONTEXT'
-  | 'INVALID_RUNTIME_ROUTE'
-  | 'PAYLOAD_TOO_LARGE'
-  | 'ELEMENT_NOT_FOUND'
-  | 'RUNTIME_NOT_READY'
-  | 'COMMAND_FAILED'
+  | "PROTOCOL_MISMATCH"
+  | "INVALID_ORIGIN"
+  | "STALE_RUNTIME"
+  | "INVALID_CONTEXT"
+  | "INVALID_RUNTIME_ROUTE"
+  | "PAYLOAD_TOO_LARGE"
+  | "ELEMENT_NOT_FOUND"
+  | "RUNTIME_NOT_READY"
+  | "COMMAND_FAILED";
 
 type RuntimeCapability =
-  | 'inspect'
-  | 'comment-target'
-  | 'highlight'
-  | 'route-sync'
-  | 'state-summary'
+  "inspect" | "comment-target" | "highlight" | "route-sync" | "state-summary";
 
 type SnapshotMeta = {
-  truncated?: boolean
-  warnings?: Array<'TEXT_TRUNCATED' | 'DEPTH_TRUNCATED' | 'COLLECTION_TRUNCATED' | 'VALUE_REDACTED'>
-}
+  truncated?: boolean;
+  warnings?: Array<
+    | "TEXT_TRUNCATED"
+    | "DEPTH_TRUNCATED"
+    | "COLLECTION_TRUNCATED"
+    | "VALUE_REDACTED"
+  >;
+};
 
-type ElementRef = { pbId?: string; handle?: string }
-type ElementBox = { x: number; y: number; width: number; height: number }
-type PagePoint = { x: number; y: number }
+type ElementRef = { pbId?: string; handle?: string };
+type ElementBox = { x: number; y: number; width: number; height: number };
+type PagePoint = { x: number; y: number };
+type StyleInspectGroup =
+  | "color"
+  | "typography"
+  | "spacing-size"
+  | "border-radius"
+  | "shadow-layout";
+type StyleInspectRow = {
+  property: string;
+  value: string;
+  cssVar?: string;
+  tokenId?: string;
+  group: StyleInspectGroup;
+  source: "binding" | "value-match" | "raw";
+};
+type TokenBindingRow = {
+  slot: string;
+  tokenId: string;
+  cssVar: string;
+};
 type ElementSummary = {
-  ref: ElementRef
-  tag: string
-  classes: string[]
-  text?: string
-  bbox?: ElementBox
-  domPath?: string
-  pbRole?: string
-  pbShell?: 'sheet' | 'dialog' | 'modal' | 'drawer'
-  semanticParent?: ElementRef
-  meta?: SnapshotMeta
-}
+  ref: ElementRef;
+  tag: string;
+  classes: string[];
+  text?: string;
+  bbox?: ElementBox;
+  domPath?: string;
+  pbRole?: string;
+  pbShell?: "sheet" | "dialog" | "modal" | "drawer";
+  semanticParent?: ElementRef;
+  meta?: SnapshotMeta;
+};
 
 type BridgePayloads = {
-  init: { canonicalRuntimeUrl: string }
-  ready: { canonicalRuntimeUrl: string; route: string; capabilities: RuntimeCapability[] }
-  hover: { element?: ElementSummary }
-  select: { element: ElementSummary; props?: JsonRecord; state?: JsonRecord; tokens?: string[]; tokenBindings?: TokenBindingRow[]; styles: StyleInspectRow[]; componentId?: string; meta?: SnapshotMeta }
-  'comment-target': { point: PagePoint; element?: ElementSummary; selector?: string; bbox?: ElementBox }
-  'clear-select': { reason: 'escape' | 'blank' | 'mode-change' | 'unmounted' }
-  route: { fromRuntimeUrl: string; canonicalRuntimeUrl: string }
-  state: { summary: JsonRecord; meta?: SnapshotMeta }
-  'inspect-mode': { enabled: boolean }
-  'comment-mode': { enabled: boolean }
-  highlight: { element?: ElementRef }
-  reload: { canonicalRuntimeUrl: string }
-  error: { code: BridgeErrorCode; message: string; requestId?: string }
-}
+  init: { canonicalRuntimeUrl: string };
+  ready: {
+    canonicalRuntimeUrl: string;
+    route: string;
+    capabilities: RuntimeCapability[];
+  };
+  hover: { element?: ElementSummary };
+  select: {
+    element: ElementSummary;
+    props?: JsonRecord;
+    state?: JsonRecord;
+    tokens?: string[];
+    tokenBindings?: TokenBindingRow[];
+    styles: StyleInspectRow[];
+    componentId?: string;
+    meta?: SnapshotMeta;
+  };
+  "comment-target": {
+    point: PagePoint;
+    element?: ElementSummary;
+    selector?: string;
+    bbox?: ElementBox;
+  };
+  "clear-select": { reason: "escape" | "blank" | "mode-change" | "unmounted" };
+  route: { fromRuntimeUrl: string; canonicalRuntimeUrl: string };
+  state: { summary: JsonRecord; meta?: SnapshotMeta };
+  "inspect-mode": { enabled: boolean };
+  "comment-mode": { enabled: boolean };
+  highlight: { element?: ElementRef };
+  reload: { canonicalRuntimeUrl: string };
+  error: { code: BridgeErrorCode; message: string; requestId?: string };
+};
 
 type BridgeMessage = {
-  [K in keyof BridgePayloads]: BridgeEnvelope<K, BridgePayloads[K]>
-}[keyof BridgePayloads]
+  [K in keyof BridgePayloads]: BridgeEnvelope<K, BridgePayloads[K]>;
+}[keyof BridgePayloads];
 ```
 
 `init`、`reload`、`highlight` 等命令可以带 `requestId`；对应执行失败使用相同 `requestId` 的 `error` 回复。首期不要求成功响应，状态成功以 `ready`、`select` 或 DOM 可见结果为准。握手 5 秒超时，其他请求 3 秒超时；超时只影响当前请求，不自动复用旧 runtime。
@@ -592,13 +650,13 @@ PBWork 不读取 Vue 私有字段（如 DOM 上的内部组件实例）来获取
 
 ```ts
 type InspectRegistration = {
-  element: HTMLElement
-  pbId: string
-  componentId?: string
-  getProps?: () => Record<string, unknown>
-  getState?: () => Record<string, unknown>
-  getTokens?: () => string[]
-}
+  element: HTMLElement;
+  pbId: string;
+  componentId?: string;
+  getProps?: () => Record<string, unknown>;
+  getState?: () => Record<string, unknown>;
+  getTokens?: () => string[];
+};
 ```
 
 组件可以通过 `usePbInspect()` composable 或 `v-pb-inspect` directive 登记。Runtime 使用 `WeakMap<HTMLElement, InspectRegistration>` 保存关系；选中普通 DOM 时只返回 DOM/style 信息，选中已登记组件时才返回 Props、State、Contract ID 与 Token。
@@ -611,21 +669,51 @@ type InspectRegistration = {
 
 ## 12. 元素检查面板
 
-右侧「元素检查」只服务原型画布选中态。Foundations、Component Playground 与 Prototype Overview 不显示该栏；资源自身的说明放在中央内容区。
+右侧「元素检查」只服务原型画布选中态。Foundations、Component Playground 与 Prototype Overview 不显示该栏；资源自身的说明放在中央内容区的 `ResourcePageShell` 与页内侧栏。
 
 ### 12.1 选中元素
 
-建议使用以下 Tab：
+选中元素后默认进入「样式」。Tab 顺序固定为：
 
-| Tab | 内容 |
-|-----|------|
-| 概览 | 标签、class、文本、尺寸、DOM path、所属 Screen/Variant |
-| 组件 | 组件名、Props/State、Contract ID、语义父节点、Token 绑定（slot → Token ID → `--pb-*`） |
+| Tab  | 内容                                                                                                                  |
+| ---- | --------------------------------------------------------------------------------------------------------------------- |
+| 样式 | 白名单 CSS 属性；第一视觉层级为 Token ID、CSS Variable、Resolved Value；按语义分组；标注匹配来源                      |
+| 组件 | 组件名、Props/State（可折叠 key-value，复杂对象可展开 JSON）、Contract ID、语义父节点、Token 绑定                     |
+| 结构 | 标签、class、文本、尺寸、DOM path、所属 Screen/Variant                                                                |
 | 约定 | 原始 tag/class、`data-pb-id`、`data-pb-role`、`data-pb-shell` 与 PBWork 一致性提示；不得展示为 PB Core 的实际推断结果 |
-| 样式 | 白名单 CSS 属性；优先展示跨端 Token ID 与 CSS 变量名，并附当前解析值 |
-| 评论 | 当前元素的未完成和已完成评论（M5） |
+| 评论 | 当前元素的未完成和已完成评论（M5）                                                                                    |
+
+样式分组：颜色 / 字体 / 间距与尺寸 / 边框与圆角 / 阴影与布局。每条样式固定结构：
+
+1. CSS 属性名；
+2. **Token ID**（高对比主色、等宽字体）+ 复制；
+3. **CSS Variable**（次级强调）+ 复制；
+4. **Resolved Value**（色块 / 尺寸条 / 阴影样本）+ 复制。
+
+匹配来源必须显式标注，避免把推断值伪装成组件契约：
+
+| `source`       | 展示文案   | 含义                                       |
+| -------------- | ---------- | ------------------------------------------ |
+| `binding`      | 显式绑定   | 来自组件 `tokenBindings` / 注册 Token 集合 |
+| `value-match`  | 值匹配推断 | 计算值与 Token 解析值相等，非契约承诺      |
+| `raw`          | 原始 CSS   | 未匹配到 Token                             |
+
+`StyleInspectRow` 携带 `group` 与 `source`；仍遵守 Bridge 64 KiB 与截断/遮蔽限制。
 
 样式与 Token 对照以 **Token ID**（如 `color.on-surface`）为跨端权威 key，CSS 变量名为 `--pb-<normalized-token-id>`，解析值为辅助确认。
+
+### 12.2 普通资源页布局
+
+`ResourcePageShell` 统一 Foundations / Components / Prototype Overview：
+
+- 页面最大宽度 1440px；
+- 统一标题、统计摘要、工具栏与内容区；
+- 宽屏使用 12 列网格；1280px 以下收为单列；
+- Token 页：分类摘要、搜索 / 主题 / 显示模式、高密度网格或表格、页内右侧详情；
+- Component Playground：主预览 + 约 320px Props；下方 States / Token Bindings / Slots / Events / Contract；支持单状态与状态矩阵；
+- Theme 页：语义色、字体、表单、列表、反馈状态矩阵；
+- Prototype Overview：页面卡片网格、Variant 数量、流程关系与生命周期信息。
+
 ---
 
 ## 13. 注册表与 Variant
@@ -634,116 +722,138 @@ type InspectRegistration = {
 
 ### 13.1 唯一注册源
 
-| 资源 | 注册位置（约定） |
-|------|------------------|
-| Prototype 元数据 | `src/prototypes/registry.ts#prototypes` |
-| Screen / Variant | `src/prototypes/registry.ts#prototypeScreens` |
+| 资源                  | 注册位置（约定）                                                                                              |
+| --------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Prototype 元数据      | `src/prototypes/registry.ts#prototypes`                                                                       |
+| Screen / Variant      | `src/prototypes/registry.ts#prototypeScreens`                                                                 |
 | Screen fixture Schema | `src/prototypes/<prototypeId>/schemas/<screenSlug>.fixture.schema.json`，由 `ScreenRecord.fixtureSchema` 引用 |
-| Component | `src/design-system/components/registry.ts`；共享契约在 `components/contracts/*.json` |
-| Theme / Token | `src/design-system/themes/*.json`、`src/design-system/tokens/*.json` |
+| Component             | `src/design-system/components/registry.ts`；共享契约在 `components/contracts/*.json`                          |
+| Theme / Token         | `src/design-system/themes/*.json`、`src/design-system/tokens/*.json`                                          |
 
 `prototypeScreens` 是 PBWork 路由、导航和当前 PB source adapter 共同读取的唯一页面表。不得再维护一份只给 Vue Router 或只给 PB 的页面列表。工作台启动时校验注册表；高级写入成功后先重新校验，再刷新路由和预览。
+
+#### 13.1.1 层级关联契约
+
+层级关联必须保持可追溯：
+
+| 层级          | 允许依赖                         | 必须提供                                     |
+| ------------- | -------------------------------- | -------------------------------------------- |
+| Token / Theme | 无下层依赖                       | 稳定 Token ID、类型、默认值、主题覆盖        |
+| 基础组件      | Token / Theme                    | Props、States、Events、Slots、Token Bindings |
+| 复杂组件      | Token / Theme、基础组件          | 组合关系、业务无关交互、Contract             |
+| 页面          | 基础组件、复杂组件、页面局部状态 | 页面结构、路由、业务状态、可检查根节点       |
+| 原型          | 页面、Runtime URL、Variant       | 页面流转、可复现 Variant、主题与业务 query   |
+
+任何新增资源都必须声明其上游依赖。依赖关系用于 Playground 预览、Runtime 检查、注册表校验和 E2E 验收；它不是运行时动态组件编排，也不允许替代真实 Vue 页面源码。
 
 ### 13.2 最小 schema
 
 当前 `vue3-prototype` adapter 静态读取页面时需要 `screenId`、`path`、`view`。PBWork 注册表必须保留这些字段，不得改成 adapter 无法识别的 `route/entry` 私有别名。
 
 ```ts
-type PrototypeLifecycle = 'active' | 'review' | 'final' | 'archived'
+type PrototypeLifecycle = "active" | "review" | "final" | "archived";
 
 type PrototypeRecord = {
-  id: string
-  label: string
-  lifecycle: PrototypeLifecycle
-  owners?: string[]
-  roles?: string[] // 参与职责，仅元数据与筛选，不作导航轴
-  defaultThemeId: string
-}
+  id: string;
+  label: string;
+  lifecycle: PrototypeLifecycle;
+  owners?: string[];
+  roles?: string[]; // 参与职责，仅元数据与筛选，不作导航轴
+  defaultThemeId: string;
+};
 
 type ScreenRecord = {
-  prototypeId: string
-  screenId: string // 全局 Contract ID，如 project.task-list
-  screenSlug: string // Prototype 内 URL 段，如 task-list
-  label: string
-  title?: string
-  path: string // Runtime path，如 /prototype/project/task-list
-  view: string // 可静态解析的 Vue SFC 逻辑相对路径，如 project/screens/TaskList.vue
-  fixtureSchema?: string // 相对 Prototype 目录，如 schemas/task-list.fixture.schema.json
-  defaultVariantId: string
-  variants: PrototypeVariant[]
-}
+  prototypeId: string;
+  screenId: string; // 全局 Contract ID，如 project.task-list
+  screenSlug: string; // Prototype 内 URL 段，如 task-list
+  label: string;
+  title?: string;
+  path: string; // Runtime path，如 /prototype/project/task-list
+  view: string; // 可静态解析的 Vue SFC 逻辑相对路径，如 project/screens/TaskList.vue
+  fixtureSchema?: string; // 相对 Prototype 目录，如 schemas/task-list.fixture.schema.json
+  defaultVariantId: string;
+  variants: PrototypeVariant[];
+};
 
 type PrototypeVariant = {
-  id: string
-  label: string
-  description?: string
-  query?: Record<string, string>
-  fixture?: string
-}
+  id: string;
+  label: string;
+  description?: string;
+  query?: Record<string, string>;
+  fixture?: string;
+};
 
-type TokenCategory = 'color' | 'typography' | 'spacing' | 'radius' | 'elevation'
-type TokenValue = string | number
+type TokenCategory =
+  "color" | "typography" | "spacing" | "radius" | "elevation";
+type TokenValue = string | number;
 
 type TokenRecord = {
-  schemaVersion: 1
-  id: string
-  label: string
-  category: TokenCategory
-  defaultValue: TokenValue
-  description?: string
-}
+  schemaVersion: 1;
+  id: string;
+  label: string;
+  category: TokenCategory;
+  defaultValue: TokenValue;
+  description?: string;
+};
 
 type ThemeRecord = {
-  schemaVersion: 1
-  id: string
-  label: string
-  dark: boolean
-  overrides: Record<string, TokenValue> // Token ID -> 当前主题值
-}
+  schemaVersion: 1;
+  id: string;
+  label: string;
+  dark: boolean;
+  overrides: Record<string, TokenValue>; // Token ID -> 当前主题值
+};
 
 type VuetifyThemeBindings = Record<
-  'background' | 'surface' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning',
+  | "background"
+  | "surface"
+  | "primary"
+  | "secondary"
+  | "error"
+  | "info"
+  | "success"
+  | "warning",
   string // Token ID
->
+>;
 
 type PlaygroundControl = {
-  key: string
-  label: string
-  control: 'text' | 'number' | 'boolean' | 'select' | 'color'
-  options?: Array<{ label: string; value: string | number | boolean }>
-}
+  key: string;
+  label: string;
+  control: "text" | "number" | "boolean" | "select" | "color";
+  options?: Array<{ label: string; value: string | number | boolean }>;
+};
 
 type ComponentRecord = {
-  id: string
-  label: string
-  category: 'basic' | 'complex'
-  view: string
-  contract: string // 可被 Flutter 消费的 JSON 契约路径
-  example: Record<string, unknown> // 必须显式存在；无覆盖时写 {}
-  controls: PlaygroundControl[] // 显式声明控件；Schema 只负责校验
-}
+  id: string;
+  label: string;
+  category: "basic" | "complex";
+  view: string;
+  contract: string; // 可被 Flutter 消费的 JSON 契约路径
+  example: Record<string, unknown>; // 必须显式存在；无覆盖时写 {}
+  controls: PlaygroundControl[]; // 显式声明控件；Schema 只负责校验
+};
 
 type ComponentStateContract = {
-  id: string
-  label: string
-  description?: string
-  props?: Record<string, unknown>
-}
+  id: string;
+  label: string;
+  description?: string;
+  props?: Record<string, unknown>;
+};
 
 type ComponentContract = {
-  schemaVersion: 1
-  id: string
-  category: 'basic' | 'complex'
-  propsSchema: Record<string, unknown> // JSON Schema object
-  defaultProps: Record<string, unknown>
-  states: ComponentStateContract[]
-  slots: string[]
-  events: string[]
-  tokenBindings: Record<string, string> // semantic slot -> Token ID
-}
+  schemaVersion: 1;
+  id: string;
+  category: "basic" | "complex";
+  propsSchema: Record<string, unknown>; // JSON Schema object
+  defaultProps: Record<string, unknown>;
+  states: ComponentStateContract[];
+  slots: string[];
+  events: string[];
+  tokenBindings: Record<string, string>; // semantic slot -> Token ID
+};
 
-export const prototypes = [] satisfies PrototypeRecord[]
-export const prototypeScreens = [] satisfies ScreenRecord[]
+export const prototypes = [] satisfies PrototypeRecord[];
+export const prototypeScreens = [] satisfies ScreenRecord[];
 ```
 
 Token、Theme 和 `ComponentContract` 必须保持 JSON 可序列化，并分别通过 `schemas/token.schema.json`、`schemas/theme.schema.json`、`schemas/component.schema.json` 校验。共享 JSON Contract 是跨端权威；Props Schema、默认 Props 和正式 States 只允许存在于 Contract。`ComponentRecord.view`、`example` 和 `controls` 只描述 PBWork 的 Vue 实现与 Playground，不得成为第二份跨端定义。TypeScript 类型由同一字段契约维护，不允许出现只存在于 UI store 的第二套定义。
@@ -786,12 +896,19 @@ Token、Theme、Component Contract 与 Screen fixture Schema 均固定使用 Dra
 
 ```ts
 type RegistryValidationError = {
-  resourceType: 'token' | 'theme' | 'component' | 'prototype' | 'screen' | 'variant' | 'fixture'
-  resourceId?: string
-  instancePath: string
-  keyword: string
-  message: string
-}
+  resourceType:
+    | "token"
+    | "theme"
+    | "component"
+    | "prototype"
+    | "screen"
+    | "variant"
+    | "fixture";
+  resourceId?: string;
+  instancePath: string;
+  keyword: string;
+  message: string;
+};
 ```
 
 ID 使用 `^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$`；`prototypeId`、`screenSlug`、`variantId` 与 `themeId` 额外禁止 `.`，只允许 `^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$`。Token category 的值约束为：color 使用可被 CSS 解析的颜色字符串；typography 使用非空 CSS 字体/字阶字符串；spacing、radius 使用非负 number 或合法 CSS 长度；elevation 使用非空 CSS shadow 字符串或非负 number。业务 query key 使用 `^[a-z][a-z0-9_-]*$`，value 为最长 512 字符的单字符串。
@@ -826,21 +943,22 @@ JSON Schema 首期用于校验 Token、Theme、基础/复杂组件共享契约�
 Variant 元数据保持纯静态数据；页面如何应用或导出状态通过 Screen Runtime 接口提供，不把函数写进注册表：
 
 ```ts
-type FixturePayload = { schemaVersion: 1 } & Record<string, unknown>
+type FixturePayload = { schemaVersion: 1 } & Record<string, unknown>;
 
 type ScreenRuntimeContext = {
-  prototype: PrototypeRecord
-  screen: ScreenRecord
-  variant: PrototypeVariant
-  theme: ThemeRecord
-  query: Record<string, string>
-  fixture?: FixturePayload
-}
+  prototype: PrototypeRecord;
+  screen: ScreenRecord;
+  variant: PrototypeVariant;
+  theme: ThemeRecord;
+  query: Record<string, string>;
+  fixture?: FixturePayload;
+};
 
 type ScreenRuntimeAdapter = {
-  applyVariant: (context: ScreenRuntimeContext) => void | Promise<void>
-  serializeVariant?: () => Record<string, unknown> | Promise<Record<string, unknown>>
-}
+  applyVariant: (context: ScreenRuntimeContext) => void | Promise<void>;
+  serializeVariant?: () =>
+    Record<string, unknown> | Promise<Record<string, unknown>>;
+};
 ```
 
 每个 Screen 必须实现 `applyVariant`，保证直接打开 Runtime URL 可以恢复注册 Variant；Runtime 根据 `ScreenRecord.fixtureSchema` 加载独立 JSON Schema，校验 fixture 后通过 `ScreenRuntimeContext.fixture` 传入，不允许页面自行拼接文件路径读取。只有 Screen 声明 `fixtureSchema` 且 adapter 实现 `serializeVariant` 时才显示“保存为新 Variant”；否则高级入口禁用并说明该页面不支持状态导出。
@@ -851,9 +969,9 @@ Runtime Adapter 使用独立静态模块表，不写入供 PB adapter 读取的 
 
 ```ts
 export const screenRuntimeAdapters = {
-  'project.task-list': () => import('./project/runtime/task-list'),
-  'project.task-detail': () => import('./project/runtime/task-detail'),
-} satisfies Record<string, () => Promise<{ default: ScreenRuntimeAdapter }>>
+  "project.task-list": () => import("./project/runtime/task-list"),
+  "project.task-detail": () => import("./project/runtime/task-detail"),
+} satisfies Record<string, () => Promise<{ default: ScreenRuntimeAdapter }>>;
 ```
 
 每个 `prototypeScreens` 条目必须在该模块表中恰好存在一个 adapter；多余或缺失条目使启动校验失败。Runtime 固定生命周期为：
@@ -883,25 +1001,25 @@ fixture Schema 是浏览器 Runtime 与 Node 源码写回服务的共同权威�
 
 ```ts
 type LocalComment = {
-  id: string
-  prototypeId: string
-  screenId: string
-  variantId?: string
-  themeId?: string
-  elementId?: string
-  selector?: string
-  point?: { x: number; y: number }
-  bbox?: { x: number; y: number; width: number; height: number }
-  content: string
-  status: 'open' | 'resolved'
-  createdAt: string
-  updatedAt: string
-}
+  id: string;
+  prototypeId: string;
+  screenId: string;
+  variantId?: string;
+  themeId?: string;
+  elementId?: string;
+  selector?: string;
+  point?: { x: number; y: number };
+  bbox?: { x: number; y: number; width: number; height: number };
+  content: string;
+  status: "open" | "resolved";
+  createdAt: string;
+  updatedAt: string;
+};
 
 type LocalCommentStore = {
-  schemaVersion: 1
-  comments: LocalComment[]
-}
+  schemaVersion: 1;
+  comments: LocalComment[];
+};
 ```
 
 定位优先级：
@@ -993,93 +1111,106 @@ type LocalCommentStore = {
 ```ts
 type SourceAction =
   | {
-      type: 'update-component-example'
-      componentId: string
-      example: Record<string, unknown>
+      type: "update-component-example";
+      componentId: string;
+      example: Record<string, unknown>;
     }
   | {
-      type: 'create-variant'
-      screenId: string
-      variant: { id: string; label: string; description?: string; query?: Record<string, string> }
-      fixture: FixturePayload
-    }
+      type: "create-variant";
+      screenId: string;
+      variant: {
+        id: string;
+        label: string;
+        description?: string;
+        query?: Record<string, string>;
+      };
+      fixture: FixturePayload;
+    };
 
 type SourceActionCode =
-  | 'OK'
-  | 'PREVIEW_READY'
-  | 'SOURCE_ACTION_DISABLED'
-  | 'INVALID_ORIGIN'
-  | 'INVALID_SESSION'
-  | 'INVALID_ACTION'
-  | 'INVALID_ID'
-  | 'PATH_OUTSIDE_ALLOWLIST'
-  | 'SYMLINK_REJECTED'
-  | 'PAYLOAD_TOO_LARGE'
-  | 'SOURCE_CHANGED'
-  | 'TOKEN_EXPIRED'
-  | 'TOKEN_USED'
-  | 'SOURCE_ACTION_CONFLICT'
-  | 'FORMAT_FAILED'
-  | 'VALIDATION_FAILED'
-  | 'APPLY_FAILED'
-  | 'ROLLBACK_FAILED'
+  | "OK"
+  | "PREVIEW_READY"
+  | "SOURCE_ACTION_DISABLED"
+  | "INVALID_ORIGIN"
+  | "INVALID_SESSION"
+  | "INVALID_ACTION"
+  | "INVALID_ID"
+  | "PATH_OUTSIDE_ALLOWLIST"
+  | "SYMLINK_REJECTED"
+  | "PAYLOAD_TOO_LARGE"
+  | "SOURCE_CHANGED"
+  | "TOKEN_EXPIRED"
+  | "TOKEN_USED"
+  | "SOURCE_ACTION_CONFLICT"
+  | "FORMAT_FAILED"
+  | "VALIDATION_FAILED"
+  | "APPLY_FAILED"
+  | "ROLLBACK_FAILED";
 
 type SourceActionError = {
-  ok: false
-  code: Exclude<SourceActionCode, 'OK' | 'PREVIEW_READY'>
-  message: string
-  validationErrors?: RegistryValidationError[]
-}
+  ok: false;
+  code: Exclude<SourceActionCode, "OK" | "PREVIEW_READY">;
+  message: string;
+  validationErrors?: RegistryValidationError[];
+};
 
 type SourceActionStatus = {
-  ok: true
-  code: 'OK'
-  message: string
-  enabled: true
-  sessionNonce: string
-  allowedActions: SourceAction['type'][]
-  limits: { requestBytes: 262144; fixtureBytes: 262144; diffBytesPerFile: 524288 }
-}
+  ok: true;
+  code: "OK";
+  message: string;
+  enabled: true;
+  sessionNonce: string;
+  allowedActions: SourceAction["type"][];
+  limits: {
+    requestBytes: 262144;
+    fixtureBytes: 262144;
+    diffBytesPerFile: 524288;
+  };
+};
 
-type PreviewRequest = { sessionNonce: string; action: SourceAction }
+type PreviewRequest = { sessionNonce: string; action: SourceAction };
 type FilePatchPreview = {
-  path: string // 相对 apps/pbwork 的 POSIX 路径
-  operation: 'create' | 'update'
-  beforeSha256?: string
-  afterSha256: string
-  unifiedDiff: string
-}
+  path: string; // 相对 apps/pbwork 的 POSIX 路径
+  operation: "create" | "update";
+  beforeSha256?: string;
+  afterSha256: string;
+  unifiedDiff: string;
+};
 type PreviewResponse = {
-  ok: true
-  code: 'PREVIEW_READY'
-  message: string
-  confirmationToken: string
-  expiresAt: string // ISO 8601 UTC
-  files: FilePatchPreview[]
-  validation: { formatted: true; schemas: true; registries: true }
-}
+  ok: true;
+  code: "PREVIEW_READY";
+  message: string;
+  confirmationToken: string;
+  expiresAt: string; // ISO 8601 UTC
+  files: FilePatchPreview[];
+  validation: { formatted: true; schemas: true; registries: true };
+};
 
-type ApplyRequest = { sessionNonce: string; confirmationToken: string }
-type AppliedFile = { path: string; operation: 'create' | 'update'; sha256: string }
+type ApplyRequest = { sessionNonce: string; confirmationToken: string };
+type AppliedFile = {
+  path: string;
+  operation: "create" | "update";
+  sha256: string;
+};
 type ApplyResponse = {
-  ok: true
-  code: 'OK'
-  message: string
-  files: AppliedFile[]
-  validation: { formatted: true; schemas: true; registries: true }
-  registryDigest: string
-}
+  ok: true;
+  code: "OK";
+  message: string;
+  files: AppliedFile[];
+  validation: { formatted: true; schemas: true; registries: true };
+  registryDigest: string;
+};
 ```
 
 `update-component-example` 要求目标 `ComponentRecord.example` 已存在；§13 已将该字段设为必填，因此服务只替换现有静态 object literal，不负责插入缺失字段。`create-variant` 从 `screenId` 解析 Prototype 和目标 Screen，拒绝重复 Variant ID；`variant.query` 来自当前 canonical Runtime URL 的业务 query，必须满足 §13.3 且禁止 `variant` / `theme`。客户端不得提交 prototype 路径、fixture 路径、patch 或完整目标文件源码。服务从注册表推导 fixture 目标，并使用该 Screen 的独立 fixture Schema 校验请求。
 
 SHA-256 对格式化后的 UTF-8 文件原始字节计算，输出 64 位小写十六进制；新文件没有 `beforeSha256`。`registryDigest` 对按 path 字典序排列的最终 `path + "\n" + sha256 + "\n"` 字节串计算 SHA-256。preview diff 使用 UTF-8、LF 和仓库相对 POSIX 路径，禁止包含事务目录、绝对路径或 token。
 
-| Endpoint | 作用 |
-|----------|------|
-| `GET /__pbwork/source-actions/status` | 返回写入服务是否可用、session nonce、允许操作和白名单摘要；响应禁止缓存 |
-| `POST /__pbwork/source-actions/preview` | 校验结构化操作并返回文件摘要、unified diff、确认令牌和过期时间 |
-| `POST /__pbwork/source-actions/apply` | 使用一次性确认令牌应用 preview 中完全相同的 patch |
+| Endpoint                                | 作用                                                                    |
+| --------------------------------------- | ----------------------------------------------------------------------- |
+| `GET /__pbwork/source-actions/status`   | 返回写入服务是否可用、session nonce、允许操作和白名单摘要；响应禁止缓存 |
+| `POST /__pbwork/source-actions/preview` | 校验结构化操作并返回文件摘要、unified diff、确认令牌和过期时间          |
+| `POST /__pbwork/source-actions/apply`   | 使用一次性确认令牌应用 preview 中完全相同的 patch                       |
 
 客户端只提交上述结构化动作，不得提交任意目标路径、完整目标文件源码或 patch。服务端根据注册表 ID 解析目标文件。所有响应使用 `SourceActionStatus`、`PreviewResponse`、`ApplyResponse` 或 `SourceActionError`，不得依赖自由文本让界面猜测原因。
 
@@ -1155,14 +1286,14 @@ apps/pbwork/
 
 按依赖顺序交付；后一阶段不阻塞前一阶段的可演示验收。
 
-| 阶段 | 目标 | 完成标准（摘要） |
-|------|------|------------------|
-| M1 壳与双路由 | 工作台布局 + Runtime Layout 分离 | 工作台 URL 与 Runtime URL 可分别打开；Runtime 无壳 DOM |
-| M2 注册表与导航 | Foundations / 组件 / 原型树 | 注册表驱动二级导航；至少一套多页原型可点选 |
-| M3 画布与设备 | 单手机 iframe 画板 | 缩放（步进/滑块/常用比例）、拖动、设备切换、主题与 Variant 切换、复制 Runtime URL |
-| M4 Bridge 与检查 | 选择元素 + 右侧检查 | inspect 模式、选中信息、`data-pb-*` 展示 |
-| M5 评论 | 本地评论 | 新增/完成/删除/刷新仍在/定位失效 |
-| M6 高级写入 | 开发环境写回 | Playground 更新示例与保存 Variant：diff + 二次确认 + 白名单 |
+| 阶段             | 目标                             | 完成标准（摘要）                                                                  |
+| ---------------- | -------------------------------- | --------------------------------------------------------------------------------- |
+| M1 壳与双路由    | 工作台布局 + Runtime Layout 分离 | 工作台 URL 与 Runtime URL 可分别打开；Runtime 无壳 DOM                            |
+| M2 注册表与导航  | Foundations / 组件 / 原型树      | 注册表驱动二级导航；至少一套多页原型可点选                                        |
+| M3 画布与设备    | 单手机 iframe 画板               | 缩放（步进/滑块/常用比例）、拖动、设备切换、主题与 Variant 切换、复制 Runtime URL |
+| M4 Bridge 与检查 | 选择元素 + 右侧检查              | inspect 模式、选中信息、`data-pb-*` 展示                                          |
+| M5 评论          | 本地评论                         | 新增/完成/删除/刷新仍在/定位失效                                                  |
+| M6 高级写入      | 开发环境写回                     | Playground 更新示例与保存 Variant：diff + 二次确认 + 白名单                       |
 
 全局搜索与设置按 §5 stub 实现即可，不单独占里程碑。
 
@@ -1170,15 +1301,15 @@ apps/pbwork/
 
 测试只覆盖容易破坏核心闭环的契约，不为 Vuetify 自身行为重复写测试，也不设置无意义的全局覆盖率门槛或扩张大面积快照。各里程碑固定验证矩阵：
 
-| 阶段 | 必须覆盖 | 推荐测试文件 |
-|------|----------|--------------|
-| M1 | history fallback；Workbench / Runtime 双 Layout；Runtime DOM 不存在工作台壳节点；未知 Runtime 资源错误页；壳键盘导航与焦点恢复 | `test/router.test.ts`、`e2e/runtime-layout.spec.ts` |
-| M2 | Token/Theme/Component/Prototype 注册表正反例；唯一 ID/path/view；Token 引用；Contract 默认值和 State 校验 | `test/registries.test.ts`、`test/design-contracts.test.ts` |
-| M3 | canonical URL；query 拒绝与排序；刷新恢复；设备 viewport；Theme / Variant 切换后 iframe URL | `test/runtime-url.test.ts`、`e2e/canvas.spec.ts` |
-| M4 | 同源握手；非法 origin；旧 runtimeId；payload 超限/截断；capability；inspect/comment 互斥；键盘选择；跨 Screen route 换代 | `test/runtime-bridge.test.ts`、`e2e/inspect.spec.ts` |
-| M5 | `comment-target` 元素/空白/键盘落点；评论持久化；损坏/未知版本；数量和长度限制；定位失效；清除确认 | `test/comments.test.ts` |
-| M6 | DTO Schema；浏览器与 Node 共用 fixture Schema；Origin/nonce；路径穿越；符号链接；摘要变化；并发冲突；格式化/校验失败；进程恢复日志 | `test/source-actions.test.ts`、`e2e/source-actions.spec.ts` |
-| 总闭环 | workbench 选择 Variant → 复制 canonical Runtime URL → 直接打开无壳页面 → PB capture 得到正确 pathname、screenId 与截图 | `e2e/pb-capture.spec.ts` + 根仓 E2E |
+| 阶段   | 必须覆盖                                                                                                                           | 推荐测试文件                                                |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| M1     | history fallback；Workbench / Runtime 双 Layout；Runtime DOM 不存在工作台壳节点；未知 Runtime 资源错误页；壳键盘导航与焦点恢复     | `test/router.test.ts`、`e2e/runtime-layout.spec.ts`         |
+| M2     | Token/Theme/Component/Prototype 注册表正反例；唯一 ID/path/view；Token 引用；Contract 默认值和 State 校验                          | `test/registries.test.ts`、`test/design-contracts.test.ts`  |
+| M3     | canonical URL；query 拒绝与排序；刷新恢复；设备 viewport；Theme / Variant 切换后 iframe URL                                        | `test/runtime-url.test.ts`、`e2e/canvas.spec.ts`            |
+| M4     | 同源握手；非法 origin；旧 runtimeId；payload 超限/截断；capability；inspect/comment 互斥；键盘选择；跨 Screen route 换代；样式 Token ID / CSS Variable / Value 与匹配来源 | `test/runtime-bridge.test.ts`、`test/inspector-snapshot.test.ts`、`e2e/inspect.spec.ts`、`e2e/inspector.spec.ts` |
+| M5     | `comment-target` 元素/空白/键盘落点；评论持久化；损坏/未知版本；数量和长度限制；定位失效；清除确认                                 | `test/comments.test.ts`                                     |
+| M6     | DTO Schema；浏览器与 Node 共用 fixture Schema；Origin/nonce；路径穿越；符号链接；摘要变化；并发冲突；格式化/校验失败；进程恢复日志 | `test/source-actions.test.ts`、`e2e/source-actions.spec.ts` |
+| 总闭环 | workbench 选择 Variant → 复制 canonical Runtime URL → 直接打开无壳页面 → PB capture 得到正确 pathname、screenId 与截图             | `e2e/pb-capture.spec.ts` + 根仓 E2E                         |
 
 注册表和安全测试必须同时包含成功与失败样本。Playwright 只覆盖跨 iframe、浏览器存储、布局和真实写回等单元测试无法证明的闭环。M6 测试在临时复制的 PBWork fixture 中运行，禁止修改开发者真实注册表。
 
@@ -1193,6 +1324,7 @@ apps/pbwork/
 - 一级导航固定为“设计基础 / 组件 / 原型”；
 - 二级导航可折叠，原型可按生命周期过滤；
 - 1280 × 720 及以上桌面窗口中，默认布局互不遮挡、中央内容最小宽度不低于 480px，页面根不产生水平滚动；更窄窗口按 §4.1 收起元素检查。
+
 ### 18.2 设计系统与组件
 
 - color、typography、spacing、radius、elevation 每类至少展示一个来自注册表的视觉样本；
@@ -1215,7 +1347,10 @@ apps/pbwork/
 ### 18.4 检查与评论
 
 - 选择模式可以 hover、选中和清除元素；
-- 右侧显示结构、样式和 PBWork 约定检查（含强制写入的 `data-pb-*`），且不伪装成 PB Core 产物；
+- 右侧显示样式（默认）、组件、结构、约定检查（含强制写入的 `data-pb-*`），且不伪装成 PB Core 产物；
+- 样式行展示 Token ID、CSS Variable、Resolved Value，并标注显式绑定 / 值匹配推断 / 原始 CSS；
+- Props / State 以可折叠 key-value 展示，复杂对象可展开 JSON；
+- Foundations / Components / Overview 使用 `ResourcePageShell`，不挂载全局元素检查栏；
 - 评论可以按元素保存、重新定位、完成和删除；
 - 刷新后本地评论仍存在；
 - 元素失效时评论不会丢失，并显示定位失效状态。
@@ -1256,11 +1391,11 @@ apps/pbwork/
 
 ### 19.1 强制标记
 
-| 属性 | 谁必须写 | 值 |
-|------|----------|-----|
-| `data-pb-id` | 新建组件根、页面关键区块、列表行根、可评论的主要节点 | 稳定、页面内唯一，如 `task-list.summary`；动态列表使用业务 ID（如 `task-list.row.${task.id}`），禁止使用数组 index |
-| `data-pb-role` | 逻辑区块根（对应 conventions section kind / 派生角色） | 如 `app-bar`、`list`、`section`、`tab-bar`、`bottom-bar`、`chart` |
-| `data-pb-shell` | Overlay / 临时层根 | `sheet` / `dialog` / `modal` / `drawer`（与 conventions shell kind 一致） |
+| 属性            | 谁必须写                                               | 值                                                                                                                 |
+| --------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `data-pb-id`    | 新建组件根、页面关键区块、列表行根、可评论的主要节点   | 稳定、页面内唯一，如 `task-list.summary`；动态列表使用业务 ID（如 `task-list.row.${task.id}`），禁止使用数组 index |
+| `data-pb-role`  | 逻辑区块根（对应 conventions section kind / 派生角色） | 如 `app-bar`、`list`、`section`、`tab-bar`、`bottom-bar`、`chart`                                                  |
+| `data-pb-shell` | Overlay / 临时层根                                     | `sheet` / `dialog` / `modal` / `drawer`（与 conventions shell kind 一致）                                          |
 
 规则：
 
@@ -1273,17 +1408,17 @@ apps/pbwork/
 
 换库只换映射；角色与 shell 含义仍以 conventions 为准。
 
-| 约定 | Vuetify / 写法 | 如何命中当前启发式 | 同时写入 |
-|------|----------------|--------------------|----------|
-| `app-bar` | `v-app-bar` 或页面顶栏根 | 根节点 class 含 `app-bar`（或 `navbar` / `toolbar`） | `data-pb-role="app-bar"` + `data-pb-id` |
-| `tab-bar` | `v-tabs` / 分段控件外层 | class 含 `tab-bar` 或 `section-tabs` | `data-pb-role="tab-bar"` |
-| `list` | `v-list` 或列表容器 | class 含 `list`；行数据在源码循环中可见 | 容器 `data-pb-role="list"`；行 `data-pb-id` |
-| `section` | `v-card` / 面板根 | class 含 `section` / `card` / `panel` | `data-pb-role="section"` |
-| `chart` | 图表容器 | class 含 `chart` / `trend` 等 | `data-pb-role="chart"` |
-| `bottom-bar` | 底部操作区 | class 含 `bottom-bar` / `bottom-actions` | `data-pb-role="bottom-bar"` |
-| `sheet` | `v-bottom-sheet` 内容根 | `v-model` / `v-if` 显隐 + class 含 `sheet`（或标签名以 sheet 结尾） | `data-pb-shell="sheet"` |
-| `dialog` / `modal` | `v-dialog` 内容根 | 显隐绑定 + class 含 `dialog` / `modal` | `data-pb-shell="dialog"` 或 `modal` |
-| `drawer` | `v-navigation-drawer`（临时层场景） | 显隐绑定 + class 含 `drawer` | `data-pb-shell="drawer"` |
+| 约定               | Vuetify / 写法                      | 如何命中当前启发式                                                  | 同时写入                                    |
+| ------------------ | ----------------------------------- | ------------------------------------------------------------------- | ------------------------------------------- |
+| `app-bar`          | `v-app-bar` 或页面顶栏根            | 根节点 class 含 `app-bar`（或 `navbar` / `toolbar`）                | `data-pb-role="app-bar"` + `data-pb-id`     |
+| `tab-bar`          | `v-tabs` / 分段控件外层             | class 含 `tab-bar` 或 `section-tabs`                                | `data-pb-role="tab-bar"`                    |
+| `list`             | `v-list` 或列表容器                 | class 含 `list`；行数据在源码循环中可见                             | 容器 `data-pb-role="list"`；行 `data-pb-id` |
+| `section`          | `v-card` / 面板根                   | class 含 `section` / `card` / `panel`                               | `data-pb-role="section"`                    |
+| `chart`            | 图表容器                            | class 含 `chart` / `trend` 等                                       | `data-pb-role="chart"`                      |
+| `bottom-bar`       | 底部操作区                          | class 含 `bottom-bar` / `bottom-actions`                            | `data-pb-role="bottom-bar"`                 |
+| `sheet`            | `v-bottom-sheet` 内容根             | `v-model` / `v-if` 显隐 + class 含 `sheet`（或标签名以 sheet 结尾） | `data-pb-shell="sheet"`                     |
+| `dialog` / `modal` | `v-dialog` 内容根                   | 显隐绑定 + class 含 `dialog` / `modal`                              | `data-pb-shell="dialog"` 或 `modal`         |
+| `drawer`           | `v-navigation-drawer`（临时层场景） | 显隐绑定 + class 含 `drawer`                                        | `data-pb-shell="drawer"`                    |
 
 Shell 显隐状态名建议 `*Open` / `*Visible` / `show*`，并与业务态字段分开。
 
@@ -1299,7 +1434,76 @@ Shell 显隐状态名建议 `*Open` / `*Visible` / `show*`，并与业务态字�
 
 ---
 
-## 20. 后续方向
+## 20. 后续建设阶段（M6 之后）
+
+首期 M1—M6 与 §16.1 固定样本仍是当前验收闸门。下列阶段在壳、检查器与资源页布局稳定后推进；实现时必须同步修订 §16.1、§18 与注册表测试，不得 silently 扩大样本规模。
+
+依赖顺序：**扩设计令牌 → 扩组件库 → 迁业务原型**。
+
+### 20.1 阶段三：扩建设计令牌
+
+将当前约 28 个 Token 扩展到约 75–90 个，优先建设语义 Token，不堆无用途色阶。
+
+| 类别         | 目标内容                                                                 |
+| ------------ | ------------------------------------------------------------------------ |
+| Color        | background、surface 层级、on-\*、outline、divider、disabled、scrim、四类反馈色 |
+| Typography   | display、headline、title、body、label、caption 的大小组合                |
+| Spacing      | 0、2、4、8、12、16、24、32、40、48、64                                    |
+| Sizing       | 控件高度、图标尺寸、头像尺寸、触控目标                                   |
+| Radius       | none、xs、sm、md、lg、xl、full                                           |
+| Border       | hairline、default、strong、focus                                         |
+| Elevation    | level 0–5                                                                |
+| Opacity      | disabled、muted、hover、pressed、overlay                                 |
+| Motion       | duration 与 easing                                                       |
+
+同步更新：
+
+- `TokenCategory` / `token.schema.json`（新增 sizing、border、opacity、motion 等类别）；
+- 主题覆盖与 `vuetify-bindings.ts`；
+- Token Gallery、注册表校验与相关测试；
+- §16.1 / §18.2 中的 Token 样本描述。
+
+### 20.2 阶段四：扩建组件库
+
+在保留现有 5 基础 + 4 复杂样本的前提下继续补齐。目标规模约 **14–16 个基础组件**、**10–12 个复杂组件**。
+
+**第一批（输入、状态与基础反馈）**
+
+Select、Textarea、Checkbox、Radio Group、Switch、Avatar、Badge、Divider、Progress / Spinner。
+
+**第二批（页面级组合）**
+
+Search Bar、Filter Bar、Bottom Navigation、Dialog、Snackbar / Toast、Empty State、Form Section、Menu / Action Menu、List Item / Settings List。
+
+每个组件必须同时交付：
+
+1. Vue 实现；
+2. JSON Contract（Props Schema、defaultProps、正式 States、Slots、Events、Token Bindings）；
+3. Playground 控件；
+4. 检查元数据（`usePbInspect` / `data-pb-*`）；
+5. 注册表校验与必要测试。
+
+实现时更新 `registries.test.ts` 的数量断言与 §16.1 / §18.2。
+
+### 20.3 阶段五：建设具体业务原型
+
+将「项目协作」迁移为更具体的「现场服务工单」：
+
+- `prototypeId`：`field-service`；
+- 协调更新文档、测试与 Runtime URL；
+- 建议并行新增后再切换，短期可双原型并存，避免一次性打断 E2E。
+
+**首批页面**
+
+工单工作台、工单列表、工单详情、新建工单、客户详情、消息中心、个人设置。
+
+**关键 Variant**
+
+默认、加载、空态、错误；筛选结果；超时 / 高优先级工单；表单校验失败；Dialog、Bottom Sheet、Toast 打开；深色主题（可用 theme 切换演示，关键态仍需可从画布复现）。
+
+页面必须使用阶段四组件与阶段三 Token，禁止静态占位图替代真实交互。完成后修订 §16.1 / §18.3，并以 `field-service` 作为默认演示原型。
+
+### 20.4 远期方向
 
 - 显式 `data-pb-*` 协议被 Core 正式消费，与 React source adapter、中立 Source IR 统一设计；
 - Flutter 共享主题、基础组件和复杂组件定义；

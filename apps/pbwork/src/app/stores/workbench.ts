@@ -3,13 +3,13 @@ import { defineStore } from "pinia";
 export type WorkbenchTheme = "pbworkLight" | "pbworkDark";
 
 const themeKey = "pbwork.workbench.theme.v1";
-const layoutKey = "pbwork.workbench.layout.v1";
+const layoutKey = "pbwork.workbench.layout.v2";
 
 export const COLLAPSED_PANEL_WIDTH = 56;
 export const DEFAULT_RESOURCE_WIDTH = 264;
-export const DEFAULT_INSPECTOR_WIDTH = 360;
-export const MIN_INSPECTOR_WIDTH = 280;
-export const MAX_INSPECTOR_WIDTH = 520;
+export const DEFAULT_INSPECTOR_WIDTH = 440;
+export const MIN_INSPECTOR_WIDTH = 420;
+export const MAX_INSPECTOR_WIDTH = 640;
 
 type LayoutPrefs = {
   resourcePanelOpen?: boolean;

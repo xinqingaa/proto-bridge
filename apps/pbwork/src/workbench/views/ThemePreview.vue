@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import ResourcePageShell from "@/workbench/views/ResourcePageShell.vue";
 import Button from "@/design-system/components/basic/Button.vue";
 import Chip from "@/design-system/components/basic/Chip.vue";
 import TextField from "@/design-system/components/basic/TextField.vue";
@@ -12,10 +13,16 @@ import {
 
 const props = defineProps<{ themeId: string }>();
 
-const theme = computed(() => loadThemes().find((item) => item.id === props.themeId));
+const theme = computed(() =>
+  loadThemes().find((item) => item.id === props.themeId),
+);
 const themes = computed(() => loadThemes());
+const tokens = computed(() => loadTokens());
 const colorTokens = computed(() =>
-  loadTokens().filter((token) => token.category === "color"),
+  tokens.value.filter((token) => token.category === "color"),
+);
+const typographyTokens = computed(() =>
+  tokens.value.filter((token) => token.category === "typography"),
 );
 const resolvedByTheme = computed(() => {
   const map: Record<string, Record<string, string | number>> = {};
@@ -28,90 +35,170 @@ const cssVars = computed(() => {
   if (!theme.value) return {};
   return tokensToCssVars(resolveThemeTokens(theme.value.id));
 });
+const resolved = computed(() =>
+  theme.value ? resolveThemeTokens(theme.value.id) : {},
+);
+
+const feedbackTones = [
+  { id: "success" as const, label: "成功", token: "color.success", chipTone: "success" as const },
+  { id: "warning" as const, label: "警告", token: "color.warning", chipTone: "warning" as const },
+  { id: "error" as const, label: "错误", token: "color.error", chipTone: "error" as const },
+  { id: "info" as const, label: "信息", token: "color.info", chipTone: "primary" as const },
+];
 </script>
 
 <template>
-  <section v-if="theme" class="theme-preview">
-    <header>
-      <p>主题</p>
-      <h1>{{ theme.label }}</h1>
-      <p class="lede">
-        与「颜色」共用同一套 Token key；下表对照 light / dark 的不同 value。
-      </p>
-    </header>
+  <ResourcePageShell
+    v-if="theme"
+    eyebrow="主题"
+    :title="theme.label"
+    description="完整对照语义色、字体、表单、列表与反馈状态。与「颜色」共用同一套 Token key。"
+    :style="cssVars"
+  >
+    <template #stats>
+      <v-chip size="small" variant="tonal"
+        >{{ colorTokens.length }} 颜色</v-chip
+      >
+      <v-chip size="small" variant="tonal"
+        >{{ typographyTokens.length }} 字体</v-chip
+      >
+      <v-chip size="small" variant="tonal">{{ themes.length }} 主题</v-chip>
+    </template>
 
-    <div class="matrix" :style="cssVars">
-      <Card title="当前主题组件预览" subtitle="基础组件由上方 Token 组成" elevated>
+    <div class="matrix-grid">
+      <section class="panel">
+        <h2>语义色矩阵</h2>
+        <div class="compare">
+          <div class="compare-head">
+            <span>Token</span>
+            <span v-for="item in themes" :key="item.id">{{ item.label }}</span>
+          </div>
+          <div v-for="token in colorTokens" :key="token.id" class="compare-row">
+            <div class="token-meta">
+              <strong>{{ token.label }}</strong>
+              <code>{{ token.id }}</code>
+            </div>
+            <div
+              v-for="item in themes"
+              :key="`${token.id}-${item.id}`"
+              class="value"
+            >
+              <span
+                class="swatch"
+                :style="{
+                  background: String(resolvedByTheme[item.id]?.[token.id]),
+                }"
+              />
+              <code>{{ resolvedByTheme[item.id]?.[token.id] }}</code>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>字体矩阵</h2>
+        <div class="typo-list">
+          <article
+            v-for="token in typographyTokens"
+            :key="token.id"
+            class="typo-row"
+          >
+            <p :style="{ font: String(resolved[token.id]) }">
+              {{ token.label }} — The quick brown fox
+            </p>
+            <code>{{ token.id }} · {{ resolved[token.id] }}</code>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>表单状态</h2>
+        <div class="form-matrix">
+          <TextField label="默认" model-value="可编辑内容" />
+          <TextField label="已填写" model-value="示例文案" />
+          <TextField label="禁用" model-value="不可编辑" disabled />
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>列表样本</h2>
+        <Card title="列表预览" subtitle="表面 / 边框 / 字体来自 Token">
+          <ul class="sample-list">
+            <li>
+              <strong>整理需求</strong>
+              <span>今日 · 进行中</span>
+            </li>
+            <li>
+              <strong>联调接口</strong>
+              <span>明日 · 待开始</span>
+            </li>
+            <li>
+              <strong>验收走查</strong>
+              <span>本周 · 高优先级</span>
+            </li>
+          </ul>
+        </Card>
+      </section>
+
+      <section class="panel feedback-panel">
+        <h2>反馈状态矩阵</h2>
+        <div class="feedback-grid">
+          <article
+            v-for="tone in feedbackTones"
+            :key="tone.id"
+            class="feedback-card"
+            :style="{
+              borderColor: String(resolved[tone.token]),
+              background: `color-mix(in srgb, ${String(resolved[tone.token])} 12%, transparent)`,
+            }"
+          >
+            <Chip :label="tone.label" :tone="tone.chipTone" />
+            <code>{{ tone.token }}</code>
+            <span>{{ resolved[tone.token] }}</span>
+          </article>
+        </div>
         <div class="matrix-row">
           <Button label="主按钮" />
-          <Chip label="状态" tone="success" />
+          <Button label="次按钮" tone="secondary" variant="tonal" />
+          <Button label="危险" tone="error" variant="outlined" />
         </div>
-        <TextField class="mt-4" label="输入框" model-value="示例文案" />
-      </Card>
+      </section>
     </div>
-
-    <div class="compare">
-      <div class="compare-head">
-        <span>Token</span>
-        <span v-for="item in themes" :key="item.id">{{ item.label }}</span>
-      </div>
-      <div
-        v-for="token in colorTokens"
-        :key="token.id"
-        class="compare-row"
-      >
-        <div class="token-meta">
-          <strong>{{ token.label }}</strong>
-          <code>{{ token.id }}</code>
-        </div>
-        <div v-for="item in themes" :key="`${token.id}-${item.id}`" class="value">
-          <span
-            class="swatch"
-            :style="{ background: String(resolvedByTheme[item.id]?.[token.id]) }"
-          />
-          <code>{{ resolvedByTheme[item.id]?.[token.id] }}</code>
-        </div>
-      </div>
-    </div>
-
-  
-  </section>
+  </ResourcePageShell>
   <v-alert v-else type="error" variant="tonal">未知主题：{{ themeId }}</v-alert>
 </template>
 
 <style scoped>
-.theme-preview {
-  width: min(920px, 100%);
+.matrix-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 16px;
 }
-header p {
-  margin: 0 0 6px;
-  color: rgb(var(--v-theme-primary));
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-header h1 {
-  margin: 0 0 8px;
-  font-size: 1.75rem;
-}
-.lede {
-  margin: 0 0 20px !important;
-  color: rgba(var(--v-theme-on-surface), 0.62) !important;
-  font-size: 0.8125rem !important;
-  font-weight: 400 !important;
-}
-.compare {
-  margin-bottom: 24px;
+.panel {
+  grid-column: span 6;
+  padding: 14px;
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-radius: 14px;
-  overflow: hidden;
   background: rgb(var(--v-theme-surface));
+}
+.feedback-panel {
+  grid-column: span 12;
+}
+.panel h2 {
+  margin: 0 0 12px;
+  font-size: 0.9375rem;
+}
+.compare {
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 12px;
+  overflow: hidden;
 }
 .compare-head,
 .compare-row {
   display: grid;
-  grid-template-columns: minmax(140px, 1.2fr) 1fr 1fr;
-  gap: 12px;
-  padding: 12px 14px;
+  grid-template-columns: minmax(120px, 1.1fr) 1fr 1fr;
+  gap: 10px;
+  padding: 10px 12px;
 }
 .compare-head {
   background: rgba(var(--v-theme-on-surface), 0.04);
@@ -126,7 +213,10 @@ header h1 {
   display: block;
 }
 .token-meta code,
-.value code {
+.value code,
+.typo-row code,
+.feedback-card code,
+.feedback-card span {
   color: rgba(var(--v-theme-on-surface), 0.62);
   font-size: 0.75rem;
 }
@@ -138,19 +228,75 @@ header h1 {
 }
 .swatch {
   flex: 0 0 auto;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
-.matrix {
-  padding: 4px;
-  margin-bottom: 24px;
+.typo-list,
+.form-matrix {
+  display: grid;
+  gap: 10px;
+}
+.typo-row p {
+  margin: 0 0 4px;
+}
+.sample-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.sample-list li {
+  display: grid;
+  gap: 2px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+.sample-list li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.sample-list span {
+  color: rgba(var(--v-theme-on-surface), 0.58);
+  font-size: 0.75rem;
+}
+.feedback-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.feedback-card {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid;
+  border-radius: 12px;
 }
 .matrix-row {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
   align-items: center;
+}
+@media (max-width: 1279px) {
+  .panel,
+  .feedback-panel {
+    grid-column: span 12;
+  }
+  .feedback-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .feedback-grid {
+    grid-template-columns: 1fr;
+  }
+  .compare-head,
+  .compare-row {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

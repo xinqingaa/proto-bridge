@@ -3,6 +3,7 @@ import type {
   ElementSummary,
   JsonRecord,
   SnapshotMeta,
+  StyleInspectGroup,
   StyleInspectRow,
   TokenBindingRow,
   BridgePayloads,
@@ -54,6 +55,32 @@ const PROPERTY_CATEGORY: Partial<
   gap: "spacing",
 };
 
+const PROPERTY_GROUP: Record<(typeof STYLE_KEYS)[number], StyleInspectGroup> = {
+  color: "color",
+  "background-color": "color",
+  "font-family": "typography",
+  "font-size": "typography",
+  "font-weight": "typography",
+  "line-height": "typography",
+  padding: "spacing-size",
+  margin: "spacing-size",
+  gap: "spacing-size",
+  width: "spacing-size",
+  height: "spacing-size",
+  border: "border-radius",
+  "border-radius": "border-radius",
+  "box-shadow": "shadow-layout",
+  display: "shadow-layout",
+  position: "shadow-layout",
+  overflow: "shadow-layout",
+};
+
+export function stylePropertyGroup(
+  property: (typeof STYLE_KEYS)[number] | string,
+): StyleInspectGroup {
+  return PROPERTY_GROUP[property as (typeof STYLE_KEYS)[number]] ?? "shadow-layout";
+}
+
 const SENSITIVE = /password|secret|token|authorization|cookie/i;
 
 type TokenVarEntry = {
@@ -102,22 +129,38 @@ function matchTokenForStyle(
   value: string,
   catalog: TokenVarEntry[],
   preferredTokenIds: Set<string>,
-): { cssVar: string; tokenId: string } | undefined {
+):
+  | {
+      cssVar: string;
+      tokenId: string;
+      source: "binding" | "value-match";
+    }
+  | undefined {
   if (!value || value === "none" || value === "normal" || value === "auto") {
     return undefined;
   }
   const category = PROPERTY_CATEGORY[property];
-  const preferred = catalog.filter((item) => preferredTokenIds.has(item.tokenId));
+  const preferred = catalog.filter(
+    (item) =>
+      preferredTokenIds.has(item.tokenId) &&
+      (!category || item.category === category),
+  );
   const categorized = category
     ? catalog.filter((item) => item.category === category)
-    : catalog;
-  const pools = [preferred, categorized, catalog];
+    : [];
+  const pools = category ? [preferred, categorized] : [];
 
   for (const pool of pools) {
     for (const item of pool) {
       if (!item.value) continue;
       if (normalizeCssValue(item.value) === normalizeCssValue(value)) {
-        return { cssVar: item.cssVar, tokenId: item.tokenId };
+        return {
+          cssVar: item.cssVar,
+          tokenId: item.tokenId,
+          source: preferredTokenIds.has(item.tokenId)
+            ? "binding"
+            : "value-match",
+        };
       }
       if (
         (property === "color" ||
@@ -125,7 +168,13 @@ function matchTokenForStyle(
           property === "border") &&
         colorsEqual(item.value, value)
       ) {
-        return { cssVar: item.cssVar, tokenId: item.tokenId };
+        return {
+          cssVar: item.cssVar,
+          tokenId: item.tokenId,
+          source: preferredTokenIds.has(item.tokenId)
+            ? "binding"
+            : "value-match",
+        };
       }
     }
   }
@@ -160,13 +209,15 @@ function sanitizeValue(
     meta.warnings = [...(meta.warnings ?? []), "DEPTH_TRUNCATED"];
     return "[truncated]";
   }
-  if (value === null || typeof value === "boolean" || typeof value === "number") {
+  if (
+    value === null ||
+    typeof value === "boolean" ||
+    typeof value === "number"
+  ) {
     return value;
   }
   if (typeof value === "string") {
-    return value.length > 500
-      ? truncateText(value, meta)
-      : value;
+    return value.length > 500 ? truncateText(value, meta) : value;
   }
   if (Array.isArray(value)) {
     if (value.length > 100) {
@@ -224,9 +275,7 @@ function domPath(el: HTMLElement): string {
       (n) => (n as HTMLElement).tagName === cur!.tagName,
     );
     const idx = siblings.indexOf(cur) + 1;
-    parts.unshift(
-      siblings.length > 1 ? `${name}:nth-of-type(${idx})` : name,
-    );
+    parts.unshift(siblings.length > 1 ? `${name}:nth-of-type(${idx})` : name);
     cur = parentEl;
   }
   return parts.join(" > ");
@@ -299,11 +348,17 @@ export function readWhitelistedStyles(
 
   for (const key of STYLE_KEYS) {
     const value = cs.getPropertyValue(key).trim();
-    const row: StyleInspectRow = { property: key, value };
+    const row: StyleInspectRow = {
+      property: key,
+      value,
+      group: stylePropertyGroup(key),
+      source: "raw",
+    };
     const match = matchTokenForStyle(key, value, catalog, preferred);
     if (match) {
       row.cssVar = match.cssVar;
       row.tokenId = match.tokenId;
+      row.source = match.source;
     }
     rows.push(row);
   }
@@ -329,14 +384,11 @@ export function buildSelectPayload(
 ): BridgePayloads["select"] | { error: "PAYLOAD_TOO_LARGE" } {
   const meta: SnapshotMeta = {};
   const element = buildElementSummary(el);
-  const reg =
-    getInspectRegistration(el) ?? findRegisteredAncestor(el);
+  const reg = getInspectRegistration(el) ?? findRegisteredAncestor(el);
 
   const tokenBindings = buildTokenBindings(reg?.getTokenBindings?.());
   const tokenIds =
-    reg?.getTokens?.() ??
-    tokenBindings?.map((row) => row.tokenId) ??
-    [];
+    reg?.getTokens?.() ?? tokenBindings?.map((row) => row.tokenId) ?? [];
   const styles = readWhitelistedStyles(el, tokenIds);
 
   const payload: BridgePayloads["select"] = {
@@ -370,7 +422,6 @@ export function buildSelectPayload(
 export function isInspectChrome(el: Element | null): boolean {
   if (!(el instanceof Element)) return false;
   return Boolean(
-    el.closest("[data-pb-inspect-chrome]") ||
-      el.closest(".pb-inspect-overlay"),
+    el.closest("[data-pb-inspect-chrome]") || el.closest(".pb-inspect-overlay"),
   );
 }

@@ -18,11 +18,7 @@ export type BridgeErrorCode =
   | "COMMAND_FAILED";
 
 export type RuntimeCapability =
-  | "inspect"
-  | "comment-target"
-  | "highlight"
-  | "route-sync"
-  | "state-summary";
+  "inspect" | "comment-target" | "highlight" | "route-sync" | "state-summary";
 
 export type JsonRecord = Record<string, unknown>;
 
@@ -45,11 +41,21 @@ export type ElementBox = {
   height: number;
 };
 
+export type StyleInspectGroup =
+  | "color"
+  | "typography"
+  | "spacing-size"
+  | "border-radius"
+  | "shadow-layout";
+
 export type StyleInspectRow = {
   property: string;
   value: string;
   cssVar?: string;
   tokenId?: string;
+  /** Semantic grouping for inspector display; kept small for Bridge payload. */
+  group: StyleInspectGroup;
+  source: "binding" | "value-match" | "raw";
 };
 
 export type TokenBindingRow = {
@@ -185,7 +191,9 @@ export function contextMatches(
   return true;
 }
 
-export function createWorkbenchEnvelope<T extends WorkbenchBridgeMessage["type"]>(
+export function createWorkbenchEnvelope<
+  T extends WorkbenchBridgeMessage["type"],
+>(
   type: T,
   ctx: BridgeContext,
   payload: BridgePayloads[T],
