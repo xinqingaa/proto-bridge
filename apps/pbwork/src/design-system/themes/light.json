@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "id": "light",
+  "label": "浅色主题",
+  "dark": false,
+  "overrides": {}
+}

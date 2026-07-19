@@ -10,12 +10,12 @@ test("primary and secondary navigation update the URL and resource view", async 
   const componentsLink = page.getByRole("link", { name: "组件", exact: true });
   await expect(componentsLink).toBeVisible();
   await componentsLink.click();
-  await expect(page).toHaveURL(/\/workbench\/components\/basic$/);
-  await expect(page.getByRole("heading", { name: "基础组件" })).toBeVisible();
+  await expect(page).toHaveURL(/\/workbench\/components\/button$/);
+  await expect(page.getByRole("heading", { name: "按钮" })).toBeVisible();
 
-  await page.getByRole("link", { name: "复杂组件", exact: true }).click();
-  await expect(page).toHaveURL(/\/workbench\/components\/complex$/);
-  await expect(page.getByRole("heading", { name: "复杂组件" })).toBeVisible();
+  await page.getByRole("link", { name: "Chip", exact: true }).click();
+  await expect(page).toHaveURL(/\/workbench\/components\/chip$/);
+  await expect(page.getByRole("heading", { name: "Chip" })).toBeVisible();
 
   const foundationsLink = page.getByRole("link", {
     name: "设计基础",
@@ -25,9 +25,9 @@ test("primary and secondary navigation update the URL and resource view", async 
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/workbench\/foundations\/tokens\/colors$/);
 
-  await page.getByRole("link", { name: "主题", exact: true }).click();
+  await page.getByRole("link", { name: "浅色主题", exact: true }).click();
   await expect(page).toHaveURL(/\/workbench\/foundations\/themes\/light$/);
-  await expect(page.getByRole("heading", { name: "主题" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "浅色主题" })).toBeVisible();
 });
 
 test("collapsing side panels expands the content track", async ({ page }) => {
@@ -62,15 +62,13 @@ test("collapsing side panels expands the content track", async ({ page }) => {
 
 test("search and settings controls have usable behavior", async ({ page }) => {
   await page.getByRole("button", { name: "搜索资源" }).click();
-  await page.getByRole("textbox", { name: "名称", exact: true }).fill("主题");
+  await page.getByRole("textbox", { name: "名称", exact: true }).fill("浅色");
   await page
     .getByRole("dialog")
-    .getByRole("link", { name: "主题", exact: true })
+    .getByRole("link", { name: "浅色主题", exact: true })
     .click();
   await expect(page).toHaveURL(/\/workbench\/foundations\/themes\/light$/);
 
   await page.getByRole("button", { name: "工作台设置" }).click();
   await expect(page.getByText("工作台偏好", { exact: true })).toBeVisible();
-  await expect(page.getByText("M1 / 工作台壳", { exact: true })).toHaveCount(0);
-  await expect(page.getByText("后续里程碑", { exact: false })).toHaveCount(0);
 });

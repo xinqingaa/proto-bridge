@@ -1,49 +1,107 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import {
+  computed,
+  defineAsyncComponent,
+  onMounted,
+  shallowRef,
+  watch,
+  type Component,
+} from "vue";
 import { useRoute } from "vue-router";
+import { screenViewModules } from "@/design-system/loaders";
+import {
+  resolveThemeTokens,
+  tokensToCssVars,
+} from "@/design-system/resolveThemeTokens";
+import { resolveRuntimeRoute } from "@/runtime/url";
 
 const route = useRoute();
-const prototypeId = computed(() => String(route.params.prototypeId));
-const screenSlug = computed(() => String(route.params.screenSlug));
-const themeQuery = computed(() => route.query.theme);
-const variantQuery = computed(() => route.query.variant);
+const screenComponent = shallowRef<Component | null>(null);
+const loadError = shallowRef<string | null>(null);
+
+const resolved = computed(() =>
+  resolveRuntimeRoute({
+    prototypeId: String(route.params.prototypeId),
+    screenSlug: String(route.params.screenSlug),
+    searchParams: new URLSearchParams(
+      route.fullPath.includes("?")
+        ? route.fullPath.slice(route.fullPath.indexOf("?") + 1)
+        : "",
+    ),
+  }),
+);
+
+const themeStyle = computed(() => {
+  if (!resolved.value.ok) return {};
+  try {
+    return tokensToCssVars(resolveThemeTokens(resolved.value.theme.id));
+  } catch {
+    return {};
+  }
+});
 
 const runtimeTheme = computed(() =>
-  themeQuery.value === "dark" ? "pbworkDark" : "pbworkLight",
+  resolved.value.ok && resolved.value.theme.dark ? "pbworkDark" : "pbworkLight",
 );
-const isKnownRuntime = computed(() => {
-  if (
-    !["light", "dark", undefined].includes(
-      themeQuery.value as string | undefined,
-    )
-  )
-    return false;
-  return (
-    prototypeId.value === "project" &&
-    ["task-list", "task-detail"].includes(screenSlug.value)
+
+async function loadScreen() {
+  screenComponent.value = null;
+  loadError.value = null;
+  if (!resolved.value.ok) return;
+
+  const view = resolved.value.screen.view;
+  const match = Object.entries(screenViewModules).find(
+    ([path]) =>
+      path.endsWith(`/${view}`) || path.endsWith(`/${view.replace(/^\//, "")}`),
   );
-});
-const title = computed(
-  () => `${prototypeId.value}/${screenSlug.value} 原型运行时`,
+  if (!match) {
+    loadError.value = `RUNTIME_ADAPTER_MISSING：${view}`;
+    return;
+  }
+  screenComponent.value = defineAsyncComponent(
+    match[1] as () => Promise<{ default: Component }>,
+  );
+}
+
+watch(
+  () => route.fullPath,
+  () => {
+    void loadScreen();
+  },
+  { immediate: true },
 );
+
+onMounted(() => {
+  void loadScreen();
+});
 </script>
 
 <template>
-  <v-app :theme="runtimeTheme" data-testid="runtime-root">
+  <v-app
+    :theme="runtimeTheme"
+    class="runtime-app"
+    :style="themeStyle"
+    data-testid="runtime-root"
+  >
     <v-main class="runtime-main">
-      <section v-if="isKnownRuntime" class="runtime-page" :aria-label="title">
-        <p class="runtime-kicker">PBWork Runtime</p>
-        <h1>{{ screenSlug === "task-list" ? "任务列表" : "任务详情" }}</h1>
-        <p>
-          Variant：{{
-            typeof variantQuery === "string" ? variantQuery : "default"
-          }}
-        </p>
-      </section>
-      <section v-else class="runtime-error" role="alert" aria-live="assertive">
+      <component
+        :is="screenComponent"
+        v-if="resolved.ok && screenComponent && !loadError"
+      />
+      <section
+        v-else
+        class="runtime-error"
+        role="alert"
+        aria-live="assertive"
+      >
         <p class="runtime-kicker">PBWork Runtime</p>
         <h1>无法打开原型</h1>
-        <p>UNKNOWN_SCREEN：{{ prototypeId }}/{{ screenSlug }}</p>
+        <p>
+          {{
+            loadError ??
+            (!resolved.ok ? resolved.message : "UNKNOWN_SCREEN")
+          }}
+        </p>
       </section>
     </v-main>
   </v-app>
@@ -53,7 +111,6 @@ const title = computed(
 .runtime-main {
   min-height: 100vh;
 }
-.runtime-page,
 .runtime-error {
   min-height: 100vh;
   box-sizing: border-box;

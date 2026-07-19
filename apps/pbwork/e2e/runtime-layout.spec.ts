@@ -13,7 +13,7 @@ test("opens a pure Runtime route without workbench chrome", async ({
 test("shows a deterministic error page for an unknown Runtime screen", async ({
   page,
 }) => {
-  await page.goto("/prototype/unknown/missing?theme=light");
+  await page.goto("/prototype/project/missing?theme=light");
 
   await expect(page.getByRole("alert")).toContainText("UNKNOWN_SCREEN");
 });

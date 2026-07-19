@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "button",
+  "category": "basic",
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "label": { "type": "string" },
+      "variant": {
+        "type": "string",
+        "enum": ["flat", "tonal", "outlined", "text"]
+      },
+      "disabled": { "type": "boolean" }
+    },
+    "required": ["label"]
+  },
+  "defaultProps": {
+    "label": "确认",
+    "variant": "flat",
+    "disabled": false
+  },
+  "states": [
+    { "id": "disabled", "label": "禁用", "props": { "disabled": true } }
+  ],
+  "slots": ["default"],
+  "events": ["click"],
+  "tokenBindings": { "background": "color.primary" }
+}

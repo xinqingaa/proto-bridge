@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "card",
+  "category": "basic",
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "title": { "type": "string" },
+      "subtitle": { "type": "string" }
+    },
+    "required": ["title"]
+  },
+  "defaultProps": {
+    "title": "任务卡片",
+    "subtitle": "描述信息"
+  },
+  "states": [],
+  "slots": ["default"],
+  "events": [],
+  "tokenBindings": { "surface": "color.surface" }
+}

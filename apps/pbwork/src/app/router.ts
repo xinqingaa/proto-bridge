@@ -2,8 +2,12 @@ import { createRouter, createWebHistory } from "vue-router";
 import RuntimeLayout from "@/runtime/RuntimeLayout.vue";
 import WorkbenchLayout from "@/workbench/WorkbenchLayout.vue";
 import WorkbenchResourceView from "@/workbench/views/WorkbenchResourceView.vue";
+import type { PrototypeLifecycle, TokenCategory } from "@/design-system/types";
+import { TOKEN_CATEGORIES } from "@/design-system/types";
 
-const resourceView = WorkbenchResourceView;
+function isTokenCategory(value: string): value is TokenCategory {
+  return (TOKEN_CATEGORIES as string[]).includes(value);
+}
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -15,102 +19,92 @@ export const router = createRouter({
       children: [
         { path: "", redirect: "/workbench/foundations/tokens/colors" },
         {
-          path: "foundations/tokens/colors",
+          path: "foundations/tokens/:category",
           name: "foundation-tokens",
-          component: resourceView,
+          component: WorkbenchResourceView,
+          props: (route) => ({
+            kind: "token",
+            category: isTokenCategory(String(route.params.category))
+              ? String(route.params.category)
+              : "color",
+          }),
           meta: {
             sectionId: "foundations",
-            resourceId: "tokens",
+            resourceKind: "token",
             title: "设计令牌",
-            context: "颜色",
           },
         },
         {
-          path: "foundations/themes/light",
+          path: "foundations/themes/:themeId",
           name: "foundation-themes",
-          component: resourceView,
+          component: WorkbenchResourceView,
+          props: (route) => ({
+            kind: "theme",
+            themeId: String(route.params.themeId),
+          }),
           meta: {
             sectionId: "foundations",
-            resourceId: "themes",
+            resourceKind: "theme",
             title: "主题",
-            context: "默认主题",
           },
         },
         {
-          path: "components/basic",
-          name: "components-basic",
-          component: resourceView,
+          path: "components/:componentId",
+          name: "component-playground",
+          component: WorkbenchResourceView,
+          props: (route) => ({
+            kind: "component",
+            componentId: String(route.params.componentId),
+          }),
           meta: {
             sectionId: "components",
-            resourceId: "basic-components",
-            title: "基础组件",
-            context: "组件",
+            resourceKind: "component",
+            title: "组件",
           },
         },
         {
-          path: "components/complex",
-          name: "components-complex",
-          component: resourceView,
-          meta: {
-            sectionId: "components",
-            resourceId: "complex-components",
-            title: "复杂组件",
-            context: "组件",
-          },
-        },
-        {
-          path: "prototypes/all",
-          name: "prototypes-all",
-          component: resourceView,
+          path: "prototypes/:lifecycle(all|active|review|final|archived)",
+          name: "prototypes-lifecycle",
+          component: WorkbenchResourceView,
+          props: (route) => ({
+            kind: "prototype-list",
+            lifecycle: String(route.params.lifecycle) as
+              | "all"
+              | PrototypeLifecycle,
+          }),
           meta: {
             sectionId: "prototypes",
-            resourceId: "all-prototypes",
-            title: "全部原型",
-            context: "原型",
+            resourceKind: "lifecycle",
+            title: "原型",
           },
         },
         {
-          path: "prototypes/active",
-          name: "prototypes-active",
-          component: resourceView,
+          path: "prototypes/:prototypeId/screens/:screenSlug",
+          name: "prototype-screen",
+          component: WorkbenchResourceView,
+          props: (route) => ({
+            kind: "screen",
+            prototypeId: String(route.params.prototypeId),
+            screenSlug: String(route.params.screenSlug),
+          }),
           meta: {
             sectionId: "prototypes",
-            resourceId: "active-prototypes",
-            title: "进行中",
-            context: "原型",
+            resourceKind: "screen",
+            title: "页面",
           },
         },
         {
-          path: "prototypes/review",
-          name: "prototypes-review",
-          component: resourceView,
+          path: "prototypes/:prototypeId",
+          name: "prototype-overview",
+          component: WorkbenchResourceView,
+          props: (route) => ({
+            kind: "prototype",
+            prototypeId: String(route.params.prototypeId),
+          }),
           meta: {
             sectionId: "prototypes",
-            resourceId: "review-prototypes",
-            title: "待确认",
-            context: "原型",
-          },
-        },
-        {
-          path: "prototypes/final",
-          name: "prototypes-final",
-          component: resourceView,
-          meta: {
-            sectionId: "prototypes",
-            resourceId: "final-prototypes",
-            title: "已定稿",
-            context: "原型",
-          },
-        },
-        {
-          path: "prototypes/archived",
-          name: "prototypes-archived",
-          component: resourceView,
-          meta: {
-            sectionId: "prototypes",
-            resourceId: "archived-prototypes",
-            title: "已归档",
-            context: "原型",
+            resourceKind: "prototype",
+            title: "原型概要",
           },
         },
         {

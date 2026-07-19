@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "id": "data-list",
+  "category": "complex",
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "title"],
+          "properties": {
+            "id": { "type": "string" },
+            "title": { "type": "string" },
+            "subtitle": { "type": "string" }
+          }
+        }
+      },
+      "loading": { "type": "boolean" },
+      "emptyText": { "type": "string" }
+    },
+    "required": ["items"]
+  },
+  "defaultProps": {
+    "items": [
+      { "id": "1", "title": "整理需求", "subtitle": "今日" },
+      { "id": "2", "title": "联调接口", "subtitle": "明日" }
+    ],
+    "loading": false,
+    "emptyText": "暂无任务"
+  },
+  "states": [
+    {
+      "id": "loading",
+      "label": "加载中",
+      "props": { "loading": true, "items": [] }
+    },
+    {
+      "id": "empty",
+      "label": "空态",
+      "props": { "items": [], "emptyText": "暂无任务" }
+    }
+  ],
+  "slots": [],
+  "events": ["select"],
+  "tokenBindings": { "surface": "color.surface" }
+}

@@ -7,6 +7,9 @@ import "vuetify/styles";
 import "@/app/styles.css";
 import AppRoot from "@/app/AppRoot.vue";
 import { router } from "@/app/router";
+import { assertRegistriesValid } from "@/design-system/validateRegistries";
+
+assertRegistriesValid();
 
 const vuetify = createVuetify({
   components,

@@ -31,11 +31,13 @@ import {
   useWorkbenchStore,
 } from "@/app/stores/workbench";
 import {
+  buildPrototypeTree,
+  getSecondaryNavigation,
   groupSecondaryNavigation,
   isWorkbenchSectionId,
+  parsePrototypeLifecycle,
   primaryNavigation,
   searchableNavigation,
-  secondaryNavigation,
 } from "@/workbench/navigation";
 
 /** Keep in sync with `.resource-panel` / `.inspector-panel` width transition. */
@@ -62,11 +64,42 @@ const sectionId = computed(() =>
 const section = computed(() =>
   primaryNavigation.find((item) => item.id === sectionId.value)!,
 );
-const secondaryItems = computed(() => secondaryNavigation[sectionId.value]);
+const secondaryItems = computed(() => getSecondaryNavigation(sectionId.value));
 const secondaryGroups = computed(() =>
   groupSecondaryNavigation(secondaryItems.value),
 );
-const selectedResourceId = computed(() => String(route.meta.resourceId ?? ""));
+const selectedSecondaryId = computed(() => {
+  const match = secondaryItems.value.find((item) => item.to === route.path);
+  if (match) return match.id;
+  if (sectionId.value === "foundations" && route.path.includes("/tokens/")) {
+    const category = route.path.split("/").pop();
+    return `token-${category}`;
+  }
+  if (sectionId.value === "foundations" && route.path.includes("/themes/")) {
+    return `theme-${route.params.themeId}`;
+  }
+  if (sectionId.value === "components") {
+    return String(route.params.componentId ?? "");
+  }
+  if (sectionId.value === "prototypes") {
+    const lifecycle = parsePrototypeLifecycle(String(route.params.lifecycle ?? ""));
+    if (lifecycle) return `lifecycle-${lifecycle}`;
+  }
+  return "";
+});
+const activePrototypeLifecycle = computed(() => {
+  const fromParam = parsePrototypeLifecycle(
+    String(route.params.lifecycle ?? ""),
+  );
+  if (fromParam) return fromParam;
+  if (route.params.prototypeId) return "all" as const;
+  return "all" as const;
+});
+const prototypeTree = computed(() =>
+  sectionId.value === "prototypes"
+    ? buildPrototypeTree(activePrototypeLifecycle.value)
+    : [],
+);
 const breadcrumbs = computed(() => [
   { title: section.value.label, disabled: false, to: section.value.to },
   { title: String(route.meta.title ?? ""), disabled: true },
@@ -100,17 +133,18 @@ const primaryIcons = {
   prototypes: Layers3,
 } as const;
 
-const secondaryIcons = {
-  tokens: SwatchBook,
-  themes: Paintbrush,
-  "basic-components": Boxes,
-  "complex-components": ComponentIcon,
-  "all-prototypes": LayoutGrid,
-  "active-prototypes": CircleDot,
-  "review-prototypes": ClipboardCheck,
-  "final-prototypes": BadgeCheck,
-  "archived-prototypes": Archive,
-} as const;
+function secondaryIconFor(id: string) {
+  if (id.startsWith("token-")) return SwatchBook;
+  if (id.startsWith("theme-")) return Paintbrush;
+  if (id.startsWith("lifecycle-all")) return LayoutGrid;
+  if (id.startsWith("lifecycle-active")) return CircleDot;
+  if (id.startsWith("lifecycle-review")) return ClipboardCheck;
+  if (id.startsWith("lifecycle-final")) return BadgeCheck;
+  if (id.startsWith("lifecycle-archived")) return Archive;
+  if (id.includes("button") || id.includes("field") || id.includes("chip") || id.includes("card"))
+    return Boxes;
+  return ComponentIcon;
+}
 
 const inspectorStubTabs = [
   { id: "overview", label: "概览", icon: Info },
@@ -378,20 +412,59 @@ onBeforeUnmount(() => {
                     :to="item.to"
                     :title="item.label"
                     :aria-label="item.label"
-                    :active="selectedResourceId === item.id"
-                    exact
+                    :active="selectedSecondaryId === item.id"
                   >
                     <template #prepend>
                       <component
-                        :is="
-                          secondaryIcons[item.id as keyof typeof secondaryIcons]
-                        "
+                        :is="secondaryIconFor(item.id)"
                         class="secondary-icon"
                         :size="16"
                         aria-hidden="true"
                       />
                     </template>
                   </v-list-item>
+                </v-list>
+              </section>
+
+              <section
+                v-if="sectionId === 'prototypes' && prototypeTree.length > 0"
+                class="secondary-group"
+              >
+                <h2 class="secondary-group-label">页面树</h2>
+                <v-list density="compact" nav class="secondary-list">
+                  <v-list-group
+                    v-for="prototype in prototypeTree"
+                    :key="prototype.id"
+                    :value="prototype.id"
+                  >
+                    <template #activator="{ props: groupProps }">
+                      <v-list-item
+                        v-bind="groupProps"
+                        :title="prototype.label"
+                        :to="prototype.to"
+                      />
+                    </template>
+                    <v-list-group
+                      v-for="screen in prototype.children ?? []"
+                      :key="screen.id"
+                      :value="screen.id"
+                    >
+                      <template #activator="{ props: screenProps }">
+                        <v-list-item
+                          v-bind="screenProps"
+                          :title="screen.label"
+                          :to="screen.to"
+                        />
+                      </template>
+                      <v-list-item
+                        v-for="variant in screen.children ?? []"
+                        :key="variant.id"
+                        :title="variant.label"
+                        :to="variant.to"
+                        class="secondary-item"
+                      />
+                    </v-list-group>
+                  </v-list-group>
                 </v-list>
               </section>
             </nav>
@@ -407,20 +480,18 @@ onBeforeUnmount(() => {
                   <v-btn
                     v-bind="props"
                     class="rail-nav-btn"
-                    :class="{ 'is-active': selectedResourceId === item.id }"
+                    :class="{ 'is-active': selectedSecondaryId === item.id }"
                     :to="item.to"
                     icon
                     variant="text"
                     size="small"
                     :aria-label="item.label"
                     :aria-current="
-                      selectedResourceId === item.id ? 'page' : undefined
+                      selectedSecondaryId === item.id ? 'page' : undefined
                     "
                   >
                     <component
-                      :is="
-                        secondaryIcons[item.id as keyof typeof secondaryIcons]
-                      "
+                      :is="secondaryIconFor(item.id)"
                       :size="18"
                       aria-hidden="true"
                     />

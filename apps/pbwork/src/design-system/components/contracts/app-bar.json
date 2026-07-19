@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "app-bar",
+  "category": "complex",
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "title": { "type": "string" },
+      "dense": { "type": "boolean" }
+    },
+    "required": ["title"]
+  },
+  "defaultProps": { "title": "项目协作", "dense": false },
+  "states": [],
+  "slots": ["append"],
+  "events": [],
+  "tokenBindings": { "background": "color.surface" }
+}

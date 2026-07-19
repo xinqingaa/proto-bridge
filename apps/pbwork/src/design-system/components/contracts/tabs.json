@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "tabs",
+  "category": "complex",
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "modelValue": { "type": "string" },
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["value", "label"],
+          "properties": {
+            "value": { "type": "string" },
+            "label": { "type": "string" }
+          }
+        }
+      }
+    },
+    "required": ["items"]
+  },
+  "defaultProps": {
+    "modelValue": "overview",
+    "items": [
+      { "value": "overview", "label": "概览" },
+      { "value": "activity", "label": "活动" }
+    ]
+  },
+  "states": [],
+  "slots": [],
+  "events": ["update:modelValue"],
+  "tokenBindings": { "indicator": "color.primary" }
+}

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "icon-button",
+  "category": "basic",
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "ariaLabel": { "type": "string" },
+      "disabled": { "type": "boolean" }
+    },
+    "required": ["ariaLabel"]
+  },
+  "defaultProps": { "ariaLabel": "更多", "disabled": false },
+  "states": [],
+  "slots": [],
+  "events": ["click"],
+  "tokenBindings": { "color": "color.primary" }
+}

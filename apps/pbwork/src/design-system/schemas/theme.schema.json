@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://proto-bridge.local/pbwork/schemas/theme/v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "label", "dark", "overrides"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+    },
+    "label": { "type": "string", "minLength": 1 },
+    "dark": { "type": "boolean" },
+    "overrides": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [{ "type": "string", "minLength": 1 }, { "type": "number" }]
+      }
+    }
+  }
+}

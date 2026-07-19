@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "bottom-sheet",
+  "category": "complex",
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "title": { "type": "string" },
+      "modelValue": { "type": "boolean" }
+    },
+    "required": ["title"]
+  },
+  "defaultProps": { "title": "操作面板", "modelValue": true },
+  "states": [
+    { "id": "open", "label": "打开", "props": { "modelValue": true } },
+    { "id": "closed", "label": "关闭", "props": { "modelValue": false } }
+  ],
+  "slots": ["default"],
+  "events": ["update:modelValue"],
+  "tokenBindings": { "surface": "color.surface" }
+}

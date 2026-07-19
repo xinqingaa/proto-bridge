@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "text-field",
+  "category": "basic",
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "label": { "type": "string" },
+      "modelValue": { "type": "string" },
+      "disabled": { "type": "boolean" }
+    },
+    "required": ["label"]
+  },
+  "defaultProps": {
+    "label": "标题",
+    "modelValue": "",
+    "disabled": false
+  },
+  "states": [],
+  "slots": [],
+  "events": ["update:modelValue"],
+  "tokenBindings": { "border": "color.secondary" }
+}

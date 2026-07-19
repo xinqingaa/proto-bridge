@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "chip",
+  "category": "basic",
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "label": { "type": "string" },
+      "color": { "type": "string" }
+    },
+    "required": ["label"]
+  },
+  "defaultProps": { "label": "进行中", "color": "primary" },
+  "states": [],
+  "slots": ["default"],
+  "events": [],
+  "tokenBindings": { "background": "color.primary" }
+}
