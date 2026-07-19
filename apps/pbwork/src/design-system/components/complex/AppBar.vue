@@ -1,15 +1,50 @@
 <script setup lang="ts">
+import { toRefs } from "vue";
 import IconButton from "@/design-system/components/basic/IconButton.vue";
+import {
+  usePbInspect,
+  usePbInspectRef,
+} from "@/runtime/inspect/usePbInspect";
 
-defineProps<{
+const props = defineProps<{
   title: string;
   dense?: boolean;
   elevated?: boolean;
 }>();
+
+const rootRef = usePbInspectRef();
+const { title, dense, elevated } = toRefs(props);
+
+usePbInspect({
+  element: rootRef,
+  pbId: "ds.app-bar",
+  componentId: "app-bar",
+  getProps: () => ({
+    title: title.value,
+    dense: dense.value ?? false,
+    elevated: elevated.value ?? false,
+  }),
+  getTokenBindings: () => ({
+    surface: "color.surface",
+    border: "color.border",
+    elevation: "elevation.card",
+    title: "typography.subtitle",
+  }),
+  getTokens: () => [
+    "color.surface",
+    "color.border",
+    "color.on-surface",
+    "elevation.card",
+    "typography.subtitle",
+    "spacing.sm",
+    "spacing.md",
+  ],
+});
 </script>
 
 <template>
   <header
+    ref="rootRef"
     class="pb-app-bar app-bar"
     data-pb-id="ds.app-bar"
     data-pb-role="app-bar"

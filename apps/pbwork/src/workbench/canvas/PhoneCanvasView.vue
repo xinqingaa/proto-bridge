@@ -11,12 +11,17 @@ import {
   resolveRuntimeRoute,
 } from "@/runtime/url";
 import {
-  BRIDGE_PROTOCOL_VERSION,
+  HANDSHAKE_TIMEOUT_MS,
+  contextMatches,
+  createWorkbenchEnvelope,
   isBridgeMessage,
   workbenchPathFromRuntimeUrl,
+  type BridgeContext,
   type RuntimeBridgeMessage,
-  type WorkbenchBridgeMessage,
 } from "@/runtime/bridge";
+import { useCanvasStore } from "@/app/stores/canvas";
+import { useWorkbenchStore } from "@/app/stores/workbench";
+import { useSelectionStore } from "@/app/stores/selection";
 import CanvasToolbar from "@/workbench/canvas/CanvasToolbar.vue";
 import PhoneStage from "@/workbench/canvas/PhoneStage.vue";
 
@@ -27,6 +32,9 @@ const props = defineProps<{
 
 const route = useRoute();
 const router = useRouter();
+const canvas = useCanvasStore();
+const workbench = useWorkbenchStore();
+const selection = useSelectionStore();
 
 const stageRef = ref<InstanceType<typeof PhoneStage> | null>(null);
 const iframeWindow = ref<Window | null>(null);
@@ -34,6 +42,7 @@ const runtimeId = ref<string | null>(null);
 const copyFeedback = ref<string | null>(null);
 const routeError = ref<string | null>(null);
 let copyTimer: ReturnType<typeof setTimeout> | null = null;
+let handshakeTimer: ReturnType<typeof setTimeout> | null = null;
 let ignoreRouteEchoUntil = 0;
 
 const prototype = computed(() =>
@@ -47,6 +56,7 @@ const screen = computed(() =>
   ),
 );
 const themes = computed(() => loadThemes());
+const isDark = computed(() => workbench.theme === "pbworkDark");
 
 const searchParams = computed(
   () =>
@@ -108,7 +118,6 @@ const absoluteRuntimeUrl = computed(() => {
   return `${window.location.origin}${canonicalRuntimePath.value}`;
 });
 
-/** Remount iframe when bumping (same URL refresh fallback). */
 const reloadNonce = ref(0);
 const iframeSrc = computed(() => absoluteRuntimeUrl.value);
 const iframeRenderKey = computed(() => reloadNonce.value);
@@ -116,6 +125,17 @@ const iframeRenderKey = computed(() => reloadNonce.value);
 const iframeTitle = computed(() => {
   if (!screen.value) return "原型预览";
   return `${screen.value.label}（${selectedVariantId.value}）`;
+});
+
+const bridgeContext = computed((): BridgeContext | null => {
+  if (!runtimeId.value || !resolved.value.ok) return null;
+  return {
+    runtimeId: runtimeId.value,
+    prototypeId: resolved.value.prototype.id,
+    screenId: resolved.value.screen.screenId,
+    variantId: resolved.value.variant.id,
+    themeId: resolved.value.theme.id,
+  };
 });
 
 function replaceWorkbenchQuery(next: {
@@ -156,6 +176,7 @@ function onThemeId(themeId: string) {
 }
 
 function refresh() {
+  selection.resetForNavigation();
   const win = iframeWindow.value;
   try {
     if (win) {
@@ -163,7 +184,7 @@ function refresh() {
       return;
     }
   } catch {
-    /* fall through to remount */
+    /* fall through */
   }
   reloadNonce.value += 1;
 }
@@ -187,10 +208,30 @@ async function copyLink() {
   }, 1600);
 }
 
-function postToRuntime(message: WorkbenchBridgeMessage) {
+function postToRuntime(
+  message: ReturnType<typeof createWorkbenchEnvelope>,
+) {
   const target = iframeWindow.value;
   if (!target) return;
   target.postMessage(message, window.location.origin);
+}
+
+function sendInspectMode(enabled: boolean) {
+  const ctx = bridgeContext.value;
+  if (!ctx || !selection.runtimeReady) return;
+  postToRuntime(
+    createWorkbenchEnvelope("inspect-mode", ctx, { enabled }),
+  );
+}
+
+function toggleInspect() {
+  if (!selection.canInspect && !selection.inspecting) return;
+  if (!selection.inspecting) {
+    if (canvas.toolMode === "pan") canvas.setToolMode("idle");
+  }
+  selection.toggleInspect();
+  sendInspectMode(selection.inspecting);
+  if (!selection.inspecting) selection.clearSelection();
 }
 
 function sendInit(contentWindow: Window | null) {
@@ -199,18 +240,25 @@ function sendInit(contentWindow: Window | null) {
 
   const id = crypto.randomUUID();
   runtimeId.value = id;
-  const message: WorkbenchBridgeMessage = {
-    source: "pbwork",
-    protocolVersion: BRIDGE_PROTOCOL_VERSION,
-    runtimeId: id,
-    type: "init",
-    prototypeId: resolved.value.prototype.id,
-    screenId: resolved.value.screen.screenId,
-    variantId: resolved.value.variant.id,
-    themeId: resolved.value.theme.id,
-    payload: { canonicalRuntimeUrl: absoluteRuntimeUrl.value },
-  };
-  postToRuntime(message);
+  selection.onRuntimeLoading(id);
+  if (handshakeTimer) clearTimeout(handshakeTimer);
+  handshakeTimer = setTimeout(() => {
+    selection.onHandshakeTimeout();
+  }, HANDSHAKE_TIMEOUT_MS);
+
+  postToRuntime(
+    createWorkbenchEnvelope(
+      "init",
+      {
+        runtimeId: id,
+        prototypeId: resolved.value.prototype.id,
+        screenId: resolved.value.screen.screenId,
+        variantId: resolved.value.variant.id,
+        themeId: resolved.value.theme.id,
+      },
+      { canonicalRuntimeUrl: absoluteRuntimeUrl.value },
+    ),
+  );
 }
 
 function onIframeLoad(contentWindow: Window | null) {
@@ -260,6 +308,7 @@ function applyRuntimeNavigation(canonicalRuntimeUrl: string) {
   }
 
   routeError.value = null;
+  selection.resetForNavigation();
   if (route.fullPath === workbenchPath) return;
   ignoreRouteEchoUntil = Date.now() + 800;
   void router.replace(workbenchPath);
@@ -270,23 +319,87 @@ function onWindowMessage(event: MessageEvent) {
   if (!iframeWindow.value || event.source !== iframeWindow.value) return;
   if (!isBridgeMessage(event.data)) return;
   if (event.data.source !== "pbwork-runtime") return;
-  if (runtimeId.value && event.data.runtimeId !== runtimeId.value) return;
 
   const msg = event.data as RuntimeBridgeMessage;
+  const ctx = bridgeContext.value;
+  if (msg.type !== "ready" && ctx && !contextMatches(msg, ctx)) return;
+  if (runtimeId.value && msg.runtimeId !== runtimeId.value) return;
+
   if (msg.type === "ready") {
     routeError.value = null;
+    selection.onReady(msg.payload.capabilities);
+    if (handshakeTimer) {
+      clearTimeout(handshakeTimer);
+      handshakeTimer = null;
+    }
+    if (selection.inspecting) sendInspectMode(true);
     return;
   }
   if (msg.type === "route") {
     applyRuntimeNavigation(msg.payload.canonicalRuntimeUrl);
+    return;
+  }
+  if (msg.type === "hover") {
+    selection.setHover(msg.payload.element);
+    return;
+  }
+  if (msg.type === "select") {
+    selection.setSelected(msg.payload);
+    return;
+  }
+  if (msg.type === "clear-select") {
+    const hadSelection = Boolean(selection.selected);
+    selection.clearSelection();
+    // Esc inside iframe: first clears selection, second exits inspect.
+    if (
+      msg.payload.reason === "escape" &&
+      !hadSelection &&
+      selection.inspecting
+    ) {
+      selection.setInspectMode(false);
+      sendInspectMode(false);
+    }
+    return;
+  }
+  if (msg.type === "error") {
+    selection.setError(`${msg.payload.code}: ${msg.payload.message}`);
+  }
+}
+
+function onShellKeydown(event: KeyboardEvent) {
+  if (event.key !== "Escape") return;
+  if (selection.selected) {
+    event.preventDefault();
+    selection.clearSelection();
+    const ctx = bridgeContext.value;
+    if (ctx && selection.runtimeReady) {
+      // ask runtime to clear highlight by toggling highlight empty
+      postToRuntime(createWorkbenchEnvelope("highlight", ctx, {}));
+    }
+    return;
+  }
+  if (selection.inspecting) {
+    event.preventDefault();
+    selection.setInspectMode(false);
+    sendInspectMode(false);
   }
 }
 
 watch(absoluteRuntimeUrl, () => {
   routeError.value = null;
+  selection.resetForNavigation();
 });
 
-/** Keep workbench address bar aligned with canonical Runtime query. */
+watch(
+  () => canvas.toolMode,
+  (mode) => {
+    if (mode === "pan" && selection.inspecting) {
+      selection.setInspectMode(false);
+      sendInspectMode(false);
+    }
+  },
+);
+
 watch(
   () => {
     if (!resolved.value.ok || !prototype.value || !screen.value) return null;
@@ -312,11 +425,16 @@ watch(
 
 onMounted(() => {
   window.addEventListener("message", onWindowMessage);
+  window.addEventListener("keydown", onShellKeydown);
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener("message", onWindowMessage);
+  window.removeEventListener("keydown", onShellKeydown);
   if (copyTimer) clearTimeout(copyTimer);
+  if (handshakeTimer) clearTimeout(handshakeTimer);
+  selection.setInspectMode(false);
+  selection.clearSelection();
 });
 </script>
 
@@ -327,9 +445,11 @@ onBeforeUnmount(() => {
       :themes="themes"
       :variant-id="selectedVariantId"
       :theme-id="selectedThemeId"
+      :is-dark="isDark"
       :copy-feedback="copyFeedback"
       @update:variant-id="onVariantId"
       @update:theme-id="onThemeId"
+      @toggle-inspect="toggleInspect"
       @refresh="refresh"
       @fullscreen="fullscreen"
       @copy="copyLink"
@@ -355,6 +475,15 @@ onBeforeUnmount(() => {
     >
       {{ routeError }}：无法跟随 iframe 内导航
     </v-alert>
+    <v-alert
+      v-if="selection.handshakeTimedOut"
+      type="warning"
+      variant="tonal"
+      density="compact"
+      class="canvas-alert"
+    >
+      Runtime 握手超时，请点击刷新。
+    </v-alert>
 
     <PhoneStage
       v-if="iframeSrc"
@@ -362,6 +491,7 @@ onBeforeUnmount(() => {
       ref="stageRef"
       :src="iframeSrc"
       :iframe-title="iframeTitle"
+      :is-dark="isDark"
       @iframe-load="onIframeLoad"
     />
   </section>

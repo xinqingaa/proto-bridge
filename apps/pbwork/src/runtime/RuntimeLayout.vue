@@ -4,6 +4,7 @@ import {
   defineAsyncComponent,
   onBeforeUnmount,
   onMounted,
+  ref,
   shallowRef,
   watch,
   type Component,
@@ -15,8 +16,8 @@ import {
   tokensToCssVars,
 } from "@/design-system/resolveThemeTokens";
 import {
-  BRIDGE_PROTOCOL_VERSION,
   isBridgeMessage,
+  type BridgeContext,
   type RuntimeBridgeMessage,
   type WorkbenchBridgeMessage,
 } from "@/runtime/bridge";
@@ -24,12 +25,15 @@ import {
   buildCanonicalRuntimeUrl,
   resolveRuntimeRoute,
 } from "@/runtime/url";
+import InspectHost from "@/runtime/inspect/InspectHost.vue";
 
 const route = useRoute();
 const screenComponent = shallowRef<Component | null>(null);
 const loadError = shallowRef<string | null>(null);
 const runtimeId = shallowRef<string | null>(null);
 const lastPostedRoute = shallowRef<string | null>(null);
+const inspectEnabled = ref(false);
+const inspectHost = ref<InstanceType<typeof InspectHost> | null>(null);
 const isEmbedded = shallowRef(
   typeof window !== "undefined" && window.parent !== window,
 );
@@ -71,6 +75,17 @@ const canonicalRuntimeUrl = computed(() => {
   return `${window.location.origin}${path}`;
 });
 
+const bridgeContext = computed((): BridgeContext | null => {
+  if (!runtimeId.value || !resolved.value.ok) return null;
+  return {
+    runtimeId: runtimeId.value,
+    prototypeId: resolved.value.prototype.id,
+    screenId: resolved.value.screen.screenId,
+    variantId: resolved.value.variant.id,
+    themeId: resolved.value.theme.id,
+  };
+});
+
 function postToParent(message: RuntimeBridgeMessage) {
   if (window.parent === window) return;
   window.parent.postMessage(message, window.location.origin);
@@ -80,16 +95,17 @@ function buildEnvelope<TType extends RuntimeBridgeMessage["type"]>(
   type: TType,
   payload: Extract<RuntimeBridgeMessage, { type: TType }>["payload"],
 ): Extract<RuntimeBridgeMessage, { type: TType }> | null {
-  if (!runtimeId.value || !resolved.value.ok) return null;
+  const ctx = bridgeContext.value;
+  if (!ctx) return null;
   return {
     source: "pbwork-runtime",
-    protocolVersion: BRIDGE_PROTOCOL_VERSION,
-    runtimeId: runtimeId.value,
+    protocolVersion: 1,
+    runtimeId: ctx.runtimeId,
     type,
-    prototypeId: resolved.value.prototype.id,
-    screenId: resolved.value.screen.screenId,
-    variantId: resolved.value.variant.id,
-    themeId: resolved.value.theme.id,
+    prototypeId: ctx.prototypeId,
+    screenId: ctx.screenId,
+    variantId: ctx.variantId,
+    themeId: ctx.themeId,
     payload,
   } as Extract<RuntimeBridgeMessage, { type: TType }>;
 }
@@ -98,7 +114,7 @@ function sendReady() {
   const message = buildEnvelope("ready", {
     canonicalRuntimeUrl: canonicalRuntimeUrl.value,
     route: route.fullPath,
-    capabilities: ["route-sync"],
+    capabilities: ["route-sync", "inspect", "highlight"],
   });
   if (!message) return;
   lastPostedRoute.value = canonicalRuntimeUrl.value;
@@ -129,12 +145,28 @@ function onMessage(event: MessageEvent) {
   const msg = event.data as WorkbenchBridgeMessage;
   if (msg.type === "init") {
     runtimeId.value = msg.runtimeId;
+    inspectEnabled.value = false;
     sendReady();
     return;
   }
+
+  if (!runtimeId.value || msg.runtimeId !== runtimeId.value) return;
+
   if (msg.type === "reload") {
-    if (runtimeId.value && msg.runtimeId !== runtimeId.value) return;
     window.location.assign(msg.payload.canonicalRuntimeUrl);
+    return;
+  }
+  if (msg.type === "inspect-mode") {
+    inspectEnabled.value = msg.payload.enabled;
+    return;
+  }
+  if (msg.type === "comment-mode") {
+    // M5 — ignore enable, force inspect off if somehow sent
+    if (msg.payload.enabled) inspectEnabled.value = false;
+    return;
+  }
+  if (msg.type === "highlight") {
+    inspectHost.value?.highlight(msg.payload.element);
   }
 }
 
@@ -209,12 +241,24 @@ onBeforeUnmount(() => {
         </p>
       </section>
     </v-main>
+
+    <InspectHost
+      v-if="isEmbedded && bridgeContext"
+      ref="inspectHost"
+      :enabled="inspectEnabled"
+      :bridge-context="bridgeContext"
+      :post="postToParent"
+    />
   </v-app>
 </template>
 
 <style scoped>
 .runtime-main {
   min-height: 100vh;
+}
+
+.runtime-app {
+  background: rgb(var(--v-theme-background));
 }
 
 .runtime-app.is-embedded :deep(.v-main) {

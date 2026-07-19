@@ -18,7 +18,6 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Paintbrush,
-  ScanSearch,
   Search,
   Settings,
   Shapes,
@@ -31,6 +30,7 @@ import {
   DEFAULT_RESOURCE_WIDTH,
   useWorkbenchStore,
 } from "@/app/stores/workbench";
+import { useSelectionStore } from "@/app/stores/selection";
 import {
   buildPrototypeTree,
   getSecondaryNavigation,
@@ -41,6 +41,7 @@ import {
   searchableNavigation,
 } from "@/workbench/navigation";
 import { loadPrototypes } from "@/design-system/loaders";
+import InspectorPanel from "@/workbench/inspector/InspectorPanel.vue";
 
 /** Keep in sync with `.resource-panel` / `.inspector-panel` width transition. */
 const PANEL_SLIDE_MS = 320;
@@ -61,6 +62,7 @@ function loadPrototypeTreeExpanded(): string[] {
 
 const route = useRoute();
 const workbench = useWorkbenchStore();
+const selection = useSelectionStore();
 const searchOpen = ref(false);
 const searchQuery = ref("");
 const resizingInspector = ref(false);
@@ -227,6 +229,9 @@ const themeLabel = computed(() =>
     ? "切换到深色工作台主题"
     : "切换到浅色工作台主题",
 );
+/** 元素检查仅在原型画布（Screen）出现。 */
+const isScreenCanvas = computed(() => route.meta.resourceKind === "screen");
+const showElementInspector = computed(() => isScreenCanvas.value);
 const gridStyle = computed(() => ({
   "--resource-expanded-width": `${DEFAULT_RESOURCE_WIDTH}px`,
   "--inspector-expanded-width": `${workbench.inspectorWidth}px`,
@@ -271,6 +276,26 @@ const inspectorStubTabs = [
   { id: "styles", label: "样式", icon: Paintbrush },
   { id: "comments", label: "评论", icon: MessageSquareText },
 ] as const;
+
+watch(
+  () => selection.selected,
+  (value) => {
+    if (
+      value &&
+      showElementInspector.value &&
+      !workbench.inspectorOpen
+    ) {
+      workbench.toggleInspector();
+    }
+  },
+);
+
+watch(isScreenCanvas, (onCanvas) => {
+  if (!onCanvas) {
+    selection.clearSelection();
+    selection.setInspectMode(false);
+  }
+});
 
 function prefersReducedMotion(): boolean {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -465,7 +490,10 @@ onBeforeUnmount(() => {
     <v-main class="workbench-main">
       <div
         class="workbench-grid"
-        :class="{ 'is-resizing': resizingInspector }"
+        :class="{
+          'is-resizing': resizingInspector,
+          'is-no-inspector': !showElementInspector,
+        }"
         :style="gridStyle"
       >
         <aside
@@ -727,7 +755,7 @@ onBeforeUnmount(() => {
 
         <main
           class="content-canvas"
-          :class="{ 'is-phone-canvas': route.meta.resourceKind === 'screen' }"
+          :class="{ 'is-phone-canvas': isScreenCanvas }"
           tabindex="-1"
           data-testid="content-canvas"
         >
@@ -735,26 +763,27 @@ onBeforeUnmount(() => {
         </main>
 
         <aside
+          v-if="showElementInspector"
           class="inspector-panel"
           :class="{ 'is-collapsed': !workbench.inspectorOpen }"
           :style="inspectorPanelStyle"
-          aria-label="上下文检查"
+          aria-label="元素检查"
           data-testid="inspector-panel"
         >
           <button
             v-if="workbench.inspectorOpen"
             type="button"
             class="inspector-resize-handle"
-            aria-label="调整上下文检查宽度"
+            aria-label="调整元素检查宽度"
             @pointerdown="onInspectorResizeStart"
           />
           <div class="panel-heading">
             <span v-if="inspectorContentExpanded" class="panel-title"
-              >上下文检查</span
+              >元素检查</span
             >
             <v-tooltip
               :text="
-                workbench.inspectorOpen ? '收起上下文检查' : '展开上下文检查'
+                workbench.inspectorOpen ? '收起元素检查' : '展开元素检查'
               "
               location="bottom"
             >
@@ -766,7 +795,7 @@ onBeforeUnmount(() => {
                   variant="text"
                   class="panel-toggle"
                   :aria-label="
-                    workbench.inspectorOpen ? '收起上下文检查' : '展开上下文检查'
+                    workbench.inspectorOpen ? '收起元素检查' : '展开元素检查'
                   "
                   :aria-expanded="workbench.inspectorOpen"
                   @click="toggleInspectorPanel"
@@ -783,14 +812,10 @@ onBeforeUnmount(() => {
               v-if="inspectorContentExpanded"
               class="inspector-body panel-expanded"
             >
-              <div class="inspector-empty">
-                <ScanSearch :size="22" aria-hidden="true" />
-                <span>未选择元素</span>
-                <p>在原型画布中开启选择模式后，可在此查看结构与约定。</p>
-              </div>
+              <InspectorPanel />
             </div>
 
-            <nav v-else class="rail-nav" aria-label="检查面板快捷入口">
+            <nav v-else class="rail-nav" aria-label="元素检查快捷入口">
               <v-tooltip
                 v-for="tab in inspectorStubTabs"
                 :key="tab.id"
@@ -805,7 +830,7 @@ onBeforeUnmount(() => {
                     variant="text"
                     size="small"
                     :aria-label="tab.label"
-                    disabled
+                    @click="toggleInspectorPanel"
                   >
                     <component :is="tab.icon" :size="18" aria-hidden="true" />
                   </v-btn>
@@ -853,6 +878,7 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .pbwork-shell {
+  background: rgb(var(--v-theme-background));
   --shell-border: color-mix(
     in srgb,
     rgb(var(--v-theme-on-surface)) 10%,
@@ -903,6 +929,9 @@ onBeforeUnmount(() => {
   grid-template-columns: auto minmax(480px, 1fr) auto;
   height: calc(100vh - 56px);
   min-height: calc(100vh - 56px);
+}
+.workbench-grid.is-no-inspector {
+  grid-template-columns: auto minmax(480px, 1fr);
 }
 .workbench-grid.is-resizing {
   user-select: none;

@@ -31,11 +31,14 @@ test("primary and secondary navigation update the URL and resource view", async 
 });
 
 test("collapsing side panels expands the content track", async ({ page }) => {
+  await page.goto(
+    "/workbench/prototypes/project/screens/task-list?variant=default&theme=light",
+  );
   const content = page.getByTestId("content-canvas");
   const initialBox = await content.boundingBox();
   expect(initialBox).not.toBeNull();
 
-  await page.getByRole("button", { name: "收起上下文检查" }).click();
+  await page.getByRole("button", { name: "收起元素检查" }).click();
   await expect
     .poll(async () => (await content.boundingBox())?.width ?? 0)
     .toBeGreaterThan(initialBox!.width + 250);
@@ -43,7 +46,7 @@ test("collapsing side panels expands the content track", async ({ page }) => {
   expect(inspectorCollapsedBox).not.toBeNull();
   expect(inspectorCollapsedBox!.width).toBeGreaterThan(initialBox!.width + 250);
   await expect(
-    page.getByRole("button", { name: "展开上下文检查" }),
+    page.getByRole("button", { name: "展开元素检查" }),
   ).toHaveAttribute("aria-expanded", "false");
 
   await page.getByRole("button", { name: "收起资源导航" }).click();
@@ -58,6 +61,17 @@ test("collapsing side panels expands the content track", async ({ page }) => {
   await expect(
     page.getByRole("button", { name: "展开资源导航" }),
   ).toHaveAttribute("aria-expanded", "false");
+});
+
+test("element inspector is hidden outside the canvas", async ({ page }) => {
+  await page.goto("/workbench/foundations/tokens/color");
+  await expect(page.getByTestId("inspector-panel")).toHaveCount(0);
+
+  await page.goto(
+    "/workbench/prototypes/project/screens/task-list?variant=default&theme=light",
+  );
+  await expect(page.getByTestId("inspector-panel")).toBeVisible();
+  await expect(page.getByText("元素检查", { exact: true })).toBeVisible();
 });
 
 test("search and settings controls have usable behavior", async ({ page }) => {

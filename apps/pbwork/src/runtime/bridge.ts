@@ -1,16 +1,84 @@
-/** Minimal M3 bridge: init / ready / route only. Full inspect arrives in M4. */
+/** PBWork ↔ Runtime Bridge protocol (design §11). */
 
 export const BRIDGE_PROTOCOL_VERSION = 1 as const;
+export const BRIDGE_MAX_BYTES = 64 * 1024;
+export const HANDSHAKE_TIMEOUT_MS = 5000;
 
 export type BridgeSource = "pbwork" | "pbwork-runtime";
 
-export type RuntimeCapability = "route-sync";
+export type BridgeErrorCode =
+  | "PROTOCOL_MISMATCH"
+  | "INVALID_ORIGIN"
+  | "STALE_RUNTIME"
+  | "INVALID_CONTEXT"
+  | "INVALID_RUNTIME_ROUTE"
+  | "PAYLOAD_TOO_LARGE"
+  | "ELEMENT_NOT_FOUND"
+  | "RUNTIME_NOT_READY"
+  | "COMMAND_FAILED";
+
+export type RuntimeCapability =
+  | "inspect"
+  | "comment-target"
+  | "highlight"
+  | "route-sync"
+  | "state-summary";
+
+export type JsonRecord = Record<string, unknown>;
+
+export type SnapshotMeta = {
+  truncated?: boolean;
+  warnings?: Array<
+    | "TEXT_TRUNCATED"
+    | "DEPTH_TRUNCATED"
+    | "COLLECTION_TRUNCATED"
+    | "VALUE_REDACTED"
+  >;
+};
+
+export type ElementRef = { pbId?: string; handle?: string };
+
+export type ElementBox = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+export type StyleInspectRow = {
+  property: string;
+  value: string;
+  cssVar?: string;
+  tokenId?: string;
+};
+
+export type TokenBindingRow = {
+  slot: string;
+  tokenId: string;
+  cssVar: string;
+};
+
+export type PagePoint = { x: number; y: number };
+
+export type ElementSummary = {
+  ref: ElementRef;
+  tag: string;
+  classes: string[];
+  text?: string;
+  bbox?: ElementBox;
+  domPath?: string;
+  pbRole?: string;
+  pbShell?: "sheet" | "dialog" | "modal" | "drawer";
+  semanticParent?: ElementRef;
+  meta?: SnapshotMeta;
+};
 
 export type BridgeEnvelope<TType extends string, TPayload> = {
   source: BridgeSource;
   protocolVersion: typeof BRIDGE_PROTOCOL_VERSION;
   runtimeId: string;
   type: TType;
+  requestId?: string;
   prototypeId: string;
   screenId: string;
   variantId?: string;
@@ -18,26 +86,70 @@ export type BridgeEnvelope<TType extends string, TPayload> = {
   payload: TPayload;
 };
 
-export type InitPayload = { canonicalRuntimeUrl: string };
-export type ReadyPayload = {
-  canonicalRuntimeUrl: string;
-  route: string;
-  capabilities: RuntimeCapability[];
-};
-export type RoutePayload = {
-  fromRuntimeUrl: string;
-  canonicalRuntimeUrl: string;
+export type BridgePayloads = {
+  init: { canonicalRuntimeUrl: string };
+  ready: {
+    canonicalRuntimeUrl: string;
+    route: string;
+    capabilities: RuntimeCapability[];
+  };
+  hover: { element?: ElementSummary };
+  select: {
+    element: ElementSummary;
+    props?: JsonRecord;
+    state?: JsonRecord;
+    /** Token IDs used by the registered component (cross-platform keys). */
+    tokens?: string[];
+    /** Semantic slot → Token ID bindings from the component contract. */
+    tokenBindings?: TokenBindingRow[];
+    styles: StyleInspectRow[];
+    componentId?: string;
+    meta?: SnapshotMeta;
+  };
+  "comment-target": {
+    point: PagePoint;
+    element?: ElementSummary;
+    selector?: string;
+    bbox?: ElementBox;
+  };
+  "clear-select": {
+    reason: "escape" | "blank" | "mode-change" | "unmounted";
+  };
+  route: { fromRuntimeUrl: string; canonicalRuntimeUrl: string };
+  state: { summary: JsonRecord; meta?: SnapshotMeta };
+  "inspect-mode": { enabled: boolean };
+  "comment-mode": { enabled: boolean };
+  highlight: { element?: ElementRef };
+  reload: { canonicalRuntimeUrl: string };
+  error: { code: BridgeErrorCode; message: string; requestId?: string };
 };
 
 export type WorkbenchBridgeMessage =
-  | BridgeEnvelope<"init", InitPayload>
-  | BridgeEnvelope<"reload", { canonicalRuntimeUrl: string }>;
+  | BridgeEnvelope<"init", BridgePayloads["init"]>
+  | BridgeEnvelope<"inspect-mode", BridgePayloads["inspect-mode"]>
+  | BridgeEnvelope<"comment-mode", BridgePayloads["comment-mode"]>
+  | BridgeEnvelope<"highlight", BridgePayloads["highlight"]>
+  | BridgeEnvelope<"reload", BridgePayloads["reload"]>;
 
 export type RuntimeBridgeMessage =
-  | BridgeEnvelope<"ready", ReadyPayload>
-  | BridgeEnvelope<"route", RoutePayload>;
+  | BridgeEnvelope<"ready", BridgePayloads["ready"]>
+  | BridgeEnvelope<"hover", BridgePayloads["hover"]>
+  | BridgeEnvelope<"select", BridgePayloads["select"]>
+  | BridgeEnvelope<"comment-target", BridgePayloads["comment-target"]>
+  | BridgeEnvelope<"clear-select", BridgePayloads["clear-select"]>
+  | BridgeEnvelope<"route", BridgePayloads["route"]>
+  | BridgeEnvelope<"state", BridgePayloads["state"]>
+  | BridgeEnvelope<"error", BridgePayloads["error"]>;
 
 export type BridgeMessage = WorkbenchBridgeMessage | RuntimeBridgeMessage;
+
+export type BridgeContext = {
+  runtimeId: string;
+  prototypeId: string;
+  screenId: string;
+  variantId?: string;
+  themeId: string;
+};
 
 export function isBridgeMessage(value: unknown): value is BridgeMessage {
   if (!value || typeof value !== "object") return false;
@@ -53,6 +165,53 @@ export function isBridgeMessage(value: unknown): value is BridgeMessage {
     typeof msg.payload === "object" &&
     msg.payload !== null
   );
+}
+
+export function contextMatches(
+  msg: BridgeMessage,
+  ctx: BridgeContext,
+): boolean {
+  if (msg.runtimeId !== ctx.runtimeId) return false;
+  if (msg.prototypeId !== ctx.prototypeId) return false;
+  if (msg.screenId !== ctx.screenId) return false;
+  if (msg.themeId !== ctx.themeId) return false;
+  if (
+    ctx.variantId !== undefined &&
+    msg.variantId !== undefined &&
+    msg.variantId !== ctx.variantId
+  ) {
+    return false;
+  }
+  return true;
+}
+
+export function createWorkbenchEnvelope<T extends WorkbenchBridgeMessage["type"]>(
+  type: T,
+  ctx: BridgeContext,
+  payload: BridgePayloads[T],
+  requestId?: string,
+): Extract<WorkbenchBridgeMessage, { type: T }> {
+  const envelope: BridgeEnvelope<T, BridgePayloads[T]> = {
+    source: "pbwork",
+    protocolVersion: BRIDGE_PROTOCOL_VERSION,
+    runtimeId: ctx.runtimeId,
+    type,
+    prototypeId: ctx.prototypeId,
+    screenId: ctx.screenId,
+    themeId: ctx.themeId,
+    payload,
+  };
+  if (ctx.variantId !== undefined) envelope.variantId = ctx.variantId;
+  if (requestId) envelope.requestId = requestId;
+  return envelope as unknown as Extract<WorkbenchBridgeMessage, { type: T }>;
+}
+
+export function measurePayloadBytes(value: unknown): number {
+  try {
+    return new TextEncoder().encode(JSON.stringify(value)).length;
+  } catch {
+    return BRIDGE_MAX_BYTES + 1;
+  }
 }
 
 export function parseRuntimePathname(pathname: string): {

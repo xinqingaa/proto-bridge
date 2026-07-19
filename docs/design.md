@@ -114,7 +114,7 @@ Prototype 内容同样不得破坏原生键盘语义，但其业务视觉是否�
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │ PBWork  / 当前位置                 全局搜索              壳主题  设置       │
 ├────────┬──────────────────┬─────────────────────────────┬──────────────────┤
-│ 一级   │ 二级资源导航     │ 中央内容 / 预览画布         │ 上下文检查       │
+│ 一级   │ 二级资源导航     │ 中央内容 / 预览画布         │ 元素检查（仅画布）│
 │ 导航   │                  │                             │                  │
 │        │ 根据一级导航变化 │ Token / Theme               │ 概览             │
 │ 设计   │                  │ Component Playground        │ Props / State    │
@@ -126,6 +126,7 @@ Prototype 内容同样不得破坏原生键盘语义，但其业务视觉是否�
 └────────┴──────────────────┴─────────────────────────────┴──────────────────┘
 ```
 
+右侧「元素检查」仅在原型 Screen 画布路由显示；Foundations / Components / Prototype Overview 不挂载该栏。
 ### 4.1 尺寸建议
 
 | 区域 | 默认尺寸 | 行为 |
@@ -133,7 +134,7 @@ Prototype 内容同样不得破坏原生键盘语义，但其业务视觉是否�
 | 顶栏 | 56px 高 | 固定 |
 | 一级导航 | 72px 宽 | 固定 rail，可显示图标和短标签 |
 | 二级导航 | 264px 宽 | 可折叠 |
-| 右侧检查 | 360px 宽 | 可折叠，可在较窄窗口收为抽屉 |
+| 右侧检查 | 360px 宽 | 仅 Screen 画布显示；可折叠，可在较窄窗口收为抽屉 |
 | 中央区域 | 剩余空间 | 最小宽度 480px，内容独立滚动 |
 
 首期不为平板或手机建设工作台布局。PBWork 是桌面工具，推荐最小窗口宽度 1280px。
@@ -163,7 +164,7 @@ Prototype 内容同样不得破坏原生键盘语义，但其业务视觉是否�
 - 顶栏：`v-app-bar`、`v-toolbar-title`、`v-breadcrumbs`、`v-text-field`、`v-btn`；
 - 一级导航：rail `v-navigation-drawer` + `v-list`；
 - 二级导航：`v-list`、`v-list-group`，原型树可使用 `v-treeview`；
-- 检查面板：`v-tabs`、`v-window`、`v-expansion-panels`；
+- 检查面板（元素检查）：自定义 Tab 条与详情列表；
 - Playground 控件：`v-form`、`v-select`、`v-switch`、`v-slider`、`v-text-field`；
 - 状态提示：`v-alert`、`v-chip`、`v-tooltip`、`v-snackbar`；
 - 二次确认：`v-dialog`。
@@ -361,7 +362,7 @@ Runtime Layout 不包含：
 
 - PBWork 顶栏和导航；
 - 画布背景与手机外框；
-- 右侧检查面板；
+- 右侧检查面板（元素检查）；
 - 评论输入 UI；
 - 工作台壳主题。
 
@@ -534,7 +535,7 @@ type BridgePayloads = {
   init: { canonicalRuntimeUrl: string }
   ready: { canonicalRuntimeUrl: string; route: string; capabilities: RuntimeCapability[] }
   hover: { element?: ElementSummary }
-  select: { element: ElementSummary; props?: JsonRecord; state?: JsonRecord; tokens?: string[]; styles: Record<string, string>; meta?: SnapshotMeta }
+  select: { element: ElementSummary; props?: JsonRecord; state?: JsonRecord; tokens?: string[]; tokenBindings?: TokenBindingRow[]; styles: StyleInspectRow[]; componentId?: string; meta?: SnapshotMeta }
   'comment-target': { point: PagePoint; element?: ElementSummary; selector?: string; bbox?: ElementBox }
   'clear-select': { reason: 'escape' | 'blank' | 'mode-change' | 'unmounted' }
   route: { fromRuntimeUrl: string; canonicalRuntimeUrl: string }
@@ -608,48 +609,23 @@ type InspectRegistration = {
 
 ---
 
-## 12. 右侧检查面板
+## 12. 元素检查面板
 
-右侧面板是上下文面板，内容随当前资源或选中元素变化，不固定展示所有字段。
+右侧「元素检查」只服务原型画布选中态。Foundations、Component Playground 与 Prototype Overview 不显示该栏；资源自身的说明放在中央内容区。
 
-### 12.1 Token / Theme
-
-- ID、名称和语义说明；
-- 当前值与不同主题值；
-- 视觉样本；
-- 使用组件与示例。
-
-### 12.2 Component
-
-- Contract ID、分类和说明；
-- Props、Slots、Events；
-- States / Variants；
-- JSON Schema 校验；
-- Token 使用；
-- `data-pb-*` 标记情况；
-- 源码文件引用。
-
-### 12.3 Prototype / Screen / Variant
-
-- Prototype ID、生命周期和参与职责；
-- Screen ID、route 和源码入口；
-- 当前 Variant、Theme 和 viewport；
-- 页面状态摘要；
-- 原始 tag/class 与 PBWork 约定检查结果；
-- 预留的 `data-pb-*` 信息。
-
-### 12.4 选中元素
+### 12.1 选中元素
 
 建议使用以下 Tab：
 
 | Tab | 内容 |
 |-----|------|
-| 概览 | 标签、class、文本、bbox、DOM path、所属 Screen/Variant |
-| 组件 | 组件名、Props/State、Contract ID、语义父节点 |
+| 概览 | 标签、class、文本、尺寸、DOM path、所属 Screen/Variant |
+| 组件 | 组件名、Props/State、Contract ID、语义父节点、Token 绑定（slot → Token ID → `--pb-*`） |
 | 约定 | 原始 tag/class、`data-pb-id`、`data-pb-role`、`data-pb-shell` 与 PBWork 一致性提示；不得展示为 PB Core 的实际推断结果 |
-| 样式 | 字体、颜色、背景、间距、圆角、边框和阴影 |
-| 评论 | 当前元素的未完成和已完成评论 |
+| 样式 | 白名单 CSS 属性；优先展示跨端 Token ID 与 CSS 变量名，并附当前解析值 |
+| 评论 | 当前元素的未完成和已完成评论（M5） |
 
+样式与 Token 对照以 **Token ID**（如 `color.on-surface`）为跨端权威 key，CSS 变量名为 `--pb-<normalized-token-id>`，解析值为辅助确认。
 ---
 
 ## 13. 注册表与 Variant
@@ -1213,11 +1189,10 @@ apps/pbwork/
 ### 18.1 工作台结构
 
 - 平台名称显示为 PBWork；
-- 顶栏、一级导航、二级导航、中央内容区和右侧检查面板均已渲染且可独立滚动或折叠；
+- 顶栏、一级导航、二级导航、中央内容区已渲染且可独立滚动或折叠；Screen 画布另挂右侧「元素检查」栏；
 - 一级导航固定为“设计基础 / 组件 / 原型”；
 - 二级导航可折叠，原型可按生命周期过滤；
-- 1280 × 720 及以上桌面窗口中，默认三栏互不遮挡、中央内容最小宽度不低于 480px，页面根不产生水平滚动；更窄窗口按 §4.1 收起检查面板。
-
+- 1280 × 720 及以上桌面窗口中，默认布局互不遮挡、中央内容最小宽度不低于 480px，页面根不产生水平滚动；更窄窗口按 §4.1 收起元素检查。
 ### 18.2 设计系统与组件
 
 - color、typography、spacing、radius、elevation 每类至少展示一个来自注册表的视觉样本；

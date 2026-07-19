@@ -1,7 +1,12 @@
 <script setup lang="ts">
+import { toRefs } from "vue";
 import Chip from "@/design-system/components/basic/Chip.vue";
+import {
+  usePbInspect,
+  usePbInspectRef,
+} from "@/runtime/inspect/usePbInspect";
 
-defineProps<{
+const props = defineProps<{
   items: Array<{ id: string; title: string; subtitle?: string }>;
   loading?: boolean;
   emptyText?: string;
@@ -9,10 +14,43 @@ defineProps<{
   elevated?: boolean;
 }>();
 defineEmits<{ select: [id: string] }>();
+
+const rootRef = usePbInspectRef();
+const { items, loading, emptyText, radius, elevated } = toRefs(props);
+
+usePbInspect({
+  element: rootRef,
+  pbId: "ds.data-list",
+  componentId: "data-list",
+  getProps: () => ({
+    itemCount: items.value.length,
+    loading: loading.value ?? false,
+    emptyText: emptyText.value ?? "暂无数据",
+    radius: radius.value ?? "lg",
+    elevated: elevated.value ?? false,
+  }),
+  getTokenBindings: () => ({
+    surface: "color.surface",
+    border: "color.border",
+    radius: `radius.${radius.value ?? "lg"}`,
+    elevation: "elevation.card",
+    title: "typography.subtitle",
+    subtitle: "typography.caption",
+  }),
+  getTokens: () => [
+    "color.surface",
+    "color.border",
+    `radius.${radius.value ?? "lg"}`,
+    "elevation.card",
+    "typography.subtitle",
+    "typography.caption",
+  ],
+});
 </script>
 
 <template>
   <div
+    ref="rootRef"
     data-pb-id="ds.data-list"
     data-pb-role="list"
     class="pb-data-list list"

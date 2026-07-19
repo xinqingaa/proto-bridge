@@ -11,6 +11,7 @@ import {
   RefreshCw,
 } from "lucide-vue-next";
 import { useCanvasStore } from "@/app/stores/canvas";
+import { useSelectionStore } from "@/app/stores/selection";
 import {
   DEVICE_PRESETS,
   ZOOM_PRESETS,
@@ -22,18 +23,21 @@ defineProps<{
   themes: ThemeRecord[];
   variantId: string;
   themeId: string;
+  isDark: boolean;
   copyFeedback?: string | null;
 }>();
 
 const emit = defineEmits<{
   "update:variantId": [string];
   "update:themeId": [string];
+  "toggle-inspect": [];
   refresh: [];
   fullscreen: [];
   copy: [];
 }>();
 
 const canvas = useCanvasStore();
+const selection = useSelectionStore();
 
 const zoomItems = computed(() =>
   ZOOM_PRESETS.map((value) => ({
@@ -45,19 +49,43 @@ const zoomItems = computed(() =>
 function onZoomSelect(value: unknown) {
   if (typeof value === "number") canvas.setZoom(value);
 }
+
+function onTogglePan() {
+  if (canvas.toolMode !== "pan" && selection.inspecting) {
+    emit("toggle-inspect");
+  }
+  canvas.togglePanMode();
+}
 </script>
 
 <template>
-  <div class="canvas-toolbar" role="toolbar" aria-label="画布工具栏">
+  <div
+    class="canvas-toolbar"
+    :class="{ 'is-dark': isDark }"
+    role="toolbar"
+    aria-label="画布工具栏"
+  >
     <div class="toolbar-cluster" role="group" aria-label="工具">
-      <v-tooltip text="选择元素（M4）" location="bottom">
+      <v-tooltip
+        :text="
+          selection.canInspect || selection.inspecting
+            ? selection.inspecting
+              ? '退出选择元素'
+              : '选择元素'
+            : '选择元素（等待 Runtime）'
+        "
+        location="bottom"
+      >
         <template #activator="{ props: tip }">
           <button
             v-bind="tip"
             type="button"
-            class="tool-btn is-disabled"
-            disabled
-            aria-label="选择元素（即将在 M4 提供）"
+            class="tool-btn"
+            :class="{ 'is-active': selection.inspecting }"
+            :disabled="!selection.canInspect && !selection.inspecting"
+            :aria-label="selection.inspecting ? '退出选择元素' : '选择元素'"
+            :aria-pressed="selection.inspecting"
+            @click="emit('toggle-inspect')"
           >
             <MousePointer2 :size="15" aria-hidden="true" />
           </button>
@@ -91,7 +119,7 @@ function onZoomSelect(value: unknown) {
               canvas.toolMode === 'pan' ? '退出拖动画布' : '拖动画布'
             "
             :aria-pressed="canvas.toolMode === 'pan'"
-            @click="canvas.togglePanMode()"
+            @click="onTogglePan"
           >
             <Hand :size="15" aria-hidden="true" />
           </button>
@@ -286,7 +314,7 @@ function onZoomSelect(value: unknown) {
   overflow-x: auto;
 }
 
-:global(.v-theme--pbworkDark) .canvas-toolbar {
+.canvas-toolbar.is-dark {
   border-bottom-color: rgba(255, 255, 255, 0.08);
   background: linear-gradient(
     180deg,
@@ -305,7 +333,7 @@ function onZoomSelect(value: unknown) {
   border: 1px solid rgba(15, 23, 42, 0.06);
 }
 
-:global(.v-theme--pbworkDark) .toolbar-cluster {
+.canvas-toolbar.is-dark .toolbar-cluster {
   background: rgba(255, 255, 255, 0.04);
   border-color: rgba(255, 255, 255, 0.08);
 }
@@ -317,7 +345,7 @@ function onZoomSelect(value: unknown) {
   background: rgba(15, 23, 42, 0.12);
 }
 
-:global(.v-theme--pbworkDark) .cluster-sep {
+.canvas-toolbar.is-dark .cluster-sep {
   background: rgba(255, 255, 255, 0.14);
 }
 
@@ -337,7 +365,7 @@ function onZoomSelect(value: unknown) {
   font: 600 12px/1 Inter, system-ui, sans-serif;
 }
 
-:global(.v-theme--pbworkDark) .tool-btn {
+.canvas-toolbar.is-dark .tool-btn {
   color: rgba(226, 232, 240, 0.88);
 }
 
@@ -345,7 +373,7 @@ function onZoomSelect(value: unknown) {
   background: rgba(15, 23, 42, 0.06);
 }
 
-:global(.v-theme--pbworkDark) .tool-btn:hover:not(:disabled) {
+.canvas-toolbar.is-dark .tool-btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.08);
 }
 
@@ -354,7 +382,7 @@ function onZoomSelect(value: unknown) {
   color: #1d4ed8;
 }
 
-:global(.v-theme--pbworkDark) .tool-btn.is-active {
+.canvas-toolbar.is-dark .tool-btn.is-active {
   background: rgba(122, 167, 255, 0.2);
   color: #a9c7ff;
 }
@@ -374,7 +402,7 @@ function onZoomSelect(value: unknown) {
   color: #1d4ed8;
 }
 
-:global(.v-theme--pbworkDark) .tool-primary {
+.canvas-toolbar.is-dark .tool-primary {
   background: rgba(122, 167, 255, 0.16);
   color: #a9c7ff;
 }
@@ -404,7 +432,7 @@ function onZoomSelect(value: unknown) {
   vertical-align: middle;
 }
 
-:global(.v-theme--pbworkDark) .zoom-slider {
+.canvas-toolbar.is-dark .zoom-slider {
   accent-color: #7aa7ff;
 }
 
@@ -435,7 +463,7 @@ function onZoomSelect(value: unknown) {
   text-transform: uppercase;
 }
 
-:global(.v-theme--pbworkDark) .field-label {
+.canvas-toolbar.is-dark .field-label {
   color: rgba(226, 232, 240, 0.45);
 }
 
@@ -451,7 +479,7 @@ function onZoomSelect(value: unknown) {
   outline: none;
 }
 
-:global(.v-theme--pbworkDark) .field-control {
+.canvas-toolbar.is-dark .field-control {
   background: rgba(0, 0, 0, 0.25);
 }
 

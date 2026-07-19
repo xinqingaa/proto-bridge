@@ -7,6 +7,7 @@ import DeviceFrame from "@/workbench/canvas/DeviceFrame.vue";
 defineProps<{
   src: string;
   iframeTitle: string;
+  isDark: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -89,6 +90,7 @@ onBeforeUnmount(() => {
     ref="stageRef"
     class="phone-stage"
     :class="{
+      'is-dark': isDark,
       'is-panning': canvas.toolMode === 'pan',
       'reduce-motion': reduceMotion,
     }"
@@ -131,7 +133,7 @@ onBeforeUnmount(() => {
   user-select: none;
 }
 
-:global(.v-theme--pbworkDark) .phone-stage {
+.phone-stage.is-dark {
   background:
     radial-gradient(
       120% 80% at 50% -10%,

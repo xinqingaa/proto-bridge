@@ -19,6 +19,34 @@ test("renders the phone canvas iframe for a screen", async ({ page }) => {
   await expect(page.getByLabel("自定义缩放比例")).toBeVisible();
 });
 
+test("dark shell styles stay scoped to the workbench chrome", async ({
+  page,
+}) => {
+  await page.getByRole("button", { name: "切换到深色工作台主题" }).click();
+
+  const styles = await page.evaluate(() => {
+    const root = document.querySelector('[data-testid="workbench-root"]');
+    const toolbar = document.querySelector(".canvas-toolbar");
+    const stage = document.querySelector(".phone-stage");
+    if (!root || !toolbar || !stage) throw new Error("missing canvas chrome");
+    return {
+      rootBackground: getComputedStyle(root).backgroundColor,
+      rootBackgroundImage: getComputedStyle(root).backgroundImage,
+      toolbarBackgroundImage: getComputedStyle(toolbar).backgroundImage,
+      stageBackgroundImage: getComputedStyle(stage).backgroundImage,
+    };
+  });
+
+  expect(styles.rootBackground).toBe("rgb(18, 24, 32)");
+  expect(styles.rootBackgroundImage).toBe("none");
+  expect(styles.toolbarBackgroundImage).toContain("linear-gradient");
+  expect(styles.stageBackgroundImage).toContain("radial-gradient");
+  await expect(page.getByTestId("prototype-iframe")).toHaveAttribute(
+    "src",
+    /theme=light/,
+  );
+});
+
 test("switching variant and theme updates workbench URL and iframe src", async ({
   page,
 }) => {

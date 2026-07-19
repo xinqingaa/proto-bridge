@@ -1,11 +1,46 @@
 <script setup lang="ts">
+import { toRefs } from "vue";
 import Button from "@/design-system/components/basic/Button.vue";
+import {
+  usePbInspect,
+  usePbInspectRef,
+} from "@/runtime/inspect/usePbInspect";
 
-defineProps<{
+const props = defineProps<{
   title: string;
   modelValue?: boolean;
 }>();
 defineEmits<{ "update:modelValue": [value: boolean] }>();
+
+const sheetRef = usePbInspectRef();
+const { title, modelValue } = toRefs(props);
+
+usePbInspect({
+  element: sheetRef,
+  pbId: "ds.bottom-sheet",
+  componentId: "bottom-sheet",
+  getProps: () => ({
+    title: title.value,
+    modelValue: modelValue.value ?? false,
+  }),
+  getState: () => ({ open: Boolean(modelValue.value) }),
+  getTokenBindings: () => ({
+    surface: "color.surface",
+    border: "color.border",
+    radius: "radius.lg",
+    elevation: "elevation.raised",
+    title: "typography.subtitle",
+    body: "typography.content",
+  }),
+  getTokens: () => [
+    "color.surface",
+    "color.border",
+    "radius.lg",
+    "elevation.raised",
+    "typography.subtitle",
+    "typography.content",
+  ],
+});
 </script>
 
 <template>
@@ -15,6 +50,7 @@ defineEmits<{ "update:modelValue": [value: boolean] }>();
     @click.self="$emit('update:modelValue', false)"
   >
     <section
+      ref="sheetRef"
       class="pb-sheet sheet"
       data-pb-id="ds.bottom-sheet"
       data-pb-shell="sheet"
