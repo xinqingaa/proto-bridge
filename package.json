@@ -14,6 +14,7 @@
     "typecheck": "pnpm --filter @proto-bridge/core build && pnpm --filter @proto-bridge/cli typecheck && pnpm --filter @proto-bridge/mcp-server typecheck",
     "lint": "pnpm run typecheck",
     "dev": "pnpm --filter @proto-bridge/cli dev",
+    "pbwork": "pnpm --filter @proto-bridge/pbwork dev",
     "generate": "node scripts/generate.mjs",
     "test": "pnpm --filter @proto-bridge/core test",
     "test:config": "pnpm --filter @proto-bridge/core exec vitest run test/config.test.ts",

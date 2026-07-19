@@ -17,10 +17,10 @@ const vuetify = createVuetify({
       pbworkLight: {
         dark: false,
         colors: {
-          background: "#f4f7f6",
+          background: "#f5f8fc",
           surface: "#ffffff",
-          primary: "#0b7a75",
-          secondary: "#4b5563",
+          primary: "#2563eb",
+          secondary: "#5b6b7c",
           error: "#b42318",
           info: "#2563eb",
           success: "#167c4d",
@@ -30,10 +30,10 @@ const vuetify = createVuetify({
       pbworkDark: {
         dark: true,
         colors: {
-          background: "#151b1b",
-          surface: "#202827",
-          primary: "#53d7cd",
-          secondary: "#b7c4c2",
+          background: "#121820",
+          surface: "#1b2430",
+          primary: "#7aa7ff",
+          secondary: "#b7c4d4",
           error: "#ffb4ab",
           info: "#a9c7ff",
           success: "#8ee7b0",
