@@ -462,6 +462,7 @@ type BridgeEnvelope<TType extends string, TPayload> = {
   requestId?: string;
   prototypeId: string;
   screenId: string;
+  screenSlug?: string;
   variantId?: string;
   themeId: string;
   payload: TPayload;
@@ -1000,16 +1001,20 @@ type LocalComment = {
   themeId?: string;
   elementId?: string;
   selector?: string;
+  elementLabel?: string;
+  textSnapshot?: string;
   point?: { x: number; y: number };
   bbox?: { x: number; y: number; width: number; height: number };
   content: string;
   status: "open" | "resolved";
+  anchorStatus: "unknown" | "located" | "missing";
+  lastLocatedAt?: string;
   createdAt: string;
   updatedAt: string;
 };
 
 type LocalCommentStore = {
-  schemaVersion: 1;
+  schemaVersion: 2;
   comments: LocalComment[];
 };
 ```
@@ -1020,7 +1025,7 @@ type LocalCommentStore = {
 2. 稳定 selector / DOM path；
 3. 保存时的页面 point / bbox 作为视觉回退。
 
-元素找不到时，评论仍保留在评论列表，并标记为“定位失效”。评论支持新增、编辑、完成、重新打开和删除。清除浏览器数据会删除全部评论，界面应明确提示这一限制。
+元素找不到时，评论仍保留在评论列表，并标记为“定位失效”。定位过程必须展示定位中、已定位、定位失效或 Bridge 错误，不允许 watcher 抛出未处理异常。评论支持新增、编辑、完成、重新打开和删除；删除与清除全部收进次级管理入口。清除浏览器数据会删除全部评论，界面应明确提示这一限制。
 
 按当前 Prototype / Screen 列出评论；切换 Variant 或原型 Theme 时：
 
@@ -1028,7 +1033,7 @@ type LocalCommentStore = {
 - 可用筛选只看当前 `variantId` / `themeId`；
 - 定位时优先匹配当前 Variant 下仍存在的 `data-pb-id`，否则标记定位失效而不删除。
 
-存储 key 固定为 `pbwork.comments.v1`。单条内容去除首尾空白后为 1—4000 字符，首期最多保存 2000 条；达到上限时拒绝新增，不自动删除旧评论。读取到非法 JSON、未知 `schemaVersion` 或字段校验失败时不得覆盖原值，界面提示“评论数据无法读取”，允许用户下载原始数据或二次确认后清除。兼容版本升级必须提供显式迁移函数，禁止在读取时猜测字段。
+存储 key 固定为 `pbwork.comments.v1`（保持本地数据地址稳定），当前数据结构为 `schemaVersion: 2`；读取 v1 时显式补齐 `anchorStatus: "unknown"` 并迁移，其他未知版本仍拒绝读取。单条内容去除首尾空白后为 1—4000 字符，首期最多保存 2000 条；达到上限时拒绝新增，不自动删除旧评论。读取到非法 JSON、未知 `schemaVersion` 或字段校验失败时不得覆盖原值，界面提示“评论数据无法读取”，允许用户下载原始数据或二次确认后清除。兼容版本升级必须提供显式迁移函数，禁止在读取时猜测字段。
 
 稳定 selector 只由 `id`、`data-pb-id` 和确定性的父子层级生成，不把随机 Vuetify class、`:nth-child` 或完整文本作为首选定位。point / bbox 使用 iframe 文档 CSS 像素，仅用于提示大致位置，不自动绑定到该坐标下碰巧出现的新元素。清除全部评论属于破坏性本地操作，必须显示数量并二次确认。
 

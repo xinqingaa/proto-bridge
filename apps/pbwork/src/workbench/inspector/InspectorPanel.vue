@@ -335,7 +335,11 @@ async function copyText(value: string) {
 function saveComment() {
   const context = commentContext.value;
   const target = currentCommentTarget.value;
-  if (!context || !target) {
+  if (!context) {
+    commentError.value = "当前页面信息不可用，请刷新后重试。";
+    return;
+  }
+  if (!editingCommentId.value && !target) {
     commentError.value = "请先在手机预览中选择元素或页面位置。";
     return;
   }
@@ -343,7 +347,7 @@ function saveComment() {
     if (editingCommentId.value) {
       comments.edit(editingCommentId.value, commentDraft.value);
     } else {
-      comments.add(context, target, commentDraft.value);
+      comments.add(context, target!, commentDraft.value);
     }
     commentDraft.value = "";
     editingCommentId.value = null;
@@ -362,14 +366,17 @@ function editComment(id: string) {
 }
 
 function locateComment(item: LocalComment) {
-  if (!item.elementId) {
+  if (!item.elementId && !item.selector) {
     commentError.value = "该评论没有稳定元素标记，只能参考保存时的位置。";
     comments.setAnchorStatus(item.id, "missing");
     return;
   }
   commentError.value = null;
   locatingCommentId.value = item.id;
-  selection.requestHighlight({ pbId: item.elementId });
+  selection.requestHighlight({
+    ...(item.elementId ? { pbId: item.elementId } : {}),
+    ...(item.selector ? { selector: item.selector } : {}),
+  });
 }
 
 watch(

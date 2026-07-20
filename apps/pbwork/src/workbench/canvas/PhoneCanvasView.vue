@@ -474,6 +474,7 @@ watch(
       ? {
           ...(request.pbId ? { pbId: request.pbId } : {}),
           ...(request.handle ? { handle: request.handle } : {}),
+          ...(request.selector ? { selector: request.selector } : {}),
         }
       : undefined;
     postToRuntime(

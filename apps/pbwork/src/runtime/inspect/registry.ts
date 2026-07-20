@@ -49,6 +49,14 @@ export function findByRef(ref: ElementRef): HTMLElement | null {
       if (handles.get(node) === ref.handle) return node;
     }
   }
+  if (ref.selector && ref.selector.length <= 512) {
+    try {
+      const el = document.querySelector(ref.selector);
+      if (el instanceof HTMLElement) return el;
+    } catch {
+      // Invalid persisted selectors are treated as missing anchors.
+    }
+  }
   return null;
 }
 

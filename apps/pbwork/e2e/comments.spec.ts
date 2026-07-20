@@ -15,7 +15,7 @@ test("adds, persists, resolves and deletes a local element comment", async ({
 
   const inspector = page.getByTestId("inspector-body");
   await inspector.getByRole("tab", { name: /评论/ }).click();
-  await inspector.getByRole("button", { name: "选择页面元素" }).click();
+  await inspector.getByRole("button", { name: "开始选择" }).click();
 
   const frame = page.frameLocator('[data-testid="prototype-iframe"]');
   await frame.locator('[data-pb-id="ds.data-list.row.t1"]').click();
@@ -28,7 +28,9 @@ test("adds, persists, resolves and deletes a local element comment", async ({
   await inspector.getByRole("button", { name: "提交评论" }).click();
   await expect(inspector.getByText("标题需要表达具体故障")).toBeVisible();
   await expect(
-    inspector.getByText("ds.data-list.row.t1", { exact: true }),
+    inspector
+      .locator(".comment-card")
+      .getByText("ds.data-list.row.t1", { exact: true }),
   ).toBeVisible();
 
   await page.reload();
@@ -48,12 +50,12 @@ test("adds, persists, resolves and deletes a local element comment", async ({
   await expect(commentCard.getByText("已定位并选中元素")).toBeVisible();
   await page
     .getByTestId("inspector-body")
-    .getByRole("button", { name: "完成" })
+    .getByRole("button", { name: "完成", exact: true })
     .click();
   await page.getByRole("button", { name: "已完成", exact: true }).click();
   await expect(page.getByRole("button", { name: "重新打开" })).toBeVisible();
   await page.getByRole("button", { name: "评论更多操作" }).click();
-  await page.getByRole("menu").getByText("删除", { exact: true }).click();
+  await page.getByText("删除", { exact: true }).click();
   await page.getByRole("dialog").getByRole("button", { name: "删除" }).click();
   await expect(page.getByText("标题需要表达具体故障")).toHaveCount(0);
   expect(pageErrors).toEqual([]);

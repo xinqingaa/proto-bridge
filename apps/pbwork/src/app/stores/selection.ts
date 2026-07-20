@@ -106,6 +106,7 @@ export const useSelectionStore = defineStore("selection", {
         ? {
             ...(ref.pbId ? { pbId: ref.pbId } : {}),
             ...(ref.handle ? { handle: ref.handle } : {}),
+            ...(ref.selector ? { selector: ref.selector } : {}),
           }
         : null;
       this.highlightStatus = ref ? "locating" : "idle";
