@@ -1,5 +1,89 @@
 <script setup lang="ts">
-import{toRefs}from"vue";import{Home,ClipboardList,Bell,User}from"lucide-vue-next";import{usePbInspect,usePbInspectRef}from"@/runtime/inspect/usePbInspect";const props=defineProps<{modelValue?:string;items?:string[]}>();defineEmits<{"update:modelValue":[string]}>();const rootRef=usePbInspectRef();const{modelValue,items}=toRefs(props);const icons=[Home,ClipboardList,Bell,User];usePbInspect({element:rootRef,pbId:"ds.bottom-navigation",componentId:"bottom-navigation",getProps:()=>({modelValue:modelValue.value??"工作台",items:items.value??[]}),getTokens:()=>["color.surface-raised","color.primary","color.on-surface-muted","color.divider","elevation.level-3","sizing.touch","typography.caption"],getTokenBindings:()=>({surface:"color.surface-raised",active:"color.primary",inactive:"color.on-surface-muted",divider:"color.divider",elevation:"elevation.level-3",target:"sizing.touch",label:"typography.caption"})});
+import { toRefs } from "vue";
+import { Home, ClipboardList, Bell, User } from "lucide-vue-next";
+import {
+  usePbInspect,
+  usePbInspectRef,
+} from "@/runtime/inspect/usePbInspect";
+
+const props = defineProps<{ modelValue?: string; items?: string[] }>();
+defineEmits<{ "update:modelValue": [string] }>();
+const rootRef = usePbInspectRef();
+const { modelValue, items } = toRefs(props);
+const icons = [Home, ClipboardList, Bell, User];
+
+usePbInspect({
+  element: rootRef,
+  pbId: "ds.bottom-navigation",
+  componentId: "bottom-navigation",
+  getProps: () => ({
+    modelValue: modelValue.value ?? "工作台",
+    items: items.value ?? [],
+  }),
+  getTokens: () => [
+    "color.surface-raised",
+    "color.primary",
+    "color.on-surface-muted",
+    "color.divider",
+    "elevation.level-3",
+    "sizing.touch",
+    "typography.caption",
+  ],
+  getTokenBindings: () => ({
+    surface: "color.surface-raised",
+    active: "color.primary",
+    inactive: "color.on-surface-muted",
+    divider: "color.divider",
+    elevation: "elevation.level-3",
+    target: "sizing.touch",
+    label: "typography.caption",
+  }),
+});
 </script>
-<template><nav ref="rootRef" class="pb-bottom-nav" data-pb-id="ds.bottom-navigation" aria-label="底部导航"><button v-for="(item,index) in items??['工作台','工单','消息','我的']" :key="item" type="button" :class="{'is-active':modelValue===item}" @click="$emit('update:modelValue',item)"><component :is="icons[index%icons.length]" :size="19"/><span>{{item}}</span></button></nav></template>
-<style scoped>.pb-bottom-nav{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--pb-color-divider);background:var(--pb-color-surface-raised);box-shadow:var(--pb-elevation-level-3)}button{display:grid;place-items:center;gap:2px;min-height:58px;border:0;background:transparent;color:var(--pb-color-on-surface-muted);font:var(--pb-typography-caption);cursor:pointer}button.is-active{color:var(--pb-color-primary)}</style>
+
+<template>
+  <nav
+    ref="rootRef"
+    class="pb-bottom-nav"
+    data-pb-id="ds.bottom-navigation"
+    aria-label="底部导航"
+  >
+    <button
+      v-for="(item, index) in items ?? ['工作台', '工单', '消息', '我的']"
+      :key="item"
+      type="button"
+      :class="{ 'is-active': modelValue === item }"
+      @click="$emit('update:modelValue', item)"
+    >
+      <component :is="icons[index % icons.length]" :size="19" />
+      <span>{{ item }}</span>
+    </button>
+  </nav>
+</template>
+
+<style scoped>
+.pb-bottom-nav {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  box-sizing: border-box;
+  padding-bottom: max(var(--pb-safe-bottom, 0px), env(safe-area-inset-bottom));
+  border-top: 1px solid var(--pb-color-divider);
+  background: var(--pb-color-surface-raised);
+  box-shadow: var(--pb-elevation-level-3);
+}
+button {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 2px;
+  min-height: 58px;
+  border: 0;
+  background: transparent;
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
+  cursor: pointer;
+}
+button.is-active {
+  color: var(--pb-color-primary);
+}
+</style>

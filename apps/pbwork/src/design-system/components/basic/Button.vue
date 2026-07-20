@@ -12,11 +12,12 @@ const props = defineProps<{
   radius?: "sm" | "md" | "lg" | "full";
   elevated?: boolean;
   disabled?: boolean;
+  type?: "button" | "submit" | "reset";
 }>();
 defineEmits<{ click: [] }>();
 
 const rootRef = usePbInspectRef();
-const { label, variant, tone, radius, elevated, disabled } = toRefs(props);
+const { label, variant, tone, radius, elevated, disabled, type } = toRefs(props);
 
 usePbInspect({
   element: rootRef,
@@ -29,6 +30,7 @@ usePbInspect({
     radius: radius.value ?? "md",
     elevated: elevated.value ?? false,
     disabled: disabled.value ?? false,
+    type: type.value ?? "button",
   }),
   getTokenBindings: () => {
     const t = tone.value ?? "primary";
@@ -61,7 +63,7 @@ usePbInspect({
 <template>
   <button
     ref="rootRef"
-    type="button"
+    :type="type ?? 'button'"
     class="pb-button"
     data-pb-id="ds.button"
     :class="[

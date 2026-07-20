@@ -40,10 +40,13 @@ const stageRef = ref<InstanceType<typeof PhoneStage> | null>(null);
 const iframeWindow = ref<Window | null>(null);
 const runtimeId = ref<string | null>(null);
 const copyFeedback = ref<string | null>(null);
+const canvasFullscreen = ref(false);
+const openRuntimeAfterCopy = ref(false);
 const routeError = ref<string | null>(null);
 let copyTimer: ReturnType<typeof setTimeout> | null = null;
 let handshakeTimer: ReturnType<typeof setTimeout> | null = null;
 let ignoreRouteEchoUntil = 0;
+let runtimeNavigationTarget: string | null = null;
 
 const prototype = computed(() =>
   loadPrototypes().find((item) => item.id === props.prototypeId),
@@ -56,7 +59,6 @@ const screen = computed(() =>
   ),
 );
 const themes = computed(() => loadThemes());
-const isDark = computed(() => workbench.theme === "pbworkDark");
 
 const searchParams = computed(
   () =>
@@ -86,6 +88,7 @@ const selectedThemeId = computed(() => {
   if (typeof route.query.theme === "string") return route.query.theme;
   return prototype.value?.defaultThemeId ?? "light";
 });
+const isDark = computed(() => selectedThemeId.value === "dark");
 
 const canonicalRuntimePath = computed(() => {
   if (!prototype.value || !screen.value) return "";
@@ -190,8 +193,10 @@ function refresh() {
 }
 
 function fullscreen() {
-  if (!absoluteRuntimeUrl.value) return;
-  window.open(absoluteRuntimeUrl.value, "_blank", "noopener,noreferrer");
+  if (!canvasFullscreen.value && !workbench.inspectorOpen) {
+    workbench.toggleInspector();
+  }
+  canvasFullscreen.value = !canvasFullscreen.value;
 }
 
 async function copyLink() {
@@ -199,6 +204,9 @@ async function copyLink() {
   try {
     await navigator.clipboard.writeText(absoluteRuntimeUrl.value);
     copyFeedback.value = "已复制";
+    if (openRuntimeAfterCopy.value) {
+      window.open(absoluteRuntimeUrl.value, "_blank", "noopener,noreferrer");
+    }
   } catch {
     copyFeedback.value = "复制失败";
   }
@@ -210,10 +218,17 @@ async function copyLink() {
 
 function postToRuntime(
   message: ReturnType<typeof createWorkbenchEnvelope>,
-) {
+): boolean {
   const target = iframeWindow.value;
-  if (!target) return;
-  target.postMessage(message, window.location.origin);
+  if (!target) return false;
+  try {
+    target.postMessage(message, window.location.origin);
+    return true;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "message could not be cloned";
+    selection.setError(`COMMAND_FAILED: ${detail}`);
+    return false;
+  }
 }
 
 function sendInspectMode(enabled: boolean) {
@@ -232,21 +247,11 @@ function sendCommentMode(enabled: boolean) {
 
 function toggleInspect() {
   if (!selection.canInspect && !selection.inspecting) return;
-  if (selection.commenting) sendCommentMode(false);
   if (!selection.inspecting) {
     if (canvas.toolMode === "pan") canvas.setToolMode("idle");
   }
   selection.toggleInspect();
-  sendInspectMode(selection.inspecting);
   if (!selection.inspecting) selection.clearSelection();
-}
-
-function toggleComment() {
-  if (!selection.canComment && !selection.commenting) return;
-  if (!selection.commenting && canvas.toolMode === "pan") canvas.setToolMode("idle");
-  if (selection.inspecting) sendInspectMode(false);
-  selection.toggleComment();
-  sendCommentMode(selection.commenting);
 }
 
 function sendInit(contentWindow: Window | null) {
@@ -323,10 +328,10 @@ function applyRuntimeNavigation(canonicalRuntimeUrl: string) {
   }
 
   routeError.value = null;
-  selection.resetForNavigation();
   if (route.fullPath === workbenchPath) return;
+  runtimeNavigationTarget = workbenchPath;
   ignoreRouteEchoUntil = Date.now() + 800;
-  void router.replace(workbenchPath);
+  void router.push(workbenchPath);
 }
 
 function onWindowMessage(event: MessageEvent) {
@@ -337,7 +342,10 @@ function onWindowMessage(event: MessageEvent) {
 
   const msg = event.data as RuntimeBridgeMessage;
   const ctx = bridgeContext.value;
-  if (msg.type !== "ready" && ctx && !contextMatches(msg, ctx)) return;
+  // A route message intentionally describes the destination context, while
+  // the Workbench still owns the source context. Validate it by runtimeId and
+  // canonical URL below instead of rejecting it as a stale screen message.
+  if (msg.type !== "ready" && msg.type !== "route" && ctx && !contextMatches(msg, ctx)) return;
   if (runtimeId.value && msg.runtimeId !== runtimeId.value) return;
 
   if (msg.type === "ready") {
@@ -349,6 +357,9 @@ function onWindowMessage(event: MessageEvent) {
     }
     if (selection.inspecting) sendInspectMode(true);
     if (selection.commenting) sendCommentMode(true);
+    if (msg.payload.canonicalRuntimeUrl !== absoluteRuntimeUrl.value) {
+      applyRuntimeNavigation(msg.payload.canonicalRuntimeUrl);
+    }
     return;
   }
   if (msg.type === "route") {
@@ -409,12 +420,23 @@ function onShellKeydown(event: KeyboardEvent) {
     event.preventDefault();
     selection.setCommentMode(false);
     sendCommentMode(false);
+    return;
   }
+  if (canvasFullscreen.value) canvasFullscreen.value = false;
 }
 
 watch(absoluteRuntimeUrl, () => {
   routeError.value = null;
+  if (runtimeNavigationTarget && runtimeNavigationTarget === route.fullPath) {
+    runtimeNavigationTarget = null;
+    return;
+  }
+  runtimeNavigationTarget = null;
   selection.resetForNavigation();
+});
+
+watch(canvasFullscreen, (enabled) => {
+  document.body.classList.toggle("pb-canvas-fullscreen", enabled);
 });
 
 watch(
@@ -432,11 +454,31 @@ watch(
 );
 
 watch(
+  () => selection.mode,
+  (mode, previous) => {
+    if (!selection.runtimeReady) return;
+    if (previous === "comment" && mode !== "comment") sendCommentMode(false);
+    if (previous === "inspect" && mode !== "inspect") sendInspectMode(false);
+    if (mode === "inspect") sendInspectMode(true);
+    if (mode === "comment") sendCommentMode(true);
+  },
+);
+
+watch(
   () => selection.highlightNonce,
   () => {
     const ctx = bridgeContext.value;
     if (!ctx || !selection.runtimeReady) return;
-    postToRuntime(createWorkbenchEnvelope("highlight", ctx, selection.highlightRequest ? { element: selection.highlightRequest } : {}));
+    const request = selection.highlightRequest;
+    const element = request
+      ? {
+          ...(request.pbId ? { pbId: request.pbId } : {}),
+          ...(request.handle ? { handle: request.handle } : {}),
+        }
+      : undefined;
+    postToRuntime(
+      createWorkbenchEnvelope("highlight", ctx, element ? { element } : {}),
+    );
   },
 );
 
@@ -469,6 +511,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  document.body.classList.remove("pb-canvas-fullscreen");
   window.removeEventListener("message", onWindowMessage);
   window.removeEventListener("keydown", onShellKeydown);
   if (copyTimer) clearTimeout(copyTimer);
@@ -480,7 +523,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section v-if="prototype && screen" class="phone-canvas">
+  <section
+    v-if="prototype && screen"
+    class="phone-canvas"
+    :class="{ 'is-fullscreen': canvasFullscreen }"
+  >
     <v-alert
       v-if="!resolved.ok"
       type="warning"
@@ -527,14 +574,16 @@ onBeforeUnmount(() => {
       :variant-id="selectedVariantId"
       :theme-id="selectedThemeId"
       :is-dark="isDark"
+      :fullscreen="canvasFullscreen"
+      :open-after-copy="openRuntimeAfterCopy"
       :copy-feedback="copyFeedback"
       @update:variant-id="onVariantId"
       @update:theme-id="onThemeId"
       @toggle-inspect="toggleInspect"
-      @toggle-comment="toggleComment"
       @refresh="refresh"
       @fullscreen="fullscreen"
       @copy="copyLink"
+      @update:open-after-copy="openRuntimeAfterCopy = $event"
     />
   </section>
   <v-alert v-else type="error" variant="tonal">
@@ -550,6 +599,15 @@ onBeforeUnmount(() => {
   flex-direction: column;
   height: 100%;
   min-height: 0;
+}
+.phone-canvas.is-fullscreen {
+  position: fixed;
+  inset: 0 var(--inspector-expanded-width, 440px) 0 0;
+  z-index: 2000;
+  background: #e8eef5;
+}
+.phone-canvas.is-fullscreen:has(.phone-stage.is-dark) {
+  background: #0f141c;
 }
 
 .canvas-alert {

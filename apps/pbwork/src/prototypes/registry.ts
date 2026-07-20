@@ -71,6 +71,7 @@ export const prototypeScreens = [
       { id: "sheet-open", label: "Bottom Sheet 打开" },
       { id: "dialog-open", label: "Dialog 打开" },
       { id: "toast-open", label: "Toast 显示" },
+      { id: "created", label: "新建成功" },
     ],
   },
   {

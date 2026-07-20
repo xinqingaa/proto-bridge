@@ -8,14 +8,16 @@
     "properties": {
       "title": { "type": "string" },
       "dense": { "type": "boolean" },
-      "elevated": { "type": "boolean" }
+      "elevated": { "type": "boolean" },
+      "showBack": { "type": "boolean" },
+      "backLabel": { "type": "string" }
     },
     "required": ["title"]
   },
-  "defaultProps": { "title": "项目协作", "dense": false, "elevated": false },
+  "defaultProps": { "title": "项目协作", "dense": false, "elevated": false, "showBack": false, "backLabel": "返回" },
   "states": [],
   "slots": ["append"],
-  "events": [],
+  "events": ["back"],
   "tokenBindings": {
     "surface": "color.surface",
     "border": "color.border",

@@ -1,15 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import ResourcePageShell from "@/workbench/views/ResourcePageShell.vue";
-import Button from "@/design-system/components/basic/Button.vue";
-import Card from "@/design-system/components/basic/Card.vue";
-import Chip from "@/design-system/components/basic/Chip.vue";
-import TextField from "@/design-system/components/basic/TextField.vue";
 import { loadTokens } from "@/design-system/loaders";
 import {
   normalizeTokenCssVarName,
   resolveThemeTokens,
-  tokensToCssVars,
 } from "@/design-system/resolveThemeTokens";
 import type { TokenCategory, TokenRecord } from "@/design-system/types";
 import { TOKEN_CATEGORIES } from "@/design-system/types";
@@ -64,8 +59,6 @@ const darkResolved = computed(() => resolveThemeTokens("dark"));
 const resolved = computed(() =>
   themeId.value === "light" ? lightResolved.value : darkResolved.value,
 );
-const lightStyle = computed(() => tokensToCssVars(lightResolved.value));
-const darkStyle = computed(() => tokensToCssVars(darkResolved.value));
 
 const selected = computed(
   () =>
@@ -112,7 +105,7 @@ function selectToken(id: string) {
   <ResourcePageShell
     eyebrow="设计令牌"
     :title="categoryLabels[category]"
-    description="先在真实 UI 中比较浅色与深色表现，再浏览 Token 的双主题值、CSS Variable 与用途。"
+    description="浏览 Token 的当前主题值、CSS Variable 与用途；浅色和深色差异请在主题页集中比较。"
   >
     <template #stats>
       <button
@@ -166,42 +159,6 @@ function selectToken(id: string) {
       </div>
     </template>
 
-    <section class="showcase-section" aria-labelledby="showcase-title">
-      <div class="section-heading">
-        <div>
-          <p class="section-kicker">应用示例</p>
-          <h2 id="showcase-title">同一组组件，双主题对照</h2>
-        </div>
-        <span>真实组件 · 非静态色块</span>
-      </div>
-      <div class="theme-showcase-grid">
-        <article class="theme-showcase light-showcase" :style="lightStyle">
-          <header><strong>浅色</strong><code>theme.light</code></header>
-          <Card title="今日工单" subtitle="3 个任务等待处理">
-            <div class="sample-form">
-              <TextField label="搜索工单" model-value="空调检修" />
-              <div class="sample-actions">
-                <Chip label="处理中" tone="primary" />
-                <Button label="查看详情" />
-              </div>
-            </div>
-          </Card>
-        </article>
-        <article class="theme-showcase dark-showcase" :style="darkStyle">
-          <header><strong>深色</strong><code>theme.dark</code></header>
-          <Card title="今日工单" subtitle="3 个任务等待处理">
-            <div class="sample-form">
-              <TextField label="搜索工单" model-value="空调检修" />
-              <div class="sample-actions">
-                <Chip label="处理中" tone="primary" />
-                <Button label="查看详情" />
-              </div>
-            </div>
-          </Card>
-        </article>
-      </div>
-    </section>
-
     <section class="token-section" aria-labelledby="token-list-title">
       <div class="section-heading compact-heading">
         <div>
@@ -220,9 +177,8 @@ function selectToken(id: string) {
         :class="{ 'is-selected': selected?.id === token.id }"
         @click="selectToken(token.id)"
       >
-        <div v-if="category === 'color'" class="dual-swatch">
-          <span :style="{ background: String(lightResolved[token.id]) }" />
-          <span :style="{ background: String(darkResolved[token.id]) }" />
+        <div v-if="category === 'color'" class="single-swatch">
+          <span :style="{ background: String(resolved[token.id]) }" />
         </div>
         <div
           v-else-if="category === 'elevation'"
@@ -267,8 +223,8 @@ function selectToken(id: string) {
       <div class="token-table-head" role="row">
         <span>名称</span>
         <span>Token ID</span>
-        <span>浅色值</span>
-        <span>深色值</span>
+        <span>{{ themeId === "light" ? "浅色值" : "深色值" }}</span>
+        <span>来源</span>
       </div>
       <button
         v-for="token in tokens"
@@ -281,8 +237,8 @@ function selectToken(id: string) {
       >
         <strong>{{ token.label }}</strong>
         <code>{{ token.id }}</code>
-        <span>{{ lightResolved[token.id] }}</span>
-        <span>{{ darkResolved[token.id] }}</span>
+        <span>{{ resolved[token.id] }}</span>
+        <span>{{ themeId === "dark" && darkResolved[token.id] !== lightResolved[token.id] ? "主题覆盖" : "基础值" }}</span>
       </button>
     </div>
 
@@ -309,26 +265,19 @@ function selectToken(id: string) {
             <dd>{{ categoryLabels[selected.category] }}</dd>
           </div>
           <div>
-            <dt>浅色值</dt>
+            <dt>{{ themeId === "light" ? "浅色主题值" : "深色主题值" }}</dt>
             <dd>
               <span
                 v-if="category === 'color'"
                 class="inline-swatch"
-                :style="{ background: String(lightResolved[selected.id]) }"
+                :style="{ background: String(resolved[selected.id]) }"
               />
-              <code>{{ lightResolved[selected.id] }}</code>
+              <code>{{ resolved[selected.id] }}</code>
             </dd>
           </div>
           <div>
-            <dt>深色值</dt>
-            <dd>
-              <span
-                v-if="category === 'color'"
-                class="inline-swatch"
-                :style="{ background: String(darkResolved[selected.id]) }"
-              />
-              <code>{{ darkResolved[selected.id] }}</code>
-            </dd>
+            <dt>值来源</dt>
+            <dd>{{ themeId === "dark" && darkResolved[selected.id] !== lightResolved[selected.id] ? "深色主题覆盖" : "基础 Token" }}</dd>
           </div>
           <div v-if="category === 'typography'">
             <dt>解析</dt>
@@ -380,7 +329,6 @@ function selectToken(id: string) {
   color: rgba(var(--v-theme-on-surface), 0.55);
   font-size: 0.75rem;
 }
-.showcase-section,
 .token-section {
   display: grid;
   gap: 14px;
@@ -407,40 +355,6 @@ function selectToken(id: string) {
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.theme-showcase-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-.theme-showcase {
-  display: grid;
-  gap: 12px;
-  min-width: 0;
-  padding: 14px;
-  border: 1px solid var(--pb-color-border, #d7dee8);
-  border-radius: 16px;
-  background: var(--pb-color-background, #f5f8fc);
-  color: var(--pb-color-on-surface, #1f2937);
-}
-.theme-showcase > header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.theme-showcase code {
-  color: var(--pb-color-on-surface-muted, #64748b);
-  font-size: 0.6875rem;
-}
-.sample-form {
-  display: grid;
-  gap: 12px;
-}
-.sample-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
 .compact-heading {
   margin-top: 4px;
 }
@@ -464,13 +378,14 @@ function selectToken(id: string) {
   border-color: rgb(var(--v-theme-primary));
   box-shadow: 0 0 0 1px rgb(var(--v-theme-primary));
 }
-.dual-swatch {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px;
+.single-swatch {
+  display: block;
   height: 56px;
 }
-.dual-swatch span {
+.single-swatch span {
+  display: block;
+  width: 100%;
+  height: 100%;
   border-radius: 8px;
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
@@ -603,7 +518,6 @@ function selectToken(id: string) {
   }
 }
 @media (max-width: 900px) {
-  .theme-showcase-grid,
   .token-detail {
     grid-template-columns: 1fr;
   }

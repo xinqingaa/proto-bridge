@@ -3,7 +3,6 @@ import {
   computed,
   defineAsyncComponent,
   onMounted,
-  reactive,
   ref,
   watch,
   type Component,
@@ -24,9 +23,7 @@ import { resolveLiveTokenBindings } from "@/design-system/resolveLiveTokenBindin
 
 const props = defineProps<{ componentId: string }>();
 const playground = usePlaygroundStore();
-const viewMode = ref<"single" | "matrix">("single");
-const selectedMatrixId = ref("default");
-const matrixOverrides = reactive<Record<string, Record<string, unknown>>>({});
+const selectedStateId = ref("default");
 
 const record = computed(() =>
   componentRecords.find((item) => item.id === props.componentId),
@@ -53,9 +50,8 @@ const darkPreviewStyle = computed(() =>
   tokensToCssVars(resolveThemeTokens("dark")),
 );
 const tallPreview = computed(() =>
-  ["bottom-sheet", "data-list", "app-bar", "tabs"].includes(props.componentId),
+  ["bottom-sheet", "data-list", "app-bar", "tabs", "dialog"].includes(props.componentId),
 );
-const isMatrix = computed(() => viewMode.value === "matrix");
 
 const previewComponent = computed(() => {
   if (!record.value) return null;
@@ -68,36 +64,11 @@ const previewComponent = computed(() => {
   );
 });
 
-const matrixCells = computed(() => {
-  const base = contract.value?.defaultProps ?? {};
-  const cells = [
-    {
-      id: "default",
-      label: "默认",
-      props: { ...base, ...(matrixOverrides.default ?? {}) },
-    },
-  ];
-  for (const state of states.value) {
-    cells.push({
-      id: state.id,
-      label: state.label,
-      props: {
-        ...base,
-        ...(state.props ?? {}),
-        ...(matrixOverrides[state.id] ?? {}),
-      },
-    });
-  }
-  return cells;
-});
-
 watch(
   () => props.componentId,
   (id) => {
     playground.open(id);
-    viewMode.value = "single";
-    selectedMatrixId.value = "default";
-    for (const key of Object.keys(matrixOverrides)) delete matrixOverrides[key];
+    selectedStateId.value = "default";
   },
   { immediate: true },
 );
@@ -108,39 +79,25 @@ function onPreviewUpdate(value: unknown) {
   setControlValue("modelValue", value);
 }
 
-const selectedMatrixCell = computed(() =>
-  matrixCells.value.find((cell) => cell.id === selectedMatrixId.value),
-);
-
 function controlValue(key: string): unknown {
-  if (viewMode.value === "single") return playground.props[key];
-  return selectedMatrixCell.value?.props[key];
+  return playground.props[key];
 }
 
 function setControlValue(key: string, value: unknown) {
-  if (viewMode.value === "single") {
-    playground.setProp(key, value);
-    return;
-  }
-  const id = selectedMatrixId.value;
-  matrixOverrides[id] = { ...(matrixOverrides[id] ?? {}), [key]: value };
+  playground.setProp(key, value);
 }
 
 function resetCurrent() {
-  if (viewMode.value === "single") {
-    playground.reset();
-    return;
+  selectState(selectedStateId.value);
+}
+
+function selectState(id: string) {
+  selectedStateId.value = id;
+  playground.open(props.componentId);
+  const state = states.value.find((item) => item.id === id);
+  for (const [key, value] of Object.entries(state?.props ?? {})) {
+    playground.setProp(key, value);
   }
-  delete matrixOverrides[selectedMatrixId.value];
-}
-
-function resetAll() {
-  playground.reset();
-  for (const key of Object.keys(matrixOverrides)) delete matrixOverrides[key];
-}
-
-function selectMatrixCell(id: string) {
-  selectedMatrixId.value = id;
 }
 </script>
 
@@ -152,8 +109,8 @@ function selectMatrixCell(id: string) {
     description="在浅色与深色中同时体验组件；选择一个正式状态后，可用易懂的控件调整内容、外观与行为。"
   >
     <template #stats>
-      <v-chip size="small" variant="tonal">{{ controls.length }} Props</v-chip>
-      <v-chip size="small" variant="tonal">{{ states.length }} States</v-chip>
+      <v-chip size="small" variant="tonal">{{ controls.length }} 个可调项</v-chip>
+      <v-chip size="small" variant="tonal">{{ states.length }} 个预设状态</v-chip>
       <v-chip size="small" variant="tonal"
         >{{ tokenBindings.length }} Bindings</v-chip
       >
@@ -161,22 +118,29 @@ function selectMatrixCell(id: string) {
 
     <template #toolbar>
       <v-btn-toggle
-        v-model="viewMode"
+        v-if="states.length"
+        :model-value="selectedStateId"
         density="compact"
         color="primary"
         variant="outlined"
         divided
         mandatory
       >
-        <v-btn value="single" size="small">单状态</v-btn>
-        <v-btn value="matrix" size="small">状态矩阵</v-btn>
+        <v-btn value="default" size="small" @click="selectState('default')">默认</v-btn>
+        <v-btn
+          v-for="state in states"
+          :key="state.id"
+          :value="state.id"
+          size="small"
+          @click="selectState(state.id)"
+        >{{ state.label }}</v-btn>
       </v-btn-toggle>
       <span class="toolbar-hint">浅色在左、深色在右 · 与工作台壳主题无关</span>
     </template>
 
     <div class="playground-grid">
       <div class="preview-wrap">
-        <div v-if="viewMode === 'single'" class="dual-preview">
+        <div class="dual-preview">
           <article class="preview-pane" :style="lightPreviewStyle">
             <header><strong>浅色</strong><code>theme.light</code></header>
             <div class="preview" :class="{ 'is-tall': tallPreview }">
@@ -205,57 +169,15 @@ function selectMatrixCell(id: string) {
           </article>
         </div>
 
-        <div
-          v-else
-          class="matrix-grid"
-          aria-label="可交互状态矩阵"
-        >
-          <article
-            v-for="cell in matrixCells"
-            :key="cell.id"
-            class="matrix-cell"
-            :class="{ 'is-selected': selectedMatrixId === cell.id }"
-            @focusin="selectMatrixCell(cell.id)"
-          >
-            <button type="button" class="matrix-cell-header" @click="selectMatrixCell(cell.id)">
-              <span>{{ cell.label }}</span>
-              <span>{{ selectedMatrixId === cell.id ? "正在调整" : "选择状态" }}</span>
-            </button>
-            <div class="matrix-theme-pair">
-              <div class="matrix-preview" :class="{ 'is-tall': tallPreview }" :style="lightPreviewStyle">
-                <span class="theme-caption">浅色</span>
-                <component :is="previewComponent" v-bind="cell.props" @update:model-value="selectMatrixCell(cell.id); setControlValue('modelValue', $event)">
-                  <template v-if="record.id === 'bottom-sheet'">可交互 Sheet。</template>
-                  <template v-else-if="record.id === 'card'">Token 驱动的 Card。</template>
-                </component>
-              </div>
-              <div class="matrix-preview" :class="{ 'is-tall': tallPreview }" :style="darkPreviewStyle">
-                <span class="theme-caption">深色</span>
-                <component :is="previewComponent" v-bind="cell.props" @update:model-value="selectMatrixCell(cell.id); setControlValue('modelValue', $event)">
-                  <template v-if="record.id === 'bottom-sheet'">可交互 Sheet。</template>
-                  <template v-else-if="record.id === 'card'">Token 驱动的 Card。</template>
-                </component>
-              </div>
-            </div>
-          </article>
-        </div>
       </div>
 
       <v-form class="controls" @submit.prevent>
         <div class="controls-header">
           <div>
             <strong>调整组件</strong>
-            <span>{{ isMatrix ? `正在调整：${selectedMatrixCell?.label ?? '默认'}` : "修改后立即更新两侧预览" }}</span>
+            <span>修改后立即更新两侧预览</span>
           </div>
-          <v-menu>
-            <template #activator="{ props: menuProps }">
-              <v-btn v-bind="menuProps" size="small" variant="text">重置</v-btn>
-            </template>
-            <v-list density="compact">
-              <v-list-item title="重置当前状态" @click="resetCurrent" />
-              <v-list-item title="全部重置" @click="resetAll" />
-            </v-list>
-          </v-menu>
+          <v-btn size="small" variant="text" @click="resetCurrent">重置</v-btn>
         </div>
 
         <p class="controls-explainer">无需理解 Props：下面的设置分别控制组件内容、外观和交互状态。</p>
@@ -371,70 +293,14 @@ function selectMatrixCell(id: string) {
 }
 .preview {
   position: relative;
+  overflow: hidden;
   min-height: 120px;
   padding: 20px;
   background: var(--pb-color-background, #f5f8fc);
   color: var(--pb-color-on-surface, #1f2937);
 }
-.preview.is-tall,
-.matrix-preview.is-tall {
+.preview.is-tall {
   min-height: 260px;
-}
-.matrix-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-  gap: 12px;
-  padding: 12px;
-  background: rgba(var(--v-theme-on-surface), 0.025);
-}
-.matrix-cell {
-  overflow: hidden;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 12px;
-  background: rgb(var(--v-theme-surface));
-}
-.matrix-cell.is-selected {
-  border-color: rgb(var(--v-theme-primary));
-  box-shadow: 0 0 0 1px rgb(var(--v-theme-primary));
-}
-.matrix-cell-header {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  padding: 9px 12px;
-  border: 0;
-  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  background: transparent;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-align: left;
-  cursor: pointer;
-}
-.matrix-cell-header span:last-child {
-  color: rgb(var(--v-theme-primary));
-  font-size: 0.6875rem;
-}
-.matrix-theme-pair {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-.matrix-preview {
-  position: relative;
-  min-height: 120px;
-  padding: 16px;
-  background: var(--pb-color-background, #f5f8fc);
-  color: var(--pb-color-on-surface, #1f2937);
-  overflow: hidden;
-}
-.matrix-preview + .matrix-preview {
-  border-left: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-.theme-caption {
-  display: block;
-  margin-bottom: 12px;
-  color: var(--pb-color-on-surface-muted, #64748b);
-  font-size: 0.6875rem;
-  font-weight: 700;
 }
 .controls {
   padding: 16px;
@@ -512,12 +378,10 @@ function selectMatrixCell(id: string) {
   }
 }
 @media (max-width: 760px) {
-  .dual-preview,
-  .matrix-theme-pair {
+  .dual-preview {
     grid-template-columns: 1fr;
   }
-  .preview-pane + .preview-pane,
-  .matrix-preview + .matrix-preview {
+  .preview-pane + .preview-pane {
     border-left: 0;
     border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   }

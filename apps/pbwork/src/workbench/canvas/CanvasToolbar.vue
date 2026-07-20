@@ -4,7 +4,6 @@ import {
   Copy,
   Expand,
   Hand,
-  MessageSquarePlus,
   Minus,
   MousePointer2,
   Plus,
@@ -25,6 +24,8 @@ defineProps<{
   variantId: string;
   themeId: string;
   isDark: boolean;
+  fullscreen: boolean;
+  openAfterCopy: boolean;
   copyFeedback?: string | null;
 }>();
 
@@ -32,10 +33,10 @@ const emit = defineEmits<{
   "update:variantId": [string];
   "update:themeId": [string];
   "toggle-inspect": [];
-  "toggle-comment": [];
   refresh: [];
   fullscreen: [];
   copy: [];
+  "update:openAfterCopy": [boolean];
 }>();
 
 const canvas = useCanvasStore();
@@ -72,9 +73,9 @@ function onTogglePan() {
         :text="
           selection.canInspect || selection.inspecting
             ? selection.inspecting
-              ? '退出选择元素（⌥ 选父级 / ↑ 上溯）'
-              : '选择元素（⌥ 选父级 / ↑ 上溯）'
-            : '选择元素（等待 Runtime）'
+              ? '退出选择与评审（⌥ 选父级 / ↑ 上溯）'
+              : '选择与评审（⌥ 选父级 / ↑ 上溯）'
+            : '选择与评审（等待 Runtime）'
         "
         location="bottom"
       >
@@ -85,27 +86,11 @@ function onTogglePan() {
             class="tool-btn"
             :class="{ 'is-active': selection.inspecting }"
             :disabled="!selection.canInspect && !selection.inspecting"
-            :aria-label="selection.inspecting ? '退出选择元素' : '选择元素'"
+            :aria-label="selection.inspecting ? '退出选择与评审' : '选择与评审'"
             :aria-pressed="selection.inspecting"
             @click="emit('toggle-inspect')"
           >
             <MousePointer2 :size="15" aria-hidden="true" />
-          </button>
-        </template>
-      </v-tooltip>
-      <v-tooltip :text="selection.commenting ? '退出添加评论' : '添加评论'" location="bottom">
-        <template #activator="{ props: tip }">
-          <button
-            v-bind="tip"
-            type="button"
-            class="tool-btn"
-            :class="{ 'is-active': selection.commenting }"
-            :disabled="!selection.canComment && !selection.commenting"
-            :aria-label="selection.commenting ? '退出添加评论' : '添加评论'"
-            :aria-pressed="selection.commenting"
-            @click="emit('toggle-comment')"
-          >
-            <MessageSquarePlus :size="15" aria-hidden="true" />
           </button>
         </template>
       </v-tooltip>
@@ -216,6 +201,14 @@ function onTogglePan() {
             <option v-for="item in DEVICE_PRESETS" :key="item.id" :value="item.id">{{ item.label }}</option>
           </select>
         </label>
+        <label class="copy-option">
+          <input
+            type="checkbox"
+            :checked="openAfterCopy"
+            @change="emit('update:openAfterCopy', ($event.target as HTMLInputElement).checked)"
+          />
+          <span>复制链接后打开 Runtime 新标签</span>
+        </label>
         <label class="field">
           <span class="field-label">主题</span>
           <select class="field-control" :value="themeId" aria-label="原型主题" @change="emit('update:themeId', ($event.target as HTMLSelectElement).value)">
@@ -247,13 +240,14 @@ function onTogglePan() {
           </button>
         </template>
       </v-tooltip>
-      <v-tooltip text="全屏预览（新标签打开 Runtime）" location="bottom">
+      <v-tooltip :text="fullscreen ? '退出全屏画布' : '全屏画布'" location="bottom">
         <template #activator="{ props: tip }">
           <button
             v-bind="tip"
             type="button"
             class="tool-btn"
-            aria-label="全屏预览"
+            :aria-label="fullscreen ? '退出全屏画布' : '全屏画布'"
+            :class="{ 'is-active': fullscreen }"
             @click="emit('fullscreen')"
           >
             <Expand :size="15" aria-hidden="true" />
@@ -331,6 +325,13 @@ function onTogglePan() {
 .settings-heading span {
   color: rgba(var(--v-theme-on-surface), 0.55);
   font-size: 0.72rem;
+}
+.copy-option {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: rgba(var(--v-theme-on-surface), 0.72);
+  font-size: 0.75rem;
 }
 .settings-popover .field {
   display: grid;

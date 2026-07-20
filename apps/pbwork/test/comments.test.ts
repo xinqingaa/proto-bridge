@@ -49,13 +49,32 @@ describe("local comments", () => {
   });
 
   it("does not overwrite invalid or unknown-version data", () => {
-    localStorage.setItem(COMMENT_STORAGE_KEY, '{"schemaVersion":2,"comments":[]}');
+    localStorage.setItem(COMMENT_STORAGE_KEY, '{"schemaVersion":3,"comments":[]}');
     setActivePinia(createPinia());
     const store = useCommentsStore();
     expect(store.readError).toBe("UNKNOWN_COMMENT_SCHEMA");
-    expect(store.unreadableRaw).toContain('"schemaVersion":2');
+    expect(store.unreadableRaw).toContain('"schemaVersion":3');
     expect(() => store.add(context, { point: { x: 1, y: 1 } }, "test")).toThrow("COMMENT_STORE_UNREADABLE");
-    expect(localStorage.getItem(COMMENT_STORAGE_KEY)).toContain('"schemaVersion":2');
+    expect(localStorage.getItem(COMMENT_STORAGE_KEY)).toContain('"schemaVersion":3');
+  });
+
+  it("migrates schema v1 comments to anchor-aware schema v2", () => {
+    const raw = JSON.stringify({
+      schemaVersion: 1,
+      comments: [{
+        id: "legacy",
+        prototypeId: "project",
+        screenId: "project.task-list",
+        elementId: "task-list.first-row",
+        content: "旧评论",
+        status: "open",
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-01T00:00:00.000Z",
+      }],
+    });
+    const migrated = parseCommentStore(raw);
+    expect(migrated.schemaVersion).toBe(2);
+    expect(migrated.comments[0]?.anchorStatus).toBe("unknown");
   });
 
   it("validates stored field shapes", () => {

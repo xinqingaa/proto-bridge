@@ -1,12 +1,22 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
-import { ChevronDown, ChevronRight, Copy } from "lucide-vue-next";
+import {
+  Check,
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  LocateFixed,
+  MessageSquarePlus,
+  MoreHorizontal,
+  RotateCcw,
+} from "lucide-vue-next";
 import { useSelectionStore } from "@/app/stores/selection";
 import {
   COMMENT_MAX_LENGTH,
   useCommentsStore,
   type CommentTarget,
+  type LocalComment,
 } from "@/app/stores/comments";
 import { loadPrototypeScreens } from "@/design-system/loaders";
 import type {
@@ -32,6 +42,7 @@ const commentStatus = ref<"all" | "open" | "resolved">("open");
 const editingCommentId = ref<string | null>(null);
 const deleteCommentId = ref<string | null>(null);
 const clearDialogOpen = ref(false);
+const locatingCommentId = ref<string | null>(null);
 
 const selected = computed(() => selection.selected);
 const element = computed(() => selected.value?.element ?? null);
@@ -48,6 +59,7 @@ const commentContext = computed(() => {
   return {
     prototypeId: screen.prototypeId,
     screenId: screen.screenId,
+    screenSlug: screen.screenSlug,
     ...(typeof route.query.variant === "string" ? { variantId: route.query.variant } : {}),
     ...(typeof route.query.theme === "string" ? { themeId: route.query.theme } : {}),
   };
@@ -58,6 +70,10 @@ const currentCommentTarget = computed((): CommentTarget | null => {
     return {
       ...(target.element?.ref.pbId ? { elementId: target.element.ref.pbId } : {}),
       ...(target.selector ? { selector: target.selector } : {}),
+      ...(target.element ? {
+        elementLabel: elementDisplayLabel(target.element),
+        ...(target.element.text ? { textSnapshot: target.element.text.slice(0, 160) } : {}),
+      } : {}),
       point: target.point,
       ...(target.bbox ? { bbox: target.bbox } : {}),
     };
@@ -66,6 +82,8 @@ const currentCommentTarget = computed((): CommentTarget | null => {
   if (!el) return null;
   return {
     ...(el.ref.pbId ? { elementId: el.ref.pbId } : {}),
+    elementLabel: elementDisplayLabel(el),
+    ...(el.text ? { textSnapshot: el.text.slice(0, 160) } : {}),
     ...(el.bbox
       ? {
           point: { x: el.bbox.x + el.bbox.width / 2, y: el.bbox.y + el.bbox.height / 2 },
@@ -74,6 +92,24 @@ const currentCommentTarget = computed((): CommentTarget | null => {
       : {}),
   };
 });
+
+function elementDisplayLabel(summary: ElementSummary): string {
+  const text = summary.text?.replace(/\s+/g, " ").trim();
+  if (text) return text.length > 42 ? `${text.slice(0, 42)}…` : text;
+  if (summary.pbRole) return summary.pbRole;
+  return `<${summary.tag}>`;
+}
+
+function commentTitle(item: LocalComment): string {
+  return item.elementLabel || item.textSnapshot || item.elementId || "页面位置";
+}
+
+const openComments = computed(() =>
+  visibleComments.value.filter((item) => item.status === "open"),
+);
+const resolvedComments = computed(() =>
+  visibleComments.value.filter((item) => item.status === "resolved"),
+);
 const visibleComments = computed(() => {
   const context = commentContext.value;
   if (!context) return [];
@@ -101,7 +137,7 @@ watch(
   () => selected.value?.element?.ref.handle ?? selected.value?.element?.ref.pbId,
   (id, prev) => {
     if (id && id !== prev) {
-      tab.value = "styles";
+      if (tab.value !== "comments") tab.value = "styles";
       expandedJsonKeys.value = new Set();
     }
   },
@@ -325,15 +361,33 @@ function editComment(id: string) {
   commentDraft.value = item.content;
 }
 
-function locateComment(id: string) {
-  const item = comments.comments.find((comment) => comment.id === id);
-  if (!item?.elementId) {
+function locateComment(item: LocalComment) {
+  if (!item.elementId) {
     commentError.value = "该评论没有稳定元素标记，只能参考保存时的位置。";
+    comments.setAnchorStatus(item.id, "missing");
     return;
   }
   commentError.value = null;
+  locatingCommentId.value = item.id;
   selection.requestHighlight({ pbId: item.elementId });
 }
+
+watch(
+  () => selection.highlightStatus,
+  (status) => {
+    const id = locatingCommentId.value;
+    if (!id) return;
+    if (status === "located") {
+      comments.setAnchorStatus(id, "located");
+      commentError.value = null;
+    } else if (status === "missing") {
+      comments.setAnchorStatus(id, "missing");
+      commentError.value = "原页面元素已经变化，无法定位。你可以重新选择元素并新建评论。";
+    } else if (status === "error") {
+      commentError.value = "定位消息发送失败，请刷新 Runtime 后重试。";
+    }
+  },
+);
 
 function confirmDelete() {
   if (deleteCommentId.value) comments.remove(deleteCommentId.value);
@@ -359,13 +413,42 @@ function downloadUnreadable() {
 
 <template>
   <div class="inspector" data-testid="inspector-body">
+    <div class="tab-bar" role="tablist" aria-label="元素检查分组">
+      <button
+        v-for="item in [
+          { id: 'styles', label: '样式' },
+          { id: 'component', label: '组件' },
+          { id: 'overview', label: '结构' },
+          { id: 'convention', label: '约定' },
+          { id: 'comments', label: `评论 ${visibleComments.length}` },
+        ]"
+        :key="item.id"
+        type="button"
+        role="tab"
+        class="tab"
+        :class="{ 'is-active': tab === item.id }"
+        :aria-selected="tab === item.id"
+        @click="tab = item.id as typeof tab"
+      >
+        {{ item.label }}
+      </button>
+    </div>
+
     <div v-if="!selected && !selection.commentTarget && tab !== 'comments'" class="empty">
-      <div class="empty-badge">元素检查</div>
+      <div class="empty-badge">选择与评审</div>
       <p class="empty-title">还没有选中节点</p>
       <p class="empty-hint">
-        在画布工具栏打开「选择元素」，然后在手机预览里点击即可。按住
+        选择页面中的元素，查看样式、组件信息或添加评论。按住
         ⌥/Alt 点击可选中语义父级；选中后按 ↑ 继续上溯。
       </p>
+      <button
+        type="button"
+        class="empty-action"
+        :disabled="!selection.canInspect"
+        @click="selection.setInspectMode(true)"
+      >
+        {{ selection.canInspect ? "开始选择元素" : "正在等待 Runtime…" }}
+      </button>
       <p v-if="selection.handshakeTimedOut" class="empty-warn">
         Runtime 握手超时，请刷新预览。
       </p>
@@ -375,27 +458,6 @@ function downloadUnreadable() {
     </div>
 
     <template v-else>
-      <div class="tab-bar" role="tablist" aria-label="元素检查分组">
-        <button
-          v-for="item in [
-            { id: 'styles', label: '样式' },
-            { id: 'component', label: '组件' },
-            { id: 'overview', label: '结构' },
-            { id: 'convention', label: '约定' },
-            { id: 'comments', label: '评论' },
-          ]"
-          :key="item.id"
-          type="button"
-          role="tab"
-          class="tab"
-          :class="{ 'is-active': tab === item.id }"
-          :aria-selected="tab === item.id"
-          @click="tab = item.id as typeof tab"
-        >
-          {{ item.label }}
-        </button>
-      </div>
-
       <div class="pane">
         <section v-if="tab === 'overview'" class="section">
           <div class="field">
@@ -682,16 +744,15 @@ function downloadUnreadable() {
           <div v-if="currentCommentTarget || editingCommentId" class="comment-composer">
             <div class="composer-heading">
               <div>
-                <strong>{{ editingCommentId ? "编辑评论" : "记录评审意见" }}</strong>
-                <span v-if="currentCommentTarget?.elementId">元素：{{ currentCommentTarget.elementId }}</span>
-                <span v-else-if="currentCommentTarget?.selector">元素：{{ currentCommentTarget.selector }}</span>
-                <span v-else>页面位置评论</span>
+                <span class="composer-kicker">{{ editingCommentId ? "编辑评审意见" : "当前选择" }}</span>
+                <strong>{{ editingCommentId ? "修改评论内容" : currentCommentTarget?.elementLabel || "页面位置" }}</strong>
+                <code v-if="!editingCommentId && currentCommentTarget?.elementId">{{ currentCommentTarget.elementId }}</code>
               </div>
               <button type="button" class="text-button" @click="selection.setCommentTarget(null); editingCommentId = null; commentDraft = ''">取消</button>
             </div>
             <v-textarea
               v-model="commentDraft"
-              label="评论内容"
+              label="评审意见"
               placeholder="描述问题、建议或验收结论…"
               variant="outlined"
               density="compact"
@@ -701,63 +762,113 @@ function downloadUnreadable() {
               :maxlength="COMMENT_MAX_LENGTH"
               hide-details="auto"
             />
-            <v-btn size="small" color="primary" :disabled="!commentDraft.trim()" @click="saveComment">
-              {{ editingCommentId ? "保存修改" : "添加评论" }}
-            </v-btn>
+            <div class="composer-actions">
+              <span>仅保存在当前浏览器</span>
+              <v-btn size="small" color="primary" :disabled="!commentDraft.trim()" @click="saveComment">
+                {{ editingCommentId ? "保存修改" : "提交评论" }}
+              </v-btn>
+            </div>
           </div>
           <div v-else class="comment-callout">
-            <strong>添加页面评论</strong>
-            <span>打开底部工具栏的评论模式，然后点击手机中的元素或空白位置。</span>
+            <div class="callout-icon"><MessageSquarePlus :size="18" /></div>
+            <div>
+              <strong>选择元素并添加评论</strong>
+              <span>选择后会显示元素名称和稳定锚点。</span>
+            </div>
+            <v-btn
+              size="small"
+              color="primary"
+              :disabled="!selection.canInspect"
+              @click="selection.setInspectMode(true)"
+            >
+              {{ selection.canInspect ? "开始选择" : "正在等待 Runtime…" }}
+            </v-btn>
           </div>
 
           <v-alert v-if="commentError" type="warning" variant="tonal" density="compact" closable @click:close="commentError = null">{{ commentError }}</v-alert>
 
           <div class="comment-toolbar">
-            <v-btn-toggle v-model="commentScope" mandatory density="compact" variant="outlined" divided>
-              <v-btn value="screen" size="x-small">整个页面</v-btn>
+            <v-btn-toggle v-model="commentScope" mandatory density="compact" variant="outlined" divided aria-label="评论范围">
+              <v-btn value="screen" size="x-small">当前页面</v-btn>
               <v-btn value="context" size="x-small">当前状态</v-btn>
             </v-btn-toggle>
-            <v-select
-              v-model="commentStatus"
-              :items="[
-                { title: '未完成', value: 'open' },
-                { title: '已完成', value: 'resolved' },
-                { title: '全部', value: 'all' },
-              ]"
-              density="compact"
-              variant="outlined"
-              hide-details
-              aria-label="评论状态筛选"
-              class="status-filter"
-            />
+            <v-btn-toggle v-model="commentStatus" mandatory density="compact" variant="text" aria-label="评论状态筛选">
+              <v-btn value="open" size="x-small">未完成</v-btn>
+              <v-btn value="resolved" size="x-small">已完成</v-btn>
+              <v-btn value="all" size="x-small">全部</v-btn>
+            </v-btn-toggle>
           </div>
 
-          <div v-if="visibleComments.length" class="comment-list">
-            <article v-for="item in visibleComments" :key="item.id" class="comment-card" :class="{ 'is-resolved': item.status === 'resolved' }">
-              <header>
-                <div>
-                  <span class="status-dot" />
-                  <strong>{{ item.status === "open" ? "未完成" : "已完成" }}</strong>
-                </div>
-                <time :datetime="item.updatedAt">{{ new Date(item.updatedAt).toLocaleString() }}</time>
-              </header>
-              <p>{{ item.content }}</p>
-              <code v-if="item.elementId">{{ item.elementId }}</code>
-              <code v-else-if="item.selector">{{ item.selector }}</code>
-              <span v-else class="location-fallback">页面坐标 {{ Math.round(item.point?.x ?? 0) }}, {{ Math.round(item.point?.y ?? 0) }}</span>
-              <footer>
-                <button type="button" @click="locateComment(item.id)">定位</button>
-                <button type="button" @click="editComment(item.id)">编辑</button>
-                <button type="button" @click="comments.setStatus(item.id, item.status === 'open' ? 'resolved' : 'open')">{{ item.status === "open" ? "完成" : "重新打开" }}</button>
-                <button type="button" class="danger" @click="deleteCommentId = item.id">删除</button>
-              </footer>
-            </article>
+          <div v-if="visibleComments.length" class="comment-groups">
+            <section v-if="openComments.length" class="comment-group">
+              <header class="group-heading"><strong>未完成</strong><span>{{ openComments.length }}</span></header>
+              <div class="comment-list">
+                <article
+                  v-for="item in openComments"
+                  :key="item.id"
+                  class="comment-card"
+                  :class="{ 'is-locating': locatingCommentId === item.id, 'is-missing': item.anchorStatus === 'missing' }"
+                >
+                  <header>
+                    <div class="comment-anchor">
+                      <LocateFixed :size="14" />
+                      <strong>{{ commentTitle(item) }}</strong>
+                    </div>
+                    <v-menu location="bottom end">
+                      <template #activator="{ props }"><button v-bind="props" type="button" class="more-button" aria-label="评论更多操作"><MoreHorizontal :size="16" /></button></template>
+                      <v-list density="compact">
+                        <v-list-item title="编辑" @click="editComment(item.id)" />
+                        <v-list-item title="删除" base-color="error" @click="deleteCommentId = item.id" />
+                      </v-list>
+                    </v-menu>
+                  </header>
+                  <p>{{ item.content }}</p>
+                  <div class="comment-meta">
+                    <time :datetime="item.updatedAt">{{ new Date(item.updatedAt).toLocaleString() }}</time>
+                    <code v-if="item.elementId">{{ item.elementId }}</code>
+                  </div>
+                  <p v-if="locatingCommentId === item.id && selection.highlightStatus === 'locating'" class="locate-feedback">正在定位…</p>
+                  <p v-else-if="locatingCommentId === item.id && selection.highlightStatus === 'located'" class="locate-feedback is-success">已定位并选中元素</p>
+                  <p v-else-if="item.anchorStatus === 'missing'" class="locate-feedback is-error">目标元素已失效</p>
+                  <footer>
+                    <v-btn size="x-small" variant="tonal" :loading="locatingCommentId === item.id && selection.highlightStatus === 'locating'" @click="locateComment(item)">
+                      <LocateFixed :size="14" />定位
+                    </v-btn>
+                    <v-btn size="x-small" variant="text" @click="comments.setStatus(item.id, 'resolved')"><Check :size="14" />完成</v-btn>
+                  </footer>
+                </article>
+              </div>
+            </section>
+
+            <section v-if="resolvedComments.length" class="comment-group is-resolved-group">
+              <header class="group-heading"><strong>已完成</strong><span>{{ resolvedComments.length }}</span></header>
+              <div class="comment-list">
+                <article v-for="item in resolvedComments" :key="item.id" class="comment-card is-resolved">
+                  <header><div class="comment-anchor"><Check :size="14" /><strong>{{ commentTitle(item) }}</strong></div></header>
+                  <p>{{ item.content }}</p>
+                  <footer>
+                    <v-btn size="x-small" variant="text" @click="comments.setStatus(item.id, 'open')"><RotateCcw :size="14" />重新打开</v-btn>
+                    <v-menu location="bottom end">
+                      <template #activator="{ props }"><button v-bind="props" type="button" class="more-button" aria-label="评论更多操作"><MoreHorizontal :size="16" /></button></template>
+                      <v-list density="compact">
+                        <v-list-item title="定位" @click="locateComment(item)" />
+                        <v-list-item title="编辑" @click="editComment(item.id)" />
+                        <v-list-item title="删除" base-color="error" @click="deleteCommentId = item.id" />
+                      </v-list>
+                    </v-menu>
+                  </footer>
+                </article>
+              </div>
+            </section>
           </div>
           <div v-else class="soft-empty">
             <p class="soft-title">当前筛选下没有评论</p>
             <p class="soft-hint">评论只保存在当前浏览器，不会上传或共享。</p>
           </div>
-          <button v-if="comments.comments.length" type="button" class="clear-comments" @click="clearDialogOpen = true">清除全部 {{ comments.comments.length }} 条本地评论</button>
+          <v-menu v-if="comments.comments.length" location="bottom start">
+            <template #activator="{ props }"><button v-bind="props" type="button" class="manage-comments">管理本地评论</button></template>
+            <v-list density="compact"><v-list-item title="清除全部评论" base-color="error" @click="clearDialogOpen = true" /></v-list>
+          </v-menu>
         </section>
       </div>
     </template>
@@ -823,6 +934,24 @@ function downloadUnreadable() {
 .empty-warn {
   color: rgb(var(--v-theme-error));
 }
+.empty-action,
+.comment-callout button {
+  justify-self: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 9px;
+  background: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-on-primary));
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.empty-action:disabled,
+.comment-callout button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
 
 .tab-bar {
   display: flex;
@@ -876,15 +1005,53 @@ function downloadUnreadable() {
   border-radius: 12px;
   background: color-mix(in srgb, rgb(var(--v-theme-primary)) 7%, transparent);
 }
+.comment-callout {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+}
+.callout-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: color-mix(in srgb, rgb(var(--v-theme-primary)) 14%, transparent);
+  color: rgb(var(--v-theme-primary));
+}
+.comment-callout > div:nth-child(2) {
+  display: grid;
+  gap: 3px;
+}
 .composer-heading {
   display: flex;
   justify-content: space-between;
   gap: 12px;
 }
 .composer-heading > div,
-.comment-callout {
+.comment-callout > div {
   display: grid;
   gap: 3px;
+}
+.composer-kicker {
+  color: rgb(var(--v-theme-primary)) !important;
+  font-size: 0.66rem !important;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.composer-heading code {
+  color: rgba(var(--v-theme-on-surface), 0.5);
+  font-size: 0.68rem;
+}
+.composer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.composer-actions span {
+  color: rgba(var(--v-theme-on-surface), 0.48);
+  font-size: 0.68rem;
 }
 .composer-heading span,
 .comment-callout span {
@@ -893,7 +1060,7 @@ function downloadUnreadable() {
 }
 .text-button,
 .comment-card footer button,
-.clear-comments {
+.manage-comments {
   border: 0;
   background: transparent;
   color: rgb(var(--v-theme-primary));
@@ -905,9 +1072,29 @@ function downloadUnreadable() {
   justify-content: space-between;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
-.status-filter {
-  flex: 0 0 116px;
+.comment-groups,
+.comment-group {
+  display: grid;
+  gap: 10px;
+}
+.group-heading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: rgba(var(--v-theme-on-surface), 0.68);
+  font-size: 0.72rem;
+}
+.group-heading span {
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(var(--v-theme-on-surface), 0.07);
+  font-size: 0.66rem;
 }
 .comment-list {
   display: grid;
@@ -920,9 +1107,17 @@ function downloadUnreadable() {
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-radius: 10px;
   background: rgb(var(--v-theme-surface));
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+.comment-card.is-locating {
+  border-color: rgb(var(--v-theme-primary));
+  box-shadow: 0 0 0 2px color-mix(in srgb, rgb(var(--v-theme-primary)) 12%, transparent);
+}
+.comment-card.is-missing {
+  border-color: color-mix(in srgb, rgb(var(--v-theme-error)) 42%, transparent);
 }
 .comment-card.is-resolved {
-  opacity: 0.72;
+  background: color-mix(in srgb, rgb(var(--v-theme-surface)) 92%, rgb(var(--v-theme-success)) 8%);
 }
 .comment-card header,
 .comment-card footer {
@@ -935,6 +1130,32 @@ function downloadUnreadable() {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+.comment-anchor {
+  min-width: 0;
+  color: rgba(var(--v-theme-on-surface), 0.82);
+}
+.comment-anchor strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.76rem;
+}
+.more-button {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(var(--v-theme-on-surface), 0.56);
+  cursor: pointer;
+}
+.more-button:hover {
+  background: rgba(var(--v-theme-on-surface), 0.06);
 }
 .comment-card time,
 .location-fallback {
@@ -951,27 +1172,39 @@ function downloadUnreadable() {
   color: rgba(var(--v-theme-on-surface), 0.58);
   font-size: 0.68rem;
 }
+.comment-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+.comment-meta code {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.locate-feedback {
+  margin: 0 !important;
+  color: rgb(var(--v-theme-primary));
+  font-size: 0.69rem !important;
+  font-weight: 700;
+}
+.locate-feedback.is-success {
+  color: rgb(var(--v-theme-success));
+}
+.locate-feedback.is-error {
+  color: rgb(var(--v-theme-error));
+}
 .comment-card footer {
   justify-content: flex-start;
   border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   padding-top: 7px;
 }
-.comment-card footer .danger,
-.clear-comments {
-  color: rgb(var(--v-theme-error));
-}
-.status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: rgb(var(--v-theme-warning));
-}
-.is-resolved .status-dot {
-  background: rgb(var(--v-theme-success));
-}
-.clear-comments {
+.manage-comments {
   justify-self: start;
   padding: 4px 0;
+  color: rgba(var(--v-theme-on-surface), 0.5);
 }
 .error-actions {
   display: flex;

@@ -106,6 +106,7 @@ onBeforeUnmount(() => {
         :device="device"
         :src="src"
         :title="iframeTitle"
+        :is-dark="isDark"
         :pointer-events="pointerEvents"
         @load="onIframeLoad"
       />

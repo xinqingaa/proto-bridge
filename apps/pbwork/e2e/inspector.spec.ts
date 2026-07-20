@@ -8,7 +8,7 @@ test("selected components expose the Token to CSS value chain", async ({
   );
   await expect(page.getByTestId("prototype-iframe")).toBeVisible();
 
-  const inspectButton = page.getByRole("button", { name: "选择元素" });
+  const inspectButton = page.getByRole("button", { name: "选择与评审" });
   await expect(inspectButton).toBeEnabled();
   await inspectButton.click();
 
@@ -23,9 +23,9 @@ test("selected components expose the Token to CSS value chain", async ({
     "aria-selected",
     "true",
   );
-  expect(await inspector.locator(".token-id").count()).toBeGreaterThan(0);
-  expect(await inspector.locator(".style-value").count()).toBeGreaterThan(0);
-  expect(
-    await inspector.getByText("值匹配推断", { exact: true }).count(),
-  ).toBeGreaterThan(0);
+  await expect(inspector.locator(".token-id").first()).toBeVisible();
+  await expect(inspector.locator(".style-value").first()).toBeVisible();
+  await expect(
+    inspector.getByText("值匹配推断", { exact: true }).first(),
+  ).toBeVisible();
 });

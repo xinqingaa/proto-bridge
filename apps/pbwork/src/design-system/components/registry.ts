@@ -165,6 +165,7 @@ export const componentRecords = [
       { key: "title", label: "标题", control: "text" },
       { key: "dense", label: "紧凑", control: "boolean" },
       { key: "elevated", label: "阴影 (elevation.card)", control: "boolean" },
+      { key: "showBack", label: "显示返回键", control: "boolean" },
     ],
   },
   {

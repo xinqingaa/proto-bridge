@@ -7,14 +7,19 @@ export type LocalComment = {
   id: string;
   prototypeId: string;
   screenId: string;
+  screenSlug?: string;
   variantId?: string;
   themeId?: string;
   elementId?: string;
   selector?: string;
+  elementLabel?: string;
+  textSnapshot?: string;
   point?: CommentPoint;
   bbox?: CommentBox;
   content: string;
   status: "open" | "resolved";
+  anchorStatus: "unknown" | "located" | "missing";
+  lastLocatedAt?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -22,6 +27,7 @@ export type LocalComment = {
 export type CommentContext = {
   prototypeId: string;
   screenId: string;
+  screenSlug?: string;
   variantId?: string;
   themeId?: string;
 };
@@ -29,11 +35,13 @@ export type CommentContext = {
 export type CommentTarget = {
   elementId?: string;
   selector?: string;
+  elementLabel?: string;
+  textSnapshot?: string;
   point?: CommentPoint;
   bbox?: CommentBox;
 };
 
-type StoredComments = { schemaVersion: 1; comments: LocalComment[] };
+type StoredComments = { schemaVersion: 2; comments: LocalComment[] };
 
 export const COMMENT_STORAGE_KEY = "pbwork.comments.v1";
 export const COMMENT_LIMIT = 2000;
@@ -56,9 +64,24 @@ function isComment(value: unknown): value is LocalComment {
     typeof item.updatedAt !== "string"
   ) return false;
   if (item.content.trim().length < 1 || item.content.length > COMMENT_MAX_LENGTH) return false;
-  for (const key of ["variantId", "themeId", "elementId", "selector"] as const) {
+  for (const key of [
+    "screenSlug",
+    "variantId",
+    "themeId",
+    "elementId",
+    "selector",
+    "elementLabel",
+    "textSnapshot",
+    "lastLocatedAt",
+  ] as const) {
     if (item[key] !== undefined && typeof item[key] !== "string") return false;
   }
+  if (
+    item.anchorStatus !== undefined &&
+    item.anchorStatus !== "unknown" &&
+    item.anchorStatus !== "located" &&
+    item.anchorStatus !== "missing"
+  ) return false;
   if (item.point !== undefined) {
     const point = item.point as Record<string, unknown>;
     if (!point || !isNumber(point.x) || !isNumber(point.y)) return false;
@@ -74,12 +97,20 @@ export function parseCommentStore(raw: string): StoredComments {
   const parsed = JSON.parse(raw) as unknown;
   if (!parsed || typeof parsed !== "object") throw new Error("INVALID_COMMENT_STORE");
   const store = parsed as Record<string, unknown>;
-  if (store.schemaVersion !== 1) throw new Error("UNKNOWN_COMMENT_SCHEMA");
+  if (store.schemaVersion !== 1 && store.schemaVersion !== 2) {
+    throw new Error("UNKNOWN_COMMENT_SCHEMA");
+  }
   if (!Array.isArray(store.comments) || store.comments.length > COMMENT_LIMIT) {
     throw new Error("INVALID_COMMENT_STORE");
   }
   if (!store.comments.every(isComment)) throw new Error("INVALID_COMMENT_STORE");
-  return { schemaVersion: 1, comments: store.comments };
+  return {
+    schemaVersion: 2,
+    comments: (store.comments as LocalComment[]).map((item) => ({
+      ...item,
+      anchorStatus: item.anchorStatus ?? "unknown",
+    })),
+  };
 }
 
 function readStoredComments(): { comments: LocalComment[]; error: string | null; raw: string | null } {
@@ -109,7 +140,7 @@ export const useCommentsStore = defineStore("comments", {
   actions: {
     persist() {
       if (typeof window === "undefined" || this.readError) return;
-      const payload: StoredComments = { schemaVersion: 1, comments: this.comments };
+      const payload: StoredComments = { schemaVersion: 2, comments: this.comments };
       window.localStorage.setItem(COMMENT_STORAGE_KEY, JSON.stringify(payload));
     },
     add(context: CommentContext, target: CommentTarget, content: string): LocalComment {
@@ -122,14 +153,18 @@ export const useCommentsStore = defineStore("comments", {
         id: crypto.randomUUID(),
         prototypeId: context.prototypeId,
         screenId: context.screenId,
+        ...(context.screenSlug ? { screenSlug: context.screenSlug } : {}),
         ...(context.variantId ? { variantId: context.variantId } : {}),
         ...(context.themeId ? { themeId: context.themeId } : {}),
         ...(target.elementId ? { elementId: target.elementId } : {}),
         ...(target.selector ? { selector: target.selector } : {}),
+        ...(target.elementLabel ? { elementLabel: target.elementLabel } : {}),
+        ...(target.textSnapshot ? { textSnapshot: target.textSnapshot } : {}),
         ...(target.point ? { point: target.point } : {}),
         ...(target.bbox ? { bbox: target.bbox } : {}),
         content: normalized,
         status: "open",
+        anchorStatus: "unknown",
         createdAt: now,
         updatedAt: now,
       };
@@ -151,6 +186,13 @@ export const useCommentsStore = defineStore("comments", {
       if (!item) return;
       item.status = status;
       item.updatedAt = new Date().toISOString();
+      this.persist();
+    },
+    setAnchorStatus(id: string, status: LocalComment["anchorStatus"]) {
+      const item = this.comments.find((comment) => comment.id === id);
+      if (!item) return;
+      item.anchorStatus = status;
+      item.lastLocatedAt = new Date().toISOString();
       this.persist();
     },
     remove(id: string) {

@@ -386,7 +386,7 @@ Runtime Layout 不包含：
 - 评论输入 UI；
 - 工作台壳主题。
 
-iframe `src`、全屏预览、复制原型链接和 PB capture 必须使用同一个 Runtime URL。不得通过在工作台 URL 上增加 `fullscreen=1` 并隐藏工作台 DOM 的方式模拟纯原型页面。
+iframe `src`、复制原型链接、可选的新标签 Runtime 和 PB capture 必须使用同一个 Runtime URL。不得通过在工作台 URL 上增加 `fullscreen=1` 并隐藏工作台 DOM 的方式模拟纯原型页面；当前页全屏只放大工作台中的画布区域。
 
 PB 侧用法约定：`--url` 指向包含 Variant、Theme 与业务 query 的完整 Runtime URL；`--route` 使用 `/prototype/:prototypeId/:screenSlug`。即使向 `--route` 传入 query，PB 也只用 pathname 定位 source，运行态恢复与 capture 应使用 `--url`。CLI 示例与 [usage.md](./usage.md) 保持一致。
 
@@ -410,8 +410,7 @@ Screen/Variant 画布工具栏包含：
 
 | 工具         | 行为                                               |
 | ------------ | -------------------------------------------------- |
-| 选择元素     | 开启 iframe hover 与点击选择（M4；首期可灰显占位） |
-| 添加评论     | 选择元素或页面位置后创建评论（M5；首期可灰显占位） |
+| 选择与评审   | 进入统一选择模式；选中元素后可检查并添加评论       |
 | 拖动画布     | 平移中央画布，不操作原型页面                       |
 | 缩小 / 放大  | 步进调整画板显示比例                               |
 | 缩放滑块     | 在允许范围内连续自定义显示比例（如 35%–200%）      |
@@ -420,12 +419,12 @@ Screen/Variant 画布工具栏包含：
 | 原型主题     | 切换原型自身主题，不影响工作台壳                   |
 | Variant      | 切换源码注册的可复现状态                           |
 | 刷新         | 重载当前 iframe                                    |
-| 全屏预览     | 在新标签页打开当前 iframe URL                      |
-| 复制原型链接 | 复制当前 iframe 完整 URL                           |
+| 全屏画布     | 当前页面内让画布占满可用窗口，可原位退出           |
+| 复制原型链接 | 复制当前 iframe 完整 URL；可选复制后打开 Runtime   |
 
 不提供「适应画布」自动算缩放：缩放由用户通过步进、滑块、常用比例或修饰键+滚轮控制；拖动画布与缩放解耦。
 
-全屏预览不创建另一套页面，它直接打开当前 Runtime URL。复制链接必须包含当前 Prototype、Screen、Variant、原型 Theme 和当前 Variant 注册的全部业务 query，可以直接提供给浏览器、评审人员或 PB。
+全屏画布不创建另一套路由，而是在当前页面放大完整画布区域。复制链接必须包含当前 Prototype、Screen、Variant、原型 Theme 和当前 Variant 注册的全部业务 query，可以直接提供给浏览器、评审人员或 PB；只有用户启用“复制后打开 Runtime”时才新开标签页。
 
 ---
 
@@ -624,25 +623,18 @@ type BridgeMessage = {
 
 ### 11.3 选择行为
 
-1. 进入“选择元素”模式（关闭评论模式）；
+1. 进入“选择与评审”模式；右侧空状态和评论列表均可进入该模式；
 2. hover 元素时在 iframe 内显示高亮边框和尺寸；
 3. 点击后锁定元素，**不向页面业务处理器传递该次点击**；
 4. Runtime Bridge 返回元素信息和最近的语义父节点；
 5. 右侧检查面板切换到选中元素；
-6. `Esc` 或再次点击空白/工具退出时清除选择。
+6. `Esc` 或再次点击工具退出时清除选择并恢复业务交互。
 
 拖动画布模式下不向 iframe 发送指针事件用于选择。退出 inspect / comment 后，页面恢复正常交互。
 
 普通 DOM 可以被选择；带稳定标记的组件或区块提供更完整信息。标记与识别面要求见 [§19 PB 源码约定](#19-pb-源码约定)。
 
-评论落点行为固定为：
-
-1. 进入“添加评论”后工作台关闭 inspect 并发送 `comment-mode { enabled: true }`；
-2. Runtime hover 仍显示落点轮廓，但不发送 `select`；
-3. 点击元素或页面空白时，Runtime 阻止该次业务 click，发送唯一一次 `comment-target`；`point` 使用 iframe 文档 CSS 像素（`client + scroll`），元素存在时附带 `ElementSummary`、稳定 selector 与换算到文档坐标的 bbox；
-4. 工作台收到并通过上下文校验后打开评论输入框，保存时映射为 `LocalComment.elementId` / `selector` / `point` / `bbox`；
-5. 保存、取消、`Esc`、切换工具或 iframe reload 都发送/视为 `comment-mode { enabled: false }`，清除临时落点并恢复页面交互；
-6. 输入框打开期间忽略后续 `comment-target`；无 `comment-target` capability 时禁用添加评论并提示 Runtime 不支持。
+评论与元素选择共用同一交互模式：选中元素后右侧评论 Tab 直接创建评论；未选中元素时仍可浏览全部评论，并通过“定位”重新选中其锚点。定位会进入选择模式、滚动到目标并返回完整元素快照；目标失效时保留评论并明确显示定位失效。Bridge 保留 `comment-target` 能力用于兼容页面空白落点，但界面不再提供与“选择元素”竞争的第二个工具开关。
 
 ### 11.4 组件检查元数据
 
@@ -669,7 +661,7 @@ type InspectRegistration = {
 
 ## 12. 元素检查面板
 
-右侧「元素检查」只服务原型画布选中态。Foundations、Component Playground 与 Prototype Overview 不显示该栏；资源自身的说明放在中央内容区的 `ResourcePageShell` 与页内侧栏。
+右侧「元素检查」服务原型画布：未选中时展示选择入口和全页评论列表，选中后展示元素详情。Foundations、Component Playground 与 Prototype Overview 不显示该栏；资源自身的说明放在中央内容区的 `ResourcePageShell` 与页内侧栏。
 
 ### 12.1 选中元素
 
@@ -710,8 +702,8 @@ type InspectRegistration = {
 - 统一标题、统计摘要、工具栏与内容区；
 - 宽屏使用 12 列网格；1280px 以下收为单列；
 - Token 页：分类摘要、搜索 / 主题 / 显示模式、高密度网格或表格、页内右侧详情；
-- Component Playground：主预览 + 约 320px Props；下方 States / Token Bindings / Slots / Events / Contract；支持单状态与状态矩阵；
-- Theme 页：语义色、字体、表单、列表、反馈状态矩阵；
+- Component Playground：浅色 / 深色并列预览 + 约 320px“可调项”；正式状态作为预设快速应用，不再维护低价值状态矩阵；
+- Theme 页：仅详细展示浅色 / 深色语义色、差异来源和关键前景/背景对比度；
 - Prototype Overview：页面卡片网格、Variant 数量、流程关系与生命周期信息。
 
 ---
@@ -1329,10 +1321,11 @@ apps/pbwork/
 
 ### 18.2 设计系统与组件
 
-- color、typography、spacing、sizing、radius、border、elevation、opacity、motion 每类至少展示一个来自注册表的视觉样本；
+- color 以当前主题单色块展示，避免把浅/深值误读为两个 Token；typography、spacing、sizing、radius、border、elevation、opacity、motion 直接展示注册值，不附加低价值“应用示例”；
+- Theme 页并列展示浅色和深色的完整语义色、覆盖来源、差异与关键对比度，不重复组件、表单、列表或字体矩阵；
 - 工作台壳和原型主题可以独立切换；
 - 完整展示 §16.1 固定的 15 个基础组件和 11 个复杂组件，不允许以空白或静态占位卡替代；
-- 每个组件至少有默认示例，适用组件的 Playground 覆盖 text、boolean、select 中至少一种控件；
+- 每个组件至少有浅色 / 深色并列默认预览，适用组件的 Playground 覆盖 text、boolean、select 中至少一种可调项；正式状态通过预设切换，不展示状态矩阵；
 - Playground 可以临时调参、按 Contract 默认值重置，并完成一次受控源码更新的 preview、确认、apply 与刷新验证。
 
 ### 18.3 原型与画布
@@ -1342,19 +1335,19 @@ apps/pbwork/
 - 列表、Tab、错误态和 Bottom Sheet 均由真实 Vue 交互实现，不使用静态截图或占位页；
 - 单手机画板支持缩放（步进、滑块、常用比例）、拖动和设备切换；
 - iframe overlay 不越过手机运行时边界；
-- 全屏与复制链接使用当前 iframe Runtime URL（history，含 variant/theme）；
+- 全屏在当前工作台放大整个画布；复制链接使用当前 iframe Runtime URL（history，含 variant/theme），并可选复制后打开 Runtime；
 - 将复制出的 URL 直接交给 PB 时，不包含任何工作台 DOM。
 - 每个正式 Variant 的 canonical URL 在新标签页刷新后恢复相同 Theme、业务 query 和可见状态；未知或非法参数显示 §13.4 对应错误页。
 - 设备框外轮廓保持预设 viewport 宽高比；状态栏等装饰为屏内 overlay，并通过统一 `--pb-safe-*` 避让内容。
 
 ### 18.4 检查与评论
 
-- 选择模式可以 hover、选中和清除元素；
+- “选择与评审”模式可以 hover、选中和清除元素；右侧空状态也可直接进入该模式；
 - 右侧显示样式（默认）、组件、结构、约定检查（含强制写入的 `data-pb-*`），且不伪装成 PB Core 产物；
 - 样式行展示 Token ID、CSS Variable、Resolved Value，并标注显式绑定 / 值匹配推断 / 原始 CSS；
 - Props / State 以可折叠 key-value 展示，复杂对象可展开 JSON；
 - Foundations / Components / Overview 使用 `ResourcePageShell`，不挂载全局元素检查栏；
-- 评论可以按元素保存、重新定位、完成和删除；
+- 未选择元素时仍可查看全部评论；评论可以按元素保存、重新定位、完成和删除；
 - 刷新后本地评论仍存在；
 - 元素失效时评论不会丢失，并显示定位失效状态。
 

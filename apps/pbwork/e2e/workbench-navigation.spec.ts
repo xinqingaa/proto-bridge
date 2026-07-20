@@ -61,6 +61,16 @@ test("collapsing side panels expands the content track", async ({ page }) => {
   await expect(
     page.getByRole("button", { name: "展开资源导航" }),
   ).toHaveAttribute("aria-expanded", "false");
+
+  await page.getByRole("button", { name: "切换原型树" }).click();
+  const collapsedTree = page.locator(".collapsed-tree-popover");
+  await expect(
+    collapsedTree.getByRole("link", { name: "任务列表", exact: true }),
+  ).toBeVisible();
+  await collapsedTree
+    .locator('a[href*="/project/screens/task-list?variant=loading"]')
+    .click();
+  await expect(page).toHaveURL(/variant=loading/);
 });
 
 test("element inspector is hidden outside the canvas", async ({ page }) => {

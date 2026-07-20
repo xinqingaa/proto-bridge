@@ -20,7 +20,11 @@
         "enum": ["sm", "md", "lg", "full"]
       },
       "elevated": { "type": "boolean" },
-      "disabled": { "type": "boolean" }
+      "disabled": { "type": "boolean" },
+      "type": {
+        "type": "string",
+        "enum": ["button", "submit", "reset"]
+      }
     },
     "required": ["label"]
   },

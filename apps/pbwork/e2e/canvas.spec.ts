@@ -87,14 +87,19 @@ test("zoom preset updates the displayed scale percent", async ({ page }) => {
   await expect(page.getByLabel("缩放比例预设")).toHaveText("75%");
 });
 
-test("fullscreen opens the pure Runtime URL", async ({ page, context }) => {
-  const popupPromise = context.waitForEvent("page");
-  await page.getByRole("button", { name: "全屏预览" }).click();
-  const popup = await popupPromise;
-  await popup.waitForLoadState("domcontentloaded");
-  expect(popup.url()).toMatch(
-    /\/prototype\/project\/task-list\?variant=default&theme=light/,
-  );
-  await expect(popup.getByTestId("runtime-root")).toBeVisible();
-  await expect(popup.getByTestId("workbench-root")).toHaveCount(0);
+test("fullscreen expands the canvas in the current workbench", async ({ page }) => {
+  await page.getByRole("button", { name: "全屏画布" }).click();
+  const fullscreenCanvas = page.locator(".phone-canvas");
+  const inspector = page.getByTestId("inspector-panel");
+  await expect(fullscreenCanvas).toHaveClass(/is-fullscreen/);
+  await expect(inspector).toBeVisible();
+  const canvasBox = await fullscreenCanvas.boundingBox();
+  const inspectorBox = await inspector.boundingBox();
+  expect(canvasBox).not.toBeNull();
+  expect(inspectorBox).not.toBeNull();
+  expect(inspectorBox!.y).toBe(0);
+  expect(canvasBox!.x + canvasBox!.width).toBeLessThanOrEqual(inspectorBox!.x);
+  await expect(page.getByRole("button", { name: "退出全屏画布" })).toBeVisible();
+  await page.getByRole("button", { name: "退出全屏画布" }).click();
+  await expect(page.locator(".phone-canvas")).not.toHaveClass(/is-fullscreen/);
 });

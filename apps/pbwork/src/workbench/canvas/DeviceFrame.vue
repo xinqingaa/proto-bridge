@@ -11,6 +11,7 @@ const props = defineProps<{
   device: DevicePreset;
   title: string;
   src: string;
+  isDark: boolean;
   pointerEvents: "auto" | "none";
 }>();
 
@@ -65,7 +66,7 @@ const statusTime = computed(() => {
         <!-- In-screen decorative chrome: does not change outer aspect ratio -->
         <div
           class="status-overlay"
-          :class="`chrome-${device.topChrome}`"
+          :class="[`chrome-${device.topChrome}`, { 'is-dark': isDark }]"
           :style="{ height: `${SAFE_TOP}px` }"
           aria-hidden="true"
         >
@@ -81,6 +82,7 @@ const statusTime = computed(() => {
         <div
           v-if="device.showHomeIndicator"
           class="home-overlay"
+          :class="{ 'is-dark': isDark }"
           :style="{ height: `${SAFE_BOTTOM}px` }"
           aria-hidden="true"
         >
@@ -187,6 +189,15 @@ const statusTime = computed(() => {
 
 .status-overlay.chrome-island {
   padding-top: 4px;
+}
+.status-overlay.is-dark {
+  color: rgba(241, 245, 249, 0.92);
+  background: linear-gradient(
+    180deg,
+    rgba(18, 24, 32, 0.72) 0%,
+    rgba(18, 24, 32, 0.16) 65%,
+    transparent 100%
+  );
 }
 
 .status-time {
@@ -295,5 +306,8 @@ const statusTime = computed(() => {
   height: 4px;
   border-radius: 999px;
   background: rgba(15, 23, 42, 0.45);
+}
+.home-overlay.is-dark .home-indicator {
+  background: rgba(241, 245, 249, 0.62);
 }
 </style>

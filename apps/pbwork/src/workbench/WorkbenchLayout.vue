@@ -221,6 +221,15 @@ function isVariantActive(variantTo: string): boolean {
     return false;
   }
 }
+
+function variantLinkTo(variantTo: string): string {
+  const currentTheme =
+    typeof route.query.theme === "string" ? route.query.theme : null;
+  if (!currentTheme) return variantTo;
+  const url = new URL(variantTo, "http://local.invalid");
+  url.searchParams.set("theme", currentTheme);
+  return `${url.pathname}?${url.searchParams.toString()}`;
+}
 const breadcrumbs = computed(() => [
   { title: section.value.label, disabled: false, to: section.value.to },
   { title: String(route.meta.title ?? ""), disabled: true },
@@ -709,7 +718,7 @@ onBeforeUnmount(() => {
                             :class="{
                               'is-active': isVariantActive(variant.to),
                             }"
-                            :to="variant.to"
+                            :to="variantLinkTo(variant.to)"
                           >
                             <span class="tree-toggle-spacer" />
                             <span class="tree-label">{{ variant.label }}</span>
@@ -760,7 +769,7 @@ onBeforeUnmount(() => {
                       <RouterLink
                         v-for="variant in screen.children ?? []"
                         :key="variant.id"
-                        :to="variant.to"
+                        :to="variantLinkTo(variant.to)"
                         class="collapsed-tree-link variant-link"
                         :class="{ 'is-active': isVariantActive(variant.to) }"
                       >{{ variant.label }}</RouterLink>
@@ -1009,6 +1018,13 @@ onBeforeUnmount(() => {
 }
 .inspector-panel {
   border-width: 0 0 0 1px;
+}
+:global(body.pb-canvas-fullscreen .inspector-panel) {
+  position: fixed;
+  inset: 0 0 0 auto;
+  z-index: 2001;
+  height: 100vh;
+  background: rgb(var(--v-theme-surface));
 }
 .resource-panel.is-collapsed,
 .inspector-panel.is-collapsed {

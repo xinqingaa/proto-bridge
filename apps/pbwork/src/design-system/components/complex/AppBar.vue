@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { toRefs } from "vue";
+import { ArrowLeft } from "lucide-vue-next";
 import IconButton from "@/design-system/components/basic/IconButton.vue";
 import {
   usePbInspect,
@@ -10,10 +11,14 @@ const props = defineProps<{
   title: string;
   dense?: boolean;
   elevated?: boolean;
+  showBack?: boolean;
+  backLabel?: string;
 }>();
 
+defineEmits<{ back: [] }>();
+
 const rootRef = usePbInspectRef();
-const { title, dense, elevated } = toRefs(props);
+const { title, dense, elevated, showBack, backLabel } = toRefs(props);
 
 usePbInspect({
   element: rootRef,
@@ -23,6 +28,8 @@ usePbInspect({
     title: title.value,
     dense: dense.value ?? false,
     elevated: elevated.value ?? false,
+    showBack: showBack.value ?? false,
+    backLabel: backLabel.value ?? "返回",
   }),
   getTokenBindings: () => ({
     surface: "color.surface",
@@ -51,6 +58,15 @@ usePbInspect({
     :class="{ 'is-dense': dense, 'is-elevated': elevated }"
   >
     <div class="pb-app-bar-main">
+      <button
+        v-if="showBack"
+        type="button"
+        class="pb-app-bar-back"
+        :aria-label="backLabel ?? '返回'"
+        @click="$emit('back')"
+      >
+        <ArrowLeft :size="20" aria-hidden="true" />
+      </button>
       <h2>{{ title }}</h2>
       <div class="pb-app-bar-actions">
         <slot name="append">
@@ -85,8 +101,24 @@ usePbInspect({
   min-height: 44px;
 }
 .pb-app-bar h2 {
+  flex: 1;
   margin: 0;
   font: var(--pb-typography-subtitle, 600 16px/1.4 Inter, system-ui, sans-serif);
+}
+.pb-app-bar-back {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--pb-radius-full, 999px);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.pb-app-bar-back:hover {
+  background: var(--pb-color-surface-variant, rgba(127, 127, 127, 0.12));
 }
 .pb-app-bar-actions {
   display: flex;

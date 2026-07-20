@@ -4,6 +4,7 @@ import {
   defineAsyncComponent,
   onBeforeUnmount,
   onMounted,
+  nextTick,
   ref,
   shallowRef,
   watch,
@@ -194,11 +195,12 @@ async function loadScreen() {
 
 watch(
   () => route.fullPath,
-  () => {
-    void loadScreen();
+  async () => {
+    await loadScreen();
+    await nextTick();
     sendRouteIfChanged();
   },
-  { immediate: true },
+  { immediate: true, flush: "post" },
 );
 
 onMounted(() => {

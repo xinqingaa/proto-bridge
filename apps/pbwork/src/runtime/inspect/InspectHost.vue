@@ -199,8 +199,7 @@ function highlight(ref?: ElementRef) {
     if (err) props.post(err);
     return;
   }
-  selectedEl.value = el;
-  selectBox.value = readBbox(el);
+  selectElement(el);
 }
 
 function onScrollOrResize() {

@@ -6,6 +6,7 @@ import type {
 } from "@/runtime/bridge";
 
 export type SelectionMode = "idle" | "inspect" | "comment";
+export type HighlightStatus = "idle" | "locating" | "located" | "missing" | "error";
 
 export type SelectedPayload = BridgePayloads["select"];
 
@@ -21,6 +22,7 @@ export const useSelectionStore = defineStore("selection", {
     commentTarget: null as BridgePayloads["comment-target"] | null,
     highlightRequest: null as ElementSummary["ref"] | null,
     highlightNonce: 0,
+    highlightStatus: "idle" as HighlightStatus,
     lastError: null as string | null,
   }),
   getters: {
@@ -63,6 +65,8 @@ export const useSelectionStore = defineStore("selection", {
       this.hover = null;
       this.selected = null;
       this.commentTarget = null;
+      this.highlightRequest = null;
+      this.highlightStatus = "idle";
       this.lastError = null;
     },
     onReady(capabilities: RuntimeCapability[]) {
@@ -84,7 +88,10 @@ export const useSelectionStore = defineStore("selection", {
     },
     setSelected(payload: SelectedPayload | null) {
       this.selected = payload;
-      if (payload) this.hover = null;
+      if (payload) {
+        this.hover = null;
+        if (this.highlightStatus === "locating") this.highlightStatus = "located";
+      }
     },
     clearSelection() {
       this.selected = null;
@@ -94,16 +101,35 @@ export const useSelectionStore = defineStore("selection", {
       this.commentTarget = payload;
     },
     requestHighlight(ref: ElementSummary["ref"] | null) {
-      this.highlightRequest = ref;
+      if (ref) this.mode = "inspect";
+      this.highlightRequest = ref
+        ? {
+            ...(ref.pbId ? { pbId: ref.pbId } : {}),
+            ...(ref.handle ? { handle: ref.handle } : {}),
+          }
+        : null;
+      this.highlightStatus = ref ? "locating" : "idle";
+      this.lastError = null;
       this.highlightNonce += 1;
+    },
+    clearHighlightStatus() {
+      this.highlightStatus = "idle";
+      this.highlightRequest = null;
     },
     resetForNavigation() {
       this.clearSelection();
       this.runtimeReady = false;
       this.capabilities = [];
+      this.highlightRequest = null;
+      this.highlightStatus = "idle";
     },
     setError(message: string | null) {
       this.lastError = message;
+      if (this.highlightStatus === "locating") {
+        this.highlightStatus = message?.startsWith("ELEMENT_NOT_FOUND")
+          ? "missing"
+          : "error";
+      }
     },
   },
 });

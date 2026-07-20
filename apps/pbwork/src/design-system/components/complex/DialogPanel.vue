@@ -11,6 +11,7 @@ const props = defineProps<{
   title: string;
   message?: string;
   confirmLabel?: string;
+  contained?: boolean;
 }>();
 
 defineEmits<{
@@ -19,7 +20,7 @@ defineEmits<{
 }>();
 
 const rootRef = usePbInspectRef();
-const { modelValue, title, message, confirmLabel } = toRefs(props);
+const { modelValue, title, message, confirmLabel, contained } = toRefs(props);
 
 usePbInspect({
   element: rootRef,
@@ -30,6 +31,7 @@ usePbInspect({
     title: title.value,
     message: message.value ?? "",
     confirmLabel: confirmLabel.value ?? "确认",
+    contained: contained.value ?? false,
   }),
   getTokens: () => [
     "color.scrim",
@@ -54,28 +56,27 @@ usePbInspect({
 
 <template>
   <span ref="rootRef" class="dialog-host" data-pb-id="ds.dialog">
-    <Teleport to="body">
-      <div
-        v-if="modelValue"
-        class="pb-dialog-scrim"
-        data-pb-id="ds.dialog.surface"
-        data-pb-shell="dialog"
-        @click.self="$emit('update:modelValue', false)"
-      >
-        <section role="dialog" aria-modal="true" :aria-label="title">
-          <h2>{{ title }}</h2>
-          <p>{{ message ?? "请确认是否继续。" }}</p>
-          <div>
-            <Button
-              label="取消"
-              variant="text"
-              @click="$emit('update:modelValue', false)"
-            />
-            <Button :label="confirmLabel ?? '确认'" @click="$emit('confirm')" />
-          </div>
-        </section>
-      </div>
-    </Teleport>
+    <div
+      v-if="modelValue"
+      class="pb-dialog-scrim"
+      :class="{ 'is-contained': contained }"
+      data-pb-id="ds.dialog.surface"
+      data-pb-shell="dialog"
+      @click.self="$emit('update:modelValue', false)"
+    >
+      <section role="dialog" aria-modal="true" :aria-label="title">
+        <h2>{{ title }}</h2>
+        <p>{{ message ?? "请确认是否继续。" }}</p>
+        <div>
+          <Button
+            label="取消"
+            variant="text"
+            @click="$emit('update:modelValue', false)"
+          />
+          <Button :label="confirmLabel ?? '确认'" @click="$emit('confirm')" />
+        </div>
+      </section>
+    </div>
   </span>
 </template>
 
@@ -90,15 +91,20 @@ usePbInspect({
   display: grid;
   place-items: center;
   padding: 24px;
-  background: var(--pb-color-scrim);
+  background: var(--pb-color-scrim, rgba(2, 6, 23, 0.72));
+}
+.pb-dialog-scrim.is-contained {
+  position: absolute;
+  border-radius: inherit;
 }
 section {
   width: min(320px, 100%);
   padding: var(--pb-spacing-lg);
   border-radius: var(--pb-radius-xl);
-  background: var(--pb-color-surface-raised);
-  color: var(--pb-color-on-surface);
-  box-shadow: var(--pb-elevation-level-5);
+  border: 1px solid var(--pb-color-border, #d7dee8);
+  background: var(--pb-color-surface-raised, #ffffff);
+  color: var(--pb-color-on-surface, #1f2937);
+  box-shadow: var(--pb-elevation-level-5, 0 22px 48px rgba(15, 23, 42, 0.24));
 }
 h2 {
   margin: 0 0 8px;
