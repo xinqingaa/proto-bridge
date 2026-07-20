@@ -17,11 +17,18 @@ export function resolveLiveTokenBindings(
   }
 
   if (typeof props.tone === "string" && props.tone.length > 0) {
-    const colorToken =
-      props.tone === "neutral" ? "color.on-surface" : `color.${props.tone}`;
+    const tone = props.tone;
     for (const key of Object.keys(result)) {
       if (key === "background" || key === "color" || key === "indicator") {
-        result[key] = colorToken;
+        const current = result[key] ?? "";
+        const wantsSoft = current.endsWith("-soft");
+        if (tone === "neutral") {
+          result[key] = "color.on-surface";
+        } else if (wantsSoft) {
+          result[key] = `color.${tone}-soft`;
+        } else {
+          result[key] = `color.${tone}`;
+        }
       }
       if (key === "onBackground") {
         // Solid fills use light-on-fill; dedicated on-* tokens only for primary today.

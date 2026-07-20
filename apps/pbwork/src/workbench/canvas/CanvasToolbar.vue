@@ -70,8 +70,8 @@ function onTogglePan() {
         :text="
           selection.canInspect || selection.inspecting
             ? selection.inspecting
-              ? '退出选择元素'
-              : '选择元素'
+              ? '退出选择元素（⌥ 选父级 / ↑ 上溯）'
+              : '选择元素（⌥ 选父级 / ↑ 上溯）'
             : '选择元素（等待 Runtime）'
         "
         location="bottom"

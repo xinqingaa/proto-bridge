@@ -41,7 +41,7 @@ const items = computed(() => {
 .variant-hint {
   margin: 0;
   padding: 8px 16px;
-  color: color-mix(in srgb, var(--pb-color-on-surface, #1f2937) 60%, transparent);
+  color: var(--pb-color-on-surface-muted, #1f29379e);
   font: var(--pb-typography-caption, 400 12px/1.4 Inter, system-ui, sans-serif);
 }
 .list {

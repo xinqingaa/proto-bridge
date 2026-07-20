@@ -29,7 +29,8 @@
   "slots": ["default"],
   "events": [],
   "tokenBindings": {
-    "background": "color.primary",
+    "background": "color.primary-soft",
+    "color": "color.primary",
     "radius": "radius.full",
     "elevation": "elevation.card",
     "typography": "typography.caption"

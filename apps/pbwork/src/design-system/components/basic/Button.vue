@@ -1,5 +1,11 @@
 <script setup lang="ts">
-defineProps<{
+import { toRefs } from "vue";
+import {
+  usePbInspect,
+  usePbInspectRef,
+} from "@/runtime/inspect/usePbInspect";
+
+const props = defineProps<{
   label: string;
   variant?: "flat" | "tonal" | "outlined" | "text";
   tone?: "primary" | "secondary" | "error" | "success";
@@ -8,10 +14,53 @@ defineProps<{
   disabled?: boolean;
 }>();
 defineEmits<{ click: [] }>();
+
+const rootRef = usePbInspectRef();
+const { label, variant, tone, radius, elevated, disabled } = toRefs(props);
+
+usePbInspect({
+  element: rootRef,
+  pbId: "ds.button",
+  componentId: "button",
+  getProps: () => ({
+    label: label.value,
+    variant: variant.value ?? "flat",
+    tone: tone.value ?? "primary",
+    radius: radius.value ?? "md",
+    elevated: elevated.value ?? false,
+    disabled: disabled.value ?? false,
+  }),
+  getTokenBindings: () => {
+    const t = tone.value ?? "primary";
+    const v = variant.value ?? "flat";
+    return {
+      background: v === "tonal" ? `color.${t}-soft` : `color.${t}`,
+      onBackground: "color.on-primary",
+      radius: `radius.${radius.value ?? "md"}`,
+      elevation: "elevation.card",
+      typography: "typography.content",
+    };
+  },
+  getTokens: () => {
+    const t = tone.value ?? "primary";
+    const v = variant.value ?? "flat";
+    return [
+      v === "tonal" ? `color.${t}-soft` : `color.${t}`,
+      "color.on-primary",
+      "color.on-surface",
+      "color.border",
+      `radius.${radius.value ?? "md"}`,
+      "elevation.card",
+      "typography.content",
+      "spacing.md",
+    ];
+  },
+});
 </script>
 
 <template>
   <button
+    ref="rootRef"
     type="button"
     class="pb-button"
     data-pb-id="ds.button"
@@ -72,7 +121,7 @@ defineEmits<{ click: [] }>();
   color: #fff;
 }
 .pb-button.is-tonal {
-  background: color-mix(in srgb, var(--pb-color-primary, #2563eb) 16%, transparent);
+  background: var(--pb-color-primary-soft, #2563eb29);
   color: var(--pb-color-primary, #2563eb);
 }
 .pb-button.is-outlined {

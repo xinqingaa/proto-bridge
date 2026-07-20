@@ -51,11 +51,24 @@ export type StyleInspectGroup =
 export type StyleInspectRow = {
   property: string;
   value: string;
+  /** Painted/effective value when `source` is `inherited` (e.g. ancestor background). */
+  effectiveValue?: string;
   cssVar?: string;
   tokenId?: string;
   /** Semantic grouping for inspector display; kept small for Bridge payload. */
   group: StyleInspectGroup;
-  source: "binding" | "value-match" | "raw";
+  /**
+   * - binding: current node's contract slot covers this property and value matches
+   * - value-match: computed value equals a token (ranking may use ancestor prefs)
+   * - inherited: value comes from an ancestor (effective background)
+   * - raw: unmatched computed style
+   */
+  source: "binding" | "value-match" | "inherited" | "raw";
+  inheritedFrom?: {
+    pbId?: string;
+    handle: string;
+    tag: string;
+  };
 };
 
 export type TokenBindingRow = {

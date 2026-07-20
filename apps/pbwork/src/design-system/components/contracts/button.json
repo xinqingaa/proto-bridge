@@ -39,6 +39,7 @@
   "events": ["click"],
   "tokenBindings": {
     "background": "color.primary",
+    "tonalBackground": "color.primary-soft",
     "onBackground": "color.on-primary",
     "radius": "radius.md",
     "elevation": "elevation.card",

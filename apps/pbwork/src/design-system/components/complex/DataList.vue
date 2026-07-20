@@ -36,14 +36,18 @@ usePbInspect({
     elevation: "elevation.card",
     title: "typography.subtitle",
     subtitle: "typography.caption",
+    muted: "color.on-surface-muted",
   }),
   getTokens: () => [
     "color.surface",
     "color.border",
+    "color.on-surface",
+    "color.on-surface-muted",
     `radius.${radius.value ?? "lg"}`,
     "elevation.card",
     "typography.subtitle",
     "typography.caption",
+    "spacing.md",
   ],
 });
 </script>
@@ -99,7 +103,7 @@ usePbInspect({
   margin: 0;
   padding: var(--pb-spacing-lg, 24px);
   text-align: center;
-  color: color-mix(in srgb, var(--pb-color-on-surface, #1f2937) 58%, transparent);
+  color: var(--pb-color-on-surface-muted, #1f29379e);
   font: var(--pb-typography-content, 400 14px/1.5 Inter, system-ui, sans-serif);
 }
 .pb-data-list-items {
@@ -125,7 +129,7 @@ usePbInspect({
 }
 .pb-data-list-row p {
   margin: 4px 0 0;
-  color: color-mix(in srgb, var(--pb-color-on-surface, #1f2937) 62%, transparent);
+  color: var(--pb-color-on-surface-muted, #1f29379e);
   font: var(--pb-typography-caption, 400 12px/1.4 Inter, system-ui, sans-serif);
 }
 </style>

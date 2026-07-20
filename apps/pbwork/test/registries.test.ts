@@ -106,4 +106,20 @@ describe("resolveLiveTokenBindings", () => {
     expect(live.elevation).toBe("none");
     expect(live.typography).toBe("typography.content");
   });
+
+  it("keeps soft background tokens when tone changes", async () => {
+    const { resolveLiveTokenBindings } = await import(
+      "@/design-system/resolveLiveTokenBindings"
+    );
+    const live = resolveLiveTokenBindings(
+      {
+        background: "color.primary-soft",
+        color: "color.primary",
+        radius: "radius.full",
+      },
+      { tone: "success" },
+    );
+    expect(live.background).toBe("color.success-soft");
+    expect(live.color).toBe("color.success");
+  });
 });

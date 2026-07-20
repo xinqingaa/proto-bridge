@@ -1,6 +1,10 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, toRefs } from "vue";
 import { MoreHorizontal, Plus, Search, Settings } from "lucide-vue-next";
+import {
+  usePbInspect,
+  usePbInspectRef,
+} from "@/runtime/inspect/usePbInspect";
 
 const props = defineProps<{
   ariaLabel: string;
@@ -12,16 +16,52 @@ const props = defineProps<{
 }>();
 defineEmits<{ click: [] }>();
 
+const rootRef = usePbInspectRef();
+const { ariaLabel, icon, size, tone, elevated, disabled } = toRefs(props);
+
 const iconComponent = computed(() => {
   if (props.icon === "plus") return Plus;
   if (props.icon === "search") return Search;
   if (props.icon === "settings") return Settings;
   return MoreHorizontal;
 });
+
+usePbInspect({
+  element: rootRef,
+  pbId: "ds.icon-button",
+  componentId: "icon-button",
+  getProps: () => ({
+    ariaLabel: ariaLabel.value,
+    icon: icon.value ?? "more",
+    size: size.value ?? "md",
+    tone: tone.value ?? "neutral",
+    elevated: elevated.value ?? false,
+    disabled: disabled.value ?? false,
+  }),
+  getTokenBindings: () => {
+    const t = tone.value ?? "neutral";
+    return {
+      color: t === "neutral" ? "color.on-surface" : `color.${t}`,
+      background: t === "primary" ? "color.primary-soft" : "color.surface",
+      radius: "radius.full",
+      elevation: "elevation.card",
+    };
+  },
+  getTokens: () => [
+    "color.primary",
+    "color.primary-soft",
+    "color.secondary",
+    "color.on-surface",
+    "color.surface",
+    "radius.full",
+    "elevation.card",
+  ],
+});
 </script>
 
 <template>
   <button
+    ref="rootRef"
     type="button"
     class="pb-icon-button"
     data-pb-id="ds.icon-button"
@@ -58,7 +98,7 @@ const iconComponent = computed(() => {
 }
 .pb-icon-button.tone-primary {
   color: var(--pb-color-primary, #2563eb);
-  background: color-mix(in srgb, var(--pb-color-primary, #2563eb) 12%, transparent);
+  background: var(--pb-color-primary-soft, #2563eb29);
 }
 .pb-icon-button.tone-secondary {
   color: var(--pb-color-secondary, #5b6b7c);

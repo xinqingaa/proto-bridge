@@ -8,6 +8,7 @@ import type {
   StyleInspectGroup,
   StyleInspectRow,
 } from "@/runtime/bridge";
+import { stylePropertyRole } from "@/runtime/inspect/snapshot";
 
 const selection = useSelectionStore();
 const tab = ref<
@@ -157,16 +158,44 @@ const groupedStyleRows = computed(() =>
       rows: styleRows.value.filter(
         (row) =>
           row.group === group.id &&
-          (styleMode.value === "all" || Boolean(row.tokenId)),
+          (styleMode.value === "all" ||
+            Boolean(row.tokenId) ||
+            row.source === "inherited" ||
+            isTransparentBackgroundRow(row)),
       ),
     }))
     .filter((group) => group.rows.length > 0),
 );
 
+function isTransparentBackgroundRow(row: StyleInspectRow): boolean {
+  if (row.property !== "background-color") return false;
+  const value = row.value.trim().toLowerCase();
+  return (
+    value === "transparent" ||
+    value === "rgba(0, 0, 0, 0)" ||
+    value === "rgba(0,0,0,0)"
+  );
+}
+
 function styleSourceLabel(source: StyleInspectRow["source"]): string {
   if (source === "binding") return "显式绑定";
   if (source === "value-match") return "值匹配推断";
+  if (source === "inherited") return "有效背景（祖先）";
   return "原始 CSS";
+}
+
+function styleDisplayValue(row: StyleInspectRow): string {
+  if (row.source === "inherited" && row.effectiveValue) {
+    return row.effectiveValue;
+  }
+  return row.value || "—";
+}
+
+function inheritedFromLabel(row: StyleInspectRow): string {
+  const from = row.inheritedFrom;
+  if (!from) return "";
+  if (from.pbId) return from.pbId;
+  return `<${from.tag}>`;
 }
 
 function bindingValue(tokenId: string): string {
@@ -174,7 +203,11 @@ function bindingValue(tokenId: string): string {
 }
 
 function isColorProperty(property: string): boolean {
-  return property === "color" || property === "background-color";
+  return (
+    property === "color" ||
+    property === "background-color" ||
+    property === "border-color"
+  );
 }
 
 async function copyText(value: string) {
@@ -193,7 +226,8 @@ async function copyText(value: string) {
       <div class="empty-badge">元素检查</div>
       <p class="empty-title">还没有选中节点</p>
       <p class="empty-hint">
-        在画布工具栏打开「选择元素」，然后在手机预览里点击即可。
+        在画布工具栏打开「选择元素」，然后在手机预览里点击即可。按住
+        ⌥/Alt 点击可选中语义父级；选中后按 ↑ 继续上溯。
       </p>
       <p v-if="selection.handshakeTimedOut" class="empty-warn">
         Runtime 握手超时，请刷新预览。
@@ -434,6 +468,9 @@ async function copyText(value: string) {
               >
                 <div class="style-main">
                   <div class="token-line">
+                    <span class="style-role">{{
+                      stylePropertyRole(row.property)
+                    }}</span>
                     <code v-if="row.tokenId" class="token-id">{{
                       row.tokenId
                     }}</code>
@@ -452,19 +489,33 @@ async function copyText(value: string) {
                     <i
                       v-if="isColorProperty(row.property)"
                       class="value-swatch"
-                      :style="{ background: row.value }"
+                      :style="{ background: styleDisplayValue(row) }"
                       aria-hidden="true"
                     />
-                    <code class="style-value">{{ row.value || "—" }}</code>
+                    <code class="style-value">{{
+                      styleDisplayValue(row)
+                    }}</code>
                     <button
                       type="button"
                       class="copy-btn"
                       aria-label="复制 Value"
-                      @click="copyText(row.value)"
+                      @click="copyText(styleDisplayValue(row))"
                     >
                       <Copy :size="13" aria-hidden="true" />
                     </button>
                   </div>
+                  <p
+                    v-if="row.source === 'inherited' && row.inheritedFrom"
+                    class="inherited-note"
+                  >
+                    自身透明 · 来自 {{ inheritedFromLabel(row) }}
+                  </p>
+                  <p
+                    v-else-if="isTransparentBackgroundRow(row)"
+                    class="inherited-note"
+                  >
+                    透明（无 token）
+                  </p>
                 </div>
                 <div class="style-meta">
                   <span class="source-badge" :class="`is-${row.source}`">{{
@@ -820,6 +871,13 @@ async function copyText(value: string) {
   min-width: 0;
 }
 
+.style-role {
+  flex: 0 0 auto;
+  color: rgba(var(--v-theme-on-surface), 0.55);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
 .token-line code,
 .value-line code {
   min-width: 0;
@@ -865,6 +923,18 @@ async function copyText(value: string) {
 .source-badge.is-value-match {
   background: color-mix(in srgb, rgb(var(--v-theme-warning)) 14%, transparent);
   color: rgb(var(--v-theme-warning));
+}
+
+.source-badge.is-inherited {
+  background: color-mix(in srgb, rgb(var(--v-theme-info)) 14%, transparent);
+  color: rgb(var(--v-theme-info));
+}
+
+.inherited-note {
+  margin: 0;
+  color: rgba(var(--v-theme-on-surface), 0.55);
+  font-size: 0.6875rem;
+  line-height: 1.35;
 }
 
 .copy-line {

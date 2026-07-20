@@ -12,8 +12,10 @@ import { findByRef } from "@/runtime/inspect/registry";
 import {
   buildElementSummary,
   buildSelectPayload,
+  climbInspectTarget,
   isInspectChrome,
   readBbox,
+  resolveInspectTarget,
 } from "@/runtime/inspect/snapshot";
 
 const props = defineProps<{
@@ -56,33 +58,7 @@ function targetFromEvent(event: Event): HTMLElement | null {
   return el;
 }
 
-function onPointerMove(event: PointerEvent) {
-  if (!props.enabled) return;
-  const el = targetFromEvent(event);
-  if (!el) {
-    hoverBox.value = null;
-    const msg = envelope("hover", {});
-    if (msg) props.post(msg);
-    return;
-  }
-  hoverBox.value = readBbox(el);
-  const summary = buildElementSummary(el);
-  const msg = envelope("hover", { element: summary });
-  if (msg) props.post(msg);
-}
-
-function onClick(event: MouseEvent) {
-  if (!props.enabled) return;
-  event.preventDefault();
-  event.stopPropagation();
-  event.stopImmediatePropagation();
-
-  const el = targetFromEvent(event);
-  if (!el) {
-    clearLocal("blank");
-    return;
-  }
-
+function selectElement(el: HTMLElement) {
   const payload = buildSelectPayload(el);
   if ("error" in payload) {
     const err = envelope("error", {
@@ -100,6 +76,37 @@ function onClick(event: MouseEvent) {
   if (msg) props.post(msg);
 }
 
+function onPointerMove(event: PointerEvent) {
+  if (!props.enabled) return;
+  const leaf = targetFromEvent(event);
+  if (!leaf) {
+    hoverBox.value = null;
+    const msg = envelope("hover", {});
+    if (msg) props.post(msg);
+    return;
+  }
+  const el = resolveInspectTarget(leaf, event.altKey);
+  hoverBox.value = readBbox(el);
+  const summary = buildElementSummary(el);
+  const msg = envelope("hover", { element: summary });
+  if (msg) props.post(msg);
+}
+
+function onClick(event: MouseEvent) {
+  if (!props.enabled) return;
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
+
+  const leaf = targetFromEvent(event);
+  if (!leaf) {
+    clearLocal("blank");
+    return;
+  }
+
+  selectElement(resolveInspectTarget(leaf, event.altKey));
+}
+
 function onKeyDown(event: KeyboardEvent) {
   if (!props.enabled) return;
   if (event.key === "Escape") {
@@ -109,18 +116,21 @@ function onKeyDown(event: KeyboardEvent) {
     clearLocal("escape");
     return;
   }
+  if (event.key === "ArrowUp" && selectedEl.value) {
+    const parent = climbInspectTarget(selectedEl.value);
+    if (!parent) return;
+    event.preventDefault();
+    event.stopPropagation();
+    selectElement(parent);
+    return;
+  }
   if (event.key === "Enter") {
     const active = document.activeElement;
     if (!(active instanceof HTMLElement) || isInspectChrome(active)) return;
     if (active === document.body || active === document.documentElement) return;
     event.preventDefault();
     event.stopPropagation();
-    const payload = buildSelectPayload(active);
-    if ("error" in payload) return;
-    selectedEl.value = active;
-    selectBox.value = readBbox(active);
-    const msg = envelope("select", payload);
-    if (msg) props.post(msg);
+    selectElement(active);
   }
 }
 

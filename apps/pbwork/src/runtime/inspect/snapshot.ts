@@ -28,7 +28,7 @@ const STYLE_KEYS = [
   "padding",
   "margin",
   "gap",
-  "border",
+  "border-color",
   "border-radius",
   "box-shadow",
   "display",
@@ -43,7 +43,7 @@ const PROPERTY_CATEGORY: Partial<
 > = {
   color: "color",
   "background-color": "color",
-  border: "color",
+  "border-color": "color",
   "border-radius": "radius",
   "box-shadow": "elevation",
   "font-family": "typography",
@@ -67,7 +67,7 @@ const PROPERTY_GROUP: Record<(typeof STYLE_KEYS)[number], StyleInspectGroup> = {
   gap: "spacing-size",
   width: "spacing-size",
   height: "spacing-size",
-  border: "border-radius",
+  "border-color": "border-radius",
   "border-radius": "border-radius",
   "box-shadow": "shadow-layout",
   display: "shadow-layout",
@@ -75,10 +75,89 @@ const PROPERTY_GROUP: Record<(typeof STYLE_KEYS)[number], StyleInspectGroup> = {
   overflow: "shadow-layout",
 };
 
+const TYPOGRAPHY_LONGHANDS = new Set<(typeof STYLE_KEYS)[number]>([
+  "font-family",
+  "font-size",
+  "font-weight",
+  "line-height",
+]);
+
+const COLOR_PROPERTIES = new Set<(typeof STYLE_KEYS)[number]>([
+  "color",
+  "background-color",
+  "border-color",
+]);
+
+/** Contract slot → CSS properties that slot is allowed to claim as "binding". */
+const BINDING_SLOT_PROPERTIES: Record<string, readonly string[]> = {
+  background: ["background-color"],
+  surface: ["background-color"],
+  tonalBackground: ["background-color"],
+  activeBackground: ["background-color"],
+  color: ["color"],
+  onBackground: ["color"],
+  inactiveColor: ["color"],
+  muted: ["color"],
+  indicator: ["color", "background-color"],
+  border: ["border-color"],
+  radius: ["border-radius"],
+  elevation: ["box-shadow"],
+  // Root-level typography only. Part slots (title/subtitle/label/input) must not
+  // claim the registered root's computed font as "显式绑定".
+  typography: ["font", "font-family", "font-size", "font-weight", "line-height"],
+};
+
+/** Part-level slots: shown in component bindings, never bind root computed styles. */
+const PART_BINDING_SLOTS = new Set([
+  "title",
+  "subtitle",
+  "label",
+  "input",
+]);
+
+export type StyleMatchOptions = {
+  /** Token IDs used only for match ranking (may include ancestor prefs). */
+  rankTokenIds?: string[];
+  /** Current node's contract bindings; only these can yield source=binding. */
+  ownBindings?: Record<string, string>;
+};
+
 export function stylePropertyGroup(
   property: (typeof STYLE_KEYS)[number] | string,
 ): StyleInspectGroup {
+  if (property === "font") return "typography";
   return PROPERTY_GROUP[property as (typeof STYLE_KEYS)[number]] ?? "shadow-layout";
+}
+
+/** Human-readable role for inspector labels (文字 / 背景 / …). */
+export function stylePropertyRole(property: string): string {
+  switch (property) {
+    case "color":
+      return "文字";
+    case "background-color":
+      return "背景";
+    case "border-color":
+      return "边框";
+    case "font":
+    case "font-family":
+    case "font-size":
+    case "font-weight":
+    case "line-height":
+      return "字体";
+    case "border-radius":
+      return "圆角";
+    case "box-shadow":
+      return "阴影";
+    case "padding":
+    case "margin":
+    case "gap":
+      return "间距";
+    case "width":
+    case "height":
+      return "尺寸";
+    default:
+      return property;
+  }
 }
 
 const SENSITIVE = /password|secret|token|authorization|cookie/i;
@@ -111,24 +190,141 @@ function normalizeCssValue(value: string): string {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+function isTransparentColor(value: string): boolean {
+  const normalized = normalizeCssValue(value);
+  return (
+    normalized === "transparent" ||
+    normalized === "rgba(0, 0, 0, 0)" ||
+    normalized === "rgba(0,0,0,0)" ||
+    normalized === "#0000" ||
+    normalized === "#00000000"
+  );
+}
+
+/** Resolve two color strings on independent probes (avoids sticky invalid assignments). */
 function colorsEqual(a: string, b: string): boolean {
   if (!a || !b) return false;
   if (normalizeCssValue(a) === normalizeCssValue(b)) return true;
-  const probe = document.createElement("span");
-  probe.style.color = a;
-  document.documentElement.appendChild(probe);
-  const resolvedA = getComputedStyle(probe).color;
-  probe.style.color = b;
-  const resolvedB = getComputedStyle(probe).color;
-  probe.remove();
+  const probeA = document.createElement("span");
+  const probeB = document.createElement("span");
+  document.documentElement.appendChild(probeA);
+  document.documentElement.appendChild(probeB);
+  probeA.style.color = a;
+  probeB.style.color = b;
+  const acceptedA = Boolean(probeA.style.color);
+  const acceptedB = Boolean(probeB.style.color);
+  const resolvedA = getComputedStyle(probeA).color;
+  const resolvedB = getComputedStyle(probeB).color;
+  probeA.remove();
+  probeB.remove();
+  if (!acceptedA || !acceptedB) return false;
   return Boolean(resolvedA) && resolvedA === resolvedB;
+}
+
+/**
+ * Composite typography tokens (`600 16px/1.4 Inter, ...`) must be applied as
+ * `font` shorthand, then compared via longhand computed values.
+ */
+function typographyLonghandMatches(
+  property: (typeof STYLE_KEYS)[number],
+  value: string,
+  tokenValue: string,
+): boolean {
+  if (!TYPOGRAPHY_LONGHANDS.has(property)) return false;
+  const probe = document.createElement("span");
+  document.documentElement.appendChild(probe);
+  probe.style.font = tokenValue;
+  const accepted = Boolean(probe.style.font);
+  const expected = accepted
+    ? getComputedStyle(probe).getPropertyValue(property).trim()
+    : "";
+  probe.remove();
+  if (!accepted || !expected) return false;
+  return normalizeCssValue(expected) === normalizeCssValue(value);
+}
+
+function bindingTokenIdsForProperty(
+  ownBindings: Record<string, string> | undefined,
+  property: string,
+): Set<string> {
+  const ids = new Set<string>();
+  if (!ownBindings) return ids;
+  for (const [slot, tokenId] of Object.entries(ownBindings)) {
+    if (PART_BINDING_SLOTS.has(slot)) continue;
+    const props = BINDING_SLOT_PROPERTIES[slot];
+    if (props?.includes(property)) ids.add(tokenId);
+  }
+  return ids;
+}
+
+function matchSourceForToken(
+  tokenId: string,
+  bindingTokenIds: Set<string>,
+): "binding" | "value-match" {
+  return bindingTokenIds.has(tokenId) ? "binding" : "value-match";
+}
+
+function hasVisibleBorder(cs: CSSStyleDeclaration): boolean {
+  const sides = ["top", "right", "bottom", "left"] as const;
+  return sides.some((side) => {
+    const style = cs.getPropertyValue(`border-${side}-style`).trim();
+    if (!style || style === "none") return false;
+    const width = parseFloat(cs.getPropertyValue(`border-${side}-width`));
+    return Number.isFinite(width) && width > 0;
+  });
+}
+
+function matchFullTypographyToken(
+  cs: CSSStyleDeclaration,
+  catalog: TokenVarEntry[],
+  rankTokenIds: Set<string>,
+  bindingTokenIds: Set<string>,
+):
+  | {
+      cssVar: string;
+      tokenId: string;
+      source: "binding" | "value-match";
+      value: string;
+    }
+  | undefined {
+  const longhands = [
+    "font-family",
+    "font-size",
+    "font-weight",
+    "line-height",
+  ] as const;
+  const actual = Object.fromEntries(
+    longhands.map((key) => [key, cs.getPropertyValue(key).trim()]),
+  ) as Record<(typeof longhands)[number], string>;
+
+  const typography = catalog.filter((item) => item.category === "typography");
+  const preferred = typography.filter((item) => rankTokenIds.has(item.tokenId));
+  const pools = [preferred, typography];
+
+  for (const pool of pools) {
+    for (const item of pool) {
+      if (!item.value) continue;
+      const allMatch = longhands.every((key) =>
+        typographyLonghandMatches(key, actual[key], item.value),
+      );
+      if (!allMatch) continue;
+      return {
+        cssVar: item.cssVar,
+        tokenId: item.tokenId,
+        source: matchSourceForToken(item.tokenId, bindingTokenIds),
+        value: item.value,
+      };
+    }
+  }
+  return undefined;
 }
 
 function matchTokenForStyle(
   property: (typeof STYLE_KEYS)[number],
   value: string,
   catalog: TokenVarEntry[],
-  preferredTokenIds: Set<string>,
+  rankTokenIds: Set<string>,
+  bindingTokenIds: Set<string>,
 ):
   | {
       cssVar: string;
@@ -139,10 +335,17 @@ function matchTokenForStyle(
   if (!value || value === "none" || value === "normal" || value === "auto") {
     return undefined;
   }
+  if (COLOR_PROPERTIES.has(property) && isTransparentColor(value)) {
+    return undefined;
+  }
+  // Typography longhands collapse into a single `font` row via matchFullTypographyToken.
+  if (TYPOGRAPHY_LONGHANDS.has(property)) {
+    return undefined;
+  }
   const category = PROPERTY_CATEGORY[property];
   const preferred = catalog.filter(
     (item) =>
-      preferredTokenIds.has(item.tokenId) &&
+      rankTokenIds.has(item.tokenId) &&
       (!category || item.category === category),
   );
   const categorized = category
@@ -157,28 +360,72 @@ function matchTokenForStyle(
         return {
           cssVar: item.cssVar,
           tokenId: item.tokenId,
-          source: preferredTokenIds.has(item.tokenId)
-            ? "binding"
-            : "value-match",
+          source: matchSourceForToken(item.tokenId, bindingTokenIds),
         };
       }
       if (
-        (property === "color" ||
-          property === "background-color" ||
-          property === "border") &&
+        COLOR_PROPERTIES.has(property) &&
         colorsEqual(item.value, value)
       ) {
         return {
           cssVar: item.cssVar,
           tokenId: item.tokenId,
-          source: preferredTokenIds.has(item.tokenId)
-            ? "binding"
-            : "value-match",
+          source: matchSourceForToken(item.tokenId, bindingTokenIds),
         };
       }
     }
   }
   return undefined;
+}
+
+function findPaintedBackground(el: HTMLElement): {
+  value: string;
+  from: NonNullable<StyleInspectRow["inheritedFrom"]>;
+} | null {
+  let cur = el.parentElement;
+  while (cur && cur !== document.documentElement && cur !== document.body) {
+    const value = getComputedStyle(cur).backgroundColor.trim();
+    if (value && !isTransparentColor(value)) {
+      const pbId = cur.getAttribute("data-pb-id") ?? undefined;
+      return {
+        value,
+        from: {
+          ...(pbId ? { pbId } : {}),
+          handle: getOrCreateHandle(cur),
+          tag: cur.tagName.toLowerCase(),
+        },
+      };
+    }
+    cur = cur.parentElement;
+  }
+  return null;
+}
+
+/** Climb to nearest inspectable ancestor (`data-pb-id` or registered). */
+export function climbInspectTarget(el: HTMLElement): HTMLElement | null {
+  let cur = el.parentElement;
+  while (cur) {
+    if (cur === document.body || cur === document.documentElement) {
+      return null;
+    }
+    if (isInspectChrome(cur)) {
+      cur = cur.parentElement;
+      continue;
+    }
+    if (cur.hasAttribute("data-pb-id") || getInspectRegistration(cur)) {
+      return cur;
+    }
+    cur = cur.parentElement;
+  }
+  return null;
+}
+
+export function resolveInspectTarget(
+  el: HTMLElement,
+  preferParent: boolean,
+): HTMLElement {
+  if (!preferParent) return el;
+  return climbInspectTarget(el) ?? el;
 }
 
 export function readBbox(el: HTMLElement): ElementBox {
@@ -335,18 +582,25 @@ export function buildElementSummary(el: HTMLElement): ElementSummary {
 
 export function readWhitelistedStyles(
   el: HTMLElement,
-  preferredTokenIds: string[] = [],
+  options: StyleMatchOptions | string[] = {},
 ): StyleInspectRow[] {
+  const opts: StyleMatchOptions = Array.isArray(options)
+    ? { rankTokenIds: options }
+    : options;
   const cs = window.getComputedStyle(el);
   const scope =
     el.closest(".runtime-app") ??
     document.querySelector(".runtime-app") ??
     document.documentElement;
   const catalog = tokenVarCatalog(scope);
-  const preferred = new Set(preferredTokenIds);
+  const rankTokenIds = new Set(opts.rankTokenIds ?? []);
   const rows: StyleInspectRow[] = [];
+  const visibleBorder = hasVisibleBorder(cs);
 
   for (const key of STYLE_KEYS) {
+    // Skip typography longhands here — collapsed into a single `font` row below.
+    if (TYPOGRAPHY_LONGHANDS.has(key)) continue;
+
     const value = cs.getPropertyValue(key).trim();
     const row: StyleInspectRow = {
       property: key,
@@ -354,14 +608,80 @@ export function readWhitelistedStyles(
       group: stylePropertyGroup(key),
       source: "raw",
     };
-    const match = matchTokenForStyle(key, value, catalog, preferred);
+
+    if (key === "border-color" && !visibleBorder) {
+      rows.push(row);
+      continue;
+    }
+
+    const bindingTokenIds = bindingTokenIdsForProperty(opts.ownBindings, key);
+    const match = matchTokenForStyle(
+      key,
+      value,
+      catalog,
+      rankTokenIds,
+      bindingTokenIds,
+    );
     if (match) {
       row.cssVar = match.cssVar;
       row.tokenId = match.tokenId;
       row.source = match.source;
     }
+
+    if (key === "background-color" && isTransparentColor(value)) {
+      const painted = findPaintedBackground(el);
+      if (painted) {
+        const paintedMatch = matchTokenForStyle(
+          "background-color",
+          painted.value,
+          catalog,
+          rankTokenIds,
+          new Set(),
+        );
+        row.effectiveValue = painted.value;
+        row.inheritedFrom = painted.from;
+        row.source = "inherited";
+        if (paintedMatch) {
+          row.cssVar = paintedMatch.cssVar;
+          row.tokenId = paintedMatch.tokenId;
+        } else {
+          delete row.cssVar;
+          delete row.tokenId;
+        }
+      }
+    }
+
     rows.push(row);
   }
+
+  const fontBindingIds = bindingTokenIdsForProperty(opts.ownBindings, "font");
+  const typographyMatch = matchFullTypographyToken(
+    cs,
+    catalog,
+    rankTokenIds,
+    fontBindingIds,
+  );
+  if (typographyMatch) {
+    rows.push({
+      property: "font",
+      value: typographyMatch.value,
+      group: "typography",
+      cssVar: typographyMatch.cssVar,
+      tokenId: typographyMatch.tokenId,
+      source: typographyMatch.source,
+    });
+  } else {
+    // "全部" mode: keep raw longhands without token attribution.
+    for (const key of TYPOGRAPHY_LONGHANDS) {
+      rows.push({
+        property: key,
+        value: cs.getPropertyValue(key).trim(),
+        group: "typography",
+        source: "raw",
+      });
+    }
+  }
+
   return rows;
 }
 
@@ -379,34 +699,53 @@ function buildTokenBindings(
   return rows.length ? rows.slice(0, 100) : undefined;
 }
 
+function collectRankTokenIds(
+  ownReg: ReturnType<typeof getInspectRegistration>,
+  ancestorReg: ReturnType<typeof findRegisteredAncestor>,
+): string[] {
+  const ids: string[] = [];
+  const pushFrom = (reg: NonNullable<typeof ownReg>) => {
+    const tokens = reg.getTokens?.() ?? [];
+    ids.push(...tokens);
+    const bindings = reg.getTokenBindings?.();
+    if (bindings) ids.push(...Object.values(bindings));
+  };
+  if (ownReg) pushFrom(ownReg);
+  else if (ancestorReg) pushFrom(ancestorReg);
+  return [...new Set(ids)];
+}
+
 export function buildSelectPayload(
   el: HTMLElement,
 ): BridgePayloads["select"] | { error: "PAYLOAD_TOO_LARGE" } {
   const meta: SnapshotMeta = {};
   const element = buildElementSummary(el);
-  const reg = getInspectRegistration(el) ?? findRegisteredAncestor(el);
+  const ownReg = getInspectRegistration(el);
+  const ancestorReg = ownReg ? undefined : findRegisteredAncestor(el);
 
-  const tokenBindings = buildTokenBindings(reg?.getTokenBindings?.());
-  const tokenIds =
-    reg?.getTokens?.() ?? tokenBindings?.map((row) => row.tokenId) ?? [];
-  const styles = readWhitelistedStyles(el, tokenIds);
+  const ownBindings = ownReg?.getTokenBindings?.();
+  const styles = readWhitelistedStyles(el, {
+    rankTokenIds: collectRankTokenIds(ownReg, ancestorReg),
+    ...(ownBindings ? { ownBindings } : {}),
+  });
 
   const payload: BridgePayloads["select"] = {
     element,
     styles,
   };
 
-  if (reg) {
-    if (reg.componentId) payload.componentId = reg.componentId;
-    const props = sanitizeRecord(reg.getProps?.(), meta);
-    const state = sanitizeRecord(reg.getState?.(), meta);
+  // Component meta only from the exact registered node — never bleed ancestor.
+  if (ownReg) {
+    if (ownReg.componentId) payload.componentId = ownReg.componentId;
+    const props = sanitizeRecord(ownReg.getProps?.(), meta);
+    const state = sanitizeRecord(ownReg.getState?.(), meta);
     if (props) payload.props = props;
     if (state) payload.state = state;
+    const tokenBindings = buildTokenBindings(ownBindings);
+    const tokenIds =
+      ownReg.getTokens?.() ?? tokenBindings?.map((row) => row.tokenId) ?? [];
     if (tokenIds.length) payload.tokens = [...new Set(tokenIds)].slice(0, 100);
     if (tokenBindings) payload.tokenBindings = tokenBindings;
-    if (reg.pbId && !payload.element.ref.pbId) {
-      payload.element.ref.pbId = reg.pbId;
-    }
   }
 
   if (meta.truncated || meta.warnings?.length) {

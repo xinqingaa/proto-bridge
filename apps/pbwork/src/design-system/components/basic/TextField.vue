@@ -1,15 +1,53 @@
 <script setup lang="ts">
-defineProps<{
+import { toRefs } from "vue";
+import {
+  usePbInspect,
+  usePbInspectRef,
+} from "@/runtime/inspect/usePbInspect";
+
+const props = defineProps<{
   label: string;
   modelValue?: string;
   disabled?: boolean;
   radius?: "sm" | "md" | "lg";
 }>();
 defineEmits<{ "update:modelValue": [value: string] }>();
+
+const rootRef = usePbInspectRef();
+const { label, modelValue, disabled, radius } = toRefs(props);
+
+usePbInspect({
+  element: rootRef,
+  pbId: "ds.text-field",
+  componentId: "text-field",
+  getProps: () => ({
+    label: label.value,
+    modelValue: modelValue.value ?? "",
+    disabled: disabled.value ?? false,
+    radius: radius.value ?? "md",
+  }),
+  getTokenBindings: () => ({
+    border: "color.border",
+    surface: "color.surface",
+    radius: `radius.${radius.value ?? "md"}`,
+    label: "typography.caption",
+    input: "typography.content",
+  }),
+  getTokens: () => [
+    "color.border",
+    "color.surface",
+    "color.on-surface",
+    `radius.${radius.value ?? "md"}`,
+    "typography.caption",
+    "typography.content",
+    "spacing.xs",
+    "spacing.md",
+  ],
+});
 </script>
 
 <template>
-  <label class="pb-field" data-pb-id="ds.text-field">
+  <label ref="rootRef" class="pb-field" data-pb-id="ds.text-field">
     <span class="pb-field-label">{{ label }}</span>
     <input
       class="pb-field-input"
