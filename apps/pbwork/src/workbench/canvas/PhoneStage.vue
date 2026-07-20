@@ -131,6 +131,7 @@ onBeforeUnmount(() => {
   cursor: default;
   touch-action: none;
   user-select: none;
+  padding-bottom: 72px;
 }
 
 .phone-stage.is-dark {

@@ -1269,14 +1269,16 @@ apps/pbwork/
 - `comments`：本地评论；
 - `playground`：组件临时 Props / State。
 
-### 16.1 首期固定内容
+### 16.1 当前固定内容
 
 首期内容用于验证真实工作流，不从旧 example 搬运：
 
 - Theme：`light`、`dark`；
-- 基础组件：按钮、图标按钮、文本框、Chip、Card；
-- 复杂组件：App Bar、Tabs、Data List、Bottom Sheet；
+- Token：90 个，覆盖 color、typography、spacing、sizing、radius、border、elevation、opacity、motion；
+- 基础组件：15 个，包括按钮、输入、选择、状态反馈、Avatar、Badge、Divider、Progress 与 Spinner；
+- 复杂组件：11 个，包括 App Bar、Tabs、Data List、Bottom Sheet、Search Bar、Filter Bar、Bottom Navigation、Dialog、Snackbar、Empty State 与 Form Section；
 - Prototype“项目协作”：任务列表（默认、加载中、空态）与任务详情（概览、活动、错误、Sheet 打开）。
+- Prototype“现场服务工单”：工单工作台、工单列表、工单详情、新建工单、客户详情、消息中心、个人设置，以及加载、空态、错误、筛选、高优先级、超时、校验失败、Sheet、Dialog、Toast 等状态。
 
 上述内容是 M2—M4 的共同验收样本；实现时可以细化视觉，但不得用占位页替代多页面、多 Variant 和弹层场景。
 
@@ -1295,7 +1297,7 @@ apps/pbwork/
 | M5 评论          | 本地评论                         | 新增/完成/删除/刷新仍在/定位失效                                                  |
 | M6 高级写入      | 开发环境写回                     | Playground 更新示例与保存 Variant：diff + 二次确认 + 白名单                       |
 
-全局搜索与设置按 §5 stub 实现即可，不单独占里程碑。
+当前实施状态：M1—M5 已完成；阶段三—五已按 2026-07-20 的建设决策提前完成；M6 后置且仍未实现。全局搜索与设置按 §5 stub 实现即可，不单独占里程碑。
 
 ### 17.1 测试边界
 
@@ -1327,15 +1329,16 @@ apps/pbwork/
 
 ### 18.2 设计系统与组件
 
-- color、typography、spacing、radius、elevation 每类至少展示一个来自注册表的视觉样本；
+- color、typography、spacing、sizing、radius、border、elevation、opacity、motion 每类至少展示一个来自注册表的视觉样本；
 - 工作台壳和原型主题可以独立切换；
-- 完整展示 §16.1 固定的 5 个基础组件和 4 个复杂组件，不允许以空白或静态占位卡替代；
+- 完整展示 §16.1 固定的 15 个基础组件和 11 个复杂组件，不允许以空白或静态占位卡替代；
 - 每个组件至少有默认示例，适用组件的 Playground 覆盖 text、boolean、select 中至少一种控件；
 - Playground 可以临时调参、按 Contract 默认值重置，并完成一次受控源码更新的 preview、确认、apply 与刷新验证。
 
 ### 18.3 原型与画布
 
 - 完整提供 §16.1 的“项目协作”原型：任务列表 3 个 Variant、任务详情 4 个 Variant；
+- 完整提供 `field-service` 的 7 个页面及可由 Runtime URL 恢复的关键 Variant，并将其作为默认业务演示原型；
 - 列表、Tab、错误态和 Bottom Sheet 均由真实 Vue 交互实现，不使用静态截图或占位页；
 - 单手机画板支持缩放（步进、滑块、常用比例）、拖动和设备切换；
 - iframe overlay 不越过手机运行时边界；
@@ -1434,15 +1437,15 @@ Shell 显隐状态名建议 `*Open` / `*Visible` / `show*`，并与业务态字�
 
 ---
 
-## 20. 后续建设阶段（M6 之后）
+## 20. 扩建阶段（当前已完成，M6 后置）
 
-首期 M1—M6 与 §16.1 固定样本仍是当前验收闸门。下列阶段在壳、检查器与资源页布局稳定后推进；实现时必须同步修订 §16.1、§18 与注册表测试，不得 silently 扩大样本规模。
+根据 2026-07-20 的建设决策，现有交互优化与 M5 完成后，阶段三—五连续推进，M6 高级源码写回后置。下列范围已经进入当前验收闸门；实施同步修订 §16.1、§18 与注册表测试。
 
 依赖顺序：**扩设计令牌 → 扩组件库 → 迁业务原型**。
 
 ### 20.1 阶段三：扩建设计令牌
 
-将当前约 28 个 Token 扩展到约 75–90 个，优先建设语义 Token，不堆无用途色阶。
+已将 Token 扩展到 90 个，优先建设语义 Token，不堆无用途色阶。
 
 | 类别         | 目标内容                                                                 |
 | ------------ | ------------------------------------------------------------------------ |
@@ -1465,7 +1468,7 @@ Shell 显隐状态名建议 `*Open` / `*Visible` / `show*`，并与业务态字�
 
 ### 20.2 阶段四：扩建组件库
 
-在保留现有 5 基础 + 4 复杂样本的前提下继续补齐。目标规模约 **14–16 个基础组件**、**10–12 个复杂组件**。
+在保留原有 5 基础 + 4 复杂样本的前提下，已补齐至 **15 个基础组件**、**11 个复杂组件**。
 
 **第一批（输入、状态与基础反馈）**
 
@@ -1487,7 +1490,7 @@ Search Bar、Filter Bar、Bottom Navigation、Dialog、Snackbar / Toast、Empty 
 
 ### 20.3 阶段五：建设具体业务原型
 
-将「项目协作」迁移为更具体的「现场服务工单」：
+已并行新增更具体的「现场服务工单」，保留「项目协作」作为兼容验收样本：
 
 - `prototypeId`：`field-service`；
 - 协调更新文档、测试与 Runtime URL；

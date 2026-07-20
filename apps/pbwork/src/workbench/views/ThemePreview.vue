@@ -31,6 +31,13 @@ const resolvedByTheme = computed(() => {
   }
   return map;
 });
+const styleByTheme = computed(() => {
+  const map: Record<string, Record<string, string | number>> = {};
+  for (const item of themes.value) {
+    map[item.id] = tokensToCssVars(resolvedByTheme.value[item.id] ?? {});
+  }
+  return map;
+});
 const cssVars = computed(() => {
   if (!theme.value) return {};
   return tokensToCssVars(resolveThemeTokens(theme.value.id));
@@ -64,6 +71,40 @@ const feedbackTones = [
       >
       <v-chip size="small" variant="tonal">{{ themes.length }} 主题</v-chip>
     </template>
+
+    <section class="theme-comparison">
+      <div class="comparison-heading">
+        <div>
+          <span>应用示例</span>
+          <h2>浅色与深色 UI 对照</h2>
+        </div>
+        <p>当前路由强调 {{ theme.label }}，两侧始终使用同一组真实组件。</p>
+      </div>
+      <div class="comparison-grid">
+        <article
+          v-for="item in themes"
+          :key="item.id"
+          class="theme-demo"
+          :class="{ 'is-current': item.id === theme.id }"
+          :style="styleByTheme[item.id]"
+        >
+          <header><strong>{{ item.label }}</strong><code>{{ item.id }}</code></header>
+          <Card title="设备巡检" subtitle="今日 3 项待处理">
+            <div class="demo-content">
+              <TextField label="搜索工单" model-value="设备编号 A-102" />
+              <ul class="sample-list">
+                <li><strong>中央空调异常</strong><span>高优先级 · 12 分钟前</span></li>
+                <li><strong>例行安全检查</strong><span>计划中 · 今天 14:30</span></li>
+              </ul>
+              <div class="matrix-row">
+                <Chip label="处理中" tone="primary" />
+                <Button label="打开工单" />
+              </div>
+            </div>
+          </Card>
+        </article>
+      </div>
+    </section>
 
     <div class="matrix-grid">
       <section class="panel">
@@ -169,6 +210,61 @@ const feedbackTones = [
 </template>
 
 <style scoped>
+.theme-comparison {
+  display: grid;
+  gap: 14px;
+}
+.comparison-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 20px;
+}
+.comparison-heading span {
+  color: rgb(var(--v-theme-primary));
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.comparison-heading h2 {
+  margin: 2px 0 0;
+  font-size: 1rem;
+}
+.comparison-heading p {
+  margin: 0;
+  color: rgba(var(--v-theme-on-surface), 0.55);
+  font-size: 0.75rem;
+}
+.comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.theme-demo {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--pb-color-border, #d7dee8);
+  border-radius: 16px;
+  background: var(--pb-color-background, #f5f8fc);
+  color: var(--pb-color-on-surface, #1f2937);
+}
+.theme-demo.is-current {
+  box-shadow: 0 0 0 2px var(--pb-color-primary, #2563eb);
+}
+.theme-demo > header {
+  display: flex;
+  justify-content: space-between;
+}
+.theme-demo code {
+  color: var(--pb-color-on-surface-muted, #64748b);
+  font-size: 0.6875rem;
+}
+.demo-content {
+  display: grid;
+  gap: 12px;
+}
 .matrix-grid {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -282,6 +378,9 @@ const feedbackTones = [
   align-items: center;
 }
 @media (max-width: 1279px) {
+  .comparison-grid {
+    grid-template-columns: 1fr;
+  }
   .panel,
   .feedback-panel {
     grid-column: span 12;

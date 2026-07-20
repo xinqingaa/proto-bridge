@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import ResourcePageShell from "@/workbench/views/ResourcePageShell.vue";
+import Button from "@/design-system/components/basic/Button.vue";
+import Card from "@/design-system/components/basic/Card.vue";
+import Chip from "@/design-system/components/basic/Chip.vue";
+import TextField from "@/design-system/components/basic/TextField.vue";
 import { loadTokens } from "@/design-system/loaders";
 import {
   normalizeTokenCssVarName,
@@ -23,8 +27,12 @@ const categoryLabels: Record<TokenCategory, string> = {
   color: "颜色",
   typography: "字体",
   spacing: "间距",
+  sizing: "尺寸",
   radius: "圆角",
+  border: "边框",
   elevation: "阴影",
+  opacity: "透明度",
+  motion: "动效",
 };
 
 const allTokens = computed(() => loadTokens());
@@ -51,8 +59,13 @@ const tokens = computed(() => {
   );
 });
 
-const resolved = computed(() => resolveThemeTokens(themeId.value));
-const cssVars = computed(() => tokensToCssVars(resolved.value));
+const lightResolved = computed(() => resolveThemeTokens("light"));
+const darkResolved = computed(() => resolveThemeTokens("dark"));
+const resolved = computed(() =>
+  themeId.value === "light" ? lightResolved.value : darkResolved.value,
+);
+const lightStyle = computed(() => tokensToCssVars(lightResolved.value));
+const darkStyle = computed(() => tokensToCssVars(darkResolved.value));
 
 const selected = computed(
   () =>
@@ -99,9 +112,7 @@ function selectToken(id: string) {
   <ResourcePageShell
     eyebrow="设计令牌"
     :title="categoryLabels[category]"
-    description="按类别浏览 Token；右侧详情展示 Key、CSS Variable、类型、主题值与用途。颜色 key 与主题共用。"
-    with-aside
-    :style="cssVars"
+    description="先在真实 UI 中比较浅色与深色表现，再浏览 Token 的双主题值、CSS Variable 与用途。"
   >
     <template #stats>
       <button
@@ -127,30 +138,78 @@ function selectToken(id: string) {
         clearable
         class="search-field"
       />
-      <v-btn-toggle
-        v-model="themeId"
-        density="compact"
-        color="primary"
-        variant="outlined"
-        divided
-        mandatory
-      >
-        <v-btn value="light" size="small">浅色</v-btn>
-        <v-btn value="dark" size="small">深色</v-btn>
-      </v-btn-toggle>
-      <v-btn-toggle
-        v-model="displayMode"
-        density="compact"
-        color="primary"
-        variant="outlined"
-        divided
-        mandatory
-      >
-        <v-btn value="grid" size="small">网格</v-btn>
-        <v-btn value="table" size="small">表格</v-btn>
-      </v-btn-toggle>
-      <span class="toolbar-meta">{{ tokens.length }} 项</span>
+      <div class="toolbar-actions">
+        <v-btn-toggle
+          v-model="themeId"
+          density="compact"
+          color="primary"
+          variant="outlined"
+          divided
+          mandatory
+          aria-label="突出显示的主题"
+        >
+          <v-btn value="light" size="small">浅色</v-btn>
+          <v-btn value="dark" size="small">深色</v-btn>
+        </v-btn-toggle>
+        <v-btn-toggle
+          v-model="displayMode"
+          density="compact"
+          color="primary"
+          variant="outlined"
+          divided
+          mandatory
+        >
+          <v-btn value="grid" size="small">网格</v-btn>
+          <v-btn value="table" size="small">表格</v-btn>
+        </v-btn-toggle>
+        <span class="toolbar-meta">{{ tokens.length }} 项</span>
+      </div>
     </template>
+
+    <section class="showcase-section" aria-labelledby="showcase-title">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">应用示例</p>
+          <h2 id="showcase-title">同一组组件，双主题对照</h2>
+        </div>
+        <span>真实组件 · 非静态色块</span>
+      </div>
+      <div class="theme-showcase-grid">
+        <article class="theme-showcase light-showcase" :style="lightStyle">
+          <header><strong>浅色</strong><code>theme.light</code></header>
+          <Card title="今日工单" subtitle="3 个任务等待处理">
+            <div class="sample-form">
+              <TextField label="搜索工单" model-value="空调检修" />
+              <div class="sample-actions">
+                <Chip label="处理中" tone="primary" />
+                <Button label="查看详情" />
+              </div>
+            </div>
+          </Card>
+        </article>
+        <article class="theme-showcase dark-showcase" :style="darkStyle">
+          <header><strong>深色</strong><code>theme.dark</code></header>
+          <Card title="今日工单" subtitle="3 个任务等待处理">
+            <div class="sample-form">
+              <TextField label="搜索工单" model-value="空调检修" />
+              <div class="sample-actions">
+                <Chip label="处理中" tone="primary" />
+                <Button label="查看详情" />
+              </div>
+            </div>
+          </Card>
+        </article>
+      </div>
+    </section>
+
+    <section class="token-section" aria-labelledby="token-list-title">
+      <div class="section-heading compact-heading">
+        <div>
+          <p class="section-kicker">Token 对照</p>
+          <h2 id="token-list-title">{{ categoryLabels[category] }}值</h2>
+        </div>
+        <span>浅色与深色始终同时可见</span>
+      </div>
 
     <div v-if="displayMode === 'grid'" class="token-grid">
       <button
@@ -161,21 +220,20 @@ function selectToken(id: string) {
         :class="{ 'is-selected': selected?.id === token.id }"
         @click="selectToken(token.id)"
       >
-        <div
-          v-if="category === 'color'"
-          class="swatch-chip"
-          :style="{ background: String(resolved[token.id]) }"
-        />
+        <div v-if="category === 'color'" class="dual-swatch">
+          <span :style="{ background: String(lightResolved[token.id]) }" />
+          <span :style="{ background: String(darkResolved[token.id]) }" />
+        </div>
         <div
           v-else-if="category === 'elevation'"
           class="elevation-box"
           :style="{ boxShadow: String(resolved[token.id]) }"
         />
         <div
-          v-else-if="category === 'spacing' || category === 'radius'"
+          v-else-if="category === 'spacing' || category === 'radius' || category === 'sizing'"
           class="metric-box"
           :style="
-            category === 'spacing'
+            category === 'spacing' || category === 'sizing'
               ? {
                   width:
                     typeof resolved[token.id] === 'number'
@@ -191,12 +249,15 @@ function selectToken(id: string) {
           "
         />
         <p
-          v-else
+          v-else-if="category === 'typography'"
           class="typo-sample"
           :style="{ font: String(resolved[token.id]) }"
         >
           Aa
         </p>
+        <div v-else class="abstract-sample">
+          <span>{{ resolved[token.id] }}</span>
+        </div>
         <strong>{{ token.label }}</strong>
         <code>{{ token.id }}</code>
       </button>
@@ -204,9 +265,10 @@ function selectToken(id: string) {
 
     <div v-else class="token-table" role="table">
       <div class="token-table-head" role="row">
-        <span>Label</span>
+        <span>名称</span>
         <span>Token ID</span>
-        <span>Value</span>
+        <span>浅色值</span>
+        <span>深色值</span>
       </div>
       <button
         v-for="token in tokens"
@@ -219,17 +281,21 @@ function selectToken(id: string) {
       >
         <strong>{{ token.label }}</strong>
         <code>{{ token.id }}</code>
-        <span>{{ resolved[token.id] }}</span>
+        <span>{{ lightResolved[token.id] }}</span>
+        <span>{{ darkResolved[token.id] }}</span>
       </button>
     </div>
 
     <p v-if="tokens.length === 0" class="empty">没有匹配的 Token。</p>
+    </section>
 
-    <template #aside>
-      <template v-if="selected">
-        <p class="aside-label">详情</p>
+    <section v-if="selected" class="token-detail" aria-live="polite">
+      <div class="detail-title">
+        <p class="aside-label">当前选择</p>
         <h2>{{ selected.label }}</h2>
-        <dl class="detail-list">
+        <p>{{ selected.description || "暂无用途说明" }}</p>
+      </div>
+      <dl class="detail-list">
           <div>
             <dt>Token ID / Key</dt>
             <dd><code>{{ selected.id }}</code></dd>
@@ -243,14 +309,25 @@ function selectToken(id: string) {
             <dd>{{ categoryLabels[selected.category] }}</dd>
           </div>
           <div>
-            <dt>主题值（{{ themeId }}）</dt>
+            <dt>浅色值</dt>
             <dd>
               <span
                 v-if="category === 'color'"
                 class="inline-swatch"
-                :style="{ background: String(resolved[selected.id]) }"
+                :style="{ background: String(lightResolved[selected.id]) }"
               />
-              <code>{{ resolved[selected.id] }}</code>
+              <code>{{ lightResolved[selected.id] }}</code>
+            </dd>
+          </div>
+          <div>
+            <dt>深色值</dt>
+            <dd>
+              <span
+                v-if="category === 'color'"
+                class="inline-swatch"
+                :style="{ background: String(darkResolved[selected.id]) }"
+              />
+              <code>{{ darkResolved[selected.id] }}</code>
             </dd>
           </div>
           <div v-if="category === 'typography'">
@@ -260,14 +337,8 @@ function selectToken(id: string) {
               {{ parseTypography(resolved[selected.id]).size }}
             </dd>
           </div>
-          <div>
-            <dt>用途</dt>
-            <dd>{{ selected.description || "—" }}</dd>
-          </div>
-        </dl>
-      </template>
-      <p v-else class="empty">选择一个 Token 查看详情。</p>
-    </template>
+      </dl>
+    </section>
   </ResourcePageShell>
 </template>
 
@@ -299,10 +370,79 @@ function selectToken(id: string) {
   flex: 1 1 220px;
   max-width: 320px;
 }
-.toolbar-meta {
+.toolbar-actions {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.toolbar-meta {
   color: rgba(var(--v-theme-on-surface), 0.55);
   font-size: 0.75rem;
+}
+.showcase-section,
+.token-section {
+  display: grid;
+  gap: 14px;
+}
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: end;
+}
+.section-heading h2 {
+  margin: 2px 0 0;
+  font-size: 1rem;
+}
+.section-heading > span {
+  color: rgba(var(--v-theme-on-surface), 0.5);
+  font-size: 0.75rem;
+}
+.section-kicker {
+  margin: 0;
+  color: rgb(var(--v-theme-primary));
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.theme-showcase-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.theme-showcase {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--pb-color-border, #d7dee8);
+  border-radius: 16px;
+  background: var(--pb-color-background, #f5f8fc);
+  color: var(--pb-color-on-surface, #1f2937);
+}
+.theme-showcase > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.theme-showcase code {
+  color: var(--pb-color-on-surface-muted, #64748b);
+  font-size: 0.6875rem;
+}
+.sample-form {
+  display: grid;
+  gap: 12px;
+}
+.sample-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.compact-heading {
+  margin-top: 4px;
 }
 .token-grid {
   display: grid;
@@ -324,9 +464,15 @@ function selectToken(id: string) {
   border-color: rgb(var(--v-theme-primary));
   box-shadow: 0 0 0 1px rgb(var(--v-theme-primary));
 }
-.swatch-chip {
+.dual-swatch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
   height: 56px;
+}
+.dual-swatch span {
   border-radius: 8px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 .metric-box {
   width: 48px;
@@ -343,6 +489,18 @@ function selectToken(id: string) {
 .typo-sample {
   margin: 0;
   color: rgb(var(--v-theme-on-surface));
+}
+.abstract-sample {
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed rgba(var(--v-theme-on-surface), 0.2);
+  border-radius: 8px;
+  background: rgba(var(--v-theme-on-surface), 0.035);
+  color: rgba(var(--v-theme-on-surface), 0.62);
+  font-size: 0.7rem;
+  text-align: center;
+  overflow: hidden;
 }
 .token-card strong {
   font-size: 0.8125rem;
@@ -362,7 +520,7 @@ function selectToken(id: string) {
 .token-table-head,
 .token-table-row {
   display: grid;
-  grid-template-columns: minmax(100px, 0.8fr) minmax(160px, 1.2fr) 1fr;
+  grid-template-columns: minmax(100px, 0.8fr) minmax(160px, 1.2fr) 1fr 1fr;
   gap: 12px;
   padding: 10px 12px;
   text-align: left;
@@ -389,14 +547,28 @@ function selectToken(id: string) {
   font-weight: 700;
   text-transform: uppercase;
 }
-.resource-aside h2,
-:deep(.resource-aside) h2 {
+.token-detail {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.8fr) minmax(0, 2fr);
+  gap: 24px;
+  padding: 18px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 14px;
+  background: rgb(var(--v-theme-surface));
+}
+.token-detail h2 {
   margin: 0 0 12px;
   font-size: 1.125rem;
+}
+.detail-title > p:last-child {
+  margin: 0;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+  font-size: 0.8125rem;
 }
 .detail-list {
   margin: 0;
   display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 .detail-list dt {
@@ -431,6 +603,13 @@ function selectToken(id: string) {
   }
 }
 @media (max-width: 900px) {
+  .theme-showcase-grid,
+  .token-detail {
+    grid-template-columns: 1fr;
+  }
+  .detail-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .token-card {
     grid-column: span 6;
   }
@@ -439,6 +618,17 @@ function selectToken(id: string) {
   }
 }
 @media (max-width: 640px) {
+  .toolbar-actions {
+    margin-left: 0;
+    flex-wrap: wrap;
+  }
+  .section-heading {
+    align-items: start;
+    flex-direction: column;
+  }
+  .detail-list {
+    grid-template-columns: 1fr;
+  }
   .token-card {
     grid-column: span 12;
   }

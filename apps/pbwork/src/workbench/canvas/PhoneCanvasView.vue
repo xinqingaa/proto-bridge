@@ -224,14 +224,29 @@ function sendInspectMode(enabled: boolean) {
   );
 }
 
+function sendCommentMode(enabled: boolean) {
+  const ctx = bridgeContext.value;
+  if (!ctx || !selection.runtimeReady) return;
+  postToRuntime(createWorkbenchEnvelope("comment-mode", ctx, { enabled }));
+}
+
 function toggleInspect() {
   if (!selection.canInspect && !selection.inspecting) return;
+  if (selection.commenting) sendCommentMode(false);
   if (!selection.inspecting) {
     if (canvas.toolMode === "pan") canvas.setToolMode("idle");
   }
   selection.toggleInspect();
   sendInspectMode(selection.inspecting);
   if (!selection.inspecting) selection.clearSelection();
+}
+
+function toggleComment() {
+  if (!selection.canComment && !selection.commenting) return;
+  if (!selection.commenting && canvas.toolMode === "pan") canvas.setToolMode("idle");
+  if (selection.inspecting) sendInspectMode(false);
+  selection.toggleComment();
+  sendCommentMode(selection.commenting);
 }
 
 function sendInit(contentWindow: Window | null) {
@@ -333,6 +348,7 @@ function onWindowMessage(event: MessageEvent) {
       handshakeTimer = null;
     }
     if (selection.inspecting) sendInspectMode(true);
+    if (selection.commenting) sendCommentMode(true);
     return;
   }
   if (msg.type === "route") {
@@ -345,6 +361,11 @@ function onWindowMessage(event: MessageEvent) {
   }
   if (msg.type === "select") {
     selection.setSelected(msg.payload);
+    return;
+  }
+  if (msg.type === "comment-target") {
+    selection.setCommentTarget(msg.payload);
+    if (!workbench.inspectorOpen) workbench.toggleInspector();
     return;
   }
   if (msg.type === "clear-select") {
@@ -382,6 +403,12 @@ function onShellKeydown(event: KeyboardEvent) {
     event.preventDefault();
     selection.setInspectMode(false);
     sendInspectMode(false);
+    return;
+  }
+  if (selection.commenting) {
+    event.preventDefault();
+    selection.setCommentMode(false);
+    sendCommentMode(false);
   }
 }
 
@@ -397,6 +424,19 @@ watch(
       selection.setInspectMode(false);
       sendInspectMode(false);
     }
+    if (mode === "pan" && selection.commenting) {
+      selection.setCommentMode(false);
+      sendCommentMode(false);
+    }
+  },
+);
+
+watch(
+  () => selection.highlightNonce,
+  () => {
+    const ctx = bridgeContext.value;
+    if (!ctx || !selection.runtimeReady) return;
+    postToRuntime(createWorkbenchEnvelope("highlight", ctx, selection.highlightRequest ? { element: selection.highlightRequest } : {}));
   },
 );
 
@@ -434,27 +474,13 @@ onBeforeUnmount(() => {
   if (copyTimer) clearTimeout(copyTimer);
   if (handshakeTimer) clearTimeout(handshakeTimer);
   selection.setInspectMode(false);
+  selection.setCommentMode(false);
   selection.clearSelection();
 });
 </script>
 
 <template>
   <section v-if="prototype && screen" class="phone-canvas">
-    <CanvasToolbar
-      :variants="screen.variants"
-      :themes="themes"
-      :variant-id="selectedVariantId"
-      :theme-id="selectedThemeId"
-      :is-dark="isDark"
-      :copy-feedback="copyFeedback"
-      @update:variant-id="onVariantId"
-      @update:theme-id="onThemeId"
-      @toggle-inspect="toggleInspect"
-      @refresh="refresh"
-      @fullscreen="fullscreen"
-      @copy="copyLink"
-    />
-
     <v-alert
       v-if="!resolved.ok"
       type="warning"
@@ -494,6 +520,22 @@ onBeforeUnmount(() => {
       :is-dark="isDark"
       @iframe-load="onIframeLoad"
     />
+
+    <CanvasToolbar
+      :variants="screen.variants"
+      :themes="themes"
+      :variant-id="selectedVariantId"
+      :theme-id="selectedThemeId"
+      :is-dark="isDark"
+      :copy-feedback="copyFeedback"
+      @update:variant-id="onVariantId"
+      @update:theme-id="onThemeId"
+      @toggle-inspect="toggleInspect"
+      @toggle-comment="toggleComment"
+      @refresh="refresh"
+      @fullscreen="fullscreen"
+      @copy="copyLink"
+    />
   </section>
   <v-alert v-else type="error" variant="tonal">
     未知 Screen：{{ prototypeId }}/{{ screenSlug }}
@@ -502,6 +544,8 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .phone-canvas {
+  position: relative;
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
   height: 100%;

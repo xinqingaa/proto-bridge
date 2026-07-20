@@ -9,6 +9,7 @@ import {
   MousePointer2,
   Plus,
   RefreshCw,
+  SlidersHorizontal,
 } from "lucide-vue-next";
 import { useCanvasStore } from "@/app/stores/canvas";
 import { useSelectionStore } from "@/app/stores/selection";
@@ -31,6 +32,7 @@ const emit = defineEmits<{
   "update:variantId": [string];
   "update:themeId": [string];
   "toggle-inspect": [];
+  "toggle-comment": [];
   refresh: [];
   fullscreen: [];
   copy: [];
@@ -91,14 +93,17 @@ function onTogglePan() {
           </button>
         </template>
       </v-tooltip>
-      <v-tooltip text="添加评论（M5）" location="bottom">
+      <v-tooltip :text="selection.commenting ? '退出添加评论' : '添加评论'" location="bottom">
         <template #activator="{ props: tip }">
           <button
             v-bind="tip"
             type="button"
-            class="tool-btn is-disabled"
-            disabled
-            aria-label="添加评论（即将在 M5 提供）"
+            class="tool-btn"
+            :class="{ 'is-active': selection.commenting }"
+            :disabled="!selection.canComment && !selection.commenting"
+            :aria-label="selection.commenting ? '退出添加评论' : '添加评论'"
+            :aria-pressed="selection.commenting"
+            @click="emit('toggle-comment')"
           >
             <MessageSquarePlus :size="15" aria-hidden="true" />
           </button>
@@ -193,60 +198,38 @@ function onTogglePan() {
       </v-tooltip>
     </div>
 
-    <div class="toolbar-cluster select-cluster">
-      <label class="field">
-        <span class="field-label">设备</span>
-        <select
-          class="field-control"
-          :value="canvas.deviceId"
-          aria-label="设备尺寸"
-          @change="
-            canvas.setDeviceId(($event.target as HTMLSelectElement).value)
-          "
-        >
-          <option
-            v-for="item in DEVICE_PRESETS"
-            :key="item.id"
-            :value="item.id"
-          >
-            {{ item.label }}
-          </option>
-        </select>
-      </label>
-      <label class="field">
-        <span class="field-label">主题</span>
-        <select
-          class="field-control"
-          :value="themeId"
-          aria-label="原型主题"
-          @change="
-            emit('update:themeId', ($event.target as HTMLSelectElement).value)
-          "
-        >
-          <option v-for="item in themes" :key="item.id" :value="item.id">
-            {{ item.label }}
-          </option>
-        </select>
-      </label>
-      <label class="field">
-        <span class="field-label">Variant</span>
-        <select
-          class="field-control"
-          :value="variantId"
-          aria-label="Variant"
-          @change="
-            emit(
-              'update:variantId',
-              ($event.target as HTMLSelectElement).value,
-            )
-          "
-        >
-          <option v-for="item in variants" :key="item.id" :value="item.id">
-            {{ item.label }}
-          </option>
-        </select>
-      </label>
-    </div>
+    <v-menu location="top" :close-on-content-click="false">
+      <template #activator="{ props: menu }">
+        <button v-bind="menu" type="button" class="tool-btn preview-settings" aria-label="预览设置">
+          <SlidersHorizontal :size="15" aria-hidden="true" />
+          <span>预览设置</span>
+        </button>
+      </template>
+      <div class="settings-popover">
+        <div class="settings-heading">
+          <strong>预览设置</strong>
+          <span>设备、主题与可复现状态</span>
+        </div>
+        <label class="field">
+          <span class="field-label">设备</span>
+          <select class="field-control" :value="canvas.deviceId" aria-label="设备尺寸" @change="canvas.setDeviceId(($event.target as HTMLSelectElement).value)">
+            <option v-for="item in DEVICE_PRESETS" :key="item.id" :value="item.id">{{ item.label }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">主题</span>
+          <select class="field-control" :value="themeId" aria-label="原型主题" @change="emit('update:themeId', ($event.target as HTMLSelectElement).value)">
+            <option v-for="item in themes" :key="item.id" :value="item.id">{{ item.label }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">状态</span>
+          <select class="field-control" :value="variantId" aria-label="Variant" @change="emit('update:variantId', ($event.target as HTMLSelectElement).value)">
+            <option v-for="item in variants" :key="item.id" :value="item.id">{{ item.label }}</option>
+          </select>
+        </label>
+      </div>
+    </v-menu>
 
     <div class="toolbar-spacer" />
 
@@ -297,13 +280,21 @@ function onTogglePan() {
 
 <style scoped>
 .canvas-toolbar {
+  position: absolute;
+  z-index: 12;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 24px);
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
   gap: 10px;
   min-height: 48px;
-  padding: 8px 12px;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  padding: 7px 8px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 16px;
   background:
     linear-gradient(
       180deg,
@@ -311,16 +302,66 @@ function onTogglePan() {
       rgba(248, 250, 252, 0.96) 100%
     );
   backdrop-filter: blur(10px);
-  overflow-x: auto;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
+  overflow: visible;
 }
 
 .canvas-toolbar.is-dark {
-  border-bottom-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
   background: linear-gradient(
     180deg,
     rgba(30, 41, 55, 0.96) 0%,
     rgba(22, 30, 40, 0.98) 100%
   );
+}
+.settings-popover {
+  width: 280px;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 14px;
+  background: rgb(var(--v-theme-surface));
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.2);
+}
+.settings-heading {
+  display: grid;
+  gap: 2px;
+}
+.settings-heading span {
+  color: rgba(var(--v-theme-on-surface), 0.55);
+  font-size: 0.72rem;
+}
+.settings-popover .field {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+.settings-popover .field-control {
+  width: 100%;
+}
+@container (max-width: 720px) {
+  .canvas-toolbar {
+    gap: 4px;
+  }
+  .zoom-slider,
+  .preview-settings span,
+  .tool-primary span,
+  .toolbar-spacer {
+    display: none;
+  }
+  .toolbar-cluster {
+    gap: 3px;
+  }
+}
+@container (max-width: 500px) {
+  .zoom-label {
+    min-width: 42px;
+  }
+  .cluster-sep {
+    display: none;
+  }
 }
 
 .toolbar-cluster {

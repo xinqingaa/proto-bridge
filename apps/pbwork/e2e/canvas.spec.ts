@@ -16,7 +16,7 @@ test("renders the phone canvas iframe for a screen", async ({ page }) => {
   await expect(iframe).toHaveAttribute("width", "390");
   await expect(iframe).toHaveAttribute("height", "844");
   await expect(page.getByRole("toolbar", { name: "画布工具栏" })).toBeVisible();
-  await expect(page.getByLabel("自定义缩放比例")).toBeVisible();
+  await expect(page.getByLabel("缩放比例预设")).toHaveText("100%");
 });
 
 test("dark shell styles stay scoped to the workbench chrome", async ({
@@ -50,6 +50,7 @@ test("dark shell styles stay scoped to the workbench chrome", async ({
 test("switching variant and theme updates workbench URL and iframe src", async ({
   page,
 }) => {
+  await page.getByRole("button", { name: "预览设置" }).click();
   await page.getByLabel("Variant").selectOption("empty");
   await expect(page).toHaveURL(/variant=empty/);
   await expect(page.getByTestId("prototype-iframe")).toHaveAttribute(
@@ -57,6 +58,7 @@ test("switching variant and theme updates workbench URL and iframe src", async (
     /variant=empty&theme=light/,
   );
 
+  await page.getByRole("button", { name: "预览设置" }).click();
   await page.getByLabel("原型主题").selectOption("dark");
   await expect(page).toHaveURL(/theme=dark/);
   await expect(page.getByTestId("prototype-iframe")).toHaveAttribute(
@@ -71,6 +73,7 @@ test("switching variant and theme updates workbench URL and iframe src", async (
 test("device preset changes iframe viewport without leaving workbench", async ({
   page,
 }) => {
+  await page.getByRole("button", { name: "预览设置" }).click();
   await page.getByLabel("设备尺寸").selectOption("iphone-se");
   const iframe = page.getByTestId("prototype-iframe");
   await expect(iframe).toHaveAttribute("width", "375");
@@ -78,9 +81,9 @@ test("device preset changes iframe viewport without leaving workbench", async ({
   await expect(page).toHaveURL(/\/workbench\/prototypes\/project\/screens\/task-list/);
 });
 
-test("zoom slider updates the displayed scale percent", async ({ page }) => {
-  const slider = page.getByLabel("自定义缩放比例");
-  await slider.fill("75");
+test("zoom preset updates the displayed scale percent", async ({ page }) => {
+  await page.getByLabel("缩放比例预设").click();
+  await page.getByText("75%", { exact: true }).click();
   await expect(page.getByLabel("缩放比例预设")).toHaveText("75%");
 });
 

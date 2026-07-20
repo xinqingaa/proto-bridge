@@ -44,8 +44,12 @@ const tokenCategoryLabels: Record<TokenCategory, string> = {
   color: "颜色",
   typography: "字体",
   spacing: "间距",
+  sizing: "尺寸",
   radius: "圆角",
+  border: "边框",
   elevation: "阴影",
+  opacity: "透明度",
+  motion: "动效",
 };
 
 export function buildFoundationsNavigation(): WorkbenchNavigationItem[] {

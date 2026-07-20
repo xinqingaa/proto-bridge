@@ -3,6 +3,7 @@ import {
   computed,
   defineAsyncComponent,
   onMounted,
+  reactive,
   ref,
   watch,
   type Component,
@@ -23,8 +24,9 @@ import { resolveLiveTokenBindings } from "@/design-system/resolveLiveTokenBindin
 
 const props = defineProps<{ componentId: string }>();
 const playground = usePlaygroundStore();
-const designThemeId = ref("light");
 const viewMode = ref<"single" | "matrix">("single");
+const selectedMatrixId = ref("default");
+const matrixOverrides = reactive<Record<string, Record<string, unknown>>>({});
 
 const record = computed(() =>
   componentRecords.find((item) => item.id === props.componentId),
@@ -44,8 +46,11 @@ const tokenBindings = computed(() =>
     ),
   ),
 );
-const previewStyle = computed(() =>
-  tokensToCssVars(resolveThemeTokens(designThemeId.value)),
+const lightPreviewStyle = computed(() =>
+  tokensToCssVars(resolveThemeTokens("light")),
+);
+const darkPreviewStyle = computed(() =>
+  tokensToCssVars(resolveThemeTokens("dark")),
 );
 const tallPreview = computed(() =>
   ["bottom-sheet", "data-list", "app-bar", "tabs"].includes(props.componentId),
@@ -65,12 +70,22 @@ const previewComponent = computed(() => {
 
 const matrixCells = computed(() => {
   const base = contract.value?.defaultProps ?? {};
-  const cells = [{ id: "default", label: "默认", props: { ...base } }];
+  const cells = [
+    {
+      id: "default",
+      label: "默认",
+      props: { ...base, ...(matrixOverrides.default ?? {}) },
+    },
+  ];
   for (const state of states.value) {
     cells.push({
       id: state.id,
       label: state.label,
-      props: { ...base, ...(state.props ?? {}) },
+      props: {
+        ...base,
+        ...(state.props ?? {}),
+        ...(matrixOverrides[state.id] ?? {}),
+      },
     });
   }
   return cells;
@@ -81,6 +96,8 @@ watch(
   (id) => {
     playground.open(id);
     viewMode.value = "single";
+    selectedMatrixId.value = "default";
+    for (const key of Object.keys(matrixOverrides)) delete matrixOverrides[key];
   },
   { immediate: true },
 );
@@ -88,7 +105,42 @@ watch(
 onMounted(() => playground.open(props.componentId));
 
 function onPreviewUpdate(value: unknown) {
-  playground.setProp("modelValue", value);
+  setControlValue("modelValue", value);
+}
+
+const selectedMatrixCell = computed(() =>
+  matrixCells.value.find((cell) => cell.id === selectedMatrixId.value),
+);
+
+function controlValue(key: string): unknown {
+  if (viewMode.value === "single") return playground.props[key];
+  return selectedMatrixCell.value?.props[key];
+}
+
+function setControlValue(key: string, value: unknown) {
+  if (viewMode.value === "single") {
+    playground.setProp(key, value);
+    return;
+  }
+  const id = selectedMatrixId.value;
+  matrixOverrides[id] = { ...(matrixOverrides[id] ?? {}), [key]: value };
+}
+
+function resetCurrent() {
+  if (viewMode.value === "single") {
+    playground.reset();
+    return;
+  }
+  delete matrixOverrides[selectedMatrixId.value];
+}
+
+function resetAll() {
+  playground.reset();
+  for (const key of Object.keys(matrixOverrides)) delete matrixOverrides[key];
+}
+
+function selectMatrixCell(id: string) {
+  selectedMatrixId.value = id;
 }
 </script>
 
@@ -97,7 +149,7 @@ function onPreviewUpdate(value: unknown) {
     v-if="record && contract"
     :eyebrow="record.category === 'basic' ? '基础组件' : '复杂组件'"
     :title="record.label"
-    description="主预览区占主要空间；右侧 Props 仅作用于单状态。状态矩阵为只读对照。"
+    description="在浅色与深色中同时体验组件；选择一个正式状态后，可用易懂的控件调整内容、外观与行为。"
   >
     <template #stats>
       <v-chip size="small" variant="tonal">{{ controls.length }} Props</v-chip>
@@ -119,60 +171,71 @@ function onPreviewUpdate(value: unknown) {
         <v-btn value="single" size="small">单状态</v-btn>
         <v-btn value="matrix" size="small">状态矩阵</v-btn>
       </v-btn-toggle>
-      <v-switch
-        :model-value="designThemeId === 'dark'"
-        label="深色预览"
-        color="primary"
-        density="compact"
-        hide-details
-        @update:model-value="designThemeId = $event ? 'dark' : 'light'"
-      />
-      <span class="toolbar-hint">仅预览 · 与顶部工作台主题无关</span>
+      <span class="toolbar-hint">浅色在左、深色在右 · 与工作台壳主题无关</span>
     </template>
 
     <div class="playground-grid">
       <div class="preview-wrap">
-        <div
-          v-if="viewMode === 'single'"
-          class="preview"
-          :class="{ 'is-tall': tallPreview }"
-          :style="previewStyle"
-        >
-          <component
-            :is="previewComponent"
-            v-bind="playground.props"
-            @update:model-value="onPreviewUpdate"
-          >
-            <template v-if="record.id === 'bottom-sheet'">
-              点遮罩或「关闭」可收起。这是由 Token 驱动的 Sheet。
-            </template>
-            <template v-else-if="record.id === 'card'">
-              Card 表面 / 圆角 / 阴影来自设计令牌。
-            </template>
-          </component>
+        <div v-if="viewMode === 'single'" class="dual-preview">
+          <article class="preview-pane" :style="lightPreviewStyle">
+            <header><strong>浅色</strong><code>theme.light</code></header>
+            <div class="preview" :class="{ 'is-tall': tallPreview }">
+              <component
+                :is="previewComponent"
+                v-bind="playground.props"
+                @update:model-value="onPreviewUpdate"
+              >
+                <template v-if="record.id === 'bottom-sheet'">点遮罩或「关闭」可收起。</template>
+                <template v-else-if="record.id === 'card'">Card 表面、圆角和阴影来自设计令牌。</template>
+              </component>
+            </div>
+          </article>
+          <article class="preview-pane" :style="darkPreviewStyle">
+            <header><strong>深色</strong><code>theme.dark</code></header>
+            <div class="preview" :class="{ 'is-tall': tallPreview }">
+              <component
+                :is="previewComponent"
+                v-bind="playground.props"
+                @update:model-value="onPreviewUpdate"
+              >
+                <template v-if="record.id === 'bottom-sheet'">点遮罩或「关闭」可收起。</template>
+                <template v-else-if="record.id === 'card'">Card 表面、圆角和阴影来自设计令牌。</template>
+              </component>
+            </div>
+          </article>
         </div>
 
         <div
           v-else
-          class="matrix-grid is-readonly"
-          :style="previewStyle"
-          aria-label="状态矩阵（只读）"
+          class="matrix-grid"
+          aria-label="可交互状态矩阵"
         >
           <article
             v-for="cell in matrixCells"
             :key="cell.id"
             class="matrix-cell"
+            :class="{ 'is-selected': selectedMatrixId === cell.id }"
+            @focusin="selectMatrixCell(cell.id)"
           >
-            <header>{{ cell.label }}</header>
-            <div class="matrix-preview" :class="{ 'is-tall': tallPreview }">
-              <component :is="previewComponent" v-bind="cell.props">
-                <template v-if="record.id === 'bottom-sheet'">
-                  状态矩阵预览（只读）。
-                </template>
-                <template v-else-if="record.id === 'card'">
-                  Card 表面 / 圆角 / 阴影来自设计令牌。
-                </template>
-              </component>
+            <button type="button" class="matrix-cell-header" @click="selectMatrixCell(cell.id)">
+              <span>{{ cell.label }}</span>
+              <span>{{ selectedMatrixId === cell.id ? "正在调整" : "选择状态" }}</span>
+            </button>
+            <div class="matrix-theme-pair">
+              <div class="matrix-preview" :class="{ 'is-tall': tallPreview }" :style="lightPreviewStyle">
+                <span class="theme-caption">浅色</span>
+                <component :is="previewComponent" v-bind="cell.props" @update:model-value="selectMatrixCell(cell.id); setControlValue('modelValue', $event)">
+                  <template v-if="record.id === 'bottom-sheet'">可交互 Sheet。</template>
+                  <template v-else-if="record.id === 'card'">Token 驱动的 Card。</template>
+                </component>
+              </div>
+              <div class="matrix-preview" :class="{ 'is-tall': tallPreview }" :style="darkPreviewStyle">
+                <span class="theme-caption">深色</span>
+                <component :is="previewComponent" v-bind="cell.props" @update:model-value="selectMatrixCell(cell.id); setControlValue('modelValue', $event)">
+                  <template v-if="record.id === 'bottom-sheet'">可交互 Sheet。</template>
+                  <template v-else-if="record.id === 'card'">Token 驱动的 Card。</template>
+                </component>
+              </div>
             </div>
           </article>
         </div>
@@ -180,61 +243,62 @@ function onPreviewUpdate(value: unknown) {
 
       <v-form class="controls" @submit.prevent>
         <div class="controls-header">
-          <strong>Props</strong>
-          <v-btn
-            size="small"
-            variant="text"
-            :disabled="isMatrix"
-            @click="playground.reset"
-            >重置</v-btn
-          >
+          <div>
+            <strong>调整组件</strong>
+            <span>{{ isMatrix ? `正在调整：${selectedMatrixCell?.label ?? '默认'}` : "修改后立即更新两侧预览" }}</span>
+          </div>
+          <v-menu>
+            <template #activator="{ props: menuProps }">
+              <v-btn v-bind="menuProps" size="small" variant="text">重置</v-btn>
+            </template>
+            <v-list density="compact">
+              <v-list-item title="重置当前状态" @click="resetCurrent" />
+              <v-list-item title="全部重置" @click="resetAll" />
+            </v-list>
+          </v-menu>
         </div>
 
-        <v-alert
-          v-if="isMatrix"
-          type="info"
-          variant="tonal"
-          density="comfortable"
-          class="mb-3"
-        >
-          状态矩阵为只读对照，右侧 Props 不会作用于矩阵。切回「单状态」可调参。
-        </v-alert>
+        <p class="controls-explainer">无需理解 Props：下面的设置分别控制组件内容、外观和交互状态。</p>
 
-        <fieldset class="controls-fields" :disabled="isMatrix">
+        <fieldset class="controls-fields">
           <template v-for="control in controls" :key="control.key">
+            <div class="control-label">
+              <span>{{ control.label }}</span>
+              <code>{{ control.key }}</code>
+            </div>
             <v-switch
               v-if="control.control === 'boolean'"
-              :model-value="Boolean(playground.props[control.key])"
+              :model-value="Boolean(controlValue(control.key))"
               :label="control.label"
               color="primary"
               hide-details
               class="mb-3"
-              @update:model-value="playground.setProp(control.key, $event)"
+              @update:model-value="setControlValue(control.key, $event)"
             />
             <v-select
               v-else-if="control.control === 'select'"
-              :model-value="playground.props[control.key]"
+              :model-value="controlValue(control.key)"
               :items="control.options ?? []"
               item-title="label"
               item-value="value"
-              :label="control.label"
+              :label="`${control.label} · ${control.key}`"
               variant="outlined"
               density="comfortable"
               hide-details
               class="mb-3"
-              @update:model-value="playground.setProp(control.key, $event)"
+              @update:model-value="setControlValue(control.key, $event)"
             />
             <v-text-field
               v-else
-              :model-value="String(playground.props[control.key] ?? '')"
-              :label="control.label"
+              :model-value="String(controlValue(control.key) ?? '')"
+              :label="`${control.label} · ${control.key}`"
               :type="control.control === 'number' ? 'number' : 'text'"
               variant="outlined"
               density="comfortable"
               hide-details
               class="mb-3"
               @update:model-value="
-                playground.setProp(
+                setControlValue(
                   control.key,
                   control.control === 'number' ? Number($event) : $event,
                 )
@@ -283,6 +347,28 @@ function onPreviewUpdate(value: unknown) {
   background: rgb(var(--v-theme-surface));
   overflow: hidden;
 }
+.dual-preview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.preview-pane {
+  min-width: 0;
+  background: var(--pb-color-background, #f5f8fc);
+  color: var(--pb-color-on-surface, #1f2937);
+}
+.preview-pane + .preview-pane {
+  border-left: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+.preview-pane > header {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--pb-color-border, #d7dee8);
+  font-size: 0.75rem;
+}
+.preview-pane > header code {
+  color: var(--pb-color-on-surface-muted, #64748b);
+}
 .preview {
   position: relative;
   min-height: 120px;
@@ -296,22 +382,41 @@ function onPreviewUpdate(value: unknown) {
 }
 .matrix-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1px;
-  background: rgba(var(--v-border-color), var(--v-border-opacity));
-}
-.matrix-grid.is-readonly {
-  pointer-events: none;
-  user-select: none;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 12px;
+  padding: 12px;
+  background: rgba(var(--v-theme-on-surface), 0.025);
 }
 .matrix-cell {
+  overflow: hidden;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 12px;
   background: rgb(var(--v-theme-surface));
 }
-.matrix-cell header {
-  padding: 8px 12px;
+.matrix-cell.is-selected {
+  border-color: rgb(var(--v-theme-primary));
+  box-shadow: 0 0 0 1px rgb(var(--v-theme-primary));
+}
+.matrix-cell-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 9px 12px;
+  border: 0;
   border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  background: transparent;
   font-size: 0.75rem;
   font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+.matrix-cell-header span:last-child {
+  color: rgb(var(--v-theme-primary));
+  font-size: 0.6875rem;
+}
+.matrix-theme-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .matrix-preview {
   position: relative;
@@ -320,6 +425,16 @@ function onPreviewUpdate(value: unknown) {
   background: var(--pb-color-background, #f5f8fc);
   color: var(--pb-color-on-surface, #1f2937);
   overflow: hidden;
+}
+.matrix-preview + .matrix-preview {
+  border-left: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+.theme-caption {
+  display: block;
+  margin-bottom: 12px;
+  color: var(--pb-color-on-surface-muted, #64748b);
+  font-size: 0.6875rem;
+  font-weight: 700;
 }
 .controls {
   padding: 16px;
@@ -330,14 +445,34 @@ function onPreviewUpdate(value: unknown) {
   justify-content: space-between;
   margin-bottom: 12px;
 }
+.controls-header > div {
+  display: grid;
+  gap: 2px;
+}
+.controls-header span,
+.controls-explainer {
+  color: rgba(var(--v-theme-on-surface), 0.55);
+  font-size: 0.75rem;
+}
+.controls-explainer {
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+.control-label {
+  display: flex;
+  justify-content: space-between;
+  margin: 2px 0 5px;
+  font-size: 0.75rem;
+}
+.control-label code {
+  color: rgba(var(--v-theme-on-surface), 0.45);
+  font-size: 0.6875rem;
+}
 .controls-fields {
   margin: 0;
   padding: 0;
   border: 0;
   min-width: 0;
-}
-.controls-fields:disabled {
-  opacity: 0.55;
 }
 .token-bindings {
   margin: 8px 0 16px;
@@ -374,6 +509,17 @@ function onPreviewUpdate(value: unknown) {
 @media (max-width: 1279px) {
   .playground-grid {
     grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 760px) {
+  .dual-preview,
+  .matrix-theme-pair {
+    grid-template-columns: 1fr;
+  }
+  .preview-pane + .preview-pane,
+  .matrix-preview + .matrix-preview {
+    border-left: 0;
+    border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   }
 }
 </style>

@@ -13,7 +13,17 @@
     "label": { "type": "string", "minLength": 1 },
     "category": {
       "type": "string",
-      "enum": ["color", "typography", "spacing", "radius", "elevation"]
+      "enum": [
+        "color",
+        "typography",
+        "spacing",
+        "sizing",
+        "radius",
+        "border",
+        "elevation",
+        "opacity",
+        "motion"
+      ]
     },
     "defaultValue": {
       "oneOf": [{ "type": "string", "minLength": 1 }, { "type": "number" }]

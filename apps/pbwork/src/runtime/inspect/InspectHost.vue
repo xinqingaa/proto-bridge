@@ -20,6 +20,7 @@ import {
 
 const props = defineProps<{
   enabled: boolean;
+  commentEnabled: boolean;
   bridgeContext: BridgeContext | null;
   post: (message: RuntimeBridgeMessage) => void;
 }>();
@@ -76,6 +77,39 @@ function selectElement(el: HTMLElement) {
   if (msg) props.post(msg);
 }
 
+function stableSelector(el: HTMLElement): string | undefined {
+  const pbId = el.getAttribute("data-pb-id");
+  if (pbId) return `[data-pb-id="${CSS.escape(pbId)}"]`;
+  if (el.id) return `#${CSS.escape(el.id)}`;
+  const parentPb = el.parentElement?.closest<HTMLElement>("[data-pb-id]");
+  const parentId = parentPb?.getAttribute("data-pb-id");
+  if (parentId) return `[data-pb-id="${CSS.escape(parentId)}"] > ${el.tagName.toLowerCase()}`;
+  return undefined;
+}
+
+function sendCommentTarget(event: MouseEvent | KeyboardEvent, leaf: HTMLElement | null) {
+  const point =
+    event instanceof MouseEvent
+      ? { x: event.clientX, y: event.clientY }
+      : leaf
+        ? { x: readBbox(leaf).x + readBbox(leaf).width / 2, y: readBbox(leaf).y + readBbox(leaf).height / 2 }
+        : { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+  const stableAncestor = leaf?.closest<HTMLElement>("[data-pb-id]") ?? null;
+  const target = stableAncestor ?? (leaf ? resolveInspectTarget(leaf, false) : null);
+  const selector = target ? stableSelector(target) : undefined;
+  const payload = {
+    point,
+    ...(target ? { element: buildElementSummary(target), bbox: readBbox(target) } : {}),
+    ...(selector ? { selector } : {}),
+  };
+  if (target) {
+    selectedEl.value = target;
+    selectBox.value = readBbox(target);
+  }
+  const msg = envelope("comment-target", payload);
+  if (msg) props.post(msg);
+}
+
 function onPointerMove(event: PointerEvent) {
   if (!props.enabled) return;
   const leaf = targetFromEvent(event);
@@ -93,12 +127,16 @@ function onPointerMove(event: PointerEvent) {
 }
 
 function onClick(event: MouseEvent) {
-  if (!props.enabled) return;
+  if (!props.enabled && !props.commentEnabled) return;
   event.preventDefault();
   event.stopPropagation();
   event.stopImmediatePropagation();
 
   const leaf = targetFromEvent(event);
+  if (props.commentEnabled) {
+    sendCommentTarget(event, leaf);
+    return;
+  }
   if (!leaf) {
     clearLocal("blank");
     return;
@@ -108,7 +146,7 @@ function onClick(event: MouseEvent) {
 }
 
 function onKeyDown(event: KeyboardEvent) {
-  if (!props.enabled) return;
+  if (!props.enabled && !props.commentEnabled) return;
   if (event.key === "Escape") {
     event.preventDefault();
     event.stopPropagation();
@@ -130,6 +168,10 @@ function onKeyDown(event: KeyboardEvent) {
     if (active === document.body || active === document.documentElement) return;
     event.preventDefault();
     event.stopPropagation();
+    if (props.commentEnabled) {
+      sendCommentTarget(event, active);
+      return;
+    }
     selectElement(active);
   }
 }
@@ -168,9 +210,9 @@ function onScrollOrResize() {
 defineExpose({ highlight, clearLocal });
 
 watch(
-  () => props.enabled,
-  (enabled) => {
-    if (!enabled) clearLocal("mode-change");
+  () => [props.enabled, props.commentEnabled] as const,
+  ([enabled, commentEnabled], previous) => {
+    if (!enabled && !commentEnabled && previous?.some(Boolean)) clearLocal("mode-change");
   },
 );
 

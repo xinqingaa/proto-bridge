@@ -2,8 +2,12 @@ export type TokenCategory =
   | "color"
   | "typography"
   | "spacing"
+  | "sizing"
   | "radius"
-  | "elevation";
+  | "border"
+  | "elevation"
+  | "opacity"
+  | "motion";
 
 export type TokenValue = string | number;
 
@@ -145,8 +149,12 @@ export const TOKEN_CATEGORIES: TokenCategory[] = [
   "color",
   "typography",
   "spacing",
+  "sizing",
   "radius",
+  "border",
   "elevation",
+  "opacity",
+  "motion",
 ];
 
 export const LIFECYCLE_LABELS: Record<PrototypeLifecycle, string> = {

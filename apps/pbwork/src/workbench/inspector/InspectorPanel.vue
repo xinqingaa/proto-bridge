@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import { useRoute } from "vue-router";
 import { ChevronDown, ChevronRight, Copy } from "lucide-vue-next";
 import { useSelectionStore } from "@/app/stores/selection";
+import {
+  COMMENT_MAX_LENGTH,
+  useCommentsStore,
+  type CommentTarget,
+} from "@/app/stores/comments";
+import { loadPrototypeScreens } from "@/design-system/loaders";
 import type {
   ElementSummary,
   JsonRecord,
@@ -11,14 +18,84 @@ import type {
 import { stylePropertyRole } from "@/runtime/inspect/snapshot";
 
 const selection = useSelectionStore();
+const comments = useCommentsStore();
+const route = useRoute();
 const tab = ref<
   "overview" | "component" | "convention" | "styles" | "comments"
 >("styles");
 const styleMode = ref<"tokens" | "all">("tokens");
 const expandedJsonKeys = ref<Set<string>>(new Set());
+const commentDraft = ref("");
+const commentError = ref<string | null>(null);
+const commentScope = ref<"screen" | "context">("screen");
+const commentStatus = ref<"all" | "open" | "resolved">("open");
+const editingCommentId = ref<string | null>(null);
+const deleteCommentId = ref<string | null>(null);
+const clearDialogOpen = ref(false);
 
 const selected = computed(() => selection.selected);
 const element = computed(() => selected.value?.element ?? null);
+const currentScreen = computed(() =>
+  loadPrototypeScreens().find(
+    (item) =>
+      item.prototypeId === String(route.params.prototypeId ?? "") &&
+      item.screenSlug === String(route.params.screenSlug ?? ""),
+  ),
+);
+const commentContext = computed(() => {
+  const screen = currentScreen.value;
+  if (!screen) return null;
+  return {
+    prototypeId: screen.prototypeId,
+    screenId: screen.screenId,
+    ...(typeof route.query.variant === "string" ? { variantId: route.query.variant } : {}),
+    ...(typeof route.query.theme === "string" ? { themeId: route.query.theme } : {}),
+  };
+});
+const currentCommentTarget = computed((): CommentTarget | null => {
+  const target = selection.commentTarget;
+  if (target) {
+    return {
+      ...(target.element?.ref.pbId ? { elementId: target.element.ref.pbId } : {}),
+      ...(target.selector ? { selector: target.selector } : {}),
+      point: target.point,
+      ...(target.bbox ? { bbox: target.bbox } : {}),
+    };
+  }
+  const el = element.value;
+  if (!el) return null;
+  return {
+    ...(el.ref.pbId ? { elementId: el.ref.pbId } : {}),
+    ...(el.bbox
+      ? {
+          point: { x: el.bbox.x + el.bbox.width / 2, y: el.bbox.y + el.bbox.height / 2 },
+          bbox: el.bbox,
+        }
+      : {}),
+  };
+});
+const visibleComments = computed(() => {
+  const context = commentContext.value;
+  if (!context) return [];
+  return comments.comments.filter((item) => {
+    if (item.prototypeId !== context.prototypeId || item.screenId !== context.screenId) return false;
+    if (commentScope.value === "context") {
+      if (item.variantId && item.variantId !== context.variantId) return false;
+      if (item.themeId && item.themeId !== context.themeId) return false;
+    }
+    return commentStatus.value === "all" || item.status === commentStatus.value;
+  });
+});
+
+watch(
+  () => selection.commentTarget,
+  (target) => {
+    if (!target) return;
+    tab.value = "comments";
+    commentDraft.value = "";
+    commentError.value = null;
+  },
+);
 
 watch(
   () => selected.value?.element?.ref.handle ?? selected.value?.element?.ref.pbId,
@@ -218,11 +295,71 @@ async function copyText(value: string) {
     // Clipboard access can be unavailable in embedded or insecure contexts.
   }
 }
+
+function saveComment() {
+  const context = commentContext.value;
+  const target = currentCommentTarget.value;
+  if (!context || !target) {
+    commentError.value = "请先在手机预览中选择元素或页面位置。";
+    return;
+  }
+  try {
+    if (editingCommentId.value) {
+      comments.edit(editingCommentId.value, commentDraft.value);
+    } else {
+      comments.add(context, target, commentDraft.value);
+    }
+    commentDraft.value = "";
+    editingCommentId.value = null;
+    selection.setCommentTarget(null);
+    commentError.value = null;
+  } catch (error) {
+    commentError.value = error instanceof Error ? error.message : "评论保存失败";
+  }
+}
+
+function editComment(id: string) {
+  const item = comments.comments.find((comment) => comment.id === id);
+  if (!item) return;
+  editingCommentId.value = id;
+  commentDraft.value = item.content;
+}
+
+function locateComment(id: string) {
+  const item = comments.comments.find((comment) => comment.id === id);
+  if (!item?.elementId) {
+    commentError.value = "该评论没有稳定元素标记，只能参考保存时的位置。";
+    return;
+  }
+  commentError.value = null;
+  selection.requestHighlight({ pbId: item.elementId });
+}
+
+function confirmDelete() {
+  if (deleteCommentId.value) comments.remove(deleteCommentId.value);
+  deleteCommentId.value = null;
+}
+
+function clearAllComments() {
+  comments.clearAll();
+  clearDialogOpen.value = false;
+}
+
+function downloadUnreadable() {
+  if (!comments.unreadableRaw) return;
+  const blob = new Blob([comments.unreadableRaw], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "pbwork-comments-unreadable.json";
+  link.click();
+  URL.revokeObjectURL(url);
+}
 </script>
 
 <template>
   <div class="inspector" data-testid="inspector-body">
-    <div v-if="!selected" class="empty">
+    <div v-if="!selected && !selection.commentTarget && tab !== 'comments'" class="empty">
       <div class="empty-badge">元素检查</div>
       <p class="empty-title">还没有选中节点</p>
       <p class="empty-hint">
@@ -293,7 +430,7 @@ async function copyText(value: string) {
           <template v-if="hasComponentMeta">
             <div class="field">
               <span class="label">组件</span>
-              <span class="value">{{ selected.componentId || "—" }}</span>
+              <span class="value">{{ selected?.componentId || "—" }}</span>
             </div>
             <div class="field">
               <span class="label">语义父级</span>
@@ -533,14 +670,108 @@ async function copyText(value: string) {
           </div>
         </section>
 
-        <section v-else class="section">
-          <div class="soft-empty">
-            <p class="soft-title">评论即将到来</p>
-            <p class="soft-hint">M5 会支持在选中元素上落点、持久化与定位。</p>
+        <section v-else class="section comments-pane">
+          <v-alert v-if="comments.readError" type="error" variant="tonal" density="compact">
+            评论数据无法读取（{{ comments.readError }}），原始数据尚未被覆盖。
+            <div class="error-actions">
+              <v-btn size="x-small" variant="text" @click="downloadUnreadable">下载原始数据</v-btn>
+              <v-btn size="x-small" variant="text" color="error" @click="clearDialogOpen = true">清除损坏数据</v-btn>
+            </div>
+          </v-alert>
+
+          <div v-if="currentCommentTarget || editingCommentId" class="comment-composer">
+            <div class="composer-heading">
+              <div>
+                <strong>{{ editingCommentId ? "编辑评论" : "记录评审意见" }}</strong>
+                <span v-if="currentCommentTarget?.elementId">元素：{{ currentCommentTarget.elementId }}</span>
+                <span v-else-if="currentCommentTarget?.selector">元素：{{ currentCommentTarget.selector }}</span>
+                <span v-else>页面位置评论</span>
+              </div>
+              <button type="button" class="text-button" @click="selection.setCommentTarget(null); editingCommentId = null; commentDraft = ''">取消</button>
+            </div>
+            <v-textarea
+              v-model="commentDraft"
+              label="评论内容"
+              placeholder="描述问题、建议或验收结论…"
+              variant="outlined"
+              density="compact"
+              rows="3"
+              auto-grow
+              :counter="COMMENT_MAX_LENGTH"
+              :maxlength="COMMENT_MAX_LENGTH"
+              hide-details="auto"
+            />
+            <v-btn size="small" color="primary" :disabled="!commentDraft.trim()" @click="saveComment">
+              {{ editingCommentId ? "保存修改" : "添加评论" }}
+            </v-btn>
           </div>
+          <div v-else class="comment-callout">
+            <strong>添加页面评论</strong>
+            <span>打开底部工具栏的评论模式，然后点击手机中的元素或空白位置。</span>
+          </div>
+
+          <v-alert v-if="commentError" type="warning" variant="tonal" density="compact" closable @click:close="commentError = null">{{ commentError }}</v-alert>
+
+          <div class="comment-toolbar">
+            <v-btn-toggle v-model="commentScope" mandatory density="compact" variant="outlined" divided>
+              <v-btn value="screen" size="x-small">整个页面</v-btn>
+              <v-btn value="context" size="x-small">当前状态</v-btn>
+            </v-btn-toggle>
+            <v-select
+              v-model="commentStatus"
+              :items="[
+                { title: '未完成', value: 'open' },
+                { title: '已完成', value: 'resolved' },
+                { title: '全部', value: 'all' },
+              ]"
+              density="compact"
+              variant="outlined"
+              hide-details
+              aria-label="评论状态筛选"
+              class="status-filter"
+            />
+          </div>
+
+          <div v-if="visibleComments.length" class="comment-list">
+            <article v-for="item in visibleComments" :key="item.id" class="comment-card" :class="{ 'is-resolved': item.status === 'resolved' }">
+              <header>
+                <div>
+                  <span class="status-dot" />
+                  <strong>{{ item.status === "open" ? "未完成" : "已完成" }}</strong>
+                </div>
+                <time :datetime="item.updatedAt">{{ new Date(item.updatedAt).toLocaleString() }}</time>
+              </header>
+              <p>{{ item.content }}</p>
+              <code v-if="item.elementId">{{ item.elementId }}</code>
+              <code v-else-if="item.selector">{{ item.selector }}</code>
+              <span v-else class="location-fallback">页面坐标 {{ Math.round(item.point?.x ?? 0) }}, {{ Math.round(item.point?.y ?? 0) }}</span>
+              <footer>
+                <button type="button" @click="locateComment(item.id)">定位</button>
+                <button type="button" @click="editComment(item.id)">编辑</button>
+                <button type="button" @click="comments.setStatus(item.id, item.status === 'open' ? 'resolved' : 'open')">{{ item.status === "open" ? "完成" : "重新打开" }}</button>
+                <button type="button" class="danger" @click="deleteCommentId = item.id">删除</button>
+              </footer>
+            </article>
+          </div>
+          <div v-else class="soft-empty">
+            <p class="soft-title">当前筛选下没有评论</p>
+            <p class="soft-hint">评论只保存在当前浏览器，不会上传或共享。</p>
+          </div>
+          <button v-if="comments.comments.length" type="button" class="clear-comments" @click="clearDialogOpen = true">清除全部 {{ comments.comments.length }} 条本地评论</button>
         </section>
       </div>
     </template>
+
+    <v-dialog :model-value="Boolean(deleteCommentId)" max-width="420" @update:model-value="!$event && (deleteCommentId = null)">
+      <v-card title="删除这条评论？" text="删除后无法恢复。">
+        <v-card-actions><v-spacer /><v-btn @click="deleteCommentId = null">取消</v-btn><v-btn color="error" @click="confirmDelete">删除</v-btn></v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog v-model="clearDialogOpen" max-width="440">
+      <v-card :title="comments.readError ? '清除损坏的评论数据？' : '清除全部本地评论？'" :text="comments.readError ? '建议先下载原始数据。清除后无法恢复。' : `将删除当前浏览器中的 ${comments.comments.length} 条评论，且无法恢复。`">
+        <v-card-actions><v-spacer /><v-btn @click="clearDialogOpen = false">取消</v-btn><v-btn color="error" @click="clearAllComments">确认清除</v-btn></v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -632,6 +863,120 @@ async function copyText(value: string) {
 .section {
   display: grid;
   gap: 10px;
+}
+.comments-pane {
+  padding-bottom: 8px;
+}
+.comment-composer,
+.comment-callout {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, rgb(var(--v-theme-primary)) 25%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, rgb(var(--v-theme-primary)) 7%, transparent);
+}
+.composer-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.composer-heading > div,
+.comment-callout {
+  display: grid;
+  gap: 3px;
+}
+.composer-heading span,
+.comment-callout span {
+  color: rgba(var(--v-theme-on-surface), 0.58);
+  font-size: 0.72rem;
+}
+.text-button,
+.comment-card footer button,
+.clear-comments {
+  border: 0;
+  background: transparent;
+  color: rgb(var(--v-theme-primary));
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.comment-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.status-filter {
+  flex: 0 0 116px;
+}
+.comment-list {
+  display: grid;
+  gap: 8px;
+}
+.comment-card {
+  display: grid;
+  gap: 8px;
+  padding: 11px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 10px;
+  background: rgb(var(--v-theme-surface));
+}
+.comment-card.is-resolved {
+  opacity: 0.72;
+}
+.comment-card header,
+.comment-card footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.comment-card header > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.comment-card time,
+.location-fallback {
+  color: rgba(var(--v-theme-on-surface), 0.5);
+  font-size: 0.66rem;
+}
+.comment-card p {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.comment-card code {
+  color: rgba(var(--v-theme-on-surface), 0.58);
+  font-size: 0.68rem;
+}
+.comment-card footer {
+  justify-content: flex-start;
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  padding-top: 7px;
+}
+.comment-card footer .danger,
+.clear-comments {
+  color: rgb(var(--v-theme-error));
+}
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgb(var(--v-theme-warning));
+}
+.is-resolved .status-dot {
+  background: rgb(var(--v-theme-success));
+}
+.clear-comments {
+  justify-self: start;
+  padding: 4px 0;
+}
+.error-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
 }
 
 .field {

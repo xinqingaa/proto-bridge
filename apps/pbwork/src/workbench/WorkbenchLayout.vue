@@ -11,6 +11,7 @@ import {
   Info,
   Layers3,
   LayoutGrid,
+  ListTree,
   MessageSquareText,
   Palette,
   PanelLeftClose,
@@ -294,6 +295,7 @@ watch(isScreenCanvas, (onCanvas) => {
   if (!onCanvas) {
     selection.clearSelection();
     selection.setInspectMode(false);
+    selection.setCommentMode(false);
   }
 });
 
@@ -721,6 +723,52 @@ onBeforeUnmount(() => {
             </nav>
 
             <nav v-else class="rail-nav" aria-label="二级导航">
+              <v-menu
+                v-if="sectionId === 'prototypes'"
+                location="end"
+                :close-on-content-click="false"
+              >
+                <template #activator="{ props }">
+                  <v-tooltip text="切换原型树" location="end">
+                    <template #activator="{ props: tip }">
+                      <v-btn
+                        v-bind="{ ...props, ...tip }"
+                        class="rail-nav-btn rail-tree-btn"
+                        icon
+                        variant="tonal"
+                        size="small"
+                        aria-label="切换原型树"
+                      >
+                        <ListTree :size="18" aria-hidden="true" />
+                      </v-btn>
+                    </template>
+                  </v-tooltip>
+                </template>
+                <div class="collapsed-tree-popover">
+                  <div class="collapsed-tree-heading">
+                    <div>
+                      <strong>原型树</strong>
+                      <span>原型 → 页面 → 状态</span>
+                    </div>
+                    <v-btn size="x-small" variant="text" @click="toggleResourcePanel">展开导航</v-btn>
+                  </div>
+                  <p v-if="prototypeTree.length === 0" class="tree-empty">此生命周期下暂无原型</p>
+                  <section v-for="prototype in prototypeTree" :key="prototype.id" class="collapsed-prototype">
+                    <RouterLink :to="prototype.to" class="collapsed-tree-link prototype-link">{{ prototype.label }}</RouterLink>
+                    <div v-for="screen in prototype.children ?? []" :key="screen.id" class="collapsed-screen">
+                      <RouterLink :to="screen.to" class="collapsed-tree-link screen-link">{{ screen.label }}</RouterLink>
+                      <RouterLink
+                        v-for="variant in screen.children ?? []"
+                        :key="variant.id"
+                        :to="variant.to"
+                        class="collapsed-tree-link variant-link"
+                        :class="{ 'is-active': isVariantActive(variant.to) }"
+                      >{{ variant.label }}</RouterLink>
+                    </div>
+                  </section>
+                </div>
+              </v-menu>
+              <span v-if="sectionId === 'prototypes'" class="rail-mode-label">生命周期</span>
               <v-tooltip
                 v-for="item in secondaryItems"
                 :key="item.id"
@@ -1076,6 +1124,78 @@ onBeforeUnmount(() => {
   min-height: 0;
   overflow: auto;
   padding-bottom: 12px;
+}
+.rail-mode-label {
+  margin: 4px 0 2px;
+  color: var(--shell-muted);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+.rail-tree-btn {
+  margin-bottom: 4px;
+}
+.collapsed-tree-popover {
+  width: 300px;
+  max-height: min(620px, calc(100vh - 100px));
+  overflow: auto;
+  padding: 14px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 14px;
+  background: rgb(var(--v-theme-surface));
+  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.2);
+}
+.collapsed-tree-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.collapsed-tree-heading > div {
+  display: grid;
+  gap: 2px;
+}
+.collapsed-tree-heading span {
+  color: rgba(var(--v-theme-on-surface), 0.5);
+  font-size: 0.6875rem;
+}
+.collapsed-prototype {
+  display: grid;
+  gap: 3px;
+  padding: 8px 0;
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+.collapsed-tree-link {
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  padding: 5px 8px;
+  border-radius: 8px;
+  color: rgb(var(--v-theme-on-surface));
+  text-decoration: none;
+  font-size: 0.78rem;
+}
+.collapsed-tree-link:hover,
+.collapsed-tree-link.is-active {
+  color: rgb(var(--v-theme-primary));
+  background: color-mix(in srgb, rgb(var(--v-theme-primary)) 10%, transparent);
+}
+.prototype-link {
+  font-weight: 750;
+}
+.collapsed-screen {
+  display: grid;
+  padding-left: 10px;
+}
+.screen-link {
+  font-weight: 650;
+}
+.variant-link {
+  padding-left: 20px;
+  color: rgba(var(--v-theme-on-surface), 0.62);
+  font-size: 0.72rem;
 }
 .secondary-group-label {
   display: flex;

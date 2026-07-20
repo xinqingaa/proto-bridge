@@ -33,6 +33,7 @@ const loadError = shallowRef<string | null>(null);
 const runtimeId = shallowRef<string | null>(null);
 const lastPostedRoute = shallowRef<string | null>(null);
 const inspectEnabled = ref(false);
+const commentEnabled = ref(false);
 const inspectHost = ref<InstanceType<typeof InspectHost> | null>(null);
 const isEmbedded = shallowRef(
   typeof window !== "undefined" && window.parent !== window,
@@ -114,7 +115,7 @@ function sendReady() {
   const message = buildEnvelope("ready", {
     canonicalRuntimeUrl: canonicalRuntimeUrl.value,
     route: route.fullPath,
-    capabilities: ["route-sync", "inspect", "highlight"],
+    capabilities: ["route-sync", "inspect", "comment-target", "highlight"],
   });
   if (!message) return;
   lastPostedRoute.value = canonicalRuntimeUrl.value;
@@ -146,6 +147,7 @@ function onMessage(event: MessageEvent) {
   if (msg.type === "init") {
     runtimeId.value = msg.runtimeId;
     inspectEnabled.value = false;
+    commentEnabled.value = false;
     sendReady();
     return;
   }
@@ -158,10 +160,11 @@ function onMessage(event: MessageEvent) {
   }
   if (msg.type === "inspect-mode") {
     inspectEnabled.value = msg.payload.enabled;
+    if (msg.payload.enabled) commentEnabled.value = false;
     return;
   }
   if (msg.type === "comment-mode") {
-    // M5 — ignore enable, force inspect off if somehow sent
+    commentEnabled.value = msg.payload.enabled;
     if (msg.payload.enabled) inspectEnabled.value = false;
     return;
   }
@@ -246,6 +249,7 @@ onBeforeUnmount(() => {
       v-if="isEmbedded && bridgeContext"
       ref="inspectHost"
       :enabled="inspectEnabled"
+      :comment-enabled="commentEnabled"
       :bridge-context="bridgeContext"
       :post="postToParent"
     />

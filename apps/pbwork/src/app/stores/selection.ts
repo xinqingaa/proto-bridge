@@ -5,7 +5,7 @@ import type {
   BridgePayloads,
 } from "@/runtime/bridge";
 
-export type SelectionMode = "idle" | "inspect";
+export type SelectionMode = "idle" | "inspect" | "comment";
 
 export type SelectedPayload = BridgePayloads["select"];
 
@@ -18,6 +18,9 @@ export const useSelectionStore = defineStore("selection", {
     capabilities: [] as RuntimeCapability[],
     hover: null as ElementSummary | null,
     selected: null as SelectedPayload | null,
+    commentTarget: null as BridgePayloads["comment-target"] | null,
+    highlightRequest: null as ElementSummary["ref"] | null,
+    highlightNonce: 0,
     lastError: null as string | null,
   }),
   getters: {
@@ -26,6 +29,12 @@ export const useSelectionStore = defineStore("selection", {
     },
     inspecting(): boolean {
       return this.mode === "inspect";
+    },
+    commenting(): boolean {
+      return this.mode === "comment";
+    },
+    canComment(): boolean {
+      return this.capabilities.includes("comment-target");
     },
   },
   actions: {
@@ -38,6 +47,14 @@ export const useSelectionStore = defineStore("selection", {
     toggleInspect() {
       this.setInspectMode(this.mode !== "inspect");
     },
+    setCommentMode(enabled: boolean) {
+      this.mode = enabled ? "comment" : "idle";
+      this.hover = null;
+      if (!enabled) this.commentTarget = null;
+    },
+    toggleComment() {
+      this.setCommentMode(this.mode !== "comment");
+    },
     onRuntimeLoading(runtimeId: string) {
       this.runtimeId = runtimeId;
       this.runtimeReady = false;
@@ -45,6 +62,7 @@ export const useSelectionStore = defineStore("selection", {
       this.capabilities = [];
       this.hover = null;
       this.selected = null;
+      this.commentTarget = null;
       this.lastError = null;
     },
     onReady(capabilities: RuntimeCapability[]) {
@@ -54,6 +72,7 @@ export const useSelectionStore = defineStore("selection", {
       if (!this.canInspect && this.mode === "inspect") {
         this.mode = "idle";
       }
+      if (!this.canComment && this.mode === "comment") this.mode = "idle";
     },
     onHandshakeTimeout() {
       if (!this.runtimeReady) {
@@ -70,6 +89,13 @@ export const useSelectionStore = defineStore("selection", {
     clearSelection() {
       this.selected = null;
       this.hover = null;
+    },
+    setCommentTarget(payload: BridgePayloads["comment-target"] | null) {
+      this.commentTarget = payload;
+    },
+    requestHighlight(ref: ElementSummary["ref"] | null) {
+      this.highlightRequest = ref;
+      this.highlightNonce += 1;
     },
     resetForNavigation() {
       this.clearSelection();

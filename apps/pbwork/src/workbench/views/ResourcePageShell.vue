@@ -112,8 +112,6 @@ defineProps<{
 }
 
 .resource-aside {
-  position: sticky;
-  top: 12px;
   min-width: 0;
   padding: 16px;
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
@@ -134,8 +132,5 @@ defineProps<{
     grid-template-columns: 1fr;
   }
 
-  .resource-aside {
-    position: static;
-  }
 }
 </style>

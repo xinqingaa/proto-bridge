@@ -58,15 +58,32 @@ describe("registries", () => {
 describe("design contracts", () => {
   it("ships the fixed component sample set", () => {
     expect(componentRecords.filter((item) => item.category === "basic")).toHaveLength(
-      5,
+      15,
     );
     expect(
       componentRecords.filter((item) => item.category === "complex"),
-    ).toHaveLength(4);
+    ).toHaveLength(11);
+  });
+
+  it("ships the expanded semantic token set", () => {
+    expect(loadTokens()).toHaveLength(90);
+    expect(new Set(loadTokens().map((item) => item.category))).toEqual(
+      new Set([
+        "color",
+        "typography",
+        "spacing",
+        "sizing",
+        "radius",
+        "border",
+        "elevation",
+        "opacity",
+        "motion",
+      ]),
+    );
   });
 
   it("ships project collaboration screens and variants", () => {
-    expect(prototypes[0]?.id).toBe("project");
+    expect(prototypes.map((item) => item.id)).toEqual(["field-service", "project"]);
     const list = prototypeScreens.find(
       (item) => item.screenId === "project.task-list",
     );
@@ -83,6 +100,19 @@ describe("design contracts", () => {
       "activity",
       "error",
       "sheet-open",
+    ]);
+    const fieldScreens = prototypeScreens.filter(
+      (item) => item.prototypeId === "field-service",
+    );
+    expect(fieldScreens).toHaveLength(7);
+    expect(fieldScreens.map((item) => item.screenSlug)).toEqual([
+      "dashboard",
+      "work-orders",
+      "work-order-detail",
+      "create-work-order",
+      "customer-detail",
+      "messages",
+      "settings",
     ]);
   });
 });

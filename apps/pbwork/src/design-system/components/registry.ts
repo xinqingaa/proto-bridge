@@ -207,4 +207,72 @@ export const componentRecords = [
       { key: "modelValue", label: "打开", control: "boolean" },
     ],
   },
+  {
+    id: "select", label: "Select", category: "basic", view: "basic/SelectField.vue", contract: "contracts/select.json", example: {},
+    controls: [{ key: "label", label: "字段名称", control: "text" }, { key: "modelValue", label: "当前选择", control: "text" }, { key: "disabled", label: "禁用", control: "boolean" }],
+  },
+  {
+    id: "textarea", label: "Textarea", category: "basic", view: "basic/Textarea.vue", contract: "contracts/textarea.json", example: {},
+    controls: [{ key: "label", label: "字段名称", control: "text" }, { key: "modelValue", label: "输入内容", control: "text" }, { key: "rows", label: "显示行数", control: "number" }, { key: "disabled", label: "禁用", control: "boolean" }],
+  },
+  {
+    id: "checkbox", label: "Checkbox", category: "basic", view: "basic/Checkbox.vue", contract: "contracts/checkbox.json", example: {},
+    controls: [{ key: "label", label: "选项文案", control: "text" }, { key: "modelValue", label: "已选中", control: "boolean" }, { key: "disabled", label: "禁用", control: "boolean" }],
+  },
+  {
+    id: "radio-group", label: "Radio Group", category: "basic", view: "basic/RadioGroup.vue", contract: "contracts/radio-group.json", example: {},
+    controls: [{ key: "label", label: "分组名称", control: "text" }, { key: "modelValue", label: "当前选项", control: "text" }, { key: "disabled", label: "禁用", control: "boolean" }],
+  },
+  {
+    id: "switch", label: "Switch", category: "basic", view: "basic/SwitchControl.vue", contract: "contracts/switch.json", example: {},
+    controls: [{ key: "label", label: "开关文案", control: "text" }, { key: "modelValue", label: "已开启", control: "boolean" }, { key: "disabled", label: "禁用", control: "boolean" }],
+  },
+  {
+    id: "avatar", label: "Avatar", category: "basic", view: "basic/Avatar.vue", contract: "contracts/avatar.json", example: {},
+    controls: [{ key: "name", label: "姓名", control: "text" }, { key: "size", label: "尺寸", control: "select", options: [{ label: "小", value: "sm" }, { label: "标准", value: "md" }, { label: "大", value: "lg" }] }, { key: "tone", label: "颜色", control: "select", options: toneOptions.filter((item) => item.value !== "error" && item.value !== "success") }],
+  },
+  {
+    id: "badge", label: "Badge", category: "basic", view: "basic/Badge.vue", contract: "contracts/badge.json", example: {},
+    controls: [{ key: "label", label: "文案", control: "text" }, { key: "tone", label: "语义色", control: "select", options: [...toneOptions, { label: "Warning (color.warning)", value: "warning" }] }],
+  },
+  {
+    id: "divider", label: "Divider", category: "basic", view: "basic/Divider.vue", contract: "contracts/divider.json", example: {},
+    controls: [{ key: "label", label: "中间文案", control: "text" }, { key: "inset", label: "左右缩进", control: "boolean" }],
+  },
+  {
+    id: "progress", label: "Progress", category: "basic", view: "basic/ProgressIndicator.vue", contract: "contracts/progress.json", example: {},
+    controls: [{ key: "label", label: "说明", control: "text" }, { key: "value", label: "进度", control: "number" }, { key: "indeterminate", label: "不确定进度", control: "boolean" }],
+  },
+  {
+    id: "spinner", label: "Spinner", category: "basic", view: "basic/Spinner.vue", contract: "contracts/spinner.json", example: {},
+    controls: [{ key: "label", label: "说明", control: "text" }, { key: "size", label: "尺寸", control: "select", options: [{ label: "小", value: "sm" }, { label: "标准", value: "md" }, { label: "大", value: "lg" }] }],
+  },
+  {
+    id: "search-bar", label: "Search Bar", category: "complex", view: "complex/SearchBar.vue", contract: "contracts/search-bar.json", example: {},
+    controls: [{ key: "modelValue", label: "搜索内容", control: "text" }, { key: "placeholder", label: "提示文案", control: "text" }, { key: "disabled", label: "禁用", control: "boolean" }],
+  },
+  {
+    id: "filter-bar", label: "Filter Bar", category: "complex", view: "complex/FilterBar.vue", contract: "contracts/filter-bar.json", example: {},
+    controls: [{ key: "modelValue", label: "当前筛选", control: "text" }, { key: "showFilter", label: "显示高级筛选", control: "boolean" }],
+  },
+  {
+    id: "bottom-navigation", label: "Bottom Navigation", category: "complex", view: "complex/BottomNavigation.vue", contract: "contracts/bottom-navigation.json", example: {},
+    controls: [{ key: "modelValue", label: "当前入口", control: "text" }],
+  },
+  {
+    id: "dialog", label: "Dialog", category: "complex", view: "complex/DialogPanel.vue", contract: "contracts/dialog.json", example: {},
+    controls: [{ key: "modelValue", label: "已打开", control: "boolean" }, { key: "title", label: "标题", control: "text" }, { key: "message", label: "说明", control: "text" }, { key: "confirmLabel", label: "确认按钮", control: "text" }],
+  },
+  {
+    id: "snackbar", label: "Snackbar / Toast", category: "complex", view: "complex/SnackbarToast.vue", contract: "contracts/snackbar.json", example: {},
+    controls: [{ key: "modelValue", label: "显示", control: "boolean" }, { key: "message", label: "提示内容", control: "text" }, { key: "tone", label: "反馈类型", control: "select", options: [{ label: "成功", value: "success" }, { label: "错误", value: "error" }, { label: "信息", value: "info" }] }],
+  },
+  {
+    id: "empty-state", label: "Empty State", category: "complex", view: "complex/EmptyState.vue", contract: "contracts/empty-state.json", example: {},
+    controls: [{ key: "title", label: "标题", control: "text" }, { key: "description", label: "说明", control: "text" }, { key: "actionLabel", label: "操作按钮", control: "text" }],
+  },
+  {
+    id: "form-section", label: "Form Section", category: "complex", view: "complex/FormSection.vue", contract: "contracts/form-section.json", example: {},
+    controls: [{ key: "title", label: "分组标题", control: "text" }, { key: "description", label: "说明", control: "text" }, { key: "required", label: "必填", control: "boolean" }],
+  },
 ] satisfies ComponentRecord[];
