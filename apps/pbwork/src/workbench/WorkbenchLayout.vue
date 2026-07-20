@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import {
   Archive,
   BadgeCheck,
-  Boxes,
   ChevronRight,
   CircleDot,
   ClipboardCheck,
@@ -20,11 +19,32 @@ import {
   PanelRightOpen,
   Paintbrush,
   Search,
+  ChevronsUp,
+  ChevronsDown,
   Settings,
   Shapes,
   Sparkles,
   SunMoon,
   SwatchBook,
+  MousePointerClick,
+  TextCursorInput,
+  Tags,
+  CreditCard,
+  PanelTop,
+  Rows3,
+  ListFilter,
+  CheckSquare,
+  ToggleRight,
+  UserCircle,
+  Minus,
+  ChartNoAxesColumnIncreasing,
+  LoaderCircle,
+  SlidersHorizontal,
+  Navigation,
+  MessageSquare,
+  Bell,
+  Inbox,
+  ListCollapse,
 } from "lucide-vue-next";
 import { RouterLink, RouterView, useRoute } from "vue-router";
 import {
@@ -32,6 +52,8 @@ import {
   useWorkbenchStore,
 } from "@/app/stores/workbench";
 import { useSelectionStore } from "@/app/stores/selection";
+import { useCommentsStore } from "@/app/stores/comments";
+import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
 import {
   buildPrototypeTree,
   getSecondaryNavigation,
@@ -46,7 +68,7 @@ import InspectorPanel from "@/workbench/inspector/InspectorPanel.vue";
 
 /** Keep in sync with `.resource-panel` / `.inspector-panel` width transition. */
 const PANEL_SLIDE_MS = 320;
-const PROTOTYPE_TREE_EXPAND_KEY = "pbwork.workbench.prototype-tree.v1";
+const PROTOTYPE_TREE_EXPAND_KEY = "pbwork.workbench.prototype-tree.v2";
 
 function loadPrototypeTreeExpanded(): string[] {
   try {
@@ -64,8 +86,11 @@ function loadPrototypeTreeExpanded(): string[] {
 const route = useRoute();
 const workbench = useWorkbenchStore();
 const selection = useSelectionStore();
+const comments = useCommentsStore();
+const prototypeLifecycle = usePrototypeLifecycleStore();
 const searchOpen = ref(false);
 const searchQuery = ref("");
+const treeQuery = ref("");
 const resizingInspector = ref(false);
 
 /** Inner chrome lags width on collapse so overflow clipping reads as a slide. */
@@ -108,7 +133,7 @@ const selectedSecondaryId = computed(() => {
     const prototypeId = route.params.prototypeId;
     if (typeof prototypeId === "string") {
       const prototype = loadPrototypes().find((item) => item.id === prototypeId);
-      if (prototype) return `lifecycle-${prototype.lifecycle}`;
+      if (prototype) return `lifecycle-${prototypeLifecycle.effectiveLifecycle(prototype)}`;
     }
   }
   return "";
@@ -121,15 +146,33 @@ const activePrototypeLifecycle = computed(() => {
   const prototypeId = route.params.prototypeId;
   if (typeof prototypeId === "string") {
     const prototype = loadPrototypes().find((item) => item.id === prototypeId);
-    if (prototype) return prototype.lifecycle;
+      if (prototype) return prototypeLifecycle.effectiveLifecycle(prototype);
   }
   return "all" as const;
 });
 const prototypeTree = computed(() =>
   sectionId.value === "prototypes"
-    ? buildPrototypeTree(activePrototypeLifecycle.value)
+    ? buildPrototypeTree(activePrototypeLifecycle.value, (id, registered) =>
+        prototypeLifecycle.overrides[id] ?? registered)
     : [],
 );
+const filteredPrototypeTree = computed(() => {
+  const query = treeQuery.value.trim().toLocaleLowerCase();
+  if (!query) return prototypeTree.value;
+  return prototypeTree.value.flatMap((prototype) => {
+    const prototypeMatch = prototype.label.toLocaleLowerCase().includes(query);
+    const children = (prototype.children ?? []).flatMap((screen) => {
+      const screenMatch = screen.label.toLocaleLowerCase().includes(query);
+      const variants = (screen.children ?? []).filter((variant) =>
+        variant.label.toLocaleLowerCase().includes(query));
+      const matchingChildren = prototypeMatch || screenMatch ? screen.children : variants;
+      return prototypeMatch || screenMatch || variants.length
+        ? [{ ...screen, ...(matchingChildren ? { children: matchingChildren } : {}) }]
+        : [];
+    });
+    return prototypeMatch || children.length ? [{ ...prototype, children }] : [];
+  });
+});
 const selectedPrototypeId = computed(() =>
   typeof route.params.prototypeId === "string" ? route.params.prototypeId : "",
 );
@@ -169,6 +212,41 @@ function toggleTreeNode(id: string) {
     ? expandedTreeIds.value.filter((item) => item !== id)
     : [...expandedTreeIds.value, id];
   persistTreeExpanded();
+}
+
+function expandPrototypeTree(prototype: (typeof prototypeTree.value)[number]) {
+  const ids = [prototype.id, ...(prototype.children ?? []).map((item) => item.id)];
+  expandedTreeIds.value = [...new Set([...expandedTreeIds.value, ...ids])];
+  persistTreeExpanded();
+}
+
+function expandAllTree() {
+  expandedTreeIds.value = prototypeTree.value.flatMap((prototype) => [
+    prototype.id,
+    ...(prototype.children ?? []).map((screen) => screen.id),
+  ]);
+  persistTreeExpanded();
+}
+
+function collapseAllTree() {
+  expandedTreeIds.value = [];
+  persistTreeExpanded();
+}
+
+function openCommentCount(prototypeId: string, screenId?: string, variantId?: string) {
+  return comments.comments.filter((comment) =>
+    comment.status === "open" && comment.prototypeId === prototypeId &&
+    (!screenId || comment.screenId === screenId) &&
+    (!variantId || comment.variantId === variantId),
+  ).length;
+}
+
+function variantIdFromTo(to: string) {
+  try {
+    return new URL(to, "http://local.invalid").searchParams.get("variant") ?? "";
+  } catch {
+    return "";
+  }
 }
 
 function screenSlugFromTo(to: string): string {
@@ -274,8 +352,35 @@ function secondaryIconFor(id: string) {
   if (id.startsWith("lifecycle-review")) return ClipboardCheck;
   if (id.startsWith("lifecycle-final")) return BadgeCheck;
   if (id.startsWith("lifecycle-archived")) return Archive;
-  if (id.includes("button") || id.includes("field") || id.includes("chip") || id.includes("card"))
-    return Boxes;
+  const componentIcons: Record<string, typeof ComponentIcon> = {
+    button: MousePointerClick,
+    "icon-button": CircleDot,
+    "text-field": TextCursorInput,
+    select: ListFilter,
+    textarea: Rows3,
+    checkbox: CheckSquare,
+    "radio-group": CircleDot,
+    switch: ToggleRight,
+    chip: Tags,
+    card: CreditCard,
+    avatar: UserCircle,
+    badge: BadgeCheck,
+    divider: Minus,
+    progress: ChartNoAxesColumnIncreasing,
+    spinner: LoaderCircle,
+    "app-bar": PanelTop,
+    tabs: ListCollapse,
+    "data-list": Rows3,
+    "search-bar": Search,
+    "filter-bar": SlidersHorizontal,
+    "bottom-navigation": Navigation,
+    "bottom-sheet": PanelRightOpen,
+    dialog: MessageSquare,
+    snackbar: Bell,
+    "empty-state": Inbox,
+    "form-section": ClipboardCheck,
+  };
+  if (componentIcons[id]) return componentIcons[id];
   return ComponentIcon;
 }
 
@@ -392,9 +497,14 @@ function onInspectorResizeStart(event: PointerEvent) {
 }
 
 onBeforeUnmount(() => {
+  document.documentElement.classList.remove("pbwork-workbench");
   resizingInspector.value = false;
   clearResourceSlideTimer();
   clearInspectorSlideTimer();
+});
+
+onMounted(() => {
+  document.documentElement.classList.add("pbwork-workbench");
 });
 </script>
 
@@ -611,20 +721,28 @@ onBeforeUnmount(() => {
                 </section>
 
                 <section class="secondary-group">
-                  <h2 class="secondary-group-label">
-                    原型树
-                    <span class="secondary-group-hint"
-                      >原型 → 页面 → 状态</span
-                    >
-                  </h2>
+                  <div class="tree-section-heading">
+                    <h2 class="secondary-group-label">
+                      原型树
+                      <span class="secondary-group-hint">原型 → 页面 → 状态</span>
+                    </h2>
+                    <div class="tree-heading-actions">
+                      <button type="button" aria-label="展开全部原型树" title="展开全部" @click="expandAllTree"><ChevronsDown :size="14" /></button>
+                      <button type="button" aria-label="收起全部原型树" title="收起全部" @click="collapseAllTree"><ChevronsUp :size="14" /></button>
+                    </div>
+                  </div>
+                  <label class="tree-search">
+                    <Search :size="14" aria-hidden="true" />
+                    <input v-model="treeQuery" type="search" placeholder="搜索原型、页面或状态" aria-label="搜索原型树" />
+                  </label>
                   <div
-                    v-if="prototypeTree.length === 0"
+                    v-if="filteredPrototypeTree.length === 0"
                     class="tree-empty"
                   >
-                    此生命周期下暂无原型
+                    {{ treeQuery ? "没有匹配的原型内容" : "此生命周期下暂无原型" }}
                   </div>
                   <div
-                    v-for="prototype in prototypeTree"
+                    v-for="prototype in filteredPrototypeTree"
                     :key="prototype.id"
                     class="proto-tree"
                   >
@@ -659,8 +777,10 @@ onBeforeUnmount(() => {
                         :to="prototype.to"
                       >
                         <span class="tree-label">{{ prototype.label }}</span>
+                        <span v-if="openCommentCount(prototype.id)" class="tree-comment" :aria-label="`${openCommentCount(prototype.id)} 条未完成评论`"><MessageSquareText :size="11" />{{ openCommentCount(prototype.id) }}</span>
                         <span class="tree-tag">原型</span>
                       </RouterLink>
+                      <button type="button" class="tree-branch-action" :aria-label="`展开 ${prototype.label} 的全部页面和状态`" title="展开此原型全部层级" @click="expandPrototypeTree(prototype)"><ChevronsDown :size="13" /></button>
                     </div>
 
                     <div
@@ -703,6 +823,7 @@ onBeforeUnmount(() => {
                             :to="screen.to"
                           >
                             <span class="tree-label">{{ screen.label }}</span>
+                            <span v-if="openCommentCount(prototype.id, screen.id)" class="tree-comment" :aria-label="`${openCommentCount(prototype.id, screen.id)} 条未完成评论`"><MessageSquareText :size="11" />{{ openCommentCount(prototype.id, screen.id) }}</span>
                             <span class="tree-tag">页面</span>
                           </RouterLink>
                         </div>
@@ -722,6 +843,7 @@ onBeforeUnmount(() => {
                           >
                             <span class="tree-toggle-spacer" />
                             <span class="tree-label">{{ variant.label }}</span>
+                            <span v-if="openCommentCount(prototype.id, screen.id, variantIdFromTo(variant.to))" class="tree-comment" :aria-label="`${openCommentCount(prototype.id, screen.id, variantIdFromTo(variant.to))} 条未完成评论`"><MessageSquareText :size="11" />{{ openCommentCount(prototype.id, screen.id, variantIdFromTo(variant.to)) }}</span>
                           </RouterLink>
                         </div>
                       </div>
@@ -761,9 +883,9 @@ onBeforeUnmount(() => {
                     </div>
                     <v-btn size="x-small" variant="text" @click="toggleResourcePanel">展开导航</v-btn>
                   </div>
-                  <p v-if="prototypeTree.length === 0" class="tree-empty">此生命周期下暂无原型</p>
-                  <section v-for="prototype in prototypeTree" :key="prototype.id" class="collapsed-prototype">
-                    <RouterLink :to="prototype.to" class="collapsed-tree-link prototype-link">{{ prototype.label }}</RouterLink>
+                  <p v-if="filteredPrototypeTree.length === 0" class="tree-empty">此生命周期下暂无原型</p>
+                  <section v-for="prototype in filteredPrototypeTree" :key="prototype.id" class="collapsed-prototype">
+                    <RouterLink :to="prototype.to" class="collapsed-tree-link prototype-link">{{ prototype.label }}<span v-if="openCommentCount(prototype.id)" class="tree-comment"><MessageSquareText :size="11" />{{ openCommentCount(prototype.id) }}</span></RouterLink>
                     <div v-for="screen in prototype.children ?? []" :key="screen.id" class="collapsed-screen">
                       <RouterLink :to="screen.to" class="collapsed-tree-link screen-link">{{ screen.label }}</RouterLink>
                       <RouterLink
@@ -1001,6 +1123,7 @@ onBeforeUnmount(() => {
 
 .resource-panel,
 .inspector-panel {
+  box-sizing: border-box;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -1018,6 +1141,7 @@ onBeforeUnmount(() => {
 }
 .inspector-panel {
   border-width: 0 0 0 1px;
+  padding-inline: 12px;
 }
 :global(body.pb-canvas-fullscreen .inspector-panel) {
   position: fixed;
@@ -1226,6 +1350,62 @@ onBeforeUnmount(() => {
   font-weight: 700;
   letter-spacing: 0.02em;
 }
+.tree-section-heading {
+  display: flex;
+  align-items: flex-start;
+  padding-right: 6px;
+}
+.tree-section-heading .secondary-group-label {
+  flex: 1;
+}
+.tree-heading-actions {
+  display: flex;
+  gap: 2px;
+}
+.tree-heading-actions button,
+.tree-branch-action {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--shell-muted);
+  cursor: pointer;
+}
+.tree-heading-actions button:hover,
+.tree-branch-action:hover {
+  background: var(--shell-soft);
+  color: rgb(var(--v-theme-on-surface));
+}
+.tree-search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 8px 10px;
+  padding: 0 9px;
+  height: 32px;
+  border: 1px solid var(--shell-border);
+  border-radius: 9px;
+  color: var(--shell-muted);
+  background: var(--shell-soft);
+}
+.tree-search:focus-within {
+  border-color: color-mix(in srgb, rgb(var(--v-theme-primary)) 55%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, rgb(var(--v-theme-primary)) 12%, transparent);
+}
+.tree-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: rgb(var(--v-theme-on-surface));
+  font: inherit;
+  font-size: 0.72rem;
+}
 .secondary-group-hint {
   color: var(--shell-muted);
   font-size: 0.6875rem;
@@ -1296,6 +1476,30 @@ onBeforeUnmount(() => {
   color: inherit;
   text-decoration: none;
   border-radius: 8px;
+}
+.tree-branch-action {
+  flex: 0 0 auto;
+  margin-right: 2px;
+  opacity: 0;
+}
+.tree-row:hover > .tree-branch-action,
+.tree-branch-action:focus-visible {
+  opacity: 1;
+}
+.tree-comment {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: auto;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, rgb(var(--v-theme-warning)) 16%, transparent);
+  color: color-mix(in srgb, rgb(var(--v-theme-warning)) 70%, rgb(var(--v-theme-on-surface)));
+  font-size: 0.625rem;
+  font-weight: 750;
+}
+.collapsed-tree-link .tree-comment {
+  margin-left: auto;
 }
 .tree-link:hover {
   background: var(--shell-soft);
@@ -1401,6 +1605,7 @@ onBeforeUnmount(() => {
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  padding-right: 1px;
 }
 .inspector-empty {
   display: grid;

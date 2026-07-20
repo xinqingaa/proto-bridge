@@ -58,7 +58,7 @@ describe("local comments", () => {
     expect(localStorage.getItem(COMMENT_STORAGE_KEY)).toContain('"schemaVersion":3');
   });
 
-  it("migrates schema v1 comments to anchor-aware schema v2", () => {
+  it("rejects legacy schema v1 without a compatibility layer", () => {
     const raw = JSON.stringify({
       schemaVersion: 1,
       comments: [{
@@ -72,13 +72,11 @@ describe("local comments", () => {
         updatedAt: "2026-01-01T00:00:00.000Z",
       }],
     });
-    const migrated = parseCommentStore(raw);
-    expect(migrated.schemaVersion).toBe(2);
-    expect(migrated.comments[0]?.anchorStatus).toBe("unknown");
+    expect(() => parseCommentStore(raw)).toThrow("UNKNOWN_COMMENT_SCHEMA");
   });
 
   it("validates stored field shapes", () => {
-    expect(() => parseCommentStore('{"schemaVersion":1,"comments":[{"id":1}]}')).toThrow("INVALID_COMMENT_STORE");
+    expect(() => parseCommentStore('{"schemaVersion":1,"comments":[{"id":1}]}')).toThrow("UNKNOWN_COMMENT_SCHEMA");
     expect(() => parseCommentStore("not-json")).toThrow();
   });
 });

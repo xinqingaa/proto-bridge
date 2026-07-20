@@ -22,6 +22,14 @@ body {
   min-width: 320px;
 }
 
+html.pbwork-workbench,
+html.pbwork-workbench body,
+html.pbwork-workbench #app {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
 /* iframe Runtime: lock document size so the viewport scrollbar does not
    steal width and leave a blank gutter beside the page. */
 html.pbwork-runtime-embedded,
@@ -50,4 +58,3 @@ a:focus-visible,
   outline: 3px solid #2563eb;
   outline-offset: 2px;
 }
-

@@ -1,13 +1,19 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
+import { History, RotateCcw } from "lucide-vue-next";
 import { RouterLink } from "vue-router";
 import ResourcePageShell from "@/workbench/views/ResourcePageShell.vue";
 import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
 import { LIFECYCLE_LABELS } from "@/design-system/types";
+import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
+import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
+import LifecycleTransitionDialog from "@/workbench/prototypes/LifecycleTransitionDialog.vue";
 
 const props = defineProps<{
   prototypeId: string;
 }>();
+const lifecycle = usePrototypeLifecycleStore();
+const transitionOpen = ref(false);
 
 const prototype = computed(() =>
   loadPrototypes().find((item) => item.id === props.prototypeId),
@@ -20,6 +26,9 @@ const screens = computed(() =>
 const variantTotal = computed(() =>
   screens.value.reduce((sum, screen) => sum + screen.variants.length, 0),
 );
+const effectiveLifecycle = computed(() => prototype.value ? lifecycle.effectiveLifecycle(prototype.value) : "active");
+const lifecycleHistory = computed(() => lifecycle.historyFor(props.prototypeId));
+const formatHistoryTime = (value: string) => new Intl.DateTimeFormat("zh-CN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 
 const flowEdges = computed(() => {
   if (screens.value.length < 2) return [] as Array<{ from: string; to: string }>;
@@ -43,8 +52,11 @@ const flowEdges = computed(() => {
   >
     <template #stats>
       <v-chip size="small" color="primary" variant="tonal">
-        {{ LIFECYCLE_LABELS[prototype.lifecycle] }}
+        {{ LIFECYCLE_LABELS[effectiveLifecycle] }}
       </v-chip>
+      <span v-if="lifecycle.hasOverride(prototype.id)" class="local-status">本地工作台状态</span>
+      <WorkbenchButton @click="transitionOpen = true">流转状态</WorkbenchButton>
+      <WorkbenchButton v-if="lifecycle.hasOverride(prototype.id)" tone="ghost" @click="lifecycle.reset(prototype)"><RotateCcw :size="13" />恢复注册状态</WorkbenchButton>
       <v-chip size="small" variant="tonal">{{ screens.length }} 页面</v-chip>
       <v-chip size="small" variant="tonal">{{ variantTotal }} Variant</v-chip>
       <v-chip
@@ -79,6 +91,16 @@ const flowEdges = computed(() => {
       </ol>
     </section>
 
+    <section v-if="lifecycleHistory.length" class="history-panel">
+      <h2><History :size="15" />状态记录</h2>
+      <ol>
+        <li v-for="entry in lifecycleHistory" :key="entry.id">
+          <div><strong>{{ LIFECYCLE_LABELS[entry.from] }} → {{ LIFECYCLE_LABELS[entry.to] }}</strong><time>{{ formatHistoryTime(entry.changedAt) }}</time></div>
+          <p v-if="entry.note">{{ entry.note }}</p>
+        </li>
+      </ol>
+    </section>
+
     <div class="screen-grid">
       <RouterLink
         v-for="screen in screens"
@@ -108,6 +130,7 @@ const flowEdges = computed(() => {
   <v-alert v-else type="error" variant="tonal"
     >未知原型：{{ prototypeId }}</v-alert
   >
+  <LifecycleTransitionDialog v-if="prototype" v-model="transitionOpen" :prototype="prototype" />
 </template>
 
 <style scoped>
@@ -117,6 +140,13 @@ const flowEdges = computed(() => {
   border-radius: 14px;
   background: rgb(var(--v-theme-surface));
 }
+.local-status { align-self:center; padding:4px 8px; border-radius:999px; background:color-mix(in srgb,rgb(var(--v-theme-warning)) 12%,transparent); color:rgb(var(--v-theme-warning)); font-size:.68rem; font-weight:750; }
+.history-panel { padding:14px 16px; border:1px solid rgba(var(--v-border-color),var(--v-border-opacity)); border-radius:14px; background:rgb(var(--v-theme-surface)); }
+.history-panel h2 { display:flex; align-items:center; gap:6px; margin:0 0 10px; font-size:.875rem; }
+.history-panel ol { list-style:none; display:grid; gap:8px; margin:0; padding:0; }
+.history-panel li { padding-left:10px; border-left:2px solid color-mix(in srgb,rgb(var(--v-theme-primary)) 30%,transparent); }
+.history-panel li div { display:flex; justify-content:space-between; gap:12px; font-size:.75rem; }
+.history-panel time,.history-panel p { color:rgba(var(--v-theme-on-surface),.5); font-size:.68rem; }.history-panel p{margin:4px 0 0}
 .flow-panel h2 {
   margin: 0 0 10px;
   font-size: 0.875rem;

@@ -95,9 +95,10 @@ export function buildPrototypeLifecycleNavigation(): WorkbenchNavigationItem[] {
 
 export function buildPrototypeTree(
   lifecycle: "all" | PrototypeLifecycle,
+  effectiveLifecycle: (prototypeId: string, registered: PrototypeLifecycle) => PrototypeLifecycle = (_, registered) => registered,
 ): PrototypeTreeNode[] {
   const prototypes = loadPrototypes().filter(
-    (item) => lifecycle === "all" || item.lifecycle === lifecycle,
+    (item) => lifecycle === "all" || effectiveLifecycle(item.id, item.lifecycle) === lifecycle,
   );
   return prototypes.map((prototype) => ({
     id: prototype.id,

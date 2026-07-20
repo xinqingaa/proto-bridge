@@ -26,6 +26,9 @@ import type {
   StyleInspectRow,
 } from "@/runtime/bridge";
 import { stylePropertyRole } from "@/runtime/inspect/snapshot";
+import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
+import WorkbenchIconButton from "@/workbench/ui/WorkbenchIconButton.vue";
+import WorkbenchSegmented from "@/workbench/ui/WorkbenchSegmented.vue";
 
 const selection = useSelectionStore();
 const comments = useCommentsStore();
@@ -43,6 +46,12 @@ const editingCommentId = ref<string | null>(null);
 const deleteCommentId = ref<string | null>(null);
 const clearDialogOpen = ref(false);
 const locatingCommentId = ref<string | null>(null);
+const manageComments = ref(false);
+const selectedCommentIds = ref<Set<string>>(new Set());
+const batchDeleteOpen = ref(false);
+const commentAnchorFilter = ref<"all" | "missing">("all");
+const visibleCommentLimit = ref(30);
+const expandedCommentIds = ref<Set<string>>(new Set());
 
 const selected = computed(() => selection.selected);
 const element = computed(() => selected.value?.element ?? null);
@@ -104,12 +113,6 @@ function commentTitle(item: LocalComment): string {
   return item.elementLabel || item.textSnapshot || item.elementId || "页面位置";
 }
 
-const openComments = computed(() =>
-  visibleComments.value.filter((item) => item.status === "open"),
-);
-const resolvedComments = computed(() =>
-  visibleComments.value.filter((item) => item.status === "resolved"),
-);
 const visibleComments = computed(() => {
   const context = commentContext.value;
   if (!context) return [];
@@ -119,8 +122,26 @@ const visibleComments = computed(() => {
       if (item.variantId && item.variantId !== context.variantId) return false;
       if (item.themeId && item.themeId !== context.themeId) return false;
     }
+    if (commentAnchorFilter.value === "missing" && item.anchorStatus !== "missing") return false;
     return commentStatus.value === "all" || item.status === commentStatus.value;
   });
+});
+const displayedComments = computed(() =>
+  visibleComments.value.slice(0, visibleCommentLimit.value),
+);
+const openComments = computed(() =>
+  displayedComments.value.filter((item) => item.status === "open"),
+);
+const resolvedComments = computed(() =>
+  displayedComments.value.filter((item) => item.status === "resolved"),
+);
+const hasMoreComments = computed(
+  () => displayedComments.value.length < visibleComments.value.length,
+);
+
+watch([commentScope, commentStatus, commentAnchorFilter], () => {
+  visibleCommentLimit.value = 30;
+  selectedCommentIds.value = new Set();
 });
 
 watch(
@@ -399,6 +420,35 @@ watch(
 function confirmDelete() {
   if (deleteCommentId.value) comments.remove(deleteCommentId.value);
   deleteCommentId.value = null;
+}
+
+function toggleCommentSelection(id: string) {
+  const next = new Set(selectedCommentIds.value);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  selectedCommentIds.value = next;
+}
+
+function selectAllVisibleComments() {
+  selectedCommentIds.value = new Set(visibleComments.value.map((item) => item.id));
+}
+
+function exitCommentManagement() {
+  manageComments.value = false;
+  selectedCommentIds.value = new Set();
+}
+
+function confirmBatchDelete() {
+  comments.removeMany([...selectedCommentIds.value]);
+  batchDeleteOpen.value = false;
+  exitCommentManagement();
+}
+
+function toggleCommentExpanded(id: string) {
+  const next = new Set(expandedCommentIds.value);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  expandedCommentIds.value = next;
 }
 
 function clearAllComments() {
@@ -771,9 +821,9 @@ function downloadUnreadable() {
             />
             <div class="composer-actions">
               <span>仅保存在当前浏览器</span>
-              <v-btn size="small" color="primary" :disabled="!commentDraft.trim()" @click="saveComment">
+              <WorkbenchButton tone="primary" :disabled="!commentDraft.trim()" @click="saveComment">
                 {{ editingCommentId ? "保存修改" : "提交评论" }}
-              </v-btn>
+              </WorkbenchButton>
             </div>
           </div>
           <div v-else class="comment-callout">
@@ -782,28 +832,43 @@ function downloadUnreadable() {
               <strong>选择元素并添加评论</strong>
               <span>选择后会显示元素名称和稳定锚点。</span>
             </div>
-            <v-btn
-              size="small"
-              color="primary"
+            <WorkbenchButton
+              tone="primary"
               :disabled="!selection.canInspect"
               @click="selection.setInspectMode(true)"
             >
               {{ selection.canInspect ? "开始选择" : "正在等待 Runtime…" }}
-            </v-btn>
+            </WorkbenchButton>
           </div>
 
           <v-alert v-if="commentError" type="warning" variant="tonal" density="compact" closable @click:close="commentError = null">{{ commentError }}</v-alert>
 
           <div class="comment-toolbar">
-            <v-btn-toggle v-model="commentScope" mandatory density="compact" variant="outlined" divided aria-label="评论范围">
-              <v-btn value="screen" size="x-small">当前页面</v-btn>
-              <v-btn value="context" size="x-small">当前状态</v-btn>
-            </v-btn-toggle>
-            <v-btn-toggle v-model="commentStatus" mandatory density="compact" variant="text" aria-label="评论状态筛选">
-              <v-btn value="open" size="x-small">未完成</v-btn>
-              <v-btn value="resolved" size="x-small">已完成</v-btn>
-              <v-btn value="all" size="x-small">全部</v-btn>
-            </v-btn-toggle>
+            <WorkbenchSegmented
+              v-model="commentScope"
+              label="评论范围"
+              :items="[
+                { value: 'screen', label: '当前页面' },
+                { value: 'context', label: '当前状态' },
+              ]"
+            />
+            <WorkbenchSegmented
+              v-model="commentStatus"
+              label="评论状态筛选"
+              :items="[
+                { value: 'open', label: '未完成' },
+                { value: 'resolved', label: '已完成' },
+                { value: 'all', label: '全部' },
+              ]"
+            />
+          </div>
+
+          <div v-if="manageComments" class="comment-management-bar">
+            <span>已选择 {{ selectedCommentIds.size }} 条</span>
+            <div>
+              <WorkbenchButton tone="ghost" @click="selectAllVisibleComments">全选当前筛选</WorkbenchButton>
+              <WorkbenchButton tone="ghost" @click="exitCommentManagement">取消</WorkbenchButton>
+            </div>
           </div>
 
           <div v-if="visibleComments.length" class="comment-groups">
@@ -817,19 +882,27 @@ function downloadUnreadable() {
                   :class="{ 'is-locating': locatingCommentId === item.id, 'is-missing': item.anchorStatus === 'missing' }"
                 >
                   <header>
+                    <label v-if="manageComments" class="comment-checkbox">
+                      <input
+                        type="checkbox"
+                        :checked="selectedCommentIds.has(item.id)"
+                        :aria-label="`选择评论：${commentTitle(item)}`"
+                        @change="toggleCommentSelection(item.id)"
+                      />
+                    </label>
                     <div class="comment-anchor">
                       <LocateFixed :size="14" />
                       <strong>{{ commentTitle(item) }}</strong>
                     </div>
-                    <v-menu location="bottom end">
-                      <template #activator="{ props }"><button v-bind="props" type="button" class="more-button" aria-label="评论更多操作"><MoreHorizontal :size="16" /></button></template>
-                      <v-list density="compact">
-                        <v-list-item title="编辑" @click="editComment(item.id)" />
-                        <v-list-item title="删除" base-color="error" @click="deleteCommentId = item.id" />
-                      </v-list>
+                    <v-menu v-if="!manageComments" location="bottom end">
+                      <template #activator="{ props }"><WorkbenchIconButton v-bind="props" label="评论更多操作"><MoreHorizontal :size="16" /></WorkbenchIconButton></template>
+                      <div class="wb-menu-card">
+                        <button type="button" @click="editComment(item.id)"><span>编辑评论</span><small>修改评审内容</small></button>
+                        <button type="button" class="is-danger" @click="deleteCommentId = item.id"><span>删除</span><small>删除后无法恢复</small></button>
+                      </div>
                     </v-menu>
                   </header>
-                  <p>{{ item.content }}</p>
+                  <p class="comment-content" :class="{ 'is-expanded': expandedCommentIds.has(item.id) }" @click="toggleCommentExpanded(item.id)">{{ item.content }}</p>
                   <div class="comment-meta">
                     <time :datetime="item.updatedAt">{{ new Date(item.updatedAt).toLocaleString() }}</time>
                     <code v-if="item.elementId">{{ item.elementId }}</code>
@@ -838,10 +911,10 @@ function downloadUnreadable() {
                   <p v-else-if="locatingCommentId === item.id && selection.highlightStatus === 'located'" class="locate-feedback is-success">已定位并选中元素</p>
                   <p v-else-if="item.anchorStatus === 'missing'" class="locate-feedback is-error">目标元素已失效</p>
                   <footer>
-                    <v-btn size="x-small" variant="tonal" :loading="locatingCommentId === item.id && selection.highlightStatus === 'locating'" @click="locateComment(item)">
+                    <WorkbenchButton tone="primary" :loading="locatingCommentId === item.id && selection.highlightStatus === 'locating'" @click="locateComment(item)">
                       <LocateFixed :size="14" />定位
-                    </v-btn>
-                    <v-btn size="x-small" variant="text" @click="comments.setStatus(item.id, 'resolved')"><Check :size="14" />完成</v-btn>
+                    </WorkbenchButton>
+                    <WorkbenchButton tone="ghost" @click="comments.setStatus(item.id, 'resolved')"><Check :size="14" />完成</WorkbenchButton>
                   </footer>
                 </article>
               </div>
@@ -851,31 +924,43 @@ function downloadUnreadable() {
               <header class="group-heading"><strong>已完成</strong><span>{{ resolvedComments.length }}</span></header>
               <div class="comment-list">
                 <article v-for="item in resolvedComments" :key="item.id" class="comment-card is-resolved">
-                  <header><div class="comment-anchor"><Check :size="14" /><strong>{{ commentTitle(item) }}</strong></div></header>
-                  <p>{{ item.content }}</p>
+                  <header>
+                    <label v-if="manageComments" class="comment-checkbox"><input type="checkbox" :checked="selectedCommentIds.has(item.id)" :aria-label="`选择评论：${commentTitle(item)}`" @change="toggleCommentSelection(item.id)" /></label>
+                    <div class="comment-anchor"><Check :size="14" /><strong>{{ commentTitle(item) }}</strong></div>
+                  </header>
+                  <p class="comment-content" :class="{ 'is-expanded': expandedCommentIds.has(item.id) }" @click="toggleCommentExpanded(item.id)">{{ item.content }}</p>
                   <footer>
-                    <v-btn size="x-small" variant="text" @click="comments.setStatus(item.id, 'open')"><RotateCcw :size="14" />重新打开</v-btn>
-                    <v-menu location="bottom end">
-                      <template #activator="{ props }"><button v-bind="props" type="button" class="more-button" aria-label="评论更多操作"><MoreHorizontal :size="16" /></button></template>
-                      <v-list density="compact">
-                        <v-list-item title="定位" @click="locateComment(item)" />
-                        <v-list-item title="编辑" @click="editComment(item.id)" />
-                        <v-list-item title="删除" base-color="error" @click="deleteCommentId = item.id" />
-                      </v-list>
+                    <WorkbenchButton tone="ghost" @click="comments.setStatus(item.id, 'open')"><RotateCcw :size="14" />重新打开</WorkbenchButton>
+                    <v-menu v-if="!manageComments" location="bottom end">
+                      <template #activator="{ props }"><WorkbenchIconButton v-bind="props" label="评论更多操作"><MoreHorizontal :size="16" /></WorkbenchIconButton></template>
+                      <div class="wb-menu-card">
+                        <button type="button" @click="locateComment(item)"><span>定位元素</span><small>在画布中重新选中</small></button>
+                        <button type="button" @click="editComment(item.id)"><span>编辑评论</span><small>修改评审内容</small></button>
+                        <button type="button" class="is-danger" @click="deleteCommentId = item.id"><span>删除</span><small>删除后无法恢复</small></button>
+                      </div>
                     </v-menu>
                   </footer>
                 </article>
               </div>
             </section>
           </div>
+          <WorkbenchButton v-if="hasMoreComments" tone="neutral" @click="visibleCommentLimit += 30">加载更多（剩余 {{ visibleComments.length - displayedComments.length }}）</WorkbenchButton>
           <div v-else class="soft-empty">
             <p class="soft-title">当前筛选下没有评论</p>
             <p class="soft-hint">评论只保存在当前浏览器，不会上传或共享。</p>
           </div>
-          <v-menu v-if="comments.comments.length" location="bottom start">
-            <template #activator="{ props }"><button v-bind="props" type="button" class="manage-comments">管理本地评论</button></template>
-            <v-list density="compact"><v-list-item title="清除全部评论" base-color="error" @click="clearDialogOpen = true" /></v-list>
+          <v-menu v-if="comments.comments.length && !manageComments" location="bottom start">
+            <template #activator="{ props }"><WorkbenchButton v-bind="props" tone="ghost"><MoreHorizontal :size="15" />管理评论</WorkbenchButton></template>
+            <div class="wb-menu-card">
+              <button type="button" @click="manageComments = true"><span>批量选择</span><small>勾选后统一删除</small></button>
+              <button type="button" @click="commentAnchorFilter = commentAnchorFilter === 'missing' ? 'all' : 'missing'"><span>{{ commentAnchorFilter === 'missing' ? '显示全部评论' : '仅看定位失效' }}</span><small>筛选已失效的元素锚点</small></button>
+              <button type="button" class="is-danger" @click="clearDialogOpen = true"><span>清除全部评论</span><small>共 {{ comments.comments.length }} 条</small></button>
+            </div>
           </v-menu>
+          <div v-if="manageComments" class="batch-action-bar">
+            <strong>已选择 {{ selectedCommentIds.size }} 条</strong>
+            <WorkbenchButton tone="danger" :disabled="selectedCommentIds.size === 0" @click="batchDeleteOpen = true">删除所选</WorkbenchButton>
+          </div>
         </section>
       </div>
     </template>
@@ -888,6 +973,18 @@ function downloadUnreadable() {
     <v-dialog v-model="clearDialogOpen" max-width="440">
       <v-card :title="comments.readError ? '清除损坏的评论数据？' : '清除全部本地评论？'" :text="comments.readError ? '建议先下载原始数据。清除后无法恢复。' : `将删除当前浏览器中的 ${comments.comments.length} 条评论，且无法恢复。`">
         <v-card-actions><v-spacer /><v-btn @click="clearDialogOpen = false">取消</v-btn><v-btn color="error" @click="clearAllComments">确认清除</v-btn></v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog v-model="batchDeleteOpen" max-width="440">
+      <v-card
+        title="删除所选评论？"
+        :text="`将删除选中的 ${selectedCommentIds.size} 条评论，且无法恢复。`"
+      >
+        <v-card-actions>
+          <v-spacer />
+          <v-btn @click="batchDeleteOpen = false">取消</v-btn>
+          <v-btn color="error" @click="confirmBatchDelete">删除所选</v-btn>
+        </v-card-actions>
       </v-card>
     </v-dialog>
   </div>
@@ -941,8 +1038,7 @@ function downloadUnreadable() {
 .empty-warn {
   color: rgb(var(--v-theme-error));
 }
-.empty-action,
-.comment-callout button {
+.empty-action {
   justify-self: center;
   min-height: 34px;
   padding: 0 14px;
@@ -954,8 +1050,7 @@ function downloadUnreadable() {
   font-weight: 700;
   cursor: pointer;
 }
-.empty-action:disabled,
-.comment-callout button:disabled {
+.empty-action:disabled {
   opacity: 0.5;
   cursor: wait;
 }
@@ -1065,9 +1160,7 @@ function downloadUnreadable() {
   color: rgba(var(--v-theme-on-surface), 0.58);
   font-size: 0.72rem;
 }
-.text-button,
-.comment-card footer button,
-.manage-comments {
+.text-button {
   border: 0;
   background: transparent;
   color: rgb(var(--v-theme-primary));
@@ -1109,8 +1202,8 @@ function downloadUnreadable() {
 }
 .comment-card {
   display: grid;
-  gap: 8px;
-  padding: 11px;
+  gap: 6px;
+  padding: 9px;
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-radius: 10px;
   background: rgb(var(--v-theme-surface));
@@ -1175,6 +1268,17 @@ function downloadUnreadable() {
   line-height: 1.5;
   white-space: pre-wrap;
 }
+.comment-content {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  cursor: pointer;
+}
+.comment-content.is-expanded {
+  display: block;
+  overflow: visible;
+}
 .comment-card code {
   color: rgba(var(--v-theme-on-surface), 0.58);
   font-size: 0.68rem;
@@ -1208,10 +1312,67 @@ function downloadUnreadable() {
   border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   padding-top: 7px;
 }
-.manage-comments {
-  justify-self: start;
-  padding: 4px 0;
-  color: rgba(var(--v-theme-on-surface), 0.5);
+.comment-checkbox {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+}
+.comment-checkbox input {
+  width: 15px;
+  height: 15px;
+  accent-color: rgb(var(--v-theme-primary));
+}
+.comment-management-bar,
+.batch-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 8px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 9px;
+  background: rgba(var(--v-theme-on-surface), 0.035);
+  font-size: 0.72rem;
+}
+.comment-management-bar > div {
+  display: flex;
+  gap: 4px;
+}
+.batch-action-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  background: rgb(var(--v-theme-surface));
+  box-shadow: 0 -8px 22px rgba(15, 23, 42, 0.08);
+}
+.wb-menu-card {
+  display: grid;
+  min-width: 210px;
+  padding: 5px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 10px;
+  background: rgb(var(--v-theme-surface));
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16);
+}
+.wb-menu-card button {
+  display: grid;
+  gap: 2px;
+  padding: 8px 9px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: rgba(var(--v-theme-on-surface), 0.82);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.wb-menu-card button:hover { background: rgba(var(--v-theme-on-surface), 0.055); }
+.wb-menu-card button span { font-size: 0.75rem; font-weight: 700; }
+.wb-menu-card button small { color: rgba(var(--v-theme-on-surface), 0.5); font-size: 0.66rem; }
+.wb-menu-card button.is-danger span { color: rgb(var(--v-theme-error)); }
+.wb-menu-card button.is-danger small { color: color-mix(in srgb, rgb(var(--v-theme-error)) 68%, transparent); }
+.pane {
+  scrollbar-gutter: stable;
 }
 .error-actions {
   display: flex;

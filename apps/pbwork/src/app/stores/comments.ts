@@ -77,7 +77,6 @@ function isComment(value: unknown): value is LocalComment {
     if (item[key] !== undefined && typeof item[key] !== "string") return false;
   }
   if (
-    item.anchorStatus !== undefined &&
     item.anchorStatus !== "unknown" &&
     item.anchorStatus !== "located" &&
     item.anchorStatus !== "missing"
@@ -97,7 +96,7 @@ export function parseCommentStore(raw: string): StoredComments {
   const parsed = JSON.parse(raw) as unknown;
   if (!parsed || typeof parsed !== "object") throw new Error("INVALID_COMMENT_STORE");
   const store = parsed as Record<string, unknown>;
-  if (store.schemaVersion !== 1 && store.schemaVersion !== 2) {
+  if (store.schemaVersion !== 2) {
     throw new Error("UNKNOWN_COMMENT_SCHEMA");
   }
   if (!Array.isArray(store.comments) || store.comments.length > COMMENT_LIMIT) {
@@ -106,10 +105,7 @@ export function parseCommentStore(raw: string): StoredComments {
   if (!store.comments.every(isComment)) throw new Error("INVALID_COMMENT_STORE");
   return {
     schemaVersion: 2,
-    comments: (store.comments as LocalComment[]).map((item) => ({
-      ...item,
-      anchorStatus: item.anchorStatus ?? "unknown",
-    })),
+    comments: store.comments as LocalComment[],
   };
 }
 
@@ -197,6 +193,11 @@ export const useCommentsStore = defineStore("comments", {
     },
     remove(id: string) {
       this.comments = this.comments.filter((comment) => comment.id !== id);
+      this.persist();
+    },
+    removeMany(ids: string[]) {
+      const targets = new Set(ids);
+      this.comments = this.comments.filter((comment) => !targets.has(comment.id));
       this.persist();
     },
     clearUnreadable() {
