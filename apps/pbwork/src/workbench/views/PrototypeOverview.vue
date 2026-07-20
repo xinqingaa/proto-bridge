@@ -7,6 +7,7 @@ import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
 import { LIFECYCLE_LABELS } from "@/design-system/types";
 import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
 import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
+import WorkbenchBadge from "@/workbench/ui/WorkbenchBadge.vue";
 import LifecycleTransitionDialog from "@/workbench/prototypes/LifecycleTransitionDialog.vue";
 
 const props = defineProps<{
@@ -26,9 +27,15 @@ const screens = computed(() =>
 const variantTotal = computed(() =>
   screens.value.reduce((sum, screen) => sum + screen.variants.length, 0),
 );
-const effectiveLifecycle = computed(() => prototype.value ? lifecycle.effectiveLifecycle(prototype.value) : "active");
+const effectiveLifecycle = computed(() =>
+  prototype.value ? lifecycle.effectiveLifecycle(prototype.value) : "active",
+);
 const lifecycleHistory = computed(() => lifecycle.historyFor(props.prototypeId));
-const formatHistoryTime = (value: string) => new Intl.DateTimeFormat("zh-CN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+const formatHistoryTime = (value: string) =>
+  new Intl.DateTimeFormat("zh-CN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
 
 const flowEdges = computed(() => {
   if (screens.value.length < 2) return [] as Array<{ from: string; to: string }>;
@@ -51,30 +58,43 @@ const flowEdges = computed(() => {
     description="页面卡片网格展示 Variant 数量、默认态与路径；流程关系与生命周期信息集中在摘要区。"
   >
     <template #stats>
-      <v-chip size="small" color="primary" variant="tonal">
-        {{ LIFECYCLE_LABELS[effectiveLifecycle] }}
-      </v-chip>
-      <span v-if="lifecycle.hasOverride(prototype.id)" class="local-status">本地工作台状态</span>
-      <WorkbenchButton @click="transitionOpen = true">流转状态</WorkbenchButton>
-      <WorkbenchButton v-if="lifecycle.hasOverride(prototype.id)" tone="ghost" @click="lifecycle.reset(prototype)"><RotateCcw :size="13" />恢复注册状态</WorkbenchButton>
-      <v-chip size="small" variant="tonal">{{ screens.length }} 页面</v-chip>
-      <v-chip size="small" variant="tonal">{{ variantTotal }} Variant</v-chip>
-      <v-chip
-        v-for="owner in prototype.owners ?? []"
-        :key="`owner-${owner}`"
-        size="small"
-        variant="flat"
-      >
-        {{ owner }}
-      </v-chip>
-      <v-chip
-        v-for="role in prototype.roles ?? []"
-        :key="`role-${role}`"
-        size="small"
-        variant="outlined"
-      >
-        {{ role }}
-      </v-chip>
+      <div class="overview-stats">
+        <div class="status-cluster">
+          <WorkbenchBadge :tone="effectiveLifecycle" class="lifecycle-status">
+            {{ LIFECYCLE_LABELS[effectiveLifecycle] }}
+          </WorkbenchBadge>
+          <span v-if="lifecycle.hasOverride(prototype.id)" class="local-status"
+            >本地工作台状态</span
+          >
+          <div class="status-actions">
+            <WorkbenchButton tone="primary" @click="transitionOpen = true"
+              >流转状态</WorkbenchButton
+            >
+            <WorkbenchButton
+              v-if="lifecycle.hasOverride(prototype.id)"
+              tone="ghost"
+              @click="lifecycle.reset(prototype)"
+              ><RotateCcw :size="13" />恢复注册状态</WorkbenchButton
+            >
+          </div>
+        </div>
+        <div class="meta-cluster">
+          <span class="meta-chip">{{ screens.length }} 页面</span>
+          <span class="meta-chip">{{ variantTotal }} Variant</span>
+          <span
+            v-for="owner in prototype.owners ?? []"
+            :key="`owner-${owner}`"
+            class="meta-chip is-owner"
+            >{{ owner }}</span
+          >
+          <span
+            v-for="role in prototype.roles ?? []"
+            :key="`role-${role}`"
+            class="meta-chip is-role"
+            >{{ role }}</span
+          >
+        </div>
+      </div>
     </template>
 
     <section v-if="flowEdges.length" class="flow-panel">
@@ -95,7 +115,12 @@ const flowEdges = computed(() => {
       <h2><History :size="15" />状态记录</h2>
       <ol>
         <li v-for="entry in lifecycleHistory" :key="entry.id">
-          <div><strong>{{ LIFECYCLE_LABELS[entry.from] }} → {{ LIFECYCLE_LABELS[entry.to] }}</strong><time>{{ formatHistoryTime(entry.changedAt) }}</time></div>
+          <div>
+            <strong
+              >{{ LIFECYCLE_LABELS[entry.from] }} →
+              {{ LIFECYCLE_LABELS[entry.to] }}</strong
+            ><time>{{ formatHistoryTime(entry.changedAt) }}</time>
+          </div>
           <p v-if="entry.note">{{ entry.note }}</p>
         </li>
       </ol>
@@ -110,7 +135,9 @@ const flowEdges = computed(() => {
       >
         <div class="screen-card-top">
           <h2>{{ screen.label }}</h2>
-          <span class="variant-count">{{ screen.variants.length }} Variant</span>
+          <span class="variant-count"
+            >{{ screen.variants.length }} Variant</span
+          >
         </div>
         <p class="screen-path">{{ screen.path }}</p>
         <p class="screen-default">
@@ -130,23 +157,113 @@ const flowEdges = computed(() => {
   <v-alert v-else type="error" variant="tonal"
     >未知原型：{{ prototypeId }}</v-alert
   >
-  <LifecycleTransitionDialog v-if="prototype" v-model="transitionOpen" :prototype="prototype" />
+  <LifecycleTransitionDialog
+    v-if="prototype"
+    v-model="transitionOpen"
+    :prototype="prototype"
+  />
 </template>
 
 <style scoped>
+.status-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.overview-stats {
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+}
+.lifecycle-status {
+  min-height: 28px;
+  padding: 0 12px;
+  font-size: 0.75rem;
+}
+.status-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.local-status {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, rgb(var(--v-theme-warning)) 12%, transparent);
+  color: rgb(var(--v-theme-warning));
+  font-size: 0.68rem;
+  font-weight: 750;
+}
+.meta-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+.meta-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: rgba(var(--v-theme-on-surface), 0.06);
+  color: rgba(var(--v-theme-on-surface), 0.7);
+  font-size: 0.6875rem;
+  font-weight: 650;
+}
+.meta-chip.is-owner {
+  background: rgba(var(--v-theme-on-surface), 0.08);
+}
+.meta-chip.is-role {
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  background: transparent;
+}
 .flow-panel {
   padding: 14px 16px;
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-radius: 14px;
   background: rgb(var(--v-theme-surface));
 }
-.local-status { align-self:center; padding:4px 8px; border-radius:999px; background:color-mix(in srgb,rgb(var(--v-theme-warning)) 12%,transparent); color:rgb(var(--v-theme-warning)); font-size:.68rem; font-weight:750; }
-.history-panel { padding:14px 16px; border:1px solid rgba(var(--v-border-color),var(--v-border-opacity)); border-radius:14px; background:rgb(var(--v-theme-surface)); }
-.history-panel h2 { display:flex; align-items:center; gap:6px; margin:0 0 10px; font-size:.875rem; }
-.history-panel ol { list-style:none; display:grid; gap:8px; margin:0; padding:0; }
-.history-panel li { padding-left:10px; border-left:2px solid color-mix(in srgb,rgb(var(--v-theme-primary)) 30%,transparent); }
-.history-panel li div { display:flex; justify-content:space-between; gap:12px; font-size:.75rem; }
-.history-panel time,.history-panel p { color:rgba(var(--v-theme-on-surface),.5); font-size:.68rem; }.history-panel p{margin:4px 0 0}
+.history-panel {
+  padding: 14px 16px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 14px;
+  background: rgb(var(--v-theme-surface));
+}
+.history-panel h2 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  font-size: 0.875rem;
+}
+.history-panel ol {
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+.history-panel li {
+  padding-left: 10px;
+  border-left: 2px solid
+    color-mix(in srgb, rgb(var(--v-theme-primary)) 30%, transparent);
+}
+.history-panel li div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.75rem;
+}
+.history-panel time,
+.history-panel p {
+  color: rgba(var(--v-theme-on-surface), 0.5);
+  font-size: 0.68rem;
+}
+.history-panel p {
+  margin: 4px 0 0;
+}
 .flow-panel h2 {
   margin: 0 0 10px;
   font-size: 0.875rem;
@@ -188,10 +305,16 @@ const flowEdges = computed(() => {
   background: rgb(var(--v-theme-surface));
   color: inherit;
   text-decoration: none;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 .screen-card:hover {
-  border-color: color-mix(in srgb, rgb(var(--v-theme-primary)) 45%, transparent);
+  border-color: color-mix(
+    in srgb,
+    rgb(var(--v-theme-primary)) 45%,
+    transparent
+  );
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
 }
 .screen-card-top {
@@ -239,6 +362,13 @@ const flowEdges = computed(() => {
 @media (max-width: 1279px) {
   .screen-card {
     grid-column: span 6;
+  }
+  .overview-stats {
+    justify-items: start;
+  }
+  .status-cluster,
+  .meta-cluster {
+    justify-content: flex-start;
   }
 }
 @media (max-width: 720px) {

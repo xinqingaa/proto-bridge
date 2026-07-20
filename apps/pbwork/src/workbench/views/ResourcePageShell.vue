@@ -81,6 +81,7 @@ defineProps<{
   flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-end;
+  align-items: center;
 }
 
 .resource-toolbar {

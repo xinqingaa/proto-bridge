@@ -346,11 +346,13 @@ function onTogglePan() {
   .canvas-toolbar {
     gap: 4px;
   }
-  .zoom-slider,
   .preview-settings span,
   .tool-primary span,
   .toolbar-spacer {
     display: none;
+  }
+  .zoom-slider {
+    width: 64px;
   }
   .toolbar-cluster {
     gap: 3px;
@@ -359,6 +361,9 @@ function onTogglePan() {
 @container (max-width: 500px) {
   .zoom-label {
     min-width: 42px;
+  }
+  .zoom-slider {
+    width: 52px;
   }
   .cluster-sep {
     display: none;

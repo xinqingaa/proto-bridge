@@ -106,6 +106,13 @@ usePbInspect({
   color: var(--pb-color-on-surface-muted, #1f29379e);
   font: var(--pb-typography-content, 400 14px/1.5 Inter, system-ui, sans-serif);
 }
+.pb-data-list:has(.pb-data-list-loading),
+.pb-data-list:has(.pb-data-list-empty) {
+  display: grid;
+  min-height: 240px;
+  height: 100%;
+  place-content: center;
+}
 .pb-data-list-items {
   list-style: none;
   margin: 0;

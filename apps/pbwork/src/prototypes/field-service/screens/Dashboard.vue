@@ -1,6 +1,149 @@
 <script setup lang="ts">
-import { computed } from "vue";import{useRoute,useRouter}from"vue-router";import FieldServiceShell from"../FieldServiceShell.vue";import Card from"@/design-system/components/basic/Card.vue";import Chip from"@/design-system/components/basic/Chip.vue";import Button from"@/design-system/components/basic/Button.vue";import ProgressIndicator from"@/design-system/components/basic/ProgressIndicator.vue";import Spinner from"@/design-system/components/basic/Spinner.vue";import EmptyState from"@/design-system/components/complex/EmptyState.vue";
-const route=useRoute();const router=useRouter();const variant=computed(()=>typeof route.query.variant==="string"?route.query.variant:"default");const theme=computed(()=>typeof route.query.theme==="string"?route.query.theme:"light");function go(slug:string,variantId="default"){void router.push(`/prototype/field-service/${slug}?variant=${variantId}&theme=${theme.value}`)}
+import { computed } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import FieldServiceShell from "../FieldServiceShell.vue";
+import Card from "@/design-system/components/basic/Card.vue";
+import Chip from "@/design-system/components/basic/Chip.vue";
+import Button from "@/design-system/components/basic/Button.vue";
+import ProgressIndicator from "@/design-system/components/basic/ProgressIndicator.vue";
+import Spinner from "@/design-system/components/basic/Spinner.vue";
+import EmptyState from "@/design-system/components/complex/EmptyState.vue";
+
+const route = useRoute();
+const router = useRouter();
+const variant = computed(() =>
+  typeof route.query.variant === "string" ? route.query.variant : "default",
+);
+const theme = computed(() =>
+  typeof route.query.theme === "string" ? route.query.theme : "light",
+);
+const isStateView = computed(
+  () => variant.value === "loading" || variant.value === "empty",
+);
+function go(slug: string, variantId = "default") {
+  void router.push(
+    `/prototype/field-service/${slug}?variant=${variantId}&theme=${theme.value}`,
+  );
+}
 </script>
-<template><FieldServiceShell title="现场服务" active="工作台"><div class="page" data-pb-id="field-service.dashboard"><div class="welcome"><div><span>7 月 20 日 · 星期一</span><h1>早上好，李明</h1><p>今天有 6 张工单需要处理</p></div><Chip label="在线" tone="success"/></div><Spinner v-if="variant==='loading'" label="正在加载工作台" size="lg"/><EmptyState v-else-if="variant==='empty'" title="今天没有待办" description="所有现场任务都已处理完成。"/><template v-else><section class="metric-grid"><button @click="go('work-orders')"><strong>6</strong><span>待处理</span></button><button @click="go('work-orders','overdue')"><strong class="danger">2</strong><span>已超时</span></button><button @click="go('work-orders','high-priority')"><strong>3</strong><span>高优先级</span></button></section><Card title="今日进度" subtitle="已完成 4 / 10"><ProgressIndicator :value="40" label="40%"/></Card><Card title="下一项任务" subtitle="距离约定时间还有 35 分钟"><div class="next-order"><div><Chip label="高优先级" tone="error"/><h2>中央空调异常检修</h2><p>远景科技园 A3 栋 · 设备 AHU-08</p></div><Button label="查看工单" @click="go('work-order-detail')"/></div></Card><Button label="新建工单" @click="go('create-work-order')"/></template></div></FieldServiceShell></template>
-<style scoped>.page{display:grid;gap:14px;padding:16px}.welcome{display:flex;justify-content:space-between;align-items:start}.welcome span,.welcome p{color:var(--pb-color-on-surface-muted);font:var(--pb-typography-caption)}h1{margin:3px 0;font:var(--pb-typography-title-lg)}.metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.metric-grid button{display:grid;gap:3px;padding:14px 8px;border:1px solid var(--pb-color-border);border-radius:var(--pb-radius-lg);background:var(--pb-color-surface);color:inherit;text-align:left}.metric-grid strong{font:var(--pb-typography-title)}.metric-grid span{color:var(--pb-color-on-surface-muted);font:var(--pb-typography-caption)}.danger{color:var(--pb-color-error)}.next-order{display:grid;gap:12px}.next-order h2{margin:8px 0 3px;font:var(--pb-typography-subtitle)}.next-order p{margin:0;color:var(--pb-color-on-surface-muted);font:var(--pb-typography-caption)}</style>
+
+<template>
+  <FieldServiceShell title="现场服务" active="工作台">
+    <div
+      class="page"
+      :class="{ 'is-state': isStateView }"
+      data-pb-id="field-service.dashboard"
+    >
+      <Spinner
+        v-if="variant === 'loading'"
+        label="正在加载工作台"
+        size="lg"
+      />
+      <EmptyState
+        v-else-if="variant === 'empty'"
+        title="今天没有待办"
+        description="所有现场任务都已处理完成。"
+      />
+      <template v-else>
+        <div class="welcome">
+          <div>
+            <span>7 月 20 日 · 星期一</span>
+            <h1>早上好，李明</h1>
+            <p>今天有 6 张工单需要处理</p>
+          </div>
+          <Chip label="在线" tone="success" />
+        </div>
+        <section class="metric-grid">
+          <button @click="go('work-orders')">
+            <strong>6</strong><span>待处理</span>
+          </button>
+          <button @click="go('work-orders', 'overdue')">
+            <strong class="danger">2</strong><span>已超时</span>
+          </button>
+          <button @click="go('work-orders', 'high-priority')">
+            <strong>3</strong><span>高优先级</span>
+          </button>
+        </section>
+        <Card title="今日进度" subtitle="已完成 4 / 10">
+          <ProgressIndicator :value="40" label="40%" />
+        </Card>
+        <Card title="下一项任务" subtitle="距离约定时间还有 35 分钟">
+          <div class="next-order">
+            <div>
+              <Chip label="高优先级" tone="error" />
+              <h2>中央空调异常检修</h2>
+              <p>远景科技园 A3 栋 · 设备 AHU-08</p>
+            </div>
+            <Button label="查看工单" @click="go('work-order-detail')" />
+          </div>
+        </Card>
+        <Button label="新建工单" @click="go('create-work-order')" />
+      </template>
+    </div>
+  </FieldServiceShell>
+</template>
+
+<style scoped>
+.page {
+  display: grid;
+  gap: 14px;
+  min-height: 100%;
+  padding: 16px;
+}
+.page.is-state {
+  place-content: center;
+  justify-items: center;
+}
+.welcome {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+}
+.welcome span,
+.welcome p {
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
+}
+h1 {
+  margin: 3px 0;
+  font: var(--pb-typography-title-lg);
+}
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.metric-grid button {
+  display: grid;
+  gap: 3px;
+  padding: 14px 8px;
+  border: 1px solid var(--pb-color-border);
+  border-radius: var(--pb-radius-lg);
+  background: var(--pb-color-surface);
+  color: inherit;
+  text-align: left;
+}
+.metric-grid strong {
+  font: var(--pb-typography-title);
+}
+.metric-grid span {
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
+}
+.danger {
+  color: var(--pb-color-error);
+}
+.next-order {
+  display: grid;
+  gap: 12px;
+}
+.next-order h2 {
+  margin: 8px 0 3px;
+  font: var(--pb-typography-subtitle);
+}
+.next-order p {
+  margin: 0;
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
+}
+</style>

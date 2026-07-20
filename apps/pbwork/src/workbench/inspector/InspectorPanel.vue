@@ -477,7 +477,7 @@ function downloadUnreadable() {
           { id: 'component', label: '组件' },
           { id: 'overview', label: '结构' },
           { id: 'convention', label: '约定' },
-          { id: 'comments', label: `评论 ${visibleComments.length}` },
+          { id: 'comments', label: '评论', count: visibleComments.length },
         ]"
         :key="item.id"
         type="button"
@@ -485,9 +485,15 @@ function downloadUnreadable() {
         class="tab"
         :class="{ 'is-active': tab === item.id }"
         :aria-selected="tab === item.id"
+        :aria-label="
+          item.count !== undefined ? `${item.label} ${item.count}` : item.label
+        "
         @click="tab = item.id as typeof tab"
       >
-        {{ item.label }}
+        <span class="tab-label">{{ item.label }}</span>
+        <span v-if="item.count !== undefined" class="tab-count">{{
+          item.count
+        }}</span>
       </button>
     </div>
 
@@ -1058,17 +1064,22 @@ function downloadUnreadable() {
 .tab-bar {
   display: flex;
   flex: 0 0 auto;
-  gap: 4px;
+  gap: 3px;
   padding: 3px;
   border-radius: 10px;
   background: rgba(var(--v-theme-on-surface), 0.05);
   overflow-x: auto;
+  scrollbar-width: thin;
 }
 
 .tab {
-  flex: 1 0 auto;
+  display: inline-flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   min-width: 0;
-  padding: 7px 10px;
+  padding: 7px 6px;
   border: 0;
   border-radius: 8px;
   background: transparent;
@@ -1078,10 +1089,32 @@ function downloadUnreadable() {
   cursor: pointer;
 }
 
+.tab-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tab-count {
+  flex: 0 0 auto;
+  min-width: 16px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: rgba(var(--v-theme-on-surface), 0.08);
+  font-size: 0.625rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
 .tab.is-active {
   background: rgb(var(--v-theme-surface));
   color: rgb(var(--v-theme-on-surface));
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.tab.is-active .tab-count {
+  background: color-mix(in srgb, rgb(var(--v-theme-primary)) 16%, transparent);
+  color: rgb(var(--v-theme-primary));
 }
 
 .pane {

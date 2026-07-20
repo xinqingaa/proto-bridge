@@ -34,6 +34,8 @@ const items = computed(() => {
 
 <style scoped>
 .screen {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
   background: var(--pb-color-background, #f5f8fc);
   color: var(--pb-color-on-surface, #1f2937);
@@ -45,6 +47,8 @@ const items = computed(() => {
   font: var(--pb-typography-caption, 400 12px/1.4 Inter, system-ui, sans-serif);
 }
 .list {
+  flex: 1;
   margin: 8px 12px 16px;
+  min-height: 0;
 }
 </style>

@@ -3,29 +3,42 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import {
   Archive,
   BadgeCheck,
+  Blend,
+  BetweenHorizontalStart,
   ChevronRight,
+  Circle,
   CircleDot,
   ClipboardCheck,
   Component as ComponentIcon,
+  Droplets,
+  Frame,
   Info,
+  Layers2,
   Layers3,
   LayoutGrid,
   ListTree,
+  Maximize2,
   MessageSquareText,
+  Moon,
   Palette,
   PanelLeftClose,
   PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
   Paintbrush,
+  Radius,
   Search,
   ChevronsUp,
   ChevronsDown,
   Settings,
   Shapes,
   Sparkles,
+  SquareMousePointer,
+  Sun,
   SunMoon,
   SwatchBook,
+  Timer,
+  Type,
   MousePointerClick,
   TextCursorInput,
   Tags,
@@ -345,6 +358,20 @@ const primaryIcons = {
 } as const;
 
 function secondaryIconFor(id: string) {
+  const foundationIcons: Record<string, typeof ComponentIcon> = {
+    "token-color": Droplets,
+    "token-typography": Type,
+    "token-spacing": BetweenHorizontalStart,
+    "token-sizing": Maximize2,
+    "token-radius": Radius,
+    "token-border": Frame,
+    "token-elevation": Layers2,
+    "token-opacity": Blend,
+    "token-motion": Timer,
+    "theme-light": Sun,
+    "theme-dark": Moon,
+  };
+  if (foundationIcons[id]) return foundationIcons[id];
   if (id.startsWith("token-")) return SwatchBook;
   if (id.startsWith("theme-")) return Paintbrush;
   if (id.startsWith("lifecycle-all")) return LayoutGrid;
@@ -354,12 +381,12 @@ function secondaryIconFor(id: string) {
   if (id.startsWith("lifecycle-archived")) return Archive;
   const componentIcons: Record<string, typeof ComponentIcon> = {
     button: MousePointerClick,
-    "icon-button": CircleDot,
+    "icon-button": SquareMousePointer,
     "text-field": TextCursorInput,
     select: ListFilter,
     textarea: Rows3,
     checkbox: CheckSquare,
-    "radio-group": CircleDot,
+    "radio-group": Circle,
     switch: ToggleRight,
     chip: Tags,
     card: CreditCard,
@@ -1171,7 +1198,8 @@ onMounted(() => {
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  min-width: calc(var(--inspector-expanded-width) - 16px);
+  /* Match .inspector-panel padding-inline: 12px (12 + 12). */
+  min-width: calc(var(--inspector-expanded-width) - 24px);
   overflow: hidden;
 }
 .content-canvas {
@@ -1605,7 +1633,6 @@ onMounted(() => {
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  padding-right: 1px;
 }
 .inspector-empty {
   display: grid;
