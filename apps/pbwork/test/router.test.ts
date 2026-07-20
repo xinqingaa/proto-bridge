@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import { router } from "@/app/router";
 
 describe("PBWork routes", () => {
-  it("resolves foundations, components, prototypes and runtime", () => {
+  it("resolves overview, foundations, components, prototypes and runtime", () => {
+    expect(router.resolve("/workbench/overview").name).toBe(
+      "workbench-overview",
+    );
     expect(router.resolve("/workbench/foundations/tokens/color").name).toBe(
       "foundation-tokens",
     );

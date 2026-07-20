@@ -1,11 +1,17 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from "vue";
 import {
   Archive,
   BadgeCheck,
   Blend,
   BetweenHorizontalStart,
-  ChevronRight,
   Circle,
   CircleDot,
   ClipboardCheck,
@@ -28,8 +34,6 @@ import {
   Paintbrush,
   Radius,
   Search,
-  ChevronsUp,
-  ChevronsDown,
   Settings,
   Shapes,
   Sparkles,
@@ -58,6 +62,8 @@ import {
   Bell,
   Inbox,
   ListCollapse,
+  Command,
+  Home,
 } from "lucide-vue-next";
 import { RouterLink, RouterView, useRoute } from "vue-router";
 import {
@@ -69,24 +75,34 @@ import { useCommentsStore } from "@/app/stores/comments";
 import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
 import {
   buildPrototypeTree,
+  buildWorkbenchNavigationTree,
   getSecondaryNavigation,
-  groupSecondaryNavigation,
   isWorkbenchSectionId,
   parsePrototypeLifecycle,
   primaryNavigation,
   searchableNavigation,
+  type WorkbenchNavigationTreeNode,
 } from "@/workbench/navigation";
-import { loadPrototypes } from "@/design-system/loaders";
+import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
 import InspectorPanel from "@/workbench/inspector/InspectorPanel.vue";
+import WorkbenchNavigationTree from "@/workbench/WorkbenchNavigationTree.vue";
 
 /** Keep in sync with `.resource-panel` / `.inspector-panel` width transition. */
 const PANEL_SLIDE_MS = 320;
-const PROTOTYPE_TREE_EXPAND_KEY = "pbwork.workbench.prototype-tree.v2";
+const PROTOTYPE_TREE_EXPAND_KEY = "pbwork.workbench.navigation-tree.v3";
 
 function loadPrototypeTreeExpanded(): string[] {
   try {
     const raw = window.localStorage.getItem(PROTOTYPE_TREE_EXPAND_KEY);
-    if (!raw) return [];
+    if (!raw) {
+      return [
+        "foundations",
+        "components",
+        "prototypes",
+        "prototype-lifecycles",
+        "prototype-assets",
+      ];
+    }
     const parsed = JSON.parse(raw) as unknown;
     return Array.isArray(parsed)
       ? parsed.filter((item): item is string => typeof item === "string")
@@ -122,9 +138,6 @@ const section = computed(() =>
   primaryNavigation.find((item) => item.id === sectionId.value)!,
 );
 const secondaryItems = computed(() => getSecondaryNavigation(sectionId.value));
-const secondaryGroups = computed(() =>
-  groupSecondaryNavigation(secondaryItems.value),
-);
 const selectedSecondaryId = computed(() => {
   const match = secondaryItems.value.find((item) => item.to === route.path);
   if (match) return match.id;
@@ -145,8 +158,11 @@ const selectedSecondaryId = computed(() => {
     if (lifecycle) return `lifecycle-${lifecycle}`;
     const prototypeId = route.params.prototypeId;
     if (typeof prototypeId === "string") {
-      const prototype = loadPrototypes().find((item) => item.id === prototypeId);
-      if (prototype) return `lifecycle-${prototypeLifecycle.effectiveLifecycle(prototype)}`;
+      const prototype = loadPrototypes().find(
+        (item) => item.id === prototypeId,
+      );
+      if (prototype)
+        return `lifecycle-${prototypeLifecycle.effectiveLifecycle(prototype)}`;
     }
   }
   return "";
@@ -159,14 +175,16 @@ const activePrototypeLifecycle = computed(() => {
   const prototypeId = route.params.prototypeId;
   if (typeof prototypeId === "string") {
     const prototype = loadPrototypes().find((item) => item.id === prototypeId);
-      if (prototype) return prototypeLifecycle.effectiveLifecycle(prototype);
+    if (prototype) return prototypeLifecycle.effectiveLifecycle(prototype);
   }
   return "all" as const;
 });
 const prototypeTree = computed(() =>
   sectionId.value === "prototypes"
-    ? buildPrototypeTree(activePrototypeLifecycle.value, (id, registered) =>
-        prototypeLifecycle.overrides[id] ?? registered)
+    ? buildPrototypeTree(
+        activePrototypeLifecycle.value,
+        (id, registered) => prototypeLifecycle.overrides[id] ?? registered,
+      )
     : [],
 );
 const filteredPrototypeTree = computed(() => {
@@ -177,13 +195,22 @@ const filteredPrototypeTree = computed(() => {
     const children = (prototype.children ?? []).flatMap((screen) => {
       const screenMatch = screen.label.toLocaleLowerCase().includes(query);
       const variants = (screen.children ?? []).filter((variant) =>
-        variant.label.toLocaleLowerCase().includes(query));
-      const matchingChildren = prototypeMatch || screenMatch ? screen.children : variants;
+        variant.label.toLocaleLowerCase().includes(query),
+      );
+      const matchingChildren =
+        prototypeMatch || screenMatch ? screen.children : variants;
       return prototypeMatch || screenMatch || variants.length
-        ? [{ ...screen, ...(matchingChildren ? { children: matchingChildren } : {}) }]
+        ? [
+            {
+              ...screen,
+              ...(matchingChildren ? { children: matchingChildren } : {}),
+            },
+          ]
         : [];
     });
-    return prototypeMatch || children.length ? [{ ...prototype, children }] : [];
+    return prototypeMatch || children.length
+      ? [{ ...prototype, children }]
+      : [];
   });
 });
 const selectedPrototypeId = computed(() =>
@@ -203,10 +230,6 @@ const lifecycleFilters = computed(() =>
 
 const expandedTreeIds = ref<string[]>(loadPrototypeTreeExpanded());
 
-function isTreeExpanded(id: string): boolean {
-  return expandedTreeIds.value.includes(id);
-}
-
 function persistTreeExpanded() {
   window.localStorage.setItem(
     PROTOTYPE_TREE_EXPAND_KEY,
@@ -214,105 +237,34 @@ function persistTreeExpanded() {
   );
 }
 
-function expandTreeNode(id: string) {
-  if (expandedTreeIds.value.includes(id)) return;
-  expandedTreeIds.value = [...expandedTreeIds.value, id];
-  persistTreeExpanded();
-}
-
 function toggleTreeNode(id: string) {
-  expandedTreeIds.value = isTreeExpanded(id)
+  expandedTreeIds.value = expandedTreeIds.value.includes(id)
     ? expandedTreeIds.value.filter((item) => item !== id)
     : [...expandedTreeIds.value, id];
   persistTreeExpanded();
 }
 
-function expandPrototypeTree(prototype: (typeof prototypeTree.value)[number]) {
-  const ids = [prototype.id, ...(prototype.children ?? []).map((item) => item.id)];
-  expandedTreeIds.value = [...new Set([...expandedTreeIds.value, ...ids])];
-  persistTreeExpanded();
-}
-
-function expandAllTree() {
-  expandedTreeIds.value = prototypeTree.value.flatMap((prototype) => [
-    prototype.id,
-    ...(prototype.children ?? []).map((screen) => screen.id),
-  ]);
-  persistTreeExpanded();
-}
-
-function collapseAllTree() {
-  expandedTreeIds.value = [];
-  persistTreeExpanded();
-}
-
-function openCommentCount(prototypeId: string, screenId?: string, variantId?: string) {
-  return comments.comments.filter((comment) =>
-    comment.status === "open" && comment.prototypeId === prototypeId &&
-    (!screenId || comment.screenId === screenId) &&
-    (!variantId || comment.variantId === variantId),
+function openCommentCount(
+  prototypeId: string,
+  screenId?: string,
+  variantId?: string,
+) {
+  return comments.comments.filter(
+    (comment) =>
+      comment.status === "open" &&
+      comment.prototypeId === prototypeId &&
+      (!screenId || comment.screenId === screenId) &&
+      (!variantId || comment.variantId === variantId),
   ).length;
 }
 
-function variantIdFromTo(to: string) {
-  try {
-    return new URL(to, "http://local.invalid").searchParams.get("variant") ?? "";
-  } catch {
-    return "";
-  }
-}
-
-function screenSlugFromTo(to: string): string {
-  return to.split("/").pop()?.split("?")[0] ?? "";
-}
-
-watch(
-  () =>
-    [selectedPrototypeId.value, selectedScreenSlug.value, prototypeTree.value] as const,
-  ([prototypeId, screenSlug, tree]) => {
-    if (!prototypeId) return;
-    expandTreeNode(prototypeId);
-    if (!screenSlug) return;
-    const prototype = tree.find((item) => item.id === prototypeId);
-    const screen = prototype?.children?.find(
-      (item) => screenSlugFromTo(item.to) === screenSlug,
-    );
-    if (screen) expandTreeNode(screen.id);
-  },
-  { immediate: true },
-);
-
-function isPrototypeActive(prototypeId: string): boolean {
-  return (
-    selectedPrototypeId.value === prototypeId && selectedScreenSlug.value === ""
-  );
-}
-
-function isScreenActive(screenTo: string): boolean {
-  const slug = screenSlugFromTo(screenTo);
-  return (
-    selectedPrototypeId.value !== "" &&
-    selectedScreenSlug.value === slug &&
-    selectedVariantId.value === ""
-  );
-}
-
 function isVariantActive(variantTo: string): boolean {
-  try {
-    const url = new URL(variantTo, "http://local.invalid");
-    const variant = url.searchParams.get("variant") ?? "";
-    const path = url.pathname;
-    const slug = path.split("/").pop() ?? "";
-    return (
-      selectedPrototypeId.value !== "" &&
-      selectedScreenSlug.value === slug &&
-      selectedVariantId.value === variant
-    );
-  } catch {
-    return false;
-  }
+  const url = new URL(variantTo, "http://local.invalid");
+  return (
+    selectedScreenSlug.value === url.pathname.split("/").pop() &&
+    selectedVariantId.value === (url.searchParams.get("variant") ?? "")
+  );
 }
-
 function variantLinkTo(variantTo: string): string {
   const currentTheme =
     typeof route.query.theme === "string" ? route.query.theme : null;
@@ -321,10 +273,211 @@ function variantLinkTo(variantTo: string): string {
   url.searchParams.set("theme", currentTheme);
   return `${url.pathname}?${url.searchParams.toString()}`;
 }
-const breadcrumbs = computed(() => [
-  { title: section.value.label, disabled: false, to: section.value.to },
-  { title: String(route.meta.title ?? ""), disabled: true },
-]);
+
+function withCurrentTheme(
+  nodes: WorkbenchNavigationTreeNode[],
+): WorkbenchNavigationTreeNode[] {
+  const currentTheme =
+    typeof route.query.theme === "string" ? route.query.theme : null;
+  return nodes.map((node) => {
+    let to = node.to;
+    if (to && node.kind === "variant" && currentTheme) {
+      const url = new URL(to, "http://local.invalid");
+      url.searchParams.set("theme", currentTheme);
+      to = `${url.pathname}?${url.searchParams.toString()}`;
+    }
+    return {
+      ...node,
+      ...(to ? { to } : {}),
+      ...(node.children ? { children: withCurrentTheme(node.children) } : {}),
+    };
+  });
+}
+
+const navigationTree = computed(() =>
+  withCurrentTheme(
+    buildWorkbenchNavigationTree(
+      (id, registered) => prototypeLifecycle.overrides[id] ?? registered,
+    ),
+  ),
+);
+
+const sectionNavigationTree = computed(() => {
+  const current = navigationTree.value.find(
+    (node) => node.id === sectionId.value,
+  );
+  if (!current) return [];
+  return sectionId.value === "overview" ? [current] : (current.children ?? []);
+});
+
+function filterNavigationNodes(
+  nodes: WorkbenchNavigationTreeNode[],
+  query: string,
+): WorkbenchNavigationTreeNode[] {
+  if (!query) return nodes;
+  return nodes.flatMap((node) => {
+    const children = filterNavigationNodes(node.children ?? [], query);
+    const matches = node.label.toLocaleLowerCase().includes(query);
+    return matches || children.length
+      ? [
+          {
+            ...node,
+            ...(node.children
+              ? { children: matches ? node.children : children }
+              : {}),
+          },
+        ]
+      : [];
+  });
+}
+
+const filteredNavigationTree = computed(() =>
+  filterNavigationNodes(
+    sectionNavigationTree.value,
+    treeQuery.value.trim().toLocaleLowerCase(),
+  ),
+);
+
+function collectExpandableIds(nodes: WorkbenchNavigationTreeNode[]): string[] {
+  return nodes.flatMap((node) =>
+    node.children?.length
+      ? [node.id, ...collectExpandableIds(node.children)]
+      : [],
+  );
+}
+
+const displayedExpandedIds = computed(() =>
+  treeQuery.value.trim()
+    ? collectExpandableIds(filteredNavigationTree.value)
+    : expandedTreeIds.value,
+);
+
+const activeNavigationId = computed(() => {
+  if (sectionId.value === "overview") return "overview";
+  if (sectionId.value === "foundations") return selectedSecondaryId.value;
+  if (sectionId.value === "components") return selectedSecondaryId.value;
+  const lifecycle = parsePrototypeLifecycle(
+    String(route.params.lifecycle ?? ""),
+  );
+  if (lifecycle) return `lifecycle-${lifecycle}`;
+  const prototypeId = selectedPrototypeId.value;
+  if (!prototypeId) return "prototypes";
+  const screen = loadPrototypeScreens().find(
+    (item) =>
+      item.prototypeId === prototypeId &&
+      item.screenSlug === selectedScreenSlug.value,
+  );
+  if (!screen) return `prototype-${prototypeId}`;
+  if (selectedVariantId.value) {
+    return `variant-${screen.screenId}.${selectedVariantId.value}`;
+  }
+  return `screen-${screen.screenId}`;
+});
+
+function ancestorIds(
+  nodes: WorkbenchNavigationTreeNode[],
+  target: string,
+  parents: string[] = [],
+): string[] {
+  for (const node of nodes) {
+    if (node.id === target) return parents;
+    const match = ancestorIds(node.children ?? [], target, [
+      ...parents,
+      node.id,
+    ]);
+    if (match.length) return match;
+  }
+  return [];
+}
+
+watch(
+  [activeNavigationId, navigationTree],
+  ([activeId, tree]) => {
+    const required = ancestorIds(tree, activeId);
+    const next = [...new Set([...expandedTreeIds.value, ...required])];
+    if (next.length === expandedTreeIds.value.length) return;
+    expandedTreeIds.value = next;
+    persistTreeExpanded();
+  },
+  { immediate: true },
+);
+
+watch(
+  activeNavigationId,
+  async () => {
+    await nextTick();
+    document
+      .querySelector(".resource-panel .nav-node.is-active")
+      ?.scrollIntoView({ block: "nearest" });
+  },
+  { immediate: true },
+);
+
+const navigationAttentionCounts = computed(() => {
+  const counts: Record<string, number> = {};
+  for (const comment of comments.comments) {
+    if (comment.status !== "open") continue;
+    const prototypeKey = `prototype-${comment.prototypeId}`;
+    const screenKey = `screen-${comment.screenId}`;
+    counts[prototypeKey] = (counts[prototypeKey] ?? 0) + 1;
+    counts[screenKey] = (counts[screenKey] ?? 0) + 1;
+    if (comment.variantId) {
+      const variantKey = `variant-${comment.screenId}.${comment.variantId}`;
+      counts[variantKey] = (counts[variantKey] ?? 0) + 1;
+    }
+  }
+  return counts;
+});
+
+const breadcrumbs = computed(() => {
+  if (sectionId.value === "overview") return [];
+  const items = [
+    { title: section.value.label, disabled: false, to: section.value.to },
+  ];
+  if (sectionId.value !== "prototypes") {
+    const current = secondaryItems.value.find(
+      (item) => item.id === selectedSecondaryId.value,
+    );
+    if (current)
+      items.push({ title: current.label, disabled: true, to: current.to });
+    return items;
+  }
+  const prototype = loadPrototypes().find(
+    (item) => item.id === selectedPrototypeId.value,
+  );
+  if (!prototype) {
+    const lifecycle = lifecycleFilters.value.find(
+      (item) => item.id === selectedSecondaryId.value,
+    );
+    if (lifecycle)
+      items.push({ title: lifecycle.label, disabled: true, to: lifecycle.to });
+    return items;
+  }
+  items.push({
+    title: prototype.label,
+    disabled: !selectedScreenSlug.value,
+    to: `/workbench/prototypes/${prototype.id}`,
+  });
+  const screen = loadPrototypeScreens().find(
+    (item) =>
+      item.prototypeId === prototype.id &&
+      item.screenSlug === selectedScreenSlug.value,
+  );
+  if (screen) {
+    items.push({
+      title: screen.label,
+      disabled: !selectedVariantId.value,
+      to: route.path,
+    });
+    const variant = screen.variants.find(
+      (item) => item.id === selectedVariantId.value,
+    );
+    if (variant) {
+      items.push({ title: variant.label, disabled: true, to: route.fullPath });
+    }
+  }
+  return items;
+});
 const themeLabel = computed(() =>
   workbench.theme === "pbworkLight"
     ? "切换到深色工作台主题"
@@ -352,6 +505,7 @@ const searchResults = computed(() => {
 });
 
 const primaryIcons = {
+  overview: Home,
   foundations: Palette,
   components: Shapes,
   prototypes: Layers3,
@@ -411,6 +565,19 @@ function secondaryIconFor(id: string) {
   return ComponentIcon;
 }
 
+function navigationTreeIconFor(node: WorkbenchNavigationTreeNode) {
+  if (
+    node.kind === "group" ||
+    node.kind === "prototype" ||
+    node.kind === "screen" ||
+    node.kind === "variant"
+  ) {
+    return null;
+  }
+  if (node.id === "overview") return Home;
+  return secondaryIconFor(node.id);
+}
+
 const inspectorStubTabs = [
   { id: "styles", label: "样式", icon: Paintbrush },
   { id: "component", label: "组件", icon: ComponentIcon },
@@ -422,11 +589,7 @@ const inspectorStubTabs = [
 watch(
   () => selection.selected,
   (value) => {
-    if (
-      value &&
-      showElementInspector.value &&
-      !workbench.inspectorOpen
-    ) {
+    if (value && showElementInspector.value && !workbench.inspectorOpen) {
       workbench.toggleInspector();
     }
   },
@@ -523,8 +686,16 @@ function onInspectorResizeStart(event: PointerEvent) {
   window.addEventListener("pointerup", onUp);
 }
 
+function onGlobalKeydown(event: KeyboardEvent) {
+  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+    event.preventDefault();
+    searchOpen.value = true;
+  }
+}
+
 onBeforeUnmount(() => {
   document.documentElement.classList.remove("pbwork-workbench");
+  window.removeEventListener("keydown", onGlobalKeydown);
   resizingInspector.value = false;
   clearResourceSlideTimer();
   clearInspectorSlideTimer();
@@ -532,6 +703,7 @@ onBeforeUnmount(() => {
 
 onMounted(() => {
   document.documentElement.classList.add("pbwork-workbench");
+  window.addEventListener("keydown", onGlobalKeydown);
 });
 </script>
 
@@ -541,32 +713,41 @@ onMounted(() => {
     class="pbwork-shell"
     data-testid="workbench-root"
   >
-    <v-app-bar height="56" flat border class="workbench-app-bar">
+    <v-app-bar height="60" flat class="workbench-app-bar">
       <v-toolbar-title class="pbwork-title">
-        <RouterLink to="/workbench/foundations/tokens/color"
-          >PBWork</RouterLink
+        <RouterLink
+          to="/workbench/overview"
+          class="brand-link"
+          aria-label="PBWork 概览"
         >
+          <span class="brand-mark"
+            ><img src="/brand/pbwork-mark.svg" alt=""
+          /></span>
+          <span class="brand-copy">
+            <strong>PBWork</strong>
+            <small>Workbench</small>
+          </span>
+        </RouterLink>
       </v-toolbar-title>
       <v-breadcrumbs
+        v-if="breadcrumbs.length"
         :items="breadcrumbs"
         class="workbench-breadcrumbs"
         aria-label="当前位置"
       />
       <v-spacer />
 
-      <v-tooltip text="搜索资源" location="bottom">
-        <template #activator="{ props }">
-          <v-btn
-            v-bind="props"
-            icon
-            variant="text"
-            aria-label="搜索资源"
-            @click="searchOpen = true"
-          >
-            <Search :size="19" />
-          </v-btn>
-        </template>
-      </v-tooltip>
+      <button
+        class="command-search"
+        type="button"
+        aria-label="搜索资源"
+        @click="searchOpen = true"
+      >
+        <Search :size="16" aria-hidden="true" />
+        <span>搜索资源</span>
+        <kbd><Command :size="11" />K</kbd>
+      </button>
+      <span class="header-divider" />
       <v-tooltip :text="themeLabel" location="bottom">
         <template #activator="{ props }">
           <v-btn
@@ -626,11 +807,15 @@ onMounted(() => {
           exact
         >
           <div class="primary-nav-content">
-            <component :is="primaryIcons[item.id]" :size="20" aria-hidden="true" />
+            <component
+              :is="primaryIcons[item.id]"
+              :size="20"
+              aria-hidden="true"
+            />
           </div>
-          <v-tooltip activator="parent" location="end">{{
-            item.label
-          }}</v-tooltip>
+          <v-tooltip activator="parent" location="end">
+            {{ item.label }}
+          </v-tooltip>
         </v-list-item>
       </v-list>
     </v-navigation-drawer>
@@ -690,194 +875,29 @@ onMounted(() => {
             <nav
               v-if="resourceContentExpanded"
               class="secondary-nav panel-expanded"
-              aria-label="二级导航"
+              aria-label="工作台导航"
             >
-              <template v-if="sectionId !== 'prototypes'">
-                <section
-                  v-for="group in secondaryGroups"
-                  :key="group.group"
-                  class="secondary-group"
-                >
-                  <h2 class="secondary-group-label">{{ group.group }}</h2>
-                  <v-list density="compact" nav class="secondary-list">
-                    <v-list-item
-                      v-for="item in group.items"
-                      :key="item.id"
-                      class="secondary-item"
-                      :to="item.to"
-                      :title="item.label"
-                      :aria-label="item.label"
-                      :active="selectedSecondaryId === item.id"
-                    >
-                      <template #prepend>
-                        <component
-                          :is="secondaryIconFor(item.id)"
-                          class="secondary-icon"
-                          :size="16"
-                          aria-hidden="true"
-                        />
-                      </template>
-                    </v-list-item>
-                  </v-list>
-                </section>
-              </template>
-
-              <template v-else>
-                <section class="secondary-group">
-                  <h2 class="secondary-group-label">生命周期</h2>
-                  <v-list density="compact" nav class="secondary-list">
-                    <v-list-item
-                      v-for="item in lifecycleFilters"
-                      :key="item.id"
-                      class="secondary-item"
-                      :to="item.to"
-                      :title="item.label"
-                      :aria-label="item.label"
-                      :active="selectedSecondaryId === item.id"
-                    >
-                      <template #prepend>
-                        <component
-                          :is="secondaryIconFor(item.id)"
-                          class="secondary-icon"
-                          :size="16"
-                          aria-hidden="true"
-                        />
-                      </template>
-                    </v-list-item>
-                  </v-list>
-                </section>
-
-                <section class="secondary-group">
-                  <div class="tree-section-heading">
-                    <h2 class="secondary-group-label">
-                      原型树
-                      <span class="secondary-group-hint">原型 → 页面 → 状态</span>
-                    </h2>
-                    <div class="tree-heading-actions">
-                      <button type="button" aria-label="展开全部原型树" title="展开全部" @click="expandAllTree"><ChevronsDown :size="14" /></button>
-                      <button type="button" aria-label="收起全部原型树" title="收起全部" @click="collapseAllTree"><ChevronsUp :size="14" /></button>
-                    </div>
-                  </div>
-                  <label class="tree-search">
-                    <Search :size="14" aria-hidden="true" />
-                    <input v-model="treeQuery" type="search" placeholder="搜索原型、页面或状态" aria-label="搜索原型树" />
-                  </label>
-                  <div
-                    v-if="filteredPrototypeTree.length === 0"
-                    class="tree-empty"
-                  >
-                    {{ treeQuery ? "没有匹配的原型内容" : "此生命周期下暂无原型" }}
-                  </div>
-                  <div
-                    v-for="prototype in filteredPrototypeTree"
-                    :key="prototype.id"
-                    class="proto-tree"
-                  >
-                    <div
-                      class="tree-row"
-                      :class="{
-                        'is-active': isPrototypeActive(prototype.id),
-                      }"
-                    >
-                      <button
-                        v-if="(prototype.children?.length ?? 0) > 0"
-                        type="button"
-                        class="tree-toggle"
-                        :aria-expanded="isTreeExpanded(prototype.id)"
-                        :aria-label="
-                          isTreeExpanded(prototype.id)
-                            ? `收起 ${prototype.label}`
-                            : `展开 ${prototype.label}`
-                        "
-                        @click="toggleTreeNode(prototype.id)"
-                      >
-                        <ChevronRight
-                          class="tree-chevron"
-                          :class="{ 'is-open': isTreeExpanded(prototype.id) }"
-                          :size="14"
-                          aria-hidden="true"
-                        />
-                      </button>
-                      <span v-else class="tree-toggle-spacer" />
-                      <RouterLink
-                        class="tree-link tree-prototype"
-                        :to="prototype.to"
-                      >
-                        <span class="tree-label">{{ prototype.label }}</span>
-                        <span v-if="openCommentCount(prototype.id)" class="tree-comment" :aria-label="`${openCommentCount(prototype.id)} 条未完成评论`"><MessageSquareText :size="11" />{{ openCommentCount(prototype.id) }}</span>
-                        <span class="tree-tag">原型</span>
-                      </RouterLink>
-                      <button type="button" class="tree-branch-action" :aria-label="`展开 ${prototype.label} 的全部页面和状态`" title="展开此原型全部层级" @click="expandPrototypeTree(prototype)"><ChevronsDown :size="13" /></button>
-                    </div>
-
-                    <div
-                      v-if="isTreeExpanded(prototype.id)"
-                      class="tree-children"
-                    >
-                      <div
-                        v-for="screen in prototype.children ?? []"
-                        :key="screen.id"
-                        class="tree-screen-block"
-                      >
-                        <div
-                          class="tree-row"
-                          :class="{
-                            'is-active': isScreenActive(screen.to),
-                          }"
-                        >
-                          <button
-                            v-if="(screen.children?.length ?? 0) > 0"
-                            type="button"
-                            class="tree-toggle"
-                            :aria-expanded="isTreeExpanded(screen.id)"
-                            :aria-label="
-                              isTreeExpanded(screen.id)
-                                ? `收起 ${screen.label}`
-                                : `展开 ${screen.label}`
-                            "
-                            @click="toggleTreeNode(screen.id)"
-                          >
-                            <ChevronRight
-                              class="tree-chevron"
-                              :class="{ 'is-open': isTreeExpanded(screen.id) }"
-                              :size="14"
-                              aria-hidden="true"
-                            />
-                          </button>
-                          <span v-else class="tree-toggle-spacer" />
-                          <RouterLink
-                            class="tree-link tree-screen"
-                            :to="screen.to"
-                          >
-                            <span class="tree-label">{{ screen.label }}</span>
-                            <span v-if="openCommentCount(prototype.id, screen.id)" class="tree-comment" :aria-label="`${openCommentCount(prototype.id, screen.id)} 条未完成评论`"><MessageSquareText :size="11" />{{ openCommentCount(prototype.id, screen.id) }}</span>
-                            <span class="tree-tag">页面</span>
-                          </RouterLink>
-                        </div>
-
-                        <div
-                          v-if="isTreeExpanded(screen.id)"
-                          class="tree-children tree-variants"
-                        >
-                          <RouterLink
-                            v-for="variant in screen.children ?? []"
-                            :key="variant.id"
-                            class="tree-row tree-variant"
-                            :class="{
-                              'is-active': isVariantActive(variant.to),
-                            }"
-                            :to="variantLinkTo(variant.to)"
-                          >
-                            <span class="tree-toggle-spacer" />
-                            <span class="tree-label">{{ variant.label }}</span>
-                            <span v-if="openCommentCount(prototype.id, screen.id, variantIdFromTo(variant.to))" class="tree-comment" :aria-label="`${openCommentCount(prototype.id, screen.id, variantIdFromTo(variant.to))} 条未完成评论`"><MessageSquareText :size="11" />{{ openCommentCount(prototype.id, screen.id, variantIdFromTo(variant.to)) }}</span>
-                          </RouterLink>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-              </template>
+              <label class="tree-search global-tree-search">
+                <Search :size="14" aria-hidden="true" />
+                <input
+                  v-model="treeQuery"
+                  type="search"
+                  :placeholder="`搜索${section.label}资源`"
+                  :aria-label="`搜索${section.label}资源`"
+                />
+              </label>
+              <WorkbenchNavigationTree
+                :nodes="filteredNavigationTree"
+                :expanded-ids="displayedExpandedIds"
+                :active-id="activeNavigationId"
+                :attention-counts="navigationAttentionCounts"
+                :depth="0"
+                :icon-for="navigationTreeIconFor"
+                @toggle="toggleTreeNode"
+              />
+              <p v-if="filteredNavigationTree.length === 0" class="tree-empty">
+                没有匹配的资源
+              </p>
             </nav>
 
             <nav v-else class="rail-nav" aria-label="二级导航">
@@ -908,25 +928,81 @@ onMounted(() => {
                       <strong>原型树</strong>
                       <span>原型 → 页面 → 状态</span>
                     </div>
-                    <v-btn size="x-small" variant="text" @click="toggleResourcePanel">展开导航</v-btn>
+                    <v-btn
+                      size="x-small"
+                      variant="text"
+                      @click="toggleResourcePanel"
+                      >展开导航</v-btn
+                    >
                   </div>
-                  <p v-if="filteredPrototypeTree.length === 0" class="tree-empty">此生命周期下暂无原型</p>
-                  <section v-for="prototype in filteredPrototypeTree" :key="prototype.id" class="collapsed-prototype">
-                    <RouterLink :to="prototype.to" class="collapsed-tree-link prototype-link">{{ prototype.label }}<span v-if="openCommentCount(prototype.id)" class="tree-comment"><MessageSquareText :size="11" />{{ openCommentCount(prototype.id) }}</span></RouterLink>
-                    <div v-for="screen in prototype.children ?? []" :key="screen.id" class="collapsed-screen">
-                      <RouterLink :to="screen.to" class="collapsed-tree-link screen-link">{{ screen.label }}</RouterLink>
+                  <p
+                    v-if="filteredPrototypeTree.length === 0"
+                    class="tree-empty"
+                  >
+                    此生命周期下暂无原型
+                  </p>
+                  <section
+                    v-for="prototype in filteredPrototypeTree"
+                    :key="prototype.id"
+                    class="collapsed-prototype"
+                  >
+                    <RouterLink
+                      :to="prototype.to"
+                      class="collapsed-tree-link prototype-link"
+                      >{{ prototype.label
+                      }}<span
+                        v-if="openCommentCount(prototype.id)"
+                        class="tree-comment"
+                        ><MessageSquareText :size="11" />{{
+                          openCommentCount(prototype.id)
+                        }}</span
+                      ></RouterLink
+                    >
+                    <div
+                      v-for="screen in prototype.children ?? []"
+                      :key="screen.id"
+                      class="collapsed-screen"
+                    >
+                      <RouterLink
+                        :to="screen.to"
+                        class="collapsed-tree-link screen-link"
+                        >{{ screen.label }}</RouterLink
+                      >
                       <RouterLink
                         v-for="variant in screen.children ?? []"
                         :key="variant.id"
                         :to="variantLinkTo(variant.to)"
                         class="collapsed-tree-link variant-link"
                         :class="{ 'is-active': isVariantActive(variant.to) }"
-                      >{{ variant.label }}</RouterLink>
+                        >{{ variant.label }}</RouterLink
+                      >
                     </div>
                   </section>
                 </div>
               </v-menu>
-              <span v-if="sectionId === 'prototypes'" class="rail-mode-label">生命周期</span>
+              <span v-if="sectionId === 'prototypes'" class="rail-mode-label"
+                >生命周期</span
+              >
+              <v-tooltip
+                v-if="sectionId === 'overview'"
+                text="概览"
+                location="end"
+              >
+                <template #activator="{ props }">
+                  <v-btn
+                    v-bind="props"
+                    class="rail-nav-btn is-active"
+                    to="/workbench/overview"
+                    icon
+                    variant="text"
+                    size="small"
+                    aria-label="概览"
+                    aria-current="page"
+                  >
+                    <Home :size="18" aria-hidden="true" />
+                  </v-btn>
+                </template>
+              </v-tooltip>
               <v-tooltip
                 v-for="item in secondaryItems"
                 :key="item.id"
@@ -988,9 +1064,7 @@ onMounted(() => {
               >元素检查</span
             >
             <v-tooltip
-              :text="
-                workbench.inspectorOpen ? '收起元素检查' : '展开元素检查'
-              "
+              :text="workbench.inspectorOpen ? '收起元素检查' : '展开元素检查'"
               location="bottom"
             >
               <template #activator="{ props }">
@@ -1109,22 +1183,114 @@ onMounted(() => {
 
 .pbwork-title {
   flex: 0 0 auto;
-  min-width: 140px;
-  margin-left: 8px;
-  font-size: 1rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
+  min-width: 200px;
+  margin-left: 6px;
 }
-.pbwork-title a {
+.brand-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   color: inherit;
   text-decoration: none;
+}
+.brand-mark {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #2563eb, #14b8a6);
+  box-shadow: 0 7px 16px rgba(37, 99, 235, 0.2);
+}
+.brand-mark img {
+  width: 100%;
+  height: 100%;
+}
+.brand-copy {
+  display: grid;
+  gap: 1px;
+  line-height: 1;
+}
+.brand-copy strong {
+  font-size: 0.94rem;
+  font-weight: 780;
+  letter-spacing: -0.01em;
+}
+.brand-copy small {
+  color: var(--shell-muted);
+  font-size: 0.58rem;
+  font-weight: 650;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
 }
 .workbench-breadcrumbs {
   min-width: 0;
   font-size: 0.75rem;
 }
 .workbench-app-bar {
-  background: rgb(var(--v-theme-surface)) !important;
+  border-bottom: 1px solid var(--shell-border) !important;
+  background: color-mix(
+    in srgb,
+    rgb(var(--v-theme-surface)) 92%,
+    transparent
+  ) !important;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.035) !important;
+  backdrop-filter: blur(16px);
+}
+.command-search {
+  display: flex;
+  width: clamp(170px, 18vw, 240px);
+  height: 36px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px 0 11px;
+  border: 1px solid var(--shell-border);
+  border-radius: 11px;
+  color: var(--shell-muted);
+  background: color-mix(
+    in srgb,
+    rgb(var(--v-theme-background)) 72%,
+    transparent
+  );
+  font: inherit;
+  font-size: 0.75rem;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    box-shadow 140ms ease;
+}
+.command-search:hover {
+  border-color: color-mix(
+    in srgb,
+    rgb(var(--v-theme-primary)) 35%,
+    transparent
+  );
+  background: var(--shell-soft);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+}
+.command-search span {
+  flex: 1;
+}
+.command-search kbd {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 5px;
+  border: 1px solid var(--shell-border);
+  border-radius: 5px;
+  background: rgb(var(--v-theme-surface));
+  font:
+    650 0.62rem ui-monospace,
+    monospace;
+}
+.header-divider {
+  width: 1px;
+  height: 24px;
+  margin: 0 5px 0 12px;
+  background: var(--shell-border);
 }
 .workbench-main {
   min-height: 100vh;
@@ -1133,8 +1299,8 @@ onMounted(() => {
 .workbench-grid {
   display: grid;
   grid-template-columns: auto minmax(480px, 1fr) auto;
-  height: calc(100vh - 56px);
-  min-height: calc(100vh - 56px);
+  height: calc(100vh - 60px);
+  min-height: calc(100vh - 60px);
 }
 .workbench-grid.is-no-inspector {
   grid-template-columns: auto minmax(480px, 1fr);
@@ -1164,7 +1330,7 @@ onMounted(() => {
   transition: width 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 .resource-panel {
-  border-width: 0 1px 0 0;
+  border-width: 0;
 }
 .inspector-panel {
   border-width: 0 0 0 1px;
@@ -1288,10 +1454,14 @@ onMounted(() => {
 .secondary-nav {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 10px;
   min-height: 0;
   overflow: auto;
   padding-bottom: 12px;
+}
+.global-tree-search {
+  flex: 0 0 auto;
+  margin-bottom: 2px;
 }
 .rail-mode-label {
   margin: 4px 0 2px;
@@ -1333,7 +1503,6 @@ onMounted(() => {
   display: grid;
   gap: 3px;
   padding: 8px 0;
-  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 .collapsed-tree-link {
   min-height: 30px;
@@ -1355,13 +1524,13 @@ onMounted(() => {
 }
 .collapsed-screen {
   display: grid;
-  padding-left: 10px;
+  padding-left: 0;
 }
 .screen-link {
   font-weight: 650;
 }
 .variant-link {
-  padding-left: 20px;
+  padding-left: 8px;
   color: rgba(var(--v-theme-on-surface), 0.62);
   font-size: 0.72rem;
 }
@@ -1372,7 +1541,6 @@ onMounted(() => {
   gap: 8px;
   margin: 0 4px 10px;
   padding: 0 8px 8px;
-  border-bottom: 1px solid var(--shell-border);
   color: rgb(var(--v-theme-on-surface));
   font-size: 0.8125rem;
   font-weight: 700;
@@ -1421,8 +1589,13 @@ onMounted(() => {
   background: var(--shell-soft);
 }
 .tree-search:focus-within {
-  border-color: color-mix(in srgb, rgb(var(--v-theme-primary)) 55%, transparent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, rgb(var(--v-theme-primary)) 12%, transparent);
+  border-color: color-mix(
+    in srgb,
+    rgb(var(--v-theme-primary)) 55%,
+    transparent
+  );
+  box-shadow: 0 0 0 2px
+    color-mix(in srgb, rgb(var(--v-theme-primary)) 12%, transparent);
 }
 .tree-search input {
   width: 100%;
@@ -1522,7 +1695,11 @@ onMounted(() => {
   padding: 2px 5px;
   border-radius: 999px;
   background: color-mix(in srgb, rgb(var(--v-theme-warning)) 16%, transparent);
-  color: color-mix(in srgb, rgb(var(--v-theme-warning)) 70%, rgb(var(--v-theme-on-surface)));
+  color: color-mix(
+    in srgb,
+    rgb(var(--v-theme-warning)) 70%,
+    rgb(var(--v-theme-on-surface))
+  );
   font-size: 0.625rem;
   font-weight: 750;
 }
@@ -1558,12 +1735,11 @@ onMounted(() => {
 .tree-children {
   display: grid;
   gap: 2px;
-  margin-left: 8px;
-  padding-left: 4px;
-  border-left: 1px solid var(--shell-border);
+  margin-left: 0;
+  padding-left: 0;
 }
 .tree-variants {
-  margin-left: 12px;
+  margin-left: 0;
 }
 .tree-tag {
   color: var(--shell-muted);
@@ -1668,6 +1844,23 @@ onMounted(() => {
   .resource-panel,
   .inspector-panel {
     transition: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .pbwork-title {
+    min-width: auto;
+  }
+  .brand-copy small,
+  .workbench-breadcrumbs,
+  .command-search span,
+  .command-search kbd {
+    display: none;
+  }
+  .command-search {
+    width: 36px;
+    justify-content: center;
+    padding: 0;
   }
 }
 </style>

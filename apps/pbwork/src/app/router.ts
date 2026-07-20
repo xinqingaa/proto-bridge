@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import RuntimeLayout from "@/runtime/RuntimeLayout.vue";
 import WorkbenchLayout from "@/workbench/WorkbenchLayout.vue";
 import WorkbenchResourceView from "@/workbench/views/WorkbenchResourceView.vue";
+import WorkbenchOverview from "@/workbench/views/WorkbenchOverview.vue";
 import type { PrototypeLifecycle, TokenCategory } from "@/design-system/types";
 import { TOKEN_CATEGORIES } from "@/design-system/types";
 
@@ -12,12 +13,22 @@ function isTokenCategory(value: string): value is TokenCategory {
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: "/", redirect: "/workbench/foundations/tokens/color" },
+    { path: "/", redirect: "/workbench/overview" },
     {
       path: "/workbench",
       component: WorkbenchLayout,
       children: [
-        { path: "", redirect: "/workbench/foundations/tokens/color" },
+        { path: "", redirect: "/workbench/overview" },
+        {
+          path: "overview",
+          name: "workbench-overview",
+          component: WorkbenchOverview,
+          meta: {
+            sectionId: "overview",
+            resourceKind: "overview",
+            title: "概览",
+          },
+        },
         {
           path: "foundations/tokens/:category",
           name: "foundation-tokens",
@@ -69,8 +80,7 @@ export const router = createRouter({
           props: (route) => ({
             kind: "prototype-list",
             lifecycle: String(route.params.lifecycle) as
-              | "all"
-              | PrototypeLifecycle,
+              "all" | PrototypeLifecycle,
           }),
           meta: {
             sectionId: "prototypes",
@@ -109,7 +119,7 @@ export const router = createRouter({
         },
         {
           path: ":pathMatch(.*)*",
-          redirect: "/workbench/foundations/tokens/color",
+          redirect: "/workbench/overview",
         },
       ],
     },
@@ -120,7 +130,7 @@ export const router = createRouter({
     },
     {
       path: "/:pathMatch(.*)*",
-      redirect: "/workbench/foundations/tokens/color",
+      redirect: "/workbench/overview",
     },
   ],
 });

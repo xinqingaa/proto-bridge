@@ -1,5 +1,9 @@
 import { componentRecords } from "@/design-system/components/registry";
-import { loadPrototypes, loadPrototypeScreens, loadThemes } from "@/design-system/loaders";
+import {
+  loadPrototypes,
+  loadPrototypeScreens,
+  loadThemes,
+} from "@/design-system/loaders";
 import {
   LIFECYCLE_LABELS,
   TOKEN_CATEGORIES,
@@ -7,7 +11,8 @@ import {
   type TokenCategory,
 } from "@/design-system/types";
 
-export type WorkbenchSectionId = "foundations" | "components" | "prototypes";
+export type WorkbenchSectionId =
+  "overview" | "foundations" | "components" | "prototypes";
 
 export type WorkbenchNavigationItem = {
   id: string;
@@ -21,12 +26,34 @@ export type PrototypeTreeNode = {
   id: string;
   label: string;
   to: string;
+  count?: number;
   children?: PrototypeTreeNode[];
+};
+
+export type WorkbenchNavigationTreeNode = {
+  id: string;
+  label: string;
+  kind:
+    | "section"
+    | "group"
+    | "item"
+    | "lifecycle"
+    | "prototype"
+    | "screen"
+    | "variant";
+  to?: string;
+  count?: number;
+  children?: WorkbenchNavigationTreeNode[];
 };
 
 export const primaryNavigation: Array<
   Omit<WorkbenchNavigationItem, "group"> & { id: WorkbenchSectionId }
 > = [
+  {
+    id: "overview",
+    label: "概览",
+    to: "/workbench/overview",
+  },
   {
     id: "foundations",
     label: "设计基础",
@@ -95,21 +122,30 @@ export function buildPrototypeLifecycleNavigation(): WorkbenchNavigationItem[] {
 
 export function buildPrototypeTree(
   lifecycle: "all" | PrototypeLifecycle,
-  effectiveLifecycle: (prototypeId: string, registered: PrototypeLifecycle) => PrototypeLifecycle = (_, registered) => registered,
+  effectiveLifecycle: (
+    prototypeId: string,
+    registered: PrototypeLifecycle,
+  ) => PrototypeLifecycle = (_, registered) => registered,
 ): PrototypeTreeNode[] {
   const prototypes = loadPrototypes().filter(
-    (item) => lifecycle === "all" || effectiveLifecycle(item.id, item.lifecycle) === lifecycle,
+    (item) =>
+      lifecycle === "all" ||
+      effectiveLifecycle(item.id, item.lifecycle) === lifecycle,
   );
   return prototypes.map((prototype) => ({
     id: prototype.id,
     label: prototype.label,
     to: `/workbench/prototypes/${prototype.id}`,
+    count: loadPrototypeScreens().filter(
+      (screen) => screen.prototypeId === prototype.id,
+    ).length,
     children: loadPrototypeScreens()
       .filter((screen) => screen.prototypeId === prototype.id)
       .map((screen) => ({
         id: screen.screenId,
         label: screen.label,
         to: `/workbench/prototypes/${prototype.id}/screens/${screen.screenSlug}`,
+        count: screen.variants.length,
         children: screen.variants.map((variant) => ({
           id: `${screen.screenId}.${variant.id}`,
           label: variant.label,
@@ -119,15 +155,155 @@ export function buildPrototypeTree(
   }));
 }
 
+export function buildWorkbenchNavigationTree(
+  effectiveLifecycle: (
+    prototypeId: string,
+    registered: PrototypeLifecycle,
+  ) => PrototypeLifecycle = (_, registered) => registered,
+): WorkbenchNavigationTreeNode[] {
+  const prototypes = loadPrototypes();
+  const screens = loadPrototypeScreens();
+  const lifecycleItems = buildPrototypeLifecycleNavigation().map((item) => {
+    const lifecycle = parsePrototypeLifecycle(
+      item.id.replace("lifecycle-", ""),
+    );
+    const count = prototypes.filter(
+      (prototype) =>
+        lifecycle === "all" ||
+        (lifecycle !== null &&
+          effectiveLifecycle(prototype.id, prototype.lifecycle) === lifecycle),
+    ).length;
+    return {
+      id: item.id,
+      label: item.label,
+      kind: "lifecycle" as const,
+      to: item.to,
+      count,
+    };
+  });
+
+  const prototypeItems: WorkbenchNavigationTreeNode[] = prototypes.map(
+    (prototype) => {
+      const prototypeScreens = screens.filter(
+        (screen) => screen.prototypeId === prototype.id,
+      );
+      return {
+        id: `prototype-${prototype.id}`,
+        label: prototype.label,
+        kind: "prototype" as const,
+        to: `/workbench/prototypes/${prototype.id}`,
+        count: prototypeScreens.length,
+        children: prototypeScreens.map((screen) => ({
+          id: `screen-${screen.screenId}`,
+          label: screen.label,
+          kind: "screen" as const,
+          to: `/workbench/prototypes/${prototype.id}/screens/${screen.screenSlug}`,
+          count: screen.variants.length,
+          children: screen.variants.map((variant) => ({
+            id: `variant-${screen.screenId}.${variant.id}`,
+            label: variant.label,
+            kind: "variant" as const,
+            to: `/workbench/prototypes/${prototype.id}/screens/${screen.screenSlug}?variant=${variant.id}&theme=${prototype.defaultThemeId}`,
+          })),
+        })),
+      };
+    },
+  );
+
+  const foundationGroups = groupSecondaryNavigation(
+    buildFoundationsNavigation(),
+  ).map((group) => ({
+    id: `foundation-group-${group.group}`,
+    label: group.group,
+    kind: "group" as const,
+    count: group.items.length,
+    children: group.items.map((item) => ({
+      id: item.id,
+      label: item.label,
+      kind: "item" as const,
+      to: item.to,
+    })),
+  }));
+  const componentGroups = groupSecondaryNavigation(
+    buildComponentsNavigation(),
+  ).map((group) => ({
+    id: `component-group-${group.group}`,
+    label: group.group,
+    kind: "group" as const,
+    count: group.items.length,
+    children: group.items.map((item) => ({
+      id: item.id,
+      label: item.label,
+      kind: "item" as const,
+      to: item.to,
+    })),
+  }));
+
+  return [
+    {
+      id: "overview",
+      label: "概览",
+      kind: "section",
+      to: "/workbench/overview",
+    },
+    {
+      id: "foundations",
+      label: "设计基础",
+      kind: "section",
+      to: "/workbench/foundations/tokens/color",
+      children: foundationGroups,
+    },
+    {
+      id: "components",
+      label: "组件",
+      kind: "section",
+      to:
+        primaryNavigation.find((item) => item.id === "components")?.to ??
+        "/workbench/components/button",
+      count: componentRecords.length,
+      children: componentGroups,
+    },
+    {
+      id: "prototypes",
+      label: "原型",
+      kind: "section",
+      to: "/workbench/prototypes/all",
+      count: prototypes.length,
+      children: [
+        {
+          id: "prototype-lifecycles",
+          label: "生命周期",
+          kind: "group",
+          children: lifecycleItems,
+        },
+        {
+          id: "prototype-assets",
+          label: "原型树",
+          kind: "group",
+          count: prototypes.length,
+          children: prototypeItems,
+        },
+      ],
+    },
+  ];
+}
+
 export function getSecondaryNavigation(
   sectionId: WorkbenchSectionId,
 ): WorkbenchNavigationItem[] {
+  if (sectionId === "overview") return [];
   if (sectionId === "foundations") return buildFoundationsNavigation();
   if (sectionId === "components") return buildComponentsNavigation();
   return buildPrototypeLifecycleNavigation();
 }
 
 export const searchableNavigation = [
+  {
+    id: "overview",
+    label: "概览",
+    group: "工作台",
+    to: "/workbench/overview",
+  },
   ...buildFoundationsNavigation(),
   ...buildComponentsNavigation(),
   ...buildPrototypeLifecycleNavigation(),
@@ -142,23 +318,26 @@ export const searchableNavigation = [
 export function groupSecondaryNavigation(
   items: WorkbenchNavigationItem[],
 ): Array<{ group: string; items: WorkbenchNavigationItem[] }> {
-  const groups: Array<{ group: string; items: WorkbenchNavigationItem[] }> = [];
+  const groups = new Map<string, WorkbenchNavigationItem[]>();
   for (const item of items) {
-    const last = groups[groups.length - 1];
-    if (last?.group === item.group) {
-      last.items.push(item);
-      continue;
-    }
-    groups.push({ group: item.group, items: [item] });
+    const group = groups.get(item.group) ?? [];
+    group.push(item);
+    groups.set(item.group, group);
   }
-  return groups;
+  return [...groups].map(([group, groupItems]) => ({
+    group,
+    items: groupItems,
+  }));
 }
 
 export function isWorkbenchSectionId(
   value: unknown,
 ): value is WorkbenchSectionId {
   return (
-    value === "foundations" || value === "components" || value === "prototypes"
+    value === "overview" ||
+    value === "foundations" ||
+    value === "components" ||
+    value === "prototypes"
   );
 }
 

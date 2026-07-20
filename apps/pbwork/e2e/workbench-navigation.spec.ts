@@ -4,6 +4,16 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/workbench/foundations/tokens/color");
 });
 
+test("overview is the default workbench destination", async ({ page }) => {
+  await page.goto("/");
+  await expect(page).toHaveURL(/\/workbench\/overview$/);
+  await expect(page.getByTestId("workbench-overview")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "从原型继续工作" }),
+  ).toBeVisible();
+  await expect(page.getByText("35", { exact: true })).toBeVisible();
+});
+
 test("primary and secondary navigation update the URL and resource view", async ({
   page,
 }) => {
@@ -25,6 +35,7 @@ test("primary and secondary navigation update the URL and resource view", async 
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/workbench\/foundations\/tokens\/color$/);
 
+  await page.getByRole("button", { name: "展开 主题" }).click();
   await page.getByRole("link", { name: "浅色主题", exact: true }).click();
   await expect(page).toHaveURL(/\/workbench\/foundations\/themes\/light$/);
   await expect(page.getByRole("heading", { name: "浅色主题" })).toBeVisible();
