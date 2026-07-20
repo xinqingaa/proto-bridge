@@ -53,6 +53,17 @@ const tallPreview = computed(() =>
   ["bottom-sheet", "data-list", "app-bar", "tabs", "dialog"].includes(props.componentId),
 );
 
+/** Named panel slots for Tabs playground (contract.slots). */
+const tabsPreviewSlots = computed(() =>
+  record.value?.id === "tabs" ? (contract.value?.slots ?? []) : [],
+);
+
+function tabsSlotLabel(name: string) {
+  if (name === "overview") return "概览内容 · 点选或左右滑动切换";
+  if (name === "activity") return "活动内容 · 点选或左右滑动切换";
+  return `${name} 面板`;
+}
+
 const previewComponent = computed(() => {
   if (!record.value) return null;
   const match = Object.entries(componentViewModules).find(([path]) =>
@@ -151,6 +162,13 @@ function selectState(id: string) {
               >
                 <template v-if="record.id === 'bottom-sheet'">点遮罩或「关闭」可收起。</template>
                 <template v-else-if="record.id === 'card'">Card 表面、圆角和阴影来自设计令牌。</template>
+                <template
+                  v-for="slotName in tabsPreviewSlots"
+                  :key="slotName"
+                  #[slotName]
+                >
+                  <p class="tabs-panel-demo">{{ tabsSlotLabel(slotName) }}</p>
+                </template>
               </component>
             </div>
           </article>
@@ -164,6 +182,13 @@ function selectState(id: string) {
               >
                 <template v-if="record.id === 'bottom-sheet'">点遮罩或「关闭」可收起。</template>
                 <template v-else-if="record.id === 'card'">Card 表面、圆角和阴影来自设计令牌。</template>
+                <template
+                  v-for="slotName in tabsPreviewSlots"
+                  :key="slotName"
+                  #[slotName]
+                >
+                  <p class="tabs-panel-demo">{{ tabsSlotLabel(slotName) }}</p>
+                </template>
               </component>
             </div>
           </article>
@@ -301,6 +326,12 @@ function selectState(id: string) {
 }
 .preview.is-tall {
   min-height: 260px;
+}
+.tabs-panel-demo {
+  margin: 0;
+  padding: 4px 0;
+  color: var(--pb-color-on-surface-muted, #64748b);
+  font: var(--pb-typography-caption, 400 12px/1.4 Inter, system-ui, sans-serif);
 }
 .controls {
   padding: 16px;

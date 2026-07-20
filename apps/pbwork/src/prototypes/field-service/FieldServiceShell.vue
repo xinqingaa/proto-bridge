@@ -12,6 +12,7 @@ const props = defineProps<{
 
 const route = useRoute();
 const router = useRouter();
+const isStack = computed(() => Boolean(props.backTo));
 const theme = computed(() =>
   typeof route.query.theme === "string" ? route.query.theme : "light",
 );
@@ -42,14 +43,19 @@ function goBack() {
 </script>
 
 <template>
-  <div class="field-service-shell" data-pb-id="field-service.shell">
+  <div
+    class="field-service-shell"
+    :class="{ 'is-stack': isStack }"
+    data-pb-id="field-service.shell"
+  >
     <AppBar
       :title="title"
-      :show-back="Boolean(backTo)"
+      :show-back="isStack"
       @back="goBack"
     />
     <main><slot /></main>
     <BottomNavigation
+      v-if="!isStack"
       :model-value="active ?? '工作台'"
       @update:model-value="navigate"
     />
@@ -58,14 +64,27 @@ function goBack() {
 
 <style scoped>
 .field-service-shell {
-  min-height: 100vh;
+  box-sizing: border-box;
   display: grid;
   grid-template-rows: auto 1fr auto;
+  height: 100%;
+  min-height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
   background: var(--pb-color-background);
   color: var(--pb-color-on-background);
 }
+.field-service-shell.is-stack {
+  grid-template-rows: auto 1fr;
+}
 main {
   min-width: 0;
+  min-height: 0;
   overflow: auto;
+}
+
+:global(html.pbwork-runtime-embedded) .field-service-shell {
+  min-height: 100%;
+  max-height: 100%;
 }
 </style>

@@ -35,28 +35,34 @@ function openOrder() {
       />
       <template v-else>
         <button class="message is-unread" @click="openOrder">
-          <Avatar name="系统" tone="secondary" />
-          <span>
-            <strong>工单即将超时</strong>
+          <Avatar name="系统" size="sm" tone="secondary" />
+          <span class="body">
+            <span class="row">
+              <strong>工单即将超时</strong>
+              <small>12 分钟前</small>
+            </span>
             <p>#WO-1042 距离 SLA 截止还有 30 分钟</p>
-            <small>12 分钟前</small>
           </span>
           <Badge label="1" tone="error" />
         </button>
         <button class="message">
-          <Avatar name="王成" />
-          <span>
-            <strong>客户补充了现场照片</strong>
+          <Avatar name="王成" size="sm" />
+          <span class="body">
+            <span class="row">
+              <strong>客户补充了现场照片</strong>
+              <small>35 分钟前</small>
+            </span>
             <p>中央空调异常检修 · 3 张图片</p>
-            <small>35 分钟前</small>
           </span>
         </button>
         <button class="message">
-          <Avatar name="调度" tone="secondary" />
-          <span>
-            <strong>新工单已分配</strong>
+          <Avatar name="调度" size="sm" tone="secondary" />
+          <span class="body">
+            <span class="row">
+              <strong>新工单已分配</strong>
+              <small>1 小时前</small>
+            </span>
             <p>消防泵例行巡检 · 今天 14:30</p>
-            <small>1 小时前</small>
           </span>
         </button>
       </template>
@@ -67,8 +73,10 @@ function openOrder() {
 <style scoped>
 .page {
   display: grid;
+  align-content: start;
+  grid-auto-rows: min-content;
   min-height: 100%;
-  padding: 8px 0;
+  padding: 4px 0;
 }
 .page.is-state {
   place-content: center;
@@ -78,29 +86,52 @@ function openOrder() {
 .message {
   display: grid;
   grid-template-columns: auto 1fr auto;
-  align-items: start;
+  align-items: center;
   gap: 10px;
-  padding: 14px 16px;
+  min-height: 0;
+  padding: 10px 16px;
   border: 0;
   border-bottom: 1px solid var(--pb-color-divider);
   background: var(--pb-color-surface);
   color: inherit;
   text-align: left;
+  cursor: pointer;
 }
 .message.is-unread {
   background: var(--pb-color-primary-soft);
 }
-.message span {
+.body {
   display: grid;
   gap: 2px;
+  min-width: 0;
 }
-.message p,
-.message small {
-  margin: 0;
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+.row strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--pb-typography-content);
+  font-weight: 600;
+}
+.row small {
+  flex: none;
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
+  white-space: nowrap;
 }
-.message strong {
-  font: var(--pb-typography-content);
+.body p {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
 }
 </style>

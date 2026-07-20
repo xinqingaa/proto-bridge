@@ -31,26 +31,31 @@ watch(
     <AppBar title="任务详情" />
     <p class="variant-hint">Variant：{{ variant }}</p>
 
+    <section v-if="variant === 'error'" class="panel error" role="alert">
+      无法加载任务详情
+    </section>
     <Tabs
+      v-else
       v-model="tab"
       :items="[
         { value: 'overview', label: '概览' },
         { value: 'activity', label: '活动' },
       ]"
-    />
-
-    <section v-if="variant === 'error'" class="panel error" role="alert">
-      无法加载任务详情
-    </section>
-    <section v-else-if="tab === 'activity'" class="panel">
-      <p>张三 更新了状态</p>
-      <p>李四 添加了评论</p>
-    </section>
-    <section v-else class="panel section" data-pb-role="section">
-      <h2>整理需求</h2>
-      <p>对齐交互状态与验收标准，输出可演示原型。</p>
-      <Button class="mt-3" label="打开操作" @click="sheetOpen = true" />
-    </section>
+    >
+      <template #overview>
+        <section class="panel section" data-pb-role="section">
+          <h2>整理需求</h2>
+          <p>对齐交互状态与验收标准，输出可演示原型。</p>
+          <Button class="mt-3" label="打开操作" @click="sheetOpen = true" />
+        </section>
+      </template>
+      <template #activity>
+        <section class="panel">
+          <p>张三 更新了状态</p>
+          <p>李四 添加了评论</p>
+        </section>
+      </template>
+    </Tabs>
 
     <BottomSheet v-model="sheetOpen" title="任务操作">
       <p>可在此进行指派、延期或完成。</p>

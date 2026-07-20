@@ -57,28 +57,37 @@ function customer() {
         </div>
         <h1>{{ variant === "created" ? "冷却塔异常振动" : "中央空调异常检修" }}</h1>
         <p class="muted">远景科技园 A3 栋 · AHU-08</p>
-        <Tabs v-model="tab" :items="[{ value: 'overview', label: '总览' }, { value: 'activity', label: '动态' }]" />
-        <template v-if="tab === 'overview'">
-          <Card title="客户与位置" subtitle="上海远景科技有限公司">
-            <button class="customer" @click="customer">
-              <Avatar name="王成" />
-              <span><strong>王成</strong><small>设施主管 · 138****8821</small></span>
-            </button>
-          </Card>
-          <Card title="故障描述" subtitle="客户报告">
-            <p class="body">设备运行时出现异常噪声，送风温度持续高于设定值。</p>
-          </Card>
-          <Card title="服务信息" subtitle="计划今天 13:30">
-            <div class="assignee">
-              <Avatar name="李明" tone="secondary" />
-              <span><strong>李明</strong><small>现场工程师</small></span>
-            </div>
-          </Card>
-        </template>
-        <Card v-else title="处理动态" subtitle="最新记录">
-          <p class="body">12:28 李明已到达现场</p>
-          <p class="body">11:46 客户补充了设备照片</p>
-        </Card>
+        <Tabs
+          v-model="tab"
+          :items="[
+            { value: 'overview', label: '总览' },
+            { value: 'activity', label: '动态' },
+          ]"
+        >
+          <template #overview>
+            <Card title="客户与位置" subtitle="上海远景科技有限公司">
+              <button class="customer" @click="customer">
+                <Avatar name="王成" />
+                <span><strong>王成</strong><small>设施主管 · 138****8821</small></span>
+              </button>
+            </Card>
+            <Card title="故障描述" subtitle="客户报告">
+              <p class="body">设备运行时出现异常噪声，送风温度持续高于设定值。</p>
+            </Card>
+            <Card title="服务信息" subtitle="计划今天 13:30">
+              <div class="assignee">
+                <Avatar name="李明" tone="secondary" />
+                <span><strong>李明</strong><small>现场工程师</small></span>
+              </div>
+            </Card>
+          </template>
+          <template #activity>
+            <Card title="处理动态" subtitle="最新记录">
+              <p class="body">12:28 李明已到达现场</p>
+              <p class="body">11:46 客户补充了设备照片</p>
+            </Card>
+          </template>
+        </Tabs>
         <div class="actions">
           <Button label="更多操作" variant="outlined" @click="sheet = true" />
           <Button label="完成工单" @click="dialog = true" />
@@ -119,6 +128,6 @@ h1 { margin: 0; font: var(--pb-typography-title-lg); }
 .body { margin: 0; font: var(--pb-typography-content); }
 .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .sheet-actions { display: grid; gap: 6px; }
-.toast-wrap { position: fixed; z-index: 50; left: 16px; right: 16px; bottom: calc(80px + var(--pb-safe-bottom, 0px)); }
+.toast-wrap { position: fixed; z-index: 50; left: 16px; right: 16px; bottom: calc(16px + var(--pb-safe-bottom, 0px)); }
 .error { padding: 16px; border-radius: var(--pb-radius-lg); background: var(--pb-color-error-soft); color: var(--pb-color-error); }
 </style>

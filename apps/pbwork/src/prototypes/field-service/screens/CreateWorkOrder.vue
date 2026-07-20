@@ -69,5 +69,5 @@ async function submit() {
 <style scoped>
 .page { display: grid; gap: 14px; padding: 14px; }
 .field-error { margin: -8px 0 0; color: var(--pb-color-error); font: var(--pb-typography-caption); }
-.toast-wrap { position: fixed; z-index: 50; left: 16px; right: 16px; bottom: calc(80px + var(--pb-safe-bottom, 0px)); }
+.toast-wrap { position: fixed; z-index: 50; left: 16px; right: 16px; bottom: calc(16px + var(--pb-safe-bottom, 0px)); }
 </style>

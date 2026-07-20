@@ -30,7 +30,7 @@
     ]
   },
   "states": [],
-  "slots": [],
+  "slots": ["overview", "activity"],
   "events": ["update:modelValue"],
   "tokenBindings": {
     "indicator": "color.primary",
@@ -39,6 +39,8 @@
     "surface": "color.surface",
     "border": "color.border",
     "radius": "radius.md",
-    "typography": "typography.content"
+    "typography": "typography.content",
+    "duration": "motion.duration-slow",
+    "easing": "motion.easing-standard"
   }
 }
