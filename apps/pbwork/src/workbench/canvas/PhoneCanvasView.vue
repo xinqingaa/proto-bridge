@@ -41,7 +41,6 @@ const iframeWindow = ref<Window | null>(null);
 const runtimeId = ref<string | null>(null);
 const copyFeedback = ref<string | null>(null);
 const canvasFullscreen = ref(false);
-const openRuntimeAfterCopy = ref(false);
 const routeError = ref<string | null>(null);
 let copyTimer: ReturnType<typeof setTimeout> | null = null;
 let handshakeTimer: ReturnType<typeof setTimeout> | null = null;
@@ -199,12 +198,12 @@ function fullscreen() {
   canvasFullscreen.value = !canvasFullscreen.value;
 }
 
-async function copyLink() {
+async function copyLink(options?: { openRuntime?: boolean }) {
   if (!absoluteRuntimeUrl.value) return;
   try {
     await navigator.clipboard.writeText(absoluteRuntimeUrl.value);
     copyFeedback.value = "已复制";
-    if (openRuntimeAfterCopy.value) {
+    if (options?.openRuntime) {
       window.open(absoluteRuntimeUrl.value, "_blank", "noopener,noreferrer");
     }
   } catch {
@@ -214,6 +213,10 @@ async function copyLink() {
   copyTimer = setTimeout(() => {
     copyFeedback.value = null;
   }, 1600);
+}
+
+function copyAndOpenRuntime() {
+  void copyLink({ openRuntime: true });
 }
 
 function postToRuntime(
@@ -576,7 +579,6 @@ onBeforeUnmount(() => {
       :theme-id="selectedThemeId"
       :is-dark="isDark"
       :fullscreen="canvasFullscreen"
-      :open-after-copy="openRuntimeAfterCopy"
       :copy-feedback="copyFeedback"
       @update:variant-id="onVariantId"
       @update:theme-id="onThemeId"
@@ -584,7 +586,7 @@ onBeforeUnmount(() => {
       @refresh="refresh"
       @fullscreen="fullscreen"
       @copy="copyLink"
-      @update:open-after-copy="openRuntimeAfterCopy = $event"
+      @copy-and-open="copyAndOpenRuntime"
     />
   </section>
   <v-alert v-else type="error" variant="tonal">

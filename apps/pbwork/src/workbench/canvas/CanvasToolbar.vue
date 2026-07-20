@@ -3,6 +3,7 @@ import { computed } from "vue";
 import {
   Copy,
   Expand,
+  ExternalLink,
   Hand,
   Minus,
   MousePointer2,
@@ -25,7 +26,6 @@ defineProps<{
   themeId: string;
   isDark: boolean;
   fullscreen: boolean;
-  openAfterCopy: boolean;
   copyFeedback?: string | null;
 }>();
 
@@ -36,7 +36,7 @@ const emit = defineEmits<{
   refresh: [];
   fullscreen: [];
   copy: [];
-  "update:openAfterCopy": [boolean];
+  "copy-and-open": [];
 }>();
 
 const canvas = useCanvasStore();
@@ -185,40 +185,74 @@ function onTogglePan() {
 
     <v-menu location="top" :close-on-content-click="false">
       <template #activator="{ props: menu }">
-        <button v-bind="menu" type="button" class="tool-btn preview-settings" aria-label="预览设置">
-          <SlidersHorizontal :size="15" aria-hidden="true" />
-          <span>预览设置</span>
-        </button>
+        <v-tooltip text="预览设置" location="bottom">
+          <template #activator="{ props: tip }">
+            <button
+              v-bind="{ ...menu, ...tip }"
+              type="button"
+              class="tool-btn"
+              aria-label="预览设置"
+            >
+              <SlidersHorizontal :size="15" aria-hidden="true" />
+            </button>
+          </template>
+        </v-tooltip>
       </template>
       <div class="settings-popover">
         <div class="settings-heading">
           <strong>预览设置</strong>
           <span>设备、主题与可复现状态</span>
         </div>
-        <label class="field">
-          <span class="field-label">设备</span>
-          <select class="field-control" :value="canvas.deviceId" aria-label="设备尺寸" @change="canvas.setDeviceId(($event.target as HTMLSelectElement).value)">
-            <option v-for="item in DEVICE_PRESETS" :key="item.id" :value="item.id">{{ item.label }}</option>
+        <label class="settings-field">
+          <span class="settings-label">设备</span>
+          <select
+            class="settings-control"
+            :value="canvas.deviceId"
+            aria-label="设备尺寸"
+            @change="
+              canvas.setDeviceId(($event.target as HTMLSelectElement).value)
+            "
+          >
+            <option
+              v-for="item in DEVICE_PRESETS"
+              :key="item.id"
+              :value="item.id"
+            >
+              {{ item.label }}
+            </option>
           </select>
         </label>
-        <label class="copy-option">
-          <input
-            type="checkbox"
-            :checked="openAfterCopy"
-            @change="emit('update:openAfterCopy', ($event.target as HTMLInputElement).checked)"
-          />
-          <span>复制链接后打开 Runtime 新标签</span>
-        </label>
-        <label class="field">
-          <span class="field-label">主题</span>
-          <select class="field-control" :value="themeId" aria-label="原型主题" @change="emit('update:themeId', ($event.target as HTMLSelectElement).value)">
-            <option v-for="item in themes" :key="item.id" :value="item.id">{{ item.label }}</option>
+        <label class="settings-field">
+          <span class="settings-label">主题</span>
+          <select
+            class="settings-control"
+            :value="themeId"
+            aria-label="原型主题"
+            @change="
+              emit('update:themeId', ($event.target as HTMLSelectElement).value)
+            "
+          >
+            <option v-for="item in themes" :key="item.id" :value="item.id">
+              {{ item.label }}
+            </option>
           </select>
         </label>
-        <label class="field">
-          <span class="field-label">状态</span>
-          <select class="field-control" :value="variantId" aria-label="Variant" @change="emit('update:variantId', ($event.target as HTMLSelectElement).value)">
-            <option v-for="item in variants" :key="item.id" :value="item.id">{{ item.label }}</option>
+        <label class="settings-field">
+          <span class="settings-label">状态</span>
+          <select
+            class="settings-control"
+            :value="variantId"
+            aria-label="Variant"
+            @change="
+              emit(
+                'update:variantId',
+                ($event.target as HTMLSelectElement).value,
+              )
+            "
+          >
+            <option v-for="item in variants" :key="item.id" :value="item.id">
+              {{ item.label }}
+            </option>
           </select>
         </label>
       </div>
@@ -240,7 +274,10 @@ function onTogglePan() {
           </button>
         </template>
       </v-tooltip>
-      <v-tooltip :text="fullscreen ? '退出全屏画布' : '全屏画布'" location="bottom">
+      <v-tooltip
+        :text="fullscreen ? '退出全屏画布' : '全屏画布'"
+        location="bottom"
+      >
         <template #activator="{ props: tip }">
           <button
             v-bind="tip"
@@ -254,6 +291,19 @@ function onTogglePan() {
           </button>
         </template>
       </v-tooltip>
+      <v-tooltip text="复制并打开 Runtime" location="bottom">
+        <template #activator="{ props: tip }">
+          <button
+            v-bind="tip"
+            type="button"
+            class="tool-btn"
+            aria-label="复制并打开 Runtime"
+            @click="emit('copy-and-open')"
+          >
+            <ExternalLink :size="15" aria-hidden="true" />
+          </button>
+        </template>
+      </v-tooltip>
       <v-tooltip :text="copyFeedback ?? '复制原型链接'" location="bottom">
         <template #activator="{ props: tip }">
           <button
@@ -264,7 +314,6 @@ function onTogglePan() {
             @click="emit('copy')"
           >
             <Copy :size="15" aria-hidden="true" />
-            <span>复制链接</span>
           </button>
         </template>
       </v-tooltip>
@@ -309,45 +358,54 @@ function onTogglePan() {
   );
 }
 .settings-popover {
-  width: 280px;
+  width: 228px;
   display: grid;
-  gap: 12px;
-  padding: 14px;
+  gap: 10px;
+  padding: 12px;
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 14px;
+  border-radius: 12px;
   background: rgb(var(--v-theme-surface));
   box-shadow: 0 18px 45px rgba(15, 23, 42, 0.2);
+  color: rgb(var(--v-theme-on-surface));
 }
 .settings-heading {
   display: grid;
   gap: 2px;
 }
+.settings-heading strong {
+  font-size: 0.8125rem;
+}
 .settings-heading span {
   color: rgba(var(--v-theme-on-surface), 0.55);
   font-size: 0.72rem;
 }
-.copy-option {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  color: rgba(var(--v-theme-on-surface), 0.72);
-  font-size: 0.75rem;
-}
-.settings-popover .field {
+.settings-field {
   display: grid;
-  grid-template-columns: 56px minmax(0, 1fr);
-  align-items: center;
-  gap: 10px;
+  gap: 4px;
 }
-.settings-popover .field-control {
+.settings-label {
+  color: rgba(var(--v-theme-on-surface), 0.62);
+  font: 600 11px/1 Inter, system-ui, sans-serif;
+}
+.settings-control {
   width: 100%;
+  height: 32px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 8px;
+  background: rgb(var(--v-theme-surface));
+  color: rgb(var(--v-theme-on-surface));
+  padding: 0 8px;
+  font: 500 12px/32px Inter, system-ui, sans-serif;
+  outline: none;
+}
+.settings-control:focus-visible {
+  border-color: rgb(var(--v-theme-primary));
+  box-shadow: 0 0 0 2px rgba(var(--v-theme-primary), 0.22);
 }
 @container (max-width: 720px) {
   .canvas-toolbar {
     gap: 4px;
   }
-  .preview-settings span,
-  .tool-primary span,
   .toolbar-spacer {
     display: none;
   }
@@ -440,10 +498,6 @@ function onTogglePan() {
   cursor: not-allowed;
 }
 
-.tool-primary span {
-  white-space: nowrap;
-}
-
 .tool-primary {
   background: rgba(37, 99, 235, 0.12);
   color: #1d4ed8;
@@ -487,51 +541,6 @@ function onTogglePan() {
   outline: 2px solid rgba(37, 99, 235, 0.45);
   outline-offset: 2px;
   border-radius: 4px;
-}
-
-.select-cluster {
-  gap: 6px;
-  padding: 3px 6px;
-}
-
-.field {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 30px;
-  padding: 0 4px 0 8px;
-  border-radius: 7px;
-}
-
-.field-label {
-  color: rgba(15, 23, 42, 0.45);
-  font: 600 10px/1 Inter, system-ui, sans-serif;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.canvas-toolbar.is-dark .field-label {
-  color: rgba(226, 232, 240, 0.45);
-}
-
-.field-control {
-  height: 26px;
-  max-width: 128px;
-  border: 0;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.7);
-  color: inherit;
-  padding: 0 6px;
-  font: 500 12px/26px Inter, system-ui, sans-serif;
-  outline: none;
-}
-
-.canvas-toolbar.is-dark .field-control {
-  background: rgba(0, 0, 0, 0.25);
-}
-
-.field-control:focus-visible {
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.35);
 }
 
 .toolbar-spacer {

@@ -566,14 +566,9 @@ function secondaryIconFor(id: string) {
 }
 
 function navigationTreeIconFor(node: WorkbenchNavigationTreeNode) {
-  if (
-    node.kind === "group" ||
-    node.kind === "prototype" ||
-    node.kind === "screen" ||
-    node.kind === "variant"
-  ) {
-    return null;
-  }
+  if (node.kind === "group" || node.kind === "variant") return null;
+  if (node.kind === "prototype") return Layers3;
+  if (node.kind === "screen") return PanelTop;
   if (node.id === "overview") return Home;
   return secondaryIconFor(node.id);
 }

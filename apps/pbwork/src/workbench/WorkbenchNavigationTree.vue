@@ -40,6 +40,27 @@ function hasChildren(node: WorkbenchNavigationTreeNode): boolean {
 function isExpanded(node: WorkbenchNavigationTreeNode): boolean {
   return props.expandedIds.includes(node.id);
 }
+
+function countTooltip(node: WorkbenchNavigationTreeNode): string {
+  const count = node.count ?? 0;
+  if (node.kind === "prototype") return `${count} 个页面`;
+  if (node.kind === "screen") return `${count} 个状态`;
+  if (node.kind === "lifecycle") return `${count} 个原型`;
+  if (node.kind === "group" || node.kind === "section") return `${count} 项`;
+  return `${count}`;
+}
+
+function attentionTooltip(count: number): string {
+  return `${count} 条未完成评论`;
+}
+
+function iconSize(node: WorkbenchNavigationTreeNode): number {
+  if (node.kind === "section") return 18;
+  if (node.kind === "prototype") return 15;
+  if (node.kind === "screen") return 14;
+  if (node.kind === "variant") return 12;
+  return 16;
+}
 </script>
 
 <template>
@@ -97,22 +118,38 @@ function isExpanded(node: WorkbenchNavigationTreeNode): boolean {
             :is="iconFor(node)"
             v-if="iconFor(node)"
             class="node-icon"
-            :size="node.kind === 'section' ? 18 : 16"
+            :size="iconSize(node)"
             aria-hidden="true"
           />
           <span class="node-label">{{ node.label }}</span>
-          <span
+          <v-tooltip
             v-if="attentionCounts[node.id]"
-            class="node-attention"
-            :aria-label="`${attentionCounts[node.id]} 条未完成评论`"
-            >{{ attentionCounts[node.id] }}</span
+            :text="attentionTooltip(attentionCounts[node.id])"
+            location="end"
           >
-          <span
+            <template #activator="{ props: tip }">
+              <span
+                v-bind="tip"
+                class="node-attention"
+                :aria-label="attentionTooltip(attentionCounts[node.id])"
+                >{{ attentionCounts[node.id] }}</span
+              >
+            </template>
+          </v-tooltip>
+          <v-tooltip
             v-if="node.count !== undefined"
-            class="node-count"
-            aria-hidden="true"
-            >{{ node.count }}</span
+            :text="countTooltip(node)"
+            location="end"
           >
+            <template #activator="{ props: tip }">
+              <span
+                v-bind="tip"
+                class="node-count"
+                :aria-label="countTooltip(node)"
+                >{{ node.count }}</span
+              >
+            </template>
+          </v-tooltip>
         </component>
       </div>
 
@@ -139,6 +176,15 @@ function isExpanded(node: WorkbenchNavigationTreeNode): boolean {
   position: relative;
   margin-left: 0;
   padding-left: 0;
+}
+/* Light nesting only — hierarchy is mostly typography + icons. */
+.nav-tree.tree-depth-1 {
+  padding-left: 6px;
+}
+.nav-tree.tree-depth-2,
+.nav-tree.tree-depth-3,
+.nav-tree.tree-depth-4 {
+  padding-left: 8px;
 }
 .nav-node {
   display: flex;
@@ -175,23 +221,26 @@ function isExpanded(node: WorkbenchNavigationTreeNode): boolean {
   font-weight: 400;
 }
 .nav-node.is-prototype {
+  min-height: 36px;
+  margin: 2px 4px;
   font-size: 0.875rem;
-}
-.nav-node.is-screen {
-  font-size: 0.8125rem;
-}
-.nav-node.is-prototype .node-label,
-.nav-node.is-screen .node-label {
-  font-weight: 600;
 }
 .nav-node.is-prototype .node-label {
   font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.nav-node.is-screen {
+  min-height: 32px;
+  font-size: 0.8125rem;
+}
+.nav-node.is-screen .node-label {
+  font-weight: 500;
 }
 .nav-node.is-variant {
-  min-height: 30px;
+  min-height: 28px;
   color: var(--shell-muted);
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 450;
 }
 .node-toggle,
 .node-toggle-spacer {
@@ -229,7 +278,7 @@ function isExpanded(node: WorkbenchNavigationTreeNode): boolean {
   min-width: 0;
   min-height: inherit;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   padding: 0 8px 0 2px;
   border: 0;
   color: inherit;
@@ -244,9 +293,18 @@ function isExpanded(node: WorkbenchNavigationTreeNode): boolean {
 .nav-node.is-lifecycle .node-content {
   padding-left: 12px;
 }
+.nav-node.is-variant .node-content {
+  gap: 6px;
+}
 .node-icon {
   flex: 0 0 auto;
   opacity: 0.85;
+}
+.nav-node.is-prototype .node-icon {
+  opacity: 0.9;
+}
+.nav-node.is-screen .node-icon {
+  opacity: 0.7;
 }
 .node-label {
   min-width: 0;
@@ -272,6 +330,7 @@ function isExpanded(node: WorkbenchNavigationTreeNode): boolean {
   color: var(--shell-muted);
   font-size: 0.625rem;
   font-weight: 650;
+  cursor: default;
 }
 .node-attention {
   min-width: 18px;
