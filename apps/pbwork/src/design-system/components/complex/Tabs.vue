@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { computed, toRefs } from "vue";
-import {
-  usePbInspect,
-  usePbInspectRef,
-} from "@/runtime/inspect/usePbInspect";
+import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 
 /** Matches `motion.duration-slow` (320ms) for v-window's numeric prop. */
 const SLIDE_DURATION_MS = 320;
@@ -11,11 +8,46 @@ const SLIDE_DURATION_MS = 320;
 const props = defineProps<{
   modelValue?: string;
   items: Array<{ value: string; label: string }>;
+  background?: "transparent" | "surface" | "surface-variant";
+  activeStyle?: "text" | "tonal";
+  tone?: "primary" | "secondary";
+  showIndicator?: boolean;
+  showDivider?: boolean;
+  grow?: boolean;
+  align?: "start" | "center";
+  radius?: "none" | "sm" | "md" | "lg" | "full";
+  size?: "sm" | "md" | "lg";
 }>();
 const emit = defineEmits<{ "update:modelValue": [value: string] }>();
 
 const rootRef = usePbInspectRef();
-const { modelValue, items } = toRefs(props);
+const {
+  modelValue,
+  items,
+  background,
+  activeStyle,
+  tone,
+  showIndicator,
+  showDivider,
+  grow,
+  align,
+  radius,
+  size,
+} = toRefs(props);
+
+const tabStyle = computed(() => ({
+  "--pb-tabs-background":
+    background.value === "transparent"
+      ? "transparent"
+      : `var(--pb-color-${background.value ?? "surface"})`,
+  "--pb-tabs-active-background":
+    activeStyle.value === "tonal"
+      ? `var(--pb-color-${tone.value ?? "primary"}-soft)`
+      : "transparent",
+  "--pb-tabs-active-color": `var(--pb-color-${tone.value ?? "primary"})`,
+  "--pb-tabs-radius": `var(--pb-radius-${radius.value ?? "md"})`,
+  "--pb-tabs-height": `var(--pb-sizing-control-${size.value ?? "md"})`,
+}));
 
 const tab = computed({
   get: () => modelValue.value ?? items.value[0]?.value ?? "",
@@ -32,14 +64,30 @@ usePbInspect({
     modelValue: modelValue.value,
     itemCount: items.value.length,
     hasPanels: true,
+    background: background.value ?? "transparent",
+    activeStyle: activeStyle.value ?? "text",
+    tone: tone.value ?? "primary",
+    showIndicator: showIndicator.value ?? true,
+    showDivider: showDivider.value ?? false,
+    grow: grow.value ?? false,
+    align: align.value ?? "start",
+    radius: radius.value ?? "md",
+    size: size.value ?? "md",
   }),
   getTokenBindings: () => ({
     indicator: "color.primary",
-    activeBackground: "color.primary-soft",
+    activeBackground:
+      activeStyle.value === "tonal"
+        ? `color.${tone.value ?? "primary"}-soft`
+        : "transparent",
     inactiveColor: "color.on-surface-muted",
-    surface: "color.surface",
-    border: "color.border",
-    radius: "radius.md",
+    surface:
+      background.value === "transparent"
+        ? "transparent"
+        : `color.${background.value ?? "surface"}`,
+    border: showDivider.value ? "color.divider" : "transparent",
+    radius: `radius.${radius.value ?? "md"}`,
+    height: `sizing.control-${size.value ?? "md"}`,
     typography: "typography.content",
     duration: "motion.duration-slow",
     easing: "motion.easing-standard",
@@ -64,15 +112,22 @@ usePbInspect({
   <div
     ref="rootRef"
     data-pb-id="ds.tabs"
-    data-pb-role="tabs"
-    class="pb-tabs"
+    data-pb-role="tab-bar"
+    class="pb-tabs tab-bar"
+    :class="{
+      'has-indicator': showIndicator ?? true,
+      'has-divider': showDivider ?? false,
+      'is-tonal': activeStyle === 'tonal',
+    }"
+    :style="tabStyle"
   >
     <v-tabs
       v-model="tab"
       class="pb-tab-bar"
       density="compact"
-      color="primary"
-      align-tabs="start"
+      :color="tone ?? 'primary'"
+      :align-tabs="align ?? 'start'"
+      :grow="grow ?? false"
     >
       <v-tab
         v-for="item in items"
@@ -108,30 +163,40 @@ usePbInspect({
 <style scoped>
 .pb-tabs {
   display: grid;
-  gap: 12px;
+  gap: var(--pb-spacing-sm-plus, 12px);
   min-width: 0;
-  background: var(--pb-color-surface, #fff);
+  background: var(--pb-tabs-background, transparent);
 }
 .pb-tab-bar {
-  border-bottom: 1px solid var(--pb-color-border, #d7dee8);
+  background: transparent;
+}
+.pb-tabs.has-divider .pb-tab-bar {
+  border-bottom: var(--pb-border-hairline);
 }
 .pb-tab-bar :deep(.v-tab) {
-  min-height: 36px;
+  min-height: max(var(--pb-tabs-height), var(--pb-sizing-touch, 44px));
   padding: 0 var(--pb-spacing-md, 16px);
-  border-radius: var(--pb-radius-md, 12px);
+  border-radius: var(--pb-tabs-radius, var(--pb-radius-md, 12px));
   color: var(--pb-color-on-surface-muted, #1f29379e);
   font: var(--pb-typography-content, 400 14px/1.5 Inter, system-ui, sans-serif);
   letter-spacing: normal;
   text-transform: none;
 }
 .pb-tab-bar :deep(.v-tab--selected) {
-  background: var(--pb-color-primary-soft, #2563eb29);
-  color: var(--pb-color-primary, #2563eb);
+  background: var(--pb-tabs-active-background, transparent);
+  color: var(--pb-tabs-active-color, var(--pb-color-primary));
   font-weight: 600;
 }
 .pb-tab-bar :deep(.v-tabs-slider),
 .pb-tab-bar :deep(.v-tab__slider) {
   display: none;
+}
+.pb-tabs.has-indicator .pb-tab-bar :deep(.v-tabs-slider),
+.pb-tabs.has-indicator .pb-tab-bar :deep(.v-tab__slider) {
+  display: block;
+  height: 3px;
+  border-radius: var(--pb-radius-full) var(--pb-radius-full) 0 0;
+  background: var(--pb-tabs-active-color, var(--pb-color-primary));
 }
 .pb-tab-window {
   min-width: 0;

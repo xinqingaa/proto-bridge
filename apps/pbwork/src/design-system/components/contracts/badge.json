@@ -1,1 +1,37 @@
-{"schemaVersion":1,"id":"badge","category":"basic","propsSchema":{"type":"object","properties":{"label":{"type":"string"},"tone":{"type":"string","enum":["primary","error","success","warning"]}},"required":["label"]},"defaultProps":{"label":"3","tone":"error"},"states":[{"id":"success","label":"成功","props":{"label":"完成","tone":"success"}},{"id":"warning","label":"警告","props":{"label":"超时","tone":"warning"}}],"slots":[],"events":[],"tokenBindings":{"background":"color.error","text":"color.on-primary","radius":"radius.full","label":"typography.caption-strong"}}
+{
+  "schemaVersion": 1,
+  "id": "badge",
+  "category": "basic",
+  "propsSchema": {
+    "type": "object",
+    "properties": {
+      "label": { "type": "string" },
+      "tone": {
+        "type": "string",
+        "enum": ["primary", "error", "success", "warning"]
+      }
+    },
+    "required": ["label"]
+  },
+  "defaultProps": { "label": "3", "tone": "error" },
+  "states": [
+    {
+      "id": "success",
+      "label": "成功",
+      "props": { "label": "完成", "tone": "success" }
+    },
+    {
+      "id": "warning",
+      "label": "警告",
+      "props": { "label": "超时", "tone": "warning" }
+    }
+  ],
+  "slots": [],
+  "events": [],
+  "tokenBindings": {
+    "background": "color.error",
+    "text": "color.on-primary",
+    "radius": "radius.full",
+    "label": "typography.caption-strong"
+  }
+}

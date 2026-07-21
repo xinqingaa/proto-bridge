@@ -7,6 +7,21 @@
     "additionalProperties": false,
     "properties": {
       "modelValue": { "type": "string" },
+      "background": {
+        "type": "string",
+        "enum": ["transparent", "surface", "surface-variant"]
+      },
+      "activeStyle": { "type": "string", "enum": ["text", "tonal"] },
+      "tone": { "type": "string", "enum": ["primary", "secondary"] },
+      "showIndicator": { "type": "boolean" },
+      "showDivider": { "type": "boolean" },
+      "grow": { "type": "boolean" },
+      "align": { "type": "string", "enum": ["start", "center"] },
+      "radius": {
+        "type": "string",
+        "enum": ["none", "sm", "md", "lg", "full"]
+      },
+      "size": { "type": "string", "enum": ["sm", "md", "lg"] },
       "items": {
         "type": "array",
         "items": {
@@ -24,12 +39,33 @@
   },
   "defaultProps": {
     "modelValue": "overview",
+    "background": "transparent",
+    "activeStyle": "text",
+    "tone": "primary",
+    "showIndicator": true,
+    "showDivider": false,
+    "grow": false,
+    "align": "start",
+    "radius": "md",
+    "size": "md",
     "items": [
       { "value": "overview", "label": "概览" },
       { "value": "activity", "label": "活动" }
     ]
   },
-  "states": [],
+  "states": [
+    {
+      "id": "tonal",
+      "label": "柔和选中",
+      "props": { "activeStyle": "tonal", "showIndicator": false }
+    },
+    { "id": "equal", "label": "等宽", "props": { "grow": true } },
+    {
+      "id": "minimal",
+      "label": "极简",
+      "props": { "showIndicator": false, "showDivider": false }
+    }
+  ],
   "slots": ["overview", "activity"],
   "events": ["update:modelValue"],
   "tokenBindings": {

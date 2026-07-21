@@ -36,7 +36,15 @@ export type VuetifyThemeBindings = Record<
   | "error"
   | "info"
   | "success"
-  | "warning",
+  | "warning"
+  | "on-background"
+  | "on-surface"
+  | "on-primary"
+  | "on-secondary"
+  | "on-error"
+  | "on-success"
+  | "on-warning"
+  | "on-info",
   string
 >;
 

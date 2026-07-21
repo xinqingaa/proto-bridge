@@ -1,1 +1,32 @@
-{"schemaVersion":1,"id":"switch","category":"basic","propsSchema":{"type":"object","properties":{"label":{"type":"string"},"modelValue":{"type":"boolean"},"disabled":{"type":"boolean"}},"required":["label"]},"defaultProps":{"label":"接收进度通知","modelValue":true,"disabled":false},"states":[{"id":"off","label":"关闭","props":{"modelValue":false}},{"id":"disabled","label":"禁用","props":{"disabled":true}}],"slots":[],"events":["update:modelValue"],"tokenBindings":{"active":"color.primary","track":"color.surface-variant","thumb":"color.surface","target":"sizing.touch","label":"typography.content"}}
+{
+  "schemaVersion": 1,
+  "id": "switch",
+  "category": "basic",
+  "propsSchema": {
+    "type": "object",
+    "properties": {
+      "label": { "type": "string" },
+      "modelValue": { "type": "boolean" },
+      "disabled": { "type": "boolean" }
+    },
+    "required": ["label"]
+  },
+  "defaultProps": {
+    "label": "接收进度通知",
+    "modelValue": true,
+    "disabled": false
+  },
+  "states": [
+    { "id": "off", "label": "关闭", "props": { "modelValue": false } },
+    { "id": "disabled", "label": "禁用", "props": { "disabled": true } }
+  ],
+  "slots": [],
+  "events": ["update:modelValue"],
+  "tokenBindings": {
+    "active": "color.primary",
+    "track": "color.surface-variant",
+    "thumb": "color.surface",
+    "target": "sizing.touch",
+    "label": "typography.content"
+  }
+}

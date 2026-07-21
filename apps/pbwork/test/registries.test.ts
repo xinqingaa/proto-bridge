@@ -3,10 +3,7 @@ import { validateRegistries } from "@/design-system/validateRegistries";
 import { loadTokens, loadThemes } from "@/design-system/loaders";
 import { resolveThemeTokens } from "@/design-system/resolveThemeTokens";
 import { componentRecords } from "@/design-system/components/registry";
-import {
-  prototypes,
-  prototypeScreens,
-} from "@/prototypes/registry";
+import { prototypes, prototypeScreens } from "@/prototypes/registry";
 
 describe("registries", () => {
   it("accepts the shipped registries", () => {
@@ -57,16 +54,16 @@ describe("registries", () => {
 
 describe("design contracts", () => {
   it("ships the fixed component sample set", () => {
-    expect(componentRecords.filter((item) => item.category === "basic")).toHaveLength(
-      15,
-    );
+    expect(
+      componentRecords.filter((item) => item.category === "basic"),
+    ).toHaveLength(15);
     expect(
       componentRecords.filter((item) => item.category === "complex"),
     ).toHaveLength(11);
   });
 
   it("ships the expanded semantic token set", () => {
-    expect(loadTokens()).toHaveLength(90);
+    expect(loadTokens()).toHaveLength(94);
     expect(new Set(loadTokens().map((item) => item.category))).toEqual(
       new Set([
         "color",
@@ -83,7 +80,10 @@ describe("design contracts", () => {
   });
 
   it("ships project collaboration screens and variants", () => {
-    expect(prototypes.map((item) => item.id)).toEqual(["field-service", "project"]);
+    expect(prototypes.map((item) => item.id)).toEqual([
+      "field-service",
+      "project",
+    ]);
     const list = prototypeScreens.find(
       (item) => item.screenId === "project.task-list",
     );
@@ -119,9 +119,8 @@ describe("design contracts", () => {
 
 describe("resolveLiveTokenBindings", () => {
   it("updates radius, tone, and elevation from live props", async () => {
-    const { resolveLiveTokenBindings } = await import(
-      "@/design-system/resolveLiveTokenBindings"
-    );
+    const { resolveLiveTokenBindings } =
+      await import("@/design-system/resolveLiveTokenBindings");
     const live = resolveLiveTokenBindings(
       {
         background: "color.primary",
@@ -138,9 +137,8 @@ describe("resolveLiveTokenBindings", () => {
   });
 
   it("keeps soft background tokens when tone changes", async () => {
-    const { resolveLiveTokenBindings } = await import(
-      "@/design-system/resolveLiveTokenBindings"
-    );
+    const { resolveLiveTokenBindings } =
+      await import("@/design-system/resolveLiveTokenBindings");
     const live = resolveLiveTokenBindings(
       {
         background: "color.primary-soft",

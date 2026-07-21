@@ -1,19 +1,20 @@
 <script setup lang="ts">
-import { toRefs } from "vue";
+import { computed, toRefs } from "vue";
 import Button from "@/design-system/components/basic/Button.vue";
-import {
-  usePbInspect,
-  usePbInspectRef,
-} from "@/runtime/inspect/usePbInspect";
+import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 
 const props = defineProps<{
   title: string;
   modelValue?: boolean;
+  /** CSS selector for overlay host; Runtime defaults to .runtime-app */
+  attach?: string;
 }>();
 defineEmits<{ "update:modelValue": [value: boolean] }>();
 
 const sheetRef = usePbInspectRef();
-const { title, modelValue } = toRefs(props);
+const { title, modelValue, attach } = toRefs(props);
+
+const attachTarget = computed(() => attach.value ?? ".runtime-app");
 
 usePbInspect({
   element: sheetRef,
@@ -44,67 +45,63 @@ usePbInspect({
 </script>
 
 <template>
-  <div
-    v-if="modelValue"
-    class="pb-sheet-overlay"
-    @click.self="$emit('update:modelValue', false)"
+  <v-bottom-sheet
+    :model-value="modelValue ?? false"
+    class="pb-sheet-host"
+    scrim
+    :attach="attachTarget"
+    absolute
+    @update:model-value="$emit('update:modelValue', Boolean($event))"
   >
-    <section
+    <v-card
       ref="sheetRef"
       class="pb-sheet sheet"
       data-pb-id="ds.bottom-sheet"
       data-pb-shell="sheet"
       role="dialog"
       aria-modal="true"
-      @click.stop
+      color="surface"
+      variant="flat"
     >
-      <header class="pb-sheet-header">
-        <h3>{{ title }}</h3>
+      <v-card-title class="pb-sheet-header">
+        <span>{{ title }}</span>
         <Button
           label="关闭"
           variant="text"
-          tone="secondary"
           @click="$emit('update:modelValue', false)"
         />
-      </header>
-      <div class="pb-sheet-body"><slot /></div>
-    </section>
-  </div>
+      </v-card-title>
+      <v-card-text class="pb-sheet-body">
+        <slot />
+      </v-card-text>
+    </v-card>
+  </v-bottom-sheet>
 </template>
 
 <style scoped>
-.pb-sheet-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 40;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  background: rgba(15, 23, 42, 0.35);
-}
 .pb-sheet {
-  width: min(480px, 100%);
-  max-height: 70vh;
-  overflow: auto;
   border-radius: var(--pb-radius-lg, 16px) var(--pb-radius-lg, 16px) 0 0;
-  background: var(--pb-color-surface, #fff);
-  color: var(--pb-color-on-surface, #1f2937);
+  background: rgb(var(--v-theme-surface));
+  color: rgb(var(--v-theme-on-surface));
   box-shadow: var(--pb-elevation-raised, none);
 }
 .pb-sheet-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
   padding: var(--pb-spacing-md, 16px);
   border-bottom: 1px solid var(--pb-color-border, #d7dee8);
-}
-.pb-sheet-header h3 {
-  margin: 0;
-  font: var(--pb-typography-subtitle, 600 16px/1.4 Inter, system-ui, sans-serif);
+  color: inherit;
+  font: var(
+    --pb-typography-subtitle,
+    600 16px/1.4 Inter,
+    system-ui,
+    sans-serif
+  );
 }
 .pb-sheet-body {
   padding: var(--pb-spacing-md, 16px);
+  color: inherit;
   font: var(--pb-typography-content, 400 14px/1.5 Inter, system-ui, sans-serif);
 }
 </style>

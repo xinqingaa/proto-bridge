@@ -1,23 +1,61 @@
 <script setup lang="ts">
-import { toRefs } from "vue";
+import { computed, toRefs, useSlots } from "vue";
+import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
+import { radiusStyle } from "@/design-system/components/_shared/radius";
 import {
-  usePbInspect,
-  usePbInspectRef,
-} from "@/runtime/inspect/usePbInspect";
+  controlSizeStyle,
+  elevationStyle,
+  elevationToken,
+  type ComponentElevation,
+  type ComponentSize,
+} from "@/design-system/components/_shared/appearance";
 
 const props = defineProps<{
   label: string;
   variant?: "flat" | "tonal" | "outlined" | "text";
   tone?: "primary" | "secondary" | "error" | "success";
   radius?: "sm" | "md" | "lg" | "full";
+  size?: ComponentSize;
+  elevation?: ComponentElevation;
+  /** @deprecated Use elevation instead. */
   elevated?: boolean;
+  loading?: boolean;
+  block?: boolean;
   disabled?: boolean;
   type?: "button" | "submit" | "reset";
 }>();
 defineEmits<{ click: [] }>();
 
 const rootRef = usePbInspectRef();
-const { label, variant, tone, radius, elevated, disabled, type } = toRefs(props);
+const slots = useSlots();
+const {
+  label,
+  variant,
+  tone,
+  radius,
+  size,
+  elevation,
+  elevated,
+  loading,
+  block,
+  disabled,
+  type,
+} = toRefs(props);
+
+const resolvedElevation = computed<ComponentElevation>(
+  () => elevation.value ?? (elevated.value ? "card" : "none"),
+);
+const vuetifySize = computed(() => {
+  if (size.value === "sm") return "small";
+  if (size.value === "lg") return "large";
+  return "default";
+});
+
+const rounded = computed(() => {
+  const r = radius.value ?? "md";
+  if (r === "full") return "pill";
+  return r;
+});
 
 usePbInspect({
   element: rootRef,
@@ -28,7 +66,10 @@ usePbInspect({
     variant: variant.value ?? "flat",
     tone: tone.value ?? "primary",
     radius: radius.value ?? "md",
-    elevated: elevated.value ?? false,
+    size: size.value ?? "md",
+    elevation: resolvedElevation.value,
+    loading: loading.value ?? false,
+    block: block.value ?? false,
     disabled: disabled.value ?? false,
     type: type.value ?? "button",
   }),
@@ -37,10 +78,11 @@ usePbInspect({
     const v = variant.value ?? "flat";
     return {
       background: v === "tonal" ? `color.${t}-soft` : `color.${t}`,
-      onBackground: "color.on-primary",
+      onBackground: `color.on-${t}`,
       radius: `radius.${radius.value ?? "md"}`,
-      elevation: "elevation.card",
-      typography: "typography.content",
+      elevation: elevationToken(resolvedElevation.value),
+      height: `sizing.control-${size.value ?? "md"}`,
+      typography: "typography.label",
     };
   },
   getTokens: () => {
@@ -48,12 +90,13 @@ usePbInspect({
     const v = variant.value ?? "flat";
     return [
       v === "tonal" ? `color.${t}-soft` : `color.${t}`,
-      "color.on-primary",
+      `color.on-${t}`,
       "color.on-surface",
       "color.border",
       `radius.${radius.value ?? "md"}`,
-      "elevation.card",
-      "typography.content",
+      elevationToken(resolvedElevation.value),
+      `sizing.control-${size.value ?? "md"}`,
+      "typography.label",
       "spacing.md",
     ];
   },
@@ -61,90 +104,45 @@ usePbInspect({
 </script>
 
 <template>
-  <button
+  <v-btn
     ref="rootRef"
-    :type="type ?? 'button'"
     class="pb-button"
     data-pb-id="ds.button"
-    :class="[
-      `is-${variant ?? 'flat'}`,
-      `tone-${tone ?? 'primary'}`,
-      `radius-${radius ?? 'md'}`,
-      { 'is-elevated': elevated, 'is-disabled': disabled },
-    ]"
+    :type="type ?? 'button'"
+    :variant="variant ?? 'flat'"
+    :color="tone ?? 'primary'"
+    :rounded="rounded"
+    :size="vuetifySize"
+    :loading="loading ?? false"
+    :block="block ?? false"
+    :elevation="0"
     :disabled="disabled ?? false"
+    :style="[
+      radiusStyle((radius ?? 'md') as 'sm' | 'md' | 'lg' | 'full'),
+      controlSizeStyle(size ?? 'md'),
+      elevationStyle(resolvedElevation),
+    ]"
     @click="$emit('click')"
   >
-    {{ label }}
-  </button>
+    <template v-if="slots.prepend" #prepend><slot name="prepend" /></template>
+    <slot>{{ label }}</slot>
+    <template v-if="slots.append" #append><slot name="append" /></template>
+  </v-btn>
 </template>
 
 <style scoped>
 .pb-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 36px;
-  padding: 0 var(--pb-spacing-md, 16px);
-  border: 1px solid transparent;
-  font: var(--pb-typography-content, 400 14px/1.5 Inter, system-ui, sans-serif);
-  cursor: pointer;
+  min-height: var(--pb-component-height, var(--pb-sizing-control-md, 40px));
+  font: var(--pb-typography-label, 600 14px/1.4 Inter, system-ui, sans-serif);
+  text-transform: none;
+  letter-spacing: normal;
   transition:
-    background-color 120ms ease,
-    color 120ms ease,
-    box-shadow 120ms ease;
+    box-shadow var(--pb-motion-duration-fast, 120ms)
+      var(--pb-motion-easing-standard),
+    transform var(--pb-motion-duration-fast, 120ms)
+      var(--pb-motion-easing-standard);
 }
-.pb-button.radius-sm {
-  border-radius: var(--pb-radius-sm, 8px);
-}
-.pb-button.radius-md {
-  border-radius: var(--pb-radius-md, 12px);
-}
-.pb-button.radius-lg {
-  border-radius: var(--pb-radius-lg, 16px);
-}
-.pb-button.radius-full {
-  border-radius: var(--pb-radius-full, 999px);
-}
-.pb-button.tone-primary.is-flat {
-  background: var(--pb-color-primary, #2563eb);
-  color: var(--pb-color-on-primary, #fff);
-}
-.pb-button.tone-secondary.is-flat {
-  background: var(--pb-color-secondary, #5b6b7c);
-  color: #fff;
-}
-.pb-button.tone-error.is-flat {
-  background: var(--pb-color-error, #b42318);
-  color: #fff;
-}
-.pb-button.tone-success.is-flat {
-  background: var(--pb-color-success, #167c4d);
-  color: #fff;
-}
-.pb-button.is-tonal {
-  background: var(--pb-color-primary-soft, #2563eb29);
-  color: var(--pb-color-primary, #2563eb);
-}
-.pb-button.is-outlined {
-  background: transparent;
-  border-color: var(--pb-color-border, #d7dee8);
-  color: var(--pb-color-on-surface, #1f2937);
-}
-.pb-button.tone-primary.is-outlined {
-  border-color: var(--pb-color-primary, #2563eb);
-  color: var(--pb-color-primary, #2563eb);
-}
-.pb-button.is-text {
-  background: transparent;
-  color: var(--pb-color-primary, #2563eb);
-}
-.pb-button.is-elevated {
-  box-shadow: var(--pb-elevation-card, none);
-}
-.pb-button.is-disabled,
-.pb-button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
+.pb-button:active:not(.v-btn--disabled) {
+  transform: scale(0.98);
 }
 </style>

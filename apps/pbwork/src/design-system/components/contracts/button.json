@@ -19,7 +19,11 @@
         "type": "string",
         "enum": ["sm", "md", "lg", "full"]
       },
+      "size": { "type": "string", "enum": ["sm", "md", "lg"] },
+      "elevation": { "type": "string", "enum": ["none", "card", "raised"] },
       "elevated": { "type": "boolean" },
+      "loading": { "type": "boolean" },
+      "block": { "type": "boolean" },
       "disabled": { "type": "boolean" },
       "type": {
         "type": "string",
@@ -33,10 +37,17 @@
     "variant": "flat",
     "tone": "primary",
     "radius": "md",
-    "elevated": false,
+    "size": "md",
+    "elevation": "none",
+    "loading": false,
+    "block": false,
     "disabled": false
   },
   "states": [
+    { "id": "tonal", "label": "柔和", "props": { "variant": "tonal" } },
+    { "id": "outlined", "label": "描边", "props": { "variant": "outlined" } },
+    { "id": "text", "label": "文字", "props": { "variant": "text" } },
+    { "id": "loading", "label": "加载", "props": { "loading": true } },
     { "id": "disabled", "label": "禁用", "props": { "disabled": true } }
   ],
   "slots": ["default"],
@@ -46,7 +57,8 @@
     "tonalBackground": "color.primary-soft",
     "onBackground": "color.on-primary",
     "radius": "radius.md",
-    "elevation": "elevation.card",
-    "typography": "typography.content"
+    "elevation": "elevation.none",
+    "height": "sizing.control-md",
+    "typography": "typography.label"
   }
 }

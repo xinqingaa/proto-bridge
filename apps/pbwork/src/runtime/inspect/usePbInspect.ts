@@ -2,8 +2,21 @@ import { onBeforeUnmount, onMounted, ref, type Ref } from "vue";
 import type { InspectRegistration } from "@/runtime/inspect/registry";
 import { registerInspect } from "@/runtime/inspect/registry";
 
+/** Resolve a template ref that may point at a native node or a Vue/Vuetify instance. */
+export function resolveInspectElement(
+  value: unknown,
+): HTMLElement | null {
+  if (!value) return null;
+  if (value instanceof HTMLElement) return value;
+  if (typeof value === "object" && value !== null && "$el" in value) {
+    const el = (value as { $el: unknown }).$el;
+    if (el instanceof HTMLElement) return el;
+  }
+  return null;
+}
+
 export function usePbInspect(options: {
-  element: Ref<HTMLElement | null>;
+  element: Ref<unknown>;
   pbId: string;
   componentId?: string;
   getProps?: () => Record<string, unknown>;
@@ -16,7 +29,7 @@ export function usePbInspect(options: {
   function sync() {
     unregister?.();
     unregister = null;
-    const el = options.element.value;
+    const el = resolveInspectElement(options.element.value);
     if (!el) return;
     const reg: InspectRegistration = {
       element: el,
@@ -43,5 +56,5 @@ export function usePbInspect(options: {
 }
 
 export function usePbInspectRef() {
-  return ref<HTMLElement | null>(null);
+  return ref<unknown>(null);
 }

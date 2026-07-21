@@ -1,20 +1,22 @@
 <script setup lang="ts">
 import { toRefs } from "vue";
+import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import {
-  usePbInspect,
-  usePbInspectRef,
-} from "@/runtime/inspect/usePbInspect";
+  controlSizeStyle,
+  type ComponentSize,
+} from "@/design-system/components/_shared/appearance";
 
 const props = defineProps<{
   label: string;
   modelValue?: string;
   disabled?: boolean;
   radius?: "sm" | "md" | "lg";
+  size?: ComponentSize;
 }>();
 defineEmits<{ "update:modelValue": [value: string] }>();
 
 const rootRef = usePbInspectRef();
-const { label, modelValue, disabled, radius } = toRefs(props);
+const { label, modelValue, disabled, radius, size } = toRefs(props);
 
 usePbInspect({
   element: rootRef,
@@ -25,11 +27,13 @@ usePbInspect({
     modelValue: modelValue.value ?? "",
     disabled: disabled.value ?? false,
     radius: radius.value ?? "md",
+    size: size.value ?? "md",
   }),
   getTokenBindings: () => ({
     border: "color.border",
     surface: "color.surface",
     radius: `radius.${radius.value ?? "md"}`,
+    height: `sizing.control-${size.value ?? "md"}`,
     label: "typography.caption",
     input: "typography.content",
   }),
@@ -47,50 +51,40 @@ usePbInspect({
 </script>
 
 <template>
-  <label ref="rootRef" class="pb-field" data-pb-id="ds.text-field">
-    <span class="pb-field-label">{{ label }}</span>
-    <input
-      class="pb-field-input"
-      :class="`radius-${radius ?? 'md'}`"
-      :value="modelValue ?? ''"
-      :disabled="disabled ?? false"
-      @input="
-        $emit(
-          'update:modelValue',
-          ($event.target as HTMLInputElement).value,
-        )
-      "
-    />
-  </label>
+  <v-text-field
+    ref="rootRef"
+    class="pb-field"
+    data-pb-id="ds.text-field"
+    :class="`radius-${radius ?? 'md'}`"
+    :style="controlSizeStyle(size ?? 'md')"
+    :label="label"
+    :model-value="modelValue ?? ''"
+    :disabled="disabled ?? false"
+    @update:model-value="$emit('update:modelValue', String($event ?? ''))"
+  />
 </template>
 
 <style scoped>
 .pb-field {
-  display: grid;
-  gap: var(--pb-spacing-xs, 4px);
-}
-.pb-field-label {
-  color: var(--pb-color-on-surface, #1f2937);
-  font: var(--pb-typography-caption, 400 12px/1.4 Inter, system-ui, sans-serif);
-}
-.pb-field-input {
-  min-height: 40px;
-  padding: 0 var(--pb-spacing-md, 16px);
-  border: 1px solid var(--pb-color-border, #d7dee8);
-  background: var(--pb-color-surface, #fff);
-  color: var(--pb-color-on-surface, #1f2937);
   font: var(--pb-typography-content, 400 14px/1.5 Inter, system-ui, sans-serif);
 }
-.pb-field-input.radius-sm {
+.pb-field :deep(.v-field) {
+  min-height: var(--pb-component-height, var(--pb-sizing-control-md));
+  background: var(--pb-color-surface, #fff);
+}
+.pb-field :deep(.v-field__input) {
+  min-height: var(--pb-component-height, var(--pb-sizing-control-md));
+}
+.pb-field.radius-sm :deep(.v-field) {
+  --v-field-border-radius: var(--pb-radius-sm, 8px);
   border-radius: var(--pb-radius-sm, 8px);
 }
-.pb-field-input.radius-md {
+.pb-field.radius-md :deep(.v-field) {
+  --v-field-border-radius: var(--pb-radius-md, 12px);
   border-radius: var(--pb-radius-md, 12px);
 }
-.pb-field-input.radius-lg {
+.pb-field.radius-lg :deep(.v-field) {
+  --v-field-border-radius: var(--pb-radius-lg, 16px);
   border-radius: var(--pb-radius-lg, 16px);
-}
-.pb-field-input:disabled {
-  opacity: 0.45;
 }
 </style>

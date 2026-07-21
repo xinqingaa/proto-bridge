@@ -1,5 +1,66 @@
 <script setup lang="ts">
-import{toRefs}from"vue";import{usePbInspect,usePbInspectRef}from"@/runtime/inspect/usePbInspect";const props=defineProps<{value?:number;indeterminate?:boolean;label?:string}>();const rootRef=usePbInspectRef();const{value,indeterminate,label}=toRefs(props);usePbInspect({element:rootRef,pbId:"ds.progress",componentId:"progress",getProps:()=>({value:value.value??0,indeterminate:indeterminate.value??false,label:label.value??""}),getTokens:()=>["color.primary","color.primary-soft","radius.full","sizing.control-sm","motion.duration-normal"],getTokenBindings:()=>({fill:"color.primary",track:"color.primary-soft",radius:"radius.full",motion:"motion.duration-normal"})});
+import { toRefs } from "vue";
+import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
+
+const props = defineProps<{
+  label?: string;
+  value?: number;
+  indeterminate?: boolean;
+}>();
+
+const rootRef = usePbInspectRef();
+const { label, value, indeterminate } = toRefs(props);
+
+usePbInspect({
+  element: rootRef,
+  pbId: "ds.progress",
+  componentId: "progress",
+  getProps: () => ({
+    label: label.value ?? "",
+    value: value.value ?? 0,
+    indeterminate: indeterminate.value ?? false,
+  }),
+  getTokens: () => [
+    "color.primary",
+    "color.primary-soft",
+    "radius.full",
+    "typography.caption",
+    "motion.duration-normal",
+  ],
+  getTokenBindings: () => ({
+    fill: "color.primary",
+    track: "color.primary-soft",
+    radius: "radius.full",
+    motion: "motion.duration-normal",
+  }),
+});
 </script>
-<template><div ref="rootRef" class="pb-progress-wrap" data-pb-id="ds.progress"><span v-if="label">{{label}}</span><div class="pb-progress" role="progressbar" :aria-valuenow="indeterminate?undefined:value??0"><i :class="{'is-indeterminate':indeterminate}" :style="indeterminate?{}:{width:`${Math.min(100,Math.max(0,value??0))}%`}"/></div></div></template>
-<style scoped>.pb-progress-wrap{display:grid;gap:6px;color:var(--pb-color-on-surface);font:var(--pb-typography-caption)}.pb-progress{height:6px;overflow:hidden;border-radius:var(--pb-radius-full);background:var(--pb-color-primary-soft)}i{display:block;height:100%;border-radius:inherit;background:var(--pb-color-primary);transition:width var(--pb-motion-duration-normal)}i.is-indeterminate{width:42%;animation:slide 1.1s infinite ease-in-out}@keyframes slide{from{transform:translateX(-110%)}to{transform:translateX(260%)}}</style>
+
+<template>
+  <div ref="rootRef" class="pb-progress-wrap" data-pb-id="ds.progress">
+    <span v-if="label" class="pb-progress-label">{{ label }}</span>
+    <v-progress-linear
+      class="pb-progress"
+      color="primary"
+      bg-color="primary"
+      :bg-opacity="0.16"
+      height="6"
+      rounded
+      :model-value="indeterminate ? 0 : (value ?? 0)"
+      :indeterminate="indeterminate ?? false"
+    />
+  </div>
+</template>
+
+<style scoped>
+.pb-progress-wrap {
+  display: grid;
+  gap: 6px;
+  color: var(--pb-color-on-surface);
+  font: var(--pb-typography-caption);
+}
+.pb-progress {
+  border-radius: var(--pb-radius-full);
+  overflow: hidden;
+}
+</style>

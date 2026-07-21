@@ -1,5 +1,71 @@
 <script setup lang="ts">
-import{toRefs}from"vue";import{usePbInspect,usePbInspectRef}from"@/runtime/inspect/usePbInspect";const props=defineProps<{label:string;modelValue?:string;options?:string[];disabled?:boolean}>();defineEmits<{"update:modelValue":[string]}>();const rootRef=usePbInspectRef();const{label,modelValue,options,disabled}=toRefs(props);usePbInspect({element:rootRef,pbId:"ds.radio-group",componentId:"radio-group",getProps:()=>({label:label.value,modelValue:modelValue.value??"",options:options.value??[],disabled:disabled.value??false}),getTokens:()=>["color.primary","color.on-surface","spacing.sm","typography.content","typography.caption"],getTokenBindings:()=>({selected:"color.primary",label:"typography.caption",option:"typography.content",gap:"spacing.sm"})});
+import { toRefs } from "vue";
+import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
+
+const props = defineProps<{
+  label: string;
+  modelValue?: string;
+  options?: string[];
+  disabled?: boolean;
+}>();
+defineEmits<{ "update:modelValue": [string] }>();
+
+const rootRef = usePbInspectRef();
+const { label, modelValue, options, disabled } = toRefs(props);
+
+usePbInspect({
+  element: rootRef,
+  pbId: "ds.radio-group",
+  componentId: "radio-group",
+  getProps: () => ({
+    label: label.value,
+    modelValue: modelValue.value ?? "",
+    options: options.value ?? [],
+    disabled: disabled.value ?? false,
+  }),
+  getTokens: () => [
+    "color.primary",
+    "color.on-surface",
+    "spacing.sm",
+    "typography.content",
+    "typography.caption",
+  ],
+  getTokenBindings: () => ({
+    selected: "color.primary",
+    label: "typography.caption",
+    option: "typography.content",
+    gap: "spacing.sm",
+  }),
+});
 </script>
-<template><fieldset ref="rootRef" class="pb-radio" data-pb-id="ds.radio-group" :disabled="disabled"><legend>{{label}}</legend><label v-for="item in options??['选项一','选项二']" :key="item"><input type="radio" :name="label" :value="item" :checked="modelValue===item" @change="$emit('update:modelValue',item)"/>{{item}}</label></fieldset></template>
-<style scoped>.pb-radio{display:grid;gap:var(--pb-spacing-sm,8px);margin:0;padding:0;border:0;color:var(--pb-color-on-surface);font:var(--pb-typography-content)}legend{margin-bottom:8px;font:var(--pb-typography-caption)}label{display:flex;align-items:center;gap:8px;min-height:32px}input{accent-color:var(--pb-color-primary)}</style>
+
+<template>
+  <v-radio-group
+    ref="rootRef"
+    class="pb-radio"
+    data-pb-id="ds.radio-group"
+    color="primary"
+    hide-details
+    :label="label"
+    :model-value="modelValue ?? ''"
+    :disabled="disabled ?? false"
+    @update:model-value="$emit('update:modelValue', String($event ?? ''))"
+  >
+    <v-radio
+      v-for="item in options ?? ['选项一', '选项二']"
+      :key="item"
+      :label="item"
+      :value="item"
+    />
+  </v-radio-group>
+</template>
+
+<style scoped>
+.pb-radio {
+  color: var(--pb-color-on-surface);
+  font: var(--pb-typography-content);
+}
+.pb-radio :deep(.v-label) {
+  font: var(--pb-typography-caption);
+}
+</style>

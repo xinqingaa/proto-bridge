@@ -124,14 +124,14 @@ function iconSize(node: WorkbenchNavigationTreeNode): number {
           <span class="node-label">{{ node.label }}</span>
           <v-tooltip
             v-if="attentionCounts[node.id]"
-            :text="attentionTooltip(attentionCounts[node.id])"
+            :text="attentionTooltip(attentionCounts[node.id] ?? 0)"
             location="end"
           >
             <template #activator="{ props: tip }">
               <span
                 v-bind="tip"
                 class="node-attention"
-                :aria-label="attentionTooltip(attentionCounts[node.id])"
+                :aria-label="attentionTooltip(attentionCounts[node.id] ?? 0)"
                 >{{ attentionCounts[node.id] }}</span
               >
             </template>

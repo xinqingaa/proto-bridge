@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { toRefs } from "vue";
-import {
-  usePbInspect,
-  usePbInspectRef,
-} from "@/runtime/inspect/usePbInspect";
+import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
+import { radiusStyle } from "@/design-system/components/_shared/radius";
+import { elevationStyle } from "@/design-system/components/_shared/appearance";
 
 const props = defineProps<{
   title: string;
@@ -49,48 +48,49 @@ usePbInspect({
 </script>
 
 <template>
-  <article
+  <v-card
     ref="rootRef"
     class="pb-card section card"
     data-pb-id="ds.card"
     data-pb-role="section"
-    :class="[`radius-${radius ?? 'lg'}`, { 'is-elevated': elevated }]"
+    variant="outlined"
+    :elevation="0"
+    :style="[
+      radiusStyle(radius ?? 'lg'),
+      elevationStyle(elevated ? 'card' : 'none'),
+    ]"
   >
-    <h3 class="pb-card-title">{{ title }}</h3>
-    <p v-if="subtitle" class="pb-card-subtitle">{{ subtitle }}</p>
-    <div class="pb-card-body"><slot /></div>
-  </article>
+    <v-card-title class="pb-card-title">{{ title }}</v-card-title>
+    <v-card-subtitle v-if="subtitle" class="pb-card-subtitle">
+      {{ subtitle }}
+    </v-card-subtitle>
+    <v-card-text class="pb-card-body">
+      <slot />
+    </v-card-text>
+  </v-card>
 </template>
 
 <style scoped>
 .pb-card {
-  padding: var(--pb-spacing-md, 16px);
-  border: 1px solid var(--pb-color-border, #d7dee8);
+  border-color: var(--pb-color-border, #d7dee8) !important;
   background: var(--pb-color-surface, #fff);
   color: var(--pb-color-on-surface, #1f2937);
 }
-.pb-card.radius-sm {
-  border-radius: var(--pb-radius-sm, 8px);
-}
-.pb-card.radius-md {
-  border-radius: var(--pb-radius-md, 12px);
-}
-.pb-card.radius-lg {
-  border-radius: var(--pb-radius-lg, 16px);
-}
-.pb-card.is-elevated {
-  box-shadow: var(--pb-elevation-card, none);
-}
 .pb-card-title {
-  margin: 0;
-  font: var(--pb-typography-subtitle, 600 16px/1.4 Inter, system-ui, sans-serif);
+  font: var(
+    --pb-typography-subtitle,
+    600 16px/1.4 Inter,
+    system-ui,
+    sans-serif
+  );
+  padding-bottom: 0;
 }
 .pb-card-subtitle {
-  margin: var(--pb-spacing-xs, 4px) 0 0;
   color: var(--pb-color-on-surface-muted, #1f29379e);
   font: var(--pb-typography-caption, 400 12px/1.4 Inter, system-ui, sans-serif);
+  opacity: 1;
 }
 .pb-card-body {
-  margin-top: var(--pb-spacing-md, 16px);
+  padding-top: var(--pb-spacing-md, 16px);
 }
 </style>

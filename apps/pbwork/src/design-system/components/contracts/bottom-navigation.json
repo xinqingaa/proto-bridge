@@ -1,1 +1,41 @@
-{"schemaVersion":1,"id":"bottom-navigation","category":"complex","propsSchema":{"type":"object","properties":{"modelValue":{"type":"string"},"items":{"type":"array","items":{"type":"string"}}}},"defaultProps":{"modelValue":"工作台","items":["工作台","工单","消息","我的"]},"states":[{"id":"orders","label":"工单选中","props":{"modelValue":"工单"}},{"id":"messages","label":"消息选中","props":{"modelValue":"消息"}}],"slots":[],"events":["update:modelValue"],"tokenBindings":{"surface":"color.surface-raised","active":"color.primary","inactive":"color.on-surface-muted","divider":"color.divider","elevation":"elevation.level-3","target":"sizing.touch","label":"typography.caption"}}
+{
+  "schemaVersion": 1,
+  "id": "bottom-navigation",
+  "category": "complex",
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "modelValue": { "type": "string" },
+      "items": { "type": "array" },
+      "display": { "type": "string", "enum": ["icon-label", "icon", "label"] },
+      "showIndicator": { "type": "boolean" },
+      "elevated": { "type": "boolean" }
+    }
+  },
+  "defaultProps": {
+    "modelValue": "工作台",
+    "items": ["工作台", "工单", "消息", "我的"],
+    "display": "icon-label",
+    "showIndicator": true,
+    "elevated": true
+  },
+  "states": [
+    { "id": "orders", "label": "工单选中", "props": { "modelValue": "工单" } },
+    { "id": "icon-only", "label": "纯图标", "props": { "display": "icon" } },
+    { "id": "label-only", "label": "纯文字", "props": { "display": "label" } }
+  ],
+  "slots": [],
+  "events": ["update:modelValue"],
+  "tokenBindings": {
+    "surface": "color.surface-raised",
+    "active": "color.primary",
+    "inactive": "color.on-surface-muted",
+    "divider": "color.divider",
+    "elevation": "elevation.level-3",
+    "target": "sizing.touch",
+    "height": "sizing.bottom-navigation",
+    "label": "typography.caption",
+    "duration": "motion.duration-normal"
+  }
+}

@@ -9,7 +9,8 @@
       "label": { "type": "string" },
       "modelValue": { "type": "string" },
       "disabled": { "type": "boolean" },
-      "radius": { "type": "string", "enum": ["sm", "md", "lg"] }
+      "radius": { "type": "string", "enum": ["sm", "md", "lg"] },
+      "size": { "type": "string", "enum": ["sm", "md", "lg"] }
     },
     "required": ["label"]
   },
@@ -17,7 +18,8 @@
     "label": "标题",
     "modelValue": "",
     "disabled": false,
-    "radius": "md"
+    "radius": "md",
+    "size": "md"
   },
   "states": [],
   "slots": [],
@@ -26,6 +28,7 @@
     "border": "color.border",
     "surface": "color.surface",
     "radius": "radius.md",
+    "height": "sizing.control-md",
     "label": "typography.caption",
     "input": "typography.content"
   }

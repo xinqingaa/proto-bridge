@@ -10,4 +10,12 @@ export const vuetifyThemeBindings = {
   info: "color.info",
   success: "color.success",
   warning: "color.warning",
+  "on-background": "color.on-background",
+  "on-surface": "color.on-surface",
+  "on-primary": "color.on-primary",
+  "on-secondary": "color.on-secondary",
+  "on-error": "color.on-error",
+  "on-success": "color.on-success",
+  "on-warning": "color.on-warning",
+  "on-info": "color.on-info",
 } as const satisfies VuetifyThemeBindings;

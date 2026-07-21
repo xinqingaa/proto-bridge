@@ -37,6 +37,44 @@ export function resolveLiveTokenBindings(
     }
   }
 
+  if (typeof props.variant === "string" && "background" in result) {
+    const tone = typeof props.tone === "string" ? props.tone : "primary";
+    if (props.variant === "tonal") result.background = `color.${tone}-soft`;
+  }
+
+  if (typeof props.size === "string" && props.size.length > 0) {
+    for (const [key, value] of Object.entries(result)) {
+      if (
+        key === "height" ||
+        key === "size" ||
+        value.startsWith("sizing.control-")
+      ) {
+        result[key] = `sizing.control-${props.size}`;
+      }
+    }
+  }
+
+  if (typeof props.elevation === "string" && "elevation" in result) {
+    result.elevation = `elevation.${props.elevation}`;
+  }
+
+  if (typeof props.background === "string" && "surface" in result) {
+    result.surface =
+      props.background === "transparent"
+        ? "transparent"
+        : `color.${props.background}`;
+  }
+
+  if (typeof props.activeStyle === "string" && "activeBackground" in result) {
+    const tone = typeof props.tone === "string" ? props.tone : "primary";
+    result.activeBackground =
+      props.activeStyle === "tonal" ? `color.${tone}-soft` : "transparent";
+  }
+
+  if (typeof props.showDivider === "boolean" && "border" in result) {
+    result.border = props.showDivider ? "color.divider" : "transparent";
+  }
+
   if ("elevated" in props) {
     for (const [key, value] of Object.entries(result)) {
       if (

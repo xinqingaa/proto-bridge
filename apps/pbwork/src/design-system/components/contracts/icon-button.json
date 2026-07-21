@@ -11,11 +11,18 @@
         "type": "string",
         "enum": ["more", "plus", "search", "settings"]
       },
-      "size": { "type": "string", "enum": ["sm", "md"] },
+      "size": { "type": "string", "enum": ["sm", "md", "lg"] },
       "tone": {
         "type": "string",
         "enum": ["primary", "secondary", "neutral"]
       },
+      "variant": {
+        "type": "string",
+        "enum": ["tonal", "flat", "outlined", "text"]
+      },
+      "radius": { "type": "string", "enum": ["sm", "md", "lg", "full"] },
+      "elevation": { "type": "string", "enum": ["none", "card", "raised"] },
+      "loading": { "type": "boolean" },
       "elevated": { "type": "boolean" },
       "disabled": { "type": "boolean" }
     },
@@ -26,16 +33,24 @@
     "icon": "more",
     "size": "md",
     "tone": "neutral",
-    "elevated": false,
+    "variant": "tonal",
+    "radius": "full",
+    "elevation": "none",
+    "loading": false,
     "disabled": false
   },
-  "states": [],
+  "states": [
+    { "id": "primary", "label": "主色", "props": { "tone": "primary" } },
+    { "id": "loading", "label": "加载", "props": { "loading": true } },
+    { "id": "disabled", "label": "禁用", "props": { "disabled": true } }
+  ],
   "slots": [],
   "events": ["click"],
   "tokenBindings": {
     "color": "color.primary",
-    "background": "color.primary-soft",
+    "background": "color.surface-variant",
     "radius": "radius.full",
-    "elevation": "elevation.card"
+    "elevation": "elevation.none",
+    "size": "sizing.control-md"
   }
 }

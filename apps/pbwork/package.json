@@ -12,6 +12,7 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@mdi/font": "^7.4.47",
     "ajv": "^8.17.1",
     "lucide-vue-next": "^0.468.0",
     "pinia": "^3.0.3",

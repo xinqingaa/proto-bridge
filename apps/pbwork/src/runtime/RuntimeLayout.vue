@@ -214,7 +214,21 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener("message", onMessage);
   document.documentElement.classList.remove("pbwork-runtime-embedded");
+  for (const key of Object.keys(themeStyle.value)) {
+    document.documentElement.style.removeProperty(key);
+  }
 });
+
+watch(
+  themeStyle,
+  (vars) => {
+    const root = document.documentElement;
+    for (const [key, value] of Object.entries(vars)) {
+      root.style.setProperty(key, value);
+    }
+  },
+  { immediate: true },
+);
 </script>
 
 <template>

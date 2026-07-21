@@ -1,1 +1,37 @@
-{"schemaVersion":1,"id":"form-section","category":"complex","propsSchema":{"type":"object","properties":{"title":{"type":"string"},"description":{"type":"string"},"required":{"type":"boolean"}},"required":["title"]},"defaultProps":{"title":"客户信息","description":"填写联系人和服务地址","required":true},"states":[{"id":"optional","label":"选填","props":{"required":false}}],"slots":["default","action"],"events":[],"tokenBindings":{"surface":"color.surface","border":"color.border","title":"color.on-surface","description":"color.on-surface-muted","radius":"radius.lg","padding":"spacing.md","typography":"typography.subtitle"}}
+{
+  "schemaVersion": 1,
+  "id": "form-section",
+  "category": "complex",
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "title": { "type": "string" },
+      "description": { "type": "string" },
+      "required": { "type": "boolean" },
+      "actionLabel": { "type": "string" }
+    },
+    "required": ["title"]
+  },
+  "defaultProps": {
+    "title": "客户信息",
+    "description": "填写联系人和服务地址",
+    "required": true,
+    "actionLabel": "编辑"
+  },
+  "states": [
+    { "id": "optional", "label": "选填", "props": { "required": false } },
+    { "id": "no-action", "label": "无操作", "props": { "actionLabel": "" } }
+  ],
+  "slots": ["default", "action"],
+  "events": ["action"],
+  "tokenBindings": {
+    "surface": "color.surface",
+    "border": "color.border",
+    "title": "color.on-surface",
+    "description": "color.on-surface-muted",
+    "radius": "radius.lg",
+    "padding": "spacing.md",
+    "typography": "typography.subtitle"
+  }
+}

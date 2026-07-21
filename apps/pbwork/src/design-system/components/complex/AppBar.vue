@@ -1,11 +1,8 @@
 <script setup lang="ts">
-import { toRefs } from "vue";
-import { ArrowLeft } from "lucide-vue-next";
+import { toRefs, useSlots } from "vue";
+import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import IconButton from "@/design-system/components/basic/IconButton.vue";
-import {
-  usePbInspect,
-  usePbInspectRef,
-} from "@/runtime/inspect/usePbInspect";
+import { elevationStyle } from "@/design-system/components/_shared/appearance";
 
 const props = defineProps<{
   title: string;
@@ -13,12 +10,16 @@ const props = defineProps<{
   elevated?: boolean;
   showBack?: boolean;
   backLabel?: string;
+  showAction?: boolean;
+  actionLabel?: string;
 }>();
 
-defineEmits<{ back: [] }>();
+defineEmits<{ back: []; action: [] }>();
 
+const slots = useSlots();
 const rootRef = usePbInspectRef();
-const { title, dense, elevated, showBack, backLabel } = toRefs(props);
+const { title, dense, elevated, showBack, backLabel, showAction, actionLabel } =
+  toRefs(props);
 
 usePbInspect({
   element: rootRef,
@@ -30,6 +31,8 @@ usePbInspect({
     elevated: elevated.value ?? false,
     showBack: showBack.value ?? false,
     backLabel: backLabel.value ?? "返回",
+    showAction: showAction.value ?? false,
+    actionLabel: actionLabel.value ?? "更多操作",
   }),
   getTokenBindings: () => ({
     surface: "color.surface",
@@ -50,75 +53,71 @@ usePbInspect({
 </script>
 
 <template>
-  <header
+  <v-toolbar
     ref="rootRef"
     class="pb-app-bar app-bar"
     data-pb-id="ds.app-bar"
     data-pb-role="app-bar"
-    :class="{ 'is-dense': dense, 'is-elevated': elevated }"
+    flat
+    color="surface"
+    :density="dense ? 'compact' : 'default'"
+    :elevation="0"
+    :style="elevationStyle(elevated ? 'card' : 'none')"
+    :class="{ 'is-elevated': elevated }"
   >
-    <div class="pb-app-bar-main">
-      <button
-        v-if="showBack"
-        type="button"
+    <template v-if="showBack" #prepend>
+      <v-btn
         class="pb-app-bar-back"
+        icon
+        variant="text"
         :aria-label="backLabel ?? '返回'"
         @click="$emit('back')"
       >
-        <ArrowLeft :size="20" aria-hidden="true" />
-      </button>
-      <h2>{{ title }}</h2>
+        <v-icon icon="mdi-arrow-left" />
+      </v-btn>
+    </template>
+    <v-toolbar-title class="pb-app-bar-title">
+      <h2 class="pb-app-bar-heading">{{ title }}</h2>
+    </v-toolbar-title>
+    <template v-if="slots.append || showAction" #append>
       <div class="pb-app-bar-actions">
         <slot name="append">
-          <IconButton ariaLabel="更多" icon="more" tone="neutral" size="sm" />
+          <IconButton
+            v-if="showAction"
+            :ariaLabel="actionLabel ?? '更多操作'"
+            icon="more"
+            size="sm"
+            @click="$emit('action')"
+          />
         </slot>
       </div>
-    </div>
-  </header>
+    </template>
+  </v-toolbar>
 </template>
 
 <style scoped>
 .pb-app-bar {
-  width: 100%;
-  box-sizing: border-box;
+  position: relative !important;
+  flex: none;
   padding-top: var(--pb-safe-top, 0px);
   border-bottom: 1px solid var(--pb-color-border, #d7dee8);
-  background: var(--pb-color-surface, #fff);
-  color: var(--pb-color-on-surface, #1f2937);
+  box-shadow: none;
 }
 .pb-app-bar.is-elevated {
   box-shadow: var(--pb-elevation-card, none);
 }
-.pb-app-bar-main {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--pb-spacing-sm, 8px);
-  min-height: 56px;
-  padding: 0 var(--pb-spacing-md, 16px);
+.pb-app-bar :deep(.v-toolbar__content) {
+  padding-inline: var(--pb-spacing-md, 16px);
 }
-.pb-app-bar.is-dense .pb-app-bar-main {
-  min-height: 44px;
-}
-.pb-app-bar h2 {
-  flex: 1;
+.pb-app-bar-title,
+.pb-app-bar-heading {
   margin: 0;
-  font: var(--pb-typography-subtitle, 600 16px/1.4 Inter, system-ui, sans-serif);
-}
-.pb-app-bar-back {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border: 0;
-  border-radius: var(--pb-radius-full, 999px);
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-}
-.pb-app-bar-back:hover {
-  background: var(--pb-color-surface-variant, rgba(127, 127, 127, 0.12));
+  font: var(
+    --pb-typography-subtitle,
+    600 16px/1.4 Inter,
+    system-ui,
+    sans-serif
+  );
 }
 .pb-app-bar-actions {
   display: flex;

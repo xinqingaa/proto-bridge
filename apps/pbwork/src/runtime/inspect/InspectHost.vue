@@ -142,7 +142,13 @@ function onClick(event: MouseEvent) {
     return;
   }
 
-  selectElement(resolveInspectTarget(leaf, event.altKey));
+  // Snap to nearest stable PB anchor so comments / inspect bind to data-pb-id roots
+  // (e.g. list rows) instead of inner typography nodes from Vuetify.
+  const anchored = leaf.closest<HTMLElement>("[data-pb-id]");
+  const target = event.altKey
+    ? resolveInspectTarget(anchored ?? leaf, true)
+    : (anchored ?? resolveInspectTarget(leaf, false));
+  selectElement(target);
 }
 
 function onKeyDown(event: KeyboardEvent) {

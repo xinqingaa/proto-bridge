@@ -1,5 +1,109 @@
 <script setup lang="ts">
-import{toRefs}from"vue";import{CheckCircle2,AlertCircle,X}from"lucide-vue-next";import{usePbInspect,usePbInspectRef}from"@/runtime/inspect/usePbInspect";const props=defineProps<{modelValue?:boolean;message:string;tone?:"success"|"error"|"info"}>();defineEmits<{"update:modelValue":[boolean]}>();const rootRef=usePbInspectRef();const{modelValue,message,tone}=toRefs(props);usePbInspect({element:rootRef,pbId:"ds.snackbar",componentId:"snackbar",getProps:()=>({modelValue:modelValue.value??true,message:message.value,tone:tone.value??"success"}),getTokens:()=>[`color.${tone.value??"success"}`,"color.surface-raised","color.on-surface","radius.lg","elevation.level-4","spacing.md","typography.content"],getTokenBindings:()=>({accent:`color.${tone.value??"success"}`,surface:"color.surface-raised",text:"color.on-surface",radius:"radius.lg",elevation:"elevation.level-4",padding:"spacing.md",message:"typography.content"})});
+import { computed, toRefs } from "vue";
+import { CheckCircle2, AlertCircle } from "lucide-vue-next";
+import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
+
+const props = defineProps<{
+  modelValue?: boolean;
+  message: string;
+  tone?: "success" | "error" | "info";
+  /** CSS selector for overlay host; Runtime defaults to .runtime-app */
+  attach?: string;
+}>();
+defineEmits<{ "update:modelValue": [boolean] }>();
+
+const rootRef = usePbInspectRef();
+const { modelValue, message, tone, attach } = toRefs(props);
+
+const color = computed(() => tone.value ?? "success");
+const attachTarget = computed(() => attach.value ?? ".runtime-app");
+
+usePbInspect({
+  element: rootRef,
+  pbId: "ds.snackbar",
+  componentId: "snackbar",
+  getProps: () => ({
+    modelValue: modelValue.value ?? true,
+    message: message.value,
+    tone: tone.value ?? "success",
+  }),
+  getTokens: () => [
+    `color.${tone.value ?? "success"}`,
+    "color.surface-raised",
+    "color.on-surface",
+    "radius.lg",
+    "elevation.level-4",
+    "spacing.md",
+    "typography.content",
+  ],
+  getTokenBindings: () => ({
+    accent: `color.${tone.value ?? "success"}`,
+    surface: "color.surface-raised",
+    text: "color.on-surface",
+    radius: "radius.lg",
+    elevation: "elevation.level-4",
+    padding: "spacing.md",
+    message: "typography.content",
+  }),
+});
 </script>
-<template><div v-if="modelValue??true" ref="rootRef" class="pb-snackbar" data-pb-id="ds.snackbar" role="status" :class="`tone-${tone??'success'}`"><component :is="tone==='error'?AlertCircle:CheckCircle2" :size="20"/><span>{{message}}</span><button type="button" aria-label="关闭提示" @click="$emit('update:modelValue',false)"><X :size="16"/></button></div></template>
-<style scoped>.pb-snackbar{display:flex;align-items:center;gap:10px;padding:12px var(--pb-spacing-md);border-left:4px solid var(--pb-color-success);border-radius:var(--pb-radius-lg);background:var(--pb-color-surface-raised);color:var(--pb-color-on-surface);box-shadow:var(--pb-elevation-level-4);font:var(--pb-typography-content)}.tone-error{border-left-color:var(--pb-color-error)}.tone-info{border-left-color:var(--pb-color-info)}span{flex:1}button{display:grid;place-items:center;border:0;background:transparent;color:inherit;cursor:pointer}</style>
+
+<template>
+  <v-snackbar
+    ref="rootRef"
+    class="pb-snackbar"
+    data-pb-id="ds.snackbar"
+    :model-value="modelValue ?? true"
+    color="surface"
+    :content-class="`pb-snackbar-surface is-${color}`"
+    :attach="attachTarget"
+    absolute
+    location="bottom"
+    multi-line
+    timeout="4000"
+    @update:model-value="$emit('update:modelValue', Boolean($event))"
+  >
+    <div class="pb-snackbar-content">
+      <component
+        :is="tone === 'error' ? AlertCircle : CheckCircle2"
+        :size="20"
+      />
+      <span>{{ message }}</span>
+    </div>
+    <template #actions>
+      <v-btn
+        variant="text"
+        aria-label="关闭提示"
+        @click="$emit('update:modelValue', false)"
+      >
+        关闭
+      </v-btn>
+    </template>
+  </v-snackbar>
+</template>
+
+<style scoped>
+.pb-snackbar-content {
+  display: flex;
+  align-items: center;
+  gap: var(--pb-spacing-sm-plus);
+}
+</style>
+
+<style>
+/* Teleported overlay content; keep classes unscoped so attach target still styles. */
+.pb-snackbar-surface {
+  border-radius: var(--pb-radius-lg) !important;
+  background: var(--pb-color-surface-raised) !important;
+  color: rgb(var(--v-theme-on-surface)) !important;
+  box-shadow: var(--pb-elevation-level-4);
+  border-left: 4px solid rgb(var(--v-theme-success));
+  font: var(--pb-typography-content);
+}
+.pb-snackbar-surface.is-error {
+  border-left-color: rgb(var(--v-theme-error));
+}
+.pb-snackbar-surface.is-info {
+  border-left-color: rgb(var(--v-theme-info));
+}
+</style>

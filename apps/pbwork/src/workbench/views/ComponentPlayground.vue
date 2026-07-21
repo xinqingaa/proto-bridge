@@ -20,10 +20,13 @@ import {
   tokensToCssVars,
 } from "@/design-system/resolveThemeTokens";
 import { resolveLiveTokenBindings } from "@/design-system/resolveLiveTokenBindings";
+import { componentScenarios } from "@/design-system/components/scenarios";
 
 const props = defineProps<{ componentId: string }>();
 const playground = usePlaygroundStore();
 const selectedStateId = ref("default");
+const selectedScenarioId = ref("");
+const previewTheme = ref<"light" | "dark">("light");
 
 const record = computed(() =>
   componentRecords.find((item) => item.id === props.componentId),
@@ -35,6 +38,12 @@ const controls = computed(
   () => (record.value?.controls ?? []) as PlaygroundControl[],
 );
 const states = computed(() => contract.value?.states ?? []);
+const scenarios = computed(() => componentScenarios(props.componentId));
+const selectedScenario = computed(
+  () =>
+    scenarios.value.find((item) => item.id === selectedScenarioId.value) ??
+    scenarios.value[0],
+);
 const tokenBindings = computed(() =>
   Object.entries(
     resolveLiveTokenBindings(
@@ -43,15 +52,96 @@ const tokenBindings = computed(() =>
     ),
   ),
 );
-const lightPreviewStyle = computed(() =>
-  tokensToCssVars(resolveThemeTokens("light")),
+const previewStyle = computed(() =>
+  tokensToCssVars(resolveThemeTokens(previewTheme.value)),
 );
-const darkPreviewStyle = computed(() =>
-  tokensToCssVars(resolveThemeTokens("dark")),
+const vuetifyPreviewTheme = computed(() =>
+  previewTheme.value === "dark" ? "pbworkDark" : "pbworkLight",
 );
 const tallPreview = computed(() =>
-  ["bottom-sheet", "data-list", "app-bar", "tabs", "dialog"].includes(props.componentId),
+  [
+    "bottom-sheet",
+    "data-list",
+    "app-bar",
+    "tabs",
+    "dialog",
+    "snackbar",
+  ].includes(props.componentId),
 );
+
+const isOverlayPreview = computed(() =>
+  ["dialog", "bottom-sheet", "snackbar"].includes(props.componentId),
+);
+
+const previewAttach = "[data-pb-scenario-preview]";
+
+function previewBind() {
+  const base = { ...playground.props };
+  if (!isOverlayPreview.value) return base;
+  return {
+    ...base,
+    attach: previewAttach,
+    contained: true,
+    modelValue: Boolean(base.modelValue),
+  };
+}
+
+watch(
+  () => props.componentId,
+  () => {
+    previewTheme.value = "light";
+  },
+);
+
+const contentControlKeys = new Set([
+  "label",
+  "title",
+  "subtitle",
+  "description",
+  "message",
+  "placeholder",
+  "modelValue",
+  "emptyText",
+  "actionLabel",
+  "confirmLabel",
+  "ariaLabel",
+  "icon",
+  "name",
+]);
+const behaviorControlKeys = new Set([
+  "loading",
+  "disabled",
+  "readonly",
+  "required",
+  "clearable",
+  "block",
+  "modelValue",
+  "showBack",
+  "showAction",
+  "showActions",
+  "showFilter",
+  "showIndicator",
+  "showDivider",
+  "grow",
+  "elevated",
+  "indeterminate",
+  "inset",
+]);
+const controlGroups = computed(() => {
+  const groups = [
+    { id: "content", label: "内容", controls: [] as PlaygroundControl[] },
+    { id: "appearance", label: "外观", controls: [] as PlaygroundControl[] },
+    { id: "behavior", label: "行为", controls: [] as PlaygroundControl[] },
+  ];
+  for (const control of controls.value) {
+    if (behaviorControlKeys.has(control.key) || control.control === "boolean")
+      groups[2]!.controls.push(control);
+    else if (contentControlKeys.has(control.key))
+      groups[0]!.controls.push(control);
+    else groups[1]!.controls.push(control);
+  }
+  return groups.filter((group) => group.controls.length > 0);
+});
 
 /** Named panel slots for Tabs playground (contract.slots). */
 const tabsPreviewSlots = computed(() =>
@@ -80,11 +170,19 @@ watch(
   (id) => {
     playground.open(id);
     selectedStateId.value = "default";
+    selectedScenarioId.value = componentScenarios(id)[0]?.id ?? "default";
+    const scenario = componentScenarios(id)[0];
+    for (const [key, value] of Object.entries(scenario?.props ?? {}))
+      playground.setProp(key, value);
   },
   { immediate: true },
 );
 
-onMounted(() => playground.open(props.componentId));
+onMounted(() =>
+  selectScenario(
+    selectedScenarioId.value || scenarios.value[0]?.id || "default",
+  ),
+);
 
 function onPreviewUpdate(value: unknown) {
   setControlValue("modelValue", value);
@@ -110,6 +208,15 @@ function selectState(id: string) {
     playground.setProp(key, value);
   }
 }
+
+function selectScenario(id: string) {
+  selectedScenarioId.value = id;
+  selectedStateId.value = "default";
+  playground.open(props.componentId);
+  const scenario = scenarios.value.find((item) => item.id === id);
+  for (const [key, value] of Object.entries(scenario?.props ?? {}))
+    playground.setProp(key, value);
+}
 </script>
 
 <template>
@@ -117,17 +224,33 @@ function selectState(id: string) {
     v-if="record && contract"
     :eyebrow="record.category === 'basic' ? '基础组件' : '复杂组件'"
     :title="record.label"
-    description="在浅色与深色中同时体验组件；选择一个正式状态后，可用易懂的控件调整内容、外观与行为。"
+    description="从真实业务场景开始体验组件，再按内容、外观与行为调整为需要的状态。"
   >
     <template #stats>
-      <v-chip size="small" variant="tonal">{{ controls.length }} 个可调项</v-chip>
-      <v-chip size="small" variant="tonal">{{ states.length }} 个预设状态</v-chip>
+      <v-chip size="small" variant="tonal"
+        >{{ controls.length }} 个可调项</v-chip
+      >
+      <v-chip size="small" variant="tonal"
+        >{{ states.length }} 个预设状态</v-chip
+      >
       <v-chip size="small" variant="tonal"
         >{{ tokenBindings.length }} Bindings</v-chip
       >
     </template>
 
     <template #toolbar>
+      <v-select
+        :model-value="selectedScenarioId"
+        :items="scenarios"
+        item-title="label"
+        item-value="id"
+        label="使用场景"
+        density="compact"
+        variant="outlined"
+        hide-details
+        class="scenario-select"
+        @update:model-value="selectScenario(String($event))"
+      />
       <v-btn-toggle
         v-if="states.length"
         :model-value="selectedStateId"
@@ -137,31 +260,65 @@ function selectState(id: string) {
         divided
         mandatory
       >
-        <v-btn value="default" size="small" @click="selectState('default')">默认</v-btn>
+        <v-btn value="default" size="small" @click="selectState('default')"
+          >默认</v-btn
+        >
         <v-btn
           v-for="state in states"
           :key="state.id"
           :value="state.id"
           size="small"
           @click="selectState(state.id)"
-        >{{ state.label }}</v-btn>
+          >{{ state.label }}</v-btn
+        >
       </v-btn-toggle>
-      <span class="toolbar-hint">浅色在左、深色在右 · 与工作台壳主题无关</span>
+      <v-btn-toggle
+        v-model="previewTheme"
+        density="compact"
+        color="primary"
+        variant="outlined"
+        divided
+        mandatory
+        aria-label="预览主题"
+      >
+        <v-btn value="light" size="small">浅色</v-btn>
+        <v-btn value="dark" size="small">深色</v-btn>
+      </v-btn-toggle>
     </template>
 
     <div class="playground-grid">
       <div class="preview-wrap">
-        <div class="dual-preview">
-          <article class="preview-pane" :style="lightPreviewStyle">
-            <header><strong>浅色</strong><code>theme.light</code></header>
-            <div class="preview" :class="{ 'is-tall': tallPreview }">
+        <article class="scenario-preview-card" :style="previewStyle">
+          <header class="scenario-header">
+            <div>
+              <strong>{{ selectedScenario?.label }}</strong>
+              <span>{{ selectedScenario?.description }}</span>
+            </div>
+            <code>{{ `theme.${previewTheme}` }}</code>
+          </header>
+          <v-theme-provider :theme="vuetifyPreviewTheme">
+            <div
+              class="preview scenario-preview"
+              data-pb-scenario-preview
+              :class="{
+                'is-tall': tallPreview,
+                'is-overlay': isOverlayPreview,
+              }"
+            >
               <component
                 :is="previewComponent"
-                v-bind="playground.props"
+                v-bind="previewBind()"
                 @update:model-value="onPreviewUpdate"
               >
-                <template v-if="record.id === 'bottom-sheet'">点遮罩或「关闭」可收起。</template>
-                <template v-else-if="record.id === 'card'">Card 表面、圆角和阴影来自设计令牌。</template>
+                <template v-if="record.id === 'bottom-sheet'"
+                  >选择状态、优先级和时间范围后应用筛选。</template
+                >
+                <template v-else-if="record.id === 'card'"
+                  >4 个待处理 · 2 个即将超时</template
+                >
+                <template v-else-if="record.id === 'form-section'"
+                  >在这里放置该业务分组的表单字段。</template
+                >
                 <template
                   v-for="slotName in tabsPreviewSlots"
                   :key="slotName"
@@ -171,47 +328,32 @@ function selectState(id: string) {
                 </template>
               </component>
             </div>
-          </article>
-          <article class="preview-pane" :style="darkPreviewStyle">
-            <header><strong>深色</strong><code>theme.dark</code></header>
-            <div class="preview" :class="{ 'is-tall': tallPreview }">
-              <component
-                :is="previewComponent"
-                v-bind="playground.props"
-                @update:model-value="onPreviewUpdate"
-              >
-                <template v-if="record.id === 'bottom-sheet'">点遮罩或「关闭」可收起。</template>
-                <template v-else-if="record.id === 'card'">Card 表面、圆角和阴影来自设计令牌。</template>
-                <template
-                  v-for="slotName in tabsPreviewSlots"
-                  :key="slotName"
-                  #[slotName]
-                >
-                  <p class="tabs-panel-demo">{{ tabsSlotLabel(slotName) }}</p>
-                </template>
-              </component>
-            </div>
-          </article>
-        </div>
-
+          </v-theme-provider>
+        </article>
       </div>
 
       <v-form class="controls" @submit.prevent>
         <div class="controls-header">
           <div>
             <strong>调整组件</strong>
-            <span>修改后立即更新两侧预览</span>
+            <span>修改后立即更新当前业务场景</span>
           </div>
           <v-btn size="small" variant="text" @click="resetCurrent">重置</v-btn>
         </div>
 
-        <p class="controls-explainer">无需理解 Props：下面的设置分别控制组件内容、外观和交互状态。</p>
+        <p class="controls-explainer">
+          无需理解 Props：下面的设置分别控制组件内容、外观和交互状态。
+        </p>
 
-        <fieldset class="controls-fields">
-          <template v-for="control in controls" :key="control.key">
+        <fieldset
+          v-for="group in controlGroups"
+          :key="group.id"
+          class="controls-fields"
+        >
+          <legend>{{ group.label }}</legend>
+          <template v-for="control in group.controls" :key="control.key">
             <div class="control-label">
               <span>{{ control.label }}</span>
-              <code>{{ control.key }}</code>
             </div>
             <v-switch
               v-if="control.control === 'boolean'"
@@ -281,6 +423,10 @@ function selectState(id: string) {
   color: rgba(var(--v-theme-on-surface), 0.55);
   font-size: 0.75rem;
 }
+.scenario-select {
+  flex: 0 1 220px;
+  min-width: 180px;
+}
 .playground-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
@@ -294,27 +440,29 @@ function selectState(id: string) {
   background: rgb(var(--v-theme-surface));
   overflow: hidden;
 }
-.dual-preview {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-.preview-pane {
-  min-width: 0;
+.scenario-preview-card {
   background: var(--pb-color-background, #f5f8fc);
   color: var(--pb-color-on-surface, #1f2937);
 }
-.preview-pane + .preview-pane {
-  border-left: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-.preview-pane > header {
+.scenario-header {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  padding: 10px 14px;
+  gap: 16px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--pb-color-border, #d7dee8);
-  font-size: 0.75rem;
 }
-.preview-pane > header code {
+.scenario-header > div {
+  display: grid;
+  gap: 3px;
+}
+.scenario-header strong {
+  font: var(--pb-typography-label);
+}
+.scenario-header span,
+.scenario-header code {
   color: var(--pb-color-on-surface-muted, #64748b);
+  font: var(--pb-typography-caption);
 }
 .preview {
   position: relative;
@@ -325,7 +473,18 @@ function selectState(id: string) {
   color: var(--pb-color-on-surface, #1f2937);
 }
 .preview.is-tall {
-  min-height: 260px;
+  min-height: 320px;
+}
+.preview.is-overlay {
+  overflow: visible;
+  min-height: 360px;
+}
+.preview-wrap:has(.is-overlay) {
+  overflow: visible;
+}
+.preview :deep(.v-overlay-container),
+.preview :deep(.v-overlay) {
+  position: absolute !important;
 }
 .tabs-panel-demo {
   margin: 0;
@@ -366,10 +525,19 @@ function selectState(id: string) {
   font-size: 0.6875rem;
 }
 .controls-fields {
-  margin: 0;
+  margin: 0 0 16px;
   padding: 0;
   border: 0;
   min-width: 0;
+}
+.controls-fields legend {
+  width: 100%;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  color: rgb(var(--v-theme-on-surface));
+  font-size: 0.8125rem;
+  font-weight: 650;
 }
 .token-bindings {
   margin: 8px 0 16px;
@@ -406,15 +574,6 @@ function selectState(id: string) {
 @media (max-width: 1279px) {
   .playground-grid {
     grid-template-columns: 1fr;
-  }
-}
-@media (max-width: 760px) {
-  .dual-preview {
-    grid-template-columns: 1fr;
-  }
-  .preview-pane + .preview-pane {
-    border-left: 0;
-    border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   }
 }
 </style>

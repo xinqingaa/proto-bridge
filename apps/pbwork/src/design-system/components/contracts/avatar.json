@@ -1,1 +1,28 @@
-{"schemaVersion":1,"id":"avatar","category":"basic","propsSchema":{"type":"object","properties":{"name":{"type":"string"},"size":{"type":"string","enum":["sm","md","lg"]},"tone":{"type":"string","enum":["primary","secondary"]}},"required":["name"]},"defaultProps":{"name":"李明","size":"md","tone":"primary"},"states":[{"id":"small","label":"小尺寸","props":{"size":"sm"}},{"id":"large","label":"大尺寸","props":{"size":"lg"}}],"slots":[],"events":[],"tokenBindings":{"background":"color.primary","text":"color.on-primary","size":"sizing.avatar-md","radius":"radius.full","initials":"typography.label"}}
+{
+  "schemaVersion": 1,
+  "id": "avatar",
+  "category": "basic",
+  "propsSchema": {
+    "type": "object",
+    "properties": {
+      "name": { "type": "string" },
+      "size": { "type": "string", "enum": ["sm", "md", "lg"] },
+      "tone": { "type": "string", "enum": ["primary", "secondary"] }
+    },
+    "required": ["name"]
+  },
+  "defaultProps": { "name": "李明", "size": "md", "tone": "primary" },
+  "states": [
+    { "id": "small", "label": "小尺寸", "props": { "size": "sm" } },
+    { "id": "large", "label": "大尺寸", "props": { "size": "lg" } }
+  ],
+  "slots": [],
+  "events": [],
+  "tokenBindings": {
+    "background": "color.primary",
+    "text": "color.on-primary",
+    "size": "sizing.avatar-md",
+    "radius": "radius.full",
+    "initials": "typography.label"
+  }
+}

@@ -1,5 +1,62 @@
 <script setup lang="ts">
-import{toRefs}from"vue";import{usePbInspect,usePbInspectRef}from"@/runtime/inspect/usePbInspect";const props=defineProps<{label:string;modelValue?:boolean;disabled?:boolean}>();defineEmits<{"update:modelValue":[boolean]}>();const rootRef=usePbInspectRef();const{label,modelValue,disabled}=toRefs(props);usePbInspect({element:rootRef,pbId:"ds.switch",componentId:"switch",getProps:()=>({label:label.value,modelValue:modelValue.value??false,disabled:disabled.value??false}),getTokens:()=>["color.primary","color.surface-variant","color.surface","sizing.touch","typography.content"],getTokenBindings:()=>({active:"color.primary",track:"color.surface-variant",thumb:"color.surface",target:"sizing.touch",label:"typography.content"})});
+import { toRefs } from "vue";
+import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
+
+const props = defineProps<{
+  label: string;
+  modelValue?: boolean;
+  disabled?: boolean;
+}>();
+defineEmits<{ "update:modelValue": [boolean] }>();
+
+const rootRef = usePbInspectRef();
+const { label, modelValue, disabled } = toRefs(props);
+
+usePbInspect({
+  element: rootRef,
+  pbId: "ds.switch",
+  componentId: "switch",
+  getProps: () => ({
+    label: label.value,
+    modelValue: modelValue.value ?? false,
+    disabled: disabled.value ?? false,
+  }),
+  getTokens: () => [
+    "color.primary",
+    "color.surface-variant",
+    "color.surface",
+    "sizing.touch",
+    "typography.content",
+  ],
+  getTokenBindings: () => ({
+    active: "color.primary",
+    track: "color.surface-variant",
+    thumb: "color.surface",
+    target: "sizing.touch",
+    label: "typography.content",
+  }),
+});
 </script>
-<template><label ref="rootRef" class="pb-switch" data-pb-id="ds.switch"><input type="checkbox" :checked="modelValue" :disabled="disabled" @change="$emit('update:modelValue',($event.target as HTMLInputElement).checked)"/><span class="track"><i/></span><span>{{label}}</span></label></template>
-<style scoped>.pb-switch{display:inline-flex;align-items:center;gap:10px;min-height:var(--pb-sizing-touch,44px);color:var(--pb-color-on-surface);font:var(--pb-typography-content);cursor:pointer}.pb-switch>input{position:absolute;opacity:0}.track{width:38px;height:22px;padding:3px;border-radius:999px;background:var(--pb-color-surface-variant);transition:background var(--pb-motion-duration-fast)}i{display:block;width:16px;height:16px;border-radius:50%;background:var(--pb-color-surface);box-shadow:var(--pb-elevation-level-1);transition:transform var(--pb-motion-duration-fast)}input:checked+.track{background:var(--pb-color-primary)}input:checked+.track i{transform:translateX(16px)}</style>
+
+<template>
+  <v-switch
+    ref="rootRef"
+    class="pb-switch"
+    data-pb-id="ds.switch"
+    color="primary"
+    hide-details
+    inset
+    :label="label"
+    :model-value="modelValue ?? false"
+    :disabled="disabled ?? false"
+    @update:model-value="$emit('update:modelValue', Boolean($event))"
+  />
+</template>
+
+<style scoped>
+.pb-switch {
+  min-height: var(--pb-sizing-touch, 44px);
+  color: var(--pb-color-on-surface);
+  font: var(--pb-typography-content);
+}
+</style>

@@ -1,1 +1,37 @@
-{"schemaVersion":1,"id":"empty-state","category":"complex","propsSchema":{"type":"object","properties":{"title":{"type":"string"},"description":{"type":"string"},"actionLabel":{"type":"string"}},"required":["title"]},"defaultProps":{"title":"暂无工单","description":"调整筛选条件，或创建第一张现场工单。","actionLabel":"新建工单"},"states":[{"id":"without-action","label":"无操作","props":{"actionLabel":""}}],"slots":[],"events":["action"],"tokenBindings":{"iconSurface":"color.primary-soft","icon":"color.primary","title":"color.on-surface","description":"color.on-surface-muted","radius":"radius.full","spacing":"spacing.lg","typography":"typography.subtitle"}}
+{
+  "schemaVersion": 1,
+  "id": "empty-state",
+  "category": "complex",
+  "propsSchema": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string" },
+      "description": { "type": "string" },
+      "actionLabel": { "type": "string" }
+    },
+    "required": ["title"]
+  },
+  "defaultProps": {
+    "title": "暂无工单",
+    "description": "调整筛选条件，或创建第一张现场工单。",
+    "actionLabel": "新建工单"
+  },
+  "states": [
+    {
+      "id": "without-action",
+      "label": "无操作",
+      "props": { "actionLabel": "" }
+    }
+  ],
+  "slots": [],
+  "events": ["action"],
+  "tokenBindings": {
+    "iconSurface": "color.primary-soft",
+    "icon": "color.primary",
+    "title": "color.on-surface",
+    "description": "color.on-surface-muted",
+    "radius": "radius.full",
+    "spacing": "spacing.lg",
+    "typography": "typography.subtitle"
+  }
+}
