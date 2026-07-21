@@ -10,13 +10,13 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "submit",
       label: "提交表单",
-      description: "移动端表单底部的主要提交操作。",
+      description: "表单底部的主操作，用于提交工单。",
       props: { label: "提交工单", block: true },
     },
     {
       id: "secondary",
       label: "次要操作",
-      description: "与主要操作并列时使用柔和样式。",
+      description: "与主按钮并列时的次要操作，如保存草稿。",
       props: { label: "保存草稿", variant: "tonal" },
     },
   ],
@@ -24,13 +24,13 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "toolbar",
       label: "工具栏操作",
-      description: "有背景和点击反馈的紧凑工具按钮。",
+      description: "顶栏或工具区中的更多操作入口。",
       props: { ariaLabel: "更多操作", icon: "more" },
     },
     {
       id: "create",
       label: "快捷新建",
-      description: "突出显示的主色图标操作。",
+      description: "突出显示的主色新建入口。",
       props: { ariaLabel: "新建工单", icon: "plus", tone: "primary" },
     },
   ],
@@ -38,13 +38,13 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "contact",
       label: "联系人信息",
-      description: "表单中的标准单行输入。",
+      description: "表单中填写联系人姓名。",
       props: { label: "联系人", modelValue: "李明" },
     },
     {
       id: "empty",
       label: "待填写字段",
-      description: "尚未输入内容的字段。",
+      description: "尚未输入的联系电话字段。",
       props: { label: "联系电话", modelValue: "" },
     },
   ],
@@ -52,7 +52,7 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "service",
       label: "服务类型",
-      description: "从有限业务选项中选择服务类型。",
+      description: "创建工单时选择维修、巡检或安装。",
       props: {
         label: "服务类型",
         modelValue: "维修",
@@ -62,7 +62,7 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "assignee",
       label: "指派人员",
-      description: "可清除的人员选择。",
+      description: "指派负责人，支持清除当前选择。",
       props: {
         label: "负责人",
         modelValue: "王工",
@@ -85,7 +85,7 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "note",
       label: "补充备注",
-      description: "可选的多行补充信息。",
+      description: "可选的现场备注补充信息。",
       props: { label: "补充备注", modelValue: "", rows: 3 },
     },
   ],
@@ -93,13 +93,13 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "agreement",
       label: "提交确认",
-      description: "提交前确认信息真实完整。",
+      description: "提交前确认信息已核对完整。",
       props: { label: "我已核对以上信息", modelValue: true },
     },
     {
       id: "preference",
       label: "偏好设置",
-      description: "可独立开启的业务偏好。",
+      description: "可独立勾选的业务偏好，如完成后通知。",
       props: { label: "完成后通知我", modelValue: false },
     },
   ],
@@ -107,13 +107,13 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "priority",
       label: "工单优先级",
-      description: "在互斥选项中选择一个优先级。",
+      description: "在普通与紧急之间选择优先级。",
       props: { label: "优先级", modelValue: "普通", options: ["普通", "紧急"] },
     },
     {
       id: "visit",
       label: "上门时段",
-      description: "选择期望的服务时段。",
+      description: "选择期望的上门服务时段。",
       props: {
         label: "上门时段",
         modelValue: "上午",
@@ -125,13 +125,13 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "notifications",
       label: "消息通知",
-      description: "即时开启或关闭通知。",
+      description: "开启或关闭工单进度通知。",
       props: { label: "接收工单进度通知", modelValue: true },
     },
     {
       id: "offline",
       label: "离线能力",
-      description: "控制离线数据缓存。",
+      description: "控制是否缓存离线工单。",
       props: { label: "缓存离线工单", modelValue: false },
     },
   ],
@@ -139,7 +139,7 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "assignee",
       label: "负责人头像",
-      description: "列表和详情中的人员标识。",
+      description: "列表与详情中标识负责人。",
       props: { name: "李明", size: "md" },
     },
     {
@@ -153,13 +153,13 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "unread",
       label: "未读数量",
-      description: "消息入口的数量提醒。",
+      description: "消息入口上的未读数量提醒。",
       props: { label: "12", tone: "error" },
     },
     {
       id: "status",
       label: "状态标识",
-      description: "紧凑展示业务状态。",
+      description: "紧凑展示业务完成状态。",
       props: { label: "已完成", tone: "success" },
     },
   ],
@@ -167,13 +167,13 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "status",
       label: "工单状态",
-      description: "列表中的柔和状态标签。",
+      description: "列表行中标记工单当前状态。",
       props: { label: "进行中", tone: "primary" },
     },
     {
       id: "warning",
       label: "风险提示",
-      description: "突出需要留意的状态。",
+      description: "突出需要留意的风险状态，如即将超时。",
       props: { label: "即将超时", tone: "warning" },
     },
   ],
@@ -181,13 +181,13 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "section",
       label: "内容分组",
-      description: "分隔相邻设置项。",
+      description: "分隔相邻设置项，理清页面结构。",
       props: { label: "" },
     },
     {
       id: "labeled",
       label: "带标题分隔",
-      description: "区分不同来源的内容。",
+      description: "用中间文案区分不同内容来源。",
       props: { label: "或", inset: true },
     },
   ],
@@ -195,13 +195,13 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "upload",
       label: "附件上传",
-      description: "展示可确定的任务进度。",
+      description: "展示可确定百分比的附件上传进度。",
       props: { label: "正在上传附件 68%", value: 68 },
     },
     {
       id: "sync",
       label: "后台同步",
-      description: "无法确定完成比例的持续任务。",
+      description: "无法确定完成比例时的持续同步状态。",
       props: { label: "正在同步工单", indeterminate: true },
     },
   ],
@@ -209,13 +209,13 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "inline",
       label: "行内加载",
-      description: "局部内容加载时使用。",
+      description: "局部内容等待返回时的行内反馈。",
       props: { label: "加载中", size: "sm" },
     },
     {
       id: "page",
       label: "页面加载",
-      description: "等待主要内容返回。",
+      description: "等待工单等主要内容返回。",
       props: { label: "正在获取工单", size: "lg" },
     },
   ],
@@ -223,13 +223,13 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "summary",
       label: "业务摘要",
-      description: "承载关键指标与摘要内容。",
+      description: "工作台展示关键指标与摘要。",
       props: { title: "今日工单", subtitle: "华东服务中心", elevated: true },
     },
     {
       id: "section",
       label: "内容分区",
-      description: "页面中的普通信息区块。",
+      description: "详情页中的普通信息区块。",
       props: {
         title: "客户信息",
         subtitle: "联系人与服务地址",
@@ -241,21 +241,31 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "detail",
       label: "详情顶栏",
-      description: "包含返回和右侧操作的移动端详情顶栏。",
-      props: { title: "工单详情", showBack: true, showAction: true },
+      description: "工单详情页：返回上级并提供右侧更多操作。",
+      props: {
+        title: "工单详情",
+        showBack: true,
+        showAction: true,
+        actionIcon: "more",
+      },
     },
     {
       id: "home",
       label: "首页顶栏",
-      description: "无返回按钮的一级页面顶栏。",
-      props: { title: "工作台", showBack: false, showAction: true },
+      description: "一级工作台页顶栏，无返回，可挂搜索。",
+      props: {
+        title: "工作台",
+        showBack: false,
+        showAction: true,
+        actionIcon: "search",
+      },
     },
   ],
   tabs: [
     {
       id: "detail",
       label: "详情分区",
-      description: "在概览与动态之间滑动切换。",
+      description: "工单详情中在概览与动态之间切换。",
       props: {
         modelValue: "overview",
         selectionStyle: "pill",
@@ -266,7 +276,7 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "filter",
       label: "分段筛选",
-      description: "使用柔和底色的等宽筛选页签。",
+      description: "列表顶部用等宽页签做状态分段。",
       props: {
         selectionStyle: "underline",
         showIndicator: true,
@@ -279,13 +289,13 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "orders",
       label: "工单列表",
-      description: "状态和行尾操作同时出现的任务列表。",
+      description: "带状态与行尾操作的工单任务列表。",
       props: { showActions: true },
     },
     {
       id: "read-only",
       label: "只读列表",
-      description: "无需行尾操作的浏览列表。",
+      description: "仅浏览、无需行尾操作的列表。",
       props: { showActions: false },
     },
   ],
@@ -293,13 +303,13 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "filter",
       label: "筛选面板",
-      description: "从页面底部展开的移动端筛选操作。",
+      description: "从底部展开，用于筛选工单条件。",
       props: { title: "筛选工单", modelValue: true },
     },
     {
       id: "actions",
       label: "操作面板",
-      description: "承载一组上下文操作。",
+      description: "承载一组与当前上下文相关的操作。",
       props: { title: "更多操作", modelValue: true },
     },
   ],
@@ -307,13 +317,13 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "orders",
       label: "搜索工单",
-      description: "在列表顶部按编号或客户搜索。",
+      description: "在列表顶部按编号或客户搜索工单。",
       props: { placeholder: "搜索工单编号或客户" },
     },
     {
       id: "filled",
       label: "已有关键词",
-      description: "展示搜索和清除交互。",
+      description: "已输入关键词时，展示搜索与清除交互。",
       props: { modelValue: "空调", placeholder: "搜索设备" },
     },
   ],
@@ -321,13 +331,13 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "orders",
       label: "工单筛选",
-      description: "快速状态筛选与高级筛选入口。",
+      description: "快捷状态筛选，并保留高级筛选入口。",
       props: { modelValue: "进行中", showFilter: true },
     },
     {
       id: "compact",
       label: "紧凑筛选",
-      description: "空间有限时仅保留快捷筛选。",
+      description: "空间有限时仅保留快捷状态筛选。",
       props: { showFilter: false },
     },
   ],
@@ -335,7 +345,7 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "primary",
       label: "应用主导航",
-      description: "图标和文字共同呈现的四入口导航。",
+      description: "四入口主 Tabbar，图标与文字同时呈现。",
       props: {
         display: "icon-label",
         showIndicator: true,
@@ -346,7 +356,7 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "compact",
       label: "紧凑导航",
-      description: "文字已经明确时仅展示图标。",
+      description: "文案已明确时仅展示图标入口。",
       props: {
         display: "icon",
         showIndicator: true,
@@ -359,7 +369,7 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "confirm",
       label: "确认操作",
-      description: "对不可逆操作进行二次确认。",
+      description: "对完成工单等不可逆操作做二次确认。",
       props: {
         title: "确认完成工单？",
         message: "完成后将无法继续编辑处理记录。",
@@ -370,7 +380,7 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "notice",
       label: "重要说明",
-      description: "需要用户明确知晓的信息。",
+      description: "需要用户明确知晓的离线同步说明。",
       props: {
         title: "离线数据已更新",
         message: "3 条工单将在恢复网络后同步。",
@@ -383,13 +393,13 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "success",
       label: "操作成功",
-      description: "反馈刚刚完成的轻量操作。",
+      description: "轻量反馈刚刚完成的保存等操作。",
       props: { message: "工单已保存", tone: "success", modelValue: true },
     },
     {
       id: "error",
       label: "操作失败",
-      description: "提示失败并保留当前上下文。",
+      description: "提示失败并保留当前页面上下文。",
       props: {
         message: "保存失败，请稍后重试",
         tone: "error",
@@ -401,7 +411,7 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "no-orders",
       label: "暂无工单",
-      description: "列表无内容时给出下一步操作。",
+      description: "列表为空时引导用户新建工单。",
       props: {
         title: "暂无工单",
         description: "新建工单后会显示在这里。",
@@ -411,7 +421,7 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "no-results",
       label: "无搜索结果",
-      description: "搜索或筛选没有匹配结果。",
+      description: "搜索或筛选无匹配时，引导调整条件。",
       props: {
         title: "没有找到结果",
         description: "请尝试修改关键词或筛选条件。",
@@ -423,7 +433,7 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "customer",
       label: "客户信息",
-      description: "带必填提示和右侧编辑操作的表单分组。",
+      description: "必填客户信息分组，可带右侧编辑操作。",
       props: {
         title: "客户信息",
         description: "联系人和服务地址",

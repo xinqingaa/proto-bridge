@@ -17,6 +17,7 @@ export const componentRecords = [
   {
     id: "button",
     label: "按钮",
+    description: "表单主次操作，如提交工单、保存草稿。",
     category: "basic",
     view: "basic/Button.vue",
     contract: "contracts/button.json",
@@ -44,6 +45,7 @@ export const componentRecords = [
   {
     id: "icon-button",
     label: "图标按钮",
+    description: "顶栏与工具区的紧凑图标操作，如更多、新建。",
     category: "basic",
     view: "basic/IconButton.vue",
     contract: "contracts/icon-button.json",
@@ -99,6 +101,7 @@ export const componentRecords = [
   {
     id: "text-field",
     label: "文本框",
+    description: "采集单行业务信息，如联系人、电话。",
     category: "basic",
     view: "basic/TextField.vue",
     contract: "contracts/text-field.json",
@@ -113,6 +116,7 @@ export const componentRecords = [
   {
     id: "chip",
     label: "Chip",
+    description: "列表中的状态标签，如进行中、即将超时。",
     category: "basic",
     view: "basic/Chip.vue",
     contract: "contracts/chip.json",
@@ -134,6 +138,7 @@ export const componentRecords = [
   {
     id: "card",
     label: "Card",
+    description: "承载业务摘要与信息区块，如今日工单、客户信息。",
     category: "basic",
     view: "basic/Card.vue",
     contract: "contracts/card.json",
@@ -147,6 +152,7 @@ export const componentRecords = [
   {
     id: "app-bar",
     label: "App Bar",
+    description: "移动端页顶导航：首页工作台，或详情页返回与操作。",
     category: "complex",
     view: "complex/AppBar.vue",
     contract: "contracts/app-bar.json",
@@ -157,18 +163,37 @@ export const componentRecords = [
       { key: "elevated", label: "显示阴影", control: "boolean" },
       { key: "showBack", label: "显示返回键", control: "boolean" },
       { key: "showAction", label: "显示右侧操作", control: "boolean" },
-      { key: "actionLabel", label: "右侧操作名称", control: "text" },
+      {
+        key: "actionIcon",
+        label: "右侧操作图标",
+        control: "select",
+        options: [
+          { label: "更多", value: "more" },
+          { label: "新建", value: "plus" },
+          { label: "搜索", value: "search" },
+          { label: "设置", value: "settings" },
+        ],
+      },
     ],
   },
   {
     id: "tabs",
     label: "Tabs",
+    description: "页内二级切换：详情分区，或列表顶等宽分段筛选。",
     category: "complex",
     view: "complex/Tabs.vue",
     contract: "contracts/tabs.json",
     example: {},
     controls: [
-      { key: "modelValue", label: "当前 Tab", control: "text" },
+      {
+        key: "modelValue",
+        label: "当前 Tab",
+        control: "select",
+        options: [
+          { label: "概览", value: "overview" },
+          { label: "活动", value: "activity" },
+        ],
+      },
       {
         key: "selectionStyle",
         label: "选中样式",
@@ -189,6 +214,7 @@ export const componentRecords = [
   {
     id: "data-list",
     label: "Data List",
+    description: "展示工单等任务列表，可带状态与行尾操作。",
     category: "complex",
     view: "complex/DataList.vue",
     contract: "contracts/data-list.json",
@@ -203,6 +229,7 @@ export const componentRecords = [
   {
     id: "bottom-sheet",
     label: "Bottom Sheet",
+    description: "从底部展开的临时面板，用于筛选或更多操作。",
     category: "complex",
     view: "complex/BottomSheet.vue",
     contract: "contracts/bottom-sheet.json",
@@ -215,6 +242,7 @@ export const componentRecords = [
   {
     id: "select",
     label: "Select",
+    description: "从有限业务选项中选择，如服务类型、负责人。",
     category: "basic",
     view: "basic/SelectField.vue",
     contract: "contracts/select.json",
@@ -234,6 +262,7 @@ export const componentRecords = [
   {
     id: "textarea",
     label: "Textarea",
+    description: "填写多行说明，如问题描述、现场备注。",
     category: "basic",
     view: "basic/Textarea.vue",
     contract: "contracts/textarea.json",
@@ -249,6 +278,7 @@ export const componentRecords = [
   {
     id: "checkbox",
     label: "Checkbox",
+    description: "独立确认项，如提交前核对、业务偏好勾选。",
     category: "basic",
     view: "basic/Checkbox.vue",
     contract: "contracts/checkbox.json",
@@ -262,6 +292,7 @@ export const componentRecords = [
   {
     id: "radio-group",
     label: "Radio Group",
+    description: "互斥单选，如工单优先级、上门时段。",
     category: "basic",
     view: "basic/RadioGroup.vue",
     contract: "contracts/radio-group.json",
@@ -275,6 +306,7 @@ export const componentRecords = [
   {
     id: "switch",
     label: "Switch",
+    description: "即时开关设置，如进度通知、离线缓存。",
     category: "basic",
     view: "basic/SwitchControl.vue",
     contract: "contracts/switch.json",
@@ -288,6 +320,7 @@ export const componentRecords = [
   {
     id: "avatar",
     label: "Avatar",
+    description: "人员标识，用于列表负责人或个人中心。",
     category: "basic",
     view: "basic/Avatar.vue",
     contract: "contracts/avatar.json",
@@ -317,6 +350,7 @@ export const componentRecords = [
   {
     id: "badge",
     label: "Badge",
+    description: "数量或状态角标，如未读数、已完成。",
     category: "basic",
     view: "basic/Badge.vue",
     contract: "contracts/badge.json",
@@ -337,6 +371,7 @@ export const componentRecords = [
   {
     id: "divider",
     label: "Divider",
+    description: "分隔设置项或内容分区，可带中间标题。",
     category: "basic",
     view: "basic/Divider.vue",
     contract: "contracts/divider.json",
@@ -349,6 +384,7 @@ export const componentRecords = [
   {
     id: "progress",
     label: "Progress",
+    description: "展示任务进度，如附件上传或后台同步。",
     category: "basic",
     view: "basic/ProgressIndicator.vue",
     contract: "contracts/progress.json",
@@ -362,6 +398,7 @@ export const componentRecords = [
   {
     id: "spinner",
     label: "Spinner",
+    description: "行内或整页加载等待反馈。",
     category: "basic",
     view: "basic/Spinner.vue",
     contract: "contracts/spinner.json",
@@ -383,6 +420,7 @@ export const componentRecords = [
   {
     id: "search-bar",
     label: "Search Bar",
+    description: "在列表顶部按编号或客户搜索，支持清除。",
     category: "complex",
     view: "complex/SearchBar.vue",
     contract: "contracts/search-bar.json",
@@ -396,6 +434,7 @@ export const componentRecords = [
   {
     id: "filter-bar",
     label: "Filter Bar",
+    description: "快捷状态筛选，并可挂接高级筛选入口。",
     category: "complex",
     view: "complex/FilterBar.vue",
     contract: "contracts/filter-bar.json",
@@ -408,12 +447,23 @@ export const componentRecords = [
   {
     id: "bottom-navigation",
     label: "Bottom Navigation",
+    description: "应用主 Tabbar：工作台、工单、消息、我的。",
     category: "complex",
     view: "complex/BottomNavigation.vue",
     contract: "contracts/bottom-navigation.json",
     example: {},
     controls: [
-      { key: "modelValue", label: "当前入口", control: "text" },
+      {
+        key: "modelValue",
+        label: "当前入口",
+        control: "select",
+        options: [
+          { label: "工作台", value: "工作台" },
+          { label: "工单", value: "工单" },
+          { label: "消息", value: "消息" },
+          { label: "我的", value: "我的" },
+        ],
+      },
       {
         key: "display",
         label: "内容形式",
@@ -424,7 +474,7 @@ export const componentRecords = [
           { label: "纯文字", value: "label" },
         ],
       },
-      { key: "showIndicator", label: "显示滑动指示器", control: "boolean" },
+      { key: "showIndicator", label: "显示顶部指示器", control: "boolean" },
       { key: "elevated", label: "显示阴影", control: "boolean" },
       { key: "showView", label: "显示内容视图", control: "boolean" },
       { key: "mouseSwipe", label: "鼠标拖动切换", control: "boolean" },
@@ -433,6 +483,7 @@ export const componentRecords = [
   {
     id: "dialog",
     label: "Dialog",
+    description: "需要确认或知悉的打断式说明，如完成工单、离线提示。",
     category: "complex",
     view: "complex/DialogPanel.vue",
     contract: "contracts/dialog.json",
@@ -447,6 +498,7 @@ export const componentRecords = [
   {
     id: "snackbar",
     label: "Snackbar / Toast",
+    description: "轻量成败反馈，不打断当前页面上下文。",
     category: "complex",
     view: "complex/SnackbarToast.vue",
     contract: "contracts/snackbar.json",
@@ -469,6 +521,7 @@ export const componentRecords = [
   {
     id: "empty-state",
     label: "Empty State",
+    description: "无数据或无结果时给出说明与下一步操作。",
     category: "complex",
     view: "complex/EmptyState.vue",
     contract: "contracts/empty-state.json",
@@ -482,6 +535,7 @@ export const componentRecords = [
   {
     id: "form-section",
     label: "Form Section",
+    description: "表单分组：必填客户信息，或可选补充信息。",
     category: "complex",
     view: "complex/FormSection.vue",
     contract: "contracts/form-section.json",

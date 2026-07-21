@@ -58,6 +58,8 @@ export type PlaygroundControl = {
 export type ComponentRecord = {
   id: string;
   label: string;
+  /** Business-facing playground intro; shown in the page header. */
+  description: string;
   category: "basic" | "complex";
   view: string;
   contract: string;

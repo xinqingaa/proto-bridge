@@ -1,8 +1,17 @@
 <script setup lang="ts">
-import { toRefs, useSlots } from "vue";
+import { computed, toRefs, useSlots } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import IconButton from "@/design-system/components/basic/IconButton.vue";
 import { elevationStyle } from "@/design-system/components/_shared/appearance";
+
+type ActionIcon = "more" | "plus" | "search" | "settings";
+
+const ACTION_ARIA_LABELS: Record<ActionIcon, string> = {
+  more: "更多操作",
+  plus: "新建",
+  search: "搜索",
+  settings: "设置",
+};
 
 const props = defineProps<{
   title: string;
@@ -11,6 +20,7 @@ const props = defineProps<{
   showBack?: boolean;
   backLabel?: string;
   showAction?: boolean;
+  actionIcon?: ActionIcon;
   actionLabel?: string;
 }>();
 
@@ -18,8 +28,26 @@ defineEmits<{ back: []; action: [] }>();
 
 const slots = useSlots();
 const rootRef = usePbInspectRef();
-const { title, dense, elevated, showBack, backLabel, showAction, actionLabel } =
-  toRefs(props);
+const {
+  title,
+  dense,
+  elevated,
+  showBack,
+  backLabel,
+  showAction,
+  actionIcon,
+  actionLabel,
+} = toRefs(props);
+
+const resolvedActionIcon = computed<ActionIcon>(
+  () => actionIcon.value ?? "more",
+);
+const resolvedActionLabel = computed(
+  () =>
+    actionLabel.value ||
+    ACTION_ARIA_LABELS[resolvedActionIcon.value] ||
+    "更多操作",
+);
 
 usePbInspect({
   element: rootRef,
@@ -32,7 +60,8 @@ usePbInspect({
     showBack: showBack.value ?? false,
     backLabel: backLabel.value ?? "返回",
     showAction: showAction.value ?? false,
-    actionLabel: actionLabel.value ?? "更多操作",
+    actionIcon: resolvedActionIcon.value,
+    actionLabel: resolvedActionLabel.value,
   }),
   getTokenBindings: () => ({
     surface: "color.surface",
@@ -84,8 +113,8 @@ usePbInspect({
         <slot name="append">
           <IconButton
             v-if="showAction"
-            :ariaLabel="actionLabel ?? '更多操作'"
-            icon="more"
+            :ariaLabel="resolvedActionLabel"
+            :icon="resolvedActionIcon"
             size="sm"
             @click="$emit('action')"
           />

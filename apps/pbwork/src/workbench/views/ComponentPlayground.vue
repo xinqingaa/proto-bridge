@@ -110,6 +110,7 @@ const contentControlKeys = new Set([
   "confirmLabel",
   "ariaLabel",
   "icon",
+  "actionIcon",
   "name",
 ]);
 const behaviorControlKeys = new Set([
@@ -233,7 +234,7 @@ function bindingResolvedValue(tokenId: string) {
     v-if="record && contract"
     :eyebrow="record.category === 'basic' ? '基础组件' : '复杂组件'"
     :title="record.label"
-    description="顶栏为预设：符合当前预览时高亮；侧栏调整后若不匹配则取消高亮。resolved = 默认 ⊕ 场景 ⊕ 覆盖。"
+    :description="record.description"
   >
     <template #stats>
       <v-chip size="small" variant="tonal"
@@ -279,6 +280,9 @@ function bindingResolvedValue(tokenId: string) {
           >{{ state.label }}</v-btn
         >
       </v-btn-toggle>
+      <span class="preset-hint"
+        >匹配当前预览时高亮；侧栏调整后若不匹配则取消</span
+      >
       <v-btn-toggle
         :model-value="themeId"
         density="compact"
@@ -453,6 +457,13 @@ function bindingResolvedValue(tokenId: string) {
 .scenario-select {
   flex: 0 1 220px;
   min-width: 180px;
+}
+.preset-hint {
+  flex: 1 1 160px;
+  min-width: 0;
+  color: rgba(var(--v-theme-on-surface), 0.52);
+  font-size: 0.75rem;
+  line-height: 1.35;
 }
 .playground-grid {
   display: grid;

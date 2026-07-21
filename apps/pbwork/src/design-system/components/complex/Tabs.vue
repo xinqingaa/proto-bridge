@@ -138,7 +138,6 @@ usePbInspect({
     <v-tabs
       v-model="tab"
       class="pb-tab-bar"
-      density="compact"
       color="primary"
       :align-tabs="align ?? 'start'"
       :grow="grow ?? false"
@@ -188,13 +187,24 @@ usePbInspect({
   background: transparent;
 }
 .pb-tab-bar {
+  --v-tabs-height: max(
+    var(--pb-tabs-height, var(--pb-sizing-control-md, 40px)),
+    var(--pb-sizing-touch, 44px)
+  );
+  height: var(--v-tabs-height);
   background: transparent;
+  overflow: visible;
 }
 .pb-tabs.has-divider .pb-tab-bar {
   border-bottom: var(--pb-border-hairline);
 }
+.pb-tab-bar :deep(.v-slide-group__container),
+.pb-tab-bar :deep(.v-slide-group__content) {
+  overflow: visible;
+}
 .pb-tab-bar :deep(.v-tab) {
-  min-height: max(var(--pb-tabs-height), var(--pb-sizing-touch, 44px));
+  height: var(--v-tabs-height);
+  min-height: var(--v-tabs-height);
   padding: 0 var(--pb-spacing-md, 16px);
   border-radius: var(--pb-tabs-radius, var(--pb-radius-full));
   color: var(--pb-tabs-inactive-color, var(--pb-color-on-surface-muted));
@@ -206,7 +216,6 @@ usePbInspect({
   background: var(--pb-tabs-active-background, transparent);
   color: var(--pb-tabs-active-color, var(--pb-color-primary));
   font-weight: 600;
-  overflow: hidden;
 }
 .pb-tabs.style-pill .pb-tab-bar :deep(.v-tab--selected .v-btn__overlay),
 .pb-tabs.style-pill .pb-tab-bar :deep(.v-tab--selected .v-btn__underlay) {

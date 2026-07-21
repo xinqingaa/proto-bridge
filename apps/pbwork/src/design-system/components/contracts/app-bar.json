@@ -24,13 +24,16 @@
       "showAction": {
         "type": "boolean"
       },
+      "actionIcon": {
+        "type": "string",
+        "enum": ["more", "plus", "search", "settings"]
+      },
       "actionLabel": {
-        "type": "string"
+        "type": "string",
+        "description": "无障碍名称；未传时按 actionIcon 推导"
       }
     },
-    "required": [
-      "title"
-    ]
+    "required": ["title"]
   },
   "defaultProps": {
     "title": "项目协作",
@@ -39,6 +42,7 @@
     "showBack": true,
     "backLabel": "返回",
     "showAction": true,
+    "actionIcon": "more",
     "actionLabel": "更多操作"
   },
   "states": [
@@ -50,13 +54,8 @@
       }
     }
   ],
-  "slots": [
-    "append"
-  ],
-  "events": [
-    "back",
-    "action"
-  ],
+  "slots": ["append"],
+  "events": ["back", "action"],
   "tokenBindings": {
     "surface": "color.surface",
     "border": "color.border",
