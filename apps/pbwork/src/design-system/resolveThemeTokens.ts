@@ -9,6 +9,16 @@ export function normalizeTokenCssVarName(tokenId: string): string {
   return `--pb-${tokenId.replaceAll(".", "-")}`;
 }
 
+export function tokenValueToCssValue(
+  tokenId: string,
+  value: TokenValue,
+): string {
+  if (typeof value !== "number") return String(value);
+  return /^(spacing|sizing|radius)\./.test(tokenId)
+    ? `${value}px`
+    : String(value);
+}
+
 export function resolveThemeTokens(
   themeId: string,
   tokens: TokenRecord[] = loadTokens(),
@@ -42,7 +52,7 @@ export function tokensToCssVars(
       throw new Error(`CSS_VAR_COLLISION:${cssVar}:${previous}:${tokenId}`);
     }
     seen.set(cssVar, tokenId);
-    vars[cssVar] = typeof value === "number" ? `${value}px` : String(value);
+    vars[cssVar] = tokenValueToCssValue(tokenId, value);
   }
 
   return vars;

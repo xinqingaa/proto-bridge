@@ -2,6 +2,7 @@
 import { computed, toRefs } from "vue";
 import { Home, ClipboardList, Bell, User } from "lucide-vue-next";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
+import { usePointerSwipe } from "@/design-system/components/_shared/usePointerSwipe";
 
 type NavigationItem = {
   value: string;
@@ -15,10 +16,22 @@ const props = defineProps<{
   display?: "icon-label" | "icon" | "label";
   showIndicator?: boolean;
   elevated?: boolean;
+  showView?: boolean;
+  viewHeight?: number;
+  mouseSwipe?: boolean;
 }>();
-defineEmits<{ "update:modelValue": [string] }>();
+const emit = defineEmits<{ "update:modelValue": [string] }>();
 const rootRef = usePbInspectRef();
-const { modelValue, items, display, showIndicator, elevated } = toRefs(props);
+const {
+  modelValue,
+  items,
+  display,
+  showIndicator,
+  elevated,
+  showView,
+  viewHeight,
+  mouseSwipe,
+} = toRefs(props);
 const defaultItems: NavigationItem[] = [
   { value: "工作台", label: "工作台", icon: "home" },
   { value: "工单", label: "工单", icon: "orders" },
@@ -41,6 +54,23 @@ const normalizedItems = computed<NavigationItem[]>(() =>
     };
   }),
 );
+const activeItem = computed({
+  get: () => modelValue.value ?? normalizedItems.value[0]?.value ?? "",
+  set: (value: string) => emit("update:modelValue", value),
+});
+const navigationValues = computed(() =>
+  normalizedItems.value.map((item) => item.value),
+);
+const swipeEnabled = computed(() => mouseSwipe.value ?? true);
+const swipe = usePointerSwipe(
+  navigationValues,
+  activeItem,
+  (value) => emit("update:modelValue", value),
+  swipeEnabled,
+);
+const viewStyle = computed(() => ({
+  minHeight: `${viewHeight.value ?? 220}px`,
+}));
 
 usePbInspect({
   element: rootRef,
@@ -52,80 +82,160 @@ usePbInspect({
     display: display.value ?? "icon-label",
     showIndicator: showIndicator.value ?? true,
     elevated: elevated.value ?? true,
+    showView: showView.value ?? false,
+    viewHeight: viewHeight.value ?? 220,
+    mouseSwipe: swipeEnabled.value,
   }),
   getTokens: () => [
     "color.surface-raised",
     "color.primary",
     "color.on-surface-muted",
-    "color.divider",
+    "border.hairline",
     "elevation.level-3",
     "sizing.touch",
+    "sizing.bottom-navigation",
     "typography.caption",
+    "typography.subtitle",
+    "color.background",
+    "radius.full",
+    "motion.duration-normal",
   ],
   getTokenBindings: () => ({
     surface: "color.surface-raised",
     active: "color.primary",
     inactive: "color.on-surface-muted",
-    divider: "color.divider",
+    border: "border.hairline",
     elevation: "elevation.level-3",
     target: "sizing.touch",
+    height: "sizing.bottom-navigation",
     label: "typography.caption",
+    indicatorRadius: "radius.full",
+    viewSurface: "color.background",
+    viewTitle: "typography.subtitle",
+    viewMuted: "color.on-surface-muted",
+    duration: "motion.duration-normal",
   }),
 });
 </script>
 
 <template>
-  <nav
+  <section
     ref="rootRef"
-    class="pb-bottom-nav bottom-bar tabbar tab-bar"
+    class="pb-bottom-nav-shell bottom-bar tabbar tab-bar"
     :class="{
       'has-indicator': showIndicator ?? true,
       'is-elevated': elevated ?? true,
     }"
     data-pb-id="ds.bottom-navigation"
     data-pb-role="bottom-bar"
-    aria-label="底部导航"
   >
-    <v-tabs
-      class="pb-bottom-nav-tabs"
-      color="primary"
-      grow
-      mandatory
-      :model-value="modelValue ?? normalizedItems[0]?.value"
-      @update:model-value="$emit('update:modelValue', String($event ?? ''))"
+    <v-window
+      v-if="showView"
+      v-model="activeItem"
+      class="pb-bottom-nav-view"
+      :class="{ 'is-dragging': swipe.dragging.value }"
+      :style="[viewStyle, swipe.dragStyle.value]"
+      :transition-duration="200"
+      @pointerdown="swipe.onPointerDown"
+      @pointermove="swipe.onPointerMove"
+      @pointerup="swipe.onPointerUp"
+      @pointercancel="swipe.onPointerCancel"
     >
-      <v-tab
+      <v-window-item
         v-for="item in normalizedItems"
         :key="item.value"
-        class="pb-bottom-nav-item"
         :value="item.value"
-        :aria-label="item.label"
-        stacked
       >
-        <component
-          v-if="display !== 'label'"
-          :is="iconMap[item.icon ?? 'home']"
-          :size="20"
-          aria-hidden="true"
-        />
-        <span v-if="display !== 'icon'">{{ item.label }}</span>
-      </v-tab>
-    </v-tabs>
-  </nav>
+        <div class="pb-bottom-nav-panel" data-pb-role="tab-panel">
+          <slot :name="item.value" :item="item">
+            <v-sheet class="pb-bottom-nav-placeholder" color="transparent">
+              <component :is="iconMap[item.icon ?? 'home']" :size="28" />
+              <strong>{{ item.label }}</strong>
+              <span>{{ item.label }}视图内容</span>
+            </v-sheet>
+          </slot>
+        </div>
+      </v-window-item>
+    </v-window>
+    <nav class="pb-bottom-nav" aria-label="底部导航">
+      <v-tabs
+        class="pb-bottom-nav-tabs"
+        color="primary"
+        grow
+        mandatory
+        v-model="activeItem"
+      >
+        <v-tab
+          v-for="item in normalizedItems"
+          :key="item.value"
+          class="pb-bottom-nav-item"
+          :value="item.value"
+          :aria-label="item.label"
+          stacked
+        >
+          <component
+            v-if="display !== 'label'"
+            :is="iconMap[item.icon ?? 'home']"
+            :size="20"
+            aria-hidden="true"
+          />
+          <span v-if="display !== 'icon'">{{ item.label }}</span>
+        </v-tab>
+      </v-tabs>
+    </nav>
+  </section>
 </template>
 
 <style scoped>
-.pb-bottom-nav {
+.pb-bottom-nav-shell {
   position: relative !important;
+  display: grid;
   flex: none;
   width: 100%;
+  background: var(--pb-color-background);
+  z-index: 1;
+}
+.pb-bottom-nav {
   padding-bottom: max(var(--pb-safe-bottom, 0px), env(safe-area-inset-bottom));
   border-top: var(--pb-border-hairline);
   background: var(--pb-color-surface-raised);
-  z-index: 1;
 }
-.pb-bottom-nav.is-elevated {
+.pb-bottom-nav-shell.is-elevated .pb-bottom-nav {
   box-shadow: var(--pb-elevation-level-3);
+}
+.pb-bottom-nav-view {
+  min-width: 0;
+  background: var(--pb-color-background);
+  cursor: grab;
+  touch-action: pan-y;
+}
+.pb-bottom-nav-view.is-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+.pb-bottom-nav-view.is-dragging :deep(.v-window__container) {
+  transform: translateX(var(--pb-swipe-offset, 0));
+  transition: none !important;
+}
+.pb-bottom-nav-panel {
+  min-height: inherit;
+  padding: var(--pb-spacing-md);
+}
+.pb-bottom-nav-placeholder {
+  display: grid;
+  min-height: inherit;
+  place-content: center;
+  place-items: center;
+  gap: var(--pb-spacing-sm);
+  color: var(--pb-color-on-surface-muted);
+  text-align: center;
+}
+.pb-bottom-nav-placeholder strong {
+  color: var(--pb-color-on-surface);
+  font: var(--pb-typography-subtitle);
+}
+.pb-bottom-nav-placeholder span {
+  font: var(--pb-typography-caption);
 }
 .pb-bottom-nav-tabs {
   height: var(--pb-sizing-bottom-navigation, 64px);

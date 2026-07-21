@@ -15,13 +15,7 @@
         "type": "string",
         "enum": ["primary", "secondary", "error", "success"]
       },
-      "radius": {
-        "type": "string",
-        "enum": ["sm", "md", "lg", "full"]
-      },
       "size": { "type": "string", "enum": ["sm", "md", "lg"] },
-      "elevation": { "type": "string", "enum": ["none", "card", "raised"] },
-      "elevated": { "type": "boolean" },
       "loading": { "type": "boolean" },
       "block": { "type": "boolean" },
       "disabled": { "type": "boolean" },
@@ -36,9 +30,7 @@
     "label": "确认",
     "variant": "flat",
     "tone": "primary",
-    "radius": "md",
     "size": "md",
-    "elevation": "none",
     "loading": false,
     "block": false,
     "disabled": false
@@ -54,11 +46,12 @@
   "events": ["click"],
   "tokenBindings": {
     "background": "color.primary",
-    "tonalBackground": "color.primary-soft",
     "onBackground": "color.on-primary",
     "radius": "radius.md",
     "elevation": "elevation.none",
     "height": "sizing.control-md",
-    "typography": "typography.label"
+    "typography": "typography.label",
+    "duration": "motion.duration-fast",
+    "easing": "motion.easing-standard"
   }
 }

@@ -1,6 +1,6 @@
 /**
  * Resolve contract tokenBindings against live playground props
- * so the inspector reflects the current radius / tone / elevation.
+ * so the inspector reflects the current size / tone / elevation / selection.
  */
 export function resolveLiveTokenBindings(
   staticBindings: Record<string, string>,
@@ -31,7 +31,6 @@ export function resolveLiveTokenBindings(
         }
       }
       if (key === "onBackground") {
-        // Solid fills use light-on-fill; dedicated on-* tokens only for primary today.
         result[key] = "color.on-primary";
       }
     }
@@ -58,21 +57,26 @@ export function resolveLiveTokenBindings(
     result.elevation = `elevation.${props.elevation}`;
   }
 
-  if (typeof props.background === "string" && "surface" in result) {
-    result.surface =
-      props.background === "transparent"
-        ? "transparent"
-        : `color.${props.background}`;
-  }
-
-  if (typeof props.activeStyle === "string" && "activeBackground" in result) {
-    const tone = typeof props.tone === "string" ? props.tone : "primary";
-    result.activeBackground =
-      props.activeStyle === "tonal" ? `color.${tone}-soft` : "transparent";
+  if (typeof props.selectionStyle === "string") {
+    if ("activeBackground" in result) {
+      result.activeBackground =
+        props.selectionStyle === "pill"
+          ? (staticBindings.activeBackground ?? "color.primary-soft")
+          : "transparent";
+    }
+    if ("radius" in result) {
+      result.radius =
+        props.selectionStyle === "pill" ? "radius.full" : "radius.md";
+    }
   }
 
   if (typeof props.showDivider === "boolean" && "border" in result) {
-    result.border = props.showDivider ? "color.divider" : "transparent";
+    result.border = props.showDivider
+      ? staticBindings.border?.startsWith("border.") ||
+        staticBindings.border?.startsWith("color.")
+        ? staticBindings.border!
+        : "border.hairline"
+      : "transparent";
   }
 
   if ("elevated" in props) {

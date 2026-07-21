@@ -5,9 +5,15 @@
   "propsSchema": {
     "type": "object",
     "properties": {
-      "value": { "type": "number" },
-      "indeterminate": { "type": "boolean" },
-      "label": { "type": "string" }
+      "value": {
+        "type": "number"
+      },
+      "indeterminate": {
+        "type": "boolean"
+      },
+      "label": {
+        "type": "string"
+      }
     }
   },
   "defaultProps": {
@@ -19,9 +25,17 @@
     {
       "id": "indeterminate",
       "label": "加载中",
-      "props": { "indeterminate": true }
+      "props": {
+        "indeterminate": true
+      }
     },
-    { "id": "complete", "label": "已完成", "props": { "value": 100 } }
+    {
+      "id": "complete",
+      "label": "已完成",
+      "props": {
+        "value": 100
+      }
+    }
   ],
   "slots": [],
   "events": [],
@@ -29,6 +43,8 @@
     "fill": "color.primary",
     "track": "color.primary-soft",
     "radius": "radius.full",
-    "motion": "motion.duration-normal"
+    "motion": "motion.duration-normal",
+    "text": "color.on-surface",
+    "label": "typography.caption"
   }
 }

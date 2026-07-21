@@ -6,27 +6,59 @@
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "label": { "type": "string" },
-      "modelValue": { "type": "string" },
-      "options": { "type": "array", "items": { "type": "string" } },
-      "placeholder": { "type": "string" },
-      "size": { "type": "string", "enum": ["sm", "md", "lg"] },
-      "radius": { "type": "string", "enum": ["none", "sm", "md", "lg"] },
-      "clearable": { "type": "boolean" },
-      "loading": { "type": "boolean" },
-      "error": { "type": "string" },
-      "open": { "type": "boolean" },
-      "disabled": { "type": "boolean" }
+      "label": {
+        "type": "string"
+      },
+      "modelValue": {
+        "type": "string"
+      },
+      "options": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "placeholder": {
+        "type": "string"
+      },
+      "size": {
+        "type": "string",
+        "enum": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "clearable": {
+        "type": "boolean"
+      },
+      "loading": {
+        "type": "boolean"
+      },
+      "error": {
+        "type": "string"
+      },
+      "open": {
+        "type": "boolean"
+      },
+      "disabled": {
+        "type": "boolean"
+      }
     },
-    "required": ["label"]
+    "required": [
+      "label"
+    ]
   },
   "defaultProps": {
     "label": "服务类型",
     "modelValue": "维修",
-    "options": ["维修", "巡检", "安装"],
+    "options": [
+      "维修",
+      "巡检",
+      "安装"
+    ],
     "placeholder": "请选择服务类型",
     "size": "md",
-    "radius": "md",
     "clearable": true,
     "loading": false,
     "error": "",
@@ -38,14 +70,39 @@
       "id": "open",
       "label": "展开菜单",
       "description": "直接体验展开后的选项菜单",
-      "props": { "open": true }
+      "props": {
+        "open": true
+      }
     },
-    { "id": "loading", "label": "加载", "props": { "loading": true } },
-    { "id": "error", "label": "错误", "props": { "error": "请选择服务类型" } },
-    { "id": "disabled", "label": "禁用", "props": { "disabled": true } }
+    {
+      "id": "loading",
+      "label": "加载",
+      "props": {
+        "loading": true
+      }
+    },
+    {
+      "id": "error",
+      "label": "错误",
+      "props": {
+        "error": "请选择服务类型"
+      }
+    },
+    {
+      "id": "disabled",
+      "label": "禁用",
+      "props": {
+        "disabled": true
+      }
+    }
   ],
-  "slots": ["item"],
-  "events": ["update:modelValue", "update:open"],
+  "slots": [
+    "item"
+  ],
+  "events": [
+    "update:modelValue",
+    "update:open"
+  ],
   "tokenBindings": {
     "surface": "color.surface",
     "border": "color.border",
@@ -53,8 +110,14 @@
     "radius": "radius.md",
     "height": "sizing.control-md",
     "text": "typography.content",
+    "muted": "color.on-surface-muted",
     "menuSurface": "color.surface-raised",
+    "menuBorder": "border.hairline",
+    "menuRadius": "radius.lg",
     "menuElevation": "elevation.level-3",
-    "menuItemHeight": "sizing.menu-item"
+    "menuItemHeight": "sizing.menu-item",
+    "selectedBackground": "color.primary-soft",
+    "duration": "motion.duration-normal",
+    "easing": "motion.easing-standard"
   }
 }

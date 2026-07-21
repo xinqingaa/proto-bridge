@@ -5,25 +5,43 @@
   "propsSchema": {
     "type": "object",
     "properties": {
-      "label": { "type": "string" },
+      "label": {
+        "type": "string"
+      },
       "tone": {
         "type": "string",
-        "enum": ["primary", "error", "success", "warning"]
+        "enum": [
+          "primary",
+          "error",
+          "success",
+          "warning"
+        ]
       }
     },
-    "required": ["label"]
+    "required": [
+      "label"
+    ]
   },
-  "defaultProps": { "label": "3", "tone": "error" },
+  "defaultProps": {
+    "label": "3",
+    "tone": "error"
+  },
   "states": [
     {
       "id": "success",
       "label": "成功",
-      "props": { "label": "完成", "tone": "success" }
+      "props": {
+        "label": "完成",
+        "tone": "success"
+      }
     },
     {
       "id": "warning",
       "label": "警告",
-      "props": { "label": "超时", "tone": "warning" }
+      "props": {
+        "label": "超时",
+        "tone": "warning"
+      }
     }
   ],
   "slots": [],

@@ -24,5 +24,8 @@ export function elevationStyle(
   elevation: ComponentElevation = "none",
 ): Record<string, string> {
   const token = elevationToken(elevation).replace(".", "-");
-  return { boxShadow: `var(--pb-${token}, none)` };
+  return {
+    "--pb-component-shadow": `var(--pb-${token}, none)`,
+    boxShadow: `var(--pb-${token}, none)`,
+  };
 }

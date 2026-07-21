@@ -5,16 +5,49 @@
   "propsSchema": {
     "type": "object",
     "properties": {
-      "name": { "type": "string" },
-      "size": { "type": "string", "enum": ["sm", "md", "lg"] },
-      "tone": { "type": "string", "enum": ["primary", "secondary"] }
+      "name": {
+        "type": "string"
+      },
+      "size": {
+        "type": "string",
+        "enum": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "tone": {
+        "type": "string",
+        "enum": [
+          "primary",
+          "secondary"
+        ]
+      }
     },
-    "required": ["name"]
+    "required": [
+      "name"
+    ]
   },
-  "defaultProps": { "name": "李明", "size": "md", "tone": "primary" },
+  "defaultProps": {
+    "name": "李明",
+    "size": "md",
+    "tone": "primary"
+  },
   "states": [
-    { "id": "small", "label": "小尺寸", "props": { "size": "sm" } },
-    { "id": "large", "label": "大尺寸", "props": { "size": "lg" } }
+    {
+      "id": "small",
+      "label": "小尺寸",
+      "props": {
+        "size": "sm"
+      }
+    },
+    {
+      "id": "large",
+      "label": "大尺寸",
+      "props": {
+        "size": "lg"
+      }
+    }
   ],
   "slots": [],
   "events": [],

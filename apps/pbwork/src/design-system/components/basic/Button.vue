@@ -5,8 +5,6 @@ import { radiusStyle } from "@/design-system/components/_shared/radius";
 import {
   controlSizeStyle,
   elevationStyle,
-  elevationToken,
-  type ComponentElevation,
   type ComponentSize,
 } from "@/design-system/components/_shared/appearance";
 
@@ -14,11 +12,7 @@ const props = defineProps<{
   label: string;
   variant?: "flat" | "tonal" | "outlined" | "text";
   tone?: "primary" | "secondary" | "error" | "success";
-  radius?: "sm" | "md" | "lg" | "full";
   size?: ComponentSize;
-  elevation?: ComponentElevation;
-  /** @deprecated Use elevation instead. */
-  elevated?: boolean;
   loading?: boolean;
   block?: boolean;
   disabled?: boolean;
@@ -28,33 +22,13 @@ defineEmits<{ click: [] }>();
 
 const rootRef = usePbInspectRef();
 const slots = useSlots();
-const {
-  label,
-  variant,
-  tone,
-  radius,
-  size,
-  elevation,
-  elevated,
-  loading,
-  block,
-  disabled,
-  type,
-} = toRefs(props);
+const { label, variant, tone, size, loading, block, disabled, type } =
+  toRefs(props);
 
-const resolvedElevation = computed<ComponentElevation>(
-  () => elevation.value ?? (elevated.value ? "card" : "none"),
-);
 const vuetifySize = computed(() => {
   if (size.value === "sm") return "small";
   if (size.value === "lg") return "large";
   return "default";
-});
-
-const rounded = computed(() => {
-  const r = radius.value ?? "md";
-  if (r === "full") return "pill";
-  return r;
 });
 
 usePbInspect({
@@ -65,9 +39,7 @@ usePbInspect({
     label: label.value,
     variant: variant.value ?? "flat",
     tone: tone.value ?? "primary",
-    radius: radius.value ?? "md",
     size: size.value ?? "md",
-    elevation: resolvedElevation.value,
     loading: loading.value ?? false,
     block: block.value ?? false,
     disabled: disabled.value ?? false,
@@ -79,10 +51,12 @@ usePbInspect({
     return {
       background: v === "tonal" ? `color.${t}-soft` : `color.${t}`,
       onBackground: `color.on-${t}`,
-      radius: `radius.${radius.value ?? "md"}`,
-      elevation: elevationToken(resolvedElevation.value),
+      radius: "radius.md",
+      elevation: "elevation.none",
       height: `sizing.control-${size.value ?? "md"}`,
       typography: "typography.label",
+      duration: "motion.duration-fast",
+      easing: "motion.easing-standard",
     };
   },
   getTokens: () => {
@@ -91,13 +65,12 @@ usePbInspect({
     return [
       v === "tonal" ? `color.${t}-soft` : `color.${t}`,
       `color.on-${t}`,
-      "color.on-surface",
-      "color.border",
-      `radius.${radius.value ?? "md"}`,
-      elevationToken(resolvedElevation.value),
+      "radius.md",
+      "elevation.none",
       `sizing.control-${size.value ?? "md"}`,
       "typography.label",
-      "spacing.md",
+      "motion.duration-fast",
+      "motion.easing-standard",
     ];
   },
 });
@@ -111,16 +84,16 @@ usePbInspect({
     :type="type ?? 'button'"
     :variant="variant ?? 'flat'"
     :color="tone ?? 'primary'"
-    :rounded="rounded"
+    rounded="md"
     :size="vuetifySize"
     :loading="loading ?? false"
     :block="block ?? false"
     :elevation="0"
     :disabled="disabled ?? false"
     :style="[
-      radiusStyle((radius ?? 'md') as 'sm' | 'md' | 'lg' | 'full'),
+      radiusStyle('md'),
       controlSizeStyle(size ?? 'md'),
-      elevationStyle(resolvedElevation),
+      elevationStyle('none'),
     ]"
     @click="$emit('click')"
   >
@@ -136,6 +109,7 @@ usePbInspect({
   font: var(--pb-typography-label, 600 14px/1.4 Inter, system-ui, sans-serif);
   text-transform: none;
   letter-spacing: normal;
+  box-shadow: var(--pb-component-shadow, none) !important;
   transition:
     box-shadow var(--pb-motion-duration-fast, 120ms)
       var(--pb-motion-easing-standard),

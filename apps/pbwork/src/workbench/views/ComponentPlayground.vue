@@ -2,7 +2,6 @@
 import {
   computed,
   defineAsyncComponent,
-  onMounted,
   ref,
   watch,
   type Component,
@@ -13,7 +12,10 @@ import {
   loadComponentContract,
 } from "@/design-system/loaders";
 import { componentRecords } from "@/design-system/components/registry";
-import { usePlaygroundStore } from "@/app/stores/playground";
+import {
+  usePlaygroundStore,
+  type PlaygroundThemeId,
+} from "@/app/stores/playground";
 import type { PlaygroundControl } from "@/design-system/types";
 import {
   resolveThemeTokens,
@@ -21,12 +23,21 @@ import {
 } from "@/design-system/resolveThemeTokens";
 import { resolveLiveTokenBindings } from "@/design-system/resolveLiveTokenBindings";
 import { componentScenarios } from "@/design-system/components/scenarios";
+import { storeToRefs } from "pinia";
 
 const props = defineProps<{ componentId: string }>();
 const playground = usePlaygroundStore();
-const selectedStateId = ref("default");
-const selectedScenarioId = ref("");
-const previewTheme = ref<"light" | "dark">("light");
+const {
+  scenarioId,
+  themeId,
+  resolvedProps,
+  selectedScenario,
+  highlightedPresetId,
+} = storeToRefs(playground);
+
+/** Stable tab ids: 内容 | 类型 | 行为 | 令牌 — never filter tabs away. */
+type ControlPanelId = "content" | "type" | "behavior" | "tokens";
+const activeControlPanel = ref<ControlPanelId>("content");
 
 const record = computed(() =>
   componentRecords.find((item) => item.id === props.componentId),
@@ -39,24 +50,23 @@ const controls = computed(
 );
 const states = computed(() => contract.value?.states ?? []);
 const scenarios = computed(() => componentScenarios(props.componentId));
-const selectedScenario = computed(
-  () =>
-    scenarios.value.find((item) => item.id === selectedScenarioId.value) ??
-    scenarios.value[0],
-);
+
 const tokenBindings = computed(() =>
   Object.entries(
     resolveLiveTokenBindings(
       contract.value?.tokenBindings ?? {},
-      playground.props,
+      resolvedProps.value,
     ),
   ),
 );
+const resolvedPreviewTokens = computed(() =>
+  resolveThemeTokens(themeId.value),
+);
 const previewStyle = computed(() =>
-  tokensToCssVars(resolveThemeTokens(previewTheme.value)),
+  tokensToCssVars(resolvedPreviewTokens.value),
 );
 const vuetifyPreviewTheme = computed(() =>
-  previewTheme.value === "dark" ? "pbworkDark" : "pbworkLight",
+  themeId.value === "dark" ? "pbworkDark" : "pbworkLight",
 );
 const tallPreview = computed(() =>
   [
@@ -66,6 +76,7 @@ const tallPreview = computed(() =>
     "tabs",
     "dialog",
     "snackbar",
+    "bottom-navigation",
   ].includes(props.componentId),
 );
 
@@ -76,7 +87,7 @@ const isOverlayPreview = computed(() =>
 const previewAttach = "[data-pb-scenario-preview]";
 
 function previewBind() {
-  const base = { ...playground.props };
+  const base: Record<string, unknown> = { ...resolvedProps.value };
   if (!isOverlayPreview.value) return base;
   return {
     ...base,
@@ -85,13 +96,6 @@ function previewBind() {
     modelValue: Boolean(base.modelValue),
   };
 }
-
-watch(
-  () => props.componentId,
-  () => {
-    previewTheme.value = "light";
-  },
-);
 
 const contentControlKeys = new Set([
   "label",
@@ -115,7 +119,6 @@ const behaviorControlKeys = new Set([
   "required",
   "clearable",
   "block",
-  "modelValue",
   "showBack",
   "showAction",
   "showActions",
@@ -126,31 +129,47 @@ const behaviorControlKeys = new Set([
   "elevated",
   "indeterminate",
   "inset",
+  "mouseSwipe",
+  "showView",
 ]);
+
+/** Always three groups + tokens tab; empty groups stay visible. */
 const controlGroups = computed(() => {
   const groups = [
-    { id: "content", label: "内容", controls: [] as PlaygroundControl[] },
-    { id: "appearance", label: "外观", controls: [] as PlaygroundControl[] },
-    { id: "behavior", label: "行为", controls: [] as PlaygroundControl[] },
+    { id: "content" as const, label: "内容", controls: [] as PlaygroundControl[] },
+    { id: "type" as const, label: "类型", controls: [] as PlaygroundControl[] },
+    {
+      id: "behavior" as const,
+      label: "行为",
+      controls: [] as PlaygroundControl[],
+    },
   ];
   for (const control of controls.value) {
-    if (behaviorControlKeys.has(control.key) || control.control === "boolean")
+    // Boolean toggles (incl. boolean modelValue) → 行为; text modelValue → 内容.
+    if (control.control === "boolean" || behaviorControlKeys.has(control.key))
       groups[2]!.controls.push(control);
     else if (contentControlKeys.has(control.key))
       groups[0]!.controls.push(control);
     else groups[1]!.controls.push(control);
   }
-  return groups.filter((group) => group.controls.length > 0);
+  return groups;
 });
 
-/** Named panel slots for Tabs playground (contract.slots). */
-const tabsPreviewSlots = computed(() =>
-  record.value?.id === "tabs" ? (contract.value?.slots ?? []) : [],
+const activeControlGroup = computed(() =>
+  controlGroups.value.find((group) => group.id === activeControlPanel.value),
 );
 
-function tabsSlotLabel(name: string) {
+const panelPreviewSlots = computed(() =>
+  ["tabs", "bottom-navigation"].includes(record.value?.id ?? "")
+    ? (contract.value?.slots ?? [])
+    : [],
+);
+
+function panelSlotLabel(name: string) {
   if (name === "overview") return "概览内容 · 点选或左右滑动切换";
   if (name === "activity") return "活动内容 · 点选或左右滑动切换";
+  if (["工作台", "工单", "消息", "我的"].includes(name))
+    return `${name}视图 · 点击导航或拖动切换`;
   return `${name} 面板`;
 }
 
@@ -169,53 +188,43 @@ watch(
   () => props.componentId,
   (id) => {
     playground.open(id);
-    selectedStateId.value = "default";
-    selectedScenarioId.value = componentScenarios(id)[0]?.id ?? "default";
-    const scenario = componentScenarios(id)[0];
-    for (const [key, value] of Object.entries(scenario?.props ?? {}))
-      playground.setProp(key, value);
+    activeControlPanel.value = "content";
   },
   { immediate: true },
 );
 
-onMounted(() =>
-  selectScenario(
-    selectedScenarioId.value || scenarios.value[0]?.id || "default",
-  ),
-);
-
 function onPreviewUpdate(value: unknown) {
-  setControlValue("modelValue", value);
+  playground.setOverride("modelValue", value);
 }
 
 function controlValue(key: string): unknown {
-  return playground.props[key];
+  return resolvedProps.value[key];
 }
 
 function setControlValue(key: string, value: unknown) {
-  playground.setProp(key, value);
+  playground.setOverride(key, value);
 }
 
 function resetCurrent() {
-  selectState(selectedStateId.value);
+  playground.reset();
 }
 
-function selectState(id: string) {
-  selectedStateId.value = id;
-  playground.open(props.componentId);
-  const state = states.value.find((item) => item.id === id);
-  for (const [key, value] of Object.entries(state?.props ?? {})) {
-    playground.setProp(key, value);
-  }
+function selectPreset(id: string) {
+  playground.applyPreset(id);
 }
 
 function selectScenario(id: string) {
-  selectedScenarioId.value = id;
-  selectedStateId.value = "default";
-  playground.open(props.componentId);
-  const scenario = scenarios.value.find((item) => item.id === id);
-  for (const [key, value] of Object.entries(scenario?.props ?? {}))
-    playground.setProp(key, value);
+  playground.setScenario(id);
+}
+
+function setPreviewTheme(value: unknown) {
+  if (value === "light" || value === "dark") {
+    playground.setTheme(value as PlaygroundThemeId);
+  }
+}
+
+function bindingResolvedValue(tokenId: string) {
+  return resolvedPreviewTokens.value[tokenId];
 }
 </script>
 
@@ -224,23 +233,23 @@ function selectScenario(id: string) {
     v-if="record && contract"
     :eyebrow="record.category === 'basic' ? '基础组件' : '复杂组件'"
     :title="record.label"
-    description="从真实业务场景开始体验组件，再按内容、外观与行为调整为需要的状态。"
+    description="顶栏为预设：符合当前预览时高亮；侧栏调整后若不匹配则取消高亮。resolved = 默认 ⊕ 场景 ⊕ 覆盖。"
   >
     <template #stats>
       <v-chip size="small" variant="tonal"
         >{{ controls.length }} 个可调项</v-chip
       >
       <v-chip size="small" variant="tonal"
-        >{{ states.length }} 个预设状态</v-chip
+        >{{ states.length }} 个预设</v-chip
       >
       <v-chip size="small" variant="tonal"
-        >{{ tokenBindings.length }} Bindings</v-chip
+        >{{ tokenBindings.length }} 个令牌绑定</v-chip
       >
     </template>
 
     <template #toolbar>
       <v-select
-        :model-value="selectedScenarioId"
+        :model-value="scenarioId"
         :items="scenarios"
         item-title="label"
         item-value="id"
@@ -252,15 +261,13 @@ function selectScenario(id: string) {
         @update:model-value="selectScenario(String($event))"
       />
       <v-btn-toggle
-        v-if="states.length"
-        :model-value="selectedStateId"
+        :model-value="highlightedPresetId"
         density="compact"
         color="primary"
         variant="outlined"
         divided
-        mandatory
       >
-        <v-btn value="default" size="small" @click="selectState('default')"
+        <v-btn value="default" size="small" @click="selectPreset('default')"
           >默认</v-btn
         >
         <v-btn
@@ -268,18 +275,19 @@ function selectScenario(id: string) {
           :key="state.id"
           :value="state.id"
           size="small"
-          @click="selectState(state.id)"
+          @click="selectPreset(state.id)"
           >{{ state.label }}</v-btn
         >
       </v-btn-toggle>
       <v-btn-toggle
-        v-model="previewTheme"
+        :model-value="themeId"
         density="compact"
         color="primary"
         variant="outlined"
         divided
         mandatory
         aria-label="预览主题"
+        @update:model-value="setPreviewTheme"
       >
         <v-btn value="light" size="small">浅色</v-btn>
         <v-btn value="dark" size="small">深色</v-btn>
@@ -294,12 +302,13 @@ function selectScenario(id: string) {
               <strong>{{ selectedScenario?.label }}</strong>
               <span>{{ selectedScenario?.description }}</span>
             </div>
-            <code>{{ `theme.${previewTheme}` }}</code>
+            <code>{{ `theme.${themeId}` }}</code>
           </header>
           <v-theme-provider :theme="vuetifyPreviewTheme">
             <div
               class="preview scenario-preview"
               data-pb-scenario-preview
+              :style="previewStyle"
               :class="{
                 'is-tall': tallPreview,
                 'is-overlay': isOverlayPreview,
@@ -320,11 +329,14 @@ function selectScenario(id: string) {
                   >在这里放置该业务分组的表单字段。</template
                 >
                 <template
-                  v-for="slotName in tabsPreviewSlots"
+                  v-for="slotName in panelPreviewSlots"
                   :key="slotName"
                   #[slotName]
                 >
-                  <p class="tabs-panel-demo">{{ tabsSlotLabel(slotName) }}</p>
+                  <div class="panel-slot-demo">
+                    <strong>{{ slotName }}</strong>
+                    <span>{{ panelSlotLabel(slotName) }}</span>
+                  </div>
                 </template>
               </component>
             </div>
@@ -334,82 +346,101 @@ function selectScenario(id: string) {
 
       <v-form class="controls" @submit.prevent>
         <div class="controls-header">
-          <div>
-            <strong>调整组件</strong>
-            <span>修改后立即更新当前业务场景</span>
-          </div>
+          <strong>调整组件</strong>
           <v-btn size="small" variant="text" @click="resetCurrent">重置</v-btn>
         </div>
 
-        <p class="controls-explainer">
-          无需理解 Props：下面的设置分别控制组件内容、外观和交互状态。
-        </p>
-
-        <fieldset
-          v-for="group in controlGroups"
-          :key="group.id"
-          class="controls-fields"
+        <v-tabs
+          v-model="activeControlPanel"
+          class="control-tabs"
+          density="compact"
+          color="primary"
+          grow
         >
-          <legend>{{ group.label }}</legend>
-          <template v-for="control in group.controls" :key="control.key">
-            <div class="control-label">
-              <span>{{ control.label }}</span>
-            </div>
-            <v-switch
-              v-if="control.control === 'boolean'"
-              :model-value="Boolean(controlValue(control.key))"
-              :label="control.label"
-              color="primary"
-              hide-details
-              class="mb-3"
-              @update:model-value="setControlValue(control.key, $event)"
-            />
-            <v-select
-              v-else-if="control.control === 'select'"
-              :model-value="controlValue(control.key)"
-              :items="control.options ?? []"
-              item-title="label"
-              item-value="value"
-              :label="`${control.label} · ${control.key}`"
-              variant="outlined"
-              density="comfortable"
-              hide-details
-              class="mb-3"
-              @update:model-value="setControlValue(control.key, $event)"
-            />
-            <v-text-field
-              v-else
-              :model-value="String(controlValue(control.key) ?? '')"
-              :label="`${control.label} · ${control.key}`"
-              :type="control.control === 'number' ? 'number' : 'text'"
-              variant="outlined"
-              density="comfortable"
-              hide-details
-              class="mb-3"
-              @update:model-value="
-                setControlValue(
-                  control.key,
-                  control.control === 'number' ? Number($event) : $event,
-                )
-              "
-            />
-          </template>
-        </fieldset>
+          <v-tab
+            v-for="group in controlGroups"
+            :key="group.id"
+            :value="group.id"
+            >{{ group.label }}</v-tab
+          >
+          <v-tab value="tokens">令牌</v-tab>
+        </v-tabs>
 
-        <section class="token-bindings">
-          <strong>Token 绑定</strong>
-          <ul v-if="tokenBindings.length" class="binding-list">
-            <li v-for="[slot, tokenId] in tokenBindings" :key="slot">
-              <span>{{ slot }}</span>
-              <code>{{ tokenId }}</code>
-            </li>
-          </ul>
-          <p v-else class="empty">无 Token 绑定。</p>
-        </section>
+        <div class="controls-body">
+          <fieldset v-if="activeControlGroup" class="controls-fields">
+            <p v-if="!activeControlGroup.controls.length" class="empty">
+              暂无可调项
+            </p>
+            <template
+              v-for="control in activeControlGroup.controls"
+              :key="control.key"
+            >
+              <v-switch
+                v-if="control.control === 'boolean'"
+                :model-value="Boolean(controlValue(control.key))"
+                :label="control.label"
+                color="primary"
+                density="compact"
+                inset
+                hide-details
+                class="compact-switch"
+                @update:model-value="setControlValue(control.key, $event)"
+              />
+              <template v-else>
+                <div class="control-label">
+                  <span>{{ control.label }}</span>
+                </div>
+                <v-select
+                  v-if="control.control === 'select'"
+                  :model-value="controlValue(control.key)"
+                  :items="control.options ?? []"
+                  item-title="label"
+                  item-value="value"
+                  :label="control.label"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                  class="compact-control"
+                  @update:model-value="setControlValue(control.key, $event)"
+                />
+                <v-text-field
+                  v-else
+                  :model-value="String(controlValue(control.key) ?? '')"
+                  :label="control.label"
+                  :type="control.control === 'number' ? 'number' : 'text'"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                  class="compact-control"
+                  @update:model-value="
+                    setControlValue(
+                      control.key,
+                      control.control === 'number' ? Number($event) : $event,
+                    )
+                  "
+                />
+              </template>
+            </template>
+          </fieldset>
 
-        <v-alert type="info" variant="tonal" density="comfortable">
-          高级写回（更新组件示例）将在 M6 启用。
-        </v-alert>
+          <section v-else-if="activeControlPanel === 'tokens'" class="token-list">
+            <p class="token-list-hint">
+              只读：组件固定消费这些语义令牌。换肤请改主题值，不要在此换绑。
+            </p>
+            <ul v-if="tokenBindings.length" class="binding-list">
+              <li v-for="[slot, tokenId] in tokenBindings" :key="slot">
+                <div class="binding-heading">
+                  <span>{{ slot }}</span>
+                  <code>{{ tokenId }}</code>
+                </div>
+                <code class="binding-value">{{
+                  bindingResolvedValue(tokenId) ?? "—"
+                }}</code>
+              </li>
+            </ul>
+            <p v-else class="empty">该组件未声明 tokenBindings。</p>
+          </section>
+        </div>
       </v-form>
     </div>
   </ResourcePageShell>
@@ -419,10 +450,6 @@ function selectScenario(id: string) {
 </template>
 
 <style scoped>
-.toolbar-hint {
-  color: rgba(var(--v-theme-on-surface), 0.55);
-  font-size: 0.75rem;
-}
 .scenario-select {
   flex: 0 1 220px;
   min-width: 180px;
@@ -486,85 +513,95 @@ function selectScenario(id: string) {
 .preview :deep(.v-overlay) {
   position: absolute !important;
 }
-.tabs-panel-demo {
-  margin: 0;
-  padding: 4px 0;
+.panel-slot-demo {
+  display: grid;
+  min-height: 120px;
+  place-content: center;
+  gap: var(--pb-spacing-xs, 4px);
+  padding: var(--pb-spacing-md, 16px);
   color: var(--pb-color-on-surface-muted, #64748b);
+  text-align: center;
   font: var(--pb-typography-caption, 400 12px/1.4 Inter, system-ui, sans-serif);
 }
-.controls {
-  padding: 16px;
+.panel-slot-demo strong {
+  color: var(--pb-color-on-surface);
+  font: var(--pb-typography-subtitle);
 }
 .controls-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  padding: 10px 12px 6px;
 }
-.controls-header > div {
-  display: grid;
-  gap: 2px;
+.control-tabs {
+  flex: none;
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
-.controls-header span,
-.controls-explainer {
-  color: rgba(var(--v-theme-on-surface), 0.55);
+.control-tabs :deep(.v-tab) {
+  min-width: 0;
+  padding-inline: 8px;
   font-size: 0.75rem;
 }
-.controls-explainer {
-  margin: 0 0 16px;
-  line-height: 1.5;
+.controls-body {
+  padding: 12px;
 }
 .control-label {
   display: flex;
   justify-content: space-between;
-  margin: 2px 0 5px;
+  margin: 0 0 5px;
   font-size: 0.75rem;
 }
-.control-label code {
-  color: rgba(var(--v-theme-on-surface), 0.45);
-  font-size: 0.6875rem;
-}
 .controls-fields {
-  margin: 0 0 16px;
+  margin: 0;
   padding: 0;
   border: 0;
   min-width: 0;
 }
-.controls-fields legend {
-  width: 100%;
+.compact-control {
   margin-bottom: 10px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  color: rgb(var(--v-theme-on-surface));
-  font-size: 0.8125rem;
-  font-weight: 650;
 }
-.token-bindings {
-  margin: 8px 0 16px;
-  padding: 12px;
-  border-radius: 10px;
-  background: rgba(var(--v-theme-on-surface), 0.04);
+.compact-switch {
+  min-height: 40px;
+  margin-bottom: 4px;
 }
-.token-bindings strong {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 0.8125rem;
+.token-list-hint {
+  margin: 0 0 12px;
+  color: rgba(var(--v-theme-on-surface), 0.55);
+  font-size: 0.75rem;
+  line-height: 1.4;
 }
 .binding-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 6px;
+  gap: 8px;
 }
 .binding-list li {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 10px;
+  background: rgba(var(--v-theme-on-surface), 0.025);
   font-size: 0.75rem;
 }
-.binding-list code {
+.binding-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.binding-heading span {
+  font-weight: 650;
+}
+.binding-heading code,
+.binding-value {
+  min-width: 0;
+  overflow: hidden;
   color: rgba(var(--v-theme-on-surface), 0.62);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .empty {
   margin: 0;

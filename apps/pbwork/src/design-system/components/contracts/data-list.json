@@ -11,30 +11,55 @@
         "items": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["id", "title"],
+          "required": [
+            "id",
+            "title"
+          ],
           "properties": {
-            "id": { "type": "string" },
-            "title": { "type": "string" },
-            "subtitle": { "type": "string" }
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "subtitle": {
+              "type": "string"
+            }
           }
         }
       },
-      "loading": { "type": "boolean" },
-      "emptyText": { "type": "string" },
-      "radius": { "type": "string", "enum": ["sm", "md", "lg"] },
-      "elevated": { "type": "boolean" },
-      "showActions": { "type": "boolean" }
+      "loading": {
+        "type": "boolean"
+      },
+      "emptyText": {
+        "type": "string"
+      },
+      "elevated": {
+        "type": "boolean"
+      },
+      "showActions": {
+        "type": "boolean"
+      }
     },
-    "required": ["items"]
+    "required": [
+      "items"
+    ]
   },
   "defaultProps": {
     "items": [
-      { "id": "1", "title": "整理需求", "subtitle": "今日" },
-      { "id": "2", "title": "联调接口", "subtitle": "明日" }
+      {
+        "id": "1",
+        "title": "整理需求",
+        "subtitle": "今日"
+      },
+      {
+        "id": "2",
+        "title": "联调接口",
+        "subtitle": "明日"
+      }
     ],
     "loading": false,
     "emptyText": "暂无任务",
-    "radius": "lg",
     "elevated": false,
     "showActions": true
   },
@@ -42,16 +67,26 @@
     {
       "id": "loading",
       "label": "加载中",
-      "props": { "loading": true, "items": [] }
+      "props": {
+        "loading": true,
+        "items": []
+      }
     },
     {
       "id": "empty",
       "label": "空态",
-      "props": { "items": [], "emptyText": "暂无任务" }
+      "props": {
+        "items": [],
+        "emptyText": "暂无任务"
+      }
     }
   ],
-  "slots": ["append"],
-  "events": ["select"],
+  "slots": [
+    "append"
+  ],
+  "events": [
+    "select"
+  ],
   "tokenBindings": {
     "surface": "color.surface",
     "border": "color.border",
@@ -59,6 +94,7 @@
     "elevation": "elevation.card",
     "title": "typography.subtitle",
     "subtitle": "typography.caption",
-    "muted": "color.on-surface-muted"
+    "muted": "color.on-surface-muted",
+    "empty": "typography.content"
   }
 }

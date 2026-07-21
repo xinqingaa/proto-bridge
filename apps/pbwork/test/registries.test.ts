@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { validateRegistries } from "@/design-system/validateRegistries";
 import { loadTokens, loadThemes } from "@/design-system/loaders";
-import { resolveThemeTokens } from "@/design-system/resolveThemeTokens";
+import {
+  resolveThemeTokens,
+  tokensToCssVars,
+} from "@/design-system/resolveThemeTokens";
 import { componentRecords } from "@/design-system/components/registry";
 import { prototypes, prototypeScreens } from "@/prototypes/registry";
 
@@ -49,6 +52,17 @@ describe("registries", () => {
     expect(light["color.primary"]).toBe("#2563eb");
     expect(dark["color.primary"]).toBe("#7aa7ff");
     expect(Object.keys(light).length).toBe(loadTokens().length);
+  });
+
+  it("keeps unitless tokens unitless while converting dimensions to px", () => {
+    const vars = tokensToCssVars({
+      "opacity.disabled": 0.38,
+      "radius.md": 12,
+      "spacing.4": 16,
+    });
+    expect(vars["--pb-opacity-disabled"]).toBe("0.38");
+    expect(vars["--pb-radius-md"]).toBe("12px");
+    expect(vars["--pb-spacing-4"]).toBe("16px");
   });
 });
 
@@ -149,5 +163,56 @@ describe("resolveLiveTokenBindings", () => {
     );
     expect(live.background).toBe("color.success-soft");
     expect(live.color).toBe("color.success");
+  });
+
+  it("maps tabs selectionStyle to fixed primary tokens", async () => {
+    const { resolveLiveTokenBindings } =
+      await import("@/design-system/resolveLiveTokenBindings");
+    const pill = resolveLiveTokenBindings(
+      {
+        activeBackground: "color.primary-soft",
+        radius: "radius.full",
+        border: "border.hairline",
+      },
+      { selectionStyle: "pill", showDivider: true },
+    );
+    expect(pill.activeBackground).toBe("color.primary-soft");
+    expect(pill.radius).toBe("radius.full");
+    expect(pill.border).toBe("border.hairline");
+
+    const underline = resolveLiveTokenBindings(
+      {
+        activeBackground: "color.primary-soft",
+        radius: "radius.full",
+        border: "border.hairline",
+      },
+      { selectionStyle: "underline", showDivider: false },
+    );
+    expect(underline.activeBackground).toBe("transparent");
+    expect(underline.radius).toBe("radius.md");
+    expect(underline.border).toBe("transparent");
+  });
+});
+
+describe("core tokens", () => {
+  it("lists only registered token ids", async () => {
+    const { CORE_TOKEN_IDS } = await import("@/design-system/coreTokens");
+    const ids = new Set(loadTokens().map((token) => token.id));
+    for (const id of CORE_TOKEN_IDS) {
+      expect(ids.has(id), id).toBe(true);
+    }
+  });
+
+  it("requires component tokenBindings to prefer registered tokens", async () => {
+    const { loadComponentContracts } = await import("@/design-system/loaders");
+    const ids = new Set(loadTokens().map((token) => token.id));
+    for (const contract of loadComponentContracts()) {
+      for (const [slot, tokenId] of Object.entries(contract.tokenBindings)) {
+        if (tokenId === "transparent" || tokenId === "none") continue;
+        expect(ids.has(tokenId), `${contract.id}.${slot}=${tokenId}`).toBe(
+          true,
+        );
+      }
+    }
   });
 });

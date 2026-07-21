@@ -6,36 +6,98 @@
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "modelValue": { "type": "string" },
-      "items": { "type": "array" },
-      "display": { "type": "string", "enum": ["icon-label", "icon", "label"] },
-      "showIndicator": { "type": "boolean" },
-      "elevated": { "type": "boolean" }
+      "modelValue": {
+        "type": "string"
+      },
+      "items": {
+        "type": "array"
+      },
+      "display": {
+        "type": "string",
+        "enum": [
+          "icon-label",
+          "icon",
+          "label"
+        ]
+      },
+      "showIndicator": {
+        "type": "boolean"
+      },
+      "elevated": {
+        "type": "boolean"
+      },
+      "showView": {
+        "type": "boolean"
+      },
+      "viewHeight": {
+        "type": "number",
+        "minimum": 120
+      },
+      "mouseSwipe": {
+        "type": "boolean"
+      }
     }
   },
   "defaultProps": {
     "modelValue": "工作台",
-    "items": ["工作台", "工单", "消息", "我的"],
+    "items": [
+      "工作台",
+      "工单",
+      "消息",
+      "我的"
+    ],
     "display": "icon-label",
     "showIndicator": true,
-    "elevated": true
+    "elevated": true,
+    "showView": true,
+    "viewHeight": 220,
+    "mouseSwipe": true
   },
   "states": [
-    { "id": "orders", "label": "工单选中", "props": { "modelValue": "工单" } },
-    { "id": "icon-only", "label": "纯图标", "props": { "display": "icon" } },
-    { "id": "label-only", "label": "纯文字", "props": { "display": "label" } }
+    {
+      "id": "orders",
+      "label": "工单选中",
+      "props": {
+        "modelValue": "工单"
+      }
+    },
+    {
+      "id": "icon-only",
+      "label": "纯图标",
+      "props": {
+        "display": "icon"
+      }
+    },
+    {
+      "id": "label-only",
+      "label": "纯文字",
+      "props": {
+        "display": "label"
+      }
+    }
   ],
-  "slots": [],
-  "events": ["update:modelValue"],
+  "slots": [
+    "工作台",
+    "工单",
+    "消息",
+    "我的"
+  ],
+  "events": [
+    "update:modelValue"
+  ],
   "tokenBindings": {
     "surface": "color.surface-raised",
     "active": "color.primary",
     "inactive": "color.on-surface-muted",
-    "divider": "color.divider",
+    "border": "border.hairline",
     "elevation": "elevation.level-3",
     "target": "sizing.touch",
     "height": "sizing.bottom-navigation",
     "label": "typography.caption",
+    "indicatorRadius": "radius.full",
+    "viewSurface": "color.background",
+    "viewTitle": "typography.subtitle",
+    "viewMuted": "color.on-surface-muted",
     "duration": "motion.duration-normal"
   }
 }

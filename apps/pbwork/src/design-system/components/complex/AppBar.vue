@@ -101,10 +101,13 @@ usePbInspect({
   flex: none;
   padding-top: var(--pb-safe-top, 0px);
   border-bottom: 1px solid var(--pb-color-border, #d7dee8);
-  box-shadow: none;
+  box-shadow: var(--pb-component-shadow, none) !important;
 }
 .pb-app-bar.is-elevated {
-  box-shadow: var(--pb-elevation-card, none);
+  box-shadow: var(
+    --pb-component-shadow,
+    var(--pb-elevation-card, none)
+  ) !important;
 }
 .pb-app-bar :deep(.v-toolbar__content) {
   padding-inline: var(--pb-spacing-md, 16px);

@@ -5,20 +5,44 @@
   "propsSchema": {
     "type": "object",
     "properties": {
-      "label": { "type": "string" },
-      "size": { "type": "string", "enum": ["sm", "md", "lg"] }
+      "label": {
+        "type": "string"
+      },
+      "size": {
+        "type": "string",
+        "enum": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      }
     }
   },
-  "defaultProps": { "label": "正在加载", "size": "md" },
+  "defaultProps": {
+    "label": "正在加载",
+    "size": "md"
+  },
   "states": [
-    { "id": "small", "label": "小尺寸", "props": { "size": "sm" } },
-    { "id": "large", "label": "大尺寸", "props": { "size": "lg" } }
+    {
+      "id": "small",
+      "label": "小尺寸",
+      "props": {
+        "size": "sm"
+      }
+    },
+    {
+      "id": "large",
+      "label": "大尺寸",
+      "props": {
+        "size": "lg"
+      }
+    }
   ],
   "slots": [],
   "events": [],
   "tokenBindings": {
     "active": "color.primary",
-    "track": "color.primary-soft",
+    "text": "color.on-surface-muted",
     "size": "sizing.icon-md",
     "motion": "motion.duration-slow",
     "label": "typography.caption"

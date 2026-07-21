@@ -6,28 +6,51 @@
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "label": { "type": "string" },
-      "modelValue": { "type": "string" },
-      "rows": { "type": "number" },
-      "radius": { "type": "string", "enum": ["sm", "md", "lg"] },
-      "size": { "type": "string", "enum": ["sm", "md", "lg"] },
-      "disabled": { "type": "boolean" }
+      "label": {
+        "type": "string"
+      },
+      "modelValue": {
+        "type": "string"
+      },
+      "rows": {
+        "type": "number"
+      },
+      "size": {
+        "type": "string",
+        "enum": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "disabled": {
+        "type": "boolean"
+      }
     },
-    "required": ["label"]
+    "required": [
+      "label"
+    ]
   },
   "defaultProps": {
     "label": "问题描述",
     "modelValue": "现场设备出现异常噪声",
     "rows": 3,
-    "radius": "md",
     "size": "md",
     "disabled": false
   },
   "states": [
-    { "id": "disabled", "label": "禁用", "props": { "disabled": true } }
+    {
+      "id": "disabled",
+      "label": "禁用",
+      "props": {
+        "disabled": true
+      }
+    }
   ],
   "slots": [],
-  "events": ["update:modelValue"],
+  "events": [
+    "update:modelValue"
+  ],
   "tokenBindings": {
     "surface": "color.surface",
     "border": "color.border",

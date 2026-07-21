@@ -2,10 +2,7 @@
 import { computed, ref, toRefs, watch } from "vue";
 import { Check, ChevronDown } from "lucide-vue-next";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
-import {
-  radiusStyle,
-  type RadiusSize,
-} from "@/design-system/components/_shared/radius";
+import { radiusStyle } from "@/design-system/components/_shared/radius";
 import {
   controlSizeStyle,
   type ComponentSize,
@@ -17,7 +14,6 @@ const props = defineProps<{
   options?: string[];
   placeholder?: string;
   size?: ComponentSize;
-  radius?: Exclude<RadiusSize, "full" | "xs" | "xl">;
   clearable?: boolean;
   loading?: boolean;
   error?: string;
@@ -36,7 +32,6 @@ const {
   options,
   placeholder,
   size,
-  radius,
   clearable,
   loading,
   error,
@@ -65,7 +60,6 @@ usePbInspect({
     options: options.value ?? [],
     placeholder: placeholder.value ?? "请选择",
     size: size.value ?? "md",
-    radius: radius.value ?? "md",
     clearable: clearable.value ?? false,
     loading: loading.value ?? false,
     error: error.value ?? "",
@@ -76,21 +70,36 @@ usePbInspect({
     "color.surface",
     "color.border",
     "color.on-surface",
+    "color.on-surface-muted",
     "color.primary",
+    "color.primary-soft",
+    "color.surface-raised",
+    "border.hairline",
     "radius.md",
+    "radius.lg",
     "sizing.control-md",
+    "sizing.menu-item",
     "typography.content",
+    "elevation.level-3",
+    "motion.duration-normal",
+    "motion.easing-standard",
   ],
   getTokenBindings: () => ({
     surface: "color.surface",
     border: "color.border",
     focus: "color.primary",
-    radius: `radius.${radius.value ?? "md"}`,
+    radius: "radius.md",
     height: `sizing.control-${size.value ?? "md"}`,
     text: "typography.content",
+    muted: "color.on-surface-muted",
     menuSurface: "color.surface-raised",
+    menuBorder: "border.hairline",
+    menuRadius: "radius.lg",
     menuElevation: "elevation.level-3",
     menuItemHeight: "sizing.menu-item",
+    selectedBackground: "color.primary-soft",
+    duration: "motion.duration-normal",
+    easing: "motion.easing-standard",
   }),
 });
 </script>
@@ -115,7 +124,7 @@ usePbInspect({
       maxHeight: 304,
       offset: 6,
     }"
-    :style="[radiusStyle(radius ?? 'md'), controlSizeStyle(size ?? 'md')]"
+    :style="[radiusStyle('md'), controlSizeStyle(size ?? 'md')]"
     @update:menu="updateMenu"
     @update:model-value="emit('update:modelValue', String($event ?? ''))"
   >
@@ -142,10 +151,24 @@ usePbInspect({
 
 <style scoped>
 .pb-select :deep(.v-field) {
-  --v-field-border-radius: inherit;
-  border-radius: inherit;
+  --v-field-border-radius: var(
+    --pb-component-radius,
+    var(--pb-radius-md, 12px)
+  );
+  border-radius: var(
+    --pb-component-radius,
+    var(--pb-radius-md, 12px)
+  ) !important;
   min-height: var(--pb-component-height, var(--pb-sizing-control-md, 40px));
   background: var(--pb-color-surface, #fff);
+}
+.pb-select :deep(.v-field__outline__start) {
+  border-radius: var(--pb-component-radius, var(--pb-radius-md, 12px)) 0 0
+    var(--pb-component-radius, var(--pb-radius-md, 12px)) !important;
+}
+.pb-select :deep(.v-field__outline__end) {
+  border-radius: 0 var(--pb-component-radius, var(--pb-radius-md, 12px))
+    var(--pb-component-radius, var(--pb-radius-md, 12px)) 0 !important;
 }
 .pb-select :deep(.v-field__input) {
   min-height: var(--pb-component-height, var(--pb-sizing-control-md, 40px));

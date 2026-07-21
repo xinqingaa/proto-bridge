@@ -6,15 +6,31 @@
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "title": { "type": "string" },
-      "dense": { "type": "boolean" },
-      "elevated": { "type": "boolean" },
-      "showBack": { "type": "boolean" },
-      "backLabel": { "type": "string" },
-      "showAction": { "type": "boolean" },
-      "actionLabel": { "type": "string" }
+      "title": {
+        "type": "string"
+      },
+      "dense": {
+        "type": "boolean"
+      },
+      "elevated": {
+        "type": "boolean"
+      },
+      "showBack": {
+        "type": "boolean"
+      },
+      "backLabel": {
+        "type": "string"
+      },
+      "showAction": {
+        "type": "boolean"
+      },
+      "actionLabel": {
+        "type": "string"
+      }
     },
-    "required": ["title"]
+    "required": [
+      "title"
+    ]
   },
   "defaultProps": {
     "title": "项目协作",
@@ -26,13 +42,25 @@
     "actionLabel": "更多操作"
   },
   "states": [
-    { "id": "no-back", "label": "无返回", "props": { "showBack": false } }
+    {
+      "id": "no-back",
+      "label": "无返回",
+      "props": {
+        "showBack": false
+      }
+    }
   ],
-  "slots": ["append"],
-  "events": ["back", "action"],
+  "slots": [
+    "append"
+  ],
+  "events": [
+    "back",
+    "action"
+  ],
   "tokenBindings": {
     "surface": "color.surface",
     "border": "color.border",
+    "text": "color.on-surface",
     "elevation": "elevation.card",
     "title": "typography.subtitle"
   }

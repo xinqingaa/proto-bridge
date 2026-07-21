@@ -258,15 +258,21 @@ const scenarios: Record<string, ComponentScenario[]> = {
       description: "在概览与动态之间滑动切换。",
       props: {
         modelValue: "overview",
-        activeStyle: "text",
-        showIndicator: true,
+        selectionStyle: "pill",
+        showIndicator: false,
+        mouseSwipe: true,
       },
     },
     {
       id: "filter",
       label: "分段筛选",
       description: "使用柔和底色的等宽筛选页签。",
-      props: { activeStyle: "tonal", showIndicator: false, grow: true },
+      props: {
+        selectionStyle: "underline",
+        showIndicator: true,
+        grow: true,
+        mouseSwipe: true,
+      },
     },
   ],
   "data-list": [
@@ -330,13 +336,23 @@ const scenarios: Record<string, ComponentScenario[]> = {
       id: "primary",
       label: "应用主导航",
       description: "图标和文字共同呈现的四入口导航。",
-      props: { display: "icon-label", showIndicator: true },
+      props: {
+        display: "icon-label",
+        showIndicator: true,
+        showView: true,
+        mouseSwipe: true,
+      },
     },
     {
       id: "compact",
       label: "紧凑导航",
       description: "文字已经明确时仅展示图标。",
-      props: { display: "icon", showIndicator: true },
+      props: {
+        display: "icon",
+        showIndicator: true,
+        showView: true,
+        mouseSwipe: true,
+      },
     },
   ],
   dialog: [

@@ -5,11 +5,19 @@
   "propsSchema": {
     "type": "object",
     "properties": {
-      "label": { "type": "string" },
-      "modelValue": { "type": "boolean" },
-      "disabled": { "type": "boolean" }
+      "label": {
+        "type": "string"
+      },
+      "modelValue": {
+        "type": "boolean"
+      },
+      "disabled": {
+        "type": "boolean"
+      }
     },
-    "required": ["label"]
+    "required": [
+      "label"
+    ]
   },
   "defaultProps": {
     "label": "接收进度通知",
@@ -17,15 +25,30 @@
     "disabled": false
   },
   "states": [
-    { "id": "off", "label": "关闭", "props": { "modelValue": false } },
-    { "id": "disabled", "label": "禁用", "props": { "disabled": true } }
+    {
+      "id": "off",
+      "label": "关闭",
+      "props": {
+        "modelValue": false
+      }
+    },
+    {
+      "id": "disabled",
+      "label": "禁用",
+      "props": {
+        "disabled": true
+      }
+    }
   ],
   "slots": [],
-  "events": ["update:modelValue"],
+  "events": [
+    "update:modelValue"
+  ],
   "tokenBindings": {
     "active": "color.primary",
     "track": "color.surface-variant",
     "thumb": "color.surface",
+    "text": "color.on-surface",
     "target": "sizing.touch",
     "label": "typography.content"
   }

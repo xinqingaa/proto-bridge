@@ -5,11 +5,24 @@
   "propsSchema": {
     "type": "object",
     "properties": {
-      "modelValue": { "type": "boolean" },
-      "message": { "type": "string" },
-      "tone": { "type": "string", "enum": ["success", "error", "info"] }
+      "modelValue": {
+        "type": "boolean"
+      },
+      "message": {
+        "type": "string"
+      },
+      "tone": {
+        "type": "string",
+        "enum": [
+          "success",
+          "error",
+          "info"
+        ]
+      }
     },
-    "required": ["message"]
+    "required": [
+      "message"
+    ]
   },
   "defaultProps": {
     "modelValue": true,
@@ -20,19 +33,29 @@
     {
       "id": "error",
       "label": "错误",
-      "props": { "message": "提交失败，请重试", "tone": "error" }
+      "props": {
+        "message": "提交失败，请重试",
+        "tone": "error"
+      }
     },
-    { "id": "hidden", "label": "隐藏", "props": { "modelValue": false } }
+    {
+      "id": "hidden",
+      "label": "隐藏",
+      "props": {
+        "modelValue": false
+      }
+    }
   ],
   "slots": [],
-  "events": ["update:modelValue"],
+  "events": [
+    "update:modelValue"
+  ],
   "tokenBindings": {
     "accent": "color.success",
     "surface": "color.surface-raised",
     "text": "color.on-surface",
     "radius": "radius.lg",
     "elevation": "elevation.level-4",
-    "padding": "spacing.md",
     "message": "typography.content"
   }
 }

@@ -38,20 +38,22 @@ usePbInspect({
   getTokens: () => [
     "color.scrim",
     "color.surface-raised",
+    "color.border",
     "color.on-surface",
     "radius.xl",
     "elevation.level-5",
-    "spacing.lg",
     "typography.title",
+    "typography.content",
   ],
   getTokenBindings: () => ({
     scrim: "color.scrim",
     surface: "color.surface-raised",
+    border: "color.border",
     text: "color.on-surface",
     radius: "radius.xl",
     elevation: "elevation.level-5",
-    padding: "spacing.lg",
     title: "typography.title",
+    body: "typography.content",
   }),
 });
 </script>

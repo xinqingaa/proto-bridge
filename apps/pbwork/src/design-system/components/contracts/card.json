@@ -6,21 +6,29 @@
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "title": { "type": "string" },
-      "subtitle": { "type": "string" },
-      "elevated": { "type": "boolean" },
-      "radius": { "type": "string", "enum": ["sm", "md", "lg"] }
+      "title": {
+        "type": "string"
+      },
+      "subtitle": {
+        "type": "string"
+      },
+      "elevated": {
+        "type": "boolean"
+      }
     },
-    "required": ["title"]
+    "required": [
+      "title"
+    ]
   },
   "defaultProps": {
     "title": "任务卡片",
     "subtitle": "描述信息",
-    "elevated": true,
-    "radius": "lg"
+    "elevated": true
   },
   "states": [],
-  "slots": ["default"],
+  "slots": [
+    "default"
+  ],
   "events": [],
   "tokenBindings": {
     "surface": "color.surface",

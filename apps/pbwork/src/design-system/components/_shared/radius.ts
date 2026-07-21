@@ -5,5 +5,8 @@ export function radiusVar(size: RadiusSize = "md"): string {
 }
 
 export function radiusStyle(size: RadiusSize = "md"): Record<string, string> {
-  return { borderRadius: radiusVar(size) };
+  return {
+    "--pb-component-radius": radiusVar(size),
+    borderRadius: radiusVar(size),
+  };
 }

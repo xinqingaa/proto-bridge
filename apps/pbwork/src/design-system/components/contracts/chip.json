@@ -6,27 +6,36 @@
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "label": { "type": "string" },
+      "label": {
+        "type": "string"
+      },
       "tone": {
         "type": "string",
-        "enum": ["primary", "secondary", "success", "warning", "error"]
+        "enum": [
+          "primary",
+          "secondary",
+          "success",
+          "warning",
+          "error"
+        ]
       },
-      "radius": {
-        "type": "string",
-        "enum": ["sm", "md", "lg", "full"]
-      },
-      "elevated": { "type": "boolean" }
+      "elevated": {
+        "type": "boolean"
+      }
     },
-    "required": ["label"]
+    "required": [
+      "label"
+    ]
   },
   "defaultProps": {
     "label": "进行中",
     "tone": "primary",
-    "radius": "full",
     "elevated": false
   },
   "states": [],
-  "slots": ["default"],
+  "slots": [
+    "default"
+  ],
   "events": [],
   "tokenBindings": {
     "background": "color.primary-soft",

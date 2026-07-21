@@ -1,12 +1,5 @@
 import type { ComponentRecord } from "@/design-system/types";
 
-const radiusOptions = [
-  { label: "SM (radius.sm)", value: "sm" },
-  { label: "MD (radius.md)", value: "md" },
-  { label: "LG (radius.lg)", value: "lg" },
-  { label: "Full (radius.full)", value: "full" },
-];
-
 const toneOptions = [
   { label: "Primary (color.primary)", value: "primary" },
   { label: "Secondary (color.secondary)", value: "secondary" },
@@ -18,12 +11,6 @@ const sizeOptions = [
   { label: "小", value: "sm" },
   { label: "标准", value: "md" },
   { label: "大", value: "lg" },
-];
-
-const elevationOptions = [
-  { label: "无阴影", value: "none" },
-  { label: "卡片阴影", value: "card" },
-  { label: "浮起阴影", value: "raised" },
 ];
 
 export const componentRecords = [
@@ -48,19 +35,7 @@ export const componentRecords = [
         ],
       },
       { key: "tone", label: "语义色", control: "select", options: toneOptions },
-      {
-        key: "radius",
-        label: "圆角",
-        control: "select",
-        options: radiusOptions,
-      },
       { key: "size", label: "尺寸", control: "select", options: sizeOptions },
-      {
-        key: "elevation",
-        label: "阴影",
-        control: "select",
-        options: elevationOptions,
-      },
       { key: "loading", label: "加载中", control: "boolean" },
       { key: "block", label: "占满宽度", control: "boolean" },
       { key: "disabled", label: "禁用", control: "boolean" },
@@ -117,18 +92,6 @@ export const componentRecords = [
           { label: "透明", value: "text" },
         ],
       },
-      {
-        key: "radius",
-        label: "圆角",
-        control: "select",
-        options: radiusOptions,
-      },
-      {
-        key: "elevation",
-        label: "阴影",
-        control: "select",
-        options: elevationOptions,
-      },
       { key: "loading", label: "加载中", control: "boolean" },
       { key: "disabled", label: "禁用", control: "boolean" },
     ],
@@ -143,12 +106,6 @@ export const componentRecords = [
     controls: [
       { key: "label", label: "标签", control: "text" },
       { key: "modelValue", label: "值", control: "text" },
-      {
-        key: "radius",
-        label: "圆角",
-        control: "select",
-        options: radiusOptions.filter((item) => item.value !== "full"),
-      },
       { key: "size", label: "尺寸", control: "select", options: sizeOptions },
       { key: "disabled", label: "禁用", control: "boolean" },
     ],
@@ -171,13 +128,7 @@ export const componentRecords = [
           { label: "Warning (color.warning)", value: "warning" },
         ],
       },
-      {
-        key: "radius",
-        label: "圆角",
-        control: "select",
-        options: radiusOptions,
-      },
-      { key: "elevated", label: "阴影 (elevation.card)", control: "boolean" },
+      { key: "elevated", label: "显示阴影", control: "boolean" },
     ],
   },
   {
@@ -190,13 +141,7 @@ export const componentRecords = [
     controls: [
       { key: "title", label: "标题", control: "text" },
       { key: "subtitle", label: "副标题", control: "text" },
-      {
-        key: "radius",
-        label: "圆角",
-        control: "select",
-        options: radiusOptions.filter((item) => item.value !== "full"),
-      },
-      { key: "elevated", label: "阴影 (elevation.card)", control: "boolean" },
+      { key: "elevated", label: "显示阴影", control: "boolean" },
     ],
   },
   {
@@ -209,7 +154,7 @@ export const componentRecords = [
     controls: [
       { key: "title", label: "标题", control: "text" },
       { key: "dense", label: "紧凑", control: "boolean" },
-      { key: "elevated", label: "阴影 (elevation.card)", control: "boolean" },
+      { key: "elevated", label: "显示阴影", control: "boolean" },
       { key: "showBack", label: "显示返回键", control: "boolean" },
       { key: "showAction", label: "显示右侧操作", control: "boolean" },
       { key: "actionLabel", label: "右侧操作名称", control: "text" },
@@ -225,42 +170,20 @@ export const componentRecords = [
     controls: [
       { key: "modelValue", label: "当前 Tab", control: "text" },
       {
-        key: "background",
-        label: "容器底色",
-        control: "select",
-        options: [
-          { label: "透明", value: "transparent" },
-          { label: "表面", value: "surface" },
-          { label: "次级表面", value: "surface-variant" },
-        ],
-      },
-      {
-        key: "activeStyle",
+        key: "selectionStyle",
         label: "选中样式",
         control: "select",
         options: [
+          { label: "全圆弧", value: "pill" },
+          { label: "底部滑线", value: "underline" },
           { label: "仅文字", value: "text" },
-          { label: "柔和底色", value: "tonal" },
         ],
       },
-      {
-        key: "tone",
-        label: "选中色",
-        control: "select",
-        options: toneOptions.filter(
-          (item) => item.value === "primary" || item.value === "secondary",
-        ),
-      },
+      { key: "size", label: "尺寸", control: "select", options: sizeOptions },
       { key: "showIndicator", label: "显示底部滑线", control: "boolean" },
       { key: "showDivider", label: "显示底部分隔线", control: "boolean" },
       { key: "grow", label: "等宽铺满", control: "boolean" },
-      {
-        key: "radius",
-        label: "圆角",
-        control: "select",
-        options: [{ label: "无圆角", value: "none" }, ...radiusOptions],
-      },
-      { key: "size", label: "尺寸", control: "select", options: sizeOptions },
+      { key: "mouseSwipe", label: "鼠标拖动切换", control: "boolean" },
     ],
   },
   {
@@ -273,13 +196,7 @@ export const componentRecords = [
     controls: [
       { key: "loading", label: "加载中", control: "boolean" },
       { key: "emptyText", label: "空态文案", control: "text" },
-      {
-        key: "radius",
-        label: "圆角",
-        control: "select",
-        options: radiusOptions.filter((item) => item.value !== "full"),
-      },
-      { key: "elevated", label: "阴影 (elevation.card)", control: "boolean" },
+      { key: "elevated", label: "显示阴影", control: "boolean" },
       { key: "showActions", label: "显示行尾按钮", control: "boolean" },
     ],
   },
@@ -307,15 +224,6 @@ export const componentRecords = [
       { key: "modelValue", label: "当前选择", control: "text" },
       { key: "placeholder", label: "提示文案", control: "text" },
       { key: "size", label: "尺寸", control: "select", options: sizeOptions },
-      {
-        key: "radius",
-        label: "圆角",
-        control: "select",
-        options: [
-          { label: "无圆角", value: "none" },
-          ...radiusOptions.filter((item) => item.value !== "full"),
-        ],
-      },
       { key: "clearable", label: "允许清除", control: "boolean" },
       { key: "open", label: "展开菜单", control: "boolean" },
       { key: "loading", label: "加载中", control: "boolean" },
@@ -334,12 +242,6 @@ export const componentRecords = [
       { key: "label", label: "字段名称", control: "text" },
       { key: "modelValue", label: "输入内容", control: "text" },
       { key: "rows", label: "显示行数", control: "number" },
-      {
-        key: "radius",
-        label: "圆角",
-        control: "select",
-        options: radiusOptions.filter((item) => item.value !== "full"),
-      },
       { key: "size", label: "尺寸", control: "select", options: sizeOptions },
       { key: "disabled", label: "禁用", control: "boolean" },
     ],
@@ -524,6 +426,8 @@ export const componentRecords = [
       },
       { key: "showIndicator", label: "显示滑动指示器", control: "boolean" },
       { key: "elevated", label: "显示阴影", control: "boolean" },
+      { key: "showView", label: "显示内容视图", control: "boolean" },
+      { key: "mouseSwipe", label: "鼠标拖动切换", control: "boolean" },
     ],
   },
   {

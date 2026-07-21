@@ -8,11 +8,10 @@ const props = defineProps<{
   title: string;
   subtitle?: string;
   elevated?: boolean;
-  radius?: "sm" | "md" | "lg";
 }>();
 
 const rootRef = usePbInspectRef();
-const { title, subtitle, elevated, radius } = toRefs(props);
+const { title, subtitle, elevated } = toRefs(props);
 
 usePbInspect({
   element: rootRef,
@@ -22,12 +21,11 @@ usePbInspect({
     title: title.value,
     subtitle: subtitle.value,
     elevated: elevated.value ?? false,
-    radius: radius.value ?? "lg",
   }),
   getTokenBindings: () => ({
     surface: "color.surface",
     border: "color.border",
-    radius: `radius.${radius.value ?? "lg"}`,
+    radius: "radius.lg",
     elevation: "elevation.card",
     title: "typography.subtitle",
     subtitle: "typography.caption",
@@ -38,7 +36,7 @@ usePbInspect({
     "color.border",
     "color.on-surface",
     "color.on-surface-muted",
-    `radius.${radius.value ?? "lg"}`,
+    "radius.lg",
     "elevation.card",
     "typography.subtitle",
     "typography.caption",
@@ -55,10 +53,7 @@ usePbInspect({
     data-pb-role="section"
     variant="outlined"
     :elevation="0"
-    :style="[
-      radiusStyle(radius ?? 'lg'),
-      elevationStyle(elevated ? 'card' : 'none'),
-    ]"
+    :style="[radiusStyle('lg'), elevationStyle(elevated ? 'card' : 'none')]"
   >
     <v-card-title class="pb-card-title">{{ title }}</v-card-title>
     <v-card-subtitle v-if="subtitle" class="pb-card-subtitle">
@@ -75,6 +70,7 @@ usePbInspect({
   border-color: var(--pb-color-border, #d7dee8) !important;
   background: var(--pb-color-surface, #fff);
   color: var(--pb-color-on-surface, #1f2937);
+  box-shadow: var(--pb-component-shadow, none) !important;
 }
 .pb-card-title {
   font: var(

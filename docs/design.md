@@ -297,6 +297,24 @@ Playground 默认只在内存中修改组件 Props / State：
 - 刷新后恢复源码注册值；
 - 默认不保存、不生成代码、不生成分享链接。
 
+Playground 可调项只允许三类，**不得**提供 Token 换绑或自定义取色：
+
+| 分组 | 含义 | 例子 |
+|------|------|------|
+| 内容 | 文案与当前值 | `label`、`title`、`message`、`modelValue` |
+| 类型 | 契约内有限枚举 | `variant`、`tone`、`size`、`selectionStyle` |
+| 行为 | 开关与交互态 | `disabled`、`loading`、`elevated`、`showIndicator` |
+
+组件外观由 `tokenBindings` 固定声明，经 Theme 解析为 CSS 变量后由实现消费。切浅色/深色只改变 Token 值，不改变绑定关系。圆角、阴影等级、字体档位属于组件默认外观，不进入 Playground 自由旋钮（可用 `elevated` 等布尔行为表达有无阴影）。
+
+#### Token 规范（短）
+
+1. **权威链**：`Token.defaultValue` + `Theme.overrides` → `--pb-*` → 组件只读变量；禁止组件实例换绑。
+2. **命名**：语义 ID（如 `color.primary`、`typography.label`），禁止业务名。
+3. **Core vs 扩展**：`coreTokens.ts` 列出组件契约应绑定的 Core 集；Foundations 页标注 Core/扩展。新增组件绑定优先使用 Core。
+4. **`tokenBindings`**：contract 声明默认语义槽；状态/类型只在约定映射内切换（如 `tone`、`variant`、`selectionStyle`）。特殊值允许 `transparent` / `none`。
+5. **换肤入口**：改 Theme 覆盖值，不改组件绑定，不在 Playground 编辑 Token。
+
 “高级操作 → 更新组件示例”允许将当前配置写回源码。用户必须先看到目标文件、配置摘要和 diff，再在 `v-dialog` 中二次确认。
 
 ### 7.2 手机画板

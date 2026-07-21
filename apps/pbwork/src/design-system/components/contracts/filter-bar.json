@@ -5,22 +5,50 @@
   "propsSchema": {
     "type": "object",
     "properties": {
-      "items": { "type": "array", "items": { "type": "string" } },
-      "modelValue": { "type": "string" },
-      "showFilter": { "type": "boolean" }
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "modelValue": {
+        "type": "string"
+      },
+      "showFilter": {
+        "type": "boolean"
+      }
     }
   },
   "defaultProps": {
-    "items": ["全部", "进行中", "已超时"],
+    "items": [
+      "全部",
+      "进行中",
+      "已超时"
+    ],
     "modelValue": "进行中",
     "showFilter": true
   },
   "states": [
-    { "id": "all", "label": "全部", "props": { "modelValue": "全部" } },
-    { "id": "compact", "label": "无筛选按钮", "props": { "showFilter": false } }
+    {
+      "id": "all",
+      "label": "全部",
+      "props": {
+        "modelValue": "全部"
+      }
+    },
+    {
+      "id": "compact",
+      "label": "无筛选按钮",
+      "props": {
+        "showFilter": false
+      }
+    }
   ],
   "slots": [],
-  "events": ["update:modelValue", "filter"],
+  "events": [
+    "update:modelValue",
+    "filter"
+  ],
   "tokenBindings": {
     "active": "color.primary",
     "activeSurface": "color.primary-soft",

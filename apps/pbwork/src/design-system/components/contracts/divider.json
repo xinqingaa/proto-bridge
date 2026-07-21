@@ -5,19 +5,39 @@
   "propsSchema": {
     "type": "object",
     "properties": {
-      "label": { "type": "string" },
-      "inset": { "type": "boolean" }
+      "label": {
+        "type": "string"
+      },
+      "inset": {
+        "type": "boolean"
+      }
     }
   },
-  "defaultProps": { "label": "或者", "inset": false },
+  "defaultProps": {
+    "label": "或者",
+    "inset": false
+  },
   "states": [
-    { "id": "plain", "label": "无文案", "props": { "label": "" } },
-    { "id": "inset", "label": "缩进", "props": { "inset": true } }
+    {
+      "id": "plain",
+      "label": "无文案",
+      "props": {
+        "label": ""
+      }
+    },
+    {
+      "id": "inset",
+      "label": "缩进",
+      "props": {
+        "inset": true
+      }
+    }
   ],
   "slots": [],
   "events": [],
   "tokenBindings": {
     "line": "color.divider",
+    "text": "color.on-surface-muted",
     "inset": "spacing.md",
     "label": "typography.caption"
   }

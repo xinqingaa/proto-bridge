@@ -10,8 +10,11 @@ const props = defineProps<{
 const rootRef = usePbInspectRef();
 const { label, size } = toRefs(props);
 
+/** Pixel sizes aligned with sizing.icon-* tokens (Vuetify needs a number). */
 const sizePx = computed(() => {
-  return `var(--pb-sizing-icon-${size.value ?? "md"})`;
+  if (size.value === "sm") return 16;
+  if (size.value === "lg") return 24;
+  return 20;
 });
 
 usePbInspect({
@@ -24,12 +27,14 @@ usePbInspect({
   }),
   getTokens: () => [
     "color.primary",
+    "color.on-surface-muted",
     `sizing.icon-${size.value ?? "md"}`,
+    "motion.duration-slow",
     "typography.caption",
   ],
   getTokenBindings: () => ({
     active: "color.primary",
-    track: "color.primary-soft",
+    text: "color.on-surface-muted",
     size: `sizing.icon-${size.value ?? "md"}`,
     motion: "motion.duration-slow",
     label: "typography.caption",
@@ -44,6 +49,7 @@ usePbInspect({
       color="primary"
       :size="sizePx"
       :width="3"
+      aria-hidden="true"
     />
     <span v-if="label">{{ label }}</span>
   </div>

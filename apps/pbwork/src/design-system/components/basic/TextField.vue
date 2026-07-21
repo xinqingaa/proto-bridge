@@ -10,13 +10,12 @@ const props = defineProps<{
   label: string;
   modelValue?: string;
   disabled?: boolean;
-  radius?: "sm" | "md" | "lg";
   size?: ComponentSize;
 }>();
 defineEmits<{ "update:modelValue": [value: string] }>();
 
 const rootRef = usePbInspectRef();
-const { label, modelValue, disabled, radius, size } = toRefs(props);
+const { label, modelValue, disabled, size } = toRefs(props);
 
 usePbInspect({
   element: rootRef,
@@ -26,13 +25,12 @@ usePbInspect({
     label: label.value,
     modelValue: modelValue.value ?? "",
     disabled: disabled.value ?? false,
-    radius: radius.value ?? "md",
     size: size.value ?? "md",
   }),
   getTokenBindings: () => ({
     border: "color.border",
     surface: "color.surface",
-    radius: `radius.${radius.value ?? "md"}`,
+    radius: "radius.md",
     height: `sizing.control-${size.value ?? "md"}`,
     label: "typography.caption",
     input: "typography.content",
@@ -41,7 +39,7 @@ usePbInspect({
     "color.border",
     "color.surface",
     "color.on-surface",
-    `radius.${radius.value ?? "md"}`,
+    "radius.md",
     "typography.caption",
     "typography.content",
     "spacing.xs",
@@ -53,9 +51,8 @@ usePbInspect({
 <template>
   <v-text-field
     ref="rootRef"
-    class="pb-field"
+    class="pb-field radius-md"
     data-pb-id="ds.text-field"
-    :class="`radius-${radius ?? 'md'}`"
     :style="controlSizeStyle(size ?? 'md')"
     :label="label"
     :model-value="modelValue ?? ''"

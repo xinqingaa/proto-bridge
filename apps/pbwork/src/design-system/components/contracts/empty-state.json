@@ -5,11 +5,19 @@
   "propsSchema": {
     "type": "object",
     "properties": {
-      "title": { "type": "string" },
-      "description": { "type": "string" },
-      "actionLabel": { "type": "string" }
+      "title": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "actionLabel": {
+        "type": "string"
+      }
     },
-    "required": ["title"]
+    "required": [
+      "title"
+    ]
   },
   "defaultProps": {
     "title": "暂无工单",
@@ -20,11 +28,15 @@
     {
       "id": "without-action",
       "label": "无操作",
-      "props": { "actionLabel": "" }
+      "props": {
+        "actionLabel": ""
+      }
     }
   ],
   "slots": [],
-  "events": ["action"],
+  "events": [
+    "action"
+  ],
   "tokenBindings": {
     "iconSurface": "color.primary-soft",
     "icon": "color.primary",
@@ -32,6 +44,8 @@
     "description": "color.on-surface-muted",
     "radius": "radius.full",
     "spacing": "spacing.lg",
-    "typography": "typography.subtitle"
+    "iconSize": "sizing.icon-lg",
+    "typography": "typography.subtitle",
+    "body": "typography.content"
   }
 }

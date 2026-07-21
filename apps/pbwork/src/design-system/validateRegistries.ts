@@ -285,7 +285,7 @@ function validateComponentContractPair(
       });
     }
     bindingKeys.add(slot);
-    if (!tokenIds.has(tokenId)) {
+    if (!tokenIds.has(tokenId) && tokenId !== "transparent" && tokenId !== "none") {
       pushError(errors, {
         resourceType: "component",
         resourceId: record.id,

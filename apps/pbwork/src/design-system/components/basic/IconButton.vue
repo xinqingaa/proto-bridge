@@ -4,14 +4,9 @@ import { MoreHorizontal, Plus, Search, Settings } from "lucide-vue-next";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import {
   elevationStyle,
-  elevationToken,
-  type ComponentElevation,
   type ComponentSize,
 } from "@/design-system/components/_shared/appearance";
-import {
-  radiusStyle,
-  type RadiusSize,
-} from "@/design-system/components/_shared/radius";
+import { radiusStyle } from "@/design-system/components/_shared/radius";
 
 const props = defineProps<{
   ariaLabel: string;
@@ -19,32 +14,15 @@ const props = defineProps<{
   size?: ComponentSize;
   tone?: "primary" | "secondary" | "neutral";
   variant?: "tonal" | "flat" | "outlined" | "text";
-  radius?: RadiusSize;
-  elevation?: ComponentElevation;
   loading?: boolean;
-  /** @deprecated Use elevation instead. */
-  elevated?: boolean;
   disabled?: boolean;
 }>();
 defineEmits<{ click: [] }>();
 
 const rootRef = usePbInspectRef();
-const {
-  ariaLabel,
-  icon,
-  size,
-  tone,
-  variant,
-  radius,
-  elevation,
-  elevated,
-  loading,
-  disabled,
-} = toRefs(props);
+const { ariaLabel, icon, size, tone, variant, loading, disabled } =
+  toRefs(props);
 
-const resolvedElevation = computed<ComponentElevation>(
-  () => elevation.value ?? (elevated.value ? "card" : "none"),
-);
 const resolvedVariant = computed(() => variant.value ?? "tonal");
 
 const iconComponent = computed(() => {
@@ -81,8 +59,6 @@ usePbInspect({
     size: size.value ?? "md",
     tone: tone.value ?? "neutral",
     variant: resolvedVariant.value,
-    radius: radius.value ?? "full",
-    elevation: resolvedElevation.value,
     loading: loading.value ?? false,
     disabled: disabled.value ?? false,
   }),
@@ -91,9 +67,12 @@ usePbInspect({
     return {
       color: t === "neutral" ? "color.on-surface" : `color.${t}`,
       background: t === "neutral" ? "color.surface-variant" : `color.${t}-soft`,
-      radius: `radius.${radius.value ?? "full"}`,
-      elevation: elevationToken(resolvedElevation.value),
+      radius: "radius.full",
+      elevation: "elevation.none",
       size: `sizing.control-${size.value ?? "md"}`,
+      target: "sizing.touch",
+      duration: "motion.duration-fast",
+      easing: "motion.easing-standard",
     };
   },
   getTokens: () => [
@@ -102,10 +81,12 @@ usePbInspect({
     "color.secondary",
     "color.on-surface",
     "color.surface-variant",
-    `radius.${radius.value ?? "full"}`,
-    elevationToken(resolvedElevation.value),
+    "radius.full",
+    "elevation.none",
     `sizing.control-${size.value ?? "md"}`,
     "sizing.touch",
+    "motion.duration-fast",
+    "motion.easing-standard",
   ],
 });
 </script>
@@ -125,8 +106,8 @@ usePbInspect({
     :elevation="0"
     :aria-label="ariaLabel"
     :disabled="disabled ?? false"
-    :rounded="(radius ?? 'full') === 'full' ? 'circle' : (radius ?? 'md')"
-    :style="[radiusStyle(radius ?? 'full'), elevationStyle(resolvedElevation)]"
+    rounded="circle"
+    :style="[radiusStyle('full'), elevationStyle('none')]"
     @click="$emit('click')"
   >
     <component :is="iconComponent" :size="iconSize" />
@@ -137,6 +118,7 @@ usePbInspect({
 .pb-icon-button {
   min-width: var(--pb-sizing-touch, 44px) !important;
   min-height: var(--pb-sizing-touch, 44px) !important;
+  box-shadow: var(--pb-component-shadow, none) !important;
   transition:
     box-shadow var(--pb-motion-duration-fast, 120ms)
       var(--pb-motion-easing-standard),
@@ -144,7 +126,7 @@ usePbInspect({
       var(--pb-motion-easing-standard);
 }
 .pb-icon-button:active:not(.v-btn--disabled) {
-  transform: scale(0.94);
+  transform: scale(0.96);
 }
 .pb-icon-button.tone-neutral {
   color: var(--pb-color-on-surface, #1f2937);

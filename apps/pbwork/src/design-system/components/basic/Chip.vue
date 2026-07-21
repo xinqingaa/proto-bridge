@@ -7,12 +7,11 @@ import { elevationStyle } from "@/design-system/components/_shared/appearance";
 const props = defineProps<{
   label: string;
   tone?: "primary" | "secondary" | "success" | "warning" | "error";
-  radius?: "sm" | "md" | "lg" | "full";
   elevated?: boolean;
 }>();
 
 const rootRef = usePbInspectRef();
-const { label, tone, radius, elevated } = toRefs(props);
+const { label, tone, elevated } = toRefs(props);
 
 function softTokenForTone(value: string | undefined): `color.${string}-soft` {
   const t = value ?? "primary";
@@ -26,20 +25,19 @@ usePbInspect({
   getProps: () => ({
     label: label.value,
     tone: tone.value ?? "primary",
-    radius: radius.value ?? "full",
     elevated: elevated.value ?? false,
   }),
   getTokenBindings: () => ({
     background: softTokenForTone(tone.value),
     color: `color.${tone.value ?? "primary"}`,
-    radius: `radius.${radius.value ?? "full"}`,
+    radius: "radius.full",
     elevation: "elevation.card",
     typography: "typography.caption",
   }),
   getTokens: () => [
     softTokenForTone(tone.value),
     `color.${tone.value ?? "primary"}`,
-    `radius.${radius.value ?? "full"}`,
+    "radius.full",
     "elevation.card",
     "typography.caption",
     "spacing.sm",
@@ -56,11 +54,8 @@ usePbInspect({
     variant="tonal"
     size="small"
     :elevation="0"
-    :rounded="(radius ?? 'full') === 'full' ? 'pill' : (radius ?? 'md')"
-    :style="[
-      radiusStyle((radius ?? 'full') as 'sm' | 'md' | 'lg' | 'full'),
-      elevationStyle(elevated ? 'card' : 'none'),
-    ]"
+    rounded="pill"
+    :style="[radiusStyle('full'), elevationStyle(elevated ? 'card' : 'none')]"
   >
     {{ label }}
   </v-chip>
@@ -71,5 +66,6 @@ usePbInspect({
   font: var(--pb-typography-caption, 400 12px/1.4 Inter, system-ui, sans-serif);
   text-transform: none;
   letter-spacing: normal;
+  box-shadow: var(--pb-component-shadow, none) !important;
 }
 </style>

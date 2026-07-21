@@ -6,24 +6,39 @@
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "label": { "type": "string" },
-      "modelValue": { "type": "string" },
-      "disabled": { "type": "boolean" },
-      "radius": { "type": "string", "enum": ["sm", "md", "lg"] },
-      "size": { "type": "string", "enum": ["sm", "md", "lg"] }
+      "label": {
+        "type": "string"
+      },
+      "modelValue": {
+        "type": "string"
+      },
+      "disabled": {
+        "type": "boolean"
+      },
+      "size": {
+        "type": "string",
+        "enum": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      }
     },
-    "required": ["label"]
+    "required": [
+      "label"
+    ]
   },
   "defaultProps": {
     "label": "标题",
     "modelValue": "",
     "disabled": false,
-    "radius": "md",
     "size": "md"
   },
   "states": [],
   "slots": [],
-  "events": ["update:modelValue"],
+  "events": [
+    "update:modelValue"
+  ],
   "tokenBindings": {
     "border": "color.border",
     "surface": "color.surface",

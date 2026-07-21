@@ -11,14 +11,13 @@ const props = defineProps<{
   label: string;
   modelValue?: string;
   rows?: number;
-  radius?: "sm" | "md" | "lg";
   size?: ComponentSize;
   disabled?: boolean;
 }>();
 defineEmits<{ "update:modelValue": [string] }>();
 
 const rootRef = usePbInspectRef();
-const { label, modelValue, rows, radius, size, disabled } = toRefs(props);
+const { label, modelValue, rows, size, disabled } = toRefs(props);
 
 usePbInspect({
   element: rootRef,
@@ -28,7 +27,6 @@ usePbInspect({
     label: label.value,
     modelValue: modelValue.value ?? "",
     rows: rows.value ?? 3,
-    radius: radius.value ?? "md",
     size: size.value ?? "md",
     disabled: disabled.value ?? false,
   }),
@@ -44,7 +42,7 @@ usePbInspect({
     surface: "color.surface",
     border: "color.border",
     focus: "color.primary",
-    radius: `radius.${radius.value ?? "md"}`,
+    radius: "radius.md",
     height: `sizing.control-${size.value ?? "md"}`,
     text: "typography.content",
   }),
@@ -60,15 +58,29 @@ usePbInspect({
     :model-value="modelValue ?? ''"
     :rows="rows ?? 3"
     :disabled="disabled ?? false"
-    :style="[radiusStyle(radius ?? 'md'), controlSizeStyle(size ?? 'md')]"
+    :style="[radiusStyle('md'), controlSizeStyle(size ?? 'md')]"
     @update:model-value="$emit('update:modelValue', String($event ?? ''))"
   />
 </template>
 
 <style scoped>
 .pb-textarea :deep(.v-field) {
-  --v-field-border-radius: inherit;
-  border-radius: inherit;
+  --v-field-border-radius: var(
+    --pb-component-radius,
+    var(--pb-radius-md, 12px)
+  );
+  border-radius: var(
+    --pb-component-radius,
+    var(--pb-radius-md, 12px)
+  ) !important;
   background: var(--pb-color-surface, #fff);
+}
+.pb-textarea :deep(.v-field__outline__start) {
+  border-radius: var(--pb-component-radius, var(--pb-radius-md, 12px)) 0 0
+    var(--pb-component-radius, var(--pb-radius-md, 12px)) !important;
+}
+.pb-textarea :deep(.v-field__outline__end) {
+  border-radius: 0 var(--pb-component-radius, var(--pb-radius-md, 12px))
+    var(--pb-component-radius, var(--pb-radius-md, 12px)) 0 !important;
 }
 </style>

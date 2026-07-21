@@ -8,6 +8,7 @@ import {
 } from "@/design-system/resolveThemeTokens";
 import type { TokenCategory, TokenRecord } from "@/design-system/types";
 import { TOKEN_CATEGORIES } from "@/design-system/types";
+import { isCoreTokenId } from "@/design-system/coreTokens";
 
 const props = defineProps<{
   category: TokenCategory;
@@ -53,6 +54,10 @@ const tokens = computed(() => {
       (token.description ?? "").toLowerCase().includes(q),
   );
 });
+
+const coreCount = computed(
+  () => tokens.value.filter((token) => isCoreTokenId(token.id)).length,
+);
 
 const lightResolved = computed(() => resolveThemeTokens("light"));
 const darkResolved = computed(() => resolveThemeTokens("dark"));
@@ -105,7 +110,7 @@ function selectToken(id: string) {
   <ResourcePageShell
     eyebrow="设计令牌"
     :title="categoryLabels[category]"
-    description="浏览 Token 的当前主题值、CSS Variable 与用途；浅色和深色差异请在主题页集中比较。"
+    description="浏览 Token 的当前主题值、CSS Variable 与用途。Core 令牌是组件契约应绑定的语义集；其余为扩展。"
   >
     <template #stats>
       <button
@@ -119,6 +124,10 @@ function selectToken(id: string) {
         <strong>{{ item.count }}</strong>
         <span>{{ item.label }}</span>
       </button>
+      <div class="stat-chip is-meta">
+        <strong>{{ coreCount }}</strong>
+        <span>本类 Core</span>
+      </div>
     </template>
 
     <template #toolbar>
@@ -215,6 +224,7 @@ function selectToken(id: string) {
           <span>{{ resolved[token.id] }}</span>
         </div>
         <strong>{{ token.label }}</strong>
+        <span v-if="isCoreTokenId(token.id)" class="tier-badge">Core</span>
         <code>{{ token.id }}</code>
       </button>
     </div>
@@ -223,6 +233,7 @@ function selectToken(id: string) {
       <div class="token-table-head" role="row">
         <span>名称</span>
         <span>Token ID</span>
+        <span>层级</span>
         <span>{{ themeId === "light" ? "浅色值" : "深色值" }}</span>
         <span>来源</span>
       </div>
@@ -237,6 +248,7 @@ function selectToken(id: string) {
       >
         <strong>{{ token.label }}</strong>
         <code>{{ token.id }}</code>
+        <span>{{ isCoreTokenId(token.id) ? "Core" : "扩展" }}</span>
         <span>{{ resolved[token.id] }}</span>
         <span>{{ themeId === "dark" && darkResolved[token.id] !== lightResolved[token.id] ? "主题覆盖" : "基础值" }}</span>
       </button>
@@ -263,6 +275,10 @@ function selectToken(id: string) {
           <div>
             <dt>类型</dt>
             <dd>{{ categoryLabels[selected.category] }}</dd>
+          </div>
+          <div>
+            <dt>层级</dt>
+            <dd>{{ isCoreTokenId(selected.id) ? "Core（组件应绑定）" : "扩展" }}</dd>
           </div>
           <div>
             <dt>{{ themeId === "light" ? "浅色主题值" : "深色主题值" }}</dt>
@@ -417,6 +433,19 @@ function selectToken(id: string) {
   text-align: center;
   overflow: hidden;
 }
+.stat-chip.is-meta {
+  cursor: default;
+  opacity: 0.92;
+}
+.tier-badge {
+  justify-self: start;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, rgb(var(--v-theme-primary)) 14%, transparent);
+  color: rgb(var(--v-theme-primary));
+  font-size: 0.625rem;
+  font-weight: 700;
+}
 .token-card strong {
   font-size: 0.8125rem;
 }
@@ -435,7 +464,7 @@ function selectToken(id: string) {
 .token-table-head,
 .token-table-row {
   display: grid;
-  grid-template-columns: minmax(100px, 0.8fr) minmax(160px, 1.2fr) 1fr 1fr;
+  grid-template-columns: minmax(100px, 0.8fr) minmax(160px, 1.2fr) 72px 1fr 1fr;
   gap: 12px;
   padding: 10px 12px;
   text-align: left;

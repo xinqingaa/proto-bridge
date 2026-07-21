@@ -5,11 +5,19 @@
   "propsSchema": {
     "type": "object",
     "properties": {
-      "label": { "type": "string" },
-      "modelValue": { "type": "boolean" },
-      "disabled": { "type": "boolean" }
+      "label": {
+        "type": "string"
+      },
+      "modelValue": {
+        "type": "boolean"
+      },
+      "disabled": {
+        "type": "boolean"
+      }
     },
-    "required": ["label"]
+    "required": [
+      "label"
+    ]
   },
   "defaultProps": {
     "label": "仅查看高优先级",
@@ -17,14 +25,29 @@
     "disabled": false
   },
   "states": [
-    { "id": "unchecked", "label": "未选中", "props": { "modelValue": false } },
-    { "id": "disabled", "label": "禁用", "props": { "disabled": true } }
+    {
+      "id": "unchecked",
+      "label": "未选中",
+      "props": {
+        "modelValue": false
+      }
+    },
+    {
+      "id": "disabled",
+      "label": "禁用",
+      "props": {
+        "disabled": true
+      }
+    }
   ],
   "slots": [],
-  "events": ["update:modelValue"],
+  "events": [
+    "update:modelValue"
+  ],
   "tokenBindings": {
     "selected": "color.primary",
     "onSelected": "color.on-primary",
+    "text": "color.on-surface",
     "target": "sizing.touch",
     "radius": "radius.xs",
     "label": "typography.content"

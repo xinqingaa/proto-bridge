@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, toRefs } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
+import { usePointerSwipe } from "@/design-system/components/_shared/usePointerSwipe";
 
 /** Matches `motion.duration-slow` (320ms) for v-window's numeric prop. */
 const SLIDE_DURATION_MS = 320;
@@ -8,15 +9,13 @@ const SLIDE_DURATION_MS = 320;
 const props = defineProps<{
   modelValue?: string;
   items: Array<{ value: string; label: string }>;
-  background?: "transparent" | "surface" | "surface-variant";
-  activeStyle?: "text" | "tonal";
-  tone?: "primary" | "secondary";
+  selectionStyle?: "pill" | "underline" | "text";
   showIndicator?: boolean;
   showDivider?: boolean;
   grow?: boolean;
   align?: "start" | "center";
-  radius?: "none" | "sm" | "md" | "lg" | "full";
   size?: "sm" | "md" | "lg";
+  mouseSwipe?: boolean;
 }>();
 const emit = defineEmits<{ "update:modelValue": [value: string] }>();
 
@@ -24,28 +23,34 @@ const rootRef = usePbInspectRef();
 const {
   modelValue,
   items,
-  background,
-  activeStyle,
-  tone,
+  selectionStyle,
   showIndicator,
   showDivider,
   grow,
   align,
-  radius,
   size,
+  mouseSwipe,
 } = toRefs(props);
 
+const resolvedSelectionStyle = computed(
+  () => selectionStyle.value ?? "pill",
+);
+const indicatorVisible = computed(
+  () => showIndicator.value ?? resolvedSelectionStyle.value === "underline",
+);
+
 const tabStyle = computed(() => ({
-  "--pb-tabs-background":
-    background.value === "transparent"
-      ? "transparent"
-      : `var(--pb-color-${background.value ?? "surface"})`,
   "--pb-tabs-active-background":
-    activeStyle.value === "tonal"
-      ? `var(--pb-color-${tone.value ?? "primary"}-soft)`
+    resolvedSelectionStyle.value === "pill"
+      ? "var(--pb-color-primary-soft)"
       : "transparent",
-  "--pb-tabs-active-color": `var(--pb-color-${tone.value ?? "primary"})`,
-  "--pb-tabs-radius": `var(--pb-radius-${radius.value ?? "md"})`,
+  "--pb-tabs-active-color": "var(--pb-color-primary)",
+  "--pb-tabs-inactive-color": "var(--pb-color-on-surface-muted)",
+  "--pb-tabs-typography": "var(--pb-typography-label)",
+  "--pb-tabs-radius":
+    resolvedSelectionStyle.value === "pill"
+      ? "var(--pb-radius-full)"
+      : "var(--pb-radius-md)",
   "--pb-tabs-height": `var(--pb-sizing-control-${size.value ?? "md"})`,
 }));
 
@@ -55,6 +60,14 @@ const tab = computed({
     if (typeof value === "string") emit("update:modelValue", value);
   },
 });
+const tabValues = computed(() => items.value.map((item) => item.value));
+const swipeEnabled = computed(() => mouseSwipe.value ?? true);
+const swipe = usePointerSwipe(
+  tabValues,
+  tab,
+  (value) => emit("update:modelValue", value),
+  swipeEnabled,
+);
 
 usePbInspect({
   element: rootRef,
@@ -64,31 +77,29 @@ usePbInspect({
     modelValue: modelValue.value,
     itemCount: items.value.length,
     hasPanels: true,
-    background: background.value ?? "transparent",
-    activeStyle: activeStyle.value ?? "text",
-    tone: tone.value ?? "primary",
-    showIndicator: showIndicator.value ?? true,
+    selectionStyle: resolvedSelectionStyle.value,
+    showIndicator: indicatorVisible.value,
     showDivider: showDivider.value ?? false,
     grow: grow.value ?? false,
     align: align.value ?? "start",
-    radius: radius.value ?? "md",
     size: size.value ?? "md",
+    mouseSwipe: swipeEnabled.value,
   }),
   getTokenBindings: () => ({
     indicator: "color.primary",
     activeBackground:
-      activeStyle.value === "tonal"
-        ? `color.${tone.value ?? "primary"}-soft`
+      resolvedSelectionStyle.value === "pill"
+        ? "color.primary-soft"
         : "transparent",
+    activeColor: "color.primary",
     inactiveColor: "color.on-surface-muted",
-    surface:
-      background.value === "transparent"
-        ? "transparent"
-        : `color.${background.value ?? "surface"}`,
-    border: showDivider.value ? "color.divider" : "transparent",
-    radius: `radius.${radius.value ?? "md"}`,
+    border: showDivider.value ? "border.hairline" : "transparent",
+    radius:
+      resolvedSelectionStyle.value === "pill" ? "radius.full" : "radius.md",
     height: `sizing.control-${size.value ?? "md"}`,
-    typography: "typography.content",
+    target: "sizing.touch",
+    typography: "typography.label",
+    panel: "typography.caption",
     duration: "motion.duration-slow",
     easing: "motion.easing-standard",
   }),
@@ -96,12 +107,13 @@ usePbInspect({
     "color.primary",
     "color.primary-soft",
     "color.on-surface-muted",
-    "color.surface",
-    "color.border",
+    "border.hairline",
+    "radius.full",
     "radius.md",
-    "typography.content",
-    "spacing.xs",
-    "spacing.md",
+    `sizing.control-${size.value ?? "md"}`,
+    "sizing.touch",
+    "typography.label",
+    "typography.caption",
     "motion.duration-slow",
     "motion.easing-standard",
   ],
@@ -115,9 +127,11 @@ usePbInspect({
     data-pb-role="tab-bar"
     class="pb-tabs tab-bar"
     :class="{
-      'has-indicator': showIndicator ?? true,
+      'has-indicator': indicatorVisible,
       'has-divider': showDivider ?? false,
-      'is-tonal': activeStyle === 'tonal',
+      'style-pill': resolvedSelectionStyle === 'pill',
+      'style-underline': resolvedSelectionStyle === 'underline',
+      'style-text': resolvedSelectionStyle === 'text',
     }"
     :style="tabStyle"
   >
@@ -125,7 +139,7 @@ usePbInspect({
       v-model="tab"
       class="pb-tab-bar"
       density="compact"
-      :color="tone ?? 'primary'"
+      color="primary"
       :align-tabs="align ?? 'start'"
       :grow="grow ?? false"
     >
@@ -142,8 +156,14 @@ usePbInspect({
     <v-window
       v-model="tab"
       class="pb-tab-window"
+      :class="{ 'is-dragging': swipe.dragging.value }"
+      :style="swipe.dragStyle.value"
       direction="horizontal"
       :transition-duration="SLIDE_DURATION_MS"
+      @pointerdown="swipe.onPointerDown"
+      @pointermove="swipe.onPointerMove"
+      @pointerup="swipe.onPointerUp"
+      @pointercancel="swipe.onPointerCancel"
     >
       <v-window-item
         v-for="item in items"
@@ -165,7 +185,7 @@ usePbInspect({
   display: grid;
   gap: var(--pb-spacing-sm-plus, 12px);
   min-width: 0;
-  background: var(--pb-tabs-background, transparent);
+  background: transparent;
 }
 .pb-tab-bar {
   background: transparent;
@@ -176,14 +196,24 @@ usePbInspect({
 .pb-tab-bar :deep(.v-tab) {
   min-height: max(var(--pb-tabs-height), var(--pb-sizing-touch, 44px));
   padding: 0 var(--pb-spacing-md, 16px);
-  border-radius: var(--pb-tabs-radius, var(--pb-radius-md, 12px));
-  color: var(--pb-color-on-surface-muted, #1f29379e);
-  font: var(--pb-typography-content, 400 14px/1.5 Inter, system-ui, sans-serif);
+  border-radius: var(--pb-tabs-radius, var(--pb-radius-full));
+  color: var(--pb-tabs-inactive-color, var(--pb-color-on-surface-muted));
+  font: var(--pb-tabs-typography, var(--pb-typography-label));
   letter-spacing: normal;
   text-transform: none;
 }
-.pb-tab-bar :deep(.v-tab--selected) {
+.pb-tabs.style-pill .pb-tab-bar :deep(.v-tab--selected) {
   background: var(--pb-tabs-active-background, transparent);
+  color: var(--pb-tabs-active-color, var(--pb-color-primary));
+  font-weight: 600;
+  overflow: hidden;
+}
+.pb-tabs.style-pill .pb-tab-bar :deep(.v-tab--selected .v-btn__overlay),
+.pb-tabs.style-pill .pb-tab-bar :deep(.v-tab--selected .v-btn__underlay) {
+  border-radius: inherit;
+}
+.pb-tabs.style-underline .pb-tab-bar :deep(.v-tab--selected),
+.pb-tabs.style-text .pb-tab-bar :deep(.v-tab--selected) {
   color: var(--pb-tabs-active-color, var(--pb-color-primary));
   font-weight: 600;
 }
@@ -200,8 +230,17 @@ usePbInspect({
 }
 .pb-tab-window {
   min-width: 0;
-  /* Peer slide — bind Vuetify window transition to motion tokens */
+  cursor: grab;
+  touch-action: pan-y;
   --v-window-transition-duration: var(--pb-motion-duration-slow, 320ms);
+}
+.pb-tab-window.is-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+.pb-tab-window.is-dragging :deep(.v-window__container) {
+  transform: translateX(var(--pb-swipe-offset, 0));
+  transition: none !important;
 }
 .pb-tab-window :deep(.v-window__container),
 .pb-tab-window :deep(.v-window-x-transition-enter-active),
