@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import ResourcePageShell from "@/workbench/views/ResourcePageShell.vue";
+import WorkbenchStatChip from "@/workbench/ui/WorkbenchStatChip.vue";
 import { loadTokens } from "@/design-system/loaders";
 import {
   normalizeTokenCssVarName,
   resolveThemeTokens,
 } from "@/design-system/resolveThemeTokens";
 import type { TokenCategory, TokenRecord } from "@/design-system/types";
-import { TOKEN_CATEGORIES } from "@/design-system/types";
 import { isCoreTokenId } from "@/design-system/coreTokens";
+import {
+  TOKEN_CATEGORY_META,
+  tokenCategoryDescription,
+} from "@/design-system/tokenCategories";
 
 const props = defineProps<{
   category: TokenCategory;
@@ -19,32 +23,19 @@ const themeId = ref<"light" | "dark">("light");
 const displayMode = ref<"grid" | "table">("grid");
 const selectedId = ref<string | null>(null);
 
-const categoryLabels: Record<TokenCategory, string> = {
-  color: "颜色",
-  typography: "字体",
-  spacing: "间距",
-  sizing: "尺寸",
-  radius: "圆角",
-  border: "边框",
-  elevation: "阴影",
-  opacity: "透明度",
-  motion: "动效",
-};
-
 const allTokens = computed(() => loadTokens());
-const categoryCounts = computed(() =>
-  TOKEN_CATEGORIES.map((category) => ({
-    category,
-    label: categoryLabels[category],
-    count: allTokens.value.filter((token) => token.category === category)
-      .length,
-  })),
+const pageDescription = computed(() => tokenCategoryDescription(props.category));
+
+const categoryTokens = computed(() =>
+  allTokens.value.filter((token) => token.category === props.category),
+);
+const categoryTotal = computed(() => categoryTokens.value.length);
+const coreCount = computed(
+  () => categoryTokens.value.filter((token) => isCoreTokenId(token.id)).length,
 );
 
 const tokens = computed(() => {
-  const list = allTokens.value.filter(
-    (token) => token.category === props.category,
-  );
+  const list = categoryTokens.value;
   const q = query.value.trim().toLowerCase();
   if (!q) return list;
   return list.filter(
@@ -55,15 +46,10 @@ const tokens = computed(() => {
   );
 });
 
-const coreCount = computed(
-  () => tokens.value.filter((token) => isCoreTokenId(token.id)).length,
+const themeLabel = computed(() =>
+  themeId.value === "light" ? "浅色" : "深色",
 );
-
-const lightResolved = computed(() => resolveThemeTokens("light"));
-const darkResolved = computed(() => resolveThemeTokens("dark"));
-const resolved = computed(() =>
-  themeId.value === "light" ? lightResolved.value : darkResolved.value,
-);
+const resolved = computed(() => resolveThemeTokens(themeId.value));
 
 const selected = computed(
   () =>
@@ -90,13 +76,6 @@ watch(
   { immediate: true },
 );
 
-function parseTypography(value: unknown): { weight: string; size: string } {
-  const text = String(value);
-  const match = text.match(/^(\d+)\s+(\d+(?:\.\d+)?px)/);
-  if (!match) return { weight: "—", size: "—" };
-  return { weight: match[1]!, size: match[2]! };
-}
-
 function tokenCssVar(token: TokenRecord): string {
   return normalizeTokenCssVarName(token.id);
 }
@@ -104,30 +83,22 @@ function tokenCssVar(token: TokenRecord): string {
 function selectToken(id: string) {
   selectedId.value = id;
 }
+
+function formatValue(value: unknown): string {
+  return String(value ?? "—");
+}
 </script>
 
 <template>
   <ResourcePageShell
     eyebrow="设计令牌"
-    :title="categoryLabels[category]"
-    description="浏览 Token 的当前主题值、CSS Variable 与用途。Core 令牌是组件契约应绑定的语义集；其余为扩展。"
+    :title="TOKEN_CATEGORY_META[category].label"
+    :description="pageDescription"
+    with-aside
   >
     <template #stats>
-      <button
-        v-for="item in categoryCounts"
-        :key="item.category"
-        type="button"
-        class="stat-chip"
-        :class="{ 'is-active': item.category === category }"
-        @click="$router.push(`/workbench/foundations/tokens/${item.category}`)"
-      >
-        <strong>{{ item.count }}</strong>
-        <span>{{ item.label }}</span>
-      </button>
-      <div class="stat-chip is-meta">
-        <strong>{{ coreCount }}</strong>
-        <span>本类 Core</span>
-      </div>
+      <WorkbenchStatChip :value="categoryTotal" label="项" />
+      <WorkbenchStatChip :value="coreCount" label="个 Core" />
     </template>
 
     <template #toolbar>
@@ -148,7 +119,7 @@ function selectToken(id: string) {
           variant="outlined"
           divided
           mandatory
-          aria-label="突出显示的主题"
+          aria-label="主题"
         >
           <v-btn value="light" size="small">浅色</v-btn>
           <v-btn value="dark" size="small">深色</v-btn>
@@ -172,165 +143,133 @@ function selectToken(id: string) {
       <div class="section-heading compact-heading">
         <div>
           <p class="section-kicker">Token 对照</p>
-          <h2 id="token-list-title">{{ categoryLabels[category] }}值</h2>
+          <h2 id="token-list-title">{{ TOKEN_CATEGORY_META[category].label }}值</h2>
         </div>
-        <span>浅色与深色始终同时可见</span>
+        <span>通过工具栏切换 {{ themeLabel }}主题</span>
       </div>
 
-    <div v-if="displayMode === 'grid'" class="token-grid">
-      <button
-        v-for="token in tokens"
-        :key="token.id"
-        type="button"
-        class="token-card"
-        :class="{ 'is-selected': selected?.id === token.id }"
-        @click="selectToken(token.id)"
-      >
-        <div v-if="category === 'color'" class="single-swatch">
-          <span :style="{ background: String(resolved[token.id]) }" />
-        </div>
-        <div
-          v-else-if="category === 'elevation'"
-          class="elevation-box"
-          :style="{ boxShadow: String(resolved[token.id]) }"
-        />
-        <div
-          v-else-if="category === 'spacing' || category === 'radius' || category === 'sizing'"
-          class="metric-box"
-          :style="
-            category === 'spacing' || category === 'sizing'
-              ? {
-                  width:
-                    typeof resolved[token.id] === 'number'
-                      ? `${resolved[token.id]}px`
-                      : String(resolved[token.id]),
-                }
-              : {
-                  borderRadius:
-                    typeof resolved[token.id] === 'number'
-                      ? `${resolved[token.id]}px`
-                      : String(resolved[token.id]),
-                }
-          "
-        />
-        <p
-          v-else-if="category === 'typography'"
-          class="typo-sample"
-          :style="{ font: String(resolved[token.id]) }"
+      <div v-if="displayMode === 'grid'" class="token-grid">
+        <button
+          v-for="token in tokens"
+          :key="token.id"
+          type="button"
+          class="token-card"
+          :class="{ 'is-selected': selected?.id === token.id }"
+          @click="selectToken(token.id)"
         >
-          Aa
-        </p>
-        <div v-else class="abstract-sample">
-          <span>{{ resolved[token.id] }}</span>
+          <div v-if="category === 'color'" class="single-swatch">
+            <span :style="{ background: String(resolved[token.id]) }" />
+          </div>
+          <div
+            v-else-if="category === 'elevation'"
+            class="elevation-box"
+            :style="{ boxShadow: String(resolved[token.id]) }"
+          />
+          <div
+            v-else-if="
+              category === 'spacing' ||
+              category === 'radius' ||
+              category === 'sizing'
+            "
+            class="metric-box"
+            :style="
+              category === 'spacing' || category === 'sizing'
+                ? {
+                    width:
+                      typeof resolved[token.id] === 'number'
+                        ? `${resolved[token.id]}px`
+                        : String(resolved[token.id]),
+                  }
+                : {
+                    borderRadius:
+                      typeof resolved[token.id] === 'number'
+                        ? `${resolved[token.id]}px`
+                        : String(resolved[token.id]),
+                  }
+            "
+          />
+          <p
+            v-else-if="category === 'typography'"
+            class="typo-sample"
+            :style="{ font: String(resolved[token.id]) }"
+          >
+            Aa
+          </p>
+          <div v-else class="abstract-sample">
+            <span>{{ resolved[token.id] }}</span>
+          </div>
+          <strong>{{ token.label }}</strong>
+          <code>{{ token.id }}</code>
+        </button>
+      </div>
+
+      <div v-else class="token-table" role="table">
+        <div class="token-table-head" role="row">
+          <span>名称</span>
+          <span>Token ID</span>
+          <span>{{ themeLabel }}值</span>
         </div>
-        <strong>{{ token.label }}</strong>
-        <span v-if="isCoreTokenId(token.id)" class="tier-badge">Core</span>
-        <code>{{ token.id }}</code>
-      </button>
-    </div>
-
-    <div v-else class="token-table" role="table">
-      <div class="token-table-head" role="row">
-        <span>名称</span>
-        <span>Token ID</span>
-        <span>层级</span>
-        <span>{{ themeId === "light" ? "浅色值" : "深色值" }}</span>
-        <span>来源</span>
+        <button
+          v-for="token in tokens"
+          :key="token.id"
+          type="button"
+          class="token-table-row"
+          :class="{ 'is-selected': selected?.id === token.id }"
+          role="row"
+          @click="selectToken(token.id)"
+        >
+          <strong>{{ token.label }}</strong>
+          <code>{{ token.id }}</code>
+          <span class="value-with-swatch">
+            <code>{{ formatValue(resolved[token.id]) }}</code>
+            <span
+              v-if="category === 'color'"
+              class="inline-swatch"
+              :style="{ background: String(resolved[token.id]) }"
+            />
+          </span>
+        </button>
       </div>
-      <button
-        v-for="token in tokens"
-        :key="token.id"
-        type="button"
-        class="token-table-row"
-        :class="{ 'is-selected': selected?.id === token.id }"
-        role="row"
-        @click="selectToken(token.id)"
-      >
-        <strong>{{ token.label }}</strong>
-        <code>{{ token.id }}</code>
-        <span>{{ isCoreTokenId(token.id) ? "Core" : "扩展" }}</span>
-        <span>{{ resolved[token.id] }}</span>
-        <span>{{ themeId === "dark" && darkResolved[token.id] !== lightResolved[token.id] ? "主题覆盖" : "基础值" }}</span>
-      </button>
-    </div>
 
-    <p v-if="tokens.length === 0" class="empty">没有匹配的 Token。</p>
+      <p v-if="tokens.length === 0" class="empty">没有匹配的 Token。</p>
     </section>
 
-    <section v-if="selected" class="token-detail" aria-live="polite">
-      <div class="detail-title">
-        <p class="aside-label">当前选择</p>
+    <template #aside>
+      <div v-if="selected" class="token-aside" aria-live="polite">
+        <p class="aside-label">当前选择 · {{ themeLabel }}</p>
         <h2>{{ selected.label }}</h2>
-        <p>{{ selected.description || "暂无用途说明" }}</p>
+        <p class="aside-desc">{{ selected.description || "暂无用途说明" }}</p>
+        <p class="aside-css">
+          <span>CSS</span>
+          <code>{{ tokenCssVar(selected) }}</code>
+        </p>
+
+        <div class="theme-row">
+          <dl>
+            <div>
+              <dt>Key</dt>
+              <dd><code>{{ selected.id }}</code></dd>
+            </div>
+            <div>
+              <dt>Value</dt>
+              <dd class="value-with-swatch">
+                <code>{{ formatValue(resolved[selected.id]) }}</code>
+                <span
+                  v-if="category === 'color'"
+                  class="inline-swatch"
+                  :style="{ background: String(resolved[selected.id]) }"
+                />
+              </dd>
+            </div>
+          </dl>
+        </div>
       </div>
-      <dl class="detail-list">
-          <div>
-            <dt>Token ID / Key</dt>
-            <dd><code>{{ selected.id }}</code></dd>
-          </div>
-          <div>
-            <dt>CSS Variable</dt>
-            <dd><code>{{ tokenCssVar(selected) }}</code></dd>
-          </div>
-          <div>
-            <dt>类型</dt>
-            <dd>{{ categoryLabels[selected.category] }}</dd>
-          </div>
-          <div>
-            <dt>层级</dt>
-            <dd>{{ isCoreTokenId(selected.id) ? "Core（组件应绑定）" : "扩展" }}</dd>
-          </div>
-          <div>
-            <dt>{{ themeId === "light" ? "浅色主题值" : "深色主题值" }}</dt>
-            <dd>
-              <span
-                v-if="category === 'color'"
-                class="inline-swatch"
-                :style="{ background: String(resolved[selected.id]) }"
-              />
-              <code>{{ resolved[selected.id] }}</code>
-            </dd>
-          </div>
-          <div>
-            <dt>值来源</dt>
-            <dd>{{ themeId === "dark" && darkResolved[selected.id] !== lightResolved[selected.id] ? "深色主题覆盖" : "基础 Token" }}</dd>
-          </div>
-          <div v-if="category === 'typography'">
-            <dt>解析</dt>
-            <dd>
-              weight {{ parseTypography(resolved[selected.id]).weight }} · size
-              {{ parseTypography(resolved[selected.id]).size }}
-            </dd>
-          </div>
-      </dl>
-    </section>
+      <p v-else class="empty">选择一个 Token 查看详情。</p>
+    </template>
   </ResourcePageShell>
 </template>
 
 <style scoped>
-.stat-chip {
-  display: grid;
-  gap: 2px;
-  min-width: 72px;
-  padding: 8px 10px;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 10px;
-  background: rgb(var(--v-theme-surface));
-  text-align: left;
-  cursor: pointer;
-}
-.stat-chip.is-active {
-  border-color: color-mix(in srgb, rgb(var(--v-theme-primary)) 45%, transparent);
-  background: color-mix(in srgb, rgb(var(--v-theme-primary)) 10%, transparent);
-}
-.stat-chip strong {
-  font-size: 1rem;
-  line-height: 1;
-}
-.stat-chip span {
-  color: rgba(var(--v-theme-on-surface), 0.58);
-  font-size: 0.6875rem;
-}
 .search-field {
   flex: 1 1 220px;
   max-width: 320px;
@@ -376,11 +315,10 @@ function selectToken(id: string) {
 }
 .token-grid {
   display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 10px;
 }
 .token-card {
-  grid-column: span 3;
   display: grid;
   gap: 6px;
   padding: 10px;
@@ -396,7 +334,7 @@ function selectToken(id: string) {
 }
 .single-swatch {
   display: block;
-  height: 56px;
+  height: 44px;
 }
 .single-swatch span {
   display: block;
@@ -412,8 +350,8 @@ function selectToken(id: string) {
   background: rgb(var(--v-theme-primary));
 }
 .elevation-box {
-  width: 56px;
-  height: 56px;
+  width: 48px;
+  height: 48px;
   border-radius: 10px;
   background: rgb(var(--v-theme-surface));
 }
@@ -422,7 +360,7 @@ function selectToken(id: string) {
   color: rgb(var(--v-theme-on-surface));
 }
 .abstract-sample {
-  height: 56px;
+  height: 44px;
   display: grid;
   place-items: center;
   border: 1px dashed rgba(var(--v-theme-on-surface), 0.2);
@@ -433,25 +371,12 @@ function selectToken(id: string) {
   text-align: center;
   overflow: hidden;
 }
-.stat-chip.is-meta {
-  cursor: default;
-  opacity: 0.92;
-}
-.tier-badge {
-  justify-self: start;
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: color-mix(in srgb, rgb(var(--v-theme-primary)) 14%, transparent);
-  color: rgb(var(--v-theme-primary));
-  font-size: 0.625rem;
-  font-weight: 700;
-}
 .token-card strong {
   font-size: 0.8125rem;
 }
 .token-card code,
 .token-table code,
-.detail-list code {
+.token-aside code {
   color: rgba(var(--v-theme-on-surface), 0.62);
   font-size: 0.75rem;
 }
@@ -464,7 +389,7 @@ function selectToken(id: string) {
 .token-table-head,
 .token-table-row {
   display: grid;
-  grid-template-columns: minmax(100px, 0.8fr) minmax(160px, 1.2fr) 72px 1fr 1fr;
+  grid-template-columns: minmax(88px, 0.7fr) minmax(140px, 1.1fr) 1fr;
   gap: 12px;
   padding: 10px 12px;
   text-align: left;
@@ -491,46 +416,60 @@ function selectToken(id: string) {
   font-weight: 700;
   text-transform: uppercase;
 }
-.token-detail {
-  display: grid;
-  grid-template-columns: minmax(180px, 0.8fr) minmax(0, 2fr);
-  gap: 24px;
-  padding: 18px;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 14px;
-  background: rgb(var(--v-theme-surface));
+.token-aside h2 {
+  margin: 0 0 6px;
+  font-size: 1.0625rem;
 }
-.token-detail h2 {
-  margin: 0 0 12px;
-  font-size: 1.125rem;
-}
-.detail-title > p:last-child {
-  margin: 0;
+.aside-desc {
+  margin: 0 0 10px;
   color: rgba(var(--v-theme-on-surface), 0.6);
   font-size: 0.8125rem;
 }
-.detail-list {
+.aside-css {
+  margin: 0 0 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  font-size: 0.75rem;
+}
+.aside-css > span {
+  color: rgba(var(--v-theme-on-surface), 0.5);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.6875rem;
+}
+.theme-row {
+  padding: 12px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 10px;
+  background: rgba(var(--v-theme-on-surface), 0.02);
+}
+.theme-row dl {
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  gap: 8px;
 }
-.detail-list dt {
+.theme-row dt {
   margin: 0 0 2px;
   color: rgba(var(--v-theme-on-surface), 0.5);
   font-size: 0.6875rem;
   font-weight: 700;
   text-transform: uppercase;
 }
-.detail-list dd {
+.theme-row dd {
   margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
   font-size: 0.8125rem;
   word-break: break-word;
 }
+.value-with-swatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
 .inline-swatch {
+  flex: 0 0 auto;
   width: 18px;
   height: 18px;
   border-radius: 4px;
@@ -541,25 +480,6 @@ function selectToken(id: string) {
   color: rgba(var(--v-theme-on-surface), 0.55);
   font-size: 0.8125rem;
 }
-@media (max-width: 1279px) {
-  .token-card {
-    grid-column: span 4;
-  }
-}
-@media (max-width: 900px) {
-  .token-detail {
-    grid-template-columns: 1fr;
-  }
-  .detail-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .token-card {
-    grid-column: span 6;
-  }
-  .token-grid {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-  }
-}
 @media (max-width: 640px) {
   .toolbar-actions {
     margin-left: 0;
@@ -569,11 +489,10 @@ function selectToken(id: string) {
     align-items: start;
     flex-direction: column;
   }
-  .detail-list {
+  .token-table-head,
+  .token-table-row {
     grid-template-columns: 1fr;
-  }
-  .token-card {
-    grid-column: span 12;
+    gap: 4px;
   }
 }
 </style>

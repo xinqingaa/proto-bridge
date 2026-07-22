@@ -7,6 +7,7 @@ import {
   type Component,
 } from "vue";
 import ResourcePageShell from "@/workbench/views/ResourcePageShell.vue";
+import WorkbenchStatChip from "@/workbench/ui/WorkbenchStatChip.vue";
 import {
   componentViewModules,
   loadComponentContract,
@@ -237,15 +238,15 @@ function bindingResolvedValue(tokenId: string) {
     :description="record.description"
   >
     <template #stats>
-      <v-chip size="small" variant="tonal"
-        >{{ controls.length }} 个可调项</v-chip
-      >
-      <v-chip size="small" variant="tonal"
-        >{{ states.length }} 个预设</v-chip
-      >
-      <v-chip size="small" variant="tonal"
-        >{{ tokenBindings.length }} 个令牌绑定</v-chip
-      >
+      <WorkbenchStatChip
+        :value="controls.length"
+        label="个可调项"
+      />
+      <WorkbenchStatChip :value="states.length" label="个预设" />
+      <WorkbenchStatChip
+        :value="tokenBindings.length"
+        label="个令牌绑定"
+      />
     </template>
 
     <template #toolbar>

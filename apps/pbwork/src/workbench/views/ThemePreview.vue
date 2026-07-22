@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import ResourcePageShell from "@/workbench/views/ResourcePageShell.vue";
+import WorkbenchStatChip from "@/workbench/ui/WorkbenchStatChip.vue";
 import { loadThemes, loadTokens } from "@/design-system/loaders";
 import { resolveThemeTokens } from "@/design-system/resolveThemeTokens";
 
@@ -88,9 +89,9 @@ const contrastPairs = [
     description="主题页专门比较浅色与深色的语义颜色、覆盖关系和前景对比度。"
   >
     <template #stats>
-      <v-chip size="small" variant="tonal">{{ colorTokens.length }} 个语义色</v-chip>
-      <v-chip size="small" variant="tonal">{{ differenceCount }} 个深色覆盖</v-chip>
-      <v-chip size="small" variant="tonal">{{ themes.length }} 个主题</v-chip>
+      <WorkbenchStatChip :value="colorTokens.length" label="个语义色" />
+      <WorkbenchStatChip :value="differenceCount" label="个深色覆盖" />
+      <WorkbenchStatChip :value="themes.length" label="个主题" />
     </template>
 
     <template #toolbar>

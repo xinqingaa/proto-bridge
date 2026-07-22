@@ -8,6 +8,7 @@ import { LIFECYCLE_LABELS } from "@/design-system/types";
 import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
 import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
 import WorkbenchBadge from "@/workbench/ui/WorkbenchBadge.vue";
+import WorkbenchStatChip from "@/workbench/ui/WorkbenchStatChip.vue";
 import LifecycleTransitionDialog from "@/workbench/prototypes/LifecycleTransitionDialog.vue";
 
 const props = defineProps<{
@@ -63,8 +64,10 @@ const flowEdges = computed(() => {
           <WorkbenchBadge :tone="effectiveLifecycle" class="lifecycle-status">
             {{ LIFECYCLE_LABELS[effectiveLifecycle] }}
           </WorkbenchBadge>
-          <span v-if="lifecycle.hasOverride(prototype.id)" class="local-status"
-            >本地工作台状态</span
+          <WorkbenchBadge
+            v-if="lifecycle.hasOverride(prototype.id)"
+            tone="warning"
+            >本地工作台状态</WorkbenchBadge
           >
           <div class="status-actions">
             <WorkbenchButton tone="primary" @click="transitionOpen = true"
@@ -79,20 +82,18 @@ const flowEdges = computed(() => {
           </div>
         </div>
         <div class="meta-cluster">
-          <span class="meta-chip">{{ screens.length }} 页面</span>
-          <span class="meta-chip">{{ variantTotal }} Variant</span>
-          <span
+          <WorkbenchStatChip :value="screens.length" label="页面" />
+          <WorkbenchStatChip :value="variantTotal" label="Variant" />
+          <WorkbenchStatChip
             v-for="owner in prototype.owners ?? []"
             :key="`owner-${owner}`"
-            class="meta-chip is-owner"
-            >{{ owner }}</span
-          >
-          <span
+            :label="owner"
+          />
+          <WorkbenchStatChip
             v-for="role in prototype.roles ?? []"
             :key="`role-${role}`"
-            class="meta-chip is-role"
-            >{{ role }}</span
-          >
+            :label="role"
+          />
         </div>
       </div>
     </template>
@@ -187,37 +188,11 @@ const flowEdges = computed(() => {
   flex-wrap: wrap;
   gap: 6px;
 }
-.local-status {
-  padding: 4px 8px;
-  border-radius: 999px;
-  background: color-mix(in srgb, rgb(var(--v-theme-warning)) 12%, transparent);
-  color: rgb(var(--v-theme-warning));
-  font-size: 0.68rem;
-  font-weight: 750;
-}
 .meta-cluster {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   justify-content: flex-end;
-}
-.meta-chip {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  padding: 0 9px;
-  border-radius: 999px;
-  background: rgba(var(--v-theme-on-surface), 0.06);
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  font-size: 0.6875rem;
-  font-weight: 650;
-}
-.meta-chip.is-owner {
-  background: rgba(var(--v-theme-on-surface), 0.08);
-}
-.meta-chip.is-role {
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  background: transparent;
 }
 .flow-panel {
   padding: 14px 16px;

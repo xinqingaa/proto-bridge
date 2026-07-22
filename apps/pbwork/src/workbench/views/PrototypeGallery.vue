@@ -17,6 +17,7 @@ import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
 import ResourcePageShell from "@/workbench/views/ResourcePageShell.vue";
 import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
 import WorkbenchBadge from "@/workbench/ui/WorkbenchBadge.vue";
+import WorkbenchStatChip from "@/workbench/ui/WorkbenchStatChip.vue";
 import LifecycleTransitionDialog from "@/workbench/prototypes/LifecycleTransitionDialog.vue";
 
 const props = defineProps<{
@@ -75,7 +76,7 @@ function onCardKeydown(event: KeyboardEvent, item: PrototypeRecord) {
     description="以独立产品资产管理原型、页面、状态与评审进度；工作台状态可直接流转，不依赖源码写回。"
   >
     <template #stats>
-      <span class="gallery-total">{{ items.length }} 个原型</span>
+      <WorkbenchStatChip :value="items.length" label="个原型" />
     </template>
     <div v-if="items.length" class="prototype-grid">
       <article
@@ -155,13 +156,6 @@ function onCardKeydown(event: KeyboardEvent, item: PrototypeRecord) {
 </template>
 
 <style scoped>
-.gallery-total {
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(var(--v-theme-on-surface), 0.06);
-  font-size: 0.72rem;
-  font-weight: 750;
-}
 .prototype-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
