@@ -12,7 +12,7 @@ const props = defineProps<{
   ariaLabel: string;
   icon?: "more" | "plus" | "search" | "settings";
   size?: ComponentSize;
-  tone?: "primary" | "secondary" | "neutral";
+  tone?: "primary" | "secondary";
   variant?: "tonal" | "flat" | "outlined" | "text";
   loading?: boolean;
   disabled?: boolean;
@@ -26,18 +26,13 @@ const { ariaLabel, icon, size, tone, variant, loading, disabled, inspectId } =
   toRefs(props);
 
 const resolvedVariant = computed(() => variant.value ?? "tonal");
+const resolvedTone = computed(() => tone.value ?? "secondary");
 
 const iconComponent = computed(() => {
   if (props.icon === "plus") return Plus;
   if (props.icon === "search") return Search;
   if (props.icon === "settings") return Settings;
   return MoreHorizontal;
-});
-
-const color = computed(() => {
-  const t = tone.value ?? "neutral";
-  if (t === "neutral") return "secondary";
-  return t;
 });
 
 const visualSize = computed(() => {
@@ -60,17 +55,18 @@ usePbInspect({
     ariaLabel: ariaLabel.value,
     icon: icon.value ?? "more",
     size: size.value ?? "md",
-    tone: tone.value ?? "neutral",
+    tone: tone.value ?? "secondary",
     variant: resolvedVariant.value,
     loading: loading.value ?? false,
     disabled: disabled.value ?? false,
     inspectId: inspectId.value,
   }),
   getTokenBindings: () => {
-    const t = tone.value ?? "neutral";
+    const t = resolvedTone.value;
+    const v = resolvedVariant.value;
     return {
-      color: t === "neutral" ? "color.on-surface" : `color.${t}`,
-      background: t === "neutral" ? "color.surface-variant" : `color.${t}-soft`,
+      color: `color.${t}`,
+      background: v === "tonal" ? `color.${t}-soft` : `color.${t}`,
       radius: "radius.full",
       elevation: "elevation.none",
       size: `sizing.control-${size.value ?? "md"}`,
@@ -79,19 +75,21 @@ usePbInspect({
       easing: "motion.easing-standard",
     };
   },
-  getTokens: () => [
-    "color.primary",
-    "color.primary-soft",
-    "color.secondary",
-    "color.on-surface",
-    "color.surface-variant",
-    "radius.full",
-    "elevation.none",
-    `sizing.control-${size.value ?? "md"}`,
-    "sizing.touch",
-    "motion.duration-fast",
-    "motion.easing-standard",
-  ],
+  getTokens: () => {
+    const t = resolvedTone.value;
+    const v = resolvedVariant.value;
+    return [
+      `color.${t}`,
+      `color.${t}-soft`,
+      "radius.full",
+      "elevation.none",
+      `sizing.control-${size.value ?? "md"}`,
+      "sizing.touch",
+      "motion.duration-fast",
+      "motion.easing-standard",
+      ...(v === "flat" ? [`color.on-${t}`] : []),
+    ];
+  },
 });
 </script>
 
@@ -100,11 +98,10 @@ usePbInspect({
     ref="rootRef"
     class="pb-icon-button"
     data-pb-id="ds.icon-button"
-    :class="[`tone-${tone ?? 'neutral'}`]"
     icon
     :width="visualSize"
     :height="visualSize"
-    :color="color"
+    :color="resolvedTone"
     :variant="resolvedVariant"
     :loading="loading ?? false"
     :elevation="0"
@@ -131,9 +128,5 @@ usePbInspect({
 }
 .pb-icon-button:active:not(.v-btn--disabled) {
   transform: scale(0.96);
-}
-.pb-icon-button.tone-neutral {
-  color: var(--pb-color-on-surface, #1f2937);
-  background: var(--pb-color-surface-variant) !important;
 }
 </style>

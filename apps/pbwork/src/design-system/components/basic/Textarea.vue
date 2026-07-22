@@ -2,16 +2,11 @@
 import { toRefs } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import { radiusStyle } from "@/design-system/components/_shared/radius";
-import {
-  controlSizeStyle,
-  type ComponentSize,
-} from "@/design-system/components/_shared/appearance";
 
 const props = defineProps<{
   label: string;
   modelValue?: string;
   rows?: number;
-  size?: ComponentSize;
   disabled?: boolean;
   /** Page-unique inspect / comment anchor; falls back to `ds.textarea`. */
   inspectId?: string;
@@ -19,7 +14,7 @@ const props = defineProps<{
 defineEmits<{ "update:modelValue": [string] }>();
 
 const rootRef = usePbInspectRef();
-const { label, modelValue, rows, size, disabled, inspectId } = toRefs(props);
+const { label, modelValue, rows, disabled, inspectId } = toRefs(props);
 
 usePbInspect({
   element: rootRef,
@@ -30,7 +25,6 @@ usePbInspect({
     label: label.value,
     modelValue: modelValue.value ?? "",
     rows: rows.value ?? 3,
-    size: size.value ?? "md",
     disabled: disabled.value ?? false,
     inspectId: inspectId.value,
   }),
@@ -47,7 +41,6 @@ usePbInspect({
     border: "color.border",
     focus: "color.primary",
     radius: "radius.md",
-    height: `sizing.control-${size.value ?? "md"}`,
     text: "typography.content",
   }),
 });
@@ -62,7 +55,7 @@ usePbInspect({
     :model-value="modelValue ?? ''"
     :rows="rows ?? 3"
     :disabled="disabled ?? false"
-    :style="[radiusStyle('md'), controlSizeStyle(size ?? 'md')]"
+    :style="radiusStyle('md')"
     @update:model-value="$emit('update:modelValue', String($event ?? ''))"
   />
 </template>

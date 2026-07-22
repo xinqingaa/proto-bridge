@@ -3,15 +3,17 @@ import { computed, toRefs, useSlots } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import { radiusStyle } from "@/design-system/components/_shared/radius";
 import {
+  controlPaddingToken,
   controlSizeStyle,
   elevationStyle,
+  sizeToken,
   type ComponentSize,
 } from "@/design-system/components/_shared/appearance";
 
 const props = defineProps<{
   label: string;
   variant?: "flat" | "tonal" | "outlined" | "text";
-  tone?: "primary" | "secondary" | "error" | "success";
+  tone?: "action" | "primary" | "secondary" | "error" | "success";
   size?: ComponentSize;
   loading?: boolean;
   block?: boolean;
@@ -27,19 +29,9 @@ const slots = useSlots();
 const { label, variant, tone, size, loading, block, disabled, type, inspectId } =
   toRefs(props);
 
-const vuetifySize = computed(() => {
-  if (size.value === "sm") return "small";
-  if (size.value === "lg") return "large";
-  return "default";
-});
-
 const resolvedVariant = computed(() => variant.value ?? "flat");
-const resolvedTone = computed(() => tone.value ?? "primary");
-const vuetifyColor = computed(() =>
-  resolvedVariant.value === "flat" && resolvedTone.value === "primary"
-    ? "action"
-    : resolvedTone.value,
-);
+const resolvedTone = computed(() => tone.value ?? "action");
+const resolvedSize = computed(() => size.value ?? "md");
 
 usePbInspect({
   element: rootRef,
@@ -49,7 +41,7 @@ usePbInspect({
   getProps: () => ({
     label: label.value,
     variant: variant.value ?? "flat",
-    tone: tone.value ?? "primary",
+    tone: tone.value ?? "action",
     size: size.value ?? "md",
     loading: loading.value ?? false,
     block: block.value ?? false,
@@ -58,28 +50,32 @@ usePbInspect({
     inspectId: inspectId.value,
   }),
   getTokenBindings: () => {
-    const t = vuetifyColor.value;
+    const t = resolvedTone.value;
     const v = resolvedVariant.value;
+    const s = resolvedSize.value;
     return {
       background: v === "tonal" ? `color.${t}-soft` : `color.${t}`,
       onBackground: `color.on-${t}`,
       radius: "radius.md",
       elevation: "elevation.none",
-      height: `sizing.control-${size.value ?? "md"}`,
+      height: sizeToken(s),
+      paddingX: controlPaddingToken(s),
       typography: "typography.label",
       duration: "motion.duration-fast",
       easing: "motion.easing-standard",
     };
   },
   getTokens: () => {
-    const t = vuetifyColor.value;
+    const t = resolvedTone.value;
     const v = resolvedVariant.value;
+    const s = resolvedSize.value;
     return [
       v === "tonal" ? `color.${t}-soft` : `color.${t}`,
       `color.on-${t}`,
       "radius.md",
       "elevation.none",
-      `sizing.control-${size.value ?? "md"}`,
+      sizeToken(s),
+      controlPaddingToken(s),
       "typography.label",
       "motion.duration-fast",
       "motion.easing-standard",
@@ -95,16 +91,15 @@ usePbInspect({
     data-pb-id="ds.button"
     :type="type ?? 'button'"
     :variant="variant ?? 'flat'"
-    :color="vuetifyColor"
+    :color="resolvedTone"
     rounded="md"
-    :size="vuetifySize"
     :loading="loading ?? false"
     :block="block ?? false"
     :elevation="0"
     :disabled="disabled ?? false"
     :style="[
       radiusStyle('md'),
-      controlSizeStyle(size ?? 'md'),
+      controlSizeStyle(resolvedSize),
       elevationStyle('none'),
     ]"
     @click="$emit('click')"
@@ -117,7 +112,12 @@ usePbInspect({
 
 <style scoped>
 .pb-button {
-  min-height: var(--pb-component-height, var(--pb-sizing-control-md, 40px));
+  height: var(--pb-component-height, var(--pb-sizing-control-md, 40px)) !important;
+  min-height: var(--pb-component-height, var(--pb-sizing-control-md, 40px)) !important;
+  padding-inline: var(
+    --pb-component-padding-x,
+    var(--pb-spacing-md, 16px)
+  ) !important;
   font: var(--pb-typography-label, 600 14px/1.4 Inter, system-ui, sans-serif);
   text-transform: none;
   letter-spacing: normal;

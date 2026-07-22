@@ -32,7 +32,7 @@ usePbInspect({
   }),
   getTokens: () => [
     `color.${tone.value ?? "primary"}`,
-    "color.on-primary",
+    `color.on-${tone.value ?? "primary"}`,
     `sizing.avatar-${size.value ?? "md"}`,
     "radius.full",
     "typography.label",

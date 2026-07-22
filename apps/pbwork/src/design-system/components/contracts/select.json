@@ -21,14 +21,6 @@
       "placeholder": {
         "type": "string"
       },
-      "size": {
-        "type": "string",
-        "enum": [
-          "sm",
-          "md",
-          "lg"
-        ]
-      },
       "clearable": {
         "type": "boolean"
       },
@@ -58,7 +50,6 @@
       "安装"
     ],
     "placeholder": "请选择服务类型",
-    "size": "md",
     "clearable": true,
     "loading": false,
     "error": "",

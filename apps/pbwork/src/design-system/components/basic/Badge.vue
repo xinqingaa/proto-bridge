@@ -19,18 +19,18 @@ usePbInspect({
   componentId: "badge",
   getProps: () => ({
     label: label.value,
-    tone: tone.value ?? "primary",
+    tone: tone.value ?? "error",
     inspectId: inspectId.value,
   }),
   getTokens: () => [
-    `color.${tone.value ?? "primary"}`,
-    `color.on-${tone.value ?? "primary"}`,
+    `color.${tone.value ?? "error"}`,
+    `color.on-${tone.value ?? "error"}`,
     "radius.full",
     "typography.caption-strong",
   ],
   getTokenBindings: () => ({
-    background: `color.${tone.value ?? "primary"}`,
-    text: `color.on-${tone.value ?? "primary"}`,
+    background: `color.${tone.value ?? "error"}`,
+    text: `color.on-${tone.value ?? "error"}`,
     radius: "radius.full",
     label: "typography.caption-strong",
   }),
@@ -42,7 +42,7 @@ usePbInspect({
     ref="rootRef"
     class="pb-badge"
     data-pb-id="ds.badge"
-    :color="tone ?? 'primary'"
+    :color="tone ?? 'error'"
     size="x-small"
     variant="flat"
     label

@@ -48,7 +48,7 @@
   "events": [],
   "tokenBindings": {
     "background": "color.error",
-    "text": "color.on-primary",
+    "text": "color.on-error",
     "radius": "radius.full",
     "label": "typography.caption-strong"
   }

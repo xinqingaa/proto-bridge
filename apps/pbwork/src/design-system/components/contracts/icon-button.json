@@ -30,8 +30,7 @@
         "type": "string",
         "enum": [
           "primary",
-          "secondary",
-          "neutral"
+          "secondary"
         ]
       },
       "variant": {
@@ -58,7 +57,7 @@
     "ariaLabel": "更多",
     "icon": "more",
     "size": "md",
-    "tone": "neutral",
+    "tone": "secondary",
     "variant": "tonal",
     "loading": false,
     "disabled": false
@@ -91,8 +90,8 @@
     "click"
   ],
   "tokenBindings": {
-    "color": "color.on-surface",
-    "background": "color.surface-variant",
+    "color": "color.secondary",
+    "background": "color.secondary-soft",
     "radius": "radius.full",
     "elevation": "elevation.none",
     "size": "sizing.control-md",

@@ -14,14 +14,6 @@
       },
       "disabled": {
         "type": "boolean"
-      },
-      "size": {
-        "type": "string",
-        "enum": [
-          "sm",
-          "md",
-          "lg"
-        ]
       }
     },
     "required": [
@@ -31,8 +23,7 @@
   "defaultProps": {
     "label": "标题",
     "modelValue": "",
-    "disabled": false,
-    "size": "md"
+    "disabled": false
   },
   "states": [],
   "slots": [],

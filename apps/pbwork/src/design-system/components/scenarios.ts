@@ -17,7 +17,13 @@ const scenarios: Record<string, ComponentScenario[]> = {
       id: "secondary",
       label: "次要操作",
       description: "与主按钮并列时的次要操作，如保存草稿。",
-      props: { label: "保存草稿", variant: "tonal" },
+      props: { label: "保存草稿", tone: "secondary", variant: "tonal" },
+    },
+    {
+      id: "primary-accent",
+      label: "强调主色",
+      description: "需要用蓝强调色时的按钮，区别于默认主操作黑。",
+      props: { label: "查看详情", tone: "primary" },
     },
   ],
   "icon-button": [

@@ -20,6 +20,7 @@ export const BIND_TOKEN_IDS = [
   "color.primary-soft",
   "color.on-primary",
   "color.action",
+  "color.action-soft",
   "color.on-action",
   "color.secondary",
   "color.secondary-soft",

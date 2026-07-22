@@ -6,11 +6,21 @@ export function sizeToken(size: ComponentSize = "md"): string {
   return `sizing.control-${size}`;
 }
 
+/** Horizontal padding token paired with control size (sm→sm, md→md, lg→lg). */
+export function controlPaddingToken(size: ComponentSize = "md"): string {
+  if (size === "sm") return "spacing.sm";
+  if (size === "lg") return "spacing.lg";
+  return "spacing.md";
+}
+
 export function controlSizeStyle(
   size: ComponentSize = "md",
 ): Record<string, string> {
+  const height = sizeToken(size).replace(".", "-");
+  const paddingX = controlPaddingToken(size).replace(".", "-");
   return {
-    "--pb-component-height": `var(--pb-${sizeToken(size).replace(".", "-")})`,
+    "--pb-component-height": `var(--pb-${height})`,
+    "--pb-component-padding-x": `var(--pb-${paddingX})`,
   };
 }
 

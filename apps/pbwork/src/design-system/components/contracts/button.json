@@ -13,7 +13,7 @@
       },
       "tone": {
         "type": "string",
-        "enum": ["primary", "secondary", "error", "success"]
+        "enum": ["action", "primary", "secondary", "error", "success"]
       },
       "size": { "type": "string", "enum": ["sm", "md", "lg"] },
       "loading": { "type": "boolean" },
@@ -29,7 +29,7 @@
   "defaultProps": {
     "label": "确认",
     "variant": "flat",
-    "tone": "primary",
+    "tone": "action",
     "size": "md",
     "loading": false,
     "block": false,
@@ -39,6 +39,7 @@
     { "id": "tonal", "label": "柔和", "props": { "variant": "tonal" } },
     { "id": "outlined", "label": "描边", "props": { "variant": "outlined" } },
     { "id": "text", "label": "文字", "props": { "variant": "text" } },
+    { "id": "primary", "label": "主色", "props": { "tone": "primary" } },
     { "id": "loading", "label": "加载", "props": { "loading": true } },
     { "id": "disabled", "label": "禁用", "props": { "disabled": true } }
   ],
@@ -50,6 +51,7 @@
     "radius": "radius.md",
     "elevation": "elevation.none",
     "height": "sizing.control-md",
+    "paddingX": "spacing.md",
     "typography": "typography.label",
     "duration": "motion.duration-fast",
     "easing": "motion.easing-standard"

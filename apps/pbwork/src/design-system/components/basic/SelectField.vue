@@ -3,17 +3,12 @@ import { computed, ref, toRefs, watch } from "vue";
 import { Check, ChevronDown } from "lucide-vue-next";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import { radiusStyle } from "@/design-system/components/_shared/radius";
-import {
-  controlSizeStyle,
-  type ComponentSize,
-} from "@/design-system/components/_shared/appearance";
 
 const props = defineProps<{
   label: string;
   modelValue?: string;
   options?: string[];
   placeholder?: string;
-  size?: ComponentSize;
   clearable?: boolean;
   loading?: boolean;
   error?: string;
@@ -33,7 +28,6 @@ const {
   modelValue,
   options,
   placeholder,
-  size,
   clearable,
   loading,
   error,
@@ -63,7 +57,6 @@ usePbInspect({
     modelValue: modelValue.value ?? "",
     options: options.value ?? [],
     placeholder: placeholder.value ?? "请选择",
-    size: size.value ?? "md",
     clearable: clearable.value ?? false,
     loading: loading.value ?? false,
     error: error.value ?? "",
@@ -94,7 +87,7 @@ usePbInspect({
     border: "color.border",
     focus: "color.primary",
     radius: "radius.md",
-    height: `sizing.control-${size.value ?? "md"}`,
+    height: "sizing.control-md",
     text: "typography.content",
     muted: "color.on-surface-muted",
     menuSurface: "color.surface-raised",
@@ -113,7 +106,6 @@ usePbInspect({
   <v-select
     ref="rootRef"
     class="pb-select"
-    :class="`size-${size ?? 'md'}`"
     data-pb-id="ds.select"
     :label="label"
     :model-value="modelValue ?? ''"
@@ -129,7 +121,7 @@ usePbInspect({
       maxHeight: 304,
       offset: 6,
     }"
-    :style="[radiusStyle('md'), controlSizeStyle(size ?? 'md')]"
+    :style="radiusStyle('md')"
     @update:menu="updateMenu"
     @update:model-value="emit('update:modelValue', String($event ?? ''))"
   >
@@ -164,7 +156,7 @@ usePbInspect({
     --pb-component-radius,
     var(--pb-radius-md, 12px)
   ) !important;
-  min-height: var(--pb-component-height, var(--pb-sizing-control-md, 40px));
+  min-height: var(--pb-sizing-control-md, 40px);
   background: var(--pb-color-surface, #fff);
 }
 .pb-select :deep(.v-field__outline__start) {
@@ -176,7 +168,7 @@ usePbInspect({
     var(--pb-component-radius, var(--pb-radius-md, 12px)) 0 !important;
 }
 .pb-select :deep(.v-field__input) {
-  min-height: var(--pb-component-height, var(--pb-sizing-control-md, 40px));
+  min-height: var(--pb-sizing-control-md, 40px);
   font: var(--pb-typography-content);
 }
 .pb-select :deep(.v-field__append-inner > .v-icon) {

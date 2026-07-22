@@ -76,7 +76,8 @@ function contrast(foreground: unknown, background: unknown) {
 const contrastPairs = [
   ["color.on-background", "color.background", "页面正文"],
   ["color.on-surface", "color.surface", "表面正文"],
-  ["color.on-primary", "color.primary", "主按钮"],
+  ["color.on-action", "color.action", "主按钮"],
+  ["color.on-primary", "color.primary", "强调色"],
   ["color.on-error", "color.error", "错误反馈"],
 ] as const;
 </script>

@@ -21,7 +21,7 @@ test("primary and secondary navigation update the URL and resource view", async 
   await expect(componentsLink).toBeVisible();
   await componentsLink.click();
   await expect(page).toHaveURL(/\/workbench\/components\/button$/);
-  await expect(page.getByRole("heading", { name: "按钮" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Button" })).toBeVisible();
 
   await page.getByRole("link", { name: "Chip", exact: true }).click();
   await expect(page).toHaveURL(/\/workbench\/components\/chip$/);

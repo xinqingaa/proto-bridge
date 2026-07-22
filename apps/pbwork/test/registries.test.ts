@@ -77,7 +77,7 @@ describe("design contracts", () => {
   });
 
   it("ships the expanded semantic token set", () => {
-    expect(loadTokens()).toHaveLength(96);
+    expect(loadTokens()).toHaveLength(97);
     expect(new Set(loadTokens().map((item) => item.category))).toEqual(
       new Set([
         "color",
@@ -169,6 +169,53 @@ describe("resolveLiveTokenBindings", () => {
     );
     expect(live.background).toBe("color.success-soft");
     expect(live.color).toBe("color.success");
+  });
+
+  it("maps button tone and onBackground without aliases", async () => {
+    const { resolveLiveTokenBindings } =
+      await import("@/design-system/resolveLiveTokenBindings");
+    const action = resolveLiveTokenBindings(
+      {
+        background: "color.action",
+        onBackground: "color.on-action",
+      },
+      { tone: "action", variant: "flat" },
+    );
+    expect(action.background).toBe("color.action");
+    expect(action.onBackground).toBe("color.on-action");
+
+    const primary = resolveLiveTokenBindings(
+      {
+        background: "color.action",
+        onBackground: "color.on-action",
+      },
+      { tone: "primary", variant: "flat" },
+    );
+    expect(primary.background).toBe("color.primary");
+    expect(primary.onBackground).toBe("color.on-primary");
+
+    const tonal = resolveLiveTokenBindings(
+      {
+        background: "color.action",
+        onBackground: "color.on-action",
+      },
+      { tone: "action", variant: "tonal" },
+    );
+    expect(tonal.background).toBe("color.action-soft");
+  });
+
+  it("maps button size to height and paddingX tokens", async () => {
+    const { resolveLiveTokenBindings } =
+      await import("@/design-system/resolveLiveTokenBindings");
+    const live = resolveLiveTokenBindings(
+      {
+        height: "sizing.control-md",
+        paddingX: "spacing.md",
+      },
+      { size: "sm" },
+    );
+    expect(live.height).toBe("sizing.control-sm");
+    expect(live.paddingX).toBe("spacing.sm");
   });
 
   it("maps tabs selectionStyle to fixed primary tokens", async () => {

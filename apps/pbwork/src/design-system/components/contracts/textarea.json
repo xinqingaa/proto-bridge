@@ -15,14 +15,6 @@
       "rows": {
         "type": "number"
       },
-      "size": {
-        "type": "string",
-        "enum": [
-          "sm",
-          "md",
-          "lg"
-        ]
-      },
       "disabled": {
         "type": "boolean"
       }
@@ -35,7 +27,6 @@
     "label": "问题描述",
     "modelValue": "现场设备出现异常噪声",
     "rows": 3,
-    "size": "md",
     "disabled": false
   },
   "states": [
@@ -56,7 +47,6 @@
     "border": "color.border",
     "focus": "color.primary",
     "radius": "radius.md",
-    "height": "sizing.control-md",
     "text": "typography.content"
   }
 }

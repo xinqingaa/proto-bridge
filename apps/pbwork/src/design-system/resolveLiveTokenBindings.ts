@@ -19,33 +19,37 @@ export function resolveLiveTokenBindings(
   if (typeof props.tone === "string" && props.tone.length > 0) {
     const tone = props.tone;
     for (const key of Object.keys(result)) {
-      if (key === "background" || key === "color" || key === "indicator") {
+      if (
+        key === "background" ||
+        key === "color" ||
+        key === "indicator" ||
+        key === "accent"
+      ) {
         const current = result[key] ?? "";
         const wantsSoft = current.endsWith("-soft");
-        if (tone === "neutral") {
-          result[key] = "color.on-surface";
-        } else if (wantsSoft) {
-          result[key] = `color.${tone}-soft`;
-        } else {
-          result[key] = `color.${tone}`;
-        }
+        result[key] = wantsSoft ? `color.${tone}-soft` : `color.${tone}`;
       }
-      if (key === "onBackground") {
-        result[key] = "color.on-primary";
+      if (key === "onBackground" || key === "text") {
+        result[key] = `color.on-${tone}`;
       }
     }
   }
 
   if (typeof props.variant === "string" && "background" in result) {
-    const tone = typeof props.tone === "string" ? props.tone : "primary";
+    const tone =
+      typeof props.tone === "string"
+        ? props.tone
+        : (result.background?.match(/^color\.([a-z0-9]+)/)?.[1] ?? "primary");
     if (props.variant === "tonal") result.background = `color.${tone}-soft`;
     if (
-      props.variant === "flat" &&
-      tone === "primary" &&
-      staticBindings.background === "color.action"
+      props.variant === "flat" ||
+      props.variant === "outlined" ||
+      props.variant === "text"
     ) {
-      result.background = "color.action";
-      if ("onBackground" in result) result.onBackground = "color.on-action";
+      // Flat / outlined / text report the solid tone token for the color slot.
+      if (result.background?.endsWith("-soft")) {
+        result.background = `color.${tone}`;
+      }
     }
   }
 
@@ -57,6 +61,14 @@ export function resolveLiveTokenBindings(
         value.startsWith("sizing.control-")
       ) {
         result[key] = `sizing.control-${props.size}`;
+      }
+      if (key === "paddingX") {
+        result[key] =
+          props.size === "sm"
+            ? "spacing.sm"
+            : props.size === "lg"
+              ? "spacing.lg"
+              : "spacing.md";
       }
     }
   }

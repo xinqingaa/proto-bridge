@@ -192,10 +192,7 @@ usePbInspect({
   background: transparent;
 }
 .pb-tab-bar {
-  --v-tabs-height: max(
-    var(--pb-tabs-height, var(--pb-sizing-control-md, 40px)),
-    var(--pb-sizing-touch, 44px)
-  );
+  --v-tabs-height: var(--pb-tabs-height, var(--pb-sizing-control-md, 40px));
   height: var(--v-tabs-height);
   background: transparent;
   overflow: visible;

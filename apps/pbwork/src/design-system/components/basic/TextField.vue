@@ -1,23 +1,18 @@
 <script setup lang="ts">
 import { toRefs } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
-import {
-  controlSizeStyle,
-  type ComponentSize,
-} from "@/design-system/components/_shared/appearance";
 
 const props = defineProps<{
   label: string;
   modelValue?: string;
   disabled?: boolean;
-  size?: ComponentSize;
   /** Page-unique inspect / comment anchor; falls back to `ds.text-field`. */
   inspectId?: string;
 }>();
 defineEmits<{ "update:modelValue": [value: string] }>();
 
 const rootRef = usePbInspectRef();
-const { label, modelValue, disabled, size, inspectId } = toRefs(props);
+const { label, modelValue, disabled, inspectId } = toRefs(props);
 
 usePbInspect({
   element: rootRef,
@@ -28,14 +23,13 @@ usePbInspect({
     label: label.value,
     modelValue: modelValue.value ?? "",
     disabled: disabled.value ?? false,
-    size: size.value ?? "md",
     inspectId: inspectId.value,
   }),
   getTokenBindings: () => ({
     border: "color.border",
     surface: "color.surface",
     radius: "radius.md",
-    height: `sizing.control-${size.value ?? "md"}`,
+    height: "sizing.control-md",
     label: "typography.caption",
     input: "typography.content",
   }),
@@ -44,6 +38,7 @@ usePbInspect({
     "color.surface",
     "color.on-surface",
     "radius.md",
+    "sizing.control-md",
     "typography.caption",
     "typography.content",
     "spacing.xs",
@@ -57,7 +52,6 @@ usePbInspect({
     ref="rootRef"
     class="pb-field radius-md"
     data-pb-id="ds.text-field"
-    :style="controlSizeStyle(size ?? 'md')"
     :label="label"
     :model-value="modelValue ?? ''"
     :disabled="disabled ?? false"
@@ -70,11 +64,11 @@ usePbInspect({
   font: var(--pb-typography-content, 400 14px/1.5 Inter, system-ui, sans-serif);
 }
 .pb-field :deep(.v-field) {
-  min-height: var(--pb-component-height, var(--pb-sizing-control-md));
+  min-height: var(--pb-sizing-control-md, 40px);
   background: var(--pb-color-surface, #fff);
 }
 .pb-field :deep(.v-field__input) {
-  min-height: var(--pb-component-height, var(--pb-sizing-control-md));
+  min-height: var(--pb-sizing-control-md, 40px);
 }
 .pb-field.radius-sm :deep(.v-field) {
   --v-field-border-radius: var(--pb-radius-sm, 8px);

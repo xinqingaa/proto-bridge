@@ -7,6 +7,11 @@ const toneOptions = [
   { label: "Success (color.success)", value: "success" },
 ];
 
+const buttonToneOptions = [
+  { label: "Action (color.action)", value: "action" },
+  ...toneOptions,
+];
+
 const sizeOptions = [
   { label: "小", value: "sm" },
   { label: "标准", value: "md" },
@@ -16,7 +21,7 @@ const sizeOptions = [
 export const componentRecords = [
   {
     id: "button",
-    label: "按钮",
+    label: "Button",
     description: "表单主次操作，如提交工单、保存草稿。",
     category: "basic",
     view: "basic/Button.vue",
@@ -35,7 +40,12 @@ export const componentRecords = [
           { label: "Text", value: "text" },
         ],
       },
-      { key: "tone", label: "语义色", control: "select", options: toneOptions },
+      {
+        key: "tone",
+        label: "语义色",
+        control: "select",
+        options: buttonToneOptions,
+      },
       { key: "size", label: "尺寸", control: "select", options: sizeOptions },
       { key: "loading", label: "加载中", control: "boolean" },
       { key: "block", label: "占满宽度", control: "boolean" },
@@ -44,7 +54,7 @@ export const componentRecords = [
   },
   {
     id: "icon-button",
-    label: "图标按钮",
+    label: "Icon Button",
     description: "顶栏与工具区的紧凑图标操作，如更多、新建。",
     category: "basic",
     view: "basic/IconButton.vue",
@@ -78,9 +88,8 @@ export const componentRecords = [
         label: "语义色",
         control: "select",
         options: [
-          { label: "Neutral (color.on-surface)", value: "neutral" },
-          { label: "Primary (color.primary)", value: "primary" },
           { label: "Secondary (color.secondary)", value: "secondary" },
+          { label: "Primary (color.primary)", value: "primary" },
         ],
       },
       {
@@ -100,7 +109,7 @@ export const componentRecords = [
   },
   {
     id: "text-field",
-    label: "文本框",
+    label: "Text Field",
     description: "采集单行业务信息，如联系人、电话。",
     category: "basic",
     view: "basic/TextField.vue",
@@ -109,7 +118,6 @@ export const componentRecords = [
     controls: [
       { key: "label", label: "标签", control: "text" },
       { key: "modelValue", label: "值", control: "text" },
-      { key: "size", label: "尺寸", control: "select", options: sizeOptions },
       { key: "disabled", label: "禁用", control: "boolean" },
     ],
   },
@@ -251,7 +259,6 @@ export const componentRecords = [
       { key: "label", label: "字段名称", control: "text" },
       { key: "modelValue", label: "当前选择", control: "text" },
       { key: "placeholder", label: "提示文案", control: "text" },
-      { key: "size", label: "尺寸", control: "select", options: sizeOptions },
       { key: "clearable", label: "允许清除", control: "boolean" },
       { key: "open", label: "展开菜单", control: "boolean" },
       { key: "loading", label: "加载中", control: "boolean" },
@@ -271,7 +278,6 @@ export const componentRecords = [
       { key: "label", label: "字段名称", control: "text" },
       { key: "modelValue", label: "输入内容", control: "text" },
       { key: "rows", label: "显示行数", control: "number" },
-      { key: "size", label: "尺寸", control: "select", options: sizeOptions },
       { key: "disabled", label: "禁用", control: "boolean" },
     ],
   },
