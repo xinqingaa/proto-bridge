@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { Home, ClipboardList, Bell, User } from "lucide-vue-next";
 import AppBar from "@/design-system/components/complex/AppBar.vue";
 import BottomNavigation from "@/design-system/components/complex/BottomNavigation.vue";
 
@@ -19,6 +20,12 @@ const theme = computed(() =>
 const inspectBaseId = computed(
   () => `field-service.${String(route.params.screenSlug ?? "screen")}`,
 );
+const navItems = [
+  { value: "工作台", label: "工作台", icon: Home },
+  { value: "工单", label: "工单", icon: ClipboardList },
+  { value: "消息", label: "消息", icon: Bell },
+  { value: "我的", label: "我的", icon: User },
+];
 const destinations: Record<string, string> = {
   工作台: "dashboard",
   工单: "work-orders",
@@ -60,6 +67,7 @@ function goBack() {
     <main><slot /></main>
     <BottomNavigation
       v-if="!isStack"
+      :items="navItems"
       :model-value="active ?? '工作台'"
       :inspect-id="`${inspectBaseId}.bottom-navigation`"
       @update:model-value="navigate"

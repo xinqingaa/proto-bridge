@@ -6,6 +6,7 @@ import {
   watch,
   type Component,
 } from "vue";
+import { Home, List, User } from "lucide-vue-next";
 import ResourcePageShell from "@/workbench/views/ResourcePageShell.vue";
 import WorkbenchStatChip from "@/workbench/ui/WorkbenchStatChip.vue";
 import {
@@ -87,17 +88,6 @@ const isOverlayPreview = computed(() =>
 
 const previewAttach = "[data-pb-scenario-preview]";
 
-function previewBind() {
-  const base: Record<string, unknown> = { ...resolvedProps.value };
-  if (!isOverlayPreview.value) return base;
-  return {
-    ...base,
-    attach: previewAttach,
-    contained: true,
-    modelValue: Boolean(base.modelValue),
-  };
-}
-
 const contentControlKeys = new Set([
   "label",
   "title",
@@ -170,9 +160,34 @@ const panelPreviewSlots = computed(() =>
 function panelSlotLabel(name: string) {
   if (name === "overview") return "概览内容 · 点选或左右滑动切换";
   if (name === "activity") return "活动内容 · 点选或左右滑动切换";
-  if (["工作台", "工单", "消息", "我的"].includes(name))
-    return `${name}视图 · 点击导航或拖动切换`;
-  return `${name} 面板`;
+  return `${name}视图 · 点击导航或拖动切换`;
+}
+
+const playgroundNavIcons = [Home, List, User];
+
+function previewBind() {
+  const base: Record<string, unknown> = { ...resolvedProps.value };
+  if (props.componentId === "bottom-navigation") {
+    const rawItems = Array.isArray(base.items) ? base.items : [];
+    base.items = rawItems.map((item, index) => {
+      const row =
+        item && typeof item === "object"
+          ? (item as { value?: string; label?: string })
+          : { value: String(item), label: String(item) };
+      return {
+        value: row.value ?? `item-${index}`,
+        label: row.label ?? row.value ?? `项 ${index + 1}`,
+        icon: playgroundNavIcons[index % playgroundNavIcons.length],
+      };
+    });
+  }
+  if (!isOverlayPreview.value) return base;
+  return {
+    ...base,
+    attach: previewAttach,
+    contained: true,
+    modelValue: Boolean(base.modelValue),
+  };
 }
 
 const previewComponent = computed(() => {

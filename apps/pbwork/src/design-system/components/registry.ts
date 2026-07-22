@@ -447,7 +447,7 @@ export const componentRecords = [
   {
     id: "bottom-navigation",
     label: "Bottom Navigation",
-    description: "应用主 Tabbar：工作台、工单、消息、我的。",
+    description: "应用主 Tabbar：入口数量、文案与图标均由外部传入。",
     category: "complex",
     view: "complex/BottomNavigation.vue",
     contract: "contracts/bottom-navigation.json",
@@ -458,10 +458,9 @@ export const componentRecords = [
         label: "当前入口",
         control: "select",
         options: [
-          { label: "工作台", value: "工作台" },
-          { label: "工单", value: "工单" },
-          { label: "消息", value: "消息" },
-          { label: "我的", value: "我的" },
+          { label: "首页", value: "one" },
+          { label: "列表", value: "two" },
+          { label: "我的", value: "three" },
         ],
       },
       {

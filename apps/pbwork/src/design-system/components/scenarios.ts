@@ -345,7 +345,7 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "primary",
       label: "应用主导航",
-      description: "四入口主 Tabbar，图标与文字同时呈现。",
+      description: "外部传入三项入口，图标与文字同时呈现。",
       props: {
         display: "icon-label",
         showIndicator: true,

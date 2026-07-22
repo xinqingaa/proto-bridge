@@ -1,18 +1,19 @@
 <script setup lang="ts">
-import { computed, toRefs } from "vue";
-import { Home, ClipboardList, Bell, User } from "lucide-vue-next";
+import { computed, toRefs, type Component } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import { usePointerSwipe } from "@/design-system/components/_shared/usePointerSwipe";
 
-type NavigationItem = {
+export type BottomNavigationItem = {
   value: string;
   label: string;
-  icon?: "home" | "orders" | "notifications" | "profile";
+  /** Caller-supplied icon component (e.g. Lucide). Not resolved inside this component. */
+  icon?: Component;
 };
 
 const props = defineProps<{
+  /** Required. Count, labels, and icons are owned by the caller — no built-in destinations. */
+  items: BottomNavigationItem[];
   modelValue?: string;
-  items?: Array<string | NavigationItem>;
   display?: "icon-label" | "icon" | "label";
   showIndicator?: boolean;
   elevated?: boolean;
@@ -35,28 +36,9 @@ const {
   mouseSwipe,
   inspectId,
 } = toRefs(props);
-const defaultItems: NavigationItem[] = [
-  { value: "工作台", label: "工作台", icon: "home" },
-  { value: "工单", label: "工单", icon: "orders" },
-  { value: "消息", label: "消息", icon: "notifications" },
-  { value: "我的", label: "我的", icon: "profile" },
-];
-const iconMap = {
-  home: Home,
-  orders: ClipboardList,
-  notifications: Bell,
-  profile: User,
-};
-const normalizedItems = computed<NavigationItem[]>(() =>
-  (items.value?.length ? items.value : defaultItems).map((item, index) => {
-    if (typeof item !== "string") return item;
-    return {
-      ...defaultItems[index % defaultItems.length],
-      value: item,
-      label: item,
-    };
-  }),
-);
+
+const normalizedItems = computed(() => items.value ?? []);
+
 const activeItem = computed({
   get: () => modelValue.value ?? normalizedItems.value[0]?.value ?? "",
   set: (value: string) => emit("update:modelValue", value),
@@ -81,8 +63,8 @@ usePbInspect({
   instanceId: inspectId,
   componentId: "bottom-navigation",
   getProps: () => ({
-    modelValue: modelValue.value ?? "工作台",
-    items: normalizedItems.value,
+    modelValue: activeItem.value,
+    items: normalizedItems.value.map(({ value, label }) => ({ value, label })),
     display: display.value ?? "icon-label",
     showIndicator: showIndicator.value ?? true,
     elevated: elevated.value ?? true,
@@ -154,7 +136,12 @@ usePbInspect({
         <div class="pb-bottom-nav-panel" data-pb-role="tab-panel">
           <slot :name="item.value" :item="item">
             <v-sheet class="pb-bottom-nav-placeholder" color="transparent">
-              <component :is="iconMap[item.icon ?? 'home']" :size="28" />
+              <component
+                :is="item.icon"
+                v-if="item.icon"
+                :size="28"
+                aria-hidden="true"
+              />
               <strong>{{ item.label }}</strong>
               <span>{{ item.label }}视图内容</span>
             </v-sheet>
@@ -179,8 +166,8 @@ usePbInspect({
           stacked
         >
           <component
-            v-if="display !== 'label'"
-            :is="iconMap[item.icon ?? 'home']"
+            :is="item.icon"
+            v-if="item.icon && display !== 'label'"
             :size="20"
             aria-hidden="true"
           />

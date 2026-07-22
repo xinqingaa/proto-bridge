@@ -10,15 +10,21 @@
         "type": "string"
       },
       "items": {
-        "type": "array"
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["value", "label"],
+          "properties": {
+            "value": { "type": "string" },
+            "label": { "type": "string" }
+          }
+        }
       },
       "display": {
         "type": "string",
-        "enum": [
-          "icon-label",
-          "icon",
-          "label"
-        ]
+        "enum": ["icon-label", "icon", "label"]
       },
       "showIndicator": {
         "type": "boolean"
@@ -36,15 +42,15 @@
       "mouseSwipe": {
         "type": "boolean"
       }
-    }
+    },
+    "required": ["items"]
   },
   "defaultProps": {
-    "modelValue": "工作台",
+    "modelValue": "one",
     "items": [
-      "工作台",
-      "工单",
-      "消息",
-      "我的"
+      { "value": "one", "label": "首页" },
+      { "value": "two", "label": "列表" },
+      { "value": "three", "label": "我的" }
     ],
     "display": "icon-label",
     "showIndicator": true,
@@ -55,10 +61,10 @@
   },
   "states": [
     {
-      "id": "orders",
-      "label": "工单选中",
+      "id": "second",
+      "label": "第二项选中",
       "props": {
-        "modelValue": "工单"
+        "modelValue": "two"
       }
     },
     {
@@ -76,15 +82,8 @@
       }
     }
   ],
-  "slots": [
-    "工作台",
-    "工单",
-    "消息",
-    "我的"
-  ],
-  "events": [
-    "update:modelValue"
-  ],
+  "slots": ["one", "two", "three"],
+  "events": ["update:modelValue"],
   "tokenBindings": {
     "surface": "color.surface-raised",
     "active": "color.primary",

@@ -1,7 +1,7 @@
 import { computed, ref, type Ref } from "vue";
 
 const INTERACTIVE_SELECTOR =
-  "button, a, input, textarea, select, [contenteditable=true], [data-no-swipe]";
+  "button, a, input, textarea, select, [contenteditable=true], [data-no-swipe], .v-chip, .pb-filter-bar, .period-segment";
 
 export function usePointerSwipe(
   values: Ref<string[]>,

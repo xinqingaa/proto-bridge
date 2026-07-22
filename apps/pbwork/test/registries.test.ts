@@ -97,6 +97,7 @@ describe("design contracts", () => {
     expect(prototypes.map((item) => item.id)).toEqual([
       "field-service",
       "project",
+      "ledger-planet",
     ]);
     const list = prototypeScreens.find(
       (item) => item.screenId === "project.task-list",
@@ -128,6 +129,11 @@ describe("design contracts", () => {
       "messages",
       "settings",
     ]);
+    const ledgerScreens = prototypeScreens.filter(
+      (item) => item.prototypeId === "ledger-planet",
+    );
+    expect(ledgerScreens).toHaveLength(17);
+    expect(ledgerScreens[0]?.screenSlug).toBe("ledger-home");
   });
 });
 
