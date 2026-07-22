@@ -2,7 +2,7 @@
 
 > 状态：已定稿
 > 范围：PBWork 的产品结构、页面布局、运行时边界、交互方式与首期验收标准
-> 非目标：本文不设计 Flutter 实现链路、PB 产物消费流程或多人协作系统
+> 非目标：本文不设计 Flutter 实现链路、PB 产物消费流程或多人协作系统；首期不交付浏览器内源码写回，也不交付多套设计基础 / 多套组件库（见 §21）
 
 旧 `examples/` 示例已经移除，不再维护、不再使用，也不是 PBWork 的脚手架或兼容目标。PBWork 从 `apps/pbwork/` 独立建设，禁止复制或依赖旧 example 的源码、路由、脚本、产物与目录结构。
 
@@ -20,10 +20,9 @@ PBWork 首期必须完成以下闭环：
 4. 在单手机画板中运行真实 Vue 页面；
 5. 选中运行时元素并检查组件、结构、样式与 PBWork 源码约定；
 6. 给页面元素添加保存在本机的评论；
-7. 打开独立原型页面或复制可直接交给 PB 的 Runtime URL；
-8. 通过受控高级操作将组件示例或新 Variant 写回源码。
+7. 打开独立原型页面或复制可直接交给 PB 的 Runtime URL。
 
-PBWork 默认是展示与检查工具。只有用户主动进入高级操作并二次确认后，才允许修改白名单内的源码文件。
+PBWork 默认是展示与检查工具。组件示例、Contract 与 Variant 的持久变更通过仓库源码完成；首期不提供浏览器内「高级操作写回源码」。
 
 长期目标是让原型平台领先维护主题、组件和业务页面，Flutter 使用共享的设计系统定义实现生产 UI，PB 负责组织更完整的源码、运行态、视觉与目标工程上下文。多人协作、拖拽编排、登录鉴权、权限控制和版本历史属于后续产品化能力。
 
@@ -315,7 +314,7 @@ Playground 可调项只允许三类，**不得**提供 Token 换绑或自定义�
 4. **`tokenBindings`**：contract 声明默认语义槽 → Bind 池内的 Token ID；状态/类型只在约定映射内切换（如 `tone`、`variant`、`selectionStyle`）。
 5. **换肤入口**：改 Theme 覆盖值，不改组件绑定，不在 Playground 编辑 Token。
 
-“高级操作 → 更新组件示例”允许将当前配置写回源码。用户必须先看到目标文件、配置摘要和 diff，再在 `v-dialog` 中二次确认。
+Playground 调参仅影响当前预览；持久化组件示例或新增 Variant 请直接修改仓库注册表 / fixture。浏览器内写回属远期能力（见 §15 归档说明与 §21）。
 
 ### 7.2 手机画板
 
@@ -741,7 +740,7 @@ type InspectRegistration = {
 | Component             | `src/design-system/components/registry.ts`；共享契约在 `components/contracts/*.json`                          |
 | Theme / Token         | `src/design-system/themes/*.json`、`src/design-system/tokens/*.json`                                          |
 
-`prototypeScreens` 是 PBWork 路由、导航和当前 PB source adapter 共同读取的唯一页面表。不得再维护一份只给 Vue Router 或只给 PB 的页面列表。工作台启动时校验注册表；高级写入成功后先重新校验，再刷新路由和预览。
+`prototypeScreens` 是 PBWork 路由、导航和当前 PB source adapter 共同读取的唯一页面表。不得再维护一份只给 Vue Router 或只给 PB 的页面列表。工作台启动时校验注册表；注册表变更后须重新校验并刷新导航与预览。
 
 #### 13.1.1 层级关联契约
 
@@ -924,7 +923,7 @@ type RegistryValidationError = {
 
 ID 使用 `^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$`；`prototypeId`、`screenSlug`、`variantId` 与 `themeId` 额外禁止 `.`，只允许 `^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$`。Token category 的值约束为：color 使用可被 CSS 解析的颜色字符串；typography 使用非空 CSS 字体/字阶字符串；spacing、radius 使用非负 number 或合法 CSS 长度；elevation 使用非空 CSS shadow 字符串或非负 number。业务 query key 使用 `^[a-z][a-z0-9_-]*$`，value 为最长 512 字符的单字符串。
 
-Token、Theme 与 Component Contract 数据对象的 `schemaVersion` 首期固定为 `1`；Schema 自身通过带版本的 `$id` 标识，不再另设 `schemaVersion` 字段。Screen fixture 的版本由对应 Schema `$id` 与 fixture 根字段 `schemaVersion` 共同确定，首期同为 `1`。不兼容字段变化必须提升版本并提供显式迁移；PBWork 不静默接受未知版本。工作台启动、生产构建和高级写入 apply 后都运行同一套 `validateRegistries()`，任何错误均阻止 Runtime ready 与源码写回。
+Token、Theme 与 Component Contract 数据对象的 `schemaVersion` 首期固定为 `1`；Schema 自身通过带版本的 `$id` 标识，不再另设 `schemaVersion` 字段。Screen fixture 的版本由对应 Schema `$id` 与 fixture 根字段 `schemaVersion` 共同确定，首期同为 `1`。不兼容字段变化必须提升版本并提供显式迁移；PBWork 不静默接受未知版本。工作台启动与生产构建都运行同一套 `validateRegistries()`，任何错误均阻止 Runtime ready。
 
 Vue Router 与组件预览使用 `import.meta.glob` 建立静态模块映射，再通过 `view` 查找唯一 SFC。Screen 的 `view` 固定写为 `<prototypeId>/screens/<File>.vue`，例如 `project/screens/TaskList.vue`。当前 adapter 使用 TypeScript AST 静态读取导出的数组，支持类型标注、`satisfies` 和 `as const`，但禁止函数调用、展开语法和其他动态表达式，也不会执行注册表源码。adapter 先扫描全部候选文件：全局存在一个 `prototypeScreens` 时只消费它；存在多个时直接报错；完全不存在时才遍历其他导出数组和 Vue Router，兼容现有项目。精确路径无匹配时才允许唯一 basename 回退；多文件同名必须报错。启动校验必须拒绝：重复 ID/path、同一 Prototype 内重复 screenSlug、`screenId !== ${prototypeId}.${screenSlug}`、`path !== /prototype/${prototypeId}/${screenSlug}`、未知 prototypeId、缺失默认 Variant、`view` 无匹配或匹配多个文件、未知或缺失默认 Theme、保留 query 被写入 Variant `query`、非法业务 query 值。
 
@@ -943,9 +942,9 @@ URL 规范化规则：
 5. 工作台 URL 与 iframe URL 使用同一个 canonicalizer，复制链接直接读取规范化后的 iframe URL；
 6. PB `--url` 保留完整 URL 用于 Runtime capture；PB source analysis 只使用 pathname。`--route` 即使带 query，也按 pathname 解析，不用 query 定位源码 Screen。
 
-页面仍可正常交互，但临时交互状态不会自动成为正式 Variant。“高级操作 → 保存为新 Variant”会读取当前可序列化状态，要求填写 ID、名称和说明，并在二次确认弹框中显示目标注册表、状态摘要与 diff。确认后才写入源码。
+页面仍可正常交互，但临时交互状态不会自动成为正式 Variant。首期新增或调整 Variant 须直接修改 `prototypes/registry.ts` 与对应 fixture；浏览器内「保存为新 Variant」不在首期交付（设计草案见 §15）。
 
-工作台不得保存业务上无法恢复或无法序列化的状态；写入后必须能够通过 Runtime URL 独立打开。
+工作台不得依赖无法由 Runtime URL 恢复的隐式业务状态。
 
 JSON Schema 首期用于校验 Token、Theme、基础/复杂组件共享契约，以及复杂组件 Props / State 的 Playground 输入；**不**用 Schema 驱动整页渲染，也不等同于 PB 产物。
 
@@ -1057,9 +1056,11 @@ type LocalCommentStore = {
 
 ---
 
-## 15. 高级源码写入
+## 15. 高级源码写入（归档设计，首期不交付）
 
-高级写入只在本地开发环境启用，部署后的只读 PBWork 不暴露入口。
+> **决策（2026-07-22）**：原里程碑 M6「开发环境受控写回」移出首期。当前场景下改注册表 / fixture 走仓库即可，写回安全面（Origin、nonce、路径穿越、事务恢复等）成本高于收益。本节保留为**归档设计草案**，若未来出现「非工程角色须在浏览器内固化示例 / Variant」再单独立项；在此之前不得实现 `/__pbwork/source-actions/**`，生产与开发预览均保持只读。
+
+高级写入若未来启用，只允许在本地开发环境，部署后的只读 PBWork 不暴露入口。下列为原设计摘要。
 
 ### 15.1 支持操作
 
@@ -1273,7 +1274,7 @@ apps/pbwork/
             └── metadata.ts
 ```
 
-开发环境源码写回的 Vite plugin 放在 `apps/pbwork/dev/source-actions/`，与浏览器 `src/` 分离；恢复日志和事务临时文件写入 gitignored 的 `apps/pbwork/.pbwork-transactions/`。生产 build 配置不得 import 该 plugin。`vite.config.ts` 只在 `command === 'serve' && mode === 'development' && hostIsLoopback` 时注册，并在启动完成前执行事务恢复；使用 `--host` 暴露到局域网时 PBWork 自动成为只读工作台。
+开发环境若未来启用源码写回，Vite plugin 草案路径为 `apps/pbwork/dev/source-actions/`（与浏览器 `src/` 分离）；恢复日志与事务临时文件写入 gitignored 的 `apps/pbwork/.pbwork-transactions/`。**首期不得**在 `vite.config.ts` 注册该 plugin；生产 build 不得 import。使用 `--host` 暴露到局域网时工作台保持只读。
 
 推荐 Pinia store：
 
@@ -1310,9 +1311,8 @@ apps/pbwork/
 | M3 画布与设备    | 单手机 iframe 画板               | 缩放（步进/滑块/常用比例）、拖动、设备切换、主题与 Variant 切换、复制 Runtime URL |
 | M4 Bridge 与检查 | 选择元素 + 右侧检查              | inspect 模式、选中信息、`data-pb-*` 展示                                          |
 | M5 评论          | 本地评论                         | 新增/完成/删除/刷新仍在/定位失效                                                  |
-| M6 高级写入      | 开发环境写回                     | Playground 更新示例与保存 Variant：diff + 二次确认 + 白名单                       |
 
-当前实施状态：M1—M5 已完成；阶段三—五已按 2026-07-20 的建设决策提前完成；M6 后置且仍未实现。全局搜索与设置按 §5 stub 实现即可，不单独占里程碑。
+当前实施状态：**M1—M5 已完成**；阶段三—五（§20）已按 2026-07-20 的建设决策完成。原 M6「高级源码写回」已移出首期，改为远期探索（§15 归档、§21）。全局搜索与设置按 §5 stub 实现即可，不单独占里程碑。
 
 ### 17.1 测试边界
 
@@ -1321,14 +1321,13 @@ apps/pbwork/
 | 阶段   | 必须覆盖                                                                                                                           | 推荐测试文件                                                |
 | ------ | ---------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
 | M1     | history fallback；Workbench / Runtime 双 Layout；Runtime DOM 不存在工作台壳节点；未知 Runtime 资源错误页；壳键盘导航与焦点恢复     | `test/router.test.ts`、`e2e/runtime-layout.spec.ts`         |
-| M2     | Token/Theme/Component/Prototype 注册表正反例；唯一 ID/path/view；Token 引用；Contract 默认值和 State 校验                          | `test/registries.test.ts`、`test/design-contracts.test.ts`  |
+| M2     | Token/Theme/Component/Prototype 注册表正反例；唯一 ID/path/view；Token 引用；Contract 默认值和 State 校验；bindTokens 池约束                          | `test/registries.test.ts`、`test/design-contracts.test.ts`  |
 | M3     | canonical URL；query 拒绝与排序；刷新恢复；设备 viewport；Theme / Variant 切换后 iframe URL                                        | `test/runtime-url.test.ts`、`e2e/canvas.spec.ts`            |
 | M4     | 同源握手；非法 origin；旧 runtimeId；payload 超限/截断；capability；inspect/comment 互斥；键盘选择；跨 Screen route 换代；样式 Token ID / CSS Variable / Value 与匹配来源 | `test/runtime-bridge.test.ts`、`test/inspector-snapshot.test.ts`、`e2e/inspect.spec.ts`、`e2e/inspector.spec.ts` |
 | M5     | `comment-target` 元素/空白/键盘落点；评论持久化；损坏/未知版本；数量和长度限制；定位失效；清除确认                                 | `test/comments.test.ts`                                     |
-| M6     | DTO Schema；浏览器与 Node 共用 fixture Schema；Origin/nonce；路径穿越；符号链接；摘要变化；并发冲突；格式化/校验失败；进程恢复日志 | `test/source-actions.test.ts`、`e2e/source-actions.spec.ts` |
 | 总闭环 | workbench 选择 Variant → 复制 canonical Runtime URL → 直接打开无壳页面 → PB capture 得到正确 pathname、screenId 与截图             | `e2e/pb-capture.spec.ts` + 根仓 E2E                         |
 
-注册表和安全测试必须同时包含成功与失败样本。Playwright 只覆盖跨 iframe、浏览器存储、布局和真实写回等单元测试无法证明的闭环。M6 测试在临时复制的 PBWork fixture 中运行，禁止修改开发者真实注册表。
+注册表测试必须同时包含成功与失败样本。Playwright 只覆盖跨 iframe、浏览器存储、布局等单元测试无法证明的闭环。首期不要求 `source-actions` 测试。
 
 ---
 
@@ -1374,18 +1373,15 @@ apps/pbwork/
 - 刷新后本地评论仍存在；
 - 元素失效时评论不会丢失，并显示定位失效状态。
 
-### 18.5 高级操作
+### 18.5 源码变更（首期）
 
 - 默认浏览和 Playground 操作不修改源码；
-- 更新组件示例和保存 Variant 都必须显示 diff 并二次确认；
-- Variant 写入后可以由独立 Runtime URL 恢复；
-- 非开发环境不提供源码写入入口。
-- 路径穿越、符号链接、非法 Origin/nonce、过期 token、源码摘要变化和并发 apply 均被稳定错误码拒绝；
-- 格式化、校验或替换失败后目标文件与操作前一致；模拟中断产生的恢复日志可在下一次 dev server 启动时处理。
+- 持久变更组件示例、Contract 或 Variant 通过仓库编辑完成，首期不提供浏览器写回入口；
+- 生产构建与开发预览均不得注册 `/__pbwork/source-actions/**` handler。
 
 ### 18.6 浏览器与可访问性
 
-- 锁定 Playwright Chromium、发布时最新两个稳定版 Chrome 与 Edge 完成 M1—M6 主闭环；
+- 锁定 Playwright Chromium、发布时最新两个稳定版 Chrome 与 Edge 完成 M1—M5 主闭环；
 - 一级/二级导航、面板折叠、Playground、画布工具栏、Dialog 和评论可仅用键盘完成；
 - inspect/comment 模式支持键盘落点，`Esc` 顺序、Dialog 焦点约束与触发点恢复符合 §3.2；
 - 图标按钮、模式状态、iframe title、错误与写入结果具有可访问语义；
@@ -1393,12 +1389,12 @@ apps/pbwork/
 
 ### 18.7 开工与交付闸门
 
-本文是 PBWork 首期建设的决策权威。开始 M1 前必须满足：核心类型、Schema、Bridge payload、Runtime 生命周期、错误码、测试文件和固定内容均已在本文定义；README、usage、conventions 与本文无冲突。完成 M6 时必须满足：
+本文是 PBWork 首期建设的决策权威。开始 M1 前必须满足：核心类型、Schema、Bridge payload、Runtime 生命周期、错误码、测试文件和固定内容均已在本文定义；README、usage、conventions 与本文无冲突。首期交付（M1—M5 + §20 扩建）完成时必须满足：
 
 1. `typecheck`、单元/组件测试和 PBWork Playwright 全部通过；
 2. 根仓现有 Core、CLI、MCP 测试无回归；
 3. 复制出的 Runtime URL 通过一次真实 PB hybrid capture；
-4. 生产构建中不存在 `/__pbwork/source-actions/**` handler 或客户端高级写入入口；
+4. 不存在 `/__pbwork/source-actions/**` handler 或客户端高级写入入口；
 5. 注册表、Contract、fixture 与文档示例全部通过同一套 Schema；
 6. §16.1 固定内容和 §18 全部验收，不以“后续补充”替代。
 
@@ -1453,9 +1449,9 @@ Shell 显隐状态名建议 `*Open` / `*Visible` / `show*`，并与业务态字�
 
 ---
 
-## 20. 扩建阶段（当前已完成，M6 后置）
+## 20. 扩建阶段（当前已完成）
 
-根据 2026-07-20 的建设决策，现有交互优化与 M5 完成后，阶段三—五连续推进，M6 高级源码写回后置。下列范围已经进入当前验收闸门；实施同步修订 §16.1、§18 与注册表测试。
+根据 2026-07-20 的建设决策，现有交互优化与 M5 完成后，阶段三—五连续推进；原 M6 写回不纳入扩建闸门。下列范围已经进入当前验收闸门；实施同步修订 §16.1、§18 与注册表测试。
 
 依赖顺序：**扩设计令牌 → 扩组件库 → 迁业务原型**。
 
@@ -1524,7 +1520,7 @@ Search Bar、Filter Bar、Bottom Navigation、Dialog、Snackbar / Toast、Empty 
 
 ### 20.4 工作台生命周期流转
 
-原型生命周期流转属于工作台业务状态，不依赖 M6 源码写回。注册表中的 `lifecycle` 是初始状态，PBWork 以 `pbwork.prototype-lifecycle.v1` 保存本地 override 与流转历史；全部原型、生命周期筛选、原型树和原型概览统一读取“有效状态”。界面必须标记“本地工作台状态”，支持按合法路径流转并恢复注册状态。M6 负责开发环境源码写回，两者没有前置依赖；未来接入服务端时只替换生命周期持久化层。
+原型生命周期流转属于工作台业务状态，不依赖源码写回。注册表中的 `lifecycle` 是初始状态，PBWork 以 `pbwork.prototype-lifecycle.v1` 保存本地 override 与流转历史；全部原型、生命周期筛选、原型树和原型概览统一读取“有效状态”。界面必须标记“本地工作台状态”，支持按合法路径流转并恢复注册状态。未来接入服务端时只替换生命周期持久化层。
 
 合法路径固定为：进行中 → 待确认；待确认 → 进行中 / 已定稿；已定稿 → 待确认 / 已归档；已归档 → 进行中。每次流转记录来源、目标、时间与可选备注。
 
@@ -1536,6 +1532,40 @@ Search Bar、Filter Bar、Bottom Navigation、Dialog、Snackbar / Toast、Empty 
 - 多人共享评论、在线状态和评审流程；
 - 登录鉴权、角色权限和定稿权限；
 - 拖拽编排、版本历史、发布与回滚；
-- 跨端运行页面的视觉与交互验收。
+- 跨端运行页面的视觉与交互验收；
+- 浏览器内受控源码写回（原 M6，见 §15 归档），仅在出现明确非工程角色场景时重开。
 
 当前 PB 的 class/tag 约定以 [conventions.md](./conventions.md) 为准；PBWork 按 §19 强制预留 `data-pb-*`，并保持 tag / class 识别面可用。
+
+---
+
+## 21. 未来探索：多套设计基础与组件库
+
+> **状态**：仅作方向备忘，**不排期、不纳入首期验收**。当前 PBWork 明确保持**一套设计基础 + 一套组件库**。
+
+### 21.1 现状（单例）
+
+- Token / Theme 由全局 `loaders` 加载一份 `tokens.json` 与 `light` / `dark`；
+- 解析链为 `defaultValue + overrides → --pb-* →` 组件与 Runtime；
+- `bindTokens.ts` 与全部 `contracts.tokenBindings` 共用一个绑定池；
+- 组件 registry、Playground、原型 Screen 的 import 路径均为单一 kit；
+- Runtime URL 仅有 `theme`（浅/深），无 `foundationId` / `kitId`。
+
+浅色与深色是**同一套**设计基础下的 Theme，不是两套设计基础。
+
+### 21.2 可扩展方向（若未来需要）
+
+| 层次 | 含义 | 粗粒度成本 |
+|------|------|------------|
+| 多 Foundation | 多套 tokens + themes；组件仍可暂用一套（要求 id / bind 池兼容，或组件声明宿主） | 中 |
+| 多 Kit | 每套组件库绑定各自 Foundation；原型选型 A 或 B | 高 |
+
+建议若启动：先 Foundation 可寻址（loaders / 解析 / Foundations 导航 / URL），再 Kit 抽象；**v1 一个原型只绑一个 kit**（从而一套 foundation），禁止同屏混用 A 组件与 B 基础。
+
+### 21.3 明确非目标（当前）
+
+- 同 Runtime DOM 同时挂载两套未命名空间的 `--pb-*`；
+- 同一 Screen 混用两套 kit 的组件；
+- 为「可能有多品牌」而提前拆分目录与路由。
+
+有真实「多 App / 多品牌设计基础」产品需求时，再以本节为起点开专项设计；在此之前继续维护单一注册表与单一权威链即可。
