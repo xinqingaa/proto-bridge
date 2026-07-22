@@ -311,8 +311,8 @@ Playground 可调项只允许三类，**不得**提供 Token 换绑或自定义�
 
 1. **权威链**：`Token.defaultValue` + `Theme.overrides` → `--pb-*` → 组件只读变量；禁止组件实例换绑。
 2. **命名**：语义 ID（如 `color.primary`、`typography.label`），禁止业务名。
-3. **Core vs 扩展**：`coreTokens.ts` 列出组件契约应绑定的 Core 集；Foundations 页标注 Core/扩展。新增组件绑定优先使用 Core。
-4. **`tokenBindings`**：contract 声明默认语义槽；状态/类型只在约定映射内切换（如 `tone`、`variant`、`selectionStyle`）。特殊值允许 `transparent` / `none`。
+3. **Bind 池 vs 扩展**：`bindTokens.ts` 列出通用组件契约允许写入 `tokenBindings` 的 token id；Foundations 可浏览全部 `tokens.json`，但契约校验拒绝绑定池外 id（`transparent` / `none` 除外）。
+4. **`tokenBindings`**：contract 声明默认语义槽 → Bind 池内的 Token ID；状态/类型只在约定映射内切换（如 `tone`、`variant`、`selectionStyle`）。
 5. **换肤入口**：改 Theme 覆盖值，不改组件绑定，不在 Playground 编辑 Token。
 
 “高级操作 → 更新组件示例”允许将当前配置写回源码。用户必须先看到目标文件、配置摘要和 diff，再在 `v-dialog` 中二次确认。
@@ -860,7 +860,7 @@ type ComponentContract = {
   states: ComponentStateContract[];
   slots: string[];
   events: string[];
-  tokenBindings: Record<string, string>; // semantic slot -> Token ID
+  tokenBindings: Record<string, string>; // semantic slot -> bindTokens id | transparent | none
 };
 
 export const prototypes = [] satisfies PrototypeRecord[];
@@ -888,8 +888,8 @@ Token.defaultValue + Theme.overrides
 3. Token ID 映射为稳定 CSS 变量 `--pb-<normalized-token-id>`，规范化后冲突必须报错；
 4. PBWork 专用 `src/design-system/themes/vuetify-bindings.ts` 导出唯一 `VuetifyThemeBindings`，将 Vuetify 语义色映射到 color Token ID；它只负责 UI 框架适配，不保存颜色值。其他 category 通过 CSS 变量消费；
 5. Token 样本、Component Playground 与 Prototype Runtime 必须调用同一个 `resolveThemeTokens(themeId)`，不得分别计算；
-6. `ComponentContract.tokenBindings` 的 value 必须引用存在的 Token ID，语义槽位在同一 Contract 内唯一；
-7. 未知 Token、类型不匹配、规范化变量名冲突或缺少必需 Vuetify 语义色都使启动校验失败。
+6. `ComponentContract.tokenBindings` 的 value 必须属于 `bindTokens.ts` 约定池，或为特殊值 `transparent` / `none`；语义槽位在同一 Contract 内唯一；池内 id 也必须存在于已注册 Token；
+7. 未知 Token、非 Bind 池绑定、类型不匹配、规范化变量名冲突或缺少必需 Vuetify 语义色都使启动校验失败。
 
 #### Component Contract 约束
 

@@ -10,16 +10,17 @@ export const TOKEN_CATEGORY_META: Record<TokenCategory, TokenCategoryMeta> = {
   color: {
     label: "颜色",
     description:
-      "表面、品牌与反馈语义色。组件契约应优先绑定 Core 色；扩展色供浏览与实验。",
+      "表面、品牌与反馈语义色。可绑定色进入通用组件契约；其余供 Foundations 浏览与实验。",
   },
   typography: {
     label: "字体",
     description:
-      "标题到说明的字重与字号组合。Core 覆盖组件常见层级，其余为展示或稀有样式。",
+      "标题到说明的字重与字号组合。可绑定档位供组件契约使用，其余为展示或稀有样式。",
   },
   spacing: {
     label: "间距",
-    description: "布局与组件内边距阶梯。Core 间距是契约绑定的常用刻度。",
+    description:
+      "布局与组件内边距阶梯。可绑定间距是通用组件契约允许使用的常用刻度。",
   },
   sizing: {
     label: "尺寸",

@@ -14,6 +14,7 @@ import {
   screenViewModules,
 } from "@/design-system/loaders";
 import { normalizeTokenCssVarName } from "@/design-system/resolveThemeTokens";
+import { isAllowedTokenBindingValue } from "@/design-system/bindTokens";
 import { vuetifyThemeBindings } from "@/design-system/themes/vuetify-bindings";
 import type {
   ComponentContract,
@@ -285,13 +286,26 @@ function validateComponentContractPair(
       });
     }
     bindingKeys.add(slot);
-    if (!tokenIds.has(tokenId) && tokenId !== "transparent" && tokenId !== "none") {
+    if (tokenId === "transparent" || tokenId === "none") {
+      continue;
+    }
+    if (!tokenIds.has(tokenId)) {
       pushError(errors, {
         resourceType: "component",
         resourceId: record.id,
         instancePath: `/tokenBindings/${slot}`,
         keyword: "enum",
         message: `unknown token ${tokenId}`,
+      });
+      continue;
+    }
+    if (!isAllowedTokenBindingValue(tokenId)) {
+      pushError(errors, {
+        resourceType: "component",
+        resourceId: record.id,
+        instancePath: `/tokenBindings/${slot}`,
+        keyword: "enum",
+        message: `token ${tokenId} is not in bindTokens (component contracts may only bind the agreed pool)`,
       });
     }
   }

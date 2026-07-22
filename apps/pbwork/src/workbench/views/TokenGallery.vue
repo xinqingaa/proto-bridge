@@ -8,7 +8,7 @@ import {
   resolveThemeTokens,
 } from "@/design-system/resolveThemeTokens";
 import type { TokenCategory, TokenRecord } from "@/design-system/types";
-import { isCoreTokenId } from "@/design-system/coreTokens";
+import { isBindTokenId } from "@/design-system/bindTokens";
 import {
   TOKEN_CATEGORY_META,
   tokenCategoryDescription,
@@ -30,8 +30,8 @@ const categoryTokens = computed(() =>
   allTokens.value.filter((token) => token.category === props.category),
 );
 const categoryTotal = computed(() => categoryTokens.value.length);
-const coreCount = computed(
-  () => categoryTokens.value.filter((token) => isCoreTokenId(token.id)).length,
+const bindCount = computed(
+  () => categoryTokens.value.filter((token) => isBindTokenId(token.id)).length,
 );
 
 const tokens = computed(() => {
@@ -98,7 +98,7 @@ function formatValue(value: unknown): string {
   >
     <template #stats>
       <WorkbenchStatChip :value="categoryTotal" label="项" />
-      <WorkbenchStatChip :value="coreCount" label="个 Core" />
+      <WorkbenchStatChip :value="bindCount" label="项已绑定到组件" />
     </template>
 
     <template #toolbar>

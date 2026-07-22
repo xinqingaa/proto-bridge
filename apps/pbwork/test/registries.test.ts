@@ -194,24 +194,26 @@ describe("resolveLiveTokenBindings", () => {
   });
 });
 
-describe("core tokens", () => {
+describe("bind tokens", () => {
   it("lists only registered token ids", async () => {
-    const { CORE_TOKEN_IDS } = await import("@/design-system/coreTokens");
+    const { BIND_TOKEN_IDS } = await import("@/design-system/bindTokens");
     const ids = new Set(loadTokens().map((token) => token.id));
-    for (const id of CORE_TOKEN_IDS) {
+    for (const id of BIND_TOKEN_IDS) {
       expect(ids.has(id), id).toBe(true);
     }
   });
 
-  it("requires component tokenBindings to prefer registered tokens", async () => {
+  it("requires component tokenBindings to use the bind pool", async () => {
     const { loadComponentContracts } = await import("@/design-system/loaders");
-    const ids = new Set(loadTokens().map((token) => token.id));
+    const { isAllowedTokenBindingValue } = await import(
+      "@/design-system/bindTokens"
+    );
     for (const contract of loadComponentContracts()) {
       for (const [slot, tokenId] of Object.entries(contract.tokenBindings)) {
-        if (tokenId === "transparent" || tokenId === "none") continue;
-        expect(ids.has(tokenId), `${contract.id}.${slot}=${tokenId}`).toBe(
-          true,
-        );
+        expect(
+          isAllowedTokenBindingValue(tokenId),
+          `${contract.id}.${slot}=${tokenId}`,
+        ).toBe(true);
       }
     }
   });

@@ -1,9 +1,12 @@
 /**
- * Core design tokens: the semantic set components should bind to.
- * Extended tokens (e.g. display typography, rare spacing) stay in tokens.json
- * for Foundations browsing but are not required for component contracts.
+ * Bind tokens: the id pool that general component contracts may reference in
+ * `tokenBindings`. All values still live in `tokens.json`; this file only
+ * declares which ids are allowed for binding.
+ *
+ * Other tokens remain browsable in Foundations but must not appear in
+ * component contracts (except special values `transparent` / `none`).
  */
-export const CORE_TOKEN_IDS = [
+export const BIND_TOKEN_IDS = [
   // Color — surfaces & text
   "color.background",
   "color.surface",
@@ -78,10 +81,19 @@ export const CORE_TOKEN_IDS = [
   "motion.easing-standard",
 ] as const;
 
-export type CoreTokenId = (typeof CORE_TOKEN_IDS)[number];
+export type BindTokenId = (typeof BIND_TOKEN_IDS)[number];
 
-const coreSet = new Set<string>(CORE_TOKEN_IDS);
+/** Allowed in `tokenBindings` without being a registered token id. */
+export const BIND_TOKEN_SPECIAL_VALUES = ["transparent", "none"] as const;
 
-export function isCoreTokenId(tokenId: string): boolean {
-  return coreSet.has(tokenId);
+const bindSet = new Set<string>(BIND_TOKEN_IDS);
+const specialSet = new Set<string>(BIND_TOKEN_SPECIAL_VALUES);
+
+export function isBindTokenId(tokenId: string): boolean {
+  return bindSet.has(tokenId);
+}
+
+/** True when a contract `tokenBindings` value is allowed. */
+export function isAllowedTokenBindingValue(tokenId: string): boolean {
+  return specialSet.has(tokenId) || bindSet.has(tokenId);
 }
