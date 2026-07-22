@@ -8,19 +8,23 @@ const props = defineProps<{
   title: string;
   subtitle?: string;
   elevated?: boolean;
+  /** Page-unique inspect / comment anchor; falls back to `ds.card`. */
+  inspectId?: string;
 }>();
 
 const rootRef = usePbInspectRef();
-const { title, subtitle, elevated } = toRefs(props);
+const { title, subtitle, elevated, inspectId } = toRefs(props);
 
 usePbInspect({
   element: rootRef,
   pbId: "ds.card",
+  instanceId: inspectId,
   componentId: "card",
   getProps: () => ({
     title: title.value,
     subtitle: subtitle.value,
     elevated: elevated.value ?? false,
+    inspectId: inspectId.value,
   }),
   getTokenBindings: () => ({
     surface: "color.surface",

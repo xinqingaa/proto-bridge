@@ -37,10 +37,10 @@ test("dark shell styles stay scoped to the workbench chrome", async ({
     };
   });
 
-  expect(styles.rootBackground).toBe("rgb(18, 24, 32)");
+  expect(styles.rootBackground).toBe("rgb(20, 21, 23)");
   expect(styles.rootBackgroundImage).toBe("none");
   expect(styles.toolbarBackgroundImage).toContain("linear-gradient");
-  expect(styles.stageBackgroundImage).toContain("radial-gradient");
+  expect(styles.stageBackgroundImage).toBe("none");
   await expect(page.getByTestId("prototype-iframe")).toHaveAttribute(
     "src",
     /theme=light/,

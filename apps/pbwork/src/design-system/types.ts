@@ -39,12 +39,18 @@ export type VuetifyThemeBindings = Record<
   | "warning"
   | "on-background"
   | "on-surface"
+  | "surface-variant"
+  | "on-surface-variant"
   | "on-primary"
+  | "action"
+  | "on-action"
   | "on-secondary"
   | "on-error"
   | "on-success"
   | "on-warning"
-  | "on-info",
+  | "on-info"
+  | "tooltip"
+  | "on-tooltip",
   string
 >;
 

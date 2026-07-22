@@ -13,15 +13,18 @@ const props = defineProps<{
   rows?: number;
   size?: ComponentSize;
   disabled?: boolean;
+  /** Page-unique inspect / comment anchor; falls back to `ds.textarea`. */
+  inspectId?: string;
 }>();
 defineEmits<{ "update:modelValue": [string] }>();
 
 const rootRef = usePbInspectRef();
-const { label, modelValue, rows, size, disabled } = toRefs(props);
+const { label, modelValue, rows, size, disabled, inspectId } = toRefs(props);
 
 usePbInspect({
   element: rootRef,
   pbId: "ds.textarea",
+  instanceId: inspectId,
   componentId: "textarea",
   getProps: () => ({
     label: label.value,
@@ -29,6 +32,7 @@ usePbInspect({
     rows: rows.value ?? 3,
     size: size.value ?? "md",
     disabled: disabled.value ?? false,
+    inspectId: inspectId.value,
   }),
   getTokens: () => [
     "color.surface",

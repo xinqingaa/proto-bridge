@@ -45,8 +45,8 @@
   "slots": ["default"],
   "events": ["click"],
   "tokenBindings": {
-    "background": "color.primary",
-    "onBackground": "color.on-primary",
+    "background": "color.action",
+    "onBackground": "color.on-action",
     "radius": "radius.md",
     "elevation": "elevation.none",
     "height": "sizing.control-md",

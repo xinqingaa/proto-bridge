@@ -6,20 +6,24 @@ const props = defineProps<{
   label: string;
   modelValue?: boolean;
   disabled?: boolean;
+  /** Page-unique inspect / comment anchor; falls back to `ds.switch`. */
+  inspectId?: string;
 }>();
 defineEmits<{ "update:modelValue": [boolean] }>();
 
 const rootRef = usePbInspectRef();
-const { label, modelValue, disabled } = toRefs(props);
+const { label, modelValue, disabled, inspectId } = toRefs(props);
 
 usePbInspect({
   element: rootRef,
   pbId: "ds.switch",
+  instanceId: inspectId,
   componentId: "switch",
   getProps: () => ({
     label: label.value,
     modelValue: modelValue.value ?? false,
     disabled: disabled.value ?? false,
+    inspectId: inspectId.value,
   }),
   getTokens: () => [
     "color.primary",

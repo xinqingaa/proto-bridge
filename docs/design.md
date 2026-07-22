@@ -642,17 +642,18 @@ type BridgeMessage = {
 ### 11.3 选择行为
 
 1. 进入“选择与评审”模式；右侧空状态和评论列表均可进入该模式；
-2. hover 元素时在 iframe 内显示高亮边框和尺寸；
-3. 点击后锁定元素，**不向页面业务处理器传递该次点击**；
-4. Runtime Bridge 返回元素信息和最近的语义父节点；
-5. 右侧检查面板切换到选中元素；
-6. `Esc` 或再次点击工具退出时清除选择并恢复业务交互。
+2. hover 与 click **共用**同一套 `resolvePickTarget`：优先最深的已登记组件（`usePbInspect`）或紧密 `data-pb-id`（如列表行）；页面 / shell 级松散锚点下的未标记交互节点保持叶子选中，避免“点子级却高亮父级”；
+3. `⌥` / `↑` 显式上溯到父级可检查节点；
+4. 点击后锁定元素，**不向页面业务处理器传递该次点击**；
+5. Runtime Bridge 返回元素信息和最近的语义父节点；
+6. 右侧检查面板切换到选中元素；
+7. `Esc` 或再次点击工具退出时清除选择并恢复业务交互。
 
 拖动画布模式下不向 iframe 发送指针事件用于选择。退出 inspect / comment 后，页面恢复正常交互。
 
-普通 DOM 可以被选择；带稳定标记的组件或区块提供更完整信息。标记与识别面要求见 [§19 PB 源码约定](#19-pb-源码约定)。
+普通 DOM 可以被选择；带稳定标记的组件或区块提供更完整信息（`data-pb-component` 类型键 + 页面唯一 `data-pb-id`）。标记与识别面要求见 [§19 PB 源码约定](#19-pb-源码约定)。
 
-评论与元素选择共用同一交互模式：选中元素后右侧评论 Tab 直接创建评论；未选中元素时仍可浏览全部评论，并通过“定位”重新选中其锚点。定位会进入选择模式、滚动到目标并返回完整元素快照；目标失效时保留评论并明确显示定位失效。Bridge 保留 `comment-target` 能力用于兼容页面空白落点，但界面不再提供与“选择元素”竞争的第二个工具开关。
+评论与元素选择共用同一交互模式：选中元素后右侧评论 Tab 直接创建评论；未选中元素时仍可浏览全部评论，并通过“定位”重新选中其锚点。定位优先使用 runtime `handle`，其次稳定 `data-pb-id`。目标失效时保留评论并明确显示定位失效。Bridge 保留 `comment-target` 能力用于兼容页面空白落点，但界面不再提供与“选择元素”竞争的第二个工具开关。
 
 ### 11.4 组件检查元数据
 
@@ -661,7 +662,7 @@ PBWork 不读取 Vue 私有字段（如 DOM 上的内部组件实例）来获取
 ```ts
 type InspectRegistration = {
   element: HTMLElement;
-  pbId: string;
+  pbId: string; // instance data-pb-id (page-unique when inspectId provided)
   componentId?: string;
   getProps?: () => Record<string, unknown>;
   getState?: () => Record<string, unknown>;
@@ -669,7 +670,7 @@ type InspectRegistration = {
 };
 ```
 
-组件可以通过 `usePbInspect()` composable 或 `v-pb-inspect` directive 登记。Runtime 使用 `WeakMap<HTMLElement, InspectRegistration>` 保存关系；选中普通 DOM 时只返回 DOM/style 信息，选中已登记组件时才返回 Props、State、Contract ID 与 Token。
+组件通过 `usePbInspect()` 登记：写入 `data-pb-component`（类型键，如 `ds.button`）与 `data-pb-id`（实例；可由组件 prop `inspectId` 传入）。Runtime 使用 `WeakMap<HTMLElement, InspectRegistration>` 保存关系；选中普通 DOM 时只返回 DOM/style 信息，选中已登记组件时才返回 Props、State、Contract ID 与 Token。
 
 返回值必须是可 JSON 序列化快照，禁止传递函数、Vue proxy、DOM 引用或循环对象。组件卸载时自动注销，iframe 重载后注册表重建。首期固定限制：文本最多 500 字符；对象最多 5 层、每层最多 100 个 key；数组最多 100 项；单条 Bridge 消息序列化后最多 64 KiB。字段被截断或遮蔽时写入 `SnapshotMeta`；截断后整条消息仍超限则不发送业务 payload，改为返回 `PAYLOAD_TOO_LARGE`。
 
@@ -1406,18 +1407,29 @@ apps/pbwork/
 
 ### 19.1 强制标记
 
-| 属性            | 谁必须写                                               | 值                                                                                                                 |
-| --------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| `data-pb-id`    | 新建组件根、页面关键区块、列表行根、可评论的主要节点   | 稳定、页面内唯一，如 `task-list.summary`；动态列表使用业务 ID（如 `task-list.row.${task.id}`），禁止使用数组 index |
-| `data-pb-role`  | 逻辑区块根（对应 conventions section kind / 派生角色） | 如 `app-bar`、`list`、`section`、`tab-bar`、`bottom-bar`、`chart`                                                  |
-| `data-pb-shell` | Overlay / 临时层根                                     | `sheet` / `dialog` / `modal` / `drawer`（与 conventions shell kind 一致）                                          |
+| 属性                 | 谁必须写                                                         | 值                                                                                                                 |
+| -------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `data-pb-component`  | 设计系统 / 定制组件根（由 `usePbInspect` 写入）                  | 类型键，页面内可重复，如 `ds.button`、`ds.switch`                                                                  |
+| `data-pb-id`         | 新建组件根、页面关键区块、列表行根、可评论的主要节点             | 稳定、**页面内唯一**，如 `task-list.summary`；动态列表使用业务 ID（如 `task-list.row.${task.id}`），禁止数组 index |
+| `data-pb-role`       | 逻辑区块根（对应 conventions section kind / 派生角色）           | 如 `app-bar`、`list`、`section`、`tab-bar`、`bottom-bar`、`chart`                                                  |
+| `data-pb-shell`      | Overlay / 临时层根                                               | `sheet` / `dialog` / `modal` / `drawer`（与 conventions shell kind 一致）                                          |
 
 规则：
 
-1. 能被检查或评论的节点优先保证 `data-pb-id`；
-2. 区块根同时写 `data-pb-role`；shell 根同时写 `data-pb-shell`；
-3. 不发明 Core 角色表以外的业务词表；
-4. 属性是补充，**不能替代** tag / class / 显隐绑定等当前识别面。
+1. 能被检查或评论的节点优先保证 `data-pb-id`；设计系统组件通过 `inspectId` / `instanceId` 传入页面唯一 id，未传入时回退为类型键（仅便于识别，不适合多实例评论定位）；
+2. 组件根同时写 `data-pb-component`（类型）与 `data-pb-id`（实例）；
+3. 区块根同时写 `data-pb-role`；shell 根同时写 `data-pb-shell`；
+4. 不发明 Core 角色表以外的业务词表；
+5. 属性是补充，**不能替代** tag / class / 显隐绑定等当前识别面。
+
+### 19.1.1 原型页面组装约定
+
+重做原型时：
+
+1. **优先使用** `design-system/components` 通用组件；页面只做布局与业务文案；
+2. 少量定制组件可以接受，但必须调用 `usePbInspect({ pbId, componentId, instanceId?, ... })`，保证检查面板能读到 Props / Contract / Token；
+3. 禁止大段无标记原生 DOM 充当可交互控件（如裸 `<button>`）；应换成 `Button` 等组件，或至少提供稳定 `data-pb-id` + `data-pb-role`；
+4. 页面 / shell 锚点（如 `field-service.settings`、`*.shell`）只表示结构容器，**不能**作为唯一可点目标——区块与控件必须有更深层锚点或组件登记。
 
 ### 19.2 Vuetify → 当前识别面
 

@@ -6,19 +6,23 @@ const props = defineProps<{
   label?: string;
   value?: number;
   indeterminate?: boolean;
+  /** Page-unique inspect / comment anchor; falls back to `ds.progress`. */
+  inspectId?: string;
 }>();
 
 const rootRef = usePbInspectRef();
-const { label, value, indeterminate } = toRefs(props);
+const { label, value, indeterminate, inspectId } = toRefs(props);
 
 usePbInspect({
   element: rootRef,
   pbId: "ds.progress",
+  instanceId: inspectId,
   componentId: "progress",
   getProps: () => ({
     label: label.value ?? "",
     value: value.value ?? 0,
     indeterminate: indeterminate.value ?? false,
+    inspectId: inspectId.value,
   }),
   getTokens: () => [
     "color.primary",

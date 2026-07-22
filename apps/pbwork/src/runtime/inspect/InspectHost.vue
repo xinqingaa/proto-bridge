@@ -15,7 +15,7 @@ import {
   climbInspectTarget,
   isInspectChrome,
   readBbox,
-  resolveInspectTarget,
+  resolvePickTarget,
 } from "@/runtime/inspect/snapshot";
 
 const props = defineProps<{
@@ -79,12 +79,39 @@ function selectElement(el: HTMLElement) {
 
 function stableSelector(el: HTMLElement): string | undefined {
   const pbId = el.getAttribute("data-pb-id");
-  if (pbId) return `[data-pb-id="${CSS.escape(pbId)}"]`;
-  if (el.id) return `#${CSS.escape(el.id)}`;
-  const parentPb = el.parentElement?.closest<HTMLElement>("[data-pb-id]");
-  const parentId = parentPb?.getAttribute("data-pb-id");
-  if (parentId) return `[data-pb-id="${CSS.escape(parentId)}"] > ${el.tagName.toLowerCase()}`;
-  return undefined;
+  if (
+    pbId &&
+    document.querySelectorAll(`[data-pb-id="${CSS.escape(pbId)}"]`).length === 1
+  ) {
+    return `[data-pb-id="${CSS.escape(pbId)}"]`;
+  }
+  if (el.id && document.querySelectorAll(`#${CSS.escape(el.id)}`).length === 1) {
+    return `#${CSS.escape(el.id)}`;
+  }
+
+  const parts: string[] = [];
+  let cur: HTMLElement | null = el;
+  while (cur && cur !== document.body && parts.length < 10) {
+    const curPbId = cur.getAttribute("data-pb-id");
+    if (
+      curPbId &&
+      document.querySelectorAll(`[data-pb-id="${CSS.escape(curPbId)}"]`).length === 1
+    ) {
+      parts.unshift(`[data-pb-id="${CSS.escape(curPbId)}"]`);
+      break;
+    }
+    const parentEl: HTMLElement | null = cur.parentElement;
+    if (!parentEl) break;
+    const tag = cur.tagName.toLowerCase();
+    const siblings = Array.from(parentEl.children).filter(
+      (node: Element) => node.tagName === cur!.tagName,
+    );
+    const index = siblings.indexOf(cur) + 1;
+    parts.unshift(siblings.length > 1 ? `${tag}:nth-of-type(${index})` : tag);
+    cur = parentEl;
+  }
+  const selector = parts.join(" > ");
+  return selector && selector.length <= 512 ? selector : undefined;
 }
 
 function sendCommentTarget(event: MouseEvent | KeyboardEvent, leaf: HTMLElement | null) {
@@ -94,8 +121,7 @@ function sendCommentTarget(event: MouseEvent | KeyboardEvent, leaf: HTMLElement 
       : leaf
         ? { x: readBbox(leaf).x + readBbox(leaf).width / 2, y: readBbox(leaf).y + readBbox(leaf).height / 2 }
         : { x: window.innerWidth / 2, y: window.innerHeight / 2 };
-  const stableAncestor = leaf?.closest<HTMLElement>("[data-pb-id]") ?? null;
-  const target = stableAncestor ?? (leaf ? resolveInspectTarget(leaf, false) : null);
+  const target = leaf ? resolvePickTarget(leaf, false) : null;
   const selector = target ? stableSelector(target) : undefined;
   const payload = {
     point,
@@ -119,7 +145,7 @@ function onPointerMove(event: PointerEvent) {
     if (msg) props.post(msg);
     return;
   }
-  const el = resolveInspectTarget(leaf, event.altKey);
+  const el = resolvePickTarget(leaf, event.altKey);
   hoverBox.value = readBbox(el);
   const summary = buildElementSummary(el);
   const msg = envelope("hover", { element: summary });
@@ -142,13 +168,7 @@ function onClick(event: MouseEvent) {
     return;
   }
 
-  // Snap to nearest stable PB anchor so comments / inspect bind to data-pb-id roots
-  // (e.g. list rows) instead of inner typography nodes from Vuetify.
-  const anchored = leaf.closest<HTMLElement>("[data-pb-id]");
-  const target = event.altKey
-    ? resolveInspectTarget(anchored ?? leaf, true)
-    : (anchored ?? resolveInspectTarget(leaf, false));
-  selectElement(target);
+  selectElement(resolvePickTarget(leaf, event.altKey));
 }
 
 function onKeyDown(event: KeyboardEvent) {
@@ -178,7 +198,7 @@ function onKeyDown(event: KeyboardEvent) {
       sendCommentTarget(event, active);
       return;
     }
-    selectElement(active);
+    selectElement(resolvePickTarget(active, event.altKey));
   }
 }
 

@@ -25,6 +25,7 @@ const items = computed(() => {
     <p class="variant-hint">Variant：{{ variant }}</p>
     <DataList
       class="list"
+      inspect-id="project.task-list.list"
       :items="items"
       :loading="variant === 'loading'"
       empty-text="暂无任务"

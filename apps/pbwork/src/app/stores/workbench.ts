@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 
-export type WorkbenchTheme = "pbworkLight" | "pbworkDark";
+export type WorkbenchTheme = "workbenchLight" | "workbenchDark";
 
 const themeKey = "pbwork.workbench.theme.v1";
 const layoutKey = "pbwork.workbench.layout.v2";
@@ -18,10 +18,11 @@ type LayoutPrefs = {
 };
 
 function readTheme(): WorkbenchTheme {
-  if (typeof window === "undefined") return "pbworkLight";
-  return window.localStorage.getItem(themeKey) === "pbworkDark"
-    ? "pbworkDark"
-    : "pbworkLight";
+  if (typeof window === "undefined") return "workbenchLight";
+  const stored = window.localStorage.getItem(themeKey);
+  return stored === "workbenchDark" || stored === "pbworkDark"
+    ? "workbenchDark"
+    : "workbenchLight";
 }
 
 function clampInspectorWidth(width: number): number {
@@ -96,7 +97,8 @@ export const useWorkbenchStore = defineStore("workbench", {
       this.persistLayout();
     },
     toggleTheme() {
-      this.theme = this.theme === "pbworkLight" ? "pbworkDark" : "pbworkLight";
+      this.theme =
+        this.theme === "workbenchLight" ? "workbenchDark" : "workbenchLight";
       window.localStorage.setItem(themeKey, this.theme);
     },
   },

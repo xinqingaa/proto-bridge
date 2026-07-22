@@ -16,7 +16,7 @@ test("dark Runtime paints its own root background", async ({ page }) => {
   const runtime = page.getByTestId("runtime-root");
   await expect(runtime).toBeVisible();
   await expect(runtime).toHaveClass(/v-theme--pbworkDark/);
-  await expect(runtime).toHaveCSS("background-color", "rgb(18, 24, 32)");
+  await expect(runtime).toHaveCSS("background-color", "rgb(20, 21, 23)");
   await expect(page.locator(".phone-stage")).toHaveCount(0);
   await expect(page.getByTestId("workbench-root")).toHaveCount(0);
 });

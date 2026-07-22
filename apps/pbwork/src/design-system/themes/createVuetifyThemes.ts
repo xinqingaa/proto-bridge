@@ -2,6 +2,7 @@ import { loadThemes } from "@/design-system/loaders";
 import { resolveThemeTokens } from "@/design-system/resolveThemeTokens";
 import { vuetifyThemeBindings } from "@/design-system/themes/vuetify-bindings";
 import type { TokenValue } from "@/design-system/types";
+import { workbenchThemes } from "@/design-system/themes/workbench-themes";
 
 function colorsFromResolved(
   resolved: Record<string, TokenValue>,
@@ -27,6 +28,7 @@ export function createVuetifyThemes() {
   }
 
   return {
+    ...workbenchThemes,
     pbworkLight: {
       dark: lightTheme.dark,
       colors: colorsFromResolved(resolveThemeTokens("light")),

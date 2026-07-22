@@ -45,10 +45,11 @@ defineEmits<{ click: [event: MouseEvent] }>();
 }
 .wb-button:hover { background: rgba(var(--v-theme-on-surface), 0.055); }
 .wb-button.is-primary {
-  border-color: color-mix(in srgb, rgb(var(--v-theme-primary)) 55%, transparent);
-  background: color-mix(in srgb, rgb(var(--v-theme-primary)) 13%, rgb(var(--v-theme-surface)));
-  color: rgb(var(--v-theme-primary));
+  border-color: rgb(var(--v-theme-action));
+  background: rgb(var(--v-theme-action));
+  color: rgb(var(--v-theme-on-action));
 }
+.wb-button.is-primary:hover { filter: brightness(1.08); }
 .wb-button.is-ghost { border-color: transparent; background: transparent; }
 .wb-button.is-danger { border-color: transparent; background: transparent; color: rgb(var(--v-theme-error)); }
 .wb-button:disabled { opacity: 0.48; cursor: not-allowed; }

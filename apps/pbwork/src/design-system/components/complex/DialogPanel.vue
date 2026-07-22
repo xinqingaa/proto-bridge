@@ -11,6 +11,8 @@ const props = defineProps<{
   contained?: boolean;
   /** CSS selector for overlay host; Runtime defaults to .runtime-app */
   attach?: string;
+  /** Page-unique inspect / comment anchor; falls back to `ds.dialog`. */
+  inspectId?: string;
 }>();
 
 defineEmits<{
@@ -19,7 +21,7 @@ defineEmits<{
 }>();
 
 const rootRef = usePbInspectRef();
-const { modelValue, title, message, confirmLabel, contained, attach } =
+const { modelValue, title, message, confirmLabel, contained, attach, inspectId } =
   toRefs(props);
 
 const attachTarget = computed(() => attach.value ?? ".runtime-app");
@@ -27,6 +29,7 @@ const attachTarget = computed(() => attach.value ?? ".runtime-app");
 usePbInspect({
   element: rootRef,
   pbId: "ds.dialog",
+  instanceId: inspectId,
   componentId: "dialog",
   getProps: () => ({
     modelValue: modelValue.value ?? false,
@@ -34,6 +37,7 @@ usePbInspect({
     message: message.value ?? "",
     confirmLabel: confirmLabel.value ?? "确认",
     contained: contained.value ?? false,
+    inspectId: inspectId.value,
   }),
   getTokens: () => [
     "color.scrim",

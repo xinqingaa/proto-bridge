@@ -91,6 +91,7 @@ const currentCommentTarget = computed((): CommentTarget | null => {
   if (!el) return null;
   return {
     ...(el.ref.pbId ? { elementId: el.ref.pbId } : {}),
+    ...(el.ref.selector ? { selector: el.ref.selector } : {}),
     elementLabel: elementDisplayLabel(el),
     ...(el.text ? { textSnapshot: el.text.slice(0, 160) } : {}),
     ...(el.bbox
@@ -502,7 +503,7 @@ function downloadUnreadable() {
       <p class="empty-title">还没有选中节点</p>
       <p class="empty-hint">
         选择页面中的元素，查看样式、组件信息或添加评论。按住
-        ⌥/Alt 点击可选中语义父级；选中后按 ↑ 继续上溯。
+        ⌥/Alt 点击可选中所属组件或语义锚点；选中后按 ↑ 逐级上溯。
       </p>
       <button
         type="button"
@@ -556,6 +557,12 @@ function downloadUnreadable() {
             <div class="field">
               <span class="label">组件</span>
               <span class="value">{{ selected?.componentId || "—" }}</span>
+            </div>
+            <div class="field">
+              <span class="label">组件实例</span>
+              <span class="value mono">{{
+                formatRef(selected?.componentOwner?.ref ?? element?.ref)
+              }}</span>
             </div>
             <div class="field">
               <span class="label">语义父级</span>
@@ -1050,8 +1057,8 @@ function downloadUnreadable() {
   padding: 0 14px;
   border: 0;
   border-radius: 9px;
-  background: rgb(var(--v-theme-primary));
-  color: rgb(var(--v-theme-on-primary));
+  background: rgb(var(--v-theme-action));
+  color: rgb(var(--v-theme-on-action));
   font-size: 0.75rem;
   font-weight: 700;
   cursor: pointer;

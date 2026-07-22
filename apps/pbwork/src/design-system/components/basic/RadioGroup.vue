@@ -7,21 +7,25 @@ const props = defineProps<{
   modelValue?: string;
   options?: string[];
   disabled?: boolean;
+  /** Page-unique inspect / comment anchor; falls back to `ds.radio-group`. */
+  inspectId?: string;
 }>();
 defineEmits<{ "update:modelValue": [string] }>();
 
 const rootRef = usePbInspectRef();
-const { label, modelValue, options, disabled } = toRefs(props);
+const { label, modelValue, options, disabled, inspectId } = toRefs(props);
 
 usePbInspect({
   element: rootRef,
   pbId: "ds.radio-group",
+  instanceId: inspectId,
   componentId: "radio-group",
   getProps: () => ({
     label: label.value,
     modelValue: modelValue.value ?? "",
     options: options.value ?? [],
     disabled: disabled.value ?? false,
+    inspectId: inspectId.value,
   }),
   getTokens: () => [
     "color.primary",

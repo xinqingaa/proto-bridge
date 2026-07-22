@@ -8,10 +8,12 @@ const props = defineProps<{
   label: string;
   tone?: "primary" | "secondary" | "success" | "warning" | "error";
   elevated?: boolean;
+  /** Page-unique inspect / comment anchor; falls back to `ds.chip`. */
+  inspectId?: string;
 }>();
 
 const rootRef = usePbInspectRef();
-const { label, tone, elevated } = toRefs(props);
+const { label, tone, elevated, inspectId } = toRefs(props);
 
 function softTokenForTone(value: string | undefined): `color.${string}-soft` {
   const t = value ?? "primary";
@@ -21,23 +23,25 @@ function softTokenForTone(value: string | undefined): `color.${string}-soft` {
 usePbInspect({
   element: rootRef,
   pbId: "ds.chip",
+  instanceId: inspectId,
   componentId: "chip",
   getProps: () => ({
     label: label.value,
     tone: tone.value ?? "primary",
     elevated: elevated.value ?? false,
+    inspectId: inspectId.value,
   }),
   getTokenBindings: () => ({
     background: softTokenForTone(tone.value),
     color: `color.${tone.value ?? "primary"}`,
-    radius: "radius.full",
+    radius: "radius.sm",
     elevation: "elevation.card",
     typography: "typography.caption",
   }),
   getTokens: () => [
     softTokenForTone(tone.value),
     `color.${tone.value ?? "primary"}`,
-    "radius.full",
+    "radius.sm",
     "elevation.card",
     "typography.caption",
     "spacing.sm",
@@ -54,8 +58,8 @@ usePbInspect({
     variant="tonal"
     size="small"
     :elevation="0"
-    rounded="pill"
-    :style="[radiusStyle('full'), elevationStyle(elevated ? 'card' : 'none')]"
+    rounded="md"
+    :style="[radiusStyle('sm'), elevationStyle(elevated ? 'card' : 'none')]"
   >
     {{ label }}
   </v-chip>

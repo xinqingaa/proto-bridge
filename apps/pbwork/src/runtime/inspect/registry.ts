@@ -36,17 +36,20 @@ export function getOrCreateHandle(element: HTMLElement): string {
 }
 
 export function findByRef(ref: ElementRef): HTMLElement | null {
-  if (ref.pbId) {
-    const el = document.querySelector(
-      `[data-pb-id="${CSS.escape(ref.pbId)}"]`,
-    );
-    if (el instanceof HTMLElement) return el;
-  }
+  // Prefer runtime handle — shared type-level data-pb-id is not instance-unique.
   if (ref.handle) {
     const all = Array.from(document.body.querySelectorAll("*"));
     for (const node of all) {
       if (!(node instanceof HTMLElement)) continue;
       if (handles.get(node) === ref.handle) return node;
+    }
+  }
+  if (ref.pbId) {
+    const matches = document.querySelectorAll(
+      `[data-pb-id="${CSS.escape(ref.pbId)}"]`,
+    );
+    if (matches.length === 1 && matches[0] instanceof HTMLElement) {
+      return matches[0];
     }
   }
   if (ref.selector && ref.selector.length <= 512) {

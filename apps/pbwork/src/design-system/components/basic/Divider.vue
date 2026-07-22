@@ -5,18 +5,22 @@ import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 const props = defineProps<{
   label?: string;
   inset?: boolean;
+  /** Page-unique inspect / comment anchor; falls back to `ds.divider`. */
+  inspectId?: string;
 }>();
 
 const rootRef = usePbInspectRef();
-const { label, inset } = toRefs(props);
+const { label, inset, inspectId } = toRefs(props);
 
 usePbInspect({
   element: rootRef,
   pbId: "ds.divider",
+  instanceId: inspectId,
   componentId: "divider",
   getProps: () => ({
     label: label.value ?? "",
     inset: inset.value ?? false,
+    inspectId: inspectId.value,
   }),
   getTokens: () => ["color.divider", "spacing.md", "typography.caption"],
   getTokenBindings: () => ({

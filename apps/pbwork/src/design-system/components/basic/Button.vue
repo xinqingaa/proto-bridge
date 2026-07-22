@@ -17,12 +17,14 @@ const props = defineProps<{
   block?: boolean;
   disabled?: boolean;
   type?: "button" | "submit" | "reset";
+  /** Page-unique inspect / comment anchor; falls back to `ds.button`. */
+  inspectId?: string;
 }>();
 defineEmits<{ click: [] }>();
 
 const rootRef = usePbInspectRef();
 const slots = useSlots();
-const { label, variant, tone, size, loading, block, disabled, type } =
+const { label, variant, tone, size, loading, block, disabled, type, inspectId } =
   toRefs(props);
 
 const vuetifySize = computed(() => {
@@ -31,9 +33,18 @@ const vuetifySize = computed(() => {
   return "default";
 });
 
+const resolvedVariant = computed(() => variant.value ?? "flat");
+const resolvedTone = computed(() => tone.value ?? "primary");
+const vuetifyColor = computed(() =>
+  resolvedVariant.value === "flat" && resolvedTone.value === "primary"
+    ? "action"
+    : resolvedTone.value,
+);
+
 usePbInspect({
   element: rootRef,
   pbId: "ds.button",
+  instanceId: inspectId,
   componentId: "button",
   getProps: () => ({
     label: label.value,
@@ -44,10 +55,11 @@ usePbInspect({
     block: block.value ?? false,
     disabled: disabled.value ?? false,
     type: type.value ?? "button",
+    inspectId: inspectId.value,
   }),
   getTokenBindings: () => {
-    const t = tone.value ?? "primary";
-    const v = variant.value ?? "flat";
+    const t = vuetifyColor.value;
+    const v = resolvedVariant.value;
     return {
       background: v === "tonal" ? `color.${t}-soft` : `color.${t}`,
       onBackground: `color.on-${t}`,
@@ -60,8 +72,8 @@ usePbInspect({
     };
   },
   getTokens: () => {
-    const t = tone.value ?? "primary";
-    const v = variant.value ?? "flat";
+    const t = vuetifyColor.value;
+    const v = resolvedVariant.value;
     return [
       v === "tonal" ? `color.${t}-soft` : `color.${t}`,
       `color.on-${t}`,
@@ -83,7 +95,7 @@ usePbInspect({
     data-pb-id="ds.button"
     :type="type ?? 'button'"
     :variant="variant ?? 'flat'"
-    :color="tone ?? 'primary'"
+    :color="vuetifyColor"
     rounded="md"
     :size="vuetifySize"
     :loading="loading ?? false"

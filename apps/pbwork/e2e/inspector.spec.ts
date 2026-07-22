@@ -13,7 +13,7 @@ test("selected components expose the Token to CSS value chain", async ({
   await inspectButton.click();
 
   const frame = page.frameLocator('[data-testid="prototype-iframe"]');
-  const list = frame.locator('[data-pb-id="ds.data-list"]');
+  const list = frame.locator('[data-pb-id="project.task-list.list"]');
   await expect(list).toBeVisible();
   await list.click();
 

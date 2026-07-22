@@ -8,21 +8,25 @@ const props = defineProps<{
   modelValue?: boolean;
   /** CSS selector for overlay host; Runtime defaults to .runtime-app */
   attach?: string;
+  /** Page-unique inspect / comment anchor; falls back to `ds.bottom-sheet`. */
+  inspectId?: string;
 }>();
 defineEmits<{ "update:modelValue": [value: boolean] }>();
 
 const sheetRef = usePbInspectRef();
-const { title, modelValue, attach } = toRefs(props);
+const { title, modelValue, attach, inspectId } = toRefs(props);
 
 const attachTarget = computed(() => attach.value ?? ".runtime-app");
 
 usePbInspect({
   element: sheetRef,
   pbId: "ds.bottom-sheet",
+  instanceId: inspectId,
   componentId: "bottom-sheet",
   getProps: () => ({
     title: title.value,
     modelValue: modelValue.value ?? false,
+    inspectId: inspectId.value,
   }),
   getState: () => ({ open: Boolean(modelValue.value) }),
   getTokenBindings: () => ({

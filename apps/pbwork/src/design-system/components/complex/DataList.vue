@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { toRefs } from "vue";
+import { computed, toRefs } from "vue";
 import { ChevronRight } from "lucide-vue-next";
 import Chip from "@/design-system/components/basic/Chip.vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
@@ -12,15 +12,20 @@ const props = defineProps<{
   emptyText?: string;
   elevated?: boolean;
   showActions?: boolean;
+  /** Page-unique inspect / comment anchor; falls back to `ds.data-list`. */
+  inspectId?: string;
 }>();
 defineEmits<{ select: [id: string] }>();
 
 const rootRef = usePbInspectRef();
-const { items, loading, emptyText, elevated, showActions } = toRefs(props);
+const { items, loading, emptyText, elevated, showActions, inspectId } =
+  toRefs(props);
+const inspectBaseId = computed(() => inspectId.value ?? "ds.data-list");
 
 usePbInspect({
   element: rootRef,
   pbId: "ds.data-list",
+  instanceId: inspectId,
   componentId: "data-list",
   getProps: () => ({
     itemCount: items.value.length,
@@ -28,11 +33,12 @@ usePbInspect({
     emptyText: emptyText.value ?? "暂无数据",
     elevated: elevated.value ?? false,
     showActions: showActions.value ?? true,
+    inspectId: inspectId.value,
   }),
   getTokenBindings: () => ({
     surface: "color.surface",
     border: "color.border",
-    radius: "radius.lg",
+    radius: "radius.sm",
     elevation: "elevation.card",
     title: "typography.subtitle",
     subtitle: "typography.caption",
@@ -44,7 +50,7 @@ usePbInspect({
     "color.border",
     "color.on-surface",
     "color.on-surface-muted",
-    "radius.lg",
+    "radius.sm",
     "elevation.card",
     "typography.subtitle",
     "typography.caption",
@@ -64,7 +70,7 @@ usePbInspect({
     color="on-surface"
     :lines="false"
     :elevation="0"
-    :style="[radiusStyle('lg'), elevationStyle(elevated ? 'card' : 'none')]"
+    :style="[radiusStyle('sm'), elevationStyle(elevated ? 'card' : 'none')]"
   >
     <div v-if="loading" class="pb-data-list-loading">加载中…</div>
     <template v-else-if="items.length > 0">
@@ -72,7 +78,7 @@ usePbInspect({
         v-for="item in items"
         :key="item.id"
         class="pb-data-list-row-wrap"
-        :data-pb-id="`ds.data-list.row.${item.id}`"
+        :data-pb-id="`${inspectBaseId}.row.${item.id}`"
         @click="$emit('select', item.id)"
       >
         <v-list-item
@@ -83,13 +89,18 @@ usePbInspect({
           <template #append>
             <slot name="append" :item="item">
               <div class="pb-data-list-actions">
-                <Chip label="进行中" tone="primary" />
+                <Chip
+                  label="进行中"
+                  tone="primary"
+                  :inspect-id="`${inspectBaseId}.row.${item.id}.status`"
+                />
                 <v-btn
                   v-if="showActions ?? true"
                   icon
                   variant="tonal"
                   size="small"
                   :aria-label="`查看${item.title}`"
+                  :data-pb-id="`${inspectBaseId}.row.${item.id}.action`"
                   @click.stop="$emit('select', item.id)"
                 >
                   <ChevronRight :size="18" />
@@ -106,7 +117,8 @@ usePbInspect({
 
 <style scoped>
 .pb-data-list {
-  border: 1px solid var(--pb-color-border, #d7dee8);
+  border: 1px solid var(--pb-color-border, #dde1e6);
+  border-radius: var(--pb-radius-sm, 8px) !important;
   overflow: hidden;
   padding: 0;
   box-shadow: var(--pb-component-shadow, none) !important;
@@ -135,7 +147,8 @@ usePbInspect({
   gap: var(--pb-spacing-sm);
 }
 .pb-data-list-row {
-  border-bottom: 1px solid var(--pb-color-border, #d7dee8);
+  min-height: 64px;
+  border-bottom: 1px solid var(--pb-color-divider, #e5e7ea);
 }
 .pb-data-list-row-wrap:last-child .pb-data-list-row {
   border-bottom: 0;
@@ -147,6 +160,9 @@ usePbInspect({
     system-ui,
     sans-serif
   );
+}
+.pb-data-list-row-wrap:hover {
+  background: var(--pb-color-surface-variant, #f0f2f4);
 }
 .pb-data-list-row :deep(.v-list-item-subtitle) {
   font: var(--pb-typography-caption, 400 12px/1.4 Inter, system-ui, sans-serif);

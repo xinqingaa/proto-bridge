@@ -16,4 +16,19 @@ describe("createVuetifyThemes", () => {
     expect(themes.pbworkLight.dark).toBe(false);
     expect(themes.pbworkDark.dark).toBe(true);
   });
+
+  it("keeps tooltip foreground and background as an explicit inverse pair", () => {
+    const themes = createVuetifyThemes();
+
+    expect(themes.workbenchLight.colors.tooltip).toBe("#303236");
+    expect(themes.workbenchLight.colors["on-tooltip"]).toBe("#ffffff");
+    expect(themes.workbenchDark.colors.tooltip).toBe("#eef0f2");
+    expect(themes.workbenchDark.colors["on-tooltip"]).toBe("#202124");
+    expect(themes.pbworkLight.colors.tooltip).toBe(
+      themes.pbworkLight.colors.action,
+    );
+    expect(themes.pbworkDark.colors["on-tooltip"]).toBe(
+      themes.pbworkDark.colors["on-action"],
+    );
+  });
 });

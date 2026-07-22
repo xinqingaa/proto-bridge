@@ -329,8 +329,8 @@ const assetStats = computed(() => [
   gap: 7px;
   padding: 0 14px;
   border-radius: 10px;
-  color: white;
-  background: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-on-action));
+  background: rgb(var(--v-theme-action));
   text-decoration: none;
   font-size: 0.78rem;
   font-weight: 700;

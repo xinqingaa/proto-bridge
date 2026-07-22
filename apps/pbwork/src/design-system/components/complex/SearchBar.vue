@@ -7,26 +7,30 @@ const props = defineProps<{
   modelValue?: string;
   placeholder?: string;
   disabled?: boolean;
+  /** Page-unique inspect / comment anchor; falls back to `ds.search-bar`. */
+  inspectId?: string;
 }>();
 defineEmits<{ "update:modelValue": [string]; submit: [] }>();
 
 const rootRef = usePbInspectRef();
-const { modelValue, placeholder, disabled } = toRefs(props);
+const { modelValue, placeholder, disabled, inspectId } = toRefs(props);
 
 usePbInspect({
   element: rootRef,
   pbId: "ds.search-bar",
+  instanceId: inspectId,
   componentId: "search-bar",
   getProps: () => ({
     modelValue: modelValue.value ?? "",
     placeholder: placeholder.value ?? "搜索",
     disabled: disabled.value ?? false,
+    inspectId: inspectId.value,
   }),
   getTokens: () => [
     "color.surface-variant",
     "color.on-surface",
     "color.on-surface-muted",
-    "radius.full",
+    "radius.md",
     "sizing.control-lg",
     "sizing.icon-md",
     "typography.content",
@@ -35,7 +39,7 @@ usePbInspect({
     surface: "color.surface-variant",
     text: "color.on-surface",
     placeholder: "color.on-surface-muted",
-    radius: "radius.full",
+    radius: "radius.md",
     height: "sizing.control-lg",
     icon: "sizing.icon-md",
     typography: "typography.content",
@@ -58,7 +62,7 @@ usePbInspect({
       flat
       hide-details
       clearable
-      rounded="pill"
+      rounded="md"
       :model-value="modelValue ?? ''"
       :placeholder="placeholder ?? '搜索'"
       :disabled="disabled ?? false"
@@ -77,11 +81,11 @@ usePbInspect({
   width: 100%;
 }
 .pb-search-field {
-  border-radius: var(--pb-radius-full, 999px);
+  border-radius: var(--pb-radius-md, 12px);
 }
 .pb-search-field :deep(.v-field) {
   min-height: var(--pb-sizing-control-lg, 48px);
-  border-radius: var(--pb-radius-full, 999px);
+  border-radius: var(--pb-radius-md, 12px);
   background: var(--pb-color-surface-variant) !important;
   color: var(--pb-color-on-surface);
   font: var(--pb-typography-content);

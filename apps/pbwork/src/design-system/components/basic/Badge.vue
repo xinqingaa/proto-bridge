@@ -5,18 +5,22 @@ import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 const props = defineProps<{
   label: string;
   tone?: "primary" | "error" | "success" | "warning";
+  /** Page-unique inspect / comment anchor; falls back to `ds.badge`. */
+  inspectId?: string;
 }>();
 
 const rootRef = usePbInspectRef();
-const { label, tone } = toRefs(props);
+const { label, tone, inspectId } = toRefs(props);
 
 usePbInspect({
   element: rootRef,
   pbId: "ds.badge",
+  instanceId: inspectId,
   componentId: "badge",
   getProps: () => ({
     label: label.value,
     tone: tone.value ?? "primary",
+    inspectId: inspectId.value,
   }),
   getTokens: () => [
     `color.${tone.value ?? "primary"}`,

@@ -45,7 +45,7 @@
   "tokenBindings": {
     "surface": "color.surface-variant",
     "text": "color.on-surface",
-    "radius": "radius.full",
+    "radius": "radius.md",
     "height": "sizing.control-lg",
     "typography": "typography.content"
   }

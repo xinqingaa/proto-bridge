@@ -22,6 +22,8 @@ const props = defineProps<{
   showAction?: boolean;
   actionIcon?: ActionIcon;
   actionLabel?: string;
+  /** Page-unique inspect / comment anchor; falls back to `ds.app-bar`. */
+  inspectId?: string;
 }>();
 
 defineEmits<{ back: []; action: [] }>();
@@ -37,6 +39,7 @@ const {
   showAction,
   actionIcon,
   actionLabel,
+  inspectId,
 } = toRefs(props);
 
 const resolvedActionIcon = computed<ActionIcon>(
@@ -52,6 +55,7 @@ const resolvedActionLabel = computed(
 usePbInspect({
   element: rootRef,
   pbId: "ds.app-bar",
+  instanceId: inspectId,
   componentId: "app-bar",
   getProps: () => ({
     title: title.value,
@@ -62,6 +66,7 @@ usePbInspect({
     showAction: showAction.value ?? false,
     actionIcon: resolvedActionIcon.value,
     actionLabel: resolvedActionLabel.value,
+    inspectId: inspectId.value,
   }),
   getTokenBindings: () => ({
     surface: "color.surface",

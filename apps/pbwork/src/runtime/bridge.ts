@@ -115,6 +115,8 @@ export type BridgePayloads = {
   hover: { element?: ElementSummary };
   select: {
     element: ElementSummary;
+    /** Nearest registered design-system component; may differ from `element`. */
+    componentOwner?: ElementSummary;
     props?: JsonRecord;
     state?: JsonRecord;
     /** Token IDs used by the registered component (cross-platform keys). */

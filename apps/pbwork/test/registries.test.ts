@@ -49,8 +49,8 @@ describe("registries", () => {
   it("resolves theme tokens with overrides", () => {
     const light = resolveThemeTokens("light");
     const dark = resolveThemeTokens("dark");
-    expect(light["color.primary"]).toBe("#2563eb");
-    expect(dark["color.primary"]).toBe("#7aa7ff");
+    expect(light["color.primary"]).toBe("#2f73d2");
+    expect(dark["color.primary"]).toBe("#83b2f2");
     expect(Object.keys(light).length).toBe(loadTokens().length);
   });
 
@@ -77,7 +77,7 @@ describe("design contracts", () => {
   });
 
   it("ships the expanded semantic token set", () => {
-    expect(loadTokens()).toHaveLength(94);
+    expect(loadTokens()).toHaveLength(96);
     expect(new Set(loadTokens().map((item) => item.category))).toEqual(
       new Set([
         "color",

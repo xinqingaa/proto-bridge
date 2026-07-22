@@ -8,20 +8,24 @@ const props = defineProps<{
   title: string;
   description?: string;
   actionLabel?: string;
+  /** Page-unique inspect / comment anchor; falls back to `ds.empty-state`. */
+  inspectId?: string;
 }>();
 defineEmits<{ action: [] }>();
 
 const rootRef = usePbInspectRef();
-const { title, description, actionLabel } = toRefs(props);
+const { title, description, actionLabel, inspectId } = toRefs(props);
 
 usePbInspect({
   element: rootRef,
   pbId: "ds.empty-state",
+  instanceId: inspectId,
   componentId: "empty-state",
   getProps: () => ({
     title: title.value,
     description: description.value ?? "",
     actionLabel: actionLabel.value ?? "",
+    inspectId: inspectId.value,
   }),
   getTokens: () => [
     "color.primary-soft",

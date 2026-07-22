@@ -122,13 +122,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   display: grid;
   place-items: center;
-  background:
-    radial-gradient(
-      120% 80% at 50% -10%,
-      rgba(148, 163, 184, 0.18),
-      transparent 55%
-    ),
-    linear-gradient(180deg, #e8eef5 0%, #d5dee8 48%, #cfd8e3 100%);
+  background: #e5e7ea;
   cursor: default;
   touch-action: none;
   user-select: none;
@@ -136,13 +130,7 @@ onBeforeUnmount(() => {
 }
 
 .phone-stage.is-dark {
-  background:
-    radial-gradient(
-      120% 80% at 50% -10%,
-      rgba(96, 165, 250, 0.12),
-      transparent 55%
-    ),
-    linear-gradient(180deg, #151b24 0%, #0f141c 100%);
+  background: #101113;
 }
 
 .phone-stage.is-panning {

@@ -483,13 +483,13 @@ function onTogglePan() {
 }
 
 .tool-btn.is-active {
-  background: rgba(37, 99, 235, 0.14);
-  color: #1d4ed8;
+  background: color-mix(in srgb, rgb(var(--v-theme-primary)) 10%, transparent);
+  color: rgb(var(--v-theme-primary));
 }
 
 .canvas-toolbar.is-dark .tool-btn.is-active {
-  background: rgba(122, 167, 255, 0.2);
-  color: #a9c7ff;
+  background: color-mix(in srgb, rgb(var(--v-theme-primary)) 16%, transparent);
+  color: rgb(var(--v-theme-primary));
 }
 
 .tool-btn.is-disabled,
@@ -499,13 +499,13 @@ function onTogglePan() {
 }
 
 .tool-primary {
-  background: rgba(37, 99, 235, 0.12);
-  color: #1d4ed8;
+  background: color-mix(in srgb, rgb(var(--v-theme-primary)) 9%, transparent);
+  color: rgb(var(--v-theme-primary));
 }
 
 .canvas-toolbar.is-dark .tool-primary {
-  background: rgba(122, 167, 255, 0.16);
-  color: #a9c7ff;
+  background: color-mix(in srgb, rgb(var(--v-theme-primary)) 14%, transparent);
+  color: rgb(var(--v-theme-primary));
 }
 
 .zoom-label {
@@ -528,17 +528,17 @@ function onTogglePan() {
   width: 96px;
   height: 30px;
   margin: 0 2px;
-  accent-color: #2563eb;
+  accent-color: rgb(var(--v-theme-primary));
   cursor: pointer;
   vertical-align: middle;
 }
 
 .canvas-toolbar.is-dark .zoom-slider {
-  accent-color: #7aa7ff;
+  accent-color: rgb(var(--v-theme-primary));
 }
 
 .zoom-slider:focus-visible {
-  outline: 2px solid rgba(37, 99, 235, 0.45);
+  outline: 2px solid color-mix(in srgb, rgb(var(--v-theme-primary)) 40%, transparent);
   outline-offset: 2px;
   border-radius: 4px;
 }

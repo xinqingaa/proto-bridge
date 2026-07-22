@@ -6,10 +6,12 @@ const props = defineProps<{
   name: string;
   size?: "sm" | "md" | "lg";
   tone?: "primary" | "secondary";
+  /** Page-unique inspect / comment anchor; falls back to `ds.avatar`. */
+  inspectId?: string;
 }>();
 
 const rootRef = usePbInspectRef();
-const { name, size, tone } = toRefs(props);
+const { name, size, tone, inspectId } = toRefs(props);
 
 const initials = computed(() => name.value.trim().slice(0, 2).toUpperCase());
 
@@ -20,11 +22,13 @@ const sizePx = computed(() => {
 usePbInspect({
   element: rootRef,
   pbId: "ds.avatar",
+  instanceId: inspectId,
   componentId: "avatar",
   getProps: () => ({
     name: name.value,
     size: size.value ?? "md",
     tone: tone.value ?? "primary",
+    inspectId: inspectId.value,
   }),
   getTokens: () => [
     `color.${tone.value ?? "primary"}`,

@@ -5,10 +5,12 @@ import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 const props = defineProps<{
   label?: string;
   size?: "sm" | "md" | "lg";
+  /** Page-unique inspect / comment anchor; falls back to `ds.spinner`. */
+  inspectId?: string;
 }>();
 
 const rootRef = usePbInspectRef();
-const { label, size } = toRefs(props);
+const { label, size, inspectId } = toRefs(props);
 
 /** Pixel sizes aligned with sizing.icon-* tokens (Vuetify needs a number). */
 const sizePx = computed(() => {
@@ -20,10 +22,12 @@ const sizePx = computed(() => {
 usePbInspect({
   element: rootRef,
   pbId: "ds.spinner",
+  instanceId: inspectId,
   componentId: "spinner",
   getProps: () => ({
     label: label.value ?? "",
     size: size.value ?? "md",
+    inspectId: inspectId.value,
   }),
   getTokens: () => [
     "color.primary",

@@ -16,11 +16,13 @@ const props = defineProps<{
   variant?: "tonal" | "flat" | "outlined" | "text";
   loading?: boolean;
   disabled?: boolean;
+  /** Page-unique inspect / comment anchor; falls back to `ds.icon-button`. */
+  inspectId?: string;
 }>();
 defineEmits<{ click: [] }>();
 
 const rootRef = usePbInspectRef();
-const { ariaLabel, icon, size, tone, variant, loading, disabled } =
+const { ariaLabel, icon, size, tone, variant, loading, disabled, inspectId } =
   toRefs(props);
 
 const resolvedVariant = computed(() => variant.value ?? "tonal");
@@ -52,6 +54,7 @@ const iconSize = computed(() => {
 usePbInspect({
   element: rootRef,
   pbId: "ds.icon-button",
+  instanceId: inspectId,
   componentId: "icon-button",
   getProps: () => ({
     ariaLabel: ariaLabel.value,
@@ -61,6 +64,7 @@ usePbInspect({
     variant: resolvedVariant.value,
     loading: loading.value ?? false,
     disabled: disabled.value ?? false,
+    inspectId: inspectId.value,
   }),
   getTokenBindings: () => {
     const t = tone.value ?? "neutral";

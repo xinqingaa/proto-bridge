@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildSelectPayload,
   climbInspectTarget,
   readWhitelistedStyles,
+  resolvePickTarget,
   stylePropertyGroup,
   stylePropertyRole,
 } from "@/runtime/inspect/snapshot";
+import { registerInspect } from "@/runtime/inspect/registry";
 import { normalizeTokenCssVarName } from "@/design-system/resolveThemeTokens";
 import { loadTokens } from "@/design-system/loaders";
 
@@ -249,7 +252,7 @@ describe("readWhitelistedStyles", () => {
 });
 
 describe("climbInspectTarget", () => {
-  it("climbs to the nearest data-pb-id ancestor", () => {
+  it("climbs exactly one DOM level instead of skipping wrappers", () => {
     const list = document.createElement("div");
     list.setAttribute("data-pb-id", "ds.data-list");
     const row = document.createElement("div");
@@ -258,8 +261,82 @@ describe("climbInspectTarget", () => {
     row.appendChild(title);
     document.body.appendChild(list);
 
-    expect(climbInspectTarget(title)).toBe(list);
+    expect(climbInspectTarget(title)).toBe(row);
 
     list.remove();
+  });
+});
+
+describe("resolvePickTarget", () => {
+  it("keeps the exact leaf while component metadata remains available", () => {
+    const page = document.createElement("div");
+    page.setAttribute("data-pb-id", "field-service.settings");
+    const host = document.createElement("div");
+    page.appendChild(host);
+    document.body.appendChild(page);
+
+    const unregister = registerInspect({
+      element: host,
+      pbId: "ds.switch",
+      componentId: "switch",
+    });
+    host.setAttribute("data-pb-id", "ds.switch");
+    host.setAttribute("data-pb-component", "ds.switch");
+
+    const label = document.createElement("span");
+    host.appendChild(label);
+
+    expect(resolvePickTarget(label)).toBe(label);
+    const payload = buildSelectPayload(label);
+    expect("error" in payload).toBe(false);
+    if (!("error" in payload)) {
+      expect(payload.element.tag).toBe("span");
+      expect(payload.element.ref.selector).toContain("span");
+      expect(payload.componentOwner?.ref.pbId).toBe("ds.switch");
+      expect(payload.componentId).toBe("switch");
+    }
+
+    unregister();
+    page.remove();
+  });
+
+  it("keeps interactive leaf under loose page anchors", () => {
+    const page = document.createElement("div");
+    page.setAttribute("data-pb-id", "field-service.settings");
+    const button = document.createElement("button");
+    button.textContent = "个人资料";
+    page.appendChild(button);
+    document.body.appendChild(page);
+
+    expect(resolvePickTarget(button)).toBe(button);
+
+    page.remove();
+  });
+
+  it("keeps typography as the selected leaf inside list rows", () => {
+    const row = document.createElement("div");
+    row.setAttribute("data-pb-id", "ds.data-list.row.1");
+    const title = document.createElement("strong");
+    row.appendChild(title);
+    document.body.appendChild(row);
+
+    expect(resolvePickTarget(title)).toBe(title);
+
+    row.remove();
+  });
+
+  it("uses Alt/preferParent to select the nearest semantic anchor", () => {
+    const page = document.createElement("div");
+    page.setAttribute("data-pb-id", "field-service.settings");
+    const row = document.createElement("div");
+    row.setAttribute("data-pb-id", "ds.data-list.row.1");
+    const title = document.createElement("strong");
+    page.appendChild(row);
+    row.appendChild(title);
+    document.body.appendChild(page);
+
+    expect(resolvePickTarget(title, true)).toBe(row);
+
+    page.remove();
   });
 });

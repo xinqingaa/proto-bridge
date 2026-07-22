@@ -479,7 +479,7 @@ const breadcrumbs = computed(() => {
   return items;
 });
 const themeLabel = computed(() =>
-  workbench.theme === "pbworkLight"
+  workbench.theme === "workbenchLight"
     ? "切换到深色工作台主题"
     : "切换到浅色工作台主题",
 );
@@ -750,7 +750,7 @@ onMounted(() => {
             icon
             variant="text"
             :aria-label="themeLabel"
-            :aria-pressed="workbench.theme === 'pbworkDark'"
+            :aria-pressed="workbench.theme === 'workbenchDark'"
             @click="workbench.toggleTheme"
           >
             <SunMoon :size="19" />
@@ -767,7 +767,7 @@ onMounted(() => {
           <v-list-subheader>工作台偏好</v-list-subheader>
           <v-list-item
             title="外观"
-            :subtitle="workbench.theme === 'pbworkDark' ? '深色' : '浅色'"
+            :subtitle="workbench.theme === 'workbenchDark' ? '深色' : '浅色'"
             @click="workbench.toggleTheme"
           >
             <template #prepend><SunMoon :size="18" /></template>
@@ -1166,12 +1166,12 @@ onMounted(() => {
   );
   --shell-soft: color-mix(
     in srgb,
-    rgb(var(--v-theme-primary)) 10%,
+    rgb(var(--v-theme-on-surface)) 5%,
     transparent
   );
   --shell-soft-strong: color-mix(
     in srgb,
-    rgb(var(--v-theme-primary)) 16%,
+    rgb(var(--v-theme-on-surface)) 8%,
     transparent
   );
 }
@@ -1195,8 +1195,8 @@ onMounted(() => {
   place-items: center;
   overflow: hidden;
   border-radius: 10px;
-  background: linear-gradient(145deg, #2563eb, #14b8a6);
-  box-shadow: 0 7px 16px rgba(37, 99, 235, 0.2);
+  background: rgb(var(--v-theme-action));
+  box-shadow: none;
 }
 .brand-mark img {
   width: 100%;
@@ -1435,8 +1435,9 @@ onMounted(() => {
 }
 .primary-navigation :deep(.primary-nav-item.is-active),
 .primary-navigation :deep(.primary-nav-item.v-list-item--active) {
-  color: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-on-surface));
   background: var(--shell-soft-strong);
+  box-shadow: inset 2px 0 rgb(var(--v-theme-primary));
 }
 .primary-nav-content {
   display: grid;

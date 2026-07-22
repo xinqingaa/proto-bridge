@@ -18,7 +18,7 @@ test("adds, persists, resolves and deletes a local element comment", async ({
   await inspector.getByRole("button", { name: "开始选择" }).click();
 
   const frame = page.frameLocator('[data-testid="prototype-iframe"]');
-  await frame.locator('[data-pb-id="ds.data-list.row.t1"]').click();
+  await frame.locator('[data-pb-id="project.task-list.list.row.t1"]').click();
 
   await expect(inspector.getByRole("tab", { name: /评论/ })).toHaveAttribute(
     "aria-selected",
@@ -30,7 +30,7 @@ test("adds, persists, resolves and deletes a local element comment", async ({
   await expect(
     inspector
       .locator(".comment-card")
-      .getByText("ds.data-list.row.t1", { exact: true }),
+      .getByText("整理需求", { exact: false }),
   ).toBeVisible();
 
   await page.reload();

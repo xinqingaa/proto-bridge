@@ -19,6 +19,8 @@ const props = defineProps<{
   showView?: boolean;
   viewHeight?: number;
   mouseSwipe?: boolean;
+  /** Page-unique inspect / comment anchor; falls back to `ds.bottom-navigation`. */
+  inspectId?: string;
 }>();
 const emit = defineEmits<{ "update:modelValue": [string] }>();
 const rootRef = usePbInspectRef();
@@ -31,6 +33,7 @@ const {
   showView,
   viewHeight,
   mouseSwipe,
+  inspectId,
 } = toRefs(props);
 const defaultItems: NavigationItem[] = [
   { value: "工作台", label: "工作台", icon: "home" },
@@ -75,6 +78,7 @@ const viewStyle = computed(() => ({
 usePbInspect({
   element: rootRef,
   pbId: "ds.bottom-navigation",
+  instanceId: inspectId,
   componentId: "bottom-navigation",
   getProps: () => ({
     modelValue: modelValue.value ?? "工作台",
@@ -85,6 +89,7 @@ usePbInspect({
     showView: showView.value ?? false,
     viewHeight: viewHeight.value ?? 220,
     mouseSwipe: swipeEnabled.value,
+    inspectId: inspectId.value,
   }),
   getTokens: () => [
     "color.surface-raised",
@@ -202,6 +207,7 @@ usePbInspect({
   );
   border-top: var(--pb-border-hairline);
   background: var(--pb-color-surface-raised);
+  padding-bottom: var(--pb-bottom-nav-safe);
 }
 .pb-bottom-nav-shell.is-elevated .pb-bottom-nav {
   box-shadow: var(--pb-elevation-level-3);
@@ -241,9 +247,7 @@ usePbInspect({
   font: var(--pb-typography-caption);
 }
 .pb-bottom-nav-tabs {
-  --v-tabs-height: calc(
-    var(--pb-sizing-bottom-navigation, 64px) + var(--pb-bottom-nav-safe)
-  );
+  --v-tabs-height: var(--pb-sizing-bottom-navigation, 64px);
   height: var(--v-tabs-height);
 }
 .pb-bottom-nav :deep(.v-slide-group__content) {
@@ -254,7 +258,7 @@ usePbInspect({
   min-width: var(--pb-sizing-touch, 44px);
   height: var(--v-tabs-height);
   min-height: var(--v-tabs-height);
-  padding-bottom: var(--pb-bottom-nav-safe);
+  padding-bottom: 0;
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
   text-transform: none;

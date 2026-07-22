@@ -39,6 +39,14 @@ export function resolveLiveTokenBindings(
   if (typeof props.variant === "string" && "background" in result) {
     const tone = typeof props.tone === "string" ? props.tone : "primary";
     if (props.variant === "tonal") result.background = `color.${tone}-soft`;
+    if (
+      props.variant === "flat" &&
+      tone === "primary" &&
+      staticBindings.background === "color.action"
+    ) {
+      result.background = "color.action";
+      if ("onBackground" in result) result.onBackground = "color.on-action";
+    }
   }
 
   if (typeof props.size === "string" && props.size.length > 0) {

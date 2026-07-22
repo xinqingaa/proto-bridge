@@ -16,6 +16,8 @@ const props = defineProps<{
   align?: "start" | "center";
   size?: "sm" | "md" | "lg";
   mouseSwipe?: boolean;
+  /** Page-unique inspect / comment anchor; falls back to `ds.tabs`. */
+  inspectId?: string;
 }>();
 const emit = defineEmits<{ "update:modelValue": [value: string] }>();
 
@@ -30,6 +32,7 @@ const {
   align,
   size,
   mouseSwipe,
+  inspectId,
 } = toRefs(props);
 
 const resolvedSelectionStyle = computed(
@@ -72,6 +75,7 @@ const swipe = usePointerSwipe(
 usePbInspect({
   element: rootRef,
   pbId: "ds.tabs",
+  instanceId: inspectId,
   componentId: "tabs",
   getProps: () => ({
     modelValue: modelValue.value,
@@ -84,6 +88,7 @@ usePbInspect({
     align: align.value ?? "start",
     size: size.value ?? "md",
     mouseSwipe: swipeEnabled.value,
+    inspectId: inspectId.value,
   }),
   getTokenBindings: () => ({
     indicator: "color.primary",

@@ -40,7 +40,7 @@
   "tokenBindings": {
     "background": "color.primary-soft",
     "color": "color.primary",
-    "radius": "radius.full",
+    "radius": "radius.sm",
     "elevation": "elevation.card",
     "typography": "typography.caption"
   }

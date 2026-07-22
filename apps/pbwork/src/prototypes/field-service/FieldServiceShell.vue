@@ -16,6 +16,9 @@ const isStack = computed(() => Boolean(props.backTo));
 const theme = computed(() =>
   typeof route.query.theme === "string" ? route.query.theme : "light",
 );
+const inspectBaseId = computed(
+  () => `field-service.${String(route.params.screenSlug ?? "screen")}`,
+);
 const destinations: Record<string, string> = {
   工作台: "dashboard",
   工单: "work-orders",
@@ -46,17 +49,19 @@ function goBack() {
   <div
     class="field-service-shell"
     :class="{ 'is-stack': isStack }"
-    data-pb-id="field-service.shell"
+    :data-pb-id="`${inspectBaseId}.shell`"
   >
     <AppBar
       :title="title"
       :show-back="isStack"
+      :inspect-id="`${inspectBaseId}.app-bar`"
       @back="goBack"
     />
     <main><slot /></main>
     <BottomNavigation
       v-if="!isStack"
       :model-value="active ?? '工作台'"
+      :inspect-id="`${inspectBaseId}.bottom-navigation`"
       @update:model-value="navigate"
     />
   </div>

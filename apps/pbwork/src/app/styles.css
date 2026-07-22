@@ -55,6 +55,13 @@ html.pbwork-runtime-embedded .v-application {
 button:focus-visible,
 a:focus-visible,
 [tabindex]:focus-visible {
-  outline: 3px solid #2563eb;
+  outline: 2px solid rgb(var(--v-theme-primary, 47, 115, 210));
   outline-offset: 2px;
+}
+
+/* Tooltips use an inverse neutral pair instead of inheriting a low-contrast
+   surface variant. This keeps their text legible across both shell themes. */
+.v-tooltip > .v-overlay__content {
+  background: rgb(var(--v-theme-tooltip));
+  color: rgb(var(--v-theme-on-tooltip));
 }

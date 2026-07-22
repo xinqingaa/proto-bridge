@@ -19,6 +19,8 @@ const props = defineProps<{
   error?: string;
   open?: boolean;
   disabled?: boolean;
+  /** Page-unique inspect / comment anchor; falls back to `ds.select`. */
+  inspectId?: string;
 }>();
 const emit = defineEmits<{
   "update:modelValue": [string];
@@ -37,6 +39,7 @@ const {
   error,
   open,
   disabled,
+  inspectId,
 } = toRefs(props);
 const menuOpen = ref(open.value ?? false);
 const resolvedOptions = computed(() => options.value ?? ["选项一", "选项二"]);
@@ -53,6 +56,7 @@ function updateMenu(value: boolean) {
 usePbInspect({
   element: rootRef,
   pbId: "ds.select",
+  instanceId: inspectId,
   componentId: "select",
   getProps: () => ({
     label: label.value,
@@ -65,6 +69,7 @@ usePbInspect({
     error: error.value ?? "",
     open: menuOpen.value,
     disabled: disabled.value ?? false,
+    inspectId: inspectId.value,
   }),
   getTokens: () => [
     "color.surface",

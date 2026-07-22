@@ -50,7 +50,7 @@ const vuetify = createVuetify({
     },
   },
   theme: {
-    defaultTheme: "pbworkLight",
+    defaultTheme: "workbenchLight",
     themes: createVuetifyThemes(),
   },
 });

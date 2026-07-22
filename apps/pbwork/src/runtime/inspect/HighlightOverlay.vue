@@ -68,13 +68,13 @@ function boxStyle(box: ElementBox | null) {
 }
 
 .inspect-box.is-hover {
-  border: 1.5px dashed rgba(37, 99, 235, 0.85);
-  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid color-mix(in srgb, var(--pb-color-primary, #2f73d2) 55%, transparent);
+  background: color-mix(in srgb, var(--pb-color-primary, #2f73d2) 6%, transparent);
 }
 
 .inspect-box.is-select {
-  border: 2px solid #2563eb;
-  background: rgba(37, 99, 235, 0.12);
+  border: 1.5px solid var(--pb-color-primary, #2f73d2);
+  background: color-mix(in srgb, var(--pb-color-primary, #2f73d2) 8%, transparent);
 }
 
 .inspect-label {
@@ -82,10 +82,11 @@ function boxStyle(box: ElementBox | null) {
   z-index: 1;
   padding: 2px 6px;
   border-radius: 4px;
-  background: #1d4ed8;
-  color: #fff;
-  font: 600 11px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: var(--pb-color-on-surface, #1f2937);
+  color: var(--pb-color-surface, #fff);
+  font: 500 10px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
   white-space: nowrap;
   pointer-events: none;
+  opacity: 0.88;
 }
 </style>

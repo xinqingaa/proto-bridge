@@ -8,21 +8,25 @@ const props = defineProps<{
   description?: string;
   required?: boolean;
   actionLabel?: string;
+  /** Page-unique inspect / comment anchor; falls back to `ds.form-section`. */
+  inspectId?: string;
 }>();
 defineEmits<{ action: [] }>();
 
 const rootRef = usePbInspectRef();
-const { title, description, required, actionLabel } = toRefs(props);
+const { title, description, required, actionLabel, inspectId } = toRefs(props);
 
 usePbInspect({
   element: rootRef,
   pbId: "ds.form-section",
+  instanceId: inspectId,
   componentId: "form-section",
   getProps: () => ({
     title: title.value,
     description: description.value ?? "",
     required: required.value ?? false,
     actionLabel: actionLabel.value ?? "",
+    inspectId: inspectId.value,
   }),
   getTokens: () => [
     "color.surface",

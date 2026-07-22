@@ -7,27 +7,31 @@ const props = defineProps<{
   items?: string[];
   modelValue?: string;
   showFilter?: boolean;
+  /** Page-unique inspect / comment anchor; falls back to `ds.filter-bar`. */
+  inspectId?: string;
 }>();
 defineEmits<{ "update:modelValue": [string]; filter: [] }>();
 
 const rootRef = usePbInspectRef();
-const { items, modelValue, showFilter } = toRefs(props);
+const { items, modelValue, showFilter, inspectId } = toRefs(props);
 
 usePbInspect({
   element: rootRef,
   pbId: "ds.filter-bar",
+  instanceId: inspectId,
   componentId: "filter-bar",
   getProps: () => ({
     items: items.value ?? [],
     modelValue: modelValue.value ?? "全部",
     showFilter: showFilter.value ?? true,
+    inspectId: inspectId.value,
   }),
   getTokens: () => [
     "color.primary",
     "color.primary-soft",
     "color.surface",
     "color.border",
-    "radius.full",
+    "radius.sm",
     "spacing.sm",
     "typography.label",
   ],
@@ -36,7 +40,7 @@ usePbInspect({
     activeSurface: "color.primary-soft",
     surface: "color.surface",
     border: "color.border",
-    radius: "radius.full",
+    radius: "radius.sm",
     gap: "spacing.sm",
     label: "typography.label",
   }),
@@ -88,15 +92,22 @@ usePbInspect({
   min-width: 0;
 }
 .pb-filter-chips :deep(.v-chip) {
-  border-radius: var(--pb-radius-full);
+  border-color: transparent !important;
+  border-radius: var(--pb-radius-sm);
+  background: transparent;
+  color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-label);
   text-transform: none;
   letter-spacing: normal;
+}
+.pb-filter-chips :deep(.v-chip.is-active) {
+  background: var(--pb-color-surface-variant) !important;
+  color: var(--pb-color-on-surface) !important;
 }
 .filter-action {
   flex-shrink: 0;
   text-transform: none;
   letter-spacing: normal;
-  border-radius: var(--pb-radius-full);
+  border-radius: var(--pb-radius-sm);
 }
 </style>

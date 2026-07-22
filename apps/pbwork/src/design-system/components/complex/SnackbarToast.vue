@@ -9,11 +9,13 @@ const props = defineProps<{
   tone?: "success" | "error" | "info";
   /** CSS selector for overlay host; Runtime defaults to .runtime-app */
   attach?: string;
+  /** Page-unique inspect / comment anchor; falls back to `ds.snackbar`. */
+  inspectId?: string;
 }>();
 defineEmits<{ "update:modelValue": [boolean] }>();
 
 const rootRef = usePbInspectRef();
-const { modelValue, message, tone, attach } = toRefs(props);
+const { modelValue, message, tone, attach, inspectId } = toRefs(props);
 
 const color = computed(() => tone.value ?? "success");
 const attachTarget = computed(() => attach.value ?? ".runtime-app");
@@ -21,11 +23,13 @@ const attachTarget = computed(() => attach.value ?? ".runtime-app");
 usePbInspect({
   element: rootRef,
   pbId: "ds.snackbar",
+  instanceId: inspectId,
   componentId: "snackbar",
   getProps: () => ({
     modelValue: modelValue.value ?? true,
     message: message.value,
     tone: tone.value ?? "success",
+    inspectId: inspectId.value,
   }),
   getTokens: () => [
     `color.${tone.value ?? "success"}`,

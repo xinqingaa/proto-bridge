@@ -401,7 +401,21 @@ function findPaintedBackground(el: HTMLElement): {
   return null;
 }
 
-/** Climb to nearest inspectable ancestor (`data-pb-id` or registered). */
+function isInspectableNode(el: HTMLElement): boolean {
+  return el.hasAttribute("data-pb-id") || Boolean(getInspectRegistration(el));
+}
+
+/** Deepest inspectable node from leaf upward (`data-pb-id` or registered). */
+export function findDeepestInspectable(leaf: HTMLElement): HTMLElement | null {
+  let cur: HTMLElement | null = leaf;
+  while (cur && cur !== document.body && cur !== document.documentElement) {
+    if (!isInspectChrome(cur) && isInspectableNode(cur)) return cur;
+    cur = cur.parentElement;
+  }
+  return null;
+}
+
+/** Climb one real DOM level; hierarchy navigation must never silently skip. */
 export function climbInspectTarget(el: HTMLElement): HTMLElement | null {
   let cur = el.parentElement;
   while (cur) {
@@ -412,10 +426,7 @@ export function climbInspectTarget(el: HTMLElement): HTMLElement | null {
       cur = cur.parentElement;
       continue;
     }
-    if (cur.hasAttribute("data-pb-id") || getInspectRegistration(cur)) {
-      return cur;
-    }
-    cur = cur.parentElement;
+    return cur;
   }
   return null;
 }
@@ -428,11 +439,31 @@ export function resolveInspectTarget(
   return climbInspectTarget(el) ?? el;
 }
 
+/**
+ * Hover/click preserve the actual event target. Alt explicitly selects the
+ * nearest registered component or stable semantic anchor.
+ */
+export function resolvePickTarget(
+  leaf: HTMLElement,
+  preferParent = false,
+): HTMLElement {
+  if (!preferParent) return leaf;
+  const semantic = findDeepestInspectable(leaf);
+  if (semantic && semantic !== leaf) return semantic;
+  let cur = leaf.parentElement;
+  while (cur && cur !== document.body && cur !== document.documentElement) {
+    if (!isInspectChrome(cur) && isInspectableNode(cur)) return cur;
+    cur = cur.parentElement;
+  }
+  return leaf;
+}
+
+/** Client (viewport) box — matches `position: fixed` inspect overlay. */
 export function readBbox(el: HTMLElement): ElementBox {
   const r = el.getBoundingClientRect();
   return {
-    x: r.left + window.scrollX,
-    y: r.top + window.scrollY,
+    x: r.left,
+    y: r.top,
     width: Math.round(r.width),
     height: Math.round(r.height),
   };
@@ -509,7 +540,12 @@ function domPath(el: HTMLElement): string {
   while (cur && cur !== document.documentElement && parts.length < 12) {
     const name = cur.tagName.toLowerCase();
     const pb = cur.getAttribute("data-pb-id");
-    if (pb) {
+    const pbMatches = pb
+      ? Array.from(document.querySelectorAll("[data-pb-id]")).filter(
+          (node) => node.getAttribute("data-pb-id") === pb,
+        ).length
+      : 0;
+    if (pb && pbMatches === 1) {
       parts.unshift(`${name}[data-pb-id="${pb}"]`);
       break;
     }
@@ -561,15 +597,17 @@ export function buildElementSummary(el: HTMLElement): ElementSummary {
       : undefined;
 
   const text = truncateText(el.innerText || el.textContent || "", meta);
+  const selector = domPath(el);
   const summary: ElementSummary = {
     ref: {
       ...(pbId ? { pbId } : {}),
       handle: getOrCreateHandle(el),
+      ...(selector ? { selector } : {}),
     },
     tag: el.tagName.toLowerCase(),
     classes: Array.from(el.classList),
     bbox: readBbox(el),
-    domPath: domPath(el),
+    domPath: selector,
   };
   if (text) summary.text = text;
   if (pbRole) summary.pbRole = pbRole;
@@ -722,6 +760,7 @@ export function buildSelectPayload(
   const element = buildElementSummary(el);
   const ownReg = getInspectRegistration(el);
   const ancestorReg = ownReg ? undefined : findRegisteredAncestor(el);
+  const componentReg = ownReg ?? ancestorReg;
 
   const ownBindings = ownReg?.getTokenBindings?.();
   const styles = readWhitelistedStyles(el, {
@@ -734,16 +773,21 @@ export function buildSelectPayload(
     styles,
   };
 
-  // Component meta only from the exact registered node — never bleed ancestor.
-  if (ownReg) {
-    if (ownReg.componentId) payload.componentId = ownReg.componentId;
-    const props = sanitizeRecord(ownReg.getProps?.(), meta);
-    const state = sanitizeRecord(ownReg.getState?.(), meta);
+  // Component context belongs to the owner, while styles and bbox stay on the
+  // exact node the user selected.
+  if (componentReg) {
+    if (componentReg.element !== el) {
+      payload.componentOwner = buildElementSummary(componentReg.element);
+    }
+    if (componentReg.componentId) payload.componentId = componentReg.componentId;
+    const props = sanitizeRecord(componentReg.getProps?.(), meta);
+    const state = sanitizeRecord(componentReg.getState?.(), meta);
     if (props) payload.props = props;
     if (state) payload.state = state;
-    const tokenBindings = buildTokenBindings(ownBindings);
+    const componentBindings = componentReg.getTokenBindings?.();
+    const tokenBindings = buildTokenBindings(componentBindings);
     const tokenIds =
-      ownReg.getTokens?.() ?? tokenBindings?.map((row) => row.tokenId) ?? [];
+      componentReg.getTokens?.() ?? tokenBindings?.map((row) => row.tokenId) ?? [];
     if (tokenIds.length) payload.tokens = [...new Set(tokenIds)].slice(0, 100);
     if (tokenBindings) payload.tokenBindings = tokenBindings;
   }

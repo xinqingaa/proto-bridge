@@ -82,10 +82,12 @@ function open() {
         <SearchBar
           v-model="query"
           placeholder="搜索工单、客户或设备"
+          inspect-id="field-service.work-orders.search"
         />
         <FilterBar
           v-model="filter"
           :items="['全部', '待处理', '进行中', '已完成']"
+          inspect-id="field-service.work-orders.filters"
         />
         <div class="results">
           <EmptyState
@@ -95,7 +97,12 @@ function open() {
             action-label="清除筛选"
             @action="query = ''"
           />
-          <DataList v-else :items="items" @select="open" />
+          <DataList
+            v-else
+            :items="items"
+            inspect-id="field-service.work-orders.list"
+            @select="open"
+          />
         </div>
       </template>
     </div>
@@ -106,9 +113,9 @@ function open() {
 .page {
   display: grid;
   grid-template-rows: auto auto 1fr;
-  gap: 12px;
+  gap: 10px;
   min-height: 100%;
-  padding: 14px;
+  padding: 12px 16px 16px;
 }
 .page.is-state {
   grid-template-rows: 1fr;

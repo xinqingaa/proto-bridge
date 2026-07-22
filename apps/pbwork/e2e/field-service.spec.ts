@@ -27,7 +27,7 @@ test("field-service ships seven routable screens and real navigation", async ({ 
   await page.goto("/prototype/field-service/work-order-detail?variant=dialog-open&theme=dark");
   const dialog = page.getByRole("dialog", { name: "确认完成工单？" });
   await expect(dialog).toBeVisible();
-  await expect(dialog).toHaveCSS("background-color", "rgb(38, 50, 65)");
+  await expect(dialog).toHaveCSS("background-color", "rgb(41, 44, 48)");
   await expect(page.getByTestId("runtime-root")).toHaveClass(/runtime-app/);
 });
 
@@ -43,7 +43,7 @@ test("workbench follows Runtime navigation and keeps review mode healthy", async
 
   await page.getByRole("button", { name: "选择与评审" }).click();
   await frame.getByRole("button", { name: "完成工单" }).click();
-  await expect(page.getByTestId("inspector-body").getByText("color.primary", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("inspector-body").getByText("color.on-action", { exact: true })).toBeVisible();
   await frame.getByRole("button", { name: "完成工单" }).press("Escape");
   await frame.getByRole("button", { name: "完成工单" }).press("Escape");
   await expect(page.getByRole("button", { name: "选择与评审" })).toBeVisible();

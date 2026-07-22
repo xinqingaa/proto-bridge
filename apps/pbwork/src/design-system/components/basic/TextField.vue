@@ -11,21 +11,25 @@ const props = defineProps<{
   modelValue?: string;
   disabled?: boolean;
   size?: ComponentSize;
+  /** Page-unique inspect / comment anchor; falls back to `ds.text-field`. */
+  inspectId?: string;
 }>();
 defineEmits<{ "update:modelValue": [value: string] }>();
 
 const rootRef = usePbInspectRef();
-const { label, modelValue, disabled, size } = toRefs(props);
+const { label, modelValue, disabled, size, inspectId } = toRefs(props);
 
 usePbInspect({
   element: rootRef,
   pbId: "ds.text-field",
+  instanceId: inspectId,
   componentId: "text-field",
   getProps: () => ({
     label: label.value,
     modelValue: modelValue.value ?? "",
     disabled: disabled.value ?? false,
     size: size.value ?? "md",
+    inspectId: inspectId.value,
   }),
   getTokenBindings: () => ({
     border: "color.border",
