@@ -7,6 +7,7 @@ import Button from "@/design-system/components/basic/Button.vue";
 import DialogPanel from "@/design-system/components/complex/DialogPanel.vue";
 import SnackbarToast from "@/design-system/components/complex/SnackbarToast.vue";
 import { formatMoney, ledgerRecords } from "../mock";
+import { finishToHome, runtimePath } from "../nav";
 
 const route = useRoute();
 const router = useRouter();
@@ -16,9 +17,6 @@ const record = ledgerRecords[0]!;
 
 const variant = computed(() =>
   typeof route.query.variant === "string" ? route.query.variant : "default",
-);
-const theme = computed(() =>
-  typeof route.query.theme === "string" ? route.query.theme : "light",
 );
 
 watch(
@@ -30,18 +28,14 @@ watch(
 );
 
 function edit() {
-  void router.push(
-    `/prototype/ledger-planet/record-edit?variant=edit&theme=${theme.value}`,
-  );
+  void router.push(runtimePath("record-edit", route, "edit"));
 }
 
 function confirmDelete() {
   dialog.value = false;
   toast.value = true;
   window.setTimeout(() => {
-    void router.push(
-      `/prototype/ledger-planet/ledger-home?variant=default&theme=${theme.value}`,
-    );
+    void finishToHome(router, route, "ledger-home", { preferBack: false });
   }, 400);
 }
 </script>

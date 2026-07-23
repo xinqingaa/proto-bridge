@@ -15,6 +15,7 @@ import {
   categoryOptions,
   ledgerRecords,
 } from "../mock";
+import { finishToHome } from "../nav";
 
 const route = useRoute();
 const router = useRouter();
@@ -29,9 +30,6 @@ const error = ref("");
 
 const variant = computed(() =>
   typeof route.query.variant === "string" ? route.query.variant : "default",
-);
-const theme = computed(() =>
-  typeof route.query.theme === "string" ? route.query.theme : "light",
 );
 const isEdit = computed(() => variant.value === "edit");
 
@@ -88,9 +86,7 @@ function save(again = false) {
     return;
   }
   window.setTimeout(() => {
-    void router.push(
-      `/prototype/ledger-planet/ledger-home?variant=default&theme=${theme.value}`,
-    );
+    void finishToHome(router, route, "ledger-home");
   }, 500);
 }
 </script>

@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed, useSlots } from "vue";
+import { computed, useSlots, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { BookOpen, Gift, User, BarChart3 } from "lucide-vue-next";
 import AppBar from "@/design-system/components/complex/AppBar.vue";
 import BottomNavigation from "@/design-system/components/complex/BottomNavigation.vue";
 import IconButton from "@/design-system/components/basic/IconButton.vue";
+import { runtimePath } from "./nav";
+import { getTheme, setTheme } from "./theme-session";
 
 export type LedgerTab = "记账" | "权益" | "我的";
 
@@ -28,9 +30,6 @@ const route = useRoute();
 const router = useRouter();
 const slots = useSlots();
 const isStack = computed(() => Boolean(props.backTo));
-const theme = computed(() =>
-  typeof route.query.theme === "string" ? route.query.theme : "light",
-);
 const inspectBaseId = computed(
   () => `ledger-planet.${String(route.params.screenSlug ?? "screen")}`,
 );
@@ -52,11 +51,25 @@ const hasTabSlots = computed(
   () => Boolean(slots["记账"] || slots["权益"] || slots["我的"]),
 );
 
-function runtimePath(slug: string, variant = "default") {
-  const currentVariant =
-    typeof route.query.variant === "string" ? route.query.variant : variant;
-  return `/prototype/ledger-planet/${slug}?variant=${currentVariant}&theme=${theme.value}`;
-}
+/** Keep URL theme aligned with session so history.back does not revert appearance. */
+watch(
+  () => route.fullPath,
+  () => {
+    const urlTheme =
+      route.query.theme === "dark"
+        ? "dark"
+        : route.query.theme === "light"
+          ? "light"
+          : null;
+    const preferred = getTheme(urlTheme ?? undefined);
+    if (urlTheme === preferred) return;
+    setTheme(preferred);
+    void router.replace({
+      query: { ...route.query, theme: preferred },
+    });
+  },
+  { immediate: true },
+);
 
 function goBack() {
   const position = Number(window.history.state?.position ?? 0);
@@ -64,7 +77,7 @@ function goBack() {
     router.back();
     return;
   }
-  void router.replace(runtimePath(props.backTo ?? "ledger-home"));
+  void router.replace(runtimePath(props.backTo ?? "ledger-home", route));
 }
 </script>
 

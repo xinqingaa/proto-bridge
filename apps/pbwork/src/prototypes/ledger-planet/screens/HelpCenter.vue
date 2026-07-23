@@ -4,13 +4,11 @@ import { useRoute, useRouter } from "vue-router";
 import LedgerPlanetShell from "../LedgerPlanetShell.vue";
 import SearchBar from "@/design-system/components/complex/SearchBar.vue";
 import { helpTopics } from "../mock";
+import { runtimePath } from "../nav";
 
 const route = useRoute();
 const router = useRouter();
 const query = ref("");
-const theme = computed(() =>
-  typeof route.query.theme === "string" ? route.query.theme : "light",
-);
 
 const rows = computed(() => {
   const q = query.value.trim();
@@ -22,7 +20,7 @@ const rows = computed(() => {
 
 function open(id: string) {
   void router.push(
-    `/prototype/ledger-planet/help-article?variant=default&theme=${theme.value}&article=${id}`,
+    runtimePath("help-article", route, "default", { article: id }),
   );
 }
 </script>

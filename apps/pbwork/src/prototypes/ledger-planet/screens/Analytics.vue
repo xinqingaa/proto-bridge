@@ -13,15 +13,13 @@ import {
   trendPoints,
   type LedgerPeriod,
 } from "../mock";
+import { runtimePath } from "../nav";
 
 const route = useRoute();
 const router = useRouter();
 const period = ref<LedgerPeriod>("month");
 const variant = computed(() =>
   typeof route.query.variant === "string" ? route.query.variant : "default",
-);
-const theme = computed(() =>
-  typeof route.query.theme === "string" ? route.query.theme : "light",
 );
 const summary = computed(() => summaryByPeriod[period.value]);
 
@@ -37,8 +35,10 @@ const trendPath = computed(() => {
 });
 
 function openCategory(name: string) {
-  void router.push(
-    `/prototype/ledger-planet/ledger-home?variant=filtered&theme=${theme.value}&category=${encodeURIComponent(name)}`,
+  void router.replace(
+    runtimePath("ledger-home", route, "filtered", {
+      category: name,
+    }),
   );
 }
 </script>

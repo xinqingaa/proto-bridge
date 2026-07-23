@@ -1,31 +1,26 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { Eye, EyeOff } from "lucide-vue-next";
 import Avatar from "@/design-system/components/basic/Avatar.vue";
-import Card from "@/design-system/components/basic/Card.vue";
 import Chip from "@/design-system/components/basic/Chip.vue";
-import Button from "@/design-system/components/basic/Button.vue";
 import Divider from "@/design-system/components/basic/Divider.vue";
 import { formatMoney } from "../mock";
+import { pushStack } from "../nav";
 
 const route = useRoute();
 const router = useRouter();
 const hidden = ref(false);
-const theme = computed(() =>
-  typeof route.query.theme === "string" ? route.query.theme : "light",
-);
 const total = 12480.5;
 
 function go(slug: string, nextVariant = "default") {
-  void router.push(
-    `/prototype/ledger-planet/${slug}?variant=${nextVariant}&theme=${theme.value}`,
-  );
+  void pushStack(router, route, "我的", slug, { variant: nextVariant });
 }
 </script>
 
 <template>
   <div class="page" data-pb-id="ledger-planet.me-home">
+    <div class="orbit" aria-hidden="true" />
     <button type="button" class="profile" @click="go('profile')">
       <Avatar name="星辰同学" size="lg" />
       <div>
@@ -35,37 +30,39 @@ function go(slug: string, nextVariant = "default") {
       <span class="chev">›</span>
     </button>
 
-    <Card title="总资产" subtitle="钱包与账本结余">
-      <div class="asset">
-        <div class="asset-top">
+    <section class="asset-hero">
+      <div class="asset-top">
+        <div>
+          <span class="label">总资产</span>
           <strong>
             {{ hidden ? "****" : `¥ ${formatMoney(total)}` }}
           </strong>
-          <button
-            type="button"
-            class="eye"
-            :aria-label="hidden ? '显示金额' : '隐藏金额'"
-            @click="hidden = !hidden"
-          >
-            <EyeOff v-if="hidden" :size="18" />
-            <Eye v-else :size="18" />
-          </button>
         </div>
-        <p>
-          钱包 {{ hidden ? "***" : "3,200" }} · 本月结余
-          {{ hidden ? "***" : "840" }} · 券 3
-        </p>
-        <div class="asset-actions">
-          <Button label="钱包" @click="go('wallet')" />
-          <Button label="分析" variant="outlined" @click="go('analytics')" />
-        </div>
+        <button
+          type="button"
+          class="eye"
+          :aria-label="hidden ? '显示金额' : '隐藏金额'"
+          @click="hidden = !hidden"
+        >
+          <EyeOff v-if="hidden" :size="18" />
+          <Eye v-else :size="18" />
+        </button>
       </div>
-    </Card>
-
-    <div class="shortcuts">
-      <button type="button" @click="go('wallet')">钱包</button>
-      <button type="button" @click="go('help-center')">帮助中心</button>
-    </div>
+      <div class="asset-grid">
+        <button type="button" @click="go('wallet')">
+          <span>钱包</span>
+          <em>{{ hidden ? "***" : "3,200" }}</em>
+        </button>
+        <button type="button" @click="go('analytics')">
+          <span>本月结余</span>
+          <em>{{ hidden ? "***" : "840" }}</em>
+        </button>
+        <button type="button" @click="go('coupon-wallet')">
+          <span>券</span>
+          <em>3</em>
+        </button>
+      </div>
+    </section>
 
     <section class="group">
       <button type="button" @click="go('profile')">
@@ -73,8 +70,7 @@ function go(slug: string, nextVariant = "default") {
       </button>
       <Divider />
       <button type="button" @click="go('settings')">设置 <span>›</span></button>
-    </section>
-    <section class="group">
+      <Divider />
       <button type="button" @click="go('help-center')">
         帮助中心 <span>›</span>
       </button>
@@ -83,15 +79,30 @@ function go(slug: string, nextVariant = "default") {
         关于账本星球 <span>›</span>
       </button>
     </section>
-    <p class="version">v0.1.0</p>
+    <p class="version">v0.1.0 · 账本星球</p>
   </div>
 </template>
 
 <style scoped>
 .page {
+  position: relative;
   display: grid;
   gap: 14px;
   padding: 16px;
+}
+.orbit {
+  pointer-events: none;
+  position: absolute;
+  top: -20px;
+  right: -30px;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, #8b5cf6 18%, transparent),
+    transparent 70%
+  );
 }
 .profile {
   display: grid;
@@ -114,17 +125,32 @@ function go(slug: string, nextVariant = "default") {
   color: var(--pb-color-on-surface-muted);
   font-size: 22px;
 }
-.asset {
+.asset-hero {
   display: grid;
-  gap: 10px;
+  gap: 14px;
+  padding: 16px;
+  border-radius: var(--pb-radius-lg);
+  background:
+    linear-gradient(
+      140deg,
+      color-mix(in srgb, var(--pb-color-primary) 12%, var(--pb-color-surface)),
+      color-mix(in srgb, #8b5cf6 8%, var(--pb-color-surface))
+    );
 }
 .asset-top {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+}
+.asset-top .label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
 }
 .asset-top strong {
   font: var(--pb-typography-title-lg);
+  letter-spacing: -0.02em;
 }
 .eye {
   display: inline-grid;
@@ -133,40 +159,40 @@ function go(slug: string, nextVariant = "default") {
   height: 36px;
   border: 0;
   border-radius: var(--pb-radius-full);
-  background: transparent;
+  background: color-mix(in srgb, var(--pb-color-surface) 60%, transparent);
   color: var(--pb-color-on-surface-muted);
   cursor: pointer;
 }
-.asset p {
-  margin: 0;
+.asset-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.asset-grid button {
+  display: grid;
+  gap: 4px;
+  padding: 10px 8px;
+  border: 0;
+  border-radius: var(--pb-radius-md);
+  background: color-mix(in srgb, var(--pb-color-surface) 70%, transparent);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.asset-grid span {
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
 }
-.asset-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-.shortcuts {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-.shortcuts button {
-  min-height: 44px;
-  border: 1px solid var(--pb-color-border);
-  border-radius: var(--pb-radius-md);
-  background: var(--pb-color-surface);
-  color: inherit;
+.asset-grid em {
   font: var(--pb-typography-subtitle);
-  cursor: pointer;
+  font-style: normal;
 }
 .group {
   display: grid;
   padding: 4px 14px;
-  border: 1px solid var(--pb-color-border);
   border-radius: var(--pb-radius-lg);
   background: var(--pb-color-surface);
+  box-shadow: inset 0 0 0 1px var(--pb-color-border);
 }
 .group > button {
   display: flex;

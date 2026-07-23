@@ -23,10 +23,16 @@ import {
   type WorkbenchBridgeMessage,
 } from "@/runtime/bridge";
 import {
+  getRouteNavigationIntent,
+  installNavigationIntentTracking,
+} from "@/runtime/navigation-intent";
+import {
   buildCanonicalRuntimeUrl,
   resolveRuntimeRoute,
 } from "@/runtime/url";
 import InspectHost from "@/runtime/inspect/InspectHost.vue";
+
+installNavigationIntentTracking();
 
 const route = useRoute();
 const screenComponent = shallowRef<Component | null>(null);
@@ -132,6 +138,7 @@ function sendRouteIfChanged() {
   const message = buildEnvelope("route", {
     fromRuntimeUrl,
     canonicalRuntimeUrl: canonicalRuntimeUrl.value,
+    navigation: getRouteNavigationIntent(),
   });
   if (!message) return;
   lastPostedRoute.value = canonicalRuntimeUrl.value;

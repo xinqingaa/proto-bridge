@@ -6,6 +6,7 @@ import ProgressIndicator from "@/design-system/components/basic/ProgressIndicato
 import Button from "@/design-system/components/basic/Button.vue";
 import SnackbarToast from "@/design-system/components/complex/SnackbarToast.vue";
 import { tasks } from "../mock";
+import { runtimePath } from "../nav";
 
 const route = useRoute();
 const router = useRouter();
@@ -13,9 +14,6 @@ const toast = ref(false);
 const task = tasks[0]!;
 const variant = computed(() =>
   typeof route.query.variant === "string" ? route.query.variant : "default",
-);
-const theme = computed(() =>
-  typeof route.query.theme === "string" ? route.query.theme : "light",
 );
 const completed = computed(
   () => variant.value === "completed" || variant.value === "claimable",
@@ -31,9 +29,7 @@ watch(
 );
 
 function goComplete() {
-  void router.push(
-    `/prototype/ledger-planet/record-edit?variant=default&theme=${theme.value}`,
-  );
+  void router.push(runtimePath("record-edit", route));
 }
 
 function claim() {

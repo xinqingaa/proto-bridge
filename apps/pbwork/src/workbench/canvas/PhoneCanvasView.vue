@@ -288,7 +288,10 @@ function onIframeLoad(contentWindow: Window | null) {
   sendInit(contentWindow);
 }
 
-function applyRuntimeNavigation(canonicalRuntimeUrl: string) {
+function applyRuntimeNavigation(
+  canonicalRuntimeUrl: string,
+  navigation: "push" | "replace" | "back" = "replace",
+) {
   if (Date.now() < ignoreRouteEchoUntil) return;
 
   let parsed: URL;
@@ -334,6 +337,29 @@ function applyRuntimeNavigation(canonicalRuntimeUrl: string) {
   if (route.fullPath === workbenchPath) return;
   runtimeNavigationTarget = workbenchPath;
   ignoreRouteEchoUntil = Date.now() + 800;
+
+  if (navigation === "back") {
+    const position = Number(window.history.state?.position ?? 0);
+    if (position > 0) {
+      router.back();
+      window.setTimeout(() => {
+        if (route.fullPath !== workbenchPath) {
+          ignoreRouteEchoUntil = Date.now() + 800;
+          runtimeNavigationTarget = workbenchPath;
+          void router.replace(workbenchPath);
+        }
+      }, 50);
+      return;
+    }
+    void router.replace(workbenchPath);
+    return;
+  }
+
+  if (navigation === "replace") {
+    void router.replace(workbenchPath);
+    return;
+  }
+
   void router.push(workbenchPath);
 }
 
@@ -361,12 +387,16 @@ function onWindowMessage(event: MessageEvent) {
     if (selection.inspecting) sendInspectMode(true);
     if (selection.commenting) sendCommentMode(true);
     if (msg.payload.canonicalRuntimeUrl !== absoluteRuntimeUrl.value) {
-      applyRuntimeNavigation(msg.payload.canonicalRuntimeUrl);
+      // ready after iframe load / remount — align without stacking history
+      applyRuntimeNavigation(msg.payload.canonicalRuntimeUrl, "replace");
     }
     return;
   }
   if (msg.type === "route") {
-    applyRuntimeNavigation(msg.payload.canonicalRuntimeUrl);
+    applyRuntimeNavigation(
+      msg.payload.canonicalRuntimeUrl,
+      msg.payload.navigation ?? "push",
+    );
     return;
   }
   if (msg.type === "hover") {

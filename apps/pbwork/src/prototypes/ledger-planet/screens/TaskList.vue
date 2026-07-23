@@ -6,15 +6,13 @@ import FilterBar from "@/design-system/components/complex/FilterBar.vue";
 import Chip from "@/design-system/components/basic/Chip.vue";
 import EmptyState from "@/design-system/components/complex/EmptyState.vue";
 import { tasks } from "../mock";
+import { runtimePath } from "../nav";
 
 const route = useRoute();
 const router = useRouter();
 const filter = ref("全部");
 const variant = computed(() =>
   typeof route.query.variant === "string" ? route.query.variant : "default",
-);
-const theme = computed(() =>
-  typeof route.query.theme === "string" ? route.query.theme : "light",
 );
 const rows = computed(() => {
   if (variant.value === "empty") return [];
@@ -25,7 +23,12 @@ const rows = computed(() => {
 
 function open(id: string, status: string) {
   void router.push(
-    `/prototype/ledger-planet/task-detail?variant=${status === "done" ? "completed" : "default"}&theme=${theme.value}&task=${id}`,
+    runtimePath(
+      "task-detail",
+      route,
+      status === "done" ? "completed" : "default",
+      { task: id },
+    ),
   );
 }
 </script>

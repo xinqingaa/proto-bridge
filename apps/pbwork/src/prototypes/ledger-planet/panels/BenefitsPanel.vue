@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import Card from "@/design-system/components/basic/Card.vue";
 import Chip from "@/design-system/components/basic/Chip.vue";
 import Button from "@/design-system/components/basic/Button.vue";
 import ProgressIndicator from "@/design-system/components/basic/ProgressIndicator.vue";
 import Spinner from "@/design-system/components/basic/Spinner.vue";
 import EmptyState from "@/design-system/components/complex/EmptyState.vue";
+import { pushStack } from "../nav";
 import { activities, coupons, tasks } from "../mock";
 
 const route = useRoute();
@@ -16,16 +16,13 @@ const variant = computed(() => {
   if (!ownsVariant.value) return "default";
   return typeof route.query.variant === "string" ? route.query.variant : "default";
 });
-const theme = computed(() =>
-  typeof route.query.theme === "string" ? route.query.theme : "light",
-);
 const unusedCount = coupons.filter((item) => item.status === "unused").length;
 const doneCount = tasks.filter((item) => item.status === "done").length;
+const featured = activities[0]!;
+const expiringSoon = coupons.find((item) => item.status === "unused");
 
 function go(slug: string, nextVariant = "default") {
-  void router.push(
-    `/prototype/ledger-planet/${slug}?variant=${nextVariant}&theme=${theme.value}`,
-  );
+  void pushStack(router, route, "权益", slug, { variant: nextVariant });
 }
 </script>
 
@@ -42,16 +39,19 @@ function go(slug: string, nextVariant = "default") {
       description="稍后再来看看活动与任务。"
     />
     <template v-else>
-      <button type="button" class="hit" @click="go('activity-detail')">
-        <Card :title="activities[0]!.title" :subtitle="activities[0]!.subtitle">
-          <div class="card-top">
-            <Chip :label="activities[0]!.status" tone="success" />
-          </div>
-          <ProgressIndicator
-            :value="(activities[0]!.progress / activities[0]!.target) * 100"
-            :label="`${activities[0]!.progress}/${activities[0]!.target}`"
-          />
-        </Card>
+      <div class="orbit" aria-hidden="true" />
+      <button type="button" class="feature" @click="go('activity-detail')">
+        <div class="feature-top">
+          <Chip :label="featured.status" tone="success" />
+          <span>进行中</span>
+        </div>
+        <strong>{{ featured.title }}</strong>
+        <p>{{ featured.subtitle }}</p>
+        <ProgressIndicator
+          :value="(featured.progress / featured.target) * 100"
+          :label="`${featured.progress}/${featured.target}`"
+        />
+        <span class="feature-cta">查看活动 ›</span>
       </button>
 
       <section class="section">
@@ -65,7 +65,8 @@ function go(slug: string, nextVariant = "default") {
           v-for="task in tasks"
           :key="task.id"
           type="button"
-          class="list-row"
+          class="task-row"
+          :class="{ done: task.status === 'done' }"
           @click="
             go(
               'task-detail',
@@ -73,6 +74,9 @@ function go(slug: string, nextVariant = "default") {
             )
           "
         >
+          <span class="check" aria-hidden="true">
+            {{ task.status === "done" ? "✓" : "" }}
+          </span>
           <div>
             <strong>{{ task.title }}</strong>
             <span>{{ task.subtitle }}</span>
@@ -84,9 +88,15 @@ function go(slug: string, nextVariant = "default") {
         </button>
       </section>
 
-      <button type="button" class="coupon-entry" @click="go('coupon-wallet')">
-        <span>我的券包</span>
-        <strong>可用 {{ unusedCount }} · 即将过期 1 ›</strong>
+      <button type="button" class="coupon-ticket" @click="go('coupon-wallet')">
+        <div class="ticket-main">
+          <span>我的券包</span>
+          <strong>可用 {{ unusedCount }}</strong>
+        </div>
+        <div class="ticket-side">
+          <span>{{ expiringSoon ? "即将过期 1" : "查看全部" }}</span>
+          <em>›</em>
+        </div>
       </button>
 
       <section class="section">
@@ -104,6 +114,7 @@ function go(slug: string, nextVariant = "default") {
               )
             "
           >
+            <div class="activity-band" aria-hidden="true" />
             <Chip :label="item.status" tone="secondary" />
             <strong>{{ item.title }}</strong>
             <span>{{ item.subtitle }}</span>
@@ -122,6 +133,7 @@ function go(slug: string, nextVariant = "default") {
 
 <style scoped>
 .page {
+  position: relative;
   display: grid;
   gap: 14px;
   padding: 16px;
@@ -132,25 +144,67 @@ function go(slug: string, nextVariant = "default") {
   justify-items: center;
   min-height: 100%;
 }
-.hit {
+.orbit {
+  pointer-events: none;
+  position: absolute;
+  top: -24px;
+  left: -36px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, #8b5cf6 22%, transparent),
+    transparent 70%
+  );
+}
+.feature {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  padding: 16px;
   border: 0;
-  padding: 0;
-  background: transparent;
+  border-radius: var(--pb-radius-lg);
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, #8b5cf6 16%, var(--pb-color-surface)),
+      var(--pb-color-surface) 60%
+    );
   color: inherit;
   text-align: left;
   cursor: pointer;
+  overflow: hidden;
 }
-.card-top {
-  margin-bottom: 10px;
+.feature-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
+}
+.feature strong {
+  font: var(--pb-typography-title);
+}
+.feature p {
+  margin: 0;
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
+}
+.feature-cta {
+  margin-top: 4px;
+  color: var(--pb-color-primary);
+  font: var(--pb-typography-caption);
 }
 .section {
   display: grid;
-  gap: 8px;
+  gap: 4px;
 }
 .section header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 4px;
 }
 .section h2 {
   margin: 0;
@@ -163,31 +217,98 @@ function go(slug: string, nextVariant = "default") {
   font: var(--pb-typography-caption);
   cursor: pointer;
 }
-.list-row,
-.coupon-entry {
-  display: flex;
-  justify-content: space-between;
+.task-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-height: 52px;
-  padding: 12px;
-  border: 1px solid var(--pb-color-border);
-  border-radius: var(--pb-radius-md);
-  background: var(--pb-color-surface);
+  padding: 10px 2px;
+  border: 0;
+  border-bottom: 1px solid var(--pb-color-border);
+  background: transparent;
   color: inherit;
   text-align: left;
   cursor: pointer;
 }
-.list-row strong,
-.coupon-entry span {
+.task-row:last-child {
+  border-bottom: 0;
+}
+.task-row.done strong {
+  text-decoration: line-through;
+  color: var(--pb-color-on-surface-muted);
+}
+.check {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--pb-color-border);
+  background: var(--pb-color-surface);
+  color: var(--pb-color-success);
+  font-size: 12px;
+}
+.task-row.done .check {
+  border-color: var(--pb-color-success);
+  background: color-mix(in srgb, var(--pb-color-success) 16%, transparent);
+}
+.task-row strong {
   display: block;
   font: var(--pb-typography-subtitle);
 }
-.list-row span,
-.coupon-entry strong {
+.task-row span {
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
-  font-weight: 400;
+}
+.coupon-ticket {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: stretch;
+  min-height: 72px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--pb-radius-lg);
+  background: var(--pb-color-surface);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px var(--pb-color-border);
+  overflow: hidden;
+}
+.ticket-main {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--pb-color-primary) 10%, transparent),
+      transparent
+    );
+}
+.ticket-main span {
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
+}
+.ticket-main strong {
+  font: var(--pb-typography-title);
+}
+.ticket-side {
+  display: grid;
+  place-content: center;
+  gap: 2px;
+  min-width: 88px;
+  padding: 12px;
+  border-left: 1px dashed var(--pb-color-border);
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
+  text-align: center;
+}
+.ticket-side em {
+  font-style: normal;
+  color: var(--pb-color-primary);
+  font-size: 18px;
 }
 .activity-scroll {
   display: grid;
@@ -197,26 +318,33 @@ function go(slug: string, nextVariant = "default") {
   overflow-x: auto;
   padding-bottom: 4px;
   scrollbar-width: none;
-  -ms-overflow-style: none;
 }
 .activity-scroll::-webkit-scrollbar {
   display: none;
-  width: 0;
-  height: 0;
 }
 .activity-card {
+  position: relative;
   display: grid;
   gap: 8px;
   justify-items: start;
   padding: 14px;
-  border: 1px solid var(--pb-color-border);
+  border: 0;
   border-radius: var(--pb-radius-lg);
   background: var(--pb-color-surface);
+  box-shadow: inset 0 0 0 1px var(--pb-color-border);
   color: inherit;
   text-align: left;
   cursor: pointer;
+  overflow: hidden;
+}
+.activity-band {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: linear-gradient(90deg, #8b5cf6, var(--pb-color-primary));
 }
 .activity-card strong {
+  margin-top: 4px;
   font: var(--pb-typography-subtitle);
 }
 .activity-card span {

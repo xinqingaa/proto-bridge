@@ -7,22 +7,39 @@ import LedgerPlanetShell, {
 import LedgerPanel from "./panels/LedgerPanel.vue";
 import BenefitsPanel from "./panels/BenefitsPanel.vue";
 import MePanel from "./panels/MePanel.vue";
+import { HOME_TAB, pushStack } from "./nav";
+import { readTab, rememberTab } from "./tab-session";
+import { ensureTheme } from "./theme-session";
 
 const props = defineProps<{ tab: LedgerTab }>();
 
 const route = useRoute();
 const router = useRouter();
-const active = ref<LedgerTab>(props.tab);
+
+ensureTheme(
+  typeof route.query.theme === "string" ? route.query.theme : undefined,
+);
+
+const active = ref<LedgerTab>(readTab(props.tab));
 
 watch(
   () => props.tab,
   (value) => {
-    active.value = value;
+    const slug = String(route.params.screenSlug ?? "");
+    // Deep-link / workbench open of a specific home: trust URL.
+    if (HOME_TAB[slug] === value) {
+      active.value = value;
+      rememberTab(value);
+    }
   },
 );
 
-const theme = computed(() =>
-  typeof route.query.theme === "string" ? route.query.theme : "light",
+watch(
+  active,
+  (value) => {
+    rememberTab(value);
+  },
+  { immediate: true },
 );
 
 const title = computed(() => active.value);
@@ -31,9 +48,7 @@ const showAdd = computed(() => active.value === "记账");
 const showSettings = computed(() => active.value === "我的");
 
 function go(slug: string) {
-  void router.push(
-    `/prototype/ledger-planet/${slug}?variant=default&theme=${theme.value}`,
-  );
+  void pushStack(router, route, active.value, slug);
 }
 </script>
 

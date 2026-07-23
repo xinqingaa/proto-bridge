@@ -7,6 +7,7 @@ import Card from "@/design-system/components/basic/Card.vue";
 import ProgressIndicator from "@/design-system/components/basic/ProgressIndicator.vue";
 import Button from "@/design-system/components/basic/Button.vue";
 import { activities } from "../mock";
+import { runtimePath } from "../nav";
 
 const route = useRoute();
 const router = useRouter();
@@ -14,15 +15,10 @@ const activity = activities[0]!;
 const variant = computed(() =>
   typeof route.query.variant === "string" ? route.query.variant : "default",
 );
-const theme = computed(() =>
-  typeof route.query.theme === "string" ? route.query.theme : "light",
-);
 const ended = computed(() => variant.value === "ended");
 
 function goRecord() {
-  void router.push(
-    `/prototype/ledger-planet/record-edit?variant=default&theme=${theme.value}`,
-  );
+  void router.push(runtimePath("record-edit", route));
 }
 </script>
 

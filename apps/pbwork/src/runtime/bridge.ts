@@ -136,7 +136,15 @@ export type BridgePayloads = {
   "clear-select": {
     reason: "escape" | "blank" | "mode-change" | "unmounted";
   };
-  route: { fromRuntimeUrl: string; canonicalRuntimeUrl: string };
+  route: {
+    fromRuntimeUrl: string;
+    canonicalRuntimeUrl: string;
+    /**
+     * How the runtime navigated. Workbench must mirror this on its own history
+     * (`push` / `replace` / `back`) instead of always pushing.
+     */
+    navigation: "push" | "replace" | "back";
+  };
   state: { summary: JsonRecord; meta?: SnapshotMeta };
   "inspect-mode": { enabled: boolean };
   "comment-mode": { enabled: boolean };

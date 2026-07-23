@@ -3,7 +3,6 @@ import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { Eye, EyeOff } from "lucide-vue-next";
 import LedgerPlanetShell from "../LedgerPlanetShell.vue";
-import Card from "@/design-system/components/basic/Card.vue";
 import Button from "@/design-system/components/basic/Button.vue";
 import DialogPanel from "@/design-system/components/complex/DialogPanel.vue";
 import SnackbarToast from "@/design-system/components/complex/SnackbarToast.vue";
@@ -37,11 +36,15 @@ function confirmTopUp() {
 <template>
   <LedgerPlanetShell title="钱包" active="我的" back-to="me-home">
     <div class="page" data-pb-id="ledger-planet.wallet">
-      <Card title="余额" subtitle="与账本账户合计（mock）">
+      <section class="balance-hero">
         <div class="balance">
-          <strong>
-            {{ hidden ? "****" : `¥ ${formatMoney(balance)}` }}
-          </strong>
+          <div>
+            <span class="label">余额</span>
+            <strong>
+              {{ hidden ? "****" : `¥ ${formatMoney(balance)}` }}
+            </strong>
+            <p>与账本账户合计（mock）</p>
+          </div>
           <button
             type="button"
             class="eye"
@@ -52,7 +55,7 @@ function confirmTopUp() {
             <Eye v-else :size="18" />
           </button>
         </div>
-      </Card>
+      </section>
       <h2>余额明细</h2>
       <EmptyState
         v-if="variant === 'empty'"
@@ -95,13 +98,35 @@ function confirmTopUp() {
   padding: 16px;
   align-content: start;
 }
+.balance-hero {
+  padding: 16px;
+  border-radius: var(--pb-radius-lg);
+  background:
+    linear-gradient(
+      140deg,
+      color-mix(in srgb, var(--pb-color-primary) 14%, var(--pb-color-surface)),
+      color-mix(in srgb, #8b5cf6 10%, var(--pb-color-surface))
+    );
+}
 .balance {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+}
+.balance .label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
 }
 .balance strong {
   font: var(--pb-typography-title-lg);
+  letter-spacing: -0.02em;
+}
+.balance p {
+  margin: 6px 0 0;
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
 }
 .eye {
   display: inline-grid;
@@ -110,7 +135,7 @@ function confirmTopUp() {
   height: 36px;
   border: 0;
   border-radius: var(--pb-radius-full);
-  background: transparent;
+  background: color-mix(in srgb, var(--pb-color-surface) 55%, transparent);
   color: var(--pb-color-on-surface-muted);
   cursor: pointer;
 }
@@ -124,12 +149,15 @@ h2 {
   align-items: center;
   gap: 12px;
   min-height: 52px;
-  padding: 10px 12px;
-  border: 1px solid var(--pb-color-border);
-  border-radius: var(--pb-radius-md);
-  background: var(--pb-color-surface);
+  padding: 12px 2px;
+  border: 0;
+  border-bottom: 1px solid var(--pb-color-border);
+  background: transparent;
   color: inherit;
   text-align: left;
+}
+.row:last-of-type {
+  border-bottom: 0;
 }
 .row strong {
   display: block;

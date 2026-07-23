@@ -6,15 +6,13 @@ import Tabs from "@/design-system/components/complex/Tabs.vue";
 import Chip from "@/design-system/components/basic/Chip.vue";
 import EmptyState from "@/design-system/components/complex/EmptyState.vue";
 import { coupons } from "../mock";
+import { runtimePath } from "../nav";
 
 const route = useRoute();
 const router = useRouter();
 const tab = ref("unused");
 const variant = computed(() =>
   typeof route.query.variant === "string" ? route.query.variant : "default",
-);
-const theme = computed(() =>
-  typeof route.query.theme === "string" ? route.query.theme : "light",
 );
 
 const tabItems = [
@@ -38,7 +36,9 @@ function rowsFor(status: string) {
 
 function open(id: string, status: string) {
   void router.push(
-    `/prototype/ledger-planet/coupon-detail?variant=${status === "used" ? "used" : "default"}&theme=${theme.value}&coupon=${id}`,
+    runtimePath("coupon-detail", route, status === "used" ? "used" : "default", {
+      coupon: id,
+    }),
   );
 }
 </script>
@@ -138,15 +138,21 @@ function open(id: string, status: string) {
   padding-top: 4px;
 }
 .row {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: center;
   gap: 12px;
-  min-height: 56px;
-  padding: 12px;
-  border: 1px solid var(--pb-color-border);
+  min-height: 64px;
+  padding: 12px 14px;
+  border: 0;
   border-radius: var(--pb-radius-md);
-  background: var(--pb-color-surface);
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--pb-color-primary) 8%, var(--pb-color-surface)),
+      var(--pb-color-surface) 42%
+    );
+  box-shadow: inset 0 0 0 1px var(--pb-color-border);
   color: inherit;
   text-align: left;
   cursor: pointer;

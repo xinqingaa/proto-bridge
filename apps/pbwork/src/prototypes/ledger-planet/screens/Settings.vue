@@ -6,35 +6,54 @@ import SwitchControl from "@/design-system/components/basic/SwitchControl.vue";
 import Divider from "@/design-system/components/basic/Divider.vue";
 import Button from "@/design-system/components/basic/Button.vue";
 import SnackbarToast from "@/design-system/components/complex/SnackbarToast.vue";
+import { getTheme, setTheme, type LedgerThemeId } from "../theme-session";
 
 const route = useRoute();
 const router = useRouter();
 const notifications = ref(true);
 const hideAmount = ref(false);
 const toast = ref(false);
+const themeTick = ref(0);
 
-const dark = computed(() => route.query.theme === "dark");
+const dark = computed(() => {
+  themeTick.value;
+  return (
+    getTheme(
+      typeof route.query.theme === "string" ? route.query.theme : undefined,
+    ) === "dark"
+  );
+});
 
 watch(
   () => route.query.variant,
   (value) => {
-    if (value === "dark" && route.query.theme !== "dark") {
-      void router.replace({
-        query: { ...route.query, theme: "dark", variant: "dark" },
-      });
+    if (value === "dark") {
+      applyTheme("dark");
     }
   },
   { immediate: true },
 );
 
-function setDark(value: boolean) {
+function applyTheme(next: LedgerThemeId) {
+  setTheme(next);
+  themeTick.value += 1;
+  const nextVariant =
+    route.query.variant === "dark" && next === "light"
+      ? "default"
+      : next === "dark" && route.query.variant === "default"
+        ? "dark"
+        : route.query.variant;
   void router.replace({
     query: {
       ...route.query,
-      theme: value ? "dark" : "light",
-      variant: value ? "dark" : "default",
+      theme: next,
+      ...(typeof nextVariant === "string" ? { variant: nextVariant } : {}),
     },
   });
+}
+
+function setDark(value: boolean) {
+  applyTheme(value ? "dark" : "light");
 }
 
 function clearCache() {
@@ -80,9 +99,9 @@ function clearCache() {
   display: grid;
   gap: 4px;
   padding: 14px;
-  border: 1px solid var(--pb-color-border);
   border-radius: var(--pb-radius-lg);
   background: var(--pb-color-surface);
+  box-shadow: inset 0 0 0 1px var(--pb-color-border);
 }
 .group h2 {
   margin: 0 0 6px;

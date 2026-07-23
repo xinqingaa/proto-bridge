@@ -9,6 +9,7 @@
 
 - 离线优先的个人账本类原型：记账、权益、资产/钱包/设置。
 - 气质：**清爽效率**（非趣味星球感堆料）。
+- 允许**小面积**装饰（角落光斑、细渐变、券票形入口），禁止大面积插画铺底或整屏装饰淹没内容。
 - 目标：可走通主流程的完整原型，而不是 demo 拼盘。
 
 ## 2. 范围边界
@@ -89,10 +90,13 @@
 
 ```text
 ledger-planet/
-  LedgerPlanetShell.vue   # 栈页壳 / Tab 壳（showView）
-  TabRoot.vue             # 三一级面板宿主
+  LedgerPlanetShell.vue   # 栈页壳 / Tab 壳（showView）+ theme 校正
+  TabRoot.vue             # 三一级面板宿主 + tab-session
   PeriodSegment.vue       # 年-月-周-日（无 window）
+  nav.ts / tab-session.ts / theme-session.ts
   panels/*                # 记账/权益/我的内容
   screens/*               # 注册用 Screen（首页薄封装 + 二级页）
   mock.ts
+  requirements.md
+  implementation-notes.md
 ```
