@@ -1,17 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import LedgerPlanetShell, {
-  type LedgerTab,
-} from "./LedgerPlanetShell.vue";
+import LedgerPlanetShell, { type LedgerTab } from "./LedgerPlanetShell.vue";
 import LedgerPanel from "./panels/LedgerPanel.vue";
 import BenefitsPanel from "./panels/BenefitsPanel.vue";
 import MePanel from "./panels/MePanel.vue";
-import { HOME_TAB, pushStack } from "./nav";
-import { readTab, rememberTab } from "./tab-session";
+import { ensureRootEntry, HOME_TAB, pushStack, switchTab } from "./nav";
 import { ensureTheme } from "./theme-session";
-
-const props = defineProps<{ tab: LedgerTab }>();
 
 const route = useRoute();
 const router = useRouter();
@@ -20,27 +15,25 @@ ensureTheme(
   typeof route.query.theme === "string" ? route.query.theme : undefined,
 );
 
-const active = ref<LedgerTab>(readTab(props.tab));
+const routeTab = () =>
+  HOME_TAB[String(route.params.screenSlug ?? "")] ?? "记账";
+const active = ref<LedgerTab>(routeTab());
 
 watch(
-  () => props.tab,
-  (value) => {
-    const slug = String(route.params.screenSlug ?? "");
-    // Deep-link / workbench open of a specific home: trust URL.
-    if (HOME_TAB[slug] === value) {
-      active.value = value;
-      rememberTab(value);
-    }
-  },
-);
-
-watch(
-  active,
-  (value) => {
-    rememberTab(value);
+  () => route.params.screenSlug,
+  () => {
+    const value = routeTab();
+    active.value = value;
+    void ensureRootEntry(router, route, value);
   },
   { immediate: true },
 );
+
+watch(active, (value, previous) => {
+  if (value !== previous && value !== routeTab()) {
+    void switchTab(router, route, value);
+  }
+});
 
 const title = computed(() => active.value);
 const showAnalytics = computed(() => active.value === "记账");

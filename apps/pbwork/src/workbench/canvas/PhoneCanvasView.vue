@@ -6,10 +6,7 @@ import {
   loadPrototypeScreens,
   loadThemes,
 } from "@/design-system/loaders";
-import {
-  buildCanonicalRuntimeUrl,
-  resolveRuntimeRoute,
-} from "@/runtime/url";
+import { buildCanonicalRuntimeUrl, resolveRuntimeRoute } from "@/runtime/url";
 import {
   HANDSHAKE_TIMEOUT_MS,
   contextMatches,
@@ -44,8 +41,6 @@ const canvasFullscreen = ref(false);
 const routeError = ref<string | null>(null);
 let copyTimer: ReturnType<typeof setTimeout> | null = null;
 let handshakeTimer: ReturnType<typeof setTimeout> | null = null;
-let ignoreRouteEchoUntil = 0;
-let runtimeNavigationTarget: string | null = null;
 
 const prototype = computed(() =>
   loadPrototypes().find((item) => item.id === props.prototypeId),
@@ -121,7 +116,7 @@ const absoluteRuntimeUrl = computed(() => {
 });
 
 const reloadNonce = ref(0);
-const iframeSrc = computed(() => absoluteRuntimeUrl.value);
+const iframeSrc = ref("");
 const iframeRenderKey = computed(() => reloadNonce.value);
 
 const iframeTitle = computed(() => {
@@ -140,10 +135,7 @@ const bridgeContext = computed((): BridgeContext | null => {
   };
 });
 
-function replaceWorkbenchQuery(next: {
-  variantId: string;
-  themeId: string;
-}) {
+function replaceWorkbenchQuery(next: { variantId: string; themeId: string }) {
   if (!screen.value || !prototype.value) return;
   const variant =
     screen.value.variants.find((item) => item.id === next.variantId) ??
@@ -156,7 +148,6 @@ function replaceWorkbenchQuery(next: {
     theme: next.themeId,
     ...(variant.query ?? {}),
   };
-  ignoreRouteEchoUntil = Date.now() + 800;
   void router.replace({
     path: `/workbench/prototypes/${prototype.value.id}/screens/${screen.value.screenSlug}`,
     query,
@@ -228,7 +219,8 @@ function postToRuntime(
     target.postMessage(message, window.location.origin);
     return true;
   } catch (error) {
-    const detail = error instanceof Error ? error.message : "message could not be cloned";
+    const detail =
+      error instanceof Error ? error.message : "message could not be cloned";
     selection.setError(`COMMAND_FAILED: ${detail}`);
     return false;
   }
@@ -237,9 +229,7 @@ function postToRuntime(
 function sendInspectMode(enabled: boolean) {
   const ctx = bridgeContext.value;
   if (!ctx || !selection.runtimeReady) return;
-  postToRuntime(
-    createWorkbenchEnvelope("inspect-mode", ctx, { enabled }),
-  );
+  postToRuntime(createWorkbenchEnvelope("inspect-mode", ctx, { enabled }));
 }
 
 function sendCommentMode(enabled: boolean) {
@@ -288,12 +278,21 @@ function onIframeLoad(contentWindow: Window | null) {
   sendInit(contentWindow);
 }
 
+function navigateRuntime(canonicalRuntimeUrl: string) {
+  const ctx = bridgeContext.value;
+  if (!ctx || !selection.runtimeReady) return;
+  postToRuntime(
+    createWorkbenchEnvelope("navigate", ctx, {
+      canonicalRuntimeUrl,
+      navigationId: crypto.randomUUID(),
+    }),
+  );
+}
+
 function applyRuntimeNavigation(
   canonicalRuntimeUrl: string,
   navigation: "push" | "replace" | "back" = "replace",
 ) {
-  if (Date.now() < ignoreRouteEchoUntil) return;
-
   let parsed: URL;
   try {
     parsed = new URL(canonicalRuntimeUrl, window.location.origin);
@@ -335,20 +334,10 @@ function applyRuntimeNavigation(
 
   routeError.value = null;
   if (route.fullPath === workbenchPath) return;
-  runtimeNavigationTarget = workbenchPath;
-  ignoreRouteEchoUntil = Date.now() + 800;
-
   if (navigation === "back") {
     const position = Number(window.history.state?.position ?? 0);
     if (position > 0) {
       router.back();
-      window.setTimeout(() => {
-        if (route.fullPath !== workbenchPath) {
-          ignoreRouteEchoUntil = Date.now() + 800;
-          runtimeNavigationTarget = workbenchPath;
-          void router.replace(workbenchPath);
-        }
-      }, 50);
       return;
     }
     void router.replace(workbenchPath);
@@ -374,7 +363,13 @@ function onWindowMessage(event: MessageEvent) {
   // A route message intentionally describes the destination context, while
   // the Workbench still owns the source context. Validate it by runtimeId and
   // canonical URL below instead of rejecting it as a stale screen message.
-  if (msg.type !== "ready" && msg.type !== "route" && ctx && !contextMatches(msg, ctx)) return;
+  if (
+    msg.type !== "ready" &&
+    msg.type !== "route" &&
+    ctx &&
+    !contextMatches(msg, ctx)
+  )
+    return;
   if (runtimeId.value && msg.runtimeId !== runtimeId.value) return;
 
   if (msg.type === "ready") {
@@ -458,15 +453,19 @@ function onShellKeydown(event: KeyboardEvent) {
   if (canvasFullscreen.value) canvasFullscreen.value = false;
 }
 
-watch(absoluteRuntimeUrl, () => {
-  routeError.value = null;
-  if (runtimeNavigationTarget && runtimeNavigationTarget === route.fullPath) {
-    runtimeNavigationTarget = null;
-    return;
-  }
-  runtimeNavigationTarget = null;
-  selection.resetForNavigation();
-});
+watch(
+  absoluteRuntimeUrl,
+  (next) => {
+    routeError.value = null;
+    if (!iframeSrc.value) {
+      iframeSrc.value = next;
+      return;
+    }
+    if (next && next !== iframeSrc.value) navigateRuntime(next);
+    selection.clearSelection();
+  },
+  { immediate: true },
+);
 
 watch(canvasFullscreen, (enabled) => {
   document.body.classList.toggle("pb-canvas-fullscreen", enabled);
@@ -532,8 +531,6 @@ watch(
   (canonicalWorkbenchPath) => {
     if (!canonicalWorkbenchPath) return;
     if (route.fullPath === canonicalWorkbenchPath) return;
-    if (Date.now() < ignoreRouteEchoUntil) return;
-    ignoreRouteEchoUntil = Date.now() + 400;
     void router.replace(canonicalWorkbenchPath);
   },
   { immediate: true },

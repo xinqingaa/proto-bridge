@@ -7,6 +7,7 @@ import Button from "@/design-system/components/basic/Button.vue";
 import DialogPanel from "@/design-system/components/complex/DialogPanel.vue";
 import SnackbarToast from "@/design-system/components/complex/SnackbarToast.vue";
 import EmptyState from "@/design-system/components/complex/EmptyState.vue";
+import DataList from "@/design-system/components/complex/DataList.vue";
 import { formatMoney, walletEntries } from "../mock";
 
 const route = useRoute();
@@ -62,7 +63,7 @@ function confirmTopUp() {
         title="暂无明细"
         description="充值或记账后会出现在这里。"
       />
-      <template v-else>
+      <DataList v-else surface="none" rounded="none">
         <button
           v-for="item in walletEntries"
           :key="item.id"
@@ -77,7 +78,7 @@ function confirmTopUp() {
             {{ item.amount < 0 ? "" : "+" }}{{ formatMoney(item.amount) }}
           </em>
         </button>
-      </template>
+      </DataList>
       <Button label="模拟充值" block @click="dialog = true" />
     </div>
     <DialogPanel
@@ -101,12 +102,16 @@ function confirmTopUp() {
 .balance-hero {
   padding: 16px;
   border-radius: var(--pb-radius-lg);
-  background:
-    linear-gradient(
-      140deg,
-      color-mix(in srgb, var(--pb-color-primary) 14%, var(--pb-color-surface)),
-      color-mix(in srgb, #8b5cf6 10%, var(--pb-color-surface))
-    );
+  border: 1px solid
+    color-mix(in srgb, var(--pb-color-primary) 24%, var(--pb-color-border));
+  background: color-mix(
+    in srgb,
+    var(--pb-color-primary) 7%,
+    var(--pb-color-surface)
+  );
+  box-shadow: 0 14px 34px
+    color-mix(in srgb, var(--pb-color-on-background) 8%, transparent);
+  backdrop-filter: blur(14px);
 }
 .balance {
   display: flex;

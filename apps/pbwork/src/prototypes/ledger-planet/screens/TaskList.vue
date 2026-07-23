@@ -5,8 +5,9 @@ import LedgerPlanetShell from "../LedgerPlanetShell.vue";
 import FilterBar from "@/design-system/components/complex/FilterBar.vue";
 import Chip from "@/design-system/components/basic/Chip.vue";
 import EmptyState from "@/design-system/components/complex/EmptyState.vue";
+import DataList from "@/design-system/components/complex/DataList.vue";
 import { tasks } from "../mock";
-import { runtimePath } from "../nav";
+import { pushStack } from "../nav";
 
 const route = useRoute();
 const router = useRouter();
@@ -16,20 +17,18 @@ const variant = computed(() =>
 );
 const rows = computed(() => {
   if (variant.value === "empty") return [];
-  if (filter.value === "已完成") return tasks.filter((item) => item.status === "done");
-  if (filter.value === "待完成") return tasks.filter((item) => item.status === "todo");
+  if (filter.value === "已完成")
+    return tasks.filter((item) => item.status === "done");
+  if (filter.value === "待完成")
+    return tasks.filter((item) => item.status === "todo");
   return tasks;
 });
 
 function open(id: string, status: string) {
-  void router.push(
-    runtimePath(
-      "task-detail",
-      route,
-      status === "done" ? "completed" : "default",
-      { task: id },
-    ),
-  );
+  void pushStack(router, route, "权益", "task-detail", {
+    variant: status === "done" ? "completed" : "default",
+    query: { task: id },
+  });
 }
 </script>
 
@@ -46,22 +45,24 @@ function open(id: string, status: string) {
         title="没有任务"
         description="稍后再来看看。"
       />
-      <button
-        v-for="task in rows"
-        :key="task.id"
-        type="button"
-        class="row"
-        @click="open(task.id, task.status)"
-      >
-        <div>
-          <strong>{{ task.title }}</strong>
-          <span>{{ task.subtitle }}</span>
-        </div>
-        <Chip
-          :label="task.status === 'done' ? '已完成' : '去完成'"
-          :tone="task.status === 'done' ? 'success' : 'primary'"
-        />
-      </button>
+      <DataList v-if="rows.length" surface="none" rounded="none">
+        <button
+          v-for="task in rows"
+          :key="task.id"
+          type="button"
+          class="row"
+          @click="open(task.id, task.status)"
+        >
+          <div>
+            <strong>{{ task.title }}</strong>
+            <span>{{ task.subtitle }}</span>
+          </div>
+          <Chip
+            :label="task.status === 'done' ? '已完成' : '去完成'"
+            :tone="task.status === 'done' ? 'success' : 'primary'"
+          />
+        </button>
+      </DataList>
     </div>
   </LedgerPlanetShell>
 </template>
@@ -79,10 +80,9 @@ function open(id: string, status: string) {
   align-items: center;
   gap: 12px;
   min-height: 52px;
-  padding: 12px;
-  border: 1px solid var(--pb-color-border);
-  border-radius: var(--pb-radius-md);
-  background: var(--pb-color-surface);
+  padding: 12px 2px;
+  border: 0;
+  background: transparent;
   color: inherit;
   text-align: left;
   cursor: pointer;

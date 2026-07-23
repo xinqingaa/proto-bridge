@@ -293,16 +293,44 @@ const scenarios: Record<string, ComponentScenario[]> = {
   ],
   "data-list": [
     {
-      id: "orders",
-      label: "工单列表",
-      description: "带状态与行尾操作的工单任务列表。",
-      props: { showActions: true },
+      id: "plain",
+      label: "分隔列表",
+      description: "只提供列表容器与分隔关系，行内容由业务传入。",
+      props: { divided: true, surface: "default" },
     },
     {
-      id: "read-only",
-      label: "只读列表",
-      description: "仅浏览、无需行尾操作的列表。",
-      props: { showActions: false },
+      id: "raised",
+      label: "抬升列表",
+      description: "在独立信息区使用轻微抬升的列表容器。",
+      props: { divided: true, surface: "raised", elevated: true },
+    },
+  ],
+  "scrollable-data-list": [
+    {
+      id: "refresh-feed",
+      label: "刷新与分页",
+      description: "可下拉刷新并在接近底部时请求下一页。",
+      props: { pullRefresh: true, loadMore: true, hasMore: true },
+    },
+    {
+      id: "finite-feed",
+      label: "已加载完成",
+      description: "数据加载完成后展示稳定的结束状态。",
+      props: { pullRefresh: true, loadMore: true, hasMore: false },
+    },
+  ],
+  "tab-viewport": [
+    {
+      id: "primary-tabs",
+      label: "一级内容视图",
+      description: "与外部导航组合，保活内容并支持横向切换。",
+      props: { swipe: true, mouseSwipe: true, keepMounted: true },
+    },
+    {
+      id: "controlled",
+      label: "仅受控切换",
+      description: "关闭手势，仅响应外部导航的选中值。",
+      props: { swipe: false, mouseSwipe: false, keepMounted: true },
     },
   ],
   "bottom-sheet": [
@@ -355,8 +383,6 @@ const scenarios: Record<string, ComponentScenario[]> = {
       props: {
         display: "icon-label",
         showIndicator: true,
-        showView: true,
-        mouseSwipe: true,
       },
     },
     {
@@ -366,8 +392,6 @@ const scenarios: Record<string, ComponentScenario[]> = {
       props: {
         display: "icon",
         showIndicator: true,
-        showView: true,
-        mouseSwipe: true,
       },
     },
   ],

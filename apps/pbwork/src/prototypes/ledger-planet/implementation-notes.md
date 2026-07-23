@@ -1,112 +1,58 @@
-# 账本星球 · 本轮实现踩坑与规范
+# 账本星球 · 实施说明与回归基线
 
-> 用途：PBWork 原型实现复盘；需求未完全定稿前先放在 `apps/pbwork/src/prototypes/`  
 > 关联需求：`requirements.md`
+> 本文记录当前采用的实现，不再把上一轮草稿方案当作规范。
 
-## 1. 踩过的坑 / 犯过的错
+## 1. 本轮问题根因
 
-### 错 1：一级 Tab 用「假滑动」
+1. 一级 Tab、业务路由、浏览器 history 三者都在维护“当前页”，返回时互相覆盖，导致权益/我的二级页回退后 Tab 乱跳。
+2. 主题只存在于 history query；切换主题后回到旧条目，旧 query 又把主题覆盖回去。
+3. 工作壳把 iframe 的每次导航都近似当作父路由 push，并依赖 50ms 回退和 400–800ms 忽略窗口，快速操作时会形成 A/B 循环或吞掉合法导航。
+4. `BottomNavigation` 同时承担导航栏、面板容器和手势，职责过重；`DataList` 则反过来理解了过多业务字段，难以容纳异构 item。
+5. 页面大量重复“圆角卡片 + 两行字”，主题色、信息密度、状态反馈和连续操作都不足。
 
-- **错法**：在 Shell `main` 上挂 `usePointerSwipe`，松手 `router.push`；BottomNavigation **未开** `showView`，没有 `v-window`。
-- **后果**：能滑但无面板动画；跟手位移残缺；体感像宽度溢出 / 闪切。
-- **正解**：一级内容放进 `BottomNavigation` 的 `showView` + 具名 slot，滑动/点击都走组件自带过渡。
+## 2. 当前架构
 
-### 错 2：在主体 Tab 里嵌套 Tabs
+### 导航
 
-- **错法**：记账首页用 `Tabs` 做年/月/周/日，又与一级横滑同方向抢手势。
-- **正解**：主体 Tab 子视图内不用带 window 的 Tabs；周期用分段控件（无 window）。
+- `BottomNavigation`：纯导航控件，只发出当前 value。
+- `TabViewport`：纯面板切换控件，统一横滑、轴向锁、动画和保活。
+- `TabRoot`：三个一级面板使用同一个 Screen 组件实例；home slug 变化不再卸载整棵视图。
+- `nav.ts`：所有进栈、替换、完成流和返回都写入 `pbScope / pbTab / pbParent / pbRootPosition`。Tab 切换使用 replace，二级页使用 push，完成流回到根或 replace。
+- 二级页禁止直接拼业务路由；使用 `pushStack`、`replaceScreen`、`goBack`、`finishToHome`。
 
-### 错 3：Tabs「只用栏、不用槽」
+### 主题
 
-- **错法**：`<Tabs v-model />` 不填 slot，业务 UI 放在 Tabs **外面**，只改一行标题。
-- **后果**：`v-window` 仍渲染空面板（只显示「月」等字），看起来蠢且冲突。
-- **正解**：要用 Tabs，内容必须进 `#xxx` slot，Tab 视图包裹整块内容。
+- `theme-session.ts` 以 localStorage 偏好为权威，并用事件通知 Runtime。
+- URL 中的 theme 用于分享和预览，但独立 Runtime 会把旧 history 条目规范化为当前偏好。
+- 切换主题使用 replace，不增加 history 条目，也不占用业务 variant。
 
-### 错 4：把规则「砍过头」
+### 工作壳与 Runtime
 
-- **错法**：记一笔的支出/收入也改成 Chip，因为「怕 Tabs」。
-- **纠正**：二级栈页可以使用 Tabs；禁的是**主体底栏 Tab 内再嵌**。
+- iframe 的启动 `src` 在本次预览期间保持不变，父路由变化通过 bridge `navigate` 指令同步，避免 iframe 重载。
+- Runtime 的内部导航通过 bridge `route` 回报 push / replace / back 语义；父层按同一语义镜像。
+- 同步以规范化 URL 是否一致为准，不再使用时间窗口或 50ms 回退猜测。
 
-### 错 5：周期切不动 / 像没切
+### 列表
 
-- **错法**：用 FilterBar 当周期器，且易被父级横滑吞点击；列表 mock 不随周期变，只有文案微变。
-- **正解**：`PeriodSegment` + `data-no-swipe`；`recordsForPeriod` 让日/周/月数据可见差异。
+- `DataList` 只提供 surface、圆角、阴影、inset 和相邻项分隔；默认 slot 可放任意业务结构，并保留按钮等原生语义。
+- `ScrollableDataList` 负责滚动手势和异步触发：`pullRefresh`、`loadMore` 均可布尔开启或传配置；`refreshing / loadingMore / hasMore` 由业务受控。
+- 触底请求有重复锁，加载完成后解锁；下拉手势做横纵轴锁定，不与一级横滑竞争。
 
-### 错 6：路由同步打断动画
+## 3. 视觉执行规则
 
-- **错法**：滑动切 Tab 时立刻 `router.replace` 换 Screen SFC → 整树重挂，动画被掐断。
-- **正解**：三面板同挂在 `TabRoot` 内本地切 `active`；**滑动过程中** URL 不强同步。
+- 一屏至少有一个明确视觉锚点：金额、进度、资产或权益票券；不用装饰性渐变堆料。
+- 主题色用于关键数字、状态、边框和小面积半透明表面。
+- 层次主要由边框、分隔线、阴影、透明叠加和轻量 backdrop blur 建立。
+- 列表优先连续排版，避免每行都变成独立卡片；卡片仅用于真正独立的信息模块。
+- 页面必须提供足够字段、状态和后续动作，不能停留在“标题 + 描述 + 一个按钮”。
 
-### 错 7：进栈前未校正 home → 返回丢 Tab（第二轮）
+## 4. 必测回归
 
-- **现象**：在 `ledger-home` 滑到「权益/我的」后进二级页，AppBar 返回却落到「记账」；路径不同时表现不稳定。
-- **根因**：一级 `active` 只活在 `TabRoot` 本地；URL 仍是进入时的 home slug；进栈卸载 TabRoot 后，`history.back()` 按旧 slug 重挂，`tab` prop 错误。
-- **正解**：
-  - `pushStack(tab, slug)`：进栈前若 URL 不是该 Tab 的 home，先 `replace` 到对应 home，再 `push` 栈页。
-  - `tab-session`：会话记住当前 Tab，深链/工作台打开某一 home 时以 URL 为准覆盖。
-  - **仍禁止**滑动中途换 Screen（错 6）。
-
-### 错 8：主题挂在 history → back 回滚主题（第二轮）
-
-- **现象**：设置里切深色后返回，「我的」又变回浅色。
-- **根因**：`theme` 写在每条 history 的 query 里；`replace` 只改当前条目，旧条目仍是旧 theme；`back` 整包恢复。
-- **正解（原型内）**：
-  - `theme-session`：会话偏好；`Settings` / 拼 URL 都读 session。
-  - `LedgerPlanetShell` 在路由变化时若 URL theme ≠ session，用 `replace` 校正（不堆新 history）。
-  - 主题与业务 `variant` 尽量解耦（深色优先走 `theme`，不要长期占用 `variant=dark`）。
-
-### 错 9：工作壳对 iframe back 再 push → A↔B 死循环（第二轮）
-
-- **现象**：工作壳里返回经常在 A/B 页来回；独立 Runtime 稍好但仍可能因完成流污染栈。
-- **根因**：iframe 内 `router.back()`，父层 `applyRuntimeNavigation` 却对每次 route **一律 `push`**，父 history 变成 `A,B,A',B'…`。
-- **正解**：
-  - Bridge `route` payload 增加 `navigation: "push" | "replace" | "back"`。
-  - Runtime 用 `navigation-intent` 钩住 `history.pushState/replaceState/popstate`。
-  - 工作壳按 intent 调用 `push` / `replace` / `back`；`ready` 对齐用 `replace`。
-
-### 错 10：完成流 `push(home)` 污染栈（第二轮）
-
-- **错法**：保存记一笔 / 删除流水后再 `router.push(ledger-home)`。
-- **后果**：中间页仍留在 history 下，再 back 又进详情/编辑。
-- **正解**：结束流程用 `finishToHome`（优先 `back`，否则 `replace`）；分类回灌用 `replace`，禁止再 `push(home)`。
-
-### 错 11：清爽做成「组件拼盘」（第二轮观感）
-
-- **现象**：每页都是 Card / bordered div 堆叠，字段少、交互单一，像 demo 而不是「清爽效率」产品。
-- **正解方向**：
-  - 一屏一个视觉锚点（金额 Hero / 进行中活动 / 资产数字网格）。
-  - 列表用分割线分层，少「每行一个描边盒子」。
-  - 允许**小面积**星球感装饰（角落径向光斑、细渐变条、券票形入口）；**禁止**大面积插画铺底、整屏紫渐变淹没内容。
-
-## 2. 应遵守的规范 / 规则
-
-1. **分层**：Token → 基础组件 → 复杂组件 → 页面 → 原型流转；业务名不污染共享 Token。
-2. **优先 DS**：有 Contract 的能力先复用；页内私有 UI 仅补缺口，且只吃 Token（装饰可用 `color-mix` / 少量固定 accent，勿新造业务色名 Token）。
-3. **BottomNavigation**：items 全外传；无业务写死默认；Playground 示例 ≠ 运行时默认。
-4. **滑动职责单一**：谁管横向切换，谁拥有 `v-window`；其它控件用 `data-no-swipe` / 可点击排除。
-5. **Tabs 铁律**：要么整视图进 slot，要么别用 Tabs（改 FilterBar/分段/Chip）。
-6. **壳与栈**：一级有 TabBar；栈页只有返回 AppBar。
-7. **入口克制**：主操作进 AppBar，不堆 FAB。
-8. **原型滚动条**：允许 overflow 滚动，禁止露出系统滚动条。
-9. **注册表**：新原型只追加；`screenId` / `path` / `view` 公式与校验一致；未决定前不要擅自删旧原型。
-10. **本期不做**：刷新/分页等能力等 DS 补齐后再回填，避免页面私造一套列表基建。
-11. **一级进栈**：一律走 `nav.pushStack`；禁止面板内手写 `push` 且不校正 home。
-12. **主题**：读/写走 `theme-session`；拼 URL 用 `nav.runtimePath` / `themeQuery`。
-13. **完成流**：禁止 `push(home)`；用 `finishToHome` 或语义 `replace`。
-14. **Bridge 路由同步**：Runtime 必须带 `navigation`；工作壳禁止对 back 再 push。
-
-## 3. 关键文件（第二轮导航 / 主题）
-
-| 文件 | 职责 |
-| ---- | ---- |
-| `nav.ts` | `pushStack` / `runtimePath` / `finishToHome` / Tab↔home 映射 |
-| `tab-session.ts` | 会话级当前 Tab |
-| `theme-session.ts` | 会话级主题偏好 |
-| `runtime/navigation-intent.ts` | History 钩子 → bridge navigation |
-| `runtime/bridge.ts` | `route.navigation` 字段 |
-| `RuntimeLayout.vue` | 发 route 时带 intent |
-| `PhoneCanvasView.vue` | 按 intent 同步父 history |
-
-## 4. 一句话复盘
-
-交互骨架必须跟通用组件契约对齐（尤其 BottomNavigation / Tabs 的 `v-window`）；一级 Tab 为保动画可以暂时不跟手写 URL，但**进栈前必须把 home 校正对**，主题必须是会话偏好而不是 history 附件，工作壳必须按 bridge 的 push/replace/back 镜像，不能一律 push。
+1. 记账 → 权益 → 券包 → 返回：仍在权益 Tab。
+2. 记账 → 我的 → 钱包 → 返回：仍在我的 Tab。
+3. 设置切深色 → AppBar 返回 → 浏览器后退/前进：主题不回滚。
+4. Runtime 与工作壳分别执行 A → B → 返回，不出现 A/B 循环。
+5. 一级点击与横滑使用同一状态，快速切换不吞点击；纵向滚动不误触横滑。
+6. 下拉刷新只在滚动顶部触发；横向动作不触发刷新；加载更多不会并发重复触发。
+7. 直接打开任意二级深链时，返回使用所属 Tab 的 home 作为稳定兜底。

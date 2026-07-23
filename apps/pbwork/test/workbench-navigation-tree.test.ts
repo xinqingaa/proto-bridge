@@ -19,12 +19,12 @@ describe("workbench navigation tree", () => {
       (node) => node.id === "screen-field-service.work-orders",
     );
 
-    expect(prototypes.count).toBe(2);
+    expect(prototypes.count).toBe(3);
     expect(components.children).toHaveLength(2);
     expect(
       lifecycle?.children?.find((node) => node.id === "lifecycle-active")
         ?.count,
-    ).toBe(2);
+    ).toBe(3);
     expect(fieldService?.count).toBe(7);
     expect(workOrders?.count).toBe(7);
   });
@@ -39,7 +39,7 @@ describe("workbench navigation tree", () => {
 
     expect(
       lifecycles?.find((node) => node.id === "lifecycle-active")?.count,
-    ).toBe(1);
+    ).toBe(2);
     expect(
       lifecycles?.find((node) => node.id === "lifecycle-review")?.count,
     ).toBe(1);

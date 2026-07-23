@@ -61,9 +61,7 @@ const tokenBindings = computed(() =>
     ),
   ),
 );
-const resolvedPreviewTokens = computed(() =>
-  resolveThemeTokens(themeId.value),
-);
+const resolvedPreviewTokens = computed(() => resolveThemeTokens(themeId.value));
 const previewStyle = computed(() =>
   tokensToCssVars(resolvedPreviewTokens.value),
 );
@@ -74,6 +72,8 @@ const tallPreview = computed(() =>
   [
     "bottom-sheet",
     "data-list",
+    "scrollable-data-list",
+    "tab-viewport",
     "app-bar",
     "tabs",
     "dialog",
@@ -128,7 +128,11 @@ const behaviorControlKeys = new Set([
 /** Always three groups + tokens tab; empty groups stay visible. */
 const controlGroups = computed(() => {
   const groups = [
-    { id: "content" as const, label: "内容", controls: [] as PlaygroundControl[] },
+    {
+      id: "content" as const,
+      label: "内容",
+      controls: [] as PlaygroundControl[],
+    },
     { id: "type" as const, label: "类型", controls: [] as PlaygroundControl[] },
     {
       id: "behavior" as const,
@@ -152,7 +156,7 @@ const activeControlGroup = computed(() =>
 );
 
 const panelPreviewSlots = computed(() =>
-  ["tabs", "bottom-navigation"].includes(record.value?.id ?? "")
+  ["tabs"].includes(record.value?.id ?? "")
     ? (contract.value?.slots ?? [])
     : [],
 );
@@ -253,15 +257,9 @@ function bindingResolvedValue(tokenId: string) {
     :description="record.description"
   >
     <template #stats>
-      <WorkbenchStatChip
-        :value="controls.length"
-        label="个可调项"
-      />
+      <WorkbenchStatChip :value="controls.length" label="个可调项" />
       <WorkbenchStatChip :value="states.length" label="个预设" />
-      <WorkbenchStatChip
-        :value="tokenBindings.length"
-        label="个令牌绑定"
-      />
+      <WorkbenchStatChip :value="tokenBindings.length" label="个令牌绑定" />
     </template>
 
     <template #toolbar>
@@ -348,6 +346,28 @@ function bindingResolvedValue(tokenId: string) {
                 <template v-else-if="record.id === 'form-section'"
                   >在这里放置该业务分组的表单字段。</template
                 >
+                <template
+                  v-else-if="
+                    record.id === 'data-list' ||
+                    record.id === 'scrollable-data-list'
+                  "
+                >
+                  <div
+                    v-for="row in ['今日流水', '本周任务', '即将过期']"
+                    :key="row"
+                    role="listitem"
+                    class="list-slot-demo"
+                  >
+                    <strong>{{ row }}</strong
+                    ><span>业务完全自定义的列表项</span>
+                  </div>
+                </template>
+                <template v-if="record.id === 'tab-viewport'" #item="{ value }">
+                  <div class="panel-slot-demo">
+                    <strong>{{ value }}</strong>
+                    <span>由外部导航控制的保活内容视图</span>
+                  </div>
+                </template>
                 <template
                   v-for="slotName in panelPreviewSlots"
                   :key="slotName"
@@ -443,7 +463,10 @@ function bindingResolvedValue(tokenId: string) {
             </template>
           </fieldset>
 
-          <section v-else-if="activeControlPanel === 'tokens'" class="token-list">
+          <section
+            v-else-if="activeControlPanel === 'tokens'"
+            class="token-list"
+          >
             <p class="token-list-hint">
               只读：组件固定消费这些语义令牌。换肤请改主题值，不要在此换绑。
             </p>
@@ -553,6 +576,20 @@ function bindingResolvedValue(tokenId: string) {
 .panel-slot-demo strong {
   color: var(--pb-color-on-surface);
   font: var(--pb-typography-subtitle);
+}
+.list-slot-demo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 56px;
+  padding: 0 14px;
+  color: var(--pb-color-on-surface);
+  font: var(--pb-typography-content);
+}
+.list-slot-demo span {
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
 }
 .controls-header {
   display: flex;

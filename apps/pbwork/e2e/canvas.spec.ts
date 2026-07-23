@@ -47,7 +47,7 @@ test("dark shell styles stay scoped to the workbench chrome", async ({
   );
 });
 
-test("switching variant and theme updates workbench URL and iframe src", async ({
+test("switching variant and theme updates the live iframe without remounting it", async ({
   page,
 }) => {
   await page.getByRole("button", { name: "预览设置" }).click();
@@ -55,7 +55,7 @@ test("switching variant and theme updates workbench URL and iframe src", async (
   await expect(page).toHaveURL(/variant=empty/);
   await expect(page.getByTestId("prototype-iframe")).toHaveAttribute(
     "src",
-    /variant=empty&theme=light/,
+    /variant=default&theme=light/,
   );
 
   await page.getByRole("button", { name: "预览设置" }).click();
@@ -63,11 +63,14 @@ test("switching variant and theme updates workbench URL and iframe src", async (
   await expect(page).toHaveURL(/theme=dark/);
   await expect(page.getByTestId("prototype-iframe")).toHaveAttribute(
     "src",
-    /\/prototype\/project\/task-list\?variant=empty&theme=dark/,
+    /\/prototype\/project\/task-list\?variant=default&theme=light/,
   );
 
   const frame = page.frameLocator('[data-testid="prototype-iframe"]');
   await expect(frame.getByText("暂无任务")).toBeVisible();
+  await expect(frame.getByTestId("runtime-root")).toHaveClass(
+    /v-theme--pbworkDark/,
+  );
 });
 
 test("device preset changes iframe viewport without leaving workbench", async ({
@@ -78,7 +81,9 @@ test("device preset changes iframe viewport without leaving workbench", async ({
   const iframe = page.getByTestId("prototype-iframe");
   await expect(iframe).toHaveAttribute("width", "375");
   await expect(iframe).toHaveAttribute("height", "667");
-  await expect(page).toHaveURL(/\/workbench\/prototypes\/project\/screens\/task-list/);
+  await expect(page).toHaveURL(
+    /\/workbench\/prototypes\/project\/screens\/task-list/,
+  );
 });
 
 test("zoom preset updates the displayed scale percent", async ({ page }) => {
@@ -87,7 +92,9 @@ test("zoom preset updates the displayed scale percent", async ({ page }) => {
   await expect(page.getByLabel("缩放比例预设")).toHaveText("75%");
 });
 
-test("fullscreen expands the canvas in the current workbench", async ({ page }) => {
+test("fullscreen expands the canvas in the current workbench", async ({
+  page,
+}) => {
   await page.getByRole("button", { name: "全屏画布" }).click();
   const fullscreenCanvas = page.locator(".phone-canvas");
   const inspector = page.getByTestId("inspector-panel");
@@ -99,7 +106,9 @@ test("fullscreen expands the canvas in the current workbench", async ({ page }) 
   expect(inspectorBox).not.toBeNull();
   expect(inspectorBox!.y).toBe(0);
   expect(canvasBox!.x + canvasBox!.width).toBeLessThanOrEqual(inspectorBox!.x);
-  await expect(page.getByRole("button", { name: "退出全屏画布" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "退出全屏画布" }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "退出全屏画布" }).click();
   await expect(page.locator(".phone-canvas")).not.toHaveClass(/is-fullscreen/);
 });

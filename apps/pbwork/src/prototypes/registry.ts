@@ -178,7 +178,7 @@ export const prototypeScreens = [
     label: "记账首页",
     title: "记账",
     path: "/prototype/ledger-planet/ledger-home",
-    view: "ledger-planet/screens/LedgerHome.vue",
+    view: "ledger-planet/screens/TabRootScreen.vue",
     defaultVariantId: "default",
     variants: [
       { id: "default", label: "默认" },
@@ -240,7 +240,7 @@ export const prototypeScreens = [
     label: "权益首页",
     title: "权益",
     path: "/prototype/ledger-planet/benefits-home",
-    view: "ledger-planet/screens/BenefitsHome.vue",
+    view: "ledger-planet/screens/TabRootScreen.vue",
     defaultVariantId: "default",
     variants: [
       { id: "default", label: "默认" },
@@ -327,7 +327,7 @@ export const prototypeScreens = [
     label: "我的",
     title: "我的",
     path: "/prototype/ledger-planet/me-home",
-    view: "ledger-planet/screens/MeHome.vue",
+    view: "ledger-planet/screens/TabRootScreen.vue",
     defaultVariantId: "default",
     variants: [{ id: "default", label: "默认" }],
   },
@@ -369,10 +369,7 @@ export const prototypeScreens = [
     path: "/prototype/ledger-planet/settings",
     view: "ledger-planet/screens/Settings.vue",
     defaultVariantId: "default",
-    variants: [
-      { id: "default", label: "浅色" },
-      { id: "dark", label: "深色" },
-    ],
+    variants: [{ id: "default", label: "默认" }],
   },
   {
     prototypeId: "ledger-planet",

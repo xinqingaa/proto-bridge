@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, useSlots, watch } from "vue";
+import { computed, useSlots } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { BookOpen, Gift, User, BarChart3 } from "lucide-vue-next";
 import AppBar from "@/design-system/components/complex/AppBar.vue";
 import BottomNavigation from "@/design-system/components/complex/BottomNavigation.vue";
+import TabViewport from "@/design-system/components/complex/TabViewport.vue";
 import IconButton from "@/design-system/components/basic/IconButton.vue";
-import { runtimePath } from "./nav";
-import { getTheme, setTheme } from "./theme-session";
+import { goBack as navigateBack } from "./nav";
 
 export type LedgerTab = "记账" | "权益" | "我的";
 
@@ -47,37 +47,12 @@ const activeTab = computed({
   },
 });
 
-const hasTabSlots = computed(
-  () => Boolean(slots["记账"] || slots["权益"] || slots["我的"]),
-);
-
-/** Keep URL theme aligned with session so history.back does not revert appearance. */
-watch(
-  () => route.fullPath,
-  () => {
-    const urlTheme =
-      route.query.theme === "dark"
-        ? "dark"
-        : route.query.theme === "light"
-          ? "light"
-          : null;
-    const preferred = getTheme(urlTheme ?? undefined);
-    if (urlTheme === preferred) return;
-    setTheme(preferred);
-    void router.replace({
-      query: { ...route.query, theme: preferred },
-    });
-  },
-  { immediate: true },
+const hasTabSlots = computed(() =>
+  Boolean(slots["记账"] || slots["权益"] || slots["我的"]),
 );
 
 function goBack() {
-  const position = Number(window.history.state?.position ?? 0);
-  if (position > 0) {
-    router.back();
-    return;
-  }
-  void router.replace(runtimePath(props.backTo ?? "ledger-home", route));
+  void navigateBack(router, route, props.backTo ?? "ledger-home");
 }
 </script>
 
@@ -123,31 +98,25 @@ function goBack() {
       </template>
     </AppBar>
 
-    <BottomNavigation
-      v-if="!isStack && hasTabSlots"
-      class="shell-bottom-nav"
-      :items="navItems"
-      v-model="activeTab"
-      show-view
-      :mouse-swipe="true"
-      :inspect-id="`${inspectBaseId}.bottom-navigation`"
-    >
-      <template #记账>
-        <div class="tab-panel-scroll">
-          <slot name="记账" />
-        </div>
-      </template>
-      <template #权益>
-        <div class="tab-panel-scroll">
-          <slot name="权益" />
-        </div>
-      </template>
-      <template #我的>
-        <div class="tab-panel-scroll">
-          <slot name="我的" />
-        </div>
-      </template>
-    </BottomNavigation>
+    <template v-if="!isStack && hasTabSlots">
+      <TabViewport
+        class="shell-tab-viewport"
+        :items="navItems"
+        v-model="activeTab"
+        :inspect-id="`${inspectBaseId}.tab-viewport`"
+      >
+        <template #item="{ value }">
+          <div class="tab-panel-scroll">
+            <slot :name="value" />
+          </div>
+        </template>
+      </TabViewport>
+      <BottomNavigation
+        :items="navItems"
+        v-model="activeTab"
+        :inspect-id="`${inspectBaseId}.bottom-navigation`"
+      />
+    </template>
 
     <main v-else class="stack-main">
       <slot />
@@ -169,6 +138,9 @@ function goBack() {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
+.ledger-planet-shell.is-tabs {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
 .ledger-planet-shell::-webkit-scrollbar,
 .ledger-planet-shell :deep(*::-webkit-scrollbar) {
   display: none;
@@ -185,30 +157,10 @@ function goBack() {
   max-height: 100%;
 }
 
-.shell-bottom-nav {
+.shell-tab-viewport {
   min-height: 0;
   height: 100%;
-  display: grid !important;
-  grid-template-rows: minmax(0, 1fr) auto;
-  flex: unset !important;
-}
-.shell-bottom-nav :deep(.pb-bottom-nav-view) {
-  min-height: 0;
-  height: 100%;
-  overflow: hidden;
-}
-.shell-bottom-nav :deep(.pb-bottom-nav-panel) {
-  box-sizing: border-box;
-  height: 100%;
-  min-height: 0;
-  padding: 0;
-  overflow: hidden;
-}
-.shell-bottom-nav :deep(.v-window),
-.shell-bottom-nav :deep(.v-window__container),
-.shell-bottom-nav :deep(.v-window-item) {
-  height: 100%;
-  min-height: 0;
+  min-width: 0;
 }
 
 .tab-panel-scroll {
@@ -218,6 +170,9 @@ function goBack() {
   overflow: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
+}
+.tab-panel-scroll:has(.pb-scrollable-data-list) {
+  overflow: hidden;
 }
 .tab-panel-scroll::-webkit-scrollbar {
   display: none;

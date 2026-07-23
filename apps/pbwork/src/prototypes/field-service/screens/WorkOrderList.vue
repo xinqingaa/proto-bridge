@@ -99,10 +99,24 @@ function open() {
           />
           <DataList
             v-else
-            :items="items"
+            surface="none"
+            rounded="none"
             inspect-id="field-service.work-orders.list"
-            @select="open"
-          />
+          >
+            <button
+              v-for="item in items"
+              :key="item.id"
+              type="button"
+              class="work-order-row"
+              @click="open"
+            >
+              <span
+                ><strong>{{ item.title }}</strong
+                ><small>{{ item.subtitle }}</small></span
+              >
+              <span class="row-arrow" aria-hidden="true">›</span>
+            </button>
+          </DataList>
         </div>
       </template>
     </div>
@@ -129,6 +143,36 @@ function open() {
 }
 .results:has(.pb-empty) {
   place-content: center;
+}
+.work-order-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+  padding: 10px 4px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.work-order-row strong,
+.work-order-row small {
+  display: block;
+}
+.work-order-row strong {
+  font: var(--pb-typography-subtitle);
+}
+.work-order-row small {
+  margin-top: 3px;
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
+}
+.row-arrow {
+  color: var(--pb-color-on-surface-muted);
+  font-size: 22px;
 }
 .error {
   display: grid;

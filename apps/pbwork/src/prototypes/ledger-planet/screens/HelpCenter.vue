@@ -3,8 +3,9 @@ import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import LedgerPlanetShell from "../LedgerPlanetShell.vue";
 import SearchBar from "@/design-system/components/complex/SearchBar.vue";
+import DataList from "@/design-system/components/complex/DataList.vue";
 import { helpTopics } from "../mock";
-import { runtimePath } from "../nav";
+import { pushStack } from "../nav";
 
 const route = useRoute();
 const router = useRouter();
@@ -19,9 +20,9 @@ const rows = computed(() => {
 });
 
 function open(id: string) {
-  void router.push(
-    runtimePath("help-article", route, "default", { article: id }),
-  );
+  void pushStack(router, route, "我的", "help-article", {
+    query: { article: id },
+  });
 }
 </script>
 
@@ -29,19 +30,21 @@ function open(id: string) {
   <LedgerPlanetShell title="帮助中心" active="我的" back-to="me-home">
     <div class="page" data-pb-id="ledger-planet.help-center">
       <SearchBar v-model="query" placeholder="搜索问题" />
-      <button
-        v-for="item in rows"
-        :key="item.id"
-        type="button"
-        class="row"
-        @click="open(item.id)"
-      >
-        <div>
-          <strong>{{ item.title }}</strong>
-          <span>{{ item.subtitle }}</span>
-        </div>
-        <span class="chev">›</span>
-      </button>
+      <DataList surface="none" rounded="none">
+        <button
+          v-for="item in rows"
+          :key="item.id"
+          type="button"
+          class="row"
+          @click="open(item.id)"
+        >
+          <div>
+            <strong>{{ item.title }}</strong
+            ><span>{{ item.subtitle }}</span>
+          </div>
+          <span class="chev">›</span>
+        </button>
+      </DataList>
     </div>
   </LedgerPlanetShell>
 </template>
@@ -58,10 +61,9 @@ function open(id: string) {
   align-items: center;
   gap: 12px;
   min-height: 52px;
-  padding: 12px;
-  border: 1px solid var(--pb-color-border);
-  border-radius: var(--pb-radius-md);
-  background: var(--pb-color-surface);
+  padding: 12px 2px;
+  border: 0;
+  background: transparent;
   color: inherit;
   text-align: left;
   cursor: pointer;

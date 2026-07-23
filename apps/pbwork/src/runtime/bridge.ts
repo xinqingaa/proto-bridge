@@ -42,11 +42,7 @@ export type ElementBox = {
 };
 
 export type StyleInspectGroup =
-  | "color"
-  | "typography"
-  | "spacing-size"
-  | "border-radius"
-  | "shadow-layout";
+  "color" | "typography" | "spacing-size" | "border-radius" | "shadow-layout";
 
 export type StyleInspectRow = {
   property: string;
@@ -150,6 +146,7 @@ export type BridgePayloads = {
   "comment-mode": { enabled: boolean };
   highlight: { element?: ElementRef };
   reload: { canonicalRuntimeUrl: string };
+  navigate: { canonicalRuntimeUrl: string; navigationId: string };
   error: { code: BridgeErrorCode; message: string; requestId?: string };
 };
 
@@ -158,6 +155,7 @@ export type WorkbenchBridgeMessage =
   | BridgeEnvelope<"inspect-mode", BridgePayloads["inspect-mode"]>
   | BridgeEnvelope<"comment-mode", BridgePayloads["comment-mode"]>
   | BridgeEnvelope<"highlight", BridgePayloads["highlight"]>
+  | BridgeEnvelope<"navigate", BridgePayloads["navigate"]>
   | BridgeEnvelope<"reload", BridgePayloads["reload"]>;
 
 export type RuntimeBridgeMessage =

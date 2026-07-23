@@ -20,7 +20,6 @@ function go(slug: string, nextVariant = "default") {
 
 <template>
   <div class="page" data-pb-id="ledger-planet.me-home">
-    <div class="orbit" aria-hidden="true" />
     <button type="button" class="profile" @click="go('profile')">
       <Avatar name="星辰同学" size="lg" />
       <div>
@@ -90,20 +89,6 @@ function go(slug: string, nextVariant = "default") {
   gap: 14px;
   padding: 16px;
 }
-.orbit {
-  pointer-events: none;
-  position: absolute;
-  top: -20px;
-  right: -30px;
-  width: 110px;
-  height: 110px;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    color-mix(in srgb, #8b5cf6 18%, transparent),
-    transparent 70%
-  );
-}
 .profile {
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -130,12 +115,19 @@ function go(slug: string, nextVariant = "default") {
   gap: 14px;
   padding: 16px;
   border-radius: var(--pb-radius-lg);
-  background:
-    linear-gradient(
-      140deg,
-      color-mix(in srgb, var(--pb-color-primary) 12%, var(--pb-color-surface)),
-      color-mix(in srgb, #8b5cf6 8%, var(--pb-color-surface))
-    );
+  border: 1px solid
+    color-mix(in srgb, var(--pb-color-primary) 24%, var(--pb-color-border));
+  background: color-mix(
+    in srgb,
+    var(--pb-color-primary) 7%,
+    var(--pb-color-surface)
+  );
+  box-shadow:
+    0 14px 34px
+      color-mix(in srgb, var(--pb-color-on-background) 8%, transparent),
+    inset 0 1px 0
+      color-mix(in srgb, var(--pb-color-surface-raised) 76%, transparent);
+  backdrop-filter: blur(14px);
 }
 .asset-top {
   display: flex;
@@ -192,7 +184,7 @@ function go(slug: string, nextVariant = "default") {
   padding: 4px 14px;
   border-radius: var(--pb-radius-lg);
   background: var(--pb-color-surface);
-  box-shadow: inset 0 0 0 1px var(--pb-color-border);
+  border: 1px solid color-mix(in srgb, var(--pb-color-border) 76%, transparent);
 }
 .group > button {
   display: flex;

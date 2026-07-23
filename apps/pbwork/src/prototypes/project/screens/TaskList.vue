@@ -23,13 +23,22 @@ const items = computed(() => {
   <div class="screen" data-pb-id="task-list.root">
     <AppBar title="任务列表" />
     <p class="variant-hint">Variant：{{ variant }}</p>
-    <DataList
-      class="list"
-      inspect-id="project.task-list.list"
-      :items="items"
-      :loading="variant === 'loading'"
-      empty-text="暂无任务"
-    />
+    <DataList class="list" inspect-id="project.task-list.list">
+      <p v-if="variant === 'loading'" class="state">正在加载任务…</p>
+      <p v-else-if="items.length === 0" class="state">暂无任务</p>
+      <template v-else>
+        <div
+          v-for="item in items"
+          :key="item.id"
+          role="listitem"
+          class="task-row"
+          :data-pb-id="`project.task-list.list.row.${item.id}`"
+        >
+          <strong>{{ item.title }}</strong
+          ><span>{{ item.subtitle }}</span>
+        </div>
+      </template>
+    </DataList>
   </div>
 </template>
 
@@ -51,5 +60,27 @@ const items = computed(() => {
   flex: 1;
   margin: 8px 12px 16px;
   min-height: 0;
+}
+.task-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 58px;
+  padding: 0 14px;
+}
+.task-row strong {
+  font: var(--pb-typography-subtitle);
+}
+.task-row span,
+.state {
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
+}
+.state {
+  display: grid;
+  min-height: 220px;
+  margin: 0;
+  place-items: center;
 }
 </style>

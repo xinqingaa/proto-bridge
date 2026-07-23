@@ -10,7 +10,7 @@ import {
   watch,
   type Component,
 } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { screenViewModules } from "@/design-system/loaders";
 import {
   resolveThemeTokens,
@@ -26,22 +26,23 @@ import {
   getRouteNavigationIntent,
   installNavigationIntentTracking,
 } from "@/runtime/navigation-intent";
-import {
-  buildCanonicalRuntimeUrl,
-  resolveRuntimeRoute,
-} from "@/runtime/url";
+import { buildCanonicalRuntimeUrl, resolveRuntimeRoute } from "@/runtime/url";
 import InspectHost from "@/runtime/inspect/InspectHost.vue";
+import { getTheme as getLedgerTheme } from "@/prototypes/ledger-planet/theme-session";
 
 installNavigationIntentTracking();
 
 const route = useRoute();
+const router = useRouter();
 const screenComponent = shallowRef<Component | null>(null);
+const loadedView = shallowRef<string | null>(null);
 const loadError = shallowRef<string | null>(null);
 const runtimeId = shallowRef<string | null>(null);
 const lastPostedRoute = shallowRef<string | null>(null);
 const inspectEnabled = ref(false);
 const commentEnabled = ref(false);
 const inspectHost = ref<InstanceType<typeof InspectHost> | null>(null);
+const themePreferenceTick = ref(0);
 const isEmbedded = shallowRef(
   typeof window !== "undefined" && window.parent !== window,
 );
@@ -58,17 +59,28 @@ const resolved = computed(() =>
   }),
 );
 
+const effectiveThemeId = computed(() => {
+  themePreferenceTick.value;
+  if (!resolved.value.ok) return "light";
+  if (resolved.value.prototype.id !== "ledger-planet" || isEmbedded.value) {
+    return resolved.value.theme.id;
+  }
+  return getLedgerTheme(
+    typeof route.query.theme === "string" ? route.query.theme : undefined,
+  );
+});
+
 const themeStyle = computed(() => {
   if (!resolved.value.ok) return {};
   try {
-    return tokensToCssVars(resolveThemeTokens(resolved.value.theme.id));
+    return tokensToCssVars(resolveThemeTokens(effectiveThemeId.value));
   } catch {
     return {};
   }
 });
 
 const runtimeTheme = computed(() =>
-  resolved.value.ok && resolved.value.theme.dark ? "pbworkDark" : "pbworkLight",
+  effectiveThemeId.value === "dark" ? "pbworkDark" : "pbworkLight",
 );
 
 const canonicalRuntimeUrl = computed(() => {
@@ -77,7 +89,7 @@ const canonicalRuntimeUrl = computed(() => {
     prototypeId: resolved.value.prototype.id,
     screenSlug: resolved.value.screen.screenSlug,
     variantId: resolved.value.variant.id,
-    themeId: resolved.value.theme.id,
+    themeId: effectiveThemeId.value,
     query: resolved.value.query,
   });
   return `${window.location.origin}${path}`;
@@ -166,6 +178,23 @@ function onMessage(event: MessageEvent) {
     window.location.assign(msg.payload.canonicalRuntimeUrl);
     return;
   }
+  if (msg.type === "navigate") {
+    let target: URL;
+    try {
+      target = new URL(msg.payload.canonicalRuntimeUrl, window.location.origin);
+    } catch {
+      return;
+    }
+    if (
+      target.origin !== window.location.origin ||
+      !target.pathname.startsWith("/prototype/")
+    )
+      return;
+    const destination = `${target.pathname}${target.search}${target.hash}`;
+    lastPostedRoute.value = `${window.location.origin}${destination}`;
+    void router.replace(destination);
+    return;
+  }
   if (msg.type === "inspect-mode") {
     inspectEnabled.value = msg.payload.enabled;
     if (msg.payload.enabled) commentEnabled.value = false;
@@ -182,11 +211,12 @@ function onMessage(event: MessageEvent) {
 }
 
 async function loadScreen() {
-  screenComponent.value = null;
   loadError.value = null;
   if (!resolved.value.ok) return;
 
   const view = resolved.value.screen.view;
+  if (loadedView.value === view && screenComponent.value) return;
+  screenComponent.value = null;
   const match = Object.entries(screenViewModules).find(
     ([path]) =>
       path.endsWith(`/${view}`) || path.endsWith(`/${view.replace(/^\//, "")}`),
@@ -198,6 +228,11 @@ async function loadScreen() {
   screenComponent.value = defineAsyncComponent(
     match[1] as () => Promise<{ default: Component }>,
   );
+  loadedView.value = view;
+}
+
+function onLedgerThemeChange() {
+  themePreferenceTick.value += 1;
 }
 
 watch(
@@ -211,6 +246,7 @@ watch(
 );
 
 onMounted(() => {
+  window.addEventListener("ledger-theme-change", onLedgerThemeChange);
   window.addEventListener("message", onMessage);
   if (window.parent !== window) {
     document.documentElement.classList.add("pbwork-runtime-embedded");
@@ -219,6 +255,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  window.removeEventListener("ledger-theme-change", onLedgerThemeChange);
   window.removeEventListener("message", onMessage);
   document.documentElement.classList.remove("pbwork-runtime-embedded");
   for (const key of Object.keys(themeStyle.value)) {
@@ -236,6 +273,26 @@ watch(
   },
   { immediate: true },
 );
+
+watch(
+  [() => route.fullPath, effectiveThemeId],
+  () => {
+    if (
+      isEmbedded.value ||
+      !resolved.value.ok ||
+      resolved.value.prototype.id !== "ledger-planet" ||
+      route.query.theme === effectiveThemeId.value
+    ) {
+      return;
+    }
+    void router.replace({
+      path: route.path,
+      query: { ...route.query, theme: effectiveThemeId.value },
+      hash: route.hash,
+    });
+  },
+  { flush: "post" },
+);
 </script>
 
 <template>
@@ -251,18 +308,12 @@ watch(
         :is="screenComponent"
         v-if="resolved.ok && screenComponent && !loadError"
       />
-      <section
-        v-else
-        class="runtime-error"
-        role="alert"
-        aria-live="assertive"
-      >
+      <section v-else class="runtime-error" role="alert" aria-live="assertive">
         <p class="runtime-kicker">PBWork Runtime</p>
         <h1>无法打开原型</h1>
         <p>
           {{
-            loadError ??
-            (!resolved.ok ? resolved.message : "UNKNOWN_SCREEN")
+            loadError ?? (!resolved.ok ? resolved.message : "UNKNOWN_SCREEN")
           }}
         </p>
       </section>

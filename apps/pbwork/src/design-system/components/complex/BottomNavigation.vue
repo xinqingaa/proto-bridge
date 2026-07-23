@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, toRefs, type Component } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
-import { usePointerSwipe } from "@/design-system/components/_shared/usePointerSwipe";
 
 export type BottomNavigationItem = {
   value: string;
@@ -17,25 +16,13 @@ const props = defineProps<{
   display?: "icon-label" | "icon" | "label";
   showIndicator?: boolean;
   elevated?: boolean;
-  showView?: boolean;
-  viewHeight?: number;
-  mouseSwipe?: boolean;
   /** Page-unique inspect / comment anchor; falls back to `ds.bottom-navigation`. */
   inspectId?: string;
 }>();
 const emit = defineEmits<{ "update:modelValue": [string] }>();
 const rootRef = usePbInspectRef();
-const {
-  modelValue,
-  items,
-  display,
-  showIndicator,
-  elevated,
-  showView,
-  viewHeight,
-  mouseSwipe,
-  inspectId,
-} = toRefs(props);
+const { modelValue, items, display, showIndicator, elevated, inspectId } =
+  toRefs(props);
 
 const normalizedItems = computed(() => items.value ?? []);
 
@@ -43,19 +30,6 @@ const activeItem = computed({
   get: () => modelValue.value ?? normalizedItems.value[0]?.value ?? "",
   set: (value: string) => emit("update:modelValue", value),
 });
-const navigationValues = computed(() =>
-  normalizedItems.value.map((item) => item.value),
-);
-const swipeEnabled = computed(() => mouseSwipe.value ?? true);
-const swipe = usePointerSwipe(
-  navigationValues,
-  activeItem,
-  (value) => emit("update:modelValue", value),
-  swipeEnabled,
-);
-const viewStyle = computed(() => ({
-  minHeight: `${viewHeight.value ?? 220}px`,
-}));
 
 usePbInspect({
   element: rootRef,
@@ -68,9 +42,6 @@ usePbInspect({
     display: display.value ?? "icon-label",
     showIndicator: showIndicator.value ?? true,
     elevated: elevated.value ?? true,
-    showView: showView.value ?? false,
-    viewHeight: viewHeight.value ?? 220,
-    mouseSwipe: swipeEnabled.value,
     inspectId: inspectId.value,
   }),
   getTokens: () => [
@@ -83,9 +54,7 @@ usePbInspect({
     "sizing.bottom-navigation",
     "typography.caption",
     "typography.subtitle",
-    "color.background",
     "radius.full",
-    "motion.duration-normal",
   ],
   getTokenBindings: () => ({
     surface: "color.surface-raised",
@@ -97,10 +66,6 @@ usePbInspect({
     height: "sizing.bottom-navigation",
     label: "typography.caption",
     indicatorRadius: "radius.full",
-    viewSurface: "color.background",
-    viewTitle: "typography.subtitle",
-    viewMuted: "color.on-surface-muted",
-    duration: "motion.duration-normal",
   }),
 });
 </script>
@@ -116,39 +81,6 @@ usePbInspect({
     data-pb-id="ds.bottom-navigation"
     data-pb-role="bottom-bar"
   >
-    <v-window
-      v-if="showView"
-      v-model="activeItem"
-      class="pb-bottom-nav-view"
-      :class="{ 'is-dragging': swipe.dragging.value }"
-      :style="[viewStyle, swipe.dragStyle.value]"
-      :transition-duration="200"
-      @pointerdown="swipe.onPointerDown"
-      @pointermove="swipe.onPointerMove"
-      @pointerup="swipe.onPointerUp"
-      @pointercancel="swipe.onPointerCancel"
-    >
-      <v-window-item
-        v-for="item in normalizedItems"
-        :key="item.value"
-        :value="item.value"
-      >
-        <div class="pb-bottom-nav-panel" data-pb-role="tab-panel">
-          <slot :name="item.value" :item="item">
-            <v-sheet class="pb-bottom-nav-placeholder" color="transparent">
-              <component
-                :is="item.icon"
-                v-if="item.icon"
-                :size="28"
-                aria-hidden="true"
-              />
-              <strong>{{ item.label }}</strong>
-              <span>{{ item.label }}视图内容</span>
-            </v-sheet>
-          </slot>
-        </div>
-      </v-window-item>
-    </v-window>
     <nav class="pb-bottom-nav" aria-label="底部导航">
       <v-tabs
         class="pb-bottom-nav-tabs"
@@ -198,40 +130,6 @@ usePbInspect({
 }
 .pb-bottom-nav-shell.is-elevated .pb-bottom-nav {
   box-shadow: var(--pb-elevation-level-3);
-}
-.pb-bottom-nav-view {
-  min-width: 0;
-  background: var(--pb-color-background);
-  cursor: grab;
-  touch-action: pan-y;
-}
-.pb-bottom-nav-view.is-dragging {
-  cursor: grabbing;
-  user-select: none;
-}
-.pb-bottom-nav-view.is-dragging :deep(.v-window__container) {
-  transform: translateX(var(--pb-swipe-offset, 0));
-  transition: none !important;
-}
-.pb-bottom-nav-panel {
-  min-height: inherit;
-  padding: var(--pb-spacing-md);
-}
-.pb-bottom-nav-placeholder {
-  display: grid;
-  min-height: inherit;
-  place-content: center;
-  place-items: center;
-  gap: var(--pb-spacing-sm);
-  color: var(--pb-color-on-surface-muted);
-  text-align: center;
-}
-.pb-bottom-nav-placeholder strong {
-  color: var(--pb-color-on-surface);
-  font: var(--pb-typography-subtitle);
-}
-.pb-bottom-nav-placeholder span {
-  font: var(--pb-typography-caption);
 }
 .pb-bottom-nav-tabs {
   --v-tabs-height: var(--pb-sizing-bottom-navigation, 64px);

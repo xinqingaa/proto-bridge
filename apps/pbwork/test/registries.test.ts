@@ -73,7 +73,7 @@ describe("design contracts", () => {
     ).toHaveLength(15);
     expect(
       componentRecords.filter((item) => item.category === "complex"),
-    ).toHaveLength(11);
+    ).toHaveLength(13);
   });
 
   it("ships the expanded semantic token set", () => {
@@ -258,9 +258,8 @@ describe("bind tokens", () => {
 
   it("requires component tokenBindings to use the bind pool", async () => {
     const { loadComponentContracts } = await import("@/design-system/loaders");
-    const { isAllowedTokenBindingValue } = await import(
-      "@/design-system/bindTokens"
-    );
+    const { isAllowedTokenBindingValue } =
+      await import("@/design-system/bindTokens");
     for (const contract of loadComponentContracts()) {
       for (const [slot, tokenId] of Object.entries(contract.tokenBindings)) {
         expect(

@@ -6,6 +6,7 @@ import PeriodSegment from "../PeriodSegment.vue";
 import Card from "@/design-system/components/basic/Card.vue";
 import ProgressIndicator from "@/design-system/components/basic/ProgressIndicator.vue";
 import EmptyState from "@/design-system/components/complex/EmptyState.vue";
+import DataList from "@/design-system/components/complex/DataList.vue";
 import {
   categoryBreakdown,
   formatMoney,
@@ -13,7 +14,7 @@ import {
   trendPoints,
   type LedgerPeriod,
 } from "../mock";
-import { runtimePath } from "../nav";
+import { replaceScreen } from "../nav";
 
 const route = useRoute();
 const router = useRouter();
@@ -35,11 +36,10 @@ const trendPath = computed(() => {
 });
 
 function openCategory(name: string) {
-  void router.replace(
-    runtimePath("ledger-home", route, "filtered", {
-      category: name,
-    }),
-  );
+  void replaceScreen(router, route, "记账", "ledger-home", {
+    variant: "filtered",
+    query: { category: name },
+  });
 }
 </script>
 
@@ -98,16 +98,18 @@ function openCategory(name: string) {
           </svg>
         </Card>
         <Card title="分类排行" subtitle="点击带回筛选">
-          <button
-            v-for="item in categoryBreakdown"
-            :key="item.name"
-            type="button"
-            class="rank-row"
-            @click="openCategory(item.name)"
-          >
-            <span>{{ item.name }}</span>
-            <strong>¥ {{ formatMoney(item.amount) }}</strong>
-          </button>
+          <DataList surface="none" rounded="none">
+            <button
+              v-for="item in categoryBreakdown"
+              :key="item.name"
+              type="button"
+              class="rank-row"
+              @click="openCategory(item.name)"
+            >
+              <span>{{ item.name }}</span
+              ><strong>¥ {{ formatMoney(item.amount) }}</strong>
+            </button>
+          </DataList>
         </Card>
       </template>
     </div>
@@ -147,14 +149,11 @@ function openCategory(name: string) {
   min-height: 44px;
   padding: 8px 0;
   border: 0;
-  border-bottom: 1px solid var(--pb-color-border);
+  border: 0;
   background: transparent;
   color: inherit;
   font: var(--pb-typography-content);
   cursor: pointer;
-}
-.rank-row:last-child {
-  border-bottom: 0;
 }
 .rank-row strong {
   font: var(--pb-typography-subtitle);

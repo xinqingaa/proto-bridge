@@ -7,7 +7,7 @@ import Button from "@/design-system/components/basic/Button.vue";
 import DialogPanel from "@/design-system/components/complex/DialogPanel.vue";
 import SnackbarToast from "@/design-system/components/complex/SnackbarToast.vue";
 import { formatMoney, ledgerRecords } from "../mock";
-import { finishToHome, runtimePath } from "../nav";
+import { finishToHome, pushStack } from "../nav";
 
 const route = useRoute();
 const router = useRouter();
@@ -28,7 +28,7 @@ watch(
 );
 
 function edit() {
-  void router.push(runtimePath("record-edit", route, "edit"));
+  void pushStack(router, route, "记账", "record-edit", { variant: "edit" });
 }
 
 function confirmDelete() {
@@ -54,13 +54,27 @@ function confirmDelete() {
         />
       </div>
       <dl class="meta">
-        <div><dt>账户</dt><dd>{{ record.account }}</dd></div>
-        <div><dt>时间</dt><dd>{{ record.date }}</dd></div>
-        <div><dt>备注</dt><dd>{{ record.note || "无" }}</dd></div>
+        <div>
+          <dt>账户</dt>
+          <dd>{{ record.account }}</dd>
+        </div>
+        <div>
+          <dt>时间</dt>
+          <dd>{{ record.date }}</dd>
+        </div>
+        <div>
+          <dt>备注</dt>
+          <dd>{{ record.note || "无" }}</dd>
+        </div>
       </dl>
       <div class="actions">
         <Button label="编辑" variant="outlined" @click="edit" />
-        <Button label="删除" tone="error" variant="outlined" @click="dialog = true" />
+        <Button
+          label="删除"
+          tone="error"
+          variant="outlined"
+          @click="dialog = true"
+        />
       </div>
     </div>
     <DialogPanel

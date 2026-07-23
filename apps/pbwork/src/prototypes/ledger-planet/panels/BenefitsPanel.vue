@@ -14,7 +14,9 @@ const router = useRouter();
 const ownsVariant = computed(() => route.params.screenSlug === "benefits-home");
 const variant = computed(() => {
   if (!ownsVariant.value) return "default";
-  return typeof route.query.variant === "string" ? route.query.variant : "default";
+  return typeof route.query.variant === "string"
+    ? route.query.variant
+    : "default";
 });
 const unusedCount = coupons.filter((item) => item.status === "unused").length;
 const doneCount = tasks.filter((item) => item.status === "done").length;
@@ -39,7 +41,6 @@ function go(slug: string, nextVariant = "default") {
       description="稍后再来看看活动与任务。"
     />
     <template v-else>
-      <div class="orbit" aria-hidden="true" />
       <button type="button" class="feature" @click="go('activity-detail')">
         <div class="feature-top">
           <Chip :label="featured.status" tone="success" />
@@ -68,10 +69,7 @@ function go(slug: string, nextVariant = "default") {
           class="task-row"
           :class="{ done: task.status === 'done' }"
           @click="
-            go(
-              'task-detail',
-              task.status === 'done' ? 'completed' : 'default',
-            )
+            go('task-detail', task.status === 'done' ? 'completed' : 'default')
           "
         >
           <span class="check" aria-hidden="true">
@@ -144,33 +142,25 @@ function go(slug: string, nextVariant = "default") {
   justify-items: center;
   min-height: 100%;
 }
-.orbit {
-  pointer-events: none;
-  position: absolute;
-  top: -24px;
-  left: -36px;
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    color-mix(in srgb, #8b5cf6 22%, transparent),
-    transparent 70%
-  );
-}
 .feature {
   position: relative;
   display: grid;
   gap: 8px;
   padding: 16px;
-  border: 0;
+  border: 1px solid
+    color-mix(in srgb, var(--pb-color-primary) 24%, var(--pb-color-border));
   border-radius: var(--pb-radius-lg);
-  background:
-    linear-gradient(
-      145deg,
-      color-mix(in srgb, #8b5cf6 16%, var(--pb-color-surface)),
-      var(--pb-color-surface) 60%
-    );
+  background: color-mix(
+    in srgb,
+    var(--pb-color-primary) 7%,
+    var(--pb-color-surface)
+  );
+  box-shadow:
+    0 14px 34px
+      color-mix(in srgb, var(--pb-color-on-background) 8%, transparent),
+    inset 0 1px 0
+      color-mix(in srgb, var(--pb-color-surface-raised) 76%, transparent);
+  backdrop-filter: blur(14px);
   color: inherit;
   text-align: left;
   cursor: pointer;
@@ -280,12 +270,7 @@ function go(slug: string, nextVariant = "default") {
   display: grid;
   gap: 4px;
   padding: 14px 16px;
-  background:
-    linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--pb-color-primary) 10%, transparent),
-      transparent
-    );
+  background: color-mix(in srgb, var(--pb-color-primary) 8%, transparent);
 }
 .ticket-main span {
   color: var(--pb-color-on-surface-muted);
@@ -341,7 +326,7 @@ function go(slug: string, nextVariant = "default") {
   position: absolute;
   inset: 0 0 auto 0;
   height: 4px;
-  background: linear-gradient(90deg, #8b5cf6, var(--pb-color-primary));
+  background: var(--pb-color-primary);
 }
 .activity-card strong {
   margin-top: 4px;

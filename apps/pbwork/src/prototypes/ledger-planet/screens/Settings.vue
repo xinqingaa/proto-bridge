@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import LedgerPlanetShell from "../LedgerPlanetShell.vue";
 import SwitchControl from "@/design-system/components/basic/SwitchControl.vue";
@@ -24,30 +24,13 @@ const dark = computed(() => {
   );
 });
 
-watch(
-  () => route.query.variant,
-  (value) => {
-    if (value === "dark") {
-      applyTheme("dark");
-    }
-  },
-  { immediate: true },
-);
-
 function applyTheme(next: LedgerThemeId) {
   setTheme(next);
   themeTick.value += 1;
-  const nextVariant =
-    route.query.variant === "dark" && next === "light"
-      ? "default"
-      : next === "dark" && route.query.variant === "default"
-        ? "dark"
-        : route.query.variant;
   void router.replace({
     query: {
       ...route.query,
       theme: next,
-      ...(typeof nextVariant === "string" ? { variant: nextVariant } : {}),
     },
   });
 }

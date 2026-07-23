@@ -29,19 +29,7 @@
       "showIndicator": {
         "type": "boolean"
       },
-      "elevated": {
-        "type": "boolean"
-      },
-      "showView": {
-        "type": "boolean"
-      },
-      "viewHeight": {
-        "type": "number",
-        "minimum": 120
-      },
-      "mouseSwipe": {
-        "type": "boolean"
-      }
+      "elevated": { "type": "boolean" }
     },
     "required": ["items"]
   },
@@ -54,10 +42,7 @@
     ],
     "display": "icon-label",
     "showIndicator": true,
-    "elevated": true,
-    "showView": true,
-    "viewHeight": 220,
-    "mouseSwipe": true
+    "elevated": true
   },
   "states": [
     {
@@ -82,7 +67,7 @@
       }
     }
   ],
-  "slots": ["one", "two", "three"],
+  "slots": [],
   "events": ["update:modelValue"],
   "tokenBindings": {
     "surface": "color.surface-raised",
@@ -93,10 +78,6 @@
     "target": "sizing.touch",
     "height": "sizing.bottom-navigation",
     "label": "typography.caption",
-    "indicatorRadius": "radius.full",
-    "viewSurface": "color.background",
-    "viewTitle": "typography.subtitle",
-    "viewMuted": "color.on-surface-muted",
-    "duration": "motion.duration-normal"
+    "indicatorRadius": "radius.full"
   }
 }

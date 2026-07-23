@@ -14,13 +14,14 @@
 
 ## 2. 范围边界
 
-| 做 | 不做（本期） |
-| ---- | ---- |
-| 三 Tab + 二级栈页 | 多账本 |
-| mock 数据与可点交互 | 下拉刷新、加载更多（等通用组件补齐后再同步） |
-| 简单 CSS/SVG 图表 | 新造业务 Token / 业务色名 |
-| 帮助文章 WebView mock | 真实支付 / 登录鉴权 / 真导入导出 |
-| **新建** `ledger-planet` | **不删除** `project`、`field-service`（移除由人工操作） |
+| 做                         | 不做（本期）                                            |
+| -------------------------- | ------------------------------------------------------- |
+| 三 Tab + 二级栈页          | 多账本                                                  |
+| mock 数据与可点交互        | 真实后端、跨设备同步                                    |
+| 通用下拉刷新与加载更多演示 | 完整移动端边缘手势兼容矩阵                              |
+| 简单 CSS/SVG 图表          | 新造业务 Token / 业务色名                               |
+| 帮助文章 WebView mock      | 真实支付 / 登录鉴权 / 真导入导出                        |
+| **新建** `ledger-planet`   | **不删除** `project`、`field-service`（移除由人工操作） |
 
 ## 3. 导航与信息架构
 
@@ -34,7 +35,7 @@
 
 - 一级：AppBar + 内容 + BottomNavigation。
 - 二级/三级栈页：AppBar 返回，**无** TabBar。
-- 一级 Tab 之间支持左右滑动切换，且须走通用 `BottomNavigation` 的 **`showView` + `v-window` 动画**（不得用路由硬切冒充滑动）。
+- 一级 Tab 之间支持左右滑动切换。`BottomNavigation` 只负责导航栏，内容切换由通用 `TabViewport` 持有，业务路由只记录当前 Tab 身份，不负责动画。
 - **记一笔入口**：AppBar `＋`，**禁止 FAB**。
 
 **二级 / 三级（当前清单）**
@@ -56,19 +57,20 @@
 
 - **有对口通用组件必须用**（AppBar、BottomNavigation、Tabs、FilterBar、Card、Chip、Dialog、Sheet、Snackbar…）。
 - **无对口组件时允许页内局部 UI**（流水行、摘要大数字、PeriodSegment、SVG 图等），但 **颜色/字体/间距/圆角/阴影必须走现有 Token**。
-- **本轮唯一允许改的通用组件**：`BottomNavigation`
-  - 数量、文案、图标全部**外部传入**
-  - **禁止**组件内写死业务默认项（如工作台/工单…）
-  - 图标以外部传入的 Component（如 Lucide）为准
+- 本轮通用组件改造：
+  - `BottomNavigation`：纯导航栏；数量、文案、图标全部外部传入。
+  - `TabViewport`：只管理一级面板、横滑、过渡和保活。
+  - `DataList`：纯列表外观容器，不理解业务 item 字段。
+  - `ScrollableDataList`：可配置下拉刷新、触底加载、加载锁和无更多状态；业务继续控制数据与异步状态。
 
 ## 6. Tabs 使用铁律（纠正版）
 
-| 场景 | 规则 |
-| ---- | ---- |
-| **底部主体 Tab 的子视图内** | **禁止再嵌套带 `v-window` 的 Tabs**（避免与一级横滑冲突） |
-| **若使用 Tabs** | 内容必须进对应具名 slot，**整页/整块视图由 Tab 包裹**；禁止「只绑 v-model、内容放外面、空面板只显示标签字」 |
-| **二级页内的 Tabs** | **允许**（如记一笔的支出/收入）——已不在主体 Tab 层级 |
-| **记账内年/月/周/日** | **不用 Tabs**；用无 window 的分段控件（如 `PeriodSegment`），切换须改变摘要 + 列表数据 |
+| 场景                        | 规则                                                                                                        |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **底部主体 Tab 的子视图内** | **禁止再嵌套带 `v-window` 的 Tabs**（避免与一级横滑冲突）                                                   |
+| **若使用 Tabs**             | 内容必须进对应具名 slot，**整页/整块视图由 Tab 包裹**；禁止「只绑 v-model、内容放外面、空面板只显示标签字」 |
+| **二级页内的 Tabs**         | **允许**（如记一笔的支出/收入）——已不在主体 Tab 层级                                                        |
+| **记账内年/月/周/日**       | **不用 Tabs**；用无 window 的分段控件（如 `PeriodSegment`），切换须改变摘要 + 列表数据                      |
 
 ## 7. 其它体验要求
 
@@ -90,10 +92,10 @@
 
 ```text
 ledger-planet/
-  LedgerPlanetShell.vue   # 栈页壳 / Tab 壳（showView）+ theme 校正
-  TabRoot.vue             # 三一级面板宿主 + tab-session
+  LedgerPlanetShell.vue   # 栈页壳 / TabViewport + BottomNavigation
+  TabRoot.vue             # 三一级面板宿主 + URL/History Tab 身份
   PeriodSegment.vue       # 年-月-周-日（无 window）
-  nav.ts / tab-session.ts / theme-session.ts
+  nav.ts / theme-session.ts
   panels/*                # 记账/权益/我的内容
   screens/*               # 注册用 Screen（首页薄封装 + 二级页）
   mock.ts

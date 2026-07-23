@@ -11,7 +11,7 @@ test("overview is the default workbench destination", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "从原型继续工作" }),
   ).toBeVisible();
-  await expect(page.getByText("35", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "28 组件" })).toBeVisible();
 });
 
 test("primary and secondary navigation update the URL and resource view", async ({
@@ -76,7 +76,9 @@ test("collapsing side panels expands the content track", async ({ page }) => {
   await page.getByRole("button", { name: "切换原型树" }).click();
   const collapsedTree = page.locator(".collapsed-tree-popover");
   await expect(
-    collapsedTree.getByRole("link", { name: "任务列表", exact: true }),
+    collapsedTree.locator(
+      'a[href="/workbench/prototypes/project/screens/task-list"]',
+    ),
   ).toBeVisible();
   await collapsedTree
     .locator('a[href*="/project/screens/task-list?variant=loading"]')

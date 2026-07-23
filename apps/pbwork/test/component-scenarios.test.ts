@@ -55,12 +55,13 @@ describe("component business scenarios", () => {
       ]),
     );
     expect(controlKeys("bottom-navigation")).toEqual(
-      expect.arrayContaining([
-        "display",
-        "showIndicator",
-        "showView",
-        "mouseSwipe",
-      ]),
+      expect.arrayContaining(["display", "showIndicator"]),
+    );
+    expect(controlKeys("bottom-navigation")).not.toEqual(
+      expect.arrayContaining(["showView", "mouseSwipe", "viewHeight"]),
+    );
+    expect(controlKeys("scrollable-data-list")).toEqual(
+      expect.arrayContaining(["pullRefresh", "loadMore", "hasMore"]),
     );
     expect(controlKeys("bottom-navigation")).not.toContain("viewHeight");
     expect(controlKeys("card")).not.toContain("radius");

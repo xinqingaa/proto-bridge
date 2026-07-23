@@ -6,95 +6,45 @@
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "items": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "id",
-            "title"
-          ],
-          "properties": {
-            "id": {
-              "type": "string"
-            },
-            "title": {
-              "type": "string"
-            },
-            "subtitle": {
-              "type": "string"
-            }
-          }
-        }
+      "divided": { "type": "boolean" },
+      "inset": { "type": "boolean" },
+      "surface": {
+        "type": "string",
+        "enum": ["none", "default", "raised"]
       },
-      "loading": {
-        "type": "boolean"
+      "rounded": {
+        "type": "string",
+        "enum": ["none", "sm", "md", "lg"]
       },
-      "emptyText": {
-        "type": "string"
-      },
-      "elevated": {
-        "type": "boolean"
-      },
-      "showActions": {
-        "type": "boolean"
-      }
-    },
-    "required": [
-      "items"
-    ]
+      "elevated": { "type": "boolean" }
+    }
   },
   "defaultProps": {
-    "items": [
-      {
-        "id": "1",
-        "title": "整理需求",
-        "subtitle": "今日"
-      },
-      {
-        "id": "2",
-        "title": "联调接口",
-        "subtitle": "明日"
-      }
-    ],
-    "loading": false,
-    "emptyText": "暂无任务",
-    "elevated": false,
-    "showActions": true
+    "divided": true,
+    "inset": false,
+    "surface": "default",
+    "rounded": "md",
+    "elevated": false
   },
   "states": [
     {
-      "id": "loading",
-      "label": "加载中",
-      "props": {
-        "loading": true,
-        "items": []
-      }
+      "id": "plain",
+      "label": "无容器",
+      "props": { "surface": "none", "rounded": "none" }
     },
     {
-      "id": "empty",
-      "label": "空态",
-      "props": {
-        "items": [],
-        "emptyText": "暂无任务"
-      }
+      "id": "raised",
+      "label": "抬升容器",
+      "props": { "surface": "raised", "elevated": true }
     }
   ],
-  "slots": [
-    "append"
-  ],
-  "events": [
-    "select"
-  ],
+  "slots": ["default"],
+  "events": [],
   "tokenBindings": {
     "surface": "color.surface",
-    "border": "color.border",
-    "radius": "radius.lg",
+    "divider": "color.border",
+    "radius": "radius.md",
     "elevation": "elevation.card",
-    "title": "typography.subtitle",
-    "subtitle": "typography.caption",
-    "muted": "color.on-surface-muted",
-    "empty": "typography.content"
+    "content": "typography.content"
   }
 }

@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "id": "scrollable-data-list",
+  "category": "complex",
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "pullRefresh": { "type": "boolean" },
+      "loadMore": { "type": "boolean" },
+      "refreshing": { "type": "boolean" },
+      "loadingMore": { "type": "boolean" },
+      "hasMore": { "type": "boolean" },
+      "disabled": { "type": "boolean" }
+    }
+  },
+  "defaultProps": {
+    "pullRefresh": true,
+    "loadMore": true,
+    "refreshing": false,
+    "loadingMore": false,
+    "hasMore": true,
+    "disabled": false
+  },
+  "states": [
+    {
+      "id": "refreshing",
+      "label": "刷新中",
+      "props": { "refreshing": true }
+    },
+    {
+      "id": "loading-more",
+      "label": "加载更多",
+      "props": { "loadingMore": true }
+    },
+    {
+      "id": "complete",
+      "label": "没有更多",
+      "props": { "hasMore": false }
+    }
+  ],
+  "slots": ["default", "refresh-indicator", "load-footer", "no-more"],
+  "events": ["refresh", "load-more"],
+  "tokenBindings": {
+    "background": "color.background",
+    "primary": "color.primary",
+    "muted": "color.on-surface-muted",
+    "footer": "typography.caption",
+    "duration": "motion.duration-normal"
+  }
+}

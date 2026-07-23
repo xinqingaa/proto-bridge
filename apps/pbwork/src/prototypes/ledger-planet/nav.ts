@@ -14,6 +14,49 @@ export const HOME_TAB: Record<string, LedgerTab> = {
   "me-home": "我的",
 };
 
+type LedgerHistoryState = {
+  pbScope?: "ledger-planet";
+  pbEntryId?: string;
+  pbTab?: LedgerTab;
+  pbParent?: string;
+  pbRootPosition?: number;
+};
+
+function currentState(): LedgerHistoryState & { position?: number } {
+  return (window.history.state ?? {}) as LedgerHistoryState & {
+    position?: number;
+  };
+}
+
+function isEmbeddedRuntime() {
+  return typeof window !== "undefined" && window.parent !== window;
+}
+
+function entryState(tab: LedgerTab, parent?: string): LedgerHistoryState {
+  const state = currentState();
+  const position = Number(state.position ?? 0);
+  return {
+    pbScope: "ledger-planet",
+    pbEntryId: crypto.randomUUID(),
+    pbTab: tab,
+    ...(parent ? { pbParent: parent } : {}),
+    pbRootPosition:
+      state.pbScope === "ledger-planet" &&
+      typeof state.pbRootPosition === "number"
+        ? state.pbRootPosition
+        : position,
+  };
+}
+
+function routeTarget(target: string, state: LedgerHistoryState) {
+  const [path, search = ""] = target.split("?");
+  return {
+    path: path!,
+    query: Object.fromEntries(new URLSearchParams(search)),
+    state,
+  };
+}
+
 export function themeQuery(
   route: RouteLocationNormalizedLoaded,
 ): "light" | "dark" {
@@ -28,19 +71,44 @@ export function runtimePath(
   variant = "default",
   extraQuery?: Record<string, string>,
 ) {
-  const theme = themeQuery(route);
   const params = new URLSearchParams({
     variant,
-    theme,
+    theme: themeQuery(route),
     ...extraQuery,
   });
   return `/prototype/ledger-planet/${slug}?${params.toString()}`;
 }
 
-/**
- * Enter a stack screen from a primary tab.
- * Replaces the URL onto the tab's home first so history.back() restores the correct tab.
- */
+export async function ensureRootEntry(
+  router: Router,
+  route: RouteLocationNormalizedLoaded,
+  tab: LedgerTab,
+) {
+  const state = currentState();
+  if (state.pbScope === "ledger-planet" && state.pbTab === tab) return;
+  const position = Number(state.position ?? 0);
+  await router.replace({
+    path: route.path,
+    query: route.query,
+    state: {
+      pbScope: "ledger-planet",
+      pbEntryId: crypto.randomUUID(),
+      pbTab: tab,
+      pbRootPosition: position,
+    },
+  });
+}
+
+export async function switchTab(
+  router: Router,
+  route: RouteLocationNormalizedLoaded,
+  tab: LedgerTab,
+) {
+  await router.replace(
+    routeTarget(runtimePath(TAB_HOME[tab], route), entryState(tab)),
+  );
+}
+
 export async function pushStack(
   router: Router,
   route: RouteLocationNormalizedLoaded,
@@ -48,31 +116,80 @@ export async function pushStack(
   slug: string,
   opts?: { variant?: string; query?: Record<string, string> },
 ) {
-  const home = TAB_HOME[tab];
-  const variant = opts?.variant ?? "default";
-
-  if (route.params.screenSlug !== home) {
-    await router.replace(runtimePath(home, route, "default"));
-  }
-
-  await router.push(runtimePath(slug, route, variant, opts?.query));
+  await router.push(
+    routeTarget(
+      runtimePath(slug, route, opts?.variant ?? "default", opts?.query),
+      entryState(tab, route.fullPath),
+    ),
+  );
 }
 
-/** Finish a flow without leaving a duplicate home under the previous stack page. */
+export async function replaceScreen(
+  router: Router,
+  route: RouteLocationNormalizedLoaded,
+  tab: LedgerTab,
+  slug: string,
+  opts?: { variant?: string; query?: Record<string, string> },
+) {
+  await router.replace(
+    routeTarget(
+      runtimePath(slug, route, opts?.variant ?? "default", opts?.query),
+      entryState(tab, currentState().pbParent),
+    ),
+  );
+}
+
+export async function goBack(
+  router: Router,
+  route: RouteLocationNormalizedLoaded,
+  fallbackSlug: string,
+) {
+  const state = currentState();
+  if (state.pbScope === "ledger-planet" && state.pbParent) {
+    if (isEmbeddedRuntime()) {
+      const fallbackTab = state.pbTab ?? HOME_TAB[fallbackSlug] ?? "记账";
+      await router.replace(
+        routeTarget(state.pbParent, entryState(fallbackTab)),
+      );
+      return;
+    }
+    router.back();
+    return;
+  }
+  const fallbackTab = HOME_TAB[fallbackSlug] ?? state.pbTab ?? "记账";
+  await router.replace(
+    routeTarget(runtimePath(fallbackSlug, route), entryState(fallbackTab)),
+  );
+}
+
 export async function finishToHome(
   router: Router,
   route: RouteLocationNormalizedLoaded,
   homeSlug: string,
-  opts?: { variant?: string; query?: Record<string, string>; preferBack?: boolean },
+  opts?: {
+    variant?: string;
+    query?: Record<string, string>;
+    preferBack?: boolean;
+  },
 ) {
-  if (opts?.preferBack !== false) {
-    const position = Number(window.history.state?.position ?? 0);
-    if (position > 0) {
-      router.back();
-      return;
-    }
+  const state = currentState();
+  const position = Number(state.position ?? 0);
+  const rootPosition = state.pbRootPosition;
+  if (
+    !isEmbeddedRuntime() &&
+    opts?.preferBack !== false &&
+    state.pbScope === "ledger-planet" &&
+    typeof rootPosition === "number" &&
+    position > rootPosition
+  ) {
+    router.go(rootPosition - position);
+    return;
   }
+  const tab = HOME_TAB[homeSlug] ?? state.pbTab ?? "记账";
   await router.replace(
-    runtimePath(homeSlug, route, opts?.variant ?? "default", opts?.query),
+    routeTarget(
+      runtimePath(homeSlug, route, opts?.variant ?? "default", opts?.query),
+      entryState(tab),
+    ),
   );
 }
