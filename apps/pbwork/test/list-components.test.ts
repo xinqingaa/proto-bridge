@@ -60,4 +60,77 @@ describe("list component responsibilities", () => {
     expect(disconnect).toHaveBeenCalled();
     globalThis.IntersectionObserver = OriginalObserver;
   });
+
+  it("supports mouse drag scrolling without disabling native wheel scrolling", async () => {
+    const wrapper = mount(ScrollableDataList, {
+      props: {
+        dragScroll: { enabled: true, mouse: true, momentum: false },
+        pullRefresh: false,
+      },
+      slots: { default: '<button type="button">可点击行</button>' },
+    });
+    const root = wrapper.element as HTMLElement;
+    root.scrollTop = 80;
+
+    await wrapper.trigger("pointerdown", {
+      pointerId: 7,
+      pointerType: "mouse",
+      button: 0,
+      clientX: 30,
+      clientY: 140,
+      timeStamp: 10,
+    });
+    await wrapper.trigger("pointermove", {
+      pointerId: 7,
+      pointerType: "mouse",
+      clientX: 32,
+      clientY: 60,
+      timeStamp: 30,
+    });
+    expect(root.scrollTop).toBeGreaterThan(80);
+    expect(wrapper.classes()).toContain("is-drag-scrolling");
+
+    await wrapper.trigger("pointerup", {
+      pointerId: 7,
+      pointerType: "mouse",
+      clientX: 32,
+      clientY: 60,
+      timeStamp: 40,
+    });
+    expect(wrapper.classes()).not.toContain("is-drag-scrolling");
+    expect(wrapper.attributes("onwheel")).toBeUndefined();
+  });
+
+  it("turns a downward mouse drag at the top into one refresh request", async () => {
+    const wrapper = mount(ScrollableDataList, {
+      props: {
+        pullRefresh: { enabled: true, mouse: true, threshold: 48 },
+        dragScroll: { enabled: true, mouse: true, momentum: false },
+      },
+    });
+    const root = wrapper.element as HTMLElement;
+    root.scrollTop = 0;
+
+    await wrapper.trigger("pointerdown", {
+      pointerId: 9,
+      pointerType: "mouse",
+      button: 0,
+      clientX: 20,
+      clientY: 20,
+    });
+    await wrapper.trigger("pointermove", {
+      pointerId: 9,
+      pointerType: "mouse",
+      clientX: 22,
+      clientY: 90,
+    });
+    await wrapper.trigger("pointerup", {
+      pointerId: 9,
+      pointerType: "mouse",
+      clientX: 22,
+      clientY: 90,
+    });
+
+    expect(wrapper.emitted("refresh")).toHaveLength(1);
+  });
 });

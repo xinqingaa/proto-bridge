@@ -62,6 +62,8 @@ import {
   Bell,
   Inbox,
   ListCollapse,
+  ListRestart,
+  GalleryHorizontal,
   Command,
   Home,
 } from "lucide-vue-next";
@@ -552,6 +554,8 @@ function secondaryIconFor(id: string) {
     "app-bar": PanelTop,
     tabs: ListCollapse,
     "data-list": Rows3,
+    "scrollable-data-list": ListRestart,
+    "tab-viewport": GalleryHorizontal,
     "search-bar": Search,
     "filter-bar": SlidersHorizontal,
     "bottom-navigation": Navigation,

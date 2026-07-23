@@ -37,12 +37,11 @@ const active = computed({
   set: (value: string) => emit("update:modelValue", value),
 });
 const values = computed(() => items.value.map((item) => item.value));
-const swipeEnabled = computed(() => swipe.value || mouseSwipe.value);
 const gesture = usePointerSwipe(
   values,
   active,
   (value) => emit("update:modelValue", value),
-  swipeEnabled,
+  { swipe, mouseSwipe },
 );
 
 usePbInspect({
@@ -77,8 +76,10 @@ usePbInspect({
     ref="rootRef"
     v-model="active"
     class="pb-tab-viewport"
-    :class="{ 'is-dragging': gesture.dragging.value }"
-    :style="gesture.dragStyle.value"
+    :class="{
+      'allows-mouse-swipe': mouseSwipe,
+      'is-dragging': gesture.dragging.value,
+    }"
     :transition-duration="transitionDuration"
     :touch="false"
     data-pb-id="ds.tab-viewport"
@@ -87,6 +88,11 @@ usePbInspect({
     @pointermove="gesture.onPointerMove"
     @pointerup="gesture.onPointerUp"
     @pointercancel="gesture.onPointerCancel"
+    @touchstart="gesture.onTouchStart"
+    @touchmove="gesture.onTouchMove"
+    @touchend="gesture.onTouchEnd"
+    @touchcancel="gesture.onTouchCancel"
+    @click.capture="gesture.onClickCapture"
   >
     <v-window-item
       v-for="item in items"
@@ -107,16 +113,14 @@ usePbInspect({
   min-height: 0;
   height: 100%;
   background: var(--pb-color-background);
-  cursor: grab;
   touch-action: pan-y;
+}
+.pb-tab-viewport.allows-mouse-swipe {
+  cursor: grab;
 }
 .pb-tab-viewport.is-dragging {
   cursor: grabbing;
   user-select: none;
-}
-.pb-tab-viewport.is-dragging :deep(.v-window__container) {
-  transform: translateX(var(--pb-swipe-offset, 0));
-  transition: none !important;
 }
 .pb-tab-viewport :deep(.v-window__container),
 .pb-tab-viewport :deep(.v-window-item),

@@ -60,8 +60,8 @@
 - 本轮通用组件改造：
   - `BottomNavigation`：纯导航栏；数量、文案、图标全部外部传入。
   - `TabViewport`：只管理一级面板、横滑、过渡和保活。
-  - `DataList`：纯列表外观容器，不理解业务 item 字段。
-  - `ScrollableDataList`：可配置下拉刷新、触底加载、加载锁和无更多状态；业务继续控制数据与异步状态。
+  - `DataList`：纯列表外观容器，不理解业务 item 字段；可滚动场景外层组合 `ScrollableDataList`。
+  - `ScrollableDataList`：滚动壳（下拉刷新、触底加载、加载锁、无更多）；不负责列表外观，不透传 DataList 的 surface/rounded 等 props。
 
 ## 6. Tabs 使用铁律（纠正版）
 

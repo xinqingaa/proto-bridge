@@ -216,13 +216,16 @@ export const componentRecords = [
       { key: "showIndicator", label: "显示底部滑线", control: "boolean" },
       { key: "showDivider", label: "显示底部分隔线", control: "boolean" },
       { key: "grow", label: "等宽铺满", control: "boolean" },
+      { key: "swipe", label: "触摸滑动切换", control: "boolean" },
       { key: "mouseSwipe", label: "鼠标拖动切换", control: "boolean" },
+      { key: "fill", label: "撑满可用高度", control: "boolean" },
     ],
   },
   {
     id: "data-list",
     label: "Data List",
-    description: "仅建立列表容器、分隔与表面层级，行内容完全由业务提供。",
+    description:
+      "列表外观容器：surface、圆角、分隔与阴影。行内容由业务提供；可滚动场景请外层组合 ScrollableDataList。",
     category: "complex",
     view: "complex/DataList.vue",
     contract: "contracts/data-list.json",
@@ -257,7 +260,8 @@ export const componentRecords = [
   {
     id: "scrollable-data-list",
     label: "Scrollable Data List",
-    description: "为任意业务列表提供可配置的下拉刷新与触底加载。",
+    description:
+      "滚动壳：下拉刷新与触底加载。不负责列表外观；内部再组合 DataList（或任意业务结构）承载行内容。",
     category: "complex",
     view: "complex/ScrollableDataList.vue",
     contract: "contracts/scrollable-data-list.json",
@@ -265,6 +269,7 @@ export const componentRecords = [
     controls: [
       { key: "pullRefresh", label: "下拉刷新", control: "boolean" },
       { key: "loadMore", label: "触底加载", control: "boolean" },
+      { key: "dragScroll", label: "鼠标拖拽滚动", control: "boolean" },
       { key: "refreshing", label: "刷新中", control: "boolean" },
       { key: "loadingMore", label: "加载更多中", control: "boolean" },
       { key: "hasMore", label: "仍有更多", control: "boolean" },

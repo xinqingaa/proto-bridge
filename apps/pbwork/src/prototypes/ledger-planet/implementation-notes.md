@@ -35,9 +35,22 @@
 
 ### 列表
 
+- 组合关系（保持分层，不合并 props）：`ScrollableDataList`（滚动 + 刷新/分页）包裹业务内容，其中的列表段再用 `DataList`（surface / 圆角 / 分隔）。
 - `DataList` 只提供 surface、圆角、阴影、inset 和相邻项分隔；默认 slot 可放任意业务结构，并保留按钮等原生语义。
-- `ScrollableDataList` 负责滚动手势和异步触发：`pullRefresh`、`loadMore` 均可布尔开启或传配置；`refreshing / loadingMore / hasMore` 由业务受控。
+- `ScrollableDataList` 负责滚动手势和异步触发：`pullRefresh`、`loadMore` 均可布尔开启或传配置；`refreshing / loadingMore / hasMore` 由业务受控。不透传 DataList 外观 props。
 - 触底请求有重复锁，加载完成后解锁；下拉手势做横纵轴锁定，不与一级横滑竞争。
+- `dragScroll` 独立控制鼠标拖拽滚动；滚轮仍保持浏览器原生行为。位于顶部继续向下拖时，才从滚动切换为下拉刷新。
+
+### 手势仲裁
+
+- `swipe` 只控制 touch / pen，`mouseSwipe` 只控制 mouse；两个开关不能互相兜底。
+- pointer down 只记录起点，横向或纵向超过阈值并完成轴锁后，对应组件才能捕获 pointer。
+- 横向由 `Tabs / TabViewport` 处理，纵向由 `ScrollableDataList` 处理；子级纵向滚动优先于父级横向切换。
+- 外层在 pointer down 时检查嵌套横向列表的真实尺寸：`scrollWidth > clientWidth` 时完全忽略该次手势，包括列表边界处的外拖；没有横向溢出时才由父级 `TabViewport` 翻页。鼠标拖拽与触屏使用同一规则。
+- Chrome 设备模拟和真实触屏也可能在平移阶段取消 Tab 的 Pointer Events；`Tabs / TabViewport` 因此提供独立 Touch Events 路径，只在完成横向轴锁后阻止默认平移。
+- Chrome 设备模拟和真实触屏可能在纵向平移开始后取消 Pointer Events；下拉刷新因此使用独立的非被动 touch 边界，仅在列表顶部确认向下拖动后阻止原生平移。
+- 业务按钮允许作为滑动起点；确认发生拖动后抑制紧随其后的 click，避免切 Tab 时误进详情。
+- 短内容 Tabs 使用 `fill` 撑满父级剩余高度，让内容下方空白仍属于可滑动面板。
 
 ## 3. 视觉执行规则
 

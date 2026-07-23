@@ -6,19 +6,28 @@ import { usePointerSwipe } from "@/design-system/components/_shared/usePointerSw
 /** Matches `motion.duration-slow` (320ms) for v-window's numeric prop. */
 const SLIDE_DURATION_MS = 320;
 
-const props = defineProps<{
-  modelValue?: string;
-  items: Array<{ value: string; label: string }>;
-  selectionStyle?: "pill" | "underline" | "text";
-  showIndicator?: boolean;
-  showDivider?: boolean;
-  grow?: boolean;
-  align?: "start" | "center";
-  size?: "sm" | "md" | "lg";
-  mouseSwipe?: boolean;
-  /** Page-unique inspect / comment anchor; falls back to `ds.tabs`. */
-  inspectId?: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    modelValue?: string;
+    items: Array<{ value: string; label: string }>;
+    selectionStyle?: "pill" | "underline" | "text";
+    showIndicator?: boolean;
+    showDivider?: boolean;
+    grow?: boolean;
+    align?: "start" | "center";
+    size?: "sm" | "md" | "lg";
+    swipe?: boolean;
+    mouseSwipe?: boolean;
+    fill?: boolean;
+    /** Page-unique inspect / comment anchor; falls back to `ds.tabs`. */
+    inspectId?: string;
+  }>(),
+  {
+    swipe: true,
+    mouseSwipe: true,
+    fill: false,
+  },
+);
 const emit = defineEmits<{ "update:modelValue": [value: string] }>();
 
 const rootRef = usePbInspectRef();
@@ -31,13 +40,13 @@ const {
   grow,
   align,
   size,
+  swipe: swipeEnabled,
   mouseSwipe,
+  fill,
   inspectId,
 } = toRefs(props);
 
-const resolvedSelectionStyle = computed(
-  () => selectionStyle.value ?? "pill",
-);
+const resolvedSelectionStyle = computed(() => selectionStyle.value ?? "pill");
 const indicatorVisible = computed(
   () => showIndicator.value ?? resolvedSelectionStyle.value === "underline",
 );
@@ -64,12 +73,11 @@ const tab = computed({
   },
 });
 const tabValues = computed(() => items.value.map((item) => item.value));
-const swipeEnabled = computed(() => mouseSwipe.value ?? true);
 const swipe = usePointerSwipe(
   tabValues,
   tab,
   (value) => emit("update:modelValue", value),
-  swipeEnabled,
+  { swipe: swipeEnabled, mouseSwipe },
 );
 
 usePbInspect({
@@ -87,7 +95,9 @@ usePbInspect({
     grow: grow.value ?? false,
     align: align.value ?? "start",
     size: size.value ?? "md",
-    mouseSwipe: swipeEnabled.value,
+    swipe: swipeEnabled.value,
+    mouseSwipe: mouseSwipe.value,
+    fill: fill.value,
     inspectId: inspectId.value,
   }),
   getTokenBindings: () => ({
@@ -137,6 +147,7 @@ usePbInspect({
       'style-pill': resolvedSelectionStyle === 'pill',
       'style-underline': resolvedSelectionStyle === 'underline',
       'style-text': resolvedSelectionStyle === 'text',
+      'is-fill': fill,
     }"
     :style="tabStyle"
   >
@@ -160,14 +171,22 @@ usePbInspect({
     <v-window
       v-model="tab"
       class="pb-tab-window"
-      :class="{ 'is-dragging': swipe.dragging.value }"
-      :style="swipe.dragStyle.value"
+      :class="{
+        'allows-mouse-swipe': mouseSwipe,
+        'is-dragging': swipe.dragging.value,
+      }"
       direction="horizontal"
       :transition-duration="SLIDE_DURATION_MS"
+      :touch="false"
       @pointerdown="swipe.onPointerDown"
       @pointermove="swipe.onPointerMove"
       @pointerup="swipe.onPointerUp"
       @pointercancel="swipe.onPointerCancel"
+      @touchstart="swipe.onTouchStart"
+      @touchmove="swipe.onTouchMove"
+      @touchend="swipe.onTouchEnd"
+      @touchcancel="swipe.onTouchCancel"
+      @click.capture="swipe.onClickCapture"
     >
       <v-window-item
         v-for="item in items"
@@ -241,17 +260,30 @@ usePbInspect({
 }
 .pb-tab-window {
   min-width: 0;
-  cursor: grab;
   touch-action: pan-y;
   --v-window-transition-duration: var(--pb-motion-duration-slow, 320ms);
+}
+.pb-tab-window.allows-mouse-swipe {
+  cursor: grab;
 }
 .pb-tab-window.is-dragging {
   cursor: grabbing;
   user-select: none;
 }
-.pb-tab-window.is-dragging :deep(.v-window__container) {
-  transform: translateX(var(--pb-swipe-offset, 0));
-  transition: none !important;
+.pb-tabs.is-fill {
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.pb-tabs.is-fill .pb-tab-window,
+.pb-tabs.is-fill .pb-tab-window :deep(.v-window__container),
+.pb-tabs.is-fill .pb-tab-window :deep(.v-window-item),
+.pb-tabs.is-fill .pb-tab-panel {
+  height: 100%;
+  min-height: 0;
+}
+.pb-tabs.is-fill .pb-tab-panel {
+  align-content: start;
 }
 .pb-tab-window :deep(.v-window__container),
 .pb-tab-window :deep(.v-window-x-transition-enter-active),

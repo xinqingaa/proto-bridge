@@ -151,6 +151,7 @@ function loadMoreRecords() {
   <ScrollableDataList
     :pull-refresh="{ enabled: !isStateView, mouse: true }"
     :load-more="!isStateView"
+    :drag-scroll="{ enabled: !isStateView, mouse: true, momentum: true }"
     :refreshing="refreshing"
     :loading-more="loadingMore"
     :has-more="hasMore"

@@ -152,6 +152,14 @@ usePbInspect({
 .pb-bottom-nav-item :deep(.v-btn__content) {
   gap: var(--pb-spacing-xs);
 }
+.pb-bottom-nav-item :deep(.v-btn__overlay) {
+  opacity: 0 !important;
+}
+.pb-bottom-nav-item:focus-visible {
+  outline: 2px solid
+    color-mix(in srgb, var(--pb-color-primary) 55%, transparent);
+  outline-offset: -4px;
+}
 .pb-bottom-nav :deep(.v-tab--selected) {
   color: var(--pb-color-primary);
   font-weight: 600;

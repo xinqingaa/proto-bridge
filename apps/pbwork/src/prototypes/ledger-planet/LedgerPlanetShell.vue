@@ -103,6 +103,8 @@ function goBack() {
         class="shell-tab-viewport"
         :items="navItems"
         v-model="activeTab"
+        :swipe="true"
+        :mouse-swipe="true"
         :inspect-id="`${inspectBaseId}.tab-viewport`"
       >
         <template #item="{ value }">
@@ -112,6 +114,7 @@ function goBack() {
         </template>
       </TabViewport>
       <BottomNavigation
+        :show-indicator="true"
         :items="navItems"
         v-model="activeTab"
         :inspect-id="`${inspectBaseId}.bottom-navigation`"
@@ -186,6 +189,15 @@ function goBack() {
   overflow: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
+}
+.stack-main:has(.pb-scrollable-data-list) {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.stack-main:has(.pb-scrollable-data-list) > :deep(.pb-scrollable-data-list) {
+  flex: 1;
+  min-height: 0;
 }
 .stack-main::-webkit-scrollbar {
   display: none;

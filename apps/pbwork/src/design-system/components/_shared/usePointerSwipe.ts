@@ -1,44 +1,113 @@
 import { computed, ref, type Ref } from "vue";
 
-const INTERACTIVE_SELECTOR =
-  "button, a, input, textarea, select, [contenteditable=true], [data-no-swipe], [data-gesture-ignore], [data-horizontal-scroll], .v-chip, .pb-filter-bar, .period-segment";
+const GESTURE_IGNORE_SELECTOR =
+  "input, textarea, select, [contenteditable=true], [data-no-swipe], [data-gesture-ignore], .pb-filter-bar, .period-segment";
+const HORIZONTAL_SCROLL_SELECTOR = "[data-horizontal-scroll]";
 
+export type PointerSwipeOptions = {
+  swipe: Ref<boolean>;
+  mouseSwipe: Ref<boolean>;
+  threshold?: number;
+};
+
+/**
+ * Direction-locked swipe gesture shared by Tabs and TabViewport.
+ *
+ * Pointer capture is intentionally delayed until the gesture is known to be
+ * horizontal. This lets a nested vertical scroller win vertical gestures.
+ */
 export function usePointerSwipe(
   values: Ref<string[]>,
   current: Ref<string>,
   update: (value: string) => void,
-  enabled: Ref<boolean>,
+  options: PointerSwipeOptions,
 ) {
-  const startX = ref<number | null>(null);
-  const startY = ref<number | null>(null);
+  const pointerId = ref<number | null>(null);
+  const touchIdentifier = ref<number | null>(null);
+  const startX = ref(0);
+  const startY = ref(0);
   const axis = ref<"pending" | "horizontal" | "vertical">("pending");
+  const touchAxis = ref<"pending" | "horizontal" | "vertical">("pending");
+  let touchStartX = 0;
+  let touchStartY = 0;
   const dragOffset = ref(0);
-  const dragging = computed(() => startX.value !== null);
+  const dragging = computed(
+    () =>
+      (pointerId.value !== null && axis.value === "horizontal") ||
+      (touchIdentifier.value !== null && touchAxis.value === "horizontal"),
+  );
+  let surface: HTMLElement | null = null;
+  let suppressClickUntil = 0;
+
+  function pointerEnabled(event: PointerEvent) {
+    if (event.pointerType === "mouse") return options.mouseSwipe.value;
+    return options.swipe.value;
+  }
+
+  function startsInScrollableHorizontalRegion(target: EventTarget | null) {
+    if (!(target instanceof Element)) return false;
+    const region = target.closest<HTMLElement>(HORIZONTAL_SCROLL_SELECTOR);
+    return Boolean(region && region.scrollWidth - region.clientWidth > 1);
+  }
+
+  function shouldIgnoreTarget(target: EventTarget | null) {
+    return Boolean(
+      target instanceof Element &&
+      (target.closest(GESTURE_IGNORE_SELECTOR) ||
+        startsInScrollableHorizontalRegion(target)),
+    );
+  }
+
+  function releaseCapture() {
+    if (
+      surface &&
+      pointerId.value !== null &&
+      surface.hasPointerCapture?.(pointerId.value)
+    ) {
+      surface.releasePointerCapture(pointerId.value);
+    }
+  }
+
+  function reset() {
+    releaseCapture();
+    pointerId.value = null;
+    startX.value = 0;
+    startY.value = 0;
+    axis.value = "pending";
+    dragOffset.value = 0;
+    surface = null;
+  }
 
   function onPointerDown(event: PointerEvent) {
-    if (!enabled.value || (event.pointerType === "mouse" && event.button !== 0))
+    if (
+      !pointerEnabled(event) ||
+      event.pointerType === "touch" ||
+      (event.pointerType === "mouse" && event.button !== 0)
+    ) {
       return;
+    }
     const target = event.target;
-    if (target instanceof Element && target.closest(INTERACTIVE_SELECTOR))
-      return;
+    if (shouldIgnoreTarget(target)) return;
+    pointerId.value = event.pointerId;
     startX.value = event.clientX;
     startY.value = event.clientY;
     axis.value = "pending";
     dragOffset.value = 0;
-    (event.currentTarget as HTMLElement | null)?.setPointerCapture?.(
-      event.pointerId,
-    );
+    surface = event.currentTarget as HTMLElement | null;
   }
 
   function onPointerMove(event: PointerEvent) {
-    if (startX.value === null || startY.value === null) return;
+    if (pointerId.value !== event.pointerId) return;
     const dx = event.clientX - startX.value;
     const dy = event.clientY - startY.value;
     if (axis.value === "pending" && Math.max(Math.abs(dx), Math.abs(dy)) >= 8) {
       axis.value = Math.abs(dx) > Math.abs(dy) ? "horizontal" : "vertical";
+      if (axis.value === "horizontal") {
+        surface?.setPointerCapture?.(event.pointerId);
+      }
     }
     if (axis.value === "vertical") {
-      cancel();
+      reset();
       return;
     }
     if (axis.value !== "horizontal") return;
@@ -47,41 +116,117 @@ export function usePointerSwipe(
   }
 
   function finish(event: PointerEvent) {
-    if (startX.value === null) return;
+    if (pointerId.value !== event.pointerId) return;
     const delta = event.clientX - startX.value;
     const currentIndex = values.value.indexOf(current.value);
-    if (
-      axis.value === "horizontal" &&
-      Math.abs(delta) >= 44 &&
-      currentIndex >= 0
-    ) {
+    const threshold = options.threshold ?? 44;
+    const wasHorizontal = axis.value === "horizontal";
+
+    if (wasHorizontal && Math.abs(delta) >= threshold && currentIndex >= 0) {
       const nextIndex = delta < 0 ? currentIndex + 1 : currentIndex - 1;
       const next = values.value[nextIndex];
       if (next) update(next);
     }
-    startX.value = null;
-    startY.value = null;
-    axis.value = "pending";
-    dragOffset.value = 0;
+    if (wasHorizontal && Math.abs(delta) >= 8) {
+      suppressClickUntil = Date.now() + 450;
+    }
+    reset();
   }
 
   function cancel() {
-    startX.value = null;
-    startY.value = null;
-    axis.value = "pending";
+    reset();
+  }
+
+  function touchByIdentifier(list: TouchList) {
+    if (touchIdentifier.value === null) return null;
+    for (let index = 0; index < list.length; index += 1) {
+      const touch = list.item(index);
+      if (touch?.identifier === touchIdentifier.value) return touch;
+    }
+    return null;
+  }
+
+  function resetTouch() {
+    touchIdentifier.value = null;
+    touchStartX = 0;
+    touchStartY = 0;
+    touchAxis.value = "pending";
     dragOffset.value = 0;
   }
 
-  const dragStyle = computed(() => ({
-    "--pb-swipe-offset": `${dragOffset.value}px`,
-  }));
+  function onTouchStart(event: TouchEvent) {
+    if (
+      !options.swipe.value ||
+      event.touches.length !== 1 ||
+      shouldIgnoreTarget(event.target)
+    ) {
+      return;
+    }
+    const touch = event.touches.item(0);
+    if (!touch) return;
+    touchIdentifier.value = touch.identifier;
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    touchAxis.value = "pending";
+    dragOffset.value = 0;
+  }
+
+  function onTouchMove(event: TouchEvent) {
+    const touch = touchByIdentifier(event.touches);
+    if (!touch) return;
+    const dx = touch.clientX - touchStartX;
+    const dy = touch.clientY - touchStartY;
+    if (
+      touchAxis.value === "pending" &&
+      Math.max(Math.abs(dx), Math.abs(dy)) >= 8
+    ) {
+      touchAxis.value = Math.abs(dx) > Math.abs(dy) ? "horizontal" : "vertical";
+    }
+    if (touchAxis.value === "vertical") {
+      resetTouch();
+      return;
+    }
+    if (touchAxis.value !== "horizontal") return;
+    event.preventDefault();
+    dragOffset.value = Math.max(-72, Math.min(72, dx));
+  }
+
+  function finishTouch(event: TouchEvent) {
+    const touch = touchByIdentifier(event.changedTouches);
+    if (!touch) return;
+    const delta = touch.clientX - touchStartX;
+    const currentIndex = values.value.indexOf(current.value);
+    const wasHorizontal = touchAxis.value === "horizontal";
+    const threshold = options.threshold ?? 44;
+    if (wasHorizontal && Math.abs(delta) >= threshold && currentIndex >= 0) {
+      const nextIndex = delta < 0 ? currentIndex + 1 : currentIndex - 1;
+      const next = values.value[nextIndex];
+      if (next) update(next);
+    }
+    if (wasHorizontal && Math.abs(delta) >= 8) {
+      suppressClickUntil = Date.now() + 450;
+    }
+    resetTouch();
+  }
+
+  function onClickCapture(event: MouseEvent) {
+    if (Date.now() >= suppressClickUntil) return;
+    suppressClickUntil = 0;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }
 
   return {
     dragging,
-    dragStyle,
+    dragOffset,
     onPointerDown,
     onPointerMove,
     onPointerUp: finish,
     onPointerCancel: cancel,
+    onTouchStart,
+    onTouchMove,
+    onTouchEnd: finishTouch,
+    onTouchCancel: resetTouch,
+    onClickCapture,
   };
 }

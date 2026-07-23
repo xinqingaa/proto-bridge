@@ -276,7 +276,9 @@ const scenarios: Record<string, ComponentScenario[]> = {
         modelValue: "overview",
         selectionStyle: "pill",
         showIndicator: false,
+        swipe: true,
         mouseSwipe: true,
+        fill: false,
       },
     },
     {
@@ -287,7 +289,9 @@ const scenarios: Record<string, ComponentScenario[]> = {
         selectionStyle: "underline",
         showIndicator: true,
         grow: true,
+        swipe: true,
         mouseSwipe: true,
+        fill: true,
       },
     },
   ],
@@ -309,14 +313,26 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "refresh-feed",
       label: "刷新与分页",
-      description: "可下拉刷新并在接近底部时请求下一页。",
-      props: { pullRefresh: true, loadMore: true, hasMore: true },
+      description:
+        "滚动壳提供下拉刷新与触底加载；列表外观由内部组合的 DataList 负责。",
+      props: {
+        pullRefresh: true,
+        loadMore: true,
+        dragScroll: true,
+        hasMore: true,
+      },
     },
     {
       id: "finite-feed",
       label: "已加载完成",
-      description: "数据加载完成后展示稳定的结束状态。",
-      props: { pullRefresh: true, loadMore: true, hasMore: false },
+      description:
+        "数据加载完成后展示稳定的结束状态；外观仍由内层 DataList 决定。",
+      props: {
+        pullRefresh: true,
+        loadMore: true,
+        dragScroll: true,
+        hasMore: false,
+      },
     },
   ],
   "tab-viewport": [

@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Chip from "@/design-system/components/basic/Chip.vue";
 import Button from "@/design-system/components/basic/Button.vue";
 import ProgressIndicator from "@/design-system/components/basic/ProgressIndicator.vue";
 import Spinner from "@/design-system/components/basic/Spinner.vue";
 import EmptyState from "@/design-system/components/complex/EmptyState.vue";
+import { useHorizontalDragScroll } from "@/design-system/components/_shared/useHorizontalDragScroll";
 import { pushStack } from "../nav";
 import { activities, coupons, tasks } from "../mock";
 
@@ -22,6 +23,8 @@ const unusedCount = coupons.filter((item) => item.status === "unused").length;
 const doneCount = tasks.filter((item) => item.status === "done").length;
 const featured = activities[0]!;
 const expiringSoon = coupons.find((item) => item.status === "unused");
+const activityScrollRef = ref<HTMLElement | null>(null);
+const activityDrag = useHorizontalDragScroll(activityScrollRef);
 
 function go(slug: string, nextVariant = "default") {
   void pushStack(router, route, "权益", slug, { variant: nextVariant });
@@ -99,7 +102,17 @@ function go(slug: string, nextVariant = "default") {
 
       <section class="section">
         <header><h2>热门活动</h2></header>
-        <div class="activity-scroll">
+        <div
+          ref="activityScrollRef"
+          class="activity-scroll"
+          :class="{ 'is-dragging': activityDrag.dragging.value }"
+          data-horizontal-scroll
+          @pointerdown="activityDrag.onPointerDown"
+          @pointermove="activityDrag.onPointerMove"
+          @pointerup="activityDrag.onPointerUp"
+          @pointercancel="activityDrag.onPointerCancel"
+          @click.capture="activityDrag.onClickCapture"
+        >
           <button
             v-for="item in activities"
             :key="item.id"
@@ -303,6 +316,14 @@ function go(slug: string, nextVariant = "default") {
   overflow-x: auto;
   padding-bottom: 4px;
   scrollbar-width: none;
+  cursor: grab;
+  touch-action: pan-y;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+}
+.activity-scroll.is-dragging {
+  cursor: grabbing;
+  user-select: none;
 }
 .activity-scroll::-webkit-scrollbar {
   display: none;
@@ -321,6 +342,7 @@ function go(slug: string, nextVariant = "default") {
   text-align: left;
   cursor: pointer;
   overflow: hidden;
+  scroll-snap-align: start;
 }
 .activity-band {
   position: absolute;

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import LedgerPlanetShell, { type LedgerTab } from "./LedgerPlanetShell.vue";
 import LedgerPanel from "./panels/LedgerPanel.vue";
@@ -18,6 +18,8 @@ ensureTheme(
 const routeTab = () =>
   HOME_TAB[String(route.params.screenSlug ?? "")] ?? "记账";
 const active = ref<LedgerTab>(routeTab());
+let tabSyncTimer: number | null = null;
+let tabSyncVersion = 0;
 
 watch(
   () => route.params.screenSlug,
@@ -31,8 +33,18 @@ watch(
 
 watch(active, (value, previous) => {
   if (value !== previous && value !== routeTab()) {
-    void switchTab(router, route, value);
+    if (tabSyncTimer) window.clearTimeout(tabSyncTimer);
+    const version = ++tabSyncVersion;
+    tabSyncTimer = window.setTimeout(() => {
+      tabSyncTimer = null;
+      if (version !== tabSyncVersion || active.value !== value) return;
+      void switchTab(router, route, value);
+    }, 180);
   }
+});
+
+onBeforeUnmount(() => {
+  if (tabSyncTimer) window.clearTimeout(tabSyncTimer);
 });
 
 const title = computed(() => active.value);

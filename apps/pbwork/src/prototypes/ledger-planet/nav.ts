@@ -116,10 +116,16 @@ export async function pushStack(
   slug: string,
   opts?: { variant?: string; query?: Record<string, string> },
 ) {
+  let parent = route.fullPath;
+  const currentHomeTab = HOME_TAB[String(route.params.screenSlug ?? "")];
+  if (currentHomeTab && currentHomeTab !== tab) {
+    parent = runtimePath(TAB_HOME[tab], route);
+    await router.replace(routeTarget(parent, entryState(tab)));
+  }
   await router.push(
     routeTarget(
       runtimePath(slug, route, opts?.variant ?? "default", opts?.query),
-      entryState(tab, route.fullPath),
+      entryState(tab, parent),
     ),
   );
 }

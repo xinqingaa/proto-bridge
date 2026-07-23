@@ -16,7 +16,9 @@
       "grow": { "type": "boolean" },
       "align": { "type": "string", "enum": ["start", "center"] },
       "size": { "type": "string", "enum": ["sm", "md", "lg"] },
+      "swipe": { "type": "boolean" },
       "mouseSwipe": { "type": "boolean" },
+      "fill": { "type": "boolean" },
       "items": {
         "type": "array",
         "items": {
@@ -40,7 +42,9 @@
     "grow": false,
     "align": "start",
     "size": "md",
+    "swipe": true,
     "mouseSwipe": true,
+    "fill": false,
     "items": [
       { "value": "overview", "label": "概览" },
       { "value": "activity", "label": "活动" }

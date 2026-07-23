@@ -7,6 +7,7 @@ import {
   type Component,
 } from "vue";
 import { Home, List, User } from "lucide-vue-next";
+import DataList from "@/design-system/components/complex/DataList.vue";
 import ResourcePageShell from "@/workbench/views/ResourcePageShell.vue";
 import WorkbenchStatChip from "@/workbench/ui/WorkbenchStatChip.vue";
 import {
@@ -346,12 +347,7 @@ function bindingResolvedValue(tokenId: string) {
                 <template v-else-if="record.id === 'form-section'"
                   >在这里放置该业务分组的表单字段。</template
                 >
-                <template
-                  v-else-if="
-                    record.id === 'data-list' ||
-                    record.id === 'scrollable-data-list'
-                  "
-                >
+                <template v-else-if="record.id === 'data-list'">
                   <div
                     v-for="row in ['今日流水', '本周任务', '即将过期']"
                     :key="row"
@@ -361,6 +357,19 @@ function bindingResolvedValue(tokenId: string) {
                     <strong>{{ row }}</strong
                     ><span>业务完全自定义的列表项</span>
                   </div>
+                </template>
+                <template v-else-if="record.id === 'scrollable-data-list'">
+                  <DataList surface="default" rounded="md" divided>
+                    <div
+                      v-for="row in ['今日流水', '本周任务', '即将过期']"
+                      :key="row"
+                      role="listitem"
+                      class="list-slot-demo"
+                    >
+                      <strong>{{ row }}</strong
+                      ><span>ScrollableDataList 壳 + DataList 外观</span>
+                    </div>
+                  </DataList>
                 </template>
                 <template v-if="record.id === 'tab-viewport'" #item="{ value }">
                   <div class="panel-slot-demo">
