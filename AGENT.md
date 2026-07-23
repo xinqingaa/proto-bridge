@@ -4,15 +4,16 @@
 
 - 改 ProtoBridge：读本文 + `skills/proto-bridge`  
 - 产品是什么 / 产物字段 / 怎么调用：`docs/overview.md`、`docs/artifacts.md`、`docs/usage.md`  
-- 原型工作台与当前源码约定：`docs/design.md`、`docs/conventions.md`
+- 原型工作台产品设计与 Source 约定：`docs/design.md`、`docs/conventions.md`  
+- **在 pbwork 做/改业务原型与 DS 用法**：`skills/pbwork-prototype` + `apps/pbwork/docs`（软链 `docs/pbwork`）
 
 ProtoBridge 产出证据与实现契约；它不替代在目标 Flutter 工程里写代码的 agent。
 
 ## 必读顺序
 
 1. 本文（硬约束）  
-2. 相关 `docs/*`  
-3. `skills/proto-bridge`（落点与检查单）  
+2. 相关 `docs/*`（含做原型时的 `apps/pbwork/docs` / `docs/pbwork`）  
+3. 对应 skill：改 Core/入口 → `skills/proto-bridge`；做/改 pbwork 原型与 DS 用法 → `skills/pbwork-prototype`  
 
 ## 架构红线
 
@@ -50,7 +51,7 @@ ProtoBridge 产出证据与实现契约；它不替代在目标 Flutter 工程�
 | Config | `pnpm run test:config` |
 | CLI / artifact 契约 | `pnpm run test:e2e:cli` |
 | MCP / validation | `pnpm run test:e2e:mcp` |
-| PBWork 文档 / Contract | 检查 `docs/design.md` 的类型、Schema、错误码、固定内容与 README / usage / conventions 一致 |
+| PBWork 文档 / Contract | 检查 `docs/design.md` 与 `apps/pbwork/docs`（组件/Token 手册）及 Contract 一致；链接可用 |
 | PBWork TypeScript / Vue | `pnpm --filter @proto-bridge/pbwork typecheck` |
 | PBWork 注册表 / 单元 | `pnpm --filter @proto-bridge/pbwork test` |
 | PBWork Runtime / 写回 | `pnpm --filter @proto-bridge/pbwork test:e2e`，并按 `docs/design.md` §17.1 执行对应里程碑矩阵 |
@@ -67,6 +68,7 @@ ProtoBridge 产出证据与实现契约；它不替代在目标 Flutter 工程�
 | 架构 / 扫描边界 / 包边界 / 适配器 | `docs/overview.md` |
 | 原型工作台定稿 | `docs/design.md` |
 | 原型 Source 约定 | `docs/conventions.md` |
+| PBWork Token / 组件用法 / 原型组装 | `apps/pbwork/docs`（`docs/pbwork`）+ `skills/pbwork-prototype` |
 | 本仓工作流 | 本文 + `skills/proto-bridge` |
 
 同一概念只在最合适处详述；README / AGENT / skill / docs 互相链接，不复制第二套说明书。

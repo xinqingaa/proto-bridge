@@ -29,9 +29,12 @@ packages/core/src/
 
 packages/cli/                    # 命令与终端适配
 packages/mcp-server/             # MCP tools / resources / prompts
-docs/                            # 产品文档（overview / artifacts / usage / design / conventions）
-skills/proto-bridge/             # 本 skill
+docs/                            # 产品文档；`docs/pbwork` → apps/pbwork/docs
+skills/proto-bridge/             # 本 skill（改 Core / 入口）
+skills/pbwork-prototype/         # 做/改 pbwork 原型与 DS 用法
+apps/pbwork/docs/                # Token / 组件 / 原型组装手册
 ```
+
 
 入口包只做 IO 适配；共享行为进 `packages/core`。
 
@@ -60,7 +63,8 @@ skills/proto-bridge/             # 本 skill
 | CLI 参数 / 交互 | `packages/cli` | `docs/usage.md`、CLI usage 文案 |
 | MCP tools / prompts | `packages/mcp-server` | `docs/usage.md` |
 | Config schema | `packages/core/src/config` | `docs/usage.md`、example config |
-| PBWork 原型工作台 | `apps/pbwork/` | `docs/design.md` |
+| PBWork 工作台产品（Playground / Bridge / 画布） | `apps/pbwork/` | `docs/design.md` |
+| PBWork **做/改业务原型与 DS 组件用法** | `apps/pbwork/src/prototypes`、`design-system` | **`skills/pbwork-prototype`** + `apps/pbwork/docs`（软链 `docs/pbwork`） |
 | 原型识别约定 | 当前 source/runtime 启发式或未来契约标记 | **`docs/conventions.md`**、`docs/design.md` |
 | 本仓工作流规范 | `AGENT.md`、本 skill | README 导航 |
 

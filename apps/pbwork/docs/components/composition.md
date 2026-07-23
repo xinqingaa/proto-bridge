@@ -1,0 +1,99 @@
+# 组件组合铁律
+
+做原型时优先按下列配方组装；细节见各组件页与 [shared-gestures.md](./shared-gestures.md)。
+
+## 1. 页面壳
+
+```text
+（可选）AppBar
+└─ 内容区（唯一主滚动或交由 ScrollableDataList）
+└─ （可选）BottomNavigation
+```
+
+- **一级最大导航页**：`AppBar` **可选**；需要统一标题/全局操作时再加，否则顶区可放在各面板内。  
+- **栈页**：通常需要 `AppBar`（`showBack`）+ 业务 `goBack` / nav 辅助函数。  
+- 一级多 Tab：内容区用 **TabViewport**，底栏用 **BottomNavigation**，二者共用同一 `v-model`。  
+- **禁止**让 BottomNavigation 同时当面板容器和手势层。
+
+## 2. 一级多面板
+
+```text
+BottomNavigation  ──value──┐
+TabViewport      ◄─────────┘  swipe / mouseSwipe / keepMounted
+  ├─ panel A → 常为 ScrollableDataList 或可滚 panel
+  ├─ panel B
+  └─ panel C
+```
+
+- Tab 切换的 **动画与保活** 只在 TabViewport。  
+- 业务路由只记录当前 Tab 身份；手势层不直接改 history 细节（由原型 nav 统一 replace/push）。
+
+## 3. Tabs 与分段
+
+| 场景 | 规则 |
+| --- | --- |
+| 底部主体 Tab 的子视图内 | **禁止**再嵌套带 `v-window` 的 `Tabs` |
+| 使用 `Tabs` | 内容必须进对应**具名 slot**；禁止空面板只显示标签字 |
+| 二级 / 栈页内 | **允许** |
+| 日/周/月等维度 | **不用 Tabs**；无 window 分段 + `data-no-swipe`，切换须改数据（recipes R7） |
+
+短内容也要可横滑：对 `Tabs` 开 `fill`，并保证父级高度链（`min-height: 0` / 可分配高度）传到 Tabs。
+
+## 4. 列表
+
+```text
+ScrollableDataList          # 纵滚 + 刷新 + 分页 + 可选鼠标拖滚
+  └─ 业务页头 / 筛选 / …
+  └─ DataList               # surface / 圆角 / 分隔
+       └─ 任意业务行（button、自定义结构均可）
+```
+
+- **不合并 props**：ScrollableDataList 不透传 DataList 的 `surface` / `rounded` 等。  
+- `refreshing` / `loadingMore` / `hasMore` 由业务受控。  
+- 父级若已含 ScrollableDataList：父容器 `overflow: hidden`，保证**唯一纵滚**与「顶部下拉」语义正确。  
+- loading / empty / error 整页态应关闭刷新与分页手势（recipes R6）。
+
+## 5. 筛选与搜索
+
+- 搜索：`SearchBar`  
+- 标准快速 chips：优先 `FilterBar`（自带横滑忽略）  
+- 自定义 Chip 行：合法，须 `data-no-swipe`  
+
+## 6. 表单
+
+```text
+FormSection
+  └─ TextField / Textarea / Select / Checkbox / RadioGroup / Switch
+```
+
+提交用 `Button`；主操作优先 `tone="action"`。
+
+## 7. 反馈与叠加
+
+| 需求 | 组件 |
+| --- | --- |
+| 空数据 | EmptyState |
+| 加载中 | Spinner（或页级 loading Variant） |
+| 失败 | 独立错误布局（优先）；勿默认滥用 EmptyState |
+| 短提示 | Snackbar |
+| 确认 | Dialog |
+| 半屏操作 | BottomSheet |
+
+打开态用 Screen **Variant** 复现。Dialog / Snackbar 宜与主滚动列**兄弟挂载**（见 recipes R4）。
+
+## 8. 嵌套横向滚动
+
+- 容器标记 `data-horizontal-scroll`  
+- 使用 `useHorizontalDragScroll`  
+- 有横向溢出时，父级 Tab **整次手势让权**（含边界外拖）；无溢出时父级可翻页  
+
+## 9. 决策速查
+
+```text
+要一级底栏多页？ → BottomNavigation + TabViewport
+要页内/二级分段面板？ → Tabs（且不在一级子视图里套）
+要日/周/月维度？ → 无 window 分段 + data-no-swipe（R7）
+要刷新/分页列表？ → ScrollableDataList + DataList
+要嵌套横滑条？ → data-horizontal-scroll + useHorizontalDragScroll
+只要标签外观？ → Chip；标准筛一排？ → FilterBar（自定义 Chip 行亦可）
+```

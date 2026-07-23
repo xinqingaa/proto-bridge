@@ -59,13 +59,15 @@ args = ["-y", "@proto-bridge/mcp-server"]
 | [docs/usage.md](docs/usage.md) | 配置、CLI / MCP / Core、开发脚本、npm 发布 |
 | [docs/design.md](docs/design.md) | 原型工作台：范围、Vue/Vuetify 栈、三栏与展示标准 |
 | [docs/conventions.md](docs/conventions.md) | 当前 Vue 原型的 class/tag 结构与弹层约定 |
+| [docs/pbwork](docs/pbwork) | PBWork 生产者手册（Token、组件用法、原型组装；链到 `apps/pbwork/docs`） |
 
 ## 工程规范（改本仓库）
 
 | 文件 | 内容 |
 | --- | --- |
 | [AGENT.md](AGENT.md) | Agent 硬约束与验证矩阵 |
-| [skills/proto-bridge](skills/proto-bridge/skill.md) | 改本仓库的操作 skill |
+| [skills/proto-bridge](skills/proto-bridge/skill.md) | 改本仓库（Core / CLI / MCP）的操作 skill |
+| [skills/pbwork-prototype](skills/pbwork-prototype/skill.md) | 在 pbwork 做/改原型与 DS 组件用法 |
 
 ## 仓库结构
 
@@ -75,9 +77,9 @@ packages/
 ├── cli/           # 终端入口
 └── mcp-server/    # MCP server
 
-docs/              # overview · artifacts · usage · design · conventions
-skills/            # proto-bridge 本仓开发规范
-apps/              # PBWork 原型工作台（按 design.md 建设）
+docs/              # overview · artifacts · usage · design · conventions · pbwork→
+skills/            # proto-bridge · pbwork-prototype
+apps/pbwork/       # 原型工作台；生产者手册在 apps/pbwork/docs
 tests/fixtures/    # CLI / MCP 核心冒烟夹具
 ```
 
