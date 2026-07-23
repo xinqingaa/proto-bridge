@@ -1,11 +1,8 @@
 import { createApp } from "vue";
 import { createPinia } from "pinia";
 import { createVuetify } from "vuetify";
-import { aliases, mdi } from "vuetify/iconsets/mdi";
-import * as components from "vuetify/components";
-import * as directives from "vuetify/directives";
+import { aliases, mdi } from "vuetify/iconsets/mdi-svg";
 import "vuetify/styles";
-import "@mdi/font/css/materialdesignicons.css";
 import "@/app/styles.css";
 import AppRoot from "@/app/AppRoot.vue";
 import { router } from "@/app/router";
@@ -15,8 +12,6 @@ import { createVuetifyThemes } from "@/design-system/themes/createVuetifyThemes"
 assertRegistriesValid();
 
 const vuetify = createVuetify({
-  components,
-  directives,
   icons: {
     defaultSet: "mdi",
     aliases,

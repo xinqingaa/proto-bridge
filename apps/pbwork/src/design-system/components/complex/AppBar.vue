@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, toRefs, useSlots } from "vue";
+import { ArrowLeft } from "lucide-vue-next";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import IconButton from "@/design-system/components/basic/IconButton.vue";
 import { elevationStyle } from "@/design-system/components/_shared/appearance";
@@ -107,7 +108,7 @@ usePbInspect({
         :aria-label="backLabel ?? '返回'"
         @click="$emit('back')"
       >
-        <v-icon icon="mdi-arrow-left" />
+        <ArrowLeft :size="20" aria-hidden="true" />
       </v-btn>
     </template>
     <v-toolbar-title class="pb-app-bar-title">

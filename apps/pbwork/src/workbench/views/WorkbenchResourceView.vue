@@ -1,13 +1,30 @@
 <script setup lang="ts">
-import TokenGallery from "@/workbench/views/TokenGallery.vue";
-import ThemePreview from "@/workbench/views/ThemePreview.vue";
-import ComponentPlayground from "@/workbench/views/ComponentPlayground.vue";
-import PrototypeOverview from "@/workbench/views/PrototypeOverview.vue";
-import PrototypeGallery from "@/workbench/views/PrototypeGallery.vue";
-import PhoneCanvasView from "@/workbench/canvas/PhoneCanvasView.vue";
-import { type PrototypeLifecycle, type TokenCategory } from "@/design-system/types";
+import { defineAsyncComponent } from "vue";
+import {
+  type PrototypeLifecycle,
+  type TokenCategory,
+} from "@/design-system/types";
 
-const props = defineProps<{
+const TokenGallery = defineAsyncComponent(
+  () => import("@/workbench/views/TokenGallery.vue"),
+);
+const ThemePreview = defineAsyncComponent(
+  () => import("@/workbench/views/ThemePreview.vue"),
+);
+const ComponentPlayground = defineAsyncComponent(
+  () => import("@/workbench/views/ComponentPlayground.vue"),
+);
+const PrototypeOverview = defineAsyncComponent(
+  () => import("@/workbench/views/PrototypeOverview.vue"),
+);
+const PrototypeGallery = defineAsyncComponent(
+  () => import("@/workbench/views/PrototypeGallery.vue"),
+);
+const PhoneCanvasView = defineAsyncComponent(
+  () => import("@/workbench/canvas/PhoneCanvasView.vue"),
+);
+
+defineProps<{
   kind:
     | "token"
     | "theme"
@@ -22,7 +39,6 @@ const props = defineProps<{
   prototypeId?: string;
   screenSlug?: string;
 }>();
-
 </script>
 
 <template>
@@ -41,5 +57,8 @@ const props = defineProps<{
     :prototype-id="prototypeId"
     :screen-slug="screenSlug"
   />
-  <PrototypeGallery v-else-if="kind === 'prototype-list'" :lifecycle="lifecycle" />
+  <PrototypeGallery
+    v-else-if="kind === 'prototype-list'"
+    :lifecycle="lifecycle"
+  />
 </template>

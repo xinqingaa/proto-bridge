@@ -1,8 +1,4 @@
 import { createRouter, createWebHistory } from "vue-router";
-import RuntimeLayout from "@/runtime/RuntimeLayout.vue";
-import WorkbenchLayout from "@/workbench/WorkbenchLayout.vue";
-import WorkbenchResourceView from "@/workbench/views/WorkbenchResourceView.vue";
-import WorkbenchOverview from "@/workbench/views/WorkbenchOverview.vue";
 import type { PrototypeLifecycle, TokenCategory } from "@/design-system/types";
 import { TOKEN_CATEGORIES } from "@/design-system/types";
 
@@ -16,13 +12,13 @@ export const router = createRouter({
     { path: "/", redirect: "/workbench/overview" },
     {
       path: "/workbench",
-      component: WorkbenchLayout,
+      component: () => import("@/workbench/WorkbenchLayout.vue"),
       children: [
         { path: "", redirect: "/workbench/overview" },
         {
           path: "overview",
           name: "workbench-overview",
-          component: WorkbenchOverview,
+          component: () => import("@/workbench/views/WorkbenchOverview.vue"),
           meta: {
             sectionId: "overview",
             resourceKind: "overview",
@@ -32,7 +28,7 @@ export const router = createRouter({
         {
           path: "foundations/tokens/:category",
           name: "foundation-tokens",
-          component: WorkbenchResourceView,
+          component: () => import("@/workbench/views/WorkbenchResourceView.vue"),
           props: (route) => ({
             kind: "token",
             category: isTokenCategory(String(route.params.category))
@@ -48,7 +44,7 @@ export const router = createRouter({
         {
           path: "foundations/themes/:themeId",
           name: "foundation-themes",
-          component: WorkbenchResourceView,
+          component: () => import("@/workbench/views/WorkbenchResourceView.vue"),
           props: (route) => ({
             kind: "theme",
             themeId: String(route.params.themeId),
@@ -62,7 +58,7 @@ export const router = createRouter({
         {
           path: "components/:componentId",
           name: "component-playground",
-          component: WorkbenchResourceView,
+          component: () => import("@/workbench/views/WorkbenchResourceView.vue"),
           props: (route) => ({
             kind: "component",
             componentId: String(route.params.componentId),
@@ -76,7 +72,7 @@ export const router = createRouter({
         {
           path: "prototypes/:lifecycle(all|active|review|final|archived)",
           name: "prototypes-lifecycle",
-          component: WorkbenchResourceView,
+          component: () => import("@/workbench/views/WorkbenchResourceView.vue"),
           props: (route) => ({
             kind: "prototype-list",
             lifecycle: String(route.params.lifecycle) as
@@ -91,7 +87,7 @@ export const router = createRouter({
         {
           path: "prototypes/:prototypeId/screens/:screenSlug",
           name: "prototype-screen",
-          component: WorkbenchResourceView,
+          component: () => import("@/workbench/views/WorkbenchResourceView.vue"),
           props: (route) => ({
             kind: "screen",
             prototypeId: String(route.params.prototypeId),
@@ -106,7 +102,7 @@ export const router = createRouter({
         {
           path: "prototypes/:prototypeId",
           name: "prototype-overview",
-          component: WorkbenchResourceView,
+          component: () => import("@/workbench/views/WorkbenchResourceView.vue"),
           props: (route) => ({
             kind: "prototype",
             prototypeId: String(route.params.prototypeId),
@@ -126,7 +122,7 @@ export const router = createRouter({
     {
       path: "/prototype/:prototypeId/:screenSlug",
       name: "prototype-runtime",
-      component: RuntimeLayout,
+      component: () => import("@/runtime/RuntimeLayout.vue"),
     },
     {
       path: "/:pathMatch(.*)*",
