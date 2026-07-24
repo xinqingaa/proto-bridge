@@ -28,7 +28,11 @@ import {
 } from "@/runtime/navigation-intent";
 import { buildCanonicalRuntimeUrl, resolveRuntimeRoute } from "@/runtime/url";
 import InspectHost from "@/runtime/inspect/InspectHost.vue";
-import { getTheme as getLedgerTheme } from "@/prototypes/ledger-planet/theme-session";
+import {
+  getTheme as getLedgerTheme,
+  setTheme as setLedgerTheme,
+  type LedgerThemeId,
+} from "@/prototypes/ledger-planet/theme-session";
 
 installNavigationIntentTracking();
 
@@ -59,10 +63,16 @@ const resolved = computed(() =>
   }),
 );
 
+function isLedgerThemeId(value: string | null | undefined): value is LedgerThemeId {
+  return value === "light" || value === "dark";
+}
+
 const effectiveThemeId = computed(() => {
   themePreferenceTick.value;
   if (!resolved.value.ok) return "light";
-  if (resolved.value.prototype.id !== "ledger-planet" || isEmbedded.value) {
+  // ledger-planet: theme-session is authoritative in both standalone and
+  // workbench iframe so preview/settings/nav share one preference.
+  if (resolved.value.prototype.id !== "ledger-planet") {
     return resolved.value.theme.id;
   }
   return getLedgerTheme(
@@ -190,6 +200,15 @@ function onMessage(event: MessageEvent) {
       !target.pathname.startsWith("/prototype/")
     )
       return;
+    // Preview settings / workbench query changes only update the URL. Sync
+    // ledger theme-session before replace so in-app nav keeps the new theme.
+    const pathParts = target.pathname.split("/");
+    const prototypeId = pathParts[2] ?? "";
+    const themeFromUrl = target.searchParams.get("theme");
+    if (prototypeId === "ledger-planet" && isLedgerThemeId(themeFromUrl)) {
+      setLedgerTheme(themeFromUrl);
+      themePreferenceTick.value += 1;
+    }
     const destination = `${target.pathname}${target.search}${target.hash}`;
     lastPostedRoute.value = `${window.location.origin}${destination}`;
     void router.replace(destination);
@@ -277,8 +296,9 @@ watch(
 watch(
   [() => route.fullPath, effectiveThemeId],
   () => {
+    // Standalone and embedded: rewrite stale history/parent URLs to the
+    // current ledger preference (fixes workbench back restoring old theme).
     if (
-      isEmbedded.value ||
       !resolved.value.ok ||
       resolved.value.prototype.id !== "ledger-planet" ||
       route.query.theme === effectiveThemeId.value

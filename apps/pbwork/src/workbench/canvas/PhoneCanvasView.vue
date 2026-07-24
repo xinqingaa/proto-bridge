@@ -125,6 +125,8 @@ const absoluteRuntimeUrl = computed(() => {
 const reloadNonce = ref(0);
 const iframeSrc = ref("");
 const iframeRenderKey = computed(() => reloadNonce.value);
+/** Parent URL changes while handshake is in flight; flushed on ready. */
+let pendingRuntimeUrl: string | null = null;
 
 const iframeTitle = computed(() => {
   if (!screen.value) return "原型预览";
@@ -294,7 +296,11 @@ function onIframeLoad(contentWindow: Window | null) {
 
 function navigateRuntime(canonicalRuntimeUrl: string) {
   const ctx = bridgeContext.value;
-  if (!ctx || !selection.runtimeReady) return;
+  if (!ctx || !selection.runtimeReady) {
+    pendingRuntimeUrl = canonicalRuntimeUrl;
+    return;
+  }
+  pendingRuntimeUrl = null;
   postToRuntime(
     createWorkbenchEnvelope("navigate", ctx, {
       canonicalRuntimeUrl,
@@ -399,7 +405,11 @@ function onWindowMessage(event: MessageEvent) {
     }
     if (selection.inspecting) sendInspectMode(true);
     if (selection.commenting) sendCommentMode(true);
-    if (msg.payload.canonicalRuntimeUrl !== absoluteRuntimeUrl.value) {
+    // Preview settings may change the parent URL before handshake completes.
+    // Flush that navigate first so we do not snap the parent back to iframe src.
+    if (pendingRuntimeUrl) {
+      navigateRuntime(pendingRuntimeUrl);
+    } else if (msg.payload.canonicalRuntimeUrl !== absoluteRuntimeUrl.value) {
       // ready after iframe load / remount — align without stacking history
       applyRuntimeNavigation(msg.payload.canonicalRuntimeUrl, "replace");
     }
@@ -563,6 +573,7 @@ onBeforeUnmount(() => {
   document.body.classList.remove("pb-canvas-fullscreen");
   window.removeEventListener("message", onWindowMessage);
   window.removeEventListener("keydown", onShellKeydown);
+  pendingRuntimeUrl = null;
   if (copyTimer) clearTimeout(copyTimer);
   if (handshakeTimer) clearTimeout(handshakeTimer);
   if (handshakeRetryTimer) clearTimeout(handshakeRetryTimer);

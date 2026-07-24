@@ -57,6 +57,18 @@ function routeTarget(target: string, state: LedgerHistoryState) {
   };
 }
 
+/** Rewrite a stored parent/full path so theme matches the current session. */
+function withCurrentTheme(
+  target: string,
+  route: RouteLocationNormalizedLoaded,
+): string {
+  const [path, search = ""] = target.split("?");
+  const params = new URLSearchParams(search);
+  params.set("theme", themeQuery(route));
+  if (!params.has("variant")) params.set("variant", "default");
+  return `${path}?${params.toString()}`;
+}
+
 export function themeQuery(
   route: RouteLocationNormalizedLoaded,
 ): "light" | "dark" {
@@ -154,8 +166,13 @@ export async function goBack(
   if (state.pbScope === "ledger-planet" && state.pbParent) {
     if (isEmbeddedRuntime()) {
       const fallbackTab = state.pbTab ?? HOME_TAB[fallbackSlug] ?? "记账";
+      // pbParent freezes the theme from push time; re-apply session theme so
+      // returning from Settings (or any stack page) does not roll preference back.
       await router.replace(
-        routeTarget(state.pbParent, entryState(fallbackTab)),
+        routeTarget(
+          withCurrentTheme(state.pbParent, route),
+          entryState(fallbackTab),
+        ),
       );
       return;
     }

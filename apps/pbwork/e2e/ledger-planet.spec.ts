@@ -61,6 +61,66 @@ test("tab identity and theme survive stack and native history navigation", async
   await expect(page).toHaveURL(/\/me-home\?variant=default&theme=dark/);
 });
 
+test("workbench preview settings theme survives in-iframe navigation", async ({
+  page,
+}) => {
+  await page.goto(
+    "/workbench/prototypes/ledger-planet/screens/me-home?variant=default&theme=light",
+  );
+  const frame = page.frameLocator('[data-testid="prototype-iframe"]');
+
+  await page.getByRole("button", { name: "预览设置" }).click();
+  await page.getByLabel("原型主题").selectOption("dark");
+  await expect(page).toHaveURL(/theme=dark/);
+  await expect(frame.getByTestId("runtime-root")).toHaveClass(
+    /v-theme--pbworkDark/,
+  );
+
+  await frame.getByRole("tab", { name: "权益" }).click();
+  await expect(page).toHaveURL(
+    /\/workbench\/prototypes\/ledger-planet\/screens\/benefits-home\?variant=default&theme=dark/,
+  );
+  await expect(frame.getByTestId("runtime-root")).toHaveClass(
+    /v-theme--pbworkDark/,
+  );
+});
+
+test("workbench settings theme survives stack back and further navigation", async ({
+  page,
+}) => {
+  await page.goto(
+    "/workbench/prototypes/ledger-planet/screens/me-home?variant=default&theme=light",
+  );
+  const frame = page.frameLocator('[data-testid="prototype-iframe"]');
+
+  await frame.getByRole("button", { name: "设置", exact: true }).click();
+  await expect(page).toHaveURL(
+    /\/workbench\/prototypes\/ledger-planet\/screens\/settings\?variant=default&theme=light/,
+  );
+
+  await frame.getByRole("checkbox", { name: "深色主题" }).click();
+  await expect(page).toHaveURL(/theme=dark/);
+  await expect(frame.getByTestId("runtime-root")).toHaveClass(
+    /v-theme--pbworkDark/,
+  );
+
+  await frame.getByRole("button", { name: "返回" }).click();
+  await expect(page).toHaveURL(
+    /\/workbench\/prototypes\/ledger-planet\/screens\/me-home\?variant=default&theme=dark/,
+  );
+  await expect(frame.getByTestId("runtime-root")).toHaveClass(
+    /v-theme--pbworkDark/,
+  );
+
+  await frame.getByRole("tab", { name: "记账" }).click();
+  await expect(page).toHaveURL(
+    /\/workbench\/prototypes\/ledger-planet\/screens\/ledger-home\?variant=default&theme=dark/,
+  );
+  await expect(frame.getByTestId("runtime-root")).toHaveClass(
+    /v-theme--pbworkDark/,
+  );
+});
+
 test("workbench mirrors ledger navigation without reloading or A/B loops", async ({
   page,
 }) => {
