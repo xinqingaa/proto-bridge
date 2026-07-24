@@ -1,48 +1,23 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { ArrowRight, Lightbulb, ReceiptText } from "lucide-vue-next";
 import Chip from "@/design-system/components/basic/Chip.vue";
-import Button from "@/design-system/components/basic/Button.vue";
 import Spinner from "@/design-system/components/basic/Spinner.vue";
 import EmptyState from "@/design-system/components/complex/EmptyState.vue";
-import BottomSheet from "@/design-system/components/complex/BottomSheet.vue";
 import DataList from "@/design-system/components/complex/DataList.vue";
 import ScrollableDataList from "@/design-system/components/complex/ScrollableDataList.vue";
-import RadioGroup from "@/design-system/components/basic/RadioGroup.vue";
-import SelectField from "@/design-system/components/basic/SelectField.vue";
-import TextField from "@/design-system/components/basic/TextField.vue";
-import PeriodSegment from "../PeriodSegment.vue";
 import { pushStack } from "../nav";
 import {
-  categoryOptions,
   formatMoney,
-  groupRecordsByDay,
-  recordsForPeriod,
-  summaryByPeriod,
-  type LedgerPeriod,
+  ledgerRecords,
+  spendingProfile,
+  weeklyTrend,
 } from "../mock";
 
 const route = useRoute();
 const router = useRouter();
-const period = ref<LedgerPeriod>("month");
-const typeFilter = ref("全部");
-const sheetOpen = ref(false);
-const sheetType = ref("全部");
-const sheetCategories = ref<string[]>([]);
-const sheetAccount = ref("全部");
-const amountMin = ref("");
-const amountMax = ref("");
 const refreshing = ref(false);
-const loadingMore = ref(false);
-const visibleLimit = ref(6);
-
-const periodTitle: Record<LedgerPeriod, string> = {
-  year: "本年支出",
-  month: "本月支出",
-  week: "本周支出",
-  day: "今日支出",
-};
-
 const ownsVariant = computed(() => route.params.screenSlug === "ledger-home");
 const variant = computed(() => {
   if (!ownsVariant.value) return "default";
@@ -53,453 +28,435 @@ const variant = computed(() => {
 const isStateView = computed(() =>
   ["loading", "empty", "error"].includes(variant.value),
 );
-const summary = computed(() => summaryByPeriod[period.value]);
-const balance = computed(() => summary.value.income - summary.value.expense);
 
-const filteredRecords = computed(() => {
-  if (["loading", "empty", "error"].includes(variant.value)) return [];
-  let rows = recordsForPeriod(period.value);
-  if (variant.value === "filtered" || typeFilter.value === "餐饮") {
-    rows = rows.filter(
-      (item) => item.type === "expense" && item.category === "餐饮",
-    );
-  } else if (typeFilter.value === "支出") {
-    rows = rows.filter((item) => item.type === "expense");
-  } else if (typeFilter.value === "收入") {
-    rows = rows.filter((item) => item.type === "income");
-  }
-  return rows;
+const todayRecords = computed(() =>
+  ledgerRecords.filter((item) => item.dayLabel === "今天"),
+);
+const recentRecords = computed(() => ledgerRecords.slice(0, 5));
+const todayExpense = computed(() =>
+  todayRecords.value
+    .filter((item) => item.type === "expense")
+    .reduce((sum, item) => sum + item.amount, 0),
+);
+const weekExpense = computed(() =>
+  weeklyTrend.reduce((sum, item) => sum + item.expense, 0),
+);
+const maxTrend = Math.max(...weeklyTrend.map((item) => item.expense), 1);
+
+const trendPath = computed(() =>
+  weeklyTrend
+    .map((item, index) => {
+      const x = 8 + (index / (weeklyTrend.length - 1)) * 264;
+      const y = 78 - (item.expense / maxTrend) * 58;
+      return `${index === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`;
+    })
+    .join(" "),
+);
+
+const radarPoints = computed(() => {
+  const center = 68;
+  const radius = 50;
+  return spendingProfile
+    .map((item, index) => {
+      const angle = -Math.PI / 2 + (index * Math.PI * 2) / spendingProfile.length;
+      const scale = item.value / 100;
+      return `${center + Math.cos(angle) * radius * scale},${
+        center + Math.sin(angle) * radius * scale
+      }`;
+    })
+    .join(" ");
 });
-const visibleRecords = computed(() =>
-  filteredRecords.value.slice(0, visibleLimit.value),
-);
-const groups = computed(() => groupRecordsByDay(visibleRecords.value));
-const hasMore = computed(
-  () => visibleLimit.value < filteredRecords.value.length,
-);
-const filterActive = computed(
-  () => typeFilter.value !== "全部" || variant.value === "filtered",
-);
-
-watch(
-  variant,
-  (value) => {
-    sheetOpen.value = value === "sheet-open";
-    if (value === "filtered") typeFilter.value = "餐饮";
-  },
-  { immediate: true },
-);
 
 function go(slug: string, nextVariant = "default") {
   void pushStack(router, route, "记账", slug, { variant: nextVariant });
-}
-
-function applyFilter() {
-  if (sheetCategories.value.includes("餐饮")) typeFilter.value = "餐饮";
-  else if (sheetType.value === "支出" || sheetType.value === "收入")
-    typeFilter.value = sheetType.value;
-  else typeFilter.value = "全部";
-  sheetOpen.value = false;
-  void router.replace({
-    query: { ...route.query, variant: "filtered" },
-  });
-}
-
-function resetFilter() {
-  sheetType.value = "全部";
-  sheetCategories.value = [];
-  sheetAccount.value = "全部";
-  amountMin.value = "";
-  amountMax.value = "";
-  typeFilter.value = "全部";
-  sheetOpen.value = false;
-  void router.replace({
-    query: { ...route.query, variant: "default" },
-  });
-}
-
-function toggleCategory(name: string) {
-  if (sheetCategories.value.includes(name)) {
-    sheetCategories.value = sheetCategories.value.filter(
-      (item) => item !== name,
-    );
-    return;
-  }
-  sheetCategories.value = [...sheetCategories.value, name];
 }
 
 function refreshRecords() {
   if (refreshing.value) return;
   refreshing.value = true;
   window.setTimeout(() => {
-    visibleLimit.value = 6;
     refreshing.value = false;
   }, 650);
-}
-
-function loadMoreRecords() {
-  if (loadingMore.value || !hasMore.value) return;
-  loadingMore.value = true;
-  window.setTimeout(() => {
-    visibleLimit.value += 4;
-    loadingMore.value = false;
-  }, 500);
 }
 </script>
 
 <template>
   <ScrollableDataList
     :pull-refresh="{ enabled: !isStateView, mouse: true }"
-    :load-more="!isStateView"
+    :load-more="false"
     :drag-scroll="{ enabled: !isStateView, mouse: true, momentum: true }"
     :refreshing="refreshing"
-    :loading-more="loadingMore"
-    :has-more="hasMore"
+    :has-more="false"
     inspect-id="ledger-planet.ledger-home.scroll-list"
     @refresh="refreshRecords"
-    @load-more="loadMoreRecords"
   >
     <div
       class="page"
       :class="{ 'is-state': isStateView }"
       data-pb-id="ledger-planet.ledger-home"
     >
-      <Spinner v-if="variant === 'loading'" label="正在加载账本" size="lg" />
-      <div v-else-if="variant === 'error'" class="error" role="alert">
-        <strong>账本加载失败</strong>
+      <Spinner v-if="variant === 'loading'" label="正在加载今日账本" size="lg" />
+      <div v-else-if="variant === 'error'" class="state-error" role="alert">
+        <strong>今日账本加载失败</strong>
         <span>请稍后重试。</span>
       </div>
       <EmptyState
         v-else-if="variant === 'empty'"
-        title="还没有流水"
-        description="记一笔，开始你的账本星球。"
+        title="今天还没有流水"
+        description="记下第一笔，开始观察本周趋势。"
         action-label="记一笔"
         @action="go('record-edit')"
       />
       <template v-else>
-        <PeriodSegment v-model="period" />
-        <button class="summary-hit" type="button" @click="go('analytics')">
-          <div
-            class="summary-hero"
-            data-pb-id="ledger-planet.ledger-home.summary"
-          >
-            <div class="summary-kicker">
-              <span>{{ periodTitle[period] }}</span>
-              <Chip :label="summary.deltaLabel" tone="secondary" />
+        <button class="summary-hit today-hero" type="button" @click="go('ledger-list', 'day')">
+          <div class="today-heading">
+            <div>
+              <span>今天 · 7月23日</span>
+              <strong>¥ {{ formatMoney(todayExpense) }}</strong>
             </div>
-            <strong>¥ {{ formatMoney(summary.expense) }}</strong>
-            <div class="summary-metrics">
-              <div>
-                <span>收入</span>
-                <em>{{ formatMoney(summary.income) }}</em>
-              </div>
-              <div>
-                <span>结余</span>
-                <em :class="{ positive: balance >= 0 }">{{
-                  formatMoney(balance)
-                }}</em>
-              </div>
-              <div>
-                <span>笔数</span>
-                <em>{{ filteredRecords.length }}</em>
-              </div>
-            </div>
+            <Chip label="低于日均 8%" tone="success" />
+          </div>
+          <div class="today-stats">
+            <div><span>本日预算</span><strong>¥200</strong></div>
+            <div><span>还可用</span><strong>¥{{ formatMoney(200 - todayExpense) }}</strong></div>
+            <div><span>已记录</span><strong>{{ todayRecords.length }} 笔</strong></div>
+          </div>
+          <div class="budget-track" aria-label="今日预算已使用 63%">
+            <span :style="{ width: `${Math.min((todayExpense / 200) * 100, 100)}%` }" />
           </div>
         </button>
 
-        <div v-if="filterActive" class="filter-banner" data-no-swipe>
-          <span>已筛：{{ typeFilter === "全部" ? "餐饮" : typeFilter }}</span>
-          <button type="button" @click="resetFilter">清除</button>
-        </div>
-
-        <div class="filters" data-no-swipe>
-          <button
-            v-for="item in ['全部', '支出', '收入', '餐饮']"
-            :key="item"
-            type="button"
-            class="chip-hit"
-            data-no-swipe
-            @click="typeFilter = item"
-          >
-            <Chip
-              :label="item"
-              :tone="typeFilter === item ? 'primary' : 'secondary'"
-            />
-          </button>
-          <button
-            type="button"
-            class="chip-hit"
-            data-no-swipe
-            @click="sheetOpen = true"
-          >
-            <Chip label="筛选" tone="secondary" />
-          </button>
-        </div>
-
-        <section
-          v-for="group in groups"
-          :key="group.dayLabel"
-          class="day-group"
-        >
+        <section class="week-card">
           <header>
-            <span>{{ group.dayLabel }}</span>
-            <span>支出 ¥ {{ formatMoney(group.total) }}</span>
+            <div><span>本周支出</span><strong>¥ {{ formatMoney(weekExpense) }}</strong></div>
+            <button type="button" @click="go('analytics')">查看分析 <ArrowRight :size="15" /></button>
+          </header>
+          <svg class="trend" viewBox="0 0 280 92" role="img" aria-label="本周七日支出趋势">
+            <defs>
+              <linearGradient id="homeTrendFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="currentColor" stop-opacity=".24" />
+                <stop offset="100%" stop-color="currentColor" stop-opacity="0" />
+              </linearGradient>
+            </defs>
+            <path :d="`${trendPath} L272 88 L8 88 Z`" fill="url(#homeTrendFill)" />
+            <path :d="trendPath" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+            <circle
+              v-for="(item, index) in weeklyTrend"
+              :key="item.label"
+              :cx="8 + (index / (weeklyTrend.length - 1)) * 264"
+              :cy="78 - (item.expense / maxTrend) * 58"
+              :r="index === weeklyTrend.length - 1 ? 4.5 : 3"
+              fill="currentColor"
+            />
+          </svg>
+          <div class="trend-labels">
+            <span v-for="item in weeklyTrend" :key="item.label">{{ item.label }}</span>
+          </div>
+        </section>
+
+        <section class="profile-card">
+          <header>
+            <div>
+              <span>本周消费画像</span>
+              <strong>餐饮支出偏高</strong>
+            </div>
+            <button type="button" @click="go('analytics')">详情</button>
+          </header>
+          <div class="profile-content">
+            <svg class="radar" viewBox="0 0 136 136" role="img" aria-label="本周五类消费雷达图">
+              <polygon points="68,18 115.6,52.5 97.4,108.5 38.6,108.5 20.4,52.5" class="radar-grid" />
+              <polygon points="68,35 99.4,57.8 87.4,94.7 48.6,94.7 36.6,57.8" class="radar-grid" />
+              <polygon :points="radarPoints" class="radar-value" />
+              <circle cx="68" cy="27" r="3" />
+            </svg>
+            <div class="profile-list">
+              <button
+                v-for="item in spendingProfile.slice(0, 3)"
+                :key="item.name"
+                type="button"
+                @click="go('ledger-list', 'filtered')"
+              >
+                <span>{{ item.name }}</span><strong>{{ item.value }}</strong><em>›</em>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <div class="insight">
+          <Lightbulb :size="18" />
+          <p><strong>本周洞察</strong><span>午餐支出比上周高 ¥86，周二和今天最集中。</span></p>
+        </div>
+
+        <section class="recent">
+          <header>
+            <div><ReceiptText :size="18" /><h2>最近流水</h2></div>
+            <button type="button" @click="go('ledger-list')">查看全部</button>
           </header>
           <DataList surface="none" rounded="none">
             <button
-              v-for="item in group.items"
+              v-for="item in recentRecords"
               :key="item.id"
               type="button"
               class="record-row"
               @click="go('record-detail')"
             >
-              <span
-                class="cat-dot"
-                :data-cat="item.category"
-                aria-hidden="true"
-              />
-              <div class="record-main">
-                <strong>{{ item.category }} · {{ item.title }}</strong>
-                <span>{{ item.account }} · {{ item.date.slice(11, 16) }}</span>
+              <span class="category-mark" :data-cat="item.category">{{ item.category.slice(0, 1) }}</span>
+              <div>
+                <strong>{{ item.title }}</strong>
+                <span>{{ item.merchant || item.account }} · {{ item.date.slice(11, 16) }}</span>
               </div>
               <em :class="item.type">
-                {{ item.type === "expense" ? "−" : "+" }}
-                {{ formatMoney(item.amount) }}
+                {{ item.type === "expense" ? "−" : "+" }}{{ formatMoney(item.amount) }}
               </em>
             </button>
           </DataList>
         </section>
-        <EmptyState
-          v-if="groups.length === 0"
-          title="没有匹配的流水"
-          description="试试调整筛选条件。"
-          action-label="清除筛选"
-          @action="resetFilter"
-        />
       </template>
-
-      <BottomSheet
-        v-model="sheetOpen"
-        title="筛选"
-        inspect-id="ledger-planet.ledger-home.filter-sheet"
-      >
-        <div class="sheet-body">
-          <RadioGroup
-            v-model="sheetType"
-            label="类型"
-            :options="['全部', '支出', '收入']"
-          />
-          <div class="sheet-block">
-            <span class="sheet-label">分类</span>
-            <div class="filters">
-              <button
-                v-for="name in categoryOptions.filter(
-                  (item) => item !== '工资',
-                )"
-                :key="name"
-                type="button"
-                class="chip-hit"
-                @click="toggleCategory(name)"
-              >
-                <Chip
-                  :label="name"
-                  :tone="
-                    sheetCategories.includes(name) ? 'primary' : 'secondary'
-                  "
-                />
-              </button>
-            </div>
-          </div>
-          <SelectField
-            v-model="sheetAccount"
-            label="账户"
-            :options="['全部', '微信', '支付宝', '现金', '银行卡']"
-          />
-          <div class="amount-row">
-            <TextField v-model="amountMin" label="最低金额" />
-            <TextField v-model="amountMax" label="最高金额" />
-          </div>
-          <div class="sheet-actions">
-            <Button label="重置" variant="outlined" @click="resetFilter" />
-            <Button label="应用" @click="applyFilter" />
-          </div>
-        </div>
-      </BottomSheet>
     </div>
   </ScrollableDataList>
 </template>
 
 <style scoped>
 .page {
-  position: relative;
   display: grid;
-  gap: var(--pb-spacing-md, 12px);
+  gap: var(--pb-spacing-md);
   min-height: 100%;
-  padding: var(--pb-spacing-md, 12px) var(--pb-spacing-md, 16px)
-    var(--pb-spacing-lg, 20px);
+  padding: var(--pb-spacing-md) var(--pb-spacing-md) var(--pb-spacing-lg);
   align-content: start;
 }
 .page.is-state {
   place-content: center;
   justify-items: center;
 }
-.error {
+.state-error,
+.state-error span {
   display: grid;
-  gap: 6px;
+  gap: var(--pb-spacing-xs);
   text-align: center;
+  color: var(--pb-color-on-surface-muted);
 }
-.error strong {
+.state-error strong {
+  color: var(--pb-color-on-surface);
   font: var(--pb-typography-subtitle);
 }
-.error span {
-  color: var(--pb-color-on-surface-muted);
-  font: var(--pb-typography-caption);
-}
-.summary-hit {
-  border: 0;
-  padding: 0;
-  background: transparent;
+.today-hero,
+.week-card,
+.profile-card {
+  width: 100%;
+  border: 1px solid color-mix(in srgb, var(--pb-color-primary) 22%, var(--pb-color-border));
+  border-radius: var(--pb-radius-lg);
+  background: color-mix(in srgb, var(--pb-color-primary) 7%, var(--pb-color-surface));
   color: inherit;
+  box-shadow: var(--pb-elevation-card);
+}
+.today-hero {
+  display: grid;
+  gap: var(--pb-spacing-md);
+  padding: var(--pb-spacing-md);
   text-align: left;
   cursor: pointer;
 }
-.summary-hero {
-  position: relative;
-  display: grid;
-  gap: 10px;
-  padding: 16px;
-  border-radius: var(--pb-radius-lg);
-  border: 1px solid
-    color-mix(in srgb, var(--pb-color-primary) 24%, var(--pb-color-border));
-  background: color-mix(
-    in srgb,
-    var(--pb-color-primary) 7%,
-    var(--pb-color-surface)
-  );
-  box-shadow:
-    0 14px 34px
-      color-mix(in srgb, var(--pb-color-on-background) 8%, transparent),
-    inset 0 1px 0
-      color-mix(in srgb, var(--pb-color-surface-raised) 74%, transparent);
-  backdrop-filter: blur(14px);
-  overflow: hidden;
-}
-.summary-kicker {
+.today-heading,
+.week-card header,
+.profile-card header,
+.recent header,
+.recent header > div {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  gap: var(--pb-spacing-sm);
+}
+.today-heading > div,
+.week-card header > div,
+.profile-card header > div {
+  display: grid;
+  gap: var(--pb-spacing-xxs);
+}
+.today-heading span,
+.today-stats span,
+.week-card header span,
+.profile-card header span {
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
 }
-.summary-hero > strong {
+.today-heading > div > strong {
   font: var(--pb-typography-title-lg);
-  letter-spacing: -0.02em;
+  letter-spacing: -.03em;
 }
-.summary-metrics {
+.today-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  padding-top: 4px;
-  border-top: 1px solid
-    color-mix(in srgb, var(--pb-color-border) 70%, transparent);
+  gap: var(--pb-spacing-sm);
 }
-.summary-metrics span {
+.today-stats div {
+  display: grid;
+  gap: var(--pb-spacing-xxs);
+}
+.today-stats strong {
+  font: var(--pb-typography-label);
+}
+.budget-track {
+  height: 6px;
+  border-radius: var(--pb-radius-sm);
+  background: var(--pb-color-surface-variant);
+  overflow: hidden;
+}
+.budget-track span {
   display: block;
-  color: var(--pb-color-on-surface-muted);
-  font: var(--pb-typography-caption);
+  height: 100%;
+  border-radius: inherit;
+  background: var(--pb-color-primary);
 }
-.summary-metrics em {
+.week-card,
+.profile-card {
+  display: grid;
+  gap: var(--pb-spacing-sm);
+  padding: var(--pb-spacing-md);
+  background: var(--pb-color-surface);
+}
+.week-card header strong,
+.profile-card header strong {
   font: var(--pb-typography-subtitle);
-  font-style: normal;
 }
-.summary-metrics em.positive {
-  color: var(--pb-color-success);
-}
-.filter-banner {
-  display: flex;
-  justify-content: space-between;
+.week-card header button,
+.profile-card header button,
+.recent header button {
+  display: inline-flex;
   align-items: center;
-  padding: 8px 12px;
-  border-radius: var(--pb-radius-md);
-  background: color-mix(in srgb, var(--pb-color-primary) 10%, transparent);
-  font: var(--pb-typography-caption);
-}
-.filter-banner button {
+  gap: var(--pb-spacing-xxs);
   border: 0;
   background: transparent;
   color: var(--pb-color-primary);
   font: var(--pb-typography-caption);
   cursor: pointer;
 }
-.filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+.trend {
+  width: 100%;
+  height: 92px;
+  color: var(--pb-color-primary);
 }
-.chip-hit {
-  border: 0;
-  padding: 0;
-  background: transparent;
-  cursor: pointer;
-}
-.day-group {
+.trend-labels {
   display: grid;
-  gap: 0;
-}
-.day-group header {
-  display: flex;
-  justify-content: space-between;
-  margin: 8px 0 4px;
+  grid-template-columns: repeat(7, 1fr);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
+  text-align: center;
+}
+.profile-content {
+  display: grid;
+  grid-template-columns: 136px 1fr;
+  gap: var(--pb-spacing-md);
+  align-items: center;
+}
+.radar {
+  width: 136px;
+  color: var(--pb-color-primary);
+}
+.radar-grid {
+  fill: color-mix(in srgb, var(--pb-color-primary) 2%, transparent);
+  stroke: var(--pb-color-border);
+}
+.radar-value {
+  fill: color-mix(in srgb, var(--pb-color-primary) 22%, transparent);
+  stroke: var(--pb-color-primary);
+  stroke-width: 2;
+}
+.profile-list {
+  display: grid;
+}
+.profile-list button {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: var(--pb-spacing-sm);
+  padding: var(--pb-spacing-sm) 0;
+  border: 0;
+  border-bottom: 1px solid var(--pb-color-border);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.profile-list button:last-child {
+  border-bottom: 0;
+}
+.profile-list strong {
+  color: var(--pb-color-primary);
+}
+.profile-list em {
+  color: var(--pb-color-on-surface-muted);
+  font-style: normal;
+}
+.insight {
+  display: flex;
+  gap: var(--pb-spacing-sm);
+  padding: var(--pb-spacing-sm-plus);
+  border-left: 3px solid var(--pb-color-warning);
+  background: var(--pb-color-warning-soft);
+}
+.insight > svg {
+  flex: 0 0 auto;
+  color: var(--pb-color-warning);
+}
+.insight p,
+.insight strong,
+.insight span {
+  display: block;
+  margin: 0;
+}
+.insight strong {
+  font: var(--pb-typography-label);
+}
+.insight span {
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
+}
+.recent {
+  display: grid;
+}
+.recent header {
+  padding: var(--pb-spacing-sm) 0 var(--pb-spacing-xs);
+}
+.recent h2 {
+  margin: 0;
+  font: var(--pb-typography-subtitle);
 }
 .record-row {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 10px;
-  min-height: var(--pb-sizing-touch, 44px);
-  padding: 12px 4px;
-  border: 0;
+  gap: var(--pb-spacing-sm);
+  width: 100%;
+  min-height: var(--pb-sizing-menu-item);
+  padding: var(--pb-spacing-sm) 0;
   border: 0;
   background: transparent;
   color: inherit;
   text-align: left;
   cursor: pointer;
 }
-.cat-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--pb-color-primary);
+.category-mark {
+  display: grid;
+  place-items: center;
+  width: var(--pb-sizing-control-md);
+  height: var(--pb-sizing-control-md);
+  border-radius: var(--pb-radius-md);
+  background: var(--pb-color-primary-soft);
+  color: var(--pb-color-primary);
+  font: var(--pb-typography-label);
 }
-.cat-dot[data-cat="餐饮"] {
-  background: color-mix(
-    in srgb,
-    var(--pb-color-error) 70%,
-    var(--pb-color-primary)
-  );
-}
-.cat-dot[data-cat="交通"] {
-  background: var(--pb-color-info, var(--pb-color-primary));
-}
-.cat-dot[data-cat="购物"] {
-  background: color-mix(in srgb, var(--pb-color-primary) 60%, #a78bfa);
-}
-.cat-dot[data-cat="工资"] {
-  background: var(--pb-color-success);
-}
-.record-main strong {
+.record-row div strong,
+.record-row div span {
   display: block;
+}
+.record-row div strong,
+.record-row em {
   font: var(--pb-typography-subtitle);
 }
-.record-main span {
+.record-row div span {
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
 }
 .record-row em {
-  font: var(--pb-typography-subtitle);
   font-style: normal;
 }
 .record-row em.expense {
@@ -507,22 +464,5 @@ function loadMoreRecords() {
 }
 .record-row em.income {
   color: var(--pb-color-success);
-}
-.sheet-body {
-  display: grid;
-  gap: 14px;
-}
-.sheet-block {
-  display: grid;
-  gap: 8px;
-}
-.sheet-label {
-  font: var(--pb-typography-subtitle);
-}
-.amount-row,
-.sheet-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
 }
 </style>

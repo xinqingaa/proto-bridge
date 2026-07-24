@@ -8,6 +8,28 @@ export const prototypes = [
     owners: ["产品设计"],
     roles: ["现场工程师", "调度", "客户"],
     defaultThemeId: "light",
+    screenGroups: [
+      {
+        id: "work-orders",
+        label: "工单",
+        screenSlugs: [
+          "dashboard",
+          "work-orders",
+          "work-order-detail",
+          "create-work-order",
+        ],
+      },
+      {
+        id: "customer-messages",
+        label: "客户与消息",
+        screenSlugs: ["customer-detail", "messages"],
+      },
+      {
+        id: "settings",
+        label: "设置",
+        screenSlugs: ["settings"],
+      },
+    ],
   },
   {
     id: "project",
@@ -16,6 +38,13 @@ export const prototypes = [
     owners: ["产品"],
     roles: ["UI", "DE", "QA"],
     defaultThemeId: "light",
+    screenGroups: [
+      {
+        id: "tasks",
+        label: "任务",
+        screenSlugs: ["task-list", "task-detail"],
+      },
+    ],
   },
   {
     id: "ledger-planet",
@@ -24,6 +53,44 @@ export const prototypes = [
     owners: ["产品设计"],
     roles: ["个人用户"],
     defaultThemeId: "light",
+    screenGroups: [
+      {
+        id: "ledger",
+        label: "记账",
+        screenSlugs: [
+          "ledger-home",
+          "record-edit",
+          "ledger-list",
+          "record-detail",
+          "analytics",
+        ],
+      },
+      {
+        id: "benefits",
+        label: "权益",
+        screenSlugs: [
+          "benefits-home",
+          "activity-detail",
+          "task-list",
+          "task-detail",
+          "coupon-wallet",
+          "coupon-detail",
+        ],
+      },
+      {
+        id: "me",
+        label: "我的",
+        screenSlugs: [
+          "me-home",
+          "wallet",
+          "profile",
+          "settings",
+          "help-center",
+          "help-article",
+          "about",
+        ],
+      },
+    ],
   },
 ] satisfies PrototypeRecord[];
 
@@ -185,8 +252,6 @@ export const prototypeScreens = [
       { id: "loading", label: "加载中" },
       { id: "empty", label: "空态" },
       { id: "error", label: "错误" },
-      { id: "filtered", label: "筛选结果" },
-      { id: "sheet-open", label: "筛选 Sheet" },
     ],
   },
   {
@@ -203,6 +268,30 @@ export const prototypeScreens = [
       { id: "edit", label: "编辑" },
       { id: "validation-error", label: "校验失败" },
       { id: "toast-open", label: "保存成功" },
+      { id: "category-sheet", label: "分类 Sheet" },
+      { id: "account-sheet", label: "账户 Sheet" },
+      { id: "date-sheet", label: "日期 Sheet" },
+    ],
+  },
+  {
+    prototypeId: "ledger-planet",
+    screenId: "ledger-planet.ledger-list",
+    screenSlug: "ledger-list",
+    label: "全部流水",
+    title: "全部流水",
+    path: "/prototype/ledger-planet/ledger-list",
+    view: "ledger-planet/screens/LedgerList.vue",
+    defaultVariantId: "default",
+    variants: [
+      { id: "default", label: "默认" },
+      { id: "loading", label: "加载中" },
+      { id: "empty", label: "空态" },
+      { id: "error", label: "错误" },
+      { id: "date-sheet", label: "日期范围 Sheet" },
+      { id: "filter-sheet", label: "筛选 Sheet" },
+      { id: "day", label: "今日流水" },
+      { id: "week", label: "本周流水" },
+      { id: "filtered", label: "分类筛选结果" },
     ],
   },
   {
@@ -231,6 +320,8 @@ export const prototypeScreens = [
     variants: [
       { id: "default", label: "默认" },
       { id: "empty", label: "空态" },
+      { id: "date-sheet", label: "时间 Sheet" },
+      { id: "filter-sheet", label: "筛选 Sheet" },
     ],
   },
   {
@@ -274,6 +365,7 @@ export const prototypeScreens = [
     variants: [
       { id: "default", label: "默认" },
       { id: "empty", label: "空态" },
+      { id: "claimable", label: "待领取" },
     ],
   },
   {

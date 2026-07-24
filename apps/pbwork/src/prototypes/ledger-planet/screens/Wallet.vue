@@ -68,14 +68,17 @@ function confirmTopUp() {
           v-for="item in walletEntries"
           :key="item.id"
           type="button"
-          class="row"
+          class="record-row"
         >
+          <span class="category-mark" :data-kind="item.kind">
+            {{ item.kind === "topup" ? "充" : "记" }}
+          </span>
           <div>
             <strong>{{ item.title }}</strong>
             <span>{{ item.subtitle }}</span>
           </div>
-          <em :class="item.amount < 0 ? 'out' : 'in'">
-            {{ item.amount < 0 ? "" : "+" }}{{ formatMoney(item.amount) }}
+          <em :class="item.amount < 0 ? 'expense' : 'income'">
+            {{ item.amount < 0 ? "−" : "+" }}{{ formatMoney(item.amount) }}
           </em>
         </button>
       </DataList>
@@ -148,38 +151,53 @@ h2 {
   margin: 8px 0 0;
   font: var(--pb-typography-subtitle);
 }
-.row {
-  display: flex;
-  justify-content: space-between;
+.record-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 12px;
-  min-height: 52px;
-  padding: 12px 2px;
+  gap: var(--pb-spacing-sm);
+  width: 100%;
+  min-height: var(--pb-sizing-menu-item);
+  padding: var(--pb-spacing-sm) 0;
   border: 0;
-  border-bottom: 1px solid var(--pb-color-border);
   background: transparent;
   color: inherit;
   text-align: left;
+  cursor: pointer;
 }
-.row:last-of-type {
-  border-bottom: 0;
+.category-mark {
+  display: grid;
+  place-items: center;
+  width: var(--pb-sizing-control-md);
+  height: var(--pb-sizing-control-md);
+  border-radius: var(--pb-radius-md);
+  background: var(--pb-color-primary-soft);
+  color: var(--pb-color-primary);
+  font: var(--pb-typography-label);
 }
-.row strong {
+.category-mark[data-kind="sync"] {
+  background: var(--pb-color-surface-variant);
+  color: var(--pb-color-on-surface-muted);
+}
+.record-row div strong,
+.record-row div span {
   display: block;
+}
+.record-row div strong,
+.record-row em {
   font: var(--pb-typography-subtitle);
 }
-.row span {
+.record-row div span {
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
 }
-.row em {
-  font: var(--pb-typography-subtitle);
+.record-row em {
   font-style: normal;
 }
-.row em.out {
+.record-row em.expense {
   color: var(--pb-color-error);
 }
-.row em.in {
+.record-row em.income {
   color: var(--pb-color-success);
 }
 </style>

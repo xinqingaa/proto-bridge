@@ -94,6 +94,12 @@ export type ComponentContract = {
 
 export type PrototypeLifecycle = "active" | "review" | "final" | "archived";
 
+export type PrototypeScreenGroup = {
+  id: string;
+  label: string;
+  screenSlugs: string[];
+};
+
 export type PrototypeRecord = {
   id: string;
   label: string;
@@ -101,6 +107,8 @@ export type PrototypeRecord = {
   owners?: string[];
   roles?: string[];
   defaultThemeId: string;
+  /** Optional Tab / module groupings for the overview flow rail. */
+  screenGroups?: PrototypeScreenGroup[];
 };
 
 export type PrototypeVariant = {

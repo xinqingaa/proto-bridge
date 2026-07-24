@@ -13,7 +13,10 @@ import { pushStack } from "../nav";
 const route = useRoute();
 const router = useRouter();
 const toast = ref(false);
-const task = tasks[0]!;
+const claimed = ref(false);
+const task = computed(
+  () => tasks.find((item) => item.id === route.query.task) ?? tasks[0]!,
+);
 const variant = computed(() =>
   typeof route.query.variant === "string" ? route.query.variant : "default",
 );
@@ -37,6 +40,7 @@ function goComplete() {
 }
 
 function claim() {
+  claimed.value = true;
   toast.value = true;
 }
 </script>
@@ -96,7 +100,13 @@ function claim() {
         </div>
       </section>
       <Button v-if="!completed" label="去完成" block @click="goComplete" />
-      <Button v-else-if="claimable" label="领取奖励" block @click="claim" />
+      <Button
+        v-else-if="claimable"
+        :label="claimed ? '已领取' : '领取奖励'"
+        :disabled="claimed"
+        block
+        @click="claim"
+      />
       <Button v-else label="已完成" variant="outlined" block disabled />
     </div>
     <SnackbarToast v-model="toast" message="奖励已放入券包" tone="success" />

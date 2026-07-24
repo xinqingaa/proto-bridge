@@ -17,6 +17,8 @@ const variant = computed(() =>
 );
 const rows = computed(() => {
   if (variant.value === "empty") return [];
+  if (variant.value === "claimable")
+    return tasks.filter((item) => item.rewardState === "claimable");
   if (filter.value === "已完成")
     return tasks.filter((item) => item.status === "done");
   if (filter.value === "待完成")
@@ -24,9 +26,14 @@ const rows = computed(() => {
   return tasks;
 });
 
-function open(id: string, status: string) {
+function open(id: string, status: string, rewardState: string) {
   void pushStack(router, route, "权益", "task-detail", {
-    variant: status === "done" ? "completed" : "default",
+    variant:
+      rewardState === "claimable"
+        ? "claimable"
+        : status === "done"
+          ? "completed"
+          : "default",
     query: { task: id },
   });
 }
@@ -51,15 +58,22 @@ function open(id: string, status: string) {
           :key="task.id"
           type="button"
           class="row"
-          @click="open(task.id, task.status)"
+          @click="open(task.id, task.status, task.rewardState)"
         >
           <div>
             <strong>{{ task.title }}</strong>
             <span>{{ task.subtitle }}</span>
+            <small>{{ task.cycle }} · 奖励 {{ task.reward }}</small>
           </div>
           <Chip
-            :label="task.status === 'done' ? '已完成' : '去完成'"
-            :tone="task.status === 'done' ? 'success' : 'primary'"
+            :label="
+              task.rewardState === 'claimable'
+                ? '待领取'
+                : task.status === 'done'
+                  ? '已完成'
+                  : '去完成'
+            "
+            :tone="task.rewardState === 'claimable' ? 'warning' : task.status === 'done' ? 'success' : 'primary'"
           />
         </button>
       </DataList>
@@ -92,6 +106,12 @@ function open(id: string, status: string) {
   font: var(--pb-typography-subtitle);
 }
 .row span {
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
+}
+.row small {
+  display: block;
+  margin-top: var(--pb-spacing-xxs);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
 }

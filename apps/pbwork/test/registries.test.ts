@@ -132,7 +132,7 @@ describe("design contracts", () => {
     const ledgerScreens = prototypeScreens.filter(
       (item) => item.prototypeId === "ledger-planet",
     );
-    expect(ledgerScreens).toHaveLength(17);
+    expect(ledgerScreens).toHaveLength(18);
     expect(ledgerScreens[0]?.screenSlug).toBe("ledger-home");
   });
 });

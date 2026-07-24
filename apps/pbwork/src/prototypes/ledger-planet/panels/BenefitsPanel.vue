@@ -6,6 +6,7 @@ import Button from "@/design-system/components/basic/Button.vue";
 import ProgressIndicator from "@/design-system/components/basic/ProgressIndicator.vue";
 import Spinner from "@/design-system/components/basic/Spinner.vue";
 import EmptyState from "@/design-system/components/complex/EmptyState.vue";
+import { Award, ChevronRight, Coins, Gift, TicketCheck } from "lucide-vue-next";
 import { useHorizontalDragScroll } from "@/design-system/components/_shared/useHorizontalDragScroll";
 import { pushStack } from "../nav";
 import { activities, coupons, tasks } from "../mock";
@@ -21,6 +22,9 @@ const variant = computed(() => {
 });
 const unusedCount = coupons.filter((item) => item.status === "unused").length;
 const doneCount = tasks.filter((item) => item.status === "done").length;
+const claimableCount = tasks.filter(
+  (item) => item.rewardState === "claimable",
+).length;
 const featured = activities[0]!;
 const expiringSoon = coupons.find((item) => item.status === "unused");
 const activityScrollRef = ref<HTMLElement | null>(null);
@@ -44,6 +48,28 @@ function go(slug: string, nextVariant = "default") {
       description="稍后再来看看活动与任务。"
     />
     <template v-else>
+      <section class="benefit-overview">
+        <div class="overview-heading">
+          <span class="level-icon"><Award :size="22" /></span>
+          <div>
+            <span>本月权益进度</span>
+            <strong>成长值 680 / 1000</strong>
+          </div>
+          <Chip label="Lv.3" tone="primary" />
+        </div>
+        <div class="overview-stats">
+          <button type="button" @click="go('task-list', 'claimable')">
+            <Coins :size="18" /><span><strong>{{ claimableCount }}</strong><small>待领取</small></span>
+          </button>
+          <button type="button" @click="go('coupon-wallet')">
+            <TicketCheck :size="18" /><span><strong>{{ unusedCount }}</strong><small>可用券</small></span>
+          </button>
+          <button type="button" @click="go('coupon-wallet')">
+            <Gift :size="18" /><span><strong>1</strong><small>即将过期</small></span>
+          </button>
+        </div>
+      </section>
+
       <button type="button" class="feature" @click="go('activity-detail')">
         <div class="feature-top">
           <Chip :label="featured.status" tone="success" />
@@ -51,11 +77,15 @@ function go(slug: string, nextVariant = "default") {
         </div>
         <strong>{{ featured.title }}</strong>
         <p>{{ featured.subtitle }}</p>
+        <div class="feature-meta">
+          <span>{{ featured.participants }} 人参与</span>
+          <span>{{ featured.reward }}</span>
+        </div>
         <ProgressIndicator
           :value="(featured.progress / featured.target) * 100"
           :label="`${featured.progress}/${featured.target}`"
         />
-        <span class="feature-cta">查看活动 ›</span>
+        <span class="feature-cta">查看活动 <ChevronRight :size="15" /></span>
       </button>
 
       <section class="section">
@@ -72,7 +102,14 @@ function go(slug: string, nextVariant = "default") {
           class="task-row"
           :class="{ done: task.status === 'done' }"
           @click="
-            go('task-detail', task.status === 'done' ? 'completed' : 'default')
+            go(
+              'task-detail',
+              task.rewardState === 'claimable'
+                ? 'claimable'
+                : task.status === 'done'
+                  ? 'completed'
+                  : 'default',
+            )
           "
         >
           <span class="check" aria-hidden="true">
@@ -81,10 +118,17 @@ function go(slug: string, nextVariant = "default") {
           <div>
             <strong>{{ task.title }}</strong>
             <span>{{ task.subtitle }}</span>
+            <small>{{ task.cycle }} · 奖励 {{ task.reward }}</small>
           </div>
           <Chip
-            :label="task.status === 'done' ? '已完成' : '去完成'"
-            :tone="task.status === 'done' ? 'success' : 'primary'"
+            :label="
+              task.rewardState === 'claimable'
+                ? '待领取'
+                : task.status === 'done'
+                  ? '已完成'
+                  : '去完成'
+            "
+            :tone="task.rewardState === 'claimable' ? 'warning' : task.status === 'done' ? 'success' : 'primary'"
           />
         </button>
       </section>
@@ -155,6 +199,82 @@ function go(slug: string, nextVariant = "default") {
   justify-items: center;
   min-height: 100%;
 }
+.benefit-overview {
+  display: grid;
+  gap: var(--pb-spacing-sm-plus);
+  padding: var(--pb-spacing-md);
+  border: 1px solid
+    color-mix(in srgb, var(--pb-color-primary) 24%, var(--pb-color-border));
+  border-radius: var(--pb-radius-lg);
+  background: color-mix(
+    in srgb,
+    var(--pb-color-primary) 8%,
+    var(--pb-color-surface)
+  );
+  box-shadow: var(--pb-elevation-card);
+}
+.overview-heading {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--pb-spacing-sm);
+}
+.level-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--pb-radius-md);
+  background: var(--pb-color-primary);
+  color: var(--pb-color-on-primary);
+}
+.overview-heading > div,
+.overview-heading > div span,
+.overview-heading > div strong {
+  display: block;
+}
+.overview-heading > div span {
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
+}
+.overview-heading > div strong {
+  font: var(--pb-typography-subtitle);
+}
+.overview-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid
+    color-mix(in srgb, var(--pb-color-border) 72%, transparent);
+}
+.overview-stats button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pb-spacing-xs);
+  padding: var(--pb-spacing-sm) 0 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.overview-stats button + button {
+  border-left: 1px solid
+    color-mix(in srgb, var(--pb-color-border) 72%, transparent);
+}
+.overview-stats svg {
+  color: var(--pb-color-primary);
+}
+.overview-stats strong,
+.overview-stats small {
+  display: block;
+}
+.overview-stats strong {
+  font: var(--pb-typography-subtitle);
+}
+.overview-stats small {
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
+}
 .feature {
   position: relative;
   display: grid;
@@ -194,7 +314,16 @@ function go(slug: string, nextVariant = "default") {
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
 }
+.feature-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--pb-spacing-sm);
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
+}
 .feature-cta {
+  display: inline-flex;
+  align-items: center;
   margin-top: 4px;
   color: var(--pb-color-primary);
   font: var(--pb-typography-caption);
@@ -261,6 +390,12 @@ function go(slug: string, nextVariant = "default") {
   font: var(--pb-typography-subtitle);
 }
 .task-row span {
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
+}
+.task-row small {
+  display: block;
+  margin-top: var(--pb-spacing-xxs);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
 }

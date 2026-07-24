@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 test.use({ viewport: { width: 1440, height: 1100 } });
+const e2ePort = Number(process.env.PBWORK_E2E_PORT ?? 3977);
 
 async function drag(
   page: Page,
@@ -70,7 +71,7 @@ test("workbench mirrors ledger navigation without reloading or A/B loops", async
   const initialSrc = await iframe.getAttribute("src");
   const frame = page.frameLocator('[data-testid="prototype-iframe"]');
 
-  await frame.getByRole("button", { name: /我的券包/ }).click();
+  await frame.getByRole("button", { name: /可用券/ }).click();
   await expect(page).toHaveURL(
     /\/workbench\/prototypes\/ledger-planet\/screens\/coupon-wallet\?variant=default&theme=light/,
   );
@@ -83,7 +84,7 @@ test("workbench mirrors ledger navigation without reloading or A/B loops", async
   await expect(frame.getByRole("heading", { name: "权益" })).toBeVisible();
   await expect(iframe).toHaveAttribute("src", initialSrc ?? "");
 
-  await drag(page, frame.getByRole("button", { name: /我的券包/ }), -180, 4);
+  await drag(page, frame.locator(".feature"), -180, 4);
   await expect(page).toHaveURL(
     /\/workbench\/prototypes\/ledger-planet\/screens\/me-home\?variant=default&theme=light/,
   );
@@ -125,9 +126,9 @@ test("ledger list supports wheel, mouse drag scrolling, and top pull refresh", a
     "/prototype/ledger-planet/ledger-home?variant=default&theme=light",
   );
   const scrollList = page.locator(".pb-scrollable-data-list");
-  const firstRow = page.locator(".record-row").first();
+  const homeSummary = page.locator(".summary-hit");
 
-  await drag(page, firstRow, 2, -180);
+  await drag(page, homeSummary, 2, -180);
   await expect
     .poll(() => scrollList.evaluate((element) => element.scrollTop))
     .toBeGreaterThan(0);
@@ -147,6 +148,53 @@ test("ledger list supports wheel, mouse drag scrolling, and top pull refresh", a
   });
   await drag(page, page.locator(".summary-hit"), 2, 110);
   await expect(page.getByText("正在刷新")).toBeVisible();
+});
+
+test("ledger home opens the full list and date range sheet", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(
+    "/prototype/ledger-planet/ledger-home?variant=default&theme=light",
+  );
+
+  await page.getByRole("button", { name: /查看全部/ }).click();
+  await expect(page).toHaveURL(
+    /\/prototype\/ledger-planet\/ledger-list\?variant=default&theme=light/,
+  );
+  await expect(page.getByRole("heading", { name: "全部流水" })).toBeVisible();
+
+  await page.getByRole("button", { name: /点击切换日/ }).click();
+  await expect(page.getByRole("dialog").first()).toBeVisible();
+  await page.getByRole("button", { name: /周\s*7月17日/ }).click();
+  await page.getByRole("button", { name: "应用时间范围" }).click();
+  await expect(
+    page.getByRole("button", { name: /7月17日–23日\s*点击切换日/ }),
+  ).toBeVisible();
+});
+
+test("record editor supports amount keypad and category sheet", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(
+    "/prototype/ledger-planet/record-edit?variant=default&theme=light",
+  );
+
+  await page.getByRole("button", { name: "4", exact: true }).click();
+  await page.getByRole("button", { name: "2", exact: true }).click();
+  await expect(page.getByText("42", { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: /全部分类/ }).click();
+  await expect(page.getByRole("dialog").first()).toBeVisible();
+  await page
+    .getByRole("dialog")
+    .last()
+    .getByRole("button", { name: "交通", exact: true })
+    .click();
+  await expect(page.getByRole("button", { name: /交通/ }).first()).toHaveClass(
+    /active/,
+  );
 });
 
 test("filled coupon tab panel accepts swipe and refresh gestures below short content", async ({
@@ -200,7 +248,7 @@ test("Chrome device emulation can trigger touch pull-to-refresh", async ({
   browser,
 }) => {
   const context = await browser.newContext({
-    baseURL: "http://127.0.0.1:3977",
+    baseURL: `http://127.0.0.1:${e2ePort}`,
     viewport: { width: 390, height: 844 },
     deviceScaleFactor: 2,
     hasTouch: true,
@@ -243,6 +291,7 @@ test("popular activities arbitrate mouse drags by actual overflow", async ({
     "/prototype/ledger-planet/benefits-home?variant=default&theme=light",
   );
   const activityScroll = page.locator(".activity-scroll");
+  await activityScroll.scrollIntoViewIfNeeded();
 
   await drag(page, activityScroll.locator(".activity-card").first(), -120, 2);
   await expect
@@ -278,7 +327,7 @@ test("device mode keeps overflowing activities inside and swipes elsewhere", asy
   browser,
 }) => {
   const context = await browser.newContext({
-    baseURL: "http://127.0.0.1:3977",
+    baseURL: `http://127.0.0.1:${e2ePort}`,
     viewport: { width: 390, height: 844 },
     deviceScaleFactor: 2,
     hasTouch: true,
@@ -289,6 +338,7 @@ test("device mode keeps overflowing activities inside and swipes elsewhere", asy
     "/prototype/ledger-planet/benefits-home?variant=default&theme=light",
   );
   const activityScroll = page.locator(".activity-scroll");
+  await activityScroll.scrollIntoViewIfNeeded();
   const box = await activityScroll.boundingBox();
   expect(box).not.toBeNull();
   const x = box!.x + box!.width / 2;
@@ -334,6 +384,7 @@ test("device mode keeps overflowing activities inside and swipes elsewhere", asy
     /\/prototype\/ledger-planet\/benefits-home\?variant=default&theme=light/,
   );
 
+  await page.locator(".feature").scrollIntoViewIfNeeded();
   const featured = await page.locator(".feature").boundingBox();
   expect(featured).not.toBeNull();
   await touchDrag(

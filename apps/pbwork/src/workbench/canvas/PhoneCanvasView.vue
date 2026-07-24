@@ -1,5 +1,11 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import {
+  computed,
+  onBeforeMount,
+  onBeforeUnmount,
+  ref,
+  watch,
+} from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
   loadPrototypes,
@@ -41,6 +47,7 @@ const canvasFullscreen = ref(false);
 const routeError = ref<string | null>(null);
 let copyTimer: ReturnType<typeof setTimeout> | null = null;
 let handshakeTimer: ReturnType<typeof setTimeout> | null = null;
+let handshakeRetryTimer: ReturnType<typeof setTimeout> | null = null;
 
 const prototype = computed(() =>
   loadPrototypes().find((item) => item.id === props.prototypeId),
@@ -275,7 +282,14 @@ function sendInit(contentWindow: Window | null) {
 }
 
 function onIframeLoad(contentWindow: Window | null) {
+  if (handshakeRetryTimer) clearTimeout(handshakeRetryTimer);
   sendInit(contentWindow);
+  handshakeRetryTimer = setTimeout(() => {
+    handshakeRetryTimer = null;
+    if (!selection.runtimeReady && iframeWindow.value === contentWindow) {
+      sendInit(contentWindow);
+    }
+  }, 180);
 }
 
 function navigateRuntime(canonicalRuntimeUrl: string) {
@@ -378,6 +392,10 @@ function onWindowMessage(event: MessageEvent) {
     if (handshakeTimer) {
       clearTimeout(handshakeTimer);
       handshakeTimer = null;
+    }
+    if (handshakeRetryTimer) {
+      clearTimeout(handshakeRetryTimer);
+      handshakeRetryTimer = null;
     }
     if (selection.inspecting) sendInspectMode(true);
     if (selection.commenting) sendCommentMode(true);
@@ -536,7 +554,7 @@ watch(
   { immediate: true },
 );
 
-onMounted(() => {
+onBeforeMount(() => {
   window.addEventListener("message", onWindowMessage);
   window.addEventListener("keydown", onShellKeydown);
 });
@@ -547,6 +565,7 @@ onBeforeUnmount(() => {
   window.removeEventListener("keydown", onShellKeydown);
   if (copyTimer) clearTimeout(copyTimer);
   if (handshakeTimer) clearTimeout(handshakeTimer);
+  if (handshakeRetryTimer) clearTimeout(handshakeRetryTimer);
   selection.setInspectMode(false);
   selection.setCommentMode(false);
   selection.clearSelection();
