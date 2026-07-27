@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'pb_colors.dart';
-import 'pb_text_styles.dart';
-import 'pb_tokens.dart';
+import 'app_colors.dart';
+import 'app_text_styles.dart';
+import 'app_tokens.dart';
 
 /// 当前亮度（对齐 pbwork light/dark 主题）。
 final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.light);
@@ -18,15 +18,15 @@ class ThemeService {
 
   bool get isDark => _brightness == Brightness.dark;
 
-  late final PbColors colors = isDark ? PbColors.dark : PbColors.light;
-  late final PbTextStyles textStyle = PbTextStyles(colors: colors);
+  late final AppColors colors = isDark ? AppColors.dark : AppColors.light;
+  late final AppTextStyles textStyle = AppTextStyles(colors: colors);
 
-  final PbSpacing spacing = const PbSpacing();
-  final PbSizing sizing = const PbSizing();
-  final PbRadius radius = const PbRadius();
-  final PbOpacity opacity = const PbOpacity();
-  final PbMotion motion = const PbMotion();
-  final PbElevation elevation = const PbElevation();
+  final AppSpacing spacing = const AppSpacing();
+  final AppSizing sizing = const AppSizing();
+  final AppRadius radius = const AppRadius();
+  final AppOpacity opacity = const AppOpacity();
+  final AppMotion motion = const AppMotion();
+  final AppElevation elevation = const AppElevation();
 
   ThemeData toThemeData() {
     final scheme = ColorScheme(
@@ -104,14 +104,14 @@ abstract final class TS {
 
   static ThemeService get current => _service;
 
-  static PbColors get colors => _service.colors;
-  static PbTextStyles get textStyle => _service.textStyle;
-  static PbSpacing get spacing => _service.spacing;
-  static PbSizing get sizing => _service.sizing;
-  static PbRadius get radius => _service.radius;
-  static PbOpacity get opacity => _service.opacity;
-  static PbMotion get motion => _service.motion;
-  static PbElevation get elevation => _service.elevation;
+  static AppColors get colors => _service.colors;
+  static AppTextStyles get textStyle => _service.textStyle;
+  static AppSpacing get spacing => _service.spacing;
+  static AppSizing get sizing => _service.sizing;
+  static AppRadius get radius => _service.radius;
+  static AppOpacity get opacity => _service.opacity;
+  static AppMotion get motion => _service.motion;
+  static AppElevation get elevation => _service.elevation;
 
   /// 绑定当前亮度（App 根节点 / 主题切换时调用）。
   static void bind(Brightness brightness) {

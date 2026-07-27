@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:unified_popups/unified_popups.dart';
 
-import '../demo/demo_home.dart';
 import '../theme/ts.dart';
+import '../router/router.dart';
 
 class PbApp extends ConsumerWidget {
   const PbApp({super.key});
@@ -29,7 +29,8 @@ class PbApp extends ConsumerWidget {
           TsBinder(child: child ?? const SizedBox.shrink()),
         );
       },
-      home: const DemoHomePage(),
+      initialRoute: AppRoutes.hub,
+      routes: appRoutes,
     );
   }
 }

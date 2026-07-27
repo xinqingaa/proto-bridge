@@ -1,0 +1,39 @@
+import 'package:flutter/material.dart';
+
+import '../../theme/ts.dart';
+
+/// 对齐 pbwork `ProgressIndicator` — 官方 [LinearProgressIndicator]。
+class CommonProgress extends StatelessWidget {
+  const CommonProgress({
+    super.key,
+    this.value,
+    this.label,
+  });
+
+  /// `null` = indeterminate。
+  final double? value;
+  final String? label;
+
+  @override
+  Widget build(BuildContext context) {
+    TS.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (label != null) ...[
+          Text(label!, style: TS.textStyle.caption),
+          SizedBox(height: TS.spacing.xs),
+        ],
+        ClipRRect(
+          borderRadius: BorderRadius.circular(TS.radius.full),
+          child: LinearProgressIndicator(
+            value: value,
+            minHeight: 6,
+            color: TS.colors.primary,
+            backgroundColor: TS.colors.primarySoft,
+          ),
+        ),
+      ],
+    );
+  }
+}
