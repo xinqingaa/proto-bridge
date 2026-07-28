@@ -41,6 +41,10 @@
     "./shared": {
       "types": "./dist/shared/index.d.ts",
       "import": "./dist/shared/index.js"
+    },
+    "./v2": {
+      "types": "./dist/v2/index.d.ts",
+      "import": "./dist/v2/index.js"
     }
   },
   "files": [
@@ -59,7 +63,8 @@
     "@vue/compiler-sfc": "^3.5.34",
     "fast-glob": "^3.3.2",
     "playwright": "^1.49.1",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "zod": "^3.25.76"
   },
   "engines": {
     "node": ">=20"
