@@ -84,18 +84,19 @@ PBWork pure Runtime 挂载 `window.__PROTO_BRIDGE_V2__`。
 
 1. describe / version negotiation；
 2. Prototype Manifest；
-3. Screen / Variant / Component / Token Contract；
+3. Screen / Variant / Component / Token / Scenario Contract；
 4. Navigation Graph；
 5. prepare-case；
 6. wait-until-stable；
 7. semantic-snapshot；
-8. execute-scenario；
+8. execute-scenario-step / checkpoint；
 9. reset-case。
 
 Workbench Bridge 保持独立，只负责 iframe 选择、高亮、评论和导航同步。
 
 Capture mode 必须：
 
+- canonical URL 导航由 Core / Playwright 完成，Runtime `prepare-case` 只验证 URL 并准备当前页面状态；
 - 以 Case theme 为权威；
 - 忽略 Ledger Planet 当前会话主题偏好；
 - 使用声明 fixture；
@@ -120,9 +121,10 @@ Capture Job
 → wait Runtime + font + stable frames
 → execute Scenario
 → capture checkpoints
-→ write Case transaction
-→ update Run
-→ atomically update Bundle Manifest
+→ write Case Evidence Revision + Case Attempt
+→ finalize immutable Run
+→ atomically create Bundle Snapshot
+→ update Bundle Manifest activeSnapshotId
 ```
 
 ### 4.2 确定性环境
@@ -149,7 +151,7 @@ Capture Job
 - 默认并发 2；
 - 有共享状态或 Scenario 链的 Case 串行；
 - 单 Case 失败不终止其他 Case；
-- 失败 Case 可通过新 Run 重试；
+- 失败 Case 可通过新 Run 重试；失败 attempt 不清除已有 active successful Evidence；
 - 取消关闭对应 Context；
 - 超过 `maxCasesPerJob` 在启动前拒绝。
 
@@ -166,6 +168,8 @@ goto canonical URL
 ```
 
 不能只依赖 `networkidle`。
+
+Scenario 从新 Context 的 Base Case 开始，Core 逐 Step 调用 Runtime。Checkpoint 到达后先验证实际 Screen / Variant，再使用完整 CaseKey 采集。Navigation Step 只允许注册的 SPA / history navigation；会卸载 document 的导航在 V2 instrumented Scenario 中返回 unsupported。
 
 ### 4.5 Screenshot 与 Trace
 
@@ -190,16 +194,24 @@ viewport 默认开启，其余由 Selection 指定。Screenshot 以 Blob digest 
 └── evidence/
     └── <bundleId>/
         ├── manifest.json
-        ├── catalog/
-        │   ├── prototype.json
-        │   ├── navigation.json
-        │   ├── tokens.json
-        │   ├── components.json
-        │   ├── assets.json
-        │   └── screens/<screenKey>/contract.json
-        ├── cases/<caseId>/evidence.json
+        ├── snapshots/<bundleSnapshotId>.json
+        ├── catalog-revisions/
+        │   ├── prototypes/<revisionId>.json
+        │   ├── navigation/<revisionId>.json
+        │   ├── tokens/<revisionId>.json
+        │   ├── components/<revisionId>.json
+        │   ├── assets/<revisionId>.json
+        │   ├── scenarios/<revisionId>.json
+        │   └── screens/<screenKey>/<revisionId>.json
+        ├── case-revisions/<caseId>/<caseEvidenceRevisionId>.json
+        ├── case-attempts/<caseAttemptId>.json
+        ├── coverage/<coverageId>.json
+        ├── issues/<issueCollectionId>.json
+        ├── staleness/<stalenessReportId>.json
+        ├── handoffs/<handoffId>.json
         ├── runs/<captureRunId>/
         │   ├── manifest.json
+        │   ├── preflight.json
         │   ├── selection.json
         │   ├── cases.json
         │   ├── coverage.json
@@ -220,26 +232,30 @@ viewport 默认开启，其余由 Selection 指定。Screenshot 以 Blob digest 
 - 锁记录 owner、PID、startedAt 和 lease；
 - 过期锁经过进程存活检查后才能回收；
 - Manifest 最后写；
-- 崩溃后旧 Manifest 始终指向完整 Case 集；
+- Case Evidence revision、Case Attempt、Run 和 Bundle Snapshot 写入后不可变；
+- Manifest 只原子更新 `activeSnapshotId`、索引和 archive metadata；
+- 崩溃后旧 Manifest 始终指向完整 Snapshot；
 - 启动时检查 orphan transaction、无引用 Blob 和 interrupted Run。
 
 ### 5.3 Digest 与 Stale
 
-Case `inputDigest` 包含：
+Case `inputDigest` 只包含当前 Case 的依赖闭包：
 
 - CaseKey；
 - fixture digest；
-- Prototype Manifest；
-- Runtime revision；
-- Source revision；
-- Component / Token Contract；
+- 当前 Screen / Variant Manifest；
+- 当前 Screen Source dependency closure；
+- 当前 Case 实际引用的 Component / Token / Asset Contract；
+- 当前 Scenario / Checkpoint Contract；
 - Device；
 - locale、timezone、clock；
 - network policy；
 - capture engine version；
 - screenshot policy。
 
-Digest 相同可复用；任一输入改变则 Case stale。
+Digest 相同可复用；依赖闭包中任一输入改变则 Case stale。无关 Screen、Source 文件、Component 或 Token 的变化不得使本 Case stale。
+
+Stale 不回写历史 Snapshot。具有 Runtime / Source 的 Producer 通过 staleness preflight 对一个 Snapshot 生成新的不可变 `StalenessReport`；PBWork 和 Handoff 使用具体 Report，Store-only MCP 只读取该 Report。
 
 ### 5.4 容量
 
@@ -249,7 +265,8 @@ Digest 相同可复用；任一输入改变则 Case stale。
 - 生成缩略图供 PBWork 列表使用；
 - raw DOM / source / trace 有独立容量和保留期；
 - 配置 `maxBundleBytes / maxDebugBytes / maxRuns / retentionDays`；
-- active Case、active Run 和被引用 Blob 不得清理；
+- active Snapshot、其 Case/Catalog revision、未归档 active Bundle、Handoff 固定的 Snapshot 和被引用 Blob 不得清理；
+- Bundle fork 显式引用源 Snapshot；archive 只改变 Bundle lifecycle，不删除 Snapshot；
 - `pb clean` 必须先 dry-run。
 
 ## 6. PB Local Service
@@ -258,15 +275,25 @@ Digest 相同可复用；任一输入改变则 Case stale。
 
 ```text
 GET  /api/v2/status
+POST /api/v2/session/bootstrap
 GET  /api/v2/prototypes
 POST /api/v2/capture-preflight
 GET  /api/v2/bundles
 GET  /api/v2/bundles/:bundleId
+POST /api/v2/bundles/:bundleId/fork
+POST /api/v2/bundles/:bundleId/archive
+GET  /api/v2/bundles/:bundleId/snapshots/:bundleSnapshotId
+POST /api/v2/bundles/:bundleId/staleness-preflight
+GET  /api/v2/bundles/:bundleId/staleness/:stalenessReportId
+GET  /api/v2/bundles/:bundleId/coverage/:coverageId
 GET  /api/v2/bundles/:bundleId/runs/:captureRunId
-GET  /api/v2/bundles/:bundleId/cases/:caseId
+GET  /api/v2/bundles/:bundleId/cases/:caseId/revisions/:caseEvidenceRevisionId
+GET  /api/v2/bundles/:bundleId/catalog/:kind/:revisionId
 GET  /api/v2/bundles/:bundleId/blobs/:sha256
 POST /api/v2/bundles/:bundleId/handoffs
-POST /api/v2/input-blobs
+GET  /api/v2/bundles/:bundleId/handoffs/:handoffId
+POST /api/v2/upload-sessions
+POST /api/v2/upload-sessions/:uploadSessionId/blobs
 POST /api/v2/capture-jobs
 GET  /api/v2/capture-jobs/:jobId
 POST /api/v2/capture-jobs/:jobId/cancel
@@ -280,14 +307,18 @@ GET  /api/v2/events
 | ----------------------------------- | --------------------------------------------------------------------------- | ------------ |
 | `GET /prototypes`                   | 返回可选 Prototype、Screen、Variant、Theme 和 Device                        | 否           |
 | `POST /capture-preflight`           | 校验 Selection 并返回规范化 Selection、Case Matrix、阻塞 Issue 和预计容量   | 否           |
-| `POST /capture-jobs`                | 只接受通过同一 revision preflight 的 `CaptureRequest`                       | 是           |
+| `POST /capture-jobs`                | 接受 `CreateCaptureJobRequest`，强校验 Preflight / Selection / Matrix digest 和 warning acceptance | 是 |
 | `GET /capture-jobs/:jobId` / events | 返回 Job、Case 进度和最终 Run 引用                                          | 否           |
 | `cancel`                            | 请求取消尚未完成的 Case                                                     | 否           |
-| `retry-selection`                   | 从失败、interrupted 或 stale 范围派生新的 Selection Draft，再进入 Preflight | 否           |
-| Bundle / Run / Case / Blob GET      | 读取 Store 投影                                                             | 否           |
-| `POST /bundles/:bundleId/handoffs`  | 校验选择引用并生成 `AgentHandoff`                                           | 否           |
+| `retry-selection`                   | 从失败、cancelled 或 interrupted attempt 派生新的 Selection Draft，再进入 Preflight | 否 |
+| Bundle / Snapshot / Run / Case revision / Catalog / Blob GET | 读取不可变 Store 对象或 Manifest 投影 | 否 |
+| `POST /bundles/:bundleId/staleness-preflight` | 对指定 Snapshot 和当前输入生成 `StalenessReport` | 否 |
+| `POST /bundles/:bundleId/handoffs`  | 校验 Snapshot、Coverage、Staleness 和选择引用并生成 `AgentHandoff` | 否 |
+| Upload session / Blob               | 在 Job 创建前暂存并校验 screenshot-only 输入，CreateJob 原子认领 | 否 |
 
-Preflight 返回 `preflightRevision`。创建 Job 时 Core 重新检查 Manifest、Runtime revision、Selection 和 Case 数；revision 失效时返回 `PREFLIGHT_STALE`，不能使用旧 Matrix 启动。
+Preflight 返回 `preflightRevision`、`selectionDigest` 和 `matrixDigest`。创建 Job 时 Core 重新检查 Manifest、Runtime revision、Selection、Matrix 和 Case 数；revision 或 digest 失效时返回 `PREFLIGHT_STALE`。warning 未完整接受时返回 `PREFLIGHT_WARNING_NOT_ACCEPTED`。
+
+Preflight 的 dry-prepare 使用独立 BrowserContext，不改变当前 PBWork iframe，不创建 Run、不写 Bundle。相同 input revision 的结果允许缓存，但创建 Job 仍必须重新校验 revision 和 digest。
 
 ### 6.2 Job
 
@@ -305,7 +336,7 @@ interrupted
 cancelled
 ```
 
-Job 状态写入 Run。Service 重启时：
+Job 和 Run 是不同对象。Job 保存可恢复进度；Run 保存不可变执行结果。Service 重启时：
 
 - queued 可以恢复；
 - discovering / capturing / writing 转为 interrupted；
@@ -318,6 +349,10 @@ SSE 使用 event ID；客户端通过 `Last-Event-ID` 补读。
 
 - 只监听 `127.0.0.1`；
 - 启动生成 bearer session token；
+- `pb serve` 生成一次性 bootstrap nonce，并把 nonce 放入启动 PBWork URL fragment；PBWork 从允许的 Origin 调用 session bootstrap 换取 bearer token后立即清除 fragment；
+- bootstrap nonce 单次使用、短 TTL，不写日志；bearer token 只保存在 `sessionStorage`，Service 重启后失效并重新 bootstrap；
+- PBWork 使用带 Authorization header 的 fetch-based SSE 流，不把 token 放入 query；
+- 只有 `/api/v2/status` 的非敏感摘要和 `/api/v2/session/bootstrap` 可在无 bearer token 时访问；其他 API 全部要求有效 token；
 - 严格 Origin allowlist 和 CORS；
 - Runtime 只允许 `http:` / `https:`；
 - 阻止 `file:`、`data:`、`javascript:`、凭据 URL和未允许重定向；
@@ -326,7 +361,7 @@ SSE 使用 event ID；客户端通过 `Last-Event-ID` 补读。
 - 客户端不能提交任意 output / source path；
 - 客户端不能提交任意 output / source / screenshot path；
 - screenshot-only 输入先通过有大小、MIME 和 digest 校验的 input Blob 接口暂存；
-- input Blob 具有短 TTL，只能被同一 Job 引用；成功写入 Bundle 后使用正式 Blob ref，未使用输入自动清理；
+- input Blob 先绑定短 TTL upload session；CreateJob 成功时 session 原子绑定唯一 Job；成功写入 Bundle 后使用正式 Blob ref，未认领或未使用输入自动清理；
 - 不执行任意 shell；
 - 限制 payload、Job 数、Case 数、并发和日志；
 - Blob 校验归属、digest、mime 和大小；
@@ -334,9 +369,23 @@ SSE 使用 event ID；客户端通过 `Last-Event-ID` 补读。
 
 这些是本地进程与文件安全，不是用户角色权限。
 
+Bootstrap 顺序固定：
+
+```text
+pb serve 生成 nonce
+→ 打开 /workbench/capture#pb-bootstrap=<nonce>
+→ PBWork POST /api/v2/session/bootstrap { nonce }
+→ Service 校验 allowed Origin、TTL 和未使用状态
+→ 返回 bearer token 与 service instance ID
+→ nonce 立即失效
+→ PBWork replaceState 清除 fragment，并把 token 写入 sessionStorage
+```
+
+Service instance ID 变化时 PBWork 清除旧 token 和 SSE cursor，保留未提交 Draft，并要求重新 bootstrap。
+
 ## 7. PBWork Capture
 
-PBWork 的完整用户路径、状态和验收以 [PBWork V2 Capture 体验规格](./pbwork-v2-capture-experience.md) 为准。本计划不规定 PBWork 一级或二级导航，只规定 PBWork 通过现有导航进入 Capture 后必须保留当前 Prototype / Screen / Variant 上下文。
+PBWork 的完整用户路径、状态和验收以 [PBWork V2 Capture 体验规格](./pbwork-v2-capture-experience.md) 为准。本计划不规定一级或二级导航的最终视觉结构，但固定 `/workbench/capture`、四类进入方式、返回行为，并要求保留当前 Prototype / Screen / Variant 上下文。
 
 PBWork 必须实现四条等价入口：
 
@@ -344,6 +393,15 @@ PBWork 必须实现四条等价入口：
 2. 画布选中的 Fragment；
 3. 自定义多 Screen / Variant；
 4. 整个 Prototype。
+
+Capture Console 固定路由为 `/workbench/capture`：
+
+- 当前 Screen 从 Screen 工具栏进入并携带已握手 Runtime context；
+- Fragment 从现有选择/检查面板的“加入采集范围”进入，并携带 `pbId + pbKey?`；
+- 自定义范围从 Capture Console 新建 Draft；
+- 整个 Prototype 从 Prototype 概要页进入；
+- 返回时优先回到 Draft 的 `returnTo` 工作台路由；`returnTo` 只用于 UI 导航，不进入 CaptureRequest；
+- 刷新后 Draft 恢复不是硬要求，但已创建 Job 必须通过 Job GET 恢复。
 
 所有入口统一经过：
 
@@ -359,6 +417,8 @@ Selection Draft
 
 PBWork 不使用“翻译代码”描述 Capture，不生成目标工程实现计划。浏览器端只通过 Local Service 操作，不直接访问文件系统、Store 或 Playwright。
 
+Handoff 创建前必须显式选择 Bundle Snapshot、读取 Snapshot Coverage，并为该 Snapshot 生成新的 Staleness Report。Handoff 固定 Snapshot、Case Evidence revision 和 Report；后续重采不会改变旧 Handoff。
+
 ## 8. CLI
 
 V2 binary 固定为 `pb`。完整顶层命令：
@@ -367,6 +427,7 @@ V2 binary 固定为 `pb`。完整顶层命令：
 pb init
 pb serve
 pb capture
+pb bundle
 pb inspect
 pb clean
 pb doctor
@@ -379,6 +440,7 @@ pb doctor
 ```bash
 pb capture --prototype ledger-planet --variants critical
 pb capture --screen ledger-planet.ledger-list --variants all
+pb capture --screen ledger-planet.ledger-list --scenarios critical
 pb capture --url https://example.test/page \
   --prototype external --screen external.example
 pb capture --screenshot /path/page.png \
@@ -391,6 +453,7 @@ pb capture --bundle <bundleId> --selection retry.json
 - 三种输入模式统一映射到 Contract 中的 `CaptureRequest`；
 - CLI 先校验 screenshot 本地路径并转成 input Blob，Job 不接收原始路径；
 - 复杂选择使用 `--selection`；
+- 逐 Screen Variant policy、显式 Scenario 和 Checkpoint 使用 `--selection`，简单 `--scenarios none|critical|all` 是全局投影；
 - `--bundle` 向既有 Bundle 增加新 Run；
 - 无 Service 时 CLI 嵌入同一个 JobHost，不复制 Job 逻辑。
 
@@ -400,23 +463,33 @@ pb capture --bundle <bundleId> --selection retry.json
 pb inspect prototypes
 pb inspect bundles
 pb inspect --bundle <bundleId>
+pb inspect --bundle <bundleId> --snapshot <bundleSnapshotId>
 pb inspect --bundle <bundleId> --screen <screenId>
-pb inspect --bundle <bundleId> --case <caseId>
+pb inspect --bundle <bundleId> --case <caseId> --revision <caseEvidenceRevisionId>
 pb inspect storage
 ```
 
 支持 `--format text|markdown|json`。人类视图从 Bundle 投影，不持久化重复 Review Markdown。
 
-### 8.3 Clean
+### 8.3 Bundle Lifecycle
+
+```bash
+pb bundle fork --bundle <bundleId> --snapshot <bundleSnapshotId> --new-bundle <newBundleId>
+pb bundle archive --bundle <bundleId> --snapshot <expectedActiveSnapshotId>
+```
+
+Fork 和 Archive 使用 Contract 的判别式请求；不接受 Store 路径。Archive 不删除 Evidence，Fork 不复制未引用历史 Run。
+
+### 8.4 Clean
 
 ```bash
 pb clean --dry-run
 pb clean --apply <planId>
 ```
 
-dry-run 返回短期有效的 planId、目标和预计释放容量；apply 前重新校验 active refs 和 Store revision。只清理 retention 允许的历史 Run、debug 和无引用 Blob。
+dry-run 返回短期有效的 planId、目标和预计释放容量；apply 前重新校验 active Snapshot、Handoff refs 和 Store revision。只清理 retention 允许且未被 active Snapshot、未归档 Bundle、Fork 或 Handoff 引用的历史对象、debug 和无引用 Blob。
 
-### 8.4 Exit Code
+### 8.5 Exit Code
 
 | Code | 含义                    |
 | ---- | ----------------------- |
@@ -450,7 +523,7 @@ validate_target_changes
 | Store                                | discover_bundles、read_evidence        |
 | Target adapter + 当前 target context | target context、examples、validation   |
 
-MCP Server 启动时连接一个 PB Workspace。Evidence tools 只读取该 Workspace 的 Store；不接受 Agent 在 tool argument 中传入任意 Store 路径。`discover_bundles` 返回当前 `workspaceId`，`read_evidence` 必须校验输入中的 `workspaceId`。
+MCP Server 启动时连接一个 PB Workspace。Evidence tools 只读取该 Workspace 的 Store；不接受 Agent 在 tool argument 中传入任意 Store 路径。`discover_bundles` 返回当前 `workspaceId`、每个 Bundle 的 `activeSnapshotId` 和 archive 状态；`read_evidence` 必须校验输入中的 `workspaceId`。
 
 Target context 与 Store 连接独立：target tool 显式 `targetRoot` 优先，否则使用当前 Agent 工作目录。目标工程不需要 ProtoBridge 配置文件。
 
@@ -459,23 +532,70 @@ Target context 与 Store 连接独立：target tool 显式 `targetRoot` 优先�
 ```ts
 type ReadEvidenceInput =
   | { workspaceId: string; kind: "manifest"; bundleId: string }
+  | {
+      workspaceId: string;
+      kind: "snapshot";
+      bundleId: string;
+      bundleSnapshotId: string;
+    }
   | { workspaceId: string; kind: "run"; bundleId: string; captureRunId: string }
   | {
       workspaceId: string;
       kind: "coverage";
       bundleId: string;
-      captureRunId?: string;
+      scope:
+        | { kind: "run"; captureRunId: string }
+        | { kind: "snapshot"; bundleSnapshotId: string };
     }
-  | { workspaceId: string; kind: "screen"; bundleId: string; screenId: string }
-  | { workspaceId: string; kind: "case"; bundleId: string; caseId: string }
+  | {
+      workspaceId: string;
+      kind: "catalog";
+      bundleId: string;
+      catalogKind:
+        | "prototype"
+        | "navigation"
+        | "components"
+        | "tokens"
+        | "assets"
+        | "scenarios";
+      revisionId: string;
+    }
+  | {
+      workspaceId: string;
+      kind: "screen";
+      bundleId: string;
+      screenId: string;
+      screenContractRevisionId: string;
+    }
+  | {
+      workspaceId: string;
+      kind: "case";
+      bundleId: string;
+      caseId: string;
+      evidenceRevisionId: string;
+    }
   | {
       workspaceId: string;
       kind: "fragment";
       bundleId: string;
       caseId: string;
+      evidenceRevisionId: string;
       fragmentRef: string;
     }
-  | { workspaceId: string; kind: "issue"; bundleId: string; issueId: string }
+  | {
+      workspaceId: string;
+      kind: "issue";
+      bundleId: string;
+      issueCollectionId: string;
+      issueId: string;
+    }
+  | {
+      workspaceId: string;
+      kind: "staleness";
+      bundleId: string;
+      stalenessReportId: string;
+    }
+  | { workspaceId: string; kind: "blob"; bundleId: string; digest: string }
   | { workspaceId: string; kind: "debug"; bundleId: string; ref: string };
 ```
 
@@ -483,11 +603,16 @@ Resources：
 
 ```text
 proto-bridge://workspaces/{workspaceId}/bundles/{bundleId}/manifest
-proto-bridge://workspaces/{workspaceId}/bundles/{bundleId}/coverage
-proto-bridge://workspaces/{workspaceId}/bundles/{bundleId}/screens/{screenId}
+proto-bridge://workspaces/{workspaceId}/bundles/{bundleId}/snapshots/{bundleSnapshotId}
+proto-bridge://workspaces/{workspaceId}/bundles/{bundleId}/snapshots/{bundleSnapshotId}/coverage
+proto-bridge://workspaces/{workspaceId}/bundles/{bundleId}/runs/{captureRunId}/coverage
+proto-bridge://workspaces/{workspaceId}/bundles/{bundleId}/catalog/{catalogKind}/{revisionId}
+proto-bridge://workspaces/{workspaceId}/bundles/{bundleId}/screens/{screenId}/revisions/{screenContractRevisionId}
 proto-bridge://workspaces/{workspaceId}/bundles/{bundleId}/runs/{captureRunId}
-proto-bridge://workspaces/{workspaceId}/bundles/{bundleId}/cases/{caseId}
-proto-bridge://workspaces/{workspaceId}/bundles/{bundleId}/cases/{caseId}/fragments/{fragmentRef}
+proto-bridge://workspaces/{workspaceId}/bundles/{bundleId}/cases/{caseId}/revisions/{evidenceRevisionId}
+proto-bridge://workspaces/{workspaceId}/bundles/{bundleId}/cases/{caseId}/revisions/{evidenceRevisionId}/fragments/{fragmentRef}
+proto-bridge://workspaces/{workspaceId}/bundles/{bundleId}/staleness/{stalenessReportId}
+proto-bridge://workspaces/{workspaceId}/bundles/{bundleId}/issues/{issueCollectionId}/{issueId}
 proto-bridge://workspaces/{workspaceId}/bundles/{bundleId}/blobs/{sha256}
 ```
 
@@ -498,6 +623,7 @@ proto-bridge://workspaces/{workspaceId}/bundles/{bundleId}/blobs/{sha256}
 - raw DOM 和 Trace 只在 debug 请求时返回；
 - MCP 重启不影响 Bundle；
 - resource 不依赖创建 Bundle 的进程；
+- Handoff 消费必须使用其固定 Snapshot 和 revision 参数，禁止自动替换为 Manifest 当前 `activeSnapshotId`；
 - Workspace 未连接或不匹配时返回 Contract §14.2 的结构化错误；
 - tool 和 resource 都不暴露 Store 物理路径；
 - target 工具不写 Evidence Bundle。
@@ -551,7 +677,8 @@ Flutter 能力迁移到 `packages/target-flutter`：
   "service": {
     "host": "127.0.0.1",
     "port": 4317,
-    "allowedWorkbenchOrigins": ["http://127.0.0.1:5173"]
+    "allowedWorkbenchOrigins": ["http://127.0.0.1:5173"],
+    "allowedCaptureOrigins": ["http://127.0.0.1:5173"]
   },
   "capture": {
     "concurrency": 2,
@@ -572,6 +699,8 @@ Flutter 能力迁移到 `packages/target-flutter`：
   }
 }
 ```
+
+Instrumented Runtime URL 必须属于 `runtime.allowedOrigins`；generic runtime URL 必须属于 `service.allowedCaptureOrigins`。CLI 的显式 `--url` 不绕过 allowlist。重定向后的每个 Origin 都重新校验。
 
 ### 11.1 配置所有权
 
@@ -638,13 +767,13 @@ Handoff 不是完整 Evidence，也不是目标实现计划。不得仅根据 Ha
 
 ## 必读顺序
 
-1. 校验 Handoff `schemaVersion`
+1. 校验 Handoff `schemaVersion`、`schemaRevision` 和 `semanticVocabularyVersion`
 2. 确认 MCP 当前 `workspaceId` 与 Handoff 一致
-3. 读取 Bundle Manifest
-4. 读取 Coverage
-5. 读取 Handoff selection 指定的 Screen Contract
-6. 读取 Case 或 Fragment Evidence
-7. 按 `recommendedResources` 和 Evidence refs 读取 Screenshot、Asset、Issue 与 unknown
+3. 读取 Handoff 固定的 Bundle Snapshot
+4. 读取 Snapshot Coverage 和 Handoff 固定的 Staleness Report
+5. 读取 Handoff selection 指定 revision 的 Screen Contract
+6. 读取指定 Case Evidence revision 或 Fragment
+7. 按 `recommendedResources` 和 Evidence refs 读取固定 revision 的 Catalog、Screenshot、Asset、Issue 与 unknown
 8. 阅读目标仓库代码、文档和现有测试
 
 默认只读当前任务需要的 Evidence。除非调试采集问题，不预加载整个 Prototype、raw DOM、Source 全文或 Trace。
@@ -675,6 +804,7 @@ Handoff 为 partial、stale 或 partial-stale 时，先检查 `riskAcceptance` �
 - `WORKSPACE_NOT_CONNECTED`
 - `WORKSPACE_MISMATCH`
 - `BUNDLE_NOT_FOUND`
+- `BUNDLE_SNAPSHOT_NOT_FOUND`
 - `BUNDLE_SCHEMA_UNSUPPORTED`
 - `HANDOFF_REFERENCE_MISSING`
 
@@ -693,82 +823,115 @@ Handoff 为 partial、stale 或 partial-stale 时，先检查 `riskAcceptance` �
 
 ## 12. 实施工作包
 
+### W0 Plan Freeze
+
+- 将主计划 B01–B12、G01–G12 映射到 Contract、实施章节和测试；
+- 固定阶段进入条件、交付和验收；
+- 冻结 Snapshot、Scenario、Preflight / Job、MCP 和 PBWork 行为；
+- W0 只修改 `docs/plans`，不修改代码。
+
 ### W1 Contract
 
 - 建立 V2 Schema、类型和 fixture；
-- 固定 ID、Vocabulary、Bundle / Run / Case / Blob；
-- 固定 EvidenceValue、Issue 和 Coverage；
+- 固定 ID、Vocabulary、EvidenceFact、Catalog Revision、Bundle Snapshot、Run、Case Attempt、Case Evidence Revision 和 Blob；
+- 固定 Runtime request-response mapping、Selection、Scenario、Preflight、Job、Issue、Coverage、Staleness Report 和 Handoff；
 - 建立 invalid Contract 测试。
 
-### W2 Runtime
-
-- 实现 window Runtime Protocol；
-- 暴露 Manifest、Screen、Variant、Navigation、Component 和 Token；
-- 实现 prepare / stable / snapshot / scenario / reset；
-- 增加 template lint 和 semantic preflight；
-- 补齐全部现有 PBWork Prototype 标记。
-
-### W3 Capture
-
-- 实现 Selection resolver 和 Case Matrix；
-- 合并旧 capture facade；
-- 实现 Browser 复用、Context 隔离和确定性环境；
-- 实现 screenshot、Scenario、failure isolation、retry、cancel 和 Trace。
-
-### W4 Store
+### W2 Store
 
 - 实现 Store interface 和 filesystem store；
-- 实现 Catalog、Case、Run 和 Blob；
-- 实现 digest、stale、增量、lock、transaction 和 recovery；
-- 实现容量、retention 和 clean。
+- 实现不可变 Catalog / Case revision、Case Attempt、Run、Bundle Snapshot 和 Staleness Report；
+- 实现 active successful evidence 与 latest attempt 分离；
+- 实现 dependency digest、stale、增量、lock、transaction 和 recovery；
+- 实现 fork、archive、容量、retention 和 clean。
+
+### W3 Runtime / Scenario
+
+- 实现 window Runtime Protocol；
+- 暴露 Manifest、Screen、Variant、Navigation、Component、Token 和 Scenario；
+- 实现 Core 导航、Runtime prepare / stable / snapshot / step / reset 边界；
+- 实现 Checkpoint 和跨 Screen SPA navigation 验证；
+- 增加 template lint 和 semantic preflight；
+
+### W4 Capture / Preflight
+
+- 实现逐 Screen Variant policy、Scenario policy、Selection resolver 和 Case Matrix；
+- 实现隔离 dry-prepare、Preflight revision、Selection / Matrix digest 和 warning acceptance；
+- 合并旧 capture facade；
+- 实现 Browser 复用、Context 隔离和确定性环境；
+- 实现 screenshot、Scenario Checkpoint、failure isolation、retry、cancel 和 Trace。
 
 ### W5 Service
 
-- 实现 API、Job queue 和 SSE；
+- 实现 typed API、Upload Session、Job queue 和 fetch-based SSE；
+- 实现一次性 bootstrap nonce 和 session token；
 - 实现 cancel、retry、interrupted recovery；
 - 实现 token、Origin、path 和 payload 安全。
 
 ### W6 PBWork
 
 - 按 PBWork Capture 体验规格实现当前 Screen、选中 Fragment、自定义范围和整 Prototype 四条入口；
+- 实现 `/workbench/capture`、进入 / 返回行为和 `pbKey` selection payload；
 - 接入 Selection Draft、Preflight、Case Matrix 和 Job event；
-- 实现 Evidence、Coverage、Issue、unknown、stale 和 screenshot view；
-- 实现 retry、cancel、stale recapture 和 Handoff；
-- 保持现有 Prototype / Screen / Variant 上下文，不在本计划规定侧边导航。
+- 实现 Snapshot Evidence、Coverage、Issue、unknown、Staleness Report 和 screenshot view；
+- 实现 retry、cancel、stale recapture 和 Snapshot-pinned Handoff。
 
 ### W7 CLI / MCP
 
 - 实现完整 CLI；
 - 实现 capability-driven MCP tools；
-- 实现带 `workspaceId` 的 Bundle resources；
-- 实现 Workspace 连接校验和 Consumer 错误；
+- 实现带 `workspaceId`、Snapshot 和 object revision 的 Catalog / Case / Fragment / Asset / Blob resources；
+- 实现 Workspace、Snapshot、revision 连接校验和 Consumer 错误；
 - 从 tool arguments 移除任意 Store path；
 - 删除 MCP session page store。
 
-### W8 Target
+### W8 Target / Consumer
 
 - 迁移 Flutter context、example search 和 validation；
 - 从 Core Capture 移除 target import；
 - target root 使用单次 tool 参数或当前 Agent 工作目录；
 - 不要求目标工程 ProtoBridge 配置；
 - 建立独立包测试。
+- 定稿 Consumer Skill、读取顺序和错误处理；
+- 建立“目标工程无 PB 配置”的消费 E2E；
+- 验证 complete、partial、stale、Workspace mismatch、Snapshot mismatch 和引用失效。
 
-### W9 Agent Consumer
+### W9 Migration
 
-- 定稿 Agent Handoff、Consumer 读取顺序和错误处理；
-- 使用 §11.4 草案审查 Consumer Skill，但在 V2 契约定稿前不创建正式 Skill 文件；
-- 编写 MCP 连接和目标工程消费使用指南；
-- 建立“目标工程无 PB 配置”的 Agent 消费 E2E；
-- 验证 complete、partial、stale、Workspace mismatch 和引用失效。
-
-### W10 Migration
-
-- 迁移 Registry 中全部 Prototype / Screen / Variant；
+- 建立当前 Registry 27 Screens / 89 Variants 的逐项台账；
+- 迁移全部 Prototype / Screen / Variant、required semantic node、Action、Component、Slot 和 Scenario；
 - 运行全量 PBWork Capture；
+- 验证 Ledger Planet 18/54、Field Service 7/28、Project 2/7。
+
+台账每个 Screen 至少记录：
+
+```text
+prototypeId
+screenId
+defaultVariantId
+variantIds / critical flags
+requiredSemanticNodes
+repeated instances / pbKey source
+actionIds
+overlayIds
+componentIds / slots
+scenarioIds / checkpointIds
+themeIds / deviceIds
+preflight result
+capture result
+coverage result
+open issues
+```
+
+迁移完成要求每个字段有明确值、`none` 或带 Issue 的 `unsupported`；禁止留空并以“其他不退化”代替。
+
+### W10 Release
+
+- 运行固定 V1/V2 基准任务并计算人工补充、误实现和返工指标；
 - 删除 V1 Planner、Artifact、CLI、MCP 和测试 fixture；
 - Contract、MCP 和消费 E2E 定稿后，将 §11.4 草案落为正式 Consumer Skill；
 - 更新配置、package exports、README、AGENT、docs 和 skills；
-- 所有发布包升至 `0.2.0`。
+- 所有正式发布包升至 `0.5.0`。
 
 ## 13. 测试矩阵
 
@@ -777,17 +940,19 @@ Handoff 为 partial、stale 或 partial-stale 时，先检查 `riskAcceptance` �
 - Schema valid / invalid；
 - ID、alias、Vocabulary；
 - duplicate pbId / pbKey；
-- Selection 和 stable caseId；
-- provenance、unknown、issue 和 Evidence Level。
+- per-screen Selection、Scenario policy 和 stable caseId；
+- typed Runtime response、Preflight / Job digest；
+- EvidenceFact conflict、provenance、unknown、issue 和 Evidence Level；
+- Bundle Snapshot、Case Evidence revision、Handoff 和状态迁移。
 
 ### Runtime
 
 - version handshake；
-- Manifest / Screen / Variant / Component / Token；
+- Manifest / Screen / Variant / Component / Token / Scenario；
 - prepare dimension match；
 - theme session isolation；
 - readiness 和 stable frames；
-- scenario / reset；
+- step / navigation / checkpoint / reset；
 - payload limit 和 stale runtime。
 
 ### Capture
@@ -802,7 +967,12 @@ Handoff 为 partial、stale 或 partial-stale 时，先检查 `riskAcceptance` �
 
 ### Store
 
-- create、incremental update、stale；
+- create、incremental update、dependency stale；
+- Case revision、Catalog revision、Run 和 Snapshot 不可变；
+- failed retry 保留 active successful Evidence；
+- digest 相同的 reused attempt 固定引用既有 Evidence revision；
+- historical Handoff 在后续重采后内容不漂移；
+- Bundle fork、archive；
 - lock、lease 和 concurrent writer；
 - atomic commit 和 interrupted recovery；
 - Blob digest、dedup 和 ref integrity；
@@ -811,13 +981,14 @@ Handoff 为 partial、stale 或 partial-stale 时，先检查 `riskAcceptance` �
 
 ### Service / PBWork
 
-- token、Origin、CORS 和 URL policy；
+- bootstrap nonce、session token、Origin、CORS 和 URL policy；
+- Upload Session claim、TTL 和重复认领；
 - Job lifecycle 和 SSE replay；
-- 当前 Screen、选中 Fragment、自定义多页和整 Prototype 四条路径；
+- `/workbench/capture` 的当前 Screen、选中 Fragment、自定义多页和整 Prototype四条路径；
 - Selection Draft、Preflight、Matrix、超限和 stale preflight；
 - progress、Issue、Evidence、Coverage、unknown 和 Handoff；
 - 无稳定 pbId / pbKey 时阻止 instrumented Fragment Capture 并提供定位；
-- complete、partial、failed、cancelled 和 stale 的界面状态与可用操作；
+- completed（captured / reused）、partial、failed、cancelled 和 stale 的界面状态与可用操作；
 - Service restart。
 
 ### CLI / MCP
@@ -826,8 +997,8 @@ Handoff 为 partial、stale 或 partial-stale 时，先检查 `riskAcceptance` �
 - 完整命令和 exit code；
 - 按配置暴露工具；
 - persistent read；
-- Case / Run / Fragment / Blob resource；
-- Workspace 连接与 Handoff `workspaceId` 校验；
+- Snapshot / Catalog / Case revision / Run / Fragment / Issue / Staleness / Blob resource；
+- Workspace、Snapshot、object revision 与 Handoff 校验；
 - Store path 不出现在 tool input、resource 或 Handoff；
 - targetRoot 参数 / 当前工作目录优先级；
 - process restart；
@@ -836,12 +1007,14 @@ Handoff 为 partial、stale 或 partial-stale 时，先检查 `riskAcceptance` �
 ### 全量闭环
 
 - Ledger Planet 18 Screens / 54 Variants；
-- Field Service 和 Project 不退化；
+- Field Service 7 Screens / 28 Variants；
+- Project 2 Screens / 7 Variants；
 - 四种 Evidence Level；
 - PBWork 当前 Screen → Handoff → MCP → 目标实现；
 - PBWork 画布 Fragment → Handoff → MCP → 局部实现；
 - PBWork 多 Screen / 整 Prototype → Bundle → 按需读取；
-- partial / stale → Issue → 修复 → 新 Run → 新 Handoff；
+- partial / stale → Issue → 修复 → 新 Run → 新 Snapshot → 新 Handoff；
+- 旧 Handoff 在新 Snapshot 产生后仍读取原 Evidence；
 - 目标工程不含 ProtoBridge 配置时完成目标实现；
 - 错误 Workspace、Bundle 不存在和 Handoff 引用失效时确定性失败；
 - V1/V2 人工补充和返工对比。
@@ -856,7 +1029,7 @@ V2 全部工作包与主计划 DoD 通过后：
 4. 删除 `page-canonical.json`、`ui-build-plan.json`、`ui-build-review.md` writer；
 5. 删除 Planner、page workflow、旧 CLI `generate` 和旧 MCP resources；
 6. 替换 config schema、binary、package exports、README 和 skills；
-7. 发布 `0.2.0`；
+7. 发布 `0.5.0`；
 8. 复跑安装包和真实目标工程闭环。
 
 不维护双轨兼容，不自动迁移旧 output，不在 V2 未完成时提前删除正式 V1。

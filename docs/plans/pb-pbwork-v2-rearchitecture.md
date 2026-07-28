@@ -1,15 +1,17 @@
 # ProtoBridge / PBWork V2 重构计划
 
-> 状态：方案闭环已补全，待实施
+> 状态：W0 计划冻结候选；代码实施尚未开始
 > 目标分支：`dev`
 > 性质：破坏性重构；不兼容 V1 Artifact、CLI 和 MCP 页面工作流
 > 更新时间：2026-07-28
 
-本文件是 V2 的决策与交付入口，回答为什么重构、完整终态是什么、如何实施以及何时完成。
+本文件是 V2 的决策与交付入口，回答为什么重构、完整终态是什么、如何实施以及满足哪些条件才算完成。
 
 精确类型与协议见 [PB V2 Contract 规范](./pb-v2-contracts.md)。
 代码落点、CLI / MCP、测试和切换步骤见 [PB V2 实施规格](./pb-v2-implementation.md)。
 PBWork 的选择、预检、采集、检查、重采和交接见 [PBWork V2 Capture 体验规格](./pbwork-v2-capture-experience.md)。
+
+V2 执行只以本文件为入口，并按上面三份计划附件读取精确 Contract、代码落点和 PBWork 行为。`docs/design.md`、现有 README、AGENT、skills 和 V1 代码只作为迁移现状，不得覆盖本计划的 V2 决策；需要保留的现状必须先进入 W9 台账。实施中不得从代码反向产生未记录的新产品目标。
 
 ## 1. 为什么重构
 
@@ -80,6 +82,14 @@ V2 的价值不是替 Agent 做更多决定，而是减少 Agent 必须猜测的
 8. Target Adapter 只查询和验证当前目标仓库，不参与 Capture，不写 Evidence。
 9. 目标工程不需要提交 ProtoBridge 配置文件；Store 连接属于 MCP 运行环境。
 10. V2 不提供用户可见的 V1/V2 中间产品，全部 DoD 通过后一次性切换。
+11. `caseId` 表示稳定 Case 身份；一次采集产生不可变 `caseEvidenceRevisionId`，历史 Run 只引用具体 revision。
+12. Bundle 当前态由不可变 `BundleSnapshot` 表达，不以“最近一次 Run”冒充整个 Bundle 当前证据。
+13. Handoff 必须固定到 `bundleSnapshotId` 和具体 Evidence revision；后续重采不得改变已经生成的 Handoff。
+14. Preflight、Job、Run、Case attempt 和 Bundle snapshot 是不同对象，不共享或混用状态字段。
+15. Runtime 页面导航由 Core / Playwright 负责；Runtime Protocol 只准备并验证当前 canonical 页面中的状态。
+16. Scenario 必须是可选择、可逐步执行、可在 Checkpoint 采集的正式 Case 来源。
+17. Stale 是一个 Snapshot 相对于一次明确输入评估的结果，由独立 `StalenessReport` 表达，不回写历史 Run 或 Snapshot。
+18. V2 发布版本不得低于现有已发布包版本；当前正式切换目标为 `0.5.0`。
 
 ## 3. 一次完整使用如何流转
 
@@ -90,15 +100,15 @@ V2 的价值不是替 Agent 做更多决定，而是减少 Agent 必须猜测的
 | 1. 原型声明   | PBWork Registry、DS Contract 和页面源码声明 Screen、Variant、Component、Token 和 Action | 原型源码                     | 可发现的 Prototype Contract             |
 | 2. 选择范围   | 用户在 PBWork 或 CLI 选择 Prototype / Screen / Variant / Fragment、Theme 和 Device      | CaptureSelection             | Selection Draft                         |
 | 3. 预检       | Runtime 与 Core 校验 Contract、稳定 ID、选择引用和采集上限                              | Selection + Manifest         | 可执行 Matrix 或阻塞 Issue              |
-| 4. 展开任务   | PB Core 将通过预检的选择展开成完整 Case Matrix                                          | Selection + Manifest         | Screen × Variant × Theme × Device Cases |
-| 5. 准备状态   | Pure Runtime 按 Case 设置路由、fixture、Variant 和 Theme，并报告是否稳定                | Case                         | 可验证的 Runtime 状态                   |
+| 4. 展开任务   | PB Core 将通过预检的选择展开成完整 Case Matrix                                          | Selection + Manifest         | Base Case 与 Scenario Checkpoint Case    |
+| 5. 准备状态   | Core 导航 canonical URL，Pure Runtime 按 Case 设置 fixture、Variant 和 Theme 并报告是否稳定 | Case                      | 可验证的 Runtime 状态                   |
 | 6. 采集证据   | Core 结合 Runtime、Source 和 Screenshot 采集语义、视觉、组件和动作证据                  | 稳定 Runtime + 可选 Source   | Case Evidence                           |
-| 7. 持久化     | Store 以事务方式写入 Catalog、Run、Case 和 Blob                                         | Case Evidence                | Evidence Bundle                         |
-| 8. 检查与交接 | PBWork 显示 Coverage、Issue、Screenshot 和 stale，并生成 Handoff                        | Bundle                       | workspaceId、bundleId、caseId 和 refs   |
-| 9. Agent 消费 | Agent 按 Consumer 规范通过 MCP 读取 Manifest、Coverage、Screen、Case、Fragment 和图片   | Handoff + MCP                | 当前实现需要的 Evidence                 |
+| 7. 持久化     | Store 以事务方式写入 Catalog revision、Run、Case Evidence revision、Blob 和 Bundle Snapshot | Case Evidence             | Evidence Bundle Snapshot                |
+| 8. 检查与交接 | PBWork 显示 Snapshot Coverage、Issue、Screenshot 和 stale，并生成固定 Snapshot 的 Handoff | Bundle Snapshot            | workspaceId、bundleId、snapshotId 和 refs |
+| 9. Agent 消费 | Agent 按 Consumer 规范通过 MCP 读取固定 Snapshot、Coverage、Catalog、Case revision、Fragment 和图片 | Handoff + MCP          | 当前实现需要的 Evidence                 |
 | 10. 目标实现  | Agent 读取目标仓库；必要时调用独立 Target Adapter 查找规范和示例                        | Evidence + Target Repository | 生产代码与验证结果                      |
 
-原型发生变化时重新执行步骤 2–7。未变化的 Case 和 Blob 可复用；新的 Run 更新 Bundle 当前证据，但不覆盖历史 Run。
+原型发生变化时重新执行步骤 2–7。未变化的 Case Evidence revision 和 Blob 可复用；新的 Run 产生新的 Bundle Snapshot，但不覆盖历史 Run、历史 Snapshot 或已经生成的 Handoff。
 
 ### 3.1 两个生命周期
 
@@ -123,10 +133,10 @@ V2 的价值不是替 Agent 做更多决定，而是减少 Agent 必须猜测的
 `AgentHandoff` 是两个生命周期之间的唯一任务交接对象：
 
 ```text
-workspaceId + bundleId + selection + intent + coverageSummary + riskAcceptance + unknowns
+workspaceId + bundleId + bundleSnapshotId + selection + intent + coverageSummary + stalenessReportId + riskAcceptance + unknowns
 ```
 
-Handoff 不内嵌整份 Evidence，不包含 Store 绝对路径、target root、目标组件映射或 Flutter 文件计划。PBWork 生成 Handoff 后，Agent 使用已连接对应 Workspace 的 MCP 读取 Evidence；MCP 连接错误或 Workspace 不匹配时必须显式失败，不能回退为路径猜测。
+Handoff 不内嵌整份 Evidence，不包含 Store 绝对路径、target root、目标组件映射或 Flutter 文件计划。PBWork 生成 Handoff 后，Agent 使用已连接对应 Workspace 的 MCP 读取其固定 Snapshot；MCP 连接错误、Workspace 不匹配、Snapshot 不存在或 revision 引用失效时必须显式失败，不能回退为路径猜测，也不能静默读取 Bundle 的更新当前态。
 
 ## 4. 目标架构
 
@@ -171,10 +181,14 @@ Handoff 不内嵌整份 Evidence，不包含 Store 绝对路径、target root、
 | Screen    | 稳定页面身份和业务结构                                  |
 | Variant   | Screen 内可直接复现的稳定业务状态                       |
 | Scenario  | 从稳定初态执行的显式动作序列                            |
-| Case      | Screen × Variant × Theme × Device × Scenario Checkpoint |
+| Case      | Screen × Variant × Theme × Device × Scenario Checkpoint 的稳定身份 |
+| Case Evidence Revision | 一次成功采集产生的不可变 Case 证据版本                    |
 | Fragment  | Case 中以稳定语义节点为根的局部证据                     |
 | Bundle    | 一个 Prototype 的长期证据集合                           |
 | Run       | 一次不可变 CaptureSelection 的执行记录                  |
+| Bundle Snapshot | 一次事务提交后的 Bundle 当前证据快照                     |
+| Case Attempt | 某个 Run 对一个 Case 的 captured / failed / skipped 等执行结果 |
+| Staleness Report | Snapshot 相对于一次当前输入探测的不可变 stale 评估       |
 | Blob      | 截图、Trace、压缩 Snapshot 等内容寻址大对象             |
 
 包布局：
@@ -194,21 +208,66 @@ apps/
 ## 5. 已确认决策
 
 1. PB 与 PBWork 近期是本地、单用户工具。
-2. PBWork 是原型生产和采集控制面；具体导航信息架构不属于本计划。
+2. PBWork 是原型生产和采集控制面；计划固定 Capture 路由、入口和返回行为，不规定侧边导航的最终视觉结构。
 3. `data-pb-*` 和 Runtime Contract 是 instrumented runtime 的语义权威。
 4. ARIA、semantic HTML、Source、Runtime 和 Screenshot 只证明各自有权证明的事实。
 5. class、tag、geometry 只用于 generic runtime 降级，不能自动升级成业务语义。
 6. Capture 使用完整 Case 身份，Theme / Device / Scenario 不会覆盖同一 Variant。
-7. Bundle、Run、Case、Blob 分离；Run 不可变，Bundle 以事务方式更新 active Case。
+7. Bundle、Snapshot、Run、Case Attempt、Case Evidence Revision 和 Blob 分离；历史对象不可变，Bundle 只以事务方式切换 `activeSnapshotId`。
 8. 所有 Agent-facing 关键事实具有 provenance、confidence 和 refs。
 9. Target Flutter 扫描从 Capture 主链移除，作为独立 adapter 按需查询。
 10. V2 完成前不切换正式入口；完成后一次性删除 V1，不发布用户可见双轨或过渡产品。
 11. 目标工程不提交 Store 或 Target 配置；MCP 在目标工程之外连接 PB Workspace。
 12. Consumer Skill 在 V2 契约定稿前只作为实施文档中的草案，不创建正式 skill 文件。
+13. 历史 Run、Bundle Snapshot、Case Evidence revision 和 Handoff 均不可变。
+14. Bundle 聚合 Coverage 以 Snapshot 为单位；Run Coverage 只描述本次 attempt，不替代 Snapshot Coverage。
+15. latest attempt 与 active successful evidence 分开保存；失败重试不覆盖上一次成功证据。
+16. Runtime Contract 的成功响应不得使用 `unknown`；每个 request kind 都有唯一响应 Schema。
+17. PBWork、CLI 和 producer MCP 只有携带有效 Preflight revision、Matrix digest 和 warning acceptance 才能创建 Job。
+18. Input Blob 先绑定 upload session，创建 Job 时原子认领，不能在 Job 创建前声称已绑定 Job。
+19. Case stale digest 只包含该 Case 的依赖闭包，不使用无差别的全仓 Source revision 使全部 Case 失效。
 
-## 6. 质量原则
+## 6. W0 阻断与缺口登记
 
-### 6.1 事实裁决
+以下编号是实施、Contract、测试和验收共同使用的追踪 ID。后续工作不得在代码中自行解释这些项目。
+
+### 6.1 实施阻断
+
+| ID  | 阻断项 | 冻结决策 |
+| --- | --- | --- |
+| B01 | 固定 Case 路径覆盖历史 Evidence | 稳定 `caseId` 与不可变 `caseEvidenceRevisionId` 分离 |
+| B02 | Run 的 Case / Catalog 引用会随 Bundle 更新漂移 | Run 固定引用具体 Case、Screen Contract 和 Catalog revision |
+| B03 | Handoff 未固定证据快照 | Handoff 必须绑定 `bundleSnapshotId` 和 Evidence revision |
+| B04 | 增量 Run 无法独立表达 Bundle 当前态 | Run attempt、active snapshot、latest attempt 分层 |
+| B05 | Runtime 成功响应使用 `data: unknown` | 每个 request kind 具有唯一响应 Schema |
+| B06 | Core 与 Runtime 都声称负责 canonical URL 导航 | Core 导航，Runtime 准备并验证当前页面状态 |
+| B07 | Scenario 未进入 Selection | Selection 显式支持 Scenario policy 和 refs |
+| B08 | 中间 Checkpoint 与跨 Screen Scenario 无执行模型 | Scenario 逐 Step 执行，Core 在 Checkpoint 建立 Case |
+| B09 | Preflight revision 与 Job 请求无绑定 | CreateJob 必须携带 revision、Selection digest、Matrix digest 和 warning acceptance |
+| B10 | Screenshot input Blob 在 Job 创建前无法归属 Job | Upload session 暂存，CreateJob 原子认领 |
+| B11 | MCP 不能完整读取 Catalog / Asset / Issue | 补齐 tool kind、resource、索引和 Snapshot 参数 |
+| B12 | Evidence 冲突无法表示 candidates 与 effective value | 统一使用 `EvidenceFact<T>` |
+
+### 6.2 重要缺口
+
+| ID  | 缺口 | 冻结决策 |
+| --- | --- | --- |
+| G01 | 自定义范围的逐 Screen Variant 策略无法映射 Contract | Screen selection 内保存各自 Variant policy |
+| G02 | 读取 Store 无法知道相对当前 Source / Runtime 是否 stale | Producer 显式生成 `StalenessReport` |
+| G03 | 全局 Source / Manifest revision 导致无关 Case stale | 使用 Case dependency closure digest |
+| G04 | skipped / cancelled / interrupted 的 partial 口径不一致 | 使用统一状态与 Handoff 汇总表 |
+| G05 | 多 Device Run 无法使用单一 CaptureEnvironment | Run 保存公共环境；Case revision 保存实际 device / viewport |
+| G06 | Bundle fork、archive 和清理生命周期未定义 | 提供显式 fork / archive；clean 不隐式删除 active Bundle |
+| G07 | PBWork 没有固定 Capture 路由和进入 / 返回行为 | 固定 `/workbench/capture` 与四类上下文入口 |
+| G08 | Browser 无法安全获得 Service bearer token | 一次性 bootstrap nonce 换取 session token |
+| G09 | 当前 Inspector 不返回 `pbKey` | V2 Bridge selection payload 增加 `pbKey` |
+| G10 | 27 Screens / 89 Variants 无逐项迁移清单 | W9 建立逐 Screen / Variant / Action / Scenario 台账 |
+| G11 | Coverage 与 V1/V2 收益不可计算 | 固定 fact 单位、分母、基准任务和通过阈值 |
+| G12 | `0.2.0` 低于当前正式包 `0.4.0` | 正式切换版本固定为 `0.5.0` |
+
+## 7. 质量原则
+
+### 7.1 事实裁决
 
 | 事实                                       | 权威来源                                                         |
 | ------------------------------------------ | ---------------------------------------------------------------- |
@@ -221,16 +280,16 @@ apps/
 
 冲突不静默覆盖；保留双方 Evidence 并生成结构化 Issue。Screenshot 只裁决视觉，不裁决业务语义。
 
-### 6.2 Instrumented PBWork 门槛
+### 7.2 Instrumented PBWork 门槛
 
 - required semantic contract 100% 有效；
 - traceable fact rate 100%；
 - heuristic fallback rate 不高于 5%；
 - Action、Navigation 和 Component identity 为 0% heuristic；
-- selected Case 全部 captured，或明确标记 unsupported；
+- selected Case 全部 captured / reused，或明确标记 unsupported；
 - 失败、跳过和 unsupported 分开统计。
 
-### 6.3 Evidence Level
+### 7.3 Evidence Level
 
 | Level                       | 可证明                                             |
 | --------------------------- | -------------------------------------------------- |
@@ -241,16 +300,46 @@ apps/
 
 低等级证据不能推断隐藏状态、完整业务动作或目标工程实现。
 
-## 7. 产品范围
+### 7.4 V1 / V2 对比口径
 
-### 7.1 必做
+正式切换前使用固定任务集分别执行 V1 和 V2，任务集至少覆盖：
+
+1. Ledger Planet 当前 Screen；
+2. Ledger Planet Overlay / Scenario；
+3. Ledger Planet 多 Screen Flow；
+4. Field Service 当前 Screen；
+5. Field Service 表单 validation / submit Scenario；
+6. Project Fragment；
+7. generic runtime；
+8. screenshot-only。
+
+每个任务使用相同目标仓库基线、相同任务说明和相同验收清单，记录：
+
+- `manualEvidenceSupplements`：实现前后需要人工补充的原型事实数；
+- `unsupportedAssumptions`：Agent 把 unknown / 缺失证据写成确定事实的数量；
+- `evidenceCausedMisimplementations`：由 Evidence 缺失、冲突未暴露或引用漂移造成的误实现数；
+- `reworkCycles`：为修复上述误实现产生的返工轮次；
+- `taskCompleted`：任务是否通过目标仓库验收。
+
+V2 正式切换门槛：
+
+- `unsupportedAssumptions = 0`；
+- taskCompleted 不低于 V1；
+- manualEvidenceSupplements 总数相对 V1 至少减少 30%；
+- evidenceCausedMisimplementations 总数相对 V1 至少减少 50%；
+- reworkCycles 总数相对 V1 至少减少 30%；
+- 原始记录和汇总作为 W10 发布证据保存，不能只给主观结论。
+
+## 8. 产品范围
+
+### 8.1 必做
 
 - Prototype / Screen / Variant / Fragment Selection；
 - Runtime Protocol discovery、prepare、stable、snapshot、scenario、reset；
 - 稳定 ID、Action、Component、Slot、Token 和 Navigation Contract；
 - Screen × Variant × Theme × Device 确定性采集；
 - Browser 复用、Context 隔离、失败重试、取消和 Trace；
-- Bundle / Run / Case / Blob 持久化；
+- Bundle / Snapshot / Run / Case Attempt / Case Evidence Revision / Blob 持久化；
 - 增量采集、stale 判断、事务写入和崩溃恢复；
 - PBWork Capture、Coverage、Issue、Evidence 和 Handoff；
 - PBWork 当前页面、画布 Fragment、多页面和整 Prototype 四条完整采集路径；
@@ -259,9 +348,14 @@ apps/
 - Agent Consumer 规范、Handoff 检查和无目标工程 PB 配置的消费闭环；
 - 独立 Flutter target 查询和验证；
 - 全部现有 PBWork Prototype / Screen / Variant 迁移；
-- V1 Artifact、Planner、CLI 和 MCP 删除。
+- V1 Artifact、Planner、CLI 和 MCP 删除；
+- 不可变 Case Evidence revision、Bundle Snapshot 和 Snapshot-pinned Handoff；
+- 逐 Screen Variant policy、Scenario policy 和 Checkpoint Case；
+- Preflight / Job 强绑定与可审计 warning acceptance；
+- Bundle Snapshot Coverage、Run Coverage 和 Staleness Report；
+- Bundle fork、archive 和安全 clean。
 
-### 7.2 不做
+### 8.2 不做
 
 - Vue / HTML / CSS 到 Dart 的自动翻译；
 - 自动选择目标文件、路由、状态框架、组件或 Token；
@@ -273,33 +367,69 @@ apps/
 
 商业化后只有在出现多人远程 Workspace、共享 Store、并发 Job、审批审计或不同写权限时，才单独设计身份与 RBAC。
 
-## 8. 完整工作包
+## 9. 阶段性工作包
 
-| 工作包            | 主要交付                                             | 依赖       |
-| ----------------- | ---------------------------------------------------- | ---------- |
-| W1 Contract       | ID、Schema、Evidence、Issue、Coverage                | 无         |
-| W2 Runtime        | Protocol、prepare/reset、semantic preflight          | W1         |
-| W3 Capture        | Selection、Case Matrix、Scenario、Playwright         | W1、W2     |
-| W4 Store          | Bundle、Run、Case、Blob、事务和 retention            | W1、W3     |
-| W5 Service        | Job、SSE、取消、恢复和安全                           | W3、W4     |
-| W6 PBWork         | Capture Console、Evidence、Coverage、Handoff         | W2、W5     |
-| W7 CLI / MCP      | 完整命令、resources、按配置暴露能力                  | W4、W5     |
-| W8 Target         | Flutter adapter 独立迁移                             | W1         |
-| W9 Agent Consumer | Handoff、MCP 连接说明、Consumer Skill 草案与消费 E2E | W4、W7、W8 |
-| W10 Migration     | 全部原型修标、V1 删除、文档和发布                    | W1–W9      |
+| 工作包 | 阶段目标 | 主要交付 | 进入条件 |
+| --- | --- | --- | --- |
+| W0 Plan Freeze | 冻结目标与机器边界 | B/G 登记、Contract 决策、追踪矩阵、阶段闸门 | 本计划评审 |
+| W1 Contract | 建立可执行唯一 Schema | 全部类型、Runtime mapping、Selection、Job、Snapshot、Handoff | G0 |
+| W2 Store | 建立不可变证据与当前态 | revision、snapshot、attempt、coverage、stale、transaction | G1 |
+| W3 Runtime / Scenario | 确定性准备和交互采集 | typed protocol、prepare、step、checkpoint、reset | G1 |
+| W4 Capture / Preflight | 统一展开与执行 | per-screen policy、Matrix、digest、retry、cancel | W2、W3 |
+| W5 Service | 持久 Job 与安全浏览器边界 | API、upload session、bootstrap、SSE、recovery | W2、W4 |
+| W6 PBWork | 完整采集控制面 | 四入口、检查、重采、Handoff | W3、W5 |
+| W7 CLI / MCP | 完整生产与证据读取入口 | CLI、Snapshot resources、Workspace 校验 | W2、W5 |
+| W8 Target / Consumer | 解耦目标查询并完成消费闭环 | 独立 Flutter adapter、Consumer Skill、消费 E2E | W1、W7 |
+| W9 Migration | 全量原型迁移 | 27 Screens / 89 Variants 台账与验收 | W1–W8 |
+| W10 Release | 对比、删除与正式切换 | V1/V2 指标、V1 删除、`0.5.0`、安装 E2E | W1–W9 |
 
 实施细节、测试组和代码落点见 [实施规格](./pb-v2-implementation.md)。
 
-## 9. 发布纪律
+### 9.1 强制闸门
 
 ```text
-Contract
-→ Runtime
-→ Capture
-→ Store
+G0 计划冻结
+→ G1 Contract 可执行且所有持久对象可校验
+→ G2 Store / Snapshot / Handoff 历史不漂移
+→ G3 单 Screen + Scenario + Handoff + MCP 垂直闭环
+→ G4 27 Screens / 89 Variants 全量迁移
+→ G5 删除 V1 并发布
+```
+
+- 未通过上一闸门不得进入下一阶段；
+- 代码实现发现需要改变不可变决策或 Contract 时，停止当前工作包，先更新对应 B/G/Requirement 并重新评审；
+- 不允许先在代码中实现一种解释，再反向同步计划；
+- 内部 vertical slice 只用于验证依赖，不成为用户可见双轨产品。
+
+### 9.2 Requirement 追踪
+
+| Requirement | Contract 权威章节 | 实施工作包 | 必过测试组 |
+| --- | --- | --- | --- |
+| B01–B04 | Contract §9 | W2 | Store、全量闭环 |
+| B05–B06 | Contract §6 | W1、W3 | Contract、Runtime |
+| B07–B08 | Contract §7、§13 | W1、W3、W4 | Runtime、Capture |
+| B09–B10 | Contract §7.1 | W1、W4、W5 | Contract、Service |
+| B11 | Contract §9–§14 | W7 | CLI / MCP、全量闭环 |
+| B12 | Contract §5 | W1、W2 | Contract、Store |
+| G01 | Contract §7 | W4、W6 | Capture、Service / PBWork |
+| G02–G03 | Contract §9.5 | W2、W4、W6 | Store、全量闭环 |
+| G04–G06 | Contract §7.1、§9、§14 | W2、W5、W6 | Store、Service / PBWork |
+| G07–G09 | PBWork 体验 §3、§11 | W5、W6 | Service / PBWork |
+| G10 | 实施规格 W9 | W9 | 全量闭环 |
+| G11 | 本计划 §7.2、§7.4 | W1、W10 | Contract、V1/V2 对比 |
+| G12 | 实施规格 W10、§14 | W10 | 安装包与发布验证 |
+
+## 10. 发布纪律
+
+```text
+Plan Freeze
+→ Contract
+→ Store + Runtime / Scenario
+→ Capture / Preflight
 → Service
 → PBWork
 → CLI / MCP / Target
+→ Agent Consumer E2E
 → 全量 Prototype 验收
 → V1 一次性删除
 → 正式切换
@@ -310,9 +440,9 @@ Contract
 - 不提供 V1 到 V2 的伪兼容 adapter；
 - 正式入口不会同时暴露 V1 和 V2；
 - 切换提交同时更新 binary、config、MCP、文档和 package exports；
-- 所有发布包统一升至 `0.2.0`。
+- 所有正式发布包统一升至 `0.5.0`。
 
-## 10. Definition of Done
+## 11. Definition of Done
 
 V2 完成必须同时满足：
 
@@ -322,40 +452,34 @@ V2 完成必须同时满足：
 4. Playwright 具备确定性、隔离、取消、重试和 failure trace。
 5. Bundle 持久化、增量更新且进程重启后可读。
 6. Store 具备锁、事务、崩溃恢复、Blob 去重、容量和安全清理。
-7. MCP 可按 Bundle、Screen、Case、Fragment 和 Blob 读取证据。
+7. MCP 可按 Snapshot、Catalog、Screen Contract revision、Case Evidence revision、Fragment、Issue、Coverage、Staleness Report 和 Blob 读取证据。
 8. Agent 默认读取小型索引和按需 refs，不加载整个 Prototype。
 9. Target 查询与 Capture 完全解耦，target 事实不进入 Bundle。
-10. instrumented PBWork 达到本计划 §6.2 的质量门槛。
+10. instrumented PBWork 达到本计划 §7.2 的质量门槛。
 11. Ledger Planet 18 Screens / 54 Variants 达到深度验收。
-12. 当前 Registry 中其他既有 Prototype / Screen / Variant 不退化。
+12. Field Service 7 Screens / 28 Variants 与 Project 2 Screens / 7 Variants 完成逐项迁移和验收。
 13. 四种 Evidence Level 均有 CLI、Store、MCP 和故障路径 E2E。
 14. PBWork、CLI、MCP 共享同一 Selection、Job 和 Store Contract。
 15. Flutter target adapter 达到 V1 等价或更高查询和验证覆盖。
 16. 旧四件套、Planner、pageId workflow、旧 CLI / MCP 和死代码全部删除。
 17. README、AGENT、产品文档、PBWork 原型规范和 skills 与 V2 一致。
-18. 与 V1 同类任务相比，人工补充、误实现和返工显著减少。
+18. V1/V2 固定任务集达到 §7.4 的全部量化门槛。
 19. PBWork 的当前页面、选中 Fragment、多页面和整 Prototype 四条用户路径均通过交互验收。
 20. PBWork 在创建 Job 前显示 preflight 结果和 Case Matrix，不允许超限或无稳定身份的 Selection 静默进入 Capture。
-21. Handoff 包含 `workspaceId`，引用可由 MCP 解析，并明确携带 partial、failed、skipped、unsupported、stale、risk acceptance 和 unknown 摘要。
+21. Handoff 包含 `workspaceId`、`bundleSnapshotId` 和 `stalenessReportId`，引用可由 MCP 解析，并明确携带 captured、reused、partial、failed、skipped、unsupported、cancelled、interrupted、missing、stale、risk acceptance 和 unknown 摘要。
 22. 目标工程没有 ProtoBridge 配置文件时，Agent 仍能通过外部 MCP 连接和 Handoff 完成 Evidence 消费。
-23. MCP 连接错误 Workspace、Bundle 不存在或引用失效时返回结构化错误，不允许 Agent 猜测 Store 路径。
+23. MCP 连接错误 Workspace、Bundle / Snapshot 不存在或 object revision 引用失效时返回结构化错误，不允许 Agent 猜测 Store 路径。
+24. 历史 Run、Snapshot、Case Evidence revision 和 Handoff 在后续重采后读取内容不变。
+25. partial retry 只更新成功 Case；失败 attempt 不覆盖既有 active successful evidence。
+26. Scenario policy 可从 PBWork、CLI 和 MCP 等价提交，中间 Checkpoint 和跨 Screen 结果具有确定身份。
+27. Job 只能从未过期 Preflight 创建，所有 warning acceptance 可审计。
+28. MCP 可读取 Prototype、Navigation、Component、Token、Asset、Screen、Case、Fragment、Issue、Coverage 和 Blob。
+29. PBWork 通过一次性 bootstrap 建立 Service 会话，token 不进入 URL query、日志、Handoff 或 Bundle。
+30. 全量迁移台账覆盖当前 Registry 的 27 Screens / 89 Variants，不以“其他不退化”替代逐项结果。
 
-## 11. 工作量与收益
+## 12. 阶段任务与收益
 
-| 工作包                    | 估算           |
-| ------------------------- | -------------- |
-| Contract                  | 2–3 天         |
-| Runtime、标注和 lint      | 4–6 天         |
-| Capture Orchestrator      | 4–6 天         |
-| Store                     | 3–5 天         |
-| Local Service             | 3–4 天         |
-| PBWork                    | 4–6 天         |
-| CLI、MCP、Target          | 3–5 天         |
-| Agent Consumer 与交接闭环 | 1–2 天         |
-| 全量迁移、删除和回归      | 3–5 天         |
-| 合计                      | 27–42 个开发日 |
-
-单人合理预期为 6–9 周。AI 能加速 Schema、类型、样板和测试编写，但不能消除浏览器稳定性、协议联调、全量修标和回归成本。
+实施只按 W0–W10 和 G0–G5 推进。每一阶段以进入条件、交付物和验收结果判定完成，不以代码量判定。
 
 V1 已经可用，因此 V2 的价值不是“从无到有”，而是：
 
