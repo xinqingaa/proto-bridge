@@ -6,6 +6,13 @@
 
 本文件描述完整 V2 如何实现。工作包可拆任务和提交，但不能作为缩水发布范围。
 
+阅读入口：
+
+- 改 Core：包边界、Source、Runtime、Capture 和 Store；
+- 改 PBWork：Runtime 接入、Local Service 和 PBWork Capture；
+- 改 CLI / MCP / Target：对应接口章节、配置和正式切换；
+- 拆实施任务：工作包、测试矩阵和正式切换。
+
 ## 1. 包边界
 
 ```text

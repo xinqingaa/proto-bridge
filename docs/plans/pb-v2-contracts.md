@@ -6,6 +6,12 @@
 
 本文件定义跨 Core、PBWork、CLI、MCP、Service 和 Store 共用的唯一机器契约。实现使用 Zod 或 JSON Schema 做运行时校验，并由 Schema 生成或校验 TypeScript 类型。
 
+阅读入口：
+
+- 制作或维护 PBWork 原型：重点阅读 ID、`data-pb-*`、语义词表、Screen / Action 和 Scenario；
+- 实现 Runtime、Capture 或 Store：重点阅读 Runtime Protocol、Selection、Case、Bundle 和 Coverage；
+- 实现 MCP 或 Agent Handoff：重点阅读 Evidence、Issue、Fragment 和 Handoff。
+
 ## 1. Schema 与兼容性
 
 ```ts
