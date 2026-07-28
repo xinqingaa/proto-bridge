@@ -93,6 +93,31 @@ export const RUN_TERMINATION_REASONS = ['completed', 'cancelled', 'interrupted',
 export const RunTerminationReason = z.enum(RUN_TERMINATION_REASONS);
 export type RunTerminationReason = z.infer<typeof RunTerminationReason>;
 
+/**
+ * Capture Job lifecycle (pb-v2-spec.md "Run、Attempt、Revision 与 Snapshot"):
+ * a Job is a persisted execution control record that must be recoverable
+ * across a Service restart and must eventually reach a terminal status.
+ * `accepted`/`running` are non-terminal; every other status is terminal.
+ */
+export const JOB_STATUSES = ['accepted', 'running', 'completed', 'failed', 'cancelled', 'interrupted'] as const;
+export const JobStatus = z.enum(JOB_STATUSES);
+export type JobStatus = z.infer<typeof JobStatus>;
+
+export const JOB_TERMINAL_STATUSES = new Set<JobStatus>(['completed', 'failed', 'cancelled', 'interrupted']);
+
+export function isTerminalJobStatus(status: JobStatus): boolean {
+  return JOB_TERMINAL_STATUSES.has(status);
+}
+
+/**
+ * pb-v2-spec.md "Bundle 生命周期": a `writable` Bundle can append new Runs;
+ * an `archived` Bundle is read-only and can only be continued from via an
+ * explicit fork into a new Bundle.
+ */
+export const BUNDLE_STATUSES = ['writable', 'archived'] as const;
+export const BundleStatus = z.enum(BUNDLE_STATUSES);
+export type BundleStatus = z.infer<typeof BundleStatus>;
+
 export const COVERAGE_STATUSES = ['complete', 'partial'] as const;
 export const CoverageStatus = z.enum(COVERAGE_STATUSES);
 export type CoverageStatus = z.infer<typeof CoverageStatus>;

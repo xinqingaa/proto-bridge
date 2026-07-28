@@ -11,7 +11,8 @@ export type V2ErrorCode =
   | 'ambiguous-reference'
   | 'immutable-violation'
   | 'downgrade-rejected'
-  | 'workspace-mismatch';
+  | 'workspace-mismatch'
+  | 'writer-lock-held';
 
 export class V2ContractError extends Error {
   readonly code: V2ErrorCode;

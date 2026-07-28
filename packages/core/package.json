@@ -45,6 +45,10 @@
     "./v2": {
       "types": "./dist/v2/index.d.ts",
       "import": "./dist/v2/index.js"
+    },
+    "./v2/store": {
+      "types": "./dist/v2/store/index.d.ts",
+      "import": "./dist/v2/store/index.js"
     }
   },
   "files": [

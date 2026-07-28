@@ -60,6 +60,7 @@ export const PbId = stableId('pbId', 400);
 export const PbKey = stableId('pbKey', 200);
 
 export const BundleId = stableId('bundleId');
+export const JobId = stableId('jobId');
 export const RunId = stableId('runId');
 export const AttemptId = stableId('attemptId');
 export const CaseId = compositeId('caseId', 600);
@@ -93,6 +94,7 @@ export type AssetId = z.infer<typeof AssetId>;
 export type PbId = z.infer<typeof PbId>;
 export type PbKey = z.infer<typeof PbKey>;
 export type BundleId = z.infer<typeof BundleId>;
+export type JobId = z.infer<typeof JobId>;
 export type RunId = z.infer<typeof RunId>;
 export type AttemptId = z.infer<typeof AttemptId>;
 export type CaseId = z.infer<typeof CaseId>;
