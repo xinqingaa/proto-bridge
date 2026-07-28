@@ -4,7 +4,7 @@ test("selected components expose the Token to CSS value chain", async ({
   page,
 }) => {
   await page.goto(
-    "/workbench/prototypes/project/screens/task-list?variant=default&theme=light",
+    "/workbench/prototypes/ledger-planet/screens/task-list?variant=default&theme=light",
   );
   await expect(page.getByTestId("prototype-iframe")).toBeVisible();
 
@@ -13,7 +13,7 @@ test("selected components expose the Token to CSS value chain", async ({
   await inspectButton.click();
 
   const frame = page.frameLocator('[data-testid="prototype-iframe"]');
-  const list = frame.locator('[data-pb-id="project.task-list.list"]');
+  const list = frame.locator('[data-pb-id="ledger-planet.task-list.list"]');
   await expect(list).toBeVisible();
   await list.click();
 

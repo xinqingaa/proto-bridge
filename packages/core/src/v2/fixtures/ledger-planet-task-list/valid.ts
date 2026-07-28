@@ -35,7 +35,7 @@ export const SNAPSHOT_ID = 'snapshot-2026-07-28t1005';
 export const STALENESS_REPORT_ID = 'staleness-2026-07-28t1010';
 export const HANDOFF_ID = 'handoff-2026-07-28t1015';
 
-/** Base Case for the reference vertical slice: `project.task-list` × `default` × `light` × `iphone-14`, no Scenario. */
+/** Base Case for the reference vertical slice: `ledger-planet.task-list` × `default` × `light` × `iphone-14`, no Scenario. */
 export const BASE_CASE = TASK_LIST_CASE_KEY;
 
 export const PRIMARY_ACTIVE_REVISION: CaseEvidenceRevision = {
@@ -51,8 +51,8 @@ export const PRIMARY_ACTIVE_REVISION: CaseEvidenceRevision = {
   capturedAt: T1,
   facts: [
     {
-      factId: 'project.task-list.root.role',
-      candidates: [{ value: 'page', provenance: { source: 'data-pb', locator: 'project.task-list.root#data-pb-role' } }],
+      factId: 'ledger-planet.task-list.root.role',
+      candidates: [{ value: 'page', provenance: { source: 'data-pb', locator: 'ledger-planet.task-list.root#data-pb-role' } }],
       resolution: 'resolved',
       effectiveValue: 'page',
     },
@@ -74,8 +74,8 @@ export const FRAGMENT_SCOPED_ACTIVE_REVISION: CaseEvidenceRevision = {
   capturedAt: T2,
   facts: [
     {
-      factId: 'project.task-list.list.role',
-      candidates: [{ value: 'list', provenance: { source: 'data-pb', locator: 'project.task-list.list#data-pb-role' } }],
+      factId: 'ledger-planet.task-list.list.role',
+      candidates: [{ value: 'list', provenance: { source: 'data-pb', locator: 'ledger-planet.task-list.list#data-pb-role' } }],
       resolution: 'resolved',
       effectiveValue: 'list',
     },

@@ -93,28 +93,26 @@ describe("design contracts", () => {
     );
   });
 
-  it("ships project collaboration screens and variants", () => {
+  it("ships the registered prototypes and their task screens", () => {
     expect(prototypes.map((item) => item.id)).toEqual([
       "field-service",
-      "project",
       "ledger-planet",
     ]);
     const list = prototypeScreens.find(
-      (item) => item.screenId === "project.task-list",
+      (item) => item.screenId === "ledger-planet.task-list",
     );
     const detail = prototypeScreens.find(
-      (item) => item.screenId === "project.task-detail",
+      (item) => item.screenId === "ledger-planet.task-detail",
     );
     expect(list?.variants.map((item) => item.id)).toEqual([
       "default",
-      "loading",
       "empty",
+      "claimable",
     ]);
     expect(detail?.variants.map((item) => item.id)).toEqual([
-      "overview",
-      "activity",
-      "error",
-      "sheet-open",
+      "default",
+      "completed",
+      "claimable",
     ]);
     const fieldScreens = prototypeScreens.filter(
       (item) => item.prototypeId === "field-service",

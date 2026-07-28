@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
   await page.goto(
-    "/workbench/prototypes/project/screens/task-list?variant=default&theme=light",
+    "/workbench/prototypes/ledger-planet/screens/task-list?variant=default&theme=light",
   );
   await expect(page.getByTestId("prototype-iframe")).toBeVisible();
 });
@@ -11,7 +11,7 @@ test("renders the phone canvas iframe for a screen", async ({ page }) => {
   const iframe = page.getByTestId("prototype-iframe");
   await expect(iframe).toHaveAttribute(
     "src",
-    /\/prototype\/project\/task-list\?variant=default&theme=light/,
+    /\/prototype\/ledger-planet\/task-list\?variant=default&theme=light/,
   );
   await expect(iframe).toHaveAttribute("width", "390");
   await expect(iframe).toHaveAttribute("height", "844");
@@ -63,11 +63,11 @@ test("switching variant and theme updates the live iframe without remounting it"
   await expect(page).toHaveURL(/theme=dark/);
   await expect(page.getByTestId("prototype-iframe")).toHaveAttribute(
     "src",
-    /\/prototype\/project\/task-list\?variant=default&theme=light/,
+    /\/prototype\/ledger-planet\/task-list\?variant=default&theme=light/,
   );
 
   const frame = page.frameLocator('[data-testid="prototype-iframe"]');
-  await expect(frame.getByText("暂无任务")).toBeVisible();
+  await expect(frame.getByText("没有任务")).toBeVisible();
   await expect(frame.getByTestId("runtime-root")).toHaveClass(
     /v-theme--pbworkDark/,
   );
@@ -82,7 +82,7 @@ test("device preset changes iframe viewport without leaving workbench", async ({
   await expect(iframe).toHaveAttribute("width", "375");
   await expect(iframe).toHaveAttribute("height", "667");
   await expect(page).toHaveURL(
-    /\/workbench\/prototypes\/project\/screens\/task-list/,
+    /\/workbench\/prototypes\/ledger-planet\/screens\/task-list/,
   );
 });
 

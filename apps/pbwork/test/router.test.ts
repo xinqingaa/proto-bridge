@@ -18,14 +18,14 @@ describe("PBWork routes", () => {
     expect(router.resolve("/workbench/prototypes/active").name).toBe(
       "prototypes-lifecycle",
     );
-    expect(router.resolve("/workbench/prototypes/project").name).toBe(
+    expect(router.resolve("/workbench/prototypes/ledger-planet").name).toBe(
       "prototype-overview",
     );
     expect(
-      router.resolve("/workbench/prototypes/project/screens/task-list").name,
+      router.resolve("/workbench/prototypes/ledger-planet/screens/task-list").name,
     ).toBe("prototype-screen");
     expect(
-      router.resolve("/prototype/project/task-list?variant=default&theme=light")
+      router.resolve("/prototype/ledger-planet/task-list?variant=default&theme=light")
         .name,
     ).toBe("prototype-runtime");
   });

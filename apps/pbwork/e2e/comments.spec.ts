@@ -8,17 +8,21 @@ test("adds, persists, resolves and deletes a local element comment", async ({
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await page.goto(
-    "/workbench/prototypes/project/screens/task-list?variant=default&theme=light",
+    "/workbench/prototypes/ledger-planet/screens/task-list?variant=default&theme=light",
   );
   await page.evaluate(() => localStorage.removeItem("pbwork.comments.v1"));
   await page.reload();
+
+  const frame = page.frameLocator('[data-testid="prototype-iframe"]');
+  await expect(frame.getByRole("heading", { name: "任务" })).toBeVisible();
 
   const inspector = page.getByTestId("inspector-body");
   await inspector.getByRole("tab", { name: /评论/ }).click();
   await inspector.getByRole("button", { name: "开始选择" }).click();
 
-  const frame = page.frameLocator('[data-testid="prototype-iframe"]');
-  await frame.locator('[data-pb-id="project.task-list.list.row.t1"]').click();
+  await frame
+    .locator('[data-pb-id="ledger-planet.task-list.list.row.t1"]')
+    .click({ position: { x: 16, y: 14 } });
 
   await expect(inspector.getByRole("tab", { name: /评论/ })).toHaveAttribute(
     "aria-selected",
@@ -30,10 +34,11 @@ test("adds, persists, resolves and deletes a local element comment", async ({
   await expect(
     inspector
       .locator(".comment-card")
-      .getByText("整理需求", { exact: false }),
+      .getByText("记一笔", { exact: false }),
   ).toBeVisible();
 
   await page.reload();
+  await expect(frame.getByRole("heading", { name: "任务" })).toBeVisible();
   await page
     .getByTestId("inspector-body")
     .getByRole("tab", { name: /评论/ })
@@ -67,7 +72,7 @@ test("reports a missing comment anchor without an unhandled page error", async (
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await page.goto(
-    "/workbench/prototypes/project/screens/task-list?variant=default&theme=light",
+    "/workbench/prototypes/ledger-planet/screens/task-list?variant=default&theme=light",
   );
   await page.evaluate(() => {
     localStorage.setItem(
@@ -76,8 +81,8 @@ test("reports a missing comment anchor without an unhandled page error", async (
         schemaVersion: 2,
         comments: [{
           id: "missing-anchor",
-          prototypeId: "project",
-          screenId: "project.task-list",
+          prototypeId: "ledger-planet",
+          screenId: "ledger-planet.task-list",
           screenSlug: "task-list",
           elementId: "missing.element",
           elementLabel: "已删除的按钮",
@@ -91,6 +96,8 @@ test("reports a missing comment anchor without an unhandled page error", async (
     );
   });
   await page.reload();
+  const frame = page.frameLocator('[data-testid="prototype-iframe"]');
+  await expect(frame.getByRole("heading", { name: "任务" })).toBeVisible();
   const inspector = page.getByTestId("inspector-body");
   await inspector.getByRole("tab", { name: /评论/ }).click();
   const card = inspector.locator(".comment-card").filter({ hasText: "这个元素已经不在页面中" });

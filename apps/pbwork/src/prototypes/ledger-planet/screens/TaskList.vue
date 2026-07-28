@@ -52,12 +52,18 @@ function open(id: string, status: string, rewardState: string) {
         title="没有任务"
         description="稍后再来看看。"
       />
-      <DataList v-if="rows.length" surface="none" rounded="none">
+      <DataList
+        v-if="rows.length"
+        surface="none"
+        rounded="none"
+        inspect-id="ledger-planet.task-list.list"
+      >
         <button
           v-for="task in rows"
           :key="task.id"
           type="button"
           class="row"
+          :data-pb-id="`ledger-planet.task-list.list.row.${task.id}`"
           @click="open(task.id, task.status, task.rewardState)"
         >
           <div>

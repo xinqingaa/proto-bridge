@@ -76,8 +76,8 @@ packages/core/src/v2/
 贯穿七阶段的第一条参考切片固定使用当前真实 Registry 中的：
 
 ```text
-Prototype: project
-Screen: project.task-list
+Prototype: ledger-planet
+Screen: ledger-planet.task-list
 Variant: default
 Theme: light
 Device: iphone-14 (390 × 844)
@@ -104,7 +104,7 @@ Scenario: none
 
 1. 在 Core 建立 V2 public boundary，不改变 V1 export。
 2. 为 Workspace、CaseKey、CaptureScope、EvidenceRef、Case Evidence header、Attempt、Run、Snapshot ref 和 Handoff ref 建立最小运行时 Schema。
-3. 建立 `project.task-list` 的 valid fixtures：
+3. 建立 `ledger-planet.task-list` 的 valid fixtures：
    - Base Case；
    - full Case primary active revision；
    - Fragment scoped active revision；
@@ -241,13 +241,13 @@ describe
 → execute scenario step/checkpoint
 ```
 
-每个 request kind 的成功响应必须有可执行 Schema。协议不需要一次实现全部 Catalog；先满足 `project.task-list` Base Case，再扩展 Component、Token、Navigation 和 Scenario。
+每个 request kind 的成功响应必须有可执行 Schema。协议不需要一次实现全部 Catalog；先满足 `ledger-planet.task-list` Base Case，再扩展 Component、Token、Navigation 和 Scenario。
 
 Core/Playwright 负责 canonical URL 导航。Runtime prepare 只应用 fixture、Variant、Theme 和业务状态，并返回实际维度。维度不匹配、未知输入或未稳定时明确失败。
 
 Device 是 Core/Playwright 的环境维度：Core 将稳定 Device identity 解析为 viewport、DPR 和相关环境设置，并验证实际浏览器上下文。Runtime 只报告可观测 viewport，并验证 Screen、Variant、Theme 和 fixture；不要求 Runtime 解释 Workbench 的 logical Device ID。
 
-在阶段三开始完整 Capture 前，先把 `project.task-list` 迁移为最小 V2 instrumented fixture：
+在阶段三开始完整 Capture 前，先把 `ledger-planet.task-list` 迁移为最小 V2 instrumented fixture：
 
 - Screen 根和目标 Fragment 具有稳定 `data-pb-id` / `data-pb-role`；
 - 重复行使用模板 `pbId + pbKey`，不再把实例键拼进模板身份；
@@ -514,7 +514,7 @@ V2 配置 Schema 在实现时与 Core Contract 一起落地。阶段七前 V1/V2
 
 ## 迁移台账
 
-阶段六开始时从当前 Registry 自动生成并提交受版本控制的迁移基线。当前期望是 3 个 Prototype、27 个 Screen、89 个 Variant；最终验收还必须确认基线与当前 Registry diff 为零，不能只检查硬编码数量。
+阶段六开始时从当前 Registry 自动生成并提交受版本控制的迁移基线。当前期望是 2 个 Prototype、25 个 Screen、82 个 Variant；最终验收还必须确认基线与当前 Registry diff 为零，不能只检查硬编码数量。
 
 执行 V2 对比任务前先冻结：
 
@@ -529,9 +529,9 @@ V2 配置 Schema 在实现时与 Core Contract 一起落地。阶段七前 V1/V2
 1. Ledger Planet 当前 Screen；
 2. Ledger Planet Overlay / Scenario；
 3. Ledger Planet 多 Screen Flow；
-4. Field Service 当前 Screen；
-5. Field Service 表单 validation / submit Scenario；
-6. Project Fragment；
+4. Ledger Planet Fragment；
+5. Field Service 当前 Screen；
+6. Field Service 表单 validation / submit Scenario；
 7. generic runtime；
 8. screenshot-only。
 
@@ -556,10 +556,9 @@ V2 配置 Schema 在实现时与 Core Contract 一起落地。阶段七前 V1/V2
 迁移顺序：
 
 ```text
-project.task-list 垂直切片
-→ Project 全量
+ledger-planet.task-list 垂直切片
+→ Ledger Planet 全量
 → Field Service
-→ Ledger Planet
 → generic runtime / screenshot-only fixtures
 → 固定 V1/V2 目标实现任务
 ```

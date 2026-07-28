@@ -28,7 +28,6 @@ lib/
 | `/demo` | Demo 对照 |
 | `/prototypes/field-service` | Field Service |
 | `/prototypes/ledger-planet` | Ledger Planet |
-| `/prototypes/project` | Project |
 
 新增原型页：
 

@@ -162,7 +162,7 @@ V2 是这个长期目标的第一个完整版本：本地、单用户、以 PBWo
 - MCP 的持久 Evidence 发现与按需读取；
 - Agent Handoff、Consumer 读取顺序和确定性错误；
 - 独立 Flutter Target 查询与验证能力；
-- 当前 PBWork Registry 的全部 Prototype、27 个 Screen 和 89 个 Variant 迁移；
+- 当前 PBWork Registry 的全部 Prototype、25 个 Screen 和 82 个 Variant 迁移；
 - V1 Artifact、Planner、旧 CLI/MCP 页面工作流和死代码退出。
 
 ### V2 不做
@@ -292,7 +292,7 @@ V2 是这个长期目标的第一个完整版本：本地、单用户、以 PBWo
 
 关键任务：
 
-- 从 Registry 自动生成 3 个 Prototype、27 个 Screen、89 个 Variant 的迁移台账；
+- 从 Registry 自动生成 2 个 Prototype、25 个 Screen、82 个 Variant 的迁移台账；
 - 在运行 V2 对比前冻结 V1/目标仓库基线、任务集、计数口径、评分 rubric 和原始记录格式；
 - 补齐稳定 ID、Action、Component、Slot、Scenario 和关键 Checkpoint；
 - 完成 instrumented-source-runtime、instrumented-runtime、generic-runtime 和 screenshot-only 验收；
@@ -302,7 +302,7 @@ V2 是这个长期目标的第一个完整版本：本地、单用户、以 PBWo
 完成条件：
 
 - 迁移台账中的每个 Screen、Variant、Action 和 Scenario 都有通过、明确不适用或带 Issue 的 unsupported 结果；
-- Ledger Planet 18 Screen / 54 Variant、Field Service 7 / 28、Project 2 / 7 全部有可追踪结果；
+- Ledger Planet 18 Screen / 54 Variant、Field Service 7 / 28 全部有可追踪结果；
 - 四种 Evidence Level 的生产、存储、读取和错误路径 E2E 通过；
 - `unsupportedAssumptions = 0`；
 - V2 完成任务数不低于 V1；

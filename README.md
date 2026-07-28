@@ -18,7 +18,7 @@ source / URL / screenshot / target repo
 npx @proto-bridge/cli init
 
 npx @proto-bridge/cli generate \
-  --url "http://127.0.0.1:5173/prototype/project/task-list?variant=default&theme=light" \
+  --url "http://127.0.0.1:5173/prototype/ledger-planet/task-list?variant=default&theme=light" \
   --capture
 ```
 

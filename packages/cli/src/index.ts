@@ -275,21 +275,21 @@ function unknownFlagMessage(key: string): string {
   return [
     `Unknown flag: --${key}`,
     'Supported flags: --config, --url, --route, --vue, --output, --capture, --trace, --source-root, --target-root.',
-  'Example: npx @proto-bridge/cli generate --url "http://127.0.0.1:5173/prototype/project/task-list?variant=default&theme=light"',
+  'Example: npx @proto-bridge/cli generate --url "http://127.0.0.1:5173/prototype/ledger-planet/task-list?variant=default&theme=light"',
   ].join('\n');
 }
 
 function missingFlagValueMessage(key: string): string {
   const examples: Record<string, string> = {
-    config: 'npx @proto-bridge/cli generate --config ./proto-bridge.config.json --route /prototype/project/task-list',
-    output: 'npx @proto-bridge/cli generate --route /prototype/project/task-list --output ./output/task-list',
-    route: 'npx @proto-bridge/cli generate --route /prototype/project/task-list',
-    url: 'npx @proto-bridge/cli generate --url "http://127.0.0.1:5173/prototype/project/task-list?variant=default&theme=light"',
+    config: 'npx @proto-bridge/cli generate --config ./proto-bridge.config.json --route /prototype/ledger-planet/task-list',
+    output: 'npx @proto-bridge/cli generate --route /prototype/ledger-planet/task-list --output ./output/task-list',
+    route: 'npx @proto-bridge/cli generate --route /prototype/ledger-planet/task-list',
+    url: 'npx @proto-bridge/cli generate --url "http://127.0.0.1:5173/prototype/ledger-planet/task-list?variant=default&theme=light"',
     vue: 'npx @proto-bridge/cli generate --vue prototype/src/views/prototype/etf/ETFDetailPage.vue',
-    'source-adapter': 'npx @proto-bridge/cli generate --route /prototype/project/task-list --source-adapter vue3-prototype',
-    'source-root': 'npx @proto-bridge/cli generate --url "http://127.0.0.1:5173/prototype/project/task-list" --source-root /path/to/source',
-    'target-adapter': 'npx @proto-bridge/cli generate --route /prototype/project/task-list --target-adapter flutter-app',
-    'target-root': 'npx @proto-bridge/cli generate --url "http://127.0.0.1:5173/prototype/project/task-list" --target-root /path/to/target',
+    'source-adapter': 'npx @proto-bridge/cli generate --route /prototype/ledger-planet/task-list --source-adapter vue3-prototype',
+    'source-root': 'npx @proto-bridge/cli generate --url "http://127.0.0.1:5173/prototype/ledger-planet/task-list" --source-root /path/to/source',
+    'target-adapter': 'npx @proto-bridge/cli generate --route /prototype/ledger-planet/task-list --target-adapter flutter-app',
+    'target-root': 'npx @proto-bridge/cli generate --url "http://127.0.0.1:5173/prototype/ledger-planet/task-list" --target-root /path/to/target',
   };
   return [`--${key} requires a value.`, `Example: ${examples[key] ?? 'npx @proto-bridge/cli --help'}`].join('\n');
 }

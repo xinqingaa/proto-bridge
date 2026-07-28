@@ -374,14 +374,14 @@ Runtime 路由只挂载原型页面和必要运行时能力。这是 PBWork 对�
 权威示例（路径与 query 语义以此为准；host/port 随本地或部署变化）：
 
 ```text
-http://127.0.0.1:5173/prototype/project/task-list?variant=default&theme=light
-http://127.0.0.1:5173/prototype/project/task-detail?variant=sheet-open&theme=dark
+http://127.0.0.1:5173/prototype/ledger-planet/task-list?variant=default&theme=light
+http://127.0.0.1:5173/prototype/ledger-planet/task-detail?variant=claimable&theme=dark
 ```
 
 | 部分                         | 规则                                                                                  |
 | ---------------------------- | ------------------------------------------------------------------------------------- |
 | `prototypeId` / `screenSlug` | 与注册表字段一致；二者共同定位 Screen，稳定、可读、可进 PB `--route`                  |
-| `screenId`                   | 不进入 URL；全局 Contract ID，如 `project.task-list`，供 PB、Bridge、评论和检查器使用 |
+| `screenId`                   | 不进入 URL；全局 Contract ID，如 `ledger-planet.task-list`，供 PB、Bridge、评论和检查器使用 |
 | `variant`                    | 可选；缺省时使用该 Screen 的 `defaultVariantId`                                       |
 | `theme`                      | 可选；缺省时使用原型默认主题                                                          |
 | 业务 query                   | Variant 可声明额外 `query`；复制链接时一并带上，且必须可由注册表复现                  |
@@ -775,12 +775,12 @@ type PrototypeRecord = {
 
 type ScreenRecord = {
   prototypeId: string;
-  screenId: string; // 全局 Contract ID，如 project.task-list
+  screenId: string; // 全局 Contract ID，如 ledger-planet.task-list
   screenSlug: string; // Prototype 内 URL 段，如 task-list
   label: string;
   title?: string;
-  path: string; // Runtime path，如 /prototype/project/task-list
-  view: string; // 可静态解析的 Vue SFC 逻辑相对路径，如 project/screens/TaskList.vue
+  path: string; // Runtime path，如 /prototype/ledger-planet/task-list
+  view: string; // 可静态解析的 Vue SFC 逻辑相对路径，如 ledger-planet/screens/TaskList.vue
   fixtureSchema?: string; // 相对 Prototype 目录，如 schemas/task-list.fixture.schema.json
   defaultVariantId: string;
   variants: PrototypeVariant[];
@@ -926,7 +926,7 @@ ID 使用 `^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$`；`prototypeId`、`screenSlug`、
 
 Token、Theme 与 Component Contract 数据对象的 `schemaVersion` 首期固定为 `1`；Schema 自身通过带版本的 `$id` 标识，不再另设 `schemaVersion` 字段。Screen fixture 的版本由对应 Schema `$id` 与 fixture 根字段 `schemaVersion` 共同确定，首期同为 `1`。不兼容字段变化必须提升版本并提供显式迁移；PBWork 不静默接受未知版本。工作台启动与生产构建都运行同一套 `validateRegistries()`，任何错误均阻止 Runtime ready。
 
-Vue Router 与组件预览使用 `import.meta.glob` 建立静态模块映射，再通过 `view` 查找唯一 SFC。Screen 的 `view` 固定写为 `<prototypeId>/screens/<File>.vue`，例如 `project/screens/TaskList.vue`。当前 adapter 使用 TypeScript AST 静态读取导出的数组，支持类型标注、`satisfies` 和 `as const`，但禁止函数调用、展开语法和其他动态表达式，也不会执行注册表源码。adapter 先扫描全部候选文件：全局存在一个 `prototypeScreens` 时只消费它；存在多个时直接报错；完全不存在时才遍历其他导出数组和 Vue Router，兼容现有项目。精确路径无匹配时才允许唯一 basename 回退；多文件同名必须报错。启动校验必须拒绝：重复 ID/path、同一 Prototype 内重复 screenSlug、`screenId !== ${prototypeId}.${screenSlug}`、`path !== /prototype/${prototypeId}/${screenSlug}`、未知 prototypeId、缺失默认 Variant、`view` 无匹配或匹配多个文件、未知或缺失默认 Theme、保留 query 被写入 Variant `query`、非法业务 query 值。
+Vue Router 与组件预览使用 `import.meta.glob` 建立静态模块映射，再通过 `view` 查找唯一 SFC。Screen 的 `view` 固定写为 `<prototypeId>/screens/<File>.vue`，例如 `ledger-planet/screens/TaskList.vue`。当前 adapter 使用 TypeScript AST 静态读取导出的数组，支持类型标注、`satisfies` 和 `as const`，但禁止函数调用、展开语法和其他动态表达式，也不会执行注册表源码。adapter 先扫描全部候选文件：全局存在一个 `prototypeScreens` 时只消费它；存在多个时直接报错；完全不存在时才遍历其他导出数组和 Vue Router，兼容现有项目。精确路径无匹配时才允许唯一 basename 回退；多文件同名必须报错。启动校验必须拒绝：重复 ID/path、同一 Prototype 内重复 screenSlug、`screenId !== ${prototypeId}.${screenSlug}`、`path !== /prototype/${prototypeId}/${screenSlug}`、未知 prototypeId、缺失默认 Variant、`view` 无匹配或匹配多个文件、未知或缺失默认 Theme、保留 query 被写入 Variant `query`、非法业务 query 值。
 
 二级导航的生命周期中文标签对应：`active` 进行中、`review` 待确认、`final` 已定稿、`archived` 已归档。
 
@@ -980,8 +980,8 @@ Runtime Adapter 使用独立静态模块表，不写入供 PB adapter 读取的 
 
 ```ts
 export const screenRuntimeAdapters = {
-  "project.task-list": () => import("./project/runtime/task-list"),
-  "project.task-detail": () => import("./project/runtime/task-detail"),
+  "ledger-planet.task-list": () => import("./ledger-planet/runtime/task-list"),
+  "ledger-planet.task-detail": () => import("./ledger-planet/runtime/task-detail"),
 } satisfies Record<string, () => Promise<{ default: ScreenRuntimeAdapter }>>;
 ```
 

@@ -8,9 +8,9 @@ import {
   type CaptureScopeInput,
 } from '../../src/v2/index.js';
 
-const screenId = 'project.task-list';
-const rowA = { screenId, pbId: 'project.task-list.list.row', pbKey: 'a' };
-const rowB = { screenId, pbId: 'project.task-list.list.row', pbKey: 'b' };
+const screenId = 'ledger-planet.task-list';
+const rowA = { screenId, pbId: 'ledger-planet.task-list.list.row', pbKey: 'a' };
+const rowB = { screenId, pbId: 'ledger-planet.task-list.list.row', pbKey: 'b' };
 
 function fullScopeInput(overrides: Partial<CaptureScopeInput> = {}): CaptureScopeInput {
   return {

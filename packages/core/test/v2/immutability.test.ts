@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { deepFreeze, fixtures } from '../../src/v2/index.js';
 
-const f = fixtures.projectTaskList;
+const f = fixtures.ledgerPlanetTaskList;
 
 describe('deepFreeze', () => {
   it('prevents in-place mutation of a persisted Run after it is frozen', () => {

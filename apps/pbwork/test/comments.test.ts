@@ -7,8 +7,8 @@ import {
 } from "@/app/stores/comments";
 
 const context = {
-  prototypeId: "project",
-  screenId: "project.task-list",
+  prototypeId: "ledger-planet",
+  screenId: "ledger-planet.task-list",
   variantId: "default",
   themeId: "light",
 };
@@ -63,8 +63,8 @@ describe("local comments", () => {
       schemaVersion: 1,
       comments: [{
         id: "legacy",
-        prototypeId: "project",
-        screenId: "project.task-list",
+        prototypeId: "ledger-planet",
+        screenId: "ledger-planet.task-list",
         elementId: "task-list.first-row",
         content: "旧评论",
         status: "open",

@@ -6,16 +6,16 @@ import type { FragmentRef } from '../../contracts/fragment.js';
 
 /**
  * Reference vertical slice fixed by pb-v2-implementation-guide.md "先垂直切片，再扩全量对象":
- * Prototype `project`, Screen `project.task-list`, Variant `default`,
+ * Prototype `ledger-planet`, Screen `ledger-planet.task-list`, Variant `default`,
  * Theme `light`, Device `iphone-14`, no Scenario.
  */
 export const WORKSPACE_ID = 'local-workspace';
-export const PROTOTYPE_ID = 'project';
-export const SCREEN_ID = 'project.task-list';
+export const PROTOTYPE_ID = 'ledger-planet';
+export const SCREEN_ID = 'ledger-planet.task-list';
 export const VARIANT_ID = 'default';
 export const THEME_ID = 'light';
 export const DEVICE_ID = 'iphone-14';
-export const BUNDLE_ID = 'project.default';
+export const BUNDLE_ID = 'ledger-planet.default';
 
 export const TASK_LIST_CASE_KEY: CaseKey = {
   screenId: SCREEN_ID,
@@ -25,8 +25,8 @@ export const TASK_LIST_CASE_KEY: CaseKey = {
 };
 export const TASK_LIST_CASE_ID = computeCaseId(TASK_LIST_CASE_KEY);
 
-export const TASK_LIST_ROOT_FRAGMENT: FragmentRef = { screenId: SCREEN_ID, pbId: 'project.task-list.root' };
-export const TASK_LIST_LIST_FRAGMENT: FragmentRef = { screenId: SCREEN_ID, pbId: 'project.task-list.list' };
+export const TASK_LIST_ROOT_FRAGMENT: FragmentRef = { screenId: SCREEN_ID, pbId: 'ledger-planet.task-list.root' };
+export const TASK_LIST_LIST_FRAGMENT: FragmentRef = { screenId: SCREEN_ID, pbId: 'ledger-planet.task-list.list' };
 
 const FULL_CASE_SCOPE_INPUT: CaptureScopeInput = {
   fragments: [],

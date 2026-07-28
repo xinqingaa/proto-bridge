@@ -10,9 +10,9 @@ import {
   fixtures,
 } from '../../src/v2/index.js';
 
-const f = fixtures.projectTaskList;
+const f = fixtures.ledgerPlanetTaskList;
 
-describe('project.task-list valid fixtures parse against their schemas', () => {
+describe('ledger-planet.task-list valid fixtures parse against their schemas', () => {
   it('Base Case', () => {
     expect(CaseKey.safeParse(f.BASE_CASE)).toMatchObject({ success: true });
   });

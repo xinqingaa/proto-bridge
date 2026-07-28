@@ -59,13 +59,6 @@ class HubPage extends ConsumerWidget {
             icon: Icons.account_balance_wallet_outlined,
             route: AppRoutes.ledgerPlanet,
           ),
-          SizedBox(height: TS.spacing.sm),
-          _HubEntry(
-            title: 'Project',
-            subtitle: 'prototypes/project',
-            icon: Icons.folder_outlined,
-            route: AppRoutes.project,
-          ),
         ],
       ),
     );

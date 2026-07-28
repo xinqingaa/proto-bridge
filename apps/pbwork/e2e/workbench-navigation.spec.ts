@@ -43,7 +43,7 @@ test("primary and secondary navigation update the URL and resource view", async 
 
 test("collapsing side panels expands the content track", async ({ page }) => {
   await page.goto(
-    "/workbench/prototypes/project/screens/task-list?variant=default&theme=light",
+    "/workbench/prototypes/ledger-planet/screens/task-list?variant=default&theme=light",
   );
   const content = page.getByTestId("content-canvas");
   const initialBox = await content.boundingBox();
@@ -77,13 +77,13 @@ test("collapsing side panels expands the content track", async ({ page }) => {
   const collapsedTree = page.locator(".collapsed-tree-popover");
   await expect(
     collapsedTree.locator(
-      'a[href="/workbench/prototypes/project/screens/task-list"]',
+      'a[href="/workbench/prototypes/ledger-planet/screens/task-list"]',
     ),
   ).toBeVisible();
   await collapsedTree
-    .locator('a[href*="/project/screens/task-list?variant=loading"]')
+    .locator('a[href*="/ledger-planet/screens/task-list?variant=empty"]')
     .click();
-  await expect(page).toHaveURL(/variant=loading/);
+  await expect(page).toHaveURL(/variant=empty/);
 });
 
 test("element inspector is hidden outside the canvas", async ({ page }) => {
@@ -92,7 +92,7 @@ test("element inspector is hidden outside the canvas", async ({ page }) => {
   await expect(page.getByTestId("resource-page-shell")).toBeVisible();
 
   await page.goto(
-    "/workbench/prototypes/project/screens/task-list?variant=default&theme=light",
+    "/workbench/prototypes/ledger-planet/screens/task-list?variant=default&theme=light",
   );
   await expect(page.getByTestId("inspector-panel")).toBeVisible();
   await expect(page.locator(".inspector-panel .panel-title")).toHaveText(

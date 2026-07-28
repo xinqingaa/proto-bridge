@@ -9,7 +9,7 @@ import {
 
 const configDir = path.resolve('/project/config');
 const cwd = path.resolve('/project');
-const pageUrl = 'http://localhost:5173/prototype/project/task-list?variant=default&theme=light';
+const pageUrl = 'http://localhost:5173/prototype/ledger-planet/task-list?variant=default&theme=light';
 const fullConfig: ProtoBridgeConfig = {
   schemaVersion: 1,
   source: { adapter: 'vue3-prototype', root: './source-app' },
@@ -31,7 +31,7 @@ describe('ProtoBridge config resolution', () => {
       requirePageInput: true,
     });
 
-    expect(resolved.page.route).toBe('/prototype/project/task-list');
+    expect(resolved.page.route).toBe('/prototype/ledger-planet/task-list');
     expect(resolved.input.url).toBe(pageUrl);
     expect(resolved.input.source?.root).toBe(path.join(configDir, 'source-app'));
     expect(resolved.input.target?.root).toBe(path.join(configDir, 'target-app'));

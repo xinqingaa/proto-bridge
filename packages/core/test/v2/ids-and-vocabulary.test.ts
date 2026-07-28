@@ -10,8 +10,8 @@ import {
 describe('V2 stable id rules', () => {
   it('accepts lowercase, readable, dot/hyphen-separated identifiers', () => {
     expect(ScreenId.safeParse('field-service.dashboard').success).toBe(true);
-    expect(ScreenId.safeParse('project.task-list').success).toBe(true);
-    expect(PbId.safeParse('project.task-list.list.row').success).toBe(true);
+    expect(ScreenId.safeParse('ledger-planet.task-list').success).toBe(true);
+    expect(PbId.safeParse('ledger-planet.task-list.list.row').success).toBe(true);
     expect(PbKey.safeParse('t1').success).toBe(true);
   });
 

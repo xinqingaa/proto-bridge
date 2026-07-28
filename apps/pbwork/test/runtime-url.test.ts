@@ -13,14 +13,14 @@ import {
 describe("buildCanonicalRuntimeUrl", () => {
   it("always writes variant and theme, and sorts business query keys", () => {
     const href = buildCanonicalRuntimeUrl({
-      prototypeId: "project",
+      prototypeId: "ledger-planet",
       screenSlug: "task-list",
       variantId: "empty",
       themeId: "dark",
       query: { zed: "1", alpha: "2" },
     });
     expect(href).toBe(
-      "/prototype/project/task-list?variant=empty&theme=dark&alpha=2&zed=1",
+      "/prototype/ledger-planet/task-list?variant=empty&theme=dark&alpha=2&zed=1",
     );
   });
 });
@@ -28,7 +28,7 @@ describe("buildCanonicalRuntimeUrl", () => {
 describe("resolveRuntimeRoute", () => {
   it("resolves known routes and fills defaults when variant/theme omitted", () => {
     const withExplicit = resolveRuntimeRoute({
-      prototypeId: "project",
+      prototypeId: "ledger-planet",
       screenSlug: "task-list",
       searchParams: new URLSearchParams("variant=empty&theme=dark"),
     });
@@ -36,12 +36,12 @@ describe("resolveRuntimeRoute", () => {
     if (withExplicit.ok) {
       expect(withExplicit.variant.id).toBe("empty");
       expect(withExplicit.theme.id).toBe("dark");
-      expect(withExplicit.canonicalPath).toBe("/prototype/project/task-list");
+      expect(withExplicit.canonicalPath).toBe("/prototype/ledger-planet/task-list");
       expect(withExplicit.canonicalSearch).toBe("variant=empty&theme=dark");
     }
 
     const withDefaults = resolveRuntimeRoute({
-      prototypeId: "project",
+      prototypeId: "ledger-planet",
       screenSlug: "task-list",
       searchParams: new URLSearchParams(""),
     });
@@ -64,7 +64,7 @@ describe("resolveRuntimeRoute", () => {
 
     expect(
       resolveRuntimeRoute({
-        prototypeId: "project",
+        prototypeId: "ledger-planet",
         screenSlug: "missing",
         searchParams: new URLSearchParams("theme=light"),
       }),
@@ -72,7 +72,7 @@ describe("resolveRuntimeRoute", () => {
 
     expect(
       resolveRuntimeRoute({
-        prototypeId: "project",
+        prototypeId: "ledger-planet",
         screenSlug: "task-list",
         searchParams: new URLSearchParams("variant=nope&theme=light"),
       }),
@@ -80,7 +80,7 @@ describe("resolveRuntimeRoute", () => {
 
     expect(
       resolveRuntimeRoute({
-        prototypeId: "project",
+        prototypeId: "ledger-planet",
         screenSlug: "task-list",
         searchParams: new URLSearchParams("variant=default&theme=nope"),
       }),
@@ -95,7 +95,7 @@ describe("resolveRuntimeRoute", () => {
     duplicate.append("foo", "2");
     expect(
       resolveRuntimeRoute({
-        prototypeId: "project",
+        prototypeId: "ledger-planet",
         screenSlug: "task-list",
         searchParams: duplicate,
       }),
@@ -103,7 +103,7 @@ describe("resolveRuntimeRoute", () => {
 
     expect(
       resolveRuntimeRoute({
-        prototypeId: "project",
+        prototypeId: "ledger-planet",
         screenSlug: "task-list",
         searchParams: new URLSearchParams(
           "variant=default&theme=light&extra=1",
