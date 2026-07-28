@@ -1,14 +1,15 @@
 # ProtoBridge / PBWork V2 重构计划
 
-> 状态：Review 完成，待实施
+> 状态：方案闭环已补全，待实施
 > 目标分支：`dev`
 > 性质：破坏性重构；不兼容 V1 Artifact、CLI 和 MCP 页面工作流
-> 更新时间：2026-07-27
+> 更新时间：2026-07-28
 
 本文件是 V2 的决策与交付入口，回答为什么重构、完整终态是什么、如何实施以及何时完成。
 
 精确类型与协议见 [PB V2 Contract 规范](./pb-v2-contracts.md)。
 代码落点、CLI / MCP、测试和切换步骤见 [PB V2 实施规格](./pb-v2-implementation.md)。
+PBWork 的选择、预检、采集、检查、重采和交接见 [PBWork V2 Capture 体验规格](./pbwork-v2-capture-experience.md)。
 
 ## 1. 为什么重构
 
@@ -65,21 +66,37 @@ V2 的价值不是替 Agent 做更多决定，而是减少 Agent 必须猜测的
 
 账号、人物角色、RBAC 和审批不进入 V2。PBWork、CLI 和 MCP 只根据当前配置中是否存在 Runtime、Store 和 Target 能力来决定可用功能。
 
+### 2.4 不可变产品决策
+
+以下决策用于裁决后续设计和实现分歧，V2 实施不得反向改变：
+
+1. V1 可以完成页面级闭环；V2 重构的原因是证据覆盖、可信度和复用能力不足，不是 V1 完全不可用。
+2. PB 的核心产物是 Evidence，不是目标工程实现计划。
+3. PBWork 和 CLI 是同一证据生产能力的两个入口，必须提交同一种 `CaptureRequest` 并写入同一个 Workspace Store。
+4. PBWork 是首要采集控制面，必须完成选择、预检、采集、检查、修复、重采和交接闭环。
+5. MCP 是 Agent 读取 Evidence 的正式入口；目标工程和 Agent 不直接解析 Store 目录。
+6. Handoff 只标识实现范围、证据引用、Coverage 和 unknown，不复制整份 Evidence，也不携带 Store 物理路径。
+7. Coding Agent 读取 Evidence 和目标仓库后自行决定文件、组件、路由、状态管理和 Token 表达。
+8. Target Adapter 只查询和验证当前目标仓库，不参与 Capture，不写 Evidence。
+9. 目标工程不需要提交 ProtoBridge 配置文件；Store 连接属于 MCP 运行环境。
+10. V2 不提供用户可见的 V1/V2 中间产品，全部 DoD 通过后一次性切换。
+
 ## 3. 一次完整使用如何流转
 
 以下流程同时适用于采集一个控件、一个页面、一组页面或整个 Prototype。
 
-| 步骤 | 发生什么 | 主要输入 | 产生什么 |
-| --- | --- | --- | --- |
-| 1. 原型声明 | PBWork Registry、DS Contract 和页面源码声明 Screen、Variant、Component、Token 和 Action | 原型源码 | 可发现的 Prototype Contract |
-| 2. 选择范围 | 用户在 PBWork 或 CLI 选择 Prototype / Screen / Variant / Fragment、Theme 和 Device | CaptureSelection | 确定的采集范围 |
-| 3. 展开任务 | PB Core 将选择展开成完整 Case Matrix | Selection + Manifest | Screen × Variant × Theme × Device Cases |
-| 4. 准备状态 | Pure Runtime 按 Case 设置路由、fixture、Variant 和 Theme，并报告是否稳定 | Case | 可验证的 Runtime 状态 |
-| 5. 采集证据 | Core 结合 Runtime、Source 和 Screenshot 采集语义、视觉、组件和动作证据 | 稳定 Runtime + 可选 Source | Case Evidence |
-| 6. 持久化 | Store 以事务方式写入 Catalog、Run、Case 和 Blob | Case Evidence | Evidence Bundle |
-| 7. 检查与交接 | PBWork 显示 Coverage、Issue 和 Screenshot，并生成 Handoff | Bundle | bundleId、caseId 和 refs |
-| 8. Agent 消费 | MCP 按任务读取 Manifest、Screen Contract、Case、Fragment 和图片 | Handoff + Store | 当前实现需要的证据 |
-| 9. 目标实现 | Agent 读取 Flutter 仓库；必要时调用独立 Target Adapter 查找规范和示例 | Evidence + Target Repository | 生产代码与验证结果 |
+| 步骤          | 发生什么                                                                                | 主要输入                     | 产生什么                                |
+| ------------- | --------------------------------------------------------------------------------------- | ---------------------------- | --------------------------------------- |
+| 1. 原型声明   | PBWork Registry、DS Contract 和页面源码声明 Screen、Variant、Component、Token 和 Action | 原型源码                     | 可发现的 Prototype Contract             |
+| 2. 选择范围   | 用户在 PBWork 或 CLI 选择 Prototype / Screen / Variant / Fragment、Theme 和 Device      | CaptureSelection             | Selection Draft                         |
+| 3. 预检       | Runtime 与 Core 校验 Contract、稳定 ID、选择引用和采集上限                              | Selection + Manifest         | 可执行 Matrix 或阻塞 Issue              |
+| 4. 展开任务   | PB Core 将通过预检的选择展开成完整 Case Matrix                                          | Selection + Manifest         | Screen × Variant × Theme × Device Cases |
+| 5. 准备状态   | Pure Runtime 按 Case 设置路由、fixture、Variant 和 Theme，并报告是否稳定                | Case                         | 可验证的 Runtime 状态                   |
+| 6. 采集证据   | Core 结合 Runtime、Source 和 Screenshot 采集语义、视觉、组件和动作证据                  | 稳定 Runtime + 可选 Source   | Case Evidence                           |
+| 7. 持久化     | Store 以事务方式写入 Catalog、Run、Case 和 Blob                                         | Case Evidence                | Evidence Bundle                         |
+| 8. 检查与交接 | PBWork 显示 Coverage、Issue、Screenshot 和 stale，并生成 Handoff                        | Bundle                       | workspaceId、bundleId、caseId 和 refs   |
+| 9. Agent 消费 | Agent 按 Consumer 规范通过 MCP 读取 Manifest、Coverage、Screen、Case、Fragment 和图片   | Handoff + MCP                | 当前实现需要的 Evidence                 |
+| 10. 目标实现  | Agent 读取目标仓库；必要时调用独立 Target Adapter 查找规范和示例                        | Evidence + Target Repository | 生产代码与验证结果                      |
 
 原型发生变化时重新执行步骤 2–7。未变化的 Case 和 Blob 可复用；新的 Run 更新 Bundle 当前证据，但不覆盖历史 Run。
 
@@ -88,7 +105,7 @@ V2 的价值不是替 Agent 做更多决定，而是减少 Agent 必须猜测的
 **证据生产生命周期**
 
 ```text
-原型声明 →选择范围 →准备状态 →采集 →检查 →持久化
+原型声明 →选择范围 →预检 →准备状态 →采集 →检查 →持久化
 ```
 
 它发生在 PBWork / CLI 和 PB 本地服务一侧，结果可以被多个任务复用。
@@ -96,21 +113,31 @@ V2 的价值不是替 Agent 做更多决定，而是减少 Agent 必须猜测的
 **目标实现生命周期**
 
 ```text
-发现 Bundle →按需读取 Screen / Case / Fragment →读取目标仓库 →实现 →验证
+接收 Handoff →验证 Workspace →按需读取 Evidence →读取目标仓库 →实现 →验证
 ```
 
 它发生在目标工程和 Coding Agent 一侧。Target 查询只辅助这次实现，不反向污染原型 Evidence。
+
+### 3.2 两个生命周期如何交接
+
+`AgentHandoff` 是两个生命周期之间的唯一任务交接对象：
+
+```text
+workspaceId + bundleId + selection + intent + coverageSummary + riskAcceptance + unknowns
+```
+
+Handoff 不内嵌整份 Evidence，不包含 Store 绝对路径、target root、目标组件映射或 Flutter 文件计划。PBWork 生成 Handoff 后，Agent 使用已连接对应 Workspace 的 MCP 读取 Evidence；MCP 连接错误或 Workspace 不匹配时必须显式失败，不能回退为路径猜测。
 
 ## 4. 目标架构
 
 目标架构按四层划分，不依赖图也可以理解：
 
-| 层 | 组件 | 职责 | 不进入下一层的内容 |
-| --- | --- | --- | --- |
-| 原型声明层 | PBWork Registry、Component/Token Contract、Prototype Source、Pure Runtime | 声明原型有哪些页面、状态、组件、动作和可复现输入 | 目标 Flutter 决策 |
-| 证据生产层 | PBWork Capture、CLI、Local Service、PB Core、Source Adapter、Playwright | 选择范围、准备 Runtime、采集并校验证据 | 未证明的业务结论 |
-| 证据存储层 | Evidence Store | 保存 Bundle、Catalog、Run、Case、Screenshot 和 Debug Blob | 目标工程扫描结果 |
-| 实现消费层 | MCP、Coding Agent、Target Flutter Adapter | 按需读取证据、理解目标仓库、实现和验证 | 不写回原型事实 |
+| 层         | 组件                                                                      | 职责                                                      | 不进入下一层的内容 |
+| ---------- | ------------------------------------------------------------------------- | --------------------------------------------------------- | ------------------ |
+| 原型声明层 | PBWork Registry、Component/Token Contract、Prototype Source、Pure Runtime | 声明原型有哪些页面、状态、组件、动作和可复现输入          | 目标 Flutter 决策  |
+| 证据生产层 | PBWork Capture、CLI、Local Service、PB Core、Source Adapter、Playwright   | 选择范围、准备 Runtime、采集并校验证据                    | 未证明的业务结论   |
+| 证据存储层 | Evidence Store                                                            | 保存 Bundle、Catalog、Run、Case、Screenshot 和 Debug Blob | 目标工程扫描结果   |
+| 实现消费层 | MCP、Coding Agent、Target Flutter Adapter                                 | 按需读取证据、理解目标仓库、实现和验证                    | 不写回原型事实     |
 
 ### 4.1 组件之间如何连接
 
@@ -123,19 +150,32 @@ V2 的价值不是替 Agent 做更多决定，而是减少 Agent 必须猜测的
 7. Coding Agent 同时读取 MCP Evidence 和目标仓库。
 8. Target Flutter Adapter 只查询和验证目标工程，不参与 Capture，也不写 Bundle。
 
-### 4.2 核心对象与代码边界
+### 4.2 配置与数据归属
 
-| 对象 | 含义 |
-| --- | --- |
-| Prototype | 一组有关联的 Screen、Variant、Flow 和共享 Contract |
-| Screen | 稳定页面身份和业务结构 |
-| Variant | Screen 内可直接复现的稳定业务状态 |
-| Scenario | 从稳定初态执行的显式动作序列 |
-| Case | Screen × Variant × Theme × Device × Scenario Checkpoint |
-| Fragment | Case 中以稳定语义节点为根的局部证据 |
-| Bundle | 一个 Prototype 的长期证据集合 |
-| Run | 一次不可变 CaptureSelection 的执行记录 |
-| Blob | 截图、Trace、压缩 Snapshot 等内容寻址大对象 |
+| 信息                                      | 归属                                       | 不得放入          |
+| ----------------------------------------- | ------------------------------------------ | ----------------- |
+| Runtime、Source、Store、Service、Capture  | PB 采集工作区配置                          | 目标工程配置      |
+| MCP 到 Workspace Store 的连接             | 用户、Codex 或 IDE 的 MCP 启动配置         | Agent Handoff     |
+| workspaceId、bundleId、选择范围和任务意图 | Agent Handoff                              | Store 绝对路径    |
+| target root                               | 当前 Agent 工作目录或单次 target tool 参数 | Evidence Bundle   |
+| 目标工程规范                              | 目标仓库代码与文档                         | PB Workspace 配置 |
+| Agent 消费流程                            | V2 Consumer Skill / 使用指南               | Core 隐式 prompt  |
+
+同一个 PB Workspace 中，PBWork、CLI 和 producer MCP 通过同一个 Core / JobHost 写入同一个 Store。目标工程不拥有 Store，也不直接读取 Store 文件；MCP 是 Store 对 Agent 的读取边界。
+
+### 4.3 核心对象与代码边界
+
+| 对象      | 含义                                                    |
+| --------- | ------------------------------------------------------- |
+| Prototype | 一组有关联的 Screen、Variant、Flow 和共享 Contract      |
+| Screen    | 稳定页面身份和业务结构                                  |
+| Variant   | Screen 内可直接复现的稳定业务状态                       |
+| Scenario  | 从稳定初态执行的显式动作序列                            |
+| Case      | Screen × Variant × Theme × Device × Scenario Checkpoint |
+| Fragment  | Case 中以稳定语义节点为根的局部证据                     |
+| Bundle    | 一个 Prototype 的长期证据集合                           |
+| Run       | 一次不可变 CaptureSelection 的执行记录                  |
+| Blob      | 截图、Trace、压缩 Snapshot 等内容寻址大对象             |
 
 包布局：
 
@@ -163,19 +203,21 @@ apps/
 8. 所有 Agent-facing 关键事实具有 provenance、confidence 和 refs。
 9. Target Flutter 扫描从 Capture 主链移除，作为独立 adapter 按需查询。
 10. V2 完成前不切换正式入口；完成后一次性删除 V1，不发布用户可见双轨或过渡产品。
+11. 目标工程不提交 Store 或 Target 配置；MCP 在目标工程之外连接 PB Workspace。
+12. Consumer Skill 在 V2 契约定稿前只作为实施文档中的草案，不创建正式 skill 文件。
 
 ## 6. 质量原则
 
 ### 6.1 事实裁决
 
-| 事实 | 权威来源 |
-| --- | --- |
-| Screen / Variant / Component / Action 身份 | Runtime Contract / Registry / `data-pb-*` |
-| 业务逻辑、未渲染状态和 action 条件 | 显式 Contract / Source |
-| 当前可见状态、文本、bbox 和 computed style | Runtime observation |
-| 最终视觉 | Screenshot + runtime computed value |
-| Accessibility | ARIA / semantic HTML |
-| Navigation | declared、source、scenario、runtime observed 分别保留 provenance |
+| 事实                                       | 权威来源                                                         |
+| ------------------------------------------ | ---------------------------------------------------------------- |
+| Screen / Variant / Component / Action 身份 | Runtime Contract / Registry / `data-pb-*`                        |
+| 业务逻辑、未渲染状态和 action 条件         | 显式 Contract / Source                                           |
+| 当前可见状态、文本、bbox 和 computed style | Runtime observation                                              |
+| 最终视觉                                   | Screenshot + runtime computed value                              |
+| Accessibility                              | ARIA / semantic HTML                                             |
+| Navigation                                 | declared、source、scenario、runtime observed 分别保留 provenance |
 
 冲突不静默覆盖；保留双方 Evidence 并生成结构化 Issue。Screenshot 只裁决视觉，不裁决业务语义。
 
@@ -190,12 +232,12 @@ apps/
 
 ### 6.3 Evidence Level
 
-| Level | 可证明 |
-| --- | --- |
+| Level                       | 可证明                                             |
+| --------------------------- | -------------------------------------------------- |
 | instrumented-source-runtime | Contract、Source 逻辑、Runtime、视觉、组件和 Token |
-| instrumented-runtime | Runtime Contract、显式语义、当前状态和视觉 |
-| generic-runtime | 可见 DOM、ARIA、控件、样式和 Screenshot |
-| screenshot-only | 像素、文字和粗略布局 |
+| instrumented-runtime        | Runtime Contract、显式语义、当前状态和视觉         |
+| generic-runtime             | 可见 DOM、ARIA、控件、样式和 Screenshot            |
+| screenshot-only             | 像素、文字和粗略布局                               |
 
 低等级证据不能推断隐藏状态、完整业务动作或目标工程实现。
 
@@ -211,8 +253,10 @@ apps/
 - Bundle / Run / Case / Blob 持久化；
 - 增量采集、stale 判断、事务写入和崩溃恢复；
 - PBWork Capture、Coverage、Issue、Evidence 和 Handoff；
+- PBWork 当前页面、画布 Fragment、多页面和整 Prototype 四条完整采集路径；
 - 完整 CLI；
 - MCP 按需发现和读取证据；
+- Agent Consumer 规范、Handoff 检查和无目标工程 PB 配置的消费闭环；
 - 独立 Flutter target 查询和验证；
 - 全部现有 PBWork Prototype / Screen / Variant 迁移；
 - V1 Artifact、Planner、CLI 和 MCP 删除。
@@ -231,17 +275,18 @@ apps/
 
 ## 8. 完整工作包
 
-| 工作包 | 主要交付 | 依赖 |
-| --- | --- | --- |
-| W1 Contract | ID、Schema、Evidence、Issue、Coverage | 无 |
-| W2 Runtime | Protocol、prepare/reset、semantic preflight | W1 |
-| W3 Capture | Selection、Case Matrix、Scenario、Playwright | W1、W2 |
-| W4 Store | Bundle、Run、Case、Blob、事务和 retention | W1、W3 |
-| W5 Service | Job、SSE、取消、恢复和安全 | W3、W4 |
-| W6 PBWork | Capture Console、Evidence、Coverage、Handoff | W2、W5 |
-| W7 CLI / MCP | 完整命令、resources、按配置暴露能力 | W4、W5 |
-| W8 Target | Flutter adapter 独立迁移 | W1 |
-| W9 Migration | 全部原型修标、V1 删除、文档和发布 | W1–W8 |
+| 工作包            | 主要交付                                             | 依赖       |
+| ----------------- | ---------------------------------------------------- | ---------- |
+| W1 Contract       | ID、Schema、Evidence、Issue、Coverage                | 无         |
+| W2 Runtime        | Protocol、prepare/reset、semantic preflight          | W1         |
+| W3 Capture        | Selection、Case Matrix、Scenario、Playwright         | W1、W2     |
+| W4 Store          | Bundle、Run、Case、Blob、事务和 retention            | W1、W3     |
+| W5 Service        | Job、SSE、取消、恢复和安全                           | W3、W4     |
+| W6 PBWork         | Capture Console、Evidence、Coverage、Handoff         | W2、W5     |
+| W7 CLI / MCP      | 完整命令、resources、按配置暴露能力                  | W4、W5     |
+| W8 Target         | Flutter adapter 独立迁移                             | W1         |
+| W9 Agent Consumer | Handoff、MCP 连接说明、Consumer Skill 草案与消费 E2E | W4、W7、W8 |
+| W10 Migration     | 全部原型修标、V1 删除、文档和发布                    | W1–W9      |
 
 实施细节、测试组和代码落点见 [实施规格](./pb-v2-implementation.md)。
 
@@ -289,22 +334,28 @@ V2 完成必须同时满足：
 16. 旧四件套、Planner、pageId workflow、旧 CLI / MCP 和死代码全部删除。
 17. README、AGENT、产品文档、PBWork 原型规范和 skills 与 V2 一致。
 18. 与 V1 同类任务相比，人工补充、误实现和返工显著减少。
+19. PBWork 的当前页面、选中 Fragment、多页面和整 Prototype 四条用户路径均通过交互验收。
+20. PBWork 在创建 Job 前显示 preflight 结果和 Case Matrix，不允许超限或无稳定身份的 Selection 静默进入 Capture。
+21. Handoff 包含 `workspaceId`，引用可由 MCP 解析，并明确携带 partial、failed、skipped、unsupported、stale、risk acceptance 和 unknown 摘要。
+22. 目标工程没有 ProtoBridge 配置文件时，Agent 仍能通过外部 MCP 连接和 Handoff 完成 Evidence 消费。
+23. MCP 连接错误 Workspace、Bundle 不存在或引用失效时返回结构化错误，不允许 Agent 猜测 Store 路径。
 
 ## 11. 工作量与收益
 
-| 工作包 | 估算 |
-| --- | --- |
-| Contract | 2–3 天 |
-| Runtime、标注和 lint | 4–6 天 |
-| Capture Orchestrator | 4–6 天 |
-| Store | 3–5 天 |
-| Local Service | 3–4 天 |
-| PBWork | 4–6 天 |
-| CLI、MCP、Target | 3–5 天 |
-| 全量迁移、删除和回归 | 3–5 天 |
-| 合计 | 26–40 个开发日 |
+| 工作包                    | 估算           |
+| ------------------------- | -------------- |
+| Contract                  | 2–3 天         |
+| Runtime、标注和 lint      | 4–6 天         |
+| Capture Orchestrator      | 4–6 天         |
+| Store                     | 3–5 天         |
+| Local Service             | 3–4 天         |
+| PBWork                    | 4–6 天         |
+| CLI、MCP、Target          | 3–5 天         |
+| Agent Consumer 与交接闭环 | 1–2 天         |
+| 全量迁移、删除和回归      | 3–5 天         |
+| 合计                      | 27–42 个开发日 |
 
-单人合理预期为 5–8 周。AI 能加速 Schema、类型、样板和测试编写，但不能消除浏览器稳定性、协议联调、全量修标和回归成本。
+单人合理预期为 6–9 周。AI 能加速 Schema、类型、样板和测试编写，但不能消除浏览器稳定性、协议联调、全量修标和回归成本。
 
 V1 已经可用，因此 V2 的价值不是“从无到有”，而是：
 

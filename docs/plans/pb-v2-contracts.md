@@ -44,19 +44,19 @@ qualified-id = segment(?: "." segment)*
 - 禁止空白、斜杠、反斜杠、`..` 和运行时递增序号；
 - 原始 ID 不直接作为文件路径；Store 使用安全 slug 和 digest。
 
-| 标识 | 作用域 | 示例 |
-| --- | --- | --- |
-| `workspaceId` | Store 全局 | `pbwork-local` |
-| `prototypeId` | Workspace 全局 | `ledger-planet` |
-| `screenId` | Workspace 全局 | `ledger-planet.ledger-list` |
-| `variantId` | Screen 内 | `filter-sheet` |
-| `pbId` | Screen Contract 内 | `ledger-planet.ledger-list.filters.open` |
-| `pbKey` | 同一语义父节点内 | `record-a1` |
-| `componentId` | Component Registry 全局 | `date-range-sheet` |
-| `actionId` | Screen 内 | `open-filter-sheet` |
-| `scenarioId` | Screen 内 | `apply-date-range` |
-| `themeId` | Workspace 内 | `light` |
-| `deviceId` | Workspace 内 | `phone-390x844` |
+| 标识          | 作用域                  | 示例                                     |
+| ------------- | ----------------------- | ---------------------------------------- |
+| `workspaceId` | Store 全局              | `pbwork-local`                           |
+| `prototypeId` | Workspace 全局          | `ledger-planet`                          |
+| `screenId`    | Workspace 全局          | `ledger-planet.ledger-list`              |
+| `variantId`   | Screen 内               | `filter-sheet`                           |
+| `pbId`        | Screen Contract 内      | `ledger-planet.ledger-list.filters.open` |
+| `pbKey`       | 同一语义父节点内        | `record-a1`                              |
+| `componentId` | Component Registry 全局 | `date-range-sheet`                       |
+| `actionId`    | Screen 内               | `open-filter-sheet`                      |
+| `scenarioId`  | Screen 内               | `apply-date-range`                       |
+| `themeId`     | Workspace 内            | `light`                                  |
+| `deviceId`    | Workspace 内            | `phone-390x844`                          |
 
 ID 重命名视为旧身份删除和新身份创建。旧 Case 只保留在历史 Run；需要追踪迁移时由 Registry 显式声明 alias，Core 不按名称相似度自动关联。
 
@@ -65,13 +65,7 @@ ID 重命名视为旧身份删除和新身份创建。旧 Case 只保留在历�
 ```ts
 type EvidenceRef = {
   refId: string;
-  kind:
-    | "contract"
-    | "runtime"
-    | "source"
-    | "screenshot"
-    | "blob"
-    | "issue";
+  kind: "contract" | "runtime" | "source" | "screenshot" | "blob" | "issue";
   uri?: string;
   digest?: string;
   source?: SourceRef;
@@ -104,15 +98,15 @@ type CaptureEnvironment = {
 
 ## 3. `data-pb-*` Authoring Contract
 
-| 属性 | 要求 | 含义 |
-| --- | --- | --- |
-| `data-pb-id` | 关键节点必需 | Screen 内稳定语义节点 |
-| `data-pb-key` | 进入 Evidence 的重复实例必需 | 稳定、非敏感实例键 |
-| `data-pb-role` | 关键节点必需 | 跨技术栈语义角色 |
-| `data-pb-shell` | Overlay 根必需 | Overlay 行为容器 |
-| `data-pb-component` | 已注册 DS 组件根必需 | Component Contract ID |
-| `data-pb-slot` | 声明的 Component part 必需 | Contract slot |
-| `data-pb-action` | 业务 action trigger 必需 | Action Contract ID |
+| 属性                | 要求                         | 含义                  |
+| ------------------- | ---------------------------- | --------------------- |
+| `data-pb-id`        | 关键节点必需                 | Screen 内稳定语义节点 |
+| `data-pb-key`       | 进入 Evidence 的重复实例必需 | 稳定、非敏感实例键    |
+| `data-pb-role`      | 关键节点必需                 | 跨技术栈语义角色      |
+| `data-pb-shell`     | Overlay 根必需               | Overlay 行为容器      |
+| `data-pb-component` | 已注册 DS 组件根必需         | Component Contract ID |
+| `data-pb-slot`      | 声明的 Component part 必需   | Contract slot         |
+| `data-pb-action`    | 业务 action trigger 必需     | Action Contract ID    |
 
 关键节点包括：
 
@@ -147,6 +141,15 @@ type FragmentSelector = {
 ```
 
 Fragment 没有独立人工 ID。Case Evidence 为实际采集结果生成 opaque `fragmentRef`。
+
+PBWork 将画布选择转换为 FragmentSelector 时必须遵守：
+
+1. 当前 `prototypeId` 和 `screenId` 来自已握手的 Runtime 上下文，不能由 DOM 文本推断；
+2. 常规交互不允许用户手写 `rootPbId` 或 CSS selector；
+3. 目标节点必须具有稳定 `data-pb-id`；重复实例同时要求稳定 `data-pb-key`；
+4. 只存在 Runtime 临时 handle、DOM path、数组 index 或随机 class 的节点不能提交 instrumented Fragment Capture；
+5. 切换 Variant、Theme 或 Screen 后必须重新验证 selector；引用失效时返回 preflight Issue；
+6. CSS selector 只能保留为 generic runtime debug 信息，不能成为正式 Fragment 身份。
 
 ## 4. 语义词表
 
@@ -201,14 +204,14 @@ toast
 
 ## 5. 事实裁决
 
-| 事实 | 权威来源 |
-| --- | --- |
-| 身份 | Runtime Contract / Registry / `data-pb-*` |
-| 逻辑与未渲染状态 | 显式 Contract / Source |
-| 当前状态、文本、bbox、computed style | Runtime |
-| 最终视觉 | Screenshot + runtime computed value |
-| Accessibility | ARIA / semantic HTML |
-| Navigation | declared、source、scenario、observed 分别保留 |
+| 事实                                 | 权威来源                                      |
+| ------------------------------------ | --------------------------------------------- |
+| 身份                                 | Runtime Contract / Registry / `data-pb-*`     |
+| 逻辑与未渲染状态                     | 显式 Contract / Source                        |
+| 当前状态、文本、bbox、computed style | Runtime                                       |
+| 最终视觉                             | Screenshot + runtime computed value           |
+| Accessibility                        | ARIA / semantic HTML                          |
+| Navigation                           | declared、source、scenario、observed 分别保留 |
 
 ```ts
 type EvidenceValue<T> = {
@@ -346,9 +349,7 @@ type RuntimeReadyState = {
 ```ts
 type CaptureSelection = {
   prototypeId: string;
-  screens:
-    | { mode: "all" }
-    | { mode: "include"; ids: string[] };
+  screens: { mode: "all" } | { mode: "include"; ids: string[] };
   variants:
     | { mode: "default" }
     | { mode: "critical" }
@@ -699,7 +700,10 @@ type CoverageReport = {
   traceableFactRate: number;
   sourceOnlyStates: number;
   failedCases: number;
+  skippedCases: number;
+  unsupportedCases: number;
   unstableCases: number;
+  staleCases: number;
 };
 ```
 
@@ -744,6 +748,8 @@ capture
 
 ```ts
 type AgentHandoff = {
+  schemaVersion: 2;
+  workspaceId: string;
   bundleId: string;
   prototypeId: string;
   selection: {
@@ -756,8 +762,85 @@ type AgentHandoff = {
   };
   intent?: string;
   recommendedResources: string[];
+  coverageSummary: {
+    status: "complete" | "partial" | "stale" | "partial-stale";
+    selectedCases: number;
+    capturedCases: number;
+    failedCases: number;
+    skippedCases: number;
+    unsupportedCases: number;
+    staleCases: number;
+  };
+  riskAcceptance?: {
+    accepted: Array<"partial" | "stale">;
+    acceptedAt: string;
+  };
   unknowns: UnknownFact[];
+  createdAt: string;
 };
 ```
 
-Handoff 只传 Evidence refs 和任务意图。目标工程规范由 Agent 在目标仓库读取；source component 不等同于 target component。
+Handoff 是 Evidence 生产生命周期与目标实现生命周期之间的任务索引，不是 Evidence 副本。
+
+生成条件：
+
+- Bundle Manifest 已完成事务提交并可由 Store Reader 读取；
+- Handoff 中的 Screen、Case、Fragment 和 `recommendedResources` 全部可解析；
+- Coverage 与 stale 已重新计算；
+- `workspaceId` 与 Bundle Identity 一致；
+- `status` 由 failed / unsupported / 缺失与 stale 的组合确定，不能由 UI 手工选择；
+- complete、partial、stale 和 partial-stale 均可生成，但非 complete 必须保留风险摘要，不得伪装成完整采集；
+- 用户确认继续交接 partial 或 stale 时写入 `riskAcceptance`；没有对应确认时不得生成非 complete Handoff。
+
+Handoff 禁止包含：
+
+- Store root、绝对 Evidence 路径或 Source 绝对路径；
+- target root；
+- Flutter 文件、Widget Tree、路由、状态框架、组件或 Token 映射；
+- 内嵌的完整 Case Evidence、截图或 Debug Blob；
+- 从名称相似度生成的目标建议。
+
+目标工程规范由 Agent 在目标仓库读取；source component 不等同于 target component。
+
+### 14.1 Consumer 读取顺序
+
+Consumer 必须按以下顺序解析 Handoff：
+
+```text
+验证 Handoff schemaVersion
+→ 验证 MCP 当前 workspaceId
+→ 读取 Bundle Manifest
+→ 读取 Coverage
+→ 读取 selection 指定的 Screen Contract
+→ 读取 Case / Fragment
+→ 按 recommendedResources 和 refs 读取 Screenshot / Asset
+→ 读取相关 Issue 和 unknown
+→ 读取目标仓库
+→ 实现与验证
+```
+
+默认读取小型结构化摘要。未被当前 Selection 或 ref 引用的 Prototype 全量 Case、raw DOM、Source 全文和 Trace 不得预加载。
+
+### 14.2 Consumer 错误
+
+MCP、PBWork 和 Consumer 文档共用以下错误语义：
+
+```text
+WORKSPACE_NOT_CONNECTED
+WORKSPACE_MISMATCH
+BUNDLE_NOT_FOUND
+BUNDLE_SCHEMA_UNSUPPORTED
+HANDOFF_REFERENCE_MISSING
+EVIDENCE_STALE
+EVIDENCE_PARTIAL
+```
+
+- `WORKSPACE_NOT_CONNECTED`：MCP 未连接任何 PB Workspace；
+- `WORKSPACE_MISMATCH`：Handoff 的 `workspaceId` 与 MCP 当前 Workspace 不一致；
+- `BUNDLE_NOT_FOUND`：当前 Workspace Store 中不存在 `bundleId`；
+- `BUNDLE_SCHEMA_UNSUPPORTED`：Reader 不支持 Bundle major；
+- `HANDOFF_REFERENCE_MISSING`：Handoff 引用的 Screen、Case、Fragment 或 resource 不存在；
+- `EVIDENCE_STALE`：选中范围包含 stale Case；
+- `EVIDENCE_PARTIAL`：选中范围存在 failed、unsupported 或缺失 Case。
+
+前五项阻止消费并要求修正连接或重新生成 Handoff。`EVIDENCE_STALE` 和 `EVIDENCE_PARTIAL` 必须显式告知 Agent 和用户。Handoff 已包含相应 `riskAcceptance` 时 Agent 可以继续，但仍须在实现结果中报告风险；未包含时停止并请求任务发起者决定。PB 不补齐缺失事实。

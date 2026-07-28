@@ -3,6 +3,7 @@
 > 权威范围：代码落点、Capture、Store、Service、PBWork、CLI、MCP、Target、迁移和测试
 > 上位决策：[V2 重构计划](./pb-pbwork-v2-rearchitecture.md)
 > 数据与协议：[V2 Contract 规范](./pb-v2-contracts.md)
+> PBWork 交互：[PBWork V2 Capture 体验规格](./pbwork-v2-capture-experience.md)
 
 本文件描述完整 V2 如何实现。工作包可拆任务和提交，但不能作为缩水发布范围。
 
@@ -258,18 +259,35 @@ Digest 相同可复用；任一输入改变则 Case stale。
 ```text
 GET  /api/v2/status
 GET  /api/v2/prototypes
+POST /api/v2/capture-preflight
 GET  /api/v2/bundles
 GET  /api/v2/bundles/:bundleId
 GET  /api/v2/bundles/:bundleId/runs/:captureRunId
 GET  /api/v2/bundles/:bundleId/cases/:caseId
 GET  /api/v2/bundles/:bundleId/blobs/:sha256
+POST /api/v2/bundles/:bundleId/handoffs
 POST /api/v2/input-blobs
 POST /api/v2/capture-jobs
 GET  /api/v2/capture-jobs/:jobId
 POST /api/v2/capture-jobs/:jobId/cancel
-POST /api/v2/capture-jobs/:jobId/retry
+POST /api/v2/capture-jobs/:jobId/retry-selection
 GET  /api/v2/events
 ```
+
+接口边界：
+
+| 接口                                | 作用                                                                        | 是否创建 Run |
+| ----------------------------------- | --------------------------------------------------------------------------- | ------------ |
+| `GET /prototypes`                   | 返回可选 Prototype、Screen、Variant、Theme 和 Device                        | 否           |
+| `POST /capture-preflight`           | 校验 Selection 并返回规范化 Selection、Case Matrix、阻塞 Issue 和预计容量   | 否           |
+| `POST /capture-jobs`                | 只接受通过同一 revision preflight 的 `CaptureRequest`                       | 是           |
+| `GET /capture-jobs/:jobId` / events | 返回 Job、Case 进度和最终 Run 引用                                          | 否           |
+| `cancel`                            | 请求取消尚未完成的 Case                                                     | 否           |
+| `retry-selection`                   | 从失败、interrupted 或 stale 范围派生新的 Selection Draft，再进入 Preflight | 否           |
+| Bundle / Run / Case / Blob GET      | 读取 Store 投影                                                             | 否           |
+| `POST /bundles/:bundleId/handoffs`  | 校验选择引用并生成 `AgentHandoff`                                           | 否           |
+
+Preflight 返回 `preflightRevision`。创建 Job 时 Core 重新检查 Manifest、Runtime revision、Selection 和 Case 数；revision 失效时返回 `PREFLIGHT_STALE`，不能使用旧 Matrix 启动。
 
 ### 6.2 Job
 
@@ -291,7 +309,7 @@ Job 状态写入 Run。Service 重启时：
 
 - queued 可以恢复；
 - discovering / capturing / writing 转为 interrupted；
-- 只有显式 retry 创建新 Run 后才继续；
+- 只有显式生成 retry Selection、重新 Preflight 并创建新 Job 后才继续；
 - 最终状态以落盘 Run 和 Job GET 为准。
 
 SSE 使用 event ID；客户端通过 `Last-Event-ID` 补读。
@@ -318,21 +336,28 @@ SSE 使用 event ID；客户端通过 `Last-Event-ID` 补读。
 
 ## 7. PBWork Capture
 
-本计划不规定 PBWork 一级或二级导航。通过 PBWork 导航进入以下能力并保留当前 Prototype / Screen 上下文：
+PBWork 的完整用户路径、状态和验收以 [PBWork V2 Capture 体验规格](./pbwork-v2-capture-experience.md) 为准。本计划不规定 PBWork 一级或二级导航，只规定 PBWork 通过现有导航进入 Capture 后必须保留当前 Prototype / Screen / Variant 上下文。
 
-- Selection；
-- Capture Matrix；
-- Job progress；
-- screenshot grid；
-- Coverage；
-- Issue；
-- Evidence Inspector；
-- Fragment selection；
-- retry / cancel / stale recapture；
-- Bundle ID；
-- Agent Handoff。
+PBWork 必须实现四条等价入口：
 
-PBWork 浏览器端通过 Local Service 操作，不直接访问文件系统或 Playwright。
+1. 当前 Screen；
+2. 画布选中的 Fragment；
+3. 自定义多 Screen / Variant；
+4. 整个 Prototype。
+
+所有入口统一经过：
+
+```text
+Selection Draft
+→ Preflight
+→ Case Matrix 确认
+→ Capture Job
+→ Coverage / Issue / Evidence 检查
+→ retry / stale recapture
+→ Agent Handoff
+```
+
+PBWork 不使用“翻译代码”描述 Capture，不生成目标工程实现计划。浏览器端只通过 Local Service 操作，不直接访问文件系统、Store 或 Playwright。
 
 ## 8. CLI
 
@@ -393,15 +418,15 @@ dry-run 返回短期有效的 planId、目标和预计释放容量；apply 前�
 
 ### 8.4 Exit Code
 
-| Code | 含义 |
-| --- | --- |
-| 0 | completed |
-| 1 | 参数或配置错误 |
-| 2 | Runtime / Source 不可用 |
-| 3 | partial，Bundle 已生成 |
-| 4 | 全部 Case 失败 |
-| 5 | Store 写入失败 |
-| 6 | Protocol 不兼容 |
+| Code | 含义                    |
+| ---- | ----------------------- |
+| 0    | completed               |
+| 1    | 参数或配置错误          |
+| 2    | Runtime / Source 不可用 |
+| 3    | partial，Bundle 已生成  |
+| 4    | 全部 Case 失败          |
+| 5    | Store 写入失败          |
+| 6    | Protocol 不兼容         |
 
 ## 9. MCP
 
@@ -419,36 +444,51 @@ validate_target_changes
 
 工具按配置能力自动暴露：
 
-| 配置 | 工具 |
-| --- | --- |
-| Runtime + Store + JobHost | discover_prototypes、capture_selection |
-| Store | discover_bundles、read_evidence |
-| Target adapter + target root | target context、examples、validation |
+| 配置                                 | 工具                                   |
+| ------------------------------------ | -------------------------------------- |
+| Runtime + Store + JobHost            | discover_prototypes、capture_selection |
+| Store                                | discover_bundles、read_evidence        |
+| Target adapter + 当前 target context | target context、examples、validation   |
+
+MCP Server 启动时连接一个 PB Workspace。Evidence tools 只读取该 Workspace 的 Store；不接受 Agent 在 tool argument 中传入任意 Store 路径。`discover_bundles` 返回当前 `workspaceId`，`read_evidence` 必须校验输入中的 `workspaceId`。
+
+Target context 与 Store 连接独立：target tool 显式 `targetRoot` 优先，否则使用当前 Agent 工作目录。目标工程不需要 ProtoBridge 配置文件。
 
 ### 9.1 Read Evidence
 
 ```ts
 type ReadEvidenceInput =
-  | { kind: "manifest"; bundleId: string }
-  | { kind: "run"; bundleId: string; captureRunId: string }
-  | { kind: "coverage"; bundleId: string; captureRunId?: string }
-  | { kind: "screen"; bundleId: string; screenId: string }
-  | { kind: "case"; bundleId: string; caseId: string }
-  | { kind: "fragment"; bundleId: string; caseId: string; fragmentRef: string }
-  | { kind: "issue"; bundleId: string; issueId: string }
-  | { kind: "debug"; bundleId: string; ref: string };
+  | { workspaceId: string; kind: "manifest"; bundleId: string }
+  | { workspaceId: string; kind: "run"; bundleId: string; captureRunId: string }
+  | {
+      workspaceId: string;
+      kind: "coverage";
+      bundleId: string;
+      captureRunId?: string;
+    }
+  | { workspaceId: string; kind: "screen"; bundleId: string; screenId: string }
+  | { workspaceId: string; kind: "case"; bundleId: string; caseId: string }
+  | {
+      workspaceId: string;
+      kind: "fragment";
+      bundleId: string;
+      caseId: string;
+      fragmentRef: string;
+    }
+  | { workspaceId: string; kind: "issue"; bundleId: string; issueId: string }
+  | { workspaceId: string; kind: "debug"; bundleId: string; ref: string };
 ```
 
 Resources：
 
 ```text
-proto-bridge://bundles/{bundleId}/manifest
-proto-bridge://bundles/{bundleId}/coverage
-proto-bridge://bundles/{bundleId}/screens/{screenId}
-proto-bridge://bundles/{bundleId}/runs/{captureRunId}
-proto-bridge://bundles/{bundleId}/cases/{caseId}
-proto-bridge://bundles/{bundleId}/cases/{caseId}/fragments/{fragmentRef}
-proto-bridge://bundles/{bundleId}/blobs/{sha256}
+proto-bridge://workspaces/{workspaceId}/bundles/{bundleId}/manifest
+proto-bridge://workspaces/{workspaceId}/bundles/{bundleId}/coverage
+proto-bridge://workspaces/{workspaceId}/bundles/{bundleId}/screens/{screenId}
+proto-bridge://workspaces/{workspaceId}/bundles/{bundleId}/runs/{captureRunId}
+proto-bridge://workspaces/{workspaceId}/bundles/{bundleId}/cases/{caseId}
+proto-bridge://workspaces/{workspaceId}/bundles/{bundleId}/cases/{caseId}/fragments/{fragmentRef}
+proto-bridge://workspaces/{workspaceId}/bundles/{bundleId}/blobs/{sha256}
 ```
 
 规则：
@@ -458,6 +498,8 @@ proto-bridge://bundles/{bundleId}/blobs/{sha256}
 - raw DOM 和 Trace 只在 debug 请求时返回；
 - MCP 重启不影响 Bundle；
 - resource 不依赖创建 Bundle 的进程；
+- Workspace 未连接或不匹配时返回 Contract §14.2 的结构化错误；
+- tool 和 resource 都不暴露 Store 物理路径；
 - target 工具不写 Evidence Bundle。
 
 ## 10. Target Flutter
@@ -531,22 +573,123 @@ Flutter 能力迁移到 `packages/target-flutter`：
 }
 ```
 
-目标工程示例：
+### 11.1 配置所有权
 
-```json
-{
-  "schemaVersion": 2,
-  "store": {
-    "root": "/path/to/proto-bridge/.proto-bridge/evidence"
-  },
-  "target": {
-    "adapter": "flutter-app",
-    "root": "."
-  }
-}
+上面的 JSON 是 PB 采集工作区的唯一项目配置，归 PB Workspace 所有。PBWork、CLI 和 producer MCP 通过它连接同一个 Runtime、Source、Service 和 Store。
+
+目标工程不得为了消费 Evidence 创建或提交 `proto-bridge.config.json`。尤其禁止在目标工程中保存：
+
+- PB Workspace 的 Store root；
+- PB Source root；
+- Bundle 的物理路径；
+- 为某次任务固定的 target root。
+
+### 11.2 MCP 连接
+
+MCP 到 Evidence Store 的连接属于用户、Codex 或 IDE 的运行环境配置。MCP 使用 `--config` 指向 PB 采集工作区配置，而不是目标工程内的配置：
+
+```toml
+[mcp_servers.proto-bridge]
+command = "node"
+args = [
+  "/path/to/proto-bridge/packages/mcp-server/dist/index.js",
+  "--config",
+  "/path/to/pb-workspace/proto-bridge.config.json"
+]
 ```
 
-由于没有 Runtime，目标工程配置自然不暴露 capture 工具。
+V2 本地范围内，一个 MCP Server 进程只连接一个 PB Workspace。Handoff 的 `workspaceId` 必须与之匹配。未来若需要同时连接多个 Workspace，应单独设计 Store Registry；V2 不通过任意路径参数实现隐式多 Store。
+
+### 11.3 Target context
+
+Target Adapter 解析目标根目录的优先级固定为：
+
+```text
+单次 target tool 的 targetRoot
+→ 当前 Agent 工作目录
+```
+
+- `targetRoot` 是目标查询和验证的调用上下文，不属于 Evidence 或 PB Workspace 配置；
+- 常规情况下 Agent 已位于目标仓库，因此无需显式传入；
+- MCP 宿主无法保证工作目录时，由调用方在 target tool 参数中传入；
+- Target Adapter 不读取 Store 配置，不写 Bundle。
+
+### 11.4 Consumer Skill 草案
+
+V2 契约尚未实现，当前不创建 `skills/proto-bridge-consumer/SKILL.md`。以下内容是随计划审查的草案；只有 Contract、MCP tools、Handoff 和端到端测试定稿后，才按草案创建正式 Skill 并同步使用指南。
+
+```md
+---
+name: proto-bridge-consumer
+description: Use when implementing or validating a target application from a ProtoBridge V2 Agent Handoff and Evidence Bundle.
+---
+
+# ProtoBridge V2 Evidence Consumer
+
+本 Skill 只用于目标工程中的实现与验证，不用于维护 ProtoBridge、制作 PBWork 原型或执行上游 Capture。
+
+## 输入
+
+- 一个 `AgentHandoff`
+- 已连接 Handoff `workspaceId` 的 ProtoBridge MCP
+- 当前目标工程
+
+Handoff 不是完整 Evidence，也不是目标实现计划。不得仅根据 Handoff 字段开始编写代码。
+
+## 必读顺序
+
+1. 校验 Handoff `schemaVersion`
+2. 确认 MCP 当前 `workspaceId` 与 Handoff 一致
+3. 读取 Bundle Manifest
+4. 读取 Coverage
+5. 读取 Handoff selection 指定的 Screen Contract
+6. 读取 Case 或 Fragment Evidence
+7. 按 `recommendedResources` 和 Evidence refs 读取 Screenshot、Asset、Issue 与 unknown
+8. 阅读目标仓库代码、文档和现有测试
+
+默认只读当前任务需要的 Evidence。除非调试采集问题，不预加载整个 Prototype、raw DOM、Source 全文或 Trace。
+
+Handoff 为 partial、stale 或 partial-stale 时，先检查 `riskAcceptance` 是否包含对应风险；缺少确认则停止并请求任务发起者决定。已有确认时仍须在实现结果中报告风险。
+
+## 实现边界
+
+- ProtoBridge Evidence 决定已证明的原型事实
+- 目标仓库决定文件组织、路由、状态管理、组件、Token、i18n 和测试方式
+- Source component 不等同于 target component
+- 名称相似只能用于查找候选，不能成为目标映射事实
+- unknown、partial 和 stale 必须保留，不得自动补成确定结论
+
+## 工作流
+
+1. 总结本次 selection、Coverage、Issue、unknown 和 stale
+2. 若存在阻断错误，停止实现并报告需要重采或修复的范围
+3. 阅读目标仓库规范和相似实现
+4. 决定目标文件、组件、状态、路由和 Token 表达
+5. 实现当前 selection
+6. 执行 format、静态检查和测试
+7. 使用 `validate_target_changes` 检查目标变更
+8. 报告实现结果、验证结果和仍未解决的 unknown
+
+## 必须停止的错误
+
+- `WORKSPACE_NOT_CONNECTED`
+- `WORKSPACE_MISMATCH`
+- `BUNDLE_NOT_FOUND`
+- `BUNDLE_SCHEMA_UNSUPPORTED`
+- `HANDOFF_REFERENCE_MISSING`
+
+`EVIDENCE_STALE` 和 `EVIDENCE_PARTIAL` 必须显式报告；只有 Handoff 已记录相应 `riskAcceptance` 或任务发起者随后明确接受时才继续。
+
+## 禁止
+
+- 直接读取或解析 Evidence Store 文件目录
+- 要求目标仓库保存 Store 绝对路径
+- 把 Source DOM 或组件机械翻译成目标代码
+- 把 source component 直接当作 target component
+- 根据缺失证据编造业务动作、隐藏状态或页面关系
+- 将目标工程扫描结果回写 Evidence Bundle
+- 修改上游 Prototype 或 Capture Bundle
+```
 
 ## 12. 实施工作包
 
@@ -587,28 +730,43 @@ Flutter 能力迁移到 `packages/target-flutter`：
 
 ### W6 PBWork
 
-- 接入 Selection、Matrix、Job event；
-- 实现 Evidence、Coverage、Issue 和 screenshot view；
-- 实现 Fragment、retry、cancel、stale 和 Handoff。
+- 按 PBWork Capture 体验规格实现当前 Screen、选中 Fragment、自定义范围和整 Prototype 四条入口；
+- 接入 Selection Draft、Preflight、Case Matrix 和 Job event；
+- 实现 Evidence、Coverage、Issue、unknown、stale 和 screenshot view；
+- 实现 retry、cancel、stale recapture 和 Handoff；
+- 保持现有 Prototype / Screen / Variant 上下文，不在本计划规定侧边导航。
 
 ### W7 CLI / MCP
 
 - 实现完整 CLI；
 - 实现 capability-driven MCP tools；
-- 实现 Bundle resources；
+- 实现带 `workspaceId` 的 Bundle resources；
+- 实现 Workspace 连接校验和 Consumer 错误；
+- 从 tool arguments 移除任意 Store path；
 - 删除 MCP session page store。
 
 ### W8 Target
 
 - 迁移 Flutter context、example search 和 validation；
 - 从 Core Capture 移除 target import；
+- target root 使用单次 tool 参数或当前 Agent 工作目录；
+- 不要求目标工程 ProtoBridge 配置；
 - 建立独立包测试。
 
-### W9 Migration
+### W9 Agent Consumer
+
+- 定稿 Agent Handoff、Consumer 读取顺序和错误处理；
+- 使用 §11.4 草案审查 Consumer Skill，但在 V2 契约定稿前不创建正式 Skill 文件；
+- 编写 MCP 连接和目标工程消费使用指南；
+- 建立“目标工程无 PB 配置”的 Agent 消费 E2E；
+- 验证 complete、partial、stale、Workspace mismatch 和引用失效。
+
+### W10 Migration
 
 - 迁移 Registry 中全部 Prototype / Screen / Variant；
 - 运行全量 PBWork Capture；
 - 删除 V1 Planner、Artifact、CLI、MCP 和测试 fixture；
+- Contract、MCP 和消费 E2E 定稿后，将 §11.4 草案落为正式 Consumer Skill；
 - 更新配置、package exports、README、AGENT、docs 和 skills；
 - 所有发布包升至 `0.2.0`。
 
@@ -655,7 +813,11 @@ Flutter 能力迁移到 `packages/target-flutter`：
 
 - token、Origin、CORS 和 URL policy；
 - Job lifecycle 和 SSE replay；
-- Selection、Matrix、progress、Issue、Evidence、Handoff；
+- 当前 Screen、选中 Fragment、自定义多页和整 Prototype 四条路径；
+- Selection Draft、Preflight、Matrix、超限和 stale preflight；
+- progress、Issue、Evidence、Coverage、unknown 和 Handoff；
+- 无稳定 pbId / pbKey 时阻止 instrumented Fragment Capture 并提供定位；
+- complete、partial、failed、cancelled 和 stale 的界面状态与可用操作；
 - Service restart。
 
 ### CLI / MCP
@@ -665,6 +827,9 @@ Flutter 能力迁移到 `packages/target-flutter`：
 - 按配置暴露工具；
 - persistent read；
 - Case / Run / Fragment / Blob resource；
+- Workspace 连接与 Handoff `workspaceId` 校验；
+- Store path 不出现在 tool input、resource 或 Handoff；
+- targetRoot 参数 / 当前工作目录优先级；
 - process restart；
 - target query 与 Capture 独立。
 
@@ -673,7 +838,12 @@ Flutter 能力迁移到 `packages/target-flutter`：
 - Ledger Planet 18 Screens / 54 Variants；
 - Field Service 和 Project 不退化；
 - 四种 Evidence Level；
-- MCP 读取后完成目标实现；
+- PBWork 当前 Screen → Handoff → MCP → 目标实现；
+- PBWork 画布 Fragment → Handoff → MCP → 局部实现；
+- PBWork 多 Screen / 整 Prototype → Bundle → 按需读取；
+- partial / stale → Issue → 修复 → 新 Run → 新 Handoff；
+- 目标工程不含 ProtoBridge 配置时完成目标实现；
+- 错误 Workspace、Bundle 不存在和 Handoff 引用失效时确定性失败；
 - V1/V2 人工补充和返工对比。
 
 ## 14. 正式切换
