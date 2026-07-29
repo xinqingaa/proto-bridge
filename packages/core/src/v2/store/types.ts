@@ -1,13 +1,30 @@
 import type { Bundle } from '../contracts/bundle.js';
+import type { BlobKind, BlobOwnerRef, BlobRecord } from '../contracts/blob.js';
+import type { CatalogRevision } from '../contracts/catalog.js';
 import type { CaseEvidenceRevision } from '../contracts/evidence.js';
 import type { AgentHandoff } from '../contracts/handoff.js';
-import type { BundleId, CaseEvidenceRevisionId, HandoffId, JobId, PrototypeId, RunId, SnapshotId, StalenessReportId, WorkspaceId } from '../contracts/ids.js';
+import type {
+  BlobId,
+  BundleId,
+  CaseEvidenceRevisionId,
+  CatalogRevisionId,
+  CaseId,
+  HandoffId,
+  JobId,
+  PrototypeId,
+  RunId,
+  SnapshotId,
+  StalenessReportId,
+  WorkspaceId,
+} from '../contracts/ids.js';
 import type { CaptureJob } from '../contracts/job.js';
 import type { NormalizedSelection, Run } from '../contracts/run.js';
 import type { BundleSnapshot } from '../contracts/snapshot.js';
 import type { StalenessReport } from '../contracts/staleness.js';
 import type { CoverageSummary } from '../contracts/coverage.js';
 import type { ExecutingJobStatus, TerminalJobStatus } from '../contracts/vocabulary.js';
+import type { EvidenceLevel } from '../contracts/vocabulary.js';
+import type { NormalizedCaptureScope } from '../contracts/scope.js';
 
 export type CreateJobInput = {
   bundleId: BundleId;
@@ -40,6 +57,72 @@ export type CommitRunResult = {
   snapshot: BundleSnapshot;
 };
 
+export type CreateBundleInput = {
+  bundleId: BundleId;
+  prototypeId: PrototypeId;
+  run: Run;
+  revisions: CaseEvidenceRevision[];
+  coverage: CoverageSummary;
+};
+
+export type ForkBundleInput = {
+  sourceBundleId: BundleId;
+  sourceSnapshotId: SnapshotId;
+  bundleId: BundleId;
+};
+
+export type PutBlobInput = {
+  bundleId: BundleId;
+  kind: BlobKind;
+  mediaType: string;
+  bytes: Uint8Array;
+  ownerRefs: BlobOwnerRef[];
+};
+
+export type FindReusableEvidenceInput = {
+  bundleId: BundleId;
+  caseId: CaseId;
+  captureScope: NormalizedCaptureScope;
+  inputDigest: string;
+  minimumEvidenceLevel?: EvidenceLevel;
+};
+
+export type CreateStalenessReportInput = {
+  bundleId: BundleId;
+  snapshotId: SnapshotId;
+  inputVersion: string;
+  currentDependencyDigests: Readonly<Record<string, string>>;
+};
+
+export type StoreCapacity = {
+  usedBytes: number;
+  maxBytes?: number;
+  remainingBytes?: number;
+};
+
+export type CleanCandidateKind = 'snapshot' | 'run' | 'revision';
+
+export type CleanCandidate = {
+  kind: CleanCandidateKind;
+  bundleId: BundleId;
+  objectId: string;
+  byteLength: number;
+};
+
+export type CleanPlan = {
+  planId: string;
+  workspaceId: WorkspaceId;
+  createdAt: string;
+  retainArchivedSnapshots: number;
+  candidates: CleanCandidate[];
+  reclaimableBytes: number;
+};
+
+export type CleanResult = {
+  deleted: CleanCandidate[];
+  reclaimedBytes: number;
+};
+
 export type InitResult = {
   /** Jobs that were non-terminal at startup and have just been finalized as `interrupted`. */
   finalizedOrphanJobs: JobId[];
@@ -48,21 +131,22 @@ export type InitResult = {
 /**
  * Store interface (pb-v2-implementation-guide.md "Evidence Store 落地"):
  * CLI, MCP and Service must depend on this interface, never construct
- * paths or file formats themselves. This first implementation covers the
- * "先实现" scope: single Workspace, single-process writer, multi-process
- * reader, Run/Attempt/Revision/Snapshot persistence with atomic commit,
- * and Job/orphan restart finalization. Blob management, fork/archive/
- * clean, dependency-digest reuse and Staleness Report *generation* are not
- * yet implemented (pb-v2-implementation-guide.md "再实现").
+ * paths or file formats themselves. The interface covers the Phase 2
+ * persistence boundary: immutable history, atomic Bundle/Snapshot commits,
+ * Job recovery, Catalog/Blob, dependency freshness, lifecycle, capacity
+ * and safe clean.
  */
 export interface V2Store {
   readonly workspaceId: WorkspaceId;
 
   /** Ensures the on-disk layout exists and finalizes any Job left non-terminal by a previous crash. Must be called once before any other method. */
   init(): Promise<InitResult>;
+  close(): Promise<void>;
 
-  ensureBundle(input: { bundleId: BundleId; prototypeId: PrototypeId }): Promise<Bundle>;
+  createBundle(input: CreateBundleInput): Promise<{ bundle: Bundle; run: Run; snapshot: BundleSnapshot }>;
   getBundle(bundleId: BundleId): Promise<Bundle | undefined>;
+  archiveBundle(bundleId: BundleId): Promise<Bundle>;
+  forkBundle(input: ForkBundleInput): Promise<{ bundle: Bundle; snapshot: BundleSnapshot }>;
 
   createJob(input: CreateJobInput): Promise<CaptureJob>;
   startJob(jobId: JobId, runId: RunId): Promise<CaptureJob>;
@@ -88,8 +172,19 @@ export interface V2Store {
    */
   commitRun(input: CommitRunInput): Promise<CommitRunResult>;
 
+  putCatalogRevision(revision: CatalogRevision): Promise<void>;
+  getCatalogRevision(bundleId: BundleId, revisionId: CatalogRevisionId): Promise<CatalogRevision | undefined>;
+  putBlob(input: PutBlobInput): Promise<BlobRecord>;
+  getBlob(bundleId: BundleId, blobId: BlobId): Promise<{ record: BlobRecord; bytes: Uint8Array } | undefined>;
+  findReusableEvidence(input: FindReusableEvidenceInput): Promise<CaseEvidenceRevision | undefined>;
+  createStalenessReport(input: CreateStalenessReportInput): Promise<StalenessReport>;
+
   putStalenessReport(report: StalenessReport): Promise<void>;
   getStalenessReport(reportId: StalenessReportId): Promise<StalenessReport | undefined>;
   putHandoff(handoff: AgentHandoff): Promise<void>;
   getHandoff(handoffId: HandoffId): Promise<AgentHandoff | undefined>;
+
+  getCapacity(): Promise<StoreCapacity>;
+  planClean(options?: { retainArchivedSnapshots?: number }): Promise<CleanPlan>;
+  applyClean(plan: CleanPlan): Promise<CleanResult>;
 }

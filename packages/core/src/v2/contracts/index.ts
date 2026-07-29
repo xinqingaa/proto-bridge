@@ -9,6 +9,8 @@ export * from './case.js';
 export * from './bundle.js';
 export * from './issue.js';
 export * from './evidence.js';
+export * from './catalog.js';
+export * from './blob.js';
 export * from './attempt.js';
 export * from './coverage.js';
 export * from './run.js';

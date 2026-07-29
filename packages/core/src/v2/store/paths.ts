@@ -1,5 +1,15 @@
 import path from 'node:path';
-import type { BundleId, CaseEvidenceRevisionId, HandoffId, JobId, RunId, SnapshotId, StalenessReportId } from '../contracts/ids.js';
+import type {
+  BlobId,
+  BundleId,
+  CaseEvidenceRevisionId,
+  CatalogRevisionId,
+  HandoffId,
+  JobId,
+  RunId,
+  SnapshotId,
+  StalenessReportId,
+} from '../contracts/ids.js';
 
 /**
  * On-disk layout for one Workspace root. Not part of the cross-component
@@ -39,6 +49,10 @@ export function evidenceRevisionPath(root: string, bundleId: BundleId, revisionI
   return path.join(bundleDir(root, bundleId), 'revisions', `${revisionId}.json`);
 }
 
+export function evidenceRevisionsDir(root: string, bundleId: BundleId): string {
+  return path.join(bundleDir(root, bundleId), 'revisions');
+}
+
 export function snapshotPath(root: string, bundleId: BundleId, snapshotId: SnapshotId): string {
   return path.join(bundleDir(root, bundleId), 'snapshots', `${snapshotId}.json`);
 }
@@ -65,4 +79,36 @@ export function stalenessReportPath(root: string, reportId: StalenessReportId): 
 
 export function handoffPath(root: string, handoffId: HandoffId): string {
   return path.join(root, 'handoffs', `${handoffId}.json`);
+}
+
+export function handoffsDir(root: string): string {
+  return path.join(root, 'handoffs');
+}
+
+export function stalenessReportsDir(root: string): string {
+  return path.join(root, 'staleness-reports');
+}
+
+export function catalogRevisionPath(root: string, bundleId: BundleId, catalogRevisionId: CatalogRevisionId): string {
+  return path.join(bundleDir(root, bundleId), 'catalogs', `${catalogRevisionId}.json`);
+}
+
+export function catalogRevisionsDir(root: string, bundleId: BundleId): string {
+  return path.join(bundleDir(root, bundleId), 'catalogs');
+}
+
+export function blobRecordPath(root: string, bundleId: BundleId, blobId: BlobId): string {
+  return path.join(bundleDir(root, bundleId), 'blobs', `${blobId}.json`);
+}
+
+export function blobContentPath(root: string, bundleId: BundleId, blobId: BlobId): string {
+  return path.join(bundleDir(root, bundleId), 'blobs', `${blobId}.bin`);
+}
+
+export function blobsDir(root: string, bundleId: BundleId): string {
+  return path.join(bundleDir(root, bundleId), 'blobs');
+}
+
+export function stagingDir(root: string): string {
+  return path.join(root, '.staging');
 }

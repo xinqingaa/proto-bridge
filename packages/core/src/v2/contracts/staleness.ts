@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CaseEvidenceRevisionId, CaseId, ScopeKey, SnapshotId, StalenessReportId } from './ids.js';
+import { BundleId, CaseEvidenceRevisionId, CaseId, ScopeKey, SnapshotId, StalenessReportId, WorkspaceId } from './ids.js';
 import { V2_SCHEMA_MAJOR } from './version.js';
 
 /**
@@ -11,6 +11,8 @@ export const StalenessReport = z
   .object({
     schemaVersion: z.literal(V2_SCHEMA_MAJOR),
     reportId: StalenessReportId,
+    workspaceId: WorkspaceId,
+    bundleId: BundleId,
     snapshotId: SnapshotId,
     checkedAt: z.string().datetime(),
     inputVersion: z.string().min(1),

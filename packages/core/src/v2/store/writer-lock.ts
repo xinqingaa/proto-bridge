@@ -27,10 +27,8 @@ function isProcessAlive(pid: number): boolean {
 const rootsLockedByThisProcess = new Set<string>();
 
 /**
- * Best-effort single-writer advisory lock for one Workspace root
- * (pb-v2-implementation-guide.md 再实现 "并发 writer 保护" — this is a
- * starter implementation, not the full future policy). Two writers racing
- * for the same root must never both believe they hold it
+ * Single-writer advisory lock for one local Workspace root. Two writers
+ * racing for the same root must never both believe they hold it
  * (pb-v2-spec.md 候选实现性质测试 "两个 writer 不能互相覆盖").
  *
  * A lock left behind by a process that is no longer alive (e.g. a crashed

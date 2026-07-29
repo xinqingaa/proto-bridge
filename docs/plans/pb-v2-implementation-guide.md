@@ -1,6 +1,6 @@
 # ProtoBridge V2 实施指南
 
-> 状态：实施中；阶段一已完成，可进入阶段二
+> 状态：实施中；阶段二已完成，可进入阶段三
 > 权威范围：当前仓库的推荐落点、实施顺序、测试、迁移和发布纪律
 > 上位目标：[V2 产品闭环与实施总览](./pb-v2-overview.md)
 > 不可违背语义：[V2 核心规范](./pb-v2-spec.md)
@@ -17,7 +17,7 @@
 | 当前能力                                                    | 真实位置                                                        | V2 处理或进度                                               |
 | ----------------------------------------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------- |
 | V2 Contract、fixtures、scope/active resolver                | `packages/core/src/v2/contracts`、`fixtures`、`resolver`        | 阶段一门禁已通过                                            |
-| V2 本地文件 Store、Job journal、Run/Snapshot commit         | `packages/core/src/v2/store`                                   | 阶段二首版已实现，尚缺完整生命周期、引用与保留策略          |
+| V2 本地文件 Store、Job journal、Run/Snapshot commit         | `packages/core/src/v2/store`                                   | 阶段二门禁已通过                                            |
 | Core workflow、capabilities、capture、source/target adapter | `packages/core`                                                 | 作为 V2 业务语义和执行能力的初始承载                        |
 | V1 固定文件 Artifact writer                                 | `packages/core/src/artifacts`、`packages/core/src/capabilities` | V1 继续可用，阶段七删除                                     |
 | Playwright 单 URL Capture                                   | `packages/core/src/snapshot/browser-capture`                    | 阶段三演进为 Case/Matrix Orchestrator                       |
@@ -35,15 +35,16 @@
 - Workspace/Bundle/Prototype/Run/revision/Snapshot/Staleness/Handoff 的通用引用与归属断言；
 - 单 Workspace 本地文件 Store、不可变 Run/revision/Snapshot、active Snapshot 原子切换；
 - 持久 Job journal、启动时 orphan 终结、单 writer 锁和跨进程读取基础；
+- 新 Bundle 与首 Snapshot 原子创建，Store 写入边界执行通用引用与归属断言；
+- Catalog revision、受控 Blob、依赖摘要、等价 Scope 复用和 Staleness Report 生成；
+- Bundle fork/archive、容量门禁、retention 与 clean plan/apply；
+- 写入失败保持旧 active Snapshot、幂等重试和 clean 执行前引用重检；
 - `ledger-planet.task-list` 正反 fixtures 及 Contract/Store 测试。
 
 当前仍不存在或尚未完成：
 
 - PBWork V2 Capture Protocol、Preflight、Case Matrix、Capture Orchestrator 和 Scenario runner；
 - Local Service、PBWork Capture Console、V2 CLI 与 Store-backed MCP；
-- Catalog/Blob 完整持久化、依赖摘要与 Staleness Report 生成；
-- Bundle 首 Snapshot 原子创建、fork/archive、retention、capacity 和 safe clean；
-- Store 写入边界尚未全面接入阶段一的通用引用断言；
 - 25 Screen / 82 Variant 迁移台账和固定 3 页端到端基准。
 
 ## 当前实施进度评估
@@ -51,18 +52,18 @@
 | 阶段 | 判断 | 已有证据 | 进入下一门禁前的主要缺口 |
 | ---- | ---- | -------- | ------------------------ |
 | 一：核心产品语义 | 已完成 | Workspace 与核心对象 Schema、统一状态枚举、正反 fixtures、scope resolver、防降级、固定 Handoff、通用引用断言和门禁测试通过 | 无 |
-| 二：证据模型与存储 | 下一阶段；已有先行实现 | 本地持久化、immutable write、Run/Snapshot commit、active pointer、orphan Job 终结和 Store tests 通过 | 新 Bundle 与首 Snapshot 原子性、Store 接入通用引用断言、Catalog/Blob、stale/复用、fork/archive/clean、容量、并发与完整引用保护 |
-| 三：Runtime 与捕获 | 未开始正式实现 | 可复用 V1 Playwright capture 与 PBWork Runtime/Registry | Capture Protocol、Selection/Preflight/Matrix、Scenario、Case Orchestrator |
+| 二：证据模型与存储 | 已完成 | 原子 Bundle 首 Snapshot、immutable Store、Job 恢复、Catalog/Blob、依赖级 stale/复用、fork/archive、容量与 safe clean 的 Store tests 通过 | 无 |
+| 三：Runtime 与捕获 | 下一阶段 | 可复用 V1 Playwright capture 与 PBWork Runtime/Registry | Capture Protocol、Selection/Preflight/Matrix、Scenario、Case Orchestrator |
 | 四：PBWork 操作闭环 | 未开始 | 现有 Workbench、Router、inspect selection 可复用 | Local Service、Capture Console、四类 Draft、Job/结果/恢复/Handoff UI |
 | 五：CLI、MCP 与消费链路 | 未开始 | V1 CLI/MCP/Target query 可复用 | V2 producer CLI、Store Reader、Consumer、Target 解耦 |
 | 六：迁移与全链路验收 | 未开始 | Registry 已确认 2 Prototype / 25 Screen / 82 Variant | 迁移台账、3 页固定基准、四种 Evidence Level 与量化对比 |
 | 七：V1 退出与发布 | 未开始 | V1 仍保持可用 | 前六阶段门禁、旧链路删除、干净安装和 0.5.0 发布 |
 
-阶段一完成时的验证基线为：Core 145 个测试通过；根级 typecheck（Core build、CLI、MCP）通过；PBWork typecheck 与 65 个 unit tests 通过。根级 `typecheck` 目前仍未自动包含 PBWork，这属于后续仓库级验证入口要修正的覆盖缺口。
+阶段二完成时的验证基线为：Core 160 个测试通过；根级 typecheck（Core build、CLI、MCP）通过；PBWork typecheck 与 65 个 unit tests 通过。根级 `typecheck` 目前仍未自动包含 PBWork，这属于后续仓库级验证入口要修正的覆盖缺口。
 
 ## 当前实施顺序
 
-实施继续严格使用总览定义的七个阶段，不增加工作包、里程碑或其他执行编号。阶段一已经关闭门禁，下一步是阶段二；阶段二门禁通过后进入阶段三，不同时提前启动 PBWork UI。
+实施继续严格使用总览定义的七个阶段，不增加工作包、里程碑或其他执行编号。阶段一和阶段二已经关闭门禁，下一步是阶段三；阶段三门禁通过后进入阶段四，不同时提前启动 PBWork UI。
 
 ### 阶段一完成记录：核心产品语义
 
@@ -83,15 +84,17 @@
 - PBWork、CLI、MCP 和 Store 后续可以复用同一套状态与引用断言；
 - 当前 Core build、typecheck 和 V2 tests 通过。
 
-### 阶段二：证据模型与存储
+### 阶段二完成记录：证据模型与存储
 
-1. 将普通新 Bundle 改为与首个可信 Snapshot 原子创建，禁止暴露无 Snapshot 的空 Bundle；
-2. 在 Store 写入边界执行阶段一的通用引用与归属断言，阻止跨 Workspace/Bundle/Prototype 混写；
-3. 实现 Catalog revision、Blob 与受控 Debug Evidence；
-4. 实现 Case dependency digest、等价 Scope 复用和 Staleness Report 生成；
-5. 实现 Bundle fork/archive、retention、capacity、clean plan/apply 与传递引用保护；
-6. 加固 writer 并发、崩溃恢复、orphan/中断事务和幂等重试；
-7. 增加 Store contract、transaction、recovery、concurrency 和 retention 测试。
+| 门禁要求 | 可执行证据 |
+| -------- | ---------- |
+| 新 Bundle 与首 Snapshot 原子创建 | `V2Store.createBundle`、staging directory rename 及 atomic Bundle tests |
+| Store 引用和归属断言 | `assertRunReferences`、`assertSnapshotReferences`、`assertStalenessReportReferences`、`assertHandoffReferences` 在写入边界执行 |
+| Catalog revision 与受控 Blob | `contracts/catalog.ts`、`blob.ts`、digest/大小/媒体类型/owner ref 校验及持久化测试 |
+| 依赖摘要、复用与 stale | `dependencyDigests`、`findReusableEvidence`、`createStalenessReport` 及无关依赖不扩散测试 |
+| Bundle 生命周期与安全清理 | `archiveBundle`、`forkBundle`、`planClean/applyClean`、容量门禁和传递引用保护测试 |
+| 并发、失败恢复和幂等 | 单 writer 锁、orphan Job 终结、旧 active Snapshot 保持、active pointer 重试及 clean 二次校验测试 |
+| Store 验收矩阵 | `local-file-store.test.ts`、`phase-two-store.test.ts`、`snapshot-builder.test.ts` |
 
 完成条件：
 
@@ -100,7 +103,7 @@
 - 错误 Workspace、Bundle、Prototype、Snapshot、Attempt 或 revision 引用均确定性失败；
 - Store 重启后所有固定 refs 可读；
 - clean 不会破坏 active Snapshot、未归档 Bundle 或 Handoff；
-- 阶段二完成前不接入 CLI/MCP/PBWork 的第二套业务逻辑。
+- CLI/MCP/PBWork 未提前接入第二套业务逻辑。
 
 ### 阶段三：Runtime 与捕获
 

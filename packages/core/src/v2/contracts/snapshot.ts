@@ -50,6 +50,8 @@ export const BundleSnapshot = z
     bundleId: BundleId,
     prototypeId: PrototypeId,
     sourceRunId: RunId,
+    /** Present when this is the initial Snapshot of a forked Bundle. */
+    originSnapshotId: SnapshotId.optional(),
     committedAt: z.string().datetime(),
     activeSlots: z.array(ActiveSlot),
     latestAttempts: z.array(LatestAttemptRef),

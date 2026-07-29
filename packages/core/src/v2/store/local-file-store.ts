@@ -1,11 +1,18 @@
-import { mkdir } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { cp, mkdir, readFile, readdir, rename, rm, stat } from 'node:fs/promises';
+import path from 'node:path';
+import { isDeepStrictEqual } from 'node:util';
+import { BlobRecord } from '../contracts/blob.js';
 import { Bundle } from '../contracts/bundle.js';
+import { CatalogRevision } from '../contracts/catalog.js';
 import { CaseEvidenceRevision } from '../contracts/evidence.js';
 import { AgentHandoff } from '../contracts/handoff.js';
 import { V2ContractError, invalidSchemaError, unknownReferenceError } from '../contracts/errors.js';
 import type {
   BundleId,
+  BlobId,
   CaseEvidenceRevisionId,
+  CatalogRevisionId,
   HandoffId,
   JobId,
   PrototypeId,
@@ -16,32 +23,76 @@ import type {
 } from '../contracts/ids.js';
 import { assertJobStatusTransition, CaptureJob } from '../contracts/job.js';
 import { Run } from '../contracts/run.js';
+import { computeScopeKey } from '../contracts/scope.js';
 import { BundleSnapshot } from '../contracts/snapshot.js';
 import { StalenessReport } from '../contracts/staleness.js';
-import { EVIDENCE_LEVELS, type ExecutingJobStatus, isTerminalJobStatus, type TerminalJobStatus } from '../contracts/vocabulary.js';
-import { V2_SCHEMA_MAJOR } from '../contracts/version.js';
 import {
+  EVIDENCE_LEVELS,
+  evidenceLevelAtLeast,
+  type ExecutingJobStatus,
+  isTerminalJobStatus,
+  type TerminalJobStatus,
+} from '../contracts/vocabulary.js';
+import { V2_SCHEMA_MAJOR } from '../contracts/version.js';
+import { Workspace } from '../contracts/workspace.js';
+import {
+  assertHandoffReferences,
+  assertRunReferences,
+  assertSnapshotReferences,
+  assertStalenessReportReferences,
+} from '../resolver/references.js';
+import {
+  fileByteLength,
   listJsonIds,
   readJson,
+  writeImmutableBytes,
   writeImmutableJson,
   writeJsonAtomic,
 } from './atomic-file.js';
 import { generateOperationalId } from './id-generator.js';
 import {
   activeSnapshotPointerPath,
+  blobContentPath,
+  blobRecordPath,
+  blobsDir,
   bundleManifestPath,
+  bundleDir,
+  bundlesDir,
+  catalogRevisionPath,
+  catalogRevisionsDir,
   evidenceRevisionPath,
+  evidenceRevisionsDir,
   handoffPath,
+  handoffsDir,
   jobPath,
   jobsDir,
   runPath,
+  runsDir,
   snapshotPath,
   snapshotsDir,
+  stagingDir,
   stalenessReportPath,
+  stalenessReportsDir,
   workspaceManifestPath,
 } from './paths.js';
 import { buildNextSnapshot } from './snapshot-builder.js';
-import type { CommitRunInput, CommitRunResult, CreateJobInput, InitResult, JobJournalEntryInput, V2Store } from './types.js';
+import type {
+  CleanCandidate,
+  CleanPlan,
+  CleanResult,
+  CommitRunInput,
+  CommitRunResult,
+  CreateBundleInput,
+  CreateJobInput,
+  CreateStalenessReportInput,
+  FindReusableEvidenceInput,
+  ForkBundleInput,
+  InitResult,
+  JobJournalEntryInput,
+  PutBlobInput,
+  StoreCapacity,
+  V2Store,
+} from './types.js';
 import { acquireWriterLock } from './writer-lock.js';
 
 type ActiveSnapshotPointer = { snapshotId: SnapshotId };
@@ -50,6 +101,12 @@ export type LocalFileStoreOptions = {
   /** Directory this Store persists into. Created if it does not exist. */
   root: string;
   workspaceId: WorkspaceId;
+  /** Hard capacity guard for the complete Store root. */
+  maxBytes?: number;
+  /** Per-Blob guard; defaults to 25 MiB. */
+  maxBlobBytes?: number;
+  /** Test/recovery hook invoked after immutable objects are durable but before the active pointer flips. */
+  beforeActivateSnapshot?: () => Promise<void>;
 };
 
 /**
@@ -66,35 +123,47 @@ export type LocalFileStoreOptions = {
 export class LocalFileStore implements V2Store {
   readonly workspaceId: WorkspaceId;
   private readonly root: string;
+  private readonly maxBytes: number | undefined;
+  private readonly maxBlobBytes: number;
+  private readonly beforeActivateSnapshot: (() => Promise<void>) | undefined;
   private releaseLock: (() => Promise<void>) | undefined;
 
   constructor(options: LocalFileStoreOptions) {
     this.root = options.root;
     this.workspaceId = options.workspaceId;
+    this.maxBytes = options.maxBytes;
+    this.maxBlobBytes = options.maxBlobBytes ?? 25 * 1024 * 1024;
+    this.beforeActivateSnapshot = options.beforeActivateSnapshot;
   }
 
   async init(): Promise<InitResult> {
     await mkdir(this.root, { recursive: true });
     this.releaseLock = await acquireWriterLock(this.root);
+    try {
+      await rm(stagingDir(this.root), { recursive: true, force: true });
 
-    const manifest = await readJson<{ schemaVersion: number; workspaceId: WorkspaceId; createdAt: string }>(
-      workspaceManifestPath(this.root),
-    );
-    if (!manifest) {
-      await writeJsonAtomic(workspaceManifestPath(this.root), {
-        schemaVersion: V2_SCHEMA_MAJOR,
-        workspaceId: this.workspaceId,
-        createdAt: new Date().toISOString(),
-      });
-    } else if (manifest.workspaceId !== this.workspaceId) {
-      throw new V2ContractError(
-        'workspace-mismatch',
-        `Store root ${this.root} already belongs to workspace ${manifest.workspaceId}, not ${this.workspaceId}.`,
+      const manifest = await readJson<{ schemaVersion: number; workspaceId: WorkspaceId; createdAt: string }>(
+        workspaceManifestPath(this.root),
       );
-    }
+      if (!manifest) {
+        await writeJsonAtomic(workspaceManifestPath(this.root), {
+          schemaVersion: V2_SCHEMA_MAJOR,
+          workspaceId: this.workspaceId,
+          createdAt: new Date().toISOString(),
+        });
+      } else if (manifest.workspaceId !== this.workspaceId) {
+        throw new V2ContractError(
+          'workspace-mismatch',
+          `Store root ${this.root} already belongs to workspace ${manifest.workspaceId}, not ${this.workspaceId}.`,
+        );
+      }
 
-    const finalizedOrphanJobs = await this.finalizeOrphanJobs();
-    return { finalizedOrphanJobs };
+      const finalizedOrphanJobs = await this.finalizeOrphanJobs();
+      return { finalizedOrphanJobs };
+    } catch (error) {
+      await this.close();
+      throw error;
+    }
   }
 
   async close(): Promise<void> {
@@ -104,16 +173,9 @@ export class LocalFileStore implements V2Store {
 
   // ---------------------------------------------------------------- Bundle
 
-  async ensureBundle(input: { bundleId: BundleId; prototypeId: PrototypeId }): Promise<Bundle> {
-    const existing = await this.getBundle(input.bundleId);
-    if (existing) {
-      if (existing.prototypeId !== input.prototypeId) {
-        throw new V2ContractError(
-          'workspace-mismatch',
-          `Bundle ${input.bundleId} already exists for prototype ${existing.prototypeId}, not ${input.prototypeId}.`,
-        );
-      }
-      return existing;
+  async createBundle(input: CreateBundleInput): Promise<{ bundle: Bundle; run: Run; snapshot: BundleSnapshot }> {
+    if (await this.getBundle(input.bundleId)) {
+      throw new V2ContractError('immutable-violation', `Bundle ${input.bundleId} already exists.`);
     }
     const bundle = Bundle.parse({
       schemaVersion: V2_SCHEMA_MAJOR,
@@ -123,8 +185,71 @@ export class LocalFileStore implements V2Store {
       status: 'writable',
       createdAt: new Date().toISOString(),
     });
-    await writeJsonAtomic(bundleManifestPath(this.root, input.bundleId), bundle);
-    return bundle;
+    const run = this.parseOrThrow(Run, input.run, 'Run');
+    if (
+      run.workspaceId !== this.workspaceId ||
+      run.bundleId !== bundle.bundleId ||
+      run.selection.prototypeId !== bundle.prototypeId
+    ) {
+      throw new V2ContractError(
+        'workspace-mismatch',
+        `Initial Run ${run.runId} does not belong to Bundle ${bundle.bundleId}/${bundle.prototypeId}.`,
+      );
+    }
+    assertRunReferences(run);
+    const revisions = input.revisions.map((revision) =>
+      this.parseOrThrow(CaseEvidenceRevision, revision, 'CaseEvidenceRevision'),
+    );
+    const revisionsById = await this.validateCommitObjects(bundle, run, revisions, undefined);
+    const snapshot = this.parseOrThrow(
+      BundleSnapshot,
+      buildNextSnapshot({
+        run,
+        revisionsById,
+        snapshotId: generateOperationalId('snapshot'),
+        committedAt: new Date().toISOString(),
+        coverage: input.coverage,
+      }),
+      'BundleSnapshot',
+    );
+    if (snapshot.activeSlots.length === 0) {
+      throw new V2ContractError(
+        'unknown-reference',
+        `Bundle ${bundle.bundleId} cannot be created without at least one active Evidence revision in its first trustworthy Snapshot.`,
+      );
+    }
+    this.assertSnapshotGraph(bundle, snapshot, [run], [...revisionsById.values()]);
+
+    const estimatedBytes = this.serializedBytes(bundle, run, snapshot, ...revisions);
+    await this.assertCapacity(estimatedBytes);
+
+    const transactionRoot = path.join(stagingDir(this.root), generateOperationalId('create-bundle'));
+    const stagedBundleDir = bundleDir(transactionRoot, bundle.bundleId);
+    try {
+      await writeJsonAtomic(bundleManifestPath(transactionRoot, bundle.bundleId), bundle);
+      for (const revision of revisions) {
+        await writeImmutableJson(
+          evidenceRevisionPath(transactionRoot, bundle.bundleId, revision.revisionId),
+          'CaseEvidenceRevision',
+          revision,
+        );
+      }
+      await writeImmutableJson(runPath(transactionRoot, bundle.bundleId, run.runId), 'Run', run);
+      await writeImmutableJson(
+        snapshotPath(transactionRoot, bundle.bundleId, snapshot.snapshotId),
+        'BundleSnapshot',
+        snapshot,
+      );
+      await writeJsonAtomic(activeSnapshotPointerPath(transactionRoot, bundle.bundleId), {
+        snapshotId: snapshot.snapshotId,
+      } satisfies ActiveSnapshotPointer);
+
+      await mkdir(bundlesDir(this.root), { recursive: true });
+      await rename(stagedBundleDir, bundleDir(this.root, bundle.bundleId));
+    } finally {
+      await rm(transactionRoot, { recursive: true, force: true });
+    }
+    return { bundle, run, snapshot };
   }
 
   async getBundle(bundleId: BundleId): Promise<Bundle | undefined> {
@@ -139,10 +264,120 @@ export class LocalFileStore implements V2Store {
     return bundle;
   }
 
+  private requireWritableBundle(bundle: Bundle): void {
+    if (bundle.status === 'archived') {
+      throw new V2ContractError(
+        'bundle-archived',
+        `Bundle ${bundle.bundleId} is archived and read-only; fork it before creating a Job or committing a Run.`,
+      );
+    }
+  }
+
+  async archiveBundle(bundleId: BundleId): Promise<Bundle> {
+    const bundle = await this.requireBundle(bundleId);
+    if (bundle.status === 'archived') return bundle;
+    const activeJobs = (await this.listNonTerminalJobs()).filter(
+      (job) => job.bundleId === bundleId,
+    );
+    if (activeJobs.length > 0) {
+      throw new V2ContractError(
+        'invalid-schema',
+        `Bundle ${bundleId} cannot be archived while non-terminal Jobs exist: ${activeJobs
+          .map((job) => job.jobId)
+          .join(', ')}.`,
+      );
+    }
+    const archived = Bundle.parse({ ...bundle, status: 'archived' });
+    await writeJsonAtomic(bundleManifestPath(this.root, bundleId), archived);
+    return archived;
+  }
+
+  async forkBundle(input: ForkBundleInput): Promise<{ bundle: Bundle; snapshot: BundleSnapshot }> {
+    if (await this.getBundle(input.bundleId)) {
+      throw new V2ContractError('immutable-violation', `Bundle ${input.bundleId} already exists.`);
+    }
+    const sourceBundle = await this.requireBundle(input.sourceBundleId);
+    const sourceSnapshot = await this.getSnapshot(input.sourceBundleId, input.sourceSnapshotId);
+    if (!sourceSnapshot) throw unknownReferenceError('Fork source Snapshot', input.sourceSnapshotId);
+    const sourceRuns = await this.loadRuns(sourceBundle.bundleId);
+    const sourceRevisions = await this.loadRevisions(sourceBundle.bundleId);
+    this.assertSnapshotGraph(sourceBundle, sourceSnapshot, sourceRuns, sourceRevisions);
+
+    const bundle = Bundle.parse({
+      schemaVersion: V2_SCHEMA_MAJOR,
+      bundleId: input.bundleId,
+      workspaceId: this.workspaceId,
+      prototypeId: sourceBundle.prototypeId,
+      status: 'writable',
+      createdAt: new Date().toISOString(),
+      originSnapshotId: sourceSnapshot.snapshotId,
+    });
+    const snapshot = BundleSnapshot.parse({
+      ...sourceSnapshot,
+      snapshotId: generateOperationalId('snapshot'),
+      bundleId: bundle.bundleId,
+      originSnapshotId: sourceSnapshot.snapshotId,
+      committedAt: new Date().toISOString(),
+    });
+    this.assertSnapshotGraph(bundle, snapshot, sourceRuns, sourceRevisions);
+
+    const transactionRoot = path.join(stagingDir(this.root), generateOperationalId('fork-bundle'));
+    const stagedBundle = bundleDir(transactionRoot, bundle.bundleId);
+    await this.assertCapacity(
+      (await this.directoryByteLength(bundleDir(this.root, sourceBundle.bundleId))) +
+        this.serializedBytes(bundle, snapshot),
+    );
+    try {
+      await writeJsonAtomic(bundleManifestPath(transactionRoot, bundle.bundleId), bundle);
+      await cp(runsDir(this.root, sourceBundle.bundleId), runsDir(transactionRoot, bundle.bundleId), {
+        recursive: true,
+        force: false,
+        errorOnExist: true,
+      }).catch((error) => {
+        if (!this.isEnoent(error)) throw error;
+      });
+      await cp(
+        evidenceRevisionsDir(this.root, sourceBundle.bundleId),
+        evidenceRevisionsDir(transactionRoot, bundle.bundleId),
+        { recursive: true, force: false, errorOnExist: true },
+      ).catch((error) => {
+        if (!this.isEnoent(error)) throw error;
+      });
+      await cp(catalogRevisionsDir(this.root, sourceBundle.bundleId), catalogRevisionsDir(transactionRoot, bundle.bundleId), {
+        recursive: true,
+        force: false,
+        errorOnExist: true,
+      }).catch((error) => {
+        if (!this.isEnoent(error)) throw error;
+      });
+      await cp(blobsDir(this.root, sourceBundle.bundleId), blobsDir(transactionRoot, bundle.bundleId), {
+        recursive: true,
+        force: false,
+        errorOnExist: true,
+      }).catch((error) => {
+        if (!this.isEnoent(error)) throw error;
+      });
+      await writeImmutableJson(
+        snapshotPath(transactionRoot, bundle.bundleId, snapshot.snapshotId),
+        'BundleSnapshot',
+        snapshot,
+      );
+      await writeJsonAtomic(activeSnapshotPointerPath(transactionRoot, bundle.bundleId), {
+        snapshotId: snapshot.snapshotId,
+      } satisfies ActiveSnapshotPointer);
+      await mkdir(bundlesDir(this.root), { recursive: true });
+      await rename(stagedBundle, bundleDir(this.root, bundle.bundleId));
+    } finally {
+      await rm(transactionRoot, { recursive: true, force: true });
+    }
+    return { bundle, snapshot };
+  }
+
   // -------------------------------------------------------------------- Job
 
   async createJob(input: CreateJobInput): Promise<CaptureJob> {
-    await this.requireBundle(input.bundleId);
+    const bundle = await this.requireBundle(input.bundleId);
+    this.requireWritableBundle(bundle);
     const now = new Date().toISOString();
     const job = CaptureJob.parse({
       schemaVersion: V2_SCHEMA_MAJOR,
@@ -343,7 +578,29 @@ export class LocalFileStore implements V2Store {
     if (run.workspaceId !== this.workspaceId) {
       throw new V2ContractError('workspace-mismatch', `Run.workspaceId (${run.workspaceId}) does not match this Store's workspace (${this.workspaceId}).`);
     }
-    await this.requireBundle(bundleId);
+    const bundle = await this.requireBundle(bundleId);
+    this.requireWritableBundle(bundle);
+    if (run.selection.prototypeId !== bundle.prototypeId) {
+      throw new V2ContractError(
+        'workspace-mismatch',
+        `Run ${run.runId} selects Prototype ${run.selection.prototypeId}, not Bundle Prototype ${bundle.prototypeId}.`,
+      );
+    }
+    assertRunReferences(run);
+
+    const existingRun = await this.getRun(bundleId, run.runId);
+    if (existingRun) {
+      if (!isDeepStrictEqual(existingRun, run)) {
+        throw new V2ContractError(
+          'immutable-violation',
+          `Run ${run.runId} is already persisted with different content.`,
+        );
+      }
+      const activeSnapshot = await this.getActiveSnapshot(bundleId);
+      if (activeSnapshot?.sourceRunId === run.runId) {
+        return { run: existingRun, snapshot: activeSnapshot };
+      }
+    }
 
     const revisions = input.revisions.map((revision) => this.parseOrThrow(CaseEvidenceRevision, revision, 'CaseEvidenceRevision'));
     for (const revision of revisions) {
@@ -351,32 +608,8 @@ export class LocalFileStore implements V2Store {
         throw new V2ContractError('workspace-mismatch', `CaseEvidenceRevision ${revision.revisionId} does not belong to workspace/bundle ${this.workspaceId}/${bundleId}.`);
       }
     }
-    const revisionsById = new Map(revisions.map((revision) => [revision.revisionId, revision]));
-
-    for (const attempt of run.attempts) {
-      if (attempt.result !== 'captured' || !attempt.revisionId) continue;
-      if (!revisionsById.has(attempt.revisionId)) {
-        throw unknownReferenceError(
-          'CaseEvidenceRevision',
-          `attempt ${attempt.attemptId} claims result=captured with revisionId ${attempt.revisionId}, but that revision was not supplied in commitRun's revisions[]`,
-        );
-      }
-    }
-    for (const attempt of run.attempts) {
-      if (attempt.result !== 'reused' || !attempt.revisionId || revisionsById.has(attempt.revisionId)) continue;
-      const existing = await this.getEvidenceRevision(bundleId, attempt.revisionId);
-      if (!existing) throw unknownReferenceError('CaseEvidenceRevision', attempt.revisionId);
-      revisionsById.set(attempt.revisionId, existing);
-    }
-
     const previousSnapshot = await this.getActiveSnapshot(bundleId);
-    const touchedCaseIds = new Set(run.attempts.map((attempt) => attempt.caseId));
-    for (const slot of previousSnapshot?.activeSlots ?? []) {
-      if (!touchedCaseIds.has(slot.caseId) || revisionsById.has(slot.revisionId)) continue;
-      const existing = await this.getEvidenceRevision(bundleId, slot.revisionId);
-      if (!existing) throw unknownReferenceError('CaseEvidenceRevision', slot.revisionId);
-      revisionsById.set(slot.revisionId, existing);
-    }
+    const revisionsById = await this.validateCommitObjects(bundle, run, revisions, previousSnapshot);
 
     const snapshotId = generateOperationalId('snapshot');
     const nextSnapshot = this.parseOrThrow(
@@ -391,6 +624,13 @@ export class LocalFileStore implements V2Store {
       }),
       'BundleSnapshot',
     );
+    const allRuns = [...(await this.loadRuns(bundleId)).filter((candidate) => candidate.runId !== run.runId), run];
+    const allRevisions = [
+      ...(await this.loadRevisions(bundleId)).filter((candidate) => !revisionsById.has(candidate.revisionId)),
+      ...revisionsById.values(),
+    ];
+    this.assertSnapshotGraph(bundle, nextSnapshot, allRuns, allRevisions);
+    await this.assertCapacity(this.serializedBytes(run, nextSnapshot, ...revisions));
 
     // Every step above only reads or validates; nothing on disk changes until we're certain the whole
     // transaction is valid. From here, we only ever create brand-new immutable files, and the final
@@ -401,15 +641,192 @@ export class LocalFileStore implements V2Store {
     }
     await writeImmutableJson(runPath(this.root, bundleId, run.runId), 'Run', run);
     await writeImmutableJson(snapshotPath(this.root, bundleId, snapshotId), 'BundleSnapshot', nextSnapshot);
+    await this.beforeActivateSnapshot?.();
     await writeJsonAtomic(activeSnapshotPointerPath(this.root, bundleId), { snapshotId } satisfies ActiveSnapshotPointer);
 
     return { run, snapshot: nextSnapshot };
   }
 
+  // ------------------------------------------------------- Catalog / Blob
+
+  async putCatalogRevision(revision: CatalogRevision): Promise<void> {
+    const parsed = this.parseOrThrow(CatalogRevision, revision, 'CatalogRevision');
+    const bundle = await this.requireBundle(parsed.bundleId);
+    this.requireWritableBundle(bundle);
+    if (
+      parsed.workspaceId !== this.workspaceId ||
+      parsed.prototypeId !== bundle.prototypeId
+    ) {
+      throw new V2ContractError(
+        'workspace-mismatch',
+        `Catalog revision ${parsed.catalogRevisionId} does not belong to Bundle ${bundle.bundleId}.`,
+      );
+    }
+    for (const blobId of parsed.entries.flatMap((entry) => entry.blobIds)) {
+      if (!(await this.getBlob(parsed.bundleId, blobId))) {
+        throw unknownReferenceError('Catalog Blob', blobId);
+      }
+    }
+    await this.assertCapacity(this.serializedBytes(parsed));
+    await writeImmutableJson(
+      catalogRevisionPath(this.root, parsed.bundleId, parsed.catalogRevisionId),
+      'CatalogRevision',
+      parsed,
+    );
+  }
+
+  async getCatalogRevision(
+    bundleId: BundleId,
+    revisionId: CatalogRevisionId,
+  ): Promise<CatalogRevision | undefined> {
+    const raw = await readJson<unknown>(catalogRevisionPath(this.root, bundleId, revisionId));
+    if (raw === undefined) return undefined;
+    return this.parseOrThrow(CatalogRevision, raw, 'CatalogRevision');
+  }
+
+  async putBlob(input: PutBlobInput): Promise<BlobRecord> {
+    const bundle = await this.requireBundle(input.bundleId);
+    this.requireWritableBundle(bundle);
+    if (input.bytes.byteLength > this.maxBlobBytes) {
+      throw new V2ContractError(
+        'blob-rejected',
+        `Blob is ${input.bytes.byteLength} bytes; the per-Blob limit is ${this.maxBlobBytes} bytes.`,
+      );
+    }
+    if (!this.isAllowedBlobMediaType(input.mediaType)) {
+      throw new V2ContractError('blob-rejected', `Blob media type ${input.mediaType} is not allowed.`);
+    }
+    if (input.ownerRefs.length === 0) {
+      throw new V2ContractError('blob-rejected', 'A Blob must have at least one logical owner reference.');
+    }
+    for (const ownerRef of input.ownerRefs) {
+      await this.assertBlobOwnerExists(input.bundleId, ownerRef);
+    }
+
+    const hash = createHash('sha256').update(input.bytes).digest('hex');
+    const blobId = `blob-${hash.slice(0, 40)}` as BlobId;
+    const record = BlobRecord.parse({
+      schemaVersion: V2_SCHEMA_MAJOR,
+      blobId,
+      workspaceId: this.workspaceId,
+      bundleId: input.bundleId,
+      kind: input.kind,
+      mediaType: input.mediaType,
+      byteLength: input.bytes.byteLength,
+      digest: `sha256:${hash}`,
+      createdAt: new Date().toISOString(),
+      ownerRefs: input.ownerRefs,
+    });
+    await this.assertCapacity(input.bytes.byteLength + this.serializedBytes(record));
+    await writeImmutableBytes(blobContentPath(this.root, input.bundleId, blobId), 'Blob', input.bytes);
+    await writeImmutableJson(blobRecordPath(this.root, input.bundleId, blobId), 'BlobRecord', record);
+    return record;
+  }
+
+  async getBlob(
+    bundleId: BundleId,
+    blobId: BlobId,
+  ): Promise<{ record: BlobRecord; bytes: Uint8Array } | undefined> {
+    const raw = await readJson<unknown>(blobRecordPath(this.root, bundleId, blobId));
+    if (raw === undefined) return undefined;
+    const record = this.parseOrThrow(BlobRecord, raw, 'BlobRecord');
+    const bytes = await readFile(blobContentPath(this.root, bundleId, blobId));
+    const digest = `sha256:${createHash('sha256').update(bytes).digest('hex')}`;
+    if (bytes.byteLength !== record.byteLength || digest !== record.digest) {
+      throw new V2ContractError(
+        'immutable-violation',
+        `Blob ${blobId} content does not match its immutable metadata.`,
+      );
+    }
+    return { record, bytes };
+  }
+
+  async findReusableEvidence(
+    input: FindReusableEvidenceInput,
+  ): Promise<CaseEvidenceRevision | undefined> {
+    const snapshot = await this.getActiveSnapshot(input.bundleId);
+    if (!snapshot) return undefined;
+    const scopeKey = computeScopeKey(input.captureScope);
+    const candidates: CaseEvidenceRevision[] = [];
+    for (const slot of snapshot.activeSlots) {
+      if (slot.caseId !== input.caseId || slot.scopeKey !== scopeKey) continue;
+      const revision = await this.getEvidenceRevision(input.bundleId, slot.revisionId);
+      if (!revision || revision.inputDigest !== input.inputDigest) continue;
+      if (
+        input.minimumEvidenceLevel &&
+        !evidenceLevelAtLeast(revision.evidenceLevel, input.minimumEvidenceLevel)
+      ) {
+        continue;
+      }
+      candidates.push(revision);
+    }
+    return candidates.sort(
+      (left, right) =>
+        right.requiredFactsResolved / Math.max(1, right.requiredFactsTotal) -
+          left.requiredFactsResolved / Math.max(1, left.requiredFactsTotal) ||
+        right.capturedAt.localeCompare(left.capturedAt),
+    )[0];
+  }
+
   // ----------------------------------------------------- Staleness/Handoff
+
+  async createStalenessReport(input: CreateStalenessReportInput): Promise<StalenessReport> {
+    const bundle = await this.requireBundle(input.bundleId);
+    const snapshot = await this.getSnapshot(input.bundleId, input.snapshotId);
+    if (!snapshot) throw unknownReferenceError('Staleness Snapshot', input.snapshotId);
+    const perRevision = [];
+    for (const slot of snapshot.activeSlots) {
+      const revision = await this.getEvidenceRevision(input.bundleId, slot.revisionId);
+      if (!revision) throw unknownReferenceError('Staleness Evidence revision', slot.revisionId);
+      const dependencies = revision.dependencyDigests ?? [];
+      const changedDependencies =
+        dependencies.length > 0
+          ? dependencies.filter(
+              (dependency) =>
+                input.currentDependencyDigests[dependency.dependencyId] !== dependency.digest,
+            )
+          : revision.inputDigest === input.inputVersion
+            ? []
+            : [{ dependencyId: 'legacy-input-version', digest: revision.inputDigest }];
+      perRevision.push({
+        revisionId: revision.revisionId,
+        caseId: slot.caseId,
+        scopeKey: slot.scopeKey,
+        stale: changedDependencies.length > 0,
+        ...(changedDependencies.length > 0
+          ? {
+              reason: `Dependency digest changed or disappeared: ${changedDependencies
+                .map((dependency) => dependency.dependencyId)
+                .join(', ')}.`,
+            }
+          : {}),
+      });
+    }
+    const report = StalenessReport.parse({
+      schemaVersion: V2_SCHEMA_MAJOR,
+      reportId: generateOperationalId('staleness'),
+      workspaceId: this.workspaceId,
+      bundleId: bundle.bundleId,
+      snapshotId: snapshot.snapshotId,
+      checkedAt: new Date().toISOString(),
+      inputVersion: input.inputVersion,
+      perRevision,
+    });
+    await this.putStalenessReport(report);
+    return report;
+  }
 
   async putStalenessReport(report: StalenessReport): Promise<void> {
     const parsed = this.parseOrThrow(StalenessReport, report, 'StalenessReport');
+    if (parsed.workspaceId !== this.workspaceId) {
+      throw new V2ContractError(
+        'workspace-mismatch',
+        `Staleness Report ${parsed.reportId} does not belong to workspace ${this.workspaceId}.`,
+      );
+    }
+    const snapshot = await this.getSnapshot(parsed.bundleId, parsed.snapshotId);
+    if (!snapshot) throw unknownReferenceError('Staleness Snapshot', parsed.snapshotId);
+    assertStalenessReportReferences(parsed, snapshot);
     await writeImmutableJson(stalenessReportPath(this.root, parsed.reportId), 'StalenessReport', parsed);
   }
 
@@ -424,6 +841,25 @@ export class LocalFileStore implements V2Store {
     if (parsed.workspaceId !== this.workspaceId) {
       throw new V2ContractError('workspace-mismatch', `Handoff ${parsed.handoffId} does not belong to workspace ${this.workspaceId}.`);
     }
+    const bundle = await this.requireBundle(parsed.bundleId);
+    const snapshot = await this.getSnapshot(parsed.bundleId, parsed.snapshotId);
+    if (!snapshot) throw unknownReferenceError('Handoff Snapshot', parsed.snapshotId);
+    const stalenessReport = await this.getStalenessReport(parsed.stalenessReportId);
+    if (!stalenessReport) {
+      throw unknownReferenceError('Handoff Staleness Report', parsed.stalenessReportId);
+    }
+    const runs = await this.loadRuns(parsed.bundleId);
+    const revisions = await this.loadRevisions(parsed.bundleId);
+    assertHandoffReferences({
+      workspace: this.workspaceFor(bundle),
+      bundle,
+      snapshot,
+      runs,
+      revisions,
+      handoff: parsed,
+      stalenessReport,
+      allowedOriginBundleIds: this.foreignObjectBundleIds(bundle, runs, revisions),
+    });
     await writeImmutableJson(handoffPath(this.root, parsed.handoffId), 'AgentHandoff', parsed);
   }
 
@@ -433,7 +869,388 @@ export class LocalFileStore implements V2Store {
     return this.parseOrThrow(AgentHandoff, raw, 'AgentHandoff');
   }
 
+  // ----------------------------------------------------- Capacity / clean
+
+  async getCapacity(): Promise<StoreCapacity> {
+    const usedBytes = await this.directoryByteLength(this.root);
+    return {
+      usedBytes,
+      ...(this.maxBytes === undefined
+        ? {}
+        : {
+            maxBytes: this.maxBytes,
+            remainingBytes: Math.max(0, this.maxBytes - usedBytes),
+          }),
+    };
+  }
+
+  async planClean(options: { retainArchivedSnapshots?: number } = {}): Promise<CleanPlan> {
+    const retainArchivedSnapshots = options.retainArchivedSnapshots ?? 1;
+    if (!Number.isInteger(retainArchivedSnapshots) || retainArchivedSnapshots < 1) {
+      throw new V2ContractError(
+        'invalid-schema',
+        'retainArchivedSnapshots must be an integer greater than or equal to 1.',
+      );
+    }
+    const protectedSnapshotIds = await this.collectWorkspaceProtectedSnapshotIds();
+    const candidates: CleanCandidate[] = [];
+
+    for (const bundleId of await this.listBundleIds()) {
+      const bundle = await this.requireBundle(bundleId);
+      if (bundle.status !== 'archived') continue;
+      const active = await this.getActiveSnapshot(bundleId);
+      if (active) protectedSnapshotIds.add(active.snapshotId);
+      const snapshots = (await this.loadSnapshots(bundleId)).sort((left, right) =>
+        right.committedAt.localeCompare(left.committedAt),
+      );
+      snapshots.slice(0, retainArchivedSnapshots).forEach((snapshot) => {
+        protectedSnapshotIds.add(snapshot.snapshotId);
+      });
+      const keptSnapshots = snapshots.filter((snapshot) =>
+        protectedSnapshotIds.has(snapshot.snapshotId),
+      );
+      const keptRunIds = new Set(
+        keptSnapshots.flatMap((snapshot) => [
+          snapshot.sourceRunId,
+          ...snapshot.latestAttempts.map((ref) => ref.runId),
+        ]),
+      );
+      const keptRevisionIds = new Set(
+        keptSnapshots.flatMap((snapshot) => snapshot.activeSlots.map((slot) => slot.revisionId)),
+      );
+
+      for (const snapshot of snapshots) {
+        if (protectedSnapshotIds.has(snapshot.snapshotId)) continue;
+        candidates.push({
+          kind: 'snapshot',
+          bundleId,
+          objectId: snapshot.snapshotId,
+          byteLength: await fileByteLength(snapshotPath(this.root, bundleId, snapshot.snapshotId)),
+        });
+      }
+      for (const runId of await listJsonIds(runsDir(this.root, bundleId))) {
+        if (keptRunIds.has(runId as RunId)) continue;
+        candidates.push({
+          kind: 'run',
+          bundleId,
+          objectId: runId,
+          byteLength: await fileByteLength(runPath(this.root, bundleId, runId as RunId)),
+        });
+      }
+      for (const revisionId of await listJsonIds(evidenceRevisionsDir(this.root, bundleId))) {
+        if (keptRevisionIds.has(revisionId as CaseEvidenceRevisionId)) continue;
+        candidates.push({
+          kind: 'revision',
+          bundleId,
+          objectId: revisionId,
+          byteLength: await fileByteLength(
+            evidenceRevisionPath(this.root, bundleId, revisionId as CaseEvidenceRevisionId),
+          ),
+        });
+      }
+    }
+    candidates.sort((left, right) =>
+      `${left.bundleId}/${left.kind}/${left.objectId}`.localeCompare(
+        `${right.bundleId}/${right.kind}/${right.objectId}`,
+      ),
+    );
+    return {
+      planId: generateOperationalId('clean-plan'),
+      workspaceId: this.workspaceId,
+      createdAt: new Date().toISOString(),
+      retainArchivedSnapshots,
+      candidates,
+      reclaimableBytes: candidates.reduce((sum, candidate) => sum + candidate.byteLength, 0),
+    };
+  }
+
+  async applyClean(plan: CleanPlan): Promise<CleanResult> {
+    if (plan.workspaceId !== this.workspaceId) {
+      throw new V2ContractError('workspace-mismatch', 'Clean plan belongs to a different Workspace.');
+    }
+    const current = await this.planClean({
+      retainArchivedSnapshots: plan.retainArchivedSnapshots,
+    });
+    const candidateKey = (candidate: CleanCandidate) =>
+      `${candidate.bundleId}/${candidate.kind}/${candidate.objectId}/${candidate.byteLength}`;
+    if (
+      !isDeepStrictEqual(
+        current.candidates.map(candidateKey),
+        plan.candidates.map(candidateKey),
+      )
+    ) {
+      throw new V2ContractError(
+        'clean-plan-stale',
+        'Store references changed after the clean plan was created; generate a new plan before applying.',
+      );
+    }
+    for (const candidate of plan.candidates) {
+      await rm(this.cleanCandidatePath(candidate), { force: true });
+    }
+    return {
+      deleted: plan.candidates,
+      reclaimedBytes: plan.candidates.reduce(
+        (sum, candidate) => sum + candidate.byteLength,
+        0,
+      ),
+    };
+  }
+
   // ------------------------------------------------------------------ util
+
+  private async validateCommitObjects(
+    bundle: Bundle,
+    run: Run,
+    revisions: CaseEvidenceRevision[],
+    previousSnapshot: BundleSnapshot | undefined,
+  ): Promise<Map<CaseEvidenceRevisionId, CaseEvidenceRevision>> {
+    const revisionsById = new Map<CaseEvidenceRevisionId, CaseEvidenceRevision>();
+    for (const revision of revisions) {
+      if (
+        revision.bundleId !== bundle.bundleId ||
+        revision.workspaceId !== this.workspaceId ||
+        revision.caseId === undefined
+      ) {
+        throw new V2ContractError(
+          'workspace-mismatch',
+          `CaseEvidenceRevision ${revision.revisionId} does not belong to workspace/bundle ${this.workspaceId}/${bundle.bundleId}.`,
+        );
+      }
+      if (revisionsById.has(revision.revisionId)) {
+        throw new V2ContractError(
+          'invalid-schema',
+          `commitRun contains duplicate revision ${revision.revisionId}.`,
+        );
+      }
+      revisionsById.set(revision.revisionId, revision);
+    }
+
+    for (const attempt of run.attempts) {
+      if (attempt.result === 'captured' && attempt.revisionId) {
+        const revision = revisionsById.get(attempt.revisionId);
+        if (!revision) {
+          throw unknownReferenceError(
+            'CaseEvidenceRevision',
+            `attempt ${attempt.attemptId} claims result=captured with revisionId ${attempt.revisionId}, but that revision was not supplied`,
+          );
+        }
+        if (
+          revision.caseId !== attempt.caseId ||
+          revision.scopeKey !== attempt.scopeKey ||
+          computeScopeKey(revision.captureScope) !== computeScopeKey(attempt.captureScope)
+        ) {
+          throw new V2ContractError(
+            'workspace-mismatch',
+            `Attempt ${attempt.attemptId} does not match captured revision ${revision.revisionId}.`,
+          );
+        }
+      }
+      if (
+        attempt.result === 'reused' &&
+        attempt.revisionId &&
+        !revisionsById.has(attempt.revisionId)
+      ) {
+        const existing = await this.getEvidenceRevision(bundle.bundleId, attempt.revisionId);
+        if (!existing) throw unknownReferenceError('CaseEvidenceRevision', attempt.revisionId);
+        revisionsById.set(attempt.revisionId, existing);
+      }
+    }
+
+    const touchedCaseIds = new Set(run.attempts.map((attempt) => attempt.caseId));
+    for (const slot of previousSnapshot?.activeSlots ?? []) {
+      if (!touchedCaseIds.has(slot.caseId) || revisionsById.has(slot.revisionId)) continue;
+      const existing = await this.getEvidenceRevision(bundle.bundleId, slot.revisionId);
+      if (!existing) throw unknownReferenceError('CaseEvidenceRevision', slot.revisionId);
+      revisionsById.set(slot.revisionId, existing);
+    }
+    return revisionsById;
+  }
+
+  private assertSnapshotGraph(
+    bundle: Bundle,
+    snapshot: BundleSnapshot,
+    runs: Run[],
+    revisions: CaseEvidenceRevision[],
+  ): void {
+    assertSnapshotReferences({
+      workspace: this.workspaceFor(bundle),
+      bundle,
+      snapshot,
+      runs,
+      revisions,
+      allowedOriginBundleIds: this.foreignObjectBundleIds(bundle, runs, revisions),
+    });
+  }
+
+  private workspaceFor(bundle: Bundle): Workspace {
+    return Workspace.parse({
+      schemaVersion: V2_SCHEMA_MAJOR,
+      workspaceId: this.workspaceId,
+      prototypeIds: [bundle.prototypeId],
+      createdAt: bundle.createdAt,
+    });
+  }
+
+  private foreignObjectBundleIds(
+    bundle: Bundle,
+    runs: readonly Run[],
+    revisions: readonly CaseEvidenceRevision[],
+  ): BundleId[] {
+    if (!bundle.originSnapshotId) return [];
+    return [
+      ...new Set(
+        [
+          ...runs.map((run) => run.bundleId),
+          ...revisions.map((revision) => revision.bundleId),
+        ].filter((bundleId) => bundleId !== bundle.bundleId),
+      ),
+    ] as BundleId[];
+  }
+
+  private async loadRuns(bundleId: BundleId): Promise<Run[]> {
+    const ids = (await listJsonIds(runsDir(this.root, bundleId))) as RunId[];
+    const runs = await Promise.all(ids.map((runId) => this.getRun(bundleId, runId)));
+    return runs.filter((run): run is Run => run !== undefined);
+  }
+
+  private async loadRevisions(bundleId: BundleId): Promise<CaseEvidenceRevision[]> {
+    const ids = (await listJsonIds(
+      evidenceRevisionsDir(this.root, bundleId),
+    )) as CaseEvidenceRevisionId[];
+    const revisions = await Promise.all(
+      ids.map((revisionId) => this.getEvidenceRevision(bundleId, revisionId)),
+    );
+    return revisions.filter((revision): revision is CaseEvidenceRevision => revision !== undefined);
+  }
+
+  private async loadSnapshots(bundleId: BundleId): Promise<BundleSnapshot[]> {
+    const ids = await this.listSnapshotIds(bundleId);
+    const snapshots = await Promise.all(
+      ids.map((snapshotId) => this.getSnapshot(bundleId, snapshotId)),
+    );
+    return snapshots.filter((snapshot): snapshot is BundleSnapshot => snapshot !== undefined);
+  }
+
+  private async listBundleIds(): Promise<BundleId[]> {
+    try {
+      const entries = await readdir(bundlesDir(this.root), { withFileTypes: true });
+      return entries
+        .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
+        .map((entry) => entry.name as BundleId);
+    } catch (error) {
+      if (this.isEnoent(error)) return [];
+      throw error;
+    }
+  }
+
+  private async assertBlobOwnerExists(
+    bundleId: BundleId,
+    ownerRef: PutBlobInput['ownerRefs'][number],
+  ): Promise<void> {
+    const exists =
+      ownerRef.kind === 'revision'
+        ? await this.getEvidenceRevision(bundleId, ownerRef.objectId as CaseEvidenceRevisionId)
+        : ownerRef.kind === 'snapshot'
+          ? await this.getSnapshot(bundleId, ownerRef.objectId as SnapshotId)
+          : ownerRef.kind === 'run'
+            ? await this.getRun(bundleId, ownerRef.objectId as RunId)
+            : await this.getCatalogRevision(
+                bundleId,
+                ownerRef.objectId as CatalogRevisionId,
+              );
+    if (!exists) throw unknownReferenceError(`Blob ${ownerRef.kind} owner`, ownerRef.objectId);
+  }
+
+  private isAllowedBlobMediaType(mediaType: string): boolean {
+    return new Set([
+      'image/png',
+      'image/jpeg',
+      'image/webp',
+      'application/json',
+      'application/zip',
+      'text/plain',
+    ]).has(mediaType);
+  }
+
+  private serializedBytes(...values: unknown[]): number {
+    return values.reduce<number>(
+      (sum, value) => sum + Buffer.byteLength(`${JSON.stringify(value, null, 2)}\n`),
+      0,
+    );
+  }
+
+  private async assertCapacity(additionalBytes: number): Promise<void> {
+    if (this.maxBytes === undefined) return;
+    const capacity = await this.getCapacity();
+    if (capacity.usedBytes + additionalBytes > this.maxBytes) {
+      throw new V2ContractError(
+        'capacity-exceeded',
+        `Store capacity would exceed ${this.maxBytes} bytes (${capacity.usedBytes} used + ${additionalBytes} requested).`,
+      );
+    }
+  }
+
+  private async directoryByteLength(dir: string): Promise<number> {
+    try {
+      const entries = await readdir(dir, { withFileTypes: true });
+      let total = 0;
+      for (const entry of entries) {
+        const entryPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) total += await this.directoryByteLength(entryPath);
+        else if (entry.isFile()) total += (await stat(entryPath)).size;
+      }
+      return total;
+    } catch (error) {
+      if (this.isEnoent(error)) return 0;
+      throw error;
+    }
+  }
+
+  private async collectWorkspaceProtectedSnapshotIds(): Promise<Set<SnapshotId>> {
+    const protectedIds = new Set<SnapshotId>();
+    for (const handoffId of (await listJsonIds(handoffsDir(this.root))) as HandoffId[]) {
+      const handoff = await this.getHandoff(handoffId);
+      if (handoff) protectedIds.add(handoff.snapshotId);
+    }
+    for (const reportId of (await listJsonIds(
+      stalenessReportsDir(this.root),
+    )) as StalenessReportId[]) {
+      const report = await this.getStalenessReport(reportId);
+      if (report) protectedIds.add(report.snapshotId);
+    }
+    for (const bundleId of await this.listBundleIds()) {
+      const bundle = await this.getBundle(bundleId);
+      if (bundle?.originSnapshotId) protectedIds.add(bundle.originSnapshotId);
+    }
+    return protectedIds;
+  }
+
+  private cleanCandidatePath(candidate: CleanCandidate): string {
+    if (candidate.kind === 'snapshot') {
+      return snapshotPath(
+        this.root,
+        candidate.bundleId,
+        candidate.objectId as SnapshotId,
+      );
+    }
+    if (candidate.kind === 'run') {
+      return runPath(this.root, candidate.bundleId, candidate.objectId as RunId);
+    }
+    return evidenceRevisionPath(
+      this.root,
+      candidate.bundleId,
+      candidate.objectId as CaseEvidenceRevisionId,
+    );
+  }
+
+  private isEnoent(error: unknown): boolean {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error as { code?: unknown }).code === 'ENOENT'
+    );
+  }
 
   private parseOrThrow<T>(schema: { safeParse: (value: unknown) => { success: boolean; data?: T; error?: import('zod').ZodError } }, value: unknown, kind: string): T {
     const result = schema.safeParse(value);

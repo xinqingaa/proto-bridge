@@ -80,6 +80,10 @@ export const PRIMARY_ACTIVE_REVISION: CaseEvidenceRevision = {
   scopeKey: FULL_CASE_SCOPE_KEY,
   evidenceLevel: 'instrumented-source-runtime',
   inputDigest: INPUT_VERSION,
+  dependencyDigests: [
+    { dependencyId: 'registry:ledger-planet.task-list', digest: 'registry-task-list-v1' },
+    { dependencyId: 'source:ledger-planet.task-list', digest: 'source-task-list-v1' },
+  ],
   capturedAt: T1,
   facts: [
     {
@@ -103,6 +107,10 @@ export const FRAGMENT_SCOPED_ACTIVE_REVISION: CaseEvidenceRevision = {
   scopeKey: LIST_FRAGMENT_SCOPE_KEY,
   evidenceLevel: 'instrumented-runtime',
   inputDigest: INPUT_VERSION,
+  dependencyDigests: [
+    { dependencyId: 'registry:ledger-planet.task-list', digest: 'registry-task-list-v1' },
+    { dependencyId: 'runtime:ledger-planet.task-list.list', digest: 'runtime-task-list-list-v1' },
+  ],
   capturedAt: T2,
   facts: [
     {
@@ -221,6 +229,8 @@ export const SNAPSHOT: BundleSnapshot = {
 export const STALENESS_REPORT: StalenessReport = {
   schemaVersion: V2_SCHEMA_MAJOR,
   reportId: STALENESS_REPORT_ID,
+  workspaceId: WORKSPACE_ID,
+  bundleId: BUNDLE_ID,
   snapshotId: SNAPSHOT_ID,
   checkedAt: T2,
   inputVersion: INPUT_VERSION,

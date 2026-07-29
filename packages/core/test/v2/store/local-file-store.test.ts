@@ -37,7 +37,13 @@ afterEach(async () => {
 async function freshStoreWithBundle(): Promise<LocalFileStore> {
   const store = new LocalFileStore({ root, workspaceId: WORKSPACE_ID });
   await store.init();
-  await store.ensureBundle({ bundleId: BUNDLE_ID, prototypeId: PROTOTYPE_ID });
+  await store.createBundle({
+    bundleId: BUNDLE_ID,
+    prototypeId: PROTOTYPE_ID,
+    run: RUN_1,
+    revisions: [PRIMARY_ACTIVE_REVISION],
+    coverage: RUN_1.coverage,
+  });
   return store;
 }
 
@@ -98,14 +104,22 @@ describe('LocalFileStore: commit + read', () => {
 });
 
 describe('LocalFileStore: reference integrity and transactional failure', () => {
-  it('rejects a commit whose captured Attempt references a revision missing from revisions[], and leaves the Bundle without an active Snapshot', async () => {
-    const store = await freshStoreWithBundle();
+  it('rejects atomic Bundle creation whose captured Attempt references a missing revision, without exposing an empty Bundle', async () => {
+    const store = new LocalFileStore({ root, workspaceId: WORKSPACE_ID });
+    await store.init();
     const brokenRun = { ...RUN_1, attempts: [{ ...RUN_1.attempts[0]!, revisionId: 'ghost-revision' }] };
 
     await expect(
-      store.commitRun({ bundleId: BUNDLE_ID, run: brokenRun, revisions: [], coverage: RUN_1.coverage }),
+      store.createBundle({
+        bundleId: BUNDLE_ID,
+        prototypeId: PROTOTYPE_ID,
+        run: brokenRun,
+        revisions: [],
+        coverage: RUN_1.coverage,
+      }),
     ).rejects.toThrow(V2ContractError);
 
+    expect(await store.getBundle(BUNDLE_ID)).toBeUndefined();
     expect(await store.getActiveSnapshot(BUNDLE_ID)).toBeUndefined();
     expect(await store.getRun(BUNDLE_ID, RUN_1_ID)).toBeUndefined();
   });
@@ -308,14 +322,22 @@ describe('LocalFileStore: Job lifecycle and orphan/restart finalization', () => 
 });
 
 describe('LocalFileStore: Bundle', () => {
-  it('rejects ensureBundle with a conflicting prototypeId for an existing Bundle', async () => {
+  it('rejects creating a second Bundle with the same identity', async () => {
     const store = await freshStoreWithBundle();
-    await expect(store.ensureBundle({ bundleId: BUNDLE_ID, prototypeId: 'some-other-prototype' })).rejects.toThrow(V2ContractError);
+    await expect(
+      store.createBundle({
+        bundleId: BUNDLE_ID,
+        prototypeId: PROTOTYPE_ID,
+        run: RUN_1,
+        revisions: [PRIMARY_ACTIVE_REVISION],
+        coverage: RUN_1.coverage,
+      }),
+    ).rejects.toThrow(V2ContractError);
   });
 
-  it('is idempotent when called again with the same prototypeId', async () => {
+  it('never exposes a successfully created Bundle without its first Snapshot', async () => {
     const store = await freshStoreWithBundle();
-    const bundle = await store.ensureBundle({ bundleId: BUNDLE_ID, prototypeId: PROTOTYPE_ID });
-    expect(bundle.bundleId).toBe(BUNDLE_ID);
+    expect(await store.getBundle(BUNDLE_ID)).toBeDefined();
+    expect(await store.getActiveSnapshot(BUNDLE_ID)).toBeDefined();
   });
 });

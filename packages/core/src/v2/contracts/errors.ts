@@ -12,7 +12,11 @@ export type V2ErrorCode =
   | 'immutable-violation'
   | 'downgrade-rejected'
   | 'workspace-mismatch'
-  | 'writer-lock-held';
+  | 'writer-lock-held'
+  | 'bundle-archived'
+  | 'capacity-exceeded'
+  | 'blob-rejected'
+  | 'clean-plan-stale';
 
 export class V2ContractError extends Error {
   readonly code: V2ErrorCode;

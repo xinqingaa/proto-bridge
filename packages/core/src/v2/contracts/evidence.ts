@@ -4,6 +4,14 @@ import { NormalizedCaptureScope, computeScopeKey } from './scope.js';
 import { EvidenceLevel, FactSource } from './vocabulary.js';
 import { V2_SCHEMA_MAJOR } from './version.js';
 
+export const DependencyDigest = z
+  .object({
+    dependencyId: z.string().min(1),
+    digest: z.string().min(1),
+  })
+  .strict();
+export type DependencyDigest = z.infer<typeof DependencyDigest>;
+
 export const Provenance = z
   .object({
     source: FactSource,
@@ -95,6 +103,8 @@ export const CaseEvidenceRevision = z
     evidenceLevel: EvidenceLevel,
     /** Opaque digest over the inputs (Registry/Source/Runtime state) used to produce this revision; used by Staleness checks. */
     inputDigest: z.string().min(1),
+    /** The actual dependency closure used for incremental reuse and per-Case stale evaluation. */
+    dependencyDigests: z.array(DependencyDigest).optional(),
     capturedAt: z.string().datetime(),
     facts: z.array(Fact).default([]),
     requiredFactsTotal: z.number().int().min(0),
@@ -117,6 +127,17 @@ export const CaseEvidenceRevision = z
         path: ['scopeKey'],
       });
     }
+    const dependencyIds = new Set<string>();
+    revision.dependencyDigests?.forEach((dependency, index) => {
+      if (dependencyIds.has(dependency.dependencyId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `duplicate dependency identity ${dependency.dependencyId}`,
+          path: ['dependencyDigests', index, 'dependencyId'],
+        });
+      }
+      dependencyIds.add(dependency.dependencyId);
+    });
   });
 export type CaseEvidenceRevision = z.infer<typeof CaseEvidenceRevision>;
 

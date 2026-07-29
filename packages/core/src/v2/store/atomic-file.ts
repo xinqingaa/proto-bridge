@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
-import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
 import { V2ContractError } from '../contracts/errors.js';
 
@@ -65,6 +65,38 @@ export async function listJsonIds(dirPath: string): Promise<string[]> {
     return entries.filter((entry) => entry.endsWith('.json') && !entry.startsWith('.tmp-')).map((entry) => entry.slice(0, -'.json'.length));
   } catch (error) {
     if (isEnoent(error)) return [];
+    throw error;
+  }
+}
+
+export async function writeImmutableBytes(filePath: string, objectKind: string, value: Uint8Array): Promise<void> {
+  try {
+    const existing = await readFile(filePath);
+    if (Buffer.compare(existing, Buffer.from(value)) === 0) return;
+    throw new V2ContractError(
+      'immutable-violation',
+      `${objectKind} at ${filePath} is already persisted with different content; historical objects cannot be modified.`,
+    );
+  } catch (error) {
+    if (!isEnoent(error)) throw error;
+  }
+  const dir = path.dirname(filePath);
+  await mkdir(dir, { recursive: true });
+  const tempPath = path.join(dir, `.tmp-${path.basename(filePath)}-${randomBytes(6).toString('hex')}`);
+  await writeFile(tempPath, value, { flag: 'wx' });
+  try {
+    await rename(tempPath, filePath);
+  } catch (error) {
+    await rm(tempPath, { force: true });
+    throw error;
+  }
+}
+
+export async function fileByteLength(filePath: string): Promise<number> {
+  try {
+    return (await stat(filePath)).size;
+  } catch (error) {
+    if (isEnoent(error)) return 0;
     throw error;
   }
 }

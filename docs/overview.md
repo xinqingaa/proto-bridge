@@ -113,6 +113,7 @@ Core 目录：
 packages/core/src/
 ├── capabilities/
 ├── workflows/capability-first/
+├── v2/                         # V2 Contract、resolver 与本地 Evidence Store
 ├── source/
 ├── snapshot/
 ├── target/
@@ -133,6 +134,10 @@ packages/core/src/
 - `@proto-bridge/core/snapshot`
 - `@proto-bridge/core/artifacts`
 - `@proto-bridge/core/shared`
+- `@proto-bridge/core/v2`（浏览器可用的 V2 Schema 与 resolver）
+- `@proto-bridge/core/v2/store`（Node-only 本地 Evidence Store）
+
+V2 Store 当前提供不可变 Run/Evidence/Catalog/Snapshot/Handoff、受控 Blob、Job 恢复、依赖级 stale/复用、Bundle fork/archive、容量与安全 clean。CLI、MCP 和 PBWork 尚未接入这条 V2 链路；它们仍使用现有正式入口。
 
 ## 相关文档
 

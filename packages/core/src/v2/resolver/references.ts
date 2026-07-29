@@ -100,6 +100,8 @@ export type SnapshotReferenceContext = {
   snapshot: BundleSnapshot;
   runs: readonly Run[];
   revisions: readonly CaseEvidenceRevision[];
+  /** Fork snapshots may keep immutable objects owned by their origin Bundle. */
+  allowedOriginBundleIds?: readonly string[];
 };
 
 /**
@@ -109,6 +111,7 @@ export type SnapshotReferenceContext = {
  */
 export function assertSnapshotReferences(context: SnapshotReferenceContext): void {
   const { workspace, bundle, snapshot, runs, revisions } = context;
+  const allowedObjectBundles = new Set([bundle.bundleId, ...(context.allowedOriginBundleIds ?? [])]);
   if (bundle.workspaceId !== workspace.workspaceId) {
     ownershipMismatch('Bundle', `workspace ${bundle.workspaceId} does not match Workspace ${workspace.workspaceId}`, bundle);
   }
@@ -120,7 +123,7 @@ export function assertSnapshotReferences(context: SnapshotReferenceContext): voi
   const runsById = new Map<RunId, Run>();
   for (const run of runs) {
     assertRunReferences(run);
-    if (run.workspaceId !== bundle.workspaceId || run.bundleId !== bundle.bundleId) {
+    if (run.workspaceId !== bundle.workspaceId || !allowedObjectBundles.has(run.bundleId)) {
       ownershipMismatch('Run', `${run.runId} does not belong to Bundle ${bundle.bundleId}`, run);
     }
     if (run.selection.prototypeId !== bundle.prototypeId) {
@@ -134,7 +137,7 @@ export function assertSnapshotReferences(context: SnapshotReferenceContext): voi
 
   const revisionsById = new Map<CaseEvidenceRevisionId, CaseEvidenceRevision>();
   for (const revision of revisions) {
-    if (revision.workspaceId !== bundle.workspaceId || revision.bundleId !== bundle.bundleId) {
+    if (revision.workspaceId !== bundle.workspaceId || !allowedObjectBundles.has(revision.bundleId)) {
       ownershipMismatch('CaseEvidenceRevision', `${revision.revisionId} does not belong to Bundle ${bundle.bundleId}`, revision);
     }
     if (revisionsById.has(revision.revisionId)) {
@@ -191,6 +194,13 @@ export function assertSnapshotReferences(context: SnapshotReferenceContext): voi
 }
 
 export function assertStalenessReportReferences(report: StalenessReport, snapshot: BundleSnapshot): void {
+  if (report.workspaceId !== snapshot.workspaceId || report.bundleId !== snapshot.bundleId) {
+    ownershipMismatch(
+      'StalenessReport',
+      `workspace/bundle ${report.workspaceId}/${report.bundleId} does not match Snapshot ${snapshot.workspaceId}/${snapshot.bundleId}`,
+      report,
+    );
+  }
   if (report.snapshotId !== snapshot.snapshotId) {
     ownershipMismatch('StalenessReport', `snapshot ${report.snapshotId} does not match ${snapshot.snapshotId}`, report);
   }
@@ -213,7 +223,16 @@ export type HandoffReferenceContext = SnapshotReferenceContext & {
 
 export function assertHandoffReferences(context: HandoffReferenceContext): void {
   const { workspace, bundle, snapshot, runs, revisions, handoff, stalenessReport } = context;
-  assertSnapshotReferences({ workspace, bundle, snapshot, runs, revisions });
+  assertSnapshotReferences({
+    workspace,
+    bundle,
+    snapshot,
+    runs,
+    revisions,
+    ...(context.allowedOriginBundleIds
+      ? { allowedOriginBundleIds: context.allowedOriginBundleIds }
+      : {}),
+  });
   assertStalenessReportReferences(stalenessReport, snapshot);
 
   if (handoff.workspaceId !== bundle.workspaceId || handoff.bundleId !== bundle.bundleId) {
