@@ -171,7 +171,9 @@ function findViewModule(
   if (exact.length > 0) return { matches: exact };
 
   const base = normalized.split("/").pop()!;
-  const byBase = Object.keys(modules).filter((path) => path.endsWith(`/${base}`));
+  const byBase = Object.keys(modules).filter((path) =>
+    path.endsWith(`/${base}`),
+  );
   return { matches: byBase };
 }
 
@@ -641,6 +643,17 @@ export function validateRegistries(input?: {
 
     const variantIds = new Set<string>();
     let hasDefault = false;
+    for (const key of screen.queryKeys ?? []) {
+      if (RESERVED_QUERY_KEYS.has(key) || !QUERY_KEY_PATTERN.test(key)) {
+        pushError(errors, {
+          resourceType: "screen",
+          resourceId: screen.screenId,
+          instancePath: "/queryKeys",
+          keyword: "pattern",
+          message: `invalid Runtime query key ${key}`,
+        });
+      }
+    }
     for (const variant of screen.variants) {
       if (!SLUG_ID_PATTERN.test(variant.id)) {
         pushError(errors, {
@@ -700,6 +713,118 @@ export function validateRegistries(input?: {
         instancePath: "/defaultVariantId",
         keyword: "enum",
         message: `default variant ${screen.defaultVariantId} missing`,
+      });
+    }
+  }
+
+  const screensById = new Map(
+    screens.map((screen) => [screen.screenId, screen]),
+  );
+  for (const screen of screens) {
+    const actions = screen.actions ?? [];
+    const actionIds = new Set<string>();
+    for (const action of actions) {
+      if (!SLUG_ID_PATTERN.test(action.id) || actionIds.has(action.id)) {
+        pushError(errors, {
+          resourceType: "screen",
+          resourceId: screen.screenId,
+          instancePath: "/actions",
+          keyword: actionIds.has(action.id) ? "uniqueItems" : "pattern",
+          message: `invalid or duplicate Action ${action.id}`,
+        });
+      }
+      actionIds.add(action.id);
+      if (!screensById.has(action.target.screenId)) {
+        pushError(errors, {
+          resourceType: "screen",
+          resourceId: screen.screenId,
+          instancePath: `/actions/${action.id}/target/screenId`,
+          keyword: "enum",
+          message: `unknown Action target Screen ${action.target.screenId}`,
+        });
+      }
+    }
+
+    const scenarioIds = new Set<string>();
+    for (const scenario of screen.scenarios ?? []) {
+      if (!SLUG_ID_PATTERN.test(scenario.id) || scenarioIds.has(scenario.id)) {
+        pushError(errors, {
+          resourceType: "screen",
+          resourceId: screen.screenId,
+          instancePath: "/scenarios",
+          keyword: scenarioIds.has(scenario.id) ? "uniqueItems" : "pattern",
+          message: `invalid or duplicate Scenario ${scenario.id}`,
+        });
+      }
+      scenarioIds.add(scenario.id);
+      if (
+        !screen.variants.some(
+          (variant) => variant.id === scenario.initialVariantId,
+        )
+      ) {
+        pushError(errors, {
+          resourceType: "screen",
+          resourceId: screen.screenId,
+          instancePath: `/scenarios/${scenario.id}/initialVariantId`,
+          keyword: "enum",
+          message: `unknown initial Variant ${scenario.initialVariantId}`,
+        });
+      }
+      for (const actionId of scenario.actionIds) {
+        if (!actionIds.has(actionId)) {
+          pushError(errors, {
+            resourceType: "screen",
+            resourceId: screen.screenId,
+            instancePath: `/scenarios/${scenario.id}/actionIds`,
+            keyword: "enum",
+            message: `unknown Action ${actionId}`,
+          });
+        }
+      }
+      const checkpointIds = new Set<string>();
+      for (const checkpoint of scenario.checkpoints) {
+        const checkpointScreen = screensById.get(checkpoint.screenId);
+        if (
+          !SLUG_ID_PATTERN.test(checkpoint.id) ||
+          checkpointIds.has(checkpoint.id)
+        ) {
+          pushError(errors, {
+            resourceType: "screen",
+            resourceId: screen.screenId,
+            instancePath: `/scenarios/${scenario.id}/checkpoints`,
+            keyword: checkpointIds.has(checkpoint.id)
+              ? "uniqueItems"
+              : "pattern",
+            message: `invalid or duplicate Checkpoint ${checkpoint.id}`,
+          });
+        }
+        checkpointIds.add(checkpoint.id);
+        if (
+          !checkpointScreen ||
+          !checkpointScreen.variants.some(
+            (variant) => variant.id === checkpoint.variantId,
+          )
+        ) {
+          pushError(errors, {
+            resourceType: "screen",
+            resourceId: screen.screenId,
+            instancePath: `/scenarios/${scenario.id}/checkpoints/${checkpoint.id}`,
+            keyword: "enum",
+            message: `unknown Checkpoint Screen/Variant ${checkpoint.screenId}/${checkpoint.variantId}`,
+          });
+        }
+      }
+    }
+    if (
+      (actions.length > 0 || (screen.scenarios?.length ?? 0) > 0) &&
+      !screen.variants.some((variant) => variant.critical)
+    ) {
+      pushError(errors, {
+        resourceType: "screen",
+        resourceId: screen.screenId,
+        instancePath: "/variants",
+        keyword: "required",
+        message: "instrumented Screen requires at least one critical Variant",
       });
     }
   }

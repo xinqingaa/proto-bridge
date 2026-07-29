@@ -6,7 +6,8 @@ import type {
 } from "@/runtime/bridge";
 
 export type SelectionMode = "idle" | "inspect" | "comment";
-export type HighlightStatus = "idle" | "locating" | "located" | "missing" | "error";
+export type HighlightStatus =
+  "idle" | "locating" | "located" | "missing" | "error";
 
 export type SelectedPayload = BridgePayloads["select"];
 
@@ -65,8 +66,8 @@ export const useSelectionStore = defineStore("selection", {
       this.hover = null;
       this.selected = null;
       this.commentTarget = null;
-      this.highlightRequest = null;
-      this.highlightStatus = "idle";
+      // Keep a locating request across a same-route Runtime remount. Actual
+      // route changes call resetForNavigation(), which clears this state.
       this.lastError = null;
     },
     onReady(capabilities: RuntimeCapability[]) {
@@ -90,7 +91,8 @@ export const useSelectionStore = defineStore("selection", {
       this.selected = payload;
       if (payload) {
         this.hover = null;
-        if (this.highlightStatus === "locating") this.highlightStatus = "located";
+        if (this.highlightStatus === "locating")
+          this.highlightStatus = "located";
       }
     },
     clearSelection() {
@@ -105,6 +107,7 @@ export const useSelectionStore = defineStore("selection", {
       this.highlightRequest = ref
         ? {
             ...(ref.pbId ? { pbId: ref.pbId } : {}),
+            ...(ref.pbKey ? { pbKey: ref.pbKey } : {}),
             ...(ref.handle ? { handle: ref.handle } : {}),
             ...(ref.selector ? { selector: ref.selector } : {}),
           }

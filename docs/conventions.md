@@ -2,7 +2,7 @@
 
 > 状态：已定稿
 > 用途：当前 `vue3-prototype` 的生产者规范——原型若要被 ProtoBridge 稳定识别，应满足本文的结构与语义。
-> 实现对照：当前 Core 依赖 tag、class、title、模板指令与源码结构；具体工作台写法见 [design.md](./design.md)。
+> 实现对照：V1 Source adapter 依赖 tag、class、title、模板指令与源码结构；V2 instrumented Runtime 读取稳定 `data-pb-*`；具体工作台写法见 [design.md](./design.md)。
 > 这不是项目 preset：Core 不绑定业务词表；本文约束的是可解析的 UI 结构。
 
 产物字段见 [artifacts.md](./artifacts.md)；证据分层见 [overview.md](./overview.md)。
@@ -107,6 +107,8 @@
 
 Runtime snapshot 另有一套可见角色，如 `app-bar`、`tab-bar`、`list`、`list-item`、`bottom-bar`、`modal`、`card`，依据 DOM、`role`、class、几何位置等推断。
 
+V2 instrumented Runtime 使用独立 Capture Protocol：语义节点同时携带 `data-pb-id` 与 `data-pb-role`；重复实例共享模板 `data-pb-id`，并用非敏感、业务稳定的 `data-pb-key` 区分。禁止把数组 index、CSS selector、DOM path、随机 class 或 Workbench 临时 handle 持久化为 Fragment identity。
+
 | 冲突时 | 裁决 |
 |--------|------|
 | 逻辑架构、未打开的 shell、状态意图 | **Source** |
@@ -134,7 +136,7 @@ Source 有 `chart` kind；runtime 不一定有独立 `chart` role。细节词表
 
 规则：换库只换映射方式，不改本文的角色与 shell 定义。
 
-工作台使用 Vue + Vuetify，并**强制**写入 `data-pb-id` / `data-pb-role` / `data-pb-shell`；当前 Core 尚不读取这些属性，因此工作台仍必须同时满足 tag / class 启发式。完整规则见 [design.md](./design.md)“PB 源码约定”。
+工作台使用 Vue + Vuetify，并**强制**写入 `data-pb-id` / `data-pb-key` / `data-pb-role` / `data-pb-shell`。V2 instrumented Runtime 读取这些标记；V1 Source/Runtime 仍要求同时满足 tag / class 启发式。完整规则见 [design.md](./design.md)“PB 源码约定”。
 
 ---
 
@@ -142,7 +144,7 @@ Source 有 `chart` kind；runtime 不一定有独立 `chart` role。细节词表
 
 | 项 | 说明 |
 |----|------|
-| 显式 `data-pb-role` / `data-pb-shell` | 用稳定属性替代 tag / class 角色猜测；**PBWork 已强制写入**（见 design §19），当前 Core 仍不依赖 |
+| 显式 `data-pb-role` / `data-pb-shell` | V2 instrumented Runtime 已消费稳定属性；后续扩展全量 Registry 与 Source adapter |
 | `react-prototype` | 读取 React 源码并映射到本文同一角色表 |
 | 中立 Source IR | 统一承载 `sections / state / interactions / routes / lifecycle / uiShells / tokens` |
 

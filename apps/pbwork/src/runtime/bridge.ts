@@ -32,7 +32,12 @@ export type SnapshotMeta = {
   >;
 };
 
-export type ElementRef = { pbId?: string; handle?: string; selector?: string };
+export type ElementRef = {
+  pbId?: string;
+  pbKey?: string;
+  handle?: string;
+  selector?: string;
+};
 
 export type ElementBox = {
   x: number;

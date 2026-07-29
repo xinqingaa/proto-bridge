@@ -73,7 +73,7 @@ source.analyze / runtime.capture / screenshot.attach / target.inspect
 | Source | `vue3-prototype`；通过 tag、class、title、模板指令与源码结构进行启发式分析 | 显式 `data-pb-*` 协议、`react-prototype` 与中立 Source IR 统一设计 |
 | Target | `flutter-app` | 按需增加其它 target |
 
-原型工作台的技术栈与首期范围见 [design.md](design.md)；当前 Vue 原型的结构 / 弹层约定见 [conventions.md](conventions.md)。工作台按 design §19 **强制**写入 `data-pb-*` 标记，但当前 Core 仍以 tag / class 启发式为准。显式属性协议与 React adapter 后续映射到同一套 section / uiShell 语义，而不是另起业务词表。
+原型工作台的技术栈与首期范围见 [design.md](design.md)；当前 Vue 原型的结构 / 弹层约定见 [conventions.md](conventions.md)。工作台按 design §19 **强制**写入 `data-pb-*` 标记。V1 Source/Runtime 仍使用 tag / class 启发式；V2 instrumented Runtime 通过独立 Capture Protocol 读取稳定 `data-pb-id` / `data-pb-key` / `data-pb-role`。两条链路映射到同一套中立语义，不另起业务词表。
 
 ## 通用规则与项目事实
 
@@ -113,7 +113,7 @@ Core 目录：
 packages/core/src/
 ├── capabilities/
 ├── workflows/capability-first/
-├── v2/                         # V2 Contract、resolver 与本地 Evidence Store
+├── v2/                         # V2 Contract、resolver、Runtime Contract、Capture 与 Evidence Store
 ├── source/
 ├── snapshot/
 ├── target/
@@ -136,8 +136,10 @@ packages/core/src/
 - `@proto-bridge/core/shared`
 - `@proto-bridge/core/v2`（浏览器可用的 V2 Schema 与 resolver）
 - `@proto-bridge/core/v2/store`（Node-only 本地 Evidence Store）
+- `@proto-bridge/core/v2/runtime-contract`（浏览器安全的 Capture Protocol Schema）
+- `@proto-bridge/core/v2/capture`（Node-only Selection、Preflight、Playwright 与 Orchestrator）
 
-V2 Store 当前提供不可变 Run/Evidence/Catalog/Snapshot/Handoff、受控 Blob、Job 恢复、依赖级 stale/复用、Bundle fork/archive、容量与安全 clean。CLI、MCP 和 PBWork 尚未接入这条 V2 链路；它们仍使用现有正式入口。
+V2 Store 当前提供不可变 Run/Evidence/Catalog/Snapshot/Handoff、受控 Blob、Job 恢复、依赖级 stale/复用、Bundle fork/archive、容量与安全 clean。V2 Capture 已在 `ledger-planet.task-list` 上打通 default/critical、Fragment、Scenario Checkpoint、三种 Evidence 输入和 Store Snapshot；PBWork Capture Console、CLI 与 MCP 尚未接入，仍使用现有正式入口。
 
 ## 相关文档
 

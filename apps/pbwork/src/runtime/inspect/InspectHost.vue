@@ -79,13 +79,17 @@ function selectElement(el: HTMLElement) {
 
 function stableSelector(el: HTMLElement): string | undefined {
   const pbId = el.getAttribute("data-pb-id");
-  if (
-    pbId &&
-    document.querySelectorAll(`[data-pb-id="${CSS.escape(pbId)}"]`).length === 1
-  ) {
-    return `[data-pb-id="${CSS.escape(pbId)}"]`;
+  const pbKey = el.getAttribute("data-pb-key");
+  const pbSelector = pbId
+    ? `[data-pb-id="${CSS.escape(pbId)}"]${pbKey ? `[data-pb-key="${CSS.escape(pbKey)}"]` : ""}`
+    : undefined;
+  if (pbSelector && document.querySelectorAll(pbSelector).length === 1) {
+    return pbSelector;
   }
-  if (el.id && document.querySelectorAll(`#${CSS.escape(el.id)}`).length === 1) {
+  if (
+    el.id &&
+    document.querySelectorAll(`#${CSS.escape(el.id)}`).length === 1
+  ) {
     return `#${CSS.escape(el.id)}`;
   }
 
@@ -93,11 +97,15 @@ function stableSelector(el: HTMLElement): string | undefined {
   let cur: HTMLElement | null = el;
   while (cur && cur !== document.body && parts.length < 10) {
     const curPbId = cur.getAttribute("data-pb-id");
+    const curPbKey = cur.getAttribute("data-pb-key");
+    const currentSelector = curPbId
+      ? `[data-pb-id="${CSS.escape(curPbId)}"]${curPbKey ? `[data-pb-key="${CSS.escape(curPbKey)}"]` : ""}`
+      : undefined;
     if (
-      curPbId &&
-      document.querySelectorAll(`[data-pb-id="${CSS.escape(curPbId)}"]`).length === 1
+      currentSelector &&
+      document.querySelectorAll(currentSelector).length === 1
     ) {
-      parts.unshift(`[data-pb-id="${CSS.escape(curPbId)}"]`);
+      parts.unshift(currentSelector);
       break;
     }
     const parentEl: HTMLElement | null = cur.parentElement;
@@ -114,18 +122,26 @@ function stableSelector(el: HTMLElement): string | undefined {
   return selector && selector.length <= 512 ? selector : undefined;
 }
 
-function sendCommentTarget(event: MouseEvent | KeyboardEvent, leaf: HTMLElement | null) {
+function sendCommentTarget(
+  event: MouseEvent | KeyboardEvent,
+  leaf: HTMLElement | null,
+) {
   const point =
     event instanceof MouseEvent
       ? { x: event.clientX, y: event.clientY }
       : leaf
-        ? { x: readBbox(leaf).x + readBbox(leaf).width / 2, y: readBbox(leaf).y + readBbox(leaf).height / 2 }
+        ? {
+            x: readBbox(leaf).x + readBbox(leaf).width / 2,
+            y: readBbox(leaf).y + readBbox(leaf).height / 2,
+          }
         : { x: window.innerWidth / 2, y: window.innerHeight / 2 };
   const target = leaf ? resolvePickTarget(leaf, false) : null;
   const selector = target ? stableSelector(target) : undefined;
   const payload = {
     point,
-    ...(target ? { element: buildElementSummary(target), bbox: readBbox(target) } : {}),
+    ...(target
+      ? { element: buildElementSummary(target), bbox: readBbox(target) }
+      : {}),
     ...(selector ? { selector } : {}),
   };
   if (target) {
@@ -237,7 +253,8 @@ defineExpose({ highlight, clearLocal });
 watch(
   () => [props.enabled, props.commentEnabled] as const,
   ([enabled, commentEnabled], previous) => {
-    if (!enabled && !commentEnabled && previous?.some(Boolean)) clearLocal("mode-change");
+    if (!enabled && !commentEnabled && previous?.some(Boolean))
+      clearLocal("mode-change");
   },
 );
 

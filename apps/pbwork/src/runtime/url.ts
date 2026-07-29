@@ -92,8 +92,7 @@ export function resolveRuntimeRoute(input: {
 
   const variantId =
     input.searchParams.get("variant") ?? screen.defaultVariantId;
-  const themeId =
-    input.searchParams.get("theme") ?? prototype.defaultThemeId;
+  const themeId = input.searchParams.get("theme") ?? prototype.defaultThemeId;
 
   const variant = screen.variants.find((item) => item.id === variantId);
   if (!variant) {
@@ -114,10 +113,11 @@ export function resolveRuntimeRoute(input: {
   }
 
   const declared = variant.query ?? {};
+  const optionalQueryKeys = new Set(screen.queryKeys ?? []);
   const business: Record<string, string> = {};
   for (const [key, value] of rawEntries) {
     if (RESERVED.has(key)) continue;
-    if (!(key in declared)) {
+    if (!(key in declared) && !optionalQueryKeys.has(key)) {
       return {
         ok: false,
         code: "INVALID_QUERY",

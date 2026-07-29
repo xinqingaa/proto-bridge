@@ -21,7 +21,9 @@ test("adds, persists, resolves and deletes a local element comment", async ({
   await inspector.getByRole("button", { name: "开始选择" }).click();
 
   await frame
-    .locator('[data-pb-id="ledger-planet.task-list.list.row.t1"]')
+    .locator(
+      '[data-pb-id="ledger-planet.task-list.list.row"][data-pb-key="t1"]',
+    )
     .click({ position: { x: 16, y: 14 } });
 
   await expect(inspector.getByRole("tab", { name: /评论/ })).toHaveAttribute(

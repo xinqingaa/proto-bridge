@@ -39,6 +39,9 @@ importers:
 
   apps/pbwork:
     dependencies:
+      '@proto-bridge/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       ajv:
         specifier: ^8.17.1
         version: 8.20.0

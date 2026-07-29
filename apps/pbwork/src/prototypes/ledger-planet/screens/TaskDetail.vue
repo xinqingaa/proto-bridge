@@ -47,7 +47,11 @@ function claim() {
 
 <template>
   <LedgerPlanetShell title="任务详情" active="权益" back-to="task-list">
-    <div class="page" data-pb-id="ledger-planet.task-detail">
+    <div
+      class="page"
+      data-pb-id="ledger-planet.task-detail.root"
+      data-pb-role="page"
+    >
       <section class="task-hero">
         <div class="hero-icon"><Target :size="24" /></div>
         <div>

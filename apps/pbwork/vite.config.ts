@@ -10,6 +10,10 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
+  optimizeDeps: {
+    exclude: ["@proto-bridge/core/v2/runtime-contract"],
+    force: true,
+  },
   server: {
     host: "127.0.0.1",
     port: 3977,

@@ -1,11 +1,5 @@
 <script setup lang="ts">
-import {
-  computed,
-  onBeforeMount,
-  onBeforeUnmount,
-  ref,
-  watch,
-} from "vue";
+import { computed, onBeforeMount, onBeforeUnmount, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
   loadPrototypes,
@@ -247,6 +241,23 @@ function sendCommentMode(enabled: boolean) {
   postToRuntime(createWorkbenchEnvelope("comment-mode", ctx, { enabled }));
 }
 
+function sendHighlightRequest() {
+  const ctx = bridgeContext.value;
+  if (!ctx || !selection.runtimeReady) return;
+  const request = selection.highlightRequest;
+  const element = request
+    ? {
+        ...(request.pbId ? { pbId: request.pbId } : {}),
+        ...(request.pbKey ? { pbKey: request.pbKey } : {}),
+        ...(request.handle ? { handle: request.handle } : {}),
+        ...(request.selector ? { selector: request.selector } : {}),
+      }
+    : undefined;
+  postToRuntime(
+    createWorkbenchEnvelope("highlight", ctx, element ? { element } : {}),
+  );
+}
+
 function toggleInspect() {
   if (!selection.canInspect && !selection.inspecting) return;
   if (!selection.inspecting) {
@@ -412,6 +423,10 @@ function onWindowMessage(event: MessageEvent) {
     } else if (msg.payload.canonicalRuntimeUrl !== absoluteRuntimeUrl.value) {
       // ready after iframe load / remount — align without stacking history
       applyRuntimeNavigation(msg.payload.canonicalRuntimeUrl, "replace");
+    } else if (selection.highlightStatus === "locating") {
+      // A locate request can switch modes while Runtime is remounting. Re-send
+      // the pending request only after the new Runtime has completed handshake.
+      sendHighlightRequest();
     }
     return;
   }
@@ -524,24 +539,7 @@ watch(
   },
 );
 
-watch(
-  () => selection.highlightNonce,
-  () => {
-    const ctx = bridgeContext.value;
-    if (!ctx || !selection.runtimeReady) return;
-    const request = selection.highlightRequest;
-    const element = request
-      ? {
-          ...(request.pbId ? { pbId: request.pbId } : {}),
-          ...(request.handle ? { handle: request.handle } : {}),
-          ...(request.selector ? { selector: request.selector } : {}),
-        }
-      : undefined;
-    postToRuntime(
-      createWorkbenchEnvelope("highlight", ctx, element ? { element } : {}),
-    );
-  },
-);
+watch(() => selection.highlightNonce, sendHighlightRequest);
 
 watch(
   () => {

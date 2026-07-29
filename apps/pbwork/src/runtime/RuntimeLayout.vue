@@ -11,7 +11,10 @@ import {
   type Component,
 } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { screenViewModules } from "@/design-system/loaders";
+import {
+  loadPrototypeScreens,
+  screenViewModules,
+} from "@/design-system/loaders";
 import {
   resolveThemeTokens,
   tokensToCssVars,
@@ -33,6 +36,7 @@ import {
   setTheme as setLedgerTheme,
   type LedgerThemeId,
 } from "@/prototypes/ledger-planet/theme-session";
+import { installRuntimeCaptureProtocol } from "@/runtime/capture-protocol";
 
 installNavigationIntentTracking();
 
@@ -50,6 +54,7 @@ const themePreferenceTick = ref(0);
 const isEmbedded = shallowRef(
   typeof window !== "undefined" && window.parent !== window,
 );
+let disposeCaptureProtocol: (() => void) | undefined;
 
 const resolved = computed(() =>
   resolveRuntimeRoute({
@@ -63,7 +68,9 @@ const resolved = computed(() =>
   }),
 );
 
-function isLedgerThemeId(value: string | null | undefined): value is LedgerThemeId {
+function isLedgerThemeId(
+  value: string | null | undefined,
+): value is LedgerThemeId {
   return value === "light" || value === "dark";
 }
 
@@ -270,6 +277,46 @@ onMounted(() => {
   if (window.parent !== window) {
     document.documentElement.classList.add("pbwork-runtime-embedded");
   }
+  disposeCaptureProtocol = installRuntimeCaptureProtocol({
+    getContext: () => {
+      if (!resolved.value.ok) return null;
+      return {
+        prototypeId: resolved.value.prototype.id,
+        screenId: resolved.value.screen.screenId,
+        variantId: resolved.value.variant.id,
+        themeId: effectiveThemeId.value,
+        ...(resolved.value.variant.fixture
+          ? { fixtureId: resolved.value.variant.fixture }
+          : {}),
+      };
+    },
+    navigate: async (target) => {
+      const screen = loadPrototypeScreens().find(
+        (candidate) =>
+          candidate.prototypeId === target.prototypeId &&
+          candidate.screenId === target.screenId,
+      );
+      if (!screen) throw new Error(`UNKNOWN_SCREEN：${target.screenId}`);
+      await router.replace(
+        buildCanonicalRuntimeUrl({
+          prototypeId: target.prototypeId,
+          screenSlug: screen.screenSlug,
+          variantId: target.variantId,
+          themeId: target.themeId,
+        }),
+      );
+      await nextTick();
+    },
+    waitForStable: async () => {
+      await document.fonts.ready;
+      await nextTick();
+      await new Promise<void>((resolveFrame) =>
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => resolveFrame()),
+        ),
+      );
+    },
+  });
   void loadScreen();
 });
 
@@ -277,6 +324,8 @@ onBeforeUnmount(() => {
   window.removeEventListener("ledger-theme-change", onLedgerThemeChange);
   window.removeEventListener("message", onMessage);
   document.documentElement.classList.remove("pbwork-runtime-embedded");
+  disposeCaptureProtocol?.();
+  disposeCaptureProtocol = undefined;
   for (const key of Object.keys(themeStyle.value)) {
     document.documentElement.style.removeProperty(key);
   }

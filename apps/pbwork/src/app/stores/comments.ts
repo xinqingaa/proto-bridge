@@ -11,6 +11,7 @@ export type LocalComment = {
   variantId?: string;
   themeId?: string;
   elementId?: string;
+  elementKey?: string;
   selector?: string;
   elementLabel?: string;
   textSnapshot?: string;
@@ -34,6 +35,7 @@ export type CommentContext = {
 
 export type CommentTarget = {
   elementId?: string;
+  elementKey?: string;
   selector?: string;
   elementLabel?: string;
   textSnapshot?: string;
@@ -69,6 +71,7 @@ function isComment(value: unknown): value is LocalComment {
     "variantId",
     "themeId",
     "elementId",
+    "elementKey",
     "selector",
     "elementLabel",
     "textSnapshot",
@@ -153,6 +156,7 @@ export const useCommentsStore = defineStore("comments", {
         ...(context.variantId ? { variantId: context.variantId } : {}),
         ...(context.themeId ? { themeId: context.themeId } : {}),
         ...(target.elementId ? { elementId: target.elementId } : {}),
+        ...(target.elementKey ? { elementKey: target.elementKey } : {}),
         ...(target.selector ? { selector: target.selector } : {}),
         ...(target.elementLabel ? { elementLabel: target.elementLabel } : {}),
         ...(target.textSnapshot ? { textSnapshot: target.textSnapshot } : {}),

@@ -41,12 +41,18 @@ function open(id: string, status: string, rewardState: string) {
 
 <template>
   <LedgerPlanetShell title="任务" active="权益" back-to="benefits-home">
-    <div class="page" data-pb-id="ledger-planet.task-list">
-      <FilterBar
-        v-model="filter"
-        :items="['全部', '待完成', '已完成']"
-        inspect-id="ledger-planet.task-list.filters"
-      />
+    <div
+      class="page"
+      data-pb-id="ledger-planet.task-list.root"
+      data-pb-role="page"
+    >
+      <div data-pb-id="ledger-planet.task-list.filters" data-pb-role="filter">
+        <FilterBar
+          v-model="filter"
+          :items="['全部', '待完成', '已完成']"
+          inspect-id="ledger-planet.task-list.filters"
+        />
+      </div>
       <EmptyState
         v-if="rows.length === 0"
         title="没有任务"
@@ -57,13 +63,17 @@ function open(id: string, status: string, rewardState: string) {
         surface="none"
         rounded="none"
         inspect-id="ledger-planet.task-list.list"
+        data-pb-id="ledger-planet.task-list.list"
       >
         <button
           v-for="task in rows"
           :key="task.id"
           type="button"
           class="row"
-          :data-pb-id="`ledger-planet.task-list.list.row.${task.id}`"
+          data-pb-id="ledger-planet.task-list.list.row"
+          :data-pb-key="task.id"
+          data-pb-role="list-item"
+          data-pb-action="open-claimable-task"
           @click="open(task.id, task.status, task.rewardState)"
         >
           <div>
@@ -79,7 +89,13 @@ function open(id: string, status: string, rewardState: string) {
                   ? '已完成'
                   : '去完成'
             "
-            :tone="task.rewardState === 'claimable' ? 'warning' : task.status === 'done' ? 'success' : 'primary'"
+            :tone="
+              task.rewardState === 'claimable'
+                ? 'warning'
+                : task.status === 'done'
+                  ? 'success'
+                  : 'primary'
+            "
           />
         </button>
       </DataList>

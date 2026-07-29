@@ -117,6 +117,34 @@ export type PrototypeVariant = {
   description?: string;
   query?: Record<string, string>;
   fixture?: string;
+  /** V2 Capture expands this Variant for the `critical` strategy. */
+  critical?: boolean;
+};
+
+export type PrototypeFragmentRef = {
+  screenId: string;
+  pbId: string;
+  pbKey?: string;
+};
+
+export type PrototypeAction = {
+  id: string;
+  kind: "click";
+  target: PrototypeFragmentRef;
+};
+
+export type PrototypeCheckpoint = {
+  id: string;
+  screenId: string;
+  variantId: string;
+  requiredFragments: PrototypeFragmentRef[];
+};
+
+export type PrototypeScenario = {
+  id: string;
+  initialVariantId: string;
+  actionIds: string[];
+  checkpoints: PrototypeCheckpoint[];
 };
 
 export type ScreenRecord = {
@@ -128,8 +156,12 @@ export type ScreenRecord = {
   path: string;
   view: string;
   fixtureSchema?: string;
+  /** Optional Runtime business query inputs accepted independently of a Variant. */
+  queryKeys?: string[];
   defaultVariantId: string;
   variants: PrototypeVariant[];
+  actions?: PrototypeAction[];
+  scenarios?: PrototypeScenario[];
 };
 
 export type FixturePayload = { schemaVersion: 1 } & Record<string, unknown>;
@@ -146,8 +178,7 @@ export type ScreenRuntimeContext = {
 export type ScreenRuntimeAdapter = {
   applyVariant: (context: ScreenRuntimeContext) => void | Promise<void>;
   serializeVariant?: () =>
-    | Record<string, unknown>
-    | Promise<Record<string, unknown>>;
+    Record<string, unknown> | Promise<Record<string, unknown>>;
 };
 
 export type RegistryValidationError = {

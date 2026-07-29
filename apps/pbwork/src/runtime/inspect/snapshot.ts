@@ -104,16 +104,17 @@ const BINDING_SLOT_PROPERTIES: Record<string, readonly string[]> = {
   elevation: ["box-shadow"],
   // Root-level typography only. Part slots (title/subtitle/label/input) must not
   // claim the registered root's computed font as "显式绑定".
-  typography: ["font", "font-family", "font-size", "font-weight", "line-height"],
+  typography: [
+    "font",
+    "font-family",
+    "font-size",
+    "font-weight",
+    "line-height",
+  ],
 };
 
 /** Part-level slots: shown in component bindings, never bind root computed styles. */
-const PART_BINDING_SLOTS = new Set([
-  "title",
-  "subtitle",
-  "label",
-  "input",
-]);
+const PART_BINDING_SLOTS = new Set(["title", "subtitle", "label", "input"]);
 
 export type StyleMatchOptions = {
   /** Token IDs used only for match ranking (may include ancestor prefs). */
@@ -126,7 +127,9 @@ export function stylePropertyGroup(
   property: (typeof STYLE_KEYS)[number] | string,
 ): StyleInspectGroup {
   if (property === "font") return "typography";
-  return PROPERTY_GROUP[property as (typeof STYLE_KEYS)[number]] ?? "shadow-layout";
+  return (
+    PROPERTY_GROUP[property as (typeof STYLE_KEYS)[number]] ?? "shadow-layout"
+  );
 }
 
 /** Human-readable role for inspector labels (文字 / 背景 / …). */
@@ -363,10 +366,7 @@ function matchTokenForStyle(
           source: matchSourceForToken(item.tokenId, bindingTokenIds),
         };
       }
-      if (
-        COLOR_PROPERTIES.has(property) &&
-        colorsEqual(item.value, value)
-      ) {
+      if (COLOR_PROPERTIES.has(property) && colorsEqual(item.value, value)) {
         return {
           cssVar: item.cssVar,
           tokenId: item.tokenId,
@@ -569,7 +569,12 @@ function semanticParentRef(el: HTMLElement): ElementSummary["semanticParent"] {
   while (cur) {
     const pbId = cur.getAttribute("data-pb-id");
     if (pbId) {
-      return { pbId, handle: getOrCreateHandle(cur) };
+      const pbKey = cur.getAttribute("data-pb-key") ?? undefined;
+      return {
+        pbId,
+        ...(pbKey ? { pbKey } : {}),
+        handle: getOrCreateHandle(cur),
+      };
     }
     const reg = getInspectRegistration(cur);
     if (reg) {
@@ -586,6 +591,7 @@ function semanticParentRef(el: HTMLElement): ElementSummary["semanticParent"] {
 export function buildElementSummary(el: HTMLElement): ElementSummary {
   const meta: SnapshotMeta = {};
   const pbId = el.getAttribute("data-pb-id") ?? undefined;
+  const pbKey = el.getAttribute("data-pb-key") ?? undefined;
   const pbRole = el.getAttribute("data-pb-role") ?? undefined;
   const pbShellRaw = el.getAttribute("data-pb-shell");
   const pbShell =
@@ -601,6 +607,7 @@ export function buildElementSummary(el: HTMLElement): ElementSummary {
   const summary: ElementSummary = {
     ref: {
       ...(pbId ? { pbId } : {}),
+      ...(pbKey ? { pbKey } : {}),
       handle: getOrCreateHandle(el),
       ...(selector ? { selector } : {}),
     },
@@ -779,7 +786,8 @@ export function buildSelectPayload(
     if (componentReg.element !== el) {
       payload.componentOwner = buildElementSummary(componentReg.element);
     }
-    if (componentReg.componentId) payload.componentId = componentReg.componentId;
+    if (componentReg.componentId)
+      payload.componentId = componentReg.componentId;
     const props = sanitizeRecord(componentReg.getProps?.(), meta);
     const state = sanitizeRecord(componentReg.getState?.(), meta);
     if (props) payload.props = props;
@@ -787,7 +795,9 @@ export function buildSelectPayload(
     const componentBindings = componentReg.getTokenBindings?.();
     const tokenBindings = buildTokenBindings(componentBindings);
     const tokenIds =
-      componentReg.getTokens?.() ?? tokenBindings?.map((row) => row.tokenId) ?? [];
+      componentReg.getTokens?.() ??
+      tokenBindings?.map((row) => row.tokenId) ??
+      [];
     if (tokenIds.length) payload.tokens = [...new Set(tokenIds)].slice(0, 100);
     if (tokenBindings) payload.tokenBindings = tokenBindings;
   }

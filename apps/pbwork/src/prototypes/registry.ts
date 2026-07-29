@@ -319,7 +319,38 @@ export const prototypeScreens = [
     variants: [
       { id: "default", label: "默认" },
       { id: "empty", label: "空态" },
-      { id: "claimable", label: "待领取" },
+      { id: "claimable", label: "待领取", critical: true },
+    ],
+    actions: [
+      {
+        id: "open-claimable-task",
+        kind: "click",
+        target: {
+          screenId: "ledger-planet.task-list",
+          pbId: "ledger-planet.task-list.list.row",
+          pbKey: "t2",
+        },
+      },
+    ],
+    scenarios: [
+      {
+        id: "open-claimable-task",
+        initialVariantId: "default",
+        actionIds: ["open-claimable-task"],
+        checkpoints: [
+          {
+            id: "claimable-task-detail",
+            screenId: "ledger-planet.task-detail",
+            variantId: "claimable",
+            requiredFragments: [
+              {
+                screenId: "ledger-planet.task-detail",
+                pbId: "ledger-planet.task-detail.root",
+              },
+            ],
+          },
+        ],
+      },
     ],
   },
   {
@@ -330,6 +361,7 @@ export const prototypeScreens = [
     title: "任务详情",
     path: "/prototype/ledger-planet/task-detail",
     view: "ledger-planet/screens/TaskDetail.vue",
+    queryKeys: ["task"],
     defaultVariantId: "default",
     variants: [
       { id: "default", label: "默认" },

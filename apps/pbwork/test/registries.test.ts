@@ -109,6 +109,20 @@ describe("design contracts", () => {
       "empty",
       "claimable",
     ]);
+    expect(
+      list?.variants
+        .filter((item) => "critical" in item && item.critical)
+        .map((item) => item.id),
+    ).toEqual(["claimable"]);
+    expect(list?.actions?.map((item) => item.id)).toEqual([
+      "open-claimable-task",
+    ]);
+    expect(list?.scenarios?.map((item) => item.id)).toEqual([
+      "open-claimable-task",
+    ]);
+    expect(list?.scenarios?.[0]?.checkpoints.map((item) => item.id)).toEqual([
+      "claimable-task-detail",
+    ]);
     expect(detail?.variants.map((item) => item.id)).toEqual([
       "default",
       "completed",

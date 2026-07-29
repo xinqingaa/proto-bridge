@@ -45,8 +45,11 @@ export function findByRef(ref: ElementRef): HTMLElement | null {
     }
   }
   if (ref.pbId) {
+    const keySelector = ref.pbKey
+      ? `[data-pb-key="${CSS.escape(ref.pbKey)}"]`
+      : "";
     const matches = document.querySelectorAll(
-      `[data-pb-id="${CSS.escape(ref.pbId)}"]`,
+      `[data-pb-id="${CSS.escape(ref.pbId)}"]${keySelector}`,
     );
     if (matches.length === 1 && matches[0] instanceof HTMLElement) {
       return matches[0];

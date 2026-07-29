@@ -932,12 +932,12 @@ Vue Router 与组件预览使用 `import.meta.glob` 建立静态模块映射，�
 
 ### 13.3 Variant 行为
 
-Variant 默认由源码注册，工作台只负责切换和展示。典型 Variant 包括默认态、加载中、空态、错误态、指定 Tab、Sheet 打开和 Dialog 打开。`variant` 与 `theme` 是 Runtime 保留 query，不得重复写入 `PrototypeVariant.query`；该字段只保存额外业务参数。`fixture` 固定为相对当前 Prototype 目录的路径，如 `fixtures/empty.json`。
+Variant 默认由源码注册，工作台只负责切换和展示。典型 Variant 包括默认态、加载中、空态、错误态、指定 Tab、Sheet 打开和 Dialog 打开。`variant` 与 `theme` 是 Runtime 保留 query，不得重复写入 `PrototypeVariant.query`；该字段保存当前 Variant 必须携带的业务参数。Screen 可用 `queryKeys` 声明跨 Variant 可选的业务参数，例如详情页的稳定业务对象 ID。`fixture` 固定为相对当前 Prototype 目录的路径，如 `fixtures/empty.json`。
 
 URL 规范化规则：
 
 1. `variant`、`theme` 为唯一保留 key，重复 key、数组值、空 key 和未知 query 一律进入运行时错误页；
-2. 业务 query 必须完整声明在当前 Variant 的 `query` 中，Runtime 不接受注册表以外的临时业务参数；
+2. 业务 query 必须声明在当前 Variant 的 `query` 或 Screen 的 `queryKeys` 中；Variant `query` 必须完整提供，`queryKeys` 参数可选，Runtime 不接受注册表以外的临时业务参数；
 3. canonical URL 始终显式写入最终 `variant` 与 `theme`，业务 query 按 key 字典序排列；
 4. query value 采用 `URLSearchParams` 编码，解码后最长 512 字符；
 5. 工作台 URL 与 iframe URL 使用同一个 canonicalizer，复制链接直接读取规范化后的 iframe URL；
@@ -1347,7 +1347,7 @@ apps/pbwork/
 - color 以当前主题单色块展示，避免把浅/深值误读为两个 Token；typography、spacing、sizing、radius、border、elevation、opacity、motion 直接展示注册值，不附加低价值“应用示例”；
 - Theme 页并列展示浅色和深色的完整语义色、覆盖来源、差异与关键对比度，不重复组件、表单、列表或字体矩阵；
 - 工作台壳和原型主题可以独立切换；
-- 完整展示 §16.1 固定的 15 个基础组件和 11 个复杂组件，不允许以空白或静态占位卡替代；
+- 完整展示 §16.1 固定的 15 个基础组件和 13 个复杂组件，不允许以空白或静态占位卡替代；
 - 每个组件至少有浅色 / 深色并列默认预览，适用组件的 Playground 覆盖 text、boolean、select 中至少一种可调项；正式状态通过预设切换，不展示状态矩阵；
 - Playground 可以临时调参、按 Contract 默认值重置，并完成一次受控源码更新的 preview、确认、apply 与刷新验证。
 
@@ -1403,14 +1403,15 @@ apps/pbwork/
 
 ## 19. PB 源码约定
 
-本节是 PBWork 作为 Vue / Vuetify 生产者的写法规范，与 [conventions.md](./conventions.md) 的角色 / shell 语义对齐。当前 PB Core **不读取** `data-pb-*`，但仍要求工作台源码强制写入，以便检查面板、评论锚点与未来显式协议无缝衔接；**同时**必须满足当前 tag / class 启发式，否则今天的 `source.analyze` / runtime 识别会失败。
+本节是 PBWork 作为 Vue / Vuetify 生产者的写法规范，与 [conventions.md](./conventions.md) 的角色 / shell 语义对齐。V2 instrumented Runtime 已通过独立 Capture Protocol 读取 `data-pb-id` / `data-pb-key` / `data-pb-role`；V1 `source.analyze` 与页面型 Runtime 证据仍依赖 tag / class 启发式，因此源码必须同时满足两类识别面。
 
 ### 19.1 强制标记
 
 | 属性                 | 谁必须写                                                         | 值                                                                                                                 |
 | -------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `data-pb-component`  | 设计系统 / 定制组件根（由 `usePbInspect` 写入）                  | 类型键，页面内可重复，如 `ds.button`、`ds.switch`                                                                  |
-| `data-pb-id`         | 新建组件根、页面关键区块、列表行根、可评论的主要节点             | 稳定、**页面内唯一**，如 `task-list.summary`；动态列表使用业务 ID（如 `task-list.row.${task.id}`），禁止数组 index |
+| `data-pb-id`         | 新建组件根、页面关键区块、列表行根、可评论的主要节点             | 稳定模板身份；非重复节点在页面内唯一，如 `task-list.summary`；重复实例共享模板 ID，如 `task-list.row` |
+| `data-pb-key`        | 共享同一 `data-pb-id` 的重复实例                                 | 非敏感、业务稳定的实例键，如任务 ID；禁止数组 index、DOM 顺序和随机值 |
 | `data-pb-role`       | 逻辑区块根（对应 conventions section kind / 派生角色）           | 如 `app-bar`、`list`、`section`、`tab-bar`、`bottom-bar`、`chart`                                                  |
 | `data-pb-shell`      | Overlay / 临时层根                                               | `sheet` / `dialog` / `modal` / `drawer`（与 conventions shell kind 一致）                                          |
 
@@ -1420,7 +1421,8 @@ apps/pbwork/
 2. 组件根同时写 `data-pb-component`（类型）与 `data-pb-id`（实例）；
 3. 区块根同时写 `data-pb-role`；shell 根同时写 `data-pb-shell`；
 4. 不发明 Core 角色表以外的业务词表；
-5. 属性是补充，**不能替代** tag / class / 显隐绑定等当前识别面。
+5. V2 持久 Fragment 只接受 `pbId` 与可选 `pbKey`，不接受 selector、DOM path 或 Workbench 临时 handle；
+6. 属性不能替代 V1 tag / class / 显隐绑定等当前识别面。
 
 ### 19.1.1 原型页面组装约定
 
@@ -1428,7 +1430,7 @@ apps/pbwork/
 
 1. **优先使用** `design-system/components` 通用组件；页面只做布局与业务文案；
 2. 少量定制组件可以接受，但必须调用 `usePbInspect({ pbId, componentId, instanceId?, ... })`，保证检查面板能读到 Props / Contract / Token；
-3. 禁止大段无标记原生 DOM 充当可交互控件（如裸 `<button>`）；应换成 `Button` 等组件，或至少提供稳定 `data-pb-id` + `data-pb-role`；
+3. 禁止大段无标记原生 DOM 充当可交互控件（如裸 `<button>`）；应换成 `Button` 等组件，或至少提供稳定 `data-pb-id` + `data-pb-role`；重复控件使用模板 `data-pb-id` + 业务稳定 `data-pb-key`；
 4. 页面 / shell 锚点（如 `field-service.settings`、`*.shell`）只表示结构容器，**不能**作为唯一可点目标——区块与控件必须有更深层锚点或组件登记。
 
 ### 19.2 Vuetify → 当前识别面
@@ -1492,7 +1494,7 @@ Shell 显隐状态名建议 `*Open` / `*Visible` / `show*`，并与业务态字�
 
 ### 20.2 阶段四：扩建组件库
 
-在保留原有 5 基础 + 4 复杂样本的前提下，已补齐至 **15 个基础组件**、**11 个复杂组件**。
+在保留原有 5 基础 + 4 复杂样本的前提下，已补齐至 **15 个基础组件**、**13 个复杂组件**。
 
 **第一批（输入、状态与基础反馈）**
 
@@ -1538,7 +1540,7 @@ Search Bar、Filter Bar、Bottom Navigation、Dialog、Snackbar / Toast、Empty 
 
 ### 20.5 远期方向
 
-- 显式 `data-pb-*` 协议被 Core 正式消费，与 React source adapter、中立 Source IR 统一设计；
+- V2 `data-pb-*` Runtime 协议扩展至全量 Registry，并与 React source adapter、中立 Source IR 统一设计；
 - Flutter 共享主题、基础组件和复杂组件定义；
 - PB 产物在真实生产页面跟进中的使用方式；
 - 多人共享评论、在线状态和评审流程；

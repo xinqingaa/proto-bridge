@@ -49,6 +49,14 @@
     "./v2/store": {
       "types": "./dist/v2/store/index.d.ts",
       "import": "./dist/v2/store/index.js"
+    },
+    "./v2/runtime-contract": {
+      "types": "./dist/v2/runtime-contract/index.d.ts",
+      "import": "./dist/v2/runtime-contract/index.js"
+    },
+    "./v2/capture": {
+      "types": "./dist/v2/capture/index.d.ts",
+      "import": "./dist/v2/capture/index.js"
     }
   },
   "files": [

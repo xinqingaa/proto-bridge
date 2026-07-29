@@ -78,6 +78,7 @@ const currentCommentTarget = computed((): CommentTarget | null => {
   if (target) {
     return {
       ...(target.element?.ref.pbId ? { elementId: target.element.ref.pbId } : {}),
+      ...(target.element?.ref.pbKey ? { elementKey: target.element.ref.pbKey } : {}),
       ...(target.selector ? { selector: target.selector } : {}),
       ...(target.element ? {
         elementLabel: elementDisplayLabel(target.element),
@@ -91,6 +92,7 @@ const currentCommentTarget = computed((): CommentTarget | null => {
   if (!el) return null;
   return {
     ...(el.ref.pbId ? { elementId: el.ref.pbId } : {}),
+    ...(el.ref.pbKey ? { elementKey: el.ref.pbKey } : {}),
     ...(el.ref.selector ? { selector: el.ref.selector } : {}),
     elementLabel: elementDisplayLabel(el),
     ...(el.text ? { textSnapshot: el.text.slice(0, 160) } : {}),
@@ -397,6 +399,7 @@ function locateComment(item: LocalComment) {
   locatingCommentId.value = item.id;
   selection.requestHighlight({
     ...(item.elementId ? { pbId: item.elementId } : {}),
+    ...(item.elementKey ? { pbKey: item.elementKey } : {}),
     ...(item.selector ? { selector: item.selector } : {}),
   });
 }
