@@ -1,0 +1,317 @@
+<script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted } from "vue";
+import { RouterLink, useRouter } from "vue-router";
+import {
+  Bell,
+  CheckCircle2,
+  CircleAlert,
+  LoaderCircle,
+  ScanLine,
+} from "lucide-vue-next";
+import { useCaptureStore } from "@/app/stores/capture";
+
+const capture = useCaptureStore();
+const router = useRouter();
+let pollTimer: ReturnType<typeof setInterval> | undefined;
+const STATUS_LABELS = {
+  queued: "等待开始",
+  discovering: "正在准备",
+  capturing: "正在采集",
+  writing: "正在保存",
+  completed: "采集完成",
+  failed: "采集失败",
+  cancelled: "已取消",
+  interrupted: "已中断",
+} as const;
+
+const executing = computed(() =>
+  capture.activeJob
+    ? ["queued", "discovering", "capturing", "writing"].includes(
+        capture.activeJob.status,
+      )
+    : false,
+);
+const progress = computed(() => {
+  const total = capture.activeJob?.selection.cases.length ?? 0;
+  if (!total) return 0;
+  const completed =
+    capture.activeJob?.journal.filter(
+      (entry) => entry.event === "case-finished",
+    ).length ?? 0;
+  return Math.min(100, (completed / total) * 100);
+});
+const statusLabel = computed(() => {
+  const status = capture.activeJob?.status;
+  return status ? STATUS_LABELS[status] : "采集与任务";
+});
+const noticeColor = computed(
+  () =>
+    ({
+      info: "info",
+      success: "success",
+      warning: "warning",
+      error: "error",
+    })[capture.notice?.tone ?? "info"],
+);
+
+async function refresh() {
+  if (!capture.connected) {
+    await capture.connect();
+    return;
+  }
+  if (capture.activeJob) await capture.refreshActiveJob();
+  await capture.refreshConsole();
+}
+
+async function viewResult() {
+  const bundleId =
+    capture.notice?.bundleId ??
+    capture.details?.bundle.bundleId ??
+    capture.activeJob?.bundleId;
+  if (!bundleId) return;
+  if (!capture.details || capture.details.bundle.bundleId !== bundleId) {
+    await capture.loadBundle(bundleId);
+  }
+  const snapshotId =
+    capture.notice?.snapshotId ?? capture.details?.activeSnapshot.snapshotId;
+  if (!snapshotId) return;
+  capture.jobCenterOpen = false;
+  capture.dismissNotice();
+  await router.push(`/workbench/evidence/${bundleId}/${snapshotId}`);
+}
+
+onMounted(() => {
+  void refresh();
+  pollTimer = setInterval(() => void refresh(), 1000);
+});
+
+onBeforeUnmount(() => {
+  if (pollTimer) clearInterval(pollTimer);
+});
+</script>
+
+<template>
+  <v-menu
+    v-model="capture.jobCenterOpen"
+    location="bottom end"
+    :close-on-content-click="false"
+  >
+    <template #activator="{ props }">
+      <v-btn
+        v-bind="props"
+        variant="tonal"
+        color="primary"
+        class="capture-job-activator"
+        data-testid="capture-job-center"
+      >
+        <LoaderCircle
+          v-if="executing"
+          :size="17"
+          class="spin"
+          aria-hidden="true"
+        />
+        <ScanLine v-else :size="17" aria-hidden="true" />
+        {{ statusLabel }}
+        <span v-if="executing" class="progress-dot" />
+      </v-btn>
+    </template>
+
+    <section class="job-popover">
+      <header>
+        <div>
+          <span>后台采集</span>
+          <h3>{{ capture.activeJob ? statusLabel : "没有正在执行的任务" }}</h3>
+        </div>
+        <Bell :size="19" />
+      </header>
+
+      <template v-if="capture.activeJob">
+        <v-progress-linear
+          :model-value="progress"
+          color="primary"
+          height="7"
+          rounded
+        />
+        <div class="job-meta">
+          <span>{{ capture.activeJob.selection.cases.length }} 个采集项</span>
+          <code>{{ capture.activeJob.jobId }}</code>
+        </div>
+        <p class="job-detail">
+          {{
+            capture.activeJob.journal.at(-1)?.detail ??
+            "任务已经持久化，可以继续浏览工作台。"
+          }}
+        </p>
+        <div class="job-actions">
+          <v-btn
+            v-if="capture.jobFinished && capture.details"
+            color="primary"
+            @click="viewResult"
+          >
+            <CheckCircle2 :size="16" /> 查看采集结果
+          </v-btn>
+          <v-btn
+            v-if="!capture.jobFinished"
+            variant="outlined"
+            color="error"
+            @click="capture.cancelActiveJob"
+          >
+            取消任务
+          </v-btn>
+          <v-btn v-else variant="outlined" @click="capture.retryActiveJob">
+            重试未完成项
+          </v-btn>
+        </div>
+      </template>
+
+      <template v-else>
+        <div class="job-empty">
+          <ScanLine :size="28" />
+          <p>从原型、页面画布或元素检查面板发起采集。</p>
+          <v-btn to="/workbench/capture" variant="text"> 查看任务历史 </v-btn>
+        </div>
+      </template>
+
+      <footer>
+        <RouterLink to="/workbench/capture">高级任务中心</RouterLink>
+      </footer>
+    </section>
+  </v-menu>
+
+  <v-snackbar
+    :model-value="Boolean(capture.notice)"
+    :color="noticeColor"
+    location="bottom right"
+    :timeout="capture.notice?.tone === 'info' ? 3500 : 8000"
+    @update:model-value="!$event && capture.dismissNotice()"
+  >
+    <div class="notice-content">
+      <CheckCircle2 v-if="capture.notice?.tone === 'success'" :size="19" />
+      <CircleAlert v-else :size="19" />
+      <div>
+        <strong>{{ capture.notice?.title }}</strong>
+        <span>{{ capture.notice?.message }}</span>
+      </div>
+    </div>
+    <template #actions>
+      <v-btn
+        v-if="capture.notice?.snapshotId"
+        variant="text"
+        @click="viewResult"
+      >
+        查看结果
+      </v-btn>
+      <v-btn variant="text" @click="capture.dismissNotice">关闭</v-btn>
+    </template>
+  </v-snackbar>
+</template>
+
+<style scoped>
+.capture-job-activator {
+  position: relative;
+}
+.progress-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 14%, transparent);
+}
+.spin {
+  animation: spin 1s linear infinite;
+}
+.job-popover {
+  width: min(390px, calc(100vw - 24px));
+  overflow: hidden;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 15px;
+  background: rgb(var(--v-theme-surface));
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16);
+}
+.job-popover header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  padding: 17px 18px 13px;
+}
+.job-popover header span {
+  color: rgb(var(--v-theme-primary));
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+.job-popover h3 {
+  margin: 2px 0 0;
+  font-size: 1rem;
+}
+.job-popover :deep(.v-progress-linear) {
+  margin-inline: 18px;
+  width: calc(100% - 36px);
+}
+.job-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 18px 0;
+  color: rgba(var(--v-theme-on-surface), 0.58);
+  font-size: 0.7rem;
+}
+.job-meta code {
+  overflow: hidden;
+  max-width: 210px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.job-detail {
+  margin: 9px 18px 0;
+  color: rgba(var(--v-theme-on-surface), 0.66);
+  font-size: 0.74rem;
+}
+.job-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 15px 18px;
+}
+.job-empty {
+  display: grid;
+  min-height: 160px;
+  place-items: center;
+  align-content: center;
+  gap: 7px;
+  color: rgba(var(--v-theme-on-surface), 0.55);
+  text-align: center;
+}
+.job-empty p {
+  margin: 0;
+}
+.job-popover footer {
+  padding: 10px 18px;
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  font-size: 0.72rem;
+  text-align: right;
+}
+.job-popover footer a {
+  color: rgb(var(--v-theme-primary));
+  text-decoration: none;
+}
+.notice-content {
+  display: flex;
+  align-items: start;
+  gap: 10px;
+}
+.notice-content strong,
+.notice-content span {
+  display: block;
+}
+.notice-content span {
+  margin-top: 2px;
+  font-size: 0.72rem;
+  opacity: 0.86;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>

@@ -6,7 +6,9 @@ import {
   CircleDot,
   History,
   RotateCcw,
+  ScanLine,
 } from "lucide-vue-next";
+import { useRoute } from "vue-router";
 import ResourcePageShell from "@/workbench/views/ResourcePageShell.vue";
 import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
 import { LIFECYCLE_LABELS } from "@/design-system/types";
@@ -18,11 +20,14 @@ import LifecycleTransitionDialog from "@/workbench/prototypes/LifecycleTransitio
 import PrototypeFlowRail from "@/workbench/prototypes/PrototypeFlowRail.vue";
 import ScreenPreviewCard from "@/workbench/prototypes/ScreenPreviewCard.vue";
 import { resolveScreenGroups } from "@/workbench/prototypes/resolveScreenGroups";
+import { useCaptureStore } from "@/app/stores/capture";
 
 const props = defineProps<{
   prototypeId: string;
 }>();
 const lifecycle = usePrototypeLifecycleStore();
+const capture = useCaptureStore();
+const route = useRoute();
 const transitionOpen = ref(false);
 const historyExpanded = ref(false);
 const lifecycleStages = [
@@ -70,6 +75,12 @@ const formatHistoryTime = (value: string) =>
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
+
+function capturePrototype() {
+  if (!prototype.value) return;
+  capture.beginPrototype(prototype.value.id, route.fullPath);
+  capture.openComposer();
+}
 </script>
 
 <template>
@@ -106,6 +117,9 @@ const formatHistoryTime = (value: string) =>
         <p>原型当前处于「{{ LIFECYCLE_LABELS[effectiveLifecycle] }}」阶段</p>
       </div>
       <div class="lifecycle-actions">
+        <WorkbenchButton tone="primary" @click="capturePrototype">
+          <ScanLine :size="14" />采集此原型
+        </WorkbenchButton>
         <WorkbenchButton tone="primary" @click="transitionOpen = true"
           >流转状态</WorkbenchButton
         >

@@ -28,6 +28,20 @@ export type CaptureEntryKind =
   "current-screen" | "fragment" | "custom" | "prototype";
 
 const CAPTURE_DRAFT_KEY = "pbwork.capture-v2.draft";
+const TERMINAL_JOB_STATUSES = [
+  "completed",
+  "cancelled",
+  "interrupted",
+  "failed",
+] as const;
+
+export type CaptureNotice = {
+  tone: "info" | "success" | "warning" | "error";
+  title: string;
+  message: string;
+  bundleId?: string;
+  snapshotId?: string;
+};
 
 function readDraftSession(): {
   entryKind: CaptureEntryKind | null;
@@ -132,6 +146,9 @@ export const useCaptureStore = defineStore("capture-v2", {
       acknowledgedRiskKinds: [] as RiskKind[],
       recaptureBundleId: null as string | null,
       screenshotUrls: {} as Record<string, string>,
+      composerOpen: false,
+      jobCenterOpen: false,
+      notice: null as CaptureNotice | null,
       connecting: false,
       busy: false,
       lastError: null as string | null,
@@ -150,8 +167,8 @@ export const useCaptureStore = defineStore("capture-v2", {
     jobFinished(state): boolean {
       return Boolean(
         state.activeJob &&
-        ["completed", "cancelled", "interrupted", "failed"].includes(
-          state.activeJob.status,
+        TERMINAL_JOB_STATUSES.includes(
+          state.activeJob.status as (typeof TERMINAL_JOB_STATUSES)[number],
         ),
       );
     },
@@ -166,6 +183,15 @@ export const useCaptureStore = defineStore("capture-v2", {
     clearError() {
       this.lastError = null;
       this.lastErrorCode = null;
+    },
+    openComposer() {
+      this.composerOpen = true;
+    },
+    closeComposer() {
+      this.composerOpen = false;
+    },
+    dismissNotice() {
+      this.notice = null;
     },
     invalidatePreflight() {
       this.preflight = null;
@@ -184,6 +210,7 @@ export const useCaptureStore = defineStore("capture-v2", {
       );
     },
     async connect() {
+      if (this.connected || this.connecting) return;
       this.connecting = true;
       this.clearError();
       try {
@@ -400,6 +427,14 @@ export const useCaptureStore = defineStore("capture-v2", {
         });
         this.activeJob = result.job;
         this.details = null;
+        this.composerOpen = false;
+        this.jobCenterOpen = true;
+        this.notice = {
+          tone: "info",
+          title: "证据采集已开始",
+          message: `${result.job.selection.cases.length} 个采集项将在后台执行，你可以继续浏览工作台。`,
+          bundleId: result.job.bundleId,
+        };
         await this.refreshConsole();
       } catch (error) {
         this.setError(error);
@@ -410,15 +445,47 @@ export const useCaptureStore = defineStore("capture-v2", {
     async refreshActiveJob() {
       if (!this.activeJob) return;
       try {
+        const previousStatus = this.activeJob.status;
         this.activeJob = await captureServiceClient.getJob(
           this.activeJob.jobId,
         );
         if (
-          ["completed", "cancelled", "interrupted", "failed"].includes(
-            this.activeJob.status,
+          TERMINAL_JOB_STATUSES.includes(
+            this.activeJob
+              .status as (typeof TERMINAL_JOB_STATUSES)[number],
           )
         ) {
           await this.loadBundle(this.activeJob.bundleId);
+          if (previousStatus !== this.activeJob.status) {
+            const coverage = this.details?.activeSnapshot.coverage.counts;
+            const failed =
+              (coverage?.failed ?? 0) +
+              (coverage?.unsupported ?? 0) +
+              (coverage?.cancelled ?? 0) +
+              (coverage?.interrupted ?? 0);
+            const successful =
+              (coverage?.captured ?? 0) + (coverage?.reused ?? 0);
+            const completed = this.activeJob.status === "completed";
+            this.notice = {
+              tone:
+                completed && failed === 0
+                  ? "success"
+                  : completed && successful > 0
+                    ? "warning"
+                    : "error",
+              title:
+                completed && failed === 0
+                  ? "证据采集完成"
+                  : completed
+                    ? "证据采集部分完成"
+                    : `证据采集${this.activeJob.status}`,
+              message: `${successful} 项成功或复用，${failed} 项未完成。`,
+              bundleId: this.activeJob.bundleId,
+              ...(this.details
+                ? { snapshotId: this.details.activeSnapshot.snapshotId }
+                : {}),
+            };
+          }
         }
       } catch (error) {
         this.setError(error);
@@ -428,7 +495,9 @@ export const useCaptureStore = defineStore("capture-v2", {
       this.activeJob = job;
       this.details = null;
       if (
-        ["completed", "cancelled", "interrupted", "failed"].includes(job.status)
+        TERMINAL_JOB_STATUSES.includes(
+          job.status as (typeof TERMINAL_JOB_STATUSES)[number],
+        )
       ) {
         await this.loadBundle(job.bundleId);
       }
@@ -446,6 +515,26 @@ export const useCaptureStore = defineStore("capture-v2", {
       this.revokeScreenshotUrls();
       try {
         this.details = await captureServiceClient.bundleDetails(bundleId);
+        await this.loadScreenshotUrls(bundleId);
+      } catch (error) {
+        this.setError(error);
+      }
+    },
+    async loadSnapshot(bundleId: string, snapshotId: string) {
+      this.revokeScreenshotUrls();
+      try {
+        this.details = await captureServiceClient.snapshotDetails(
+          bundleId,
+          snapshotId,
+        );
+        await this.loadScreenshotUrls(bundleId);
+      } catch (error) {
+        this.setError(error);
+      }
+    },
+    async loadScreenshotUrls(bundleId: string) {
+      if (!this.details) return;
+      try {
         for (const blob of this.details.blobs.filter(
           (candidate) => candidate.kind === "screenshot",
         )) {

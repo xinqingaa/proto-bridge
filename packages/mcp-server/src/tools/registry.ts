@@ -5,6 +5,11 @@ import { reconstructPageContextTool } from './reconstruct-page-context.js';
 import { getTargetConventionsTool } from './get-target-conventions.js';
 import { findTargetExamplesTool } from './find-target-examples.js';
 import { validateTargetChangesTool } from './validate-target-changes.js';
+import {
+  listEvidenceBundlesTool,
+  readEvidenceCaseTool,
+  readEvidenceSnapshotTool,
+} from './read-evidence.js';
 
 const baseObjectSchema = {
   type: 'object',
@@ -58,6 +63,74 @@ const validationOutputSchema = {
 };
 
 const toolDefinitions: JsonValue[] = [
+  {
+    name: 'list_evidence_bundles',
+    title: '列出证据 Bundle',
+    description: [
+      '只读列出 V2 Evidence Store 中的 Bundle 与当前 active Snapshot。',
+      '返回的 active Snapshot 仅用于发现；后续读取必须显式传 snapshotId，避免 Agent 在消费过程中漂移到新证据。',
+      '不会触发采集，也不会补造不存在的证据。',
+    ].join('\n'),
+    annotations: {
+      title: '列出证据 Bundle',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    inputSchema: baseObjectSchema,
+    outputSchema: readOnlyJsonOutputSchema,
+  },
+  {
+    name: 'read_evidence_snapshot',
+    title: '读取固定证据 Snapshot',
+    description: [
+      '按明确的 bundleId + snapshotId 读取与 PBWork Evidence Viewer 相同的 Screen/Case 证据模型。',
+      '先返回质量消息，再返回执行覆盖、语义覆盖、截图资源、事实值与 provenance。',
+      'unknown、冲突和缺失保持原样，不推断或捏造。',
+    ].join('\n'),
+    annotations: {
+      title: '读取固定证据 Snapshot',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    inputSchema: {
+      ...baseObjectSchema,
+      properties: {
+        bundleId: { type: 'string', description: 'Evidence Bundle ID。' },
+        snapshotId: { type: 'string', description: '必须固定读取的 Snapshot ID。' },
+      },
+      required: ['bundleId', 'snapshotId'],
+    },
+    outputSchema: readOnlyJsonOutputSchema,
+  },
+  {
+    name: 'read_evidence_case',
+    title: '读取固定 Snapshot 中的 Case',
+    description: [
+      '读取一个固定 Snapshot 中的单个 Case，适合 Agent 在实现具体页面、Variant 或 Scenario 前按需取证。',
+      '返回截图 resource、事实和 provenance；缺失内容会明确报告。',
+    ].join('\n'),
+    annotations: {
+      title: '读取固定证据 Case',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    inputSchema: {
+      ...baseObjectSchema,
+      properties: {
+        bundleId: { type: 'string', description: 'Evidence Bundle ID。' },
+        snapshotId: { type: 'string', description: '固定 Snapshot ID。' },
+        caseId: { type: 'string', description: 'Snapshot 中的稳定 Case ID。' },
+      },
+      required: ['bundleId', 'snapshotId', 'caseId'],
+    },
+    outputSchema: readOnlyJsonOutputSchema,
+  },
   {
     name: 'reconstruct_page_context',
     title: '重建页面统一上下文',
@@ -235,6 +308,15 @@ export async function callTool(context: ToolContext, params: JsonObject | undefi
   const args = readObject(params, 'arguments') ?? {};
   if (!name) throw new Error('tools/call requires params.name');
 
+  if (name === 'list_evidence_bundles') {
+    return toolJson(await listEvidenceBundlesTool(context));
+  }
+  if (name === 'read_evidence_snapshot') {
+    return toolJson(await readEvidenceSnapshotTool(context, args));
+  }
+  if (name === 'read_evidence_case') {
+    return toolJson(await readEvidenceCaseTool(context, args));
+  }
   if (name === 'reconstruct_page_context') return toolJson(await reconstructPageContextTool(context, args));
   if (name === 'read_target_conventions') return toolJson(await getTargetConventionsTool(context, args));
   if (name === 'find_target_examples') return toolJson(await findTargetExamplesTool(context, args));

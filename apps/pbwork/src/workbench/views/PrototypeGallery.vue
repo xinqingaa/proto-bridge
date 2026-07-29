@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import {
   ArrowRight,
   FileStack,
   GitBranch,
   MessageSquareText,
   RotateCcw,
+  ScanLine,
   Users,
 } from "lucide-vue-next";
 import type { PrototypeLifecycle, PrototypeRecord } from "@/design-system/types";
@@ -19,11 +20,14 @@ import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
 import WorkbenchBadge from "@/workbench/ui/WorkbenchBadge.vue";
 import WorkbenchStatChip from "@/workbench/ui/WorkbenchStatChip.vue";
 import LifecycleTransitionDialog from "@/workbench/prototypes/LifecycleTransitionDialog.vue";
+import { useCaptureStore } from "@/app/stores/capture";
 
 const props = defineProps<{
   lifecycle?: "all" | PrototypeLifecycle | undefined;
 }>();
 const router = useRouter();
+const route = useRoute();
+const capture = useCaptureStore();
 const state = usePrototypeLifecycleStore();
 const comments = useCommentsStore();
 const editing = ref<PrototypeRecord | null>(null);
@@ -66,6 +70,11 @@ function onCardKeydown(event: KeyboardEvent, item: PrototypeRecord) {
     event.preventDefault();
     openPrototype(item);
   }
+}
+
+function capturePrototype(item: PrototypeRecord) {
+  capture.beginPrototype(item.id, route.fullPath);
+  capture.openComposer();
 }
 </script>
 
@@ -133,6 +142,9 @@ function onCardKeydown(event: KeyboardEvent, item: PrototypeRecord) {
           <WorkbenchButton tone="primary" @click="editing = item"
             >流转状态</WorkbenchButton
           >
+          <WorkbenchButton tone="ghost" @click="capturePrototype(item)">
+            <ScanLine :size="14" />采集原型
+          </WorkbenchButton>
           <span class="open-hint"
             >查看原型<ArrowRight :size="14"
           /></span>

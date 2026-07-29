@@ -228,6 +228,33 @@ describe('LocalFileStore: concurrent writer protection', () => {
     await expect(third.init()).resolves.toBeDefined();
     await third.close();
   });
+
+  it('allows a read-only Store to inspect a fixed Snapshot while the writer lock is held', async () => {
+    const writer = await freshStoreWithBundle();
+    const active = await writer.getActiveSnapshot(BUNDLE_ID);
+
+    const reader = new LocalFileStore({
+      root,
+      workspaceId: WORKSPACE_ID,
+      readOnly: true,
+    });
+    await expect(reader.init()).resolves.toEqual({
+      finalizedOrphanJobs: [],
+    });
+    await expect(
+      reader.getSnapshot(BUNDLE_ID, active!.snapshotId),
+    ).resolves.toEqual(active);
+    await expect(
+      reader.createJob({
+        bundleId: BUNDLE_ID,
+        selection: RUN_1.selection as NormalizedSelection,
+        inputVersion: RUN_1.inputVersion,
+      }),
+    ).rejects.toThrow(/read-only mode/);
+
+    await reader.close();
+    await writer.close();
+  });
 });
 
 describe('LocalFileStore: workspace mismatch', () => {

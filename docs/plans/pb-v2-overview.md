@@ -1,6 +1,6 @@
 # ProtoBridge / PBWork V2 产品闭环与实施总览
 
-> 状态：实施中；阶段四及证据质量门禁已完成，可进入阶段五
+> 状态：实施中；阶段五进行中，Store-backed MCP Reader 垂直切片已完成
 > 目标分支：`dev`
 > 性质：破坏性重构；V2 不兼容 V1 Artifact、CLI 和 MCP 页面工作流
 > 当前正式包基线：`0.4.0`
@@ -277,6 +277,13 @@ V2 是这个长期目标的第一个完整版本：本地、单用户、以 PBWo
 - 从 Capture 主链移除 Target Flutter 扫描，形成独立查询与验证边界；
 - 定稿 Agent Handoff Consumer 指南；
 - 建立“目标工程无 ProtoBridge 配置”的消费 E2E。
+
+当前进度（2026-07-29）：
+
+- 已建立 PBWork/MCP 共用的 Screen/Case Evidence Read Model；
+- MCP 已支持 Bundle 发现、固定 Snapshot、单 Case 和 Screenshot Blob 的 Store-backed 只读消费；
+- PBWork 的就地 Capture Composer、全局 Job Center、完成通知和截图优先 Evidence Viewer 已接入；
+- `task-list` 的 PBWork → 固定 Snapshot → MCP 同证据 E2E 已通过；CLI Producer、完整 Handoff Consumer 和 Target 解耦仍待完成。
 
 完成条件：
 

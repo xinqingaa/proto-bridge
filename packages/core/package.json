@@ -46,6 +46,10 @@
       "types": "./dist/v2/index.d.ts",
       "import": "./dist/v2/index.js"
     },
+    "./v2/evidence-read-model": {
+      "types": "./dist/v2/evidence-read-model.d.ts",
+      "import": "./dist/v2/evidence-read-model.js"
+    },
     "./v2/store": {
       "types": "./dist/v2/store/index.d.ts",
       "import": "./dist/v2/store/index.js"

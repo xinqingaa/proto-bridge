@@ -100,6 +100,15 @@ export class CaptureServiceClient {
     return this.request(`/bundles/${encodeURIComponent(bundleId)}`);
   }
 
+  snapshotDetails(
+    bundleId: string,
+    snapshotId: string,
+  ): Promise<BundleEvidenceDetails> {
+    return this.request(
+      `/bundles/${encodeURIComponent(bundleId)}/snapshots/${encodeURIComponent(snapshotId)}`,
+    );
+  }
+
   archiveBundle(bundleId: string): Promise<unknown> {
     return this.request(`/bundles/${encodeURIComponent(bundleId)}/archive`, {
       method: "POST",

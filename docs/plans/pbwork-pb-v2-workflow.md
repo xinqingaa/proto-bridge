@@ -81,7 +81,7 @@ Coding Agent
 
 当前 Screen、Fragment、自定义范围和整个 Prototype 只负责创建不同的 Draft。它们不能拥有不同的 Capture、Store 或 Handoff 实现。
 
-Capture Console 的产品路由固定为 `/workbench/capture`。最终导航位置和视觉布局可在 PBWork 实施阶段确定，但四类入口必须能进入同一 Console，并保留返回原工作台上下文。
+四类入口默认在当前工作位置打开同一个 Workbench Capture Composer，不强制离开原型上下文。Composer 以底部 Sheet 展示页面、Variant、Scenario、Fragment、Screenshot、预计 Matrix 和 warning，用户二次确认后才创建 Job。`/workbench/capture` 保留为高级任务中心与历史恢复入口，不再是每次采集必须跳转的中间页。
 
 ## 四类入口
 
@@ -307,7 +307,10 @@ Bundle / Active Snapshot
 
 - Snapshot Coverage 与单次 Run Coverage 分开展示；
 - 最近 Run 不能冒充 Bundle 当前态；
-- Screenshot 使用缩略图，原图和 Debug Evidence 按需读取；
+- 默认按 Screen / Case 组织，先展示 Screenshot 和质量结论，再展示人类可读 Facts；
+- Screenshot 使用缩略图，原图和 Debug Evidence 按需读取；没有 Screenshot Blob 时明确显示原因，不使用占位图冒充；
+- 执行覆盖与语义完整性分开判断；没有 authored 完整性边界时不能把 captured 显示为“语义完整”；
+- revision、原始 fact ID、provenance 和 JSON 收在技术详情中，不作为默认阅读入口；
 - Source、Runtime、ARIA 和 Screenshot 冲突并列展示 provenance；
 - partial、stale 和各失败类别不能被单一百分比或颜色掩盖；
 - Fragment-only 或较低 Evidence Level 的 revision 可以作为其明确 Scope 的 active Evidence，但不能替换更完整的 primary active revision；
@@ -427,6 +430,11 @@ Coverage complete 要求所选 Case 和 Capture Scope 在固定 Snapshot 中均�
 
 PBWork 操作闭环完成必须通过：
 
+- 就地发起：原型列表、原型概要、画布和 Inspector 均可创建 Draft，打开 Composer 后 URL 与工作位置不变；
+- 二次确认：Job 创建前明确展示 Screen、Variant、Scenario、Fragment、Screenshot、Matrix 和 warning；
+- 后台反馈：创建 Job 后可以继续浏览工作台，全局 Job Center 持续显示状态，并对成功、部分成功和失败发送可操作通知；
+- 结果可读：Evidence Viewer 默认展示截图、执行覆盖、语义完整性和按类别组织的 Facts，原始 JSON 仅作为详情；
+- 诚实降级：未声明完整性边界时保留实际观测结果并说明限制，不补造节点、状态、交互或 Screenshot；
 - 当前 Screen：从已握手 Runtime 建立 Draft，经 Preflight 和 Matrix 生成 Snapshot；
 - Fragment：稳定 `pbId/pbKey` 可提交，临时 selector 被阻止并可定位修复；
 - 自定义范围：逐 Screen Variant/Scenario 策略展开结果与 Core 一致；

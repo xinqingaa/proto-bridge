@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 import {
   Check,
   ChevronDown,
@@ -37,7 +37,6 @@ const capture = useCaptureStore();
 const canvas = useCanvasStore();
 const comments = useCommentsStore();
 const route = useRoute();
-const router = useRouter();
 const tab = ref<
   "overview" | "component" | "convention" | "styles" | "comments"
 >("styles");
@@ -161,8 +160,7 @@ function addSelectedFragmentToCapture() {
     },
   });
   if (accepted) {
-    window.dispatchEvent(new Event("pbwork:navigate-away"));
-    void router.push("/workbench/capture");
+    capture.openComposer();
   }
 }
 

@@ -1,13 +1,11 @@
 import type { JsonRpcRequest, ServerOptions, ToolContext } from '../types.js';
 import { PageStore } from '../services/session-state.js';
+import { EvidenceStoreReader } from '../services/evidence-store-reader.js';
 import { dispatch } from './dispatcher.js';
 import { errorMessage, send, sendError } from './responses.js';
 
 export function startMcpServer(options: ServerOptions): void {
-  const context: ToolContext = {
-    options,
-    pages: new PageStore(),
-  };
+  const context = createToolContext(options);
 
   process.stdin.setEncoding('utf8');
   let buffer = '';
@@ -24,6 +22,14 @@ export function startMcpServer(options: ServerOptions): void {
   process.stdin.on('end', () => {
     // Let in-flight async tool calls finish before Node exits naturally.
   });
+}
+
+export function createToolContext(options: ServerOptions): ToolContext {
+  return {
+    options,
+    pages: new PageStore(),
+    evidence: new EvidenceStoreReader(options),
+  };
 }
 
 async function handleLine(context: ToolContext, line: string): Promise<void> {

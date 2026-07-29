@@ -66,7 +66,6 @@ import {
   GalleryHorizontal,
   Command,
   Home,
-  ScanLine,
 } from "lucide-vue-next";
 import { RouterLink, RouterView, useRoute } from "vue-router";
 import {
@@ -89,6 +88,8 @@ import {
 import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
 import InspectorPanel from "@/workbench/inspector/InspectorPanel.vue";
 import WorkbenchNavigationTree from "@/workbench/WorkbenchNavigationTree.vue";
+import CaptureComposerSheet from "@/capture/CaptureComposerSheet.vue";
+import CaptureJobCenter from "@/capture/CaptureJobCenter.vue";
 
 /** Keep in sync with `.resource-panel` / `.inspector-panel` width transition. */
 const PANEL_SLIDE_MS = 320;
@@ -748,15 +749,7 @@ onMounted(() => {
         <kbd><Command :size="11" />K</kbd>
       </button>
       <span class="header-divider" />
-      <v-btn
-        to="/workbench/capture"
-        variant="tonal"
-        color="primary"
-        class="capture-console-link"
-      >
-        <ScanLine :size="17" />
-        证据采集
-      </v-btn>
+      <CaptureJobCenter />
       <v-tooltip :text="themeLabel" location="bottom">
         <template #activator="{ props }">
           <v-btn
@@ -1162,6 +1155,7 @@ onMounted(() => {
         </v-card-text>
       </v-card>
     </v-dialog>
+    <CaptureComposerSheet />
   </v-app>
 </template>
 

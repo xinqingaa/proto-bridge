@@ -21,7 +21,9 @@
     "test:config": "pnpm --filter @proto-bridge/core exec vitest run test/config.test.ts",
     "test:e2e": "node scripts/test-e2e.mjs",
     "test:e2e:cli": "node scripts/test-e2e.mjs cli",
-    "test:e2e:mcp": "node scripts/test-e2e.mjs mcp"
+    "test:e2e:mcp": "node scripts/test-e2e.mjs mcp",
+    "test:e2e:mcp-v2": "pnpm --filter @proto-bridge/core build && pnpm --filter @proto-bridge/mcp-server build && node scripts/test-mcp-evidence-v2.mjs",
+    "test:e2e:evidence-slice": "node scripts/test-evidence-vertical-slice.mjs"
   },
   "engines": {
     "node": ">=20"

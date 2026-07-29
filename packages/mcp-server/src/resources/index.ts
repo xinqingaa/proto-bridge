@@ -14,9 +14,26 @@ import {
   uiBuildReviewUri,
 } from '../artifacts/contracts.js';
 import { toolCatalog } from '../tools/registry.js';
+import {
+  evidenceScreenshotUri,
+  evidenceSnapshotUri,
+} from '../services/evidence-store-reader.js';
 
 export function resourceTemplatesList(): JsonValue[] {
   return [
+    {
+      uriTemplate: 'proto-bridge://evidence/{bundleId}/snapshots/{snapshotId}',
+      name: '固定证据 Snapshot',
+      description: '读取 PBWork 与 Agent 共用的固定 Evidence Snapshot 人类可读模型。',
+      mimeType: 'application/json',
+    },
+    {
+      uriTemplate:
+        'proto-bridge://evidence/{bundleId}/snapshots/{snapshotId}/screenshots/{blobId}',
+      name: '固定 Snapshot 截图',
+      description: '读取确实挂载在指定 Snapshot active Case 上的截图 Blob。',
+      mimeType: 'image/png',
+    },
     {
       uriTemplate: 'proto-bridge://pages/{pageId}/page-canonical',
       name: '页面标准上下文',
@@ -98,6 +115,55 @@ export async function readResource(context: ToolContext, params: JsonObject | un
       flutterRoot: resolveRuntimeTargetRoot(configTargetRoot),
     });
     return textContent(uri, 'application/json', JSON.stringify(conventions, null, 2));
+  }
+
+  const evidenceSnapshotMatch = uri.match(
+    /^proto-bridge:\/\/evidence\/([^/]+)\/snapshots\/([^/]+)$/,
+  );
+  if (evidenceSnapshotMatch?.[1] && evidenceSnapshotMatch[2]) {
+    const bundleId = decodeURIComponent(evidenceSnapshotMatch[1]);
+    const snapshotId = decodeURIComponent(evidenceSnapshotMatch[2]);
+    const details = await context.evidence.readSnapshot(bundleId, snapshotId);
+    return textContent(
+      evidenceSnapshotUri(bundleId, snapshotId),
+      'application/json',
+      JSON.stringify(
+        {
+          messages: details.evidence.messages,
+          fixedSnapshotId: details.evidence.snapshotId,
+          ...details,
+        },
+        null,
+        2,
+      ),
+    );
+  }
+
+  const evidenceScreenshotMatch = uri.match(
+    /^proto-bridge:\/\/evidence\/([^/]+)\/snapshots\/([^/]+)\/screenshots\/([^/]+)$/,
+  );
+  if (
+    evidenceScreenshotMatch?.[1] &&
+    evidenceScreenshotMatch[2] &&
+    evidenceScreenshotMatch[3]
+  ) {
+    const bundleId = decodeURIComponent(evidenceScreenshotMatch[1]);
+    const snapshotId = decodeURIComponent(evidenceScreenshotMatch[2]);
+    const blobId = decodeURIComponent(evidenceScreenshotMatch[3]);
+    const screenshot = await context.evidence.readScreenshot(
+      bundleId,
+      snapshotId,
+      blobId,
+    );
+    return {
+      contents: [
+        {
+          uri: evidenceScreenshotUri(bundleId, snapshotId, blobId),
+          mimeType: screenshot.mediaType,
+          blob: Buffer.from(screenshot.bytes).toString('base64'),
+        },
+      ],
+    };
   }
 
   const pageCanonicalMatch = uri.match(/^proto-bridge:\/\/pages\/([^/]+)\/page-canonical$/);

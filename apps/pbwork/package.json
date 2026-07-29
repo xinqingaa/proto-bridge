@@ -18,6 +18,8 @@
     "test:e2e:v2-capture": "playwright test e2e/runtime-capture-v2.spec.ts",
     "pretest:e2e:v2-console": "pnpm --filter @proto-bridge/local-service build && pnpm build",
     "test:e2e:v2-console": "playwright test e2e/capture-console-v2.spec.ts",
+    "pretest:e2e:v2-evidence": "pnpm --filter @proto-bridge/local-service build && pnpm build",
+    "test:e2e:v2-evidence": "playwright test e2e/evidence-usability-v2.spec.ts",
     "format": "prettier --write ."
   },
   "dependencies": {

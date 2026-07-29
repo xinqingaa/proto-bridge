@@ -113,6 +113,12 @@ export type LocalFileStoreOptions = {
   /** Directory this Store persists into. Created if it does not exist. */
   root: string;
   workspaceId: WorkspaceId;
+  /**
+   * Open an existing Store without taking the single-writer lock or
+   * performing recovery writes. Intended for cross-process consumers such
+   * as MCP readers.
+   */
+  readOnly?: boolean;
   /** Hard capacity guard for the complete Store root. */
   maxBytes?: number;
   /** Per-Blob guard; defaults to 25 MiB. */
@@ -138,6 +144,7 @@ export class LocalFileStore implements V2Store {
   private readonly maxBytes: number | undefined;
   private readonly maxBlobBytes: number;
   private readonly beforeActivateSnapshot: (() => Promise<void>) | undefined;
+  private readonly readOnly: boolean;
   private releaseLock: (() => Promise<void>) | undefined;
 
   constructor(options: LocalFileStoreOptions) {
@@ -146,9 +153,30 @@ export class LocalFileStore implements V2Store {
     this.maxBytes = options.maxBytes;
     this.maxBlobBytes = options.maxBlobBytes ?? 25 * 1024 * 1024;
     this.beforeActivateSnapshot = options.beforeActivateSnapshot;
+    this.readOnly = options.readOnly ?? false;
   }
 
   async init(): Promise<InitResult> {
+    if (this.readOnly) {
+      const manifest = await readJson<{
+        schemaVersion: number;
+        workspaceId: WorkspaceId;
+        createdAt: string;
+      }>(workspaceManifestPath(this.root));
+      if (!manifest) {
+        throw new V2ContractError(
+          'unknown-reference',
+          `Store root ${this.root} does not contain a Workspace manifest.`,
+        );
+      }
+      if (manifest.workspaceId !== this.workspaceId) {
+        throw new V2ContractError(
+          'workspace-mismatch',
+          `Store root ${this.root} belongs to workspace ${manifest.workspaceId}, not ${this.workspaceId}.`,
+        );
+      }
+      return { finalizedOrphanJobs: [] };
+    }
     await mkdir(this.root, { recursive: true });
     this.releaseLock = await acquireWriterLock(this.root);
     try {
@@ -185,11 +213,21 @@ export class LocalFileStore implements V2Store {
     this.releaseLock = undefined;
   }
 
+  private assertWritableStore(): void {
+    if (this.readOnly) {
+      throw new V2ContractError(
+        'unsafe-input',
+        'This LocalFileStore instance is open in read-only mode.',
+      );
+    }
+  }
+
   // ---------------------------------------------------------------- Bundle
 
   async createBundle(
     input: CreateBundleInput,
   ): Promise<{ bundle: Bundle; run: Run; snapshot: BundleSnapshot }> {
+    this.assertWritableStore();
     if (await this.getBundle(input.bundleId)) {
       throw new V2ContractError(
         'immutable-violation',
@@ -336,6 +374,7 @@ export class LocalFileStore implements V2Store {
   }
 
   async archiveBundle(bundleId: BundleId): Promise<Bundle> {
+    this.assertWritableStore();
     const bundle = await this.requireBundle(bundleId);
     if (bundle.status === 'archived') return bundle;
     const activeJobs = (await this.listNonTerminalJobs()).filter(
@@ -357,6 +396,7 @@ export class LocalFileStore implements V2Store {
   async forkBundle(
     input: ForkBundleInput,
   ): Promise<{ bundle: Bundle; snapshot: BundleSnapshot }> {
+    this.assertWritableStore();
     if (await this.getBundle(input.bundleId)) {
       throw new V2ContractError(
         'immutable-violation',
@@ -477,6 +517,7 @@ export class LocalFileStore implements V2Store {
   // -------------------------------------------------------------------- Job
 
   async createJob(input: CreateJobInput): Promise<CaptureJob> {
+    this.assertWritableStore();
     const bundle = await this.getBundle(input.bundleId);
     if (bundle) {
       this.requireWritableBundle(bundle);
@@ -516,6 +557,7 @@ export class LocalFileStore implements V2Store {
   }
 
   async startJob(jobId: JobId, runId: RunId): Promise<CaptureJob> {
+    this.assertWritableStore();
     const job = await this.requireJob(jobId);
     assertJobStatusTransition(job.status, 'discovering');
     const now = new Date().toISOString();
@@ -537,6 +579,7 @@ export class LocalFileStore implements V2Store {
     jobId: JobId,
     status: Exclude<ExecutingJobStatus, 'discovering'>,
   ): Promise<CaptureJob> {
+    this.assertWritableStore();
     const job = await this.requireJob(jobId);
     assertJobStatusTransition(job.status, status);
     const now = new Date().toISOString();
@@ -553,6 +596,7 @@ export class LocalFileStore implements V2Store {
     jobId: JobId,
     entry: JobJournalEntryInput,
   ): Promise<CaptureJob> {
+    this.assertWritableStore();
     const job = await this.requireJob(jobId);
     if (isTerminalJobStatus(job.status)) {
       throw new V2ContractError(
@@ -572,6 +616,7 @@ export class LocalFileStore implements V2Store {
     jobId: JobId,
     status: TerminalJobStatus,
   ): Promise<CaptureJob> {
+    this.assertWritableStore();
     const job = await this.requireJob(jobId);
     assertJobStatusTransition(job.status, status);
     const now = new Date().toISOString();
@@ -758,6 +803,7 @@ export class LocalFileStore implements V2Store {
   // ---------------------------------------------------------------- Commit
 
   async commitRun(input: CommitRunInput): Promise<CommitRunResult> {
+    this.assertWritableStore();
     const { bundleId, coverage } = input;
     const run = this.parseOrThrow(Run, input.run, 'Run');
     if (run.bundleId !== bundleId) {
@@ -880,6 +926,7 @@ export class LocalFileStore implements V2Store {
   // ------------------------------------------------------- Catalog / Blob
 
   async putCatalogRevision(revision: CatalogRevision): Promise<void> {
+    this.assertWritableStore();
     const parsed = this.parseOrThrow(
       CatalogRevision,
       revision,
@@ -921,6 +968,7 @@ export class LocalFileStore implements V2Store {
   }
 
   async putBlob(input: PutBlobInput): Promise<BlobRecord> {
+    this.assertWritableStore();
     const bundle = await this.requireBundle(input.bundleId);
     this.requireWritableBundle(bundle);
     if (input.bytes.byteLength > this.maxBlobBytes) {
@@ -1043,6 +1091,7 @@ export class LocalFileStore implements V2Store {
   async createStalenessReport(
     input: CreateStalenessReportInput,
   ): Promise<StalenessReport> {
+    this.assertWritableStore();
     const bundle = await this.requireBundle(input.bundleId);
     const snapshot = await this.getSnapshot(input.bundleId, input.snapshotId);
     if (!snapshot)
@@ -1103,6 +1152,7 @@ export class LocalFileStore implements V2Store {
   }
 
   async putStalenessReport(report: StalenessReport): Promise<void> {
+    this.assertWritableStore();
     const parsed = this.parseOrThrow(
       StalenessReport,
       report,
@@ -1152,6 +1202,7 @@ export class LocalFileStore implements V2Store {
   }
 
   async putHandoff(handoff: AgentHandoff): Promise<void> {
+    this.assertWritableStore();
     const parsed = this.parseOrThrow(AgentHandoff, handoff, 'AgentHandoff');
     if (parsed.workspaceId !== this.workspaceId) {
       throw new V2ContractError(
@@ -1332,6 +1383,7 @@ export class LocalFileStore implements V2Store {
   }
 
   async applyClean(plan: CleanPlan): Promise<CleanResult> {
+    this.assertWritableStore();
     if (plan.workspaceId !== this.workspaceId) {
       throw new V2ContractError(
         'workspace-mismatch',

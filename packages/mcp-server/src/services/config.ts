@@ -31,21 +31,38 @@ export function resolveProjectRoot(project: ProtoBridgeProjectConfig | undefined
 
 export function parseServerOptions(argv: string[]): ServerOptions {
   const configPath = resolveConfigPath(readConfigArg(argv) ?? DEFAULT_CONFIG_FILE, process.cwd());
+  const storeRootInput =
+    readOptionArg(argv, '--store-root') ?? process.env.PB_V2_STORE_ROOT;
+  const workspaceId =
+    readOptionArg(argv, '--workspace') ?? process.env.PB_V2_WORKSPACE_ID;
   return {
     configPath,
     configDir: path.dirname(configPath),
     configLoaded: false,
+    ...(storeRootInput
+      ? { storeRoot: path.resolve(process.cwd(), storeRootInput) }
+      : {}),
+    ...(workspaceId ? { workspaceId } : {}),
   };
 }
 
 function readConfigArg(argv: string[]): string | undefined {
+  return readOptionArg(argv, '--config');
+}
+
+function readOptionArg(
+  argv: string[],
+  option: '--config' | '--store-root' | '--workspace',
+): string | undefined {
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (!arg) continue;
-    if (arg.startsWith('--config=')) return arg.slice('--config='.length);
-    if (arg === '--config') {
+    if (arg.startsWith(`${option}=`)) return arg.slice(`${option}=`.length);
+    if (arg === option) {
       const next = argv[index + 1];
-      if (!next || next.startsWith('--')) throw new Error('--config requires a file path.');
+      if (!next || next.startsWith('--')) {
+        throw new Error(`${option} requires a value.`);
+      }
       return next;
     }
   }

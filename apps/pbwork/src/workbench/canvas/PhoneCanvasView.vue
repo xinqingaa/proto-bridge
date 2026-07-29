@@ -226,8 +226,7 @@ function captureCurrentScreen() {
     deviceId: canvas.deviceId,
     returnTo: route.fullPath,
   });
-  suppressRuntimeNavigation = true;
-  void router.push("/workbench/capture");
+  capture.openComposer();
 }
 
 function postToRuntime(

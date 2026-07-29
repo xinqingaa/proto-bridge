@@ -36,6 +36,20 @@ export const router = createRouter({
           },
         },
         {
+          path: "evidence/:bundleId/:snapshotId",
+          name: "workbench-evidence",
+          component: () => import("@/capture/EvidenceViewer.vue"),
+          props: (route) => ({
+            bundleId: String(route.params.bundleId),
+            snapshotId: String(route.params.snapshotId),
+          }),
+          meta: {
+            sectionId: "prototypes",
+            resourceKind: "evidence",
+            title: "采集结果",
+          },
+        },
+        {
           path: "foundations/tokens/:category",
           name: "foundation-tokens",
           component: () =>

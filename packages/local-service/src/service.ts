@@ -335,6 +335,33 @@ export class ProtoBridgeLocalService {
     }
   }
 
+  private async evidenceDetails(
+    bundleId: string,
+    snapshot: BundleSnapshot,
+  ): Promise<BundleEvidenceDetails> {
+    const bundle = await this.store.getBundle(bundleId);
+    if (!bundle)
+      throw new V2ContractError(
+        'unknown-reference',
+        'Bundle does not exist.',
+      );
+    const revisions = await this.store.listEvidenceRevisions(bundleId);
+    const activeRevisionIds = new Set(
+      snapshot.activeSlots.map((slot) => slot.revisionId),
+    );
+    return {
+      bundle,
+      activeSnapshot: snapshot,
+      runs: await this.store.listRuns(bundleId),
+      activeRevisions: revisions.filter((revision) =>
+        activeRevisionIds.has(revision.revisionId),
+      ),
+      blobs: await this.store.listBlobRecords(bundleId),
+      stalenessReports: await this.store.listStalenessReports(bundleId),
+      handoffs: await this.store.listHandoffs(bundleId),
+    };
+  }
+
   private requireSession(request: IncomingMessage): void {
     const authorization = request.headers.authorization;
     if (!authorization?.startsWith('Bearer ')) {
@@ -555,22 +582,24 @@ export class ProtoBridgeLocalService {
           'Bundle has no active Snapshot.',
         );
       }
-      const revisions = await this.store.listEvidenceRevisions(bundleId);
-      const activeRevisionIds = new Set(
-        activeSnapshot.activeSlots.map((slot) => slot.revisionId),
-      );
-      const details: BundleEvidenceDetails = {
-        bundle,
-        activeSnapshot,
-        runs: await this.store.listRuns(bundleId),
-        activeRevisions: revisions.filter((revision) =>
-          activeRevisionIds.has(revision.revisionId),
-        ),
-        blobs: await this.store.listBlobRecords(bundleId),
-        stalenessReports: await this.store.listStalenessReports(bundleId),
-        handoffs: await this.store.listHandoffs(bundleId),
-      };
-      success(response, details);
+      success(response, await this.evidenceDetails(bundleId, activeSnapshot));
+      return;
+    }
+
+    const snapshotDetailsMatch = path.match(
+      /^\/api\/v2\/bundles\/([^/]+)\/snapshots\/([^/]+)$/,
+    );
+    if (request.method === 'GET' && snapshotDetailsMatch) {
+      const bundleId = BundleId.parse(snapshotDetailsMatch[1]);
+      const snapshotId = SnapshotId.parse(snapshotDetailsMatch[2]);
+      const snapshot = await this.store.getSnapshot(bundleId, snapshotId);
+      if (!snapshot) {
+        throw new V2ContractError(
+          'unknown-reference',
+          'Bundle Snapshot does not exist.',
+        );
+      }
+      success(response, await this.evidenceDetails(bundleId, snapshot));
       return;
     }
 

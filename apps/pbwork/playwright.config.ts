@@ -3,6 +3,9 @@ import { defineConfig, devices } from "@playwright/test";
 const channel = process.env.PLAYWRIGHT_CHANNEL;
 const port = Number(process.env.PBWORK_E2E_PORT ?? 3977);
 const servicePort = Number(process.env.PBWORK_E2E_SERVICE_PORT ?? 3988);
+const storeRootCommand = process.env.PBWORK_E2E_STORE_ROOT
+  ? JSON.stringify(process.env.PBWORK_E2E_STORE_ROOT)
+  : "$(mktemp -d)";
 
 export default defineConfig({
   testDir: "./e2e",
@@ -17,7 +20,7 @@ export default defineConfig({
         `PB_V2_SERVICE_PORT=${servicePort} ` +
         `PBWORK_ORIGIN=http://127.0.0.1:${port} ` +
         `PBWORK_RUNTIME_ORIGIN=http://127.0.0.1:${port} ` +
-        `PB_V2_STORE_ROOT=$(mktemp -d) ` +
+        `PB_V2_STORE_ROOT=${storeRootCommand} ` +
         `pnpm --filter @proto-bridge/local-service exec tsx --conditions=source src/index.ts`,
       port: servicePort,
       reuseExistingServer: false,

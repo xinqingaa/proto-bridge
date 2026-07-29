@@ -198,6 +198,15 @@ describe('ProtoBridge Local Service', () => {
     const details = await call(base, `/bundles/${job.bundleId}`, { token });
     expect(details.body.data.activeSnapshot.activeSlots).toHaveLength(1);
     expect(details.body.data.blobs).toHaveLength(1);
+    const fixedSnapshot = await call(
+      base,
+      `/bundles/${job.bundleId}/snapshots/${details.body.data.activeSnapshot.snapshotId}`,
+      { token },
+    );
+    expect(fixedSnapshot.response.status).toBe(200);
+    expect(fixedSnapshot.body.data.activeSnapshot.snapshotId).toBe(
+      details.body.data.activeSnapshot.snapshotId,
+    );
   });
 
   it('blocks unaccepted warnings, expired Preflight and foreign request fields', async () => {

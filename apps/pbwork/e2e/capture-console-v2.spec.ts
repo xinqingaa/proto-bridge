@@ -25,7 +25,9 @@ test("current Screen goes through Preflight, background Job, Snapshot and fixed 
   await expect(current).toBeEnabled();
   await current.click();
 
-  await expect(page).toHaveURL(/\/workbench\/capture$/);
+  await expect(page.getByTestId("capture-composer")).toBeVisible();
+  await page.getByRole("button", { name: "关闭采集确认" }).click();
+  await page.goto("/workbench/capture");
   await expect(page.getByTestId("capture-console")).toBeVisible();
   await expect(page.getByText("Local Service 已连接")).toBeVisible();
   await page.getByTestId("run-preflight").click();
@@ -60,8 +62,12 @@ test("stable Fragment is preflighted and source warning blocks Job until explici
     .click({ modifiers: ["Alt"] });
   await page.getByTestId("capture-selected-fragment").click();
   await expect(
-    page.getByText("ledger-planet.task-list.list.row#t2"),
+    page
+      .getByTestId("capture-composer")
+      .getByText("ledger-planet.task-list.list.row#t2"),
   ).toBeVisible();
+  await page.getByRole("button", { name: "关闭采集确认" }).click();
+  await page.goto("/workbench/capture");
 
   await page.getByLabel("请求 Source Evidence").check();
   await page.getByTestId("run-preflight").click();
@@ -97,6 +103,8 @@ test("whole Prototype expands only the Matrix, while a page-close Job is recover
   const current = page.getByTestId("capture-current-screen");
   await expect(current).toBeEnabled();
   await current.click();
+  await page.getByRole("button", { name: "关闭采集确认" }).click();
+  await page.goto("/workbench/capture");
   await page.getByTestId("run-preflight").click();
   await expect(page.getByText("Case Matrix")).toBeVisible({ timeout: 20_000 });
   await page.getByTestId("create-capture-job").click();

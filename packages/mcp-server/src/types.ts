@@ -9,6 +9,7 @@ import type {
   ScreenshotAttachCapabilityResult,
   UiReviewCapabilityResult,
 } from '@proto-bridge/core/capabilities';
+import type { EvidenceStoreReader } from './services/evidence-store-reader.js';
 
 export type JsonValue = string | number | boolean | null | JsonObject | JsonValue[];
 export type JsonObject = { [key: string]: JsonValue | undefined };
@@ -44,6 +45,8 @@ export type ServerOptions = {
   configDir: string;
   configLoaded: boolean;
   config?: ProtoBridgeConfig | undefined;
+  storeRoot?: string | undefined;
+  workspaceId?: string | undefined;
 };
 
 export type ToolContext = {
@@ -55,4 +58,5 @@ export type ToolContext = {
     latest(): GeneratedPage | undefined;
     values(): GeneratedPage[];
   };
+  evidence: EvidenceStoreReader;
 };
