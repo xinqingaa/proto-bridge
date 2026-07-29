@@ -27,6 +27,12 @@ export const RuntimeVariantManifest = z
     variantId: StableId,
     critical: z.boolean(),
     fixtureId: StableId.optional(),
+    /**
+     * Authored completeness boundary for a full instrumented capture.
+     * Missing means that Runtime can expose observed markers, but cannot
+     * prove that the semantic set is complete.
+     */
+    requiredFragments: z.array(RuntimeFragmentIdentity).optional(),
   })
   .strict();
 export type RuntimeVariantManifest = z.infer<typeof RuntimeVariantManifest>;

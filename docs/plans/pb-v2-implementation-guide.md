@@ -1,6 +1,6 @@
 # ProtoBridge V2 实施指南
 
-> 状态：实施中；阶段四已完成，可进入阶段五
+> 状态：实施中；阶段四及证据质量门禁已完成，可进入阶段五
 > 权威范围：当前仓库的推荐落点、实施顺序、测试、迁移和发布纪律
 > 上位目标：[V2 产品闭环与实施总览](./pb-v2-overview.md)
 > 不可违背语义：[V2 核心规范](./pb-v2-spec.md)
@@ -45,6 +45,7 @@
 - 隔离 Browser/Context、固定 viewport/DPR/locale/timezone/clock/theme/motion/network 的 Playwright Case Capture；
 - Capture Orchestrator 的等价复用、失败/取消隔离、Run/Coverage/Blob 和 Snapshot 提交；
 - `ledger-planet.task-list` 的稳定 Marker、critical Variant、Action、Scenario、Checkpoint 与重复实例 `pbId + pbKey`；
+- Variant `requiredFragments` 完整性契约、缺少契约时的 semantic-coverage unknown，以及 Action/Scenario Contract 事实；
 - instrumented、generic-runtime、screenshot-only 三种输入和固定三页浏览器基准；
 - `ledger-planet.task-list` 正反 fixtures 及 Contract/Store 测试。
 - `@proto-bridge/core/v2/service-contract`、隔离 Runtime Preflight、durable `CaptureJobHost` 与固定 Snapshot Handoff；
@@ -66,15 +67,38 @@
 | 二：证据模型与存储      | 已完成   | 原子 Bundle 首 Snapshot、immutable Store、Job 恢复、Catalog/Blob、依赖级 stale/复用、fork/archive、容量与 safe clean 的 Store tests 通过 | 无                                                     |
 | 三：Runtime 与捕获      | 已完成   | Capture Protocol、稳定 Matrix、Scenario runner、三种输入、Playwright Orchestrator 与真实 Store 浏览器闭环通过                            | 无                                                     |
 | 四：PBWork 操作闭环     | 已完成   | Local Service、四类 Draft、Preflight/Matrix、后台 Job/恢复、Evidence/stale、Bundle 管理和固定 Handoff 的 unit/service/E2E 通过           | 无                                                     |
-| 五：CLI、MCP 与消费链路 | 下一阶段 | V1 CLI/MCP/Target query 与阶段四 Service/Core Contract 可复用                                                                            | V2 producer CLI、Store Reader、Consumer、Target 解耦   |
+| 五：CLI、MCP 与消费链路 | 下一阶段 | V1 CLI/MCP/Target query、阶段四 Service/Core Contract 与证据质量门禁可复用                                                                | V2 producer CLI、Store Reader、Consumer、Target 解耦   |
 | 六：迁移与全链路验收    | 未开始   | Registry 已确认 2 Prototype / 25 Screen / 82 Variant                                                                                     | 迁移台账、3 页固定基准、四种 Evidence Level 与量化对比 |
 | 七：V1 退出与发布       | 未开始   | V1 仍保持可用                                                                                                                            | 前六阶段门禁、旧链路删除、干净安装和 0.5.0 发布        |
 
 阶段四完成时的验证基线为：Core 172 个测试通过；Local Service 6 个测试通过；PBWork typecheck、68 个 unit tests、阶段三 Capture E2E 与阶段四 Console E2E 通过。浏览器回归仍固定为 `task-list`、`ledger-list`、`create-work-order` 三页，整个 Prototype 只展开并验证 55 项 Matrix，不启动 25 页重复采集。根级 build/typecheck 已包含 Local Service；PBWork 仍通过独立包命令验收，阶段六前需纳入统一仓库级入口。
 
+## 阶段五前证据质量门禁
+
+此门禁暂停阶段五，不是新增实施阶段，也不提前执行阶段六迁移。当前随机点击产生的稀疏 Store 数据不作为采集能力上限，也不要求为通过门禁而重做 `analytics`、`ledger-list`、`create-work-order` 或其他原型。
+
+判断顺序：
+
+1. 以充分仪表化的 `ledger-planet.task-list` 为黄金样本，直接调用 Core Capture，不依赖 Capture Console 页面交互；
+2. 验证 default、critical、Fragment、Scenario Checkpoint、重复输入复用和 Screenshot owner ref；
+3. 逐项核对稳定身份、可见文本、role、tag、bbox、Action/Scenario Contract、provenance、unknown/conflict/heuristic 和 Store revision；
+4. 对未声明 `requiredFragments` 的稀疏页面只保存实际观测事实，并生成 `semantic-coverage-contract-missing` unknown；不得推断未观测节点或业务状态；
+5. Handoff 必须暴露 required unknown；请求 Screenshot 却没有持久 Blob 时必须为 partial；
+6. 黄金路径不合格才修复采集主链；黄金路径合格则不扩大原型改造，只保留诚实降级并进入阶段五。
+
+当前实现采用的最小完整性契约是 Variant `requiredFragments`。Fragment-only Selection 的所选 Fragment 是该 scoped revision 的覆盖边界；完整 Selection 没有 authored boundary 时，“捕获成功”只表示已诚实保存观测结果，不表示页面语义已经完整。
+
+门禁结论（2026-07-29）：通过。
+
+- `task-list` default、claimable、Scenario Checkpoint 均产生完整 resolved Evidence，稳定行 `t1/t2/t3` 的文本、role、tag、bbox 与可见性和 Runtime 一致；
+- Action 与 Scenario Contract 已作为带 `runtime-contract` provenance 的事实持久化，Screenshot Blob 均正确归属 revision；
+- `t2` Fragment-only Capture 只包含所选重复实例，等价输入命中同一 revision reuse；
+- 黄金路径没有 heuristic、unknown 或 conflict；`analytics` 未声明完整性边界时仍保存实际 Marker，但额外产生一个 required unknown，Handoff 明确暴露该风险；
+- Core 173 tests、PBWork 68 unit tests、Local Service 6 tests、PBWork Runtime/Console 6 browser E2E、仓库 typecheck 与 PBWork build 通过。
+
 ## 当前实施顺序
 
-实施继续严格使用总览定义的七个阶段，不增加工作包、里程碑或其他执行编号。阶段一至阶段四已经关闭门禁，下一步是阶段五；阶段五接入 CLI、MCP 与消费链路，不提前执行阶段六迁移验收。
+实施继续严格使用总览定义的七个阶段，不增加工作包、里程碑或其他执行编号。阶段一至阶段四已经关闭门禁；先关闭上述证据质量门禁，再进入阶段五 CLI、MCP 与消费链路，不提前执行阶段六迁移验收。
 
 ### 阶段一完成记录：核心产品语义
 

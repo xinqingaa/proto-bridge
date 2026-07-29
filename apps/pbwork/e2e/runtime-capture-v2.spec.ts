@@ -5,6 +5,7 @@ import path from "node:path";
 import {
   PlaywrightCaseCaptureDriver,
   capturePreflightToStore,
+  evaluateAgentHandoff,
   preflightSelection,
   type SelectionDraft,
 } from "@proto-bridge/core/v2/capture";
@@ -74,6 +75,39 @@ test("V2 Runtime protocol captures default, stable repeated rows, Scenario Check
       .filter((variant: { critical: boolean }) => variant.critical)
       .map((variant: { variantId: string }) => variant.variantId),
   ).toEqual(["claimable"]);
+  expect(
+    taskList.variants.find(
+      (variant: { variantId: string }) => variant.variantId === "default",
+    ).requiredFragments,
+  ).toEqual([
+    {
+      screenId: "ledger-planet.task-list",
+      pbId: "ledger-planet.task-list.root",
+    },
+    {
+      screenId: "ledger-planet.task-list",
+      pbId: "ledger-planet.task-list.filters",
+    },
+    {
+      screenId: "ledger-planet.task-list",
+      pbId: "ledger-planet.task-list.list",
+    },
+    {
+      screenId: "ledger-planet.task-list",
+      pbId: "ledger-planet.task-list.list.row",
+      pbKey: "t1",
+    },
+    {
+      screenId: "ledger-planet.task-list",
+      pbId: "ledger-planet.task-list.list.row",
+      pbKey: "t2",
+    },
+    {
+      screenId: "ledger-planet.task-list",
+      pbId: "ledger-planet.task-list.list.row",
+      pbKey: "t3",
+    },
+  ]);
   expect(taskList.actions[0].actionId).toBe("open-claimable-task");
   expect(taskList.scenarios[0].checkpoints[0].checkpointId).toBe(
     "claimable-task-detail",
@@ -286,6 +320,179 @@ test("Core Playwright orchestrator commits default, critical, Fragment and Scena
       })),
     );
     expect(full.snapshot.coverage.counts.captured).toBe(3);
+    expect(full.run.coverage.factQuality).toMatchObject({
+      heuristic: 0,
+      unknown: 0,
+      conflict: 0,
+    });
+
+    const selectedCaseFor = (
+      variantId: string,
+      scenarioId?: string,
+    ) => {
+      const selected = full.run.selection.cases.find(
+        (candidate) =>
+          candidate.caseKey.variantId === variantId &&
+          candidate.caseKey.scenario?.scenarioId === scenarioId,
+      );
+      expect(selected).toBeDefined();
+      return selected!;
+    };
+    const revisionFor = async (variantId: string, scenarioId?: string) => {
+      const selected = selectedCaseFor(variantId, scenarioId);
+      const attempt = full.run.attempts.find(
+        (candidate) => candidate.caseId === selected.caseId,
+      );
+      expect(attempt?.result).toBe("captured");
+      expect(attempt?.revisionId).toBeDefined();
+      const revision = await store.getEvidenceRevision(
+        reference.BUNDLE_ID,
+        attempt!.revisionId!,
+      );
+      expect(revision).toBeDefined();
+      return revision!;
+    };
+    const fact = (
+      revision: Awaited<ReturnType<typeof revisionFor>>,
+      factId: string,
+    ) => {
+      const found = revision.facts.find(
+        (candidate) => candidate.factId === factId,
+      );
+      expect(found, `missing ${factId}`).toBeDefined();
+      return found!;
+    };
+
+    const defaultRevision = await revisionFor("default");
+    expect(defaultRevision.requiredFactsResolved).toBe(
+      defaultRevision.requiredFactsTotal,
+    );
+    expect(
+      fact(
+        defaultRevision,
+        "ledger-planet.task-list.runtime.semantic-coverage",
+      ),
+    ).toMatchObject({
+      resolution: "resolved",
+      effectiveValue: {
+        status: "declared",
+        scopeSource: "variant-contract",
+      },
+    });
+    for (const [rowId, snippets] of [
+      ["t1", ["记一笔", "今日完成 1 笔记账", "3 星币", "去完成"]],
+      ["t2", ["查看本周图表", "打开图表分析页", "5 星币", "待领取"]],
+      ["t3", ["连续记账 3 天", "成长任务", "¥3 体验券"]],
+    ] as const) {
+      const text = String(
+        fact(
+          defaultRevision,
+          `ledger-planet.task-list.list.row.${rowId}.text`,
+        ).effectiveValue,
+      );
+      for (const snippet of snippets) expect(text).toContain(snippet);
+    }
+    expect(
+      fact(
+        defaultRevision,
+        "ledger-planet.task-list.list.row.t2.tag",
+      ).effectiveValue,
+    ).toBe("button");
+    expect(
+      fact(
+        defaultRevision,
+        "ledger-planet.task-list.list.row.t2.bbox",
+      ).effectiveValue,
+    ).toMatchObject({ width: expect.any(Number), height: expect.any(Number) });
+    expect(
+      fact(
+        defaultRevision,
+        "ledger-planet.task-list.action.open-claimable-task",
+      ),
+    ).toMatchObject({
+      resolution: "resolved",
+      effectiveValue: {
+        kind: "click",
+        target: {
+          pbId: "ledger-planet.task-list.list.row",
+          pbKey: "t2",
+        },
+      },
+    });
+
+    const claimableRevision = await revisionFor("claimable");
+    expect(
+      fact(
+        claimableRevision,
+        "ledger-planet.task-list.list.row.t2.text",
+      ).effectiveValue,
+    ).toContain("待领取");
+    expect(
+      claimableRevision.facts.some((candidate) =>
+        candidate.factId.includes("list.row.t1"),
+      ),
+    ).toBe(false);
+
+    const scenarioRevision = await revisionFor(
+      "claimable",
+      "open-claimable-task",
+    );
+    expect(
+      fact(
+        scenarioRevision,
+        "ledger-planet.task-list.scenario.open-claimable-task.claimable-task-detail",
+      ),
+    ).toMatchObject({
+      resolution: "resolved",
+      effectiveValue: {
+        ownerScreenId: "ledger-planet.task-list",
+        actionIds: ["open-claimable-task"],
+        checkpoint: {
+          screenId: "ledger-planet.task-detail",
+          variantId: "claimable",
+        },
+      },
+    });
+    const detailText = String(
+      fact(
+        scenarioRevision,
+        "ledger-planet.task-detail.root.text",
+      ).effectiveValue,
+    );
+    for (const snippet of ["查看本周图表", "已达成", "领取奖励"]) {
+      expect(detailText).toContain(snippet);
+    }
+    expect(
+      full.run.attempts.every((attempt) =>
+        (attempt.revisionId
+          ? [defaultRevision, claimableRevision, scenarioRevision]
+              .find((revision) => revision.revisionId === attempt.revisionId)
+              ?.facts.every((candidate) =>
+                candidate.candidates.every(
+                  (value) => value.provenance.source !== "heuristic",
+                ),
+              )
+          : false),
+      ),
+    ).toBe(true);
+    const fullBlobs = await store.listBlobRecords(reference.BUNDLE_ID);
+    for (const revision of [
+      defaultRevision,
+      claimableRevision,
+      scenarioRevision,
+    ]) {
+      expect(
+        fullBlobs.some(
+          (blob) =>
+            blob.kind === "screenshot" &&
+            blob.ownerRefs.some(
+              (owner) =>
+                owner.kind === "revision" &&
+                owner.objectId === revision.revisionId,
+            ),
+        ),
+      ).toBe(true);
+    }
 
     const scoped = await capturePreflightToStore({
       store,
@@ -303,6 +510,48 @@ test("Core Playwright orchestrator commits default, critical, Fragment and Scena
       ),
     ).toBe(true);
     expect(scoped.storedBlobIds).toHaveLength(1);
+    const scopedAttempt = scoped.run.attempts[0]!;
+    const scopedRevision = await store.getEvidenceRevision(
+      reference.BUNDLE_ID,
+      scopedAttempt.revisionId!,
+    );
+    expect(scopedRevision).toBeDefined();
+    expect(
+      fact(
+        scopedRevision!,
+        "ledger-planet.task-list.runtime.semantic-coverage",
+      ),
+    ).toMatchObject({
+      resolution: "resolved",
+      effectiveValue: {
+        status: "declared",
+        scopeSource: "selection",
+        requiredFragments: [fragment],
+      },
+    });
+    expect(
+      scopedRevision!.facts
+        .filter((candidate) =>
+          candidate.factId.startsWith("ledger-planet.task-list.list.row."),
+        )
+        .every((candidate) =>
+          candidate.factId.startsWith(
+            "ledger-planet.task-list.list.row.t2.",
+          ),
+        ),
+    ).toBe(true);
+    const repeatedScoped = await capturePreflightToStore({
+      store,
+      bundleId: reference.BUNDLE_ID,
+      preflight: preflightSelection(fragmentDraft, manifest),
+      runtimeBaseUrl,
+      driver,
+    });
+    expect(repeatedScoped.run.attempts[0]?.result).toBe("reused");
+    expect(repeatedScoped.run.attempts[0]?.revisionId).toBe(
+      scopedAttempt.revisionId,
+    );
+    expect(repeatedScoped.storedBlobIds).toHaveLength(0);
 
     const genericDraft: SelectionDraft = {
       prototypeId: "ledger-planet",
@@ -379,6 +628,95 @@ test("Core Playwright orchestrator commits default, critical, Fragment and Scena
         )
       )?.evidenceLevel,
     ).toBe("screenshot-only");
+
+    const sparseDraft: SelectionDraft = {
+      prototypeId: "ledger-planet",
+      screens: [
+        {
+          screenId: "ledger-planet.analytics",
+          variants: { mode: "default" },
+          themeIds: ["light"],
+          deviceIds: ["iphone-14"],
+          scenarios: { mode: "none" },
+          captureScope: baseScope,
+        },
+      ],
+      acceptedWarningIds: [],
+    };
+    const sparsePreflight = preflightSelection(sparseDraft, manifest);
+    const sparse = await capturePreflightToStore({
+      store,
+      bundleId: reference.BUNDLE_ID,
+      preflight: sparsePreflight,
+      runtimeBaseUrl,
+      driver,
+    });
+    expect(sparse.run.attempts[0]?.result).toBe("captured");
+    expect(sparse.run.coverage.factQuality).toMatchObject({
+      heuristic: 0,
+      unknown: 1,
+      conflict: 0,
+    });
+    const sparseRevision = await store.getEvidenceRevision(
+      reference.BUNDLE_ID,
+      sparse.run.attempts[0]!.revisionId!,
+    );
+    expect(sparseRevision).toBeDefined();
+    expect(
+      fact(
+        sparseRevision!,
+        "ledger-planet.analytics.runtime.semantic-coverage",
+      ),
+    ).toMatchObject({
+      resolution: "unknown",
+      issueRef: "semantic-coverage-contract-missing",
+      candidates: [
+        {
+          value: {
+            status: "undeclared",
+          },
+        },
+      ],
+    });
+    expect(sparseRevision!.requiredFactsResolved).toBeLessThan(
+      sparseRevision!.requiredFactsTotal,
+    );
+    expect(
+      sparseRevision!.facts.every((candidate) =>
+        candidate.candidates.every(
+          (value) => value.provenance.source !== "heuristic",
+        ),
+      ),
+    ).toBe(true);
+
+    const sparseStaleness = await store.createStalenessReport({
+      bundleId: reference.BUNDLE_ID,
+      snapshotId: sparse.snapshot.snapshotId,
+      inputVersion: sparsePreflight.inputVersion,
+      currentDependencyDigests: {
+        "manifest:ledger-planet": sparsePreflight.manifestDigest,
+        "runtime:ledger-planet.analytics": sparsePreflight.inputVersion,
+      },
+    });
+    const sparseHandoff = await evaluateAgentHandoff({
+      store,
+      bundleId: reference.BUNDLE_ID,
+      snapshotId: sparse.snapshot.snapshotId,
+      selectedCases: sparse.run.selection.cases,
+      stalenessReport: sparseStaleness,
+    });
+    expect(sparseHandoff.coverageStatus).toBe("complete");
+    expect(sparseHandoff.freshnessStatus).toBe("fresh");
+    expect(sparseHandoff.risks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "required-unknown",
+          refs: [
+            "ledger-planet.analytics.runtime.semantic-coverage",
+          ],
+        }),
+      ]),
+    );
   } finally {
     await store.close();
     await rm(storeRoot, { recursive: true, force: true });

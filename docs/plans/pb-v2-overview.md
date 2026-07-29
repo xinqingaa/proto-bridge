@@ -1,6 +1,6 @@
 # ProtoBridge / PBWork V2 产品闭环与实施总览
 
-> 状态：实施中；阶段四已完成，可进入阶段五
+> 状态：实施中；阶段四及证据质量门禁已完成，可进入阶段五
 > 目标分支：`dev`
 > 性质：破坏性重构；V2 不兼容 V1 Artifact、CLI 和 MCP 页面工作流
 > 当前正式包基线：`0.4.0`
@@ -267,6 +267,8 @@ V2 是这个长期目标的第一个完整版本：本地、单用户、以 PBWo
 ### 阶段五：CLI、MCP 与消费链路
 
 目标是让自动化生产者和 Coding Agent 使用同一份持久 Evidence 完成目标实现。
+
+进入本阶段前先使用 `ledger-planet.task-list` 的 default、critical、Fragment 和 Scenario Checkpoint 作为充分仪表化黄金样本，确认语义、视觉、行为、provenance、复用和 Store owner refs 可以被独立回归。未声明完整覆盖边界的页面只采集实际观测证据并报告 required unknown；这个门禁不要求提前迁移或重做其他原型页面。
 
 关键任务：
 

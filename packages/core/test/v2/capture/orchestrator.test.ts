@@ -7,6 +7,7 @@ import type { RuntimeCaptureManifest } from '../../../src/v2/runtime-contract/in
 import {
   createAgentHandoff,
   capturePreflightToStore,
+  evaluateAgentHandoff,
   preflightSelection,
   type CaptureCaseInput,
   type CapturedCase,
@@ -289,6 +290,56 @@ describe('V2 Capture Orchestrator + real Store', () => {
     });
     expect(result.run.terminationReason).toBe('failed');
     expect(result.snapshot.coverage.counts.unsupported).toBe(1);
+  });
+
+  it('reports partial Handoff coverage when a requested Screenshot Blob is absent', async () => {
+    const bundleId = 'bundle-no-screenshot';
+    const preflight = preflightSelection(
+      draft(['default']),
+      manifest('runtime-input-no-screenshot'),
+    );
+    const noScreenshotDriver: CaseCaptureDriver = {
+      async captureCase(input) {
+        const captured = await new FakeDriver().captureCase(input);
+        return { ...captured, binaries: [] };
+      },
+    };
+    const result = await capturePreflightToStore({
+      store,
+      bundleId,
+      preflight,
+      runtimeBaseUrl: 'http://127.0.0.1:3977',
+      driver: noScreenshotDriver,
+      now,
+    });
+    expect(result.run.attempts[0]?.result).toBe('captured');
+    expect(result.storedBlobIds).toHaveLength(0);
+
+    const report = await store.createStalenessReport({
+      bundleId,
+      snapshotId: result.snapshot.snapshotId,
+      inputVersion: preflight.inputVersion,
+      currentDependencyDigests: {
+        'manifest:ledger-planet': preflight.manifestDigest,
+        'runtime:ledger-planet.task-list': preflight.inputVersion,
+      },
+    });
+    const evaluation = await evaluateAgentHandoff({
+      store,
+      bundleId,
+      snapshotId: result.snapshot.snapshotId,
+      selectedCases: result.run.selection.cases,
+      stalenessReport: report,
+    });
+    expect(evaluation.coverageStatus).toBe('partial');
+    expect(evaluation.risks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: 'partial-coverage',
+          message: expect.stringContaining('no screenshot Blob is stored'),
+        }),
+      ]),
+    );
   });
 
   it('atomically creates the first Bundle/Snapshot and fixes a Handoff to that Snapshot', async () => {

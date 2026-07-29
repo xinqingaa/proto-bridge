@@ -7,6 +7,8 @@ import type { EvidenceLevel } from '../contracts/vocabulary.js';
 import {
   RUNTIME_CAPTURE_GLOBAL,
   type RuntimeActualDimensions,
+  type RuntimeFragmentIdentity,
+  type RuntimeScreenManifest,
   type RuntimeSemanticNode,
 } from '../runtime-contract/index.js';
 import type { CapturePreflight } from './preflight.js';
@@ -77,7 +79,7 @@ function actualFact(
         value: actual[dimension],
         provenance: {
           source: 'runtime-contract',
-          locator: `capture-protocol.prepare.actual.${dimension}`,
+          locator: `capture-protocol.semantic-snapshot.actual.${dimension}`,
         },
       },
     ],
@@ -118,6 +120,34 @@ function nodeFacts(nodes: RuntimeSemanticNode[]): Fact[] {
         resolution: 'resolved',
         effectiveValue: node.visible,
       },
+      {
+        factId: `${identity}.tag`,
+        candidates: [
+          {
+            value: node.tag,
+            provenance: {
+              source: 'runtime-observation',
+              locator: `${node.fragment.pbId}#tag-name`,
+            },
+          },
+        ],
+        resolution: 'resolved',
+        effectiveValue: node.tag,
+      },
+      {
+        factId: `${identity}.bbox`,
+        candidates: [
+          {
+            value: node.bbox,
+            provenance: {
+              source: 'runtime-observation',
+              locator: `${node.fragment.pbId}#bounding-client-rect`,
+            },
+          },
+        ],
+        resolution: 'resolved',
+        effectiveValue: node.bbox,
+      },
     ];
     if (node.text) {
       facts.push({
@@ -137,6 +167,157 @@ function nodeFacts(nodes: RuntimeSemanticNode[]): Fact[] {
     }
     return facts;
   });
+}
+
+function fragmentKey(fragment: RuntimeFragmentIdentity): string {
+  return `${fragment.screenId}#${fragment.pbId}#${fragment.pbKey ?? ''}`;
+}
+
+function uniqueFragments(
+  fragments: readonly RuntimeFragmentIdentity[],
+): RuntimeFragmentIdentity[] {
+  return [
+    ...new Map(
+      fragments.map((fragment) => [fragmentKey(fragment), fragment] as const),
+    ).values(),
+  ].sort((a, b) => fragmentKey(a).localeCompare(fragmentKey(b)));
+}
+
+function semanticCoverageFact(input: {
+  screenId: string;
+  requiredFragments: RuntimeFragmentIdentity[] | undefined;
+  observedNodes: RuntimeSemanticNode[];
+  scopeSource: 'selection' | 'variant-contract' | 'undeclared';
+}): Fact {
+  const observedFragments = uniqueFragments(
+    input.observedNodes.map((node) => node.fragment),
+  );
+  if (input.requiredFragments === undefined) {
+    return {
+      factId: `${input.screenId}.runtime.semantic-coverage`,
+      candidates: [
+        {
+          value: {
+            status: 'undeclared',
+            observedFragments,
+          },
+          provenance: {
+            source: 'runtime-observation',
+            locator: 'capture-protocol.semantic-snapshot.nodes',
+          },
+        },
+      ],
+      resolution: 'unknown',
+      issueRef: 'semantic-coverage-contract-missing',
+    };
+  }
+  const requiredFragments = uniqueFragments(input.requiredFragments);
+  const observedKeys = new Set(observedFragments.map(fragmentKey));
+  const missingFragments = requiredFragments.filter(
+    (fragment) => !observedKeys.has(fragmentKey(fragment)),
+  );
+  const value = {
+    status: missingFragments.length === 0 ? 'declared' : 'incomplete',
+    scopeSource: input.scopeSource,
+    requiredFragments,
+    observedFragments,
+    ...(missingFragments.length > 0 ? { missingFragments } : {}),
+  };
+  if (missingFragments.length > 0) {
+    return {
+      factId: `${input.screenId}.runtime.semantic-coverage`,
+      candidates: [
+        {
+          value,
+          provenance: {
+            source: 'runtime-observation',
+            locator: 'capture-protocol.semantic-snapshot.nodes',
+          },
+        },
+      ],
+      resolution: 'unknown',
+      issueRef: 'semantic-coverage-required-fragment-missing',
+    };
+  }
+  return {
+    factId: `${input.screenId}.runtime.semantic-coverage`,
+    candidates: [
+      {
+        value,
+        provenance: {
+          source: 'runtime-observation',
+          locator: `capture-protocol.semantic-snapshot.nodes#compared-with-${
+            input.scopeSource === 'selection'
+              ? 'request.fragments'
+              : `manifest.screens.${input.screenId}.variants.requiredFragments`
+          }`,
+        },
+      },
+    ],
+    resolution: 'resolved',
+    effectiveValue: value,
+  };
+}
+
+function actionFacts(
+  screen: RuntimeScreenManifest,
+  requestedFragments: readonly RuntimeFragmentIdentity[],
+): Fact[] {
+  const requested = new Set(requestedFragments.map(fragmentKey));
+  return screen.actions
+    .filter(
+      (action) =>
+        requested.size === 0 || requested.has(fragmentKey(action.target)),
+    )
+    .map((action) => {
+      const value = { kind: action.kind, target: action.target };
+      return {
+        factId: `${screen.screenId}.action.${action.actionId}`,
+        candidates: [
+          {
+            value,
+            provenance: {
+              source: 'runtime-contract' as const,
+              locator: `capture-protocol.describe.manifest.screens.${screen.screenId}.actions.${action.actionId}`,
+            },
+          },
+        ],
+        resolution: 'resolved' as const,
+        effectiveValue: value,
+      };
+    });
+}
+
+function scenarioFact(entry: CaseMatrixEntry): Fact[] {
+  if (!entry.scenario) return [];
+  const { scenario, checkpoint } = entry.scenario;
+  const value = {
+    ownerScreenId: scenario.ownerScreenId,
+    initialVariantId: scenario.initialVariantId,
+    actionIds: scenario.actionIds,
+    checkpoint: {
+      checkpointId: checkpoint.checkpointId,
+      screenId: checkpoint.screenId,
+      variantId: checkpoint.variantId,
+      requiredFragments: checkpoint.requiredFragments,
+    },
+  };
+  return [
+    {
+      factId: `${scenario.ownerScreenId}.scenario.${scenario.scenarioId}.${checkpoint.checkpointId}`,
+      candidates: [
+        {
+          value,
+          provenance: {
+            source: 'runtime-contract',
+            locator: `capture-protocol.describe.manifest.screens.${scenario.ownerScreenId}.scenarios.${scenario.scenarioId}`,
+          },
+        },
+      ],
+      resolution: 'resolved',
+      effectiveValue: value,
+    },
+  ];
 }
 
 async function screenshotBinaries(
@@ -363,6 +544,20 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
         });
         if (prepared.kind !== 'prepare') throw new Error('Unexpected prepare response.');
 
+        const targetScreen = described.payload.manifest.screens.find(
+          (screen) =>
+            screen.screenId === input.entry.selectedCase.caseKey.screenId,
+        );
+        const targetVariant = targetScreen?.variants.find(
+          (variant) =>
+            variant.variantId === input.entry.selectedCase.caseKey.variantId,
+        );
+        if (!targetScreen || !targetVariant) {
+          throw new Error(
+            `Runtime manifest no longer contains target ${input.entry.selectedCase.caseKey.screenId}/${input.entry.selectedCase.caseKey.variantId}.`,
+          );
+        }
+
         if (input.entry.scenario) {
           const ownerScreen = described.payload.manifest.screens.find(
             (screen) =>
@@ -408,9 +603,18 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
           }
         }
 
-        const requiredFragments = input.entry.scenario
-          ? input.entry.scenario.checkpoint.requiredFragments
-          : input.entry.selectedCase.captureScope.fragments;
+        const selectedFragments =
+          input.entry.selectedCase.captureScope.fragments;
+        const declaredRequiredFragments =
+          selectedFragments.length > 0
+            ? selectedFragments
+            : targetVariant.requiredFragments;
+        const requiredFragments = uniqueFragments([
+          ...(input.entry.scenario
+            ? input.entry.scenario.checkpoint.requiredFragments
+            : []),
+          ...(declaredRequiredFragments ?? []),
+        ]);
         const ready = await requestRuntimeCapture(page, {
           kind: 'readiness',
           expected: {
@@ -434,6 +638,28 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
           actualFact(snapshot.payload.actual, 'screenId'),
           actualFact(snapshot.payload.actual, 'variantId'),
           actualFact(snapshot.payload.actual, 'themeId'),
+          semanticCoverageFact({
+            screenId: input.entry.selectedCase.caseKey.screenId,
+            requiredFragments: declaredRequiredFragments,
+            observedNodes: snapshot.payload.nodes,
+            scopeSource:
+              selectedFragments.length > 0
+                ? 'selection'
+                : targetVariant.requiredFragments
+                  ? 'variant-contract'
+                  : 'undeclared',
+          }),
+          ...actionFacts(
+            input.entry.scenario
+              ? described.payload.manifest.screens.find(
+                  (screen) =>
+                    screen.screenId ===
+                    input.entry.scenario!.scenario.ownerScreenId,
+                ) ?? targetScreen
+              : targetScreen,
+            selectedFragments,
+          ),
+          ...scenarioFact(input.entry),
           ...nodeFacts(snapshot.payload.nodes),
         ];
         // Runtime instrumentation alone cannot prove source provenance. A

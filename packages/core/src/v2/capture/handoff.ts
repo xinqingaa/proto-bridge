@@ -65,6 +65,16 @@ export async function evaluateAgentHandoff(
   }
   const runs = await input.store.listRuns(input.bundleId);
   const revisions = await input.store.listEvidenceRevisions(input.bundleId);
+  const blobs = await input.store.listBlobRecords(input.bundleId);
+  const revisionsWithScreenshots = new Set(
+    blobs
+      .filter((blob) => blob.kind === 'screenshot')
+      .flatMap((blob) =>
+        blob.ownerRefs
+          .filter((owner) => owner.kind === 'revision')
+          .map((owner) => owner.objectId),
+      ),
+  );
   const sourceRun = runs.find((run) => run.runId === snapshot.sourceRunId);
   if (!sourceRun)
     throw unknownReferenceError('Handoff source Run', snapshot.sourceRunId);
@@ -83,6 +93,7 @@ export async function evaluateAgentHandoff(
     ),
   );
   let incomplete = false;
+  let attemptIncomplete = false;
   let stale = false;
   const selectedRefs: AgentHandoff['selectedCases'] = [];
   const risks: Risk[] = [];
@@ -117,6 +128,7 @@ export async function evaluateAgentHandoff(
       !resolution.relevantAttempt
     ) {
       incomplete = true;
+      attemptIncomplete = true;
       selectedRefs.push({
         caseId: selected.caseId,
         captureScope: selected.captureScope,
@@ -143,7 +155,10 @@ export async function evaluateAgentHandoff(
       revisionId: revision.revisionId,
       relevantAttemptId: resolution.relevantAttempt.attemptId,
     });
-    incomplete ||= !resolution.isComplete;
+    if (!resolution.isComplete) {
+      incomplete = true;
+      attemptIncomplete = true;
+    }
     const revisionStale = staleByRevision.get(revision.revisionId);
     if (revisionStale === undefined) {
       throw unknownReferenceError(
@@ -189,9 +204,20 @@ export async function evaluateAgentHandoff(
         refs: [revision.revisionId],
       });
     }
+    if (
+      selected.captureScope.screenshots.mode !== 'none' &&
+      !revisionsWithScreenshots.has(revision.revisionId)
+    ) {
+      incomplete = true;
+      risks.push({
+        kind: 'partial-coverage',
+        message: `Screenshot Evidence was requested but no screenshot Blob is stored for ${revision.revisionId}.`,
+        refs: [revision.revisionId],
+      });
+    }
   }
 
-  if (incomplete) {
+  if (attemptIncomplete) {
     risks.unshift({
       kind: 'partial-coverage',
       message:

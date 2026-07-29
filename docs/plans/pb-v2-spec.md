@@ -131,6 +131,7 @@ Scenario 可以跨 Screen，但必须保留 `ownerScreenId`。Case 身份中的 
 - 敏感主键必须先映射为稳定非敏感键；
 - unknown role、shell、component、slot 或 action 在 instrumented runtime 中是 Contract 错误；
 - Action 的 kind、target、precondition 和 outcome 来自显式 Contract，不能从 ID 文本或 DOM click 猜测；
+- Variant 可以声明 `requiredFragments` 作为完整 instrumented capture 的显式语义覆盖边界；未声明时只能报告实际观测到的 Marker，不能把该集合称为完整；
 - 设计系统组件应该自动输出 component、role 和 slot，页面只补业务 region、Action 和重复实例 key；
 - Registry validation、template lint 和 Runtime Preflight 共同验证；
 - instrumented capture 遇到缺失关键标记时必须失败，不能静默降级为 generic 语义。
@@ -264,6 +265,8 @@ Runtime 禁止：
 - 返回无法按 request kind 验证的成功 payload；
 - 把截断数据伪装成完整 Evidence。
 
+完整 instrumented capture 必须把 Variant Contract 声明的 `requiredFragments` 与最终 semantic snapshot 再次核对。声明缺失时生成可追溯的 semantic-coverage unknown；已声明但最终 snapshot 缺少 required Fragment 时同样保持 unknown 并列出 missing Fragment。Fragment-only Selection 自身可以作为该次 scoped revision 的明确覆盖边界。任何一种情况都不得补造未观测节点、文本、动作或业务状态。
+
 Device identity 属于 Core/Playwright 环境。Core 必须把稳定 Device identity 解析为 viewport、DPR 和其他环境设置，并验证浏览器上下文；Runtime 不负责解释 Workbench 的 logical Device ID。
 
 Scenario 必须从隔离或经验证的初态开始。每个 Step 引用 Action Contract 或稳定语义节点，具有前置条件、超时和失败策略。CSS selector 不能成为正式 Action 身份。
@@ -378,7 +381,7 @@ Handoff 使用三个正交维度表达状态：
 - `freshnessStatus`：fresh 或 stale，由 Handoff 固定的 Staleness Report 决定；
 - `risks`：所选范围中的 required unknown、unresolved conflict、Evidence Level 限制、人工 promotion 和其他必须披露的风险。
 
-failed、skipped、unsupported、cancelled、interrupted、missing 或无匹配 active Evidence 都使 `coverageStatus=partial`。Coverage 和其中的 latest Attempt refs 必须固定在 Handoff 中，状态计算不能读取后续 Bundle-global latest。
+failed、skipped、unsupported、cancelled、interrupted、missing、无匹配 active Evidence，或 Selection 明确要求 Screenshot 但对应 revision 没有持久 Screenshot Blob，都使 `coverageStatus=partial`。Coverage 和其中的 latest Attempt refs 必须固定在 Handoff 中，状态计算不能读取后续 Bundle-global latest。
 
 partial、stale 或需要确认的 risk 只有在用户明确接受对应风险后才能生成 Handoff。风险接受不会改变 Coverage、Issue、freshness 或 Evidence，也不能让 Consumer 隐去风险。全选范围没有任何可用 Evidence 时禁止生成 Handoff。
 

@@ -98,6 +98,9 @@ function toScreenManifest(
       variantId: variant.id,
       critical: variant.critical ?? false,
       ...(variant.fixture ? { fixtureId: variant.fixture } : {}),
+      ...(variant.requiredFragments
+        ? { requiredFragments: variant.requiredFragments }
+        : {}),
     })),
     actions: (screen.actions ?? []).map((action) => ({
       actionId: action.id,

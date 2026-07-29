@@ -119,6 +119,12 @@ export type PrototypeVariant = {
   fixture?: string;
   /** V2 Capture expands this Variant for the `critical` strategy. */
   critical?: boolean;
+  /**
+   * Optional authored completeness contract for instrumented Runtime capture.
+   * Absence is allowed, but V2 Evidence must then report semantic coverage as
+   * undeclared instead of presenting the observed markers as a complete set.
+   */
+  requiredFragments?: PrototypeFragmentRef[];
 };
 
 export type PrototypeFragmentRef = {

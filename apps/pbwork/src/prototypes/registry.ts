@@ -317,9 +317,64 @@ export const prototypeScreens = [
     view: "ledger-planet/screens/TaskList.vue",
     defaultVariantId: "default",
     variants: [
-      { id: "default", label: "默认" },
+      {
+        id: "default",
+        label: "默认",
+        requiredFragments: [
+          {
+            screenId: "ledger-planet.task-list",
+            pbId: "ledger-planet.task-list.root",
+          },
+          {
+            screenId: "ledger-planet.task-list",
+            pbId: "ledger-planet.task-list.filters",
+          },
+          {
+            screenId: "ledger-planet.task-list",
+            pbId: "ledger-planet.task-list.list",
+          },
+          {
+            screenId: "ledger-planet.task-list",
+            pbId: "ledger-planet.task-list.list.row",
+            pbKey: "t1",
+          },
+          {
+            screenId: "ledger-planet.task-list",
+            pbId: "ledger-planet.task-list.list.row",
+            pbKey: "t2",
+          },
+          {
+            screenId: "ledger-planet.task-list",
+            pbId: "ledger-planet.task-list.list.row",
+            pbKey: "t3",
+          },
+        ],
+      },
       { id: "empty", label: "空态" },
-      { id: "claimable", label: "待领取", critical: true },
+      {
+        id: "claimable",
+        label: "待领取",
+        critical: true,
+        requiredFragments: [
+          {
+            screenId: "ledger-planet.task-list",
+            pbId: "ledger-planet.task-list.root",
+          },
+          {
+            screenId: "ledger-planet.task-list",
+            pbId: "ledger-planet.task-list.filters",
+          },
+          {
+            screenId: "ledger-planet.task-list",
+            pbId: "ledger-planet.task-list.list",
+          },
+          {
+            screenId: "ledger-planet.task-list",
+            pbId: "ledger-planet.task-list.list.row",
+            pbKey: "t2",
+          },
+        ],
+      },
     ],
     actions: [
       {
@@ -367,7 +422,16 @@ export const prototypeScreens = [
     variants: [
       { id: "default", label: "默认" },
       { id: "completed", label: "已完成" },
-      { id: "claimable", label: "可领奖" },
+      {
+        id: "claimable",
+        label: "可领奖",
+        requiredFragments: [
+          {
+            screenId: "ledger-planet.task-detail",
+            pbId: "ledger-planet.task-detail.root",
+          },
+        ],
+      },
     ],
   },
   {
