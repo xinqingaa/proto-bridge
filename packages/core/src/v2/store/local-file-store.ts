@@ -14,11 +14,11 @@ import type {
   StalenessReportId,
   WorkspaceId,
 } from '../contracts/ids.js';
-import { CaptureJob } from '../contracts/job.js';
+import { assertJobStatusTransition, CaptureJob } from '../contracts/job.js';
 import { Run } from '../contracts/run.js';
 import { BundleSnapshot } from '../contracts/snapshot.js';
 import { StalenessReport } from '../contracts/staleness.js';
-import { EVIDENCE_LEVELS, isTerminalJobStatus } from '../contracts/vocabulary.js';
+import { EVIDENCE_LEVELS, type ExecutingJobStatus, isTerminalJobStatus, type TerminalJobStatus } from '../contracts/vocabulary.js';
 import { V2_SCHEMA_MAJOR } from '../contracts/version.js';
 import {
   listJsonIds,
@@ -41,7 +41,7 @@ import {
   workspaceManifestPath,
 } from './paths.js';
 import { buildNextSnapshot } from './snapshot-builder.js';
-import type { CommitRunInput, CommitRunResult, CreateJobInput, InitResult, JobJournalEntryInput, TerminalJobStatus, V2Store } from './types.js';
+import type { CommitRunInput, CommitRunResult, CreateJobInput, InitResult, JobJournalEntryInput, V2Store } from './types.js';
 import { acquireWriterLock } from './writer-lock.js';
 
 type ActiveSnapshotPointer = { snapshotId: SnapshotId };
@@ -151,9 +151,9 @@ export class LocalFileStore implements V2Store {
       bundleId: input.bundleId,
       selection: input.selection,
       inputVersion: input.inputVersion,
-      status: 'accepted',
+      status: 'queued',
       acceptedAt: now,
-      journal: [{ at: now, event: 'accepted' }],
+      journal: [{ at: now, event: 'queued' }],
     });
     await writeJsonAtomic(jobPath(this.root, job.jobId), job);
     return job;
@@ -171,18 +171,29 @@ export class LocalFileStore implements V2Store {
     return job;
   }
 
-  async markJobRunning(jobId: JobId, runId: RunId): Promise<CaptureJob> {
+  async startJob(jobId: JobId, runId: RunId): Promise<CaptureJob> {
     const job = await this.requireJob(jobId);
-    if (job.status !== 'accepted') {
-      throw new V2ContractError('invalid-schema', `Job ${jobId} cannot transition to running from status ${job.status}.`);
-    }
+    assertJobStatusTransition(job.status, 'discovering');
     const now = new Date().toISOString();
     const next = CaptureJob.parse({
       ...job,
-      status: 'running',
+      status: 'discovering',
       startedAt: now,
       runId,
-      journal: [...job.journal, { at: now, event: 'started', detail: runId }],
+      journal: [...job.journal, { at: now, event: 'discovering', detail: runId }],
+    });
+    await writeJsonAtomic(jobPath(this.root, jobId), next);
+    return next;
+  }
+
+  async advanceJob(jobId: JobId, status: Exclude<ExecutingJobStatus, 'discovering'>): Promise<CaptureJob> {
+    const job = await this.requireJob(jobId);
+    assertJobStatusTransition(job.status, status);
+    const now = new Date().toISOString();
+    const next = CaptureJob.parse({
+      ...job,
+      status,
+      journal: [...job.journal, { at: now, event: status }],
     });
     await writeJsonAtomic(jobPath(this.root, jobId), next);
     return next;
@@ -203,9 +214,7 @@ export class LocalFileStore implements V2Store {
 
   async finalizeJob(jobId: JobId, status: TerminalJobStatus): Promise<CaptureJob> {
     const job = await this.requireJob(jobId);
-    if (isTerminalJobStatus(job.status)) {
-      throw new V2ContractError('immutable-violation', `Job ${jobId} is already terminal (${job.status}).`);
-    }
+    assertJobStatusTransition(job.status, status);
     const now = new Date().toISOString();
     const next = CaptureJob.parse({
       ...job,
@@ -226,7 +235,7 @@ export class LocalFileStore implements V2Store {
   /**
    * Restart finalization (pb-v2-spec.md "Service 重启后非终态 Job 可以确定性
    * 终结为 interrupted Run、Coverage 和 Snapshot"): every Job still
-   * `accepted`/`running` when this process starts belonged to a writer that
+   * any non-terminal phase when this process starts belonged to a writer that
    * never reached a terminal state (crash, kill, or an unclean shutdown).
    * Each one is finalized as `interrupted` and, if it ever started
    * executing, produces a zero-Attempt interrupted Run whose Snapshot

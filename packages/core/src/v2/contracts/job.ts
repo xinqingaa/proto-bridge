@@ -1,7 +1,14 @@
 import { z } from 'zod';
 import { BundleId, JobId, RunId, WorkspaceId } from './ids.js';
 import { NormalizedSelection } from './run.js';
-import { isTerminalJobStatus, JobStatus } from './vocabulary.js';
+import { V2ContractError } from './errors.js';
+import {
+  isTerminalJobStatus,
+  type JobStatus,
+  JobStatus as JobStatusSchema,
+  type RunTerminationReason,
+  type TerminalJobStatus,
+} from './vocabulary.js';
 import { V2_SCHEMA_MAJOR } from './version.js';
 
 /**
@@ -18,6 +25,31 @@ export const JobJournalEntry = z
   })
   .strict();
 export type JobJournalEntry = z.infer<typeof JobJournalEntry>;
+
+const JOB_STATUS_TRANSITIONS: Readonly<Record<JobStatus, readonly JobStatus[]>> = {
+  queued: ['discovering', 'cancelled', 'interrupted', 'failed'],
+  discovering: ['capturing', 'writing', 'cancelled', 'interrupted', 'failed'],
+  capturing: ['writing', 'cancelled', 'interrupted', 'failed'],
+  writing: ['completed', 'cancelled', 'interrupted', 'failed'],
+  completed: [],
+  cancelled: [],
+  interrupted: [],
+  failed: [],
+};
+
+export function canTransitionJobStatus(from: JobStatus, to: JobStatus): boolean {
+  return JOB_STATUS_TRANSITIONS[from].includes(to);
+}
+
+export function assertJobStatusTransition(from: JobStatus, to: JobStatus): void {
+  if (!canTransitionJobStatus(from, to)) {
+    throw new V2ContractError('immutable-violation', `Capture Job cannot transition from ${from} to ${to}.`, { from, to });
+  }
+}
+
+export function terminalJobStatusToRunTerminationReason(status: TerminalJobStatus): RunTerminationReason {
+  return status;
+}
 
 /**
  * Persistent execution control record for one accepted Capture Job
@@ -40,7 +72,7 @@ export const CaptureJob = z
     selection: NormalizedSelection,
     /** Input version Preflight validated this Selection against; carried onto the Run this Job produces. */
     inputVersion: z.string().min(1),
-    status: JobStatus,
+    status: JobStatusSchema,
     acceptedAt: z.string().datetime(),
     startedAt: z.string().datetime().optional(),
     endedAt: z.string().datetime().optional(),
@@ -51,27 +83,27 @@ export const CaptureJob = z
   .strict()
   .superRefine((job, ctx) => {
     const terminal = isTerminalJobStatus(job.status);
-    if (job.status === 'accepted') {
+    if (job.status === 'queued') {
       if (job.startedAt !== undefined) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'accepted jobs must not carry startedAt', path: ['startedAt'] });
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'queued jobs must not carry startedAt', path: ['startedAt'] });
       }
       if (job.runId !== undefined) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'accepted jobs must not carry runId', path: ['runId'] });
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'queued jobs must not carry runId', path: ['runId'] });
       }
       if (job.endedAt !== undefined) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'accepted jobs must not carry endedAt', path: ['endedAt'] });
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'queued jobs must not carry endedAt', path: ['endedAt'] });
       }
       return;
     }
-    if (job.status === 'running') {
+    if (!terminal) {
       if (job.startedAt === undefined) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'running jobs must carry startedAt', path: ['startedAt'] });
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: `${job.status} jobs must carry startedAt`, path: ['startedAt'] });
       }
       if (job.runId === undefined) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'running jobs must carry a Run identity', path: ['runId'] });
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: `${job.status} jobs must carry a Run identity`, path: ['runId'] });
       }
       if (job.endedAt !== undefined) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'running jobs must not carry endedAt', path: ['endedAt'] });
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: `${job.status} jobs must not carry endedAt`, path: ['endedAt'] });
       }
       return;
     }
@@ -83,6 +115,13 @@ export const CaptureJob = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'startedAt and runId must be set together: a Job only gets a Run identity once it actually starts executing',
+        path: ['runId'],
+      });
+    }
+    if (job.status === 'completed' && (job.startedAt === undefined || job.runId === undefined)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'completed jobs must carry startedAt and runId',
         path: ['runId'],
       });
     }

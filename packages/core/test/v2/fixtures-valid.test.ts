@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
   AgentHandoff,
+  Bundle,
   BundleSnapshot,
   CaseAttempt,
   CaseEvidenceRevision,
   CaseKey,
+  Fact,
+  Issue,
   Run,
   StalenessReport,
+  Workspace,
   fixtures,
 } from '../../src/v2/index.js';
 
@@ -15,6 +19,14 @@ const f = fixtures.ledgerPlanetTaskList;
 describe('ledger-planet.task-list valid fixtures parse against their schemas', () => {
   it('Base Case', () => {
     expect(CaseKey.safeParse(f.BASE_CASE)).toMatchObject({ success: true });
+  });
+
+  it('Bundle', () => {
+    expect(Bundle.safeParse(f.BUNDLE)).toMatchObject({ success: true });
+  });
+
+  it('Workspace', () => {
+    expect(Workspace.safeParse(f.WORKSPACE)).toMatchObject({ success: true });
   });
 
   it('full Case primary active revision', () => {
@@ -55,6 +67,26 @@ describe('ledger-planet.task-list valid fixtures parse against their schemas', (
     expect(f.HANDOFF.freshnessStatus).toBe('fresh');
     expect(f.HANDOFF.risks).toHaveLength(0);
   });
+
+  it('explicit unknown and unresolved-conflict Facts', () => {
+    expect(Fact.safeParse(f.UNKNOWN_FACT).success).toBe(true);
+    expect(Fact.safeParse(f.CONFLICT_FACT).success).toBe(true);
+    expect(f.UNKNOWN_FACT.resolution).toBe('unknown');
+    expect(f.CONFLICT_FACT.resolution).toBe('unresolved-conflict');
+    expect(Issue.safeParse(f.UNKNOWN_ISSUE).success).toBe(true);
+  });
+
+  it('partial and stale Handoff examples remain explicit and acknowledged', () => {
+    expect(AgentHandoff.safeParse(f.PARTIAL_HANDOFF).success).toBe(true);
+    expect(f.PARTIAL_HANDOFF.coverageStatus).toBe('partial');
+    expect(f.PARTIAL_HANDOFF.risks.map((risk) => risk.kind)).toContain('partial-coverage');
+    expect(AgentHandoff.safeParse(f.MISSING_PARTIAL_HANDOFF).success).toBe(true);
+    expect(f.MISSING_PARTIAL_HANDOFF.selectedCases.some((selectedCase) => selectedCase.resolution === 'missing')).toBe(true);
+
+    expect(AgentHandoff.safeParse(f.STALE_HANDOFF).success).toBe(true);
+    expect(f.STALE_HANDOFF.freshnessStatus).toBe('stale');
+    expect(f.STALE_HANDOFF.risks.map((risk) => risk.kind)).toContain('stale-evidence');
+  });
 });
 
 describe('cross-reference integrity across the fixture bundle', () => {
@@ -91,7 +123,7 @@ describe('cross-reference integrity across the fixture bundle', () => {
     expect(f.HANDOFF.stalenessReportId).toBe(f.STALENESS_REPORT.reportId);
     const activeRevisionIds = new Set(f.SNAPSHOT.activeSlots.map((slot) => slot.revisionId));
     for (const ref of f.HANDOFF.selectedCases) {
-      expect(activeRevisionIds.has(ref.revisionId)).toBe(true);
+      if (ref.resolution === 'resolved') expect(activeRevisionIds.has(ref.revisionId)).toBe(true);
     }
   });
 

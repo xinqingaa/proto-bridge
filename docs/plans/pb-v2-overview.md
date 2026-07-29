@@ -1,11 +1,11 @@
 # ProtoBridge / PBWork V2 产品闭环与实施总览
 
-> 状态：可进入实施
+> 状态：实施中；阶段一已完成，可进入阶段二
 > 目标分支：`dev`
 > 性质：破坏性重构；V2 不兼容 V1 Artifact、CLI 和 MCP 页面工作流
 > 当前正式包基线：`0.4.0`
 > V2 正式发布目标：`0.5.0`
-> 更新时间：2026-07-28
+> 更新时间：2026-07-29
 
 本文件是 ProtoBridge V2 的唯一实施入口，固定长期目标、产品闭环、职责边界、关键取舍、七个实施阶段和最终完成条件。
 
@@ -288,7 +288,7 @@ V2 是这个长期目标的第一个完整版本：本地、单用户、以 PBWo
 
 ### 阶段六：迁移与全链路验收
 
-目标是用全部现有原型和固定任务集证明 V2 不是只对单个样例成立。
+目标是用完整迁移台账和 3 个代表页面的固定任务集证明 V2 不是只对单个样例成立。
 
 关键任务：
 
@@ -296,13 +296,19 @@ V2 是这个长期目标的第一个完整版本：本地、单用户、以 PBWo
 - 在运行 V2 对比前冻结 V1/目标仓库基线、任务集、计数口径、评分 rubric 和原始记录格式；
 - 补齐稳定 ID、Action、Component、Slot、Scenario 和关键 Checkpoint；
 - 完成 instrumented-source-runtime、instrumented-runtime、generic-runtime 和 screenshot-only 验收；
-- 验证单 Screen、Fragment、多 Screen、整个 Prototype、partial 修复和 stale 重采；
+- 在固定 3 页基准内验证单 Screen、Fragment、多 Screen、partial 修复和 stale 重采；整个 Prototype 只验证 Selection、Matrix、容量和任务拆分，不执行 25 页重复浏览器回归；
 - 在相同目标仓库基线上执行固定 V1/V2 对比任务。
+
+测试范围必须区分：
+
+- 25 Screen / 82 Variant 的迁移台账用于 Registry、Contract、lint、引用和能力覆盖检查；
+- 浏览器回归与 V1/V2 实现对比固定选取 3 个代表页面，不要求对 25 个 Screen 逐页重复回归；
+- generic runtime、screenshot-only、故障和恢复路径优先复用这 3 个页面或独立最小 fixture，不扩大页面分母。
 
 完成条件：
 
-- 迁移台账中的每个 Screen、Variant、Action 和 Scenario 都有通过、明确不适用或带 Issue 的 unsupported 结果；
-- Ledger Planet 18 Screen / 54 Variant、Field Service 7 / 28 全部有可追踪结果；
+- 迁移台账中的每个 Screen、Variant、Action 和 Scenario 都有 Contract/lint 通过、明确不适用或带 Issue 的 unsupported 结果，不要求逐项执行浏览器回归；
+- Ledger Planet 18 Screen / 54 Variant、Field Service 7 / 28 与当前 Registry 完全一致并有可追踪台账；
 - 四种 Evidence Level 的生产、存储、读取和错误路径 E2E 通过；
 - `unsupportedAssumptions = 0`；
 - V2 完成任务数不低于 V1；
@@ -348,9 +354,9 @@ V2 完成必须同时满足：
 - MCP 能按需读取完整消费链所需 Evidence；
 - Agent 不需要读取 Store 路径或在目标仓库保存 PB 配置；
 - Target 查询与 Capture 解耦，目标事实不污染来源证据；
-- 当前 27 Screen / 89 Variant 全量迁移；
+- 当前 25 Screen / 82 Variant 完成迁移台账与 Contract 覆盖；
 - 四种 Evidence Level 和主要失败路径通过 E2E；
-- V1/V2 固定任务集达到阶段六的量化门槛；
+- 3 个代表页面的 V1/V2 固定任务集达到阶段六的量化门槛；
 - V1 只在上述条件全部满足后删除并发布 V2。
 
 实施完成以可复现的测试、迁移台账和发布证据判断，不以文档篇幅、代码量或“主要路径可用”判断。

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { CaseAttempt } from './attempt.js';
 import { CoverageSummary } from './coverage.js';
-import { BundleId, CaseId, PrototypeId, RunId, WorkspaceId } from './ids.js';
+import { BundleId, CaseId, IssueId, PrototypeId, RunId, WorkspaceId } from './ids.js';
 import { NormalizedCaptureScope } from './scope.js';
 import { CaseKey } from './case.js';
 import { RunTerminationReason } from './vocabulary.js';
@@ -22,7 +22,7 @@ export const NormalizedSelection = z
   .object({
     prototypeId: PrototypeId,
     cases: z.array(SelectedCase).min(1),
-    acceptedWarningIds: z.array(z.string()).default([]),
+    acceptedWarningIds: z.array(IssueId).default([]),
   })
   .strict();
 export type NormalizedSelection = z.infer<typeof NormalizedSelection>;

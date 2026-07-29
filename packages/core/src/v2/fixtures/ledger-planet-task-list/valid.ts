@@ -1,5 +1,10 @@
 import type { CaseEvidenceRevision } from '../../contracts/evidence.js';
+import type { Fact } from '../../contracts/evidence.js';
 import type { CaseAttempt } from '../../contracts/attempt.js';
+import type { Bundle } from '../../contracts/bundle.js';
+import type { Workspace } from '../../contracts/workspace.js';
+import type { Issue } from '../../contracts/issue.js';
+import { computeCaseId, type CaseKey } from '../../contracts/case.js';
 import type { Run } from '../../contracts/run.js';
 import type { BundleSnapshot } from '../../contracts/snapshot.js';
 import type { StalenessReport } from '../../contracts/staleness.js';
@@ -34,6 +39,33 @@ export const FRAGMENT_REVISION_ID = 'task-list-default-list-fragment-rev1';
 export const SNAPSHOT_ID = 'snapshot-2026-07-28t1005';
 export const STALENESS_REPORT_ID = 'staleness-2026-07-28t1010';
 export const HANDOFF_ID = 'handoff-2026-07-28t1015';
+export const PARTIAL_RUN_ID = 'run-2026-07-28t1100-fragment-retry';
+export const PARTIAL_ATTEMPT_ID = 'attempt-run-2026-07-28t1100-fragment-retry';
+export const PARTIAL_SNAPSHOT_ID = 'snapshot-2026-07-28t1105';
+export const PARTIAL_STALENESS_REPORT_ID = 'staleness-2026-07-28t1110';
+export const PARTIAL_HANDOFF_ID = 'handoff-2026-07-28t1115';
+export const STALE_STALENESS_REPORT_ID = 'staleness-2026-07-28t1120';
+export const STALE_HANDOFF_ID = 'handoff-2026-07-28t1125';
+export const MISSING_PARTIAL_HANDOFF_ID = 'handoff-2026-07-28t1130-missing-case';
+
+export const MISSING_CASE_KEY: CaseKey = { ...TASK_LIST_CASE_KEY, variantId: 'empty' };
+export const MISSING_CASE_ID = computeCaseId(MISSING_CASE_KEY);
+
+export const BUNDLE: Bundle = {
+  schemaVersion: V2_SCHEMA_MAJOR,
+  bundleId: BUNDLE_ID,
+  workspaceId: WORKSPACE_ID,
+  prototypeId: PROTOTYPE_ID,
+  status: 'writable',
+  createdAt: T0,
+};
+
+export const WORKSPACE: Workspace = {
+  schemaVersion: V2_SCHEMA_MAJOR,
+  workspaceId: WORKSPACE_ID,
+  prototypeIds: [PROTOTYPE_ID],
+  createdAt: T0,
+};
 
 /** Base Case for the reference vertical slice: `ledger-planet.task-list` × `default` × `light` × `iphone-14`, no Scenario. */
 export const BASE_CASE = TASK_LIST_CASE_KEY;
@@ -207,12 +239,163 @@ export const HANDOFF: AgentHandoff = {
   snapshotId: SNAPSHOT_ID,
   createdAt: T2,
   implementationIntent: 'Implement the task list screen in the target Flutter app',
-  selectedCases: [{ caseId: TASK_LIST_CASE_ID, scopeKey: FULL_CASE_SCOPE_KEY, revisionId: PRIMARY_REVISION_ID, relevantAttemptId: ATTEMPT_1_ID }],
+  selectedCases: [
+    {
+      caseId: TASK_LIST_CASE_ID,
+      captureScope: FULL_CASE_SCOPE,
+      scopeKey: FULL_CASE_SCOPE_KEY,
+      resolution: 'resolved',
+      revisionId: PRIMARY_REVISION_ID,
+      relevantAttemptId: ATTEMPT_1_ID,
+    },
+  ],
   coverageStatus: 'complete',
   freshnessStatus: 'fresh',
   stalenessReportId: STALENESS_REPORT_ID,
   risks: [],
   resourceRefs: [{ kind: 'case', ref: TASK_LIST_CASE_ID }],
+};
+
+export const UNKNOWN_FACT: Fact = {
+  factId: 'ledger-planet.task-list.hidden-state',
+  candidates: [{ value: null, provenance: { source: 'runtime-observation', locator: 'task-list:hidden-state', confidence: 'low' } }],
+  resolution: 'unknown',
+  issueRef: 'issue-task-list-hidden-state',
+};
+
+export const UNKNOWN_ISSUE: Issue = {
+  schemaVersion: V2_SCHEMA_MAJOR,
+  issueId: 'issue-task-list-hidden-state',
+  severity: 'warning',
+  reason: 'The hidden task-list state cannot be proven from the current Evidence Level.',
+  affectedCaseIds: [TASK_LIST_CASE_ID],
+  evidenceRefs: [PRIMARY_REVISION_ID],
+  nextAction: 'Capture the state through an explicit Variant or Scenario Checkpoint.',
+};
+
+export const CONFLICT_FACT: Fact = {
+  factId: 'ledger-planet.task-list.title',
+  candidates: [
+    { value: '任务中心', provenance: { source: 'source', locator: 'TaskList.vue:title' } },
+    { value: '福利任务', provenance: { source: 'runtime-observation', locator: 'ledger-planet.task-list.root:title' } },
+  ],
+  resolution: 'unresolved-conflict',
+  issueRef: 'issue-task-list-title-conflict',
+};
+
+export const PARTIAL_FRAGMENT_ATTEMPT: CaseAttempt = {
+  schemaVersion: V2_SCHEMA_MAJOR,
+  attemptId: PARTIAL_ATTEMPT_ID,
+  runId: PARTIAL_RUN_ID,
+  caseId: TASK_LIST_CASE_ID,
+  captureScope: LIST_FRAGMENT_SCOPE,
+  scopeKey: LIST_FRAGMENT_SCOPE_KEY,
+  result: 'failed',
+  reason: 'Runtime timed out waiting for the list Fragment to stabilize.',
+  startedAt: T2,
+  endedAt: T2,
+};
+
+export const PARTIAL_RUN: Run = {
+  schemaVersion: V2_SCHEMA_MAJOR,
+  runId: PARTIAL_RUN_ID,
+  workspaceId: WORKSPACE_ID,
+  bundleId: BUNDLE_ID,
+  selection: {
+    prototypeId: PROTOTYPE_ID,
+    cases: [{ caseId: TASK_LIST_CASE_ID, caseKey: TASK_LIST_CASE_KEY, captureScope: LIST_FRAGMENT_SCOPE }],
+    acceptedWarningIds: [],
+  },
+  inputVersion: INPUT_VERSION,
+  startedAt: T2,
+  endedAt: T2,
+  terminationReason: 'completed',
+  attempts: [PARTIAL_FRAGMENT_ATTEMPT],
+  coverage: {
+    counts: { selected: 1, captured: 0, reused: 0, failed: 1, skipped: 0, unsupported: 0, cancelled: 0, interrupted: 0, missing: 0, stale: 0 },
+    evidenceLevelBreakdown: {},
+    factQuality: { traceable: 0, heuristic: 0, unknown: 0, conflict: 0 },
+    denominator: 1,
+  },
+};
+
+export const PARTIAL_SNAPSHOT: BundleSnapshot = {
+  ...SNAPSHOT,
+  snapshotId: PARTIAL_SNAPSHOT_ID,
+  sourceRunId: PARTIAL_RUN_ID,
+  committedAt: T2,
+  latestAttempts: [
+    SNAPSHOT.latestAttempts[0]!,
+    { caseId: TASK_LIST_CASE_ID, scopeKey: LIST_FRAGMENT_SCOPE_KEY, attemptId: PARTIAL_ATTEMPT_ID, runId: PARTIAL_RUN_ID },
+  ],
+  coverage: {
+    counts: { selected: 2, captured: 1, reused: 0, failed: 1, skipped: 0, unsupported: 0, cancelled: 0, interrupted: 0, missing: 0, stale: 0 },
+    evidenceLevelBreakdown: { 'instrumented-source-runtime': 1, 'instrumented-runtime': 1 },
+    factQuality: { traceable: 2, heuristic: 0, unknown: 0, conflict: 0 },
+    denominator: 2,
+  },
+};
+
+export const PARTIAL_STALENESS_REPORT: StalenessReport = {
+  ...STALENESS_REPORT,
+  reportId: PARTIAL_STALENESS_REPORT_ID,
+  snapshotId: PARTIAL_SNAPSHOT_ID,
+};
+
+export const PARTIAL_HANDOFF: AgentHandoff = {
+  ...HANDOFF,
+  handoffId: PARTIAL_HANDOFF_ID,
+  snapshotId: PARTIAL_SNAPSHOT_ID,
+  selectedCases: [
+    {
+      caseId: TASK_LIST_CASE_ID,
+      captureScope: LIST_FRAGMENT_SCOPE,
+      scopeKey: LIST_FRAGMENT_SCOPE_KEY,
+      resolution: 'resolved',
+      revisionId: FRAGMENT_REVISION_ID,
+      relevantAttemptId: PARTIAL_ATTEMPT_ID,
+    },
+  ],
+  coverageStatus: 'partial',
+  stalenessReportId: PARTIAL_STALENESS_REPORT_ID,
+  risks: [{ kind: 'partial-coverage', message: 'The latest Fragment retry failed.', refs: [PARTIAL_ATTEMPT_ID] }],
+  riskAcknowledgement: { acknowledgedAt: T2, acknowledgedRiskKinds: ['partial-coverage'] },
+};
+
+export const STALE_STALENESS_REPORT: StalenessReport = {
+  ...STALENESS_REPORT,
+  reportId: STALE_STALENESS_REPORT_ID,
+  perRevision: STALENESS_REPORT.perRevision.map((entry) =>
+    entry.revisionId === PRIMARY_REVISION_ID
+      ? { ...entry, stale: true, reason: 'The task-list source dependency digest changed.' }
+      : entry,
+  ),
+};
+
+export const STALE_HANDOFF: AgentHandoff = {
+  ...HANDOFF,
+  handoffId: STALE_HANDOFF_ID,
+  freshnessStatus: 'stale',
+  stalenessReportId: STALE_STALENESS_REPORT_ID,
+  risks: [{ kind: 'stale-evidence', message: 'The selected primary revision is stale.', refs: [PRIMARY_REVISION_ID] }],
+  riskAcknowledgement: { acknowledgedAt: T2, acknowledgedRiskKinds: ['stale-evidence'] },
+};
+
+export const MISSING_PARTIAL_HANDOFF: AgentHandoff = {
+  ...HANDOFF,
+  handoffId: MISSING_PARTIAL_HANDOFF_ID,
+  selectedCases: [
+    HANDOFF.selectedCases[0]!,
+    {
+      caseId: MISSING_CASE_ID,
+      captureScope: FULL_CASE_SCOPE,
+      scopeKey: FULL_CASE_SCOPE_KEY,
+      resolution: 'missing',
+    },
+  ],
+  coverageStatus: 'partial',
+  risks: [{ kind: 'partial-coverage', message: 'The empty Variant has no active Evidence or Attempt.', refs: [MISSING_CASE_ID] }],
+  riskAcknowledgement: { acknowledgedAt: T2, acknowledgedRiskKinds: ['partial-coverage'] },
 };
 
 export function revisionScopeOf(revisionId: CaseEvidenceRevisionId): NormalizedCaptureScope {

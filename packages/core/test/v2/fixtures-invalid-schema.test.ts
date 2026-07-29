@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { AgentHandoff, CaseEvidenceRevision, CaseKey, FragmentRef, Candidate, fixtures } from '../../src/v2/index.js';
+import { AgentHandoff, CaseEvidenceRevision, CaseKey, FragmentRef, Candidate, Workspace, fixtures } from '../../src/v2/index.js';
 import type { InvalidSchemaFixture } from '../../src/v2/fixtures/ledger-planet-task-list/invalid-schema.js';
 
-const SCHEMAS = { CaseKey, CaseEvidenceRevision, AgentHandoff, FragmentRef, Candidate };
+const SCHEMAS = { Workspace, CaseKey, CaseEvidenceRevision, AgentHandoff, FragmentRef, Candidate };
 
 describe('ledger-planet.task-list invalid fixtures each fail schema validation', () => {
   const f = fixtures.ledgerPlanetTaskList;

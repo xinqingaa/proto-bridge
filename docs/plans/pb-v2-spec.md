@@ -1,6 +1,6 @@
 # ProtoBridge V2 核心规范
 
-> 状态：可进入实施
+> 状态：规范已固定；实施中
 > 权威范围：跨 Core、PBWork、Runtime、Store、CLI、MCP、Target Adapter 和 Agent 必须一致的 V2 语义
 > 上位目标：[V2 产品闭环与实施总览](./pb-v2-overview.md)
 > 用户行为：[PBWork 与 PB 的操作闭环](./pbwork-pb-v2-workflow.md)

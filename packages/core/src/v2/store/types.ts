@@ -7,6 +7,7 @@ import type { NormalizedSelection, Run } from '../contracts/run.js';
 import type { BundleSnapshot } from '../contracts/snapshot.js';
 import type { StalenessReport } from '../contracts/staleness.js';
 import type { CoverageSummary } from '../contracts/coverage.js';
+import type { ExecutingJobStatus, TerminalJobStatus } from '../contracts/vocabulary.js';
 
 export type CreateJobInput = {
   bundleId: BundleId;
@@ -18,9 +19,6 @@ export type JobJournalEntryInput = {
   event: string;
   detail?: string;
 };
-
-/** Terminal Job statuses double as the `RunTerminationReason` of the Run the Job produces. */
-export type TerminalJobStatus = 'completed' | 'failed' | 'cancelled' | 'interrupted';
 
 export type CommitRunInput = {
   bundleId: BundleId;
@@ -67,7 +65,8 @@ export interface V2Store {
   getBundle(bundleId: BundleId): Promise<Bundle | undefined>;
 
   createJob(input: CreateJobInput): Promise<CaptureJob>;
-  markJobRunning(jobId: JobId, runId: RunId): Promise<CaptureJob>;
+  startJob(jobId: JobId, runId: RunId): Promise<CaptureJob>;
+  advanceJob(jobId: JobId, status: Exclude<ExecutingJobStatus, 'discovering'>): Promise<CaptureJob>;
   appendJobJournal(jobId: JobId, entry: JobJournalEntryInput): Promise<CaptureJob>;
   finalizeJob(jobId: JobId, status: TerminalJobStatus): Promise<CaptureJob>;
   getJob(jobId: JobId): Promise<CaptureJob | undefined>;

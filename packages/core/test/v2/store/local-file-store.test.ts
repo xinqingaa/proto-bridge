@@ -233,25 +233,28 @@ describe('LocalFileStore: Job lifecycle and orphan/restart finalization', () => 
   it('accepts, runs and finalizes a Job normally', async () => {
     const store = await freshStoreWithBundle();
     const job = await store.createJob({ bundleId: BUNDLE_ID, selection, inputVersion: RUN_1.inputVersion });
-    expect(job.status).toBe('accepted');
+    expect(job.status).toBe('queued');
 
-    const running = await store.markJobRunning(job.jobId, RUN_1_ID);
-    expect(running.status).toBe('running');
-    expect(running.runId).toBe(RUN_1_ID);
+    const discovering = await store.startJob(job.jobId, RUN_1_ID);
+    expect(discovering.status).toBe('discovering');
+    expect(discovering.runId).toBe(RUN_1_ID);
+    expect((await store.advanceJob(job.jobId, 'capturing')).status).toBe('capturing');
 
     await store.commitRun({ bundleId: BUNDLE_ID, run: RUN_1, revisions: [PRIMARY_ACTIVE_REVISION], coverage: RUN_1.coverage });
+    expect((await store.advanceJob(job.jobId, 'writing')).status).toBe('writing');
     const finalized = await store.finalizeJob(job.jobId, 'completed');
     expect(finalized.status).toBe('completed');
     expect(finalized.endedAt).toBeDefined();
   });
 
-  it('finalizes a Job left running by a crashed writer as interrupted on the next Store init, without touching existing active Evidence', async () => {
+  it('finalizes a Job left capturing by a crashed writer as interrupted on the next Store init, without touching existing active Evidence', async () => {
     const writer = await freshStoreWithBundle();
     await writer.commitRun({ bundleId: BUNDLE_ID, run: RUN_1, revisions: [PRIMARY_ACTIVE_REVISION], coverage: RUN_1.coverage });
 
     const orphanSelection: NormalizedSelection = RUN_2.selection;
     const job = await writer.createJob({ bundleId: BUNDLE_ID, selection: orphanSelection, inputVersion: RUN_2.inputVersion });
-    await writer.markJobRunning(job.jobId, 'run-that-never-finished');
+    await writer.startJob(job.jobId, 'run-that-never-finished');
+    await writer.advanceJob(job.jobId, 'capturing');
     // Simulate a crash: the process dies here, before commitRun or finalizeJob ever runs.
     await writer.close();
 
@@ -276,7 +279,7 @@ describe('LocalFileStore: Job lifecycle and orphan/restart finalization', () => 
     await restarted.close();
   });
 
-  it('finalizes a Job that never even started (still accepted) as interrupted with a zero-Attempt Run', async () => {
+  it('finalizes a Job that never even started (still queued) as interrupted with a zero-Attempt Run', async () => {
     const store = await freshStoreWithBundle();
     const job = await store.createJob({ bundleId: BUNDLE_ID, selection, inputVersion: RUN_1.inputVersion });
     await store.close();
@@ -293,8 +296,10 @@ describe('LocalFileStore: Job lifecycle and orphan/restart finalization', () => 
   it('rejects appending to or finalizing an already-terminal Job', async () => {
     const store = await freshStoreWithBundle();
     const job = await store.createJob({ bundleId: BUNDLE_ID, selection, inputVersion: RUN_1.inputVersion });
-    await store.markJobRunning(job.jobId, RUN_1_ID);
+    await store.startJob(job.jobId, RUN_1_ID);
+    await store.advanceJob(job.jobId, 'capturing');
     await store.commitRun({ bundleId: BUNDLE_ID, run: RUN_1, revisions: [PRIMARY_ACTIVE_REVISION], coverage: RUN_1.coverage });
+    await store.advanceJob(job.jobId, 'writing');
     await store.finalizeJob(job.jobId, 'completed');
 
     await expect(store.finalizeJob(job.jobId, 'failed')).rejects.toThrow(V2ContractError);

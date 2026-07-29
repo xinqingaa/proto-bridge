@@ -1,6 +1,6 @@
 # PBWork 与 ProtoBridge V2 操作闭环
 
-> 状态：可进入实施
+> 状态：规范已固定；实施中
 > 权威范围：PBWork 中 Evidence 的选择、预检、采集、检查、恢复、重采和 Agent Handoff
 > 上位目标：[V2 产品闭环与实施总览](./pb-v2-overview.md)
 > 语义约束：[V2 核心规范](./pb-v2-spec.md)
@@ -430,7 +430,7 @@ PBWork 操作闭环完成必须通过：
 - 当前 Screen：从已握手 Runtime 建立 Draft，经 Preflight 和 Matrix 生成 Snapshot；
 - Fragment：稳定 `pbId/pbKey` 可提交，临时 selector 被阻止并可定位修复；
 - 自定义范围：逐 Screen Variant/Scenario 策略展开结果与 Core 一致；
-- 整个 Prototype：all 策略、容量和超限行为明确；
+- 整个 Prototype：all 策略、容量和超限行为明确；重复回归只验证 Selection/Matrix 和任务拆分，不逐页执行全部 Capture；
 - warning：未确认或 Draft 变化时不能创建 Job；
 - partial：成功 Evidence 保留，失败范围可生成新 Draft；
 - cancel：停止新 Case，已完成结果可终结为 partial Snapshot；

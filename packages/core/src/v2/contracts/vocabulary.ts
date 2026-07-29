@@ -94,16 +94,31 @@ export const RunTerminationReason = z.enum(RUN_TERMINATION_REASONS);
 export type RunTerminationReason = z.infer<typeof RunTerminationReason>;
 
 /**
- * Capture Job lifecycle (pb-v2-spec.md "Run、Attempt、Revision 与 Snapshot"):
- * a Job is a persisted execution control record that must be recoverable
- * across a Service restart and must eventually reach a terminal status.
- * `accepted`/`running` are non-terminal; every other status is terminal.
+ * Capture Job lifecycle (pbwork-pb-v2-workflow.md "Job 执行状态"). These
+ * values are the only public execution-state vocabulary; Service, PBWork
+ * and CLI must not collapse the four observable phases into a private
+ * `running` state.
  */
-export const JOB_STATUSES = ['accepted', 'running', 'completed', 'failed', 'cancelled', 'interrupted'] as const;
+export const JOB_STATUSES = [
+  'queued',
+  'discovering',
+  'capturing',
+  'writing',
+  'completed',
+  'cancelled',
+  'interrupted',
+  'failed',
+] as const;
 export const JobStatus = z.enum(JOB_STATUSES);
 export type JobStatus = z.infer<typeof JobStatus>;
 
-export const JOB_TERMINAL_STATUSES = new Set<JobStatus>(['completed', 'failed', 'cancelled', 'interrupted']);
+export const JOB_EXECUTING_STATUSES = ['discovering', 'capturing', 'writing'] as const;
+export type ExecutingJobStatus = (typeof JOB_EXECUTING_STATUSES)[number];
+
+export const JOB_TERMINAL_STATUS_VALUES = ['completed', 'cancelled', 'interrupted', 'failed'] as const;
+export type TerminalJobStatus = (typeof JOB_TERMINAL_STATUS_VALUES)[number];
+
+export const JOB_TERMINAL_STATUSES = new Set<JobStatus>(JOB_TERMINAL_STATUS_VALUES);
 
 export function isTerminalJobStatus(status: JobStatus): boolean {
   return JOB_TERMINAL_STATUSES.has(status);

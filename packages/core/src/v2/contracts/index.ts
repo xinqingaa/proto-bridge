@@ -2,6 +2,7 @@ export * from './version.js';
 export * from './errors.js';
 export * from './ids.js';
 export * from './vocabulary.js';
+export * from './workspace.js';
 export * from './fragment.js';
 export * from './scope.js';
 export * from './case.js';

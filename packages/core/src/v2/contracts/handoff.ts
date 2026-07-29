@@ -10,6 +10,7 @@ import {
   StalenessReportId,
   WorkspaceId,
 } from './ids.js';
+import { computeScopeKey, NormalizedCaptureScope } from './scope.js';
 import { CoverageStatus, FreshnessStatus, RiskKind } from './vocabulary.js';
 import { V2_SCHEMA_MAJOR } from './version.js';
 
@@ -22,20 +23,51 @@ export const Risk = z
   .strict();
 export type Risk = z.infer<typeof Risk>;
 
-/**
- * A Handoff must fix a concrete revision (and its relevant Attempt) for
- * every selected Case + Capture Scope; it can never resolve to "latest" at
- * consumption time (pb-v2-spec.md "Agent Handoff 与消费").
- */
+const HandoffCaseBase = {
+  caseId: CaseId,
+  captureScope: NormalizedCaptureScope,
+  scopeKey: ScopeKey,
+};
+
+function validateHandoffCaseScope(
+  ref: { captureScope: z.infer<typeof NormalizedCaptureScope>; scopeKey: z.infer<typeof ScopeKey> },
+  ctx: z.RefinementCtx,
+): void {
+  const expectedScopeKey = computeScopeKey(ref.captureScope);
+  if (ref.scopeKey !== expectedScopeKey) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `scopeKey does not match computeScopeKey(captureScope): expected ${expectedScopeKey}`,
+      path: ['scopeKey'],
+    });
+  }
+}
+
+/** An available active Evidence revision plus the Snapshot-fixed relevant Attempt. */
 export const ResolvedCaseRef = z
   .object({
-    caseId: CaseId,
-    scopeKey: ScopeKey,
+    ...HandoffCaseBase,
+    resolution: z.literal('resolved'),
     revisionId: CaseEvidenceRevisionId,
     relevantAttemptId: AttemptId,
   })
-  .strict();
+  .strict()
+  .superRefine(validateHandoffCaseScope);
 export type ResolvedCaseRef = z.infer<typeof ResolvedCaseRef>;
+
+/** A selected Case/Scope with no matching active revision; a failed Attempt may still explain the missing Evidence. */
+export const MissingCaseRef = z
+  .object({
+    ...HandoffCaseBase,
+    resolution: z.literal('missing'),
+    relevantAttemptId: AttemptId.optional(),
+  })
+  .strict()
+  .superRefine(validateHandoffCaseScope);
+export type MissingCaseRef = z.infer<typeof MissingCaseRef>;
+
+export const HandoffCaseRef = z.union([ResolvedCaseRef, MissingCaseRef]);
+export type HandoffCaseRef = z.infer<typeof HandoffCaseRef>;
 
 export const RiskAcknowledgement = z
   .object({
@@ -62,7 +94,7 @@ export const AgentHandoff = z
     snapshotId: SnapshotId,
     createdAt: z.string().datetime(),
     implementationIntent: z.string().optional(),
-    selectedCases: z.array(ResolvedCaseRef).min(1),
+    selectedCases: z.array(HandoffCaseRef).min(1),
     coverageStatus: CoverageStatus,
     freshnessStatus: FreshnessStatus,
     stalenessReportId: StalenessReportId,
@@ -74,6 +106,13 @@ export const AgentHandoff = z
   })
   .strict()
   .superRefine((handoff, ctx) => {
+    if (!handoff.selectedCases.some((selectedCase) => selectedCase.resolution === 'resolved')) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'a Handoff must contain at least one selected Case with available Evidence',
+        path: ['selectedCases'],
+      });
+    }
     const hasRisks = handoff.risks.length > 0;
     if (hasRisks && handoff.riskAcknowledgement === undefined) {
       ctx.addIssue({

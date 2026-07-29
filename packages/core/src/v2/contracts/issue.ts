@@ -1,6 +1,7 @@
 import { z } from 'zod';
-import { CaseId } from './ids.js';
+import { CaseId, IssueId } from './ids.js';
 import { IssueSeverity } from './vocabulary.js';
+import { V2_SCHEMA_MAJOR } from './version.js';
 
 /**
  * pb-v2-spec.md "Coverage、Issue 与 stale": every Issue must carry severity,
@@ -10,7 +11,8 @@ import { IssueSeverity } from './vocabulary.js';
  */
 export const Issue = z
   .object({
-    issueId: z.string().min(1),
+    schemaVersion: z.literal(V2_SCHEMA_MAJOR),
+    issueId: IssueId,
     severity: IssueSeverity,
     reason: z.string().min(1),
     affectedCaseIds: z.array(CaseId).default([]),
