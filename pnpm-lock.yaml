@@ -123,6 +123,22 @@ importers:
         specifier: ^3.2.7
         version: 3.2.7(@types/node@22.19.17)(jsdom@26.1.0)(tsx@4.21.0)(yaml@2.8.3)
 
+  packages/local-service:
+    dependencies:
+      '@proto-bridge/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      tsx:
+        specifier: ^4.19.2
+        version: 4.21.0
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.7
+        version: 3.2.7(@types/node@22.19.17)(jsdom@26.1.0)(tsx@4.21.0)(yaml@2.8.3)
+
   packages/mcp-server:
     dependencies:
       '@proto-bridge/core':

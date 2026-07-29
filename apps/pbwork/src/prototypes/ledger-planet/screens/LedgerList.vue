@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { CalendarRange, ChevronLeft, ChevronRight, RotateCcw } from "lucide-vue-next";
+import {
+  CalendarRange,
+  ChevronLeft,
+  ChevronRight,
+  RotateCcw,
+} from "lucide-vue-next";
 import LedgerPlanetShell from "../LedgerPlanetShell.vue";
 import DateRangeSheet from "../DateRangeSheet.vue";
 import Button from "@/design-system/components/basic/Button.vue";
@@ -49,9 +54,7 @@ const type = ref(
     ? String(route.query.type)
     : "全部",
 );
-const category = ref(
-  variant.value === "filtered" ? "餐饮" : "全部",
-);
+const category = ref(variant.value === "filtered" ? "餐饮" : "全部");
 const account = ref("全部");
 const amountMin = ref("");
 const amountMax = ref("");
@@ -76,7 +79,9 @@ const filteredRecords = computed(() => {
       ? ledgerRecords.filter((item) => item.dayLabel === "今天")
       : range.value === "week"
         ? ledgerRecords.filter((item) =>
-            ["今天", "昨天", "7月15日", "7月14日", "7月13日"].includes(item.dayLabel),
+            ["今天", "昨天", "7月15日", "7月14日", "7月13日"].includes(
+              item.dayLabel,
+            ),
           )
         : ledgerRecords;
   if (type.value !== "全部") {
@@ -93,13 +98,21 @@ const filteredRecords = computed(() => {
   const keyword = search.value.trim().toLowerCase();
   if (keyword) {
     rows = rows.filter((item) =>
-      [item.title, item.category, item.merchant, item.note, ...(item.tags ?? [])]
+      [
+        item.title,
+        item.category,
+        item.merchant,
+        item.note,
+        ...(item.tags ?? []),
+      ]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(keyword)),
     );
   }
-  if (amountMin.value) rows = rows.filter((item) => item.amount >= Number(amountMin.value));
-  if (amountMax.value) rows = rows.filter((item) => item.amount <= Number(amountMax.value));
+  if (amountMin.value)
+    rows = rows.filter((item) => item.amount >= Number(amountMin.value));
+  if (amountMax.value)
+    rows = rows.filter((item) => item.amount <= Number(amountMax.value));
   return rows;
 });
 
@@ -107,7 +120,9 @@ const visibleRecords = computed(() =>
   filteredRecords.value.slice(0, visibleLimit.value),
 );
 const groups = computed(() => groupRecordsByDay(visibleRecords.value));
-const hasMore = computed(() => visibleLimit.value < filteredRecords.value.length);
+const hasMore = computed(
+  () => visibleLimit.value < filteredRecords.value.length,
+);
 const expense = computed(() =>
   filteredRecords.value
     .filter((item) => item.type === "expense")
@@ -197,18 +212,32 @@ function loadMore() {
         />
         <template v-else>
           <div class="range-nav" data-no-swipe>
-            <button type="button" aria-label="上一个周期"><ChevronLeft :size="19" /></button>
+            <button type="button" aria-label="上一个周期">
+              <ChevronLeft :size="19" />
+            </button>
             <button class="range-main" type="button" @click="timeSheet = true">
               <CalendarRange :size="18" />
-              <span><strong>{{ rangeLabel }}</strong><small>点击切换日 / 周 / 月 / 年</small></span>
+              <span
+                ><strong>{{ rangeLabel }}</strong
+                ><small>点击切换日 / 周 / 月 / 年</small></span
+              >
             </button>
-            <button type="button" aria-label="下一个周期"><ChevronRight :size="19" /></button>
+            <button type="button" aria-label="下一个周期">
+              <ChevronRight :size="19" />
+            </button>
           </div>
 
           <section class="result-summary">
-            <div><span>支出</span><strong>¥ {{ formatMoney(expense) }}</strong></div>
-            <div><span>收入</span><strong>¥ {{ formatMoney(income) }}</strong></div>
-            <div><span>结余</span><strong>¥ {{ formatMoney(income - expense) }}</strong></div>
+            <div>
+              <span>支出</span><strong>¥ {{ formatMoney(expense) }}</strong>
+            </div>
+            <div>
+              <span>收入</span><strong>¥ {{ formatMoney(income) }}</strong>
+            </div>
+            <div>
+              <span>结余</span
+              ><strong>¥ {{ formatMoney(income - expense) }}</strong>
+            </div>
           </section>
 
           <SearchBar
@@ -223,19 +252,37 @@ function loadMore() {
             @filter="filterSheet = true"
           />
 
-          <div v-if="activeFilterCount > 0 || category !== '全部'" class="active-filters" data-no-swipe>
+          <div
+            v-if="activeFilterCount > 0 || category !== '全部'"
+            class="active-filters"
+            data-no-swipe
+          >
             <Chip v-if="category !== '全部'" :label="category" tone="primary" />
             <Chip v-if="account !== '全部'" :label="account" tone="secondary" />
-            <Chip v-if="amountMin || amountMax" label="金额范围" tone="secondary" />
-            <button type="button" @click="resetFilters"><RotateCcw :size="14" />清除</button>
+            <Chip
+              v-if="amountMin || amountMax"
+              label="金额范围"
+              tone="secondary"
+            />
+            <button type="button" @click="resetFilters">
+              <RotateCcw :size="14" />清除
+            </button>
           </div>
 
-          <section v-for="group in groups" :key="group.dayLabel" class="day-group">
+          <section
+            v-for="group in groups"
+            :key="group.dayLabel"
+            class="day-group"
+          >
             <header>
               <strong>{{ group.dayLabel }}</strong>
               <span>支出 ¥ {{ formatMoney(group.total) }}</span>
             </header>
-            <DataList surface="none" rounded="none">
+            <DataList
+              surface="none"
+              rounded="none"
+              :inspect-id="`ledger-planet.ledger-list.group.${group.items[0]?.date.slice(0, 10)}`"
+            >
               <button
                 v-for="item in group.items"
                 :key="item.id"
@@ -243,14 +290,22 @@ function loadMore() {
                 class="record-row"
                 @click="goDetail(item.id)"
               >
-                <span class="category-mark">{{ item.category.slice(0, 1) }}</span>
+                <span class="category-mark">{{
+                  item.category.slice(0, 1)
+                }}</span>
                 <div>
                   <strong>{{ item.title }}</strong>
-                  <span>{{ item.merchant || item.account }} · {{ item.account }} · {{ item.date.slice(11, 16) }}</span>
-                  <small v-if="item.tags?.length">{{ item.tags.join(" · ") }}</small>
+                  <span
+                    >{{ item.merchant || item.account }} · {{ item.account }} ·
+                    {{ item.date.slice(11, 16) }}</span
+                  >
+                  <small v-if="item.tags?.length">{{
+                    item.tags.join(" · ")
+                  }}</small>
                 </div>
                 <em :class="item.type">
-                  {{ item.type === "expense" ? "−" : "+" }}{{ formatMoney(item.amount) }}
+                  {{ item.type === "expense" ? "−" : "+"
+                  }}{{ formatMoney(item.amount) }}
                 </em>
               </button>
             </DataList>
@@ -280,9 +335,21 @@ function loadMore() {
       inspect-id="ledger-planet.ledger-list.filter-sheet"
     >
       <div class="sheet-form">
-        <RadioGroup v-model="type" label="收支类型" :options="['全部', '支出', '收入']" />
-        <SelectField v-model="category" label="分类" :options="['全部', ...categoryOptions]" />
-        <SelectField v-model="account" label="账户" :options="['全部', ...accountOptions]" />
+        <RadioGroup
+          v-model="type"
+          label="收支类型"
+          :options="['全部', '支出', '收入']"
+        />
+        <SelectField
+          v-model="category"
+          label="分类"
+          :options="['全部', ...categoryOptions]"
+        />
+        <SelectField
+          v-model="account"
+          label="账户"
+          :options="['全部', ...accountOptions]"
+        />
         <div class="amount-row">
           <TextField v-model="amountMin" label="最低金额" />
           <TextField v-model="amountMax" label="最高金额" />

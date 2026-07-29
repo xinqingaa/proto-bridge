@@ -48,13 +48,16 @@ export const RuntimeCheckpointManifest = z
     requiredFragments: z.array(RuntimeFragmentIdentity),
   })
   .strict();
-export type RuntimeCheckpointManifest = z.infer<typeof RuntimeCheckpointManifest>;
+export type RuntimeCheckpointManifest = z.infer<
+  typeof RuntimeCheckpointManifest
+>;
 
 export const RuntimeScenarioManifest = z
   .object({
     scenarioId: StableId,
     ownerScreenId: StableId,
     initialVariantId: StableId,
+    critical: z.boolean().default(false),
     actionIds: z.array(StableId).min(1),
     checkpoints: z.array(RuntimeCheckpointManifest).min(1),
   })
@@ -153,7 +156,10 @@ const ReadinessRequest = z
   .object({
     kind: z.literal('readiness'),
     expected: RuntimeActualDimensions.omit({ viewport: true }).extend({
-      viewport: RuntimeActualDimensions.shape.viewport.pick({ width: true, height: true }),
+      viewport: RuntimeActualDimensions.shape.viewport.pick({
+        width: true,
+        height: true,
+      }),
     }),
     requiredFragments: z.array(RuntimeFragmentIdentity).default([]),
   })
@@ -189,7 +195,9 @@ export const RuntimeCaptureRequestPayload = z.discriminatedUnion('kind', [
   ExecuteActionRequest,
   VerifyCheckpointRequest,
 ]);
-export type RuntimeCaptureRequestPayload = z.infer<typeof RuntimeCaptureRequestPayload>;
+export type RuntimeCaptureRequestPayload = z.infer<
+  typeof RuntimeCaptureRequestPayload
+>;
 
 export const RuntimeCaptureRequest = z
   .object({
@@ -248,7 +256,9 @@ export const RuntimeExecuteActionSuccess = successEnvelope(
 );
 export const RuntimeVerifyCheckpointSuccess = successEnvelope(
   'verify-checkpoint',
-  z.object({ checkpointId: StableId, actual: RuntimeActualDimensions }).strict(),
+  z
+    .object({ checkpointId: StableId, actual: RuntimeActualDimensions })
+    .strict(),
 );
 
 export const RUNTIME_CAPTURE_ERROR_CODES = [

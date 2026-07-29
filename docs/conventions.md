@@ -12,8 +12,8 @@
 ## 1. 原则
 
 1. **约定先于启发式膨胀**：当前用清晰的 tag、class、角色与 shell 语义表达页面；不要发明引擎认不出的临时层容器。
-2. **Source 管逻辑，Runtime 管可见事实**：未打开的弹层可为 `source-only`，但源码中必须存在完整 UI shell 树。  
-3. **状态可切换**：复杂页用 Variant 驱动 Tab、Sheet 等，便于多次 capture。  
+2. **Source 管逻辑，Runtime 管可见事实**：未打开的弹层可为 `source-only`，但源码中必须存在完整 UI shell 树。
+3. **状态可切换**：复杂页用 Variant 驱动 Tab、Sheet 等，便于多次 capture。
 4. **角色表保持中立**：当前由 `vue3-prototype` 产出；未来 React 与显式属性协议仍映射到同一套 section / uiShell 语义，不另起业务词表。
 5. **组件库是实现细节**：选用 Vuetify、Vant 或自研组件，都必须满足本文当前识别面。
 
@@ -21,12 +21,12 @@
 
 ## 2. 页面与变体
 
-| 要求 | 说明 |
-|------|------|
-| 稳定身份 | 每页有稳定 `route` / `screenId`，进入页面注册表 |
-| Variant | 同页业务态显式可切换（如 query、store 标志）：空态、Tab、Sheet 开合等 |
-| 一变体一产物 | 需还原的多态分别 capture / generate |
-| 列表数据可静态见到 | 列表循环与选项集合应在源码中出现，避免仅运行时字符串拼出整棵 UI |
+| 要求               | 说明                                                                  |
+| ------------------ | --------------------------------------------------------------------- |
+| 稳定身份           | 每页有稳定 `route` / `screenId`，进入页面注册表                       |
+| Variant            | 同页业务态显式可切换（如 query、store 标志）：空态、Tab、Sheet 开合等 |
+| 一变体一产物       | 需还原的多态分别 capture / generate                                   |
+| 列表数据可静态见到 | 列表循环与选项集合应在源码中出现，避免仅运行时字符串拼出整棵 UI       |
 
 ---
 
@@ -34,16 +34,16 @@
 
 逻辑区块用下列 **kind** 表达（与当前 source 模型对齐）：
 
-| kind | 含义 |
-|------|------|
-| `app-bar` | 顶栏 |
-| `tab-bar` | 页内 Tab |
-| `list` | 列表区 |
-| `chart` | 图表区 |
-| `bottom-bar` | 底栏 / 底部操作区 |
-| `modal` | 弹层类区块在 section 层的统称（细分类见 §4 shell kind） |
-| `section` | 普通内容块（卡片、面板、指标组等） |
-| `unknown` | 未归类；应尽量少用 |
+| kind         | 含义                                                    |
+| ------------ | ------------------------------------------------------- |
+| `app-bar`    | 顶栏                                                    |
+| `tab-bar`    | 页内 Tab                                                |
+| `list`       | 列表区                                                  |
+| `chart`      | 图表区                                                  |
+| `bottom-bar` | 底栏 / 底部操作区                                       |
+| `modal`      | 弹层类区块在 section 层的统称（细分类见 §4 shell kind） |
+| `section`    | 普通内容块（卡片、面板、指标组等）                      |
+| `unknown`    | 未归类；应尽量少用                                      |
 
 派生语义角色包括：`header`、`tabs`、`section-tabs`、`list`、`modal`、`bottom-actions`、`summary`、`content-section`、`chart`。
 
@@ -51,15 +51,15 @@
 
 当前引擎依靠 tag、class、title 和模板结构识别。生产者应保证这些识别面清晰，不要依赖与 UI 语义无关的偶然类名：
 
-| kind | 当前推荐识别面 |
-|------|----------------|
-| `app-bar` | 名称或 class 含 `app-bar` / `navbar` / `nav-bar` / `toolbar`；或语义化顶栏标签 |
-| `tab-bar` | 含 `tab` / `tab-bar`；页内分段可用明确的 `section-tabs` 语义 |
-| `list` | 含 `list`，或模板片段包含列表循环；行数据应有源码级循环/集合 |
-| `chart` | 含 `chart` / `trend` / `donut` 等图表语义 |
-| `bottom-bar` | 含 `bottom-bar` / `footer` / `bottom-actions` 等底部操作区命名 |
-| `section` | 含 `section` / `card` / `panel` 等块级语义 |
-| `modal`（section） | 含 `modal` / `popup` / `sheet` / `dialog`（细 shell 仍以 §4 为准） |
+| kind               | 当前推荐识别面                                                                 |
+| ------------------ | ------------------------------------------------------------------------------ |
+| `app-bar`          | 名称或 class 含 `app-bar` / `navbar` / `nav-bar` / `toolbar`；或语义化顶栏标签 |
+| `tab-bar`          | 含 `tab` / `tab-bar`；页内分段可用明确的 `section-tabs` 语义                   |
+| `list`             | 含 `list`，或模板片段包含列表循环；行数据应有源码级循环/集合                   |
+| `chart`            | 含 `chart` / `trend` / `donut` 等图表语义                                      |
+| `bottom-bar`       | 含 `bottom-bar` / `footer` / `bottom-actions` 等底部操作区命名                 |
+| `section`          | 含 `section` / `card` / `panel` 等块级语义                                     |
+| `modal`（section） | 含 `modal` / `popup` / `sheet` / `dialog`（细 shell 仍以 §4 为准）             |
 
 ---
 
@@ -69,12 +69,12 @@
 
 ### 4.1 Shell kind
 
-| kind | 用途 | 是否默认进入“必须实现的 UI shell” |
-|------|------|------------------------------------|
-| `sheet` | 底部筛选 / 操作板 | 是（有业务/筛选证据时） |
-| `dialog` / `modal` | 居中确认、详情 | 是 |
-| `drawer` | 侧滑面板 | 按页面需要 |
-| `popover` / `toast` | 轻量提示 | 默认可不进入必做 shell |
+| kind                | 用途              | 是否默认进入“必须实现的 UI shell” |
+| ------------------- | ----------------- | --------------------------------- |
+| `sheet`             | 底部筛选 / 操作板 | 是（有业务/筛选证据时）           |
+| `dialog` / `modal`  | 居中确认、详情    | 是                                |
+| `drawer`            | 侧滑面板          | 按页面需要                        |
+| `popover` / `toast` | 轻量提示          | 默认可不进入必做 shell            |
 
 ### 4.2 Overlay 根节点应满足
 
@@ -89,10 +89,10 @@
 
 ### 4.3 状态命名
 
-| 建议 | 说明 |
-|------|------|
-| `*Open` / `*Visible` / `show*` | 控制 shell 显隐 |
-| 业务态与 shell 态分开 | 例如 `activeTab` vs `filterSheetOpen` |
+| 建议                           | 说明                                  |
+| ------------------------------ | ------------------------------------- |
+| `*Open` / `*Visible` / `show*` | 控制 shell 显隐                       |
+| 业务态与 shell 态分开          | 例如 `activeTab` vs `filterSheetOpen` |
 
 ### 4.4 禁止项
 
@@ -109,10 +109,12 @@ Runtime snapshot 另有一套可见角色，如 `app-bar`、`tab-bar`、`list`�
 
 V2 instrumented Runtime 使用独立 Capture Protocol：语义节点同时携带 `data-pb-id` 与 `data-pb-role`；重复实例共享模板 `data-pb-id`，并用非敏感、业务稳定的 `data-pb-key` 区分。禁止把数组 index、CSS selector、DOM path、随机 class 或 Workbench 临时 handle 持久化为 Fragment identity。
 
-| 冲突时 | 裁决 |
-|--------|------|
-| 逻辑架构、未打开的 shell、状态意图 | **Source** |
-| 可见文案、bbox、当前屏布局 | **Runtime / screenshot** |
+正式 Fragment Capture 在 Preflight 中重新打开隔离 Runtime，并验证 `screenId + data-pb-id + data-pb-key` 唯一解析且 readiness/semantic snapshot 一致。检查器当前选中的临时 DOM handle 或 selector 只能帮助定位；缺少稳定身份、重复模板缺少 `data-pb-key`、或目标在准备后的页面中不存在时都必须阻止创建 Job。
+
+| 冲突时                             | 裁决                     |
+| ---------------------------------- | ------------------------ |
+| 逻辑架构、未打开的 shell、状态意图 | **Source**               |
+| 可见文案、bbox、当前屏布局         | **Runtime / screenshot** |
 
 Source 有 `chart` kind；runtime 不一定有独立 `chart` role。细节词表以附录为准，随 Core 演进可更新附录而不改 §3–4 的角色含义。
 
@@ -122,17 +124,17 @@ Source 有 `chart` kind；runtime 不一定有独立 `chart` role。细节词表
 
 本规范不规定使用哪个组件库。当前对接某库时，组件的 tag 或 class 必须能够命中 §3–4；**PBWork（Vue + Vuetify）的具体写法与强制 `data-pb-*` 见 [design.md §19 PB 源码约定](./design.md#19-pb-源码约定)**。
 
-| 约定角色 / shell | 选用组件（PBWork） | 如何满足当前识别面 | 备注 |
-|------------------|--------------------|--------------------|------|
-| `app-bar` | `v-app-bar` 或顶栏根 | class 含 `app-bar` / `navbar` / `toolbar` | 同时写 `data-pb-role` + `data-pb-id` |
-| `tab-bar` | `v-tabs` 外层 | class 含 `tab-bar` / `section-tabs` | `data-pb-role="tab-bar"` |
-| `list` | `v-list` 或列表容器 | class 含 `list`；行在源码循环中 | 行节点写 `data-pb-id` |
-| `section` | `v-card` / 面板根 | class 含 `section` / `card` / `panel` | `data-pb-role="section"` |
-| `chart` | 图表容器 | class 含 `chart` / `trend` 等 | `data-pb-role="chart"` |
-| `bottom-bar` | 底部操作区 | class 含 `bottom-bar` / `bottom-actions` | `data-pb-role="bottom-bar"` |
-| `sheet` | `v-bottom-sheet` 内容根 | 显隐绑定 + class 含 `sheet` | `data-pb-shell="sheet"` |
-| `dialog` / `modal` | `v-dialog` 内容根 | 显隐绑定 + class 含 `dialog` / `modal` | `data-pb-shell` |
-| `drawer` | 临时侧滑层 | 显隐绑定 + class 含 `drawer` | `data-pb-shell="drawer"` |
+| 约定角色 / shell   | 选用组件（PBWork）      | 如何满足当前识别面                        | 备注                                 |
+| ------------------ | ----------------------- | ----------------------------------------- | ------------------------------------ |
+| `app-bar`          | `v-app-bar` 或顶栏根    | class 含 `app-bar` / `navbar` / `toolbar` | 同时写 `data-pb-role` + `data-pb-id` |
+| `tab-bar`          | `v-tabs` 外层           | class 含 `tab-bar` / `section-tabs`       | `data-pb-role="tab-bar"`             |
+| `list`             | `v-list` 或列表容器     | class 含 `list`；行在源码循环中           | 行节点写 `data-pb-id`                |
+| `section`          | `v-card` / 面板根       | class 含 `section` / `card` / `panel`     | `data-pb-role="section"`             |
+| `chart`            | 图表容器                | class 含 `chart` / `trend` 等             | `data-pb-role="chart"`               |
+| `bottom-bar`       | 底部操作区              | class 含 `bottom-bar` / `bottom-actions`  | `data-pb-role="bottom-bar"`          |
+| `sheet`            | `v-bottom-sheet` 内容根 | 显隐绑定 + class 含 `sheet`               | `data-pb-shell="sheet"`              |
+| `dialog` / `modal` | `v-dialog` 内容根       | 显隐绑定 + class 含 `dialog` / `modal`    | `data-pb-shell`                      |
+| `drawer`           | 临时侧滑层              | 显隐绑定 + class 含 `drawer`              | `data-pb-shell="drawer"`             |
 
 规则：换库只换映射方式，不改本文的角色与 shell 定义。
 
@@ -142,11 +144,11 @@ Source 有 `chart` kind；runtime 不一定有独立 `chart` role。细节词表
 
 ## 7. 后续 source 能力
 
-| 项 | 说明 |
-|----|------|
-| 显式 `data-pb-role` / `data-pb-shell` | V2 instrumented Runtime 已消费稳定属性；后续扩展全量 Registry 与 Source adapter |
-| `react-prototype` | 读取 React 源码并映射到本文同一角色表 |
-| 中立 Source IR | 统一承载 `sections / state / interactions / routes / lifecycle / uiShells / tokens` |
+| 项                                    | 说明                                                                                |
+| ------------------------------------- | ----------------------------------------------------------------------------------- |
+| 显式 `data-pb-role` / `data-pb-shell` | V2 instrumented Runtime 已消费稳定属性；后续扩展全量 Registry 与 Source adapter     |
+| `react-prototype`                     | 读取 React 源码并映射到本文同一角色表                                               |
+| 中立 Source IR                        | 统一承载 `sections / state / interactions / routes / lifecycle / uiShells / tokens` |
 
 这三项作为同一组 source 能力统一设计：显式属性提供跨组件库的稳定语义，Vue / React adapter 将框架源码映射到同一 IR。它们是未来扩展方向，不是当前工作台或真实 Vue 项目的迁移前置。
 
@@ -158,17 +160,17 @@ Source 有 `chart` kind；runtime 不一定有独立 `chart` role。细节词表
 
 ### A.1 Source `inferSectionKind`（haystack = tag + class + title）
 
-- `bottom-bar`：`bottom-bar` / `footer`  
-- `modal`：`modal` / `popup` / `sheet` / `dialog`  
-- `app-bar`：`app-bar` / `navbar` / `nav-bar` / `header` / `toolbar`  
-- `tab-bar`：`section-tabs` / `section-chip` / `tab` / `tab-bar`  
+- `bottom-bar`：`bottom-bar` / `footer`
+- `modal`：`modal` / `popup` / `sheet` / `dialog`
+- `app-bar`：`app-bar` / `navbar` / `nav-bar` / `header` / `toolbar`
+- `tab-bar`：`section-tabs` / `section-chip` / `tab` / `tab-bar`
 - `chart`：lexicon `chartTerms`，如 chart、donut、trend、indicator
-- `list`：lexicon `listTerms`，或模板片段含列表循环指令  
+- `list`：lexicon `listTerms`，或模板片段含列表循环指令
 - `section`：lexicon `sectionTerms`，如 section、card、panel、metric
 
 ### A.2 Source `isOverlayRoot`
 
-1. tag 名以 `sheet|modal|popup|dialog|drawer` 结尾；或  
+1. tag 名以 `sheet|modal|popup|dialog|drawer` 结尾；或
 2. 存在 `v-model` / `v-if`，且 class 像 `sheet-backdrop` / `modal` / `popup` / `dialog` / `drawer`。
 
 ### A.3 Runtime `SnapshotNodeRole`（节选）
@@ -189,5 +191,5 @@ Source 有 `chart` kind；runtime 不一定有独立 `chart` role。细节词表
 ## 相关文档
 
 - [design.md](./design.md) — 原型工作台范围与 Vue / Vuetify 写法
-- [artifacts.md](./artifacts.md) — `overlayPlan` 等产物字段  
+- [artifacts.md](./artifacts.md) — `overlayPlan` 等产物字段
 - [overview.md](./overview.md) — 证据分层与适配器

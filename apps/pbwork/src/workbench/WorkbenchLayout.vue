@@ -66,6 +66,7 @@ import {
   GalleryHorizontal,
   Command,
   Home,
+  ScanLine,
 } from "lucide-vue-next";
 import { RouterLink, RouterView, useRoute } from "vue-router";
 import {
@@ -747,6 +748,15 @@ onMounted(() => {
         <kbd><Command :size="11" />K</kbd>
       </button>
       <span class="header-divider" />
+      <v-btn
+        to="/workbench/capture"
+        variant="tonal"
+        color="primary"
+        class="capture-console-link"
+      >
+        <ScanLine :size="17" />
+        证据采集
+      </v-btn>
       <v-tooltip :text="themeLabel" location="bottom">
         <template #activator="{ props }">
           <v-btn

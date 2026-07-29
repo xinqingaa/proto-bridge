@@ -9,9 +9,9 @@ description: Use when modifying the proto-bridge repository itself — core capa
 
 ## 必读顺序
 
-1. `AGENT.md` — 本仓库硬约束与验证矩阵  
-2. 相关产品文档：`docs/overview.md` / `docs/artifacts.md` / `docs/usage.md` / `docs/design.md` / `docs/conventions.md`  
-3. 本 skill — 落点与检查单  
+1. `AGENT.md` — 本仓库硬约束与验证矩阵
+2. 相关产品文档：`docs/overview.md` / `docs/artifacts.md` / `docs/usage.md` / `docs/design.md` / `docs/conventions.md`
+3. 本 skill — 落点与检查单
 
 ## 代码地图
 
@@ -35,7 +35,6 @@ skills/pbwork-prototype/         # 做/改 pbwork 原型与 DS 用法
 apps/pbwork/docs/                # Token / 组件 / 原型组装手册
 ```
 
-
 入口包只做 IO 适配；共享行为进 `packages/core`。
 
 ## 架构红线
@@ -54,43 +53,44 @@ apps/pbwork/docs/                # Token / 组件 / 原型组装手册
 
 ## 改动落点检查单
 
-| 改什么 | 主要落点 | 必同步 |
-| --- | --- | --- |
-| 编排 / 输入组合 | `workflows/capability-first` | `docs/overview.md`、`docs/usage.md` |
-| 单能力行为 | `capabilities/*` + 对应 source/snapshot/target | 相关 docs；必要时 e2e |
-| Plan / review 字段 | `types/planning.ts`、planner、artifact writer、ui.review | **`docs/artifacts.md`** |
-| Canonical / debug index | evidence types、page.merge、writers | `docs/artifacts.md` |
-| CLI 参数 / 交互 | `packages/cli` | `docs/usage.md`、CLI usage 文案 |
-| MCP tools / prompts | `packages/mcp-server` | `docs/usage.md` |
-| Config schema | `packages/core/src/config` | `docs/usage.md`、example config |
-| PBWork 工作台产品（Playground / Bridge / 画布） | `apps/pbwork/` | `docs/design.md` |
-| PBWork **做/改业务原型与 DS 组件用法** | `apps/pbwork/src/prototypes`、`design-system` | **`skills/pbwork-prototype`** + `apps/pbwork/docs`（软链 `docs/pbwork`） |
-| 原型识别约定 | 当前 source/runtime 启发式或未来契约标记 | **`docs/conventions.md`**、`docs/design.md` |
-| 本仓工作流规范 | `AGENT.md`、本 skill | README 导航 |
+| 改什么                                          | 主要落点                                                                    | 必同步                                                                     |
+| ----------------------------------------------- | --------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| 编排 / 输入组合                                 | `workflows/capability-first`                                                | `docs/overview.md`、`docs/usage.md`                                        |
+| 单能力行为                                      | `capabilities/*` + 对应 source/snapshot/target                              | 相关 docs；必要时 e2e                                                      |
+| Plan / review 字段                              | `types/planning.ts`、planner、artifact writer、ui.review                    | **`docs/artifacts.md`**                                                    |
+| Canonical / debug index                         | evidence types、page.merge、writers                                         | `docs/artifacts.md`                                                        |
+| CLI 参数 / 交互                                 | `packages/cli`                                                              | `docs/usage.md`、CLI usage 文案                                            |
+| MCP tools / prompts                             | `packages/mcp-server`                                                       | `docs/usage.md`                                                            |
+| Config schema                                   | `packages/core/src/config`                                                  | `docs/usage.md`、example config                                            |
+| PBWork 工作台产品（Playground / Bridge / 画布） | `apps/pbwork/`                                                              | `docs/design.md`                                                           |
+| PBWork V2 Capture / Local Service               | `apps/pbwork/src/capture`、`packages/local-service`、`packages/core/src/v2` | `docs/plans/pb-v2-overview.md`、`docs/plans/pb-v2-implementation-guide.md` |
+| PBWork **做/改业务原型与 DS 组件用法**          | `apps/pbwork/src/prototypes`、`design-system`                               | **`skills/pbwork-prototype`** + `apps/pbwork/docs`（软链 `docs/pbwork`）   |
+| 原型识别约定                                    | 当前 source/runtime 启发式或未来契约标记                                    | **`docs/conventions.md`**、`docs/design.md`                                |
+| 本仓工作流规范                                  | `AGENT.md`、本 skill                                                        | README 导航                                                                |
 
 ## 改产物契约时
 
-1. 先改 `packages/core/src/types/` 中的类型。  
-2. 改 planner / merge / writer，保证写出形状与类型一致。  
-3. 更新 `docs/artifacts.md` 字段说明。  
-4. 跑 `pnpm run typecheck`；涉及 CLI/MCP 契约时跑对应 e2e。  
+1. 先改 `packages/core/src/types/` 中的类型。
+2. 改 planner / merge / writer，保证写出形状与类型一致。
+3. 更新 `docs/artifacts.md` 字段说明。
+4. 跑 `pnpm run typecheck`；涉及 CLI/MCP 契约时跑对应 e2e。
 5. 若 review 投影依赖新字段，同步 `ui.review` 渲染逻辑。
 
 ## 改入口时
 
-1. CLI flag 与 MCP argument 命名、语义对齐。  
-2. Screenshot/OCR：**MCP 支持** `screenshotPath` / `ocrText` / `ocrBoxes`；CLI 仅 `--url` + `--capture`。文档勿写反。  
+1. CLI flag 与 MCP argument 命名、语义对齐。
+2. Screenshot/OCR：**MCP 支持** `screenshotPath` / `ocrText` / `ocrBoxes`；CLI 仅 `--url` + `--capture`。文档勿写反。
 3. 更新 `docs/usage.md`。
 
 ## 回归选择
 
-| 范围 | 命令 |
-| --- | --- |
-| 任意 TS | `pnpm run typecheck`（必要时 `pnpm run build`） |
-| config | `pnpm run test:config` |
-| CLI / artifact 写出 | `pnpm run test:e2e:cli` |
-| MCP / validate | `pnpm run test:e2e:mcp` |
-| 原型工作台 / Source 约定文档 | 同步 `docs/design.md`、`docs/conventions.md` |
+| 范围                         | 命令                                            |
+| ---------------------------- | ----------------------------------------------- |
+| 任意 TS                      | `pnpm run typecheck`（必要时 `pnpm run build`） |
+| config                       | `pnpm run test:config`                          |
+| CLI / artifact 写出          | `pnpm run test:e2e:cli`                         |
+| MCP / validate               | `pnpm run test:e2e:mcp`                         |
+| 原型工作台 / Source 约定文档 | 同步 `docs/design.md`、`docs/conventions.md`    |
 
 不要提交：
 

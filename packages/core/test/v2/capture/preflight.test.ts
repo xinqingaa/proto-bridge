@@ -7,7 +7,9 @@ import {
 } from '../../../src/v2/capture/index.js';
 import { V2ContractError } from '../../../src/v2/contracts/errors.js';
 
-function manifest(inputVersion = 'registry-task-list-v2'): RuntimeCaptureManifest {
+function manifest(
+  inputVersion = 'registry-task-list-v2',
+): RuntimeCaptureManifest {
   return {
     protocolVersion: 2,
     inputVersion,
@@ -48,6 +50,7 @@ function manifest(inputVersion = 'registry-task-list-v2'): RuntimeCaptureManifes
             scenarioId: 'open-claimable-task',
             ownerScreenId: 'ledger-planet.task-list',
             initialVariantId: 'default',
+            critical: true,
             actionIds: ['open-claimable-task'],
             checkpoints: [
               {
@@ -172,10 +175,23 @@ describe('V2 Selection normalization and Preflight', () => {
     expect(resolved.matrix[0]?.selectedCase.caseId).not.toContain('t2');
   });
 
+  it('expands only explicitly critical Scenarios for the critical policy', () => {
+    const criticalDraft = draft();
+    criticalDraft.screens[0]!.variants = { mode: 'default' };
+    criticalDraft.screens[0]!.scenarios = { mode: 'critical' };
+    const resolved = resolveSelectionMatrix(criticalDraft, manifest());
+    expect(resolved.matrix).toHaveLength(2);
+    expect(
+      resolved.matrix.filter(
+        (entry) => entry.selectedCase.caseKey.scenario !== undefined,
+      ),
+    ).toHaveLength(1);
+  });
+
   it('blocks over-limit Matrix and unaccepted source warnings', () => {
-    expect(() => preflightSelection(draft(), manifest(), { maxCases: 2 })).toThrow(
-      V2ContractError,
-    );
+    expect(() =>
+      preflightSelection(draft(), manifest(), { maxCases: 2 }),
+    ).toThrow(V2ContractError);
     const sourceDraft = draft();
     sourceDraft.screens[0]!.captureScope.sourcePolicy = true;
     const preflight = preflightSelection(sourceDraft, manifest());

@@ -2,5 +2,8 @@ export * from './devices.js';
 export * from './selection.js';
 export * from './preflight.js';
 export * from './runtime-client.js';
+export * from './runtime-preflight.js';
 export * from './playwright-driver.js';
 export * from './orchestrator.js';
+export * from './job-host.js';
+export * from './handoff.js';

@@ -143,6 +143,7 @@ export type PrototypeCheckpoint = {
 export type PrototypeScenario = {
   id: string;
   initialVariantId: string;
+  critical?: boolean;
   actionIds: string[];
   checkpoints: PrototypeCheckpoint[];
 };

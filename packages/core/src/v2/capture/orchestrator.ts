@@ -6,12 +6,20 @@ import {
   CaseEvidenceRevision,
   type CaseEvidenceRevision as CaseEvidenceRevisionType,
 } from '../contracts/evidence.js';
-import { CoverageSummary, type CoverageSummary as CoverageSummaryType } from '../contracts/coverage.js';
+import {
+  CoverageSummary,
+  type CoverageSummary as CoverageSummaryType,
+} from '../contracts/coverage.js';
 import { Run, type Run as RunType } from '../contracts/run.js';
 import { computeScopeKey } from '../contracts/scope.js';
-import { evidenceLevelAtLeast, type AttemptResult, type EvidenceLevel } from '../contracts/vocabulary.js';
+import {
+  evidenceLevelAtLeast,
+  type AttemptResult,
+  type EvidenceLevel,
+} from '../contracts/vocabulary.js';
 import { V2_SCHEMA_MAJOR } from '../contracts/version.js';
 import type { BundleSnapshot } from '../contracts/snapshot.js';
+import type { JobId } from '../contracts/ids.js';
 import type { V2Store } from '../store/types.js';
 import { generateOperationalId } from '../store/id-generator.js';
 import type { CapturedBinary, CaseCaptureDriver } from './playwright-driver.js';
@@ -28,6 +36,8 @@ export type CaptureOrchestratorInput = {
   preflight: CapturePreflight;
   runtimeBaseUrl: string;
   driver: CaseCaptureDriver;
+  /** A Job already durably accepted by CaptureJobHost/Local Service. */
+  jobId?: JobId;
   signal?: AbortSignal;
   now?: () => Date;
 };
@@ -41,7 +51,8 @@ export type CaptureOrchestratorResult = {
 
 type PendingBinary = {
   binary: CapturedBinary;
-  owner: { kind: 'revision'; objectId: string } | { kind: 'run'; objectId: string };
+  owner:
+    { kind: 'revision'; objectId: string } | { kind: 'run'; objectId: string };
 };
 
 function emptyCounts(selected: number): CoverageSummaryType['counts'] {
@@ -98,7 +109,10 @@ function coverageFor(
 }
 
 function resultReason(error: unknown): string {
-  return (error instanceof Error ? error.message : String(error)).slice(0, 2000);
+  return (error instanceof Error ? error.message : String(error)).slice(
+    0,
+    2000,
+  );
 }
 
 function attemptResultToTermination(
@@ -123,11 +137,25 @@ export async function capturePreflightToStore(
   assertPreflightReady(input.preflight);
   const now = input.now ?? (() => new Date());
   const runId = generateOperationalId('run', now());
-  const job = await input.store.createJob({
-    bundleId: input.bundleId,
-    selection: input.preflight.selection,
-    inputVersion: input.preflight.inputVersion,
-  });
+  const job = input.jobId
+    ? await input.store.getJob(input.jobId)
+    : await input.store.createJob({
+        bundleId: input.bundleId,
+        selection: input.preflight.selection,
+        inputVersion: input.preflight.inputVersion,
+      });
+  if (!job) {
+    throw new Error(`Capture Job ${input.jobId} no longer exists.`);
+  }
+  if (
+    job.bundleId !== input.bundleId ||
+    job.inputVersion !== input.preflight.inputVersion ||
+    JSON.stringify(job.selection) !== JSON.stringify(input.preflight.selection)
+  ) {
+    throw new Error(
+      `Capture Job ${job.jobId} does not match the fixed Preflight input.`,
+    );
+  }
   await input.store.startJob(job.jobId, runId);
   await input.store.advanceJob(job.jobId, 'capturing');
 
@@ -142,6 +170,10 @@ export async function capturePreflightToStore(
       break;
     }
     const startedAt = now().toISOString();
+    await input.store.appendJobJournal(job.jobId, {
+      event: 'case-started',
+      detail: entry.selectedCase.caseId,
+    });
     const scopeKey = computeScopeKey(entry.selectedCase.captureScope);
     const inputDigest = digestCaptureInput({
       manifestDigest: input.preflight.manifestDigest,
@@ -171,6 +203,10 @@ export async function capturePreflightToStore(
         }),
       );
       revisions.push(reusable);
+      await input.store.appendJobJournal(job.jobId, {
+        event: 'case-finished',
+        detail: `${entry.selectedCase.caseId}:reused`,
+      });
       continue;
     }
 
@@ -201,6 +237,10 @@ export async function capturePreflightToStore(
             endedAt: now().toISOString(),
           }),
         );
+        await input.store.appendJobJournal(job.jobId, {
+          event: 'case-finished',
+          detail: `${entry.selectedCase.caseId}:unsupported`,
+        });
         continue;
       }
       const revisionId = generateOperationalId('revision', now());
@@ -250,9 +290,14 @@ export async function capturePreflightToStore(
           owner: { kind: 'revision', objectId: revisionId },
         });
       }
+      await input.store.appendJobJournal(job.jobId, {
+        event: 'case-finished',
+        detail: `${entry.selectedCase.caseId}:captured`,
+      });
     } catch (error) {
-      const result: AttemptResult =
-        input.signal?.aborted ? 'cancelled' : 'failed';
+      const result: AttemptResult = input.signal?.aborted
+        ? 'cancelled'
+        : 'failed';
       if (result === 'cancelled') cancelled = true;
       attempts.push(
         CaseAttempt.parse({
@@ -276,6 +321,13 @@ export async function capturePreflightToStore(
           });
         }
       }
+      await input.store.appendJobJournal(job.jobId, {
+        event: 'case-finished',
+        detail:
+          result === 'failed'
+            ? `${entry.selectedCase.caseId}:${result}:${resultReason(error)}`
+            : `${entry.selectedCase.caseId}:${result}`,
+      });
     }
   }
 
@@ -317,18 +369,28 @@ export async function capturePreflightToStore(
 
   await input.store.advanceJob(job.jobId, 'writing');
   try {
-    const committed = await input.store.commitRun({
-      bundleId: input.bundleId,
-      run,
-      revisions: revisions.filter((revision) =>
-        attempts.some(
-          (attempt) =>
-            attempt.result === 'captured' &&
-            attempt.revisionId === revision.revisionId,
-        ),
+    const newlyCaptured = revisions.filter((revision) =>
+      attempts.some(
+        (attempt) =>
+          attempt.result === 'captured' &&
+          attempt.revisionId === revision.revisionId,
       ),
-      coverage,
-    });
+    );
+    const existingBundle = await input.store.getBundle(input.bundleId);
+    const committed = existingBundle
+      ? await input.store.commitRun({
+          bundleId: input.bundleId,
+          run,
+          revisions: newlyCaptured,
+          coverage,
+        })
+      : await input.store.createBundle({
+          bundleId: input.bundleId,
+          prototypeId: input.preflight.selection.prototypeId,
+          run,
+          revisions: newlyCaptured,
+          coverage,
+        });
     const storedBlobIds: string[] = [];
     for (const pending of pendingBinaries) {
       try {

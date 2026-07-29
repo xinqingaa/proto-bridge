@@ -16,7 +16,10 @@ export type V2ErrorCode =
   | 'bundle-archived'
   | 'capacity-exceeded'
   | 'blob-rejected'
-  | 'clean-plan-stale';
+  | 'clean-plan-stale'
+  | 'unsafe-input'
+  | 'preflight-expired'
+  | 'unauthorized';
 
 export class V2ContractError extends Error {
   readonly code: V2ErrorCode;
@@ -30,7 +33,10 @@ export class V2ContractError extends Error {
   }
 }
 
-export function invalidSchemaError(objectKind: string, error: ZodError): V2ContractError {
+export function invalidSchemaError(
+  objectKind: string,
+  error: ZodError,
+): V2ContractError {
   return new V2ContractError(
     'invalid-schema',
     `${objectKind} failed schema validation: ${error.issues.map((issue) => `${issue.path.join('.') || '<root>'}: ${issue.message}`).join('; ')}`,
@@ -38,11 +44,21 @@ export function invalidSchemaError(objectKind: string, error: ZodError): V2Contr
   );
 }
 
-export function unknownReferenceError(objectKind: string, ref: unknown): V2ContractError {
-  return new V2ContractError('unknown-reference', `${objectKind} reference does not resolve: ${JSON.stringify(ref)}`, ref);
+export function unknownReferenceError(
+  objectKind: string,
+  ref: unknown,
+): V2ContractError {
+  return new V2ContractError(
+    'unknown-reference',
+    `${objectKind} reference does not resolve: ${JSON.stringify(ref)}`,
+    ref,
+  );
 }
 
-export function ambiguousReferenceError(objectKind: string, candidates: unknown[]): V2ContractError {
+export function ambiguousReferenceError(
+  objectKind: string,
+  candidates: unknown[],
+): V2ContractError {
   return new V2ContractError(
     'ambiguous-reference',
     `${objectKind} resolution is ambiguous between ${candidates.length} candidates with no unique minimal covering item.`,

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeMount, onBeforeUnmount, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router";
 import {
   loadPrototypes,
   loadPrototypeScreens,
@@ -19,6 +19,7 @@ import {
 import { useCanvasStore } from "@/app/stores/canvas";
 import { useWorkbenchStore } from "@/app/stores/workbench";
 import { useSelectionStore } from "@/app/stores/selection";
+import { useCaptureStore } from "@/app/stores/capture";
 import CanvasToolbar from "@/workbench/canvas/CanvasToolbar.vue";
 import PhoneStage from "@/workbench/canvas/PhoneStage.vue";
 
@@ -32,6 +33,7 @@ const router = useRouter();
 const canvas = useCanvasStore();
 const workbench = useWorkbenchStore();
 const selection = useSelectionStore();
+const capture = useCaptureStore();
 
 const stageRef = ref<InstanceType<typeof PhoneStage> | null>(null);
 const iframeWindow = ref<Window | null>(null);
@@ -42,6 +44,7 @@ const routeError = ref<string | null>(null);
 let copyTimer: ReturnType<typeof setTimeout> | null = null;
 let handshakeTimer: ReturnType<typeof setTimeout> | null = null;
 let handshakeRetryTimer: ReturnType<typeof setTimeout> | null = null;
+let suppressRuntimeNavigation = false;
 
 const prototype = computed(() =>
   loadPrototypes().find((item) => item.id === props.prototypeId),
@@ -213,6 +216,20 @@ function copyAndOpenRuntime() {
   void copyLink({ openRuntime: true });
 }
 
+function captureCurrentScreen() {
+  if (!resolved.value.ok) return;
+  capture.beginCurrentScreen({
+    prototypeId: resolved.value.prototype.id,
+    screenId: resolved.value.screen.screenId,
+    variantId: resolved.value.variant.id,
+    themeId: resolved.value.theme.id,
+    deviceId: canvas.deviceId,
+    returnTo: route.fullPath,
+  });
+  suppressRuntimeNavigation = true;
+  void router.push("/workbench/capture");
+}
+
 function postToRuntime(
   message: ReturnType<typeof createWorkbenchEnvelope>,
 ): boolean {
@@ -324,6 +341,7 @@ function applyRuntimeNavigation(
   canonicalRuntimeUrl: string,
   navigation: "push" | "replace" | "back" = "replace",
 ) {
+  if (suppressRuntimeNavigation) return;
   let parsed: URL;
   try {
     parsed = new URL(canonicalRuntimeUrl, window.location.origin);
@@ -384,6 +402,7 @@ function applyRuntimeNavigation(
 }
 
 function onWindowMessage(event: MessageEvent) {
+  if (suppressRuntimeNavigation) return;
   if (event.origin !== window.location.origin) return;
   if (!iframeWindow.value || event.source !== iframeWindow.value) return;
   if (!isBridgeMessage(event.data)) return;
@@ -469,6 +488,10 @@ function onWindowMessage(event: MessageEvent) {
   }
 }
 
+function onWorkbenchNavigateAway() {
+  suppressRuntimeNavigation = true;
+}
+
 function onShellKeydown(event: KeyboardEvent) {
   if (event.key !== "Escape") return;
   if (selection.selected) {
@@ -499,6 +522,7 @@ function onShellKeydown(event: KeyboardEvent) {
 watch(
   absoluteRuntimeUrl,
   (next) => {
+    if (suppressRuntimeNavigation) return;
     routeError.value = null;
     if (!iframeSrc.value) {
       iframeSrc.value = next;
@@ -541,10 +565,14 @@ watch(
 
 watch(() => selection.highlightNonce, sendHighlightRequest);
 
-watch(
-  () => {
-    if (!resolved.value.ok || !prototype.value || !screen.value) return null;
-    return workbenchPathFromRuntimeUrl(
+onBeforeRouteLeave(() => {
+  // Ignore late iframe messages once PBWork starts leaving this Screen.
+  suppressRuntimeNavigation = true;
+});
+
+onBeforeMount(() => {
+  if (resolved.value.ok && prototype.value && screen.value) {
+    const canonicalWorkbenchPath = workbenchPathFromRuntimeUrl(
       buildCanonicalRuntimeUrl({
         prototypeId: prototype.value.id,
         screenSlug: screen.value.screenSlug,
@@ -553,24 +581,27 @@ watch(
         query: resolved.value.query,
       }),
     );
-  },
-  (canonicalWorkbenchPath) => {
-    if (!canonicalWorkbenchPath) return;
-    if (route.fullPath === canonicalWorkbenchPath) return;
-    void router.replace(canonicalWorkbenchPath);
-  },
-  { immediate: true },
-);
-
-onBeforeMount(() => {
+    const lacksCanonicalDimensions =
+      typeof route.query.variant !== "string" ||
+      typeof route.query.theme !== "string";
+    if (
+      canonicalWorkbenchPath &&
+      lacksCanonicalDimensions &&
+      route.fullPath !== canonicalWorkbenchPath
+    ) {
+      void router.replace(canonicalWorkbenchPath);
+    }
+  }
   window.addEventListener("message", onWindowMessage);
   window.addEventListener("keydown", onShellKeydown);
+  window.addEventListener("pbwork:navigate-away", onWorkbenchNavigateAway);
 });
 
 onBeforeUnmount(() => {
   document.body.classList.remove("pb-canvas-fullscreen");
   window.removeEventListener("message", onWindowMessage);
   window.removeEventListener("keydown", onShellKeydown);
+  window.removeEventListener("pbwork:navigate-away", onWorkbenchNavigateAway);
   pendingRuntimeUrl = null;
   if (copyTimer) clearTimeout(copyTimer);
   if (handshakeTimer) clearTimeout(handshakeTimer);
@@ -627,6 +658,17 @@ onBeforeUnmount(() => {
       @iframe-load="onIframeLoad"
     />
 
+    <v-btn
+      class="capture-current-action"
+      color="primary"
+      size="small"
+      :disabled="!selection.runtimeReady || !resolved.ok"
+      data-testid="capture-current-screen"
+      @click="captureCurrentScreen"
+    >
+      采集当前页面
+    </v-btn>
+
     <CanvasToolbar
       :variants="screen.variants"
       :themes="themes"
@@ -670,5 +712,11 @@ onBeforeUnmount(() => {
 
 .canvas-alert {
   margin: 8px 12px 0;
+}
+.capture-current-action {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  z-index: 8;
 }
 </style>

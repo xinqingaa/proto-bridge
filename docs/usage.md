@@ -7,10 +7,10 @@
 
 ## 环境
 
-- Node.js 20+  
-- Flutter target repository（生成面向客户端的 plan / validation 通常需要）  
-- 可选：prototype / source repository  
-- 可选：可访问的 prototype URL（runtime capture）  
+- Node.js 20+
+- Flutter target repository（生成面向客户端的 plan / validation 通常需要）
+- 可选：prototype / source repository
+- 可选：可访问的 prototype URL（runtime capture）
 
 ## 安装
 
@@ -68,14 +68,14 @@ CLI args / MCP tool args > proto-bridge.config.json > defaults
 
 ## 输入组合
 
-| 输入 | 可运行 | 调用能力 | 入口 |
-| --- | --- | --- | --- |
-| source + target | 是 | source.analyze、target.inspect、merge、plan、review | CLI / MCP |
-| URL + target | 是 | runtime.capture、target.inspect、merge、plan、review | CLI / MCP |
-| source + URL + target | 是（推荐完整重建） | source + runtime + target + merge + plan + review | CLI / MCP |
-| screenshot / OCR + target | 是 | screenshot.attach、target.inspect、merge、plan、review | **仅 MCP**（`screenshotPath` / `ocrText` / `ocrBoxes`） |
-| 已实现 target diff | validation | ui.validate | MCP `validate_ui_build` |
-| target only | 不生成页面上下文 | 可读 conventions 或做 validation | MCP |
+| 输入                      | 可运行             | 调用能力                                               | 入口                                                    |
+| ------------------------- | ------------------ | ------------------------------------------------------ | ------------------------------------------------------- |
+| source + target           | 是                 | source.analyze、target.inspect、merge、plan、review    | CLI / MCP                                               |
+| URL + target              | 是                 | runtime.capture、target.inspect、merge、plan、review   | CLI / MCP                                               |
+| source + URL + target     | 是（推荐完整重建） | source + runtime + target + merge + plan + review      | CLI / MCP                                               |
+| screenshot / OCR + target | 是                 | screenshot.attach、target.inspect、merge、plan、review | **仅 MCP**（`screenshotPath` / `ocrText` / `ocrBoxes`） |
+| 已实现 target diff        | validation         | ui.validate                                            | MCP `validate_ui_build`                                 |
+| target only               | 不生成页面上下文   | 可读 conventions 或做 validation                       | MCP                                                     |
 
 CLI 支持 `--url` / `--route` / `--vue` 与 `--capture`；**不提供**独立 screenshot/OCR 参数。有 `source.root` 时，URL 会推导 route 并补充源码证据。
 
@@ -149,12 +149,12 @@ args = [
 
 Tools：
 
-| Tool | 作用 |
-| --- | --- |
+| Tool                       | 作用                     |
+| -------------------------- | ------------------------ |
 | `reconstruct_page_context` | 生成页面上下文与实现产物 |
-| `read_target_conventions` | 读取目标工程规范 |
-| `find_target_examples` | 搜索相似目标文件 / 片段 |
-| `validate_ui_build` | 验证目标变更 |
+| `read_target_conventions`  | 读取目标工程规范         |
+| `find_target_examples`     | 搜索相似目标文件 / 片段  |
+| `validate_ui_build`        | 验证目标变更             |
 
 Hybrid 示例：
 
@@ -187,33 +187,33 @@ Validation 示例：
 
 ### Agent 消费流程（目标工程实现）
 
-1. `reconstruct_page_context`  
+1. `reconstruct_page_context`
 2. 读 `ui-build-review.md` 和截图，确认页面架构、流程、风险及人工修订
 3. 必读 `ui-build-plan.json` 的 `canonicalReadPolicy`、`implementationContract`、`visualPlan`、`stylePlan` 和交互字段
 4. `canonicalReadPolicy.required=true` 时按 refs 必读 `page-canonical.json`；否则在证据冲突或采集异常时读取。需要 B 细节时调用 `read_target_conventions` / `find_target_examples`
-5. 在 target Flutter 仓库实现  
-6. format / analyze / tests  
-7. `validate_ui_build`  
+5. 在 target Flutter 仓库实现
+6. format / analyze / tests
+7. `validate_ui_build`
 
 ---
 
 ## Core 嵌入
 
 ```ts
-import { reconstructPageContext } from '@proto-bridge/core/workflows/capability-first';
+import { reconstructPageContext } from "@proto-bridge/core/workflows/capability-first";
 
 const result = await reconstructPageContext({
   source: {
-    adapter: 'vue3-prototype',
-    root: '/path/to/vue3-prototype',
+    adapter: "vue3-prototype",
+    root: "/path/to/vue3-prototype",
   },
   target: {
-    adapter: 'flutter-app',
-    root: '/path/to/flutter-project',
+    adapter: "flutter-app",
+    root: "/path/to/flutter-project",
   },
-  route: '/prototype/ledger-planet/task-list',
-  url: 'http://127.0.0.1:5173/prototype/ledger-planet/task-list?variant=default&theme=light',
-  outDir: './output/pnl-analysis',
+  route: "/prototype/ledger-planet/task-list",
+  url: "http://127.0.0.1:5173/prototype/ledger-planet/task-list?variant=default&theme=light",
+  outDir: "./output/pnl-analysis",
   capture: true,
   buildPlan: true,
   buildReview: true,
@@ -225,11 +225,11 @@ console.log(result.files.uiBuildPlan);
 单独 validation：
 
 ```ts
-import { validateUiCapability } from '@proto-bridge/core/capabilities';
+import { validateUiCapability } from "@proto-bridge/core/capabilities";
 
 const result = await validateUiCapability({
-  targetRoot: '/path/to/flutter-project',
-  allowedPaths: ['lib/features/example'],
+  targetRoot: "/path/to/flutter-project",
+  allowedPaths: ["lib/features/example"],
 });
 ```
 
@@ -237,20 +237,24 @@ const result = await validateUiCapability({
 
 ## 仓库开发命令
 
-| 命令 | 作用 |
-| --- | --- |
-| `pnpm run build` | 构建 core / cli / mcp-server |
-| `pnpm run typecheck` | 三包 TypeScript 检查 |
-| `pnpm run lint` | 当前等同 typecheck |
-| `pnpm run dev` | CLI 源码开发入口 |
-| `pnpm run generate -- ...` | 构建后跑本地 `proto-bridge generate` |
-| `pnpm run test` | Core 必要单元测试 |
-| `pnpm run test:config` | Core config 解析测试 |
-| `pnpm run test:e2e:cli` | CLI hybrid artifacts 冒烟 |
-| `pnpm run test:e2e:mcp` | MCP hybrid 协议与 validation 冒烟 |
-| `pnpm run test:e2e` | CLI + MCP hybrid 冒烟 |
+| 命令                       | 作用                                                    |
+| -------------------------- | ------------------------------------------------------- |
+| `pnpm run build`           | 构建 core / local-service / cli / mcp-server            |
+| `pnpm run typecheck`       | core / local-service / cli / mcp-server TypeScript 检查 |
+| `pnpm run lint`            | 当前等同 typecheck                                      |
+| `pnpm run dev`             | CLI 源码开发入口                                        |
+| `pnpm run pbwork`          | 构建 Core 后同时启动 PBWork 与 V2 Local Service         |
+| `pnpm run pbwork:service`  | 只启动 V2 Local Service                                 |
+| `pnpm run generate -- ...` | 构建后跑本地 `proto-bridge generate`                    |
+| `pnpm run test`            | Core 必要单元测试                                       |
+| `pnpm run test:config`     | Core config 解析测试                                    |
+| `pnpm run test:e2e:cli`    | CLI hybrid artifacts 冒烟                               |
+| `pnpm run test:e2e:mcp`    | MCP hybrid 协议与 validation 冒烟                       |
+| `pnpm run test:e2e`        | CLI + MCP hybrid 冒烟                                   |
 
 e2e 默认使用 `tests/fixtures/`；`url`、`sourceRoot`、`targetRoot` 可用参数覆盖，见根 `package.json` 与 `scripts/test-e2e.mjs`。
+
+Local Service 默认只监听 loopback。可用 `PB_V2_SERVICE_PORT`、`PB_V2_STORE_ROOT`、`PBWORK_ORIGIN` 与 `PBWORK_RUNTIME_ORIGIN` 调整本地端口、Store 和明确 Origin；session token 只经 `Authorization` header 传递。阶段五完成前没有正式 V2 CLI/MCP 命令，PBWork Capture Console 是 V2 的正式交互入口。
 
 改本仓库的约束与检查单：`AGENT.md`、`skills/proto-bridge`。
 

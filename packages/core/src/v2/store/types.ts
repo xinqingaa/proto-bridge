@@ -22,7 +22,10 @@ import type { NormalizedSelection, Run } from '../contracts/run.js';
 import type { BundleSnapshot } from '../contracts/snapshot.js';
 import type { StalenessReport } from '../contracts/staleness.js';
 import type { CoverageSummary } from '../contracts/coverage.js';
-import type { ExecutingJobStatus, TerminalJobStatus } from '../contracts/vocabulary.js';
+import type {
+  ExecutingJobStatus,
+  TerminalJobStatus,
+} from '../contracts/vocabulary.js';
 import type { EvidenceLevel } from '../contracts/vocabulary.js';
 import type { NormalizedCaptureScope } from '../contracts/scope.js';
 
@@ -143,24 +146,44 @@ export interface V2Store {
   init(): Promise<InitResult>;
   close(): Promise<void>;
 
-  createBundle(input: CreateBundleInput): Promise<{ bundle: Bundle; run: Run; snapshot: BundleSnapshot }>;
+  createBundle(
+    input: CreateBundleInput,
+  ): Promise<{ bundle: Bundle; run: Run; snapshot: BundleSnapshot }>;
   getBundle(bundleId: BundleId): Promise<Bundle | undefined>;
+  listBundles(): Promise<Bundle[]>;
   archiveBundle(bundleId: BundleId): Promise<Bundle>;
-  forkBundle(input: ForkBundleInput): Promise<{ bundle: Bundle; snapshot: BundleSnapshot }>;
+  forkBundle(
+    input: ForkBundleInput,
+  ): Promise<{ bundle: Bundle; snapshot: BundleSnapshot }>;
 
   createJob(input: CreateJobInput): Promise<CaptureJob>;
   startJob(jobId: JobId, runId: RunId): Promise<CaptureJob>;
-  advanceJob(jobId: JobId, status: Exclude<ExecutingJobStatus, 'discovering'>): Promise<CaptureJob>;
-  appendJobJournal(jobId: JobId, entry: JobJournalEntryInput): Promise<CaptureJob>;
+  advanceJob(
+    jobId: JobId,
+    status: Exclude<ExecutingJobStatus, 'discovering'>,
+  ): Promise<CaptureJob>;
+  appendJobJournal(
+    jobId: JobId,
+    entry: JobJournalEntryInput,
+  ): Promise<CaptureJob>;
   finalizeJob(jobId: JobId, status: TerminalJobStatus): Promise<CaptureJob>;
   getJob(jobId: JobId): Promise<CaptureJob | undefined>;
+  listJobs(): Promise<CaptureJob[]>;
   listNonTerminalJobs(): Promise<CaptureJob[]>;
 
   getRun(bundleId: BundleId, runId: RunId): Promise<Run | undefined>;
-  getEvidenceRevision(bundleId: BundleId, revisionId: CaseEvidenceRevisionId): Promise<CaseEvidenceRevision | undefined>;
+  listRuns(bundleId: BundleId): Promise<Run[]>;
+  getEvidenceRevision(
+    bundleId: BundleId,
+    revisionId: CaseEvidenceRevisionId,
+  ): Promise<CaseEvidenceRevision | undefined>;
+  listEvidenceRevisions(bundleId: BundleId): Promise<CaseEvidenceRevision[]>;
 
   getActiveSnapshot(bundleId: BundleId): Promise<BundleSnapshot | undefined>;
-  getSnapshot(bundleId: BundleId, snapshotId: SnapshotId): Promise<BundleSnapshot | undefined>;
+  getSnapshot(
+    bundleId: BundleId,
+    snapshotId: SnapshotId,
+  ): Promise<BundleSnapshot | undefined>;
   listSnapshotIds(bundleId: BundleId): Promise<SnapshotId[]>;
 
   /**
@@ -173,16 +196,31 @@ export interface V2Store {
   commitRun(input: CommitRunInput): Promise<CommitRunResult>;
 
   putCatalogRevision(revision: CatalogRevision): Promise<void>;
-  getCatalogRevision(bundleId: BundleId, revisionId: CatalogRevisionId): Promise<CatalogRevision | undefined>;
+  getCatalogRevision(
+    bundleId: BundleId,
+    revisionId: CatalogRevisionId,
+  ): Promise<CatalogRevision | undefined>;
   putBlob(input: PutBlobInput): Promise<BlobRecord>;
-  getBlob(bundleId: BundleId, blobId: BlobId): Promise<{ record: BlobRecord; bytes: Uint8Array } | undefined>;
-  findReusableEvidence(input: FindReusableEvidenceInput): Promise<CaseEvidenceRevision | undefined>;
-  createStalenessReport(input: CreateStalenessReportInput): Promise<StalenessReport>;
+  getBlob(
+    bundleId: BundleId,
+    blobId: BlobId,
+  ): Promise<{ record: BlobRecord; bytes: Uint8Array } | undefined>;
+  listBlobRecords(bundleId: BundleId): Promise<BlobRecord[]>;
+  findReusableEvidence(
+    input: FindReusableEvidenceInput,
+  ): Promise<CaseEvidenceRevision | undefined>;
+  createStalenessReport(
+    input: CreateStalenessReportInput,
+  ): Promise<StalenessReport>;
 
   putStalenessReport(report: StalenessReport): Promise<void>;
-  getStalenessReport(reportId: StalenessReportId): Promise<StalenessReport | undefined>;
+  getStalenessReport(
+    reportId: StalenessReportId,
+  ): Promise<StalenessReport | undefined>;
+  listStalenessReports(bundleId?: BundleId): Promise<StalenessReport[]>;
   putHandoff(handoff: AgentHandoff): Promise<void>;
   getHandoff(handoffId: HandoffId): Promise<AgentHandoff | undefined>;
+  listHandoffs(bundleId?: BundleId): Promise<AgentHandoff[]>;
 
   getCapacity(): Promise<StoreCapacity>;
   planClean(options?: { retainArchivedSnapshots?: number }): Promise<CleanPlan>;

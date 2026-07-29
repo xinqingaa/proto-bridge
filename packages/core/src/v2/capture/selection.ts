@@ -1,7 +1,18 @@
 import { z } from 'zod';
 import { CaseKey, computeCaseId } from '../contracts/case.js';
-import { DeviceId, IssueId, PrototypeId, ScenarioId, ScreenId, ThemeId, VariantId } from '../contracts/ids.js';
-import { CaptureScopeInput, normalizeCaptureScope } from '../contracts/scope.js';
+import {
+  DeviceId,
+  IssueId,
+  PrototypeId,
+  ScenarioId,
+  ScreenId,
+  ThemeId,
+  VariantId,
+} from '../contracts/ids.js';
+import {
+  CaptureScopeInput,
+  normalizeCaptureScope,
+} from '../contracts/scope.js';
 import type { NormalizedSelection, SelectedCase } from '../contracts/run.js';
 import type {
   RuntimeCaptureManifest,
@@ -18,14 +29,25 @@ export const VariantSelection = z.discriminatedUnion('mode', [
   z.object({ mode: z.literal('critical') }).strict(),
   z.object({ mode: z.literal('default-and-critical') }).strict(),
   z.object({ mode: z.literal('all') }).strict(),
-  z.object({ mode: z.literal('explicit'), variantIds: z.array(VariantId).min(1) }).strict(),
+  z
+    .object({
+      mode: z.literal('explicit'),
+      variantIds: z.array(VariantId).min(1),
+    })
+    .strict(),
 ]);
 export type VariantSelection = z.infer<typeof VariantSelection>;
 
 export const ScenarioSelection = z.discriminatedUnion('mode', [
   z.object({ mode: z.literal('none') }).strict(),
+  z.object({ mode: z.literal('critical') }).strict(),
   z.object({ mode: z.literal('all') }).strict(),
-  z.object({ mode: z.literal('explicit'), scenarioIds: z.array(ScenarioId).min(1) }).strict(),
+  z
+    .object({
+      mode: z.literal('explicit'),
+      scenarioIds: z.array(ScenarioId).min(1),
+    })
+    .strict(),
 ]);
 export type ScenarioSelection = z.infer<typeof ScenarioSelection>;
 
@@ -108,7 +130,8 @@ function selectedVariantIds(
   }
   const known = new Set(screen.variants.map((variant) => variant.variantId));
   for (const value of values) {
-    if (!known.has(value)) throw unknownReferenceError('Runtime Variant manifest', value);
+    if (!known.has(value))
+      throw unknownReferenceError('Runtime Variant manifest', value);
   }
   return [...new Set(values)].sort();
 }
@@ -121,16 +144,24 @@ function selectedScenarios(
   const values =
     selection.mode === 'all'
       ? screen.scenarios
-      : selection.scenarioIds.map((scenarioId) => {
-          const scenario = screen.scenarios.find(
-            (candidate) => candidate.scenarioId === scenarioId,
-          );
-          if (!scenario) throw unknownReferenceError('Runtime Scenario manifest', scenarioId);
-          return scenario;
-        });
-  return [...new Map(values.map((scenario) => [scenario.scenarioId, scenario])).values()].sort(
-    (a, b) => a.scenarioId.localeCompare(b.scenarioId),
-  );
+      : selection.mode === 'critical'
+        ? screen.scenarios.filter((scenario) => scenario.critical)
+        : selection.scenarioIds.map((scenarioId) => {
+            const scenario = screen.scenarios.find(
+              (candidate) => candidate.scenarioId === scenarioId,
+            );
+            if (!scenario)
+              throw unknownReferenceError(
+                'Runtime Scenario manifest',
+                scenarioId,
+              );
+            return scenario;
+          });
+  return [
+    ...new Map(
+      values.map((scenario) => [scenario.scenarioId, scenario]),
+    ).values(),
+  ].sort((a, b) => a.scenarioId.localeCompare(b.scenarioId));
 }
 
 function makeEntry(input: {
@@ -170,7 +201,11 @@ export function resolveSelectionMatrix(
   for (const screenDraft of [...draft.screens].sort((a, b) =>
     a.screenId.localeCompare(b.screenId),
   )) {
-    const screen = requireScreen(manifest, draft.prototypeId, screenDraft.screenId);
+    const screen = requireScreen(
+      manifest,
+      draft.prototypeId,
+      screenDraft.screenId,
+    );
     const variants = selectedVariantIds(screen, screenDraft.variants);
     const themes = [...new Set(screenDraft.themeIds)].sort();
     const devices = [...new Set(screenDraft.deviceIds)].sort();
@@ -266,9 +301,7 @@ export function resolveSelectionMatrix(
   });
   const seen = new Set<string>();
   for (const entry of entries) {
-    const identity = `${entry.selectedCase.caseId}#${JSON.stringify(
-      entry.selectedCase.captureScope,
-    )}`;
+    const identity = `${entry.selectedCase.caseId}#${JSON.stringify(entry.selectedCase.captureScope)}`;
     if (seen.has(identity)) {
       throw new V2ContractError(
         'invalid-schema',

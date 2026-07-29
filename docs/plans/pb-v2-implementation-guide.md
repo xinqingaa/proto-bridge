@@ -1,6 +1,6 @@
 # ProtoBridge V2 实施指南
 
-> 状态：实施中；阶段三已完成，可进入阶段四
+> 状态：实施中；阶段四已完成，可进入阶段五
 > 权威范围：当前仓库的推荐落点、实施顺序、测试、迁移和发布纪律
 > 上位目标：[V2 产品闭环与实施总览](./pb-v2-overview.md)
 > 不可违背语义：[V2 核心规范](./pb-v2-spec.md)
@@ -14,17 +14,18 @@
 
 截至 2026-07-29：
 
-| 当前能力                                                    | 真实位置                                                        | V2 处理或进度                                               |
-| ----------------------------------------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------- |
-| V2 Contract、fixtures、scope/active resolver                | `packages/core/src/v2/contracts`、`fixtures`、`resolver`        | 阶段一门禁已通过                                            |
-| V2 本地文件 Store、Job journal、Run/Snapshot commit         | `packages/core/src/v2/store`                                   | 阶段二门禁已通过                                            |
-| Core workflow、capabilities、capture、source/target adapter | `packages/core`                                                 | 作为 V2 业务语义和执行能力的初始承载                        |
-| V1 固定文件 Artifact writer                                 | `packages/core/src/artifacts`、`packages/core/src/capabilities` | V1 继续可用，阶段七删除                                     |
-| V2 Runtime Contract、Preflight、Matrix 与 Capture           | `packages/core/src/v2/runtime-contract`、`capture`               | 阶段三门禁已通过                                            |
-| CLI `init/generate`                                         | `packages/cli`                                                  | 尚未接入 V2；阶段五新增 V2 命令族，阶段七删除旧 generate    |
-| MCP page resources 和内存 PageStore                         | `packages/mcp-server`                                           | 尚未接入 V2；阶段五改为持久 Store Reader                    |
-| PBWork Registry、Runtime、Workbench Bridge                  | `apps/pbwork`                                                   | Registry 为 2 Prototype / 25 Screen / 82 Variant；`task-list` Capture Protocol 已实现，Console 尚未实现 |
-| Flutter Target 分析和 Planner                               | `packages/core/src/target/flutter-app`                          | 查询/验证能力保留，Planner 退出；阶段五建立独立边界         |
+| 当前能力                                                    | 真实位置                                                        | V2 处理或进度                                                          |
+| ----------------------------------------------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| V2 Contract、fixtures、scope/active resolver                | `packages/core/src/v2/contracts`、`fixtures`、`resolver`        | 阶段一门禁已通过                                                       |
+| V2 本地文件 Store、Job journal、Run/Snapshot commit         | `packages/core/src/v2/store`                                    | 阶段二门禁已通过                                                       |
+| Core workflow、capabilities、capture、source/target adapter | `packages/core`                                                 | 作为 V2 业务语义和执行能力的初始承载                                   |
+| V1 固定文件 Artifact writer                                 | `packages/core/src/artifacts`、`packages/core/src/capabilities` | V1 继续可用，阶段七删除                                                |
+| V2 Runtime Contract、Preflight、Matrix 与 Capture           | `packages/core/src/v2/runtime-contract`、`capture`              | 阶段三门禁已通过                                                       |
+| CLI `init/generate`                                         | `packages/cli`                                                  | 尚未接入 V2；阶段五新增 V2 命令族，阶段七删除旧 generate               |
+| MCP page resources 和内存 PageStore                         | `packages/mcp-server`                                           | 尚未接入 V2；阶段五改为持久 Store Reader                               |
+| PBWork Registry、Runtime、Capture Console                   | `apps/pbwork`                                                   | Registry 为 2 Prototype / 25 Screen / 82 Variant；阶段四操作闭环已完成 |
+| V2 Local Service                                            | `packages/local-service`                                        | 阶段四门禁已通过；只承载安全会话和 Core/Store/JobHost 适配             |
+| Flutter Target 分析和 Planner                               | `packages/core/src/target/flutter-app`                          | 查询/验证能力保留，Planner 退出；阶段五建立独立边界                    |
 
 当前已实现：
 
@@ -46,43 +47,47 @@
 - `ledger-planet.task-list` 的稳定 Marker、critical Variant、Action、Scenario、Checkpoint 与重复实例 `pbId + pbKey`；
 - instrumented、generic-runtime、screenshot-only 三种输入和固定三页浏览器基准；
 - `ledger-planet.task-list` 正反 fixtures 及 Contract/Store 测试。
+- `@proto-bridge/core/v2/service-contract`、隔离 Runtime Preflight、durable `CaptureJobHost` 与固定 Snapshot Handoff；
+- 仅本机监听、Origin/session/payload 受控的 Local Service，以及重启 orphan Job 的诚实终结；
+- PBWork 四类 Capture 入口、Draft/Preflight/Matrix、后台 Job、Coverage/Issue/Screenshot/stale、retry/fork/archive 和 Handoff；
+- 页面关闭后的 Job 恢复、仅重采 stale、逐项 warning/risk 确认和失败 Case 原因展示。
 
 当前仍不存在或尚未完成：
 
-- Local Service、PBWork Capture Console、V2 CLI 与 Store-backed MCP；
+- V2 CLI 与 Store-backed MCP；
 - Source adapter 与 `instrumented-source-runtime` 级别提升；阶段三保持 Runtime-only 的诚实降级，阶段六完成四级验收；
 - 25 Screen / 82 Variant 迁移台账；固定三页已建立阶段三基准，完整迁移验收仍在阶段六。
 
 ## 当前实施进度评估
 
-| 阶段 | 判断 | 已有证据 | 进入下一门禁前的主要缺口 |
-| ---- | ---- | -------- | ------------------------ |
-| 一：核心产品语义 | 已完成 | Workspace 与核心对象 Schema、统一状态枚举、正反 fixtures、scope resolver、防降级、固定 Handoff、通用引用断言和门禁测试通过 | 无 |
-| 二：证据模型与存储 | 已完成 | 原子 Bundle 首 Snapshot、immutable Store、Job 恢复、Catalog/Blob、依赖级 stale/复用、fork/archive、容量与 safe clean 的 Store tests 通过 | 无 |
-| 三：Runtime 与捕获 | 已完成 | Capture Protocol、稳定 Matrix、Scenario runner、三种输入、Playwright Orchestrator 与真实 Store 浏览器闭环通过 | 无 |
-| 四：PBWork 操作闭环 | 下一阶段 | 现有 Workbench、Router、inspect selection 与阶段三 Core Capture 可复用 | Local Service、Capture Console、四类 Draft、Job/结果/恢复/Handoff UI |
-| 五：CLI、MCP 与消费链路 | 未开始 | V1 CLI/MCP/Target query 可复用 | V2 producer CLI、Store Reader、Consumer、Target 解耦 |
-| 六：迁移与全链路验收 | 未开始 | Registry 已确认 2 Prototype / 25 Screen / 82 Variant | 迁移台账、3 页固定基准、四种 Evidence Level 与量化对比 |
-| 七：V1 退出与发布 | 未开始 | V1 仍保持可用 | 前六阶段门禁、旧链路删除、干净安装和 0.5.0 发布 |
+| 阶段                    | 判断     | 已有证据                                                                                                                                 | 进入下一门禁前的主要缺口                               |
+| ----------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| 一：核心产品语义        | 已完成   | Workspace 与核心对象 Schema、统一状态枚举、正反 fixtures、scope resolver、防降级、固定 Handoff、通用引用断言和门禁测试通过               | 无                                                     |
+| 二：证据模型与存储      | 已完成   | 原子 Bundle 首 Snapshot、immutable Store、Job 恢复、Catalog/Blob、依赖级 stale/复用、fork/archive、容量与 safe clean 的 Store tests 通过 | 无                                                     |
+| 三：Runtime 与捕获      | 已完成   | Capture Protocol、稳定 Matrix、Scenario runner、三种输入、Playwright Orchestrator 与真实 Store 浏览器闭环通过                            | 无                                                     |
+| 四：PBWork 操作闭环     | 已完成   | Local Service、四类 Draft、Preflight/Matrix、后台 Job/恢复、Evidence/stale、Bundle 管理和固定 Handoff 的 unit/service/E2E 通过           | 无                                                     |
+| 五：CLI、MCP 与消费链路 | 下一阶段 | V1 CLI/MCP/Target query 与阶段四 Service/Core Contract 可复用                                                                            | V2 producer CLI、Store Reader、Consumer、Target 解耦   |
+| 六：迁移与全链路验收    | 未开始   | Registry 已确认 2 Prototype / 25 Screen / 82 Variant                                                                                     | 迁移台账、3 页固定基准、四种 Evidence Level 与量化对比 |
+| 七：V1 退出与发布       | 未开始   | V1 仍保持可用                                                                                                                            | 前六阶段门禁、旧链路删除、干净安装和 0.5.0 发布        |
 
-阶段三完成时的验证基线为：Core 170 个测试通过；根级 typecheck（Core build、CLI、MCP）通过；PBWork typecheck 与 65 个 unit tests 通过；阶段三专用 Playwright E2E 3 个测试通过，覆盖真实 Store 垂直切片与固定三页基准。根级 `typecheck` 目前仍未自动包含 PBWork，这属于阶段六前要修正的仓库级验证入口覆盖缺口。
+阶段四完成时的验证基线为：Core 172 个测试通过；Local Service 6 个测试通过；PBWork typecheck、68 个 unit tests、阶段三 Capture E2E 与阶段四 Console E2E 通过。浏览器回归仍固定为 `task-list`、`ledger-list`、`create-work-order` 三页，整个 Prototype 只展开并验证 55 项 Matrix，不启动 25 页重复采集。根级 build/typecheck 已包含 Local Service；PBWork 仍通过独立包命令验收，阶段六前需纳入统一仓库级入口。
 
 ## 当前实施顺序
 
-实施继续严格使用总览定义的七个阶段，不增加工作包、里程碑或其他执行编号。阶段一至阶段三已经关闭门禁，下一步是阶段四；阶段四建立 Local Service 和 PBWork 操作闭环，不提前接入阶段五 CLI/MCP。
+实施继续严格使用总览定义的七个阶段，不增加工作包、里程碑或其他执行编号。阶段一至阶段四已经关闭门禁，下一步是阶段五；阶段五接入 CLI、MCP 与消费链路，不提前执行阶段六迁移验收。
 
 ### 阶段一完成记录：核心产品语义
 
-| 门禁要求 | 可执行证据 |
-| -------- | ---------- |
-| 唯一 V2 Schema 与稳定身份 | `contracts/workspace.ts`、`ids.ts`、`case.ts`、`scope.ts` 及 `ids-and-vocabulary.test.ts`、`case-identity.test.ts`、`scope.test.ts` |
-| 核心对象、状态与错误分类 | `contracts/*`、八态 `JOB_STATUSES`、Job 单向迁移及 `job.test.ts` |
-| primary/scoped active 与防降级 | `resolver/active-ref-resolver.ts`、`activation.ts` 及对应 resolver/activation tests |
-| 跨对象引用和归属 | `resolver/references.ts` 与 `references.test.ts` |
-| 成功、unknown、conflict、partial、stale、failed retry、固定 Handoff | `fixtures/ledger-planet-task-list` 与 valid/invalid/Handoff tests |
-| Schema compatibility | 所有阶段一持久对象拒绝未知 major，见 `schema-version.test.ts` |
-| 历史不可变 | `immutability.test.ts` 及 immutable Store tests |
-| V1 隔离 | V2 只从 `@proto-bridge/core/v2`、`@proto-bridge/core/v2/store` 导出，V1 根导出未改变 |
+| 门禁要求                                                            | 可执行证据                                                                                                                          |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| 唯一 V2 Schema 与稳定身份                                           | `contracts/workspace.ts`、`ids.ts`、`case.ts`、`scope.ts` 及 `ids-and-vocabulary.test.ts`、`case-identity.test.ts`、`scope.test.ts` |
+| 核心对象、状态与错误分类                                            | `contracts/*`、八态 `JOB_STATUSES`、Job 单向迁移及 `job.test.ts`                                                                    |
+| primary/scoped active 与防降级                                      | `resolver/active-ref-resolver.ts`、`activation.ts` 及对应 resolver/activation tests                                                 |
+| 跨对象引用和归属                                                    | `resolver/references.ts` 与 `references.test.ts`                                                                                    |
+| 成功、unknown、conflict、partial、stale、failed retry、固定 Handoff | `fixtures/ledger-planet-task-list` 与 valid/invalid/Handoff tests                                                                   |
+| Schema compatibility                                                | 所有阶段一持久对象拒绝未知 major，见 `schema-version.test.ts`                                                                       |
+| 历史不可变                                                          | `immutability.test.ts` 及 immutable Store tests                                                                                     |
+| V1 隔离                                                             | V2 只从 `@proto-bridge/core/v2`、`@proto-bridge/core/v2/store` 导出，V1 根导出未改变                                                |
 
 完成条件：
 
@@ -92,15 +97,15 @@
 
 ### 阶段二完成记录：证据模型与存储
 
-| 门禁要求 | 可执行证据 |
-| -------- | ---------- |
-| 新 Bundle 与首 Snapshot 原子创建 | `V2Store.createBundle`、staging directory rename 及 atomic Bundle tests |
-| Store 引用和归属断言 | `assertRunReferences`、`assertSnapshotReferences`、`assertStalenessReportReferences`、`assertHandoffReferences` 在写入边界执行 |
-| Catalog revision 与受控 Blob | `contracts/catalog.ts`、`blob.ts`、digest/大小/媒体类型/owner ref 校验及持久化测试 |
-| 依赖摘要、复用与 stale | `dependencyDigests`、`findReusableEvidence`、`createStalenessReport` 及无关依赖不扩散测试 |
-| Bundle 生命周期与安全清理 | `archiveBundle`、`forkBundle`、`planClean/applyClean`、容量门禁和传递引用保护测试 |
-| 并发、失败恢复和幂等 | 单 writer 锁、orphan Job 终结、旧 active Snapshot 保持、active pointer 重试及 clean 二次校验测试 |
-| Store 验收矩阵 | `local-file-store.test.ts`、`phase-two-store.test.ts`、`snapshot-builder.test.ts` |
+| 门禁要求                         | 可执行证据                                                                                                                     |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| 新 Bundle 与首 Snapshot 原子创建 | `V2Store.createBundle`、staging directory rename 及 atomic Bundle tests                                                        |
+| Store 引用和归属断言             | `assertRunReferences`、`assertSnapshotReferences`、`assertStalenessReportReferences`、`assertHandoffReferences` 在写入边界执行 |
+| Catalog revision 与受控 Blob     | `contracts/catalog.ts`、`blob.ts`、digest/大小/媒体类型/owner ref 校验及持久化测试                                             |
+| 依赖摘要、复用与 stale           | `dependencyDigests`、`findReusableEvidence`、`createStalenessReport` 及无关依赖不扩散测试                                      |
+| Bundle 生命周期与安全清理        | `archiveBundle`、`forkBundle`、`planClean/applyClean`、容量门禁和传递引用保护测试                                              |
+| 并发、失败恢复和幂等             | 单 writer 锁、orphan Job 终结、旧 active Snapshot 保持、active pointer 重试及 clean 二次校验测试                               |
+| Store 验收矩阵                   | `local-file-store.test.ts`、`phase-two-store.test.ts`、`snapshot-builder.test.ts`                                              |
 
 完成条件：
 
@@ -131,14 +136,42 @@
 - generic-runtime 与 screenshot-only 使用同一对象关系并保持诚实 Evidence Level；
 - 阶段三专用 E2E 只回归 `task-list`、`ledger-list`、`create-work-order` 三页。
 
-| 门禁要求 | 可执行证据 |
-| -------- | ---------- |
-| 唯一 Runtime Contract | `v2/runtime-contract/protocol.ts` 与 `runtime-contract.test.ts` |
-| Selection、Preflight 与稳定 Matrix | `capture/selection.ts`、`preflight.ts` 与 `preflight.test.ts` |
-| instrumented fixture | PBWork Registry、`TaskList.vue`、`TaskDetail.vue` 及 Registry tests |
-| Playwright Case 隔离与固定环境 | `capture/playwright-driver.ts` |
-| Store transaction 与故障路径 | `capture/orchestrator.ts`、`orchestrator.test.ts` |
-| 真实浏览器闭环与三页基准 | `apps/pbwork/e2e/runtime-capture-v2.spec.ts` |
+| 门禁要求                           | 可执行证据                                                          |
+| ---------------------------------- | ------------------------------------------------------------------- |
+| 唯一 Runtime Contract              | `v2/runtime-contract/protocol.ts` 与 `runtime-contract.test.ts`     |
+| Selection、Preflight 与稳定 Matrix | `capture/selection.ts`、`preflight.ts` 与 `preflight.test.ts`       |
+| instrumented fixture               | PBWork Registry、`TaskList.vue`、`TaskDetail.vue` 及 Registry tests |
+| Playwright Case 隔离与固定环境     | `capture/playwright-driver.ts`                                      |
+| Store transaction 与故障路径       | `capture/orchestrator.ts`、`orchestrator.test.ts`                   |
+| 真实浏览器闭环与三页基准           | `apps/pbwork/e2e/runtime-capture-v2.spec.ts`                        |
+
+### 阶段四完成记录：PBWork 操作闭环
+
+已完成：
+
+1. `packages/local-service` 建立 PBWork 与 Core/Playwright/Store 的本地边界，浏览器不直接访问 Node 能力或文件路径；
+2. 当前 Screen、稳定 Fragment、自定义范围和整个 Prototype 四类入口生成同一 `SelectionDraft`；
+3. Preflight 固定 Runtime 输入、Manifest 摘要和 Case Matrix，warning 未逐项确认、身份缺失、过期或超限时拒绝 Job；
+4. Job 接受前持久化，页面关闭后继续执行并可恢复，Service 重启时把孤儿 Job 终结为 `interrupted`；
+5. Console 展示 Coverage、Issue、unknown、Screenshot、失败原因和 stale，并支持 cancel、retry、仅重采 stale、fork 与 archive；
+6. Handoff 在 Core 中解析 active Evidence，逐项确认 partial/stale/policy risk，并固定到创建时 Snapshot。
+
+完成条件：
+
+- 四类入口共用 Core Preflight、JobHost、Capture Orchestrator 和 V2 Store；
+- Local Service token 不进入 URL、日志或持久对象，旧 Service session 在重启后失效；
+- 后台 Job、恢复、失败/取消、过期 Preflight 和受控 Blob 均有 service/Core 测试；
+- `task-list` 验证当前 Screen、Fragment、warning 和 Handoff，`ledger-list` 验证页面关闭恢复，`create-work-order` 保留为三页回归基准；
+- 整个 `ledger-planet` 只验证 55 项 Matrix 与前 50 项展示，不执行全量浏览器 Capture；
+- 新 Snapshot 不改变旧 Handoff 的 Snapshot/revision 引用。
+
+| 门禁要求                   | 可执行证据                                                                             |
+| -------------------------- | -------------------------------------------------------------------------------------- |
+| Service 安全与恢复         | `packages/local-service/src/service.ts`、`packages/local-service/test/service.test.ts` |
+| Core Job/Handoff 边界      | `capture/job-host.ts`、`runtime-preflight.ts`、`handoff.ts` 及 Core tests              |
+| 四类 Draft 与交互          | `apps/pbwork/src/app/stores/capture.ts`、`CaptureConsole.vue`、PBWork unit tests       |
+| 页面关闭恢复与固定 Handoff | `apps/pbwork/e2e/capture-console-v2.spec.ts`                                           |
+| 三页固定基准               | `runtime-capture-v2.spec.ts` 与 `capture-console-v2.spec.ts`                           |
 
 现有 `PageCanonical` 是一次页面重建结果，包含 Source、Runtime、Screenshot 和 Target 信息，不等同于 V2 Evidence revision 或 Snapshot。V2 可以编写迁移/对照 fixture，但不能只把 V1 对象改名后继续混存 Target 事实。
 
@@ -393,17 +426,17 @@ PBWork 和 CLI 对同一 Selection 的 Matrix 必须 byte-equivalent 或经过�
 
 ### 三种 Evidence 输入
 
-| 输入            | 首要实现重点                                                     |
-| --------------- | ---------------------------------------------------------------- |
+| 输入            | 首要实现重点                                                                                     |
+| --------------- | ------------------------------------------------------------------------------------------------ |
 | instrumented    | 完整 Contract、确定 Case、Scenario 与 Runtime provenance；Source adapter 后续提升 Evidence Level |
-| generic runtime | 可见 DOM、ARIA、computed style 和 Screenshot；不生成隐藏业务事实 |
-| screenshot-only | 受控 Blob、可见视觉和文字；完整 Case 维度由 Preflight 归一       |
+| generic runtime | 可见 DOM、ARIA、computed style 和 Screenshot；不生成隐藏业务事实                                 |
+| screenshot-only | 受控 Blob、可见视觉和文字；完整 Case 维度由 Preflight 归一                                       |
 
 generic 和 screenshot-only 可以在 instrumented 垂直切片稳定后实现，但 Store、Coverage、Handoff 和 Consumer 使用同一对象关系。
 
 ## Local Service 与 PBWork 接入
 
-PBWork 是浏览器应用，不能直接依赖 Node、Playwright 或 Store，因此需要本地进程边界。可以新增 `packages/local-service`，也可以先由 CLI 的 `serve` 入口承载；在 PBWork 垂直切片验证前不冻结包形态。
+PBWork 是浏览器应用，不能直接依赖 Node、Playwright 或 Store，因此通过私有包 `packages/local-service` 建立本地进程边界。该包调用 Core 的公开 Capture/Store 能力，不复制产品逻辑，也不作为阶段五 CLI 的替代入口。
 
 Service 只负责：
 
@@ -435,7 +468,7 @@ PBWork 接入顺序：
 8. 接入 stale、retry、fork/archive 和 Handoff；
 9. 完成 Accessibility、容量和大列表处理。
 
-认证、事件传输和 token 保存方式在 Service 实现时决定。最低安全测试包括：
+Service 使用短期 session token 和 `Authorization` header；token 不进入 URL，PBWork 通过同源代理访问，所有状态变更请求校验明确 Origin。最低安全测试包括：
 
 - 仅允许本地和明确 Origin；
 - token/credential 不进入 URL query、Handoff、Bundle 或日志；

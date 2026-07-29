@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import {
   Check,
   ChevronDown,
@@ -12,6 +12,8 @@ import {
   RotateCcw,
 } from "lucide-vue-next";
 import { useSelectionStore } from "@/app/stores/selection";
+import { useCaptureStore } from "@/app/stores/capture";
+import { useCanvasStore } from "@/app/stores/canvas";
 import {
   COMMENT_MAX_LENGTH,
   useCommentsStore,
@@ -31,8 +33,11 @@ import WorkbenchIconButton from "@/workbench/ui/WorkbenchIconButton.vue";
 import WorkbenchSegmented from "@/workbench/ui/WorkbenchSegmented.vue";
 
 const selection = useSelectionStore();
+const capture = useCaptureStore();
+const canvas = useCanvasStore();
 const comments = useCommentsStore();
 const route = useRoute();
+const router = useRouter();
 const tab = ref<
   "overview" | "component" | "convention" | "styles" | "comments"
 >("styles");
@@ -69,21 +74,33 @@ const commentContext = computed(() => {
     prototypeId: screen.prototypeId,
     screenId: screen.screenId,
     screenSlug: screen.screenSlug,
-    ...(typeof route.query.variant === "string" ? { variantId: route.query.variant } : {}),
-    ...(typeof route.query.theme === "string" ? { themeId: route.query.theme } : {}),
+    ...(typeof route.query.variant === "string"
+      ? { variantId: route.query.variant }
+      : {}),
+    ...(typeof route.query.theme === "string"
+      ? { themeId: route.query.theme }
+      : {}),
   };
 });
 const currentCommentTarget = computed((): CommentTarget | null => {
   const target = selection.commentTarget;
   if (target) {
     return {
-      ...(target.element?.ref.pbId ? { elementId: target.element.ref.pbId } : {}),
-      ...(target.element?.ref.pbKey ? { elementKey: target.element.ref.pbKey } : {}),
+      ...(target.element?.ref.pbId
+        ? { elementId: target.element.ref.pbId }
+        : {}),
+      ...(target.element?.ref.pbKey
+        ? { elementKey: target.element.ref.pbKey }
+        : {}),
       ...(target.selector ? { selector: target.selector } : {}),
-      ...(target.element ? {
-        elementLabel: elementDisplayLabel(target.element),
-        ...(target.element.text ? { textSnapshot: target.element.text.slice(0, 160) } : {}),
-      } : {}),
+      ...(target.element
+        ? {
+            elementLabel: elementDisplayLabel(target.element),
+            ...(target.element.text
+              ? { textSnapshot: target.element.text.slice(0, 160) }
+              : {}),
+          }
+        : {}),
       point: target.point,
       ...(target.bbox ? { bbox: target.bbox } : {}),
     };
@@ -98,7 +115,10 @@ const currentCommentTarget = computed((): CommentTarget | null => {
     ...(el.text ? { textSnapshot: el.text.slice(0, 160) } : {}),
     ...(el.bbox
       ? {
-          point: { x: el.bbox.x + el.bbox.width / 2, y: el.bbox.y + el.bbox.height / 2 },
+          point: {
+            x: el.bbox.x + el.bbox.width / 2,
+            y: el.bbox.y + el.bbox.height / 2,
+          },
           bbox: el.bbox,
         }
       : {}),
@@ -112,6 +132,40 @@ function elementDisplayLabel(summary: ElementSummary): string {
   return `<${summary.tag}>`;
 }
 
+function addSelectedFragmentToCapture() {
+  const screen = currentScreen.value;
+  const ref = element.value?.ref;
+  if (!screen || !ref?.pbId) {
+    capture.setError(
+      new Error(
+        `当前节点缺少稳定 data-pb-id，不能作为 ${screen?.screenId ?? "当前 Screen"} 的正式 Fragment。`,
+      ),
+    );
+    return;
+  }
+  const accepted = capture.beginFragment({
+    prototypeId: screen.prototypeId,
+    screenId: screen.screenId,
+    variantId:
+      typeof route.query.variant === "string"
+        ? route.query.variant
+        : screen.defaultVariantId,
+    themeId:
+      typeof route.query.theme === "string" ? route.query.theme : "light",
+    deviceId: canvas.deviceId,
+    returnTo: route.fullPath,
+    fragment: {
+      screenId: screen.screenId,
+      pbId: ref.pbId,
+      ...(ref.pbKey ? { pbKey: ref.pbKey } : {}),
+    },
+  });
+  if (accepted) {
+    window.dispatchEvent(new Event("pbwork:navigate-away"));
+    void router.push("/workbench/capture");
+  }
+}
+
 function commentTitle(item: LocalComment): string {
   return item.elementLabel || item.textSnapshot || item.elementId || "页面位置";
 }
@@ -120,12 +174,20 @@ const visibleComments = computed(() => {
   const context = commentContext.value;
   if (!context) return [];
   return comments.comments.filter((item) => {
-    if (item.prototypeId !== context.prototypeId || item.screenId !== context.screenId) return false;
+    if (
+      item.prototypeId !== context.prototypeId ||
+      item.screenId !== context.screenId
+    )
+      return false;
     if (commentScope.value === "context") {
       if (item.variantId && item.variantId !== context.variantId) return false;
       if (item.themeId && item.themeId !== context.themeId) return false;
     }
-    if (commentAnchorFilter.value === "missing" && item.anchorStatus !== "missing") return false;
+    if (
+      commentAnchorFilter.value === "missing" &&
+      item.anchorStatus !== "missing"
+    )
+      return false;
     return commentStatus.value === "all" || item.status === commentStatus.value;
   });
 });
@@ -158,7 +220,8 @@ watch(
 );
 
 watch(
-  () => selected.value?.element?.ref.handle ?? selected.value?.element?.ref.pbId,
+  () =>
+    selected.value?.element?.ref.handle ?? selected.value?.element?.ref.pbId,
   (id, prev) => {
     if (id && id !== prev) {
       if (tab.value !== "comments") tab.value = "styles";
@@ -216,9 +279,9 @@ const tokenBindings = computed(() => selected.value?.tokenBindings ?? []);
 const hasComponentMeta = computed(() =>
   Boolean(
     selected.value?.componentId ||
-      selected.value?.props ||
-      selected.value?.state ||
-      tokenBindings.value.length,
+    selected.value?.props ||
+    selected.value?.state ||
+    tokenBindings.value.length,
   ),
 );
 
@@ -378,7 +441,8 @@ function saveComment() {
     selection.setCommentTarget(null);
     commentError.value = null;
   } catch (error) {
-    commentError.value = error instanceof Error ? error.message : "评论保存失败";
+    commentError.value =
+      error instanceof Error ? error.message : "评论保存失败";
   }
 }
 
@@ -414,7 +478,8 @@ watch(
       commentError.value = null;
     } else if (status === "missing") {
       comments.setAnchorStatus(id, "missing");
-      commentError.value = "原页面元素已经变化，无法定位。你可以重新选择元素并新建评论。";
+      commentError.value =
+        "原页面元素已经变化，无法定位。你可以重新选择元素并新建评论。";
     } else if (status === "error") {
       commentError.value = "定位消息发送失败，请刷新 Runtime 后重试。";
     }
@@ -434,7 +499,9 @@ function toggleCommentSelection(id: string) {
 }
 
 function selectAllVisibleComments() {
-  selectedCommentIds.value = new Set(visibleComments.value.map((item) => item.id));
+  selectedCommentIds.value = new Set(
+    visibleComments.value.map((item) => item.id),
+  );
 }
 
 function exitCommentManagement() {
@@ -501,12 +568,32 @@ function downloadUnreadable() {
       </button>
     </div>
 
-    <div v-if="!selected && !selection.commentTarget && tab !== 'comments'" class="empty">
+    <div v-if="selected" class="capture-fragment-action">
+      <WorkbenchButton
+        tone="primary"
+        data-testid="capture-selected-fragment"
+        @click="addSelectedFragmentToCapture"
+      >
+        加入采集范围
+      </WorkbenchButton>
+      <small v-if="!element?.ref.pbId">
+        缺少稳定 data-pb-id，Preflight 将阻止提交。
+      </small>
+      <small v-else>
+        {{ element.ref.pbId
+        }}{{ element.ref.pbKey ? `#${element.ref.pbKey}` : "" }}
+      </small>
+    </div>
+
+    <div
+      v-if="!selected && !selection.commentTarget && tab !== 'comments'"
+      class="empty"
+    >
       <div class="empty-badge">选择与评审</div>
       <p class="empty-title">还没有选中节点</p>
       <p class="empty-hint">
-        选择页面中的元素，查看样式、组件信息或添加评论。按住
-        ⌥/Alt 点击可选中所属组件或语义锚点；选中后按 ↑ 逐级上溯。
+        选择页面中的元素，查看样式、组件信息或添加评论。按住 ⌥/Alt
+        点击可选中所属组件或语义锚点；选中后按 ↑ 逐级上溯。
       </p>
       <button
         type="button"
@@ -604,8 +691,7 @@ function downloadUnreadable() {
                 <pre
                   v-if="row.complex && isJsonOpen('props', row.key)"
                   class="code-block"
-                  >{{ row.json }}</pre
-                >
+                  >{{ row.json }}</pre>
               </div>
             </div>
             <p v-else class="soft-inline">无 Props</p>
@@ -640,8 +726,7 @@ function downloadUnreadable() {
                 <pre
                   v-if="row.complex && isJsonOpen('state', row.key)"
                   class="code-block"
-                  >{{ row.json }}</pre
-                >
+                  >{{ row.json }}</pre>
               </div>
             </div>
             <p v-else class="soft-inline">无 State</p>
@@ -793,7 +878,9 @@ function downloadUnreadable() {
                   <span class="source-badge" :class="`is-${row.source}`">{{
                     styleSourceLabel(row.source)
                   }}</span>
-                  <code v-if="row.cssVar" class="css-var">{{ row.cssVar }}</code>
+                  <code v-if="row.cssVar" class="css-var">{{
+                    row.cssVar
+                  }}</code>
                 </div>
               </li>
             </ul>
@@ -806,22 +893,57 @@ function downloadUnreadable() {
         </section>
 
         <section v-else class="section comments-pane">
-          <v-alert v-if="comments.readError" type="error" variant="tonal" density="compact">
+          <v-alert
+            v-if="comments.readError"
+            type="error"
+            variant="tonal"
+            density="compact"
+          >
             评论数据无法读取（{{ comments.readError }}），原始数据尚未被覆盖。
             <div class="error-actions">
-              <v-btn size="x-small" variant="text" @click="downloadUnreadable">下载原始数据</v-btn>
-              <v-btn size="x-small" variant="text" color="error" @click="clearDialogOpen = true">清除损坏数据</v-btn>
+              <v-btn size="x-small" variant="text" @click="downloadUnreadable"
+                >下载原始数据</v-btn
+              >
+              <v-btn
+                size="x-small"
+                variant="text"
+                color="error"
+                @click="clearDialogOpen = true"
+                >清除损坏数据</v-btn
+              >
             </div>
           </v-alert>
 
-          <div v-if="currentCommentTarget || editingCommentId" class="comment-composer">
+          <div
+            v-if="currentCommentTarget || editingCommentId"
+            class="comment-composer"
+          >
             <div class="composer-heading">
               <div>
-                <span class="composer-kicker">{{ editingCommentId ? "编辑评审意见" : "当前选择" }}</span>
-                <strong>{{ editingCommentId ? "修改评论内容" : currentCommentTarget?.elementLabel || "页面位置" }}</strong>
-                <code v-if="!editingCommentId && currentCommentTarget?.elementId">{{ currentCommentTarget.elementId }}</code>
+                <span class="composer-kicker">{{
+                  editingCommentId ? "编辑评审意见" : "当前选择"
+                }}</span>
+                <strong>{{
+                  editingCommentId
+                    ? "修改评论内容"
+                    : currentCommentTarget?.elementLabel || "页面位置"
+                }}</strong>
+                <code
+                  v-if="!editingCommentId && currentCommentTarget?.elementId"
+                  >{{ currentCommentTarget.elementId }}</code
+                >
               </div>
-              <button type="button" class="text-button" @click="selection.setCommentTarget(null); editingCommentId = null; commentDraft = ''">取消</button>
+              <button
+                type="button"
+                class="text-button"
+                @click="
+                  selection.setCommentTarget(null);
+                  editingCommentId = null;
+                  commentDraft = '';
+                "
+              >
+                取消
+              </button>
             </div>
             <v-textarea
               v-model="commentDraft"
@@ -837,7 +959,11 @@ function downloadUnreadable() {
             />
             <div class="composer-actions">
               <span>仅保存在当前浏览器</span>
-              <WorkbenchButton tone="primary" :disabled="!commentDraft.trim()" @click="saveComment">
+              <WorkbenchButton
+                tone="primary"
+                :disabled="!commentDraft.trim()"
+                @click="saveComment"
+              >
                 {{ editingCommentId ? "保存修改" : "提交评论" }}
               </WorkbenchButton>
             </div>
@@ -857,7 +983,15 @@ function downloadUnreadable() {
             </WorkbenchButton>
           </div>
 
-          <v-alert v-if="commentError" type="warning" variant="tonal" density="compact" closable @click:close="commentError = null">{{ commentError }}</v-alert>
+          <v-alert
+            v-if="commentError"
+            type="warning"
+            variant="tonal"
+            density="compact"
+            closable
+            @click:close="commentError = null"
+            >{{ commentError }}</v-alert
+          >
 
           <div class="comment-toolbar">
             <WorkbenchSegmented
@@ -882,20 +1016,29 @@ function downloadUnreadable() {
           <div v-if="manageComments" class="comment-management-bar">
             <span>已选择 {{ selectedCommentIds.size }} 条</span>
             <div>
-              <WorkbenchButton tone="ghost" @click="selectAllVisibleComments">全选当前筛选</WorkbenchButton>
-              <WorkbenchButton tone="ghost" @click="exitCommentManagement">取消</WorkbenchButton>
+              <WorkbenchButton tone="ghost" @click="selectAllVisibleComments"
+                >全选当前筛选</WorkbenchButton
+              >
+              <WorkbenchButton tone="ghost" @click="exitCommentManagement"
+                >取消</WorkbenchButton
+              >
             </div>
           </div>
 
           <div v-if="visibleComments.length" class="comment-groups">
             <section v-if="openComments.length" class="comment-group">
-              <header class="group-heading"><strong>未完成</strong><span>{{ openComments.length }}</span></header>
+              <header class="group-heading">
+                <strong>未完成</strong><span>{{ openComments.length }}</span>
+              </header>
               <div class="comment-list">
                 <article
                   v-for="item in openComments"
                   :key="item.id"
                   class="comment-card"
-                  :class="{ 'is-locating': locatingCommentId === item.id, 'is-missing': item.anchorStatus === 'missing' }"
+                  :class="{
+                    'is-locating': locatingCommentId === item.id,
+                    'is-missing': item.anchorStatus === 'missing',
+                  }"
                 >
                   <header>
                     <label v-if="manageComments" class="comment-checkbox">
@@ -911,48 +1054,146 @@ function downloadUnreadable() {
                       <strong>{{ commentTitle(item) }}</strong>
                     </div>
                     <v-menu v-if="!manageComments" location="bottom end">
-                      <template #activator="{ props }"><WorkbenchIconButton v-bind="props" label="评论更多操作"><MoreHorizontal :size="16" /></WorkbenchIconButton></template>
+                      <template #activator="{ props }"
+                        ><WorkbenchIconButton
+                          v-bind="props"
+                          label="评论更多操作"
+                          ><MoreHorizontal :size="16" /></WorkbenchIconButton
+                      ></template>
                       <div class="wb-menu-card">
-                        <button type="button" @click="editComment(item.id)"><span>编辑评论</span><small>修改评审内容</small></button>
-                        <button type="button" class="is-danger" @click="deleteCommentId = item.id"><span>删除</span><small>删除后无法恢复</small></button>
+                        <button type="button" @click="editComment(item.id)">
+                          <span>编辑评论</span><small>修改评审内容</small>
+                        </button>
+                        <button
+                          type="button"
+                          class="is-danger"
+                          @click="deleteCommentId = item.id"
+                        >
+                          <span>删除</span><small>删除后无法恢复</small>
+                        </button>
                       </div>
                     </v-menu>
                   </header>
-                  <p class="comment-content" :class="{ 'is-expanded': expandedCommentIds.has(item.id) }" @click="toggleCommentExpanded(item.id)">{{ item.content }}</p>
+                  <p
+                    class="comment-content"
+                    :class="{ 'is-expanded': expandedCommentIds.has(item.id) }"
+                    @click="toggleCommentExpanded(item.id)"
+                  >
+                    {{ item.content }}
+                  </p>
                   <div class="comment-meta">
-                    <time :datetime="item.updatedAt">{{ new Date(item.updatedAt).toLocaleString() }}</time>
+                    <time :datetime="item.updatedAt">{{
+                      new Date(item.updatedAt).toLocaleString()
+                    }}</time>
                     <code v-if="item.elementId">{{ item.elementId }}</code>
                   </div>
-                  <p v-if="locatingCommentId === item.id && selection.highlightStatus === 'locating'" class="locate-feedback">正在定位…</p>
-                  <p v-else-if="locatingCommentId === item.id && selection.highlightStatus === 'located'" class="locate-feedback is-success">已定位并选中元素</p>
-                  <p v-else-if="item.anchorStatus === 'missing'" class="locate-feedback is-error">目标元素已失效</p>
+                  <p
+                    v-if="
+                      locatingCommentId === item.id &&
+                      selection.highlightStatus === 'locating'
+                    "
+                    class="locate-feedback"
+                  >
+                    正在定位…
+                  </p>
+                  <p
+                    v-else-if="
+                      locatingCommentId === item.id &&
+                      selection.highlightStatus === 'located'
+                    "
+                    class="locate-feedback is-success"
+                  >
+                    已定位并选中元素
+                  </p>
+                  <p
+                    v-else-if="item.anchorStatus === 'missing'"
+                    class="locate-feedback is-error"
+                  >
+                    目标元素已失效
+                  </p>
                   <footer>
-                    <WorkbenchButton tone="primary" :loading="locatingCommentId === item.id && selection.highlightStatus === 'locating'" @click="locateComment(item)">
+                    <WorkbenchButton
+                      tone="primary"
+                      :loading="
+                        locatingCommentId === item.id &&
+                        selection.highlightStatus === 'locating'
+                      "
+                      @click="locateComment(item)"
+                    >
                       <LocateFixed :size="14" />定位
                     </WorkbenchButton>
-                    <WorkbenchButton tone="ghost" @click="comments.setStatus(item.id, 'resolved')"><Check :size="14" />完成</WorkbenchButton>
+                    <WorkbenchButton
+                      tone="ghost"
+                      @click="comments.setStatus(item.id, 'resolved')"
+                      ><Check :size="14" />完成</WorkbenchButton
+                    >
                   </footer>
                 </article>
               </div>
             </section>
 
-            <section v-if="resolvedComments.length" class="comment-group is-resolved-group">
-              <header class="group-heading"><strong>已完成</strong><span>{{ resolvedComments.length }}</span></header>
+            <section
+              v-if="resolvedComments.length"
+              class="comment-group is-resolved-group"
+            >
+              <header class="group-heading">
+                <strong>已完成</strong
+                ><span>{{ resolvedComments.length }}</span>
+              </header>
               <div class="comment-list">
-                <article v-for="item in resolvedComments" :key="item.id" class="comment-card is-resolved">
+                <article
+                  v-for="item in resolvedComments"
+                  :key="item.id"
+                  class="comment-card is-resolved"
+                >
                   <header>
-                    <label v-if="manageComments" class="comment-checkbox"><input type="checkbox" :checked="selectedCommentIds.has(item.id)" :aria-label="`选择评论：${commentTitle(item)}`" @change="toggleCommentSelection(item.id)" /></label>
-                    <div class="comment-anchor"><Check :size="14" /><strong>{{ commentTitle(item) }}</strong></div>
+                    <label v-if="manageComments" class="comment-checkbox"
+                      ><input
+                        type="checkbox"
+                        :checked="selectedCommentIds.has(item.id)"
+                        :aria-label="`选择评论：${commentTitle(item)}`"
+                        @change="toggleCommentSelection(item.id)"
+                    /></label>
+                    <div class="comment-anchor">
+                      <Check :size="14" /><strong>{{
+                        commentTitle(item)
+                      }}</strong>
+                    </div>
                   </header>
-                  <p class="comment-content" :class="{ 'is-expanded': expandedCommentIds.has(item.id) }" @click="toggleCommentExpanded(item.id)">{{ item.content }}</p>
+                  <p
+                    class="comment-content"
+                    :class="{ 'is-expanded': expandedCommentIds.has(item.id) }"
+                    @click="toggleCommentExpanded(item.id)"
+                  >
+                    {{ item.content }}
+                  </p>
                   <footer>
-                    <WorkbenchButton tone="ghost" @click="comments.setStatus(item.id, 'open')"><RotateCcw :size="14" />重新打开</WorkbenchButton>
+                    <WorkbenchButton
+                      tone="ghost"
+                      @click="comments.setStatus(item.id, 'open')"
+                      ><RotateCcw :size="14" />重新打开</WorkbenchButton
+                    >
                     <v-menu v-if="!manageComments" location="bottom end">
-                      <template #activator="{ props }"><WorkbenchIconButton v-bind="props" label="评论更多操作"><MoreHorizontal :size="16" /></WorkbenchIconButton></template>
+                      <template #activator="{ props }"
+                        ><WorkbenchIconButton
+                          v-bind="props"
+                          label="评论更多操作"
+                          ><MoreHorizontal :size="16" /></WorkbenchIconButton
+                      ></template>
                       <div class="wb-menu-card">
-                        <button type="button" @click="locateComment(item)"><span>定位元素</span><small>在画布中重新选中</small></button>
-                        <button type="button" @click="editComment(item.id)"><span>编辑评论</span><small>修改评审内容</small></button>
-                        <button type="button" class="is-danger" @click="deleteCommentId = item.id"><span>删除</span><small>删除后无法恢复</small></button>
+                        <button type="button" @click="locateComment(item)">
+                          <span>定位元素</span><small>在画布中重新选中</small>
+                        </button>
+                        <button type="button" @click="editComment(item.id)">
+                          <span>编辑评论</span><small>修改评审内容</small>
+                        </button>
+                        <button
+                          type="button"
+                          class="is-danger"
+                          @click="deleteCommentId = item.id"
+                        >
+                          <span>删除</span><small>删除后无法恢复</small>
+                        </button>
                       </div>
                     </v-menu>
                   </footer>
@@ -960,35 +1201,100 @@ function downloadUnreadable() {
               </div>
             </section>
           </div>
-          <WorkbenchButton v-if="hasMoreComments" tone="neutral" @click="visibleCommentLimit += 30">加载更多（剩余 {{ visibleComments.length - displayedComments.length }}）</WorkbenchButton>
+          <WorkbenchButton
+            v-if="hasMoreComments"
+            tone="neutral"
+            @click="visibleCommentLimit += 30"
+            >加载更多（剩余
+            {{
+              visibleComments.length - displayedComments.length
+            }}）</WorkbenchButton
+          >
           <div v-else class="soft-empty">
             <p class="soft-title">当前筛选下没有评论</p>
             <p class="soft-hint">评论只保存在当前浏览器，不会上传或共享。</p>
           </div>
-          <v-menu v-if="comments.comments.length && !manageComments" location="bottom start">
-            <template #activator="{ props }"><WorkbenchButton v-bind="props" tone="ghost"><MoreHorizontal :size="15" />管理评论</WorkbenchButton></template>
+          <v-menu
+            v-if="comments.comments.length && !manageComments"
+            location="bottom start"
+          >
+            <template #activator="{ props }"
+              ><WorkbenchButton v-bind="props" tone="ghost"
+                ><MoreHorizontal :size="15" />管理评论</WorkbenchButton
+              ></template
+            >
             <div class="wb-menu-card">
-              <button type="button" @click="manageComments = true"><span>批量选择</span><small>勾选后统一删除</small></button>
-              <button type="button" @click="commentAnchorFilter = commentAnchorFilter === 'missing' ? 'all' : 'missing'"><span>{{ commentAnchorFilter === 'missing' ? '显示全部评论' : '仅看定位失效' }}</span><small>筛选已失效的元素锚点</small></button>
-              <button type="button" class="is-danger" @click="clearDialogOpen = true"><span>清除全部评论</span><small>共 {{ comments.comments.length }} 条</small></button>
+              <button type="button" @click="manageComments = true">
+                <span>批量选择</span><small>勾选后统一删除</small>
+              </button>
+              <button
+                type="button"
+                @click="
+                  commentAnchorFilter =
+                    commentAnchorFilter === 'missing' ? 'all' : 'missing'
+                "
+              >
+                <span>{{
+                  commentAnchorFilter === "missing"
+                    ? "显示全部评论"
+                    : "仅看定位失效"
+                }}</span
+                ><small>筛选已失效的元素锚点</small>
+              </button>
+              <button
+                type="button"
+                class="is-danger"
+                @click="clearDialogOpen = true"
+              >
+                <span>清除全部评论</span
+                ><small>共 {{ comments.comments.length }} 条</small>
+              </button>
             </div>
           </v-menu>
           <div v-if="manageComments" class="batch-action-bar">
             <strong>已选择 {{ selectedCommentIds.size }} 条</strong>
-            <WorkbenchButton tone="danger" :disabled="selectedCommentIds.size === 0" @click="batchDeleteOpen = true">删除所选</WorkbenchButton>
+            <WorkbenchButton
+              tone="danger"
+              :disabled="selectedCommentIds.size === 0"
+              @click="batchDeleteOpen = true"
+              >删除所选</WorkbenchButton
+            >
           </div>
         </section>
       </div>
     </template>
 
-    <v-dialog :model-value="Boolean(deleteCommentId)" max-width="420" @update:model-value="!$event && (deleteCommentId = null)">
+    <v-dialog
+      :model-value="Boolean(deleteCommentId)"
+      max-width="420"
+      @update:model-value="!$event && (deleteCommentId = null)"
+    >
       <v-card title="删除这条评论？" text="删除后无法恢复。">
-        <v-card-actions><v-spacer /><v-btn @click="deleteCommentId = null">取消</v-btn><v-btn color="error" @click="confirmDelete">删除</v-btn></v-card-actions>
+        <v-card-actions
+          ><v-spacer /><v-btn @click="deleteCommentId = null">取消</v-btn
+          ><v-btn color="error" @click="confirmDelete"
+            >删除</v-btn
+          ></v-card-actions
+        >
       </v-card>
     </v-dialog>
     <v-dialog v-model="clearDialogOpen" max-width="440">
-      <v-card :title="comments.readError ? '清除损坏的评论数据？' : '清除全部本地评论？'" :text="comments.readError ? '建议先下载原始数据。清除后无法恢复。' : `将删除当前浏览器中的 ${comments.comments.length} 条评论，且无法恢复。`">
-        <v-card-actions><v-spacer /><v-btn @click="clearDialogOpen = false">取消</v-btn><v-btn color="error" @click="clearAllComments">确认清除</v-btn></v-card-actions>
+      <v-card
+        :title="
+          comments.readError ? '清除损坏的评论数据？' : '清除全部本地评论？'
+        "
+        :text="
+          comments.readError
+            ? '建议先下载原始数据。清除后无法恢复。'
+            : `将删除当前浏览器中的 ${comments.comments.length} 条评论，且无法恢复。`
+        "
+      >
+        <v-card-actions
+          ><v-spacer /><v-btn @click="clearDialogOpen = false">取消</v-btn
+          ><v-btn color="error" @click="clearAllComments"
+            >确认清除</v-btn
+          ></v-card-actions
+        >
       </v-card>
     </v-dialog>
     <v-dialog v-model="batchDeleteOpen" max-width="440">
@@ -1141,12 +1447,24 @@ function downloadUnreadable() {
 .comments-pane {
   padding-bottom: 8px;
 }
+.capture-fragment-action {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(var(--v-border-color), 0.16);
+}
+.capture-fragment-action small {
+  overflow: hidden;
+  color: rgb(var(--v-theme-on-surface-variant));
+  text-overflow: ellipsis;
+}
 .comment-composer,
 .comment-callout {
   display: grid;
   gap: 12px;
   padding: 12px;
-  border: 1px solid color-mix(in srgb, rgb(var(--v-theme-primary)) 25%, transparent);
+  border: 1px solid
+    color-mix(in srgb, rgb(var(--v-theme-primary)) 25%, transparent);
   border-radius: 12px;
   background: color-mix(in srgb, rgb(var(--v-theme-primary)) 7%, transparent);
 }
@@ -1250,17 +1568,24 @@ function downloadUnreadable() {
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-radius: 10px;
   background: rgb(var(--v-theme-surface));
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 .comment-card.is-locating {
   border-color: rgb(var(--v-theme-primary));
-  box-shadow: 0 0 0 2px color-mix(in srgb, rgb(var(--v-theme-primary)) 12%, transparent);
+  box-shadow: 0 0 0 2px
+    color-mix(in srgb, rgb(var(--v-theme-primary)) 12%, transparent);
 }
 .comment-card.is-missing {
   border-color: color-mix(in srgb, rgb(var(--v-theme-error)) 42%, transparent);
 }
 .comment-card.is-resolved {
-  background: color-mix(in srgb, rgb(var(--v-theme-surface)) 92%, rgb(var(--v-theme-success)) 8%);
+  background: color-mix(
+    in srgb,
+    rgb(var(--v-theme-surface)) 92%,
+    rgb(var(--v-theme-success)) 8%
+  );
 }
 .comment-card header,
 .comment-card footer {
@@ -1409,11 +1734,23 @@ function downloadUnreadable() {
   text-align: left;
   cursor: pointer;
 }
-.wb-menu-card button:hover { background: rgba(var(--v-theme-on-surface), 0.055); }
-.wb-menu-card button span { font-size: 0.75rem; font-weight: 700; }
-.wb-menu-card button small { color: rgba(var(--v-theme-on-surface), 0.5); font-size: 0.66rem; }
-.wb-menu-card button.is-danger span { color: rgb(var(--v-theme-error)); }
-.wb-menu-card button.is-danger small { color: color-mix(in srgb, rgb(var(--v-theme-error)) 68%, transparent); }
+.wb-menu-card button:hover {
+  background: rgba(var(--v-theme-on-surface), 0.055);
+}
+.wb-menu-card button span {
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.wb-menu-card button small {
+  color: rgba(var(--v-theme-on-surface), 0.5);
+  font-size: 0.66rem;
+}
+.wb-menu-card button.is-danger span {
+  color: rgb(var(--v-theme-error));
+}
+.wb-menu-card button.is-danger small {
+  color: color-mix(in srgb, rgb(var(--v-theme-error)) 68%, transparent);
+}
 .pane {
   scrollbar-gutter: stable;
 }

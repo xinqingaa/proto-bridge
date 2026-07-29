@@ -57,6 +57,10 @@
     "./v2/capture": {
       "types": "./dist/v2/capture/index.d.ts",
       "import": "./dist/v2/capture/index.js"
+    },
+    "./v2/service-contract": {
+      "types": "./dist/v2/service-contract/index.d.ts",
+      "import": "./dist/v2/service-contract/index.js"
     }
   },
   "files": [

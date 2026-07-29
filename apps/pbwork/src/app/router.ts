@@ -26,9 +26,20 @@ export const router = createRouter({
           },
         },
         {
+          path: "capture",
+          name: "workbench-capture",
+          component: () => import("@/capture/CaptureConsole.vue"),
+          meta: {
+            sectionId: "overview",
+            resourceKind: "capture",
+            title: "证据采集",
+          },
+        },
+        {
           path: "foundations/tokens/:category",
           name: "foundation-tokens",
-          component: () => import("@/workbench/views/WorkbenchResourceView.vue"),
+          component: () =>
+            import("@/workbench/views/WorkbenchResourceView.vue"),
           props: (route) => ({
             kind: "token",
             category: isTokenCategory(String(route.params.category))
@@ -44,7 +55,8 @@ export const router = createRouter({
         {
           path: "foundations/themes/:themeId",
           name: "foundation-themes",
-          component: () => import("@/workbench/views/WorkbenchResourceView.vue"),
+          component: () =>
+            import("@/workbench/views/WorkbenchResourceView.vue"),
           props: (route) => ({
             kind: "theme",
             themeId: String(route.params.themeId),
@@ -58,7 +70,8 @@ export const router = createRouter({
         {
           path: "components/:componentId",
           name: "component-playground",
-          component: () => import("@/workbench/views/WorkbenchResourceView.vue"),
+          component: () =>
+            import("@/workbench/views/WorkbenchResourceView.vue"),
           props: (route) => ({
             kind: "component",
             componentId: String(route.params.componentId),
@@ -72,7 +85,8 @@ export const router = createRouter({
         {
           path: "prototypes/:lifecycle(all|active|review|final|archived)",
           name: "prototypes-lifecycle",
-          component: () => import("@/workbench/views/WorkbenchResourceView.vue"),
+          component: () =>
+            import("@/workbench/views/WorkbenchResourceView.vue"),
           props: (route) => ({
             kind: "prototype-list",
             lifecycle: String(route.params.lifecycle) as
@@ -87,7 +101,8 @@ export const router = createRouter({
         {
           path: "prototypes/:prototypeId/screens/:screenSlug",
           name: "prototype-screen",
-          component: () => import("@/workbench/views/WorkbenchResourceView.vue"),
+          component: () =>
+            import("@/workbench/views/WorkbenchResourceView.vue"),
           props: (route) => ({
             kind: "screen",
             prototypeId: String(route.params.prototypeId),
@@ -102,7 +117,8 @@ export const router = createRouter({
         {
           path: "prototypes/:prototypeId",
           name: "prototype-overview",
-          component: () => import("@/workbench/views/WorkbenchResourceView.vue"),
+          component: () =>
+            import("@/workbench/views/WorkbenchResourceView.vue"),
           props: (route) => ({
             kind: "prototype",
             prototypeId: String(route.params.prototypeId),

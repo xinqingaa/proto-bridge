@@ -10,9 +10,21 @@ export default defineConfig({
     ...devices["Desktop Chrome"],
     ...(channel ? { channel } : {}),
   },
-  webServer: {
-    command: `pnpm dev --host 127.0.0.1 --port ${port}`,
-    port,
-    reuseExistingServer: !process.env.CI,
-  },
+  webServer: [
+    {
+      command:
+        `PB_V2_SERVICE_PORT=3988 ` +
+        `PBWORK_ORIGIN=http://127.0.0.1:${port} ` +
+        `PBWORK_RUNTIME_ORIGIN=http://127.0.0.1:${port} ` +
+        `PB_V2_STORE_ROOT=$(mktemp -d) ` +
+        `pnpm --filter @proto-bridge/local-service exec tsx --conditions=source src/index.ts`,
+      port: 3988,
+      reuseExistingServer: false,
+    },
+    {
+      command: `pnpm exec vite preview --host 127.0.0.1 --port ${port}`,
+      port,
+      reuseExistingServer: false,
+    },
+  ],
 });

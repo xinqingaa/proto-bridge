@@ -148,12 +148,12 @@ Prototype 内容同样不得破坏原生键盘语义，但其业务视觉是否�
 
 ### 4.1 尺寸建议
 
-| 区域     | 默认尺寸 | 行为                                                                       |
-| -------- | -------- | -------------------------------------------------------------------------- |
-| 顶栏     | 56px 高  | 固定                                                                       |
-| 一级导航 | 72px 宽  | 固定 rail，可显示图标和短标签                                              |
-| 二级导航 | 264px 宽 | 可折叠                                                                     |
-| 右侧检查 | 440px 宽 | 仅 Screen 画布显示；可折叠；最小 420px，样式检查允许拖拽扩展到 640px       |
+| 区域     | 默认尺寸 | 行为                                                                        |
+| -------- | -------- | --------------------------------------------------------------------------- |
+| 顶栏     | 56px 高  | 固定                                                                        |
+| 一级导航 | 72px 宽  | 固定 rail，可显示图标和短标签                                               |
+| 二级导航 | 264px 宽 | 可折叠                                                                      |
+| 右侧检查 | 440px 宽 | 仅 Screen 画布显示；可折叠；最小 420px，样式检查允许拖拽扩展到 640px        |
 | 中央区域 | 剩余空间 | 最小宽度 480px；1280px 窗口下在检查栏展开时仍保留可用画布宽度；内容独立滚动 |
 
 首期不为平板或手机建设工作台布局。PBWork 是桌面工具，推荐最小窗口宽度 1280px。
@@ -298,11 +298,11 @@ Playground 默认只在内存中修改组件 Props / State：
 
 Playground 可调项只允许三类，**不得**提供 Token 换绑或自定义取色：
 
-| 分组 | 含义 | 例子 |
-|------|------|------|
-| 内容 | 文案与当前值 | `label`、`title`、`message`、`modelValue` |
-| 类型 | 契约内有限枚举 | `variant`、`tone`、`size`、`selectionStyle` |
-| 行为 | 开关与交互态 | `disabled`、`loading`、`elevated`、`showIndicator` |
+| 分组 | 含义           | 例子                                               |
+| ---- | -------------- | -------------------------------------------------- |
+| 内容 | 文案与当前值   | `label`、`title`、`message`、`modelValue`          |
+| 类型 | 契约内有限枚举 | `variant`、`tone`、`size`、`selectionStyle`        |
+| 行为 | 开关与交互态   | `disabled`、`loading`、`elevated`、`showIndicator` |
 
 组件外观由 `tokenBindings` 固定声明，经 Theme 解析为 CSS 变量后由实现消费。切浅色/深色只改变 Token 值，不改变绑定关系。圆角、阴影等级、字体档位属于组件默认外观，不进入 Playground 自由旋钮（可用 `elevated` 等布尔行为表达有无阴影）。
 
@@ -378,14 +378,14 @@ http://127.0.0.1:5173/prototype/ledger-planet/task-list?variant=default&theme=li
 http://127.0.0.1:5173/prototype/ledger-planet/task-detail?variant=claimable&theme=dark
 ```
 
-| 部分                         | 规则                                                                                  |
-| ---------------------------- | ------------------------------------------------------------------------------------- |
-| `prototypeId` / `screenSlug` | 与注册表字段一致；二者共同定位 Screen，稳定、可读、可进 PB `--route`                  |
+| 部分                         | 规则                                                                                        |
+| ---------------------------- | ------------------------------------------------------------------------------------------- |
+| `prototypeId` / `screenSlug` | 与注册表字段一致；二者共同定位 Screen，稳定、可读、可进 PB `--route`                        |
 | `screenId`                   | 不进入 URL；全局 Contract ID，如 `ledger-planet.task-list`，供 PB、Bridge、评论和检查器使用 |
-| `variant`                    | 可选；缺省时使用该 Screen 的 `defaultVariantId`                                       |
-| `theme`                      | 可选；缺省时使用原型默认主题                                                          |
-| 业务 query                   | Variant 可声明额外 `query`；复制链接时一并带上，且必须可由注册表复现                  |
-| 禁止                         | 工作台专用 query（如 `inspect=1`、`fullscreen=1`）不得出现在交给 PB 的 URL 上         |
+| `variant`                    | 可选；缺省时使用该 Screen 的 `defaultVariantId`                                             |
+| `theme`                      | 可选；缺省时使用原型默认主题                                                                |
+| 业务 query                   | Variant 可声明额外 `query`；复制链接时一并带上，且必须可由注册表复现                        |
+| 禁止                         | 工作台专用 query（如 `inspect=1`、`fullscreen=1`）不得出现在交给 PB 的 URL 上               |
 
 Runtime Layout 包含：
 
@@ -425,19 +425,19 @@ Runtime URL 是当前 Screen、Variant、Theme 和可复现业务 query 的唯�
 
 Screen/Variant 画布工具栏包含：
 
-| 工具         | 行为                                               |
-| ------------ | -------------------------------------------------- |
-| 选择与评审   | 进入统一选择模式；选中元素后可检查并添加评论       |
-| 拖动画布     | 平移中央画布，不操作原型页面                       |
-| 缩小 / 放大  | 步进调整画板显示比例                               |
-| 缩放滑块     | 在允许范围内连续自定义显示比例（如 35%–200%）      |
-| 缩放比例     | 显示当前比例；可打开常用比例菜单                   |
-| 设备尺寸     | 切换 iframe viewport                               |
-| 原型主题     | 切换原型自身主题，不影响工作台壳                   |
-| Variant      | 切换源码注册的可复现状态                           |
-| 刷新         | 重载当前 iframe                                    |
-| 全屏画布     | 当前页面内让画布占满可用窗口，可原位退出           |
-| 复制原型链接 | 复制当前 iframe 完整 URL；可选复制后打开 Runtime   |
+| 工具         | 行为                                             |
+| ------------ | ------------------------------------------------ |
+| 选择与评审   | 进入统一选择模式；选中元素后可检查并添加评论     |
+| 拖动画布     | 平移中央画布，不操作原型页面                     |
+| 缩小 / 放大  | 步进调整画板显示比例                             |
+| 缩放滑块     | 在允许范围内连续自定义显示比例（如 35%–200%）    |
+| 缩放比例     | 显示当前比例；可打开常用比例菜单                 |
+| 设备尺寸     | 切换 iframe viewport                             |
+| 原型主题     | 切换原型自身主题，不影响工作台壳                 |
+| Variant      | 切换源码注册的可复现状态                         |
+| 刷新         | 重载当前 iframe                                  |
+| 全屏画布     | 当前页面内让画布占满可用窗口，可原位退出         |
+| 复制原型链接 | 复制当前 iframe 完整 URL；可选复制后打开 Runtime |
 
 不提供「适应画布」自动算缩放：缩放由用户通过步进、滑块、常用比例或修饰键+滚轮控制；拖动画布与缩放解耦。
 
@@ -557,11 +557,7 @@ type ElementRef = { pbId?: string; handle?: string };
 type ElementBox = { x: number; y: number; width: number; height: number };
 type PagePoint = { x: number; y: number };
 type StyleInspectGroup =
-  | "color"
-  | "typography"
-  | "spacing-size"
-  | "border-radius"
-  | "shadow-layout";
+  "color" | "typography" | "spacing-size" | "border-radius" | "shadow-layout";
 type StyleInspectRow = {
   property: string;
   value: string;
@@ -703,11 +699,11 @@ type InspectRegistration = {
 
 匹配来源必须显式标注，避免把推断值伪装成组件契约：
 
-| `source`       | 展示文案   | 含义                                       |
-| -------------- | ---------- | ------------------------------------------ |
-| `binding`      | 显式绑定   | 来自组件 `tokenBindings` / 注册 Token 集合 |
-| `value-match`  | 值匹配推断 | 计算值与 Token 解析值相等，非契约承诺      |
-| `raw`          | 原始 CSS   | 未匹配到 Token                             |
+| `source`      | 展示文案   | 含义                                       |
+| ------------- | ---------- | ------------------------------------------ |
+| `binding`     | 显式绑定   | 来自组件 `tokenBindings` / 注册 Token 集合 |
+| `value-match` | 值匹配推断 | 计算值与 Token 解析值相等，非契约承诺      |
+| `raw`         | 原始 CSS   | 未匹配到 Token                             |
 
 `StyleInspectRow` 携带 `group` 与 `source`；仍遵守 Bridge 64 KiB 与截断/遮蔽限制。
 
@@ -981,7 +977,8 @@ Runtime Adapter 使用独立静态模块表，不写入供 PB adapter 读取的 
 ```ts
 export const screenRuntimeAdapters = {
   "ledger-planet.task-list": () => import("./ledger-planet/runtime/task-list"),
-  "ledger-planet.task-detail": () => import("./ledger-planet/runtime/task-detail"),
+  "ledger-planet.task-detail": () =>
+    import("./ledger-planet/runtime/task-detail"),
 } satisfies Record<string, () => Promise<{ default: ScreenRuntimeAdapter }>>;
 ```
 
@@ -1283,6 +1280,7 @@ apps/pbwork/
 - `canvas`：设备、缩放、平移、工具模式；
 - `prototype`：当前 Prototype、Screen、Variant 和原型主题；
 - `selection`：hover、选中元素和 Runtime Bridge 状态；
+- `capture`：V2 Selection Draft、Preflight、Job 恢复、Evidence 与 Handoff；持久事实仍以 Local Service/Store 为准；
 - `comments`：本地评论；
 - `playground`：组件临时 Props / State。
 
@@ -1293,7 +1291,7 @@ apps/pbwork/
 - Theme：`light`、`dark`；
 - Token：90 个，覆盖 color、typography、spacing、sizing、radius、border、elevation、opacity、motion；
 - 基础组件：15 个，包括按钮、输入、选择、状态反馈、Avatar、Badge、Divider、Progress 与 Spinner；
-- 复杂组件：11 个，包括 App Bar、Tabs、Data List、Bottom Sheet、Search Bar、Filter Bar、Bottom Navigation、Dialog、Snackbar、Empty State 与 Form Section；
+- 复杂组件：13 个，包括 App Bar、Tabs、Data List、Scrollable Data List、Tab Viewport、Bottom Sheet、Search Bar、Filter Bar、Bottom Navigation、Dialog、Snackbar、Empty State 与 Form Section；
 - Prototype“项目协作”：任务列表（默认、加载中、空态）与任务详情（概览、活动、错误、Sheet 打开）。
 - Prototype“现场服务工单”：工单工作台、工单列表、工单详情、新建工单、客户详情、消息中心、个人设置，以及加载、空态、错误、筛选、高优先级、超时、校验失败、Sheet、Dialog、Toast 等状态。
 
@@ -1319,14 +1317,14 @@ apps/pbwork/
 
 测试只覆盖容易破坏核心闭环的契约，不为 Vuetify 自身行为重复写测试，也不设置无意义的全局覆盖率门槛或扩张大面积快照。各里程碑固定验证矩阵：
 
-| 阶段   | 必须覆盖                                                                                                                           | 推荐测试文件                                                |
-| ------ | ---------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| M1     | history fallback；Workbench / Runtime 双 Layout；Runtime DOM 不存在工作台壳节点；未知 Runtime 资源错误页；壳键盘导航与焦点恢复     | `test/router.test.ts`、`e2e/runtime-layout.spec.ts`         |
-| M2     | Token/Theme/Component/Prototype 注册表正反例；唯一 ID/path/view；Token 引用；Contract 默认值和 State 校验；bindTokens 池约束                          | `test/registries.test.ts`、`test/design-contracts.test.ts`  |
-| M3     | canonical URL；query 拒绝与排序；刷新恢复；设备 viewport；Theme / Variant 切换后 iframe URL                                        | `test/runtime-url.test.ts`、`e2e/canvas.spec.ts`            |
+| 阶段   | 必须覆盖                                                                                                                                                                  | 推荐测试文件                                                                                                     |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| M1     | history fallback；Workbench / Runtime 双 Layout；Runtime DOM 不存在工作台壳节点；未知 Runtime 资源错误页；壳键盘导航与焦点恢复                                            | `test/router.test.ts`、`e2e/runtime-layout.spec.ts`                                                              |
+| M2     | Token/Theme/Component/Prototype 注册表正反例；唯一 ID/path/view；Token 引用；Contract 默认值和 State 校验；bindTokens 池约束                                              | `test/registries.test.ts`、`test/design-contracts.test.ts`                                                       |
+| M3     | canonical URL；query 拒绝与排序；刷新恢复；设备 viewport；Theme / Variant 切换后 iframe URL                                                                               | `test/runtime-url.test.ts`、`e2e/canvas.spec.ts`                                                                 |
 | M4     | 同源握手；非法 origin；旧 runtimeId；payload 超限/截断；capability；inspect/comment 互斥；键盘选择；跨 Screen route 换代；样式 Token ID / CSS Variable / Value 与匹配来源 | `test/runtime-bridge.test.ts`、`test/inspector-snapshot.test.ts`、`e2e/inspect.spec.ts`、`e2e/inspector.spec.ts` |
-| M5     | `comment-target` 元素/空白/键盘落点；评论持久化；损坏/未知版本；数量和长度限制；定位失效；清除确认                                 | `test/comments.test.ts`                                     |
-| 总闭环 | workbench 选择 Variant → 复制 canonical Runtime URL → 直接打开无壳页面 → PB capture 得到正确 pathname、screenId 与截图             | `e2e/pb-capture.spec.ts` + 根仓 E2E                         |
+| M5     | `comment-target` 元素/空白/键盘落点；评论持久化；损坏/未知版本；数量和长度限制；定位失效；清除确认                                                                        | `test/comments.test.ts`                                                                                          |
+| 总闭环 | workbench 选择 Variant → 复制 canonical Runtime URL → 直接打开无壳页面 → PB capture 得到正确 pathname、screenId 与截图                                                    | `e2e/pb-capture.spec.ts` + 根仓 E2E                                                                              |
 
 注册表测试必须同时包含成功与失败样本。Playwright 只覆盖跨 iframe、浏览器存储、布局等单元测试无法证明的闭环。首期不要求 `source-actions` 测试。
 
@@ -1407,13 +1405,13 @@ apps/pbwork/
 
 ### 19.1 强制标记
 
-| 属性                 | 谁必须写                                                         | 值                                                                                                                 |
-| -------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `data-pb-component`  | 设计系统 / 定制组件根（由 `usePbInspect` 写入）                  | 类型键，页面内可重复，如 `ds.button`、`ds.switch`                                                                  |
-| `data-pb-id`         | 新建组件根、页面关键区块、列表行根、可评论的主要节点             | 稳定模板身份；非重复节点在页面内唯一，如 `task-list.summary`；重复实例共享模板 ID，如 `task-list.row` |
-| `data-pb-key`        | 共享同一 `data-pb-id` 的重复实例                                 | 非敏感、业务稳定的实例键，如任务 ID；禁止数组 index、DOM 顺序和随机值 |
-| `data-pb-role`       | 逻辑区块根（对应 conventions section kind / 派生角色）           | 如 `app-bar`、`list`、`section`、`tab-bar`、`bottom-bar`、`chart`                                                  |
-| `data-pb-shell`      | Overlay / 临时层根                                               | `sheet` / `dialog` / `modal` / `drawer`（与 conventions shell kind 一致）                                          |
+| 属性                | 谁必须写                                               | 值                                                                                                    |
+| ------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `data-pb-component` | 设计系统 / 定制组件根（由 `usePbInspect` 写入）        | 类型键，页面内可重复，如 `ds.button`、`ds.switch`                                                     |
+| `data-pb-id`        | 新建组件根、页面关键区块、列表行根、可评论的主要节点   | 稳定模板身份；非重复节点在页面内唯一，如 `task-list.summary`；重复实例共享模板 ID，如 `task-list.row` |
+| `data-pb-key`       | 共享同一 `data-pb-id` 的重复实例                       | 非敏感、业务稳定的实例键，如任务 ID；禁止数组 index、DOM 顺序和随机值                                 |
+| `data-pb-role`      | 逻辑区块根（对应 conventions section kind / 派生角色） | 如 `app-bar`、`list`、`section`、`tab-bar`、`bottom-bar`、`chart`                                     |
+| `data-pb-shell`     | Overlay / 临时层根                                     | `sheet` / `dialog` / `modal` / `drawer`（与 conventions shell kind 一致）                             |
 
 规则：
 
@@ -1473,17 +1471,17 @@ Shell 显隐状态名建议 `*Open` / `*Visible` / `show*`，并与业务态字�
 
 已将 Token 扩展到 90 个，优先建设语义 Token，不堆无用途色阶。
 
-| 类别         | 目标内容                                                                 |
-| ------------ | ------------------------------------------------------------------------ |
-| Color        | background、surface 层级、on-\*、outline、divider、disabled、scrim、四类反馈色 |
-| Typography   | display、headline、title、body、label、caption 的大小组合                |
-| Spacing      | 0、2、4、8、12、16、24、32、40、48、64                                    |
-| Sizing       | 控件高度、图标尺寸、头像尺寸、触控目标                                   |
-| Radius       | none、xs、sm、md、lg、xl、full                                           |
-| Border       | hairline、default、strong、focus                                         |
-| Elevation    | level 0–5                                                                |
-| Opacity      | disabled、muted、hover、pressed、overlay                                 |
-| Motion       | duration 与 easing                                                       |
+| 类别       | 目标内容                                                                       |
+| ---------- | ------------------------------------------------------------------------------ |
+| Color      | background、surface 层级、on-\*、outline、divider、disabled、scrim、四类反馈色 |
+| Typography | display、headline、title、body、label、caption 的大小组合                      |
+| Spacing    | 0、2、4、8、12、16、24、32、40、48、64                                         |
+| Sizing     | 控件高度、图标尺寸、头像尺寸、触控目标                                         |
+| Radius     | none、xs、sm、md、lg、xl、full                                                 |
+| Border     | hairline、default、strong、focus                                               |
+| Elevation  | level 0–5                                                                      |
+| Opacity    | disabled、muted、hover、pressed、overlay                                       |
+| Motion     | duration 与 easing                                                             |
 
 同步更新：
 
@@ -1569,10 +1567,10 @@ Search Bar、Filter Bar、Bottom Navigation、Dialog、Snackbar / Toast、Empty 
 
 ### 21.2 可扩展方向（若未来需要）
 
-| 层次 | 含义 | 粗粒度成本 |
-|------|------|------------|
-| 多 Foundation | 多套 tokens + themes；组件仍可暂用一套（要求 id / bind 池兼容，或组件声明宿主） | 中 |
-| 多 Kit | 每套组件库绑定各自 Foundation；原型选型 A 或 B | 高 |
+| 层次          | 含义                                                                            | 粗粒度成本 |
+| ------------- | ------------------------------------------------------------------------------- | ---------- |
+| 多 Foundation | 多套 tokens + themes；组件仍可暂用一套（要求 id / bind 池兼容，或组件声明宿主） | 中         |
+| 多 Kit        | 每套组件库绑定各自 Foundation；原型选型 A 或 B                                  | 高         |
 
 建议若启动：先 Foundation 可寻址（loaders / 解析 / Foundations 导航 / URL），再 Kit 抽象；**v1 一个原型只绑一个 kit**（从而一套 foundation），禁止同屏混用 A 组件与 B 基础。
 

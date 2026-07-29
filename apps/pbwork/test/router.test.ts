@@ -6,6 +6,7 @@ describe("PBWork routes", () => {
     expect(router.resolve("/workbench/overview").name).toBe(
       "workbench-overview",
     );
+    expect(router.resolve("/workbench/capture").name).toBe("workbench-capture");
     expect(router.resolve("/workbench/foundations/tokens/color").name).toBe(
       "foundation-tokens",
     );
@@ -22,11 +23,13 @@ describe("PBWork routes", () => {
       "prototype-overview",
     );
     expect(
-      router.resolve("/workbench/prototypes/ledger-planet/screens/task-list").name,
+      router.resolve("/workbench/prototypes/ledger-planet/screens/task-list")
+        .name,
     ).toBe("prototype-screen");
     expect(
-      router.resolve("/prototype/ledger-planet/task-list?variant=default&theme=light")
-        .name,
+      router.resolve(
+        "/prototype/ledger-planet/task-list?variant=default&theme=light",
+      ).name,
     ).toBe("prototype-runtime");
   });
 });

@@ -19,11 +19,11 @@ source / URL / screenshot / target repo
 
 ## 证据分层
 
-| 证据来源 | 负责 | 不负责 |
-| --- | --- | --- |
-| Source semantics | 业务区块、状态意图、交互与生命周期意图、Widget contract、禁止直译项、资源与文案线索 | 不决定目标工程用哪种 state / routing / i18n / theme 框架 |
-| Target conventions | 目标 Flutter 工程中扫描到的 state、routing、i18n、theme family、component、file organization 证据 | 不决定页面必须接入哪个 route/module/component/token，不替代实现 agent 阅读 B |
-| Runtime / screenshot | 可见文案、bbox、section 顺序、computed style、截图、OCR | 不反向决定文件拆分、状态 owner 或架构边界 |
+| 证据来源             | 负责                                                                                              | 不负责                                                                       |
+| -------------------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Source semantics     | 业务区块、状态意图、交互与生命周期意图、Widget contract、禁止直译项、资源与文案线索               | 不决定目标工程用哪种 state / routing / i18n / theme 框架                     |
+| Target conventions   | 目标 Flutter 工程中扫描到的 state、routing、i18n、theme family、component、file organization 证据 | 不决定页面必须接入哪个 route/module/component/token，不替代实现 agent 阅读 B |
+| Runtime / screenshot | 可见文案、bbox、section 顺序、computed style、截图、OCR                                           | 不反向决定文件拆分、状态 owner 或架构边界                                    |
 
 冲突裁决：
 
@@ -47,31 +47,31 @@ source.analyze / runtime.capture / screenshot.attach / target.inspect
   -> ui.validate
 ```
 
-| Capability | 输入 | 输出 |
-| --- | --- | --- |
-| `source.analyze` | source root、route、Vue SFC | source facts |
-| `runtime.capture` | URL、viewport | runtime facts、screenshots |
-| `screenshot.attach` | screenshot、OCR text/boxes | screenshot facts |
-| `target.inspect` | Flutter target root | target facts、扫描出的 architecture profile |
-| `page.merge` | 各 facts | `page-canonical.json` |
-| `ui.plan` | canonical、target、source-aware draft | `ui-build-plan.json` |
-| `ui.review` | plan | `ui-build-review.md` |
-| `ui.validate` | target diff、plan | validation result |
+| Capability          | 输入                                  | 输出                                        |
+| ------------------- | ------------------------------------- | ------------------------------------------- |
+| `source.analyze`    | source root、route、Vue SFC           | source facts                                |
+| `runtime.capture`   | URL、viewport                         | runtime facts、screenshots                  |
+| `screenshot.attach` | screenshot、OCR text/boxes            | screenshot facts                            |
+| `target.inspect`    | Flutter target root                   | target facts、扫描出的 architecture profile |
+| `page.merge`        | 各 facts                              | `page-canonical.json`                       |
+| `ui.plan`           | canonical、target、source-aware draft | `ui-build-plan.json`                        |
+| `ui.review`         | plan                                  | `ui-build-review.md`                        |
+| `ui.validate`       | target diff、plan                     | validation result                           |
 
 主入口：
 
-| 入口 | 场景 | 命令 / API |
-| --- | --- | --- |
-| CLI | 本地准备、批量、人工 review | `proto-bridge generate` |
-| MCP | Codex / Cursor / Claude Code 等 | `reconstruct_page_context` |
-| Core | 嵌入其他 Node 工具 | `reconstructPageContext` |
+| 入口 | 场景                            | 命令 / API                 |
+| ---- | ------------------------------- | -------------------------- |
+| CLI  | 本地准备、批量、人工 review     | `proto-bridge generate`    |
+| MCP  | Codex / Cursor / Claude Code 等 | `reconstruct_page_context` |
+| Core | 嵌入其他 Node 工具              | `reconstructPageContext`   |
 
 ### 适配器
 
-| 方向 | 当前 | 后续 |
-|------|------|------|
+| 方向   | 当前                                                                       | 后续                                                               |
+| ------ | -------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | Source | `vue3-prototype`；通过 tag、class、title、模板指令与源码结构进行启发式分析 | 显式 `data-pb-*` 协议、`react-prototype` 与中立 Source IR 统一设计 |
-| Target | `flutter-app` | 按需增加其它 target |
+| Target | `flutter-app`                                                              | 按需增加其它 target                                                |
 
 原型工作台的技术栈与首期范围见 [design.md](design.md)；当前 Vue 原型的结构 / 弹层约定见 [conventions.md](conventions.md)。工作台按 design §19 **强制**写入 `data-pb-*` 标记。V1 Source/Runtime 仍使用 tag / class 启发式；V2 instrumented Runtime 通过独立 Capture Protocol 读取稳定 `data-pb-id` / `data-pb-key` / `data-pb-role`。两条链路映射到同一套中立语义，不另起业务词表。
 
@@ -103,6 +103,7 @@ Planner 内部先生成不属于任何项目的逻辑文件树，再依据目标
 ```text
 packages/
 ├── core/          # capabilities、workflow、source/snapshot/target、artifacts、types
+├── local-service/ # PBWork 到 Core/Playwright/Store 的 V2 本地安全边界
 ├── cli/           # 命令解析、config、终端输出
 └── mcp-server/    # MCP stdio、tools、resources、prompts
 ```
@@ -138,8 +139,9 @@ packages/core/src/
 - `@proto-bridge/core/v2/store`（Node-only 本地 Evidence Store）
 - `@proto-bridge/core/v2/runtime-contract`（浏览器安全的 Capture Protocol Schema）
 - `@proto-bridge/core/v2/capture`（Node-only Selection、Preflight、Playwright 与 Orchestrator）
+- `@proto-bridge/core/v2/service-contract`（PBWork 与 Local Service 共用的浏览器安全协议类型）
 
-V2 Store 当前提供不可变 Run/Evidence/Catalog/Snapshot/Handoff、受控 Blob、Job 恢复、依赖级 stale/复用、Bundle fork/archive、容量与安全 clean。V2 Capture 已在 `ledger-planet.task-list` 上打通 default/critical、Fragment、Scenario Checkpoint、三种 Evidence 输入和 Store Snapshot；PBWork Capture Console、CLI 与 MCP 尚未接入，仍使用现有正式入口。
+V2 Store 当前提供不可变 Run/Evidence/Catalog/Snapshot/Handoff、受控 Blob、Job 恢复、依赖级 stale/复用、Bundle fork/archive、容量与安全 clean。V2 Capture 已打通 default/critical、Fragment、Scenario Checkpoint、三种 Evidence 输入和 Store Snapshot。PBWork Capture Console 通过 Local Service 提供四类 Draft、Preflight/Matrix、后台 Job/恢复、Evidence/stale、Bundle 管理和固定 Handoff；V2 CLI 与 Store-backed MCP 在阶段五接入。
 
 ## 相关文档
 

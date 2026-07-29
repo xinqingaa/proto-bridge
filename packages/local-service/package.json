@@ -1,0 +1,36 @@
+{
+  "name": "@proto-bridge/local-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "clean": "rm -rf dist",
+    "predev": "pnpm --filter @proto-bridge/core build",
+    "dev": "tsx --conditions=source src/index.ts",
+    "prebuild": "pnpm --filter @proto-bridge/core build",
+    "build": "pnpm run clean && tsc -p tsconfig.json",
+    "pretypecheck": "pnpm --filter @proto-bridge/core build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "pretest": "pnpm --filter @proto-bridge/core build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@proto-bridge/core": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^3.2.7"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

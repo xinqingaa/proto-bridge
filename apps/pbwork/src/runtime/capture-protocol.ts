@@ -108,6 +108,7 @@ function toScreenManifest(
       scenarioId: scenario.id,
       ownerScreenId: screen.screenId,
       initialVariantId: scenario.initialVariantId,
+      critical: scenario.critical ?? false,
       actionIds: scenario.actionIds,
       checkpoints: scenario.checkpoints.map((checkpoint) => ({
         checkpointId: checkpoint.id,

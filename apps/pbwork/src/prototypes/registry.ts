@@ -336,6 +336,7 @@ export const prototypeScreens = [
       {
         id: "open-claimable-task",
         initialVariantId: "default",
+        critical: true,
         actionIds: ["open-claimable-task"],
         checkpoints: [
           {

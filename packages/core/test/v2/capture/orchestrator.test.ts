@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Fact } from '../../../src/v2/contracts/evidence.js';
 import type { RuntimeCaptureManifest } from '../../../src/v2/runtime-contract/index.js';
 import {
+  createAgentHandoff,
   capturePreflightToStore,
   preflightSelection,
   type CaptureCaseInput,
@@ -153,15 +154,16 @@ describe('V2 Capture Orchestrator + real Store', () => {
       now,
     });
 
-    expect(result.run.attempts.map((attempt) => attempt.result).sort()).toEqual([
-      'captured',
-      'failed',
-    ]);
+    expect(result.run.attempts.map((attempt) => attempt.result).sort()).toEqual(
+      ['captured', 'failed'],
+    );
     expect(result.run.terminationReason).toBe('completed');
     expect(result.snapshot.coverage.counts.failed).toBe(1);
     expect(result.snapshot.coverage.counts.captured).toBe(1);
     expect(result.storedBlobIds).toHaveLength(1);
-    expect(await store.getBlob(fixture.BUNDLE_ID, result.storedBlobIds[0]!)).toBeDefined();
+    expect(
+      await store.getBlob(fixture.BUNDLE_ID, result.storedBlobIds[0]!),
+    ).toBeDefined();
     expect((await store.getJob(result.jobId))?.status).toBe('completed');
   });
 
@@ -287,5 +289,62 @@ describe('V2 Capture Orchestrator + real Store', () => {
     });
     expect(result.run.terminationReason).toBe('failed');
     expect(result.snapshot.coverage.counts.unsupported).toBe(1);
+  });
+
+  it('atomically creates the first Bundle/Snapshot and fixes a Handoff to that Snapshot', async () => {
+    const bundleId = 'bundle-stage-four-new';
+    const preflight = preflightSelection(
+      draft(['default']),
+      manifest('runtime-input-stage-four'),
+    );
+    const first = await capturePreflightToStore({
+      store,
+      bundleId,
+      preflight,
+      runtimeBaseUrl: 'http://127.0.0.1:3977',
+      driver: new FakeDriver(),
+      now,
+    });
+    expect((await store.getBundle(bundleId))?.prototypeId).toBe(
+      'ledger-planet',
+    );
+    expect(first.snapshot.activeSlots).toHaveLength(1);
+    const report = await store.createStalenessReport({
+      bundleId,
+      snapshotId: first.snapshot.snapshotId,
+      inputVersion: preflight.inputVersion,
+      currentDependencyDigests: {
+        'manifest:ledger-planet': preflight.manifestDigest,
+        'runtime:ledger-planet.task-list': preflight.inputVersion,
+      },
+    });
+    const handoff = await createAgentHandoff({
+      store,
+      bundleId,
+      snapshotId: first.snapshot.snapshotId,
+      selectedCases: first.run.selection.cases,
+      stalenessReport: report,
+      currentInputVersion: preflight.inputVersion,
+      implementationIntent: '实现任务列表',
+      acknowledgedRiskKinds: [],
+    });
+    expect(handoff.coverageStatus).toBe('complete');
+    expect(handoff.freshnessStatus).toBe('fresh');
+
+    const recapture = await capturePreflightToStore({
+      store,
+      bundleId,
+      preflight: preflightSelection(
+        draft(['claimable']),
+        manifest('runtime-input-stage-four-next'),
+      ),
+      runtimeBaseUrl: 'http://127.0.0.1:3977',
+      driver: new FakeDriver(),
+      now,
+    });
+    expect(recapture.snapshot.snapshotId).not.toBe(first.snapshot.snapshotId);
+    expect((await store.getHandoff(handoff.handoffId))?.snapshotId).toBe(
+      first.snapshot.snapshotId,
+    );
   });
 });
