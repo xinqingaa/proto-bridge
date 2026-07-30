@@ -3,19 +3,14 @@ import { expect, test } from "@playwright/test";
 test.use({ viewport: { width: 1440, height: 1050 } });
 
 async function waitForCompletedJob(page: import("@playwright/test").Page) {
-  const jobPanel = page.locator(".job-panel");
-  await expect(jobPanel).toBeVisible({ timeout: 15_000 });
-  await expect(
-    jobPanel.getByRole("heading", { name: "completed" }),
-  ).toBeVisible({
+  const tasks = page.getByTestId("recent-capture-jobs");
+  await expect(tasks).toBeVisible({ timeout: 15_000 });
+  await expect(tasks.getByText("采集完成").first()).toBeVisible({
     timeout: 30_000,
-  });
-  await expect(page.getByText("Snapshot Evidence")).toBeVisible({
-    timeout: 15_000,
   });
 }
 
-test("current Screen goes through Preflight, background Job, Snapshot and fixed Handoff", async ({
+test("current Screen goes through Preflight, background Job and readable result", async ({
   page,
 }) => {
   await page.goto(
@@ -32,16 +27,16 @@ test("current Screen goes through Preflight, background Job, Snapshot and fixed 
   await page.getByTestId("composer-start-capture").click();
   await page.getByRole("link", { name: "采集证据", exact: true }).click();
   await expect(page.getByTestId("capture-console")).toBeVisible();
-  await expect(page.getByText("Local Service 已连接")).toBeVisible();
   await waitForCompletedJob(page);
-  await expect(page.locator(".screenshot-grid img").first()).toBeVisible();
-
-  await page.getByRole("button", { name: "检查 Handoff 风险" }).click();
-  await expect(page.getByTestId("create-handoff")).toBeVisible({
-    timeout: 20_000,
-  });
-  await page.getByTestId("create-handoff").click();
-  await expect(page.locator(".handoff-result")).toContainText("Snapshot：");
+  await page
+    .getByTestId("recent-capture-jobs")
+    .getByRole("button")
+    .filter({ hasText: "采集完成" })
+    .first()
+    .click();
+  await expect(page.getByTestId("evidence-viewer")).toBeVisible();
+  await expect(page.getByText(/个视图采集成功/)).toBeVisible();
+  await expect(page.locator(".visual-evidence img").first()).toBeVisible();
 });
 
 test("stable Fragment is preflighted and source warning blocks Job until explicitly accepted", async ({
@@ -76,7 +71,13 @@ test("stable Fragment is preflighted and source warning blocks Job until explici
   await page.getByTestId("composer-start-capture").click();
   await page.getByRole("link", { name: "采集证据", exact: true }).click();
   await waitForCompletedJob(page);
-  await expect(page.locator(".status-pill")).toHaveText("complete");
+  await page
+    .getByTestId("recent-capture-jobs")
+    .getByRole("button")
+    .filter({ hasText: "采集完成" })
+    .first()
+    .click();
+  await expect(page.getByText(/个视图采集成功/)).toBeVisible();
 });
 
 test("whole Prototype expands only the Matrix, while a page-close Job is recovered from Service state", async ({
@@ -84,8 +85,8 @@ test("whole Prototype expands only the Matrix, while a page-close Job is recover
   browser,
 }) => {
   await page.goto("/workbench/capture");
-  await expect(page.getByText("Local Service 已连接")).toBeVisible();
-  await page.getByRole("button", { name: /采集整个原型/ }).click();
+  await expect(page.getByRole("heading", { name: "任务中心" })).toBeVisible();
+  await page.getByRole("button", { name: "整个原型" }).click();
   await page
     .getByRole("combobox", { name: "所有页面的状态范围" })
     .press("Enter");
@@ -121,15 +122,21 @@ test("whole Prototype expands only the Matrix, while a page-close Job is recover
   });
   const recoveryAction = next
     .getByTestId("recent-capture-jobs")
-    .getByRole("button", { name: /查看进度|处理任务|查看结果/ })
+    .getByRole("button")
     .first();
   const recoveryLabel = await recoveryAction.textContent();
   await recoveryAction.click();
-  if (recoveryLabel?.includes("查看结果")) {
+  if (recoveryLabel?.includes("采集完成")) {
     await expect(next.getByTestId("evidence-viewer")).toBeVisible();
   } else {
     await waitForCompletedJob(next);
-    await expect(next.locator(".evidence-panel")).toBeVisible();
+    await next
+      .getByTestId("recent-capture-jobs")
+      .getByRole("button")
+      .filter({ hasText: "采集完成" })
+      .first()
+      .click();
+    await expect(next.getByTestId("evidence-viewer")).toBeVisible();
   }
   await next.close();
 });

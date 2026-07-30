@@ -49,6 +49,11 @@ export type EvidenceCaseReadModel = {
   themeId: string;
   deviceId: string;
   scenarioLabel?: string;
+  scenario?: {
+    ownerScreenId: string;
+    scenarioId: string;
+    checkpointId: string;
+  };
   revisionId: string;
   evidenceLevel: CaseEvidenceRevision["evidenceLevel"];
   scopeKind: "page" | "fragment";
@@ -286,6 +291,11 @@ export function buildEvidenceReadModel(
       ...(scenario
         ? {
             scenarioLabel: `${scenario.ownerScreenId}.${scenario.scenarioId} / ${scenario.checkpointId}`,
+            scenario: {
+              ownerScreenId: scenario.ownerScreenId,
+              scenarioId: scenario.scenarioId,
+              checkpointId: scenario.checkpointId,
+            },
           }
         : {}),
       revisionId: revision.revisionId,

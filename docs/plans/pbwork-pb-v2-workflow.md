@@ -10,6 +10,13 @@
 
 当前正式 V1 行为仍以 `docs/design.md` 和代码为准。V2 在阶段七正式切换前不得提前替换 V1 对外入口。
 
+当前 PBWork 可用性闸门采用“普通用户无需理解内部对象”的展示原则：
+
+- 任务中心默认只展示新建采集、运行进度、可处理失败和历史结果，不直接展示 Snapshot、Bundle fork/archive、stale 或 Handoff 管理；
+- 历史失败若被后续成功 Job 以相同或覆盖范围解决，保留审计记录但标记为“已由后续采集解决”，不再计入待处理；
+- 结果页先展示截图、页面状态和交互路径，再展示人类可读内容；Evidence Level、revision、Fact ID、provenance 和原始 JSON 收进技术详情；
+- Handoff 与实现意图仍是 V2 核心能力，但在阶段五 Agent 消费流程重新设计前不进入 PBWork 默认操作面。
+
 ## 产品边界
 
 PBWork Capture 负责：

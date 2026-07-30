@@ -59,19 +59,17 @@ test("task-list captures in place, reports background completion, and renders hi
   await openFinishedResult(page);
 
   await expect(page).toHaveURL(/\/workbench\/evidence\/[^/]+\/[^/]+$/);
-  await expect(page.getByText("证据可以继续交付")).toBeVisible();
-  await expect(
-    page.getByText("执行覆盖").locator("..").getByText("complete"),
-  ).toBeVisible();
-  await expect(
-    page.getByText("语义完整性").locator("..").getByText("declared"),
-  ).toBeVisible();
+  await expect(page.getByText("2 / 2 个视图采集成功")).toBeVisible();
+  await expect(page.getByText("本次采集的页面与状态")).toBeVisible();
+  await expect(page.getByText("任务列表 · 默认").first()).toBeVisible();
+  await expect(page.getByText("任务详情 · 可领奖").first()).toBeVisible();
   await expect(
     page.getByRole("img", { name: /任务列表.*采集截图/ }).first(),
   ).toBeVisible();
-  await expect(page.getByText("页面内容与语义区域").first()).toBeVisible();
-  await expect(page.getByText(/页面语义区域/).first()).toBeVisible();
-  await expect(page.getByText(/所有原始事实/).first()).toBeVisible();
+  await expect(page.getByText("页面内容").first()).toBeVisible();
+  await expect(page.getByText("页面区域").first()).toBeVisible();
+  await page.getByText("技术详情与原始事实").click();
+  await expect(page.getByText(/严格保持 Store JSON 顺序/)).toBeVisible();
 
   if (process.env.PBWORK_E2E_RESULT_PATH) {
     const [, bundleId, snapshotId] =
@@ -98,11 +96,12 @@ test("a sparse analytics prototype keeps the screenshot but reports semantic lim
   await finishFromComposer(page);
   await openFinishedResult(page);
 
-  await expect(page.getByText("证据已保存，但需要注意限制")).toBeVisible();
-  await expect(page.getByText("无法证明完整").first()).toBeVisible();
-  await expect(page.getByText(/没有可证明的完整语义覆盖/)).toBeVisible();
+  await expect(page.getByText("1 / 1 个视图采集成功")).toBeVisible();
+  await expect(page.getByText("1 个视图尚未设置明确验收范围")).toBeVisible();
+  await expect(
+    page.getByText(/这个页面状态尚未设置明确的验收元素/),
+  ).toBeVisible();
   await expect(
     page.getByRole("img", { name: /图表分析.*采集截图/ }).first(),
   ).toBeVisible();
-  await expect(page.getByText("不会用占位图冒充采集截图")).toHaveCount(0);
 });

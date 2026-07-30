@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
 import { RouterLink } from "vue-router";
 import {
   ArrowRight,
@@ -10,6 +10,7 @@ import {
   Layers3,
   MessageSquareText,
   Palette,
+  ScanLine,
   Sparkles,
 } from "lucide-vue-next";
 import {
@@ -24,11 +25,14 @@ import {
 } from "@/design-system/types";
 import { useCommentsStore } from "@/app/stores/comments";
 import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
+import { useCaptureStore } from "@/app/stores/capture";
+import { buildCaptureTaskPresentations } from "@/capture/presentation";
 
 const prototypes = loadPrototypes();
 const screens = loadPrototypeScreens();
 const comments = useCommentsStore();
 const lifecycleStore = usePrototypeLifecycleStore();
+const capture = useCaptureStore();
 
 const lifecycleOrder: Array<"all" | PrototypeLifecycle> = [
   "all",
@@ -62,6 +66,53 @@ const focusPrototypes = computed(() => {
 const openComments = computed(() =>
   comments.comments.filter((comment) => comment.status === "open"),
 );
+const captureTasks = computed(() =>
+  buildCaptureTaskPresentations(capture.consoleState),
+);
+const unresolvedCaptureTasks = computed(
+  () =>
+    captureTasks.value.filter((item) => item.status === "needs-attention")
+      .length,
+);
+const runningCaptureTasks = computed(
+  () => captureTasks.value.filter((item) => item.status === "running").length,
+);
+const captureResults = computed(() =>
+  (capture.consoleState?.bundles ?? [])
+    .filter((item) => item.activeSnapshot)
+    .slice(0, 4),
+);
+const captureResultCount = computed(
+  () =>
+    (capture.consoleState?.bundles ?? []).filter((item) => item.activeSnapshot)
+      .length,
+);
+
+function captureResultPath(
+  item: (typeof captureResults.value)[number],
+): string {
+  return `/workbench/evidence/${item.bundle.bundleId}/${item.activeSnapshot!.snapshotId}`;
+}
+
+function captureResultLabel(item: (typeof captureResults.value)[number]) {
+  const counts = item.activeSnapshot!.coverage.counts;
+  return `${counts.captured + counts.reused}/${counts.selected} 成功`;
+}
+
+function captureResultTime(item: (typeof captureResults.value)[number]) {
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date(item.activeSnapshot!.committedAt));
+}
+
+onMounted(() => {
+  if (!capture.connected) void capture.connect();
+  else void capture.refreshConsole();
+});
 
 function prototypeStats(prototypeId: string) {
   const prototypeScreens = screens.filter(
@@ -175,6 +226,59 @@ const assetStats = computed(() => [
             <footer>打开原型 <ArrowRight :size="14" /></footer>
           </div>
         </RouterLink>
+      </div>
+    </section>
+
+    <section class="overview-section capture-section">
+      <div class="section-heading compact">
+        <div>
+          <p>采集与验收</p>
+          <h2>最近采集</h2>
+        </div>
+        <RouterLink to="/workbench/capture" class="section-link">
+          任务中心 <ArrowRight :size="14" />
+        </RouterLink>
+      </div>
+      <div class="capture-overview">
+        <div class="capture-stats">
+          <article>
+            <span>进行中</span>
+            <strong>{{ runningCaptureTasks }}</strong>
+          </article>
+          <article :class="{ attention: unresolvedCaptureTasks }">
+            <span>需处理</span>
+            <strong>{{ unresolvedCaptureTasks }}</strong>
+          </article>
+          <article>
+            <span>可检查结果</span>
+            <strong>{{ captureResultCount }}</strong>
+          </article>
+        </div>
+        <div v-if="captureResults.length" class="capture-result-list">
+          <RouterLink
+            v-for="item in captureResults"
+            :key="item.bundle.bundleId"
+            :to="captureResultPath(item)"
+          >
+            <span class="capture-result-icon"><ScanLine :size="16" /></span>
+            <span>
+              <strong>{{
+                prototypes.find(
+                  (prototype) => prototype.id === item.bundle.prototypeId,
+                )?.label ?? item.bundle.prototypeId
+              }}</strong>
+              <small
+                >{{ captureResultLabel(item) }} ·
+                {{ captureResultTime(item) }}</small
+              >
+            </span>
+            <ArrowRight :size="14" />
+          </RouterLink>
+        </div>
+        <div v-else class="capture-empty">
+          <ScanLine :size="22" />
+          <span>完成采集后，结果会显示在这里。</span>
+        </div>
       </div>
     </section>
 
@@ -492,6 +596,106 @@ const assetStats = computed(() => [
   font-size: 0.7rem;
   font-weight: 700;
 }
+.section-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: rgb(var(--v-theme-primary));
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.capture-section {
+  padding: 19px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 17px;
+  background: rgb(var(--v-theme-surface));
+}
+.capture-overview {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.72fr) minmax(0, 1.28fr);
+  gap: 14px;
+}
+.capture-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+.capture-stats article {
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  min-height: 76px;
+  padding: 11px;
+  border-radius: 11px;
+  background: rgba(var(--v-theme-on-surface), 0.035);
+}
+.capture-stats article.attention {
+  background: color-mix(in srgb, rgb(var(--v-theme-error)) 7%, transparent);
+}
+.capture-stats span {
+  color: rgba(var(--v-theme-on-surface), 0.5);
+  font-size: 0.66rem;
+}
+.capture-stats strong {
+  font-size: 1.25rem;
+}
+.capture-result-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+.capture-result-list a {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  min-height: 50px;
+  padding: 8px 10px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 10px;
+  color: inherit;
+  text-decoration: none;
+}
+.capture-result-list a:hover {
+  border-color: color-mix(
+    in srgb,
+    rgb(var(--v-theme-primary)) 38%,
+    transparent
+  );
+}
+.capture-result-icon {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 9px;
+  background: color-mix(in srgb, rgb(var(--v-theme-success)) 10%, transparent);
+  color: rgb(var(--v-theme-success));
+}
+.capture-result-list a > span:nth-child(2) {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+.capture-result-list small {
+  overflow: hidden;
+  color: rgba(var(--v-theme-on-surface), 0.48);
+  font-size: 0.64rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.capture-empty {
+  display: flex;
+  min-height: 76px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px dashed rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 11px;
+  color: rgba(var(--v-theme-on-surface), 0.48);
+  font-size: 0.72rem;
+}
 .overview-columns {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
@@ -636,7 +840,8 @@ const assetStats = computed(() => [
 }
 @media (max-width: 1050px) {
   .focus-grid,
-  .overview-columns {
+  .overview-columns,
+  .capture-overview {
     grid-template-columns: 1fr;
   }
 }
@@ -650,6 +855,9 @@ const assetStats = computed(() => [
   }
   .asset-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .capture-result-list {
+    grid-template-columns: 1fr;
   }
   .lifecycle-list {
     grid-template-columns: repeat(3, 1fr);

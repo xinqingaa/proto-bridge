@@ -45,6 +45,9 @@ const statusLabel = computed(() => {
   const status = capture.activeJob?.status;
   return status ? STATUS_LABELS[status] : "采集任务";
 });
+const hasCurrentItem = computed(
+  () => executing.value || Boolean(capture.notice),
+);
 const activatorLabel = computed(() =>
   executing.value
     ? `${statusLabel.value}，打开采集任务`
@@ -138,31 +141,40 @@ onBeforeUnmount(() => {
       <header>
         <div>
           <span>后台采集</span>
-          <h3>{{ capture.activeJob ? statusLabel : "没有正在执行的任务" }}</h3>
+          <h3>
+            {{
+              executing
+                ? statusLabel
+                : (capture.notice?.title ?? "没有正在执行的任务")
+            }}
+          </h3>
         </div>
         <Bell :size="19" />
       </header>
 
-      <template v-if="capture.activeJob">
+      <template v-if="hasCurrentItem">
         <v-progress-linear
+          v-if="executing"
           :model-value="progress"
           color="primary"
           height="7"
           rounded
         />
-        <div class="job-meta">
+        <div v-if="executing && capture.activeJob" class="job-meta">
           <span>{{ capture.activeJob.selection.cases.length }} 个采集项</span>
           <code>{{ capture.activeJob.jobId }}</code>
         </div>
         <p class="job-detail">
           {{
-            capture.activeJob.journal.at(-1)?.detail ??
-            "任务已经持久化，可以继续浏览工作台。"
+            executing
+              ? (capture.activeJob?.journal.at(-1)?.detail ??
+                "任务已经开始，可以继续浏览工作台。")
+              : capture.notice?.message
           }}
         </p>
         <div class="job-actions">
           <v-btn
-            v-if="capture.jobFinished && capture.details"
+            v-if="capture.notice?.snapshotId"
             color="primary"
             @click="viewResult"
           >
@@ -176,7 +188,15 @@ onBeforeUnmount(() => {
           >
             取消任务
           </v-btn>
-          <v-btn v-else variant="outlined" @click="capture.retryActiveJob">
+          <v-btn
+            v-if="
+              !executing &&
+              capture.notice?.tone === 'error' &&
+              capture.activeJob
+            "
+            variant="outlined"
+            @click="capture.retryActiveJob"
+          >
             重试未完成项
           </v-btn>
         </div>
@@ -191,7 +211,7 @@ onBeforeUnmount(() => {
       </template>
 
       <footer>
-        <RouterLink to="/workbench/capture">高级任务中心</RouterLink>
+        <RouterLink to="/workbench/capture">任务中心</RouterLink>
       </footer>
     </section>
   </v-menu>

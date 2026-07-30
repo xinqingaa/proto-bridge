@@ -346,29 +346,52 @@ const sectionNavigationTree = computed(() => {
   if (!current) return [];
   if (sectionId.value === "overview") return [current];
   if (sectionId.value === "capture") {
-    const bundles = (capture.consoleState?.bundles ?? [])
-      .filter((item) => item.activeSnapshot)
-      .map((item) => {
-        const prototype = loadPrototypes().find(
-          (record) => record.id === item.bundle.prototypeId,
-        );
-        return {
-          id: `bundle-${item.bundle.bundleId}`,
-          label: [
-            prototype?.label ?? item.bundle.prototypeId,
-            `${item.activeSnapshot!.activeSlots.length} 项`,
-            new Intl.DateTimeFormat("zh-CN", {
-              month: "2-digit",
-              day: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: false,
-            }).format(new Date(item.activeSnapshot!.committedAt)),
-          ].join(" · "),
-          kind: "item" as const,
-          to: `/workbench/evidence/${item.bundle.bundleId}/${item.activeSnapshot!.snapshotId}`,
-        };
-      });
+    const resultGroups = new Map<
+      string,
+      {
+        id: string;
+        label: string;
+        kind: "group";
+        children: WorkbenchNavigationTreeNode[];
+      }
+    >();
+    for (const item of (capture.consoleState?.bundles ?? []).filter(
+      (candidate) => candidate.activeSnapshot,
+    )) {
+      const snapshot = item.activeSnapshot!;
+      const prototype = loadPrototypes().find(
+        (record) => record.id === item.bundle.prototypeId,
+      );
+      const counts = snapshot.coverage.counts;
+      const successful = counts.captured + counts.reused;
+      const resultNode: WorkbenchNavigationTreeNode = {
+        id: `bundle-${item.bundle.bundleId}`,
+        label: [
+          new Intl.DateTimeFormat("zh-CN", {
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+          }).format(new Date(snapshot.committedAt)),
+          `${successful}/${counts.selected} 成功`,
+        ].join(" · "),
+        kind: "item",
+        to: `/workbench/evidence/${item.bundle.bundleId}/${snapshot.snapshotId}`,
+      };
+      const group = resultGroups.get(item.bundle.prototypeId) ?? {
+        id: `capture-result-prototype-${item.bundle.prototypeId}`,
+        label: prototype?.label ?? item.bundle.prototypeId,
+        kind: "group" as const,
+        children: [],
+      };
+      group.children.push(resultNode);
+      resultGroups.set(item.bundle.prototypeId, group);
+    }
+    const resultChildren = [...resultGroups.values()].map((group) => ({
+      ...group,
+      count: group.children.length,
+    }));
     return [
       {
         id: "capture-task-group",
@@ -381,8 +404,11 @@ const sectionNavigationTree = computed(() => {
         id: "capture-result-group",
         label: "采集结果",
         kind: "group" as const,
-        count: bundles.length,
-        children: bundles,
+        count: [...resultGroups.values()].reduce(
+          (sum, group) => sum + group.children.length,
+          0,
+        ),
+        children: resultChildren,
       },
     ];
   }

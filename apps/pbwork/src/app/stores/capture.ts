@@ -139,6 +139,7 @@ export const useCaptureStore = defineStore("capture-v2", {
       preflight: null as StoredPreflight | null,
       acceptedWarningIds: [] as string[],
       activeJob: null as CaptureJob | null,
+      selectedJob: null as CaptureJob | null,
       details: null as BundleEvidenceDetails | null,
       stalenessReport: null as StalenessReport | null,
       handoffPreview: null as HandoffPreview | null,
@@ -201,6 +202,9 @@ export const useCaptureStore = defineStore("capture-v2", {
     },
     dismissNotice() {
       this.notice = null;
+    },
+    clearSelectedJob() {
+      this.selectedJob = null;
     },
     invalidatePreflight() {
       this.preflight = null;
@@ -435,6 +439,7 @@ export const useCaptureStore = defineStore("capture-v2", {
           ...(targetBundleId ? { bundleId: targetBundleId } : {}),
         });
         this.activeJob = result.job;
+        this.selectedJob = null;
         this.details = null;
         this.composerOpen = false;
         this.jobCenterOpen = true;
@@ -479,8 +484,7 @@ export const useCaptureStore = defineStore("capture-v2", {
           (coverage?.unsupported ?? 0) +
           (coverage?.cancelled ?? 0) +
           (coverage?.interrupted ?? 0);
-        const successful =
-          (coverage?.captured ?? 0) + (coverage?.reused ?? 0);
+        const successful = (coverage?.captured ?? 0) + (coverage?.reused ?? 0);
         const completed = this.activeJob.status === "completed";
         this.notice = {
           tone:
@@ -508,15 +512,16 @@ export const useCaptureStore = defineStore("capture-v2", {
       }
     },
     async resumeJob(job: CaptureJob) {
-      this.activeJob = job;
-      this.details = null;
       if (
         TERMINAL_JOB_STATUSES.includes(
           job.status as (typeof TERMINAL_JOB_STATUSES)[number],
         )
       ) {
-        await this.loadBundle(job.bundleId);
+        this.selectedJob = job;
+        return;
       }
+      this.activeJob = job;
+      this.selectedJob = job;
     },
     async cancelActiveJob() {
       if (!this.activeJob) return;
@@ -528,6 +533,7 @@ export const useCaptureStore = defineStore("capture-v2", {
       }
     },
     async loadBundle(bundleId: string) {
+      this.clearError();
       try {
         const details = await captureServiceClient.bundleDetails(bundleId);
         this.revokeScreenshotUrls();
@@ -538,6 +544,7 @@ export const useCaptureStore = defineStore("capture-v2", {
       }
     },
     async loadSnapshot(bundleId: string, snapshotId: string) {
+      this.clearError();
       try {
         const details = await captureServiceClient.snapshotDetails(
           bundleId,
@@ -605,12 +612,14 @@ export const useCaptureStore = defineStore("capture-v2", {
     },
     async retryActiveJob() {
       if (!this.activeJob) return;
+      await this.retryJob(this.activeJob);
+    },
+    async retryJob(job: CaptureJob) {
       try {
-        this.draft = await captureServiceClient.retryDraft(
-          this.activeJob.jobId,
-        );
+        this.draft = await captureServiceClient.retryDraft(job.jobId);
         this.entryKind = "custom";
-        this.recaptureBundleId = this.activeJob.bundleId;
+        this.recaptureBundleId = job.bundleId;
+        this.selectedJob = null;
         this.invalidatePreflight();
         this.openComposer();
       } catch (error) {
