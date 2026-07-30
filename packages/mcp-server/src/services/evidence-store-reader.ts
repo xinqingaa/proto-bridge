@@ -88,8 +88,8 @@ export function evidenceScreenshotUri(
 }
 
 /**
- * Read-only Stage 5 adapter over the same immutable V2 Store consumed by
- * PBWork. It always resolves a concrete Snapshot ID before returning
+ * Read-only adapter over the same immutable Store consumed by PBWork.
+ * It always resolves a concrete Snapshot ID before returning
  * evidence, so a long-running Agent never silently drifts to a newer active
  * Snapshot.
  */
@@ -431,7 +431,7 @@ export class EvidenceStoreReader {
     if (!storeRoot || !workspaceId) {
       throw new V2ContractError(
         "workspace-mismatch",
-        "Evidence Store reader is not configured. Start MCP with --store-root <path> and --workspace <workspaceId>, or set PB_V2_STORE_ROOT and PB_V2_WORKSPACE_ID.",
+        "Evidence Store reader is not configured. Start MCP with --store-root <path> and --workspace <workspaceId>, or set PB_STORE_ROOT and PB_WORKSPACE_ID.",
       );
     }
     this.initPromise = (async () => {

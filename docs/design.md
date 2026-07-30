@@ -1236,7 +1236,7 @@ HTTP 状态固定映射：成功为 200；`INVALID_ACTION` / `INVALID_ID` 为 40
 
 ## 16. 目录结构
 
-PBWork 固定为本仓库内的 `apps/pbwork/` 独立前端应用。旧 `examples/` 已经移除且不再维护或使用；PBWork 不提供兼容层，不读取旧路径，也不复用旧脚本。Source adapter 的 `source.root` 指向 `apps/pbwork/`，runtime capture 只使用 PBWork 的 Runtime URL。
+PBWork 固定为本仓库内的 `apps/pbwork/` 独立前端应用。旧 `examples/` 已经移除且不再维护或使用；PBWork 不提供兼容层，不读取旧路径，也不复用旧脚本。Evidence capture 只使用 PBWork 的 instrumented Runtime URL 和 authored Contract。
 
 ```text
 apps/pbwork/
@@ -1244,7 +1244,6 @@ apps/pbwork/
 ├── vite.config.ts
 ├── tsconfig.json
 ├── env.d.ts
-├── proto-bridge.config.json    # source.adapter=vue3-prototype，source.root=.
 ├── test/
 ├── e2e/
 └── src/
@@ -1401,7 +1400,7 @@ apps/pbwork/
 
 ## 19. PB 源码约定
 
-本节是 PBWork 作为 Vue / Vuetify 生产者的写法规范，与 [conventions.md](./conventions.md) 的角色 / shell 语义对齐。V2 instrumented Runtime 已通过独立 Capture Protocol 读取 `data-pb-id` / `data-pb-key` / `data-pb-role`；V1 `source.analyze` 与页面型 Runtime 证据仍依赖 tag / class 启发式，因此源码必须同时满足两类识别面。
+本节是 PBWork 作为 Vue / Vuetify 生产者的写法规范，与 [conventions.md](./conventions.md) 的角色 / shell 语义对齐。instrumented Runtime 通过独立 Capture Protocol 读取 `data-pb-id` / `data-pb-key` / `data-pb-role`，并使用 Registry 中 authored `requiredFragments` 判断完整性。
 
 ### 19.1 强制标记
 
@@ -1420,7 +1419,7 @@ apps/pbwork/
 3. 区块根同时写 `data-pb-role`；shell 根同时写 `data-pb-shell`；
 4. 不发明 Core 角色表以外的业务词表；
 5. V2 持久 Fragment 只接受 `pbId` 与可选 `pbKey`，不接受 selector、DOM path 或 Workbench 临时 handle；
-6. 属性不能替代 V1 tag / class / 显隐绑定等当前识别面。
+6. default 与 critical Variant 必须声明可由 Runtime 验证的完整性边界；不得用源码或 DOM 启发式补造未观测事实。
 
 ### 19.1.1 原型页面组装约定
 
@@ -1547,7 +1546,7 @@ Search Bar、Filter Bar、Bottom Navigation、Dialog、Snackbar / Toast、Empty 
 - 跨端运行页面的视觉与交互验收；
 - 浏览器内受控源码写回（原 M6，见 §15 归档），仅在出现明确非工程角色场景时重开。
 
-当前 PB 的 class/tag 约定以 [conventions.md](./conventions.md) 为准；PBWork 按 §19 强制预留 `data-pb-*`，并保持 tag / class 识别面可用。
+当前 PB Evidence 约定以 [conventions.md](./conventions.md) 为准；PBWork 按 §19 强制提供稳定 `data-pb-*` 与 authored completeness boundary。
 
 ---
 

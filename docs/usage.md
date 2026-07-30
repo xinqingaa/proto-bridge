@@ -1,313 +1,75 @@
-# 使用指南
+# ProtoBridge 使用指南
 
-安装、配置、CLI / MCP / Core 接入、仓库开发脚本与 npm 发布。
-
-产品定位与架构见 [overview.md](overview.md)；产物字段见 [artifacts.md](artifacts.md)。  
-原型工作台定稿见 [design.md](design.md)；当前原型写法约定见 [conventions.md](conventions.md)。
-
-## 环境
-
-- Node.js 20+
-- Flutter target repository（生成面向客户端的 plan / validation 通常需要）
-- 可选：prototype / source repository
-- 可选：可访问的 prototype URL（runtime capture）
-
-## 安装
-
-发布版：
+## 安装与构建
 
 ```bash
-npx @proto-bridge/cli init
-```
-
-本地 monorepo：
-
-```bash
-cd /path/to/proto-bridge
 pnpm install
-pnpm run build
+pnpm build
 ```
 
-仓库不再维护内置 example；本地契约验证使用 `tests/fixtures/`，PBWork 的实现目标见 [design.md](design.md)。
+## 启动 PBWork
 
-## 配置
-
-`proto-bridge.config.json` 只放稳定环境信息；每次还原哪一页由 CLI 参数或 MCP arguments 传入。
-
-```json
-{
-  "schemaVersion": 1,
-  "source": {
-    "adapter": "vue3-prototype",
-    "root": "/path/to/vue3-prototype"
-  },
-  "target": {
-    "adapter": "flutter-app",
-    "root": "/path/to/flutter-project"
-  },
-  "runtime": {
-    "capture": true
-  },
-  "output": {
-    "root": "./output"
-  }
-}
+```bash
+pnpm pbwork
 ```
 
-配置不描述项目架构，也不支持 project profile。模块、组件、主题、路由、i18n 和文件组织由运行时扫描 source / target 获得。
+Local Service 默认只监听 loopback。可使用：
 
-仅 target + URL 也可运行（无 source 时 `sourceSemantics` 为空或 visual fallback）。
+- `PB_SERVICE_PORT`
+- `PB_STORE_ROOT`
+- `PB_WORKSPACE_ID`
+- `PB_MAX_CASES`
+- `PBWORK_ORIGIN`
+- `PBWORK_RUNTIME_ORIGIN`
 
-优先级：
-
-```text
-CLI args / MCP tool args > proto-bridge.config.json > defaults
-```
-
----
-
-## 输入组合
-
-| 输入                      | 可运行             | 调用能力                                               | 入口                                                    |
-| ------------------------- | ------------------ | ------------------------------------------------------ | ------------------------------------------------------- |
-| source + target           | 是                 | source.analyze、target.inspect、merge、plan、review    | CLI / MCP                                               |
-| URL + target              | 是                 | runtime.capture、target.inspect、merge、plan、review   | CLI / MCP                                               |
-| source + URL + target     | 是（推荐完整重建） | source + runtime + target + merge + plan + review      | CLI / MCP                                               |
-| screenshot / OCR + target | 是                 | screenshot.attach、target.inspect、merge、plan、review | **仅 MCP**（`screenshotPath` / `ocrText` / `ocrBoxes`） |
-| 已实现 target diff        | validation         | ui.validate                                            | MCP `validate_ui_build`                                 |
-| target only               | 不生成页面上下文   | 可读 conventions 或做 validation                       | MCP                                                     |
-
-CLI 支持 `--url` / `--route` / `--vue` 与 `--capture`；**不提供**独立 screenshot/OCR 参数。有 `source.root` 时，URL 会推导 route 并补充源码证据。
-
-不要强行同时要求 source 与 URL。没有 `source.root` 时不要用 `route`/`vue` 硬跑 source analysis；没有 URL 时不要强行 capture。
-
----
+session token 只经 `Authorization` header 传递。
 
 ## CLI
 
 ```bash
-npx @proto-bridge/cli init
+proto-bridge workspace init \
+  --workspace pbwork-local \
+  --runtime http://127.0.0.1:3977
 
-npx @proto-bridge/cli generate \
-  --url "http://127.0.0.1:5173/prototype/ledger-planet/task-list?variant=default&theme=light"
-
-npx @proto-bridge/cli generate --route /prototype/ledger-planet/task-list
-
-npx @proto-bridge/cli generate \
-  --url "http://127.0.0.1:5173/prototype/ledger-planet/task-list?variant=default&theme=light" \
-  --capture
+proto-bridge workspace doctor
+proto-bridge preflight --selection selection.json
+proto-bridge capture run --selection selection.json
+proto-bridge bundle list
 ```
 
-不传页面参数且终端可交互时，会询问 `url` / `route` / `vue`。
-
-常用 flag：`--config`、`--url`、`--route`、`--vue`、`--output`、`--capture`、`--trace`、`--source-root`、`--target-root`、`--source-adapter`、`--target-adapter`。
-
-本地源码：
-
-```bash
-pnpm run generate -- --route /prototype/ledger-planet/task-list
-```
-
-PBWork 使用 Vue Router history Runtime URL：`/prototype/:prototypeId/:screenSlug?variant=:variantId&theme=:themeId`。`--url` 保留完整 URL 用于浏览器 capture，同时提取 pathname 进行 source analysis；`--route` 是高级源码路由输入，即使传入 query 也只使用 pathname，不用 Variant 或 Theme 定位 Vue SFC。复制给 PB 的地址必须是 PBWork Runtime URL，不得使用 `/workbench/**` 地址。
-
----
+配置文件为 `proto-bridge.json`。Selection、warning/risk 确认和命令完整列表见 [CLI README](../packages/cli/README.md)。
 
 ## MCP
 
-发布包：
-
-```toml
-[mcp_servers.proto-bridge]
-command = "npx"
-args = ["-y", "@proto-bridge/mcp-server"]
+```bash
+proto-bridge-mcp \
+  --store-root .proto-bridge/store \
+  --workspace pbwork-local
 ```
 
-指定 config：
+标准消费顺序：
 
-```toml
-[mcp_servers.proto-bridge]
-command = "npx"
-args = [
-  "-y",
-  "@proto-bridge/mcp-server",
-  "--config",
-  "/path/to/proto-bridge.config.json"
-]
-```
+1. `inspect_evidence_workspace`
+2. `read_agent_handoff`
+3. 原样报告全部 `mandatoryRiskReport`
+4. 读取固定 Snapshot、Staleness Report 和具体 revision/Fragment
+5. 读取目标仓库并实现
+6. `validate_target_changes`
 
-本地构建：
+不得把 Handoff 固定引用替换为 active/latest。详见 [Consumer 指南](agent-handoff-consumer.md)。
 
-```toml
-[mcp_servers.proto-bridge]
-command = "node"
-args = [
-  "/Users/name/work/proto-bridge/packages/mcp-server/dist/index.js",
-  "--config",
-  "/path/to/proto-bridge.config.json"
-]
-```
-
-Tools：
-
-| Tool                       | 作用                     |
-| -------------------------- | ------------------------ |
-| `reconstruct_page_context` | 生成页面上下文与实现产物 |
-| `read_target_conventions`  | 读取目标工程规范         |
-| `find_target_examples`     | 搜索相似目标文件 / 片段  |
-| `validate_ui_build`        | 验证目标变更             |
-
-Hybrid 示例：
-
-```json
-{
-  "route": "/prototype/ledger-planet/task-list",
-  "url": "http://127.0.0.1:5173/prototype/ledger-planet/task-list?variant=default&theme=light",
-  "capture": true
-}
-```
-
-Screenshot / OCR 示例：
-
-```json
-{
-  "screenshotPath": "/Users/name/Desktop/page.png",
-  "ocrText": ["Account Detail", "P/L Analysis"],
-  "targetRoot": "/path/to/flutter-project"
-}
-```
-
-Validation 示例：
-
-```json
-{
-  "pageId": "page-pnl-analysis-20260514T05343",
-  "targetRoot": "/path/to/flutter-project"
-}
-```
-
-### Agent 消费流程（目标工程实现）
-
-1. `reconstruct_page_context`
-2. 读 `ui-build-review.md` 和截图，确认页面架构、流程、风险及人工修订
-3. 必读 `ui-build-plan.json` 的 `canonicalReadPolicy`、`implementationContract`、`visualPlan`、`stylePlan` 和交互字段
-4. `canonicalReadPolicy.required=true` 时按 refs 必读 `page-canonical.json`；否则在证据冲突或采集异常时读取。需要 B 细节时调用 `read_target_conventions` / `find_target_examples`
-5. 在 target Flutter 仓库实现
-6. format / analyze / tests
-7. `validate_ui_build`
-
----
-
-## Core 嵌入
-
-```ts
-import { reconstructPageContext } from "@proto-bridge/core/workflows/capability-first";
-
-const result = await reconstructPageContext({
-  source: {
-    adapter: "vue3-prototype",
-    root: "/path/to/vue3-prototype",
-  },
-  target: {
-    adapter: "flutter-app",
-    root: "/path/to/flutter-project",
-  },
-  route: "/prototype/ledger-planet/task-list",
-  url: "http://127.0.0.1:5173/prototype/ledger-planet/task-list?variant=default&theme=light",
-  outDir: "./output/pnl-analysis",
-  capture: true,
-  buildPlan: true,
-  buildReview: true,
-});
-
-console.log(result.files.uiBuildPlan);
-```
-
-单独 validation：
-
-```ts
-import { validateUiCapability } from "@proto-bridge/core/capabilities";
-
-const result = await validateUiCapability({
-  targetRoot: "/path/to/flutter-project",
-  allowedPaths: ["lib/features/example"],
-});
-```
-
----
-
-## 仓库开发命令
-
-| 命令                       | 作用                                                    |
-| -------------------------- | ------------------------------------------------------- |
-| `pnpm run build`           | 构建 core / local-service / cli / mcp-server            |
-| `pnpm run typecheck`       | core / local-service / cli / mcp-server TypeScript 检查 |
-| `pnpm run lint`            | 当前等同 typecheck                                      |
-| `pnpm run dev`             | CLI 源码开发入口                                        |
-| `pnpm run pbwork`          | 构建 Core 后同时启动 PBWork 与 V2 Local Service         |
-| `pnpm run pbwork:service`  | 只启动 V2 Local Service                                 |
-| `pnpm run generate -- ...` | 构建后跑本地 `proto-bridge generate`                    |
-| `pnpm run test`            | Core 必要单元测试                                       |
-| `pnpm run test:config`     | Core config 解析测试                                    |
-| `pnpm run test:e2e:cli`    | CLI hybrid artifacts 冒烟                               |
-| `pnpm run test:e2e:mcp`    | MCP hybrid 协议与 validation 冒烟                       |
-| `pnpm run test:e2e`        | CLI + MCP hybrid 冒烟                                   |
-| `pnpm run test:e2e:mcp-v2` | 固定 Snapshot/revision 的 Store-backed MCP E2E          |
-| `pnpm run test:e2e:consumer-v2` | Handoff → MCP → 无 PB 配置目标仓库 → validation E2E |
-| `pnpm run test:e2e:evidence-slice` | PBWork 与 MCP 同 Snapshot 黄金切片 E2E           |
-| `pnpm run verify:v2:phase-five` | Core/CLI/MCP/PBWork/Consumer 第五阶段总门禁         |
-
-e2e 默认使用 `tests/fixtures/`；`url`、`sourceRoot`、`targetRoot` 可用参数覆盖，见根 `package.json` 与 `scripts/test-e2e.mjs`。
-
-Local Service 默认只监听 loopback。可用 `PB_V2_SERVICE_PORT`、`PB_V2_STORE_ROOT`、`PBWORK_ORIGIN` 与 `PBWORK_RUNTIME_ORIGIN` 调整本地端口、Store 和明确 Origin；session token 只经 `Authorization` header 传递。V2 CLI 使用 `proto-bridge v2 ...` 生产同一 Store Evidence；MCP 使用 `--store-root` 与 `--workspace` 只读连接该 Workspace。
-
-改本仓库的约束与检查单：`AGENT.md`、`skills/proto-bridge`。
-
----
-
-## npm 发布
-
-发布包：`@proto-bridge/core`、`@proto-bridge/cli`、`@proto-bridge/mcp-server`。  
-不发布 monorepo 根项目 `proto-bridge`。
-
-用户入口：
+## 验证
 
 ```bash
-npx @proto-bridge/cli init
-npx @proto-bridge/cli generate --route /prototype/ledger-planet/task-list
-npx -y @proto-bridge/mcp-server
+pnpm verify
 ```
 
-发布前：
+可单独运行：
 
 ```bash
-npm config get registry
-npm whoami
-pnpm install
-pnpm run typecheck
-pnpm run build
-pnpm --filter @proto-bridge/core pack --dry-run
-pnpm --filter @proto-bridge/cli pack --dry-run
-pnpm --filter @proto-bridge/mcp-server pack --dry-run
+pnpm test
+pnpm test:e2e:runtime
+pnpm test:e2e:mcp
+pnpm test:e2e:consumer
+pnpm test:e2e:evidence-slice
 ```
-
-顺序：`core` → `cli` → `mcp-server`。
-
-```bash
-pnpm --filter @proto-bridge/core publish --access public --registry=https://registry.npmjs.org/
-pnpm --filter @proto-bridge/cli publish --access public --registry=https://registry.npmjs.org/
-pnpm --filter @proto-bridge/mcp-server publish --access public --registry=https://registry.npmjs.org/
-```
-
-版本：`patch` 兼容修复；`minor` 兼容新功能；`major` 破坏性变更。`workspace:*` 在 pack/publish 时转为当前发布版本。依赖新能力的包需同链发布。
-
-发布后：
-
-```bash
-npm view @proto-bridge/core version
-npm view @proto-bridge/cli version
-npm view @proto-bridge/mcp-server version
-cd /tmp
-npx @proto-bridge/cli@latest --help
-```
-
-约束：`bin` 指向 `dist/index.js`；`prepack` 会自动 build；正式发布前建议工作区干净。

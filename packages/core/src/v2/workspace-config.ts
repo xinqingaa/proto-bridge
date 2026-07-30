@@ -62,4 +62,4 @@ export const V2WorkspaceConfig = z
 
 export type V2WorkspaceConfig = z.infer<typeof V2WorkspaceConfig>;
 
-export const DEFAULT_V2_CONFIG_FILE = 'proto-bridge.v2.json';
+export const DEFAULT_V2_CONFIG_FILE = 'proto-bridge.json';

@@ -38,7 +38,8 @@ description: >-
 - 列表：`ScrollableDataList` + `DataList`，勿合并职责；状态页关闭刷新手势。  
 - 禁止页内自造手势仲裁；复用 `_shared` 与 ScrollableDataList。  
 - 多 Tab + 栈遵守 `docs/prototypes/shell-and-nav.md`；`keepMounted` 下 ownsVariant；theme ≠ variant。  
-- Screen / Variant 写入 `prototypes/registry.ts`；稳定 `data-pb-id` / `inspectId`。  
+- Screen / Variant 写入 `prototypes/registry.ts`；稳定 `data-pb-id` / `data-pb-role` / `inspectId`。
+- 新 Screen 默认是 PB Evidence strict：default 与 critical Variant 必须声明 `requiredFragments`，关键交互声明 Action/Scenario/Checkpoint；禁止加入 legacy allowlist 绕过。
 - 只把已稳定的通用规则写入 docs；未定稿视觉口味不要写成铁律。  
 
 ## 改动落点
@@ -55,6 +56,7 @@ description: >-
 ```bash
 pnpm --filter @proto-bridge/pbwork test
 pnpm --filter @proto-bridge/pbwork typecheck
+pnpm test:e2e:runtime
 ```
 
 涉及手势时至少跑 `pointer-gestures` 相关测试；涉及原型交互时按该原型 e2e / 手工清单验收。

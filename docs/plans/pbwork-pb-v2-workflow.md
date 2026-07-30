@@ -1,6 +1,6 @@
 # PBWork 与 ProtoBridge V2 操作闭环
 
-> 状态：规范已固定；实施中
+> 状态：规范已固定；当前闭环已实现
 > 权威范围：PBWork 中 Evidence 的选择、预检、采集、检查、恢复、重采和 Agent Handoff
 > 上位目标：[V2 产品闭环与实施总览](./pb-v2-overview.md)
 > 语义约束：[V2 核心规范](./pb-v2-spec.md)
@@ -8,7 +8,7 @@
 
 本文件定义 PBWork 如何成为 ProtoBridge V2 的证据采集控制面。它固定用户任务、状态反馈、失败恢复和验收行为，不固定页面视觉、HTTP 路径、鉴权机制或 Store 文件布局。
 
-当前正式 V1 行为仍以 `docs/design.md` 和代码为准。V2 在阶段七正式切换前不得提前替换 V1 对外入口。
+当前仓库只保留 Evidence 产品入口。内部 `v2` 命名表示 Schema/协议 major version，不代表仍存在 V1/V2 双轨产品。
 
 当前 PBWork 可用性闸门采用“普通用户无需理解内部对象”的展示原则：
 

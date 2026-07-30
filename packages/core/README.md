@@ -1,79 +1,29 @@
 # @proto-bridge/core
 
-ProtoBridge core library。
+ProtoBridge 的唯一产品语义层，包含：
 
-大多数用户应优先使用 `@proto-bridge/cli` 或 `@proto-bridge/mcp-server`。当需要把 ProtoBridge 嵌入另一个 Node.js 工具，或围绕共享 capabilities 做自定义编排时，再直接使用本包。
+- Evidence Contract、稳定 ID、状态词汇和引用断言；
+- Selection、Preflight、Case Matrix、Capture 与 Handoff；
+- 不可变本地 Store、Job 恢复、stale、fork/archive 和安全 clean；
+- 浏览器安全 Runtime Capture Protocol；
+- 独立 Flutter Target 查询与变更验证。
 
-## Workflow 接口
-
-```ts
-import { reconstructPageContext } from '@proto-bridge/core/workflows/capability-first';
-
-const result = await reconstructPageContext({
-  source: {
-    adapter: 'vue3-prototype',
-    root: '/path/to/vue3-prototype',
-  },
-  target: {
-    adapter: 'flutter-app',
-    root: '/path/to/flutter-project',
-  },
-  route: '/prototype/asset/pnl-analysis',
-  url: 'http://localhost:5173/#/prototype/asset/pnl-analysis?is_mobile=1',
-  outDir: './output/pnl-analysis',
-  capture: true,
-  buildPlan: true,
-  buildReview: true,
-});
-
-console.log(result.files.pageCanonical);
-console.log(result.files.uiBuildPlan);
-console.log(result.files.uiBuildReview);
-```
-
-## Capability 接口
-
-```ts
-import { validateUiCapability } from '@proto-bridge/core/capabilities';
-
-const validation = await validateUiCapability({
-  targetRoot: '/path/to/flutter-project',
-  allowedPaths: ['lib/features/example'],
-});
-
-console.log(validation.status);
-```
-
-## 输出
+公共边界：
 
 ```text
-<outDir>/
-├── page-canonical.json
-├── ui-build-plan.json
-├── ui-build-review.md
-└── screenshots/
+@proto-bridge/core
+@proto-bridge/core/v2
+@proto-bridge/core/v2/capture
+@proto-bridge/core/v2/store
+@proto-bridge/core/v2/runtime-contract
+@proto-bridge/core/v2/service-contract
+@proto-bridge/core/target/flutter-app/query
+@proto-bridge/core/target/flutter-app/validation
 ```
 
-`ui-build-plan.json` 是唯一机器契约，包含 `canonicalReadPolicy`、`targetConventions`、`implementationContract` 和 `visualPlan`。实现 agent 必读 plan；`canonicalReadPolicy.required=true` 时还必须按 refs 读取 Canonical。`ui-build-review.md` 是从 plan 渲染的人类可读 brief。
+`/v2` 是持久对象和协议的 schema namespace；仓库不包含旧 Artifact/Planner 产品链。
 
-## 项目事实边界
-
-Core 不包含项目 preset。Vue 3 / Flutter 技术规则留在 adapter 与 analyzer；模块、组件、主题、路由、i18n、资产和文件组织来自本次 source / target 扫描。无法证明的事实保持 `unknown`。
-
-## 公开 Subpaths
-
-- `@proto-bridge/core/workflows/capability-first`
-- `@proto-bridge/core/capabilities`
-- `@proto-bridge/core/config`
-- `@proto-bridge/core/target/flutter-app`
-- `@proto-bridge/core/source/vue3-prototype`
-- `@proto-bridge/core/snapshot`
-- `@proto-bridge/core/artifacts`
-- `@proto-bridge/core/shared`
-
-完整产品文档见仓库根目录 `docs/overview.md`、`docs/artifacts.md`、`docs/usage.md`。
-
-## 环境要求
-
-- Node.js 20 或更高版本。
-- ESM runtime。
+```bash
+pnpm --filter @proto-bridge/core build
+pnpm --filter @proto-bridge/core test
+```

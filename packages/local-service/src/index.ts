@@ -13,7 +13,7 @@ function envNumber(name: string, fallback: number): number {
 }
 
 async function main(): Promise<void> {
-  const port = envNumber('PB_V2_SERVICE_PORT', 3988);
+  const port = envNumber('PB_SERVICE_PORT', 3988);
   const service = new ProtoBridgeLocalService({
     host: '127.0.0.1',
     port,
@@ -24,10 +24,10 @@ async function main(): Promise<void> {
     runtimeBaseUrl:
       process.env.PBWORK_RUNTIME_ORIGIN ?? 'http://127.0.0.1:3977',
     storeRoot:
-      process.env.PB_V2_STORE_ROOT ??
-      path.resolve(process.cwd(), '.proto-bridge/v2-store'),
-    workspaceId: process.env.PB_V2_WORKSPACE_ID ?? 'pbwork-local',
-    maxCases: envNumber('PB_V2_MAX_CASES', 100),
+      process.env.PB_STORE_ROOT ??
+      path.resolve(process.cwd(), '.proto-bridge/store'),
+    workspaceId: process.env.PB_WORKSPACE_ID ?? 'pbwork-local',
+    maxCases: envNumber('PB_MAX_CASES', 100),
   });
   const address = await service.start();
   process.stdout.write(

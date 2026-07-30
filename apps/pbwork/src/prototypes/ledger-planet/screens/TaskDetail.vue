@@ -52,7 +52,11 @@ function claim() {
       data-pb-id="ledger-planet.task-detail.root"
       data-pb-role="page"
     >
-      <section class="task-hero">
+      <section
+        class="task-hero"
+        data-pb-id="ledger-planet.task-detail.hero"
+        data-pb-role="section"
+      >
         <div class="hero-icon"><Target :size="24" /></div>
         <div>
           <span class="eyebrow">每日任务</span>
@@ -64,7 +68,11 @@ function claim() {
           :tone="completed ? 'success' : 'primary'"
         />
       </section>
-      <section class="progress-panel">
+      <section
+        class="progress-panel"
+        data-pb-id="ledger-planet.task-detail.progress"
+        data-pb-role="section"
+      >
         <div class="section-heading">
           <strong>完成进度</strong
           ><span
@@ -83,7 +91,11 @@ function claim() {
           </div>
         </div>
       </section>
-      <section class="steps">
+      <section
+        class="steps"
+        data-pb-id="ledger-planet.task-detail.steps"
+        data-pb-role="section"
+      >
         <h2>完成方式</h2>
         <div>
           <span class="step-index"

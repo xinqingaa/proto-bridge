@@ -5,7 +5,7 @@ import vuetify from "vite-plugin-vuetify";
 
 const serviceProxy = {
   "/__pb_v2": {
-    target: `http://127.0.0.1:${process.env.PB_V2_SERVICE_PORT ?? "3988"}`,
+    target: `http://127.0.0.1:${process.env.PB_SERVICE_PORT ?? "3988"}`,
     changeOrigin: false,
     rewrite: (path: string) => path.replace(/^\/__pb_v2/, "/api/v2"),
   },

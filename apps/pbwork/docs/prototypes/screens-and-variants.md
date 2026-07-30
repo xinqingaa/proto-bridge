@@ -29,6 +29,20 @@
 2. **主题不是 Variant**：`theme` 与业务 `variant` 分离（见 [../tokens/themes.md](../tokens/themes.md)）。  
 3. 叠加层打开态必须可注册、可 capture，不要用未登记的临时弹层冒充。
 
+## PB Evidence 门禁
+
+新 Screen 默认执行严格 Evidence 门禁：
+
+1. default Variant 必须声明 `requiredFragments`；
+2. 每个 `critical: true` Variant 必须声明自己的 `requiredFragments`；
+3. Fragment identity 使用稳定 `screenId + pbId + optional pbKey`；
+4. 对应 Runtime 节点必须提供合法 `data-pb-role`，可见且具有非零 bbox；
+5. 关键路径使用 Action、Scenario 和 Checkpoint，不以无边界自动点击代替；
+6. `LEGACY_EVIDENCE_SCREEN_IDS` 只记录已有迁移债务，禁止为新页面新增例外。
+
+提交前运行 `pnpm --filter @proto-bridge/pbwork test` 和
+`pnpm test:e2e:runtime`。
+
 ## keepMounted 下的 Variant 所有权
 
 一级多面板共用 Screen 且面板保活时：

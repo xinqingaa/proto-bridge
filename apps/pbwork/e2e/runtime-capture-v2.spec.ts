@@ -195,11 +195,103 @@ test("the fixed three-page regression baseline still resolves", async ({
   for (const path of [
     "/prototype/ledger-planet/task-list?variant=default&theme=light",
     "/prototype/ledger-planet/ledger-list?variant=default&theme=light",
-    "/prototype/field-service/create-work-order?variant=default&theme=light",
+    "/prototype/ledger-planet/task-detail?variant=default&theme=light",
   ]) {
     await page.goto(path);
     await expect(page.getByTestId("runtime-root")).toBeVisible();
     await expect(page.getByRole("alert")).toHaveCount(0);
+  }
+});
+
+test("all PB-compliant Ledger Planet samples satisfy their authored Evidence boundary", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const screenSlug of ["task-list", "task-detail", "ledger-list"]) {
+    await page.goto(
+      `/prototype/ledger-planet/${screenSlug}?variant=default&theme=light`,
+    );
+    await page.waitForFunction(() =>
+      Boolean(
+        (window as unknown as Record<string, unknown>)
+          .__PROTO_BRIDGE_CAPTURE_V2__,
+      ),
+    );
+    const result = await page.evaluate(async (slug) => {
+      const api = (
+        window as unknown as Record<
+          string,
+          { request(input: unknown): Promise<any> }
+        >
+      ).__PROTO_BRIDGE_CAPTURE_V2__;
+      if (!api) throw new Error("Runtime Capture Protocol missing");
+      const describe = await api.request({
+        protocolVersion: 2,
+        requestId: `compliance-describe-${slug}`,
+        payload: { kind: "describe" },
+      });
+      const screenId = `ledger-planet.${slug}`;
+      const screen = describe.payload.manifest.screens.find(
+        (candidate: { screenId: string }) => candidate.screenId === screenId,
+      );
+      const defaultVariant = screen.variants.find(
+        (variant: { variantId: string }) =>
+          variant.variantId === screen.defaultVariantId,
+      );
+      const requiredFragments = defaultVariant.requiredFragments;
+      const prepare = await api.request({
+        protocolVersion: 2,
+        requestId: `compliance-prepare-${slug}`,
+        payload: {
+          kind: "prepare",
+          expected: {
+            prototypeId: "ledger-planet",
+            screenId,
+            variantId: screen.defaultVariantId,
+            themeId: "light",
+          },
+        },
+      });
+      const readiness = await api.request({
+        protocolVersion: 2,
+        requestId: `compliance-ready-${slug}`,
+        payload: {
+          kind: "readiness",
+          expected: {
+            prototypeId: "ledger-planet",
+            screenId,
+            variantId: screen.defaultVariantId,
+            themeId: "light",
+            viewport: { width: 390, height: 844 },
+          },
+          requiredFragments,
+        },
+      });
+      const snapshot = await api.request({
+        protocolVersion: 2,
+        requestId: `compliance-snapshot-${slug}`,
+        payload: { kind: "semantic-snapshot", fragments: requiredFragments },
+      });
+      return { requiredFragments, prepare, readiness, snapshot };
+    }, screenSlug);
+
+    expect(result.requiredFragments.length).toBeGreaterThan(0);
+    expect(result.prepare.ok).toBe(true);
+    expect(result.readiness.ok).toBe(true);
+    expect(
+      result.snapshot.ok,
+      `${screenSlug}: ${JSON.stringify(result.snapshot)}`,
+    ).toBe(true);
+    expect(result.snapshot.payload.nodes).toHaveLength(
+      result.requiredFragments.length,
+    );
+    expect(
+      result.snapshot.payload.nodes.every(
+        (node: { visible: boolean; bbox: { width: number; height: number } }) =>
+          node.visible && node.bbox.width > 0 && node.bbox.height > 0,
+      ),
+    ).toBe(true);
+    expect((await page.screenshot()).byteLength).toBeGreaterThan(10_000);
   }
 });
 

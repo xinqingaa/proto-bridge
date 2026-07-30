@@ -200,7 +200,11 @@ function loadMore() {
       @refresh="refresh"
       @load-more="loadMore"
     >
-      <div class="page" data-pb-id="ledger-planet.ledger-list">
+      <div
+        class="page"
+        data-pb-id="ledger-planet.ledger-list.root"
+        data-pb-role="page"
+      >
         <Spinner v-if="variant === 'loading'" label="正在加载流水" size="lg" />
         <div v-else-if="variant === 'error'" class="error" role="alert">
           <strong>流水加载失败</strong><span>请检查后重试。</span>
@@ -227,7 +231,11 @@ function loadMore() {
             </button>
           </div>
 
-          <section class="result-summary">
+          <section
+            class="result-summary"
+            data-pb-id="ledger-planet.ledger-list.summary"
+            data-pb-role="section"
+          >
             <div>
               <span>支出</span><strong>¥ {{ formatMoney(expense) }}</strong>
             </div>
@@ -244,11 +252,13 @@ function loadMore() {
             v-model="search"
             placeholder="搜索商户、分类、标签或备注"
             inspect-id="ledger-planet.ledger-list.search"
+            data-pb-role="search"
           />
           <FilterBar
             v-model="type"
             :items="['全部', '支出', '收入']"
             inspect-id="ledger-planet.ledger-list.filters"
+            data-pb-role="filter"
             @filter="filterSheet = true"
           />
 
@@ -269,11 +279,16 @@ function loadMore() {
             </button>
           </div>
 
-          <section
-            v-for="group in groups"
-            :key="group.dayLabel"
-            class="day-group"
+          <div
+            class="record-groups"
+            data-pb-id="ledger-planet.ledger-list.records"
+            data-pb-role="list"
           >
+            <section
+              v-for="group in groups"
+              :key="group.dayLabel"
+              class="day-group"
+            >
             <header>
               <strong>{{ group.dayLabel }}</strong>
               <span>支出 ¥ {{ formatMoney(group.total) }}</span>
@@ -309,14 +324,15 @@ function loadMore() {
                 </em>
               </button>
             </DataList>
-          </section>
-          <EmptyState
-            v-if="groups.length === 0"
-            title="没有匹配的流水"
-            description="试试调整搜索词、时间或筛选条件。"
-            action-label="重置筛选"
-            @action="resetFilters"
-          />
+            </section>
+            <EmptyState
+              v-if="groups.length === 0"
+              title="没有匹配的流水"
+              description="试试调整搜索词、时间或筛选条件。"
+              action-label="重置筛选"
+              @action="resetFilters"
+            />
+          </div>
         </template>
       </div>
     </ScrollableDataList>
@@ -453,6 +469,9 @@ function loadMore() {
   cursor: pointer;
 }
 .day-group {
+  display: grid;
+}
+.record-groups {
   display: grid;
 }
 .day-group > header {

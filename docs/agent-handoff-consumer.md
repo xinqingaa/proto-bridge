@@ -1,6 +1,6 @@
-# ProtoBridge V2 Agent Handoff Consumer
+# ProtoBridge Agent Handoff Consumer
 
-> 状态：阶段五正式消费指南
+> 状态：正式消费指南
 > 适用对象：通过 MCP 消费持久 Evidence 并修改目标仓库的 Coding Agent
 
 Handoff 是固定 Evidence 索引，不是实现计划。Consumer 必须使用 Handoff
@@ -46,6 +46,6 @@ active/latest，也不能直接解析 Store 目录。
 
 ## 目标仓库边界
 
-目标仓库不需要 `proto-bridge.config` 或 `proto-bridge.v2.json`。Target root 来自
+目标仓库不需要 `proto-bridge.json`。Target root 来自
 Agent 当前工作目录或单次 tool 参数。ProtoBridge 不选择 Flutter 文件、
 Widget Tree、路由、状态框架或 Token，也不修改目标仓库。

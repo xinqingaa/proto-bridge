@@ -237,7 +237,32 @@ export const prototypeScreens = [
     view: "ledger-planet/screens/LedgerList.vue",
     defaultVariantId: "default",
     variants: [
-      { id: "default", label: "默认" },
+      {
+        id: "default",
+        label: "默认",
+        requiredFragments: [
+          {
+            screenId: "ledger-planet.ledger-list",
+            pbId: "ledger-planet.ledger-list.root",
+          },
+          {
+            screenId: "ledger-planet.ledger-list",
+            pbId: "ledger-planet.ledger-list.summary",
+          },
+          {
+            screenId: "ledger-planet.ledger-list",
+            pbId: "ledger-planet.ledger-list.search",
+          },
+          {
+            screenId: "ledger-planet.ledger-list",
+            pbId: "ledger-planet.ledger-list.filters",
+          },
+          {
+            screenId: "ledger-planet.ledger-list",
+            pbId: "ledger-planet.ledger-list.records",
+          },
+        ],
+      },
       { id: "loading", label: "加载中" },
       { id: "empty", label: "空态" },
       { id: "error", label: "错误" },
@@ -420,7 +445,28 @@ export const prototypeScreens = [
     queryKeys: ["task"],
     defaultVariantId: "default",
     variants: [
-      { id: "default", label: "默认" },
+      {
+        id: "default",
+        label: "默认",
+        requiredFragments: [
+          {
+            screenId: "ledger-planet.task-detail",
+            pbId: "ledger-planet.task-detail.root",
+          },
+          {
+            screenId: "ledger-planet.task-detail",
+            pbId: "ledger-planet.task-detail.hero",
+          },
+          {
+            screenId: "ledger-planet.task-detail",
+            pbId: "ledger-planet.task-detail.progress",
+          },
+          {
+            screenId: "ledger-planet.task-detail",
+            pbId: "ledger-planet.task-detail.steps",
+          },
+        ],
+      },
       { id: "completed", label: "已完成" },
       {
         id: "claimable",

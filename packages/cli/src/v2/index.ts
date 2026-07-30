@@ -105,17 +105,17 @@ async function execute(args: V2Args, io: V2CliIo): Promise<number> {
   if (command === 'handoff show') return handoffShow(args, io, loaded);
   if (command === 'handoff export') return handoffExport(args, io, loaded);
   if (command === 'service start') return serviceStart(args, io, loaded);
-  throw new Error(`Unknown V2 command: ${command}`);
+  throw new Error(`Unknown ProtoBridge command: ${command}`);
 }
 
 async function initWorkspace(args: V2Args, io: V2CliIo): Promise<number> {
   const configPath = path.resolve(
     io.cwd,
-    flag(args, 'config') ?? 'proto-bridge.v2.json',
+    flag(args, 'config') ?? 'proto-bridge.json',
   );
   try {
     await access(configPath);
-    throw new Error(`V2 config already exists: ${configPath}`);
+    throw new Error(`ProtoBridge config already exists: ${configPath}`);
   } catch (error) {
     if (
       !(error instanceof Error && 'code' in error && error.code === 'ENOENT')
@@ -134,7 +134,7 @@ async function initWorkspace(args: V2Args, io: V2CliIo): Promise<number> {
       allowedOrigins: flags(args, 'runtime-origin'),
     },
     store: {
-      root: flag(args, 'store') ?? '.proto-bridge/v2-store',
+      root: flag(args, 'store') ?? '.proto-bridge/store',
       ...(numberFlag(args, 'max-store-bytes') === undefined
         ? {}
         : { maxBytes: numberFlag(args, 'max-store-bytes') }),
@@ -855,19 +855,19 @@ function exitForRun(run: {
 
 export function v2Usage(): string {
   return `Usage:
-  proto-bridge v2 workspace init [--config <file>]
-  proto-bridge v2 workspace doctor [--json]
-  proto-bridge v2 preflight --selection <file> [--manifest <file>]
-  proto-bridge v2 capture run --selection <file> [--bundle <id>]
-  proto-bridge v2 job status|cancel|retry --job <id>
-  proto-bridge v2 bundle list|inspect|fork|archive|clean
-  proto-bridge v2 snapshot|run|case inspect
-  proto-bridge v2 stale check --bundle <id> --snapshot <id>
-  proto-bridge v2 handoff create|show|export
-  proto-bridge v2 service start
+  proto-bridge workspace init [--config <file>]
+  proto-bridge workspace doctor [--json]
+  proto-bridge preflight --selection <file> [--manifest <file>]
+  proto-bridge capture run --selection <file> [--bundle <id>]
+  proto-bridge job status|cancel|retry --job <id>
+  proto-bridge bundle list|inspect|fork|archive|clean
+  proto-bridge snapshot|run|case inspect
+  proto-bridge stale check --bundle <id> --snapshot <id>
+  proto-bridge handoff create|show|export
+  proto-bridge service start
 
 Rules:
-  --config defaults to ./proto-bridge.v2.json.
+  --config defaults to ./proto-bridge.json.
   Repeat --accept-warning <id> and --ack-risk <kind> explicitly.
   --force is intentionally unsupported.
   Add --json for stable automation output.`;

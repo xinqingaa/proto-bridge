@@ -1,7 +1,7 @@
 {
   "name": "@proto-bridge/core",
   "version": "0.4.0",
-  "description": "Core adapters and generators for ProtoBridge.",
+  "description": "Evidence contracts, capture, storage, and target-query boundaries for ProtoBridge.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -10,22 +10,6 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./workflows/capability-first": {
-      "types": "./dist/workflows/capability-first/index.d.ts",
-      "import": "./dist/workflows/capability-first/index.js"
-    },
-    "./capabilities": {
-      "types": "./dist/capabilities/index.d.ts",
-      "import": "./dist/capabilities/index.js"
-    },
-    "./config": {
-      "types": "./dist/config/index.d.ts",
-      "import": "./dist/config/index.js"
-    },
-    "./target/flutter-app": {
-      "types": "./dist/target/flutter-app/index.d.ts",
-      "import": "./dist/target/flutter-app/index.js"
-    },
     "./target/flutter-app/query": {
       "types": "./dist/target/flutter-app/query.d.ts",
       "import": "./dist/target/flutter-app/query.js"
@@ -33,22 +17,6 @@
     "./target/flutter-app/validation": {
       "types": "./dist/target/flutter-app/validation/index.d.ts",
       "import": "./dist/target/flutter-app/validation/index.js"
-    },
-    "./source/vue3-prototype": {
-      "types": "./dist/source/vue3-prototype/index.d.ts",
-      "import": "./dist/source/vue3-prototype/index.js"
-    },
-    "./snapshot": {
-      "types": "./dist/snapshot/index.d.ts",
-      "import": "./dist/snapshot/index.js"
-    },
-    "./artifacts": {
-      "types": "./dist/artifacts/index.d.ts",
-      "import": "./dist/artifacts/index.js"
-    },
-    "./shared": {
-      "types": "./dist/shared/index.d.ts",
-      "import": "./dist/shared/index.js"
     },
     "./v2": {
       "types": "./dist/v2/index.d.ts",
@@ -87,11 +55,8 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@vue/compiler-dom": "^3.5.34",
-    "@vue/compiler-sfc": "^3.5.34",
     "fast-glob": "^3.3.2",
     "playwright": "^1.49.1",
-    "typescript": "^5.7.2",
     "zod": "^3.25.76"
   },
   "engines": {
@@ -102,6 +67,7 @@
   },
   "license": "UNLICENSED",
   "devDependencies": {
+    "typescript": "^5.7.2",
     "vitest": "^3.2.7"
   }
 }

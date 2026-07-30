@@ -1,5 +1,4 @@
 import type { JsonRpcRequest, ServerOptions, ToolContext } from '../types.js';
-import { PageStore } from '../services/session-state.js';
 import { EvidenceStoreReader } from '../services/evidence-store-reader.js';
 import { dispatch } from './dispatcher.js';
 import { errorData, errorMessage, send, sendError } from './responses.js';
@@ -27,7 +26,6 @@ export function startMcpServer(options: ServerOptions): void {
 export function createToolContext(options: ServerOptions): ToolContext {
   return {
     options,
-    pages: new PageStore(),
     evidence: new EvidenceStoreReader(options),
   };
 }

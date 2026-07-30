@@ -114,6 +114,16 @@ try {
       `tools/list is missing ${name}.`,
     );
   }
+  for (const removedName of [
+    "reconstruct_page_context",
+    "validate_ui_build",
+    "validate_target_page",
+  ]) {
+    assert(
+      !tools.tools?.some((tool) => tool.name === removedName),
+      `tools/list still exposes removed V1 tool ${removedName}.`,
+    );
+  }
 
   const workspace = parseToolJson(
     await client.request("tools/call", {
@@ -341,7 +351,7 @@ try {
   );
 
   process.stdout.write(
-    `MCP Evidence V2 E2E passed: ${reference.BUNDLE_ID}/${fixedSnapshotId}\n`,
+    `MCP Evidence E2E passed: ${reference.BUNDLE_ID}/${fixedSnapshotId}\n`,
   );
 } finally {
   await client?.close();

@@ -1,7 +1,7 @@
-export const V2_CONSUMER_GUIDE_URI =
-  'proto-bridge://guides/v2-handoff-consumer';
+export const CONSUMER_GUIDE_URI =
+  'proto-bridge://guides/handoff-consumer';
 
-export const V2_CONSUMER_GUIDE = `# ProtoBridge V2 Agent Handoff Consumer
+export const CONSUMER_GUIDE = `# ProtoBridge Agent Handoff Consumer
 
 1. Call \`inspect_evidence_workspace\`, then \`read_agent_handoff\`. Stop on Workspace mismatch.
 2. Report every item in \`mandatoryRiskReport\` before editing target code. Producer acknowledgement does not remove a risk.

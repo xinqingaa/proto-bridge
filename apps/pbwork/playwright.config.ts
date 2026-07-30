@@ -17,17 +17,17 @@ export default defineConfig({
   webServer: [
     {
       command:
-        `PB_V2_SERVICE_PORT=${servicePort} ` +
+        `PB_SERVICE_PORT=${servicePort} ` +
         `PBWORK_ORIGIN=http://127.0.0.1:${port} ` +
         `PBWORK_RUNTIME_ORIGIN=http://127.0.0.1:${port} ` +
-        `PB_V2_STORE_ROOT=${storeRootCommand} ` +
+        `PB_STORE_ROOT=${storeRootCommand} ` +
         `pnpm --filter @proto-bridge/local-service exec tsx --conditions=source src/index.ts`,
       port: servicePort,
       reuseExistingServer: false,
     },
     {
       command:
-        `PB_V2_SERVICE_PORT=${servicePort} ` +
+        `PB_SERVICE_PORT=${servicePort} ` +
         `pnpm exec vite preview --host 127.0.0.1 --port ${port}`,
       port,
       reuseExistingServer: false,

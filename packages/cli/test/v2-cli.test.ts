@@ -85,8 +85,19 @@ function screenshotDraft() {
   };
 }
 
-describe('ProtoBridge V2 CLI', () => {
-  it('creates and diagnoses an explicit V2 Workspace config', async () => {
+describe('ProtoBridge CLI', () => {
+  it('exposes the Evidence commands directly without a legacy prefix', async () => {
+    const root = await tempRoot();
+    const output = recorder(root);
+
+    expect(await runV2Cli(['--help'], output.io)).toBe(V2_EXIT_CODES.ok);
+    const usage = output.stdout.join('\n');
+    expect(usage).toContain('proto-bridge workspace init');
+    expect(usage).not.toContain('proto-bridge v2');
+    expect(usage).not.toContain('proto-bridge generate');
+  });
+
+  it('creates and diagnoses an explicit Workspace config', async () => {
     const root = await tempRoot();
     const output = recorder(root);
     expect(
@@ -104,7 +115,7 @@ describe('ProtoBridge V2 CLI', () => {
       ),
     ).toBe(V2_EXIT_CODES.ok);
     const config = JSON.parse(
-      await readFile(path.join(root, 'proto-bridge.v2.json'), 'utf8'),
+      await readFile(path.join(root, 'proto-bridge.json'), 'utf8'),
     );
     expect(config).toMatchObject({ schemaVersion: 1, workspaceId: 'cli-test' });
     expect(

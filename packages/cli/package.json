@@ -15,7 +15,6 @@
   "scripts": {
     "clean": "rm -rf dist",
     "dev": "tsx --conditions=source src/index.ts",
-    "generate": "node dist/index.js generate",
     "build": "pnpm run clean && tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",

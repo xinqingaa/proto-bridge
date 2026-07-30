@@ -6,7 +6,7 @@ import {
 
 describe('V2 Workspace config', () => {
   it('uses an explicit V2 schema and applies safe defaults', () => {
-    expect(DEFAULT_V2_CONFIG_FILE).toBe('proto-bridge.v2.json');
+    expect(DEFAULT_V2_CONFIG_FILE).toBe('proto-bridge.json');
     expect(
       V2WorkspaceConfig.parse({
         schemaVersion: 1,
@@ -21,7 +21,7 @@ describe('V2 Workspace config', () => {
     });
   });
 
-  it('rejects V1-shaped and credential-bearing configuration', () => {
+  it('rejects obsolete and credential-bearing configuration', () => {
     expect(() =>
       V2WorkspaceConfig.parse({
         schemaVersion: 1,

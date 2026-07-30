@@ -1,86 +1,69 @@
 # ProtoBridge
 
-ProtoBridge 把交互原型、运行时页面、截图证据和目标 Flutter 工程规范整理成页面级上下文，服务于人工开发者与 AI coding agent。
-
-它产出可追溯、可审查、可验证的 artifacts（`page-canonical.json`、`ui-build-plan.json` 等），**不**直接把 Vue / DOM / 截图翻译成生产 Dart，也**不**自己生成生产页面。
+ProtoBridge 是本地原型证据基础设施：从符合 PB Contract 的 Runtime 确定性采集语义、状态、交互与截图，保存为不可变 Evidence，再通过 PBWork、CLI 和 MCP 交给 Coding Agent。
 
 ```text
-source / URL / screenshot / target repo
-  -> page-canonical.json
-  -> ui-build-plan.json
-  -> ui-build-review.md
-  -> implementation + validation
+PBWork Runtime Contract
+  → Selection / Preflight / Case Matrix
+  → Capture Job / Evidence Store / Snapshot
+  → Agent Handoff
+  → MCP fixed Evidence
+  → Target implementation / validation
 ```
+
+ProtoBridge 不生成目标工程计划，不自动翻译 Vue/DOM，也不替代 Coding Agent 决定文件、组件、路由、状态管理或 Token。
 
 ## 快速开始
 
 ```bash
-npx @proto-bridge/cli init
+pnpm install
+pnpm build
 
-npx @proto-bridge/cli generate \
-  --url "http://127.0.0.1:5173/prototype/ledger-planet/task-list?variant=default&theme=light" \
-  --capture
+node packages/cli/dist/index.js workspace init \
+  --workspace pbwork-local \
+  --runtime http://127.0.0.1:3977
+
+node packages/cli/dist/index.js workspace doctor
 ```
 
-配置示例（稳定环境写进 `proto-bridge.config.json`；页面参数每次传入）：
+默认配置为 `proto-bridge.json`，Store 默认为 `.proto-bridge/store`。
 
-```json
-{
-  "schemaVersion": 1,
-  "source": {
-    "adapter": "vue3-prototype",
-    "root": "/path/to/vue3-prototype"
-  },
-  "target": {
-    "adapter": "flutter-app",
-    "root": "/path/to/flutter-project"
-  },
-  "runtime": { "capture": true },
-  "output": { "root": "./output" }
-}
+PBWork：
+
+```bash
+pnpm pbwork
 ```
 
 MCP：
 
-```toml
-[mcp_servers.proto-bridge]
-command = "npx"
-args = ["-y", "@proto-bridge/mcp-server"]
+```bash
+node packages/mcp-server/dist/index.js \
+  --store-root .proto-bridge/store \
+  --workspace pbwork-local
 ```
 
-主工具：`reconstruct_page_context`、`read_target_conventions`、`find_target_examples`、`validate_ui_build`。
+## 产品边界
 
-## 文档（产品说明）
+- Core：Contract、Capture、Store、Handoff 与 Target 只读边界。
+- PBWork：原型 Runtime、采集控制面和 Evidence Review。
+- CLI：自动化 Producer 与 Bundle 生命周期入口。
+- MCP：固定 Snapshot/revision 的正式消费边界。
+- Target：独立查询和验证，不写回 Evidence。
 
-| 文档 | 内容 |
-| --- | --- |
-| [docs/overview.md](docs/overview.md) | 定位、证据分层、扫描边界、包边界、适配器 |
-| [docs/artifacts.md](docs/artifacts.md) | 产物权威链与字段契约 |
-| [docs/usage.md](docs/usage.md) | 配置、CLI / MCP / Core、开发脚本、npm 发布 |
-| [docs/design.md](docs/design.md) | 原型工作台：范围、Vue/Vuetify 栈、三栏与展示标准 |
-| [docs/conventions.md](docs/conventions.md) | 当前 Vue 原型的 class/tag 结构与弹层约定 |
-| [docs/pbwork](docs/pbwork) | PBWork 生产者手册（Token、组件用法、原型组装；链到 `apps/pbwork/docs`） |
+未来 PBWork Screen 默认执行严格 Evidence 门禁；现有未迁移页面由明确 legacy allowlist 隔离。详见 [原型规范](docs/conventions.md)和 [PBWork checklist](apps/pbwork/docs/checklist.md)。
 
-## 工程规范（改本仓库）
+## 验证
 
-| 文件 | 内容 |
-| --- | --- |
-| [AGENT.md](AGENT.md) | Agent 硬约束与验证矩阵 |
-| [skills/proto-bridge](skills/proto-bridge/skill.md) | 改本仓库（Core / CLI / MCP）的操作 skill |
-| [skills/pbwork-prototype](skills/pbwork-prototype/skill.md) | 在 pbwork 做/改原型与 DS 组件用法 |
-
-## 仓库结构
-
-```text
-packages/
-├── core/          # capabilities、workflow、source/snapshot/target
-├── cli/           # 终端入口
-└── mcp-server/    # MCP server
-
-docs/              # overview · artifacts · usage · design · conventions · pbwork→
-skills/            # proto-bridge · pbwork-prototype
-apps/pbwork/       # 原型工作台；生产者手册在 apps/pbwork/docs
-tests/fixtures/    # CLI / MCP 核心冒烟夹具
+```bash
+pnpm verify
 ```
 
-当前适配重点：`source: vue3-prototype`，`target: flutter-app`。
+该门禁覆盖 build/typecheck、Core/Service/CLI/PBWork tests、三页 Runtime Capture、MCP、Consumer 和 PBWork → Store → MCP 垂直切片。
+
+更多文档：
+
+- [架构总览](docs/overview.md)
+- [使用方式](docs/usage.md)
+- [Evidence 对象](docs/artifacts.md)
+- [Handoff Consumer](docs/agent-handoff-consumer.md)
+- [V2 核心规范](docs/plans/pb-v2-spec.md)

@@ -30,7 +30,11 @@
 - [ ] Screen / Variant 已注册且可经 URL 打开  
 - [ ] 叠加/校验等关键态有 Variant；theme ≠ variant  
 - [ ] 列表与选项数据在源码中可见  
-- [ ] `data-pb-id` / `inspectId` 稳定  
+- [ ] `data-pb-id` / `data-pb-role` / `inspectId` 稳定
+- [ ] default 与 critical Variant 已声明非空 `requiredFragments`
+- [ ] required Fragment 在真实 Runtime 中唯一、可见且有非零 bbox
+- [ ] 关键交互已声明 Action、Scenario 与 Checkpoint
+- [ ] 新 Screen 未加入 `LEGACY_EVIDENCE_SCREEN_IDS`
 
 ## 文档
 

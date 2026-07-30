@@ -30,6 +30,10 @@ import {
   RESOURCE_ID_PATTERN,
   SLUG_ID_PATTERN,
 } from "@/design-system/types";
+import {
+  LEGACY_EVIDENCE_SCREEN_IDS,
+  requiresStrictEvidence,
+} from "@/prototypes/evidence-policy";
 
 const RESERVED_QUERY_KEYS = new Set(["variant", "theme"]);
 
@@ -705,6 +709,32 @@ export function validateRegistries(input?: {
           });
         }
       }
+
+      if (
+        requiresStrictEvidence(screen.screenId) &&
+        (variant.id === screen.defaultVariantId || variant.critical) &&
+        (!variant.requiredFragments || variant.requiredFragments.length === 0)
+      ) {
+        pushError(errors, {
+          resourceType: "variant",
+          resourceId: `${screen.screenId}.${variant.id}`,
+          instancePath: "/requiredFragments",
+          keyword: "required",
+          message:
+            "PB-compliant default and critical Variants require an authored Evidence completeness boundary",
+        });
+      }
+      for (const fragment of variant.requiredFragments ?? []) {
+        if (fragment.screenId !== screen.screenId) {
+          pushError(errors, {
+            resourceType: "variant",
+            resourceId: `${screen.screenId}.${variant.id}`,
+            instancePath: "/requiredFragments",
+            keyword: "const",
+            message: `Variant Fragment must belong to ${screen.screenId}`,
+          });
+        }
+      }
     }
     if (!hasDefault) {
       pushError(errors, {
@@ -720,6 +750,17 @@ export function validateRegistries(input?: {
   const screensById = new Map(
     screens.map((screen) => [screen.screenId, screen]),
   );
+  for (const legacyScreenId of LEGACY_EVIDENCE_SCREEN_IDS) {
+    if (!screensById.has(legacyScreenId)) {
+      pushError(errors, {
+        resourceType: "screen",
+        resourceId: legacyScreenId,
+        instancePath: "/legacyEvidenceScreenIds",
+        keyword: "enum",
+        message: "stale legacy Evidence exception; remove this ID",
+      });
+    }
+  }
   for (const screen of screens) {
     const actions = screen.actions ?? [];
     const actionIds = new Set<string>();

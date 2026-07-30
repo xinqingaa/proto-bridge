@@ -110,7 +110,7 @@ try {
     "target fixture baseline",
   ]);
   await assertMissing(path.join(targetRoot, "proto-bridge.config.json"));
-  await assertMissing(path.join(targetRoot, "proto-bridge.v2.json"));
+  await assertMissing(path.join(targetRoot, "proto-bridge.json"));
 
   client = await startClient([
     "--store-root",
@@ -122,12 +122,12 @@ try {
   const resources = await client.request("resources/list", {});
   assert(
     resources.resources?.some(
-      (item) => item.uri === "proto-bridge://guides/v2-handoff-consumer",
+      (item) => item.uri === "proto-bridge://guides/handoff-consumer",
     ),
     "Consumer guide resource is missing.",
   );
   const guide = await client.request("resources/read", {
-    uri: "proto-bridge://guides/v2-handoff-consumer",
+    uri: "proto-bridge://guides/handoff-consumer",
   });
   assert(
     guide.contents?.[0]?.text?.includes("Never replace them with active/latest"),
@@ -227,7 +227,7 @@ try {
   );
 
   process.stdout.write(
-    `V2 Consumer E2E passed: ${handoff.handoffId} -> lib/task_list_view.dart\n`,
+    `Consumer E2E passed: ${handoff.handoffId} -> lib/task_list_view.dart\n`,
   );
 } finally {
   await client?.close();

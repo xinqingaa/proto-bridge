@@ -2,7 +2,7 @@
   "name": "proto-bridge",
   "version": "0.1.0",
   "private": true,
-  "description": "Prototype-to-implementation context bridge: evidence, UI build plans, and validation for AI-assisted Flutter work.",
+  "description": "Local prototype evidence capture, storage, handoff, and consumption for coding agents.",
   "type": "module",
   "packageManager": "pnpm@10.33.2",
   "workspaces": [
@@ -16,16 +16,12 @@
     "dev": "pnpm --filter @proto-bridge/cli dev",
     "pbwork": "node scripts/pbwork-dev.mjs",
     "pbwork:service": "pnpm --filter @proto-bridge/local-service dev",
-    "generate": "node scripts/generate.mjs",
     "test": "pnpm --filter @proto-bridge/core test",
-    "test:config": "pnpm --filter @proto-bridge/core exec vitest run test/config.test.ts",
-    "test:e2e": "node scripts/test-e2e.mjs",
-    "test:e2e:cli": "node scripts/test-e2e.mjs cli",
-    "test:e2e:mcp": "node scripts/test-e2e.mjs mcp",
-    "test:e2e:mcp-v2": "pnpm --filter @proto-bridge/core build && pnpm --filter @proto-bridge/mcp-server build && node scripts/test-mcp-evidence-v2.mjs",
+    "test:e2e:mcp": "pnpm --filter @proto-bridge/core build && pnpm --filter @proto-bridge/mcp-server build && node scripts/test-mcp-evidence.mjs",
+    "test:e2e:runtime": "node scripts/test-runtime-capture.mjs",
     "test:e2e:evidence-slice": "node scripts/test-evidence-vertical-slice.mjs",
-    "test:e2e:consumer-v2": "node scripts/test-v2-consumer-runner.mjs",
-    "verify:v2:phase-five": "node scripts/verify-phase-five.mjs"
+    "test:e2e:consumer": "node scripts/test-consumer-runner.mjs",
+    "verify": "node scripts/verify-product.mjs"
   },
   "engines": {
     "node": ">=20"
@@ -34,13 +30,5 @@
     "@types/node": "^22.10.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
-  },
-  "dependencies": {
-    "fast-glob": "^3.3.2",
-    "fs-extra": "^11.2.0",
-    "playwright": "^1.49.1",
-    "vue-eslint-parser": "^9.4.3",
-    "yaml": "^2.6.1",
-    "zod": "^3.24.1"
   }
 }

@@ -46,6 +46,29 @@ describe("registries", () => {
     expect(errors.some((error) => error.keyword === "const")).toBe(true);
   });
 
+  it("requires every future Screen to author a complete default Evidence boundary", () => {
+    const newScreen = {
+      ...prototypeScreens.find(
+        (screen) => screen.screenId === "ledger-planet.task-detail",
+      )!,
+      screenId: "ledger-planet.future-screen",
+      screenSlug: "future-screen",
+      path: "/prototype/ledger-planet/future-screen",
+      defaultVariantId: "default",
+      variants: [{ id: "default", label: "默认" }],
+    };
+    const errors = validateRegistries({
+      screens: [...prototypeScreens, newScreen] as typeof prototypeScreens,
+    });
+    expect(
+      errors.some(
+        (error) =>
+          error.resourceId === "ledger-planet.future-screen.default" &&
+          error.instancePath === "/requiredFragments",
+      ),
+    ).toBe(true);
+  });
+
   it("resolves theme tokens with overrides", () => {
     const light = resolveThemeTokens("light");
     const dark = resolveThemeTokens("dark");

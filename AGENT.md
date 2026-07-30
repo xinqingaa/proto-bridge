@@ -1,76 +1,47 @@
 # ProtoBridge Agent 规范
 
-面向在 **本仓库** 协作的 AI coding agent 与开发者。
+面向本仓库的 AI coding agent 与开发者。
 
-- 改 ProtoBridge：读本文 + `skills/proto-bridge`  
-- 产品是什么 / 产物字段 / 怎么调用：`docs/overview.md`、`docs/artifacts.md`、`docs/usage.md`  
-- 原型工作台产品设计与 Source 约定：`docs/design.md`、`docs/conventions.md`  
-- **在 pbwork 做/改业务原型与 DS 用法**：`skills/pbwork-prototype` + `apps/pbwork/docs`（软链 `docs/pbwork`）
+## 必读
 
-ProtoBridge 产出证据与实现契约；它不替代在目标 Flutter 工程里写代码的 agent。
-
-## 必读顺序
-
-1. 本文（硬约束）  
-2. 相关 `docs/*`（含做原型时的 `apps/pbwork/docs` / `docs/pbwork`）  
-3. 对应 skill：改 Core/入口 → `skills/proto-bridge`；做/改 pbwork 原型与 DS 用法 → `skills/pbwork-prototype`  
+1. 本文；
+2. `docs/overview.md`、`docs/artifacts.md`、`docs/usage.md`；
+3. 改 Core/CLI/MCP 时读 `skills/proto-bridge/skill.md`；
+4. 做 PBWork 原型时读 `skills/pbwork-prototype/skill.md` 与 `apps/pbwork/docs`。
 
 ## 架构红线
 
-- Capability-first：共享行为进 `packages/core`；CLI / MCP 只做入口适配。  
-- 证据分层：source → 逻辑架构；target → 工程表达；runtime / screenshot → 视觉事实。  
-- `ui-build-plan.json` 是精确实现蓝图；`ui-build-review.md` 是人类优先阅读的自然语言投影，并保留显式人工修订。
-- 页面事实、来源语义、运行态与样式事实是权威契约；route/module/component/theme 等 B 接入结论默认只是 advisory guidance。
-- 低置信名称或路径相似度只能用于检索候选，不能自动成为 target route、module、component 或 token。
-- Core 只保留 Vue 3 / Flutter 等技术通用解析规则，不包含真实项目名称、符号、目录、业务词表或 token 映射。
-- A / B 的模块、组件、主题、路由、i18n 与文件组织必须从本次 source / target 扫描取得；扫描不到就保持 `unknown`。
-- 不提供项目 preset / profile，也不通过配置补录项目架构。项目 README 和代码是扫描证据的一部分。
-- 高置信组件、theme、i18n、routing 必须以 target 扫描或 `targetConventions` 为证。
-- 私有项目消费规范可放在 gitignored `skills/private/`，只能指导实现 agent，不能被 Core 读取为隐形 preset。
+- Core 是 Selection、Preflight、Capture、Store、Handoff 的唯一产品语义层；
+- CLI、PBWork Local Service 和 MCP 只做进程/IO 适配，不复制状态词汇或引用算法；
+- Evidence 必须保存 provenance、unknown、conflict、Coverage 与固定引用；
+- Runtime 负责声明、准备和验证状态，Core/Playwright 负责导航与固定采集环境；
+- Source Adapter 不是闭环前提；不得用源码启发式补造未观测事实；
+- Target 查询与 Capture 解耦，Target 事实不得进入 Evidence；
+- MCP 只读取固定 Workspace/Snapshot/revision，不猜测路径或回退 latest；
+- Coding Agent 自行决定目标文件、组件、路由、状态管理与 Token；
+- PBWork 新 Screen 默认执行严格 Evidence 门禁，不得加入 legacy allowlist 绕过。
 
-## 改动落点
+## 代码地图
 
 | 区域 | 路径 |
 | --- | --- |
-| 编排 | `packages/core/src/workflows/capability-first` |
-| Capabilities | `packages/core/src/capabilities` |
-| Source | `packages/core/src/source` |
-| Snapshot | `packages/core/src/snapshot` |
-| Target / plan / validate | `packages/core/src/target` |
-| Artifacts 写出 | `packages/core/src/artifacts` |
-| Config | `packages/core/src/config` |
+| Contract/Capture/Store | `packages/core/src/v2` |
+| Target query/validation | `packages/core/src/target/flutter-app` |
+| Local Service | `packages/local-service` |
 | CLI | `packages/cli` |
 | MCP | `packages/mcp-server` |
+| PBWork Runtime/Capture | `apps/pbwork` |
+| 原型合规例外 | `apps/pbwork/src/prototypes/evidence-policy.ts` |
 
-## 验证矩阵
+## 验证
 
-| 改动范围 | 至少执行 |
+| 范围 | 至少执行 |
 | --- | --- |
-| 文档 / skill / AGENT | 检查链接、命令名、字段名与三层导航一致；禁止演进口吻 |
-| TypeScript | `pnpm run typecheck`（必要时 `build`） |
-| Config | `pnpm run test:config` |
-| CLI / artifact 契约 | `pnpm run test:e2e:cli` |
-| MCP / validation | `pnpm run test:e2e:mcp` |
-| PBWork 文档 / Contract | 检查 `docs/design.md` 与 `apps/pbwork/docs`（组件/Token 手册）及 Contract 一致；链接可用 |
-| PBWork TypeScript / Vue | `pnpm --filter @proto-bridge/pbwork typecheck` |
-| PBWork 注册表 / 单元 | `pnpm --filter @proto-bridge/pbwork test` |
-| PBWork Runtime / 写回 | `pnpm --filter @proto-bridge/pbwork test:e2e`，并按 `docs/design.md` §17.1 执行对应里程碑矩阵 |
-| PBWork → PB 闭环 | 根仓 `pnpm run test:e2e`，使用 canonical Runtime URL 验证 source + runtime capture |
+| TypeScript | `pnpm typecheck` |
+| Core | `pnpm --filter @proto-bridge/core test` |
+| CLI | `pnpm --filter @proto-bridge/cli test` |
+| PBWork 原型/Contract | `pnpm --filter @proto-bridge/pbwork test`、`pnpm test:e2e:runtime` |
+| MCP/Consumer | `pnpm test:e2e:mcp`、`pnpm test:e2e:consumer` |
+| 完整产品 | `pnpm verify` |
 
-不要提交：`output/`、Flutter `build/` / `.dart_tool/`。
-
-## 文档与 skill 同步
-
-| 改动 | 必同步 |
-| --- | --- |
-| 契约字段 / 权威链 | `docs/artifacts.md` |
-| 入口参数 / 工作流 / 发布 | `docs/usage.md` |
-| 架构 / 扫描边界 / 包边界 / 适配器 | `docs/overview.md` |
-| 原型工作台定稿 | `docs/design.md` |
-| 原型 Source 约定 | `docs/conventions.md` |
-| PBWork Token / 组件用法 / 原型组装 | `apps/pbwork/docs`（`docs/pbwork`）+ `skills/pbwork-prototype` |
-| 本仓工作流 | 本文 + `skills/proto-bridge` |
-
-同一概念只在最合适处详述；README / AGENT / skill / docs 互相链接，不复制第二套说明书。
-
-正式文档只描述当前行为。禁止「本轮优化」「之前没有」「为了解决某次问题」等演进口吻。有效信息应保留或整合，删的是重复、不一致与过时路径。
+不要提交 `output/`、`.proto-bridge/store/`、Flutter `build/` 或 `.dart_tool/`。

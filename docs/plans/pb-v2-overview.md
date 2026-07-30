@@ -1,10 +1,10 @@
 # ProtoBridge / PBWork V2 产品闭环与实施总览
 
-> 状态：实施中；阶段五已完成，阶段六未开始
+> 状态：阶段六、阶段七按收敛范围完成；仓库进入 V2-only 可用态，未发布
 > 目标分支：`dev`
 > 性质：破坏性重构；V2 不兼容 V1 Artifact、CLI 和 MCP 页面工作流
 > 当前正式包基线：`0.4.0`
-> V2 正式发布目标：`0.5.0`
+> 当前目标：仓库干净、可用并形成产品闭环；不要求发布或统一版本号
 > 更新时间：2026-07-30
 
 本文件是 ProtoBridge V2 的唯一实施入口，固定长期目标、产品闭环、职责边界、关键取舍、七个实施阶段和最终完成条件。
@@ -142,7 +142,7 @@ V2 是这个长期目标的第一个完整版本：本地、单用户、以 PBWo
 13. Scenario 是正式 Case 来源，Checkpoint 具有可重复采集的稳定身份。
 14. partial、stale、failed、skipped、unsupported、cancelled、interrupted 和 unknown 对用户与 Agent 可见。
 15. 目标工程不需要提交 PB Workspace、Store 或 Source 配置。
-16. V2 未完成前保留可用的正式 V1；全部完成后一次性退出 V1，不发布用户可见双轨产品。
+16. 阶段六、七合并收敛：以账本星球三个代表页面验证闭环；删除 V1 产品链与 CLI `v2` 前缀，但不要求发布。
 
 这些决策的精确对象关系和验证规则见 [V2 核心规范](./pb-v2-spec.md)。
 
@@ -162,7 +162,8 @@ V2 是这个长期目标的第一个完整版本：本地、单用户、以 PBWo
 - MCP 的持久 Evidence 发现与按需读取；
 - Agent Handoff、Consumer 读取顺序和确定性错误；
 - 独立 Flutter Target 查询与验证能力；
-- 当前 PBWork Registry 的全部 Prototype、25 个 Screen 和 82 个 Variant 迁移；
+- 新增 Screen 默认执行严格证据门禁，存量未迁移页面显式进入 legacy allowlist；
+- 账本星球任务列表、任务详情、账本列表完成代表性迁移与浏览器回归；
 - V1 Artifact、Planner、旧 CLI/MCP 页面工作流和死代码退出。
 
 ### V2 不做
@@ -280,11 +281,11 @@ V2 是这个长期目标的第一个完整版本：本地、单用户、以 PBWo
 
 完成记录（2026-07-30）：
 
-- CLI 已使用 V2 Workspace 配置接入 Core 的 Selection、Preflight、Capture、Job、Bundle、stale 和 Handoff 能力；V1 `init/generate` 保持到阶段七；
+- CLI 已使用 Workspace 配置接入 Core 的 Selection、Preflight、Capture、Job、Bundle、stale 和 Handoff 能力；
 - MCP 已覆盖 Workspace、历史、Run、Snapshot、revision、Fragment、Catalog、Issue、Staleness、Handoff 和受引用约束的 Blob 只读消费，并提供确定性结构化错误；
 - Capture 与 Flutter Target 已建立单向边界，Target 只提供独立查询和变更验证，不要求目标工程存在 ProtoBridge 配置，也不写入 Evidence；
 - Agent Handoff Consumer 指南、MCP resource/prompt 和真实 Target 消费 E2E 已完成，Consumer 会保留并报告全部 Handoff risks；
-- `pnpm verify:v2:phase-five` 已通过 CLI/PBWork Matrix 等价、历史读取、Consumer、Target 和 PBWork → Store → MCP 垂直切片门禁。
+- 当前统一入口 `pnpm verify` 覆盖 CLI/PBWork Matrix 等价、历史读取、Consumer、Target 和 PBWork → Store → MCP 垂直切片门禁。
 
 完成条件：
 
@@ -296,55 +297,59 @@ V2 是这个长期目标的第一个完整版本：本地、单用户、以 PBWo
 - Target 查询结果不进入 Evidence Bundle；
 - CLI、MCP、Consumer 和 Target tests 通过。
 
-### 阶段六：迁移与全链路验收
+### 阶段六：代表性真实产品闭环验证
 
-目标是用完整迁移台账和 3 个代表页面的固定任务集证明 V2 不是只对单个样例成立。
-
-关键任务：
-
-- 从 Registry 自动生成 2 个 Prototype、25 个 Screen、82 个 Variant 的迁移台账；
-- 在运行 V2 对比前冻结 V1/目标仓库基线、任务集、计数口径、评分 rubric 和原始记录格式；
-- 补齐稳定 ID、Action、Component、Slot、Scenario 和关键 Checkpoint；
-- 完成 instrumented-source-runtime、instrumented-runtime、generic-runtime 和 screenshot-only 验收；
-- 在固定 3 页基准内验证单 Screen、Fragment、多 Screen、partial 修复和 stale 重采；整个 Prototype 只验证 Selection、Matrix、容量和任务拆分，不执行 25 页重复浏览器回归；
-- 在相同目标仓库基线上执行固定 V1/V2 对比任务。
-
-测试范围必须区分：
-
-- 25 Screen / 82 Variant 的迁移台账用于 Registry、Contract、lint、引用和能力覆盖检查；
-- 浏览器回归与 V1/V2 实现对比固定选取 3 个代表页面，不要求对 25 个 Screen 逐页重复回归；
-- generic runtime、screenshot-only、故障和恢复路径优先复用这 3 个页面或独立最小 fixture，不扩大页面分母。
-
-完成条件：
-
-- 迁移台账中的每个 Screen、Variant、Action 和 Scenario 都有 Contract/lint 通过、明确不适用或带 Issue 的 unsupported 结果，不要求逐项执行浏览器回归；
-- Ledger Planet 18 Screen / 54 Variant、Field Service 7 / 28 与当前 Registry 完全一致并有可追踪台账；
-- 四种 Evidence Level 的生产、存储、读取和错误路径 E2E 通过；
-- `unsupportedAssumptions = 0`；
-- V2 完成任务数不低于 V1；
-- 人工补充事实数较 V1 至少减少 30%，Evidence 导致的误实现至少减少 50%，相关返工轮次至少减少 30%；
-- 原始对比记录和汇总进入发布证据。
-
-### 阶段七：V1 退出与发布
-
-目标是在 V2 完整通过后一次性删除旧产品链路并发布正式版本。
+目标是用少量但完整可靠的真实证据验证产品闭环，并让之后新增的 PB 原型天然符合证据规范。
 
 关键任务：
 
-- 冻结 V1 功能变更；
-- 删除旧 Artifact writer、Planner、pageId workflow、旧 CLI generate 和旧 MCP resources；
-- 删除不再使用的 Target planning 和兼容代码；
-- 更新 config、binary、package exports、README、AGENT、产品文档和 Consumer 指南；
-- 统一正式包版本并执行安装包验证。
+- 对新增 Screen 建立默认严格门禁：默认态和关键 Variant 必须声明并实现 `requiredFragments`；
+- 将暂不迁移的存量 PBWork 页面放入显式 legacy allowlist，禁止 allowlist 无限增长；
+- 迁移并回归账本星球的任务列表、任务详情和账本列表；
+- 验证 Runtime Evidence、真实截图、Store Capture 与 Handoff 消费链；
+- 验证 Instrumented Runtime、通用 Runtime 和 Screenshot-only 的能力边界。
+
+本阶段明确不要求：
+
+- PBWork 25 个 Screen、82 个 Variant 全量迁移；
+- Source Adapter 作为完成前提；
+- V1 / V2 定量对照；
+- 反复扩展 CLI / MCP 测试矩阵。
 
 完成条件：
 
-- 前六阶段的完成证据全部存在；
-- 仓库中不再有正式入口引用 `page-canonical.json`、`ui-build-plan.json`、`ui-build-review.md` 或旧 page resources；
-- V2 CLI、MCP、PBWork、Store 和 Target 包从干净安装环境可运行；
-- 真实 PBWork → Handoff → MCP → 目标实现闭环再次通过；
-- 所有发布包使用不低于现有 `0.4.0` 的统一正式版本，目标为 `0.5.0`；
-- V1 删除、迁移说明和发布说明经复核后发布。
+- 未来新增 Screen 若缺少证据边界会在注册表校验中失败；
+- 三个账本星球页面均完成真实浏览器采集与片段可见性验证；
+- 证据可写入 Store，并可由现有 CLI / MCP 消费；
+- 风险与能力降级规则有明确文档和自动化测试。
+
+### 阶段七：V1 退出与仓库收口
+
+目标是删除 V1 产品链，留下单一、干净、可用的 Evidence 产品，不以发布为完成条件。
+
+关键任务：
+
+- 删除 V1 采集、生成、规划、配置、页面重建及兼容代码；
+- CLI 移除 `v2` 前缀，默认直接暴露 Evidence 工作流；
+- MCP 删除 V1 页面工具、资源、Prompt 与配置入口；
+- 清理旧导出、旧依赖、旧脚本、旧环境变量和文档口径；
+- 在 V1 删除后重新验证 CLI、MCP、Store、Runtime 与 Handoff 闭环；
+- 使用锁文件冻结安装、构建、类型检查、测试与真实浏览器回归验证仓库可用性。
+
+本阶段明确不要求：
+
+- 发布 npm 包；
+- 统一版本号；
+- 迁移所有存量 PBWork 原型。
+
+完成条件：
+
+- 正式源码与产品入口不再提供 V1 能力；
+- 顶层 CLI 无 `v2` 前缀，MCP 只暴露 Evidence 与目标查询能力；
+- 依赖安装、构建、类型检查、单测和端到端测试全部通过；
+- 仓库无验证过程产生的临时文件，未执行发布。
+
+完成记录（2026-07-30）：`pnpm verify` 全部通过；冻结锁文件安装、仓库构建与类型检查成功，Core 169、Local Service 6、CLI 5、PBWork 72 个测试通过，Runtime 4 个浏览器用例、MCP、Consumer 和 Evidence 垂直切片均通过。
 
 ## 最终 Definition of Done
 
@@ -364,9 +369,11 @@ V2 完成必须同时满足：
 - MCP 能按需读取完整消费链所需 Evidence；
 - Agent 不需要读取 Store 路径或在目标仓库保存 PB 配置；
 - Target 查询与 Capture 解耦，目标事实不污染来源证据；
-- 当前 25 Screen / 82 Variant 完成迁移台账与 Contract 覆盖；
-- 四种 Evidence Level 和主要失败路径通过 E2E；
-- 3 个代表页面的 V1/V2 固定任务集达到阶段六的量化门槛；
-- V1 只在上述条件全部满足后删除并发布 V2。
+- 新增 PBWork Screen 默认受严格证据门禁约束，存量例外显式隔离；
+- 账本星球三个代表页面完成 Runtime、截图、Store 与 Handoff 回归；
+- 三种 Evidence Level 和主要失败路径通过 E2E；
+- V1 产品代码、兼容入口、旧依赖与 CLI `v2` 前缀已移除；
+- `pnpm verify` 覆盖冻结安装、构建、类型检查、单测和端到端闭环；
+- 仓库保持可用且未执行发布。
 
-实施完成以可复现的测试、迁移台账和发布证据判断，不以文档篇幅、代码量或“主要路径可用”判断。
+实施完成以可复现测试和代表性真实证据判断，不以全量旧原型迁移、文档篇幅、代码量或发布动作判断。
