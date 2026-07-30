@@ -17,6 +17,8 @@ export type EvidenceFactCategory =
   | "other";
 
 export type EvidenceReadableFact = {
+  /** Zero-based position in the immutable revision.facts array. */
+  sourceIndex: number;
   factId: string;
   category: EvidenceFactCategory;
   label: string;
@@ -24,6 +26,20 @@ export type EvidenceReadableFact = {
   value?: unknown;
   issueRef?: string;
   provenance: Provenance[];
+};
+
+export type EvidenceSemanticRegionReadModel = {
+  /** Exact Fact identity prefix; no display regrouping rewrites it. */
+  regionId: string;
+  label: string;
+  role?: string;
+  tag?: string;
+  text?: string;
+  visible?: boolean;
+  bbox?: { x: number; y: number; width: number; height: number };
+  firstSourceIndex: number;
+  sourceFactIds: string[];
+  facts: EvidenceReadableFact[];
 };
 
 export type EvidenceCaseReadModel = {
@@ -39,6 +55,9 @@ export type EvidenceCaseReadModel = {
   fragmentLabels: string[];
   screenshotBlobIds: string[];
   facts: EvidenceReadableFact[];
+  contextFacts: EvidenceReadableFact[];
+  interactionFacts: EvidenceReadableFact[];
+  regions: EvidenceSemanticRegionReadModel[];
   unknownCount: number;
   conflictCount: number;
   semanticCoverage: "declared" | "undeclared" | "incomplete" | "not-recorded";
@@ -57,6 +76,10 @@ export type EvidenceReadModel = {
   deliveryStatus: "ready" | "attention";
   coverageStatus: "complete" | "partial";
   semanticStatus: "declared" | "limited";
+  evidenceLevels: Array<{
+    level: CaseEvidenceRevision["evidenceLevel"];
+    count: number;
+  }>;
   summary: {
     selected: number;
     captured: number;
@@ -111,9 +134,10 @@ function labelFor(factId: string, category: EvidenceFactCategory): string {
   return labels[category];
 }
 
-function readableFact(fact: Fact): EvidenceReadableFact {
+function readableFact(fact: Fact, sourceIndex: number): EvidenceReadableFact {
   const category = categoryFor(fact.factId);
   return {
+    sourceIndex,
     factId: fact.factId,
     category,
     label: labelFor(fact.factId, category),
@@ -126,6 +150,72 @@ function readableFact(fact: Fact): EvidenceReadableFact {
     ...(fact.issueRef ? { issueRef: fact.issueRef } : {}),
     provenance: fact.candidates.map((candidate) => candidate.provenance),
   };
+}
+
+const NODE_FACT_SUFFIX = /\.(role|visible|tag|bbox|text)$/;
+
+function stringValue(
+  fact: EvidenceReadableFact | undefined,
+): string | undefined {
+  return typeof fact?.value === "string" ? fact.value : undefined;
+}
+
+function booleanValue(
+  fact: EvidenceReadableFact | undefined,
+): boolean | undefined {
+  return typeof fact?.value === "boolean" ? fact.value : undefined;
+}
+
+function bboxValue(
+  fact: EvidenceReadableFact | undefined,
+): EvidenceSemanticRegionReadModel["bbox"] {
+  if (!fact?.value || typeof fact.value !== "object") return undefined;
+  const value = fact.value as Record<string, unknown>;
+  return ["x", "y", "width", "height"].every(
+    (key) => typeof value[key] === "number",
+  )
+    ? {
+        x: value.x as number,
+        y: value.y as number,
+        width: value.width as number,
+        height: value.height as number,
+      }
+    : undefined;
+}
+
+function semanticRegions(
+  facts: EvidenceReadableFact[],
+): EvidenceSemanticRegionReadModel[] {
+  const groups = new Map<string, EvidenceReadableFact[]>();
+  for (const fact of facts) {
+    const suffix = fact.factId.match(NODE_FACT_SUFFIX);
+    if (!suffix) continue;
+    const regionId = fact.factId.slice(0, -suffix[0].length);
+    const existing = groups.get(regionId) ?? [];
+    existing.push(fact);
+    groups.set(regionId, existing);
+  }
+  return [...groups].map(([regionId, regionFacts]) => {
+    const bySuffix = (suffix: string) =>
+      regionFacts.find((fact) => fact.factId.endsWith(`.${suffix}`));
+    const text = stringValue(bySuffix("text"));
+    const role = stringValue(bySuffix("role"));
+    const tag = stringValue(bySuffix("tag"));
+    const visible = booleanValue(bySuffix("visible"));
+    const bbox = bboxValue(bySuffix("bbox"));
+    return {
+      regionId,
+      label: text?.replace(/\s+/g, " ").trim().slice(0, 80) || role || regionId,
+      ...(role ? { role } : {}),
+      ...(tag ? { tag } : {}),
+      ...(text ? { text } : {}),
+      ...(visible !== undefined ? { visible } : {}),
+      ...(bbox ? { bbox } : {}),
+      firstSourceIndex: regionFacts[0]?.sourceIndex ?? 0,
+      sourceFactIds: regionFacts.map((fact) => fact.factId),
+      facts: regionFacts,
+    };
+  });
 }
 
 function semanticCoverageOf(
@@ -185,6 +275,7 @@ export function buildEvidenceReadModel(
     const selected = cases.get(slot.caseId);
     if (!revision || !selected) continue;
     const facts = revision.facts.map(readableFact);
+    const regions = semanticRegions(facts);
     const scenario = selected.caseKey.scenario;
     const model: EvidenceCaseReadModel = {
       caseId: selected.caseId,
@@ -207,6 +298,14 @@ export function buildEvidenceReadModel(
       ),
       screenshotBlobIds: screenshots.get(revision.revisionId) ?? [],
       facts,
+      contextFacts: facts.filter(
+        (fact) =>
+          fact.category === "coverage" ||
+          fact.category === "environment" ||
+          fact.category === "other",
+      ),
+      interactionFacts: facts.filter((fact) => fact.category === "interaction"),
+      regions,
       unknownCount: facts.filter((fact) => fact.resolution === "unknown")
         .length,
       conflictCount: facts.filter(
@@ -219,14 +318,12 @@ export function buildEvidenceReadModel(
     screens.set(model.screenId, existing);
   }
 
-  const screenModels = [...screens.entries()]
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(([screenId, screenCases]) => ({
+  const screenModels = [...screens.entries()].map(
+    ([screenId, screenCases]) => ({
       screenId,
-      cases: screenCases.sort((left, right) =>
-        left.caseId.localeCompare(right.caseId),
-      ),
-    }));
+      cases: screenCases,
+    }),
+  );
   const allCases = screenModels.flatMap((screen) => screen.cases);
   const screenshotCount = new Set(
     allCases.flatMap((item) => item.screenshotBlobIds),
@@ -240,6 +337,16 @@ export function buildEvidenceReadModel(
       item.semanticCoverage === "incomplete" ||
       item.semanticCoverage === "not-recorded",
   );
+  const evidenceLevelCounts = new Map<
+    CaseEvidenceRevision["evidenceLevel"],
+    number
+  >();
+  for (const item of allCases) {
+    evidenceLevelCounts.set(
+      item.evidenceLevel,
+      (evidenceLevelCounts.get(item.evidenceLevel) ?? 0) + 1,
+    );
+  }
   const partial =
     counts.failed +
       counts.skipped +
@@ -274,6 +381,10 @@ export function buildEvidenceReadModel(
         : "ready",
     coverageStatus: partial ? "partial" : "complete",
     semanticStatus: semanticLimited ? "limited" : "declared",
+    evidenceLevels: [...evidenceLevelCounts].map(([level, count]) => ({
+      level,
+      count,
+    })),
     summary: {
       selected: counts.selected,
       captured: counts.captured,

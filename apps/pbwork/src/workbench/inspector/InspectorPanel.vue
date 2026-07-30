@@ -59,6 +59,15 @@ const expandedCommentIds = ref<Set<string>>(new Set());
 
 const selected = computed(() => selection.selected);
 const element = computed(() => selected.value?.element ?? null);
+const captureElementRef = computed(() => {
+  const current = element.value;
+  if (current?.ref.pbId) return current.ref;
+  if (current?.semanticParent?.pbId) return current.semanticParent;
+  return null;
+});
+const captureUsesSemanticParent = computed(() =>
+  Boolean(captureElementRef.value && !element.value?.ref.pbId),
+);
 const currentScreen = computed(() =>
   loadPrototypeScreens().find(
     (item) =>
@@ -133,13 +142,8 @@ function elementDisplayLabel(summary: ElementSummary): string {
 
 function addSelectedFragmentToCapture() {
   const screen = currentScreen.value;
-  const ref = element.value?.ref;
+  const ref = captureElementRef.value;
   if (!screen || !ref?.pbId) {
-    capture.setError(
-      new Error(
-        `当前节点缺少稳定 data-pb-id，不能作为 ${screen?.screenId ?? "当前 Screen"} 的正式 Fragment。`,
-      ),
-    );
     return;
   }
   const accepted = capture.beginFragment({
@@ -569,17 +573,23 @@ function downloadUnreadable() {
     <div v-if="selected" class="capture-fragment-action">
       <WorkbenchButton
         tone="primary"
+        :disabled="!captureElementRef"
         data-testid="capture-selected-fragment"
         @click="addSelectedFragmentToCapture"
       >
-        加入采集范围
+        {{ captureUsesSemanticParent ? "采集所属稳定元素" : "加入采集范围" }}
       </WorkbenchButton>
-      <small v-if="!element?.ref.pbId">
-        缺少稳定 data-pb-id，Preflight 将阻止提交。
+      <small v-if="!captureElementRef">
+        当前节点和所属语义区域都没有稳定标识；可改为采集当前页面。
+      </small>
+      <small v-else-if="captureUsesSemanticParent">
+        当前叶节点没有稳定标识，将采集所属区域
+        {{ captureElementRef.pbId
+        }}{{ captureElementRef.pbKey ? `#${captureElementRef.pbKey}` : "" }}。
       </small>
       <small v-else>
-        {{ element.ref.pbId
-        }}{{ element.ref.pbKey ? `#${element.ref.pbKey}` : "" }}
+        {{ captureElementRef.pbId
+        }}{{ captureElementRef.pbKey ? `#${captureElementRef.pbKey}` : "" }}
       </small>
     </div>
 

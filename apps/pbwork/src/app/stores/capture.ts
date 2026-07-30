@@ -190,6 +190,15 @@ export const useCaptureStore = defineStore("capture-v2", {
     closeComposer() {
       this.composerOpen = false;
     },
+    discardDraft() {
+      this.entryKind = null;
+      this.draft = null;
+      this.preflight = null;
+      this.acceptedWarningIds = [];
+      this.recaptureBundleId = null;
+      this.handoffPreview = null;
+      this.persistDraft();
+    },
     dismissNotice() {
       this.notice = null;
     },
@@ -446,47 +455,54 @@ export const useCaptureStore = defineStore("capture-v2", {
       if (!this.activeJob) return;
       try {
         const previousStatus = this.activeJob.status;
+        const wasTerminal = TERMINAL_JOB_STATUSES.includes(
+          previousStatus as (typeof TERMINAL_JOB_STATUSES)[number],
+        );
         this.activeJob = await captureServiceClient.getJob(
           this.activeJob.jobId,
         );
-        if (
-          TERMINAL_JOB_STATUSES.includes(
-            this.activeJob
-              .status as (typeof TERMINAL_JOB_STATUSES)[number],
-          )
-        ) {
-          await this.loadBundle(this.activeJob.bundleId);
-          if (previousStatus !== this.activeJob.status) {
-            const coverage = this.details?.activeSnapshot.coverage.counts;
-            const failed =
-              (coverage?.failed ?? 0) +
-              (coverage?.unsupported ?? 0) +
-              (coverage?.cancelled ?? 0) +
-              (coverage?.interrupted ?? 0);
-            const successful =
-              (coverage?.captured ?? 0) + (coverage?.reused ?? 0);
-            const completed = this.activeJob.status === "completed";
-            this.notice = {
-              tone:
-                completed && failed === 0
-                  ? "success"
-                  : completed && successful > 0
-                    ? "warning"
-                    : "error",
-              title:
-                completed && failed === 0
-                  ? "证据采集完成"
-                  : completed
-                    ? "证据采集部分完成"
-                    : `证据采集${this.activeJob.status}`,
-              message: `${successful} 项成功或复用，${failed} 项未完成。`,
-              bundleId: this.activeJob.bundleId,
-              ...(this.details
-                ? { snapshotId: this.details.activeSnapshot.snapshotId }
-                : {}),
-            };
-          }
-        }
+        const isTerminal = TERMINAL_JOB_STATUSES.includes(
+          this.activeJob.status as (typeof TERMINAL_JOB_STATUSES)[number],
+        );
+        if (!isTerminal) return;
+
+        // Only hydrate evidence when the job newly reaches a terminal state.
+        // Re-fetching on every poll revokes screenshot object URLs and makes
+        // Evidence Viewer images flicker (and 404-spams failed bundles).
+        const justFinished = !wasTerminal;
+        if (!justFinished) return;
+
+        await this.loadBundle(this.activeJob.bundleId);
+        const coverage = this.details?.activeSnapshot.coverage.counts;
+        const failed =
+          (coverage?.failed ?? 0) +
+          (coverage?.unsupported ?? 0) +
+          (coverage?.cancelled ?? 0) +
+          (coverage?.interrupted ?? 0);
+        const successful =
+          (coverage?.captured ?? 0) + (coverage?.reused ?? 0);
+        const completed = this.activeJob.status === "completed";
+        this.notice = {
+          tone:
+            completed && failed === 0
+              ? "success"
+              : completed && successful > 0
+                ? "warning"
+                : "error",
+          title:
+            completed && failed === 0
+              ? "证据采集完成"
+              : completed
+                ? "证据采集部分完成"
+                : `证据采集${this.activeJob.status}`,
+          message: this.details
+            ? `${successful} 项成功或复用，${failed} 项未完成。`
+            : "任务已结束，但还没有可打开的采集结果。",
+          bundleId: this.activeJob.bundleId,
+          ...(this.details
+            ? { snapshotId: this.details.activeSnapshot.snapshotId }
+            : {}),
+        };
       } catch (error) {
         this.setError(error);
       }
@@ -512,21 +528,23 @@ export const useCaptureStore = defineStore("capture-v2", {
       }
     },
     async loadBundle(bundleId: string) {
-      this.revokeScreenshotUrls();
       try {
-        this.details = await captureServiceClient.bundleDetails(bundleId);
+        const details = await captureServiceClient.bundleDetails(bundleId);
+        this.revokeScreenshotUrls();
+        this.details = details;
         await this.loadScreenshotUrls(bundleId);
       } catch (error) {
         this.setError(error);
       }
     },
     async loadSnapshot(bundleId: string, snapshotId: string) {
-      this.revokeScreenshotUrls();
       try {
-        this.details = await captureServiceClient.snapshotDetails(
+        const details = await captureServiceClient.snapshotDetails(
           bundleId,
           snapshotId,
         );
+        this.revokeScreenshotUrls();
+        this.details = details;
         await this.loadScreenshotUrls(bundleId);
       } catch (error) {
         this.setError(error);
@@ -580,6 +598,7 @@ export const useCaptureStore = defineStore("capture-v2", {
         this.details = null;
         this.stalenessReport = null;
         this.invalidatePreflight();
+        this.openComposer();
       } catch (error) {
         this.setError(error);
       }
@@ -593,6 +612,7 @@ export const useCaptureStore = defineStore("capture-v2", {
         this.entryKind = "custom";
         this.recaptureBundleId = this.activeJob.bundleId;
         this.invalidatePreflight();
+        this.openComposer();
       } catch (error) {
         this.setError(error);
       }

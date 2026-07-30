@@ -15,7 +15,8 @@ import {
 import {
   buildEvidenceReadModel,
   type EvidenceCaseReadModel,
-  type EvidenceFactCategory,
+  type EvidenceReadableFact,
+  type EvidenceSemanticRegionReadModel,
 } from "@proto-bridge/core/v2/evidence-read-model";
 import { useCaptureStore } from "@/app/stores/capture";
 import { loadPrototypeScreens } from "@/design-system/loaders";
@@ -59,36 +60,102 @@ const semanticLabel = (value: EvidenceCaseReadModel["semanticCoverage"]) =>
     incomplete: "缺少必要语义节点",
     "not-recorded": "旧证据未记录完整性",
   })[value];
-const categoryLabel = (category: EvidenceFactCategory) =>
-  ({
-    content: "页面内容",
-    structure: "结构与语义",
-    interaction: "交互与业务场景",
-    visual: "位置与尺寸",
-    coverage: "证据覆盖",
-    environment: "采集环境",
-    other: "其他事实",
-  })[category];
-
-function categoriesFor(item: EvidenceCaseReadModel) {
-  return [
-    "content",
-    "structure",
-    "interaction",
-    "visual",
-    "coverage",
-    "environment",
-    "other",
-  ].filter((category) =>
-    item.facts.some((fact) => fact.category === category),
-  ) as EvidenceFactCategory[];
-}
-
 function friendlyValue(value: unknown): string {
   if (typeof value === "string") return value;
   if (typeof value === "boolean") return value ? "是" : "否";
   if (value === undefined) return "没有确定值";
   return JSON.stringify(value, null, 2);
+}
+
+function evidenceLevelSummary(
+  levels: NonNullable<typeof model.value>["evidenceLevels"],
+): string {
+  if (levels.length === 0) return "unknown";
+  if (levels.length === 1) return levels[0]!.level;
+  return `${levels.length} 种级别`;
+}
+
+function contextLabel(fact: EvidenceReadableFact): string {
+  if (fact.category === "coverage") return "语义覆盖";
+  if (fact.factId.endsWith(".screenId")) return "实际页面";
+  if (fact.factId.endsWith(".variantId")) return "实际状态";
+  if (fact.factId.endsWith(".themeId")) return "实际主题";
+  return fact.label;
+}
+
+function contextValue(fact: EvidenceReadableFact): string {
+  if (
+    fact.category === "coverage" &&
+    fact.value &&
+    typeof fact.value === "object"
+  ) {
+    const value = fact.value as Record<string, unknown>;
+    const required = Array.isArray(value.requiredFragments)
+      ? value.requiredFragments.length
+      : 0;
+    const observed = Array.isArray(value.observedFragments)
+      ? value.observedFragments.length
+      : 0;
+    const missing = Array.isArray(value.missingFragments)
+      ? value.missingFragments.length
+      : 0;
+    const status =
+      value.status === "declared"
+        ? "已声明"
+        : value.status === "incomplete"
+          ? "不完整"
+          : "未声明";
+    return [
+      status,
+      required ? `${required} 个必要元素` : "",
+      `${observed} 个已观测`,
+      missing ? `${missing} 个缺失` : "",
+    ]
+      .filter(Boolean)
+      .join(" · ");
+  }
+  return friendlyValue(fact.value);
+}
+
+function interactionSummary(fact: EvidenceReadableFact): string {
+  const value =
+    fact.value && typeof fact.value === "object"
+      ? (fact.value as Record<string, unknown>)
+      : null;
+  if (fact.factId.includes(".action.") && value) {
+    const target =
+      value.target && typeof value.target === "object"
+        ? (value.target as Record<string, unknown>)
+        : null;
+    const identity = target?.pbId
+      ? `${String(target.pbId)}${target.pbKey ? `#${String(target.pbKey)}` : ""}`
+      : "页面元素";
+    return `${String(value.kind ?? "操作")} · ${identity}`;
+  }
+  if (fact.factId.includes(".scenario.") && value) {
+    const checkpoint =
+      value.checkpoint && typeof value.checkpoint === "object"
+        ? (value.checkpoint as Record<string, unknown>)
+        : null;
+    return `业务场景 · ${String(checkpoint?.checkpointId ?? fact.factId.split(".").at(-1))}`;
+  }
+  return friendlyValue(fact.value);
+}
+
+function regionMeta(region: EvidenceSemanticRegionReadModel): string {
+  return [
+    region.role ? `角色 ${region.role}` : "",
+    region.tag ? `<${region.tag}>` : "",
+    region.visible === false ? "不可见" : "可见",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+function bboxLabel(region: EvidenceSemanticRegionReadModel): string {
+  if (!region.bbox) return "未记录位置";
+  const { x, y, width, height } = region.bbox;
+  return `x ${Math.round(x)} · y ${Math.round(y)} · ${Math.round(width)} × ${Math.round(height)}`;
 }
 
 async function load() {
@@ -162,10 +229,14 @@ watch(
           </article>
           <article>
             <span>Evidence Level</span>
-            <strong>{{
-              model.screens[0]?.cases[0]?.evidenceLevel ?? "unknown"
-            }}</strong>
-            <small>当前证据能够证明到什么层级</small>
+            <strong>{{ evidenceLevelSummary(model.evidenceLevels) }}</strong>
+            <small>
+              {{
+                model.evidenceLevels
+                  .map((item) => `${item.level} × ${item.count}`)
+                  .join("；") || "没有活动证据"
+              }}
+            </small>
           </article>
         </div>
         <ul>
@@ -283,26 +354,111 @@ watch(
               <div class="subheading">
                 <div>
                   <FileJson2 :size="17" />
-                  <strong>可读证据</strong>
+                  <strong>页面内容与语义区域</strong>
                 </div>
-                <span>{{ item.facts.length }} 个事实</span>
+                <span
+                  >{{ item.regions.length }} 个区域 ·
+                  {{ item.facts.length }} 个原始事实</span
+                >
               </div>
 
-              <div
-                v-for="category in categoriesFor(item)"
-                :key="category"
-                class="fact-category"
+              <section v-if="item.contextFacts.length" class="evidence-group">
+                <h4>本次采集说明</h4>
+                <div class="context-grid">
+                  <article
+                    v-for="fact in item.contextFacts"
+                    :key="fact.factId"
+                    :class="`is-${fact.resolution}`"
+                  >
+                    <span>{{ contextLabel(fact) }}</span>
+                    <strong>{{ contextValue(fact) }}</strong>
+                  </article>
+                </div>
+              </section>
+
+              <section
+                v-if="item.interactionFacts.length"
+                class="evidence-group"
               >
-                <h4>{{ categoryLabel(category) }}</h4>
+                <h4>可执行交互与业务场景</h4>
                 <article
-                  v-for="fact in item.facts.filter(
-                    (candidate) => candidate.category === category,
-                  )"
+                  v-for="fact in item.interactionFacts"
+                  :key="fact.factId"
+                  class="interaction-card"
+                  :class="`is-${fact.resolution}`"
+                >
+                  <strong>{{ interactionSummary(fact) }}</strong>
+                  <details>
+                    <summary>查看来源</summary>
+                    <code>{{ fact.factId }}</code>
+                  </details>
+                </article>
+              </section>
+
+              <section v-if="item.regions.length" class="evidence-group">
+                <h4>页面语义区域（按采集顺序）</h4>
+                <div class="region-list">
+                  <article
+                    v-for="(region, regionIndex) in item.regions"
+                    :key="region.regionId"
+                    class="region-card"
+                  >
+                    <span class="region-index">{{
+                      String(regionIndex + 1).padStart(2, "0")
+                    }}</span>
+                    <div class="region-copy">
+                      <strong>{{ region.label }}</strong>
+                      <span>{{ regionMeta(region) }}</span>
+                      <p v-if="region.text && region.text !== region.label">
+                        {{ region.text }}
+                      </p>
+                      <small>{{ bboxLabel(region) }}</small>
+                    </div>
+                    <details>
+                      <summary>{{ region.facts.length }} 个来源事实</summary>
+                      <div
+                        v-for="fact in region.facts"
+                        :key="fact.factId"
+                        class="source-fact"
+                      >
+                        <span
+                          >#{{ fact.sourceIndex + 1 }} {{ fact.label }}</span
+                        >
+                        <code>{{ fact.factId }}</code>
+                        <pre>{{ friendlyValue(fact.value) }}</pre>
+                      </div>
+                    </details>
+                  </article>
+                </div>
+              </section>
+
+              <section
+                v-if="
+                  !item.contextFacts.length &&
+                  !item.interactionFacts.length &&
+                  !item.regions.length
+                "
+                class="screenshot-empty"
+              >
+                <FileJson2 :size="22" />
+                <strong>此 Case 没有可映射的语义事实</strong>
+                <span>原始 Revision 标识仍保留在下方技术详情。</span>
+              </section>
+
+              <details class="raw-facts">
+                <summary>
+                  所有原始事实（严格按 JSON 顺序，共
+                  {{ item.facts.length }} 项）
+                </summary>
+                <article
+                  v-for="fact in item.facts"
                   :key="fact.factId"
                   :class="`is-${fact.resolution}`"
                 >
                   <div class="fact-title">
-                    <strong>{{ fact.label }}</strong>
+                    <strong
+                      >#{{ fact.sourceIndex + 1 }} {{ fact.label }}</strong
+                    >
                     <span>{{ fact.resolution }}</span>
                   </div>
                   <pre>{{ friendlyValue(fact.value) }}</pre>
@@ -320,14 +476,18 @@ watch(
                     </ul>
                   </details>
                 </article>
-              </div>
+              </details>
             </section>
           </div>
 
           <details class="revision-details">
-            <summary>Revision 与原始 Evidence 标识</summary>
+            <summary>Revision、Case 与映射说明</summary>
             <code>{{ item.revisionId }}</code>
             <code>{{ item.caseId }}</code>
+            <p>
+              上方区域是只读映射；Fact ID、顺序、值与 provenance 均来自该
+              Revision，Store JSON 未重排或改写。
+            </p>
           </details>
         </article>
       </section>
@@ -557,6 +717,9 @@ watch(
   padding: 18px;
 }
 .visual-evidence {
+  align-self: start;
+  position: sticky;
+  top: 14px;
   border-right: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   background: rgba(var(--v-theme-on-surface), 0.018);
 }
@@ -628,25 +791,157 @@ watch(
   background: color-mix(in srgb, rgb(var(--v-theme-primary)) 8%, transparent);
   font-size: 0.7rem;
 }
-.fact-category + .fact-category {
+.evidence-group + .evidence-group {
   margin-top: 16px;
 }
-.fact-category h4 {
+.evidence-group h4 {
   margin: 0 0 7px;
   color: rgba(var(--v-theme-on-surface), 0.58);
   font-size: 0.7rem;
 }
-.fact-category > article {
+.context-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+.context-grid article {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 9px;
+  background: rgba(var(--v-theme-on-surface), 0.02);
+}
+.context-grid span {
+  color: rgba(var(--v-theme-on-surface), 0.5);
+  font-size: 0.66rem;
+}
+.context-grid strong {
+  overflow: hidden;
+  font-size: 0.72rem;
+  text-overflow: ellipsis;
+}
+.interaction-card {
   padding: 10px 11px;
   border-left: 3px solid rgb(var(--v-theme-success));
   border-radius: 8px;
   background: rgba(var(--v-theme-on-surface), 0.025);
 }
-.fact-category > article + article {
+.interaction-card + .interaction-card {
   margin-top: 6px;
 }
-.fact-category > article.is-unknown,
-.fact-category > article.is-unresolved-conflict {
+.interaction-card.is-unknown,
+.interaction-card.is-unresolved-conflict,
+.context-grid article.is-unknown,
+.context-grid article.is-unresolved-conflict {
+  border-left-color: rgb(var(--v-theme-warning));
+}
+.interaction-card details {
+  margin-top: 5px;
+  color: rgba(var(--v-theme-on-surface), 0.48);
+  font-size: 0.65rem;
+}
+.interaction-card code {
+  display: block;
+  overflow: hidden;
+  margin-top: 5px;
+  text-overflow: ellipsis;
+}
+.region-list {
+  display: grid;
+  gap: 7px;
+}
+.region-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  padding: 11px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 11px;
+  background: rgba(var(--v-theme-on-surface), 0.018);
+}
+.region-index {
+  display: grid;
+  width: 27px;
+  height: 27px;
+  place-items: center;
+  border-radius: 8px;
+  background: color-mix(in srgb, rgb(var(--v-theme-primary)) 10%, transparent);
+  color: rgb(var(--v-theme-primary));
+  font:
+    700 0.65rem ui-monospace,
+    monospace;
+}
+.region-copy {
+  min-width: 0;
+}
+.region-copy > strong,
+.region-copy > span,
+.region-copy > small {
+  display: block;
+}
+.region-copy > strong {
+  overflow: hidden;
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.region-copy > span,
+.region-copy > small {
+  margin-top: 3px;
+  color: rgba(var(--v-theme-on-surface), 0.5);
+  font-size: 0.66rem;
+}
+.region-copy p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 6px 0 0;
+  color: rgba(var(--v-theme-on-surface), 0.72);
+  font-size: 0.7rem;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+.region-card > details {
+  grid-column: 2;
+  color: rgba(var(--v-theme-on-surface), 0.52);
+  font-size: 0.66rem;
+}
+.source-fact {
+  display: grid;
+  gap: 3px;
+  margin-top: 7px;
+  padding: 7px 8px;
+  border-radius: 7px;
+  background: rgba(var(--v-theme-on-surface), 0.035);
+}
+.source-fact code,
+.source-fact pre {
+  overflow: auto;
+  margin: 0;
+  font:
+    0.64rem/1.4 ui-monospace,
+    monospace;
+}
+.source-fact code {
+  color: rgba(var(--v-theme-on-surface), 0.48);
+}
+.raw-facts {
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  color: rgba(var(--v-theme-on-surface), 0.54);
+  font-size: 0.68rem;
+}
+.raw-facts > article {
+  margin-top: 7px;
+  padding: 9px 10px;
+  border-left: 3px solid rgb(var(--v-theme-success));
+  border-radius: 8px;
+  background: rgba(var(--v-theme-on-surface), 0.025);
+}
+.raw-facts > article.is-unknown,
+.raw-facts > article.is-unresolved-conflict {
   border-left-color: rgb(var(--v-theme-warning));
 }
 .fact-title {
@@ -658,7 +953,7 @@ watch(
   color: rgba(var(--v-theme-on-surface), 0.45);
   font-size: 0.64rem;
 }
-.fact-category pre {
+.raw-facts pre {
   overflow: auto;
   max-height: 180px;
   margin: 6px 0 0;
@@ -668,30 +963,33 @@ watch(
     monospace;
   white-space: pre-wrap;
 }
-.fact-category p {
+.raw-facts p {
   margin: 6px 0 0;
   color: rgb(var(--v-theme-warning));
   font-size: 0.68rem;
 }
-.fact-category details,
+.raw-facts details,
 .revision-details {
   margin-top: 7px;
   color: rgba(var(--v-theme-on-surface), 0.5);
   font-size: 0.66rem;
 }
-.fact-category details code,
+.raw-facts details code,
 .revision-details code {
   display: block;
   overflow: hidden;
   margin-top: 5px;
   text-overflow: ellipsis;
 }
-.fact-category details ul {
+.raw-facts details ul {
   margin: 5px 0 0;
   padding-left: 18px;
 }
 .revision-details {
   padding: 0 18px 14px;
+}
+.revision-details p {
+  margin: 7px 0 0;
 }
 .viewer-loading {
   display: grid;
@@ -708,9 +1006,13 @@ watch(
     grid-template-columns: 1fr;
   }
   .visual-evidence {
+    position: static;
     border-right: 0;
     border-bottom: 1px solid
       rgba(var(--v-border-color), var(--v-border-opacity));
+  }
+  .context-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

@@ -6,8 +6,7 @@ test.use({ viewport: { width: 1440, height: 1050 } });
 async function finishFromComposer(
   page: import("@playwright/test").Page,
 ): Promise<void> {
-  await page.getByTestId("composer-run-preflight").click();
-  await expect(page.getByText(/个采集项/).first()).toBeVisible({
+  await expect(page.getByText(/个将执行的采集项/).first()).toBeVisible({
     timeout: 20_000,
   });
   await expect(page.getByText("可以开始")).toBeVisible();
@@ -18,8 +17,9 @@ async function finishFromComposer(
 async function openFinishedResult(
   page: import("@playwright/test").Page,
 ): Promise<void> {
-  await expect(page.getByTestId("capture-job-center")).toContainText(
-    "采集完成",
+  await expect(page.getByTestId("capture-job-center")).toHaveAttribute(
+    "aria-label",
+    /采集完成/,
     { timeout: 30_000 },
   );
   await expect(
@@ -69,9 +69,9 @@ test("task-list captures in place, reports background completion, and renders hi
   await expect(
     page.getByRole("img", { name: /任务列表.*采集截图/ }).first(),
   ).toBeVisible();
-  await expect(page.getByText("可读证据").first()).toBeVisible();
-  await expect(page.getByText("页面内容").first()).toBeVisible();
-  await expect(page.getByText("来源与技术详情").first()).toBeVisible();
+  await expect(page.getByText("页面内容与语义区域").first()).toBeVisible();
+  await expect(page.getByText(/页面语义区域/).first()).toBeVisible();
+  await expect(page.getByText(/所有原始事实/).first()).toBeVisible();
 
   if (process.env.PBWORK_E2E_RESULT_PATH) {
     const [, bundleId, snapshotId] =

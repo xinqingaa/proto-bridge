@@ -1,6 +1,6 @@
 # ProtoBridge V2 实施指南
 
-> 状态：实施中；阶段五已进入，Store-backed MCP Reader 垂直切片完成，CLI Producer 待接入
+> 状态：实施中；阶段四能力已完成，阶段五暂停，先关闭 PBWork 可用性验收门禁
 > 权威范围：当前仓库的推荐落点、实施顺序、测试、迁移和发布纪律
 > 上位目标：[V2 产品闭环与实施总览](./pb-v2-overview.md)
 > 不可违背语义：[V2 核心规范](./pb-v2-spec.md)
@@ -72,15 +72,23 @@
 | 二：证据模型与存储      | 已完成 | 原子 Bundle 首 Snapshot、immutable Store、Job 恢复、Catalog/Blob、依赖级 stale/复用、fork/archive、容量与 safe clean 的 Store tests 通过 | 无                                                     |
 | 三：Runtime 与捕获      | 已完成 | Capture Protocol、稳定 Matrix、Scenario runner、三种输入、Playwright Orchestrator 与真实 Store 浏览器闭环通过                            | 无                                                     |
 | 四：PBWork 操作闭环     | 已完成 | Local Service、四类 Draft、Preflight/Matrix、后台 Job/恢复、Evidence/stale、Bundle 管理和固定 Handoff 的 unit/service/E2E 通过           | 无                                                     |
-| 五：CLI、MCP 与消费链路 | 进行中 | 共用 Evidence Read Model、跨进程只读 Store、固定 Snapshot/Case/Screenshot MCP resource、PBWork→MCP 同 Snapshot E2E 已通过                | V2 producer CLI、完整 Consumer、Target 解耦            |
+| 五：CLI、MCP 与消费链路 | 暂停   | 共用 Evidence Read Model、跨进程只读 Store、固定 Snapshot/Case/Screenshot MCP resource、PBWork→MCP 同 Snapshot E2E 已通过                | PBWork 可用性验收门禁；随后接 V2 producer CLI、完整 Consumer、Target 解耦 |
 | 六：迁移与全链路验收    | 未开始 | Registry 已确认 2 Prototype / 25 Screen / 82 Variant                                                                                     | 迁移台账、3 页固定基准、四种 Evidence Level 与量化对比 |
 | 七：V1 退出与发布       | 未开始 | V1 仍保持可用                                                                                                                            | 前六阶段门禁、旧链路删除、干净安装和 0.5.0 发布        |
 
 当前验证基线为：Core 175 个测试通过；Local Service 6 个测试通过；PBWork typecheck/build、既有 unit/Runtime/Console 回归可继续运行。新增证据可用性 E2E 证明高条件 `task-list` 为 `complete + declared + screenshot`，稀疏 `analytics` 保留截图并诚实报告语义限制；`test:e2e:evidence-slice` 进一步证明 PBWork 与 MCP 读取同一个固定 Snapshot。整个 Prototype 仍只展开并验证 Matrix，不启动 25 页重复采集。
 
-## 阶段五前证据质量门禁
+## 阶段五前证据质量与 PBWork 可用性门禁
 
-此门禁暂停阶段五，不是新增实施阶段，也不提前执行阶段六迁移。当前随机点击产生的稀疏 Store 数据不作为采集能力上限，也不要求为通过门禁而重做 `analytics`、`ledger-list`、`create-work-order` 或其他原型。
+此门禁暂停阶段五，不是新增实施阶段，也不提前执行阶段六迁移。除证据质量外，PBWork 必须达到可由用户自行理解任务、发起采集、检查结果和定位问题的可用性基线。当前随机点击产生的稀疏 Store 数据不作为采集能力上限，也不要求为通过门禁而重做 `analytics`、`ledger-list`、`create-work-order` 或其他原型。
+
+PBWork 可用性基线包括：
+
+1. 一级导航保持纯图标并提供可访问名称；采集区二级导航明确区分任务与采集结果。
+2. Prototype、Screen、Fragment 三类入口使用一致的工作壳控件和清楚的动作语义。
+3. 采集 Sheet 自动检查范围，Prototype 级策略默认一次设置，逐 Screen 只处理例外。
+4. 任务中心优先展示需要处理和运行中的任务；完成任务进入独立 Evidence Review。
+5. Evidence Review 按 Screen、Case 和语义区域形成可读映射，同时保留原始事实顺序与引用。
 
 判断顺序：
 

@@ -9,17 +9,16 @@ import {
   MousePointer2,
   Plus,
   RefreshCw,
+  ScanLine,
   SlidersHorizontal,
 } from "lucide-vue-next";
 import { useCanvasStore } from "@/app/stores/canvas";
 import { useSelectionStore } from "@/app/stores/selection";
-import {
-  DEVICE_PRESETS,
-  ZOOM_PRESETS,
-} from "@/workbench/canvas/devices";
+import { DEVICE_PRESETS, ZOOM_PRESETS } from "@/workbench/canvas/devices";
 import type { PrototypeVariant, ThemeRecord } from "@/design-system/types";
+import WorkbenchSelect from "@/workbench/ui/WorkbenchSelect.vue";
 
-defineProps<{
+const props = defineProps<{
   variants: PrototypeVariant[];
   themes: ThemeRecord[];
   variantId: string;
@@ -27,6 +26,7 @@ defineProps<{
   isDark: boolean;
   fullscreen: boolean;
   copyFeedback?: string | null;
+  captureDisabled?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -37,6 +37,7 @@ const emit = defineEmits<{
   fullscreen: [];
   copy: [];
   "copy-and-open": [];
+  capture: [];
 }>();
 
 const canvas = useCanvasStore();
@@ -47,6 +48,16 @@ const zoomItems = computed(() =>
     title: `${Math.round(value * 100)}%`,
     value,
   })),
+);
+const deviceItems = DEVICE_PRESETS.map((item) => ({
+  label: item.label,
+  value: item.id,
+}));
+const themeItems = computed(() =>
+  props.themes.map((item) => ({ label: item.label, value: item.id })),
+);
+const variantItems = computed(() =>
+  props.variants.map((item) => ({ label: item.label, value: item.id })),
 );
 
 function onZoomSelect(value: unknown) {
@@ -205,55 +216,30 @@ function onTogglePan() {
         </div>
         <label class="settings-field">
           <span class="settings-label">设备</span>
-          <select
-            class="settings-control"
-            :value="canvas.deviceId"
+          <WorkbenchSelect
+            :model-value="canvas.deviceId"
+            :items="deviceItems"
             aria-label="设备尺寸"
-            @change="
-              canvas.setDeviceId(($event.target as HTMLSelectElement).value)
-            "
-          >
-            <option
-              v-for="item in DEVICE_PRESETS"
-              :key="item.id"
-              :value="item.id"
-            >
-              {{ item.label }}
-            </option>
-          </select>
+            @update:model-value="canvas.setDeviceId"
+          />
         </label>
         <label class="settings-field">
           <span class="settings-label">主题</span>
-          <select
-            class="settings-control"
-            :value="themeId"
+          <WorkbenchSelect
+            :model-value="themeId"
+            :items="themeItems"
             aria-label="原型主题"
-            @change="
-              emit('update:themeId', ($event.target as HTMLSelectElement).value)
-            "
-          >
-            <option v-for="item in themes" :key="item.id" :value="item.id">
-              {{ item.label }}
-            </option>
-          </select>
+            @update:model-value="emit('update:themeId', $event)"
+          />
         </label>
         <label class="settings-field">
           <span class="settings-label">状态</span>
-          <select
-            class="settings-control"
-            :value="variantId"
+          <WorkbenchSelect
+            :model-value="variantId"
+            :items="variantItems"
             aria-label="Variant"
-            @change="
-              emit(
-                'update:variantId',
-                ($event.target as HTMLSelectElement).value,
-              )
-            "
-          >
-            <option v-for="item in variants" :key="item.id" :value="item.id">
-              {{ item.label }}
-            </option>
-          </select>
+            @update:model-value="emit('update:variantId', $event)"
+          />
         </label>
       </div>
     </v-menu>
@@ -261,6 +247,22 @@ function onTogglePan() {
     <div class="toolbar-spacer" />
 
     <div class="toolbar-cluster" role="group" aria-label="链接">
+      <v-tooltip text="采集当前页面" location="bottom">
+        <template #activator="{ props: tip }">
+          <button
+            v-bind="tip"
+            type="button"
+            class="tool-btn tool-primary"
+            aria-label="采集当前页面"
+            :disabled="captureDisabled"
+            data-testid="capture-current-screen"
+            @click="emit('capture')"
+          >
+            <ScanLine :size="15" aria-hidden="true" />
+          </button>
+        </template>
+      </v-tooltip>
+      <span class="cluster-sep" aria-hidden="true" />
       <v-tooltip text="刷新" location="bottom">
         <template #activator="{ props: tip }">
           <button
@@ -338,12 +340,11 @@ function onTogglePan() {
   padding: 7px 8px;
   border: 1px solid rgba(15, 23, 42, 0.1);
   border-radius: 16px;
-  background:
-    linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.92) 0%,
-      rgba(248, 250, 252, 0.96) 100%
-    );
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(248, 250, 252, 0.96) 100%
+  );
   backdrop-filter: blur(10px);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
   overflow: visible;
@@ -385,22 +386,10 @@ function onTogglePan() {
 }
 .settings-label {
   color: rgba(var(--v-theme-on-surface), 0.62);
-  font: 600 11px/1 Inter, system-ui, sans-serif;
-}
-.settings-control {
-  width: 100%;
-  height: 32px;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 8px;
-  background: rgb(var(--v-theme-surface));
-  color: rgb(var(--v-theme-on-surface));
-  padding: 0 8px;
-  font: 500 12px/32px Inter, system-ui, sans-serif;
-  outline: none;
-}
-.settings-control:focus-visible {
-  border-color: rgb(var(--v-theme-primary));
-  box-shadow: 0 0 0 2px rgba(var(--v-theme-primary), 0.22);
+  font:
+    600 11px/1 Inter,
+    system-ui,
+    sans-serif;
 }
 @container (max-width: 720px) {
   .canvas-toolbar {
@@ -467,7 +456,10 @@ function onTogglePan() {
   background: transparent;
   color: rgba(15, 23, 42, 0.78);
   cursor: pointer;
-  font: 600 12px/1 Inter, system-ui, sans-serif;
+  font:
+    600 12px/1 Inter,
+    system-ui,
+    sans-serif;
 }
 
 .canvas-toolbar.is-dark .tool-btn {
@@ -516,7 +508,11 @@ function onTogglePan() {
   background: transparent;
   color: inherit;
   cursor: pointer;
-  font: 600 12px/30px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font:
+    600 12px/30px ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
   text-align: center;
 }
 
@@ -538,7 +534,8 @@ function onTogglePan() {
 }
 
 .zoom-slider:focus-visible {
-  outline: 2px solid color-mix(in srgb, rgb(var(--v-theme-primary)) 40%, transparent);
+  outline: 2px solid
+    color-mix(in srgb, rgb(var(--v-theme-primary)) 40%, transparent);
   outline-offset: 2px;
   border-radius: 4px;
 }

@@ -9,6 +9,7 @@ import {
   ScanLine,
 } from "lucide-vue-next";
 import { useCaptureStore } from "@/app/stores/capture";
+import WorkbenchIconButton from "@/workbench/ui/WorkbenchIconButton.vue";
 
 const capture = useCaptureStore();
 const router = useRouter();
@@ -42,8 +43,15 @@ const progress = computed(() => {
 });
 const statusLabel = computed(() => {
   const status = capture.activeJob?.status;
-  return status ? STATUS_LABELS[status] : "采集与任务";
+  return status ? STATUS_LABELS[status] : "采集任务";
 });
+const activatorLabel = computed(() =>
+  executing.value
+    ? `${statusLabel.value}，打开采集任务`
+    : capture.notice
+      ? `${capture.notice.title}，打开采集任务`
+      : "打开采集任务",
+);
 const noticeColor = computed(
   () =>
     ({
@@ -59,7 +67,11 @@ async function refresh() {
     await capture.connect();
     return;
   }
-  if (capture.activeJob) await capture.refreshActiveJob();
+  // Match CaptureConsole: only poll in-flight jobs. Terminal jobs were already
+  // hydrated once; re-calling loadBundle every second revokes blob URLs.
+  if (capture.activeJob && !capture.jobFinished) {
+    await capture.refreshActiveJob();
+  }
   await capture.refreshConsole();
 }
 
@@ -97,10 +109,12 @@ onBeforeUnmount(() => {
     :close-on-content-click="false"
   >
     <template #activator="{ props }">
-      <v-btn
+      <WorkbenchIconButton
         v-bind="props"
-        variant="tonal"
-        color="primary"
+        :label="activatorLabel"
+        :active="capture.jobCenterOpen"
+        :tone="executing ? 'action' : 'neutral'"
+        size="large"
         class="capture-job-activator"
         data-testid="capture-job-center"
       >
@@ -110,10 +124,14 @@ onBeforeUnmount(() => {
           class="spin"
           aria-hidden="true"
         />
-        <ScanLine v-else :size="17" aria-hidden="true" />
-        {{ statusLabel }}
-        <span v-if="executing" class="progress-dot" />
-      </v-btn>
+        <Bell v-else :size="18" aria-hidden="true" />
+        <span
+          v-if="executing || capture.notice"
+          class="job-indicator"
+          :class="{ 'is-running': executing }"
+          aria-hidden="true"
+        />
+      </WorkbenchIconButton>
     </template>
 
     <section class="job-popover">
@@ -210,12 +228,20 @@ onBeforeUnmount(() => {
 .capture-job-activator {
   position: relative;
 }
-.progress-dot {
-  width: 6px;
-  height: 6px;
+.job-indicator {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  border: 2px solid rgb(var(--v-theme-surface));
   border-radius: 50%;
-  background: currentColor;
-  box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 14%, transparent);
+  background: rgb(var(--v-theme-error));
+  box-sizing: content-box;
+}
+.job-indicator.is-running {
+  background: rgb(var(--v-theme-action));
+  animation: pulse 1.6s ease-in-out infinite;
 }
 .spin {
   animation: spin 1s linear infinite;
@@ -312,6 +338,12 @@ onBeforeUnmount(() => {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+@keyframes pulse {
+  50% {
+    opacity: 0.45;
+    transform: scale(0.82);
   }
 }
 </style>

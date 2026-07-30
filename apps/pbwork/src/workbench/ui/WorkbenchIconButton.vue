@@ -1,7 +1,18 @@
 <script setup lang="ts">
 withDefaults(
-  defineProps<{ label: string; active?: boolean; disabled?: boolean }>(),
-  { active: false, disabled: false },
+  defineProps<{
+    label: string;
+    active?: boolean;
+    disabled?: boolean;
+    tone?: "neutral" | "action" | "strong" | "danger";
+    size?: "small" | "medium" | "large";
+  }>(),
+  {
+    active: false,
+    disabled: false,
+    tone: "neutral",
+    size: "medium",
+  },
 );
 defineEmits<{ click: [event: MouseEvent] }>();
 </script>
@@ -10,12 +21,14 @@ defineEmits<{ click: [event: MouseEvent] }>();
   <button
     type="button"
     class="wb-icon-button"
-    :class="{ 'is-active': active }"
+    :class="[`is-${tone}`, `is-${size}`, { 'is-active': active }]"
     :aria-label="label"
     :aria-pressed="active || undefined"
     :disabled="disabled"
     @click="$emit('click', $event)"
-  ><slot /></button>
+  >
+    <slot />
+  </button>
 </template>
 
 <style scoped>
@@ -31,7 +44,43 @@ defineEmits<{ click: [event: MouseEvent] }>();
   color: rgba(var(--v-theme-on-surface), 0.58);
   cursor: pointer;
 }
-.wb-icon-button:hover { background: rgba(var(--v-theme-on-surface), 0.055); color: rgba(var(--v-theme-on-surface), 0.88); }
-.wb-icon-button.is-active { border-color: rgba(var(--v-border-color), var(--v-border-opacity)); background: rgb(var(--v-theme-surface)); color: rgb(var(--v-theme-primary)); }
-.wb-icon-button:disabled { opacity: 0.4; cursor: not-allowed; }
+.wb-icon-button.is-small {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+}
+.wb-icon-button.is-large {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+}
+.wb-icon-button:hover {
+  background: rgba(var(--v-theme-on-surface), 0.055);
+  color: rgba(var(--v-theme-on-surface), 0.88);
+}
+.wb-icon-button.is-active {
+  border-color: rgba(var(--v-border-color), var(--v-border-opacity));
+  background: rgb(var(--v-theme-surface));
+  color: rgb(var(--v-theme-primary));
+}
+.wb-icon-button.is-action {
+  color: rgb(var(--v-theme-action));
+}
+.wb-icon-button.is-strong {
+  border-color: rgb(var(--v-theme-on-surface));
+  border-radius: 50%;
+  background: rgb(var(--v-theme-on-surface));
+  color: rgb(var(--v-theme-surface));
+}
+.wb-icon-button.is-strong:hover {
+  background: rgba(var(--v-theme-on-surface), 0.84);
+  color: rgb(var(--v-theme-surface));
+}
+.wb-icon-button.is-danger {
+  color: rgb(var(--v-theme-error));
+}
+.wb-icon-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 </style>

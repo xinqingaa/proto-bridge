@@ -25,7 +25,10 @@
 6. 新建或改业务原型 → [prototypes/overview.md](./prototypes/overview.md)、[shell-and-nav.md](./prototypes/shell-and-nav.md)、[screens-and-variants.md](./prototypes/screens-and-variants.md)、[recipes.md](./prototypes/recipes.md)  
 7. 提交前 → [checklist.md](./checklist.md)
 
-Agent 入口：`skills/pbwork-prototype/skill.md`。
+Agent 入口：
+
+- 业务原型与原型设计系统：`skills/pbwork-prototype/skill.md`
+- PBWork 管理工作壳、采集与 Evidence Review：`skills/pbwork-workbench/SKILL.md`
 
 ## 代码地图
 

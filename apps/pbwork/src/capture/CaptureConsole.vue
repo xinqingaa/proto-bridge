@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { RouterLink } from "vue-router";
+import { RouterLink, useRouter } from "vue-router";
 import {
   Archive,
   Camera,
@@ -22,8 +22,11 @@ import {
 import type { RiskKind } from "@proto-bridge/core/v2";
 import { useCaptureStore } from "@/app/stores/capture";
 import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
+import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
+import WorkbenchSelect from "@/workbench/ui/WorkbenchSelect.vue";
 
 const capture = useCaptureStore();
+const router = useRouter();
 const selectedPrototypeId = ref("ledger-planet");
 const targetBundleId = ref("");
 const implementationIntent = ref("");
@@ -93,6 +96,72 @@ const writableBundles = computed(
         item.bundle.prototypeId === capture.draft?.prototypeId,
     ) ?? [],
 );
+const prototypeItems = loadPrototypes().map((prototype) => ({
+  label: prototype.label,
+  value: prototype.id,
+}));
+const runningJobs = computed(
+  () =>
+    capture.consoleState?.jobs.filter((job) =>
+      ["queued", "discovering", "capturing", "writing"].includes(job.status),
+    ) ?? [],
+);
+const attentionJobs = computed(
+  () =>
+    capture.consoleState?.jobs.filter((job) =>
+      ["failed", "interrupted"].includes(job.status),
+    ) ?? [],
+);
+const completedJobs = computed(
+  () =>
+    capture.consoleState?.jobs.filter((job) => job.status === "completed") ??
+    [],
+);
+const statusLabels: Record<string, string> = {
+  queued: "等待开始",
+  discovering: "正在准备",
+  capturing: "正在采集",
+  writing: "正在保存",
+  completed: "已完成",
+  failed: "失败，需处理",
+  cancelled: "已取消",
+  interrupted: "已中断，需处理",
+};
+
+function jobStatusLabel(status: string): string {
+  return statusLabels[status] ?? status;
+}
+
+function jobActionLabel(status: string): string {
+  if (status === "completed") return "查看结果";
+  if (["queued", "discovering", "capturing", "writing"].includes(status)) {
+    return "查看进度";
+  }
+  return "处理任务";
+}
+
+async function openJob(
+  job: NonNullable<typeof capture.consoleState>["jobs"][number],
+) {
+  if (job.status === "completed") {
+    const summary = capture.consoleState?.bundles.find(
+      (item) => item.bundle.bundleId === job.bundleId,
+    );
+    if (summary?.activeSnapshot) {
+      await router.push(
+        `/workbench/evidence/${job.bundleId}/${summary.activeSnapshot.snapshotId}`,
+      );
+      return;
+    }
+  }
+  await capture.resumeJob(job);
+}
+
+function beginTask(kind: "custom" | "prototype") {
+  if (kind === "custom") capture.beginCustom(selectedPrototypeId.value);
+  else capture.beginPrototype(selectedPrototypeId.value);
+  capture.openComposer();
+}
 
 watch(
   () => capture.recaptureBundleId,
@@ -188,9 +257,9 @@ onBeforeUnmount(() => {
   <main class="capture-console" data-testid="capture-console">
     <header class="console-header">
       <div>
-        <span class="eyebrow"><ScanLine :size="15" /> ProtoBridge V2</span>
-        <h1>证据采集</h1>
-        <p>选择范围、预检 Case Matrix，并在后台生成固定 Snapshot。</p>
+        <span class="eyebrow"><ScanLine :size="15" /> 采集工作区</span>
+        <h1>任务中心</h1>
+        <p>先处理异常和进行中的任务；完成后到“采集结果”检查证据。</p>
       </div>
       <RouterLink :to="capture.returnTo" class="return-link"
         >返回工作台</RouterLink
@@ -235,48 +304,95 @@ onBeforeUnmount(() => {
         </span>
       </div>
 
+      <section class="task-overview" aria-label="任务概况">
+        <article :class="{ 'needs-attention': attentionJobs.length }">
+          <span>需要处理</span>
+          <strong>{{ attentionJobs.length }}</strong>
+          <small>{{
+            attentionJobs.length ? "失败或中断的任务等待处理" : "当前没有阻塞项"
+          }}</small>
+        </article>
+        <article>
+          <span>正在运行</span>
+          <strong>{{ runningJobs.length }}</strong>
+          <small>{{
+            runningJobs.length ? "可离开页面，任务会继续" : "当前没有后台采集"
+          }}</small>
+        </article>
+        <article>
+          <span>已有结果</span>
+          <strong>{{ completedJobs.length }}</strong>
+          <small>从左侧“采集结果”进入逐页检查</small>
+        </article>
+      </section>
+
       <section v-if="!capture.draft" class="panel entry-panel">
         <div class="section-heading">
           <div>
-            <span class="step-label">选择入口</span>
-            <h2>从同一条证据生产链开始</h2>
+            <span class="step-label">新任务</span>
+            <h2>发起新的采集</h2>
           </div>
-          <v-select
-            v-model="selectedPrototypeId"
-            :items="
-              loadPrototypes().map((prototype) => ({
-                title: prototype.label,
-                value: prototype.id,
-              }))
-            "
-            label="Prototype"
-            max-width="300"
-            hide-details
+          <WorkbenchSelect
+            :model-value="selectedPrototypeId"
+            :items="prototypeItems"
+            label="选择原型"
+            class="prototype-picker"
+            @update:model-value="selectedPrototypeId = $event"
           />
         </div>
         <div class="entry-grid">
-          <button
-            type="button"
-            class="entry-card"
-            @click="capture.beginCustom(selectedPrototypeId)"
-          >
+          <button type="button" class="entry-card" @click="beginTask('custom')">
             <SquareDashedMousePointer :size="25" />
-            <strong>自定义范围</strong>
-            <span>多选 Screen，并逐页设置 Variant 与 Scenario。</span>
+            <strong>选择部分页面</strong>
+            <span>只采集你指定的页面，之后统一设置状态与场景。</span>
           </button>
           <button
             type="button"
             class="entry-card"
-            @click="capture.beginPrototype(selectedPrototypeId)"
+            @click="beginTask('prototype')"
           >
             <Layers3 :size="25" />
-            <strong>整个 Prototype</strong>
-            <span>展开全部 Screen；默认不使用 all 策略。</span>
+            <strong>采集整个原型</strong>
+            <span>包含全部页面；默认只采集每页默认状态。</span>
           </button>
         </div>
         <p class="entry-note">
-          “当前 Screen”和“选中 Fragment”入口位于原型画布与元素检查面板。
+          单页采集在画布底部工具栏；元素采集在右侧元素检查面板。
         </p>
+      </section>
+
+      <section
+        v-if="capture.draft && !capture.composerOpen"
+        class="panel pending-draft"
+      >
+        <div>
+          <span class="step-label">待开始</span>
+          <h2>
+            {{
+              {
+                "current-screen": "当前页面采集",
+                fragment: "稳定元素采集",
+                custom: "部分页面采集",
+                prototype: "整个原型采集",
+              }[capture.entryKind ?? "custom"]
+            }}
+          </h2>
+          <p>
+            {{ capture.draft.prototypeId }} ·
+            {{
+              capture.draft.screens.length
+            }}
+            个页面。范围检查会在打开后自动执行。
+          </p>
+        </div>
+        <div class="pending-actions">
+          <WorkbenchButton tone="ghost" @click="capture.discardDraft">
+            放弃草稿
+          </WorkbenchButton>
+          <WorkbenchButton tone="primary" @click="capture.openComposer">
+            继续设置并开始
+          </WorkbenchButton>
+        </div>
       </section>
 
       <section
@@ -286,8 +402,8 @@ onBeforeUnmount(() => {
       >
         <div class="section-heading">
           <div>
-            <span class="step-label">恢复</span>
-            <h2>最近的 Capture Job</h2>
+            <span class="step-label">任务记录</span>
+            <h2>最近任务</h2>
           </div>
           <v-btn size="small" variant="text" @click="capture.refreshConsole">
             <RefreshCw :size="15" /> 刷新
@@ -299,23 +415,28 @@ onBeforeUnmount(() => {
           class="recent-job"
         >
           <div>
-            <strong>{{ job.status }}</strong>
+            <strong>{{ jobStatusLabel(job.status) }}</strong>
             <code>{{ job.jobId }}</code>
             <span
-              >{{ job.selection.cases.length }} Case · {{ job.bundleId }}</span
+              >{{ job.selection.cases.length }} 个采集项 ·
+              {{ job.bundleId }}</span
             >
           </div>
-          <v-btn
+          <WorkbenchButton
             size="small"
-            variant="outlined"
-            @click="capture.resumeJob(job)"
+            :tone="job.status === 'completed' ? 'primary' : 'neutral'"
+            @click="openJob(job)"
           >
-            恢复任务
-          </v-btn>
+            {{ jobActionLabel(job.status) }}
+          </WorkbenchButton>
         </article>
       </section>
 
-      <section v-if="capture.draft" class="panel draft-panel">
+      <section
+        v-if="capture.draft && capture.composerOpen"
+        class="panel draft-panel"
+        aria-hidden="true"
+      >
         <div class="section-heading">
           <div>
             <span class="step-label">Selection Draft</span>
@@ -488,7 +609,11 @@ onBeforeUnmount(() => {
         </div>
       </section>
 
-      <section v-if="capture.preflight" class="panel matrix-panel">
+      <section
+        v-if="capture.preflight && capture.composerOpen"
+        class="panel matrix-panel"
+        aria-hidden="true"
+      >
         <div class="section-heading">
           <div>
             <span class="step-label">Case Matrix</span>
@@ -868,6 +993,59 @@ onBeforeUnmount(() => {
   border-radius: 18px;
   background: rgb(var(--v-theme-surface));
   box-shadow: 0 12px 36px rgba(20, 31, 52, 0.06);
+}
+.task-overview {
+  display: grid;
+  max-width: 1180px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 auto 18px;
+}
+.task-overview article {
+  display: grid;
+  gap: 3px;
+  padding: 17px 18px;
+  border: 1px solid rgba(var(--v-border-color), 0.14);
+  border-radius: 15px;
+  background: rgb(var(--v-theme-surface));
+}
+.task-overview article.needs-attention {
+  border-color: color-mix(
+    in srgb,
+    rgb(var(--v-theme-warning)) 45%,
+    transparent
+  );
+  background: color-mix(
+    in srgb,
+    rgb(var(--v-theme-warning)) 7%,
+    rgb(var(--v-theme-surface))
+  );
+}
+.task-overview span,
+.task-overview small {
+  color: rgb(var(--v-theme-on-surface-variant));
+  font-size: 12px;
+}
+.task-overview strong {
+  font-size: 26px;
+}
+.prototype-picker {
+  width: min(300px, 40vw);
+}
+.pending-draft {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.pending-draft p {
+  margin: 6px 0 0;
+  color: rgb(var(--v-theme-on-surface-variant));
+}
+.pending-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
 }
 .panel {
   padding: 22px;

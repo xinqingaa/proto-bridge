@@ -657,17 +657,6 @@ onBeforeUnmount(() => {
       @iframe-load="onIframeLoad"
     />
 
-    <v-btn
-      class="capture-current-action"
-      color="primary"
-      size="small"
-      :disabled="!selection.runtimeReady || !resolved.ok"
-      data-testid="capture-current-screen"
-      @click="captureCurrentScreen"
-    >
-      采集当前页面
-    </v-btn>
-
     <CanvasToolbar
       :variants="screen.variants"
       :themes="themes"
@@ -676,6 +665,7 @@ onBeforeUnmount(() => {
       :is-dark="isDark"
       :fullscreen="canvasFullscreen"
       :copy-feedback="copyFeedback"
+      :capture-disabled="!selection.runtimeReady || !resolved.ok"
       @update:variant-id="onVariantId"
       @update:theme-id="onThemeId"
       @toggle-inspect="toggleInspect"
@@ -683,6 +673,7 @@ onBeforeUnmount(() => {
       @fullscreen="fullscreen"
       @copy="copyLink"
       @copy-and-open="copyAndOpenRuntime"
+      @capture="captureCurrentScreen"
     />
   </section>
   <v-alert v-else type="error" variant="tonal">
@@ -711,11 +702,5 @@ onBeforeUnmount(() => {
 
 .canvas-alert {
   margin: 8px 12px 0;
-}
-.capture-current-action {
-  position: absolute;
-  top: 14px;
-  right: 18px;
-  z-index: 8;
 }
 </style>

@@ -334,9 +334,7 @@ const navigationTree = computed(() =>
   withCurrentTheme(
     buildWorkbenchNavigationTree(
       (id, registered) => prototypeLifecycle.overrides[id] ?? registered,
-      sectionId.value === "prototypes"
-        ? activePrototypeLifecycle.value
-        : "all",
+      sectionId.value === "prototypes" ? activePrototypeLifecycle.value : "all",
     ),
   ),
 );
@@ -356,12 +354,37 @@ const sectionNavigationTree = computed(() => {
         );
         return {
           id: `bundle-${item.bundle.bundleId}`,
-          label: prototype?.label ?? item.bundle.prototypeId,
+          label: [
+            prototype?.label ?? item.bundle.prototypeId,
+            `${item.activeSnapshot!.activeSlots.length} 项`,
+            new Intl.DateTimeFormat("zh-CN", {
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            }).format(new Date(item.activeSnapshot!.committedAt)),
+          ].join(" · "),
           kind: "item" as const,
           to: `/workbench/evidence/${item.bundle.bundleId}/${item.activeSnapshot!.snapshotId}`,
         };
       });
-    return [...(current.children ?? []), ...bundles];
+    return [
+      {
+        id: "capture-task-group",
+        label: "任务",
+        kind: "group" as const,
+        count: current.children?.length ?? 0,
+        children: current.children ?? [],
+      },
+      {
+        id: "capture-result-group",
+        label: "采集结果",
+        kind: "group" as const,
+        count: bundles.length,
+        children: bundles,
+      },
+    ];
   }
   return current.children ?? [];
 });
@@ -479,6 +502,8 @@ function isPreservedExpandId(id: string): boolean {
     id === "capture" ||
     id.startsWith("foundation-") ||
     id.startsWith("component-") ||
+    id.startsWith("capture-task-") ||
+    id.startsWith("capture-result-") ||
     id.startsWith("bundle-") ||
     id === "capture-console"
   );
@@ -502,7 +527,10 @@ watch(
       return;
     }
 
-    const required = ancestorIds(tree, activeId);
+    const required = ancestorIds(
+      section === "capture" ? sectionTree : tree,
+      activeId,
+    );
     const next = [...new Set([...expandedTreeIds.value, ...required])];
     if (next.length === expandedTreeIds.value.length) return;
     expandedTreeIds.value = next;

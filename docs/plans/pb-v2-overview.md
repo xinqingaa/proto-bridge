@@ -1,6 +1,6 @@
 # ProtoBridge / PBWork V2 产品闭环与实施总览
 
-> 状态：实施中；阶段五进行中，Store-backed MCP Reader 垂直切片已完成
+> 状态：实施中；阶段四能力已完成，阶段五暂停，先关闭 PBWork 可用性验收门禁
 > 目标分支：`dev`
 > 性质：破坏性重构；V2 不兼容 V1 Artifact、CLI 和 MCP 页面工作流
 > 当前正式包基线：`0.4.0`

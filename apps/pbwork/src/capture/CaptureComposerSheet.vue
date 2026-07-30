@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch } from "vue";
+import { computed, onBeforeUnmount, watch } from "vue";
 import {
   AlertTriangle,
   Check,
@@ -12,6 +12,12 @@ import {
 } from "lucide-vue-next";
 import { useCaptureStore } from "@/app/stores/capture";
 import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
+import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
+import WorkbenchCheckbox from "@/workbench/ui/WorkbenchCheckbox.vue";
+import WorkbenchIconButton from "@/workbench/ui/WorkbenchIconButton.vue";
+import WorkbenchSelect, {
+  type WorkbenchSelectItem,
+} from "@/workbench/ui/WorkbenchSelect.vue";
 
 const capture = useCaptureStore();
 const prototypes = loadPrototypes();
@@ -42,13 +48,70 @@ const fragmentCount = computed(() =>
     0,
   ),
 );
+const variantItems: WorkbenchSelectItem[] = [
+  { label: "默认状态", value: "default" },
+  { label: "仅关键状态", value: "critical" },
+  { label: "默认 + 关键状态", value: "default-and-critical" },
+  { label: "全部状态", value: "all" },
+];
+const scenarioItems: WorkbenchSelectItem[] = [
+  { label: "不执行场景", value: "none" },
+  { label: "关键场景", value: "critical" },
+  { label: "全部场景", value: "all" },
+];
+const allVariantMode = computed(
+  () => capture.draft?.screens[0]?.variants.mode ?? "default",
+);
+const allScenarioMode = computed(
+  () => capture.draft?.screens[0]?.scenarios.mode ?? "none",
+);
+const mixedVariantModes = computed(
+  () =>
+    new Set(
+      (capture.draft?.screens ?? []).map((screen) => screen.variants.mode),
+    ).size > 1,
+);
+const mixedScenarioModes = computed(
+  () =>
+    new Set(
+      (capture.draft?.screens ?? []).map((screen) => screen.scenarios.mode),
+    ).size > 1,
+);
+const sourcePolicy = computed(
+  () =>
+    capture.draft?.screens.some((screen) => screen.captureScope.sourcePolicy) ??
+    false,
+);
+
+let autoPreflightTimer: ReturnType<typeof setTimeout> | undefined;
+
+async function autoPreflight() {
+  if (!capture.composerOpen || !capture.draft?.screens.length) return;
+  if (!capture.connected) {
+    await capture.connect();
+    return;
+  }
+  if (capture.composerOpen) await capture.runPreflight();
+}
 
 watch(
-  () => capture.composerOpen,
-  (open) => {
-    if (open && !capture.connected) void capture.connect();
+  () =>
+    [
+      capture.composerOpen,
+      capture.draft ? JSON.stringify(capture.draft) : "",
+      capture.connected,
+    ] as const,
+  ([open]) => {
+    if (autoPreflightTimer) clearTimeout(autoPreflightTimer);
+    if (!open) return;
+    autoPreflightTimer = setTimeout(() => void autoPreflight(), 240);
   },
+  { immediate: true },
 );
+
+onBeforeUnmount(() => {
+  if (autoPreflightTimer) clearTimeout(autoPreflightTimer);
+});
 
 function variantMode(screenId: string) {
   return capture.draft?.screens.find((screen) => screen.screenId === screenId)
@@ -60,23 +123,25 @@ function scenarioMode(screenId: string) {
     ?.scenarios.mode;
 }
 
-function setVariant(screenId: string, event: Event) {
+function setVariant(screenId: string, value: string) {
   capture.setVariantMode(
     screenId,
-    (event.target as HTMLSelectElement).value as
-      "default" | "critical" | "default-and-critical" | "all",
+    value as "default" | "critical" | "default-and-critical" | "all",
   );
 }
 
-function setScenario(screenId: string, event: Event) {
-  capture.setScenarioMode(
-    screenId,
-    (event.target as HTMLSelectElement).value as "none" | "critical" | "all",
+function setScenario(screenId: string, value: string) {
+  capture.setScenarioMode(screenId, value as "none" | "critical" | "all");
+}
+
+function setAllVariants(value: string) {
+  capture.setAllVariantMode(
+    value as "default" | "critical" | "default-and-critical" | "all",
   );
 }
 
-function toggleWarning(warningId: string, event: Event) {
-  capture.toggleWarning(warningId, (event.target as HTMLInputElement).checked);
+function setAllScenarios(value: string) {
+  capture.setAllScenarioMode(value as "none" | "critical" | "all");
 }
 
 function formatFragment(fragment: {
@@ -95,7 +160,6 @@ async function startCapture() {
   <v-bottom-sheet
     v-model="capture.composerOpen"
     :retain-focus="false"
-    scrollable
     content-class="capture-composer-overlay"
     data-testid="capture-composer"
   >
@@ -103,255 +167,281 @@ async function startCapture() {
       <header class="composer-header">
         <div class="header-mark"><ScanLine :size="22" /></div>
         <div>
-          <span>采集前确认</span>
           <h2>{{ entryLabel }}</h2>
           <p>
             {{
               prototype?.label ?? capture.draft?.prototypeId ?? "尚未选择原型"
             }}
-            · 确认后将在后台采集，不会离开当前工作位置。
           </p>
         </div>
-        <button
-          type="button"
-          class="close-button"
-          aria-label="关闭采集确认"
+        <WorkbenchIconButton
+          label="关闭采集确认"
+          size="large"
           @click="capture.closeComposer"
         >
           <X :size="20" />
-        </button>
+        </WorkbenchIconButton>
       </header>
 
-      <div v-if="!capture.draft" class="composer-empty">
-        <Layers3 :size="30" />
-        <strong>还没有采集范围</strong>
-        <p>请从原型、页面画布或元素检查面板发起采集。</p>
-      </div>
-
-      <template v-else>
-        <div class="scope-summary">
-          <article>
-            <span>范围</span>
-            <strong>{{ capture.draft.screens.length }} 个页面</strong>
-          </article>
-          <article>
-            <span>稳定元素</span>
-            <strong>{{ fragmentCount || "完整页面" }}</strong>
-          </article>
-          <article>
-            <span>截图</span>
-            <strong>自动保存</strong>
-          </article>
-          <article>
-            <span>执行方式</span>
-            <strong>后台任务</strong>
-          </article>
+      <div class="composer-scroll">
+        <div v-if="!capture.draft" class="composer-empty">
+          <Layers3 :size="30" />
+          <strong>还没有采集范围</strong>
+          <p>请从原型、页面画布或元素检查面板发起采集。</p>
         </div>
 
-        <section class="composer-section">
-          <div class="section-title">
-            <div>
-              <span>要采集什么</span>
-              <h3>页面、状态和关键场景</h3>
-            </div>
-            <small>仅显示当前原型中的选择</small>
-          </div>
-
-          <div class="screen-list">
-            <article
-              v-for="{ selection, record } in draftScreens"
-              :key="selection.screenId"
-              class="screen-selection"
-            >
-              <div class="screen-copy">
-                <span class="screen-icon"><Layers3 :size="16" /></span>
-                <div>
-                  <strong>{{ record?.label ?? selection.screenId }}</strong>
-                  <small>{{ selection.screenId }}</small>
-                </div>
-              </div>
-              <label>
-                <span>页面状态</span>
-                <select
-                  :value="variantMode(selection.screenId)"
-                  @change="setVariant(selection.screenId, $event)"
-                >
-                  <option value="default">默认状态</option>
-                  <option value="critical">仅关键状态</option>
-                  <option value="default-and-critical">默认 + 关键状态</option>
-                  <option value="all">全部状态</option>
-                </select>
-              </label>
-              <label>
-                <span>交互场景</span>
-                <select
-                  :value="scenarioMode(selection.screenId)"
-                  @change="setScenario(selection.screenId, $event)"
-                >
-                  <option value="none">不执行场景</option>
-                  <option value="critical">关键场景</option>
-                  <option value="all">全部场景</option>
-                </select>
-              </label>
-              <div
-                v-if="selection.captureScope.fragments.length"
-                class="fragment-list"
-              >
-                <span
-                  v-for="fragment in selection.captureScope.fragments"
-                  :key="formatFragment(fragment)"
-                >
-                  <MousePointer2 :size="13" />
-                  {{ formatFragment(fragment) }}
-                </span>
-              </div>
-              <div v-else class="page-scope">
-                <Check :size="14" /> 包含当前页面全部可观测语义和截图
-              </div>
+        <template v-else>
+          <div class="scope-summary">
+            <article>
+              <span>范围</span>
+              <strong>{{ capture.draft.screens.length }} 个页面</strong>
+            </article>
+            <article>
+              <span>稳定元素</span>
+              <strong>{{ fragmentCount || "完整页面" }}</strong>
+            </article>
+            <article>
+              <span>截图</span>
+              <strong>自动保存</strong>
+            </article>
+            <article>
+              <span>执行方式</span>
+              <strong>后台任务</strong>
             </article>
           </div>
-        </section>
 
-        <details class="advanced-options">
-          <summary>
-            技术选项
-            <span>Theme、Device、Source 与 Evidence Level</span>
-            <ChevronRight :size="16" />
-          </summary>
-          <div class="advanced-grid">
-            <span
-              >Theme：{{
-                capture.draft.screens
-                  .flatMap((screen) => screen.themeIds)
-                  .join(", ")
-              }}</span
+          <section class="composer-section">
+            <div class="section-title">
+              <div>
+                <span>要采集什么</span>
+                <h3>页面、状态和关键场景</h3>
+              </div>
+              <small>先统一设置，仅在例外页面中单独覆盖</small>
+            </div>
+
+            <div class="prototype-policy">
+              <label>
+                <span>所有页面的状态范围</span>
+                <WorkbenchSelect
+                  :model-value="allVariantMode"
+                  :items="variantItems"
+                  aria-label="所有页面的状态范围"
+                  @update:model-value="setAllVariants"
+                />
+                <small v-if="mixedVariantModes">当前存在页面级例外</small>
+              </label>
+              <label>
+                <span>所有页面的交互场景</span>
+                <WorkbenchSelect
+                  :model-value="allScenarioMode"
+                  :items="scenarioItems"
+                  aria-label="所有页面的交互场景"
+                  @update:model-value="setAllScenarios"
+                />
+                <small v-if="mixedScenarioModes">当前存在页面级例外</small>
+              </label>
+            </div>
+
+            <div class="screen-list">
+              <article
+                v-for="{ selection, record } in draftScreens"
+                :key="selection.screenId"
+                class="screen-selection"
+              >
+                <div class="screen-copy">
+                  <span class="screen-icon"><Layers3 :size="16" /></span>
+                  <div>
+                    <strong>{{ record?.label ?? selection.screenId }}</strong>
+                    <small>{{ selection.screenId }}</small>
+                  </div>
+                </div>
+                <details class="screen-override">
+                  <summary>单独调整</summary>
+                  <div class="screen-override-fields">
+                    <label>
+                      <span>页面状态</span>
+                      <WorkbenchSelect
+                        :model-value="
+                          variantMode(selection.screenId) ?? 'default'
+                        "
+                        :items="variantItems"
+                        aria-label="页面状态"
+                        @update:model-value="
+                          setVariant(selection.screenId, $event)
+                        "
+                      />
+                    </label>
+                    <label>
+                      <span>交互场景</span>
+                      <WorkbenchSelect
+                        :model-value="
+                          scenarioMode(selection.screenId) ?? 'none'
+                        "
+                        :items="scenarioItems"
+                        aria-label="交互场景"
+                        @update:model-value="
+                          setScenario(selection.screenId, $event)
+                        "
+                      />
+                    </label>
+                  </div>
+                </details>
+                <div
+                  v-if="selection.captureScope.fragments.length"
+                  class="fragment-list"
+                >
+                  <span
+                    v-for="fragment in selection.captureScope.fragments"
+                    :key="formatFragment(fragment)"
+                  >
+                    <MousePointer2 :size="13" />
+                    {{ formatFragment(fragment) }}
+                  </span>
+                </div>
+                <div v-else class="page-scope">
+                  <Check :size="14" /> 包含当前页面全部可观测语义和截图
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <details class="advanced-options">
+            <summary>
+              采集环境
+              <span>主题、设备、源码证据与最低证据级别</span>
+              <ChevronRight :size="16" />
+            </summary>
+            <div class="advanced-grid">
+              <span
+                >Theme：{{
+                  capture.draft.screens
+                    .flatMap((screen) => screen.themeIds)
+                    .join(", ")
+                }}</span
+              >
+              <span
+                >Device：{{
+                  capture.draft.screens
+                    .flatMap((screen) => screen.deviceIds)
+                    .join(", ")
+                }}</span
+              >
+              <WorkbenchCheckbox
+                :model-value="sourcePolicy"
+                label="同时采集源码证据"
+                @update:model-value="capture.setSourcePolicy"
+              />
+              <span>最低证据级别：运行时语义</span>
+            </div>
+          </details>
+
+          <v-alert
+            v-if="capture.lastError"
+            type="error"
+            variant="tonal"
+            density="comfortable"
+            closable
+            @click:close="capture.clearError"
+          >
+            {{ capture.lastError }}
+          </v-alert>
+
+          <section v-if="capture.preflight" class="preflight-result">
+            <div class="preflight-heading">
+              <div>
+                <span>范围检查</span>
+                <h3>{{ matrix.length }} 个将执行的采集项</h3>
+              </div>
+              <strong
+                :class="{ warning: capture.preflight.result.warnings.length }"
+              >
+                {{
+                  capture.preflight.result.warnings.length
+                    ? `${capture.preflight.result.warnings.length} 项需要确认`
+                    : "可以开始"
+                }}
+              </strong>
+            </div>
+            <div
+              v-for="warning in capture.preflight.result.warnings"
+              :key="warning.warningId"
+              class="warning-row"
             >
-            <span
-              >Device：{{
-                capture.draft.screens
-                  .flatMap((screen) => screen.deviceIds)
-                  .join(", ")
-              }}</span
-            >
-            <label>
-              <input
-                type="checkbox"
-                :checked="
-                  capture.draft.screens.some(
-                    (screen) => screen.captureScope.sourcePolicy,
-                  )
+              <AlertTriangle :size="17" />
+              <span>
+                <strong>{{ warning.message }}</strong>
+                <small>影响 {{ warning.caseIds.length }} 个采集项</small>
+              </span>
+              <WorkbenchCheckbox
+                :model-value="
+                  capture.acceptedWarningIds.includes(warning.warningId)
                 "
-                @change="
-                  capture.setSourcePolicy(
-                    ($event.target as HTMLInputElement).checked,
-                  )
+                label="确认"
+                @update:model-value="
+                  capture.toggleWarning(warning.warningId, $event)
                 "
               />
-              请求 Source Evidence
-            </label>
-            <span>最低级别：instrumented-runtime</span>
-          </div>
-        </details>
-
-        <v-alert
-          v-if="capture.lastError"
-          type="error"
-          variant="tonal"
-          density="comfortable"
-          closable
-          @click:close="capture.clearError"
-        >
-          {{ capture.lastError }}
-        </v-alert>
-
-        <section v-if="capture.preflight" class="preflight-result">
-          <div class="preflight-heading">
-            <div>
-              <span>采集检查</span>
-              <h3>{{ matrix.length }} 个采集项</h3>
             </div>
-            <strong
-              :class="{ warning: capture.preflight.result.warnings.length }"
-            >
-              {{
-                capture.preflight.result.warnings.length
-                  ? `${capture.preflight.result.warnings.length} 项需要确认`
-                  : "可以开始"
-              }}
-            </strong>
-          </div>
-          <label
-            v-for="warning in capture.preflight.result.warnings"
-            :key="warning.warningId"
-            class="warning-row"
-          >
-            <AlertTriangle :size="17" />
-            <span>
-              <strong>{{ warning.message }}</strong>
-              <small>影响 {{ warning.caseIds.length }} 个采集项</small>
-            </span>
-            <input
-              type="checkbox"
-              :checked="capture.acceptedWarningIds.includes(warning.warningId)"
-              @change="toggleWarning(warning.warningId, $event)"
-            />
-          </label>
-          <div class="matrix-preview">
-            <span
-              v-for="entry in matrix.slice(0, 6)"
-              :key="entry.selectedCase.caseId"
-            >
-              {{ entry.selectedCase.caseKey.screenId }} ·
-              {{ entry.selectedCase.caseKey.variantId }}
-              <template v-if="entry.selectedCase.caseKey.scenario">
-                · {{ entry.selectedCase.caseKey.scenario.checkpointId }}
-              </template>
-            </span>
-            <small v-if="matrix.length > 6"
-              >还有 {{ matrix.length - 6 }} 项将在后台执行</small
-            >
-          </div>
-        </section>
+            <div class="matrix-preview">
+              <span
+                v-for="entry in matrix.slice(0, 6)"
+                :key="entry.selectedCase.caseId"
+              >
+                {{ entry.selectedCase.caseKey.screenId }} ·
+                {{ entry.selectedCase.caseKey.variantId }}
+                <template v-if="entry.selectedCase.caseKey.scenario">
+                  · {{ entry.selectedCase.caseKey.scenario.checkpointId }}
+                </template>
+              </span>
+              <small v-if="matrix.length > 6"
+                >还有 {{ matrix.length - 6 }} 项将在后台执行</small
+              >
+            </div>
+          </section>
+        </template>
+      </div>
 
-        <footer class="composer-actions">
-          <div>
-            <strong v-if="capture.preflight">
-              已通过 Core Preflight；开始后仍可继续浏览工作台
-            </strong>
-            <span v-else>先检查稳定身份、状态、场景和预计采集数量</span>
-          </div>
-          <v-btn variant="text" @click="capture.closeComposer">稍后处理</v-btn>
-          <v-btn
-            v-if="!capture.preflight"
-            color="primary"
-            size="large"
-            :loading="capture.busy"
-            data-testid="composer-run-preflight"
-            @click="capture.runPreflight"
-          >
-            <ScanLine :size="18" /> 检查采集内容
-          </v-btn>
-          <v-btn
-            v-else
-            color="primary"
-            size="large"
-            :loading="capture.busy"
-            :disabled="!capture.warningsAccepted"
-            data-testid="composer-start-capture"
-            @click="startCapture"
-          >
-            <Play :size="18" /> 开始采集
-          </v-btn>
-        </footer>
-      </template>
+      <footer v-if="capture.draft" class="composer-actions">
+        <div>
+          <strong v-if="capture.preflight">
+            范围检查已完成；开始后仍可继续浏览工作台
+          </strong>
+          <span v-else-if="capture.busy">正在自动检查采集范围…</span>
+          <span v-else>采集范围变化后会自动重新检查</span>
+        </div>
+        <WorkbenchButton
+          v-if="!capture.preflight"
+          tone="neutral"
+          :loading="capture.busy"
+          :disabled="capture.busy"
+          data-testid="composer-run-preflight"
+          @click="capture.runPreflight"
+        >
+          <ScanLine :size="16" /> 重新检查
+        </WorkbenchButton>
+        <WorkbenchButton
+          v-else
+          tone="primary"
+          :loading="capture.busy"
+          :disabled="!capture.warningsAccepted"
+          data-testid="composer-start-capture"
+          @click="startCapture"
+        >
+          <Play :size="16" /> 开始
+        </WorkbenchButton>
+      </footer>
     </section>
   </v-bottom-sheet>
 </template>
 
 <style scoped>
 .capture-composer {
+  display: flex;
+  width: min(1240px, calc(100vw - 32px));
   max-height: min(88vh, 900px);
-  overflow: auto;
+  margin-inline: auto;
+  overflow: hidden;
+  flex-direction: column;
   border-radius: 24px 24px 0 0;
   background: rgb(var(--v-theme-surface));
   box-shadow: 0 -24px 70px rgba(15, 23, 42, 0.18);
@@ -399,19 +489,10 @@ async function startCapture() {
   color: rgba(var(--v-theme-on-surface), 0.6);
   font-size: 0.78rem;
 }
-.close-button {
-  display: grid;
-  width: 36px;
-  height: 36px;
-  place-items: center;
-  border: 0;
-  border-radius: 10px;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-}
-.close-button:hover {
-  background: rgba(var(--v-theme-on-surface), 0.06);
+.composer-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable both-edges;
 }
 .scope-summary {
   display: grid;
@@ -454,6 +535,26 @@ async function startCapture() {
 .section-title small {
   color: rgba(var(--v-theme-on-surface), 0.48);
 }
+.prototype-policy {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 15px;
+  padding: 13px;
+  border-radius: 12px;
+  background: color-mix(in srgb, rgb(var(--v-theme-action)) 7%, transparent);
+}
+.prototype-policy label > span,
+.prototype-policy label > small {
+  display: block;
+  margin-bottom: 5px;
+  color: rgba(var(--v-theme-on-surface), 0.58);
+  font-size: 0.68rem;
+}
+.prototype-policy label > small {
+  margin: 5px 0 0;
+  color: rgb(var(--v-theme-warning));
+}
 .screen-list {
   display: grid;
   gap: 10px;
@@ -461,10 +562,7 @@ async function startCapture() {
 }
 .screen-selection {
   display: grid;
-  grid-template-columns: minmax(210px, 1.4fr) minmax(150px, 0.8fr) minmax(
-      150px,
-      0.8fr
-    );
+  grid-template-columns: minmax(210px, 1fr) auto;
   align-items: center;
   gap: 12px;
   padding: 12px;
@@ -499,14 +597,28 @@ async function startCapture() {
     monospace;
   text-overflow: ellipsis;
 }
-.screen-selection select {
-  width: 100%;
-  margin-top: 4px;
-  padding: 7px 9px;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 8px;
-  background: rgb(var(--v-theme-surface));
-  color: inherit;
+.screen-override {
+  min-width: 112px;
+}
+.screen-override summary {
+  cursor: pointer;
+  color: rgb(var(--v-theme-action));
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: right;
+}
+.screen-override-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(170px, 1fr));
+  align-items: end;
+  gap: 10px;
+  margin-top: 10px;
+}
+.screen-override-fields > label > span {
+  display: block;
+  margin-bottom: 5px;
+  color: rgba(var(--v-theme-on-surface), 0.58);
+  font-size: 0.68rem;
 }
 .fragment-list,
 .page-scope {
@@ -598,8 +710,6 @@ async function startCapture() {
   font-size: 0.68rem;
 }
 .composer-actions {
-  position: sticky;
-  bottom: 0;
   z-index: 3;
   display: flex;
   align-items: center;
@@ -635,6 +745,12 @@ async function startCapture() {
   }
   .screen-selection {
     grid-template-columns: 1fr;
+  }
+  .prototype-policy {
+    grid-template-columns: 1fr;
+  }
+  .screen-override summary {
+    text-align: left;
   }
   .fragment-list,
   .page-scope {

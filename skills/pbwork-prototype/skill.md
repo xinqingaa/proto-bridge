@@ -10,9 +10,11 @@ description: >-
 
 # PBWork 原型 Skill
 
-在 **`apps/pbwork`** 做或改原型、页面壳、面板、以及设计系统组件用法时使用。
+在 **`apps/pbwork`** 做或改业务原型、原型页面壳、原型面板，以及原型设计系统组件用法时使用。
 
 改 ProtoBridge Core / CLI / MCP / 产物契约时用 `skills/proto-bridge`，不要用本 skill 替代。
+改 PBWork 管理工作壳、采集任务、证据 Review 或 `src/workbench/ui` 时用
+`skills/pbwork-workbench/SKILL.md`；工作壳不得复用带原型采集标记的设计系统组件。
 
 ## 必读顺序
 

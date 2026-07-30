@@ -2,7 +2,6 @@
 import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
-  ArrowRight,
   FileStack,
   GitBranch,
   MessageSquareText,
@@ -10,13 +9,16 @@ import {
   ScanLine,
   Users,
 } from "lucide-vue-next";
-import type { PrototypeLifecycle, PrototypeRecord } from "@/design-system/types";
+import type {
+  PrototypeLifecycle,
+  PrototypeRecord,
+} from "@/design-system/types";
 import { LIFECYCLE_LABELS } from "@/design-system/types";
 import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
 import { useCommentsStore } from "@/app/stores/comments";
 import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
 import ResourcePageShell from "@/workbench/views/ResourcePageShell.vue";
-import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
+import WorkbenchIconButton from "@/workbench/ui/WorkbenchIconButton.vue";
 import WorkbenchBadge from "@/workbench/ui/WorkbenchBadge.vue";
 import WorkbenchStatChip from "@/workbench/ui/WorkbenchStatChip.vue";
 import LifecycleTransitionDialog from "@/workbench/prototypes/LifecycleTransitionDialog.vue";
@@ -51,10 +53,7 @@ const stats = (id: string) => {
   );
   return {
     screens: screens.length,
-    variants: screens.reduce(
-      (sum, screen) => sum + screen.variants.length,
-      0,
-    ),
+    variants: screens.reduce((sum, screen) => sum + screen.variants.length, 0),
     comments: comments.comments.filter(
       (comment) => comment.prototypeId === id && comment.status === "open",
     ).length,
@@ -128,35 +127,40 @@ function capturePrototype(item: PrototypeRecord) {
             "未设置参与者"
           }}
         </p>
-        <div
-          v-if="state.hasOverride(item.id)"
-          class="local-state"
-          @click.stop
-        >
+        <div v-if="state.hasOverride(item.id)" class="local-state" @click.stop>
           <span>本地工作台状态</span>
           <button type="button" @click="state.reset(item)">
             <RotateCcw :size="12" />恢复注册状态
           </button>
         </div>
         <footer @click.stop>
-          <WorkbenchButton tone="primary" @click="editing = item"
-            >流转状态</WorkbenchButton
-          >
-          <WorkbenchButton tone="ghost" @click="capturePrototype(item)">
-            <ScanLine :size="14" />采集原型
-          </WorkbenchButton>
-          <span class="open-hint"
-            >查看原型<ArrowRight :size="14"
-          /></span>
+
+            <WorkbenchIconButton
+              label="采集整个原型"
+              title="采集整个原型"
+              tone="action"
+              size="large"
+              @click="capturePrototype(item)"
+            >
+              <ScanLine :size="18" />
+            </WorkbenchIconButton>
+            <WorkbenchIconButton
+              label="流转原型状态"
+              title="流转原型状态"
+              tone="strong"
+              size="large"
+              @click="editing = item"
+            >
+              <GitBranch :size="18" />
+            </WorkbenchIconButton>
+    
         </footer>
       </article>
     </div>
     <div v-else class="gallery-empty">
       <GitBranch :size="30" />
       <h2>此阶段还没有原型</h2>
-      <p>
-        可从其他生命周期流转到「{{ title }}」，列表和原型树会立即同步。
-      </p>
+      <p>可从其他生命周期流转到「{{ title }}」，列表和原型树会立即同步。</p>
     </div>
   </ResourcePageShell>
   <LifecycleTransitionDialog
@@ -210,7 +214,11 @@ function capturePrototype(item: PrototypeRecord) {
   padding: 16px;
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, rgb(var(--v-theme-primary)) 13%, rgb(var(--v-theme-surface))),
+    color-mix(
+      in srgb,
+      rgb(var(--v-theme-primary)) 13%,
+      rgb(var(--v-theme-surface))
+    ),
     rgba(var(--v-theme-on-surface), 0.025)
   );
   border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
@@ -251,7 +259,9 @@ function capturePrototype(item: PrototypeRecord) {
 .card-heading p {
   margin: 0 0 3px;
   color: rgba(var(--v-theme-on-surface), 0.45);
-  font: 600 0.66rem ui-monospace, monospace;
+  font:
+    600 0.66rem ui-monospace,
+    monospace;
 }
 .card-heading h2 {
   margin: 0;
@@ -301,18 +311,11 @@ function capturePrototype(item: PrototypeRecord) {
 .prototype-card footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content:  space-between;
+  gap: 8px;
   margin-top: 15px;
   padding: 13px 0 15px;
   border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-.open-hint {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  color: rgb(var(--v-theme-primary));
-  font-size: 0.75rem;
-  font-weight: 750;
 }
 .gallery-empty {
   display: grid;
@@ -331,6 +334,12 @@ function capturePrototype(item: PrototypeRecord) {
 .gallery-empty p {
   margin: 0;
   font-size: 0.78rem;
+}
+.footer-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
 }
 @media (max-width: 860px) {
   .prototype-grid {
