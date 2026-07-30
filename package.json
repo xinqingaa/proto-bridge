@@ -23,7 +23,9 @@
     "test:e2e:cli": "node scripts/test-e2e.mjs cli",
     "test:e2e:mcp": "node scripts/test-e2e.mjs mcp",
     "test:e2e:mcp-v2": "pnpm --filter @proto-bridge/core build && pnpm --filter @proto-bridge/mcp-server build && node scripts/test-mcp-evidence-v2.mjs",
-    "test:e2e:evidence-slice": "node scripts/test-evidence-vertical-slice.mjs"
+    "test:e2e:evidence-slice": "node scripts/test-evidence-vertical-slice.mjs",
+    "test:e2e:consumer-v2": "node scripts/test-v2-consumer-runner.mjs",
+    "verify:v2:phase-five": "node scripts/verify-phase-five.mjs"
   },
   "engines": {
     "node": ">=20"

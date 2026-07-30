@@ -131,6 +131,8 @@ packages/core/src/
 - `@proto-bridge/core/capabilities`
 - `@proto-bridge/core/config`
 - `@proto-bridge/core/target/flutter-app`
+- `@proto-bridge/core/target/flutter-app/query`（V2 只读目标约定与示例）
+- `@proto-bridge/core/target/flutter-app/validation`（V2 独立目标验证）
 - `@proto-bridge/core/source/vue3-prototype`
 - `@proto-bridge/core/snapshot`
 - `@proto-bridge/core/artifacts`
@@ -141,7 +143,7 @@ packages/core/src/
 - `@proto-bridge/core/v2/capture`（Node-only Selection、Preflight、Playwright 与 Orchestrator）
 - `@proto-bridge/core/v2/service-contract`（PBWork 与 Local Service 共用的浏览器安全协议类型）
 
-V2 Store 当前提供不可变 Run/Evidence/Catalog/Snapshot/Handoff、受控 Blob、Job 恢复、依赖级 stale/复用、Bundle fork/archive、容量与安全 clean。V2 Capture 已打通 default/critical、Fragment、Scenario Checkpoint、三种 Evidence 输入和 Store Snapshot。PBWork Capture Console 通过 Local Service 提供四类 Draft、Preflight/Matrix、后台 Job/恢复、Evidence/stale、Bundle 管理和固定 Handoff；V2 CLI 与 Store-backed MCP 在阶段五接入。
+V2 Store 当前提供不可变 Run/Evidence/Catalog/Snapshot/Handoff、受控 Blob、Job 恢复、依赖级 stale/复用、Bundle fork/archive、容量与安全 clean。V2 Capture 已打通 default/critical、Fragment、Scenario Checkpoint、三种 Evidence 输入和 Store Snapshot。PBWork Capture Console 与 `proto-bridge v2` CLI 复用 Core Selection/Preflight/JobHost；Store-backed MCP 按固定 Snapshot/revision 读取 Evidence，并通过独立 Target query/validation 支持 Handoff Consumer。
 
 ## 相关文档
 

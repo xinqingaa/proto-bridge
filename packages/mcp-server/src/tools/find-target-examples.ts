@@ -1,5 +1,5 @@
-import { findFlutterTargetExamples } from '@proto-bridge/core/target/flutter-app';
-import type { FindFlutterTargetExamplesInput, FlutterComponentRole } from '@proto-bridge/core/target/flutter-app';
+import { findFlutterTargetExamples } from '@proto-bridge/core/target/flutter-app/query';
+import type { FindFlutterTargetExamplesInput, FlutterComponentRole } from '@proto-bridge/core/target/flutter-app/query';
 import type { JsonObject, ToolContext } from '../types.js';
 import { readNumber, readString, readStringArray } from '../utils/args.js';
 import { resolveProjectRoot, resolveRuntimeConfig, resolveRuntimeTargetRoot } from '../services/config.js';

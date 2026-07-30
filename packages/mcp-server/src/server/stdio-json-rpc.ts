@@ -2,7 +2,7 @@ import type { JsonRpcRequest, ServerOptions, ToolContext } from '../types.js';
 import { PageStore } from '../services/session-state.js';
 import { EvidenceStoreReader } from '../services/evidence-store-reader.js';
 import { dispatch } from './dispatcher.js';
-import { errorMessage, send, sendError } from './responses.js';
+import { errorData, errorMessage, send, sendError } from './responses.js';
 
 export function startMcpServer(options: ServerOptions): void {
   const context = createToolContext(options);
@@ -48,7 +48,7 @@ async function handleLine(context: ToolContext, line: string): Promise<void> {
     }
   } catch (error) {
     if (request.id !== undefined && request.id !== null) {
-      sendError(request.id, -32603, errorMessage(error));
+      sendError(request.id, -32603, errorMessage(error), errorData(error));
     } else {
       console.error(errorMessage(error));
     }

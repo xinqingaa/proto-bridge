@@ -3,6 +3,7 @@ import type { BlobKind, BlobOwnerRef, BlobRecord } from '../contracts/blob.js';
 import type { CatalogRevision } from '../contracts/catalog.js';
 import type { CaseEvidenceRevision } from '../contracts/evidence.js';
 import type { AgentHandoff } from '../contracts/handoff.js';
+import type { Issue } from '../contracts/issue.js';
 import type {
   BlobId,
   BundleId,
@@ -11,6 +12,7 @@ import type {
   CaseId,
   HandoffId,
   JobId,
+  IssueId,
   PrototypeId,
   RunId,
   SnapshotId,
@@ -200,6 +202,10 @@ export interface V2Store {
     bundleId: BundleId,
     revisionId: CatalogRevisionId,
   ): Promise<CatalogRevision | undefined>;
+  listCatalogRevisions(bundleId: BundleId): Promise<CatalogRevision[]>;
+  putIssue(bundleId: BundleId, issue: Issue): Promise<void>;
+  getIssue(bundleId: BundleId, issueId: IssueId): Promise<Issue | undefined>;
+  listIssues(bundleId: BundleId): Promise<Issue[]>;
   putBlob(input: PutBlobInput): Promise<BlobRecord>;
   getBlob(
     bundleId: BundleId,

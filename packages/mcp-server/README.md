@@ -2,6 +2,46 @@
 
 ProtoBridge MCP server 为 AI coding agent 暴露页面重建、target inspect、example search 和 validation tools。
 
+## V2 Store-backed Evidence Reader
+
+V2 MCP 连接一个明确 Workspace Store，只接受逻辑 ID：
+
+```bash
+node packages/mcp-server/dist/index.js \
+  --store-root /path/to/.proto-bridge/v2-store \
+  --workspace pbwork-local
+```
+
+Evidence tools：
+
+- `inspect_evidence_workspace`
+- `list_evidence_bundles`
+- `list_evidence_history`
+- `read_evidence_snapshot`
+- `read_evidence_case`
+- `read_evidence_run`
+- `read_evidence_revision`
+- `read_evidence_fragment`
+- `read_evidence_catalog`
+- `read_evidence_issue`
+- `read_evidence_staleness`
+- `read_agent_handoff`
+- `read_evidence_blob`
+
+Snapshot、revision、Staleness Report 和 Handoff 读取均固定引用；缺失或
+Workspace 不匹配时结构化失败，不回退 active/latest。Debug/Trace Blob
+还要求显式 `allowDebug=true`。
+
+V2 Target tools 与 Evidence 独立：
+
+- `read_target_conventions`
+- `find_target_examples`
+- `validate_target_changes`
+
+Consumer 应先读取 resource
+`proto-bridge://guides/v2-handoff-consumer`，或使用 prompt
+`consume_evidence_handoff`。目标仓库不需要 ProtoBridge 配置。
+
 `sourceRoot` 和 `url` 不是共同必填项：有源码可传 `sourceRoot + route/vuePath`，有 URL 可直接 runtime capture，两者都有时会合并为 hybrid evidence。生成面向客户端的 plan 时通常需要 `targetRoot` 或 config 中的 `target.root`。
 
 ## 启动
@@ -76,10 +116,14 @@ Tool arguments 会覆盖 config values。
 
 ## Tools
 
+- 上述 V2 Store-backed Evidence 与 Target tools；
 - `reconstruct_page_context`：根据 source、URL、screenshot/OCR 和 target 输入生成页面上下文和实现产物。
 - `read_target_conventions`：读取目标 Flutter modules、routes、themes、assets、components 和 conventions。
 - `find_target_examples`：搜索相似目标文件和代码片段。
 - `validate_ui_build`：通过共享 `ui.validate` capability 验证目标变更。
+
+`reconstruct_page_context`、`validate_ui_build` 和 page resources 是阶段七
+前保留的 V1 页面工作流，不是 V2 Evidence producer。
 
 ## Tool 调用示例
 

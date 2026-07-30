@@ -15,6 +15,7 @@ import { Bundle } from '../contracts/bundle.js';
 import { CatalogRevision } from '../contracts/catalog.js';
 import { CaseEvidenceRevision } from '../contracts/evidence.js';
 import { AgentHandoff } from '../contracts/handoff.js';
+import { Issue } from '../contracts/issue.js';
 import {
   V2ContractError,
   invalidSchemaError,
@@ -26,6 +27,7 @@ import type {
   CaseEvidenceRevisionId,
   CatalogRevisionId,
   HandoffId,
+  IssueId,
   JobId,
   PrototypeId,
   RunId,
@@ -76,6 +78,8 @@ import {
   evidenceRevisionsDir,
   handoffPath,
   handoffsDir,
+  issuePath,
+  issuesDir,
   jobPath,
   jobsDir,
   runPath,
@@ -965,6 +969,54 @@ export class LocalFileStore implements V2Store {
     );
     if (raw === undefined) return undefined;
     return this.parseOrThrow(CatalogRevision, raw, 'CatalogRevision');
+  }
+
+  async listCatalogRevisions(bundleId: BundleId): Promise<CatalogRevision[]> {
+    await this.requireBundle(bundleId);
+    const ids = (await listJsonIds(
+      catalogRevisionsDir(this.root, bundleId),
+    )) as CatalogRevisionId[];
+    const revisions = await Promise.all(
+      ids.map((revisionId) => this.getCatalogRevision(bundleId, revisionId)),
+    );
+    return revisions
+      .filter((revision): revision is CatalogRevision => revision !== undefined)
+      .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+  }
+
+  async putIssue(bundleId: BundleId, issue: Issue): Promise<void> {
+    this.assertWritableStore();
+    const bundle = await this.requireBundle(bundleId);
+    this.requireWritableBundle(bundle);
+    const parsed = this.parseOrThrow(Issue, issue, 'Issue');
+    await this.assertCapacity(this.serializedBytes(parsed));
+    await writeImmutableJson(
+      issuePath(this.root, bundleId, parsed.issueId),
+      'Issue',
+      parsed,
+    );
+  }
+
+  async getIssue(
+    bundleId: BundleId,
+    issueId: IssueId,
+  ): Promise<Issue | undefined> {
+    const raw = await readJson<unknown>(
+      issuePath(this.root, bundleId, issueId),
+    );
+    if (raw === undefined) return undefined;
+    return this.parseOrThrow(Issue, raw, 'Issue');
+  }
+
+  async listIssues(bundleId: BundleId): Promise<Issue[]> {
+    await this.requireBundle(bundleId);
+    const ids = (await listJsonIds(issuesDir(this.root, bundleId))) as IssueId[];
+    const issues = await Promise.all(
+      ids.map((issueId) => this.getIssue(bundleId, issueId)),
+    );
+    return issues
+      .filter((issue): issue is Issue => issue !== undefined)
+      .sort((left, right) => left.issueId.localeCompare(right.issueId));
   }
 
   async putBlob(input: PutBlobInput): Promise<BlobRecord> {

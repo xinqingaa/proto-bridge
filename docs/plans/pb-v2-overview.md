@@ -1,11 +1,11 @@
 # ProtoBridge / PBWork V2 产品闭环与实施总览
 
-> 状态：实施中；阶段四能力已完成，阶段五暂停，先关闭 PBWork 可用性验收门禁
+> 状态：实施中；阶段五已完成，阶段六未开始
 > 目标分支：`dev`
 > 性质：破坏性重构；V2 不兼容 V1 Artifact、CLI 和 MCP 页面工作流
 > 当前正式包基线：`0.4.0`
 > V2 正式发布目标：`0.5.0`
-> 更新时间：2026-07-29
+> 更新时间：2026-07-30
 
 本文件是 ProtoBridge V2 的唯一实施入口，固定长期目标、产品闭环、职责边界、关键取舍、七个实施阶段和最终完成条件。
 
@@ -278,12 +278,13 @@ V2 是这个长期目标的第一个完整版本：本地、单用户、以 PBWo
 - 定稿 Agent Handoff Consumer 指南；
 - 建立“目标工程无 ProtoBridge 配置”的消费 E2E。
 
-当前进度（2026-07-29）：
+完成记录（2026-07-30）：
 
-- 已建立 PBWork/MCP 共用的 Screen/Case Evidence Read Model；
-- MCP 已支持 Bundle 发现、固定 Snapshot、单 Case 和 Screenshot Blob 的 Store-backed 只读消费；
-- PBWork 的就地 Capture Composer、全局 Job Center、完成通知和截图优先 Evidence Viewer 已接入；
-- `task-list` 的 PBWork → 固定 Snapshot → MCP 同证据 E2E 已通过；CLI Producer、完整 Handoff Consumer 和 Target 解耦仍待完成。
+- CLI 已使用 V2 Workspace 配置接入 Core 的 Selection、Preflight、Capture、Job、Bundle、stale 和 Handoff 能力；V1 `init/generate` 保持到阶段七；
+- MCP 已覆盖 Workspace、历史、Run、Snapshot、revision、Fragment、Catalog、Issue、Staleness、Handoff 和受引用约束的 Blob 只读消费，并提供确定性结构化错误；
+- Capture 与 Flutter Target 已建立单向边界，Target 只提供独立查询和变更验证，不要求目标工程存在 ProtoBridge 配置，也不写入 Evidence；
+- Agent Handoff Consumer 指南、MCP resource/prompt 和真实 Target 消费 E2E 已完成，Consumer 会保留并报告全部 Handoff risks；
+- `pnpm verify:v2:phase-five` 已通过 CLI/PBWork Matrix 等价、历史读取、Consumer、Target 和 PBWork → Store → MCP 垂直切片门禁。
 
 完成条件：
 

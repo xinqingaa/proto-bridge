@@ -25,9 +25,9 @@ import {
   createAgentHandoff,
   evaluateAgentHandoff,
   preflightInstrumentedRuntime,
+  selectionDraftFromSelectedCases,
   type CapturePreflight,
   type CaseCaptureDriver,
-  type ScreenSelectionDraft,
 } from '@proto-bridge/core/v2/capture';
 import {
   LocalFileStore,
@@ -139,69 +139,6 @@ function matrixIdentity(preflight: CapturePreflight): string {
       captureScope: entry.selectedCase.captureScope,
     })),
   );
-}
-
-function draftFromCases(
-  prototypeId: string,
-  cases: SelectedCase[],
-): SelectionDraft {
-  const groups = new Map<
-    string,
-    {
-      screenId: string;
-      themeId: string;
-      deviceId: string;
-      captureScope: SelectedCase['captureScope'];
-      variantIds: Set<string>;
-      scenarioIds: Set<string>;
-    }
-  >();
-  for (const selected of cases) {
-    const scenario = selected.caseKey.scenario;
-    const screenId = scenario?.ownerScreenId ?? selected.caseKey.screenId;
-    const key = JSON.stringify({
-      screenId,
-      themeId: selected.caseKey.themeId,
-      deviceId: selected.caseKey.deviceId,
-      captureScope: selected.captureScope,
-    });
-    const group = groups.get(key) ?? {
-      screenId,
-      themeId: selected.caseKey.themeId,
-      deviceId: selected.caseKey.deviceId,
-      captureScope: selected.captureScope,
-      variantIds: new Set<string>(),
-      scenarioIds: new Set<string>(),
-    };
-    if (scenario) group.scenarioIds.add(scenario.scenarioId);
-    else group.variantIds.add(selected.caseKey.variantId);
-    groups.set(key, group);
-  }
-  const screens: ScreenSelectionDraft[] = [...groups.values()].map((group) => ({
-    screenId: group.screenId,
-    variants:
-      group.variantIds.size > 0
-        ? {
-            mode: 'explicit',
-            variantIds: [...group.variantIds],
-          }
-        : { mode: 'default' },
-    themeIds: [group.themeId],
-    deviceIds: [group.deviceId],
-    scenarios:
-      group.scenarioIds.size > 0
-        ? {
-            mode: 'explicit',
-            scenarioIds: [...group.scenarioIds],
-          }
-        : { mode: 'none' },
-    captureScope: group.captureScope,
-  }));
-  return SelectionDraft.parse({
-    prototypeId,
-    screens,
-    acceptedWarningIds: [],
-  });
 }
 
 async function selectedCasesForSnapshot(
@@ -562,7 +499,10 @@ export class ProtoBridgeLocalService {
         (selected) =>
           failedCaseIds.size === 0 || failedCaseIds.has(selected.caseId),
       );
-      success(response, draftFromCases(job.selection.prototypeId, cases));
+      success(
+        response,
+        selectionDraftFromSelectedCases(job.selection.prototypeId, cases),
+      );
       return;
     }
 
@@ -662,7 +602,10 @@ export class ProtoBridgeLocalService {
           'Staleness Report has no stale Case/Scope to recapture.',
         );
       }
-      success(response, draftFromCases(bundle.prototypeId, cases));
+      success(
+        response,
+        selectionDraftFromSelectedCases(bundle.prototypeId, cases),
+      );
       return;
     }
 
@@ -711,7 +654,10 @@ export class ProtoBridgeLocalService {
         bundleId,
         snapshot,
       );
-      const draft = draftFromCases(run.selection.prototypeId, activeCases);
+      const draft = selectionDraftFromSelectedCases(
+        run.selection.prototypeId,
+        activeCases,
+      );
       const current = (await this.runPreflight(draft)).preflight;
       const dependencyDigests: Record<string, string> = {
         [`manifest:${run.selection.prototypeId}`]: current.manifestDigest,
@@ -759,7 +705,10 @@ export class ProtoBridgeLocalService {
       );
       const current = (
         await this.runPreflight(
-          draftFromCases(run.selection.prototypeId, activeCases),
+          selectionDraftFromSelectedCases(
+            run.selection.prototypeId,
+            activeCases,
+          ),
         )
       ).preflight;
       const dependencyDigests: Record<string, string> = {

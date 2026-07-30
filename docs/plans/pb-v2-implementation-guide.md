@@ -1,6 +1,6 @@
 # ProtoBridge V2 实施指南
 
-> 状态：实施中；阶段四能力已完成，阶段五暂停，先关闭 PBWork 可用性验收门禁
+> 状态：实施中；阶段五已完成，阶段六未开始
 > 权威范围：当前仓库的推荐落点、实施顺序、测试、迁移和发布纪律
 > 上位目标：[V2 产品闭环与实施总览](./pb-v2-overview.md)
 > 不可违背语义：[V2 核心规范](./pb-v2-spec.md)
@@ -12,7 +12,7 @@
 
 ## 当前代码基线
 
-截至 2026-07-29：
+截至 2026-07-30：
 
 | 当前能力                                                    | 真实位置                                                        | V2 处理或进度                                                           |
 | ----------------------------------------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------------- |
@@ -21,11 +21,11 @@
 | Core workflow、capabilities、capture、source/target adapter | `packages/core`                                                 | 作为 V2 业务语义和执行能力的初始承载                                    |
 | V1 固定文件 Artifact writer                                 | `packages/core/src/artifacts`、`packages/core/src/capabilities` | V1 继续可用，阶段七删除                                                 |
 | V2 Runtime Contract、Preflight、Matrix 与 Capture           | `packages/core/src/v2/runtime-contract`、`capture`              | 阶段三门禁已通过                                                        |
-| CLI `init/generate`                                         | `packages/cli`                                                  | 尚未接入 V2；阶段五新增 V2 命令族，阶段七删除旧 generate                |
-| MCP page resources 和内存 PageStore                         | `packages/mcp-server`                                           | V1 继续保留；V2 已新增固定 Snapshot/Case/Screenshot 的只读 Store Reader |
+| CLI `init/generate` 与 V2 命令族                            | `packages/cli`                                                  | V2 Producer 已接入；V1 `init/generate` 保留到阶段七                      |
+| MCP page resources、PageStore 与 V2 Evidence Reader         | `packages/mcp-server`                                           | V2 持久 Evidence 消费面已完成；V1 页面工作流保留到阶段七                 |
 | PBWork Registry、Runtime、Capture Console                   | `apps/pbwork`                                                   | Registry 为 2 Prototype / 25 Screen / 82 Variant；已补可用性垂直切片    |
 | V2 Local Service                                            | `packages/local-service`                                        | 阶段四门禁已通过；只承载安全会话和 Core/Store/JobHost 适配              |
-| Flutter Target 分析和 Planner                               | `packages/core/src/target/flutter-app`                          | 查询/验证能力保留，Planner 退出；阶段五建立独立边界                     |
+| Flutter Target 查询与验证                                   | `packages/core/src/target/flutter-app`                          | 已与 Capture 解耦；只读查询/验证保留，Planner 退出                       |
 
 当前已实现：
 
@@ -55,12 +55,14 @@
 - 原型列表、原型概要、画布和 Inspector 的就地 Capture 入口，以及工作台底部确认 Sheet；
 - 全局后台 Job Center、成功/失败通知和固定 Snapshot 的截图优先 Evidence Viewer；
 - PBWork 与 MCP 共用的 Screen/Case Evidence Read Model；
-- MCP `list_evidence_bundles`、`read_evidence_snapshot`、`read_evidence_case` 和受 Snapshot 约束的 Screenshot resource。
+- MCP 对 Workspace、历史、Run、Snapshot、revision、Fragment、Catalog、Issue、Staleness、Handoff 和受引用约束 Blob 的只读消费；
+- V2 CLI Workspace 配置、Preflight/Capture、Job、Bundle、stale 和 Handoff 命令族，以及 JSON/错误退出约定；
+- CLI 与 PBWork 共用 Core Selection/Preflight/Case Matrix，未知 warning/risk 不能被笼统强制绕过；
+- Flutter Target 只读查询/验证边界，Capture 主链不依赖 Target，目标工程不要求 ProtoBridge 配置；
+- Agent Handoff Consumer 指南、MCP resource/prompt 和真实 Target 消费 E2E。
 
 当前仍不存在或尚未完成：
 
-- V2 CLI Producer；
-- MCP 的 Catalog、Issue/Staleness、Handoff 和 Consumer 指南完整面；
 - Source adapter 与 `instrumented-source-runtime` 级别提升；阶段三保持 Runtime-only 的诚实降级，阶段六完成四级验收；
 - 25 Screen / 82 Variant 迁移台账；固定三页已建立阶段三基准，完整迁移验收仍在阶段六。
 
@@ -72,13 +74,13 @@
 | 二：证据模型与存储      | 已完成 | 原子 Bundle 首 Snapshot、immutable Store、Job 恢复、Catalog/Blob、依赖级 stale/复用、fork/archive、容量与 safe clean 的 Store tests 通过 | 无                                                     |
 | 三：Runtime 与捕获      | 已完成 | Capture Protocol、稳定 Matrix、Scenario runner、三种输入、Playwright Orchestrator 与真实 Store 浏览器闭环通过                            | 无                                                     |
 | 四：PBWork 操作闭环     | 已完成 | Local Service、四类 Draft、Preflight/Matrix、后台 Job/恢复、Evidence/stale、Bundle 管理和固定 Handoff 的 unit/service/E2E 通过           | 无                                                     |
-| 五：CLI、MCP 与消费链路 | 暂停   | 共用 Evidence Read Model、跨进程只读 Store、固定 Snapshot/Case/Screenshot MCP resource、PBWork→MCP 同 Snapshot E2E 已通过                | PBWork 可用性验收门禁；随后接 V2 producer CLI、完整 Consumer、Target 解耦 |
+| 五：CLI、MCP 与消费链路 | 已完成 | V2 CLI Producer、完整 MCP Evidence Reader、Handoff Consumer、Target 独立边界及真实目标工程 E2E 均通过                                  | 无                                                     |
 | 六：迁移与全链路验收    | 未开始 | Registry 已确认 2 Prototype / 25 Screen / 82 Variant                                                                                     | 迁移台账、3 页固定基准、四种 Evidence Level 与量化对比 |
 | 七：V1 退出与发布       | 未开始 | V1 仍保持可用                                                                                                                            | 前六阶段门禁、旧链路删除、干净安装和 0.5.0 发布        |
 
-当前验证基线为：Core 175 个测试通过；Local Service 6 个测试通过；PBWork typecheck/build、既有 unit/Runtime/Console 回归可继续运行。新增证据可用性 E2E 证明高条件 `task-list` 为 `complete + declared + screenshot`，稀疏 `analytics` 保留截图并诚实报告语义限制；`test:e2e:evidence-slice` 进一步证明 PBWork 与 MCP 读取同一个固定 Snapshot。整个 Prototype 仍只展开并验证 Matrix，不启动 25 页重复采集。
+当前验证基线为：Core 182 个测试、Local Service 6 个测试、CLI 4 个测试、PBWork 71 个测试通过，仓库 build/typecheck 与 PBWork build 通过。`test:e2e:mcp-v2` 覆盖持久 Evidence 读取，`test:e2e:consumer-v2` 覆盖带 required unknown 风险的固定 Handoff 到无 ProtoBridge 配置 Target 的真实实现与验证，`test:e2e:evidence-slice` 证明 PBWork 与 MCP 读取同一个固定 Snapshot。统一入口 `pnpm verify:v2:phase-five` 全部通过。整个 Prototype 仍只展开并验证 Matrix，不启动 25 页重复采集。
 
-## 阶段五前证据质量与 PBWork 可用性门禁
+## 阶段五前证据质量与 PBWork 可用性门禁（已通过）
 
 此门禁暂停阶段五，不是新增实施阶段，也不提前执行阶段六迁移。除证据质量外，PBWork 必须达到可由用户自行理解任务、发起采集、检查结果和定位问题的可用性基线。当前随机点击产生的稀疏 Store 数据不作为采集能力上限，也不要求为通过门禁而重做 `analytics`、`ledger-list`、`create-work-order` 或其他原型。
 
@@ -118,7 +120,7 @@ PBWork 可用性基线包括：
 
 ## 当前实施顺序
 
-实施继续严格使用总览定义的七个阶段，不增加工作包、里程碑或其他执行编号。阶段一至阶段四已经关闭门禁；先关闭上述证据质量门禁，再进入阶段五 CLI、MCP 与消费链路，不提前执行阶段六迁移验收。
+实施继续严格使用总览定义的七个阶段，不增加工作包、里程碑或其他执行编号。阶段一至阶段五已经关闭门禁；下一步是阶段六迁移与全链路验收，不提前执行阶段七 V1 退出与发布。
 
 ### 阶段一完成记录：核心产品语义
 
@@ -216,6 +218,27 @@ PBWork 可用性基线包括：
 | 四类 Draft 与交互          | `apps/pbwork/src/app/stores/capture.ts`、`CaptureConsole.vue`、PBWork unit tests       |
 | 页面关闭恢复与固定 Handoff | `apps/pbwork/e2e/capture-console-v2.spec.ts`                                           |
 | 三页固定基准               | `runtime-capture-v2.spec.ts` 与 `capture-console-v2.spec.ts`                           |
+
+### 阶段五完成记录：CLI、MCP 与消费链路
+
+已完成：
+
+1. `packages/cli` 新增独立 V2 Workspace 配置和命令族，覆盖 Preflight、Capture、Job、Bundle、stale、Handoff 与 Service 生命周期，同时保持 V1 `init/generate` 行为；
+2. CLI 和 PBWork 使用同一个 Core Selection/Preflight/Matrix，逐项接受 warning/risk，拒绝无边界 `--force`；
+3. MCP 的 Store Reader 按固定 Workspace、Snapshot 和 revision 读取历史对象，覆盖 Run、Fragment、Catalog、Issue、Staleness、Handoff 与受引用约束的 Blob；
+4. MCP 对 Workspace 不匹配、对象缺失和不可达 revision 返回稳定的结构化错误，不猜测 Store 路径；
+5. Capture 不 import Flutter Target；Target 查询和变更验证通过独立导出及 MCP tool 暴露，不向 Evidence 写回目标事实；
+6. Agent Consumer 按 Handoff → Snapshot → revision 的固定顺序读取 Evidence，完整报告 required unknown 等 risks，再读取、修改并验证无 ProtoBridge 配置的目标工程。
+
+| 门禁要求                              | 可执行证据                                                                                                    |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| PBWork/CLI Matrix 完全一致            | `packages/cli/test/v2-cli.test.ts`                                                                            |
+| CLI Producer 与生命周期              | `packages/cli/src/v2`、`packages/cli/test/v2-cli.test.ts`                                                     |
+| MCP 历史对象和固定引用读取            | `packages/mcp-server/src/services/evidence-store-reader.ts`、`scripts/test-mcp-evidence-v2.mjs`              |
+| Consumer 风险、真实实现与验证         | `docs/v2-agent-handoff-consumer.md`、`scripts/test-v2-consumer.mjs`                                           |
+| Capture/Target 单向边界               | `packages/core/src/target/flutter-app/query.ts`、`packages/core/test/v2/target-boundary.test.ts`             |
+| PBWork → Store → MCP 同证据垂直切片   | `apps/pbwork/e2e/evidence-usability-v2.spec.ts`、`scripts/test-evidence-vertical-slice.mjs`                   |
+| 阶段五统一门禁                        | `scripts/verify-phase-five.mjs`，执行 `pnpm verify:v2:phase-five`                                             |
 
 现有 `PageCanonical` 是一次页面重建结果，包含 Source、Runtime、Screenshot 和 Target 信息，不等同于 V2 Evidence revision 或 Snapshot。V2 可以编写迁移/对照 fixture，但不能只把 V1 对象改名后继续混存 Target 事实。
 

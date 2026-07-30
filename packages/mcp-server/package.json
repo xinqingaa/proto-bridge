@@ -25,7 +25,8 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@proto-bridge/core": "workspace:*"
+    "@proto-bridge/core": "workspace:*",
+    "zod": "^3.25.76"
   },
   "engines": {
     "node": ">=20"

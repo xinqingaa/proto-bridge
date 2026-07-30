@@ -26,6 +26,14 @@
       "types": "./dist/target/flutter-app/index.d.ts",
       "import": "./dist/target/flutter-app/index.js"
     },
+    "./target/flutter-app/query": {
+      "types": "./dist/target/flutter-app/query.d.ts",
+      "import": "./dist/target/flutter-app/query.js"
+    },
+    "./target/flutter-app/validation": {
+      "types": "./dist/target/flutter-app/validation/index.d.ts",
+      "import": "./dist/target/flutter-app/validation/index.js"
+    },
     "./source/vue3-prototype": {
       "types": "./dist/source/vue3-prototype/index.d.ts",
       "import": "./dist/source/vue3-prototype/index.js"

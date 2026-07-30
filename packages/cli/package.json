@@ -18,10 +18,15 @@
     "generate": "node dist/index.js generate",
     "build": "pnpm run clean && tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@proto-bridge/core": "workspace:*"
+    "@proto-bridge/core": "workspace:*",
+    "@proto-bridge/local-service": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.7"
   },
   "engines": {
     "node": ">=20"

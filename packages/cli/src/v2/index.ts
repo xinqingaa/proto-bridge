@@ -1,0 +1,876 @@
+import path from 'node:path';
+import { access, readFile, writeFile } from 'node:fs/promises';
+import {
+  AgentHandoff,
+  BundleId,
+  HandoffId,
+  JobId,
+  RunId,
+  RiskKind,
+  SnapshotId,
+  V2ContractError,
+  V2_SCHEMA_MAJOR,
+  V2WorkspaceConfig,
+  WorkspaceId,
+  buildEvidenceReadModel,
+  computeScopeKey,
+  type SelectedCase,
+} from '@proto-bridge/core/v2';
+import {
+  CaptureJobHost,
+  PlaywrightCaseCaptureDriver,
+  SelectionDraft,
+  createAgentHandoff,
+  preflightInstrumentedRuntime,
+  preflightSelection,
+  selectionDraftFromSelectedCases,
+  type CapturePreflight,
+  type CaseCaptureDriver,
+  type CapturedCase,
+} from '@proto-bridge/core/v2/capture';
+import { RuntimeCaptureManifest } from '@proto-bridge/core/v2/runtime-contract';
+import {
+  LocalFileStore,
+  generateOperationalId,
+} from '@proto-bridge/core/v2/store';
+import { ProtoBridgeLocalService } from '@proto-bridge/local-service';
+import {
+  booleanFlag,
+  flag,
+  flags,
+  numberFlag,
+  parseV2Args,
+  requiredFlag,
+  type V2Args,
+} from './args.js';
+import { loadV2Config, type LoadedV2Config } from './config.js';
+import { emit, processIo, type V2CliIo } from './output.js';
+
+const EXIT = {
+  ok: 0,
+  error: 1,
+  partial: 2,
+  cancelled: 3,
+  interrupted: 4,
+  failed: 5,
+  stale: 6,
+  blocked: 7,
+} as const;
+
+export async function runV2Cli(
+  argv: string[],
+  io: V2CliIo = processIo,
+): Promise<number> {
+  try {
+    return await execute(parseV2Args(argv), io);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    io.stderr(message);
+    if (
+      error instanceof V2ContractError &&
+      ['preflight-expired', 'bundle-archived', 'capacity-exceeded'].includes(
+        error.code,
+      )
+    ) {
+      return EXIT.blocked;
+    }
+    return EXIT.error;
+  }
+}
+
+async function execute(args: V2Args, io: V2CliIo): Promise<number> {
+  const command = args.command.join(' ');
+  if (booleanFlag(args, 'help') || command === '' || command === 'help') {
+    io.stdout(v2Usage());
+    return EXIT.ok;
+  }
+  if (command === 'workspace init') return initWorkspace(args, io);
+  const loaded = await loadV2Config(flag(args, 'config'), io.cwd);
+  if (command === 'workspace doctor') return workspaceDoctor(args, io, loaded);
+  if (command === 'preflight') return preflightCommand(args, io, loaded);
+  if (command === 'capture run') return captureCommand(args, io, loaded);
+  if (command === 'job status') return jobStatus(args, io, loaded);
+  if (command === 'job cancel') return jobCancel(args, io, loaded);
+  if (command === 'job retry') return jobRetry(args, io, loaded);
+  if (command === 'bundle list') return bundleList(args, io, loaded);
+  if (command === 'bundle inspect') return bundleInspect(args, io, loaded);
+  if (command === 'bundle fork') return bundleFork(args, io, loaded);
+  if (command === 'bundle archive') return bundleArchive(args, io, loaded);
+  if (command === 'bundle clean') return bundleClean(args, io, loaded);
+  if (command === 'snapshot inspect') return snapshotInspect(args, io, loaded);
+  if (command === 'run inspect') return runInspect(args, io, loaded);
+  if (command === 'case inspect') return caseInspect(args, io, loaded);
+  if (command === 'stale check') return staleCheck(args, io, loaded);
+  if (command === 'handoff create') return handoffCreate(args, io, loaded);
+  if (command === 'handoff show') return handoffShow(args, io, loaded);
+  if (command === 'handoff export') return handoffExport(args, io, loaded);
+  if (command === 'service start') return serviceStart(args, io, loaded);
+  throw new Error(`Unknown V2 command: ${command}`);
+}
+
+async function initWorkspace(args: V2Args, io: V2CliIo): Promise<number> {
+  const configPath = path.resolve(
+    io.cwd,
+    flag(args, 'config') ?? 'proto-bridge.v2.json',
+  );
+  try {
+    await access(configPath);
+    throw new Error(`V2 config already exists: ${configPath}`);
+  } catch (error) {
+    if (
+      !(error instanceof Error && 'code' in error && error.code === 'ENOENT')
+    ) {
+      throw error;
+    }
+  }
+  const runtimeBaseUrl =
+    flag(args, 'runtime') ?? 'http://127.0.0.1:3977';
+  const servicePort = numberFlag(args, 'service-port') ?? 3988;
+  const config = V2WorkspaceConfig.parse({
+    schemaVersion: V2_SCHEMA_MAJOR,
+    workspaceId: flag(args, 'workspace') ?? 'pbwork-local',
+    runtime: {
+      baseUrl: runtimeBaseUrl,
+      allowedOrigins: flags(args, 'runtime-origin'),
+    },
+    store: {
+      root: flag(args, 'store') ?? '.proto-bridge/v2-store',
+      ...(numberFlag(args, 'max-store-bytes') === undefined
+        ? {}
+        : { maxBytes: numberFlag(args, 'max-store-bytes') }),
+    },
+    capture: { maxCases: numberFlag(args, 'max-cases') ?? 100 },
+    service: {
+      host: flag(args, 'service-host') ?? '127.0.0.1',
+      port: servicePort,
+      allowedOrigins:
+        flags(args, 'service-origin').length > 0
+          ? flags(args, 'service-origin')
+          : [`http://127.0.0.1:${servicePort}`],
+    },
+  });
+  await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, {
+    encoding: 'utf8',
+    flag: 'wx',
+  });
+  const store = new LocalFileStore({
+    root: path.resolve(path.dirname(configPath), config.store.root),
+    workspaceId: config.workspaceId,
+    ...(config.store.maxBytes === undefined
+      ? {}
+      : { maxBytes: config.store.maxBytes }),
+  });
+  await store.init();
+  await store.close();
+  emit(io, booleanFlag(args, 'json'), { configPath, config }, `Created ${configPath}`);
+  return EXIT.ok;
+}
+
+async function workspaceDoctor(
+  args: V2Args,
+  io: V2CliIo,
+  loaded: LoadedV2Config,
+): Promise<number> {
+  const store = await openStore(loaded);
+  try {
+    const result = {
+      schemaVersion: loaded.value.schemaVersion,
+      workspaceId: loaded.value.workspaceId,
+      configPath: loaded.path,
+      storeRoot: loaded.storeRoot,
+      runtimeBaseUrl: loaded.value.runtime.baseUrl,
+      capacity: await store.getCapacity(),
+      bundles: (await store.listBundles()).length,
+      jobs: (await store.listJobs()).length,
+    };
+    emit(io, booleanFlag(args, 'json'), result, `Workspace ${result.workspaceId} is ready.`);
+    return EXIT.ok;
+  } finally {
+    await store.close();
+  }
+}
+
+async function loadDraft(args: V2Args): Promise<SelectionDraft> {
+  return SelectionDraft.parse(
+    JSON.parse(await readFile(requiredFlag(args, 'selection'), 'utf8')) as unknown,
+  );
+}
+
+async function resolvePreflight(
+  args: V2Args,
+  loaded: LoadedV2Config,
+  draftInput?: SelectionDraft,
+): Promise<CapturePreflight> {
+  const draft = draftInput ?? (await loadDraft(args));
+  const accepted = flags(args, 'accept-warning');
+  const effectiveDraft = SelectionDraft.parse({
+    ...draft,
+    acceptedWarningIds:
+      accepted.length > 0 ? accepted : draft.acceptedWarningIds,
+  });
+  const manifestPath = flag(args, 'manifest');
+  if (manifestPath) {
+    const manifest = RuntimeCaptureManifest.parse(
+      JSON.parse(await readFile(manifestPath, 'utf8')) as unknown,
+    );
+    return preflightSelection(effectiveDraft, manifest, {
+      maxCases: loaded.value.capture.maxCases,
+    });
+  }
+  return (
+    await preflightInstrumentedRuntime({
+      draft: effectiveDraft,
+      runtimeBaseUrl: loaded.value.runtime.baseUrl,
+      maxCases: loaded.value.capture.maxCases,
+    })
+  ).preflight;
+}
+
+async function preflightCommand(
+  args: V2Args,
+  io: V2CliIo,
+  loaded: LoadedV2Config,
+): Promise<number> {
+  const preflight = await resolvePreflight(args, loaded);
+  emit(
+    io,
+    booleanFlag(args, 'json'),
+    preflight,
+    [
+      `Preflight ${preflight.ready ? 'ready' : 'blocked'}.`,
+      `Cases: ${preflight.matrix.length}`,
+      ...preflight.warnings.map(
+        (warning) => `Warning ${warning.warningId}: ${warning.message}`,
+      ),
+    ].join('\n'),
+  );
+  return preflight.ready ? EXIT.ok : EXIT.blocked;
+}
+
+class AttachedScreenshotDriver implements CaseCaptureDriver {
+  constructor(
+    private readonly bytes: Uint8Array,
+    private readonly mediaType: string,
+  ) {}
+
+  async captureCase(): Promise<CapturedCase> {
+    return {
+      evidenceLevel: 'screenshot-only',
+      facts: [],
+      requiredFactsTotal: 0,
+      requiredFactsResolved: 0,
+      binaries: [
+        { kind: 'screenshot', mediaType: this.mediaType, bytes: this.bytes },
+      ],
+      diagnostics: { console: [], pageErrors: [], failedRequests: [] },
+    };
+  }
+}
+
+async function captureDriver(args: V2Args): Promise<CaseCaptureDriver> {
+  const screenshotPath = flag(args, 'screenshot');
+  if (!screenshotPath) return new PlaywrightCaseCaptureDriver();
+  const bytes = await readFile(screenshotPath);
+  const extension = path.extname(screenshotPath).toLowerCase();
+  const mediaType =
+    extension === '.png'
+      ? 'image/png'
+      : extension === '.jpg' || extension === '.jpeg'
+        ? 'image/jpeg'
+        : undefined;
+  if (!mediaType || bytes.byteLength === 0) {
+    throw new V2ContractError(
+      'blob-rejected',
+      'Attached screenshot must be a non-empty PNG or JPEG file.',
+    );
+  }
+  return new AttachedScreenshotDriver(bytes, mediaType);
+}
+
+async function runCapture(
+  args: V2Args,
+  loaded: LoadedV2Config,
+  draft?: SelectionDraft,
+  bundleIdInput?: string,
+) {
+  const preflight = await resolvePreflight(args, loaded, draft);
+  if (!preflight.ready) {
+    throw new V2ContractError(
+      'invalid-schema',
+      `Warnings must be accepted individually: ${preflight.unacceptedWarningIds.join(', ')}.`,
+    );
+  }
+  if (
+    flag(args, 'screenshot') &&
+    preflight.selection.cases.some(
+      (selected) =>
+        selected.captureScope.evidenceInputMode !== 'screenshot-only',
+    )
+  ) {
+    throw new V2ContractError(
+      'invalid-schema',
+      '--screenshot requires every selected Case to use screenshot-only evidenceInputMode.',
+    );
+  }
+  const store = await openStore(loaded);
+  try {
+    const bundleId = BundleId.parse(
+      bundleIdInput ??
+        flag(args, 'bundle') ??
+        generateOperationalId('bundle'),
+    );
+    const host = new CaptureJobHost();
+    const accepted = await host.accept({
+      store,
+      bundleId,
+      preflight,
+      runtimeBaseUrl: loaded.value.runtime.baseUrl,
+      driver: await captureDriver(args),
+    });
+    return await accepted.completion;
+  } finally {
+    await store.close();
+  }
+}
+
+async function captureCommand(
+  args: V2Args,
+  io: V2CliIo,
+  loaded: LoadedV2Config,
+): Promise<number> {
+  const result = await runCapture(args, loaded);
+  emit(
+    io,
+    booleanFlag(args, 'json'),
+    result,
+    `Captured ${result.run.coverage.counts.captured}, reused ${result.run.coverage.counts.reused}, failed ${result.run.coverage.counts.failed}. Snapshot ${result.snapshot.snapshotId}.`,
+  );
+  return exitForRun(result.run);
+}
+
+async function jobStatus(
+  args: V2Args,
+  io: V2CliIo,
+  loaded: LoadedV2Config,
+): Promise<number> {
+  const store = await openStore(loaded, true);
+  try {
+    const job = await store.getJob(JobId.parse(requiredFlag(args, 'job')));
+    if (!job) throw new V2ContractError('unknown-reference', 'Job does not exist.');
+    emit(io, booleanFlag(args, 'json'), job);
+    return job.status === 'cancelled'
+      ? EXIT.cancelled
+      : job.status === 'interrupted'
+        ? EXIT.interrupted
+        : job.status === 'failed'
+          ? EXIT.failed
+          : EXIT.ok;
+  } finally {
+    await store.close();
+  }
+}
+
+async function jobCancel(
+  args: V2Args,
+  io: V2CliIo,
+  loaded: LoadedV2Config,
+): Promise<number> {
+  const store = await openStore(loaded);
+  try {
+    const job = await new CaptureJobHost().cancel(
+      store,
+      JobId.parse(requiredFlag(args, 'job')),
+    );
+    emit(io, booleanFlag(args, 'json'), job);
+    return EXIT.cancelled;
+  } finally {
+    await store.close();
+  }
+}
+
+async function jobRetry(
+  args: V2Args,
+  io: V2CliIo,
+  loaded: LoadedV2Config,
+): Promise<number> {
+  const store = await openStore(loaded, true);
+  let draft: SelectionDraft;
+  let bundleId: string;
+  try {
+    const job = await store.getJob(JobId.parse(requiredFlag(args, 'job')));
+    if (!job) throw new V2ContractError('unknown-reference', 'Job does not exist.');
+    const run = job.runId ? await store.getRun(job.bundleId, job.runId) : undefined;
+    const retryIds = new Set(
+      run?.attempts
+        .filter((attempt) =>
+          ['failed', 'unsupported', 'cancelled', 'interrupted'].includes(
+            attempt.result,
+          ),
+        )
+        .map((attempt) => attempt.caseId) ?? [],
+    );
+    const selected =
+      retryIds.size > 0
+        ? job.selection.cases.filter((item) => retryIds.has(item.caseId))
+        : job.selection.cases;
+    draft = selectionDraftFromSelectedCases(
+      job.selection.prototypeId,
+      selected,
+    );
+    bundleId = job.bundleId;
+  } finally {
+    await store.close();
+  }
+  const result = await runCapture(args, loaded, draft, bundleId);
+  emit(io, booleanFlag(args, 'json'), result);
+  return exitForRun(result.run);
+}
+
+async function bundleList(
+  args: V2Args,
+  io: V2CliIo,
+  loaded: LoadedV2Config,
+): Promise<number> {
+  const store = await openStore(loaded, true);
+  try {
+    const bundles = await Promise.all(
+      (await store.listBundles()).map(async (bundle) => ({
+        ...bundle,
+        activeSnapshotId: (await store.getActiveSnapshot(bundle.bundleId))
+          ?.snapshotId,
+      })),
+    );
+    emit(io, booleanFlag(args, 'json'), { bundles });
+    return EXIT.ok;
+  } finally {
+    await store.close();
+  }
+}
+
+async function evidenceDetails(
+  loaded: LoadedV2Config,
+  bundleIdInput: string,
+  snapshotIdInput?: string,
+) {
+  const store = await openStore(loaded, true);
+  try {
+    const bundleId = BundleId.parse(bundleIdInput);
+    const snapshot = snapshotIdInput
+      ? await store.getSnapshot(bundleId, SnapshotId.parse(snapshotIdInput))
+      : await store.getActiveSnapshot(bundleId);
+    if (!snapshot)
+      throw new V2ContractError('unknown-reference', 'Snapshot does not exist.');
+    const activeRevisionIds = new Set(
+      snapshot.activeSlots.map((slot) => slot.revisionId),
+    );
+    return buildEvidenceReadModel({
+      snapshot,
+      runs: await store.listRuns(bundleId),
+      revisions: (await store.listEvidenceRevisions(bundleId)).filter(
+        (revision) => activeRevisionIds.has(revision.revisionId),
+      ),
+      blobs: await store.listBlobRecords(bundleId),
+    });
+  } finally {
+    await store.close();
+  }
+}
+
+async function bundleInspect(
+  args: V2Args,
+  io: V2CliIo,
+  loaded: LoadedV2Config,
+): Promise<number> {
+  const details = await evidenceDetails(loaded, requiredFlag(args, 'bundle'));
+  emit(io, booleanFlag(args, 'json'), details);
+  return details.coverageStatus === 'partial' ? EXIT.partial : EXIT.ok;
+}
+
+async function snapshotInspect(
+  args: V2Args,
+  io: V2CliIo,
+  loaded: LoadedV2Config,
+): Promise<number> {
+  const details = await evidenceDetails(
+    loaded,
+    requiredFlag(args, 'bundle'),
+    requiredFlag(args, 'snapshot'),
+  );
+  emit(io, booleanFlag(args, 'json'), details);
+  return details.coverageStatus === 'partial' ? EXIT.partial : EXIT.ok;
+}
+
+async function runInspect(
+  args: V2Args,
+  io: V2CliIo,
+  loaded: LoadedV2Config,
+): Promise<number> {
+  const store = await openStore(loaded, true);
+  try {
+    const run = await store.getRun(
+      BundleId.parse(requiredFlag(args, 'bundle')),
+      RunId.parse(requiredFlag(args, 'run')),
+    );
+    if (!run) throw new V2ContractError('unknown-reference', 'Run does not exist.');
+    emit(io, booleanFlag(args, 'json'), run);
+    return exitForRun(run);
+  } finally {
+    await store.close();
+  }
+}
+
+async function caseInspect(
+  args: V2Args,
+  io: V2CliIo,
+  loaded: LoadedV2Config,
+): Promise<number> {
+  const details = await evidenceDetails(
+    loaded,
+    requiredFlag(args, 'bundle'),
+    requiredFlag(args, 'snapshot'),
+  );
+  const selected = details.screens
+    .flatMap((screen) => screen.cases)
+    .filter((item) => item.caseId === requiredFlag(args, 'case'));
+  if (selected.length === 0) {
+    throw new V2ContractError('unknown-reference', 'Case is not active in Snapshot.');
+  }
+  emit(io, booleanFlag(args, 'json'), { cases: selected });
+  return selected.some(
+    (item) => item.unknownCount > 0 || item.conflictCount > 0,
+  )
+    ? EXIT.partial
+    : EXIT.ok;
+}
+
+async function bundleFork(
+  args: V2Args,
+  io: V2CliIo,
+  loaded: LoadedV2Config,
+): Promise<number> {
+  const store = await openStore(loaded);
+  try {
+    const result = await store.forkBundle({
+      sourceBundleId: BundleId.parse(requiredFlag(args, 'bundle')),
+      sourceSnapshotId: SnapshotId.parse(requiredFlag(args, 'snapshot')),
+      bundleId: BundleId.parse(
+        flag(args, 'new-bundle') ?? generateOperationalId('bundle'),
+      ),
+    });
+    emit(io, booleanFlag(args, 'json'), result);
+    return EXIT.ok;
+  } finally {
+    await store.close();
+  }
+}
+
+async function bundleArchive(
+  args: V2Args,
+  io: V2CliIo,
+  loaded: LoadedV2Config,
+): Promise<number> {
+  const store = await openStore(loaded);
+  try {
+    emit(
+      io,
+      booleanFlag(args, 'json'),
+      await store.archiveBundle(BundleId.parse(requiredFlag(args, 'bundle'))),
+    );
+    return EXIT.ok;
+  } finally {
+    await store.close();
+  }
+}
+
+async function bundleClean(
+  args: V2Args,
+  io: V2CliIo,
+  loaded: LoadedV2Config,
+): Promise<number> {
+  const store = await openStore(loaded);
+  try {
+    const plan = await store.planClean({
+      retainArchivedSnapshots:
+        numberFlag(args, 'retain-archived-snapshots') ??
+        loaded.value.store.retainArchivedSnapshots,
+    });
+    if (!booleanFlag(args, 'apply')) {
+      emit(io, booleanFlag(args, 'json'), { plan, applied: false });
+      return EXIT.ok;
+    }
+    const result = await store.applyClean(plan);
+    emit(io, booleanFlag(args, 'json'), { plan, result, applied: true });
+    return EXIT.ok;
+  } finally {
+    await store.close();
+  }
+}
+
+async function activeCasesForSnapshot(
+  store: LocalFileStore,
+  bundleId: BundleId,
+  snapshotId: SnapshotId,
+): Promise<{
+  snapshot: NonNullable<Awaited<ReturnType<LocalFileStore['getSnapshot']>>>;
+  cases: SelectedCase[];
+}> {
+  const snapshot = await store.getSnapshot(bundleId, snapshotId);
+  if (!snapshot)
+    throw new V2ContractError('unknown-reference', 'Snapshot does not exist.');
+  const activeKeys = new Set(
+    snapshot.activeSlots.map((slot) => `${slot.caseId}/${slot.scopeKey}`),
+  );
+  const selectedByIdentity = new Map(
+    (await store.listRuns(bundleId))
+      .flatMap((run) => run.selection.cases)
+      .map(
+        (selected) =>
+          [
+            `${selected.caseId}/${computeScopeKey(selected.captureScope)}`,
+            selected,
+          ] as const,
+      ),
+  );
+  const resolved = snapshot.activeSlots
+    .map((slot) =>
+      selectedByIdentity.get(`${slot.caseId}/${slot.scopeKey}`),
+    )
+    .filter((selected): selected is SelectedCase => Boolean(selected));
+  if (resolved.length !== activeKeys.size) {
+    throw new V2ContractError(
+      'unknown-reference',
+      'Snapshot active Cases cannot be reconstructed.',
+    );
+  }
+  return { snapshot, cases: resolved };
+}
+
+async function createCurrentStaleness(
+  args: V2Args,
+  loaded: LoadedV2Config,
+  store: LocalFileStore,
+  bundleId: BundleId,
+  snapshotId: SnapshotId,
+) {
+  const { cases } = await activeCasesForSnapshot(store, bundleId, snapshotId);
+  const bundle = await store.getBundle(bundleId);
+  if (!bundle)
+    throw new V2ContractError('unknown-reference', 'Bundle does not exist.');
+  const draft = selectionDraftFromSelectedCases(bundle.prototypeId, cases);
+  const current = await resolvePreflight(args, loaded, draft);
+  const currentDependencyDigests: Record<string, string> = {
+    [`manifest:${bundle.prototypeId}`]: current.manifestDigest,
+  };
+  for (const selected of cases) {
+    currentDependencyDigests[`runtime:${selected.caseKey.screenId}`] =
+      current.inputVersion;
+  }
+  const report = await store.createStalenessReport({
+    bundleId,
+    snapshotId,
+    inputVersion: current.inputVersion,
+    currentDependencyDigests,
+  });
+  return { report, currentInputVersion: current.inputVersion, cases };
+}
+
+async function staleCheck(
+  args: V2Args,
+  io: V2CliIo,
+  loaded: LoadedV2Config,
+): Promise<number> {
+  const store = await openStore(loaded);
+  try {
+    const result = await createCurrentStaleness(
+      args,
+      loaded,
+      store,
+      BundleId.parse(requiredFlag(args, 'bundle')),
+      SnapshotId.parse(requiredFlag(args, 'snapshot')),
+    );
+    emit(io, booleanFlag(args, 'json'), result.report);
+    return result.report.perRevision.some((entry) => entry.stale)
+      ? EXIT.stale
+      : EXIT.ok;
+  } finally {
+    await store.close();
+  }
+}
+
+async function handoffCreate(
+  args: V2Args,
+  io: V2CliIo,
+  loaded: LoadedV2Config,
+): Promise<number> {
+  const store = await openStore(loaded);
+  try {
+    const bundleId = BundleId.parse(requiredFlag(args, 'bundle'));
+    const snapshotId = SnapshotId.parse(requiredFlag(args, 'snapshot'));
+    const current = await createCurrentStaleness(
+      args,
+      loaded,
+      store,
+      bundleId,
+      snapshotId,
+    );
+    const implementationIntent = flag(args, 'intent');
+    const handoff = await createAgentHandoff({
+      store,
+      bundleId,
+      snapshotId,
+      selectedCases: current.cases,
+      stalenessReport: current.report,
+      currentInputVersion: current.currentInputVersion,
+      ...(implementationIntent ? { implementationIntent } : {}),
+      acknowledgedRiskKinds: flags(args, 'ack-risk').map((kind) =>
+        RiskKind.parse(kind),
+      ),
+    });
+    emit(io, booleanFlag(args, 'json'), handoff);
+    return handoff.coverageStatus === 'partial'
+      ? EXIT.partial
+      : handoff.freshnessStatus === 'stale'
+        ? EXIT.stale
+        : EXIT.ok;
+  } finally {
+    await store.close();
+  }
+}
+
+async function getHandoff(
+  loaded: LoadedV2Config,
+  handoffIdInput: string,
+): Promise<AgentHandoff> {
+  const store = await openStore(loaded, true);
+  try {
+    const handoff = await store.getHandoff(HandoffId.parse(handoffIdInput));
+    if (!handoff)
+      throw new V2ContractError('unknown-reference', 'Handoff does not exist.');
+    return handoff;
+  } finally {
+    await store.close();
+  }
+}
+
+async function handoffShow(
+  args: V2Args,
+  io: V2CliIo,
+  loaded: LoadedV2Config,
+): Promise<number> {
+  const handoff = await getHandoff(loaded, requiredFlag(args, 'handoff'));
+  emit(io, booleanFlag(args, 'json'), handoff);
+  return handoff.coverageStatus === 'partial'
+    ? EXIT.partial
+    : handoff.freshnessStatus === 'stale'
+      ? EXIT.stale
+      : EXIT.ok;
+}
+
+async function handoffExport(
+  args: V2Args,
+  io: V2CliIo,
+  loaded: LoadedV2Config,
+): Promise<number> {
+  const handoff = await getHandoff(loaded, requiredFlag(args, 'handoff'));
+  const outputPath = path.resolve(io.cwd, requiredFlag(args, 'output'));
+  await writeFile(outputPath, `${JSON.stringify(handoff, null, 2)}\n`, 'utf8');
+  emit(io, booleanFlag(args, 'json'), { handoffId: handoff.handoffId, outputPath });
+  return EXIT.ok;
+}
+
+async function serviceStart(
+  args: V2Args,
+  io: V2CliIo,
+  loaded: LoadedV2Config,
+): Promise<number> {
+  const config = loaded.value;
+  const allowedOrigins =
+    config.service.allowedOrigins.length > 0
+      ? config.service.allowedOrigins
+      : config.runtime.allowedOrigins;
+  if (allowedOrigins.length === 0) {
+    throw new V2ContractError(
+      'invalid-schema',
+      'service.allowedOrigins must contain at least one explicit local origin.',
+    );
+  }
+  const service = new ProtoBridgeLocalService({
+    host: config.service.host,
+    port: config.service.port,
+    allowedOrigins,
+    runtimeBaseUrl: config.runtime.baseUrl,
+    storeRoot: loaded.storeRoot,
+    workspaceId: config.workspaceId,
+    maxCases: config.capture.maxCases,
+    ...(config.store.maxBytes === undefined
+      ? {}
+      : { maxStoreBytes: config.store.maxBytes }),
+  });
+  const address = await service.start();
+  emit(
+    io,
+    booleanFlag(args, 'json'),
+    { address, workspaceId: config.workspaceId },
+    `ProtoBridge V2 Local Service listening on http://${address.host}:${address.port}`,
+  );
+  await new Promise<void>((resolve) => {
+    const shutdown = () => {
+      void service.close().finally(resolve);
+    };
+    process.once('SIGINT', shutdown);
+    process.once('SIGTERM', shutdown);
+  });
+  return EXIT.ok;
+}
+
+async function openStore(
+  loaded: LoadedV2Config,
+  readOnly = false,
+): Promise<LocalFileStore> {
+  const store = new LocalFileStore({
+    root: loaded.storeRoot,
+    workspaceId: WorkspaceId.parse(loaded.value.workspaceId),
+    readOnly,
+    ...(loaded.value.store.maxBytes === undefined
+      ? {}
+      : { maxBytes: loaded.value.store.maxBytes }),
+  });
+  await store.init();
+  return store;
+}
+
+function exitForRun(run: {
+  terminationReason: string;
+  coverage: { counts: { failed: number; unsupported: number; missing: number } };
+}): number {
+  if (run.terminationReason === 'cancelled') return EXIT.cancelled;
+  if (run.terminationReason === 'interrupted') return EXIT.interrupted;
+  if (run.terminationReason === 'failed') return EXIT.failed;
+  return run.coverage.counts.failed > 0 ||
+    run.coverage.counts.unsupported > 0 ||
+    run.coverage.counts.missing > 0
+    ? EXIT.partial
+    : EXIT.ok;
+}
+
+export function v2Usage(): string {
+  return `Usage:
+  proto-bridge v2 workspace init [--config <file>]
+  proto-bridge v2 workspace doctor [--json]
+  proto-bridge v2 preflight --selection <file> [--manifest <file>]
+  proto-bridge v2 capture run --selection <file> [--bundle <id>]
+  proto-bridge v2 job status|cancel|retry --job <id>
+  proto-bridge v2 bundle list|inspect|fork|archive|clean
+  proto-bridge v2 snapshot|run|case inspect
+  proto-bridge v2 stale check --bundle <id> --snapshot <id>
+  proto-bridge v2 handoff create|show|export
+  proto-bridge v2 service start
+
+Rules:
+  --config defaults to ./proto-bridge.v2.json.
+  Repeat --accept-warning <id> and --ack-risk <kind> explicitly.
+  --force is intentionally unsupported.
+  Add --json for stable automation output.`;
+}
+
+export { EXIT as V2_EXIT_CODES };

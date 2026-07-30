@@ -90,6 +90,73 @@ export type ResolvedSelectionMatrix = {
   matrix: CaseMatrixEntry[];
 };
 
+/**
+ * Rebuilds an explicit Draft from persisted Case/Scope identities. Retry and
+ * stale-recapture entry points use this helper so CLI and Local Service do not
+ * invent separate grouping semantics.
+ */
+export function selectionDraftFromSelectedCases(
+  prototypeId: string,
+  cases: SelectedCase[],
+): SelectionDraft {
+  const groups = new Map<
+    string,
+    {
+      screenId: string;
+      themeId: string;
+      deviceId: string;
+      captureScope: SelectedCase['captureScope'];
+      variantIds: Set<string>;
+      scenarioIds: Set<string>;
+    }
+  >();
+  for (const selected of cases) {
+    const scenario = selected.caseKey.scenario;
+    const screenId = scenario?.ownerScreenId ?? selected.caseKey.screenId;
+    const key = JSON.stringify({
+      screenId,
+      themeId: selected.caseKey.themeId,
+      deviceId: selected.caseKey.deviceId,
+      captureScope: selected.captureScope,
+    });
+    const group = groups.get(key) ?? {
+      screenId,
+      themeId: selected.caseKey.themeId,
+      deviceId: selected.caseKey.deviceId,
+      captureScope: selected.captureScope,
+      variantIds: new Set<string>(),
+      scenarioIds: new Set<string>(),
+    };
+    if (scenario) group.scenarioIds.add(scenario.scenarioId);
+    else group.variantIds.add(selected.caseKey.variantId);
+    groups.set(key, group);
+  }
+  return SelectionDraft.parse({
+    prototypeId,
+    screens: [...groups.values()].map((group) => ({
+      screenId: group.screenId,
+      variants:
+        group.variantIds.size > 0
+          ? {
+              mode: 'explicit' as const,
+              variantIds: [...group.variantIds],
+            }
+          : { mode: 'default' as const },
+      themeIds: [group.themeId],
+      deviceIds: [group.deviceId],
+      scenarios:
+        group.scenarioIds.size > 0
+          ? {
+              mode: 'explicit' as const,
+              scenarioIds: [...group.scenarioIds],
+            }
+          : { mode: 'none' as const },
+      captureScope: group.captureScope,
+    })),
+    acceptedWarningIds: [],
+  });
+}
+
 function requireScreen(
   manifest: RuntimeCaptureManifest,
   prototypeId: string,

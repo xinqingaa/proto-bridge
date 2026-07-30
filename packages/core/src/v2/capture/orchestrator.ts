@@ -11,6 +11,7 @@ import {
   type CoverageSummary as CoverageSummaryType,
 } from '../contracts/coverage.js';
 import { Run, type Run as RunType } from '../contracts/run.js';
+import { Issue } from '../contracts/issue.js';
 import { computeScopeKey } from '../contracts/scope.js';
 import {
   evidenceLevelAtLeast,
@@ -392,6 +393,43 @@ export async function capturePreflightToStore(
           coverage,
         });
     const storedBlobIds: string[] = [];
+    const issues = new Map(
+      newlyCaptured.flatMap((revision) =>
+        revision.facts
+          .filter(
+            (fact) =>
+              fact.issueRef &&
+              (fact.resolution === 'unknown' ||
+                fact.resolution === 'unresolved-conflict'),
+          )
+          .map((fact) => {
+            const issue = Issue.parse({
+              schemaVersion: V2_SCHEMA_MAJOR,
+              issueId: fact.issueRef,
+              severity: 'warning',
+              reason:
+                fact.resolution === 'unknown'
+                  ? `Fact ${fact.factId} is required but remains unknown.`
+                  : `Fact ${fact.factId} has an unresolved conflict.`,
+              affectedCaseIds: [revision.caseId],
+              evidenceRefs: [fact.factId],
+              nextAction:
+                'Add an explicit Variant, Scenario Checkpoint or higher-level Evidence source, then recapture.',
+            });
+            return [issue.issueId, issue] as const;
+          }),
+      ),
+    );
+    for (const issue of issues.values()) {
+      try {
+        await input.store.putIssue(input.bundleId, issue);
+      } catch (error) {
+        await input.store.appendJobJournal(job.jobId, {
+          event: 'issue-write-failed',
+          detail: resultReason(error),
+        });
+      }
+    }
     for (const pending of pendingBinaries) {
       try {
         const record = await input.store.putBlob({

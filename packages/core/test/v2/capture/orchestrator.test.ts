@@ -56,6 +56,40 @@ class FakeDriver implements CaseCaptureDriver {
   }
 }
 
+class UnknownDriver implements CaseCaptureDriver {
+  async captureCase(input: CaptureCaseInput): Promise<CapturedCase> {
+    return {
+      evidenceLevel: 'instrumented-runtime',
+      facts: [
+        {
+          factId: `${input.entry.selectedCase.caseKey.screenId}.hidden-state`,
+          candidates: [
+            {
+              value: null,
+              provenance: {
+                source: 'runtime-observation',
+                locator: 'hidden-state',
+              },
+            },
+          ],
+          resolution: 'unknown',
+          issueRef: 'issue-task-list-hidden-state',
+        },
+      ],
+      requiredFactsTotal: 1,
+      requiredFactsResolved: 0,
+      binaries: [
+        {
+          kind: 'screenshot',
+          mediaType: 'image/png',
+          bytes: new Uint8Array([137, 80, 78, 71]),
+        },
+      ],
+      diagnostics: { console: [], pageErrors: [], failedRequests: [] },
+    };
+  }
+}
+
 function manifest(inputVersion: string): RuntimeCaptureManifest {
   return {
     protocolVersion: 2,
@@ -166,6 +200,27 @@ describe('V2 Capture Orchestrator + real Store', () => {
       await store.getBlob(fixture.BUNDLE_ID, result.storedBlobIds[0]!),
     ).toBeDefined();
     expect((await store.getJob(result.jobId))?.status).toBe('completed');
+  });
+
+  it('persists required unknowns as readable immutable Issues', async () => {
+    await capturePreflightToStore({
+      store,
+      bundleId: fixture.BUNDLE_ID,
+      preflight: preflightSelection(
+        draft(['empty']),
+        manifest('runtime-input-unknown'),
+      ),
+      runtimeBaseUrl: 'http://127.0.0.1:3977',
+      driver: new UnknownDriver(),
+      now,
+    });
+    expect(await store.listIssues(fixture.BUNDLE_ID)).toEqual([
+      expect.objectContaining({
+        issueId: 'issue-task-list-hidden-state',
+        severity: 'warning',
+        nextAction: expect.stringContaining('recapture'),
+      }),
+    ]);
   });
 
   it('keeps prior active Evidence when an exact retry fails with changed input', async () => {

@@ -1,6 +1,10 @@
 import path from 'node:path';
-import { readFile } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
+import { access, readFile } from 'node:fs/promises';
+import { promisify } from 'node:util';
 import type { UiBuildPlan } from '../../../types/index.js';
+
+const execFileAsync = promisify(execFile);
 
 export type FlutterTargetFileIssue = {
   file: string;
@@ -18,6 +22,104 @@ export type FlutterTargetValidationResult = {
   validationHints: string[];
   status: 'ok' | 'needs-review';
 };
+
+export type ValidateFlutterTargetChangesInput = {
+  targetRoot: string;
+  gitBase?: string;
+  allowedPaths?: string[];
+  expectedFiles?: string[];
+  validationHints?: string[];
+};
+
+/**
+ * Independent V2 Target validation boundary. It reads only the target
+ * repository and never accepts Source Evidence, Snapshot or Handoff objects.
+ */
+export async function validateFlutterTargetChanges(
+  input: ValidateFlutterTargetChangesInput,
+): Promise<FlutterTargetValidationResult> {
+  const targetRoot = path.resolve(input.targetRoot);
+  const expectedFiles = input.expectedFiles ?? [];
+  const changedFiles = await collectChangedFiles(targetRoot, input.gitBase);
+  const missingExpectedFiles = await collectMissingFiles(
+    targetRoot,
+    expectedFiles,
+  );
+  const fileIssues = await scanFlutterTargetDartFiles(
+    targetRoot,
+    changedFiles.filter((file) => file.endsWith('.dart')),
+  );
+  return buildFlutterTargetValidationResult({
+    targetRoot,
+    changedFiles,
+    allowedPaths: input.allowedPaths ?? [],
+    fileIssues,
+    validationHints: input.validationHints,
+    expectedFiles,
+    missingExpectedFiles,
+  });
+}
+
+async function collectChangedFiles(
+  targetRoot: string,
+  gitBase: string | undefined,
+): Promise<string[]> {
+  const diff = await runGit(
+    targetRoot,
+    gitBase ? ['diff', '--name-only', gitBase] : ['diff', '--name-only'],
+  );
+  const staged = await runGit(targetRoot, [
+    'diff',
+    '--cached',
+    '--name-only',
+  ]);
+  const untracked = await runGit(targetRoot, [
+    'ls-files',
+    '--others',
+    '--exclude-standard',
+  ]);
+  return [
+    ...new Set(
+      [...splitLines(diff), ...splitLines(staged), ...splitLines(untracked)].map(
+        (value) => value.split(path.sep).join('/'),
+      ),
+    ),
+  ];
+}
+
+async function runGit(cwd: string, args: string[]): Promise<string> {
+  try {
+    return (
+      await execFileAsync('git', ['-C', cwd, ...args], {
+        maxBuffer: 4 * 1024 * 1024,
+      })
+    ).stdout;
+  } catch {
+    return '';
+  }
+}
+
+async function collectMissingFiles(
+  targetRoot: string,
+  files: string[],
+): Promise<string[]> {
+  const missing: string[] = [];
+  for (const file of files) {
+    try {
+      await access(path.join(targetRoot, file));
+    } catch {
+      missing.push(file);
+    }
+  }
+  return missing;
+}
+
+function splitLines(value: string): string[] {
+  return value
+    .split(/\r?\n/g)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
 
 export async function scanFlutterTargetDartFiles(
   targetRoot: string,

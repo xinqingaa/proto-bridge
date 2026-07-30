@@ -6,6 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { fixtures } from "../packages/core/dist/v2/index.js";
+import { createAgentHandoff } from "../packages/core/dist/v2/capture/index.js";
 import { LocalFileStore } from "../packages/core/dist/v2/store/index.js";
 
 const repoRoot = path.resolve(
@@ -47,6 +48,43 @@ try {
       },
     ],
   });
+  await writer.putCatalogRevision({
+    schemaVersion: 1,
+    catalogRevisionId: "catalog-task-list-screen-v1",
+    workspaceId: reference.WORKSPACE_ID,
+    bundleId: reference.BUNDLE_ID,
+    prototypeId: reference.PROTOTYPE_ID,
+    kind: "screen",
+    inputDigest: "sha256:task-list-screen-v1",
+    createdAt: "2026-07-30T08:00:00.000Z",
+    entries: [
+      {
+        objectId: reference.SCREEN_ID,
+        digest: "sha256:task-list",
+        value: { title: "任务列表" },
+        blobIds: [],
+      },
+    ],
+  });
+  await writer.putIssue(reference.BUNDLE_ID, reference.UNKNOWN_ISSUE);
+  const staleness = await writer.createStalenessReport({
+    bundleId: reference.BUNDLE_ID,
+    snapshotId: fixedSnapshotId,
+    inputVersion: "consumer-check-v1",
+    currentDependencyDigests: {
+      "registry:ledger-planet.task-list": "registry-task-list-v1",
+      "source:ledger-planet.task-list": "source-task-list-v1",
+    },
+  });
+  const handoff = await createAgentHandoff({
+    store: writer,
+    bundleId: reference.BUNDLE_ID,
+    snapshotId: fixedSnapshotId,
+    selectedCases: reference.RUN_1.selection.cases,
+    stalenessReport: staleness,
+    currentInputVersion: staleness.inputVersion,
+    acknowledgedRiskKinds: [],
+  });
 
   client = await startClient([
     "--store-root",
@@ -57,15 +95,50 @@ try {
 
   const tools = await client.request("tools/list", {});
   for (const name of [
+    "inspect_evidence_workspace",
     "list_evidence_bundles",
+    "list_evidence_history",
     "read_evidence_snapshot",
     "read_evidence_case",
+    "read_evidence_run",
+    "read_evidence_revision",
+    "read_evidence_fragment",
+    "read_evidence_catalog",
+    "read_evidence_issue",
+    "read_evidence_staleness",
+    "read_agent_handoff",
+    "read_evidence_blob",
   ]) {
     assert(
       tools.tools?.some((tool) => tool.name === name),
       `tools/list is missing ${name}.`,
     );
   }
+
+  const workspace = parseToolJson(
+    await client.request("tools/call", {
+      name: "inspect_evidence_workspace",
+      arguments: {},
+    }),
+  );
+  assert(
+    workspace.workspace?.workspaceId === reference.WORKSPACE_ID,
+    "MCP is not bound to the expected logical Workspace.",
+  );
+
+  const history = parseToolJson(
+    await client.request("tools/call", {
+      name: "list_evidence_history",
+      arguments: { bundleId: reference.BUNDLE_ID },
+    }),
+  );
+  assert(
+    history.catalogs?.[0]?.catalogRevisionId ===
+      "catalog-task-list-screen-v1" &&
+      history.issues?.[0]?.issueId === reference.UNKNOWN_ISSUE.issueId &&
+      history.handoffs?.[0]?.handoffId === handoff.handoffId,
+    "MCP history does not expose Catalog, Issue and Handoff refs.",
+  );
 
   const listedBefore = parseToolJson(
     await client.request("tools/call", {
@@ -76,6 +149,107 @@ try {
   assert(
     listedBefore.bundles?.[0]?.activeSnapshotId === fixedSnapshotId,
     "Bundle discovery did not expose the writer active Snapshot.",
+  );
+
+  const runResult = parseToolJson(
+    await client.request("tools/call", {
+      name: "read_evidence_run",
+      arguments: {
+        bundleId: reference.BUNDLE_ID,
+        runId: reference.RUN_1.runId,
+      },
+    }),
+  );
+  assert(
+    runResult.coverage?.counts?.selected === 1,
+    "Run reader did not expose immutable Run Coverage.",
+  );
+
+  const revisionResult = parseToolJson(
+    await client.request("tools/call", {
+      name: "read_evidence_revision",
+      arguments: {
+        bundleId: reference.BUNDLE_ID,
+        snapshotId: fixedSnapshotId,
+        revisionId: reference.PRIMARY_ACTIVE_REVISION.revisionId,
+      },
+    }),
+  );
+  assert(
+    revisionResult.revisionId === reference.PRIMARY_ACTIVE_REVISION.revisionId,
+    "Revision reader did not preserve the requested revision.",
+  );
+
+  const fragmentResult = parseToolJson(
+    await client.request("tools/call", {
+      name: "read_evidence_fragment",
+      arguments: {
+        bundleId: reference.BUNDLE_ID,
+        snapshotId: fixedSnapshotId,
+        revisionId: reference.PRIMARY_ACTIVE_REVISION.revisionId,
+        pbId: "ledger-planet.task-list.root",
+      },
+    }),
+  );
+  assert(
+    fragmentResult.facts?.[0]?.factId ===
+      "ledger-planet.task-list.root.role",
+    "Fragment reader did not return fixed-revision facts.",
+  );
+
+  const catalogResult = parseToolJson(
+    await client.request("tools/call", {
+      name: "read_evidence_catalog",
+      arguments: {
+        bundleId: reference.BUNDLE_ID,
+        catalogRevisionId: "catalog-task-list-screen-v1",
+      },
+    }),
+  );
+  assert(
+    catalogResult.kind === "screen",
+    "Catalog revision is not readable.",
+  );
+
+  const issueResult = parseToolJson(
+    await client.request("tools/call", {
+      name: "read_evidence_issue",
+      arguments: {
+        bundleId: reference.BUNDLE_ID,
+        issueId: reference.UNKNOWN_ISSUE.issueId,
+      },
+    }),
+  );
+  assert(
+    issueResult.nextAction === reference.UNKNOWN_ISSUE.nextAction,
+    "Evidence Issue is not readable.",
+  );
+
+  const stalenessResult = parseToolJson(
+    await client.request("tools/call", {
+      name: "read_evidence_staleness",
+      arguments: {
+        bundleId: reference.BUNDLE_ID,
+        snapshotId: fixedSnapshotId,
+        reportId: staleness.reportId,
+      },
+    }),
+  );
+  assert(
+    stalenessResult.snapshotId === fixedSnapshotId,
+    "Staleness reader did not enforce the fixed Snapshot.",
+  );
+
+  const handoffResult = parseToolJson(
+    await client.request("tools/call", {
+      name: "read_agent_handoff",
+      arguments: { handoffId: handoff.handoffId },
+    }),
+  );
+  assert(
+    handoffResult.handoff?.snapshotId === fixedSnapshotId &&
+      Array.isArray(handoffResult.mandatoryRiskReport),
+    "Handoff reader did not return fixed refs and mandatory risks.",
   );
 
   const fixedBefore = parseToolJson(

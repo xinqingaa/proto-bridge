@@ -5,6 +5,7 @@ import type {
   CaseEvidenceRevisionId,
   CatalogRevisionId,
   HandoffId,
+  IssueId,
   JobId,
   RunId,
   SnapshotId,
@@ -95,6 +96,14 @@ export function catalogRevisionPath(root: string, bundleId: BundleId, catalogRev
 
 export function catalogRevisionsDir(root: string, bundleId: BundleId): string {
   return path.join(bundleDir(root, bundleId), 'catalogs');
+}
+
+export function issuePath(root: string, bundleId: BundleId, issueId: IssueId): string {
+  return path.join(bundleDir(root, bundleId), 'issues', `${issueId}.json`);
+}
+
+export function issuesDir(root: string, bundleId: BundleId): string {
+  return path.join(bundleDir(root, bundleId), 'issues');
 }
 
 export function blobRecordPath(root: string, bundleId: BundleId, blobId: BlobId): string {

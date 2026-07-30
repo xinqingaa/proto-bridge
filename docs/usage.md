@@ -251,10 +251,14 @@ const result = await validateUiCapability({
 | `pnpm run test:e2e:cli`    | CLI hybrid artifacts 冒烟                               |
 | `pnpm run test:e2e:mcp`    | MCP hybrid 协议与 validation 冒烟                       |
 | `pnpm run test:e2e`        | CLI + MCP hybrid 冒烟                                   |
+| `pnpm run test:e2e:mcp-v2` | 固定 Snapshot/revision 的 Store-backed MCP E2E          |
+| `pnpm run test:e2e:consumer-v2` | Handoff → MCP → 无 PB 配置目标仓库 → validation E2E |
+| `pnpm run test:e2e:evidence-slice` | PBWork 与 MCP 同 Snapshot 黄金切片 E2E           |
+| `pnpm run verify:v2:phase-five` | Core/CLI/MCP/PBWork/Consumer 第五阶段总门禁         |
 
 e2e 默认使用 `tests/fixtures/`；`url`、`sourceRoot`、`targetRoot` 可用参数覆盖，见根 `package.json` 与 `scripts/test-e2e.mjs`。
 
-Local Service 默认只监听 loopback。可用 `PB_V2_SERVICE_PORT`、`PB_V2_STORE_ROOT`、`PBWORK_ORIGIN` 与 `PBWORK_RUNTIME_ORIGIN` 调整本地端口、Store 和明确 Origin；session token 只经 `Authorization` header 传递。阶段五完成前没有正式 V2 CLI/MCP 命令，PBWork Capture Console 是 V2 的正式交互入口。
+Local Service 默认只监听 loopback。可用 `PB_V2_SERVICE_PORT`、`PB_V2_STORE_ROOT`、`PBWORK_ORIGIN` 与 `PBWORK_RUNTIME_ORIGIN` 调整本地端口、Store 和明确 Origin；session token 只经 `Authorization` header 传递。V2 CLI 使用 `proto-bridge v2 ...` 生产同一 Store Evidence；MCP 使用 `--store-root` 与 `--workspace` 只读连接该 Workspace。
 
 改本仓库的约束与检查单：`AGENT.md`、`skills/proto-bridge`。
 

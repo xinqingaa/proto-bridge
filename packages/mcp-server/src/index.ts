@@ -5,7 +5,7 @@ import { reconstructPageContext } from '@proto-bridge/core/workflows/capability-
 import {
   findFlutterTargetExamples,
   getFlutterTargetConventions,
-} from '@proto-bridge/core/target/flutter-app';
+} from '@proto-bridge/core/target/flutter-app/query';
 import { parseServerOptions } from './services/config.js';
 import { startMcpServer } from './server/stdio-json-rpc.js';
 
@@ -21,7 +21,7 @@ export type {
 } from '@proto-bridge/core/workflows/capability-first';
 export type {
   FindFlutterTargetExamplesInput,
-} from '@proto-bridge/core/target/flutter-app';
+} from '@proto-bridge/core/target/flutter-app/query';
 
 if (isDirectRun()) {
   startMcpServer(parseServerOptions(process.argv.slice(2)));

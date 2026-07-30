@@ -1,7 +1,16 @@
 import type { JsonObject, JsonValue } from '../types.js';
 import { readObject, readString } from '../utils/args.js';
+import { V2_CONSUMER_GUIDE_URI } from '../consumer-guide.js';
 
 const promptDefinitions = [
+  {
+    name: 'consume_evidence_handoff',
+    description: '按固定 Snapshot/revision 消费 V2 Agent Handoff，实现并验证目标代码。',
+    arguments: [
+      { name: 'handoffId', description: '持久化 Agent Handoff ID。', required: true },
+      { name: 'targetRoot', description: '目标仓库根目录；仓库无需 ProtoBridge 配置。', required: true },
+    ],
+  },
   {
     name: 'reconstruct_url_ui',
     description: '运行完整 ProtoBridge capability-first 流程：统一重构上下文、可选 OCR、实现并验证。',
@@ -55,6 +64,7 @@ export function getPrompt(params: JsonObject | undefined): JsonObject {
   const name = readString(params, 'name');
   const args = readObject(params, 'arguments') ?? {};
 
+  if (name === 'consume_evidence_handoff') return promptResponse(name, consumeEvidenceHandoffPrompt(args));
   if (name === 'reconstruct_url_ui') return promptResponse(name, reconstructUrlUiPrompt(args));
   if (name === 'capture_url_evidence') return promptResponse(name, captureUrlEvidencePrompt(args));
   if (name === 'investigate_visual_mismatch') return promptResponse(name, investigateVisualMismatchPrompt(args));
@@ -62,6 +72,22 @@ export function getPrompt(params: JsonObject | undefined): JsonObject {
   if (name === 'validate_ui_reconstruction') return promptResponse(name, validateUiReconstructionPrompt(args));
 
   throw new Error(`Unknown prompt: ${name ?? '(missing)'}`);
+}
+
+function consumeEvidenceHandoffPrompt(args: JsonObject): string[] {
+  const handoffId = readString(args, 'handoffId') ?? '<handoffId>';
+  const targetRoot = readString(args, 'targetRoot') ?? '<targetRoot>';
+  return [
+    `消费 ProtoBridge V2 Handoff ${handoffId}，目标仓库为 ${targetRoot}。`,
+    `先读取 ${V2_CONSUMER_GUIDE_URI} 并严格遵守顺序。`,
+    '调用 inspect_evidence_workspace 和 read_agent_handoff；Workspace 或固定引用不匹配时停止。',
+    '编辑前原样报告 mandatoryRiskReport 的全部 risks；生产者已确认不等于 Consumer 可以省略。',
+    '读取 Handoff 固定的 Snapshot、Staleness Report 与具体 revision/Fragment，禁止替换为 active/latest。',
+    '读取目标仓库自身规范与既有实现；目标仓库不需要 proto-bridge 配置。',
+    '必要时调用 read_target_conventions/find_target_examples，它们只提供独立 Target 查询，不能回写或覆盖 Evidence。',
+    '自行决定文件、组件、状态、路由和 Token，完成实现并运行目标原生测试。',
+    '最后调用 validate_target_changes，报告变更文件、验证结果、全部原始 risks 和剩余风险。',
+  ];
 }
 
 function reconstructUrlUiPrompt(args: JsonObject): string[] {

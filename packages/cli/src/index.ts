@@ -17,6 +17,7 @@ import {
   type ReconstructPageContextInput,
   type ReconstructPageContextResult,
 } from '@proto-bridge/core/workflows/capability-first';
+import { runV2Cli } from './v2/index.js';
 
 type ParsedArgs = {
   command: string;
@@ -68,6 +69,10 @@ const ALLOWED_FLAGS = new Set([
 const BOOLEAN_FLAGS = new Set(['capture', 'help', 'trace']);
 
 async function main(): Promise<void> {
+  if (process.argv[2] === 'v2') {
+    process.exitCode = await runV2Cli(process.argv.slice(3));
+    return;
+  }
   const parsed = parseArgs(process.argv.slice(2));
 
   if (parsed.values.help || parsed.command === 'help') {

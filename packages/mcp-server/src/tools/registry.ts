@@ -5,10 +5,21 @@ import { reconstructPageContextTool } from './reconstruct-page-context.js';
 import { getTargetConventionsTool } from './get-target-conventions.js';
 import { findTargetExamplesTool } from './find-target-examples.js';
 import { validateTargetChangesTool } from './validate-target-changes.js';
+import { validateTargetV2Tool } from './validate-target-v2.js';
 import {
+  inspectEvidenceWorkspaceTool,
+  listEvidenceHistoryTool,
   listEvidenceBundlesTool,
+  readAgentHandoffTool,
+  readEvidenceBlobTool,
+  readEvidenceCatalogTool,
   readEvidenceCaseTool,
+  readEvidenceFragmentTool,
+  readEvidenceIssueTool,
+  readEvidenceRevisionTool,
+  readEvidenceRunTool,
   readEvidenceSnapshotTool,
+  readEvidenceStalenessTool,
 } from './read-evidence.js';
 
 const baseObjectSchema = {
@@ -50,6 +61,15 @@ const readOnlyJsonOutputSchema = {
   description: '以工具文本形式返回的只读 JSON 数据。',
 };
 
+const bundleInput = {
+  bundleId: { type: 'string', description: 'Evidence Bundle ID。' },
+};
+
+const fixedSnapshotInput = {
+  ...bundleInput,
+  snapshotId: { type: 'string', description: '必须固定读取的 Snapshot ID。' },
+};
+
 const validationOutputSchema = {
   type: 'object',
   properties: {
@@ -63,6 +83,38 @@ const validationOutputSchema = {
 };
 
 const toolDefinitions: JsonValue[] = [
+  {
+    name: 'inspect_evidence_workspace',
+    title: '检查 Evidence Workspace',
+    description: '返回 MCP 当前绑定的逻辑 Workspace；不返回或接受 Store 物理路径。',
+    annotations: {
+      title: '检查 Evidence Workspace',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    inputSchema: baseObjectSchema,
+    outputSchema: readOnlyJsonOutputSchema,
+  },
+  {
+    name: 'list_evidence_history',
+    title: '列出 Bundle 固定历史',
+    description: '列出 Snapshot、Run/Coverage、Catalog revision、Issue、Staleness Report 与 Handoff 的逻辑索引。',
+    annotations: {
+      title: '列出 Bundle 固定历史',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    inputSchema: {
+      ...baseObjectSchema,
+      properties: bundleInput,
+      required: ['bundleId'],
+    },
+    outputSchema: readOnlyJsonOutputSchema,
+  },
   {
     name: 'list_evidence_bundles',
     title: '列出证据 Bundle',
@@ -99,8 +151,7 @@ const toolDefinitions: JsonValue[] = [
     inputSchema: {
       ...baseObjectSchema,
       properties: {
-        bundleId: { type: 'string', description: 'Evidence Bundle ID。' },
-        snapshotId: { type: 'string', description: '必须固定读取的 Snapshot ID。' },
+        ...fixedSnapshotInput,
       },
       required: ['bundleId', 'snapshotId'],
     },
@@ -123,13 +174,206 @@ const toolDefinitions: JsonValue[] = [
     inputSchema: {
       ...baseObjectSchema,
       properties: {
-        bundleId: { type: 'string', description: 'Evidence Bundle ID。' },
-        snapshotId: { type: 'string', description: '固定 Snapshot ID。' },
+        ...fixedSnapshotInput,
         caseId: { type: 'string', description: 'Snapshot 中的稳定 Case ID。' },
       },
       required: ['bundleId', 'snapshotId', 'caseId'],
     },
     outputSchema: readOnlyJsonOutputSchema,
+  },
+  {
+    name: 'read_evidence_run',
+    title: '读取固定 Run 与 Coverage',
+    description: '按 Bundle + Run ID 读取不可变 Run、Selection、Attempt 与 Run Coverage。',
+    annotations: {
+      title: '读取固定 Evidence Run',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    inputSchema: {
+      ...baseObjectSchema,
+      properties: {
+        ...bundleInput,
+        runId: { type: 'string' },
+      },
+      required: ['bundleId', 'runId'],
+    },
+    outputSchema: readOnlyJsonOutputSchema,
+  },
+  {
+    name: 'read_evidence_revision',
+    title: '读取固定 Evidence Revision',
+    description: '仅当具体 revision 可由指定 Snapshot 到达时返回，绝不替换为 active/latest。',
+    annotations: {
+      title: '读取固定 Evidence Revision',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    inputSchema: {
+      ...baseObjectSchema,
+      properties: {
+        ...fixedSnapshotInput,
+        revisionId: { type: 'string' },
+      },
+      required: ['bundleId', 'snapshotId', 'revisionId'],
+    },
+    outputSchema: readOnlyJsonOutputSchema,
+  },
+  {
+    name: 'read_evidence_fragment',
+    title: '读取固定 Fragment Evidence',
+    description: '从固定 Snapshot/revision 中按稳定 pbId/pbKey 读取 Fragment facts 与 provenance。',
+    annotations: {
+      title: '读取固定 Fragment Evidence',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    inputSchema: {
+      ...baseObjectSchema,
+      properties: {
+        ...fixedSnapshotInput,
+        revisionId: { type: 'string' },
+        pbId: { type: 'string' },
+        pbKey: { type: 'string' },
+      },
+      required: ['bundleId', 'snapshotId', 'revisionId', 'pbId'],
+    },
+    outputSchema: readOnlyJsonOutputSchema,
+  },
+  {
+    name: 'read_evidence_catalog',
+    title: '读取固定 Catalog Revision',
+    description: '按明确 Catalog revision ID 读取 Prototype/Navigation/Screen/Component/Token/Asset/Scenario Catalog。',
+    annotations: {
+      title: '读取固定 Catalog Revision',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    inputSchema: {
+      ...baseObjectSchema,
+      properties: {
+        ...bundleInput,
+        catalogRevisionId: { type: 'string' },
+      },
+      required: ['bundleId', 'catalogRevisionId'],
+    },
+    outputSchema: readOnlyJsonOutputSchema,
+  },
+  {
+    name: 'read_evidence_issue',
+    title: '读取固定 Evidence Issue',
+    description: '按明确 Issue ID 读取 severity、原因、影响范围、refs 与 next action。',
+    annotations: {
+      title: '读取固定 Evidence Issue',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    inputSchema: {
+      ...baseObjectSchema,
+      properties: {
+        ...bundleInput,
+        issueId: { type: 'string' },
+      },
+      required: ['bundleId', 'issueId'],
+    },
+    outputSchema: readOnlyJsonOutputSchema,
+  },
+  {
+    name: 'read_evidence_staleness',
+    title: '读取固定 Staleness Report',
+    description: '要求 Report 同时匹配明确 Bundle 与 Snapshot，禁止使用其他 freshness 结果替代。',
+    annotations: {
+      title: '读取固定 Staleness Report',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    inputSchema: {
+      ...baseObjectSchema,
+      properties: {
+        ...fixedSnapshotInput,
+        reportId: { type: 'string' },
+      },
+      required: ['bundleId', 'snapshotId', 'reportId'],
+    },
+    outputSchema: readOnlyJsonOutputSchema,
+  },
+  {
+    name: 'read_agent_handoff',
+    title: '读取 Agent Handoff',
+    description: '读取固定 Workspace/Snapshot/revision refs，并单独返回 Consumer 必须报告的全部 risks。',
+    annotations: {
+      title: '读取 Agent Handoff',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    inputSchema: {
+      ...baseObjectSchema,
+      properties: { handoffId: { type: 'string' } },
+      required: ['handoffId'],
+    },
+    outputSchema: readOnlyJsonOutputSchema,
+  },
+  {
+    name: 'read_evidence_blob',
+    title: '读取受控 Evidence Blob',
+    description: '读取固定 Snapshot 或明确 Catalog revision 可达的 Blob；Debug/Trace 必须显式 allowDebug=true。',
+    annotations: {
+      title: '读取受控 Evidence Blob',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    inputSchema: {
+      ...baseObjectSchema,
+      properties: {
+        ...fixedSnapshotInput,
+        blobId: { type: 'string' },
+        catalogRevisionId: { type: 'string' },
+        allowDebug: { type: 'boolean' },
+      },
+      required: ['bundleId', 'snapshotId', 'blobId'],
+    },
+    outputSchema: readOnlyJsonOutputSchema,
+  },
+  {
+    name: 'validate_target_changes',
+    title: '验证目标工程变更',
+    description: [
+      'V2 独立 Target validation：只读取目标仓库的实际变更、约定和明显风险。',
+      '不读取或写入 Evidence Bundle，不依赖目标仓库存在 ProtoBridge 配置。',
+    ].join('\n'),
+    annotations: {
+      title: '验证目标工程变更',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    inputSchema: {
+      ...baseObjectSchema,
+      properties: {
+        targetRoot: { type: 'string' },
+        gitBase: { type: 'string' },
+        allowedPaths: stringArraySchema,
+        expectedFiles: stringArraySchema,
+      },
+    },
+    outputSchema: validationOutputSchema,
   },
   {
     name: 'reconstruct_page_context',
@@ -308,6 +552,9 @@ export async function callTool(context: ToolContext, params: JsonObject | undefi
   const args = readObject(params, 'arguments') ?? {};
   if (!name) throw new Error('tools/call requires params.name');
 
+  if (name === 'inspect_evidence_workspace') {
+    return toolJson(await inspectEvidenceWorkspaceTool(context));
+  }
   if (name === 'list_evidence_bundles') {
     return toolJson(await listEvidenceBundlesTool(context));
   }
@@ -316,6 +563,36 @@ export async function callTool(context: ToolContext, params: JsonObject | undefi
   }
   if (name === 'read_evidence_case') {
     return toolJson(await readEvidenceCaseTool(context, args));
+  }
+  if (name === 'list_evidence_history') {
+    return toolJson(await listEvidenceHistoryTool(context, args));
+  }
+  if (name === 'read_evidence_run') {
+    return toolJson(await readEvidenceRunTool(context, args));
+  }
+  if (name === 'read_evidence_revision') {
+    return toolJson(await readEvidenceRevisionTool(context, args));
+  }
+  if (name === 'read_evidence_fragment') {
+    return toolJson(await readEvidenceFragmentTool(context, args));
+  }
+  if (name === 'read_evidence_catalog') {
+    return toolJson(await readEvidenceCatalogTool(context, args));
+  }
+  if (name === 'read_evidence_issue') {
+    return toolJson(await readEvidenceIssueTool(context, args));
+  }
+  if (name === 'read_evidence_staleness') {
+    return toolJson(await readEvidenceStalenessTool(context, args));
+  }
+  if (name === 'read_agent_handoff') {
+    return toolJson(await readAgentHandoffTool(context, args));
+  }
+  if (name === 'read_evidence_blob') {
+    return toolJson(await readEvidenceBlobTool(context, args));
+  }
+  if (name === 'validate_target_changes') {
+    return toolJson(await validateTargetV2Tool(args));
   }
   if (name === 'reconstruct_page_context') return toolJson(await reconstructPageContextTool(context, args));
   if (name === 'read_target_conventions') return toolJson(await getTargetConventionsTool(context, args));

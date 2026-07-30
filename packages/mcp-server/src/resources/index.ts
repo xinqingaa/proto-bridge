@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { getFlutterTargetConventions } from '@proto-bridge/core/target/flutter-app';
+import { getFlutterTargetConventions } from '@proto-bridge/core/target/flutter-app/query';
 import type { JsonObject, JsonValue, ToolContext } from '../types.js';
 import { readString } from '../utils/args.js';
 import { resolveProjectRoot, resolveRuntimeConfig, resolveRuntimeTargetRoot } from '../services/config.js';
@@ -18,6 +18,10 @@ import {
   evidenceScreenshotUri,
   evidenceSnapshotUri,
 } from '../services/evidence-store-reader.js';
+import {
+  V2_CONSUMER_GUIDE,
+  V2_CONSUMER_GUIDE_URI,
+} from '../consumer-guide.js';
 
 export function resourceTemplatesList(): JsonValue[] {
   return [
@@ -64,6 +68,11 @@ export function resourceTemplatesList(): JsonValue[] {
 export function resourcesList(context: ToolContext): JsonValue[] {
   return [
     {
+      uri: V2_CONSUMER_GUIDE_URI,
+      name: 'ProtoBridge V2 Handoff Consumer 指南',
+      mimeType: 'text/markdown',
+    },
+    {
       uri: WORKFLOW_GUIDE_URI,
       name: 'ProtoBridge UI 还原指南',
       mimeType: 'text/markdown',
@@ -90,6 +99,10 @@ export function resourcesList(context: ToolContext): JsonValue[] {
 export async function readResource(context: ToolContext, params: JsonObject | undefined): Promise<JsonObject> {
   const uri = readString(params, 'uri');
   if (!uri) throw new Error('resources/read requires params.uri');
+
+  if (uri === V2_CONSUMER_GUIDE_URI) {
+    return textContent(uri, 'text/markdown', V2_CONSUMER_GUIDE);
+  }
 
   if (uri === WORKFLOW_GUIDE_URI) {
     return textContent(uri, 'text/markdown', renderWorkflowGuide());
