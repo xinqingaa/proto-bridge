@@ -30,7 +30,7 @@ export const router = createRouter({
           name: "workbench-capture",
           component: () => import("@/capture/CaptureConsole.vue"),
           meta: {
-            sectionId: "overview",
+            sectionId: "capture",
             resourceKind: "capture",
             title: "证据采集",
           },
@@ -44,7 +44,7 @@ export const router = createRouter({
             snapshotId: String(route.params.snapshotId),
           }),
           meta: {
-            sectionId: "prototypes",
+            sectionId: "capture",
             resourceKind: "evidence",
             title: "采集结果",
           },

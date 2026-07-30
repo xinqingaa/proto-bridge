@@ -153,16 +153,24 @@ function iconSize(node: WorkbenchNavigationTreeNode): number {
         </component>
       </div>
 
-      <WorkbenchNavigationTree
-        v-if="hasChildren(node) && isExpanded(node)"
-        :nodes="node.children ?? []"
-        :expanded-ids="expandedIds"
-        :active-id="activeId"
-        :attention-counts="attentionCounts"
-        :depth="depth + 1"
-        :icon-for="iconFor"
-        @toggle="emit('toggle', $event)"
-      />
+      <Transition name="nav-expand">
+        <div
+          v-if="hasChildren(node) && isExpanded(node)"
+          class="nav-expand-wrap"
+        >
+          <div class="nav-expand-inner">
+            <WorkbenchNavigationTree
+              :nodes="node.children ?? []"
+              :expanded-ids="expandedIds"
+              :active-id="activeId"
+              :attention-counts="attentionCounts"
+              :depth="depth + 1"
+              :icon-for="iconFor"
+              @toggle="emit('toggle', $event)"
+            />
+          </div>
+        </div>
+      </Transition>
     </div>
   </div>
 </template>
@@ -185,6 +193,37 @@ function iconSize(node: WorkbenchNavigationTreeNode): number {
 .nav-tree.tree-depth-3,
 .nav-tree.tree-depth-4 {
   padding-left: 8px;
+}
+.nav-expand-wrap {
+  display: grid;
+  grid-template-rows: 1fr;
+}
+.nav-expand-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+.nav-expand-enter-active,
+.nav-expand-leave-active {
+  display: grid;
+  transition:
+    grid-template-rows 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 180ms ease;
+}
+.nav-expand-enter-from,
+.nav-expand-leave-to {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+.nav-expand-enter-to,
+.nav-expand-leave-from {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-expand-enter-active,
+  .nav-expand-leave-active {
+    transition: none;
+  }
 }
 .nav-node {
   display: flex;
@@ -267,10 +306,15 @@ function iconSize(node: WorkbenchNavigationTreeNode): number {
   );
 }
 .node-chevron {
-  transition: transform 140ms ease;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 .node-chevron.is-open {
   transform: rotate(90deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .node-chevron {
+    transition: none;
+  }
 }
 .node-content {
   display: flex;

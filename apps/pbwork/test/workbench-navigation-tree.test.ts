@@ -1,18 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { buildWorkbenchNavigationTree } from "@/workbench/navigation";
+import {
+  buildWorkbenchNavigationTree,
+  countPrototypesForLifecycle,
+} from "@/workbench/navigation";
 
 describe("workbench navigation tree", () => {
-  it("builds nested resource counts", () => {
+  it("builds nested resource counts without lifecycle rows", () => {
     const tree = buildWorkbenchNavigationTree();
     const prototypes = tree.find((node) => node.id === "prototypes")!;
     const components = tree.find((node) => node.id === "components")!;
-    const lifecycle = prototypes.children?.find(
-      (node) => node.id === "prototype-lifecycles",
-    );
-    const assets = prototypes.children?.find(
-      (node) => node.id === "prototype-assets",
-    );
-    const fieldService = assets?.children?.find(
+    const capture = tree.find((node) => node.id === "capture")!;
+    const fieldService = prototypes.children?.find(
       (node) => node.id === "prototype-field-service",
     );
     const workOrders = fieldService?.children?.find(
@@ -22,26 +20,35 @@ describe("workbench navigation tree", () => {
     expect(prototypes.count).toBe(2);
     expect(components.children).toHaveLength(2);
     expect(
-      lifecycle?.children?.find((node) => node.id === "lifecycle-active")
-        ?.count,
-    ).toBe(2);
+      prototypes.children?.some((node) => node.kind === "lifecycle"),
+    ).toBe(false);
     expect(fieldService?.count).toBe(7);
     expect(workOrders?.count).toBe(7);
+    expect(capture.children?.[0]).toMatchObject({
+      id: "capture-console",
+      to: "/workbench/capture",
+    });
   });
 
-  it("uses effective lifecycle overrides in badges", () => {
-    const tree = buildWorkbenchNavigationTree((id, registered) =>
-      id === "ledger-planet" ? "review" : registered,
-    );
-    const lifecycles = tree
-      .find((node) => node.id === "prototypes")
-      ?.children?.find((node) => node.id === "prototype-lifecycles")?.children;
+  it("filters prototypes by lifecycle and counts overrides", () => {
+    const effective = (
+      id: string,
+      registered: "active" | "review" | "final" | "archived",
+    ) => (id === "ledger-planet" ? ("review" as const) : registered);
 
-    expect(
-      lifecycles?.find((node) => node.id === "lifecycle-active")?.count,
-    ).toBe(1);
-    expect(
-      lifecycles?.find((node) => node.id === "lifecycle-review")?.count,
-    ).toBe(1);
+    expect(countPrototypesForLifecycle("active", effective)).toBe(1);
+    expect(countPrototypesForLifecycle("review", effective)).toBe(1);
+
+    const activeTree = buildWorkbenchNavigationTree(effective, "active");
+    const reviewTree = buildWorkbenchNavigationTree(effective, "review");
+    const activePrototypes = activeTree.find((node) => node.id === "prototypes");
+    const reviewPrototypes = reviewTree.find((node) => node.id === "prototypes");
+
+    expect(activePrototypes?.children?.map((node) => node.id)).toEqual([
+      "prototype-field-service",
+    ]);
+    expect(reviewPrototypes?.children?.map((node) => node.id)).toEqual([
+      "prototype-ledger-planet",
+    ]);
   });
 });

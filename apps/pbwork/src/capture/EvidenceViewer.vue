@@ -106,8 +106,8 @@ watch(
 <template>
   <main class="evidence-viewer" data-testid="evidence-viewer">
     <header class="viewer-header">
-      <RouterLink to="/workbench/prototypes/all" class="back-link">
-        <ArrowLeft :size="16" /> 返回原型工作台
+      <RouterLink to="/workbench/capture" class="back-link">
+        <ArrowLeft :size="16" /> 返回采集证据
       </RouterLink>
       <div class="header-main">
         <div>

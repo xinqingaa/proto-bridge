@@ -66,6 +66,8 @@ import {
   GalleryHorizontal,
   Command,
   Home,
+  ChevronDown,
+  ScanLine,
 } from "lucide-vue-next";
 import { RouterLink, RouterView, useRoute } from "vue-router";
 import {
@@ -75,9 +77,11 @@ import {
 import { useSelectionStore } from "@/app/stores/selection";
 import { useCommentsStore } from "@/app/stores/comments";
 import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
+import { useCaptureStore } from "@/app/stores/capture";
 import {
   buildPrototypeTree,
   buildWorkbenchNavigationTree,
+  countPrototypesForLifecycle,
   getSecondaryNavigation,
   isWorkbenchSectionId,
   parsePrototypeLifecycle,
@@ -86,6 +90,7 @@ import {
   type WorkbenchNavigationTreeNode,
 } from "@/workbench/navigation";
 import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
+import { LIFECYCLE_LABELS } from "@/design-system/types";
 import InspectorPanel from "@/workbench/inspector/InspectorPanel.vue";
 import WorkbenchNavigationTree from "@/workbench/WorkbenchNavigationTree.vue";
 import CaptureComposerSheet from "@/capture/CaptureComposerSheet.vue";
@@ -99,13 +104,7 @@ function loadPrototypeTreeExpanded(): string[] {
   try {
     const raw = window.localStorage.getItem(PROTOTYPE_TREE_EXPAND_KEY);
     if (!raw) {
-      return [
-        "foundations",
-        "components",
-        "prototypes",
-        "prototype-lifecycles",
-        "prototype-assets",
-      ];
+      return ["foundations", "components", "prototypes"];
     }
     const parsed = JSON.parse(raw) as unknown;
     return Array.isArray(parsed)
@@ -121,6 +120,7 @@ const workbench = useWorkbenchStore();
 const selection = useSelectionStore();
 const comments = useCommentsStore();
 const prototypeLifecycle = usePrototypeLifecycleStore();
+const capture = useCaptureStore();
 const searchOpen = ref(false);
 const searchQuery = ref("");
 const treeQuery = ref("");
@@ -154,6 +154,12 @@ const selectedSecondaryId = computed(() => {
   }
   if (sectionId.value === "components") {
     return String(route.params.componentId ?? "");
+  }
+  if (sectionId.value === "capture") {
+    if (route.meta.resourceKind === "evidence") {
+      return `bundle-${String(route.params.bundleId ?? "")}`;
+    }
+    return "capture-console";
   }
   if (sectionId.value === "prototypes") {
     const lifecycle = parsePrototypeLifecycle(
@@ -232,6 +238,32 @@ const lifecycleFilters = computed(() =>
   ),
 );
 
+const lifecycleMenuItems = computed(() =>
+  lifecycleFilters.value.map((item) => {
+    const lifecycle =
+      parsePrototypeLifecycle(item.id.replace("lifecycle-", "")) ?? "all";
+    return {
+      ...item,
+      lifecycle,
+      count: countPrototypesForLifecycle(
+        lifecycle,
+        (id, registered) => prototypeLifecycle.overrides[id] ?? registered,
+      ),
+    };
+  }),
+);
+const lifecycleFilterLabel = computed(() =>
+  activePrototypeLifecycle.value === "all"
+    ? "全部原型"
+    : LIFECYCLE_LABELS[activePrototypeLifecycle.value],
+);
+const lifecycleFilterCount = computed(() =>
+  countPrototypesForLifecycle(
+    activePrototypeLifecycle.value,
+    (id, registered) => prototypeLifecycle.overrides[id] ?? registered,
+  ),
+);
+
 const expandedTreeIds = ref<string[]>(loadPrototypeTreeExpanded());
 
 function persistTreeExpanded() {
@@ -302,6 +334,9 @@ const navigationTree = computed(() =>
   withCurrentTheme(
     buildWorkbenchNavigationTree(
       (id, registered) => prototypeLifecycle.overrides[id] ?? registered,
+      sectionId.value === "prototypes"
+        ? activePrototypeLifecycle.value
+        : "all",
     ),
   ),
 );
@@ -311,7 +346,24 @@ const sectionNavigationTree = computed(() => {
     (node) => node.id === sectionId.value,
   );
   if (!current) return [];
-  return sectionId.value === "overview" ? [current] : (current.children ?? []);
+  if (sectionId.value === "overview") return [current];
+  if (sectionId.value === "capture") {
+    const bundles = (capture.consoleState?.bundles ?? [])
+      .filter((item) => item.activeSnapshot)
+      .map((item) => {
+        const prototype = loadPrototypes().find(
+          (record) => record.id === item.bundle.prototypeId,
+        );
+        return {
+          id: `bundle-${item.bundle.bundleId}`,
+          label: prototype?.label ?? item.bundle.prototypeId,
+          kind: "item" as const,
+          to: `/workbench/evidence/${item.bundle.bundleId}/${item.activeSnapshot!.snapshotId}`,
+        };
+      });
+    return [...(current.children ?? []), ...bundles];
+  }
+  return current.children ?? [];
 });
 
 function filterNavigationNodes(
@@ -360,12 +412,13 @@ const activeNavigationId = computed(() => {
   if (sectionId.value === "overview") return "overview";
   if (sectionId.value === "foundations") return selectedSecondaryId.value;
   if (sectionId.value === "components") return selectedSecondaryId.value;
+  if (sectionId.value === "capture") return selectedSecondaryId.value;
   const lifecycle = parsePrototypeLifecycle(
     String(route.params.lifecycle ?? ""),
   );
-  if (lifecycle) return `lifecycle-${lifecycle}`;
+  if (lifecycle) return "";
   const prototypeId = selectedPrototypeId.value;
-  if (!prototypeId) return "prototypes";
+  if (!prototypeId) return "";
   const screen = loadPrototypeScreens().find(
     (item) =>
       item.prototypeId === prototypeId &&
@@ -394,9 +447,61 @@ function ancestorIds(
   return [];
 }
 
+function findNavigationNode(
+  nodes: WorkbenchNavigationTreeNode[],
+  target: string,
+): WorkbenchNavigationTreeNode | null {
+  for (const node of nodes) {
+    if (node.id === target) return node;
+    const match = findNavigationNode(node.children ?? [], target);
+    if (match) return match;
+  }
+  return null;
+}
+
+function expansionPathForActive(
+  nodes: WorkbenchNavigationTreeNode[],
+  activeId: string,
+): string[] {
+  if (!activeId) return [];
+  const parents = ancestorIds(nodes, activeId);
+  const node = findNavigationNode(nodes, activeId);
+  if (node?.kind === "prototype" || node?.kind === "screen") {
+    return [...parents, node.id];
+  }
+  return parents;
+}
+
+function isPreservedExpandId(id: string): boolean {
+  return (
+    id === "foundations" ||
+    id === "components" ||
+    id === "capture" ||
+    id.startsWith("foundation-") ||
+    id.startsWith("component-") ||
+    id.startsWith("bundle-") ||
+    id === "capture-console"
+  );
+}
+
 watch(
-  [activeNavigationId, navigationTree],
-  ([activeId, tree]) => {
+  [activeNavigationId, sectionNavigationTree, sectionId, navigationTree],
+  ([activeId, sectionTree, section, tree]) => {
+    if (section === "prototypes") {
+      const path = expansionPathForActive(sectionTree, activeId);
+      const preserved = expandedTreeIds.value.filter(isPreservedExpandId);
+      const next = [...new Set([...preserved, ...path])];
+      if (
+        next.length === expandedTreeIds.value.length &&
+        next.every((id) => expandedTreeIds.value.includes(id))
+      ) {
+        return;
+      }
+      expandedTreeIds.value = next;
+      persistTreeExpanded();
+      return;
+    }
+
     const required = ancestorIds(tree, activeId);
     const next = [...new Set([...expandedTreeIds.value, ...required])];
     if (next.length === expandedTreeIds.value.length) return;
@@ -439,6 +544,24 @@ const breadcrumbs = computed(() => {
     { title: section.value.label, disabled: false, to: section.value.to },
   ];
   if (sectionId.value !== "prototypes") {
+    if (
+      sectionId.value === "capture" &&
+      route.meta.resourceKind === "evidence"
+    ) {
+      const bundleId = String(route.params.bundleId ?? "");
+      const summary = capture.consoleState?.bundles.find(
+        (item) => item.bundle.bundleId === bundleId,
+      );
+      const prototype = loadPrototypes().find(
+        (record) => record.id === summary?.bundle.prototypeId,
+      );
+      items.push({
+        title: prototype?.label ?? "采集结果",
+        disabled: true,
+        to: route.fullPath,
+      });
+      return items;
+    }
     const current = secondaryItems.value.find(
       (item) => item.id === selectedSecondaryId.value,
     );
@@ -513,6 +636,7 @@ const primaryIcons = {
   foundations: Palette,
   components: Shapes,
   prototypes: Layers3,
+  capture: ScanLine,
 } as const;
 
 function secondaryIconFor(id: string) {
@@ -532,6 +656,7 @@ function secondaryIconFor(id: string) {
   if (foundationIcons[id]) return foundationIcons[id];
   if (id.startsWith("token-")) return SwatchBook;
   if (id.startsWith("theme-")) return Paintbrush;
+  if (id === "capture-console" || id.startsWith("bundle-")) return ScanLine;
   if (id.startsWith("lifecycle-all")) return LayoutGrid;
   if (id.startsWith("lifecycle-active")) return CircleDot;
   if (id.startsWith("lifecycle-review")) return ClipboardCheck;
@@ -572,8 +697,13 @@ function secondaryIconFor(id: string) {
 }
 
 function navigationTreeIconFor(node: WorkbenchNavigationTreeNode) {
-  if (node.kind === "group" || node.kind === "variant") return null;
-  if (node.kind === "prototype") return Layers3;
+  if (
+    node.kind === "group" ||
+    node.kind === "variant" ||
+    node.kind === "prototype"
+  ) {
+    return null;
+  }
   if (node.kind === "screen") return PanelTop;
   if (node.id === "overview") return Home;
   return secondaryIconFor(node.id);
@@ -603,6 +733,16 @@ watch(isScreenCanvas, (onCanvas) => {
     selection.setCommentMode(false);
   }
 });
+
+watch(
+  sectionId,
+  (id) => {
+    if (id === "capture" && capture.connected) {
+      void capture.refreshConsole();
+    }
+  },
+  { immediate: true },
+);
 
 function prefersReducedMotion(): boolean {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -787,8 +927,8 @@ onMounted(() => {
       class="primary-navigation"
       permanent
       rail
-      width="72"
-      rail-width="72"
+      width="56"
+      rail-width="56"
       border
     >
       <v-list
@@ -842,6 +982,18 @@ onMounted(() => {
             <span v-if="resourceContentExpanded" class="panel-title">{{
               section.label
             }}</span>
+            <label
+              v-if="resourceContentExpanded"
+              class="tree-search heading-search"
+            >
+              <Search :size="14" aria-hidden="true" />
+              <input
+                v-model="treeQuery"
+                type="search"
+                :placeholder="`搜索${section.label}`"
+                :aria-label="`搜索${section.label}资源`"
+              />
+            </label>
             <v-tooltip
               :text="
                 workbench.resourcePanelOpen ? '收起资源导航' : '展开资源导航'
@@ -879,15 +1031,43 @@ onMounted(() => {
               class="secondary-nav panel-expanded"
               aria-label="工作台导航"
             >
-              <label class="tree-search global-tree-search">
-                <Search :size="14" aria-hidden="true" />
-                <input
-                  v-model="treeQuery"
-                  type="search"
-                  :placeholder="`搜索${section.label}资源`"
-                  :aria-label="`搜索${section.label}资源`"
-                />
-              </label>
+              <v-menu
+                v-if="sectionId === 'prototypes'"
+                location="bottom start"
+                :close-on-content-click="true"
+              >
+                <template #activator="{ props }">
+                  <button
+                    v-bind="props"
+                    type="button"
+                    class="lifecycle-filter-btn"
+                    :aria-label="`生命周期筛选：${lifecycleFilterLabel}`"
+                  >
+                    <span class="lifecycle-filter-label">{{
+                      lifecycleFilterLabel
+                    }}</span>
+                    <span class="lifecycle-filter-count">{{
+                      lifecycleFilterCount
+                    }}</span>
+                    <ChevronDown :size="14" aria-hidden="true" />
+                  </button>
+                </template>
+                <v-list
+                  class="lifecycle-filter-menu"
+                  density="compact"
+                  nav
+                  aria-label="生命周期筛选"
+                >
+                  <v-list-item
+                    v-for="item in lifecycleMenuItems"
+                    :key="item.id"
+                    :to="item.to"
+                    :active="item.lifecycle === activePrototypeLifecycle"
+                    :title="item.label"
+                    :subtitle="`${item.count} 个原型`"
+                  />
+                </v-list>
+              </v-menu>
               <WorkbenchNavigationTree
                 :nodes="filteredNavigationTree"
                 :expanded-ids="displayedExpandedIds"
@@ -1400,14 +1580,20 @@ onMounted(() => {
   gap: 8px;
 }
 .panel-title {
+  flex: 0 0 auto;
   font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: 0.02em;
+}
+.heading-search {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .is-collapsed .panel-heading {
   justify-content: center;
 }
 .panel-toggle {
+  flex: 0 0 auto;
   color: var(--shell-muted);
 }
 
@@ -1415,7 +1601,11 @@ onMounted(() => {
   background: rgb(var(--v-theme-surface)) !important;
 }
 .primary-nav-list {
-  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 0;
 }
 .primary-navigation :deep(.v-list-item-title),
 .primary-navigation :deep(.v-list-item__prepend),
@@ -1423,16 +1613,19 @@ onMounted(() => {
   display: none;
 }
 .primary-navigation :deep(.primary-nav-item) {
-  min-height: 52px;
-  margin: 4px 10px;
+  width: 48px;
+  min-height: 48px;
+  max-height: 48px;
+  margin: 0;
   padding: 0 !important;
-  border-radius: 14px;
+  border-radius: 12px;
   color: var(--shell-muted);
   justify-content: center;
 }
 .primary-navigation :deep(.primary-nav-item .v-list-item__content) {
   display: flex;
   width: 100%;
+  height: 100%;
   padding: 0;
   justify-content: center;
   align-items: center;
@@ -1450,8 +1643,8 @@ onMounted(() => {
 .primary-nav-content {
   display: grid;
   place-items: center;
-  width: 100%;
-  height: 52px;
+  width: 48px;
+  height: 48px;
   color: inherit;
 }
 
@@ -1463,9 +1656,47 @@ onMounted(() => {
   overflow: auto;
   padding-bottom: 12px;
 }
+.lifecycle-filter-btn {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  margin: 0 4px;
+  padding: 0 10px;
+  min-height: 32px;
+  border: 1px solid var(--shell-border);
+  border-radius: 9px;
+  background: var(--shell-soft);
+  color: rgb(var(--v-theme-on-surface));
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+.lifecycle-filter-btn:hover {
+  background: var(--shell-soft-strong);
+}
+.lifecycle-filter-label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.lifecycle-filter-count {
+  color: var(--shell-muted);
+  font-size: 0.6875rem;
+  font-weight: 500;
+}
+.lifecycle-filter-menu {
+  min-width: 200px;
+}
 .global-tree-search {
   flex: 0 0 auto;
   margin-bottom: 2px;
+}
+.heading-search.tree-search {
+  margin: 0;
+  height: 30px;
+  padding: 0 8px;
 }
 .rail-mode-label {
   margin: 4px 0 2px;
