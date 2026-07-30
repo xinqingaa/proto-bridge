@@ -79,12 +79,9 @@ export type FlutterTargetConventionProfile = {
 
 export type AnalyzeFlutterContextInput = {
   flutterRoot: string;
-  prototypeModule?: string | undefined;
   screenId?: string | undefined;
   route?: string | undefined;
   targetModule?: string | undefined;
-  sourceRoutes?: import('./source.js').VueRouteHint[] | undefined;
-  sourceRouteRegistry?: import('./source.js').SourceRouteEntry[] | undefined;
 };
 
 export type FlutterContextAnalysis = {
@@ -93,7 +90,6 @@ export type FlutterContextAnalysis = {
   suggestedModule?: string | undefined;
   routeRegistry: FlutterRouteEntry[];
   routeMapping?: FlutterRouteMapping | undefined;
-  routeIntentMappings?: FlutterRouteIntentMapping[] | undefined;
   existingModules: string[];
   reusableWidgets: string[];
   routesFiles: string[];
@@ -128,10 +124,6 @@ export type FlutterRouteMapping = {
   evidence: string[];
   candidates: FlutterRouteEntry[];
   unresolved?: boolean | undefined;
-};
-
-export type FlutterRouteIntentMapping = FlutterRouteMapping & {
-  action?: string | undefined;
 };
 
 export type FlutterComponentRole =

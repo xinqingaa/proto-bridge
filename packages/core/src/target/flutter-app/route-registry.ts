@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { readFile } from 'node:fs/promises';
 import fg from 'fast-glob';
-import type { FlutterRouteEntry, FlutterRouteIntentMapping, FlutterRouteMapping, MappingConfidence, SourceRouteEntry } from '../../types/index.js';
+import type { FlutterRouteEntry, FlutterRouteMapping, MappingConfidence } from '../../types/index.js';
 import { toPosixPath } from '../../shared/paths.js';
 
 type DartFile = {
@@ -52,12 +52,11 @@ export async function scanFlutterRouteRegistry(flutterRoot: string): Promise<Flu
 export function matchFlutterRoute(input: {
   sourceRoute?: string | undefined;
   sourceModule?: string | undefined;
-  sourceRegistry?: SourceRouteEntry[] | undefined;
   targetRoutes: FlutterRouteEntry[];
   existingModules: string[];
 }): FlutterRouteMapping | undefined {
   if (input.targetRoutes.length === 0) return undefined;
-  const sourceCandidates = sourceRouteCandidates(input.sourceRoute, input.sourceRegistry);
+  const sourceCandidates = sourceRouteCandidates(input.sourceRoute);
   const scored = input.targetRoutes
     .map((route) => {
       const score = routeScore(route, sourceCandidates, input.sourceModule);
@@ -112,29 +111,6 @@ export function matchFlutterRoute(input: {
     ].slice(0, 10),
     candidates,
   };
-}
-
-export function matchFlutterRouteIntents(input: {
-  routes: Array<{
-    action: string;
-    target?: string | undefined;
-  }>;
-  sourceModule?: string | undefined;
-  sourceRegistry?: SourceRouteEntry[] | undefined;
-  targetRoutes: FlutterRouteEntry[];
-  existingModules: string[];
-}): FlutterRouteIntentMapping[] {
-  return input.routes.flatMap((route) => {
-    if (route.action !== 'navigate' || !isRouteLike(route.target)) return [];
-    const mapping = matchFlutterRoute({
-      sourceRoute: route.target,
-      sourceModule: sourceModuleForRoute(route.target, input.sourceRegistry) ?? input.sourceModule,
-      sourceRegistry: input.sourceRegistry,
-      targetRoutes: input.targetRoutes,
-      existingModules: input.existingModules,
-    });
-    return mapping ? [{ ...mapping, action: route.action }] : [];
-  });
 }
 
 function parseGetPages(file: DartFile, constants: Map<string, string>): FlutterRouteEntry[] {
@@ -342,16 +318,9 @@ function routeScore(route: FlutterRouteEntry, sourceCandidates: string[], source
   return score;
 }
 
-function sourceRouteCandidates(route: string | undefined, registry: SourceRouteEntry[] | undefined): string[] {
+function sourceRouteCandidates(route: string | undefined): string[] {
   const current = route ? normalizeTargetRoute(route) : undefined;
-  const related = (registry ?? [])
-    .filter((entry) => {
-      if (!current) return false;
-      return entry.route === current;
-    })
-    .flatMap((entry) => [entry.route, entry.screenId, entry.view, entry.key, entry.title, entry.label])
-    .filter((item): item is string => Boolean(item));
-  return dedupe([...(current ? [current] : []), ...related]);
+  return current ? [current] : [];
 }
 
 function routeMatchReason(route: FlutterRouteEntry, score: number, sourceCandidates: string[]): string {
@@ -364,16 +333,6 @@ function moduleFromRoute(route: string, existingModules: string[]): string | und
   const first = route.split(/[?#]/)[0]?.split('/').filter(Boolean)[0];
   if (!first) return undefined;
   return existingModules.find((moduleName) => normalizeModuleName(moduleName) === normalizeModuleName(first));
-}
-
-function sourceModuleForRoute(route: string | undefined, registry: SourceRouteEntry[] | undefined): string | undefined {
-  const normalized = route ? normalizeTargetRoute(route) : undefined;
-  if (!normalized) return undefined;
-  return registry?.find((entry) => entry.route === normalized)?.module;
-}
-
-function isRouteLike(value: string | undefined): boolean {
-  return Boolean(value && value.includes('/'));
 }
 
 function normalizeModuleName(value: string): string {
@@ -450,8 +409,4 @@ function confidenceScore(confidence: MappingConfidence): number {
   if (confidence === 'high') return 3;
   if (confidence === 'medium') return 2;
   return 1;
-}
-
-function dedupe<T>(items: T[]): T[] {
-  return [...new Set(items.filter(Boolean))];
 }

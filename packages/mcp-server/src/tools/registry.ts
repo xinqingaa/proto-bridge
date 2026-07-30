@@ -3,7 +3,7 @@ import { readObject, readString } from '../utils/args.js';
 import { toolJson } from '../server/responses.js';
 import { getTargetConventionsTool } from './get-target-conventions.js';
 import { findTargetExamplesTool } from './find-target-examples.js';
-import { validateTargetV2Tool } from './validate-target-v2.js';
+import { validateTargetChangesTool } from './validate-target.js';
 import {
   inspectEvidenceWorkspaceTool,
   listEvidenceHistoryTool,
@@ -107,7 +107,7 @@ export async function callTool(
     read_evidence_blob: () => readEvidenceBlobTool(context, args),
     read_target_conventions: () => getTargetConventionsTool(args),
     find_target_examples: () => findTargetExamplesTool(args),
-    validate_target_changes: () => validateTargetV2Tool(args),
+    validate_target_changes: () => validateTargetChangesTool(args),
   };
   const handler = handlers[name];
   if (!handler) throw new Error(`Unknown tool: ${name}`);

@@ -15,6 +15,13 @@ const HttpOrigin = z
     }
   });
 
+/** Keys from the deleted V1 config surface; rejected by `.strict()`. */
+export const OBSOLETE_WORKSPACE_CONFIG_KEYS = [
+  'source',
+  'target',
+  'output',
+] as const;
+
 export const V2WorkspaceConfig = z
   .object({
     schemaVersion: z.literal(V2_SCHEMA_MAJOR),
@@ -50,13 +57,6 @@ export const V2WorkspaceConfig = z
         port: 3988,
         allowedOrigins: [],
       }),
-    source: z
-      .object({
-        adapter: z.string().min(1),
-        root: z.string().min(1).optional(),
-      })
-      .strict()
-      .optional(),
   })
   .strict();
 

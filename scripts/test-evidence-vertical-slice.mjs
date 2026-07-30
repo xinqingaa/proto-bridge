@@ -30,7 +30,7 @@ try {
       "exec",
       "playwright",
       "test",
-      "e2e/evidence-usability-v2.spec.ts",
+      "e2e/evidence-usability.spec.ts",
       "--grep",
       "high-quality readable evidence",
     ],

@@ -3,7 +3,7 @@ import type { JsonObject } from '../types.js';
 import { readString, readStringArray } from '../utils/args.js';
 import { resolveRuntimeTargetRoot } from '../services/config.js';
 
-export async function validateTargetV2Tool(args: JsonObject): Promise<unknown> {
+export async function validateTargetChangesTool(args: JsonObject): Promise<unknown> {
   return validateFlutterTargetChanges({
     targetRoot: resolveRuntimeTargetRoot(readString(args, 'targetRoot')),
     ...(readString(args, 'gitBase')

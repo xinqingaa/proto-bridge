@@ -1,11 +1,11 @@
-export type V2Args = {
+export type CliArgs = {
   command: string[];
   flags: Map<string, string[]>;
 };
 
 const BOOLEAN_FLAGS = new Set(['apply', 'json', 'help']);
 
-export function parseV2Args(argv: string[]): V2Args {
+export function parseCliArgs(argv: string[]): CliArgs {
   const command: string[] = [];
   const flags = new Map<string, string[]>();
   for (let index = 0; index < argv.length; index += 1) {
@@ -43,24 +43,24 @@ export function parseV2Args(argv: string[]): V2Args {
 }
 
 export function flag(
-  args: V2Args,
+  args: CliArgs,
   name: string,
 ): string | undefined {
   return args.flags.get(name)?.at(-1);
 }
 
-export function flags(args: V2Args, name: string): string[] {
+export function flags(args: CliArgs, name: string): string[] {
   return args.flags.get(name) ?? [];
 }
 
-export function requiredFlag(args: V2Args, name: string): string {
+export function requiredFlag(args: CliArgs, name: string): string {
   const value = flag(args, name);
   if (!value) throw new Error(`--${name} is required.`);
   return value;
 }
 
 export function numberFlag(
-  args: V2Args,
+  args: CliArgs,
   name: string,
 ): number | undefined {
   const value = flag(args, name);
@@ -70,6 +70,6 @@ export function numberFlag(
   return parsed;
 }
 
-export function booleanFlag(args: V2Args, name: string): boolean {
+export function booleanFlag(args: CliArgs, name: string): boolean {
   return flag(args, name) === 'true';
 }

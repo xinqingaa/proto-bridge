@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "workspaceId": "pbwork-local",
+  "runtime": {
+    "baseUrl": "http://127.0.0.1:3977",
+    "allowedOrigins": []
+  },
+  "store": {
+    "root": ".proto-bridge/store",
+    "retainArchivedSnapshots": 1
+  },
+  "capture": {
+    "maxCases": 100
+  },
+  "service": {
+    "host": "127.0.0.1",
+    "port": 3988,
+    "allowedOrigins": ["http://127.0.0.1:3988"]
+  }
+}

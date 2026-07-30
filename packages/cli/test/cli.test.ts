@@ -4,8 +4,8 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { preflightSelection } from '@proto-bridge/core/v2/capture';
 import { ProtoBridgeLocalService } from '@proto-bridge/local-service';
-import { runV2Cli, V2_EXIT_CODES } from '../src/v2/index.js';
-import type { V2CliIo } from '../src/v2/output.js';
+import { runCli, CLI_EXIT_CODES } from '../src/cli.js';
+import type { CliIo } from '../src/output.js';
 
 const tempRoots: string[] = [];
 
@@ -24,7 +24,7 @@ async function tempRoot(): Promise<string> {
 }
 
 function recorder(cwd: string): {
-  io: V2CliIo;
+  io: CliIo;
   stdout: string[];
   stderr: string[];
 } {
@@ -90,7 +90,7 @@ describe('ProtoBridge CLI', () => {
     const root = await tempRoot();
     const output = recorder(root);
 
-    expect(await runV2Cli(['--help'], output.io)).toBe(V2_EXIT_CODES.ok);
+    expect(await runCli(['--help'], output.io)).toBe(CLI_EXIT_CODES.ok);
     const usage = output.stdout.join('\n');
     expect(usage).toContain('proto-bridge workspace init');
     expect(usage).not.toContain('proto-bridge v2');
@@ -101,7 +101,7 @@ describe('ProtoBridge CLI', () => {
     const root = await tempRoot();
     const output = recorder(root);
     expect(
-      await runV2Cli(
+      await runCli(
         [
           'workspace',
           'init',
@@ -113,14 +113,14 @@ describe('ProtoBridge CLI', () => {
         ],
         output.io,
       ),
-    ).toBe(V2_EXIT_CODES.ok);
+    ).toBe(CLI_EXIT_CODES.ok);
     const config = JSON.parse(
       await readFile(path.join(root, 'proto-bridge.json'), 'utf8'),
     );
     expect(config).toMatchObject({ schemaVersion: 1, workspaceId: 'cli-test' });
     expect(
-      await runV2Cli(['workspace', 'doctor', '--json'], output.io),
-    ).toBe(V2_EXIT_CODES.ok);
+      await runCli(['workspace', 'doctor', '--json'], output.io),
+    ).toBe(CLI_EXIT_CODES.ok);
     expect(JSON.parse(output.stdout.at(-1) ?? '{}')).toMatchObject({
       workspaceId: 'cli-test',
       bundles: 0,
@@ -130,7 +130,7 @@ describe('ProtoBridge CLI', () => {
   it('uses one Matrix for preflight and screenshot-only Capture', async () => {
     const root = await tempRoot();
     const output = recorder(root);
-    await runV2Cli(
+    await runCli(
       [
         'workspace',
         'init',
@@ -155,7 +155,7 @@ describe('ProtoBridge CLI', () => {
     );
 
     expect(
-      await runV2Cli(
+      await runCli(
         [
           'preflight',
           '--selection',
@@ -166,12 +166,12 @@ describe('ProtoBridge CLI', () => {
         ],
         output.io,
       ),
-    ).toBe(V2_EXIT_CODES.ok);
+    ).toBe(CLI_EXIT_CODES.ok);
     const preflight = JSON.parse(output.stdout.at(-1) ?? '{}');
     expect(preflight.matrix).toHaveLength(1);
 
     expect(
-      await runV2Cli(
+      await runCli(
         [
           'capture',
           'run',
@@ -187,23 +187,23 @@ describe('ProtoBridge CLI', () => {
         ],
         output.io,
       ),
-    ).toBe(V2_EXIT_CODES.ok);
+    ).toBe(CLI_EXIT_CODES.ok);
     const capture = JSON.parse(output.stdout.at(-1) ?? '{}');
     expect(capture.snapshot.activeSlots).toHaveLength(1);
     expect(capture.storedBlobIds).toHaveLength(1);
     const snapshotId = capture.snapshot.snapshotId as string;
 
     expect(
-      await runV2Cli(
+      await runCli(
         ['bundle', 'inspect', '--bundle', 'cli-screenshot', '--json'],
         output.io,
       ),
-    ).toBe(V2_EXIT_CODES.ok);
+    ).toBe(CLI_EXIT_CODES.ok);
     const evidence = JSON.parse(output.stdout.at(-1) ?? '{}');
     expect(evidence.summary.screenshots).toBe(1);
 
     expect(
-      await runV2Cli(
+      await runCli(
         [
           'stale',
           'check',
@@ -217,9 +217,9 @@ describe('ProtoBridge CLI', () => {
         ],
         output.io,
       ),
-    ).toBe(V2_EXIT_CODES.ok);
+    ).toBe(CLI_EXIT_CODES.ok);
     expect(
-      await runV2Cli(
+      await runCli(
         [
           'handoff',
           'create',
@@ -235,13 +235,13 @@ describe('ProtoBridge CLI', () => {
         ],
         output.io,
       ),
-    ).toBe(V2_EXIT_CODES.ok);
+    ).toBe(CLI_EXIT_CODES.ok);
     const handoff = JSON.parse(output.stdout.at(-1) ?? '{}');
     expect(handoff.snapshotId).toBe(snapshotId);
 
     const exportPath = path.join(root, 'handoff.json');
     expect(
-      await runV2Cli(
+      await runCli(
         [
           'handoff',
           'export',
@@ -253,19 +253,19 @@ describe('ProtoBridge CLI', () => {
         ],
         output.io,
       ),
-    ).toBe(V2_EXIT_CODES.ok);
+    ).toBe(CLI_EXIT_CODES.ok);
     expect(JSON.parse(await readFile(exportPath, 'utf8')).handoffId).toBe(
       handoff.handoffId,
     );
 
     expect(
-      await runV2Cli(
+      await runCli(
         ['bundle', 'archive', '--bundle', 'cli-screenshot', '--json'],
         output.io,
       ),
-    ).toBe(V2_EXIT_CODES.ok);
+    ).toBe(CLI_EXIT_CODES.ok);
     expect(
-      await runV2Cli(
+      await runCli(
         [
           'capture',
           'run',
@@ -280,22 +280,22 @@ describe('ProtoBridge CLI', () => {
         ],
         output.io,
       ),
-    ).toBe(V2_EXIT_CODES.blocked);
+    ).toBe(CLI_EXIT_CODES.blocked);
   });
 
   it('rejects a global risk bypass', async () => {
     const root = await tempRoot();
     const output = recorder(root);
     expect(
-      await runV2Cli(['preflight', '--force'], output.io),
-    ).toBe(V2_EXIT_CODES.error);
+      await runCli(['preflight', '--force'], output.io),
+    ).toBe(CLI_EXIT_CODES.error);
     expect(output.stderr.join('\n')).toContain('--force is not supported');
   });
 
   it('produces the same Matrix as the PBWork Local Service', async () => {
     const root = await tempRoot();
     const output = recorder(root);
-    await runV2Cli(
+    await runCli(
       [
         'workspace',
         'init',
@@ -310,7 +310,7 @@ describe('ProtoBridge CLI', () => {
     const selectionPath = path.join(root, 'selection.json');
     await writeFile(manifestPath, JSON.stringify(manifest()), 'utf8');
     await writeFile(selectionPath, JSON.stringify(screenshotDraft()), 'utf8');
-    await runV2Cli(
+    await runCli(
       [
         'preflight',
         '--selection',

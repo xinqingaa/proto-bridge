@@ -39,12 +39,12 @@ import {
   flag,
   flags,
   numberFlag,
-  parseV2Args,
+  parseCliArgs,
   requiredFlag,
-  type V2Args,
+  type CliArgs,
 } from './args.js';
-import { loadV2Config, type LoadedV2Config } from './config.js';
-import { emit, processIo, type V2CliIo } from './output.js';
+import { loadCliConfig, type LoadedCliConfig } from './config.js';
+import { emit, processIo, type CliIo } from './output.js';
 
 const EXIT = {
   ok: 0,
@@ -57,12 +57,12 @@ const EXIT = {
   blocked: 7,
 } as const;
 
-export async function runV2Cli(
+export async function runCli(
   argv: string[],
-  io: V2CliIo = processIo,
+  io: CliIo = processIo,
 ): Promise<number> {
   try {
-    return await execute(parseV2Args(argv), io);
+    return await execute(parseCliArgs(argv), io);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     io.stderr(message);
@@ -78,14 +78,14 @@ export async function runV2Cli(
   }
 }
 
-async function execute(args: V2Args, io: V2CliIo): Promise<number> {
+async function execute(args: CliArgs, io: CliIo): Promise<number> {
   const command = args.command.join(' ');
   if (booleanFlag(args, 'help') || command === '' || command === 'help') {
-    io.stdout(v2Usage());
+    io.stdout(cliUsage());
     return EXIT.ok;
   }
   if (command === 'workspace init') return initWorkspace(args, io);
-  const loaded = await loadV2Config(flag(args, 'config'), io.cwd);
+  const loaded = await loadCliConfig(flag(args, 'config'), io.cwd);
   if (command === 'workspace doctor') return workspaceDoctor(args, io, loaded);
   if (command === 'preflight') return preflightCommand(args, io, loaded);
   if (command === 'capture run') return captureCommand(args, io, loaded);
@@ -108,7 +108,7 @@ async function execute(args: V2Args, io: V2CliIo): Promise<number> {
   throw new Error(`Unknown ProtoBridge command: ${command}`);
 }
 
-async function initWorkspace(args: V2Args, io: V2CliIo): Promise<number> {
+async function initWorkspace(args: CliArgs, io: CliIo): Promise<number> {
   const configPath = path.resolve(
     io.cwd,
     flag(args, 'config') ?? 'proto-bridge.json',
@@ -167,9 +167,9 @@ async function initWorkspace(args: V2Args, io: V2CliIo): Promise<number> {
 }
 
 async function workspaceDoctor(
-  args: V2Args,
-  io: V2CliIo,
-  loaded: LoadedV2Config,
+  args: CliArgs,
+  io: CliIo,
+  loaded: LoadedCliConfig,
 ): Promise<number> {
   const store = await openStore(loaded);
   try {
@@ -190,15 +190,15 @@ async function workspaceDoctor(
   }
 }
 
-async function loadDraft(args: V2Args): Promise<SelectionDraft> {
+async function loadDraft(args: CliArgs): Promise<SelectionDraft> {
   return SelectionDraft.parse(
     JSON.parse(await readFile(requiredFlag(args, 'selection'), 'utf8')) as unknown,
   );
 }
 
 async function resolvePreflight(
-  args: V2Args,
-  loaded: LoadedV2Config,
+  args: CliArgs,
+  loaded: LoadedCliConfig,
   draftInput?: SelectionDraft,
 ): Promise<CapturePreflight> {
   const draft = draftInput ?? (await loadDraft(args));
@@ -227,9 +227,9 @@ async function resolvePreflight(
 }
 
 async function preflightCommand(
-  args: V2Args,
-  io: V2CliIo,
-  loaded: LoadedV2Config,
+  args: CliArgs,
+  io: CliIo,
+  loaded: LoadedCliConfig,
 ): Promise<number> {
   const preflight = await resolvePreflight(args, loaded);
   emit(
@@ -267,7 +267,7 @@ class AttachedScreenshotDriver implements CaseCaptureDriver {
   }
 }
 
-async function captureDriver(args: V2Args): Promise<CaseCaptureDriver> {
+async function captureDriver(args: CliArgs): Promise<CaseCaptureDriver> {
   const screenshotPath = flag(args, 'screenshot');
   if (!screenshotPath) return new PlaywrightCaseCaptureDriver();
   const bytes = await readFile(screenshotPath);
@@ -288,8 +288,8 @@ async function captureDriver(args: V2Args): Promise<CaseCaptureDriver> {
 }
 
 async function runCapture(
-  args: V2Args,
-  loaded: LoadedV2Config,
+  args: CliArgs,
+  loaded: LoadedCliConfig,
   draft?: SelectionDraft,
   bundleIdInput?: string,
 ) {
@@ -334,9 +334,9 @@ async function runCapture(
 }
 
 async function captureCommand(
-  args: V2Args,
-  io: V2CliIo,
-  loaded: LoadedV2Config,
+  args: CliArgs,
+  io: CliIo,
+  loaded: LoadedCliConfig,
 ): Promise<number> {
   const result = await runCapture(args, loaded);
   emit(
@@ -349,9 +349,9 @@ async function captureCommand(
 }
 
 async function jobStatus(
-  args: V2Args,
-  io: V2CliIo,
-  loaded: LoadedV2Config,
+  args: CliArgs,
+  io: CliIo,
+  loaded: LoadedCliConfig,
 ): Promise<number> {
   const store = await openStore(loaded, true);
   try {
@@ -371,9 +371,9 @@ async function jobStatus(
 }
 
 async function jobCancel(
-  args: V2Args,
-  io: V2CliIo,
-  loaded: LoadedV2Config,
+  args: CliArgs,
+  io: CliIo,
+  loaded: LoadedCliConfig,
 ): Promise<number> {
   const store = await openStore(loaded);
   try {
@@ -389,9 +389,9 @@ async function jobCancel(
 }
 
 async function jobRetry(
-  args: V2Args,
-  io: V2CliIo,
-  loaded: LoadedV2Config,
+  args: CliArgs,
+  io: CliIo,
+  loaded: LoadedCliConfig,
 ): Promise<number> {
   const store = await openStore(loaded, true);
   let draft: SelectionDraft;
@@ -427,9 +427,9 @@ async function jobRetry(
 }
 
 async function bundleList(
-  args: V2Args,
-  io: V2CliIo,
-  loaded: LoadedV2Config,
+  args: CliArgs,
+  io: CliIo,
+  loaded: LoadedCliConfig,
 ): Promise<number> {
   const store = await openStore(loaded, true);
   try {
@@ -448,7 +448,7 @@ async function bundleList(
 }
 
 async function evidenceDetails(
-  loaded: LoadedV2Config,
+  loaded: LoadedCliConfig,
   bundleIdInput: string,
   snapshotIdInput?: string,
 ) {
@@ -477,9 +477,9 @@ async function evidenceDetails(
 }
 
 async function bundleInspect(
-  args: V2Args,
-  io: V2CliIo,
-  loaded: LoadedV2Config,
+  args: CliArgs,
+  io: CliIo,
+  loaded: LoadedCliConfig,
 ): Promise<number> {
   const details = await evidenceDetails(loaded, requiredFlag(args, 'bundle'));
   emit(io, booleanFlag(args, 'json'), details);
@@ -487,9 +487,9 @@ async function bundleInspect(
 }
 
 async function snapshotInspect(
-  args: V2Args,
-  io: V2CliIo,
-  loaded: LoadedV2Config,
+  args: CliArgs,
+  io: CliIo,
+  loaded: LoadedCliConfig,
 ): Promise<number> {
   const details = await evidenceDetails(
     loaded,
@@ -501,9 +501,9 @@ async function snapshotInspect(
 }
 
 async function runInspect(
-  args: V2Args,
-  io: V2CliIo,
-  loaded: LoadedV2Config,
+  args: CliArgs,
+  io: CliIo,
+  loaded: LoadedCliConfig,
 ): Promise<number> {
   const store = await openStore(loaded, true);
   try {
@@ -520,9 +520,9 @@ async function runInspect(
 }
 
 async function caseInspect(
-  args: V2Args,
-  io: V2CliIo,
-  loaded: LoadedV2Config,
+  args: CliArgs,
+  io: CliIo,
+  loaded: LoadedCliConfig,
 ): Promise<number> {
   const details = await evidenceDetails(
     loaded,
@@ -544,9 +544,9 @@ async function caseInspect(
 }
 
 async function bundleFork(
-  args: V2Args,
-  io: V2CliIo,
-  loaded: LoadedV2Config,
+  args: CliArgs,
+  io: CliIo,
+  loaded: LoadedCliConfig,
 ): Promise<number> {
   const store = await openStore(loaded);
   try {
@@ -565,9 +565,9 @@ async function bundleFork(
 }
 
 async function bundleArchive(
-  args: V2Args,
-  io: V2CliIo,
-  loaded: LoadedV2Config,
+  args: CliArgs,
+  io: CliIo,
+  loaded: LoadedCliConfig,
 ): Promise<number> {
   const store = await openStore(loaded);
   try {
@@ -583,9 +583,9 @@ async function bundleArchive(
 }
 
 async function bundleClean(
-  args: V2Args,
-  io: V2CliIo,
-  loaded: LoadedV2Config,
+  args: CliArgs,
+  io: CliIo,
+  loaded: LoadedCliConfig,
 ): Promise<number> {
   const store = await openStore(loaded);
   try {
@@ -646,8 +646,8 @@ async function activeCasesForSnapshot(
 }
 
 async function createCurrentStaleness(
-  args: V2Args,
-  loaded: LoadedV2Config,
+  args: CliArgs,
+  loaded: LoadedCliConfig,
   store: LocalFileStore,
   bundleId: BundleId,
   snapshotId: SnapshotId,
@@ -675,9 +675,9 @@ async function createCurrentStaleness(
 }
 
 async function staleCheck(
-  args: V2Args,
-  io: V2CliIo,
-  loaded: LoadedV2Config,
+  args: CliArgs,
+  io: CliIo,
+  loaded: LoadedCliConfig,
 ): Promise<number> {
   const store = await openStore(loaded);
   try {
@@ -698,9 +698,9 @@ async function staleCheck(
 }
 
 async function handoffCreate(
-  args: V2Args,
-  io: V2CliIo,
-  loaded: LoadedV2Config,
+  args: CliArgs,
+  io: CliIo,
+  loaded: LoadedCliConfig,
 ): Promise<number> {
   const store = await openStore(loaded);
   try {
@@ -738,7 +738,7 @@ async function handoffCreate(
 }
 
 async function getHandoff(
-  loaded: LoadedV2Config,
+  loaded: LoadedCliConfig,
   handoffIdInput: string,
 ): Promise<AgentHandoff> {
   const store = await openStore(loaded, true);
@@ -753,9 +753,9 @@ async function getHandoff(
 }
 
 async function handoffShow(
-  args: V2Args,
-  io: V2CliIo,
-  loaded: LoadedV2Config,
+  args: CliArgs,
+  io: CliIo,
+  loaded: LoadedCliConfig,
 ): Promise<number> {
   const handoff = await getHandoff(loaded, requiredFlag(args, 'handoff'));
   emit(io, booleanFlag(args, 'json'), handoff);
@@ -767,9 +767,9 @@ async function handoffShow(
 }
 
 async function handoffExport(
-  args: V2Args,
-  io: V2CliIo,
-  loaded: LoadedV2Config,
+  args: CliArgs,
+  io: CliIo,
+  loaded: LoadedCliConfig,
 ): Promise<number> {
   const handoff = await getHandoff(loaded, requiredFlag(args, 'handoff'));
   const outputPath = path.resolve(io.cwd, requiredFlag(args, 'output'));
@@ -779,9 +779,9 @@ async function handoffExport(
 }
 
 async function serviceStart(
-  args: V2Args,
-  io: V2CliIo,
-  loaded: LoadedV2Config,
+  args: CliArgs,
+  io: CliIo,
+  loaded: LoadedCliConfig,
 ): Promise<number> {
   const config = loaded.value;
   const allowedOrigins =
@@ -824,7 +824,7 @@ async function serviceStart(
 }
 
 async function openStore(
-  loaded: LoadedV2Config,
+  loaded: LoadedCliConfig,
   readOnly = false,
 ): Promise<LocalFileStore> {
   const store = new LocalFileStore({
@@ -853,7 +853,7 @@ function exitForRun(run: {
     : EXIT.ok;
 }
 
-export function v2Usage(): string {
+export function cliUsage(): string {
   return `Usage:
   proto-bridge workspace init [--config <file>]
   proto-bridge workspace doctor [--json]
@@ -873,4 +873,4 @@ Rules:
   Add --json for stable automation output.`;
 }
 
-export { EXIT as V2_EXIT_CODES };
+export { EXIT as CLI_EXIT_CODES };

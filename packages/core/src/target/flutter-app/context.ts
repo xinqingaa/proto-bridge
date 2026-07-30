@@ -4,7 +4,7 @@ import fg from 'fast-glob';
 import type { AnalyzeFlutterContextInput, FlutterContextAnalysis } from '../../types/index.js';
 import { pathExists, toPosixPath } from '../../shared/paths.js';
 import { detectFlutterTargetConventions } from './architecture-profile.js';
-import { matchFlutterRoute, matchFlutterRouteIntents, scanFlutterRouteRegistry } from './route-registry.js';
+import { matchFlutterRoute, scanFlutterRouteRegistry } from './route-registry.js';
 
 export async function analyzeFlutterContext(input: AnalyzeFlutterContextInput): Promise<FlutterContextAnalysis> {
   const flutterRoot = path.resolve(input.flutterRoot);
@@ -18,15 +18,7 @@ export async function analyzeFlutterContext(input: AnalyzeFlutterContextInput): 
   const routeRegistry = await scanFlutterRouteRegistry(flutterRoot);
   const routeMapping = matchFlutterRoute({
     sourceRoute: input.route,
-    sourceModule: input.prototypeModule ?? input.screenId?.split('.')[0],
-    sourceRegistry: input.sourceRouteRegistry,
-    targetRoutes: routeRegistry,
-    existingModules,
-  });
-  const routeIntentMappings = matchFlutterRouteIntents({
-    routes: input.sourceRoutes ?? [],
-    sourceModule: input.prototypeModule ?? input.screenId?.split('.')[0],
-    sourceRegistry: input.sourceRouteRegistry,
+    sourceModule: input.screenId?.split('.')[0] ?? input.targetModule,
     targetRoutes: routeRegistry,
     existingModules,
   });
@@ -44,7 +36,7 @@ export async function analyzeFlutterContext(input: AnalyzeFlutterContextInput): 
     'assets/**/translations/**/*.{arb,json}', 'assets/**/l10n/**/*.{arb,json}',
   ]);
   const assetDirectories = await discoverAssetDirectories(flutterRoot);
-  const reusableWidgets = await collectReusableWidgets(flutterRoot, input);
+  const reusableWidgets = await collectReusableWidgets(flutterRoot);
   const similarFiles = suggestedModule ? await collectSimilarFiles(flutterRoot, suggestedModule, input.screenId) : [];
   const targetConventions = await detectFlutterTargetConventions({
     flutterRoot,
@@ -52,7 +44,7 @@ export async function analyzeFlutterContext(input: AnalyzeFlutterContextInput): 
   });
 
   if (!suggestedModule) {
-    warnings.push('Unable to suggest a Flutter module from prototype module or screenId.');
+    warnings.push('Unable to suggest a Flutter module from screenId or target module.');
   }
 
   return {
@@ -61,7 +53,6 @@ export async function analyzeFlutterContext(input: AnalyzeFlutterContextInput): 
     suggestedModule,
     routeRegistry,
     ...(routeMapping ? { routeMapping } : {}),
-    ...(routeIntentMappings.length ? { routeIntentMappings } : {}),
     existingModules,
     reusableWidgets,
     routesFiles,
@@ -73,10 +64,6 @@ export async function analyzeFlutterContext(input: AnalyzeFlutterContextInput): 
   };
 }
 
-export function getFlutterModuleMap(): Record<string, string> {
-  return {};
-}
-
 function suggestModule(
   input: AnalyzeFlutterContextInput,
   existingModules: string[],
@@ -86,14 +73,12 @@ function suggestModule(
   if (routeMappedModule && existingModules.includes(routeMappedModule)) return routeMappedModule;
 
   const candidates = [
-    input.prototypeModule,
     input.screenId?.split('.')[0],
     input.route?.split('/').filter(Boolean).at(-1),
   ].filter((candidate): candidate is string => Boolean(candidate));
 
   for (const candidate of candidates) {
-    const mapped = resolveModuleAlias(candidate, input, existingModules);
-    if (existingModules.includes(mapped)) return mapped;
+    if (existingModules.includes(candidate)) return candidate;
   }
 
   return undefined;
@@ -133,7 +118,7 @@ async function discoverAssetDirectories(root: string): Promise<string[]> {
   return [...new Set(files.map((file) => toPosixPath(path.dirname(file))))].sort().slice(0, 80);
 }
 
-async function collectReusableWidgets(flutterRoot: string, input: AnalyzeFlutterContextInput): Promise<string[]> {
+async function collectReusableWidgets(flutterRoot: string): Promise<string[]> {
   const commonFiles = await fg(
     ['lib/**/*.dart'],
     {
@@ -159,10 +144,6 @@ async function collectReusableWidgets(flutterRoot: string, input: AnalyzeFlutter
     }
   }
   return [...discovered].sort();
-}
-
-function resolveModuleAlias(candidate: string, input: AnalyzeFlutterContextInput, existingModules: string[]): string {
-  return candidate;
 }
 
 async function collectSimilarFiles(

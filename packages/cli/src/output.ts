@@ -1,17 +1,17 @@
-export type V2CliIo = {
+export type CliIo = {
   stdout(value: string): void;
   stderr(value: string): void;
   cwd: string;
 };
 
-export const processIo: V2CliIo = {
+export const processIo: CliIo = {
   stdout: (value) => process.stdout.write(`${value}\n`),
   stderr: (value) => process.stderr.write(`${value}\n`),
   cwd: process.cwd(),
 };
 
 export function emit(
-  io: V2CliIo,
+  io: CliIo,
   json: boolean,
   value: unknown,
   human?: string,

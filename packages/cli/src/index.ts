@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import { runV2Cli } from './v2/index.js';
+import { runCli } from './cli.js';
 
-runV2Cli(process.argv.slice(2))
+runCli(process.argv.slice(2))
   .then((exitCode) => {
     process.exitCode = exitCode;
   })

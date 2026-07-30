@@ -16,7 +16,7 @@ await run(
     "exec",
     "playwright",
     "test",
-    "e2e/runtime-capture-v2.spec.ts",
+    "e2e/runtime-capture.spec.ts",
   ],
   {
     PBWORK_E2E_PORT: String(uiPort),
