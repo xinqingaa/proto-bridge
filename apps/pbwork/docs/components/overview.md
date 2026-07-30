@@ -41,7 +41,10 @@ Contract 必含：`schemaVersion`、`id`、`category`、`propsSchema`、`default
 3. 登记 `registry.ts` controls  
 4. 需要时补 `scenarios.ts`  
 5. 写本文档对应页  
-6. 单元 / playground 相关测试  
+6. 单元 / playground 相关测试
+7. 运行 `pnpm docs:verify`
+
+修改已有组件也执行同一流程。Agent 必须在开始组件任务时提醒文档同步义务，并在交付时说明更新了哪些 Contract、Registry、文档和测试。
 
 ## 目录
 

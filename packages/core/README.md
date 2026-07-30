@@ -1,14 +1,18 @@
 # @proto-bridge/core
 
-ProtoBridge 的唯一产品语义层，包含：
+ProtoBridge 的唯一产品语义层，包含可执行 Evidence Contract、Capture、Store、Handoff 和独立 Target 查询/验证。
 
-- Evidence Contract、稳定 ID、状态词汇和引用断言；
-- Selection、Preflight、Case Matrix、Capture 与 Handoff；
-- 不可变本地 Store、Job 恢复、stale、fork/archive 和安全 clean；
-- 浏览器安全 Runtime Capture Protocol；
-- 独立 Flutter Target 查询与变更验证。
+## 职责
 
-公共边界：
+- Workspace、Bundle、Case、Run、Attempt、revision、Snapshot、Coverage、Issue、Staleness、Handoff 和 Blob Schema；
+- 稳定 ID、状态词汇、风险、错误和引用断言；
+- Selection、Preflight、Case Matrix、Playwright Capture 和 JobHost；
+- Runtime/Service browser-safe protocol；
+- 不可变本地 Store、active activation、防降级、fork/archive/clean；
+- Evidence Read Model；
+- Flutter Target conventions、examples 和 change validation。
+
+## 公共导出
 
 ```text
 @proto-bridge/core
@@ -21,9 +25,16 @@ ProtoBridge 的唯一产品语义层，包含：
 @proto-bridge/core/target/flutter-app/validation
 ```
 
-`/v2` 是持久对象和协议的 schema namespace；仓库不包含旧 Artifact/Planner 产品链。
+`/v2` 是持久对象和协议的 major namespace。具体公共面以 `package.json#exports` 为准。
+
+入口包不得复制 Core Schema、状态、Case identity、risk 或 active-ref 解析。
+
+## 开发
 
 ```bash
 pnpm --filter @proto-bridge/core build
+pnpm --filter @proto-bridge/core typecheck
 pnpm --filter @proto-bridge/core test
 ```
+
+架构说明见 [ProtoBridge 实现](../../docs/architecture/proto-bridge.md)和 [Evidence 模型](../../docs/architecture/evidence-model.md)。

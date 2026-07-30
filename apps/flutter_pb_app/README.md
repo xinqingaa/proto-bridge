@@ -1,62 +1,76 @@
 # flutter_pb_app
 
-pbwork 配套 Flutter 工程：主题 token（`TS`）+ `common` 可复用层 + feature 落页载体。
+独立 Flutter 目标工程示例，用于验证 Coding Agent 如何结合 ProtoBridge Evidence 与目标仓库既有规范完成实现。
 
-## 结构
+该应用不是 Evidence Store，也不参与 PBWork Runtime Capture。ProtoBridge Target Tools 可以只读扫描本目录的路由、Theme、公共组件和验证结果，但扫描内容不会写入 Evidence。
 
-```
+## 架构
+
+```text
 lib/
-  app/              MaterialApp（主题 / Pop.host / 挂路由）
-  router/           Navigator 1.0：routes 常量 + appRoutes 注册表
-  theme/            TS / ThemeService（对齐 pbwork tokens）
-  common/
-    widgets/        Common* 可复用控件
-    overlay/        AppPop（封装 unified_popups）
-  features/         页面与原型入口（pb 落页目标）
-    hub/            总入口（Demo + 各原型）
-    demo/           组件对照画廊
-    field_service / ledger_planet / project  原型占位
+├── app/              MaterialApp and application bootstrap
+├── router/           route constants and route registry
+├── theme/            semantic tokens and ThemeService
+├── common/
+│   ├── widgets/      reusable target widgets
+│   └── overlay/      shared overlay abstraction
+└── features/
+    ├── hub/          example entry
+    ├── demo/         component gallery
+    ├── field_service/
+    └── ledger_planet/
 ```
 
-依赖方向：`features` → `common` / `theme` / `router`（反向禁止）。
+依赖方向：
 
-## 路由（Navigator 1.0）
+```text
+features → common / theme / router
+```
+
+`common`、`theme` 和 `router` 不依赖业务 feature。
+
+## 路由
 
 | Route | Feature |
 | --- | --- |
 | `/` | Hub |
-| `/demo` | Demo 对照 |
+| `/demo` | Component gallery |
 | `/prototypes/field-service` | Field Service |
 | `/prototypes/ledger-planet` | Ledger Planet |
 
-新增原型页：
+新增页面时：
 
-1. 在 `lib/features/<name>/` 下加 page
-2. 在 `lib/router/routes.dart` 增加 path 常量
-3. 在 `lib/router/router.dart` 的 `appRoutes` 注册
-4. 在 `HubPage` 增加入口
+1. 在 `lib/features/<feature>/` 添加页面；
+2. 在 `lib/router/routes.dart` 定义 route；
+3. 在 `lib/router/router.dart` 注册；
+4. 按需在 Hub 增加入口；
+5. 使用目标工程已有 Theme 和 Common widgets；
+6. 运行 Flutter analyze/test。
 
 ## 依赖
 
-- `flutter_riverpod` — 状态
-- `pull_to_refresh_flutter3` — 下拉刷新
-- `unified_popups` — path: `../../../unified_popups`（同级 work 目录）
+- `flutter_riverpod`：状态管理
+- `pull_to_refresh_flutter3`：列表刷新
+- `unified_popups`：Overlay
 
-仅配置 **Android / iOS**。
+工程配置 Android 和 iOS。
 
-## 运行
+## 运行与验证
 
 ```bash
 cd apps/flutter_pb_app
+flutter pub get
+flutter analyze
+flutter test
 flutter run
 ```
 
-## Select 两种实现
+## Select
 
-`CommonSelect` 默认 `DropdownButtonFormField`；将
+`CommonSelect` 默认使用 `DropdownButtonFormField`。通过：
 
 ```dart
 implementation: CommonSelectImplementation.dropMenu,
 ```
 
-或改 `CommonSelect.defaultImplementation` 可切到 `AppPop.dropMenu`（`Pop.dropMenu`）。
+可以选择共享 `AppPop.dropMenu` 实现。不要在 feature 中创建第三种平行 Select。

@@ -1,24 +1,29 @@
 # ProtoBridge
 
-ProtoBridge 是本地原型证据基础设施：从符合 PB Contract 的 Runtime 确定性采集语义、状态、交互与截图，保存为不可变 Evidence，再通过 PBWork、CLI 和 MCP 交给 Coding Agent。
+ProtoBridge（PB）从符合 Authoring Contract 的原型 Runtime 采集语义、状态、交互与截图，保存为不可变 Evidence，并通过 PBWork、CLI 和 MCP 交给 Coding Agent。
 
 ```text
-PBWork Runtime Contract
+PBWork Prototype + Runtime Contract
   → Selection / Preflight / Case Matrix
-  → Capture Job / Evidence Store / Snapshot
-  → Agent Handoff
-  → MCP fixed Evidence
-  → Target implementation / validation
+  → Capture / Store / Snapshot
+  → Evidence Review / Handoff
+  → MCP fixed read
+  → Agent implementation / target validation
 ```
 
-ProtoBridge 不生成目标工程计划，不自动翻译 Vue/DOM，也不替代 Coding Agent 决定文件、组件、路由、状态管理或 Token。
+PBWork 是 PB 的图形工作台、原型生产环境和 instrumented Runtime。PB 证明原型事实；Agent 结合目标仓库自身规范决定具体实现。
 
 ## 快速开始
 
 ```bash
 pnpm install
 pnpm build
+pnpm pbwork
+```
 
+初始化 CLI Workspace：
+
+```bash
 node packages/cli/dist/index.js workspace init \
   --workspace pbwork-local \
   --runtime http://127.0.0.1:3977
@@ -26,15 +31,7 @@ node packages/cli/dist/index.js workspace init \
 node packages/cli/dist/index.js workspace doctor
 ```
 
-默认配置为 `proto-bridge.json`，Store 默认为 `.proto-bridge/store`。
-
-PBWork：
-
-```bash
-pnpm pbwork
-```
-
-MCP：
+启动 MCP：
 
 ```bash
 node packages/mcp-server/dist/index.js \
@@ -42,15 +39,30 @@ node packages/mcp-server/dist/index.js \
   --workspace pbwork-local
 ```
 
-## 产品边界
+完整步骤见 [快速上手](docs/guides/getting-started.md)。
 
-- Core：Contract、Capture、Store、Handoff 与 Target 只读边界。
-- PBWork：原型 Runtime、采集控制面和 Evidence Review。
-- CLI：自动化 Producer 与 Bundle 生命周期入口。
-- MCP：固定 Snapshot/revision 的正式消费边界。
-- Target：独立查询和验证，不写回 Evidence。
+## 仓库组成
 
-未来 PBWork Screen 默认执行严格 Evidence 门禁；现有未迁移页面由明确 legacy allowlist 隔离。详见 [原型规范](docs/conventions.md)和 [PBWork checklist](apps/pbwork/docs/checklist.md)。
+| 区域 | 职责 |
+| --- | --- |
+| `packages/core` | Contract、Capture、Store、Handoff 和 Target 只读边界 |
+| `packages/local-service` | PBWork browser 与 Node/Playwright/Store 的本地安全边界 |
+| `packages/cli` | 自动化 Evidence Producer 和 Bundle 生命周期 |
+| `packages/mcp-server` | 固定 Evidence Consumer 与 Target 查询/验证 |
+| `apps/pbwork` | Workbench GUI、Design System、业务原型和 Runtime |
+| `apps/flutter_pb_app` | 独立 Flutter 目标工程示例与验证载体 |
+
+## 原型强约束
+
+进入 PB Evidence 闭环的原型必须：
+
+- 只使用 PBWork Token、Theme、组件和共享手势；
+- 在唯一 Registry 声明 Screen、Variant、Action 和 Scenario；
+- 为 default 与 critical Variant 声明 `requiredFragments`；
+- 提供稳定 `data-pb-id`、可选 `data-pb-key` 和合法 `data-pb-role`；
+- 能由真实 Runtime 确定性 prepare、readiness、snapshot、scenario 和 reset。
+
+详见 [原型 Authoring Contract](docs/reference/prototype-authoring.md)和 [PBWork 原型手册](apps/pbwork/docs/README.md)。
 
 ## 验证
 
@@ -58,12 +70,14 @@ node packages/mcp-server/dist/index.js \
 pnpm verify
 ```
 
-该门禁覆盖 build/typecheck、Core/Service/CLI/PBWork tests、三页 Runtime Capture、MCP、Consumer 和 PBWork → Store → MCP 垂直切片。
+该门禁覆盖构建、类型检查、Core/Service/CLI/PBWork 测试、Runtime 浏览器采集、MCP、Consumer 和 PBWork → Store → MCP 垂直切片。
 
-更多文档：
+## 文档
 
-- [架构总览](docs/overview.md)
-- [使用方式](docs/usage.md)
-- [Evidence 对象](docs/artifacts.md)
-- [Handoff Consumer](docs/agent-handoff-consumer.md)
-- [V2 核心规范](docs/plans/pb-v2-spec.md)
+- [文档总入口](docs/README.md)
+- [产品总览](docs/product/overview.md)
+- [完整工作流](docs/product/workflow.md)
+- [系统架构](docs/architecture/overview.md)
+- [PBWork 与 PB](docs/guides/pbwork-and-pb.md)
+- [Agent 消费指南](docs/guides/agent-consumption.md)
+- [V1 架构转型背景](docs/history/v1-to-evidence-architecture.md)

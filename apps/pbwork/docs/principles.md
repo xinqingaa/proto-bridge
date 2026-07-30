@@ -4,43 +4,57 @@
 
 ```text
 Token / Theme
-  → 基础组件（basic）
-  → 复杂组件（complex）
+  → basic
+  → complex
   → Screen / Panel
-  → Prototype（路由 + Variant + Runtime）
+  → Prototype
 ```
 
-每一层只消费下一层的公开契约（props / slots / events / `tokenBindings`），不读取实现私有状态，不复制下层实现。
+每一层只消费下层公开 props、slots、events 和 `tokenBindings`。禁止复制下层实现、依赖私有 class 或读取内部状态。
 
-## 2. 升层标准
+## 2. 复用优先
 
-- 能被 **两个及以上** 组件或页面复用的能力，才进入共享注册表。
-- 业务专用颜色、间距、组件名、页面状态 **不得** 以业务名写入共享 Token 或组件契约。
-- 页面缺能力时，按序判断：已有 Token → 已有基础组件 → 已有复杂组件 → 页内局部 UI（仍须走 Token）。
+页面缺少能力时依次判断：
 
-## 3. 使用红线
+1. 现有 Token 能否表达；
+2. 现有 basic component 能否组合；
+3. 现有 complex component 是否对口；
+4. 是否真的是业务局部 UI；
+5. 是否经过至少两个独立使用场景，值得提升为共享能力。
 
-1. **形状匹配时优先用对口 DS 组件**（AppBar、BottomNavigation、Tabs、TabViewport、DataList、ScrollableDataList、Dialog、Sheet、Snackbar、EmptyState、SearchBar、FilterBar 等）。  
-   - 筛选条：标准一排 chip + 筛选入口 → 优先 `FilterBar`；自定义 Chip 行合法，须加 `data-no-swipe`（横滑场景）。  
-   - 卡片：仅当容器承载**独立交互模块**时用 `Card`；列表行、英雄区装饰默认不是 Card。  
-   - 无对口或形状明显不符 → 页内局部 UI，仍走 Token。
-2. **页内局部 UI** 的颜色 / 字体 / 间距 / 圆角 / 阴影必须走现有 Token（`var(--pb-*)`），禁止硬编码设计值（极少数位图/SVG 装饰除外，且不得引入业务色名 Token）。
-3. **禁止组件实例换绑 Token**。切浅色/深色只改 Theme 覆盖值。
-4. **Playground 只调** 内容、类型枚举、行为开关；不提供 Token 换绑或自由取色。
-5. **BottomNavigation 不做面板容器、不做手势**；一级多面板用 `TabViewport`。
-6. **一级主体 Tab 的子视图内禁止再嵌套带 window 的 `Tabs`**；二级栈页允许。维度切换用无 window 分段（见 recipes R7）。
-7. **列表外观与滚动分离**：`DataList` 只管表面；`ScrollableDataList` 管刷新/分页/纵滚。
-8. **禁止页内自造一套横滑/下拉手势**；复用 `_shared/usePointerSwipe`、`useHorizontalDragScroll` 与 ScrollableDataList 已有仲裁（见 [shared-gestures.md](./components/shared-gestures.md)）。
-9. **导航与主题**：多 Tab + 栈须遵守 [shell-and-nav.md](./prototypes/shell-and-nav.md) 与 [tokens/themes.md](./tokens/themes.md)；`theme` 不是业务 Variant。
+业务专用颜色、间距、组件名和页面状态不得进入共享 Token/Contract。
 
-## 4. 与 Vuetify
+## 3. 组件红线
 
-Vue + Vuetify 是实现技术。对外契约以 PB `contracts/*.json` 与 `--pb-*` 为准；不要把 Vuetify 私有 class / 主题键当作跨端或文档权威。
+- 对口组件存在时必须使用。
+- `BottomNavigation` 只导航；一级面板使用 `TabViewport`。
+- 一级主体面板内不嵌套带 window 的 `Tabs`。
+- `DataList` 管列表表面，`ScrollableDataList` 管纵滚、刷新和分页。
+- `FilterBar`、`SearchBar`、Dialog、Sheet、Snackbar、EmptyState 等不得页内复制。
+- 页内局部 UI 仍必须使用 Token。
+- 禁止组件实例换绑 Token。
 
-## 5. 与 ProtoBridge 识别
+## 4. 手势红线
 
-组装页面时满足 [`docs/conventions.md`](../../../docs/conventions.md) 的结构角色与标记；本手册补「用哪个组件、如何组合」。检查器依赖稳定的 `data-pb-id` / `inspectId` / `data-pb-role`。
+- 不在业务页面自造横滑、下拉刷新、拖滚或 click suppression。
+- 复用 `_shared/usePointerSwipe`、`useHorizontalDragScroll` 和 `ScrollableDataList`。
+- 嵌套横滚、表单输入和无 window 分段使用标准忽略标记。
+- 一个页面只有一个主纵滚。
 
-## 6. 文档演进
+## 5. Workbench 与 Runtime
 
-本手册只沉淀**已稳定的通用规则**。业务原型的视觉与布局可继续打磨；新的可复用规范确认后再写入此处，避免把未定稿的 UI 口味写成铁律。
+- Workbench 控件来自 `src/workbench/ui`。
+- Runtime 原型组件来自 `src/design-system/components`。
+- 两套组件不交叉复用。
+- Workbench 临时 Inspector handle 不进入持久 Evidence。
+- Runtime Screen 遵守 [Authoring Contract](../../../docs/reference/prototype-authoring.md)。
+
+## 6. Registry
+
+- Component Contract、Vue、Registry、Scenario、文档和测试保持一致。
+- Prototype/Screen/Variant/Action/Scenario 只在 `prototypes/registry.ts` 注册。
+- Runtime 路由、工作台导航和 Capture manifest 不维护平行清单。
+
+## 7. 规范升级
+
+通用规范必须来源于稳定、可复用、经过测试的行为。业务视觉偏好、单页 workaround 和未验证方向留在业务需求或局部实现，不写成全局铁律。

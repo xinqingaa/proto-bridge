@@ -1,6 +1,6 @@
 # 交付检查单
 
-做完或改完 pbwork 原型 / DS 用法后自检：
+完成 PBWork Prototype、Design System 或 Runtime 改动后逐项检查。
 
 ## 设计系统
 
@@ -9,6 +9,7 @@
 - [ ] 无硬编码色值/字号/阴影等设计量  
 - [ ] 浅色 / 深色主题下关键表面可读；theme 切换不堆业务 history、不占用 variant  
 - [ ] 新增或改动的 props 已进 contract + registry + 对应 docs 页  
+- [ ] Contract、Vue、Registry、Scenario、组件文档中的 props/states/slots/events/bindings 一致
 
 ## 组合与手势
 
@@ -35,8 +36,12 @@
 - [ ] required Fragment 在真实 Runtime 中唯一、可见且有非零 bbox
 - [ ] 关键交互已声明 Action、Scenario 与 Checkpoint
 - [ ] 新 Screen 未加入 `LEGACY_EVIDENCE_SCREEN_IDS`
+- [ ] Action target 使用稳定 Fragment；Scenario/Checkpoint 实际维度可验证
+- [ ] prepare/readiness/snapshot/reset 在独立 Case 中可重复
 
 ## 文档
 
 - [ ] 若沉淀了新的**通用**规则，已写入 `apps/pbwork/docs`（不要把未定稿视觉口味写成铁律）  
 - [ ] 业务个案笔记（如有）与手册不冲突；冲突以手册 + contract 为准  
+- [ ] 组件、Token、Theme、手势或 Registry 变化已按 `development.md` 同步文档
+- [ ] `pnpm docs:verify` 已通过

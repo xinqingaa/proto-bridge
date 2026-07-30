@@ -1,49 +1,54 @@
 ---
 name: pbwork-workbench
 description: >-
-  Build or change the PBWork management shell and its own UI primitives.
-  Covers navigation, prototype management, capture composer, task center,
-  evidence review, canvas toolbar, inspector, and apps/pbwork/src/workbench/ui.
-  Use for PBWork platform UX rather than business prototype pages.
+  Build or modify the PBWork management shell, navigation, canvas, inspector,
+  prototype management, Capture Console, task center, Evidence Review, or
+  workbench-only UI primitives.
 ---
 
 # PBWork 工作壳 Skill
 
-用于 `apps/pbwork` 的管理工作壳、采集控制面与证据检查，不用于业务原型页面。
+用于 PBWork 管理 GUI，不用于业务 Prototype Screen 或 Prototype Design System。
 
 ## 必读
 
-1. `docs/design.md` 的工作台壳、导航与 Runtime 边界。
-2. `docs/plans/pbwork-pb-v2-workflow.md` 的 Capture 操作闭环。
-3. 相关实现与测试；改证据语义时同时读 V2 Evidence Read Model。
+1. `docs/architecture/pbwork.md`
+2. `docs/guides/pbwork-and-pb.md`
+3. `apps/pbwork/docs/development.md`
+4. 修改 Evidence 展示时阅读 `docs/architecture/evidence-model.md`
+5. 修改 Capture 流程时阅读 `docs/architecture/capture-pipeline.md`
 
 ## 组件边界
 
-- 工作壳控件统一从 `src/workbench/ui/` 复用或封装。
-- 不直接把原生 `select`、`checkbox` 或样式不统一的临时按钮放进业务视图。
-- 不复用 `src/design-system/components/` 的原型组件；它们服务 Runtime，
-  可能携带 `data-pb-*` 采集语义。
-- Vuetify 是工作壳底层能力，不是页面直接随意选择样式的理由。常用按钮、
-  图标按钮、选择框、勾选框和输入框必须经工作壳组件收口。
-- 一级导航只显示图标，必须保留可访问名称和 Tooltip；二级导航表达资源层级。
+- Workbench 控件从 `src/workbench/ui` 复用或封装。
+- 不把临时原生 select、checkbox、input 或不统一 button 放进业务 View。
+- 不复用 `src/design-system/components`；它们服务 Prototype Runtime，可能携带采集语义。
+- Vuetify 是底层能力，常用 Workbench 控件仍经 `workbench/ui` 收口。
+- 一级导航保留可访问名称和 Tooltip，二级导航表达资源层级。
 
 ## Capture 与 Evidence
 
-- 用户打开采集 Sheet 后自动执行范围检查；真正启动采集始终需要明确确认。
-- Prototype 级策略一次设置，只有例外 Screen 才逐项覆盖。
-- 任务中心先回答“现在要处理什么”，任务详情与结果 Review 分开。
-- 结果以采集记录为主轴，Prototype 是来源和筛选维度。
-- Evidence 默认按 Screen → Case → 语义区域映射展示；原始事实顺序和 ID
-  必须可追溯，不改写 Store 中的 JSON。
-- 无稳定 `data-pb-id` 时，优先使用明确显示的稳定语义祖先；没有可采祖先时
-  禁用 Fragment 采集并解释替代入口。
+- Composer 可以自动预检，启动 Capture 必须明确确认。
+- 四类入口只生成同一种 Core Selection Draft。
+- Job、Run、Attempt、revision 和 Snapshot 的状态来自 Core Contract。
+- 任务中心、任务详情和 Evidence Review 职责分开。
+- Evidence 可按 Screen/Case/Fragment 重组展示，但不改写 Store JSON。
+- fixed refs、provenance、unknown、conflict、Coverage、Issue 和 risks 始终可追溯。
+- Inspector 临时 handle 不能持久化；Fragment 使用稳定 identity。
+
+## Bridge
+
+- 校验 origin、source window、runtimeId 和 requestId。
+- iframe load 后重新握手，旧消息失效。
+- 路由同步使用明确 push/replace/back 语义，不用任意时间窗口猜测。
+- Workbench Bridge 与 Capture Protocol 不混用。
 
 ## 验证
 
 ```bash
 pnpm --filter @proto-bridge/pbwork typecheck
 pnpm --filter @proto-bridge/pbwork test
+pnpm docs:verify
 ```
 
-改交互后补跑对应 Playwright E2E，并在真实工作台宽度下检查滚动、焦点、
-空态、失败态和深浅主题。
+交互变化补跑对应 Playwright spec，并检查滚动、焦点、空态、失败态、键盘和深浅主题。

@@ -21,6 +21,7 @@
     "test:e2e:runtime": "node scripts/test-runtime-capture.mjs",
     "test:e2e:evidence-slice": "node scripts/test-evidence-vertical-slice.mjs",
     "test:e2e:consumer": "node scripts/test-consumer-runner.mjs",
+    "docs:verify": "node scripts/verify-docs.mjs",
     "verify": "node scripts/verify-product.mjs"
   },
   "engines": {

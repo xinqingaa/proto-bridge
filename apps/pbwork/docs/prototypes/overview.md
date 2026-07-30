@@ -40,8 +40,9 @@ prototypes/{prototypeId}/
 ## 组装原则
 
 1. 优先 DS 组件与 [composition.md](../components/composition.md) 配方。  
-2. 满足 [conventions.md](../../../../docs/conventions.md) 识别面。  
+2. 满足根 [原型 Authoring Contract](../../../../docs/reference/prototype-authoring.md)。
 3. Variant 可切换且可静态见到关键列表数据。  
-4. 稳定 `data-pb-id` / `inspectId`。  
+4. 提供稳定 `data-pb-id` / `data-pb-key` / `data-pb-role` / `inspectId`。
+5. default/critical Variant 声明 required boundary，关键交互声明 Action/Scenario/Checkpoint。
 
 下一步：[shell-and-nav.md](./shell-and-nav.md) · [screens-and-variants.md](./screens-and-variants.md) · [recipes.md](./recipes.md) · [../checklist.md](../checklist.md)

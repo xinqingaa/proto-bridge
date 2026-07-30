@@ -29,16 +29,17 @@
 2. **主题不是 Variant**：`theme` 与业务 `variant` 分离（见 [../tokens/themes.md](../tokens/themes.md)）。  
 3. 叠加层打开态必须可注册、可 capture，不要用未登记的临时弹层冒充。
 
-## PB Evidence 门禁
+## PB Evidence Contract
 
-新 Screen 默认执行严格 Evidence 门禁：
+进入 Evidence 闭环的 Screen：
 
-1. default Variant 必须声明 `requiredFragments`；
-2. 每个 `critical: true` Variant 必须声明自己的 `requiredFragments`；
+1. default Variant 必须声明非空 `requiredFragments`；
+2. 每个 `critical: true` Variant 必须声明自己的非空 `requiredFragments`；
 3. Fragment identity 使用稳定 `screenId + pbId + optional pbKey`；
 4. 对应 Runtime 节点必须提供合法 `data-pb-role`，可见且具有非零 bbox；
 5. 关键路径使用 Action、Scenario 和 Checkpoint，不以无边界自动点击代替；
-6. `LEGACY_EVIDENCE_SCREEN_IDS` 只记录已有迁移债务，禁止为新页面新增例外。
+6. Runtime 必须能 prepare、readiness、semantic snapshot 和 reset；
+7. 不得通过 `LEGACY_EVIDENCE_SCREEN_IDS` 为新工作创建例外。
 
 提交前运行 `pnpm --filter @proto-bridge/pbwork test` 和
 `pnpm test:e2e:runtime`。
@@ -59,7 +60,7 @@
 
 ## 数据可见性
 
-列表循环与选项集合应在源码中出现（mock / 常量），避免仅运行时字符串拼出整棵 UI，便于 Source 识别与 capture。
+列表循环与选项集合应使用稳定 mock/fixture 表达，避免随机值、系统时间或不受控网络请求改变 Capture 结果。
 
 ## 检查 ID
 
@@ -75,4 +76,4 @@
 
 ## 与 conventions
 
-页面结构角色（app-bar、tab-bar、list、bottom-bar、modal、section…）应能被当前识别面看到。详见仓库 `docs/conventions.md`。组装时不要发明引擎认不出的临时包裹层来「美化 DOM」。
+页面结构角色（app-bar、tab-bar、list、bottom-bar、modal、section…）应落在拥有真实语义的节点。详见根 [Authoring Contract](../../../../docs/reference/prototype-authoring.md)。不要为采集创建没有产品语义的临时包裹层。

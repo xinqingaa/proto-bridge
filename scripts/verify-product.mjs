@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const steps = [
   ["pnpm", ["install", "--frozen-lockfile"]],
+  ["pnpm", ["docs:verify"]],
   ["pnpm", ["build"]],
   ["pnpm", ["typecheck"]],
   ["pnpm", ["--filter", "@proto-bridge/core", "test"]],

@@ -36,7 +36,7 @@
 
 ## Slots / Events
 
-- **Slots**：按 `items[].value` 具名（契约示例仅为示意；业务以实际 `items` 为准）。**每个 value 必须有对应 slot 内容。**
+- **Slots**：契约示例为 `overview`、`activity`；实际按 `items[].value` 具名。**每个 value 必须有对应 slot 内容。**
 - **Events**：`update:modelValue`
 
 ## tokenBindings
@@ -65,4 +65,3 @@
 3. `swipe` / `mouseSwipe` 分离，不可互兜底。
 4. 一级主体子视图内禁止使用；维度切换用 recipes R7。
 5. 详见 [composition.md](../composition.md)、[recipes.md](../../prototypes/recipes.md)、[shared-gestures.md](../shared-gestures.md)。
-

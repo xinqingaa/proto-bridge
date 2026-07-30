@@ -1,61 +1,76 @@
 # PBWork 原型生产者手册
 
-> 权威路径：`apps/pbwork/docs/`（仓库根 `docs/pbwork` 为其软链接）  
-> 用途：接到「在 pbwork 做/改原型」指令时，按本文使用设计令牌与组件，而不是临时发明 UI 与手势。  
-> 范围：只沉淀**已稳定的通用规则**；业务原型视觉与布局可继续迭代，确认可复用后再写入手册。
+本目录是 PBWork Token、Theme、组件、手势、页面组装和开发约束的唯一文档源。仓库根 `docs/pbwork` 软链接到本目录。
 
-## 和其它文档的分工
+PBWork 原型既要表达产品设计，也要作为 ProtoBridge Runtime 提供可验证 Evidence。页面必须同时满足 Design System 规范和 [原型 Authoring Contract](../../../docs/reference/prototype-authoring.md)。
 
-| 文档 | 负责 |
-| --- | --- |
-| 本手册（`apps/pbwork/docs`） | Token、组件用法、边界、组合、原型组装 |
-| [`docs/design.md`](../../../docs/design.md) | 工作台产品设计（Playground、画布、Bridge、注册表 schema） |
-| [`docs/conventions.md`](../../../docs/conventions.md) | ProtoBridge Source 识别约定（section / shell） |
-| 各原型 `requirements.md` / `implementation-notes.md` | 业务需求与个案笔记 |
+## 阅读路线
 
-平台怎么建 → `design.md`。页面怎么用 DS → **本手册**。
+1. [开发规范](./development.md)
+2. [原则与边界](./principles.md)
+3. [Token 规范](./tokens/overview.md)和 [Theme](./tokens/themes.md)
+4. [组件总论](./components/overview.md)和 [组件组合](./components/composition.md)
+5. 按任务阅读具体组件文档
+6. 涉及滑动、刷新或横滚时阅读 [手势仲裁](./components/shared-gestures.md)
+7. 新建或修改业务原型时阅读：
+   - [原型系统](./prototypes/overview.md)
+   - [壳与导航](./prototypes/shell-and-nav.md)
+   - [Screen 与 Variant](./prototypes/screens-and-variants.md)
+   - [页面配方](./prototypes/recipes.md)
+8. 提交前执行 [交付检查单](./checklist.md)
 
-## 必读顺序
+## 设计基础
 
-1. [principles.md](./principles.md) — 分层与红线  
-2. [tokens/overview.md](./tokens/overview.md) + 需要时 [tokens/catalog.md](./tokens/catalog.md)  
-3. [components/overview.md](./components/overview.md) + [components/composition.md](./components/composition.md)  
-4. 涉及的具体组件页：`components/basic/*`、`components/complex/*`  
-5. 涉及横滑 / 下拉刷新 / 嵌套横滚 → [components/shared-gestures.md](./components/shared-gestures.md)  
-6. 新建或改业务原型 → [prototypes/overview.md](./prototypes/overview.md)、[shell-and-nav.md](./prototypes/shell-and-nav.md)、[screens-and-variants.md](./prototypes/screens-and-variants.md)、[recipes.md](./prototypes/recipes.md)  
-7. 提交前 → [checklist.md](./checklist.md)
+```text
+Token / Theme
+  → basic components
+  → complex components
+  → shared composition and gestures
+  → Screen / Panel
+  → Prototype shell + Runtime Contract
+```
 
-Agent 入口：
-
-- 业务原型与原型设计系统：`skills/pbwork-prototype/skill.md`
-- PBWork 管理工作壳、采集与 Evidence Review：`skills/pbwork-workbench/SKILL.md`
+任何层只能消费下层公开 Contract，不复制实现、不读取私有状态、不绕开 Design System 创建平行基础。
 
 ## 代码地图
 
 ```text
-apps/pbwork/src/design-system/
-├── tokens/tokens.json          # 全量 Token
-├── bindTokens.ts               # 组件可绑定 ID 池
-├── themes/{light,dark}.json
-├── components/
-│   ├── registry.ts             # Playground 控件与元数据
-│   ├── contracts/*.json        # 组件契约（权威 props / bindings）
-│   ├── basic/ · complex/
-│   └── _shared/                # 手势等共享实现
-└── schemas/                    # Token / Theme / Component JSON Schema
-
-apps/pbwork/src/prototypes/
-├── registry.ts                 # 原型与 Screen / Variant 注册
-└── {prototypeId}/              # Shell、nav、screens、panels、mock
+apps/pbwork/src/
+├── design-system/
+│   ├── tokens/tokens.json
+│   ├── bindTokens.ts
+│   ├── themes/
+│   ├── components/
+│   │   ├── contracts/
+│   │   ├── basic/
+│   │   ├── complex/
+│   │   ├── _shared/
+│   │   ├── registry.ts
+│   │   └── scenarios.ts
+│   └── schemas/
+├── prototypes/
+│   ├── registry.ts
+│   ├── evidence-policy.ts
+│   └── {prototypeId}/
+├── runtime/
+├── workbench/
+└── capture/
 ```
 
-## 变更同步
+## 修改同步
 
-| 改什么 | 必同步 |
+| 改动 | 同一任务中必须同步 |
 | --- | --- |
-| Token 增删改 | `tokens.json`、（若可绑定）`bindTokens.ts`、Theme、本手册 `tokens/` |
-| 组件 props / 行为 | `contracts/*.json`、Vue 实现、`registry.ts`、对应 `components/**` 文档 |
-| 手势仲裁 | `_shared/*`、`shared-gestures.md`、相关 complex 页、测试 |
-| 原型注册 / 路由 | `prototypes/registry.ts`、本手册 `prototypes/` |
+| Token | `tokens.json`、按需 `bindTokens.ts`、Theme、Token 文档和测试 |
+| Component | JSON Contract、Vue、Registry、场景、对应组件文档和测试 |
+| Shared gesture | `_shared`/组件实现、手势文档、相关组件页和浏览器测试 |
+| Prototype Screen | Registry、页面、Authoring Contract 检查和 Runtime 测试 |
+| Workbench UI | `src/workbench/ui`、PBWork 架构/Skill、交互测试 |
 
-契约与实现冲突时，以 **contract + 校验通过的实现** 为准，并立刻改文档。
+Contract 与实现冲突时不能选择一边静默继续；应修正不一致并让校验通过。
+
+## Agent 入口
+
+- 业务原型：`skills/pbwork-prototype-authoring/SKILL.md`
+- Token、Theme 和组件：`skills/pbwork-design-system/SKILL.md`
+- Workbench 与 Capture UI：`skills/pbwork-workbench/SKILL.md`

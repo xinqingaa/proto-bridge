@@ -1,25 +1,28 @@
 # ProtoBridge Agent 规范
 
-面向本仓库的 AI coding agent 与开发者。
+本文是修改本仓库的任务路由和硬约束。产品知识以 `docs/` 和 PBWork 手册为准，不在本文复制第二套说明。
 
-## 必读
+## 先判断任务
 
-1. 本文；
-2. `docs/overview.md`、`docs/artifacts.md`、`docs/usage.md`；
-3. 改 Core/CLI/MCP 时读 `skills/proto-bridge/skill.md`；
-4. 做 PBWork 原型时读 `skills/pbwork-prototype/skill.md` 与 `apps/pbwork/docs`。
+| 任务 | Skill | 必读 |
+| --- | --- | --- |
+| Core、Store、Capture、CLI、MCP、Local Service、Target | `skills/proto-bridge-repository/SKILL.md` | `docs/architecture/*` 中相关文档 |
+| PBWork 业务原型、Screen、Variant、导航 | `skills/pbwork-prototype-authoring/SKILL.md` | Authoring Contract、PBWork 原型手册 |
+| PBWork Token、Theme、组件、共享手势 | `skills/pbwork-design-system/SKILL.md` | PBWork 开发、Token/组件手册 |
+| PBWork 工作壳、Canvas、Inspector、Capture UI | `skills/pbwork-workbench/SKILL.md` | PBWork 架构与工作壳 Skill |
+| 文档体系 | `skills/proto-bridge-repository/SKILL.md` | `docs/maintenance/documentation.md` |
 
 ## 架构红线
 
-- Core 是 Selection、Preflight、Capture、Store、Handoff 的唯一产品语义层；
-- CLI、PBWork Local Service 和 MCP 只做进程/IO 适配，不复制状态词汇或引用算法；
-- Evidence 必须保存 provenance、unknown、conflict、Coverage 与固定引用；
-- Runtime 负责声明、准备和验证状态，Core/Playwright 负责导航与固定采集环境；
-- Source Adapter 不是闭环前提；不得用源码启发式补造未观测事实；
-- Target 查询与 Capture 解耦，Target 事实不得进入 Evidence；
-- MCP 只读取固定 Workspace/Snapshot/revision，不猜测路径或回退 latest；
-- Coding Agent 自行决定目标文件、组件、路由、状态管理与 Token；
-- PBWork 新 Screen 默认执行严格 Evidence 门禁，不得加入 legacy allowlist 绕过。
+- Core 是 Contract、Selection、Preflight、Capture、Store、Handoff、状态和引用的唯一语义层。
+- CLI、MCP、Local Service 和 PBWork 不复制 Core 枚举、risk、Case identity 或 active-ref 算法。
+- Evidence 保留 provenance、unknown、conflict、Coverage、Issue 和固定引用。
+- Runtime 声明并准备状态；Core/Playwright 固定 Case 环境并采集。
+- Target query/validation 与 Capture 隔离，Target 事实不进入 Evidence。
+- MCP 只读取固定 Workspace/Snapshot/revision，不猜 Store 路径，不回退 active/latest。
+- Coding Agent 自行决定目标文件、组件、路由、状态管理和 Token。
+- PBWork 原型只使用 PBWork Design System；形状匹配时禁止自行重造组件。
+- default/critical Variant 必须具有 authored completeness boundary；不得通过例外列表绕过新工作。
 
 ## 代码地图
 
@@ -30,18 +33,29 @@
 | Local Service | `packages/local-service` |
 | CLI | `packages/cli` |
 | MCP | `packages/mcp-server` |
-| PBWork Runtime/Capture | `apps/pbwork` |
-| 原型合规例外 | `apps/pbwork/src/prototypes/evidence-policy.ts` |
+| PBWork Workbench | `apps/pbwork/src/workbench`、`src/capture` |
+| PBWork Design System | `apps/pbwork/src/design-system` |
+| PBWork Prototype/Runtime | `apps/pbwork/src/prototypes`、`src/runtime` |
+
+## 改动同步
+
+- 公共 Schema、入口、状态、路径、环境变量变化必须同步文档。
+- 修改 PBWork Component/Token/Theme/手势时，必须主动提醒并同步对应手册、Contract、Registry 和测试。
+- 同一概念只在权威文档详述；其它入口使用链接。
+- 主体文档只描述当前行为；历史和设计理由分别进入 `docs/history`、`docs/decisions`。
+
+完整同步矩阵见 `docs/maintenance/documentation.md`。
 
 ## 验证
 
 | 范围 | 至少执行 |
 | --- | --- |
+| 文档 | `pnpm docs:verify` |
 | TypeScript | `pnpm typecheck` |
 | Core | `pnpm --filter @proto-bridge/core test` |
 | CLI | `pnpm --filter @proto-bridge/cli test` |
-| PBWork 原型/Contract | `pnpm --filter @proto-bridge/pbwork test`、`pnpm test:e2e:runtime` |
+| PBWork | `pnpm --filter @proto-bridge/pbwork test`、`pnpm test:e2e:runtime` |
 | MCP/Consumer | `pnpm test:e2e:mcp`、`pnpm test:e2e:consumer` |
 | 完整产品 | `pnpm verify` |
 
-不要提交 `output/`、`.proto-bridge/store/`、Flutter `build/` 或 `.dart_tool/`。
+不要提交 `.proto-bridge/store/`、`output/`、Flutter `build/` 或 `.dart_tool/`。
