@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "flow-sheet",
+  "category": "complex",
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "title": { "type": "string" },
+      "modelValue": { "type": "boolean" },
+      "step": { "type": "number" },
+      "stepCount": { "type": "number" },
+      "swipe": { "type": "boolean" }
+    },
+    "required": ["title"]
+  },
+  "defaultProps": {
+    "title": "分步面板",
+    "modelValue": true,
+    "step": 0,
+    "stepCount": 3,
+    "swipe": true
+  },
+  "states": [
+    {
+      "id": "step-one",
+      "label": "第一步",
+      "props": { "modelValue": true, "step": 0, "stepCount": 3 }
+    },
+    {
+      "id": "step-two",
+      "label": "第二步",
+      "props": { "modelValue": true, "step": 1, "stepCount": 3 }
+    }
+  ],
+  "slots": ["default", "actions"],
+  "events": ["update:modelValue", "update:step"],
+  "tokenBindings": {
+    "surface": "color.surface",
+    "border": "color.border",
+    "radius": "radius.lg",
+    "elevation": "elevation.raised",
+    "title": "typography.subtitle",
+    "body": "typography.content"
+  }
+}

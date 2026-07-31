@@ -1,6 +1,9 @@
-import type { CaptureJob, RiskKind } from "@proto-bridge/core/v2";
+import type { CaptureJob } from "@proto-bridge/core/v2";
+import { riskKindLabel } from "@proto-bridge/core/v2/agent-prompt";
 import type { CaptureConsoleState } from "@proto-bridge/core/v2/service-contract";
 import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
+
+export { riskKindLabel };
 
 const RUNNING_STATUSES = new Set([
   "queued",
@@ -8,19 +11,6 @@ const RUNNING_STATUSES = new Set([
   "capturing",
   "writing",
 ]);
-
-const RISK_KIND_LABELS: Record<RiskKind, string> = {
-  "partial-coverage": "覆盖不完整",
-  "stale-evidence": "证据可能过期",
-  "required-unknown": "存在未证明的必需要素",
-  "unresolved-conflict": "存在未解决冲突",
-  "evidence-level-limitation": "证据级别受限",
-  "manual-promotion": "含人工提升项",
-};
-
-export function riskKindLabel(kind: RiskKind | string): string {
-  return RISK_KIND_LABELS[kind as RiskKind] ?? kind;
-}
 
 export type CaptureTaskDisplayStatus =
   "running" | "needs-attention" | "resolved" | "completed" | "cancelled";

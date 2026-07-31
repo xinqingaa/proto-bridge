@@ -10,7 +10,7 @@
 | `pnpm pb:up` | 按 Workspace 配置启动 PBWork 与 Local Service | Service 可以在启动恢复时终结 orphan Job |
 | `pnpm pb -- <args>` | 从仓库根目录调用正式 CLI | 由具体 CLI 命令决定 |
 | `pnpm pb:mcp` | 从配置解析 Store/Workspace 并启动 stdio MCP | 否 |
-| `pnpm pb:journey` | 用真实 CLI 采集、创建 Handoff、检查 MCP 固定读取并保存收据 | 是 |
+| `pnpm pb:journey` | **已过时（验收回归保留）**；日常请用 `pnpm pb -- deliver` | 是 |
 
 `pnpm pbwork` 是 `pnpm pb:up` 的兼容别名。
 
@@ -72,60 +72,29 @@ pnpm pb:mcp -- --print-config
 输出只包含命令、参数、Workspace 和 Store，不启动 MCP。
 Agent 客户端应使用输出中的直接 `node scripts/pb-mcp.mjs` 命令，避免包管理器的生命周期日志进入 stdio。MCP 启动不会隐式构建；构建缺失时先运行 `pnpm build`。
 
-## Guided Journey
+## Deliver（产品主路径）
 
-先在一个终端运行：
-
-```bash
-pnpm pb:up
-```
-
-再在另一个终端运行：
-
-```bash
-pnpm pb:journey
-```
-
-默认使用
-`examples/selections/ledger-planet-task-list.json`。自定义原型可以传入自己的 `SelectionDraft`：
-
-```bash
-pnpm pb:journey -- \
-  --selection /absolute/path/to/selection.json \
-  --target /absolute/path/to/apps/flutter_pb_app \
-  --intent "实现本次原型范围"
-```
-
-Journey 顺序调用真实入口：
-
-1. CLI Preflight；
-2. 逐项确认 warning；
-3. CLI Capture（Local Service 可达时经 Service 写入，可与 `pnpm pb:up` 并存）；
-4. Snapshot inspect；
-5. 逐项确认 Handoff risk；
-6. Handoff create；
-7. MCP 读取固定 Workspace、Handoff 和 Snapshot；
-8. 生成 Agent prompt 与 Journey receipt。
-
-warning 使用交互确认或可重复的 `--accept-warning <id>`；Handoff risk 使用交互确认或可重复的 `--ack-risk <kind>`。Journey 不提供全局确认或 force。
-
-产物保存在：
+GUI「交付到 Agent」与 CLI `deliver` 都会写入：
 
 ```text
-.proto-bridge/journeys/<timestamp>/
+.proto-bridge/deliveries/<timestamp>/
 ├── receipt.json
 └── agent-prompt.md
-
-.proto-bridge/journeys/latest.json
 ```
 
-Receipt 记录 Selection、Workspace、Store、Bundle、Run、Snapshot、Handoff、确认项和 MCP 检查结果。目录属于本地操作记录，不提交 Git。
+```bash
+pnpm pb -- deliver \
+  --prototype ledger-planet \
+  --screen task-list \
+  --target apps/flutter_pb_app
+```
 
-## 适用边界
+收据只是 Store 索引；MCP 仍按 Handoff / Snapshot 从 Store 按需读取。也可用
+`--selection <file>`，或 `--bundle` + `--snapshot` 在已有 Evidence 上续跑交接。
 
-- `pnpm verify` 是可重复的仓库门禁；
-- `pnpm pb:journey` 是保留真实 Evidence 的本地操作验收；
-- PBWork GUI 是交互选择与 Review 入口；
-- Cursor/Codex 是真实 Consumer，Journey 只生成 prompt，不代替 Agent。
+## Guided Journey（验收回归）
+
+`pnpm pb:journey` 仍可用于本地验收回归，但**不是**日常产品主路径；请优先使用
+`pnpm pb -- deliver` 或 PBWork「交付到 Agent」。
 
 完整人工验收顺序应以当前验收任务文档为准；稳定的 Agent 读取规则仍由 [Agent 消费指南](./agent-consumption.md)定义。

@@ -38,8 +38,13 @@ pnpm pb:mcp -- --print-config
 保留一次可交给 Agent 的真实 Evidence：
 
 ```bash
-pnpm pb:journey
+pnpm pb -- deliver \
+  --prototype ledger-planet \
+  --screen task-list \
+  --target apps/flutter_pb_app
 ```
+
+（`pnpm pb:journey` 仅保留给验收回归，日常请用 `deliver` 或 PBWork「交付到 Agent」。）
 
 完整步骤见 [快速上手](docs/guides/getting-started.md)和[本地操作脚本](docs/guides/operator-scripts.md)。
 

@@ -1,6 +1,6 @@
-import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { FragmentRef, fragmentSetIsSubsetOf, normalizeFragmentRefs } from './fragment.js';
+import { sha1Hex } from './hash-sha1.js';
 import { CaptureInputMode, EvidenceLevel, evidenceLevelRank } from './vocabulary.js';
 import { ScopeKey } from './ids.js';
 
@@ -113,6 +113,6 @@ export function computeScopeKey(scope: NormalizedCaptureScope): ScopeKey {
     evidenceInputMode: scope.evidenceInputMode,
     minEvidenceLevel: scope.minEvidenceLevel,
   };
-  const digest = createHash('sha1').update(JSON.stringify(canonical)).digest('hex').slice(0, 16);
+  const digest = sha1Hex(JSON.stringify(canonical)).slice(0, 16);
   return `scope_${digest}` as ScopeKey;
 }

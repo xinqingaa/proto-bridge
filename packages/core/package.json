@@ -26,6 +26,11 @@
       "types": "./dist/v2/evidence-read-model.d.ts",
       "import": "./dist/v2/evidence-read-model.js"
     },
+    "./v2/agent-prompt": {
+      "types": "./dist/v2/agent-prompt.d.ts",
+      "import": "./dist/v2/agent-prompt.js"
+    },
+
     "./v2/store": {
       "types": "./dist/v2/store/index.d.ts",
       "import": "./dist/v2/store/index.js"

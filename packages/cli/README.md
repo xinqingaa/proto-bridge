@@ -24,6 +24,8 @@ proto-bridge workspace init [--config <file>]
 proto-bridge workspace doctor [--json]
 proto-bridge preflight --selection <file> [--manifest <file>]
 proto-bridge capture run --selection <file> [--bundle <id>]
+proto-bridge deliver (--selection <file> | --prototype <id> --screen <slug>) [--target <dir>]
+proto-bridge deliver --bundle <id> --snapshot <id> [--ack-risk <kind>]
 proto-bridge job status|cancel|retry --job <id>
 proto-bridge bundle list|inspect|fork|archive|clean
 proto-bridge snapshot|run|case inspect
@@ -39,8 +41,10 @@ proto-bridge service start
 - warning 使用可重复的 `--accept-warning <warningId>` 逐项确认；
 - Handoff risk 使用可重复的 `--ack-risk <riskKind>` 逐项确认；
 - 不提供 `--force`；
+- `deliver` 一次完成采集、Handoff 与 `.proto-bridge/deliveries/*/agent-prompt.md`（收据只是 Store 索引；MCP 仍按 Handoff/Snapshot 读 Store）；
+- `deliver` 默认 `--variants default-and-critical`、`--scenarios critical`；
 - `workspace doctor` 与 inspect/list/show 以只读方式打开 Store，可与 `pnpm pb:up` 并存；
-- `capture run`、`handoff create`、`job cancel` 等写命令在 Local Service 可达时自动经 HTTP 写入（与 GUI 共用同一 writer）；不可达时回退到本地写锁；
+- `capture run`、`handoff create`、`job cancel`、`deliver` 等写命令在 Local Service 可达时自动经 HTTP 写入（与 GUI 共用同一 writer）；不可达时回退到本地写锁；
 - 可用 `--via-service` 强制走 Service，或 `--local-store` 强制本地写（需停掉占用 Store 的 Service）；
 - `--json` 输出稳定 JSON；
 - blocked、partial、cancelled、interrupted、failed 和 stale 使用不同退出码；
@@ -53,8 +57,16 @@ proto-bridge service start
 PBWork 与 CLI 对同一规范化 Draft 必须生成相同 Case identity 和 Matrix。
 
 仓库提供可直接执行的
-`examples/selections/ledger-planet-task-list.json`，以及保留真实
-Bundle/Handoff 的 `pnpm pb:journey`。脚本行为见[本地操作脚本](../../docs/guides/operator-scripts.md)。
+`examples/selections/ledger-planet-task-list.json`。推荐日常用：
+
+```bash
+pnpm pb -- deliver \
+  --prototype ledger-planet \
+  --screen task-list \
+  --target apps/flutter_pb_app
+```
+
+`pnpm pb:journey` 仍可用于本地验收回归，但产品主路径是 `deliver`。
 
 ## 开发
 

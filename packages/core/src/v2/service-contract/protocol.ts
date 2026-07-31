@@ -92,3 +92,21 @@ export type HandoffPreview = {
   handoff?: AgentHandoff;
   persisted: boolean;
 };
+
+export type CreateDeliveryRequest = {
+  handoffId: string;
+  targetRoot: string;
+  implementationIntent?: string;
+  runId?: string;
+  acceptedWarningIds?: string[];
+  acknowledgedRiskKinds?: string[];
+};
+
+export type DeliveryArtifact = {
+  deliveryId: string;
+  agentPromptPath: string;
+  receiptPath: string;
+  handoffId: string;
+  bundleId: string;
+  snapshotId: string;
+};

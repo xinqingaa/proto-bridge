@@ -315,6 +315,22 @@ export const componentRecords = [
     ],
   },
   {
+    id: "flow-sheet",
+    label: "Flow Sheet",
+    description: "底部多步面板，页内左右滑动切换步骤。",
+    category: "complex",
+    view: "complex/FlowSheet.vue",
+    contract: "contracts/flow-sheet.json",
+    example: {},
+    controls: [
+      { key: "title", label: "标题", control: "text" },
+      { key: "modelValue", label: "打开", control: "boolean" },
+      { key: "step", label: "当前步骤", control: "number" },
+      { key: "stepCount", label: "步骤数", control: "number" },
+      { key: "swipe", label: "允许滑动", control: "boolean" },
+    ],
+  },
+  {
     id: "select",
     label: "Select",
     description: "从有限业务选项中选择，如服务类型、负责人。",

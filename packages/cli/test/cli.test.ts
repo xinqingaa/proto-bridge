@@ -93,6 +93,7 @@ describe('ProtoBridge CLI', () => {
     expect(await runCli(['--help'], output.io)).toBe(CLI_EXIT_CODES.ok);
     const usage = output.stdout.join('\n');
     expect(usage).toContain('proto-bridge workspace init');
+    expect(usage).toContain('proto-bridge deliver');
     expect(usage).not.toContain('proto-bridge v2');
     expect(usage).not.toContain('proto-bridge generate');
   });

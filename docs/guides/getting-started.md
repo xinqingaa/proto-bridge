@@ -86,11 +86,17 @@ pnpm pb:mcp -- --print-config
 对照或配置 Codex。不要把带生命周期日志的包管理器命令登记为 stdio server。
 MCP 必须绑定到 Handoff 所属 Workspace。Agent 的读取顺序见 [Agent 消费指南](./agent-consumption.md)。
 
-需要生成一份持久 Journey receipt、固定读取检查和 Agent prompt 时：
+需要生成可 review 的 delivery 收据和 Agent prompt 时：
 
 ```bash
-pnpm pb:journey
+pnpm pb -- deliver \
+  --prototype ledger-planet \
+  --screen task-list \
+  --target apps/flutter_pb_app
 ```
+
+PBWork「交付到 Agent」会写入同一套 `.proto-bridge/deliveries/` 产物。
+`pnpm pb:journey` 仅保留给带 MCP 固定读取检查的验收回归。
 
 所有根脚本和参数见[本地操作脚本](./operator-scripts.md)。
 

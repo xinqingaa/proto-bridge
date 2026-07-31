@@ -6,6 +6,7 @@ import type {
   RiskKind,
   StalenessReport,
 } from "@proto-bridge/core/v2";
+import { buildAgentPrompt } from "@proto-bridge/core/v2/agent-prompt";
 import type {
   ScenarioSelection,
   SelectionDraft,
@@ -147,6 +148,14 @@ export const useCaptureStore = defineStore("capture-v2", {
       acknowledgedRiskKinds: [] as RiskKind[],
       handoffSheetOpen: false,
       handoffIntent: "",
+      deliverStep: 0,
+      agentPrompt: null as string | null,
+      deliveryArtifact: null as {
+        deliveryId: string;
+        agentPromptPath: string;
+        receiptPath: string;
+      } | null,
+      deliverTargetRoot: "apps/flutter_pb_app",
       recaptureBundleId: null as string | null,
       screenshotUrls: {} as Record<string, string>,
       composerOpen: false,
@@ -201,10 +210,18 @@ export const useCaptureStore = defineStore("capture-v2", {
       this.lastErrorCode = null;
     },
     openComposer() {
+      this.deliverStep = 0;
+      this.agentPrompt = null;
+      this.deliveryArtifact = null;
+      this.handoff = null;
       this.composerOpen = true;
+      void this.runPreflight();
     },
     closeComposer() {
       this.composerOpen = false;
+    },
+    setDeliverStep(step: number) {
+      this.deliverStep = Math.min(3, Math.max(0, step));
     },
     discardDraft() {
       this.entryKind = null;
@@ -456,12 +473,17 @@ export const useCaptureStore = defineStore("capture-v2", {
         this.activeJob = result.job;
         this.selectedJob = null;
         this.details = null;
-        this.composerOpen = false;
-        this.jobCenterOpen = true;
+        this.agentPrompt = null;
+        this.deliveryArtifact = null;
+        this.handoff = null;
+        this.deliverStep = 1;
+        this.composerOpen = true;
+        // Keep progress inside the Deliver FlowSheet; task center stays secondary.
+        this.jobCenterOpen = false;
         this.notice = {
           tone: "info",
-          title: "证据采集已开始",
-          message: `${result.job.selection.cases.length} 个采集项将在后台执行，你可以继续浏览工作台。`,
+          title: "正在交付",
+          message: `${result.job.selection.cases.length} 个采集项执行中。`,
           bundleId: result.job.bundleId,
         };
         await this.refreshConsole();
@@ -522,6 +544,14 @@ export const useCaptureStore = defineStore("capture-v2", {
             ? { snapshotId: this.details.activeSnapshot.snapshotId }
             : {}),
         };
+        if (completed && this.details && this.composerOpen) {
+          this.deliverStep = 2;
+          this.acknowledgedRiskKinds = [];
+          await this.previewCurrentHandoff();
+          // Auto-ack risks for deliver continuity; risks stay in the Agent prompt.
+          this.acknowledgedRiskKinds =
+            this.handoffPreview?.risks.map((risk) => risk.kind) ?? [];
+        }
       } catch (error) {
         this.setError(error);
       }
@@ -695,10 +725,17 @@ export const useCaptureStore = defineStore("capture-v2", {
     openHandoffSheet() {
       this.handoff = null;
       this.handoffPreview = null;
+      this.agentPrompt = null;
+      this.deliveryArtifact = null;
       this.acknowledgedRiskKinds = [];
       this.handoffIntent = "";
-      this.handoffSheetOpen = true;
-      void this.previewCurrentHandoff();
+      this.deliverStep = 2;
+      this.composerOpen = true;
+      this.handoffSheetOpen = false;
+      void this.previewCurrentHandoff().then(() => {
+        this.acknowledgedRiskKinds =
+          this.handoffPreview?.risks.map((risk) => risk.kind) ?? [];
+      });
     },
     closeHandoffSheet() {
       this.handoffSheetOpen = false;
@@ -718,6 +755,30 @@ export const useCaptureStore = defineStore("capture-v2", {
           acknowledgedRiskKinds: this.acknowledgedRiskKinds,
         });
         await this.loadSnapshot(bundleId, snapshotId);
+        this.agentPrompt = buildAgentPrompt({
+          handoffId: this.handoff.handoffId,
+          workspaceId: this.details.bundle.workspaceId,
+          bundleId,
+          snapshotId,
+          targetRoot: this.deliverTargetRoot,
+          ...(intent.trim() ? { implementationIntent: intent.trim() } : {}),
+          risks: this.handoff.risks,
+        });
+        const delivery = await captureServiceClient.createDelivery({
+          handoffId: this.handoff.handoffId,
+          targetRoot: this.deliverTargetRoot,
+          ...(intent.trim() ? { implementationIntent: intent.trim() } : {}),
+          runId: this.details.activeSnapshot.sourceRunId,
+          acceptedWarningIds: this.acceptedWarningIds,
+          acknowledgedRiskKinds: this.acknowledgedRiskKinds,
+        });
+        this.deliveryArtifact = {
+          deliveryId: delivery.deliveryId,
+          agentPromptPath: delivery.agentPromptPath,
+          receiptPath: delivery.receiptPath,
+        };
+        this.deliverStep = 3;
+        this.composerOpen = true;
       } catch (error) {
         this.setError(error);
       } finally {

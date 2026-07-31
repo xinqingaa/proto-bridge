@@ -4,6 +4,7 @@ import { mkdir, stat, writeFile } from "node:fs/promises";
 import { createInterface as createLineReader } from "node:readline";
 import { createInterface as createPromptInterface } from "node:readline/promises";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import {
   ensureBuilt,
   loadWorkspaceConfig,
@@ -20,6 +21,9 @@ const argv = userArgv();
 if (argv.includes("--help")) {
   process.stdout.write(`Usage:
   pnpm pb:journey -- [options]
+
+DEPRECATED: prefer \`pnpm pb -- deliver\` (or PBWork 交付到 Agent).
+pb:journey remains for local acceptance regression with an MCP fixed-read check.
 
 Options:
   --config <file>            Workspace config (default: proto-bridge.json)
@@ -209,12 +213,14 @@ try {
   const journeyId = createdAt.replaceAll(":", "-").replace(/\.\d{3}Z$/, "Z");
   const journeyDir = path.join(journeyRoot, journeyId);
   await mkdir(journeyDir, { recursive: true });
-  const agentPrompt = createAgentPrompt({
+  const agentPrompt = await createAgentPrompt({
     handoffId: handoff.handoffId,
     workspaceId: workspace.workspaceId,
     bundleId,
     snapshotId,
     targetRoot,
+    risks: handoff.risks ?? [],
+    implementationIntent: intent,
   });
   const agentPromptPath = path.join(journeyDir, "agent-prompt.md");
   await writeFile(agentPromptPath, agentPrompt, "utf8");
@@ -465,41 +471,27 @@ function parseToolJson(result) {
   return result.structuredContent;
 }
 
-function createAgentPrompt({
+async function createAgentPrompt({
   handoffId,
   workspaceId,
   bundleId,
   snapshotId,
   targetRoot,
+  risks = [],
+  implementationIntent,
 }) {
-  return `# ProtoBridge Agent 验收任务
-
-通过已配置的 ProtoBridge MCP 消费固定 Evidence。目标工程是：
-
-\`${targetRoot}\`
-
-固定引用：
-
-- Workspace：\`${workspaceId}\`
-- Handoff：\`${handoffId}\`
-- Bundle：\`${bundleId}\`
-- Snapshot：\`${snapshotId}\`
-
-先完成只读阶段，不要立即修改代码：
-
-1. 读取资源 \`proto-bridge://guides/handoff-consumer\`。
-2. 调用 \`inspect_evidence_workspace\` 并核对 Workspace。
-3. 调用 \`read_agent_handoff\`，在编辑前原样报告全部 \`mandatoryRiskReport\`。
-4. 读取 Handoff 固定的 Snapshot、Staleness Report、Case、revision、Fragment 和 Screenshot；不得切换到 active/latest。
-5. 调用 \`read_target_conventions\` 与 \`find_target_examples\`，说明会复用哪些目标工程模式。
-6. 先给出 Evidence 理解摘要并等待我确认。
-
-确认后进入实现阶段：
-
-1. 只修改与 Handoff 实现范围相关的文件。
-2. 使用目标工程现有 Theme、路由和公共组件。
-3. 运行 \`flutter analyze\` 与 \`flutter test\`。
-4. 调用 \`validate_target_changes\`。
-5. 最终报告固定 Handoff/Snapshot/revision、原始风险、修改文件、测试结果和剩余风险。
-`;
+  const mod = await import(
+    pathToFileURL(
+      path.join(repoRoot, "packages/core/dist/v2/agent-prompt.js"),
+    ).href
+  );
+  return mod.buildAgentPrompt({
+    handoffId,
+    workspaceId,
+    bundleId,
+    snapshotId,
+    targetRoot,
+    risks,
+    implementationIntent,
+  });
 }

@@ -9,6 +9,7 @@ import type { AddressInfo } from 'node:net';
 import {
   BlobId,
   BundleId,
+  HandoffId,
   JobId,
   RiskKind,
   SnapshotId,
@@ -32,12 +33,14 @@ import {
 import {
   LocalFileStore,
   generateOperationalId,
+  writeDeliveryReceipt,
   type V2Store,
 } from '@proto-bridge/core/v2/store';
 import {
   LOCAL_SERVICE_PROTOCOL_VERSION,
   type BundleEvidenceDetails,
   type CaptureConsoleState,
+  type CreateDeliveryRequest,
   type CreateJobRequest,
   type CreatePreflightRequest,
   type HandoffPreviewRequest,
@@ -753,6 +756,50 @@ export class ProtoBridgeLocalService {
         ),
       });
       success(response, { handoff, persisted: true }, 201);
+      return;
+    }
+
+    if (request.method === 'POST' && path === '/api/v2/deliveries') {
+      const body = (await readBody(request)) as CreateDeliveryRequest;
+      const handoffId = HandoffId.parse(body.handoffId);
+      const handoff = await this.store.getHandoff(handoffId);
+      if (!handoff) {
+        throw new V2ContractError(
+          'unknown-reference',
+          `Handoff ${handoffId} does not exist.`,
+        );
+      }
+      const targetRoot = String(body.targetRoot ?? '').trim();
+      if (!targetRoot) {
+        throw new V2ContractError(
+          'invalid-schema',
+          'deliveries require targetRoot.',
+        );
+      }
+      const receipt = await writeDeliveryReceipt({
+        storeRoot: this.options.storeRoot,
+        targetRoot,
+        handoff,
+        source: 'gui',
+        ...(body.runId ? { runId: body.runId } : {}),
+        acceptedWarningIds: body.acceptedWarningIds ?? [],
+        acknowledgedRiskKinds: body.acknowledgedRiskKinds ?? [],
+        ...(body.implementationIntent
+          ? { implementationIntent: body.implementationIntent }
+          : {}),
+      });
+      success(
+        response,
+        {
+          deliveryId: receipt.deliveryId,
+          agentPromptPath: receipt.agentPromptPath,
+          receiptPath: receipt.receiptPath,
+          handoffId: receipt.handoffId,
+          bundleId: receipt.bundleId,
+          snapshotId: receipt.snapshotId,
+        },
+        201,
+      );
       return;
     }
 

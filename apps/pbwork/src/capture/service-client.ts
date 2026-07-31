@@ -15,6 +15,7 @@ import type {
   StalenessReport,
 } from "@proto-bridge/core/v2";
 import type { SelectionDraft } from "@proto-bridge/core/v2/capture";
+import type { DeliveryArtifact } from "@proto-bridge/core/v2/service-contract";
 
 const SESSION_KEY = "pbwork.capture-v2.session";
 
@@ -142,6 +143,17 @@ export class CaptureServiceClient {
       body,
     });
     return result.handoff;
+  }
+
+  createDelivery(body: {
+    handoffId: string;
+    targetRoot: string;
+    implementationIntent?: string;
+    runId?: string;
+    acceptedWarningIds?: string[];
+    acknowledgedRiskKinds?: string[];
+  }): Promise<DeliveryArtifact> {
+    return this.request("/deliveries", { method: "POST", body });
   }
 
   async blobUrl(bundleId: string, blobId: string): Promise<string> {

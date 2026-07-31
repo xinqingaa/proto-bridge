@@ -1,0 +1,596 @@
+<script setup lang="ts">
+import { computed, ref, watch } from "vue";
+import { useRouter } from "vue-router";
+import {
+  AlertTriangle,
+  Check,
+  ClipboardCopy,
+  Handshake,
+  LoaderCircle,
+  ScanLine,
+  X,
+} from "lucide-vue-next";
+import { riskKindLabel } from "@proto-bridge/core/v2/agent-prompt";
+import { useCaptureStore } from "@/app/stores/capture";
+import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
+import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
+import WorkbenchCheckbox from "@/workbench/ui/WorkbenchCheckbox.vue";
+import WorkbenchIconButton from "@/workbench/ui/WorkbenchIconButton.vue";
+import WorkbenchSelect, {
+  type WorkbenchSelectItem,
+} from "@/workbench/ui/WorkbenchSelect.vue";
+import WorkbenchTextField from "@/workbench/ui/WorkbenchTextField.vue";
+
+const capture = useCaptureStore();
+const router = useRouter();
+const prototypes = loadPrototypes();
+const screens = loadPrototypeScreens();
+const copied = ref(false);
+
+const STEP_TITLES = ["确认范围", "执行中", "结果与风险", "Agent 提示词"] as const;
+
+const prototype = computed(() =>
+  prototypes.find((item) => item.id === capture.draft?.prototypeId),
+);
+const entryLabel = computed(
+  () =>
+    ({
+      "current-screen": "当前页面",
+      fragment: "所选元素",
+      custom: "自定义页面范围",
+      prototype: "整个原型",
+    })[capture.entryKind ?? "custom"],
+);
+const variantItems: WorkbenchSelectItem[] = [
+  { label: "默认状态", value: "default" },
+  { label: "仅关键状态", value: "critical" },
+  { label: "默认 + 关键状态", value: "default-and-critical" },
+  { label: "全部状态", value: "all" },
+];
+const scenarioItems: WorkbenchSelectItem[] = [
+  { label: "不执行场景", value: "none" },
+  { label: "关键场景", value: "critical" },
+  { label: "全部场景", value: "all" },
+];
+const allVariantMode = computed(() => {
+  const mode = capture.draft?.screens[0]?.variants.mode ?? "default-and-critical";
+  return mode === "explicit" ? "default" : mode;
+});
+const allScenarioMode = computed(() => {
+  const mode = capture.draft?.screens[0]?.scenarios.mode ?? "critical";
+  return mode === "explicit" ? "critical" : mode;
+});
+const fragmentLabel = computed(() => {
+  const fragments = capture.draft?.screens[0]?.captureScope.fragments ?? [];
+  if (!fragments.length) return "";
+  return fragments
+    .map((item) =>
+      item.pbKey ? `${item.pbId}#${item.pbKey}` : item.pbId,
+    )
+    .join(", ");
+});
+const scopeEditable = computed(
+  () => capture.entryKind === "custom" || capture.entryKind === "prototype",
+);
+const warnings = computed(() => capture.preflight?.result.warnings ?? []);
+const matrixCount = computed(() => capture.preflight?.result.matrix.length ?? 0);
+const risks = computed(() => capture.handoffPreview?.risks ?? []);
+const successfulCount = computed(() => {
+  const counts = capture.details?.activeSnapshot.coverage.counts;
+  if (!counts) return 0;
+  return counts.captured + counts.reused;
+});
+const promptHtml = computed(() => renderMarkdown(capture.agentPrompt ?? ""));
+
+watch(
+  () => capture.composerOpen,
+  (open) => {
+    if (open && capture.deliverStep === 0 && capture.draft && !capture.preflight) {
+      void capture.runPreflight();
+    }
+  },
+);
+
+function setAllVariants(value: string) {
+  capture.setAllVariantMode(
+    value as "default" | "critical" | "default-and-critical" | "all",
+  );
+  void capture.runPreflight();
+}
+function setAllScenarios(value: string) {
+  capture.setAllScenarioMode(value as "none" | "critical" | "all");
+  void capture.runPreflight();
+}
+
+async function startDeliver() {
+  if (!capture.preflight) await capture.runPreflight();
+  if (!capture.warningsAccepted) return;
+  await capture.createJob();
+}
+
+async function finishHandoff() {
+  await capture.createCurrentHandoff();
+}
+
+async function copyPrompt() {
+  if (!capture.agentPrompt) return;
+  try {
+    await navigator.clipboard.writeText(capture.agentPrompt);
+    copied.value = true;
+    setTimeout(() => {
+      copied.value = false;
+    }, 1600);
+  } catch {
+    capture.setError(new Error("无法复制提示词，请手动选择文本。"));
+  }
+}
+
+async function openDetails() {
+  const bundleId = capture.details?.bundle.bundleId;
+  const snapshotId = capture.details?.activeSnapshot.snapshotId;
+  if (!bundleId || !snapshotId) return;
+  capture.closeComposer();
+  await router.push(`/workbench/evidence/${bundleId}/${snapshotId}`);
+}
+
+function renderMarkdown(source: string): string {
+  const escaped = source
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+  return escaped
+    .replace(/^### (.+)$/gm, "<h3>$1</h3>")
+    .replace(/^## (.+)$/gm, "<h2>$1</h2>")
+    .replace(/^# (.+)$/gm, "<h1>$1</h1>")
+    .replace(/^- (.+)$/gm, "<li>$1</li>")
+    .replace(/(<li>.*<\/li>\n?)+/g, (block) => `<ul>${block}</ul>`)
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\n\n/g, "</p><p>")
+    .replace(/^(?!<[hul])/gm, (line) => (line.trim() ? line : ""))
+    .replace(/^(?!<)/, "<p>")
+    .concat("</p>")
+    .replaceAll("<p></p>", "")
+    .replaceAll("<p><h", "<h")
+    .replaceAll("</h1></p>", "</h1>")
+    .replaceAll("</h2></p>", "</h2>")
+    .replaceAll("</h3></p>", "</h3>")
+    .replaceAll("<p><ul>", "<ul>")
+    .replaceAll("</ul></p>", "</ul>");
+}
+</script>
+
+<template>
+  <v-bottom-sheet
+    v-model="capture.composerOpen"
+    :retain-focus="false"
+    content-class="deliver-flow-overlay"
+    data-testid="capture-composer"
+  >
+    <section
+      class="deliver-flow"
+      aria-label="交付到 Agent"
+      data-testid="deliver-flow-sheet"
+    >
+      <header class="flow-header">
+        <div class="header-mark">
+          <Handshake v-if="capture.deliverStep === 3" :size="22" />
+          <LoaderCircle
+            v-else-if="capture.deliverStep === 1"
+            :size="22"
+            class="spin"
+          />
+          <ScanLine v-else :size="22" />
+        </div>
+        <div>
+          <h2>交付到 Agent</h2>
+          <p>
+            {{ STEP_TITLES[capture.deliverStep] }} ·
+            {{ prototype?.label ?? capture.draft?.prototypeId ?? "未选择" }}
+          </p>
+        </div>
+        <WorkbenchIconButton
+          label="关闭交付流程"
+          size="large"
+          @click="capture.closeComposer"
+        >
+          <X :size="20" />
+        </WorkbenchIconButton>
+      </header>
+
+      <div class="step-dots" aria-hidden="true">
+        <span
+          v-for="index in 4"
+          :key="index"
+          :class="{ active: index - 1 === capture.deliverStep }"
+        />
+      </div>
+
+      <div class="flow-scroll" data-no-swipe>
+        <v-alert
+          v-if="capture.lastError"
+          type="error"
+          variant="tonal"
+          density="comfortable"
+          closable
+          @click:close="capture.clearError"
+        >
+          {{ capture.lastError }}
+        </v-alert>
+
+        <!-- Step 0: scope -->
+        <section v-if="capture.deliverStep === 0" class="step-panel">
+          <div v-if="!capture.draft" class="empty">
+            <strong>还没有交付范围</strong>
+            <p>请从原型、页面画布或元素检查面板发起。</p>
+          </div>
+          <template v-else>
+            <div class="summary-grid">
+              <article>
+                <span>入口</span>
+                <strong>{{ entryLabel }}</strong>
+              </article>
+              <article>
+                <span>页面</span>
+                <strong>{{ capture.draft.screens.length }}</strong>
+              </article>
+              <article>
+                <span>将采集</span>
+                <strong>{{ matrixCount || "…" }} 项</strong>
+              </article>
+            </div>
+            <p v-if="fragmentLabel" class="ok-line">
+              稳定元素：{{ fragmentLabel }}
+            </p>
+
+            <label v-if="scopeEditable" class="field">
+              <span>状态范围</span>
+              <WorkbenchSelect
+                :model-value="allVariantMode"
+                :items="variantItems"
+                aria-label="状态范围"
+                @update:model-value="setAllVariants"
+              />
+              <small v-if="allVariantMode === 'all'">
+                「全部状态」可能包含未声明验收元素的空态，创建交接时会出现风险提示。
+              </small>
+            </label>
+            <label v-if="scopeEditable" class="field">
+              <span>交互场景</span>
+              <WorkbenchSelect
+                :model-value="allScenarioMode"
+                :items="scenarioItems"
+                aria-label="交互场景"
+                @update:model-value="setAllScenarios"
+              />
+            </label>
+            <p v-else class="ok-line">
+              将按当前入口采集；默认包含本页相关关键场景（若有）。
+            </p>
+            <label class="field">
+              <span>实现意图（可选）</span>
+              <WorkbenchTextField
+                :model-value="capture.handoffIntent"
+                aria-label="实现意图"
+                placeholder="例如：在 Flutter 示例工程还原任务列表"
+                @update:model-value="capture.handoffIntent = $event"
+              />
+            </label>
+
+            <section v-if="warnings.length" class="risk-block">
+              <strong>需要确认的事项</strong>
+              <div
+                v-for="warning in warnings"
+                :key="warning.warningId"
+                class="risk-row"
+              >
+                <AlertTriangle :size="16" />
+                <span>{{ warning.message }}</span>
+                <WorkbenchCheckbox
+                  :model-value="
+                    capture.acceptedWarningIds.includes(warning.warningId)
+                  "
+                  label="我已了解并继续"
+                  @update:model-value="
+                    capture.toggleWarning(warning.warningId, $event)
+                  "
+                />
+              </div>
+            </section>
+          </template>
+        </section>
+
+        <!-- Step 1: running -->
+        <section v-else-if="capture.deliverStep === 1" class="step-panel loading">
+          <LoaderCircle :size="36" class="spin" />
+          <strong>{{ capture.activeJob?.status ?? "准备中" }}</strong>
+          <p>
+            正在采集 {{ capture.activeJob?.selection.cases.length ?? 0 }} 个视图。
+            完成后会留在此面板继续交接。
+          </p>
+        </section>
+
+        <!-- Step 2: result + risks -->
+        <section v-else-if="capture.deliverStep === 2" class="step-panel">
+          <div class="result-banner">
+            <Check :size="20" />
+            <div>
+              <strong>{{ successfulCount }} 个视图已就绪</strong>
+              <small>
+                Snapshot
+                {{ capture.details?.activeSnapshot.snapshotId ?? "—" }}
+              </small>
+            </div>
+          </div>
+
+          <section v-if="risks.length" class="risk-block">
+            <strong>提醒（不会修改 Evidence，会写入 Agent 提示词）</strong>
+            <div
+              v-for="risk in risks"
+              :key="risk.kind"
+              class="risk-row"
+              data-testid="deliver-risk-row"
+            >
+              <AlertTriangle :size="16" />
+              <span>
+                <b>{{ riskKindLabel(risk.kind) }}</b>
+                <small>{{ risk.message }}</small>
+              </span>
+            </div>
+          </section>
+          <p v-else class="ok-line">当前没有必须确认的风险，可以直接生成交接。</p>
+        </section>
+
+        <!-- Step 3: prompt -->
+        <section v-else class="step-panel">
+          <div v-if="capture.handoff" class="result-banner">
+            <Check :size="20" />
+            <div>
+              <strong>交接已创建</strong>
+              <small data-testid="handoff-id">{{ capture.handoff.handoffId }}</small>
+            </div>
+          </div>
+          <p
+            v-if="capture.deliveryArtifact"
+            class="ok-line"
+            data-testid="delivery-path"
+          >
+            已写入：{{ capture.deliveryArtifact.agentPromptPath }}
+          </p>
+          <article
+            v-if="capture.agentPrompt"
+            class="prompt-md"
+            data-testid="agent-prompt"
+            v-html="promptHtml"
+          />
+          <p class="hint">
+            请到 Cursor / Codex 粘贴本提示词，并确认已配置 ProtoBridge MCP。
+            <small>一键拉起 Agent 暂不支持。</small>
+          </p>
+        </section>
+      </div>
+
+      <footer class="flow-actions">
+        <WorkbenchButton
+          v-if="capture.deliverStep === 2"
+          tone="neutral"
+          @click="openDetails"
+        >
+          查看详情
+        </WorkbenchButton>
+        <div class="spacer" />
+        <WorkbenchButton
+          v-if="capture.deliverStep === 0"
+          tone="primary"
+          :loading="capture.busy"
+          :disabled="!capture.draft || !capture.preflight || !capture.warningsAccepted"
+          data-testid="composer-start-capture"
+          @click="startDeliver"
+        >
+          开始交付
+        </WorkbenchButton>
+        <WorkbenchButton
+          v-else-if="capture.deliverStep === 2"
+          tone="primary"
+          :loading="capture.busy"
+          :disabled="!capture.handoffPreview || !capture.risksAccepted"
+          data-testid="handoff-create"
+          @click="finishHandoff"
+        >
+          生成交接与提示词
+        </WorkbenchButton>
+        <template v-else-if="capture.deliverStep === 3">
+          <WorkbenchButton
+            tone="primary"
+            data-testid="deliver-copy-prompt"
+            @click="copyPrompt"
+          >
+            <ClipboardCopy :size="16" />
+            {{ copied ? "已复制" : "复制提示词" }}
+          </WorkbenchButton>
+          <WorkbenchButton tone="neutral" @click="capture.closeComposer">
+            完成
+          </WorkbenchButton>
+        </template>
+      </footer>
+    </section>
+  </v-bottom-sheet>
+</template>
+
+<style scoped>
+.deliver-flow {
+  display: flex;
+  width: min(920px, calc(100vw - 32px));
+  max-height: min(88vh, 820px);
+  margin-inline: auto;
+  overflow: hidden;
+  flex-direction: column;
+  border-radius: 24px 24px 0 0;
+  background: rgb(var(--v-theme-surface));
+  box-shadow: 0 -24px 70px rgba(15, 23, 42, 0.18);
+}
+.flow-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+  padding: 22px 28px 12px;
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+.header-mark {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 13px;
+  background: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-on-primary));
+}
+.flow-header h2 {
+  margin: 2px 0 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+.flow-header p {
+  margin: 4px 0 0;
+  color: rgba(var(--v-theme-on-surface), 0.58);
+  font-size: 0.78rem;
+}
+.step-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 0 0;
+}
+.step-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(var(--v-theme-on-surface), 0.18);
+}
+.step-dots span.active {
+  width: 16px;
+  background: rgb(var(--v-theme-primary));
+}
+.flow-scroll {
+  overflow: auto;
+  padding: 16px 28px 8px;
+}
+.step-panel {
+  display: grid;
+  gap: 14px;
+}
+.step-panel.loading {
+  place-items: center;
+  padding: 48px 12px;
+  text-align: center;
+}
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.summary-grid article,
+.result-banner,
+.risk-block {
+  padding: 12px 14px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 14px;
+  background: rgba(var(--v-theme-on-surface), 0.02);
+}
+.summary-grid span,
+.field > span {
+  color: rgb(var(--v-theme-primary));
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.summary-grid strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.92rem;
+}
+.field {
+  display: grid;
+  gap: 8px;
+}
+.field small,
+.hint small,
+.risk-row small,
+.result-banner small {
+  display: block;
+  margin-top: 4px;
+  color: rgba(var(--v-theme-on-surface), 0.55);
+  font-size: 0.72rem;
+}
+.risk-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, rgb(var(--v-theme-warning)) 9%, transparent);
+}
+.risk-row b,
+.risk-row small {
+  display: block;
+}
+.result-banner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+.ok-line,
+.hint,
+.empty p {
+  margin: 0;
+  color: rgba(var(--v-theme-on-surface), 0.62);
+  font-size: 0.8rem;
+}
+.prompt-md {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(var(--v-theme-on-surface), 0.04);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  overflow: auto;
+  max-height: 42vh;
+}
+.prompt-md :deep(h1),
+.prompt-md :deep(h2),
+.prompt-md :deep(h3) {
+  margin: 0.6em 0 0.35em;
+  font-size: 0.95rem;
+}
+.prompt-md :deep(ul) {
+  margin: 0.4em 0;
+  padding-left: 1.2em;
+}
+.prompt-md :deep(code) {
+  padding: 0 4px;
+  border-radius: 4px;
+  background: rgba(var(--v-theme-on-surface), 0.08);
+  font-size: 0.78rem;
+}
+.flow-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px 22px;
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+.spacer {
+  flex: 1;
+}
+.spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>

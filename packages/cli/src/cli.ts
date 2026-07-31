@@ -12,8 +12,11 @@ import {
   V2_SCHEMA_MAJOR,
   V2WorkspaceConfig,
   WorkspaceId,
+  buildAgentPrompt,
   buildEvidenceReadModel,
   computeScopeKey,
+  riskKindLabel,
+  type Risk,
   type SelectedCase,
 } from '@proto-bridge/core/v2';
 import {
@@ -21,6 +24,7 @@ import {
   PlaywrightCaseCaptureDriver,
   SelectionDraft,
   createAgentHandoff,
+  evaluateAgentHandoff,
   preflightInstrumentedRuntime,
   preflightSelection,
   selectionDraftFromSelectedCases,
@@ -32,6 +36,7 @@ import { RuntimeCaptureManifest } from '@proto-bridge/core/v2/runtime-contract';
 import {
   LocalFileStore,
   generateOperationalId,
+  writeDeliveryReceipt,
 } from '@proto-bridge/core/v2/store';
 import { ProtoBridgeLocalService } from '@proto-bridge/local-service';
 import {
@@ -121,6 +126,7 @@ async function execute(args: CliArgs, io: CliIo): Promise<number> {
   if (command === 'handoff create') return handoffCreate(args, io, loaded);
   if (command === 'handoff show') return handoffShow(args, io, loaded);
   if (command === 'handoff export') return handoffExport(args, io, loaded);
+  if (command === 'deliver') return deliverCommand(args, io, loaded);
   if (command === 'service start') return serviceStart(args, io, loaded);
   throw new Error(`Unknown ProtoBridge command: ${command}`);
 }
@@ -214,6 +220,337 @@ async function loadDraft(args: CliArgs): Promise<SelectionDraft> {
   return SelectionDraft.parse(
     JSON.parse(await readFile(requiredFlag(args, 'selection'), 'utf8')) as unknown,
   );
+}
+
+function resolveScreenId(prototypeId: string, screen: string): string {
+  return screen.includes('.') ? screen : `${prototypeId}.${screen}`;
+}
+
+function parseFragmentFlag(
+  raw: string,
+  screenId: string,
+): { screenId: string; pbId: string; pbKey?: string } {
+  const [pbId, pbKey] = raw.split(':');
+  if (!pbId) {
+    throw new V2ContractError(
+      'invalid-schema',
+      '--fragment requires pbId or pbId:pbKey.',
+    );
+  }
+  return {
+    screenId,
+    pbId,
+    ...(pbKey ? { pbKey } : {}),
+  };
+}
+
+/**
+ * Builds a SelectionDraft from --selection or short deliver flags.
+ * Defaults: variants=default-and-critical, scenarios=critical, theme=light,
+ * device=iphone-14.
+ * When --bundle and --snapshot are both set, SelectionDraft is not required
+ * (resume path: handoff + prompt only).
+ */
+async function resolveDeliverDraft(
+  args: CliArgs,
+): Promise<SelectionDraft | undefined> {
+  if (flag(args, 'bundle') && flag(args, 'snapshot')) {
+    if (flag(args, 'selection') || flag(args, 'prototype') || flag(args, 'screen')) {
+      // Capture scope is ignored when resuming from a fixed Snapshot.
+    }
+    return undefined;
+  }
+  if (flag(args, 'selection')) return loadDraft(args);
+
+  const prototypeId = flag(args, 'prototype');
+  const screen = flag(args, 'screen');
+  if (!prototypeId || !screen) {
+    throw new V2ContractError(
+      'invalid-schema',
+      'deliver requires --selection <file>, or both --prototype and --screen, or --bundle with --snapshot to resume.',
+    );
+  }
+
+  const screenId = resolveScreenId(prototypeId, screen);
+  const variantMode = (flag(args, 'variants') ??
+    'default-and-critical') as
+    | 'default'
+    | 'critical'
+    | 'default-and-critical'
+    | 'all';
+  if (
+    !['default', 'critical', 'default-and-critical', 'all'].includes(
+      variantMode,
+    )
+  ) {
+    throw new V2ContractError(
+      'invalid-schema',
+      '--variants must be default, critical, default-and-critical, or all.',
+    );
+  }
+  const scenarioMode = (flag(args, 'scenarios') ?? 'critical') as
+    | 'none'
+    | 'critical'
+    | 'all';
+  if (!['none', 'critical', 'all'].includes(scenarioMode)) {
+    throw new V2ContractError(
+      'invalid-schema',
+      '--scenarios must be none, critical, or all.',
+    );
+  }
+
+  const fragmentRaw = flag(args, 'fragment');
+  const fragments = fragmentRaw
+    ? [parseFragmentFlag(fragmentRaw, screenId)]
+    : [];
+
+  return SelectionDraft.parse({
+    prototypeId,
+    screens: [
+      {
+        screenId,
+        variants: { mode: variantMode },
+        themeIds: [flag(args, 'theme') ?? 'light'],
+        deviceIds: [flag(args, 'device') ?? 'iphone-14'],
+        scenarios: { mode: scenarioMode },
+        captureScope: {
+          fragments,
+          screenshots:
+            fragments.length > 0
+              ? { mode: 'selected', targets: fragments }
+              : { mode: 'all' },
+          sourcePolicy: false,
+          debugPolicy: false,
+          evidenceInputMode: 'instrumented',
+          minEvidenceLevel: 'instrumented-runtime',
+        },
+      },
+    ],
+    acceptedWarningIds: flags(args, 'accept-warning'),
+  });
+}
+
+async function previewDeliverRisks(
+  args: CliArgs,
+  loaded: LoadedCliConfig,
+  bundleId: string,
+  snapshotId: string,
+  intent: string | undefined,
+): Promise<{ risks: Risk[]; coverageStatus: string; freshnessStatus: string }> {
+  const acknowledgedRiskKinds = flags(args, 'ack-risk').map((kind) =>
+    RiskKind.parse(kind),
+  );
+  const mode = await resolveWriterMode(args, loaded);
+  if (mode === 'service') {
+    const client = await connectLocalService(loaded);
+    const preview = await client.previewHandoff({
+      bundleId,
+      snapshotId,
+      ...(intent ? { implementationIntent: intent } : {}),
+      acknowledgedRiskKinds,
+    });
+    return {
+      risks: preview.risks,
+      coverageStatus: preview.coverageStatus,
+      freshnessStatus: preview.freshnessStatus,
+    };
+  }
+  const store = await openStore(loaded, true);
+  try {
+    const current = await createCurrentStaleness(
+      args,
+      loaded,
+      store,
+      BundleId.parse(bundleId),
+      SnapshotId.parse(snapshotId),
+    );
+    const evaluation = await evaluateAgentHandoff({
+      store,
+      bundleId: BundleId.parse(bundleId),
+      snapshotId: SnapshotId.parse(snapshotId),
+      selectedCases: current.cases,
+      stalenessReport: current.report,
+    });
+    return {
+      risks: evaluation.risks,
+      coverageStatus: evaluation.coverageStatus,
+      freshnessStatus: evaluation.freshnessStatus,
+    };
+  } finally {
+    await store.close();
+  }
+}
+
+async function createDeliverHandoff(
+  args: CliArgs,
+  loaded: LoadedCliConfig,
+  bundleId: string,
+  snapshotId: string,
+  intent: string,
+): Promise<AgentHandoff> {
+  const acknowledgedRiskKinds = flags(args, 'ack-risk').map((kind) =>
+    RiskKind.parse(kind),
+  );
+  const mode = await resolveWriterMode(args, loaded);
+  if (mode === 'service') {
+    const client = await connectLocalService(loaded);
+    return client.createHandoff({
+      bundleId,
+      snapshotId,
+      implementationIntent: intent,
+      acknowledgedRiskKinds,
+    });
+  }
+  const store = await openStore(loaded);
+  try {
+    const current = await createCurrentStaleness(
+      args,
+      loaded,
+      store,
+      BundleId.parse(bundleId),
+      SnapshotId.parse(snapshotId),
+    );
+    return createAgentHandoff({
+      store,
+      bundleId: BundleId.parse(bundleId),
+      snapshotId: SnapshotId.parse(snapshotId),
+      selectedCases: current.cases,
+      stalenessReport: current.report,
+      currentInputVersion: current.currentInputVersion,
+      implementationIntent: intent,
+      acknowledgedRiskKinds,
+    });
+  } finally {
+    await store.close();
+  }
+}
+
+async function deliverCommand(
+  args: CliArgs,
+  io: CliIo,
+  loaded: LoadedCliConfig,
+): Promise<number> {
+  const targetRoot = path.resolve(
+    io.cwd,
+    flag(args, 'target') ?? 'apps/flutter_pb_app',
+  );
+  try {
+    await access(targetRoot);
+  } catch {
+    throw new V2ContractError(
+      'invalid-schema',
+      `Agent target is not reachable: ${targetRoot}`,
+    );
+  }
+
+  const intent =
+    flag(args, 'intent') ??
+    'Use the fixed ProtoBridge Evidence to implement or verify the selected prototype scope.';
+  const draft = await resolveDeliverDraft(args);
+
+  let bundleId = flag(args, 'bundle');
+  let snapshotId = flag(args, 'snapshot');
+  let runId: string | undefined;
+  let captureExit: number = EXIT.ok;
+
+  if (draft) {
+    const captureResult = await runCapture(args, loaded, draft);
+    bundleId = captureResult.run.bundleId;
+    snapshotId = captureResult.snapshot.snapshotId;
+    runId = captureResult.run.runId;
+    captureExit = exitForRun(captureResult.run);
+  }
+  if (!bundleId || !snapshotId) {
+    throw new V2ContractError(
+      'invalid-schema',
+      'deliver requires a capture selection or both --bundle and --snapshot.',
+    );
+  }
+
+  const preview = await previewDeliverRisks(
+    args,
+    loaded,
+    bundleId,
+    snapshotId,
+    intent,
+  );
+  const acknowledged = new Set(flags(args, 'ack-risk'));
+  const missingRisks = preview.risks
+    .map((risk) => risk.kind)
+    .filter((kind) => !acknowledged.has(kind));
+  if (missingRisks.length > 0) {
+    throw new V2ContractError(
+      'invalid-schema',
+      [
+        'Deliver captured Evidence, but Handoff risks must be acknowledged:',
+        ...preview.risks.map(
+          (risk) =>
+            `  --ack-risk ${risk.kind}  # ${riskKindLabel(risk.kind)}: ${risk.message}`,
+        ),
+        '',
+        'Resume without re-capturing:',
+        `  pnpm pb -- deliver --bundle ${bundleId} --snapshot ${snapshotId} --target ${targetRoot} --intent ${JSON.stringify(intent)} ${preview.risks
+          .map((risk) => `--ack-risk ${risk.kind}`)
+          .join(' ')}`,
+      ].join('\n'),
+    );
+  }
+
+  const handoff = await createDeliverHandoff(
+    args,
+    loaded,
+    bundleId,
+    snapshotId,
+    intent,
+  );
+
+  const receipt = await writeDeliveryReceipt({
+    storeRoot: loaded.storeRoot,
+    targetRoot,
+    handoff,
+    source: 'cli',
+    ...(runId ? { runId } : {}),
+    acceptedWarningIds:
+      draft?.acceptedWarningIds ?? flags(args, 'accept-warning'),
+    acknowledgedRiskKinds: flags(args, 'ack-risk'),
+    configPath: loaded.path,
+    implementationIntent: intent,
+  });
+  const agentPrompt = buildAgentPrompt({
+    handoffId: handoff.handoffId,
+    workspaceId: loaded.value.workspaceId,
+    bundleId,
+    snapshotId,
+    targetRoot,
+    implementationIntent: intent,
+    risks: handoff.risks,
+  });
+
+  if (booleanFlag(args, 'json')) {
+    emit(io, true, { ...receipt, handoff });
+  } else {
+    io.stdout(
+      [
+        '',
+        'Delivered (Store index only; MCP reads Evidence from the Store)',
+        `  Workspace  ${loaded.value.workspaceId}`,
+        `  Bundle     ${bundleId}`,
+        `  Snapshot   ${snapshotId}`,
+        `  Handoff    ${handoff.handoffId}`,
+        `  Prompt     ${receipt.agentPromptPath}`,
+        '',
+        '──────── copy into Cursor / Codex ────────',
+        agentPrompt.trimEnd(),
+        '──────────────────────────────────────────',
+        'MCP: confirm Cursor/Codex has proto-bridge configured (one-click Agent launch is not supported yet).',
+        '',
+      ].join('\n'),
+    );
+  }
+
+  if (handoff.coverageStatus === 'partial') return EXIT.partial;
+  if (handoff.freshnessStatus === 'stale') return EXIT.stale;
+  return captureExit;
 }
 
 async function resolvePreflight(
@@ -1012,6 +1349,8 @@ export function cliUsage(): string {
   proto-bridge workspace doctor [--json]
   proto-bridge preflight --selection <file> [--manifest <file>]
   proto-bridge capture run --selection <file> [--bundle <id>]
+  proto-bridge deliver (--selection <file> | --prototype <id> --screen <id|slug>) [--target <dir>]
+  proto-bridge deliver --bundle <id> --snapshot <id> [--ack-risk <kind>] [--target <dir>]
   proto-bridge job status|cancel|retry --job <id>
   proto-bridge bundle list|inspect|fork|archive|clean
   proto-bridge snapshot|run|case inspect
@@ -1021,6 +1360,9 @@ export function cliUsage(): string {
 
 Rules:
   --config defaults to ./proto-bridge.json.
+  deliver captures, creates a Handoff, and writes .proto-bridge/deliveries/*/agent-prompt.md
+  (Store index only; MCP still reads Evidence from the Store).
+  deliver defaults: --variants default-and-critical, --scenarios critical.
   Repeat --accept-warning <id> and --ack-risk <kind> explicitly.
   --force is intentionally unsupported.
   Write commands auto-route through Local Service when it is reachable
