@@ -139,6 +139,12 @@ export const RuntimeSemanticNode = z
         height: z.number().min(0),
       })
       .strict(),
+    /** Design-system component id when the node is a registered PBWork component. */
+    componentId: StableId.optional(),
+    /** Selected authored props that affect Evidence (tone, selectionStyle, …). */
+    props: z.record(z.string(), z.unknown()).optional(),
+    /** Live token slot → token id bindings from the component or data-pb-token-* attrs. */
+    tokenBindings: z.record(z.string(), z.string().min(1)).optional(),
   })
   .strict();
 export type RuntimeSemanticNode = z.infer<typeof RuntimeSemanticNode>;

@@ -98,6 +98,7 @@ usePbInspect({
     ref="rootRef"
     class="pb-icon-button"
     data-pb-id="ds.icon-button"
+    data-pb-role="button"
     icon
     :width="visualSize"
     :height="visualSize"

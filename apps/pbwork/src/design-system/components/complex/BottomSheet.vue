@@ -61,6 +61,7 @@ usePbInspect({
       ref="sheetRef"
       class="pb-sheet sheet"
       data-pb-id="ds.bottom-sheet"
+      data-pb-role="sheet"
       data-pb-shell="sheet"
       role="dialog"
       aria-modal="true"

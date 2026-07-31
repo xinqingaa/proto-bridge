@@ -42,6 +42,7 @@ usePbInspect({
     ref="rootRef"
     class="pb-badge"
     data-pb-id="ds.badge"
+    data-pb-role="badge"
     :color="tone ?? 'error'"
     size="x-small"
     variant="flat"

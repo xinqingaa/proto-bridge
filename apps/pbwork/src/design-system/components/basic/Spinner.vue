@@ -47,7 +47,7 @@ usePbInspect({
 </script>
 
 <template>
-  <div ref="rootRef" class="pb-spinner" data-pb-id="ds.spinner">
+  <div ref="rootRef" class="pb-spinner" data-pb-id="ds.spinner" data-pb-role="loading-state">
     <v-progress-circular
       indeterminate
       color="primary"

@@ -48,6 +48,7 @@ usePbInspect({
     ref="rootRef"
     class="pb-radio"
     data-pb-id="ds.radio-group"
+    data-pb-role="field"
     color="primary"
     hide-details
     :label="label"

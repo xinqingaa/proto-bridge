@@ -52,6 +52,7 @@ usePbInspect({
     ref="rootRef"
     class="pb-avatar"
     data-pb-id="ds.avatar"
+    data-pb-role="image"
     :color="tone ?? 'primary'"
     :size="sizePx"
   >

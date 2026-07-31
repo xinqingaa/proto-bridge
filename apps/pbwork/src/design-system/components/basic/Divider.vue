@@ -36,6 +36,7 @@ usePbInspect({
     ref="rootRef"
     class="pb-divider"
     data-pb-id="ds.divider"
+    data-pb-role="unknown"
     :class="{ 'is-inset': inset }"
   >
     <v-divider />

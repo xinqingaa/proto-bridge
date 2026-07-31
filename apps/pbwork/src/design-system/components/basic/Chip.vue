@@ -10,10 +10,12 @@ const props = defineProps<{
   elevated?: boolean;
   /** Page-unique inspect / comment anchor; falls back to `ds.chip`. */
   inspectId?: string;
+  /** Required when multiple chips share the same inspectId on one Screen. */
+  pbKey?: string;
 }>();
 
 const rootRef = usePbInspectRef();
-const { label, tone, elevated, inspectId } = toRefs(props);
+const { label, tone, elevated, inspectId, pbKey } = toRefs(props);
 
 function softTokenForTone(value: string | undefined): `color.${string}-soft` {
   const t = value ?? "primary";
@@ -24,12 +26,14 @@ usePbInspect({
   element: rootRef,
   pbId: "ds.chip",
   instanceId: inspectId,
+  pbKey,
   componentId: "chip",
   getProps: () => ({
     label: label.value,
     tone: tone.value ?? "primary",
     elevated: elevated.value ?? false,
     inspectId: inspectId.value,
+    pbKey: pbKey.value,
   }),
   getTokenBindings: () => ({
     background: softTokenForTone(tone.value),
@@ -54,6 +58,7 @@ usePbInspect({
     ref="rootRef"
     class="pb-chip"
     data-pb-id="ds.chip"
+    data-pb-role="chip"
     :color="tone ?? 'primary'"
     variant="tonal"
     size="small"

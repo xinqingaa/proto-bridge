@@ -63,7 +63,7 @@ usePbInspect({
 </script>
 
 <template>
-  <span ref="rootRef" class="dialog-host" data-pb-id="ds.dialog">
+  <span ref="rootRef" class="dialog-host" data-pb-id="ds.dialog" data-pb-role="dialog">
     <v-dialog
       :model-value="modelValue ?? false"
       :attach="attachTarget"

@@ -89,6 +89,7 @@ usePbInspect({
     ref="rootRef"
     class="pb-button"
     data-pb-id="ds.button"
+    data-pb-role="button"
     :type="type ?? 'button'"
     :variant="variant ?? 'flat'"
     :color="resolvedTone"

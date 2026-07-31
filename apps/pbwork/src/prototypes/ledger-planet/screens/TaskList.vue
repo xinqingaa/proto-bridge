@@ -126,11 +126,7 @@ function onRefresh() {
         data-pb-id="ledger-planet.task-list.root"
         data-pb-role="page"
       >
-        <div
-          class="task-tabs"
-          data-pb-id="ledger-planet.task-list.filters"
-          data-pb-role="filter"
-        >
+        <div class="task-tabs">
           <Tabs
             class="task-tabs-control"
             v-model="tab"
@@ -140,6 +136,7 @@ function onRefresh() {
             fill
             :swipe="true"
             :mouse-swipe="true"
+            inspect-id="ledger-planet.task-list.filters"
           >
             <template v-for="panel in panels" :key="panel.value" #[panel.value]>
               <div class="panel">
@@ -191,8 +188,34 @@ function onRefresh() {
                     @click="open(task.id, task.status, task.rewardState)"
                   >
                     <div class="ticket-face" aria-hidden="true">
-                      <strong>{{ faceValue(task.reward).primary }}</strong>
-                      <span>{{ faceValue(task.reward).hint }}</span>
+                      <strong
+                        :data-pb-id="
+                          isInstrumented(panel.value)
+                            ? 'ledger-planet.task-list.list.row.face-value'
+                            : undefined
+                        "
+                        :data-pb-key="
+                          isInstrumented(panel.value) ? task.id : undefined
+                        "
+                        :data-pb-role="
+                          isInstrumented(panel.value) ? 'text' : undefined
+                        "
+                        data-pb-token-typography="typography.title"
+                      >{{ faceValue(task.reward).primary }}</strong>
+                      <span
+                        :data-pb-id="
+                          isInstrumented(panel.value)
+                            ? 'ledger-planet.task-list.list.row.face-hint'
+                            : undefined
+                        "
+                        :data-pb-key="
+                          isInstrumented(panel.value) ? task.id : undefined
+                        "
+                        :data-pb-role="
+                          isInstrumented(panel.value) ? 'text' : undefined
+                        "
+                        data-pb-token-typography="typography.caption"
+                      >{{ faceValue(task.reward).hint }}</span>
                     </div>
                     <div class="ticket-body">
                       <strong>{{ task.title }}</strong>
@@ -202,6 +225,15 @@ function onRefresh() {
                     <Chip
                       :label="chipFor(task).label"
                       :tone="chipFor(task).tone"
+                      v-bind="
+                        isInstrumented(panel.value)
+                          ? {
+                              inspectId:
+                                'ledger-planet.task-list.list.row.chip',
+                              pbKey: task.id,
+                            }
+                          : {}
+                      "
                     />
                   </button>
                 </DataList>

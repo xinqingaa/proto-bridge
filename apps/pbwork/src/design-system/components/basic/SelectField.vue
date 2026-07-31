@@ -107,6 +107,7 @@ usePbInspect({
     ref="rootRef"
     class="pb-select"
     data-pb-id="ds.select"
+    data-pb-role="field"
     :label="label"
     :model-value="modelValue ?? ''"
     :items="resolvedOptions"

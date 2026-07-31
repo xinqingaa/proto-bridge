@@ -52,6 +52,7 @@ usePbInspect({
     ref="rootRef"
     class="pb-field radius-md"
     data-pb-id="ds.text-field"
+    data-pb-role="field"
     :label="label"
     :model-value="modelValue ?? ''"
     :disabled="disabled ?? false"

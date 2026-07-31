@@ -51,6 +51,7 @@ usePbInspect({
     ref="rootRef"
     class="pb-textarea"
     data-pb-id="ds.textarea"
+    data-pb-role="field"
     :label="label"
     :model-value="modelValue ?? ''"
     :rows="rows ?? 3"

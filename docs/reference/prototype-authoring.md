@@ -102,7 +102,9 @@ default Variant 必须声明非空 `requiredFragments`。每个 `critical: true`
 
 ## 6. Role
 
-`data-pb-role` 是 PB 语义词表，不等同于 ARIA role。常用角色包括：
+`data-pb-role` 是 PB 语义词表，不等同于 ARIA role。设计系统组件根节点应自带默认 role；语义采集要求节点同时具备 `data-pb-role` 与 `data-pb-id`。业务页优先使用组件默认 role，避免外包一层改写。
+
+常用角色包括：
 
 - `page`
 - `section`
@@ -117,10 +119,16 @@ default Variant 必须声明非空 `requiredFragments`。每个 `critical: true`
 - `form`
 - `field`
 - `button`
+- `chip`
+- `badge`
+- `empty-state`
+- `loading-state`
 - `sheet`
 - `dialog`
 - `modal`
+- `toast`
 - `status`
+- `text`
 
 机器闭集以 Core Contract 为准。节点仍需提供正确 HTML/ARIA 语义，不能用 `data-pb-role` 代替可访问性。
 

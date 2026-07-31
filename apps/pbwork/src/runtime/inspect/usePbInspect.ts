@@ -41,6 +41,8 @@ export function usePbInspect(options: {
    * from the screen (e.g. `field-service.settings.logout`).
    */
   instanceId?: string | Ref<string | undefined> | (() => string | undefined);
+  /** Stable key for repeated template instances (data-pb-key). */
+  pbKey?: string | Ref<string | undefined> | (() => string | undefined);
   componentId?: string;
   getProps?: () => Record<string, unknown>;
   getState?: () => Record<string, unknown>;
@@ -55,6 +57,7 @@ export function usePbInspect(options: {
     const el = resolveInspectElement(options.element.value);
     if (!el) return;
     const instancePbId = readMaybeString(options.instanceId) ?? options.pbId;
+    const pbKey = readMaybeString(options.pbKey);
     const reg: InspectRegistration = {
       element: el,
       pbId: instancePbId,
@@ -67,11 +70,16 @@ export function usePbInspect(options: {
     unregister = registerInspect(reg);
     el.setAttribute("data-pb-component", options.pbId);
     el.setAttribute("data-pb-id", instancePbId);
+    if (pbKey) el.setAttribute("data-pb-key", pbKey);
+    else el.removeAttribute("data-pb-key");
   }
 
   onMounted(sync);
   if (typeof options.instanceId === "object" && options.instanceId && "value" in options.instanceId) {
     watch(options.instanceId, sync);
+  }
+  if (typeof options.pbKey === "object" && options.pbKey && "value" in options.pbKey) {
+    watch(options.pbKey, sync);
   }
   onBeforeUnmount(() => {
     unregister?.();

@@ -12,6 +12,10 @@ import {
   type RuntimeScreenManifest,
 } from "@proto-bridge/core/v2/runtime-contract";
 import { loadPrototypeScreens } from "@/design-system/loaders";
+import {
+  findRegisteredAncestor,
+  getInspectRegistration,
+} from "@/runtime/inspect/registry";
 
 type RuntimeContext = {
   prototypeId: string;
@@ -26,6 +30,57 @@ type CaptureProtocolOptions = {
   navigate(input: RuntimeContext): Promise<void>;
   waitForStable(): Promise<void>;
 };
+
+const CAPTURE_PROP_KEYS = [
+  "tone",
+  "selectionStyle",
+  "size",
+  "label",
+  "elevated",
+  "variant",
+] as const;
+
+function readDatasetTokenBindings(
+  element: HTMLElement,
+): Record<string, string> | undefined {
+  const bindings: Record<string, string> = {};
+  for (const [key, value] of Object.entries(element.dataset)) {
+    if (!key.startsWith("pbToken") || !value) continue;
+    const slot = key
+      .slice("pbToken".length)
+      .replace(/^[A-Z]/, (char) => char.toLowerCase())
+      .replace(/[A-Z]/g, (char) => `-${char.toLowerCase()}`);
+    if (slot) bindings[slot] = value;
+  }
+  return Object.keys(bindings).length > 0 ? bindings : undefined;
+}
+
+function readComponentContext(element: HTMLElement): {
+  componentId?: string;
+  props?: Record<string, unknown>;
+  tokenBindings?: Record<string, string>;
+} {
+  const reg =
+    getInspectRegistration(element) ?? findRegisteredAncestor(element);
+  const fromDataset = readDatasetTokenBindings(element);
+  if (!reg) {
+    return fromDataset ? { tokenBindings: fromDataset } : {};
+  }
+  const rawProps = reg.getProps?.() ?? {};
+  const props: Record<string, unknown> = {};
+  for (const key of CAPTURE_PROP_KEYS) {
+    if (rawProps[key] !== undefined) props[key] = rawProps[key];
+  }
+  const tokenBindings = {
+    ...(reg.getTokenBindings?.() ?? {}),
+    ...(fromDataset ?? {}),
+  };
+  return {
+    ...(reg.componentId ? { componentId: reg.componentId } : {}),
+    ...(Object.keys(props).length > 0 ? { props } : {}),
+    ...(Object.keys(tokenBindings).length > 0 ? { tokenBindings } : {}),
+  };
+}
 
 declare global {
   interface Window {
@@ -438,6 +493,7 @@ export function installRuntimeCaptureProtocol(
         nodes: selected.map((element) => {
           const rect = element.getBoundingClientRect();
           const style = window.getComputedStyle(element);
+          const context = readComponentContext(element);
           return {
             fragment: markerIdentity(element, current.screenId),
             role: element.dataset.pbRole!,
@@ -457,6 +513,13 @@ export function installRuntimeCaptureProtocol(
               width: Number(rect.width.toFixed(2)),
               height: Number(rect.height.toFixed(2)),
             },
+            ...(context.componentId
+              ? { componentId: context.componentId }
+              : {}),
+            ...(context.props ? { props: context.props } : {}),
+            ...(context.tokenBindings
+              ? { tokenBindings: context.tokenBindings }
+              : {}),
           };
         }),
       };

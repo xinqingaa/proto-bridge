@@ -48,6 +48,7 @@ usePbInspect({
     ref="rootRef"
     class="pb-check"
     data-pb-id="ds.checkbox"
+    data-pb-role="field"
     color="primary"
     density="comfortable"
     hide-details

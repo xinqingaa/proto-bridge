@@ -165,6 +165,54 @@ function nodeFacts(nodes: RuntimeSemanticNode[]): Fact[] {
         effectiveValue: node.text,
       });
     }
+    if (node.componentId) {
+      facts.push({
+        factId: `${identity}.componentId`,
+        candidates: [
+          {
+            value: node.componentId,
+            provenance: {
+              source: 'registry',
+              locator: `${node.fragment.pbId}#componentId`,
+            },
+          },
+        ],
+        resolution: 'resolved',
+        effectiveValue: node.componentId,
+      });
+    }
+    if (node.props && Object.keys(node.props).length > 0) {
+      facts.push({
+        factId: `${identity}.props`,
+        candidates: [
+          {
+            value: node.props,
+            provenance: {
+              source: 'registry',
+              locator: `${node.fragment.pbId}#props`,
+            },
+          },
+        ],
+        resolution: 'resolved',
+        effectiveValue: node.props,
+      });
+    }
+    if (node.tokenBindings && Object.keys(node.tokenBindings).length > 0) {
+      facts.push({
+        factId: `${identity}.tokenBindings`,
+        candidates: [
+          {
+            value: node.tokenBindings,
+            provenance: {
+              source: 'registry',
+              locator: `${node.fragment.pbId}#tokenBindings`,
+            },
+          },
+        ],
+        resolution: 'resolved',
+        effectiveValue: node.tokenBindings,
+      });
+    }
     return facts;
   });
 }

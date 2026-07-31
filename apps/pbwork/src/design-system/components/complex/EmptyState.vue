@@ -54,6 +54,7 @@ usePbInspect({
     ref="rootRef"
     class="pb-empty"
     data-pb-id="ds.empty-state"
+    data-pb-role="empty-state"
     color="transparent"
   >
     <v-avatar color="primary" variant="tonal" size="56" class="pb-empty-icon">

@@ -147,6 +147,7 @@ class _DemoPageState extends ConsumerState<DemoPage> {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               const CommonChip(label: 'Chip'),
+              const CommonChip(label: '待领取', tone: CommonChipTone.warning),
               const CommonBadge(label: '99+', tone: CommonButtonTone.error),
               const CommonAvatar(name: 'Lin Rui'),
             ],
@@ -185,6 +186,7 @@ class _DemoPageState extends ConsumerState<DemoPage> {
                       CommonTabItem(value: '2', label: '进行中'),
                       CommonTabItem(value: '3', label: '已完成'),
                     ],
+                    selectionStyle: CommonTabSelectionStyle.pill,
                   ),
                   const Expanded(
                     child: CommonTabView(

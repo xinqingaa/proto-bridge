@@ -47,6 +47,7 @@ usePbInspect({
     ref="rootRef"
     class="pb-switch"
     data-pb-id="ds.switch"
+    data-pb-role="field"
     color="primary"
     hide-details
     inset

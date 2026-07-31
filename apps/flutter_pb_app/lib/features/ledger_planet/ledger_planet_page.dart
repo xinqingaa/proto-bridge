@@ -5,8 +5,6 @@ import '../../router/routes.dart';
 import '../../theme/ts.dart';
 import 'task_models.dart';
 
-enum _TaskTab { all, todo, done }
-
 /// Task list — Evidence: `ledger-planet.task-list` (default / claimable).
 class LedgerPlanetPage extends StatefulWidget {
   const LedgerPlanetPage({
@@ -21,54 +19,70 @@ class LedgerPlanetPage extends StatefulWidget {
   State<LedgerPlanetPage> createState() => _LedgerPlanetPageState();
 }
 
-class _LedgerPlanetPageState extends State<LedgerPlanetPage> {
-  _TaskTab _tab = _TaskTab.all;
-
-  static const _filters = [
-    CommonFilterItem(value: 'all', label: '全部'),
-    CommonFilterItem(value: 'todo', label: '待完成'),
-    CommonFilterItem(value: 'done', label: '已完成'),
+class _LedgerPlanetPageState extends State<LedgerPlanetPage>
+    with SingleTickerProviderStateMixin {
+  static const _tabItems = [
+    CommonTabItem(value: 'all', label: '全部'),
+    CommonTabItem(value: 'todo', label: '待完成'),
+    CommonTabItem(value: 'done', label: '已完成'),
   ];
 
-  List<BenefitTask> _rowsFor(_TaskTab tab) {
+  late final TabController _tabs;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabs = TabController(length: _tabItems.length, vsync: this);
+    _tabs.addListener(() {
+      if (!_tabs.indexIsChanging) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabs.dispose();
+    super.dispose();
+  }
+
+  List<BenefitTask> _rowsFor(int index) {
     if (widget.variant == 'claimable') {
-      if (tab != _TaskTab.all) return const [];
+      if (index != 0) return const [];
       return kLedgerTasks
           .where((item) => item.rewardState == RewardState.claimable)
           .toList();
     }
-    switch (tab) {
-      case _TaskTab.todo:
+    switch (index) {
+      case 1:
         return kLedgerTasks
             .where((item) => item.status == TaskStatus.todo)
             .toList();
-      case _TaskTab.done:
+      case 2:
         return kLedgerTasks
             .where((item) => item.status == TaskStatus.done)
             .toList();
-      case _TaskTab.all:
+      default:
         return kLedgerTasks;
     }
   }
 
-  String get _emptyTitle {
-    switch (_tab) {
-      case _TaskTab.todo:
+  String _emptyTitle(int index) {
+    switch (index) {
+      case 1:
         return '暂无待完成任务';
-      case _TaskTab.done:
+      case 2:
         return '暂无已完成任务';
-      case _TaskTab.all:
+      default:
         return '没有任务';
     }
   }
 
-  String get _emptyDescription {
-    switch (_tab) {
-      case _TaskTab.todo:
+  String _emptyDescription(int index) {
+    switch (index) {
+      case 1:
         return '新任务会出现在这里。';
-      case _TaskTab.done:
+      case 2:
         return '完成后会出现在这里。';
-      case _TaskTab.all:
+      default:
         return '稍后再来看看。';
     }
   }
@@ -88,50 +102,71 @@ class _LedgerPlanetPageState extends State<LedgerPlanetPage> {
     );
   }
 
+  Widget _panel(int index) {
+    final rows = _rowsFor(index);
+    if (rows.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.only(top: TS.spacing.xl),
+        children: [
+          CommonEmptyState(
+            title: _emptyTitle(index),
+            description: _emptyDescription(index),
+          ),
+        ],
+      );
+    }
+    return ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: EdgeInsets.only(top: TS.spacing.xs),
+      itemCount: rows.length,
+      separatorBuilder: (_, _) => SizedBox(height: TS.spacing.smPlus),
+      itemBuilder: (context, i) {
+        final task = rows[i];
+        return _TaskTicket(task: task, onTap: () => _open(task));
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     TS.of(context);
-    final rows = _rowsFor(_tab);
 
     return Scaffold(
       backgroundColor: TS.colors.background,
       appBar: const CommonAppBar(title: '任务', showBack: true),
-      body: CommonScrollableDataList(
-        onRefresh: () async {
-          await Future<void>.delayed(const Duration(milliseconds: 400));
-        },
-        padding: EdgeInsets.all(TS.spacing.md),
-        itemCount: 1,
-        itemBuilder: (context, _) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              CommonFilterBar(
-                items: _filters,
-                selected: {_tab.name},
-                onSelected: (value) {
-                  setState(() {
-                    _tab = _TaskTab.values.firstWhere((t) => t.name == value);
-                  });
+      body: Padding(
+        padding: EdgeInsets.fromLTRB(
+          TS.spacing.md,
+          TS.spacing.md,
+          TS.spacing.md,
+          0,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            CommonTabs(
+              controller: _tabs,
+              items: _tabItems,
+              selectionStyle: CommonTabSelectionStyle.pill,
+              isScrollable: false,
+            ),
+            SizedBox(height: TS.spacing.sm),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  await Future<void>.delayed(const Duration(milliseconds: 400));
                 },
+                child: CommonTabView(
+                  controller: _tabs,
+                  children: [
+                    for (var i = 0; i < _tabItems.length; i++) _panel(i),
+                  ],
+                ),
               ),
-              SizedBox(height: TS.spacing.sm),
-              if (rows.isEmpty)
-                Padding(
-                  padding: EdgeInsets.only(top: TS.spacing.xl),
-                  child: CommonEmptyState(
-                    title: _emptyTitle,
-                    description: _emptyDescription,
-                  ),
-                )
-              else
-                for (var i = 0; i < rows.length; i++) ...[
-                  if (i > 0) SizedBox(height: TS.spacing.smPlus),
-                  _TaskTicket(task: rows[i], onTap: () => _open(rows[i])),
-                ],
-            ],
-          );
-        },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -147,26 +182,16 @@ class _TaskTicket extends StatelessWidget {
   bool get _doneMuted =>
       task.status == TaskStatus.done && !_claimable;
 
-  ({String label, Color bg, Color fg}) get _chip {
-    if (_claimable) {
-      return (
-        label: '待领取',
-        bg: TS.colors.warningSoft,
-        fg: TS.colors.warning,
-      );
-    }
-    if (task.status == TaskStatus.done) {
-      return (
-        label: '已完成',
-        bg: TS.colors.successSoft,
-        fg: TS.colors.success,
-      );
-    }
-    return (
-      label: '去完成',
-      bg: TS.colors.primarySoft,
-      fg: TS.colors.primary,
-    );
+  CommonChipTone get _chipTone {
+    if (_claimable) return CommonChipTone.warning;
+    if (task.status == TaskStatus.done) return CommonChipTone.success;
+    return CommonChipTone.primary;
+  }
+
+  String get _chipLabel {
+    if (_claimable) return '待领取';
+    if (task.status == TaskStatus.done) return '已完成';
+    return '去完成';
   }
 
   @override
@@ -183,7 +208,6 @@ class _TaskTicket extends StatelessWidget {
         : _doneMuted
             ? TS.colors.onSurfaceMuted
             : TS.colors.primary;
-    final chip = _chip;
 
     return Material(
       color: TS.colors.surface,
@@ -271,19 +295,9 @@ class _TaskTicket extends StatelessWidget {
                 ),
                 Padding(
                   padding: EdgeInsets.only(right: TS.spacing.md),
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: TS.spacing.sm,
-                      vertical: TS.spacing.xs,
-                    ),
-                    decoration: BoxDecoration(
-                      color: chip.bg,
-                      borderRadius: BorderRadius.circular(TS.radius.full),
-                    ),
-                    child: Text(
-                      chip.label,
-                      style: TS.textStyle.captionStrong.copyWith(color: chip.fg),
-                    ),
+                  child: CommonChip(
+                    label: _chipLabel,
+                    tone: _chipTone,
                   ),
                 ),
               ],

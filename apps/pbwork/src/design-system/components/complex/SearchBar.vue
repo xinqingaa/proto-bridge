@@ -52,6 +52,7 @@ usePbInspect({
     ref="rootRef"
     class="pb-search"
     data-pb-id="ds.search-bar"
+    data-pb-role="search"
     role="search"
     @submit.prevent="$emit('submit')"
   >

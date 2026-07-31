@@ -41,7 +41,7 @@ usePbInspect({
 </script>
 
 <template>
-  <div ref="rootRef" class="pb-progress-wrap" data-pb-id="ds.progress">
+  <div ref="rootRef" class="pb-progress-wrap" data-pb-id="ds.progress" data-pb-role="loading-state">
     <span v-if="label" class="pb-progress-label">{{ label }}</span>
     <v-progress-linear
       class="pb-progress"

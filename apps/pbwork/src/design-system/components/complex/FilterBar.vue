@@ -48,7 +48,12 @@ usePbInspect({
 </script>
 
 <template>
-  <div ref="rootRef" class="pb-filter-bar" data-pb-id="ds.filter-bar">
+  <div
+    ref="rootRef"
+    class="pb-filter-bar"
+    data-pb-id="ds.filter-bar"
+    data-pb-role="filter"
+  >
     <v-chip-group
       class="pb-filter-chips"
       selected-class="is-active"

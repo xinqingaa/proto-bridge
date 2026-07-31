@@ -57,6 +57,7 @@ usePbInspect({
     ref="rootRef"
     class="pb-snackbar"
     data-pb-id="ds.snackbar"
+    data-pb-role="toast"
     :model-value="modelValue ?? true"
     color="surface"
     :content-class="`pb-snackbar-surface is-${color}`"
