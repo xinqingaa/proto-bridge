@@ -19,12 +19,29 @@ export function sendError(
   });
 }
 
+/**
+ * Successful tool results for tools that declare `outputSchema` must include
+ * `structuredContent` (MCP 2025-06-18). Cursor and other strict clients reject
+ * content-only payloads when an output schema is advertised.
+ */
 export function toolJson(value: unknown): JsonObject {
-  return toolText(JSON.stringify(value, null, 2));
+  const structuredContent = toStructuredObject(value);
+  const text = JSON.stringify(structuredContent, null, 2);
+  return {
+    content: [{ type: 'text', text }],
+    structuredContent,
+  };
 }
 
 export function toolText(text: string): JsonObject {
   return { content: [{ type: 'text', text }] };
+}
+
+function toStructuredObject(value: unknown): JsonObject {
+  if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+    return value as JsonObject;
+  }
+  return { value: value as never };
 }
 
 export function errorMessage(error: unknown): string {

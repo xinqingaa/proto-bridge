@@ -165,9 +165,25 @@ async function startMcpClient(args) {
 }
 
 function parseToolJson(result) {
+  if (
+    result.structuredContent === undefined ||
+    result.structuredContent === null ||
+    typeof result.structuredContent !== "object" ||
+    Array.isArray(result.structuredContent)
+  ) {
+    throw new Error(
+      "MCP tool advertised structured output but returned no structuredContent object.",
+    );
+  }
   const text = result.content?.find((item) => item.type === "text")?.text;
-  if (!text) throw new Error("MCP tool did not return text JSON.");
-  return JSON.parse(text);
+  if (!text) throw new Error("MCP tool did not return text JSON in content.");
+  const fromText = JSON.parse(text);
+  if (JSON.stringify(fromText) !== JSON.stringify(result.structuredContent)) {
+    throw new Error(
+      "MCP tool content JSON does not match structuredContent.",
+    );
+  }
+  return result.structuredContent;
 }
 
 function assert(condition, message) {

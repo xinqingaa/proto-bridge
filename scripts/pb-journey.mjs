@@ -444,9 +444,25 @@ async function startMcpClient(args) {
 }
 
 function parseToolJson(result) {
+  if (
+    result.structuredContent === undefined ||
+    result.structuredContent === null ||
+    typeof result.structuredContent !== "object" ||
+    Array.isArray(result.structuredContent)
+  ) {
+    throw new Error(
+      "MCP tool advertised structured output but returned no structuredContent object.",
+    );
+  }
   const content = result.content?.find((item) => item.type === "text")?.text;
-  if (!content) throw new Error("MCP tool did not return text JSON.");
-  return JSON.parse(content);
+  if (!content) throw new Error("MCP tool did not return text JSON in content.");
+  const fromText = JSON.parse(content);
+  if (JSON.stringify(fromText) !== JSON.stringify(result.structuredContent)) {
+    throw new Error(
+      "MCP tool content JSON does not match structuredContent.",
+    );
+  }
+  return result.structuredContent;
 }
 
 function createAgentPrompt({

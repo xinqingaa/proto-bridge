@@ -21,6 +21,11 @@ pnpm pb:mcp -- --print-config
 
 第二个命令只打印 Cursor/Codex 可使用的 stdio 配置材料，不启动 server。
 
+成功的 `tools/call` 对声明了 `outputSchema` 的工具会同时返回：
+
+- `content`：JSON 文本（兼容只读 `content` 的客户端）；
+- `structuredContent`：同一对象（Cursor 等严格客户端要求）。
+
 ## Evidence Tools
 
 - `inspect_evidence_workspace`
