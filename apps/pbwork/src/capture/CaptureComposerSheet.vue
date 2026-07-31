@@ -231,7 +231,7 @@ async function startCapture() {
                 <small v-if="mixedVariantModes">当前存在页面级例外</small>
               </label>
               <label>
-                <span>所有页面的交互场景</span>
+                <span>所有页面的交互场景 · Scenario</span>
                 <WorkbenchSelect
                   :model-value="allScenarioMode"
                   :items="scenarioItems"
@@ -349,7 +349,7 @@ async function startCapture() {
           <section v-if="capture.preflight" class="preflight-result">
             <div class="preflight-heading">
               <div>
-                <span>范围检查</span>
+                <span>范围检查 · Preflight / Case Matrix</span>
                 <h3>{{ matrix.length }} 个将执行的采集项</h3>
               </div>
               <strong
@@ -376,7 +376,7 @@ async function startCapture() {
                 :model-value="
                   capture.acceptedWarningIds.includes(warning.warningId)
                 "
-                label="确认"
+                label="我已了解并继续"
                 @update:model-value="
                   capture.toggleWarning(warning.warningId, $event)
                 "

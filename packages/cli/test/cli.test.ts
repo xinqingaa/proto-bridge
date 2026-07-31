@@ -133,6 +133,38 @@ describe('ProtoBridge CLI', () => {
     });
   });
 
+  it('runs workspace doctor while another process holds the writer lock', async () => {
+    const root = await tempRoot();
+    const output = recorder(root);
+    await runCli(
+      [
+        'workspace',
+        'init',
+        '--workspace',
+        'cli-test',
+        '--runtime',
+        'http://127.0.0.1:3977',
+      ],
+      output.io,
+    );
+    const { LocalFileStore } = await import('@proto-bridge/core/v2/store');
+    const writer = new LocalFileStore({
+      root: path.join(root, '.proto-bridge', 'store'),
+      workspaceId: 'cli-test' as never,
+    });
+    await writer.init();
+    try {
+      expect(
+        await runCli(['workspace', 'doctor', '--json'], output.io),
+      ).toBe(CLI_EXIT_CODES.ok);
+      expect(JSON.parse(output.stdout.at(-1) ?? '{}')).toMatchObject({
+        workspaceId: 'cli-test',
+      });
+    } finally {
+      await writer.close();
+    }
+  });
+
   it('uses one Matrix for preflight and screenshot-only Capture', async () => {
     const root = await tempRoot();
     const output = recorder(root);

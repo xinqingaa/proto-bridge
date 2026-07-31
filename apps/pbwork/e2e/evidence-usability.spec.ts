@@ -71,6 +71,21 @@ test("task-list captures in place, reports background completion, and renders hi
   await page.getByText("技术详情与原始事实").click();
   await expect(page.getByText(/严格保持 Store JSON 顺序/)).toBeVisible();
 
+  await page.getByTestId("open-handoff-composer").click();
+  await expect(page.getByTestId("handoff-composer")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "创建 Agent 交接" })).toBeVisible();
+  const riskRows = page.getByTestId("handoff-risk-row");
+  const riskCount = await riskRows.count();
+  for (let index = 0; index < riskCount; index += 1) {
+    await riskRows
+      .nth(index)
+      .getByRole("checkbox", { name: "我已了解并继续" })
+      .click();
+  }
+  await page.getByTestId("handoff-create").click();
+  await expect(page.getByTestId("handoff-id")).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole("heading", { name: "交接已创建" })).toBeVisible();
+
   if (process.env.PBWORK_E2E_RESULT_PATH) {
     const [, bundleId, snapshotId] =
       page.url().match(/\/workbench\/evidence\/([^/]+)\/([^/]+)$/) ?? [];

@@ -3,7 +3,13 @@ export type CliArgs = {
   flags: Map<string, string[]>;
 };
 
-const BOOLEAN_FLAGS = new Set(['apply', 'json', 'help']);
+const BOOLEAN_FLAGS = new Set([
+  'apply',
+  'json',
+  'help',
+  'local-store',
+  'via-service',
+]);
 
 export function parseCliArgs(argv: string[]): CliArgs {
   const command: string[] = [];

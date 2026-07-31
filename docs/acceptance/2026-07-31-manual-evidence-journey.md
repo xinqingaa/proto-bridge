@@ -84,19 +84,24 @@ pnpm pb -- bundle list
 - Workbench 为 `http://127.0.0.1:3977/workbench/prototypes/all`；
 - Local Service 为 `127.0.0.1:3988`；
 - GUI 与 CLI 报告同一个 `pbwork-local` Workspace；
+- `workspace doctor` 在 Service 持锁时仍可读（只读开 Store）；
+- 写操作（`capture run` / `handoff create` / `pb:journey`）在 Service 可达时自动经 Local Service，不必先停 `pb:up`；
 - `bundle list` 能看到后续 GUI/CLI 创建的 Bundle。
 
 ## 2. 账本星球：GUI Producer
 
-1. 打开账本星球“任务列表”default Variant。
+1. 打开账本星球「任务列表」default Variant。
 2. 确认页面、主题和设备状态正确。
-3. 点击“采集当前页面”。
-4. 在 Composer 中核对 Case Matrix、Scenario 和 warning。
+3. 点击「采集当前页面」。
+4. 在「确认采集内容」Sheet（Composer）中核对：
+   - **范围检查**（Preflight）与 **将执行的采集项**（Case Matrix）；
+   - **交互场景**（Scenario，应包含 `open-claimable-task`）；
+   - **需要确认的事项**（warning）：逐项勾选「我已了解并继续」。
 5. 启动采集，等待任务中心完成。
-6. 打开 Evidence Viewer。
+6. 打开「采集结果」（Evidence Viewer）。
 7. 检查任务列表 default、critical 状态和 `open-claimable-task` Scenario。
-8. 检查截图、页面内容、Fragment、Facts、Coverage、Issue 和技术详情。
-9. 创建 Handoff；有风险时逐项阅读并确认。
+8. 检查截图、页面内容、页面区域（Fragment）、Facts、覆盖情况（Coverage）、检查说明（Issue）和技术详情。
+9. 点击「创建 Agent 交接」（Handoff）；有「必须确认的风险」时逐项阅读并确认，创建后记录 Handoff ID。
 
 必须记录：
 
@@ -160,36 +165,19 @@ examples/selections/ledger-planet-task-list.json
 
 ## 4. 配置 Cursor
 
-运行：
-
-```bash
-pnpm pb:mcp -- --print-config
-```
-
-将输出的 `cursor.mcpServers` 内容合并到用户级：
+仓库已提供项目级 MCP 配置：
 
 ```text
-~/.cursor/mcp.json
+.cursor/mcp.json
 ```
 
-配置形状：
+在 Cursor **Settings → MCP** 刷新或重启窗口，确认 `proto-bridge` 以及
+`inspect_evidence_workspace`、`read_agent_handoff` 可见。也可运行
+`pnpm pb:mcp -- --print-config` 对照命令；不要把带生命周期日志的包管理器
+命令登记为 stdio server。
 
-```json
-{
-  "mcpServers": {
-    "proto-bridge": {
-      "command": "/absolute/path/to/node",
-      "args": [
-        "/Users/lrq/work/proto-bridge/scripts/pb-mcp.mjs"
-      ]
-    }
-  }
-}
-```
-
-重启或刷新 Cursor MCP，确认 `proto-bridge` server 以及
-`inspect_evidence_workspace`、`read_agent_handoff` 可见。Cursor 官方说明
-项目级 `.cursor/mcp.json` 与用户级 `~/.cursor/mcp.json` 均可配置 stdio
+可选：将同一 `mcpServers` 片段合并到用户级 `~/.cursor/mcp.json`（跨仓库复用）。
+项目级与用户级均可配置 stdio
 server：[Cursor MCP 文档](https://docs.cursor.com/context/model-context-protocol)。
 
 ### Cursor 只读轮

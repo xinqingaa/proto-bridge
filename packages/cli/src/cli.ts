@@ -45,6 +45,12 @@ import {
 } from './args.js';
 import { loadCliConfig, type LoadedCliConfig } from './config.js';
 import { emit, processIo, type CliIo } from './output.js';
+import {
+  CliServiceClientError,
+  connectLocalService,
+  probeLocalService,
+  type CliServiceClient,
+} from './service-client.js';
 
 const EXIT = {
   ok: 0,
@@ -64,6 +70,17 @@ export async function runCli(
   try {
     return await execute(parseCliArgs(argv), io);
   } catch (error) {
+    if (error instanceof CliServiceClientError) {
+      io.stderr(error.message);
+      if (
+        ['preflight-expired', 'bundle-archived', 'capacity-exceeded'].includes(
+          error.code,
+        )
+      ) {
+        return EXIT.blocked;
+      }
+      return EXIT.error;
+    }
     const message = error instanceof Error ? error.message : String(error);
     io.stderr(message);
     if (
@@ -172,7 +189,9 @@ async function workspaceDoctor(
   io: CliIo,
   loaded: LoadedCliConfig,
 ): Promise<number> {
-  const store = await openStore(loaded);
+  // Doctor only reads Workspace state; stay read-only so it works while
+  // Local Service (pb:up) holds the single-writer lock.
+  const store = await openStore(loaded, true);
   try {
     const result = {
       schemaVersion: loaded.value.schemaVersion,
@@ -288,12 +307,106 @@ async function captureDriver(args: CliArgs): Promise<CaseCaptureDriver> {
   return new AttachedScreenshotDriver(bytes, mediaType);
 }
 
+async function resolveWriterMode(
+  args: CliArgs,
+  loaded: LoadedCliConfig,
+): Promise<'service' | 'local'> {
+  if (booleanFlag(args, 'local-store') || flag(args, 'screenshot')) {
+    return 'local';
+  }
+  if (booleanFlag(args, 'via-service')) return 'service';
+  return (await probeLocalService(loaded)) ? 'service' : 'local';
+}
+
+async function runCaptureViaService(
+  args: CliArgs,
+  loaded: LoadedCliConfig,
+  draft: SelectionDraft | undefined,
+  bundleIdInput: string | undefined,
+  client: CliServiceClient,
+) {
+  const baseDraft = draft ?? (await loadDraft(args));
+  const acceptedWarningIds = [
+    ...new Set([
+      ...baseDraft.acceptedWarningIds,
+      ...flags(args, 'accept-warning'),
+    ]),
+  ].sort();
+  const effectiveDraft = SelectionDraft.parse({
+    ...baseDraft,
+    acceptedWarningIds,
+  });
+  const stored = await client.createPreflight(effectiveDraft);
+  if (!stored.result.ready) {
+    throw new V2ContractError(
+      'invalid-schema',
+      `Warnings must be accepted individually: ${stored.result.unacceptedWarningIds.join(', ')}.`,
+    );
+  }
+  const bundleId =
+    bundleIdInput ?? flag(args, 'bundle') ?? generateOperationalId('bundle');
+  const accepted = await client.createJob({
+    preflightId: stored.preflightId,
+    acceptedWarningIds,
+    bundleId,
+  });
+  const terminal = new Set([
+    'completed',
+    'failed',
+    'cancelled',
+    'interrupted',
+  ]);
+  let job = accepted.job;
+  for (let attempt = 0; attempt < 3_600; attempt += 1) {
+    if (terminal.has(job.status)) break;
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    job = await client.getJob(job.jobId);
+  }
+  if (!terminal.has(job.status)) {
+    throw new Error(`Capture Job ${job.jobId} did not finish in time.`);
+  }
+  if (!job.runId) {
+    throw new V2ContractError(
+      'unknown-reference',
+      `Capture Job ${job.jobId} ended as ${job.status} without a Run.`,
+    );
+  }
+  const store = await openStore(loaded, true);
+  try {
+    const run = await store.getRun(job.bundleId, job.runId);
+    if (!run) {
+      throw new V2ContractError('unknown-reference', 'Run does not exist.');
+    }
+    const details = await client.getBundle(job.bundleId);
+    const snapshot = details.activeSnapshot;
+    if (snapshot.sourceRunId !== job.runId) {
+      throw new V2ContractError(
+        'unknown-reference',
+        `Active Snapshot ${snapshot.snapshotId} was not produced by Run ${job.runId}.`,
+      );
+    }
+    return {
+      run,
+      snapshot,
+      jobId: job.jobId,
+      storedBlobIds: details.blobs.map((blob) => blob.blobId),
+    };
+  } finally {
+    await store.close();
+  }
+}
+
 async function runCapture(
   args: CliArgs,
   loaded: LoadedCliConfig,
   draft?: SelectionDraft,
   bundleIdInput?: string,
 ) {
+  const mode = await resolveWriterMode(args, loaded);
+  if (mode === 'service') {
+    const client = await connectLocalService(loaded);
+    return runCaptureViaService(args, loaded, draft, bundleIdInput, client);
+  }
   const preflight = await resolvePreflight(args, loaded, draft);
   if (!preflight.ready) {
     throw new V2ContractError(
@@ -376,6 +489,13 @@ async function jobCancel(
   io: CliIo,
   loaded: LoadedCliConfig,
 ): Promise<number> {
+  const mode = await resolveWriterMode(args, loaded);
+  if (mode === 'service') {
+    const client = await connectLocalService(loaded);
+    const job = await client.cancelJob(requiredFlag(args, 'job'));
+    emit(io, booleanFlag(args, 'json'), job);
+    return EXIT.cancelled;
+  }
   const store = await openStore(loaded);
   try {
     const job = await new CaptureJobHost().cancel(
@@ -703,10 +823,30 @@ async function handoffCreate(
   io: CliIo,
   loaded: LoadedCliConfig,
 ): Promise<number> {
+  const bundleId = BundleId.parse(requiredFlag(args, 'bundle'));
+  const snapshotId = SnapshotId.parse(requiredFlag(args, 'snapshot'));
+  const implementationIntent = flag(args, 'intent');
+  const acknowledgedRiskKinds = flags(args, 'ack-risk').map((kind) =>
+    RiskKind.parse(kind),
+  );
+  const mode = await resolveWriterMode(args, loaded);
+  if (mode === 'service') {
+    const client = await connectLocalService(loaded);
+    const handoff = await client.createHandoff({
+      bundleId,
+      snapshotId,
+      ...(implementationIntent ? { implementationIntent } : {}),
+      acknowledgedRiskKinds,
+    });
+    emit(io, booleanFlag(args, 'json'), handoff);
+    return handoff.coverageStatus === 'partial'
+      ? EXIT.partial
+      : handoff.freshnessStatus === 'stale'
+        ? EXIT.stale
+        : EXIT.ok;
+  }
   const store = await openStore(loaded);
   try {
-    const bundleId = BundleId.parse(requiredFlag(args, 'bundle'));
-    const snapshotId = SnapshotId.parse(requiredFlag(args, 'snapshot'));
     const current = await createCurrentStaleness(
       args,
       loaded,
@@ -714,7 +854,6 @@ async function handoffCreate(
       bundleId,
       snapshotId,
     );
-    const implementationIntent = flag(args, 'intent');
     const handoff = await createAgentHandoff({
       store,
       bundleId,
@@ -723,9 +862,7 @@ async function handoffCreate(
       stalenessReport: current.report,
       currentInputVersion: current.currentInputVersion,
       ...(implementationIntent ? { implementationIntent } : {}),
-      acknowledgedRiskKinds: flags(args, 'ack-risk').map((kind) =>
-        RiskKind.parse(kind),
-      ),
+      acknowledgedRiskKinds,
     });
     emit(io, booleanFlag(args, 'json'), handoff);
     return handoff.coverageStatus === 'partial'
@@ -836,7 +973,22 @@ async function openStore(
       ? {}
       : { maxBytes: loaded.value.store.maxBytes }),
   });
-  await store.init();
+  try {
+    await store.init();
+  } catch (error) {
+    if (
+      error instanceof V2ContractError &&
+      error.code === 'writer-lock-held' &&
+      !readOnly
+    ) {
+      const service = loaded.value.service;
+      throw new V2ContractError(
+        'writer-lock-held',
+        `${error.message} Local Service at ${service.host}:${service.port} likely holds the Store while pnpm pb:up is running. Use a read-only command, stop the Service, or let this command route through Local Service automatically.`,
+      );
+    }
+    throw error;
+  }
   return store;
 }
 
@@ -871,6 +1023,9 @@ Rules:
   --config defaults to ./proto-bridge.json.
   Repeat --accept-warning <id> and --ack-risk <kind> explicitly.
   --force is intentionally unsupported.
+  Write commands auto-route through Local Service when it is reachable
+  (pnpm pb:up). Pass --local-store to force a local writer, or --via-service
+  to require the Service.
   Add --json for stable automation output.`;
 }
 

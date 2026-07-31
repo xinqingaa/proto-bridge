@@ -94,6 +94,7 @@ import { LIFECYCLE_LABELS } from "@/design-system/types";
 import InspectorPanel from "@/workbench/inspector/InspectorPanel.vue";
 import WorkbenchNavigationTree from "@/workbench/WorkbenchNavigationTree.vue";
 import CaptureComposerSheet from "@/capture/CaptureComposerSheet.vue";
+import HandoffComposerSheet from "@/capture/HandoffComposerSheet.vue";
 import CaptureJobCenter from "@/capture/CaptureJobCenter.vue";
 
 /** Keep in sync with `.resource-panel` / `.inspector-panel` width transition. */
@@ -1390,6 +1391,7 @@ onMounted(() => {
       </v-card>
     </v-dialog>
     <CaptureComposerSheet />
+    <HandoffComposerSheet />
   </v-app>
 </template>
 

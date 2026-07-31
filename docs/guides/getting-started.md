@@ -54,7 +54,7 @@ Runtime 使用 `/prototype/:prototypeId/:screenSlug`，工作台使用
 3. 查看 Preflight、Case Matrix、warning 和范围。
 4. 明确确认后启动 Job。
 5. 在任务中心查看进度，在结果页 Review Facts、截图、Coverage 和 Issue。
-6. 需要交给 Agent 时创建 Handoff。
+6. 需要交给 Agent 时，在「采集结果」点击「创建 Agent 交接」，逐项确认风险后记下 Handoff ID。
 
 详细操作语义见 [PBWork 与 PB 协作](./pbwork-and-pb.md)。
 
@@ -76,11 +76,15 @@ warning 使用可重复的 `--accept-warning <warningId>` 逐项确认。CLI 不
 
 ## 配置 MCP
 
+仓库默认提供 Cursor 项目级配置 `.cursor/mcp.json`。打开本仓库后在
+Cursor **Settings → MCP** 刷新即可；也可用：
+
 ```bash
 pnpm pb:mcp -- --print-config
 ```
 
-将输出中的直接 Node stdio 命令配置到 Cursor 或 Codex；不要把带生命周期日志的包管理器命令登记为 stdio server。MCP 必须绑定到 Handoff 所属 Workspace。Agent 的读取顺序见 [Agent 消费指南](./agent-consumption.md)。
+对照或配置 Codex。不要把带生命周期日志的包管理器命令登记为 stdio server。
+MCP 必须绑定到 Handoff 所属 Workspace。Agent 的读取顺序见 [Agent 消费指南](./agent-consumption.md)。
 
 需要生成一份持久 Journey receipt、固定读取检查和 Agent prompt 时：
 

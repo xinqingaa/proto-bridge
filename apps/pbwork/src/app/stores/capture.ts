@@ -145,6 +145,8 @@ export const useCaptureStore = defineStore("capture-v2", {
       handoffPreview: null as HandoffPreview | null,
       handoff: null as AgentHandoff | null,
       acknowledgedRiskKinds: [] as RiskKind[],
+      handoffSheetOpen: false,
+      handoffIntent: "",
       recaptureBundleId: null as string | null,
       screenshotUrls: {} as Record<string, string>,
       composerOpen: false,
@@ -164,6 +166,19 @@ export const useCaptureStore = defineStore("capture-v2", {
         [];
       const accepted = new Set(state.acceptedWarningIds);
       return required.every((warningId) => accepted.has(warningId));
+    },
+    risksAccepted(state): boolean {
+      const required =
+        state.handoffPreview?.risks.map((risk) => risk.kind) ?? [];
+      const accepted = new Set(state.acknowledgedRiskKinds);
+      return required.every((kind) => accepted.has(kind));
+    },
+    currentSnapshotHandoffs(state): AgentHandoff[] {
+      if (!state.details) return [];
+      const snapshotId = state.details.activeSnapshot.snapshotId;
+      return state.details.handoffs.filter(
+        (item) => item.snapshotId === snapshotId,
+      );
     },
     jobFinished(state): boolean {
       return Boolean(
@@ -650,16 +665,26 @@ export const useCaptureStore = defineStore("capture-v2", {
     },
     async previewCurrentHandoff(implementationIntent?: string) {
       if (!this.details) return;
+      this.busy = true;
+      this.clearError();
       try {
+        const intent = implementationIntent ?? this.handoffIntent;
         this.handoffPreview = await captureServiceClient.previewHandoff({
           bundleId: this.details.bundle.bundleId,
           snapshotId: this.details.activeSnapshot.snapshotId,
-          ...(implementationIntent ? { implementationIntent } : {}),
+          ...(intent.trim() ? { implementationIntent: intent.trim() } : {}),
           acknowledgedRiskKinds: [],
         });
-        this.acknowledgedRiskKinds = [];
+        const allowed = new Set(
+          this.handoffPreview.risks.map((risk) => risk.kind),
+        );
+        this.acknowledgedRiskKinds = this.acknowledgedRiskKinds.filter((kind) =>
+          allowed.has(kind),
+        );
       } catch (error) {
         this.setError(error);
+      } finally {
+        this.busy = false;
       }
     },
     toggleRisk(kind: RiskKind, accepted: boolean) {
@@ -667,18 +692,36 @@ export const useCaptureStore = defineStore("capture-v2", {
         ? [...new Set([...this.acknowledgedRiskKinds, kind])]
         : this.acknowledgedRiskKinds.filter((item) => item !== kind);
     },
+    openHandoffSheet() {
+      this.handoff = null;
+      this.handoffPreview = null;
+      this.acknowledgedRiskKinds = [];
+      this.handoffIntent = "";
+      this.handoffSheetOpen = true;
+      void this.previewCurrentHandoff();
+    },
+    closeHandoffSheet() {
+      this.handoffSheetOpen = false;
+    },
     async createCurrentHandoff(implementationIntent?: string) {
-      if (!this.details) return;
+      if (!this.details || !this.risksAccepted) return;
+      this.busy = true;
+      this.clearError();
       try {
+        const bundleId = this.details.bundle.bundleId;
+        const snapshotId = this.details.activeSnapshot.snapshotId;
+        const intent = implementationIntent ?? this.handoffIntent;
         this.handoff = await captureServiceClient.createHandoff({
-          bundleId: this.details.bundle.bundleId,
-          snapshotId: this.details.activeSnapshot.snapshotId,
-          ...(implementationIntent ? { implementationIntent } : {}),
+          bundleId,
+          snapshotId,
+          ...(intent.trim() ? { implementationIntent: intent.trim() } : {}),
           acknowledgedRiskKinds: this.acknowledgedRiskKinds,
         });
-        await this.loadBundle(this.details.bundle.bundleId);
+        await this.loadSnapshot(bundleId, snapshotId);
       } catch (error) {
         this.setError(error);
+      } finally {
+        this.busy = false;
       }
     },
   },

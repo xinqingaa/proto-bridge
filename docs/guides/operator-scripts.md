@@ -100,7 +100,7 @@ Journey 顺序调用真实入口：
 
 1. CLI Preflight；
 2. 逐项确认 warning；
-3. CLI Capture；
+3. CLI Capture（Local Service 可达时经 Service 写入，可与 `pnpm pb:up` 并存）；
 4. Snapshot inspect；
 5. 逐项确认 Handoff risk；
 6. Handoff create；

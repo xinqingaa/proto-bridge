@@ -33,9 +33,11 @@ PBWork 展示 Core 返回的：
 - 规范化 Selection；
 - Preflight ready/blocked；
 - warning 和接受状态；
-- Case Matrix；
+- Case Matrix（界面文案为「将执行的采集项」）；
 - 运行中的 Job 和 Case；
 - Run、Snapshot、Coverage、Issue 和 Handoff。
+
+在「采集结果」页可通过「创建 Agent 交接」打开交接 Sheet：预览固定引用、逐项确认 mandatory risks，创建后复制 Handoff ID。术语对照见 [词汇表](../reference/vocabulary.md#gui-对照)。
 
 PBWork 可以重组显示顺序，但不能改写 Store JSON、隐藏风险、发明状态词汇或重新计算 active 引用。
 

@@ -9,6 +9,7 @@ import {
   ChevronRight,
   ExternalLink,
   FileJson2,
+  Handshake,
   Image,
   MousePointer2,
   Route,
@@ -21,6 +22,7 @@ import {
 } from "@proto-bridge/core/v2/evidence-read-model";
 import { useCaptureStore } from "@/app/stores/capture";
 import { loadPrototypeScreens } from "@/design-system/loaders";
+import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
 import WorkbenchIconButton from "@/workbench/ui/WorkbenchIconButton.vue";
 
 const props = defineProps<{
@@ -81,6 +83,7 @@ const reviewNotes = computed(() => {
   }
   return notes;
 });
+const existingHandoffs = computed(() => capture.currentSnapshotHandoffs);
 
 function screenRecord(screenId: string) {
   return screens.find((screen) => screen.screenId === screenId);
@@ -273,12 +276,24 @@ watch(
           <small
             >{{ model.summary.screenshots }} 张截图{{
               model.summary.reused ? ` · ${model.summary.reused} 项复用` : ""
+            }}{{
+              existingHandoffs.length
+                ? ` · 已有 ${existingHandoffs.length} 个交接`
+                : ""
             }}</small
           >
         </div>
         <div v-if="reviewNotes.length" class="review-count">
           {{ reviewNotes.length }} 项检查说明
         </div>
+        <WorkbenchButton
+          tone="primary"
+          data-testid="open-handoff-composer"
+          @click="capture.openHandoffSheet"
+        >
+          <Handshake :size="16" />
+          {{ existingHandoffs.length ? "再创建 Agent 交接" : "创建 Agent 交接" }}
+        </WorkbenchButton>
       </section>
       <ul v-if="reviewNotes.length" class="review-notes">
         <li v-for="note in reviewNotes" :key="note">{{ note }}</li>
@@ -569,19 +584,21 @@ watch(
 .result-summary > div {
   display: grid;
   gap: 3px;
+  min-width: 0;
+  flex: 1;
 }
 .result-summary small {
   color: rgba(var(--v-theme-on-surface), 0.52);
   font-size: 0.7rem;
 }
 .review-count {
-  margin-left: auto;
   padding: 5px 8px;
   border-radius: 999px;
   background: color-mix(in srgb, rgb(var(--v-theme-warning)) 10%, transparent);
   color: rgb(var(--v-theme-warning));
   font-size: 0.68rem;
   font-weight: 750;
+  white-space: nowrap;
 }
 .review-notes {
   display: flex;

@@ -39,6 +39,9 @@ proto-bridge service start
 - warning 使用可重复的 `--accept-warning <warningId>` 逐项确认；
 - Handoff risk 使用可重复的 `--ack-risk <riskKind>` 逐项确认；
 - 不提供 `--force`；
+- `workspace doctor` 与 inspect/list/show 以只读方式打开 Store，可与 `pnpm pb:up` 并存；
+- `capture run`、`handoff create`、`job cancel` 等写命令在 Local Service 可达时自动经 HTTP 写入（与 GUI 共用同一 writer）；不可达时回退到本地写锁；
+- 可用 `--via-service` 强制走 Service，或 `--local-store` 强制本地写（需停掉占用 Store 的 Service）；
 - `--json` 输出稳定 JSON；
 - blocked、partial、cancelled、interrupted、failed 和 stale 使用不同退出码；
 - 确认只允许流程继续，不修改 warning、risk 或 Evidence。
