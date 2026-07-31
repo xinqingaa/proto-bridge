@@ -338,9 +338,9 @@ pnpm pb -- deliver \
 | PBWork GUI |  |  |  |  |
 | CLI |  |  |  |  |
 | MCP |  |  |  |  |
-| Cursor |  |  |  |  |
+| Cursor | V2 Tabs 被 `IgnorePointer` 降级为不可交互 | High | 是 | [PB-ACCEPT-001](./2026-07-31-ledger-planet-tab-evidence-gap.md) |
 | Codex |  |  |  |  |
-| Evidence 质量 |  |  |  |  |
+| Evidence 质量 | 缺少“待完成 / 已完成”切换后的 Action、Scenario 与固定状态 | High | 是 | [PB-ACCEPT-001](./2026-07-31-ledger-planet-tab-evidence-gap.md) |
 | Flutter Target |  |  |  |  |
 | 新原型规范 |  |  |  |  |
 
