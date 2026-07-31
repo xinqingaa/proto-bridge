@@ -7,4 +7,6 @@ abstract final class AppRoutes {
   static const demo = '/demo';
   static const fieldService = '/prototypes/field-service';
   static const ledgerPlanet = '/prototypes/ledger-planet';
+  static const ledgerPlanetTaskDetail =
+      '/prototypes/ledger-planet/task-detail';
 }

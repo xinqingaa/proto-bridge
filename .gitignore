@@ -39,3 +39,6 @@ proto-bridge.config.json
 
 # TypeScript
 *.tsbuildinfo
+
+# Cursor
+.cursor-tmp/
