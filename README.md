@@ -44,7 +44,7 @@ pnpm pb -- deliver \
   --target apps/flutter_pb_app
 ```
 
-（`pnpm pb:journey` 仅保留给验收回归，日常请用 `deliver` 或 PBWork「交付到 Agent」。）
+也可在 PBWork 点击「交付到 Agent」。产物在 `.proto-bridge/deliveries/`（提示词 + receipt；MCP 仍读 Store）。
 
 完整步骤见 [快速上手](docs/guides/getting-started.md)和[本地操作脚本](docs/guides/operator-scripts.md)。
 

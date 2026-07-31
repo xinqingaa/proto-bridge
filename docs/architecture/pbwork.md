@@ -12,7 +12,7 @@ apps/pbwork/src/
 ├── design-system/       prototype tokens, themes, components, contracts
 ├── prototypes/          business prototypes and the single registry
 ├── runtime/             pure prototype runtime and browser protocols
-└── capture/             composer, jobs, evidence viewer, service client
+└── capture/             deliver flow, jobs, evidence viewer, service client
 ```
 
 ## Workbench
@@ -25,7 +25,7 @@ apps/pbwork/src/
 - Prototype 生命周期、Screen 树和画布；
 - iframe Runtime 预览；
 - Inspector、Highlight 和本地评论；
-- Capture Console、Composer、Job Center 和 Evidence Viewer。
+- Capture Console、Deliver FlowSheet、Job Center 和 Evidence Viewer。
 
 Workbench 组件统一从 `src/workbench/ui` 复用或封装。该层可以使用 Vuetify，但业务视图不能随意创建不一致的原生控件。
 

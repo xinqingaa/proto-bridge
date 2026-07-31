@@ -43,21 +43,22 @@ PBWork 工作台主文案用中文；产品词可作次要标注。验收与指�
 
 | 产品词 | GUI 主文案 |
 | --- | --- |
-| Composer | 确认采集内容 |
+| Deliver / Deliver FlowSheet | 交付到 Agent |
 | Selection / Draft | 采集范围 |
 | Preflight | 范围检查 |
-| Case Matrix | 将执行的采集项 |
+| Case Matrix | 将采集 N 项 / 将执行的采集项 |
 | Case | 采集项 / 视图 |
 | Variant | 页面状态 |
 | Scenario | 交互场景 |
 | warning | 需要确认的事项（勾选「我已了解并继续」） |
-| Job / 任务中心 | 采集任务 |
-| Evidence Viewer | 采集结果 |
+| Job / 任务中心 | 采集任务（后台历史） |
+| Evidence Viewer | 采集结果（按需详情） |
 | Fragment | 页面区域 / 验收元素 |
 | Coverage | 覆盖情况（如「N/N 个视图采集成功」） |
 | Issue | 检查说明 |
-| Agent Handoff | Agent 交接 |
-| mandatory risk | 必须确认的风险 |
+| Agent Handoff | Agent 交接（交付流程内生成） |
+| Agent prompt / deliveries | Agent 提示词 / `.proto-bridge/deliveries/` |
+| mandatory risk | 必须确认的风险 / 风险提醒 |
 | Staleness / freshness | 新鲜 / 已过期 |
 
 状态、风险和错误码的机器权威在 `@proto-bridge/core/v2` Schema 中。

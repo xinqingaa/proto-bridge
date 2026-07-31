@@ -66,7 +66,7 @@ pnpm pb -- deliver \
   --target apps/flutter_pb_app
 ```
 
-`pnpm pb:journey` 仍可用于本地验收回归，但产品主路径是 `deliver`。
+PBWork「交付到 Agent」与 CLI `deliver` 写入同一套 `.proto-bridge/deliveries/` 产物。
 
 ## 开发
 

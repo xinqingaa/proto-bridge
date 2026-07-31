@@ -6,7 +6,7 @@ PBWork 是 ProtoBridge 的 GUI，但不是 Core 的替代实现。它把人的�
 
 | 界面 | 面向对象 | 职责 |
 | --- | --- | --- |
-| Workbench | 原型作者、设计者、开发者 | Design Foundation、组件 Playground、原型画布、Inspector、Capture Console、任务中心和 Evidence Review |
+| Workbench | 原型作者、设计者、开发者 | Design Foundation、组件 Playground、原型画布、Inspector、Deliver Flow、任务中心和 Evidence Review |
 | Runtime | Core Capture、Playwright、Workbench iframe | 确定性渲染 Screen/Variant，暴露 authored manifest、语义快照和 Scenario 执行能力 |
 
 Workbench 路由位于 `/workbench/*`。Runtime 路由位于 `/prototype/:prototypeId/:screenSlug`，业务状态通过受约束 query 表达。画布设备、缩放和工作壳偏好不得进入 Runtime URL。
@@ -24,20 +24,25 @@ Workbench 路由位于 `/workbench/*`。Runtime 路由位于 `/prototype/:protot
 
 工作壳组件与原型组件严格隔离：`src/workbench/ui` 服务 Workbench，`src/design-system/components` 服务 Runtime。工作壳不能复用携带原型采集语义的组件。
 
-## 采集阶段
+## 交付阶段
 
-Capture Composer 把选择转换为 `SelectionDraft`。打开 Composer 可以自动执行范围检查，但启动采集必须由用户确认。
+「交付到 Agent」（Deliver FlowSheet）把选择转换为 `SelectionDraft`，并在同一张 Sheet 内完成：
+
+1. 确认范围（可自动 Preflight）；
+2. 执行采集（进度留在 Sheet 内）；
+3. 结果摘要与风险提醒；
+4. 创建 Handoff，渲染并可复制 Agent 提示词，同时写入 `.proto-bridge/deliveries/`。
 
 PBWork 展示 Core 返回的：
 
 - 规范化 Selection；
 - Preflight ready/blocked；
 - warning 和接受状态；
-- Case Matrix（界面文案为「将执行的采集项」）；
-- 运行中的 Job 和 Case；
+- Case Matrix（界面文案为「将采集 N 项」）；
+- 运行中的 Job；
 - Run、Snapshot、Coverage、Issue 和 Handoff。
 
-在「采集结果」页可通过「创建 Agent 交接」打开交接 Sheet：预览固定引用、逐项确认 mandatory risks，创建后复制 Handoff ID。术语对照见 [词汇表](../reference/vocabulary.md#gui-对照)。
+任务中心保留后台历史与恢复；「采集结果」页用于按需 Review 详情。术语对照见 [词汇表](../reference/vocabulary.md#gui-对照)。
 
 PBWork 可以重组显示顺序，但不能改写 Store JSON、隐藏风险、发明状态词汇或重新计算 active 引用。
 
@@ -48,24 +53,15 @@ Review 先回答 Evidence 是否足够，而不是页面“看起来是否差不
 - required Fragment 是否全部 resolved；
 - 语义 Snapshot 和 Screenshot 是否属于同一 Case；
 - active revision 是否来自成功 Attempt；
-- 是否存在 required unknown 或 unresolved conflict；
-- Snapshot 是否 stale；
-- Handoff 是否覆盖实际实现范围。
+- unknown / conflict / Issue 是否可解释；
+- Handoff 风险是否已进入 Agent 提示词。
 
-如果证据不足，应修改原型 Contract、状态准备或语义标记并重采。手工确认风险不会提升 Evidence Level，也不会把未知事实变为已知。
+## Agent 消费
 
-## CLI 的关系
+交付产物（`agent-prompt.md`）是 Store 索引；Agent 通过 MCP 按固定 Handoff / Snapshot 读取 Evidence。顺序见 [Agent 消费指南](./agent-consumption.md)。
 
-CLI 和 PBWork 是两个 Producer 入口：
+## 边界
 
-- PBWork 适合交互选择、视觉检查和结果 Review；
-- CLI 适合可重复自动化、批量操作和 CI；
-- 两者共用 Selection、Preflight、Matrix、Capture、Store 和 Handoff；
-- 同一输入必须得到相同 Case identity 和状态语义。
-
-## MCP 的关系
-
-MCP 是 Consumer，不创建 Capture Job。PBWork 或 CLI 先生成 Handoff，Agent 再通过 MCP 读取固定 Evidence。PBWork 不把 Handoff 自动发送给某个 Agent，也不假设 Agent 的目标工程布局。
-
-原型制作细节见 [PBWork 原型生产者手册](../pbwork/README.md)，采集实现见 [采集链路](../architecture/capture-pipeline.md)。
-
+- Workbench 不直接访问 Store 或 Playwright；经 Local Service。
+- Runtime 不依赖 Workbench 全局状态。
+- CLI `deliver` 与 GUI 交付写入同一套 deliveries 约定。

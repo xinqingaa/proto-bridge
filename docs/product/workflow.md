@@ -10,7 +10,7 @@ PBWork Design Foundation / Components
   → isolated Capture Job
   → immutable Run + Evidence revisions + Snapshot
   → Evidence Review + Staleness
-  → Agent Handoff
+  → Deliver (Handoff + agent-prompt / deliveries)
   → MCP fixed read
   → Agent implementation + target validation
 ```
@@ -85,7 +85,9 @@ PBWork Evidence Review 按 Screen、Case 和语义区域展示：
 
 重新采集会创建新 Run 和新 Snapshot，历史 Snapshot 与 Handoff 保持可读。
 
-## 6. Agent Handoff
+## 6. Deliver 与 Agent Handoff
+
+产品主路径是 Deliver（PBWork「交付到 Agent」或 CLI `deliver`）：在同一流程内完成 Capture（或续跑已有 Snapshot）、创建 Handoff，并写入 `.proto-bridge/deliveries/`（`receipt.json` + `agent-prompt.md`）。deliveries 只是 Store 索引；MCP 仍按 Handoff / Snapshot 读 Store。
 
 Handoff 固定：
 
@@ -96,7 +98,7 @@ Handoff 固定：
 - 具体 Case、revision 和 Fragment；
 - `mandatoryRiskReport`。
 
-Handoff 是 Evidence 索引，不是实现计划。PBWork 可以创建和导出 Handoff；CLI 提供同一能力。
+Handoff 是 Evidence 索引，不是实现计划。PBWork 与 CLI 共用同一 Core 能力。
 
 ## 7. MCP 与目标实现
 

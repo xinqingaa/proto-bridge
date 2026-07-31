@@ -18,7 +18,6 @@
     "pb:doctor": "node scripts/pb-doctor.mjs",
     "pb:up": "node scripts/pbwork-dev.mjs",
     "pb:mcp": "node scripts/pb-mcp.mjs",
-    "pb:journey": "node scripts/pb-journey.mjs",
     "pbwork": "pnpm pb:up",
     "pbwork:service": "pnpm --filter @proto-bridge/local-service dev",
     "test": "pnpm --filter @proto-bridge/core test",

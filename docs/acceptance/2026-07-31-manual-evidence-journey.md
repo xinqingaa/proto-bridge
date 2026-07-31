@@ -85,23 +85,22 @@ pnpm pb -- bundle list
 - Local Service 为 `127.0.0.1:3988`；
 - GUI 与 CLI 报告同一个 `pbwork-local` Workspace；
 - `workspace doctor` 在 Service 持锁时仍可读（只读开 Store）；
-- 写操作（`capture run` / `handoff create` / `pb:journey`）在 Service 可达时自动经 Local Service，不必先停 `pb:up`；
+- 写操作（`capture run` / `handoff create` / `deliver`）在 Service 可达时自动经 Local Service，不必先停 `pb:up`；
 - `bundle list` 能看到后续 GUI/CLI 创建的 Bundle。
 
 ## 2. 账本星球：GUI Producer
 
 1. 打开账本星球「任务列表」default Variant。
 2. 确认页面、主题和设备状态正确。
-3. 点击「采集当前页面」。
-4. 在「确认采集内容」Sheet（Composer）中核对：
-   - **范围检查**（Preflight）与 **将执行的采集项**（Case Matrix）；
+3. 点击「交付到 Agent」（当前页）。
+4. 在 Deliver FlowSheet 中核对：
+   - **范围检查**（Preflight）与 **将采集 N 项**（Case Matrix）；
    - **交互场景**（Scenario，应包含 `open-claimable-task`）；
    - **需要确认的事项**（warning）：逐项勾选「我已了解并继续」。
-5. 启动采集，等待任务中心完成。
-6. 打开「采集结果」（Evidence Viewer）。
-7. 检查任务列表 default、critical 状态和 `open-claimable-task` Scenario。
-8. 检查截图、页面内容、页面区域（Fragment）、Facts、覆盖情况（Coverage）、检查说明（Issue）和技术详情。
-9. 点击「创建 Agent 交接」（Handoff）；有「必须确认的风险」时逐项阅读并确认，创建后记录 Handoff ID。
+5. 点击「开始交付」，在同一 Sheet 内等待采集完成。
+6. 查看结果摘要与风险提醒；生成交接与 Agent 提示词。
+7. 记录已写入的 `.proto-bridge/deliveries/*/agent-prompt.md`，复制提示词或记下 Handoff ID。
+8. 可选：打开「采集结果」核对截图、页面区域、Facts、覆盖情况、检查说明。
 
 必须记录：
 
@@ -111,6 +110,7 @@ pnpm pb -- bundle list
 | Run ID |  |
 | Snapshot ID |  |
 | Handoff ID |  |
+| Delivery 路径 |  |
 | Case 数 |  |
 | Screenshot 数 |  |
 | Coverage |  |
@@ -134,10 +134,13 @@ pnpm pb -- handoff show --handoff <handoffId> --json
 终端 A 保持 `pnpm pb:up`。终端 B 执行：
 
 ```bash
-pnpm pb:journey
+pnpm pb -- deliver \
+  --prototype ledger-planet \
+  --screen task-list \
+  --target apps/flutter_pb_app
 ```
 
-默认 Selection 是：
+也可使用 Selection 文件：
 
 ```text
 examples/selections/ledger-planet-task-list.json
@@ -146,18 +149,18 @@ examples/selections/ledger-planet-task-list.json
 逐项确认所有 warning/risk。完成后打开：
 
 ```text
-.proto-bridge/journeys/latest.json
+.proto-bridge/deliveries/<timestamp>/
+├── receipt.json
+└── agent-prompt.md
 ```
 
 检查 Receipt 是否包含：
 
-- 绝对 config/selection/target/store 路径；
 - Workspace、Bundle、Run、Snapshot、Handoff；
 - warning/risk 确认记录；
-- MCP 返回的固定 Workspace/Snapshot；
 - `agent-prompt.md` 路径。
 
-记录 Journey 路径：
+记录 Delivery 路径：
 
 ```text
 
@@ -311,7 +314,7 @@ cp examples/selections/ledger-planet-task-list.json \
 编辑后运行：
 
 ```bash
-pnpm pb:journey -- \
+pnpm pb -- deliver \
   --selection .proto-bridge/new-prototype-selection.json \
   --target apps/flutter_pb_app \
   --intent "在 Flutter 示例工程还原新原型的 2–3 个页面"

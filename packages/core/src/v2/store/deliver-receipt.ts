@@ -21,7 +21,7 @@ export type DeliveryReceipt = {
   mandatoryRisks: AgentHandoff['risks'];
   agentPromptPath: string;
   receiptPath: string;
-  source: 'cli' | 'gui' | 'journey';
+  source: 'cli' | 'gui';
   configPath?: string;
 };
 

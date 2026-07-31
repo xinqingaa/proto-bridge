@@ -28,7 +28,7 @@ export type BuildAgentPromptInput = {
 
 /**
  * Builds the markdown Agent prompt for Cursor / Codex consumption.
- * Journeys and deliveries are Store indexes only; MCP still reads Evidence
+ * Deliveries are Store indexes only; MCP still reads Evidence
  * from the configured Store via the fixed Handoff / Snapshot IDs below.
  */
 export function buildAgentPrompt(input: BuildAgentPromptInput): string {

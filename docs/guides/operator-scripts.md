@@ -1,6 +1,6 @@
 # 本地操作脚本
 
-仓库根脚本减少本地路径、端口和固定 ID 的手工拼接，但不定义新的产品语义。Selection、warning、risk、Capture、Handoff 和 MCP 读取仍由 CLI、Core 与 MCP 实现。
+仓库根脚本减少本地路径、端口和固定 ID 的手工拼接，但不定义新的产品语义。Selection、warning、risk、Capture、Handoff、Deliver 和 MCP 读取仍由 CLI、Core 与 MCP 实现。
 
 ## 命令
 
@@ -8,9 +8,8 @@
 | --- | --- | --- |
 | `pnpm pb:doctor` | 检查环境、配置、浏览器、构建、Store 和服务可达性 | 否 |
 | `pnpm pb:up` | 按 Workspace 配置启动 PBWork 与 Local Service | Service 可以在启动恢复时终结 orphan Job |
-| `pnpm pb -- <args>` | 从仓库根目录调用正式 CLI | 由具体 CLI 命令决定 |
+| `pnpm pb -- <args>` | 从仓库根目录调用正式 CLI（含 `deliver`） | 由具体 CLI 命令决定 |
 | `pnpm pb:mcp` | 从配置解析 Store/Workspace 并启动 stdio MCP | 否 |
-| `pnpm pb:journey` | **已过时（验收回归保留）**；日常请用 `pnpm pb -- deliver` | 是 |
 
 `pnpm pbwork` 是 `pnpm pb:up` 的兼容别名。
 
@@ -74,7 +73,7 @@ Agent 客户端应使用输出中的直接 `node scripts/pb-mcp.mjs` 命令，�
 
 ## Deliver（产品主路径）
 
-GUI「交付到 Agent」与 CLI `deliver` 都会写入：
+GUI「交付到 Agent」与 CLI `deliver` 都会：采集（或续跑已有 Snapshot）→ 创建 Handoff → 写入：
 
 ```text
 .proto-bridge/deliveries/<timestamp>/
@@ -92,9 +91,4 @@ pnpm pb -- deliver \
 收据只是 Store 索引；MCP 仍按 Handoff / Snapshot 从 Store 按需读取。也可用
 `--selection <file>`，或 `--bundle` + `--snapshot` 在已有 Evidence 上续跑交接。
 
-## Guided Journey（验收回归）
-
-`pnpm pb:journey` 仍可用于本地验收回归，但**不是**日常产品主路径；请优先使用
-`pnpm pb -- deliver` 或 PBWork「交付到 Agent」。
-
-完整人工验收顺序应以当前验收任务文档为准；稳定的 Agent 读取规则仍由 [Agent 消费指南](./agent-consumption.md)定义。
+稳定的 Agent 读取规则见 [Agent 消费指南](./agent-consumption.md)。

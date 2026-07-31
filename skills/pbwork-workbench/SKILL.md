@@ -2,8 +2,8 @@
 name: pbwork-workbench
 description: >-
   Build or modify the PBWork management shell, navigation, canvas, inspector,
-  prototype management, Capture Console, task center, Evidence Review, or
-  workbench-only UI primitives.
+  prototype management, Capture Console, Deliver FlowSheet, task center,
+  Evidence Review, or workbench-only UI primitives.
 ---
 
 # PBWork 工作壳 Skill
@@ -28,10 +28,11 @@ description: >-
 
 ## Capture 与 Evidence
 
-- Composer 可以自动预检，启动 Capture 必须明确确认。
-- 四类入口只生成同一种 Core Selection Draft。
+- 产品主路径是「交付到 Agent」（`DeliverFlowSheet`）：范围确认 → 采集 → 结果/风险 → Agent 提示词，并写入 `.proto-bridge/deliveries/`。
+- Deliver 可自动预检；开始交付必须明确确认。warning / risk 逐项确认，不提供全局跳过。
+- 入口只生成同一种 Core Selection Draft；与 CLI `deliver` 共用 Core。
 - Job、Run、Attempt、revision 和 Snapshot 的状态来自 Core Contract。
-- 任务中心、任务详情和 Evidence Review 职责分开。
+- 任务中心保留后台历史；Evidence Review 用于按需详情；交付进度默认留在 Deliver Sheet。
 - Evidence 可按 Screen/Case/Fragment 重组展示，但不改写 Store JSON。
 - fixed refs、provenance、unknown、conflict、Coverage、Issue 和 risks 始终可追溯。
 - Inspector 临时 handle 不能持久化；Fragment 使用稳定 identity。
