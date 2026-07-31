@@ -27,13 +27,13 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 5. 在编辑前原样报告 `mandatoryRiskReport` 的全部风险。
 6. 读取 Handoff 固定的 Snapshot、Coverage 和 Staleness Report。
 7. 按实现范围读取固定 Case revision；局部任务再读取对应 Fragment。
-8. 按需读取 Screenshot、Catalog 和 Issue。
+8. 实际查看 Screenshot（构图约束与 Fragment 结构同级）；按需读取 Catalog 和 Issue。
 9. 阅读目标仓库自己的 AGENT、README、架构、测试和既有实现。
-10. 必要时调用 `read_target_conventions` 与 `find_target_examples`。
-11. Agent 自行决定文件、组件、状态、路由和 Token，完成实现并运行目标原生验证。
-12. 调用 `validate_target_changes`，报告变更范围、验证结果、原始风险和剩余风险。
+10. 必要时调用 `read_target_conventions` 与 `find_target_examples`；Target 结果不是 Source Evidence，不得覆盖 Screenshot / Fragment。
+11. Agent 自行决定文件、组件、状态、路由和 Token，但不得发明证据未支持的容器形态、文案、交互或状态；布局敏感 prop 缺失时对照截图，仍不确定则披露为剩余风险。
+12. 完成实现并运行目标原生验证，调用 `validate_target_changes`，报告变更范围、验证结果、原始风险、相对 Evidence 的已知偏差和剩余风险。
 
-也可以使用 MCP Prompt `consume_evidence_handoff` 创建同一读取任务；Prompt 不放宽上述规则。
+也可以使用 MCP Prompt `consume_evidence_handoff` 创建同一读取任务；Prompt 不放宽上述规则。权威实现纪律以 `proto-bridge://guides/handoff-consumer` 为准。
 
 ## Evidence Tools
 
@@ -83,7 +83,8 @@ Producer 对风险的确认只允许生成 Handoff，不代表 Consumer 可以�
 - revision 不能由 Handoff Snapshot 到达；
 - Schema major 不受支持；
 - Debug/Trace 未经显式请求；
-- Target 路径越界或目标仓库无法验证。
+- Target 路径越界或目标仓库无法验证；
+- 发明 Screenshot / Fragment 未支持的视觉结构、文案或交互，却仍宣称完成。
 
 不得通过切换 active/latest、拼接 Store 文件路径、忽略风险或重新解释旧对象恢复。
 
@@ -97,5 +98,6 @@ Agent 最终至少报告：
 - 使用了哪些目标工程既有模式；
 - 运行的原生测试和结果；
 - `validate_target_changes` 结果；
+- 相对 Evidence 的已知偏差；
 - 尚未解决的 Evidence 或实现风险。
 

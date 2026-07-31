@@ -34,5 +34,10 @@ describe('agent-prompt', () => {
     expect(prompt).toContain('存在未证明的必需要素');
     expect(prompt).toContain('read_agent_handoff');
     expect(prompt).toContain('不得切换到 active/latest');
+    expect(prompt).toContain('实现纪律');
+    expect(prompt).toContain('Screenshot 必须实际查看');
+    expect(prompt).toContain('不得发明证据未支持的容器形态');
+    expect(prompt).toContain('不得 silent 使用会改变构图的组件默认值');
+    expect(prompt).toContain('相对 Evidence 的已知偏差');
   });
 });

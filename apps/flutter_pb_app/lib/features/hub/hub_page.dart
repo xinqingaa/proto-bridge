@@ -59,6 +59,13 @@ class HubPage extends ConsumerWidget {
             icon: Icons.account_balance_wallet_outlined,
             route: AppRoutes.ledgerPlanet,
           ),
+          SizedBox(height: TS.spacing.sm),
+          _HubEntry(
+            title: 'Ledger Planet V2',
+            subtitle: 'prototypes/ledger-planet-v2',
+            icon: Icons.auto_awesome_outlined,
+            route: AppRoutes.ledgerPlanetV2,
+          ),
         ],
       ),
     );
