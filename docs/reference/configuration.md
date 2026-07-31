@@ -18,6 +18,10 @@
 
 具体 Schema 由 `V2WorkspaceConfig` 定义。配置值不用于补录原型事实或目标工程架构。
 
+`workspace init` 默认把 `runtime.baseUrl` 的 origin 写入
+`service.allowedOrigins`，因为 PBWork 浏览器是 Local Service 的调用方。
+配置完成后可用 `pnpm pb:doctor` 检查 origin、Store Workspace、浏览器和本地端口。
+
 ## 环境变量
 
 | 变量 | 用途 |
@@ -62,4 +66,3 @@ CLI 配置文件和显式参数的优先级以对应入口实现为准。MCP 支
 - Workbench Bridge 校验 origin、source window、runtimeId、requestId 和 payload。
 - Capture Protocol 只暴露浏览器安全 Contract。
 - URL 只包含可复现的 Runtime 维度；token、Store path 和本地工作台偏好不得进入 URL。
-

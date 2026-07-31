@@ -1,0 +1,34 @@
+{
+  "prototypeId": "ledger-planet",
+  "screens": [
+    {
+      "screenId": "ledger-planet.task-list",
+      "variants": {
+        "mode": "default-and-critical"
+      },
+      "themeIds": [
+        "light"
+      ],
+      "deviceIds": [
+        "iphone-14"
+      ],
+      "scenarios": {
+        "mode": "explicit",
+        "scenarioIds": [
+          "open-claimable-task"
+        ]
+      },
+      "captureScope": {
+        "fragments": [],
+        "screenshots": {
+          "mode": "all"
+        },
+        "sourcePolicy": false,
+        "debugPolicy": false,
+        "evidenceInputMode": "instrumented",
+        "minEvidenceLevel": "instrumented-runtime"
+      }
+    }
+  ],
+  "acceptedWarningIds": []
+}

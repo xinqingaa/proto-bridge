@@ -117,7 +117,13 @@ describe('ProtoBridge CLI', () => {
     const config = JSON.parse(
       await readFile(path.join(root, 'proto-bridge.json'), 'utf8'),
     );
-    expect(config).toMatchObject({ schemaVersion: 1, workspaceId: 'cli-test' });
+    expect(config).toMatchObject({
+      schemaVersion: 1,
+      workspaceId: 'cli-test',
+      service: {
+        allowedOrigins: ['http://127.0.0.1:3977'],
+      },
+    });
     expect(
       await runCli(['workspace', 'doctor', '--json'], output.io),
     ).toBe(CLI_EXIT_CODES.ok);

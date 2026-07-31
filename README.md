@@ -15,31 +15,33 @@ PBWork 是 PB 的图形工作台、原型生产环境和 instrumented Runtime。
 
 ## 快速开始
 
+首次使用时初始化 Workspace；已有 `proto-bridge.json` 时跳过
+`workspace init`：
+
 ```bash
 pnpm install
 pnpm build
-pnpm pbwork
-```
-
-初始化 CLI Workspace：
-
-```bash
-node packages/cli/dist/index.js workspace init \
+pnpm pb -- workspace init \
   --workspace pbwork-local \
   --runtime http://127.0.0.1:3977
 
-node packages/cli/dist/index.js workspace doctor
+pnpm pb:doctor
+pnpm pb:up
 ```
 
-启动 MCP：
+生成 Cursor/Codex 的 MCP 配置：
 
 ```bash
-node packages/mcp-server/dist/index.js \
-  --store-root .proto-bridge/store \
-  --workspace pbwork-local
+pnpm pb:mcp -- --print-config
 ```
 
-完整步骤见 [快速上手](docs/guides/getting-started.md)。
+保留一次可交给 Agent 的真实 Evidence：
+
+```bash
+pnpm pb:journey
+```
+
+完整步骤见 [快速上手](docs/guides/getting-started.md)和[本地操作脚本](docs/guides/operator-scripts.md)。
 
 ## 仓库组成
 

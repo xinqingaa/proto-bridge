@@ -125,6 +125,7 @@ async function initWorkspace(args: CliArgs, io: CliIo): Promise<number> {
   }
   const runtimeBaseUrl =
     flag(args, 'runtime') ?? 'http://127.0.0.1:3977';
+  const runtimeOrigin = new URL(runtimeBaseUrl).origin;
   const servicePort = numberFlag(args, 'service-port') ?? 3988;
   const config = V2WorkspaceConfig.parse({
     schemaVersion: V2_SCHEMA_MAJOR,
@@ -146,7 +147,7 @@ async function initWorkspace(args: CliArgs, io: CliIo): Promise<number> {
       allowedOrigins:
         flags(args, 'service-origin').length > 0
           ? flags(args, 'service-origin')
-          : [`http://127.0.0.1:${servicePort}`],
+          : [runtimeOrigin],
     },
   });
   await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, {

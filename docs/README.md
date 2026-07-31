@@ -8,6 +8,7 @@ ProtoBridge（PB）把可交互原型转化为可追溯、可固定引用的 Evi
 | --- | --- |
 | 了解产品与边界 | [产品总览](./product/overview.md) → [完整工作流](./product/workflow.md) |
 | 安装并跑通闭环 | [快速上手](./guides/getting-started.md) |
+| 使用本地操作脚本 | [本地操作脚本](./guides/operator-scripts.md) |
 | 使用 PBWork 采集 | [PBWork 与 PB 协作](./guides/pbwork-and-pb.md) |
 | 让 Agent 消费 Evidence | [Agent 消费指南](./guides/agent-consumption.md) |
 | 理解 PB 实现 | [系统架构](./architecture/overview.md) → [ProtoBridge 实现](./architecture/proto-bridge.md) |
@@ -17,6 +18,8 @@ ProtoBridge（PB）把可交互原型转化为可追溯、可固定引用的 Evi
 | 修改 PBWork Token 或组件 | [PBWork 开发规范](./pbwork/development.md) → [组件总论](./pbwork/components/overview.md) |
 | 维护仓库 | [开发规范](./maintenance/development.md) → [文档维护](./maintenance/documentation.md) |
 | 理解架构转型背景 | [从 V1 到 Evidence 架构](./history/v1-to-evidence-architecture.md) |
+
+进行中的一次性人工验收记录位于 `docs/acceptance/`；它不替代正式指南或产品规范。
 
 ## 权威边界
 
@@ -31,4 +34,3 @@ ProtoBridge（PB）把可交互原型转化为可追溯、可固定引用的 Evi
 - Agent 执行入口：根目录 `AGENT.md` 与 `skills/*/SKILL.md`
 
 同一规则只在所属权威文档中完整定义。其它文档应链接到该规则，不复制一份可独立漂移的说明。
-

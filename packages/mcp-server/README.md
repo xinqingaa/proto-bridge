@@ -12,6 +12,15 @@ proto-bridge-mcp \
 
 也可使用 `PB_STORE_ROOT` 与 `PB_WORKSPACE_ID`。
 
+在本仓库中可以让 wrapper 从 `proto-bridge.json` 自动解析两者：
+
+```bash
+pnpm pb:mcp
+pnpm pb:mcp -- --print-config
+```
+
+第二个命令只打印 Cursor/Codex 可使用的 stdio 配置材料，不启动 server。
+
 ## Evidence Tools
 
 - `inspect_evidence_workspace`

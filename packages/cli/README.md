@@ -4,12 +4,15 @@ ProtoBridge CLI 是自动化 Evidence Producer 和 Workspace/Bundle 生命周期
 
 ## Workspace
 
+安装包后使用 `proto-bridge`；在本仓库根目录使用等价包装
+`pnpm pb -- <args>`：
+
 ```bash
-proto-bridge workspace init \
+pnpm pb -- workspace init \
   --workspace pbwork-local \
   --runtime http://127.0.0.1:3977
 
-proto-bridge workspace doctor
+pnpm pb -- workspace doctor
 ```
 
 默认配置是 `./proto-bridge.json`，默认 Store 是相对配置文件的 `.proto-bridge/store`。
@@ -45,6 +48,10 @@ proto-bridge service start
 `--selection` 接受 Core `SelectionDraft` JSON。可以用 `--manifest` 提供离线 Runtime manifest，否则 Preflight 从配置的 instrumented Runtime 读取 manifest。
 
 PBWork 与 CLI 对同一规范化 Draft 必须生成相同 Case identity 和 Matrix。
+
+仓库提供可直接执行的
+`examples/selections/ledger-planet-task-list.json`，以及保留真实
+Bundle/Handoff 的 `pnpm pb:journey`。脚本行为见[本地操作脚本](../../docs/guides/operator-scripts.md)。
 
 ## 开发
 
