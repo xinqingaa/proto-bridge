@@ -17,9 +17,26 @@ export const Bundle = z
     workspaceId: WorkspaceId,
     prototypeId: PrototypeId,
     status: BundleStatus,
+    statusBeforeTrash: z.enum(['writable', 'archived']).optional(),
     createdAt: z.string().datetime(),
     /** Set only for a Bundle created by `fork`; identifies the source Snapshot it was forked from (pb-v2-spec.md "Bundle 生命周期"). */
     originSnapshotId: SnapshotId.optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((bundle, ctx) => {
+    if (bundle.status === 'trashed' && !bundle.statusBeforeTrash) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['statusBeforeTrash'],
+        message: 'trashed Bundles must record their prior status',
+      });
+    }
+    if (bundle.status !== 'trashed' && bundle.statusBeforeTrash) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['statusBeforeTrash'],
+        message: 'only trashed Bundles may record a prior status',
+      });
+    }
+  });
 export type Bundle = z.infer<typeof Bundle>;

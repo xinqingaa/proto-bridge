@@ -8,6 +8,7 @@ export const RISK_KIND_LABELS: Record<RiskKind, string> = {
   'unresolved-conflict': '存在未解决冲突',
   'evidence-level-limitation': '证据级别受限',
   'manual-promotion': '含人工提升项',
+  'interaction-coverage': '交互覆盖不完整',
 };
 
 export function riskKindLabel(kind: RiskKind | string): string {

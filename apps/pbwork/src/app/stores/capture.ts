@@ -15,6 +15,8 @@ import type {
 import type {
   BundleEvidenceDetails,
   CaptureConsoleState,
+  EvidenceInventory,
+  BundleDeletePlan,
   HandoffPreview,
   LocalServiceSession,
   StoredPreflight,
@@ -137,6 +139,8 @@ export const useCaptureStore = defineStore("capture-v2", {
       draft: draftSession.draft,
       session: null as LocalServiceSession | null,
       consoleState: null as CaptureConsoleState | null,
+      evidenceInventory: null as EvidenceInventory | null,
+      deletePlan: null as BundleDeletePlan | null,
       preflight: null as StoredPreflight | null,
       acceptedWarningIds: [] as string[],
       activeJob: null as CaptureJob | null,
@@ -271,6 +275,7 @@ export const useCaptureStore = defineStore("capture-v2", {
     async refreshConsole() {
       try {
         this.consoleState = await captureServiceClient.consoleState();
+        this.evidenceInventory = await captureServiceClient.evidenceInventory();
         if (this.activeJob) {
           const refreshed = this.consoleState.jobs.find(
             (job) => job.jobId === this.activeJob?.jobId,
@@ -407,6 +412,67 @@ export const useCaptureStore = defineStore("capture-v2", {
       } else {
         screen.scenarios = { mode };
       }
+      this.invalidatePreflight();
+    },
+    toggleVariantId(screenId: string, variantId: string, selected: boolean) {
+      const screen = this.draft?.screens.find(
+        (candidate) => candidate.screenId === screenId,
+      );
+      const record = loadPrototypeScreens().find(
+        (candidate) => candidate.screenId === screenId,
+      );
+      if (!screen || !record) return;
+      const current =
+        screen.variants.mode === "explicit"
+          ? screen.variants.variantIds
+          : record.variants
+              .filter((variant) => {
+                if (screen.variants.mode === "all") return true;
+                if (screen.variants.mode === "critical") {
+                  return variant.critical;
+                }
+                if (screen.variants.mode === "default-and-critical") {
+                  return (
+                    variant.id === record.defaultVariantId || variant.critical
+                  );
+                }
+                return variant.id === record.defaultVariantId;
+              })
+              .map((variant) => variant.id);
+      const variantIds = selected
+        ? [...new Set([...current, variantId])]
+        : current.filter((item) => item !== variantId);
+      if (variantIds.length === 0) {
+        this.setError(new Error("每个页面至少需要选择一个状态。"));
+        return;
+      }
+      screen.variants = { mode: "explicit", variantIds };
+      this.invalidatePreflight();
+    },
+    toggleScenarioId(screenId: string, scenarioId: string, selected: boolean) {
+      const screen = this.draft?.screens.find(
+        (candidate) => candidate.screenId === screenId,
+      );
+      const record = loadPrototypeScreens().find(
+        (candidate) => candidate.screenId === screenId,
+      );
+      if (!screen || !record) return;
+      const current =
+        screen.scenarios.mode === "explicit"
+          ? screen.scenarios.scenarioIds
+          : screen.scenarios.mode === "all"
+            ? (record.scenarios ?? []).map((scenario) => scenario.id)
+            : screen.scenarios.mode === "critical"
+              ? (record.scenarios ?? [])
+                  .filter((scenario) => scenario.critical)
+                  .map((scenario) => scenario.id)
+              : [];
+      const scenarioIds = selected
+        ? [...new Set([...current, scenarioId])]
+        : current.filter((item) => item !== scenarioId);
+      screen.scenarios = scenarioIds.length
+        ? { mode: "explicit", scenarioIds }
+        : { mode: "none" };
       this.invalidatePreflight();
     },
     setSourcePolicy(enabled: boolean) {
@@ -635,6 +701,51 @@ export const useCaptureStore = defineStore("capture-v2", {
         this.setError(error);
       }
     },
+    async checkInventoryEvidence(bundleId: string, snapshotId: string) {
+      try {
+        await captureServiceClient.checkStaleness(bundleId, snapshotId);
+        await this.refreshConsole();
+      } catch (error) {
+        this.setError(error);
+      }
+    },
+    async trashBundles(bundleIds: string[]) {
+      try {
+        await captureServiceClient.trashBundles(bundleIds);
+        this.deletePlan = null;
+        await this.refreshConsole();
+      } catch (error) {
+        this.setError(error);
+      }
+    },
+    async restoreBundles(bundleIds: string[]) {
+      try {
+        await captureServiceClient.restoreBundles(bundleIds);
+        this.deletePlan = null;
+        await this.refreshConsole();
+      } catch (error) {
+        this.setError(error);
+      }
+    },
+    async previewDeleteBundles(bundleIds: string[]) {
+      try {
+        this.deletePlan = await captureServiceClient.planDeleteBundles(
+          bundleIds,
+        );
+      } catch (error) {
+        this.setError(error);
+      }
+    },
+    async applyDeletePlan() {
+      if (!this.deletePlan) return;
+      try {
+        await captureServiceClient.applyDeleteBundles(this.deletePlan);
+        this.deletePlan = null;
+        await this.refreshConsole();
+      } catch (error) {
+        this.setError(error);
+      }
+    },
     async createStaleRecaptureDraft() {
       if (!this.details || !this.stalenessReport) return;
       try {
@@ -649,6 +760,23 @@ export const useCaptureStore = defineStore("capture-v2", {
         this.activeJob = null;
         this.details = null;
         this.stalenessReport = null;
+        this.invalidatePreflight();
+        this.openComposer();
+      } catch (error) {
+        this.setError(error);
+      }
+    },
+    async recaptureEvidence(bundleId: string, caseId?: string) {
+      try {
+        this.draft = await captureServiceClient.recaptureDraft(
+          bundleId,
+          caseId,
+        );
+        this.entryKind = "custom";
+        this.returnTo = "/workbench/capture";
+        this.recaptureBundleId = bundleId;
+        this.activeJob = null;
+        this.details = null;
         this.invalidatePreflight();
         this.openComposer();
       } catch (error) {

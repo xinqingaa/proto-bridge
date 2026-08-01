@@ -9,6 +9,11 @@ import type { BundleSnapshot } from '../contracts/snapshot.js';
 import type { StalenessReport } from '../contracts/staleness.js';
 import type { CapturePreflight } from '../capture/preflight.js';
 import type { SelectionDraft } from '../capture/selection.js';
+import type { EvidenceInventory } from '../evidence-inventory.js';
+import type {
+  BundleDeletePlan,
+  BundleDeleteResult,
+} from '../store/types.js';
 
 export const LOCAL_SERVICE_PROTOCOL_VERSION = 2 as const;
 
@@ -54,6 +59,9 @@ export type CaptureConsoleState = {
   jobs: CaptureJob[];
 };
 
+export type { EvidenceInventory };
+export type { BundleDeletePlan, BundleDeleteResult };
+
 export type BundleEvidenceDetails = {
   bundle: Bundle;
   activeSnapshot: BundleSnapshot;
@@ -88,6 +96,11 @@ export type HandoffPreviewRequest = {
 export type HandoffPreview = {
   risks: Risk[];
   coverageStatus: 'complete' | 'partial';
+  interactionCoverage?: {
+    required: number;
+    captured: number;
+    missingScenarioIds: string[];
+  };
   freshnessStatus: 'fresh' | 'stale';
   handoff?: AgentHandoff;
   persisted: boolean;

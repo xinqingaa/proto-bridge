@@ -6,6 +6,7 @@
 export * from './contracts/index.js';
 export * from './resolver/index.js';
 export * from './evidence-read-model.js';
+export * from './evidence-inventory.js';
 export * from './agent-prompt.js';
 export * from './workspace-config.js';
 export * as fixtures from './fixtures/index.js';

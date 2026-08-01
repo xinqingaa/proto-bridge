@@ -70,7 +70,8 @@ test("workbench preview settings theme survives in-iframe navigation", async ({
   const frame = page.frameLocator('[data-testid="prototype-iframe"]');
 
   await page.getByRole("button", { name: "预览设置" }).click();
-  await page.getByLabel("原型主题").selectOption("dark");
+  await page.getByLabel("原型主题").press("ArrowDown");
+  await page.getByRole("option", { name: "深色主题", exact: true }).click();
   await expect(page).toHaveURL(/theme=dark/);
   await expect(frame.getByTestId("runtime-root")).toHaveClass(
     /v-theme--pbworkDark/,

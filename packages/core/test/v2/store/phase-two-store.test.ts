@@ -322,6 +322,25 @@ describe('Phase 2 Store: Bundle lifecycle, capacity and retention', () => {
     });
   });
 
+  it('trashes, restores, and permanently deletes through a fresh Delete Plan', async () => {
+    const store = await openStore();
+    await createBundle(store);
+    await expect(store.trashBundle(f.BUNDLE_ID)).resolves.toMatchObject({
+      status: 'trashed',
+      statusBeforeTrash: 'writable',
+    });
+    await expect(store.restoreBundle(f.BUNDLE_ID)).resolves.toMatchObject({
+      status: 'writable',
+    });
+    await store.trashBundle(f.BUNDLE_ID);
+    const plan = await store.planDeleteBundles([f.BUNDLE_ID]);
+    expect(plan.candidates[0]?.blockedBy).toEqual([]);
+    await expect(store.applyDeleteBundles(plan)).resolves.toEqual({
+      deletedBundleIds: [f.BUNDLE_ID],
+    });
+    expect(await store.getBundle(f.BUNDLE_ID)).toBeUndefined();
+  });
+
   it('enforces Store capacity before accepting new bytes', async () => {
     const store = await openStore({ maxBytes: 1 });
     await expect(

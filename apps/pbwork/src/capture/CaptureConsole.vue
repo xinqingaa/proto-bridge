@@ -6,27 +6,33 @@ import {
   ChevronRight,
   CircleAlert,
   Clock3,
+  Eye,
   Layers3,
   ListFilter,
   Play,
   RotateCcw,
+  ShieldCheck,
+  Trash2,
+  ArchiveRestore,
   ScanLine,
   Square,
   SquareDashedMousePointer,
   X,
 } from "lucide-vue-next";
 import { useCaptureStore } from "@/app/stores/capture";
-import { loadPrototypes } from "@/design-system/loaders";
+import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
 import {
   buildCaptureTaskPresentations,
   type CaptureTaskPresentation,
 } from "@/capture/presentation";
 import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
+import WorkbenchCheckbox from "@/workbench/ui/WorkbenchCheckbox.vue";
 import WorkbenchIconButton from "@/workbench/ui/WorkbenchIconButton.vue";
 import WorkbenchSelect from "@/workbench/ui/WorkbenchSelect.vue";
 import WorkbenchTabs from "@/workbench/ui/WorkbenchTabs.vue";
 
 type TaskFilter = "all" | "running" | "attention" | "completed";
+type ConsoleView = "evidence" | "tasks";
 
 const capture = useCaptureStore();
 const router = useRouter();
@@ -36,12 +42,34 @@ const selectedPrototypeId = ref(
     "",
 );
 const taskFilter = ref<TaskFilter>("all");
+const consoleView = ref<ConsoleView>("evidence");
+const showTrashed = ref(false);
+const selectedBundleIds = ref<string[]>([]);
 let pollTimer: ReturnType<typeof setInterval> | undefined;
 
 const prototypeItems = loadPrototypes().map((prototype) => ({
   label: prototype.label,
   value: prototype.id,
 }));
+const consoleTabs = [
+  { label: "证据库", value: "evidence" },
+  { label: "采集任务", value: "tasks" },
+];
+const inventoryScreens = computed(() => {
+  const authored = loadPrototypeScreens().filter(
+    (screen) => screen.prototypeId === selectedPrototypeId.value,
+  );
+  const inventory = capture.evidenceInventory?.prototypes.find(
+    (item) => item.prototypeId === selectedPrototypeId.value,
+  );
+  return authored.map((screen) => ({
+    screen,
+    items: (
+      inventory?.screens.find((item) => item.screenId === screen.screenId)
+        ?.items ?? []
+    ).filter((item) => showTrashed.value || item.status !== "trashed"),
+  }));
+});
 const taskPresentations = computed(() =>
   buildCaptureTaskPresentations(capture.consoleState),
 );
@@ -117,6 +145,50 @@ async function retry(item: CaptureTaskPresentation) {
   await capture.retryJob(item.job);
 }
 
+function evidenceStatus(status: string): string {
+  return (
+    {
+      fresh: "有效",
+      stale: "已过期",
+      unchecked: "未检查",
+      partial: "部分完成",
+      failed: "失败",
+      archived: "已归档",
+      trashed: "回收站",
+    }[status] ?? status
+  );
+}
+
+function bundleSelected(bundleId: string): boolean {
+  return selectedBundleIds.value.includes(bundleId);
+}
+
+function toggleBundle(bundleId: string, selected: boolean) {
+  selectedBundleIds.value = selected
+    ? [...new Set([...selectedBundleIds.value, bundleId])]
+    : selectedBundleIds.value.filter((item) => item !== bundleId);
+  capture.deletePlan = null;
+}
+
+async function trashSelected() {
+  await capture.trashBundles(selectedBundleIds.value);
+  selectedBundleIds.value = [];
+}
+
+async function restoreSelected() {
+  await capture.restoreBundles(selectedBundleIds.value);
+  selectedBundleIds.value = [];
+}
+
+async function applyDeletePlan() {
+  await capture.applyDeletePlan();
+  selectedBundleIds.value = [];
+}
+
+async function openEvidence(bundleId: string, snapshotId: string) {
+  await router.push(`/workbench/evidence/${bundleId}/${snapshotId}`);
+}
+
 onMounted(async () => {
   if (!capture.connected) await capture.connect();
   else await capture.refreshConsole();
@@ -149,6 +221,14 @@ onBeforeUnmount(() => {
           <span><CheckCircle2 :size="13" /> {{ resultCount }} 个结果</span>
         </div>
       </header>
+
+      <WorkbenchTabs
+        :model-value="consoleView"
+        :items="consoleTabs"
+        label="任务中心视图"
+        class="console-tabs"
+        @update:model-value="consoleView = $event as ConsoleView"
+      />
 
       <v-alert
         v-if="capture.lastError"
@@ -211,7 +291,136 @@ onBeforeUnmount(() => {
           </div>
         </section>
 
-        <section class="task-section" data-testid="recent-capture-jobs">
+        <section
+          v-if="consoleView === 'evidence'"
+          class="evidence-section"
+          data-testid="evidence-inventory"
+        >
+          <div class="inventory-heading">
+            <div>
+              <ShieldCheck :size="17" />
+              <h2>已采集证据</h2>
+            </div>
+            <WorkbenchCheckbox
+              :model-value="showTrashed"
+              label="显示回收站"
+              @update:model-value="showTrashed = $event"
+            />
+          </div>
+          <div v-if="selectedBundleIds.length" class="inventory-toolbar">
+            <strong>已选择 {{ selectedBundleIds.length }} 个 Bundle</strong>
+            <WorkbenchButton size="small" @click="trashSelected">
+              <Trash2 :size="14" /> 移到回收站
+            </WorkbenchButton>
+            <WorkbenchButton size="small" @click="restoreSelected">
+              <ArchiveRestore :size="14" /> 恢复
+            </WorkbenchButton>
+            <WorkbenchButton
+              tone="danger"
+              size="small"
+              @click="capture.previewDeleteBundles(selectedBundleIds)"
+            >
+              预览永久删除
+            </WorkbenchButton>
+          </div>
+          <div v-if="capture.deletePlan" class="delete-plan">
+            <div>
+              <strong>永久删除计划</strong>
+              <small>
+                {{ capture.deletePlan.candidates.length }} 个 Bundle；
+                {{
+                  capture.deletePlan.candidates.reduce(
+                    (sum, item) => sum + item.blockedBy.length,
+                    0,
+                  )
+                }} 个阻塞引用
+              </small>
+            </div>
+            <WorkbenchButton
+              tone="danger"
+              size="small"
+              :disabled="capture.deletePlan.candidates.some(item => item.blockedBy.length)"
+              @click="applyDeletePlan"
+            >
+              确认永久删除
+            </WorkbenchButton>
+          </div>
+          <div class="inventory-list">
+            <details
+              v-for="group in inventoryScreens"
+              :key="group.screen.screenId"
+              class="inventory-screen"
+              :open="group.items.length > 0"
+            >
+              <summary>
+                <span>
+                  <strong>{{ group.screen.label }}</strong>
+                  <small>{{ group.screen.screenId }}</small>
+                </span>
+                <b>{{ group.items.length ? `${group.items.length} 项` : "未采集" }}</b>
+              </summary>
+              <div v-if="group.items.length" class="evidence-rows">
+                <article
+                  v-for="item in group.items"
+                  :key="`${item.bundleId}/${item.revisionId}`"
+                  class="evidence-row"
+                >
+                  <WorkbenchCheckbox
+                    :model-value="bundleSelected(item.bundleId)"
+                    label="选择"
+                    @update:model-value="toggleBundle(item.bundleId, $event)"
+                  />
+                  <span class="evidence-state" :class="`is-${item.status}`">
+                    {{ evidenceStatus(item.status) }}
+                  </span>
+                  <span class="evidence-copy">
+                    <strong>
+                      {{ item.variantId }}
+                      <template v-if="item.scenario">
+                        · {{ item.scenario.scenarioId }} / {{ item.scenario.checkpointId }}
+                      </template>
+                    </strong>
+                    <small>
+                      {{ item.bundleId }} · {{ item.evidenceLevel }} ·
+                      {{ item.screenshotCount }} 张截图 · 历史 {{ item.historyCount }}
+                    </small>
+                  </span>
+                  <div class="evidence-actions">
+                    <WorkbenchIconButton
+                      label="查看证据"
+                      size="small"
+                      @click="openEvidence(item.bundleId, item.snapshotId)"
+                    >
+                      <Eye :size="15" />
+                    </WorkbenchIconButton>
+                    <WorkbenchIconButton
+                      label="检查是否过期"
+                      size="small"
+                      @click="
+                        capture.checkInventoryEvidence(
+                          item.bundleId,
+                          item.snapshotId,
+                        )
+                      "
+                    >
+                      <ShieldCheck :size="15" />
+                    </WorkbenchIconButton>
+                    <WorkbenchIconButton
+                      label="重新采集此项"
+                      size="small"
+                      @click="capture.recaptureEvidence(item.bundleId, item.caseId)"
+                    >
+                      <RotateCcw :size="15" />
+                    </WorkbenchIconButton>
+                  </div>
+                </article>
+              </div>
+              <p v-else>此页面还没有可查看的 Evidence。</p>
+            </details>
+          </div>
+        </section>
+
+        <section v-else class="task-section" data-testid="recent-capture-jobs">
           <div class="task-heading">
             <div>
               <ListFilter :size="17" />
@@ -232,6 +441,7 @@ onBeforeUnmount(() => {
                 :key="item.job.jobId"
                 type="button"
                 class="task-row"
+                :data-job-id="item.job.jobId"
                 :class="[
                   `is-${item.status}`,
                   { 'is-selected': selectedTask?.job.jobId === item.job.jobId },
@@ -304,6 +514,26 @@ onBeforeUnmount(() => {
                 >
                   <Square :size="14" /> 取消任务
                 </WorkbenchButton>
+              </template>
+
+              <template v-else-if="selectedTask.status === 'completed'">
+                <div class="completed-note">
+                  <CheckCircle2 :size="18" />
+                  <span>
+                    <strong>证据已生成</strong>
+                    可以查看截图、结构化证据和本次采集结果。
+                  </span>
+                </div>
+                <div class="detail-actions">
+                  <WorkbenchButton
+                    v-if="selectedTask.resultPath"
+                    tone="primary"
+                    size="small"
+                    @click="viewResult(selectedTask)"
+                  >
+                    <Eye :size="14" /> 查看采集结果
+                  </WorkbenchButton>
+                </div>
               </template>
 
               <template
@@ -398,6 +628,9 @@ onBeforeUnmount(() => {
   gap: 18px;
   margin-bottom: 16px;
 }
+.console-tabs {
+  margin-bottom: 12px;
+}
 .console-header h1,
 .task-heading h2,
 .task-detail h3 {
@@ -433,9 +666,127 @@ onBeforeUnmount(() => {
 .connection-panel,
 .new-task-bar,
 .pending-draft,
+.evidence-section,
 .task-section {
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   background: rgb(var(--v-theme-surface));
+}
+.evidence-section {
+  border-radius: 12px;
+  overflow: hidden;
+}
+.inventory-heading,
+.inventory-heading > div,
+.inventory-screen summary,
+.evidence-row {
+  display: flex;
+  align-items: center;
+}
+.inventory-heading {
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+.inventory-toolbar,
+.delete-plan {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  background: rgba(var(--v-theme-on-surface), 0.025);
+}
+.inventory-toolbar strong {
+  margin-inline-end: auto;
+  font-size: 0.75rem;
+}
+.delete-plan {
+  justify-content: space-between;
+  background: color-mix(in srgb, rgb(var(--v-theme-error)) 7%, transparent);
+}
+.delete-plan > div {
+  display: grid;
+  gap: 2px;
+}
+.delete-plan small {
+  color: rgba(var(--v-theme-on-surface), 0.58);
+  font-size: 0.7rem;
+}
+.inventory-heading > div {
+  gap: 8px;
+}
+.inventory-heading h2 {
+  margin: 0;
+  font-size: 0.92rem;
+}
+.inventory-heading small {
+  color: rgba(var(--v-theme-on-surface), 0.52);
+  font-size: 0.7rem;
+}
+.inventory-screen {
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+.inventory-screen:last-child {
+  border-bottom: 0;
+}
+.inventory-screen summary {
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+}
+.inventory-screen summary > span,
+.evidence-copy {
+  display: grid;
+  gap: 2px;
+}
+.inventory-screen summary small,
+.evidence-copy small,
+.inventory-screen > p {
+  color: rgba(var(--v-theme-on-surface), 0.52);
+  font-size: 0.68rem;
+}
+.inventory-screen summary b {
+  font-size: 0.72rem;
+}
+.inventory-screen > p {
+  margin: 0;
+  padding: 0 16px 14px;
+}
+.evidence-rows {
+  padding: 0 12px 12px;
+}
+.evidence-row {
+  gap: 10px;
+  min-height: 54px;
+  padding: 8px;
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+.evidence-state {
+  width: 64px;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+.evidence-state.is-fresh {
+  color: rgb(var(--v-theme-success));
+}
+.evidence-state.is-stale,
+.evidence-state.is-failed,
+.evidence-state.is-partial {
+  color: rgb(var(--v-theme-error));
+}
+.evidence-copy {
+  min-width: 0;
+  flex: 1;
+}
+.evidence-copy strong {
+  font-size: 0.77rem;
+}
+.evidence-actions {
+  display: flex;
+  gap: 4px;
 }
 .connection-panel,
 .new-task-bar,
@@ -610,7 +961,8 @@ onBeforeUnmount(() => {
 .task-detail .wb-button {
   margin-top: 12px;
 }
-.resolved-note {
+.resolved-note,
+.completed-note {
   display: flex;
   gap: 9px;
   padding: 11px;
@@ -618,7 +970,8 @@ onBeforeUnmount(() => {
   background: color-mix(in srgb, rgb(var(--v-theme-success)) 9%, transparent);
   color: rgb(var(--v-theme-success));
 }
-.resolved-note span {
+.resolved-note span,
+.completed-note span {
   display: grid;
   gap: 2px;
   font-size: 0.7rem;

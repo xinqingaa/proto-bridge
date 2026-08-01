@@ -23,6 +23,7 @@ export type HandoffEvaluation = {
   coverageStatus: CoverageStatus;
   freshnessStatus: FreshnessStatus;
   risks: Risk[];
+  interactionCoverage?: NonNullable<AgentHandoff['interactionCoverage']>;
 };
 
 export type EvaluateHandoffInput = {
@@ -31,6 +32,7 @@ export type EvaluateHandoffInput = {
   snapshotId: SnapshotId;
   selectedCases?: SelectedCase[];
   stalenessReport: StalenessReport;
+  interactionCoverage?: NonNullable<AgentHandoff['interactionCoverage']>;
 };
 
 function uniqueRisks(risks: Risk[]): Risk[] {
@@ -227,12 +229,22 @@ export async function evaluateAgentHandoff(
         .map((selected) => `${selected.caseId}/${selected.scopeKey}`),
     });
   }
+  if (input.interactionCoverage?.missingScenarioIds.length) {
+    risks.push({
+      kind: 'interaction-coverage',
+      message: `${input.interactionCoverage.missingScenarioIds.length} required interaction Scenario(s) have no Evidence.`,
+      refs: input.interactionCoverage.missingScenarioIds,
+    });
+  }
 
   return {
     selectedCases: selectedRefs,
     coverageStatus: incomplete ? 'partial' : 'complete',
     freshnessStatus: stale ? 'stale' : 'fresh',
     risks: uniqueRisks(risks),
+    ...(input.interactionCoverage
+      ? { interactionCoverage: input.interactionCoverage }
+      : {}),
   };
 }
 
@@ -266,6 +278,9 @@ export async function createAgentHandoff(
       : {}),
     selectedCases: evaluation.selectedCases,
     coverageStatus: evaluation.coverageStatus,
+    ...(evaluation.interactionCoverage
+      ? { interactionCoverage: evaluation.interactionCoverage }
+      : {}),
     freshnessStatus: evaluation.freshnessStatus,
     stalenessReportId: input.stalenessReport.reportId,
     risks: evaluation.risks,

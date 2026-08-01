@@ -69,8 +69,17 @@ const fragmentLabel = computed(() => {
     )
     .join(", ");
 });
-const scopeEditable = computed(
-  () => capture.entryKind === "custom" || capture.entryKind === "prototype",
+const prototypeScreens = computed(() =>
+  screens.filter((screen) => screen.prototypeId === capture.draft?.prototypeId),
+);
+const selectedScreenIds = computed(
+  () => new Set(capture.draft?.screens.map((screen) => screen.screenId) ?? []),
+);
+const draftScreens = computed(() =>
+  (capture.draft?.screens ?? []).map((selection) => ({
+    selection,
+    record: screens.find((screen) => screen.screenId === selection.screenId),
+  })),
 );
 const warnings = computed(() => capture.preflight?.result.warnings ?? []);
 const matrixCount = computed(() => capture.preflight?.result.matrix.length ?? 0);
@@ -99,6 +108,43 @@ function setAllVariants(value: string) {
 }
 function setAllScenarios(value: string) {
   capture.setAllScenarioMode(value as "none" | "critical" | "all");
+  void capture.runPreflight();
+}
+
+function variantSelected(screenId: string, variantId: string): boolean {
+  const selection = capture.draft?.screens.find(
+    (screen) => screen.screenId === screenId,
+  );
+  const record = screens.find((screen) => screen.screenId === screenId);
+  if (!selection || !record) return false;
+  if (selection.variants.mode === "explicit") {
+    return selection.variants.variantIds.includes(variantId);
+  }
+  if (selection.variants.mode === "all") return true;
+  const variant = record.variants.find((item) => item.id === variantId);
+  if (selection.variants.mode === "critical") return Boolean(variant?.critical);
+  if (selection.variants.mode === "default-and-critical") {
+    return variantId === record.defaultVariantId || Boolean(variant?.critical);
+  }
+  return variantId === record.defaultVariantId;
+}
+
+function scenarioSelected(screenId: string, scenarioId: string): boolean {
+  const selection = capture.draft?.screens.find(
+    (screen) => screen.screenId === screenId,
+  );
+  const record = screens.find((screen) => screen.screenId === screenId);
+  if (!selection || !record || selection.scenarios.mode === "none") return false;
+  if (selection.scenarios.mode === "explicit") {
+    return selection.scenarios.scenarioIds.includes(scenarioId);
+  }
+  if (selection.scenarios.mode === "all") return true;
+  return Boolean(
+    record.scenarios?.find((scenario) => scenario.id === scenarioId)?.critical,
+  );
+}
+
+function refreshAfterEdit() {
   void capture.runPreflight();
 }
 
@@ -242,7 +288,7 @@ function renderMarkdown(source: string): string {
               稳定元素：{{ fragmentLabel }}
             </p>
 
-            <label v-if="scopeEditable" class="field">
+            <label class="field">
               <span>状态范围</span>
               <WorkbenchSelect
                 :model-value="allVariantMode"
@@ -254,7 +300,7 @@ function renderMarkdown(source: string): string {
                 「全部状态」可能包含未声明验收元素的空态，创建交接时会出现风险提示。
               </small>
             </label>
-            <label v-if="scopeEditable" class="field">
+            <label class="field">
               <span>交互场景</span>
               <WorkbenchSelect
                 :model-value="allScenarioMode"
@@ -263,9 +309,73 @@ function renderMarkdown(source: string): string {
                 @update:model-value="setAllScenarios"
               />
             </label>
-            <p v-else class="ok-line">
-              将按当前入口采集；默认包含本页相关关键场景（若有）。
-            </p>
+            <section v-if="capture.entryKind === 'custom'" class="scope-editor">
+              <strong>选择页面</strong>
+              <div class="choice-grid">
+                <WorkbenchCheckbox
+                  v-for="screen in prototypeScreens"
+                  :key="screen.screenId"
+                  :model-value="selectedScreenIds.has(screen.screenId)"
+                  :label="screen.label"
+                  @update:model-value="
+                    capture.toggleCustomScreen(screen.screenId, $event);
+                    refreshAfterEdit();
+                  "
+                />
+              </div>
+            </section>
+
+            <section class="scope-editor">
+              <strong>逐页选择状态与行为</strong>
+              <article
+                v-for="{ selection, record } in draftScreens"
+                :key="selection.screenId"
+                class="screen-editor"
+              >
+                <header>
+                  <b>{{ record?.label ?? selection.screenId }}</b>
+                  <small>{{ selection.screenId }}</small>
+                </header>
+                <div class="choice-group">
+                  <span>页面状态</span>
+                  <div class="choice-grid">
+                    <WorkbenchCheckbox
+                      v-for="variant in record?.variants ?? []"
+                      :key="variant.id"
+                      :model-value="variantSelected(selection.screenId, variant.id)"
+                      :label="variant.label"
+                      @update:model-value="
+                        capture.toggleVariantId(
+                          selection.screenId,
+                          variant.id,
+                          $event,
+                        );
+                        refreshAfterEdit();
+                      "
+                    />
+                  </div>
+                </div>
+                <div v-if="record?.scenarios?.length" class="choice-group">
+                  <span>行为场景</span>
+                  <div class="choice-grid">
+                    <WorkbenchCheckbox
+                      v-for="scenario in record.scenarios"
+                      :key="scenario.id"
+                      :model-value="scenarioSelected(selection.screenId, scenario.id)"
+                      :label="scenario.id"
+                      @update:model-value="
+                        capture.toggleScenarioId(
+                          selection.screenId,
+                          scenario.id,
+                          $event,
+                        );
+                        refreshAfterEdit();
+                      "
+                    />
+                  </div>
+                </div>
+              </article>
+            </section>
             <label class="field">
               <span>实现意图（可选）</span>
               <WorkbenchTextField
@@ -514,6 +624,43 @@ function renderMarkdown(source: string): string {
   display: grid;
   gap: 8px;
 }
+.scope-editor {
+  display: grid;
+  gap: 10px;
+  padding-block: 4px;
+}
+.scope-editor > strong {
+  font-size: 0.82rem;
+}
+.screen-editor {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 8px;
+}
+.screen-editor header {
+  display: grid;
+  gap: 2px;
+}
+.screen-editor header small {
+  color: rgba(var(--v-theme-on-surface), 0.52);
+  font-size: 0.68rem;
+}
+.choice-group {
+  display: grid;
+  gap: 4px;
+}
+.choice-group > span {
+  color: rgb(var(--v-theme-primary));
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.choice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 2px 10px;
+}
 .field small,
 .hint small,
 .risk-row small,
@@ -591,6 +738,37 @@ function renderMarkdown(source: string): string {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+@media (max-width: 600px) {
+  .deliver-flow {
+    width: calc(100vw - 12px);
+    max-height: calc(100vh - 8px);
+    border-radius: 16px 16px 0 0;
+  }
+  .flow-header {
+    gap: 10px;
+    padding: 14px 14px 10px;
+  }
+  .header-mark {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+  .flow-scroll {
+    padding: 12px 14px 8px;
+  }
+  .summary-grid {
+    gap: 6px;
+  }
+  .summary-grid article {
+    padding: 10px;
+  }
+  .choice-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .flow-actions {
+    padding: 12px 14px 14px;
   }
 }
 </style>

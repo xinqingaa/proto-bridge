@@ -121,6 +121,7 @@ const absoluteRuntimeUrl = computed(() => {
 
 const reloadNonce = ref(0);
 const iframeSrc = ref("");
+const runtimeCanonicalUrl = ref("");
 const iframeRenderKey = computed(() => reloadNonce.value);
 /** Parent URL changes while handshake is in flight; flushed on ready. */
 let pendingRuntimeUrl: string | null = null;
@@ -312,6 +313,7 @@ function sendInit(contentWindow: Window | null) {
 
 function onIframeLoad(contentWindow: Window | null) {
   if (handshakeRetryTimer) clearTimeout(handshakeRetryTimer);
+  runtimeCanonicalUrl.value = iframeSrc.value;
   sendInit(contentWindow);
   handshakeRetryTimer = setTimeout(() => {
     handshakeRetryTimer = null;
@@ -322,12 +324,16 @@ function onIframeLoad(contentWindow: Window | null) {
 }
 
 function navigateRuntime(canonicalRuntimeUrl: string) {
+  if (canonicalRuntimeUrl === runtimeCanonicalUrl.value && !pendingRuntimeUrl) {
+    return;
+  }
   const ctx = bridgeContext.value;
   if (!ctx || !selection.runtimeReady) {
     pendingRuntimeUrl = canonicalRuntimeUrl;
     return;
   }
   pendingRuntimeUrl = null;
+  runtimeCanonicalUrl.value = canonicalRuntimeUrl;
   postToRuntime(
     createWorkbenchEnvelope("navigate", ctx, {
       canonicalRuntimeUrl,
@@ -423,6 +429,7 @@ function onWindowMessage(event: MessageEvent) {
 
   if (msg.type === "ready") {
     routeError.value = null;
+    runtimeCanonicalUrl.value = msg.payload.canonicalRuntimeUrl;
     selection.onReady(msg.payload.capabilities);
     if (handshakeTimer) {
       clearTimeout(handshakeTimer);
@@ -449,6 +456,7 @@ function onWindowMessage(event: MessageEvent) {
     return;
   }
   if (msg.type === "route") {
+    runtimeCanonicalUrl.value = msg.payload.canonicalRuntimeUrl;
     applyRuntimeNavigation(
       msg.payload.canonicalRuntimeUrl,
       msg.payload.navigation ?? "push",
@@ -525,9 +533,10 @@ watch(
     routeError.value = null;
     if (!iframeSrc.value) {
       iframeSrc.value = next;
+      runtimeCanonicalUrl.value = next;
       return;
     }
-    if (next && next !== iframeSrc.value) navigateRuntime(next);
+    if (next && next !== runtimeCanonicalUrl.value) navigateRuntime(next);
     selection.clearSelection();
   },
   { immediate: true },

@@ -74,7 +74,7 @@ test("V2 Runtime protocol captures default, stable repeated rows, Scenario Check
     taskList.variants
       .filter((variant: { critical: boolean }) => variant.critical)
       .map((variant: { variantId: string }) => variant.variantId),
-  ).toEqual(["claimable"]);
+  ).toEqual(["default"]);
   expect(
     taskList.variants.find(
       (variant: { variantId: string }) => variant.variantId === "default",
@@ -108,10 +108,11 @@ test("V2 Runtime protocol captures default, stable repeated rows, Scenario Check
       pbKey: "t3",
     },
   ]);
-  expect(taskList.actions[0].actionId).toBe("open-claimable-task");
-  expect(taskList.scenarios[0].checkpoints[0].checkpointId).toBe(
-    "claimable-task-detail",
-  );
+  expect(taskList.actions.map((item: { actionId: string }) => item.actionId))
+    .toEqual(["select-todo", "select-done", "open-claimable-task"]);
+  expect(
+    taskList.scenarios.map((item: { scenarioId: string }) => item.scenarioId),
+  ).toEqual(["filter-todo", "filter-done", "open-claimable-task"]);
 
   const prepared = await request("e2e-prepare", {
     kind: "prepare",
@@ -160,6 +161,34 @@ test("V2 Runtime protocol captures default, stable repeated rows, Scenario Check
     fragments: [],
   });
   expect(repeatedSnapshot.payload).toEqual(snapshot.payload);
+
+  const todoAction = await request("e2e-action-todo", {
+    kind: "execute-action",
+    scenarioId: "filter-todo",
+    actionId: "select-todo",
+  });
+  expect(todoAction.ok).toBe(true);
+  const todoCheckpoint = await request("e2e-checkpoint-todo", {
+    kind: "verify-checkpoint",
+    scenarioId: "filter-todo",
+    checkpointId: "todo-selected",
+  });
+  expect(todoCheckpoint.ok, JSON.stringify(todoCheckpoint)).toBe(true);
+  await request("e2e-reset-after-todo", { kind: "reset" });
+
+  const doneAction = await request("e2e-action-done", {
+    kind: "execute-action",
+    scenarioId: "filter-done",
+    actionId: "select-done",
+  });
+  expect(doneAction.ok).toBe(true);
+  const doneCheckpoint = await request("e2e-checkpoint-done", {
+    kind: "verify-checkpoint",
+    scenarioId: "filter-done",
+    checkpointId: "done-selected",
+  });
+  expect(doneCheckpoint.ok, JSON.stringify(doneCheckpoint)).toBe(true);
+  await request("e2e-reset-after-done", { kind: "reset" });
 
   const action = await request("e2e-action", {
     kind: "execute-action",
@@ -342,7 +371,11 @@ test("Core Playwright orchestrator commits default, critical, Fragment and Scena
         deviceIds: ["iphone-14"],
         scenarios: {
           mode: "explicit",
-          scenarioIds: ["open-claimable-task"],
+          scenarioIds: [
+            "filter-todo",
+            "filter-done",
+            "open-claimable-task",
+          ],
         },
         captureScope: baseScope,
       },
@@ -370,7 +403,7 @@ test("Core Playwright orchestrator commits default, critical, Fragment and Scena
         },
       },
     ],
-    acceptedWarningIds: [],
+    acceptedWarningIds: ["warning-interaction-coverage"],
   };
 
   const storeRoot = await mkdtemp(path.join(os.tmpdir(), "pb-v2-browser-e2e-"));
@@ -397,7 +430,7 @@ test("Core Playwright orchestrator commits default, critical, Fragment and Scena
       runtimeBaseUrl,
       driver,
     });
-    expect(full.run.attempts).toHaveLength(3);
+    expect(full.run.attempts).toHaveLength(4);
     expect(
       full.run.attempts.map((attempt) => ({
         caseId: attempt.caseId,
@@ -411,7 +444,7 @@ test("Core Playwright orchestrator commits default, critical, Fragment and Scena
         reason: undefined,
       })),
     );
-    expect(full.snapshot.coverage.counts.captured).toBe(3);
+    expect(full.snapshot.coverage.counts.captured).toBe(4);
     expect(full.run.coverage.factQuality).toMatchObject({
       heuristic: 0,
       unknown: 0,
@@ -512,15 +545,28 @@ test("Core Playwright orchestrator commits default, critical, Fragment and Scena
       },
     });
 
-    const claimableRevision = await revisionFor("claimable");
+    const todoRevision = await revisionFor("default", "filter-todo");
     expect(
       fact(
-        claimableRevision,
+        todoRevision,
+        "ledger-planet.task-list.list.row.t1.text",
+      ).effectiveValue,
+    ).toContain("记一笔");
+    expect(
+      todoRevision.facts.some((candidate) =>
+        candidate.factId.includes("list.row.t2"),
+      ),
+    ).toBe(false);
+
+    const doneRevision = await revisionFor("default", "filter-done");
+    expect(
+      fact(
+        doneRevision,
         "ledger-planet.task-list.list.row.t2.text",
       ).effectiveValue,
     ).toContain("待领取");
     expect(
-      claimableRevision.facts.some((candidate) =>
+      doneRevision.facts.some((candidate) =>
         candidate.factId.includes("list.row.t1"),
       ),
     ).toBe(false);
@@ -557,7 +603,7 @@ test("Core Playwright orchestrator commits default, critical, Fragment and Scena
     expect(
       full.run.attempts.every((attempt) =>
         (attempt.revisionId
-          ? [defaultRevision, claimableRevision, scenarioRevision]
+          ? [defaultRevision, todoRevision, doneRevision, scenarioRevision]
               .find((revision) => revision.revisionId === attempt.revisionId)
               ?.facts.every((candidate) =>
                 candidate.candidates.every(
@@ -570,7 +616,8 @@ test("Core Playwright orchestrator commits default, critical, Fragment and Scena
     const fullBlobs = await store.listBlobRecords(reference.BUNDLE_ID);
     for (const revision of [
       defaultRevision,
-      claimableRevision,
+      todoRevision,
+      doneRevision,
       scenarioRevision,
     ]) {
       expect(
@@ -664,7 +711,7 @@ test("Core Playwright orchestrator commits default, critical, Fragment and Scena
           },
         },
       ],
-      acceptedWarningIds: [],
+      acceptedWarningIds: ["warning-interaction-coverage"],
     };
     const generic = await capturePreflightToStore({
       store,
@@ -702,7 +749,7 @@ test("Core Playwright orchestrator commits default, critical, Fragment and Scena
           },
         },
       ],
-      acceptedWarningIds: [],
+      acceptedWarningIds: ["warning-interaction-coverage"],
     };
     const screenshotOnly = await capturePreflightToStore({
       store,

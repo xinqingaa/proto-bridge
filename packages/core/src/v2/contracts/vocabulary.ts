@@ -132,7 +132,7 @@ export function isTerminalJobStatus(status: JobStatus): boolean {
  * an `archived` Bundle is read-only and can only be continued from via an
  * explicit fork into a new Bundle.
  */
-export const BUNDLE_STATUSES = ['writable', 'archived'] as const;
+export const BUNDLE_STATUSES = ['writable', 'archived', 'trashed'] as const;
 export const BundleStatus = z.enum(BUNDLE_STATUSES);
 export type BundleStatus = z.infer<typeof BundleStatus>;
 
@@ -155,6 +155,7 @@ export const RISK_KINDS = [
   'unresolved-conflict',
   'evidence-level-limitation',
   'manual-promotion',
+  'interaction-coverage',
 ] as const;
 export const RiskKind = z.enum(RISK_KINDS);
 export type RiskKind = z.infer<typeof RiskKind>;

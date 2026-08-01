@@ -15,20 +15,24 @@ describe("PBWork V2 capture store", () => {
     store.beginCurrentScreen({
       prototypeId: "ledger-planet",
       screenId: "ledger-planet.task-list",
-      variantId: "claimable",
+      variantId: "default",
       themeId: "light",
       deviceId: "iphone-14",
       returnTo:
-        "/workbench/prototypes/ledger-planet/screens/task-list?variant=claimable&theme=light",
+        "/workbench/prototypes/ledger-planet/screens/task-list?variant=default&theme=light",
     });
     expect(store.entryKind).toBe("current-screen");
     expect(store.draft?.screens[0]?.variants).toEqual({
       mode: "explicit",
-      variantIds: ["claimable"],
+      variantIds: ["default"],
     });
     expect(store.draft?.screens[0]?.scenarios).toEqual({
       mode: "explicit",
-      scenarioIds: ["open-claimable-task"],
+      scenarioIds: [
+        "filter-todo",
+        "filter-done",
+        "open-claimable-task",
+      ],
     });
 
     expect(
@@ -112,5 +116,31 @@ describe("PBWork V2 capture store", () => {
     store.setSourcePolicy(true);
     expect(store.preflight).toBeNull();
     expect(store.acceptedWarningIds).toEqual([]);
+  });
+
+  it("supports explicit per-Screen Variant and Scenario editing", () => {
+    const store = useCaptureStore();
+    store.beginCurrentScreen({
+      prototypeId: "ledger-planet",
+      screenId: "ledger-planet.task-list",
+      variantId: "default",
+      themeId: "light",
+      deviceId: "iphone-14",
+      returnTo: "/workbench/prototypes/ledger-planet/screens/task-list",
+    });
+    store.toggleVariantId("ledger-planet.task-list", "empty", true);
+    expect(store.draft?.screens[0]?.variants).toEqual({
+      mode: "explicit",
+      variantIds: ["default", "empty"],
+    });
+    store.toggleScenarioId(
+      "ledger-planet.task-list",
+      "filter-todo",
+      false,
+    );
+    expect(store.draft?.screens[0]?.scenarios).toEqual({
+      mode: "explicit",
+      scenarioIds: ["filter-done", "open-claimable-task"],
+    });
   });
 });

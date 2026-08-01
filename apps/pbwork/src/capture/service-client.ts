@@ -6,6 +6,9 @@ import {
   type CreateJobResponse,
   type HandoffPreview,
   type HandoffPreviewRequest,
+  type EvidenceInventory,
+  type BundleDeletePlan,
+  type BundleDeleteResult,
   type LocalServiceSession,
   type StoredPreflight,
 } from "@proto-bridge/core/v2/service-contract";
@@ -60,6 +63,38 @@ export class CaptureServiceClient {
     return this.request("/console");
   }
 
+  evidenceInventory(): Promise<EvidenceInventory> {
+    return this.request("/evidence-inventory");
+  }
+
+  trashBundles(bundleIds: string[]): Promise<unknown> {
+    return this.request("/bundles/trash", {
+      method: "POST",
+      body: { bundleIds },
+    });
+  }
+
+  restoreBundles(bundleIds: string[]): Promise<unknown> {
+    return this.request("/bundles/restore", {
+      method: "POST",
+      body: { bundleIds },
+    });
+  }
+
+  planDeleteBundles(bundleIds: string[]): Promise<BundleDeletePlan> {
+    return this.request("/delete-plans", {
+      method: "POST",
+      body: { bundleIds },
+    });
+  }
+
+  applyDeleteBundles(plan: BundleDeletePlan): Promise<BundleDeleteResult> {
+    return this.request("/delete-plans/apply", {
+      method: "POST",
+      body: { plan },
+    });
+  }
+
   createPreflight(draft: SelectionDraft): Promise<StoredPreflight> {
     return this.request("/preflights", {
       method: "POST",
@@ -93,6 +128,16 @@ export class CaptureServiceClient {
       {
         method: "POST",
         body: { reportId },
+      },
+    );
+  }
+
+  recaptureDraft(bundleId: string, caseId?: string): Promise<SelectionDraft> {
+    return this.request(
+      `/bundles/${encodeURIComponent(bundleId)}/recapture-draft`,
+      {
+        method: "POST",
+        body: { ...(caseId ? { caseId } : {}) },
       },
     );
   }

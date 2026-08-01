@@ -15,6 +15,7 @@ import {
   SnapshotId,
   StalenessReportId,
   V2ContractError,
+  buildEvidenceInventory,
   computeScopeKey,
   type BundleSnapshot,
   type SelectedCase,
@@ -40,6 +41,8 @@ import {
   LOCAL_SERVICE_PROTOCOL_VERSION,
   type BundleEvidenceDetails,
   type CaptureConsoleState,
+  type EvidenceInventory,
+  type BundleDeletePlan,
   type CreateDeliveryRequest,
   type CreateJobRequest,
   type CreatePreflightRequest,
@@ -384,6 +387,78 @@ export class ProtoBridgeLocalService {
       return;
     }
 
+    if (request.method === 'GET' && path === '/api/v2/evidence-inventory') {
+      const bundles = await this.store.listBundles();
+      const inventory: EvidenceInventory = buildEvidenceInventory(
+        this.store.workspaceId,
+        await Promise.all(
+          bundles.map(async (bundle) => ({
+            bundle,
+            ...((await this.store.getActiveSnapshot(bundle.bundleId))
+              ? {
+                  activeSnapshot: (await this.store.getActiveSnapshot(
+                    bundle.bundleId,
+                  ))!,
+                }
+              : {}),
+            runs: await this.store.listRuns(bundle.bundleId),
+            revisions: await this.store.listEvidenceRevisions(bundle.bundleId),
+            blobs: await this.store.listBlobRecords(bundle.bundleId),
+            stalenessReports: await this.store.listStalenessReports(
+              bundle.bundleId,
+            ),
+            handoffs: await this.store.listHandoffs(bundle.bundleId),
+          })),
+        ),
+      );
+      success(response, inventory);
+      return;
+    }
+
+    if (request.method === 'POST' && path === '/api/v2/bundles/trash') {
+      const body = (await readBody(request)) as { bundleIds?: unknown };
+      const bundleIds = BundleId.array().min(1).parse(body.bundleIds);
+      success(
+        response,
+        await Promise.all(
+          [...new Set(bundleIds)].map((bundleId) =>
+            this.store.trashBundle(bundleId),
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (request.method === 'POST' && path === '/api/v2/bundles/restore') {
+      const body = (await readBody(request)) as { bundleIds?: unknown };
+      const bundleIds = BundleId.array().min(1).parse(body.bundleIds);
+      success(
+        response,
+        await Promise.all(
+          [...new Set(bundleIds)].map((bundleId) =>
+            this.store.restoreBundle(bundleId),
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (request.method === 'POST' && path === '/api/v2/delete-plans') {
+      const body = (await readBody(request)) as { bundleIds?: unknown };
+      const bundleIds = BundleId.array().min(1).parse(body.bundleIds);
+      success(response, await this.store.planDeleteBundles(bundleIds), 201);
+      return;
+    }
+
+    if (request.method === 'POST' && path === '/api/v2/delete-plans/apply') {
+      const body = (await readBody(request)) as { plan?: BundleDeletePlan };
+      if (!body.plan) {
+        throw new V2ContractError('invalid-schema', 'Delete Plan is required.');
+      }
+      success(response, await this.store.applyDeleteBundles(body.plan));
+      return;
+    }
+
     if (request.method === 'POST' && path === '/api/v2/preflights') {
       const body = (await readBody(request)) as CreatePreflightRequest;
       const draft = SelectionDraft.parse(body.draft);
@@ -612,6 +687,42 @@ export class ProtoBridgeLocalService {
       return;
     }
 
+    const recaptureDraftMatch = path.match(
+      /^\/api\/v2\/bundles\/([^/]+)\/recapture-draft$/,
+    );
+    if (request.method === 'POST' && recaptureDraftMatch) {
+      const bundleId = BundleId.parse(recaptureDraftMatch[1]);
+      const body = (await readBody(request)) as { caseId?: unknown };
+      const activeSnapshot = await this.store.getActiveSnapshot(bundleId);
+      const bundle = await this.store.getBundle(bundleId);
+      if (!bundle || !activeSnapshot) {
+        throw new V2ContractError(
+          'unknown-reference',
+          'Bundle or active Snapshot does not exist.',
+        );
+      }
+      const activeCases = await selectedCasesForSnapshot(
+        this.store,
+        bundleId,
+        activeSnapshot,
+      );
+      const selectedCases =
+        typeof body.caseId === 'string'
+          ? activeCases.filter((selected) => selected.caseId === body.caseId)
+          : activeCases;
+      if (selectedCases.length === 0) {
+        throw new V2ContractError(
+          'unknown-reference',
+          'The requested active Case does not exist.',
+        );
+      }
+      success(
+        response,
+        selectionDraftFromSelectedCases(bundle.prototypeId, selectedCases),
+      );
+      return;
+    }
+
     const archiveMatch = path.match(/^\/api\/v2\/bundles\/([^/]+)\/archive$/);
     if (request.method === 'POST' && archiveMatch) {
       success(
@@ -661,20 +772,32 @@ export class ProtoBridgeLocalService {
         run.selection.prototypeId,
         activeCases,
       );
-      const current = (await this.runPreflight(draft)).preflight;
-      const dependencyDigests: Record<string, string> = {
-        [`manifest:${run.selection.prototypeId}`]: current.manifestDigest,
-      };
-      for (const selected of activeCases) {
-        dependencyDigests[`runtime:${selected.caseKey.screenId}`] =
-          current.inputVersion;
+      let current: CapturePreflight | undefined;
+      try {
+        current = (await this.runPreflight(draft)).preflight;
+      } catch (error) {
+        if (
+          !(error instanceof V2ContractError) ||
+          error.code !== 'unknown-reference'
+        ) {
+          throw error;
+        }
+      }
+      const dependencyDigests: Record<string, string> = current
+        ? { [`manifest:${run.selection.prototypeId}`]: current.manifestDigest }
+        : {};
+      if (current) {
+        for (const selected of activeCases) {
+          dependencyDigests[`runtime:${selected.caseKey.screenId}`] =
+            current.inputVersion;
+        }
       }
       success(
         response,
         await this.store.createStalenessReport({
           bundleId,
           snapshotId,
-          inputVersion: current.inputVersion,
+          inputVersion: current?.inputVersion ?? 'authored-reference-removed',
           currentDependencyDigests: dependencyDigests,
         }),
         201,
@@ -706,25 +829,49 @@ export class ProtoBridgeLocalService {
         bundleId,
         snapshot,
       );
-      const current = (
-        await this.runPreflight(
-          selectionDraftFromSelectedCases(
-            run.selection.prototypeId,
-            activeCases,
-          ),
-        )
-      ).preflight;
-      const dependencyDigests: Record<string, string> = {
-        [`manifest:${run.selection.prototypeId}`]: current.manifestDigest,
-      };
-      for (const selected of activeCases) {
-        dependencyDigests[`runtime:${selected.caseKey.screenId}`] =
-          current.inputVersion;
+      let current: CapturePreflight | undefined;
+      try {
+        current = (
+          await this.runPreflight(
+            selectionDraftFromSelectedCases(
+              run.selection.prototypeId,
+              activeCases,
+            ),
+          )
+        ).preflight;
+      } catch (error) {
+        if (
+          !(error instanceof V2ContractError) ||
+          error.code !== 'unknown-reference'
+        ) {
+          throw error;
+        }
+      }
+      const interactionCoverage = current
+        ? {
+            required: current.interactionCoverage.required,
+            captured: current.interactionCoverage.selected,
+            missingScenarioIds:
+              current.interactionCoverage.missingScenarioIds,
+          }
+        : {
+            required: 1,
+            captured: 0,
+            missingScenarioIds: ['authored-reference-removed'],
+          };
+      const dependencyDigests: Record<string, string> = current
+        ? { [`manifest:${run.selection.prototypeId}`]: current.manifestDigest }
+        : {};
+      if (current) {
+        for (const selected of activeCases) {
+          dependencyDigests[`runtime:${selected.caseKey.screenId}`] =
+            current.inputVersion;
+        }
       }
       const report = await this.store.createStalenessReport({
         bundleId,
         snapshotId,
-        inputVersion: current.inputVersion,
+        inputVersion: current?.inputVersion ?? 'authored-reference-removed',
         currentDependencyDigests: dependencyDigests,
       });
       const evaluation = await evaluateAgentHandoff({
@@ -733,6 +880,7 @@ export class ProtoBridgeLocalService {
         snapshotId,
         selectedCases: run.selection.cases,
         stalenessReport: report,
+        interactionCoverage,
       });
       if (path.endsWith('/preview')) {
         success(response, {
@@ -747,7 +895,9 @@ export class ProtoBridgeLocalService {
         snapshotId,
         selectedCases: run.selection.cases,
         stalenessReport: report,
-        currentInputVersion: current.inputVersion,
+        currentInputVersion:
+          current?.inputVersion ?? 'authored-reference-removed',
+        interactionCoverage,
         ...(body.implementationIntent
           ? { implementationIntent: body.implementationIntent }
           : {}),

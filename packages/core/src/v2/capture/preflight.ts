@@ -17,6 +17,11 @@ export type CapturePreflight = {
   selection: NormalizedSelection;
   matrix: CaseMatrixEntry[];
   warnings: PreflightWarning[];
+  interactionCoverage: {
+    required: number;
+    selected: number;
+    missingScenarioIds: string[];
+  };
   unacceptedWarningIds: string[];
   ready: boolean;
 };
@@ -70,6 +75,36 @@ export function preflightSelection(
     });
   }
 
+  const selectedScenarios = new Set(
+    matrix.flatMap((entry) =>
+      entry.selectedCase.caseKey.scenario
+        ? [
+            `${entry.selectedCase.caseKey.scenario.ownerScreenId}/${entry.selectedCase.caseKey.scenario.scenarioId}`,
+          ]
+        : [],
+    ),
+  );
+  const selectedScreenIds = new Set(
+    draft.screens.map((screen) => screen.screenId),
+  );
+  const requiredScenarios = manifest.screens
+    .filter((screen) => selectedScreenIds.has(screen.screenId))
+    .flatMap((screen) =>
+      (screen.requiredScenarioIds ?? []).map(
+        (scenarioId) => `${screen.screenId}/${scenarioId}`,
+      ),
+    );
+  const missingScenarioIds = requiredScenarios.filter(
+    (scenarioId) => !selectedScenarios.has(scenarioId),
+  );
+  if (missingScenarioIds.length > 0) {
+    warnings.push({
+      warningId: 'warning-interaction-coverage',
+      message: `Required interaction Scenarios are not selected: ${missingScenarioIds.join(', ')}.`,
+      caseIds: missingScenarioIds,
+    });
+  }
+
   const accepted = new Set(selection.acceptedWarningIds);
   const unacceptedWarningIds = warnings
     .map((warning) => warning.warningId)
@@ -80,6 +115,11 @@ export function preflightSelection(
     selection,
     matrix,
     warnings,
+    interactionCoverage: {
+      required: requiredScenarios.length,
+      selected: requiredScenarios.length - missingScenarioIds.length,
+      missingScenarioIds,
+    },
     unacceptedWarningIds,
     ready: unacceptedWarningIds.length === 0,
   };

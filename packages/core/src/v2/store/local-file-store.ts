@@ -369,10 +369,10 @@ export class LocalFileStore implements V2Store {
   }
 
   private requireWritableBundle(bundle: Bundle): void {
-    if (bundle.status === 'archived') {
+    if (bundle.status !== 'writable') {
       throw new V2ContractError(
         'bundle-archived',
-        `Bundle ${bundle.bundleId} is archived and read-only; fork it before creating a Job or committing a Run.`,
+        `Bundle ${bundle.bundleId} is ${bundle.status} and read-only; restore or fork it before creating a Job or committing a Run.`,
       );
     }
   }
@@ -381,6 +381,12 @@ export class LocalFileStore implements V2Store {
     this.assertWritableStore();
     const bundle = await this.requireBundle(bundleId);
     if (bundle.status === 'archived') return bundle;
+    if (bundle.status === 'trashed') {
+      throw new V2ContractError(
+        'invalid-schema',
+        `Bundle ${bundleId} must be restored before it can be archived.`,
+      );
+    }
     const activeJobs = (await this.listNonTerminalJobs()).filter(
       (job) => job.bundleId === bundleId,
     );
@@ -395,6 +401,131 @@ export class LocalFileStore implements V2Store {
     const archived = Bundle.parse({ ...bundle, status: 'archived' });
     await writeJsonAtomic(bundleManifestPath(this.root, bundleId), archived);
     return archived;
+  }
+
+  async trashBundle(bundleId: BundleId): Promise<Bundle> {
+    this.assertWritableStore();
+    const bundle = await this.requireBundle(bundleId);
+    if (bundle.status === 'trashed') return bundle;
+    const activeJobs = (await this.listNonTerminalJobs()).filter(
+      (job) => job.bundleId === bundleId,
+    );
+    if (activeJobs.length > 0) {
+      throw new V2ContractError(
+        'invalid-schema',
+        `Bundle ${bundleId} cannot be trashed while non-terminal Jobs exist.`,
+      );
+    }
+    const trashed = Bundle.parse({
+      ...bundle,
+      status: 'trashed',
+      statusBeforeTrash: bundle.status,
+    });
+    await writeJsonAtomic(bundleManifestPath(this.root, bundleId), trashed);
+    return trashed;
+  }
+
+  async restoreBundle(bundleId: BundleId): Promise<Bundle> {
+    this.assertWritableStore();
+    const bundle = await this.requireBundle(bundleId);
+    if (bundle.status !== 'trashed') return bundle;
+    const { statusBeforeTrash, ...rest } = bundle;
+    const restored = Bundle.parse({
+      ...rest,
+      status: statusBeforeTrash ?? 'writable',
+    });
+    await writeJsonAtomic(bundleManifestPath(this.root, bundleId), restored);
+    return restored;
+  }
+
+  private async bundleDeleteCandidate(bundleId: BundleId) {
+    const bundle = await this.requireBundle(bundleId);
+    if (bundle.status !== 'trashed') {
+      throw new V2ContractError(
+        'invalid-schema',
+        `Bundle ${bundleId} must be moved to trash before permanent deletion.`,
+      );
+    }
+    const handoffs = await this.listHandoffs(bundleId);
+    const activeJobs = (await this.listNonTerminalJobs()).filter(
+      (job) => job.bundleId === bundleId,
+    );
+    const activeSnapshot = await this.getActiveSnapshot(bundleId);
+    const fingerprint = `sha256:${createHash('sha256')
+      .update(
+        JSON.stringify({
+          bundle,
+          activeSnapshotId: activeSnapshot?.snapshotId,
+          handoffIds: handoffs.map((item) => item.handoffId).sort(),
+          activeJobIds: activeJobs.map((item) => item.jobId).sort(),
+        }),
+      )
+      .digest('hex')}`;
+    return {
+      bundleId,
+      fingerprint,
+      blockedBy: [
+        ...handoffs.map((handoff) => ({
+          kind: 'handoff' as const,
+          objectId: handoff.handoffId,
+        })),
+        ...activeJobs.map((job) => ({
+          kind: 'active-job' as const,
+          objectId: job.jobId,
+        })),
+      ],
+    };
+  }
+
+  async planDeleteBundles(bundleIds: BundleId[]) {
+    const uniqueIds = [...new Set(bundleIds)].sort();
+    if (uniqueIds.length === 0) {
+      throw new V2ContractError('invalid-schema', 'No Bundles were selected.');
+    }
+    return {
+      planId: generateOperationalId('delete-plan'),
+      workspaceId: this.workspaceId,
+      createdAt: new Date().toISOString(),
+      candidates: await Promise.all(
+        uniqueIds.map((bundleId) => this.bundleDeleteCandidate(bundleId)),
+      ),
+    };
+  }
+
+  async applyDeleteBundles(plan: import('./types.js').BundleDeletePlan) {
+    this.assertWritableStore();
+    if (plan.workspaceId !== this.workspaceId) {
+      throw new V2ContractError(
+        'workspace-mismatch',
+        'Delete Plan belongs to another Workspace.',
+      );
+    }
+    const current = await Promise.all(
+      plan.candidates.map((candidate) =>
+        this.bundleDeleteCandidate(candidate.bundleId),
+      ),
+    );
+    if (!isDeepStrictEqual(current, plan.candidates)) {
+      throw new V2ContractError(
+        'preflight-expired',
+        'Delete Plan is stale; generate a new preview.',
+      );
+    }
+    const blockers = current.flatMap((candidate) => candidate.blockedBy);
+    if (blockers.length > 0) {
+      throw new V2ContractError(
+        'invalid-schema',
+        'Referenced Bundles cannot be permanently deleted.',
+        blockers,
+      );
+    }
+    for (const candidate of current) {
+      await rm(bundleDir(this.root, candidate.bundleId), {
+        recursive: true,
+        force: false,
+      });
+    }
+    return { deletedBundleIds: current.map((candidate) => candidate.bundleId) };
   }
 
   async forkBundle(

@@ -67,6 +67,31 @@ describe('V2 Runtime Capture Protocol schemas', () => {
                       pbId: 'ledger-planet.task-detail.root',
                     },
                   ],
+                  expectedStates: [
+                    {
+                      fragment: {
+                        screenId: 'ledger-planet.task-detail',
+                        pbId: 'ledger-planet.task-detail.root',
+                      },
+                      key: 'selected',
+                      value: 'claimable',
+                    },
+                  ],
+                  expectedFragmentKeys: [
+                    {
+                      fragment: {
+                        screenId: 'ledger-planet.task-detail',
+                        pbId: 'ledger-planet.task-detail.row',
+                      },
+                      keys: ['t2'],
+                    },
+                  ],
+                  forbiddenFragments: [
+                    {
+                      screenId: 'ledger-planet.task-detail',
+                      pbId: 'ledger-planet.task-detail.error',
+                    },
+                  ],
                 },
               ],
             },

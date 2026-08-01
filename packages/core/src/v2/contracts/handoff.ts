@@ -96,6 +96,14 @@ export const AgentHandoff = z
     implementationIntent: z.string().optional(),
     selectedCases: z.array(HandoffCaseRef).min(1),
     coverageStatus: CoverageStatus,
+    interactionCoverage: z
+      .object({
+        required: z.number().int().nonnegative(),
+        captured: z.number().int().nonnegative(),
+        missingScenarioIds: z.array(z.string()).default([]),
+      })
+      .strict()
+      .optional(),
     freshnessStatus: FreshnessStatus,
     stalenessReportId: StalenessReportId,
     risks: z.array(Risk).default([]),

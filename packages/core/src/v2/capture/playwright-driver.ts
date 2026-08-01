@@ -235,7 +235,11 @@ function semanticCoverageFact(input: {
   screenId: string;
   requiredFragments: RuntimeFragmentIdentity[] | undefined;
   observedNodes: RuntimeSemanticNode[];
-  scopeSource: 'selection' | 'variant-contract' | 'undeclared';
+  scopeSource:
+    | 'selection'
+    | 'variant-contract'
+    | 'scenario-contract'
+    | 'undeclared';
 }): Fact {
   const observedFragments = uniqueFragments(
     input.observedNodes.map((node) => node.fragment),
@@ -348,6 +352,15 @@ function scenarioFact(entry: CaseMatrixEntry): Fact[] {
       screenId: checkpoint.screenId,
       variantId: checkpoint.variantId,
       requiredFragments: checkpoint.requiredFragments,
+      ...(checkpoint.expectedStates
+        ? { expectedStates: checkpoint.expectedStates }
+        : {}),
+      ...(checkpoint.expectedFragmentKeys
+        ? { expectedFragmentKeys: checkpoint.expectedFragmentKeys }
+        : {}),
+      ...(checkpoint.forbiddenFragments
+        ? { forbiddenFragments: checkpoint.forbiddenFragments }
+        : {}),
     },
   };
   return [
@@ -656,7 +669,9 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
         const declaredRequiredFragments =
           selectedFragments.length > 0
             ? selectedFragments
-            : targetVariant.requiredFragments;
+            : input.entry.scenario
+              ? input.entry.scenario.checkpoint.requiredFragments
+              : targetVariant.requiredFragments;
         const requiredFragments = uniqueFragments([
           ...(input.entry.scenario
             ? input.entry.scenario.checkpoint.requiredFragments
@@ -693,9 +708,11 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
             scopeSource:
               selectedFragments.length > 0
                 ? 'selection'
-                : targetVariant.requiredFragments
-                  ? 'variant-contract'
-                  : 'undeclared',
+                : input.entry.scenario
+                  ? 'scenario-contract'
+                  : targetVariant.requiredFragments
+                    ? 'variant-contract'
+                    : 'undeclared',
           }),
           ...actionFacts(
             input.entry.scenario

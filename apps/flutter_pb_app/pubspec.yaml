@@ -12,7 +12,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_riverpod: ^2.6.1
   pull_to_refresh_flutter3: ^2.0.2
-  unified_popups: ^2.0.0
+  unified_popups: ^2.0.3
 
 dev_dependencies:
   flutter_test:

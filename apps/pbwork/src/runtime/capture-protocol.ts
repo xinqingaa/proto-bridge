@@ -173,8 +173,20 @@ function toScreenManifest(
         screenId: checkpoint.screenId,
         variantId: checkpoint.variantId,
         requiredFragments: checkpoint.requiredFragments,
+        ...(checkpoint.expectedStates
+          ? { expectedStates: checkpoint.expectedStates }
+          : {}),
+        ...(checkpoint.expectedFragmentKeys
+          ? { expectedFragmentKeys: checkpoint.expectedFragmentKeys }
+          : {}),
+        ...(checkpoint.forbiddenFragments
+          ? { forbiddenFragments: checkpoint.forbiddenFragments }
+          : {}),
       })),
     })),
+    ...(screen.requiredScenarioIds
+      ? { requiredScenarioIds: screen.requiredScenarioIds }
+      : {}),
   };
 }
 
@@ -386,6 +398,98 @@ async function waitForFragments(
   );
 }
 
+function isVisible(element: HTMLElement): boolean {
+  const style = window.getComputedStyle(element);
+  const rect = element.getBoundingClientRect();
+  return (
+    style.display !== "none" &&
+    style.visibility !== "hidden" &&
+    rect.width > 0 &&
+    rect.height > 0
+  );
+}
+
+function readCheckpointState(
+  element: HTMLElement,
+  key: string,
+): unknown {
+  const registered =
+    getInspectRegistration(element) ?? findRegisteredAncestor(element);
+  const state = registered?.getState?.();
+  if (state && key in state) return state[key];
+  if (key === "selected") {
+    const selected = element.querySelector<HTMLElement>(
+      '[data-pb-role="tab"][aria-selected="true"], [role="tab"][aria-selected="true"]',
+    );
+    return selected?.dataset.pbKey;
+  }
+  return undefined;
+}
+
+async function verifyCheckpointAssertions(
+  options: CaptureProtocolOptions,
+  context: RuntimeContext,
+  checkpoint: RuntimeScreenManifest["scenarios"][number]["checkpoints"][number],
+  timeoutMs = 5000,
+): Promise<void> {
+  const deadline = performance.now() + timeoutMs;
+  let lastFailure = "Checkpoint assertions did not pass.";
+  while (performance.now() < deadline) {
+    await options.waitForStable();
+    const current = options.getContext();
+    if (!current || !sameDimensions(current, context)) {
+      throw new ProtocolFailure(
+        "dimension-mismatch",
+        "Runtime route changed while verifying Checkpoint assertions.",
+      );
+    }
+
+    const failedState = checkpoint.expectedStates?.find((expectation) => {
+      const element = findFragment(expectation.fragment, context);
+      return (
+        !element ||
+        readCheckpointState(element, expectation.key) !== expectation.value
+      );
+    });
+    if (failedState) {
+      lastFailure = `Fragment ${failedState.fragment.pbId}/${failedState.fragment.pbKey ?? ""} state ${failedState.key} did not equal ${JSON.stringify(failedState.value)}.`;
+      await new Promise((resolve) => window.setTimeout(resolve, 25));
+      continue;
+    }
+
+    const failedKeys = checkpoint.expectedFragmentKeys?.find((expectation) => {
+      const actual = markerElements()
+        .filter(
+          (element) =>
+            element.dataset.pbId === expectation.fragment.pbId &&
+            isVisible(element),
+        )
+        .map((element) => element.dataset.pbKey)
+        .filter((key): key is string => Boolean(key))
+        .sort();
+      const expected = [...expectation.keys].sort();
+      return JSON.stringify(actual) !== JSON.stringify(expected);
+    });
+    if (failedKeys) {
+      lastFailure = `Visible keys for ${failedKeys.fragment.pbId} did not exactly match [${failedKeys.keys.join(", ")}].`;
+      await new Promise((resolve) => window.setTimeout(resolve, 25));
+      continue;
+    }
+
+    const forbidden = checkpoint.forbiddenFragments?.find((fragment) => {
+      const element = findFragment(fragment, context);
+      return element ? isVisible(element) : false;
+    });
+    if (forbidden) {
+      lastFailure = `Forbidden Fragment ${forbidden.pbId}/${forbidden.pbKey ?? ""} is visible.`;
+      await new Promise((resolve) => window.setTimeout(resolve, 25));
+      continue;
+    }
+    return;
+  }
+  throw new ProtocolFailure("command-failed", lastFailure);
+}
+
 class ProtocolFailure extends Error {
   constructor(
     readonly code: RuntimeCaptureFailure["error"]["code"],
@@ -590,6 +694,7 @@ export function installRuntimeCaptureProtocol(
       checkpointContext,
       checkpoint.requiredFragments,
     );
+    await verifyCheckpointAssertions(options, checkpointContext, checkpoint);
     return {
       checkpointId: checkpoint.checkpointId,
       actual: actualDimensions(checkpointContext),

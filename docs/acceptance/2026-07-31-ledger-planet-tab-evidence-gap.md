@@ -2,7 +2,7 @@
 
 Issue ID：`PB-ACCEPT-001`
 
-状态：Open
+状态：Producer Fixed / Pending Recapture and Consumer Verification
 
 严重度：High
 
@@ -135,3 +135,17 @@ Flutter V2 任务列表展示“全部 / 待完成 / 已完成”三个 Tab，�
 - Widget 测试覆盖三个 Tab 及对应列表结果；
 - 不再以“缺少业务结果证据”为由禁用 Evidence 已证明的基础控件交互。
 
+## 2026-08-01 Producer 修复记录
+
+PBWork 采集侧已完成以下修复，原历史 Evidence 因数据已清理，仍需重新采集后才能关闭本 Issue：
+
+- 任务列表只保留页面级 `default`、`empty` Variant；“待领取”归属任务详情，不再与列表默认数据冲突；
+- 新增“待完成”“已完成”筛选 Action、Scenario 和 Checkpoint，并固定 Tab 选中状态与可见任务 key；
+- Screen manifest 可声明 `requiredScenarioIds`，Preflight/Handoff 分别报告交互覆盖与 Case 覆盖；
+- Checkpoint 支持校验显式状态、重复项精确 key 和禁止出现的 Fragment；
+- 交付流程恢复全局及逐页 Variant/Scenario 选择，可明确选择要采集的页面、状态和行为；
+- 新增 Evidence Inventory，按 Prototype / Screen 展示已采集、未采集、过期、失败、归档和回收站状态；
+- 支持查看结果、检查新鲜度、按 Case 定向重采、批量移入回收站、恢复及带指纹校验的永久删除；
+- 已移除的 Screen/Variant/Scenario 引用会被标记为过期，不再使旧 Evidence 的检查流程直接中断。
+
+Producer 自动化验证已覆盖任务列表三个 Tab 的 Runtime Capture，以及采集任务在页面关闭后的恢复。Issue 关闭仍要求按上述契约重新生成固定 Evidence，并完成 Flutter Consumer 的交互与过滤结果验收。

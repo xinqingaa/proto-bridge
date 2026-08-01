@@ -48,21 +48,12 @@ const panels: Array<{
   },
 ];
 
-watch(
-  variant,
-  (value) => {
-    if (value === "claimable") tab.value = "all";
-  },
-  { immediate: true },
-);
+watch(variant, () => {
+  tab.value = "all";
+});
 
 function rowsFor(status: TaskTab) {
   if (variant.value === "empty") return [];
-  if (variant.value === "claimable") {
-    // Keep a single instrumented list for the claimable variant.
-    if (status !== "all") return [];
-    return tasks.filter((item) => item.rewardState === "claimable");
-  }
   if (status === "todo") return tasks.filter((item) => item.status === "todo");
   if (status === "done") return tasks.filter((item) => item.status === "done");
   return tasks;

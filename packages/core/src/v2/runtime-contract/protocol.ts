@@ -52,6 +52,28 @@ export const RuntimeCheckpointManifest = z
     screenId: StableId,
     variantId: StableId,
     requiredFragments: z.array(RuntimeFragmentIdentity),
+    expectedStates: z
+      .array(
+        z
+          .object({
+            fragment: RuntimeFragmentIdentity,
+            key: StableId,
+            value: z.union([z.string(), z.number(), z.boolean(), z.null()]),
+          })
+          .strict(),
+      )
+      .optional(),
+    expectedFragmentKeys: z
+      .array(
+        z
+          .object({
+            fragment: RuntimeFragmentIdentity.omit({ pbKey: true }),
+            keys: z.array(StableId),
+          })
+          .strict(),
+      )
+      .optional(),
+    forbiddenFragments: z.array(RuntimeFragmentIdentity).optional(),
   })
   .strict();
 export type RuntimeCheckpointManifest = z.infer<
@@ -81,6 +103,7 @@ export const RuntimeScreenManifest = z
     variants: z.array(RuntimeVariantManifest).min(1),
     actions: z.array(RuntimeActionManifest),
     scenarios: z.array(RuntimeScenarioManifest),
+    requiredScenarioIds: z.array(StableId).optional(),
   })
   .strict();
 export type RuntimeScreenManifest = z.infer<typeof RuntimeScreenManifest>;

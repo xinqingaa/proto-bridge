@@ -2151,5 +2151,15 @@ onMounted(() => {
     justify-content: center;
     padding: 0;
   }
+  .workbench-grid,
+  .workbench-grid.is-no-inspector {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .resource-panel {
+    display: none;
+  }
+  .content-canvas {
+    padding: 20px 16px;
+  }
 }
 </style>

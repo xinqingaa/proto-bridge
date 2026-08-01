@@ -144,6 +144,16 @@ export type PrototypeCheckpoint = {
   screenId: string;
   variantId: string;
   requiredFragments: PrototypeFragmentRef[];
+  expectedStates?: Array<{
+    fragment: PrototypeFragmentRef;
+    key: string;
+    value: string | number | boolean | null;
+  }>;
+  expectedFragmentKeys?: Array<{
+    fragment: Omit<PrototypeFragmentRef, "pbKey">;
+    keys: string[];
+  }>;
+  forbiddenFragments?: PrototypeFragmentRef[];
 };
 
 export type PrototypeScenario = {
@@ -169,6 +179,8 @@ export type ScreenRecord = {
   variants: PrototypeVariant[];
   actions?: PrototypeAction[];
   scenarios?: PrototypeScenario[];
+  /** Scenarios required before this Screen has complete interaction Evidence. */
+  requiredScenarioIds?: string[];
 };
 
 export type FixturePayload = { schemaVersion: 1 } & Record<string, unknown>;

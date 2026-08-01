@@ -68,7 +68,10 @@ test("prototype dark theme also updates canvas chrome and safe area", async ({ p
     "/workbench/prototypes/field-service/screens/dashboard?variant=default&theme=light",
   );
   await page.getByRole("button", { name: "预览设置" }).click();
-  await page.getByLabel("原型主题").selectOption("dark");
+  await page.getByLabel("原型主题").press("ArrowDown");
+  await page
+    .getByRole("option", { name: "深色主题", exact: true })
+    .click();
   await expect(page.getByRole("toolbar", { name: "画布工具栏" })).toHaveClass(/is-dark/);
   await expect(page.getByTestId("phone-stage")).toHaveClass(/is-dark/);
   const frame = page.frameLocator('[data-testid="prototype-iframe"]');

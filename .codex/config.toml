@@ -1,0 +1,9 @@
+# ProtoBridge Evidence MCP (project-scoped).
+# Codex loads this only for trusted projects.
+# Prefer direct `node` over `pnpm pb:mcp` so package-manager logs do not break stdio.
+# Build first: `pnpm build`
+
+[mcp_servers.proto-bridge]
+command = "node"
+args = ["scripts/pb-mcp.mjs"]
+startup_timeout_sec = 20

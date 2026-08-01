@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 test.use({ viewport: { width: 1440, height: 1050 } });
 
 async function waitForCompletedJob(page: import("@playwright/test").Page) {
+  await page.getByRole("tab", { name: "采集任务" }).click();
   const tasks = page.getByTestId("recent-capture-jobs");
   await expect(tasks).toBeVisible({ timeout: 15_000 });
   await expect(tasks.getByText("采集完成").first()).toBeVisible({
@@ -81,18 +82,29 @@ test("page-close Job is recovered from Service state", async ({
   await expect(page.getByTestId("composer-start-capture")).toBeVisible({
     timeout: 20_000,
   });
+  const jobResponsePromise = page.waitForResponse(
+    (response) =>
+      response.request().method() === "POST" &&
+      new URL(response.url()).pathname.endsWith("/jobs"),
+  );
   await page.getByTestId("composer-start-capture").click();
+  const jobResponse = (await jobResponsePromise).json() as Promise<{
+    data: { job: { jobId: string } };
+  }>;
+  const jobId = (await jobResponse).data.job.jobId;
   await page.close();
 
   const next = await browser.newPage();
   await next.goto("/workbench/capture");
+  await next.getByRole("tab", { name: "采集任务" }).click();
   await expect(next.getByTestId("recent-capture-jobs")).toBeVisible({
     timeout: 15_000,
   });
   const recoveryAction = next
     .getByTestId("recent-capture-jobs")
-    .getByRole("button")
-    .first();
+    .locator(`[data-job-id="${jobId}"]`)
+    .filter({ hasText: "采集完成" });
+  await expect(recoveryAction).toBeVisible({ timeout: 30_000 });
   await recoveryAction.click();
   await expect(next.getByTestId("evidence-viewer")).toBeVisible({
     timeout: 30_000,

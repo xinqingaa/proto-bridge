@@ -2,15 +2,19 @@ import 'package:flutter/material.dart';
 
 import '../../common/widgets/app_bar.dart';
 import '../../common/widgets/button.dart';
+import '../../common/widgets/chip.dart';
 import '../../common/widgets/progress.dart';
 import '../../theme/ts.dart';
 
+/// Ledger Planet V2 任务详情（claimable Checkpoint）。
+///
+/// 固定 Evidence：
+/// - Case `ledger-planet.task-detail::claimable::...@claimable-task-detail`
+/// - revision `revision-2026-08-01t064215479-b283232e`
 class TaskDetailV2Page extends StatelessWidget {
   const TaskDetailV2Page({super.key});
 
-  factory TaskDetailV2Page.fromRouteArgs(Object? arguments) {
-    return const TaskDetailV2Page();
-  }
+  factory TaskDetailV2Page.fromRouteArgs(Object? _) => const TaskDetailV2Page();
 
   @override
   Widget build(BuildContext context) {
@@ -22,85 +26,67 @@ class TaskDetailV2Page extends StatelessWidget {
         title: '任务详情',
         showBack: true,
         elevated: false,
-        centerTitle: false,
       ),
-      body: SingleChildScrollView(
+      body: ListView(
         padding: EdgeInsets.all(TS.spacing.md),
-        child: Column(
-          children: [
-            const _TaskHero(),
-            const SizedBox(height: 18),
-            const _ProgressSection(),
-            const SizedBox(height: 18),
-            const _StepsSection(),
-            const SizedBox(height: 18),
-            const CommonButton(
-              label: '领取奖励',
-              variant: CommonButtonVariant.flat,
-              tone: CommonButtonTone.action,
-              size: CommonControlSize.md,
-              block: true,
-            ),
-          ],
-        ),
+        children: [
+          const _HeroCard(),
+          SizedBox(height: TS.spacing.md),
+          const _ProgressSection(),
+          SizedBox(height: TS.spacing.md),
+          const _StepsSection(),
+          SizedBox(height: TS.spacing.lg),
+          CommonButton(
+            label: '领取奖励',
+            tone: CommonButtonTone.action,
+            variant: CommonButtonVariant.flat,
+            size: CommonControlSize.md,
+            block: true,
+            onPressed: () {},
+          ),
+        ],
       ),
     );
   }
 }
 
-class _TaskHero extends StatelessWidget {
-  const _TaskHero();
+class _HeroCard extends StatelessWidget {
+  const _HeroCard();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 113,
-      padding: EdgeInsets.symmetric(horizontal: TS.spacing.lg),
+      padding: EdgeInsets.all(TS.spacing.md),
       decoration: BoxDecoration(
-        color: TS.colors.primarySoft,
+        color: TS.colors.surface,
         borderRadius: BorderRadius.circular(TS.radius.lg),
-        border: Border.all(color: TS.colors.primary.withAlpha(90)),
-        boxShadow: [
-          BoxShadow(
-            color: TS.colors.onSurface.withAlpha(18),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: TS.colors.border),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
               color: TS.colors.primary,
-              borderRadius: BorderRadius.circular(TS.radius.lg),
+              borderRadius: BorderRadius.circular(TS.radius.md),
             ),
-            child: Icon(Icons.gps_fixed, size: 32, color: TS.colors.onPrimary),
+            alignment: Alignment.center,
+            child: Icon(Icons.radar, color: TS.colors.onPrimary, size: 28),
           ),
           SizedBox(width: TS.spacing.md),
           Expanded(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   '每日任务',
-                  style: TS.textStyle.content.copyWith(
-                    color: TS.colors.primary,
-                  ),
+                  style: TS.textStyle.caption.copyWith(color: TS.colors.primary),
                 ),
-                Text(
-                  '查看本周图表',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TS.textStyle.title,
-                ),
+                Text('查看本周图表', style: TS.textStyle.title),
                 Text(
                   '打开图表分析页',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                   style: TS.textStyle.content.copyWith(
                     color: TS.colors.onSurfaceMuted,
                   ),
@@ -109,18 +95,9 @@ class _TaskHero extends StatelessWidget {
             ),
           ),
           SizedBox(width: TS.spacing.sm),
-          Container(
-            width: 56,
-            height: 26,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: TS.colors.successSoft,
-              borderRadius: BorderRadius.circular(TS.radius.sm),
-            ),
-            child: Text(
-              '已达成',
-              style: TS.textStyle.caption.copyWith(color: TS.colors.success),
-            ),
+          const CommonChip(
+            label: '已达成',
+            tone: CommonChipTone.success,
           ),
         ],
       ),
@@ -133,60 +110,61 @@ class _ProgressSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 125,
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('完成进度', style: TS.textStyle.titleSm),
-              Text(
-                '1/1',
-                style: TS.textStyle.titleSm.copyWith(color: TS.colors.primary),
-              ),
-            ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Text('完成进度', style: TS.textStyle.subtitle),
+            const Spacer(),
+            Text(
+              '1/1',
+              style: TS.textStyle.subtitle.copyWith(color: TS.colors.primary),
+            ),
+          ],
+        ),
+        SizedBox(height: TS.spacing.sm),
+        const CommonProgress(value: 1),
+        SizedBox(height: TS.spacing.md),
+        Container(
+          padding: EdgeInsets.all(TS.spacing.md),
+          decoration: BoxDecoration(
+            color: TS.colors.primarySoft,
+            borderRadius: BorderRadius.circular(TS.radius.md),
           ),
-          SizedBox(height: TS.spacing.smPlus),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 2),
-            child: CommonProgress(value: 1),
-          ),
-          SizedBox(height: TS.spacing.smPlus),
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: TS.colors.primarySoft,
-                border: Border(left: BorderSide(color: TS.colors.primary)),
-              ),
-              padding: EdgeInsets.symmetric(horizontal: TS.spacing.md),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.attach_money,
-                    size: TS.sizing.iconLg,
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  width: 3,
+                  decoration: BoxDecoration(
                     color: TS.colors.primary,
+                    borderRadius: BorderRadius.circular(TS.radius.full),
                   ),
-                  SizedBox(width: TS.spacing.smPlus),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                ),
+                SizedBox(width: TS.spacing.smPlus),
+                Icon(Icons.monetization_on_outlined, color: TS.colors.primary),
+                SizedBox(width: TS.spacing.sm),
+                Expanded(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Text('奖励 ', style: TS.textStyle.subtitle),
-                          Text('¥3 体验券', style: TS.textStyle.subtitle),
-                        ],
+                      Text('奖励 ¥3 体验券', style: TS.textStyle.subtitle),
+                      Text(
+                        '完成后自动进入券包',
+                        style: TS.textStyle.caption.copyWith(
+                          color: TS.colors.onSurfaceMuted,
+                        ),
                       ),
-                      Text('完成后自动进入券包', style: TS.textStyle.caption),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -196,26 +174,23 @@ class _StepsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 122,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('完成方式', style: TS.textStyle.titleSm),
-          SizedBox(height: TS.spacing.sm),
-          const _StepRow(
-            icon: Icons.check,
-            title: '新增一笔有效流水',
-            subtitle: '支出或收入均可，金额需大于 0',
-          ),
-          const SizedBox(height: 6),
-          const _StepRow(
-            icon: Icons.local_fire_department_outlined,
-            title: '保持连续记录',
-            subtitle: '连续完成可解锁成长任务',
-          ),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('完成方式', style: TS.textStyle.subtitle),
+        SizedBox(height: TS.spacing.md),
+        const _StepRow(
+          icon: Icons.check_circle,
+          title: '新增一笔有效流水',
+          description: '支出或收入均可，金额需大于 0',
+        ),
+        SizedBox(height: TS.spacing.md),
+        const _StepRow(
+          icon: Icons.local_fire_department,
+          title: '保持连续记录',
+          description: '连续完成可解锁成长任务',
+        ),
+      ],
     );
   }
 }
@@ -224,46 +199,35 @@ class _StepRow extends StatelessWidget {
   const _StepRow({
     required this.icon,
     required this.title,
-    required this.subtitle,
+    required this.description,
   });
 
   final IconData icon;
   final String title;
-  final String subtitle;
+  final String description;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 38,
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: TS.colors.primary),
-            ),
-            child: Icon(icon, size: TS.sizing.iconMd, color: TS.colors.primary),
-          ),
-          SizedBox(width: TS.spacing.smPlus),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: TS.textStyle.content),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TS.textStyle.caption,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: TS.colors.primary, size: 22),
+        SizedBox(width: TS.spacing.smPlus),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: TS.textStyle.content),
+              Text(
+                description,
+                style: TS.textStyle.caption.copyWith(
+                  color: TS.colors.onSurfaceMuted,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

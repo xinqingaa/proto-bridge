@@ -345,6 +345,7 @@ export const prototypeScreens = [
       {
         id: "default",
         label: "默认",
+        critical: true,
         requiredFragments: [
           {
             screenId: "ledger-planet.task-list",
@@ -376,32 +377,26 @@ export const prototypeScreens = [
         ],
       },
       { id: "empty", label: "空态" },
-      {
-        id: "claimable",
-        label: "待领取",
-        critical: true,
-        requiredFragments: [
-          {
-            screenId: "ledger-planet.task-list",
-            pbId: "ledger-planet.task-list.root",
-          },
-          {
-            screenId: "ledger-planet.task-list",
-            pbId: "ledger-planet.task-list.filters",
-          },
-          {
-            screenId: "ledger-planet.task-list",
-            pbId: "ledger-planet.task-list.list",
-          },
-          {
-            screenId: "ledger-planet.task-list",
-            pbId: "ledger-planet.task-list.list.row",
-            pbKey: "t2",
-          },
-        ],
-      },
     ],
     actions: [
+      {
+        id: "select-todo",
+        kind: "click",
+        target: {
+          screenId: "ledger-planet.task-list",
+          pbId: "ledger-planet.task-list.filters.tab",
+          pbKey: "todo",
+        },
+      },
+      {
+        id: "select-done",
+        kind: "click",
+        target: {
+          screenId: "ledger-planet.task-list",
+          pbId: "ledger-planet.task-list.filters.tab",
+          pbKey: "done",
+        },
+      },
       {
         id: "open-claimable-task",
         kind: "click",
@@ -413,6 +408,101 @@ export const prototypeScreens = [
       },
     ],
     scenarios: [
+      {
+        id: "filter-todo",
+        initialVariantId: "default",
+        critical: true,
+        actionIds: ["select-todo"],
+        checkpoints: [
+          {
+            id: "todo-selected",
+            screenId: "ledger-planet.task-list",
+            variantId: "default",
+            requiredFragments: [
+              {
+                screenId: "ledger-planet.task-list",
+                pbId: "ledger-planet.task-list.list",
+              },
+            ],
+            expectedStates: [
+              {
+                fragment: {
+                  screenId: "ledger-planet.task-list",
+                  pbId: "ledger-planet.task-list.filters",
+                },
+                key: "selected",
+                value: "todo",
+              },
+            ],
+            expectedFragmentKeys: [
+              {
+                fragment: {
+                  screenId: "ledger-planet.task-list",
+                  pbId: "ledger-planet.task-list.list.row",
+                },
+                keys: ["t1", "t3"],
+              },
+            ],
+            forbiddenFragments: [
+              {
+                screenId: "ledger-planet.task-list",
+                pbId: "ledger-planet.task-list.list.row",
+                pbKey: "t2",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "filter-done",
+        initialVariantId: "default",
+        critical: true,
+        actionIds: ["select-done"],
+        checkpoints: [
+          {
+            id: "done-selected",
+            screenId: "ledger-planet.task-list",
+            variantId: "default",
+            requiredFragments: [
+              {
+                screenId: "ledger-planet.task-list",
+                pbId: "ledger-planet.task-list.list",
+              },
+            ],
+            expectedStates: [
+              {
+                fragment: {
+                  screenId: "ledger-planet.task-list",
+                  pbId: "ledger-planet.task-list.filters",
+                },
+                key: "selected",
+                value: "done",
+              },
+            ],
+            expectedFragmentKeys: [
+              {
+                fragment: {
+                  screenId: "ledger-planet.task-list",
+                  pbId: "ledger-planet.task-list.list.row",
+                },
+                keys: ["t2"],
+              },
+            ],
+            forbiddenFragments: [
+              {
+                screenId: "ledger-planet.task-list",
+                pbId: "ledger-planet.task-list.list.row",
+                pbKey: "t1",
+              },
+              {
+                screenId: "ledger-planet.task-list",
+                pbId: "ledger-planet.task-list.list.row",
+                pbKey: "t3",
+              },
+            ],
+          },
+        ],
+      },
       {
         id: "open-claimable-task",
         initialVariantId: "default",
@@ -432,6 +522,11 @@ export const prototypeScreens = [
           },
         ],
       },
+    ],
+    requiredScenarioIds: [
+      "filter-todo",
+      "filter-done",
+      "open-claimable-task",
     ],
   },
   {

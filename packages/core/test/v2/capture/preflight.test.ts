@@ -202,4 +202,22 @@ describe('V2 Selection normalization and Preflight', () => {
     sourceDraft.acceptedWarningIds = ['warning-source-unavailable'];
     expect(preflightSelection(sourceDraft, manifest()).ready).toBe(true);
   });
+
+  it('reports required interaction coverage independently from Base Cases', () => {
+    const contract = manifest();
+    contract.screens[0]!.requiredScenarioIds = ['open-claimable-task'];
+    const withoutScenario = draft();
+    withoutScenario.screens[0]!.scenarios = { mode: 'none' };
+    const preflight = preflightSelection(withoutScenario, contract);
+    expect(preflight.interactionCoverage).toEqual({
+      required: 1,
+      selected: 0,
+      missingScenarioIds: [
+        'ledger-planet.task-list/open-claimable-task',
+      ],
+    });
+    expect(preflight.unacceptedWarningIds).toContain(
+      'warning-interaction-coverage',
+    );
+  });
 });

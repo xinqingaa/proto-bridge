@@ -209,6 +209,75 @@ describe('ProtoBridge Local Service', () => {
     );
   });
 
+  it('serves Evidence Inventory and enforces the trash-before-delete lifecycle', async () => {
+    const base = await start();
+    const session = await call(base, '/session', { method: 'POST' });
+    const token = session.body.data.sessionToken as string;
+    const preflight = await call(base, '/preflights', {
+      method: 'POST',
+      token,
+      body: { draft: draft() },
+    });
+    const accepted = await call(base, '/jobs', {
+      method: 'POST',
+      token,
+      body: {
+        preflightId: preflight.body.data.preflightId,
+        acceptedWarningIds: [],
+      },
+    });
+    const jobId = accepted.body.data.job.jobId as string;
+    const bundleId = accepted.body.data.job.bundleId as string;
+    for (let index = 0; index < 30; index += 1) {
+      const result = await call(base, `/jobs/${jobId}`, { token });
+      if (result.body.data.status === 'completed') break;
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+
+    const inventory = await call(base, '/evidence-inventory', { token });
+    expect(inventory.response.status).toBe(200);
+    expect(JSON.stringify(inventory.body.data)).toContain(bundleId);
+
+    const trashed = await call(base, '/bundles/trash', {
+      method: 'POST',
+      token,
+      body: { bundleIds: [bundleId] },
+    });
+    expect(trashed.body.data[0].status).toBe('trashed');
+
+    const restored = await call(base, '/bundles/restore', {
+      method: 'POST',
+      token,
+      body: { bundleIds: [bundleId] },
+    });
+    expect(restored.body.data[0].status).toBe('writable');
+
+    await call(base, '/bundles/trash', {
+      method: 'POST',
+      token,
+      body: { bundleIds: [bundleId] },
+    });
+    const planned = await call(base, '/delete-plans', {
+      method: 'POST',
+      token,
+      body: { bundleIds: [bundleId] },
+    });
+    expect(planned.response.status).toBe(201);
+    expect(planned.body.data.candidates[0].blockedBy).toHaveLength(0);
+    const deleted = await call(base, '/delete-plans/apply', {
+      method: 'POST',
+      token,
+      body: { plan: planned.body.data },
+    });
+    expect(deleted.body.data.deletedBundleIds).toEqual([bundleId]);
+    const state = await call(base, '/console', { token });
+    expect(
+      state.body.data.bundles.some(
+        (bundle: { bundleId: string }) => bundle.bundleId === bundleId,
+      ),
+    ).toBe(false);
+  });
+
   it('blocks unaccepted warnings, expired Preflight and foreign request fields', async () => {
     const base = await start(5);
     const session = await call(base, '/session', { method: 'POST' });

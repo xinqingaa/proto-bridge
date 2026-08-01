@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import {
   computed,
-  defineAsyncComponent,
   onBeforeUnmount,
   onMounted,
   nextTick,
@@ -45,6 +44,9 @@ const router = useRouter();
 const screenComponent = shallowRef<Component | null>(null);
 const loadedView = shallowRef<string | null>(null);
 const loadError = shallowRef<string | null>(null);
+const screenComponentCache = new Map<string, Component>();
+const screenComponentLoads = new Map<string, Promise<Component>>();
+let screenLoadGeneration = 0;
 const runtimeId = shallowRef<string | null>(null);
 const lastPostedRoute = shallowRef<string | null>(null);
 const inspectEnabled = ref(false);
@@ -236,25 +238,58 @@ function onMessage(event: MessageEvent) {
   }
 }
 
-async function loadScreen() {
-  loadError.value = null;
-  if (!resolved.value.ok) return;
+function resolveScreenComponent(view: string): Promise<Component> {
+  const cached = screenComponentCache.get(view);
+  if (cached) return Promise.resolve(cached);
 
-  const view = resolved.value.screen.view;
-  if (loadedView.value === view && screenComponent.value) return;
-  screenComponent.value = null;
+  const loading = screenComponentLoads.get(view);
+  if (loading) return loading;
+
   const match = Object.entries(screenViewModules).find(
     ([path]) =>
       path.endsWith(`/${view}`) || path.endsWith(`/${view.replace(/^\//, "")}`),
   );
   if (!match) {
-    loadError.value = `RUNTIME_ADAPTER_MISSING：${view}`;
-    return;
+    return Promise.reject(new Error(`RUNTIME_ADAPTER_MISSING：${view}`));
   }
-  screenComponent.value = defineAsyncComponent(
-    match[1] as () => Promise<{ default: Component }>,
+
+  const promise = (match[1] as () => Promise<{ default: Component }>)().then(
+    (module) => {
+      screenComponentCache.set(view, module.default);
+      screenComponentLoads.delete(view);
+      return module.default;
+    },
   );
-  loadedView.value = view;
+  screenComponentLoads.set(view, promise);
+  return promise;
+}
+
+async function loadScreen() {
+  const generation = ++screenLoadGeneration;
+  loadError.value = null;
+  if (!resolved.value.ok) return;
+
+  const view = resolved.value.screen.view;
+  if (loadedView.value === view && screenComponent.value) return;
+  try {
+    const component = await resolveScreenComponent(view);
+    if (
+      generation !== screenLoadGeneration ||
+      !resolved.value.ok ||
+      resolved.value.screen.view !== view
+    ) {
+      return;
+    }
+    loadedView.value = view;
+    screenComponent.value = component;
+  } catch (error) {
+    screenComponentLoads.delete(view);
+    if (generation !== screenLoadGeneration) return;
+    loadError.value =
+      error instanceof Error
+        ? error.message
+        : `RUNTIME_ADAPTER_LOAD_FAILED：${view}`;
+  }
 }
 
 function onLedgerThemeChange() {
@@ -317,7 +352,6 @@ onMounted(() => {
       );
     },
   });
-  void loadScreen();
 });
 
 onBeforeUnmount(() => {
@@ -376,6 +410,12 @@ watch(
       <component
         :is="screenComponent"
         v-if="resolved.ok && screenComponent && !loadError"
+        :key="loadedView"
+      />
+      <section
+        v-else-if="resolved.ok && !loadError"
+        class="runtime-loading"
+        aria-busy="true"
       />
       <section v-else class="runtime-error" role="alert" aria-live="assertive">
         <p class="runtime-kicker">PBWork Runtime</p>
@@ -424,6 +464,11 @@ watch(
 .runtime-app.is-embedded :deep(.v-main::-webkit-scrollbar) {
   width: 0;
   height: 0;
+}
+
+.runtime-loading {
+  min-height: 100vh;
+  background: rgb(var(--v-theme-background));
 }
 
 .runtime-error {

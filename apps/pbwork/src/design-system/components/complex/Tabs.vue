@@ -100,6 +100,7 @@ usePbInspect({
     fill: fill.value,
     inspectId: inspectId.value,
   }),
+  getState: () => ({ selected: tab.value }),
   getTokenBindings: () => ({
     indicator: "color.primary",
     activeBackground:
@@ -138,8 +139,6 @@ usePbInspect({
 <template>
   <div
     ref="rootRef"
-    data-pb-id="ds.tabs"
-    data-pb-role="tab-bar"
     class="pb-tabs tab-bar"
     :class="{
       'has-indicator': indicatorVisible,
@@ -150,6 +149,7 @@ usePbInspect({
       'is-fill': fill,
     }"
     :style="tabStyle"
+    data-pb-role="tab-bar"
   >
     <v-tabs
       v-model="tab"
@@ -163,6 +163,9 @@ usePbInspect({
         :key="item.value"
         :value="item.value"
         class="pb-tab"
+        :data-pb-id="`${inspectId ?? 'ds.tabs'}.tab`"
+        :data-pb-key="item.value"
+        data-pb-role="tab"
       >
         {{ item.label }}
       </v-tab>
@@ -193,7 +196,13 @@ usePbInspect({
         :key="item.value"
         :value="item.value"
       >
-        <div class="pb-tab-panel" data-pb-role="tab-panel">
+        <div
+          v-if="tab === item.value"
+          class="pb-tab-panel"
+          :data-pb-id="`${inspectId ?? 'ds.tabs'}.panel`"
+          :data-pb-key="item.value"
+          data-pb-role="tab-panel"
+        >
           <slot :name="item.value">
             <p class="pb-tab-panel-empty">{{ item.label }}</p>
           </slot>

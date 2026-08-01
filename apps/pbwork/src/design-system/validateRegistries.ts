@@ -854,7 +854,60 @@ export function validateRegistries(input?: {
             message: `unknown Checkpoint Screen/Variant ${checkpoint.screenId}/${checkpoint.variantId}`,
           });
         }
+        const assertionFragments = [
+          ...checkpoint.requiredFragments,
+          ...(checkpoint.expectedStates ?? []).map((item) => item.fragment),
+          ...(checkpoint.expectedFragmentKeys ?? []).map(
+            (item) => item.fragment,
+          ),
+          ...(checkpoint.forbiddenFragments ?? []),
+        ];
+        for (const fragment of assertionFragments) {
+          if (fragment.screenId !== checkpoint.screenId) {
+            pushError(errors, {
+              resourceType: "screen",
+              resourceId: screen.screenId,
+              instancePath: `/scenarios/${scenario.id}/checkpoints/${checkpoint.id}`,
+              keyword: "const",
+              message: `Checkpoint Fragment must belong to ${checkpoint.screenId}`,
+            });
+          }
+        }
+        for (const expected of checkpoint.expectedFragmentKeys ?? []) {
+          if (new Set(expected.keys).size !== expected.keys.length) {
+            pushError(errors, {
+              resourceType: "screen",
+              resourceId: screen.screenId,
+              instancePath: `/scenarios/${scenario.id}/checkpoints/${checkpoint.id}/expectedFragmentKeys`,
+              keyword: "uniqueItems",
+              message: `Checkpoint expected keys for ${expected.fragment.pbId} must be unique`,
+            });
+          }
+        }
       }
+    }
+    for (const scenarioId of screen.requiredScenarioIds ?? []) {
+      if (!scenarioIds.has(scenarioId)) {
+        pushError(errors, {
+          resourceType: "screen",
+          resourceId: screen.screenId,
+          instancePath: "/requiredScenarioIds",
+          keyword: "enum",
+          message: `unknown required Scenario ${scenarioId}`,
+        });
+      }
+    }
+    if (
+      new Set(screen.requiredScenarioIds ?? []).size !==
+      (screen.requiredScenarioIds ?? []).length
+    ) {
+      pushError(errors, {
+        resourceType: "screen",
+        resourceId: screen.screenId,
+        instancePath: "/requiredScenarioIds",
+        keyword: "uniqueItems",
+        message: "required Scenario ids must be unique",
+      });
     }
     if (
       (actions.length > 0 || (screen.scenarios?.length ?? 0) > 0) &&

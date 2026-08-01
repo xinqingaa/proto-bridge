@@ -128,6 +128,23 @@ export type CleanResult = {
   reclaimedBytes: number;
 };
 
+export type BundleDeleteCandidate = {
+  bundleId: BundleId;
+  fingerprint: string;
+  blockedBy: Array<{ kind: 'handoff' | 'active-job'; objectId: string }>;
+};
+
+export type BundleDeletePlan = {
+  planId: string;
+  workspaceId: WorkspaceId;
+  createdAt: string;
+  candidates: BundleDeleteCandidate[];
+};
+
+export type BundleDeleteResult = {
+  deletedBundleIds: BundleId[];
+};
+
 export type InitResult = {
   /** Jobs that were non-terminal at startup and have just been finalized as `interrupted`. */
   finalizedOrphanJobs: JobId[];
@@ -154,6 +171,10 @@ export interface V2Store {
   getBundle(bundleId: BundleId): Promise<Bundle | undefined>;
   listBundles(): Promise<Bundle[]>;
   archiveBundle(bundleId: BundleId): Promise<Bundle>;
+  trashBundle(bundleId: BundleId): Promise<Bundle>;
+  restoreBundle(bundleId: BundleId): Promise<Bundle>;
+  planDeleteBundles(bundleIds: BundleId[]): Promise<BundleDeletePlan>;
+  applyDeleteBundles(plan: BundleDeletePlan): Promise<BundleDeleteResult>;
   forkBundle(
     input: ForkBundleInput,
   ): Promise<{ bundle: Bundle; snapshot: BundleSnapshot }>;
