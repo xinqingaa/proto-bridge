@@ -17,12 +17,14 @@ import {
 import { resolveCaseEvidence } from '../resolver/active-ref-resolver.js';
 import type { V2Store } from '../store/types.js';
 import { generateOperationalId } from '../store/id-generator.js';
+import type { SnapshotCatalogRef } from '../contracts/snapshot.js';
 
 export type HandoffEvaluation = {
   selectedCases: AgentHandoff['selectedCases'];
   coverageStatus: CoverageStatus;
   freshnessStatus: FreshnessStatus;
   risks: Risk[];
+  catalogRefs: SnapshotCatalogRef[];
   interactionCoverage?: NonNullable<AgentHandoff['interactionCoverage']>;
 };
 
@@ -99,6 +101,7 @@ export async function evaluateAgentHandoff(
   let stale = false;
   const selectedRefs: AgentHandoff['selectedCases'] = [];
   const risks: Risk[] = [];
+  const requiredCatalogKinds = new Set<'component' | 'token'>();
 
   for (const selected of selectedCases) {
     const resolution = resolveCaseEvidence({
@@ -189,6 +192,12 @@ export async function evaluateAgentHandoff(
     const conflicts = revision.facts.filter(
       (fact) => fact.resolution === 'unresolved-conflict',
     );
+    if (revision.facts.some((fact) => fact.factId.endsWith('.componentId'))) {
+      requiredCatalogKinds.add('component');
+    }
+    if (revision.facts.some((fact) => fact.factId.endsWith('.tokenBindings'))) {
+      requiredCatalogKinds.add('token');
+    }
     if (conflicts.length > 0) {
       risks.push({
         kind: 'unresolved-conflict',
@@ -236,12 +245,32 @@ export async function evaluateAgentHandoff(
       refs: input.interactionCoverage.missingScenarioIds,
     });
   }
+  for (const kind of requiredCatalogKinds) {
+    if (!snapshot.catalogRefs.some((reference) => reference.kind === kind)) {
+      throw new V2ContractError(
+        'unknown-reference',
+        `Handoff Evidence uses ${kind} facts but fixed Snapshot ${snapshot.snapshotId} has no ${kind} Catalog revision.`,
+        { snapshotId: snapshot.snapshotId, kind },
+      );
+    }
+  }
+  for (const reference of snapshot.catalogRefs) {
+    if (
+      !(await input.store.getCatalogRevision(
+        input.bundleId,
+        reference.catalogRevisionId,
+      ))
+    ) {
+      throw unknownReferenceError('Handoff Catalog revision', reference);
+    }
+  }
 
   return {
     selectedCases: selectedRefs,
     coverageStatus: incomplete ? 'partial' : 'complete',
     freshnessStatus: stale ? 'stale' : 'fresh',
     risks: uniqueRisks(risks),
+    catalogRefs: snapshot.catalogRefs,
     ...(input.interactionCoverage
       ? { interactionCoverage: input.interactionCoverage }
       : {}),
@@ -297,6 +326,10 @@ export async function createAgentHandoff(
         kind: 'bundle-snapshot',
         ref: `pb://workspace/${input.store.workspaceId}/bundle/${input.bundleId}/snapshot/${input.snapshotId}`,
       },
+      ...evaluation.catalogRefs.map((reference) => ({
+        kind: `${reference.kind}-catalog`,
+        ref: `pb://workspace/${input.store.workspaceId}/bundle/${input.bundleId}/snapshot/${input.snapshotId}/catalog/${reference.catalogRevisionId}`,
+      })),
     ],
   });
   if (input.persist !== false) await input.store.putHandoff(handoff);

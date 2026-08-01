@@ -3,7 +3,7 @@ import { evidenceQualityScore } from '../contracts/evidence.js';
 import type { CaseEvidenceRevisionId, CaseId, ScopeKey, SnapshotId } from '../contracts/ids.js';
 import type { Run } from '../contracts/run.js';
 import type { CoverageSummary } from '../contracts/coverage.js';
-import type { ActiveSlot, BundleSnapshot, LatestAttemptRef } from '../contracts/snapshot.js';
+import type { ActiveSlot, BundleSnapshot, LatestAttemptRef, SnapshotCatalogRef } from '../contracts/snapshot.js';
 import { unknownReferenceError } from '../contracts/errors.js';
 import type { ActivationCandidate, CaseActiveState, ExistingActiveRevision } from '../resolver/activation.js';
 import { applyAttemptToActiveRevisions } from '../resolver/activation.js';
@@ -31,6 +31,8 @@ export type BuildNextSnapshotInput = {
    * result it derives here.
    */
   coverage: CoverageSummary;
+  /** Fixed Catalog set for this commit; omitted to carry the previous set. */
+  catalogRefs?: SnapshotCatalogRef[];
 };
 
 function toActivationCandidate(revision: CaseEvidenceRevision): ActivationCandidate {
@@ -148,6 +150,7 @@ export function buildNextSnapshot(input: BuildNextSnapshotInput): BundleSnapshot
     committedAt,
     activeSlots,
     latestAttempts: [...latestAttemptByKey.values()],
+    catalogRefs: input.catalogRefs ?? previousSnapshot?.catalogRefs ?? [],
     coverage,
   };
 }

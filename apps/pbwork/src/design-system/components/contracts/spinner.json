@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "id": "spinner",
   "category": "basic",
+  "semantic": { "policy": "fixed", "defaultRole": "loading-state" },
   "propsSchema": {
     "type": "object",
     "properties": {

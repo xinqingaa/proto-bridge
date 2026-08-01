@@ -276,10 +276,30 @@ export class EvidenceStoreReader {
     return revision;
   }
 
-  async readCatalog(bundleIdInput: string, catalogRevisionIdInput: string) {
+  async readCatalog(
+    bundleIdInput: string,
+    snapshotIdInput: string,
+    catalogRevisionIdInput: string,
+  ) {
     const store = await this.requireStore();
     const bundleId = BundleId.parse(bundleIdInput);
+    const snapshotId = SnapshotId.parse(snapshotIdInput);
     const catalogRevisionId = CatalogRevisionId.parse(catalogRevisionIdInput);
+    const snapshot = await store.getSnapshot(bundleId, snapshotId);
+    if (!snapshot) {
+      throw unknownReferenceError("Evidence Snapshot", { bundleId, snapshotId });
+    }
+    if (
+      !snapshot.catalogRefs.some(
+        (reference) => reference.catalogRevisionId === catalogRevisionId,
+      )
+    ) {
+      throw new V2ContractError(
+        "unknown-reference",
+        `Catalog revision ${catalogRevisionId} is not reachable from fixed Snapshot ${snapshotId}.`,
+        { bundleId, snapshotId, catalogRevisionId },
+      );
+    }
     const catalog = await store.getCatalogRevision(bundleId, catalogRevisionId);
     if (!catalog) {
       throw unknownReferenceError("Catalog revision", {
@@ -371,6 +391,7 @@ export class EvidenceStoreReader {
     if (!reachable && input.catalogRevisionId) {
       const catalog = await this.readCatalog(
         input.bundleId,
+        input.snapshotId,
         input.catalogRevisionId,
       );
       reachable = catalog.entries.some((entry) =>

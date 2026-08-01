@@ -198,19 +198,29 @@ function nodeFacts(nodes: RuntimeSemanticNode[]): Fact[] {
       });
     }
     if (node.tokenBindings && Object.keys(node.tokenBindings).length > 0) {
+      const bindingEvidence = node.tokenBindingEvidence ??
+        Object.entries(node.tokenBindings).map(([slot, tokenId]) => ({
+          slot,
+          tokenId,
+          source: 'runtime-registration' as const,
+        }));
+      const candidates = bindingEvidence.map((binding) => ({
+        value: { slot: binding.slot, tokenId: binding.tokenId },
+        provenance: {
+          source: binding.source,
+          locator: `${node.fragment.pbId}#tokenBindings.${binding.slot}`,
+        },
+      }));
       facts.push({
         factId: `${identity}.tokenBindings`,
-        candidates: [
-          {
-            value: node.tokenBindings,
-            provenance: {
-              source: 'registry',
-              locator: `${node.fragment.pbId}#tokenBindings`,
-            },
-          },
-        ],
-        resolution: 'resolved',
-        effectiveValue: node.tokenBindings,
+        candidates,
+        resolution:
+          (node.tokenBindingConflicts?.length ?? 0) > 0
+            ? 'unresolved-conflict'
+            : 'resolved',
+        ...((node.tokenBindingConflicts?.length ?? 0) > 0
+          ? { issueRef: `${identity}.token-binding-conflict` }
+          : { effectiveValue: node.tokenBindings }),
       });
     }
     return facts;

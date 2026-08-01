@@ -1,5 +1,10 @@
 import { createHash } from 'node:crypto';
 import type { RuntimeCaptureManifest } from '../runtime-contract/index.js';
+import type { RuntimeCatalogInput } from '../runtime-contract/index.js';
+import {
+  AuthoringDiagnostic,
+  type AuthoringDiagnostic as AuthoringDiagnosticValue,
+} from '../contracts/authoring-diagnostic.js';
 import type { NormalizedSelection } from '../contracts/run.js';
 import { V2ContractError } from '../contracts/errors.js';
 import type { CaseMatrixEntry, SelectionDraft } from './selection.js';
@@ -14,9 +19,14 @@ export type PreflightWarning = {
 export type CapturePreflight = {
   inputVersion: string;
   manifestDigest: string;
+  catalogInputDigest: string;
+  catalogInputs: RuntimeCatalogInput[];
   selection: NormalizedSelection;
   matrix: CaseMatrixEntry[];
   warnings: PreflightWarning[];
+  /** Canonical gate input. `warnings` remains a compatibility projection. */
+  diagnostics: AuthoringDiagnosticValue[];
+  blockingDiagnosticIds: string[];
   interactionCoverage: {
     required: number;
     selected: number;
@@ -50,9 +60,13 @@ export function digestCaptureInput(value: unknown): string {
 export function preflightSelection(
   draft: SelectionDraft,
   manifest: RuntimeCaptureManifest,
-  options: { maxCases?: number } = {},
+  options: {
+    maxCases?: number;
+    authoringDiagnostics?: AuthoringDiagnosticValue[];
+  } = {},
 ): CapturePreflight {
   const { selection, matrix } = resolveSelectionMatrix(draft, manifest);
+  const catalogInputs = manifest.catalogs ?? [];
   const maxCases = options.maxCases ?? 100;
   if (matrix.length > maxCases) {
     throw new V2ContractError(
@@ -65,10 +79,15 @@ export function preflightSelection(
   const sourceUnavailable = matrix
     .filter((entry) => entry.selectedCase.captureScope.sourcePolicy)
     .map((entry) => entry.selectedCase.caseId);
-  const warnings: PreflightWarning[] = [];
+  const diagnostics = [
+    ...(manifest.authoringDiagnostics ?? []),
+    ...(options.authoringDiagnostics ?? []),
+  ].map((diagnostic) => AuthoringDiagnostic.parse(diagnostic));
   if (sourceUnavailable.length > 0) {
-    warnings.push({
-      warningId: 'warning-source-unavailable',
+    diagnostics.push({
+      diagnosticId: 'warning-source-unavailable',
+      code: 'capture.source-unavailable',
+      severity: 'warning',
       message:
         'Source Evidence was requested but the Capture driver does not yet provide a Source adapter; these Cases remain Runtime-only.',
       caseIds: sourceUnavailable,
@@ -98,30 +117,47 @@ export function preflightSelection(
     (scenarioId) => !selectedScenarios.has(scenarioId),
   );
   if (missingScenarioIds.length > 0) {
-    warnings.push({
-      warningId: 'warning-interaction-coverage',
+    diagnostics.push({
+      diagnosticId: 'warning-interaction-coverage',
+      code: 'capture.interaction-coverage',
+      severity: 'warning',
       message: `Required interaction Scenarios are not selected: ${missingScenarioIds.join(', ')}.`,
       caseIds: missingScenarioIds,
     });
   }
 
   const accepted = new Set(selection.acceptedWarningIds);
+  const warnings = diagnostics
+    .filter((diagnostic) => diagnostic.severity === 'warning')
+    .map((diagnostic) => ({
+      warningId: diagnostic.diagnosticId,
+      message: diagnostic.message,
+      caseIds: diagnostic.caseIds,
+    }));
   const unacceptedWarningIds = warnings
     .map((warning) => warning.warningId)
     .filter((warningId) => !accepted.has(warningId));
+  const blockingDiagnosticIds = diagnostics
+    .filter((diagnostic) => diagnostic.severity === 'block')
+    .map((diagnostic) => diagnostic.diagnosticId);
   return {
     inputVersion: manifest.inputVersion,
     manifestDigest: digestCaptureInput(manifest),
+    catalogInputDigest: digestCaptureInput(catalogInputs),
+    catalogInputs,
     selection,
     matrix,
     warnings,
+    diagnostics,
+    blockingDiagnosticIds,
     interactionCoverage: {
       required: requiredScenarios.length,
       selected: requiredScenarios.length - missingScenarioIds.length,
       missingScenarioIds,
     },
     unacceptedWarningIds,
-    ready: unacceptedWarningIds.length === 0,
+    ready:
+      blockingDiagnosticIds.length === 0 && unacceptedWarningIds.length === 0,
   };
 }
 
@@ -131,8 +167,14 @@ export function assertPreflightReady(
   if (!preflight.ready) {
     throw new V2ContractError(
       'invalid-schema',
-      `Preflight has unaccepted warnings: ${preflight.unacceptedWarningIds.join(', ')}.`,
-      preflight.unacceptedWarningIds,
+      `Preflight is blocked by diagnostics: ${[
+        ...preflight.blockingDiagnosticIds,
+        ...preflight.unacceptedWarningIds,
+      ].join(', ')}.`,
+      {
+        blockingDiagnosticIds: preflight.blockingDiagnosticIds,
+        unacceptedWarningIds: preflight.unacceptedWarningIds,
+      },
     );
   }
 }

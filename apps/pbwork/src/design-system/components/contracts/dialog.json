@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "id": "dialog",
   "category": "complex",
+  "semantic": { "policy": "fixed", "defaultRole": "dialog" },
   "propsSchema": {
     "type": "object",
     "properties": {

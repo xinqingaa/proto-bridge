@@ -65,7 +65,7 @@ const toolDefinitions: JsonValue[] = [
   tool('read_evidence_run', '读取固定 Run', '读取不可变 Run、Selection、Attempt 与 Coverage。', { ...bundle, runId: { type: 'string' } }, ['bundleId', 'runId']),
   tool('read_evidence_revision', '读取固定 revision', '只读取指定 Snapshot 可达的 Evidence revision。', { ...snapshot, revisionId: { type: 'string' } }, ['bundleId', 'snapshotId', 'revisionId']),
   tool('read_evidence_fragment', '读取固定 Fragment', '按稳定 pbId/pbKey 读取 Fragment Facts。', { ...snapshot, revisionId: { type: 'string' }, pbId: { type: 'string' }, pbKey: { type: 'string' } }, ['bundleId', 'snapshotId', 'revisionId', 'pbId']),
-  tool('read_evidence_catalog', '读取 Catalog revision', '读取固定 Catalog revision。', { ...bundle, catalogRevisionId: { type: 'string' } }, ['bundleId', 'catalogRevisionId']),
+  tool('read_evidence_catalog', '读取 Catalog revision', '读取固定 Snapshot 可达的 Catalog revision。', { ...snapshot, catalogRevisionId: { type: 'string' } }, ['bundleId', 'snapshotId', 'catalogRevisionId']),
   tool('read_evidence_issue', '读取 Evidence Issue', '读取固定 Issue 与 next action。', { ...bundle, issueId: { type: 'string' } }, ['bundleId', 'issueId']),
   tool('read_evidence_staleness', '读取 Staleness Report', '读取同时匹配 Bundle 与 Snapshot 的固定报告。', { ...snapshot, reportId: { type: 'string' } }, ['bundleId', 'snapshotId', 'reportId']),
   tool('read_agent_handoff', '读取 Agent Handoff', '读取固定 Workspace/Snapshot/revision refs 与全部 risks。', { handoffId: { type: 'string' } }, ['handoffId']),

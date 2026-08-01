@@ -10,11 +10,12 @@ const props = defineProps<{
   actionLabel?: string;
   /** Page-unique inspect / comment anchor; falls back to `ds.form-section`. */
   inspectId?: string;
+  semanticRole?: "section" | "form";
 }>();
 defineEmits<{ action: [] }>();
 
 const rootRef = usePbInspectRef();
-const { title, description, required, actionLabel, inspectId } = toRefs(props);
+const { title, description, required, actionLabel, inspectId, semanticRole } = toRefs(props);
 
 usePbInspect({
   element: rootRef,
@@ -27,6 +28,7 @@ usePbInspect({
     required: required.value ?? false,
     actionLabel: actionLabel.value ?? "",
     inspectId: inspectId.value,
+    semanticRole: semanticRole.value ?? "section",
   }),
   getTokens: () => [
     "color.surface",
@@ -58,7 +60,7 @@ usePbInspect({
     ref="rootRef"
     class="pb-form-section section"
     data-pb-id="ds.form-section"
-    data-pb-role="section"
+    :data-pb-role="semanticRole ?? 'section'"
     variant="outlined"
   >
     <v-card-item>

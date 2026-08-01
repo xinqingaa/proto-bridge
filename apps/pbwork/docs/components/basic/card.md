@@ -19,6 +19,7 @@
 | `title` | string | `任务卡片` | |
 | `subtitle` | string | `描述信息` | |
 | `elevated` | boolean | `true` | |
+| `semanticRole` | `section \| card \| summary` | `section` | contextual role，只能从 Contract `allowedRoles` 选择 |
 
 ## States（Playground / Contract）
 
@@ -48,4 +49,3 @@
 1. 从 `@/design-system/components/basic/...` 引入实现组件。
 2. Props 保持在契约枚举内；需要新能力先改 contract + registry + 本文。
 3. 业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`；默认 `ds.*` 只用于 Playground、组件测试或非业务预览。
-

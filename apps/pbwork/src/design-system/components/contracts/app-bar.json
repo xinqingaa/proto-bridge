@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "id": "app-bar",
   "category": "complex",
+  "semantic": { "policy": "fixed", "defaultRole": "app-bar" },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,

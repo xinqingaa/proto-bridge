@@ -32,7 +32,7 @@ PBWork Foundation / Component / Prototype code
 - Capture 正式生成并固定交付所需 Catalog revision；
 - PBWork 与 CLI 对同一 Draft 产生相同 Case、门禁和 Evidence；
 - Handoff/MCP 不回退 active/latest，Agent 能读取 Screenshot、Fragment、Component 和 Token Evidence；
-- 至少一条新黄金原型完成 PBWork → Store → MCP → Flutter 实现与验证；
+- Phase 1–5 的协议、门禁、Catalog 固定读取和 Target-neutral Agent 指引完成闭环；
 - `pnpm verify` 和 `pnpm docs:verify` 全绿。
 
 ## 3. 权威文档
@@ -97,11 +97,11 @@ allowedRoles?: SemanticRole[]
 
 目标：Preflight 固定 catalog input digest，Capture/commit 写入 Catalog revision，Snapshot/Handoff 固定所需 Catalog ref。
 
-### G7：Target 扩展边界未抽象
+### G7：主消费指引仍与 Flutter 绑定
 
-Evidence 已框架无关，但 MCP Target tools 和 Agent prompt 当前为 Flutter 专用。
+Evidence 已框架无关，Flutter 已是隔离的可选 legacy Target adapter；但 MCP Consumer Guide 和 Agent prompt 仍把 Flutter 工具及命令写成主路径的必选步骤。
 
-目标：黄金路径完成后抽象 Adapter 接口；本收敛版本只要求 Flutter 全绿，不要求实现 Kotlin、Swift 或 React Native Adapter。
+目标：本阶段只把主消费纪律改为 Target-neutral：存在适用 adapter 时才读取约定/样例并执行目标原生验证。不新增语言、不扩 `TargetPlatform`，也不删除或重构现有 Flutter adapter。
 
 ## 5. 实施阶段
 
@@ -120,6 +120,8 @@ Evidence 已框架无关，但 MCP Target tools 和 Agent prompt 当前为 Flutt
 验收：`pnpm docs:verify` 不再因正式文档漂移失败；若扫描本地生成物失败，应先让校验忽略被禁止提交的 `output/`，而不是修改历史产物冒充当前规范。
 
 ### Phase 1：统一 authoring diagnostics
+
+状态：本轮完成。
 
 主要落点：
 
@@ -148,6 +150,8 @@ Warning 检查允许不完美，但必须输出稳定 code、位置、理由和 
 
 ### Phase 2：Runtime/Core completeness
 
+状态：本轮完成。
+
 主要落点：
 
 - `apps/pbwork/src/runtime/capture-protocol.ts`；
@@ -168,6 +172,8 @@ Warning 检查允许不完美，但必须输出稳定 code、位置、理由和 
 测试至少覆盖 hidden、zero-size、duplicate、id-only、role-only、unknown、`ds.*`、重复 key、Overlay 和正常结果。
 
 ### Phase 3：Component semantic Contract
+
+状态：本轮完成。
 
 主要落点：
 
@@ -190,6 +196,8 @@ Warning 检查允许不完美，但必须输出稳定 code、位置、理由和 
 完成前不扩 role 词表；先处理已有词的含义和使用一致性。
 
 ### Phase 4：Token Evidence 与 provenance
+
+状态：本轮完成。
 
 主要落点：
 
@@ -219,6 +227,8 @@ source: component-contract | runtime-registration | data-pb
 
 ### Phase 5：Catalog 生产闭环
 
+状态：本轮完成。
+
 主要落点：Core catalog builder、PBWork Runtime manifest/catalog input、Capture commit、Snapshot/Handoff、MCP read model。
 
 至少生成：
@@ -233,49 +243,7 @@ Catalog revision 必须不可变、由 Snapshot 可达。Handoff 范围使用组
 
 测试覆盖 Catalog 复用、输入变化产生新 revision、旧 Snapshot 仍读旧 Catalog、不可达拒绝和 MCP 固定读取。
 
-### Phase 6：新黄金原型
-
-在上述门禁完成后创建一个最小但完整的新原型：
-
-- 一个 Screen；
-- `default`、`loading`、`empty`；
-- page、app-bar、list、list-item、button；
-- 一个 contextual DS component；
-- 一个带 typography/color Token 的业务局部节点；
-- 重复 `pbId + pbKey`；
-- 一个 Action、Scenario、Checkpoint；
-- light/dark；
-- full-screen 和 selected-fragment Capture。
-
-验收路径：
-
-```text
-PBWork authoring checks
-→ GUI Deliver
-→ CLI equivalent Selection parity
-→ immutable Snapshot + Catalog
-→ Handoff
-→ MCP fixed read
-→ Flutter implementation
-→ flutter analyze/test
-→ validate_target_changes
-```
-
-故意删除局部节点的 id、role 或 Token attr 时，测试必须在预期层级失败，而不是生成看似完整 Evidence。
-
-### Phase 7：Target Adapter 抽象
-
-只在黄金路径稳定后执行：
-
-```text
-detect
-readConventions
-findExamples
-validateChanges
-nativeVerificationHints
-```
-
-先把现有 Flutter 实现迁入接口且行为不变。其它语言按真实目标需求逐个增加，不向 Evidence Schema 写入 Flutter/Swift/Kotlin 类型。
+Phase 5 同时清理主 Agent prompt、MCP Consumer Guide 和 prompt 中的 Flutter 必选表述，改成 Target-neutral 的条件式 adapter 与目标原生验证。现有 Flutter tools 作为可选 legacy adapter 保留。
 
 ## 6. CI 门禁
 
@@ -312,5 +280,7 @@ CI 规则：
 - 不要求标记所有 DOM；
 - 不用截图、CSS selector 或启发式推断替代 authored required boundary；
 - 不在本阶段实现 Kotlin、Swift、React Native Target Adapter。
+- 不在本阶段创建新黄金原型；Phase 1–5 使用协议、单元、集成和现有中性夹具验收。
+- 不在本阶段抽象或重构 Flutter Target Adapter；只清理主链路对它的硬绑定。
 
-旧原型删除应在黄金原型接管必要回归夹具后单独执行，不能与协议收敛混成同一任务。
+旧原型删除和未来新黄金原型应作为后续独立工作，不能与本轮协议收敛混成同一任务。

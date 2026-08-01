@@ -84,6 +84,14 @@ export type ComponentContract = {
   schemaVersion: 1;
   id: string;
   category: "basic" | "complex";
+  semantic:
+    | { policy: "fixed"; defaultRole: Exclude<SemanticRole, "unknown"> }
+    | {
+        policy: "contextual";
+        defaultRole: Exclude<SemanticRole, "unknown">;
+        allowedRoles: Array<Exclude<SemanticRole, "unknown">>;
+      }
+    | { policy: "decorative" };
   propsSchema: Record<string, unknown>;
   defaultProps: Record<string, unknown>;
   states: ComponentStateContract[];
@@ -237,3 +245,4 @@ export const LIFECYCLE_LABELS: Record<PrototypeLifecycle, string> = {
   final: "已定稿",
   archived: "已归档",
 };
+import type { SemanticRole } from "@proto-bridge/core/v2";

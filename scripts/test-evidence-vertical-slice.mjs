@@ -32,7 +32,7 @@ try {
       "test",
       "e2e/evidence-usability.spec.ts",
       "--grep",
-      "high-quality readable evidence",
+      "evidence viewer can reopen deliver flow",
     ],
     {
       PBWORK_E2E_PORT: String(uiPort),

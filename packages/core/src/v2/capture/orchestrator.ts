@@ -12,6 +12,7 @@ import {
 } from '../contracts/coverage.js';
 import { Run, type Run as RunType } from '../contracts/run.js';
 import { Issue } from '../contracts/issue.js';
+import { CatalogRevision, type CatalogRevision as CatalogRevisionType } from '../contracts/catalog.js';
 import { computeScopeKey } from '../contracts/scope.js';
 import {
   evidenceLevelAtLeast,
@@ -370,6 +371,28 @@ export async function capturePreflightToStore(
 
   await input.store.advanceJob(job.jobId, 'writing');
   try {
+    const existingCatalogs = (await input.store.getBundle(input.bundleId))
+      ? await input.store.listCatalogRevisions(input.bundleId)
+      : [];
+    const catalogs: CatalogRevisionType[] = input.preflight.catalogInputs.map(
+      (catalog) =>
+        existingCatalogs.find(
+          (candidate) =>
+            candidate.kind === catalog.kind &&
+            candidate.inputDigest === catalog.inputDigest,
+        ) ??
+        CatalogRevision.parse({
+          schemaVersion: V2_SCHEMA_MAJOR,
+          catalogRevisionId: generateOperationalId('catalog', now()),
+          workspaceId: input.store.workspaceId,
+          bundleId: input.bundleId,
+          prototypeId: input.preflight.selection.prototypeId,
+          kind: catalog.kind,
+          inputDigest: catalog.inputDigest,
+          createdAt: now().toISOString(),
+          entries: catalog.entries,
+        }),
+    );
     const newlyCaptured = revisions.filter((revision) =>
       attempts.some(
         (attempt) =>
@@ -384,6 +407,7 @@ export async function capturePreflightToStore(
           run,
           revisions: newlyCaptured,
           coverage,
+          catalogs,
         })
       : await input.store.createBundle({
           bundleId: input.bundleId,
@@ -391,6 +415,7 @@ export async function capturePreflightToStore(
           run,
           revisions: newlyCaptured,
           coverage,
+          catalogs,
         });
     const storedBlobIds: string[] = [];
     const issues = new Map(

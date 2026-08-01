@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "id": "text-field",
   "category": "basic",
+  "semantic": { "policy": "fixed", "defaultRole": "field" },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,

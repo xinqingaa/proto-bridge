@@ -7,6 +7,7 @@
     "schemaVersion",
     "id",
     "category",
+    "semantic",
     "propsSchema",
     "defaultProps",
     "states",
@@ -21,6 +22,40 @@
       "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
     },
     "category": { "type": "string", "enum": ["basic", "complex"] },
+    "semantic": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["policy", "defaultRole"],
+          "properties": {
+            "policy": { "const": "fixed" },
+            "defaultRole": { "$ref": "#/$defs/semanticRole" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["policy", "defaultRole", "allowedRoles"],
+          "properties": {
+            "policy": { "const": "contextual" },
+            "defaultRole": { "$ref": "#/$defs/semanticRole" },
+            "allowedRoles": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/semanticRole" },
+              "minItems": 1,
+              "uniqueItems": true
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["policy"],
+          "properties": { "policy": { "const": "decorative" } }
+        }
+      ]
+    },
     "propsSchema": {
       "type": "object",
       "required": ["type"],
@@ -62,6 +97,12 @@
         "type": "string",
         "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
       }
+    }
+  },
+  "$defs": {
+    "semanticRole": {
+      "type": "string",
+      "enum": ["page", "app-bar", "bottom-bar", "navigation", "section", "summary", "card", "list", "scroll-list", "list-item", "filter", "search", "form", "field", "tab-bar", "tab", "tab-panel", "tab-viewport", "chart", "empty-state", "loading-state", "error-state", "sheet", "dialog", "drawer", "toast", "button", "chip", "badge", "status", "icon", "image", "text"]
     }
   }
 }

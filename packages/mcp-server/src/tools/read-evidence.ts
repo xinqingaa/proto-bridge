@@ -156,6 +156,7 @@ export async function readEvidenceCatalogTool(
 ): Promise<unknown> {
   return context.evidence.readCatalog(
     requiredString(args, "bundleId"),
+    requiredString(args, "snapshotId"),
     requiredString(args, "catalogRevisionId"),
   );
 }

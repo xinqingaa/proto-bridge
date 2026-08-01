@@ -28,6 +28,7 @@ import type {
   StyleInspectRow,
 } from "@/runtime/bridge";
 import { stylePropertyRole } from "@/runtime/inspect/snapshot";
+import { inspectElementDiagnostics } from "@/authoring/diagnostics";
 import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
 import WorkbenchIconButton from "@/workbench/ui/WorkbenchIconButton.vue";
 import WorkbenchSegmented from "@/workbench/ui/WorkbenchSegmented.vue";
@@ -235,41 +236,11 @@ watch(
 const conventionHints = computed(() => {
   const el = element.value;
   if (!el) return [] as Array<{ tone: "ok" | "warn"; text: string }>;
-  const hints: Array<{ tone: "ok" | "warn"; text: string }> = [];
-  const classes = el.classes.join(" ");
-  if (/\blist\b/i.test(classes) && !el.pbRole) {
-    hints.push({
+  const hints: Array<{ tone: "ok" | "warn"; text: string }> =
+    inspectElementDiagnostics(el).map((diagnostic) => ({
       tone: "warn",
-      text: '看起来像列表，建议补上 data-pb-role="list"',
-    });
-  }
-  if (
-    /\b(app-bar|navbar|toolbar)\b/i.test(classes) &&
-    el.pbRole !== "app-bar"
-  ) {
-    hints.push({
-      tone: "warn",
-      text: '顶栏建议使用 data-pb-role="app-bar"',
-    });
-  }
-  if (/\b(section|card|panel)\b/i.test(classes) && !el.pbRole) {
-    hints.push({
-      tone: "warn",
-      text: '区块建议补 data-pb-role="section"',
-    });
-  }
-  if (/\bsheet\b/i.test(classes) && !el.pbShell) {
-    hints.push({
-      tone: "warn",
-      text: '弹层建议补 data-pb-shell="sheet"',
-    });
-  }
-  if (!el.ref.pbId) {
-    hints.push({
-      tone: "warn",
-      text: "可加稳定 data-pb-id，便于高亮与评论定位",
-    });
-  }
+      text: `[${diagnostic.code}] ${diagnostic.message}`,
+    }));
   if (hints.length === 0) {
     hints.push({ tone: "ok", text: "标记齐全，暂无约定缺口" });
   }

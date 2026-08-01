@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { SemanticRole } from '../contracts/vocabulary.js';
+import { CatalogEntry, CatalogKind } from '../contracts/catalog.js';
+import { AuthoringDiagnostic } from '../contracts/authoring-diagnostic.js';
 
 /**
  * Browser-safe V2 Runtime Capture Protocol.
@@ -12,6 +14,9 @@ export const RUNTIME_CAPTURE_PROTOCOL_VERSION = 2 as const;
 export const RUNTIME_CAPTURE_GLOBAL = '__PROTO_BRIDGE_CAPTURE_V2__' as const;
 
 const StableId = z.string().regex(/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/);
+const TokenBindingSlot = z
+  .string()
+  .regex(/^[a-z][A-Za-z0-9]*(?:[._-][A-Za-z0-9]+)*$/);
 
 export const RuntimeFragmentIdentity = z
   .object({
@@ -104,9 +109,20 @@ export const RuntimeScreenManifest = z
     actions: z.array(RuntimeActionManifest),
     scenarios: z.array(RuntimeScenarioManifest),
     requiredScenarioIds: z.array(StableId).optional(),
+    /** New Screens are strict; omitted only by pre-convergence producers. */
+    evidencePolicy: z.enum(['strict', 'legacy']).optional(),
   })
   .strict();
 export type RuntimeScreenManifest = z.infer<typeof RuntimeScreenManifest>;
+
+export const RuntimeCatalogInput = z
+  .object({
+    kind: CatalogKind,
+    inputDigest: z.string().min(1),
+    entries: z.array(CatalogEntry),
+  })
+  .strict();
+export type RuntimeCatalogInput = z.infer<typeof RuntimeCatalogInput>;
 
 export const RuntimeCaptureManifest = z
   .object({
@@ -125,6 +141,10 @@ export const RuntimeCaptureManifest = z
       )
       .min(5),
     screens: z.array(RuntimeScreenManifest).min(1),
+    /** Immutable producer inputs from which Capture creates Catalog revisions. */
+    catalogs: z.array(RuntimeCatalogInput).default([]),
+    /** Producer diagnostics consumed unchanged by PBWork and CLI Preflight. */
+    authoringDiagnostics: z.array(AuthoringDiagnostic).default([]),
   })
   .strict();
 export type RuntimeCaptureManifest = z.infer<typeof RuntimeCaptureManifest>;
@@ -168,6 +188,32 @@ export const RuntimeSemanticNode = z
     props: z.record(z.string(), z.unknown()).optional(),
     /** Live token slot → token id bindings from the component or data-pb-token-* attrs. */
     tokenBindings: z.record(z.string(), z.string().min(1)).optional(),
+    /** Authored binding candidates with their real producer provenance. */
+    tokenBindingEvidence: z
+      .array(
+        z
+          .object({
+            slot: TokenBindingSlot,
+            tokenId: StableId,
+            source: z.enum([
+              'component-contract',
+              'runtime-registration',
+              'data-pb',
+            ]),
+          })
+          .strict(),
+      )
+      .optional(),
+    tokenBindingConflicts: z
+      .array(
+        z
+          .object({
+            slot: TokenBindingSlot,
+            candidates: z.array(StableId).min(2),
+          })
+          .strict(),
+      )
+      .optional(),
   })
   .strict();
 export type RuntimeSemanticNode = z.infer<typeof RuntimeSemanticNode>;
@@ -305,6 +351,11 @@ export const RUNTIME_CAPTURE_ERROR_CODES = [
   'unknown-checkpoint',
   'fragment-not-found',
   'duplicate-fragment-identity',
+  'invalid-semantic-marker',
+  'invalid-fragment-role',
+  'invalid-business-identity',
+  'fragment-not-visible',
+  'fragment-occluded',
   'runtime-not-ready',
   'command-failed',
 ] as const;

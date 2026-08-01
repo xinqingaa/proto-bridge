@@ -1,6 +1,7 @@
 import { z } from 'zod';
-import { AttemptId, BundleId, CaseEvidenceRevisionId, CaseId, PrototypeId, RunId, ScopeKey, SnapshotId, WorkspaceId } from './ids.js';
+import { AttemptId, BundleId, CaseEvidenceRevisionId, CaseId, CatalogRevisionId, PrototypeId, RunId, ScopeKey, SnapshotId, WorkspaceId } from './ids.js';
 import { CoverageSummary } from './coverage.js';
+import { CatalogKind } from './catalog.js';
 import { V2_SCHEMA_MAJOR } from './version.js';
 
 /**
@@ -27,6 +28,14 @@ export const LatestAttemptRef = z
   })
   .strict();
 export type LatestAttemptRef = z.infer<typeof LatestAttemptRef>;
+
+export const SnapshotCatalogRef = z
+  .object({
+    kind: CatalogKind,
+    catalogRevisionId: CatalogRevisionId,
+  })
+  .strict();
+export type SnapshotCatalogRef = z.infer<typeof SnapshotCatalogRef>;
 
 function slotKey(slot: Pick<ActiveSlot, 'caseId' | 'scopeKey' | 'kind'>): string {
   return `${slot.caseId}#${slot.kind}#${slot.kind === 'primary' ? '' : slot.scopeKey}`;
@@ -55,6 +64,8 @@ export const BundleSnapshot = z
     committedAt: z.string().datetime(),
     activeSlots: z.array(ActiveSlot),
     latestAttempts: z.array(LatestAttemptRef),
+    /** Immutable Catalog revisions reachable from this exact Snapshot. */
+    catalogRefs: z.array(SnapshotCatalogRef).default([]),
     coverage: CoverageSummary,
   })
   .strict()
@@ -74,6 +85,17 @@ export const BundleSnapshot = z
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: `duplicate latest attempt ref for ${key}`, path: ['latestAttempts', index] });
       }
       seenAttempts.add(key);
+    });
+    const seenCatalogKinds = new Set<string>();
+    snapshot.catalogRefs.forEach((ref, index) => {
+      if (seenCatalogKinds.has(ref.kind)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `duplicate Catalog ref for kind ${ref.kind}`,
+          path: ['catalogRefs', index],
+        });
+      }
+      seenCatalogKinds.add(ref.kind);
     });
   });
 export type BundleSnapshot = z.infer<typeof BundleSnapshot>;

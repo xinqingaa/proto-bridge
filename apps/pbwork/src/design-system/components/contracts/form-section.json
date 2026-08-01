@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "id": "form-section",
   "category": "complex",
+  "semantic": { "policy": "contextual", "defaultRole": "section", "allowedRoles": ["section", "form"] },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -17,6 +18,10 @@
       },
       "actionLabel": {
         "type": "string"
+      },
+      "semanticRole": {
+        "type": "string",
+        "enum": ["section", "form"]
       }
     },
     "required": [
@@ -28,6 +33,7 @@
     "description": "填写联系人和服务地址",
     "required": true,
     "actionLabel": "编辑"
+    ,"semanticRole": "section"
   },
   "states": [
     {

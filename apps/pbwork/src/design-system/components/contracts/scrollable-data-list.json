@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "id": "scrollable-data-list",
   "category": "complex",
+  "semantic": { "policy": "fixed", "defaultRole": "scroll-list" },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,

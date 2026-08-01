@@ -261,6 +261,10 @@ export class LocalFileStore implements V2Store {
     const revisions = input.revisions.map((revision) =>
       this.parseOrThrow(CaseEvidenceRevision, revision, 'CaseEvidenceRevision'),
     );
+    const catalogs = (input.catalogs ?? []).map((catalog) =>
+      this.parseOrThrow(CatalogRevision, catalog, 'CatalogRevision'),
+    );
+    this.assertCatalogCommitOwnership(bundle, catalogs);
     const revisionsById = await this.validateCommitObjects(
       bundle,
       run,
@@ -275,6 +279,10 @@ export class LocalFileStore implements V2Store {
         snapshotId: generateOperationalId('snapshot'),
         committedAt: new Date().toISOString(),
         coverage: input.coverage,
+        catalogRefs: catalogs.map(({ kind, catalogRevisionId }) => ({
+          kind,
+          catalogRevisionId,
+        })),
       }),
       'BundleSnapshot',
     );
@@ -296,6 +304,7 @@ export class LocalFileStore implements V2Store {
       run,
       snapshot,
       ...revisions,
+      ...catalogs,
     );
     await this.assertCapacity(estimatedBytes);
 
@@ -318,6 +327,17 @@ export class LocalFileStore implements V2Store {
           ),
           'CaseEvidenceRevision',
           revision,
+        );
+      }
+      for (const catalog of catalogs) {
+        await writeImmutableJson(
+          catalogRevisionPath(
+            transactionRoot,
+            bundle.bundleId,
+            catalog.catalogRevisionId,
+          ),
+          'CatalogRevision',
+          catalog,
         );
       }
       await writeImmutableJson(
@@ -980,6 +1000,10 @@ export class LocalFileStore implements V2Store {
     const revisions = input.revisions.map((revision) =>
       this.parseOrThrow(CaseEvidenceRevision, revision, 'CaseEvidenceRevision'),
     );
+    const catalogs = (input.catalogs ?? []).map((catalog) =>
+      this.parseOrThrow(CatalogRevision, catalog, 'CatalogRevision'),
+    );
+    this.assertCatalogCommitOwnership(bundle, catalogs);
     for (const revision of revisions) {
       if (
         revision.bundleId !== bundleId ||
@@ -1009,6 +1033,14 @@ export class LocalFileStore implements V2Store {
         snapshotId,
         committedAt: new Date().toISOString(),
         coverage,
+        ...(input.catalogs === undefined
+          ? {}
+          : {
+              catalogRefs: catalogs.map(({ kind, catalogRevisionId }) => ({
+                kind,
+                catalogRevisionId,
+              })),
+            }),
       }),
       'BundleSnapshot',
     );
@@ -1026,7 +1058,7 @@ export class LocalFileStore implements V2Store {
     ];
     this.assertSnapshotGraph(bundle, nextSnapshot, allRuns, allRevisions);
     await this.assertCapacity(
-      this.serializedBytes(run, nextSnapshot, ...revisions),
+      this.serializedBytes(run, nextSnapshot, ...revisions, ...catalogs),
     );
 
     // Every step above only reads or validates; nothing on disk changes until we're certain the whole
@@ -1038,6 +1070,13 @@ export class LocalFileStore implements V2Store {
         evidenceRevisionPath(this.root, bundleId, revision.revisionId),
         'CaseEvidenceRevision',
         revision,
+      );
+    }
+    for (const catalog of catalogs) {
+      await writeImmutableJson(
+        catalogRevisionPath(this.root, bundleId, catalog.catalogRevisionId),
+        'CatalogRevision',
+        catalog,
       );
     }
     await writeImmutableJson(
@@ -1690,6 +1729,32 @@ export class LocalFileStore implements V2Store {
       revisionsById.set(slot.revisionId, existing);
     }
     return revisionsById;
+  }
+
+  private assertCatalogCommitOwnership(
+    bundle: Bundle,
+    catalogs: CatalogRevision[],
+  ): void {
+    const kinds = new Set<string>();
+    for (const catalog of catalogs) {
+      if (
+        catalog.workspaceId !== this.workspaceId ||
+        catalog.bundleId !== bundle.bundleId ||
+        catalog.prototypeId !== bundle.prototypeId
+      ) {
+        throw new V2ContractError(
+          'workspace-mismatch',
+          `CatalogRevision ${catalog.catalogRevisionId} does not belong to ${this.workspaceId}/${bundle.bundleId}/${bundle.prototypeId}.`,
+        );
+      }
+      if (kinds.has(catalog.kind)) {
+        throw new V2ContractError(
+          'invalid-schema',
+          `Catalog commit contains duplicate kind ${catalog.kind}.`,
+        );
+      }
+      kinds.add(catalog.kind);
+    }
   }
 
   private assertSnapshotGraph(

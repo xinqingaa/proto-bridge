@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "id": "data-list",
   "category": "complex",
+  "semantic": { "policy": "fixed", "defaultRole": "list" },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,

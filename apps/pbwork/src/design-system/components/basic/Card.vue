@@ -8,12 +8,13 @@ const props = defineProps<{
   title: string;
   subtitle?: string;
   elevated?: boolean;
+  semanticRole?: "section" | "card" | "summary";
   /** Page-unique inspect / comment anchor; falls back to `ds.card`. */
   inspectId?: string;
 }>();
 
 const rootRef = usePbInspectRef();
-const { title, subtitle, elevated, inspectId } = toRefs(props);
+const { title, subtitle, elevated, inspectId, semanticRole } = toRefs(props);
 
 usePbInspect({
   element: rootRef,
@@ -25,6 +26,7 @@ usePbInspect({
     subtitle: subtitle.value,
     elevated: elevated.value ?? false,
     inspectId: inspectId.value,
+    semanticRole: semanticRole.value ?? "section",
   }),
   getTokenBindings: () => ({
     surface: "color.surface",
@@ -54,7 +56,7 @@ usePbInspect({
     ref="rootRef"
     class="pb-card section card"
     data-pb-id="ds.card"
-    data-pb-role="section"
+    :data-pb-role="semanticRole ?? 'section'"
     variant="outlined"
     :elevation="0"
     :style="[radiusStyle('lg'), elevationStyle(elevated ? 'card' : 'none')]"

@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "id": "bottom-sheet",
   "category": "complex",
+  "semantic": { "policy": "fixed", "defaultRole": "sheet" },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,

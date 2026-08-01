@@ -24,12 +24,31 @@ try {
     workspaceId: reference.WORKSPACE_ID,
   });
   await writer.init();
+  const screenCatalog = {
+    schemaVersion: 1,
+    catalogRevisionId: "catalog-task-list-screen-v1",
+    workspaceId: reference.WORKSPACE_ID,
+    bundleId: reference.BUNDLE_ID,
+    prototypeId: reference.PROTOTYPE_ID,
+    kind: "screen",
+    inputDigest: "sha256:task-list-screen-v1",
+    createdAt: "2026-07-30T08:00:00.000Z",
+    entries: [
+      {
+        objectId: reference.SCREEN_ID,
+        digest: "sha256:task-list",
+        value: { title: "任务列表" },
+        blobIds: [],
+      },
+    ],
+  };
   const created = await writer.createBundle({
     bundleId: reference.BUNDLE_ID,
     prototypeId: reference.PROTOTYPE_ID,
     run: reference.RUN_1,
     revisions: [reference.PRIMARY_ACTIVE_REVISION],
     coverage: reference.RUN_1.coverage,
+    catalogs: [screenCatalog],
   });
   const fixedSnapshotId = created.snapshot.snapshotId;
   const screenshotBytes = Buffer.from(
@@ -45,24 +64,6 @@ try {
       {
         kind: "revision",
         objectId: reference.PRIMARY_ACTIVE_REVISION.revisionId,
-      },
-    ],
-  });
-  await writer.putCatalogRevision({
-    schemaVersion: 1,
-    catalogRevisionId: "catalog-task-list-screen-v1",
-    workspaceId: reference.WORKSPACE_ID,
-    bundleId: reference.BUNDLE_ID,
-    prototypeId: reference.PROTOTYPE_ID,
-    kind: "screen",
-    inputDigest: "sha256:task-list-screen-v1",
-    createdAt: "2026-07-30T08:00:00.000Z",
-    entries: [
-      {
-        objectId: reference.SCREEN_ID,
-        digest: "sha256:task-list",
-        value: { title: "任务列表" },
-        blobIds: [],
       },
     ],
   });
@@ -212,6 +213,7 @@ try {
       name: "read_evidence_catalog",
       arguments: {
         bundleId: reference.BUNDLE_ID,
+        snapshotId: fixedSnapshotId,
         catalogRevisionId: "catalog-task-list-screen-v1",
       },
     }),

@@ -48,7 +48,7 @@ pnpm pb:mcp -- --print-config
 - `find_target_examples`
 - `validate_target_changes`
 
-Target Tools 只读目标仓库，不读取或写入 Evidence。
+这些工具是当前可选的 legacy Flutter adapter。主 Evidence 消费链路不要求 Flutter；仅在目标适用时调用。Target Tools 只读目标仓库，不读取或写入 Evidence。
 
 ## Resources 与 Prompt
 

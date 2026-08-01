@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "id": "filter-bar",
   "category": "complex",
+  "semantic": { "policy": "fixed", "defaultRole": "filter" },
   "propsSchema": {
     "type": "object",
     "properties": {

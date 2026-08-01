@@ -9,10 +9,10 @@ export const CONSUMER_GUIDE = `# ProtoBridge Agent Handoff Consumer
 4. Read only the referenced Case revisions and Fragments needed for the implementation intent. Preserve provenance, unknown and unresolved conflicts.
 5. Actually view Screenshot resources. Screenshots constrain composition at the same authority as structural Fragment facts; text-only summaries are not sufficient.
 6. Read target repository instructions and existing code. The target repository does not need ProtoBridge configuration.
-7. Use \`read_target_conventions\` and \`find_target_examples\` only as independent target queries. Their results are not Source Evidence and must not override Screenshot or Fragment facts.
+7. When an applicable Target adapter/tool exists, use its convention/example queries only as independent target context. Adapter results are not Source Evidence and must not override Screenshot or Fragment facts.
 8. Decide files, components, routing, state and tokens in the target repository; do not treat ProtoBridge as a code generator. Do not invent containers, copy, interactions or state that Evidence does not support.
 9. When Evidence omits a layout-sensitive prop, check the Screenshot; if still uncertain, disclose it as remaining risk instead of silently accepting a composition-changing default.
-10. Implement and run target-native tests, then call \`validate_target_changes\`.
+10. Implement and run target-native checks/tests. Call adapter validation only when an applicable Target adapter/tool exists.
 11. Report changed files, validation results, all original Handoff risks, known deviations from Evidence, and any remaining implementation risk.
 
 Hard failures:

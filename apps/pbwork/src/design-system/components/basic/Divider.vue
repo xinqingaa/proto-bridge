@@ -17,6 +17,7 @@ usePbInspect({
   pbId: "ds.divider",
   instanceId: inspectId,
   componentId: "divider",
+  semantic: false,
   getProps: () => ({
     label: label.value ?? "",
     inset: inset.value ?? false,
@@ -35,8 +36,6 @@ usePbInspect({
   <div
     ref="rootRef"
     class="pb-divider"
-    data-pb-id="ds.divider"
-    data-pb-role="unknown"
     :class="{ 'is-inset': inset }"
   >
     <v-divider />

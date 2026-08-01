@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "id": "tabs",
   "category": "complex",
+  "semantic": { "policy": "fixed", "defaultRole": "tab-bar" },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,

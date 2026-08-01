@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "id": "snackbar",
   "category": "complex",
+  "semantic": { "policy": "fixed", "defaultRole": "toast" },
   "propsSchema": {
     "type": "object",
     "properties": {

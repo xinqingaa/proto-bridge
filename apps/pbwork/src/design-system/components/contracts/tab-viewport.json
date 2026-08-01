@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "id": "tab-viewport",
   "category": "complex",
+  "semantic": { "policy": "fixed", "defaultRole": "tab-viewport" },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,

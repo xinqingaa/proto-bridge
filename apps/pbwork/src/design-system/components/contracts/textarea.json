@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "id": "textarea",
   "category": "basic",
+  "semantic": { "policy": "fixed", "defaultRole": "field" },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,

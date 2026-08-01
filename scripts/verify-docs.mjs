@@ -38,6 +38,7 @@ async function collectMarkdown(root) {
     "dist",
     "node_modules",
     ".proto-bridge",
+    "output",
   ]);
 
   async function visit(directory) {

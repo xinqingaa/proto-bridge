@@ -55,6 +55,8 @@ export type CommitRunInput = {
   revisions: CaseEvidenceRevision[];
   /** Snapshot Coverage for the resulting Snapshot; computed by the caller (pb-v2-implementation-guide.md). */
   coverage: CoverageSummary;
+  /** New or reused immutable Catalog revisions fixed by the next Snapshot. */
+  catalogs?: CatalogRevision[];
 };
 
 export type CommitRunResult = {
@@ -68,6 +70,7 @@ export type CreateBundleInput = {
   run: Run;
   revisions: CaseEvidenceRevision[];
   coverage: CoverageSummary;
+  catalogs?: CatalogRevision[];
 };
 
 export type ForkBundleInput = {

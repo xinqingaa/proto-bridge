@@ -68,7 +68,7 @@ ${riskBlock}
 2. 调用 \`inspect_evidence_workspace\` 并核对 Workspace。
 3. 调用 \`read_agent_handoff\`，在编辑前原样报告全部 \`mandatoryRiskReport\`。
 4. 读取 Handoff 固定的 Snapshot、Staleness Report、Case、revision、Fragment 和 Screenshot；不得切换到 active/latest。Screenshot 必须实际查看，不得只靠文本 facts 推断构图。
-5. 调用 \`read_target_conventions\` 与 \`find_target_examples\`，说明会复用哪些目标工程模式；Target 结果不是 Source Evidence，不得覆盖 Screenshot / Fragment。
+5. 读取目标工程自己的规范与既有模式；仅当当前目标存在适用的 Target adapter/tools 时，调用其 conventions/examples 查询。Target 结果不是 Source Evidence，不得覆盖 Screenshot / Fragment。
 6. 先给出 Evidence 理解摘要并等待我确认。摘要须包含：结构树、关键区域构图、将实现 / 将不实现（证据不足）、以及拟采用的布局敏感默认值及其依据。
 
 实现纪律（详见 handoff-consumer）：
@@ -81,8 +81,8 @@ ${riskBlock}
 
 1. 只修改与 Handoff 实现范围相关的文件。
 2. 使用目标工程现有 Theme、路由和公共组件。
-3. 实现后对照 Screenshot / 关键文案 / 场景导航自检，再运行 \`flutter analyze\` 与 \`flutter test\`。
-4. 调用 \`validate_target_changes\`。
+3. 实现后对照 Screenshot / 关键文案 / 场景导航自检，再运行目标工程原生的静态检查与测试。
+4. 仅当存在适用的 Target adapter/tool 时调用其变更校验；否则原样报告目标原生验证结果。
 5. 最终报告固定 Handoff/Snapshot/revision、原始风险、修改文件、测试结果、相对 Evidence 的已知偏差和剩余风险。
 `;
 }

@@ -77,4 +77,12 @@ test("evidence viewer can reopen deliver flow for another handoff", async ({
     `${match[1]}\n${match[2]}\n`,
     "utf8",
   );
+  const resultPath = process.env.PBWORK_E2E_RESULT_PATH;
+  if (resultPath) {
+    await writeFile(
+      resultPath,
+      JSON.stringify({ bundleId: match[1], snapshotId: match[2] }),
+      "utf8",
+    );
+  }
 });

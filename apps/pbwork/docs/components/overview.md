@@ -12,7 +12,9 @@
 | 场景 | `components/scenarios.ts`（可选组合示例） |
 | 文档 | `apps/pbwork/docs/components/**` |
 
-Contract 必含：`schemaVersion`、`id`、`category`、`propsSchema`、`defaultProps`、`states`、`slots`、`events`、`tokenBindings`。
+Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`propsSchema`、`defaultProps`、`states`、`slots`、`events`、`tokenBindings`。
+
+`semantic.policy` 只能是 `fixed`、`contextual` 或 `decorative`。fixed 组件由 Contract 固定根 role；contextual 组件只允许通过公开 prop 从 `allowedRoles` 选择；decorative 组件默认不写 `data-pb-id` / `data-pb-role`，不会独立进入 Evidence。
 
 ## Playground 可调项
 

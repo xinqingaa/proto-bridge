@@ -98,6 +98,7 @@ function state(jobs: CaptureJob[]): CaptureConsoleState {
           revisionId: `revision-${entry.caseId}`,
         })),
         latestAttempts: [],
+        catalogRefs: [],
         coverage: {
           counts: {
             selected: item.selection.cases.length,

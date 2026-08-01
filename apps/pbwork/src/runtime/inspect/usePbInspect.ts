@@ -44,6 +44,8 @@ export function usePbInspect(options: {
   /** Stable key for repeated template instances (data-pb-key). */
   pbKey?: string | Ref<string | undefined> | (() => string | undefined);
   componentId?: string;
+  /** Set false for decorative components that must not enter semantic Evidence. */
+  semantic?: boolean;
   getProps?: () => Record<string, unknown>;
   getState?: () => Record<string, unknown>;
   getTokens?: () => string[];
@@ -69,7 +71,8 @@ export function usePbInspect(options: {
     if (options.getTokenBindings) reg.getTokenBindings = options.getTokenBindings;
     unregister = registerInspect(reg);
     el.setAttribute("data-pb-component", options.pbId);
-    el.setAttribute("data-pb-id", instancePbId);
+    if (options.semantic !== false) el.setAttribute("data-pb-id", instancePbId);
+    else el.removeAttribute("data-pb-id");
     if (pbKey) el.setAttribute("data-pb-key", pbKey);
     else el.removeAttribute("data-pb-key");
   }

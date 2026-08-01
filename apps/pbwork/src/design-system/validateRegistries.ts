@@ -280,6 +280,18 @@ function validateComponentContractPair(
   }
 
   const tokenIds = new Set(tokens.map((token) => token.id));
+  if (
+    contract.semantic.policy === "contextual" &&
+    !contract.semantic.allowedRoles.includes(contract.semantic.defaultRole)
+  ) {
+    pushError(errors, {
+      resourceType: "component",
+      resourceId: record.id,
+      instancePath: "/semantic/defaultRole",
+      keyword: "enum",
+      message: "contextual defaultRole must be included in allowedRoles",
+    });
+  }
   const bindingKeys = new Set<string>();
   for (const [slot, tokenId] of Object.entries(contract.tokenBindings)) {
     if (bindingKeys.has(slot)) {

@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "id": "badge",
   "category": "basic",
+  "semantic": { "policy": "fixed", "defaultRole": "badge" },
   "propsSchema": {
     "type": "object",
     "properties": {

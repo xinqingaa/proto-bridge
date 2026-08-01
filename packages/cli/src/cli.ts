@@ -596,6 +596,12 @@ async function preflightCommand(
     [
       `Preflight ${preflight.ready ? 'ready' : 'blocked'}.`,
       `Cases: ${preflight.matrix.length}`,
+      ...preflight.diagnostics
+        .filter((diagnostic) => diagnostic.severity === 'block')
+        .map(
+          (diagnostic) =>
+            `Block ${diagnostic.diagnosticId} (${diagnostic.code}): ${diagnostic.message}`,
+        ),
       ...preflight.warnings.map(
         (warning) => `Warning ${warning.warningId}: ${warning.message}`,
       ),

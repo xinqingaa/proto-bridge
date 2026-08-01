@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "id": "empty-state",
   "category": "complex",
+  "semantic": { "policy": "fixed", "defaultRole": "empty-state" },
   "propsSchema": {
     "type": "object",
     "properties": {

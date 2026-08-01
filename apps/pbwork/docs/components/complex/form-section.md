@@ -19,6 +19,7 @@
 | `description` | string | `填写联系人和服务地址` | |
 | `required` | boolean | `true` | |
 | `actionLabel` | string | `编辑` | |
+| `semanticRole` | `section \| form` | `section` | contextual role，只能从 Contract `allowedRoles` 选择 |
 
 ## States（Playground / Contract）
 
@@ -51,4 +52,3 @@
 1. 从 `@/design-system/components/complex/...` 引入实现组件。
 2. Props 保持在契约枚举内；需要新能力先改 contract + registry + 本文。
 3. 业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`；默认 `ds.*` 只用于 Playground、组件测试或非业务预览。
-

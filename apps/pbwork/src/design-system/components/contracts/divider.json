@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "id": "divider",
   "category": "basic",
+  "semantic": { "policy": "decorative" },
   "propsSchema": {
     "type": "object",
     "properties": {

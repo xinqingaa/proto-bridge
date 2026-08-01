@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "id": "avatar",
   "category": "basic",
+  "semantic": { "policy": "fixed", "defaultRole": "image" },
   "propsSchema": {
     "type": "object",
     "properties": {

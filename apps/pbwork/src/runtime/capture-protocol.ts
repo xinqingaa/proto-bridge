@@ -3,6 +3,7 @@ import {
   RUNTIME_CAPTURE_PROTOCOL_VERSION,
   RuntimeCaptureRequest,
   RuntimeCaptureResponse,
+  RuntimeSemanticNode,
   type RuntimeActualDimensions,
   type RuntimeCaptureApi,
   type RuntimeCaptureFailure,
@@ -11,11 +12,19 @@ import {
   type RuntimeFragmentIdentity,
   type RuntimeScreenManifest,
 } from "@proto-bridge/core/v2/runtime-contract";
-import { loadPrototypeScreens } from "@/design-system/loaders";
+import {
+  loadComponentContracts,
+  loadPrototypes,
+  loadPrototypeScreens,
+  loadThemes,
+  loadTokens,
+} from "@/design-system/loaders";
+import { validateRegistries } from "@/design-system/validateRegistries";
 import {
   findRegisteredAncestor,
   getInspectRegistration,
 } from "@/runtime/inspect/registry";
+import { requiresStrictEvidence } from "@/prototypes/evidence-policy";
 
 type RuntimeContext = {
   prototypeId: string;
@@ -43,6 +52,7 @@ const CAPTURE_PROP_KEYS = [
 function readDatasetTokenBindings(
   element: HTMLElement,
 ): Record<string, string> | undefined {
+  const knownTokenIds = new Set(loadTokens().map((token) => token.id));
   const bindings: Record<string, string> = {};
   for (const [key, value] of Object.entries(element.dataset)) {
     if (!key.startsWith("pbToken") || !value) continue;
@@ -50,7 +60,21 @@ function readDatasetTokenBindings(
       .slice("pbToken".length)
       .replace(/^[A-Z]/, (char) => char.toLowerCase())
       .replace(/[A-Z]/g, (char) => `-${char.toLowerCase()}`);
-    if (slot) bindings[slot] = value;
+    if (!/^[a-z][A-Za-z0-9]*(?:[._-][A-Za-z0-9]+)*$/.test(slot)) {
+      throw new ProtocolFailure(
+        "invalid-semantic-marker",
+        `Invalid Token Evidence slot ${slot}.`,
+        { slot, tokenId: value },
+      );
+    }
+    if (!knownTokenIds.has(value)) {
+      throw new ProtocolFailure(
+        "invalid-semantic-marker",
+        `Unknown Foundation Token ${value} in data-pb-token-${slot}.`,
+        { slot, tokenId: value },
+      );
+    }
+    bindings[slot] = value;
   }
   return Object.keys(bindings).length > 0 ? bindings : undefined;
 }
@@ -59,26 +83,65 @@ function readComponentContext(element: HTMLElement): {
   componentId?: string;
   props?: Record<string, unknown>;
   tokenBindings?: Record<string, string>;
+  tokenBindingEvidence?: Array<{
+    slot: string;
+    tokenId: string;
+    source: "component-contract" | "runtime-registration" | "data-pb";
+  }>;
+  tokenBindingConflicts?: Array<{ slot: string; candidates: string[] }>;
 } {
-  const reg =
-    getInspectRegistration(element) ?? findRegisteredAncestor(element);
   const fromDataset = readDatasetTokenBindings(element);
+  const directRegistration = getInspectRegistration(element);
+  const reg =
+    directRegistration ??
+    (fromDataset ? undefined : findRegisteredAncestor(element));
   if (!reg) {
-    return fromDataset ? { tokenBindings: fromDataset } : {};
+    return fromDataset
+      ? {
+          tokenBindings: fromDataset,
+          tokenBindingEvidence: Object.entries(fromDataset).map(
+            ([slot, tokenId]) => ({ slot, tokenId, source: "data-pb" }),
+          ),
+        }
+      : {};
   }
   const rawProps = reg.getProps?.() ?? {};
   const props: Record<string, unknown> = {};
   for (const key of CAPTURE_PROP_KEYS) {
     if (rawProps[key] !== undefined) props[key] = rawProps[key];
   }
-  const tokenBindings = {
-    ...(reg.getTokenBindings?.() ?? {}),
-    ...(fromDataset ?? {}),
-  };
+  const registered = reg.getTokenBindings?.() ?? {};
+  const tokenBindings = { ...registered };
+  for (const [slot, tokenId] of Object.entries(fromDataset ?? {})) {
+    if (!(slot in tokenBindings)) tokenBindings[slot] = tokenId;
+  }
+  const registrationSource: "component-contract" | "runtime-registration" = reg.componentId
+    ? "component-contract"
+    : "runtime-registration";
+  const tokenBindingEvidence = [
+    ...Object.entries(registered).map(([slot, tokenId]) => ({
+      slot,
+      tokenId,
+      source: registrationSource,
+    })),
+    ...Object.entries(fromDataset ?? {}).map(([slot, tokenId]) => ({
+      slot,
+      tokenId,
+      source: "data-pb" as const,
+    })),
+  ];
+  const tokenBindingConflicts = Object.entries(fromDataset ?? {}).flatMap(
+    ([slot, tokenId]) =>
+      registered[slot] && registered[slot] !== tokenId
+        ? [{ slot, candidates: [registered[slot], tokenId] }]
+        : [],
+  );
   return {
     ...(reg.componentId ? { componentId: reg.componentId } : {}),
     ...(Object.keys(props).length > 0 ? { props } : {}),
     ...(Object.keys(tokenBindings).length > 0 ? { tokenBindings } : {}),
+    ...(tokenBindingEvidence.length > 0 ? { tokenBindingEvidence } : {}),
+    ...(tokenBindingConflicts.length > 0 ? { tokenBindingConflicts } : {}),
   };
 }
 
@@ -187,6 +250,9 @@ function toScreenManifest(
     ...(screen.requiredScenarioIds
       ? { requiredScenarioIds: screen.requiredScenarioIds }
       : {}),
+    evidencePolicy: requiresStrictEvidence(screen.screenId)
+      ? "strict"
+      : "legacy",
   };
 }
 
@@ -202,6 +268,74 @@ function buildManifest(prototypeId: string): RuntimeCaptureManifest {
     actions: screen.actions,
     scenarios: screen.scenarios,
   }));
+  const catalogValues = [
+    {
+      kind: "prototype" as const,
+      values: loadPrototypes().filter((prototype) => prototype.id === prototypeId),
+      id: (value: { id: string }) => value.id,
+    },
+    {
+      kind: "screen" as const,
+      values: loadPrototypeScreens().filter(
+        (screen) => screen.prototypeId === prototypeId,
+      ),
+      id: (value: { screenId: string }) => value.screenId,
+    },
+    {
+      kind: "component" as const,
+      values: loadComponentContracts(),
+      id: (value: { id: string }) => value.id,
+    },
+    {
+      kind: "token" as const,
+      values: [
+        ...loadTokens(),
+        ...loadThemes().map((theme) => ({ ...theme, catalogObject: "theme" })),
+      ],
+      id: (value: { id: string }) => value.id,
+    },
+    {
+      kind: "scenario" as const,
+      values: loadPrototypeScreens()
+        .filter((screen) => screen.prototypeId === prototypeId)
+        .flatMap((screen) =>
+          (screen.scenarios ?? []).map((scenario) => ({
+            ...scenario,
+            ownerScreenId: screen.screenId,
+          })),
+        ),
+      id: (value: { id: string; ownerScreenId: string }) =>
+        `${value.ownerScreenId}.${value.id}`,
+    },
+  ];
+  const catalogs = catalogValues.map((catalog) => {
+    const entries = catalog.values.map((value) => ({
+      objectId: catalog.id(value as never),
+      digest: digestText(JSON.stringify(value)),
+      value,
+      blobIds: [],
+    }));
+    return {
+      kind: catalog.kind,
+      inputDigest: digestText(JSON.stringify(entries)),
+      entries,
+    };
+  });
+  const authoringDiagnostics = validateRegistries().map((error, index) => ({
+    diagnosticId: `registry-${error.resourceType}-${error.resourceId ?? "unknown"}-${index}`,
+    code: `registry.${error.keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "invalid"}`,
+    severity: "block" as const,
+    message: `${error.resourceType} ${error.resourceId ?? "unknown"}: ${error.message}`,
+    caseIds: [],
+    source: {
+      kind: "registry" as const,
+      locator: `${error.resourceType}:${error.resourceId ?? "unknown"}${error.instancePath}`,
+      ...(error.resourceType === "screen" && error.resourceId
+        ? { screenId: error.resourceId }
+        : {}),
+    },
+    nextAction: "Fix the Registry/Contract validation error before Capture.",
+  }));
   return {
     protocolVersion: RUNTIME_CAPTURE_PROTOCOL_VERSION,
     inputVersion: digestText(JSON.stringify(versionInput)),
@@ -214,6 +348,8 @@ function buildManifest(prototypeId: string): RuntimeCaptureManifest {
       "scenario",
     ],
     screens,
+    catalogs,
+    authoringDiagnostics,
   };
 }
 
@@ -343,19 +479,26 @@ async function waitForStableSemanticMarkers(
   );
 }
 
-function findFragment(
+function findFragments(
   fragment: RuntimeFragmentIdentity,
   context: RuntimeContext,
-): HTMLElement | undefined {
-  if (fragment.screenId !== context.screenId) return undefined;
+): HTMLElement[] {
+  if (fragment.screenId !== context.screenId) return [];
   return Array.from(
-    document.querySelectorAll<HTMLElement>("[data-pb-id]"),
-  ).find(
+    document.querySelectorAll<HTMLElement>("[data-pb-id][data-pb-role]"),
+  ).filter(
     (element) =>
       element.dataset.pbId === fragment.pbId &&
       (fragment.pbKey === undefined ||
         element.dataset.pbKey === fragment.pbKey),
   );
+}
+
+function findFragment(
+  fragment: RuntimeFragmentIdentity,
+  context: RuntimeContext,
+): HTMLElement | undefined {
+  return findFragments(fragment, context)[0];
 }
 
 async function waitForExpectedContext(
@@ -380,12 +523,92 @@ async function waitForFragments(
   options: CaptureProtocolOptions,
   context: RuntimeContext,
   fragments: RuntimeFragmentIdentity[],
+  strict: boolean,
   timeoutMs = 5000,
 ): Promise<void> {
   const deadline = performance.now() + timeoutMs;
   while (performance.now() < deadline) {
     await options.waitForStable();
-    if (fragments.every((fragment) => findFragment(fragment, context))) return;
+    const failure = fragments
+      .map((fragment) => {
+        if (strict && fragment.pbId.startsWith("ds.")) {
+          return new ProtocolFailure(
+            "invalid-business-identity",
+            `Strict required Fragment ${fragment.pbId} must use a business identity, not ds.*.`,
+            fragment,
+          );
+        }
+        const matches = findFragments(fragment, context);
+        if (matches.length === 0) {
+          const idOnly = Array.from(
+            document.querySelectorAll<HTMLElement>("[data-pb-id]"),
+          ).find(
+            (element) =>
+              element.dataset.pbId === fragment.pbId &&
+              (fragment.pbKey === undefined ||
+                element.dataset.pbKey === fragment.pbKey) &&
+              !element.hasAttribute("data-pb-role"),
+          );
+          if (idOnly) {
+            return new ProtocolFailure(
+              "invalid-semantic-marker",
+              `Required Fragment ${fragment.pbId}/${fragment.pbKey ?? ""} has data-pb-id without data-pb-role.`,
+              fragment,
+            );
+          }
+          return undefined;
+        }
+        if (matches.length > 1) {
+          return new ProtocolFailure(
+            "duplicate-fragment-identity",
+            `Required Fragment ${fragment.pbId}/${fragment.pbKey ?? ""} matched ${matches.length} semantic markers.`,
+            fragment,
+          );
+        }
+        const element = matches[0]!;
+        const role = element.dataset.pbRole;
+        if (!RuntimeSemanticNode.shape.role.safeParse(role).success || role === "unknown") {
+          return new ProtocolFailure(
+            "invalid-fragment-role",
+            `Required Fragment ${fragment.pbId}/${fragment.pbKey ?? ""} has invalid role ${role ?? "missing"}.`,
+            { fragment, role },
+          );
+        }
+        if (!isVisible(element)) {
+          const rect = element.getBoundingClientRect();
+          return new ProtocolFailure(
+            "fragment-not-visible",
+            `Required Fragment ${fragment.pbId}/${fragment.pbKey ?? ""} is hidden or has a zero-size box.`,
+            { fragment, bbox: { width: rect.width, height: rect.height } },
+          );
+        }
+        const rect = element.getBoundingClientRect();
+        const hit = document.elementFromPoint(
+          rect.left + rect.width / 2,
+          rect.top + rect.height / 2,
+        );
+        if (hit && !element.contains(hit)) {
+          return new ProtocolFailure(
+            "fragment-occluded",
+            `Required Fragment ${fragment.pbId}/${fragment.pbKey ?? ""} is occluded at its center point.`,
+            {
+              fragment,
+              occluder:
+                hit instanceof HTMLElement
+                  ? {
+                      tag: hit.tagName.toLowerCase(),
+                      pbId: hit.dataset.pbId,
+                      className: hit.className,
+                    }
+                  : { tag: hit.nodeName.toLowerCase() },
+            },
+          );
+        }
+        return null;
+      })
+      .find((result) => result !== null && result !== undefined);
+    if (!failure && fragments.every((fragment) => findFragments(fragment, context).length === 1)) return;
+    if (failure) throw failure;
     await new Promise((resolve) => window.setTimeout(resolve, 25));
   }
   const missing = fragments.find(
@@ -562,7 +785,15 @@ export function installRuntimeCaptureProtocol(
         );
       }
       await waitForStableSemanticMarkers(options, readyContext);
-      await waitForFragments(options, readyContext, payload.requiredFragments);
+      const screen = manifest.screens.find(
+        (candidate) => candidate.screenId === readyContext.screenId,
+      );
+      await waitForFragments(
+        options,
+        readyContext,
+        payload.requiredFragments,
+        screen?.evidencePolicy === "strict",
+      );
       return {
         actual: actualDimensions(readyContext),
         stable: true,
@@ -583,14 +814,16 @@ export function installRuntimeCaptureProtocol(
         payload.fragments.length === 0
           ? all
           : payload.fragments.map((fragment) => {
-              const element = findFragment(fragment, current);
-              if (!element) {
+              const matches = findFragments(fragment, current);
+              if (matches.length !== 1) {
                 throw new ProtocolFailure(
-                  "fragment-not-found",
-                  `Fragment ${fragment.pbId}/${fragment.pbKey ?? ""} is missing.`,
+                  matches.length === 0
+                    ? "fragment-not-found"
+                    : "duplicate-fragment-identity",
+                  `Fragment ${fragment.pbId}/${fragment.pbKey ?? ""} matched ${matches.length} semantic markers.`,
                 );
               }
-              return element;
+              return matches[0]!;
             });
       return {
         actual: actualDimensions(current),
@@ -623,6 +856,12 @@ export function installRuntimeCaptureProtocol(
             ...(context.props ? { props: context.props } : {}),
             ...(context.tokenBindings
               ? { tokenBindings: context.tokenBindings }
+              : {}),
+            ...(context.tokenBindingEvidence
+              ? { tokenBindingEvidence: context.tokenBindingEvidence }
+              : {}),
+            ...(context.tokenBindingConflicts
+              ? { tokenBindingConflicts: context.tokenBindingConflicts }
               : {}),
           };
         }),
@@ -693,6 +932,9 @@ export function installRuntimeCaptureProtocol(
       options,
       checkpointContext,
       checkpoint.requiredFragments,
+      manifest.screens.find(
+        (candidate) => candidate.screenId === checkpoint.screenId,
+      )?.evidencePolicy === "strict",
     );
     await verifyCheckpointAssertions(options, checkpointContext, checkpoint);
     return {

@@ -218,6 +218,7 @@ export const SNAPSHOT: BundleSnapshot = {
     { caseId: TASK_LIST_CASE_ID, scopeKey: FULL_CASE_SCOPE_KEY, attemptId: ATTEMPT_1_ID, runId: RUN_1_ID },
     { caseId: TASK_LIST_CASE_ID, scopeKey: LIST_FRAGMENT_SCOPE_KEY, attemptId: ATTEMPT_2_ID, runId: RUN_2_ID },
   ],
+  catalogRefs: [],
   coverage: {
     counts: { selected: 2, captured: 2, reused: 0, failed: 0, skipped: 0, unsupported: 0, cancelled: 0, interrupted: 0, missing: 0, stale: 0 },
     evidenceLevelBreakdown: { 'instrumented-source-runtime': 1, 'instrumented-runtime': 1 },
@@ -338,6 +339,7 @@ export const PARTIAL_SNAPSHOT: BundleSnapshot = {
     SNAPSHOT.latestAttempts[0]!,
     { caseId: TASK_LIST_CASE_ID, scopeKey: LIST_FRAGMENT_SCOPE_KEY, attemptId: PARTIAL_ATTEMPT_ID, runId: PARTIAL_RUN_ID },
   ],
+  catalogRefs: [],
   coverage: {
     counts: { selected: 2, captured: 1, reused: 0, failed: 1, skipped: 0, unsupported: 0, cancelled: 0, interrupted: 0, missing: 0, stale: 0 },
     evidenceLevelBreakdown: { 'instrumented-source-runtime': 1, 'instrumented-runtime': 1 },

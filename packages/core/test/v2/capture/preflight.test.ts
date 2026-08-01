@@ -220,4 +220,23 @@ describe('V2 Selection normalization and Preflight', () => {
       'warning-interaction-coverage',
     );
   });
+
+  it('uses the shared diagnostic severity model as the Preflight gate', () => {
+    const contract = manifest();
+    contract.authoringDiagnostics = [
+      {
+        diagnosticId: 'registry-screen-invalid',
+        code: 'registry.required',
+        severity: 'block',
+        message: 'Screen contract is incomplete.',
+        caseIds: [],
+      },
+    ];
+    const preflight = preflightSelection(draft(), contract);
+    expect(preflight.ready).toBe(false);
+    expect(preflight.blockingDiagnosticIds).toEqual([
+      'registry-screen-invalid',
+    ]);
+    expect(preflight.warnings).toEqual([]);
+  });
 });

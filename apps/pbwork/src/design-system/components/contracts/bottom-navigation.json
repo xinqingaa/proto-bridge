@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "id": "bottom-navigation",
   "category": "complex",
+  "semantic": { "policy": "fixed", "defaultRole": "bottom-bar" },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,

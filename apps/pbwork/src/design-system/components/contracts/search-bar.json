@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "id": "search-bar",
   "category": "complex",
+  "semantic": { "policy": "fixed", "defaultRole": "search" },
   "propsSchema": {
     "type": "object",
     "properties": {

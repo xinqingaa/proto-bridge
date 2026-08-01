@@ -73,6 +73,8 @@ export function evidenceLevelAtLeast(level: EvidenceLevel, minimum: EvidenceLeve
 /** Authoritative fact sources (pb-v2-spec.md "事实、来源与冲突"). Target facts must never appear here. */
 export const FACT_SOURCES = [
   'registry',
+  'component-contract',
+  'runtime-registration',
   'runtime-contract',
   'data-pb',
   'source',

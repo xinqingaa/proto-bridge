@@ -82,6 +82,11 @@ const draftScreens = computed(() =>
   })),
 );
 const warnings = computed(() => capture.preflight?.result.warnings ?? []);
+const blocks = computed(() =>
+  (capture.preflight?.result.diagnostics ?? []).filter(
+    (diagnostic) => diagnostic.severity === "block",
+  ),
+);
 const matrixCount = computed(() => capture.preflight?.result.matrix.length ?? 0);
 const risks = computed(() => capture.handoffPreview?.risks ?? []);
 const successfulCount = computed(() => {
@@ -386,6 +391,18 @@ function renderMarkdown(source: string): string {
               />
             </label>
 
+            <section v-if="blocks.length" class="risk-block is-blocking">
+              <strong>必须修复</strong>
+              <div
+                v-for="diagnostic in blocks"
+                :key="diagnostic.diagnosticId"
+                class="risk-row"
+              >
+                <AlertTriangle :size="16" />
+                <span>{{ diagnostic.message }}</span>
+              </div>
+            </section>
+
             <section v-if="warnings.length" class="risk-block">
               <strong>需要确认的事项</strong>
               <div
@@ -619,6 +636,9 @@ function renderMarkdown(source: string): string {
   display: block;
   margin-top: 4px;
   font-size: 0.92rem;
+}
+.risk-block.is-blocking {
+  border-color: rgb(var(--v-theme-error));
 }
 .field {
   display: grid;

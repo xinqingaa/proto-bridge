@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "id": "icon-button",
   "category": "basic",
+  "semantic": { "policy": "fixed", "defaultRole": "button" },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,
