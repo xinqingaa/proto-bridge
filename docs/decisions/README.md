@@ -9,6 +9,6 @@
 | [0003](./0003-immutable-fixed-evidence.md) | 历史不可变，消费使用固定引用 |
 | [0004](./0004-producer-consumer-target-boundaries.md) | Producer、Consumer 与 Target 单向分离 |
 | [0005](./0005-pbwork-foundation-and-component-boundary.md) | PBWork 使用一套严格的设计基础和组件边界 |
+| [0006](./0006-explicit-semantic-evidence.md) | 实现相关语义必须显式进入 Evidence |
 
 ADR 被后续决策替代时保留原文，并在状态中链接替代项；不要改写旧决策以伪装从未发生变化。
-

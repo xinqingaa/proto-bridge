@@ -28,16 +28,15 @@ Contract 必含：`schemaVersion`、`id`、`category`、`propsSchema`、`default
 
 ## 检查标记
 
-原型中优先提供：
-
-- `inspectId`（组件支持时）  
-- `data-pb-id`：建议 `{prototype}.{screen}.{slot}`  
-- `data-pb-role`：与 conventions / 组件内置 role 对齐（如 `tab-bar`、`scroll-list`）
+- 注册组件必须提供根节点 role、`componentId` 和 Contract/运行时 token bindings。
+- 业务原型中的 DS 实例必须传业务稳定 `inspectId`，命名为 `{screenId}.{slotPath}`；不得让 required Fragment 依赖默认 `ds.*`。
+- Component Contract 必须声明 `fixed`、`contextual` 或 `decorative` semantic role policy；contextual 组件同时声明 allowed roles。
+- 业务局部节点不借用组件默认标记，按[语义标记与证据门禁](../../../../docs/reference/semantic-authoring.md)显式声明。
 
 ## 新增组件清单
 
 1. 写 `contracts/{id}.json`（Ajv / schema 通过）  
-2. 实现 Vue，只读 `--pb-*`  
+2. 实现 Vue，只读 `--pb-*`，并提供 semantic role policy 与 Inspect registration
 3. 登记 `registry.ts` controls  
 4. 需要时补 `scenarios.ts`  
 5. 写本文档对应页  

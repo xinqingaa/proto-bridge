@@ -24,8 +24,8 @@ proto-bridge workspace init [--config <file>]
 proto-bridge workspace doctor [--json]
 proto-bridge preflight --selection <file> [--manifest <file>]
 proto-bridge capture run --selection <file> [--bundle <id>]
-proto-bridge deliver (--selection <file> | --prototype <id> --screen <slug>) [--target <dir>]
-proto-bridge deliver --bundle <id> --snapshot <id> [--ack-risk <kind>]
+proto-bridge deliver (--selection <file> | --prototype <id> --screen <id|slug>) [--target <dir>]
+proto-bridge deliver --bundle <id> --snapshot <id> [--ack-risk <kind>] [--target <dir>]
 proto-bridge job status|cancel|retry --job <id>
 proto-bridge bundle list|inspect|fork|archive|clean
 proto-bridge snapshot|run|case inspect

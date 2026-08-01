@@ -37,9 +37,10 @@
 2. 每个 `critical: true` Variant 必须声明自己的非空 `requiredFragments`；
 3. Fragment identity 使用稳定 `screenId + pbId + optional pbKey`；
 4. 对应 Runtime 节点必须提供合法 `data-pb-role`，可见且具有非零 bbox；
-5. 关键路径使用 Action、Scenario 和 Checkpoint，不以无边界自动点击代替；
-6. Runtime 必须能 prepare、readiness、semantic snapshot 和 reset；
-7. 不得通过 `LEGACY_EVIDENCE_SCREEN_IDS` 为新工作创建例外。
+5. DS required Fragment 使用业务 `inspectId`，业务局部 required Fragment 显式声明实现所需 `data-pb-token-*`；
+6. 关键路径使用 Action、Scenario 和 Checkpoint，不以无边界自动点击代替；
+7. Runtime 必须能 prepare、readiness、semantic snapshot 和 reset；
+8. 不得通过 `LEGACY_EVIDENCE_SCREEN_IDS` 为新工作创建例外。
 
 提交前运行 `pnpm --filter @proto-bridge/pbwork test` 和
 `pnpm test:e2e:runtime`。
@@ -72,7 +73,7 @@
 {prototypeId}.{screenSlug}.app-bar | tab-viewport | bottom-navigation
 ```
 
-组件支持 `inspectId` 时传入同上字符串。
+业务 Evidence 中组件支持 `inspectId` 时必须传入同上字符串。业务局部证据节点的 id、role、key 和 Token binding 规则见[语义标记与证据门禁](../../../../docs/reference/semantic-authoring.md)。
 
 ## 与 conventions
 

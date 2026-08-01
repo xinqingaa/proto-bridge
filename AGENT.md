@@ -22,7 +22,10 @@
 - MCP 只读取固定 Workspace/Snapshot/revision，不猜 Store 路径，不回退 active/latest。
 - Coding Agent 自行决定目标文件、组件、路由、状态管理和 Token。
 - PBWork 原型只使用 PBWork Design System；形状匹配时禁止自行重造组件。
+- DS 业务实例必须使用业务稳定 `inspectId`；strict required Fragment 禁止依赖默认 `ds.*`。
+- 业务局部证据节点必须显式提供 `data-pb-id`、`data-pb-role`、按需 `data-pb-key` 和实现所需 `data-pb-token-*`；只写 CSS Token 不构成 Evidence。
 - default/critical Variant 必须具有 authored completeness boundary；不得通过例外列表绕过新工作。
+- required Fragment 缺失、重复、不可见、零 bbox、非法/unknown role 或缺少所需 Token Evidence 必须阻断完整性声明。
 
 ## 代码地图
 
@@ -41,6 +44,7 @@
 
 - 公共 Schema、入口、状态、路径、环境变量变化必须同步文档。
 - 修改 PBWork Component/Token/Theme/手势时，必须主动提醒并同步对应手册、Contract、Registry 和测试。
+- 修改语义标记、Role、Token Evidence 或门禁时，必须同步 `docs/reference/semantic-authoring.md`、Authoring Contract、相关 Skill、检查单和测试。
 - 同一概念只在权威文档详述；其它入口使用链接。
 - 主体文档只描述当前行为；历史和设计理由分别进入 `docs/history`、`docs/decisions`。
 

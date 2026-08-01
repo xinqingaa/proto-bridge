@@ -2,6 +2,8 @@
 
 PBWork 是 ProtoBridge 的 GUI，但不是 Core 的替代实现。它把人的选择和 Review 操作映射到 Core Contract，并通过 instrumented Runtime 提供高质量 Evidence。
 
+原型作者、设计师和产品人员都通过 Cursor、Codex 等 Coding Agent 修改 PBWork 代码资产；Workbench 用于浏览、检查、采集和 Review，不是独立可视化编辑器，也不维护另一套作者协议。
+
 ## 两个界面
 
 | 界面 | 面向对象 | 职责 |
@@ -21,6 +23,8 @@ Workbench 路由位于 `/workbench/*`。Runtime 路由位于 `/prototype/:protot
 4. 在 Registry 声明 Screen、Variant、Action、Scenario 和 required boundary；
 5. 使用 Inspector 核对稳定 `data-pb-*` 身份；
 6. 运行 PBWork unit/typecheck 与 Runtime 浏览器测试。
+
+DS 业务实例必须传稳定 `inspectId`。业务局部证据节点必须显式提供 id、role 和实现所需 `data-pb-token-*`；CSS Token 本身不能替代 Token Evidence。完整规则见[语义标记与证据门禁](../reference/semantic-authoring.md)。
 
 工作壳组件与原型组件严格隔离：`src/workbench/ui` 服务 Workbench，`src/design-system/components` 服务 Runtime。工作壳不能复用携带原型采集语义的组件。
 

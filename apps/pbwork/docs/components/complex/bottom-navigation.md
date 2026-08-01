@@ -53,5 +53,4 @@
 
 1. 只与 `TabViewport` 组合使用同一选中值；本组件不渲染面板内容。
 2. 见 [shell-and-nav.md](../../prototypes/shell-and-nav.md)、recipes R1。
-3. 传稳定 `inspectId`。
-
+3. 业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`；默认 `ds.*` 只用于 Playground、组件测试或非业务预览。

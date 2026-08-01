@@ -37,6 +37,12 @@ Token.defaultValue + Theme.overrides
 2. 运行时按 Theme 解析为 CSS 变量。  
 3. 状态切换只走约定映射（`tone`、`variant`、`selectionStyle` 等），不新增临时绑定表。
 
+## 业务局部节点的 Evidence
+
+业务页面仍通过 CSS `var(--pb-*)` 应用实际样式，但需要 Agent 独立实现或验收的自定义节点还必须使用 `data-pb-token-{slot}` 声明 binding。CSS 使用和 Evidence binding 缺一不可。
+
+DS 组件由 Contract/运行时 registration 提供 bindings，不在每个业务实例重复手写。自定义 binding 的 Token ID 必须存在于固定 Catalog，Capture provenance 必须标为 `data-pb`。完整规则见[语义标记与证据门禁](../../../../docs/reference/semantic-authoring.md)。
+
 ## 换肤
 
 - 改 Theme `overrides` 中的值。  

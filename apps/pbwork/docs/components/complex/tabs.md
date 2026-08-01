@@ -64,4 +64,5 @@
 2. `fill` 须配合父级高度链（`min-height: 0` / 可分配高度），否则短内容可能仍滑不动。
 3. `swipe` / `mouseSwipe` 分离，不可互兜底。
 4. 一级主体子视图内禁止使用；维度切换用 recipes R7。
+5. 业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`；默认 `ds.*` 只用于 Playground、组件测试或非业务预览。
 5. 详见 [composition.md](../composition.md)、[recipes.md](../../prototypes/recipes.md)、[shared-gestures.md](../shared-gestures.md)。

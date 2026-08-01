@@ -31,9 +31,12 @@
 - [ ] Screen / Variant 已注册且可经 URL 打开  
 - [ ] 叠加/校验等关键态有 Variant；theme ≠ variant  
 - [ ] 列表与选项数据在源码中可见  
-- [ ] `data-pb-id` / `data-pb-role` / `inspectId` 稳定
+- [ ] 已先列出所有需要 Agent 独立实现或验收的证据节点
+- [ ] DS 业务实例使用业务稳定 `inspectId`；required Fragment 不依赖 `ds.*`
+- [ ] 业务局部证据节点的 `data-pb-id` / `data-pb-role` 成对，重复实例使用稳定 `data-pb-key`
+- [ ] 业务局部证据节点显式声明实现所需 `data-pb-token-*`，没有只靠 CSS Token
 - [ ] default 与 critical Variant 已声明非空 `requiredFragments`
-- [ ] required Fragment 在真实 Runtime 中唯一、可见且有非零 bbox
+- [ ] required Fragment 在真实 Runtime 中唯一、role 非 unknown、可见且有非零 bbox
 - [ ] 关键交互已声明 Action、Scenario 与 Checkpoint
 - [ ] 新 Screen 未加入 `LEGACY_EVIDENCE_SCREEN_IDS`
 - [ ] Action target 使用稳定 Fragment；Scenario/Checkpoint 实际维度可验证
@@ -45,3 +48,4 @@
 - [ ] 业务个案笔记（如有）与手册不冲突；冲突以手册 + contract 为准  
 - [ ] 组件、Token、Theme、手势或 Registry 变化已按 `development.md` 同步文档
 - [ ] `pnpm docs:verify` 已通过
+- [ ] authoring lint、Registry validation 和 Runtime Capture 的 Block 为零；每个 Warning 已修复或记录理由

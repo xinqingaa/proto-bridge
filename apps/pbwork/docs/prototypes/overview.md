@@ -43,6 +43,9 @@ prototypes/{prototypeId}/
 2. 满足根 [原型 Authoring Contract](../../../../docs/reference/prototype-authoring.md)。
 3. Variant 可切换且可静态见到关键列表数据。  
 4. 提供稳定 `data-pb-id` / `data-pb-key` / `data-pb-role` / `inspectId`。
-5. default/critical Variant 声明 required boundary，关键交互声明 Action/Scenario/Checkpoint。
+5. 业务局部证据节点显式提供实现所需 `data-pb-token-*`，不能只靠 CSS Token。
+6. default/critical Variant 声明 required boundary，关键交互声明 Action/Scenario/Checkpoint。
+
+节点是否需要独立 Evidence、DS 与自定义节点的不同要求以及门禁等级见[语义标记与证据门禁](../../../../docs/reference/semantic-authoring.md)。
 
 下一步：[shell-and-nav.md](./shell-and-nav.md) · [screens-and-variants.md](./screens-and-variants.md) · [recipes.md](./recipes.md) · [../checklist.md](../checklist.md)

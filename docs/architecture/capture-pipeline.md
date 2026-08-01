@@ -15,6 +15,8 @@ Runtime `describe` 返回：
 
 Core 使用浏览器安全 Schema 校验响应。缺字段、未知引用、重复身份或不受支持的协议会阻止 Preflight。
 
+收敛版本要求在读取 Runtime 前运行 PBWork authoring lint：确定性违反 Contract 的结果直接 Block，只能启发式判断的 CSS-only 疑似遗漏形成 Warning。当前实现差距和落点见根 `plan.md`，精确等级见[语义标记与证据门禁](../reference/semantic-authoring.md)。
+
 ## 2. Selection Draft
 
 Draft 表达用户意图，不表达执行结果。Core 对输入归一化并拒绝：
@@ -60,8 +62,11 @@ Runtime 读取 `[data-pb-role][data-pb-id]` 节点：
 - 构造 `screenId + pbId + optional pbKey`；
 - 重复 `pbId` 要求每个实例都有稳定 `pbKey`；
 - 验证 required Fragment 唯一、可见并具有非零 bbox；
+- 拒绝 required Fragment 的 `unknown` role、业务 `ds.*` identity 和缺失的必要 Token Evidence；
 - 提取文本、状态、可访问性和几何事实；
 - 保留实际 DOM 观测来源。
+
+其中 required Fragment 的可见性、bbox、非 `unknown` role、业务 identity 和 Token Evidence 是收敛 Contract；尚未由现有 Runtime/Core 全部执行的部分列在根 `plan.md`，不能因当前工具未报错而视为合规。
 
 Semantic snapshot 与 Screenshot 必须在同一固定 Case 中采集。
 
@@ -112,4 +117,3 @@ Handoff 创建前评估：
 - 是否存在手工提升或接受风险。
 
 所有 mandatory risks 固定进入 Handoff。Consumer 读取顺序见 [Agent 消费指南](../guides/agent-consumption.md)。
-

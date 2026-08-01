@@ -13,12 +13,13 @@ description: >-
 ## 必读
 
 1. `docs/reference/prototype-authoring.md`
-2. `apps/pbwork/docs/README.md`
-3. `apps/pbwork/docs/principles.md`
-4. `apps/pbwork/docs/components/composition.md`
-5. `apps/pbwork/docs/prototypes/overview.md`
-6. 按任务阅读 shell/navigation、Screen/Variant、recipes、组件和手势文档
-7. 完成前使用 `apps/pbwork/docs/checklist.md`
+2. `docs/reference/semantic-authoring.md`
+3. `apps/pbwork/docs/README.md`
+4. `apps/pbwork/docs/principles.md`
+5. `apps/pbwork/docs/components/composition.md`
+6. `apps/pbwork/docs/prototypes/overview.md`
+7. 按任务阅读 shell/navigation、Screen/Variant、recipes、组件和手势文档
+8. 完成前使用 `apps/pbwork/docs/checklist.md`
 
 ## 硬约束
 
@@ -29,6 +30,9 @@ description: >-
 - Screen/Variant/Action/Scenario 只在 `prototypes/registry.ts` 注册。
 - default 与 critical Variant 声明非空 `requiredFragments`。
 - Fragment 使用稳定 `screenId + pbId + optional pbKey`。
+- DS 业务实例传业务稳定 `inspectId`，required Fragment 不依赖 `ds.*`。
+- 业务局部证据节点显式提供 `data-pb-id`、`data-pb-role`、按需 `data-pb-key` 和实现所需 `data-pb-token-*`；CSS Token 不代替 binding Fact。
+- 修改前列出独立实现/验收节点；不确定是否遗漏时给 warning，已确定属于交付范围而缺标记时必须补齐。
 - 关键交互声明 Action、Scenario 和 Checkpoint。
 - Runtime 能确定性 prepare、readiness、snapshot 和 reset。
 - 不为新工作扩大 Evidence exception allowlist。

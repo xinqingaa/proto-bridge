@@ -32,6 +32,7 @@ Token / Theme
 - `DataList` 管列表表面，`ScrollableDataList` 管纵滚、刷新和分页。
 - `FilterBar`、`SearchBar`、Dialog、Sheet、Snackbar、EmptyState 等不得页内复制。
 - 页内局部 UI 仍必须使用 Token。
+- 需要 Agent 独立实现或验收的局部节点必须显式进入 Evidence；只写 CSS Token 不构成 Token binding。
 - 禁止组件实例换绑 Token。
 
 ## 4. 手势红线
@@ -55,6 +56,15 @@ Token / Theme
 - Prototype/Screen/Variant/Action/Scenario 只在 `prototypes/registry.ts` 注册。
 - Runtime 路由、工作台导航和 Capture manifest 不维护平行清单。
 
-## 7. 规范升级
+## 7. Semantic Evidence
+
+- DS 业务实例必须传业务稳定 `inspectId`；默认 `ds.*` 只用于 Playground、组件测试或非业务预览。
+- 业务局部证据节点必须在同一实际元素上提供 `data-pb-id`、`data-pb-role`、按需 `data-pb-key` 和所需 `data-pb-token-*`。
+- 不标记所有 DOM；是否需要独立 Evidence 以实现、验收、状态和视觉差异为准。
+- required boundary、Action 和 Scenario 只引用能被 Runtime 精确解析的稳定 Fragment。
+
+完整规则与门禁等级见[语义标记与证据门禁](../../../docs/reference/semantic-authoring.md)。
+
+## 8. 规范升级
 
 通用规范必须来源于稳定、可复用、经过测试的行为。业务视觉偏好、单页 workaround 和未验证方向留在业务需求或局部实现，不写成全局铁律。

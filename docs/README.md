@@ -15,11 +15,13 @@ ProtoBridge（PB）把可交互原型转化为可追溯、可固定引用的 Evi
 | 理解 PBWork 实现 | [PBWork 架构](./architecture/pbwork.md) |
 | 修改 Contract、Store 或 Capture | [Evidence 模型](./architecture/evidence-model.md) → [采集链路](./architecture/capture-pipeline.md) |
 | 在 PBWork 制作原型 | [原型 Authoring Contract](./reference/prototype-authoring.md) → [PBWork 手册](./pbwork/README.md) |
+| 标记业务节点与设置门禁 | [语义标记与证据门禁](./reference/semantic-authoring.md) |
 | 修改 PBWork Token 或组件 | [PBWork 开发规范](./pbwork/development.md) → [组件总论](./pbwork/components/overview.md) |
 | 维护仓库 | [开发规范](./maintenance/development.md) → [文档维护](./maintenance/documentation.md) |
+| 实施收敛版本 | [根实施计划](../plan.md) |
 | 理解架构转型背景 | [从 V1 到 Evidence 架构](./history/v1-to-evidence-architecture.md) |
 
-进行中的一次性人工验收记录位于 `docs/acceptance/`；它不替代正式指南或产品规范。
+一次性人工验收记录位于 [`docs/acceptance/`](./acceptance/README.md)；它不替代正式指南或产品规范。
 
 ## 权威边界
 
@@ -27,6 +29,7 @@ ProtoBridge（PB）把可交互原型转化为可追溯、可固定引用的 Evi
 - 当前实现与对象语义：`docs/architecture/`
 - 操作步骤：`docs/guides/`
 - 跨模块强制契约：`docs/reference/`
+- 节点 identity、role、component、Token Evidence 与阻断等级：`docs/reference/semantic-authoring.md`
 - PBWork Token、组件、手势和页面组装：`apps/pbwork/docs/`，根目录下的 `docs/pbwork` 是其软链接
 - 包级命令和 API：各 `packages/*/README.md`
 - 设计取舍及理由：`docs/decisions/`

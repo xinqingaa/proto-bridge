@@ -18,6 +18,7 @@ description: >-
 4. Component 任务 → `components/overview.md`、`composition.md`、具体组件页
 5. 手势任务 → `components/shared-gestures.md`
 6. `docs/reference/prototype-authoring.md`
+7. `docs/reference/semantic-authoring.md`
 
 ## 组件原子变更
 
@@ -50,6 +51,8 @@ Theme 只覆盖值，不改变 Token 语义或组件绑定。
 - 手势仲裁集中在 `_shared` 和对应 complex component。
 - Workbench 不复用 Prototype Design System 组件。
 - `data-pb-*`、HTML/ARIA、键盘和焦点语义保持一致。
+- Component Contract 声明并校验 fixed/contextual/decorative semantic role policy；组件注册提供的 token bindings 保留真实 provenance。
+- DS 组件默认 `ds.*` 只服务 Playground/测试；业务原型通过 `inspectId` 提供 Fragment identity。
 
 ## 验证
 
@@ -61,4 +64,3 @@ pnpm docs:verify
 ```
 
 涉及手势、Overlay、导航或 Playground 时补跑对应 Playwright spec。
-

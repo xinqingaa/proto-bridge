@@ -32,6 +32,7 @@
 - 不可变对象只能追加。
 - 引用必须验证 Workspace、owner 和可达性。
 - 安全失败应确定性返回错误码，不能回退猜测路径或 latest。
+- 语义标记门禁由 `docs/reference/semantic-authoring.md` 定义；入口不得维护第二套 role、Token slot 或严重性判断。
 
 ## 测试
 
@@ -71,4 +72,3 @@
 ## 文档
 
 任何公共 Contract、入口、组件、Token、流程或目录变化都属于文档改动。同步矩阵见 [文档维护规范](./documentation.md)。
-

@@ -2,6 +2,8 @@
 
 PBWork 是一个 Vue 3 + TypeScript + Vuetify 应用，由 Workbench、Prototype Runtime、Design System 和 Capture UI 组成。
 
+PBWork 的全部作者资产由产品、设计和开发人员通过 Coding Agent 修改。Workbench 是浏览、检查、采集和 Review 控制面，不是独立可视化编辑器或聊天式作者入口。
+
 ## 目录与职责
 
 ```text
@@ -52,6 +54,8 @@ Token + Theme
 
 Workbench UI 与 Prototype Design System 不得互相复用组件：原型组件可能携带 `data-pb-*` 和 Inspector 语义，工作壳组件不应进入 Evidence。
 
+Component Contract 还应固定组件的 semantic role policy；业务局部证据节点的显式标记不由 DS 默认值代替。统一规则见[语义标记与证据门禁](../reference/semantic-authoring.md)。
+
 ## Registry
 
 `prototypes/registry.ts` 是 Prototype、Screen、Variant、Action 和 Scenario 的唯一注册源。Router、Workbench navigation、Runtime manifest 和 Capture Preflight 都从该注册表读取。
@@ -80,6 +84,8 @@ Runtime 提供：
 - 稳定等待、路由准备和 reset。
 
 Capture Protocol 的 manifest 由 Registry 构造，`inputVersion` 对 Screen、Variant、Action 和 Scenario 定义计算摘要。页面语义快照只读取同时具有合法 `data-pb-role` 与 `data-pb-id` 的节点。
+
+收敛版本的 Authoring lint 在 Runtime 前发现确定性违规和疑似 CSS-only 遗漏；Inspector 使用同一规则展示 Block、Warning 和 Info，不维护私有建议词表。当前实现差距见根 `plan.md`。
 
 ## Workbench Bridge
 
@@ -119,4 +125,3 @@ Evidence Viewer 可以按 Screen、Case 和 Fragment组织内容，但必须保�
 - Product slice：PBWork Runtime → Core Capture → Store → MCP。
 
 开发强规范见 [PBWork 开发规范](../pbwork/development.md)。
-

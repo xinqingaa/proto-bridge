@@ -19,15 +19,19 @@ PBWork Design Foundation / Components
 
 原型作者只能从 PBWork 的 Token、Theme、基础组件、复杂组件和共享手势中组装页面。没有对口组件时可以实现业务局部 UI，但设计量仍必须使用现有 Token，且不得复制已有组件职责。
 
+所有作者角色均通过 Coding Agent 修改同一套代码资产。DS 组件用业务 `inspectId` 进入 Evidence；需要独立实现或验收的业务局部节点必须显式提供 `data-pb-id`、`data-pb-role`、按需 `data-pb-key` 和 `data-pb-token-*`。只在 CSS 中使用 `--pb-*` 不会形成 Token binding Fact。
+
 每个进入 Evidence 闭环的 Screen 必须：
 
 - 在唯一 Registry 中声明稳定身份、路径、默认 Variant 和关键 Variant；
 - 为 default 与 critical Variant 声明 `requiredFragments`；
 - 用稳定 `data-pb-id`、可选 `data-pb-key` 和合法 `data-pb-role` 标记语义节点；
+- 为业务局部证据节点显式声明实现所需 Token binding；
 - 为关键交互声明 Action、Scenario 和 Checkpoint；
 - 能由 Runtime 确定性执行 describe、prepare、readiness、semantic snapshot 和 reset。
 
 完整规则见 [原型 Authoring Contract](../reference/prototype-authoring.md)。
+节点判定与阻断等级见[语义标记与证据门禁](../reference/semantic-authoring.md)。
 
 ## 2. 创建 Selection
 
@@ -115,5 +119,6 @@ Agent 通过 MCP：
 
 Target 查询与 Capture Evidence 互相隔离。目标仓库的既有组件和约定可以指导实现，但不能覆盖原型 Evidence 中的 unknown 或 conflict。
 
-详细对象关系见 [Evidence 模型](../architecture/evidence-model.md)，操作指南见 [PBWork 与 PB](../guides/pbwork-and-pb.md)和 [Agent 消费指南](../guides/agent-consumption.md)。
+Evidence 层面允许任意 Target；当前内置 Target query/validation 只支持 Flutter。新增 Kotlin、Swift、React Native 或其它 Adapter 时必须复用相同 Handoff 和 Evidence 读取纪律。
 
+详细对象关系见 [Evidence 模型](../architecture/evidence-model.md)，操作指南见 [PBWork 与 PB](../guides/pbwork-and-pb.md)和 [Agent 消费指南](../guides/agent-consumption.md)。

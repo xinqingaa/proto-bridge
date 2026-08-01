@@ -41,6 +41,7 @@ PBWork 有三个 UI 分区：
 - 使用组件公开 props/slots/events，不复制其样式或手势实现。
 - 页面必须遵守统一壳、导航、滚动、Overlay 和 Variant 规范。
 - 所有进入 Capture 的 Screen 遵守根 [Authoring Contract](../../../docs/reference/prototype-authoring.md)。
+- DS 业务实例使用业务 `inspectId`；业务局部证据节点显式声明 id、role、key 和 Token bindings，详见[语义标记与证据门禁](../../../docs/reference/semantic-authoring.md)。
 
 ## 5. Registry 与 Contract
 
@@ -54,6 +55,8 @@ Component 变更是一个原子工作单元：
 6. 修改测试。
 
 Screen 变更必须同步 Prototype Registry、required boundary、Action/Scenario 和 Runtime 测试。
+
+语义标记变更必须同步 Authoring Contract、语义门禁规范、prototype Skill、检查单和 authoring lint/Runtime tests。已确定属于交付范围的证据节点缺少标记时必须阻断；只能启发式判断的疑似遗漏应产生 warning。
 
 ## 6. Token 与 Theme
 

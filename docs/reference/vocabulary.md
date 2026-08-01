@@ -10,6 +10,7 @@
 | Screen | 可寻址、可复现、可声明 Variant 的页面身份 |
 | Variant | Screen 的稳定业务状态；Theme 不是 Variant |
 | Fragment | `screenId + pbId + optional pbKey` 标识的语义区域 |
+| Evidence-bearing node | 需要 Agent 独立实现、消费或验收，因而必须显式进入 Fragment/Fact 的节点 |
 | Action | Runtime 可确定性执行的原子交互 |
 | Scenario | 初始 Variant、Action 顺序和 Checkpoint 的组合 |
 | Checkpoint | Scenario 中要验证的实际 Screen/Variant 与 required Fragment |
@@ -31,6 +32,7 @@
 | Blob | 由 Snapshot/Catalog owner ref 管理的截图或调试数据 |
 | Evidence Level | Evidence 输入和可证明能力的等级 |
 | Target | Agent 要修改的独立目标仓库 |
+| Authoring lint | 对原型源码中的稳定身份、role、Token binding 和疑似遗漏执行的静态检查 |
 | provenance | Fact 的具体来源、采集方式和上下文 |
 | unknown | Evidence 没有证明的事实 |
 | conflict | 多个来源不能一致解释的事实 |

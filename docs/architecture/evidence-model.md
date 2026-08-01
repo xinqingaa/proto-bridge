@@ -66,6 +66,8 @@ Evidence revision 是 Case/Scope 的不可变观测结果，包含：
 
 revision 不包含目标工程实现建议。事实冲突必须并存并带来源，不能用优先级静默覆盖。
 
+节点 Token binding 必须区分 component contract、runtime registration 和 `data-pb` 来源；CSS 使用本身不是 binding Fact。语义节点规范见[语义标记与证据门禁](../reference/semantic-authoring.md)。
+
 ## Snapshot
 
 Snapshot 固定 Bundle 在一次提交后的读取视图：
@@ -78,6 +80,8 @@ Snapshot 固定 Bundle 在一次提交后的读取视图：
 - 创建该状态的 Run。
 
 active slot 的激活遵循防降级规则：失败、取消、低 Evidence Level 或 required boundary 不完整不能覆盖已有更可信 revision。零成功 Run 可以提交一个 carry-forward Snapshot，使 latest Attempt 和 Coverage 可追溯，同时保持旧 active Evidence。
+
+收敛版本中，正式 Handoff 所需的 Prototype、Screen、Component 和 Token Catalog 必须由 Snapshot 固定；缺少交付范围所需 Catalog 时不得把组件/Token 事实声明为完整。
 
 ## Catalog
 
@@ -140,4 +144,3 @@ Blob 保存 Screenshot、调试数据或目录附件。Blob 必须具有 owner r
 - Workspace 不匹配确定性失败；
 - Handoff 消费不回退 active/latest；
 - Store 文件布局不属于公共 Contract。
-

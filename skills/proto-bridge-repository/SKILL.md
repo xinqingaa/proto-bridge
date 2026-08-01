@@ -14,6 +14,7 @@ description: >-
 3. 按任务阅读：
    - Contract/Store → `docs/architecture/evidence-model.md`
    - Capture/Runtime → `docs/architecture/capture-pipeline.md`
+   - Semantic authoring/门禁 → `docs/reference/semantic-authoring.md`
    - CLI/MCP/Service → `docs/architecture/proto-bridge.md`
    - 文档 → `docs/maintenance/documentation.md`
 

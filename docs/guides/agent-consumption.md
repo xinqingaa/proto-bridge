@@ -63,6 +63,10 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 
 Target 结果是实现上下文，不是原型事实。它不能写回 Evidence，也不能覆盖 unknown 或 conflict。
 
+Evidence Contract 可以服务任意技术栈；当前表中的 Target tools 只实现 Flutter。非 Flutter 目标在对应 Adapter 落地前仍可消费固定 Evidence，但不能宣称已完成 PB Target query/validation 闭环。
+
+当 Handoff 范围依赖 PBWork Component 或 Token Fact 时，Agent 必须读取 Handoff/Snapshot 固定的 Catalog revision；Catalog 缺失或不能解析相关 ID 时应报告 Evidence 不完整，不得读取当前源码目录补造旧 Snapshot 的目录事实。
+
 ## 必须报告的风险
 
 - `partial-coverage`
@@ -100,4 +104,3 @@ Agent 最终至少报告：
 - `validate_target_changes` 结果；
 - 相对 Evidence 的已知偏差；
 - 尚未解决的 Evidence 或实现风险。
-

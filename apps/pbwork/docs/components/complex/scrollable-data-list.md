@@ -60,5 +60,4 @@
 1. 从 `@/design-system/components/complex/ScrollableDataList.vue` 引入。
 2. 与 `DataList` 分层组合；手势仲裁见 [shared-gestures.md](../shared-gestures.md)。
 3. 父级含本组件时设 `overflow: hidden`，保证唯一纵滚。
-4. 原型内建议传稳定 `inspectId`。
-
+4. 业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`；默认 `ds.*` 只用于 Playground、组件测试或非业务预览。

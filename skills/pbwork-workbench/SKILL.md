@@ -17,6 +17,7 @@ description: >-
 3. `apps/pbwork/docs/development.md`
 4. 修改 Evidence 展示时阅读 `docs/architecture/evidence-model.md`
 5. 修改 Capture 流程时阅读 `docs/architecture/capture-pipeline.md`
+6. 修改语义检查、Inspector 提示或 Preflight 门禁时阅读 `docs/reference/semantic-authoring.md`
 
 ## 组件边界
 
@@ -35,6 +36,7 @@ description: >-
 - 任务中心保留后台历史；Evidence Review 用于按需详情；交付进度默认留在 Deliver Sheet。
 - Evidence 可按 Screen/Case/Fragment 重组展示，但不改写 Store JSON。
 - fixed refs、provenance、unknown、conflict、Coverage、Issue 和 risks 始终可追溯。
+- 语义检查按权威规范区分 Block/Warning/Info；warning 接受不提升 Evidence，Block 不提供绕过入口。
 - Inspector 临时 handle 不能持久化；Fragment 使用稳定 identity。
 
 ## Bridge

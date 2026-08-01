@@ -2,6 +2,8 @@
 
 ProtoBridge（PB）是本地原型证据基础设施。它从遵循 PB Authoring Contract 的 Runtime 采集页面结构、状态、交互、截图和来源信息，将结果保存为不可变 Evidence，并通过 PBWork、CLI 和 MCP 交给 Coding Agent。
 
+PBWork 的原型、设计基础、组件和工作壳均是代码资产。产品、设计和开发人员通过 Cursor、Codex 等 Coding Agent 使用同一套仓库 Skill、Contract 和 CI 维护这些资产；当前产品不建设独立的可视化编辑器或面向作者的聊天入口。
+
 PB 的产品输出是 Evidence，不是目标工程实现计划。Agent 结合 Evidence 与目标仓库自身规范决定文件、组件、路由、状态管理、Token 和具体代码。
 
 ## 产品组成
@@ -19,7 +21,7 @@ PB 的产品输出是 Evidence，不是目标工程实现计划。Agent 结合 E
 
 PBWork 同时承担两个相互隔离的角色：
 
-1. **Workbench**：面向人的图形界面，用于浏览设计基础、制作和检查原型、选择采集范围、确认 Case Matrix、查看任务和 Review Evidence。
+1. **Workbench**：面向人的图形界面，用于浏览设计基础和 Agent 制作的原型、执行检查、选择采集范围、确认 Case Matrix、查看任务和 Review Evidence。
 2. **Runtime**：面向 PB Capture 的确定性页面环境，通过 authored Contract 声明 Screen、Variant、Fragment、Action、Scenario 和 Checkpoint。
 
 Workbench 不拥有第二套 Capture 语义。它把用户操作归一为 Core 的 Selection Draft，并通过 Local Service 调用同一套 Preflight、Capture、Store 和 Handoff 能力。CLI 也使用相同 Core，因此 GUI 与自动化入口不会产生不同的 Case、状态或引用规则。
@@ -43,7 +45,12 @@ PB 不负责：
 - 用源码启发式补造 Runtime 未证明的事实；
 - 把 warning、unknown、conflict 或 partial coverage 隐藏成成功；
 - 在 Handoff 消费时用 active/latest 替换固定引用；
-- 提供云端账号、多人审批或远程共享 Store。
+- 提供云端账号、多人审批或远程共享 Store；
+- 从未标记的 CSS/DOM 猜测作者希望独立实现的节点和 Token binding。
+
+## Target 能力边界
+
+Evidence Contract 不绑定 Flutter、Kotlin、Swift、React Native 或 Web，Agent 可以据此实现不同技术栈。当前内置 Target conventions、examples、change validation 和交付验证提示只完整支持 Flutter；其它 Target 需要新增独立 Adapter，但不得改变 Evidence 核心对象。
 
 ## 可信基础
 
@@ -55,4 +62,3 @@ PB 的可信度建立在四个约束上：
 - **Fixed consumption**：Handoff 固定所有正式引用，Agent 读取同一份已审查证据。
 
 术语见 [词汇表](../reference/vocabulary.md)，实现关系见 [系统架构](../architecture/overview.md)。
-

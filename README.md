@@ -13,6 +13,8 @@ PBWork Prototype + Runtime Contract
 
 PBWork 是 PB 的图形工作台、原型生产环境和 instrumented Runtime。PB 证明原型事实；Agent 结合目标仓库自身规范决定具体实现。
 
+PBWork 的 Token、组件、原型和工作壳都是代码资产；产品、设计和开发人员通过 Cursor、Codex 等 Coding Agent 遵守同一套仓库规范进行维护。
+
 ## 快速开始
 
 首次使用时初始化 Workspace；已有 `proto-bridge.json` 时跳过
@@ -67,9 +69,11 @@ pnpm pb -- deliver \
 - 在唯一 Registry 声明 Screen、Variant、Action 和 Scenario；
 - 为 default 与 critical Variant 声明 `requiredFragments`；
 - 提供稳定 `data-pb-id`、可选 `data-pb-key` 和合法 `data-pb-role`；
+- 为需要独立实现或验收的业务局部节点显式提供 `data-pb-token-*`，不得只依赖 CSS Token；
 - 能由真实 Runtime 确定性 prepare、readiness、snapshot、scenario 和 reset。
 
 详见 [原型 Authoring Contract](docs/reference/prototype-authoring.md)和 [PBWork 原型手册](apps/pbwork/docs/README.md)。
+节点 identity、role、component、Token Evidence 和阻断等级见[语义标记与证据门禁](docs/reference/semantic-authoring.md)。
 
 ## 验证
 

@@ -48,5 +48,4 @@
 1. 与 `BottomNavigation` 共用同一 `v-model`；手势先改 UI，URL replace 须节流。
 2. `swipe` / `mouseSwipe` 分离；仲裁见 [shared-gestures.md](../shared-gestures.md)。
 3. 壳与 history 见 [shell-and-nav.md](../../prototypes/shell-and-nav.md)；配方 R1。
-4. 传稳定 `inspectId`。
-
+4. 业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`；默认 `ds.*` 只用于 Playground、组件测试或非业务预览。

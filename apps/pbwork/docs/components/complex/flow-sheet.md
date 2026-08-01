@@ -16,7 +16,7 @@
 | Prop | 类型 | 默认 | 说明 |
 | --- | --- | --- | --- |
 | `title` | string | `分步面板` | |
-| `modelValue` | boolean | `false` | |
+| `modelValue` | boolean | `true` | |
 | `step` | number | `0` | 当前步（0-based） |
 | `stepCount` | number | `3` | |
 | `swipe` | boolean | `true` | 允许左右滑 |
@@ -26,6 +26,22 @@
 - **Slots**：`default`（每步一页）、`actions`
 - **Events**：`update:modelValue`、`update:step`
 
+## States
+
+- `step-one`：第一步，`step=0`、`stepCount=3`
+- `step-two`：第二步，`step=1`、`stepCount=3`
+
 ## tokenBindings
 
-与 Bottom Sheet 一致：`surface` / `border` / `radius` / `elevation` / `title` / `body`。
+| 槽 | Token |
+| --- | --- |
+| `surface` | `color.surface` |
+| `border` | `color.border` |
+| `radius` | `radius.lg` |
+| `elevation` | `elevation.raised` |
+| `title` | `typography.subtitle` |
+| `body` | `typography.content` |
+
+## 使用检查
+
+业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`；默认 `ds.*` 只用于 Playground、组件测试或非业务预览。
