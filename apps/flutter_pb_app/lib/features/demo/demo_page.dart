@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:unified_popups/unified_popups.dart';
 
 import '../../common/overlay/app_pop.dart';
 import '../../theme/ts.dart';
@@ -135,7 +136,13 @@ class _DemoPageState extends ConsumerState<DemoPage> {
               ),
               CommonIconButton(
                 icon: Icons.add,
+                tooltip: '新增',
                 onPressed: () {},
+              ),
+              const CommonIconButton(
+                icon: Icons.add,
+                tooltip: '加载中',
+                loading: true,
               ),
             ],
           ),
@@ -231,6 +238,7 @@ class _DemoPageState extends ConsumerState<DemoPage> {
               label: '选择',
               value: _selectValue,
               options: _selectOptions,
+              clearable: true,
               implementation: CommonSelectImplementation.dropMenu,
               onChanged: (v) => setState(() => _selectValue = v),
             ),
@@ -359,7 +367,121 @@ class _DemoPageState extends ConsumerState<DemoPage> {
             );
           },
         ),
+        SizedBox(height: TS.spacing.sm),
+        CommonButton(
+          label: 'Loading',
+          block: true,
+          variant: CommonButtonVariant.tonal,
+          tone: CommonButtonTone.secondary,
+          onPressed: () async {
+            await AppPop.runLoading(
+              message: '提交中',
+              task: Future<void>.delayed(const Duration(milliseconds: 1200)),
+            );
+            AppPop.success('已完成');
+          },
+        ),
+        SizedBox(height: TS.spacing.sm),
+        CommonButton(
+          label: 'FlowSheet',
+          block: true,
+          variant: CommonButtonVariant.outlined,
+          tone: CommonButtonTone.secondary,
+          onPressed: () async {
+            final controller = FlowSheetController<String>();
+            final result = await AppPop.flowSheet<String>(
+              controller: controller,
+              title: '分步面板',
+              initialPage: _DemoFlowStepOne(controller: controller),
+            );
+            if (result != null) {
+              AppPop.success('完成：$result');
+            }
+          },
+        ),
       ],
+    );
+  }
+}
+
+class _DemoFlowStepOne extends FlowSheetPage<void> {
+  const _DemoFlowStepOne({required this.controller})
+      : super(id: 'demo_flow_step_1');
+
+  final FlowSheetController<String> controller;
+
+  @override
+  State<_DemoFlowStepOne> createState() => _DemoFlowStepOneState();
+}
+
+class _DemoFlowStepOneState
+    extends FlowSheetPageState<_DemoFlowStepOne, void> {
+  @override
+  Widget build(BuildContext context) {
+    TS.of(context);
+    return Padding(
+      padding: EdgeInsets.all(TS.spacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('第一步', style: TS.textStyle.subtitle),
+          SizedBox(height: TS.spacing.sm),
+          Text('对齐 FlowSheet 多步面板', style: TS.textStyle.content),
+          const Spacer(),
+          CommonButton(
+            label: '下一步',
+            block: true,
+            onPressed: () {
+              nav.push<void>(
+                _DemoFlowStepTwo(controller: widget.controller),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DemoFlowStepTwo extends FlowSheetPage<void> {
+  const _DemoFlowStepTwo({required this.controller})
+      : super(id: 'demo_flow_step_2', maintainState: true);
+
+  final FlowSheetController<String> controller;
+
+  @override
+  State<_DemoFlowStepTwo> createState() => _DemoFlowStepTwoState();
+}
+
+class _DemoFlowStepTwoState
+    extends FlowSheetPageState<_DemoFlowStepTwo, void> {
+  @override
+  Widget build(BuildContext context) {
+    TS.of(context);
+    return Padding(
+      padding: EdgeInsets.all(TS.spacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('第二步', style: TS.textStyle.subtitle),
+          SizedBox(height: TS.spacing.sm),
+          Text('可返回上一步或完成流程', style: TS.textStyle.content),
+          const Spacer(),
+          CommonButton(
+            label: '返回',
+            block: true,
+            variant: CommonButtonVariant.outlined,
+            tone: CommonButtonTone.primary,
+            onPressed: nav.pop,
+          ),
+          SizedBox(height: TS.spacing.sm),
+          CommonButton(
+            label: '完成',
+            block: true,
+            onPressed: () => widget.controller.closeAll('已确认'),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -7,10 +7,10 @@ abstract final class AppRoutes {
   static const demo = '/demo';
   static const fieldService = '/prototypes/field-service';
   static const ledgerPlanet = '/prototypes/ledger-planet';
-  static const ledgerPlanetTaskDetail =
-      '/prototypes/ledger-planet/task-detail';
+  static const ledgerPlanetTaskDetail = '/prototypes/ledger-planet/task-detail';
   static const ledgerPlanetV2 = '/prototypes/ledger-planet-v2';
   static const ledgerPlanetV2TaskDetail =
       '/prototypes/ledger-planet-v2/task-detail';
   static const coldChain = '/prototypes/cold-chain';
+  static const coldChainV2 = '/prototypes/cold-chain-v2';
 }

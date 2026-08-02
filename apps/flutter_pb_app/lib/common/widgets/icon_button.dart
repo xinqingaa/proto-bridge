@@ -4,6 +4,8 @@ import '../../theme/ts.dart';
 import 'button.dart';
 
 /// 对齐 pbwork `IconButton` — 官方 [IconButton]。
+///
+/// [loading] 时用转圈替换图标并禁用点击，对齐原型与 [CommonButton.loading]。
 class CommonIconButton extends StatelessWidget {
   const CommonIconButton({
     super.key,
@@ -13,6 +15,7 @@ class CommonIconButton extends StatelessWidget {
     this.size = CommonControlSize.md,
     this.tone = CommonButtonTone.secondary,
     this.variant = CommonButtonVariant.tonal,
+    this.loading = false,
     this.disabled = false,
   });
 
@@ -22,7 +25,10 @@ class CommonIconButton extends StatelessWidget {
   final CommonControlSize size;
   final CommonButtonTone tone;
   final CommonButtonVariant variant;
+  final bool loading;
   final bool disabled;
+
+  bool get _enabled => !disabled && !loading && onPressed != null;
 
   double get _iconSize {
     switch (size) {
@@ -85,7 +91,7 @@ class CommonIconButton extends StatelessWidget {
         : _color;
 
     return IconButton(
-      onPressed: disabled ? null : onPressed,
+      onPressed: _enabled ? onPressed : null,
       tooltip: tooltip,
       iconSize: _iconSize,
       style: IconButton.styleFrom(
@@ -95,7 +101,16 @@ class CommonIconButton extends StatelessWidget {
             ? BorderSide(color: _color)
             : null,
       ),
-      icon: Icon(icon),
+      icon: loading
+          ? SizedBox(
+              width: _iconSize,
+              height: _iconSize,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: fg,
+              ),
+            )
+          : Icon(icon),
     );
   }
 }

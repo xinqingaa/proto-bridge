@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -12,6 +13,25 @@ void main() {
     expect(find.text('Field Service'), findsOneWidget);
     expect(find.text('Ledger Planet'), findsOneWidget);
     expect(find.text('Ledger Planet V2'), findsOneWidget);
+    await tester.drag(find.byType(ListView), const Offset(0, -400));
+    await tester.pumpAndSettle();
+    expect(find.text('冷链异常 V2'), findsOneWidget);
+  });
+
+  testWidgets('Cold Chain V2 opens from Hub', (tester) async {
+    await tester.pumpWidget(const ProviderScope(child: PbApp()));
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.byType(ListView), const Offset(0, -400));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('冷链异常 V2'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('冷链异常 V2'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('冷链异常'), findsOneWidget);
+    expect(find.text('当前风险'), findsOneWidget);
+    expect(find.text('仅看严重异常'), findsOneWidget);
   });
 
   testWidgets('Ledger Planet task list opens claimable detail', (tester) async {
@@ -37,8 +57,9 @@ void main() {
     expect(find.text('1/1'), findsOneWidget);
   });
 
-  testWidgets('Ledger Planet V2 task list opens claimable detail',
-      (tester) async {
+  testWidgets('Ledger Planet V2 task list opens claimable detail', (
+    tester,
+  ) async {
     await tester.pumpWidget(const ProviderScope(child: PbApp()));
     await tester.pumpAndSettle();
 

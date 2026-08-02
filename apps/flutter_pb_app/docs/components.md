@@ -1,6 +1,6 @@
 # 公共组件
 
-公共组件位于 `lib/common/widgets/`，统一从 `widgets.dart` 导入。组件负责稳定的交互语义、尺寸和 Theme 映射；业务页面只传入数据、状态和回调。
+公共组件位于 `lib/common/widgets/`，统一从 `widgets.dart` 导入。组件负责稳定的交互语义、尺寸和 Theme 映射；业务页面只传入数据、状态和回调。弹层统一走 `lib/common/overlay/app_pop.dart` 的 `AppPop`。
 
 ## 组件职责
 
@@ -12,23 +12,36 @@
 | `CommonBadge` | 只读状态或严重度标签；不承担选择交互 |
 | `CommonChip` | 轻量标签或可点击的短选项；不能代替状态 Badge |
 | `CommonFilterBar` | 横向筛选项和可选筛选动作；需要稳定滚动和选中状态 |
-| `CommonDataList` | 不需要刷新控制的列表容器 |
-| `CommonScrollableDataList` | 需要下拉刷新、加载更多或 footer 的列表容器 |
-| `CommonSearchBar` | 搜索输入、提交和搜索图标 |
-| `CommonSelect` | 单选下拉；支持默认 Dropdown 和 AppPop 菜单两种实现 |
+| `CommonDataList` | 列表外观容器：分隔、inset、surface、圆角与阴影 |
+| `CommonScrollableDataList` | 下拉刷新、加载更多；刷新头为文案 + Spinner（非水滴） |
+| `CommonSearchBar` | 搜索输入、提交、清除 |
+| `CommonSelect` | 单选下拉；支持清除、加载中、错误文案；Dropdown / AppPop 两种实现 |
 | `CommonTextField` | 单行文本输入 |
 | `CommonTextArea` | 多行文本输入 |
 | `CommonRadioGroup` | 互斥选项集合 |
 | `CommonCheckbox` | 独立勾选项 |
 | `CommonSwitch` | 二值开关设置；不能用 Checkbox 静默替代 |
 | `CommonButton` | 主要、次要、危险和加载动作 |
-| `CommonIconButton` | 单图标动作，必须提供 tooltip |
+| `CommonIconButton` | 单图标动作（含 loading）；必须提供 tooltip |
 | `CommonTabs` / `CommonTabView` | 同一页面内的互斥视图切换 |
 | `CommonEmptyState` | 空数据或未配置状态 |
 | `CommonSpinner` / `CommonProgress` | 加载指示和进度展示 |
 | `CommonDivider` | 语义分隔线 |
 | `CommonAvatar` | 人员或主体头像/首字母 |
-| `CommonBottomNav` | 顶级页面导航 |
+| `CommonBottomNav` | 顶级页面导航；支持 icon-label / icon / label、顶部指示条、抬升 |
+
+## AppPop 弹层
+
+| 方法 | 对齐 |
+| --- | --- |
+| `toast` / `success` / `error` / `warn` | SnackbarToast |
+| `confirm` | DialogPanel |
+| `sheet` | BottomSheet |
+| `flowSheet` | FlowSheet（多步页面栈） |
+| `loading` / `hideLoading` / `runLoading` | 全局阻塞 Loading |
+| `menu` / `dropMenu` | 锚定菜单 / Select 备选 |
+
+业务代码只调 `AppPop`，不直接调 `Pop`。
 
 ## 重要语义边界
 

@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:pull_to_refresh_flutter3/pull_to_refresh_flutter3.dart';
 
 import '../../theme/ts.dart';
+import 'button.dart';
 import 'spinner.dart';
 
 /// 对齐 pbwork `ScrollableDataList` — [ListView] + pull_to_refresh。
+///
+/// 刷新头对齐原型：下拉刷新 / 松开刷新 / 正在刷新 + Spinner，不用水滴动画。
 class CommonScrollableDataList extends StatefulWidget {
   const CommonScrollableDataList({
     super.key,
@@ -71,6 +74,9 @@ class _CommonScrollableDataListState extends State<CommonScrollableDataList> {
   Widget build(BuildContext context) {
     TS.of(context);
     final enablePullUp = widget.onLoadMore != null;
+    final muted = TS.colors.onSurfaceMuted;
+    final primary = TS.colors.primary;
+    final caption = TS.textStyle.caption;
 
     return SmartRefresher(
       controller: _controller,
@@ -78,20 +84,45 @@ class _CommonScrollableDataListState extends State<CommonScrollableDataList> {
       enablePullUp: enablePullUp,
       onRefresh: widget.onRefresh == null ? null : _onRefresh,
       onLoading: enablePullUp ? _onLoading : null,
-      header: WaterDropHeader(
-        waterDropColor: TS.colors.primary,
-        complete: Icon(Icons.check, color: TS.colors.success),
+      header: ClassicHeader(
+        height: 52,
+        spacing: TS.spacing.xs,
+        textStyle: caption.copyWith(color: muted),
+        idleText: '下拉刷新',
+        releaseText: '松开刷新',
+        refreshingText: '正在刷新',
+        completeText: '刷新完成',
+        failedText: '刷新失败',
+        idleIcon: Icon(Icons.refresh, size: TS.sizing.iconSm, color: muted),
+        releaseIcon: Icon(Icons.refresh, size: TS.sizing.iconSm, color: primary),
+        completeIcon:
+            Icon(Icons.check, size: TS.sizing.iconSm, color: TS.colors.success),
+        failedIcon:
+            Icon(Icons.error_outline, size: TS.sizing.iconSm, color: TS.colors.error),
+        refreshingIcon: SizedBox(
+          width: TS.sizing.iconSm,
+          height: TS.sizing.iconSm,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: primary,
+          ),
+        ),
       ),
       footer: CustomFooter(
         builder: (context, mode) {
           if (mode == LoadStatus.loading) {
-            return const Center(child: CommonSpinner());
+            return Padding(
+              padding: EdgeInsets.symmetric(vertical: TS.spacing.md),
+              child: const Center(
+                child: CommonSpinner(size: CommonControlSize.sm),
+              ),
+            );
           }
           if (mode == LoadStatus.noMore) {
             return Padding(
               padding: EdgeInsets.all(TS.spacing.md),
               child: Center(
-                child: Text('没有更多了', style: TS.textStyle.caption),
+                child: Text('没有更多了', style: caption.copyWith(color: muted)),
               ),
             );
           }

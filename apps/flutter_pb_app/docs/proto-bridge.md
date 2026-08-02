@@ -16,13 +16,22 @@
 | `filter-bar` | `CommonFilterBar` | `common/widgets/widgets.dart` |
 | `scrollable-data-list` | `CommonScrollableDataList` | `common/widgets/widgets.dart` |
 | `data-list` | `CommonDataList` | `common/widgets/widgets.dart` |
-| `search` | `CommonSearchBar` | `common/widgets/widgets.dart` |
+| `search` / `search-bar` | `CommonSearchBar` | `common/widgets/widgets.dart` |
 | `select` / `select-field` | `CommonSelect` | `common/widgets/widgets.dart` |
 | `textarea` | `CommonTextArea` | `common/widgets/widgets.dart` |
 | `radio-group` | `CommonRadioGroup` | `common/widgets/widgets.dart` |
 | `checkbox` | `CommonCheckbox` | `common/widgets/widgets.dart` |
 | `switch-control` | `CommonSwitch` | `common/widgets/widgets.dart` |
 | `button` | `CommonButton` | `common/widgets/widgets.dart` |
+| `icon-button` | `CommonIconButton` | `common/widgets/widgets.dart` |
+| `tabs` | `CommonTabs` | `common/widgets/widgets.dart` |
+| `tab-viewport` | `CommonTabView` | `common/widgets/widgets.dart` |
+| `bottom-navigation` | `CommonBottomNav` | `common/widgets/widgets.dart` |
+| `empty-state` | `CommonEmptyState` | `common/widgets/widgets.dart` |
+| `dialog` | `AppPop.confirm` | `common/overlay/app_pop.dart` |
+| `bottom-sheet` | `AppPop.sheet` | `common/overlay/app_pop.dart` |
+| `flow-sheet` | `AppPop.flowSheet` | `common/overlay/app_pop.dart` |
+| `snackbar` | `AppPop.toast` | `common/overlay/app_pop.dart` |
 
 该表是目标工程自己的适配契约，不应被 ProtoBridge 核心代码硬编码到其他目标工程。
 

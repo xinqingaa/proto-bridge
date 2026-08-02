@@ -6,8 +6,10 @@ import 'package:unified_popups/unified_popups.dart';
 /// 对齐 pbwork：
 /// - DialogPanel → [confirm]
 /// - BottomSheet → [sheet]
+/// - FlowSheet → [flowSheet]
 /// - SnackbarToast → [toast]
-/// - Select 备选 → [menu]
+/// - Loading → [loading] / [hideLoading]
+/// - Select 备选 → [menu] / [dropMenu]
 abstract final class AppPop {
   static void toast(
     String message, {
@@ -24,6 +26,46 @@ abstract final class AppPop {
   static void error(String message) => toast(message, type: ToastType.error);
 
   static void warn(String message) => toast(message, type: ToastType.warn);
+
+  /// 全局阻塞 Loading；[message] 为空时仅显示转圈。
+  ///
+  /// 传入 [until] 时，Future settled 后自动关闭（异常仍由调用方处理）。
+  static void loading({
+    String? message,
+    Future<void>? until,
+  }) {
+    if (message == null || message.isEmpty) {
+      Pop.loading(
+        LoadingConfig.indicator(
+          lifetime: until == null
+              ? const PopupLifetime.manual()
+              : PopupLifetime.until(until),
+        ),
+      );
+      return;
+    }
+    Pop.loading(
+      LoadingConfig.text(
+        message,
+        lifetime: until == null
+            ? const PopupLifetime.manual()
+            : PopupLifetime.until(until),
+      ),
+    );
+  }
+
+  /// 关闭全局 Loading。
+  static Future<void> hideLoading() => Pop.hideLoading();
+
+  /// 跑异步任务并自动展示 / 关闭 Loading。
+  static Future<T> runLoading<T>({
+    String message = '加载中',
+    required Future<T> task,
+  }) async {
+    final settled = task.then<void>((_) {});
+    loading(message: message, until: settled);
+    return task;
+  }
 
   /// 对齐 pbwork DialogPanel / confirm。
   static Future<bool> confirm({
@@ -57,6 +99,36 @@ abstract final class AppPop {
           showCloseButton: title != null && showCloseButton,
         ),
         builder: builder,
+      ),
+    ).result;
+  }
+
+  /// 对齐 pbwork FlowSheet — 多步底部面板（内嵌页面栈）。
+  ///
+  /// 每次调用应新建 [FlowSheetController]；不要复用已关闭的实例。
+  static Future<R?> flowSheet<R>({
+    required FlowSheetController<R> controller,
+    required FlowSheetPage initialPage,
+    String? title,
+    bool showCloseButton = true,
+    SheetSizeConfig size = const SheetSizeConfig(
+      maxHeight: SheetDimension.fraction(0.9),
+    ),
+    SheetDragConfig drag = const SheetDragConfig(
+      mode: SheetDragDismissMode.handleOnly,
+    ),
+  }) {
+    return Pop.flowSheet<R>(
+      FlowSheetConfig<R>(
+        controller: controller,
+        initialPage: initialPage,
+        header: SheetHeaderConfig(
+          title: title,
+          showCloseButton: title != null && showCloseButton,
+        ),
+        size: size,
+        drag: drag,
+        barrier: const PopupBarrierConfig(dismissible: true),
       ),
     ).result;
   }

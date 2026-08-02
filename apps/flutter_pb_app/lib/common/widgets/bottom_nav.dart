@@ -16,55 +16,136 @@ class CommonBottomNavItem {
   final IconData? activeIcon;
 }
 
-/// 对齐 pbwork `BottomNavigation` — 官方 [BottomNavigationBar]（主视图底部 Tab）。
+/// 对齐 pbwork BottomNavigation `display`。
+enum CommonBottomNavDisplay { iconLabel, icon, label }
+
+/// 对齐 pbwork `BottomNavigation`。
+///
+/// 支持展示模式、顶部选中指示条、抬升阴影。
 class CommonBottomNav extends StatelessWidget {
   const CommonBottomNav({
     super.key,
     required this.items,
     required this.currentIndex,
     required this.onTap,
+    this.display = CommonBottomNavDisplay.iconLabel,
+    this.showIndicator = true,
+    this.elevated = true,
   });
 
   final List<CommonBottomNavItem> items;
   final int currentIndex;
   final ValueChanged<int> onTap;
+  final CommonBottomNavDisplay display;
+  final bool showIndicator;
+  final bool elevated;
 
   @override
   Widget build(BuildContext context) {
     TS.of(context);
-    // 不强制固定高度：Material 底栏 icon+label 所需高度常 > sizing.bottomNavigation(64)，
-    // 硬套 SizedBox 会导致 RenderFlex / 文本溢出。
-    final labelStyle = TS.textStyle.caption.copyWith(
-      fontSize: 11,
-      height: 1.1,
-    );
-    final selectedStyle = TS.textStyle.captionStrong.copyWith(
-      fontSize: 11,
-      height: 1.1,
-    );
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
 
-    return BottomNavigationBar(
-      currentIndex: currentIndex,
-      onTap: onTap,
-      type: BottomNavigationBarType.fixed,
-      backgroundColor: TS.colors.surface,
-      selectedItemColor: TS.colors.primary,
-      unselectedItemColor: TS.colors.onSurfaceMuted,
-      selectedFontSize: 11,
-      unselectedFontSize: 11,
-      selectedLabelStyle: selectedStyle,
-      unselectedLabelStyle: labelStyle,
-      items: [
-        for (final item in items)
-          BottomNavigationBarItem(
-            icon: Icon(item.icon, size: TS.sizing.iconLg),
-            activeIcon: Icon(
-              item.activeIcon ?? item.icon,
-              size: TS.sizing.iconLg,
-            ),
-            label: item.label,
+    return Material(
+      color: TS.colors.surfaceRaised,
+      elevation: elevated ? TS.elevation.level3 : TS.elevation.none,
+      shadowColor: Colors.black26,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(color: TS.colors.border, width: 0.5),
           ),
-      ],
+        ),
+        child: Padding(
+          padding: EdgeInsets.only(bottom: bottomInset),
+          child: SizedBox(
+            height: TS.sizing.bottomNavigation,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final itemWidth = constraints.maxWidth / items.length;
+                final indicatorWidth = itemWidth * 0.36;
+
+                return Stack(
+                  children: [
+                    Row(
+                      children: [
+                        for (var i = 0; i < items.length; i++)
+                          Expanded(
+                            child: _NavTile(
+                              item: items[i],
+                              selected: i == currentIndex,
+                              display: display,
+                              onTap: () => onTap(i),
+                            ),
+                          ),
+                      ],
+                    ),
+                    if (showIndicator)
+                      AnimatedPositioned(
+                        duration: TS.motion.durationNormal,
+                        curve: Curves.easeOut,
+                        top: 0,
+                        left: itemWidth * currentIndex +
+                            (itemWidth - indicatorWidth) / 2,
+                        width: indicatorWidth,
+                        height: 3,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: TS.colors.primary,
+                            borderRadius:
+                                BorderRadius.circular(TS.radius.full),
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavTile extends StatelessWidget {
+  const _NavTile({
+    required this.item,
+    required this.selected,
+    required this.display,
+    required this.onTap,
+  });
+
+  final CommonBottomNavItem item;
+  final bool selected;
+  final CommonBottomNavDisplay display;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color =
+        selected ? TS.colors.primary : TS.colors.onSurfaceMuted;
+    final showIcon = display != CommonBottomNavDisplay.label;
+    final showLabel = display != CommonBottomNavDisplay.icon;
+    final labelStyle = (selected
+            ? TS.textStyle.captionStrong
+            : TS.textStyle.caption)
+        .copyWith(fontSize: 11, height: 1.1, color: color);
+
+    return InkWell(
+      onTap: onTap,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (showIcon)
+            Icon(
+              selected ? (item.activeIcon ?? item.icon) : item.icon,
+              size: TS.sizing.iconLg,
+              color: color,
+            ),
+          if (showIcon && showLabel) SizedBox(height: TS.spacing.xxs),
+          if (showLabel) Text(item.label, style: labelStyle),
+        ],
+      ),
     );
   }
 }
