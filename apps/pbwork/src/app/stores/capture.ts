@@ -6,12 +6,8 @@ import type {
   RiskKind,
   StalenessReport,
 } from "@proto-bridge/core/v2";
-import { buildAgentPrompt } from "@proto-bridge/core/v2/agent-prompt";
-import type {
-  ScenarioSelection,
-  SelectionDraft,
-  VariantSelection,
-} from "@proto-bridge/core/v2/capture";
+import { buildAgentPrompt } from "@proto-bridge/core/v2/prompts/agent-prompt";
+import type { SelectionDraft } from "@proto-bridge/core/v2/capture";
 import type {
   BundleEvidenceDetails,
   CaptureConsoleState,
@@ -102,27 +98,33 @@ function defaultScope(fragments: FragmentRef[] = []) {
   };
 }
 
-function criticalScenarios(screenId: string): ScenarioSelection {
-  const scenarioIds =
-    loadPrototypeScreens()
-      .find((screen) => screen.screenId === screenId)
-      ?.scenarios?.filter((scenario) => scenario.critical)
-      .map((scenario) => scenario.id) ?? [];
-  return scenarioIds.length
-    ? { mode: "explicit", scenarioIds }
-    : { mode: "none" };
+function allSelections(screenId: string) {
+  const screen = loadPrototypeScreens().find(
+    (candidate) => candidate.screenId === screenId,
+  );
+  const scenarioIds = screen?.scenarios?.map((scenario) => scenario.id) ?? [];
+  return {
+    variants: {
+      mode: "explicit" as const,
+      variantIds: screen?.variants.map((variant) => variant.id) ?? [],
+    },
+    scenarios: scenarioIds.length
+      ? { mode: "explicit" as const, scenarioIds }
+      : { mode: "none" as const },
+  };
 }
 
 function currentScreenDraft(input: CurrentScreenInput): SelectionDraft {
+  const selections = allSelections(input.screenId);
   return {
     prototypeId: input.prototypeId,
     screens: [
       {
         screenId: input.screenId,
-        variants: { mode: "explicit", variantIds: [input.variantId] },
+        variants: selections.variants,
         themeIds: [input.themeId],
         deviceIds: [input.deviceId],
-        scenarios: criticalScenarios(input.screenId),
+        scenarios: selections.scenarios,
         captureScope: defaultScope(),
       },
     ],
@@ -324,10 +326,9 @@ export const useCaptureStore = defineStore("capture-v2", {
         screens: [
           {
             screenId: first.screenId,
-            variants: { mode: "default" },
+            ...allSelections(first.screenId),
             themeIds: [prototype.defaultThemeId],
             deviceIds: ["iphone-14"],
-            scenarios: { mode: "none" },
             captureScope: defaultScope(),
           },
         ],
@@ -349,10 +350,9 @@ export const useCaptureStore = defineStore("capture-v2", {
           .filter((screen) => screen.prototypeId === prototypeId)
           .map((screen) => ({
             screenId: screen.screenId,
-            variants: { mode: "default" as const },
+            ...allSelections(screen.screenId),
             themeIds: [prototype.defaultThemeId],
             deviceIds: ["iphone-14"],
-            scenarios: { mode: "none" as const },
             captureScope: defaultScope(),
           })),
         acceptedWarningIds: [],
@@ -375,42 +375,11 @@ export const useCaptureStore = defineStore("capture-v2", {
         );
         this.draft.screens.push({
           screenId,
-          variants: { mode: "default" },
+          ...allSelections(screenId),
           themeIds: [prototype?.defaultThemeId ?? "light"],
           deviceIds: ["iphone-14"],
-          scenarios: { mode: "none" },
           captureScope: defaultScope(),
         });
-      }
-      this.invalidatePreflight();
-    },
-    setVariantMode(screenId: string, mode: VariantSelection["mode"]) {
-      const screen = this.draft?.screens.find(
-        (candidate) => candidate.screenId === screenId,
-      );
-      if (!screen) return;
-      if (mode === "explicit") {
-        const record = loadPrototypeScreens().find(
-          (candidate) => candidate.screenId === screenId,
-        );
-        screen.variants = {
-          mode: "explicit",
-          variantIds: [record?.defaultVariantId ?? "default"],
-        };
-      } else {
-        screen.variants = { mode };
-      }
-      this.invalidatePreflight();
-    },
-    setScenarioMode(screenId: string, mode: ScenarioSelection["mode"]) {
-      const screen = this.draft?.screens.find(
-        (candidate) => candidate.screenId === screenId,
-      );
-      if (!screen) return;
-      if (mode === "explicit") {
-        screen.scenarios = criticalScenarios(screenId);
-      } else {
-        screen.scenarios = { mode };
       }
       this.invalidatePreflight();
     },
@@ -422,23 +391,7 @@ export const useCaptureStore = defineStore("capture-v2", {
         (candidate) => candidate.screenId === screenId,
       );
       if (!screen || !record) return;
-      const current =
-        screen.variants.mode === "explicit"
-          ? screen.variants.variantIds
-          : record.variants
-              .filter((variant) => {
-                if (screen.variants.mode === "all") return true;
-                if (screen.variants.mode === "critical") {
-                  return variant.critical;
-                }
-                if (screen.variants.mode === "default-and-critical") {
-                  return (
-                    variant.id === record.defaultVariantId || variant.critical
-                  );
-                }
-                return variant.id === record.defaultVariantId;
-              })
-              .map((variant) => variant.id);
+      const current = screen.variants.variantIds;
       const variantIds = selected
         ? [...new Set([...current, variantId])]
         : current.filter((item) => item !== variantId);
@@ -460,13 +413,7 @@ export const useCaptureStore = defineStore("capture-v2", {
       const current =
         screen.scenarios.mode === "explicit"
           ? screen.scenarios.scenarioIds
-          : screen.scenarios.mode === "all"
-            ? (record.scenarios ?? []).map((scenario) => scenario.id)
-            : screen.scenarios.mode === "critical"
-              ? (record.scenarios ?? [])
-                  .filter((scenario) => scenario.critical)
-                  .map((scenario) => scenario.id)
-              : [];
+          : [];
       const scenarioIds = selected
         ? [...new Set([...current, scenarioId])]
         : current.filter((item) => item !== scenarioId);
@@ -479,31 +426,6 @@ export const useCaptureStore = defineStore("capture-v2", {
       if (!this.draft) return;
       this.draft.screens.forEach((screen) => {
         screen.captureScope.sourcePolicy = enabled;
-      });
-      this.invalidatePreflight();
-    },
-    setAllVariantMode(mode: VariantSelection["mode"]) {
-      if (!this.draft) return;
-      this.draft.screens.forEach((screen) => {
-        if (mode === "explicit") {
-          const record = loadPrototypeScreens().find(
-            (candidate) => candidate.screenId === screen.screenId,
-          );
-          screen.variants = {
-            mode: "explicit",
-            variantIds: [record?.defaultVariantId ?? "default"],
-          };
-        } else {
-          screen.variants = { mode };
-        }
-      });
-      this.invalidatePreflight();
-    },
-    setAllScenarioMode(mode: ScenarioSelection["mode"]) {
-      if (!this.draft) return;
-      this.draft.screens.forEach((screen) => {
-        screen.scenarios =
-          mode === "explicit" ? criticalScenarios(screen.screenId) : { mode };
       });
       this.invalidatePreflight();
     },
@@ -729,9 +651,8 @@ export const useCaptureStore = defineStore("capture-v2", {
     },
     async previewDeleteBundles(bundleIds: string[]) {
       try {
-        this.deletePlan = await captureServiceClient.planDeleteBundles(
-          bundleIds,
-        );
+        this.deletePlan =
+          await captureServiceClient.planDeleteBundles(bundleIds);
       } catch (error) {
         this.setError(error);
       }

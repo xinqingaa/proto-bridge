@@ -71,10 +71,10 @@ test("V2 Runtime protocol captures default, stable repeated rows, Scenario Check
       screen.screenId === "ledger-planet.task-list",
   );
   expect(
-    taskList.variants
-      .filter((variant: { critical: boolean }) => variant.critical)
-      .map((variant: { variantId: string }) => variant.variantId),
-  ).toEqual(["default"]);
+    taskList.variants.map(
+      (variant: { variantId: string }) => variant.variantId,
+    ),
+  ).toEqual(["default", "empty"]);
   expect(
     taskList.variants.find(
       (variant: { variantId: string }) => variant.variantId === "default",
@@ -523,7 +523,7 @@ test("cold-chain-ops satisfies every authored Variant and required Scenario boun
   }
 });
 
-test("Core Playwright orchestrator commits default, critical, Fragment and Scenario Evidence to the V2 Store", async ({
+test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenario Evidence to the V2 Store", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -565,7 +565,12 @@ test("Core Playwright orchestrator commits default, critical, Fragment and Scena
     screens: [
       {
         screenId: "ledger-planet.task-list",
-        variants: { mode: "default-and-critical" },
+        variants: {
+          mode: "explicit",
+          variantIds: manifest.screens[0]!.variants.map(
+            (variant) => variant.variantId,
+          ),
+        },
         themeIds: ["light"],
         deviceIds: ["iphone-14"],
         scenarios: {
@@ -587,7 +592,7 @@ test("Core Playwright orchestrator commits default, critical, Fragment and Scena
     screens: [
       {
         screenId: "ledger-planet.task-list",
-        variants: { mode: "default" },
+        variants: { mode: "explicit", variantIds: ["default"] },
         themeIds: ["light"],
         deviceIds: ["iphone-14"],
         scenarios: { mode: "none" },
@@ -875,7 +880,7 @@ test("Core Playwright orchestrator commits default, critical, Fragment and Scena
       screens: [
         {
           screenId: "ledger-planet.task-list",
-          variants: { mode: "default" },
+          variants: { mode: "explicit", variantIds: ["default"] },
           themeIds: ["light"],
           deviceIds: ["iphone-14"],
           scenarios: { mode: "none" },
@@ -951,7 +956,7 @@ test("Core Playwright orchestrator commits default, critical, Fragment and Scena
       screens: [
         {
           screenId: "ledger-planet.analytics",
-          variants: { mode: "default" },
+          variants: { mode: "explicit", variantIds: ["default"] },
           themeIds: ["light"],
           deviceIds: ["iphone-14"],
           scenarios: { mode: "none" },

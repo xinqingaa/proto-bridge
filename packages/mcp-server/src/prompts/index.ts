@@ -1,6 +1,6 @@
 import type { JsonObject, JsonValue } from '../types.js';
 import { readObject, readString } from '../utils/args.js';
-import { buildAgentPrompt } from '@proto-bridge/core/v2/agent-prompt';
+import { buildAgentPrompt } from '@proto-bridge/core/v2/prompts/agent-prompt';
 
 const promptDefinitions = [
   {

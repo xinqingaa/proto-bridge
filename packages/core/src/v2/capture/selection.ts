@@ -24,24 +24,17 @@ import { V2ContractError, unknownReferenceError } from '../contracts/errors.js';
 import { assertSelectionReferences } from '../resolver/references.js';
 import { resolveCaptureDevice } from './devices.js';
 
-export const VariantSelection = z.discriminatedUnion('mode', [
-  z.object({ mode: z.literal('default') }).strict(),
-  z.object({ mode: z.literal('critical') }).strict(),
-  z.object({ mode: z.literal('default-and-critical') }).strict(),
-  z.object({ mode: z.literal('all') }).strict(),
-  z
-    .object({
-      mode: z.literal('explicit'),
-      variantIds: z.array(VariantId).min(1),
-    })
-    .strict(),
-]);
+export const VariantSelection = z
+  .object({
+    mode: z.literal('explicit'),
+    // Empty is valid for retry drafts that contain only Scenario Cases.
+    variantIds: z.array(VariantId),
+  })
+  .strict();
 export type VariantSelection = z.infer<typeof VariantSelection>;
 
 export const ScenarioSelection = z.discriminatedUnion('mode', [
   z.object({ mode: z.literal('none') }).strict(),
-  z.object({ mode: z.literal('critical') }).strict(),
-  z.object({ mode: z.literal('all') }).strict(),
   z
     .object({
       mode: z.literal('explicit'),
@@ -135,13 +128,10 @@ export function selectionDraftFromSelectedCases(
     prototypeId,
     screens: [...groups.values()].map((group) => ({
       screenId: group.screenId,
-      variants:
-        group.variantIds.size > 0
-          ? {
-              mode: 'explicit' as const,
-              variantIds: [...group.variantIds],
-            }
-          : { mode: 'default' as const },
+      variants: {
+        mode: 'explicit' as const,
+        variantIds: [...group.variantIds],
+      },
       themeIds: [group.themeId],
       deviceIds: [group.deviceId],
       scenarios:
@@ -174,27 +164,7 @@ function selectedVariantIds(
   screen: RuntimeScreenManifest,
   selection: VariantSelection,
 ): string[] {
-  const critical = screen.variants
-    .filter((variant) => variant.critical)
-    .map((variant) => variant.variantId);
-  let values: string[];
-  switch (selection.mode) {
-    case 'default':
-      values = [screen.defaultVariantId];
-      break;
-    case 'critical':
-      values = critical;
-      break;
-    case 'default-and-critical':
-      values = [screen.defaultVariantId, ...critical];
-      break;
-    case 'all':
-      values = screen.variants.map((variant) => variant.variantId);
-      break;
-    case 'explicit':
-      values = selection.variantIds;
-      break;
-  }
+  const values = selection.variantIds;
   const known = new Set(screen.variants.map((variant) => variant.variantId));
   for (const value of values) {
     if (!known.has(value))
@@ -208,22 +178,14 @@ function selectedScenarios(
   selection: ScenarioSelection,
 ): RuntimeScenarioManifest[] {
   if (selection.mode === 'none') return [];
-  const values =
-    selection.mode === 'all'
-      ? screen.scenarios
-      : selection.mode === 'critical'
-        ? screen.scenarios.filter((scenario) => scenario.critical)
-        : selection.scenarioIds.map((scenarioId) => {
-            const scenario = screen.scenarios.find(
-              (candidate) => candidate.scenarioId === scenarioId,
-            );
-            if (!scenario)
-              throw unknownReferenceError(
-                'Runtime Scenario manifest',
-                scenarioId,
-              );
-            return scenario;
-          });
+  const values = selection.scenarioIds.map((scenarioId) => {
+    const scenario = screen.scenarios.find(
+      (candidate) => candidate.scenarioId === scenarioId,
+    );
+    if (!scenario)
+      throw unknownReferenceError('Runtime Scenario manifest', scenarioId);
+    return scenario;
+  });
   return [
     ...new Map(
       values.map((scenario) => [scenario.scenarioId, scenario]),

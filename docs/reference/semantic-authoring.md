@@ -122,7 +122,7 @@
 - Action/Scenario/Checkpoint 引用不能精确解析；
 - 证据节点声明了未知 Token、非法 slot 或与组件 Contract 冲突的 binding；
 - 已声明为独立实现/验收目标的业务局部节点缺少显式 Token binding；
-- default/critical Variant 没有非空 authored boundary；
+- strict Screen 的 default Variant 没有非空 authored boundary；
 - Handoff 不能固定所需 Evidence/Catalog revision。
 
 ### Warning：必须展示并逐项处理，不得静默忽略
@@ -130,7 +130,7 @@
 - 源码中疑似实现关键的文字、色面或状态节点只使用 CSS Token，没有语义标记；
 - 非 required 的语义节点缺少 Agent 实现所需 Token 槽；
 - 自定义局部 UI 与现有 DS 组件形状或职责高度相似；
-- 重要但未标成 critical 的 Variant/Scenario 可能遗漏；
+- 未纳入本次显式 Selection 的 Variant/Scenario 可能未被采集；
 - Overlay 遮挡检查无法确定；
 - Catalog 或 Source adapter 只能提供部分 provenance。
 

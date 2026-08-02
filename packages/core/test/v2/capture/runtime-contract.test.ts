@@ -36,8 +36,8 @@ describe('V2 Runtime Capture Protocol schemas', () => {
           sourcePath: 'ledger-planet/screens/TaskList.vue',
           defaultVariantId: 'default',
           variants: [
-            { variantId: 'default', critical: false },
-            { variantId: 'claimable', critical: true },
+            { variantId: 'default', label: '默认' },
+            { variantId: 'claimable', label: '可领取' },
           ],
           actions: [
             {
@@ -53,6 +53,7 @@ describe('V2 Runtime Capture Protocol schemas', () => {
           scenarios: [
             {
               scenarioId: 'open-claimable-task',
+              label: '打开可领取任务',
               ownerScreenId: 'ledger-planet.task-list',
               initialVariantId: 'default',
               actionIds: ['open-claimable-task'],

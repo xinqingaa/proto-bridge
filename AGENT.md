@@ -24,7 +24,7 @@
 - PBWork 原型只使用 PBWork Design System；形状匹配时禁止自行重造组件。
 - DS 业务实例必须使用业务稳定 `inspectId`；strict required Fragment 禁止依赖默认 `ds.*`。
 - 业务局部证据节点必须显式提供 `data-pb-id`、`data-pb-role`、按需 `data-pb-key` 和实现所需 `data-pb-token-*`；只写 CSS Token 不构成 Evidence。
-- default/critical Variant 必须具有 authored completeness boundary；不得通过例外列表绕过新工作。
+- 严格 Screen 的 default Variant 必须具有 authored completeness boundary；其它 Variant 的未声明边界必须在 Evidence 风险中可见。
 - required Fragment 缺失、重复、不可见、零 bbox、非法/unknown role 或缺少所需 Token Evidence 必须阻断完整性声明。
 
 ## 代码地图

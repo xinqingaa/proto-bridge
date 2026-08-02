@@ -31,9 +31,7 @@ describe('selection retry draft', () => {
           screenSlug: 'task-list',
           path: '/prototype/ledger-planet/task-list',
           defaultVariantId: reference.VARIANT_ID,
-          variants: [
-            { variantId: reference.VARIANT_ID, critical: false },
-          ],
+          variants: [{ variantId: reference.VARIANT_ID, label: '默认' }],
           actions: [],
           scenarios: [],
         },

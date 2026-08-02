@@ -13,6 +13,39 @@ export type InstrumentedRuntimePreflightInput = {
   maxCases?: number;
 };
 
+/** Reads the authored Runtime Manifest without selecting or capturing Cases. */
+export async function discoverInstrumentedRuntimeManifest(input: {
+  runtimeBaseUrl: string;
+  prototypeId: string;
+  screenSlug?: string;
+}): Promise<RuntimeCaptureManifest> {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      deviceScaleFactor: 3,
+      locale: 'zh-CN',
+      timezoneId: 'Asia/Shanghai',
+      colorScheme: 'light',
+      reducedMotion: 'reduce',
+      serviceWorkers: 'block',
+    });
+    const page = await context.newPage();
+    await page.goto(
+      new URL(
+        `/prototype/${encodeURIComponent(input.prototypeId)}/${encodeURIComponent(input.screenSlug ?? '__manifest__')}`,
+        input.runtimeBaseUrl,
+      ).toString(),
+      { waitUntil: 'domcontentloaded' },
+    );
+    await waitForProtocol(page);
+    const described = await requestRuntimeCapture(page, { kind: 'describe' });
+    return described.payload.manifest;
+  } finally {
+    await browser.close();
+  }
+}
+
 function runtimeUrl(
   runtimeBaseUrl: string,
   path: string,

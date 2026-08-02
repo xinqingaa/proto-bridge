@@ -9,7 +9,7 @@ Runtime `describe` 返回：
 - protocol version 与 input version；
 - capabilities；
 - Prototype 和 Screen；
-- Variant、critical 标记和 required Fragments；
+- Variant 标签和 required Fragments；
 - Action；
 - Scenario、Action sequence 和 Checkpoint。
 
@@ -19,7 +19,7 @@ Core 使用浏览器安全 Schema 校验响应。缺字段、未知引用、重�
 
 ## 2. Selection Draft
 
-Draft 表达用户意图，不表达执行结果。Core 对输入归一化并拒绝：
+Draft 表达用户意图，不表达执行结果。状态和场景均使用 authored ID 的显式集合；GUI/CLI 的“全部”只在入口展开，不进入持久 Draft。Core 对输入归一化并拒绝：
 
 - 未知 Screen/Variant/Scenario；
 - 非稳定 Fragment；

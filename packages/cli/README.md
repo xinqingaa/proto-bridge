@@ -24,7 +24,7 @@ proto-bridge workspace init [--config <file>]
 proto-bridge workspace doctor [--json]
 proto-bridge preflight --selection <file> [--manifest <file>]
 proto-bridge capture run --selection <file> [--bundle <id>]
-proto-bridge deliver (--selection <file> | --prototype <id> --screen <id|slug>) [--target <dir>]
+proto-bridge deliver (--selection <file> | --prototype <id> [--screen <id|slug>]) [--target <dir>]
 proto-bridge deliver --bundle <id> --snapshot <id> [--ack-risk <kind>] [--target <dir>]
 proto-bridge job status|cancel|retry --job <id>
 proto-bridge bundle list|inspect|fork|archive|clean
@@ -42,7 +42,7 @@ proto-bridge service start
 - Handoff risk 使用可重复的 `--ack-risk <riskKind>` 逐项确认；
 - 不提供 `--force`；
 - `deliver` 一次完成采集、Handoff 与 `.proto-bridge/deliveries/*/agent-prompt.md`（收据只是 Store 索引；MCP 仍按 Handoff/Snapshot 读 Store）；
-- `deliver` 默认 `--variants default-and-critical`、`--scenarios critical`；
+- `deliver` 默认选择指定范围内全部 authored Screens、Variants 和 Scenarios；使用 `--only-variant` / `--only-scenario`（需配合 `--screen`）缩小范围；
 - `workspace doctor` 与 inspect/list/show 以只读方式打开 Store，可与 `pnpm pb:up` 并存；
 - `capture run`、`handoff create`、`job cancel`、`deliver` 等写命令在 Local Service 可达时自动经 HTTP 写入（与 GUI 共用同一 writer）；不可达时回退到本地写锁；
 - 可用 `--via-service` 强制走 Service，或 `--local-store` 强制本地写（需停掉占用 Store 的 Service）；
@@ -60,6 +60,12 @@ PBWork 与 CLI 对同一规范化 Draft 必须生成相同 Case identity 和 Mat
 `examples/selections/ledger-planet-task-list.json`。推荐日常用：
 
 ```bash
+# 整个原型：全部页面、状态和场景
+pnpm pb -- deliver \
+  --prototype ledger-planet \
+  --target apps/flutter_pb_app
+
+# 单页：默认包含该页全部状态和场景
 pnpm pb -- deliver \
   --prototype ledger-planet \
   --screen task-list \

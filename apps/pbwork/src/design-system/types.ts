@@ -125,8 +125,6 @@ export type PrototypeVariant = {
   description?: string;
   query?: Record<string, string>;
   fixture?: string;
-  /** V2 Capture expands this Variant for the `critical` strategy. */
-  critical?: boolean;
   /**
    * Optional authored completeness contract for instrumented Runtime capture.
    * Absence is allowed, but V2 Evidence must then report semantic coverage as
@@ -166,8 +164,8 @@ export type PrototypeCheckpoint = {
 
 export type PrototypeScenario = {
   id: string;
+  label: string;
   initialVariantId: string;
-  critical?: boolean;
   actionIds: string[];
   checkpoints: PrototypeCheckpoint[];
 };

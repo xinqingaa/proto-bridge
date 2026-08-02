@@ -30,9 +30,9 @@ function manifest(
         sourcePath: 'ledger-planet/screens/TaskList.vue',
         defaultVariantId: 'default',
         variants: [
-          { variantId: 'default', critical: false },
-          { variantId: 'empty', critical: false },
-          { variantId: 'claimable', critical: true },
+          { variantId: 'default', label: '默认' },
+          { variantId: 'empty', label: '空态' },
+          { variantId: 'claimable', label: '可领取' },
         ],
         actions: [
           {
@@ -48,9 +48,9 @@ function manifest(
         scenarios: [
           {
             scenarioId: 'open-claimable-task',
+            label: '打开可领取任务',
             ownerScreenId: 'ledger-planet.task-list',
             initialVariantId: 'default',
-            critical: true,
             actionIds: ['open-claimable-task'],
             checkpoints: [
               {
@@ -76,8 +76,8 @@ function manifest(
         sourcePath: 'ledger-planet/screens/TaskDetail.vue',
         defaultVariantId: 'default',
         variants: [
-          { variantId: 'default', critical: false },
-          { variantId: 'claimable', critical: false },
+          { variantId: 'default', label: '默认' },
+          { variantId: 'claimable', label: '可领取' },
         ],
         actions: [],
         scenarios: [],
@@ -92,7 +92,10 @@ function draft(): SelectionDraft {
     screens: [
       {
         screenId: 'ledger-planet.task-list',
-        variants: { mode: 'default-and-critical' },
+        variants: {
+          mode: 'explicit',
+          variantIds: ['default', 'claimable'],
+        },
         themeIds: ['light'],
         deviceIds: ['iphone-14'],
         scenarios: { mode: 'explicit', scenarioIds: ['open-claimable-task'] },
@@ -111,7 +114,7 @@ function draft(): SelectionDraft {
 }
 
 describe('V2 Selection normalization and Preflight', () => {
-  it('expands default, critical and Scenario Checkpoint into a stable three-Case Matrix', () => {
+  it('expands explicit Variants and a Scenario Checkpoint into a stable three-Case Matrix', () => {
     const first = resolveSelectionMatrix(draft(), manifest());
     const second = resolveSelectionMatrix(draft(), manifest());
     expect(first).toEqual(second);
@@ -148,7 +151,10 @@ describe('V2 Selection normalization and Preflight', () => {
 
   it('normalizes a stable Fragment scope without changing Case identity', () => {
     const fragmentDraft = draft();
-    fragmentDraft.screens[0]!.variants = { mode: 'default' };
+    fragmentDraft.screens[0]!.variants = {
+      mode: 'explicit',
+      variantIds: ['default'],
+    };
     fragmentDraft.screens[0]!.scenarios = { mode: 'none' };
     fragmentDraft.screens[0]!.captureScope.fragments = [
       {
@@ -175,11 +181,13 @@ describe('V2 Selection normalization and Preflight', () => {
     expect(resolved.matrix[0]?.selectedCase.caseId).not.toContain('t2');
   });
 
-  it('expands only explicitly critical Scenarios for the critical policy', () => {
-    const criticalDraft = draft();
-    criticalDraft.screens[0]!.variants = { mode: 'default' };
-    criticalDraft.screens[0]!.scenarios = { mode: 'critical' };
-    const resolved = resolveSelectionMatrix(criticalDraft, manifest());
+  it('expands only explicitly selected Scenarios', () => {
+    const explicitDraft = draft();
+    explicitDraft.screens[0]!.variants = {
+      mode: 'explicit',
+      variantIds: ['default'],
+    };
+    const resolved = resolveSelectionMatrix(explicitDraft, manifest());
     expect(resolved.matrix).toHaveLength(2);
     expect(
       resolved.matrix.filter(
@@ -212,9 +220,7 @@ describe('V2 Selection normalization and Preflight', () => {
     expect(preflight.interactionCoverage).toEqual({
       required: 1,
       selected: 0,
-      missingScenarioIds: [
-        'ledger-planet.task-list/open-claimable-task',
-      ],
+      missingScenarioIds: ['ledger-planet.task-list/open-claimable-task'],
     });
     expect(preflight.unacceptedWarningIds).toContain(
       'warning-interaction-coverage',

@@ -21,6 +21,7 @@ import {
 } from '@proto-bridge/core/v2';
 import {
   CaptureJobHost,
+  discoverInstrumentedRuntimeManifest,
   PlaywrightCaseCaptureDriver,
   SelectionDraft,
   createAgentHandoff,
@@ -140,14 +141,15 @@ async function initWorkspace(args: CliArgs, io: CliIo): Promise<number> {
     await access(configPath);
     throw new Error(`ProtoBridge config already exists: ${configPath}`);
   } catch (error) {
-    if (
-      !(error instanceof Error && 'code' in error && error.code === 'ENOENT')
-    ) {
+    if (!(
+      error instanceof Error &&
+      'code' in error &&
+      error.code === 'ENOENT'
+    )) {
       throw error;
     }
   }
-  const runtimeBaseUrl =
-    flag(args, 'runtime') ?? 'http://127.0.0.1:3977';
+  const runtimeBaseUrl = flag(args, 'runtime') ?? 'http://127.0.0.1:3977';
   const runtimeOrigin = new URL(runtimeBaseUrl).origin;
   const servicePort = numberFlag(args, 'service-port') ?? 3988;
   const config = V2WorkspaceConfig.parse({
@@ -186,7 +188,12 @@ async function initWorkspace(args: CliArgs, io: CliIo): Promise<number> {
   });
   await store.init();
   await store.close();
-  emit(io, booleanFlag(args, 'json'), { configPath, config }, `Created ${configPath}`);
+  emit(
+    io,
+    booleanFlag(args, 'json'),
+    { configPath, config },
+    `Created ${configPath}`,
+  );
   return EXIT.ok;
 }
 
@@ -209,7 +216,12 @@ async function workspaceDoctor(
       bundles: (await store.listBundles()).length,
       jobs: (await store.listJobs()).length,
     };
-    emit(io, booleanFlag(args, 'json'), result, `Workspace ${result.workspaceId} is ready.`);
+    emit(
+      io,
+      booleanFlag(args, 'json'),
+      result,
+      `Workspace ${result.workspaceId} is ready.`,
+    );
     return EXIT.ok;
   } finally {
     await store.close();
@@ -218,7 +230,9 @@ async function workspaceDoctor(
 
 async function loadDraft(args: CliArgs): Promise<SelectionDraft> {
   return SelectionDraft.parse(
-    JSON.parse(await readFile(requiredFlag(args, 'selection'), 'utf8')) as unknown,
+    JSON.parse(
+      await readFile(requiredFlag(args, 'selection'), 'utf8'),
+    ) as unknown,
   );
 }
 
@@ -246,16 +260,21 @@ function parseFragmentFlag(
 
 /**
  * Builds a SelectionDraft from --selection or short deliver flags.
- * Defaults: variants=default-and-critical, scenarios=critical, theme=light,
- * device=iphone-14.
+ * Defaults: all authored Screens, Variants and Scenarios, theme=light,
+ * device=iphone-14. Repeated --only-* flags narrow by authored ids.
  * When --bundle and --snapshot are both set, SelectionDraft is not required
  * (resume path: handoff + prompt only).
  */
-async function resolveDeliverDraft(
+export async function resolveDeliverDraft(
   args: CliArgs,
+  loaded: LoadedCliConfig,
 ): Promise<SelectionDraft | undefined> {
   if (flag(args, 'bundle') && flag(args, 'snapshot')) {
-    if (flag(args, 'selection') || flag(args, 'prototype') || flag(args, 'screen')) {
+    if (
+      flag(args, 'selection') ||
+      flag(args, 'prototype') ||
+      flag(args, 'screen')
+    ) {
       // Capture scope is ignored when resuming from a fixed Snapshot.
     }
     return undefined;
@@ -264,58 +283,114 @@ async function resolveDeliverDraft(
 
   const prototypeId = flag(args, 'prototype');
   const screen = flag(args, 'screen');
-  if (!prototypeId || !screen) {
+  if (!prototypeId) {
     throw new V2ContractError(
       'invalid-schema',
-      'deliver requires --selection <file>, or both --prototype and --screen, or --bundle with --snapshot to resume.',
+      'deliver requires --selection <file>, --prototype <id>, or --bundle with --snapshot to resume.',
     );
   }
 
-  const screenId = resolveScreenId(prototypeId, screen);
-  const variantMode = (flag(args, 'variants') ??
-    'default-and-critical') as
-    | 'default'
-    | 'critical'
-    | 'default-and-critical'
-    | 'all';
+  if (flag(args, 'variants') || flag(args, 'scenarios')) {
+    throw new V2ContractError(
+      'invalid-schema',
+      '--variants and --scenarios were removed. Use repeatable --only-variant and --only-scenario with authored ids.',
+    );
+  }
+  const manifestPath = flag(args, 'manifest');
+  const manifest = manifestPath
+    ? RuntimeCaptureManifest.parse(
+        JSON.parse(await readFile(manifestPath, 'utf8')) as unknown,
+      )
+    : await discoverInstrumentedRuntimeManifest({
+        runtimeBaseUrl: loaded.value.runtime.baseUrl,
+        prototypeId,
+        ...(screen
+          ? {
+              screenSlug: screen.includes('.')
+                ? screen.split('.').at(-1)!
+                : screen,
+            }
+          : {}),
+      });
+  const requestedScreenId = screen
+    ? resolveScreenId(prototypeId, screen)
+    : undefined;
+  const selectedScreens = manifest.screens.filter(
+    (candidate) =>
+      candidate.prototypeId === prototypeId &&
+      (!requestedScreenId || candidate.screenId === requestedScreenId),
+  );
+  if (selectedScreens.length === 0) {
+    throw new V2ContractError(
+      'unknown-reference',
+      requestedScreenId
+        ? `Runtime Manifest does not contain Screen ${requestedScreenId}.`
+        : `Runtime Manifest does not contain Prototype ${prototypeId}.`,
+    );
+  }
+  const onlyVariantIds = new Set(flags(args, 'only-variant'));
+  const onlyScenarioIds = new Set(flags(args, 'only-scenario'));
   if (
-    !['default', 'critical', 'default-and-critical', 'all'].includes(
-      variantMode,
-    )
+    !requestedScreenId &&
+    (onlyVariantIds.size > 0 || onlyScenarioIds.size > 0)
   ) {
     throw new V2ContractError(
       'invalid-schema',
-      '--variants must be default, critical, default-and-critical, or all.',
-    );
-  }
-  const scenarioMode = (flag(args, 'scenarios') ?? 'critical') as
-    | 'none'
-    | 'critical'
-    | 'all';
-  if (!['none', 'critical', 'all'].includes(scenarioMode)) {
-    throw new V2ContractError(
-      'invalid-schema',
-      '--scenarios must be none, critical, or all.',
+      '--only-variant and --only-scenario require --screen. Use --selection for an exact multi-Screen matrix.',
     );
   }
 
   const fragmentRaw = flag(args, 'fragment');
+  if (fragmentRaw && !requestedScreenId) {
+    throw new V2ContractError(
+      'invalid-schema',
+      '--fragment requires --screen so its owner Screen is explicit.',
+    );
+  }
   const fragments = fragmentRaw
-    ? [parseFragmentFlag(fragmentRaw, screenId)]
+    ? [parseFragmentFlag(fragmentRaw, requestedScreenId!)]
     : [];
 
   return SelectionDraft.parse({
     prototypeId,
-    screens: [
-      {
-        screenId,
-        variants: { mode: variantMode },
+    screens: selectedScreens.map((selectedScreen) => {
+      const variantIds = selectedScreen.variants
+        .map((variant) => variant.variantId)
+        .filter(
+          (variantId) =>
+            onlyVariantIds.size === 0 || onlyVariantIds.has(variantId),
+        );
+      if (variantIds.length === 0) {
+        throw new V2ContractError(
+          'unknown-reference',
+          `No --only-variant id belongs to Screen ${selectedScreen.screenId}.`,
+        );
+      }
+      const scenarioIds = selectedScreen.scenarios
+        .map((scenario) => scenario.scenarioId)
+        .filter(
+          (scenarioId) =>
+            onlyScenarioIds.size === 0 || onlyScenarioIds.has(scenarioId),
+        );
+      if (onlyScenarioIds.size > 0 && scenarioIds.length === 0) {
+        throw new V2ContractError(
+          'unknown-reference',
+          `No --only-scenario id belongs to Screen ${selectedScreen.screenId}.`,
+        );
+      }
+      return {
+        screenId: selectedScreen.screenId,
+        variants: { mode: 'explicit' as const, variantIds },
         themeIds: [flag(args, 'theme') ?? 'light'],
         deviceIds: [flag(args, 'device') ?? 'iphone-14'],
-        scenarios: { mode: scenarioMode },
+        scenarios: scenarioIds.length
+          ? { mode: 'explicit' as const, scenarioIds }
+          : { mode: 'none' as const },
         captureScope: {
-          fragments,
+          fragments:
+            selectedScreen.screenId === requestedScreenId ? fragments : [],
           screenshots:
+            selectedScreen.screenId === requestedScreenId &&
             fragments.length > 0
               ? { mode: 'selected', targets: fragments }
               : { mode: 'all' },
@@ -324,8 +399,8 @@ async function resolveDeliverDraft(
           evidenceInputMode: 'instrumented',
           minEvidenceLevel: 'instrumented-runtime',
         },
-      },
-    ],
+      };
+    }),
     acceptedWarningIds: flags(args, 'accept-warning'),
   });
 }
@@ -446,7 +521,7 @@ async function deliverCommand(
   const intent =
     flag(args, 'intent') ??
     'Use the fixed ProtoBridge Evidence to implement or verify the selected prototype scope.';
-  const draft = await resolveDeliverDraft(args);
+  const draft = await resolveDeliverDraft(args, loaded);
 
   let bundleId = flag(args, 'bundle');
   let snapshotId = flag(args, 'snapshot');
@@ -693,12 +768,7 @@ async function runCaptureViaService(
     acceptedWarningIds,
     bundleId,
   });
-  const terminal = new Set([
-    'completed',
-    'failed',
-    'cancelled',
-    'interrupted',
-  ]);
+  const terminal = new Set(['completed', 'failed', 'cancelled', 'interrupted']);
   let job = accepted.job;
   for (let attempt = 0; attempt < 3_600; attempt += 1) {
     if (terminal.has(job.status)) break;
@@ -772,9 +842,7 @@ async function runCapture(
   const store = await openStore(loaded);
   try {
     const bundleId = BundleId.parse(
-      bundleIdInput ??
-        flag(args, 'bundle') ??
-        generateOperationalId('bundle'),
+      bundleIdInput ?? flag(args, 'bundle') ?? generateOperationalId('bundle'),
     );
     const host = new CaptureJobHost();
     const accepted = await host.accept({
@@ -813,7 +881,8 @@ async function jobStatus(
   const store = await openStore(loaded, true);
   try {
     const job = await store.getJob(JobId.parse(requiredFlag(args, 'job')));
-    if (!job) throw new V2ContractError('unknown-reference', 'Job does not exist.');
+    if (!job)
+      throw new V2ContractError('unknown-reference', 'Job does not exist.');
     emit(io, booleanFlag(args, 'json'), job);
     return job.status === 'cancelled'
       ? EXIT.cancelled
@@ -862,8 +931,11 @@ async function jobRetry(
   let bundleId: string;
   try {
     const job = await store.getJob(JobId.parse(requiredFlag(args, 'job')));
-    if (!job) throw new V2ContractError('unknown-reference', 'Job does not exist.');
-    const run = job.runId ? await store.getRun(job.bundleId, job.runId) : undefined;
+    if (!job)
+      throw new V2ContractError('unknown-reference', 'Job does not exist.');
+    const run = job.runId
+      ? await store.getRun(job.bundleId, job.runId)
+      : undefined;
     const retryIds = new Set(
       run?.attempts
         .filter((attempt) =>
@@ -923,7 +995,10 @@ async function evidenceDetails(
       ? await store.getSnapshot(bundleId, SnapshotId.parse(snapshotIdInput))
       : await store.getActiveSnapshot(bundleId);
     if (!snapshot)
-      throw new V2ContractError('unknown-reference', 'Snapshot does not exist.');
+      throw new V2ContractError(
+        'unknown-reference',
+        'Snapshot does not exist.',
+      );
     const activeRevisionIds = new Set(
       snapshot.activeSlots.map((slot) => slot.revisionId),
     );
@@ -975,7 +1050,8 @@ async function runInspect(
       BundleId.parse(requiredFlag(args, 'bundle')),
       RunId.parse(requiredFlag(args, 'run')),
     );
-    if (!run) throw new V2ContractError('unknown-reference', 'Run does not exist.');
+    if (!run)
+      throw new V2ContractError('unknown-reference', 'Run does not exist.');
     emit(io, booleanFlag(args, 'json'), run);
     return exitForRun(run);
   } finally {
@@ -997,7 +1073,10 @@ async function caseInspect(
     .flatMap((screen) => screen.cases)
     .filter((item) => item.caseId === requiredFlag(args, 'case'));
   if (selected.length === 0) {
-    throw new V2ContractError('unknown-reference', 'Case is not active in Snapshot.');
+    throw new V2ContractError(
+      'unknown-reference',
+      'Case is not active in Snapshot.',
+    );
   }
   emit(io, booleanFlag(args, 'json'), { cases: selected });
   return selected.some(
@@ -1096,9 +1175,7 @@ async function activeCasesForSnapshot(
       ),
   );
   const resolved = snapshot.activeSlots
-    .map((slot) =>
-      selectedByIdentity.get(`${slot.caseId}/${slot.scopeKey}`),
-    )
+    .map((slot) => selectedByIdentity.get(`${slot.caseId}/${slot.scopeKey}`))
     .filter((selected): selected is SelectedCase => Boolean(selected));
   if (resolved.length !== activeKeys.size) {
     throw new V2ContractError(
@@ -1255,7 +1332,10 @@ async function handoffExport(
   const handoff = await getHandoff(loaded, requiredFlag(args, 'handoff'));
   const outputPath = path.resolve(io.cwd, requiredFlag(args, 'output'));
   await writeFile(outputPath, `${JSON.stringify(handoff, null, 2)}\n`, 'utf8');
-  emit(io, booleanFlag(args, 'json'), { handoffId: handoff.handoffId, outputPath });
+  emit(io, booleanFlag(args, 'json'), {
+    handoffId: handoff.handoffId,
+    outputPath,
+  });
   return EXIT.ok;
 }
 
@@ -1337,7 +1417,9 @@ async function openStore(
 
 function exitForRun(run: {
   terminationReason: string;
-  coverage: { counts: { failed: number; unsupported: number; missing: number } };
+  coverage: {
+    counts: { failed: number; unsupported: number; missing: number };
+  };
 }): number {
   if (run.terminationReason === 'cancelled') return EXIT.cancelled;
   if (run.terminationReason === 'interrupted') return EXIT.interrupted;
@@ -1355,7 +1437,7 @@ export function cliUsage(): string {
   proto-bridge workspace doctor [--json]
   proto-bridge preflight --selection <file> [--manifest <file>]
   proto-bridge capture run --selection <file> [--bundle <id>]
-  proto-bridge deliver (--selection <file> | --prototype <id> --screen <id|slug>) [--target <dir>]
+  proto-bridge deliver (--selection <file> | --prototype <id> [--screen <id|slug>]) [--target <dir>]
   proto-bridge deliver --bundle <id> --snapshot <id> [--ack-risk <kind>] [--target <dir>]
   proto-bridge job status|cancel|retry --job <id>
   proto-bridge bundle list|inspect|fork|archive|clean
@@ -1368,7 +1450,9 @@ Rules:
   --config defaults to ./proto-bridge.json.
   deliver captures, creates a Handoff, and writes .proto-bridge/deliveries/*/agent-prompt.md
   (Store index only; MCP still reads Evidence from the Store).
-  deliver defaults: --variants default-and-critical, --scenarios critical.
+  deliver defaults to all authored Screens, Variants and Scenarios in scope.
+  With --screen, repeat --only-variant <id> or --only-scenario <id> to narrow.
+  Use --selection for an exact multi-Screen matrix.
   Repeat --accept-warning <id> and --ack-risk <kind> explicitly.
   --force is intentionally unsupported.
   Write commands auto-route through Local Service when it is reachable

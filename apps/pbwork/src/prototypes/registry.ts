@@ -140,7 +140,6 @@ export const prototypeScreens = [
       {
         id: "critical-only",
         label: "仅严重异常",
-        critical: true,
         requiredFragments: [
           {
             screenId: "cold-chain-ops.exception-queue",
@@ -192,7 +191,6 @@ export const prototypeScreens = [
       {
         id: "error",
         label: "数据不可用",
-        critical: true,
         requiredFragments: [
           {
             screenId: "cold-chain-ops.exception-queue",
@@ -227,8 +225,8 @@ export const prototypeScreens = [
     scenarios: [
       {
         id: "focus-critical",
+        label: "筛选严重异常",
         initialVariantId: "default",
-        critical: true,
         actionIds: ["show-critical"],
         checkpoints: [
           {
@@ -267,8 +265,8 @@ export const prototypeScreens = [
       },
       {
         id: "inspect-primary-exception",
+        label: "查看首要异常运输详情",
         initialVariantId: "default",
-        critical: true,
         actionIds: ["open-primary-exception"],
         checkpoints: [
           {
@@ -327,7 +325,6 @@ export const prototypeScreens = [
       {
         id: "active-excursion",
         label: "持续超温",
-        critical: true,
         requiredFragments: [
           {
             screenId: "cold-chain-ops.shipment-detail",
@@ -350,7 +347,6 @@ export const prototypeScreens = [
       {
         id: "sensor-offline",
         label: "传感器离线",
-        critical: true,
         requiredFragments: [
           {
             screenId: "cold-chain-ops.shipment-detail",
@@ -369,7 +365,6 @@ export const prototypeScreens = [
       {
         id: "action-sheet-open",
         label: "处置操作打开",
-        critical: true,
         requiredFragments: [
           {
             screenId: "cold-chain-ops.shipment-detail",
@@ -409,8 +404,8 @@ export const prototypeScreens = [
     scenarios: [
       {
         id: "reveal-response-options",
+        label: "打开处置选项",
         initialVariantId: "active-excursion",
-        critical: true,
         actionIds: ["open-actions"],
         checkpoints: [
           {
@@ -428,8 +423,8 @@ export const prototypeScreens = [
       },
       {
         id: "start-resolution",
+        label: "开始填写处置记录",
         initialVariantId: "action-sheet-open",
-        critical: true,
         actionIds: ["open-resolution"],
         checkpoints: [
           {
@@ -484,7 +479,6 @@ export const prototypeScreens = [
       {
         id: "validation-error",
         label: "校验失败",
-        critical: true,
         requiredFragments: [
           {
             screenId: "cold-chain-ops.resolution-form",
@@ -503,7 +497,6 @@ export const prototypeScreens = [
       {
         id: "ready-to-submit",
         label: "信息完整",
-        critical: true,
         requiredFragments: [
           {
             screenId: "cold-chain-ops.resolution-form",
@@ -522,7 +515,6 @@ export const prototypeScreens = [
       {
         id: "approval-required",
         label: "等待主管审批",
-        critical: true,
         requiredFragments: [
           {
             screenId: "cold-chain-ops.resolution-form",
@@ -541,7 +533,6 @@ export const prototypeScreens = [
       {
         id: "approval-validation-error",
         label: "主管审批缺失",
-        critical: true,
         requiredFragments: [
           {
             screenId: "cold-chain-ops.resolution-form",
@@ -556,7 +547,6 @@ export const prototypeScreens = [
       {
         id: "confirm-dialog-open",
         label: "确认提交",
-        critical: true,
         requiredFragments: [
           {
             screenId: "cold-chain-ops.resolution-form",
@@ -592,8 +582,8 @@ export const prototypeScreens = [
     scenarios: [
       {
         id: "reject-incomplete-resolution",
+        label: "拒绝不完整处置记录",
         initialVariantId: "default",
-        critical: true,
         actionIds: ["submit-resolution"],
         checkpoints: [
           {
@@ -617,8 +607,8 @@ export const prototypeScreens = [
       },
       {
         id: "confirm-complete-resolution",
+        label: "确认完整处置记录",
         initialVariantId: "ready-to-submit",
-        critical: true,
         actionIds: ["submit-resolution"],
         checkpoints: [
           {
@@ -636,8 +626,8 @@ export const prototypeScreens = [
       },
       {
         id: "reject-missing-supervisor-approval",
+        label: "拒绝缺少主管审批的记录",
         initialVariantId: "approval-required",
-        critical: true,
         actionIds: ["submit-resolution"],
         checkpoints: [
           {
@@ -935,7 +925,6 @@ export const prototypeScreens = [
       {
         id: "default",
         label: "默认",
-        critical: true,
         requiredFragments: [
           {
             screenId: "ledger-planet.task-list",
@@ -966,7 +955,20 @@ export const prototypeScreens = [
           },
         ],
       },
-      { id: "empty", label: "空态" },
+      {
+        id: "empty",
+        label: "空态",
+        requiredFragments: [
+          {
+            screenId: "ledger-planet.task-list",
+            pbId: "ledger-planet.task-list.root",
+          },
+          {
+            screenId: "ledger-planet.task-list",
+            pbId: "ledger-planet.task-list.filters",
+          },
+        ],
+      },
     ],
     actions: [
       {
@@ -1000,8 +1002,8 @@ export const prototypeScreens = [
     scenarios: [
       {
         id: "filter-todo",
+        label: "筛选待完成任务",
         initialVariantId: "default",
-        critical: true,
         actionIds: ["select-todo"],
         checkpoints: [
           {
@@ -1045,8 +1047,8 @@ export const prototypeScreens = [
       },
       {
         id: "filter-done",
+        label: "筛选已完成任务",
         initialVariantId: "default",
-        critical: true,
         actionIds: ["select-done"],
         checkpoints: [
           {
@@ -1095,8 +1097,8 @@ export const prototypeScreens = [
       },
       {
         id: "open-claimable-task",
+        label: "打开可领取任务",
         initialVariantId: "default",
-        critical: true,
         actionIds: ["open-claimable-task"],
         checkpoints: [
           {

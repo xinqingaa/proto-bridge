@@ -71,7 +71,7 @@ ScrollableDataList
 
 样本必须验证：
 
-- default/critical Variant 的 required boundary；
+- default Variant 的 required boundary；
 - Runtime describe、prepare、readiness、semantic snapshot 和 reset；
 - stable Fragment identity；
 - visible non-zero bbox；
@@ -87,4 +87,4 @@ ScrollableDataList
 5. Tab 点击与横滑共享状态；快速切换不吞点击。
 6. 纵滚不误触横滑；下拉刷新只在顶部；load-more 不并发。
 7. 任意二级深链返回所属 Tab home。
-8. default/critical Variant 的 required Fragment 均唯一、可见、bbox 非零。
+8. 被选中的 Variant 的 required Fragment 均唯一、可见、bbox 非零。

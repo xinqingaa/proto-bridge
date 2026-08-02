@@ -11,4 +11,4 @@
 5. 所有读取都必须使用 Handoff 提供的固定引用，不得切换到 `active`、`latest` 或自行猜测 Store 路径。
 6. Screenshot 必须实际查看；不能只根据文本 facts 推断构图。
 
-缺少固定对象、Snapshot、revision 或 Screenshot 时，停止实现并报告阻塞项。
+缺少固定对象、Snapshot、revision 或 Screenshot 时，报告阻塞项；只有它确实阻止实现时才暂停。

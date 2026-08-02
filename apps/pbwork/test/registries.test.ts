@@ -148,11 +148,7 @@ describe("design contracts", () => {
       (item) => item.screenId === "ledger-planet.task-detail",
     );
     expect(list?.variants.map((item) => item.id)).toEqual(["default", "empty"]);
-    expect(
-      list?.variants
-        .filter((item) => "critical" in item && item.critical)
-        .map((item) => item.id),
-    ).toEqual(["default"]);
+    expect(list?.variants.every((item) => !("critical" in item))).toBe(true);
     expect(list?.actions?.map((item) => item.id)).toEqual([
       "select-todo",
       "select-done",

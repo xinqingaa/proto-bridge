@@ -67,7 +67,7 @@ Component Contract 还应固定组件的 semantic role policy；业务局部证�
 - view 文件不存在；
 - default Variant 缺失；
 - required Fragment 属于其它 Screen；
-- strict Screen 的 default/critical Variant 没有完整性边界；
+- strict Screen 的 default Variant 没有完整性边界；
 - Action、Scenario 或 Checkpoint 引用不存在。
 
 ## Runtime

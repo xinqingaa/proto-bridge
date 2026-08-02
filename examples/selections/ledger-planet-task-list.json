@@ -4,19 +4,14 @@
     {
       "screenId": "ledger-planet.task-list",
       "variants": {
-        "mode": "default-and-critical"
+        "mode": "explicit",
+        "variantIds": ["default", "empty"]
       },
-      "themeIds": [
-        "light"
-      ],
-      "deviceIds": [
-        "iphone-14"
-      ],
+      "themeIds": ["light"],
+      "deviceIds": ["iphone-14"],
       "scenarios": {
         "mode": "explicit",
-        "scenarioIds": [
-          "open-claimable-task"
-        ]
+        "scenarioIds": ["open-claimable-task"]
       },
       "captureScope": {
         "fragments": [],

@@ -21,7 +21,7 @@ export default defineConfig({
   optimizeDeps: {
     exclude: [
       "@proto-bridge/core/v2",
-      "@proto-bridge/core/v2/agent-prompt",
+      "@proto-bridge/core/v2/prompts/agent-prompt",
       "@proto-bridge/core/v2/capture",
       "@proto-bridge/core/v2/runtime-contract",
       "@proto-bridge/core/v2/service-contract",

@@ -4,16 +4,17 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { preflightSelection } from '@proto-bridge/core/v2/capture';
 import { ProtoBridgeLocalService } from '@proto-bridge/local-service';
-import { runCli, CLI_EXIT_CODES } from '../src/cli.js';
+import { runCli, CLI_EXIT_CODES, resolveDeliverDraft } from '../src/cli.js';
+import { parseCliArgs } from '../src/args.js';
 import type { CliIo } from '../src/output.js';
 
 const tempRoots: string[] = [];
 
 afterEach(async () => {
   await Promise.all(
-    tempRoots.splice(0).map((root) =>
-      rm(root, { recursive: true, force: true }),
-    ),
+    tempRoots
+      .splice(0)
+      .map((root) => rm(root, { recursive: true, force: true })),
   );
 });
 
@@ -45,7 +46,13 @@ function manifest() {
   return {
     protocolVersion: 2,
     inputVersion: 'cli-screenshot-v1',
-    capabilities: ['describe', 'prepare', 'readiness', 'semantic-snapshot', 'reset'],
+    capabilities: [
+      'describe',
+      'prepare',
+      'readiness',
+      'semantic-snapshot',
+      'reset',
+    ],
     screens: [
       {
         prototypeId: 'ledger-planet',
@@ -53,7 +60,7 @@ function manifest() {
         screenSlug: 'task-list',
         path: '/prototype/ledger-planet/task-list',
         defaultVariantId: 'default',
-        variants: [{ variantId: 'default', critical: false }],
+        variants: [{ variantId: 'default', label: '默认' }],
         actions: [],
         scenarios: [],
       },
@@ -67,7 +74,7 @@ function screenshotDraft() {
     screens: [
       {
         screenId: 'ledger-planet.task-list',
-        variants: { mode: 'default' },
+        variants: { mode: 'explicit', variantIds: ['default'] },
         themeIds: ['light'],
         deviceIds: ['iphone-14'],
         scenarios: { mode: 'none' },
@@ -85,7 +92,103 @@ function screenshotDraft() {
   };
 }
 
+function coldChainManifest() {
+  const screen = (
+    screenSlug: string,
+    variantCount: number,
+    scenarioCount: number,
+  ) => ({
+    prototypeId: 'cold-chain-ops',
+    screenId: `cold-chain-ops.${screenSlug}`,
+    screenSlug,
+    path: `/prototype/cold-chain-ops/${screenSlug}`,
+    defaultVariantId: 'state-1',
+    variants: Array.from({ length: variantCount }, (_, index) => ({
+      variantId: `state-${index + 1}`,
+      label: `状态 ${index + 1}`,
+    })),
+    actions: Array.from({ length: scenarioCount }, (_, index) => ({
+      actionId: `action-${index + 1}`,
+      kind: 'click' as const,
+      target: {
+        screenId: `cold-chain-ops.${screenSlug}`,
+        pbId: `cold-chain-ops.${screenSlug}.action-${index + 1}`,
+      },
+    })),
+    scenarios: Array.from({ length: scenarioCount }, (_, index) => ({
+      scenarioId: `scenario-${index + 1}`,
+      label: `场景 ${index + 1}`,
+      ownerScreenId: `cold-chain-ops.${screenSlug}`,
+      initialVariantId: 'state-1',
+      actionIds: [`action-${index + 1}`],
+      checkpoints: [
+        {
+          checkpointId: `checkpoint-${index + 1}`,
+          screenId: `cold-chain-ops.${screenSlug}`,
+          variantId: 'state-1',
+          requiredFragments: [],
+        },
+      ],
+    })),
+  });
+  return {
+    protocolVersion: 2,
+    inputVersion: 'cold-chain-cli-parity',
+    capabilities: [
+      'describe',
+      'prepare',
+      'readiness',
+      'semantic-snapshot',
+      'reset',
+      'scenario',
+    ],
+    screens: [
+      screen('exception-queue', 5, 2),
+      screen('shipment-detail', 5, 2),
+      screen('resolution-form', 7, 3),
+    ],
+  };
+}
+
 describe('ProtoBridge CLI', () => {
+  it('expands whole-Prototype and one-Screen deliver intent to 24 and 7 Cases', async () => {
+    const root = await tempRoot();
+    const manifestPath = path.join(root, 'manifest.json');
+    await writeFile(manifestPath, JSON.stringify(coldChainManifest()));
+    const loaded = {
+      value: { runtime: { baseUrl: 'http://127.0.0.1:3977' } },
+    } as any;
+
+    const whole = await resolveDeliverDraft(
+      parseCliArgs([
+        'deliver',
+        '--prototype',
+        'cold-chain-ops',
+        '--manifest',
+        manifestPath,
+      ]),
+      loaded,
+    );
+    expect(
+      preflightSelection(whole!, coldChainManifest() as any).matrix,
+    ).toHaveLength(24);
+
+    const oneScreen = await resolveDeliverDraft(
+      parseCliArgs([
+        'deliver',
+        '--prototype',
+        'cold-chain-ops',
+        '--screen',
+        'exception-queue',
+        '--manifest',
+        manifestPath,
+      ]),
+      loaded,
+    );
+    expect(
+      preflightSelection(oneScreen!, coldChainManifest() as any).matrix,
+    ).toHaveLength(7);
+  });
   it('exposes the Evidence commands directly without a legacy prefix', async () => {
     const root = await tempRoot();
     const output = recorder(root);
@@ -125,9 +228,9 @@ describe('ProtoBridge CLI', () => {
         allowedOrigins: ['http://127.0.0.1:3977'],
       },
     });
-    expect(
-      await runCli(['workspace', 'doctor', '--json'], output.io),
-    ).toBe(CLI_EXIT_CODES.ok);
+    expect(await runCli(['workspace', 'doctor', '--json'], output.io)).toBe(
+      CLI_EXIT_CODES.ok,
+    );
     expect(JSON.parse(output.stdout.at(-1) ?? '{}')).toMatchObject({
       workspaceId: 'cli-test',
       bundles: 0,
@@ -155,9 +258,9 @@ describe('ProtoBridge CLI', () => {
     });
     await writer.init();
     try {
-      expect(
-        await runCli(['workspace', 'doctor', '--json'], output.io),
-      ).toBe(CLI_EXIT_CODES.ok);
+      expect(await runCli(['workspace', 'doctor', '--json'], output.io)).toBe(
+        CLI_EXIT_CODES.ok,
+      );
       expect(JSON.parse(output.stdout.at(-1) ?? '{}')).toMatchObject({
         workspaceId: 'cli-test',
       });
@@ -325,9 +428,9 @@ describe('ProtoBridge CLI', () => {
   it('rejects a global risk bypass', async () => {
     const root = await tempRoot();
     const output = recorder(root);
-    expect(
-      await runCli(['preflight', '--force'], output.io),
-    ).toBe(CLI_EXIT_CODES.error);
+    expect(await runCli(['preflight', '--force'], output.io)).toBe(
+      CLI_EXIT_CODES.error,
+    );
     expect(output.stderr.join('\n')).toContain('--force is not supported');
   });
 

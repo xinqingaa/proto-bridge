@@ -724,7 +724,7 @@ export function validateRegistries(input?: {
 
       if (
         requiresStrictEvidence(screen.screenId) &&
-        (variant.id === screen.defaultVariantId || variant.critical) &&
+        variant.id === screen.defaultVariantId &&
         (!variant.requiredFragments || variant.requiredFragments.length === 0)
       ) {
         pushError(errors, {
@@ -733,7 +733,7 @@ export function validateRegistries(input?: {
           instancePath: "/requiredFragments",
           keyword: "required",
           message:
-            "PB-compliant default and critical Variants require an authored Evidence completeness boundary",
+            "PB-compliant default Variant requires an authored Evidence completeness boundary",
         });
       }
       for (const fragment of variant.requiredFragments ?? []) {
@@ -919,18 +919,6 @@ export function validateRegistries(input?: {
         instancePath: "/requiredScenarioIds",
         keyword: "uniqueItems",
         message: "required Scenario ids must be unique",
-      });
-    }
-    if (
-      (actions.length > 0 || (screen.scenarios?.length ?? 0) > 0) &&
-      !screen.variants.some((variant) => variant.critical)
-    ) {
-      pushError(errors, {
-        resourceType: "screen",
-        resourceId: screen.screenId,
-        instancePath: "/variants",
-        keyword: "required",
-        message: "instrumented Screen requires at least one critical Variant",
       });
     }
   }

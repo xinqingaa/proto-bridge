@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildAgentPrompt,
   riskKindLabel,
-} from '../../src/v2/agent-prompt.js';
+} from '../../src/v2/prompts/agent-prompt.js';
 
 describe('agent-prompt', () => {
   it('labels known risk kinds in Chinese', () => {
@@ -40,12 +40,16 @@ describe('agent-prompt', () => {
     expect(prompt).toContain('# Verification');
     expect(prompt).toContain('# Final Report');
     expect(prompt).toContain('Screenshot 必须实际查看');
-    expect(prompt).toContain('不得发明证据未支持的容器形态');
-    expect(prompt).toContain('不得静默接受会改变构图的组件默认值');
+    expect(prompt).toContain('不要凭经验补造 Evidence 未支持的容器');
+    expect(prompt).toContain('仍不确定时记录风险');
     expect(prompt).toContain('AGENTS.md');
-    expect(prompt).toContain('Evidence `componentId/role -> target symbol/import/依据`');
-    expect(prompt).toContain('Evidence Case/variant/interaction -> target state/navigation');
-    expect(prompt).toContain('不得用外观相似的通用 widget 静默替代');
+    expect(prompt).toContain(
+      'Evidence `componentId/role -> target symbol/import/依据`',
+    );
+    expect(prompt).toContain(
+      'Evidence Case/variant/interaction -> target state/navigation',
+    );
+    expect(prompt).toContain('优先复用目标工程已声明或扫描确认的组件');
     expect(prompt).toContain('相对 Screenshot/Fragment 的已知偏差');
     expect(prompt).not.toContain('通用 Flutter 架构');
   });

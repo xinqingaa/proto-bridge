@@ -24,7 +24,7 @@ PBWork Design Foundation / Components
 每个进入 Evidence 闭环的 Screen 必须：
 
 - 在唯一 Registry 中声明稳定身份、路径、默认 Variant 和关键 Variant；
-- 为 default 与 critical Variant 声明 `requiredFragments`；
+- 为 strict Screen 的 default Variant 声明 `requiredFragments`；
 - 用稳定 `data-pb-id`、可选 `data-pb-key` 和合法 `data-pb-role` 标记语义节点；
 - 为业务局部证据节点显式声明实现所需 Token binding；
 - 为关键交互声明 Action、Scenario 和 Checkpoint；

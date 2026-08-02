@@ -28,7 +28,7 @@ description: >-
 - 不复制组件、导航、滚动或手势实现。
 - `BottomNavigation + TabViewport`、`ScrollableDataList + DataList` 等组合遵循手册。
 - Screen/Variant/Action/Scenario 只在 `prototypes/registry.ts` 注册。
-- default 与 critical Variant 声明非空 `requiredFragments`。
+- strict Screen 的 default Variant 声明非空 `requiredFragments`；其它 Variant 的覆盖风险保持可见。
 - Fragment 使用稳定 `screenId + pbId + optional pbKey`。
 - DS 业务实例传业务稳定 `inspectId`，required Fragment 不依赖 `ds.*`。
 - 业务局部证据节点显式提供 `data-pb-id`、`data-pb-role`、按需 `data-pb-key` 和实现所需 `data-pb-token-*`；CSS Token 不代替 binding Fact。

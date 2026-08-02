@@ -67,7 +67,7 @@ pnpm pb -- deliver \
 
 - 只使用 PBWork Token、Theme、组件和共享手势；
 - 在唯一 Registry 声明 Screen、Variant、Action 和 Scenario；
-- 为 default 与 critical Variant 声明 `requiredFragments`；
+- 为 strict Screen 的 default Variant 声明 `requiredFragments`；
 - 提供稳定 `data-pb-id`、可选 `data-pb-key` 和合法 `data-pb-role`；
 - 为需要独立实现或验收的业务局部节点显式提供 `data-pb-token-*`，不得只依赖 CSS Token；
 - 能由真实 Runtime 确定性 prepare、readiness、snapshot、scenario 和 reset。

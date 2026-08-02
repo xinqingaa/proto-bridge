@@ -6,10 +6,10 @@ PBWork 是 ProtoBridge 的 GUI，但不是 Core 的替代实现。它把人的�
 
 ## 两个界面
 
-| 界面 | 面向对象 | 职责 |
-| --- | --- | --- |
-| Workbench | 原型作者、设计者、开发者 | Design Foundation、组件 Playground、原型画布、Inspector、Deliver Flow、任务中心和 Evidence Review |
-| Runtime | Core Capture、Playwright、Workbench iframe | 确定性渲染 Screen/Variant，暴露 authored manifest、语义快照和 Scenario 执行能力 |
+| 界面      | 面向对象                                   | 职责                                                                                              |
+| --------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| Workbench | 原型作者、设计者、开发者                   | Design Foundation、组件 Playground、原型画布、Inspector、Deliver Flow、任务中心和 Evidence Review |
+| Runtime   | Core Capture、Playwright、Workbench iframe | 确定性渲染 Screen/Variant，暴露 authored manifest、语义快照和 Scenario 执行能力                   |
 
 Workbench 路由位于 `/workbench/*`。Runtime 路由位于 `/prototype/:prototypeId/:screenSlug`，业务状态通过受约束 query 表达。画布设备、缩放和工作壳偏好不得进入 Runtime URL。
 
@@ -36,6 +36,10 @@ DS 业务实例必须传稳定 `inspectId`。业务局部证据节点必须显�
 2. 执行采集（进度留在 Sheet 内）；
 3. 结果摘要与风险提醒；
 4. 创建 Handoff，渲染并可复制 Agent 提示词，同时写入 `.proto-bridge/deliveries/`。
+
+范围选择使用 authored 的真实页面、Variant 和 Scenario 名称。当前页面默认选中该页全部 Variant/Scenario，整个原型默认选中全部页面及其全部 Variant/Scenario；页面和每个真实选项都可以逐项取消。Draft 持久化为显式 ID 集合，不保存“关键/默认”等抽象模式；“全部”只是入口展开便利。
+
+CLI 使用相同默认语义：`deliver --prototype <id>` 选择整个原型，追加 `--screen <id|slug>` 选择单页；需要缩小时使用 `--only-variant <id>` 或 `--only-scenario <id>`。GUI 复制出的 SelectionDraft 可直接交给 CLI 的 `--selection`。
 
 PBWork 展示 Core 返回的：
 

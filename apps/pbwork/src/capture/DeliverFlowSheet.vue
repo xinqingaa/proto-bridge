@@ -10,15 +10,12 @@ import {
   ScanLine,
   X,
 } from "lucide-vue-next";
-import { riskKindLabel } from "@proto-bridge/core/v2/agent-prompt";
+import { riskKindLabel } from "@proto-bridge/core/v2/prompts/agent-prompt";
 import { useCaptureStore } from "@/app/stores/capture";
 import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
 import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
 import WorkbenchCheckbox from "@/workbench/ui/WorkbenchCheckbox.vue";
 import WorkbenchIconButton from "@/workbench/ui/WorkbenchIconButton.vue";
-import WorkbenchSelect, {
-  type WorkbenchSelectItem,
-} from "@/workbench/ui/WorkbenchSelect.vue";
 import WorkbenchTextField from "@/workbench/ui/WorkbenchTextField.vue";
 
 const capture = useCaptureStore();
@@ -26,8 +23,14 @@ const router = useRouter();
 const prototypes = loadPrototypes();
 const screens = loadPrototypeScreens();
 const copied = ref(false);
+const selectionCopied = ref(false);
 
-const STEP_TITLES = ["确认范围", "执行中", "结果与风险", "Agent 提示词"] as const;
+const STEP_TITLES = [
+  "确认范围",
+  "执行中",
+  "结果与风险",
+  "Agent 提示词",
+] as const;
 
 const prototype = computed(() =>
   prototypes.find((item) => item.id === capture.draft?.prototypeId),
@@ -41,32 +44,11 @@ const entryLabel = computed(
       prototype: "整个原型",
     })[capture.entryKind ?? "custom"],
 );
-const variantItems: WorkbenchSelectItem[] = [
-  { label: "默认状态", value: "default" },
-  { label: "仅关键状态", value: "critical" },
-  { label: "默认 + 关键状态", value: "default-and-critical" },
-  { label: "全部状态", value: "all" },
-];
-const scenarioItems: WorkbenchSelectItem[] = [
-  { label: "不执行场景", value: "none" },
-  { label: "关键场景", value: "critical" },
-  { label: "全部场景", value: "all" },
-];
-const allVariantMode = computed(() => {
-  const mode = capture.draft?.screens[0]?.variants.mode ?? "default-and-critical";
-  return mode === "explicit" ? "default" : mode;
-});
-const allScenarioMode = computed(() => {
-  const mode = capture.draft?.screens[0]?.scenarios.mode ?? "critical";
-  return mode === "explicit" ? "critical" : mode;
-});
 const fragmentLabel = computed(() => {
   const fragments = capture.draft?.screens[0]?.captureScope.fragments ?? [];
   if (!fragments.length) return "";
   return fragments
-    .map((item) =>
-      item.pbKey ? `${item.pbId}#${item.pbKey}` : item.pbId,
-    )
+    .map((item) => (item.pbKey ? `${item.pbId}#${item.pbKey}` : item.pbId))
     .join(", ");
 });
 const prototypeScreens = computed(() =>
@@ -74,6 +56,11 @@ const prototypeScreens = computed(() =>
 );
 const selectedScreenIds = computed(
   () => new Set(capture.draft?.screens.map((screen) => screen.screenId) ?? []),
+);
+const omittedScreenLabels = computed(() =>
+  prototypeScreens.value
+    .filter((screen) => !selectedScreenIds.value.has(screen.screenId))
+    .map((screen) => screen.label),
 );
 const draftScreens = computed(() =>
   (capture.draft?.screens ?? []).map((selection) => ({
@@ -87,7 +74,49 @@ const blocks = computed(() =>
     (diagnostic) => diagnostic.severity === "block",
   ),
 );
-const matrixCount = computed(() => capture.preflight?.result.matrix.length ?? 0);
+const matrixCount = computed(
+  () => capture.preflight?.result.matrix.length ?? 0,
+);
+const selectedVariantCount = computed(() =>
+  draftScreens.value.reduce(
+    (total, { selection }) => total + selection.variants.variantIds.length,
+    0,
+  ),
+);
+const totalVariantCount = computed(() =>
+  prototypeScreens.value.reduce(
+    (total, screen) => total + screen.variants.length,
+    0,
+  ),
+);
+const selectedScenarioCheckpointCount = computed(() =>
+  draftScreens.value.reduce(
+    (total, { selection, record }) =>
+      total +
+      (record?.scenarios ?? [])
+        .filter(
+          (scenario) =>
+            selection.scenarios.mode === "explicit" &&
+            selection.scenarios.scenarioIds.includes(scenario.id),
+        )
+        .reduce((count, scenario) => count + scenario.checkpoints.length, 0),
+    0,
+  ),
+);
+const selectedCaseCount = computed(
+  () => selectedVariantCount.value + selectedScenarioCheckpointCount.value,
+);
+const totalScenarioCheckpointCount = computed(() =>
+  prototypeScreens.value.reduce(
+    (total, screen) =>
+      total +
+      (screen.scenarios ?? []).reduce(
+        (count, scenario) => count + scenario.checkpoints.length,
+        0,
+      ),
+    0,
+  ),
+);
 const risks = computed(() => capture.handoffPreview?.risks ?? []);
 const successfulCount = computed(() => {
   const counts = capture.details?.activeSnapshot.coverage.counts;
@@ -99,22 +128,16 @@ const promptHtml = computed(() => renderMarkdown(capture.agentPrompt ?? ""));
 watch(
   () => capture.composerOpen,
   (open) => {
-    if (open && capture.deliverStep === 0 && capture.draft && !capture.preflight) {
+    if (
+      open &&
+      capture.deliverStep === 0 &&
+      capture.draft &&
+      !capture.preflight
+    ) {
       void capture.runPreflight();
     }
   },
 );
-
-function setAllVariants(value: string) {
-  capture.setAllVariantMode(
-    value as "default" | "critical" | "default-and-critical" | "all",
-  );
-  void capture.runPreflight();
-}
-function setAllScenarios(value: string) {
-  capture.setAllScenarioMode(value as "none" | "critical" | "all");
-  void capture.runPreflight();
-}
 
 function variantSelected(screenId: string, variantId: string): boolean {
   const selection = capture.draft?.screens.find(
@@ -122,16 +145,7 @@ function variantSelected(screenId: string, variantId: string): boolean {
   );
   const record = screens.find((screen) => screen.screenId === screenId);
   if (!selection || !record) return false;
-  if (selection.variants.mode === "explicit") {
-    return selection.variants.variantIds.includes(variantId);
-  }
-  if (selection.variants.mode === "all") return true;
-  const variant = record.variants.find((item) => item.id === variantId);
-  if (selection.variants.mode === "critical") return Boolean(variant?.critical);
-  if (selection.variants.mode === "default-and-critical") {
-    return variantId === record.defaultVariantId || Boolean(variant?.critical);
-  }
-  return variantId === record.defaultVariantId;
+  return selection.variants.variantIds.includes(variantId);
 }
 
 function scenarioSelected(screenId: string, scenarioId: string): boolean {
@@ -139,14 +153,9 @@ function scenarioSelected(screenId: string, scenarioId: string): boolean {
     (screen) => screen.screenId === screenId,
   );
   const record = screens.find((screen) => screen.screenId === screenId);
-  if (!selection || !record || selection.scenarios.mode === "none") return false;
-  if (selection.scenarios.mode === "explicit") {
-    return selection.scenarios.scenarioIds.includes(scenarioId);
-  }
-  if (selection.scenarios.mode === "all") return true;
-  return Boolean(
-    record.scenarios?.find((scenario) => scenario.id === scenarioId)?.critical,
-  );
+  if (!selection || !record || selection.scenarios.mode === "none")
+    return false;
+  return selection.scenarios.scenarioIds.includes(scenarioId);
 }
 
 function refreshAfterEdit() {
@@ -173,6 +182,19 @@ async function copyPrompt() {
     }, 1600);
   } catch {
     capture.setError(new Error("无法复制提示词，请手动选择文本。"));
+  }
+}
+
+async function copySelection() {
+  if (!capture.draft) return;
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(capture.draft, null, 2));
+    selectionCopied.value = true;
+    setTimeout(() => {
+      selectionCopied.value = false;
+    }, 1600);
+  } catch {
+    capture.setError(new Error("无法复制 Selection，请检查浏览器剪贴板权限。"));
   }
 }
 
@@ -282,38 +304,44 @@ function renderMarkdown(source: string): string {
               </article>
               <article>
                 <span>页面</span>
-                <strong>{{ capture.draft.screens.length }}</strong>
+                <strong
+                  >{{ capture.draft.screens.length }} /
+                  {{ prototypeScreens.length }}</strong
+                >
+              </article>
+              <article>
+                <span>状态</span>
+                <strong
+                  >{{ selectedVariantCount }} / {{ totalVariantCount }}</strong
+                >
+              </article>
+              <article>
+                <span>场景检查点</span>
+                <strong
+                  >{{ selectedScenarioCheckpointCount }} /
+                  {{ totalScenarioCheckpointCount }}</strong
+                >
               </article>
               <article>
                 <span>将采集</span>
-                <strong>{{ matrixCount || "…" }} 项</strong>
+                <strong
+                  >{{ matrixCount || selectedCaseCount || "…" }} 项</strong
+                >
               </article>
             </div>
             <p v-if="fragmentLabel" class="ok-line">
               稳定元素：{{ fragmentLabel }}
             </p>
+            <p v-if="omittedScreenLabels.length" class="hint">
+              未包含：{{ omittedScreenLabels.join("、") }}
+            </p>
+            <div class="scope-tools">
+              <WorkbenchButton tone="ghost" size="small" @click="copySelection">
+                <ClipboardCopy :size="14" />
+                {{ selectionCopied ? "已复制 Selection" : "复制 Selection" }}
+              </WorkbenchButton>
+            </div>
 
-            <label class="field">
-              <span>状态范围</span>
-              <WorkbenchSelect
-                :model-value="allVariantMode"
-                :items="variantItems"
-                aria-label="状态范围"
-                @update:model-value="setAllVariants"
-              />
-              <small v-if="allVariantMode === 'all'">
-                「全部状态」可能包含未声明验收元素的空态，创建交接时会出现风险提示。
-              </small>
-            </label>
-            <label class="field">
-              <span>交互场景</span>
-              <WorkbenchSelect
-                :model-value="allScenarioMode"
-                :items="scenarioItems"
-                aria-label="交互场景"
-                @update:model-value="setAllScenarios"
-              />
-            </label>
             <section v-if="capture.entryKind === 'custom'" class="scope-editor">
               <strong>选择页面</strong>
               <div class="choice-grid">
@@ -347,7 +375,9 @@ function renderMarkdown(source: string): string {
                     <WorkbenchCheckbox
                       v-for="variant in record?.variants ?? []"
                       :key="variant.id"
-                      :model-value="variantSelected(selection.screenId, variant.id)"
+                      :model-value="
+                        variantSelected(selection.screenId, variant.id)
+                      "
                       :label="variant.label"
                       @update:model-value="
                         capture.toggleVariantId(
@@ -366,8 +396,10 @@ function renderMarkdown(source: string): string {
                     <WorkbenchCheckbox
                       v-for="scenario in record.scenarios"
                       :key="scenario.id"
-                      :model-value="scenarioSelected(selection.screenId, scenario.id)"
-                      :label="scenario.id"
+                      :model-value="
+                        scenarioSelected(selection.screenId, scenario.id)
+                      "
+                      :label="scenario.label"
                       @update:model-value="
                         capture.toggleScenarioId(
                           selection.screenId,
@@ -427,11 +459,15 @@ function renderMarkdown(source: string): string {
         </section>
 
         <!-- Step 1: running -->
-        <section v-else-if="capture.deliverStep === 1" class="step-panel loading">
+        <section
+          v-else-if="capture.deliverStep === 1"
+          class="step-panel loading"
+        >
           <LoaderCircle :size="36" class="spin" />
           <strong>{{ capture.activeJob?.status ?? "准备中" }}</strong>
           <p>
-            正在采集 {{ capture.activeJob?.selection.cases.length ?? 0 }} 个视图。
+            正在采集
+            {{ capture.activeJob?.selection.cases.length ?? 0 }} 个视图。
             完成后会留在此面板继续交接。
           </p>
         </section>
@@ -464,7 +500,9 @@ function renderMarkdown(source: string): string {
               </span>
             </div>
           </section>
-          <p v-else class="ok-line">当前没有必须确认的风险，可以直接生成交接。</p>
+          <p v-else class="ok-line">
+            当前没有必须确认的风险，可以直接生成交接。
+          </p>
         </section>
 
         <!-- Step 3: prompt -->
@@ -473,7 +511,9 @@ function renderMarkdown(source: string): string {
             <Check :size="20" />
             <div>
               <strong>交接已创建</strong>
-              <small data-testid="handoff-id">{{ capture.handoff.handoffId }}</small>
+              <small data-testid="handoff-id">{{
+                capture.handoff.handoffId
+              }}</small>
             </div>
           </div>
           <p
@@ -509,7 +549,9 @@ function renderMarkdown(source: string): string {
           v-if="capture.deliverStep === 0"
           tone="primary"
           :loading="capture.busy"
-          :disabled="!capture.draft || !capture.preflight || !capture.warningsAccepted"
+          :disabled="
+            !capture.draft || !capture.preflight || !capture.warningsAccepted
+          "
           data-testid="composer-start-capture"
           @click="startDeliver"
         >
@@ -613,7 +655,7 @@ function renderMarkdown(source: string): string {
 }
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
   gap: 10px;
 }
 .summary-grid article,
@@ -648,6 +690,10 @@ function renderMarkdown(source: string): string {
   display: grid;
   gap: 10px;
   padding-block: 4px;
+}
+.scope-tools {
+  display: flex;
+  justify-content: flex-end;
 }
 .scope-editor > strong {
   font-size: 0.82rem;

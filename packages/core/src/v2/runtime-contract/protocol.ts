@@ -30,7 +30,7 @@ export type RuntimeFragmentIdentity = z.infer<typeof RuntimeFragmentIdentity>;
 export const RuntimeVariantManifest = z
   .object({
     variantId: StableId,
-    critical: z.boolean(),
+    label: z.string().min(1),
     fixtureId: StableId.optional(),
     /**
      * Authored completeness boundary for a full instrumented capture.
@@ -88,9 +88,9 @@ export type RuntimeCheckpointManifest = z.infer<
 export const RuntimeScenarioManifest = z
   .object({
     scenarioId: StableId,
+    label: z.string().min(1),
     ownerScreenId: StableId,
     initialVariantId: StableId,
-    critical: z.boolean().default(false),
     actionIds: z.array(StableId).min(1),
     checkpoints: z.array(RuntimeCheckpointManifest).min(1),
   })

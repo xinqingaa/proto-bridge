@@ -81,7 +81,7 @@ Variant 表达稳定业务状态，例如：
 
 Theme、Device、Viewport 和 Fixture 是独立 Case 维度，不得伪装成 Variant。
 
-default Variant 必须声明非空 `requiredFragments`。每个 `critical: true` Variant 也必须声明自己的非空 `requiredFragments`。
+严格 Screen 的 default Variant 必须声明非空 `requiredFragments`。其它 Variant 可以未声明 boundary，但采集和交接必须保留覆盖风险。
 
 ## 5. Runtime 标记
 
@@ -161,7 +161,6 @@ Scenario 声明：
 - owner Screen；
 - initial Variant；
 - 有序 Action IDs；
-- 是否 critical；
 - 一个或多个 Checkpoint。
 
 Checkpoint 必须声明实际 Screen、Variant 和非空 required Fragments。Runtime 执行后发现任一维度不匹配，应确定性失败。
@@ -221,7 +220,7 @@ pnpm test:e2e:runtime
 - 用真实浏览器验证 required Fragment 唯一、可见、bbox 非零；
 - 验证业务局部证据节点没有只写 CSS Token 而遗漏 id、role 或 `data-pb-token-*`；
 - 验证 DS 业务实例使用业务 `inspectId`，required boundary 不依赖 `ds.*`；
-- 验证 default 与所有 critical Variant；
+- 验证 default 与所有被选中的 Variant；
 - 验证 Action、Scenario、Checkpoint 和 reset；
 - 验证纵滚、横滑、刷新、Overlay 和返回；
 - 确认相关 Contract、Registry、测试和文档同步。

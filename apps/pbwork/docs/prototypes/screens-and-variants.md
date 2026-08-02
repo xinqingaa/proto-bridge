@@ -34,7 +34,7 @@
 进入 Evidence 闭环的 Screen：
 
 1. default Variant 必须声明非空 `requiredFragments`；
-2. 每个 `critical: true` Variant 必须声明自己的非空 `requiredFragments`；
+2. 严格 Screen 的 default Variant 必须声明非空 `requiredFragments`；其它 Variant 可以在证据未完整声明时产生可见覆盖风险；
 3. Fragment identity 使用稳定 `screenId + pbId + optional pbKey`；
 4. 对应 Runtime 节点必须提供合法 `data-pb-role`，可见且具有非零 bbox；
 5. DS required Fragment 使用业务 `inspectId`，业务局部 required Fragment 显式声明实现所需 `data-pb-token-*`；

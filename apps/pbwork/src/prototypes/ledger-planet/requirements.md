@@ -108,7 +108,7 @@
 ## Runtime 与 Evidence
 
 - 所有 Screen/Variant 在唯一 Registry 注册。
-- default 与 critical Variant 声明 `requiredFragments`。
+- strict Screen 的 default Variant 声明 `requiredFragments`。
 - 关键节点具有稳定 `data-pb-id`、`data-pb-role` 和按需 `data-pb-key`。
 - 关键任务通过 Action、Scenario 和 Checkpoint 表达。
 - Variant、Theme、Fixture 和 Device 是独立维度。

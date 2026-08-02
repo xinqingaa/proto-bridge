@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
 import { useCaptureStore } from "@/app/stores/capture";
 import { captureServiceClient } from "@/capture/service-client";
+import { resolveSelectionMatrix } from "@proto-bridge/core/v2/capture";
+import { buildRuntimeCaptureManifest } from "@/runtime/capture-protocol";
 
 describe("PBWork V2 capture store", () => {
   beforeEach(() => {
@@ -24,15 +26,11 @@ describe("PBWork V2 capture store", () => {
     expect(store.entryKind).toBe("current-screen");
     expect(store.draft?.screens[0]?.variants).toEqual({
       mode: "explicit",
-      variantIds: ["default"],
+      variantIds: ["default", "empty"],
     });
     expect(store.draft?.screens[0]?.scenarios).toEqual({
       mode: "explicit",
-      scenarioIds: [
-        "filter-todo",
-        "filter-done",
-        "open-claimable-task",
-      ],
+      scenarioIds: ["filter-todo", "filter-done", "open-claimable-task"],
     });
 
     expect(
@@ -59,7 +57,7 @@ describe("PBWork V2 capture store", () => {
     );
   });
 
-  it("builds custom and whole-Prototype Drafts without making all the default", () => {
+  it("builds custom and whole-Prototype Drafts with explicit authored scope", () => {
     const store = useCaptureStore();
     store.beginCustom("ledger-planet");
     expect(store.draft?.screens).toHaveLength(1);
@@ -71,14 +69,15 @@ describe("PBWork V2 capture store", () => {
     expect(
       store.draft?.screens.every(
         (screen) =>
-          screen.variants.mode === "default" &&
-          screen.scenarios.mode === "none",
+          screen.variants.mode === "explicit" &&
+          (screen.scenarios.mode === "none" ||
+            screen.scenarios.mode === "explicit"),
       ),
     ).toBe(true);
-    store.setAllVariantMode("all");
-    store.setAllScenarioMode("critical");
     expect(
-      store.draft?.screens.every((screen) => screen.variants.mode === "all"),
+      store.draft?.screens.every(
+        (screen) => screen.variants.mode === "explicit",
+      ),
     ).toBe(true);
   });
 
@@ -118,6 +117,37 @@ describe("PBWork V2 capture store", () => {
     expect(store.acceptedWarningIds).toEqual([]);
   });
 
+  it("expands cold-chain whole-Prototype and one-Screen defaults to 24 and 7 Cases", () => {
+    const store = useCaptureStore();
+    const manifest = buildRuntimeCaptureManifest("cold-chain-ops");
+
+    store.beginPrototype("cold-chain-ops");
+    expect(resolveSelectionMatrix(store.draft!, manifest).matrix).toHaveLength(
+      24,
+    );
+
+    store.beginCurrentScreen({
+      prototypeId: "cold-chain-ops",
+      screenId: "cold-chain-ops.exception-queue",
+      variantId: "default",
+      themeId: "light",
+      deviceId: "iphone-14",
+      returnTo: "/workbench/prototypes/cold-chain-ops/screens/exception-queue",
+    });
+    expect(resolveSelectionMatrix(store.draft!, manifest).matrix).toHaveLength(
+      7,
+    );
+
+    store.toggleScenarioId(
+      "cold-chain-ops.exception-queue",
+      "focus-critical",
+      false,
+    );
+    expect(resolveSelectionMatrix(store.draft!, manifest).matrix).toHaveLength(
+      6,
+    );
+  });
+
   it("supports explicit per-Screen Variant and Scenario editing", () => {
     const store = useCaptureStore();
     store.beginCurrentScreen({
@@ -133,11 +163,7 @@ describe("PBWork V2 capture store", () => {
       mode: "explicit",
       variantIds: ["default", "empty"],
     });
-    store.toggleScenarioId(
-      "ledger-planet.task-list",
-      "filter-todo",
-      false,
-    );
+    store.toggleScenarioId("ledger-planet.task-list", "filter-todo", false);
     expect(store.draft?.screens[0]?.scenarios).toEqual({
       mode: "explicit",
       scenarioIds: ["filter-done", "open-claimable-task"],

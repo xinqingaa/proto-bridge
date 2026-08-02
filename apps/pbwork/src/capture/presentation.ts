@@ -1,5 +1,5 @@
 import type { CaptureJob } from "@proto-bridge/core/v2";
-import { riskKindLabel } from "@proto-bridge/core/v2/agent-prompt";
+import { riskKindLabel } from "@proto-bridge/core/v2/prompts/agent-prompt";
 import type { CaptureConsoleState } from "@proto-bridge/core/v2/service-contract";
 import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
 

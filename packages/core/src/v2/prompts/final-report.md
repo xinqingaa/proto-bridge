@@ -1,6 +1,6 @@
 # Final Report
 
-最终报告必须包含：
+最终报告简洁说明：
 
 - 实际使用的 Workspace、Handoff、Bundle、Snapshot 和 revisions；
 - Handoff 原始 `mandatoryRiskReport`，不得改写或省略；

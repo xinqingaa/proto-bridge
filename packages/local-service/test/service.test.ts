@@ -35,8 +35,8 @@ function manifest(): RuntimeCaptureManifest {
         path: '/prototype/ledger-planet/task-list',
         defaultVariantId: 'default',
         variants: [
-          { variantId: 'default', critical: false },
-          { variantId: 'claimable', critical: true },
+          { variantId: 'default', label: '默认' },
+          { variantId: 'claimable', label: '可领取' },
         ],
         actions: [],
         scenarios: [],
@@ -51,7 +51,7 @@ function draft(sourcePolicy = false): SelectionDraft {
     screens: [
       {
         screenId: 'ledger-planet.task-list',
-        variants: { mode: 'default' },
+        variants: { mode: 'explicit', variantIds: ['default'] },
         themeIds: ['light'],
         deviceIds: ['iphone-14'],
         scenarios: { mode: 'none' },

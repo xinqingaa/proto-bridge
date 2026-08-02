@@ -115,9 +115,8 @@ function readComponentContext(element: HTMLElement): {
   for (const [slot, tokenId] of Object.entries(fromDataset ?? {})) {
     if (!(slot in tokenBindings)) tokenBindings[slot] = tokenId;
   }
-  const registrationSource: "component-contract" | "runtime-registration" = reg.componentId
-    ? "component-contract"
-    : "runtime-registration";
+  const registrationSource: "component-contract" | "runtime-registration" =
+    reg.componentId ? "component-contract" : "runtime-registration";
   const tokenBindingEvidence = [
     ...Object.entries(registered).map(([slot, tokenId]) => ({
       slot,
@@ -214,7 +213,7 @@ function toScreenManifest(
     defaultVariantId: screen.defaultVariantId,
     variants: screen.variants.map((variant) => ({
       variantId: variant.id,
-      critical: variant.critical ?? false,
+      label: variant.label,
       ...(variant.fixture ? { fixtureId: variant.fixture } : {}),
       ...(variant.requiredFragments
         ? { requiredFragments: variant.requiredFragments }
@@ -227,9 +226,9 @@ function toScreenManifest(
     })),
     scenarios: (screen.scenarios ?? []).map((scenario) => ({
       scenarioId: scenario.id,
+      label: scenario.label,
       ownerScreenId: screen.screenId,
       initialVariantId: scenario.initialVariantId,
-      critical: scenario.critical ?? false,
       actionIds: scenario.actionIds,
       checkpoints: scenario.checkpoints.map((checkpoint) => ({
         checkpointId: checkpoint.id,
@@ -256,7 +255,9 @@ function toScreenManifest(
   };
 }
 
-function buildManifest(prototypeId: string): RuntimeCaptureManifest {
+export function buildRuntimeCaptureManifest(
+  prototypeId: string,
+): RuntimeCaptureManifest {
   const screens = loadPrototypeScreens()
     .filter((screen) => screen.prototypeId === prototypeId)
     .map(toScreenManifest)
@@ -271,7 +272,9 @@ function buildManifest(prototypeId: string): RuntimeCaptureManifest {
   const catalogValues = [
     {
       kind: "prototype" as const,
-      values: loadPrototypes().filter((prototype) => prototype.id === prototypeId),
+      values: loadPrototypes().filter(
+        (prototype) => prototype.id === prototypeId,
+      ),
       id: (value: { id: string }) => value.id,
     },
     {
@@ -567,7 +570,10 @@ async function waitForFragments(
         }
         const element = matches[0]!;
         const role = element.dataset.pbRole;
-        if (!RuntimeSemanticNode.shape.role.safeParse(role).success || role === "unknown") {
+        if (
+          !RuntimeSemanticNode.shape.role.safeParse(role).success ||
+          role === "unknown"
+        ) {
           return new ProtocolFailure(
             "invalid-fragment-role",
             `Required Fragment ${fragment.pbId}/${fragment.pbKey ?? ""} has invalid role ${role ?? "missing"}.`,
@@ -607,7 +613,13 @@ async function waitForFragments(
         return null;
       })
       .find((result) => result !== null && result !== undefined);
-    if (!failure && fragments.every((fragment) => findFragments(fragment, context).length === 1)) return;
+    if (
+      !failure &&
+      fragments.every(
+        (fragment) => findFragments(fragment, context).length === 1,
+      )
+    )
+      return;
     if (failure) throw failure;
     await new Promise((resolve) => window.setTimeout(resolve, 25));
   }
@@ -632,10 +644,7 @@ function isVisible(element: HTMLElement): boolean {
   );
 }
 
-function readCheckpointState(
-  element: HTMLElement,
-  key: string,
-): unknown {
+function readCheckpointState(element: HTMLElement, key: string): unknown {
   const registered =
     getInspectRegistration(element) ?? findRegisteredAncestor(element);
   const state = registered?.getState?.();
@@ -736,7 +745,7 @@ export function installRuntimeCaptureProtocol(
         "Runtime route has not resolved.",
       );
     }
-    const manifest = buildManifest(context.prototypeId);
+    const manifest = buildRuntimeCaptureManifest(context.prototypeId);
 
     if (payload.kind === "describe") return { manifest };
 

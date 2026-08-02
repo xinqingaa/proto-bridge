@@ -2,6 +2,8 @@
 
 这是一个独立的、可运行的 Flutter 产品工程。实现功能前必须先读本文件、`README.md` 和任务相关的 `docs/`，再检查实际代码和相似页面。
 
+收到固定 ProtoBridge Evidence 的实现任务时，先读取并遵守 `.agents/skills/proto-bridge-consumer/SKILL.md`；该 Skill 负责 Evidence 消费流程，本文件和 `docs/` 负责本工程的实现规范。
+
 ## 文档优先级
 
 1. 固定 ProtoBridge Evidence 决定源页面的结构、文案、状态、交互和构图。

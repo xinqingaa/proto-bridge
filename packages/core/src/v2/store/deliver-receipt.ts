@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { buildAgentPrompt } from '../agent-prompt.js';
+import { buildAgentPrompt } from '../prompts/agent-prompt.js';
 import type { AgentHandoff } from '../contracts/handoff.js';
 
 export type DeliveryReceipt = {

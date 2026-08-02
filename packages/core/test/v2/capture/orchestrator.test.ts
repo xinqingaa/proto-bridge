@@ -111,9 +111,9 @@ function manifest(inputVersion: string): RuntimeCaptureManifest {
         sourcePath: 'ledger-planet/screens/TaskList.vue',
         defaultVariantId: 'default',
         variants: [
-          { variantId: 'default', critical: false },
-          { variantId: 'empty', critical: false },
-          { variantId: 'claimable', critical: true },
+          { variantId: 'default', label: '默认' },
+          { variantId: 'empty', label: '空态' },
+          { variantId: 'claimable', label: '可领取' },
         ],
         actions: [],
         scenarios: [],
