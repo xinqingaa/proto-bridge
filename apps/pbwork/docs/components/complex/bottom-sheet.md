@@ -46,4 +46,4 @@
 1. 从 `@/design-system/components/complex/...` 引入实现组件。
 2. Props 保持在契约枚举内；需要新能力先改 contract + registry + 本文。
 3. 业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`；默认 `ds.*` 只用于 Playground、组件测试或非业务预览。
-
+4. 关闭态通过交互切换为打开态时，组件会重新注册实际 Sheet surface，确保 Scenario Checkpoint 能读取可见、非零 bbox 的 Overlay Evidence。

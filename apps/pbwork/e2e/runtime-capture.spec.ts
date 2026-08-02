@@ -108,8 +108,9 @@ test("V2 Runtime protocol captures default, stable repeated rows, Scenario Check
       pbKey: "t3",
     },
   ]);
-  expect(taskList.actions.map((item: { actionId: string }) => item.actionId))
-    .toEqual(["select-todo", "select-done", "open-claimable-task"]);
+  expect(
+    taskList.actions.map((item: { actionId: string }) => item.actionId),
+  ).toEqual(["select-todo", "select-done", "open-claimable-task"]);
   expect(
     taskList.scenarios.map((item: { scenarioId: string }) => item.scenarioId),
   ).toEqual(["filter-todo", "filter-done", "open-claimable-task"]);
@@ -324,6 +325,204 @@ test("all PB-compliant Ledger Planet samples satisfy their authored Evidence bou
   }
 });
 
+test("cold-chain-ops satisfies every authored Variant and required Scenario boundary", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+
+  async function request(
+    requestId: string,
+    payload: Record<string, unknown>,
+  ): Promise<any> {
+    for (let attempt = 0; ; attempt += 1) {
+      try {
+        return await page.evaluate(
+          async ({ id, body }) => {
+            const api = (
+              window as unknown as Record<
+                string,
+                { request(input: unknown): Promise<unknown> }
+              >
+            ).__PROTO_BRIDGE_CAPTURE_V2__;
+            if (!api) throw new Error("V2 Runtime Capture Protocol missing");
+            return api.request({
+              protocolVersion: 2,
+              requestId: id,
+              payload: body,
+            });
+          },
+          { id: requestId, body: payload },
+        );
+      } catch (error) {
+        if (
+          !(error instanceof Error) ||
+          !error.message.includes("Execution context was destroyed") ||
+          attempt >= 2
+        ) {
+          throw error;
+        }
+        await page.waitForLoadState("domcontentloaded");
+        await page.waitForFunction(() =>
+          Boolean(
+            (window as unknown as Record<string, unknown>)
+              .__PROTO_BRIDGE_CAPTURE_V2__,
+          ),
+        );
+      }
+    }
+  }
+
+  await page.goto(
+    "/prototype/cold-chain-ops/exception-queue?variant=default&theme=light",
+  );
+  await page.waitForFunction(() =>
+    Boolean(
+      (window as unknown as Record<string, unknown>)
+        .__PROTO_BRIDGE_CAPTURE_V2__,
+    ),
+  );
+  const described = await request("cold-chain-describe", { kind: "describe" });
+  expect(described.ok, JSON.stringify(described)).toBe(true);
+  expect(described.payload.manifest.authoringDiagnostics).toEqual([]);
+
+  const screens = described.payload.manifest.screens.filter(
+    (screen: { prototypeId: string }) =>
+      screen.prototypeId === "cold-chain-ops",
+  );
+  expect(screens).toHaveLength(3);
+
+  for (const screen of screens) {
+    for (const variant of screen.variants.filter(
+      (item: { requiredFragments?: unknown[] }) =>
+        (item.requiredFragments?.length ?? 0) > 0,
+    )) {
+      await page.goto(
+        `/prototype/cold-chain-ops/${screen.screenSlug}?variant=${variant.variantId}&theme=light&shipment=SH-2048`,
+      );
+      await page.waitForFunction(() =>
+        Boolean(
+          (window as unknown as Record<string, unknown>)
+            .__PROTO_BRIDGE_CAPTURE_V2__,
+        ),
+      );
+      const suffix = `${screen.screenSlug}-${variant.variantId}`;
+      const prepare = await request(`cold-chain-prepare-${suffix}`, {
+        kind: "prepare",
+        expected: {
+          prototypeId: "cold-chain-ops",
+          screenId: screen.screenId,
+          variantId: variant.variantId,
+          themeId: "light",
+        },
+      });
+      const readiness = await request(`cold-chain-ready-${suffix}`, {
+        kind: "readiness",
+        expected: {
+          prototypeId: "cold-chain-ops",
+          screenId: screen.screenId,
+          variantId: variant.variantId,
+          themeId: "light",
+          viewport: { width: 390, height: 844 },
+        },
+        requiredFragments: variant.requiredFragments,
+      });
+      const snapshot = await request(`cold-chain-snapshot-${suffix}`, {
+        kind: "semantic-snapshot",
+        fragments: variant.requiredFragments,
+      });
+      expect(prepare.ok, `${suffix}: ${JSON.stringify(prepare)}`).toBe(true);
+      expect(readiness.ok, `${suffix}: ${JSON.stringify(readiness)}`).toBe(
+        true,
+      );
+      expect(snapshot.ok, `${suffix}: ${JSON.stringify(snapshot)}`).toBe(true);
+      expect(snapshot.payload.nodes).toHaveLength(
+        variant.requiredFragments.length,
+      );
+      expect(
+        snapshot.payload.nodes.every(
+          (node: {
+            visible: boolean;
+            bbox: { width: number; height: number };
+          }) => node.visible && node.bbox.width > 0 && node.bbox.height > 0,
+        ),
+      ).toBe(true);
+    }
+  }
+
+  for (const screen of screens) {
+    for (const scenarioId of screen.requiredScenarioIds) {
+      const scenario = screen.scenarios.find(
+        (candidate: { scenarioId: string }) =>
+          candidate.scenarioId === scenarioId,
+      );
+      await page.goto(
+        `/prototype/cold-chain-ops/${screen.screenSlug}?variant=${scenario.initialVariantId}&theme=light&shipment=SH-2048`,
+      );
+      await page.waitForFunction(() =>
+        Boolean(
+          (window as unknown as Record<string, unknown>)
+            .__PROTO_BRIDGE_CAPTURE_V2__,
+        ),
+      );
+      const prepare = await request(
+        `cold-chain-scenario-prepare-${scenarioId}`,
+        {
+          kind: "prepare",
+          expected: {
+            prototypeId: "cold-chain-ops",
+            screenId: screen.screenId,
+            variantId: scenario.initialVariantId,
+            themeId: "light",
+          },
+        },
+      );
+      expect(prepare.ok, JSON.stringify(prepare)).toBe(true);
+      const initialVariant = screen.variants.find(
+        (candidate: { variantId: string }) =>
+          candidate.variantId === scenario.initialVariantId,
+      );
+      const ready = await request(`cold-chain-scenario-ready-${scenarioId}`, {
+        kind: "readiness",
+        expected: {
+          prototypeId: "cold-chain-ops",
+          screenId: screen.screenId,
+          variantId: scenario.initialVariantId,
+          themeId: "light",
+          viewport: { width: 390, height: 844 },
+        },
+        requiredFragments: initialVariant.requiredFragments,
+      });
+      expect(ready.ok, `${scenarioId}: ${JSON.stringify(ready)}`).toBe(true);
+      for (const actionId of scenario.actionIds) {
+        const action = await request(
+          `cold-chain-scenario-action-${scenarioId}-${actionId}`,
+          { kind: "execute-action", scenarioId, actionId },
+        );
+        expect(action.ok, `${scenarioId}: ${JSON.stringify(action)}`).toBe(
+          true,
+        );
+      }
+      for (const checkpoint of scenario.checkpoints) {
+        const verified = await request(
+          `cold-chain-scenario-checkpoint-${scenarioId}-${checkpoint.checkpointId}`,
+          {
+            kind: "verify-checkpoint",
+            scenarioId,
+            checkpointId: checkpoint.checkpointId,
+          },
+        );
+        expect(verified.ok, `${scenarioId}: ${JSON.stringify(verified)}`).toBe(
+          true,
+        );
+      }
+      const reset = await request(`cold-chain-scenario-reset-${scenarioId}`, {
+        kind: "reset",
+      });
+      expect(reset.ok, `${scenarioId}: ${JSON.stringify(reset)}`).toBe(true);
+    }
+  }
+});
+
 test("Core Playwright orchestrator commits default, critical, Fragment and Scenario Evidence to the V2 Store", async ({
   page,
 }) => {
@@ -371,11 +570,7 @@ test("Core Playwright orchestrator commits default, critical, Fragment and Scena
         deviceIds: ["iphone-14"],
         scenarios: {
           mode: "explicit",
-          scenarioIds: [
-            "filter-todo",
-            "filter-done",
-            "open-claimable-task",
-          ],
+          scenarioIds: ["filter-todo", "filter-done", "open-claimable-task"],
         },
         captureScope: baseScope,
       },
@@ -451,10 +646,7 @@ test("Core Playwright orchestrator commits default, critical, Fragment and Scena
       conflict: 0,
     });
 
-    const selectedCaseFor = (
-      variantId: string,
-      scenarioId?: string,
-    ) => {
+    const selectedCaseFor = (variantId: string, scenarioId?: string) => {
       const selected = full.run.selection.cases.find(
         (candidate) =>
           candidate.caseKey.variantId === variantId &&
@@ -510,24 +702,18 @@ test("Core Playwright orchestrator commits default, critical, Fragment and Scena
       ["t3", ["连续记账 3 天", "成长任务", "¥3 体验券"]],
     ] as const) {
       const text = String(
-        fact(
-          defaultRevision,
-          `ledger-planet.task-list.list.row.${rowId}.text`,
-        ).effectiveValue,
+        fact(defaultRevision, `ledger-planet.task-list.list.row.${rowId}.text`)
+          .effectiveValue,
       );
       for (const snippet of snippets) expect(text).toContain(snippet);
     }
     expect(
-      fact(
-        defaultRevision,
-        "ledger-planet.task-list.list.row.t2.tag",
-      ).effectiveValue,
+      fact(defaultRevision, "ledger-planet.task-list.list.row.t2.tag")
+        .effectiveValue,
     ).toBe("button");
     expect(
-      fact(
-        defaultRevision,
-        "ledger-planet.task-list.list.row.t2.bbox",
-      ).effectiveValue,
+      fact(defaultRevision, "ledger-planet.task-list.list.row.t2.bbox")
+        .effectiveValue,
     ).toMatchObject({ width: expect.any(Number), height: expect.any(Number) });
     expect(
       fact(
@@ -547,10 +733,8 @@ test("Core Playwright orchestrator commits default, critical, Fragment and Scena
 
     const todoRevision = await revisionFor("default", "filter-todo");
     expect(
-      fact(
-        todoRevision,
-        "ledger-planet.task-list.list.row.t1.text",
-      ).effectiveValue,
+      fact(todoRevision, "ledger-planet.task-list.list.row.t1.text")
+        .effectiveValue,
     ).toContain("记一笔");
     expect(
       todoRevision.facts.some((candidate) =>
@@ -560,10 +744,8 @@ test("Core Playwright orchestrator commits default, critical, Fragment and Scena
 
     const doneRevision = await revisionFor("default", "filter-done");
     expect(
-      fact(
-        doneRevision,
-        "ledger-planet.task-list.list.row.t2.text",
-      ).effectiveValue,
+      fact(doneRevision, "ledger-planet.task-list.list.row.t2.text")
+        .effectiveValue,
     ).toContain("待领取");
     expect(
       doneRevision.facts.some((candidate) =>
@@ -592,17 +774,15 @@ test("Core Playwright orchestrator commits default, critical, Fragment and Scena
       },
     });
     const detailText = String(
-      fact(
-        scenarioRevision,
-        "ledger-planet.task-detail.root.text",
-      ).effectiveValue,
+      fact(scenarioRevision, "ledger-planet.task-detail.root.text")
+        .effectiveValue,
     );
     for (const snippet of ["查看本周图表", "已达成", "领取奖励"]) {
       expect(detailText).toContain(snippet);
     }
     expect(
       full.run.attempts.every((attempt) =>
-        (attempt.revisionId
+        attempt.revisionId
           ? [defaultRevision, todoRevision, doneRevision, scenarioRevision]
               .find((revision) => revision.revisionId === attempt.revisionId)
               ?.facts.every((candidate) =>
@@ -610,7 +790,7 @@ test("Core Playwright orchestrator commits default, critical, Fragment and Scena
                   (value) => value.provenance.source !== "heuristic",
                 ),
               )
-          : false),
+          : false,
       ),
     ).toBe(true);
     const fullBlobs = await store.listBlobRecords(reference.BUNDLE_ID);
@@ -674,9 +854,7 @@ test("Core Playwright orchestrator commits default, critical, Fragment and Scena
           candidate.factId.startsWith("ledger-planet.task-list.list.row."),
         )
         .every((candidate) =>
-          candidate.factId.startsWith(
-            "ledger-planet.task-list.list.row.t2.",
-          ),
+          candidate.factId.startsWith("ledger-planet.task-list.list.row.t2."),
         ),
     ).toBe(true);
     const repeatedScoped = await capturePreflightToStore({
@@ -850,9 +1028,7 @@ test("Core Playwright orchestrator commits default, critical, Fragment and Scena
       expect.arrayContaining([
         expect.objectContaining({
           kind: "required-unknown",
-          refs: [
-            "ledger-planet.analytics.runtime.semantic-coverage",
-          ],
+          refs: ["ledger-planet.analytics.runtime.semantic-coverage"],
         }),
       ]),
     );

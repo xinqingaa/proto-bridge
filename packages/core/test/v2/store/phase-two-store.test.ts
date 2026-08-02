@@ -162,6 +162,52 @@ describe('Phase 2 Store: Catalog and controlled Blob', () => {
     expect(new TextDecoder().decode(reloadedBlob?.bytes)).toBe('controlled debug payload');
   });
 
+  it('keeps identical bytes reachable from distinct immutable owners', async () => {
+    const store = await openStore();
+    await createBundle(store);
+    await store.commitRun({
+      bundleId: f.BUNDLE_ID,
+      run: f.RUN_2,
+      revisions: [f.FRAGMENT_SCOPED_ACTIVE_REVISION],
+      coverage: f.SNAPSHOT.coverage,
+    });
+    const bytes = new TextEncoder().encode('identical screenshot bytes');
+    const primary = await store.putBlob({
+      bundleId: f.BUNDLE_ID,
+      kind: 'screenshot',
+      mediaType: 'image/png',
+      bytes,
+      ownerRefs: [{ kind: 'revision', objectId: f.PRIMARY_REVISION_ID }],
+    });
+    const fragment = await store.putBlob({
+      bundleId: f.BUNDLE_ID,
+      kind: 'screenshot',
+      mediaType: 'image/png',
+      bytes,
+      ownerRefs: [
+        { kind: 'revision', objectId: f.FRAGMENT_REVISION_ID },
+      ],
+    });
+
+    expect(primary.blobId).not.toBe(fragment.blobId);
+    expect(primary.digest).toBe(fragment.digest);
+    expect((await store.getBlob(f.BUNDLE_ID, primary.blobId))?.record.ownerRefs).toEqual([
+      { kind: 'revision', objectId: f.PRIMARY_REVISION_ID },
+    ]);
+    expect((await store.getBlob(f.BUNDLE_ID, fragment.blobId))?.record.ownerRefs).toEqual([
+      { kind: 'revision', objectId: f.FRAGMENT_REVISION_ID },
+    ]);
+
+    const retried = await store.putBlob({
+      bundleId: f.BUNDLE_ID,
+      kind: 'screenshot',
+      mediaType: 'image/png',
+      bytes,
+      ownerRefs: [{ kind: 'revision', objectId: f.PRIMARY_REVISION_ID }],
+    });
+    expect(retried).toEqual(primary);
+  });
+
   it('rejects arbitrary media, oversize bytes and unresolved logical owners', async () => {
     const store = await openStore({ maxBlobBytes: 4 });
     await createBundle(store);

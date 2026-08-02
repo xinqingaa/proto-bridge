@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, toRefs } from "vue";
+import { computed, nextTick, toRefs, watch } from "vue";
 import Button from "@/design-system/components/basic/Button.vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 
@@ -21,12 +21,19 @@ defineEmits<{
 }>();
 
 const rootRef = usePbInspectRef();
-const { modelValue, title, message, confirmLabel, contained, attach, inspectId } =
-  toRefs(props);
+const {
+  modelValue,
+  title,
+  message,
+  confirmLabel,
+  contained,
+  attach,
+  inspectId,
+} = toRefs(props);
 
 const attachTarget = computed(() => attach.value ?? ".runtime-app");
 
-usePbInspect({
+const { resync } = usePbInspect({
   element: rootRef,
   pbId: "ds.dialog",
   instanceId: inspectId,
@@ -60,10 +67,16 @@ usePbInspect({
     body: "typography.content",
   }),
 });
+
+watch(modelValue, async (value) => {
+  if (!value) return;
+  await nextTick();
+  resync();
+});
 </script>
 
 <template>
-  <span ref="rootRef" class="dialog-host" data-pb-id="ds.dialog" data-pb-role="dialog">
+  <span class="dialog-host">
     <v-dialog
       :model-value="modelValue ?? false"
       :attach="attachTarget"
@@ -72,8 +85,10 @@ usePbInspect({
       @update:model-value="$emit('update:modelValue', Boolean($event))"
     >
       <v-card
+        ref="rootRef"
         class="pb-dialog dialog"
-        data-pb-id="ds.dialog.surface"
+        data-pb-id="ds.dialog"
+        data-pb-role="dialog"
         data-pb-shell="dialog"
         role="dialog"
         aria-modal="true"
@@ -88,9 +103,14 @@ usePbInspect({
           <Button
             label="取消"
             variant="text"
+            v-bind="inspectId ? { inspectId: `${inspectId}.cancel` } : {}"
             @click="$emit('update:modelValue', false)"
           />
-          <Button :label="confirmLabel ?? '确认'" @click="$emit('confirm')" />
+          <Button
+            :label="confirmLabel ?? '确认'"
+            v-bind="inspectId ? { inspectId: `${inspectId}.confirm` } : {}"
+            @click="$emit('confirm')"
+          />
         </v-card-actions>
       </v-card>
     </v-dialog>

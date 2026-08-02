@@ -18,7 +18,6 @@ ProtoBridge（PB）把可交互原型转化为可追溯、可固定引用的 Evi
 | 标记业务节点与设置门禁 | [语义标记与证据门禁](./reference/semantic-authoring.md) |
 | 修改 PBWork Token 或组件 | [PBWork 开发规范](./pbwork/development.md) → [组件总论](./pbwork/components/overview.md) |
 | 维护仓库 | [开发规范](./maintenance/development.md) → [文档维护](./maintenance/documentation.md) |
-| 实施收敛版本 | [根实施计划](../plan.md) |
 | 理解架构转型背景 | [从 V1 到 Evidence 架构](./history/v1-to-evidence-architecture.md) |
 
 一次性人工验收记录位于 [`docs/acceptance/`](./acceptance/README.md)；它不替代正式指南或产品规范。

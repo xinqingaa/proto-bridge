@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, toRefs } from "vue";
+import { computed, nextTick, toRefs, watch } from "vue";
 import Button from "@/design-system/components/basic/Button.vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 
@@ -18,7 +18,7 @@ const { title, modelValue, attach, inspectId } = toRefs(props);
 
 const attachTarget = computed(() => attach.value ?? ".runtime-app");
 
-usePbInspect({
+const { resync } = usePbInspect({
   element: sheetRef,
   pbId: "ds.bottom-sheet",
   instanceId: inspectId,
@@ -45,6 +45,12 @@ usePbInspect({
     "typography.subtitle",
     "typography.content",
   ],
+});
+
+watch(modelValue, async (value) => {
+  if (!value) return;
+  await nextTick();
+  resync();
 });
 </script>
 

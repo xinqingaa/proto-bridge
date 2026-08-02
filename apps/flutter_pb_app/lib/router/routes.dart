@@ -12,4 +12,5 @@ abstract final class AppRoutes {
   static const ledgerPlanetV2 = '/prototypes/ledger-planet-v2';
   static const ledgerPlanetV2TaskDetail =
       '/prototypes/ledger-planet-v2/task-detail';
+  static const coldChain = '/prototypes/cold-chain';
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../features/demo/demo_page.dart';
+import '../features/cold_chain/cold_chain_page.dart';
 import '../features/field_service/field_service_page.dart';
 import '../features/hub/hub_page.dart';
 import '../features/ledger_planet/ledger_planet_page.dart';
@@ -25,4 +26,5 @@ final Map<String, WidgetBuilder> appRoutes = {
       TaskDetailV2Page.fromRouteArgs(
         ModalRoute.of(context)?.settings.arguments,
       ),
+  AppRoutes.coldChain: (_) => const ColdChainPage(),
 };

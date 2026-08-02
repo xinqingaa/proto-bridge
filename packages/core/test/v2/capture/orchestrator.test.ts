@@ -202,6 +202,61 @@ describe('V2 Capture Orchestrator + real Store', () => {
     expect((await store.getJob(result.jobId))?.status).toBe('completed');
   });
 
+  it('keeps identical Screenshot bytes reachable for every captured Case', async () => {
+    const preflight = preflightSelection(
+      draft(['empty', 'claimable']),
+      manifest('runtime-input-identical-screenshots'),
+    );
+    const identicalScreenshotDriver: CaseCaptureDriver = {
+      async captureCase(input) {
+        const captured = await new FakeDriver().captureCase(input);
+        return {
+          ...captured,
+          binaries: [
+            {
+              kind: 'screenshot',
+              mediaType: 'image/png',
+              bytes: new Uint8Array([137, 80, 78, 71]),
+            },
+          ],
+        };
+      },
+    };
+    const result = await capturePreflightToStore({
+      store,
+      bundleId: fixture.BUNDLE_ID,
+      preflight,
+      runtimeBaseUrl: 'http://127.0.0.1:3977',
+      driver: identicalScreenshotDriver,
+      now,
+    });
+
+    expect(result.storedBlobIds).toHaveLength(2);
+    expect(new Set(result.storedBlobIds)).toHaveLength(2);
+    const report = await store.createStalenessReport({
+      bundleId: fixture.BUNDLE_ID,
+      snapshotId: result.snapshot.snapshotId,
+      inputVersion: preflight.inputVersion,
+      currentDependencyDigests: {
+        'manifest:ledger-planet': preflight.manifestDigest,
+        'runtime:ledger-planet.task-list': preflight.inputVersion,
+      },
+    });
+    const evaluation = await evaluateAgentHandoff({
+      store,
+      bundleId: fixture.BUNDLE_ID,
+      snapshotId: result.snapshot.snapshotId,
+      selectedCases: result.run.selection.cases,
+      stalenessReport: report,
+    });
+    expect(evaluation.coverageStatus).toBe('complete');
+    expect(evaluation.risks).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: 'partial-coverage' }),
+      ]),
+    );
+  });
+
   it('persists required unknowns as readable immutable Issues', async () => {
     await capturePreflightToStore({
       store,

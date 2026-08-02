@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, toRefs } from "vue";
+import { computed, nextTick, toRefs, watch } from "vue";
 import { CheckCircle2, AlertCircle } from "lucide-vue-next";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 
@@ -20,7 +20,7 @@ const { modelValue, message, tone, attach, inspectId } = toRefs(props);
 const color = computed(() => tone.value ?? "success");
 const attachTarget = computed(() => attach.value ?? ".runtime-app");
 
-usePbInspect({
+const { resync } = usePbInspect({
   element: rootRef,
   pbId: "ds.snackbar",
   instanceId: inspectId,
@@ -50,14 +50,17 @@ usePbInspect({
     message: "typography.content",
   }),
 });
+
+watch(modelValue, async (value) => {
+  if (!value) return;
+  await nextTick();
+  resync();
+});
 </script>
 
 <template>
   <v-snackbar
-    ref="rootRef"
     class="pb-snackbar"
-    data-pb-id="ds.snackbar"
-    data-pb-role="toast"
     :model-value="modelValue ?? true"
     color="surface"
     :content-class="`pb-snackbar-surface is-${color}`"
@@ -68,7 +71,13 @@ usePbInspect({
     timeout="4000"
     @update:model-value="$emit('update:modelValue', Boolean($event))"
   >
-    <div class="pb-snackbar-content">
+    <div
+      ref="rootRef"
+      class="pb-snackbar-content"
+      data-pb-id="ds.snackbar"
+      data-pb-role="toast"
+      data-pb-shell="toast"
+    >
       <component
         :is="tone === 'error' ? AlertCircle : CheckCircle2"
         :size="20"

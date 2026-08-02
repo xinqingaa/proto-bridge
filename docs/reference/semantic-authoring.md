@@ -2,7 +2,7 @@
 
 本规范是 PBWork Runtime 与 ProtoBridge 之间关于节点身份、语义角色、组件来源和 Token 证据的唯一权威。它适用于由开发、设计和产品人员通过 Cursor、Codex 等 Coding Agent 维护的所有新原型。
 
-本文定义收敛版本的目标 Contract。尚未由代码门禁覆盖的条目必须列入根目录 `plan.md`；在实现完成前，Agent 仍须按本文进行源码审查，不得因为工具尚未阻断而视为合规。
+本文定义当前执行中的 Contract。Block 必须由 Schema、Registry validation、authoring lint、Runtime/Core validation 或 CI 的确定性检查执行；Warning 必须进入 Inspector、Preflight 或 CI 报告。没有对应执行点的提案不得写成现行强制规则。
 
 ## 1. 先判断节点是否需要独立证据
 
@@ -154,4 +154,4 @@ Warning 可以被明确接受以继续一次 Producer 操作，但接受不会�
 6. 运行静态 authoring lint、Registry validation 和真实 Runtime Capture；
 7. 对每个 warning 给出修复或保留理由。
 
-检查单见 [PBWork 交付检查单](../../apps/pbwork/docs/checklist.md)，实现收敛顺序见根目录 [`plan.md`](../../plan.md)。
+检查单见 [PBWork 交付检查单](../../apps/pbwork/docs/checklist.md)。

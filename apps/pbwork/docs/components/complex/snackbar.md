@@ -47,4 +47,4 @@
 1. 从 `@/design-system/components/complex/...` 引入实现组件。
 2. Props 保持在契约枚举内；需要新能力先改 contract + registry + 本文。
 3. 业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`；默认 `ds.*` 只用于 Playground、组件测试或非业务预览。
-
+4. Snackbar 的语义锚点位于实际可见消息内容，打开态 Variant 才会形成可见、非零 bbox 的 Toast Evidence。

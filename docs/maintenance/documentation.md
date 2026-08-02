@@ -44,7 +44,7 @@
 - `Block` 必须有 Schema、Registry validation、authoring lint、Runtime/Core validation 或 CI 中至少一个确定性执行点；
 - `Warning` 必须进入 Inspector、Preflight 或 CI 报告，并能记录处理理由；
 - `Info` 只用于不影响 Evidence 诚实性的作者提示；
-- 暂未实现执行点的收敛规则必须列入根 `plan.md`，正式文档不得把未实现能力写成已经通过验证。
+- 没有执行点的提案不得写成现行 `Block` 或已验证能力；升级为正式规则时，文档、实现和测试必须在同一变更中落地。
 
 Agent 在收到组件、Token、Theme 或共享手势修改任务时，必须主动提醒文档同步义务，并在交付时说明同步了哪些文档。
 

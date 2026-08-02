@@ -1211,12 +1211,29 @@ export class LocalFileStore implements V2Store {
         'A Blob must have at least one logical owner reference.',
       );
     }
-    for (const ownerRef of input.ownerRefs) {
+    const ownerRefs = [...new Map(
+      input.ownerRefs
+        .map((ownerRef) => [`${ownerRef.kind}:${ownerRef.objectId}`, ownerRef] as const)
+        .sort(([left], [right]) => left.localeCompare(right)),
+    ).values()];
+    for (const ownerRef of ownerRefs) {
       await this.assertBlobOwnerExists(input.bundleId, ownerRef);
     }
 
     const hash = createHash('sha256').update(input.bytes).digest('hex');
-    const blobId = `blob-${hash.slice(0, 40)}` as BlobId;
+    const logicalHash = createHash('sha256')
+      .update(
+        JSON.stringify({
+          digest: `sha256:${hash}`,
+          kind: input.kind,
+          mediaType: input.mediaType,
+          ownerRefs,
+        }),
+      )
+      .digest('hex');
+    const blobId = `blob-${hash.slice(0, 24)}-${logicalHash.slice(0, 15)}` as BlobId;
+    const existing = await this.getBlob(input.bundleId, blobId);
+    if (existing) return existing.record;
     const record = BlobRecord.parse({
       schemaVersion: V2_SCHEMA_MAJOR,
       blobId,
@@ -1227,7 +1244,7 @@ export class LocalFileStore implements V2Store {
       byteLength: input.bytes.byteLength,
       digest: `sha256:${hash}`,
       createdAt: new Date().toISOString(),
-      ownerRefs: input.ownerRefs,
+      ownerRefs,
     });
     await this.assertCapacity(
       input.bytes.byteLength + this.serializedBytes(record),

@@ -7,20 +7,24 @@ const props = defineProps<{
   tone?: "primary" | "error" | "success" | "warning";
   /** Page-unique inspect / comment anchor; falls back to `ds.badge`. */
   inspectId?: string;
+  /** Required when multiple badges share the same inspectId on one Screen. */
+  pbKey?: string;
 }>();
 
 const rootRef = usePbInspectRef();
-const { label, tone, inspectId } = toRefs(props);
+const { label, tone, inspectId, pbKey } = toRefs(props);
 
 usePbInspect({
   element: rootRef,
   pbId: "ds.badge",
   instanceId: inspectId,
+  pbKey,
   componentId: "badge",
   getProps: () => ({
     label: label.value,
     tone: tone.value ?? "error",
     inspectId: inspectId.value,
+    pbKey: pbKey.value,
   }),
   getTokens: () => [
     `color.${tone.value ?? "error"}`,

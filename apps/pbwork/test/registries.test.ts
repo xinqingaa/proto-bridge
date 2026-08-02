@@ -118,8 +118,28 @@ describe("design contracts", () => {
 
   it("ships the registered prototypes and their task screens", () => {
     expect(prototypes.map((item) => item.id)).toEqual([
+      "cold-chain-ops",
       "field-service",
       "ledger-planet",
+    ]);
+    const coldChainScreens = prototypeScreens.filter(
+      (item) => item.prototypeId === "cold-chain-ops",
+    );
+    expect(coldChainScreens.map((item) => item.screenId)).toEqual([
+      "cold-chain-ops.exception-queue",
+      "cold-chain-ops.shipment-detail",
+      "cold-chain-ops.resolution-form",
+    ]);
+    expect(
+      coldChainScreens.flatMap((item) => item.requiredScenarioIds ?? []),
+    ).toEqual([
+      "focus-critical",
+      "inspect-primary-exception",
+      "reveal-response-options",
+      "start-resolution",
+      "reject-incomplete-resolution",
+      "confirm-complete-resolution",
+      "reject-missing-supervisor-approval",
     ]);
     const list = prototypeScreens.find(
       (item) => item.screenId === "ledger-planet.task-list",
@@ -127,10 +147,7 @@ describe("design contracts", () => {
     const detail = prototypeScreens.find(
       (item) => item.screenId === "ledger-planet.task-detail",
     );
-    expect(list?.variants.map((item) => item.id)).toEqual([
-      "default",
-      "empty",
-    ]);
+    expect(list?.variants.map((item) => item.id)).toEqual(["default", "empty"]);
     expect(
       list?.variants
         .filter((item) => "critical" in item && item.critical)
