@@ -13,6 +13,8 @@ type DocumentationHint = FlutterTargetDocumentationEvidence['architectureHints']
 const DOC_PATTERNS = [
   'README.md',
   'readme.md',
+  'AGENTS.md',
+  'agents.md',
   'AGENT.md',
   'agent.md',
   'CLAUDE.md',
@@ -20,6 +22,8 @@ const DOC_PATTERNS = [
   '.cursorrules',
   '.cursor/rules/**/*',
   '.claude/**/*',
+  '.agents/**/*',
+  '.codex/**/*',
   'docs/**/*.md',
   'Docs/**/*.md',
 ];
@@ -53,7 +57,9 @@ const HINT_PATTERNS: Array<{
   { kind: 'i18n', pattern: 'build_context_t_extension', confidence: 'medium', needles: [/\bcontext\.t\s*\(/i] },
   { kind: 'i18n', pattern: 'app_localizations', confidence: 'medium', needles: [/\bAppLocalizations\.of\b/i, /\bflutter_gen\/gen_l10n\b/i] },
   { kind: 'theme', pattern: 'Theme.of(context)', confidence: 'low', needles: [/\bTheme\.of\s*\(\s*context\s*\)/i] },
+  { kind: 'component', pattern: 'shared-components', confidence: 'medium', needles: [/\bCommon[A-Z]\w*\b/, /lib\/(?:common|shared|widgets|components)\//i] },
   { kind: 'file-organization', pattern: 'page_state_files', confidence: 'medium', needles: [/\b(?:features|modules)\/[^/\s]+\//i, /\b(?:controller|bloc|cubit|provider)\.dart\b/i] },
+  { kind: 'workflow', pattern: 'target-validation', confidence: 'medium', needles: [/flutter analyze/i, /flutter test/i] },
   { kind: 'workflow', pattern: 'architecture-doc', confidence: 'low', needles: [/\barchitecture\b/i, /\bconvention\b/i, /架构|约定|规范/] },
 ];
 
@@ -97,6 +103,7 @@ export async function scanFlutterTargetDocumentation(input: {
   }
 
   const architectureHints = dedupeHints(documents.flatMap((document) => hintsForDocument(document)));
+  const contract = buildDocumentationContract(documents.map((document) => document.path));
   return {
     files: documents.map((document) => ({
       path: document.path,
@@ -104,8 +111,47 @@ export async function scanFlutterTargetDocumentation(input: {
       summary: summarizeDocument(document.text),
     })),
     architectureHints,
+    contract,
     conflicts: input.architectureProfile ? detectDocumentationConflicts(architectureHints, input.architectureProfile) : [],
     warnings,
+  };
+}
+
+function buildDocumentationContract(
+  files: string[],
+): FlutterTargetDocumentationEvidence['contract'] {
+  const lower = new Map(files.map((file) => [file.toLowerCase(), file]));
+  const matching = (...needles: string[]) =>
+    needles.flatMap((needle) => {
+      const match = lower.get(needle.toLowerCase());
+      return match ? [match] : [];
+    });
+  const entrypoints = matching('AGENTS.md', 'README.md');
+  const architecture = matching('docs/architecture.md');
+  const components = matching('docs/components.md');
+  const theme = matching('docs/theme.md');
+  const routing = matching('docs/routing.md');
+  const testing = matching('docs/testing.md');
+  const adapter = matching('docs/proto-bridge.md');
+  const missing = [
+    ...(!lower.has('agents.md') ? ['AGENTS.md'] : []),
+    ...(!lower.has('readme.md') ? ['README.md'] : []),
+    ...(!architecture.length ? ['docs/architecture.md'] : []),
+    ...(!components.length ? ['docs/components.md'] : []),
+    ...(!theme.length ? ['docs/theme.md'] : []),
+    ...(!routing.length ? ['docs/routing.md'] : []),
+    ...(!testing.length ? ['docs/testing.md'] : []),
+  ];
+  return {
+    entrypoints,
+    architecture,
+    components,
+    theme,
+    routing,
+    testing,
+    adapter,
+    missing,
+    complete: missing.length === 0,
   };
 }
 

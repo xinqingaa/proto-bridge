@@ -18,6 +18,10 @@
       "types": "./dist/target/flutter-app/validation/index.d.ts",
       "import": "./dist/target/flutter-app/validation/index.js"
     },
+    "./target": {
+      "types": "./dist/target/index.d.ts",
+      "import": "./dist/target/index.js"
+    },
     "./v2": {
       "types": "./dist/v2/index.d.ts",
       "import": "./dist/v2/index.js"
@@ -54,7 +58,8 @@
   ],
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "pnpm run clean && tsc -p tsconfig.json",
+    "prompts:generate": "node scripts/generate-prompt-assets.mjs",
+    "build": "pnpm run prompts:generate && pnpm run clean && tsc -p tsconfig.json",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "prepack": "pnpm run build"

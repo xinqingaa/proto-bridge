@@ -5,16 +5,26 @@ import {
   findFlutterTargetExamples,
   getFlutterTargetConventions,
 } from '@proto-bridge/core/target/flutter-app/query';
+import {
+  findTargetExamples,
+  readTargetConventions,
+} from '@proto-bridge/core/target';
 import { parseServerOptions } from './services/config.js';
 import { startMcpServer } from './server/stdio-json-rpc.js';
 
 export {
+  findTargetExamples,
+  readTargetConventions,
   findFlutterTargetExamples,
   getFlutterTargetConventions,
 };
 export type {
   FindFlutterTargetExamplesInput,
 } from '@proto-bridge/core/target/flutter-app/query';
+export type {
+  FindTargetExamplesInput,
+  ReadTargetConventionsInput,
+} from '@proto-bridge/core/target';
 
 if (isDirectRun()) {
   startMcpServer(parseServerOptions(process.argv.slice(2)));

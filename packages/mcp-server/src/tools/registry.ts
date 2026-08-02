@@ -70,9 +70,9 @@ const toolDefinitions: JsonValue[] = [
   tool('read_evidence_staleness', '读取 Staleness Report', '读取同时匹配 Bundle 与 Snapshot 的固定报告。', { ...snapshot, reportId: { type: 'string' } }, ['bundleId', 'snapshotId', 'reportId']),
   tool('read_agent_handoff', '读取 Agent Handoff', '读取固定 Workspace/Snapshot/revision refs 与全部 risks。', { handoffId: { type: 'string' } }, ['handoffId']),
   tool('read_evidence_blob', '读取 Evidence Blob', '读取固定 Snapshot 或 Catalog 可达的 Blob。', { ...snapshot, blobId: { type: 'string' }, catalogRevisionId: { type: 'string' }, allowDebug: { type: 'boolean' } }, ['bundleId', 'snapshotId', 'blobId']),
-  tool('read_target_conventions', '读取目标工程规范', '独立扫描 Flutter 目标工程；结果不进入 Evidence。', { targetRoot: { type: 'string' }, module: { type: 'string' }, roles: stringArraySchema, symbols: stringArraySchema }),
-  tool('find_target_examples', '查找目标工程示例', '在目标工程查找既有 Flutter 模式；结果不进入 Evidence。', { targetRoot: { type: 'string' }, module: { type: 'string' }, pattern: { type: 'string' }, roles: stringArraySchema, symbols: stringArraySchema, screenId: { type: 'string' }, limit: { type: 'number' } }),
-  tool('validate_target_changes', '验证目标工程变更', '只读验证目标变更；目标仓库无需 ProtoBridge 配置。', { targetRoot: { type: 'string' }, gitBase: { type: 'string' }, allowedPaths: stringArraySchema, expectedFiles: stringArraySchema }),
+  tool('read_target_conventions', '读取目标工程规范', '通过适用的 Target adapter 独立扫描目标工程；结果不进入 Evidence。', { targetRoot: { type: 'string' }, module: { type: 'string' }, roles: stringArraySchema, symbols: stringArraySchema }),
+  tool('find_target_examples', '查找目标工程示例', '通过适用的 Target adapter 查找目标工程既有模式；结果不进入 Evidence。', { targetRoot: { type: 'string' }, module: { type: 'string' }, pattern: { type: 'string' }, roles: stringArraySchema, symbols: stringArraySchema, screenId: { type: 'string' }, limit: { type: 'number' } }),
+  tool('validate_target_changes', '验证目标工程变更', '通过适用的 Target adapter 只读验证目标变更；目标仓库无需 ProtoBridge 配置。', { targetRoot: { type: 'string' }, gitBase: { type: 'string' }, allowedPaths: stringArraySchema, expectedFiles: stringArraySchema }),
 ];
 
 export function toolsList(): JsonValue[] {

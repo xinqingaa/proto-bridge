@@ -10,7 +10,7 @@ ProtoBridge 的唯一产品语义层，包含可执行 Evidence Contract、Captu
 - Runtime/Service browser-safe protocol；
 - 不可变本地 Store、active activation、防降级、fork/archive/clean；
 - Evidence Read Model；
-- Flutter Target conventions、examples 和 change validation。
+- Target adapter conventions、examples 和 change validation；当前内置 Flutter adapter。
 
 ## 公共导出
 
@@ -23,6 +23,7 @@ ProtoBridge 的唯一产品语义层，包含可执行 Evidence Contract、Captu
 @proto-bridge/core/v2/service-contract
 @proto-bridge/core/target/flutter-app/query
 @proto-bridge/core/target/flutter-app/validation
+@proto-bridge/core/target
 ```
 
 `/v2` 是持久对象和协议的 major namespace。具体公共面以 `package.json#exports` 为准。

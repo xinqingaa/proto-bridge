@@ -67,6 +67,17 @@ export type FlutterTargetDocumentationEvidence = {
     evidence: string;
     file: string;
   }>;
+  contract: {
+    entrypoints: string[];
+    architecture: string[];
+    components: string[];
+    theme: string[];
+    routing: string[];
+    testing: string[];
+    adapter: string[];
+    missing: string[];
+    complete: boolean;
+  };
   conflicts: string[];
   warnings: string[];
 };
