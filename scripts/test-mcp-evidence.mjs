@@ -111,7 +111,7 @@ try {
     "read_evidence_blob",
     "read_evidence_screenshot",
     "read_acceptance_contract",
-    "evaluate_acceptance",
+    "summarize_reconstruction_review",
   ]) {
     assert(
       tools.tools?.some((tool) => tool.name === name),
@@ -347,25 +347,27 @@ try {
     }),
   );
   assert(
-    acceptance.policy?.targetScore === 90 &&
-      acceptance.policy?.minimumScore === 85 &&
+    acceptance.policy === undefined &&
       acceptance.screenshots?.[0]?.blobIds?.includes(screenshot.blobId),
-    "Acceptance Contract did not bind scoring policy and fixed Screenshot.",
+    "Review Contract did not bind the fixed Screenshot or still contains scoring policy.",
   );
-  const evaluation = parseToolJson(
+  const review = parseToolJson(
     await client.request("tools/call", {
-      name: "evaluate_acceptance",
+      name: "summarize_reconstruction_review",
       arguments: {
         handoffId: handoff.handoffId,
+        addressedCaseIds: [],
         viewedScreenshotBlobIds: [screenshot.blobId],
-        results: [],
+        replayedScenarioCaseIds: [],
+        observations: [],
       },
     }),
   );
   assert(
-    evaluation.status === "failed" &&
-      evaluation.dimensions?.structure?.unverified > 0,
-    "Missing Acceptance results were not conservatively marked unverified.",
+    review.coverageStatus === "partial" &&
+      review.visualReviewStatus === "reviewed" &&
+      review.overallScore === undefined,
+    "Review summary did not report Case omission without a score.",
   );
 
   const next = await writer.commitRun({

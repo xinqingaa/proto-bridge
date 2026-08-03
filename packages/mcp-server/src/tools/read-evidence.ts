@@ -1,8 +1,8 @@
 import type { JsonObject, ToolContext } from "../types.js";
 import { V2ContractError } from "@proto-bridge/core/v2";
 import {
-  AcceptanceRequirementResult,
-  evaluateAcceptance,
+  ReconstructionReviewObservation,
+  summarizeReconstructionReview,
 } from "@proto-bridge/core/v2";
 import {
   readBoolean,
@@ -216,22 +216,25 @@ export async function readAcceptanceContractTool(
   );
 }
 
-export async function evaluateAcceptanceTool(
+export async function summarizeReconstructionReviewTool(
   context: ToolContext,
   args: JsonObject,
 ): Promise<unknown> {
   const contract = await context.evidence.readAcceptanceContract(
     requiredString(args, "handoffId"),
   );
-  const rawResults = args.results;
-  const results = AcceptanceRequirementResult.array().parse(
-    Array.isArray(rawResults) ? rawResults : [],
+  const rawObservations = args.observations;
+  const observations = ReconstructionReviewObservation.array().parse(
+    Array.isArray(rawObservations) ? rawObservations : [],
   );
-  return evaluateAcceptance({
+  return summarizeReconstructionReview({
     contract,
-    results,
+    addressedCaseIds: readStringArray(args, "addressedCaseIds") ?? [],
     viewedScreenshotBlobIds:
       readStringArray(args, "viewedScreenshotBlobIds") ?? [],
+    replayedScenarioCaseIds:
+      readStringArray(args, "replayedScenarioCaseIds") ?? [],
+    observations,
   });
 }
 

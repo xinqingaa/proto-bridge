@@ -10,8 +10,9 @@ Evidence coverage、reconstruction readiness 与 target fidelity 是三个独立
 - Runtime 额外记录 semantic parent、ancestor path、document order、scroll owner 与 positioning；
 - Screen/Variant/Checkpoint 使用独立 structure/shell contract 表达父子、顺序、滚动归属和状态壳层；
 - 每个 Handoff 派生固定的五维 Reconstruction Acceptance Contract；
-- 最终验收按结构、组件、Token、状态、交互计算，目标 90、最低 85，任一维度不得低于 80；
-- critical requirement 的 `fail` 或 `unverified` 都不能通过 hard gate。
+- 最终 Review 仍按结构、组件、Token、状态、交互组织证据，但不计算加权分数或维度下限；
+- 自动派生的组件、Token 和普通 Region reference 是实施指引，不是配额或 automatic critical requirement；
+- 完成摘要只约束 Handoff 选中 Case、Screenshot 和必需 Scenario 不被静默遗漏，并要求披露偏差与未验证事项。
 
 ## 理由
 
@@ -33,5 +34,5 @@ Store 对象时间和逻辑 ID 继续使用 UTC。人类可见的 Delivery 目�
 
 - `coverageStatus=complete` 不再等价于“足以达到高保真重建”；
 - 缺少 topology、shell contract、可渲染 Screenshot 或五维验证时必须报告 reconstruction readiness 风险；
-- Agent 不得自行删减验收分母、修改权重或把 unverified 计为 pass；
+- Agent 不得把范围覆盖摘要解释成独立视觉验收，也不得隐瞒未实施 Case、未查看 Screenshot、未重放 Scenario、已知偏差或未验证事项；
 - 协议同时支持整页滚动、固定头部列表、整页状态替换和继承壳层，不把单一原型构图写死为通用规则。

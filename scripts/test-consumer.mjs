@@ -187,8 +187,11 @@ try {
     }),
   );
   assert(
-    acceptance.policy?.minimumScore === 85,
-    "Consumer did not receive the fixed five-dimension Acceptance Contract.",
+    acceptance.policy === undefined &&
+      acceptance.screenshots?.some((item) =>
+        item.blobIds?.includes(screenshotBlobId),
+      ),
+    "Consumer did not receive the fixed non-scoring Review Contract.",
   );
   const revisionId = handoff.selectedCases[0].revisionId;
   const consumedRevision = parseToolJson(

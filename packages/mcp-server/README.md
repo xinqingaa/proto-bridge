@@ -42,6 +42,8 @@ pnpm pb:mcp -- --print-config
 - `read_agent_handoff`
 - `read_evidence_blob`
 - `read_evidence_screenshot`（视觉消费必须使用；返回 MCP ImageContent，不返回 base64 文本）
+- `read_acceptance_contract`（非评分的五维实施与复查指引）
+- `summarize_reconstruction_review`（汇总 Case/Screenshot/Scenario 覆盖和披露项，不计算分数）
 
 ## Target Tools
 

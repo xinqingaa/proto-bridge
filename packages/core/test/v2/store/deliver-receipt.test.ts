@@ -78,11 +78,8 @@ describe('Delivery review artifacts', () => {
     const contract = JSON.parse(
       await readFile(receipt.acceptanceContractPath, 'utf8'),
     );
-    expect(contract.policy).toMatchObject({
-      targetScore: 90,
-      minimumScore: 85,
-      minimumDimensionScore: 80,
-    });
+    expect(contract).not.toHaveProperty('policy');
+    expect(contract.screenshots).toHaveLength(1);
     expect(await readFile(receipt.agentPromptPath, 'utf8')).toContain(
       receipt.acceptanceContractPath,
     );

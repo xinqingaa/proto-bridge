@@ -10,7 +10,7 @@ import {
   listEvidenceBundlesTool,
   readAgentHandoffTool,
   readAcceptanceContractTool,
-  evaluateAcceptanceTool,
+  summarizeReconstructionReviewTool,
   readEvidenceBlobTool,
   readEvidenceCatalogTool,
   readEvidenceCaseTool,
@@ -72,25 +72,27 @@ const toolDefinitions: JsonValue[] = [
   tool('read_evidence_issue', '读取 Evidence Issue', '读取固定 Issue 与 next action。', { ...bundle, issueId: { type: 'string' } }, ['bundleId', 'issueId']),
   tool('read_evidence_staleness', '读取 Staleness Report', '读取同时匹配 Bundle 与 Snapshot 的固定报告。', { ...snapshot, reportId: { type: 'string' } }, ['bundleId', 'snapshotId', 'reportId']),
   tool('read_agent_handoff', '读取 Agent Handoff', '读取固定 Workspace/Snapshot/revision refs 与全部 risks。', { handoffId: { type: 'string' } }, ['handoffId']),
-  tool('read_acceptance_contract', '读取五维验收合同', '读取固定 Handoff 派生的结构、组件、Token、状态、交互验收要求与 90/85 门槛。', { handoffId: { type: 'string' } }, ['handoffId']),
-  tool('evaluate_acceptance', '计算五维验收结果', '根据固定 Acceptance Contract 计算五维得分；缺少结果自动记为 unverified，critical unverified 不能通过。', {
+  tool('read_acceptance_contract', '读取重建 Review 合同', '读取固定 Handoff 派生的选中 Case、Screenshot 与结构、组件、Token、状态、交互证据指引；不包含分数或自动通过判定。', { handoffId: { type: 'string' } }, ['handoffId']),
+  tool('summarize_reconstruction_review', '汇总重建 Review', '汇总选中 Case、Screenshot、Scenario、已知偏差和未验证事项；不计算还原分数，也不把组件或 Token 映射当作配额。', {
     handoffId: { type: 'string' },
+    addressedCaseIds: stringArraySchema,
     viewedScreenshotBlobIds: stringArraySchema,
-    results: {
+    replayedScenarioCaseIds: stringArraySchema,
+    observations: {
       type: 'array',
       items: {
         type: 'object',
         additionalProperties: false,
         properties: {
           requirementId: { type: 'string' },
-          status: { type: 'string', enum: ['pass', 'fail', 'unverified'] },
+          status: { type: 'string', enum: ['matched', 'deviation', 'unverified', 'not-applicable'] },
           evidence: stringArraySchema,
           detail: { type: 'string' },
         },
         required: ['requirementId', 'status', 'evidence'],
       },
     },
-  }, ['handoffId', 'viewedScreenshotBlobIds', 'results']),
+  }, ['handoffId', 'addressedCaseIds', 'viewedScreenshotBlobIds', 'replayedScenarioCaseIds', 'observations']),
   tool('read_evidence_blob', '读取 Evidence Blob', '读取固定 Snapshot 或 Catalog 可达的 Blob。', { ...snapshot, blobId: { type: 'string' }, catalogRevisionId: { type: 'string' }, allowDebug: { type: 'boolean' } }, ['bundleId', 'snapshotId', 'blobId']),
   tool('read_evidence_screenshot', '查看 Evidence Screenshot', '把固定 Snapshot 中的 Screenshot 作为真正的 MCP 图片返回；视觉实现必须使用本工具，不得把 Blob metadata 或 base64 文本当作图片。', { ...snapshot, blobId: { type: 'string' } }, ['bundleId', 'snapshotId', 'blobId']),
   tool('read_target_conventions', '读取目标工程规范', '通过适用的 Target adapter 独立扫描目标工程；结果不进入 Evidence。', { targetRoot: { type: 'string' }, module: { type: 'string' }, roles: stringArraySchema, symbols: stringArraySchema }),
@@ -137,7 +139,8 @@ export async function callTool(
     read_evidence_staleness: () => readEvidenceStalenessTool(context, args),
     read_agent_handoff: () => readAgentHandoffTool(context, args),
     read_acceptance_contract: () => readAcceptanceContractTool(context, args),
-    evaluate_acceptance: () => evaluateAcceptanceTool(context, args),
+    summarize_reconstruction_review: () =>
+      summarizeReconstructionReviewTool(context, args),
     read_evidence_blob: () => readEvidenceBlobTool(context, args),
     read_target_conventions: () => getTargetConventionsTool(args),
     find_target_examples: () => findTargetExamplesTool(args),

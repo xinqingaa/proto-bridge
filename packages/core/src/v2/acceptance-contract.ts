@@ -12,33 +12,6 @@ export const ACCEPTANCE_DIMENSIONS = [
 ] as const;
 export type AcceptanceDimension = (typeof ACCEPTANCE_DIMENSIONS)[number];
 
-export type AcceptancePolicy = {
-  targetScore: number;
-  minimumScore: number;
-  minimumDimensionScore: number;
-  weights: Record<AcceptanceDimension, number>;
-  hardGates: string[];
-};
-
-export const DEFAULT_ACCEPTANCE_POLICY: AcceptancePolicy = {
-  targetScore: 90,
-  minimumScore: 85,
-  minimumDimensionScore: 80,
-  weights: {
-    structure: 25,
-    components: 20,
-    tokens: 20,
-    states: 20,
-    interactions: 15,
-  },
-  hardGates: [
-    'Every selected Screenshot must be returned and viewed as MCP ImageContent.',
-    'Critical parent, order, scroll-owner and shell assertions must not conflict.',
-    'Every selected state and required interaction checkpoint must be verified.',
-    'Unknown or unverified critical requirements cannot be counted as passed.',
-  ],
-};
-
 export type AcceptanceRequirement = {
   requirementId: string;
   caseId: string;
@@ -48,7 +21,6 @@ export type AcceptanceRequirement = {
   subject: string;
   expected: unknown;
   evidenceRefs: string[];
-  critical: boolean;
 };
 
 export type ReconstructionAcceptanceContract = {
@@ -57,7 +29,6 @@ export type ReconstructionAcceptanceContract = {
   workspaceId: string;
   bundleId: string;
   snapshotId: string;
-  policy: AcceptancePolicy;
   readiness: {
     status: 'ready' | 'partial';
     blockers: string[];
@@ -80,7 +51,6 @@ export function buildReconstructionAcceptanceContract(input: {
   handoffId: string;
   workspaceId: string;
   evidence: EvidenceReadModel;
-  policy?: AcceptancePolicy;
 }): ReconstructionAcceptanceContract {
   const dimensions: ReconstructionAcceptanceContract['dimensions'] = {
     structure: [],
@@ -134,7 +104,6 @@ export function buildReconstructionAcceptanceContract(input: {
             .map((region) => region.regionId),
         },
         evidenceRefs: evidenceCase.contextFacts.map((fact) => fact.factId),
-        critical: true,
       });
 
       for (const region of evidenceCase.regions) {
@@ -158,12 +127,6 @@ export function buildReconstructionAcceptanceContract(input: {
           subject: region.regionId,
           expected: topology,
           evidenceRefs: region.sourceFactIds,
-          critical:
-            region.role === 'page' ||
-            region.role === 'app-bar' ||
-            region.role === 'scroll-list' ||
-            region.role === 'sheet' ||
-            region.role === 'dialog',
         });
         if (region.documentOrder === undefined || region.scrollOwner === undefined) {
           blockers.push(
@@ -185,7 +148,6 @@ export function buildReconstructionAcceptanceContract(input: {
             evidenceRefs: region.facts
               .filter((fact) => fact.factId.endsWith('.componentId'))
               .map((fact) => fact.factId),
-            critical: true,
           });
         }
 
@@ -205,7 +167,6 @@ export function buildReconstructionAcceptanceContract(input: {
             evidenceRefs: region.facts
               .filter((fact) => fact.factId.endsWith('.tokenBindings'))
               .map((fact) => fact.factId),
-            critical: true,
           });
         }
       }
@@ -222,7 +183,6 @@ export function buildReconstructionAcceptanceContract(input: {
           subject: fact.factId,
           expected: fact.value,
           evidenceRefs: [fact.factId],
-          critical: true,
         });
       }
 
@@ -238,7 +198,6 @@ export function buildReconstructionAcceptanceContract(input: {
           subject: fact.factId,
           expected: fact.value,
           evidenceRefs: [fact.factId],
-          critical: true,
         });
       }
     }
@@ -250,7 +209,6 @@ export function buildReconstructionAcceptanceContract(input: {
     workspaceId: input.workspaceId,
     bundleId: input.evidence.bundleId,
     snapshotId: input.evidence.snapshotId,
-    policy: input.policy ?? DEFAULT_ACCEPTANCE_POLICY,
     readiness: {
       status: blockers.length === 0 ? 'ready' : 'partial',
       blockers: [...new Set(blockers)].sort(),
@@ -264,29 +222,29 @@ export function acceptanceChecklistMarkdown(
   contract: ReconstructionAcceptanceContract,
 ): string {
   const lines = [
-    '# Reconstruction Acceptance Checklist',
+    '# Reconstruction Review Checklist',
     '',
     `- Handoff: \`${contract.handoffId}\``,
     `- Snapshot: \`${contract.snapshotId}\``,
-    `- Goal: ${contract.policy.targetScore}`,
-    `- Minimum: ${contract.policy.minimumScore}`,
-    `- Per-dimension minimum: ${contract.policy.minimumDimensionScore}`,
     `- Readiness: ${contract.readiness.status}`,
     '',
-    '## Hard gates',
+    '## Selected Case review',
     '',
-    ...contract.policy.hardGates.map((gate) => `- [ ] ${gate}`),
-    '',
-    '## Dimensions',
-    '',
-    '| Dimension | Weight | Requirements |',
-    '| --- | ---: | ---: |',
-    ...ACCEPTANCE_DIMENSIONS.map(
-      (dimension) =>
-        `| ${dimension} | ${contract.policy.weights[dimension]} | ${contract.dimensions[dimension].length} |`,
+    ...contract.screenshots.map(
+      (item) =>
+        `- [ ] \`${item.caseId}\`: Screenshot viewed; implementation addressed;${item.scenario ? ' Scenario replayed;' : ''} deviations and unverified details disclosed.`,
     ),
     '',
-    'Every requirement must be reported as pass, fail, or unverified with concrete validation evidence. Unverified critical requirements do not pass.',
+    '## Evidence guidance by dimension',
+    '',
+    '| Dimension | Evidence references |',
+    '| --- | ---: |',
+    ...ACCEPTANCE_DIMENSIONS.map(
+      (dimension) =>
+        `| ${dimension} | ${contract.dimensions[dimension].length} |`,
+    ),
+    '',
+    'These references are implementation and review guidance. They are not points, quotas, automatic blockers, or a substitute for Screenshot review.',
     '',
   ];
   if (contract.readiness.blockers.length > 0) {

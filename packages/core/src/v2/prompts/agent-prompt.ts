@@ -25,7 +25,7 @@ export type BuildAgentPromptInput = {
   targetRoot: string;
   /** Optional producer intent echoed into the prompt. */
   implementationIntent?: string;
-  /** Fixed, generated five-dimension acceptance contract for this Delivery. */
+  /** Fixed, generated non-scoring review contract for this Delivery. */
   acceptanceContractPath?: string;
   /** Risks already fixed on the Handoff; listed for the Agent before edits. */
   risks?: readonly Risk[];
@@ -53,7 +53,7 @@ export function buildAgentPrompt(input: BuildAgentPromptInput): string {
         ].join('\n')
       : '';
   const acceptanceBlock = input.acceptanceContractPath
-    ? `\n固定验收合同：\n\n- Acceptance Contract：\`${input.acceptanceContractPath}\`\n- 目标总分：90；最低总分：85；结构、组件、Token、状态、交互任一维度不得低于 80。\n- critical requirement 为 fail 或 unverified 时不得宣称完成。\n`
+    ? `\n固定重建 Review 合同：\n\n- Review Contract：\`${input.acceptanceContractPath}\`\n- 合同中的结构、组件、Token、状态和交互是实现与复查指引，不是分数、配额或自动阻断项。\n- Screenshot 是最终可见结果的首要依据；完成时如实披露偏差、未覆盖 Case 和未验证事项。\n`
     : '';
 
   const sections = [
@@ -64,7 +64,7 @@ export function buildAgentPrompt(input: BuildAgentPromptInput): string {
     PROMPT_ASSETS['final-report'],
   ].join('\n\n');
 
-  return `# ProtoBridge Agent 验收任务
+  return `# ProtoBridge Agent 重建任务
 
 通过已配置的 ProtoBridge MCP 消费固定 Evidence。目标工程是：
 

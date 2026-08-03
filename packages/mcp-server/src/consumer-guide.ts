@@ -12,9 +12,9 @@ export const CONSUMER_GUIDE = `# ProtoBridge Agent Handoff Consumer
 7. When an applicable Target adapter/tool exists, use its convention/example queries only as independent target context. Adapter results are not Source Evidence and must not override Screenshot or Fragment facts.
 8. Decide files, components, routing, state and tokens in the target repository; do not treat ProtoBridge as a code generator. Do not invent containers, copy, interactions or state that Evidence does not support.
 9. When Evidence omits a layout-sensitive prop, check the Screenshot; if still uncertain, disclose it as remaining risk instead of silently accepting a composition-changing default.
-10. Before editing, report the Screenshot inventory and the structure/component/token/state/interaction mapping required by the fixed Acceptance Contract.
+10. Before editing, summarize each selected Screenshot's composition, scroll boundary, visual priorities and state differences. Structure/component/token/state/interaction references are implementation guidance, not a scoring quota.
 11. Implement and run target-native checks/tests. Call adapter validation only when an applicable Target adapter/tool exists.
-12. Report each Acceptance requirement as pass, fail or unverified. A critical unverified requirement cannot be counted as passed or claimed complete.
+12. Call \`summarize_reconstruction_review\` to disclose addressed Cases, viewed Screenshots, replayed Scenarios, known deviations and unverified details. Do not assign a reconstruction score.
 
 Hard failures:
 

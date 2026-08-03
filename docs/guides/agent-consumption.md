@@ -31,8 +31,8 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 9. 阅读目标仓库自己的 AGENT、README、架构、测试和既有实现。
 10. 仅在当前目标存在适用 Target adapter/tools 时调用 conventions/examples 查询；Target 结果不是 Source Evidence，不得覆盖 Screenshot / Fragment。
 11. Agent 自行决定文件、组件、状态、路由和 Token，但不得发明证据未支持的容器形态、文案、交互或状态；布局敏感 prop 缺失时对照截图，仍不确定则披露为剩余风险。
-12. 读取固定 `read_acceptance_contract`，实施前完成结构/组件/Token/状态/交互映射。
-13. 完成实现并运行目标原生验证；调用 `evaluate_acceptance`，报告五维 pass/fail/unverified。critical unverified 不得宣称完成。
+12. 读取固定 `read_acceptance_contract`，先按 Case 理解 Screenshot 的构图、滚动边界和状态差异；结构/组件/Token/状态/交互内容是实施与复查指引，不是评分配额。
+13. 完成实现并运行目标原生验证；调用 `summarize_reconstruction_review`，汇总已处理 Case、已查看 Screenshot、已重放 Scenario、已知偏差和未验证事项。
 
 也可以使用 MCP Prompt `consume_evidence_handoff` 创建同一读取任务；Prompt 不放宽上述规则。权威实现纪律以 `proto-bridge://guides/handoff-consumer` 为准。
 
@@ -54,8 +54,8 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 | `read_agent_handoff` | 读取固定范围、引用和 mandatory risks |
 | `read_evidence_blob` | 读取 Snapshot/Catalog 可达的截图或经许可的调试 Blob |
 | `read_evidence_screenshot` | 将固定 Screenshot 作为真正的 MCP ImageContent 返回 |
-| `read_acceptance_contract` | 读取固定 Handoff 派生的五维验收合同 |
-| `evaluate_acceptance` | 保守计算五维得分；缺项自动记为 unverified |
+| `read_acceptance_contract` | 读取固定 Handoff 派生的非评分 Review 合同 |
+| `summarize_reconstruction_review` | 汇总范围覆盖、视觉阅读、场景重放、偏差和未验证事项，不计算分数 |
 
 ## Target Tools
 
@@ -92,7 +92,7 @@ Producer 对风险的确认只允许生成 Handoff，不代表 Consumer 可以�
 - Schema major 不受支持；
 - Debug/Trace 未经显式请求；
 - Target 路径越界或目标仓库无法验证；
-- 发明 Screenshot / Fragment 未支持的视觉结构、文案或交互，却仍宣称完成。
+- 发明 Screenshot / Fragment 未支持的视觉结构、文案或交互，却不披露偏差。
 
 不得通过切换 active/latest、拼接 Store 文件路径、忽略风险或重新解释旧对象恢复。
 
@@ -108,3 +108,5 @@ Agent 最终至少报告：
 - 适用 adapter 的变更校验结果（若存在）；
 - 相对 Evidence 的已知偏差；
 - 尚未解决的 Evidence 或实现风险。
+
+这里的完成报告是范围与验证事实摘要，不是还原度评分。组件或 Token Evidence 无法逐项映射时可以继续结合 Screenshot 和目标规范实施，但必须如实说明取舍；不要为了填满映射表而弱化最终视觉。

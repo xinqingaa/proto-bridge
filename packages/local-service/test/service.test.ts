@@ -14,6 +14,10 @@ import {
 import { ProtoBridgeLocalService } from '../src/service.js';
 
 const origin = 'http://127.0.0.1:3977';
+const PNG_BYTES = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+  'base64',
+);
 
 function manifest(): RuntimeCaptureManifest {
   return {
@@ -91,7 +95,7 @@ class FakeDriver implements CaseCaptureDriver {
         {
           kind: 'screenshot',
           mediaType: 'image/png',
-          bytes: new Uint8Array([137, 80, 78, 71]),
+          bytes: PNG_BYTES,
         },
       ],
       diagnostics: { console: [], pageErrors: [], failedRequests: [] },
@@ -411,7 +415,10 @@ describe('ProtoBridge Local Service', () => {
       token,
       body: {
         ...request,
-        acknowledgedRiskKinds: ['evidence-level-limitation'],
+        acknowledgedRiskKinds: [
+          'evidence-level-limitation',
+          'reconstruction-readiness',
+        ],
       },
     });
     expect(created.response.status).toBe(201);
