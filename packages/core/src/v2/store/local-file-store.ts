@@ -111,6 +111,33 @@ import type {
 } from './types.js';
 import { acquireWriterLock } from './writer-lock.js';
 
+function readPngDimensions(bytes: Uint8Array): {
+  width: number;
+  height: number;
+} {
+  const signature = [137, 80, 78, 71, 13, 10, 26, 10];
+  if (
+    bytes.byteLength < 24 ||
+    signature.some((value, index) => bytes[index] !== value) ||
+    String.fromCharCode(...bytes.slice(12, 16)) !== 'IHDR'
+  ) {
+    throw new V2ContractError(
+      'blob-rejected',
+      'Screenshot declared as image/png is not a decodable PNG header.',
+    );
+  }
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const width = view.getUint32(16, false);
+  const height = view.getUint32(20, false);
+  if (width < 1 || height < 1) {
+    throw new V2ContractError(
+      'blob-rejected',
+      'Screenshot PNG has invalid pixel dimensions.',
+    );
+  }
+  return { width, height };
+}
+
 type ActiveSnapshotPointer = { snapshotId: SnapshotId };
 
 export type LocalFileStoreOptions = {
@@ -1211,6 +1238,10 @@ export class LocalFileStore implements V2Store {
         'A Blob must have at least one logical owner reference.',
       );
     }
+    const image =
+      input.kind === 'screenshot' && input.mediaType === 'image/png'
+        ? readPngDimensions(input.bytes)
+        : undefined;
     const ownerRefs = [...new Map(
       input.ownerRefs
         .map((ownerRef) => [`${ownerRef.kind}:${ownerRef.objectId}`, ownerRef] as const)
@@ -1244,6 +1275,7 @@ export class LocalFileStore implements V2Store {
       byteLength: input.bytes.byteLength,
       digest: `sha256:${hash}`,
       createdAt: new Date().toISOString(),
+      ...(image ? { image } : {}),
       ownerRefs,
     });
     await this.assertCapacity(

@@ -4,6 +4,7 @@ import {
   RuntimeCaptureManifest,
   RuntimeCaptureRequest,
   RuntimeCaptureResponse,
+  RuntimeSemanticNode,
 } from '../../../src/v2/runtime-contract/index.js';
 
 const actual = {
@@ -123,6 +124,10 @@ describe('V2 Runtime Capture Protocol schemas', () => {
               text: '任务',
               visible: true,
               bbox: { x: 0, y: 0, width: 390, height: 844 },
+              semanticAncestors: [],
+              documentOrder: 0,
+              scrollOwner: { kind: 'viewport' },
+              positioning: 'flow',
             },
           ],
         },
@@ -176,10 +181,51 @@ describe('V2 Runtime Capture Protocol schemas', () => {
               text: '',
               visible: true,
               bbox: { x: 0, y: 0, width: 1, height: 1 },
+              semanticAncestors: [],
+              documentOrder: 0,
+              scrollOwner: { kind: 'viewport' },
+              positioning: 'flow',
             },
           ],
         },
       }),
     ).toThrow();
+  });
+
+  it('represents both whole-page scrolling and fixed-header list composition', () => {
+    const base = {
+      role: 'summary' as const,
+      tag: 'section',
+      text: '',
+      visible: true,
+      bbox: { x: 0, y: 64, width: 390, height: 100 },
+      semanticAncestors: [],
+      documentOrder: 1,
+      positioning: 'flow' as const,
+    };
+    const wholePage = RuntimeSemanticNode.parse({
+      ...base,
+      fragment: {
+        screenId: 'sample.whole-page',
+        pbId: 'sample.whole-page.summary',
+      },
+      scrollOwner: {
+        kind: 'fragment',
+        fragment: {
+          screenId: 'sample.whole-page',
+          pbId: 'sample.whole-page.scroll-list',
+        },
+      },
+    });
+    const fixedHeader = RuntimeSemanticNode.parse({
+      ...base,
+      fragment: {
+        screenId: 'sample.fixed-header',
+        pbId: 'sample.fixed-header.summary',
+      },
+      scrollOwner: { kind: 'viewport' },
+    });
+    expect(wholePage.scrollOwner.kind).toBe('fragment');
+    expect(fixedHeader.scrollOwner.kind).toBe('viewport');
   });
 });

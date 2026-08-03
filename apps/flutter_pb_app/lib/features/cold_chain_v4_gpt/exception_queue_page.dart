@@ -81,7 +81,7 @@ class _EvidenceExceptionQueuePageState
 
   void _openPrimary(ExceptionItem item) {
     Navigator.of(context).pushNamed(
-      AppRoutes.evidence20260803ShipmentDetail,
+      AppRoutes.coldChainV4GptShipmentDetail,
       arguments: {
         'shipment': item.shipmentId,
         'variant': item.exceptionId == 'EX-017'

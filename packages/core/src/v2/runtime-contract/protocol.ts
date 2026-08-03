@@ -27,6 +27,66 @@ export const RuntimeFragmentIdentity = z
   .strict();
 export type RuntimeFragmentIdentity = z.infer<typeof RuntimeFragmentIdentity>;
 
+export const RuntimePositioning = z.enum([
+  'flow',
+  'sticky',
+  'fixed',
+  'overlay',
+]);
+export type RuntimePositioning = z.infer<typeof RuntimePositioning>;
+
+export const RuntimeScrollOwner = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('viewport') }).strict(),
+  z
+    .object({
+      kind: z.literal('fragment'),
+      fragment: RuntimeFragmentIdentity,
+    })
+    .strict(),
+]);
+export type RuntimeScrollOwner = z.infer<typeof RuntimeScrollOwner>;
+
+export const RuntimeStructureAssertion = z.discriminatedUnion('kind', [
+  z
+    .object({
+      kind: z.literal('parent'),
+      child: RuntimeFragmentIdentity,
+      parent: RuntimeFragmentIdentity,
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('scroll-owner'),
+      fragment: RuntimeFragmentIdentity,
+      owner: RuntimeScrollOwner,
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('order'),
+      parent: RuntimeFragmentIdentity,
+      children: z.array(RuntimeFragmentIdentity).min(2),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('positioning'),
+      fragment: RuntimeFragmentIdentity,
+      value: RuntimePositioning,
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('visibility'),
+      fragment: RuntimeFragmentIdentity,
+      visible: z.boolean(),
+    })
+    .strict(),
+]);
+export type RuntimeStructureAssertion = z.infer<
+  typeof RuntimeStructureAssertion
+>;
+
 export const RuntimeVariantManifest = z
   .object({
     variantId: StableId,
@@ -38,6 +98,9 @@ export const RuntimeVariantManifest = z
      * prove that the semantic set is complete.
      */
     requiredFragments: z.array(RuntimeFragmentIdentity).optional(),
+    /** Whether the Variant keeps the Screen shell or intentionally replaces it. */
+    shellPolicy: z.enum(['inherit', 'replace']).optional(),
+    structureAssertions: z.array(RuntimeStructureAssertion).default([]),
   })
   .strict();
 export type RuntimeVariantManifest = z.infer<typeof RuntimeVariantManifest>;
@@ -79,6 +142,7 @@ export const RuntimeCheckpointManifest = z
       )
       .optional(),
     forbiddenFragments: z.array(RuntimeFragmentIdentity).optional(),
+    structureAssertions: z.array(RuntimeStructureAssertion).default([]),
   })
   .strict();
 export type RuntimeCheckpointManifest = z.infer<
@@ -109,6 +173,9 @@ export const RuntimeScreenManifest = z
     actions: z.array(RuntimeActionManifest),
     scenarios: z.array(RuntimeScenarioManifest),
     requiredScenarioIds: z.array(StableId).optional(),
+    /** Stable page chrome inherited by Variants whose shellPolicy is inherit. */
+    shellFragments: z.array(RuntimeFragmentIdentity).default([]),
+    structureAssertions: z.array(RuntimeStructureAssertion).default([]),
     /** New Screens are strict; omitted only by pre-convergence producers. */
     evidencePolicy: z.enum(['strict', 'legacy']).optional(),
   })
@@ -182,6 +249,15 @@ export const RuntimeSemanticNode = z
         height: z.number().min(0),
       })
       .strict(),
+    /** Nearest Evidence-bearing DOM ancestor, independent of capture selection. */
+    semanticParent: RuntimeFragmentIdentity.optional(),
+    /** Full Evidence-bearing ancestor path, nearest ancestor first. */
+    semanticAncestors: z.array(RuntimeFragmentIdentity).default([]),
+    /** Stable DOM order within the captured semantic snapshot. */
+    documentOrder: z.number().int().nonnegative(),
+    /** Actual vertical scroll owner observed from the rendered DOM. */
+    scrollOwner: RuntimeScrollOwner,
+    positioning: RuntimePositioning,
     /** Design-system component id when the node is a registered PBWork component. */
     componentId: StableId.optional(),
     /** Selected authored props that affect Evidence (tone, selectionStyle, …). */

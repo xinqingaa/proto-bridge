@@ -31,6 +31,13 @@ export const BlobRecord = z
     byteLength: z.number().int().min(0),
     digest: z.string().regex(/^sha256:[0-9a-f]{64}$/),
     createdAt: z.string().datetime(),
+    image: z
+      .object({
+        width: z.number().int().positive(),
+        height: z.number().int().positive(),
+      })
+      .strict()
+      .optional(),
     ownerRefs: z.array(BlobOwnerRef).min(1),
   })
   .strict();

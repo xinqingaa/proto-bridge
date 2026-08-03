@@ -27,11 +27,12 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 5. 在编辑前原样报告 `mandatoryRiskReport` 的全部风险。
 6. 读取 Handoff 固定的 Snapshot、Coverage 和 Staleness Report。
 7. 按实现范围读取固定 Case revision；局部任务再读取对应 Fragment。
-8. 实际查看 Screenshot（构图约束与 Fragment 结构同级）；按需读取 Catalog 和 Issue。
+8. 对每个选中 Case 调用 `read_evidence_screenshot`，确认返回 MCP ImageContent；Blob metadata、base64 文本和相似 Variant 不能替代固定 Screenshot。
 9. 阅读目标仓库自己的 AGENT、README、架构、测试和既有实现。
 10. 仅在当前目标存在适用 Target adapter/tools 时调用 conventions/examples 查询；Target 结果不是 Source Evidence，不得覆盖 Screenshot / Fragment。
 11. Agent 自行决定文件、组件、状态、路由和 Token，但不得发明证据未支持的容器形态、文案、交互或状态；布局敏感 prop 缺失时对照截图，仍不确定则披露为剩余风险。
-12. 完成实现并运行目标原生验证；仅在适用 adapter 存在时调用其变更校验，报告变更范围、验证结果、原始风险、相对 Evidence 的已知偏差和剩余风险。
+12. 读取固定 `read_acceptance_contract`，实施前完成结构/组件/Token/状态/交互映射。
+13. 完成实现并运行目标原生验证；调用 `evaluate_acceptance`，报告五维 pass/fail/unverified。critical unverified 不得宣称完成。
 
 也可以使用 MCP Prompt `consume_evidence_handoff` 创建同一读取任务；Prompt 不放宽上述规则。权威实现纪律以 `proto-bridge://guides/handoff-consumer` 为准。
 
@@ -52,6 +53,9 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 | `read_evidence_staleness` | 读取指定 Snapshot 的 freshness 判断 |
 | `read_agent_handoff` | 读取固定范围、引用和 mandatory risks |
 | `read_evidence_blob` | 读取 Snapshot/Catalog 可达的截图或经许可的调试 Blob |
+| `read_evidence_screenshot` | 将固定 Screenshot 作为真正的 MCP ImageContent 返回 |
+| `read_acceptance_contract` | 读取固定 Handoff 派生的五维验收合同 |
+| `evaluate_acceptance` | 保守计算五维得分；缺项自动记为 unverified |
 
 ## Target Tools
 

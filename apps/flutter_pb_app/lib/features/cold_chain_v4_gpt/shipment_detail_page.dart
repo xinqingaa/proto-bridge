@@ -93,7 +93,7 @@ class _EvidenceShipmentDetailPageState
     if (!mounted) return;
     if (result == 'resolution') {
       Navigator.of(context).pushNamed(
-        AppRoutes.evidence20260803ResolutionForm,
+        AppRoutes.coldChainV4GptResolutionForm,
         arguments: const {'variant': 'ready-to-submit'},
       );
     } else if (result == 'acknowledge') {

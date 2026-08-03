@@ -3,12 +3,6 @@
 /// New prototype pages: add a constant here, register in [appRoutes],
 /// and expose an entry on HubPage.
 abstract final class AppRoutes {
-  static const evidence20260803Queue =
-      '/deliveries/2026-08-03/cold-chain/queue';
-  static const evidence20260803ShipmentDetail =
-      '/deliveries/2026-08-03/cold-chain/shipment-detail';
-  static const evidence20260803ResolutionForm =
-      '/deliveries/2026-08-03/cold-chain/resolution-form';
   static const hub = '/';
   static const demo = '/demo';
   static const fieldService = '/prototypes/field-service';
@@ -24,4 +18,16 @@ abstract final class AppRoutes {
       '/prototypes/cold-chain-v3/shipment-detail';
   static const coldChainV3ResolutionForm =
       '/prototypes/cold-chain-v3/resolution-form';
+  static const coldChainV4Gpt = '/prototypes/cold-chain-v4-gpt';
+  static const coldChainV4GptShipmentDetail =
+      '/prototypes/cold-chain-v4-gpt/shipment-detail';
+  static const coldChainV4GptResolutionForm =
+      '/prototypes/cold-chain-v4-gpt/resolution-form';
+
+  /// Delivery 2026-08-03 cold-chain-ops Evidence reconstruction.
+  static const coldChainOpsQueue = '/deliveries/2026-08-03/cold-chain-ops/queue';
+  static const coldChainOpsShipmentDetail =
+      '/deliveries/2026-08-03/cold-chain-ops/shipment-detail';
+  static const coldChainOpsResolutionForm =
+      '/deliveries/2026-08-03/cold-chain-ops/resolution-form';
 }

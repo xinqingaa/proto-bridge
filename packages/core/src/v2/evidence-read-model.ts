@@ -37,6 +37,13 @@ export type EvidenceSemanticRegionReadModel = {
   text?: string;
   visible?: boolean;
   bbox?: { x: number; y: number; width: number; height: number };
+  componentId?: string;
+  tokenBindings?: Record<string, string>;
+  semanticParent?: unknown;
+  semanticAncestors?: unknown[];
+  documentOrder?: number;
+  scrollOwner?: unknown;
+  positioning?: string;
   firstSourceIndex: number;
   sourceFactIds: string[];
   facts: EvidenceReadableFact[];
@@ -111,7 +118,13 @@ function categoryFor(factId: string): EvidenceFactCategory {
   if (
     factId.endsWith(".role") ||
     factId.endsWith(".tag") ||
-    factId.endsWith(".visible")
+    factId.endsWith(".visible") ||
+    factId.endsWith(".semanticParent") ||
+    factId.endsWith(".semanticAncestors") ||
+    factId.endsWith(".documentOrder") ||
+    factId.endsWith(".scrollOwner") ||
+    factId.endsWith(".positioning") ||
+    factId.includes(".structure.")
   ) {
     return "structure";
   }
@@ -157,7 +170,7 @@ function readableFact(fact: Fact, sourceIndex: number): EvidenceReadableFact {
   };
 }
 
-const NODE_FACT_SUFFIX = /\.(role|visible|tag|bbox|text)$/;
+const NODE_FACT_SUFFIX = /\.(role|visible|tag|bbox|text|componentId|tokenBindings|semanticParent|semanticAncestors|documentOrder|scrollOwner|positioning)$/;
 
 function stringValue(
   fact: EvidenceReadableFact | undefined,
@@ -208,6 +221,22 @@ function semanticRegions(
     const tag = stringValue(bySuffix("tag"));
     const visible = booleanValue(bySuffix("visible"));
     const bbox = bboxValue(bySuffix("bbox"));
+    const componentId = stringValue(bySuffix("componentId"));
+    const tokenBindingsFact = bySuffix("tokenBindings")?.value;
+    const tokenBindings =
+      tokenBindingsFact && typeof tokenBindingsFact === "object"
+        ? (tokenBindingsFact as Record<string, string>)
+        : undefined;
+    const semanticParent = bySuffix("semanticParent")?.value;
+    const semanticAncestorsValue = bySuffix("semanticAncestors")?.value;
+    const semanticAncestors = Array.isArray(semanticAncestorsValue)
+      ? semanticAncestorsValue
+      : undefined;
+    const documentOrderValue = bySuffix("documentOrder")?.value;
+    const documentOrder =
+      typeof documentOrderValue === "number" ? documentOrderValue : undefined;
+    const scrollOwner = bySuffix("scrollOwner")?.value;
+    const positioning = stringValue(bySuffix("positioning"));
     return {
       regionId,
       label: text?.replace(/\s+/g, " ").trim().slice(0, 80) || role || regionId,
@@ -216,6 +245,13 @@ function semanticRegions(
       ...(text ? { text } : {}),
       ...(visible !== undefined ? { visible } : {}),
       ...(bbox ? { bbox } : {}),
+      ...(componentId ? { componentId } : {}),
+      ...(tokenBindings ? { tokenBindings } : {}),
+      ...(semanticParent !== undefined ? { semanticParent } : {}),
+      ...(semanticAncestors ? { semanticAncestors } : {}),
+      ...(documentOrder !== undefined ? { documentOrder } : {}),
+      ...(scrollOwner !== undefined ? { scrollOwner } : {}),
+      ...(positioning ? { positioning } : {}),
       firstSourceIndex: regionFacts[0]?.sourceIndex ?? 0,
       sourceFactIds: regionFacts.map((fact) => fact.factId),
       facts: regionFacts,

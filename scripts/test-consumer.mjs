@@ -85,7 +85,10 @@ try {
     stalenessReport: report,
     currentInputVersion: report.inputVersion,
     implementationIntent: "Implement the task-list page shell.",
-    acknowledgedRiskKinds: ["required-unknown"],
+    acknowledgedRiskKinds: [
+      "required-unknown",
+      "reconstruction-readiness",
+    ],
   });
   await writer.close();
   writer = undefined;
@@ -163,6 +166,29 @@ try {
         snapshotId: handoff.snapshotId,
       },
     }),
+  );
+  const screenshotBlobId = snapshot.screenshotResources?.[0]?.blobId;
+  const screenshotResult = await client.request("tools/call", {
+    name: "read_evidence_screenshot",
+    arguments: {
+      bundleId: handoff.bundleId,
+      snapshotId: handoff.snapshotId,
+      blobId: screenshotBlobId,
+    },
+  });
+  assert(
+    screenshotResult.content?.some((item) => item.type === "image"),
+    "Consumer could not view the fixed Screenshot as MCP ImageContent.",
+  );
+  const acceptance = parseToolJson(
+    await client.request("tools/call", {
+      name: "read_acceptance_contract",
+      arguments: { handoffId: handoff.handoffId },
+    }),
+  );
+  assert(
+    acceptance.policy?.minimumScore === 85,
+    "Consumer did not receive the fixed five-dimension Acceptance Contract.",
   );
   const revisionId = handoff.selectedCases[0].revisionId;
   const consumedRevision = parseToolJson(

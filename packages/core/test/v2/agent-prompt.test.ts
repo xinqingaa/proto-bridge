@@ -18,6 +18,7 @@ describe('agent-prompt', () => {
       snapshotId: 'snapshot-1',
       targetRoot: '/tmp/flutter_pb_app',
       implementationIntent: '还原任务列表',
+      acceptanceContractPath: '/tmp/delivery/acceptance-contract.json',
       risks: [
         {
           kind: 'required-unknown',
@@ -39,7 +40,9 @@ describe('agent-prompt', () => {
     expect(prompt).toContain('# Implementation Discipline');
     expect(prompt).toContain('# Verification');
     expect(prompt).toContain('# Final Report');
-    expect(prompt).toContain('Screenshot 必须实际查看');
+    expect(prompt).toContain('read_evidence_screenshot');
+    expect(prompt).toContain('/tmp/delivery/acceptance-contract.json');
+    expect(prompt).toContain('最低总分：85');
     expect(prompt).toContain('不要凭经验补造 Evidence 未支持的容器');
     expect(prompt).toContain('仍不确定时记录风险');
     expect(prompt).toContain('AGENTS.md');
@@ -51,6 +54,7 @@ describe('agent-prompt', () => {
     );
     expect(prompt).toContain('优先复用目标工程已声明或扫描确认的组件');
     expect(prompt).toContain('相对 Screenshot/Fragment 的已知偏差');
+    expect(prompt).toContain('evaluate_acceptance');
     expect(prompt).not.toContain('通用 Flutter 架构');
   });
 });

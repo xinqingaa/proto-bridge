@@ -599,6 +599,7 @@ async function deliverCommand(
     targetRoot,
     implementationIntent: intent,
     risks: handoff.risks,
+    acceptanceContractPath: receipt.acceptanceContractPath,
   });
 
   if (booleanFlag(args, 'json')) {
@@ -613,6 +614,8 @@ async function deliverCommand(
         `  Snapshot   ${snapshotId}`,
         `  Handoff    ${handoff.handoffId}`,
         `  Prompt     ${receipt.agentPromptPath}`,
+        `  Contract   ${receipt.acceptanceContractPath}`,
+        `  Review     ${receipt.reviewIndexPath} (${receipt.screenshotCount} screenshots)`,
         '',
         '──────── copy into Cursor / Codex ────────',
         agentPrompt.trimEnd(),

@@ -171,7 +171,10 @@ describe('Phase 2 Store: Catalog and controlled Blob', () => {
       revisions: [f.FRAGMENT_SCOPED_ACTIVE_REVISION],
       coverage: f.SNAPSHOT.coverage,
     });
-    const bytes = new TextEncoder().encode('identical screenshot bytes');
+    const bytes = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+      'base64',
+    );
     const primary = await store.putBlob({
       bundleId: f.BUNDLE_ID,
       kind: 'screenshot',

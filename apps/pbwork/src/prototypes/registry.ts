@@ -105,6 +105,16 @@ export const prototypeScreens = [
     view: "cold-chain-ops/screens/ExceptionQueue.vue",
     queryKeys: ["shipment"],
     defaultVariantId: "default",
+    shellFragments: [
+      {
+        screenId: "cold-chain-ops.exception-queue",
+        pbId: "cold-chain-ops.exception-queue.root",
+      },
+      {
+        screenId: "cold-chain-ops.exception-queue",
+        pbId: "cold-chain-ops.exception-queue.app-bar",
+      },
+    ],
     variants: [
       {
         id: "default",
@@ -134,6 +144,40 @@ export const prototypeScreens = [
             screenId: "cold-chain-ops.exception-queue",
             pbId: "cold-chain-ops.exception-queue.list.row",
             pbKey: "ex-017",
+          },
+        ],
+        structureAssertions: [
+          ...[
+            "summary",
+            "search",
+            "filters",
+            "list",
+          ].map((slot) => ({
+            kind: "scroll-owner" as const,
+            fragment: {
+              screenId: "cold-chain-ops.exception-queue",
+              pbId: `cold-chain-ops.exception-queue.${slot}`,
+            },
+            owner: {
+              kind: "fragment" as const,
+              fragment: {
+                screenId: "cold-chain-ops.exception-queue",
+                pbId: "cold-chain-ops.exception-queue.scroll-list",
+              },
+            },
+          })),
+          {
+            kind: "order",
+            parent: {
+              screenId: "cold-chain-ops.exception-queue",
+              pbId: "cold-chain-ops.exception-queue.scroll-list",
+            },
+            children: ["summary", "search", "filters", "list"].map(
+              (slot) => ({
+                screenId: "cold-chain-ops.exception-queue",
+                pbId: `cold-chain-ops.exception-queue.${slot}`,
+              }),
+            ),
           },
         ],
       },
@@ -185,6 +229,35 @@ export const prototypeScreens = [
           {
             screenId: "cold-chain-ops.exception-queue",
             pbId: "cold-chain-ops.exception-queue.empty",
+          },
+        ],
+        structureAssertions: [
+          ...["summary", "search", "filters", "empty"].map((slot) => ({
+            kind: "scroll-owner" as const,
+            fragment: {
+              screenId: "cold-chain-ops.exception-queue",
+              pbId: `cold-chain-ops.exception-queue.${slot}`,
+            },
+            owner: {
+              kind: "fragment" as const,
+              fragment: {
+                screenId: "cold-chain-ops.exception-queue",
+                pbId: "cold-chain-ops.exception-queue.scroll-list",
+              },
+            },
+          })),
+          {
+            kind: "order",
+            parent: {
+              screenId: "cold-chain-ops.exception-queue",
+              pbId: "cold-chain-ops.exception-queue.scroll-list",
+            },
+            children: ["summary", "search", "filters", "empty"].map(
+              (slot) => ({
+                screenId: "cold-chain-ops.exception-queue",
+                pbId: `cold-chain-ops.exception-queue.${slot}`,
+              }),
+            ),
           },
         ],
       },
@@ -299,6 +372,16 @@ export const prototypeScreens = [
     view: "cold-chain-ops/screens/ShipmentDetail.vue",
     queryKeys: ["shipment"],
     defaultVariantId: "default",
+    shellFragments: [
+      {
+        screenId: "cold-chain-ops.shipment-detail",
+        pbId: "cold-chain-ops.shipment-detail.root",
+      },
+      {
+        screenId: "cold-chain-ops.shipment-detail",
+        pbId: "cold-chain-ops.shipment-detail.app-bar",
+      },
+    ],
     variants: [
       {
         id: "default",
@@ -457,6 +540,16 @@ export const prototypeScreens = [
     view: "cold-chain-ops/screens/ResolutionForm.vue",
     queryKeys: ["shipment"],
     defaultVariantId: "default",
+    shellFragments: [
+      {
+        screenId: "cold-chain-ops.resolution-form",
+        pbId: "cold-chain-ops.resolution-form.root",
+      },
+      {
+        screenId: "cold-chain-ops.resolution-form",
+        pbId: "cold-chain-ops.resolution-form.app-bar",
+      },
+    ],
     variants: [
       {
         id: "default",
@@ -816,6 +909,12 @@ export const prototypeScreens = [
     path: "/prototype/ledger-planet/ledger-list",
     view: "ledger-planet/screens/LedgerList.vue",
     defaultVariantId: "default",
+    shellFragments: [
+      {
+        screenId: "ledger-planet.ledger-list",
+        pbId: "ledger-planet.ledger-list.root",
+      },
+    ],
     variants: [
       {
         id: "default",
@@ -921,6 +1020,12 @@ export const prototypeScreens = [
     path: "/prototype/ledger-planet/task-list",
     view: "ledger-planet/screens/TaskList.vue",
     defaultVariantId: "default",
+    shellFragments: [
+      {
+        screenId: "ledger-planet.task-list",
+        pbId: "ledger-planet.task-list.root",
+      },
+    ],
     variants: [
       {
         id: "default",
@@ -1127,6 +1232,12 @@ export const prototypeScreens = [
     view: "ledger-planet/screens/TaskDetail.vue",
     queryKeys: ["task"],
     defaultVariantId: "default",
+    shellFragments: [
+      {
+        screenId: "ledger-planet.task-detail",
+        pbId: "ledger-planet.task-detail.root",
+      },
+    ],
     variants: [
       {
         id: "default",

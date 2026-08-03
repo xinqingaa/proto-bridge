@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:unified_popups/unified_popups.dart';
 
-import 'package:flutter_pb_app/features/cold_chain_evidence_20260803_021714/exception_queue_page.dart';
-import 'package:flutter_pb_app/features/cold_chain_evidence_20260803_021714/models.dart';
-import 'package:flutter_pb_app/features/cold_chain_evidence_20260803_021714/resolution_form_page.dart';
-import 'package:flutter_pb_app/features/cold_chain_evidence_20260803_021714/shipment_detail_page.dart';
+import 'package:flutter_pb_app/features/cold_chain_v4_gpt/exception_queue_page.dart';
+import 'package:flutter_pb_app/features/cold_chain_v4_gpt/models.dart';
+import 'package:flutter_pb_app/features/cold_chain_v4_gpt/resolution_form_page.dart';
+import 'package:flutter_pb_app/features/cold_chain_v4_gpt/shipment_detail_page.dart';
 import 'package:flutter_pb_app/router/routes.dart';
 import 'package:flutter_pb_app/theme/ts.dart';
 
@@ -20,11 +20,11 @@ Widget _harness(Widget home) {
     ),
     home: home,
     routes: {
-      AppRoutes.evidence20260803ShipmentDetail: (context) =>
+      AppRoutes.coldChainV4GptShipmentDetail: (context) =>
           EvidenceShipmentDetailPage.fromRouteArgs(
             ModalRoute.of(context)?.settings.arguments,
           ),
-      AppRoutes.evidence20260803ResolutionForm: (context) =>
+      AppRoutes.coldChainV4GptResolutionForm: (context) =>
           EvidenceResolutionFormPage.fromRouteArgs(
             ModalRoute.of(context)?.settings.arguments,
           ),

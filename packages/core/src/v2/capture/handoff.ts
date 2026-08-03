@@ -226,6 +226,49 @@ export async function evaluateAgentHandoff(
         refs: [revision.revisionId],
       });
     }
+    if (revision.evidenceLevel.startsWith('instrumented')) {
+      const factIds = new Set(revision.facts.map((fact) => fact.factId));
+      const regionPrefixes = revision.facts
+        .filter((fact) => fact.factId.endsWith('.role'))
+        .map((fact) => fact.factId.slice(0, -'.role'.length));
+      const missingTopology = regionPrefixes.flatMap((prefix) =>
+        ['documentOrder', 'scrollOwner', 'positioning']
+          .filter((suffix) => !factIds.has(`${prefix}.${suffix}`))
+          .map((suffix) => `${prefix}.${suffix}`),
+      );
+      const hasShellContract = revision.facts.some((fact) =>
+        fact.factId.endsWith('.structure.shell'),
+      );
+      if (missingTopology.length > 0 || !hasShellContract) {
+        risks.push({
+          kind: 'reconstruction-readiness',
+          message: `High-fidelity structure contract is incomplete in ${revision.revisionId}.`,
+          refs: [
+            ...missingTopology,
+            ...(!hasShellContract
+              ? [`${revision.revisionId}:missing-shell-contract`]
+              : []),
+          ],
+        });
+      }
+    }
+    const screenshotRecords = blobs.filter(
+      (blob) =>
+        blob.kind === 'screenshot' &&
+        blob.ownerRefs.some(
+          (owner) =>
+            owner.kind === 'revision' && owner.objectId === revision.revisionId,
+        ),
+    );
+    if (screenshotRecords.some((blob) => !blob.image)) {
+      risks.push({
+        kind: 'reconstruction-readiness',
+        message: `Screenshot renderability metadata is missing in ${revision.revisionId}.`,
+        refs: screenshotRecords
+          .filter((blob) => !blob.image)
+          .map((blob) => blob.blobId),
+      });
+    }
   }
 
   if (attemptIncomplete) {

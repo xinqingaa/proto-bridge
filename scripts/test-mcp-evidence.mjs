@@ -84,7 +84,7 @@ try {
     selectedCases: reference.RUN_1.selection.cases,
     stalenessReport: staleness,
     currentInputVersion: staleness.inputVersion,
-    acknowledgedRiskKinds: [],
+    acknowledgedRiskKinds: ["reconstruction-readiness"],
   });
 
   client = await startClient([
@@ -109,6 +109,9 @@ try {
     "read_evidence_staleness",
     "read_agent_handoff",
     "read_evidence_blob",
+    "read_evidence_screenshot",
+    "read_acceptance_contract",
+    "evaluate_acceptance",
   ]) {
     assert(
       tools.tools?.some((tool) => tool.name === name),
@@ -312,6 +315,57 @@ try {
   assert(
     screenshotRead.contents?.[0]?.blob === screenshotBytes.toString("base64"),
     "Screenshot resource bytes changed during MCP transport.",
+  );
+  const screenshotToolRead = await client.request("tools/call", {
+    name: "read_evidence_screenshot",
+    arguments: {
+      bundleId: reference.BUNDLE_ID,
+      snapshotId: fixedSnapshotId,
+      blobId: screenshot.blobId,
+    },
+  });
+  assert(
+    screenshotToolRead.content?.some(
+      (item) =>
+        item.type === "image" &&
+        item.mimeType === "image/png" &&
+        item.data === screenshotBytes.toString("base64"),
+    ),
+    "Screenshot tool did not return a real MCP ImageContent block.",
+  );
+  assert(
+    screenshotToolRead.structuredContent?.viewedAs === "mcp-image-content" &&
+      screenshotToolRead.structuredContent?.width === 1 &&
+      screenshotToolRead.structuredContent?.height === 1,
+    "Screenshot tool did not return verified PNG metadata.",
+  );
+
+  const acceptance = parseToolJson(
+    await client.request("tools/call", {
+      name: "read_acceptance_contract",
+      arguments: { handoffId: handoff.handoffId },
+    }),
+  );
+  assert(
+    acceptance.policy?.targetScore === 90 &&
+      acceptance.policy?.minimumScore === 85 &&
+      acceptance.screenshots?.[0]?.blobIds?.includes(screenshot.blobId),
+    "Acceptance Contract did not bind scoring policy and fixed Screenshot.",
+  );
+  const evaluation = parseToolJson(
+    await client.request("tools/call", {
+      name: "evaluate_acceptance",
+      arguments: {
+        handoffId: handoff.handoffId,
+        viewedScreenshotBlobIds: [screenshot.blobId],
+        results: [],
+      },
+    }),
+  );
+  assert(
+    evaluation.status === "failed" &&
+      evaluation.dimensions?.structure?.unverified > 0,
+    "Missing Acceptance results were not conservatively marked unverified.",
   );
 
   const next = await writer.commitRun({

@@ -10,6 +10,8 @@ import {
   type RuntimeFragmentIdentity,
   type RuntimeScreenManifest,
   type RuntimeSemanticNode,
+  type RuntimeStructureAssertion,
+  type RuntimeVariantManifest,
 } from '../runtime-contract/index.js';
 import type { CapturePreflight } from './preflight.js';
 import type { CaseMatrixEntry } from './selection.js';
@@ -165,6 +167,29 @@ function nodeFacts(nodes: RuntimeSemanticNode[]): Fact[] {
         effectiveValue: node.text,
       });
     }
+    for (const [suffix, value, locator] of [
+      ['semanticParent', node.semanticParent, '#nearest-semantic-ancestor'],
+      ['semanticAncestors', node.semanticAncestors, '#semantic-ancestor-path'],
+      ['documentOrder', node.documentOrder, '#document-order'],
+      ['scrollOwner', node.scrollOwner, '#computed-scroll-owner'],
+      ['positioning', node.positioning, '#computed-positioning'],
+    ] as const) {
+      if (value === undefined) continue;
+      facts.push({
+        factId: `${identity}.${suffix}`,
+        candidates: [
+          {
+            value,
+            provenance: {
+              source: 'runtime-observation',
+              locator: `${node.fragment.pbId}${locator}`,
+            },
+          },
+        ],
+        resolution: 'resolved',
+        effectiveValue: value,
+      });
+    }
     if (node.componentId) {
       facts.push({
         factId: `${identity}.componentId`,
@@ -225,6 +250,153 @@ function nodeFacts(nodes: RuntimeSemanticNode[]): Fact[] {
     }
     return facts;
   });
+}
+
+function sameFragment(
+  left: RuntimeFragmentIdentity | undefined,
+  right: RuntimeFragmentIdentity | undefined,
+): boolean {
+  if (!left || !right) return left === right;
+  return fragmentKey(left) === fragmentKey(right);
+}
+
+function observedAssertionValue(
+  assertion: RuntimeStructureAssertion,
+  nodes: RuntimeSemanticNode[],
+): unknown {
+  const byFragment = new Map(
+    nodes.map((node) => [fragmentKey(node.fragment), node] as const),
+  );
+  if (assertion.kind === 'parent') {
+    return byFragment.get(fragmentKey(assertion.child))?.semanticParent;
+  }
+  if (assertion.kind === 'scroll-owner') {
+    return byFragment.get(fragmentKey(assertion.fragment))?.scrollOwner;
+  }
+  if (assertion.kind === 'positioning') {
+    return byFragment.get(fragmentKey(assertion.fragment))?.positioning;
+  }
+  if (assertion.kind === 'visibility') {
+    return byFragment.get(fragmentKey(assertion.fragment))?.visible;
+  }
+  return assertion.children
+    .map((fragment) => byFragment.get(fragmentKey(fragment)))
+    .filter((node): node is RuntimeSemanticNode => node !== undefined)
+    .sort((left, right) => left.documentOrder - right.documentOrder)
+    .map((node) => node.fragment);
+}
+
+function expectedAssertionValue(assertion: RuntimeStructureAssertion): unknown {
+  if (assertion.kind === 'parent') return assertion.parent;
+  if (assertion.kind === 'scroll-owner') return assertion.owner;
+  if (assertion.kind === 'positioning') return assertion.value;
+  if (assertion.kind === 'visibility') return assertion.visible;
+  return assertion.children;
+}
+
+function structureValueMatches(
+  assertion: RuntimeStructureAssertion,
+  observed: unknown,
+): boolean {
+  const expected = expectedAssertionValue(assertion);
+  if (assertion.kind === 'parent') {
+    return sameFragment(
+      observed as RuntimeFragmentIdentity | undefined,
+      expected as RuntimeFragmentIdentity,
+    );
+  }
+  return JSON.stringify(observed) === JSON.stringify(expected);
+}
+
+function structureContractFacts(input: {
+  screen: RuntimeScreenManifest;
+  variant: RuntimeVariantManifest;
+  checkpointAssertions: RuntimeStructureAssertion[];
+  nodes: RuntimeSemanticNode[];
+}): Fact[] {
+  const assertions = [
+    ...input.screen.structureAssertions,
+    ...input.variant.structureAssertions,
+    ...input.checkpointAssertions,
+  ];
+  const facts = assertions.map((assertion, index): Fact => {
+    const expected = expectedAssertionValue(assertion);
+    const observed = observedAssertionValue(assertion, input.nodes);
+    const factId = `${input.screen.screenId}.structure.assertion.${index}`;
+    if (structureValueMatches(assertion, observed)) {
+      return {
+        factId,
+        candidates: [
+          {
+            value: { assertion, observed },
+            provenance: {
+              source: 'runtime-contract',
+              locator: `manifest.screens.${input.screen.screenId}.structureAssertions`,
+            },
+          },
+        ],
+        resolution: 'resolved',
+        effectiveValue: { assertion, observed },
+      };
+    }
+    return {
+      factId,
+      candidates: [
+        {
+          value: { expected: assertion },
+          provenance: {
+            source: 'runtime-contract',
+            locator: `manifest.screens.${input.screen.screenId}.structureAssertions`,
+          },
+        },
+        {
+          value: { observed },
+          provenance: {
+            source: 'runtime-observation',
+            locator: 'capture-protocol.semantic-snapshot.nodes',
+          },
+        },
+      ],
+      resolution: 'unresolved-conflict',
+      issueRef: `${factId}.mismatch`,
+    };
+  });
+
+  const shellPolicy = input.variant.shellPolicy ??
+    (input.screen.shellFragments.length > 0 ? 'inherit' : undefined);
+  if (!shellPolicy) return facts;
+  const visible = new Set(
+    input.nodes
+      .filter((node) => node.visible)
+      .map((node) => fragmentKey(node.fragment)),
+  );
+  const missingShell = shellPolicy === 'inherit'
+    ? input.screen.shellFragments.filter(
+        (fragment) => !visible.has(fragmentKey(fragment)),
+      )
+    : [];
+  const shellValue = {
+    policy: shellPolicy,
+    shellFragments: input.screen.shellFragments,
+    missingShell,
+  };
+  facts.push({
+    factId: `${input.screen.screenId}.structure.shell`,
+    candidates: [
+      {
+        value: shellValue,
+        provenance: {
+          source: 'runtime-contract',
+          locator: `manifest.screens.${input.screen.screenId}.shellFragments`,
+        },
+      },
+    ],
+    resolution: missingShell.length === 0 ? 'resolved' : 'unknown',
+    ...(missingShell.length === 0
+      ? { effectiveValue: shellValue }
+      : { issueRef: `${input.screen.screenId}.structure.shell.missing` }),
+  });
+  return facts;
 }
 
 function fragmentKey(fragment: RuntimeFragmentIdentity): string {
@@ -735,6 +907,13 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
             selectedFragments,
           ),
           ...scenarioFact(input.entry),
+          ...structureContractFacts({
+            screen: targetScreen,
+            variant: targetVariant,
+            checkpointAssertions:
+              input.entry.scenario?.checkpoint.structureAssertions ?? [],
+            nodes: snapshot.payload.nodes,
+          }),
           ...nodeFacts(snapshot.payload.nodes),
         ];
         // Runtime instrumentation alone cannot prove source provenance. A

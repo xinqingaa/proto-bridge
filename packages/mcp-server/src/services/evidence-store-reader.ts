@@ -12,6 +12,7 @@ import {
   WorkspaceId,
   unknownReferenceError,
 } from "@proto-bridge/core/v2";
+import { buildAcceptanceContractFromStore } from "@proto-bridge/core/v2/store";
 import {
   buildEvidenceReadModel,
   type EvidenceReadModel,
@@ -359,6 +360,14 @@ export class EvidenceStoreReader {
     return handoff;
   }
 
+  async readAcceptanceContract(handoffIdInput: string) {
+    const handoff = await this.readHandoff(handoffIdInput);
+    const store = await this.requireStore();
+    return (
+      await buildAcceptanceContractFromStore({ store, handoff })
+    ).contract;
+  }
+
   async readBlob(input: {
     bundleId: string;
     snapshotId: string;
@@ -423,7 +432,17 @@ export class EvidenceStoreReader {
     bundleIdInput: string,
     snapshotIdInput: string,
     blobIdInput: string,
-  ): Promise<{ mediaType: string; bytes: Uint8Array }> {
+  ): Promise<{
+    record: {
+      blobId: string;
+      digest: string;
+      byteLength: number;
+      mediaType: string;
+      image?: { width: number; height: number };
+    };
+    mediaType: string;
+    bytes: Uint8Array;
+  }> {
     const details = await this.readSnapshot(bundleIdInput, snapshotIdInput);
     const allowed = new Set(
       details.evidence.screens.flatMap((screen) =>
@@ -442,7 +461,17 @@ export class EvidenceStoreReader {
     if (!blob || blob.record.kind !== "screenshot") {
       throw unknownReferenceError("Screenshot Blob", blobId);
     }
-    return { mediaType: blob.record.mediaType, bytes: blob.bytes };
+    return {
+      record: {
+        blobId: blob.record.blobId,
+        digest: blob.record.digest,
+        byteLength: blob.record.byteLength,
+        mediaType: blob.record.mediaType,
+        ...(blob.record.image ? { image: blob.record.image } : {}),
+      },
+      mediaType: blob.record.mediaType,
+      bytes: blob.bytes,
+    };
   }
 
   private async requireStore(): Promise<LocalFileStore> {

@@ -10,6 +10,7 @@ export const RISK_KIND_LABELS: Record<RiskKind, string> = {
   'evidence-level-limitation': '证据级别受限',
   'manual-promotion': '含人工提升项',
   'interaction-coverage': '交互覆盖不完整',
+  'reconstruction-readiness': '高保真重建合同不完整',
 };
 
 export function riskKindLabel(kind: RiskKind | string): string {
@@ -24,6 +25,8 @@ export type BuildAgentPromptInput = {
   targetRoot: string;
   /** Optional producer intent echoed into the prompt. */
   implementationIntent?: string;
+  /** Fixed, generated five-dimension acceptance contract for this Delivery. */
+  acceptanceContractPath?: string;
   /** Risks already fixed on the Handoff; listed for the Agent before edits. */
   risks?: readonly Risk[];
 };
@@ -49,6 +52,9 @@ export function buildAgentPrompt(input: BuildAgentPromptInput): string {
           '',
         ].join('\n')
       : '';
+  const acceptanceBlock = input.acceptanceContractPath
+    ? `\n固定验收合同：\n\n- Acceptance Contract：\`${input.acceptanceContractPath}\`\n- 目标总分：90；最低总分：85；结构、组件、Token、状态、交互任一维度不得低于 80。\n- critical requirement 为 fail 或 unverified 时不得宣称完成。\n`
+    : '';
 
   const sections = [
     PROMPT_ASSETS['handoff-consumer'],
@@ -71,6 +77,7 @@ ${intentBlock}
 - Bundle：\`${input.bundleId}\`
 - Snapshot：\`${input.snapshotId}\`
 ${riskBlock}
+${acceptanceBlock}
 ## Consumer contract
 
 ${sections}

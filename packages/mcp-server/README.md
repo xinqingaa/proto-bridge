@@ -41,6 +41,7 @@ pnpm pb:mcp -- --print-config
 - `read_evidence_staleness`
 - `read_agent_handoff`
 - `read_evidence_blob`
+- `read_evidence_screenshot`（视觉消费必须使用；返回 MCP ImageContent，不返回 base64 文本）
 
 ## Target Tools
 

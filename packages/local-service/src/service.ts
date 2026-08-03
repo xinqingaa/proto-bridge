@@ -943,6 +943,10 @@ export class ProtoBridgeLocalService {
         {
           deliveryId: receipt.deliveryId,
           agentPromptPath: receipt.agentPromptPath,
+          acceptanceContractPath: receipt.acceptanceContractPath,
+          acceptanceChecklistPath: receipt.acceptanceChecklistPath,
+          reviewIndexPath: receipt.reviewIndexPath,
+          screenshotCount: receipt.screenshotCount,
           receiptPath: receipt.receiptPath,
           handoffId: receipt.handoffId,
           bundleId: receipt.bundleId,

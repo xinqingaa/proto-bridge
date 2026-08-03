@@ -131,6 +131,8 @@ export type PrototypeVariant = {
    * undeclared instead of presenting the observed markers as a complete set.
    */
   requiredFragments?: PrototypeFragmentRef[];
+  shellPolicy?: "inherit" | "replace";
+  structureAssertions?: PrototypeStructureAssertion[];
 };
 
 export type PrototypeFragmentRef = {
@@ -138,6 +140,37 @@ export type PrototypeFragmentRef = {
   pbId: string;
   pbKey?: string;
 };
+
+export type PrototypeScrollOwner =
+  | { kind: "viewport" }
+  | { kind: "fragment"; fragment: PrototypeFragmentRef };
+
+export type PrototypeStructureAssertion =
+  | {
+      kind: "parent";
+      child: PrototypeFragmentRef;
+      parent: PrototypeFragmentRef;
+    }
+  | {
+      kind: "scroll-owner";
+      fragment: PrototypeFragmentRef;
+      owner: PrototypeScrollOwner;
+    }
+  | {
+      kind: "order";
+      parent: PrototypeFragmentRef;
+      children: PrototypeFragmentRef[];
+    }
+  | {
+      kind: "positioning";
+      fragment: PrototypeFragmentRef;
+      value: "flow" | "sticky" | "fixed" | "overlay";
+    }
+  | {
+      kind: "visibility";
+      fragment: PrototypeFragmentRef;
+      visible: boolean;
+    };
 
 export type PrototypeAction = {
   id: string;
@@ -160,6 +193,7 @@ export type PrototypeCheckpoint = {
     keys: string[];
   }>;
   forbiddenFragments?: PrototypeFragmentRef[];
+  structureAssertions?: PrototypeStructureAssertion[];
 };
 
 export type PrototypeScenario = {
@@ -187,6 +221,9 @@ export type ScreenRecord = {
   scenarios?: PrototypeScenario[];
   /** Scenarios required before this Screen has complete interaction Evidence. */
   requiredScenarioIds?: string[];
+  /** Stable page chrome inherited by Variants unless they explicitly replace it. */
+  shellFragments?: PrototypeFragmentRef[];
+  structureAssertions?: PrototypeStructureAssertion[];
 };
 
 export type FixturePayload = { schemaVersion: 1 } & Record<string, unknown>;

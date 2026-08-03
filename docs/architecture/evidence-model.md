@@ -121,6 +121,8 @@ Handoff 固定：
 
 Handoff 创建前可以要求用户逐项确认风险，但确认不会修改风险或 Evidence。
 
+每个 Handoff 还可确定性派生 Reconstruction Acceptance Contract。该合同不修改 Evidence，而是把固定 revision 中的 topology、componentId、Token binding、Variant/Checkpoint、Scenario 与 Screenshot 组织成五维验收分母。
+
 ## Blob
 
 Blob 保存 Screenshot、调试数据或目录附件。Blob 必须具有 owner ref，并能从请求的 Snapshot 或 Catalog 到达。Debug/Trace 需要显式许可；MCP 不按文件路径读取 Blob。

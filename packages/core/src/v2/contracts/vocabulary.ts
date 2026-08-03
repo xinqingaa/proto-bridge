@@ -158,6 +158,7 @@ export const RISK_KINDS = [
   'evidence-level-limitation',
   'manual-promotion',
   'interaction-coverage',
+  'reconstruction-readiness',
 ] as const;
 export const RiskKind = z.enum(RISK_KINDS);
 export type RiskKind = z.infer<typeof RiskKind>;

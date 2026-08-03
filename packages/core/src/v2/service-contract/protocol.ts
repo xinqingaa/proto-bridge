@@ -118,6 +118,10 @@ export type CreateDeliveryRequest = {
 export type DeliveryArtifact = {
   deliveryId: string;
   agentPromptPath: string;
+  acceptanceContractPath: string;
+  acceptanceChecklistPath: string;
+  reviewIndexPath: string;
+  screenshotCount: number;
   receiptPath: string;
   handoffId: string;
   bundleId: string;

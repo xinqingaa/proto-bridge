@@ -17,6 +17,11 @@ import {
 import { LocalFileStore } from '../../../src/v2/store/local-file-store.js';
 import { ledgerPlanetTaskList as fixture } from '../../../src/v2/fixtures/index.js';
 
+const PNG_BYTES = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+  'base64',
+);
+
 class FakeDriver implements CaseCaptureDriver {
   constructor(private readonly failVariants = new Set<string>()) {}
 
@@ -48,7 +53,7 @@ class FakeDriver implements CaseCaptureDriver {
         {
           kind: 'screenshot',
           mediaType: 'image/png',
-          bytes: new Uint8Array([137, 80, 78, 71, variantId.length]),
+          bytes: PNG_BYTES,
         },
       ],
       diagnostics: { console: [], pageErrors: [], failedRequests: [] },
@@ -82,7 +87,7 @@ class UnknownDriver implements CaseCaptureDriver {
         {
           kind: 'screenshot',
           mediaType: 'image/png',
-          bytes: new Uint8Array([137, 80, 78, 71]),
+          bytes: PNG_BYTES,
         },
       ],
       diagnostics: { console: [], pageErrors: [], failedRequests: [] },
@@ -216,7 +221,7 @@ describe('V2 Capture Orchestrator + real Store', () => {
             {
               kind: 'screenshot',
               mediaType: 'image/png',
-              bytes: new Uint8Array([137, 80, 78, 71]),
+              bytes: PNG_BYTES,
             },
           ],
         };
@@ -487,7 +492,7 @@ describe('V2 Capture Orchestrator + real Store', () => {
       stalenessReport: report,
       currentInputVersion: preflight.inputVersion,
       implementationIntent: '实现任务列表',
-      acknowledgedRiskKinds: [],
+      acknowledgedRiskKinds: ['reconstruction-readiness'],
     });
     expect(handoff.coverageStatus).toBe('complete');
     expect(handoff.freshnessStatus).toBe('fresh');

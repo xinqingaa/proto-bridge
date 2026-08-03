@@ -37,6 +37,21 @@ export function toolText(text: string): JsonObject {
   return { content: [{ type: 'text', text }] };
 }
 
+/** Returns a real MCP ImageContent block while keeping strict structured output. */
+export function toolImage(input: {
+  data: string;
+  mimeType: string;
+  metadata: JsonObject;
+}): JsonObject {
+  return {
+    content: [
+      { type: 'image', data: input.data, mimeType: input.mimeType },
+      { type: 'text', text: JSON.stringify(input.metadata, null, 2) },
+    ],
+    structuredContent: input.metadata,
+  };
+}
+
 function toStructuredObject(value: unknown): JsonObject {
   if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
     return value as JsonObject;

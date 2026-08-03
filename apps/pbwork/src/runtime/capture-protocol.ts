@@ -218,6 +218,8 @@ function toScreenManifest(
       ...(variant.requiredFragments
         ? { requiredFragments: variant.requiredFragments }
         : {}),
+      ...(variant.shellPolicy ? { shellPolicy: variant.shellPolicy } : {}),
+      structureAssertions: variant.structureAssertions ?? [],
     })),
     actions: (screen.actions ?? []).map((action) => ({
       actionId: action.id,
@@ -244,11 +246,14 @@ function toScreenManifest(
         ...(checkpoint.forbiddenFragments
           ? { forbiddenFragments: checkpoint.forbiddenFragments }
           : {}),
+        structureAssertions: checkpoint.structureAssertions ?? [],
       })),
     })),
     ...(screen.requiredScenarioIds
       ? { requiredScenarioIds: screen.requiredScenarioIds }
       : {}),
+    shellFragments: screen.shellFragments ?? [],
+    structureAssertions: screen.structureAssertions ?? [],
     evidencePolicy: requiresStrictEvidence(screen.screenId)
       ? "strict"
       : "legacy",
@@ -324,7 +329,8 @@ export function buildRuntimeCaptureManifest(
       entries,
     };
   });
-  const authoringDiagnostics = validateRegistries().map((error, index) => ({
+  const authoringDiagnostics: RuntimeCaptureManifest["authoringDiagnostics"] =
+    validateRegistries().map((error, index) => ({
     diagnosticId: `registry-${error.resourceType}-${error.resourceId ?? "unknown"}-${index}`,
     code: `registry.${error.keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "invalid"}`,
     severity: "block" as const,
@@ -338,7 +344,30 @@ export function buildRuntimeCaptureManifest(
         : {}),
     },
     nextAction: "Fix the Registry/Contract validation error before Capture.",
-  }));
+    }));
+  authoringDiagnostics.push(
+    ...screens
+      .filter(
+        (screen) =>
+          screen.evidencePolicy === "strict" &&
+          screen.shellFragments.length === 0 &&
+          screen.variants.some((variant) => variant.shellPolicy !== "replace"),
+      )
+      .map((screen, index) => ({
+        diagnosticId: `reconstruction-shell-${screen.screenId}-${index}`,
+        code: "reconstruction.shell-contract-missing",
+        severity: "warning" as const,
+        message: `Strict Screen ${screen.screenId} must declare shellFragments or explicitly mark every Variant shellPolicy=replace before high-fidelity delivery.`,
+        caseIds: [],
+        source: {
+          kind: "registry" as const,
+          locator: `screen:${screen.screenId}/shellFragments`,
+          screenId: screen.screenId,
+        },
+        nextAction:
+          "Author the stable Screen shell and Variant inheritance/replacement policy; do not infer it from a Screenshot.",
+      })),
+  );
   return {
     protocolVersion: RUNTIME_CAPTURE_PROTOCOL_VERSION,
     inputVersion: digestText(JSON.stringify(versionInput)),
@@ -398,6 +427,75 @@ function markerIdentity(
     pbId,
     ...(pbKey ? { pbKey } : {}),
   };
+}
+
+function semanticAncestors(
+  element: HTMLElement,
+  screenId: string,
+): RuntimeFragmentIdentity[] {
+  const ancestors: RuntimeFragmentIdentity[] = [];
+  let current = element.parentElement;
+  while (current) {
+    if (current.dataset.pbId && current.dataset.pbRole) {
+      ancestors.push(markerIdentity(current, screenId));
+    }
+    current = current.parentElement;
+  }
+  return ancestors;
+}
+
+function isVerticalScrollContainer(element: HTMLElement): boolean {
+  const style = window.getComputedStyle(element);
+  const overflow = style.overflowY;
+  return (
+    overflow === "auto" ||
+    overflow === "scroll" ||
+    overflow === "overlay" ||
+    element.dataset.pbRole === "scroll-list"
+  );
+}
+
+function observedScrollOwner(
+  element: HTMLElement,
+  screenId: string,
+):
+  | { kind: "viewport" }
+  | { kind: "fragment"; fragment: RuntimeFragmentIdentity } {
+  let current = element.parentElement;
+  while (current) {
+    if (isVerticalScrollContainer(current)) {
+      if (current.dataset.pbId && current.dataset.pbRole) {
+        return {
+          kind: "fragment",
+          fragment: markerIdentity(current, screenId),
+        };
+      }
+      const semanticOwner = current.closest<HTMLElement>(
+        "[data-pb-id][data-pb-role]",
+      );
+      if (semanticOwner && semanticOwner !== element) {
+        return {
+          kind: "fragment",
+          fragment: markerIdentity(semanticOwner, screenId),
+        };
+      }
+    }
+    current = current.parentElement;
+  }
+  return { kind: "viewport" };
+}
+
+function observedPositioning(
+  element: HTMLElement,
+): "flow" | "sticky" | "fixed" | "overlay" {
+  const role = element.dataset.pbRole;
+  if (["sheet", "dialog", "drawer", "toast"].includes(role ?? "")) {
+    return "overlay";
+  }
+  const position = window.getComputedStyle(element).position;
+  if (position === "fixed") return "fixed";
+  if (position === "sticky") return "sticky";
+  return "flow";
 }
 
 function assertMarkerIdentities(
@@ -840,6 +938,7 @@ export function installRuntimeCaptureProtocol(
           const rect = element.getBoundingClientRect();
           const style = window.getComputedStyle(element);
           const context = readComponentContext(element);
+          const ancestors = semanticAncestors(element, current.screenId);
           return {
             fragment: markerIdentity(element, current.screenId),
             role: element.dataset.pbRole!,
@@ -859,6 +958,11 @@ export function installRuntimeCaptureProtocol(
               width: Number(rect.width.toFixed(2)),
               height: Number(rect.height.toFixed(2)),
             },
+            ...(ancestors[0] ? { semanticParent: ancestors[0] } : {}),
+            semanticAncestors: ancestors,
+            documentOrder: all.indexOf(element),
+            scrollOwner: observedScrollOwner(element, current.screenId),
+            positioning: observedPositioning(element),
             ...(context.componentId
               ? { componentId: context.componentId }
               : {}),

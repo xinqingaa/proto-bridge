@@ -1,6 +1,14 @@
 import type { JsonObject, ToolContext } from "../types.js";
 import { V2ContractError } from "@proto-bridge/core/v2";
-import { readBoolean, readString } from "../utils/args.js";
+import {
+  AcceptanceRequirementResult,
+  evaluateAcceptance,
+} from "@proto-bridge/core/v2";
+import {
+  readBoolean,
+  readString,
+  readStringArray,
+} from "../utils/args.js";
 import {
   evidenceScreenshotUri,
   evidenceSnapshotUri,
@@ -199,6 +207,34 @@ export async function readAgentHandoffTool(
   };
 }
 
+export async function readAcceptanceContractTool(
+  context: ToolContext,
+  args: JsonObject,
+): Promise<unknown> {
+  return context.evidence.readAcceptanceContract(
+    requiredString(args, "handoffId"),
+  );
+}
+
+export async function evaluateAcceptanceTool(
+  context: ToolContext,
+  args: JsonObject,
+): Promise<unknown> {
+  const contract = await context.evidence.readAcceptanceContract(
+    requiredString(args, "handoffId"),
+  );
+  const rawResults = args.results;
+  const results = AcceptanceRequirementResult.array().parse(
+    Array.isArray(rawResults) ? rawResults : [],
+  );
+  return evaluateAcceptance({
+    contract,
+    results,
+    viewedScreenshotBlobIds:
+      readStringArray(args, "viewedScreenshotBlobIds") ?? [],
+  });
+}
+
 export async function readEvidenceBlobTool(
   context: ToolContext,
   args: JsonObject,
@@ -212,6 +248,42 @@ export async function readEvidenceBlobTool(
       ? { catalogRevisionId: readString(args, "catalogRevisionId")! }
       : {}),
   });
+}
+
+export async function readEvidenceScreenshotTool(
+  context: ToolContext,
+  args: JsonObject,
+): Promise<{
+  metadata: JsonObject;
+  data: string;
+  mimeType: string;
+}> {
+  const bundleId = requiredString(args, "bundleId");
+  const snapshotId = requiredString(args, "snapshotId");
+  const blobId = requiredString(args, "blobId");
+  const screenshot = await context.evidence.readScreenshot(
+    bundleId,
+    snapshotId,
+    blobId,
+  );
+  return {
+    metadata: {
+      fixedSnapshotId: snapshotId,
+      blobId: screenshot.record.blobId,
+      digest: screenshot.record.digest,
+      byteLength: screenshot.record.byteLength,
+      mediaType: screenshot.record.mediaType,
+      ...(screenshot.record.image
+        ? {
+            width: screenshot.record.image.width,
+            height: screenshot.record.image.height,
+          }
+        : {}),
+      viewedAs: "mcp-image-content",
+    },
+    data: Buffer.from(screenshot.bytes).toString("base64"),
+    mimeType: screenshot.mediaType,
+  };
 }
 
 function requiredString(args: JsonObject, key: string): string {

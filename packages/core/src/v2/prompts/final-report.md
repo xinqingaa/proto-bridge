@@ -9,3 +9,5 @@
 - 目标工程静态检查、测试和视觉验证结果；
 - Target validation 结果（如适用）；
 - 相对 Screenshot/Fragment 的已知偏差、未实现项和剩余风险。
+- 五维验收表：每维 requirement 总数、pass、fail、unverified、分数和验证依据；不得自行把 unverified 计为 pass。
+- 实际通过 `read_evidence_screenshot` 查看过的全部 Screenshot blobId。
