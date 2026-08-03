@@ -10,6 +10,8 @@ class CommonEmptyState extends StatelessWidget {
     required this.title,
     this.description,
     this.icon = Icons.inbox_outlined,
+    this.iconColor,
+    this.iconBackgroundColor,
     this.actionLabel,
     this.onAction,
   });
@@ -17,6 +19,8 @@ class CommonEmptyState extends StatelessWidget {
   final String title;
   final String? description;
   final IconData icon;
+  final Color? iconColor;
+  final Color? iconBackgroundColor;
   final String? actionLabel;
   final VoidCallback? onAction;
 
@@ -29,9 +33,33 @@ class CommonEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 48, color: TS.colors.onSurfaceMuted),
+            if (iconColor == null && iconBackgroundColor == null)
+              Icon(
+                icon,
+                size: TS.sizing.iconLg,
+                color: TS.colors.onSurfaceMuted,
+              )
+            else
+              Container(
+                width: 56,
+                height: 56,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: iconBackgroundColor,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  size: TS.sizing.iconLg,
+                  color: iconColor ?? TS.colors.onSurfaceMuted,
+                ),
+              ),
             SizedBox(height: TS.spacing.md),
-            Text(title, style: TS.textStyle.subtitle, textAlign: TextAlign.center),
+            Text(
+              title,
+              style: TS.textStyle.subtitle,
+              textAlign: TextAlign.center,
+            ),
             if (description != null) ...[
               SizedBox(height: TS.spacing.xs),
               Text(

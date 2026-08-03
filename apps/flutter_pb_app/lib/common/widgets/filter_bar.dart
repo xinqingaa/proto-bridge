@@ -19,6 +19,7 @@ class CommonFilterBar extends StatelessWidget {
     required this.onSelected,
     this.showFilterAction = false,
     this.onFilterTap,
+    this.itemRadius,
   });
 
   final List<CommonFilterItem> items;
@@ -26,6 +27,7 @@ class CommonFilterBar extends StatelessWidget {
   final ValueChanged<String> onSelected;
   final bool showFilterAction;
   final VoidCallback? onFilterTap;
+  final double? itemRadius;
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +42,7 @@ class CommonFilterBar extends StatelessWidget {
               label: item.label,
               selected: selected.contains(item.value),
               onTap: () => onSelected(item.value),
+              radius: itemRadius,
             ),
             SizedBox(width: TS.spacing.sm),
           ],

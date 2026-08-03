@@ -16,6 +16,7 @@ void main() {
     await tester.drag(find.byType(ListView), const Offset(0, -400));
     await tester.pumpAndSettle();
     expect(find.text('冷链异常 V2'), findsOneWidget);
+    expect(find.text('冷链异常 V3'), findsOneWidget);
   });
 
   testWidgets('Cold Chain V2 opens from Hub', (tester) async {

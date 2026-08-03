@@ -15,12 +15,18 @@ class CommonChip extends StatelessWidget {
     this.tone = CommonChipTone.secondary,
     this.selected = false,
     this.onTap,
+    this.radius,
   });
 
   final String label;
   final CommonChipTone tone;
   final bool selected;
   final VoidCallback? onTap;
+  final double? radius;
+
+  RoundedRectangleBorder get _shape => RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(radius ?? TS.radius.full),
+  );
 
   Color get _bg {
     if (selected) return TS.colors.primarySoft;
@@ -63,6 +69,7 @@ class CommonChip extends StatelessWidget {
         label: Text(label, style: labelStyle),
         backgroundColor: _bg,
         side: BorderSide.none,
+        shape: _shape,
         padding: EdgeInsets.symmetric(horizontal: TS.spacing.xs),
         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         visualDensity: VisualDensity.compact,
@@ -73,6 +80,7 @@ class CommonChip extends StatelessWidget {
       onPressed: onTap,
       backgroundColor: _bg,
       side: BorderSide(color: TS.colors.border),
+      shape: _shape,
     );
   }
 }
