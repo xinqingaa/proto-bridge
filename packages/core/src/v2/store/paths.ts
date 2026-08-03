@@ -110,8 +110,14 @@ export function blobRecordPath(root: string, bundleId: BundleId, blobId: BlobId)
   return path.join(bundleDir(root, bundleId), 'blobs', `${blobId}.json`);
 }
 
-export function blobContentPath(root: string, bundleId: BundleId, blobId: BlobId): string {
-  return path.join(bundleDir(root, bundleId), 'blobs', `${blobId}.bin`);
+export function blobContentPath(root: string, bundleId: BundleId, digest: string): string {
+  const contentHash = digest.replace(/^sha256:/, '');
+  return path.join(
+    bundleDir(root, bundleId),
+    'blobs',
+    'content',
+    `${contentHash}.bin`,
+  );
 }
 
 export function blobsDir(root: string, bundleId: BundleId): string {

@@ -1,4 +1,11 @@
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import {
+  access,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -267,6 +274,51 @@ describe('ProtoBridge CLI', () => {
     } finally {
       await writer.close();
     }
+  });
+
+  it('previews Workspace reset, then clears Store and deliveries while preserving config', async () => {
+    const root = await tempRoot();
+    const output = recorder(root);
+    await runCli(
+      [
+        'workspace',
+        'init',
+        '--workspace',
+        'cli-reset-test',
+        '--runtime',
+        'http://127.0.0.1:3977',
+      ],
+      output.io,
+    );
+    const storeRoot = path.join(root, '.proto-bridge', 'store');
+    const deliveriesRoot = path.join(root, '.proto-bridge', 'deliveries');
+    await writeFile(path.join(storeRoot, 'old-capture.txt'), 'old', 'utf8');
+    await mkdir(deliveriesRoot, { recursive: true });
+    await writeFile(path.join(deliveriesRoot, 'old-prompt.md'), 'old', 'utf8');
+
+    expect(
+      await runCli(['workspace', 'reset', '--json'], output.io),
+    ).toBe(CLI_EXIT_CODES.ok);
+    expect(JSON.parse(output.stdout.at(-1) ?? '{}')).toMatchObject({
+      workspaceId: 'cli-reset-test',
+      applied: false,
+    });
+    await expect(access(path.join(storeRoot, 'old-capture.txt'))).resolves.toBeUndefined();
+
+    expect(
+      await runCli(
+        ['workspace', 'reset', '--apply', '--json'],
+        output.io,
+      ),
+    ).toBe(CLI_EXIT_CODES.ok);
+    expect(JSON.parse(output.stdout.at(-1) ?? '{}')).toMatchObject({
+      workspaceId: 'cli-reset-test',
+      applied: true,
+    });
+    await expect(access(path.join(storeRoot, 'old-capture.txt'))).rejects.toThrow();
+    await expect(access(deliveriesRoot)).rejects.toThrow();
+    await expect(access(path.join(storeRoot, 'workspace.json'))).resolves.toBeUndefined();
+    await expect(access(path.join(root, 'proto-bridge.json'))).resolves.toBeUndefined();
   });
 
   it('uses one Matrix for preflight and screenshot-only Capture', async () => {

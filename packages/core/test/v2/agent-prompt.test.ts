@@ -19,6 +19,7 @@ describe('agent-prompt', () => {
       targetRoot: '/tmp/flutter_pb_app',
       implementationIntent: '还原任务列表',
       acceptanceContractPath: '/tmp/delivery/acceptance-contract.json',
+      evidenceBrief: '# Evidence Implementation Brief\n\n- Selected Cases: 2',
       risks: [
         {
           kind: 'required-unknown',
@@ -42,6 +43,11 @@ describe('agent-prompt', () => {
     expect(prompt).toContain('# Final Report');
     expect(prompt).toContain('read_evidence_screenshot');
     expect(prompt).toContain('/tmp/delivery/acceptance-contract.json');
+    expect(prompt).toContain('# ProtoBridge Evidence 驱动的页面实现');
+    expect(prompt).toContain('当前阶段：只读分析与实现计划');
+    expect(prompt).toContain('本阶段不得修改目标工程');
+    expect(prompt).toContain('# Evidence Implementation Brief');
+    expect(prompt).toContain('不得直接进入实施');
     expect(prompt).toContain('Screenshot 是最终可见结果的首要依据');
     expect(prompt).toContain('不要凭经验补造 Evidence 未支持的容器');
     expect(prompt).toContain('仍不确定时记录风险');

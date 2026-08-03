@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { access, readFile, writeFile } from 'node:fs/promises';
+import { access, readFile, rm, writeFile } from 'node:fs/promises';
 import {
   AgentHandoff,
   BundleId,
@@ -12,7 +12,6 @@ import {
   V2_SCHEMA_MAJOR,
   V2WorkspaceConfig,
   WorkspaceId,
-  buildAgentPrompt,
   buildEvidenceReadModel,
   computeScopeKey,
   riskKindLabel,
@@ -36,6 +35,7 @@ import {
 import { RuntimeCaptureManifest } from '@proto-bridge/core/v2/runtime-contract';
 import {
   LocalFileStore,
+  deliveryRootFromStoreRoot,
   generateOperationalId,
   writeDeliveryReceipt,
 } from '@proto-bridge/core/v2/store';
@@ -110,6 +110,7 @@ async function execute(args: CliArgs, io: CliIo): Promise<number> {
   if (command === 'workspace init') return initWorkspace(args, io);
   const loaded = await loadCliConfig(flag(args, 'config'), io.cwd);
   if (command === 'workspace doctor') return workspaceDoctor(args, io, loaded);
+  if (command === 'workspace reset') return workspaceReset(args, io, loaded);
   if (command === 'preflight') return preflightCommand(args, io, loaded);
   if (command === 'capture run') return captureCommand(args, io, loaded);
   if (command === 'job status') return jobStatus(args, io, loaded);
@@ -226,6 +227,84 @@ async function workspaceDoctor(
   } finally {
     await store.close();
   }
+}
+
+async function workspaceReset(
+  args: CliArgs,
+  io: CliIo,
+  loaded: LoadedCliConfig,
+): Promise<number> {
+  const storeRoot = path.resolve(loaded.storeRoot);
+  const deliveriesRoot = deliveryRootFromStoreRoot(storeRoot);
+  const filesystemRoot = path.parse(storeRoot).root;
+  if (
+    storeRoot === filesystemRoot ||
+    deliveriesRoot === filesystemRoot ||
+    storeRoot === path.resolve(io.cwd) ||
+    path.dirname(storeRoot) === filesystemRoot
+  ) {
+    throw new V2ContractError(
+      'unsafe-input',
+      `Refusing to reset unsafe Store root ${storeRoot}.`,
+    );
+  }
+
+  const store = await openStore(loaded);
+  let bundleIds: string[];
+  let usedBytes: number;
+  try {
+    bundleIds = (await store.listBundles()).map((bundle) => bundle.bundleId);
+    usedBytes = (await store.getCapacity()).usedBytes;
+  } finally {
+    await store.close();
+  }
+
+  const preview = {
+    workspaceId: loaded.value.workspaceId,
+    storeRoot,
+    deliveriesRoot,
+    bundleIds,
+    usedBytes,
+    applied: false,
+    warning:
+      'Applying this reset permanently removes all captured Evidence, Screenshots, Bundles, Snapshots, Handoffs and Delivery artifacts for this Workspace. The config file is preserved.',
+  };
+  if (!booleanFlag(args, 'apply')) {
+    emit(
+      io,
+      booleanFlag(args, 'json'),
+      preview,
+      [
+        `Workspace reset preview for ${loaded.value.workspaceId}`,
+        `  Store       ${storeRoot}`,
+        `  Deliveries  ${deliveriesRoot}`,
+        `  Bundles     ${bundleIds.length}`,
+        `  Store bytes ${usedBytes}`,
+        '',
+        'Nothing was deleted. Re-run with --apply to clear this Workspace and create a fresh Store manifest.',
+      ].join('\n'),
+    );
+    return EXIT.ok;
+  }
+
+  await rm(deliveriesRoot, { recursive: true, force: true });
+  await rm(storeRoot, { recursive: true, force: true });
+  const fresh = new LocalFileStore({
+    root: storeRoot,
+    workspaceId: WorkspaceId.parse(loaded.value.workspaceId),
+    ...(loaded.value.store.maxBytes === undefined
+      ? {}
+      : { maxBytes: loaded.value.store.maxBytes }),
+  });
+  await fresh.init();
+  await fresh.close();
+  emit(
+    io,
+    booleanFlag(args, 'json'),
+    { ...preview, applied: true },
+    `Reset Workspace ${loaded.value.workspaceId}; removed ${bundleIds.length} Bundles and reinitialized ${storeRoot}.`,
+  );
+  return EXIT.ok;
 }
 
 async function loadDraft(args: CliArgs): Promise<SelectionDraft> {
@@ -591,16 +670,7 @@ async function deliverCommand(
     configPath: loaded.path,
     implementationIntent: intent,
   });
-  const agentPrompt = buildAgentPrompt({
-    handoffId: handoff.handoffId,
-    workspaceId: loaded.value.workspaceId,
-    bundleId,
-    snapshotId,
-    targetRoot,
-    implementationIntent: intent,
-    risks: handoff.risks,
-    acceptanceContractPath: receipt.acceptanceContractPath,
-  });
+  const agentPrompt = await readFile(receipt.agentPromptPath, 'utf8');
 
   if (booleanFlag(args, 'json')) {
     emit(io, true, { ...receipt, handoff });
@@ -615,7 +685,8 @@ async function deliverCommand(
         `  Handoff    ${handoff.handoffId}`,
         `  Prompt     ${receipt.agentPromptPath}`,
         `  Contract   ${receipt.acceptanceContractPath}`,
-        `  Review     ${receipt.reviewIndexPath} (${receipt.screenshotCount} screenshots)`,
+        `  Brief      ${receipt.evidenceBriefPath}`,
+        `  Review     ${receipt.reviewIndexPath} (${receipt.screenshotCount} distinct screenshots)`,
         '',
         '──────── copy into Cursor / Codex ────────',
         agentPrompt.trimEnd(),
@@ -1438,6 +1509,7 @@ export function cliUsage(): string {
   return `Usage:
   proto-bridge workspace init [--config <file>]
   proto-bridge workspace doctor [--json]
+  proto-bridge workspace reset [--apply] [--json]
   proto-bridge preflight --selection <file> [--manifest <file>]
   proto-bridge capture run --selection <file> [--bundle <id>]
   proto-bridge deliver (--selection <file> | --prototype <id> [--screen <id|slug>]) [--target <dir>]
@@ -1454,6 +1526,8 @@ Rules:
   deliver captures, creates a Handoff, and writes .proto-bridge/deliveries/*/agent-prompt.md
   (Store index only; MCP still reads Evidence from the Store).
   deliver defaults to all authored Screens, Variants and Scenarios in scope.
+  workspace reset previews by default; --apply clears Store + deliveries,
+  preserves proto-bridge.json, and creates a fresh Workspace manifest.
   With --screen, repeat --only-variant <id> or --only-scenario <id> to narrow.
   Use --selection for an exact multi-Screen matrix.
   Repeat --accept-warning <id> and --ack-risk <kind> explicitly.

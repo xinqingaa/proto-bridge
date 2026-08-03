@@ -197,7 +197,7 @@ export class LocalFileStore implements V2Store {
       if (!manifest) {
         throw new V2ContractError(
           'unknown-reference',
-          `Store root ${this.root} does not contain a Workspace manifest.`,
+          `Store root ${this.root} does not contain a Workspace manifest. Existing Bundle, Snapshot and Handoff IDs cannot be resumed after the Store is cleared. Run a capture-based deliver (--prototype or --selection) to create fresh Evidence, or initialize/reset the Workspace Store first.`,
         );
       }
       if (manifest.workspaceId !== this.workspaceId) {
@@ -1278,12 +1278,19 @@ export class LocalFileStore implements V2Store {
       ...(image ? { image } : {}),
       ownerRefs,
     });
+    const contentPath = blobContentPath(
+      this.root,
+      input.bundleId,
+      record.digest,
+    );
+    const contentAlreadyStored = (await fileByteLength(contentPath)) > 0;
     await this.assertCapacity(
-      input.bytes.byteLength + this.serializedBytes(record),
+      (contentAlreadyStored ? 0 : input.bytes.byteLength) +
+        this.serializedBytes(record),
     );
     await writeImmutableBytes(
-      blobContentPath(this.root, input.bundleId, blobId),
-      'Blob',
+      contentPath,
+      'Blob content',
       input.bytes,
     );
     await writeImmutableJson(
@@ -1303,7 +1310,9 @@ export class LocalFileStore implements V2Store {
     );
     if (raw === undefined) return undefined;
     const record = this.parseOrThrow(BlobRecord, raw, 'BlobRecord');
-    const bytes = await readFile(blobContentPath(this.root, bundleId, blobId));
+    const bytes = await readFile(
+      blobContentPath(this.root, bundleId, record.digest),
+    );
     const digest = `sha256:${createHash('sha256').update(bytes).digest('hex')}`;
     if (bytes.byteLength !== record.byteLength || digest !== record.digest) {
       throw new V2ContractError(

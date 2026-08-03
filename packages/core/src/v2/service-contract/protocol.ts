@@ -120,6 +120,7 @@ export type DeliveryArtifact = {
   agentPromptPath: string;
   acceptanceContractPath: string;
   acceptanceChecklistPath: string;
+  evidenceBriefPath: string;
   reviewIndexPath: string;
   screenshotCount: number;
   receiptPath: string;

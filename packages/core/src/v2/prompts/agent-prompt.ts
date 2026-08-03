@@ -27,6 +27,8 @@ export type BuildAgentPromptInput = {
   implementationIntent?: string;
   /** Fixed, generated non-scoring review contract for this Delivery. */
   acceptanceContractPath?: string;
+  /** Compact, fixed Evidence projection embedded into the prompt. */
+  evidenceBrief?: string;
   /** Risks already fixed on the Handoff; listed for the Agent before edits. */
   risks?: readonly Risk[];
 };
@@ -55,6 +57,9 @@ export function buildAgentPrompt(input: BuildAgentPromptInput): string {
   const acceptanceBlock = input.acceptanceContractPath
     ? `\n固定重建 Review 合同：\n\n- Review Contract：\`${input.acceptanceContractPath}\`\n- 合同中的结构、组件、Token、状态和交互是实现与复查指引，不是分数、配额或自动阻断项。\n- Screenshot 是最终可见结果的首要依据；完成时如实披露偏差、未覆盖 Case 和未验证事项。\n`
     : '';
+  const evidenceBriefBlock = input.evidenceBrief?.trim()
+    ? `\n${input.evidenceBrief.trim()}\n`
+    : '';
 
   const sections = [
     PROMPT_ASSETS['handoff-consumer'],
@@ -64,7 +69,7 @@ export function buildAgentPrompt(input: BuildAgentPromptInput): string {
     PROMPT_ASSETS['final-report'],
   ].join('\n\n');
 
-  return `# ProtoBridge Agent 重建任务
+  return `# ProtoBridge Evidence 驱动的页面实现
 
 通过已配置的 ProtoBridge MCP 消费固定 Evidence。目标工程是：
 
@@ -78,11 +83,18 @@ ${intentBlock}
 - Snapshot：\`${input.snapshotId}\`
 ${riskBlock}
 ${acceptanceBlock}
+## 当前阶段：只读分析与实现计划
+
+本阶段不得修改目标工程、生成代码或执行会改变目标工程状态的命令。完成 Evidence 阅读、目标工程扫描和实现计划后必须暂停，等待用户明确批准。计划应简洁说明页面构图与滚动边界、公共组件命中、Token 方案、状态/交互落地、预计修改文件、验证方式和剩余风险；不要把 Evidence reference 展开成评分表或逐项配额。
+
+用户批准后，在同一任务中继续实施与验证，并始终使用下面固定的 Handoff/Snapshot。
+
+${evidenceBriefBlock}
 ## Consumer contract
 
 ${sections}
 
-先给出 Evidence 理解摘要。只有任务明确要求确认或存在真实阻塞时才暂停；否则继续完成实现与验证。
+当前轮只输出 Evidence 理解摘要和实现计划，然后暂停等待用户确认；不得直接进入实施。
 `;
 }
 

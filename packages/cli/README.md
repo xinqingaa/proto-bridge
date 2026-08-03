@@ -13,6 +13,10 @@ pnpm pb -- workspace init \
   --runtime http://127.0.0.1:3977
 
 pnpm pb -- workspace doctor
+
+# 先预览，再清除旧 Store 与 deliveries；保留 proto-bridge.json
+pnpm pb -- workspace reset
+pnpm pb -- workspace reset --apply
 ```
 
 默认配置是 `./proto-bridge.json`，默认 Store 是相对配置文件的 `.proto-bridge/store`。
@@ -22,6 +26,7 @@ pnpm pb -- workspace doctor
 ```text
 proto-bridge workspace init [--config <file>]
 proto-bridge workspace doctor [--json]
+proto-bridge workspace reset [--apply] [--json]
 proto-bridge preflight --selection <file> [--manifest <file>]
 proto-bridge capture run --selection <file> [--bundle <id>]
 proto-bridge deliver (--selection <file> | --prototype <id> [--screen <id|slug>]) [--target <dir>]
@@ -44,6 +49,7 @@ proto-bridge service start
 - `deliver` 一次完成采集、Handoff 与 `.proto-bridge/deliveries/*/agent-prompt.md`（收据只是 Store 索引；MCP 仍按 Handoff/Snapshot 读 Store）；
 - `deliver` 默认选择指定范围内全部 authored Screens、Variants 和 Scenarios；使用 `--only-variant` / `--only-scenario`（需配合 `--screen`）缩小范围；
 - `workspace doctor` 与 inspect/list/show 以只读方式打开 Store，可与 `pnpm pb:up` 并存；
+- `workspace reset` 默认只预览待清理范围；确认无误后加 `--apply`，清除配置指向的 Store 和同级 `deliveries`，保留配置并创建一个新的 Workspace manifest。执行前应停止占用 Store 的 `pnpm pb:up`；
 - `capture run`、`handoff create`、`job cancel`、`deliver` 等写命令在 Local Service 可达时自动经 HTTP 写入（与 GUI 共用同一 writer）；不可达时回退到本地写锁；
 - 可用 `--via-service` 强制走 Service，或 `--local-store` 强制本地写（需停掉占用 Store 的 Service）；
 - `--json` 输出稳定 JSON；

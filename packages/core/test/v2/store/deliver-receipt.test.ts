@@ -83,6 +83,12 @@ describe('Delivery review artifacts', () => {
     expect(await readFile(receipt.agentPromptPath, 'utf8')).toContain(
       receipt.acceptanceContractPath,
     );
+    expect(await readFile(receipt.agentPromptPath, 'utf8')).toContain(
+      '当前阶段：只读分析与实现计划',
+    );
+    expect(await readFile(receipt.evidenceBriefPath, 'utf8')).toContain(
+      '# Evidence Implementation Brief',
+    );
     const reviewManifest = JSON.parse(
       await readFile(receipt.reviewManifestPath, 'utf8'),
     );

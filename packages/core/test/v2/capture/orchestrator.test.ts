@@ -236,8 +236,12 @@ describe('V2 Capture Orchestrator + real Store', () => {
       now,
     });
 
-    expect(result.storedBlobIds).toHaveLength(2);
-    expect(new Set(result.storedBlobIds)).toHaveLength(2);
+    expect(result.storedBlobIds).toHaveLength(1);
+    const sharedScreenshot = await store.getBlob(
+      fixture.BUNDLE_ID,
+      result.storedBlobIds[0]!,
+    );
+    expect(sharedScreenshot?.record.ownerRefs).toHaveLength(2);
     const report = await store.createStalenessReport({
       bundleId: fixture.BUNDLE_ID,
       snapshotId: result.snapshot.snapshotId,

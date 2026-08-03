@@ -53,6 +53,17 @@ pnpm pb -- preflight \
 
 包装脚本只缩短可执行路径；全部参数、输出和退出码仍由 `@proto-bridge/cli` 决定。构建产物缺失时会先运行根 `pnpm build`。
 
+### 清理旧采集数据
+
+不要手动只删除 `.proto-bridge/store`。先停止占用 Store 的 `pnpm pb:up`，预览精确清理范围，再显式执行：
+
+```bash
+pnpm pb -- workspace reset
+pnpm pb -- workspace reset --apply
+```
+
+该命令清除当前配置指向的 Store 和同级 `deliveries`，保留 `proto-bridge.json`，并立即创建新的 Workspace manifest。之后可直接重新 `deliver`。默认不带 `--apply` 时不会删除数据；运行中的 Local Service 持有 writer lock 时会拒绝清理。
+
 ## 启动 MCP
 
 ```bash
@@ -78,6 +89,11 @@ GUI「交付到 Agent」与 CLI `deliver` 都会：采集（或续跑已有 Snap
 ```text
 .proto-bridge/deliveries/<timestamp>/
 ├── receipt.json
+├── evidence-brief.md
+├── review/
+│   ├── index.md
+│   └── screenshots/
+│       └── *.png
 └── agent-prompt.md
 ```
 
@@ -88,7 +104,7 @@ pnpm pb -- deliver \
   --target apps/flutter_pb_app
 ```
 
-收据只是 Store 索引；MCP 仍按 Handoff / Snapshot 从 Store 按需读取。也可用
+Review 按 PNG 内容去重：完全相同的 Screenshot 只写一份图片，并列出其对应的全部 Case。Agent 提示词先要求只读理解 Evidence 和目标工程、提交实现计划并等待确认；确认后才在同一任务中实施。收据只是 Store 索引；MCP 仍按 Handoff / Snapshot 从 Store 按需读取。也可用
 `--selection <file>`，或 `--bundle` + `--snapshot` 在已有 Evidence 上续跑交接。
 
 稳定的 Agent 读取规则见 [Agent 消费指南](./agent-consumption.md)。

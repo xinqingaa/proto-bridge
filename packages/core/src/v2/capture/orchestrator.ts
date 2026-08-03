@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import {
   CaseAttempt,
   type CaseAttempt as CaseAttemptType,
@@ -56,6 +57,27 @@ type PendingBinary = {
   owner:
     { kind: 'revision'; objectId: string } | { kind: 'run'; objectId: string };
 };
+
+function groupPendingBinaries(pending: PendingBinary[]): Array<{
+  binary: CapturedBinary;
+  owners: PendingBinary['owner'][];
+}> {
+  const groups = new Map<
+    string,
+    { binary: CapturedBinary; owners: PendingBinary['owner'][] }
+  >();
+  for (const item of pending) {
+    const digest = createHash('sha256').update(item.binary.bytes).digest('hex');
+    const key = `${item.binary.kind}/${item.binary.mediaType}/${digest}`;
+    const existing = groups.get(key);
+    if (existing) {
+      existing.owners.push(item.owner);
+    } else {
+      groups.set(key, { binary: item.binary, owners: [item.owner] });
+    }
+  }
+  return [...groups.values()];
+}
 
 function emptyCounts(selected: number): CoverageSummaryType['counts'] {
   return {
@@ -455,14 +477,14 @@ export async function capturePreflightToStore(
         });
       }
     }
-    for (const pending of pendingBinaries) {
+    for (const pending of groupPendingBinaries(pendingBinaries)) {
       try {
         const record = await input.store.putBlob({
           bundleId: input.bundleId,
           kind: pending.binary.kind,
           mediaType: pending.binary.mediaType,
           bytes: pending.binary.bytes,
-          ownerRefs: [pending.owner],
+          ownerRefs: pending.owners,
         });
         storedBlobIds.push(record.blobId);
       } catch (error) {

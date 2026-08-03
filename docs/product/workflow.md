@@ -10,7 +10,7 @@ PBWork Design Foundation / Components
   → isolated Capture Job
   → immutable Run + Evidence revisions + Snapshot
   → Evidence Review + Staleness
-  → Deliver (Handoff + agent-prompt / deliveries)
+  → Deliver (Handoff + Evidence Brief + deduplicated Review + agent-prompt)
   → MCP fixed read
   → Agent implementation + target validation
 ```
@@ -91,7 +91,7 @@ PBWork Evidence Review 按 Screen、Case 和语义区域展示：
 
 ## 6. Deliver 与 Agent Handoff
 
-产品主路径是 Deliver（PBWork「交付到 Agent」或 CLI `deliver`）：在同一流程内完成 Capture（或续跑已有 Snapshot）、创建 Handoff，并写入 `.proto-bridge/deliveries/`（`receipt.json` + `agent-prompt.md`）。deliveries 只是 Store 索引；MCP 仍按 Handoff / Snapshot 读 Store。
+产品主路径是 Deliver（PBWork「交付到 Agent」或 CLI `deliver`）：在同一流程内完成 Capture（或续跑已有 Snapshot）、创建 Handoff，并写入 `.proto-bridge/deliveries/`（收据、Evidence Brief、按图片内容去重的 Review 与 Agent 提示词）。完全相同的 Screenshot 只输出一份 PNG，但保留全部 Case 和 Blob 引用。deliveries 只是 Store 索引；MCP 仍按 Handoff / Snapshot 读 Store。
 
 Handoff 固定：
 
@@ -102,7 +102,7 @@ Handoff 固定：
 - 具体 Case、revision 和 Fragment；
 - `mandatoryRiskReport`。
 
-Handoff 是 Evidence 索引，不是实现计划。PBWork 与 CLI 共用同一 Core 能力。
+Handoff 是 Evidence 索引，不是实现计划。Prompt 先要求 Agent 只读核对固定 Evidence、Screenshot 与目标工程，输出实施计划并等待用户确认；确认后才进入实现。内嵌的五视角 Evidence Brief 用于建立全局理解，不是打分表或映射配额。PBWork 与 CLI 共用同一 Core 能力。
 
 ## 7. MCP 与目标实现
 

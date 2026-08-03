@@ -8,6 +8,7 @@ export * from './resolver/index.js';
 export * from './evidence-read-model.js';
 export * from './evidence-inventory.js';
 export * from './acceptance-contract.js';
+export * from './evidence-brief.js';
 export * from './reconstruction-review.js';
 export * from './prompts/agent-prompt.js';
 export * from './workspace-config.js';

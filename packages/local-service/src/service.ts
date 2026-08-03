@@ -945,6 +945,7 @@ export class ProtoBridgeLocalService {
           agentPromptPath: receipt.agentPromptPath,
           acceptanceContractPath: receipt.acceptanceContractPath,
           acceptanceChecklistPath: receipt.acceptanceChecklistPath,
+          evidenceBriefPath: receipt.evidenceBriefPath,
           reviewIndexPath: receipt.reviewIndexPath,
           screenshotCount: receipt.screenshotCount,
           receiptPath: receipt.receiptPath,

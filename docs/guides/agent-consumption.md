@@ -27,7 +27,7 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 5. 在编辑前原样报告 `mandatoryRiskReport` 的全部风险。
 6. 读取 Handoff 固定的 Snapshot、Coverage 和 Staleness Report。
 7. 按实现范围读取固定 Case revision；局部任务再读取对应 Fragment。
-8. 对每个选中 Case 调用 `read_evidence_screenshot`，确认返回 MCP ImageContent；Blob metadata、base64 文本和相似 Variant 不能替代固定 Screenshot。
+8. 按 Evidence Brief / Review 的 digest 分组；每份不同的 Screenshot 内容选择一个固定 blobId 调用 `read_evidence_screenshot`，确认返回 MCP ImageContent，并记录其覆盖的全部 Case。相同 digest 不重复注入图片内容；Blob metadata、base64 文本和相似 Variant 不能替代固定 Screenshot。
 9. 阅读目标仓库自己的 AGENT、README、架构、测试和既有实现。
 10. 仅在当前目标存在适用 Target adapter/tools 时调用 conventions/examples 查询；Target 结果不是 Source Evidence，不得覆盖 Screenshot / Fragment。
 11. Agent 自行决定文件、组件、状态、路由和 Token，但不得发明证据未支持的容器形态、文案、交互或状态；布局敏感 prop 缺失时对照截图，仍不确定则披露为剩余风险。

@@ -9,7 +9,7 @@
 3. 调用 `read_agent_handoff`，在编辑前原样报告全部 `mandatoryRiskReport`。
 4. 读取 Handoff 固定的 Snapshot、Staleness Report、Case、revision、Fragment 和 Review Contract。
 5. 所有读取都必须使用 Handoff 提供的固定引用，不得切换到 `active`、`latest` 或自行猜测 Store 路径。
-6. 对每个选中 Case 调用 `read_evidence_screenshot`，确认返回 `type=image` 的 MCP ImageContent；不能把 `read_evidence_blob` 的 base64 文本、Blob metadata 或相似 Variant 当成已查看 Screenshot。
+6. 按 Evidence Brief / Review 的 digest 分组，对每份不同的 Screenshot 内容选择一个固定 blobId 调用 `read_evidence_screenshot`，确认返回 `type=image` 的 MCP ImageContent，并记录它覆盖的全部 Case；同一 digest 不重复读取图片内容。不能把 `read_evidence_blob` 的 base64 文本、Blob metadata 或相似 Variant 当成已查看 Screenshot。
 7. 编辑前先按 Case 概括 Screenshot 中的页面构图、滚动边界、视觉重点和状态差异；结构、组件、Token 与交互 Evidence 用于辅助实施，不要求为了验收逐项凑映射。
 
 缺少固定对象、Snapshot、revision 或 Screenshot 时，报告阻塞项；只有它确实阻止实现时才暂停。

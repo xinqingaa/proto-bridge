@@ -7,7 +7,7 @@ export const CONSUMER_GUIDE = `# ProtoBridge Agent Handoff Consumer
 2. Report every item in \`mandatoryRiskReport\` before editing target code. Producer acknowledgement does not remove a risk.
 3. Read the Handoff's fixed Snapshot and Staleness Report. Never replace them with active/latest.
 4. Read only the referenced Case revisions and Fragments needed for the implementation intent. Preserve provenance, unknown and unresolved conflicts.
-5. Call \`read_evidence_screenshot\` for every selected Case and confirm an MCP ImageContent block is returned. Blob metadata, base64 text and a similar Variant are not visual evidence.
+5. Group fixed Screenshots by digest. Call \`read_evidence_screenshot\` once for one fixed blobId per distinct image content, confirm an MCP ImageContent block is returned, and record every selected Case covered by that digest. Do not inject byte-identical images repeatedly. Blob metadata, base64 text and a similar Variant are not visual evidence.
 6. Read target repository instructions and existing code. The target repository does not need ProtoBridge configuration.
 7. When an applicable Target adapter/tool exists, use its convention/example queries only as independent target context. Adapter results are not Source Evidence and must not override Screenshot or Fragment facts.
 8. Decide files, components, routing, state and tokens in the target repository; do not treat ProtoBridge as a code generator. Do not invent containers, copy, interactions or state that Evidence does not support.

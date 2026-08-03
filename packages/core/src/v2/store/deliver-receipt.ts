@@ -2,6 +2,10 @@ import { createHash } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { acceptanceChecklistMarkdown } from '../acceptance-contract.js';
+import {
+  reconstructionEvidenceBriefMarkdown,
+  type EvidenceBriefScreenshotGroup,
+} from '../evidence-brief.js';
 import { buildAgentPrompt } from '../prompts/agent-prompt.js';
 import type { AgentHandoff } from '../contracts/handoff.js';
 import { LocalFileStore } from './local-file-store.js';
@@ -28,6 +32,7 @@ export type DeliveryReceipt = {
   agentPromptPath: string;
   acceptanceContractPath: string;
   acceptanceChecklistPath: string;
+  evidenceBriefPath: string;
   reviewManifestPath: string;
   reviewIndexPath: string;
   screenshotCount: number;
@@ -118,7 +123,6 @@ export async function writeDeliveryReceipt(
   const { deliveryId, createdAtLocal } = localDeliveryTime(now, timeZone);
   const deliveryRoot = deliveryRootFromStoreRoot(input.storeRoot);
   const deliveryDir = path.join(deliveryRoot, deliveryId);
-  await mkdir(deliveryDir, { recursive: true });
 
   const store = new LocalFileStore({
     root: input.storeRoot,
@@ -130,6 +134,7 @@ export async function writeDeliveryReceipt(
     store,
     handoff: input.handoff,
   });
+  await mkdir(deliveryDir, { recursive: true });
   const acceptanceContractPath = path.join(
     deliveryDir,
     'acceptance-contract.json',
@@ -149,13 +154,35 @@ export async function writeDeliveryReceipt(
   const reviewDir = path.join(deliveryDir, 'review');
   const screenshotsDir = path.join(reviewDir, 'screenshots');
   await mkdir(screenshotsDir, { recursive: true });
-  const reviewEntries: Array<Record<string, unknown>> = [];
+  type ReviewEntry = EvidenceBriefScreenshotGroup & {
+    mediaType: string;
+    byteLength: number;
+    image?: { width: number; height: number };
+  };
+  const reviewEntries: ReviewEntry[] = [];
+  const reviewByDigest = new Map<string, ReviewEntry>();
   let screenshotIndex = 0;
   for (const item of contract.screenshots) {
     for (const blobId of item.blobIds) {
       const blob = await store.getBlob(input.handoff.bundleId, blobId as never);
       if (!blob || blob.record.kind !== 'screenshot') {
         throw new Error(`Screenshot ${blobId} is missing from the fixed Handoff.`);
+      }
+      const caseRef = {
+        caseId: item.caseId,
+        screenId: item.screenId,
+        variantId: item.variantId,
+        ...(item.scenario?.checkpointId
+          ? { checkpointId: item.scenario.checkpointId }
+          : {}),
+      };
+      const existing = reviewByDigest.get(blob.record.digest);
+      if (existing) {
+        if (!existing.blobIds.includes(blobId)) existing.blobIds.push(blobId);
+        if (!existing.cases.some((candidate) => candidate.caseId === item.caseId)) {
+          existing.cases.push(caseRef);
+        }
+        continue;
       }
       screenshotIndex += 1;
       const fileName = reviewFileName({
@@ -168,24 +195,17 @@ export async function writeDeliveryReceipt(
       });
       const relativePath = path.posix.join('screenshots', fileName);
       await writeFile(path.join(reviewDir, relativePath), blob.bytes);
-      const selectedCase = input.handoff.selectedCases.find(
-        (candidate) => candidate.caseId === item.caseId,
-      );
-      reviewEntries.push({
-        caseId: item.caseId,
-        screenId: item.screenId,
-        variantId: item.variantId,
-        ...(item.scenario ? { scenario: item.scenario } : {}),
-        ...(selectedCase?.resolution === 'resolved'
-          ? { revisionId: selectedCase.revisionId }
-          : {}),
-        blobId,
+      const entry: ReviewEntry = {
         digest: blob.record.digest,
+        path: relativePath,
+        blobIds: [blobId],
+        cases: [caseRef],
         mediaType: blob.record.mediaType,
         byteLength: blob.record.byteLength,
         ...(blob.record.image ? { image: blob.record.image } : {}),
-        path: relativePath,
-      });
+      };
+      reviewEntries.push(entry);
+      reviewByDigest.set(entry.digest, entry);
     }
   }
   await store.close();
@@ -193,7 +213,7 @@ export async function writeDeliveryReceipt(
   const reviewManifestPath = path.join(reviewDir, 'manifest.json');
   const reviewIndexPath = path.join(reviewDir, 'index.md');
   const reviewManifest = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     handoffId: input.handoff.handoffId,
     snapshotId: input.handoff.snapshotId,
     acceptanceContractDigest: `sha256:${createHash('sha256').update(contractJson).digest('hex')}`,
@@ -212,18 +232,28 @@ export async function writeDeliveryReceipt(
       `Handoff: \`${input.handoff.handoffId}\``,
       '',
       ...reviewEntries.flatMap((entry) => [
-        `## ${String(entry.screenId)} · ${String(entry.variantId)}`,
+        `## ${entry.cases[0]!.screenId} · ${entry.cases[0]!.variantId}`,
         '',
-        `- Case: \`${String(entry.caseId)}\``,
-        `- Blob: \`${String(entry.blobId)}\``,
-        `- Digest: \`${String(entry.digest)}\``,
+        `- Cases: ${entry.cases.map((item) => `\`${item.caseId}\``).join(', ')}`,
+        `- Blobs: ${entry.blobIds.map((blobId) => `\`${blobId}\``).join(', ')}`,
+        `- Digest: \`${entry.digest}\``,
         '',
-        `![${String(entry.caseId)}](${String(entry.path)})`,
+        `![${entry.cases.map((item) => item.caseId).join(', ')}](${entry.path})`,
         '',
       ]),
     ].join('\n')}\n`,
     'utf8',
   );
+
+  const evidenceBriefPath = path.join(deliveryDir, 'evidence-brief.md');
+  const evidenceBrief = reconstructionEvidenceBriefMarkdown({
+    contract,
+    screenshotGroups: reviewEntries.map((entry) => ({
+      ...entry,
+      path: path.posix.join('review', entry.path),
+    })),
+  });
+  await writeFile(evidenceBriefPath, evidenceBrief, 'utf8');
 
   const agentPrompt = buildAgentPrompt({
     handoffId: input.handoff.handoffId,
@@ -236,6 +266,7 @@ export async function writeDeliveryReceipt(
       : {}),
     risks: input.handoff.risks,
     acceptanceContractPath,
+    evidenceBrief,
   });
   const agentPromptPath = path.join(deliveryDir, 'agent-prompt.md');
   await writeFile(agentPromptPath, agentPrompt, 'utf8');
@@ -261,6 +292,7 @@ export async function writeDeliveryReceipt(
     agentPromptPath,
     acceptanceContractPath,
     acceptanceChecklistPath,
+    evidenceBriefPath,
     reviewManifestPath,
     reviewIndexPath,
     screenshotCount: reviewEntries.length,

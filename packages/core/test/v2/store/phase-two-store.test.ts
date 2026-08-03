@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readdir, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -194,6 +194,11 @@ describe('Phase 2 Store: Catalog and controlled Blob', () => {
 
     expect(primary.blobId).not.toBe(fragment.blobId);
     expect(primary.digest).toBe(fragment.digest);
+    expect(
+      await readdir(
+        path.join(root, 'bundles', f.BUNDLE_ID, 'blobs', 'content'),
+      ),
+    ).toHaveLength(1);
     expect((await store.getBlob(f.BUNDLE_ID, primary.blobId))?.record.ownerRefs).toEqual([
       { kind: 'revision', objectId: f.PRIMARY_REVISION_ID },
     ]);
