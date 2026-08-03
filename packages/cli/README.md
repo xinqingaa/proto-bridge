@@ -49,7 +49,7 @@ proto-bridge service start
 - `deliver` 一次完成采集、Handoff 与 `.proto-bridge/deliveries/*/agent-prompt.md`（收据只是 Store 索引；MCP 仍按 Handoff/Snapshot 读 Store）；
 - `deliver` 默认选择指定范围内全部 authored Screens、Variants 和 Scenarios；使用 `--only-variant` / `--only-scenario`（需配合 `--screen`）缩小范围；
 - `workspace doctor` 与 inspect/list/show 以只读方式打开 Store，可与 `pnpm pb:up` 并存；
-- `workspace reset` 默认只预览待清理范围；确认无误后加 `--apply`，清除配置指向的 Store 和同级 `deliveries`，保留配置并创建一个新的 Workspace manifest。执行前应停止占用 Store 的 `pnpm pb:up`；
+- `workspace reset` 默认只预览待清理范围；确认无误后加 `--apply`，清除配置指向的 Store 和同级 `deliveries`，保留配置并创建一个新的 Workspace manifest。`pnpm pb:up` 正在运行时会自动经 Local Service 安全重置，不需要手工停服务；
 - `capture run`、`handoff create`、`job cancel`、`deliver` 等写命令在 Local Service 可达时自动经 HTTP 写入（与 GUI 共用同一 writer）；不可达时回退到本地写锁；
 - 可用 `--via-service` 强制走 Service，或 `--local-store` 强制本地写（需停掉占用 Store 的 Service）；
 - `--json` 输出稳定 JSON；

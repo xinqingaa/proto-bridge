@@ -321,6 +321,58 @@ describe('ProtoBridge CLI', () => {
     await expect(access(path.join(root, 'proto-bridge.json'))).resolves.toBeUndefined();
   });
 
+  it('resets through a running Local Service without requiring a manual stop', async () => {
+    const root = await tempRoot();
+    const output = recorder(root);
+    await runCli(
+      [
+        'workspace',
+        'init',
+        '--workspace',
+        'cli-live-reset-test',
+        '--runtime',
+        'http://127.0.0.1:3977',
+      ],
+      output.io,
+    );
+    const configPath = path.join(root, 'proto-bridge.json');
+    const storeRoot = path.join(root, '.proto-bridge', 'store');
+    const deliveriesRoot = path.join(root, '.proto-bridge', 'deliveries');
+    await writeFile(path.join(storeRoot, 'old-capture.txt'), 'old', 'utf8');
+    await mkdir(deliveriesRoot, { recursive: true });
+    await writeFile(path.join(deliveriesRoot, 'old-prompt.md'), 'old', 'utf8');
+    const liveService = new ProtoBridgeLocalService({
+      port: 0,
+      allowedOrigins: ['http://127.0.0.1:3977'],
+      runtimeBaseUrl: 'http://127.0.0.1:3977',
+      storeRoot,
+      workspaceId: 'cli-live-reset-test',
+    });
+    const address = await liveService.start();
+    try {
+      const config = JSON.parse(await readFile(configPath, 'utf8'));
+      config.service.port = address.port;
+      await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`);
+
+      const resetExit = await runCli(
+        ['workspace', 'reset', '--apply', '--json'],
+        output.io,
+      );
+      expect(resetExit, output.stderr.join('\n')).toBe(CLI_EXIT_CODES.ok);
+      expect(JSON.parse(output.stdout.at(-1) ?? '{}')).toMatchObject({
+        workspaceId: 'cli-live-reset-test',
+        applied: true,
+        viaService: true,
+      });
+      await expect(access(path.join(storeRoot, 'old-capture.txt'))).rejects.toThrow();
+      await expect(access(deliveriesRoot)).rejects.toThrow();
+      await expect(access(path.join(storeRoot, 'workspace.json'))).resolves.toBeUndefined();
+      expect(await liveService.store.listBundles()).toEqual([]);
+    } finally {
+      await liveService.close();
+    }
+  });
+
   it('uses one Matrix for preflight and screenshot-only Capture', async () => {
     const root = await tempRoot();
     const output = recorder(root);

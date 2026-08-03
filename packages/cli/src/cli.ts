@@ -249,14 +249,23 @@ async function workspaceReset(
     );
   }
 
-  const store = await openStore(loaded);
-  let bundleIds: string[];
-  let usedBytes: number;
+  let bundleIds: string[] = [];
+  let usedBytes = 0;
   try {
-    bundleIds = (await store.listBundles()).map((bundle) => bundle.bundleId);
-    usedBytes = (await store.getCapacity()).usedBytes;
-  } finally {
-    await store.close();
+    const store = await openStore(loaded, true);
+    try {
+      bundleIds = (await store.listBundles()).map((bundle) => bundle.bundleId);
+      usedBytes = (await store.getCapacity()).usedBytes;
+    } finally {
+      await store.close();
+    }
+  } catch (error) {
+    if (
+      !(error instanceof V2ContractError) ||
+      error.code !== 'unknown-reference'
+    ) {
+      throw error;
+    }
   }
 
   const preview = {
@@ -287,21 +296,25 @@ async function workspaceReset(
     return EXIT.ok;
   }
 
-  await rm(deliveriesRoot, { recursive: true, force: true });
-  await rm(storeRoot, { recursive: true, force: true });
-  const fresh = new LocalFileStore({
-    root: storeRoot,
-    workspaceId: WorkspaceId.parse(loaded.value.workspaceId),
-    ...(loaded.value.store.maxBytes === undefined
-      ? {}
-      : { maxBytes: loaded.value.store.maxBytes }),
-  });
-  await fresh.init();
-  await fresh.close();
+  const viaService = await probeLocalService(loaded);
+  if (viaService) {
+    const client = await connectLocalService(loaded);
+    const result = await client.resetWorkspace(loaded.value.workspaceId);
+    bundleIds = result.removedBundleIds;
+    usedBytes = result.removedStoreBytes;
+  } else {
+    const writer = await openStore(loaded);
+    try {
+      await writer.resetWorkspace();
+    } finally {
+      await writer.close();
+    }
+    await rm(deliveriesRoot, { recursive: true, force: true });
+  }
   emit(
     io,
     booleanFlag(args, 'json'),
-    { ...preview, applied: true },
+    { ...preview, bundleIds, usedBytes, applied: true, viaService },
     `Reset Workspace ${loaded.value.workspaceId}; removed ${bundleIds.length} Bundles and reinitialized ${storeRoot}.`,
   );
   return EXIT.ok;

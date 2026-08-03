@@ -288,11 +288,16 @@ watch(
         </div>
         <WorkbenchButton
           tone="primary"
+          :loading="capture.busy"
           data-testid="open-handoff-composer"
-          @click="capture.openHandoffSheet"
+          @click="
+            existingHandoffs.length
+              ? capture.regenerateCurrentPrompt()
+              : capture.openHandoffSheet()
+          "
         >
           <Handshake :size="16" />
-          {{ existingHandoffs.length ? "再创建 Agent 交接" : "创建 Agent 交接" }}
+          {{ existingHandoffs.length ? "重新生成 Agent 提示词" : "创建 Agent 交接" }}
         </WorkbenchButton>
       </section>
       <ul v-if="reviewNotes.length" class="review-notes">

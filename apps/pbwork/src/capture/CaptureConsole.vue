@@ -195,8 +195,8 @@ onMounted(async () => {
   pollTimer = setInterval(() => {
     if (capture.activeJob && !capture.jobFinished) {
       void capture.refreshActiveJob();
+      void capture.refreshConsole();
     }
-    void capture.refreshConsole();
   }, 1000);
 });
 

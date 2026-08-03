@@ -1,4 +1,4 @@
-import { mkdtemp, readdir, rm } from 'node:fs/promises';
+import { access, mkdtemp, readdir, rename, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -214,6 +214,73 @@ describe('Phase 2 Store: Catalog and controlled Blob', () => {
       ownerRefs: [{ kind: 'revision', objectId: f.PRIMARY_REVISION_ID }],
     });
     expect(retried).toEqual(primary);
+  });
+
+  it('recovers a legacy per-Blob binary and migrates it to digest storage', async () => {
+    const store = await openStore();
+    await createBundle(store);
+    const bytes = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+      'base64',
+    );
+    const blob = await store.putBlob({
+      bundleId: f.BUNDLE_ID,
+      kind: 'screenshot',
+      mediaType: 'image/png',
+      bytes,
+      ownerRefs: [{ kind: 'revision', objectId: f.PRIMARY_REVISION_ID }],
+    });
+    const contentPath = path.join(
+      root,
+      'bundles',
+      f.BUNDLE_ID,
+      'blobs',
+      'content',
+      `${blob.digest.replace('sha256:', '')}.bin`,
+    );
+    const legacyPath = path.join(
+      root,
+      'bundles',
+      f.BUNDLE_ID,
+      'blobs',
+      `${blob.blobId}.bin`,
+    );
+    await rename(contentPath, legacyPath);
+
+    expect((await store.getBlob(f.BUNDLE_ID, blob.blobId))?.bytes).toEqual(bytes);
+    await expect(access(contentPath)).resolves.toBeUndefined();
+    await expect(access(legacyPath)).rejects.toThrow();
+  });
+
+  it('lists inventory metadata without loading every Screenshot binary', async () => {
+    const store = await openStore();
+    await createBundle(store);
+    const bytes = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+      'base64',
+    );
+    const blob = await store.putBlob({
+      bundleId: f.BUNDLE_ID,
+      kind: 'screenshot',
+      mediaType: 'image/png',
+      bytes,
+      ownerRefs: [{ kind: 'revision', objectId: f.PRIMARY_REVISION_ID }],
+    });
+    await rm(
+      path.join(
+        root,
+        'bundles',
+        f.BUNDLE_ID,
+        'blobs',
+        'content',
+        `${blob.digest.replace('sha256:', '')}.bin`,
+      ),
+    );
+
+    await expect(store.listBlobRecords(f.BUNDLE_ID)).resolves.toEqual([blob]);
+    await expect(store.getBlob(f.BUNDLE_ID, blob.blobId)).rejects.toMatchObject({
+      code: 'unknown-reference',
+    });
   });
 
   it('rejects arbitrary media, oversize bytes and unresolved logical owners', async () => {

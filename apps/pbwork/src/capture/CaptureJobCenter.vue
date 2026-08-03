@@ -65,7 +65,7 @@ const noticeColor = computed(
     })[capture.notice?.tone ?? "info"],
 );
 
-async function refresh() {
+async function refresh(includeIdle = false) {
   if (!capture.connected) {
     await capture.connect();
     return;
@@ -74,8 +74,10 @@ async function refresh() {
   // hydrated once; re-calling loadBundle every second revokes blob URLs.
   if (capture.activeJob && !capture.jobFinished) {
     await capture.refreshActiveJob();
+    await capture.refreshConsole();
+  } else if (includeIdle) {
+    await capture.refreshConsole();
   }
-  await capture.refreshConsole();
 }
 
 async function viewResult() {
@@ -96,7 +98,7 @@ async function viewResult() {
 }
 
 onMounted(() => {
-  void refresh();
+  void refresh(true);
   pollTimer = setInterval(() => void refresh(), 1000);
 });
 

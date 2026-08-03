@@ -13,6 +13,7 @@ export type V2ErrorCode =
   | 'downgrade-rejected'
   | 'workspace-mismatch'
   | 'writer-lock-held'
+  | 'workspace-resetting'
   | 'bundle-archived'
   | 'capacity-exceeded'
   | 'blob-rejected'

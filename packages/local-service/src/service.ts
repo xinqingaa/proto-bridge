@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import { readFile, rm } from 'node:fs/promises';
 import {
   createServer,
   type IncomingMessage,
@@ -33,6 +34,7 @@ import {
 } from '@proto-bridge/core/v2/capture';
 import {
   LocalFileStore,
+  deliveryRootFromStoreRoot,
   generateOperationalId,
   writeDeliveryReceipt,
   type V2Store,
@@ -49,6 +51,8 @@ import {
   type HandoffPreviewRequest,
   type LocalServiceSession,
   type StoredPreflight,
+  type WorkspaceResetRequest,
+  type WorkspaceResetResult,
 } from '@proto-bridge/core/v2/service-contract';
 
 const BODY_LIMIT_BYTES = 1024 * 1024;
@@ -105,10 +109,12 @@ function failure(
 }
 
 function errorStatus(code: string): number {
+  if (code === 'internal-error') return 500;
   if (code === 'unauthorized') return 401;
   if (code === 'unknown-reference') return 404;
   if (code === 'preflight-expired') return 409;
   if (code === 'writer-lock-held') return 409;
+  if (code === 'workspace-resetting') return 409;
   if (code === 'capacity-exceeded') return 413;
   return 400;
 }
@@ -184,7 +190,7 @@ async function selectedCasesForSnapshot(
 
 export class ProtoBridgeLocalService {
   readonly serviceInstanceId = generateOperationalId('service');
-  readonly store: V2Store;
+  readonly store: LocalFileStore;
   private readonly options: Required<
     Pick<LocalServiceOptions, 'host' | 'port' | 'preflightTtlMs'>
   > &
@@ -195,6 +201,7 @@ export class ProtoBridgeLocalService {
   private readonly jobHost = new CaptureJobHost();
   private server: Server | undefined;
   private finalizedOrphanJobIds: string[] = [];
+  private workspaceResetting = false;
 
   constructor(options: LocalServiceOptions) {
     this.options = {
@@ -231,8 +238,14 @@ export class ProtoBridgeLocalService {
     this.finalizedOrphanJobIds = initialized.finalizedOrphanJobs;
     this.server = createServer((request, response) => {
       void this.handle(request, response).catch((error: unknown) => {
+        const schemaError =
+          error instanceof Error && error.name === 'ZodError';
         const code =
-          error instanceof V2ContractError ? error.code : 'internal-error';
+          error instanceof V2ContractError
+            ? error.code
+            : schemaError
+              ? 'invalid-schema'
+              : 'internal-error';
         const message =
           error instanceof Error
             ? error.message
@@ -364,6 +377,69 @@ export class ProtoBridgeLocalService {
     }
 
     this.requireSession(request);
+
+    if (request.method === 'POST' && path === '/api/v2/workspace/reset') {
+      if (this.workspaceResetting) {
+        throw new V2ContractError(
+          'workspace-resetting',
+          'Workspace reset is already in progress.',
+        );
+      }
+      const body = (await readBody(request)) as WorkspaceResetRequest;
+      if (body.workspaceId !== this.store.workspaceId) {
+        throw new V2ContractError(
+          'workspace-mismatch',
+          `Reset requested for ${String(body.workspaceId)}, but this Service owns ${this.store.workspaceId}.`,
+        );
+      }
+      this.workspaceResetting = true;
+      try {
+        const jobs = await this.store.listJobs();
+        const runningJobs = jobs.filter(
+          (job) =>
+            !['completed', 'failed', 'cancelled', 'interrupted'].includes(
+              job.status,
+            ),
+        );
+        for (const job of runningJobs) {
+          await this.jobHost.cancel(this.store, job.jobId);
+        }
+        await Promise.allSettled(
+          runningJobs
+            .map((job) => this.jobHost.completion(job.jobId))
+            .filter(
+              (completion): completion is NonNullable<typeof completion> =>
+                completion !== undefined,
+            ),
+        );
+        const bundles = await this.store.listBundles();
+        const capacity = await this.store.getCapacity();
+        await this.store.resetWorkspace();
+        await rm(deliveryRootFromStoreRoot(this.options.storeRoot), {
+          recursive: true,
+          force: true,
+        });
+        this.preflights.clear();
+        this.finalizedOrphanJobIds = [];
+        const result: WorkspaceResetResult = {
+          workspaceId: this.store.workspaceId,
+          removedBundleIds: bundles.map((bundle) => bundle.bundleId),
+          removedStoreBytes: capacity.usedBytes,
+          deliveriesCleared: true,
+        };
+        success(response, result);
+      } finally {
+        this.workspaceResetting = false;
+      }
+      return;
+    }
+
+    if (this.workspaceResetting) {
+      throw new V2ContractError(
+        'workspace-resetting',
+        'Workspace reset is in progress; retry this request shortly.',
+      );
+    }
 
     if (request.method === 'GET' && path === '/api/v2/console') {
       const bundles = await this.store.listBundles();
@@ -942,6 +1018,7 @@ export class ProtoBridgeLocalService {
         response,
         {
           deliveryId: receipt.deliveryId,
+          agentPrompt: await readFile(receipt.agentPromptPath, 'utf8'),
           agentPromptPath: receipt.agentPromptPath,
           acceptanceContractPath: receipt.acceptanceContractPath,
           acceptanceChecklistPath: receipt.acceptanceChecklistPath,

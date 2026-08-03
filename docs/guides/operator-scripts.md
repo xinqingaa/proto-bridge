@@ -55,14 +55,14 @@ pnpm pb -- preflight \
 
 ### 清理旧采集数据
 
-不要手动只删除 `.proto-bridge/store`。先停止占用 Store 的 `pnpm pb:up`，预览精确清理范围，再显式执行：
+不要手动只删除 `.proto-bridge/store`。先预览精确清理范围，再显式执行：
 
 ```bash
 pnpm pb -- workspace reset
 pnpm pb -- workspace reset --apply
 ```
 
-该命令清除当前配置指向的 Store 和同级 `deliveries`，保留 `proto-bridge.json`，并立即创建新的 Workspace manifest。之后可直接重新 `deliver`。默认不带 `--apply` 时不会删除数据；运行中的 Local Service 持有 writer lock 时会拒绝清理。
+该命令清除当前配置指向的 Store 和同级 `deliveries`，保留 `proto-bridge.json`，并立即创建新的 Workspace manifest。之后可直接重新 `deliver`。默认不带 `--apply` 时不会删除数据；`pnpm pb:up` 正在运行时，CLI 会自动通过 Local Service 取消未结束任务并完成重置，不需要手工停服务。
 
 ## 启动 MCP
 

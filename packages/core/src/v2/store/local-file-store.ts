@@ -82,6 +82,7 @@ import {
   issuesDir,
   jobPath,
   jobsDir,
+  legacyBlobContentPath,
   runPath,
   runsDir,
   snapshotPath,
@@ -242,6 +243,24 @@ export class LocalFileStore implements V2Store {
   async close(): Promise<void> {
     await this.releaseLock?.();
     this.releaseLock = undefined;
+  }
+
+  /** Clears this Workspace while preserving the writer lock and root manifest. */
+  async resetWorkspace(): Promise<void> {
+    this.assertWritableStore();
+    const entries = await readdir(this.root, { withFileTypes: true });
+    await Promise.all(
+      entries
+        .filter((entry) => entry.name !== '.lock')
+        .map((entry) =>
+          rm(path.join(this.root, entry.name), { recursive: true, force: true }),
+        ),
+    );
+    await writeJsonAtomic(workspaceManifestPath(this.root), {
+      schemaVersion: V2_SCHEMA_MAJOR,
+      workspaceId: this.workspaceId,
+      createdAt: new Date().toISOString(),
+    });
   }
 
   private assertWritableStore(): void {
@@ -1310,9 +1329,35 @@ export class LocalFileStore implements V2Store {
     );
     if (raw === undefined) return undefined;
     const record = this.parseOrThrow(BlobRecord, raw, 'BlobRecord');
-    const bytes = await readFile(
-      blobContentPath(this.root, bundleId, record.digest),
-    );
+    const contentPath = blobContentPath(this.root, bundleId, record.digest);
+    const legacyPath = legacyBlobContentPath(this.root, bundleId, blobId);
+    let bytes: Uint8Array;
+    try {
+      bytes = await readFile(contentPath);
+    } catch (error) {
+      if (
+        typeof error !== 'object' ||
+        error === null ||
+        (error as { code?: unknown }).code !== 'ENOENT'
+      ) {
+        throw error;
+      }
+      try {
+        bytes = await readFile(legacyPath);
+      } catch (legacyError) {
+        if (
+          typeof legacyError === 'object' &&
+          legacyError !== null &&
+          (legacyError as { code?: unknown }).code === 'ENOENT'
+        ) {
+          throw new V2ContractError(
+            'unknown-reference',
+            `Blob ${blobId} metadata exists, but its binary content is missing from both supported Store layouts.`,
+          );
+        }
+        throw legacyError;
+      }
+    }
     const digest = `sha256:${createHash('sha256').update(bytes).digest('hex')}`;
     if (bytes.byteLength !== record.byteLength || digest !== record.digest) {
       throw new V2ContractError(
@@ -1320,13 +1365,24 @@ export class LocalFileStore implements V2Store {
         `Blob ${blobId} content does not match its immutable metadata.`,
       );
     }
+    if (!this.readOnly) {
+      await writeImmutableBytes(contentPath, 'Blob content', bytes);
+      await rm(legacyPath, { force: true });
+    }
     return { record, bytes };
   }
 
   async listBlobRecords(bundleId: BundleId): Promise<BlobRecord[]> {
     const ids = (await listJsonIds(blobsDir(this.root, bundleId))) as BlobId[];
     const records = await Promise.all(
-      ids.map(async (blobId) => (await this.getBlob(bundleId, blobId))?.record),
+      ids.map(async (blobId) => {
+        const raw = await readJson<unknown>(
+          blobRecordPath(this.root, bundleId, blobId),
+        );
+        return raw === undefined
+          ? undefined
+          : this.parseOrThrow(BlobRecord, raw, 'BlobRecord');
+      }),
     );
     return records
       .filter((record): record is BlobRecord => record !== undefined)

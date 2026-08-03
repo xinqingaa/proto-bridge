@@ -120,6 +120,15 @@ export function blobContentPath(root: string, bundleId: BundleId, digest: string
   );
 }
 
+/** Previous per-record layout, retained only as an automatic migration source. */
+export function legacyBlobContentPath(
+  root: string,
+  bundleId: BundleId,
+  blobId: BlobId,
+): string {
+  return path.join(bundleDir(root, bundleId), 'blobs', `${blobId}.bin`);
+}
+
 export function blobsDir(root: string, bundleId: BundleId): string {
   return path.join(bundleDir(root, bundleId), 'blobs');
 }

@@ -59,6 +59,17 @@ export type CaptureConsoleState = {
   jobs: CaptureJob[];
 };
 
+export type WorkspaceResetRequest = {
+  workspaceId: string;
+};
+
+export type WorkspaceResetResult = {
+  workspaceId: string;
+  removedBundleIds: string[];
+  removedStoreBytes: number;
+  deliveriesCleared: boolean;
+};
+
 export type { EvidenceInventory };
 export type { BundleDeletePlan, BundleDeleteResult };
 
@@ -117,6 +128,7 @@ export type CreateDeliveryRequest = {
 
 export type DeliveryArtifact = {
   deliveryId: string;
+  agentPrompt: string;
   agentPromptPath: string;
   acceptanceContractPath: string;
   acceptanceChecklistPath: string;

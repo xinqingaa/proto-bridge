@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -119,7 +119,7 @@ async function start(preflightTtlMs = 60_000) {
     port: 0,
     allowedOrigins: [origin],
     runtimeBaseUrl: origin,
-    storeRoot: root,
+    storeRoot: path.join(root, 'store'),
     workspaceId: 'workspace-service-test',
     preflightTtlMs,
     preflightProvider: async (selection) => ({
@@ -282,6 +282,51 @@ describe('ProtoBridge Local Service', () => {
     ).toBe(false);
   });
 
+  it('fully resets a live Workspace and keeps the Service usable', async () => {
+    const base = await start();
+    const session = await call(base, '/session', { method: 'POST' });
+    const token = session.body.data.sessionToken as string;
+    const preflight = await call(base, '/preflights', {
+      method: 'POST',
+      token,
+      body: { draft: draft() },
+    });
+    const accepted = await call(base, '/jobs', {
+      method: 'POST',
+      token,
+      body: {
+        preflightId: preflight.body.data.preflightId,
+        acceptedWarningIds: [],
+      },
+    });
+    const jobId = accepted.body.data.job.jobId as string;
+    for (let index = 0; index < 30; index += 1) {
+      const result = await call(base, `/jobs/${jobId}`, { token });
+      if (result.body.data.status === 'completed') break;
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    const deliveriesRoot = path.join(root!, 'deliveries');
+    await mkdir(deliveriesRoot, { recursive: true });
+    await writeFile(path.join(deliveriesRoot, 'old.md'), 'old');
+
+    const reset = await call(base, '/workspace/reset', {
+      method: 'POST',
+      token,
+      body: { workspaceId: 'workspace-service-test' },
+    });
+    expect(reset.response.status).toBe(200);
+    expect(reset.body.data.removedBundleIds).toContain(
+      accepted.body.data.job.bundleId,
+    );
+    await expect(access(deliveriesRoot)).rejects.toThrow();
+    const state = await call(base, '/console', { token });
+    expect(state.body.data.bundles).toEqual([]);
+    expect(state.body.data.jobs).toEqual([]);
+    await expect(
+      access(path.join(root!, 'store', 'workspace.json')),
+    ).resolves.toBeUndefined();
+  });
+
   it('blocks unaccepted warnings, expired Preflight and foreign request fields', async () => {
     const base = await start(5);
     const session = await call(base, '/session', { method: 'POST' });
@@ -423,6 +468,21 @@ describe('ProtoBridge Local Service', () => {
     });
     expect(created.response.status).toBe(201);
     expect(created.body.data.handoff.snapshotId).toBe(request.snapshotId);
+    const delivery = await call(base, '/deliveries', {
+      method: 'POST',
+      token,
+      body: {
+        handoffId: created.body.data.handoff.handoffId,
+        targetRoot: 'apps/flutter_pb_app',
+      },
+    });
+    expect(delivery.response.status).toBe(201);
+    expect(delivery.body.data.agentPrompt).toContain(
+      '# ProtoBridge Evidence 驱动的页面实现',
+    );
+    expect(delivery.body.data.agentPrompt).toContain(
+      '# Evidence Implementation Brief',
+    );
   });
 
   it('invalidates old sessions on restart and reports orphan Jobs as interrupted', async () => {
@@ -439,7 +499,7 @@ describe('ProtoBridge Local Service', () => {
       port: 0,
       allowedOrigins: [origin],
       runtimeBaseUrl: origin,
-      storeRoot: root!,
+      storeRoot: path.join(root!, 'store'),
       workspaceId: 'workspace-service-test',
       preflightProvider: async (selection) => ({
         preflight: preflightSelection(selection, manifest()),

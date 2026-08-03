@@ -6,7 +6,6 @@ import type {
   RiskKind,
   StalenessReport,
 } from "@proto-bridge/core/v2";
-import { buildAgentPrompt } from "@proto-bridge/core/v2/prompts/agent-prompt";
 import type { SelectionDraft } from "@proto-bridge/core/v2/capture";
 import type {
   BundleEvidenceDetails,
@@ -171,6 +170,7 @@ export const useCaptureStore = defineStore("capture-v2", {
       busy: false,
       lastError: null as string | null,
       lastErrorCode: null as string | null,
+      consolePollingPaused: false,
     };
   },
   getters: {
@@ -214,6 +214,7 @@ export const useCaptureStore = defineStore("capture-v2", {
     clearError() {
       this.lastError = null;
       this.lastErrorCode = null;
+      this.consolePollingPaused = false;
     },
     openComposer() {
       this.deliverStep = 0;
@@ -275,6 +276,7 @@ export const useCaptureStore = defineStore("capture-v2", {
       }
     },
     async refreshConsole() {
+      if (this.consolePollingPaused) return false;
       try {
         this.consoleState = await captureServiceClient.consoleState();
         this.evidenceInventory = await captureServiceClient.evidenceInventory();
@@ -284,8 +286,11 @@ export const useCaptureStore = defineStore("capture-v2", {
           );
           if (refreshed) this.activeJob = refreshed;
         }
+        return true;
       } catch (error) {
         this.setError(error);
+        this.consolePollingPaused = true;
+        return false;
       }
     },
     beginCurrentScreen(input: CurrentScreenInput) {
@@ -789,6 +794,41 @@ export const useCaptureStore = defineStore("capture-v2", {
     closeHandoffSheet() {
       this.handoffSheetOpen = false;
     },
+    async regenerateCurrentPrompt() {
+      if (!this.details) return;
+      const handoff = this.currentSnapshotHandoffs[0];
+      if (!handoff) {
+        this.openHandoffSheet();
+        return;
+      }
+      this.busy = true;
+      this.clearError();
+      try {
+        const delivery = await captureServiceClient.createDelivery({
+          handoffId: handoff.handoffId,
+          targetRoot: this.deliverTargetRoot,
+          ...(handoff.implementationIntent
+            ? { implementationIntent: handoff.implementationIntent }
+            : {}),
+          runId: this.details.activeSnapshot.sourceRunId,
+          acknowledgedRiskKinds:
+            handoff.riskAcknowledgement?.acknowledgedRiskKinds ?? [],
+        });
+        this.handoff = handoff;
+        this.agentPrompt = delivery.agentPrompt;
+        this.deliveryArtifact = {
+          deliveryId: delivery.deliveryId,
+          agentPromptPath: delivery.agentPromptPath,
+          receiptPath: delivery.receiptPath,
+        };
+        this.deliverStep = 3;
+        this.composerOpen = true;
+      } catch (error) {
+        this.setError(error);
+      } finally {
+        this.busy = false;
+      }
+    },
     async createCurrentHandoff(implementationIntent?: string) {
       if (!this.details || !this.risksAccepted) return;
       this.busy = true;
@@ -804,15 +844,6 @@ export const useCaptureStore = defineStore("capture-v2", {
           acknowledgedRiskKinds: this.acknowledgedRiskKinds,
         });
         await this.loadSnapshot(bundleId, snapshotId);
-        this.agentPrompt = buildAgentPrompt({
-          handoffId: this.handoff.handoffId,
-          workspaceId: this.details.bundle.workspaceId,
-          bundleId,
-          snapshotId,
-          targetRoot: this.deliverTargetRoot,
-          ...(intent.trim() ? { implementationIntent: intent.trim() } : {}),
-          risks: this.handoff.risks,
-        });
         const delivery = await captureServiceClient.createDelivery({
           handoffId: this.handoff.handoffId,
           targetRoot: this.deliverTargetRoot,
@@ -821,6 +852,7 @@ export const useCaptureStore = defineStore("capture-v2", {
           acceptedWarningIds: this.acceptedWarningIds,
           acknowledgedRiskKinds: this.acknowledgedRiskKinds,
         });
+        this.agentPrompt = delivery.agentPrompt;
         this.deliveryArtifact = {
           deliveryId: delivery.deliveryId,
           agentPromptPath: delivery.agentPromptPath,
