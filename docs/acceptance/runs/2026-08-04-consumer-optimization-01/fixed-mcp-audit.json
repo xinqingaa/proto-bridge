@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "auditedAt": "2026-08-04T08:12:14.104Z",
+  "auditedAt": "2026-08-04T08:57:04.256Z",
   "fixed": {
     "workspaceId": "pbwork-local",
     "bundleId": "bundle-2026-08-03t095053078-241d3a74",
@@ -11,16 +11,16 @@
   "runtime": {
     "build": {
       "packageVersion": "0.4.0",
-      "fingerprint": "sha256:299210e872d3080a5657ffd98b0a9b8e5fbef75a82e6f649bb3bf6ed867f986e"
+      "fingerprint": "sha256:541cb4696e0e80d0ef8ad8e179bccfa0ca827fb35df2da46af015aa1b99f15ef"
     },
-    "processStartedAt": "2026-08-04T08:12:07.973Z",
+    "processStartedAt": "2026-08-04T08:56:58.612Z",
     "contracts": {
       "toolVersion": 1,
       "projectionVersion": 1
     },
     "store": {
       "layout": "local-file-store/content-addressed-blobs-v2",
-      "generation": "legacy-unavailable"
+      "generation": "generation-2026-08-04t085651613-b0384629"
     },
     "capabilities": [
       "handoff-index",
@@ -33,7 +33,7 @@
       "target-example-exclusions"
     ]
   },
-  "toolCount": 25,
+  "toolCount": 33,
   "requiredToolsPresent": true,
   "projections": {
     "screenCount": 3,
