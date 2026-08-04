@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "phase": 1,
+  "status": "passed",
+  "closedAt": "2026-08-04T08:12:14Z",
+  "implementationCommit": "48ae92905f9808b5526a29223137e7bf47f6436f",
+  "fixedAudit": {
+    "script": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/audit-fixed-mcp.mjs",
+    "receipt": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/fixed-mcp-audit.json",
+    "receiptSha256": "c2c7857dadfe937fc99447f73345b4fa31465941989bdc3416e1d0d456d51eaa",
+    "screenCount": 3,
+    "caseDeltaCount": 24,
+    "distinctScreenshotCount": 16,
+    "allScreenshotsReturnedImageContent": true,
+    "detailProjectionPageCount": 48,
+    "detailProjectionItemCount": 10032,
+    "progressiveResponseBytesForFullAuditTraversal": 30996990,
+    "workspaceGeneration": "legacy-unavailable"
+  },
+  "fixedIdentity": {
+    "status": "unchanged-from-phase-0-manifest",
+    "verifiedFiles": 6
+  },
+  "commands": [
+    {
+      "command": "pnpm --filter @proto-bridge/core test",
+      "exitCode": 0,
+      "result": "32 files, 201 tests passed"
+    },
+    {
+      "command": "pnpm --filter @proto-bridge/core build",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm --filter @proto-bridge/mcp-server build",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm test:e2e:mcp",
+      "exitCode": 0,
+      "result": "progressive tools, fixed refs, ImageContent and typed cursor error passed"
+    },
+    {
+      "command": "pnpm docs:verify",
+      "exitCode": 0,
+      "result": "99 Markdown files verified"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    },
+    {
+      "command": "node docs/acceptance/runs/2026-08-04-consumer-optimization-01/audit-fixed-mcp.mjs",
+      "exitCode": 0
+    }
+  ],
+  "exitCriteria": {
+    "bootstrapAvoidsFullSnapshotAndContract": "passed-by-prompt-tests-and-default-doc-audit",
+    "singleScreenExcludesOtherScreenFacts": "passed-by-unit-negative-tests-and-fixed-screen-traversal",
+    "screenshotPrecedesFullDetailExpansion": "passed-by-tool-contract-and-default-prompt-order",
+    "allOmissionsHaveLogicalEntryPoints": "passed-by-projection-contract-tests",
+    "sameImageDifferentSemanticsPreserved": "passed-by-unit-tests-and-24-fixed-case-deltas",
+    "defaultDocsAndSkillUseProgressivePath": "passed-by-doc-verification-and-source-audit",
+    "fixedRefsUnknownConflictProvenancePreserved": "passed-by-semantic-equivalence-and-mcp-e2e-tests"
+  },
+  "boundaryAudit": {
+    "producerPersistentObjectsAdded": false,
+    "captureContractModified": false,
+    "fullReadCompatibilityRemoved": false,
+    "experimentalIdsAddedToCore": false,
+    "workspaceResetPerformed": false
+  },
+  "notes": [
+    "Commit 48ae929 was an existing WIP transport commit containing both Phase 1 and Phase 2 code. This receipt closes only Phase 1; Phase 2 remains ungated until its separate audit passes.",
+    "Response bytes are observational only and are not used as a product gate."
+  ]
+}

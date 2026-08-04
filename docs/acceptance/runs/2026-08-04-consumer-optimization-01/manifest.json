@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "experimentRunId": "2026-08-04-consumer-optimization-01",
-  "status": "phase-0-passed",
+  "status": "phase-1-passed",
   "createdAt": "2026-08-04T06:52:48Z",
   "timeZone": "Asia/Shanghai",
   "plan": {
@@ -197,5 +197,15 @@
       "The legacy Workspace does not yet expose generation; this is recorded as legacy-unavailable and is addressed in Phase 3.",
       "Control visual review did not produce a target artifact for every variant/overlay and did not run automated pixel diff; these remain unverified and are not represented as complete."
     ]
+  },
+  "phase1Gate": {
+    "status": "passed",
+    "closedAt": "2026-08-04T08:12:14Z",
+    "implementationCommit": "48ae92905f9808b5526a29223137e7bf47f6436f",
+    "receipt": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/phase-1-gate.json",
+    "fixedMcpAudit": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/fixed-mcp-audit.json",
+    "fixedEvidenceIdentityVerified": true,
+    "captureContractModified": false,
+    "workspaceResetPerformed": false
   }
 }
