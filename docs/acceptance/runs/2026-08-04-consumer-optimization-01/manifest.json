@@ -163,10 +163,16 @@
     ]
   },
   "control": {
-    "status": "pending",
-    "worktreeCommit": null,
+    "status": "in-progress",
+    "startedAt": "2026-08-04T06:58:40Z",
+    "worktreeRoot": "/Users/lrq/work/proto-bridge-control-2026-08-04-01",
+    "worktreeCommit": "79780eb6962086affb9af8bcacd8006707517a67",
     "candidateOutputRoot": null,
-    "excludePaths": []
+    "excludePaths": [
+      "/Users/lrq/work/proto-bridge-control-2026-08-04-01"
+    ],
+    "consumerFlow": "legacy-full-read",
+    "isolation": "independent-agent-detached-worktree"
   },
   "treatment": {
     "status": "pending"
