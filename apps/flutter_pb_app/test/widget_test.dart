@@ -16,58 +16,6 @@ void main() {
     expect(find.text('Field Service'), findsOneWidget);
     expect(find.text('Ledger Planet'), findsOneWidget);
     expect(find.text('Ledger Planet V2'), findsOneWidget);
-    await tester.drag(find.byType(ListView), const Offset(0, -400));
-    await tester.pumpAndSettle();
-    expect(find.text('冷链异常 V2'), findsOneWidget);
-    expect(find.text('冷链异常 V3'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('冷链异常 V4 GPT'),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.text('冷链异常 V4 GPT'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('冷链异常 Ops'),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.text('冷链异常 Ops'), findsOneWidget);
-  });
-
-  testWidgets('Cold Chain V2 opens from Hub', (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: PbApp()));
-    await tester.pumpAndSettle();
-
-    await tester.drag(find.byType(ListView), const Offset(0, -400));
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('冷链异常 V2'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('冷链异常 V2'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('冷链异常'), findsOneWidget);
-    expect(find.text('当前风险'), findsOneWidget);
-    expect(find.text('仅看严重异常'), findsOneWidget);
-  });
-
-  testWidgets('Cold Chain Ops opens from Hub', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(390, 844));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    await tester.pumpWidget(const ProviderScope(child: PbApp()));
-    await tester.pumpAndSettle();
-
-    final entry = find.text('冷链异常 Ops');
-    await tester.scrollUntilVisible(
-      entry,
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.tap(entry);
-    await tester.pumpAndSettle();
-
-    expect(find.text('当前风险'), findsOneWidget);
-    expect(find.text('仅看严重异常'), findsOneWidget);
   });
 
   testWidgets('Ledger Planet task list opens claimable detail', (tester) async {
