@@ -251,6 +251,25 @@ export const useCaptureStore = defineStore("capture-v2", {
       this.handoffPreview = null;
       this.persistDraft();
     },
+    clearWorkspaceScopedState() {
+      this.draft = null;
+      this.preflight = null;
+      this.acceptedWarningIds = [];
+      this.activeJob = null;
+      this.selectedJob = null;
+      this.details = null;
+      this.stalenessReport = null;
+      this.handoffPreview = null;
+      this.handoff = null;
+      this.acknowledgedRiskKinds = [];
+      this.agentPrompt = null;
+      this.deliveryArtifact = null;
+      this.evidenceInventory = null;
+      this.deletePlan = null;
+      this.consoleState = null;
+      this.screenshotUrls = {};
+      this.persistDraft();
+    },
     persistDraft() {
       window.sessionStorage.setItem(
         CAPTURE_DRAFT_KEY,
@@ -278,7 +297,12 @@ export const useCaptureStore = defineStore("capture-v2", {
     async refreshConsole() {
       if (this.consolePollingPaused) return false;
       try {
-        this.consoleState = await captureServiceClient.consoleState();
+        const nextConsoleState = await captureServiceClient.consoleState();
+        if (this.session && nextConsoleState.generationId !== this.session.generationId) {
+          this.clearWorkspaceScopedState();
+          this.session.generationId = nextConsoleState.generationId;
+        }
+        this.consoleState = nextConsoleState;
         this.evidenceInventory = await captureServiceClient.evidenceInventory();
         if (this.activeJob) {
           const refreshed = this.consoleState.jobs.find(
@@ -288,6 +312,17 @@ export const useCaptureStore = defineStore("capture-v2", {
         }
         return true;
       } catch (error) {
+        if (
+          error instanceof LocalServiceClientError &&
+          ["unauthorized", "workspace-generation-mismatch"].includes(error.code)
+        ) {
+          this.session = null;
+          captureServiceClient.disconnect();
+          this.clearWorkspaceScopedState();
+          this.consolePollingPaused = false;
+          await this.connect();
+          return false;
+        }
         this.setError(error);
         this.consolePollingPaused = true;
         return false;

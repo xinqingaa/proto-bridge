@@ -36,6 +36,9 @@ import {
   LocalFileStore,
   deliveryRootFromStoreRoot,
   generateOperationalId,
+  createWorkspaceResetPlan,
+  reviewsRootFromStoreRoot,
+  validateWorkspaceResetPlan,
   writeDeliveryReceipt,
   type V2Store,
 } from '@proto-bridge/core/v2/store';
@@ -51,7 +54,8 @@ import {
   type HandoffPreviewRequest,
   type LocalServiceSession,
   type StoredPreflight,
-  type WorkspaceResetRequest,
+  type WorkspaceResetApplyRequest,
+  type WorkspaceResetPreviewRequest,
   type WorkspaceResetResult,
 } from '@proto-bridge/core/v2/service-contract';
 
@@ -64,6 +68,7 @@ type PreflightRecord = StoredPreflight & {
 
 type SessionRecord = {
   expiresAt: number;
+  generationId: string | 'legacy-unavailable';
 };
 
 export type LocalServiceOptions = {
@@ -114,7 +119,14 @@ function errorStatus(code: string): number {
   if (code === 'unknown-reference') return 404;
   if (code === 'preflight-expired') return 409;
   if (code === 'writer-lock-held') return 409;
-  if (code === 'workspace-resetting') return 409;
+  if ([
+    'workspace-resetting',
+    'workspace-generation-mismatch',
+    'reset-plan-expired',
+    'reset-plan-drift',
+    'external-store-destroyed',
+    'writer-lock-lost',
+  ].includes(code)) return 409;
   if (code === 'capacity-exceeded') return 413;
   return 400;
 }
@@ -202,6 +214,8 @@ export class ProtoBridgeLocalService {
   private server: Server | undefined;
   private finalizedOrphanJobIds: string[] = [];
   private workspaceResetting = false;
+  private currentGenerationId: string | 'legacy-unavailable' = 'legacy-unavailable';
+  private externalStoreDestroyed = false;
 
   constructor(options: LocalServiceOptions) {
     this.options = {
@@ -236,6 +250,7 @@ export class ProtoBridgeLocalService {
     if (this.server) throw new Error('Local Service is already started.');
     const initialized = await this.store.init();
     this.finalizedOrphanJobIds = initialized.finalizedOrphanJobs;
+    this.currentGenerationId = initialized.lifecycle.generationId;
     this.server = createServer((request, response) => {
       void this.handle(request, response).catch((error: unknown) => {
         const schemaError =
@@ -335,6 +350,30 @@ export class ProtoBridgeLocalService {
         'Local Service session is invalid or expired.',
       );
     }
+    if (session.generationId !== this.currentGenerationId) {
+      this.sessions.delete(token);
+      throw new V2ContractError(
+        'workspace-generation-mismatch',
+        'Local Service session belongs to an earlier Workspace generation.',
+      );
+    }
+  }
+
+  private async ensureStoreHealthy(): Promise<void> {
+    if (this.externalStoreDestroyed) {
+      throw new V2ContractError('external-store-destroyed', 'Workspace Store was destroyed or replaced; stop the Service and explicitly reinitialize it.');
+    }
+    try {
+      await this.store.assertHealthy();
+    } catch (error) {
+      if (error instanceof V2ContractError && ['external-store-destroyed', 'writer-lock-lost'].includes(error.code)) {
+        this.externalStoreDestroyed = true;
+        this.sessions.clear();
+        this.preflights.clear();
+        await this.store.close();
+      }
+      throw error;
+    }
   }
 
   private async runPreflight(
@@ -360,15 +399,18 @@ export class ProtoBridgeLocalService {
     const url = new URL(request.url ?? '/', 'http://local.invalid');
     const path = url.pathname;
 
+    await this.ensureStoreHealthy();
+
     if (request.method === 'POST' && path === '/api/v2/session') {
       const token = randomBytes(32).toString('base64url');
       const expiresAt = Date.now() + SESSION_TTL_MS;
-      this.sessions.set(token, { expiresAt });
+      this.sessions.set(token, { expiresAt, generationId: this.currentGenerationId });
       const session: LocalServiceSession = {
         protocolVersion: LOCAL_SERVICE_PROTOCOL_VERSION,
         serviceInstanceId: this.serviceInstanceId,
         sessionToken: token,
         workspaceId: this.store.workspaceId,
+        generationId: this.currentGenerationId,
         expiresAt: new Date(expiresAt).toISOString(),
         finalizedOrphanJobIds: this.finalizedOrphanJobIds,
       };
@@ -378,29 +420,60 @@ export class ProtoBridgeLocalService {
 
     this.requireSession(request);
 
-    if (request.method === 'POST' && path === '/api/v2/workspace/reset') {
+    if (request.method === 'POST' && path === '/api/v2/workspace/reset/preview') {
+      const body = (await readBody(request)) as WorkspaceResetPreviewRequest;
+      if (body.workspaceId !== this.store.workspaceId) {
+        throw new V2ContractError('workspace-mismatch', `Reset requested for ${String(body.workspaceId)}, but this Service owns ${this.store.workspaceId}.`);
+      }
+      if (this.currentGenerationId === 'legacy-unavailable') {
+        throw new V2ContractError('workspace-generation-mismatch', 'Legacy Workspace must be upgraded by the writer before reset preview.');
+      }
+      const runningTasks = (await this.store.listNonTerminalJobs()).map((job) => `job:${job.jobId}`).sort();
+      const plan = await createWorkspaceResetPlan({
+        workspaceId: this.store.workspaceId,
+        generationId: this.currentGenerationId,
+        storeRoot: this.options.storeRoot,
+        deliveriesRoot: deliveryRootFromStoreRoot(this.options.storeRoot),
+        reviewsRoot: reviewsRootFromStoreRoot(this.options.storeRoot, this.store.workspaceId),
+        runningTasks,
+      });
+      success(response, plan, 201);
+      return;
+    }
+
+    if (request.method === 'POST' && path === '/api/v2/workspace/reset/apply') {
       if (this.workspaceResetting) {
         throw new V2ContractError(
           'workspace-resetting',
           'Workspace reset is already in progress.',
         );
       }
-      const body = (await readBody(request)) as WorkspaceResetRequest;
+      const body = (await readBody(request)) as WorkspaceResetApplyRequest;
       if (body.workspaceId !== this.store.workspaceId) {
         throw new V2ContractError(
           'workspace-mismatch',
           `Reset requested for ${String(body.workspaceId)}, but this Service owns ${this.store.workspaceId}.`,
         );
       }
+      if (body.generationId !== this.currentGenerationId) {
+        throw new V2ContractError('workspace-generation-mismatch', `Reset apply expected ${body.generationId}; Service owns ${this.currentGenerationId}.`);
+      }
+      const jobs = await this.store.listJobs();
+      const runningJobs = jobs.filter(
+        (job) => !['completed', 'failed', 'cancelled', 'interrupted'].includes(job.status),
+      );
+      const runningTasks = runningJobs.map((job) => `job:${job.jobId}`).sort();
+      const plan = await validateWorkspaceResetPlan({
+        planId: body.planId,
+        workspaceId: body.workspaceId,
+        generationId: body.generationId,
+        storeRoot: this.options.storeRoot,
+        deliveriesRoot: deliveryRootFromStoreRoot(this.options.storeRoot),
+        reviewsRoot: reviewsRootFromStoreRoot(this.options.storeRoot, this.store.workspaceId),
+        runningTasks,
+      });
       this.workspaceResetting = true;
       try {
-        const jobs = await this.store.listJobs();
-        const runningJobs = jobs.filter(
-          (job) =>
-            !['completed', 'failed', 'cancelled', 'interrupted'].includes(
-              job.status,
-            ),
-        );
         for (const job of runningJobs) {
           await this.jobHost.cancel(this.store, job.jobId);
         }
@@ -412,20 +485,29 @@ export class ProtoBridgeLocalService {
                 completion !== undefined,
             ),
         );
-        const bundles = await this.store.listBundles();
-        const capacity = await this.store.getCapacity();
-        await this.store.resetWorkspace();
+        const reset = await this.store.resetWorkspace(body.generationId);
         await rm(deliveryRootFromStoreRoot(this.options.storeRoot), {
           recursive: true,
           force: true,
         });
+        await rm(reviewsRootFromStoreRoot(this.options.storeRoot, this.store.workspaceId), { recursive: true, force: true });
+        const revokedSessionCount = this.sessions.size;
         this.preflights.clear();
         this.finalizedOrphanJobIds = [];
+        this.sessions.clear();
+        this.currentGenerationId = reset.newGenerationId;
         const result: WorkspaceResetResult = {
           workspaceId: this.store.workspaceId,
-          removedBundleIds: bundles.map((bundle) => bundle.bundleId),
-          removedStoreBytes: capacity.usedBytes,
-          deliveriesCleared: true,
+          oldGenerationId: reset.oldGenerationId,
+          newGenerationId: reset.newGenerationId,
+          actualRemoved: {
+            evidence: plan.evidence,
+            deliveries: plan.deliveries,
+            reviews: plan.reviews,
+          },
+          revokedSessionCount,
+          stoppedJobIds: runningJobs.map((job) => job.jobId),
+          stoppedReviewRunIds: [],
         };
         success(response, result);
       } finally {
@@ -445,6 +527,7 @@ export class ProtoBridgeLocalService {
       const bundles = await this.store.listBundles();
       const state: CaptureConsoleState = {
         workspaceId: this.store.workspaceId,
+        generationId: this.currentGenerationId,
         bundles: await Promise.all(
           bundles.map(async (bundle) => ({
             bundle,

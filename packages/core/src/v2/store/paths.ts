@@ -26,6 +26,10 @@ export function writerLockPath(root: string): string {
   return path.join(root, '.lock');
 }
 
+export function resetInProgressPath(root: string): string {
+  return path.join(root, '.reset-in-progress.json');
+}
+
 export function bundleDir(root: string, bundleId: BundleId): string {
   return path.join(root, 'bundles', bundleId);
 }

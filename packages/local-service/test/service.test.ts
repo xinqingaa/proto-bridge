@@ -309,22 +309,86 @@ describe('ProtoBridge Local Service', () => {
     await mkdir(deliveriesRoot, { recursive: true });
     await writeFile(path.join(deliveriesRoot, 'old.md'), 'old');
 
-    const reset = await call(base, '/workspace/reset', {
+    const preview = await call(base, '/workspace/reset/preview', {
       method: 'POST',
       token,
       body: { workspaceId: 'workspace-service-test' },
     });
+    expect(preview.response.status).toBe(201);
+    const reset = await call(base, '/workspace/reset/apply', {
+      method: 'POST',
+      token,
+      body: {
+        workspaceId: 'workspace-service-test',
+        generationId: preview.body.data.generationId,
+        planId: preview.body.data.planId,
+      },
+    });
     expect(reset.response.status).toBe(200);
-    expect(reset.body.data.removedBundleIds).toContain(
-      accepted.body.data.job.bundleId,
-    );
+    expect(reset.body.data.oldGenerationId).toBe(preview.body.data.generationId);
+    expect(reset.body.data.newGenerationId).not.toBe(preview.body.data.generationId);
     await expect(access(deliveriesRoot)).rejects.toThrow();
-    const state = await call(base, '/console', { token });
+    const oldState = await call(base, '/console', { token });
+    expect(oldState.response.status).toBe(401);
+    const nextSession = await call(base, '/session', { method: 'POST' });
+    const state = await call(base, '/console', { token: nextSession.body.data.sessionToken });
     expect(state.body.data.bundles).toEqual([]);
     expect(state.body.data.jobs).toEqual([]);
+    expect(state.body.data.generationId).toBe(reset.body.data.newGenerationId);
     await expect(
       access(path.join(root!, 'store', 'workspace.json')),
     ).resolves.toBeUndefined();
+  });
+
+  it('rejects reset apply when the preview scope or generation drifts', async () => {
+    const base = await start();
+    const session = await call(base, '/session', { method: 'POST' });
+    const token = session.body.data.sessionToken as string;
+    const preview = await call(base, '/workspace/reset/preview', {
+      method: 'POST',
+      token,
+      body: { workspaceId: 'workspace-service-test' },
+    });
+    const deliveriesRoot = path.join(root!, 'deliveries');
+    await mkdir(deliveriesRoot, { recursive: true });
+    await writeFile(path.join(deliveriesRoot, 'late.json'), '{}\n');
+
+    const drift = await call(base, '/workspace/reset/apply', {
+      method: 'POST',
+      token,
+      body: {
+        workspaceId: 'workspace-service-test',
+        generationId: preview.body.data.generationId,
+        planId: preview.body.data.planId,
+      },
+    });
+    expect(drift.response.status).toBe(409);
+    expect(drift.body.error.code).toBe('reset-plan-drift');
+
+    const mismatch = await call(base, '/workspace/reset/apply', {
+      method: 'POST',
+      token,
+      body: {
+        workspaceId: 'workspace-service-test',
+        generationId: 'generation-foreign',
+        planId: preview.body.data.planId,
+      },
+    });
+    expect(mismatch.response.status).toBe(409);
+    expect(mismatch.body.error.code).toBe('workspace-generation-mismatch');
+  });
+
+  it('enters external-store-destroyed without recreating a deleted live root', async () => {
+    const base = await start();
+    const session = await call(base, '/session', { method: 'POST' });
+    const token = session.body.data.sessionToken as string;
+    const storeRoot = path.join(root!, 'store');
+    await rm(storeRoot, { recursive: true, force: true });
+
+    const state = await call(base, '/console', { token });
+    expect(state.response.status).toBe(409);
+    expect(state.body.error.code).toBe('external-store-destroyed');
+    await expect(access(storeRoot)).rejects.toThrow();
   });
 
   it('blocks unaccepted warnings, expired Preflight and foreign request fields', async () => {
@@ -480,9 +544,7 @@ describe('ProtoBridge Local Service', () => {
     expect(delivery.body.data.agentPrompt).toContain(
       '# ProtoBridge Evidence 驱动的页面实现',
     );
-    expect(delivery.body.data.agentPrompt).toContain(
-      '# Evidence Implementation Brief',
-    );
+    expect(delivery.body.data.agentPrompt).not.toContain('# Evidence Implementation Brief');
   });
 
   it('invalidates old sessions on restart and reports orphan Jobs as interrupted', async () => {

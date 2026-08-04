@@ -73,6 +73,7 @@ function state(jobs: CaptureJob[]): CaptureConsoleState {
   const completed = jobs.filter((item) => item.status === "completed");
   return {
     workspaceId: "pbwork-local",
+    generationId: "generation-test",
     jobs,
     bundles: completed.map((item) => ({
       bundle: {

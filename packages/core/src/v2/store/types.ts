@@ -151,6 +151,25 @@ export type BundleDeleteResult = {
 export type InitResult = {
   /** Jobs that were non-terminal at startup and have just been finalized as `interrupted`. */
   finalizedOrphanJobs: JobId[];
+  lifecycle: WorkspaceLifecycle;
+  migration?: WorkspaceLifecycleMigration;
+};
+
+export type WorkspaceLifecycle = {
+  storeLayoutVersion: number | 'legacy-unavailable';
+  generationId: string | 'legacy-unavailable';
+  createdAt: string;
+};
+
+export type WorkspaceLifecycleMigration = {
+  kind: 'legacy-generation-upgrade';
+  migratedAt: string;
+  generationId: string;
+};
+
+export type WorkspaceStoreResetResult = {
+  oldGenerationId: string;
+  newGenerationId: string;
 };
 
 /**
@@ -167,6 +186,9 @@ export interface V2Store {
   /** Ensures the on-disk layout exists and finalizes any Job left non-terminal by a previous crash. Must be called once before any other method. */
   init(): Promise<InitResult>;
   close(): Promise<void>;
+  getWorkspaceLifecycle(refresh?: boolean): Promise<WorkspaceLifecycle>;
+  assertHealthy(): Promise<void>;
+  resetWorkspace(expectedGenerationId: string): Promise<WorkspaceStoreResetResult>;
 
   createBundle(
     input: CreateBundleInput,

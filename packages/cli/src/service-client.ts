@@ -4,6 +4,8 @@ import {
   type HandoffPreview,
   type StoredPreflight,
   type WorkspaceResetResult,
+  type WorkspaceResetPlan,
+  type WorkspaceResetApplyRequest,
 } from '@proto-bridge/core/v2/service-contract';
 import type { AgentHandoff, CaptureJob } from '@proto-bridge/core/v2';
 import type { SelectionDraft } from '@proto-bridge/core/v2/capture';
@@ -22,7 +24,8 @@ export class CliServiceClientError extends Error {
 
 export type CliServiceClient = {
   baseUrl: string;
-  resetWorkspace(workspaceId: string): Promise<WorkspaceResetResult>;
+  previewWorkspaceReset(workspaceId: string): Promise<WorkspaceResetPlan>;
+  applyWorkspaceReset(input: WorkspaceResetApplyRequest): Promise<WorkspaceResetResult>;
   createPreflight(draft: SelectionDraft): Promise<StoredPreflight>;
   createJob(input: {
     preflightId: string;
@@ -116,11 +119,14 @@ export async function connectLocalService(
 
   return {
     baseUrl,
-    resetWorkspace(workspaceId) {
-      return authed('/workspace/reset', {
+    previewWorkspaceReset(workspaceId) {
+      return authed('/workspace/reset/preview', {
         method: 'POST',
         body: { workspaceId },
       });
+    },
+    applyWorkspaceReset(input) {
+      return authed('/workspace/reset/apply', { method: 'POST', body: input });
     },
     createPreflight(draft) {
       return authed('/preflights', { method: 'POST', body: { draft } });

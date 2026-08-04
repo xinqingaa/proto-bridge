@@ -42,9 +42,10 @@ export async function listEvidenceBundlesTool(
 export async function inspectEvidenceWorkspaceTool(
   context: ToolContext,
 ): Promise<unknown> {
+  const workspace = await context.evidence.workspace();
   return {
-    workspace: context.evidence.workspace(),
-    runtime: mcpRuntimeInfo(),
+    workspace,
+    runtime: mcpRuntimeInfo(workspace.generation),
     messages: [
       "MCP is bound to this logical Workspace; Store paths are never accepted by Evidence tools.",
       "Use capabilities and contract versions to verify compatibility before reading a Handoff index.",

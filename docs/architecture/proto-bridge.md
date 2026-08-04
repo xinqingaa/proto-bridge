@@ -58,6 +58,9 @@ Capture Driver 只报告观测结果。它不能用 Target 扫描或源码命名
 - 运行 Core JobHost；
 - 读取 Bundle、Snapshot、Evidence 和 Handoff View；
 - 服务重启后终结 orphan Job，并使旧 session 失效。
+- session/console 绑定 Workspace generation；generation 变化后撤销旧 session，并由 PBWork 清空 Workspace 范围缓存；
+- reset 使用 Store 外持久化的 `planId + generation + inventory digest` 两阶段 Contract，范围覆盖 Evidence、Delivery 与未导出 Review；
+- writer 校验 root/lock 身份，外部破坏后停止旧 writer，禁止在原进程内自动重建。
 
 Service Contract 来自 `@proto-bridge/core/v2/service-contract`。PBWork client 不应根据 HTTP 状态猜测第二套产品错误。
 

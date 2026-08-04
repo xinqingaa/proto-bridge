@@ -149,7 +149,7 @@ try {
     workspace.runtime?.build?.fingerprint?.startsWith("sha256:") &&
       workspace.runtime?.processStartedAt &&
       workspace.runtime?.contracts?.projectionVersion === 1 &&
-      workspace.runtime?.store?.generation === "legacy-unavailable" &&
+      workspace.runtime?.store?.generation?.startsWith("generation-") &&
       workspace.runtime?.capabilities?.includes("handoff-index") &&
       workspace.runtime?.capabilities?.includes("image-content-screenshot"),
     "MCP capability/build handshake is incomplete.",
@@ -540,6 +540,16 @@ try {
     "Progressive projection drifted after the active Snapshot changed.",
   );
 
+  const lifecycle = await writer.getWorkspaceLifecycle();
+  await writer.resetWorkspace(lifecycle.generationId);
+  await expectToolErrorCode(
+    client.request("tools/call", {
+      name: "read_handoff_index",
+      arguments: { handoffId: handoff.handoffId },
+    }),
+    "workspace-generation-mismatch",
+  );
+
   process.stdout.write(
     `MCP Evidence E2E passed: ${reference.BUNDLE_ID}/${fixedSnapshotId}\n`,
   );
@@ -637,9 +647,10 @@ async function expectToolErrorCode(promise, code) {
   try {
     await promise;
   } catch (error) {
+    const received = error?.data?.errorCode ?? error?.data?.code;
     assert(
-      error?.data?.code === code,
-      `Expected MCP error code ${code}, received ${error?.data?.code ?? "none"}.`,
+      received === code,
+      `Expected MCP error code ${code}, received ${received ?? "none"}.`,
     );
     return;
   }

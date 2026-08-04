@@ -83,6 +83,7 @@ import {
   jobPath,
   jobsDir,
   legacyBlobContentPath,
+  resetInProgressPath,
   runPath,
   runsDir,
   snapshotPath,
@@ -141,6 +142,19 @@ function readPngDimensions(bytes: Uint8Array): {
 
 type ActiveSnapshotPointer = { snapshotId: SnapshotId };
 
+type WorkspaceManifest = {
+  schemaVersion: number;
+  storeLayoutVersion?: number;
+  generationId?: string;
+  workspaceId: WorkspaceId;
+  createdAt: string;
+  migratedAt?: string;
+};
+
+type FileIdentity = { dev: number; ino: number };
+
+export const STORE_LAYOUT_VERSION = 3 as const;
+
 export type LocalFileStoreOptions = {
   /** Directory this Store persists into. Created if it does not exist. */
   root: string;
@@ -157,6 +171,8 @@ export type LocalFileStoreOptions = {
   maxBlobBytes?: number;
   /** Test/recovery hook invoked after immutable objects are durable but before the active pointer flips. */
   beforeActivateSnapshot?: () => Promise<void>;
+  /** Fault-injection hook after reset removal and before the new manifest is durable. */
+  beforeResetManifest?: () => Promise<void>;
 };
 
 /**
@@ -176,8 +192,13 @@ export class LocalFileStore implements V2Store {
   private readonly maxBytes: number | undefined;
   private readonly maxBlobBytes: number;
   private readonly beforeActivateSnapshot: (() => Promise<void>) | undefined;
+  private readonly beforeResetManifest: (() => Promise<void>) | undefined;
   private readonly readOnly: boolean;
   private releaseLock: (() => Promise<void>) | undefined;
+  private rootIdentity: FileIdentity | undefined;
+  private lockIdentity: FileIdentity | undefined;
+  private lifecycle: import('./types.js').WorkspaceLifecycle | undefined;
+  private resetInterrupted = false;
 
   constructor(options: LocalFileStoreOptions) {
     this.root = options.root;
@@ -185,16 +206,13 @@ export class LocalFileStore implements V2Store {
     this.maxBytes = options.maxBytes;
     this.maxBlobBytes = options.maxBlobBytes ?? 25 * 1024 * 1024;
     this.beforeActivateSnapshot = options.beforeActivateSnapshot;
+    this.beforeResetManifest = options.beforeResetManifest;
     this.readOnly = options.readOnly ?? false;
   }
 
   async init(): Promise<InitResult> {
     if (this.readOnly) {
-      const manifest = await readJson<{
-        schemaVersion: number;
-        workspaceId: WorkspaceId;
-        createdAt: string;
-      }>(workspaceManifestPath(this.root));
+      const manifest = await readJson<WorkspaceManifest>(workspaceManifestPath(this.root));
       if (!manifest) {
         throw new V2ContractError(
           'unknown-reference',
@@ -207,33 +225,51 @@ export class LocalFileStore implements V2Store {
           `Store root ${this.root} belongs to workspace ${manifest.workspaceId}, not ${this.workspaceId}.`,
         );
       }
-      return { finalizedOrphanJobs: [] };
+      this.lifecycle = lifecycleFromManifest(manifest);
+      return { finalizedOrphanJobs: [], lifecycle: this.lifecycle };
     }
     await mkdir(this.root, { recursive: true });
     this.releaseLock = await acquireWriterLock(this.root);
     try {
+      if (await readJson(resetInProgressPath(this.root))) {
+        throw new V2ContractError('workspace-resetting', 'A previous reset stopped before the new generation became durable; explicit reinitialize is required.');
+      }
       await rm(stagingDir(this.root), { recursive: true, force: true });
 
-      const manifest = await readJson<{
-        schemaVersion: number;
-        workspaceId: WorkspaceId;
-        createdAt: string;
-      }>(workspaceManifestPath(this.root));
+      const manifest = await readJson<WorkspaceManifest>(workspaceManifestPath(this.root));
+      let migration: import('./types.js').WorkspaceLifecycleMigration | undefined;
       if (!manifest) {
-        await writeJsonAtomic(workspaceManifestPath(this.root), {
-          schemaVersion: V2_SCHEMA_MAJOR,
-          workspaceId: this.workspaceId,
-          createdAt: new Date().toISOString(),
-        });
+        const created = newWorkspaceManifest(this.workspaceId);
+        await writeJsonAtomic(workspaceManifestPath(this.root), created);
+        this.lifecycle = lifecycleFromManifest(created);
       } else if (manifest.workspaceId !== this.workspaceId) {
         throw new V2ContractError(
           'workspace-mismatch',
           `Store root ${this.root} already belongs to workspace ${manifest.workspaceId}, not ${this.workspaceId}.`,
         );
+      } else if (!manifest.generationId || !manifest.storeLayoutVersion) {
+        const migratedAt = new Date().toISOString();
+        const upgraded: WorkspaceManifest = {
+          ...manifest,
+          storeLayoutVersion: STORE_LAYOUT_VERSION,
+          generationId: generateOperationalId('generation'),
+          migratedAt,
+        };
+        await writeJsonAtomic(workspaceManifestPath(this.root), upgraded);
+        this.lifecycle = lifecycleFromManifest(upgraded);
+        migration = {
+          kind: 'legacy-generation-upgrade',
+          migratedAt,
+          generationId: upgraded.generationId!,
+        };
+      } else {
+        this.lifecycle = lifecycleFromManifest(manifest);
       }
+      this.rootIdentity = await fileIdentity(this.root);
+      this.lockIdentity = await fileIdentity(path.join(this.root, '.lock'));
 
       const finalizedOrphanJobs = await this.finalizeOrphanJobs();
-      return { finalizedOrphanJobs };
+      return { finalizedOrphanJobs, lifecycle: this.lifecycle!, ...(migration ? { migration } : {}) };
     } catch (error) {
       await this.close();
       throw error;
@@ -243,33 +279,82 @@ export class LocalFileStore implements V2Store {
   async close(): Promise<void> {
     await this.releaseLock?.();
     this.releaseLock = undefined;
+    this.lockIdentity = undefined;
   }
 
-  /** Clears this Workspace while preserving the writer lock and root manifest. */
-  async resetWorkspace(): Promise<void> {
-    this.assertWritableStore();
+  async getWorkspaceLifecycle(refresh = false): Promise<import('./types.js').WorkspaceLifecycle> {
+    if (this.lifecycle && !refresh) return this.lifecycle;
+    const manifest = await readJson<WorkspaceManifest>(workspaceManifestPath(this.root));
+    if (!manifest) {
+      throw new V2ContractError('unknown-reference', `Workspace ${this.root} is not initialized.`);
+    }
+    this.lifecycle = lifecycleFromManifest(manifest);
+    return this.lifecycle;
+  }
+
+  async assertHealthy(): Promise<void> {
+    if (this.resetInterrupted) {
+      throw new V2ContractError('workspace-resetting', 'Reset was interrupted after scope removal; stop this writer and explicitly reinitialize the Workspace.');
+    }
+    if (this.readOnly) {
+      const manifest = await readJson<WorkspaceManifest>(workspaceManifestPath(this.root));
+      if (!manifest) throw new V2ContractError('external-store-destroyed', `Workspace root ${this.root} no longer exists.`);
+      return;
+    }
+    if (!this.releaseLock || !this.rootIdentity || !this.lockIdentity) {
+      throw new V2ContractError('writer-lock-lost', 'Workspace writer is not initialized or no longer owns its lock.');
+    }
+    const currentRoot = await fileIdentity(this.root).catch(() => undefined);
+    if (!currentRoot || !sameIdentity(currentRoot, this.rootIdentity)) {
+      throw new V2ContractError('external-store-destroyed', `Workspace root ${this.root} was deleted or replaced while the writer was active.`);
+    }
+    const currentLock = await fileIdentity(path.join(this.root, '.lock')).catch(() => undefined);
+    if (!currentLock || !sameIdentity(currentLock, this.lockIdentity)) {
+      throw new V2ContractError('writer-lock-lost', `Workspace writer lock for ${this.root} was deleted or replaced.`);
+    }
+  }
+
+  /** Clears this Workspace while preserving the writer lock and creating a non-reusable generation. */
+  async resetWorkspace(expectedGenerationId: string): Promise<import('./types.js').WorkspaceStoreResetResult> {
+    await this.assertWritableStore();
+    const current = await this.getWorkspaceLifecycle();
+    if (current.generationId === 'legacy-unavailable' || current.generationId !== expectedGenerationId) {
+      throw new V2ContractError('workspace-generation-mismatch', `Expected generation ${expectedGenerationId}, current generation is ${current.generationId}.`);
+    }
+    const nextManifest = newWorkspaceManifest(this.workspaceId);
+    await writeJsonAtomic(resetInProgressPath(this.root), {
+      oldGenerationId: current.generationId,
+      newGenerationId: nextManifest.generationId,
+      startedAt: new Date().toISOString(),
+    });
     const entries = await readdir(this.root, { withFileTypes: true });
     await Promise.all(
       entries
-        .filter((entry) => entry.name !== '.lock')
+        .filter((entry) => !['.lock', '.reset-in-progress.json'].includes(entry.name))
         .map((entry) =>
           rm(path.join(this.root, entry.name), { recursive: true, force: true }),
         ),
     );
-    await writeJsonAtomic(workspaceManifestPath(this.root), {
-      schemaVersion: V2_SCHEMA_MAJOR,
-      workspaceId: this.workspaceId,
-      createdAt: new Date().toISOString(),
-    });
+    try {
+      await this.beforeResetManifest?.();
+      await writeJsonAtomic(workspaceManifestPath(this.root), nextManifest);
+      await rm(resetInProgressPath(this.root), { force: true });
+    } catch (error) {
+      this.resetInterrupted = true;
+      throw error;
+    }
+    this.lifecycle = lifecycleFromManifest(nextManifest);
+    return { oldGenerationId: current.generationId, newGenerationId: this.lifecycle.generationId as string };
   }
 
-  private assertWritableStore(): void {
+  private async assertWritableStore(): Promise<void> {
     if (this.readOnly) {
       throw new V2ContractError(
         'unsafe-input',
         'This LocalFileStore instance is open in read-only mode.',
       );
     }
+    await this.assertHealthy();
   }
 
   // ---------------------------------------------------------------- Bundle
@@ -277,7 +362,7 @@ export class LocalFileStore implements V2Store {
   async createBundle(
     input: CreateBundleInput,
   ): Promise<{ bundle: Bundle; run: Run; snapshot: BundleSnapshot }> {
-    this.assertWritableStore();
+    await this.assertWritableStore();
     if (await this.getBundle(input.bundleId)) {
       throw new V2ContractError(
         'immutable-violation',
@@ -444,7 +529,7 @@ export class LocalFileStore implements V2Store {
   }
 
   async archiveBundle(bundleId: BundleId): Promise<Bundle> {
-    this.assertWritableStore();
+    await this.assertWritableStore();
     const bundle = await this.requireBundle(bundleId);
     if (bundle.status === 'archived') return bundle;
     if (bundle.status === 'trashed') {
@@ -470,7 +555,7 @@ export class LocalFileStore implements V2Store {
   }
 
   async trashBundle(bundleId: BundleId): Promise<Bundle> {
-    this.assertWritableStore();
+    await this.assertWritableStore();
     const bundle = await this.requireBundle(bundleId);
     if (bundle.status === 'trashed') return bundle;
     const activeJobs = (await this.listNonTerminalJobs()).filter(
@@ -492,7 +577,7 @@ export class LocalFileStore implements V2Store {
   }
 
   async restoreBundle(bundleId: BundleId): Promise<Bundle> {
-    this.assertWritableStore();
+    await this.assertWritableStore();
     const bundle = await this.requireBundle(bundleId);
     if (bundle.status !== 'trashed') return bundle;
     const { statusBeforeTrash, ...rest } = bundle;
@@ -559,7 +644,7 @@ export class LocalFileStore implements V2Store {
   }
 
   async applyDeleteBundles(plan: import('./types.js').BundleDeletePlan) {
-    this.assertWritableStore();
+    await this.assertWritableStore();
     if (plan.workspaceId !== this.workspaceId) {
       throw new V2ContractError(
         'workspace-mismatch',
@@ -597,7 +682,7 @@ export class LocalFileStore implements V2Store {
   async forkBundle(
     input: ForkBundleInput,
   ): Promise<{ bundle: Bundle; snapshot: BundleSnapshot }> {
-    this.assertWritableStore();
+    await this.assertWritableStore();
     if (await this.getBundle(input.bundleId)) {
       throw new V2ContractError(
         'immutable-violation',
@@ -718,7 +803,7 @@ export class LocalFileStore implements V2Store {
   // -------------------------------------------------------------------- Job
 
   async createJob(input: CreateJobInput): Promise<CaptureJob> {
-    this.assertWritableStore();
+    await this.assertWritableStore();
     const bundle = await this.getBundle(input.bundleId);
     if (bundle) {
       this.requireWritableBundle(bundle);
@@ -758,7 +843,7 @@ export class LocalFileStore implements V2Store {
   }
 
   async startJob(jobId: JobId, runId: RunId): Promise<CaptureJob> {
-    this.assertWritableStore();
+    await this.assertWritableStore();
     const job = await this.requireJob(jobId);
     assertJobStatusTransition(job.status, 'discovering');
     const now = new Date().toISOString();
@@ -780,7 +865,7 @@ export class LocalFileStore implements V2Store {
     jobId: JobId,
     status: Exclude<ExecutingJobStatus, 'discovering'>,
   ): Promise<CaptureJob> {
-    this.assertWritableStore();
+    await this.assertWritableStore();
     const job = await this.requireJob(jobId);
     assertJobStatusTransition(job.status, status);
     const now = new Date().toISOString();
@@ -797,7 +882,7 @@ export class LocalFileStore implements V2Store {
     jobId: JobId,
     entry: JobJournalEntryInput,
   ): Promise<CaptureJob> {
-    this.assertWritableStore();
+    await this.assertWritableStore();
     const job = await this.requireJob(jobId);
     if (isTerminalJobStatus(job.status)) {
       throw new V2ContractError(
@@ -817,7 +902,7 @@ export class LocalFileStore implements V2Store {
     jobId: JobId,
     status: TerminalJobStatus,
   ): Promise<CaptureJob> {
-    this.assertWritableStore();
+    await this.assertWritableStore();
     const job = await this.requireJob(jobId);
     assertJobStatusTransition(job.status, status);
     const now = new Date().toISOString();
@@ -1004,7 +1089,7 @@ export class LocalFileStore implements V2Store {
   // ---------------------------------------------------------------- Commit
 
   async commitRun(input: CommitRunInput): Promise<CommitRunResult> {
-    this.assertWritableStore();
+    await this.assertWritableStore();
     const { bundleId, coverage } = input;
     const run = this.parseOrThrow(Run, input.run, 'Run');
     if (run.bundleId !== bundleId) {
@@ -1146,7 +1231,7 @@ export class LocalFileStore implements V2Store {
   // ------------------------------------------------------- Catalog / Blob
 
   async putCatalogRevision(revision: CatalogRevision): Promise<void> {
-    this.assertWritableStore();
+    await this.assertWritableStore();
     const parsed = this.parseOrThrow(
       CatalogRevision,
       revision,
@@ -1201,7 +1286,7 @@ export class LocalFileStore implements V2Store {
   }
 
   async putIssue(bundleId: BundleId, issue: Issue): Promise<void> {
-    this.assertWritableStore();
+    await this.assertWritableStore();
     const bundle = await this.requireBundle(bundleId);
     this.requireWritableBundle(bundle);
     const parsed = this.parseOrThrow(Issue, issue, 'Issue');
@@ -1236,7 +1321,7 @@ export class LocalFileStore implements V2Store {
   }
 
   async putBlob(input: PutBlobInput): Promise<BlobRecord> {
-    this.assertWritableStore();
+    await this.assertWritableStore();
     const bundle = await this.requireBundle(input.bundleId);
     this.requireWritableBundle(bundle);
     if (input.bytes.byteLength > this.maxBlobBytes) {
@@ -1427,7 +1512,7 @@ export class LocalFileStore implements V2Store {
   async createStalenessReport(
     input: CreateStalenessReportInput,
   ): Promise<StalenessReport> {
-    this.assertWritableStore();
+    await this.assertWritableStore();
     const bundle = await this.requireBundle(input.bundleId);
     const snapshot = await this.getSnapshot(input.bundleId, input.snapshotId);
     if (!snapshot)
@@ -1488,7 +1573,7 @@ export class LocalFileStore implements V2Store {
   }
 
   async putStalenessReport(report: StalenessReport): Promise<void> {
-    this.assertWritableStore();
+    await this.assertWritableStore();
     const parsed = this.parseOrThrow(
       StalenessReport,
       report,
@@ -1538,7 +1623,7 @@ export class LocalFileStore implements V2Store {
   }
 
   async putHandoff(handoff: AgentHandoff): Promise<void> {
-    this.assertWritableStore();
+    await this.assertWritableStore();
     const parsed = this.parseOrThrow(AgentHandoff, handoff, 'AgentHandoff');
     if (parsed.workspaceId !== this.workspaceId) {
       throw new V2ContractError(
@@ -1719,7 +1804,7 @@ export class LocalFileStore implements V2Store {
   }
 
   async applyClean(plan: CleanPlan): Promise<CleanResult> {
-    this.assertWritableStore();
+    await this.assertWritableStore();
     if (plan.workspaceId !== this.workspaceId) {
       throw new V2ContractError(
         'workspace-mismatch',
@@ -2103,4 +2188,33 @@ export class LocalFileStore implements V2Store {
     if (!result.success) throw invalidSchemaError(kind, result.error!);
     return result.data as T;
   }
+}
+
+function newWorkspaceManifest(workspaceId: WorkspaceId): WorkspaceManifest {
+  return {
+    schemaVersion: V2_SCHEMA_MAJOR,
+    storeLayoutVersion: STORE_LAYOUT_VERSION,
+    generationId: generateOperationalId('generation'),
+    workspaceId,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function lifecycleFromManifest(
+  manifest: WorkspaceManifest,
+): import('./types.js').WorkspaceLifecycle {
+  return {
+    storeLayoutVersion: manifest.storeLayoutVersion ?? 'legacy-unavailable',
+    generationId: manifest.generationId ?? 'legacy-unavailable',
+    createdAt: manifest.createdAt,
+  };
+}
+
+async function fileIdentity(filePath: string): Promise<FileIdentity> {
+  const details = await stat(filePath);
+  return { dev: details.dev, ino: details.ino };
+}
+
+function sameIdentity(left: FileIdentity, right: FileIdentity): boolean {
+  return left.dev === right.dev && left.ino === right.ino;
 }

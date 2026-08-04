@@ -37,6 +37,7 @@ export type LocalServiceSession = {
   serviceInstanceId: string;
   sessionToken: string;
   workspaceId: string;
+  generationId: string | 'legacy-unavailable';
   expiresAt: string;
   finalizedOrphanJobIds: string[];
 };
@@ -55,19 +56,52 @@ export type BundleSummary = {
 
 export type CaptureConsoleState = {
   workspaceId: string;
+  generationId: string | 'legacy-unavailable';
   bundles: BundleSummary[];
   jobs: CaptureJob[];
 };
 
-export type WorkspaceResetRequest = {
+export type WorkspaceResetScopeSummary = {
+  objects: number;
+  bytes: number;
+};
+
+export type WorkspaceResetPlan = {
+  planId: string;
   workspaceId: string;
+  generationId: string;
+  inventoryDigest: string;
+  evidence: WorkspaceResetScopeSummary;
+  deliveries: WorkspaceResetScopeSummary;
+  reviews: WorkspaceResetScopeSummary;
+  runningTasks: string[];
+  createdAt: string;
+  expiresAt: string;
+  irreversibleWarnings: string[];
+};
+
+export type WorkspaceResetPreviewRequest = {
+  workspaceId: string;
+};
+
+export type WorkspaceResetApplyRequest = {
+  workspaceId: string;
+  generationId: string;
+  planId: string;
 };
 
 export type WorkspaceResetResult = {
   workspaceId: string;
-  removedBundleIds: string[];
-  removedStoreBytes: number;
-  deliveriesCleared: boolean;
+  oldGenerationId: string;
+  newGenerationId: string;
+  actualRemoved: {
+    evidence: WorkspaceResetScopeSummary;
+    deliveries: WorkspaceResetScopeSummary;
+    reviews: WorkspaceResetScopeSummary;
+  };
+  revokedSessionCount: number;
+  stoppedJobIds: string[];
+  stoppedReviewRunIds: string[];
 };
 
 export type { EvidenceInventory };

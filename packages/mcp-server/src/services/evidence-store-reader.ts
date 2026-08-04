@@ -98,6 +98,7 @@ export function evidenceScreenshotUri(
 export class EvidenceStoreReader {
   private store: LocalFileStore | undefined;
   private initPromise: Promise<LocalFileStore> | undefined;
+  private boundGeneration: string | 'legacy-unavailable' | undefined;
 
   constructor(private readonly options: ServerOptions) {}
 
@@ -140,19 +141,22 @@ export class EvidenceStoreReader {
     );
   }
 
-  workspace(): {
+  async workspace(): Promise<{
     workspaceId: string;
     configuredStoreRoot: boolean;
-  } {
+    generation: string | 'legacy-unavailable';
+  }> {
     if (!this.options.workspaceId) {
       throw new V2ContractError(
         "workspace-mismatch",
         "MCP Evidence Reader is not connected to a Workspace.",
       );
     }
+    const store = await this.requireStore();
     return {
       workspaceId: WorkspaceId.parse(this.options.workspaceId),
       configuredStoreRoot: Boolean(this.options.storeRoot),
+      generation: (await store.getWorkspaceLifecycle()).generationId,
     };
   }
 
@@ -494,7 +498,14 @@ export class EvidenceStoreReader {
   }
 
   private async requireStore(): Promise<LocalFileStore> {
-    if (this.store) return this.store;
+    if (this.store) {
+      await this.store.assertHealthy();
+      const current = await this.store.getWorkspaceLifecycle(true);
+      if (this.boundGeneration !== undefined && current.generationId !== this.boundGeneration) {
+        throw new V2ContractError('workspace-generation-mismatch', `MCP is bound to generation ${this.boundGeneration}; current Workspace generation is ${current.generationId}. Restart MCP and use new fixed references.`);
+      }
+      return this.store;
+    }
     if (this.initPromise) return this.initPromise;
     const { storeRoot, workspaceId } = this.options;
     if (!storeRoot || !workspaceId) {
@@ -509,7 +520,8 @@ export class EvidenceStoreReader {
         workspaceId: WorkspaceId.parse(workspaceId),
         readOnly: true,
       });
-      await store.init();
+      const initialized = await store.init();
+      this.boundGeneration = initialized.lifecycle.generationId;
       this.store = store;
       return store;
     })();

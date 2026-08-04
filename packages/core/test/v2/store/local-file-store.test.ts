@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -238,8 +238,9 @@ describe('LocalFileStore: concurrent writer protection', () => {
       workspaceId: WORKSPACE_ID,
       readOnly: true,
     });
-    await expect(reader.init()).resolves.toEqual({
+    await expect(reader.init()).resolves.toMatchObject({
       finalizedOrphanJobs: [],
+      lifecycle: { storeLayoutVersion: 3, generationId: expect.stringMatching(/^generation-/) },
     });
     await expect(
       reader.getSnapshot(BUNDLE_ID, active!.snapshotId),
@@ -265,6 +266,96 @@ describe('LocalFileStore: workspace mismatch', () => {
 
     const other = new LocalFileStore({ root, workspaceId: 'some-other-workspace' });
     await expect(other.init()).rejects.toThrow(V2ContractError);
+  });
+});
+
+describe('LocalFileStore: Workspace generation and root identity', () => {
+  it('keeps generation on reopen and creates a new generation only after bound reset', async () => {
+    const store = await freshStoreWithBundle();
+    const before = await store.getWorkspaceLifecycle();
+    await store.close();
+
+    const reopened = new LocalFileStore({ root, workspaceId: WORKSPACE_ID });
+    const initialized = await reopened.init();
+    expect(initialized.lifecycle.generationId).toBe(before.generationId);
+    const reset = await reopened.resetWorkspace(before.generationId as string);
+    expect(reset.oldGenerationId).toBe(before.generationId);
+    expect(reset.newGenerationId).not.toBe(before.generationId);
+    await expect(reopened.getBundle(BUNDLE_ID)).resolves.toBeUndefined();
+    await reopened.close();
+  });
+
+  it('reports legacy generation to readers and migrates it once under the writer lock', async () => {
+    const store = await freshStoreWithBundle();
+    await store.close();
+    const manifestPath = path.join(root, 'workspace.json');
+    const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
+    delete manifest.generationId;
+    delete manifest.storeLayoutVersion;
+    await writeFile(manifestPath, `${JSON.stringify(manifest)}\n`, 'utf8');
+
+    const reader = new LocalFileStore({ root, workspaceId: WORKSPACE_ID, readOnly: true });
+    const legacy = await reader.init();
+    expect(legacy.lifecycle.generationId).toBe('legacy-unavailable');
+    await reader.close();
+
+    const writer = new LocalFileStore({ root, workspaceId: WORKSPACE_ID });
+    const migrated = await writer.init();
+    expect(migrated.migration).toMatchObject({ kind: 'legacy-generation-upgrade' });
+    expect(await writer.getBundle(BUNDLE_ID)).toBeDefined();
+    const generation = migrated.lifecycle.generationId;
+    await writer.close();
+
+    const again = new LocalFileStore({ root, workspaceId: WORKSPACE_ID });
+    const reopened = await again.init();
+    expect(reopened.lifecycle.generationId).toBe(generation);
+    expect(reopened.migration).toBeUndefined();
+    await again.close();
+  });
+
+  it('fails terminally when an active writer root is externally deleted and does not recreate it', async () => {
+    const store = await freshStoreWithBundle();
+    await rm(root, { recursive: true, force: true });
+    await expect(store.createBundle({
+      bundleId: 'bundle-after-destroy',
+      prototypeId: PROTOTYPE_ID,
+      run: { ...RUN_1, bundleId: 'bundle-after-destroy' },
+      revisions: [],
+      coverage: RUN_1.coverage,
+    })).rejects.toMatchObject({ code: 'external-store-destroyed' });
+    await expect(access(root)).rejects.toThrow();
+    await store.close();
+  });
+
+  it('detects writer lock removal before the next mutation', async () => {
+    const store = await freshStoreWithBundle();
+    await rm(path.join(root, '.lock'), { force: true });
+    await expect(store.archiveBundle(BUNDLE_ID)).rejects.toMatchObject({ code: 'writer-lock-lost' });
+    await store.close();
+  });
+
+  it('leaves an interrupted reset terminal until explicit reinitialize', async () => {
+    const initial = await freshStoreWithBundle();
+    const generation = (await initial.getWorkspaceLifecycle()).generationId as string;
+    await initial.close();
+    const crashing = new LocalFileStore({
+      root,
+      workspaceId: WORKSPACE_ID,
+      beforeResetManifest: async () => { throw new Error('simulated reset crash'); },
+    });
+    await crashing.init();
+    await expect(crashing.resetWorkspace(generation)).rejects.toThrow('simulated reset crash');
+    await expect(crashing.createJob({
+      bundleId: BUNDLE_ID,
+      selection: RUN_1.selection as NormalizedSelection,
+      inputVersion: RUN_1.inputVersion,
+    })).rejects.toMatchObject({ code: 'workspace-resetting' });
+    await expect(access(path.join(root, '.reset-in-progress.json'))).resolves.toBeUndefined();
+    await expect(access(path.join(root, 'workspace.json'))).rejects.toThrow();
+    await crashing.close();
+
+    const restarted = new LocalFileStore({ root, workspaceId: WORKSPACE_ID });
+    await expect(restarted.init()).rejects.toMatchObject({ code: 'workspace-resetting' });
   });
 });
 

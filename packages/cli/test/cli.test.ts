@@ -276,6 +276,27 @@ describe('ProtoBridge CLI', () => {
     }
   });
 
+  it('requires explicit reinitialize after external Store destruction', async () => {
+    const root = await tempRoot();
+    const output = recorder(root);
+    await runCli([
+      'workspace', 'init', '--workspace', 'cli-reinitialize-test', '--runtime', 'http://127.0.0.1:3977',
+    ], output.io);
+    const storeRoot = path.join(root, '.proto-bridge', 'store');
+    await rm(storeRoot, { recursive: true, force: true });
+
+    expect(await runCli(['workspace', 'doctor', 'repair', '--json'], output.io)).toBe(CLI_EXIT_CODES.error);
+    await expect(access(storeRoot)).rejects.toThrow();
+    expect(await runCli([
+      'workspace', 'reinitialize', '--confirm-destroyed', 'cli-reinitialize-test', '--json',
+    ], output.io)).toBe(CLI_EXIT_CODES.ok);
+    expect(JSON.parse(output.stdout.at(-1) ?? '{}')).toMatchObject({
+      workspaceId: 'cli-reinitialize-test',
+      reinitialized: true,
+      lifecycle: { storeLayoutVersion: 3 },
+    });
+  });
+
   it('previews Workspace reset, then clears Store and deliveries while preserving config', async () => {
     const root = await tempRoot();
     const output = recorder(root);
@@ -299,7 +320,8 @@ describe('ProtoBridge CLI', () => {
     expect(
       await runCli(['workspace', 'reset', '--json'], output.io),
     ).toBe(CLI_EXIT_CODES.ok);
-    expect(JSON.parse(output.stdout.at(-1) ?? '{}')).toMatchObject({
+    const preview = JSON.parse(output.stdout.at(-1) ?? '{}');
+    expect(preview).toMatchObject({
       workspaceId: 'cli-reset-test',
       applied: false,
     });
@@ -307,7 +329,7 @@ describe('ProtoBridge CLI', () => {
 
     expect(
       await runCli(
-        ['workspace', 'reset', '--apply', '--json'],
+        ['workspace', 'reset', '--apply', '--plan-id', preview.planId, '--generation', preview.generationId, '--json'],
         output.io,
       ),
     ).toBe(CLI_EXIT_CODES.ok);
@@ -354,8 +376,10 @@ describe('ProtoBridge CLI', () => {
       config.service.port = address.port;
       await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`);
 
+      expect(await runCli(['workspace', 'reset', '--json'], output.io)).toBe(CLI_EXIT_CODES.ok);
+      const preview = JSON.parse(output.stdout.at(-1) ?? '{}');
       const resetExit = await runCli(
-        ['workspace', 'reset', '--apply', '--json'],
+        ['workspace', 'reset', '--apply', '--plan-id', preview.planId, '--generation', preview.generationId, '--json'],
         output.io,
       );
       expect(resetExit, output.stderr.join('\n')).toBe(CLI_EXIT_CODES.ok);

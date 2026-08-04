@@ -10,7 +10,7 @@ import {
 export const MCP_TOOL_CONTRACT_VERSION = 1 as const;
 export const MCP_PROCESS_STARTED_AT = new Date().toISOString();
 
-export function mcpRuntimeInfo() {
+export function mcpRuntimeInfo(generation: string | 'legacy-unavailable' = 'legacy-unavailable') {
   return {
     build: {
       packageVersion: MCP_PACKAGE_VERSION,
@@ -23,7 +23,7 @@ export function mcpRuntimeInfo() {
     },
     store: {
       layout: 'local-file-store/content-addressed-blobs-v2',
-      generation: 'legacy-unavailable',
+      generation,
     },
     capabilities: [
       ...CONSUMER_PROJECTION_CAPABILITIES,

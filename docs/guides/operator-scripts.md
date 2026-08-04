@@ -59,10 +59,18 @@ pnpm pb -- preflight \
 
 ```bash
 pnpm pb -- workspace reset
-pnpm pb -- workspace reset --apply
+pnpm pb -- workspace reset --apply --plan-id <preview-plan-id> --generation <preview-generation>
 ```
 
-该命令清除当前配置指向的 Store 和同级 `deliveries`，保留 `proto-bridge.json`，并立即创建新的 Workspace manifest。之后可直接重新 `deliver`。默认不带 `--apply` 时不会删除数据；`pnpm pb:up` 正在运行时，CLI 会自动通过 Local Service 取消未结束任务并完成重置，不需要手工停服务。
+preview 逐类披露 Evidence、`deliveries`、当前 Workspace 的未导出 Review、运行任务、inventory digest 和不可恢复警告，并把 plan audit 保存到 Store root 外。apply 必须带回同一 `planId + generation`；期间新增或修改任何对象都会返回 `reset-plan-drift`。成功后保留 `proto-bridge.json`/plan audit，创建不可复用的新 generation，并使旧 session/MCP task 终止。`pnpm pb:up` 存活时 CLI 自动经 Local Service drain。
+
+若运行中的 Store root/lock 被外部删除或替换，Service 返回 `external-store-destroyed` / `writer-lock-lost`，不会自动创建目录。停止 Service 后先运行 `pnpm pb -- workspace doctor repair`；root 整体丢失时 repair 会拒绝，只能明确运行：
+
+```bash
+pnpm pb -- workspace reinitialize --confirm-destroyed <workspaceId>
+```
+
+reinitialize 创建新 generation，不能恢复旧 Handoff。固定验收 Workspace 禁止 reset/reinitialize。
 
 ## 启动 MCP
 

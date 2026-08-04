@@ -35,8 +35,11 @@ import {
 import { RuntimeCaptureManifest } from '@proto-bridge/core/v2/runtime-contract';
 import {
   LocalFileStore,
+  createWorkspaceResetPlan,
   deliveryRootFromStoreRoot,
   generateOperationalId,
+  reviewsRootFromStoreRoot,
+  validateWorkspaceResetPlan,
   writeDeliveryReceipt,
 } from '@proto-bridge/core/v2/store';
 import { ProtoBridgeLocalService } from '@proto-bridge/local-service';
@@ -110,7 +113,9 @@ async function execute(args: CliArgs, io: CliIo): Promise<number> {
   if (command === 'workspace init') return initWorkspace(args, io);
   const loaded = await loadCliConfig(flag(args, 'config'), io.cwd);
   if (command === 'workspace doctor') return workspaceDoctor(args, io, loaded);
+  if (command === 'workspace doctor repair') return workspaceDoctorRepair(args, io, loaded);
   if (command === 'workspace reset') return workspaceReset(args, io, loaded);
+  if (command === 'workspace reinitialize') return workspaceReinitialize(args, io, loaded);
   if (command === 'preflight') return preflightCommand(args, io, loaded);
   if (command === 'capture run') return captureCommand(args, io, loaded);
   if (command === 'job status') return jobStatus(args, io, loaded);
@@ -187,12 +192,12 @@ async function initWorkspace(args: CliArgs, io: CliIo): Promise<number> {
       ? {}
       : { maxBytes: config.store.maxBytes }),
   });
-  await store.init();
+  const initialized = await store.init();
   await store.close();
   emit(
     io,
     booleanFlag(args, 'json'),
-    { configPath, config },
+    { configPath, config, lifecycle: initialized.lifecycle },
     `Created ${configPath}`,
   );
   return EXIT.ok;
@@ -213,6 +218,7 @@ async function workspaceDoctor(
       configPath: loaded.path,
       storeRoot: loaded.storeRoot,
       runtimeBaseUrl: loaded.value.runtime.baseUrl,
+      lifecycle: await store.getWorkspaceLifecycle(),
       capacity: await store.getCapacity(),
       bundles: (await store.listBundles()).length,
       jobs: (await store.listJobs()).length,
@@ -229,6 +235,74 @@ async function workspaceDoctor(
   }
 }
 
+async function workspaceDoctorRepair(
+  args: CliArgs,
+  io: CliIo,
+  loaded: LoadedCliConfig,
+): Promise<number> {
+  const manifestPath = path.join(loaded.storeRoot, 'workspace.json');
+  try {
+    await access(manifestPath);
+  } catch {
+    throw new V2ContractError('external-store-destroyed', 'Workspace manifest/root is missing; repair cannot recreate Evidence identity. Use workspace reinitialize with explicit confirmation.');
+  }
+  const writer = await openStore(loaded);
+  try {
+    const lifecycle = await writer.getWorkspaceLifecycle();
+    emit(io, booleanFlag(args, 'json'), {
+      workspaceId: loaded.value.workspaceId,
+      lifecycle,
+      repaired: true,
+      evidenceIdentityChanged: false,
+    }, `Workspace ${loaded.value.workspaceId} runtime state is healthy; Evidence identity was not changed.`);
+    return EXIT.ok;
+  } finally {
+    await writer.close();
+  }
+}
+
+async function workspaceReinitialize(
+  args: CliArgs,
+  io: CliIo,
+  loaded: LoadedCliConfig,
+): Promise<number> {
+  if (requiredFlag(args, 'confirm-destroyed') !== loaded.value.workspaceId) {
+    throw new V2ContractError('unsafe-input', `--confirm-destroyed must exactly equal ${loaded.value.workspaceId}.`);
+  }
+  if (await probeLocalService(loaded)) {
+    throw new V2ContractError('writer-lock-held', 'Stop the active Local Service before reinitializing a destroyed Workspace.');
+  }
+  let rootExists = true;
+  try { await access(loaded.storeRoot); } catch (error) {
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') rootExists = false;
+    else throw error;
+  }
+  if (rootExists) {
+    const marker = path.join(loaded.storeRoot, '.reset-in-progress.json');
+    let interruptedReset = true;
+    try { await access(marker); } catch { interruptedReset = false; }
+    let manifestExists = true;
+    try { await access(path.join(loaded.storeRoot, 'workspace.json')); } catch { manifestExists = false; }
+    if (!interruptedReset || manifestExists) {
+      throw new V2ContractError('unsafe-input', 'Workspace Store still exists; use generation-bound workspace reset instead of reinitialize.');
+    }
+    await rm(loaded.storeRoot, { recursive: true, force: true });
+  }
+  const writer = await openStore(loaded);
+  try {
+    const lifecycle = await writer.getWorkspaceLifecycle();
+    emit(io, booleanFlag(args, 'json'), {
+      workspaceId: loaded.value.workspaceId,
+      lifecycle,
+      reinitialized: true,
+      oldEvidenceRecoverable: false,
+    }, `Reinitialized ${loaded.value.workspaceId} with generation ${lifecycle.generationId}.`);
+    return EXIT.ok;
+  } finally {
+    await writer.close();
+  }
+}
+
 async function workspaceReset(
   args: CliArgs,
   io: CliIo,
@@ -236,6 +310,7 @@ async function workspaceReset(
 ): Promise<number> {
   const storeRoot = path.resolve(loaded.storeRoot);
   const deliveriesRoot = deliveryRootFromStoreRoot(storeRoot);
+  const reviewsRoot = reviewsRootFromStoreRoot(storeRoot, loaded.value.workspaceId);
   const filesystemRoot = path.parse(storeRoot).root;
   if (
     storeRoot === filesystemRoot ||
@@ -249,73 +324,88 @@ async function workspaceReset(
     );
   }
 
-  let bundleIds: string[] = [];
-  let usedBytes = 0;
-  try {
-    const store = await openStore(loaded, true);
-    try {
-      bundleIds = (await store.listBundles()).map((bundle) => bundle.bundleId);
-      usedBytes = (await store.getCapacity()).usedBytes;
-    } finally {
-      await store.close();
-    }
-  } catch (error) {
-    if (
-      !(error instanceof V2ContractError) ||
-      error.code !== 'unknown-reference'
-    ) {
-      throw error;
-    }
-  }
-
-  const preview = {
-    workspaceId: loaded.value.workspaceId,
-    storeRoot,
-    deliveriesRoot,
-    bundleIds,
-    usedBytes,
-    applied: false,
-    warning:
-      'Applying this reset permanently removes all captured Evidence, Screenshots, Bundles, Snapshots, Handoffs and Delivery artifacts for this Workspace. The config file is preserved.',
-  };
+  const viaService = await probeLocalService(loaded);
   if (!booleanFlag(args, 'apply')) {
+    let plan;
+    if (viaService) {
+      plan = await (await connectLocalService(loaded)).previewWorkspaceReset(loaded.value.workspaceId);
+    } else {
+      const writer = await openStore(loaded);
+      try {
+        const lifecycle = await writer.getWorkspaceLifecycle();
+        if (lifecycle.generationId === 'legacy-unavailable') {
+          throw new V2ContractError('workspace-generation-mismatch', 'Workspace writer did not upgrade the legacy generation.');
+        }
+        plan = await createWorkspaceResetPlan({
+          workspaceId: loaded.value.workspaceId,
+          generationId: lifecycle.generationId,
+          storeRoot,
+          deliveriesRoot,
+          reviewsRoot,
+          runningTasks: (await writer.listNonTerminalJobs()).map((job) => `job:${job.jobId}`),
+        });
+      } finally {
+        await writer.close();
+      }
+    }
     emit(
       io,
       booleanFlag(args, 'json'),
-      preview,
+      { ...plan, storeRoot, deliveriesRoot, reviewsRoot, applied: false, viaService },
       [
         `Workspace reset preview for ${loaded.value.workspaceId}`,
-        `  Store       ${storeRoot}`,
-        `  Deliveries  ${deliveriesRoot}`,
-        `  Bundles     ${bundleIds.length}`,
-        `  Store bytes ${usedBytes}`,
+        `  Plan        ${plan.planId}`,
+        `  Generation  ${plan.generationId}`,
+        `  Evidence    ${plan.evidence.objects} objects / ${plan.evidence.bytes} bytes`,
+        `  Deliveries  ${plan.deliveries.objects} objects / ${plan.deliveries.bytes} bytes`,
+        `  Reviews     ${plan.reviews.objects} objects / ${plan.reviews.bytes} bytes`,
         '',
-        'Nothing was deleted. Re-run with --apply to clear this Workspace and create a fresh Store manifest.',
+        `Nothing was deleted. Re-run with --apply --plan-id ${plan.planId} --generation ${plan.generationId}.`,
       ].join('\n'),
     );
     return EXIT.ok;
   }
 
-  const viaService = await probeLocalService(loaded);
+  const planId = requiredFlag(args, 'plan-id');
+  const generationId = requiredFlag(args, 'generation');
+  let result;
   if (viaService) {
     const client = await connectLocalService(loaded);
-    const result = await client.resetWorkspace(loaded.value.workspaceId);
-    bundleIds = result.removedBundleIds;
-    usedBytes = result.removedStoreBytes;
+    result = await client.applyWorkspaceReset({ workspaceId: loaded.value.workspaceId, generationId, planId });
   } else {
     const writer = await openStore(loaded);
     try {
-      await writer.resetWorkspace();
+      const runningTasks = (await writer.listNonTerminalJobs()).map((job) => `job:${job.jobId}`);
+      const plan = await validateWorkspaceResetPlan({
+        planId,
+        workspaceId: loaded.value.workspaceId,
+        generationId,
+        storeRoot,
+        deliveriesRoot,
+        reviewsRoot,
+        runningTasks,
+      });
+      const reset = await writer.resetWorkspace(generationId);
+      await rm(deliveriesRoot, { recursive: true, force: true });
+      await rm(reviewsRoot, { recursive: true, force: true });
+      result = {
+        workspaceId: loaded.value.workspaceId,
+        oldGenerationId: reset.oldGenerationId,
+        newGenerationId: reset.newGenerationId,
+        actualRemoved: { evidence: plan.evidence, deliveries: plan.deliveries, reviews: plan.reviews },
+        revokedSessionCount: 0,
+        stoppedJobIds: runningTasks.map((item) => item.replace(/^job:/, '')),
+        stoppedReviewRunIds: [],
+      };
     } finally {
       await writer.close();
     }
-    await rm(deliveriesRoot, { recursive: true, force: true });
   }
   emit(
     io,
     booleanFlag(args, 'json'),
-    { ...preview, bundleIds, usedBytes, applied: true, viaService },
-    `Reset Workspace ${loaded.value.workspaceId}; removed ${bundleIds.length} Bundles and reinitialized ${storeRoot}.`,
+    { ...result, storeRoot, deliveriesRoot, reviewsRoot, applied: true, viaService },
+    `Reset Workspace ${loaded.value.workspaceId}; generation ${result.oldGenerationId} -> ${result.newGenerationId}.`,
   );
   return EXIT.ok;
 }
@@ -1522,7 +1612,9 @@ export function cliUsage(): string {
   return `Usage:
   proto-bridge workspace init [--config <file>]
   proto-bridge workspace doctor [--json]
-  proto-bridge workspace reset [--apply] [--json]
+  proto-bridge workspace doctor repair [--json]
+  proto-bridge workspace reset [--apply --plan-id <id> --generation <id>] [--json]
+  proto-bridge workspace reinitialize --confirm-destroyed <workspaceId> [--json]
   proto-bridge preflight --selection <file> [--manifest <file>]
   proto-bridge capture run --selection <file> [--bundle <id>]
   proto-bridge deliver (--selection <file> | --prototype <id> [--screen <id|slug>]) [--target <dir>]
@@ -1539,8 +1631,8 @@ Rules:
   deliver captures, creates a Handoff, and writes .proto-bridge/deliveries/*/agent-prompt.md
   (Store index only; MCP still reads Evidence from the Store).
   deliver defaults to all authored Screens, Variants and Scenarios in scope.
-  workspace reset previews by default; --apply clears Store + deliveries,
-  preserves proto-bridge.json, and creates a fresh Workspace manifest.
+  workspace reset previews by default; --apply requires the preview planId and generation,
+  clears Store + deliveries + unexported reviews, preserves config/audit, and creates a new generation.
   With --screen, repeat --only-variant <id> or --only-scenario <id> to narrow.
   Use --selection for an exact multi-Screen matrix.
   Repeat --accept-warning <id> and --ack-risk <kind> explicitly.

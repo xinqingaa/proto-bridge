@@ -10,4 +10,5 @@ export * from './local-file-store.js';
 export * from './snapshot-builder.js';
 export * from './deliver-receipt.js';
 export * from './acceptance.js';
+export * from './workspace-lifecycle.js';
 export { generateOperationalId } from './id-generator.js';
