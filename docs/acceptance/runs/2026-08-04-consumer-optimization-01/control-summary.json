@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "experimentRunId": "2026-08-04-consumer-optimization-01",
+  "arm": "control",
+  "workflow": "legacy-full-read",
+  "completedAt": "2026-08-04T07:22:41Z",
+  "baselineCommit": "79780eb6962086affb9af8bcacd8006707517a67",
+  "resultCommit": "b62070973c54d19cca0d3c8356f676b5da843509",
+  "worktree": "/Users/lrq/work/proto-bridge-control-2026-08-04-01",
+  "targetRoot": "apps/flutter_pb_app",
+  "fixedEvidence": {
+    "workspaceId": "pbwork-local",
+    "bundleId": "bundle-2026-08-03t095053078-241d3a74",
+    "runId": "run-2026-08-03t095053079-14b6f18f",
+    "snapshotId": "snapshot-2026-08-03t095114638-511379f3",
+    "handoffId": "handoff-2026-08-03t100731725-9a0121d7",
+    "selectedCaseCount": 24,
+    "scenarioCount": 7,
+    "distinctScreenshotCount": 16,
+    "mandatoryRiskCount": 0
+  },
+  "legacyConsumption": {
+    "toolCallCount": 77,
+    "responseCharacterCountApprox": 56001862,
+    "catalogReads": 5,
+    "caseReads": 24,
+    "revisionReads": 24,
+    "screenshotReads": 16,
+    "targetConventionReads": 1,
+    "targetExampleReads": 1
+  },
+  "environment": {
+    "device": "PB Control iPhone 14",
+    "platform": "iOS 18.6 simulator",
+    "logicalViewport": "390x844",
+    "screenshotPixels": "1170x2532",
+    "devicePixelRatio": 3
+  },
+  "changedFiles": [
+    "apps/flutter_pb_app/lib/common/widgets/app_bar.dart",
+    "apps/flutter_pb_app/lib/features/hub/hub_page.dart",
+    "apps/flutter_pb_app/lib/router/router.dart",
+    "apps/flutter_pb_app/lib/router/routes.dart",
+    "apps/flutter_pb_app/lib/features/cold_chain_ops/cold_chain_models.dart",
+    "apps/flutter_pb_app/lib/features/cold_chain_ops/exception_queue_page.dart",
+    "apps/flutter_pb_app/lib/features/cold_chain_ops/shipment_detail_page.dart",
+    "apps/flutter_pb_app/lib/features/cold_chain_ops/resolution_form_page.dart",
+    "apps/flutter_pb_app/test/widget_test.dart"
+  ],
+  "validation": {
+    "flutterAnalyze": "passed",
+    "flutterTest": "passed: 7",
+    "validateTargetChanges": "ok",
+    "outsideAllowedPaths": [],
+    "fileIssues": [],
+    "unrelatedIosAutoMigrationRestored": true,
+    "worktreeClean": true,
+    "commitParentMatchesBaseline": true
+  },
+  "artifacts": [
+    {
+      "name": "initial-target",
+      "path": "/Users/lrq/work/proto-bridge-control-2026-08-04-01/apps/flutter_pb_app/.proto-bridge/control-artifacts/control-2026-08-04-01/initial-target.png",
+      "sha256": "2832ed354ac397e8d077d4c30c25a139655fa542003de2a68d3acc8c8b8bc59f"
+    },
+    {
+      "name": "final-exception-queue",
+      "path": "/Users/lrq/work/proto-bridge-control-2026-08-04-01/apps/flutter_pb_app/.proto-bridge/control-artifacts/control-2026-08-04-01/final-exception-queue.png",
+      "sha256": "93ea4aeab3b0779cd574d734139726f05a0d7b8e8ebf434b1e0ea4dea1363ffa"
+    },
+    {
+      "name": "final-shipment-detail",
+      "path": "/Users/lrq/work/proto-bridge-control-2026-08-04-01/apps/flutter_pb_app/.proto-bridge/control-artifacts/control-2026-08-04-01/final-shipment-detail.png",
+      "sha256": "3ac21e8f14411adcd951a11a5875ac0ee12873491da4ef24a9dce15d78c92b61"
+    },
+    {
+      "name": "final-resolution-form",
+      "path": "/Users/lrq/work/proto-bridge-control-2026-08-04-01/apps/flutter_pb_app/.proto-bridge/control-artifacts/control-2026-08-04-01/final-resolution-form.png",
+      "sha256": "c443f5a69d77dc285dfab149cfcffda5e93b3dfc755adf3f3b0cca25e19aceb2"
+    }
+  ],
+  "review": {
+    "primaryScreenArtifacts": "verified by manual visual inspection",
+    "allSourceScreenshotsViewed": true,
+    "remainingVariantAndOverlayTargetArtifacts": "unverified",
+    "automatedPixelDiff": "unverified",
+    "notes": [
+      "All 24 selected cases and all 7 fixed scenarios were addressed in the implementation.",
+      "Three primary target screens were captured on the fixed viewport; variant and overlay states were not each captured separately.",
+      "The temperature chart is feature-local because the target exposes no public chart component.",
+      "No reconstruction score was calculated."
+    ]
+  },
+  "isolation": {
+    "controlOutputOutsideMainWorktree": true,
+    "treatmentMustExcludeWorktree": "/Users/lrq/work/proto-bridge-control-2026-08-04-01",
+    "controlOutputAddedToTargetExamples": false
+  }
+}
