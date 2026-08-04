@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "experimentRunId": "2026-08-04-consumer-optimization-01",
-  "status": "phase-2-passed",
+  "status": "phase-3-passed",
   "createdAt": "2026-08-04T06:52:48Z",
   "timeZone": "Asia/Shanghai",
   "plan": {
@@ -220,5 +220,16 @@
     "experimentalIdsAddedToCore": false,
     "targetOutputWrittenToEvidence": false,
     "workspaceResetPerformed": false
+  },
+  "phase3Gate": {
+    "status": "passed",
+    "closedAt": "2026-08-04T08:35:05Z",
+    "implementationCommit": "b74d852",
+    "receipt": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/phase-3-gate.json",
+    "legacyCopyAudit": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/phase-3-legacy-copy-audit.json",
+    "fixedWorkspaceGeneration": "legacy-unavailable",
+    "fixedWorkspaceMigrated": false,
+    "fixedWorkspaceResetPerformed": false,
+    "fixedEvidenceIdentityVerified": true
   }
 }

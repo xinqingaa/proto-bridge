@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "auditedAt": "2026-08-04T08:33:16.713Z",
+  "sourceRoot": "/Users/lrq/work/proto-bridge/.proto-bridge/store",
+  "sourceOpenedAsWriter": false,
+  "temporaryCopyRemovedAfterAudit": true,
+  "fixed": {
+    "workspaceId": "pbwork-local",
+    "bundleId": "bundle-2026-08-03t095053078-241d3a74",
+    "runId": "run-2026-08-03t095053079-14b6f18f",
+    "snapshotId": "snapshot-2026-08-03t095114638-511379f3",
+    "handoffId": "handoff-2026-08-03t100731725-9a0121d7"
+  },
+  "sourceManifestSha256Before": "sha256:b120f37a79dac753165e1bd771f9608732b0b021fcd110933e6032b1d1b3b318",
+  "sourceManifestSha256After": "sha256:b120f37a79dac753165e1bd771f9608732b0b021fcd110933e6032b1d1b3b318",
+  "sourceInventoryBefore": {
+    "objectCount": 239,
+    "totalBytes": 26970011,
+    "digest": "sha256:6c72b7638f1cc4aaaaf57b89d6245ce22ffc7c28f23bf63773dc1850f23ea177"
+  },
+  "sourceInventoryAfter": {
+    "objectCount": 239,
+    "totalBytes": 26970011,
+    "digest": "sha256:6c72b7638f1cc4aaaaf57b89d6245ce22ffc7c28f23bf63773dc1850f23ea177"
+  },
+  "copyInventoryBefore": {
+    "objectCount": 239,
+    "totalBytes": 26970011,
+    "digest": "sha256:6c72b7638f1cc4aaaaf57b89d6245ce22ffc7c28f23bf63773dc1850f23ea177"
+  },
+  "copyInventoryAfter": {
+    "objectCount": 239,
+    "totalBytes": 26970011,
+    "digest": "sha256:6c72b7638f1cc4aaaaf57b89d6245ce22ffc7c28f23bf63773dc1850f23ea177"
+  },
+  "migration": {
+    "kind": "legacy-generation-upgrade",
+    "migratedAt": "2026-08-04T08:33:16.643Z",
+    "generationId": "generation-2026-08-04t083316643-f308c19a"
+  },
+  "migratedLifecycle": {
+    "storeLayoutVersion": 3,
+    "generationId": "generation-2026-08-04t083316643-f308c19a",
+    "createdAt": "2026-08-03T09:50:48.388Z"
+  },
+  "migratedManifest": {
+    "storeLayoutVersion": 3,
+    "generationId": "generation-2026-08-04t083316643-f308c19a",
+    "migratedAt": "2026-08-04T08:33:16.643Z"
+  },
+  "fixedIdsResolvedAfterMigration": {
+    "bundle": true,
+    "run": true,
+    "snapshot": true,
+    "handoff": true
+  },
+  "result": "passed"
+}

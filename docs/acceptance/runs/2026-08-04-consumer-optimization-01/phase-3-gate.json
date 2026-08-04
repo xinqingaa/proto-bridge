@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "phase": 3,
+  "status": "passed",
+  "closedAt": "2026-08-04T08:35:05Z",
+  "implementationCommit": "b74d852",
+  "fixedWorkspacePolicy": {
+    "sourceGeneration": "legacy-unavailable",
+    "sourceOpenedAsWriter": false,
+    "sourceResetPerformed": false,
+    "sourceReinitialized": false,
+    "identityFileDigestsUnchanged": true
+  },
+  "legacyCopyAudit": {
+    "script": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/audit-legacy-generation-copy.mjs",
+    "receipt": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/phase-3-legacy-copy-audit.json",
+    "receiptSha256": "a6c51ebd478b269408e76728c12c0c759d2a54056d9cbccead7f9534d5451a4b",
+    "result": "passed",
+    "inventoryObjectCount": 239,
+    "inventoryBytes": 26970011,
+    "inventoryDigestBeforeAndAfter": "sha256:6c72b7638f1cc4aaaaf57b89d6245ce22ffc7c28f23bf63773dc1850f23ea177",
+    "fixedIdsResolvedAfterMigration": true,
+    "temporaryCopyRemoved": true
+  },
+  "commands": [
+    {
+      "command": "pnpm --filter @proto-bridge/core test",
+      "exitCode": 0,
+      "result": "33 files, 209 tests passed"
+    },
+    {
+      "command": "pnpm --filter @proto-bridge/local-service test",
+      "exitCode": 0,
+      "result": "10 tests passed"
+    },
+    {
+      "command": "pnpm --filter @proto-bridge/cli test",
+      "exitCode": 0,
+      "result": "10 tests passed"
+    },
+    {
+      "command": "pnpm --filter @proto-bridge/pbwork test",
+      "exitCode": 0,
+      "result": "16 files, 76 tests passed"
+    },
+    {
+      "command": "pnpm test:e2e:mcp",
+      "exitCode": 0,
+      "result": "MCP rejected an old-generation progressive read with workspace-generation-mismatch"
+    },
+    {
+      "command": "pnpm test:e2e:runtime",
+      "exitCode": 0,
+      "result": "5 Playwright runtime tests passed"
+    },
+    {
+      "command": "pnpm docs:verify",
+      "exitCode": 0,
+      "result": "100 Markdown files verified"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    },
+    {
+      "command": "node docs/acceptance/runs/2026-08-04-consumer-optimization-01/audit-legacy-generation-copy.mjs",
+      "exitCode": 0
+    }
+  ],
+  "contractCoverage": {
+    "manifestGenerationAndLayout": "passed",
+    "generationPersistsOnReopen": "passed",
+    "resetCreatesNonReusableGeneration": "passed",
+    "legacyReadOnlyDoesNotMigrate": "passed",
+    "legacyWriterMigrationOnce": "passed",
+    "previewPlanPersistsOutsideStore": "passed",
+    "applyBindsPlanGenerationInventoryAndTasks": "passed",
+    "planExpirationAndDriftTypedErrors": "passed",
+    "serviceDrainAndSessionRevocation": "passed",
+    "pbworkGenerationInvalidation": "passed",
+    "mcpGenerationMismatch": "passed",
+    "externalRootAndLockIdentity": "passed",
+    "interruptedResetMarker": "passed",
+    "doctorRepairAndExplicitReinitialize": "passed"
+  },
+  "exitCriteria": {
+    "rootServiceCombinationMatrixDeterministic": "passed",
+    "previewApplyScopeCannotDrift": "passed",
+    "oldHandoffAndSessionTerminateOnNewGeneration": "passed",
+    "liveExternalDeletionDoesNotRecreateRoot": "passed",
+    "postResetCaptureRestartRequirementsDocumented": "passed",
+    "legacyMigrationVerifiedOnFixedWorkspaceCopy": "passed"
+  },
+  "notes": [
+    "The fixed experiment Workspace deliberately remains legacy-unavailable and read-only. Phase 3 product capability is verified without mutating its manifest.",
+    "An interrupted reset leaves .reset-in-progress.json and cannot resume the old generation; explicit confirmed reinitialize is required."
+  ]
+}
