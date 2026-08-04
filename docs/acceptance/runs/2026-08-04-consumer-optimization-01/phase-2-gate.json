@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "phase": 2,
+  "status": "passed",
+  "closedAt": "2026-08-04T08:15:42Z",
+  "implementationCommits": [
+    "48ae92905f9808b5526a29223137e7bf47f6436f",
+    "14dfa5b"
+  ],
+  "fixedHandoffAudit": {
+    "receipt": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/fixed-mcp-audit.json",
+    "componentIdCount": 19,
+    "componentStatusCounts": {
+      "resolved": 17,
+      "candidate": 2
+    },
+    "tokenIdCount": 57,
+    "tokenStatusCounts": {
+      "resolved": 7,
+      "candidate": 3,
+      "unresolved": 47
+    },
+    "allComponentIdsHaveExplicitStatus": true,
+    "allTokenIdsHaveExplicitStatus": true,
+    "unresolvedMappingsWereNotPromoted": true
+  },
+  "commands": [
+    {
+      "command": "pnpm --filter @proto-bridge/core test -- target/target-resolver.test.ts",
+      "exitCode": 0,
+      "result": "32 files, 202 tests passed; resolver suite 7 tests"
+    },
+    {
+      "command": "pnpm --filter @proto-bridge/core build",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm --filter @proto-bridge/mcp-server build",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm test:e2e:mcp",
+      "exitCode": 0,
+      "result": "component/token MCP tools returned target-owned resolved mappings"
+    },
+    {
+      "command": "pnpm docs:verify",
+      "exitCode": 0,
+      "result": "99 Markdown files verified"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    },
+    {
+      "command": "findTargetExamples(targetRoot=apps/flutter_pb_app, gitBase=79780eb..., pattern=hub)",
+      "exitCode": 0,
+      "result": "read baseline tree and returned only paths present at gitBase"
+    },
+    {
+      "command": "rg experimental fixed IDs in packages/core/src packages/mcp-server/src",
+      "exitCode": 0,
+      "result": "no cold-chain Workspace/Bundle/Run/Snapshot/Handoff IDs found"
+    }
+  ],
+  "contractCoverage": {
+    "openStringIds": "passed",
+    "targetOwnedMachineAndMarkdownDeclarations": "passed",
+    "policyConflict": "passed",
+    "staleSymbolAndSignature": "passed",
+    "singleHeuristicCandidate": "passed",
+    "multipleAndUnknownCandidates": "passed",
+    "tokenAccessorValidation": "passed",
+    "inventoryCacheInvalidation": "passed",
+    "pathTraversalRejection": "passed",
+    "candidateOutputExclusion": "passed",
+    "gitBaseIsolation": "passed",
+    "unsupportedTarget": "passed",
+    "unrelatedOpenIdFixture": "passed"
+  },
+  "exitCriteria": {
+    "handoffComponentIdsResolvedOrDisclosed": "passed",
+    "agentReceivesSymbolsBeforeImplementationChoice": "passed",
+    "screenTokensHaveCandidatesOrDisclosedUnresolvedState": "passed",
+    "explicitMappingsValidatedAgainstCode": "passed",
+    "targetOutputDoesNotEnterEvidence": "passed-by-boundary-types-and-tests",
+    "experimentOutputExcludedFromExamples": "passed-by-candidate-output-and-git-base-tests"
+  },
+  "boundaryAudit": {
+    "legacyFlutterComponentRoleExpanded": false,
+    "legacyRoleMarkedAdvisory": true,
+    "experimentalIdsAddedToCore": false,
+    "targetObjectsAddedToEvidence": false,
+    "visualValidationClaimed": false,
+    "fixedWorkspaceMutated": false
+  },
+  "notes": [
+    "Unresolved token mappings are an explicit Phase 2 outcome, not a hidden fallback. The target owns only seven explicit token mappings; the remaining IDs stay candidate/unresolved for Agent disclosure.",
+    "gitBase example lookup was completed after the WIP commit because merely passing gitBase without reading that tree did not satisfy isolation."
+  ]
+}

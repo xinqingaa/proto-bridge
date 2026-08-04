@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "experimentRunId": "2026-08-04-consumer-optimization-01",
-  "status": "phase-1-passed",
+  "status": "phase-2-passed",
   "createdAt": "2026-08-04T06:52:48Z",
   "timeZone": "Asia/Shanghai",
   "plan": {
@@ -206,6 +206,19 @@
     "fixedMcpAudit": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/fixed-mcp-audit.json",
     "fixedEvidenceIdentityVerified": true,
     "captureContractModified": false,
+    "workspaceResetPerformed": false
+  },
+  "phase2Gate": {
+    "status": "passed",
+    "closedAt": "2026-08-04T08:15:42Z",
+    "implementationCommits": [
+      "48ae92905f9808b5526a29223137e7bf47f6436f",
+      "14dfa5b"
+    ],
+    "receipt": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/phase-2-gate.json",
+    "fixedHandoffResolutionAudit": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/fixed-mcp-audit.json",
+    "experimentalIdsAddedToCore": false,
+    "targetOutputWrittenToEvidence": false,
     "workspaceResetPerformed": false
   }
 }
