@@ -134,6 +134,9 @@ async function execute(args: CliArgs, io: CliIo): Promise<number> {
   if (command === 'handoff show') return handoffShow(args, io, loaded);
   if (command === 'handoff export') return handoffExport(args, io, loaded);
   if (command === 'deliver') return deliverCommand(args, io, loaded);
+  if (command === 'review show') return reviewShow(args, io, loaded);
+  if (command === 'review approve-tranche') return reviewApproveTranche(args, io, loaded);
+  if (command === 'review approve-finalize') return reviewApproveFinalize(args, io, loaded);
   if (command === 'service start') return serviceStart(args, io, loaded);
   throw new Error(`Unknown ProtoBridge command: ${command}`);
 }
@@ -1561,6 +1564,39 @@ async function serviceStart(
   return EXIT.ok;
 }
 
+async function reviewShow(args: CliArgs, io: CliIo, loaded: LoadedCliConfig): Promise<number> {
+  const client = await connectLocalService(loaded);
+  const review = await client.readReview(requiredFlag(args, 'review'));
+  emit(io, booleanFlag(args, 'json'), review);
+  return ['unverified', 'needs-human', 'invalidated'].includes(review.status) ? EXIT.blocked : EXIT.ok;
+}
+
+async function reviewApproveTranche(args: CliArgs, io: CliIo, loaded: LoadedCliConfig): Promise<number> {
+  const client = await connectLocalService(loaded);
+  const approval = await client.createReviewApproval({
+    kind: 'tranche',
+    reviewRunId: requiredFlag(args, 'review'),
+    screenId: requiredFlag(args, 'screen'),
+    tranche: numberFlag(args, 'tranche') ?? 1,
+    approvalRef: requiredFlag(args, 'approval-ref'),
+    actor: 'cli',
+  });
+  emit(io, booleanFlag(args, 'json'), approval, `One-time Review tranche approval issued; expires ${approval.expiresAt}.`);
+  return EXIT.ok;
+}
+
+async function reviewApproveFinalize(args: CliArgs, io: CliIo, loaded: LoadedCliConfig): Promise<number> {
+  const client = await connectLocalService(loaded);
+  const approval = await client.createReviewApproval({
+    kind: 'finalize',
+    reviewRunId: requiredFlag(args, 'review'),
+    confirmationRef: requiredFlag(args, 'confirmation-ref'),
+    actor: 'human',
+  });
+  emit(io, booleanFlag(args, 'json'), approval, `One-time human Review completion token issued; expires ${approval.expiresAt}.`);
+  return EXIT.ok;
+}
+
 async function openStore(
   loaded: LoadedCliConfig,
   readOnly = false,
@@ -1624,6 +1660,9 @@ export function cliUsage(): string {
   proto-bridge snapshot|run|case inspect
   proto-bridge stale check --bundle <id> --snapshot <id>
   proto-bridge handoff create|show|export
+  proto-bridge review show --review <id>
+  proto-bridge review approve-tranche --review <id> --screen <id> --tranche <n> --approval-ref <ref>
+  proto-bridge review approve-finalize --review <id> --confirmation-ref <ref>
   proto-bridge service start
 
 Rules:

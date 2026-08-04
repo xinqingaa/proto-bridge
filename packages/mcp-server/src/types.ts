@@ -1,4 +1,5 @@
 import type { EvidenceStoreReader } from './services/evidence-store-reader.js';
+import type { ReviewServiceClient } from './services/review-service-client.js';
 
 export type JsonValue =
   | string
@@ -19,9 +20,12 @@ export type JsonRpcRequest = {
 export type ServerOptions = {
   storeRoot?: string;
   workspaceId?: string;
+  serviceUrl?: string;
+  serviceOrigin?: string;
 };
 
 export type ToolContext = {
   options: ServerOptions;
   evidence: EvidenceStoreReader;
+  reviews: ReviewServiceClient;
 };

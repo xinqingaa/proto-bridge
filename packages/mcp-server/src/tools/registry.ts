@@ -30,6 +30,17 @@ import {
   readEvidenceSnapshotTool,
   readEvidenceStalenessTool,
 } from './read-evidence.js';
+import {
+  compareTargetArtifactsTool,
+  finalizeTargetReviewTool,
+  readTargetReviewTool,
+  recordReviewFindingsTool,
+  recordScreenshotViewedTool,
+  renderTargetCaseTool,
+  replayTargetScenarioTool,
+  requestReviewTrancheTool,
+  startTargetReviewTool,
+} from './target-review.js';
 
 const objectSchema = { type: 'object', additionalProperties: false };
 const stringArraySchema = { type: 'array', items: { type: 'string' } };
@@ -63,6 +74,15 @@ function tool(
       properties,
       ...(required.length ? { required } : {}),
     },
+    outputSchema,
+  };
+}
+
+function reviewTool(name: string, title: string, description: string, properties: JsonObject, required: string[]): JsonObject {
+  return {
+    name, title, description,
+    annotations: { title, readOnlyHint: name === 'read_target_review', destructiveHint: false, idempotentHint: name === 'read_target_review', openWorldHint: true },
+    inputSchema: { ...objectSchema, properties, required },
     outputSchema,
   };
 }
@@ -116,12 +136,20 @@ const toolDefinitions: JsonValue[] = [
     },
   }, ['handoffId', 'addressedCaseIds', 'viewedScreenshotBlobIds', 'replayedScenarioCaseIds', 'observations']),
   tool('read_evidence_blob', '读取 Evidence Blob', '读取固定 Snapshot 或 Catalog 可达的 Blob。', { ...snapshot, blobId: { type: 'string' }, catalogRevisionId: { type: 'string' }, allowDebug: { type: 'boolean' } }, ['bundleId', 'snapshotId', 'blobId']),
-  tool('read_evidence_screenshot', '查看 Evidence Screenshot', '把固定 Snapshot 中的 Screenshot 作为真正的 MCP 图片返回；视觉实现必须使用本工具，不得把 Blob metadata 或 base64 文本当作图片。', { ...snapshot, blobId: { type: 'string' } }, ['bundleId', 'snapshotId', 'blobId']),
+  tool('read_evidence_screenshot', '查看 Evidence Screenshot', '把固定 Snapshot 中的 Screenshot 作为真正的 MCP 图片返回；传 reviewRunId 时仅在图片读取成功后写入 authoritative viewed receipt。', { ...snapshot, blobId: { type: 'string' }, reviewRunId: { type: 'string' } }, ['bundleId', 'snapshotId', 'blobId']),
   tool('read_target_conventions', '读取目标工程规范', '通过适用的 Target adapter 独立扫描目标工程；结果不进入 Evidence。', { targetRoot: { type: 'string' }, module: { type: 'string' }, roles: stringArraySchema, symbols: stringArraySchema }),
   tool('find_target_examples', '查找目标工程示例', '通过适用的 Target adapter 查找目标工程既有模式；结果不进入 Evidence。可排除 Control/candidate output，避免实验实现污染示例。', { targetRoot: { type: 'string' }, module: { type: 'string' }, pattern: { type: 'string' }, roles: stringArraySchema, symbols: stringArraySchema, screenId: { type: 'string' }, limit: { type: 'number' }, gitBase: { type: 'string' }, excludePaths: stringArraySchema, candidateOutputRoot: { type: 'string' } }),
   tool('resolve_target_components', '解析目标组件', '批量解析开放 Evidence component ID；目标文档优先，机器 Contract 不得覆盖政策，resolved 必须通过当前代码校验。', { targetRoot: { type: 'string' }, componentIds: stringArraySchema, gitBase: { type: 'string' }, excludePaths: stringArraySchema, candidateOutputRoot: { type: 'string' } }, ['targetRoot', 'componentIds']),
   tool('resolve_target_tokens', '解析目标 Token', '批量解析开放 Evidence token ID，并校验 accessor、定义、import 与当前目标 revision；启发式结果最多为 candidate。', { targetRoot: { type: 'string' }, tokenIds: stringArraySchema, gitBase: { type: 'string' }, excludePaths: stringArraySchema, candidateOutputRoot: { type: 'string' } }, ['targetRoot', 'tokenIds']),
   tool('validate_target_changes', '验证目标工程变更', '通过适用的 Target adapter 只读验证目标变更，并复核实际采用的 resolved mapping 仍存在；目标仓库无需 ProtoBridge 配置。', { targetRoot: { type: 'string' }, gitBase: { type: 'string' }, allowedPaths: stringArraySchema, expectedFiles: stringArraySchema, resolvedMappings: { type: 'array', items: { type: 'object', additionalProperties: false, properties: { id: { type: 'string' }, kind: { type: 'string', enum: ['component', 'token'] }, symbol: { type: 'string' }, accessor: { type: 'string' }, importPath: { type: 'string' } }, required: ['id', 'kind'] } } }),
+  reviewTool('start_target_review', '开始 Target Review', '从固定 Handoff 派生独立 authoritative Review Session；必须由 Local Service 持久化。', { handoffId: { type: 'string' }, targetRoot: { type: 'string' }, targetBaselineCommit: { type: 'string' }, targetRevision: { type: 'string' }, reviewRunId: { type: 'string' } }, ['handoffId', 'targetRoot', 'targetBaselineCommit', 'targetRevision']),
+  reviewTool('read_target_review', '读取 Target Review', '从 Local Service 恢复并校验 append-only Review event chain。', { reviewRunId: { type: 'string' } }, ['reviewRunId']),
+  reviewTool('render_target_case', '渲染 Target Case', '运行目标工程声明的单 Case Flutter launcher，并记录固定设备与 screenshot receipt。', { reviewRunId: { type: 'string' }, caseId: { type: 'string' }, sourceDigest: { type: 'string' }, tranche: { type: 'integer', minimum: 1 }, round: { type: 'integer', minimum: 1, maximum: 3 }, attemptId: { type: 'string' } }, ['reviewRunId', 'caseId', 'sourceDigest', 'tranche', 'round']),
+  reviewTool('replay_target_scenario', '回放 Target Scenario', '运行目标工程声明的单 Scenario driver 并记录实际 receipt。', { reviewRunId: { type: 'string' }, caseId: { type: 'string' } }, ['reviewRunId', 'caseId']),
+  reviewTool('compare_target_artifacts', '比较 Target artifacts', '生成可视 diff/overlay 和 normalized stop signature；不输出综合分数。', { reviewRunId: { type: 'string' }, attemptId: { type: 'string' }, sourceDigest: { type: 'string' }, targetDigest: { type: 'string' } }, ['reviewRunId', 'attemptId', 'sourceDigest', 'targetDigest']),
+  reviewTool('record_review_findings', '记录 Review findings', '记录 Agent finding；Agent 不能自证 Accepted deviation 或人工完成。', { reviewRunId: { type: 'string' }, findings: { type: 'array', items: { type: 'object', additionalProperties: true } } }, ['reviewRunId', 'findings']),
+  reviewTool('request_review_tranche', '应用 Review tranche 授权', '消费由 PBWork/CLI/operator 或 MCP host approval 预先签发的一次性 token；普通参数不能自证授权。', { reviewRunId: { type: 'string' }, approvalToken: { type: 'string' } }, ['reviewRunId', 'approvalToken']),
+  reviewTool('finalize_target_review', '人工完成 Target Review', '消费人工一次性确认 token；Reducer 会重新检查全部完成门禁。', { reviewRunId: { type: 'string' }, confirmationToken: { type: 'string' } }, ['reviewRunId', 'confirmationToken']),
 ];
 
 export function toolsList(): JsonValue[] {
@@ -142,6 +170,7 @@ export async function callTool(
 
   if (name === 'read_evidence_screenshot') {
     const screenshot = await readEvidenceScreenshotTool(context, args);
+    await recordScreenshotViewedTool(context, args, screenshot);
     return toolImage({
       data: screenshot.data,
       mimeType: screenshot.mimeType,
@@ -175,6 +204,14 @@ export async function callTool(
     resolve_target_components: () => resolveTargetComponentsTool(args),
     resolve_target_tokens: () => resolveTargetTokensTool(args),
     validate_target_changes: () => validateTargetChangesTool(args),
+    start_target_review: () => startTargetReviewTool(context, args),
+    read_target_review: () => readTargetReviewTool(context, args),
+    render_target_case: () => renderTargetCaseTool(context, args),
+    replay_target_scenario: () => replayTargetScenarioTool(context, args),
+    compare_target_artifacts: () => compareTargetArtifactsTool(context, args),
+    record_review_findings: () => recordReviewFindingsTool(context, args),
+    request_review_tranche: () => requestReviewTrancheTool(context, args),
+    finalize_target_review: () => finalizeTargetReviewTool(context, args),
   };
   const handler = handlers[name];
   if (!handler) throw new Error(`Unknown tool: ${name}`);

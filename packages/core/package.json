@@ -18,9 +18,17 @@
       "types": "./dist/target/flutter-app/validation/index.d.ts",
       "import": "./dist/target/flutter-app/validation/index.js"
     },
+    "./target/flutter-app/review": {
+      "types": "./dist/target/flutter-app/review.d.ts",
+      "import": "./dist/target/flutter-app/review.js"
+    },
     "./target": {
       "types": "./dist/target/index.d.ts",
       "import": "./dist/target/index.js"
+    },
+    "./review": {
+      "types": "./dist/review/index.d.ts",
+      "import": "./dist/review/index.js"
     },
     "./v2": {
       "types": "./dist/v2/index.d.ts",
@@ -66,6 +74,7 @@
   "dependencies": {
     "fast-glob": "^3.3.2",
     "playwright": "^1.49.1",
+    "pngjs": "7.0.0",
     "zod": "^3.25.76"
   },
   "engines": {
@@ -76,6 +85,7 @@
   },
   "license": "UNLICENSED",
   "devDependencies": {
+    "@types/pngjs": "6.0.5",
     "typescript": "^5.7.2",
     "vitest": "^3.2.7"
   }

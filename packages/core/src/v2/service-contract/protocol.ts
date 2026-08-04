@@ -14,6 +14,11 @@ import type {
   BundleDeletePlan,
   BundleDeleteResult,
 } from '../store/types.js';
+import type {
+  ReviewArtifact,
+  ReviewFinding,
+  ReviewSessionSeed,
+} from '../../review/contracts.js';
 
 export const LOCAL_SERVICE_PROTOCOL_VERSION = 2 as const;
 
@@ -173,4 +178,61 @@ export type DeliveryArtifact = {
   handoffId: string;
   bundleId: string;
   snapshotId: string;
+};
+
+export type StartTargetReviewRequest = { seed: ReviewSessionSeed };
+export type ReviewArtifactUpload = { artifact: ReviewArtifact; bytesBase64: string };
+export type RecordScreenshotViewedRequest = ReviewArtifactUpload & {
+  screenId: string;
+  caseIds: string[];
+};
+export type RecordTargetRenderRequest = ReviewArtifactUpload & {
+  screenId: string;
+  caseId: string;
+  sourceDigest: string;
+  tranche: number;
+  round: number;
+  attemptId: string;
+  targetRevision: string;
+  receiptTool: string;
+};
+export type RecordScenarioReplayRequest = {
+  screenId: string;
+  caseId: string;
+  scenarioId: string;
+  receiptDigest: string;
+  targetRevision: string;
+  receiptTool: string;
+};
+export type RecordArtifactCompareRequest = {
+  screenId: string;
+  caseId: string;
+  attemptId: string;
+  sourceDigest: string;
+  targetDigest: string;
+  diff: ReviewArtifactUpload;
+  overlay?: ReviewArtifactUpload;
+  comparable: boolean;
+  normalizedDiffSignature?: string;
+  reason?: string;
+  receiptTool: string;
+};
+export type RecordReviewFindingsRequest = {
+  findings: ReviewFinding[];
+  actor: 'agent' | 'operator' | 'human';
+};
+export type AuthorizeReviewTrancheRequest = {
+  screenId: string;
+  tranche: number;
+  approvalRef: string;
+  actor: 'operator' | 'human' | 'pbwork' | 'cli' | 'mcp-host-approval';
+};
+export type CreateReviewApprovalRequest =
+  | { kind: 'tranche'; reviewRunId: string; screenId: string; tranche: number; approvalRef: string; actor: 'operator' | 'human' | 'pbwork' | 'cli' | 'mcp-host-approval' }
+  | { kind: 'finalize'; reviewRunId: string; confirmationRef: string; actor: 'operator' | 'human' };
+export type ReviewApprovalToken = { token: string; kind: 'tranche' | 'finalize'; reviewRunId: string; expiresAt: string };
+export type ConsumeReviewApprovalRequest = { approvalToken: string };
+export type FinalizeTargetReviewRequest = {
+  confirmationRef: string;
+  actor: 'operator' | 'human';
 };

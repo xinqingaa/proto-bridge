@@ -63,6 +63,10 @@ const child = spawn(
     workspace.storeRoot,
     "--workspace",
     workspace.workspaceId,
+    "--service-url",
+    `http://${workspace.serviceHost}:${workspace.servicePort}/api/v2`,
+    "--service-origin",
+    workspace.runtimeOrigin,
   ],
   {
     cwd: repoRoot,

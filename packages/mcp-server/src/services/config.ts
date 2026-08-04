@@ -10,17 +10,21 @@ export function parseServerOptions(argv: string[]): ServerOptions {
     readOptionArg(argv, '--store-root') ?? process.env.PB_STORE_ROOT;
   const workspaceId =
     readOptionArg(argv, '--workspace') ?? process.env.PB_WORKSPACE_ID;
+  const serviceUrl = readOptionArg(argv, '--service-url') ?? process.env.PB_SERVICE_URL;
+  const serviceOrigin = readOptionArg(argv, '--service-origin') ?? process.env.PB_SERVICE_ORIGIN;
   return {
     ...(storeRootInput
       ? { storeRoot: path.resolve(process.cwd(), storeRootInput) }
       : {}),
     ...(workspaceId ? { workspaceId } : {}),
+    ...(serviceUrl ? { serviceUrl } : {}),
+    ...(serviceOrigin ? { serviceOrigin } : {}),
   };
 }
 
 function readOptionArg(
   argv: string[],
-  option: '--store-root' | '--workspace',
+  option: '--store-root' | '--workspace' | '--service-url' | '--service-origin',
 ): string | undefined {
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];

@@ -25,6 +25,39 @@ const machineMapping = z.object({
   constructorHints: z.array(z.string().min(1)).optional(),
   usageHints: z.array(z.string().min(1)).optional(),
 }).strict();
+export const FlutterReviewContract = z.object({
+  version: z.literal(1),
+  platform: z.literal('ios-simulator'),
+  launcher: z.object({
+    command: z.array(z.string().min(1)).min(1),
+    scenarioCommand: z.array(z.string().min(1)).min(1).optional(),
+    environment: z.record(z.string()).optional(),
+    timeoutMs: z.number().int().min(1_000).max(300_000).optional(),
+  }).strict(),
+  device: z.object({
+    udid: z.string().min(1),
+    runtime: z.string().min(1),
+    logicalWidth: z.number().int().positive(),
+    logicalHeight: z.number().int().positive(),
+    dpr: z.number().positive(),
+    locale: z.string().min(1),
+    theme: z.string().min(1),
+    textScale: z.number().positive(),
+    safeArea: z.string().min(1),
+    settle: z.string().min(1),
+  }).strict(),
+  cases: z.record(z.string().min(1), z.object({
+    screenId: z.string().min(1),
+    arguments: z.array(z.string()).optional(),
+    stateSeed: z.string().optional(),
+  }).strict()),
+  scenarios: z.record(z.string().min(1), z.object({
+    screenId: z.string().min(1),
+    scenarioId: z.string().min(1),
+    arguments: z.array(z.string()).optional(),
+  }).strict()).optional(),
+}).strict();
+export type FlutterReviewContract = z.infer<typeof FlutterReviewContract>;
 const machineContract = z.object({
   version: z.literal(1),
   technology: z.literal('flutter'),
@@ -32,6 +65,7 @@ const machineContract = z.object({
   components: z.record(z.string().min(1), machineMapping).optional(),
   tokens: z.record(z.string().min(1), machineMapping).optional(),
   queryExclusions: z.array(z.string().min(1)).optional(),
+  review: FlutterReviewContract.optional(),
 }).strict();
 
 type MappingKind = 'component' | 'token';

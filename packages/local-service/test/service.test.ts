@@ -532,6 +532,34 @@ describe('ProtoBridge Local Service', () => {
     });
     expect(created.response.status).toBe(201);
     expect(created.body.data.handoff.snapshotId).toBe(request.snapshotId);
+    const reviewRunId = 'review-service-vertical';
+    const caseId = created.body.data.handoff.selectedCases[0].caseId as string;
+    const source = details.body.data.blobs[0];
+    const review = await call(base, '/reviews', {
+      method: 'POST', token,
+      body: { seed: {
+        reviewRunId, workspaceId: 'workspace-service-test', generationId: session.body.data.generationId,
+        bundleId: job.bundleId, snapshotId: request.snapshotId, handoffId: created.body.data.handoff.handoffId,
+        targetRoot: '/tmp/target', targetBaselineCommit: 'baseline', targetRevision: 'revision-a',
+        selectedCaseIds: [caseId], requiredSourceDigests: [source.digest], requiredScenarioCaseIds: [],
+        comparatorVersion: 'compare-v1', createdAt: '2026-08-04T00:00:00.000Z',
+      } },
+    });
+    expect(review.response.status).toBe(201);
+    const forged = await call(base, `/reviews/${reviewRunId}/tranches`, { method: 'POST', token, body: { approvalToken: 'ordinary-tool-parameter' } });
+    expect(forged.response.status).toBe(401);
+    const trancheApproval = await call(base, '/review-approvals', { method: 'POST', token, body: { kind: 'tranche', reviewRunId, screenId: 'ledger-planet.task-list', tranche: 1, approvalRef: 'operator-approved', actor: 'operator' } });
+    await call(base, `/reviews/${reviewRunId}/tranches`, { method: 'POST', token, body: { approvalToken: trancheApproval.body.data.token } });
+    const sourceArtifact = { kind: 'source', digest: source.digest, mimeType: 'image/png', byteLength: PNG_BYTES.byteLength, width: 1, height: 1, owner: { screenId: 'ledger-planet.task-list' } };
+    await call(base, `/reviews/${reviewRunId}/viewed`, { method: 'POST', token, body: { screenId: 'ledger-planet.task-list', caseIds: [caseId], artifact: sourceArtifact, bytesBase64: PNG_BYTES.toString('base64') } });
+    const targetArtifact = { ...sourceArtifact, kind: 'target', owner: { screenId: 'ledger-planet.task-list', caseId, attemptId: 'attempt-1' } };
+    await call(base, `/reviews/${reviewRunId}/render`, { method: 'POST', token, body: { screenId: 'ledger-planet.task-list', caseId, sourceDigest: source.digest, tranche: 1, round: 1, attemptId: 'attempt-1', targetRevision: 'revision-a', receiptTool: 'fixture-runner', artifact: targetArtifact, bytesBase64: PNG_BYTES.toString('base64') } });
+    const diffArtifact = { ...targetArtifact, kind: 'diff' };
+    await call(base, `/reviews/${reviewRunId}/compare`, { method: 'POST', token, body: { screenId: 'ledger-planet.task-list', caseId, attemptId: 'attempt-1', sourceDigest: source.digest, targetDigest: source.digest, diff: { artifact: diffArtifact, bytesBase64: PNG_BYTES.toString('base64') }, comparable: true, normalizedDiffSignature: 'sha256:identical', receiptTool: 'fixture-compare' } });
+    await call(base, `/reviews/${reviewRunId}/findings`, { method: 'POST', token, body: { actor: 'agent', findings: [] } });
+    const finalizeApproval = await call(base, '/review-approvals', { method: 'POST', token, body: { kind: 'finalize', reviewRunId, confirmationRef: 'human-confirmed', actor: 'human' } });
+    const finalized = await call(base, `/reviews/${reviewRunId}/finalize`, { method: 'POST', token, body: { approvalToken: finalizeApproval.body.data.token } });
+    expect(finalized.body.data.status).toBe('completed');
     const delivery = await call(base, '/deliveries', {
       method: 'POST',
       token,

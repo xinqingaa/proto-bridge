@@ -57,7 +57,16 @@ import {
   type WorkspaceResetApplyRequest,
   type WorkspaceResetPreviewRequest,
   type WorkspaceResetResult,
+  type StartTargetReviewRequest,
+  type RecordScreenshotViewedRequest,
+  type RecordTargetRenderRequest,
+  type RecordScenarioReplayRequest,
+  type RecordArtifactCompareRequest,
+  type RecordReviewFindingsRequest,
+  type CreateReviewApprovalRequest,
+  type ConsumeReviewApprovalRequest,
 } from '@proto-bridge/core/v2/service-contract';
+import { ReviewRepository } from './review-repository.js';
 
 const BODY_LIMIT_BYTES = 1024 * 1024;
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
@@ -70,6 +79,8 @@ type SessionRecord = {
   expiresAt: number;
   generationId: string | 'legacy-unavailable';
 };
+
+type ReviewApprovalRecord = CreateReviewApprovalRequest & { expiresAt: number };
 
 export type LocalServiceOptions = {
   host?: '127.0.0.1' | '::1';
@@ -156,6 +167,31 @@ async function readBody(request: IncomingMessage): Promise<unknown> {
   }
 }
 
+function decodeArtifactBytes(value: string): Uint8Array {
+  if (typeof value !== 'string' || value.length === 0) {
+    throw new V2ContractError('invalid-schema', 'Review artifact bytesBase64 is required.');
+  }
+  const bytes = Buffer.from(value, 'base64');
+  if (bytes.byteLength === 0 || bytes.toString('base64').replace(/=+$/, '') !== value.replace(/=+$/, '')) {
+    throw new V2ContractError('invalid-schema', 'Review artifact bytesBase64 is not canonical base64.');
+  }
+  return bytes;
+}
+
+function consumeReviewApproval(
+  approvals: Map<string, ReviewApprovalRecord>,
+  token: string,
+  kind: ReviewApprovalRecord['kind'],
+  reviewRunId: string,
+): ReviewApprovalRecord {
+  const approval = approvals.get(token);
+  approvals.delete(token);
+  if (!approval || approval.expiresAt <= Date.now() || approval.kind !== kind || approval.reviewRunId !== reviewRunId) {
+    throw new V2ContractError('unauthorized', `A live one-time ${kind} approval issued outside the ordinary MCP tool parameters is required.`);
+  }
+  return approval;
+}
+
 function matrixIdentity(preflight: CapturePreflight): string {
   return JSON.stringify(
     preflight.matrix.map((entry) => ({
@@ -203,6 +239,7 @@ async function selectedCasesForSnapshot(
 export class ProtoBridgeLocalService {
   readonly serviceInstanceId = generateOperationalId('service');
   readonly store: LocalFileStore;
+  readonly reviews: ReviewRepository;
   private readonly options: Required<
     Pick<LocalServiceOptions, 'host' | 'port' | 'preflightTtlMs'>
   > &
@@ -210,6 +247,7 @@ export class ProtoBridgeLocalService {
   private readonly allowedOrigins: Set<string>;
   private readonly sessions = new Map<string, SessionRecord>();
   private readonly preflights = new Map<string, PreflightRecord>();
+  private readonly reviewApprovals = new Map<string, ReviewApprovalRecord>();
   private readonly jobHost = new CaptureJobHost();
   private server: Server | undefined;
   private finalizedOrphanJobIds: string[] = [];
@@ -244,6 +282,11 @@ export class ProtoBridgeLocalService {
         ? {}
         : { maxBytes: options.maxStoreBytes }),
     });
+    this.reviews = new ReviewRepository(
+      reviewsRootFromStoreRoot(options.storeRoot, options.workspaceId),
+      options.workspaceId,
+      () => this.currentGenerationId,
+    );
   }
 
   async start(): Promise<{ host: string; port: number }> {
@@ -288,6 +331,7 @@ export class ProtoBridgeLocalService {
         server.close((error) => (error ? reject(error) : resolve())),
       );
     }
+    await this.reviews.close();
     await this.store.close();
   }
 
@@ -370,6 +414,7 @@ export class ProtoBridgeLocalService {
         this.externalStoreDestroyed = true;
         this.sessions.clear();
         this.preflights.clear();
+        this.reviewApprovals.clear();
         await this.store.close();
       }
       throw error;
@@ -474,6 +519,7 @@ export class ProtoBridgeLocalService {
       });
       this.workspaceResetting = true;
       try {
+        const stoppedReviewRunIds = await this.reviews.close();
         for (const job of runningJobs) {
           await this.jobHost.cancel(this.store, job.jobId);
         }
@@ -493,6 +539,7 @@ export class ProtoBridgeLocalService {
         await rm(reviewsRootFromStoreRoot(this.options.storeRoot, this.store.workspaceId), { recursive: true, force: true });
         const revokedSessionCount = this.sessions.size;
         this.preflights.clear();
+        this.reviewApprovals.clear();
         this.finalizedOrphanJobIds = [];
         this.sessions.clear();
         this.currentGenerationId = reset.newGenerationId;
@@ -507,7 +554,7 @@ export class ProtoBridgeLocalService {
           },
           revokedSessionCount,
           stoppedJobIds: runningJobs.map((job) => job.jobId),
-          stoppedReviewRunIds: [],
+          stoppedReviewRunIds,
         };
         success(response, result);
       } finally {
@@ -543,6 +590,113 @@ export class ProtoBridgeLocalService {
         jobs: await this.store.listJobs(),
       };
       success(response, state);
+      return;
+    }
+
+    if (request.method === 'POST' && path === '/api/v2/reviews') {
+      const body = (await readBody(request)) as StartTargetReviewRequest;
+      const handoff = await this.store.getHandoff(HandoffId.parse(body.seed?.handoffId));
+      if (!handoff || handoff.bundleId !== body.seed.bundleId || handoff.snapshotId !== body.seed.snapshotId) {
+        throw new V2ContractError('unknown-reference', 'Review seed does not match a persisted Handoff/Bundle/Snapshot.');
+      }
+      success(response, await this.reviews.start(body.seed), 201);
+      return;
+    }
+
+    if (request.method === 'POST' && path === '/api/v2/review-approvals') {
+      const body = (await readBody(request)) as CreateReviewApprovalRequest;
+      await this.reviews.read(body.reviewRunId);
+      const token = randomBytes(32).toString('base64url');
+      const expiresAt = Date.now() + 10 * 60 * 1000;
+      this.reviewApprovals.set(token, { ...body, expiresAt });
+      success(response, { token, kind: body.kind, reviewRunId: body.reviewRunId, expiresAt: new Date(expiresAt).toISOString() }, 201);
+      return;
+    }
+
+    const reviewMatch = path.match(/^\/api\/v2\/reviews\/([^/]+)$/);
+    if (request.method === 'GET' && reviewMatch) {
+      success(response, await this.reviews.read(reviewMatch[1]!));
+      return;
+    }
+
+    const reviewArtifactMatch = path.match(/^\/api\/v2\/reviews\/([^/]+)\/artifacts\/(sha256:[a-f0-9]{64})$/);
+    if (request.method === 'GET' && reviewArtifactMatch) {
+      const bytes = await this.reviews.getArtifact(reviewArtifactMatch[1]!, reviewArtifactMatch[2]!);
+      response.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Content-Length': String(bytes.byteLength), 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' });
+      response.end(Buffer.from(bytes));
+      return;
+    }
+
+    const reviewOperation = path.match(/^\/api\/v2\/reviews\/([^/]+)\/(viewed|render|replay|compare|findings|tranches|finalize)$/);
+    if (request.method === 'POST' && reviewOperation) {
+      const reviewRunId = reviewOperation[1]!;
+      const operation = reviewOperation[2]!;
+      if (operation === 'viewed') {
+        const body = (await readBody(request)) as RecordScreenshotViewedRequest;
+        const bytes = decodeArtifactBytes(body.bytesBase64);
+        await this.reviews.putArtifact(reviewRunId, body.artifact, bytes);
+        success(response, await this.reviews.append({
+          reviewRunId,
+          actor: 'mcp',
+          tool: 'read_evidence_screenshot',
+          payload: { kind: 'screenshot-viewed', screenId: body.screenId, caseIds: body.caseIds, source: body.artifact },
+        }), 201);
+        return;
+      }
+      if (operation === 'render') {
+        const body = (await readBody(request)) as RecordTargetRenderRequest;
+        const bytes = decodeArtifactBytes(body.bytesBase64);
+        await this.reviews.putArtifact(reviewRunId, body.artifact, bytes);
+        success(response, await this.reviews.append({
+          reviewRunId,
+          actor: 'runner',
+          tool: body.receiptTool,
+          payload: { kind: 'target-rendered', screenId: body.screenId, caseId: body.caseId, sourceDigest: body.sourceDigest, tranche: body.tranche, round: body.round, attemptId: body.attemptId, targetRevision: body.targetRevision, target: body.artifact },
+        }), 201);
+        return;
+      }
+      if (operation === 'replay') {
+        const body = (await readBody(request)) as RecordScenarioReplayRequest;
+        success(response, await this.reviews.append({
+          reviewRunId,
+          actor: 'runner',
+          tool: body.receiptTool,
+          payload: { kind: 'scenario-replayed', screenId: body.screenId, caseId: body.caseId, scenarioId: body.scenarioId, receiptDigest: body.receiptDigest, targetRevision: body.targetRevision },
+        }), 201);
+        return;
+      }
+      if (operation === 'compare') {
+        const body = (await readBody(request)) as RecordArtifactCompareRequest;
+        await this.reviews.putArtifact(reviewRunId, body.diff.artifact, decodeArtifactBytes(body.diff.bytesBase64));
+        if (body.overlay) await this.reviews.putArtifact(reviewRunId, body.overlay.artifact, decodeArtifactBytes(body.overlay.bytesBase64));
+        success(response, await this.reviews.append({
+          reviewRunId,
+          actor: 'runner',
+          tool: body.receiptTool,
+          payload: {
+            kind: 'artifacts-compared', screenId: body.screenId, caseId: body.caseId, attemptId: body.attemptId,
+            sourceDigest: body.sourceDigest, targetDigest: body.targetDigest, diff: body.diff.artifact,
+            ...(body.overlay ? { overlay: body.overlay.artifact } : {}), comparable: body.comparable,
+            ...(body.normalizedDiffSignature === undefined ? {} : { normalizedDiffSignature: body.normalizedDiffSignature }),
+            ...(body.reason === undefined ? {} : { reason: body.reason }),
+          },
+        }), 201);
+        return;
+      }
+      if (operation === 'findings') {
+        const body = (await readBody(request)) as RecordReviewFindingsRequest;
+        success(response, await this.reviews.append({ reviewRunId, actor: body.actor, payload: { kind: 'findings-recorded', findings: body.findings } }), 201);
+        return;
+      }
+      if (operation === 'tranches') {
+        const body = (await readBody(request)) as ConsumeReviewApprovalRequest;
+        const approval = consumeReviewApproval(this.reviewApprovals, body.approvalToken, 'tranche', reviewRunId) as Extract<CreateReviewApprovalRequest, { kind: 'tranche' }>;
+        success(response, await this.reviews.append({ reviewRunId, actor: approval.actor, payload: { kind: 'tranche-authorized', screenId: approval.screenId, tranche: approval.tranche, approvalRef: approval.approvalRef } }), 201);
+        return;
+      }
+      const body = (await readBody(request)) as ConsumeReviewApprovalRequest;
+      const approval = consumeReviewApproval(this.reviewApprovals, body.approvalToken, 'finalize', reviewRunId) as Extract<CreateReviewApprovalRequest, { kind: 'finalize' }>;
+      success(response, await this.reviews.append({ reviewRunId, actor: approval.actor, payload: { kind: 'human-finalized', confirmationRef: approval.confirmationRef, decision: 'complete' } }), 201);
       return;
     }
 

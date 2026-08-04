@@ -118,6 +118,14 @@ try {
     "summarize_reconstruction_review",
     "resolve_target_components",
     "resolve_target_tokens",
+    "start_target_review",
+    "read_target_review",
+    "render_target_case",
+    "replay_target_scenario",
+    "compare_target_artifacts",
+    "record_review_findings",
+    "request_review_tranche",
+    "finalize_target_review",
   ]) {
     assert(
       tools.tools?.some((tool) => tool.name === name),
@@ -486,8 +494,21 @@ try {
   assert(
     review.coverageStatus === "partial" &&
       review.visualReviewStatus === "reviewed" &&
+      review.validationAuthority === "consumer-reported-review" &&
       review.overallScore === undefined,
     "Review summary did not report Case omission without a score.",
+  );
+  await expectToolErrorCode(
+    client.request("tools/call", {
+      name: "start_target_review",
+      arguments: {
+        handoffId: handoff.handoffId,
+        targetRoot: path.join(repoRoot, "apps/flutter_pb_app"),
+        targetBaselineCommit: "baseline",
+        targetRevision: "revision",
+      },
+    }),
+    "review-service-unavailable",
   );
 
   const next = await writer.commitRun({

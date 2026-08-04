@@ -6,7 +6,10 @@ import {
   type WorkspaceResetResult,
   type WorkspaceResetPlan,
   type WorkspaceResetApplyRequest,
+  type CreateReviewApprovalRequest,
+  type ReviewApprovalToken,
 } from '@proto-bridge/core/v2/service-contract';
+import type { ReviewSession } from '@proto-bridge/core/review';
 import type { AgentHandoff, CaptureJob } from '@proto-bridge/core/v2';
 import type { SelectionDraft } from '@proto-bridge/core/v2/capture';
 import type { LoadedCliConfig } from './config.js';
@@ -47,6 +50,8 @@ export type CliServiceClient = {
     implementationIntent?: string;
     acknowledgedRiskKinds: string[];
   }): Promise<AgentHandoff>;
+  readReview(reviewRunId: string): Promise<ReviewSession>;
+  createReviewApproval(input: CreateReviewApprovalRequest): Promise<ReviewApprovalToken>;
 };
 
 function serviceBaseUrl(loaded: LoadedCliConfig): string {
@@ -154,6 +159,12 @@ export async function connectLocalService(
         body: input,
       });
       return result.handoff;
+    },
+    readReview(reviewRunId) {
+      return authed(`/reviews/${encodeURIComponent(reviewRunId)}`);
+    },
+    createReviewApproval(input) {
+      return authed('/review-approvals', { method: 'POST', body: input });
     },
   };
 }

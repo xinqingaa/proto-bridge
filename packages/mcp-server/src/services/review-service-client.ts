@@ -1,0 +1,70 @@
+import { V2ContractError } from '@proto-bridge/core/v2';
+import type { LocalServiceEnvelope, LocalServiceSession } from '@proto-bridge/core/v2/service-contract';
+import type { ServerOptions } from '../types.js';
+
+export class ReviewServiceClient {
+  private session: LocalServiceSession | undefined;
+
+  constructor(private readonly options: ServerOptions) {}
+
+  async call<T>(path: string, init: { method?: 'GET' | 'POST'; body?: unknown } = {}): Promise<T> {
+    if (!this.options.serviceUrl) throw unavailable('No Local Service URL is configured for this MCP process.');
+    const session = await this.ensureSession();
+    try {
+      const response = await fetch(`${this.options.serviceUrl.replace(/\/$/, '')}${path}`, {
+        method: init.method ?? 'GET',
+        headers: {
+          Origin: this.options.serviceOrigin ?? new URL(this.options.serviceUrl).origin,
+          Authorization: `Bearer ${session.sessionToken}`,
+          ...(init.body === undefined ? {} : { 'Content-Type': 'application/json' }),
+        },
+        ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }),
+      });
+      const envelope = await response.json() as LocalServiceEnvelope;
+      if (!envelope.ok) throw new V2ContractError(envelope.error.code as never, envelope.error.message, envelope.error.details);
+      return envelope.data as T;
+    } catch (error) {
+      if (error instanceof V2ContractError) throw error;
+      this.session = undefined;
+      throw unavailable(error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  async readArtifact(reviewRunId: string, digest: string): Promise<Uint8Array> {
+    if (!this.options.serviceUrl) throw unavailable('No Local Service URL is configured for this MCP process.');
+    const session = await this.ensureSession();
+    try {
+      const response = await fetch(`${this.options.serviceUrl.replace(/\/$/, '')}/reviews/${encodeURIComponent(reviewRunId)}/artifacts/${encodeURIComponent(digest)}`, {
+        headers: { Origin: this.options.serviceOrigin ?? new URL(this.options.serviceUrl).origin, Authorization: `Bearer ${session.sessionToken}` },
+      });
+      if (!response.ok) {
+        const envelope = await response.json() as LocalServiceEnvelope;
+        if (!envelope.ok) throw new V2ContractError(envelope.error.code as never, envelope.error.message, envelope.error.details);
+      }
+      return new Uint8Array(await response.arrayBuffer());
+    } catch (error) {
+      if (error instanceof V2ContractError) throw error;
+      throw unavailable(error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  private async ensureSession(): Promise<LocalServiceSession> {
+    if (this.session && Date.parse(this.session.expiresAt) > Date.now()) return this.session;
+    try {
+      const response = await fetch(`${this.options.serviceUrl!.replace(/\/$/, '')}/session`, {
+        method: 'POST',
+        headers: { Origin: this.options.serviceOrigin ?? new URL(this.options.serviceUrl!).origin },
+      });
+      const envelope = await response.json() as LocalServiceEnvelope;
+      if (!envelope.ok) throw new Error(envelope.error.message);
+      this.session = envelope.data as LocalServiceSession;
+      return this.session;
+    } catch (error) {
+      throw unavailable(error instanceof Error ? error.message : String(error));
+    }
+  }
+}
+
+function unavailable(detail: string): V2ContractError {
+  return new V2ContractError('review-service-unavailable', `Authoritative Review requires the Local Service: ${detail}`);
+}

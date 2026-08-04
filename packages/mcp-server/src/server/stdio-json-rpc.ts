@@ -1,5 +1,6 @@
 import type { JsonRpcRequest, ServerOptions, ToolContext } from '../types.js';
 import { EvidenceStoreReader } from '../services/evidence-store-reader.js';
+import { ReviewServiceClient } from '../services/review-service-client.js';
 import { dispatch } from './dispatcher.js';
 import { errorData, errorMessage, send, sendError } from './responses.js';
 
@@ -27,6 +28,7 @@ export function createToolContext(options: ServerOptions): ToolContext {
   return {
     options,
     evidence: new EvidenceStoreReader(options),
+    reviews: new ReviewServiceClient(options),
   };
 }
 
