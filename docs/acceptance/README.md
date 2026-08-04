@@ -14,5 +14,3 @@
 ## 记录
 
 - [2026-08-03 冷链原型高保真还原：现状诊断、边界与优化规划](./2026-08-03-cold-chain-reconstruction-audit-and-optimization-plan.md)
-- [2026-07-31 账本星球 Tab 交互证据与还原缺口](./2026-07-31-ledger-planet-tab-evidence-gap.md)
-- [2026-07-31 手工 Evidence Journey](./2026-07-31-manual-evidence-journey.md)
