@@ -137,6 +137,7 @@ export type FlutterRouteMapping = {
   unresolved?: boolean | undefined;
 };
 
+/** Legacy advisory classification used only by conventions/example search. */
 export type FlutterComponentRole =
   | 'app-bar'
   | 'button'

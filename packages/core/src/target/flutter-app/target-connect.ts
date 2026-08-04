@@ -1,5 +1,7 @@
 import path from 'node:path';
+import { execFile } from 'node:child_process';
 import { readFile, realpath, stat } from 'node:fs/promises';
+import { promisify } from 'node:util';
 import fg from 'fast-glob';
 import type {
   AnalyzeFlutterTargetConventionsInput,
@@ -16,6 +18,8 @@ import { detectFlutterTargetConventions } from './architecture-profile.js';
 
 type DartFile = { path: string; text: string };
 type ComponentCandidate = { symbol: string; role: FlutterComponentRole; reason: string };
+
+const execFileAsync = promisify(execFile);
 
 const FLUTTER_TECHNICAL_COMPONENTS: ComponentCandidate[] = [
   { symbol: 'AppBar', role: 'app-bar', reason: 'Flutter Material app-bar API.' },
@@ -80,7 +84,9 @@ export async function findFlutterTargetExamples(input: FindFlutterTargetExamples
     ...(input.excludePaths ?? []),
     ...(input.candidateOutputRoot ? [input.candidateOutputRoot] : []),
   ]);
-  const files = await readDartFiles(flutterRoot, ['lib/**/*.dart'], exclusions);
+  const files = input.gitBase
+    ? await readDartFilesAtGitBase(flutterRoot, input.gitBase, exclusions)
+    : await readDartFiles(flutterRoot, ['lib/**/*.dart'], exclusions);
   const scopedFiles = input.module
     ? files.filter((file) => pathSegments(file.path).includes(input.module ?? ''))
     : files;
@@ -245,6 +251,47 @@ async function readDartFiles(
     }
   }
   return files;
+}
+
+async function readDartFilesAtGitBase(
+  flutterRoot: string,
+  gitBase: string,
+  exclusions: string[],
+): Promise<DartFile[]> {
+  if (!/^[A-Za-z0-9._/-]+$/.test(gitBase) || gitBase.startsWith('-') || gitBase.includes('..')) {
+    throw new Error(`Invalid gitBase for target example query: ${gitBase}`);
+  }
+  const prefix = (await execFileAsync('git', ['-C', flutterRoot, 'rev-parse', '--show-prefix'])).stdout;
+  const repositoryPrefix = toPosixPath(prefix.trim());
+  const treeRoot = `${repositoryPrefix}lib`;
+  const listed = await execFileAsync('git', [
+    '-C',
+    flutterRoot,
+    'ls-tree',
+    '--full-tree',
+    '-r',
+    '--name-only',
+    gitBase,
+    '--',
+    treeRoot,
+  ]);
+  const paths = listed.stdout
+    .split(/\r?\n/)
+    .map((item) => item.trim())
+    .filter((item) => item.endsWith('.dart'))
+    .map((item) => repositoryPrefix && item.startsWith(repositoryPrefix) ? item.slice(repositoryPrefix.length) : item)
+    .filter((item) =>
+      !/\.(?:g|freezed)\.dart$/.test(item) &&
+      !exclusions.some((excluded) => item === excluded || item.startsWith(`${excluded}/`)),
+    )
+    .sort();
+  return Promise.all(paths.map(async (relativePath) => {
+    const objectPath = `${repositoryPrefix}${relativePath}`;
+    const shown = await execFileAsync('git', ['-C', flutterRoot, 'show', `${gitBase}:${objectPath}`], {
+      maxBuffer: 4 * 1024 * 1024,
+    });
+    return { path: relativePath, text: shown.stdout };
+  }));
 }
 
 async function normalizeExampleExclusions(

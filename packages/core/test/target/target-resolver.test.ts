@@ -1,6 +1,8 @@
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
+import { promisify } from 'node:util';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   findTargetExamples,
@@ -9,6 +11,7 @@ import {
 } from '../../src/target/index.js';
 
 const roots: string[] = [];
+const execFileAsync = promisify(execFile);
 
 afterEach(async () => {
   await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
@@ -121,6 +124,27 @@ describe('Target component/token resolver', () => {
     ).rejects.toThrow(/inside targetRoot/);
   });
 
+  it('reads examples from gitBase instead of candidate worktree changes', async () => {
+    const root = await flutterTarget();
+    await write(root, 'lib/features/baseline/invoice_page.dart', 'class InvoicePage extends StatelessWidget { Widget build(c) => Scaffold(); }\n');
+    await git(root, ['init']);
+    await git(root, ['config', 'user.email', 'resolver@example.invalid']);
+    await git(root, ['config', 'user.name', 'Resolver Test']);
+    await git(root, ['add', '.']);
+    await git(root, ['commit', '-m', 'baseline']);
+    const gitBase = (await git(root, ['rev-parse', 'HEAD'])).trim();
+    await write(root, 'lib/features/candidate/invoice_copy.dart', 'class InvoiceCopy extends StatelessWidget { Widget build(c) => Scaffold(); }\n');
+
+    const examples = await findTargetExamples({
+      targetRoot: root,
+      pattern: 'invoice',
+      gitBase,
+    });
+
+    expect(examples.examples.map((item) => item.path)).toContain('lib/features/baseline/invoice_page.dart');
+    expect(examples.examples.map((item) => item.path)).not.toContain('lib/features/candidate/invoice_copy.dart');
+  });
+
   it('returns unsupported resolutions without inventing a Flutter mapping', async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), 'pb-target-unsupported-'));
     roots.push(root);
@@ -160,4 +184,8 @@ async function write(root: string, relativePath: string, content: string): Promi
   const file = path.join(root, relativePath);
   await mkdir(path.dirname(file), { recursive: true });
   await writeFile(file, content, 'utf8');
+}
+
+async function git(root: string, args: string[]): Promise<string> {
+  return (await execFileAsync('git', ['-C', root, ...args])).stdout;
 }
