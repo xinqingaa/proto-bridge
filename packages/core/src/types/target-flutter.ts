@@ -197,6 +197,9 @@ export type AnalyzeFlutterTargetConventionsInput = {
 
 export type FindFlutterTargetExamplesInput = {
   flutterRoot: string;
+  gitBase?: string | undefined;
+  excludePaths?: string[] | undefined;
+  candidateOutputRoot?: string | undefined;
   module?: string | undefined;
   pattern?: string | undefined;
   roles?: FlutterComponentRole[] | undefined;

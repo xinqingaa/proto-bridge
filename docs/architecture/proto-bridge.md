@@ -83,24 +83,25 @@ CLI 只解析参数、加载 Workspace 配置、调用 Core、格式化文本/JS
 - 通过 stdio JSON-RPC 暴露 Tools、Resources 和 Prompt；
 - 启动时固定 Store root 与 Workspace；
 - 使用 Core Evidence Read Model 和 Store Reader；
+- 以 `HandoffIndex → ScreenPacket → CaseDelta/EvidenceDetail` 提供固定、闭集、按需投影；
+- 握手公开 Workspace、能力、契约版本、源码构建指纹、进程身份和 Store generation；
 - 校验 Snapshot/revision/Blob 的可达性；
 - 返回可见 risks、unknown 和 conflicts；
 - 独立提供 Target conventions、examples 和 validation。
 
-MCP 不创建 Capture Job，不接受 Store 文件路径作为对象引用，不替 Agent选择实现。完整参考见 [MCP README](../../packages/mcp-server/README.md)。
+MCP 不创建 Capture Job，不接受 Store 文件路径作为对象引用，不替 Agent 选择实现。完整 Snapshot/Contract 读取仅为兼容和显式 debug，默认 Prompt 不调用。普通响应不按字节阈值截断；detail continuation 只按稳定逻辑查询边界产生。完整参考见 [MCP README](../../packages/mcp-server/README.md)。
 
 ## Target boundary
 
 `packages/core/src/target/flutter-app` 提供：
 
-- 工程上下文和架构轮廓；
-- 文档、路由和组件约定读取；
-- 既有实现示例查找；
-- 目标变更路径和原生验证结果检查。
+- Flutter 工程类型识别、文档发现、Dart inventory、显式 mapping 解析和代码校验；
+- 开放 component/token ID 的批量解析，输出 `resolved/candidate/stale/conflict/unresolved/unsupported`；
+- 既有实现示例查找及 Control/candidate output 排除；
+- 目标变更路径、实际采用 mapping 和原生验证结果检查。
 
-Target root 来自 Agent 当前任务或单次 Tool 参数。目标仓库不需要 `proto-bridge.json`，Target 结果不写入 Bundle。
+它不拥有任何具体产品的组件/Token 映射。真实目标工程的 `AGENTS.md`、`docs/proto-bridge.md`、`docs/components.md`、`docs/theme.md` 和公开代码拥有当前约束；可选 `docs/proto-bridge.target.json` 只是这些约束的严格机器投影。政策与机器 Contract 冲突返回 `conflict`，显式声明与代码不符返回 `stale`，代码启发式最多返回 `candidate`。Target root 来自 Agent 当前任务或单次 Tool 参数；目标仓库不需要 ProtoBridge Workspace 配置，Target 结果不写入 Bundle。
 
 ## 公共导出
 
 `@proto-bridge/core` 导出当前 Evidence 产品。`@proto-bridge/core/v2/*` 是需要精确 schema/protocol major 的子路径；Target query/validation 使用独立导出。公共导出以 `packages/core/package.json` 为准。
-

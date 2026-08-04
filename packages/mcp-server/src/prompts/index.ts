@@ -5,7 +5,7 @@ import { buildAgentPrompt } from '@proto-bridge/core/v2/prompts/agent-prompt';
 const promptDefinitions = [
   {
     name: 'consume_evidence_handoff',
-    description: '按固定 Snapshot/revision 消费 Agent Handoff，实现并验证目标代码。',
+    description: '按固定 Handoff 渐进读取 Screen/Case Evidence，实现并验证目标代码。',
     arguments: [
       { name: 'handoffId', description: '持久化 Agent Handoff ID。', required: true },
       { name: 'targetRoot', description: '目标仓库根目录；仓库无需 ProtoBridge 配置。', required: true },
@@ -33,7 +33,7 @@ export function getPrompt(params: JsonObject | undefined): JsonObject {
     targetRoot,
   });
   return {
-    description: '按固定 Snapshot/revision 消费 Agent Handoff，实现并验证目标代码。',
+    description: '按固定 Handoff 渐进读取 Screen/Case Evidence，实现并验证目标代码。',
     messages: [
       {
         role: 'user',

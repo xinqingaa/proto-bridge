@@ -80,10 +80,11 @@ describe('Delivery review artifacts', () => {
     );
     expect(contract).not.toHaveProperty('policy');
     expect(contract.screenshots).toHaveLength(1);
-    expect(await readFile(receipt.agentPromptPath, 'utf8')).toContain(
-      receipt.acceptanceContractPath,
-    );
-    expect(await readFile(receipt.agentPromptPath, 'utf8')).toContain(
+    const agentPrompt = await readFile(receipt.agentPromptPath, 'utf8');
+    expect(agentPrompt).not.toContain(receipt.acceptanceContractPath);
+    expect(agentPrompt).not.toContain('# Evidence Implementation Brief');
+    expect(agentPrompt).toContain('read_handoff_index');
+    expect(agentPrompt).toContain(
       '当前阶段：只读分析与实现计划',
     );
     expect(await readFile(receipt.evidenceBriefPath, 'utf8')).toContain(

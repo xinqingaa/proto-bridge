@@ -13,6 +13,9 @@ export async function findTargetExamplesTool(args: JsonObject): Promise<unknown>
     symbols: readStringArray(args, 'symbols'),
     screenId: readString(args, 'screenId'),
     limit: readNumber(args, 'limit'),
+    gitBase: readString(args, 'gitBase'),
+    excludePaths: readStringArray(args, 'excludePaths'),
+    candidateOutputRoot: readString(args, 'candidateOutputRoot'),
   };
   return findTargetExamples(input);
 }

@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { readFile } from 'node:fs/promises';
+import { readFile, realpath, stat } from 'node:fs/promises';
 import fg from 'fast-glob';
 import type {
   AnalyzeFlutterTargetConventionsInput,
@@ -74,9 +74,13 @@ export async function getFlutterTargetConventions(
 }
 
 export async function findFlutterTargetExamples(input: FindFlutterTargetExamplesInput): Promise<FlutterExampleRef[]> {
-  const flutterRoot = path.resolve(input.flutterRoot);
+  const flutterRoot = await realpath(input.flutterRoot).catch(() => path.resolve(input.flutterRoot));
   const limit = clamp(input.limit ?? 8, 1, 20);
-  const files = await readDartFiles(flutterRoot, ['lib/**/*.dart']);
+  const exclusions = await normalizeExampleExclusions(flutterRoot, [
+    ...(input.excludePaths ?? []),
+    ...(input.candidateOutputRoot ? [input.candidateOutputRoot] : []),
+  ]);
+  const files = await readDartFiles(flutterRoot, ['lib/**/*.dart'], exclusions);
   const scopedFiles = input.module
     ? files.filter((file) => pathSegments(file.path).includes(input.module ?? ''))
     : files;
@@ -213,13 +217,24 @@ function looksShared(filePath: string): boolean {
   return /(?:^|\/)(?:common|shared|widgets?|components?|design_system|ui)(?:\/|$)/.test(filePath);
 }
 
-async function readDartFiles(flutterRoot: string, patterns: string[]): Promise<DartFile[]> {
+async function readDartFiles(
+  flutterRoot: string,
+  patterns: string[],
+  exclusions: string[] = [],
+): Promise<DartFile[]> {
   const paths = await fg(patterns, {
     cwd: flutterRoot,
     onlyFiles: true,
     absolute: false,
     suppressErrors: true,
-    ignore: ['**/*.g.dart', '**/*.freezed.dart', '**/.dart_tool/**', '**/build/**', '**/_proto/**'],
+    ignore: [
+      '**/*.g.dart',
+      '**/*.freezed.dart',
+      '**/.dart_tool/**',
+      '**/build/**',
+      '**/_proto/**',
+      ...exclusions.flatMap((item) => [item, `${item}/**`]),
+    ],
   });
   const files: DartFile[] = [];
   for (const filePath of paths.sort()) {
@@ -230,6 +245,27 @@ async function readDartFiles(flutterRoot: string, patterns: string[]): Promise<D
     }
   }
   return files;
+}
+
+async function normalizeExampleExclusions(
+  flutterRoot: string,
+  values: string[],
+): Promise<string[]> {
+  const results: string[] = [];
+  for (const value of values) {
+    const absolute = path.isAbsolute(value)
+      ? path.resolve(value)
+      : path.resolve(flutterRoot, value);
+    const resolved = await stat(absolute)
+      .then(() => realpath(absolute))
+      .catch(() => Promise.resolve(absolute));
+    const relative = path.relative(flutterRoot, resolved);
+    if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) {
+      throw new Error(`Target example exclusion must resolve inside targetRoot: ${value}`);
+    }
+    results.push(toPosixPath(relative));
+  }
+  return [...new Set(results)].sort();
 }
 
 async function collectUsageLines(flutterRoot: string, symbols: string[], module: string | undefined): Promise<string[]> {

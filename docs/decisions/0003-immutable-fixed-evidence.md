@@ -24,5 +24,5 @@ Run、Attempt、Evidence revision、Snapshot、Catalog revision、Issue、Stalen
 - 失败或降级结果不能替换更可信 active revision。
 - Staleness Report 判断 Snapshot，不修改 Snapshot。
 - MCP 校验对象可达性并拒绝 latest fallback。
+- Consumer projection 和 continuation 同时绑定 Handoff、Snapshot、契约版本与规范化查询，续读不能漂移到新 active Snapshot。
 - Store 文件路径不属于公共引用。
-

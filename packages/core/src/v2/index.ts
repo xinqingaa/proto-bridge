@@ -6,6 +6,7 @@
 export * from './contracts/index.js';
 export * from './resolver/index.js';
 export * from './evidence-read-model.js';
+export * from './consumer-projection.js';
 export * from './evidence-inventory.js';
 export * from './acceptance-contract.js';
 export * from './evidence-brief.js';

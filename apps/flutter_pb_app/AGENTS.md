@@ -23,9 +23,9 @@
 
 ## 实现流程
 
-1. 阅读 Evidence 的固定 Snapshot、revision、Fragment 和 Screenshot。
+1. 按 Consumer Skill 读取固定 Handoff index、Screen packet、不同 digest 的 Screenshot，以及必要的 Case delta/detail。
 2. 阅读目标文档、公共组件定义和相似页面。
-3. 先列出 Evidence 组件到目标 symbol/import 的映射，以及 Case/variant/interaction 到目标状态/路由的映射。
+3. 批量解析 Evidence 组件/Token 到目标 symbol/import/accessor 的映射；只有 resolver 返回 `resolved` 才可视为已验证落点，`candidate/stale/conflict/unresolved` 必须披露。
 4. 无法确认的映射、布局敏感值或状态必须标记 unresolved 并记录风险。
 5. 使用现有 Theme、组件和路由实现；不得按外观用通用 widget 静默替换有语义的组件。
 6. 实现后运行目标工程检查、测试和可用的同尺寸视觉验证。

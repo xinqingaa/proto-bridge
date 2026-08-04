@@ -2,6 +2,7 @@ import path from 'node:path';
 import { execFile } from 'node:child_process';
 import { access, readFile } from 'node:fs/promises';
 import { promisify } from 'node:util';
+import fg from 'fast-glob';
 
 const execFileAsync = promisify(execFile);
 
@@ -18,6 +19,7 @@ export type FlutterTargetValidationResult = {
   fileIssues: FlutterTargetFileIssue[];
   expectedFiles: string[];
   missingExpectedFiles: string[];
+  mappingIssues: FlutterTargetFileIssue[];
   validationHints: string[];
   status: 'ok' | 'needs-review';
 };
@@ -28,6 +30,15 @@ export type ValidateFlutterTargetChangesInput = {
   allowedPaths?: string[];
   expectedFiles?: string[];
   validationHints?: string[];
+  resolvedMappings?: FlutterAdoptedMapping[];
+};
+
+export type FlutterAdoptedMapping = {
+  id: string;
+  kind: 'component' | 'token';
+  symbol?: string;
+  accessor?: string;
+  importPath?: string;
 };
 
 /**
@@ -48,6 +59,10 @@ export async function validateFlutterTargetChanges(
     targetRoot,
     changedFiles.filter((file) => file.endsWith('.dart')),
   );
+  const mappingIssues = await validateAdoptedMappings(
+    targetRoot,
+    input.resolvedMappings ?? [],
+  );
   return buildFlutterTargetValidationResult({
     targetRoot,
     changedFiles,
@@ -56,6 +71,7 @@ export async function validateFlutterTargetChanges(
     validationHints: input.validationHints,
     expectedFiles,
     missingExpectedFiles,
+    mappingIssues,
   });
 }
 
@@ -165,11 +181,13 @@ export function buildFlutterTargetValidationResult(input: {
   validationHints?: string[] | undefined;
   expectedFiles?: string[] | undefined;
   missingExpectedFiles?: string[] | undefined;
+  mappingIssues?: FlutterTargetFileIssue[] | undefined;
 }): FlutterTargetValidationResult {
   const outsideAllowedPaths = input.allowedPaths.length
     ? input.changedFiles.filter((file) => !input.allowedPaths.some((allowedPath) => file === allowedPath || file.startsWith(ensureTrailingSlash(allowedPath))))
     : [];
   const missingExpectedFiles = input.missingExpectedFiles ?? [];
+  const mappingIssues = input.mappingIssues ?? [];
   return {
     targetRoot: input.targetRoot,
     changedFiles: input.changedFiles,
@@ -178,9 +196,41 @@ export function buildFlutterTargetValidationResult(input: {
     fileIssues: input.fileIssues,
     expectedFiles: input.expectedFiles ?? [],
     missingExpectedFiles,
+    mappingIssues,
     validationHints: input.validationHints ?? [],
-    status: outsideAllowedPaths.length || input.fileIssues.length || missingExpectedFiles.length ? 'needs-review' : 'ok',
+    status: outsideAllowedPaths.length || input.fileIssues.length || missingExpectedFiles.length || mappingIssues.length ? 'needs-review' : 'ok',
   };
+}
+
+async function validateAdoptedMappings(
+  targetRoot: string,
+  mappings: FlutterAdoptedMapping[],
+): Promise<FlutterTargetFileIssue[]> {
+  if (mappings.length === 0) return [];
+  const paths = await fg(['lib/**/*.dart'], {
+    cwd: targetRoot,
+    onlyFiles: true,
+    ignore: ['**/*.g.dart', '**/*.freezed.dart', '**/.dart_tool/**', '**/build/**'],
+    suppressErrors: true,
+  });
+  const files = await Promise.all(
+    paths.sort().map(async (file) => ({ file, text: await readFile(path.join(targetRoot, file), 'utf8') })),
+  );
+  const issues: FlutterTargetFileIssue[] = [];
+  for (const mapping of mappings) {
+    const target = mapping.symbol ?? mapping.accessor;
+    if (!target || !files.some((file) => target.split('.').every((segment) => file.text.includes(segment)))) {
+      issues.push({ file: mapping.importPath ?? '<target>', issue: `Resolved ${mapping.kind} mapping ${mapping.id} no longer exposes ${target ?? 'a target symbol/accessor'}.` });
+      continue;
+    }
+    if (mapping.importPath && !mapping.importPath.startsWith('package:')) {
+      const relative = mapping.importPath.replace(/^lib\//, '');
+      if (!paths.includes(`lib/${relative}`) && !paths.includes(relative)) {
+        issues.push({ file: mapping.importPath, issue: `Resolved mapping import no longer exists for ${mapping.id}.` });
+      }
+    }
+  }
+  return issues;
 }
 
 function ensureTrailingSlash(value: string): string {

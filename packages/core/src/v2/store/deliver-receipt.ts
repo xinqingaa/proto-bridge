@@ -265,8 +265,6 @@ export async function writeDeliveryReceipt(
       ? { implementationIntent: input.implementationIntent }
       : {}),
     risks: input.handoff.risks,
-    acceptanceContractPath,
-    evidenceBrief,
   });
   const agentPromptPath = path.join(deliveryDir, 'agent-prompt.md');
   await writeFile(agentPromptPath, agentPrompt, 'utf8');

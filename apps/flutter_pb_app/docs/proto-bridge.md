@@ -35,6 +35,15 @@
 
 该表是目标工程自己的适配契约，不应被 ProtoBridge 核心代码硬编码到其他目标工程。
 
+## 来源优先级与 resolver 职责
+
+1. 本工程 `AGENTS.md`、本文件、`components.md`、`theme.md` 和公开 Dart API 是当前目标约束的首要来源。
+2. `packages/core/src/target/flutter-app` 只负责发现这些来源、解析受控表格、扫描当前 Dart inventory 并验证 symbol/import/constructor/accessor/usage；它不得内置本工程的 `Common*` 或 `TS.*` 映射。
+3. 可选 `docs/proto-bridge.target.json` 仅用于把稳定映射机器化；缺失不影响文档解析。它与 `AGENTS.md` 冲突时 resolver 返回 `conflict`，与当前代码不符时返回 `stale`，不能用优先级静默覆盖。
+4. 没有显式声明时，代码搜索只能返回 `candidate`；多个候选或未知 ID 返回 `unresolved`，由 Agent 披露或补充目标侧声明。
+
+因此本工程文档回答“应当使用什么”，Flutter adapter 回答“声明在哪里、当前代码是否仍支持以及有哪些候选”。
+
 ## 适配规则
 
 - 语义组件映射优先于外观相似性。`CommonChip` 不替代 `CommonBadge`，`Wrap` 不替代 `CommonFilterBar`，普通 `ListView` 不替代 `CommonScrollableDataList`。

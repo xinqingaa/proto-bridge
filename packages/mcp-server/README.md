@@ -28,7 +28,18 @@ pnpm pb:mcp -- --print-config
 
 ## Evidence Tools
 
-- `inspect_evidence_workspace`
+默认消费路径：
+
+- `inspect_evidence_workspace`（Workspace、能力、契约版本、build fingerprint、进程启动时间和 Store generation 握手）
+- `read_handoff_index`
+- `read_screen_packet`
+- `read_case_delta`
+- `read_evidence_detail`
+- `read_evidence_screenshot`（视觉消费必须使用；返回 MCP ImageContent）
+- `summarize_reconstruction_review`
+
+兼容与显式 debug 路径：
+
 - `list_evidence_bundles`
 - `list_evidence_history`
 - `read_evidence_snapshot`
@@ -41,17 +52,19 @@ pnpm pb:mcp -- --print-config
 - `read_evidence_staleness`
 - `read_agent_handoff`
 - `read_evidence_blob`
-- `read_evidence_screenshot`（视觉消费必须使用；返回 MCP ImageContent，不返回 base64 文本）
 - `read_acceptance_contract`（非评分的五维实施与复查指引）
-- `summarize_reconstruction_review`（汇总 Case/Screenshot/Scenario 覆盖和披露项，不计算分数）
+
+兼容工具不会被默认 Prompt 调用。普通 JSON 响应没有按字节截断规则；`read_evidence_detail` 只在调用方选择逻辑分页时返回绑定固定查询的 continuation。
 
 ## Target Tools
 
 - `read_target_conventions`
+- `resolve_target_components`
+- `resolve_target_tokens`
 - `find_target_examples`
 - `validate_target_changes`
 
-这些工具通过 Target adapter 访问目标工程；当前内置 Flutter adapter，其他目标会返回 unsupported/unresolved。主 Evidence 消费链路不要求 Flutter；Target Tools 只读目标仓库，不读取或写入 Evidence。
+这些工具通过 Target adapter 访问目标工程；当前内置 Flutter adapter，其他目标会返回 unsupported。真实目标文档与公开代码优先，可选机器 Contract 不能覆盖政策；显式 mapping 通过当前代码验证才返回 resolved，启发式结果最多为 candidate。`find_target_examples` 支持排除 Control/candidate output，`validate_target_changes` 可复核 Agent 实际采用的 resolved mapping。Target Tools 只读目标仓库，不读取或写入 Evidence。
 
 ## Resources 与 Prompt
 
@@ -60,7 +73,7 @@ pnpm pb:mcp -- --print-config
 - `proto-bridge://evidence/{bundleId}/snapshots/{snapshotId}/screenshots/{blobId}`
 - Prompt：`consume_evidence_handoff`
 
-Consumer 先确认 Workspace 并读取 Handoff，随后只读取 Handoff 固定的 Snapshot/revision。详细顺序见 [Agent 消费指南](../../docs/guides/agent-consumption.md)。
+Consumer 的唯一默认顺序是 `inspect → read_handoff_index → read_screen_packet → screenshot → case_delta/detail`。详细规则见 [Agent 消费指南](../../docs/guides/agent-consumption.md)。
 
 ## 开发
 

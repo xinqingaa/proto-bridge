@@ -11,6 +11,7 @@ export type ValidateTargetChangesInput = {
   allowedPaths?: string[] | undefined;
   expectedFiles?: string[] | undefined;
   validationHints?: string[] | undefined;
+  resolvedMappings?: import('./flutter-app/validation/index.js').FlutterAdoptedMapping[] | undefined;
 };
 
 export type TargetValidationResult =
@@ -54,6 +55,7 @@ export async function validateTargetChanges(
       ...(input.allowedPaths ? { allowedPaths: input.allowedPaths } : {}),
       ...(input.expectedFiles ? { expectedFiles: input.expectedFiles } : {}),
       ...(input.validationHints ? { validationHints: input.validationHints } : {}),
+      ...(input.resolvedMappings ? { resolvedMappings: input.resolvedMappings } : {}),
     })),
   };
 }

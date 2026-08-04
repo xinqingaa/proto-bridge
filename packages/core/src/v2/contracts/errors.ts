@@ -18,6 +18,8 @@ export type V2ErrorCode =
   | 'capacity-exceeded'
   | 'blob-rejected'
   | 'clean-plan-stale'
+  | 'invalid-continuation'
+  | 'incompatible-consumer-capability'
   | 'unsafe-input'
   | 'preflight-expired'
   | 'unauthorized';

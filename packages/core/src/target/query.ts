@@ -10,6 +10,14 @@ import type {
   FlutterExampleRef,
   FlutterTargetConventions,
 } from '../types/index.js';
+import {
+  resolveFlutterTargetComponents,
+  resolveFlutterTargetTokens,
+} from './flutter-app/resolver.js';
+import type {
+  ResolveTargetMappingsInput,
+  TargetResolutionBatch,
+} from './types.js';
 
 export type TargetAdapterId = 'flutter' | 'unsupported';
 
@@ -27,6 +35,9 @@ export type ReadTargetConventionsInput = {
 };
 
 export type FindTargetExamplesInput = ReadTargetConventionsInput & {
+  gitBase?: string | undefined;
+  excludePaths?: string[] | undefined;
+  candidateOutputRoot?: string | undefined;
   pattern?: string | undefined;
   screenId?: string | undefined;
   limit?: number | undefined;
@@ -132,8 +143,23 @@ export async function findTargetExamples(
       symbols: input.symbols,
       screenId: input.screenId,
       limit: input.limit,
+      gitBase: input.gitBase,
+      excludePaths: input.excludePaths,
+      candidateOutputRoot: input.candidateOutputRoot,
     }),
     warnings: [],
     unresolved: [],
   };
+}
+
+export async function resolveTargetComponents(
+  input: ResolveTargetMappingsInput,
+): Promise<TargetResolutionBatch> {
+  return resolveFlutterTargetComponents(input);
+}
+
+export async function resolveTargetTokens(
+  input: ResolveTargetMappingsInput,
+): Promise<TargetResolutionBatch> {
+  return resolveFlutterTargetTokens(input);
 }

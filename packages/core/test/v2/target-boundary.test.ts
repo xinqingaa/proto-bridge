@@ -57,6 +57,14 @@ describe('V2 Target boundary', () => {
     const result = await validateFlutterTargetChanges({
       targetRoot: root,
       allowedPaths: ['lib'],
+      resolvedMappings: [
+        {
+          id: 'open.removed-component',
+          kind: 'component',
+          symbol: 'RemovedComponent',
+          importPath: 'common/widgets/removed_component.dart',
+        },
+      ],
     });
     expect(result.changedFiles).toEqual(['lib/task_list.dart']);
     expect(result.fileIssues).toEqual(
@@ -65,5 +73,10 @@ describe('V2 Target boundary', () => {
       ]),
     );
     expect(result.targetRoot).toBe(root);
+    expect(result.mappingIssues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ issue: expect.stringContaining('open.removed-component') }),
+      ]),
+    );
   });
 });

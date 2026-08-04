@@ -38,7 +38,8 @@ test("task-list delivers in one flow sheet and produces an Agent prompt", async 
   await expect(page.getByTestId("handoff-id")).toBeVisible();
   const prompt = await page.getByTestId("agent-prompt").innerText();
   expect(prompt).toContain("ProtoBridge Agent");
-  expect(prompt).toContain("read_agent_handoff");
+  expect(prompt).toContain("read_handoff_index");
+  expect(prompt).not.toContain("read_acceptance_contract");
 
   await page.getByRole("button", { name: "完成" }).click();
 });

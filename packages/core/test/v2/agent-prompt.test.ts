@@ -10,7 +10,7 @@ describe('agent-prompt', () => {
     expect(riskKindLabel('partial-coverage')).toBe('覆盖不完整');
   });
 
-  it('embeds fixed Store refs and optional risks into the Agent prompt', () => {
+  it('embeds fixed refs and risks without embedding legacy full-read payloads', () => {
     const prompt = buildAgentPrompt({
       handoffId: 'handoff-1',
       workspaceId: 'pbwork-local',
@@ -18,8 +18,6 @@ describe('agent-prompt', () => {
       snapshotId: 'snapshot-1',
       targetRoot: '/tmp/flutter_pb_app',
       implementationIntent: '还原任务列表',
-      acceptanceContractPath: '/tmp/delivery/acceptance-contract.json',
-      evidenceBrief: '# Evidence Implementation Brief\n\n- Selected Cases: 2',
       risks: [
         {
           kind: 'required-unknown',
@@ -34,7 +32,7 @@ describe('agent-prompt', () => {
     expect(prompt).toContain('/tmp/flutter_pb_app');
     expect(prompt).toContain('还原任务列表');
     expect(prompt).toContain('存在未证明的必需要素');
-    expect(prompt).toContain('read_agent_handoff');
+    expect(prompt).toContain('read_handoff_index');
     expect(prompt).toContain('不得切换到 `active`、`latest`');
     expect(prompt).toContain('# Handoff Consumer');
     expect(prompt).toContain('# Target Contract');
@@ -42,11 +40,10 @@ describe('agent-prompt', () => {
     expect(prompt).toContain('# Verification');
     expect(prompt).toContain('# Final Report');
     expect(prompt).toContain('read_evidence_screenshot');
-    expect(prompt).toContain('/tmp/delivery/acceptance-contract.json');
     expect(prompt).toContain('# ProtoBridge Evidence 驱动的页面实现');
     expect(prompt).toContain('当前阶段：只读分析与实现计划');
     expect(prompt).toContain('本阶段不得修改目标工程');
-    expect(prompt).toContain('# Evidence Implementation Brief');
+    expect(prompt).not.toContain('read_acceptance_contract');
     expect(prompt).toContain('不得直接进入实施');
     expect(prompt).toContain('Screenshot 是最终可见结果的首要依据');
     expect(prompt).toContain('不要凭经验补造 Evidence 未支持的容器');

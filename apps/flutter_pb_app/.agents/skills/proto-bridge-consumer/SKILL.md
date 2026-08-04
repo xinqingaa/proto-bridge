@@ -10,9 +10,10 @@ Use this workflow when a task supplies a fixed Workspace, Handoff, Bundle, Snaps
 ## Read Before Editing
 
 1. Read `AGENTS.md`, `README.md`, and the relevant files under `docs/`.
-2. Use the configured ProtoBridge MCP to read the fixed Handoff, mandatory risks, Snapshot, Staleness Report, selected Cases, revisions, Fragments, Screenshots, and relevant catalogs. Never replace fixed references with active/latest data.
-3. Inspect every required Screenshot directly. Record the visible structure, responsive assumptions, and unresolved layout-sensitive values.
-4. Inspect similar pages and the actual public component, Theme, and router APIs before deciding file locations or state ownership.
+2. Call `inspect_evidence_workspace`, verify the Workspace and required consumer capabilities, then call `read_handoff_index`. Report every `mandatoryRisks` item before editing. Never replace fixed references with active/latest data.
+3. Read one `read_screen_packet` per selected Screen. Use `read_case_delta` for non-baseline/state Cases and `read_evidence_detail` only to answer a concrete implementation question. Follow continuation only for that same query until complete; never cycle through all projections or restart completed queries.
+4. Inspect every distinct Screenshot directly using the digest group's representative blob ID. Record the visible structure, responsive assumptions, covered Cases, and unresolved layout-sensitive values.
+5. Inspect similar pages and the actual public component, Theme, and router APIs before deciding file locations or state ownership. Real app docs and public code take priority over adapter fallback rules.
 
 ## Build The Selected Scope
 

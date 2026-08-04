@@ -16,5 +16,6 @@ PBWork 和 CLI 是 Evidence Producer；MCP 是固定 Evidence Consumer；Target 
 - MCP 不创建 Job、不写 Bundle。
 - Target 结果不进入 Evidence revision。
 - Agent 先读取固定 Evidence，再读取 Target 上下文。
+- Target adapter 负责发现、解析和校验，不拥有具体目标产品的映射；真实目标文档/公开代码优先，可选机器 Contract 冲突时不得覆盖政策。
+- 只有显式目标声明通过当前代码校验才能成为 `resolved`；启发式命中保持 `candidate`。
 - CLI、MCP、Local Service 不复制 Core 状态和引用算法。
-

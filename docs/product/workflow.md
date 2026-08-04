@@ -10,8 +10,8 @@ PBWork Design Foundation / Components
   → isolated Capture Job
   → immutable Run + Evidence revisions + Snapshot
   → Evidence Review + Staleness
-  → Deliver (Handoff + Evidence Brief + deduplicated Review + agent-prompt)
-  → MCP fixed read
+  → Deliver (Handoff + human/debug artifacts + agent-prompt)
+  → MCP fixed progressive projections
   → Agent implementation + target validation
 ```
 
@@ -91,7 +91,7 @@ PBWork Evidence Review 按 Screen、Case 和语义区域展示：
 
 ## 6. Deliver 与 Agent Handoff
 
-产品主路径是 Deliver（PBWork「交付到 Agent」或 CLI `deliver`）：在同一流程内完成 Capture（或续跑已有 Snapshot）、创建 Handoff，并写入 `.proto-bridge/deliveries/`（收据、Evidence Brief、按图片内容去重的 Review 与 Agent 提示词）。完全相同的 Screenshot 只输出一份 PNG，但保留全部 Case 和 Blob 引用。deliveries 只是 Store 索引；MCP 仍按 Handoff / Snapshot 读 Store。
+产品主路径是 Deliver（PBWork「交付到 Agent」或 CLI `deliver`）：在同一流程内完成 Capture（或续跑已有 Snapshot）、创建 Handoff，并写入 `.proto-bridge/deliveries/`（收据、供人工/debug 查看用的 Evidence Brief 与 Review、按图片内容去重的 Screenshot、Agent 提示词）。完全相同的 Screenshot 只输出一份 PNG，但保留全部 Case 和 Blob 引用。Agent 提示词不嵌入 Brief 或完整 Contract；deliveries 只是 Store 索引，默认消费通过 MCP 的固定 Handoff 投影完成。
 
 Handoff 固定：
 
@@ -102,20 +102,19 @@ Handoff 固定：
 - 具体 Case、revision 和 Fragment；
 - `mandatoryRiskReport`。
 
-Handoff 是 Evidence 索引，不是实现计划。Prompt 先要求 Agent 只读核对固定 Evidence、Screenshot 与目标工程，输出实施计划并等待用户确认；确认后才进入实现。内嵌的五视角 Evidence Brief 用于建立全局理解，不是打分表或映射配额。PBWork 与 CLI 共用同一 Core 能力。
+Handoff 是 Evidence 索引，不是实现计划。Prompt 先要求 Agent 通过渐进投影只读核对 Screenshot、Case 差异与目标工程，输出实施计划并等待用户确认；确认后才进入实现。PBWork 与 CLI 共用同一 Core 能力。
 
 ## 7. MCP 与目标实现
 
 Agent 通过 MCP：
 
-1. 确认 MCP 绑定的 Workspace；
-2. 读取 Handoff；
-3. 在编辑前报告全部 mandatory risks；
-4. 读取固定 Snapshot、Coverage、Staleness Report 和 revision；
-5. 按需读取 Fragment、Screenshot 和 Issue；
-6. 阅读目标仓库自身规范与既有代码；
-7. 实现并运行目标原生测试；
-8. 调用 Target validation 工具核对变更范围和结果。
+1. 用 `inspect_evidence_workspace` 确认 Workspace、契约版本与能力；
+2. 用 `read_handoff_index` 固定范围并在编辑前报告全部 mandatory risks；
+3. 每个 Screen 读取 `read_screen_packet`，每个不同 digest 查看一次 Screenshot；
+4. 仅为非 baseline 状态或明确实现问题读取 `read_case_delta` / `read_evidence_detail`；
+5. 阅读目标仓库自身规范与既有代码；
+6. 实现并运行目标原生测试；
+7. 调用适用的 Target validation 工具核对变更范围和结果。
 
 Target 查询与 Capture Evidence 互相隔离。目标仓库的既有组件和约定可以指导实现，但不能覆盖原型 Evidence 中的 unknown 或 conflict。
 

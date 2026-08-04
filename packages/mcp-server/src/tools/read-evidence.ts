@@ -1,11 +1,20 @@
 import type { JsonObject, ToolContext } from "../types.js";
-import { V2ContractError } from "@proto-bridge/core/v2";
+import {
+  buildCaseDelta,
+  buildEvidenceDetail,
+  buildHandoffIndex,
+  buildScreenPacket,
+  EVIDENCE_DETAIL_PROJECTIONS,
+  V2ContractError,
+  type EvidenceDetailProjection,
+} from "@proto-bridge/core/v2";
 import {
   ReconstructionReviewObservation,
   summarizeReconstructionReview,
 } from "@proto-bridge/core/v2";
 import {
   readBoolean,
+  readNumber,
   readString,
   readStringArray,
 } from "../utils/args.js";
@@ -13,6 +22,7 @@ import {
   evidenceScreenshotUri,
   evidenceSnapshotUri,
 } from "../services/evidence-store-reader.js";
+import { mcpRuntimeInfo } from "../runtime-info.js";
 
 export async function listEvidenceBundlesTool(
   context: ToolContext,
@@ -34,8 +44,10 @@ export async function inspectEvidenceWorkspaceTool(
 ): Promise<unknown> {
   return {
     workspace: context.evidence.workspace(),
+    runtime: mcpRuntimeInfo(),
     messages: [
       "MCP is bound to this logical Workspace; Store paths are never accepted by Evidence tools.",
+      "Use capabilities and contract versions to verify compatibility before reading a Handoff index.",
     ],
   };
 }
@@ -216,6 +228,60 @@ export async function readAcceptanceContractTool(
   );
 }
 
+export async function readHandoffIndexTool(
+  context: ToolContext,
+  args: JsonObject,
+): Promise<unknown> {
+  const input = await context.evidence.readConsumerProjectionInput(
+    requiredString(args, "handoffId"),
+  );
+  return buildHandoffIndex(input);
+}
+
+export async function readScreenPacketTool(
+  context: ToolContext,
+  args: JsonObject,
+): Promise<unknown> {
+  const input = await context.evidence.readConsumerProjectionInput(
+    requiredString(args, "handoffId"),
+  );
+  return buildScreenPacket(input, requiredString(args, "screenId"));
+}
+
+export async function readCaseDeltaTool(
+  context: ToolContext,
+  args: JsonObject,
+): Promise<unknown> {
+  const input = await context.evidence.readConsumerProjectionInput(
+    requiredString(args, "handoffId"),
+  );
+  return buildCaseDelta(
+    input,
+    requiredString(args, "screenId"),
+    requiredString(args, "caseId"),
+  );
+}
+
+export async function readEvidenceDetailTool(
+  context: ToolContext,
+  args: JsonObject,
+): Promise<unknown> {
+  const handoffId = requiredString(args, "handoffId");
+  const projection = requiredProjection(args);
+  const input = await context.evidence.readConsumerProjectionInput(handoffId);
+  return buildEvidenceDetail(input, {
+    handoffId,
+    screenId: requiredString(args, "screenId"),
+    projection,
+    ...(readString(args, "caseId") ? { caseId: readString(args, "caseId")! } : {}),
+    ...(readStringArray(args, "regionIds") ? { regionIds: readStringArray(args, "regionIds")! } : {}),
+    ...(readStringArray(args, "componentIds") ? { componentIds: readStringArray(args, "componentIds")! } : {}),
+    ...(readStringArray(args, "tokenIds") ? { tokenIds: readStringArray(args, "tokenIds")! } : {}),
+    ...(readNumber(args, "pageSize") !== undefined ? { pageSize: readNumber(args, "pageSize")! } : {}),
+    ...(readString(args, "cursor") ? { cursor: readString(args, "cursor")! } : {}),
+  });
+}
+
 export async function summarizeReconstructionReviewTool(
   context: ToolContext,
   args: JsonObject,
@@ -293,4 +359,15 @@ function requiredString(args: JsonObject, key: string): string {
   const value = readString(args, key);
   if (!value) throw new Error(`${key} is required.`);
   return value;
+}
+
+function requiredProjection(args: JsonObject): EvidenceDetailProjection {
+  const value = requiredString(args, "projection");
+  if (!EVIDENCE_DETAIL_PROJECTIONS.includes(value as EvidenceDetailProjection)) {
+    throw new V2ContractError(
+      "unsafe-input",
+      `projection must be one of: ${EVIDENCE_DETAIL_PROJECTIONS.join(", ")}.`,
+    );
+  }
+  return value as EvidenceDetailProjection;
 }

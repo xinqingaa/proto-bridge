@@ -108,10 +108,16 @@ try {
     "read_evidence_issue",
     "read_evidence_staleness",
     "read_agent_handoff",
+    "read_handoff_index",
+    "read_screen_packet",
+    "read_case_delta",
+    "read_evidence_detail",
     "read_evidence_blob",
     "read_evidence_screenshot",
     "read_acceptance_contract",
     "summarize_reconstruction_review",
+    "resolve_target_components",
+    "resolve_target_tokens",
   ]) {
     assert(
       tools.tools?.some((tool) => tool.name === name),
@@ -138,6 +144,41 @@ try {
   assert(
     workspace.workspace?.workspaceId === reference.WORKSPACE_ID,
     "MCP is not bound to the expected logical Workspace.",
+  );
+  assert(
+    workspace.runtime?.build?.fingerprint?.startsWith("sha256:") &&
+      workspace.runtime?.processStartedAt &&
+      workspace.runtime?.contracts?.projectionVersion === 1 &&
+      workspace.runtime?.store?.generation === "legacy-unavailable" &&
+      workspace.runtime?.capabilities?.includes("handoff-index") &&
+      workspace.runtime?.capabilities?.includes("image-content-screenshot"),
+    "MCP capability/build handshake is incomplete.",
+  );
+
+  const targetComponents = parseToolJson(
+    await client.request("tools/call", {
+      name: "resolve_target_components",
+      arguments: {
+        targetRoot: path.join(repoRoot, "apps/flutter_pb_app"),
+        componentIds: ["app-bar"],
+      },
+    }),
+  );
+  const targetTokens = parseToolJson(
+    await client.request("tools/call", {
+      name: "resolve_target_tokens",
+      arguments: {
+        targetRoot: path.join(repoRoot, "apps/flutter_pb_app"),
+        tokenIds: ["color.error"],
+      },
+    }),
+  );
+  assert(
+    targetComponents.resolutions?.[0]?.status === "resolved" &&
+      targetComponents.resolutions?.[0]?.candidates?.[0]?.symbol === "CommonAppBar" &&
+      targetTokens.resolutions?.[0]?.status === "resolved" &&
+      targetTokens.resolutions?.[0]?.candidates?.[0]?.accessor === "TS.colors.error",
+    "Target component/token resolver did not honor target-owned declarations and current code.",
   );
 
   const history = parseToolJson(
@@ -266,6 +307,85 @@ try {
       Array.isArray(handoffResult.mandatoryRiskReport),
     "Handoff reader did not return fixed refs and mandatory risks.",
   );
+
+  const handoffIndex = parseToolJson(
+    await client.request("tools/call", {
+      name: "read_handoff_index",
+      arguments: { handoffId: handoff.handoffId },
+    }),
+  );
+  assert(
+    handoffIndex.fixedRefs?.snapshotId === fixedSnapshotId &&
+      handoffIndex.screens?.[0]?.screenId === reference.SCREEN_ID &&
+      handoffIndex.requiredCapabilities?.includes("evidence-detail") &&
+      handoffIndex.omittedCategories?.includes("full-facts"),
+    "Handoff index did not preserve fixed identity or projection boundaries.",
+  );
+
+  const screenPacket = parseToolJson(
+    await client.request("tools/call", {
+      name: "read_screen_packet",
+      arguments: {
+        handoffId: handoff.handoffId,
+        screenId: reference.SCREEN_ID,
+      },
+    }),
+  );
+  assert(
+    screenPacket.baselineCaseId === reference.TASK_LIST_CASE_ID &&
+      screenPacket.cases?.length === 1 &&
+      screenPacket.screenshotGroups?.[0]?.digest === screenshot.digest,
+    "Screen packet did not return the fixed baseline and screenshot group.",
+  );
+
+  const caseDelta = parseToolJson(
+    await client.request("tools/call", {
+      name: "read_case_delta",
+      arguments: {
+        handoffId: handoff.handoffId,
+        screenId: reference.SCREEN_ID,
+        caseId: reference.TASK_LIST_CASE_ID,
+      },
+    }),
+  );
+  assert(
+    caseDelta.baselineCaseId === reference.TASK_LIST_CASE_ID &&
+      caseDelta.added?.length === 0 &&
+      caseDelta.changed?.length === 0,
+    "Case delta did not treat the selected baseline as unchanged.",
+  );
+
+  const evidenceDetail = parseToolJson(
+    await client.request("tools/call", {
+      name: "read_evidence_detail",
+      arguments: {
+        handoffId: handoff.handoffId,
+        screenId: reference.SCREEN_ID,
+        projection: "structure",
+        pageSize: 1,
+      },
+    }),
+  );
+  assert(
+    evidenceDetail.projection === "structure" &&
+      evidenceDetail.items?.length === 1 &&
+      evidenceDetail.omittedCategories?.includes("tokens"),
+    "Evidence detail did not preserve the requested projection boundary.",
+  );
+  if (evidenceDetail.continuation) {
+    await expectToolErrorCode(
+      client.request("tools/call", {
+        name: "read_evidence_detail",
+        arguments: {
+          handoffId: handoff.handoffId,
+          screenId: reference.SCREEN_ID,
+          projection: "tokens",
+          cursor: evidenceDetail.continuation,
+        },
+      }),
+      "invalid-continuation",
+    );
+  }
 
   const fixedBefore = parseToolJson(
     await client.request("tools/call", {
@@ -407,6 +527,18 @@ try {
         fixedBefore.evidence?.screens?.[0]?.cases?.length,
     "Reading a fixed Snapshot drifted after active Snapshot changed.",
   );
+  const projectedAfter = parseToolJson(
+    await client.request("tools/call", {
+      name: "read_handoff_index",
+      arguments: { handoffId: handoff.handoffId },
+    }),
+  );
+  assert(
+    projectedAfter.fixedRefs?.snapshotId === fixedSnapshotId &&
+      JSON.stringify(projectedAfter.screens) ===
+        JSON.stringify(handoffIndex.screens),
+    "Progressive projection drifted after the active Snapshot changed.",
+  );
 
   process.stdout.write(
     `MCP Evidence E2E passed: ${reference.BUNDLE_ID}/${fixedSnapshotId}\n`,
@@ -439,7 +571,11 @@ async function startClient(args) {
     const slot = pending.get(message.id);
     if (!slot) return;
     pending.delete(message.id);
-    if (message.error) slot.reject(new Error(message.error.message));
+    if (message.error) {
+      const error = new Error(message.error.message);
+      error.data = message.error.data;
+      slot.reject(error);
+    }
     else slot.resolve(message.result);
   });
   child.once("exit", (code) => {
@@ -495,4 +631,17 @@ function parseToolJson(result) {
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
+}
+
+async function expectToolErrorCode(promise, code) {
+  try {
+    await promise;
+  } catch (error) {
+    assert(
+      error?.data?.code === code,
+      `Expected MCP error code ${code}, received ${error?.data?.code ?? "none"}.`,
+    );
+    return;
+  }
+  throw new Error(`Expected MCP tool call to fail with ${code}.`);
 }

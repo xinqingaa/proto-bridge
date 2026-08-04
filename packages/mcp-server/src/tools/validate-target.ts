@@ -16,6 +16,24 @@ export async function validateTargetChangesTool(args: JsonObject): Promise<unkno
     ...(readStringArray(args, 'expectedFiles')
       ? { expectedFiles: readStringArray(args, 'expectedFiles')! }
       : {}),
+    ...(Array.isArray(args.resolvedMappings)
+      ? {
+          resolvedMappings: args.resolvedMappings.filter(
+            (item): item is {
+              id: string;
+              kind: 'component' | 'token';
+              symbol?: string;
+              accessor?: string;
+              importPath?: string;
+            } =>
+              item !== null &&
+              typeof item === 'object' &&
+              !Array.isArray(item) &&
+              typeof item.id === 'string' &&
+              (item.kind === 'component' || item.kind === 'token'),
+          ),
+        }
+      : {}),
   };
   return validateTargetChanges(input);
 }

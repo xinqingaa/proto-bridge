@@ -11,6 +11,7 @@ import {
   V2ContractError,
   WorkspaceId,
   unknownReferenceError,
+  type ConsumerProjectionInput,
 } from "@proto-bridge/core/v2";
 import { buildAcceptanceContractFromStore } from "@proto-bridge/core/v2/store";
 import {
@@ -366,6 +367,24 @@ export class EvidenceStoreReader {
     return (
       await buildAcceptanceContractFromStore({ store, handoff })
     ).contract;
+  }
+
+  async readConsumerProjectionInput(
+    handoffIdInput: string,
+  ): Promise<ConsumerProjectionInput> {
+    const handoff = await this.readHandoff(handoffIdInput);
+    const store = await this.requireStore();
+    const [{ evidence }, acceptanceResult, blobs] = await Promise.all([
+      this.readSnapshot(handoff.bundleId, handoff.snapshotId),
+      buildAcceptanceContractFromStore({ store, handoff }),
+      store.listBlobRecords(handoff.bundleId),
+    ]);
+    return {
+      handoff,
+      evidence,
+      acceptance: acceptanceResult.contract,
+      blobs,
+    };
   }
 
   async readBlob(input: {
