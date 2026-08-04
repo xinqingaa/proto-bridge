@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "experimentRunId": "2026-08-04-consumer-optimization-01",
+  "status": "phase-0-in-progress",
+  "createdAt": "2026-08-04T06:52:48Z",
+  "timeZone": "Asia/Shanghai",
+  "plan": {
+    "path": "docs/acceptance/2026-08-03-cold-chain-reconstruction-audit-and-optimization-plan.md",
+    "commit": "a7542d1"
+  },
+  "fixedEvidence": {
+    "workspaceId": "pbwork-local",
+    "workspaceGeneration": "legacy-unavailable",
+    "bundleId": "bundle-2026-08-03t095053078-241d3a74",
+    "runId": "run-2026-08-03t095053079-14b6f18f",
+    "snapshotId": "snapshot-2026-08-03t095114638-511379f3",
+    "handoffId": "handoff-2026-08-03t100731725-9a0121d7",
+    "deliveryId": "2026-08-03T18-08-20+08-00",
+    "coverageStatus": "complete",
+    "freshnessStatus": "fresh",
+    "mandatoryRisks": [],
+    "selectedCaseCount": 24,
+    "distinctScreenshotCount": 16,
+    "acceptanceContractVersion": 1,
+    "acceptanceDimensions": {
+      "structure": 566,
+      "components": 270,
+      "tokens": 2667,
+      "states": 24,
+      "interactions": 89
+    },
+    "identityFileDigests": {
+      ".proto-bridge/store/workspace.json": "sha256:b120f37a79dac753165e1bd771f9608732b0b021fcd110933e6032b1d1b3b318",
+      ".proto-bridge/store/handoffs/handoff-2026-08-03t100731725-9a0121d7.json": "sha256:f23d4249f8040a5e5c81ae7cbf0c3e9dbf3fd404255d67ee31ea98f32d852ef5",
+      ".proto-bridge/store/bundles/bundle-2026-08-03t095053078-241d3a74/snapshots/snapshot-2026-08-03t095114638-511379f3.json": "sha256:ee1678b4f21a1a6955f220371368c9cb2a657fe5450fa31a953dd888a6e9821a",
+      ".proto-bridge/store/bundles/bundle-2026-08-03t095053078-241d3a74/runs/run-2026-08-03t095053079-14b6f18f.json": "sha256:0bc51bc6e937d329725559047eacf4cb5bdd9a870115354e0b1948bae57873d7",
+      ".proto-bridge/deliveries/2026-08-03T18-08-20+08-00/receipt.json": "sha256:aa95233b5edcd5ece43763b7f6e8726935de1a973084572d8413c5e6b54fd949",
+      ".proto-bridge/deliveries/2026-08-03T18-08-20+08-00/acceptance-contract.json": "sha256:a3dfe229c2b8fb3e6c75359305029b734d63294dab2cdb06a9e4cb419524f29f"
+    },
+    "screenshots": [
+      {
+        "digest": "sha256:046d0c0c23851252e13e61a34146133b40c63b9e728f58f66149c0a171bd995f",
+        "representativeBlobId": "blob-046d0c0c23851252e13e61a3-541d0907752377c"
+      },
+      {
+        "digest": "sha256:080f611562c25c5d718df576e592db254600cb95d7bea0d80a3561a311a8029f",
+        "representativeBlobId": "blob-080f611562c25c5d718df576-b0569d1ef817fb0"
+      },
+      {
+        "digest": "sha256:3de0fa853a905167155516e45186a9a34f5e3d8eb899afaa4cbfb0ac67490a26",
+        "representativeBlobId": "blob-3de0fa853a905167155516e4-aaf054b8a8420f9"
+      },
+      {
+        "digest": "sha256:48f514c68f73852475945a655a594e5e1306bf46c0b0cab11e11f0098451fc36",
+        "representativeBlobId": "blob-48f514c68f73852475945a65-8b92968203e8d07"
+      },
+      {
+        "digest": "sha256:53d2837d4b7daf60cbef70632fba079fc638ed7074b6c18d38f71cc07c25c2eb",
+        "representativeBlobId": "blob-53d2837d4b7daf60cbef7063-47792f4d64d6d04"
+      },
+      {
+        "digest": "sha256:74fe26bbfd37940e75bbd4ee0591162185d06c4dc3950fc4c6b205863bffce6f",
+        "representativeBlobId": "blob-74fe26bbfd37940e75bbd4ee-2a8da8d1c7593b8"
+      },
+      {
+        "digest": "sha256:8195915d09401219d9209bd1972d7e0b65464e06a5fbbc5b36f6fe3932627311",
+        "representativeBlobId": "blob-8195915d09401219d9209bd1-4a82602d9873d36"
+      },
+      {
+        "digest": "sha256:856a487590600361e95c3a94d588cce9eeb17dc07c09fbea997a1c73ad7a5154",
+        "representativeBlobId": "blob-856a487590600361e95c3a94-0fa0bdb7ecf3e90"
+      },
+      {
+        "digest": "sha256:9b12c12d9db2734623ef042650551da1c55fa0636a9221cc6612bea2c325185f",
+        "representativeBlobId": "blob-9b12c12d9db2734623ef0426-1339e70c9616f9a"
+      },
+      {
+        "digest": "sha256:a948335715fa013e7855b1b9a5afaf24e0e866f64e9db0032b42b94c26468493",
+        "representativeBlobId": "blob-a948335715fa013e7855b1b9-405e546b42edbed"
+      },
+      {
+        "digest": "sha256:be0f61a64919c5d816515f602faac497f686953cccd79144807620641d8b05cd",
+        "representativeBlobId": "blob-be0f61a64919c5d816515f60-95ef6c0b3cbc816"
+      },
+      {
+        "digest": "sha256:c3d4af22adca71330ba968835b21aa8f75ba77cbab011440c05876df3b3e6757",
+        "representativeBlobId": "blob-c3d4af22adca71330ba96883-a4844bfdbc218b3"
+      },
+      {
+        "digest": "sha256:c99c24a0dd54e8cbfdeaf93d49055ca8893aff6c17769cf0212a09ae9c55e159",
+        "representativeBlobId": "blob-c99c24a0dd54e8cbfdeaf93d-840f197b0775ed7"
+      },
+      {
+        "digest": "sha256:dd41372d7cdce0926c2be8178b435438b00add796536c184b297af58e003ccd0",
+        "representativeBlobId": "blob-dd41372d7cdce0926c2be817-1dde3d280d0fb96"
+      },
+      {
+        "digest": "sha256:f35c6dc6063b22fddecca1434efbaa12d3311c157b35f520285d2e364c38441c",
+        "representativeBlobId": "blob-f35c6dc6063b22fddecca143-888e6fd730587dd"
+      },
+      {
+        "digest": "sha256:fb952778397b03a506651f84d18222c22d408649ac055240519aef795fb4450d",
+        "representativeBlobId": "blob-fb952778397b03a506651f84-2c96aa4aaeb3092"
+      }
+    ]
+  },
+  "target": {
+    "root": "apps/flutter_pb_app",
+    "baselineCommit": "79780eb6962086affb9af8bcacd8006707517a67",
+    "baselineChecks": {
+      "flutterAnalyze": "passed",
+      "flutterTest": "passed",
+      "widgetTestsPassed": 4
+    },
+    "logicalViewport": {
+      "width": 390,
+      "height": 844,
+      "devicePixelRatio": 3
+    },
+    "theme": "light"
+  },
+  "environment": {
+    "os": "Darwin 24.6.0 arm64",
+    "node": "v22.21.1",
+    "pnpm": "10.33.2",
+    "flutter": "3.44.0",
+    "dart": "3.12.0",
+    "agentRuntime": "Codex desktop",
+    "agentModel": "not-programmatically-exposed",
+    "permissions": "workspace-local implementation and verification",
+    "timeBudget": "not-fixed"
+  },
+  "mcp": {
+    "status": "pending-build-and-client-reload",
+    "buildFingerprint": "legacy-unavailable",
+    "projectionVersion": "legacy-full-read",
+    "capabilities": []
+  },
+  "control": {
+    "status": "pending",
+    "worktreeCommit": null,
+    "candidateOutputRoot": null,
+    "excludePaths": []
+  },
+  "treatment": {
+    "status": "pending"
+  }
+}
