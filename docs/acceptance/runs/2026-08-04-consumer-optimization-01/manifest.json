@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "experimentRunId": "2026-08-04-consumer-optimization-01",
-  "status": "phase-0-in-progress",
+  "status": "phase-0-control-pending",
   "createdAt": "2026-08-04T06:52:48Z",
   "timeZone": "Asia/Shanghai",
   "plan": {
@@ -131,10 +131,36 @@
     "timeBudget": "not-fixed"
   },
   "mcp": {
-    "status": "pending-build-and-client-reload",
+    "status": "build-and-current-client-verified",
+    "verifiedAt": "2026-08-04T06:56:30Z",
     "buildFingerprint": "legacy-unavailable",
     "projectionVersion": "legacy-full-read",
-    "capabilities": []
+    "capabilities": [
+      "fixed-handoff-read",
+      "fixed-snapshot-read",
+      "image-content-screenshot",
+      "legacy-target-adapter"
+    ],
+    "toolCount": 19,
+    "distDigests": {
+      "packages/core/dist/index.js": "sha256:e11bcc8f4b9995dc8bb9ccb267f01ce97a7e867040088e97833770e23a19a91d",
+      "packages/mcp-server/dist/index.js": "sha256:9bc0e681188004b342b2ed1e40924c1878dda0b3885e58529edcf9c7eda796c2",
+      "scripts/pb-mcp.mjs": "sha256:00720b44b4b20351b042a8471c45aa704cb07fcb5887ac1426a6cf5ec69f92db"
+    },
+    "verification": {
+      "productBuild": "passed",
+      "mcpEvidenceE2E": "passed",
+      "standaloneFixedWorkspaceScreenshotCount": 16,
+      "currentClientFixedWorkspaceScreenshotCount": 16,
+      "screenshotDimensions": "1170x2532",
+      "totalDistinctScreenshotBytes": 3045808,
+      "fixedWorkspaceId": "pbwork-local",
+      "fixedHandoffId": "handoff-2026-08-03t100731725-9a0121d7",
+      "fixedSnapshotId": "snapshot-2026-08-03t095114638-511379f3"
+    },
+    "limitations": [
+      "The legacy MCP protocol does not expose a process build fingerprint or process start time; dist digests and successful current-client behavior are recorded separately."
+    ]
   },
   "control": {
     "status": "pending",
