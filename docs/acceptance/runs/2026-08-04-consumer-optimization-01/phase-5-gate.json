@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "experimentRunId": "2026-08-04-consumer-optimization-01",
+  "phase": 5,
+  "status": "passed",
+  "closedAt": "2026-08-05T04:58:04Z",
+  "decision": "Promote",
+  "treatmentCommit": "eb18edd099c590b895aca9e99299100b7624bd92",
+  "experimentBaselineCommit": "79780eb6962086affb9af8bcacd8006707517a67",
+  "reviewRunId": "review-2026-08-05-treatment-01",
+  "artifacts": {
+    "progressiveBootstrap": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/treatment-progressive-bootstrap.json",
+    "reviewCoverage": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/treatment-review-coverage.json",
+    "treatmentSummary": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/treatment-summary.json",
+    "comparison": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/comparison.md"
+  },
+  "checks": {
+    "progressiveBootstrapCompleted": true,
+    "toolCallCount": 44,
+    "responseCharacterCountApprox": 15245111,
+    "authoritativeReviewRenderedComparable": "16/16",
+    "authoritativeReviewScenariosReplayed": "7/7",
+    "flutterAnalyze": "passed",
+    "flutterTest": "passed:12",
+    "humanFinalizeCompleted": false,
+    "captureContractModified": false,
+    "workspaceResetPerformed": false,
+    "fixedEvidenceIdentityVerified": true,
+    "controlAndPhase4ExcludedFromTreatment": true
+  },
+  "notes": [
+    "Promote applies to the progressive consumer + authoritative Review architecture under this fixed Evidence experiment.",
+    "Review session remains active pending optional human finalize; this does not block the Phase 5 experimental decision."
+  ]
+}

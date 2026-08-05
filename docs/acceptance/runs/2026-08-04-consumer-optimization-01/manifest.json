@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "experimentRunId": "2026-08-04-consumer-optimization-01",
-  "status": "phase-4-passed",
+  "status": "phase-5-passed",
   "createdAt": "2026-08-04T06:52:48Z",
   "timeZone": "Asia/Shanghai",
   "plan": {
@@ -146,7 +146,7 @@
       "target-example-exclusions",
       "target-review-authoritative"
     ],
-    "toolCount": 19,
+    "toolCount": 33,
     "distDigests": {
       "packages/core/dist/index.js": "sha256:e11bcc8f4b9995dc8bb9ccb267f01ce97a7e867040088e97833770e23a19a91d",
       "packages/mcp-server/dist/index.js": "sha256:9bc0e681188004b342b2ed1e40924c1878dda0b3885e58529edcf9c7eda796c2",
@@ -187,7 +187,29 @@
     "visualStatus": "three-primary-screens-reviewed; remaining-variants-and-pixel-diff-unverified"
   },
   "treatment": {
-    "status": "pending"
+    "status": "completed",
+    "startedAt": "2026-08-05T03:20:00Z",
+    "completedAt": "2026-08-05T04:58:04Z",
+    "worktreeRoot": "/Users/lrq/work/proto-bridge-treatment-2026-08-05-01",
+    "baselineCommit": "79780eb6962086affb9af8bcacd8006707517a67",
+    "worktreeCommit": "eb18edd099c590b895aca9e99299100b7624bd92",
+    "candidateOutputRoot": "apps/flutter_pb_app/lib/features/cold_chain_ops",
+    "excludePaths": [
+      "/Users/lrq/work/proto-bridge-control-2026-08-04-01",
+      "/Users/lrq/work/proto-bridge-phase4-review-2026-08-04",
+      "lib/features/cold_chain_ops"
+    ],
+    "consumerFlow": "progressive-handoff-packet-delta-review",
+    "isolation": "independent-agent-detached-worktree",
+    "summaryPath": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/treatment-summary.json",
+    "progressiveBootstrapPath": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/treatment-progressive-bootstrap.json",
+    "reviewCoveragePath": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/treatment-review-coverage.json",
+    "comparisonPath": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/comparison.md",
+    "toolCallCount": 44,
+    "responseCharacterCountApprox": 15245111,
+    "validation": "flutter-analyze-and-12-tests-passed",
+    "reviewRunId": "review-2026-08-05-treatment-01",
+    "visualStatus": "16-of-16-comparable-target-digests; 7-of-7-scenarios-replayed; human-finalize-open"
   },
   "phase0Gate": {
     "status": "passed",
@@ -251,5 +273,22 @@
     "captureContractModified": false,
     "workspaceResetPerformed": false,
     "fixedEvidenceIdentityVerified": true
+  },
+  "phase5Gate": {
+    "status": "passed",
+    "closedAt": "2026-08-05T04:58:04Z",
+    "receipt": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/phase-5-gate.json",
+    "decision": "Promote",
+    "treatmentCommit": "eb18edd099c590b895aca9e99299100b7624bd92",
+    "reviewRunId": "review-2026-08-05-treatment-01",
+    "renderedComparableTargetCount": 16,
+    "replayedScenarioCount": 7,
+    "toolCallCount": 44,
+    "responseCharacterCountApprox": 15245111,
+    "humanFinalizeCompleted": false,
+    "captureContractModified": false,
+    "workspaceResetPerformed": false,
+    "fixedEvidenceIdentityVerified": true,
+    "comparisonPath": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/comparison.md"
   }
 }

@@ -5,7 +5,7 @@
   "closedAt": "2026-08-05T02:20:00Z",
   "implementationCommits": [
     "a9790cd",
-    "pending-uncommitted-phase4-closure"
+    "e0ff4fc"
   ],
   "reviewRunId": "review-2026-08-04-phase4-fixed-01",
   "targetWorktree": "/Users/lrq/work/proto-bridge-phase4-review-2026-08-04/apps/flutter_pb_app",
@@ -15,8 +15,8 @@
     "bootstrap": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/phase-4-review-bootstrap.json",
     "exceptionQueueSlice": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/phase-4-exception-queue-slice.json",
     "exceptionQueueCorrection": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/phase-4-exception-queue-correction.json",
-    "coverageExpand": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/phase-4-coverage-expand.json",
-    "scenarioResume": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/phase-4-scenario-resume.json"
+    "scenarioResume": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/phase-4-scenario-resume.json",
+    "coverageNote": "Full 16-digest render/compare coverage is recorded in Review events.ndjson for review-2026-08-04-phase4-fixed-01; the interim coverage-expand JSON was not persisted after a mid-run scenario failure."
   },
   "commands": [
     {
