@@ -43,6 +43,23 @@ export type ReconstructionAcceptanceContract = {
   dimensions: Record<AcceptanceDimension, AcceptanceRequirement[]>;
 };
 
+export type StateScalar = string | number | boolean | null;
+
+export type KeyedStateSnapshot = {
+  shell: { screenId: string; variantId: string };
+  semanticCoverage: EvidenceCaseReadModel['semanticCoverage'];
+  visibleRegionIds: string[];
+  keyedCollections: Array<{
+    collectionId: string;
+    keys: string[];
+  }>;
+  values: Array<{
+    regionId: string;
+    key: string;
+    value: StateScalar;
+  }>;
+};
+
 function safeId(value: string): string {
   return value.replace(/[^a-zA-Z0-9._-]+/g, '-');
 }
@@ -94,16 +111,11 @@ export function buildReconstructionAcceptanceContract(input: {
         caseId: evidenceCase.caseId,
         screenId: evidenceCase.screenId,
         dimension: 'states',
-        kind: evidenceCase.scenario ? 'checkpoint-state' : 'variant-state',
+        kind: 'keyed-state-snapshot',
         subject: evidenceCase.scenario?.checkpointId ?? evidenceCase.variantId,
-        expected: {
-          variantId: evidenceCase.variantId,
-          semanticCoverage: evidenceCase.semanticCoverage,
-          visibleRegions: evidenceCase.regions
-            .filter((region) => region.visible !== false)
-            .map((region) => region.regionId),
-        },
-        evidenceRefs: evidenceCase.contextFacts.map((fact) => fact.factId),
+        expected: buildKeyedStateSnapshot(evidenceCase),
+        evidenceRefs: [...evidenceCase.contextFacts, ...evidenceCase.interactionFacts]
+          .map((fact) => fact.factId),
       });
 
       for (const region of evidenceCase.regions) {
@@ -216,6 +228,76 @@ export function buildReconstructionAcceptanceContract(input: {
     screenshots,
     dimensions,
   };
+}
+
+function buildKeyedStateSnapshot(
+  evidenceCase: EvidenceCaseReadModel,
+): KeyedStateSnapshot {
+  const collections = new Map<string, Set<string>>();
+  for (const region of evidenceCase.regions) {
+    if (region.identity?.pbKey) {
+      const keys = collections.get(region.identity.pbId) ?? new Set<string>();
+      keys.add(region.identity.pbKey);
+      collections.set(region.identity.pbId, keys);
+    }
+    for (const identity of [region.semanticParent, ...(region.semanticAncestors ?? [])]) {
+      const value = objectValue(identity);
+      if (typeof value?.pbId !== 'string' || typeof value.pbKey !== 'string') continue;
+      const keys = collections.get(value.pbId) ?? new Set<string>();
+      keys.add(value.pbKey);
+      collections.set(value.pbId, keys);
+    }
+  }
+  const values = new Map<string, { regionId: string; key: string; value: StateScalar }>();
+  for (const region of evidenceCase.regions) {
+    for (const [key, value] of Object.entries(region.props ?? {})) {
+      if (!isStateScalar(value)) continue;
+      values.set(`${region.regionId}\0${key}`, { regionId: region.regionId, key, value });
+    }
+  }
+  for (const fact of evidenceCase.interactionFacts) {
+    const expected = objectValue(fact.value);
+    const checkpoint = objectValue(expected?.checkpoint);
+    const expectedStates = Array.isArray(checkpoint?.expectedStates) ? checkpoint.expectedStates : [];
+    for (const state of expectedStates) {
+      const item = objectValue(state);
+      const fragment = objectValue(item?.fragment);
+      if (typeof fragment?.pbId !== 'string' || typeof item?.key !== 'string' || !isStateScalar(item.value)) continue;
+      const regionId = `${fragment.pbId}${typeof fragment.pbKey === 'string' ? `.${fragment.pbKey}` : ''}`;
+      values.set(`${regionId}\0${item.key}`, { regionId, key: item.key, value: item.value });
+    }
+    const expectedCollections = Array.isArray(checkpoint?.expectedFragmentKeys) ? checkpoint.expectedFragmentKeys : [];
+    for (const collection of expectedCollections) {
+      const item = objectValue(collection);
+      const fragment = objectValue(item?.fragment);
+      if (typeof fragment?.pbId !== 'string' || !Array.isArray(item?.keys)) continue;
+      const keys = collections.get(fragment.pbId) ?? new Set<string>();
+      for (const key of item.keys) if (typeof key === 'string') keys.add(key);
+      collections.set(fragment.pbId, keys);
+    }
+  }
+  return {
+    shell: { screenId: evidenceCase.screenId, variantId: evidenceCase.variantId },
+    semanticCoverage: evidenceCase.semanticCoverage,
+    visibleRegionIds: evidenceCase.regions
+      .filter((region) => region.visible !== false)
+      .sort((a, b) => (a.documentOrder ?? Number.MAX_SAFE_INTEGER) - (b.documentOrder ?? Number.MAX_SAFE_INTEGER) || a.regionId.localeCompare(b.regionId))
+      .map((region) => region.regionId),
+    keyedCollections: [...collections.entries()]
+      .map(([collectionId, keys]) => ({ collectionId, keys: [...keys].sort() }))
+      .sort((a, b) => a.collectionId.localeCompare(b.collectionId)),
+    values: [...values.values()].sort((a, b) => `${a.regionId}:${a.key}`.localeCompare(`${b.regionId}:${b.key}`)),
+  };
+}
+
+function objectValue(value: unknown): Record<string, unknown> | undefined {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : undefined;
+}
+
+function isStateScalar(value: unknown): value is StateScalar {
+  return value === null || ['string', 'number', 'boolean'].includes(typeof value);
 }
 
 export function acceptanceChecklistMarkdown(

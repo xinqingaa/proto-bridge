@@ -26,6 +26,7 @@ const seed: ReviewSessionSeed = {
   requiredObligations: [
     { obligationId: 'obligation-structure', dimension: 'structure', screenId: 'screen', caseIds: ['screen::default'], kind: 'semantic-region-topology', subject: 'content', expected: { scrollOwner: 'content' }, evidenceRefs: ['fact.structure'] },
     { obligationId: 'obligation-token', dimension: 'tokens', screenId: 'screen', caseIds: ['screen::default'], kind: 'token-mapping', subject: 'content.background', expected: { tokenId: 'surface.primary' }, evidenceRefs: ['fact.token'] },
+    { obligationId: 'obligation-state', dimension: 'states', screenId: 'screen', caseIds: ['screen::default'], kind: 'keyed-state-snapshot', subject: 'default', expected: { shell: { screenId: 'screen', variantId: 'default' } }, evidenceRefs: ['fact.state'] },
   ],
   verificationContractVersion: 1,
   comparatorVersion: 'compare-v1',
@@ -168,6 +169,26 @@ describe('authoritative Review reducer', () => {
       { actor: 'runner', tool: verifierReceipt.verifierId, payload: { kind: 'target-claims-verified', receipt: verifierReceipt } },
       { actor: 'runner', tool: driftedReceipt.verifierId, payload: { kind: 'target-claims-verified', receipt: driftedReceipt } },
     ))).toThrow(/content drifted/);
+  });
+
+  it('turns State and Interaction verifier failures into blocking assessments automatically', () => {
+    const unsigned = {
+      ...unsignedVerifierReceipt,
+      results: [{ obligationId: 'obligation-state', dimension: 'states' as const, status: 'deviation' as const, detail: 'Default selection differs.' }],
+    };
+    const receipt = { ...unsigned, receiptDigest: reviewVerifierReceiptDigest(unsigned) };
+    const session = reduceReviewEvents(chain({
+      actor: 'runner',
+      tool: receipt.verifierId,
+      payload: { kind: 'target-claims-verified', receipt },
+    }));
+    expect(session.obligationAssessments).toEqual([{
+      obligationId: 'obligation-state',
+      status: 'deviation',
+      detail: 'Default selection differs.',
+      evidenceDigests: [receipt.receiptDigest],
+      verifierReceiptDigest: receipt.receiptDigest,
+    }]);
   });
 
   it('keeps legacy Review event logs readable but prevents silent completion', () => {

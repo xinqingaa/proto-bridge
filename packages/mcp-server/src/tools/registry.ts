@@ -165,14 +165,16 @@ const toolDefinitions: JsonValue[] = [
     cursor: { type: 'string' },
   }, ['reviewRunId']),
   reviewTool('render_target_case', '渲染 Target Case', '运行目标工程声明的单 Case Flutter launcher，并记录固定设备与 screenshot receipt。', { reviewRunId: { type: 'string' }, caseId: { type: 'string' }, sourceDigest: { type: 'string' }, tranche: { type: 'integer', minimum: 1 }, round: { type: 'integer', minimum: 1, maximum: 3 }, attemptId: { type: 'string' } }, ['reviewRunId', 'caseId', 'sourceDigest', 'tranche', 'round']),
-  reviewTool('replay_target_scenario', '回放 Target Scenario', '运行目标工程声明的单 Scenario driver 并记录实际 receipt。', { reviewRunId: { type: 'string' }, caseId: { type: 'string' } }, ['reviewRunId', 'caseId']),
+  reviewTool('replay_target_scenario', '回放 Target Scenario', '运行目标工程声明的单 Scenario driver，并记录 typed pre/action/post/visible-result receipt。', { reviewRunId: { type: 'string' }, caseId: { type: 'string' } }, ['reviewRunId', 'caseId']),
   reviewTool('compare_target_artifacts', '比较 Target artifacts', '生成可视 diff/overlay 和 normalized stop signature；不输出综合分数。', { reviewRunId: { type: 'string' }, attemptId: { type: 'string' }, sourceDigest: { type: 'string' }, targetDigest: { type: 'string' } }, ['reviewRunId', 'attemptId', 'sourceDigest', 'targetDigest']),
-  reviewTool('verify_target_claims', '验证 Target Claims', '把固定 obligation 绑定到 Target Structure IR 或精确 Dart occurrence，并记录机器 verifier receipt；不接受 Agent 自填 expected。', {
+  reviewTool('verify_target_claims', '验证 Target Claims', '把固定 obligation 绑定到 Target Structure/State/Scenario IR 或精确 Dart occurrence，并记录机器 verifier receipt；不接受 Agent 自填 expected。', {
     reviewRunId: { type: 'string' },
     claims: { type: 'array', minItems: 1, maxItems: 100, items: { oneOf: [
       { type: 'object', additionalProperties: false, properties: { obligationId: { type: 'string' }, dimension: { const: 'structure' }, caseId: { type: 'string' } }, required: ['obligationId', 'dimension', 'caseId'] },
       { type: 'object', additionalProperties: false, properties: { obligationId: { type: 'string' }, dimension: { const: 'components' }, symbol: { type: 'string' }, occurrence: targetOccurrenceSchema, ownerSymbol: { type: 'string' }, targetSlot: { type: 'string' } }, required: ['obligationId', 'dimension', 'symbol', 'occurrence'] },
       { type: 'object', additionalProperties: false, properties: { obligationId: { type: 'string' }, dimension: { const: 'tokens' }, accessor: { type: 'string' }, occurrence: targetOccurrenceSchema, ownerSymbol: { type: 'string' }, targetSlot: { type: 'string' } }, required: ['obligationId', 'dimension', 'accessor', 'occurrence', 'ownerSymbol', 'targetSlot'] },
+      { type: 'object', additionalProperties: false, properties: { obligationId: { type: 'string' }, dimension: { const: 'states' }, caseId: { type: 'string' } }, required: ['obligationId', 'dimension', 'caseId'] },
+      { type: 'object', additionalProperties: false, properties: { obligationId: { type: 'string' }, dimension: { const: 'interactions' }, caseId: { type: 'string' } }, required: ['obligationId', 'dimension', 'caseId'] },
     ] } },
   }, ['reviewRunId', 'claims']),
   reviewTool('record_review_findings', '记录 Review findings', '记录 Agent finding；Agent 不能自证 Accepted deviation 或人工完成。', { reviewRunId: { type: 'string' }, findings: { type: 'array', items: { type: 'object', additionalProperties: true } } }, ['reviewRunId', 'findings']),

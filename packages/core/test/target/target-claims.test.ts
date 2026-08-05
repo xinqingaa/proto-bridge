@@ -14,6 +14,7 @@ import type { StructureIR } from '../../src/v2/index.js';
 const execFileAsync = promisify(execFile);
 const roots: string[] = [];
 const CASE = 'sample.screen::default';
+const SCENARIO_CASE = 'sample.screen::scenario';
 const SCREEN = 'sample.screen';
 
 afterEach(async () => {
@@ -72,6 +73,39 @@ describe('Target claim verifier', () => {
     await write(root, 'structure.json', `${JSON.stringify(mutated)}\n`);
     const failed = await verify(root, head, obligations, [structureClaim]);
     expect(failed.results[0]).toMatchObject({ status: 'deviation', detail: expect.stringContaining('scroll-owner') });
+  });
+
+  it('verifies typed state and transition receipts and rejects state/interaction mutations', async () => {
+    const root = await targetFixture();
+    const head = await commit(root);
+    const obligations = fixtureObligations();
+    const stateClaim: TargetImplementationClaim = { obligationId: 'obligation-state', dimension: 'states', caseId: CASE };
+    const actionClaim: TargetImplementationClaim = { obligationId: 'obligation-action', dimension: 'interactions', caseId: SCENARIO_CASE };
+    const transitionClaim: TargetImplementationClaim = { obligationId: 'obligation-transition', dimension: 'interactions', caseId: SCENARIO_CASE };
+
+    const matched = await verify(root, head, obligations, [stateClaim, actionClaim, transitionClaim]);
+    expect(matched.results.map((item) => item.status)).toEqual(['matched', 'matched', 'matched']);
+    expect(matched.results[0]?.stateProof?.values).toContainEqual({ regionId: `${SCREEN}.filter`, key: 'selected', value: 'all' });
+    expect(matched.results[2]?.transitionProof?.actions).toHaveLength(1);
+
+    const wrongDefault = fixtureState();
+    wrongDefault.values[0]!.value = 'delayed';
+    await write(root, 'state.json', `${JSON.stringify(wrongDefault)}\n`);
+    const defaultFailure = await verify(root, head, obligations, [stateClaim]);
+    expect(defaultFailure.results[0]).toMatchObject({ status: 'deviation', detail: expect.stringContaining('value:sample.screen.filter.selected') });
+
+    const wrongObject = fixtureTransition();
+    wrongObject.actions[0]!.targetRegionId = `${SCREEN}.unrelated`;
+    await write(root, 'scenario.json', `${JSON.stringify(wrongObject)}\n`);
+    const objectFailure = await verify(root, head, obligations, [actionClaim]);
+    expect(objectFailure.results[0]).toMatchObject({ status: 'deviation', detail: expect.stringContaining('action-target') });
+
+    const unchanged = fixtureTransition();
+    unchanged.postState.shell.variantId = 'default';
+    unchanged.postState.values[0]!.value = false;
+    await write(root, 'scenario.json', `${JSON.stringify(unchanged)}\n`);
+    const transitionFailure = await verify(root, head, obligations, [transitionClaim]);
+    expect(transitionFailure.results[0]).toMatchObject({ status: 'deviation', detail: expect.stringMatching(/postState\.variantId|value:/) });
   });
 });
 
@@ -135,7 +169,65 @@ function fixtureObligations(): ReconstructionObligation[] {
       obligationId: 'obligation-token', dimension: 'tokens', screenId: SCREEN, caseIds: [CASE],
       kind: 'token-mapping', subject: `${SCREEN}.content.surface`, expected: { tokenId: 'color.surface', slot: 'surface' }, evidenceRefs: ['fact.token'],
     },
+    {
+      obligationId: 'obligation-state', dimension: 'states', screenId: SCREEN, caseIds: [CASE],
+      kind: 'keyed-state-snapshot', subject: 'default', expected: {
+        shell: { screenId: SCREEN, variantId: 'default' }, semanticCoverage: 'declared',
+        visibleRegionIds: [`${SCREEN}.scroll`, `${SCREEN}.content`, `${SCREEN}.filter`],
+        keyedCollections: [{ collectionId: `${SCREEN}.row`, keys: ['row-1', 'row-2'] }],
+        values: [{ regionId: `${SCREEN}.filter`, key: 'selected', value: 'all' }],
+      }, evidenceRefs: ['fact.state'],
+    },
+    {
+      obligationId: 'obligation-action', dimension: 'interactions', screenId: SCREEN, caseIds: [SCENARIO_CASE],
+      kind: 'action', subject: `${SCREEN}.action.select-row`, expected: {
+        actionId: 'select-row', kind: 'click', target: { screenId: SCREEN, pbId: `${SCREEN}.row`, pbKey: 'row-2' },
+      }, evidenceRefs: ['fact.action'],
+    },
+    {
+      obligationId: 'obligation-transition', dimension: 'interactions', screenId: SCREEN, caseIds: [SCENARIO_CASE],
+      kind: 'scenario-checkpoint', subject: `${SCREEN}.scenario.select-row.selected`, expected: {
+        scenarioId: 'select-row', ownerScreenId: SCREEN, initialVariantId: 'default', actionIds: ['select-row'],
+        checkpoint: {
+          checkpointId: 'selected', screenId: SCREEN, variantId: 'selected',
+          requiredFragments: [{ screenId: SCREEN, pbId: `${SCREEN}.content` }],
+          expectedStates: [{ fragment: { screenId: SCREEN, pbId: `${SCREEN}.row`, pbKey: 'row-2' }, key: 'selected', value: true }],
+          expectedFragmentKeys: [{ fragment: { screenId: SCREEN, pbId: `${SCREEN}.row` }, keys: ['row-1', 'row-2'] }],
+        },
+      }, evidenceRefs: ['fact.scenario'],
+    },
   ];
+}
+
+function fixtureState(caseId = CASE) {
+  return {
+    caseId,
+    shell: { screenId: SCREEN, variantId: 'default' },
+    visibleRegionIds: [`${SCREEN}.scroll`, `${SCREEN}.content`, `${SCREEN}.filter`],
+    keyedCollections: [{ collectionId: `${SCREEN}.row`, keys: ['row-1', 'row-2'] }],
+    values: [{ regionId: `${SCREEN}.filter`, key: 'selected', value: 'all' as string | boolean }],
+    complete: true,
+    unknownKeys: [],
+  };
+}
+
+function fixtureTransition() {
+  const preState = fixtureState(SCENARIO_CASE);
+  const postState = {
+    ...fixtureState(SCENARIO_CASE),
+    shell: { screenId: SCREEN, variantId: 'selected' },
+    values: [{ regionId: `${SCREEN}.row.row-2`, key: 'selected', value: true as string | boolean }],
+  };
+  return {
+    caseId: SCENARIO_CASE,
+    screenId: SCREEN,
+    scenarioId: 'select-row',
+    checkpointId: 'selected',
+    preState,
+    actions: [{ actionId: 'select-row', kind: 'click', targetRegionId: `${SCREEN}.row.row-2` }],
+    postState,
+    visibleResult: { visibleRegionIds: postState.visibleRegionIds, changedRegionIds: [`${SCREEN}.row.row-2`] },
+  };
 }
 
 function fixtureStructure(): StructureIR {
@@ -182,6 +274,10 @@ async function targetFixture(): Promise<string> {
   await write(root, 'lib/features/page.dart', validPageSource());
   await write(root, 'structure.json', `${JSON.stringify(fixtureStructure())}\n`);
   await write(root, 'structure.mjs', "import { readFileSync } from 'node:fs';\nprocess.stdout.write(readFileSync('structure.json', 'utf8'));\n");
+  await write(root, 'state.json', `${JSON.stringify(fixtureState())}\n`);
+  await write(root, 'state.mjs', "import { readFileSync } from 'node:fs';\nprocess.stdout.write(readFileSync('state.json', 'utf8'));\n");
+  await write(root, 'scenario.json', `${JSON.stringify(fixtureTransition())}\n`);
+  await write(root, 'scenario.mjs', "import { readFileSync } from 'node:fs';\nprocess.stdout.write(readFileSync('scenario.json', 'utf8'));\n");
   await write(root, 'docs/proto-bridge.target.json', `${JSON.stringify({
     version: 1,
     technology: 'flutter',
@@ -190,9 +286,10 @@ async function targetFixture(): Promise<string> {
     review: {
       version: 1,
       platform: 'ios-simulator',
-      launcher: { command: ['node', 'render.mjs'], structureCommand: ['node', 'structure.mjs'] },
+      launcher: { command: ['node', 'render.mjs'], structureCommand: ['node', 'structure.mjs'], stateCommand: ['node', 'state.mjs'], scenarioCommand: ['node', 'scenario.mjs'] },
       device: { udid: 'fixture', runtime: 'fixture', logicalWidth: 390, logicalHeight: 844, dpr: 3, locale: 'zh-CN', theme: 'light', textScale: 1, safeArea: 'fixture', settle: 'fixture' },
-      cases: { [CASE]: { screenId: SCREEN } },
+      cases: { [CASE]: { screenId: SCREEN }, [SCENARIO_CASE]: { screenId: SCREEN } },
+      scenarios: { [SCENARIO_CASE]: { screenId: SCREEN, scenarioId: 'select-row' } },
     },
   }, null, 2)}\n`);
   return root;

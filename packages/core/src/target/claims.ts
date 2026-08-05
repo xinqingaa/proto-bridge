@@ -43,6 +43,16 @@ export type TargetImplementationClaim =
       occurrence: TargetOccurrenceLocator;
       ownerSymbol: string;
       targetSlot: string;
+    }
+  | {
+      obligationId: string;
+      dimension: 'states';
+      caseId: string;
+    }
+  | {
+      obligationId: string;
+      dimension: 'interactions';
+      caseId: string;
     };
 
 export type ExpectedTargetStructure = {
@@ -104,15 +114,15 @@ function assertClaims(
     if (!obligation || obligation.dimension !== claim.dimension) {
       throw new Error(`Target claim ${claim.obligationId} is not bound to a matching fixed obligation.`);
     }
-    if (!['structure', 'components', 'tokens'].includes(claim.dimension)) {
+    if (!['structure', 'components', 'tokens', 'states', 'interactions'].includes(claim.dimension)) {
       throw new Error(`Target claim dimension ${claim.dimension} is not supported by contract v1.`);
     }
     if (ids.has(claim.obligationId)) throw new Error(`Duplicate Target claim ${claim.obligationId}.`);
     ids.add(claim.obligationId);
-    if (claim.dimension !== 'structure') {
+    if (claim.dimension === 'components' || claim.dimension === 'tokens') {
       validateLocator(claim.occurrence);
     } else if (!obligation.caseIds.includes(claim.caseId)) {
-      throw new Error(`Target Structure claim ${claim.obligationId} is not applicable to Case ${claim.caseId}.`);
+      throw new Error(`Target ${claim.dimension} claim ${claim.obligationId} is not applicable to Case ${claim.caseId}.`);
     }
   }
 }

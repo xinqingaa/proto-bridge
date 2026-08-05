@@ -138,7 +138,7 @@ export async function replayTargetScenarioTool(context: ToolContext, args: JsonO
   const receipt = await replayFlutterTargetScenario({ targetRoot: session.targetRoot, caseId, expectedTargetHead: session.targetBaselineCommit });
   return projectReviewSession(await context.reviews.call(`/reviews/${encodeURIComponent(reviewRunId)}/replay`, {
     method: 'POST',
-    body: { screenId: receipt.screenId, caseId, scenarioId: receipt.scenarioId, receiptDigest: receipt.receiptDigest, targetRevision: session.targetRevision, receiptTool: 'flutter-review-scenario-v1' },
+    body: { screenId: receipt.screenId, caseId, scenarioId: receipt.scenarioId, receiptDigest: receipt.receiptDigest, targetRevision: session.targetRevision, receiptTool: 'flutter-review-scenario-v1', transition: receipt.transition },
   }));
 }
 
@@ -256,6 +256,9 @@ function parseTargetClaims(value: unknown): TargetImplementationClaim[] {
     if (typeof claim.obligationId !== 'string') throw new V2ContractError('invalid-schema', 'Target claim obligationId is required.');
     if (claim.dimension === 'structure' && typeof claim.caseId === 'string') {
       return { obligationId: claim.obligationId, dimension: 'structure', caseId: claim.caseId };
+    }
+    if ((claim.dimension === 'states' || claim.dimension === 'interactions') && typeof claim.caseId === 'string') {
+      return { obligationId: claim.obligationId, dimension: claim.dimension, caseId: claim.caseId };
     }
     const occurrence = parseOccurrence(claim.occurrence);
     if (claim.dimension === 'components' && typeof claim.symbol === 'string') {

@@ -5,11 +5,52 @@ import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { PNG } from 'pngjs';
-import type { ReviewArtifact } from '../../review/contracts.js';
+import { z } from 'zod';
+import type {
+  ReviewArtifact,
+  TargetScenarioTransition,
+  TargetStateSnapshot,
+} from '../../review/contracts.js';
 import { FlutterReviewContract, type FlutterReviewContract as FlutterReviewContractType } from './resolver.js';
 
 const execFileAsync = promisify(execFile);
 export const FLUTTER_COMPARATOR_VERSION = 'proto-bridge-pixel-regions-v1';
+
+const stateScalarSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
+const targetStateSnapshotSchema = z.object({
+  caseId: z.string().min(1),
+  shell: z.object({ screenId: z.string().min(1), variantId: z.string().min(1) }).strict(),
+  visibleRegionIds: z.array(z.string().min(1)),
+  keyedCollections: z.array(z.object({
+    collectionId: z.string().min(1),
+    keys: z.array(z.string().min(1)),
+  }).strict()),
+  values: z.array(z.object({
+    regionId: z.string().min(1),
+    key: z.string().min(1),
+    value: stateScalarSchema,
+  }).strict()),
+  complete: z.boolean(),
+  unknownKeys: z.array(z.string().min(1)),
+}).strict();
+const targetScenarioTransitionSchema = z.object({
+  caseId: z.string().min(1),
+  screenId: z.string().min(1),
+  scenarioId: z.string().min(1),
+  checkpointId: z.string().min(1),
+  preState: targetStateSnapshotSchema,
+  actions: z.array(z.object({
+    actionId: z.string().min(1),
+    kind: z.enum(['click', 'input', 'select', 'submit', 'custom']),
+    targetRegionId: z.string().min(1).optional(),
+    input: stateScalarSchema.optional(),
+  }).strict()),
+  postState: targetStateSnapshotSchema,
+  visibleResult: z.object({
+    visibleRegionIds: z.array(z.string().min(1)),
+    changedRegionIds: z.array(z.string().min(1)),
+  }).strict(),
+}).strict();
 
 export type FlutterRenderReceipt = {
   contract: FlutterReviewContractType;
@@ -89,7 +130,7 @@ export async function replayFlutterTargetScenario(input: {
   targetRoot: string;
   caseId: string;
   expectedTargetHead: string;
-}): Promise<{ screenId: string; scenarioId: string; receiptDigest: string; command: string[]; environment: Record<string, string | number> }> {
+}): Promise<{ screenId: string; scenarioId: string; receiptDigest: string; command: string[]; environment: Record<string, string | number>; transition: TargetScenarioTransition }> {
   const targetRoot = await realpath(input.targetRoot);
   const contract = await readFlutterReviewContract(targetRoot);
   const selected = contract.scenarios?.[input.caseId];
@@ -105,8 +146,38 @@ export async function replayFlutterTargetScenario(input: {
     timeout: contract.launcher.timeoutMs ?? 120_000,
     maxBuffer: 10 * 1024 * 1024,
   });
+  const transition = targetScenarioTransitionSchema.parse(JSON.parse(result.stdout)) as TargetScenarioTransition;
+  if (
+    transition.caseId !== input.caseId
+    || transition.screenId !== selected.screenId
+    || transition.scenarioId !== selected.scenarioId
+  ) throw new Error('Flutter Scenario inspector returned an identity outside the selected Review Case.');
   const receiptDigest = sha256(Buffer.from(JSON.stringify({ command, stdout: result.stdout, stderr: result.stderr, identity, device: contract.device })));
-  return { screenId: selected.screenId, scenarioId: selected.scenarioId, receiptDigest, command, environment: { deviceId: contract.device.udid, runtime: contract.device.runtime, exitCode: 0 } };
+  return { screenId: selected.screenId, scenarioId: selected.scenarioId, receiptDigest, command, environment: { deviceId: contract.device.udid, runtime: contract.device.runtime, exitCode: 0 }, transition };
+}
+
+export async function inspectFlutterTargetState(input: {
+  targetRoot: string;
+  caseId: string;
+}): Promise<TargetStateSnapshot> {
+  const targetRoot = await realpath(input.targetRoot);
+  const contract = await readFlutterReviewContract(targetRoot);
+  const selected = contract.cases[input.caseId];
+  const base = contract.launcher.stateCommand;
+  if (!selected || !base) throw new Error(`Flutter Review launcher has no State inspector for Case ${input.caseId}.`);
+  const variables = { caseId: input.caseId, screenId: selected.screenId, scenarioId: '', deviceId: contract.device.udid, output: '' };
+  const command = [...base.map((item) => interpolate(item, variables)), ...(selected.stateArguments ?? []).map((item) => interpolate(item, variables))];
+  const result = await execFileAsync(command[0]!, command.slice(1), {
+    cwd: targetRoot,
+    env: { ...process.env, ...contract.launcher.environment },
+    timeout: contract.launcher.timeoutMs ?? 120_000,
+    maxBuffer: 10 * 1024 * 1024,
+  });
+  const snapshot = targetStateSnapshotSchema.parse(JSON.parse(result.stdout)) as TargetStateSnapshot;
+  if (snapshot.caseId !== input.caseId || snapshot.shell.screenId !== selected.screenId) {
+    throw new Error('Flutter State inspector returned an identity outside the selected Review Case.');
+  }
+  return snapshot;
 }
 
 export function comparePngArtifacts(input: {

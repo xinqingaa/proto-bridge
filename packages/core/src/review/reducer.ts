@@ -124,6 +124,13 @@ export function reduceReviewEvents(
     } else if (payload.kind === 'scenario-replayed') {
       if (event.actor !== 'runner' || !event.tool) throw new Error('Scenario replay facts require a successful runner receipt.');
       if (payload.targetRevision !== session.targetRevision || !session.requiredScenarioCaseIds.includes(payload.caseId)) throw new Error('Scenario receipt is outside the fixed Review target revision/selection.');
+      if (payload.transition && (
+        payload.transition.caseId !== payload.caseId
+        || payload.transition.screenId !== payload.screenId
+        || payload.transition.scenarioId !== payload.scenarioId
+        || payload.transition.preState.caseId !== payload.caseId
+        || payload.transition.postState.caseId !== payload.caseId
+      )) throw new Error('Structured Scenario receipt identity does not match its Review event.');
       session.replayedScenarioCaseIds.push(payload.caseId);
     } else if (payload.kind === 'artifacts-compared') {
       if (event.actor !== 'runner' || !event.tool) throw new Error('Compare facts require a successful comparator receipt.');
@@ -169,6 +176,16 @@ export function reduceReviewEvents(
       receiptByDigest.set(receiptDigest, receipt);
       session.verifierReceipts = [...receiptByDigest.values()];
       session.verifierTargetContentDigest = receipt.targetContentDigest;
+      for (const result of receipt.results.filter((item) => item.dimension === 'states' || item.dimension === 'interactions')) {
+        assessmentById.set(result.obligationId, {
+          obligationId: result.obligationId,
+          status: result.status,
+          detail: result.detail,
+          evidenceDigests: [receiptDigest],
+          verifierReceiptDigest: receiptDigest,
+        });
+      }
+      session.obligationAssessments = [...assessmentById.values()].sort((a, b) => a.obligationId.localeCompare(b.obligationId));
     } else if (payload.kind === 'obligations-assessed') {
       const requiredIds = new Set(session.requiredObligations.map((item) => item.obligationId));
       for (const assessment of payload.assessments) {

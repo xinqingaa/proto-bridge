@@ -31,6 +31,7 @@ export type EvidenceReadableFact = {
 export type EvidenceSemanticRegionReadModel = {
   /** Exact Fact identity prefix; no display regrouping rewrites it. */
   regionId: string;
+  identity?: { screenId: string; pbId: string; pbKey?: string };
   label: string;
   role?: string;
   tag?: string;
@@ -38,6 +39,7 @@ export type EvidenceSemanticRegionReadModel = {
   visible?: boolean;
   bbox?: { x: number; y: number; width: number; height: number };
   componentId?: string;
+  props?: Record<string, unknown>;
   tokenBindings?: Record<string, string>;
   semanticParent?: unknown;
   semanticAncestors?: unknown[];
@@ -170,7 +172,7 @@ function readableFact(fact: Fact, sourceIndex: number): EvidenceReadableFact {
   };
 }
 
-const NODE_FACT_SUFFIX = /\.(role|visible|tag|bbox|text|componentId|tokenBindings|semanticParent|semanticAncestors|documentOrder|scrollOwner|positioning)$/;
+const NODE_FACT_SUFFIX = /\.(identity|role|visible|tag|bbox|text|componentId|props|tokenBindings|semanticParent|semanticAncestors|documentOrder|scrollOwner|positioning)$/;
 
 function stringValue(
   fact: EvidenceReadableFact | undefined,
@@ -217,11 +219,28 @@ function semanticRegions(
     const bySuffix = (suffix: string) =>
       regionFacts.find((fact) => fact.factId.endsWith(`.${suffix}`));
     const text = stringValue(bySuffix("text"));
+    const identityValue = bySuffix("identity")?.value;
+    const identityObject = identityValue && typeof identityValue === "object" && !Array.isArray(identityValue)
+      ? identityValue as Record<string, unknown>
+      : undefined;
+    const identity =
+      typeof identityObject?.screenId === "string" && typeof identityObject.pbId === "string"
+        ? {
+            screenId: identityObject.screenId,
+            pbId: identityObject.pbId,
+            ...(typeof identityObject.pbKey === "string" ? { pbKey: identityObject.pbKey } : {}),
+          }
+        : undefined;
     const role = stringValue(bySuffix("role"));
     const tag = stringValue(bySuffix("tag"));
     const visible = booleanValue(bySuffix("visible"));
     const bbox = bboxValue(bySuffix("bbox"));
     const componentId = stringValue(bySuffix("componentId"));
+    const propsFact = bySuffix("props")?.value;
+    const props =
+      propsFact && typeof propsFact === "object" && !Array.isArray(propsFact)
+        ? (propsFact as Record<string, unknown>)
+        : undefined;
     const tokenBindingsFact = bySuffix("tokenBindings")?.value;
     const tokenBindings =
       tokenBindingsFact && typeof tokenBindingsFact === "object"
@@ -239,6 +258,7 @@ function semanticRegions(
     const positioning = stringValue(bySuffix("positioning"));
     return {
       regionId,
+      ...(identity ? { identity } : {}),
       label: text?.replace(/\s+/g, " ").trim().slice(0, 80) || role || regionId,
       ...(role ? { role } : {}),
       ...(tag ? { tag } : {}),
@@ -246,6 +266,7 @@ function semanticRegions(
       ...(visible !== undefined ? { visible } : {}),
       ...(bbox ? { bbox } : {}),
       ...(componentId ? { componentId } : {}),
+      ...(props ? { props } : {}),
       ...(tokenBindings ? { tokenBindings } : {}),
       ...(semanticParent !== undefined ? { semanticParent } : {}),
       ...(semanticAncestors ? { semanticAncestors } : {}),

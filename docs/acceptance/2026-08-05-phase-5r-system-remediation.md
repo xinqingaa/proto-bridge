@@ -83,15 +83,21 @@ Local Service 会从持久 Handoff 独立重算 obligations，并拒绝客户端
 
 退出条件已由 mutation tests 覆盖：正确组件只出现在无关位置、只 import、不在 claimed occurrence 使用、Token 位于错误 slot，以及 Structure scroll owner 错误均不能通过。
 
-本切片不把 state/interaction 自然语言 assessment 升格为机器事实；在 5R.4 verifier 完成前，这两维必须保持 `unverified`。
+本切片当时不把 state/interaction 自然语言 assessment 升格为机器事实；该缺口已由 5R.4 补齐。
 
-### 5R.4 State 与 Interaction verifier
+### 5R.4 已实现：State 与 Interaction verifier
 
-- 生成 keyed state snapshot，包括 visible collection、selected/default values 和状态壳层；
-- Scenario receipt 记录 pre-state、action/input、post-state 和可见结果；
-- required transition 未执行或 post-state 不匹配时自动产生 blocking assessment/finding。
+实现结果：
 
-退出条件：默认选中值错误、操作更新错误对象、交互发生但页面状态未变化的 mutation 均不能通过。
+- Source Evidence read model 提升 runtime `props`，Acceptance 与 Screen packet 生成 typed keyed state snapshot，包括 state shell、visible Region、业务 key collection、selected/default 标量值和 semantic coverage；
+- Target-independent claim 新增 `states` 与 `interactions`，仍只提交 obligation ID 与适用 Case，expected 从固定 Review 读取；
+- Flutter contract 新增 `launcher.stateCommand`/Case `stateArguments`；输出必须包含 identity、shell、visible Region、keyed collection、values、`complete` 和 `unknownKeys`；
+- `scenarioCommand` 从“退出 0 + stdout hash”升级为严格 JSON transition，记录 pre-state、实际 action ID/kind/target/input、post-state、checkpoint 和 visible result；
+- verifier 逐义务验证 action target、action sequence、initial/post shell、required/forbidden visibility、expected state values 和 collection keys；缺命令、Schema/identity 不符或 incomplete/unknown 时为 `unverified`；
+- state/interaction verifier result 自动物化为带 receipt 的 assessment；`deviation`/`unverified` 直接进入 Review 完成门禁；
+- Core contract 不含 Prototype Screen ID、Flutter Widget 映射或项目 Token ID，绝对视觉值仍不作为状态/交互命中条件。
+
+退出条件已由 mutation tests 覆盖：默认选中值错误、操作更新错误对象、交互记录存在但 post-state 未变化均返回 `deviation`，不能通过。
 
 ### 5R.5 跨样本推广
 

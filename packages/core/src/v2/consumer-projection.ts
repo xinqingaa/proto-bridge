@@ -223,6 +223,11 @@ export type StateSnapshot = {
     keys: string[];
     itemRegionIds: string[];
   }>;
+  values: Array<{
+    regionId: string;
+    key: string;
+    value: string | number | boolean | null;
+  }>;
   requirements: Array<{
     subject: string;
     kind: string;
@@ -613,13 +618,38 @@ function buildStateSnapshot(
       && (candidate.semanticAncestors ?? []).some((ancestor) => fragmentRegionId(ancestor) === region.regionId));
   });
   const keyed = new Map<string, Map<string, string>>();
+  const values = new Map<string, StateSnapshot['values'][number]>();
   for (const region of evidenceCase.regions) {
+    if (region.identity?.pbKey) {
+      const current = keyed.get(region.identity.pbId) ?? new Map<string, string>();
+      current.set(region.identity.pbKey, region.regionId);
+      keyed.set(region.identity.pbId, current);
+    }
+    for (const [key, value] of Object.entries(region.props ?? {})) {
+      if (value === null || ['string', 'number', 'boolean'].includes(typeof value)) {
+        values.set(`${region.regionId}\0${key}`, { regionId: region.regionId, key, value: value as string | number | boolean | null });
+      }
+    }
     for (const value of [region.semanticParent, ...(region.semanticAncestors ?? [])]) {
       const identity = fragmentIdentity(value);
       if (!identity?.pbKey) continue;
       const current = keyed.get(identity.pbId) ?? new Map<string, string>();
       current.set(identity.pbKey, fragmentRegionId(identity)!);
       keyed.set(identity.pbId, current);
+    }
+  }
+  const stateRequirements = input.acceptance.dimensions.states
+    .filter((item) => item.screenId === evidenceCase.screenId && item.caseId === evidenceCase.caseId);
+  for (const requirement of stateRequirements) {
+    const expectedValues = objectValue(requirement.expected)?.values;
+    if (!Array.isArray(expectedValues)) continue;
+    for (const value of expectedValues) {
+      const item = objectValue(value);
+      if (
+        typeof item?.regionId === 'string'
+        && typeof item.key === 'string'
+        && (item.value === null || ['string', 'number', 'boolean'].includes(typeof item.value))
+      ) values.set(`${item.regionId}\0${item.key}`, item as StateSnapshot['values'][number]);
     }
   }
   return {
@@ -636,8 +666,8 @@ function buildStateSnapshot(
       keys: [...items.keys()].sort(),
       itemRegionIds: [...items.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, regionId]) => regionId),
     })).sort((a, b) => a.itemBaseRegionId.localeCompare(b.itemBaseRegionId)),
-    requirements: input.acceptance.dimensions.states
-      .filter((item) => item.screenId === evidenceCase.screenId && item.caseId === evidenceCase.caseId)
+    values: [...values.values()].sort((a, b) => `${a.regionId}:${a.key}`.localeCompare(`${b.regionId}:${b.key}`)),
+    requirements: stateRequirements
       .map((item) => ({ subject: item.subject, kind: item.kind, expected: item.expected, evidenceRefs: [...item.evidenceRefs] }))
       .sort((a, b) => `${a.kind}:${a.subject}`.localeCompare(`${b.kind}:${b.subject}`)),
   };

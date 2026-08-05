@@ -205,6 +205,7 @@ export type RecordScenarioReplayRequest = {
   receiptDigest: string;
   targetRevision: string;
   receiptTool: string;
+  transition?: import('../../review/contracts.js').TargetScenarioTransition;
 };
 export type RecordArtifactCompareRequest = {
   screenId: string;

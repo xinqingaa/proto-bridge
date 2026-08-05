@@ -108,11 +108,13 @@ Review 的验收分母来自 Core 对 Acceptance Contract 的确定性编译：�
 - 开放 component/token ID 的批量解析，输出 `resolved/candidate/stale/conflict/unresolved/unsupported`；
 - 既有实现示例查找及 Control/candidate output 排除；
 - 目标变更路径、实际采用 mapping 和原生验证结果检查。
-- target-independent implementation claims；Flutter adapter 对 Structure 运行目标 inspector 并比较 IR，对 component/token 校验精确 Dart occurrence、owner 和 named-argument slot。
+- target-independent implementation claims；Flutter adapter 对 Structure 运行目标 inspector 并比较 IR，对 component/token 校验精确 Dart occurrence、owner 和 named-argument slot，对 state/interaction 比较 typed runtime proof。
 
 它不拥有任何具体产品的组件/Token 映射。真实目标工程的 `AGENTS.md`、`docs/proto-bridge.md`、`docs/components.md`、`docs/theme.md` 和公开代码拥有当前约束；可选 `docs/proto-bridge.target.json` 只是这些约束的严格机器投影。政策与机器 Contract 冲突返回 `conflict`，显式声明与代码不符返回 `stale`，代码启发式最多返回 `candidate`。Target root 来自 Agent 当前任务或单次 Tool 参数；目标仓库不需要 ProtoBridge Workspace 配置，Target 结果不写入 Bundle。
 
 Flutter Review machine contract 可在 `review.launcher.structureCommand` 声明确定性 Structure inspector。命令接收 `{caseId}`、`{screenId}`、`{deviceId}` 插值并向 stdout 输出 Consumer projection version 2 的完整 `StructureIR` JSON；Case 可用 `structureArguments` 添加参数。命令缺失、失败、Case 不一致、Schema 不完整或 Source/Target Region 含 unknown 时，verifier 返回 `unverified`，不根据 Widget 类型猜 parent 或 scroll owner。
+
+同一 contract 可用 `review.launcher.stateCommand` 输出 typed State snapshot：Case/shell identity、visible Region IDs、以业务 identity 表达的 keyed collections、selected/default 等标量 values，以及 `complete/unknownKeys`。`scenarioCommand` 输出 Scenario transition：pre-state、实际 action ID/kind/target/input、post-state、checkpoint identity 和 visible result。Verifier 从固定 obligation 读取 Source expected，逐键验证 shell、集合、值、动作目标、required/forbidden visibility 和 checkpoint；不比较原型与 Flutter 的内部状态对象，也不接受 Agent 自填 expected。Case 可分别用 `stateArguments` 和 Scenario `arguments` 增补命令参数。缺少命令、JSON 不完整、状态 unknown 或只有退出码/stdout hash 时返回 `unverified`。
 
 ## 公共导出
 

@@ -64,6 +64,41 @@ export type ReviewVerifierResult = {
     ownerSymbol?: string;
     targetSlot?: string;
   };
+  stateProof?: TargetStateSnapshot;
+  transitionProof?: TargetScenarioTransition;
+};
+
+export type ReviewStateScalar = string | number | boolean | null;
+
+export type TargetStateSnapshot = {
+  caseId: string;
+  shell: { screenId: string; variantId: string };
+  visibleRegionIds: string[];
+  keyedCollections: Array<{ collectionId: string; keys: string[] }>;
+  values: Array<{ regionId: string; key: string; value: ReviewStateScalar }>;
+  complete: boolean;
+  unknownKeys: string[];
+};
+
+export type TargetScenarioAction = {
+  actionId: string;
+  kind: 'click' | 'input' | 'select' | 'submit' | 'custom';
+  targetRegionId?: string;
+  input?: ReviewStateScalar;
+};
+
+export type TargetScenarioTransition = {
+  caseId: string;
+  screenId: string;
+  scenarioId: string;
+  checkpointId: string;
+  preState: TargetStateSnapshot;
+  actions: TargetScenarioAction[];
+  postState: TargetStateSnapshot;
+  visibleResult: {
+    visibleRegionIds: string[];
+    changedRegionIds: string[];
+  };
 };
 
 export type ReviewVerifierReceipt = {
@@ -102,7 +137,7 @@ export type ReviewEventPayload =
   | { kind: 'tranche-authorized'; screenId: string; tranche: number; approvalRef: string }
   | { kind: 'screenshot-viewed'; screenId: string; caseIds: string[]; source: ReviewArtifact }
   | { kind: 'target-rendered'; screenId: string; caseId: string; sourceDigest: string; tranche: number; round: number; attemptId: string; targetRevision: string; target: ReviewArtifact }
-  | { kind: 'scenario-replayed'; screenId: string; caseId: string; scenarioId: string; receiptDigest: string; targetRevision: string }
+  | { kind: 'scenario-replayed'; screenId: string; caseId: string; scenarioId: string; receiptDigest: string; targetRevision: string; transition?: TargetScenarioTransition }
   | { kind: 'artifacts-compared'; screenId: string; caseId: string; attemptId: string; sourceDigest: string; targetDigest: string; diff: ReviewArtifact; overlay?: ReviewArtifact; comparable: boolean; normalizedDiffSignature?: string; reason?: string }
   | { kind: 'target-claims-verified'; receipt: ReviewVerifierReceipt }
   | { kind: 'findings-recorded'; findings: ReviewFinding[] }

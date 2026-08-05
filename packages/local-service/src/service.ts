@@ -672,7 +672,7 @@ export class ProtoBridgeLocalService {
           reviewRunId,
           actor: 'runner',
           tool: body.receiptTool,
-          payload: { kind: 'scenario-replayed', screenId: body.screenId, caseId: body.caseId, scenarioId: body.scenarioId, receiptDigest: body.receiptDigest, targetRevision: body.targetRevision },
+          payload: { kind: 'scenario-replayed', screenId: body.screenId, caseId: body.caseId, scenarioId: body.scenarioId, receiptDigest: body.receiptDigest, targetRevision: body.targetRevision, ...(body.transition ? { transition: body.transition } : {}) },
         }), 201);
         return;
       }

@@ -95,6 +95,20 @@ function nodeFacts(nodes: RuntimeSemanticNode[]): Fact[] {
     const identity = `${node.fragment.pbId}${node.fragment.pbKey ? `.${node.fragment.pbKey}` : ''}`;
     const facts: Fact[] = [
       {
+        factId: `${identity}.identity`,
+        candidates: [
+          {
+            value: node.fragment,
+            provenance: {
+              source: 'data-pb',
+              locator: `[data-pb-id="${node.fragment.pbId}"]${node.fragment.pbKey ? `[data-pb-key="${node.fragment.pbKey}"]` : ''}`,
+            },
+          },
+        ],
+        resolution: 'resolved',
+        effectiveValue: node.fragment,
+      },
+      {
         factId: `${identity}.role`,
         candidates: [
           {
@@ -504,7 +518,7 @@ function actionFacts(
         requested.size === 0 || requested.has(fragmentKey(action.target)),
     )
     .map((action) => {
-      const value = { kind: action.kind, target: action.target };
+      const value = { actionId: action.actionId, kind: action.kind, target: action.target };
       return {
         factId: `${screen.screenId}.action.${action.actionId}`,
         candidates: [
@@ -526,6 +540,7 @@ function scenarioFact(entry: CaseMatrixEntry): Fact[] {
   if (!entry.scenario) return [];
   const { scenario, checkpoint } = entry.scenario;
   const value = {
+    scenarioId: scenario.scenarioId,
     ownerScreenId: scenario.ownerScreenId,
     initialVariantId: scenario.initialVariantId,
     actionIds: scenario.actionIds,

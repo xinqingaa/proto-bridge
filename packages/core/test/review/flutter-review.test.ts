@@ -26,13 +26,22 @@ describe('Flutter authoritative Review adapter', () => {
     const png = new PNG({ width: 2, height: 3 });
     png.data.fill(255);
     await writeFile(path.join(root, 'fixture.png'), PNG.sync.write(png));
+    const scenarioTransition = {
+      caseId: 'open.case.scenario', screenId: 'open.screen', scenarioId: 'open.scenario', checkpointId: 'opened',
+      preState: { caseId: 'open.case.scenario', shell: { screenId: 'open.screen', variantId: 'closed' }, visibleRegionIds: ['open.trigger'], keyedCollections: [], values: [], complete: true, unknownKeys: [] },
+      actions: [{ actionId: 'open', kind: 'click', targetRegionId: 'open.trigger' }],
+      postState: { caseId: 'open.case.scenario', shell: { screenId: 'open.screen', variantId: 'open' }, visibleRegionIds: ['open.trigger', 'open.panel'], keyedCollections: [], values: [], complete: true, unknownKeys: [] },
+      visibleResult: { visibleRegionIds: ['open.trigger', 'open.panel'], changedRegionIds: ['open.panel'] },
+    };
+    await writeFile(path.join(root, 'scenario.json'), JSON.stringify(scenarioTransition));
+    await writeFile(path.join(root, 'scenario.mjs'), "import { readFileSync } from 'node:fs'; process.stdout.write(readFileSync('scenario.json', 'utf8'));\n");
     await writeFile(path.join(root, 'docs/proto-bridge.target.json'), JSON.stringify({
       version: 1,
       technology: 'flutter',
       review: {
         version: 1,
         platform: 'ios-simulator',
-        launcher: { command: ['cp', 'fixture.png', '{output}'], scenarioCommand: ['true'] },
+        launcher: { command: ['cp', 'fixture.png', '{output}'], scenarioCommand: ['node', 'scenario.mjs'] },
         device: { udid: 'fixture-device', runtime: 'fixture-runtime', logicalWidth: 2, logicalHeight: 3, dpr: 1, locale: 'en_US', theme: 'light', textScale: 1, safeArea: 'fixture', settle: 'no-pending-frames' },
         cases: { 'open.case.default': { screenId: 'open.screen' } },
         scenarios: { 'open.case.scenario': { screenId: 'open.screen', scenarioId: 'open.scenario' } },
@@ -47,6 +56,7 @@ describe('Flutter authoritative Review adapter', () => {
     expect(receipt.command).toEqual(['cp', 'fixture.png', expect.stringContaining('target.png')]);
     const scenario = await replayFlutterTargetScenario({ targetRoot: root, caseId: 'open.case.scenario', expectedTargetHead: head });
     expect(scenario).toMatchObject({ scenarioId: 'open.scenario', screenId: 'open.screen' });
+    expect(scenario.transition).toEqual(scenarioTransition);
   });
 
   it('emits visible diff/overlay artifacts and a stable non-score signature', () => {

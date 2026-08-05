@@ -32,6 +32,7 @@ export const FlutterReviewContract = z.object({
     command: z.array(z.string().min(1)).min(1),
     scenarioCommand: z.array(z.string().min(1)).min(1).optional(),
     structureCommand: z.array(z.string().min(1)).min(1).optional(),
+    stateCommand: z.array(z.string().min(1)).min(1).optional(),
     environment: z.record(z.string()).optional(),
     timeoutMs: z.number().int().min(1_000).max(300_000).optional(),
   }).strict(),
@@ -51,6 +52,7 @@ export const FlutterReviewContract = z.object({
     screenId: z.string().min(1),
     arguments: z.array(z.string()).optional(),
     structureArguments: z.array(z.string()).optional(),
+    stateArguments: z.array(z.string()).optional(),
     stateSeed: z.string().optional(),
   }).strict()),
   scenarios: z.record(z.string().min(1), z.object({
