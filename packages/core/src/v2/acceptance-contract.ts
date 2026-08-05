@@ -244,7 +244,7 @@ export function acceptanceChecklistMarkdown(
         `| ${dimension} | ${contract.dimensions[dimension].length} |`,
     ),
     '',
-    'These references are implementation and review guidance. They are not points, quotas, automatic blockers, or a substitute for Screenshot review.',
+    'These requirements are compiled into canonical Reconstruction Obligations for authoritative Target Review. They are not weighted points or a substitute for Screenshot review; every obligation must receive an explicit assessment before completion.',
     '',
   ];
   if (contract.readiness.blockers.length > 0) {

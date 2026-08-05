@@ -3,8 +3,20 @@ import {
   buildHandoffIndex,
   buildScreenPacket,
   V2ContractError,
+  type AcceptanceDimension,
 } from '@proto-bridge/core/v2';
-import type { ReviewFinding, ReviewSession, ReviewSessionSeed } from '@proto-bridge/core/review';
+import {
+  compileReconstructionObligations,
+  RECONSTRUCTION_OBLIGATION_CONTRACT_VERSION,
+  projectReviewObligations,
+  projectReviewSession,
+  type ReviewFinding,
+  type ReviewObligationFilterStatus,
+  type ReviewObligationAssessment,
+  type ReviewSession,
+  type ReviewSessionProjection,
+  type ReviewSessionSeed,
+} from '@proto-bridge/core/review';
 import {
   comparePngArtifacts,
   FLUTTER_COMPARATOR_VERSION,
@@ -21,7 +33,7 @@ export async function recordScreenshotViewedTool(
 ): Promise<void> {
   const reviewRunId = readString(args, 'reviewRunId');
   if (!reviewRunId) return;
-  const session = await readTargetReviewTool(context, { reviewRunId });
+  const session = await readTargetReviewSession(context, reviewRunId);
   const input = await context.evidence.readConsumerProjectionInput(session.handoffId);
   const index = buildHandoffIndex(input);
   const digest = String(screenshot.metadata.digest);
@@ -46,7 +58,7 @@ export async function recordScreenshotViewedTool(
   });
 }
 
-export async function startTargetReviewTool(context: ToolContext, args: JsonObject): Promise<ReviewSession> {
+export async function startTargetReviewTool(context: ToolContext, args: JsonObject): Promise<ReviewSessionProjection> {
   const handoffId = required(args, 'handoffId');
   const input = await context.evidence.readConsumerProjectionInput(handoffId);
   const index = buildHandoffIndex(input);
@@ -65,27 +77,44 @@ export async function startTargetReviewTool(context: ToolContext, args: JsonObje
     selectedCaseIds: index.screens.flatMap((screen) => screen.caseIds),
     requiredSourceDigests: index.screenshotGroups.flatMap((group) => group.digest ? [group.digest] : []),
     requiredScenarioCaseIds: [...new Set(scenarioCaseIds)].sort(),
+    obligationContractVersion: RECONSTRUCTION_OBLIGATION_CONTRACT_VERSION,
+    requiredObligations: compileReconstructionObligations(input.acceptance),
     comparatorVersion: FLUTTER_COMPARATOR_VERSION,
     createdAt: new Date().toISOString(),
   };
   if (seed.requiredSourceDigests.length !== index.screenshotGroups.length) {
     throw new V2ContractError('unknown-reference', 'Authoritative Review cannot start while a selected Screenshot digest is missing.');
   }
-  return context.reviews.call('/reviews', { method: 'POST', body: { seed } });
+  return projectReviewSession(await context.reviews.call('/reviews', { method: 'POST', body: { seed } }));
 }
 
-export function readTargetReviewTool(context: ToolContext, args: JsonObject): Promise<ReviewSession> {
-  return context.reviews.call(`/reviews/${encodeURIComponent(required(args, 'reviewRunId'))}`);
+export async function readTargetReviewTool(context: ToolContext, args: JsonObject): Promise<ReviewSessionProjection> {
+  return projectReviewSession(await readTargetReviewSession(context, required(args, 'reviewRunId')));
 }
 
-export async function renderTargetCaseTool(context: ToolContext, args: JsonObject): Promise<ReviewSession> {
+export async function readReviewObligationsTool(context: ToolContext, args: JsonObject) {
   const reviewRunId = required(args, 'reviewRunId');
-  const session = await readTargetReviewTool(context, { reviewRunId });
+  const session = await readTargetReviewSession(context, reviewRunId);
+  const dimension = readString(args, 'dimension') as AcceptanceDimension | undefined;
+  const status = readString(args, 'status') as ReviewObligationFilterStatus | undefined;
+  return projectReviewObligations(session, {
+    reviewRunId,
+    ...(readString(args, 'screenId') ? { screenId: readString(args, 'screenId')! } : {}),
+    ...(dimension ? { dimension } : {}),
+    ...(status ? { status } : {}),
+    ...(readNumber(args, 'pageSize') !== undefined ? { pageSize: readNumber(args, 'pageSize')! } : {}),
+    ...(readString(args, 'cursor') ? { cursor: readString(args, 'cursor')! } : {}),
+  });
+}
+
+export async function renderTargetCaseTool(context: ToolContext, args: JsonObject): Promise<ReviewSessionProjection> {
+  const reviewRunId = required(args, 'reviewRunId');
+  const session = await readTargetReviewSession(context, reviewRunId);
   const caseId = required(args, 'caseId');
   const sourceDigest = required(args, 'sourceDigest');
   const attemptId = readString(args, 'attemptId') ?? `attempt-${randomUUID()}`;
   const receipt = await renderFlutterTargetCase({ targetRoot: session.targetRoot, caseId, attemptId, expectedTargetHead: session.targetBaselineCommit });
-  return context.reviews.call(`/reviews/${encodeURIComponent(reviewRunId)}/render`, {
+  return projectReviewSession(await context.reviews.call(`/reviews/${encodeURIComponent(reviewRunId)}/render`, {
     method: 'POST',
     body: {
       screenId: receipt.artifact.owner.screenId, caseId, sourceDigest,
@@ -93,23 +122,23 @@ export async function renderTargetCaseTool(context: ToolContext, args: JsonObjec
       targetRevision: session.targetRevision, receiptTool: 'flutter-review-runner-v1',
       artifact: receipt.artifact, bytesBase64: Buffer.from(receipt.bytes).toString('base64'),
     },
-  });
+  }));
 }
 
-export async function replayTargetScenarioTool(context: ToolContext, args: JsonObject): Promise<ReviewSession> {
+export async function replayTargetScenarioTool(context: ToolContext, args: JsonObject): Promise<ReviewSessionProjection> {
   const reviewRunId = required(args, 'reviewRunId');
-  const session = await readTargetReviewTool(context, { reviewRunId });
+  const session = await readTargetReviewSession(context, reviewRunId);
   const caseId = required(args, 'caseId');
   const receipt = await replayFlutterTargetScenario({ targetRoot: session.targetRoot, caseId, expectedTargetHead: session.targetBaselineCommit });
-  return context.reviews.call(`/reviews/${encodeURIComponent(reviewRunId)}/replay`, {
+  return projectReviewSession(await context.reviews.call(`/reviews/${encodeURIComponent(reviewRunId)}/replay`, {
     method: 'POST',
     body: { screenId: receipt.screenId, caseId, scenarioId: receipt.scenarioId, receiptDigest: receipt.receiptDigest, targetRevision: session.targetRevision, receiptTool: 'flutter-review-scenario-v1' },
-  });
+  }));
 }
 
-export async function compareTargetArtifactsTool(context: ToolContext, args: JsonObject): Promise<ReviewSession> {
+export async function compareTargetArtifactsTool(context: ToolContext, args: JsonObject): Promise<ReviewSessionProjection> {
   const reviewRunId = required(args, 'reviewRunId');
-  const session = await readTargetReviewTool(context, { reviewRunId });
+  const session = await readTargetReviewSession(context, reviewRunId);
   const sourceDigest = required(args, 'sourceDigest');
   const targetDigest = required(args, 'targetDigest');
   const attemptId = required(args, 'attemptId');
@@ -120,7 +149,7 @@ export async function compareTargetArtifactsTool(context: ToolContext, args: Jso
     target: await context.reviews.readArtifact(reviewRunId, targetDigest),
     owner: { screenId: attempt.screenId, caseId: attempt.caseId, attemptId },
   });
-  return context.reviews.call(`/reviews/${encodeURIComponent(reviewRunId)}/compare`, {
+  return projectReviewSession(await context.reviews.call(`/reviews/${encodeURIComponent(reviewRunId)}/compare`, {
     method: 'POST',
     body: {
       screenId: attempt.screenId, caseId: attempt.caseId, attemptId, sourceDigest, targetDigest,
@@ -131,21 +160,34 @@ export async function compareTargetArtifactsTool(context: ToolContext, args: Jso
       ...(compared.reason ? { reason: compared.reason } : {}),
       receiptTool: FLUTTER_COMPARATOR_VERSION,
     },
-  });
+  }));
 }
 
-export function recordReviewFindingsTool(context: ToolContext, args: JsonObject): Promise<ReviewSession> {
+export async function recordReviewFindingsTool(context: ToolContext, args: JsonObject): Promise<ReviewSessionProjection> {
   const findings = args.findings;
   if (!Array.isArray(findings)) throw new V2ContractError('invalid-schema', 'findings must be an array.');
-  return context.reviews.call(`/reviews/${encodeURIComponent(required(args, 'reviewRunId'))}/findings`, { method: 'POST', body: { actor: 'agent', findings: findings as unknown as ReviewFinding[] } });
+  return projectReviewSession(await context.reviews.call(`/reviews/${encodeURIComponent(required(args, 'reviewRunId'))}/findings`, { method: 'POST', body: { actor: 'agent', findings: findings as unknown as ReviewFinding[] } }));
 }
 
-export function requestReviewTrancheTool(context: ToolContext, args: JsonObject): Promise<ReviewSession> {
-  return context.reviews.call(`/reviews/${encodeURIComponent(required(args, 'reviewRunId'))}/tranches`, { method: 'POST', body: { approvalToken: required(args, 'approvalToken') } });
+export async function recordReviewAssessmentsTool(context: ToolContext, args: JsonObject): Promise<ReviewSessionProjection> {
+  const assessments = args.assessments;
+  if (!Array.isArray(assessments)) throw new V2ContractError('invalid-schema', 'assessments must be an array.');
+  return projectReviewSession(await context.reviews.call(`/reviews/${encodeURIComponent(required(args, 'reviewRunId'))}/assessments`, {
+    method: 'POST',
+    body: { assessments: assessments as unknown as ReviewObligationAssessment[] },
+  }));
 }
 
-export function finalizeTargetReviewTool(context: ToolContext, args: JsonObject): Promise<ReviewSession> {
-  return context.reviews.call(`/reviews/${encodeURIComponent(required(args, 'reviewRunId'))}/finalize`, { method: 'POST', body: { approvalToken: required(args, 'confirmationToken') } });
+export async function requestReviewTrancheTool(context: ToolContext, args: JsonObject): Promise<ReviewSessionProjection> {
+  return projectReviewSession(await context.reviews.call(`/reviews/${encodeURIComponent(required(args, 'reviewRunId'))}/tranches`, { method: 'POST', body: { approvalToken: required(args, 'approvalToken') } }));
+}
+
+export async function finalizeTargetReviewTool(context: ToolContext, args: JsonObject): Promise<ReviewSessionProjection> {
+  return projectReviewSession(await context.reviews.call(`/reviews/${encodeURIComponent(required(args, 'reviewRunId'))}/finalize`, { method: 'POST', body: { approvalToken: required(args, 'confirmationToken') } }));
+}
+
+function readTargetReviewSession(context: ToolContext, reviewRunId: string): Promise<ReviewSession> {
+  return context.reviews.call(`/reviews/${encodeURIComponent(reviewRunId)}`);
 }
 
 function unavailableArtifact(attempt: ReviewSession['attempts'][number]) {

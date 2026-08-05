@@ -4,12 +4,15 @@ import {
   buildCaseDelta,
   buildEvidenceDetail,
   buildHandoffIndex,
+  buildReconstructionObligationProjection,
   buildScreenPacket,
+  compareStructureIR,
   fixtures,
   type AgentHandoff,
   type BlobRecord,
   type ConsumerProjectionInput,
   type EvidenceCaseReadModel,
+  type EvidenceSemanticRegionReadModel,
   type EvidenceDetailProjection,
   type EvidenceDetailItem,
   type EvidenceReadModel,
@@ -98,7 +101,56 @@ describe('Consumer projection', () => {
     expect(packet.tokenIds).toEqual(['color.surface', 'space.md']);
     expect(packet.screenshotGroups.find((group) => group.digest === DIGEST_EMPTY)?.caseIds)
       .toEqual([EMPTY_CASE, SCENARIO_CASE]);
+    expect(packet.baseline.structure.scrollContainers).toContainEqual({
+      owner: { kind: 'region', regionId: `${SCREEN}.scroll-list` },
+      memberRegionIds: [
+        `${SCREEN}.summary`,
+        `${SCREEN}.summary.metric.critical`,
+        `${SCREEN}.summary.metric.unassigned`,
+        `${SCREEN}.search`,
+        `${SCREEN}.list`,
+      ],
+      pinnedRegionIds: [],
+    });
+    expect(packet.baseline.structure.siblingRelations).toContainEqual({
+      parentRegionId: `${SCREEN}.summary`,
+      regionId: `${SCREEN}.summary.metric.critical`,
+      nextRegionId: `${SCREEN}.summary.metric.unassigned`,
+      relation: 'left-of',
+    });
+    expect(packet.baseline.state.visibleContent).toContainEqual({
+      regionId: `${SCREEN}.summary.metric.critical`,
+      role: 'status',
+      text: '3 个严重异常',
+    });
+    expect(packet.obligationQueryHints).toContainEqual({
+      screenId: SCREEN,
+      dimension: 'structure',
+      count: expect.any(Number),
+    });
     expect(JSON.stringify(packet)).not.toContain(OTHER_SCREEN);
+  });
+
+  it('detects parent, scroll-owner, positioning, sibling-order and bbox-relation mutations as structure classes', () => {
+    const expected = buildScreenPacket(projectionFixture(), SCREEN).baseline.structure;
+    const actual = structuredClone(expected);
+    actual.regions.find((item) => item.regionId === `${SCREEN}.summary`)!.scrollOwner = { kind: 'viewport' };
+    actual.regions.find((item) => item.regionId === `${SCREEN}.search`)!.parentRegionId = `${SCREEN}.root`;
+    actual.regions.find((item) => item.regionId === `${SCREEN}.list`)!.positioning = 'fixed';
+    const metricGroup = actual.siblingGroups.find((item) => item.parentRegionId === `${SCREEN}.summary`)!;
+    metricGroup.childRegionIds.reverse();
+    actual.siblingRelations.find((item) =>
+      item.regionId === `${SCREEN}.summary.metric.critical`
+      && item.nextRegionId === `${SCREEN}.summary.metric.unassigned`
+    )!.relation = 'above';
+
+    expect(new Set(compareStructureIR(expected, actual).map((item) => item.kind))).toEqual(new Set([
+      'scroll-owner',
+      'parent',
+      'positioning',
+      'sibling-order',
+      'bbox-relation',
+    ]));
   });
 
   it('returns only changed Facts while preserving unknown/conflict and provenance changes', () => {
@@ -117,11 +169,9 @@ describe('Consumer projection', () => {
     ]);
     expect(delta.removed).toEqual([]);
     expect(delta.omittedCategories).toContain('unchanged-facts');
-    expect(delta.added[0]?.after?.provenance[0]).toEqual({
-      source: 'runtime-observation',
-      locator: '#empty',
-      confidence: 'high',
-    });
+    expect(delta.added[0]?.after).toEqual({ resolution: 'unknown', value: 'empty-state' });
+    expect(delta.added[0]?.changedFields).toContain('provenance');
+    expect(JSON.stringify(delta)).not.toContain('runtime-observation');
   });
 
   it('traverses stable logical pages and rejects a cursor reused for another query', () => {
@@ -134,7 +184,7 @@ describe('Consumer projection', () => {
     });
     expect(first.complete).toBe(false);
     expect(first.items).toHaveLength(1);
-    expect(first.continuation).toMatch(/^pbcp1\./);
+    expect(first.continuation).toMatch(/^pbcp2\./);
 
     const second = buildEvidenceDetail(input, {
       handoffId: input.handoff.handoffId,
@@ -154,6 +204,33 @@ describe('Consumer projection', () => {
         cursor: first.continuation,
       }),
     ).toThrowError(expect.objectContaining({ code: 'invalid-continuation' }));
+  });
+
+  it('pages canonical obligations by Screen and dimension with a query-bound cursor', () => {
+    const input = projectionFixture();
+    const first = buildReconstructionObligationProjection(input, {
+      handoffId: input.handoff.handoffId,
+      screenId: SCREEN,
+      dimension: 'structure',
+      pageSize: 1,
+    });
+    expect(first.obligations).toHaveLength(1);
+    expect(first.total).toBeGreaterThan(1);
+    expect(first.continuation).toMatch(/^pbop2\./);
+    const second = buildReconstructionObligationProjection(input, {
+      handoffId: input.handoff.handoffId,
+      screenId: SCREEN,
+      dimension: 'structure',
+      pageSize: 1,
+      cursor: first.continuation,
+    });
+    expect(second.obligations[0]?.obligationId).not.toBe(first.obligations[0]?.obligationId);
+    expect(() => buildReconstructionObligationProjection(input, {
+      handoffId: input.handoff.handoffId,
+      screenId: SCREEN,
+      dimension: 'tokens',
+      cursor: first.continuation,
+    })).toThrowError(expect.objectContaining({ code: 'invalid-continuation' }));
   });
 
   it('preserves the Acceptance requirement set when every detail projection is traversed', () => {
@@ -313,6 +390,7 @@ function projectionFixture(): ConsumerProjectionInput {
       fact(`${SCREEN}.root.role`, 'page', 0),
       fact(`${SCREEN}.status.text`, 'baseline-only-text', 1),
     ],
+    regions: baselineRegions(),
   });
   const emptyCase = caseModel({
     caseId: EMPTY_CASE,
@@ -419,6 +497,7 @@ function caseModel(input: {
   screenshotBlobIds: string[];
   scenario?: EvidenceCaseReadModel['scenario'];
   facts: EvidenceReadableFact[];
+  regions?: EvidenceSemanticRegionReadModel[];
 }): EvidenceCaseReadModel {
   return {
     caseId: input.caseId,
@@ -435,7 +514,7 @@ function caseModel(input: {
     facts: input.facts,
     contextFacts: [],
     interactionFacts: [],
-    regions: [],
+    regions: input.regions ?? [],
     unknownCount: input.facts.filter((item) => item.resolution === 'unknown')
       .length,
     conflictCount: input.facts.filter(
@@ -480,21 +559,12 @@ function blob(blobId: string, digest: string, revisionId: string): BlobRecord {
 function acceptanceContract(
   handoff: AgentHandoff,
 ): ReconstructionAcceptanceContract {
-  const structure = [DEFAULT_CASE, EMPTY_CASE, SCENARIO_CASE].flatMap(
-    (caseId) => [
-      {
-        requirementId: `structure.${caseId}.root`,
-        caseId,
-        screenId: SCREEN,
-        dimension: 'structure' as const,
-        kind: 'semantic-region-topology',
-        subject: `${SCREEN}.root`,
-        expected: {
-          scrollOwner: 'viewport',
-          positioning: 'flow',
-        },
-        evidenceRefs: [`${SCREEN}.root.role`],
-      },
+  const structure = [DEFAULT_CASE, EMPTY_CASE, SCENARIO_CASE].flatMap((caseId) => {
+    const topology = caseId === DEFAULT_CASE
+      ? baselineTopology(caseId)
+      : [topologyRequirement(caseId, `${SCREEN}.root`, 0, undefined, { kind: 'viewport' }, { x: 0, y: 0, width: 390, height: 844 })];
+    return [
+      ...topology,
       {
         requirementId: `shell.${caseId}`,
         caseId,
@@ -505,8 +575,8 @@ function acceptanceContract(
         expected: { appBar: true },
         evidenceRefs: [`${SCREEN}.structure.shell`],
       },
-    ],
-  );
+    ];
+  });
   return {
     contractVersion: 1,
     handoffId: handoff.handoffId,
@@ -602,6 +672,88 @@ function acceptanceContract(
         ),
       ],
     },
+  };
+}
+
+function baselineTopology(caseId: string) {
+  const viewport = { kind: 'viewport' } as const;
+  const scrollOwner = { kind: 'fragment', fragment: fragment(`${SCREEN}.scroll-list`) } as const;
+  return [
+    topologyRequirement(caseId, `${SCREEN}.app-bar`, 0, undefined, viewport, { x: 0, y: 0, width: 390, height: 65 }, 'app-bar'),
+    topologyRequirement(caseId, `${SCREEN}.root`, 1, undefined, viewport, { x: 0, y: 65, width: 390, height: 779 }, 'page'),
+    topologyRequirement(caseId, `${SCREEN}.scroll-list`, 2, `${SCREEN}.root`, viewport, { x: 0, y: 65, width: 390, height: 779 }, 'scroll-list'),
+    topologyRequirement(caseId, `${SCREEN}.summary`, 3, `${SCREEN}.scroll-list`, scrollOwner, { x: 16, y: 81, width: 358, height: 190 }, 'summary'),
+    topologyRequirement(caseId, `${SCREEN}.summary.metric.critical`, 4, `${SCREEN}.summary`, scrollOwner, { x: 33, y: 149, width: 102, height: 61 }, 'status'),
+    topologyRequirement(caseId, `${SCREEN}.summary.metric.unassigned`, 5, `${SCREEN}.summary`, scrollOwner, { x: 144, y: 149, width: 102, height: 61 }, 'status'),
+    topologyRequirement(caseId, `${SCREEN}.search`, 6, `${SCREEN}.scroll-list`, scrollOwner, { x: 16, y: 283, width: 358, height: 48 }, 'search'),
+    topologyRequirement(caseId, `${SCREEN}.list`, 7, `${SCREEN}.scroll-list`, scrollOwner, { x: 16, y: 403, width: 358, height: 316 }, 'list'),
+  ];
+}
+
+function topologyRequirement(
+  caseId: string,
+  subject: string,
+  documentOrder: number,
+  parentRegionId: string | undefined,
+  scrollOwner: unknown,
+  bbox: { x: number; y: number; width: number; height: number },
+  role = 'region',
+) {
+  const ancestors = parentRegionId ? [fragment(parentRegionId)] : [];
+  return {
+    requirementId: `structure.${caseId}.${subject}`,
+    caseId,
+    screenId: SCREEN,
+    dimension: 'structure' as const,
+    kind: 'semantic-region-topology',
+    subject,
+    expected: {
+      role,
+      ...(parentRegionId ? { semanticParent: fragment(parentRegionId) } : {}),
+      semanticAncestors: ancestors,
+      documentOrder,
+      scrollOwner,
+      positioning: 'flow',
+      bbox,
+    },
+    evidenceRefs: [`${subject}.role`],
+  };
+}
+
+function fragment(regionId: string, pbKey?: string) {
+  return { screenId: SCREEN, pbId: regionId, ...(pbKey ? { pbKey } : {}) };
+}
+
+function baselineRegions(): EvidenceSemanticRegionReadModel[] {
+  return [
+    region(`${SCREEN}.app-bar`, 0, 'app-bar'),
+    region(`${SCREEN}.root`, 1, 'page'),
+    region(`${SCREEN}.scroll-list`, 2, 'scroll-list', `${SCREEN}.root`),
+    region(`${SCREEN}.summary`, 3, 'summary', `${SCREEN}.scroll-list`),
+    region(`${SCREEN}.summary.metric.critical`, 4, 'status', `${SCREEN}.summary`, '3 个严重异常'),
+    region(`${SCREEN}.summary.metric.unassigned`, 5, 'status', `${SCREEN}.summary`, '2 个等待接手'),
+    region(`${SCREEN}.search`, 6, 'search', `${SCREEN}.scroll-list`, '搜索运单'),
+    region(`${SCREEN}.list`, 7, 'list', `${SCREEN}.scroll-list`),
+  ];
+}
+
+function region(regionId: string, documentOrder: number, role: string, parentRegionId?: string, text?: string): EvidenceSemanticRegionReadModel {
+  return {
+    regionId,
+    label: text ?? role,
+    role,
+    ...(text ? { text } : {}),
+    visible: true,
+    ...(parentRegionId ? { semanticParent: fragment(parentRegionId) } : {}),
+    semanticAncestors: parentRegionId ? [fragment(parentRegionId)] : [],
+    documentOrder,
+    scrollOwner: parentRegionId === `${SCREEN}.scroll-list` || parentRegionId === `${SCREEN}.summary`
+      ? { kind: 'fragment', fragment: fragment(`${SCREEN}.scroll-list`) }
+      : { kind: 'viewport' },
+    positioning: 'flow',
+    firstSourceIndex: documentOrder,
+    sourceFactIds: [`${regionId}.role`],
+    facts: [],
   };
 }
 

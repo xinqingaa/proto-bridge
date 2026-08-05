@@ -40,8 +40,10 @@ import {
   reviewsRootFromStoreRoot,
   validateWorkspaceResetPlan,
   writeDeliveryReceipt,
+  buildAcceptanceContractFromStore,
   type V2Store,
 } from '@proto-bridge/core/v2/store';
+import { compileReconstructionObligations } from '@proto-bridge/core/review';
 import {
   LOCAL_SERVICE_PROTOCOL_VERSION,
   type BundleEvidenceDetails,
@@ -63,6 +65,7 @@ import {
   type RecordScenarioReplayRequest,
   type RecordArtifactCompareRequest,
   type RecordReviewFindingsRequest,
+  type RecordReviewAssessmentsRequest,
   type CreateReviewApprovalRequest,
   type ConsumeReviewApprovalRequest,
 } from '@proto-bridge/core/v2/service-contract';
@@ -599,6 +602,12 @@ export class ProtoBridgeLocalService {
       if (!handoff || handoff.bundleId !== body.seed.bundleId || handoff.snapshotId !== body.seed.snapshotId) {
         throw new V2ContractError('unknown-reference', 'Review seed does not match a persisted Handoff/Bundle/Snapshot.');
       }
+      const requiredObligations = compileReconstructionObligations(
+        (await buildAcceptanceContractFromStore({ store: this.store, handoff })).contract,
+      );
+      if (body.seed.obligationContractVersion !== 1 || JSON.stringify(body.seed.requiredObligations) !== JSON.stringify(requiredObligations)) {
+        throw new V2ContractError('invalid-schema', 'Review seed obligations do not match the fixed Handoff Acceptance Contract.');
+      }
       success(response, await this.reviews.start(body.seed), 201);
       return;
     }
@@ -628,7 +637,7 @@ export class ProtoBridgeLocalService {
       return;
     }
 
-    const reviewOperation = path.match(/^\/api\/v2\/reviews\/([^/]+)\/(viewed|render|replay|compare|findings|tranches|finalize)$/);
+    const reviewOperation = path.match(/^\/api\/v2\/reviews\/([^/]+)\/(viewed|render|replay|compare|findings|assessments|tranches|finalize)$/);
     if (request.method === 'POST' && reviewOperation) {
       const reviewRunId = reviewOperation[1]!;
       const operation = reviewOperation[2]!;
@@ -687,6 +696,11 @@ export class ProtoBridgeLocalService {
       if (operation === 'findings') {
         const body = (await readBody(request)) as RecordReviewFindingsRequest;
         success(response, await this.reviews.append({ reviewRunId, actor: body.actor, payload: { kind: 'findings-recorded', findings: body.findings } }), 201);
+        return;
+      }
+      if (operation === 'assessments') {
+        const body = (await readBody(request)) as RecordReviewAssessmentsRequest;
+        success(response, await this.reviews.append({ reviewRunId, actor: 'agent', payload: { kind: 'obligations-assessed', assessments: body.assessments } }), 201);
         return;
       }
       if (operation === 'tranches') {

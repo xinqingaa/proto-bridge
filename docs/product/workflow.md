@@ -13,6 +13,7 @@ PBWork Design Foundation / Components
   → Deliver (Handoff + human/debug artifacts + agent-prompt)
   → MCP fixed progressive projections
   → Agent implementation + target validation
+  → canonical Reconstruction Obligations + authoritative Target Review
 ```
 
 ## 1. 制作可采集原型
@@ -110,11 +111,15 @@ Agent 通过 MCP：
 
 1. 用 `inspect_evidence_workspace` 确认 Workspace、契约版本与能力；
 2. 用 `read_handoff_index` 固定范围并在编辑前报告全部 mandatory risks；
-3. 每个 Screen 读取 `read_screen_packet`，每个不同 digest 查看一次 Screenshot；
-4. 仅为非 baseline 状态或明确实现问题读取 `read_case_delta` / `read_evidence_detail`；
+3. 每个 Screen 读取 `read_screen_packet`，先按 baseline Structure IR 固定 parent、scroll owner/member、pinning、ordering、bbox relation 和可见 state/content，再查看每个不同 digest 的 Screenshot；
+4. 非 baseline 状态读取紧凑 `read_case_delta`；按 Screen/维度分页读取 Reconstruction Obligations，只有明确来源问题才展开 `read_evidence_detail`；
 5. 阅读目标仓库自身规范与既有代码；
 6. 实现并运行目标原生测试；
 7. 调用适用的 Target validation 工具核对变更范围和结果。
+
+实现后的 authoritative Target Review 从固定 Handoff 的五维 Acceptance Contract 编译稳定、去重的 Reconstruction Obligations。Local Service 会独立重算并固定这组义务，客户端不能删减验收分母。Screenshot viewed、target render、artifact compare 和 Scenario replay 只证明所需 artifact 已覆盖；Agent 还必须为每项 structure、component、Token、state 和 interaction 义务记录 `matched`、`deviation` 或 `unverified` assessment。
+
+完成门禁要求全部义务已核验，且不存在 `deviation`、`unverified`、阻断 finding 或缺失 artifact receipt。`not-applicable` 只能由 operator/human 基于明确 Target 依据确认。旧 Review 日志可以读取，但没有 obligation contract 的旧 Session 不能继续完成。
 
 Target 查询与 Capture Evidence 互相隔离。目标仓库的既有组件和约定可以指导实现，但不能覆盖原型 Evidence 中的 unknown 或 conflict。
 

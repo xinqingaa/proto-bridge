@@ -1,4 +1,9 @@
-import type { AcceptanceRequirement, ReconstructionAcceptanceContract } from './acceptance-contract.js';
+import {
+  ACCEPTANCE_DIMENSIONS,
+  type AcceptanceDimension,
+  type AcceptanceRequirement,
+  type ReconstructionAcceptanceContract,
+} from './acceptance-contract.js';
 import type { BlobRecord } from './contracts/blob.js';
 import { V2ContractError, unknownReferenceError } from './contracts/errors.js';
 import { sha1Hex } from './contracts/hash-sha1.js';
@@ -8,14 +13,20 @@ import type {
   EvidenceReadModel,
   EvidenceReadableFact,
 } from './evidence-read-model.js';
+import {
+  compileReconstructionObligations,
+  type ReconstructionObligation,
+} from './reconstruction-obligations.js';
 
-export const CONSUMER_PROJECTION_VERSION = 1 as const;
+export const CONSUMER_PROJECTION_VERSION = 2 as const;
 
 export const CONSUMER_PROJECTION_CAPABILITIES = [
   'handoff-index',
   'screen-packet',
+  'screen-implementation-packet',
   'case-delta',
   'evidence-detail',
+  'reconstruction-obligations',
   'image-content-screenshot',
 ] as const;
 export type ConsumerProjectionCapability =
@@ -90,7 +101,7 @@ export type HandoffIndexProjection = {
   }>;
   screenshotGroups: ConsumerScreenshotGroup[];
   availableProjections: Array<
-    'screen-packet' | 'case-delta' | EvidenceDetailProjection
+    'screen-packet' | 'case-delta' | 'reconstruction-obligations' | EvidenceDetailProjection
   >;
   complete: true;
   omittedCategories: string[];
@@ -131,10 +142,9 @@ export type ScreenPacketProjection = {
     expected: unknown;
     evidenceRefs: string[];
   }>;
-  scrollBoundarySummary: {
-    regionCount: number;
-    scrollOwners: unknown[];
-    positionedRegionCount: number;
+  baseline: {
+    structure: StructureIR;
+    state: StateSnapshot;
   };
   componentIds: string[];
   tokenIds: string[];
@@ -143,15 +153,109 @@ export type ScreenPacketProjection = {
     projection: EvidenceDetailProjection;
     screenId: string;
   }>;
+  obligationQueryHints: Array<{
+    dimension: AcceptanceDimension;
+    screenId: string;
+    count: number;
+  }>;
   complete: true;
   omittedCategories: string[];
   warnings: string[];
 };
 
+export type StructureScrollOwner =
+  | { kind: 'viewport' }
+  | { kind: 'region'; regionId: string }
+  | { kind: 'unknown' };
+
+export type StructureBbox = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+export type StructureRegion = {
+  regionId: string;
+  role?: string;
+  parentRegionId?: string;
+  ancestorRegionIds: string[];
+  documentOrder: number | null;
+  scrollOwner: StructureScrollOwner;
+  positioning: 'flow' | 'sticky' | 'fixed' | 'overlay' | 'unknown';
+  pinned: boolean;
+  visible?: boolean;
+  bbox?: StructureBbox;
+  unknownFields: string[];
+};
+
+export type StructureSiblingRelation = {
+  parentRegionId: string | null;
+  regionId: string;
+  nextRegionId: string;
+  relation: 'above' | 'below' | 'left-of' | 'right-of' | 'overlap' | 'diagonal' | 'unknown';
+};
+
+export type StructureIR = {
+  caseId: string;
+  regions: StructureRegion[];
+  rootRegionIds: string[];
+  siblingGroups: Array<{ parentRegionId: string | null; childRegionIds: string[] }>;
+  siblingRelations: StructureSiblingRelation[];
+  scrollContainers: Array<{
+    owner: StructureScrollOwner;
+    memberRegionIds: string[];
+    pinnedRegionIds: string[];
+  }>;
+  complete: boolean;
+  unknownRegionIds: string[];
+};
+
+export type StateSnapshot = {
+  caseId: string;
+  variantId: string;
+  scenario?: EvidenceCaseReadModel['scenario'];
+  semanticCoverage: EvidenceCaseReadModel['semanticCoverage'];
+  visibleRegionIds: string[];
+  visibleContent: Array<{ regionId: string; role?: string; text: string }>;
+  keyedCollections: Array<{
+    itemBaseRegionId: string;
+    keys: string[];
+    itemRegionIds: string[];
+  }>;
+  requirements: Array<{
+    subject: string;
+    kind: string;
+    expected: unknown;
+    evidenceRefs: string[];
+  }>;
+};
+
+export type StructureMismatch = {
+  kind:
+    | 'missing-region'
+    | 'unexpected-region'
+    | 'parent'
+    | 'scroll-owner'
+    | 'positioning'
+    | 'sibling-order'
+    | 'bbox-relation';
+  regionId?: string;
+  expected?: unknown;
+  actual?: unknown;
+};
+
+export type CompactFactSnapshot = {
+  resolution: EvidenceReadableFact['resolution'];
+  value?: unknown;
+  issueRef?: string;
+};
+
 export type FactDelta = {
   factId: string;
-  before?: EvidenceReadableFact;
-  after?: EvidenceReadableFact;
+  before?: CompactFactSnapshot;
+  after?: CompactFactSnapshot;
+  changedFields: Array<'value' | 'resolution' | 'issueRef' | 'provenance'>;
 };
 
 export type CaseDeltaProjection = {
@@ -168,9 +272,36 @@ export type CaseDeltaProjection = {
   added: FactDelta[];
   removed: FactDelta[];
   changed: FactDelta[];
-  unresolved: EvidenceReadableFact[];
+  state: StateSnapshot;
+  stateDelta: {
+    visibleRegionIdsAdded: string[];
+    visibleRegionIdsRemoved: string[];
+    contentChanged: Array<{ regionId: string; before?: string; after?: string }>;
+  };
+  unresolved: Array<{ factId: string; resolution: EvidenceReadableFact['resolution']; issueRef?: string }>;
   complete: true;
   omittedCategories: string[];
+};
+
+export type ReconstructionObligationInput = {
+  handoffId: string;
+  screenId: string;
+  dimension?: AcceptanceDimension;
+  pageSize?: number;
+  cursor?: string;
+};
+
+export type ReconstructionObligationProjection = {
+  projectionVersion: typeof CONSUMER_PROJECTION_VERSION;
+  handoffId: string;
+  snapshotId: string;
+  screenId: string;
+  dimension?: AcceptanceDimension;
+  obligations: ReconstructionObligation[];
+  total: number;
+  complete: boolean;
+  continuation?: string;
+  omittedDimensions: AcceptanceDimension[];
 };
 
 export type EvidenceDetailInput = {
@@ -225,6 +356,16 @@ type CursorPayload = {
   handoffId: string;
   snapshotId: string;
   projection: EvidenceDetailProjection;
+  queryDigest: string;
+  nextKey: string;
+};
+
+type ObligationCursorPayload = {
+  version: typeof CONSUMER_PROJECTION_VERSION;
+  handoffId: string;
+  snapshotId: string;
+  screenId: string;
+  dimension?: AcceptanceDimension;
   queryDigest: string;
   nextKey: string;
 };
@@ -284,6 +425,7 @@ export function buildHandoffIndex(
     availableProjections: [
       'screen-packet',
       'case-delta',
+      'reconstruction-obligations',
       ...EVIDENCE_DETAIL_PROJECTIONS,
     ],
     complete: true,
@@ -293,6 +435,211 @@ export function buildHandoffIndex(
       'full-acceptance-dimensions',
     ],
     warnings,
+  };
+}
+
+export function buildStructureIR(
+  input: ConsumerProjectionInput,
+  screenId: string,
+  caseId: string,
+): StructureIR {
+  const prepared = prepare(input);
+  const screen = requireScreen(prepared, screenId);
+  if (!screen.cases.some((item) => item.caseId === caseId)) {
+    throw unknownReferenceError('Screen Case', { screenId, caseId });
+  }
+  const requirements = input.acceptance.dimensions.structure.filter(
+    (item) => item.screenId === screenId
+      && item.caseId === caseId
+      && item.kind === 'semantic-region-topology',
+  );
+  const regions: StructureRegion[] = requirements.map((requirement) => {
+    const expected = objectValue(requirement.expected) ?? {};
+    const parentRegionId = fragmentRegionId(expected.semanticParent);
+    const ancestorRegionIds = Array.isArray(expected.semanticAncestors)
+      ? expected.semanticAncestors.flatMap((item) => {
+          const regionId = fragmentRegionId(item);
+          return regionId ? [regionId] : [];
+        })
+      : [];
+    const documentOrder = typeof expected.documentOrder === 'number'
+      ? expected.documentOrder
+      : null;
+    const scrollOwner = structureScrollOwner(expected.scrollOwner);
+    const positioning = isStructurePositioning(expected.positioning)
+      ? expected.positioning
+      : 'unknown';
+    const bbox = structureBbox(expected.bbox);
+    const unknownFields = [
+      ...(documentOrder === null ? ['documentOrder'] : []),
+      ...(scrollOwner.kind === 'unknown' ? ['scrollOwner'] : []),
+      ...(positioning === 'unknown' ? ['positioning'] : []),
+      ...(!('semanticAncestors' in expected) ? ['semanticAncestors'] : []),
+    ];
+    return {
+      regionId: requirement.subject,
+      ...(typeof expected.role === 'string' ? { role: expected.role } : {}),
+      ...(parentRegionId ? { parentRegionId } : {}),
+      ancestorRegionIds,
+      documentOrder,
+      scrollOwner,
+      positioning,
+      pinned: positioning === 'sticky' || positioning === 'fixed',
+      ...(typeof expected.visible === 'boolean' ? { visible: expected.visible } : {}),
+      ...(bbox ? { bbox } : {}),
+      unknownFields,
+    };
+  }).sort(compareStructureRegionOrder);
+
+  const groups = new Map<string, StructureRegion[]>();
+  for (const region of regions) {
+    const key = region.parentRegionId ?? '';
+    const current = groups.get(key) ?? [];
+    current.push(region);
+    groups.set(key, current);
+  }
+  const siblingGroups = [...groups.entries()]
+    .map(([parentRegionId, children]) => ({
+      parentRegionId: parentRegionId || null,
+      childRegionIds: [...children].sort(compareStructureRegionOrder).map((item) => item.regionId),
+    }))
+    .sort((a, b) => (a.parentRegionId ?? '').localeCompare(b.parentRegionId ?? ''));
+  const regionById = new Map(regions.map((region) => [region.regionId, region]));
+  const siblingRelations = siblingGroups.flatMap((group) =>
+    group.childRegionIds.slice(0, -1).map((regionId, index) => {
+      const nextRegionId = group.childRegionIds[index + 1]!;
+      return {
+        parentRegionId: group.parentRegionId,
+        regionId,
+        nextRegionId,
+        relation: bboxRelation(regionById.get(regionId)?.bbox, regionById.get(nextRegionId)?.bbox),
+      };
+    }),
+  );
+
+  const scrollGroups = new Map<string, { owner: StructureScrollOwner; members: string[]; pinned: string[] }>();
+  for (const region of regions) {
+    if (region.scrollOwner.kind === 'unknown') continue;
+    const key = canonical(region.scrollOwner);
+    const current = scrollGroups.get(key) ?? { owner: region.scrollOwner, members: [], pinned: [] };
+    current.members.push(region.regionId);
+    if (region.pinned) current.pinned.push(region.regionId);
+    scrollGroups.set(key, current);
+  }
+  const scrollContainers = [...scrollGroups.values()]
+    .map((item) => ({
+      owner: item.owner,
+      memberRegionIds: item.members,
+      pinnedRegionIds: item.pinned,
+    }))
+    .sort((a, b) => canonical(a.owner).localeCompare(canonical(b.owner)));
+  const unknownRegionIds = regions.filter((item) => item.unknownFields.length > 0).map((item) => item.regionId);
+  return {
+    caseId,
+    regions,
+    rootRegionIds: siblingGroups.find((item) => item.parentRegionId === null)?.childRegionIds ?? [],
+    siblingGroups,
+    siblingRelations,
+    scrollContainers,
+    complete: unknownRegionIds.length === 0,
+    unknownRegionIds,
+  };
+}
+
+export function compareStructureIR(expected: StructureIR, actual: StructureIR): StructureMismatch[] {
+  const mismatches: StructureMismatch[] = [];
+  const expectedById = new Map(expected.regions.map((item) => [item.regionId, item]));
+  const actualById = new Map(actual.regions.map((item) => [item.regionId, item]));
+  for (const region of expected.regions) {
+    const candidate = actualById.get(region.regionId);
+    if (!candidate) {
+      mismatches.push({ kind: 'missing-region', regionId: region.regionId });
+      continue;
+    }
+    if (region.parentRegionId !== candidate.parentRegionId) {
+      mismatches.push({ kind: 'parent', regionId: region.regionId, expected: region.parentRegionId ?? null, actual: candidate.parentRegionId ?? null });
+    }
+    if (canonical(region.scrollOwner) !== canonical(candidate.scrollOwner)) {
+      mismatches.push({ kind: 'scroll-owner', regionId: region.regionId, expected: region.scrollOwner, actual: candidate.scrollOwner });
+    }
+    if (region.positioning !== candidate.positioning) {
+      mismatches.push({ kind: 'positioning', regionId: region.regionId, expected: region.positioning, actual: candidate.positioning });
+    }
+  }
+  for (const region of actual.regions) {
+    if (!expectedById.has(region.regionId)) mismatches.push({ kind: 'unexpected-region', regionId: region.regionId });
+  }
+  const actualGroups = new Map(actual.siblingGroups.map((item) => [item.parentRegionId, item.childRegionIds]));
+  for (const group of expected.siblingGroups) {
+    const actualOrder = actualGroups.get(group.parentRegionId);
+    if (actualOrder && canonical(group.childRegionIds) !== canonical(actualOrder)) {
+      mismatches.push({ kind: 'sibling-order', expected: { parentRegionId: group.parentRegionId, childRegionIds: group.childRegionIds }, actual: { parentRegionId: group.parentRegionId, childRegionIds: actualOrder } });
+    }
+  }
+  const actualRelations = new Map(actual.siblingRelations.map((item) => [
+    canonical([item.parentRegionId, item.regionId, item.nextRegionId]),
+    item,
+  ]));
+  for (const relation of expected.siblingRelations) {
+    const candidate = actualRelations.get(canonical([
+      relation.parentRegionId,
+      relation.regionId,
+      relation.nextRegionId,
+    ]));
+    if (candidate && relation.relation !== candidate.relation) {
+      mismatches.push({
+        kind: 'bbox-relation',
+        regionId: relation.regionId,
+        expected: relation,
+        actual: candidate,
+      });
+    }
+  }
+  return mismatches;
+}
+
+function buildStateSnapshot(
+  input: ConsumerProjectionInput,
+  evidenceCase: EvidenceCaseReadModel,
+): StateSnapshot {
+  const visibleRegions = evidenceCase.regions
+    .filter((region) => region.visible !== false)
+    .sort((a, b) => (a.documentOrder ?? Number.MAX_SAFE_INTEGER) - (b.documentOrder ?? Number.MAX_SAFE_INTEGER) || a.regionId.localeCompare(b.regionId));
+  const contentRegions = visibleRegions.filter((region) => {
+    if (!region.text) return false;
+    return !visibleRegions.some((candidate) =>
+      candidate.regionId !== region.regionId
+      && Boolean(candidate.text)
+      && (candidate.semanticAncestors ?? []).some((ancestor) => fragmentRegionId(ancestor) === region.regionId));
+  });
+  const keyed = new Map<string, Map<string, string>>();
+  for (const region of evidenceCase.regions) {
+    for (const value of [region.semanticParent, ...(region.semanticAncestors ?? [])]) {
+      const identity = fragmentIdentity(value);
+      if (!identity?.pbKey) continue;
+      const current = keyed.get(identity.pbId) ?? new Map<string, string>();
+      current.set(identity.pbKey, fragmentRegionId(identity)!);
+      keyed.set(identity.pbId, current);
+    }
+  }
+  return {
+    caseId: evidenceCase.caseId,
+    variantId: evidenceCase.variantId,
+    ...(evidenceCase.scenario ? { scenario: { ...evidenceCase.scenario } } : {}),
+    semanticCoverage: evidenceCase.semanticCoverage,
+    visibleRegionIds: visibleRegions.map((item) => item.regionId),
+    visibleContent: contentRegions.flatMap((item) => item.text
+      ? [{ regionId: item.regionId, ...(item.role ? { role: item.role } : {}), text: item.text }]
+      : []),
+    keyedCollections: [...keyed.entries()].map(([itemBaseRegionId, items]) => ({
+      itemBaseRegionId,
+      keys: [...items.keys()].sort(),
+      itemRegionIds: [...items.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, regionId]) => regionId),
+    })).sort((a, b) => a.itemBaseRegionId.localeCompare(b.itemBaseRegionId)),
+    requirements: input.acceptance.dimensions.states
+      .filter((item) => item.screenId === evidenceCase.screenId && item.caseId === evidenceCase.caseId)
+      .map((item) => ({ subject: item.subject, kind: item.kind, expected: item.expected, evidenceRefs: [...item.evidenceRefs] }))
+      .sort((a, b) => `${a.kind}:${a.subject}`.localeCompare(`${b.kind}:${b.subject}`)),
   };
 }
 
@@ -323,17 +670,9 @@ export function buildScreenPacket(
         `${right.caseId}:${right.subject}`,
       ),
     );
-  const topology = structure.filter(
-    (requirement) => requirement.kind === 'semantic-region-topology',
-  );
-  const scrollOwners = uniqueByCanonical(
-    topology.flatMap((requirement) => {
-      const expected = objectValue(requirement.expected);
-      return expected && expected.scrollOwner !== undefined
-        ? [expected.scrollOwner]
-        : [];
-    }),
-  );
+  const baselineStructure = buildStructureIR(input, screenId, baseline.caseModel.caseId);
+  const baselineState = buildStateSnapshot(input, baseline.caseModel);
+  const screenObligations = compileReconstructionObligations(input.acceptance).filter((item) => item.screenId === screenId);
   const componentIds = unique(
     input.acceptance.dimensions.components
       .filter((item) => item.screenId === screenId)
@@ -398,13 +737,9 @@ export function buildScreenPacket(
         : [],
     ),
     shellContracts,
-    scrollBoundarySummary: {
-      regionCount: topology.length,
-      scrollOwners,
-      positionedRegionCount: topology.filter((requirement) => {
-        const expected = objectValue(requirement.expected);
-        return Boolean(expected?.positioning);
-      }).length,
+    baseline: {
+      structure: baselineStructure,
+      state: baselineState,
     },
     componentIds,
     tokenIds,
@@ -413,9 +748,14 @@ export function buildScreenPacket(
       projection,
       screenId,
     })),
+    obligationQueryHints: ACCEPTANCE_DIMENSIONS.map((dimension) => ({
+      dimension,
+      screenId,
+      count: screenObligations.filter((item) => item.dimension === dimension).length,
+    })).filter((item) => item.count > 0),
     complete: true,
     omittedCategories: [
-      'full-region-facts',
+      'non-baseline-region-trees',
       'full-token-bindings',
       'full-provenance',
       'other-screens',
@@ -451,15 +791,15 @@ export function buildCaseDelta(
     const baselineFact = before.get(factId);
     const selectedFact = after.get(factId);
     if (!baselineFact && selectedFact) {
-      added.push({ factId, after: selectedFact });
+      added.push({ factId, after: compactFact(selectedFact), changedFields: factChangedFields(undefined, selectedFact) });
     } else if (baselineFact && !selectedFact) {
-      removed.push({ factId, before: baselineFact });
+      removed.push({ factId, before: compactFact(baselineFact), changedFields: factChangedFields(baselineFact, undefined) });
     } else if (
       baselineFact &&
       selectedFact &&
-      canonical(baselineFact) !== canonical(selectedFact)
+      factChangedFields(baselineFact, selectedFact).length > 0
     ) {
-      changed.push({ factId, before: baselineFact, after: selectedFact });
+      changed.push({ factId, before: compactFact(baselineFact), after: compactFact(selectedFact), changedFields: factChangedFields(baselineFact, selectedFact) });
     }
   }
   const baselineDigests = new Set(
@@ -471,6 +811,10 @@ export function buildCaseDelta(
   const selectedDigests = screenshotGroups.flatMap((group) =>
     group.digest ? [group.digest] : [],
   );
+  const baselineState = buildStateSnapshot(input, baseline);
+  const selectedState = buildStateSnapshot(input, selected);
+  const baselineContent = new Map(baselineState.visibleContent.map((item) => [item.regionId, item.text]));
+  const selectedContent = new Map(selectedState.visibleContent.map((item) => [item.regionId, item.text]));
   return {
     projectionVersion: CONSUMER_PROJECTION_VERSION,
     handoffId: input.handoff.handoffId,
@@ -487,9 +831,23 @@ export function buildCaseDelta(
     added,
     removed,
     changed,
-    unresolved: selected.facts.filter(
-      (fact) => fact.resolution !== 'resolved',
-    ),
+    state: selectedState,
+    stateDelta: {
+      visibleRegionIdsAdded: selectedState.visibleRegionIds.filter((item) => !baselineState.visibleRegionIds.includes(item)),
+      visibleRegionIdsRemoved: baselineState.visibleRegionIds.filter((item) => !selectedState.visibleRegionIds.includes(item)),
+      contentChanged: unique([...baselineContent.keys(), ...selectedContent.keys()]).sort().flatMap((regionId) => {
+        const beforeText = baselineContent.get(regionId);
+        const afterText = selectedContent.get(regionId);
+        return beforeText !== afterText
+          ? [{ regionId, ...(beforeText === undefined ? {} : { before: beforeText }), ...(afterText === undefined ? {} : { after: afterText }) }]
+          : [];
+      }),
+    },
+    unresolved: selected.facts.filter((fact) => fact.resolution !== 'resolved').map((fact) => ({
+      factId: fact.factId,
+      resolution: fact.resolution,
+      ...(fact.issueRef ? { issueRef: fact.issueRef } : {}),
+    })),
     complete: true,
     omittedCategories: ['unchanged-facts', 'other-cases', 'other-screens'],
   };
@@ -582,6 +940,76 @@ export function buildEvidenceDetail(
     omittedCategories: EVIDENCE_DETAIL_PROJECTIONS.filter(
       (projection) => projection !== query.projection,
     ),
+  };
+}
+
+export function buildReconstructionObligationProjection(
+  input: ConsumerProjectionInput,
+  query: ReconstructionObligationInput,
+): ReconstructionObligationProjection {
+  const prepared = prepare(input);
+  if (query.handoffId !== input.handoff.handoffId) {
+    throw new V2ContractError('workspace-mismatch', `Obligation query Handoff ${query.handoffId} does not match ${input.handoff.handoffId}.`);
+  }
+  requireScreen(prepared, query.screenId);
+  if (query.dimension !== undefined && !ACCEPTANCE_DIMENSIONS.includes(query.dimension)) {
+    throw new V2ContractError('unsafe-input', `Unknown Acceptance dimension ${String(query.dimension)}.`);
+  }
+  if (query.pageSize !== undefined && (!Number.isInteger(query.pageSize) || query.pageSize <= 0 || query.pageSize > 100)) {
+    throw new V2ContractError('unsafe-input', 'pageSize must be an integer from 1 through 100.');
+  }
+  const normalizedQuery = {
+    handoffId: query.handoffId,
+    screenId: query.screenId,
+    ...(query.dimension ? { dimension: query.dimension } : {}),
+  };
+  const queryDigest = sha1Hex(canonical(normalizedQuery));
+  const all = compileReconstructionObligations(input.acceptance).filter(
+    (item) => item.screenId === query.screenId && (!query.dimension || item.dimension === query.dimension),
+  );
+  const cursor = query.cursor
+    ? decodeObligationCursor(query.cursor, {
+        handoffId: input.handoff.handoffId,
+        snapshotId: input.handoff.snapshotId,
+        screenId: query.screenId,
+        ...(query.dimension ? { dimension: query.dimension } : {}),
+        queryDigest,
+      })
+    : undefined;
+  const start = cursor
+    ? (() => {
+        const index = all.findIndex((item) => item.obligationId === cursor.nextKey);
+        if (index < 0) throw invalidContinuation('Continuation no longer resolves within the fixed obligation projection.');
+        return index;
+      })()
+    : 0;
+  const pageSize = query.pageSize ?? 50;
+  const obligations = all.slice(start, start + pageSize);
+  const next = all[start + obligations.length];
+  const continuation = next
+    ? encodeObligationCursor({
+        version: CONSUMER_PROJECTION_VERSION,
+        handoffId: input.handoff.handoffId,
+        snapshotId: input.handoff.snapshotId,
+        screenId: query.screenId,
+        ...(query.dimension ? { dimension: query.dimension } : {}),
+        queryDigest,
+        nextKey: next.obligationId,
+      })
+    : undefined;
+  return {
+    projectionVersion: CONSUMER_PROJECTION_VERSION,
+    handoffId: input.handoff.handoffId,
+    snapshotId: input.handoff.snapshotId,
+    screenId: query.screenId,
+    ...(query.dimension ? { dimension: query.dimension } : {}),
+    obligations,
+    total: all.length,
+    complete: continuation === undefined,
+    ...(continuation ? { continuation } : {}),
+    omittedDimensions: query.dimension
+      ? ACCEPTANCE_DIMENSIONS.filter((item) => item !== query.dimension)
+      : [],
   };
 }
 
@@ -832,13 +1260,124 @@ function matchesSelectors(
   return true;
 }
 
+function fragmentIdentity(value: unknown): { screenId: string; pbId: string; pbKey?: string } | undefined {
+  const object = objectValue(value);
+  if (!object || typeof object.screenId !== 'string' || typeof object.pbId !== 'string') return undefined;
+  return {
+    screenId: object.screenId,
+    pbId: object.pbId,
+    ...(typeof object.pbKey === 'string' ? { pbKey: object.pbKey } : {}),
+  };
+}
+
+function fragmentRegionId(value: unknown): string | undefined {
+  const identity = fragmentIdentity(value);
+  return identity ? `${identity.pbId}${identity.pbKey ? `.${identity.pbKey}` : ''}` : undefined;
+}
+
+function structureScrollOwner(value: unknown): StructureScrollOwner {
+  if (value === 'viewport') return { kind: 'viewport' };
+  const object = objectValue(value);
+  if (object?.kind === 'viewport') return { kind: 'viewport' };
+  if (object?.kind === 'fragment') {
+    const regionId = fragmentRegionId(object.fragment);
+    if (regionId) return { kind: 'region', regionId };
+  }
+  return { kind: 'unknown' };
+}
+
+function isStructurePositioning(value: unknown): value is StructureRegion['positioning'] {
+  return value === 'flow' || value === 'sticky' || value === 'fixed' || value === 'overlay';
+}
+
+function structureBbox(value: unknown): StructureBbox | undefined {
+  const object = objectValue(value);
+  return object && ['x', 'y', 'width', 'height'].every((key) => typeof object[key] === 'number')
+    ? { x: object.x as number, y: object.y as number, width: object.width as number, height: object.height as number }
+    : undefined;
+}
+
+function compareStructureRegionOrder(a: StructureRegion, b: StructureRegion): number {
+  return (a.documentOrder ?? Number.MAX_SAFE_INTEGER) - (b.documentOrder ?? Number.MAX_SAFE_INTEGER)
+    || a.regionId.localeCompare(b.regionId);
+}
+
+function bboxRelation(a: StructureBbox | undefined, b: StructureBbox | undefined): StructureSiblingRelation['relation'] {
+  if (!a || !b) return 'unknown';
+  const epsilon = 0.5;
+  const horizontalOverlap = Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x) > epsilon;
+  const verticalOverlap = Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y) > epsilon;
+  if (horizontalOverlap && verticalOverlap) return 'overlap';
+  if (horizontalOverlap) return a.y + a.height <= b.y + epsilon ? 'above' : 'below';
+  if (verticalOverlap) return a.x + a.width <= b.x + epsilon ? 'left-of' : 'right-of';
+  return 'diagonal';
+}
+
+function compactFact(fact: EvidenceReadableFact): CompactFactSnapshot {
+  return {
+    resolution: fact.resolution,
+    ...(fact.value !== undefined ? { value: fact.value } : {}),
+    ...(fact.issueRef ? { issueRef: fact.issueRef } : {}),
+  };
+}
+
+function factChangedFields(
+  before: EvidenceReadableFact | undefined,
+  after: EvidenceReadableFact | undefined,
+): FactDelta['changedFields'] {
+  const fields: FactDelta['changedFields'] = [];
+  if (canonical(before?.value) !== canonical(after?.value)) fields.push('value');
+  if (before?.resolution !== after?.resolution) fields.push('resolution');
+  if (before?.issueRef !== after?.issueRef) fields.push('issueRef');
+  if (canonical(before?.provenance) !== canonical(after?.provenance)) fields.push('provenance');
+  return fields;
+}
+
+function encodeObligationCursor(payload: ObligationCursorPayload): string {
+  const json = canonical(payload);
+  return `pbop2.${sha1Hex(json)}.${encodeURIComponent(json).replaceAll('.', '%2E')}`;
+}
+
+function decodeObligationCursor(
+  value: string,
+  expected: Omit<ObligationCursorPayload, 'version' | 'nextKey'>,
+): ObligationCursorPayload {
+  const [prefix, checksum, encoded, ...rest] = value.split('.');
+  if (prefix !== 'pbop2' || !checksum || !encoded || rest.length > 0) throw invalidContinuation('Obligation continuation format is invalid.');
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(decodeURIComponent(encoded));
+  } catch {
+    throw invalidContinuation('Obligation continuation payload is invalid.');
+  }
+  if (sha1Hex(canonical(parsed)) !== checksum) throw invalidContinuation('Obligation continuation checksum is invalid.');
+  const payload = parsed as Partial<ObligationCursorPayload>;
+  if (
+    payload.version !== CONSUMER_PROJECTION_VERSION
+    || typeof payload.handoffId !== 'string'
+    || typeof payload.snapshotId !== 'string'
+    || typeof payload.screenId !== 'string'
+    || (payload.dimension !== undefined && !ACCEPTANCE_DIMENSIONS.includes(payload.dimension))
+    || typeof payload.queryDigest !== 'string'
+    || typeof payload.nextKey !== 'string'
+  ) throw invalidContinuation('Obligation continuation fields are invalid.');
+  if (
+    payload.handoffId !== expected.handoffId
+    || payload.snapshotId !== expected.snapshotId
+    || payload.screenId !== expected.screenId
+    || payload.dimension !== expected.dimension
+    || payload.queryDigest !== expected.queryDigest
+  ) throw invalidContinuation('Obligation continuation is bound to a different fixed query.');
+  return payload as ObligationCursorPayload;
+}
+
 function encodeCursor(payload: CursorPayload): string {
   const json = canonical(payload);
   // encodeURIComponent intentionally leaves periods unescaped. Escape them so
   // the period-delimited envelope remains unambiguous for IDs such as
   // "screen.detail" and logical item keys.
   const encoded = encodeURIComponent(json).replaceAll('.', '%2E');
-  return `pbcp1.${sha1Hex(json)}.${encoded}`;
+  return `pbcp2.${sha1Hex(json)}.${encoded}`;
 }
 
 function decodeCursor(
@@ -849,7 +1388,7 @@ function decodeCursor(
   >,
 ): CursorPayload {
   const [prefix, checksum, encoded, ...rest] = value.split('.');
-  if (prefix !== 'pbcp1' || !checksum || !encoded || rest.length > 0) {
+  if (prefix !== 'pbcp2' || !checksum || !encoded || rest.length > 0) {
     throw invalidContinuation('Continuation format is invalid.');
   }
   let json: string;
@@ -901,18 +1440,6 @@ function objectValue(value: unknown): Record<string, unknown> | undefined {
 
 function unique(values: string[]): string[] {
   return [...new Set(values)];
-}
-
-function uniqueByCanonical(values: unknown[]): unknown[] {
-  const seen = new Set<string>();
-  return values
-    .filter((value) => {
-      const key = canonical(value);
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    })
-    .sort((left, right) => canonical(left).localeCompare(canonical(right)));
 }
 
 function canonical(value: unknown): string {

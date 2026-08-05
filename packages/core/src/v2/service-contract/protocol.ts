@@ -17,6 +17,7 @@ import type {
 import type {
   ReviewArtifact,
   ReviewFinding,
+  ReviewObligationAssessment,
   ReviewSessionSeed,
 } from '../../review/contracts.js';
 
@@ -220,6 +221,9 @@ export type RecordArtifactCompareRequest = {
 export type RecordReviewFindingsRequest = {
   findings: ReviewFinding[];
   actor: 'agent' | 'operator' | 'human';
+};
+export type RecordReviewAssessmentsRequest = {
+  assessments: ReviewObligationAssessment[];
 };
 export type AuthorizeReviewTrancheRequest = {
   screenId: string;

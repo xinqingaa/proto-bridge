@@ -3,6 +3,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { Fact } from '@proto-bridge/core/v2';
+import type { AgentHandoff } from '@proto-bridge/core/v2';
+import { compileReconstructionObligations } from '@proto-bridge/core/review';
+import { buildAcceptanceContractFromStore } from '@proto-bridge/core/v2/store';
 import type { RuntimeCaptureManifest } from '@proto-bridge/core/v2/runtime-contract';
 import {
   preflightSelection,
@@ -535,15 +538,27 @@ describe('ProtoBridge Local Service', () => {
     const reviewRunId = 'review-service-vertical';
     const caseId = created.body.data.handoff.selectedCases[0].caseId as string;
     const source = details.body.data.blobs[0];
+    const fixedHandoff = created.body.data.handoff as unknown as AgentHandoff;
+    const requiredObligations = compileReconstructionObligations(
+      (await buildAcceptanceContractFromStore({ store: service!.store, handoff: fixedHandoff })).contract,
+    );
+    const reviewSeed = {
+      reviewRunId, workspaceId: 'workspace-service-test', generationId: session.body.data.generationId,
+      bundleId: job.bundleId, snapshotId: request.snapshotId, handoffId: created.body.data.handoff.handoffId,
+      targetRoot: '/tmp/target', targetBaselineCommit: 'baseline', targetRevision: 'revision-a',
+      selectedCaseIds: [caseId], requiredSourceDigests: [source.digest], requiredScenarioCaseIds: [],
+      obligationContractVersion: 1, requiredObligations,
+      comparatorVersion: 'compare-v1', createdAt: '2026-08-04T00:00:00.000Z',
+    };
+    const forgedReview = await call(base, '/reviews', {
+      method: 'POST', token,
+      body: { seed: { ...reviewSeed, requiredObligations: requiredObligations.slice(1) } },
+    });
+    expect(forgedReview.response.status).toBe(400);
+    expect(forgedReview.body.error.message).toContain('do not match');
     const review = await call(base, '/reviews', {
       method: 'POST', token,
-      body: { seed: {
-        reviewRunId, workspaceId: 'workspace-service-test', generationId: session.body.data.generationId,
-        bundleId: job.bundleId, snapshotId: request.snapshotId, handoffId: created.body.data.handoff.handoffId,
-        targetRoot: '/tmp/target', targetBaselineCommit: 'baseline', targetRevision: 'revision-a',
-        selectedCaseIds: [caseId], requiredSourceDigests: [source.digest], requiredScenarioCaseIds: [],
-        comparatorVersion: 'compare-v1', createdAt: '2026-08-04T00:00:00.000Z',
-      } },
+      body: { seed: reviewSeed },
     });
     expect(review.response.status).toBe(201);
     const forged = await call(base, `/reviews/${reviewRunId}/tranches`, { method: 'POST', token, body: { approvalToken: 'ordinary-tool-parameter' } });
@@ -557,6 +572,14 @@ describe('ProtoBridge Local Service', () => {
     const diffArtifact = { ...targetArtifact, kind: 'diff' };
     await call(base, `/reviews/${reviewRunId}/compare`, { method: 'POST', token, body: { screenId: 'ledger-planet.task-list', caseId, attemptId: 'attempt-1', sourceDigest: source.digest, targetDigest: source.digest, diff: { artifact: diffArtifact, bytesBase64: PNG_BYTES.toString('base64') }, comparable: true, normalizedDiffSignature: 'sha256:identical', receiptTool: 'fixture-compare' } });
     await call(base, `/reviews/${reviewRunId}/findings`, { method: 'POST', token, body: { actor: 'agent', findings: [] } });
+    const incompleteApproval = await call(base, '/review-approvals', { method: 'POST', token, body: { kind: 'finalize', reviewRunId, confirmationRef: 'human-before-semantic-review', actor: 'human' } });
+    const incomplete = await call(base, `/reviews/${reviewRunId}/finalize`, { method: 'POST', token, body: { approvalToken: incompleteApproval.body.data.token } });
+    expect(incomplete.response.status).toBe(500);
+    expect(incomplete.body.error.message).toContain('missingObligations');
+    const assessed = await call(base, `/reviews/${reviewRunId}/assessments`, { method: 'POST', token, body: {
+      assessments: requiredObligations.map((item) => ({ obligationId: item.obligationId, status: 'matched', detail: 'Verified in the target implementation.', evidenceDigests: [source.digest] })),
+    } });
+    expect(assessed.body.data.obligationAssessments).toHaveLength(requiredObligations.length);
     const finalizeApproval = await call(base, '/review-approvals', { method: 'POST', token, body: { kind: 'finalize', reviewRunId, confirmationRef: 'human-confirmed', actor: 'human' } });
     const finalized = await call(base, `/reviews/${reviewRunId}/finalize`, { method: 'POST', token, body: { approvalToken: finalizeApproval.body.data.token } });
     expect(finalized.body.data.status).toBe('completed');

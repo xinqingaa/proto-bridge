@@ -1,3 +1,5 @@
+import type { ReconstructionObligation } from './obligations.js';
+
 export type ReviewStatus =
   | 'active'
   | 'awaiting-human-review'
@@ -33,6 +35,20 @@ export type ReviewFinding = {
   humanConfirmed?: boolean;
 };
 
+export type ReviewAssessmentStatus =
+  | 'matched'
+  | 'deviation'
+  | 'unverified'
+  | 'not-applicable';
+
+export type ReviewObligationAssessment = {
+  obligationId: string;
+  status: ReviewAssessmentStatus;
+  detail: string;
+  evidenceDigests: string[];
+  targetBasis?: string;
+};
+
 export type ReviewSessionSeed = {
   reviewRunId: string;
   workspaceId: string;
@@ -46,6 +62,8 @@ export type ReviewSessionSeed = {
   selectedCaseIds: string[];
   requiredSourceDigests: string[];
   requiredScenarioCaseIds: string[];
+  obligationContractVersion: 1 | 'legacy-unavailable';
+  requiredObligations: ReconstructionObligation[];
   comparatorVersion: string;
   createdAt: string;
 };
@@ -58,6 +76,7 @@ export type ReviewEventPayload =
   | { kind: 'scenario-replayed'; screenId: string; caseId: string; scenarioId: string; receiptDigest: string; targetRevision: string }
   | { kind: 'artifacts-compared'; screenId: string; caseId: string; attemptId: string; sourceDigest: string; targetDigest: string; diff: ReviewArtifact; overlay?: ReviewArtifact; comparable: boolean; normalizedDiffSignature?: string; reason?: string }
   | { kind: 'findings-recorded'; findings: ReviewFinding[] }
+  | { kind: 'obligations-assessed'; assessments: ReviewObligationAssessment[] }
   | { kind: 'human-finalized'; confirmationRef: string; decision: 'complete' }
   | { kind: 'invalidated'; reason: string };
 
@@ -95,6 +114,7 @@ export type ReviewSession = ReviewSessionSeed & {
   authorizedTranches: Array<{ screenId: string; tranche: number; approvalRef: string }>;
   attempts: ReviewAttempt[];
   findings: ReviewFinding[];
+  obligationAssessments: ReviewObligationAssessment[];
   artifacts: ReviewArtifact[];
   stopReason?: string;
   completedAt?: string;

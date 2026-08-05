@@ -21,6 +21,11 @@ const seed: ReviewSessionSeed = {
   selectedCaseIds: ['screen::default', 'screen::scenario'],
   requiredSourceDigests: ['sha256:source-a'],
   requiredScenarioCaseIds: ['screen::scenario'],
+  obligationContractVersion: 1,
+  requiredObligations: [
+    { obligationId: 'obligation-structure', dimension: 'structure', screenId: 'screen', caseIds: ['screen::default'], kind: 'semantic-region-topology', subject: 'content', expected: { scrollOwner: 'content' }, evidenceRefs: ['fact.structure'] },
+    { obligationId: 'obligation-token', dimension: 'tokens', screenId: 'screen', caseIds: ['screen::default'], kind: 'token-mapping', subject: 'content.background', expected: { tokenId: 'surface.primary' }, evidenceRefs: ['fact.token'] },
+  ],
   comparatorVersion: 'compare-v1',
   createdAt: '2026-08-04T00:00:00.000Z',
 };
@@ -44,18 +49,88 @@ const source = { kind: 'source' as const, digest: 'sha256:source-a', mimeType: '
 const target = { kind: 'target' as const, digest: 'sha256:target-a', mimeType: 'image/png', byteLength: 1, width: 1170, height: 2532, owner: { screenId: 'screen', caseId: 'screen::default', attemptId: 'attempt-1' } };
 const diff = { kind: 'diff' as const, digest: 'sha256:diff-a', mimeType: 'image/png', byteLength: 1, width: 1170, height: 2532, owner: { screenId: 'screen', caseId: 'screen::default', attemptId: 'attempt-1' } };
 
+function coverageEvents(): Array<{ actor: ReviewActor; payload: ReviewEventPayload }> {
+  return [
+    { actor: 'operator', payload: { kind: 'tranche-authorized', screenId: 'screen', tranche: 1, approvalRef: 'approval-1' } },
+    { actor: 'mcp', payload: { kind: 'screenshot-viewed', screenId: 'screen', caseIds: seed.selectedCaseIds, source } },
+    { actor: 'runner', payload: { kind: 'target-rendered', screenId: 'screen', caseId: 'screen::default', sourceDigest: source.digest, tranche: 1, round: 1, attemptId: 'attempt-1', targetRevision: seed.targetRevision, target } },
+    { actor: 'runner', payload: { kind: 'artifacts-compared', screenId: 'screen', caseId: 'screen::default', attemptId: 'attempt-1', sourceDigest: source.digest, targetDigest: target.digest, diff, comparable: true, normalizedDiffSignature: 'signature-a' } },
+    { actor: 'runner', payload: { kind: 'scenario-replayed', screenId: 'screen', caseId: 'screen::scenario', scenarioId: 'scenario', receiptDigest: 'sha256:scenario', targetRevision: seed.targetRevision } },
+  ];
+}
+
+const matchedAssessments = seed.requiredObligations.map((item) => ({
+  obligationId: item.obligationId,
+  status: 'matched' as const,
+  detail: 'Verified against target implementation and runtime receipt.',
+  evidenceDigests: [diff.digest],
+}));
+
 describe('authoritative Review reducer', () => {
   it('completes only from runner receipts and human confirmation', () => {
     const events = chain(
-      { actor: 'operator', payload: { kind: 'tranche-authorized', screenId: 'screen', tranche: 1, approvalRef: 'approval-1' } },
-      { actor: 'mcp', payload: { kind: 'screenshot-viewed', screenId: 'screen', caseIds: seed.selectedCaseIds, source } },
-      { actor: 'runner', payload: { kind: 'target-rendered', screenId: 'screen', caseId: 'screen::default', sourceDigest: source.digest, tranche: 1, round: 1, attemptId: 'attempt-1', targetRevision: seed.targetRevision, target } },
-      { actor: 'runner', payload: { kind: 'artifacts-compared', screenId: 'screen', caseId: 'screen::default', attemptId: 'attempt-1', sourceDigest: source.digest, targetDigest: target.digest, diff, comparable: true, normalizedDiffSignature: 'signature-a' } },
-      { actor: 'runner', payload: { kind: 'scenario-replayed', screenId: 'screen', caseId: 'screen::scenario', scenarioId: 'scenario', receiptDigest: 'sha256:scenario', targetRevision: seed.targetRevision } },
+      ...coverageEvents(),
+      { actor: 'agent', payload: { kind: 'obligations-assessed', assessments: matchedAssessments } },
       { actor: 'agent', payload: { kind: 'findings-recorded', findings: [{ findingId: 'minor', screenId: 'screen', severity: 'Minor', status: 'open', detail: 'detail', evidenceDigests: [diff.digest] }] } },
       { actor: 'human', payload: { kind: 'human-finalized', confirmationRef: 'human-confirmation', decision: 'complete' } },
     );
-    expect(reduceReviewEvents(events)).toMatchObject({ status: 'completed', eventCount: 8 });
+    expect(reduceReviewEvents(events)).toMatchObject({ status: 'completed', eventCount: 9 });
+  });
+
+  it('does not confuse complete artifact coverage or empty findings with semantic verification', () => {
+    const zeroAssessments = chain(
+      ...coverageEvents(),
+      { actor: 'agent', payload: { kind: 'findings-recorded', findings: [] } },
+      { actor: 'human', payload: { kind: 'human-finalized', confirmationRef: 'human', decision: 'complete' } },
+    );
+    expect(() => reduceReviewEvents(zeroAssessments)).toThrow(/missingObligations/);
+
+    const partialAssessments = chain(
+      ...coverageEvents(),
+      { actor: 'agent', payload: { kind: 'obligations-assessed', assessments: matchedAssessments.slice(0, 1) } },
+      { actor: 'human', payload: { kind: 'human-finalized', confirmationRef: 'human', decision: 'complete' } },
+    );
+    expect(() => reduceReviewEvents(partialAssessments)).toThrow(/obligation-token/);
+  });
+
+  it('blocks unverified and deviating obligations, while all matched obligations may complete with no findings', () => {
+    for (const status of ['unverified', 'deviation'] as const) {
+      const assessments = matchedAssessments.map((item, index) => index === 0 ? { ...item, status } : item);
+      expect(() => reduceReviewEvents(chain(
+        ...coverageEvents(),
+        { actor: 'agent', payload: { kind: 'obligations-assessed', assessments } },
+        { actor: 'agent', payload: { kind: 'findings-recorded', findings: [] } },
+        { actor: 'human', payload: { kind: 'human-finalized', confirmationRef: 'human', decision: 'complete' } },
+      ))).toThrow(status === 'unverified' ? /unverifiedObligations/ : /deviatingObligations/);
+    }
+
+    expect(reduceReviewEvents(chain(
+      ...coverageEvents(),
+      { actor: 'agent', payload: { kind: 'obligations-assessed', assessments: matchedAssessments } },
+      { actor: 'agent', payload: { kind: 'findings-recorded', findings: [] } },
+      { actor: 'human', payload: { kind: 'human-finalized', confirmationRef: 'human', decision: 'complete' } },
+    )).status).toBe('completed');
+  });
+
+  it('rejects unknown obligations and agent-authored not-applicable claims', () => {
+    expect(() => reduceReviewEvents(chain({
+      actor: 'agent',
+      payload: { kind: 'obligations-assessed', assessments: [{ obligationId: 'obligation-unknown', status: 'matched', detail: 'invented', evidenceDigests: [] }] },
+    }))).toThrow(/Unknown Review obligation/);
+    expect(() => reduceReviewEvents(chain({
+      actor: 'agent',
+      payload: { kind: 'obligations-assessed', assessments: [{ obligationId: 'obligation-structure', status: 'not-applicable', detail: 'not used', evidenceDigests: [], targetBasis: 'target policy' }] },
+    }))).toThrow(/operator\/human authority/);
+  });
+
+  it('keeps legacy Review event logs readable but prevents silent completion', () => {
+    const legacySeed = { ...seed } as ReviewSessionSeed & { obligationContractVersion?: never; requiredObligations?: never };
+    delete legacySeed.obligationContractVersion;
+    delete legacySeed.requiredObligations;
+    const legacyStart = createReviewEvent({ eventId: 'legacy-0', previousEventDigest: null, at: '2026-08-04T00:00:00.000Z', actor: 'operator', payload: { kind: 'session-started', seed: legacySeed } });
+    expect(reduceReviewEvents([legacyStart])).toMatchObject({ obligationContractVersion: 'legacy-unavailable', requiredObligations: [] });
+    const finalize = createReviewEvent({ eventId: 'legacy-1', previousEventDigest: legacyStart.eventDigest, at: '2026-08-04T00:00:01.000Z', actor: 'human', payload: { kind: 'human-finalized', confirmationRef: 'human', decision: 'complete' } });
+    expect(() => reduceReviewEvents([legacyStart, finalize])).toThrow(/legacyObligationContractMissing/);
   });
 
   it('rejects event-chain, revision, authorization and completion forgery', () => {

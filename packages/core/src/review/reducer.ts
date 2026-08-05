@@ -4,6 +4,7 @@ import type {
   ReviewEvent,
   ReviewEventPayload,
   ReviewFinding,
+  ReviewObligationAssessment,
   ReviewSession,
 } from './contracts.js';
 
@@ -32,6 +33,7 @@ export function reduceReviewEvents(
   let previous: string | null = null;
   let session: ReviewSession | undefined;
   const findingById = new Map<string, ReviewFinding>();
+  const assessmentById = new Map<string, ReviewObligationAssessment>();
   for (const event of events) {
     const { eventDigest, ...unsigned } = event;
     if (event.previousEventDigest !== previous || reviewEventDigest(unsigned) !== eventDigest) {
@@ -43,6 +45,8 @@ export function reduceReviewEvents(
       if (session) throw new Error('Review session-started may appear only once.');
       session = {
         ...payload.seed,
+        obligationContractVersion: payload.seed.obligationContractVersion ?? 'legacy-unavailable',
+        requiredObligations: payload.seed.requiredObligations ?? [],
         status: 'active',
         eventHeadDigest: event.eventDigest,
         eventCount: 1,
@@ -52,8 +56,15 @@ export function reduceReviewEvents(
         authorizedTranches: [],
         attempts: [],
         findings: [],
+        obligationAssessments: [],
         artifacts: [],
       };
+      if (session.obligationContractVersion === 1 && session.requiredObligations.length === 0) {
+        throw new Error('Review obligation contract v1 must contain required obligations.');
+      }
+      if (new Set(session.requiredObligations.map((item) => item.obligationId)).size !== session.requiredObligations.length) {
+        throw new Error('Review required obligation IDs must be unique.');
+      }
       if (expected?.generationId !== undefined && session.generationId !== expected.generationId) {
         throw new Error('Review generation does not match the active Workspace generation.');
       }
@@ -122,6 +133,19 @@ export function reduceReviewEvents(
           session.stopReason = 'repeated-normalized-diff';
         }
       }
+    } else if (payload.kind === 'obligations-assessed') {
+      const requiredIds = new Set(session.requiredObligations.map((item) => item.obligationId));
+      for (const assessment of payload.assessments) {
+        if (!requiredIds.has(assessment.obligationId)) throw new Error(`Unknown Review obligation ${assessment.obligationId}.`);
+        if (!['matched', 'deviation', 'unverified', 'not-applicable'].includes(assessment.status)) throw new Error('Unknown Review obligation assessment status.');
+        if (typeof assessment.detail !== 'string' || !assessment.detail.trim()) throw new Error('Review obligation assessment requires detail.');
+        if (!Array.isArray(assessment.evidenceDigests) || assessment.evidenceDigests.some((item) => typeof item !== 'string')) throw new Error('Review obligation assessment evidenceDigests must be strings.');
+        if (assessment.status === 'not-applicable' && (!['operator', 'human'].includes(event.actor) || !assessment.targetBasis?.trim())) {
+          throw new Error('Not-applicable obligation requires operator/human authority and target basis.');
+        }
+        assessmentById.set(assessment.obligationId, assessment);
+      }
+      session.obligationAssessments = [...assessmentById.values()].sort((a, b) => a.obligationId.localeCompare(b.obligationId));
     } else if (payload.kind === 'findings-recorded') {
       for (const finding of payload.findings) {
         if (finding.severity === 'Accepted' && (!['operator', 'human'].includes(event.actor) || !finding.humanConfirmed || !finding.targetBasis)) throw new Error('Accepted deviation requires human confirmation and target basis.');
@@ -156,8 +180,13 @@ function assertCompletionGates(session: ReviewSession): void {
   const missingScenarios = session.requiredScenarioCaseIds.filter((item) => !session.replayedScenarioCaseIds.includes(item));
   const openBlocking = session.findings.filter((item) => ['Critical', 'Major'].includes(item.severity) && item.status === 'open');
   const unverified = session.findings.filter((item) => item.severity === 'Unverified' || item.status === 'unverified');
-  if (missingViewed.length || missingRendered.length || missingScenarios.length || openBlocking.length || unverified.length || session.status === 'unverified') {
-    throw new Error(`Review completion gates failed: ${JSON.stringify({ missingViewed, missingRendered, missingScenarios, openBlocking: openBlocking.map((item) => item.findingId), unverified: unverified.map((item) => item.findingId) })}`);
+  const assessedById = new Map(session.obligationAssessments.map((item) => [item.obligationId, item]));
+  const missingObligations = session.requiredObligations.filter((item) => !assessedById.has(item.obligationId)).map((item) => item.obligationId);
+  const unverifiedObligations = session.obligationAssessments.filter((item) => item.status === 'unverified').map((item) => item.obligationId);
+  const deviatingObligations = session.obligationAssessments.filter((item) => item.status === 'deviation').map((item) => item.obligationId);
+  const legacyObligationContractMissing = session.obligationContractVersion !== 1;
+  if (missingViewed.length || missingRendered.length || missingScenarios.length || openBlocking.length || unverified.length || missingObligations.length || unverifiedObligations.length || deviatingObligations.length || legacyObligationContractMissing || session.status === 'unverified') {
+    throw new Error(`Review completion gates failed: ${JSON.stringify({ missingViewed, missingRendered, missingScenarios, openBlocking: openBlocking.map((item) => item.findingId), unverified: unverified.map((item) => item.findingId), missingObligations, unverifiedObligations, deviatingObligations, legacyObligationContractMissing })}`);
   }
 }
 

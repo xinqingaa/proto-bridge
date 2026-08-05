@@ -9,6 +9,7 @@ export * from './evidence-read-model.js';
 export * from './consumer-projection.js';
 export * from './evidence-inventory.js';
 export * from './acceptance-contract.js';
+export * from './reconstruction-obligations.js';
 export * from './evidence-brief.js';
 export * from './reconstruction-review.js';
 export * from './prompts/agent-prompt.js';

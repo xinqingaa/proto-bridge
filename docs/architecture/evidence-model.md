@@ -121,7 +121,7 @@ Handoff 固定：
 
 Handoff 创建前可以要求用户逐项确认风险，但确认不会修改风险或 Evidence。
 
-每个 Handoff 还可确定性派生 Reconstruction Acceptance Contract。该合同不修改 Evidence，而是把固定 revision 中的 topology、componentId、Token binding、Variant/Checkpoint、Scenario 与 Screenshot 组织成五维验收分母。
+每个 Handoff 还可确定性派生 Reconstruction Acceptance Contract。该合同不修改 Evidence，而是把固定 revision 中的 topology、componentId、Token binding、Variant/Checkpoint、Scenario 与 Screenshot 组织成五维要求。Authoritative Review 再将等价的 per-Case requirements 编译为稳定、去重的 Reconstruction Obligations；全部 obligation 都必须有明确 assessment，artifact coverage 不能替代该验收分母。
 
 ## Blob
 

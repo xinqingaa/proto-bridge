@@ -113,6 +113,7 @@ try {
     "read_screen_packet",
     "read_case_delta",
     "read_evidence_detail",
+    "read_reconstruction_obligations",
     "read_evidence_blob",
     "read_evidence_screenshot",
     "read_acceptance_contract",
@@ -121,10 +122,12 @@ try {
     "resolve_target_tokens",
     "start_target_review",
     "read_target_review",
+    "read_review_obligations",
     "render_target_case",
     "replay_target_scenario",
     "compare_target_artifacts",
     "record_review_findings",
+    "record_review_assessments",
     "request_review_tranche",
     "finalize_target_review",
   ]) {
@@ -157,7 +160,7 @@ try {
   assert(
     workspace.runtime?.build?.fingerprint?.startsWith("sha256:") &&
       workspace.runtime?.processStartedAt &&
-      workspace.runtime?.contracts?.projectionVersion === 1 &&
+      workspace.runtime?.contracts?.projectionVersion === 2 &&
       workspace.runtime?.store?.generation?.startsWith("generation-") &&
       workspace.runtime?.capabilities?.includes("handoff-index") &&
       workspace.runtime?.capabilities?.includes("image-content-screenshot"),
@@ -416,8 +419,27 @@ try {
   assert(
     screenPacket.baselineCaseId === reference.TASK_LIST_CASE_ID &&
       screenPacket.cases?.length === 1 &&
+      screenPacket.baseline?.structure?.caseId === reference.TASK_LIST_CASE_ID &&
       screenPacket.screenshotGroups?.[0]?.digest === screenshot.digest,
     "Screen packet did not return the fixed baseline and screenshot group.",
+  );
+
+  const obligations = parseToolJson(
+    await client.request("tools/call", {
+      name: "read_reconstruction_obligations",
+      arguments: {
+        handoffId: handoff.handoffId,
+        screenId: reference.SCREEN_ID,
+        dimension: "structure",
+        pageSize: 1,
+      },
+    }),
+  );
+  assert(
+    obligations.dimension === "structure" &&
+      obligations.total >= 1 &&
+      obligations.obligations?.length === 1,
+    "Reconstruction obligations were not projected by fixed Screen/dimension.",
   );
 
   const caseDelta = parseToolJson(

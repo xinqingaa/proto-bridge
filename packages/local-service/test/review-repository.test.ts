@@ -23,6 +23,10 @@ function seed(reviewRunId = 'review-test'): ReviewSessionSeed {
     selectedCaseIds: ['screen::default'],
     requiredSourceDigests: ['sha256:source'],
     requiredScenarioCaseIds: [],
+    obligationContractVersion: 1,
+    requiredObligations: [
+      { obligationId: 'obligation-test', dimension: 'structure', screenId: 'screen', caseIds: ['screen::default'], kind: 'topology', subject: 'content', expected: { scrollOwner: 'content' }, evidenceRefs: ['fact.structure'] },
+    ],
     comparatorVersion: 'compare-v1',
     createdAt: '2026-08-04T00:00:00.000Z',
   };

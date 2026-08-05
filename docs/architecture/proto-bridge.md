@@ -61,6 +61,7 @@ Capture Driver 只报告观测结果。它不能用 Target 扫描或源码命名
 - session/console 绑定 Workspace generation；generation 变化后撤销旧 session，并由 PBWork 清空 Workspace 范围缓存；
 - reset 使用 Store 外持久化的 `planId + generation + inventory digest` 两阶段 Contract，范围覆盖 Evidence、Delivery 与未导出 Review；
 - writer 校验 root/lock 身份，外部破坏后停止旧 writer，禁止在原进程内自动重建。
+- authoritative Review 启动时从固定 Handoff 独立重算 canonical Reconstruction Obligations，拒绝客户端缩小验收分母；append-only event log 保存逐项 assessment，Reducer 在人工完成事件上重新执行 artifact coverage 与语义门禁。
 
 Service Contract 来自 `@proto-bridge/core/v2/service-contract`。PBWork client 不应根据 HTTP 状态猜测第二套产品错误。
 
@@ -86,13 +87,18 @@ CLI 只解析参数、加载 Workspace 配置、调用 Core、格式化文本/JS
 - 通过 stdio JSON-RPC 暴露 Tools、Resources 和 Prompt；
 - 启动时固定 Store root 与 Workspace；
 - 使用 Core Evidence Read Model 和 Store Reader；
-- 以 `HandoffIndex → ScreenPacket → CaseDelta/EvidenceDetail` 提供固定、闭集、按需投影；
+- 以 `HandoffIndex → Screen Implementation Packet → compact CaseDelta / paged Obligations → EvidenceDetail` 提供固定、闭集、按需投影；Screen packet 直接表达 Region tree、scroll owner/member、pinning、ordering、bbox relation 和 baseline state/content；
 - 握手公开 Workspace、能力、契约版本、源码构建指纹、进程身份和 Store generation；
 - 校验 Snapshot/revision/Blob 的可达性；
 - 返回可见 risks、unknown 和 conflicts；
 - 独立提供 Target conventions、examples 和 validation。
+- 提供 Target Review 的 render/replay/compare receipt 与 obligation assessment 写入；截图或 Scenario coverage 不能替代五维语义核验。
 
 MCP 不创建 Capture Job，不接受 Store 文件路径作为对象引用，不替 Agent 选择实现。完整 Snapshot/Contract 读取仅为兼容和显式 debug，默认 Prompt 不调用。普通响应不按字节阈值截断；detail continuation 只按稳定逻辑查询边界产生。完整参考见 [MCP README](../../packages/mcp-server/README.md)。
+
+Consumer projection version 2 不再让 Case delta 重复完整 Fact/provenance，也不让 Review response 内嵌全部 obligations。Evidence obligations 按 Handoff/Screen/维度分页；Review obligations 额外支持 assessment 状态过滤。所有 continuation 都绑定固定 Snapshot 和规范化查询，不能跨维度复用。
+
+Review 的验收分母来自 Core 对 Acceptance Contract 的确定性编译：等价的 per-Case requirements 按 Screen、维度、kind、subject 和 canonical expected 去重，同时保留全部 Case 与 Evidence refs。Assessment 使用显式 last-write 语义；`deviation`、`unverified`、未 assessment、阻断 finding 和缺少必要 receipt 都会阻止完成。`not-applicable` 仅允许 operator/human 附 Target basis 写入。旧 event log 仍可恢复，但缺少 obligation contract 时禁止完成。
 
 ## Target boundary
 

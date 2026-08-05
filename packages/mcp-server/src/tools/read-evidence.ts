@@ -3,10 +3,12 @@ import {
   buildCaseDelta,
   buildEvidenceDetail,
   buildHandoffIndex,
+  buildReconstructionObligationProjection,
   buildScreenPacket,
   EVIDENCE_DETAIL_PROJECTIONS,
   V2ContractError,
   type EvidenceDetailProjection,
+  type AcceptanceDimension,
 } from "@proto-bridge/core/v2";
 import {
   ReconstructionReviewObservation,
@@ -280,6 +282,22 @@ export async function readEvidenceDetailTool(
     ...(readStringArray(args, "tokenIds") ? { tokenIds: readStringArray(args, "tokenIds")! } : {}),
     ...(readNumber(args, "pageSize") !== undefined ? { pageSize: readNumber(args, "pageSize")! } : {}),
     ...(readString(args, "cursor") ? { cursor: readString(args, "cursor")! } : {}),
+  });
+}
+
+export async function readReconstructionObligationsTool(
+  context: ToolContext,
+  args: JsonObject,
+): Promise<unknown> {
+  const handoffId = requiredString(args, 'handoffId');
+  const input = await context.evidence.readConsumerProjectionInput(handoffId);
+  const dimension = readString(args, 'dimension') as AcceptanceDimension | undefined;
+  return buildReconstructionObligationProjection(input, {
+    handoffId,
+    screenId: requiredString(args, 'screenId'),
+    ...(dimension ? { dimension } : {}),
+    ...(readNumber(args, 'pageSize') !== undefined ? { pageSize: readNumber(args, 'pageSize')! } : {}),
+    ...(readString(args, 'cursor') ? { cursor: readString(args, 'cursor')! } : {}),
   });
 }
 
