@@ -40,12 +40,13 @@ Local Service 会从持久 Handoff 独立重算 obligations，并拒绝客户端
 
 ## 尚未解决的根因
 
-5R.1-5R.3 已消除验收分母可删减、Source 结构难消费，以及 Structure/component/token 由 Agent 自证的问题。剩余问题集中在动态语义和推广：
+5R.1-5R.4 已消除验收分母可删减、Source 结构难消费，以及 Structure/component/token/state/interaction 由 Agent 自证的问题。剩余问题集中在消费规模、Target 接入和推广：
 
-1. **状态语义仍需加强**：baseline 和 Case 已有 visible content、keyed collection 与 state requirements；selected/default value 仍需 typed state claim，不能只依赖通用 expected 对象。
-2. **交互没有完整 transition contract**：action、input/dataflow、pre-state 和 post-state 需要绑定为一个可 replay、可断言的 transition。
-3. **Target inspector 需要工程接入**：Structure verifier 不从 Flutter widget 名称猜语义；目标工程必须提供 deterministic `structureCommand`。未接入时系统会保持 `unverified`，不会静默通过。
-4. **跨技术栈与跨样本尚未推广**：Claim contract 与 Review authority 是 target-independent，但当前 occurrence/Structure adapter 仅实现 Flutter，仍需盲测和其他 Adapter 验证抽象是否稳定。
+1. **渐进读取载荷仍然偏大**：Screen packet 和 Case delta 已去除完整 provenance，但仍包含大量重复 expected、bbox、document order 和 scroll owner 字段；Agent 可能再次被机械 Fact 差异淹没。
+2. **Target inspector 需要工程接入**：Structure/state/interaction verifier 不从 Flutter widget 名称或测试退出码猜语义；目标工程必须提供 deterministic `structureCommand`、`stateCommand` 和 `scenarioCommand`。未接入时系统会保持 `unverified`，不会静默通过。
+3. **Target 映射声明仍可能不完整**：目标代码中实际存在的组件或 Token accessor，如果没有目标文档或机器 Contract 明确授权，resolver 仍只能返回 `candidate` 或 `unresolved`。这符合安全预期，但会阻止 authoritative Review 闭合。
+4. **消费指南与构建产物需要同源校验**：Tool schema、仓库指南和 MCP 内置 guide 只要存在版本漂移，Agent 就可能遗漏新 verifier 或执行过时流程。
+5. **跨技术栈与跨样本尚未推广**：Claim contract 与 Review authority 是 target-independent，但当前 occurrence/Structure adapter 仅实现 Flutter，仍需盲测和其他 Adapter 验证抽象是否稳定。
 
 ## 后续切片
 
@@ -104,6 +105,50 @@ Local Service 会从持久 Handoff 独立重算 obligations，并拒绝客户端
 - 使用至少两个不同 Prototype 和两个独立实现 Agent 做盲测；
 - 统计 obligation coverage、verifier authority、unknown/deviation、上下文字符数和调用次数；
 - 只有结构、组件、Token、状态和交互五类 mutation 都被系统捕获，且消费量没有退回全量读取级别，才允许 Promote。
+
+## 2026-08-05 固定 Handoff 只读验证结论
+
+验证使用以下不可变引用：
+
+- Workspace：`pbwork-local`；
+- Handoff：`handoff-2026-08-05t144830231-7c176926`；
+- Bundle：`bundle-2026-08-05t144807352-64c6e471`；
+- Snapshot：`snapshot-2026-08-05t144826204-480957ce`；
+- Target：`apps/flutter_pb_app`，revision `11ad24e9a6bd40ac9172f4e31261a846b4b6dbb3`；
+- Handoff 原始 `mandatoryRisks`：`[]`；
+- 范围：3 Screens、24 Cases、7 Scenarios、16 份不同 Screenshot 内容。
+
+当前 MCP 为 package `0.4.0`、projection version 2，`screen-implementation-packet`、typed state、keyed collection，以及 structure/component/token/state/interaction verifier 均已在当前进程可见。本次验证没有切换到 `active`、`latest` 或旧读取链路，并实际查看了全部 16 份去重 Screenshot。
+
+### 决策：Revise，暂不 Promote
+
+Source Evidence 已足以确定三个 Screen 的页面构图和滚动边界：app bar 固定在 viewport，主体各自只有一个纵向 scroll owner；summary、search、filter、列表、表单 section、详情 card 和 timeline 都是该主体的成员，Dialog、Bottom Sheet 和 Snackbar 是覆盖层。因此后续实现若再次产生错误 scroll owner，根因不再是 Source Evidence 缺失，而是 Target 实现或 Review gate 没有执行到位。
+
+本次读取同时确认以下改进已经生效：
+
+- 固定引用、capability handshake、Handoff index 和 Screenshot digest 去重有效；
+- baseline Structure IR 已明确 parent、order、scroll owner/member 和 positioning；
+- typed state、keyed collection 和 Scenario checkpoint 已进入 packet/delta；
+- verifier schema 已覆盖五个维度，Agent 不能再通过空 finding 或自然语言声明完成。
+
+但当前仍不满足 Promote 条件：
+
+- 三个 Screen packet 合计约 48k token 并发生输出截断；21 个非 baseline Case delta 仍约 20k token，单 Variant 可包含数百条机械 Fact 差异；
+- 为提取约 57 个唯一 Token ID，三个 Screen 的 token detail 在 `pageSize=100` 下累计 28 页，说明 detail 尚未按语义去重到合适工作集；
+- MCP 内置 `handoff-consumer` guide 未同步说明 state/interaction typed verifier，而仓库指南已经更新；这是构建资源内容漂移，不是旧 MCP 进程；
+- Flutter Target 尚未声明 `structureCommand`、`stateCommand` 和 `scenarioCommand`，所以动态和结构义务仍只能保持 `unverified`；
+- 19 个 Evidence component ID 中有 17 个 resolved，`spinner` 和 `switch` 仍为 candidate；约 40 个 Token resolved，但 `color.scrim`、`border.hairline`、motion、部分 elevation/radius/sizing/typography 映射仍为 candidate 或 unresolved；
+- 当前 `cold_chain_ops` 实现虽然顶层单滚动方向基本正确，但仍存在 `form-section` 被 `CommonCard` 替代、empty 分支绕过 `CommonScrollableDataList`、timeline 缺少稳定业务 key、7 个 Scenario 未完整重放等问题。
+
+### 下一步修复顺序
+
+1. 压缩 Source projection：Screen packet 去除 state 与 requirement expected 的重复；Case delta 按 Region 和语义变化聚合 add/remove/reparent/scroll-owner/order/state patch，不再逐字段展开机械 bbox Fact。
+2. 为 Screen packet 增加稳定、去重的 component/token inventory，避免 Agent 为批量 Target resolver 再遍历完整 detail；增加响应字符数、item 数和重复率预算测试。
+3. 让 MCP 内置 guide、仓库指南、capability 和 Tool schema 从同一来源生成或交叉校验，构建时阻止 state/interaction 能力与文案漂移。
+4. 补齐 Flutter Target 自有映射声明；已有 accessor 只补目标文档/Contract，真正缺失的 `border.hairline`、standard easing 等再扩展 Theme API，不在 feature 中写裸值。
+5. 为 Flutter Target 接入 deterministic structure/state/scenario launcher；Structure 输出真实 parent/scroll owner/order，State 输出 visible Regions、keyed collections 和 selected/default values，Scenario 输出 pre/action/post/checkpoint/visible result。
+6. 修正 cold-chain Target 仅作为验证样本，不把业务 ID 写入 Core：复用真实 `CommonFormSection`、统一单滚动组件、补稳定业务 key，并完整重放 7 个 Scenario。
+7. 完成 authoritative Review 后再执行 5R.5：至少两个不同 Prototype、两个独立 Agent 和一个非当前项目映射范围；只有五维 mutation 均被捕获且消费量未退回全量级别，才重新评估 Promote。
 
 ## 非目标
 
