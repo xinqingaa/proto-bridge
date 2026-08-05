@@ -46,7 +46,35 @@ export type ReviewObligationAssessment = {
   status: ReviewAssessmentStatus;
   detail: string;
   evidenceDigests: string[];
+  verifierReceiptDigest?: string;
   targetBasis?: string;
+};
+
+export type ReviewVerifierResult = {
+  obligationId: string;
+  dimension: ReconstructionObligation['dimension'];
+  status: 'matched' | 'deviation' | 'unverified';
+  detail: string;
+  targetOccurrence?: {
+    path: string;
+    line: number;
+    column?: number;
+    symbol?: string;
+    accessor?: string;
+    ownerSymbol?: string;
+    targetSlot?: string;
+  };
+};
+
+export type ReviewVerifierReceipt = {
+  receiptVersion: 1;
+  receiptDigest: string;
+  verifierId: string;
+  adapterId: string;
+  targetRevision: string;
+  targetHead: string;
+  targetContentDigest: string;
+  results: ReviewVerifierResult[];
 };
 
 export type ReviewSessionSeed = {
@@ -64,6 +92,7 @@ export type ReviewSessionSeed = {
   requiredScenarioCaseIds: string[];
   obligationContractVersion: 1 | 'legacy-unavailable';
   requiredObligations: ReconstructionObligation[];
+  verificationContractVersion: 1 | 'legacy-unavailable';
   comparatorVersion: string;
   createdAt: string;
 };
@@ -75,6 +104,7 @@ export type ReviewEventPayload =
   | { kind: 'target-rendered'; screenId: string; caseId: string; sourceDigest: string; tranche: number; round: number; attemptId: string; targetRevision: string; target: ReviewArtifact }
   | { kind: 'scenario-replayed'; screenId: string; caseId: string; scenarioId: string; receiptDigest: string; targetRevision: string }
   | { kind: 'artifacts-compared'; screenId: string; caseId: string; attemptId: string; sourceDigest: string; targetDigest: string; diff: ReviewArtifact; overlay?: ReviewArtifact; comparable: boolean; normalizedDiffSignature?: string; reason?: string }
+  | { kind: 'target-claims-verified'; receipt: ReviewVerifierReceipt }
   | { kind: 'findings-recorded'; findings: ReviewFinding[] }
   | { kind: 'obligations-assessed'; assessments: ReviewObligationAssessment[] }
   | { kind: 'human-finalized'; confirmationRef: string; decision: 'complete' }
@@ -115,6 +145,8 @@ export type ReviewSession = ReviewSessionSeed & {
   attempts: ReviewAttempt[];
   findings: ReviewFinding[];
   obligationAssessments: ReviewObligationAssessment[];
+  verifierReceipts: ReviewVerifierReceipt[];
+  verifierTargetContentDigest?: string;
   artifacts: ReviewArtifact[];
   stopReason?: string;
   completedAt?: string;

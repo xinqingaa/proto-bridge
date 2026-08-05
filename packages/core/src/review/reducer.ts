@@ -6,6 +6,7 @@ import type {
   ReviewFinding,
   ReviewObligationAssessment,
   ReviewSession,
+  ReviewVerifierReceipt,
 } from './contracts.js';
 
 export function reviewEventDigest(input: Omit<ReviewEvent, 'eventDigest'>): string {
@@ -23,6 +24,12 @@ export function createReviewEvent(input: {
   return { ...input, eventDigest: reviewEventDigest(input) };
 }
 
+export function reviewVerifierReceiptDigest(
+  receipt: Omit<ReviewVerifierReceipt, 'receiptDigest'>,
+): string {
+  return `sha256:${createHash('sha256').update(JSON.stringify(receipt)).digest('hex')}`;
+}
+
 export function reduceReviewEvents(
   events: ReviewEvent[],
   expected?: { generationId?: string | 'legacy-unavailable'; targetRevision?: string },
@@ -34,6 +41,7 @@ export function reduceReviewEvents(
   let session: ReviewSession | undefined;
   const findingById = new Map<string, ReviewFinding>();
   const assessmentById = new Map<string, ReviewObligationAssessment>();
+  const receiptByDigest = new Map<string, ReviewVerifierReceipt>();
   for (const event of events) {
     const { eventDigest, ...unsigned } = event;
     if (event.previousEventDigest !== previous || reviewEventDigest(unsigned) !== eventDigest) {
@@ -47,6 +55,7 @@ export function reduceReviewEvents(
         ...payload.seed,
         obligationContractVersion: payload.seed.obligationContractVersion ?? 'legacy-unavailable',
         requiredObligations: payload.seed.requiredObligations ?? [],
+        verificationContractVersion: payload.seed.verificationContractVersion ?? 'legacy-unavailable',
         status: 'active',
         eventHeadDigest: event.eventDigest,
         eventCount: 1,
@@ -57,6 +66,7 @@ export function reduceReviewEvents(
         attempts: [],
         findings: [],
         obligationAssessments: [],
+        verifierReceipts: [],
         artifacts: [],
       };
       if (session.obligationContractVersion === 1 && session.requiredObligations.length === 0) {
@@ -133,6 +143,32 @@ export function reduceReviewEvents(
           session.stopReason = 'repeated-normalized-diff';
         }
       }
+    } else if (payload.kind === 'target-claims-verified') {
+      if (event.actor !== 'runner' || !event.tool) throw new Error('Target claim verification requires a successful runner receipt.');
+      const { receipt } = payload;
+      if (
+        receipt.receiptVersion !== 1
+        || receipt.targetRevision !== session.targetRevision
+        || receipt.targetHead !== session.targetBaselineCommit
+        || event.tool !== receipt.verifierId
+      ) throw new Error('Target claim receipt is outside the fixed Review target revision/verifier.');
+      if (!receipt.verifierId.trim() || !receipt.adapterId.trim() || !receipt.targetContentDigest.trim() || receipt.results.length === 0) throw new Error('Target claim verifier receipt is incomplete.');
+      if (session.verifierTargetContentDigest && session.verifierTargetContentDigest !== receipt.targetContentDigest) throw new Error('Target content drifted between claim verifier receipts.');
+      const { receiptDigest, ...unsignedReceipt } = receipt;
+      if (reviewVerifierReceiptDigest(unsignedReceipt) !== receiptDigest) throw new Error('Target claim verifier receipt digest is invalid.');
+      if (receiptByDigest.has(receiptDigest)) throw new Error('Target claim verifier receipt is duplicated.');
+      const requiredById = new Map(session.requiredObligations.map((item) => [item.obligationId, item]));
+      const resultIds = new Set<string>();
+      for (const result of receipt.results) {
+        const obligation = requiredById.get(result.obligationId);
+        if (!obligation || obligation.dimension !== result.dimension) throw new Error(`Unknown or mismatched Review verifier obligation ${result.obligationId}.`);
+        if (resultIds.has(result.obligationId)) throw new Error(`Duplicate Review verifier result ${result.obligationId}.`);
+        if (!['matched', 'deviation', 'unverified'].includes(result.status) || !result.detail.trim()) throw new Error('Review verifier result is invalid.');
+        resultIds.add(result.obligationId);
+      }
+      receiptByDigest.set(receiptDigest, receipt);
+      session.verifierReceipts = [...receiptByDigest.values()];
+      session.verifierTargetContentDigest = receipt.targetContentDigest;
     } else if (payload.kind === 'obligations-assessed') {
       const requiredIds = new Set(session.requiredObligations.map((item) => item.obligationId));
       for (const assessment of payload.assessments) {
@@ -140,6 +176,17 @@ export function reduceReviewEvents(
         if (!['matched', 'deviation', 'unverified', 'not-applicable'].includes(assessment.status)) throw new Error('Unknown Review obligation assessment status.');
         if (typeof assessment.detail !== 'string' || !assessment.detail.trim()) throw new Error('Review obligation assessment requires detail.');
         if (!Array.isArray(assessment.evidenceDigests) || assessment.evidenceDigests.some((item) => typeof item !== 'string')) throw new Error('Review obligation assessment evidenceDigests must be strings.');
+        if (session.verificationContractVersion === 1 && assessment.status === 'matched') {
+          const receipt = assessment.verifierReceiptDigest ? receiptByDigest.get(assessment.verifierReceiptDigest) : undefined;
+          const result = receipt?.results.find((item) => item.obligationId === assessment.obligationId);
+          if (!receipt || result?.status !== 'matched') throw new Error(`Matched Review obligation ${assessment.obligationId} requires a successful verifier receipt.`);
+          if (!assessment.evidenceDigests.includes(receipt.receiptDigest)) throw new Error('Matched Review obligation evidenceDigests must include its verifier receipt.');
+        }
+        if (assessment.verifierReceiptDigest) {
+          const receipt = receiptByDigest.get(assessment.verifierReceiptDigest);
+          const result = receipt?.results.find((item) => item.obligationId === assessment.obligationId);
+          if (!receipt || !result || (assessment.status !== 'not-applicable' && result.status !== assessment.status)) throw new Error(`Review obligation ${assessment.obligationId} does not match its verifier receipt.`);
+        }
         if (assessment.status === 'not-applicable' && (!['operator', 'human'].includes(event.actor) || !assessment.targetBasis?.trim())) {
           throw new Error('Not-applicable obligation requires operator/human authority and target basis.');
         }
@@ -185,8 +232,9 @@ function assertCompletionGates(session: ReviewSession): void {
   const unverifiedObligations = session.obligationAssessments.filter((item) => item.status === 'unverified').map((item) => item.obligationId);
   const deviatingObligations = session.obligationAssessments.filter((item) => item.status === 'deviation').map((item) => item.obligationId);
   const legacyObligationContractMissing = session.obligationContractVersion !== 1;
-  if (missingViewed.length || missingRendered.length || missingScenarios.length || openBlocking.length || unverified.length || missingObligations.length || unverifiedObligations.length || deviatingObligations.length || legacyObligationContractMissing || session.status === 'unverified') {
-    throw new Error(`Review completion gates failed: ${JSON.stringify({ missingViewed, missingRendered, missingScenarios, openBlocking: openBlocking.map((item) => item.findingId), unverified: unverified.map((item) => item.findingId), missingObligations, unverifiedObligations, deviatingObligations, legacyObligationContractMissing })}`);
+  const legacyVerificationContractMissing = session.verificationContractVersion !== 1;
+  if (missingViewed.length || missingRendered.length || missingScenarios.length || openBlocking.length || unverified.length || missingObligations.length || unverifiedObligations.length || deviatingObligations.length || legacyObligationContractMissing || legacyVerificationContractMissing || session.status === 'unverified') {
+    throw new Error(`Review completion gates failed: ${JSON.stringify({ missingViewed, missingRendered, missingScenarios, openBlocking: openBlocking.map((item) => item.findingId), unverified: unverified.map((item) => item.findingId), missingObligations, unverifiedObligations, deviatingObligations, legacyObligationContractMissing, legacyVerificationContractMissing })}`);
   }
 }
 

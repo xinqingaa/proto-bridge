@@ -92,13 +92,13 @@ CLI 只解析参数、加载 Workspace 配置、调用 Core、格式化文本/JS
 - 校验 Snapshot/revision/Blob 的可达性；
 - 返回可见 risks、unknown 和 conflicts；
 - 独立提供 Target conventions、examples 和 validation。
-- 提供 Target Review 的 render/replay/compare receipt 与 obligation assessment 写入；截图或 Scenario coverage 不能替代五维语义核验。
+- 提供 Target Review 的 render/replay/compare、Target claim verifier receipt 与 obligation assessment 写入；截图或 Scenario coverage 不能替代五维语义核验。
 
 MCP 不创建 Capture Job，不接受 Store 文件路径作为对象引用，不替 Agent 选择实现。完整 Snapshot/Contract 读取仅为兼容和显式 debug，默认 Prompt 不调用。普通响应不按字节阈值截断；detail continuation 只按稳定逻辑查询边界产生。完整参考见 [MCP README](../../packages/mcp-server/README.md)。
 
 Consumer projection version 2 不再让 Case delta 重复完整 Fact/provenance，也不让 Review response 内嵌全部 obligations。Evidence obligations 按 Handoff/Screen/维度分页；Review obligations 额外支持 assessment 状态过滤。所有 continuation 都绑定固定 Snapshot 和规范化查询，不能跨维度复用。
 
-Review 的验收分母来自 Core 对 Acceptance Contract 的确定性编译：等价的 per-Case requirements 按 Screen、维度、kind、subject 和 canonical expected 去重，同时保留全部 Case 与 Evidence refs。Assessment 使用显式 last-write 语义；`deviation`、`unverified`、未 assessment、阻断 finding 和缺少必要 receipt 都会阻止完成。`not-applicable` 仅允许 operator/human 附 Target basis 写入。旧 event log 仍可恢复，但缺少 obligation contract 时禁止完成。
+Review 的验收分母来自 Core 对 Acceptance Contract 的确定性编译：等价的 per-Case requirements 按 Screen、维度、kind、subject 和 canonical expected 去重，同时保留全部 Case 与 Evidence refs。Assessment 使用显式 last-write 语义；`deviation`、`unverified`、未 assessment、阻断 finding 和缺少必要 receipt 都会阻止完成。`matched` 必须绑定固定 Target revision 上同一 obligation 的机器 verifier receipt；`not-applicable` 仅允许 operator/human 附 Target basis 写入。旧 event log 仍可恢复，但缺少 obligation 或 verification contract 时禁止完成。
 
 ## Target boundary
 
@@ -108,8 +108,11 @@ Review 的验收分母来自 Core 对 Acceptance Contract 的确定性编译：�
 - 开放 component/token ID 的批量解析，输出 `resolved/candidate/stale/conflict/unresolved/unsupported`；
 - 既有实现示例查找及 Control/candidate output 排除；
 - 目标变更路径、实际采用 mapping 和原生验证结果检查。
+- target-independent implementation claims；Flutter adapter 对 Structure 运行目标 inspector 并比较 IR，对 component/token 校验精确 Dart occurrence、owner 和 named-argument slot。
 
 它不拥有任何具体产品的组件/Token 映射。真实目标工程的 `AGENTS.md`、`docs/proto-bridge.md`、`docs/components.md`、`docs/theme.md` 和公开代码拥有当前约束；可选 `docs/proto-bridge.target.json` 只是这些约束的严格机器投影。政策与机器 Contract 冲突返回 `conflict`，显式声明与代码不符返回 `stale`，代码启发式最多返回 `candidate`。Target root 来自 Agent 当前任务或单次 Tool 参数；目标仓库不需要 ProtoBridge Workspace 配置，Target 结果不写入 Bundle。
+
+Flutter Review machine contract 可在 `review.launcher.structureCommand` 声明确定性 Structure inspector。命令接收 `{caseId}`、`{screenId}`、`{deviceId}` 插值并向 stdout 输出 Consumer projection version 2 的完整 `StructureIR` JSON；Case 可用 `structureArguments` 添加参数。命令缺失、失败、Case 不一致、Schema 不完整或 Source/Target Region 含 unknown 时，verifier 返回 `unverified`，不根据 Widget 类型猜 parent 或 scroll owner。
 
 ## 公共导出
 

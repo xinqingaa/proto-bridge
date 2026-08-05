@@ -27,6 +27,7 @@ function seed(reviewRunId = 'review-test'): ReviewSessionSeed {
     requiredObligations: [
       { obligationId: 'obligation-test', dimension: 'structure', screenId: 'screen', caseIds: ['screen::default'], kind: 'topology', subject: 'content', expected: { scrollOwner: 'content' }, evidenceRefs: ['fact.structure'] },
     ],
+    verificationContractVersion: 1,
     comparatorVersion: 'compare-v1',
     createdAt: '2026-08-04T00:00:00.000Z',
   };

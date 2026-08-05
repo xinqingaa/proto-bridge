@@ -13,7 +13,8 @@ export const CONSUMER_GUIDE = `# ProtoBridge Agent Handoff Consumer
 8. Read target repository instructions and public code. An applicable Target adapter may discover and normalize that context, but fallback adapter rules cannot override real target docs. Target context is not Source Evidence.
 9. Decide files, components, routing, state and tokens in the target repository; do not treat ProtoBridge as a code generator. Do not invent containers, copy, interactions or state that Evidence does not support.
 10. Before editing, summarize each Screen's composition, scroll boundary, visual priorities and Case differences. Implement and run target-native checks/tests; call adapter validation only when applicable.
-11. Call \`summarize_reconstruction_review\` to disclose addressed Cases, viewed Screenshots, replayed Scenarios, known deviations and unverified details. Do not assign a reconstruction score.
+11. During authoritative Review, submit Structure/component/token occurrence claims through \`verify_target_claims\`. A component claim names the exact Dart constructor occurrence; a token claim names its owner constructor and named-argument slot. \`matched\` assessments must reference the returned verifier receipt digest. Missing inspector/mapping/occurrence authority remains \`unverified\`.
+12. Call \`summarize_reconstruction_review\` to disclose addressed Cases, viewed Screenshots, replayed Scenarios, known deviations and unverified details. Do not assign a reconstruction score.
 
 Hard failures:
 

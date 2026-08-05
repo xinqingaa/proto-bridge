@@ -27,6 +27,7 @@ function session(): ReviewSession {
     requiredScenarioCaseIds: [],
     obligationContractVersion: 1,
     requiredObligations: obligations,
+    verificationContractVersion: 1,
     comparatorVersion: 'compare-v1',
     createdAt: '2026-08-05T00:00:00.000Z',
     status: 'active',
@@ -39,6 +40,7 @@ function session(): ReviewSession {
     attempts: [],
     findings: [],
     obligationAssessments: [{ obligationId: 'obligation-a', status: 'matched', detail: 'verified', evidenceDigests: ['sha256:receipt'] }],
+    verifierReceipts: [],
     artifacts: [],
   };
 }

@@ -9,4 +9,5 @@
 - baseline state 包含可见 Region、文案、keyed collection 和状态要求；`read_case_delta` 只携带紧凑 value/resolution patch，provenance 变化需要时再定向展开。
 - Evidence 有 `componentId` 时优先复用目标工程公共组件；没有可靠映射时结合 Screenshot 和目标规范实现，并说明取舍。
 - Token binding 用于优先命中目标 Theme/Token；不能可靠映射时仍需保证 Screenshot 所示的最终视觉，并记录已知差异。
+- Authoritative Review 的 component/token claim 必须定位到实际 Dart 构造调用；Token 还必须声明 owner constructor 和 named-argument slot。不能用全仓存在、import 或另一个 occurrence 代替当前 obligation 的落点。
 - 不要默认遍历全部 detail projection。每次查询都应对应一个明确的实现判断；同一查询 `complete=true` 后停止，避免以读取替代决策。

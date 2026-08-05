@@ -123,6 +123,7 @@ try {
     "start_target_review",
     "read_target_review",
     "read_review_obligations",
+    "verify_target_claims",
     "render_target_case",
     "replay_target_scenario",
     "compare_target_artifacts",

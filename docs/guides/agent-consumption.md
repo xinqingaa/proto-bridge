@@ -30,7 +30,7 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 8. 阅读目标仓库自己的 AGENT、README、架构、测试、公共 API 和既有实现。Target adapter 只发现和归一化这些上下文；内置 fallback 不能覆盖真实目标文档。
 9. Agent 自行决定文件、组件、状态、路由和 Token，但不得发明证据未支持的容器形态、文案、交互或状态；布局敏感 prop 缺失时对照 Screenshot，仍不确定则披露为剩余风险。
 10. 完成实现并运行目标原生验证；调用 `summarize_reconstruction_review` 汇总已处理 Case、已查看 Screenshot、已重放 Scenario、已知偏差和未验证事项。
-11. 需要 authoritative Review 时调用 `start_target_review` 固定验收分母；完成视觉/运行时回执后，用 `record_review_assessments` 逐项核验 Session 中的 Reconstruction Obligations，再提交 findings 和人工完成请求。
+11. 需要 authoritative Review 时调用 `start_target_review` 固定验收分母；Structure/component/token obligation 先通过 `verify_target_claims` 提交 Target occurrence claim，随后用返回的 receipt digest 写入 `record_review_assessments`。没有 inspector、resolved mapping 或精确 occurrence authority 时必须保持 `unverified`，再提交 findings 和人工完成请求。
 
 `read_agent_handoff`、`read_evidence_snapshot`、`read_evidence_case`、`read_evidence_revision`、`read_evidence_fragment` 和 `read_acceptance_contract` 只保留为显式 debug/兼容入口，不属于默认消费顺序。
 
@@ -84,11 +84,12 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 | `read_review_obligations` | 按 Screen、维度和 assessment 状态分页读取 Review obligations |
 | `render_target_case` / `compare_target_artifacts` | 记录目标渲染与视觉比较回执 |
 | `replay_target_scenario` | 记录 Scenario 运行时回执 |
-| `record_review_assessments` | 对固定 obligation 写入 `matched`、`deviation` 或 `unverified`；后写结果显式替代同一 obligation 的旧 assessment |
+| `verify_target_claims` | 对 Structure 运行 Target inspector；对 component/token 验证精确 Dart occurrence/slot，并写入机器 receipt |
+| `record_review_assessments` | 对固定 obligation 写入 `matched`、`deviation` 或 `unverified`；`matched` 必须引用成功 verifier receipt，后写结果显式替代旧 assessment |
 | `record_review_findings` | 记录偏差、严重度和处理状态；不能代替 obligation assessment |
 | `finalize_target_review` | 消费人工确认，并由 Reducer 重新执行全部门禁 |
 
-Screenshot/Scenario coverage 与语义完成是两类独立事实。即使所有图片都已查看、所有 Case 都已渲染且 findings 为空，只要存在未核验、偏差或未验证 obligation，Review 就不能完成。Agent 不能声明 `not-applicable`；该状态需要 operator/human authority 和明确 Target basis。
+Screenshot/Scenario coverage 与语义完成是两类独立事实。即使所有图片都已查看、所有 Case 都已渲染且 findings 为空，只要存在未核验、偏差、未验证 obligation 或没有 authority 的 `matched`，Review 就不能完成。Agent 不能声明 `not-applicable`；该状态需要 operator/human authority 和明确 Target basis。5R.3 verifier 覆盖 Structure/component/token；state/interaction 的 typed runtime verifier 在 5R.4 前仍必须保持 `unverified`。
 
 Target 结果是实现上下文，不是原型事实。真实目标文档/公开代码优先于 adapter fallback；机器 Contract 与政策冲突时必须保留 conflict。它不能写回 Evidence，也不能覆盖 unknown 或 conflict。
 

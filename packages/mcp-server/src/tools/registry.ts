@@ -43,10 +43,12 @@ import {
   replayTargetScenarioTool,
   requestReviewTrancheTool,
   startTargetReviewTool,
+  verifyTargetClaimsTool,
 } from './target-review.js';
 
 const objectSchema = { type: 'object', additionalProperties: false };
 const stringArraySchema = { type: 'array', items: { type: 'string' } };
+const targetOccurrenceSchema = { type: 'object', additionalProperties: false, properties: { path: { type: 'string' }, line: { type: 'integer', minimum: 1 }, column: { type: 'integer', minimum: 1 } }, required: ['path', 'line'] };
 const outputSchema = { type: 'object', additionalProperties: true };
 const readOnly = {
   readOnlyHint: true,
@@ -165,10 +167,18 @@ const toolDefinitions: JsonValue[] = [
   reviewTool('render_target_case', '渲染 Target Case', '运行目标工程声明的单 Case Flutter launcher，并记录固定设备与 screenshot receipt。', { reviewRunId: { type: 'string' }, caseId: { type: 'string' }, sourceDigest: { type: 'string' }, tranche: { type: 'integer', minimum: 1 }, round: { type: 'integer', minimum: 1, maximum: 3 }, attemptId: { type: 'string' } }, ['reviewRunId', 'caseId', 'sourceDigest', 'tranche', 'round']),
   reviewTool('replay_target_scenario', '回放 Target Scenario', '运行目标工程声明的单 Scenario driver 并记录实际 receipt。', { reviewRunId: { type: 'string' }, caseId: { type: 'string' } }, ['reviewRunId', 'caseId']),
   reviewTool('compare_target_artifacts', '比较 Target artifacts', '生成可视 diff/overlay 和 normalized stop signature；不输出综合分数。', { reviewRunId: { type: 'string' }, attemptId: { type: 'string' }, sourceDigest: { type: 'string' }, targetDigest: { type: 'string' } }, ['reviewRunId', 'attemptId', 'sourceDigest', 'targetDigest']),
-  reviewTool('record_review_findings', '记录 Review findings', '记录 Agent finding；Agent 不能自证 Accepted deviation 或人工完成。', { reviewRunId: { type: 'string' }, findings: { type: 'array', items: { type: 'object', additionalProperties: true } } }, ['reviewRunId', 'findings']),
-  reviewTool('record_review_assessments', '核验还原义务', '逐项记录固定还原义务的 matched/deviation/unverified 结论；未核验义务会阻止完成。', {
+  reviewTool('verify_target_claims', '验证 Target Claims', '把固定 obligation 绑定到 Target Structure IR 或精确 Dart occurrence，并记录机器 verifier receipt；不接受 Agent 自填 expected。', {
     reviewRunId: { type: 'string' },
-    assessments: { type: 'array', items: { type: 'object', additionalProperties: false, properties: { obligationId: { type: 'string' }, status: { type: 'string', enum: ['matched', 'deviation', 'unverified'] }, detail: { type: 'string' }, evidenceDigests: stringArraySchema, targetBasis: { type: 'string' } }, required: ['obligationId', 'status', 'detail', 'evidenceDigests'] } },
+    claims: { type: 'array', minItems: 1, maxItems: 100, items: { oneOf: [
+      { type: 'object', additionalProperties: false, properties: { obligationId: { type: 'string' }, dimension: { const: 'structure' }, caseId: { type: 'string' } }, required: ['obligationId', 'dimension', 'caseId'] },
+      { type: 'object', additionalProperties: false, properties: { obligationId: { type: 'string' }, dimension: { const: 'components' }, symbol: { type: 'string' }, occurrence: targetOccurrenceSchema, ownerSymbol: { type: 'string' }, targetSlot: { type: 'string' } }, required: ['obligationId', 'dimension', 'symbol', 'occurrence'] },
+      { type: 'object', additionalProperties: false, properties: { obligationId: { type: 'string' }, dimension: { const: 'tokens' }, accessor: { type: 'string' }, occurrence: targetOccurrenceSchema, ownerSymbol: { type: 'string' }, targetSlot: { type: 'string' } }, required: ['obligationId', 'dimension', 'accessor', 'occurrence', 'ownerSymbol', 'targetSlot'] },
+    ] } },
+  }, ['reviewRunId', 'claims']),
+  reviewTool('record_review_findings', '记录 Review findings', '记录 Agent finding；Agent 不能自证 Accepted deviation 或人工完成。', { reviewRunId: { type: 'string' }, findings: { type: 'array', items: { type: 'object', additionalProperties: true } } }, ['reviewRunId', 'findings']),
+  reviewTool('record_review_assessments', '核验还原义务', '逐项记录固定还原义务的 matched/deviation/unverified 结论；matched 必须引用 verify_target_claims 返回的成功 verifier receipt。', {
+    reviewRunId: { type: 'string' },
+    assessments: { type: 'array', items: { type: 'object', additionalProperties: false, properties: { obligationId: { type: 'string' }, status: { type: 'string', enum: ['matched', 'deviation', 'unverified'] }, detail: { type: 'string' }, evidenceDigests: stringArraySchema, verifierReceiptDigest: { type: 'string' }, targetBasis: { type: 'string' } }, required: ['obligationId', 'status', 'detail', 'evidenceDigests'] } },
   }, ['reviewRunId', 'assessments']),
   reviewTool('request_review_tranche', '应用 Review tranche 授权', '消费由 PBWork/CLI/operator 或 MCP host approval 预先签发的一次性 token；普通参数不能自证授权。', { reviewRunId: { type: 'string' }, approvalToken: { type: 'string' } }, ['reviewRunId', 'approvalToken']),
   reviewTool('finalize_target_review', '人工完成 Target Review', '消费人工一次性确认 token；Reducer 会重新检查全部完成门禁。', { reviewRunId: { type: 'string' }, confirmationToken: { type: 'string' } }, ['reviewRunId', 'confirmationToken']),
@@ -233,6 +243,7 @@ export async function callTool(
     render_target_case: () => renderTargetCaseTool(context, args),
     replay_target_scenario: () => replayTargetScenarioTool(context, args),
     compare_target_artifacts: () => compareTargetArtifactsTool(context, args),
+    verify_target_claims: () => verifyTargetClaimsTool(context, args),
     record_review_findings: () => recordReviewFindingsTool(context, args),
     record_review_assessments: () => recordReviewAssessmentsTool(context, args),
     request_review_tranche: () => requestReviewTrancheTool(context, args),

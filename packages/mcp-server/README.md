@@ -73,6 +73,7 @@ pnpm pb:mcp -- --print-config
 
 - `start_target_review` / `read_target_review`
 - `read_review_obligations`
+- `verify_target_claims`
 - `render_target_case` / `compare_target_artifacts`
 - `replay_target_scenario`
 - `record_review_assessments`
@@ -81,7 +82,9 @@ pnpm pb:mcp -- --print-config
 
 Review 启动时把固定 Handoff 的五维 Acceptance Requirements 编译成稳定、跨 Case 去重的 Reconstruction Obligations，Local Service 会独立重算以阻止客户端缩小验收范围。Screenshot、render、compare 和 Scenario receipts 只代表 artifact coverage；每项 obligation 还必须显式 assessment。未核验、`deviation`、`unverified`、阻断 finding 或缺少 receipt 都会阻止人工完成；Agent 不能自行声明 `not-applicable`。
 
-Review tools 只返回 Session 摘要、attempt、finding 和 obligation 计数，不重复完整验收分母。`read_review_obligations` 按 Screen、维度和 `unassessed/matched/deviation/unverified/not-applicable` 状态分页。
+`verify_target_claims` 不接受 Agent 自填 expected。它从固定 Review obligation 读取 Source subject/componentId/tokenId：Structure 运行 Target 自有 deterministic `launcher.structureCommand` 并比较同构 IR；component/token 先重新解析 resolved mapping，再验证 `lib/**/*.dart` 中指定行的构造调用、owner 和 named-argument slot。Receipt 绑定 `HEAD + tracked diff + untracked bytes` 的 Target content digest，同一 Review 不能混用不同内容状态。正确 symbol/accessor 只在无关文件出现、只 import、错误 occurrence 或错误 slot 均返回 `deviation`；缺少 inspector 或 unresolved mapping 返回 `unverified`。
+
+Review tools 只返回 Session 摘要、attempt、finding、obligation 和 verifier receipt 计数，不重复完整验收分母。`read_review_obligations` 按 Screen、维度和 `unassessed/matched/deviation/unverified/not-applicable` 状态分页。新 Review 的 `matched` assessment 必须引用同一 obligation 的成功 verifier receipt；旧 event log 可恢复，但没有 verification contract 时不能完成。
 
 ## Resources 与 Prompt
 

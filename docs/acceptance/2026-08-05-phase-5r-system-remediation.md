@@ -40,13 +40,12 @@ Local Service 会从持久 Handoff 独立重算 obligations，并拒绝客户端
 
 ## 尚未解决的根因
 
-5R.1 消除了“事实可被静默忽略”的协议漏洞，但 assessment 仍主要是 Agent 声明，尚不能单独证明实现正确。以下问题必须按类别处理，不能继续按单页面补丁修复：
+5R.1-5R.3 已消除验收分母可删减、Source 结构难消费，以及 Structure/component/token 由 Agent 自证的问题。剩余问题集中在动态语义和推广：
 
-1. **Target Structure claim 尚未生成**：Source Structure IR 和 comparator 已可执行，但 Target adapter 还不能从目标实现/运行时产生同构 IR，因此真实滚动容器错误尚不能自动进入 assessment。
-2. **Target binding 只验证全局存在**：当前 component/token validation 证明 symbol/accessor 在某个 Dart 文件出现，不证明目标 occurrence 的正确 slot 使用了它。
-3. **状态语义仍需加强**：baseline 和 Case 已有 visible content、keyed collection 与 state requirements；selected/default value 仍需 typed state claim，不能只依赖通用 expected 对象。
-4. **交互没有完整 transition contract**：action、input/dataflow、pre-state 和 post-state 需要绑定为一个可 replay、可断言的 transition。
-5. **Verifier authority 不足**：`matched` 需要绑定 occurrence-level static claim、runtime semantic receipt 或 visual region receipt；不能长期依赖自然语言 detail。
+1. **状态语义仍需加强**：baseline 和 Case 已有 visible content、keyed collection 与 state requirements；selected/default value 仍需 typed state claim，不能只依赖通用 expected 对象。
+2. **交互没有完整 transition contract**：action、input/dataflow、pre-state 和 post-state 需要绑定为一个可 replay、可断言的 transition。
+3. **Target inspector 需要工程接入**：Structure verifier 不从 Flutter widget 名称猜语义；目标工程必须提供 deterministic `structureCommand`。未接入时系统会保持 `unverified`，不会静默通过。
+4. **跨技术栈与跨样本尚未推广**：Claim contract 与 Review authority 是 target-independent，但当前 occurrence/Structure adapter 仅实现 Flutter，仍需盲测和其他 Adapter 验证抽象是否稳定。
 
 ## 后续切片
 
@@ -67,15 +66,24 @@ Local Service 会从持久 Handoff 独立重算 obligations，并拒绝客户端
 - Evidence obligations 按 Handoff/Screen/维度分页，Review obligations 按 Screen/维度/assessment 状态分页；Review 摘要不再内嵌全部 expected；
 - parent、scroll owner、positioning、sibling order 和 bbox relation mutation tests 已全部通过。
 
-本切片的 comparator 已堵住结构错误的通用比较逻辑，但 Target 实际 IR/claim 的采集属于 5R.3；在该适配完成前，不能声称真实 Flutter 滚动 mutation 已自动阻断。
+本切片提供 Source comparator；5R.3 已把它接到 Target inspector。目标工程未提供 inspector 时，真实滚动结构仍会被明确标为 `unverified`，不能宣称已自动验证。
 
-### 5R.3 Target Claims 与 occurrence-level verifier
+### 5R.3 已实现：Target Claims 与 occurrence-level verifier
 
-- Agent 提交 `obligationId -> target occurrence/slot/symbol/accessor` claim；
-- Adapter 验证 occurrence 所在文件、语法节点、组件参数和 Token slot，而不是全仓字符串存在；
-- matched assessment 必须引用 verifier receipt；无法验证时自动保持 `unverified`。
+实现结果：
 
-退出条件：在无关文件使用正确 component/token、在错误 occurrence 使用正确 accessor、只 import 不使用的 mutation 均不能通过。
+- 新增 target-independent `TargetImplementationClaim` 和 `ReviewVerifierReceipt`，receipt 绑定 obligation、Target revision、Target HEAD、worktree content digest 与 verifier result；同一 Review 的分批 receipt 不能跨 Target 内容状态；
+- `verify_target_claims` 只接受 obligation ID 和 Target locator，expected、componentId、tokenId 均从固定 Review/Handoff 读取，Agent 不能重写 Source 预期；
+- Structure claim 运行目标工程 `launcher.structureCommand`，校验输出的同构 Structure IR，再复用 5R.2 comparator；缺少 command、Case 或完整字段时返回 `unverified`；
+- component claim 重新执行 resolver，并验证 `lib/**/*.dart` 中指定行的 constructor invocation，可选验证 owner constructor 与 named-argument slot；
+- token claim 重新执行 resolver，并验证指定 owner constructor 的具体 named-argument slot 使用了 resolved accessor；
+- 注释、字符串、import、无关文件和其他 occurrence 不计为命中；locator 越界、重复 obligation claim 和 Target HEAD 漂移会确定性失败；
+- Review event log 新增 `target-claims-verified` runner event；新 Session 的 `matched` assessment 必须引用同一 obligation 的成功 receipt，receipt digest 不匹配会拒绝恢复；
+- Review 摘要只返回 verifier receipt/result 计数，不重复完整 claims/results。
+
+退出条件已由 mutation tests 覆盖：正确组件只出现在无关位置、只 import、不在 claimed occurrence 使用、Token 位于错误 slot，以及 Structure scroll owner 错误均不能通过。
+
+本切片不把 state/interaction 自然语言 assessment 升格为机器事实；在 5R.4 verifier 完成前，这两维必须保持 `unverified`。
 
 ### 5R.4 State 与 Interaction verifier
 

@@ -4,7 +4,7 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { Fact } from '@proto-bridge/core/v2';
 import type { AgentHandoff } from '@proto-bridge/core/v2';
-import { compileReconstructionObligations } from '@proto-bridge/core/review';
+import { compileReconstructionObligations, reviewVerifierReceiptDigest } from '@proto-bridge/core/review';
 import { buildAcceptanceContractFromStore } from '@proto-bridge/core/v2/store';
 import type { RuntimeCaptureManifest } from '@proto-bridge/core/v2/runtime-contract';
 import {
@@ -547,7 +547,7 @@ describe('ProtoBridge Local Service', () => {
       bundleId: job.bundleId, snapshotId: request.snapshotId, handoffId: created.body.data.handoff.handoffId,
       targetRoot: '/tmp/target', targetBaselineCommit: 'baseline', targetRevision: 'revision-a',
       selectedCaseIds: [caseId], requiredSourceDigests: [source.digest], requiredScenarioCaseIds: [],
-      obligationContractVersion: 1, requiredObligations,
+      obligationContractVersion: 1, requiredObligations, verificationContractVersion: 1,
       comparatorVersion: 'compare-v1', createdAt: '2026-08-04T00:00:00.000Z',
     };
     const forgedReview = await call(base, '/reviews', {
@@ -576,8 +576,20 @@ describe('ProtoBridge Local Service', () => {
     const incomplete = await call(base, `/reviews/${reviewRunId}/finalize`, { method: 'POST', token, body: { approvalToken: incompleteApproval.body.data.token } });
     expect(incomplete.response.status).toBe(500);
     expect(incomplete.body.error.message).toContain('missingObligations');
+    const unsignedVerifierReceipt = {
+      receiptVersion: 1 as const,
+      verifierId: 'fixture-verifier-v1',
+      adapterId: 'fixture',
+      targetRevision: reviewSeed.targetRevision,
+      targetHead: reviewSeed.targetBaselineCommit,
+      targetContentDigest: 'sha256:fixture-content',
+      results: requiredObligations.map((item) => ({ obligationId: item.obligationId, dimension: item.dimension, status: 'matched' as const, detail: 'Machine verified.' })),
+    };
+    const verifierReceipt = { ...unsignedVerifierReceipt, receiptDigest: reviewVerifierReceiptDigest(unsignedVerifierReceipt) };
+    const verified = await call(base, `/reviews/${reviewRunId}/claims`, { method: 'POST', token, body: { receipt: verifierReceipt, receiptTool: 'fixture-verifier-v1' } });
+    expect(verified.body.data.verifierReceipts).toHaveLength(1);
     const assessed = await call(base, `/reviews/${reviewRunId}/assessments`, { method: 'POST', token, body: {
-      assessments: requiredObligations.map((item) => ({ obligationId: item.obligationId, status: 'matched', detail: 'Verified in the target implementation.', evidenceDigests: [source.digest] })),
+      assessments: requiredObligations.map((item) => ({ obligationId: item.obligationId, status: 'matched', detail: 'Verified in the target implementation.', evidenceDigests: [source.digest, verifierReceipt.receiptDigest], verifierReceiptDigest: verifierReceipt.receiptDigest })),
     } });
     expect(assessed.body.data.obligationAssessments).toHaveLength(requiredObligations.length);
     const finalizeApproval = await call(base, '/review-approvals', { method: 'POST', token, body: { kind: 'finalize', reviewRunId, confirmationRef: 'human-confirmed', actor: 'human' } });

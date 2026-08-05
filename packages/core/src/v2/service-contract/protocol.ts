@@ -18,6 +18,7 @@ import type {
   ReviewArtifact,
   ReviewFinding,
   ReviewObligationAssessment,
+  ReviewVerifierReceipt,
   ReviewSessionSeed,
 } from '../../review/contracts.js';
 
@@ -224,6 +225,10 @@ export type RecordReviewFindingsRequest = {
 };
 export type RecordReviewAssessmentsRequest = {
   assessments: ReviewObligationAssessment[];
+};
+export type RecordTargetClaimsVerifiedRequest = {
+  receipt: ReviewVerifierReceipt;
+  receiptTool: string;
 };
 export type AuthorizeReviewTrancheRequest = {
   screenId: string;

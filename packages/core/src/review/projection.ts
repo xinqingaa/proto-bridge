@@ -20,6 +20,7 @@ export type ReviewSessionProjection = {
   snapshotId: string;
   handoffId: string;
   targetRevision: string;
+  verificationContractVersion: ReviewSession['verificationContractVersion'];
   status: ReviewSession['status'];
   selectedCaseIds: string[];
   requiredSourceDigests: string[];
@@ -38,6 +39,14 @@ export type ReviewSessionProjection = {
     byStatus: Record<ReviewObligationFilterStatus, number>;
   };
   obligationQueryHints: Array<{ screenId: string; dimension: AcceptanceDimension }>;
+  verifierSummary: {
+    receipts: number;
+    results: number;
+    matched: number;
+    deviation: number;
+    unverified: number;
+  };
+  verifierTargetContentDigest?: string;
   stopReason?: string;
   completedAt?: string;
 };
@@ -94,6 +103,8 @@ export function projectReviewSession(session: ReviewSession): ReviewSessionProje
     const status = assessmentById.get(obligation.obligationId)?.status ?? 'unassessed';
     byStatus[status] += 1;
   }
+  const verifierReceipts = session.verifierReceipts ?? [];
+  const verifierResults = verifierReceipts.flatMap((item) => item.results);
   return {
     projectionVersion: REVIEW_PROJECTION_VERSION,
     reviewRunId: session.reviewRunId,
@@ -103,6 +114,7 @@ export function projectReviewSession(session: ReviewSession): ReviewSessionProje
     snapshotId: session.snapshotId,
     handoffId: session.handoffId,
     targetRevision: session.targetRevision,
+    verificationContractVersion: session.verificationContractVersion ?? 'legacy-unavailable',
     status: session.status,
     selectedCaseIds: [...session.selectedCaseIds],
     requiredSourceDigests: [...session.requiredSourceDigests],
@@ -121,6 +133,14 @@ export function projectReviewSession(session: ReviewSession): ReviewSessionProje
       byStatus,
     },
     obligationQueryHints: uniqueQueries(session.requiredObligations),
+    verifierSummary: {
+      receipts: verifierReceipts.length,
+      results: verifierResults.length,
+      matched: verifierResults.filter((item) => item.status === 'matched').length,
+      deviation: verifierResults.filter((item) => item.status === 'deviation').length,
+      unverified: verifierResults.filter((item) => item.status === 'unverified').length,
+    },
+    ...(session.verifierTargetContentDigest ? { verifierTargetContentDigest: session.verifierTargetContentDigest } : {}),
     ...(session.stopReason ? { stopReason: session.stopReason } : {}),
     ...(session.completedAt ? { completedAt: session.completedAt } : {}),
   };

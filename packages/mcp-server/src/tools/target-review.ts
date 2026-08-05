@@ -2,6 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import {
   buildHandoffIndex,
   buildScreenPacket,
+  buildStructureIR,
   V2ContractError,
   type AcceptanceDimension,
 } from '@proto-bridge/core/v2';
@@ -23,6 +24,10 @@ import {
   renderFlutterTargetCase,
   replayFlutterTargetScenario,
 } from '@proto-bridge/core/target/flutter-app/review';
+import {
+  verifyTargetClaims,
+  type TargetImplementationClaim,
+} from '@proto-bridge/core/target';
 import type { JsonObject, ToolContext } from '../types.js';
 import { readNumber, readString } from '../utils/args.js';
 
@@ -79,6 +84,7 @@ export async function startTargetReviewTool(context: ToolContext, args: JsonObje
     requiredScenarioCaseIds: [...new Set(scenarioCaseIds)].sort(),
     obligationContractVersion: RECONSTRUCTION_OBLIGATION_CONTRACT_VERSION,
     requiredObligations: compileReconstructionObligations(input.acceptance),
+    verificationContractVersion: 1,
     comparatorVersion: FLUTTER_COMPARATOR_VERSION,
     createdAt: new Date().toISOString(),
   };
@@ -163,6 +169,38 @@ export async function compareTargetArtifactsTool(context: ToolContext, args: Jso
   }));
 }
 
+export async function verifyTargetClaimsTool(context: ToolContext, args: JsonObject) {
+  const reviewRunId = required(args, 'reviewRunId');
+  const session = await readTargetReviewSession(context, reviewRunId);
+  const claims = parseTargetClaims(args.claims);
+  const input = await context.evidence.readConsumerProjectionInput(session.handoffId);
+  const expectedStructures = [...new Map(claims.flatMap((claim) => {
+    if (claim.dimension !== 'structure') return [];
+    const obligation = session.requiredObligations.find((item) => item.obligationId === claim.obligationId);
+    if (!obligation || !obligation.caseIds.includes(claim.caseId)) {
+      throw new V2ContractError('unknown-reference', `Structure claim ${claim.obligationId} is not applicable to ${claim.caseId}.`);
+    }
+    return [[`${obligation.screenId}:${claim.caseId}`, {
+      screenId: obligation.screenId,
+      caseId: claim.caseId,
+      structure: buildStructureIR(input, obligation.screenId, claim.caseId),
+    }] as const];
+  })).values()];
+  const receipt = await verifyTargetClaims({
+    targetRoot: session.targetRoot,
+    expectedTargetHead: session.targetBaselineCommit,
+    targetRevision: session.targetRevision,
+    obligations: session.requiredObligations,
+    claims,
+    expectedStructures,
+  });
+  const updated = await context.reviews.call<ReviewSession>(`/reviews/${encodeURIComponent(reviewRunId)}/claims`, {
+    method: 'POST',
+    body: { receipt, receiptTool: receipt.verifierId },
+  });
+  return { receipt, review: projectReviewSession(updated) };
+}
+
 export async function recordReviewFindingsTool(context: ToolContext, args: JsonObject): Promise<ReviewSessionProjection> {
   const findings = args.findings;
   if (!Array.isArray(findings)) throw new V2ContractError('invalid-schema', 'findings must be an array.');
@@ -208,4 +246,42 @@ function requiredInteger(args: JsonObject, key: string): number {
   const value = readNumber(args, key);
   if (!Number.isInteger(value)) throw new V2ContractError('invalid-schema', `${key} must be an integer.`);
   return value!;
+}
+
+function parseTargetClaims(value: unknown): TargetImplementationClaim[] {
+  if (!Array.isArray(value) || value.length === 0) throw new V2ContractError('invalid-schema', 'claims must be a non-empty array.');
+  return value.map((item) => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) throw new V2ContractError('invalid-schema', 'Each Target claim must be an object.');
+    const claim = item as Record<string, unknown>;
+    if (typeof claim.obligationId !== 'string') throw new V2ContractError('invalid-schema', 'Target claim obligationId is required.');
+    if (claim.dimension === 'structure' && typeof claim.caseId === 'string') {
+      return { obligationId: claim.obligationId, dimension: 'structure', caseId: claim.caseId };
+    }
+    const occurrence = parseOccurrence(claim.occurrence);
+    if (claim.dimension === 'components' && typeof claim.symbol === 'string') {
+      return {
+        obligationId: claim.obligationId,
+        dimension: 'components',
+        symbol: claim.symbol,
+        occurrence,
+        ...(typeof claim.ownerSymbol === 'string' ? { ownerSymbol: claim.ownerSymbol } : {}),
+        ...(typeof claim.targetSlot === 'string' ? { targetSlot: claim.targetSlot } : {}),
+      };
+    }
+    if (claim.dimension === 'tokens' && typeof claim.accessor === 'string' && typeof claim.ownerSymbol === 'string' && typeof claim.targetSlot === 'string') {
+      return { obligationId: claim.obligationId, dimension: 'tokens', accessor: claim.accessor, ownerSymbol: claim.ownerSymbol, targetSlot: claim.targetSlot, occurrence };
+    }
+    throw new V2ContractError('invalid-schema', `Unsupported or incomplete Target claim ${claim.obligationId}.`);
+  });
+}
+
+function parseOccurrence(value: unknown): { path: string; line: number; column?: number } {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new V2ContractError('invalid-schema', 'Target claim occurrence is required.');
+  const occurrence = value as Record<string, unknown>;
+  if (typeof occurrence.path !== 'string' || !Number.isInteger(occurrence.line)) throw new V2ContractError('invalid-schema', 'Target claim occurrence requires path and integer line.');
+  return {
+    path: occurrence.path,
+    line: occurrence.line as number,
+    ...(Number.isInteger(occurrence.column) ? { column: occurrence.column as number } : {}),
+  };
 }

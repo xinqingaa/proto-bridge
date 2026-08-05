@@ -14,6 +14,7 @@ Evidence coverage、reconstruction readiness 与 target fidelity 是三个独立
 - Acceptance Requirements 会规范化为稳定、跨 Case 去重的 Reconstruction Obligations；它们构成验收分母，不是加权配额；
 - Screenshot、render、compare 和 Scenario receipt 只证明 artifact coverage，不能替代逐项语义 assessment；
 - 完成门禁同时约束 Handoff 选中 Case、Screenshot、必需 Scenario 和全部五维 obligations，不允许用空 findings 表示已经验证。
+- 新 Review 的 `matched` assessment 必须引用固定 Target revision 上、同一 obligation 的机器 verifier receipt；正确 symbol/accessor 在仓库其他位置存在不构成 occurrence 证明。
 
 ## 理由
 

@@ -66,6 +66,7 @@ import {
   type RecordArtifactCompareRequest,
   type RecordReviewFindingsRequest,
   type RecordReviewAssessmentsRequest,
+  type RecordTargetClaimsVerifiedRequest,
   type CreateReviewApprovalRequest,
   type ConsumeReviewApprovalRequest,
 } from '@proto-bridge/core/v2/service-contract';
@@ -605,7 +606,7 @@ export class ProtoBridgeLocalService {
       const requiredObligations = compileReconstructionObligations(
         (await buildAcceptanceContractFromStore({ store: this.store, handoff })).contract,
       );
-      if (body.seed.obligationContractVersion !== 1 || JSON.stringify(body.seed.requiredObligations) !== JSON.stringify(requiredObligations)) {
+      if (body.seed.obligationContractVersion !== 1 || body.seed.verificationContractVersion !== 1 || JSON.stringify(body.seed.requiredObligations) !== JSON.stringify(requiredObligations)) {
         throw new V2ContractError('invalid-schema', 'Review seed obligations do not match the fixed Handoff Acceptance Contract.');
       }
       success(response, await this.reviews.start(body.seed), 201);
@@ -637,7 +638,7 @@ export class ProtoBridgeLocalService {
       return;
     }
 
-    const reviewOperation = path.match(/^\/api\/v2\/reviews\/([^/]+)\/(viewed|render|replay|compare|findings|assessments|tranches|finalize)$/);
+    const reviewOperation = path.match(/^\/api\/v2\/reviews\/([^/]+)\/(viewed|render|replay|compare|claims|findings|assessments|tranches|finalize)$/);
     if (request.method === 'POST' && reviewOperation) {
       const reviewRunId = reviewOperation[1]!;
       const operation = reviewOperation[2]!;
@@ -690,6 +691,16 @@ export class ProtoBridgeLocalService {
             ...(body.normalizedDiffSignature === undefined ? {} : { normalizedDiffSignature: body.normalizedDiffSignature }),
             ...(body.reason === undefined ? {} : { reason: body.reason }),
           },
+        }), 201);
+        return;
+      }
+      if (operation === 'claims') {
+        const body = (await readBody(request)) as RecordTargetClaimsVerifiedRequest;
+        success(response, await this.reviews.append({
+          reviewRunId,
+          actor: 'runner',
+          tool: body.receiptTool,
+          payload: { kind: 'target-claims-verified', receipt: body.receipt },
         }), 201);
         return;
       }
