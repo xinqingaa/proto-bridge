@@ -66,6 +66,20 @@ class HubPage extends ConsumerWidget {
             icon: Icons.auto_awesome_outlined,
             route: AppRoutes.ledgerPlanetV2,
           ),
+          SizedBox(height: TS.spacing.sm),
+          _HubEntry(
+            title: 'Cold Chain Ops',
+            subtitle: 'prototypes/cold-chain-ops',
+            icon: Icons.ac_unit_outlined,
+            route: AppRoutes.coldChainExceptionQueue,
+          ),
+          SizedBox(height: TS.spacing.sm),
+          _HubEntry(
+            title: 'Cold Chain Ops V6',
+            subtitle: 'prototypes/v6',
+            icon: Icons.local_shipping_outlined,
+            route: AppRoutes.v6ExceptionQueue,
+          ),
         ],
       ),
     );
