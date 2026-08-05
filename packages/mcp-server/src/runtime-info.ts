@@ -30,6 +30,7 @@ export function mcpRuntimeInfo(generation: string | 'legacy-unavailable' = 'lega
       'target-component-resolver',
       'target-token-resolver',
       'target-example-exclusions',
+      'target-review-authoritative',
     ],
   };
 }

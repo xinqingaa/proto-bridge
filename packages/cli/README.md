@@ -38,6 +38,9 @@ proto-bridge bundle list|inspect|fork|archive|clean
 proto-bridge snapshot|run|case inspect
 proto-bridge stale check --bundle <id> --snapshot <id>
 proto-bridge handoff create|show|export
+proto-bridge review show --review <id>
+proto-bridge review approve-tranche --review <id> --screen <id> --tranche <n> --approval-ref <ref>
+proto-bridge review approve-finalize --review <id> --confirmation-ref <ref>
 proto-bridge service start
 ```
 

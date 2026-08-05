@@ -619,9 +619,10 @@ export class ProtoBridgeLocalService {
       return;
     }
 
-    const reviewArtifactMatch = path.match(/^\/api\/v2\/reviews\/([^/]+)\/artifacts\/(sha256:[a-f0-9]{64})$/);
+    const reviewArtifactMatch = path.match(/^\/api\/v2\/reviews\/([^/]+)\/artifacts\/(sha256(?::|%3A|%3a)[a-f0-9]{64})$/);
     if (request.method === 'GET' && reviewArtifactMatch) {
-      const bytes = await this.reviews.getArtifact(reviewArtifactMatch[1]!, reviewArtifactMatch[2]!);
+      const artifactDigest = decodeURIComponent(reviewArtifactMatch[2]!);
+      const bytes = await this.reviews.getArtifact(reviewArtifactMatch[1]!, artifactDigest);
       response.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Content-Length': String(bytes.byteLength), 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' });
       response.end(Buffer.from(bytes));
       return;

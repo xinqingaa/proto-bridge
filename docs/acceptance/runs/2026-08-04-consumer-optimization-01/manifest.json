@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "experimentRunId": "2026-08-04-consumer-optimization-01",
-  "status": "phase-3-passed",
+  "status": "phase-4-passed",
   "createdAt": "2026-08-04T06:52:48Z",
   "timeZone": "Asia/Shanghai",
   "plan": {
@@ -10,7 +10,7 @@
   },
   "fixedEvidence": {
     "workspaceId": "pbwork-local",
-    "workspaceGeneration": "legacy-unavailable",
+    "workspaceGeneration": "generation-2026-08-04t085651613-b0384629",
     "bundleId": "bundle-2026-08-03t095053078-241d3a74",
     "runId": "run-2026-08-03t095053079-14b6f18f",
     "snapshotId": "snapshot-2026-08-03t095114638-511379f3",
@@ -30,7 +30,7 @@
       "interactions": 89
     },
     "identityFileDigests": {
-      ".proto-bridge/store/workspace.json": "sha256:b120f37a79dac753165e1bd771f9608732b0b021fcd110933e6032b1d1b3b318",
+      ".proto-bridge/store/workspace.json": "sha256:c083cad343ec1c874f2d49463d542de68cadaad762a57e864fa5f181eb84a8dc",
       ".proto-bridge/store/handoffs/handoff-2026-08-03t100731725-9a0121d7.json": "sha256:f23d4249f8040a5e5c81ae7cbf0c3e9dbf3fd404255d67ee31ea98f32d852ef5",
       ".proto-bridge/store/bundles/bundle-2026-08-03t095053078-241d3a74/snapshots/snapshot-2026-08-03t095114638-511379f3.json": "sha256:ee1678b4f21a1a6955f220371368c9cb2a657fe5450fa31a953dd888a6e9821a",
       ".proto-bridge/store/bundles/bundle-2026-08-03t095053078-241d3a74/runs/run-2026-08-03t095053079-14b6f18f.json": "sha256:0bc51bc6e937d329725559047eacf4cb5bdd9a870115354e0b1948bae57873d7",
@@ -132,14 +132,19 @@
   },
   "mcp": {
     "status": "build-and-current-client-verified",
-    "verifiedAt": "2026-08-04T06:56:30Z",
-    "buildFingerprint": "legacy-unavailable",
-    "projectionVersion": "legacy-full-read",
+    "verifiedAt": "2026-08-05T02:20:00Z",
+    "buildFingerprint": "sha256:b90f28712e6005a02b8dd6432d5f022b2743d9d00c23b2c30e752d73977ccb7e",
+    "projectionVersion": "1",
     "capabilities": [
-      "fixed-handoff-read",
-      "fixed-snapshot-read",
+      "handoff-index",
+      "screen-packet",
+      "case-delta",
+      "evidence-detail",
       "image-content-screenshot",
-      "legacy-target-adapter"
+      "target-component-resolver",
+      "target-token-resolver",
+      "target-example-exclusions",
+      "target-review-authoritative"
     ],
     "toolCount": 19,
     "distDigests": {
@@ -230,6 +235,21 @@
     "fixedWorkspaceGeneration": "legacy-unavailable",
     "fixedWorkspaceMigrated": false,
     "fixedWorkspaceResetPerformed": false,
+    "fixedEvidenceIdentityVerified": true
+  },
+  "phase4Gate": {
+    "status": "passed",
+    "closedAt": "2026-08-05T02:20:00Z",
+    "receipt": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/phase-4-gate.json",
+    "reviewRunId": "review-2026-08-04-phase4-fixed-01",
+    "fixedWorkspaceGeneration": "generation-2026-08-04t085651613-b0384629",
+    "renderedComparableTargetCount": 16,
+    "replayedScenarioCount": 7,
+    "effectiveCorrectionCompleted": true,
+    "humanFinalizeCompleted": false,
+    "capabilityDeclared": "target-review-authoritative",
+    "captureContractModified": false,
+    "workspaceResetPerformed": false,
     "fixedEvidenceIdentityVerified": true
   }
 }

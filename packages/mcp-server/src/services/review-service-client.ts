@@ -34,7 +34,11 @@ export class ReviewServiceClient {
     if (!this.options.serviceUrl) throw unavailable('No Local Service URL is configured for this MCP process.');
     const session = await this.ensureSession();
     try {
-      const response = await fetch(`${this.options.serviceUrl.replace(/\/$/, '')}/reviews/${encodeURIComponent(reviewRunId)}/artifacts/${encodeURIComponent(digest)}`, {
+      // Digest is always `sha256:<hex>`; do not encodeURIComponent it — `%3A` breaks Local Service path matching.
+      if (!/^sha256:[a-f0-9]{64}$/.test(digest)) {
+        throw new V2ContractError('unknown-reference', `Invalid Review artifact digest ${digest}.`);
+      }
+      const response = await fetch(`${this.options.serviceUrl.replace(/\/$/, '')}/reviews/${encodeURIComponent(reviewRunId)}/artifacts/${digest}`, {
         headers: { Origin: this.options.serviceOrigin ?? new URL(this.options.serviceUrl).origin, Authorization: `Bearer ${session.sessionToken}` },
       });
       if (!response.ok) {

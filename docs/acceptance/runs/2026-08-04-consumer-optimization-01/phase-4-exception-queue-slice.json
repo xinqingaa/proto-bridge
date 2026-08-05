@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "auditedAt": "2026-08-04T11:38:04.440Z",
+  "fixed": {
+    "reviewRunId": "review-2026-08-04-phase4-fixed-01",
+    "screenId": "cold-chain-ops.exception-queue",
+    "defaultCaseId": "cold-chain-ops.exception-queue::default::light::iphone-14",
+    "defaultSourceDigest": "sha256:be0f61a64919c5d816515f602faac497f686953cccd79144807620641d8b05cd",
+    "defaultAttemptId": "attempt-exception-queue-default-r1",
+    "stateCaseId": "cold-chain-ops.exception-queue::loading::light::iphone-14",
+    "stateSourceDigest": "sha256:48f514c68f73852475945a655a594e5e1306bf46c0b0cab11e11f0098451fc36",
+    "stateAttemptId": "attempt-exception-queue-loading-r1",
+    "scenarioCaseId": "cold-chain-ops.exception-queue::critical-only::light::iphone-14::scenario=cold-chain-ops.exception-queue.focus-critical@critical-filtered"
+  },
+  "steps": [
+    {
+      "step": "compare_default",
+      "comparable": true,
+      "diffDigest": "sha256:e66dd043348a19bde03ffb0557290bd2611b0805aa9243e1f4ae07d164d910c9",
+      "normalizedDiffSignature": "sha256:da5fd42bf82483c5a1efc0a79e3260e9c8a42b7edd8753549f447b1b3952d615",
+      "status": "active"
+    },
+    {
+      "step": "render_state",
+      "targetDigest": "sha256:155be7034e4ab2e58b661ba5125762bf2c22898cfd826a9d282acb5d47cbd2b3"
+    },
+    {
+      "step": "compare_state",
+      "comparable": true,
+      "diffDigest": "sha256:0df7cfc916d499b65dd7089a6afb4f27d7698e3ac3b63968c9607a85cdb5b6ae",
+      "status": "active"
+    },
+    {
+      "step": "replay_scenario",
+      "replayedScenarioCaseIds": [
+        "cold-chain-ops.exception-queue::critical-only::light::iphone-14::scenario=cold-chain-ops.exception-queue.focus-critical@critical-filtered"
+      ]
+    }
+  ],
+  "review": {
+    "status": "active",
+    "eventCount": 23,
+    "authorizedTranches": [
+      {
+        "kind": "tranche-authorized",
+        "screenId": "cold-chain-ops.exception-queue",
+        "tranche": 1,
+        "approvalRef": "operator-phase4-exception-queue-tranche-1"
+      }
+    ],
+    "renderedSourceDigests": [
+      "sha256:48f514c68f73852475945a655a594e5e1306bf46c0b0cab11e11f0098451fc36",
+      "sha256:be0f61a64919c5d816515f602faac497f686953cccd79144807620641d8b05cd"
+    ],
+    "replayedScenarioCaseIds": [
+      "cold-chain-ops.exception-queue::critical-only::light::iphone-14::scenario=cold-chain-ops.exception-queue.focus-critical@critical-filtered"
+    ],
+    "attempts": [
+      {
+        "attemptId": "attempt-exception-queue-default-r1",
+        "screenId": "cold-chain-ops.exception-queue",
+        "caseId": "cold-chain-ops.exception-queue::default::light::iphone-14",
+        "sourceDigest": "sha256:be0f61a64919c5d816515f602faac497f686953cccd79144807620641d8b05cd",
+        "tranche": 1,
+        "round": 1,
+        "targetRevision": "79780eb6962086affb9af8bcacd8006707517a67:phase4-validation",
+        "targetDigest": "sha256:898ed3dfb88310844f85938fd67137ff572c4dc5f5cb05eff12a0cc40509f200",
+        "diffDigest": "sha256:e66dd043348a19bde03ffb0557290bd2611b0805aa9243e1f4ae07d164d910c9",
+        "normalizedDiffSignature": "sha256:da5fd42bf82483c5a1efc0a79e3260e9c8a42b7edd8753549f447b1b3952d615",
+        "comparable": true
+      },
+      {
+        "attemptId": "attempt-exception-queue-loading-r1",
+        "screenId": "cold-chain-ops.exception-queue",
+        "caseId": "cold-chain-ops.exception-queue::loading::light::iphone-14",
+        "sourceDigest": "sha256:48f514c68f73852475945a655a594e5e1306bf46c0b0cab11e11f0098451fc36",
+        "tranche": 1,
+        "round": 2,
+        "targetRevision": "79780eb6962086affb9af8bcacd8006707517a67:phase4-validation",
+        "targetDigest": "sha256:155be7034e4ab2e58b661ba5125762bf2c22898cfd826a9d282acb5d47cbd2b3",
+        "diffDigest": "sha256:0df7cfc916d499b65dd7089a6afb4f27d7698e3ac3b63968c9607a85cdb5b6ae",
+        "normalizedDiffSignature": "sha256:09764998b35b8772761a2cf898ca5b40184e15a4799da9d48dacb361530fb006",
+        "comparable": true
+      }
+    ],
+    "findingCount": 0
+  }
+}

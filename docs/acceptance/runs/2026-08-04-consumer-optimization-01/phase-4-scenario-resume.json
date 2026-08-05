@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "auditedAt": "2026-08-05T02:14:53.242Z",
+  "steps": [
+    {
+      "step": "skip",
+      "caseId": "cold-chain-ops.shipment-detail::action-sheet-open::light::iphone-14::scenario=cold-chain-ops.shipment-detail.reveal-response-options@response-sheet-visible"
+    },
+    {
+      "step": "skip",
+      "caseId": "cold-chain-ops.resolution-form::ready-to-submit::light::iphone-14::scenario=cold-chain-ops.shipment-detail.start-resolution@resolution-ready"
+    },
+    {
+      "step": "replayed",
+      "caseId": "cold-chain-ops.resolution-form::validation-error::light::iphone-14::scenario=cold-chain-ops.resolution-form.reject-incomplete-resolution@required-fields-visible"
+    },
+    {
+      "step": "replayed",
+      "caseId": "cold-chain-ops.resolution-form::approval-validation-error::light::iphone-14::scenario=cold-chain-ops.resolution-form.reject-missing-supervisor-approval@supervisor-required-visible"
+    },
+    {
+      "step": "replayed",
+      "caseId": "cold-chain-ops.resolution-form::confirm-dialog-open::light::iphone-14::scenario=cold-chain-ops.resolution-form.confirm-complete-resolution@confirmation-visible"
+    }
+  ],
+  "coverage": {
+    "renderedSourceDigestCount": 16,
+    "requiredSourceDigestCount": 16,
+    "replayedScenarioCount": 7,
+    "requiredScenarioCount": 7,
+    "missingScenarios": []
+  },
+  "review": {
+    "status": "active",
+    "eventCount": 66,
+    "findings": [
+      {
+        "findingId": "finding-exception-queue-card-timestamps",
+        "screenId": "cold-chain-ops.exception-queue",
+        "caseId": "cold-chain-ops.exception-queue::default::light::iphone-14",
+        "severity": "Major",
+        "status": "fixed",
+        "detail": "Per-card updatedAt values now match Source (14:32 / 14:26 / 14:20). Round-3 normalized diff signature changed after the fix.",
+        "evidenceDigests": [
+          "sha256:be0f61a64919c5d816515f602faac497f686953cccd79144807620641d8b05cd",
+          "sha256:67b5bb49d56336e8f18018df73cfda28c9bf76134110de3143196e80c2a842b8",
+          "sha256:0aef37076c922372281c0729c88a5a5668f87748778f81ee63871edd77982f66"
+        ],
+        "targetBasis": "cold_chain_review_page.dart ExceptionCard updatedAt + summary critical button wiring"
+      }
+    ]
+  }
+}
