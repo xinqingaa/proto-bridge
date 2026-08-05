@@ -3,6 +3,7 @@
   "phase": 2,
   "status": "passed",
   "closedAt": "2026-08-04T08:15:42Z",
+  "revalidatedAt": "2026-08-05T05:55:50.967Z",
   "implementationCommits": [
     "48ae92905f9808b5526a29223137e7bf47f6436f",
     "14dfa5b"
@@ -16,9 +17,9 @@
     },
     "tokenIdCount": 57,
     "tokenStatusCounts": {
-      "resolved": 7,
-      "candidate": 3,
-      "unresolved": 47
+      "resolved": 40,
+      "candidate": 2,
+      "unresolved": 15
     },
     "allComponentIdsHaveExplicitStatus": true,
     "allTokenIdsHaveExplicitStatus": true,
@@ -26,9 +27,9 @@
   },
   "commands": [
     {
-      "command": "pnpm --filter @proto-bridge/core test -- target/target-resolver.test.ts",
+      "command": "pnpm --filter @proto-bridge/core test",
       "exitCode": 0,
-      "result": "32 files, 202 tests passed; resolver suite 7 tests"
+      "result": "35 files, 215 tests passed; resolver suite 8 tests"
     },
     {
       "command": "pnpm --filter @proto-bridge/core build",
@@ -71,6 +72,9 @@
     "singleHeuristicCandidate": "passed",
     "multipleAndUnknownCandidates": "passed",
     "tokenAccessorValidation": "passed",
+    "usageHintValidation": "passed",
+    "malformedMappingShape": "passed",
+    "sameFileAccessorChain": "passed",
     "inventoryCacheInvalidation": "passed",
     "pathTraversalRejection": "passed",
     "candidateOutputExclusion": "passed",
@@ -95,7 +99,8 @@
     "fixedWorkspaceMutated": false
   },
   "notes": [
-    "Unresolved token mappings are an explicit Phase 2 outcome, not a hidden fallback. The target owns only seven explicit token mappings; the remaining IDs stay candidate/unresolved for Agent disclosure.",
+    "Unresolved token mappings are an explicit Phase 2 outcome, not a hidden fallback. The target now owns forty verified high-impact token mappings; the remaining IDs stay candidate/unresolved for Agent disclosure.",
+    "Resolver hardening rejects malformed or wrong-kind mappings, requires usage hints when declared, and no longer treats independent identifiers from different Dart files as one accessor chain.",
     "gitBase example lookup was completed after the WIP commit because merely passing gitBase without reading that tree did not satisfy isolation."
   ]
 }

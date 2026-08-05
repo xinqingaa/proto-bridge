@@ -132,8 +132,10 @@ try {
   const guide = await client.request("resources/read", {
     uri: "proto-bridge://guides/handoff-consumer",
   });
+  const guideText = guide.contents?.[0]?.text ?? "";
   assert(
-    guide.contents?.[0]?.text?.includes("Never replace them with active/latest"),
+    guideText.includes("Never replace fixed refs with active/latest") ||
+      guideText.includes("never substitute active/latest"),
     "Consumer guide does not preserve fixed-reference policy.",
   );
   const prompt = await client.request("prompts/get", {

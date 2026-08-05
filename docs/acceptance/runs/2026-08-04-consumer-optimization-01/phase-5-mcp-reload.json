@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-08-05T06:54:04.504Z",
+  "fixed": {
+    "workspaceId": "pbwork-local",
+    "bundleId": "bundle-2026-08-03t095053078-241d3a74",
+    "snapshotId": "snapshot-2026-08-03t095114638-511379f3",
+    "handoffId": "handoff-2026-08-03t100731725-9a0121d7",
+    "workspaceGeneration": "generation-2026-08-04t085651613-b0384629"
+  },
+  "standaloneMcp": {
+    "buildCommand": "pnpm build",
+    "buildStatus": "passed",
+    "buildFingerprint": "sha256:b90f28712e6005a02b8dd6432d5f022b2743d9d00c23b2c30e752d73977ccb7e",
+    "toolCount": 33,
+    "fixedScreenshotCount": 16,
+    "allScreenshotsImageContent": true
+  },
+  "currentClient": {
+    "runtimeInspectionStatus": "passed",
+    "processStartedAt": "2026-08-05T06:48:14.703Z",
+    "buildFingerprint": "sha256:b90f28712e6005a02b8dd6432d5f022b2743d9d00c23b2c30e752d73977ccb7e",
+    "catalogToolCount": 33,
+    "requiredToolsMissing": [],
+    "requiredToolsPresent": true,
+    "fixedHandoffRead": "passed",
+    "screenPacketCount": 3,
+    "fixedScreenshotCount": 16,
+    "allScreenshotsImageContent": true,
+    "targetResolverStatus": "passed",
+    "reviewToolsPresent": true,
+    "reviewReadStatus": "passed",
+    "localServiceStatus": "passed",
+    "status": "passed",
+    "notes": [
+      "The Cursor host MCP was verified after a complete client shutdown and restart.",
+      "All 33 tools were exposed, fixed Handoff/Screen projections were readable, and all 16 fixed screenshots returned ImageContent.",
+      "Both authoritative Review sessions were readable after Local Service was started on 127.0.0.1:3988."
+    ]
+  }
+}

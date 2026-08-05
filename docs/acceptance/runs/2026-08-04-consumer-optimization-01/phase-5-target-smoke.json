@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-08-05T06:08:59Z",
+  "status": "passed-main-target-smoke-with-separate-treatment-simulator-receipt",
+  "scope": "main-target",
+  "targetRoot": "apps/flutter_pb_app",
+  "targetCommit": "fdadb334ea93732ef2e15b0e0411fdb9bb81ba3c",
+  "targetWorkingTree": "dirty: target-owned docs/proto-bridge.md mapping additions",
+  "checks": {
+    "flutterAnalyze": {
+      "command": "flutter analyze",
+      "status": "passed",
+      "result": "No issues found"
+    },
+    "flutterTest": {
+      "command": "flutter test",
+      "status": "passed",
+      "result": "5 tests passed"
+    },
+    "simulatorDevices": {
+      "command": "flutter devices",
+      "status": "passed",
+      "selectedDevice": {
+        "name": "iPhone 16",
+        "udid": "802913D6-8E86-485C-9234-931E5455F557",
+        "runtime": "iOS 18.6"
+      }
+    },
+    "simulatorLaunch": {
+      "command": "flutter run -d 802913D6-8E86-485C-9234-931E5455F557 --no-resident --no-pub",
+      "status": "passed",
+      "result": "Main target launched successfully"
+    },
+    "screenshot": {
+      "command": "xcrun simctl io 802913D6-8E86-485C-9234-931E5455F557 screenshot /tmp/proto-bridge-phase5-main-simulator.png",
+      "status": "passed",
+      "path": "/tmp/proto-bridge-phase5-main-simulator.png",
+      "sha256": "sha256:336f42554a9b93f88b308a015ee0d137212df03d71853a5f079d27bdea1d5697",
+      "width": 1179,
+      "height": 2556
+    },
+    "fixedEvidenceComparability": {
+      "status": "not-comparable",
+      "reason": "Main target smoke used iPhone 16 physical pixels (1179x2556), while fixed Evidence requires 1170x2532 at 390x844 logical viewport and DPR 3."
+    },
+    "treatmentAuthoritativeSimulatorReview": {
+      "status": "covered-by-separate-treatment-simulator-receipt",
+      "receipt": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/phase-5-treatment-simulator.json",
+      "reason": "The authoritative Treatment Review remains the historical Flutter-test artifact set; the dedicated iOS 18.6 Treatment simulator smoke is recorded separately and accepted for the Phase 5 runtime gate."
+    }
+  }
+}

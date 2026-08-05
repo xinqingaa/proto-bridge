@@ -131,8 +131,8 @@
     "timeBudget": "not-fixed"
   },
   "mcp": {
-    "status": "build-and-current-client-verified",
-    "verifiedAt": "2026-08-05T02:20:00Z",
+    "status": "build-current-client-passed",
+    "verifiedAt": "2026-08-05T06:54:04.504Z",
     "buildFingerprint": "sha256:b90f28712e6005a02b8dd6432d5f022b2743d9d00c23b2c30e752d73977ccb7e",
     "projectionVersion": "1",
     "capabilities": [
@@ -147,16 +147,22 @@
       "target-review-authoritative"
     ],
     "toolCount": 33,
+    "currentClientCatalogToolCount": 33,
+    "currentClientRequiredToolsPresent": true,
     "distDigests": {
-      "packages/core/dist/index.js": "sha256:e11bcc8f4b9995dc8bb9ccb267f01ce97a7e867040088e97833770e23a19a91d",
+      "packages/core/dist/index.js": "sha256:87797e851c850d9d2a637596bdfbfac3f15a2b8fe35a730152511834975c2328",
       "packages/mcp-server/dist/index.js": "sha256:9bc0e681188004b342b2ed1e40924c1878dda0b3885e58529edcf9c7eda796c2",
-      "scripts/pb-mcp.mjs": "sha256:00720b44b4b20351b042a8471c45aa704cb07fcb5887ac1426a6cf5ec69f92db"
+      "scripts/pb-mcp.mjs": "sha256:045f1a4562b607731250a7c96b256713bb4b98ae183f0db22ef9b808e01a3236"
     },
     "verification": {
       "productBuild": "passed",
       "mcpEvidenceE2E": "passed",
       "standaloneFixedWorkspaceScreenshotCount": 16,
       "currentClientFixedWorkspaceScreenshotCount": 16,
+      "currentClientScreenPacketCount": 3,
+      "currentClientAllScreenshotsImageContent": true,
+      "currentClientTargetResolver": "passed",
+      "currentClientReviewRead": "passed",
       "screenshotDimensions": "1170x2532",
       "totalDistinctScreenshotBytes": 3045808,
       "fixedWorkspaceId": "pbwork-local",
@@ -164,7 +170,8 @@
       "fixedSnapshotId": "snapshot-2026-08-03t095114638-511379f3"
     },
     "limitations": [
-      "The legacy MCP protocol does not expose a process build fingerprint or process start time; dist digests and successful current-client behavior are recorded separately."
+      "Both the Treatment and Phase 4 Review sessions are human-finalized.",
+      "The Treatment authoritative artifacts were captured by the Flutter-test launcher; a dedicated iOS 18.6 simulator smoke at the fixed 390x844 @ DPR 3 viewport passed, with the operator accepting the unavailable iOS 17 runtime difference."
     ]
   },
   "control": {
@@ -209,7 +216,7 @@
     "responseCharacterCountApprox": 15245111,
     "validation": "flutter-analyze-and-12-tests-passed",
     "reviewRunId": "review-2026-08-05-treatment-01",
-    "visualStatus": "16-of-16-comparable-target-digests; 7-of-7-scenarios-replayed; human-finalize-open"
+    "visualStatus": "16-of-16-comparable-target-digests; 7-of-7-scenarios-replayed; both-reviews-human-finalized; iOS18.6-simulator-smoke-passed"
   },
   "phase0Gate": {
     "status": "passed",
@@ -268,7 +275,7 @@
     "renderedComparableTargetCount": 16,
     "replayedScenarioCount": 7,
     "effectiveCorrectionCompleted": true,
-    "humanFinalizeCompleted": false,
+    "humanFinalizeCompleted": true,
     "capabilityDeclared": "target-review-authoritative",
     "captureContractModified": false,
     "workspaceResetPerformed": false,
@@ -276,16 +283,30 @@
   },
   "phase5Gate": {
     "status": "passed",
-    "closedAt": "2026-08-05T04:58:04Z",
+    "reopenedAt": "2026-08-05T05:51:59.771Z",
+    "closedAt": "2026-08-05T07:42:10.502Z",
     "receipt": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/phase-5-gate.json",
     "decision": "Promote",
+    "mcpReloadReceipt": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/phase-5-mcp-reload.json",
+    "crossRangeReceipt": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/phase-5-cross-range.json",
+    "productVerifyReceipt": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/phase-5-verify.json",
+    "targetSmokeReceipt": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/phase-5-target-smoke.json",
+    "treatmentSimulatorReceipt": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/phase-5-treatment-simulator.json",
+    "reviewCloseoutReceipt": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/phase-5-review-closeout.json",
     "treatmentCommit": "eb18edd099c590b895aca9e99299100b7624bd92",
     "reviewRunId": "review-2026-08-05-treatment-01",
     "renderedComparableTargetCount": 16,
     "replayedScenarioCount": 7,
     "toolCallCount": 44,
     "responseCharacterCountApprox": 15245111,
-    "humanFinalizeCompleted": false,
+    "treatmentHumanFinalizeCompleted": true,
+    "humanFinalizeCompleted": true,
+    "currentClientMcp": "passed",
+    "crossRangeRegression": "passed",
+    "fullProductVerify": "passed",
+    "simulatorSmoke": "passed-with-accepted-ios18-runtime",
+    "treatmentSimulatorSmoke": "passed",
+    "reviewCloseout": "completed-with-accepted-ios18-runtime",
     "captureContractModified": false,
     "workspaceResetPerformed": false,
     "fixedEvidenceIdentityVerified": true,

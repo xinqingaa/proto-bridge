@@ -2,9 +2,9 @@
 
 ## Decision
 
-**Promote** the progressive Evidence consumer path (Handoff index → screen packet → case delta → authoritative Target Review).
+**Promote** the progressive Evidence consumer path (Handoff index → screen packet → case delta → authoritative Target Review) after closing Phase 5 verification.
 
-This is an experiment conclusion for Consumer/Target/Review optimization, not a claim that the Treatment UI is pixel-identical to Source, and not a human-finalized Review completion.
+This is an experiment conclusion for Consumer/Target/Review optimization, not a claim that the Treatment UI is pixel-identical to Source.
 
 ## Coverage
 
@@ -15,9 +15,9 @@ This is an experiment conclusion for Consumer/Target/Review optimization, not a 
 | Target artifacts rendered | 3 primary screens | **16 / 16** |
 | Automated comparable pixel diffs | unverified | **16 / 16** |
 | Required scenarios replayed | claimed in implementation notes | **7 / 7** |
-| Authoritative Review run | none (manual) | `review-2026-08-05-treatment-01` (62 events, status `active`) |
+| Authoritative Review run | none (manual) | `review-2026-08-05-treatment-01` (63 events, status `completed`) |
 
-Treatment closes the Control gap on variant/overlay verification. Human finalize remains open (same policy as Phase 4 gate).
+Treatment closes the Control gap on variant/overlay verification. Both authoritative Review sessions are now human-finalized.
 
 ## Efficiency
 
@@ -34,7 +34,7 @@ Efficiency improves clearly without reducing mandatory screenshot/scenario cover
 Treatment progressive resolvers on the same fixed Handoff:
 
 - Components: 17 resolved, 2 candidate
-- Tokens: 7 resolved, 3 candidate, **47 unresolved**
+- Tokens: 40 resolved, 2 candidate, **15 unresolved**
 
 Unresolved tokens remain a shared fidelity risk, not a Treatment regression versus Control’s disclosed limitations. Chart stays feature-local (no public chart component).
 
@@ -50,15 +50,25 @@ All 16 Treatment attempts are dimension-comparable (1170×2532) and produced dis
 
 ## Unverified / remaining
 
-1. Human finalize of `review-2026-08-05-treatment-01` not performed.
-2. Cursor IDE MCP may still be stale; Treatment Review used standalone built MCP + Local Service.
-3. Many token IDs remain unresolved (47/57).
-4. Treatment screenshots used flutter-test goldens rather than a dedicated Treatment simulator boot; viewport contract matched (390×844 @ DPR 3 → 1170×2532).
-5. Phase 6 resource/layout migration not started (correctly deferred).
+1. Treatment authoritative artifacts were captured by Flutter-test goldens; a dedicated iOS 18.6 iPhone 14 simulator smoke passed at the fixed 390×844 @ DPR 3 viewport (1170×2532), with the operator accepting the unavailable iOS 17 runtime difference.
+2. Token resolution remains partial: 40 resolved, 2 candidate, and 15 unresolved out of 57.
+3. Phase 6 resource/layout migration not started (correctly deferred).
 
 ## Why Promote (not Revise)
 
 - No coverage or safety rollback versus Control.
 - Fidelity verification improved (full authoritative render/compare + scenarios).
 - Efficiency improved substantially on the progressive path.
-- Residual gaps are disclosed and do not reverse the experimental conclusion for promoting the consumer architecture.
+- The progressive consumer path is materially improved, and the dedicated Treatment iOS 18.6 simulator smoke closes the remaining runtime gate under the operator-approved iOS 18 equivalence.
+
+## Phase 5 verification revalidation — 2026-08-05
+
+The follow-up verification completed the executable gaps without changing the fixed Evidence identity:
+
+- P5.4 cross-range regression passed for an independent prototype, open component/token IDs, partial Evidence, no machine Contract, cache invalidation, path isolation, and unsupported adapter.
+- `pnpm verify` passed all product steps, including Playwright runtime, MCP, Consumer, and Evidence vertical-slice E2E; receipt: `phase-5-verify.json`.
+- Main Flutter Target `analyze`, `test`, and the Treatment iOS 18.6 simulator smoke passed. The smoke used the fixed 390×844 @ DPR 3 viewport and produced a 1170×2532 PNG; receipt: `phase-5-treatment-simulator.json`.
+- Resolver validation now records 40 verified explicit high-impact token mappings; 17 IDs remain non-resolved (2 candidate, 15 unresolved) rather than being promoted heuristically.
+- The current Cursor MCP exposes the full 33-tool surface after a complete client restart; fixed Handoff/Screen projections, all 16 ImageContent screenshots, Target resolvers, and both Review reads passed. Both Review sessions are now `completed` and human-finalized.
+
+Accordingly, the progressive architecture result is positive and the authoritative Phase 5 gate is `passed` with decision `Promote`; the iOS 17-to-iOS 18.6 runtime difference is explicitly accepted and recorded.

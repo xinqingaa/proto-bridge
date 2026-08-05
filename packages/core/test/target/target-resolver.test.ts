@@ -49,6 +49,91 @@ describe('Target component/token resolver', () => {
     expect(components.policySources.map((item) => item.path)).toContain('docs/proto-bridge.md');
   });
 
+  it('requires usage hints, validates mapping shape and preserves open IDs containing token', async () => {
+    const root = await flutterTarget();
+    await machineContract(root, {
+      components: {
+        'open.hinted': {
+          symbol: 'CommonCard',
+          usageHints: ["CommonCard(child: Text('hint'))"],
+        },
+        'open.path-mismatch': {
+          symbol: 'CommonCard',
+          definition: 'lib/theme/app_tokens.dart',
+        },
+        'open.dual': {
+          symbol: 'CommonCard',
+          accessor: 'TS.colors.error',
+        },
+        'open.empty': {},
+        'open.wrong-kind': { accessor: 'TS.colors.error' },
+      },
+      tokens: {
+        'open.split-chain': { accessor: 'TS.missing.error' },
+        'open.wrong-kind-token': { symbol: 'CommonCard' },
+        'open.missing-token-usage': {
+          accessor: 'TS.colors.error',
+          usageHints: ['TS.colors.missing'],
+        },
+        'open.token-path-mismatch': {
+          accessor: 'TS.colors.error',
+          definition: 'lib/common/card.dart',
+        },
+      },
+    });
+    await write(
+      root,
+      'docs/proto-bridge.md',
+      `# Adapter\n\n## Token mapping\n\n| Evidence token | Target token |\n| --- | --- |\n| \`design.token-primary\` | \`TS.colors.error\` |\n`,
+    );
+
+    const beforeUsage = await resolveTargetComponents({
+      targetRoot: root,
+      ids: ['open.hinted', 'open.path-mismatch', 'open.dual', 'open.empty', 'open.wrong-kind'],
+    });
+    expect(beforeUsage.resolutions.map((item) => item.status)).toEqual([
+      'stale',
+      'stale',
+      'stale',
+      'stale',
+      'stale',
+    ]);
+    expect(beforeUsage.resolutions[0]?.validation.usageFound).toBe(false);
+
+    await write(
+      root,
+      'lib/features/usage.dart',
+      "final fixtureCardUse = CommonCard(child: Text('hint'));\n",
+    );
+    const afterUsage = await resolveTargetComponents({
+      targetRoot: root,
+      ids: ['open.hinted'],
+    });
+    expect(afterUsage.resolutions[0]).toMatchObject({
+      status: 'resolved',
+      validation: { usageFound: true },
+    });
+
+    const tokens = await resolveTargetTokens({
+      targetRoot: root,
+      ids: [
+        'open.split-chain',
+        'open.wrong-kind-token',
+        'open.missing-token-usage',
+        'open.token-path-mismatch',
+        'design.token-primary',
+      ],
+    });
+    expect(tokens.resolutions.map((item) => item.status)).toEqual([
+      'stale',
+      'stale',
+      'stale',
+      'stale',
+      'resolved',
+    ]);
+    expect(tokens.resolutions[0]?.validation.exists).toBe(false);
+  });
+
   it('reports policy/machine conflict instead of choosing a higher-priority declaration', async () => {
     const root = await flutterTarget();
     await write(
@@ -165,7 +250,11 @@ async function flutterTarget(): Promise<string> {
     'lib/common/widgets/common_card.dart',
     'class CommonCard extends StatelessWidget { const CommonCard({required this.child}); final Widget child; }\n',
   );
-  await write(root, 'lib/theme/app_tokens.dart', 'class TS { static final colors = AppColors(); } class AppColors { int get error => 1; }\n');
+  await write(
+    root,
+    'lib/theme/app_tokens.dart',
+    'class TS { static final colors = AppColors(); } class AppColors { int get error => 1; }\nfinal fixtureTokenUse = TS.colors.error;\n',
+  );
   return root;
 }
 

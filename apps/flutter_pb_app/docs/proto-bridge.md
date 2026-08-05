@@ -55,12 +55,46 @@
 
 | Evidence token | 目标 token |
 | --- | --- |
+| `color.action` | `TS.colors.action` |
+| `color.action-soft` | `TS.colors.actionSoft` |
+| `color.background` | `TS.colors.background` |
+| `color.border` | `TS.colors.border` |
 | `color.error` | `TS.colors.error` |
 | `color.error-soft` | `TS.colors.errorSoft` |
+| `color.on-action` | `TS.colors.onAction` |
+| `color.on-background` | `TS.colors.onBackground` |
+| `color.on-error` | `TS.colors.onError` |
+| `color.on-primary` | `TS.colors.onPrimary` |
+| `color.on-surface` | `TS.colors.onSurface` |
+| `color.on-surface-muted` | `TS.colors.onSurfaceMuted` |
+| `color.on-warning` | `TS.colors.onWarning` |
+| `color.primary` | `TS.colors.primary` |
+| `color.primary-soft` | `TS.colors.primarySoft` |
+| `color.success` | `TS.colors.success` |
+| `color.surface` | `TS.colors.surface` |
+| `color.surface-raised` | `TS.colors.surfaceRaised` |
+| `color.surface-variant` | `TS.colors.surfaceVariant` |
+| `color.warning` | `TS.colors.warning` |
+| `color.warning-soft` | `TS.colors.warningSoft` |
+| `elevation.card` | `TS.elevation.card` |
+| `elevation.level-3` | `TS.elevation.level3` |
+| `elevation.none` | `TS.elevation.none` |
+| `radius.full` | `TS.radius.full` |
+| `radius.lg` | `TS.radius.lg` |
+| `radius.md` | `TS.radius.md` |
+| `radius.sm` | `TS.radius.sm` |
+| `spacing.lg` | `TS.spacing.lg` |
 | `spacing.sm-plus` | `TS.spacing.smPlus` |
 | `spacing.md` | `TS.spacing.md` |
-| `radius.lg` | `TS.radius.lg` |
+| `spacing.sm` | `TS.spacing.sm` |
+| `sizing.control-md` | `TS.sizing.controlMd` |
+| `sizing.icon-lg` | `TS.sizing.iconLg` |
+| `sizing.icon-md` | `TS.sizing.iconMd` |
 | `typography.title` | `TS.textStyle.title` |
+| `typography.title-sm` | `TS.textStyle.titleSm` |
+| `typography.subtitle` | `TS.textStyle.subtitle` |
+| `typography.content` | `TS.textStyle.content` |
+| `typography.label` | `TS.textStyle.label` |
 | `typography.caption` | `TS.textStyle.caption` |
 
 Evidence 未提供的布局敏感值不能静默接受目标组件默认值；必须检查 Screenshot，仍不确定时记录剩余风险。

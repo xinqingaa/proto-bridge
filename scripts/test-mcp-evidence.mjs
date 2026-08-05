@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawn } from "node:child_process";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { createInterface } from "node:readline";
 import os from "node:os";
 import path from "node:path";
@@ -17,6 +17,7 @@ const reference = fixtures.ledgerPlanetTaskList;
 const storeRoot = await mkdtemp(path.join(os.tmpdir(), "pb-mcp-evidence-"));
 let writer;
 let client;
+let targetFixture;
 
 try {
   writer = new LocalFileStore({
@@ -187,6 +188,79 @@ try {
       targetTokens.resolutions?.[0]?.status === "resolved" &&
       targetTokens.resolutions?.[0]?.candidates?.[0]?.accessor === "TS.colors.error",
     "Target component/token resolver did not honor target-owned declarations and current code.",
+  );
+
+  targetFixture = await mkdtemp(path.join(os.tmpdir(), "pb-mcp-target-"));
+  await mkdir(path.join(targetFixture, "lib", "theme"), { recursive: true });
+  await mkdir(path.join(targetFixture, "lib", "common"), { recursive: true });
+  await mkdir(path.join(targetFixture, "docs"), { recursive: true });
+  await writeFile(
+    path.join(targetFixture, "pubspec.yaml"),
+    "name: mcp_target_fixture\ndependencies:\n  flutter:\n    sdk: flutter\n",
+  );
+  await writeFile(
+    path.join(targetFixture, "lib", "common", "card.dart"),
+    "class CommonCard extends StatelessWidget { const CommonCard({required this.child}); final Widget child; }\nfinal fixtureUse = CommonCard(child: Text('hint'));\n",
+  );
+  await writeFile(
+    path.join(targetFixture, "lib", "theme", "tokens.dart"),
+    "class TS { static final colors = AppColors(); } class AppColors { int get error => 1; }\nfinal fixtureTokenUse = TS.colors.error;\n",
+  );
+  await writeFile(
+    path.join(targetFixture, "docs", "proto-bridge.target.json"),
+    `${JSON.stringify({
+      version: 1,
+      technology: "flutter",
+      components: {
+        "open.hinted": {
+          symbol: "CommonCard",
+          usageHints: ["CommonCard(child: Text('hint'))"],
+        },
+        "open.malformed": {
+          symbol: "CommonCard",
+          accessor: "TS.colors.error",
+        },
+        "open.empty": {},
+      },
+      tokens: {
+        "open.split-chain": { accessor: "TS.missing.error" },
+        "open.wrong-kind": { symbol: "CommonCard" },
+      },
+    }, null, 2)}\n`,
+  );
+  await writeFile(
+    path.join(targetFixture, "docs", "proto-bridge.md"),
+    "# Adapter\n\n## Token mapping\n\n| Evidence token | Target token |\n| --- | --- |\n| `design.token-primary` | `TS.colors.error` |\n",
+  );
+  const fixtureComponents = parseToolJson(
+    await client.request("tools/call", {
+      name: "resolve_target_components",
+      arguments: {
+        targetRoot: targetFixture,
+        componentIds: ["open.hinted", "open.malformed", "open.empty"],
+      },
+    }),
+  );
+  assert(
+    fixtureComponents.resolutions?.map((item) => item.status).join(",") ===
+      "resolved,stale,stale" &&
+      fixtureComponents.resolutions?.[0]?.validation?.usageFound === true,
+    "MCP did not enforce explicit mapping shape and usage hints.",
+  );
+  const fixtureTokens = parseToolJson(
+    await client.request("tools/call", {
+      name: "resolve_target_tokens",
+      arguments: {
+        targetRoot: targetFixture,
+        tokenIds: ["open.split-chain", "open.wrong-kind", "design.token-primary"],
+      },
+    }),
+  );
+  assert(
+    fixtureTokens.resolutions?.map((item) => item.status).join(",") ===
+      "stale,stale,resolved" &&
+      fixtureTokens.resolutions?.[0]?.validation?.exists === false,
+    "MCP did not reject split accessor chains or preserve open token IDs.",
   );
 
   const history = parseToolJson(
@@ -577,6 +651,7 @@ try {
 } finally {
   await client?.close();
   await writer?.close();
+  if (targetFixture) await rm(targetFixture, { recursive: true, force: true });
   await rm(storeRoot, { recursive: true, force: true });
 }
 

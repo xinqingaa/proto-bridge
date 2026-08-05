@@ -249,7 +249,12 @@ function resolveOne(inventory: Inventory, id: string, kind: MappingKind): Target
   if (declaration) {
     const candidate = toCandidate(declaration);
     const validation = validateCandidate(inventory, candidate, kind);
-    const valid = validation.exists && validation.importable && validation.signatureCompatible;
+    const usageRequired = kind === 'token' || candidate.usageHints.length > 0;
+    const valid =
+      validation.exists &&
+      validation.importable &&
+      validation.signatureCompatible &&
+      (!usageRequired || validation.usageFound);
     return {
       id,
       kind,
@@ -305,7 +310,7 @@ function markdownDeclarations(
     else if (/^#{1,4}\s+/.test(line)) section = undefined;
     if (!section || !/^\s*\|/.test(line) || /^\s*\|?\s*:?-{3}/.test(line)) continue;
     const cells = line.split('|').slice(1, -1).map((cell) => cell.trim());
-    const ids = [...(cells[0] ?? '').matchAll(/`([^`]+)`/g)].map((match) => match[1]!).filter((value) => !/Evidence|语义|token/i.test(value));
+    const ids = [...(cells[0] ?? '').matchAll(/`([^`]+)`/g)].map((match) => match[1]!).filter((value) => !/Evidence|语义/i.test(value));
     const target = [...(cells[1] ?? '').matchAll(/`([^`]+)`/g)][0]?.[1];
     if (!ids.length || !target) continue;
     const importPath = [...(cells[2] ?? '').matchAll(/`([^`]+)`/g)][0]?.[1];
@@ -352,15 +357,36 @@ function validateCandidate(
   kind: MappingKind,
 ): TargetCodeValidation {
   const target = candidate.symbol ?? candidate.accessor ?? '';
+  const shape = mappingShape(candidate, kind);
+  if (!shape.valid) {
+    return {
+      exists: false,
+      importable: false,
+      signatureCompatible: false,
+      usageFound: false,
+      details: [shape.reason],
+    };
+  }
   const definition = candidate.definitionPath
     ? inventory.dartFiles.find((file) => file.path === posix(candidate.definitionPath!))
     : definitionFor(inventory.dartFiles, target, kind);
-  const exists = Boolean(definition) || identifierChainExists(inventory.dartFiles, target);
+  const definitionMatches =
+    Boolean(definition) &&
+    (candidate.definitionPath
+      ? declarationMatchesInFile(definition!.text, target, kind)
+      : true);
+  const exists =
+    definitionMatches &&
+    (kind === 'token' ? accessorChainExists(inventory.dartFiles, target) : true);
   const importable = !candidate.importPath || importPathExists(inventory, candidate.importPath);
   const signatureCompatible = candidate.constructorHints.every((hint) =>
-    inventory.dartFiles.some((file) => file.text.includes(hint)),
+    inventory.dartFiles.some((file) => stripDartComments(file.text).includes(hint)),
   );
-  const usageFound = inventory.dartFiles.some((file) => file.text.includes(target));
+  const usageFound = candidate.usageHints.length > 0
+    ? candidate.usageHints.every((hint) =>
+        inventory.dartFiles.some((file) => stripDartComments(file.text).includes(hint)),
+      )
+    : targetUsageFound(inventory.dartFiles, target, kind);
   return {
     exists,
     importable,
@@ -370,7 +396,7 @@ function validateCandidate(
       exists ? `Current code contains ${target}.` : `Current code does not contain ${target}.`,
       importable ? 'Declared import is reachable.' : `Declared import is missing: ${candidate.importPath}.`,
       signatureCompatible ? 'Constructor/accessor hints are compatible.' : 'One or more required constructor/accessor hints are missing.',
-      usageFound ? 'At least one current target usage was found.' : 'No current target usage was found.',
+      usageFound ? 'All required current target usage hints were found.' : 'Required current target usage was not found.',
     ],
   };
 }
@@ -419,18 +445,93 @@ function codeCandidate(
 }
 
 function definitionFor(files: InventoryFile[], target: string, kind: MappingKind): InventoryFile | undefined {
+  if (kind === 'token') {
+    return files.find((file) => accessorChainExistsInText(file.text, target));
+  }
   if (kind === 'component' && /^[A-Za-z_]\w*$/.test(target)) {
     const pattern = new RegExp(`\\b(?:class|mixin|extension|enum)\\s+${escapeRegExp(target)}\\b`);
     return files.find((file) => pattern.test(file.text));
   }
-  return files.find((file) => file.text.includes(target));
+  return files.find((file) => codeContainsTarget(file.text, target));
 }
 
-function identifierChainExists(files: InventoryFile[], target: string): boolean {
-  const identifiers = target.split('.').filter((item) => /^[A-Za-z_]\w*$/.test(item));
-  return identifiers.length > 0 && identifiers.every((identifier) =>
-    files.some((file) => new RegExp(`\\b${escapeRegExp(identifier)}\\b`).test(file.text)),
-  );
+function mappingShape(
+  candidate: TargetResolutionCandidate,
+  kind: MappingKind,
+): { valid: boolean; reason: string } {
+  const hasSymbol = Boolean(candidate.symbol);
+  const hasAccessor = Boolean(candidate.accessor);
+  if (hasSymbol === hasAccessor) {
+    return {
+      valid: false,
+      reason: 'Target mapping must declare exactly one of symbol or accessor.',
+    };
+  }
+  if (kind === 'component' && !hasSymbol) {
+    return {
+      valid: false,
+      reason: 'Component mappings must declare a symbol, not an accessor.',
+    };
+  }
+  if (kind === 'token' && !hasAccessor) {
+    return {
+      valid: false,
+      reason: 'Token mappings must declare an accessor, not a symbol.',
+    };
+  }
+  return { valid: true, reason: '' };
+}
+
+function accessorChainExists(files: InventoryFile[], target: string): boolean {
+  return files.some((file) => accessorChainExistsInText(file.text, target));
+}
+
+function accessorChainExistsInText(text: string, target: string): boolean {
+  const segments = target.split('.').filter((item) => /^[A-Za-z_]\w*$/.test(item));
+  if (segments.length < 2 || segments.length !== target.split('.').length) return false;
+  const chain = segments.map(escapeRegExp).join('\\s*\\.\\s*');
+  return new RegExp(`(?:^|[^$\\w])${chain}(?![$\\w])`).test(stripDartComments(text));
+}
+
+function declarationMatchesInFile(text: string, target: string, kind: MappingKind): boolean {
+  const source = stripDartComments(text);
+  if (kind === 'token') {
+    if (accessorChainExistsInText(source, target)) return true;
+    const tail = target.split('.').at(-1);
+    return Boolean(
+      tail &&
+      new RegExp(`\\b(?:get|set|final|const|var|late|static|[A-Za-z_]\\w*)\\s+${escapeRegExp(tail)}\\b`).test(source),
+    );
+  }
+  const symbol = target.split('.').at(-1) ?? target;
+  if (/^[A-Za-z_]\w*$/.test(target)) {
+    return new RegExp(`\\b(?:class|mixin|extension|enum)\\s+${escapeRegExp(symbol)}\\b`).test(source);
+  }
+  return new RegExp(`\\b${escapeRegExp(symbol)}\\s*\\(`).test(source);
+}
+
+function codeContainsTarget(text: string, target: string): boolean {
+  const source = stripDartComments(text);
+  if (target.includes('.')) return accessorChainExistsInText(source, target);
+  return new RegExp(`\\b${escapeRegExp(target)}\\b`).test(source);
+}
+
+function targetUsageFound(files: InventoryFile[], target: string, kind: MappingKind): boolean {
+  return files.some((file) => {
+    const source = stripDartComments(file.text);
+    if (kind === 'token' || target.includes('.')) {
+      return accessorChainExistsInText(source, target);
+    }
+    const declarationPattern = new RegExp(`\\b(?:class|mixin|extension|enum)\\s+${escapeRegExp(target)}\\b`);
+    const withoutDeclaration = source.replace(declarationPattern, '');
+    return new RegExp(`\\b(?:const\\s+|new\\s+)?${escapeRegExp(target)}\\s*(?:<[^>]+>)?\\s*\\(`).test(withoutDeclaration);
+  });
+}
+
+function stripDartComments(text: string): string {
+  return text
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/.*$/gm, '');
 }
 
 function importPathExists(inventory: Inventory, importPath: string): boolean {
@@ -510,7 +611,14 @@ function toCandidate(declaration: TargetMappingDeclaration): TargetResolutionCan
 }
 
 function mappingIdentity(item: TargetMappingDeclaration): string {
-  return JSON.stringify([item.symbol, item.accessor, item.importPath, item.definitionPath, item.constructorHints]);
+  return JSON.stringify([
+    item.symbol,
+    item.accessor,
+    item.importPath,
+    item.definitionPath,
+    item.constructorHints,
+    item.usageHints,
+  ]);
 }
 
 function emptyValidation(detail: string): TargetCodeValidation {

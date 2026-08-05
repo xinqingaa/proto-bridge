@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "auditedAt": "2026-08-04T08:57:04.256Z",
+  "auditedAt": "2026-08-05T05:56:52.261Z",
   "fixed": {
     "workspaceId": "pbwork-local",
     "bundleId": "bundle-2026-08-03t095053078-241d3a74",
@@ -11,9 +11,9 @@
   "runtime": {
     "build": {
       "packageVersion": "0.4.0",
-      "fingerprint": "sha256:541cb4696e0e80d0ef8ad8e179bccfa0ca827fb35df2da46af015aa1b99f15ef"
+      "fingerprint": "sha256:b90f28712e6005a02b8dd6432d5f022b2743d9d00c23b2c30e752d73977ccb7e"
     },
-    "processStartedAt": "2026-08-04T08:56:58.612Z",
+    "processStartedAt": "2026-08-05T05:56:45.993Z",
     "contracts": {
       "toolVersion": 1,
       "projectionVersion": 1
@@ -30,7 +30,8 @@
       "image-content-screenshot",
       "target-component-resolver",
       "target-token-resolver",
-      "target-example-exclusions"
+      "target-example-exclusions",
+      "target-review-authoritative"
     ]
   },
   "toolCount": 33,
@@ -227,9 +228,9 @@
       "resolved": 17
     },
     "tokenStatusCounts": {
-      "candidate": 3,
-      "resolved": 7,
-      "unresolved": 47
+      "candidate": 2,
+      "resolved": 40,
+      "unresolved": 15
     },
     "componentResolutions": [
       {
@@ -243,7 +244,7 @@
           "source": {
             "kind": "target-documentation",
             "path": "docs/proto-bridge.md",
-            "digest": "sha256:4ee1fdff1bf53fdcd1911c2ac79a9a89ce35f2c081456c016e8d0af5bb2ed572",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
             "priority": 60,
             "location": {
               "line": 11
@@ -262,7 +263,7 @@
           "source": {
             "kind": "target-documentation",
             "path": "docs/proto-bridge.md",
-            "digest": "sha256:4ee1fdff1bf53fdcd1911c2ac79a9a89ce35f2c081456c016e8d0af5bb2ed572",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
             "priority": 60,
             "location": {
               "line": 14
@@ -281,7 +282,7 @@
           "source": {
             "kind": "target-documentation",
             "path": "docs/proto-bridge.md",
-            "digest": "sha256:4ee1fdff1bf53fdcd1911c2ac79a9a89ce35f2c081456c016e8d0af5bb2ed572",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
             "priority": 60,
             "location": {
               "line": 32
@@ -300,7 +301,7 @@
           "source": {
             "kind": "target-documentation",
             "path": "docs/proto-bridge.md",
-            "digest": "sha256:4ee1fdff1bf53fdcd1911c2ac79a9a89ce35f2c081456c016e8d0af5bb2ed572",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
             "priority": 60,
             "location": {
               "line": 25
@@ -319,7 +320,7 @@
           "source": {
             "kind": "target-documentation",
             "path": "docs/proto-bridge.md",
-            "digest": "sha256:4ee1fdff1bf53fdcd1911c2ac79a9a89ce35f2c081456c016e8d0af5bb2ed572",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
             "priority": 60,
             "location": {
               "line": 12
@@ -338,7 +339,7 @@
           "source": {
             "kind": "target-documentation",
             "path": "docs/proto-bridge.md",
-            "digest": "sha256:4ee1fdff1bf53fdcd1911c2ac79a9a89ce35f2c081456c016e8d0af5bb2ed572",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
             "priority": 60,
             "location": {
               "line": 23
@@ -357,7 +358,7 @@
           "source": {
             "kind": "target-documentation",
             "path": "docs/proto-bridge.md",
-            "digest": "sha256:4ee1fdff1bf53fdcd1911c2ac79a9a89ce35f2c081456c016e8d0af5bb2ed572",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
             "priority": 60,
             "location": {
               "line": 18
@@ -376,7 +377,7 @@
           "source": {
             "kind": "target-documentation",
             "path": "docs/proto-bridge.md",
-            "digest": "sha256:4ee1fdff1bf53fdcd1911c2ac79a9a89ce35f2c081456c016e8d0af5bb2ed572",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
             "priority": 60,
             "location": {
               "line": 31
@@ -395,7 +396,7 @@
           "source": {
             "kind": "target-documentation",
             "path": "docs/proto-bridge.md",
-            "digest": "sha256:4ee1fdff1bf53fdcd1911c2ac79a9a89ce35f2c081456c016e8d0af5bb2ed572",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
             "priority": 60,
             "location": {
               "line": 30
@@ -414,7 +415,7 @@
           "source": {
             "kind": "target-documentation",
             "path": "docs/proto-bridge.md",
-            "digest": "sha256:4ee1fdff1bf53fdcd1911c2ac79a9a89ce35f2c081456c016e8d0af5bb2ed572",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
             "priority": 60,
             "location": {
               "line": 16
@@ -433,7 +434,7 @@
           "source": {
             "kind": "target-documentation",
             "path": "docs/proto-bridge.md",
-            "digest": "sha256:4ee1fdff1bf53fdcd1911c2ac79a9a89ce35f2c081456c016e8d0af5bb2ed572",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
             "priority": 60,
             "location": {
               "line": 13
@@ -452,7 +453,7 @@
           "source": {
             "kind": "target-documentation",
             "path": "docs/proto-bridge.md",
-            "digest": "sha256:4ee1fdff1bf53fdcd1911c2ac79a9a89ce35f2c081456c016e8d0af5bb2ed572",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
             "priority": 60,
             "location": {
               "line": 22
@@ -471,7 +472,7 @@
           "source": {
             "kind": "target-documentation",
             "path": "docs/proto-bridge.md",
-            "digest": "sha256:4ee1fdff1bf53fdcd1911c2ac79a9a89ce35f2c081456c016e8d0af5bb2ed572",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
             "priority": 60,
             "location": {
               "line": 17
@@ -490,7 +491,7 @@
           "source": {
             "kind": "target-documentation",
             "path": "docs/proto-bridge.md",
-            "digest": "sha256:4ee1fdff1bf53fdcd1911c2ac79a9a89ce35f2c081456c016e8d0af5bb2ed572",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
             "priority": 60,
             "location": {
               "line": 19
@@ -509,7 +510,7 @@
           "source": {
             "kind": "target-documentation",
             "path": "docs/proto-bridge.md",
-            "digest": "sha256:4ee1fdff1bf53fdcd1911c2ac79a9a89ce35f2c081456c016e8d0af5bb2ed572",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
             "priority": 60,
             "location": {
               "line": 20
@@ -528,7 +529,7 @@
           "source": {
             "kind": "target-documentation",
             "path": "docs/proto-bridge.md",
-            "digest": "sha256:4ee1fdff1bf53fdcd1911c2ac79a9a89ce35f2c081456c016e8d0af5bb2ed572",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
             "priority": 60,
             "location": {
               "line": 34
@@ -581,7 +582,7 @@
           "source": {
             "kind": "target-documentation",
             "path": "docs/proto-bridge.md",
-            "digest": "sha256:4ee1fdff1bf53fdcd1911c2ac79a9a89ce35f2c081456c016e8d0af5bb2ed572",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
             "priority": 60,
             "location": {
               "line": 21
@@ -601,52 +602,55 @@
       },
       {
         "id": "color.action",
-        "status": "unresolved",
-        "reason": "Multiple code candidates matched the open Evidence ID.",
-        "nextQueries": [
-          "Add an explicit mapping that distinguishes the intended public API."
-        ],
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
         "candidate": {
           "accessor": "TS.colors.action",
           "source": {
-            "kind": "code-heuristic",
-            "path": "lib/common/widgets/avatar.dart",
-            "digest": "sha256:b1d44b0ad1efff9ee78ae35d8da550fb516cf6aab005ecc316a90a42bab10840",
-            "priority": 10
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 58
+            }
           }
         }
       },
       {
         "id": "color.background",
-        "status": "unresolved",
-        "reason": "Multiple code candidates matched the open Evidence ID.",
-        "nextQueries": [
-          "Add an explicit mapping that distinguishes the intended public API."
-        ],
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
         "candidate": {
           "accessor": "TS.colors.background",
           "source": {
-            "kind": "code-heuristic",
-            "path": "lib/features/demo/demo_page.dart",
-            "digest": "sha256:c4c7d66f2e6005e10b61491ce951d104f4a50d535b233527e25d9d8fc80b88b9",
-            "priority": 10
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 60
+            }
           }
         }
       },
       {
         "id": "color.border",
-        "status": "unresolved",
-        "reason": "Multiple code candidates matched the open Evidence ID.",
-        "nextQueries": [
-          "Add an explicit mapping that distinguishes the intended public API."
-        ],
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
         "candidate": {
           "accessor": "TS.colors.border",
           "source": {
-            "kind": "code-heuristic",
-            "path": "lib/common/widgets/bottom_nav.dart",
-            "digest": "sha256:6f9937b331f1f7b1916cce3168ef2dfa8307c712dc8462131499137da872e567",
-            "priority": 10
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 61
+            }
           }
         }
       },
@@ -660,10 +664,10 @@
           "source": {
             "kind": "target-documentation",
             "path": "docs/proto-bridge.md",
-            "digest": "sha256:4ee1fdff1bf53fdcd1911c2ac79a9a89ce35f2c081456c016e8d0af5bb2ed572",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
             "priority": 60,
             "location": {
-              "line": 58
+              "line": 62
             }
           }
         }
@@ -678,148 +682,175 @@
           "source": {
             "kind": "target-documentation",
             "path": "docs/proto-bridge.md",
-            "digest": "sha256:4ee1fdff1bf53fdcd1911c2ac79a9a89ce35f2c081456c016e8d0af5bb2ed572",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
             "priority": 60,
             "location": {
-              "line": 59
+              "line": 63
             }
           }
         }
       },
       {
         "id": "color.on-action",
-        "status": "unresolved",
-        "reason": "Multiple code candidates matched the open Evidence ID.",
-        "nextQueries": [
-          "Add an explicit mapping that distinguishes the intended public API."
-        ],
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
         "candidate": {
-          "accessor": "TS.colors.action",
+          "accessor": "TS.colors.onAction",
           "source": {
-            "kind": "code-heuristic",
-            "path": "lib/common/widgets/avatar.dart",
-            "digest": "sha256:b1d44b0ad1efff9ee78ae35d8da550fb516cf6aab005ecc316a90a42bab10840",
-            "priority": 10
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 64
+            }
           }
         }
       },
       {
         "id": "color.on-background",
-        "status": "unresolved",
-        "reason": "Multiple code candidates matched the open Evidence ID.",
-        "nextQueries": [
-          "Add an explicit mapping that distinguishes the intended public API."
-        ],
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
         "candidate": {
-          "accessor": "TS.colors.background",
+          "accessor": "TS.colors.onBackground",
           "source": {
-            "kind": "code-heuristic",
-            "path": "lib/features/demo/demo_page.dart",
-            "digest": "sha256:c4c7d66f2e6005e10b61491ce951d104f4a50d535b233527e25d9d8fc80b88b9",
-            "priority": 10
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 65
+            }
           }
         }
       },
       {
         "id": "color.on-error",
-        "status": "unresolved",
-        "reason": "Multiple code candidates matched the open Evidence ID.",
-        "nextQueries": [
-          "Add an explicit mapping that distinguishes the intended public API."
-        ],
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
         "candidate": {
-          "accessor": "TS.colors.error",
+          "accessor": "TS.colors.onError",
           "source": {
-            "kind": "code-heuristic",
-            "path": "lib/common/widgets/avatar.dart",
-            "digest": "sha256:b1d44b0ad1efff9ee78ae35d8da550fb516cf6aab005ecc316a90a42bab10840",
-            "priority": 10
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 66
+            }
           }
         }
       },
       {
         "id": "color.on-primary",
-        "status": "unresolved",
-        "reason": "Multiple code candidates matched the open Evidence ID.",
-        "nextQueries": [
-          "Add an explicit mapping that distinguishes the intended public API."
-        ],
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
         "candidate": {
-          "accessor": "TS.colors.primary",
+          "accessor": "TS.colors.onPrimary",
           "source": {
-            "kind": "code-heuristic",
-            "path": "lib/common/widgets/avatar.dart",
-            "digest": "sha256:b1d44b0ad1efff9ee78ae35d8da550fb516cf6aab005ecc316a90a42bab10840",
-            "priority": 10
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 67
+            }
           }
         }
       },
       {
         "id": "color.on-surface",
-        "status": "unresolved",
-        "reason": "Multiple code candidates matched the open Evidence ID.",
-        "nextQueries": [
-          "Add an explicit mapping that distinguishes the intended public API."
-        ],
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
         "candidate": {
-          "accessor": "TS.colors.surface",
+          "accessor": "TS.colors.onSurface",
           "source": {
-            "kind": "code-heuristic",
-            "path": "lib/common/widgets/app_bar.dart",
-            "digest": "sha256:07632c00c8d79b82e0cd5fc22a8f4fe3ccb2c9899e02ecf7ba056886efe95df3",
-            "priority": 10
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 68
+            }
           }
         }
       },
       {
         "id": "color.on-surface-muted",
-        "status": "unresolved",
-        "reason": "No target mapping declaration or credible code candidate was found.",
-        "nextQueries": [
-          "Inspect target docs/code and add an explicit target-owned mapping if appropriate."
-        ]
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
+        "candidate": {
+          "accessor": "TS.colors.onSurfaceMuted",
+          "source": {
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 69
+            }
+          }
+        }
       },
       {
         "id": "color.on-warning",
-        "status": "unresolved",
-        "reason": "Multiple code candidates matched the open Evidence ID.",
-        "nextQueries": [
-          "Add an explicit mapping that distinguishes the intended public API."
-        ],
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
         "candidate": {
-          "accessor": "TS.colors.warning",
+          "accessor": "TS.colors.onWarning",
           "source": {
-            "kind": "code-heuristic",
-            "path": "lib/common/widgets/badge.dart",
-            "digest": "sha256:4cbc684b035ed2c7f814749f1c4c196acb2b78325dc6cbc1e9e1d629787b3969",
-            "priority": 10
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 70
+            }
           }
         }
       },
       {
         "id": "color.primary",
-        "status": "unresolved",
-        "reason": "Multiple code candidates matched the open Evidence ID.",
-        "nextQueries": [
-          "Add an explicit mapping that distinguishes the intended public API."
-        ],
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
         "candidate": {
           "accessor": "TS.colors.primary",
           "source": {
-            "kind": "code-heuristic",
-            "path": "lib/common/widgets/avatar.dart",
-            "digest": "sha256:b1d44b0ad1efff9ee78ae35d8da550fb516cf6aab005ecc316a90a42bab10840",
-            "priority": 10
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 71
+            }
           }
         }
       },
       {
         "id": "color.primary-soft",
-        "status": "unresolved",
-        "reason": "No target mapping declaration or credible code candidate was found.",
-        "nextQueries": [
-          "Inspect target docs/code and add an explicit target-owned mapping if appropriate."
-        ]
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
+        "candidate": {
+          "accessor": "TS.colors.primarySoft",
+          "source": {
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 72
+            }
+          }
+        }
       },
       {
         "id": "color.scrim",
@@ -831,110 +862,145 @@
       },
       {
         "id": "color.success",
-        "status": "unresolved",
-        "reason": "Multiple code candidates matched the open Evidence ID.",
-        "nextQueries": [
-          "Add an explicit mapping that distinguishes the intended public API."
-        ],
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
         "candidate": {
           "accessor": "TS.colors.success",
           "source": {
-            "kind": "code-heuristic",
-            "path": "lib/common/widgets/avatar.dart",
-            "digest": "sha256:b1d44b0ad1efff9ee78ae35d8da550fb516cf6aab005ecc316a90a42bab10840",
-            "priority": 10
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 73
+            }
           }
         }
       },
       {
         "id": "color.surface",
-        "status": "unresolved",
-        "reason": "Multiple code candidates matched the open Evidence ID.",
-        "nextQueries": [
-          "Add an explicit mapping that distinguishes the intended public API."
-        ],
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
         "candidate": {
           "accessor": "TS.colors.surface",
           "source": {
-            "kind": "code-heuristic",
-            "path": "lib/common/widgets/app_bar.dart",
-            "digest": "sha256:07632c00c8d79b82e0cd5fc22a8f4fe3ccb2c9899e02ecf7ba056886efe95df3",
-            "priority": 10
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 74
+            }
           }
         }
       },
       {
         "id": "color.surface-raised",
-        "status": "unresolved",
-        "reason": "No target mapping declaration or credible code candidate was found.",
-        "nextQueries": [
-          "Inspect target docs/code and add an explicit target-owned mapping if appropriate."
-        ]
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
+        "candidate": {
+          "accessor": "TS.colors.surfaceRaised",
+          "source": {
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 75
+            }
+          }
+        }
       },
       {
         "id": "color.surface-variant",
-        "status": "unresolved",
-        "reason": "No target mapping declaration or credible code candidate was found.",
-        "nextQueries": [
-          "Inspect target docs/code and add an explicit target-owned mapping if appropriate."
-        ]
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
+        "candidate": {
+          "accessor": "TS.colors.surfaceVariant",
+          "source": {
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 76
+            }
+          }
+        }
       },
       {
         "id": "color.warning",
-        "status": "unresolved",
-        "reason": "Multiple code candidates matched the open Evidence ID.",
-        "nextQueries": [
-          "Add an explicit mapping that distinguishes the intended public API."
-        ],
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
         "candidate": {
           "accessor": "TS.colors.warning",
           "source": {
-            "kind": "code-heuristic",
-            "path": "lib/common/widgets/badge.dart",
-            "digest": "sha256:4cbc684b035ed2c7f814749f1c4c196acb2b78325dc6cbc1e9e1d629787b3969",
-            "priority": 10
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 77
+            }
           }
         }
       },
       {
         "id": "color.warning-soft",
-        "status": "unresolved",
-        "reason": "No target mapping declaration or credible code candidate was found.",
-        "nextQueries": [
-          "Inspect target docs/code and add an explicit target-owned mapping if appropriate."
-        ]
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
+        "candidate": {
+          "accessor": "TS.colors.warningSoft",
+          "source": {
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 78
+            }
+          }
+        }
       },
       {
         "id": "elevation.card",
-        "status": "unresolved",
-        "reason": "Multiple code candidates matched the open Evidence ID.",
-        "nextQueries": [
-          "Add an explicit mapping that distinguishes the intended public API."
-        ],
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
         "candidate": {
           "accessor": "TS.elevation.card",
           "source": {
-            "kind": "code-heuristic",
-            "path": "lib/common/widgets/app_bar.dart",
-            "digest": "sha256:07632c00c8d79b82e0cd5fc22a8f4fe3ccb2c9899e02ecf7ba056886efe95df3",
-            "priority": 10
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 79
+            }
           }
         }
       },
       {
         "id": "elevation.level-3",
-        "status": "candidate",
-        "reason": "One code heuristic matched, but no explicit target declaration authorizes a resolved mapping.",
-        "nextQueries": [
-          "Confirm the candidate in target documentation or docs/proto-bridge.target.json."
-        ],
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
         "candidate": {
           "accessor": "TS.elevation.level3",
           "source": {
-            "kind": "code-heuristic",
-            "path": "lib/common/widgets/bottom_nav.dart",
-            "digest": "sha256:6f9937b331f1f7b1916cce3168ef2dfa8307c712dc8462131499137da872e567",
-            "priority": 10
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 80
+            }
           }
         }
       },
@@ -974,18 +1040,19 @@
       },
       {
         "id": "elevation.none",
-        "status": "unresolved",
-        "reason": "Multiple code candidates matched the open Evidence ID.",
-        "nextQueries": [
-          "Add an explicit mapping that distinguishes the intended public API."
-        ],
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
         "candidate": {
           "accessor": "TS.elevation.none",
           "source": {
-            "kind": "code-heuristic",
-            "path": "lib/common/widgets/app_bar.dart",
-            "digest": "sha256:07632c00c8d79b82e0cd5fc22a8f4fe3ccb2c9899e02ecf7ba056886efe95df3",
-            "priority": 10
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 81
+            }
           }
         }
       },
@@ -1031,18 +1098,19 @@
       },
       {
         "id": "radius.full",
-        "status": "unresolved",
-        "reason": "Multiple code candidates matched the open Evidence ID.",
-        "nextQueries": [
-          "Add an explicit mapping that distinguishes the intended public API."
-        ],
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
         "candidate": {
           "accessor": "TS.radius.full",
           "source": {
-            "kind": "code-heuristic",
-            "path": "lib/common/widgets/badge.dart",
-            "digest": "sha256:4cbc684b035ed2c7f814749f1c4c196acb2b78325dc6cbc1e9e1d629787b3969",
-            "priority": 10
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 82
+            }
           }
         }
       },
@@ -1056,21 +1124,31 @@
           "source": {
             "kind": "target-documentation",
             "path": "docs/proto-bridge.md",
-            "digest": "sha256:4ee1fdff1bf53fdcd1911c2ac79a9a89ce35f2c081456c016e8d0af5bb2ed572",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
             "priority": 60,
             "location": {
-              "line": 62
+              "line": 83
             }
           }
         }
       },
       {
         "id": "radius.md",
-        "status": "unresolved",
-        "reason": "No target mapping declaration or credible code candidate was found.",
-        "nextQueries": [
-          "Inspect target docs/code and add an explicit target-owned mapping if appropriate."
-        ]
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
+        "candidate": {
+          "accessor": "TS.radius.md",
+          "source": {
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 84
+            }
+          }
+        }
       },
       {
         "id": "radius.none",
@@ -1091,11 +1169,21 @@
       },
       {
         "id": "radius.sm",
-        "status": "unresolved",
-        "reason": "No target mapping declaration or credible code candidate was found.",
-        "nextQueries": [
-          "Inspect target docs/code and add an explicit target-owned mapping if appropriate."
-        ]
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
+        "candidate": {
+          "accessor": "TS.radius.sm",
+          "source": {
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 85
+            }
+          }
+        }
       },
       {
         "id": "radius.xl",
@@ -1132,18 +1220,19 @@
       },
       {
         "id": "sizing.control-md",
-        "status": "unresolved",
-        "reason": "Multiple code candidates matched the open Evidence ID.",
-        "nextQueries": [
-          "Add an explicit mapping that distinguishes the intended public API."
-        ],
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
         "candidate": {
-          "accessor": "TS.sizing.controlLg",
+          "accessor": "TS.sizing.controlMd",
           "source": {
-            "kind": "code-heuristic",
-            "path": "lib/common/widgets/button.dart",
-            "digest": "sha256:d206fd46a428a669d573ca929e6274596775e5d2604b7f372b965877532603cc",
-            "priority": 10
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 90
+            }
           }
         }
       },
@@ -1166,35 +1255,37 @@
       },
       {
         "id": "sizing.icon-lg",
-        "status": "unresolved",
-        "reason": "Multiple code candidates matched the open Evidence ID.",
-        "nextQueries": [
-          "Add an explicit mapping that distinguishes the intended public API."
-        ],
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
         "candidate": {
           "accessor": "TS.sizing.iconLg",
           "source": {
-            "kind": "code-heuristic",
-            "path": "lib/common/widgets/bottom_nav.dart",
-            "digest": "sha256:6f9937b331f1f7b1916cce3168ef2dfa8307c712dc8462131499137da872e567",
-            "priority": 10
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 91
+            }
           }
         }
       },
       {
         "id": "sizing.icon-md",
-        "status": "unresolved",
-        "reason": "Multiple code candidates matched the open Evidence ID.",
-        "nextQueries": [
-          "Add an explicit mapping that distinguishes the intended public API."
-        ],
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
         "candidate": {
-          "accessor": "TS.sizing.iconLg",
+          "accessor": "TS.sizing.iconMd",
           "source": {
-            "kind": "code-heuristic",
-            "path": "lib/common/widgets/bottom_nav.dart",
-            "digest": "sha256:6f9937b331f1f7b1916cce3168ef2dfa8307c712dc8462131499137da872e567",
-            "priority": 10
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 92
+            }
           }
         }
       },
@@ -1216,11 +1307,21 @@
       },
       {
         "id": "spacing.lg",
-        "status": "unresolved",
-        "reason": "No target mapping declaration or credible code candidate was found.",
-        "nextQueries": [
-          "Inspect target docs/code and add an explicit target-owned mapping if appropriate."
-        ]
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
+        "candidate": {
+          "accessor": "TS.spacing.lg",
+          "source": {
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 86
+            }
+          }
+        }
       },
       {
         "id": "spacing.md",
@@ -1232,21 +1333,31 @@
           "source": {
             "kind": "target-documentation",
             "path": "docs/proto-bridge.md",
-            "digest": "sha256:4ee1fdff1bf53fdcd1911c2ac79a9a89ce35f2c081456c016e8d0af5bb2ed572",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
             "priority": 60,
             "location": {
-              "line": 61
+              "line": 88
             }
           }
         }
       },
       {
         "id": "spacing.sm",
-        "status": "unresolved",
-        "reason": "No target mapping declaration or credible code candidate was found.",
-        "nextQueries": [
-          "Inspect target docs/code and add an explicit target-owned mapping if appropriate."
-        ]
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
+        "candidate": {
+          "accessor": "TS.spacing.sm",
+          "source": {
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 89
+            }
+          }
+        }
       },
       {
         "id": "spacing.sm-plus",
@@ -1258,10 +1369,10 @@
           "source": {
             "kind": "target-documentation",
             "path": "docs/proto-bridge.md",
-            "digest": "sha256:4ee1fdff1bf53fdcd1911c2ac79a9a89ce35f2c081456c016e8d0af5bb2ed572",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
             "priority": 60,
             "location": {
-              "line": 60
+              "line": 87
             }
           }
         }
@@ -1276,10 +1387,10 @@
           "source": {
             "kind": "target-documentation",
             "path": "docs/proto-bridge.md",
-            "digest": "sha256:4ee1fdff1bf53fdcd1911c2ac79a9a89ce35f2c081456c016e8d0af5bb2ed572",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
             "priority": 60,
             "location": {
-              "line": 64
+              "line": 98
             }
           }
         }
@@ -1294,52 +1405,55 @@
       },
       {
         "id": "typography.content",
-        "status": "unresolved",
-        "reason": "Multiple code candidates matched the open Evidence ID.",
-        "nextQueries": [
-          "Add an explicit mapping that distinguishes the intended public API."
-        ],
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
         "candidate": {
           "accessor": "TS.textStyle.content",
           "source": {
-            "kind": "code-heuristic",
-            "path": "lib/common/widgets/checkbox.dart",
-            "digest": "sha256:b185fd1d002b389ea4ee89bb07dbe23853f7fd09e7a13a60a94902cdfb984098",
-            "priority": 10
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 96
+            }
           }
         }
       },
       {
         "id": "typography.label",
-        "status": "unresolved",
-        "reason": "Multiple code candidates matched the open Evidence ID.",
-        "nextQueries": [
-          "Add an explicit mapping that distinguishes the intended public API."
-        ],
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
         "candidate": {
           "accessor": "TS.textStyle.label",
           "source": {
-            "kind": "code-heuristic",
-            "path": "lib/common/widgets/avatar.dart",
-            "digest": "sha256:b1d44b0ad1efff9ee78ae35d8da550fb516cf6aab005ecc316a90a42bab10840",
-            "priority": 10
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 97
+            }
           }
         }
       },
       {
         "id": "typography.subtitle",
-        "status": "unresolved",
-        "reason": "Multiple code candidates matched the open Evidence ID.",
-        "nextQueries": [
-          "Add an explicit mapping that distinguishes the intended public API."
-        ],
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
         "candidate": {
           "accessor": "TS.textStyle.subtitle",
           "source": {
-            "kind": "code-heuristic",
-            "path": "lib/common/widgets/card.dart",
-            "digest": "sha256:27d8ae425b68de7dc94368aea80a52025922d219d9fcb91a73cb2a183cd5c976",
-            "priority": 10
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 95
+            }
           }
         }
       },
@@ -1353,28 +1467,29 @@
           "source": {
             "kind": "target-documentation",
             "path": "docs/proto-bridge.md",
-            "digest": "sha256:4ee1fdff1bf53fdcd1911c2ac79a9a89ce35f2c081456c016e8d0af5bb2ed572",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
             "priority": 60,
             "location": {
-              "line": 63
+              "line": 93
             }
           }
         }
       },
       {
         "id": "typography.title-sm",
-        "status": "unresolved",
-        "reason": "Multiple code candidates matched the open Evidence ID.",
-        "nextQueries": [
-          "Add an explicit mapping that distinguishes the intended public API."
-        ],
+        "status": "resolved",
+        "reason": "An explicit target declaration is backed by the current target code.",
+        "nextQueries": [],
         "candidate": {
-          "accessor": "TS.textStyle.title",
+          "accessor": "TS.textStyle.titleSm",
           "source": {
-            "kind": "code-heuristic",
-            "path": "lib/common/widgets/app_bar.dart",
-            "digest": "sha256:07632c00c8d79b82e0cd5fc22a8f4fe3ccb2c9899e02ecf7ba056886efe95df3",
-            "priority": 10
+            "kind": "target-documentation",
+            "path": "docs/proto-bridge.md",
+            "digest": "sha256:3559ef174c398e78f50fe448bc9e8df72e0bc67b3feb81c54e34d3f2d1204508",
+            "priority": 60,
+            "location": {
+              "line": 94
+            }
           }
         }
       }

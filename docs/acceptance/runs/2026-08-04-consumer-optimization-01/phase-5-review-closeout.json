@@ -1,0 +1,1658 @@
+{
+  "schemaVersion": 1,
+  "auditedAt": "2026-08-05T07:43:55.522Z",
+  "status": "completed-with-accepted-ios18-runtime",
+  "standaloneMcp": {
+    "toolCount": 33,
+    "reviewToolsPresent": true,
+    "serviceUrl": "http://127.0.0.1:3988/api/v2"
+  },
+  "sessions": [
+    {
+      "reviewRunId": "review-2026-08-04-phase4-fixed-01",
+      "status": "completed",
+      "workspaceId": "pbwork-local",
+      "generationId": "generation-2026-08-04t085651613-b0384629",
+      "bundleId": "bundle-2026-08-03t095053078-241d3a74",
+      "snapshotId": "snapshot-2026-08-03t095114638-511379f3",
+      "handoffId": "handoff-2026-08-03t100731725-9a0121d7",
+      "targetRoot": "/Users/lrq/work/proto-bridge-phase4-review-2026-08-04/apps/flutter_pb_app",
+      "targetBaselineCommit": "79780eb6962086affb9af8bcacd8006707517a67",
+      "targetRevision": "79780eb6962086affb9af8bcacd8006707517a67:phase4-validation",
+      "comparatorVersion": "proto-bridge-pixel-regions-v1",
+      "eventCount": 67,
+      "viewedSourceDigestCount": 16,
+      "renderedSourceDigestCount": 16,
+      "replayedScenarioCount": 7,
+      "requiredScenarioCount": 7,
+      "attemptCount": 17,
+      "comparableAttemptCount": 17,
+      "findingCount": 1,
+      "findingsByStatus": {
+        "fixed": 1
+      },
+      "findings": [
+        {
+          "findingId": "finding-exception-queue-card-timestamps",
+          "screenId": "cold-chain-ops.exception-queue",
+          "caseId": "cold-chain-ops.exception-queue::default::light::iphone-14",
+          "severity": "Major",
+          "status": "fixed",
+          "detail": "Per-card updatedAt values now match Source (14:32 / 14:26 / 14:20). Round-3 normalized diff signature changed after the fix.",
+          "evidenceDigests": [
+            "sha256:be0f61a64919c5d816515f602faac497f686953cccd79144807620641d8b05cd",
+            "sha256:67b5bb49d56336e8f18018df73cfda28c9bf76134110de3143196e80c2a842b8",
+            "sha256:0aef37076c922372281c0729c88a5a5668f87748778f81ee63871edd77982f66"
+          ],
+          "targetBasis": "cold_chain_review_page.dart ExceptionCard updatedAt + summary critical button wiring"
+        }
+      ],
+      "diffArtifactCount": 17,
+      "overlayArtifactCount": 17,
+      "artifactRefs": [
+        {
+          "kind": "source",
+          "digest": "sha256:046d0c0c23851252e13e61a34146133b40c63b9e728f58f66149c0a171bd995f",
+          "byteLength": 62884,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:080f611562c25c5d718df576e592db254600cb95d7bea0d80a3561a311a8029f",
+          "byteLength": 263378,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:3de0fa853a905167155516e45186a9a34f5e3d8eb899afaa4cbfb0ac67490a26",
+          "byteLength": 182579,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:48f514c68f73852475945a655a594e5e1306bf46c0b0cab11e11f0098451fc36",
+          "byteLength": 32765,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:53d2837d4b7daf60cbef70632fba079fc638ed7074b6c18d38f71cc07c25c2eb",
+          "byteLength": 214042,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:74fe26bbfd37940e75bbd4ee0591162185d06c4dc3950fc4c6b205863bffce6f",
+          "byteLength": 217154,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:8195915d09401219d9209bd1972d7e0b65464e06a5fbbc5b36f6fe3932627311",
+          "byteLength": 211217,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:856a487590600361e95c3a94d588cce9eeb17dc07c09fbea997a1c73ad7a5154",
+          "byteLength": 202836,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:9b12c12d9db2734623ef042650551da1c55fa0636a9221cc6612bea2c325185f",
+          "byteLength": 224743,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:a948335715fa013e7855b1b9a5afaf24e0e866f64e9db0032b42b94c26468493",
+          "byteLength": 211647,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:be0f61a64919c5d816515f602faac497f686953cccd79144807620641d8b05cd",
+          "byteLength": 208192,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:c3d4af22adca71330ba968835b21aa8f75ba77cbab011440c05876df3b3e6757",
+          "byteLength": 247878,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:c99c24a0dd54e8cbfdeaf93d49055ca8893aff6c17769cf0212a09ae9c55e159",
+          "byteLength": 224497,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:dd41372d7cdce0926c2be8178b435438b00add796536c184b297af58e003ccd0",
+          "byteLength": 121480,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:f35c6dc6063b22fddecca1434efbaa12d3311c157b35f520285d2e364c38441c",
+          "byteLength": 201655,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:fb952778397b03a506651f84d18222c22d408649ac055240519aef795fb4450d",
+          "byteLength": 218861,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:898ed3dfb88310844f85938fd67137ff572c4dc5f5cb05eff12a0cc40509f200",
+          "byteLength": 256493,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::default::light::iphone-14",
+            "attemptId": "attempt-exception-queue-default-r1"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:e66dd043348a19bde03ffb0557290bd2611b0805aa9243e1f4ae07d164d910c9",
+          "byteLength": 117078,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::default::light::iphone-14",
+            "attemptId": "attempt-exception-queue-default-r1"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:88965deebd472e5b512f38e5753bbde1a022c2e687815053ef38fc01259ee64a",
+          "byteLength": 393241,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::default::light::iphone-14",
+            "attemptId": "attempt-exception-queue-default-r1"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:155be7034e4ab2e58b661ba5125762bf2c22898cfd826a9d282acb5d47cbd2b3",
+          "byteLength": 147952,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::loading::light::iphone-14",
+            "attemptId": "attempt-exception-queue-loading-r1"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:0df7cfc916d499b65dd7089a6afb4f27d7698e3ac3b63968c9607a85cdb5b6ae",
+          "byteLength": 42077,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::loading::light::iphone-14",
+            "attemptId": "attempt-exception-queue-loading-r1"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:d3755deef781f7fcf8081fd4a6a60abc6d4a33cec8c2419a34c4ea4382e643a4",
+          "byteLength": 114568,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::loading::light::iphone-14",
+            "attemptId": "attempt-exception-queue-loading-r1"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:67b5bb49d56336e8f18018df73cfda28c9bf76134110de3143196e80c2a842b8",
+          "byteLength": 257015,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::default::light::iphone-14",
+            "attemptId": "attempt-exception-queue-default-r3-fix"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:0aef37076c922372281c0729c88a5a5668f87748778f81ee63871edd77982f66",
+          "byteLength": 117099,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::default::light::iphone-14",
+            "attemptId": "attempt-exception-queue-default-r3-fix"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:0dceb674421373440cef76415dfd05276cb781d08935d5115d5839ce910fcaa4",
+          "byteLength": 393423,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::default::light::iphone-14",
+            "attemptId": "attempt-exception-queue-default-r3-fix"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:124482e823dbd18b29ae3e0f761928ad47544e30654c7f419b9c5311ee54942b",
+          "byteLength": 252117,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::critical-only::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-exception-queue-critical-only-light-iphone-14-t2-r1"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:049623d3567bcb22f53fc286129a0dcfa71cbeaef04ffcc4da4f66b02b490235",
+          "byteLength": 110009,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::critical-only::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-exception-queue-critical-only-light-iphone-14-t2-r1"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:d3ff49186cb63e4f976d47ba803941dc32496161af17baa4faa2c272273c465e",
+          "byteLength": 362004,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::critical-only::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-exception-queue-critical-only-light-iphone-14-t2-r1"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:5d38c296207abdfd26e7585fc8be9625b254ce6266b6ee0183360eab40092393",
+          "byteLength": 185679,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::empty::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-exception-queue-empty-light-iphone-14-t2-r2"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:e7985ca093867b1ae6bc1c1e8b4852d3c6afc65c08f21578120a79d106bca00e",
+          "byteLength": 75403,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::empty::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-exception-queue-empty-light-iphone-14-t2-r2"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:a23ff62d598d33f47d36755af9138f48e5d041ee7985d2d78e9528d4b2ad9d31",
+          "byteLength": 237246,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::empty::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-exception-queue-empty-light-iphone-14-t2-r2"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:0d22eef6cdd158a1fa2abb87ded27a87d702f0ebfa95e3d7e8786dd1ab512498",
+          "byteLength": 116751,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::error::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-exception-queue-error-light-iphone-14-t2-r3"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:86edbec9899f48d083a46d52b0e977d9a3e84ba7b47990304166b76554c4ffbb",
+          "byteLength": 45756,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::error::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-exception-queue-error-light-iphone-14-t2-r3"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:ba7d5f923b05c61a38da699444b288f9650ed029c5a72b1b518f53c9ca3a2030",
+          "byteLength": 113991,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::error::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-exception-queue-error-light-iphone-14-t2-r3"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:1d3cd521c23387d207706eb3b1c00ccc31a99591beef9eb4b8486858ef800fbd",
+          "byteLength": 246773,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::default::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-default-light-iphone-14-t1-r1"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:e48eddd5173da6a3473c54dc0316748277f04e4e10ccaf4f3b659828e8af5aff",
+          "byteLength": 129633,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::default::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-default-light-iphone-14-t1-r1"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:6956d5b8a1f48e5cd02f081ba3789129c14debe906dd08722f09f36d41110c64",
+          "byteLength": 395010,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::default::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-default-light-iphone-14-t1-r1"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:d5346a0e9e7dacd755795b2e21c52b655b9f756563c7b2138ffcf3f67b65c24f",
+          "byteLength": 250344,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::active-excursion::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-active-excursion-light-iphone-14-t1-r2"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:d065ac3b571b457314a0764f4cfcd18e4a805e33986ffbf8430d99f0da973026",
+          "byteLength": 126231,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::active-excursion::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-active-excursion-light-iphone-14-t1-r2"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:df77270888744b05f6f7b8a810a08d66c253014ddd8195097c1c04499a8fa627",
+          "byteLength": 406774,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::active-excursion::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-active-excursion-light-iphone-14-t1-r2"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:265a1337d0ac0d7045233e1a94378ab092f315840fdaf3af933ff9d8538066e1",
+          "byteLength": 245961,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::sensor-offline::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-sensor-offline-light-iphone-14-t1-r3"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:f20aab1ea96833db9833114bbb86e69f0455886b151b1852271fda4c0be51279",
+          "byteLength": 118915,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::sensor-offline::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-sensor-offline-light-iphone-14-t1-r3"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:9da198a395e042db3b7b4b9a8da936ce4af57034a3c31415db34a13d8e177ea1",
+          "byteLength": 414700,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::sensor-offline::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-sensor-offline-light-iphone-14-t1-r3"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:b3f257d2fa4886247ae0565bc4378f3454292947791af58fdb80ce6217d81b56",
+          "byteLength": 247800,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::action-sheet-open::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-action-sheet-open-light-iphone-14-t2-r1"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:ae8e7a77f702317d5c48020fa5eb766fde5d1c4fc63c8d1b2bd1f3c4fed51132",
+          "byteLength": 74583,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::action-sheet-open::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-action-sheet-open-light-iphone-14-t2-r1"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:f63f19a4b502df43096730c3b5ed363898ba9c795dada9bb1aaa9b7350b80d45",
+          "byteLength": 377422,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::action-sheet-open::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-action-sheet-open-light-iphone-14-t2-r1"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:6f58831917f3e2663b8c7f73919fe426dfad0c7a119ca7151860a1dbb9233d18",
+          "byteLength": 232413,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::acknowledge-dialog-open::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-acknowledge-dialog-open-light-iphone-14-t2-r2"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:67008e588f6558ad6b7223c7d1803f240802b1964127597bfd90c5dcc295e0af",
+          "byteLength": 77903,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::acknowledge-dialog-open::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-acknowledge-dialog-open-light-iphone-14-t2-r2"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:95306b578eecc45607284e422d47eafa3984af7451bb995f1b9c25f441ce4e1c",
+          "byteLength": 409169,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::acknowledge-dialog-open::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-acknowledge-dialog-open-light-iphone-14-t2-r2"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:218bd97823e3230e470b4c3060efb0b7416809b1dff87346187876ae4476828e",
+          "byteLength": 258853,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::default::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-default-light-iphone-14-t1-r1"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:94601fe7d9876bbe948d8103e10a6d5348f4be479ab74f015c488b8ffefdc0aa",
+          "byteLength": 119419,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::default::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-default-light-iphone-14-t1-r1"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:d8b74680b322a838b03455992da9d61e8687ae5574b329c0e926a00b92145013",
+          "byteLength": 392370,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::default::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-default-light-iphone-14-t1-r1"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:94df2c6bf5c07d1a0dcb198de1cd6067c020983c0a725240c73389b2acfa726c",
+          "byteLength": 276480,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::ready-to-submit::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-ready-to-submit-light-iphone-14-t1-r2"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:8adf45fa296b6ab4cc1948de811ee936174e16351bd49a42341034301f0c4748",
+          "byteLength": 127659,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::ready-to-submit::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-ready-to-submit-light-iphone-14-t1-r2"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:f15facc136ece9bf89a3bfc62cc567a16d3e543ccb2027e192090b61e9ac3427",
+          "byteLength": 426622,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::ready-to-submit::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-ready-to-submit-light-iphone-14-t1-r2"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:7a01e9b5fc8f0126148e63d66ea79857cea092f79c2f0f835c82050802a383c2",
+          "byteLength": 266738,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::validation-error::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-validation-error-light-iphone-14-t1-r3"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:5603fbf36e48137e7cc88e51cc9f8a5e68ca6265aa8ca333e885f1cbdb0b6f4b",
+          "byteLength": 121415,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::validation-error::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-validation-error-light-iphone-14-t1-r3"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:65f2331aebe54cfbe41045bc163b32786fc0908bb0a1c6c443eb7550033681cd",
+          "byteLength": 406398,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::validation-error::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-validation-error-light-iphone-14-t1-r3"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:f55edbee5b918081285920a7286e1ff26c5e3f5f82b3ba9410859dc9e169b52d",
+          "byteLength": 266152,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::approval-validation-error::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-approval-validation-error-light-iphone-14-t2-r1"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:88bd174a92bb3d380da14b15304e858446ee8608131140ead2d0f432ab64d09c",
+          "byteLength": 125031,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::approval-validation-error::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-approval-validation-error-light-iphone-14-t2-r1"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:9a4feefe38e1dadea5b2eeed2715ea93bdb641936bb58ec7f96d66a784f3359c",
+          "byteLength": 416276,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::approval-validation-error::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-approval-validation-error-light-iphone-14-t2-r1"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:43ce169a4c137a42b977c3efb8cba5c95dd498d2a845b676da14c28855931515",
+          "byteLength": 277865,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::confirm-dialog-open::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-confirm-dialog-open-light-iphone-14-t2-r2"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:bb000f6933c03b47f32197000e5d2e3ec736a1b188371bc350bd2b134a5bb7ca",
+          "byteLength": 91901,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::confirm-dialog-open::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-confirm-dialog-open-light-iphone-14-t2-r2"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:2c0031f2ee37ef13be3e224ffc177c3c4bdd7ee2bc8196a62529c70ed0082d38",
+          "byteLength": 458700,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::confirm-dialog-open::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-confirm-dialog-open-light-iphone-14-t2-r2"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:ad6e11c27b588dc5103bbc29d6b5a49398e800a682b370b7e7d6fd087d91a433",
+          "byteLength": 284155,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::submitted::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-submitted-light-iphone-14-t2-r3"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:56824adea0a1ceece167dd7c26e17a6c616ee812355008deb3c874075ee2c6bd",
+          "byteLength": 134514,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::submitted::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-submitted-light-iphone-14-t2-r3"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:f57ecdb6b135ac915c99ead2f520c2199bf585d9833557589f1e1422a8fcce03",
+          "byteLength": 438169,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::submitted::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-submitted-light-iphone-14-t2-r3"
+          }
+        }
+      ],
+      "compareReceipts": [
+        {
+          "attemptId": "attempt-exception-queue-default-r1",
+          "caseId": "cold-chain-ops.exception-queue::default::light::iphone-14",
+          "sourceDigest": "sha256:be0f61a64919c5d816515f602faac497f686953cccd79144807620641d8b05cd",
+          "targetDigest": "sha256:898ed3dfb88310844f85938fd67137ff572c4dc5f5cb05eff12a0cc40509f200",
+          "diffDigest": "sha256:e66dd043348a19bde03ffb0557290bd2611b0805aa9243e1f4ae07d164d910c9",
+          "normalizedDiffSignature": "sha256:da5fd42bf82483c5a1efc0a79e3260e9c8a42b7edd8753549f447b1b3952d615",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-exception-queue-loading-r1",
+          "caseId": "cold-chain-ops.exception-queue::loading::light::iphone-14",
+          "sourceDigest": "sha256:48f514c68f73852475945a655a594e5e1306bf46c0b0cab11e11f0098451fc36",
+          "targetDigest": "sha256:155be7034e4ab2e58b661ba5125762bf2c22898cfd826a9d282acb5d47cbd2b3",
+          "diffDigest": "sha256:0df7cfc916d499b65dd7089a6afb4f27d7698e3ac3b63968c9607a85cdb5b6ae",
+          "normalizedDiffSignature": "sha256:09764998b35b8772761a2cf898ca5b40184e15a4799da9d48dacb361530fb006",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-exception-queue-default-r3-fix",
+          "caseId": "cold-chain-ops.exception-queue::default::light::iphone-14",
+          "sourceDigest": "sha256:be0f61a64919c5d816515f602faac497f686953cccd79144807620641d8b05cd",
+          "targetDigest": "sha256:67b5bb49d56336e8f18018df73cfda28c9bf76134110de3143196e80c2a842b8",
+          "diffDigest": "sha256:0aef37076c922372281c0729c88a5a5668f87748778f81ee63871edd77982f66",
+          "normalizedDiffSignature": "sha256:e8122b9316c98e0ad3663f4659fd9b9c7cc799ba4f5e9cdcb190d29c5636ad8a",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-exception-queue-critical-only-light-iphone-14-t2-r1",
+          "caseId": "cold-chain-ops.exception-queue::critical-only::light::iphone-14",
+          "sourceDigest": "sha256:3de0fa853a905167155516e45186a9a34f5e3d8eb899afaa4cbfb0ac67490a26",
+          "targetDigest": "sha256:124482e823dbd18b29ae3e0f761928ad47544e30654c7f419b9c5311ee54942b",
+          "diffDigest": "sha256:049623d3567bcb22f53fc286129a0dcfa71cbeaef04ffcc4da4f66b02b490235",
+          "normalizedDiffSignature": "sha256:04be7f5387ca0d75106f59589577bc13e373759c3a01a8038fdd89fcdec3922e",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-exception-queue-empty-light-iphone-14-t2-r2",
+          "caseId": "cold-chain-ops.exception-queue::empty::light::iphone-14",
+          "sourceDigest": "sha256:dd41372d7cdce0926c2be8178b435438b00add796536c184b297af58e003ccd0",
+          "targetDigest": "sha256:5d38c296207abdfd26e7585fc8be9625b254ce6266b6ee0183360eab40092393",
+          "diffDigest": "sha256:e7985ca093867b1ae6bc1c1e8b4852d3c6afc65c08f21578120a79d106bca00e",
+          "normalizedDiffSignature": "sha256:153fc30b0a010d9f457aaf6d5012eaf95ddd11d207738b2ab678965b7e2bd9e8",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-exception-queue-error-light-iphone-14-t2-r3",
+          "caseId": "cold-chain-ops.exception-queue::error::light::iphone-14",
+          "sourceDigest": "sha256:046d0c0c23851252e13e61a34146133b40c63b9e728f58f66149c0a171bd995f",
+          "targetDigest": "sha256:0d22eef6cdd158a1fa2abb87ded27a87d702f0ebfa95e3d7e8786dd1ab512498",
+          "diffDigest": "sha256:86edbec9899f48d083a46d52b0e977d9a3e84ba7b47990304166b76554c4ffbb",
+          "normalizedDiffSignature": "sha256:98f6709923a00d9cea2f77c3d62feb14844e5c95e8c8b4b2b4778bebe10b479b",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-shipment-detail-default-light-iphone-14-t1-r1",
+          "caseId": "cold-chain-ops.shipment-detail::default::light::iphone-14",
+          "sourceDigest": "sha256:a948335715fa013e7855b1b9a5afaf24e0e866f64e9db0032b42b94c26468493",
+          "targetDigest": "sha256:1d3cd521c23387d207706eb3b1c00ccc31a99591beef9eb4b8486858ef800fbd",
+          "diffDigest": "sha256:e48eddd5173da6a3473c54dc0316748277f04e4e10ccaf4f3b659828e8af5aff",
+          "normalizedDiffSignature": "sha256:ad5f5c458c5fd9336de10fb49257c091662d7b1ad322223e5eedcc52d03ad2df",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-shipment-detail-active-excursion-light-iphone-14-t1-r2",
+          "caseId": "cold-chain-ops.shipment-detail::active-excursion::light::iphone-14",
+          "sourceDigest": "sha256:53d2837d4b7daf60cbef70632fba079fc638ed7074b6c18d38f71cc07c25c2eb",
+          "targetDigest": "sha256:d5346a0e9e7dacd755795b2e21c52b655b9f756563c7b2138ffcf3f67b65c24f",
+          "diffDigest": "sha256:d065ac3b571b457314a0764f4cfcd18e4a805e33986ffbf8430d99f0da973026",
+          "normalizedDiffSignature": "sha256:c17e424d4323bf8b4c3143b1d100dee36615c2ee437c0ac9c5b6cfbc88f049c4",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-shipment-detail-sensor-offline-light-iphone-14-t1-r3",
+          "caseId": "cold-chain-ops.shipment-detail::sensor-offline::light::iphone-14",
+          "sourceDigest": "sha256:9b12c12d9db2734623ef042650551da1c55fa0636a9221cc6612bea2c325185f",
+          "targetDigest": "sha256:265a1337d0ac0d7045233e1a94378ab092f315840fdaf3af933ff9d8538066e1",
+          "diffDigest": "sha256:f20aab1ea96833db9833114bbb86e69f0455886b151b1852271fda4c0be51279",
+          "normalizedDiffSignature": "sha256:7b61b25a19af879be85caddaa3c2447a2d93335d0ff340cff1477c65a1807b0d",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-shipment-detail-action-sheet-open-light-iphone-14-t2-r1",
+          "caseId": "cold-chain-ops.shipment-detail::action-sheet-open::light::iphone-14",
+          "sourceDigest": "sha256:856a487590600361e95c3a94d588cce9eeb17dc07c09fbea997a1c73ad7a5154",
+          "targetDigest": "sha256:b3f257d2fa4886247ae0565bc4378f3454292947791af58fdb80ce6217d81b56",
+          "diffDigest": "sha256:ae8e7a77f702317d5c48020fa5eb766fde5d1c4fc63c8d1b2bd1f3c4fed51132",
+          "normalizedDiffSignature": "sha256:b8b5ce6f97509b2e4046a25b6d83c2973137ba12cb81937d4c5ae997b18f7e48",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-shipment-detail-acknowledge-dialog-open-light-iphone-14-t2-r2",
+          "caseId": "cold-chain-ops.shipment-detail::acknowledge-dialog-open::light::iphone-14",
+          "sourceDigest": "sha256:c3d4af22adca71330ba968835b21aa8f75ba77cbab011440c05876df3b3e6757",
+          "targetDigest": "sha256:6f58831917f3e2663b8c7f73919fe426dfad0c7a119ca7151860a1dbb9233d18",
+          "diffDigest": "sha256:67008e588f6558ad6b7223c7d1803f240802b1964127597bfd90c5dcc295e0af",
+          "normalizedDiffSignature": "sha256:8c50a8c75baa365c8686eaa0f50cafe0c396f51177a9b3ebf0bea80150279d70",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-resolution-form-default-light-iphone-14-t1-r1",
+          "caseId": "cold-chain-ops.resolution-form::default::light::iphone-14",
+          "sourceDigest": "sha256:f35c6dc6063b22fddecca1434efbaa12d3311c157b35f520285d2e364c38441c",
+          "targetDigest": "sha256:218bd97823e3230e470b4c3060efb0b7416809b1dff87346187876ae4476828e",
+          "diffDigest": "sha256:94601fe7d9876bbe948d8103e10a6d5348f4be479ab74f015c488b8ffefdc0aa",
+          "normalizedDiffSignature": "sha256:d10837dc58a90507e237ff48c65001e79004a2938d1fee674799c68a4240b7c7",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-resolution-form-ready-to-submit-light-iphone-14-t1-r2",
+          "caseId": "cold-chain-ops.resolution-form::ready-to-submit::light::iphone-14",
+          "sourceDigest": "sha256:74fe26bbfd37940e75bbd4ee0591162185d06c4dc3950fc4c6b205863bffce6f",
+          "targetDigest": "sha256:94df2c6bf5c07d1a0dcb198de1cd6067c020983c0a725240c73389b2acfa726c",
+          "diffDigest": "sha256:8adf45fa296b6ab4cc1948de811ee936174e16351bd49a42341034301f0c4748",
+          "normalizedDiffSignature": "sha256:867a10f1c60100bf3d185cb434cca8c0ac625b07215beec8014253099ba158e3",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-resolution-form-validation-error-light-iphone-14-t1-r3",
+          "caseId": "cold-chain-ops.resolution-form::validation-error::light::iphone-14",
+          "sourceDigest": "sha256:8195915d09401219d9209bd1972d7e0b65464e06a5fbbc5b36f6fe3932627311",
+          "targetDigest": "sha256:7a01e9b5fc8f0126148e63d66ea79857cea092f79c2f0f835c82050802a383c2",
+          "diffDigest": "sha256:5603fbf36e48137e7cc88e51cc9f8a5e68ca6265aa8ca333e885f1cbdb0b6f4b",
+          "normalizedDiffSignature": "sha256:dd3aac1480b5dd4037ac8588b52453cdd2e0c6536ac8020af5e14316102b94bd",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-resolution-form-approval-validation-error-light-iphone-14-t2-r1",
+          "caseId": "cold-chain-ops.resolution-form::approval-validation-error::light::iphone-14",
+          "sourceDigest": "sha256:fb952778397b03a506651f84d18222c22d408649ac055240519aef795fb4450d",
+          "targetDigest": "sha256:f55edbee5b918081285920a7286e1ff26c5e3f5f82b3ba9410859dc9e169b52d",
+          "diffDigest": "sha256:88bd174a92bb3d380da14b15304e858446ee8608131140ead2d0f432ab64d09c",
+          "normalizedDiffSignature": "sha256:2647ec00a1a165e90704d1b1eb0c5561aed7dbe6bacc36e6b646c9cf55b56c76",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-resolution-form-confirm-dialog-open-light-iphone-14-t2-r2",
+          "caseId": "cold-chain-ops.resolution-form::confirm-dialog-open::light::iphone-14",
+          "sourceDigest": "sha256:080f611562c25c5d718df576e592db254600cb95d7bea0d80a3561a311a8029f",
+          "targetDigest": "sha256:43ce169a4c137a42b977c3efb8cba5c95dd498d2a845b676da14c28855931515",
+          "diffDigest": "sha256:bb000f6933c03b47f32197000e5d2e3ec736a1b188371bc350bd2b134a5bb7ca",
+          "normalizedDiffSignature": "sha256:d3f4e089fe058d74658a9dcd5a88afc0b3a56136d54c57dd58dc02bad3a5634a",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-resolution-form-submitted-light-iphone-14-t2-r3",
+          "caseId": "cold-chain-ops.resolution-form::submitted::light::iphone-14",
+          "sourceDigest": "sha256:c99c24a0dd54e8cbfdeaf93d49055ca8893aff6c17769cf0212a09ae9c55e159",
+          "targetDigest": "sha256:ad6e11c27b588dc5103bbc29d6b5a49398e800a682b370b7e7d6fd087d91a433",
+          "diffDigest": "sha256:56824adea0a1ceece167dd7c26e17a6c616ee812355008deb3c874075ee2c6bd",
+          "normalizedDiffSignature": "sha256:2f7637f897be513119e577e9108c9cf1483135392ace8be1dd18628ba2b2e650",
+          "comparable": true
+        }
+      ]
+    },
+    {
+      "reviewRunId": "review-2026-08-05-treatment-01",
+      "status": "completed",
+      "workspaceId": "pbwork-local",
+      "generationId": "generation-2026-08-04t085651613-b0384629",
+      "bundleId": "bundle-2026-08-03t095053078-241d3a74",
+      "snapshotId": "snapshot-2026-08-03t095114638-511379f3",
+      "handoffId": "handoff-2026-08-03t100731725-9a0121d7",
+      "targetRoot": "/Users/lrq/work/proto-bridge-treatment-2026-08-05-01/apps/flutter_pb_app",
+      "targetBaselineCommit": "eb18edd099c590b895aca9e99299100b7624bd92",
+      "targetRevision": "eb18edd099c590b895aca9e99299100b7624bd92:treatment-2026-08-05",
+      "comparatorVersion": "proto-bridge-pixel-regions-v1",
+      "eventCount": 63,
+      "viewedSourceDigestCount": 16,
+      "renderedSourceDigestCount": 16,
+      "replayedScenarioCount": 7,
+      "requiredScenarioCount": 7,
+      "attemptCount": 16,
+      "comparableAttemptCount": 16,
+      "findingCount": 0,
+      "findingsByStatus": {},
+      "findings": [],
+      "diffArtifactCount": 16,
+      "overlayArtifactCount": 16,
+      "artifactRefs": [
+        {
+          "kind": "source",
+          "digest": "sha256:046d0c0c23851252e13e61a34146133b40c63b9e728f58f66149c0a171bd995f",
+          "byteLength": 62884,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:080f611562c25c5d718df576e592db254600cb95d7bea0d80a3561a311a8029f",
+          "byteLength": 263378,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:3de0fa853a905167155516e45186a9a34f5e3d8eb899afaa4cbfb0ac67490a26",
+          "byteLength": 182579,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:48f514c68f73852475945a655a594e5e1306bf46c0b0cab11e11f0098451fc36",
+          "byteLength": 32765,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:53d2837d4b7daf60cbef70632fba079fc638ed7074b6c18d38f71cc07c25c2eb",
+          "byteLength": 214042,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:74fe26bbfd37940e75bbd4ee0591162185d06c4dc3950fc4c6b205863bffce6f",
+          "byteLength": 217154,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:8195915d09401219d9209bd1972d7e0b65464e06a5fbbc5b36f6fe3932627311",
+          "byteLength": 211217,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:856a487590600361e95c3a94d588cce9eeb17dc07c09fbea997a1c73ad7a5154",
+          "byteLength": 202836,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:9b12c12d9db2734623ef042650551da1c55fa0636a9221cc6612bea2c325185f",
+          "byteLength": 224743,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:a948335715fa013e7855b1b9a5afaf24e0e866f64e9db0032b42b94c26468493",
+          "byteLength": 211647,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:be0f61a64919c5d816515f602faac497f686953cccd79144807620641d8b05cd",
+          "byteLength": 208192,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:c3d4af22adca71330ba968835b21aa8f75ba77cbab011440c05876df3b3e6757",
+          "byteLength": 247878,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:c99c24a0dd54e8cbfdeaf93d49055ca8893aff6c17769cf0212a09ae9c55e159",
+          "byteLength": 224497,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:dd41372d7cdce0926c2be8178b435438b00add796536c184b297af58e003ccd0",
+          "byteLength": 121480,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:f35c6dc6063b22fddecca1434efbaa12d3311c157b35f520285d2e364c38441c",
+          "byteLength": 201655,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form"
+          }
+        },
+        {
+          "kind": "source",
+          "digest": "sha256:fb952778397b03a506651f84d18222c22d408649ac055240519aef795fb4450d",
+          "byteLength": 218861,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:ac92f03d5c11dca00437cdeb2b1a13d60ec1c1164a71a90d913cba33709f2198",
+          "byteLength": 63555,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::default::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-exception-queue-default-light-iphone-14-t1-r1"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:7ae39e33b578d8f15c35941044682728395221b25f2c3411a5e4eb3400f5f63d",
+          "byteLength": 107857,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::default::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-exception-queue-default-light-iphone-14-t1-r1"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:f3b131024449c0a5269140dc9c351c1f427ce25d516f2641fe35ae9e29cceb86",
+          "byteLength": 267749,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::default::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-exception-queue-default-light-iphone-14-t1-r1"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:1562f0af2d8302d81d416de578cb1ad215028de1c89aae6513a2317d42acfb4d",
+          "byteLength": 19447,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::loading::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-exception-queue-loading-light-iphone-14-t1-r2"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:17eeb6ba1dc0fcc8392755a1afc08354b1d43749795f194ba75e13c2a0f28a83",
+          "byteLength": 24540,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::loading::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-exception-queue-loading-light-iphone-14-t1-r2"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:6a4b2c860710a60c6f41965454e9c580a507e84ee3cc8649eb27fb6216862fe6",
+          "byteLength": 36194,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::loading::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-exception-queue-loading-light-iphone-14-t1-r2"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:396e093982fac18b655d751c034b94c371f094ef8b6157cf515fc958c0b60ce6",
+          "byteLength": 57790,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::critical-only::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-exception-queue-critical-only-light-iphone-14-t1-r3"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:f044ccf774dc572ddb030cf704d40a3c5fbd0ba8c9d379b559e08c15b692a272",
+          "byteLength": 97440,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::critical-only::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-exception-queue-critical-only-light-iphone-14-t1-r3"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:f44f3b130b7f234b9fbb2c46bf5fa5ccaaac81a9bdaaf40d920ffdd20db6c165",
+          "byteLength": 235223,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::critical-only::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-exception-queue-critical-only-light-iphone-14-t1-r3"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:7d9703d7de86c82a578e1b7a4c2ef668ff7e29088e35220cd4101d378af70529",
+          "byteLength": 39931,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::empty::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-exception-queue-empty-light-iphone-14-t2-r1"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:be00b620bc21a28bdbb8e57f4090ea9d5a47861374930cf963f8f3139d39d3a1",
+          "byteLength": 71860,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::empty::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-exception-queue-empty-light-iphone-14-t2-r1"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:323e78824e017c7442ebe3498a8bfda4af3b7e8cf9bd98d9ffdbf6cee085ad87",
+          "byteLength": 154726,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::empty::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-exception-queue-empty-light-iphone-14-t2-r1"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:9556b99075f714673a18b949f5f5e483c98cabd1693e0b7efe26e896eda5d10b",
+          "byteLength": 23030,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::error::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-exception-queue-error-light-iphone-14-t2-r2"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:fe4f0a4c83e919b8a44df2acef7e0fa8216ea5fc3fa3bc1c314ee2494132b510",
+          "byteLength": 22078,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::error::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-exception-queue-error-light-iphone-14-t2-r2"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:2c1f3253e4a9f48dfb3e5b6836fbc853c9394b758e17d757783b031ab8b110d8",
+          "byteLength": 72238,
+          "owner": {
+            "screenId": "cold-chain-ops.exception-queue",
+            "caseId": "cold-chain-ops.exception-queue::error::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-exception-queue-error-light-iphone-14-t2-r2"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:3dbc356de47e14fb298d6bf9a45a030ec61ae2db8dd51e96209e7d0e7b0301bc",
+          "byteLength": 53250,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::default::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-default-light-iphone-14-t1-r1"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:8cb3b6fc8397291b59232d9447f0cbdfcd0287499694e4b8ee47a47127771175",
+          "byteLength": 106066,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::default::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-default-light-iphone-14-t1-r1"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:9588de77a06f980b78e50084b9c0cf8f6a62ddded196dd75359f1617bdcb083e",
+          "byteLength": 285943,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::default::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-default-light-iphone-14-t1-r1"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:b9f58805ba0105bc0c540c3a2afa6361436845ebd569d5d035c62d1ca57422ab",
+          "byteLength": 55215,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::active-excursion::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-active-excursion-light-iphone-14-t1-r2"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:3ff97afca9d00554491f031643d6d740048689b7a343ad29a5cc47a214f05c19",
+          "byteLength": 105196,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::active-excursion::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-active-excursion-light-iphone-14-t1-r2"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:d8d9dc0a2c5130f4111c656fc3ee02fcca555809270ee762a8cdf3cf89e8e304",
+          "byteLength": 294120,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::active-excursion::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-active-excursion-light-iphone-14-t1-r2"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:8867333dbe28dd961a9692102d3d54b496740c15a5c63e058b16ac95a71d9701",
+          "byteLength": 53623,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::sensor-offline::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-sensor-offline-light-iphone-14-t1-r3"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:ffb1571e710d1e9795085da3303dc024b684ca193b20c5931e68cf46611a69eb",
+          "byteLength": 118091,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::sensor-offline::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-sensor-offline-light-iphone-14-t1-r3"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:a068c74c7d8c040c3055211e9af4b314bfe3db2ffabd58e4ddb3ba6cfac7cd7d",
+          "byteLength": 298339,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::sensor-offline::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-sensor-offline-light-iphone-14-t1-r3"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:490618ca5644adf6693e020d0e7583201f2781843781b7c0e24da88bc6dfb931",
+          "byteLength": 47434,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::action-sheet-open::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-action-sheet-open-light-iphone-14-t2-r1"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:497381adf91c79fe8c4e987df6c48bf11738a505cfc5924ca183bec7c168dd2d",
+          "byteLength": 65359,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::action-sheet-open::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-action-sheet-open-light-iphone-14-t2-r1"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:070caeb9714a75546c63553a82f0499c9dc34ea297db37221cba1da49dd1f066",
+          "byteLength": 247411,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::action-sheet-open::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-action-sheet-open-light-iphone-14-t2-r1"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:50fe4013130b0e42b63889fe700943b4cebf9a99a452cc2fcce0596099449c58",
+          "byteLength": 53431,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::acknowledge-dialog-open::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-acknowledge-dialog-open-light-iphone-14-t2-r2"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:79187ff747a69b79612df825763fa1607104ea3ccb036c8a6c81dfe73973b426",
+          "byteLength": 65950,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::acknowledge-dialog-open::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-acknowledge-dialog-open-light-iphone-14-t2-r2"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:82aa44756ed8d8456fd41a11403c94330bf30ec59c4d923de639d83d328c8b36",
+          "byteLength": 313654,
+          "owner": {
+            "screenId": "cold-chain-ops.shipment-detail",
+            "caseId": "cold-chain-ops.shipment-detail::acknowledge-dialog-open::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-shipment-detail-acknowledge-dialog-open-light-iphone-14-t2-r2"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:34adc68de8ef9b57ac30c01849091e017ad851ae495e6781ffcd9e0caa314212",
+          "byteLength": 43183,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::default::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-default-light-iphone-14-t1-r1"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:3070c39c0fafa6c24c04ca852bae764ac9bfb27b35369d907222cc3833fad2ab",
+          "byteLength": 109754,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::default::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-default-light-iphone-14-t1-r1"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:5c65a0affd52407acc9403380c95fd83575d1a202a8b916872c338ebc6c58e16",
+          "byteLength": 244507,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::default::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-default-light-iphone-14-t1-r1"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:5e2b8394714fb5c33bacf2c8cbc6a5dfdd19abca828c61badfbd87142f1ef405",
+          "byteLength": 45256,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::ready-to-submit::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-ready-to-submit-light-iphone-14-t1-r2"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:7ed5bb3283c91c72adfb830e41cb7ee7d7b387aaabc878eb1ff4bdf75cf7e571",
+          "byteLength": 117920,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::ready-to-submit::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-ready-to-submit-light-iphone-14-t1-r2"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:a29171e5845f562f39394260207ea37303a2c343ad7dbf95cdcbb67e0a244fe4",
+          "byteLength": 267006,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::ready-to-submit::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-ready-to-submit-light-iphone-14-t1-r2"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:c2824b107951a41637a09a5518b6422b5d4878325f755846ef5952c22a41e581",
+          "byteLength": 45160,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::validation-error::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-validation-error-light-iphone-14-t1-r3"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:95915ebea8d15b93c0239c126f9d9ae470454c2532720b70f61a7f153413a8a8",
+          "byteLength": 114433,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::validation-error::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-validation-error-light-iphone-14-t1-r3"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:2edb31813cc1b5e3b1f89a767743f607aa94b5685487fc59fa3298b929666154",
+          "byteLength": 261942,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::validation-error::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-validation-error-light-iphone-14-t1-r3"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:151d16195772a95f9a15907313daebb05ce3999c1d8de12ea38bc11747f99d92",
+          "byteLength": 45380,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::approval-validation-error::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-approval-validation-error-light-iphone-14-t2-r1"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:d27ee0337f875d645760b6fe9e9f417a2483c063f878c4549489fec5c3c261a9",
+          "byteLength": 121210,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::approval-validation-error::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-approval-validation-error-light-iphone-14-t2-r1"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:51514ccbda517ba20b984a2078df1743d1fc7ad2ece8ea3a6ad9ea4e427dc863",
+          "byteLength": 271437,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::approval-validation-error::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-approval-validation-error-light-iphone-14-t2-r1"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:5886cbab842e0e7cfa0a6c2a708ac8ec281eb75262d1fd67bd6ef4fff69e07e4",
+          "byteLength": 43488,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::confirm-dialog-open::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-confirm-dialog-open-light-iphone-14-t2-r2"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:1f11c8a51cabb8c2c194d910d71fecf814f362b135a538be6e12d0f2f193e9e2",
+          "byteLength": 83093,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::confirm-dialog-open::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-confirm-dialog-open-light-iphone-14-t2-r2"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:3424147a62a27018999924a268e88ffb20e2f42d67e80e27ee62796637067e37",
+          "byteLength": 307591,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::confirm-dialog-open::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-confirm-dialog-open-light-iphone-14-t2-r2"
+          }
+        },
+        {
+          "kind": "target",
+          "digest": "sha256:f45f88019abab28713dc01a9fc7392a83c5ef12c1324c9aae429705e386a4f84",
+          "byteLength": 47473,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::submitted::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-submitted-light-iphone-14-t2-r3"
+          }
+        },
+        {
+          "kind": "diff",
+          "digest": "sha256:4a2c93eb785d1a9aad562ab59fccfecc4e23c7aff9c3860fa5067a7f1f746e2e",
+          "byteLength": 121870,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::submitted::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-submitted-light-iphone-14-t2-r3"
+          }
+        },
+        {
+          "kind": "overlay",
+          "digest": "sha256:1377ec04f8e136f51f04abe8080bf14ea3acb195ea543e65245cb5a1a1997933",
+          "byteLength": 280032,
+          "owner": {
+            "screenId": "cold-chain-ops.resolution-form",
+            "caseId": "cold-chain-ops.resolution-form::submitted::light::iphone-14",
+            "attemptId": "attempt-cold-chain-ops-resolution-form-submitted-light-iphone-14-t2-r3"
+          }
+        }
+      ],
+      "compareReceipts": [
+        {
+          "attemptId": "attempt-cold-chain-ops-exception-queue-default-light-iphone-14-t1-r1",
+          "caseId": "cold-chain-ops.exception-queue::default::light::iphone-14",
+          "sourceDigest": "sha256:be0f61a64919c5d816515f602faac497f686953cccd79144807620641d8b05cd",
+          "targetDigest": "sha256:ac92f03d5c11dca00437cdeb2b1a13d60ec1c1164a71a90d913cba33709f2198",
+          "diffDigest": "sha256:7ae39e33b578d8f15c35941044682728395221b25f2c3411a5e4eb3400f5f63d",
+          "normalizedDiffSignature": "sha256:0f55dc7621790c48f2a18bad11fdfc9d22cd9fd2610795577e421db05dc010a9",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-exception-queue-loading-light-iphone-14-t1-r2",
+          "caseId": "cold-chain-ops.exception-queue::loading::light::iphone-14",
+          "sourceDigest": "sha256:48f514c68f73852475945a655a594e5e1306bf46c0b0cab11e11f0098451fc36",
+          "targetDigest": "sha256:1562f0af2d8302d81d416de578cb1ad215028de1c89aae6513a2317d42acfb4d",
+          "diffDigest": "sha256:17eeb6ba1dc0fcc8392755a1afc08354b1d43749795f194ba75e13c2a0f28a83",
+          "normalizedDiffSignature": "sha256:10e18710374842eebab68e4f92795ab97f28291c4050c367466b562498a85fc3",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-exception-queue-critical-only-light-iphone-14-t1-r3",
+          "caseId": "cold-chain-ops.exception-queue::critical-only::light::iphone-14",
+          "sourceDigest": "sha256:3de0fa853a905167155516e45186a9a34f5e3d8eb899afaa4cbfb0ac67490a26",
+          "targetDigest": "sha256:396e093982fac18b655d751c034b94c371f094ef8b6157cf515fc958c0b60ce6",
+          "diffDigest": "sha256:f044ccf774dc572ddb030cf704d40a3c5fbd0ba8c9d379b559e08c15b692a272",
+          "normalizedDiffSignature": "sha256:a04d56fc60d923395bfa69fe4c3eaebbb4e175eb2c60ce339a1010362e888249",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-exception-queue-empty-light-iphone-14-t2-r1",
+          "caseId": "cold-chain-ops.exception-queue::empty::light::iphone-14",
+          "sourceDigest": "sha256:dd41372d7cdce0926c2be8178b435438b00add796536c184b297af58e003ccd0",
+          "targetDigest": "sha256:7d9703d7de86c82a578e1b7a4c2ef668ff7e29088e35220cd4101d378af70529",
+          "diffDigest": "sha256:be00b620bc21a28bdbb8e57f4090ea9d5a47861374930cf963f8f3139d39d3a1",
+          "normalizedDiffSignature": "sha256:82f7c4e14b0439a738e967490688aad0349eb65612ef9bef0e87f1e08847bebc",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-exception-queue-error-light-iphone-14-t2-r2",
+          "caseId": "cold-chain-ops.exception-queue::error::light::iphone-14",
+          "sourceDigest": "sha256:046d0c0c23851252e13e61a34146133b40c63b9e728f58f66149c0a171bd995f",
+          "targetDigest": "sha256:9556b99075f714673a18b949f5f5e483c98cabd1693e0b7efe26e896eda5d10b",
+          "diffDigest": "sha256:fe4f0a4c83e919b8a44df2acef7e0fa8216ea5fc3fa3bc1c314ee2494132b510",
+          "normalizedDiffSignature": "sha256:defd9f0329eb492b22190333163a29e8910679526a05cc72010e464fa28261f2",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-shipment-detail-default-light-iphone-14-t1-r1",
+          "caseId": "cold-chain-ops.shipment-detail::default::light::iphone-14",
+          "sourceDigest": "sha256:a948335715fa013e7855b1b9a5afaf24e0e866f64e9db0032b42b94c26468493",
+          "targetDigest": "sha256:3dbc356de47e14fb298d6bf9a45a030ec61ae2db8dd51e96209e7d0e7b0301bc",
+          "diffDigest": "sha256:8cb3b6fc8397291b59232d9447f0cbdfcd0287499694e4b8ee47a47127771175",
+          "normalizedDiffSignature": "sha256:1a6443b38a55b639b8894b3aa8711091576c8e5ef021b1176f34b8ba55aeccc4",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-shipment-detail-active-excursion-light-iphone-14-t1-r2",
+          "caseId": "cold-chain-ops.shipment-detail::active-excursion::light::iphone-14",
+          "sourceDigest": "sha256:53d2837d4b7daf60cbef70632fba079fc638ed7074b6c18d38f71cc07c25c2eb",
+          "targetDigest": "sha256:b9f58805ba0105bc0c540c3a2afa6361436845ebd569d5d035c62d1ca57422ab",
+          "diffDigest": "sha256:3ff97afca9d00554491f031643d6d740048689b7a343ad29a5cc47a214f05c19",
+          "normalizedDiffSignature": "sha256:293cdb43be03a3be7bfc685b60da59608faaf6e500b210ac6a6c7b37b38ecba2",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-shipment-detail-sensor-offline-light-iphone-14-t1-r3",
+          "caseId": "cold-chain-ops.shipment-detail::sensor-offline::light::iphone-14",
+          "sourceDigest": "sha256:9b12c12d9db2734623ef042650551da1c55fa0636a9221cc6612bea2c325185f",
+          "targetDigest": "sha256:8867333dbe28dd961a9692102d3d54b496740c15a5c63e058b16ac95a71d9701",
+          "diffDigest": "sha256:ffb1571e710d1e9795085da3303dc024b684ca193b20c5931e68cf46611a69eb",
+          "normalizedDiffSignature": "sha256:6ee7625f4f0ed20e2e56da912635942fb670dca84d4ff1b62ad301d883d47034",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-shipment-detail-action-sheet-open-light-iphone-14-t2-r1",
+          "caseId": "cold-chain-ops.shipment-detail::action-sheet-open::light::iphone-14",
+          "sourceDigest": "sha256:856a487590600361e95c3a94d588cce9eeb17dc07c09fbea997a1c73ad7a5154",
+          "targetDigest": "sha256:490618ca5644adf6693e020d0e7583201f2781843781b7c0e24da88bc6dfb931",
+          "diffDigest": "sha256:497381adf91c79fe8c4e987df6c48bf11738a505cfc5924ca183bec7c168dd2d",
+          "normalizedDiffSignature": "sha256:d4ac3b721814c83e0f6c9721447f40e9d10baaf8e856cc332bd9853b2de1893c",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-shipment-detail-acknowledge-dialog-open-light-iphone-14-t2-r2",
+          "caseId": "cold-chain-ops.shipment-detail::acknowledge-dialog-open::light::iphone-14",
+          "sourceDigest": "sha256:c3d4af22adca71330ba968835b21aa8f75ba77cbab011440c05876df3b3e6757",
+          "targetDigest": "sha256:50fe4013130b0e42b63889fe700943b4cebf9a99a452cc2fcce0596099449c58",
+          "diffDigest": "sha256:79187ff747a69b79612df825763fa1607104ea3ccb036c8a6c81dfe73973b426",
+          "normalizedDiffSignature": "sha256:817af3e3cee798e81e6a4d85e7a0a3c2eb2a55b6d1030814e822a424b7425b43",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-resolution-form-default-light-iphone-14-t1-r1",
+          "caseId": "cold-chain-ops.resolution-form::default::light::iphone-14",
+          "sourceDigest": "sha256:f35c6dc6063b22fddecca1434efbaa12d3311c157b35f520285d2e364c38441c",
+          "targetDigest": "sha256:34adc68de8ef9b57ac30c01849091e017ad851ae495e6781ffcd9e0caa314212",
+          "diffDigest": "sha256:3070c39c0fafa6c24c04ca852bae764ac9bfb27b35369d907222cc3833fad2ab",
+          "normalizedDiffSignature": "sha256:26a4633465912774fb295a3366da68782f70f6f8f88f9108f5cda6cc1242398b",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-resolution-form-ready-to-submit-light-iphone-14-t1-r2",
+          "caseId": "cold-chain-ops.resolution-form::ready-to-submit::light::iphone-14",
+          "sourceDigest": "sha256:74fe26bbfd37940e75bbd4ee0591162185d06c4dc3950fc4c6b205863bffce6f",
+          "targetDigest": "sha256:5e2b8394714fb5c33bacf2c8cbc6a5dfdd19abca828c61badfbd87142f1ef405",
+          "diffDigest": "sha256:7ed5bb3283c91c72adfb830e41cb7ee7d7b387aaabc878eb1ff4bdf75cf7e571",
+          "normalizedDiffSignature": "sha256:939cf819c38bcedae33ebfae4bd42d2d995bab0a44e9010bc75f417f9c345900",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-resolution-form-validation-error-light-iphone-14-t1-r3",
+          "caseId": "cold-chain-ops.resolution-form::validation-error::light::iphone-14",
+          "sourceDigest": "sha256:8195915d09401219d9209bd1972d7e0b65464e06a5fbbc5b36f6fe3932627311",
+          "targetDigest": "sha256:c2824b107951a41637a09a5518b6422b5d4878325f755846ef5952c22a41e581",
+          "diffDigest": "sha256:95915ebea8d15b93c0239c126f9d9ae470454c2532720b70f61a7f153413a8a8",
+          "normalizedDiffSignature": "sha256:85bebb5126ccc824671eb4515008c4cc84c5e623211bfa9f2a74cc89a424d9c1",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-resolution-form-approval-validation-error-light-iphone-14-t2-r1",
+          "caseId": "cold-chain-ops.resolution-form::approval-validation-error::light::iphone-14",
+          "sourceDigest": "sha256:fb952778397b03a506651f84d18222c22d408649ac055240519aef795fb4450d",
+          "targetDigest": "sha256:151d16195772a95f9a15907313daebb05ce3999c1d8de12ea38bc11747f99d92",
+          "diffDigest": "sha256:d27ee0337f875d645760b6fe9e9f417a2483c063f878c4549489fec5c3c261a9",
+          "normalizedDiffSignature": "sha256:ea37860af6bbd653a40cbedfa3d30ceb6424ba59d9d2afa9d20051d95c205f39",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-resolution-form-confirm-dialog-open-light-iphone-14-t2-r2",
+          "caseId": "cold-chain-ops.resolution-form::confirm-dialog-open::light::iphone-14",
+          "sourceDigest": "sha256:080f611562c25c5d718df576e592db254600cb95d7bea0d80a3561a311a8029f",
+          "targetDigest": "sha256:5886cbab842e0e7cfa0a6c2a708ac8ec281eb75262d1fd67bd6ef4fff69e07e4",
+          "diffDigest": "sha256:1f11c8a51cabb8c2c194d910d71fecf814f362b135a538be6e12d0f2f193e9e2",
+          "normalizedDiffSignature": "sha256:e145873ac2a0315089a13b6d41f404a5dad77fc203eb6f5537a26c0c77c38570",
+          "comparable": true
+        },
+        {
+          "attemptId": "attempt-cold-chain-ops-resolution-form-submitted-light-iphone-14-t2-r3",
+          "caseId": "cold-chain-ops.resolution-form::submitted::light::iphone-14",
+          "sourceDigest": "sha256:c99c24a0dd54e8cbfdeaf93d49055ca8893aff6c17769cf0212a09ae9c55e159",
+          "targetDigest": "sha256:f45f88019abab28713dc01a9fc7392a83c5ef12c1324c9aae429705e386a4f84",
+          "diffDigest": "sha256:4a2c93eb785d1a9aad562ab59fccfecc4e23c7aff9c3860fa5067a7f1f746e2e",
+          "normalizedDiffSignature": "sha256:99e161ca9129aabea3b11c95ad676443168ac848ccc36d3cc76bf756b41d1a88",
+          "comparable": true
+        }
+      ]
+    }
+  ],
+  "humanFinalize": {
+    "status": "passed",
+    "requiredAction": "All tracked Review sessions have been finalized.",
+    "operatorTokenConsumed": true,
+    "finalizedReviewRunIds": [
+      "review-2026-08-04-phase4-fixed-01",
+      "review-2026-08-05-treatment-01"
+    ],
+    "phase5StatusMustRemain": "passed"
+  },
+  "treatmentSimulator": {
+    "status": "passed-with-accepted-ios18-runtime",
+    "receipt": "docs/acceptance/runs/2026-08-04-consumer-optimization-01/phase-5-treatment-simulator.json",
+    "reason": "A Treatment review case was launched on the iPhone 14 iOS 18.6 simulator at the fixed 390x844 @ DPR 3 viewport; the operator accepted the runtime difference from the unavailable iOS 17 contract."
+  },
+  "currentClientMcp": {
+    "status": "passed",
+    "catalogToolCount": 33,
+    "requiredToolsPresent": true,
+    "fixedHandoffVerified": true,
+    "screenPacketCount": 3,
+    "fixedScreenshotCount": 16,
+    "allScreenshotsImageContent": true,
+    "targetResolverStatus": "passed",
+    "reviewReadStatus": "passed",
+    "localServiceStatus": "passed",
+    "reason": "Verified from the Cursor host after a complete client shutdown and restart; the current MCP exposed the rebuilt 33-tool surface and both Review sessions were readable."
+  }
+}
