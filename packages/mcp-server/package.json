@@ -20,7 +20,7 @@
   ],
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "node scripts/generate-build-info.mjs && pnpm run clean && tsc -p tsconfig.json",
+    "build": "node ../../scripts/verify-consumer-contract.mjs && node scripts/generate-build-info.mjs && pnpm run clean && tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "prepack": "pnpm run build"
   },

@@ -25,12 +25,13 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 3. 调用 `read_handoff_index`，在编辑前原样报告 `mandatoryRisks` 的全部风险，并固定 Screen 顺序、Case/Scenario 范围与 Screenshot digest 分组。
 4. 每个实现范围内的 Screen 调用一次 `read_screen_packet`。在规划容器前逐项核对 baseline 的 Region parent、scroll owner/member、positioning/pinning、sibling order、bbox relation，以及可见 content/state；这些是实现约束，不是滚动摘要。
 5. 每份不同 Screenshot 内容使用 digest group 的 `representativeBlobId` 调用 `read_evidence_screenshot`，确认 MCP ImageContent，并记录覆盖的全部 Case。相同 digest 不重复注入；metadata、base64 文本和相似 Variant 不能替代 Screenshot。
-6. 非 baseline 或包含状态/场景差异的 Case 调用 `read_case_delta`。Delta 只返回 value/resolution 和状态 patch；需要来源时再定向调用 `read_evidence_detail`。逐项实施或复查使用 `read_reconstruction_obligations` 按 Screen/维度分页，不读取完整 Acceptance Contract。
-7. continuation 只能续读同一规范化查询直到 `complete=true`。完成后不得重启；不得为“读全”轮询所有投影或在 selector 之间循环。一次针对性展开仍不能解决时，记录未知或风险。
-8. 阅读目标仓库自己的 AGENT、README、架构、测试、公共 API 和既有实现。Target adapter 只发现和归一化这些上下文；内置 fallback 不能覆盖真实目标文档。
-9. Agent 自行决定文件、组件、状态、路由和 Token，但不得发明证据未支持的容器形态、文案、交互或状态；布局敏感 prop 缺失时对照 Screenshot，仍不确定则披露为剩余风险。
-10. 完成实现并运行目标原生验证；调用 `summarize_reconstruction_review` 汇总已处理 Case、已查看 Screenshot、已重放 Scenario、已知偏差和未验证事项。
-11. 需要 authoritative Review 时调用 `start_target_review` 固定验收分母；Structure/state/interaction obligation 通过 `verify_target_claims` 提交适用 Case，component/token 提交精确 Target occurrence/slot。state/interaction result 自动形成 assessment；其他结果用 receipt digest 写入 `record_review_assessments`。没有 inspector、resolved mapping 或精确 occurrence authority 时必须保持 `unverified`，再提交 findings 和人工完成请求。
+6. 每个 Screen 在编辑前调用 `inspect_target_readiness`，记录 resolver coverage、component/token candidate/conflict/unresolved、五维 machine authority 和 blockers；没有 authority 的维度只能保持 `unverified`。随后调用 `read_implementation_plan`，按 Region tranche 依赖顺序实施，并用 `read_implementation_tranche` 只展开当前工作包。
+7. 非 baseline 或包含状态/场景差异的 Case 调用 `read_case_delta`。Delta 只返回 value/resolution 和状态 patch；需要来源时再定向调用 `read_evidence_detail`。逐项实施或复查使用 `read_reconstruction_obligations` 按 Screen/维度分页，不读取完整 Acceptance Contract。
+8. continuation 只能续读同一规范化查询直到 `complete=true`。完成后不得重启；不得为“读全”轮询所有投影或在 selector 之间循环。一次针对性展开仍不能解决时，记录未知或风险。
+9. 阅读目标仓库自己的 AGENT、README、架构、测试、公共 API 和既有实现。Target adapter 只发现和归一化这些上下文；内置 fallback 不能覆盖真实目标文档。
+10. Agent 自行决定文件、组件、状态、路由和 Token，但不得发明证据未支持的容器形态、文案、交互或状态；布局敏感 prop 缺失时对照 Screenshot，仍不确定则披露为剩余风险。
+11. 完成实现并运行目标原生验证；调用 `summarize_reconstruction_review` 汇总已处理 Case、已查看 Screenshot、已重放 Scenario、已知偏差和未验证事项。
+12. 需要 authoritative Review 时调用 `start_target_review` 固定验收分母；Structure/state/interaction obligation 通过 `verify_target_claims` 提交适用 Case，component/token 提交精确 Target occurrence/slot。state/interaction result 自动形成 assessment；其他结果用 receipt digest 写入 `record_review_assessments`。没有 inspector、resolved mapping 或精确 occurrence authority 时必须保持 `unverified`，再提交 findings 和人工完成请求。
 
 `read_agent_handoff`、`read_evidence_snapshot`、`read_evidence_case`、`read_evidence_revision`、`read_evidence_fragment` 和 `read_acceptance_contract` 只保留为显式 debug/兼容入口，不属于默认消费顺序。
 
@@ -43,6 +44,8 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 | `inspect_evidence_workspace` | 确认 Workspace、能力、契约版本、构建与进程身份、Store generation |
 | `read_handoff_index` | 默认入口：固定 refs、风险、Screen/Case/Scenario 摘要和 digest 分组 |
 | `read_screen_packet` | 单 Screen 的 baseline Structure IR、可见 state/content、Case/Scenario 和 Screenshot 分组 |
+| `read_implementation_plan` | 按 Region 依赖排序的实施 tranche 索引和 canonical obligation 计数 |
+| `read_implementation_tranche` | 只展开当前 Region tranche 的完整 canonical obligations |
 | `read_case_delta` | 指定 Case 相对 baseline 的紧凑 Fact/state patch，不重复完整 provenance |
 | `read_evidence_detail` | 按需读取单 Screen 的指定投影；可按稳定逻辑 continuation 续读 |
 | `read_reconstruction_obligations` | 按 Screen 和维度分页读取稳定、去重的五维还原义务 |
@@ -72,6 +75,7 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 | `resolve_target_tokens` | 批量解析开放 token ID，并校验 accessor/定义/usage |
 | `find_target_examples` | 查找可复用模式；Treatment 必须排除 Control 和 candidate output |
 | `validate_target_changes` | 验证变更范围、文件与实际采用的 resolved mapping |
+| `inspect_target_readiness` | 编辑前报告 resolver coverage、machine authority、Case/Scenario 声明和 blockers |
 
 ## Authoritative Target Review
 

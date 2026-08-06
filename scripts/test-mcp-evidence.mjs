@@ -111,6 +111,8 @@ try {
     "read_agent_handoff",
     "read_handoff_index",
     "read_screen_packet",
+    "read_implementation_plan",
+    "read_implementation_tranche",
     "read_case_delta",
     "read_evidence_detail",
     "read_reconstruction_obligations",
@@ -120,6 +122,7 @@ try {
     "summarize_reconstruction_review",
     "resolve_target_components",
     "resolve_target_tokens",
+    "inspect_target_readiness",
     "start_target_review",
     "read_target_review",
     "read_review_obligations",
@@ -161,9 +164,12 @@ try {
   assert(
     workspace.runtime?.build?.fingerprint?.startsWith("sha256:") &&
       workspace.runtime?.processStartedAt &&
-      workspace.runtime?.contracts?.projectionVersion === 2 &&
+      workspace.runtime?.contracts?.projectionVersion === 3 &&
       workspace.runtime?.store?.generation?.startsWith("generation-") &&
       workspace.runtime?.capabilities?.includes("handoff-index") &&
+      workspace.runtime?.capabilities?.includes("implementation-plan") &&
+      workspace.runtime?.capabilities?.includes("implementation-tranche") &&
+      workspace.runtime?.capabilities?.includes("target-readiness-contract") &&
       workspace.runtime?.capabilities?.includes("image-content-screenshot"),
     "MCP capability/build handshake is incomplete.",
   );
@@ -265,6 +271,29 @@ try {
       "stale,stale,resolved" &&
       fixtureTokens.resolutions?.[0]?.validation?.exists === false,
     "MCP did not reject split accessor chains or preserve open token IDs.",
+  );
+
+  const readiness = parseToolJson(
+    await client.request("tools/call", {
+      name: "inspect_target_readiness",
+      arguments: {
+        handoffId: handoff.handoffId,
+        targetRoot: targetFixture,
+        screenId: reference.SCREEN_ID,
+      },
+    }),
+  );
+  assert(
+    readiness.contractVersion === 1 &&
+      readiness.screenIds?.[0] === reference.SCREEN_ID &&
+      readiness.mapping?.components &&
+      readiness.mapping?.tokens &&
+      readiness.dimensions?.structure?.status === "unverified" &&
+      readiness.expectedReviewAuthority?.interactions ===
+        "target-scenario-transition-inspector" &&
+      readiness.authoritativeReviewReady === false &&
+      readiness.blockers?.length > 0,
+    "Target readiness did not report resolver coverage and missing machine authority.",
   );
 
   const history = parseToolJson(
@@ -404,6 +433,7 @@ try {
     handoffIndex.fixedRefs?.snapshotId === fixedSnapshotId &&
       handoffIndex.screens?.[0]?.screenId === reference.SCREEN_ID &&
       handoffIndex.requiredCapabilities?.includes("evidence-detail") &&
+      handoffIndex.requiredCapabilities?.includes("semantic-case-patches") &&
       handoffIndex.omittedCategories?.includes("full-facts"),
     "Handoff index did not preserve fixed identity or projection boundaries.",
   );
@@ -421,8 +451,50 @@ try {
     screenPacket.baselineCaseId === reference.TASK_LIST_CASE_ID &&
       screenPacket.cases?.length === 1 &&
       screenPacket.baseline?.structure?.caseId === reference.TASK_LIST_CASE_ID &&
+      screenPacket.implementationInventory?.resolverInput &&
       screenPacket.screenshotGroups?.[0]?.digest === screenshot.digest,
     "Screen packet did not return the fixed baseline and screenshot group.",
+  );
+
+  const implementationPlan = parseToolJson(
+    await client.request("tools/call", {
+      name: "read_implementation_plan",
+      arguments: {
+        handoffId: handoff.handoffId,
+        screenId: reference.SCREEN_ID,
+      },
+    }),
+  );
+  const firstTranche = implementationPlan.tranches?.[0];
+  assert(
+    implementationPlan.complete === true &&
+      implementationPlan.canonicalObligationCount >= 1 &&
+      firstTranche?.trancheId &&
+      implementationPlan.tranches.reduce(
+        (total, tranche) => total + tranche.obligationCount,
+        0,
+      ) === implementationPlan.canonicalObligationCount,
+    "Implementation plan did not preserve the canonical obligation denominator.",
+  );
+
+  const implementationTranche = parseToolJson(
+    await client.request("tools/call", {
+      name: "read_implementation_tranche",
+      arguments: {
+        handoffId: handoff.handoffId,
+        screenId: reference.SCREEN_ID,
+        trancheId: firstTranche.trancheId,
+      },
+    }),
+  );
+  assert(
+    implementationTranche.complete === true &&
+      implementationTranche.tranche?.trancheId === firstTranche.trancheId &&
+      Object.values(implementationTranche.obligations ?? {}).reduce(
+        (total, items) => total + items.length,
+        0,
+      ) === firstTranche.obligationCount,
+    "Implementation tranche did not expand exactly its canonical obligations.",
   );
 
   const obligations = parseToolJson(
@@ -455,8 +527,8 @@ try {
   );
   assert(
     caseDelta.baselineCaseId === reference.TASK_LIST_CASE_ID &&
-      caseDelta.added?.length === 0 &&
-      caseDelta.changed?.length === 0,
+      caseDelta.patches?.length === 0 &&
+      caseDelta.evidenceSignals?.length === 0,
     "Case delta did not treat the selected baseline as unchanged.",
   );
 

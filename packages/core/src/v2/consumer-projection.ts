@@ -18,13 +18,17 @@ import {
   type ReconstructionObligation,
 } from './reconstruction-obligations.js';
 
-export const CONSUMER_PROJECTION_VERSION = 2 as const;
+export const CONSUMER_PROJECTION_VERSION = 3 as const;
 
 export const CONSUMER_PROJECTION_CAPABILITIES = [
   'handoff-index',
   'screen-packet',
   'screen-implementation-packet',
+  'semantic-implementation-inventory',
+  'implementation-plan',
+  'implementation-tranche',
   'case-delta',
+  'semantic-case-patches',
   'evidence-detail',
   'reconstruction-obligations',
   'image-content-screenshot',
@@ -136,18 +140,11 @@ export type ScreenPacketProjection = {
     scenarioId: string;
     checkpointId: string;
   }>;
-  shellContracts: Array<{
-    caseId: string;
-    subject: string;
-    expected: unknown;
-    evidenceRefs: string[];
-  }>;
   baseline: {
-    structure: StructureIR;
+    structure: ScreenStructureProjection;
     state: StateSnapshot;
   };
-  componentIds: string[];
-  tokenIds: string[];
+  implementationInventory: ImplementationInventory;
   screenshotGroups: ConsumerScreenshotGroup[];
   detailQueryHints: Array<{
     projection: EvidenceDetailProjection;
@@ -211,10 +208,27 @@ export type StructureIR = {
   unknownRegionIds: string[];
 };
 
-export type StateSnapshot = {
+export type ScreenStructureProjection = {
   caseId: string;
-  variantId: string;
-  scenario?: EvidenceCaseReadModel['scenario'];
+  regions: Array<{
+    regionId: string;
+    role?: string;
+    positioning: StructureRegion['positioning'];
+    visible?: boolean;
+    unknownFields: string[];
+  }>;
+  siblingGroups: StructureIR['siblingGroups'];
+  siblingRelations: StructureIR['siblingRelations'];
+  scrollContainers: StructureIR['scrollContainers'];
+  complete: boolean;
+  unknownRegionIds: string[];
+};
+
+export type StateSnapshot = {
+  shell: {
+    screenId: string;
+    variantId: string;
+  };
   semanticCoverage: EvidenceCaseReadModel['semanticCoverage'];
   visibleRegionIds: string[];
   visibleContent: Array<{ regionId: string; role?: string; text: string }>;
@@ -228,12 +242,42 @@ export type StateSnapshot = {
     key: string;
     value: string | number | boolean | null;
   }>;
-  requirements: Array<{
-    subject: string;
-    kind: string;
-    expected: unknown;
-    evidenceRefs: string[];
+};
+
+export type ComponentInventoryOccurrence = {
+  regionIndex: number;
+  caseIndexes: number[];
+};
+
+export type ComponentInventoryItem = {
+  componentId: string;
+  occurrenceCount: number;
+  occurrences: ComponentInventoryOccurrence[];
+};
+
+export type TokenInventoryOccurrence = {
+  regionIndex: number;
+  slot: string;
+  caseIndexes: number[];
+};
+
+export type TokenInventoryItem = {
+  tokenId: string;
+  occurrenceCount: number;
+  occurrences: TokenInventoryOccurrence[];
+};
+
+export type ImplementationInventory = {
+  resolverInput: {
+    componentIds: string[];
+    tokenIds: string[];
+  };
+  regions: Array<{
+    regionId: string;
+    roles: string[];
   }>;
+  components: ComponentInventoryItem[];
+  tokens: TokenInventoryItem[];
 };
 
 export type StructureMismatch = {
@@ -250,17 +294,38 @@ export type StructureMismatch = {
   actual?: unknown;
 };
 
-export type CompactFactSnapshot = {
-  resolution: EvidenceReadableFact['resolution'];
-  value?: unknown;
-  issueRef?: string;
+export type CompactSemanticRegion = {
+  regionId: string;
+  role?: string;
+  parentRegionId?: string;
+  scrollOwner: StructureScrollOwner;
+  positioning: StructureRegion['positioning'];
+  pinned: boolean;
+  visible?: boolean;
 };
 
-export type FactDelta = {
-  factId: string;
-  before?: CompactFactSnapshot;
-  after?: CompactFactSnapshot;
-  changedFields: Array<'value' | 'resolution' | 'issueRef' | 'provenance'>;
+export type SemanticCasePatch =
+  | { kind: 'add'; region: CompactSemanticRegion }
+  | { kind: 'remove'; regionIndex: number }
+  | { kind: 'reparent'; regionIndex: number; beforeRegionIndex?: number; beforeRegionId?: string; afterRegionIndex?: number; afterRegionId?: string }
+  | { kind: 'scroll-owner'; regionIndex: number; before: StructureScrollOwner; after: StructureScrollOwner }
+  | { kind: 'positioning'; regionIndex: number; before: StructureRegion['positioning']; after: StructureRegion['positioning'] }
+  | { kind: 'order'; parentRegionIndex?: number; parentRegionId?: string | null; before: Array<number | string>; after: Array<number | string> }
+  | { kind: 'relation'; parentRegionIndex?: number; parentRegionId?: string | null; region: number | string; nextRegion: number | string; before?: StructureSiblingRelation['relation']; after?: StructureSiblingRelation['relation'] }
+  | { kind: 'content'; regionIndex?: number; regionId?: string; before?: string; after?: string }
+  | { kind: 'state'; regionIndex?: number; subject?: 'shell'; field: 'variantId' | 'semanticCoverage' | 'visible'; before?: string | boolean; after?: string | boolean }
+  | { kind: 'value'; regionIndex?: number; regionId?: string; key: string; before?: string | number | boolean | null; after?: string | number | boolean | null }
+  | { kind: 'keyed-collection'; collectionIndex?: number; collectionId?: string; addedKeys: string[]; removedKeys: string[] }
+  | { kind: 'interaction'; change: 'add' | 'remove'; obligationId: string; subject: string; interactionKind: string };
+
+export type CaseEvidenceSignal = {
+  subject: string;
+  unresolved: Array<{
+    field: string;
+    resolution: EvidenceReadableFact['resolution'];
+    issueRef?: string;
+  }>;
+  provenanceChangedFields: string[];
 };
 
 export type CaseDeltaProjection = {
@@ -274,16 +339,8 @@ export type CaseDeltaProjection = {
   scenario?: EvidenceCaseReadModel['scenario'];
   screenshotGroups: ConsumerScreenshotGroup[];
   sameScreenshotContentAsBaseline: boolean;
-  added: FactDelta[];
-  removed: FactDelta[];
-  changed: FactDelta[];
-  state: StateSnapshot;
-  stateDelta: {
-    visibleRegionIdsAdded: string[];
-    visibleRegionIdsRemoved: string[];
-    contentChanged: Array<{ regionId: string; before?: string; after?: string }>;
-  };
-  unresolved: Array<{ factId: string; resolution: EvidenceReadableFact['resolution']; issueRef?: string }>;
+  patches: SemanticCasePatch[];
+  evidenceSignals: CaseEvidenceSignal[];
   complete: true;
   omittedCategories: string[];
 };
@@ -653,9 +710,10 @@ function buildStateSnapshot(
     }
   }
   return {
-    caseId: evidenceCase.caseId,
-    variantId: evidenceCase.variantId,
-    ...(evidenceCase.scenario ? { scenario: { ...evidenceCase.scenario } } : {}),
+    shell: {
+      screenId: evidenceCase.screenId,
+      variantId: evidenceCase.variantId,
+    },
     semanticCoverage: evidenceCase.semanticCoverage,
     visibleRegionIds: visibleRegions.map((item) => item.regionId),
     visibleContent: contentRegions.flatMap((item) => item.text
@@ -667,9 +725,6 @@ function buildStateSnapshot(
       itemRegionIds: [...items.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, regionId]) => regionId),
     })).sort((a, b) => a.itemBaseRegionId.localeCompare(b.itemBaseRegionId)),
     values: [...values.values()].sort((a, b) => `${a.regionId}:${a.key}`.localeCompare(`${b.regionId}:${b.key}`)),
-    requirements: stateRequirements
-      .map((item) => ({ subject: item.subject, kind: item.kind, expected: item.expected, evidenceRefs: [...item.evidenceRefs] }))
-      .sort((a, b) => `${a.kind}:${a.subject}`.localeCompare(`${b.kind}:${b.subject}`)),
   };
 }
 
@@ -680,47 +735,13 @@ export function buildScreenPacket(
   const prepared = prepare(input);
   const screen = requireScreen(prepared, screenId);
   const baseline = selectBaseline(screen.cases);
-  const structure = input.acceptance.dimensions.structure.filter(
-    (requirement) => requirement.screenId === screenId,
-  );
-  const shellContracts = structure
-    .filter(
-      (requirement) =>
-        requirement.kind === 'authored-structure-contract' &&
-        requirement.subject.endsWith('.structure.shell'),
-    )
-    .map((requirement) => ({
-      caseId: requirement.caseId,
-      subject: requirement.subject,
-      expected: requirement.expected,
-      evidenceRefs: [...requirement.evidenceRefs],
-    }))
-    .sort((left, right) =>
-      `${left.caseId}:${left.subject}`.localeCompare(
-        `${right.caseId}:${right.subject}`,
-      ),
-    );
   const baselineStructure = buildStructureIR(input, screenId, baseline.caseModel.caseId);
   const baselineState = buildStateSnapshot(input, baseline.caseModel);
   const screenObligations = compileReconstructionObligations(input.acceptance).filter((item) => item.screenId === screenId);
-  const componentIds = unique(
-    input.acceptance.dimensions.components
-      .filter((item) => item.screenId === screenId)
-      .flatMap((item) => {
-        const expected = objectValue(item.expected);
-        return typeof expected?.componentId === 'string'
-          ? [expected.componentId]
-          : [];
-      }),
-  ).sort();
-  const tokenIds = unique(
-    input.acceptance.dimensions.tokens
-      .filter((item) => item.screenId === screenId)
-      .flatMap((item) => {
-        const expected = objectValue(item.expected);
-        return typeof expected?.tokenId === 'string' ? [expected.tokenId] : [];
-      }),
-  ).sort();
+  const implementationInventory = buildImplementationInventory(
+    screen.cases,
+    screenObligations,
+  );
   const screenshotGroups = buildScreenshotGroups(prepared, screenId);
   const digestByBlob = new Map(
     screenshotGroups.flatMap((group) =>
@@ -766,13 +787,11 @@ export function buildScreenPacket(
           ]
         : [],
     ),
-    shellContracts,
     baseline: {
-      structure: baselineStructure,
+      structure: compactScreenStructure(baselineStructure),
       state: baselineState,
     },
-    componentIds,
-    tokenIds,
+    implementationInventory,
     screenshotGroups,
     detailQueryHints: EVIDENCE_DETAIL_PROJECTIONS.map((projection) => ({
       projection,
@@ -786,7 +805,7 @@ export function buildScreenPacket(
     complete: true,
     omittedCategories: [
       'non-baseline-region-trees',
-      'full-token-bindings',
+      'full-component-and-token-requirements',
       'full-provenance',
       'other-screens',
     ],
@@ -797,6 +816,161 @@ export function buildScreenPacket(
           `Screenshot metadata is missing for ${group.representativeBlobId}.`,
       ),
   };
+}
+
+function buildImplementationInventory(
+  screenCases: EvidenceCaseReadModel[],
+  obligations: ReconstructionObligation[],
+): ImplementationInventory {
+  type PendingComponent = {
+    componentId: string;
+    occurrences: Map<string, {
+      regionId: string;
+      caseIds: Set<string>;
+    }>;
+  };
+  type PendingToken = {
+    tokenId: string;
+    occurrences: Map<string, {
+      regionId: string;
+      slot: string;
+      caseIds: Set<string>;
+    }>;
+  };
+  const components = new Map<string, PendingComponent>();
+  const tokens = new Map<string, PendingToken>();
+  const caseIndexById = new Map(
+    screenCases.map((item, index) => [item.caseId, index]),
+  );
+
+  for (const obligation of obligations) {
+    const expected = objectValue(obligation.expected);
+    if (
+      obligation.dimension === 'components'
+      && typeof expected?.componentId === 'string'
+    ) {
+      const item = components.get(expected.componentId) ?? {
+        componentId: expected.componentId,
+        occurrences: new Map(),
+      };
+      const occurrence = item.occurrences.get(obligation.subject) ?? {
+        regionId: obligation.subject,
+        caseIds: new Set<string>(),
+      };
+      for (const caseId of obligation.caseIds) occurrence.caseIds.add(caseId);
+      item.occurrences.set(obligation.subject, occurrence);
+      components.set(expected.componentId, item);
+    }
+    if (
+      obligation.dimension === 'tokens'
+      && typeof expected?.tokenId === 'string'
+      && typeof expected.slot === 'string'
+    ) {
+      const regionId = tokenRegionId(obligation.subject, expected.slot);
+      const occurrenceKey = `${regionId}\0${expected.slot}`;
+      const item = tokens.get(expected.tokenId) ?? {
+        tokenId: expected.tokenId,
+        occurrences: new Map(),
+      };
+      const occurrence = item.occurrences.get(occurrenceKey) ?? {
+        regionId,
+        slot: expected.slot,
+        caseIds: new Set<string>(),
+      };
+      for (const caseId of obligation.caseIds) occurrence.caseIds.add(caseId);
+      item.occurrences.set(occurrenceKey, occurrence);
+      tokens.set(expected.tokenId, item);
+    }
+  }
+
+  const inventoryRegionIds = unique([
+    ...[...components.values()].flatMap((item) =>
+      [...item.occurrences.values()].map((occurrence) => occurrence.regionId)),
+    ...[...tokens.values()].flatMap((item) =>
+      [...item.occurrences.values()].map((occurrence) => occurrence.regionId)),
+  ]).sort();
+  const regionIndexById = new Map(
+    inventoryRegionIds.map((regionId, index) => [regionId, index]),
+  );
+  const allCaseIds = new Set(screenCases.map((item) => item.caseId));
+  const regions = inventoryRegionIds.map((regionId) => ({
+    regionId,
+    roles: rolesForRegion(screenCases, regionId, allCaseIds),
+  }));
+
+  const componentItems = [...components.values()]
+    .sort((a, b) => a.componentId.localeCompare(b.componentId))
+    .map((item): ComponentInventoryItem => {
+      const occurrences = [...item.occurrences.values()]
+        .sort((a, b) => a.regionId.localeCompare(b.regionId))
+        .map((occurrence) => ({
+          regionIndex: regionIndexById.get(occurrence.regionId)!,
+          caseIndexes: caseIndexes(occurrence.caseIds, caseIndexById),
+        }));
+      return {
+        componentId: item.componentId,
+        occurrenceCount: occurrences.length,
+        occurrences,
+      };
+    });
+  const tokenItems = [...tokens.values()]
+    .sort((a, b) => a.tokenId.localeCompare(b.tokenId))
+    .map((item): TokenInventoryItem => {
+      const occurrences = [...item.occurrences.values()]
+        .sort((a, b) => a.regionId.localeCompare(b.regionId) || a.slot.localeCompare(b.slot))
+        .map((occurrence) => ({
+          regionIndex: regionIndexById.get(occurrence.regionId)!,
+          slot: occurrence.slot,
+          caseIndexes: caseIndexes(occurrence.caseIds, caseIndexById),
+        }));
+      return {
+        tokenId: item.tokenId,
+        occurrenceCount: occurrences.length,
+        occurrences,
+      };
+    });
+
+  return {
+    resolverInput: {
+      componentIds: componentItems.map((item) => item.componentId),
+      tokenIds: tokenItems.map((item) => item.tokenId),
+    },
+    regions,
+    components: componentItems,
+    tokens: tokenItems,
+  };
+}
+
+function caseIndexes(
+  caseIds: Set<string>,
+  caseIndexById: Map<string, number>,
+): number[] {
+  return uniqueNumbers(
+    [...caseIds].flatMap((caseId) => {
+      const index = caseIndexById.get(caseId);
+      return index === undefined ? [] : [index];
+    }),
+  );
+}
+
+function rolesForRegion(
+  screenCases: EvidenceCaseReadModel[],
+  regionId: string,
+  caseIds: Set<string>,
+): string[] {
+  return unique(
+    screenCases
+      .filter((item) => caseIds.has(item.caseId))
+      .flatMap((item) => {
+        const role = item.regions.find((region) => region.regionId === regionId)?.role;
+        return role ? [role] : [];
+      }),
+  ).sort();
+}
+
+function tokenRegionId(subject: string, slot: string): string {
+  const suffix = `.${slot}`;
+  return subject.endsWith(suffix) ? subject.slice(0, -suffix.length) : subject;
 }
 
 export function buildCaseDelta(
@@ -811,27 +985,6 @@ export function buildCaseDelta(
   if (!selected) {
     throw unknownReferenceError('Screen Case', { screenId, caseId });
   }
-  const before = new Map(baseline.facts.map((fact) => [fact.factId, fact]));
-  const after = new Map(selected.facts.map((fact) => [fact.factId, fact]));
-  const added: FactDelta[] = [];
-  const removed: FactDelta[] = [];
-  const changed: FactDelta[] = [];
-  const factIds = unique([...before.keys(), ...after.keys()]).sort();
-  for (const factId of factIds) {
-    const baselineFact = before.get(factId);
-    const selectedFact = after.get(factId);
-    if (!baselineFact && selectedFact) {
-      added.push({ factId, after: compactFact(selectedFact), changedFields: factChangedFields(undefined, selectedFact) });
-    } else if (baselineFact && !selectedFact) {
-      removed.push({ factId, before: compactFact(baselineFact), changedFields: factChangedFields(baselineFact, undefined) });
-    } else if (
-      baselineFact &&
-      selectedFact &&
-      factChangedFields(baselineFact, selectedFact).length > 0
-    ) {
-      changed.push({ factId, before: compactFact(baselineFact), after: compactFact(selectedFact), changedFields: factChangedFields(baselineFact, selectedFact) });
-    }
-  }
   const baselineDigests = new Set(
     buildScreenshotGroupsForCases(prepared, [baseline]).flatMap((group) =>
       group.digest ? [group.digest] : [],
@@ -843,8 +996,10 @@ export function buildCaseDelta(
   );
   const baselineState = buildStateSnapshot(input, baseline);
   const selectedState = buildStateSnapshot(input, selected);
-  const baselineContent = new Map(baselineState.visibleContent.map((item) => [item.regionId, item.text]));
-  const selectedContent = new Map(selectedState.visibleContent.map((item) => [item.regionId, item.text]));
+  const baselineStructure = buildStructureIR(input, screenId, baseline.caseId);
+  const selectedStructure = buildStructureIR(input, screenId, selected.caseId);
+  const obligations = compileReconstructionObligations(input.acceptance)
+    .filter((item) => item.screenId === screenId);
   return {
     projectionVersion: CONSUMER_PROJECTION_VERSION,
     handoffId: input.handoff.handoffId,
@@ -858,28 +1013,397 @@ export function buildCaseDelta(
     sameScreenshotContentAsBaseline:
       selectedDigests.length > 0 &&
       selectedDigests.every((digest) => baselineDigests.has(digest)),
-    added,
-    removed,
-    changed,
-    state: selectedState,
-    stateDelta: {
-      visibleRegionIdsAdded: selectedState.visibleRegionIds.filter((item) => !baselineState.visibleRegionIds.includes(item)),
-      visibleRegionIdsRemoved: baselineState.visibleRegionIds.filter((item) => !selectedState.visibleRegionIds.includes(item)),
-      contentChanged: unique([...baselineContent.keys(), ...selectedContent.keys()]).sort().flatMap((regionId) => {
-        const beforeText = baselineContent.get(regionId);
-        const afterText = selectedContent.get(regionId);
-        return beforeText !== afterText
-          ? [{ regionId, ...(beforeText === undefined ? {} : { before: beforeText }), ...(afterText === undefined ? {} : { after: afterText }) }]
-          : [];
-      }),
-    },
-    unresolved: selected.facts.filter((fact) => fact.resolution !== 'resolved').map((fact) => ({
-      factId: fact.factId,
-      resolution: fact.resolution,
-      ...(fact.issueRef ? { issueRef: fact.issueRef } : {}),
-    })),
+    patches: buildSemanticCasePatches({
+      baseline,
+      selected,
+      baselineStructure,
+      selectedStructure,
+      baselineState,
+      selectedState,
+      obligations,
+    }),
+    evidenceSignals: buildCaseEvidenceSignals(
+      baseline,
+      selected,
+      unique([
+        ...baselineStructure.regions.map((item) => item.regionId),
+        ...selectedStructure.regions.map((item) => item.regionId),
+        ...baseline.regions.map((item) => item.regionId),
+        ...selected.regions.map((item) => item.regionId),
+      ]),
+    ),
     complete: true,
-    omittedCategories: ['unchanged-facts', 'other-cases', 'other-screens'],
+    omittedCategories: [
+      'unchanged-semantics',
+      'fact-level-deltas',
+      'full-selected-state',
+      'full-provenance',
+      'other-cases',
+      'other-screens',
+    ],
+  };
+}
+
+function buildSemanticCasePatches(input: {
+  baseline: EvidenceCaseReadModel;
+  selected: EvidenceCaseReadModel;
+  baselineStructure: StructureIR;
+  selectedStructure: StructureIR;
+  baselineState: StateSnapshot;
+  selectedState: StateSnapshot;
+  obligations: ReconstructionObligation[];
+}): SemanticCasePatch[] {
+  const patches: SemanticCasePatch[] = [];
+  const beforeRegions = new Map(
+    input.baselineStructure.regions.map((item) => [item.regionId, item]),
+  );
+  const afterRegions = new Map(
+    input.selectedStructure.regions.map((item) => [item.regionId, item]),
+  );
+  const baselineRegionIndex = new Map(
+    input.baselineStructure.regions.map((item, index) => [item.regionId, index]),
+  );
+  const regionIds = unique([...beforeRegions.keys(), ...afterRegions.keys()]).sort();
+
+  for (const regionId of regionIds) {
+    const before = beforeRegions.get(regionId);
+    const after = afterRegions.get(regionId);
+    if (!before && after) {
+      patches.push({ kind: 'add', region: compactSemanticRegion(after) });
+      continue;
+    }
+    if (before && !after) {
+      patches.push({ kind: 'remove', regionIndex: baselineRegionIndex.get(regionId)! });
+      continue;
+    }
+    if (!before || !after) continue;
+    if (before.parentRegionId !== after.parentRegionId) {
+      patches.push({
+        kind: 'reparent',
+        regionIndex: baselineRegionIndex.get(regionId)!,
+        ...(before.parentRegionId
+          ? baselineRegionIndex.has(before.parentRegionId)
+            ? { beforeRegionIndex: baselineRegionIndex.get(before.parentRegionId)! }
+            : { beforeRegionId: before.parentRegionId }
+          : {}),
+        ...(after.parentRegionId
+          ? baselineRegionIndex.has(after.parentRegionId)
+            ? { afterRegionIndex: baselineRegionIndex.get(after.parentRegionId)! }
+            : { afterRegionId: after.parentRegionId }
+          : {}),
+      });
+    }
+    if (canonical(before.scrollOwner) !== canonical(after.scrollOwner)) {
+      patches.push({
+        kind: 'scroll-owner',
+        regionIndex: baselineRegionIndex.get(regionId)!,
+        before: before.scrollOwner,
+        after: after.scrollOwner,
+      });
+    }
+    if (before.positioning !== after.positioning) {
+      patches.push({
+        kind: 'positioning',
+        regionIndex: baselineRegionIndex.get(regionId)!,
+        before: before.positioning,
+        after: after.positioning,
+      });
+    }
+  }
+
+  const beforeGroups = new Map(
+    input.baselineStructure.siblingGroups.map((item) => [item.parentRegionId ?? '', item]),
+  );
+  const afterGroups = new Map(
+    input.selectedStructure.siblingGroups.map((item) => [item.parentRegionId ?? '', item]),
+  );
+  for (const key of unique([...beforeGroups.keys(), ...afterGroups.keys()]).sort()) {
+    const before = beforeGroups.get(key)?.childRegionIds ?? [];
+    const after = afterGroups.get(key)?.childRegionIds ?? [];
+    if (canonical(before) !== canonical(after)) {
+      const parentRegionId = key || null;
+      patches.push({
+        kind: 'order',
+        ...(parentRegionId && baselineRegionIndex.has(parentRegionId)
+          ? { parentRegionIndex: baselineRegionIndex.get(parentRegionId)! }
+          : { parentRegionId }),
+        before: before.map((regionId) => baselineRegionIndex.get(regionId) ?? regionId),
+        after: after.map((regionId) => baselineRegionIndex.get(regionId) ?? regionId),
+      });
+    }
+  }
+
+  const relationKey = (item: StructureSiblingRelation) =>
+    canonical([item.parentRegionId, item.regionId, item.nextRegionId]);
+  const beforeRelations = new Map(
+    input.baselineStructure.siblingRelations.map((item) => [relationKey(item), item]),
+  );
+  const afterRelations = new Map(
+    input.selectedStructure.siblingRelations.map((item) => [relationKey(item), item]),
+  );
+  for (const key of unique([...beforeRelations.keys(), ...afterRelations.keys()]).sort()) {
+    const before = beforeRelations.get(key);
+    const after = afterRelations.get(key);
+    const addsNewEndpoint = Boolean(
+      !before
+      && after
+      && (
+        !baselineRegionIndex.has(after.regionId)
+        || !baselineRegionIndex.has(after.nextRegionId)
+      ),
+    );
+    if (
+      after
+      && (addsNewEndpoint || (before && before.relation !== after.relation))
+    ) {
+      patches.push({
+        kind: 'relation',
+        ...(after.parentRegionId && baselineRegionIndex.has(after.parentRegionId)
+          ? { parentRegionIndex: baselineRegionIndex.get(after.parentRegionId)! }
+          : { parentRegionId: after.parentRegionId }),
+        region: baselineRegionIndex.get(after.regionId) ?? after.regionId,
+        nextRegion: baselineRegionIndex.get(after.nextRegionId) ?? after.nextRegionId,
+        ...(before ? { before: before.relation } : {}),
+        after: after.relation,
+      });
+    }
+  }
+
+  const beforeContent = new Map(
+    input.baselineState.visibleContent.map((item) => [item.regionId, item.text]),
+  );
+  const afterContent = new Map(
+    input.selectedState.visibleContent.map((item) => [item.regionId, item.text]),
+  );
+  for (const regionId of unique([...beforeContent.keys(), ...afterContent.keys()]).sort()) {
+    if (!afterRegions.has(regionId)) continue;
+    const before = beforeContent.get(regionId);
+    const after = afterContent.get(regionId);
+    if (before !== after) {
+      patches.push({
+        kind: 'content',
+        ...(baselineRegionIndex.has(regionId)
+          ? { regionIndex: baselineRegionIndex.get(regionId)! }
+          : { regionId }),
+        ...(before !== undefined ? { before } : {}),
+        ...(after !== undefined ? { after } : {}),
+      });
+    }
+  }
+
+  if (input.baselineState.shell.variantId !== input.selectedState.shell.variantId) {
+    patches.push({
+      kind: 'state',
+      subject: 'shell',
+      field: 'variantId',
+      before: input.baselineState.shell.variantId,
+      after: input.selectedState.shell.variantId,
+    });
+  }
+  if (input.baselineState.semanticCoverage !== input.selectedState.semanticCoverage) {
+    patches.push({
+      kind: 'state',
+      subject: 'shell',
+      field: 'semanticCoverage',
+      before: input.baselineState.semanticCoverage,
+      after: input.selectedState.semanticCoverage,
+    });
+  }
+  const beforeVisible = new Set(input.baselineState.visibleRegionIds);
+  const afterVisible = new Set(input.selectedState.visibleRegionIds);
+  for (const regionId of regionIds) {
+    if (!beforeRegions.has(regionId) || !afterRegions.has(regionId)) continue;
+    const before = beforeVisible.has(regionId);
+    const after = afterVisible.has(regionId);
+    if (before !== after) {
+      patches.push({
+        kind: 'state',
+        regionIndex: baselineRegionIndex.get(regionId)!,
+        field: 'visible',
+        before,
+        after,
+      });
+    }
+  }
+
+  const valueKey = (item: StateSnapshot['values'][number]) => `${item.regionId}\0${item.key}`;
+  const beforeValues = new Map(input.baselineState.values.map((item) => [valueKey(item), item]));
+  const afterValues = new Map(input.selectedState.values.map((item) => [valueKey(item), item]));
+  for (const key of unique([...beforeValues.keys(), ...afterValues.keys()]).sort()) {
+    const before = beforeValues.get(key);
+    const after = afterValues.get(key);
+    const regionId = after?.regionId ?? before!.regionId;
+    if (!afterRegions.has(regionId)) continue;
+    if (canonical(before?.value) !== canonical(after?.value)) {
+      patches.push({
+        kind: 'value',
+        ...(baselineRegionIndex.has(regionId)
+          ? { regionIndex: baselineRegionIndex.get(regionId)! }
+          : { regionId }),
+        key: after?.key ?? before!.key,
+        ...(before ? { before: before.value } : {}),
+        ...(after ? { after: after.value } : {}),
+      });
+    }
+  }
+
+  const beforeCollections = new Map(
+    input.baselineState.keyedCollections.map((item) => [item.itemBaseRegionId, item.keys]),
+  );
+  const afterCollections = new Map(
+    input.selectedState.keyedCollections.map((item) => [item.itemBaseRegionId, item.keys]),
+  );
+  for (const collectionId of unique([...beforeCollections.keys(), ...afterCollections.keys()]).sort()) {
+    const before = new Set(beforeCollections.get(collectionId) ?? []);
+    const after = new Set(afterCollections.get(collectionId) ?? []);
+    const addedKeys = [...after].filter((item) => !before.has(item)).sort();
+    const removedKeys = [...before].filter((item) => !after.has(item)).sort();
+    if (addedKeys.length > 0 || removedKeys.length > 0) {
+      patches.push({
+        kind: 'keyed-collection',
+        ...(baselineRegionIndex.has(collectionId)
+          ? { collectionIndex: baselineRegionIndex.get(collectionId)! }
+          : { collectionId }),
+        addedKeys,
+        removedKeys,
+      });
+    }
+  }
+
+  const interactionsFor = (caseId: string) => new Map(
+    input.obligations
+      .filter((item) => item.dimension === 'interactions' && item.caseIds.includes(caseId))
+      .map((item) => [item.obligationId, item]),
+  );
+  const beforeInteractions = interactionsFor(input.baseline.caseId);
+  const afterInteractions = interactionsFor(input.selected.caseId);
+  for (const obligationId of unique([
+    ...beforeInteractions.keys(),
+    ...afterInteractions.keys(),
+  ]).sort()) {
+    const before = beforeInteractions.get(obligationId);
+    const after = afterInteractions.get(obligationId);
+    if (!before && after) {
+      patches.push({
+        kind: 'interaction',
+        change: 'add',
+        obligationId,
+        subject: after.subject,
+        interactionKind: after.kind,
+      });
+    } else if (before && !after) {
+      patches.push({
+        kind: 'interaction',
+        change: 'remove',
+        obligationId,
+        subject: before.subject,
+        interactionKind: before.kind,
+      });
+    }
+  }
+
+  return patches.sort((a, b) => canonical(a).localeCompare(canonical(b)));
+}
+
+function compactSemanticRegion(region: StructureRegion): CompactSemanticRegion {
+  return {
+    regionId: region.regionId,
+    ...(region.role ? { role: region.role } : {}),
+    ...(region.parentRegionId ? { parentRegionId: region.parentRegionId } : {}),
+    scrollOwner: region.scrollOwner,
+    positioning: region.positioning,
+    pinned: region.pinned,
+    ...(region.visible !== undefined ? { visible: region.visible } : {}),
+  };
+}
+
+function compactScreenStructure(structure: StructureIR): ScreenStructureProjection {
+  return {
+    caseId: structure.caseId,
+    regions: structure.regions.map((region) => ({
+      regionId: region.regionId,
+      ...(region.role ? { role: region.role } : {}),
+      positioning: region.positioning,
+      ...(region.visible !== undefined ? { visible: region.visible } : {}),
+      unknownFields: [...region.unknownFields],
+    })),
+    siblingGroups: structure.siblingGroups.map((group) => ({
+      parentRegionId: group.parentRegionId,
+      childRegionIds: [...group.childRegionIds],
+    })),
+    siblingRelations: structure.siblingRelations.map((relation) => ({
+      ...relation,
+    })),
+    scrollContainers: structure.scrollContainers.map((container) => ({
+      owner: { ...container.owner },
+      memberRegionIds: [...container.memberRegionIds],
+      pinnedRegionIds: [...container.pinnedRegionIds],
+    })),
+    complete: structure.complete,
+    unknownRegionIds: [...structure.unknownRegionIds],
+  };
+}
+
+function buildCaseEvidenceSignals(
+  baseline: EvidenceCaseReadModel,
+  selected: EvidenceCaseReadModel,
+  regionIds: string[],
+): CaseEvidenceSignal[] {
+  type PendingSignal = {
+    subject: string;
+    unresolved: CaseEvidenceSignal['unresolved'];
+    provenanceChangedFields: Set<string>;
+  };
+  const signals = new Map<string, PendingSignal>();
+  const beforeFacts = new Map(baseline.facts.map((item) => [item.factId, item]));
+  const sortedRegionIds = [...regionIds].sort((a, b) => b.length - a.length || a.localeCompare(b));
+  const signalFor = (factId: string) => {
+    const location = factLocation(factId, sortedRegionIds);
+    const signal = signals.get(location.subject) ?? {
+      subject: location.subject,
+      unresolved: [],
+      provenanceChangedFields: new Set<string>(),
+    };
+    signals.set(location.subject, signal);
+    return { signal, field: location.field };
+  };
+
+  for (const fact of selected.facts) {
+    if (fact.resolution !== 'resolved') {
+      const { signal, field } = signalFor(fact.factId);
+      signal.unresolved.push({
+        field,
+        resolution: fact.resolution,
+        ...(fact.issueRef ? { issueRef: fact.issueRef } : {}),
+      });
+    }
+    const before = beforeFacts.get(fact.factId);
+    if (before && canonical(before.provenance) !== canonical(fact.provenance)) {
+      const { signal, field } = signalFor(fact.factId);
+      signal.provenanceChangedFields.add(field);
+    }
+  }
+
+  return [...signals.values()]
+    .map((item) => ({
+      subject: item.subject,
+      unresolved: item.unresolved.sort((a, b) => a.field.localeCompare(b.field)),
+      provenanceChangedFields: [...item.provenanceChangedFields].sort(),
+    }))
+    .sort((a, b) => a.subject.localeCompare(b.subject));
+}
+
+function factLocation(
+  factId: string,
+  regionIds: string[],
+): { subject: string; field: string } {
+  const regionId = regionIds.find(
+    (candidate) => factId === candidate || factId.startsWith(`${candidate}.`),
+  );
+  if (!regionId) return { subject: factId, field: '$fact' };
+  return {
+    subject: regionId,
+    field: factId === regionId ? '$self' : factId.slice(regionId.length + 1),
   };
 }
 
@@ -1343,29 +1867,9 @@ function bboxRelation(a: StructureBbox | undefined, b: StructureBbox | undefined
   return 'diagonal';
 }
 
-function compactFact(fact: EvidenceReadableFact): CompactFactSnapshot {
-  return {
-    resolution: fact.resolution,
-    ...(fact.value !== undefined ? { value: fact.value } : {}),
-    ...(fact.issueRef ? { issueRef: fact.issueRef } : {}),
-  };
-}
-
-function factChangedFields(
-  before: EvidenceReadableFact | undefined,
-  after: EvidenceReadableFact | undefined,
-): FactDelta['changedFields'] {
-  const fields: FactDelta['changedFields'] = [];
-  if (canonical(before?.value) !== canonical(after?.value)) fields.push('value');
-  if (before?.resolution !== after?.resolution) fields.push('resolution');
-  if (before?.issueRef !== after?.issueRef) fields.push('issueRef');
-  if (canonical(before?.provenance) !== canonical(after?.provenance)) fields.push('provenance');
-  return fields;
-}
-
 function encodeObligationCursor(payload: ObligationCursorPayload): string {
   const json = canonical(payload);
-  return `pbop2.${sha1Hex(json)}.${encodeURIComponent(json).replaceAll('.', '%2E')}`;
+  return `pbop3.${sha1Hex(json)}.${encodeURIComponent(json).replaceAll('.', '%2E')}`;
 }
 
 function decodeObligationCursor(
@@ -1373,7 +1877,7 @@ function decodeObligationCursor(
   expected: Omit<ObligationCursorPayload, 'version' | 'nextKey'>,
 ): ObligationCursorPayload {
   const [prefix, checksum, encoded, ...rest] = value.split('.');
-  if (prefix !== 'pbop2' || !checksum || !encoded || rest.length > 0) throw invalidContinuation('Obligation continuation format is invalid.');
+  if (prefix !== 'pbop3' || !checksum || !encoded || rest.length > 0) throw invalidContinuation('Obligation continuation format is invalid.');
   let parsed: unknown;
   try {
     parsed = JSON.parse(decodeURIComponent(encoded));
@@ -1407,7 +1911,7 @@ function encodeCursor(payload: CursorPayload): string {
   // the period-delimited envelope remains unambiguous for IDs such as
   // "screen.detail" and logical item keys.
   const encoded = encodeURIComponent(json).replaceAll('.', '%2E');
-  return `pbcp2.${sha1Hex(json)}.${encoded}`;
+  return `pbcp3.${sha1Hex(json)}.${encoded}`;
 }
 
 function decodeCursor(
@@ -1418,7 +1922,7 @@ function decodeCursor(
   >,
 ): CursorPayload {
   const [prefix, checksum, encoded, ...rest] = value.split('.');
-  if (prefix !== 'pbcp2' || !checksum || !encoded || rest.length > 0) {
+  if (prefix !== 'pbcp3' || !checksum || !encoded || rest.length > 0) {
     throw invalidContinuation('Continuation format is invalid.');
   }
   let json: string;
@@ -1470,6 +1974,10 @@ function objectValue(value: unknown): Record<string, unknown> | undefined {
 
 function unique(values: string[]): string[] {
   return [...new Set(values)];
+}
+
+function uniqueNumbers(values: number[]): number[] {
+  return [...new Set(values)].sort((a, b) => a - b);
 }
 
 function canonical(value: unknown): string {

@@ -38,15 +38,12 @@ Local Service 会从持久 Handoff 独立重算 obligations，并拒绝客户端
 
 旧 Review event log 仍可读取，但缺少 obligation contract 的旧 Session 不能静默完成。
 
-## 尚未解决的根因
+## 当前仍未闭合的根因
 
-5R.1-5R.4 已消除验收分母可删减、Source 结构难消费，以及 Structure/component/token/state/interaction 由 Agent 自证的问题。剩余问题集中在消费规模、Target 接入和推广：
+5R.1-5R.4 已消除验收分母可删减、Source 结构难消费，以及 Structure/component/token/state/interaction 由 Agent 自证的问题。2026-08-06 完成的 5R-A/B 进一步移除了 Fact 级 delta 放大和 component/token detail 遍历。剩余问题是：
 
-1. **渐进读取载荷仍然偏大**：Screen packet 和 Case delta 已去除完整 provenance，但仍包含大量重复 expected、bbox、document order 和 scroll owner 字段；Agent 可能再次被机械 Fact 差异淹没。
-2. **Target inspector 需要工程接入**：Structure/state/interaction verifier 不从 Flutter widget 名称或测试退出码猜语义；目标工程必须提供 deterministic `structureCommand`、`stateCommand` 和 `scenarioCommand`。未接入时系统会保持 `unverified`，不会静默通过。
-3. **Target 映射声明仍可能不完整**：目标代码中实际存在的组件或 Token accessor，如果没有目标文档或机器 Contract 明确授权，resolver 仍只能返回 `candidate` 或 `unresolved`。这符合安全预期，但会阻止 authoritative Review 闭合。
-4. **消费指南与构建产物需要同源校验**：Tool schema、仓库指南和 MCP 内置 guide 只要存在版本漂移，Agent 就可能遗漏新 verifier 或执行过时流程。
-5. **跨技术栈与跨样本尚未推广**：Claim contract 与 Review authority 是 target-independent，但当前 occurrence/Structure adapter 仅实现 Flutter，仍需盲测和其他 Adapter 验证抽象是否稳定。
+1. **Target 映射声明仍可能不完整**：目标代码中实际存在的组件或 Token accessor，如果没有目标文档或机器 Contract 明确授权，resolver 仍只能返回 `candidate` 或 `unresolved`。这符合安全预期，但会阻止 authoritative Review 闭合。
+2. **跨样本推广尚未完成**：仍需至少两个 Prototype、两个独立消费者和一个非当前映射范围的 Target adapter 做盲测；synthetic quality/mutation gate 不能替代独立 Agent 验收。
 
 ## 后续切片
 
@@ -100,11 +97,49 @@ Local Service 会从持久 Handoff 独立重算 obligations，并拒绝客户端
 
 退出条件已由 mutation tests 覆盖：默认选中值错误、操作更新错误对象、交互记录存在但 post-state 未变化均返回 `deviation`，不能通过。
 
+### 2026-08-06 5R-C 已实现：Region 实施工作包
+
+- 新增 `read_implementation_plan` 与 `read_implementation_tranche`，按 Screen 的 Region 拓扑和依赖顺序输出实施 tranche。
+- `$screen` tranche 汇总 states/interactions，并显式依赖所有 Region tranche；普通 tranche 只展开当前 Region 绑定的完整 canonical obligations。
+- 计划索引保留 Case 索引、父依赖、五维计数和 canonical denominator；Core 在任何 obligation 未分配时拒绝生成计划。
+- MCP E2E 会实际读取 plan/tranche，并断言所有 tranche 的 obligation 数量等于固定分母。
+
+### 2026-08-06 5R-D 已实现：编辑前 Target readiness
+
+- Core 新增中性的 readiness contract/analyzer，分别报告 component/token resolver coverage、candidate/conflict/stale/unresolved、五维 authority、只能 `unverified` 的维度和 blockers。
+- MCP 新增只读 `inspect_target_readiness`，从固定 Handoff 的 implementation inventory 批量解析目标映射，并读取 Target adapter 明确声明的 inspector、Case 和 Scenario 能力。
+- readiness 不从 Widget 名称、文件名、测试退出码或 Screenshot 观感推断语义；缺少显式 Target authority 会保持 `unverified` 并阻断 authoritative Review。
+- Flutter adapter 仅提供其 machine contract 中声明的命令事实；Core contract 不包含 Flutter、cold-chain、Screen ID 或项目 Token ID。
+
+### 2026-08-06 5R-E 已实现：Consumer contract 单一来源与 drift gate
+
+- MCP 内置 `handoff-consumer` guide 直接引用 Core 生成的 prompt asset；不再维护第二份独立消费正文。
+- `consumer-contract:verify` 检查 Markdown、生成资产、MCP guide、projection capabilities、Tool registry 和 readiness capability 的一致性；MCP build 失败即停止，不允许带漂移构建。
+
+### 2026-08-06 5R-F 已实现：通用质量与 mutation gate 基础
+
+- Core 新增中性的 `measureConsumerQuality`/`assertConsumerQualityGates`，覆盖 payload 字符量、精确重复率、delta amplification、detail traversal、continuation 稳定性和 implementation-plan denominator preservation。
+- synthetic fixture 不使用冷链、Flutter Widget、产品业务 ID 或项目 Token ID；现有五维 target-claim mutation tests 继续覆盖结构、组件、Token、状态和交互错误。
+- 质量阈值是相对 gate，不生成综合还原分数；跨 Prototype/Agent 的绝对 Promote 结论仍留给 5R-G。
+
 ### 5R.5 跨样本推广
 
 - 使用至少两个不同 Prototype 和两个独立实现 Agent 做盲测；
 - 统计 obligation coverage、verifier authority、unknown/deviation、上下文字符数和调用次数；
 - 只有结构、组件、Token、状态和交互五类 mutation 都被系统捕获，且消费量没有退回全量读取级别，才允许 Promote。
+
+### 2026-08-06 5R-A/B 已实现：紧凑语义投影与实施 Inventory
+
+本切片不修改任何 Target 工程，仅修改 Core/MCP 的 Evidence 消费合同和通用测试。
+
+- Consumer projection 升级到 version 3，并新增 `semantic-implementation-inventory` 与 `semantic-case-patches` capability；旧 projection 不会被静默兼容。
+- Screen packet 移除逐 Case shell expected、baseline state requirements 和重复的 component/token ID 清单；baseline Structure 仅保留 Region role/positioning、parent/order、scroll relation 和 scroll membership 所需的语义关系，省略可由关系重建的 ancestor/document-order/bbox 原值。
+- `implementationInventory` 按 component/token 聚合 occurrence，Region role 只保存一次；occurrence 用 `regionIndex` 和 `caseIndexes` 引用 packet 内稳定表，resolver 输入仍可直接批量传给 Target resolver。
+- Case delta 移除 `added/removed/changed Fact[]` 与完整 selected State，改为 Region、reparent、scroll-owner、positioning、order、bbox relation、content、typed state/value、keyed collection 和 interaction patch；unknown/conflict/provenance 只通过按语义 Region 聚合的 signal 保留。
+- delta 的已有 Region 使用 baseline Structure index；新增 Region 才携带语义 ID，避免长 Region ID 和 Case ID 在每条 patch 中重复。
+- MCP tool description、consumer guide、Core prompt asset 和 MCP E2E contract 已同步到新字段；5R-E 已增加构建时 drift gate。
+
+固定 `handoff-2026-08-06t025523748-a522bc2f` 的只读测量结果：三份 Screen packet 合计约 129k 字符，21 份非 baseline Case delta 合计约 81k 字符；单个 Screen packet 最大约 46.5k 字符，单个 delta 最大约 7.5k 字符。该测量只验证投影规模和语义完整性，不代表 Target 实现已通过 Review。
 
 ## 2026-08-05 固定 Handoff 只读验证结论
 
@@ -142,13 +177,7 @@ Source Evidence 已足以确定三个 Screen 的页面构图和滚动边界：ap
 
 ### 下一步修复顺序
 
-1. 压缩 Source projection：Screen packet 去除 state 与 requirement expected 的重复；Case delta 按 Region 和语义变化聚合 add/remove/reparent/scroll-owner/order/state patch，不再逐字段展开机械 bbox Fact。
-2. 为 Screen packet 增加稳定、去重的 component/token inventory，避免 Agent 为批量 Target resolver 再遍历完整 detail；增加响应字符数、item 数和重复率预算测试。
-3. 让 MCP 内置 guide、仓库指南、capability 和 Tool schema 从同一来源生成或交叉校验，构建时阻止 state/interaction 能力与文案漂移。
-4. 补齐 Flutter Target 自有映射声明；已有 accessor 只补目标文档/Contract，真正缺失的 `border.hairline`、standard easing 等再扩展 Theme API，不在 feature 中写裸值。
-5. 为 Flutter Target 接入 deterministic structure/state/scenario launcher；Structure 输出真实 parent/scroll owner/order，State 输出 visible Regions、keyed collections 和 selected/default values，Scenario 输出 pre/action/post/checkpoint/visible result。
-6. 修正 cold-chain Target 仅作为验证样本，不把业务 ID 写入 Core：复用真实 `CommonFormSection`、统一单滚动组件、补稳定业务 key，并完整重放 7 个 Scenario。
-7. 完成 authoritative Review 后再执行 5R.5：至少两个不同 Prototype、两个独立 Agent 和一个非当前项目映射范围；只有五维 mutation 均被捕获且消费量未退回全量级别，才重新评估 Promote。
+1. 完成 5R-G：至少两个 Prototype、两个独立 Agent 和一个非当前映射范围的 Target adapter 进行盲测；只有五维 mutation 均被捕获且消费量未退回全量级别，才重新评估 Promote。
 
 ## 非目标
 

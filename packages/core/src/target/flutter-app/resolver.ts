@@ -15,6 +15,7 @@ import type {
   TargetResolutionCandidate,
   TargetRevisionKey,
 } from '../types.js';
+import type { TargetAdapterAuthorityInspection } from '../readiness.js';
 
 const execFileAsync = promisify(execFile);
 const machineMapping = z.object({
@@ -81,6 +82,7 @@ type Inventory = {
   declarations: TargetMappingDeclaration[];
   policySources: TargetDeclarationSource[];
   warnings: string[];
+  reviewContract?: FlutterReviewContract;
 };
 
 const inventoryCache = new Map<string, Inventory>();
@@ -95,6 +97,48 @@ export async function resolveFlutterTargetTokens(
   input: ResolveTargetMappingsInput,
 ): Promise<TargetResolutionBatch> {
   return resolveFlutterMappings(input, 'token');
+}
+
+export async function inspectFlutterTargetAuthority(input: {
+  targetRoot: string;
+  gitBase?: string;
+  excludePaths?: string[];
+  candidateOutputRoot?: string;
+}): Promise<TargetAdapterAuthorityInspection> {
+  const targetRootRealpath = await realpath(input.targetRoot).catch(() => path.resolve(input.targetRoot));
+  if (!(await isFlutterTarget(targetRootRealpath))) {
+    return {
+      adapterId: 'unsupported',
+      supported: false,
+      targetRevisionKey: await unsupportedRevision(targetRootRealpath, input.gitBase),
+      authorities: {},
+      warnings: ['No Flutter Target adapter matched this target root.'],
+    };
+  }
+  const inventory = await loadInventory(targetRootRealpath, { ...input, ids: [] });
+  const review = inventory.reviewContract;
+  const source = inventory.policySources.find((item) => item.kind === 'machine-contract')?.path;
+  const authority = (available: boolean, name: string, missing: string) => ({
+    available,
+    authority: name,
+    ...(source ? { source } : {}),
+    reason: available ? `Target contract declares ${name}.` : missing,
+  });
+  return {
+    adapterId: 'flutter',
+    supported: true,
+    targetRevisionKey: inventory.revision,
+    authorities: {
+      components: authority(true, 'target-component-occurrence-verifier', 'Component occurrence verifier is unavailable.'),
+      tokens: authority(true, 'target-token-slot-verifier', 'Token slot verifier is unavailable.'),
+      structure: authority(Boolean(review?.launcher.structureCommand), 'target-structure-inspector', 'Target contract does not declare a Structure inspector.'),
+      states: authority(Boolean(review?.launcher.stateCommand), 'target-state-inspector', 'Target contract does not declare a State inspector.'),
+      interactions: authority(Boolean(review?.launcher.scenarioCommand), 'target-scenario-transition-inspector', 'Target contract does not declare a Scenario transition inspector.'),
+    },
+    ...(review ? { declaredCaseIds: Object.keys(review.cases).sort() } : {}),
+    ...(review?.scenarios ? { declaredScenarioIds: Object.values(review.scenarios).map((item) => item.scenarioId).sort() } : {}),
+    warnings: inventory.warnings,
+  };
 }
 
 async function resolveFlutterMappings(
@@ -172,6 +216,7 @@ async function loadInventory(
   const declarations: TargetMappingDeclaration[] = [];
   const policySources: TargetDeclarationSource[] = [];
   let machineQueryExclusions: string[] = [];
+  let reviewContract: FlutterReviewContract | undefined;
   for (const file of files.filter((item) => item.path.endsWith('.md'))) {
     const sourceKind = /(?:^|\/)AGENTS\.md$/i.test(file.path)
       ? 'target-policy' as const
@@ -192,6 +237,7 @@ async function loadInventory(
         warnings.push(`Invalid docs/proto-bridge.target.json: ${parsed.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`).join('; ')}`);
       } else {
         machineQueryExclusions = parsed.data.queryExclusions ?? [];
+        reviewContract = parsed.data.review;
         const source = sourceFor(machine, 'machine-contract', 80);
         policySources.push(source);
         declarations.push(
@@ -226,6 +272,7 @@ async function loadInventory(
     declarations,
     policySources: uniqueSources(policySources),
     warnings,
+    ...(reviewContract ? { reviewContract } : {}),
   };
   inventoryCache.set(cacheKey, inventory);
   return inventory;

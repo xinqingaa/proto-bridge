@@ -29,6 +29,7 @@ export function mcpRuntimeInfo(generation: string | 'legacy-unavailable' = 'lega
       ...CONSUMER_PROJECTION_CAPABILITIES,
       'target-component-resolver',
       'target-token-resolver',
+      'target-readiness-contract',
       'target-example-exclusions',
       'target-review-authoritative',
     ],

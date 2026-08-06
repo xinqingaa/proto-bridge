@@ -6,7 +6,7 @@
 - 优先复用目标工程已声明或扫描确认的组件、Theme、路由和状态边界；只有确有需要时才扩展。
 - 覆盖 Handoff 选中的 Case、variant 和 interaction；不能实现的范围及时披露。
 - `read_screen_packet` 的 baseline Structure IR 是容器实现约束：逐节点 parent、scroll owner/member、positioning/pinning、sibling order 和 bbox relation 必须一起转译；不能把 owner 去重列表或 Screenshot 观感替代这些关系。
-- baseline state 包含状态壳层、可见 Region、文案、keyed collection、selected/default 标量值和状态要求；业务 identity/key 必须原样落到 Target inspector，不能以列表位置代替。
+- baseline state 包含状态壳层、可见 Region、文案、keyed collection 和 selected/default 标量值；具体状态 expected 仍通过固定 obligations 查询，不在 packet 中重复注入。业务 identity/key 必须原样落到 Target inspector，不能以列表位置代替。
 - Evidence 有 `componentId` 时优先复用目标工程公共组件；没有可靠映射时结合 Screenshot 和目标规范实现，并说明取舍。
 - Token binding 用于优先命中目标 Theme/Token；不能可靠映射时仍需保证 Screenshot 所示的最终视觉，并记录已知差异。
 - Authoritative Review 的 component/token claim 必须定位到实际 Dart 构造调用；Token 还必须声明 owner constructor 和 named-argument slot。不能用全仓存在、import 或另一个 occurrence 代替当前 obligation 的落点。

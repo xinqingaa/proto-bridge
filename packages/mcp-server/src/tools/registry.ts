@@ -19,6 +19,8 @@ import {
   readHandoffIndexTool,
   readReconstructionObligationsTool,
   readScreenPacketTool,
+  readImplementationPlanTool,
+  readImplementationTrancheTool,
   summarizeReconstructionReviewTool,
   readEvidenceBlobTool,
   readEvidenceCatalogTool,
@@ -45,6 +47,7 @@ import {
   startTargetReviewTool,
   verifyTargetClaimsTool,
 } from './target-review.js';
+import { inspectTargetReadinessTool } from './inspect-target-readiness.js';
 
 const objectSchema = { type: 'object', additionalProperties: false };
 const stringArraySchema = { type: 'array', items: { type: 'string' } };
@@ -106,8 +109,10 @@ const toolDefinitions: JsonValue[] = [
   tool('read_evidence_staleness', '读取 Staleness Report', '读取同时匹配 Bundle 与 Snapshot 的固定报告。', { ...snapshot, reportId: { type: 'string' } }, ['bundleId', 'snapshotId', 'reportId']),
   tool('read_agent_handoff', '读取 Agent Handoff', '读取固定 Workspace/Snapshot/revision refs 与全部 risks。', { handoffId: { type: 'string' } }, ['handoffId']),
   tool('read_handoff_index', '读取 Handoff 索引', '默认消费入口：返回固定引用、全部风险、Screen 顺序、Case/Scenario 计数和 Screenshot digest 分组，不展开完整 Facts 或 Acceptance dimensions。', { handoffId: { type: 'string' } }, ['handoffId']),
-  tool('read_screen_packet', '读取 Screen 包', '按固定 Handoff 读取单个 Screen 的 Case/Scenario 地图、baseline、截图分组及可继续查询的结构摘要。', { handoffId: { type: 'string' }, screenId: { type: 'string' } }, ['handoffId', 'screenId']),
-  tool('read_case_delta', '读取 Case 差量', '返回指定 Case 相对该 Screen 固定 baseline 的 Fact 与 Screenshot 差量；保留 unknown/conflict 和 Scenario 语义。', { handoffId: { type: 'string' }, screenId: { type: 'string' }, caseId: { type: 'string' } }, ['handoffId', 'screenId', 'caseId']),
+  tool('read_screen_packet', '读取 Screen 包', '按固定 Handoff 读取单个 Screen 的 Case/Scenario 地图、紧凑 baseline、截图分组，以及按组件/Token、Region、role、slot 和适用 Case 聚合的实施 inventory。', { handoffId: { type: 'string' }, screenId: { type: 'string' } }, ['handoffId', 'screenId']),
+  tool('read_implementation_plan', '读取实施计划索引', '按 Screen 返回有序 Region tranche、父依赖、Case 索引和五维 obligation 计数；不展开完整 expected。', { handoffId: { type: 'string' }, screenId: { type: 'string' } }, ['handoffId', 'screenId']),
+  tool('read_implementation_tranche', '读取实施 tranche', '读取单个 Region tranche 绑定的完整 canonical obligations；只展开当前实施单元，不注入其他 Region 的 expected。', { handoffId: { type: 'string' }, screenId: { type: 'string' }, trancheId: { type: 'string' } }, ['handoffId', 'screenId', 'trancheId']),
+  tool('read_case_delta', '读取 Case 差量', '返回指定 Case 相对固定 baseline 的 Region/内容/状态/业务 key/交互语义 patch；Fact 级变化只以压缩的 unresolved/provenance 信号保留。', { handoffId: { type: 'string' }, screenId: { type: 'string' }, caseId: { type: 'string' } }, ['handoffId', 'screenId', 'caseId']),
   tool('read_evidence_detail', '按需读取 Evidence 明细', '只返回指定 Screen 与 projection 的 structure/components/tokens/interactions/provenance 明细；可用稳定 continuation 续读，不按响应字节数截断。', {
     handoffId: { type: 'string' },
     screenId: { type: 'string' },
@@ -153,6 +158,7 @@ const toolDefinitions: JsonValue[] = [
   tool('find_target_examples', '查找目标工程示例', '通过适用的 Target adapter 查找目标工程既有模式；结果不进入 Evidence。可排除 Control/candidate output，避免实验实现污染示例。', { targetRoot: { type: 'string' }, module: { type: 'string' }, pattern: { type: 'string' }, roles: stringArraySchema, symbols: stringArraySchema, screenId: { type: 'string' }, limit: { type: 'number' }, gitBase: { type: 'string' }, excludePaths: stringArraySchema, candidateOutputRoot: { type: 'string' } }),
   tool('resolve_target_components', '解析目标组件', '批量解析开放 Evidence component ID；目标文档优先，机器 Contract 不得覆盖政策，resolved 必须通过当前代码校验。', { targetRoot: { type: 'string' }, componentIds: stringArraySchema, gitBase: { type: 'string' }, excludePaths: stringArraySchema, candidateOutputRoot: { type: 'string' } }, ['targetRoot', 'componentIds']),
   tool('resolve_target_tokens', '解析目标 Token', '批量解析开放 Evidence token ID，并校验 accessor、定义、import 与当前目标 revision；启发式结果最多为 candidate。', { targetRoot: { type: 'string' }, tokenIds: stringArraySchema, gitBase: { type: 'string' }, excludePaths: stringArraySchema, candidateOutputRoot: { type: 'string' } }, ['targetRoot', 'tokenIds']),
+  tool('inspect_target_readiness', '检查 Target readiness', '编辑前读取固定 Handoff inventory，报告组件/Token resolver 覆盖、五维 inspector authority、只能 unverified 的维度、Case/Scenario 声明缺口和 Review blockers。', { handoffId: { type: 'string' }, targetRoot: { type: 'string' }, screenId: { type: 'string' }, gitBase: { type: 'string' }, excludePaths: stringArraySchema, candidateOutputRoot: { type: 'string' } }, ['handoffId', 'targetRoot']),
   tool('validate_target_changes', '验证目标工程变更', '通过适用的 Target adapter 只读验证目标变更，并复核实际采用的 resolved mapping 仍存在；目标仓库无需 ProtoBridge 配置。', { targetRoot: { type: 'string' }, gitBase: { type: 'string' }, allowedPaths: stringArraySchema, expectedFiles: stringArraySchema, resolvedMappings: { type: 'array', items: { type: 'object', additionalProperties: false, properties: { id: { type: 'string' }, kind: { type: 'string', enum: ['component', 'token'] }, symbol: { type: 'string' }, accessor: { type: 'string' }, importPath: { type: 'string' } }, required: ['id', 'kind'] } } }),
   reviewTool('start_target_review', '开始 Target Review', '从固定 Handoff 派生独立 authoritative Review Session；必须由 Local Service 持久化。', { handoffId: { type: 'string' }, targetRoot: { type: 'string' }, targetBaselineCommit: { type: 'string' }, targetRevision: { type: 'string' }, reviewRunId: { type: 'string' } }, ['handoffId', 'targetRoot', 'targetBaselineCommit', 'targetRevision']),
   reviewTool('read_target_review', '读取 Target Review', '从 Local Service 恢复并校验 append-only Review event chain。', { reviewRunId: { type: 'string' } }, ['reviewRunId']),
@@ -227,6 +233,8 @@ export async function callTool(
     read_agent_handoff: () => readAgentHandoffTool(context, args),
     read_handoff_index: () => readHandoffIndexTool(context, args),
     read_screen_packet: () => readScreenPacketTool(context, args),
+    read_implementation_plan: () => readImplementationPlanTool(context, args),
+    read_implementation_tranche: () => readImplementationTrancheTool(context, args),
     read_case_delta: () => readCaseDeltaTool(context, args),
     read_evidence_detail: () => readEvidenceDetailTool(context, args),
     read_reconstruction_obligations: () => readReconstructionObligationsTool(context, args),
@@ -238,6 +246,7 @@ export async function callTool(
     find_target_examples: () => findTargetExamplesTool(args),
     resolve_target_components: () => resolveTargetComponentsTool(args),
     resolve_target_tokens: () => resolveTargetTokensTool(args),
+    inspect_target_readiness: () => inspectTargetReadinessTool(context, args),
     validate_target_changes: () => validateTargetChangesTool(args),
     start_target_review: () => startTargetReviewTool(context, args),
     read_target_review: () => readTargetReviewTool(context, args),

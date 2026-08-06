@@ -5,6 +5,8 @@ import {
   buildHandoffIndex,
   buildReconstructionObligationProjection,
   buildScreenPacket,
+  buildImplementationPlan,
+  buildImplementationTranche,
   EVIDENCE_DETAIL_PROJECTIONS,
   V2ContractError,
   type EvidenceDetailProjection,
@@ -249,6 +251,28 @@ export async function readScreenPacketTool(
     requiredString(args, "handoffId"),
   );
   return buildScreenPacket(input, requiredString(args, "screenId"));
+}
+
+export async function readImplementationPlanTool(
+  context: ToolContext,
+  args: JsonObject,
+): Promise<unknown> {
+  const handoffId = requiredString(args, 'handoffId');
+  const input = await context.evidence.readConsumerProjectionInput(handoffId);
+  return buildImplementationPlan(input, requiredString(args, 'screenId'));
+}
+
+export async function readImplementationTrancheTool(
+  context: ToolContext,
+  args: JsonObject,
+): Promise<unknown> {
+  const handoffId = requiredString(args, 'handoffId');
+  const input = await context.evidence.readConsumerProjectionInput(handoffId);
+  return buildImplementationTranche(
+    input,
+    requiredString(args, 'screenId'),
+    requiredString(args, 'trancheId'),
+  );
 }
 
 export async function readCaseDeltaTool(

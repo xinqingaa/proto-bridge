@@ -33,6 +33,8 @@ pnpm pb:mcp -- --print-config
 - `inspect_evidence_workspace`（Workspace、能力、契约版本、build fingerprint、进程启动时间和 Store generation 握手）
 - `read_handoff_index`
 - `read_screen_packet`
+- `read_implementation_plan`
+- `read_implementation_tranche`
 - `read_case_delta`
 - `read_reconstruction_obligations`
 - `read_evidence_detail`
@@ -55,7 +57,7 @@ pnpm pb:mcp -- --print-config
 - `read_evidence_blob`
 - `read_acceptance_contract`（非评分的五维实施与复查指引）
 
-`read_screen_packet` 返回 baseline Structure IR（Region tree、scroll owner/member、positioning/pinning、sibling order、bbox relation）和可见 state/content。`read_case_delta` 只返回紧凑 value/resolution/state patch；完整 provenance 必须定向读取。`read_reconstruction_obligations` 按 Screen/维度分页，避免重新注入完整 Acceptance Contract。
+`read_screen_packet` 返回 baseline Structure IR（Region tree、scroll owner/member、positioning/pinning、sibling order、bbox relation）和可见 state/content。随后用 `read_implementation_plan` 获取按 Region 依赖排序的工作包，并用 `read_implementation_tranche` 只展开当前 Region 的 canonical obligations。`read_case_delta` 只返回紧凑 value/resolution/state patch；完整 provenance 必须定向读取。`read_reconstruction_obligations` 按 Screen/维度分页，避免重新注入完整 Acceptance Contract。
 
 兼容工具不会被默认 Prompt 调用。普通 JSON 响应没有按字节截断规则；detail/obligation continuation 绑定固定 Snapshot 和规范化查询。
 
@@ -64,10 +66,11 @@ pnpm pb:mcp -- --print-config
 - `read_target_conventions`
 - `resolve_target_components`
 - `resolve_target_tokens`
+- `inspect_target_readiness`
 - `find_target_examples`
 - `validate_target_changes`
 
-这些工具通过 Target adapter 访问目标工程；当前内置 Flutter adapter，其他目标会返回 unsupported。真实目标文档与公开代码优先，可选机器 Contract 不能覆盖政策；显式 mapping 通过当前代码验证才返回 resolved，启发式结果最多为 candidate。`find_target_examples` 支持排除 Control/candidate output，`validate_target_changes` 可复核 Agent 实际采用的 resolved mapping。Target Tools 只读目标仓库，不读取或写入 Evidence。
+这些工具通过 Target adapter 访问目标工程；当前内置 Flutter adapter，其他目标会返回 unsupported。真实目标文档与公开代码优先，可选机器 Contract 不能覆盖政策；显式 mapping 通过当前代码验证才返回 resolved，启发式结果最多为 candidate。`inspect_target_readiness` 在编辑前汇总 resolver coverage、authority、Case/Scenario 声明和 blockers，不从 Widget 名称或测试退出码推断语义。`find_target_examples` 支持排除 Control/candidate output，`validate_target_changes` 可复核 Agent 实际采用的 resolved mapping。Target Tools 只读目标仓库，不读取或写入 Evidence。
 
 ## Authoritative Review Tools
 
