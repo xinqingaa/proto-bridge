@@ -69,7 +69,7 @@ class HubPage extends ConsumerWidget {
           SizedBox(height: TS.spacing.sm),
           _HubEntry(
             title: 'Cold Chain Ops',
-            subtitle: 'prototypes/cold-chain-ops · evidence',
+            subtitle: 'prototypes/cold-chain-ops-evidence',
             icon: Icons.ac_unit_outlined,
             route: AppRoutes.coldChainExceptionQueue,
           ),

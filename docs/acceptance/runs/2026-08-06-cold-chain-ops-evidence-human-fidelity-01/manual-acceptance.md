@@ -73,13 +73,13 @@
 
 已确认：
 
-- 三个 Screen：异常队列、运输详情、提交处置，均有独立路由与 Hub 入口
+- 三个 Screen：异常队列、运输详情、提交处置，均有独立路由；Hub 仅提供异常队列入口，详情与表单经流程内导航进入
 - 队列根页 `CommonAppBar` 默认 `showBack: false`，符合根页面壳层
-- 队列 `summary` / `search` / `filters` / `list` / footer 处于同一 `CommonScrollableDataList`（主滚动边界正确，优于 V6）
+- 队列 `summary` / `search` / `filters` / `list` / footer 处于同一 `CommonScrollableDataList`（主滚动边界正确；相对当时并行 V6 实现更好）
 - 详情页横向路线构图（起点 → 进度 → 终点）存在
 - 公共组件复用面高：`CommonAppBar`、`CommonCard`、`CommonSearchBar`、`CommonFilterBar`、`CommonScrollableDataList`、`CommonEmptyState`、`CommonSpinner`、`CommonBadge`、`CommonButton`、`CommonFormSection`、`CommonSelect`、`CommonRadioGroup`、`CommonCheckbox`、`CommonSwitch`、`CommonTextArea`、`AppPop`
 - 队列含 default / critical-only / empty / loading / error；详情含 active-excursion / sensor-offline / sheet / dialog；表单含 ready / validation / approval / confirm / submitted
-- 严重异常导航到 `active-excursion`（`ex-017` 与 `ex-031` 均覆盖，优于 V6）
+- 严重异常导航到 `active-excursion`（`ex-017` 与 `ex-031` 均覆盖；相对当时并行 V6 实现更好）
 - 筛选含全部 / 严重 / 警告 / 关注，且 `watch` 有真实过滤分支
 - 四条异常 key（`ex-017` / `ex-031` / `ex-024` / `ex-029`）与运单号主数据对齐 Source
 
@@ -235,7 +235,7 @@ Source 标题 `on-surface`、描述 `on-surface-muted`。
 | 交互命中 | 7.5 | 导航筛选弹层闭环；当前结果未进校验 |
 | 简单平均 | **7.6** | |
 
-评分解释：相对 V6（约 7.8，但滚动错误更严重）与 V5（约 8.0–8.2），本轮 **主滚动与严重态导航更好**，但 **业务数据与表单完整性回退**，总分略低于 V5 水位。
+评分解释：相对当时并行 Target 实现 V6（约 7.8，但滚动错误更严重）与 V5（约 8.0–8.2），本轮 **主滚动与严重态导航更好**，但 **业务数据与表单完整性回退**，总分略低于 V5 水位。说明：V5/V6 并行 Flutter feature 已从仓库删除，此处比分仅作历史水位锚点，不是现行消费或实施路径。
 
 ## 九、总评
 

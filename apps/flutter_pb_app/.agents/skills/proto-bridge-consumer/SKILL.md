@@ -13,12 +13,16 @@ Evidence Region 用于定位与验收事实；它们不是 Widget 边界、ListV
 
 1. 阅读 `AGENTS.md`、`README.md` 以及 `docs/` 下相关文件。
 2. 调用 `inspect_evidence_workspace`，核对 Workspace 与所需 consumer capabilities，再调用 `read_handoff_index`。编辑前原样报告全部 `mandatoryRisks`。不得用 active/latest 替换固定引用。
-3. 每个选中 Screen 调用一次 `read_screen_packet`。用 `canonicalBrief`、baseline structure/state，以及按 `regionId` / `caseId` 组织的 `implementationInventory`，理解主滚动归属、主 section、状态矩阵和固定业务数据。编辑前调用 `inspect_target_readiness` 并解析组件/Token。非 baseline Case 使用 `read_case_delta`；仅在有明确未决问题时调用 `read_evidence_detail`。默认路径不要调用 `read_implementation_plan` 或 `read_implementation_tranche`；二者仅作诊断。
+3. 每个选中 Screen 调用一次 `read_screen_packet`。用 `canonicalBrief`、baseline structure/state，以及按 `regionId` / `caseId` 组织的 `implementationInventory`，理解主滚动归属、主 section、状态矩阵和固定业务数据。
 4. 用 digest 分组的 `representativeBlobId` 直接查看每份不同 Screenshot。记录可见结构、响应式假设、覆盖的 Case，以及未解决的布局敏感值。
-5. 每个 Screen 在编辑前用简短散文写出 Evidence 理解摘要：主结构与滚动边界、拟用的组件/Token 落点、状态与交互覆盖。这是给人纠偏的检查点，不是清单、评分表或验收分母。
-6. 在决定文件位置或状态归属前，先查看相似页面以及真实的公共组件、Theme、路由 API。真实工程文档与公开代码优先于 adapter 回退规则。
+5. 编辑前调用 `inspect_target_readiness` 并解析组件/Token。非 baseline Case 使用 `read_case_delta`；仅在有明确未决问题时调用 `read_evidence_detail`。默认路径不要调用 `read_implementation_plan` 或 `read_implementation_tranche`；二者仅作诊断。
+6. 每个 Screen 在编辑前用简短散文写出 Evidence 理解摘要：主结构与滚动边界、拟用的组件/Token 落点、状态与交互覆盖，并附实现计划。这是给人纠偏的检查点，不是清单、评分表或验收分母。
+7. 在决定文件位置或状态归属前，先查看相似页面以及真实的公共组件、Theme、路由 API。真实工程文档与公开代码优先于 adapter 回退规则。
+8. 输出摘要与实现计划后必须暂停，等待用户明确批准。未获批准前不得修改本工程代码，也不得执行会改变目标工程状态的命令。
 
 ## 实现所选范围
+
+仅在用户明确批准后进入本阶段。
 
 1. 区分页面 Variant、局部交互状态、导航、弹层，以及提交/刷新状态。显式覆盖每个选中 Evidence Case；不要只实现默认 Case。
 2. 用 `docs/components.md` 和真实 Dart 构造函数，把 Evidence role/component 映射到目标 symbol。目标工程已有语义组件时，不要用外观相近的通用 widget 静默替代。

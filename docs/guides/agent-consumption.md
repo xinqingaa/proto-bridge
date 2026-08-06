@@ -26,12 +26,12 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 4. 每个实现范围内的 Screen 调用一次 `read_screen_packet`。用 `canonicalBrief`、baseline Structure 与 state 理解主滚动边界、主 section、状态矩阵和固定业务数据；Evidence Region 用于定位与验收，不是目标侧组件边界、列表项边界或文件边界。
 5. 每份不同 Screenshot 内容使用 digest group 的 `representativeBlobId` 调用 `read_evidence_screenshot`，确认 MCP ImageContent，并记录覆盖的全部 Case。相同 digest 不重复注入；metadata、base64 文本和相似 Variant 不能替代 Screenshot。
 6. 每个 Screen 在编辑前调用 `inspect_target_readiness`，记录 resolver coverage、component/token candidate/conflict/unresolved、五维 machine authority 和 blockers；没有 authority 的维度只能保持 `unverified`。用 `implementationInventory` 的 `regionId`/`caseId` 批量解析组件和 Token。`read_implementation_plan` / `read_implementation_tranche` 仅诊断或 Review 辅助，不是默认实施路径。
-7. 每个 Screen 在编辑前用简短散文概括 Evidence 理解：主结构与滚动边界、组件与 Token 落点意向、状态与交互覆盖。这是给人纠偏的白话摘要，不是清单或评分表。
-8. 非 baseline 或包含状态/场景差异的 Case 调用 `read_case_delta`。Delta 使用语义 ID patch；需要来源时再定向调用 `read_evidence_detail`。实施后复查使用 `read_reconstruction_obligations` 按 Screen/维度分页，不读取完整 Acceptance Contract，也不把 obligation 顺序当作编码顺序。
-9. continuation 只能续读同一规范化查询直到 `complete=true`。完成后不得重启；不得为“读全”轮询所有投影或在 selector 之间循环。一次针对性展开仍不能解决时，记录未知或风险。
-10. 阅读目标仓库自己的 AGENT、README、架构、测试、公共 API 和既有实现。Target adapter 只发现和归一化这些上下文；内置 fallback 不能覆盖真实目标文档。
-11. Agent 自行决定文件、组件、状态、路由和 Token，但不得发明证据未支持的容器形态、文案、交互或状态；优先复用 Evidence/Source 固定业务数据；布局敏感 prop 缺失时对照 Screenshot，仍不确定则披露为剩余风险。
-12. 完成实现并运行目标原生验证；调用 `summarize_reconstruction_review` 汇总已处理 Case、已查看 Screenshot、已重放 Scenario、已知偏差和未验证事项。
+7. 非 baseline 或包含状态/场景差异的 Case 调用 `read_case_delta`。Delta 使用语义 ID patch；需要来源时再定向调用 `read_evidence_detail`。
+8. 每个 Screen 在编辑前用简短散文概括 Evidence 理解：主结构与滚动边界、组件与 Token 落点意向、状态与交互覆盖，并附实现计划（预计修改文件、验证方式、剩余风险）。这是给人纠偏的白话摘要，不是清单或评分表。然后必须暂停，等待用户明确批准；未获批准前不得修改目标工程，也不得执行会改变目标工程状态的命令。Deliver 提示词与此门禁一致，见 [快速上手](./getting-started.md)。
+9. 用户批准后，阅读目标仓库自己的 AGENT、README、架构、测试、公共 API 和既有实现。Target adapter 只发现和归一化这些上下文；内置 fallback 不能覆盖真实目标文档。
+10. Agent 自行决定文件、组件、状态、路由和 Token，但不得发明证据未支持的容器形态、文案、交互或状态；优先复用 Evidence/Source 固定业务数据；布局敏感 prop 缺失时对照 Screenshot，仍不确定则披露为剩余风险。
+11. continuation 只能续读同一规范化查询直到 `complete=true`。完成后不得重启；不得为“读全”轮询所有投影或在 selector 之间循环。一次针对性展开仍不能解决时，记录未知或风险。
+12. 完成实现并运行目标原生验证；实施后复查使用 `read_reconstruction_obligations` 按 Screen/维度分页，不读取完整 Acceptance Contract，也不把 obligation 顺序当作编码顺序。调用 `summarize_reconstruction_review` 汇总已处理 Case、已查看 Screenshot、已重放 Scenario、已知偏差和未验证事项。
 13. 需要 authoritative Review 时调用 `start_target_review` 固定验收分母；Structure/state/interaction obligation 通过 `verify_target_claims` 提交适用 Case，component/token 提交精确 Target occurrence/slot。state/interaction result 自动形成 assessment；其他结果用 receipt digest 写入 `record_review_assessments`。没有 inspector、resolved mapping 或精确 occurrence authority 时必须保持 `unverified`，再提交 findings 和人工完成请求。
 
 `read_agent_handoff`、`read_evidence_snapshot`、`read_evidence_case`、`read_evidence_revision`、`read_evidence_fragment` 和 `read_acceptance_contract` 只保留为显式 debug/兼容入口，不属于默认消费顺序。
@@ -92,6 +92,7 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 | `verify_target_claims` | 对 Structure/state/interaction 运行 typed Target inspector；对 component/token 验证精确 occurrence/slot，并写入机器 receipt |
 | `record_review_assessments` | 对固定 obligation 写入 `matched`、`deviation` 或 `unverified`；`matched` 必须引用成功 verifier receipt，后写结果显式替代旧 assessment |
 | `record_review_findings` | 记录偏差、严重度和处理状态；不能代替 obligation assessment |
+| `request_review_tranche` | 消费由 PBWork/CLI/operator 或 MCP host approval 预先签发的一次性授权 token；普通参数不能自证授权 |
 | `finalize_target_review` | 消费人工确认，并由 Reducer 重新执行全部门禁 |
 
 Screenshot/Scenario coverage 与语义完成是两类独立事实。即使所有图片都已查看、所有 Case 都已渲染且 findings 为空，只要存在未核验、偏差、未验证 obligation 或没有 authority 的 `matched`，Review 就不能完成。Agent 不能声明 `not-applicable`；该状态需要 operator/human authority 和明确 Target basis。State/interaction 只有完整 typed runtime proof 才能 matched；普通命令成功或点击记录不足以通过。

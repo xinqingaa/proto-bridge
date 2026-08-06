@@ -33,13 +33,16 @@ pnpm pb:mcp -- --print-config
 - `inspect_evidence_workspace`（Workspace、能力、契约版本、build fingerprint、进程启动时间和 Store generation 握手）
 - `read_handoff_index`
 - `read_screen_packet`
+- `read_evidence_screenshot`（视觉消费必须使用；返回 MCP ImageContent）
+- `read_case_delta`（非 baseline / 有状态差时）
+- `read_evidence_detail`（仅明确未决问题时）
+- `read_reconstruction_obligations`（实施后复查）
+- `summarize_reconstruction_review`
+
+诊断（非默认实施路径）：
+
 - `read_implementation_plan`
 - `read_implementation_tranche`
-- `read_case_delta`
-- `read_reconstruction_obligations`
-- `read_evidence_detail`
-- `read_evidence_screenshot`（视觉消费必须使用；返回 MCP ImageContent）
-- `summarize_reconstruction_review`
 
 兼容与显式 debug 路径：
 
@@ -57,7 +60,7 @@ pnpm pb:mcp -- --print-config
 - `read_evidence_blob`
 - `read_acceptance_contract`（非评分的五维实施与复查指引）
 
-`read_screen_packet` 返回 baseline Structure、`canonicalBrief`（主滚动、状态矩阵、固定业务数据）、以及按 `regionId`/`caseId` 聚合的 inventory。`read_implementation_plan` / `read_implementation_tranche` 仅作诊断或 Review 辅助，不是默认实施路径。`read_case_delta` 返回以语义 ID 表达的紧凑 patch；完整 provenance 必须定向读取。`read_reconstruction_obligations` 按 Screen/维度分页，用于实施后复查，避免重新注入完整 Acceptance Contract。
+`read_screen_packet` 返回 baseline Structure、`canonicalBrief`（主滚动、状态矩阵、固定业务数据）、以及按 `regionId`/`caseId` 聚合的 inventory。`read_implementation_plan` / `read_implementation_tranche` 仅作诊断或 Review 辅助，不是默认实施路径，不得按 tranche 顺序编码。`read_case_delta` 返回以语义 ID 表达的紧凑 patch；完整 provenance 必须定向读取。`read_reconstruction_obligations` 按 Screen/维度分页，用于实施后复查，避免重新注入完整 Acceptance Contract。
 
 兼容工具不会被默认 Prompt 调用。普通 JSON 响应没有按字节截断规则；detail/obligation continuation 绑定固定 Snapshot 和规范化查询。
 
@@ -96,7 +99,7 @@ Review tools 只返回 Session 摘要、attempt、finding、obligation 和 verif
 - `proto-bridge://evidence/{bundleId}/snapshots/{snapshotId}/screenshots/{blobId}`
 - Prompt：`consume_evidence_handoff`
 
-Consumer 的唯一默认顺序是 `inspect → handoff index → Screen packet（含 canonicalBrief）→ screenshot → readiness/resolver → 按需 Case delta / detail → 编辑前 Screen 理解摘要 → 自主实施 → 实施后 obligations/verify`。详细规则见 [Agent 消费指南](../../docs/guides/agent-consumption.md)。
+Consumer 的唯一默认顺序是 `inspect → handoff index → Screen packet（含 canonicalBrief）→ screenshot → readiness/resolver → 按需 Case delta / detail → 编辑前 Screen 理解摘要与实现计划 → 等待用户确认 → 自主实施 → 实施后 obligations/verify`。详细规则见 [Agent 消费指南](../../docs/guides/agent-consumption.md)。
 
 ## 开发
 
