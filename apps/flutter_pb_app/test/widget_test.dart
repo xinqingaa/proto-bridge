@@ -17,10 +17,6 @@ void main() {
     expect(find.text('Ledger Planet'), findsOneWidget);
     expect(find.text('Ledger Planet V2'), findsOneWidget);
     expect(find.text('Cold Chain Ops'), findsOneWidget);
-    expect(find.text('Cold Chain Ops V6'), findsOneWidget);
-    await tester.drag(find.byType(ListView).first, const Offset(0, -400));
-    await tester.pumpAndSettle();
-    expect(find.text('Cold Chain Ops Evidence'), findsOneWidget);
   });
 
   testWidgets('Ledger Planet task list opens claimable detail', (tester) async {

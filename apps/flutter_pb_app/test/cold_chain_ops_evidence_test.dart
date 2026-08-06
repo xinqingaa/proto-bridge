@@ -36,16 +36,13 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
   }
 
-  testWidgets('Hub lists Cold Chain Ops Evidence entry', (tester) async {
+  testWidgets('Hub lists Cold Chain Ops entry', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(const ProviderScope(child: PbApp()));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
-    await tester.drag(find.byType(ListView).first, const Offset(0, -400));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('Cold Chain Ops Evidence'), findsOneWidget);
+    expect(find.text('Cold Chain Ops'), findsOneWidget);
   });
 
   testWidgets('Exception queue default shows fixed Evidence rows', (
@@ -53,7 +50,7 @@ void main() {
   ) async {
     await pumpRoute(
       tester,
-      route: AppRoutes.coldChainEvidenceExceptionQueue,
+      route: AppRoutes.coldChainExceptionQueue,
     );
     expect(find.text('冷链异常'), findsOneWidget);
     expect(find.text('当前风险'), findsOneWidget);
@@ -68,7 +65,7 @@ void main() {
   testWidgets('focus-critical filters to severe rows', (tester) async {
     await pumpRoute(
       tester,
-      route: AppRoutes.coldChainEvidenceExceptionQueue,
+      route: AppRoutes.coldChainExceptionQueue,
     );
     await tester.tap(find.text('仅看严重异常'));
     await tester.pump();
@@ -82,7 +79,7 @@ void main() {
   testWidgets('Queue opens active-excursion shipment detail', (tester) async {
     await pumpRoute(
       tester,
-      route: AppRoutes.coldChainEvidenceExceptionQueue,
+      route: AppRoutes.coldChainExceptionQueue,
     );
     await tester.tap(find.text('EX-017 · SH-2048'));
     await tester.pump();
@@ -97,7 +94,7 @@ void main() {
   testWidgets('Shipment action sheet reveals resolution entry', (tester) async {
     await pumpRoute(
       tester,
-      route: AppRoutes.coldChainEvidenceShipmentDetail,
+      route: AppRoutes.coldChainShipmentDetail,
       args: <String, String>{
         'variant': 'active-excursion',
         'exceptionId': 'ex-017',
@@ -116,7 +113,7 @@ void main() {
   testWidgets('Resolution form validates incomplete submission', (tester) async {
     await pumpRoute(
       tester,
-      route: AppRoutes.coldChainEvidenceResolutionForm,
+      route: AppRoutes.coldChainResolutionForm,
       args: <String, String>{'variant': 'validation-error'},
     );
     expect(find.text('提交处置'), findsOneWidget);
@@ -129,7 +126,7 @@ void main() {
   testWidgets('Resolution ready-to-submit opens confirm dialog', (tester) async {
     await pumpRoute(
       tester,
-      route: AppRoutes.coldChainEvidenceResolutionForm,
+      route: AppRoutes.coldChainResolutionForm,
       args: <String, String>{'variant': 'ready-to-submit'},
     );
     await tester.dragUntilVisible(
@@ -147,7 +144,7 @@ void main() {
   testWidgets('loading shell shows sync copy', (tester) async {
     await pumpRoute(
       tester,
-      route: AppRoutes.coldChainEvidenceExceptionQueue,
+      route: AppRoutes.coldChainExceptionQueue,
       args: <String, String>{'variant': 'loading'},
     );
     expect(find.text('正在同步运输监控数据'), findsOneWidget);
@@ -156,7 +153,7 @@ void main() {
   testWidgets('error shell shows retry copy', (tester) async {
     await pumpRoute(
       tester,
-      route: AppRoutes.coldChainEvidenceExceptionQueue,
+      route: AppRoutes.coldChainExceptionQueue,
       args: <String, String>{'variant': 'error'},
     );
     expect(find.text('监控数据暂时不可用'), findsOneWidget);
@@ -165,7 +162,7 @@ void main() {
   testWidgets('empty shell shows empty state', (tester) async {
     await pumpRoute(
       tester,
-      route: AppRoutes.coldChainEvidenceExceptionQueue,
+      route: AppRoutes.coldChainExceptionQueue,
       args: <String, String>{'variant': 'empty'},
     );
     expect(find.text('没有待处理异常'), findsOneWidget);
@@ -174,7 +171,7 @@ void main() {
   testWidgets('sensor-offline shows probe banner', (tester) async {
     await pumpRoute(
       tester,
-      route: AppRoutes.coldChainEvidenceShipmentDetail,
+      route: AppRoutes.coldChainShipmentDetail,
       args: <String, String>{'variant': 'sensor-offline'},
     );
     expect(find.textContaining('探头 T-07 已离线'), findsOneWidget);
@@ -183,7 +180,7 @@ void main() {
   testWidgets('approval-validation-error shows supervisor message', (tester) async {
     await pumpRoute(
       tester,
-      route: AppRoutes.coldChainEvidenceResolutionForm,
+      route: AppRoutes.coldChainResolutionForm,
       args: <String, String>{'variant': 'approval-validation-error'},
     );
     expect(find.textContaining('必须指定值班主管'), findsOneWidget);

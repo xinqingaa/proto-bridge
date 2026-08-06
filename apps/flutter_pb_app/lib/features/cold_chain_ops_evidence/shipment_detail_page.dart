@@ -137,7 +137,7 @@ class _ShipmentDetailEvidencePageState extends State<ShipmentDetailEvidencePage>
 
   void _openResolution() {
     Navigator.of(context).pushNamed(
-      AppRoutes.coldChainEvidenceResolutionForm,
+      AppRoutes.coldChainResolutionForm,
       arguments: <String, String>{
         'exceptionId': widget.exceptionId,
         'shipmentId': widget.shipmentId,

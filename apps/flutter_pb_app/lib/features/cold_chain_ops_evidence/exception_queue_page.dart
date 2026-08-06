@@ -105,7 +105,7 @@ class _ExceptionQueueEvidencePageState extends State<ExceptionQueueEvidencePage>
     final detailVariant =
         row.severity == ExceptionSeverity.critical ? 'active-excursion' : 'default';
     Navigator.of(context).pushNamed(
-      AppRoutes.coldChainEvidenceShipmentDetail,
+      AppRoutes.coldChainShipmentDetail,
       arguments: <String, String>{
         'exceptionId': row.id,
         'shipmentId': row.shipmentId,

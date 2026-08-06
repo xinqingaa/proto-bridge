@@ -15,9 +15,9 @@
 
 ## 一、验收目的
 
-对照 Source 原型与 `cold_chain_ops_evidence` 实施代码，按五维判断 5R 减法后的还原质量，并区分实施问题与 Target 维护差异。
+对照 Source 原型与 `cold_chain_ops_evidence` 实施代码，按五维判断当前默认消费链路下的还原质量，并区分实施问题与 Target 维护差异。
 
-本记录只供人工 Review 归档，不驱动 Agent 反复回查，也不替代 authoritative Target Review。
+本记录只供人工 Review 归档，不驱动 Agent 反复回查，也不替代 authoritative Target Review。当前默认流程见 [产品工作流](../../../product/workflow.md) 与 [Agent 消费指南](../../../guides/agent-consumption.md)。
 
 ## 二、固定验收对象
 
@@ -239,7 +239,7 @@ Source 标题 `on-surface`、描述 `on-surface-muted`。
 
 ## 九、总评
 
-> 5R 减法后的 `cold_chain_ops_evidence`：**结构主路径明显改善（单滚动正确）**，组件命中良好；主要损耗仍在固定业务数据与表单校验完整性。达到可用的人工对照基线，但未稳定到 8 分以上。
+> `cold_chain_ops_evidence`：**结构主路径明显改善（单滚动正确）**，组件命中良好；主要损耗仍在固定业务数据与表单校验完整性。达到可用的人工对照基线，但未稳定到 8 分以上。
 
 建议有界修正优先级：
 

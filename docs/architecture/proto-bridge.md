@@ -87,16 +87,16 @@ CLI 只解析参数、加载 Workspace 配置、调用 Core、格式化文本/JS
 - 通过 stdio JSON-RPC 暴露 Tools、Resources 和 Prompt；
 - 启动时固定 Store root 与 Workspace；
 - 使用 Core Evidence Read Model 和 Store Reader；
-- 以 `HandoffIndex → Screen Implementation Packet → compact CaseDelta / paged Obligations → EvidenceDetail` 提供固定、闭集、按需投影；Screen packet 直接表达 Region tree、scroll owner/member、pinning、ordering、bbox relation 和 baseline state/content；
+- 以 `HandoffIndex → Screen Packet（含 canonicalBrief 与 semantic inventory）→ compact CaseDelta → paged Obligations → EvidenceDetail` 提供固定、闭集、按需投影；Screen packet 表达主滚动边界、Region 语义关系、inventory occurrence，以及状态矩阵所需的固定业务数据摘要；
 - 握手公开 Workspace、能力、契约版本、源码构建指纹、进程身份和 Store generation；
 - 校验 Snapshot/revision/Blob 的可达性；
 - 返回可见 risks、unknown 和 conflicts；
-- 独立提供 Target conventions、examples 和 validation。
+- 独立提供 Target conventions、examples、readiness 与 validation；
 - 提供 Target Review 的 render/replay/compare、Target claim verifier receipt 与 obligation assessment 写入；截图或 Scenario coverage 不能替代五维语义核验。
 
-MCP 不创建 Capture Job，不接受 Store 文件路径作为对象引用，不替 Agent 选择实现。完整 Snapshot/Contract 读取仅为兼容和显式 debug，默认 Prompt 不调用。普通响应不按字节阈值截断；detail continuation 只按稳定逻辑查询边界产生。完整参考见 [MCP README](../../packages/mcp-server/README.md)。
+MCP 不创建 Capture Job，不接受 Store 文件路径作为对象引用，不替 Agent 选择实现。完整 Snapshot/Contract 读取仅为兼容和显式 debug，默认 Prompt 不调用。`read_implementation_plan` / `read_implementation_tranche` 保留为诊断能力，不是默认实施路径。普通响应不按字节阈值截断；detail continuation 只按稳定逻辑查询边界产生。完整参考见 [MCP README](../../packages/mcp-server/README.md)。
 
-Consumer projection version 2 不再让 Case delta 重复完整 Fact/provenance，也不让 Review response 内嵌全部 obligations。Evidence obligations 按 Handoff/Screen/维度分页；Review obligations 额外支持 assessment 状态过滤。所有 continuation 都绑定固定 Snapshot 和规范化查询，不能跨维度复用。
+Consumer projection version 4 是当前默认契约：Screen packet 含 `canonicalBrief`；inventory 与 Case delta 面向 Agent 使用 `regionId` / `caseId`；Case delta 不重复完整 Fact/provenance；Review response 不内嵌全部 obligations。Evidence obligations 按 Handoff/Screen/维度分页；Review obligations 额外支持 assessment 状态过滤。continuation 前缀为 `pbcp4` / `pbop4`，绑定固定 Snapshot 与规范化查询，不能跨维度复用。Evidence Region 是 Source 定位与验收单元，不等于目标侧组件、列表项或文件边界。
 
 Review 的验收分母来自 Core 对 Acceptance Contract 的确定性编译：等价的 per-Case requirements 按 Screen、维度、kind、subject 和 canonical expected 去重，同时保留全部 Case 与 Evidence refs。Assessment 使用显式 last-write 语义；`deviation`、`unverified`、未 assessment、阻断 finding 和缺少必要 receipt 都会阻止完成。`matched` 必须绑定固定 Target revision 上同一 obligation 的机器 verifier receipt；`not-applicable` 仅允许 operator/human 附 Target basis 写入。旧 event log 仍可恢复，但缺少 obligation 或 verification contract 时禁止完成。
 
@@ -106,13 +106,14 @@ Review 的验收分母来自 Core 对 Acceptance Contract 的确定性编译：�
 
 - Flutter 工程类型识别、文档发现、Dart inventory、显式 mapping 解析和代码校验；
 - 开放 component/token ID 的批量解析，输出 `resolved/candidate/stale/conflict/unresolved/unsupported`；
+- 编辑前 readiness：汇总 resolver coverage、五维 machine authority、Case/Scenario 声明与 blockers；
 - 既有实现示例查找及 Control/candidate output 排除；
-- 目标变更路径、实际采用 mapping 和原生验证结果检查。
+- 目标变更路径、实际采用 mapping 和原生验证结果检查；
 - target-independent implementation claims；Flutter adapter 对 Structure 运行目标 inspector 并比较 IR，对 component/token 校验精确 Dart occurrence、owner 和 named-argument slot，对 state/interaction 比较 typed runtime proof。
 
-它不拥有任何具体产品的组件/Token 映射。真实目标工程的 `AGENTS.md`、`docs/proto-bridge.md`、`docs/components.md`、`docs/theme.md` 和公开代码拥有当前约束；可选 `docs/proto-bridge.target.json` 只是这些约束的严格机器投影。政策与机器 Contract 冲突返回 `conflict`，显式声明与代码不符返回 `stale`，代码启发式最多返回 `candidate`。Target root 来自 Agent 当前任务或单次 Tool 参数；目标仓库不需要 ProtoBridge Workspace 配置，Target 结果不写入 Bundle。
+它不拥有任何具体产品的组件/Token 映射。真实目标工程的 `AGENTS.md`、`docs/proto-bridge.md`、`docs/components.md`、`docs/theme.md` 和公开代码拥有当前约束；可选 `docs/proto-bridge.target.json` 只是这些约束的严格机器投影。政策与机器 Contract 冲突返回 `conflict`，显式声明与代码不符返回 `stale`，代码启发式最多返回 `candidate`。缺少 authority 的维度只能保持 `unverified`。Target root 来自 Agent 当前任务或单次 Tool 参数；目标仓库不需要 ProtoBridge Workspace 配置，Target 结果不写入 Bundle。
 
-Flutter Review machine contract 可在 `review.launcher.structureCommand` 声明确定性 Structure inspector。命令接收 `{caseId}`、`{screenId}`、`{deviceId}` 插值并向 stdout 输出 Consumer projection version 2 的完整 `StructureIR` JSON；Case 可用 `structureArguments` 添加参数。命令缺失、失败、Case 不一致、Schema 不完整或 Source/Target Region 含 unknown 时，verifier 返回 `unverified`，不根据 Widget 类型猜 parent 或 scroll owner。
+Flutter Review machine contract 可在 `review.launcher.structureCommand` 声明确定性 Structure inspector。命令接收 `{caseId}`、`{screenId}`、`{deviceId}` 插值并向 stdout 输出与当前 Consumer projection 兼容的完整 `StructureIR` JSON；Case 可用 `structureArguments` 添加参数。命令缺失、失败、Case 不一致、Schema 不完整或 Source/Target Region 含 unknown 时，verifier 返回 `unverified`，不根据 Widget 类型猜 parent 或 scroll owner。
 
 同一 contract 可用 `review.launcher.stateCommand` 输出 typed State snapshot：Case/shell identity、visible Region IDs、以业务 identity 表达的 keyed collections、selected/default 等标量 values，以及 `complete/unknownKeys`。`scenarioCommand` 输出 Scenario transition：pre-state、实际 action ID/kind/target/input、post-state、checkpoint identity 和 visible result。Verifier 从固定 obligation 读取 Source expected，逐键验证 shell、集合、值、动作目标、required/forbidden visibility 和 checkpoint；不比较原型与 Flutter 的内部状态对象，也不接受 Agent 自填 expected。Case 可分别用 `stateArguments` 和 Scenario `arguments` 增补命令参数。缺少命令、JSON 不完整、状态 unknown 或只有退出码/stdout hash 时返回 `unverified`。
 

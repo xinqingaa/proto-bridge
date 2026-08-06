@@ -107,21 +107,36 @@ Handoff 是 Evidence 索引，不是实现计划。Prompt 先要求 Agent 通过
 
 ## 7. MCP 与目标实现
 
+默认消费与实施顺序（Consumer projection version 4）：
+
+```text
+inspect_evidence_workspace
+  → read_handoff_index
+  → read_screen_packet（含 canonicalBrief）
+  → read_evidence_screenshot
+  → inspect_target_readiness + resolve
+  → 按需 read_case_delta / read_evidence_detail
+  → 编辑前按 Screen 白话理解摘要
+  → Agent 自主实施
+  → 实施后 obligations / verify / Review
+```
+
 Agent 通过 MCP：
 
 1. 用 `inspect_evidence_workspace` 确认 Workspace、契约版本与能力；
 2. 用 `read_handoff_index` 固定范围并在编辑前报告全部 mandatory risks；
-3. 每个 Screen 读取 `read_screen_packet`，先按 baseline Structure IR 固定 parent、scroll owner/member、pinning、ordering、bbox relation 和可见 state/content，再查看每个不同 digest 的 Screenshot；
-4. 非 baseline 状态读取紧凑 `read_case_delta`；按 Screen/维度分页读取 Reconstruction Obligations，只有明确来源问题才展开 `read_evidence_detail`；
-5. 阅读目标仓库自身规范与既有代码；
-6. 实现并运行目标原生测试；
-7. 调用适用的 Target validation 工具核对变更范围和结果；authoritative Review 再将 Structure/state/interaction obligation 绑定到 deterministic inspector，将 component/token obligation 绑定到精确 occurrence/slot。
+3. 每个 Screen 读取 `read_screen_packet`：用 `canonicalBrief`、baseline Structure（parent、scroll owner/member、pinning、ordering）与 inventory 理解主滚动、主 section、状态矩阵和固定业务数据；Evidence Region 用于定位与验收，不是目标侧组件/文件边界；
+4. 查看每个不同 digest 的 Screenshot；编辑前调用 `inspect_target_readiness`，并用 inventory 的 `regionId`/`caseId` 批量 resolve 组件与 Token；
+5. 非 baseline 状态读取紧凑 `read_case_delta`；只有明确来源问题才展开 `read_evidence_detail`；
+6. 每个 Screen 在编码前用简短散文概括 Evidence 理解（结构与滚动、组件/Token 落点意向、状态与交互）；这不是评分表，也不是验收分母；
+7. 阅读目标仓库自身规范与既有代码后自主组织实现；`read_implementation_plan` / `read_implementation_tranche` 仅诊断或 Review 辅助，不是默认实施路径；
+8. 实现并运行目标原生测试；实施后按 Screen/维度分页读取 Reconstruction Obligations，再调用 Target validation 与 authoritative Review。
 
 实现后的 authoritative Target Review 从固定 Handoff 的五维 Acceptance Contract 编译稳定、去重的 Reconstruction Obligations。Local Service 会独立重算并固定这组义务，客户端不能删减验收分母。Screenshot viewed、target render、artifact compare 和 Scenario replay 只证明所需 artifact 已覆盖；每项 structure、component、Token、state 和 interaction 义务仍需 `matched`、`deviation` 或 `unverified` assessment。五维 `matched` 都必须引用同一 obligation 的 verifier receipt；state/interaction verifier 会从 structured proof 自动写入 assessment，失败立即成为完成门禁。
 
 完成门禁要求全部义务已核验，且不存在 `deviation`、`unverified`、阻断 finding 或缺失 artifact receipt。`not-applicable` 只能由 operator/human 基于明确 Target 依据确认。旧 Review 日志可以读取，但没有 obligation contract 的旧 Session 不能继续完成。
 
-Target 查询与 Capture Evidence 互相隔离。目标仓库的既有组件和约定可以指导实现，但不能覆盖原型 Evidence 中的 unknown 或 conflict。
+Target 查询与 Capture Evidence 互相隔离。目标仓库的既有组件和约定可以指导实现，但不能覆盖原型 Evidence 中的 unknown 或 conflict。只有 resolver 返回 `resolved` 的映射才可视为已验证落点；`candidate`/`stale`/`conflict`/`unresolved` 必须披露，不能升格为已确认。
 
 Evidence 层面允许任意 Target；当前内置 Target query/validation 只支持 Flutter。新增 Kotlin、Swift、React Native 或其它 Adapter 时必须复用相同 Handoff 和 Evidence 读取纪律。
 

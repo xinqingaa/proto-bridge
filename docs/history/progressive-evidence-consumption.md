@@ -146,8 +146,18 @@ Agent 可用的启发式：
 | 视觉 | 易被结构 / token 明细淹没 | 截图在结构全量展开前进入工作集 |
 | 完成判定 | 容易变成「读过 / 测过」 | 仍按 Case / 图 / Scenario 覆盖；未读维度不能装成已验证 |
 
+## 演进到当前终态
+
+渐进投影落地后，消费链路又经过两轮系统收敛：
+
+1. **义务与 verifier hardening**：把五维 Acceptance 编译为不可删减的 Reconstruction Obligations，并用 structure/component/token/state/interaction verifier receipt 约束 authoritative Review 完成门禁。
+2. **减法收敛（Consumer projection version 4）**：默认路径回到「按 Screen 读语义 → Agent 自主组织代码 → 实施后 obligations/verify」；`canonicalBrief` 进入 Screen packet；面向 Agent 的引用改回 `regionId`/`caseId`；`read_implementation_plan` / `read_implementation_tranche` 降为诊断能力，不再作为默认实施编排。Workspace 级内容寻址（曾规划的后续资源优化）暂缓，不影响当前消费与验收闭环。
+
+当前操作顺序与字段语义以 [Agent 消费指南](../guides/agent-consumption.md)、[产品工作流](../product/workflow.md) 和 [ProtoBridge 实现](../architecture/proto-bridge.md) 为准。
+
 ## 小结
 
 - 按需读取的决策权在 Agent；按需能够成立的约束权在 MCP 投影契约。
 - 交付范围与读取粒度正交：缩小任务不等于跳过 Screen / 截图；放大任务也不等于一次读完全库。
 - detail 是问题上门的工具，不是把 Acceptance 条目读满的配额。
+- 当前终态是 projection v4 + 义务/verifier hardening + 减法后的默认链路；历史实验收据不再作为产品规范。
