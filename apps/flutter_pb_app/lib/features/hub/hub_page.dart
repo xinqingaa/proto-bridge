@@ -80,6 +80,13 @@ class HubPage extends ConsumerWidget {
             icon: Icons.local_shipping_outlined,
             route: AppRoutes.v6ExceptionQueue,
           ),
+          SizedBox(height: TS.spacing.sm),
+          _HubEntry(
+            title: 'Cold Chain Ops Evidence',
+            subtitle: 'handoff cold-chain-ops · evidence feature',
+            icon: Icons.verified_outlined,
+            route: AppRoutes.coldChainEvidenceExceptionQueue,
+          ),
         ],
       ),
     );

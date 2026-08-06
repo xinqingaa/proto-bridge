@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../features/cold_chain_ops/exception_queue_page.dart';
 import '../features/cold_chain_ops/resolution_form_page.dart';
 import '../features/cold_chain_ops/shipment_detail_page.dart';
+import '../features/cold_chain_ops_evidence/exception_queue_page.dart';
+import '../features/cold_chain_ops_evidence/resolution_form_page.dart';
+import '../features/cold_chain_ops_evidence/shipment_detail_page.dart';
 import '../features/demo/demo_page.dart';
 import '../features/field_service/field_service_page.dart';
 import '../features/hub/hub_page.dart';
@@ -50,4 +53,16 @@ final Map<String, WidgetBuilder> appRoutes = {
   AppRoutes.v6ResolutionForm: (context) => V6ResolutionFormPage.fromRouteArgs(
     ModalRoute.of(context)?.settings.arguments,
   ),
+  AppRoutes.coldChainEvidenceExceptionQueue: (context) =>
+      ExceptionQueueEvidencePage.fromRouteArgs(
+        ModalRoute.of(context)?.settings.arguments,
+      ),
+  AppRoutes.coldChainEvidenceShipmentDetail: (context) =>
+      ShipmentDetailEvidencePage.fromRouteArgs(
+        ModalRoute.of(context)?.settings.arguments,
+      ),
+  AppRoutes.coldChainEvidenceResolutionForm: (context) =>
+      ResolutionFormEvidencePage.fromRouteArgs(
+        ModalRoute.of(context)?.settings.arguments,
+      ),
 };

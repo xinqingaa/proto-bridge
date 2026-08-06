@@ -20,4 +20,10 @@ abstract final class AppRoutes {
   static const v6ExceptionQueue = '/prototypes/v6/exception-queue';
   static const v6ShipmentDetail = '/prototypes/v6/shipment-detail';
   static const v6ResolutionForm = '/prototypes/v6/resolution-form';
+  static const coldChainEvidenceExceptionQueue =
+      '/prototypes/cold-chain-ops-evidence/exception-queue';
+  static const coldChainEvidenceShipmentDetail =
+      '/prototypes/cold-chain-ops-evidence/shipment-detail';
+  static const coldChainEvidenceResolutionForm =
+      '/prototypes/cold-chain-ops-evidence/resolution-form';
 }
