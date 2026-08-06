@@ -6,8 +6,9 @@ export type ConsumerQualityInput = {
   detailTraversalCount: number;
   continuationTokens: string[];
   expectedContinuationTokens?: string[];
-  canonicalObligationCount: number;
-  trancheObligationCounts: number[];
+  /** Optional diagnostic fields for implementation-plan runs. */
+  canonicalObligationCount?: number;
+  trancheObligationCounts?: number[];
 };
 
 export type ConsumerQualityMeasurement = {
@@ -18,9 +19,9 @@ export type ConsumerQualityMeasurement = {
   deltaAmplification: number;
   detailTraversalCount: number;
   continuationStable: boolean;
-  canonicalObligationCount: number;
-  trancheObligationCount: number;
-  denominatorPreserved: boolean;
+  canonicalObligationCount?: number;
+  trancheObligationCount?: number;
+  denominatorPreserved?: boolean;
 };
 
 export type ConsumerQualityGate = {
@@ -28,6 +29,7 @@ export type ConsumerQualityGate = {
   maxDeltaAmplification?: number;
   maxDetailTraversalCount?: number;
   requireStableContinuation?: boolean;
+  /** Diagnostic only: enable when explicitly measuring implementation-plan coverage. */
   requireDenominatorPreserved?: boolean;
 };
 
@@ -42,7 +44,11 @@ export function measureConsumerQuality(input: ConsumerQualityInput): ConsumerQua
   const continuationStable = input.expectedContinuationTokens
     ? same(input.continuationTokens, input.expectedContinuationTokens)
     : new Set(input.continuationTokens).size === input.continuationTokens.length;
-  const trancheObligationCount = input.trancheObligationCounts.reduce((sum, value) => sum + value, 0);
+  const hasPlanDenominator = input.canonicalObligationCount !== undefined
+    || input.trancheObligationCounts !== undefined;
+  const canonicalObligationCount = input.canonicalObligationCount ?? 0;
+  const trancheObligationCount = (input.trancheObligationCounts ?? [])
+    .reduce((sum, value) => sum + value, 0);
   return {
     baselineChars,
     deltaChars,
@@ -51,9 +57,13 @@ export function measureConsumerQuality(input: ConsumerQualityInput): ConsumerQua
     deltaAmplification: baselineChars === 0 ? 0 : deltaChars / baselineChars,
     detailTraversalCount: input.detailTraversalCount,
     continuationStable,
-    canonicalObligationCount: input.canonicalObligationCount,
-    trancheObligationCount,
-    denominatorPreserved: trancheObligationCount === input.canonicalObligationCount,
+    ...(hasPlanDenominator
+      ? {
+          canonicalObligationCount,
+          trancheObligationCount,
+          denominatorPreserved: trancheObligationCount === canonicalObligationCount,
+        }
+      : {}),
   };
 }
 
@@ -66,7 +76,13 @@ export function assertConsumerQualityGates(
   if (gate.maxDeltaAmplification !== undefined && measurement.deltaAmplification > gate.maxDeltaAmplification) failures.push('delta amplification exceeded');
   if (gate.maxDetailTraversalCount !== undefined && measurement.detailTraversalCount > gate.maxDetailTraversalCount) failures.push('detail traversal count exceeded');
   if (gate.requireStableContinuation && !measurement.continuationStable) failures.push('continuation is not stable');
-  if (gate.requireDenominatorPreserved && !measurement.denominatorPreserved) failures.push('implementation tranche denominator was not preserved');
+  if (gate.requireDenominatorPreserved) {
+    if (measurement.denominatorPreserved === undefined) {
+      failures.push('implementation tranche denominator was not measured');
+    } else if (!measurement.denominatorPreserved) {
+      failures.push('implementation tranche denominator was not preserved');
+    }
+  }
   if (failures.length) throw new V2ContractError('unsafe-input', `Consumer quality gate failed: ${failures.join('; ')}`, { measurement, failures });
 }
 

@@ -23,15 +23,16 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 1. 读取资源 `proto-bridge://guides/handoff-consumer`。
 2. 调用 `inspect_evidence_workspace`，校验 Workspace、projection contract version 和 capabilities。能力缺失时停止，不回退旧链路。
 3. 调用 `read_handoff_index`，在编辑前原样报告 `mandatoryRisks` 的全部风险，并固定 Screen 顺序、Case/Scenario 范围与 Screenshot digest 分组。
-4. 每个实现范围内的 Screen 调用一次 `read_screen_packet`。在规划容器前逐项核对 baseline 的 Region parent、scroll owner/member、positioning/pinning、sibling order、bbox relation，以及可见 content/state；这些是实现约束，不是滚动摘要。
+4. 每个实现范围内的 Screen 调用一次 `read_screen_packet`。用 `canonicalBrief`、baseline Structure 与 state 理解主滚动边界、主 section、状态矩阵和固定业务数据；Evidence Region 用于定位与验收，不是目标侧组件边界、列表项边界或文件边界。
 5. 每份不同 Screenshot 内容使用 digest group 的 `representativeBlobId` 调用 `read_evidence_screenshot`，确认 MCP ImageContent，并记录覆盖的全部 Case。相同 digest 不重复注入；metadata、base64 文本和相似 Variant 不能替代 Screenshot。
-6. 每个 Screen 在编辑前调用 `inspect_target_readiness`，记录 resolver coverage、component/token candidate/conflict/unresolved、五维 machine authority 和 blockers；没有 authority 的维度只能保持 `unverified`。随后调用 `read_implementation_plan`，按 Region tranche 依赖顺序实施，并用 `read_implementation_tranche` 只展开当前工作包。
-7. 非 baseline 或包含状态/场景差异的 Case 调用 `read_case_delta`。Delta 只返回 value/resolution 和状态 patch；需要来源时再定向调用 `read_evidence_detail`。逐项实施或复查使用 `read_reconstruction_obligations` 按 Screen/维度分页，不读取完整 Acceptance Contract。
-8. continuation 只能续读同一规范化查询直到 `complete=true`。完成后不得重启；不得为“读全”轮询所有投影或在 selector 之间循环。一次针对性展开仍不能解决时，记录未知或风险。
-9. 阅读目标仓库自己的 AGENT、README、架构、测试、公共 API 和既有实现。Target adapter 只发现和归一化这些上下文；内置 fallback 不能覆盖真实目标文档。
-10. Agent 自行决定文件、组件、状态、路由和 Token，但不得发明证据未支持的容器形态、文案、交互或状态；布局敏感 prop 缺失时对照 Screenshot，仍不确定则披露为剩余风险。
-11. 完成实现并运行目标原生验证；调用 `summarize_reconstruction_review` 汇总已处理 Case、已查看 Screenshot、已重放 Scenario、已知偏差和未验证事项。
-12. 需要 authoritative Review 时调用 `start_target_review` 固定验收分母；Structure/state/interaction obligation 通过 `verify_target_claims` 提交适用 Case，component/token 提交精确 Target occurrence/slot。state/interaction result 自动形成 assessment；其他结果用 receipt digest 写入 `record_review_assessments`。没有 inspector、resolved mapping 或精确 occurrence authority 时必须保持 `unverified`，再提交 findings 和人工完成请求。
+6. 每个 Screen 在编辑前调用 `inspect_target_readiness`，记录 resolver coverage、component/token candidate/conflict/unresolved、五维 machine authority 和 blockers；没有 authority 的维度只能保持 `unverified`。用 `implementationInventory` 的 `regionId`/`caseId` 批量解析组件和 Token。`read_implementation_plan` / `read_implementation_tranche` 仅诊断或 Review 辅助，不是默认实施路径。
+7. 每个 Screen 在编辑前用简短散文概括 Evidence 理解：主结构与滚动边界、组件与 Token 落点意向、状态与交互覆盖。这是给人纠偏的白话摘要，不是清单或评分表。
+8. 非 baseline 或包含状态/场景差异的 Case 调用 `read_case_delta`。Delta 使用语义 ID patch；需要来源时再定向调用 `read_evidence_detail`。实施后复查使用 `read_reconstruction_obligations` 按 Screen/维度分页，不读取完整 Acceptance Contract，也不把 obligation 顺序当作编码顺序。
+9. continuation 只能续读同一规范化查询直到 `complete=true`。完成后不得重启；不得为“读全”轮询所有投影或在 selector 之间循环。一次针对性展开仍不能解决时，记录未知或风险。
+10. 阅读目标仓库自己的 AGENT、README、架构、测试、公共 API 和既有实现。Target adapter 只发现和归一化这些上下文；内置 fallback 不能覆盖真实目标文档。
+11. Agent 自行决定文件、组件、状态、路由和 Token，但不得发明证据未支持的容器形态、文案、交互或状态；优先复用 Evidence/Source 固定业务数据；布局敏感 prop 缺失时对照 Screenshot，仍不确定则披露为剩余风险。
+12. 完成实现并运行目标原生验证；调用 `summarize_reconstruction_review` 汇总已处理 Case、已查看 Screenshot、已重放 Scenario、已知偏差和未验证事项。
+13. 需要 authoritative Review 时调用 `start_target_review` 固定验收分母；Structure/state/interaction obligation 通过 `verify_target_claims` 提交适用 Case，component/token 提交精确 Target occurrence/slot。state/interaction result 自动形成 assessment；其他结果用 receipt digest 写入 `record_review_assessments`。没有 inspector、resolved mapping 或精确 occurrence authority 时必须保持 `unverified`，再提交 findings 和人工完成请求。
 
 `read_agent_handoff`、`read_evidence_snapshot`、`read_evidence_case`、`read_evidence_revision`、`read_evidence_fragment` 和 `read_acceptance_contract` 只保留为显式 debug/兼容入口，不属于默认消费顺序。
 
@@ -43,10 +44,10 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 | --- | --- |
 | `inspect_evidence_workspace` | 确认 Workspace、能力、契约版本、构建与进程身份、Store generation |
 | `read_handoff_index` | 默认入口：固定 refs、风险、Screen/Case/Scenario 摘要和 digest 分组 |
-| `read_screen_packet` | 单 Screen 的 baseline Structure IR、可见 state/content、Case/Scenario 和 Screenshot 分组 |
-| `read_implementation_plan` | 按 Region 依赖排序的实施 tranche 索引和 canonical obligation 计数 |
-| `read_implementation_tranche` | 只展开当前 Region tranche 的完整 canonical obligations |
-| `read_case_delta` | 指定 Case 相对 baseline 的紧凑 Fact/state patch，不重复完整 provenance |
+| `read_screen_packet` | 单 Screen 的 baseline、canonicalBrief、inventory、Case/Scenario 和 Screenshot 分组 |
+| `read_implementation_plan` | 诊断：Region tranche 索引与 obligation 计数（非默认实施路径） |
+| `read_implementation_tranche` | 诊断：展开单个 tranche 的 obligations（非默认实施路径） |
+| `read_case_delta` | 指定 Case 相对 baseline 的语义 patch（regionId/caseId） |
 | `read_evidence_detail` | 按需读取单 Screen 的指定投影；可按稳定逻辑 continuation 续读 |
 | `read_reconstruction_obligations` | 按 Screen 和维度分页读取稳定、去重的五维还原义务 |
 | `read_evidence_screenshot` | 将代表 Screenshot 作为真正的 MCP ImageContent 返回 |
@@ -88,7 +89,7 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 | `read_review_obligations` | 按 Screen、维度和 assessment 状态分页读取 Review obligations |
 | `render_target_case` / `compare_target_artifacts` | 记录目标渲染与视觉比较回执 |
 | `replay_target_scenario` | 记录包含 pre-state、实际 action/input、post-state 和 visible result 的 Scenario 回执 |
-| `verify_target_claims` | 对 Structure/state/interaction 运行 typed Target inspector；对 component/token 验证精确 Dart occurrence/slot，并写入机器 receipt |
+| `verify_target_claims` | 对 Structure/state/interaction 运行 typed Target inspector；对 component/token 验证精确 occurrence/slot，并写入机器 receipt |
 | `record_review_assessments` | 对固定 obligation 写入 `matched`、`deviation` 或 `unverified`；`matched` 必须引用成功 verifier receipt，后写结果显式替代旧 assessment |
 | `record_review_findings` | 记录偏差、严重度和处理状态；不能代替 obligation assessment |
 | `finalize_target_review` | 消费人工确认，并由 Reducer 重新执行全部门禁 |

@@ -164,7 +164,7 @@ try {
   assert(
     workspace.runtime?.build?.fingerprint?.startsWith("sha256:") &&
       workspace.runtime?.processStartedAt &&
-      workspace.runtime?.contracts?.projectionVersion === 3 &&
+      workspace.runtime?.contracts?.projectionVersion === 4 &&
       workspace.runtime?.store?.generation?.startsWith("generation-") &&
       workspace.runtime?.capabilities?.includes("handoff-index") &&
       workspace.runtime?.capabilities?.includes("implementation-plan") &&
@@ -451,11 +451,24 @@ try {
     screenPacket.baselineCaseId === reference.TASK_LIST_CASE_ID &&
       screenPacket.cases?.length === 1 &&
       screenPacket.baseline?.structure?.caseId === reference.TASK_LIST_CASE_ID &&
+      screenPacket.canonicalBrief?.primaryScroll &&
+      Array.isArray(screenPacket.canonicalBrief?.stateMatrix) &&
+      screenPacket.canonicalBrief?.highImpactConstraints?.length >= 1 &&
       screenPacket.implementationInventory?.resolverInput &&
+      screenPacket.implementationInventory?.components?.every(
+        (item) =>
+          Array.isArray(item.occurrences) &&
+          item.occurrences.every(
+            (occurrence) =>
+              typeof occurrence.regionId === "string" &&
+              Array.isArray(occurrence.caseIds),
+          ),
+      ) &&
       screenPacket.screenshotGroups?.[0]?.digest === screenshot.digest,
-    "Screen packet did not return the fixed baseline and screenshot group.",
+    "Screen packet did not return the fixed baseline, canonicalBrief, or screenshot group.",
   );
 
+  // Diagnostic tools remain available but are not part of the default consumer path.
   const implementationPlan = parseToolJson(
     await client.request("tools/call", {
       name: "read_implementation_plan",
@@ -470,11 +483,12 @@ try {
     implementationPlan.complete === true &&
       implementationPlan.canonicalObligationCount >= 1 &&
       firstTranche?.trancheId &&
+      Array.isArray(firstTranche.caseIds) &&
       implementationPlan.tranches.reduce(
         (total, tranche) => total + tranche.obligationCount,
         0,
       ) === implementationPlan.canonicalObligationCount,
-    "Implementation plan did not preserve the canonical obligation denominator.",
+    "Diagnostic implementation plan did not preserve the canonical obligation denominator.",
   );
 
   const implementationTranche = parseToolJson(
@@ -494,7 +508,7 @@ try {
         (total, items) => total + items.length,
         0,
       ) === firstTranche.obligationCount,
-    "Implementation tranche did not expand exactly its canonical obligations.",
+    "Diagnostic implementation tranche did not expand exactly its canonical obligations.",
   );
 
   const obligations = parseToolJson(

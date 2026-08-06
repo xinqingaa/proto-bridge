@@ -18,7 +18,7 @@ import {
   type ReconstructionObligation,
 } from './reconstruction-obligations.js';
 
-export const CONSUMER_PROJECTION_VERSION = 3 as const;
+export const CONSUMER_PROJECTION_VERSION = 4 as const;
 
 export const CONSUMER_PROJECTION_CAPABILITIES = [
   'handoff-index',
@@ -144,6 +144,7 @@ export type ScreenPacketProjection = {
     structure: ScreenStructureProjection;
     state: StateSnapshot;
   };
+  canonicalBrief: ScreenCanonicalBrief;
   implementationInventory: ImplementationInventory;
   screenshotGroups: ConsumerScreenshotGroup[];
   detailQueryHints: Array<{
@@ -158,6 +159,33 @@ export type ScreenPacketProjection = {
   complete: true;
   omittedCategories: string[];
   warnings: string[];
+};
+
+export type ScreenCanonicalBrief = {
+  shell: {
+    rootRegionIds: string[];
+    fixedOrOverlayRegionIds: string[];
+  };
+  primaryScroll: Array<{
+    owner: StructureScrollOwner;
+    memberRegionIds: string[];
+    memberSections: Array<{ regionId: string; role?: string }>;
+  }>;
+  sections: Array<{
+    regionId: string;
+    role?: string;
+    parentRegionId?: string | null;
+  }>;
+  stateMatrix: Array<{
+    caseId: string;
+    variantId: string;
+    scenario?: EvidenceCaseReadModel['scenario'];
+    visibleRegionIds: string[];
+    visibleContent: StateSnapshot['visibleContent'];
+    keyedCollections: StateSnapshot['keyedCollections'];
+    values: StateSnapshot['values'];
+  }>;
+  highImpactConstraints: string[];
 };
 
 export type StructureScrollOwner =
@@ -245,8 +273,8 @@ export type StateSnapshot = {
 };
 
 export type ComponentInventoryOccurrence = {
-  regionIndex: number;
-  caseIndexes: number[];
+  regionId: string;
+  caseIds: string[];
 };
 
 export type ComponentInventoryItem = {
@@ -256,9 +284,9 @@ export type ComponentInventoryItem = {
 };
 
 export type TokenInventoryOccurrence = {
-  regionIndex: number;
+  regionId: string;
   slot: string;
-  caseIndexes: number[];
+  caseIds: string[];
 };
 
 export type TokenInventoryItem = {
@@ -306,16 +334,16 @@ export type CompactSemanticRegion = {
 
 export type SemanticCasePatch =
   | { kind: 'add'; region: CompactSemanticRegion }
-  | { kind: 'remove'; regionIndex: number }
-  | { kind: 'reparent'; regionIndex: number; beforeRegionIndex?: number; beforeRegionId?: string; afterRegionIndex?: number; afterRegionId?: string }
-  | { kind: 'scroll-owner'; regionIndex: number; before: StructureScrollOwner; after: StructureScrollOwner }
-  | { kind: 'positioning'; regionIndex: number; before: StructureRegion['positioning']; after: StructureRegion['positioning'] }
-  | { kind: 'order'; parentRegionIndex?: number; parentRegionId?: string | null; before: Array<number | string>; after: Array<number | string> }
-  | { kind: 'relation'; parentRegionIndex?: number; parentRegionId?: string | null; region: number | string; nextRegion: number | string; before?: StructureSiblingRelation['relation']; after?: StructureSiblingRelation['relation'] }
-  | { kind: 'content'; regionIndex?: number; regionId?: string; before?: string; after?: string }
-  | { kind: 'state'; regionIndex?: number; subject?: 'shell'; field: 'variantId' | 'semanticCoverage' | 'visible'; before?: string | boolean; after?: string | boolean }
-  | { kind: 'value'; regionIndex?: number; regionId?: string; key: string; before?: string | number | boolean | null; after?: string | number | boolean | null }
-  | { kind: 'keyed-collection'; collectionIndex?: number; collectionId?: string; addedKeys: string[]; removedKeys: string[] }
+  | { kind: 'remove'; regionId: string }
+  | { kind: 'reparent'; regionId: string; beforeRegionId?: string | null; afterRegionId?: string | null }
+  | { kind: 'scroll-owner'; regionId: string; before: StructureScrollOwner; after: StructureScrollOwner }
+  | { kind: 'positioning'; regionId: string; before: StructureRegion['positioning']; after: StructureRegion['positioning'] }
+  | { kind: 'order'; parentRegionId: string | null; before: string[]; after: string[] }
+  | { kind: 'relation'; parentRegionId: string | null; regionId: string; nextRegionId: string; before?: StructureSiblingRelation['relation']; after?: StructureSiblingRelation['relation'] }
+  | { kind: 'content'; regionId: string; before?: string; after?: string }
+  | { kind: 'state'; regionId?: string; subject?: 'shell'; field: 'variantId' | 'semanticCoverage' | 'visible'; before?: string | boolean; after?: string | boolean }
+  | { kind: 'value'; regionId: string; key: string; before?: string | number | boolean | null; after?: string | number | boolean | null }
+  | { kind: 'keyed-collection'; collectionId: string; addedKeys: string[]; removedKeys: string[] }
   | { kind: 'interaction'; change: 'add' | 'remove'; obligationId: string; subject: string; interactionKind: string };
 
 export type CaseEvidenceSignal = {
@@ -791,6 +819,11 @@ export function buildScreenPacket(
       structure: compactScreenStructure(baselineStructure),
       state: baselineState,
     },
+    canonicalBrief: buildCanonicalBrief({
+      input,
+      cases: screen.cases,
+      baselineStructure,
+    }),
     implementationInventory,
     screenshotGroups,
     detailQueryHints: EVIDENCE_DETAIL_PROJECTIONS.map((projection) => ({
@@ -808,6 +841,7 @@ export function buildScreenPacket(
       'full-component-and-token-requirements',
       'full-provenance',
       'other-screens',
+      'implementation-tranches',
     ],
     warnings: screenshotGroups
       .filter((group) => group.metadataStatus === 'missing')
@@ -815,6 +849,87 @@ export function buildScreenPacket(
         (group) =>
           `Screenshot metadata is missing for ${group.representativeBlobId}.`,
       ),
+  };
+}
+
+function buildCanonicalBrief(input: {
+  input: ConsumerProjectionInput;
+  cases: EvidenceCaseReadModel[];
+  baselineStructure: StructureIR;
+}): ScreenCanonicalBrief {
+  const regionById = new Map(
+    input.baselineStructure.regions.map((region) => [region.regionId, region]),
+  );
+  const fixedOrOverlayRegionIds = input.baselineStructure.regions
+    .filter((region) =>
+      region.positioning === 'fixed'
+      || region.positioning === 'sticky'
+      || region.positioning === 'overlay'
+      || region.scrollOwner.kind === 'viewport')
+    .map((region) => region.regionId)
+    .sort();
+  const primaryScroll = input.baselineStructure.scrollContainers
+    .filter((container) => container.owner.kind === 'region')
+    .map((container) => ({
+      owner: { ...container.owner },
+      memberRegionIds: [...container.memberRegionIds],
+      memberSections: container.memberRegionIds.map((regionId) => {
+        const region = regionById.get(regionId);
+        return {
+          regionId,
+          ...(region?.role ? { role: region.role } : {}),
+        };
+      }),
+    }));
+  const sections = input.baselineStructure.siblingGroups.flatMap((group) =>
+    group.childRegionIds.map((regionId) => {
+      const region = regionById.get(regionId);
+      return {
+        regionId,
+        ...(region?.role ? { role: region.role } : {}),
+        parentRegionId: group.parentRegionId,
+      };
+    }),
+  );
+  const stateMatrix = input.cases.map((evidenceCase) => {
+    const snapshot = buildStateSnapshot(input.input, evidenceCase);
+    return {
+      caseId: evidenceCase.caseId,
+      variantId: evidenceCase.variantId,
+      ...(evidenceCase.scenario ? { scenario: { ...evidenceCase.scenario } } : {}),
+      visibleRegionIds: snapshot.visibleRegionIds,
+      visibleContent: snapshot.visibleContent,
+      keyedCollections: snapshot.keyedCollections,
+      values: snapshot.values,
+    };
+  });
+  const highImpactConstraints: string[] = [];
+  for (const container of primaryScroll) {
+    const ownerId = container.owner.kind === 'region' ? container.owner.regionId : 'unknown';
+    highImpactConstraints.push(
+      `Members of scroll owner ${ownerId} share one primary scroll container: ${container.memberRegionIds.join(', ')}.`,
+    );
+  }
+  if (fixedOrOverlayRegionIds.length > 0) {
+    highImpactConstraints.push(
+      `Fixed, sticky, overlay, or viewport-owned regions are not primary-scroll members by default: ${fixedOrOverlayRegionIds.join(', ')}.`,
+    );
+  }
+  highImpactConstraints.push(
+    'Evidence Region IDs locate acceptance subjects; they are not target component, list-item, or file boundaries.',
+  );
+  highImpactConstraints.push(
+    'Prefer keyedCollections and values from this brief over reinvented mock data.',
+  );
+  return {
+    shell: {
+      rootRegionIds: [...input.baselineStructure.rootRegionIds],
+      fixedOrOverlayRegionIds,
+    },
+    primaryScroll,
+    sections,
+    stateMatrix,
+    highImpactConstraints,
   };
 }
 
@@ -839,9 +954,6 @@ function buildImplementationInventory(
   };
   const components = new Map<string, PendingComponent>();
   const tokens = new Map<string, PendingToken>();
-  const caseIndexById = new Map(
-    screenCases.map((item, index) => [item.caseId, index]),
-  );
 
   for (const obligation of obligations) {
     const expected = objectValue(obligation.expected);
@@ -889,9 +1001,6 @@ function buildImplementationInventory(
     ...[...tokens.values()].flatMap((item) =>
       [...item.occurrences.values()].map((occurrence) => occurrence.regionId)),
   ]).sort();
-  const regionIndexById = new Map(
-    inventoryRegionIds.map((regionId, index) => [regionId, index]),
-  );
   const allCaseIds = new Set(screenCases.map((item) => item.caseId));
   const regions = inventoryRegionIds.map((regionId) => ({
     regionId,
@@ -904,8 +1013,8 @@ function buildImplementationInventory(
       const occurrences = [...item.occurrences.values()]
         .sort((a, b) => a.regionId.localeCompare(b.regionId))
         .map((occurrence) => ({
-          regionIndex: regionIndexById.get(occurrence.regionId)!,
-          caseIndexes: caseIndexes(occurrence.caseIds, caseIndexById),
+          regionId: occurrence.regionId,
+          caseIds: [...occurrence.caseIds].sort(),
         }));
       return {
         componentId: item.componentId,
@@ -919,9 +1028,9 @@ function buildImplementationInventory(
       const occurrences = [...item.occurrences.values()]
         .sort((a, b) => a.regionId.localeCompare(b.regionId) || a.slot.localeCompare(b.slot))
         .map((occurrence) => ({
-          regionIndex: regionIndexById.get(occurrence.regionId)!,
+          regionId: occurrence.regionId,
           slot: occurrence.slot,
-          caseIndexes: caseIndexes(occurrence.caseIds, caseIndexById),
+          caseIds: [...occurrence.caseIds].sort(),
         }));
       return {
         tokenId: item.tokenId,
@@ -939,18 +1048,6 @@ function buildImplementationInventory(
     components: componentItems,
     tokens: tokenItems,
   };
-}
-
-function caseIndexes(
-  caseIds: Set<string>,
-  caseIndexById: Map<string, number>,
-): number[] {
-  return uniqueNumbers(
-    [...caseIds].flatMap((caseId) => {
-      const index = caseIndexById.get(caseId);
-      return index === undefined ? [] : [index];
-    }),
-  );
 }
 
 function rolesForRegion(
@@ -1060,9 +1157,6 @@ function buildSemanticCasePatches(input: {
   const afterRegions = new Map(
     input.selectedStructure.regions.map((item) => [item.regionId, item]),
   );
-  const baselineRegionIndex = new Map(
-    input.baselineStructure.regions.map((item, index) => [item.regionId, index]),
-  );
   const regionIds = unique([...beforeRegions.keys(), ...afterRegions.keys()]).sort();
 
   for (const regionId of regionIds) {
@@ -1073,30 +1167,26 @@ function buildSemanticCasePatches(input: {
       continue;
     }
     if (before && !after) {
-      patches.push({ kind: 'remove', regionIndex: baselineRegionIndex.get(regionId)! });
+      patches.push({ kind: 'remove', regionId });
       continue;
     }
     if (!before || !after) continue;
     if (before.parentRegionId !== after.parentRegionId) {
       patches.push({
         kind: 'reparent',
-        regionIndex: baselineRegionIndex.get(regionId)!,
-        ...(before.parentRegionId
-          ? baselineRegionIndex.has(before.parentRegionId)
-            ? { beforeRegionIndex: baselineRegionIndex.get(before.parentRegionId)! }
-            : { beforeRegionId: before.parentRegionId }
-          : {}),
-        ...(after.parentRegionId
-          ? baselineRegionIndex.has(after.parentRegionId)
-            ? { afterRegionIndex: baselineRegionIndex.get(after.parentRegionId)! }
-            : { afterRegionId: after.parentRegionId }
-          : {}),
+        regionId,
+        ...(before.parentRegionId !== undefined
+          ? { beforeRegionId: before.parentRegionId }
+          : { beforeRegionId: null }),
+        ...(after.parentRegionId !== undefined
+          ? { afterRegionId: after.parentRegionId }
+          : { afterRegionId: null }),
       });
     }
     if (canonical(before.scrollOwner) !== canonical(after.scrollOwner)) {
       patches.push({
         kind: 'scroll-owner',
-        regionIndex: baselineRegionIndex.get(regionId)!,
+        regionId,
         before: before.scrollOwner,
         after: after.scrollOwner,
       });
@@ -1104,7 +1194,7 @@ function buildSemanticCasePatches(input: {
     if (before.positioning !== after.positioning) {
       patches.push({
         kind: 'positioning',
-        regionIndex: baselineRegionIndex.get(regionId)!,
+        regionId,
         before: before.positioning,
         after: after.positioning,
       });
@@ -1121,14 +1211,11 @@ function buildSemanticCasePatches(input: {
     const before = beforeGroups.get(key)?.childRegionIds ?? [];
     const after = afterGroups.get(key)?.childRegionIds ?? [];
     if (canonical(before) !== canonical(after)) {
-      const parentRegionId = key || null;
       patches.push({
         kind: 'order',
-        ...(parentRegionId && baselineRegionIndex.has(parentRegionId)
-          ? { parentRegionIndex: baselineRegionIndex.get(parentRegionId)! }
-          : { parentRegionId }),
-        before: before.map((regionId) => baselineRegionIndex.get(regionId) ?? regionId),
-        after: after.map((regionId) => baselineRegionIndex.get(regionId) ?? regionId),
+        parentRegionId: key || null,
+        before: [...before],
+        after: [...after],
       });
     }
   }
@@ -1144,25 +1231,15 @@ function buildSemanticCasePatches(input: {
   for (const key of unique([...beforeRelations.keys(), ...afterRelations.keys()]).sort()) {
     const before = beforeRelations.get(key);
     const after = afterRelations.get(key);
-    const addsNewEndpoint = Boolean(
-      !before
-      && after
-      && (
-        !baselineRegionIndex.has(after.regionId)
-        || !baselineRegionIndex.has(after.nextRegionId)
-      ),
-    );
     if (
       after
-      && (addsNewEndpoint || (before && before.relation !== after.relation))
+      && (!before || before.relation !== after.relation)
     ) {
       patches.push({
         kind: 'relation',
-        ...(after.parentRegionId && baselineRegionIndex.has(after.parentRegionId)
-          ? { parentRegionIndex: baselineRegionIndex.get(after.parentRegionId)! }
-          : { parentRegionId: after.parentRegionId }),
-        region: baselineRegionIndex.get(after.regionId) ?? after.regionId,
-        nextRegion: baselineRegionIndex.get(after.nextRegionId) ?? after.nextRegionId,
+        parentRegionId: after.parentRegionId,
+        regionId: after.regionId,
+        nextRegionId: after.nextRegionId,
         ...(before ? { before: before.relation } : {}),
         after: after.relation,
       });
@@ -1182,9 +1259,7 @@ function buildSemanticCasePatches(input: {
     if (before !== after) {
       patches.push({
         kind: 'content',
-        ...(baselineRegionIndex.has(regionId)
-          ? { regionIndex: baselineRegionIndex.get(regionId)! }
-          : { regionId }),
+        regionId,
         ...(before !== undefined ? { before } : {}),
         ...(after !== undefined ? { after } : {}),
       });
@@ -1218,7 +1293,7 @@ function buildSemanticCasePatches(input: {
     if (before !== after) {
       patches.push({
         kind: 'state',
-        regionIndex: baselineRegionIndex.get(regionId)!,
+        regionId,
         field: 'visible',
         before,
         after,
@@ -1237,9 +1312,7 @@ function buildSemanticCasePatches(input: {
     if (canonical(before?.value) !== canonical(after?.value)) {
       patches.push({
         kind: 'value',
-        ...(baselineRegionIndex.has(regionId)
-          ? { regionIndex: baselineRegionIndex.get(regionId)! }
-          : { regionId }),
+        regionId,
         key: after?.key ?? before!.key,
         ...(before ? { before: before.value } : {}),
         ...(after ? { after: after.value } : {}),
@@ -1261,9 +1334,7 @@ function buildSemanticCasePatches(input: {
     if (addedKeys.length > 0 || removedKeys.length > 0) {
       patches.push({
         kind: 'keyed-collection',
-        ...(baselineRegionIndex.has(collectionId)
-          ? { collectionIndex: baselineRegionIndex.get(collectionId)! }
-          : { collectionId }),
+        collectionId,
         addedKeys,
         removedKeys,
       });
@@ -1869,7 +1940,7 @@ function bboxRelation(a: StructureBbox | undefined, b: StructureBbox | undefined
 
 function encodeObligationCursor(payload: ObligationCursorPayload): string {
   const json = canonical(payload);
-  return `pbop3.${sha1Hex(json)}.${encodeURIComponent(json).replaceAll('.', '%2E')}`;
+  return `pbop4.${sha1Hex(json)}.${encodeURIComponent(json).replaceAll('.', '%2E')}`;
 }
 
 function decodeObligationCursor(
@@ -1877,7 +1948,7 @@ function decodeObligationCursor(
   expected: Omit<ObligationCursorPayload, 'version' | 'nextKey'>,
 ): ObligationCursorPayload {
   const [prefix, checksum, encoded, ...rest] = value.split('.');
-  if (prefix !== 'pbop3' || !checksum || !encoded || rest.length > 0) throw invalidContinuation('Obligation continuation format is invalid.');
+  if (prefix !== 'pbop4' || !checksum || !encoded || rest.length > 0) throw invalidContinuation('Obligation continuation format is invalid.');
   let parsed: unknown;
   try {
     parsed = JSON.parse(decodeURIComponent(encoded));
@@ -1911,7 +1982,7 @@ function encodeCursor(payload: CursorPayload): string {
   // the period-delimited envelope remains unambiguous for IDs such as
   // "screen.detail" and logical item keys.
   const encoded = encodeURIComponent(json).replaceAll('.', '%2E');
-  return `pbcp3.${sha1Hex(json)}.${encoded}`;
+  return `pbcp4.${sha1Hex(json)}.${encoded}`;
 }
 
 function decodeCursor(
@@ -1922,7 +1993,7 @@ function decodeCursor(
   >,
 ): CursorPayload {
   const [prefix, checksum, encoded, ...rest] = value.split('.');
-  if (prefix !== 'pbcp3' || !checksum || !encoded || rest.length > 0) {
+  if (prefix !== 'pbcp4' || !checksum || !encoded || rest.length > 0) {
     throw invalidContinuation('Continuation format is invalid.');
   }
   let json: string;
@@ -1974,10 +2045,6 @@ function objectValue(value: unknown): Record<string, unknown> | undefined {
 
 function unique(values: string[]): string[] {
   return [...new Set(values)];
-}
-
-function uniqueNumbers(values: number[]): number[] {
-  return [...new Set(values)].sort((a, b) => a - b);
 }
 
 function canonical(value: unknown): string {

@@ -17,7 +17,7 @@ export type ImplementationTrancheSummary = {
   roles: string[];
   parentRegionIds: string[];
   sequence: number;
-  caseIndexes: number[];
+  caseIds: string[];
   dependencies: {
     trancheIds: string[];
     allRegionTranches: boolean;
@@ -120,7 +120,6 @@ function compilePlan(input: ConsumerProjectionInput, screenId: string): Compiled
     obligationsByRegion.set(regionId, current);
   }
 
-  const caseIndexById = new Map(cases.map((item, index) => [item.caseId, index]));
   const trancheIdByRegion = new Map(
     [...regions.keys()].map((regionId) => [regionId, trancheId(screenId, regionId)]),
   );
@@ -133,19 +132,16 @@ function compilePlan(input: ConsumerProjectionInput, screenId: string): Compiled
           return id ? [id] : [];
         })
         .sort();
-      const caseIndexes = uniqueNumbers(
-        assigned.flatMap((item) => item.caseIds.flatMap((caseId) => {
-          const index = caseIndexById.get(caseId);
-          return index === undefined ? [] : [index];
-        })),
-      );
+      const caseIds = unique(
+        assigned.flatMap((item) => item.caseIds),
+      ).sort();
       return {
         trancheId: trancheIdByRegion.get(region.regionId)!,
         regionId: region.regionId,
         roles: [...region.roles].sort(),
         parentRegionIds: [...region.parentRegionIds].sort(),
         sequence: region.sequence,
-        caseIndexes,
+        caseIds,
         dependencies: {
           trancheIds: parentDependencies,
           allRegionTranches: region.regionId === SCREEN_TRANCHE_REGION_ID,
@@ -263,8 +259,8 @@ function objectValue(value: unknown): Record<string, unknown> | undefined {
     : undefined;
 }
 
-function uniqueNumbers(values: number[]): number[] {
-  return [...new Set(values)].sort((a, b) => a - b);
+function unique(values: string[]): string[] {
+  return [...new Set(values)];
 }
 
 function assertFixedInput(input: ConsumerProjectionInput): void {

@@ -14,3 +14,8 @@
 ## 记录
 
 - [2026-08-03 冷链原型高保真还原：现状诊断、边界与优化规划](./2026-08-03-cold-chain-reconstruction-audit-and-optimization-plan.md)
+- [2026-08-05 Phase 5R：还原义务与系统性质量门禁](./2026-08-05-phase-5r-system-remediation.md)
+- [2026-08-06 5R 减法收敛](./2026-08-06-5r-subtraction-convergence.md)
+- [2026-08-05 冷链人工验收](./runs/2026-08-05-cold-chain-manual-acceptance-01/manual-acceptance.md)
+- [2026-08-05 冷链 V6 实施回查](./runs/2026-08-05-cold-chain-v6-implementation-review-01/manual-acceptance.md)
+- [2026-08-06 5R 减法人工对照清单](./runs/2026-08-06-5r-subtraction-manual-checklist/manual-acceptance.md)

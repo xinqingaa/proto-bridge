@@ -100,46 +100,52 @@ describe('Consumer projection', () => {
         checkpointId: 'applied',
       },
     ]);
-    expect(packet.projectionVersion).toBe(3);
+    expect(packet.projectionVersion).toBe(4);
     expect(packet.implementationInventory.resolverInput).toEqual({
       componentIds: ['app.card', 'app.page-shell'],
       tokenIds: ['color.surface', 'space.md'],
     });
     const inventory = packet.implementationInventory;
-    const emptyRegionIndex = inventory.regions.findIndex((item) => item.regionId === `${SCREEN}.empty.one`);
-    const rootRegionIndex = inventory.regions.findIndex((item) => item.regionId === `${SCREEN}.root`);
     expect(inventory.regions).toContainEqual({ regionId: `${SCREEN}.empty.one`, roles: ['empty-state'] });
     expect(inventory.regions).toContainEqual({ regionId: `${SCREEN}.root`, roles: ['page'] });
     expect(inventory.components).toEqual([
       {
         componentId: 'app.card',
         occurrenceCount: 1,
-        occurrences: [{ regionIndex: emptyRegionIndex, caseIndexes: [1] }],
+        occurrences: [{ regionId: `${SCREEN}.empty.one`, caseIds: [EMPTY_CASE] }],
       },
       {
         componentId: 'app.page-shell',
         occurrenceCount: 1,
-        occurrences: [{ regionIndex: rootRegionIndex, caseIndexes: [0, 2] }],
+        occurrences: [{ regionId: `${SCREEN}.root`, caseIds: [DEFAULT_CASE, SCENARIO_CASE] }],
       },
     ]);
     expect(inventory.tokens).toContainEqual({
       tokenId: 'color.surface',
       occurrenceCount: 1,
       occurrences: [{
-        regionIndex: rootRegionIndex,
+        regionId: `${SCREEN}.root`,
         slot: 'color',
-        caseIndexes: [0, 2],
+        caseIds: [DEFAULT_CASE, SCENARIO_CASE],
       }],
     });
     expect(inventory.tokens).toContainEqual({
       tokenId: 'space.md',
       occurrenceCount: 1,
       occurrences: [{
-        regionIndex: emptyRegionIndex,
+        regionId: `${SCREEN}.empty.one`,
         slot: 'gap',
-        caseIndexes: [1],
+        caseIds: [EMPTY_CASE],
       }],
     });
+    expect(packet.canonicalBrief.primaryScroll.length).toBeGreaterThan(0);
+    expect(packet.canonicalBrief.stateMatrix.map((item) => item.caseId)).toEqual([
+      DEFAULT_CASE,
+      EMPTY_CASE,
+      SCENARIO_CASE,
+    ]);
+    expect(packet.canonicalBrief.highImpactConstraints.some((item) =>
+      item.includes('not target component'))).toBe(true);
     expect(packet).not.toHaveProperty('componentIds');
     expect(packet).not.toHaveProperty('tokenIds');
     expect(packet).not.toHaveProperty('shellContracts');
@@ -266,9 +272,9 @@ describe('Consumer projection', () => {
     ]));
     expect(delta.patches).toContainEqual({
       kind: 'reparent',
-      regionIndex: 3,
-      beforeRegionIndex: 2,
-      afterRegionIndex: 1,
+      regionId: `${SCREEN}.summary`,
+      beforeRegionId: `${SCREEN}.scroll-list`,
+      afterRegionId: `${SCREEN}.root`,
     });
     expect(delta.patches).toContainEqual(expect.objectContaining({
       kind: 'interaction',
@@ -319,7 +325,7 @@ describe('Consumer projection', () => {
 
     const root = plan.tranches.find((item) => item.regionId === `${SCREEN}.root`)!;
     expect(root.byDimension.components).toBe(1);
-    expect(root.caseIndexes).toEqual([0, 1, 2]);
+    expect(root.caseIds).toEqual([DEFAULT_CASE, SCENARIO_CASE, EMPTY_CASE]);
     const tranche = buildImplementationTranche(input, SCREEN, root.trancheId);
     expect(tranche.obligations.components).toHaveLength(1);
     expect(tranche.obligations.components[0]?.obligationId).toMatch(/^obligation-sha1:/);
@@ -335,7 +341,7 @@ describe('Consumer projection', () => {
     });
     expect(first.complete).toBe(false);
     expect(first.items).toHaveLength(1);
-    expect(first.continuation).toMatch(/^pbcp3\./);
+    expect(first.continuation).toMatch(/^pbcp4\./);
 
     const second = buildEvidenceDetail(input, {
       handoffId: input.handoff.handoffId,
@@ -367,7 +373,7 @@ describe('Consumer projection', () => {
     });
     expect(first.obligations).toHaveLength(1);
     expect(first.total).toBeGreaterThan(1);
-    expect(first.continuation).toMatch(/^pbop3\./);
+    expect(first.continuation).toMatch(/^pbop4\./);
     const second = buildReconstructionObligationProjection(input, {
       handoffId: input.handoff.handoffId,
       screenId: SCREEN,

@@ -1,7 +1,8 @@
 # Phase 5R：还原义务与系统性质量门禁
 
 - 日期：2026-08-05
-- 状态：in-progress
+- 状态：superseded-in-part by 2026-08-06 5R subtraction（验收 hardening 保留；默认 Region tranche 编排已移出）
+- 后续收敛：[2026-08-06 5R 减法收敛](./2026-08-06-5r-subtraction-convergence.md)
 - 适用范围：任意 Prototype、Screen 和 Target；不包含 cold-chain 或 Flutter 专用规则
 
 ## 结论
