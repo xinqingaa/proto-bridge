@@ -47,27 +47,6 @@ class HubPage extends ConsumerWidget {
           ),
           SizedBox(height: TS.spacing.sm),
           _HubEntry(
-            title: 'Field Service',
-            subtitle: 'prototypes/field-service',
-            icon: Icons.handyman_outlined,
-            route: AppRoutes.fieldService,
-          ),
-          SizedBox(height: TS.spacing.sm),
-          _HubEntry(
-            title: 'Ledger Planet',
-            subtitle: 'prototypes/ledger-planet',
-            icon: Icons.account_balance_wallet_outlined,
-            route: AppRoutes.ledgerPlanet,
-          ),
-          SizedBox(height: TS.spacing.sm),
-          _HubEntry(
-            title: 'Ledger Planet V2',
-            subtitle: 'prototypes/ledger-planet-v2',
-            icon: Icons.auto_awesome_outlined,
-            route: AppRoutes.ledgerPlanetV2,
-          ),
-          SizedBox(height: TS.spacing.sm),
-          _HubEntry(
             title: 'Cold Chain Ops',
             subtitle: 'prototypes/cold-chain-ops-evidence',
             icon: Icons.ac_unit_outlined,

@@ -520,7 +520,7 @@ describe('Consumer projection', () => {
 });
 
 function projectionFixture(): ConsumerProjectionInput {
-  const baseRef = fixtures.ledgerPlanetTaskList.HANDOFF.selectedCases[0]!;
+  const baseRef = fixtures.referenceCaseSlice.HANDOFF.selectedCases[0]!;
   const resolved = (caseId: string, revisionId: string, attemptId: string) => ({
     ...baseRef,
     caseId,
@@ -528,7 +528,7 @@ function projectionFixture(): ConsumerProjectionInput {
     relevantAttemptId: attemptId,
   });
   const handoff: AgentHandoff = {
-    ...fixtures.ledgerPlanetTaskList.HANDOFF,
+    ...fixtures.referenceCaseSlice.HANDOFF,
     selectedCases: [
       resolved(DEFAULT_CASE, 'revision-default', 'attempt-default'),
       resolved(EMPTY_CASE, 'revision-empty', 'attempt-empty'),
@@ -702,8 +702,8 @@ function blob(blobId: string, digest: string, revisionId: string): BlobRecord {
   return {
     schemaVersion: 1,
     blobId,
-    workspaceId: fixtures.ledgerPlanetTaskList.WORKSPACE_ID,
-    bundleId: fixtures.ledgerPlanetTaskList.BUNDLE_ID,
+    workspaceId: fixtures.referenceCaseSlice.WORKSPACE_ID,
+    bundleId: fixtures.referenceCaseSlice.BUNDLE_ID,
     kind: 'screenshot',
     mediaType: 'image/png',
     byteLength: 10,

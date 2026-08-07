@@ -270,7 +270,7 @@ describe("climbInspectTarget", () => {
 describe("resolvePickTarget", () => {
   it("keeps the exact leaf while component metadata remains available", () => {
     const page = document.createElement("div");
-    page.setAttribute("data-pb-id", "field-service.settings");
+    page.setAttribute("data-pb-id", "cold-chain-ops.exception-queue");
     const host = document.createElement("div");
     page.appendChild(host);
     document.body.appendChild(page);
@@ -302,7 +302,7 @@ describe("resolvePickTarget", () => {
 
   it("keeps interactive leaf under loose page anchors", () => {
     const page = document.createElement("div");
-    page.setAttribute("data-pb-id", "field-service.settings");
+    page.setAttribute("data-pb-id", "cold-chain-ops.exception-queue");
     const button = document.createElement("button");
     button.textContent = "个人资料";
     page.appendChild(button);
@@ -327,7 +327,7 @@ describe("resolvePickTarget", () => {
 
   it("uses Alt/preferParent to select the nearest semantic anchor", () => {
     const page = document.createElement("div");
-    page.setAttribute("data-pb-id", "field-service.settings");
+    page.setAttribute("data-pb-id", "cold-chain-ops.exception-queue");
     const row = document.createElement("div");
     row.setAttribute("data-pb-id", "ds.data-list.row.1");
     const title = document.createElement("strong");

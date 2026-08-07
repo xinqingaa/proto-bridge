@@ -30,11 +30,6 @@ import {
 } from "@/runtime/navigation-intent";
 import { buildCanonicalRuntimeUrl, resolveRuntimeRoute } from "@/runtime/url";
 import InspectHost from "@/runtime/inspect/InspectHost.vue";
-import {
-  getTheme as getLedgerTheme,
-  setTheme as setLedgerTheme,
-  type LedgerThemeId,
-} from "@/prototypes/ledger-planet/theme-session";
 import { installRuntimeCaptureProtocol } from "@/runtime/capture-protocol";
 
 installNavigationIntentTracking();
@@ -52,7 +47,6 @@ const lastPostedRoute = shallowRef<string | null>(null);
 const inspectEnabled = ref(false);
 const commentEnabled = ref(false);
 const inspectHost = ref<InstanceType<typeof InspectHost> | null>(null);
-const themePreferenceTick = ref(0);
 const isEmbedded = shallowRef(
   typeof window !== "undefined" && window.parent !== window,
 );
@@ -70,23 +64,9 @@ const resolved = computed(() =>
   }),
 );
 
-function isLedgerThemeId(
-  value: string | null | undefined,
-): value is LedgerThemeId {
-  return value === "light" || value === "dark";
-}
-
 const effectiveThemeId = computed(() => {
-  themePreferenceTick.value;
   if (!resolved.value.ok) return "light";
-  // ledger-planet: theme-session is authoritative in both standalone and
-  // workbench iframe so preview/settings/nav share one preference.
-  if (resolved.value.prototype.id !== "ledger-planet") {
-    return resolved.value.theme.id;
-  }
-  return getLedgerTheme(
-    typeof route.query.theme === "string" ? route.query.theme : undefined,
-  );
+  return resolved.value.theme.id;
 });
 
 const themeStyle = computed(() => {
@@ -209,15 +189,6 @@ function onMessage(event: MessageEvent) {
       !target.pathname.startsWith("/prototype/")
     )
       return;
-    // Preview settings / workbench query changes only update the URL. Sync
-    // ledger theme-session before replace so in-app nav keeps the new theme.
-    const pathParts = target.pathname.split("/");
-    const prototypeId = pathParts[2] ?? "";
-    const themeFromUrl = target.searchParams.get("theme");
-    if (prototypeId === "ledger-planet" && isLedgerThemeId(themeFromUrl)) {
-      setLedgerTheme(themeFromUrl);
-      themePreferenceTick.value += 1;
-    }
     const destination = `${target.pathname}${target.search}${target.hash}`;
     lastPostedRoute.value = `${window.location.origin}${destination}`;
     void router.replace(destination);
@@ -292,10 +263,6 @@ async function loadScreen() {
   }
 }
 
-function onLedgerThemeChange() {
-  themePreferenceTick.value += 1;
-}
-
 watch(
   () => route.fullPath,
   async () => {
@@ -307,7 +274,6 @@ watch(
 );
 
 onMounted(() => {
-  window.addEventListener("ledger-theme-change", onLedgerThemeChange);
   window.addEventListener("message", onMessage);
   if (window.parent !== window) {
     document.documentElement.classList.add("pbwork-runtime-embedded");
@@ -355,7 +321,6 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener("ledger-theme-change", onLedgerThemeChange);
   window.removeEventListener("message", onMessage);
   document.documentElement.classList.remove("pbwork-runtime-embedded");
   disposeCaptureProtocol?.();
@@ -376,26 +341,6 @@ watch(
   { immediate: true },
 );
 
-watch(
-  [() => route.fullPath, effectiveThemeId],
-  () => {
-    // Standalone and embedded: rewrite stale history/parent URLs to the
-    // current ledger preference (fixes workbench back restoring old theme).
-    if (
-      !resolved.value.ok ||
-      resolved.value.prototype.id !== "ledger-planet" ||
-      route.query.theme === effectiveThemeId.value
-    ) {
-      return;
-    }
-    void router.replace({
-      path: route.path,
-      query: { ...route.query, theme: effectiveThemeId.value },
-      hash: route.hash,
-    });
-  },
-  { flush: "post" },
-);
 </script>
 
 <template>

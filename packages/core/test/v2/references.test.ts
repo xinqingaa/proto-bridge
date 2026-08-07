@@ -11,7 +11,7 @@ import {
   type CaseEvidenceRevision,
 } from '../../src/v2/index.js';
 
-const f = fixtures.ledgerPlanetTaskList;
+const f = fixtures.referenceCaseSlice;
 
 const COMPLETE_CONTEXT = {
   workspace: f.WORKSPACE,
@@ -58,7 +58,7 @@ describe('V2 shared cross-reference assertions', () => {
   it('rejects a selected caseId that was not computed from its CaseKey', () => {
     const invalidSelection = {
       ...f.RUN_1.selection,
-      cases: [{ ...f.RUN_1.selection.cases[0]!, caseId: 'ledger-planet.task-list::wrong::light::iphone-14' }],
+      cases: [{ ...f.RUN_1.selection.cases[0]!, caseId: 'sample.task-list::wrong::light::iphone-14' }],
     };
     expect(() => assertSelectionReferences(invalidSelection)).toThrow(/computeCaseId/);
     expect(() =>

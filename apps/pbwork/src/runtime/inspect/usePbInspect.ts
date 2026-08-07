@@ -38,7 +38,7 @@ export function usePbInspect(options: {
   pbId: string;
   /**
    * Page-unique instance id for `data-pb-id`. Prefer business-stable values
-   * from the screen (e.g. `field-service.settings.logout`).
+   * from the screen (e.g. `cold-chain-ops.exception-queue.retry`).
    */
   instanceId?: string | Ref<string | undefined> | (() => string | undefined);
   /** Stable key for repeated template instances (data-pb-key). */

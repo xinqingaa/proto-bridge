@@ -50,6 +50,8 @@
 
 测试应覆盖成功、失败、取消、重试、不可达引用、Workspace 不匹配、防降级和旧 Snapshot 可读性。
 
+Core Evidence 金标唯一：`packages/core/src/v2/fixtures/reference-case-slice`（`fixtures.referenceCaseSlice`）。新业务原型禁止再新增按原型分叉的 fixture 目录；细则见 [PBWork 开发规范 · 新原型与测试边界](../pbwork/development.md#9-新原型与测试边界)。
+
 ## 安全
 
 - Local Service 和 Runtime 必须限制本地 origin。

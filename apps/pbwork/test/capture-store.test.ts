@@ -15,42 +15,49 @@ describe("PBWork V2 capture store", () => {
   it("builds current Screen and stable Fragment Drafts through one shape", () => {
     const store = useCaptureStore();
     store.beginCurrentScreen({
-      prototypeId: "ledger-planet",
-      screenId: "ledger-planet.task-list",
+      prototypeId: "cold-chain-ops",
+      screenId: "cold-chain-ops.exception-queue",
       variantId: "default",
       themeId: "light",
       deviceId: "iphone-14",
       returnTo:
-        "/workbench/prototypes/ledger-planet/screens/task-list?variant=default&theme=light",
+        "/workbench/prototypes/cold-chain-ops/screens/exception-queue?variant=default&theme=light",
     });
     expect(store.entryKind).toBe("current-screen");
     expect(store.draft?.screens[0]?.variants).toEqual({
       mode: "explicit",
-      variantIds: ["default", "empty"],
+      variantIds: [
+        "default",
+        "critical-only",
+        "loading",
+        "empty",
+        "error",
+      ],
     });
     expect(store.draft?.screens[0]?.scenarios).toEqual({
       mode: "explicit",
-      scenarioIds: ["filter-todo", "filter-done", "open-claimable-task"],
+      scenarioIds: ["focus-critical", "inspect-primary-exception"],
     });
 
     expect(
       store.beginFragment({
-        prototypeId: "ledger-planet",
-        screenId: "ledger-planet.task-list",
+        prototypeId: "cold-chain-ops",
+        screenId: "cold-chain-ops.exception-queue",
         variantId: "default",
         themeId: "light",
         deviceId: "iphone-14",
-        returnTo: "/workbench/prototypes/ledger-planet/screens/task-list",
+        returnTo:
+          "/workbench/prototypes/cold-chain-ops/screens/exception-queue",
         fragment: {
-          screenId: "ledger-planet.task-list",
-          pbId: "ledger-planet.task-list.list.row",
-          pbKey: "t2",
+          screenId: "cold-chain-ops.exception-queue",
+          pbId: "cold-chain-ops.exception-queue.list.row",
+          pbKey: "ex-017",
         },
       }),
     ).toBe(true);
     expect(store.draft?.screens[0]?.captureScope.fragments[0]).toMatchObject({
-      pbId: "ledger-planet.task-list.list.row",
-      pbKey: "t2",
+      pbId: "cold-chain-ops.exception-queue.list.row",
+      pbKey: "ex-017",
     });
     expect(store.draft?.screens[0]?.captureScope.screenshots.mode).toBe(
       "selected",
@@ -59,13 +66,13 @@ describe("PBWork V2 capture store", () => {
 
   it("builds custom and whole-Prototype Drafts with explicit authored scope", () => {
     const store = useCaptureStore();
-    store.beginCustom("ledger-planet");
+    store.beginCustom("cold-chain-ops");
     expect(store.draft?.screens).toHaveLength(1);
-    store.toggleCustomScreen("ledger-planet.ledger-list", true);
+    store.toggleCustomScreen("cold-chain-ops.shipment-detail", true);
     expect(store.draft?.screens).toHaveLength(2);
 
-    store.beginPrototype("ledger-planet");
-    expect(store.draft?.screens).toHaveLength(18);
+    store.beginPrototype("cold-chain-ops");
+    expect(store.draft?.screens).toHaveLength(3);
     expect(
       store.draft?.screens.every(
         (screen) =>
@@ -83,7 +90,7 @@ describe("PBWork V2 capture store", () => {
 
   it("invalidates Preflight whenever CaptureRequest fields change", async () => {
     const store = useCaptureStore();
-    store.beginCustom("ledger-planet");
+    store.beginCustom("cold-chain-ops");
     vi.spyOn(captureServiceClient, "createPreflight").mockResolvedValue({
       preflightId: "preflight-test",
       createdAt: "2026-07-29T08:00:00.000Z",
@@ -92,7 +99,7 @@ describe("PBWork V2 capture store", () => {
         inputVersion: "runtime-v1",
         manifestDigest: "sha256:test",
         selection: {
-          prototypeId: "ledger-planet",
+          prototypeId: "cold-chain-ops",
           cases: [],
           acceptedWarningIds: [],
         },
@@ -151,22 +158,32 @@ describe("PBWork V2 capture store", () => {
   it("supports explicit per-Screen Variant and Scenario editing", () => {
     const store = useCaptureStore();
     store.beginCurrentScreen({
-      prototypeId: "ledger-planet",
-      screenId: "ledger-planet.task-list",
+      prototypeId: "cold-chain-ops",
+      screenId: "cold-chain-ops.exception-queue",
       variantId: "default",
       themeId: "light",
       deviceId: "iphone-14",
-      returnTo: "/workbench/prototypes/ledger-planet/screens/task-list",
+      returnTo: "/workbench/prototypes/cold-chain-ops/screens/exception-queue",
     });
-    store.toggleVariantId("ledger-planet.task-list", "empty", true);
+    store.toggleVariantId("cold-chain-ops.exception-queue", "empty", true);
     expect(store.draft?.screens[0]?.variants).toEqual({
       mode: "explicit",
-      variantIds: ["default", "empty"],
+      variantIds: [
+        "default",
+        "critical-only",
+        "loading",
+        "empty",
+        "error",
+      ],
     });
-    store.toggleScenarioId("ledger-planet.task-list", "filter-todo", false);
+    store.toggleScenarioId(
+      "cold-chain-ops.exception-queue",
+      "focus-critical",
+      false,
+    );
     expect(store.draft?.screens[0]?.scenarios).toEqual({
       mode: "explicit",
-      scenarioIds: ["filter-done", "open-claimable-task"],
+      scenarioIds: ["inspect-primary-exception"],
     });
   });
 });

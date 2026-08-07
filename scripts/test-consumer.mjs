@@ -22,7 +22,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pb-v2-consumer-"));
 const storeRoot = path.join(tempRoot, "store");
 const targetRoot = path.join(tempRoot, "target");
-const reference = fixtures.ledgerPlanetTaskList;
+const reference = fixtures.referenceCaseSlice;
 let writer;
 let client;
 
@@ -73,8 +73,8 @@ try {
     snapshotId: created.snapshot.snapshotId,
     inputVersion: "consumer-target-v1",
     currentDependencyDigests: {
-      "registry:ledger-planet.task-list": "registry-task-list-v1",
-      "source:ledger-planet.task-list": "source-task-list-v1",
+      "registry:sample.task-list": "registry-task-list-v1",
+      "source:sample.task-list": "source-task-list-v1",
     },
   });
   const handoff = await createAgentHandoff({

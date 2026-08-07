@@ -7,8 +7,8 @@ import {
 } from "@/app/stores/comments";
 
 const context = {
-  prototypeId: "ledger-planet",
-  screenId: "ledger-planet.task-list",
+  prototypeId: "cold-chain-ops",
+  screenId: "cold-chain-ops.exception-queue",
   variantId: "default",
   themeId: "light",
 };
@@ -24,8 +24,8 @@ describe("local comments", () => {
     const item = store.add(
       context,
       {
-        elementId: "task-list.first-row",
-        selector: '[data-pb-id="task-list.first-row"]',
+        elementId: "exception-queue.first-row",
+        selector: '[data-pb-id="exception-queue.first-row"]',
         point: { x: 24, y: 80 },
       },
       "  调整标题层级  ",
@@ -63,9 +63,9 @@ describe("local comments", () => {
       schemaVersion: 1,
       comments: [{
         id: "legacy",
-        prototypeId: "ledger-planet",
-        screenId: "ledger-planet.task-list",
-        elementId: "task-list.first-row",
+        prototypeId: "cold-chain-ops",
+        screenId: "cold-chain-ops.exception-queue",
+        elementId: "exception-queue.first-row",
         content: "旧评论",
         status: "open",
         createdAt: "2026-01-01T00:00:00.000Z",

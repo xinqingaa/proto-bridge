@@ -15,7 +15,7 @@ test("current Screen goes through Deliver FlowSheet and readable result", async 
   page,
 }) => {
   await page.goto(
-    "/workbench/prototypes/ledger-planet/screens/task-list?variant=default&theme=light",
+    "/workbench/prototypes/cold-chain-ops/screens/exception-queue?variant=default&theme=light",
   );
   const current = page.getByTestId("capture-current-screen");
   await expect(current).toBeEnabled();
@@ -39,7 +39,7 @@ test("stable Fragment is shown in deliver scope and can finish to task center", 
   page,
 }) => {
   await page.goto(
-    "/workbench/prototypes/ledger-planet/screens/task-list?variant=default&theme=light",
+    "/workbench/prototypes/cold-chain-ops/screens/exception-queue?variant=default&theme=light",
   );
   const inspectButton = page.getByRole("button", { name: "选择与评审" });
   await expect(inspectButton).toBeEnabled();
@@ -47,14 +47,14 @@ test("stable Fragment is shown in deliver scope and can finish to task center", 
   const frame = page.frameLocator('[data-testid="prototype-iframe"]');
   await frame
     .locator(
-      '[data-pb-id="ledger-planet.task-list.list.row"][data-pb-key="t2"]',
+      '[data-pb-id="cold-chain-ops.exception-queue.list.row"][data-pb-key="ex-017"]',
     )
     .click({ modifiers: ["Alt"] });
   await page.getByTestId("capture-selected-fragment").click();
   await expect(
     page
       .getByTestId("capture-composer")
-      .getByText("ledger-planet.task-list.list.row#t2"),
+      .getByText("cold-chain-ops.exception-queue.list.row#ex-017"),
   ).toBeVisible();
   await page.getByTestId("composer-start-capture").click();
   await page.getByLabel("关闭交付流程").click();
@@ -74,7 +74,7 @@ test("page-close Job is recovered from Service state", async ({
   browser,
 }) => {
   await page.goto(
-    "/workbench/prototypes/ledger-planet/screens/ledger-list?variant=default&theme=light",
+    "/workbench/prototypes/cold-chain-ops/screens/shipment-detail?variant=default&theme=light&shipment=SH-2048",
   );
   const current = page.getByTestId("capture-current-screen");
   await expect(current).toBeEnabled();

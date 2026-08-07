@@ -41,8 +41,8 @@ pnpm pb:mcp -- --print-config
 
 ```bash
 pnpm pb -- deliver \
-  --prototype ledger-planet \
-  --screen task-list \
+  --prototype cold-chain-ops \
+  --screen exception-queue \
   --target apps/flutter_pb_app
 ```
 

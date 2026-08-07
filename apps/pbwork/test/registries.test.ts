@@ -49,11 +49,11 @@ describe("registries", () => {
   it("requires every future Screen to author a complete default Evidence boundary", () => {
     const newScreen = {
       ...prototypeScreens.find(
-        (screen) => screen.screenId === "ledger-planet.task-detail",
+        (screen) => screen.screenId === "cold-chain-ops.shipment-detail",
       )!,
-      screenId: "ledger-planet.future-screen",
+      screenId: "cold-chain-ops.future-screen",
       screenSlug: "future-screen",
-      path: "/prototype/ledger-planet/future-screen",
+      path: "/prototype/cold-chain-ops/future-screen",
       defaultVariantId: "default",
       variants: [{ id: "default", label: "默认" }],
     };
@@ -63,7 +63,7 @@ describe("registries", () => {
     expect(
       errors.some(
         (error) =>
-          error.resourceId === "ledger-planet.future-screen.default" &&
+          error.resourceId === "cold-chain-ops.future-screen.default" &&
           error.instancePath === "/requiredFragments",
       ),
     ).toBe(true);
@@ -116,12 +116,8 @@ describe("design contracts", () => {
     );
   });
 
-  it("ships the registered prototypes and their task screens", () => {
-    expect(prototypes.map((item) => item.id)).toEqual([
-      "cold-chain-ops",
-      "field-service",
-      "ledger-planet",
-    ]);
+  it("ships the registered cold-chain prototype and its screens", () => {
+    expect(prototypes.map((item) => item.id)).toEqual(["cold-chain-ops"]);
     const coldChainScreens = prototypeScreens.filter(
       (item) => item.prototypeId === "cold-chain-ops",
     );
@@ -141,57 +137,28 @@ describe("design contracts", () => {
       "confirm-complete-resolution",
       "reject-missing-supervisor-approval",
     ]);
-    const list = prototypeScreens.find(
-      (item) => item.screenId === "ledger-planet.task-list",
+    const queue = prototypeScreens.find(
+      (item) => item.screenId === "cold-chain-ops.exception-queue",
     );
-    const detail = prototypeScreens.find(
-      (item) => item.screenId === "ledger-planet.task-detail",
-    );
-    expect(list?.variants.map((item) => item.id)).toEqual(["default", "empty"]);
-    expect(list?.variants.every((item) => !("critical" in item))).toBe(true);
-    expect(list?.actions?.map((item) => item.id)).toEqual([
-      "select-todo",
-      "select-done",
-      "open-claimable-task",
-    ]);
-    expect(list?.scenarios?.map((item) => item.id)).toEqual([
-      "filter-todo",
-      "filter-done",
-      "open-claimable-task",
-    ]);
-    expect(list?.requiredScenarioIds).toEqual([
-      "filter-todo",
-      "filter-done",
-      "open-claimable-task",
-    ]);
-    expect(
-      list?.scenarios?.flatMap((scenario) =>
-        scenario.checkpoints.map((item) => item.id),
-      ),
-    ).toEqual(["todo-selected", "done-selected", "claimable-task-detail"]);
-    expect(detail?.variants.map((item) => item.id)).toEqual([
+    expect(queue?.variants.map((item) => item.id)).toEqual([
       "default",
-      "completed",
-      "claimable",
+      "critical-only",
+      "loading",
+      "empty",
+      "error",
     ]);
-    const fieldScreens = prototypeScreens.filter(
-      (item) => item.prototypeId === "field-service",
-    );
-    expect(fieldScreens).toHaveLength(7);
-    expect(fieldScreens.map((item) => item.screenSlug)).toEqual([
-      "dashboard",
-      "work-orders",
-      "work-order-detail",
-      "create-work-order",
-      "customer-detail",
-      "messages",
-      "settings",
+    expect(queue?.actions?.map((item) => item.id)).toEqual([
+      "show-critical",
+      "open-primary-exception",
     ]);
-    const ledgerScreens = prototypeScreens.filter(
-      (item) => item.prototypeId === "ledger-planet",
-    );
-    expect(ledgerScreens).toHaveLength(18);
-    expect(ledgerScreens[0]?.screenSlug).toBe("ledger-home");
+    expect(queue?.scenarios?.map((item) => item.id)).toEqual([
+      "focus-critical",
+      "inspect-primary-exception",
+    ]);
+    expect(queue?.requiredScenarioIds).toEqual([
+      "focus-critical",
+      "inspect-primary-exception",
+    ]);
   });
 });
 

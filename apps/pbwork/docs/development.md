@@ -84,7 +84,22 @@ Screen 变更必须同步 Prototype Registry、required boundary、Action/Scenar
 - 表单控件、可编辑区域和 `data-no-swipe` 不触发父级翻页。
 - 拖动后抑制合成 click，不能用整块 `pointer-events: none` 规避。
 
-## 9. 文档提醒
+## 9. 新原型与测试边界
+
+新增或替换业务原型时，MUST 遵守：
+
+1. **`packages/core/src/v2/fixtures` 只保留一套金标**（现行：`reference-case-slice`，导出 `fixtures.referenceCaseSlice`）。禁止按原型再新增 `fixtures/<prototype>-*` 目录。
+2. Core / MCP / Consumer 单测与脚本复用该金标。需要新对象形状时，改金标或加最小变体字段，不按 App 复制整包。
+3. 新原型允许的测试上限：
+   - Registry / 屏清单单测（必要）；
+   - 至多 1 条 Runtime 冒烟 e2e（关键屏可开，可选覆盖 1 个 Scenario）；
+   - 通用能力（canvas / inspector / capture / navigation）改挂现有样板原型，不为新原型复制全套 e2e。
+4. Flutter 还原演示 ≠ Core fixture；有 Target 验收需求时走 acceptance / 既有 evidence-slice，不为此再生金标树。
+5. 例外：仅当 Evidence **契约本身**变更且现有金标无法表达时，才扩金标——且仍保持单目录，不按原型分叉。
+
+金标职责是 Evidence 引擎离线样本，不是现役原型资产。目录与导出命名必须保持中性，不得绑死某个业务原型 ID。
+
+## 10. 文档提醒
 
 只要任务修改 Token、Theme、Component Contract、共享手势、Prototype Registry 或 Runtime Contract，Agent 必须：
 
@@ -93,7 +108,7 @@ Screen 变更必须同步 Prototype Registry、required boundary、Action/Scenar
 - 交付时列出已同步的文档；
 - 运行 `pnpm docs:verify`。
 
-## 10. 验证
+## 11. 验证
 
 ```bash
 pnpm --filter @proto-bridge/pbwork typecheck
@@ -102,3 +117,4 @@ pnpm test:e2e:runtime
 ```
 
 修改 Workbench/Capture 交互时补跑相应 Playwright spec；修改 Evidence 全链路时运行 `pnpm test:e2e:evidence-slice`。
+新原型交付验证以上述第 9 节边界为准，禁止为「每个新 App」再铺一套 Core fixture 与全量 e2e。

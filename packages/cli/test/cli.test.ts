@@ -62,10 +62,10 @@ function manifest() {
     ],
     screens: [
       {
-        prototypeId: 'ledger-planet',
-        screenId: 'ledger-planet.task-list',
+        prototypeId: 'sample',
+        screenId: 'sample.task-list',
         screenSlug: 'task-list',
-        path: '/prototype/ledger-planet/task-list',
+        path: '/prototype/sample/task-list',
         defaultVariantId: 'default',
         variants: [{ variantId: 'default', label: '默认' }],
         actions: [],
@@ -77,10 +77,10 @@ function manifest() {
 
 function screenshotDraft() {
   return {
-    prototypeId: 'ledger-planet',
+    prototypeId: 'sample',
     screens: [
       {
-        screenId: 'ledger-planet.task-list',
+        screenId: 'sample.task-list',
         variants: { mode: 'explicit', variantIds: ['default'] },
         themeIds: ['light'],
         deviceIds: ['iphone-14'],

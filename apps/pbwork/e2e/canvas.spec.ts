@@ -7,7 +7,7 @@ async function selectPreviewSetting(page: Page, label: string, option: string) {
 
 test.beforeEach(async ({ page }) => {
   await page.goto(
-    "/workbench/prototypes/ledger-planet/screens/task-list?variant=default&theme=light",
+    "/workbench/prototypes/cold-chain-ops/screens/exception-queue?variant=default&theme=light",
   );
   await expect(page.getByTestId("prototype-iframe")).toBeVisible();
 });
@@ -16,7 +16,7 @@ test("renders the phone canvas iframe for a screen", async ({ page }) => {
   const iframe = page.getByTestId("prototype-iframe");
   await expect(iframe).toHaveAttribute(
     "src",
-    /\/prototype\/ledger-planet\/task-list\?variant=default&theme=light/,
+    /\/prototype\/cold-chain-ops\/exception-queue\?variant=default&theme=light/,
   );
   await expect(iframe).toHaveAttribute("width", "390");
   await expect(iframe).toHaveAttribute("height", "844");
@@ -57,26 +57,26 @@ test("switching variant and theme updates the live iframe without remounting it"
 }) => {
   const frame = page.frameLocator('[data-testid="prototype-iframe"]');
   await page.getByRole("button", { name: "预览设置" }).click();
-  await selectPreviewSetting(page, "Variant", "空态");
+  await selectPreviewSetting(page, "Variant", "无待处理异常");
   await expect(page).toHaveURL(/variant=empty/);
   await expect(page.getByTestId("prototype-iframe")).toHaveAttribute(
     "src",
     /variant=default&theme=light/,
   );
-  await expect(frame.getByText("没有任务")).toBeVisible();
+  await expect(frame.getByText("没有待处理异常")).toBeVisible();
 
-  await selectPreviewSetting(page, "Variant", "默认");
+  await selectPreviewSetting(page, "Variant", "待处理异常");
   await expect(page).toHaveURL(/variant=default/);
   await expect(
-    frame.locator('[data-pb-id="ledger-planet.task-list.list.row"]'),
-  ).toHaveCount(3);
-  await expect(frame.getByText("没有任务")).toHaveCount(0);
+    frame.locator('[data-pb-id="cold-chain-ops.exception-queue.list.row"]'),
+  ).toHaveCount(4);
+  await expect(frame.getByText("没有待处理异常")).toHaveCount(0);
 
   await selectPreviewSetting(page, "原型主题", "深色主题");
   await expect(page).toHaveURL(/theme=dark/);
   await expect(page.getByTestId("prototype-iframe")).toHaveAttribute(
     "src",
-    /\/prototype\/ledger-planet\/task-list\?variant=default&theme=light/,
+    /\/prototype\/cold-chain-ops\/exception-queue\?variant=default&theme=light/,
   );
 
   await expect(frame.getByTestId("runtime-root")).toHaveClass(
@@ -112,17 +112,17 @@ test("screen navigation swaps lazy views without blanking or remounting the ifra
   });
 
   await frame
-    .getByRole("button", {
-      name: "记一笔 今日完成 1 笔记账 每日 · 奖励 3 星币 去完成",
-    })
+    .locator(
+      '[data-pb-id="cold-chain-ops.exception-queue.list.row"][data-pb-key="ex-017"]',
+    )
     .click();
-  await expect(page).toHaveURL(/\/screens\/task-detail\?variant=default/);
-  await expect(frame.getByRole("heading", { name: "任务详情" })).toBeVisible();
+  await expect(page).toHaveURL(/\/screens\/shipment-detail\?variant=active-excursion/);
+  await expect(frame.getByRole("heading", { name: "运输详情" })).toBeVisible();
   await frame.getByRole("button", { name: "返回" }).click();
-  await expect(page).toHaveURL(/\/screens\/task-list\?variant=default/);
+  await expect(page).toHaveURL(/\/screens\/exception-queue\?variant=default/);
   await expect(
-    frame.locator('[data-pb-id="ledger-planet.task-list.list.row"]'),
-  ).toHaveCount(3);
+    frame.locator('[data-pb-id="cold-chain-ops.exception-queue.list.row"]'),
+  ).toHaveCount(4);
   await expect(iframe).toHaveAttribute("src", initialSrc ?? "");
 
   const renderIssues = await frame.locator(".runtime-main").evaluate(() => {
@@ -145,7 +145,7 @@ test("device preset changes iframe viewport without leaving workbench", async ({
   await expect(iframe).toHaveAttribute("width", "375");
   await expect(iframe).toHaveAttribute("height", "667");
   await expect(page).toHaveURL(
-    /\/workbench\/prototypes\/ledger-planet\/screens\/task-list/,
+    /\/workbench\/prototypes\/cold-chain-ops\/screens\/exception-queue/,
   );
 });
 

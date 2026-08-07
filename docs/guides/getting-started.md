@@ -64,18 +64,12 @@ Runtime 使用 `/prototype/:prototypeId/:screenSlug`，工作台使用
 
 ```bash
 pnpm pb -- deliver \
-  --prototype ledger-planet \
-  --screen task-list \
+  --prototype cold-chain-ops \
+  --screen exception-queue \
   --target apps/flutter_pb_app
 ```
 
-也可用 Selection JSON：
-
-```bash
-pnpm pb -- deliver \
-  --selection examples/selections/ledger-planet-task-list.json \
-  --target apps/flutter_pb_app
-```
+也可用 Selection JSON（Core `SelectionDraft`）：由 Workbench「交付到 Agent」导出，或手写后交给 `--selection`。
 
 warning / risk 使用可重复的 `--accept-warning` / `--ack-risk` 逐项确认。CLI 不提供 `--force`。
 

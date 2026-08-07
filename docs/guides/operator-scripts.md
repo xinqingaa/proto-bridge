@@ -47,8 +47,10 @@ pnpm pb:up -- --config /absolute/path/to/proto-bridge.json
 ```bash
 pnpm pb -- workspace doctor
 pnpm pb -- bundle list
-pnpm pb -- preflight \
-  --selection examples/selections/ledger-planet-task-list.json
+pnpm pb -- deliver \
+  --prototype cold-chain-ops \
+  --screen exception-queue \
+  --target apps/flutter_pb_app
 ```
 
 包装脚本只缩短可执行路径；全部参数、输出和退出码仍由 `@proto-bridge/cli` 决定。构建产物缺失时会先运行根 `pnpm build`。
@@ -107,8 +109,8 @@ GUI「交付到 Agent」与 CLI `deliver` 都会：采集（或续跑已有 Snap
 
 ```bash
 pnpm pb -- deliver \
-  --prototype ledger-planet \
-  --screen task-list \
+  --prototype cold-chain-ops \
+  --screen exception-queue \
   --target apps/flutter_pb_app
 ```
 

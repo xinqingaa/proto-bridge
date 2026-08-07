@@ -67,7 +67,7 @@ export const WORKSPACE: Workspace = {
   createdAt: T0,
 };
 
-/** Base Case for the reference vertical slice: `ledger-planet.task-list` × `default` × `light` × `iphone-14`, no Scenario. */
+/** Base Case for the reference vertical slice: `sample.task-list` × `default` × `light` × `iphone-14`, no Scenario. */
 export const BASE_CASE = TASK_LIST_CASE_KEY;
 
 export const PRIMARY_ACTIVE_REVISION: CaseEvidenceRevision = {
@@ -81,14 +81,14 @@ export const PRIMARY_ACTIVE_REVISION: CaseEvidenceRevision = {
   evidenceLevel: 'instrumented-source-runtime',
   inputDigest: INPUT_VERSION,
   dependencyDigests: [
-    { dependencyId: 'registry:ledger-planet.task-list', digest: 'registry-task-list-v1' },
-    { dependencyId: 'source:ledger-planet.task-list', digest: 'source-task-list-v1' },
+    { dependencyId: 'registry:sample.task-list', digest: 'registry-task-list-v1' },
+    { dependencyId: 'source:sample.task-list', digest: 'source-task-list-v1' },
   ],
   capturedAt: T1,
   facts: [
     {
-      factId: 'ledger-planet.task-list.root.role',
-      candidates: [{ value: 'page', provenance: { source: 'data-pb', locator: 'ledger-planet.task-list.root#data-pb-role' } }],
+      factId: 'sample.task-list.root.role',
+      candidates: [{ value: 'page', provenance: { source: 'data-pb', locator: 'sample.task-list.root#data-pb-role' } }],
       resolution: 'resolved',
       effectiveValue: 'page',
     },
@@ -108,14 +108,14 @@ export const FRAGMENT_SCOPED_ACTIVE_REVISION: CaseEvidenceRevision = {
   evidenceLevel: 'instrumented-runtime',
   inputDigest: INPUT_VERSION,
   dependencyDigests: [
-    { dependencyId: 'registry:ledger-planet.task-list', digest: 'registry-task-list-v1' },
-    { dependencyId: 'runtime:ledger-planet.task-list.list', digest: 'runtime-task-list-list-v1' },
+    { dependencyId: 'registry:sample.task-list', digest: 'registry-task-list-v1' },
+    { dependencyId: 'runtime:sample.task-list.list', digest: 'runtime-task-list-list-v1' },
   ],
   capturedAt: T2,
   facts: [
     {
-      factId: 'ledger-planet.task-list.list.role',
-      candidates: [{ value: 'list', provenance: { source: 'data-pb', locator: 'ledger-planet.task-list.list#data-pb-role' } }],
+      factId: 'sample.task-list.list.role',
+      candidates: [{ value: 'list', provenance: { source: 'data-pb', locator: 'sample.task-list.list#data-pb-role' } }],
       resolution: 'resolved',
       effectiveValue: 'list',
     },
@@ -268,7 +268,7 @@ export const HANDOFF: AgentHandoff = {
 };
 
 export const UNKNOWN_FACT: Fact = {
-  factId: 'ledger-planet.task-list.hidden-state',
+  factId: 'sample.task-list.hidden-state',
   candidates: [{ value: null, provenance: { source: 'runtime-observation', locator: 'task-list:hidden-state', confidence: 'low' } }],
   resolution: 'unknown',
   issueRef: 'issue-task-list-hidden-state',
@@ -285,10 +285,10 @@ export const UNKNOWN_ISSUE: Issue = {
 };
 
 export const CONFLICT_FACT: Fact = {
-  factId: 'ledger-planet.task-list.title',
+  factId: 'sample.task-list.title',
   candidates: [
     { value: '任务中心', provenance: { source: 'source', locator: 'TaskList.vue:title' } },
-    { value: '福利任务', provenance: { source: 'runtime-observation', locator: 'ledger-planet.task-list.root:title' } },
+    { value: '福利任务', provenance: { source: 'runtime-observation', locator: 'sample.task-list.root:title' } },
   ],
   resolution: 'unresolved-conflict',
   issueRef: 'issue-task-list-title-conflict',

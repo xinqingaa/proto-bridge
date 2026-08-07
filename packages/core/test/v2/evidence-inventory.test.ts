@@ -4,7 +4,7 @@ import {
   fixtures,
 } from '../../src/v2/index.js';
 
-const f = fixtures.ledgerPlanetTaskList;
+const f = fixtures.referenceCaseSlice;
 
 describe('Evidence Inventory read model', () => {
   it('keeps Bundle identity and reports unchecked Evidence without a report', () => {

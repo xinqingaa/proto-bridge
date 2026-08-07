@@ -10,20 +10,20 @@ describe("workbench navigation tree", () => {
     const prototypes = tree.find((node) => node.id === "prototypes")!;
     const components = tree.find((node) => node.id === "components")!;
     const capture = tree.find((node) => node.id === "capture")!;
-    const fieldService = prototypes.children?.find(
-      (node) => node.id === "prototype-field-service",
+    const coldChain = prototypes.children?.find(
+      (node) => node.id === "prototype-cold-chain-ops",
     );
-    const workOrders = fieldService?.children?.find(
-      (node) => node.id === "screen-field-service.work-orders",
+    const exceptionQueue = coldChain?.children?.find(
+      (node) => node.id === "screen-cold-chain-ops.exception-queue",
     );
 
-    expect(prototypes.count).toBe(3);
+    expect(prototypes.count).toBe(1);
     expect(components.children).toHaveLength(2);
     expect(prototypes.children?.some((node) => node.kind === "lifecycle")).toBe(
       false,
     );
-    expect(fieldService?.count).toBe(7);
-    expect(workOrders?.count).toBe(7);
+    expect(coldChain?.count).toBe(3);
+    expect(exceptionQueue?.count).toBe(5);
     expect(capture.children?.[0]).toMatchObject({
       id: "capture-console",
       to: "/workbench/capture",
@@ -34,9 +34,9 @@ describe("workbench navigation tree", () => {
     const effective = (
       id: string,
       registered: "active" | "review" | "final" | "archived",
-    ) => (id === "ledger-planet" ? ("review" as const) : registered);
+    ) => (id === "cold-chain-ops" ? ("review" as const) : registered);
 
-    expect(countPrototypesForLifecycle("active", effective)).toBe(2);
+    expect(countPrototypesForLifecycle("active", effective)).toBe(0);
     expect(countPrototypesForLifecycle("review", effective)).toBe(1);
 
     const activeTree = buildWorkbenchNavigationTree(effective, "active");
@@ -48,12 +48,9 @@ describe("workbench navigation tree", () => {
       (node) => node.id === "prototypes",
     );
 
-    expect(activePrototypes?.children?.map((node) => node.id)).toEqual([
-      "prototype-cold-chain-ops",
-      "prototype-field-service",
-    ]);
+    expect(activePrototypes?.children?.map((node) => node.id)).toEqual([]);
     expect(reviewPrototypes?.children?.map((node) => node.id)).toEqual([
-      "prototype-ledger-planet",
+      "prototype-cold-chain-ops",
     ]);
   });
 });

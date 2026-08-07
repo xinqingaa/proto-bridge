@@ -36,10 +36,10 @@ function manifest(): RuntimeCaptureManifest {
     ],
     screens: [
       {
-        prototypeId: 'ledger-planet',
-        screenId: 'ledger-planet.task-list',
+        prototypeId: 'sample',
+        screenId: 'sample.task-list',
         screenSlug: 'task-list',
-        path: '/prototype/ledger-planet/task-list',
+        path: '/prototype/sample/task-list',
         defaultVariantId: 'default',
         variants: [
           { variantId: 'default', label: '默认' },
@@ -54,10 +54,10 @@ function manifest(): RuntimeCaptureManifest {
 
 function draft(sourcePolicy = false): SelectionDraft {
   return {
-    prototypeId: 'ledger-planet',
+    prototypeId: 'sample',
     screens: [
       {
-        screenId: 'ledger-planet.task-list',
+        screenId: 'sample.task-list',
         variants: { mode: 'explicit', variantIds: ['default'] },
         themeIds: ['light'],
         deviceIds: ['iphone-14'],
@@ -452,8 +452,8 @@ describe('ProtoBridge Local Service', () => {
       snapshotId: details.body.data.activeSnapshot.snapshotId,
       inputVersion: 'changed-input',
       currentDependencyDigests: {
-        'manifest:ledger-planet': 'changed-manifest',
-        'runtime:ledger-planet.task-list': 'changed-runtime',
+        'manifest:sample': 'changed-manifest',
+        'runtime:sample.task-list': 'changed-runtime',
       },
     });
     expect(report.perRevision.every((entry) => entry.stale)).toBe(true);
@@ -467,10 +467,10 @@ describe('ProtoBridge Local Service', () => {
       },
     );
     expect(staleDraft.response.status).toBe(200);
-    expect(staleDraft.body.data.prototypeId).toBe('ledger-planet');
+    expect(staleDraft.body.data.prototypeId).toBe('sample');
     expect(staleDraft.body.data.screens).toHaveLength(1);
     expect(staleDraft.body.data.screens[0].screenId).toBe(
-      'ledger-planet.task-list',
+      'sample.task-list',
     );
   });
 
@@ -563,14 +563,14 @@ describe('ProtoBridge Local Service', () => {
     expect(review.response.status).toBe(201);
     const forged = await call(base, `/reviews/${reviewRunId}/tranches`, { method: 'POST', token, body: { approvalToken: 'ordinary-tool-parameter' } });
     expect(forged.response.status).toBe(401);
-    const trancheApproval = await call(base, '/review-approvals', { method: 'POST', token, body: { kind: 'tranche', reviewRunId, screenId: 'ledger-planet.task-list', tranche: 1, approvalRef: 'operator-approved', actor: 'operator' } });
+    const trancheApproval = await call(base, '/review-approvals', { method: 'POST', token, body: { kind: 'tranche', reviewRunId, screenId: 'sample.task-list', tranche: 1, approvalRef: 'operator-approved', actor: 'operator' } });
     await call(base, `/reviews/${reviewRunId}/tranches`, { method: 'POST', token, body: { approvalToken: trancheApproval.body.data.token } });
-    const sourceArtifact = { kind: 'source', digest: source.digest, mimeType: 'image/png', byteLength: PNG_BYTES.byteLength, width: 1, height: 1, owner: { screenId: 'ledger-planet.task-list' } };
-    await call(base, `/reviews/${reviewRunId}/viewed`, { method: 'POST', token, body: { screenId: 'ledger-planet.task-list', caseIds: [caseId], artifact: sourceArtifact, bytesBase64: PNG_BYTES.toString('base64') } });
-    const targetArtifact = { ...sourceArtifact, kind: 'target', owner: { screenId: 'ledger-planet.task-list', caseId, attemptId: 'attempt-1' } };
-    await call(base, `/reviews/${reviewRunId}/render`, { method: 'POST', token, body: { screenId: 'ledger-planet.task-list', caseId, sourceDigest: source.digest, tranche: 1, round: 1, attemptId: 'attempt-1', targetRevision: 'revision-a', receiptTool: 'fixture-runner', artifact: targetArtifact, bytesBase64: PNG_BYTES.toString('base64') } });
+    const sourceArtifact = { kind: 'source', digest: source.digest, mimeType: 'image/png', byteLength: PNG_BYTES.byteLength, width: 1, height: 1, owner: { screenId: 'sample.task-list' } };
+    await call(base, `/reviews/${reviewRunId}/viewed`, { method: 'POST', token, body: { screenId: 'sample.task-list', caseIds: [caseId], artifact: sourceArtifact, bytesBase64: PNG_BYTES.toString('base64') } });
+    const targetArtifact = { ...sourceArtifact, kind: 'target', owner: { screenId: 'sample.task-list', caseId, attemptId: 'attempt-1' } };
+    await call(base, `/reviews/${reviewRunId}/render`, { method: 'POST', token, body: { screenId: 'sample.task-list', caseId, sourceDigest: source.digest, tranche: 1, round: 1, attemptId: 'attempt-1', targetRevision: 'revision-a', receiptTool: 'fixture-runner', artifact: targetArtifact, bytesBase64: PNG_BYTES.toString('base64') } });
     const diffArtifact = { ...targetArtifact, kind: 'diff' };
-    await call(base, `/reviews/${reviewRunId}/compare`, { method: 'POST', token, body: { screenId: 'ledger-planet.task-list', caseId, attemptId: 'attempt-1', sourceDigest: source.digest, targetDigest: source.digest, diff: { artifact: diffArtifact, bytesBase64: PNG_BYTES.toString('base64') }, comparable: true, normalizedDiffSignature: 'sha256:identical', receiptTool: 'fixture-compare' } });
+    await call(base, `/reviews/${reviewRunId}/compare`, { method: 'POST', token, body: { screenId: 'sample.task-list', caseId, attemptId: 'attempt-1', sourceDigest: source.digest, targetDigest: source.digest, diff: { artifact: diffArtifact, bytesBase64: PNG_BYTES.toString('base64') }, comparable: true, normalizedDiffSignature: 'sha256:identical', receiptTool: 'fixture-compare' } });
     await call(base, `/reviews/${reviewRunId}/findings`, { method: 'POST', token, body: { actor: 'agent', findings: [] } });
     const incompleteApproval = await call(base, '/review-approvals', { method: 'POST', token, body: { kind: 'finalize', reviewRunId, confirmationRef: 'human-before-semantic-review', actor: 'human' } });
     const incomplete = await call(base, `/reviews/${reviewRunId}/finalize`, { method: 'POST', token, body: { approvalToken: incompleteApproval.body.data.token } });

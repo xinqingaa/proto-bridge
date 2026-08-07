@@ -41,7 +41,7 @@ function compositeId(label: string, maxLength = 600) {
 
 export const WorkspaceId = stableId('workspaceId');
 export const PrototypeId = stableId('prototypeId');
-/** Should carry the owning Prototype as a prefix, e.g. `ledger-planet.task-list`. */
+/** Should carry the owning Prototype as a prefix, e.g. `sample.task-list`. */
 export const ScreenId = stableId('screenId');
 export const VariantId = stableId('variantId');
 export const ThemeId = stableId('themeId');

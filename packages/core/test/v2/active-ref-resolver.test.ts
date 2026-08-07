@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { fixtures, resolveActiveRef, resolveCaseEvidence, resolveRelevantAttempt } from '../../src/v2/index.js';
 
-const f = fixtures.ledgerPlanetTaskList;
+const f = fixtures.referenceCaseSlice;
 
 describe('resolveActiveRef: baseline exact / primary / covering / missing', () => {
   it('resolves the full Case request to the primary active slot', () => {

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { CatalogRevision } from '../../../src/v2/contracts/catalog.js';
 import { V2ContractError } from '../../../src/v2/contracts/errors.js';
 import { V2_SCHEMA_MAJOR } from '../../../src/v2/contracts/version.js';
-import { ledgerPlanetTaskList as f } from '../../../src/v2/fixtures/index.js';
+import { referenceCaseSlice as f } from '../../../src/v2/fixtures/index.js';
 import { LocalFileStore } from '../../../src/v2/store/local-file-store.js';
 
 let root: string;
@@ -144,7 +144,7 @@ describe('Phase 2 Store: Catalog and controlled Blob', () => {
       createdAt: f.T2,
       entries: [
         {
-          objectId: 'ledger-planet.task-list',
+          objectId: 'sample.task-list',
           digest: 'screen-task-list-v1',
           value: { title: '任务中心' },
           blobIds: [blob.blobId],
@@ -353,9 +353,9 @@ describe('Phase 2 Store: reuse and dependency-level stale', () => {
       snapshotId: snapshot.snapshotId,
       inputVersion: 'workspace-input-v2',
       currentDependencyDigests: {
-        'registry:ledger-planet.task-list': 'registry-task-list-v1',
-        'source:ledger-planet.task-list': 'source-task-list-v2',
-        'runtime:ledger-planet.task-list.list': 'runtime-task-list-list-v1',
+        'registry:sample.task-list': 'registry-task-list-v1',
+        'source:sample.task-list': 'source-task-list-v2',
+        'runtime:sample.task-list.list': 'runtime-task-list-list-v1',
         'source:unrelated-screen': 'unrelated-v9',
       },
     });
@@ -381,9 +381,9 @@ describe('Phase 2 Store: reuse and dependency-level stale', () => {
       snapshotId: snapshot.snapshotId,
       inputVersion: f.RUN_2.inputVersion,
       currentDependencyDigests: {
-        'registry:ledger-planet.task-list': 'registry-task-list-v1',
-        'source:ledger-planet.task-list': 'source-task-list-v1',
-        'runtime:ledger-planet.task-list.list': 'runtime-task-list-list-v1',
+        'registry:sample.task-list': 'registry-task-list-v1',
+        'source:sample.task-list': 'source-task-list-v1',
+        'runtime:sample.task-list.list': 'runtime-task-list-list-v1',
       },
     });
     const handoff = {
@@ -421,7 +421,7 @@ describe('Phase 2 Store: Bundle lifecycle, capacity and retention', () => {
     const fork = await store.forkBundle({
       sourceBundleId: f.BUNDLE_ID,
       sourceSnapshotId: source!.snapshotId,
-      bundleId: 'bundle-ledger-planet-fork',
+      bundleId: 'bundle-sample-fork',
     });
     expect(fork.bundle.originSnapshotId).toBe(source!.snapshotId);
     expect(fork.snapshot.activeSlots).toEqual(source!.activeSlots);
@@ -538,8 +538,8 @@ describe('Phase 2 Store: Bundle lifecycle, capacity and retention', () => {
       snapshotId: oldSnapshot!.snapshotId,
       inputVersion: f.RUN_1.inputVersion,
       currentDependencyDigests: {
-        'registry:ledger-planet.task-list': 'registry-task-list-v1',
-        'source:ledger-planet.task-list': 'source-task-list-v1',
+        'registry:sample.task-list': 'registry-task-list-v1',
+        'source:sample.task-list': 'source-task-list-v1',
       },
     });
     await expect(store.applyClean(plan)).rejects.toMatchObject({ code: 'clean-plan-stale' });

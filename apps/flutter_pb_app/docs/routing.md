@@ -15,8 +15,8 @@
 
 ```dart
 Navigator.of(context).pushNamed(
-  AppRoutes.ledgerPlanetTaskDetail,
-  arguments: {'taskId': task.id, 'variant': 'claimable'},
+  AppRoutes.coldChainShipmentDetail,
+  arguments: {'shipmentId': 'SH-2048'},
 );
 ```
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildNextSnapshot } from '../../../src/v2/store/snapshot-builder.js';
-import { ledgerPlanetTaskList } from '../../../src/v2/fixtures/index.js';
+import { referenceCaseSlice } from '../../../src/v2/fixtures/index.js';
 import type { CaseEvidenceRevision } from '../../../src/v2/contracts/evidence.js';
 
 const {
@@ -19,7 +19,7 @@ const {
   ATTEMPT_2_ID,
   RUN_1_ID,
   RUN_2_ID,
-} = ledgerPlanetTaskList;
+} = referenceCaseSlice;
 
 function revisionsMap(...revisions: CaseEvidenceRevision[]): Map<string, CaseEvidenceRevision> {
   return new Map(revisions.map((revision) => [revision.revisionId, revision]));

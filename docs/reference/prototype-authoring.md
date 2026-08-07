@@ -224,3 +224,5 @@ pnpm test:e2e:runtime
 - 验证 Action、Scenario、Checkpoint 和 reset；
 - 验证纵滚、横滑、刷新、Overlay 和返回；
 - 确认相关 Contract、Registry、测试和文档同步。
+
+测试边界（MUST）：新原型不得在 `packages/core/src/v2/fixtures` 下新增按原型命名的金标目录；Core/MCP/Consumer 复用唯一 `reference-case-slice`。允许 Registry 单测 + 至多一条 Runtime 冒烟 e2e；通用 Workbench/Capture e2e 改挂现有样板，不按 App 复制全套。详见 [PBWork 开发规范 · 新原型与测试边界](../pbwork/development.md#9-新原型与测试边界)。

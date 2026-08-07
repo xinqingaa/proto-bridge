@@ -8,13 +8,13 @@ test("adds, persists, resolves and deletes a local element comment", async ({
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await page.goto(
-    "/workbench/prototypes/ledger-planet/screens/task-list?variant=default&theme=light",
+    "/workbench/prototypes/cold-chain-ops/screens/exception-queue?variant=default&theme=light",
   );
   await page.evaluate(() => localStorage.removeItem("pbwork.comments.v1"));
   await page.reload();
 
   const frame = page.frameLocator('[data-testid="prototype-iframe"]');
-  await expect(frame.getByRole("heading", { name: "任务" })).toBeVisible();
+  await expect(frame.getByRole("heading", { name: "冷链异常" })).toBeVisible();
 
   const inspector = page.getByTestId("inspector-body");
   await inspector.getByRole("tab", { name: /评论/ }).click();
@@ -22,7 +22,7 @@ test("adds, persists, resolves and deletes a local element comment", async ({
 
   await frame
     .locator(
-      '[data-pb-id="ledger-planet.task-list.list.row"][data-pb-key="t1"]',
+      '[data-pb-id="cold-chain-ops.exception-queue.list.row"][data-pb-key="ex-017"]',
     )
     .click({ position: { x: 16, y: 14 } });
 
@@ -36,11 +36,11 @@ test("adds, persists, resolves and deletes a local element comment", async ({
   await expect(
     inspector
       .locator(".comment-card")
-      .getByText("记一笔", { exact: false }),
+      .getByText("上海虹桥", { exact: false }),
   ).toBeVisible();
 
   await page.reload();
-  await expect(frame.getByRole("heading", { name: "任务" })).toBeVisible();
+  await expect(frame.getByRole("heading", { name: "冷链异常" })).toBeVisible();
   await page
     .getByTestId("inspector-body")
     .getByRole("tab", { name: /评论/ })
@@ -74,7 +74,7 @@ test("reports a missing comment anchor without an unhandled page error", async (
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await page.goto(
-    "/workbench/prototypes/ledger-planet/screens/task-list?variant=default&theme=light",
+    "/workbench/prototypes/cold-chain-ops/screens/exception-queue?variant=default&theme=light",
   );
   await page.evaluate(() => {
     localStorage.setItem(
@@ -83,9 +83,9 @@ test("reports a missing comment anchor without an unhandled page error", async (
         schemaVersion: 2,
         comments: [{
           id: "missing-anchor",
-          prototypeId: "ledger-planet",
-          screenId: "ledger-planet.task-list",
-          screenSlug: "task-list",
+          prototypeId: "cold-chain-ops",
+          screenId: "cold-chain-ops.exception-queue",
+          screenSlug: "exception-queue",
           elementId: "missing.element",
           elementLabel: "已删除的按钮",
           content: "这个元素已经不在页面中",
@@ -99,7 +99,7 @@ test("reports a missing comment anchor without an unhandled page error", async (
   });
   await page.reload();
   const frame = page.frameLocator('[data-testid="prototype-iframe"]');
-  await expect(frame.getByRole("heading", { name: "任务" })).toBeVisible();
+  await expect(frame.getByRole("heading", { name: "冷链异常" })).toBeVisible();
   const inspector = page.getByTestId("inspector-body");
   await inspector.getByRole("tab", { name: /评论/ }).click();
   const card = inspector.locator(".comment-card").filter({ hasText: "这个元素已经不在页面中" });

@@ -13,14 +13,14 @@ import {
 describe("buildCanonicalRuntimeUrl", () => {
   it("always writes variant and theme, and sorts business query keys", () => {
     const href = buildCanonicalRuntimeUrl({
-      prototypeId: "ledger-planet",
-      screenSlug: "task-list",
+      prototypeId: "cold-chain-ops",
+      screenSlug: "exception-queue",
       variantId: "empty",
       themeId: "dark",
       query: { zed: "1", alpha: "2" },
     });
     expect(href).toBe(
-      "/prototype/ledger-planet/task-list?variant=empty&theme=dark&alpha=2&zed=1",
+      "/prototype/cold-chain-ops/exception-queue?variant=empty&theme=dark&alpha=2&zed=1",
     );
   });
 });
@@ -28,21 +28,21 @@ describe("buildCanonicalRuntimeUrl", () => {
 describe("resolveRuntimeRoute", () => {
   it("resolves known routes and fills defaults when variant/theme omitted", () => {
     const withExplicit = resolveRuntimeRoute({
-      prototypeId: "ledger-planet",
-      screenSlug: "task-list",
+      prototypeId: "cold-chain-ops",
+      screenSlug: "exception-queue",
       searchParams: new URLSearchParams("variant=empty&theme=dark"),
     });
     expect(withExplicit.ok).toBe(true);
     if (withExplicit.ok) {
       expect(withExplicit.variant.id).toBe("empty");
       expect(withExplicit.theme.id).toBe("dark");
-      expect(withExplicit.canonicalPath).toBe("/prototype/ledger-planet/task-list");
+      expect(withExplicit.canonicalPath).toBe("/prototype/cold-chain-ops/exception-queue");
       expect(withExplicit.canonicalSearch).toBe("variant=empty&theme=dark");
     }
 
     const withDefaults = resolveRuntimeRoute({
-      prototypeId: "ledger-planet",
-      screenSlug: "task-list",
+      prototypeId: "cold-chain-ops",
+      screenSlug: "exception-queue",
       searchParams: new URLSearchParams(""),
     });
     expect(withDefaults.ok).toBe(true);
@@ -57,14 +57,14 @@ describe("resolveRuntimeRoute", () => {
     expect(
       resolveRuntimeRoute({
         prototypeId: "missing",
-        screenSlug: "task-list",
+        screenSlug: "exception-queue",
         searchParams: new URLSearchParams("theme=light"),
       }),
     ).toMatchObject({ ok: false, code: "UNKNOWN_PROTOTYPE" });
 
     expect(
       resolveRuntimeRoute({
-        prototypeId: "ledger-planet",
+        prototypeId: "cold-chain-ops",
         screenSlug: "missing",
         searchParams: new URLSearchParams("theme=light"),
       }),
@@ -72,16 +72,16 @@ describe("resolveRuntimeRoute", () => {
 
     expect(
       resolveRuntimeRoute({
-        prototypeId: "ledger-planet",
-        screenSlug: "task-list",
+        prototypeId: "cold-chain-ops",
+        screenSlug: "exception-queue",
         searchParams: new URLSearchParams("variant=nope&theme=light"),
       }),
     ).toMatchObject({ ok: false, code: "UNKNOWN_VARIANT" });
 
     expect(
       resolveRuntimeRoute({
-        prototypeId: "ledger-planet",
-        screenSlug: "task-list",
+        prototypeId: "cold-chain-ops",
+        screenSlug: "exception-queue",
         searchParams: new URLSearchParams("variant=default&theme=nope"),
       }),
     ).toMatchObject({ ok: false, code: "UNKNOWN_THEME" });
@@ -95,16 +95,16 @@ describe("resolveRuntimeRoute", () => {
     duplicate.append("foo", "2");
     expect(
       resolveRuntimeRoute({
-        prototypeId: "ledger-planet",
-        screenSlug: "task-list",
+        prototypeId: "cold-chain-ops",
+        screenSlug: "exception-queue",
         searchParams: duplicate,
       }),
     ).toMatchObject({ ok: false, code: "INVALID_QUERY" });
 
     expect(
       resolveRuntimeRoute({
-        prototypeId: "ledger-planet",
-        screenSlug: "task-list",
+        prototypeId: "cold-chain-ops",
+        screenSlug: "exception-queue",
         searchParams: new URLSearchParams(
           "variant=default&theme=light&extra=1",
         ),

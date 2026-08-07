@@ -7,9 +7,9 @@ import {
 } from '../../src/v2/contracts/job.js';
 import { V2_SCHEMA_MAJOR } from '../../src/v2/contracts/version.js';
 import { JOB_STATUSES } from '../../src/v2/contracts/vocabulary.js';
-import { ledgerPlanetTaskList } from '../../src/v2/fixtures/index.js';
+import { referenceCaseSlice } from '../../src/v2/fixtures/index.js';
 
-const { WORKSPACE_ID, BUNDLE_ID, PROTOTYPE_ID, TASK_LIST_CASE_ID, TASK_LIST_CASE_KEY, FULL_CASE_SCOPE } = ledgerPlanetTaskList;
+const { WORKSPACE_ID, BUNDLE_ID, PROTOTYPE_ID, TASK_LIST_CASE_ID, TASK_LIST_CASE_KEY, FULL_CASE_SCOPE } = referenceCaseSlice;
 
 const SELECTION = {
   prototypeId: PROTOTYPE_ID,

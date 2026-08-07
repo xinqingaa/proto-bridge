@@ -15,9 +15,9 @@ const scope = {
   minEvidenceLevel: "instrumented-runtime" as const,
 };
 const selectedCase = {
-  caseId: "ledger-planet.task-list::default::light::iphone-14",
+  caseId: "cold-chain-ops.exception-queue::default::light::iphone-14",
   caseKey: {
-    screenId: "ledger-planet.task-list",
+    screenId: "cold-chain-ops.exception-queue",
     variantId: "default",
     themeId: "light",
     deviceId: "iphone-14",
@@ -37,7 +37,7 @@ function job(
     workspaceId: "pbwork-local",
     bundleId: `bundle-${id}`,
     selection: {
-      prototypeId: "ledger-planet",
+      prototypeId: "cold-chain-ops",
       cases,
       acceptedWarningIds: [],
     },
@@ -62,7 +62,7 @@ function job(
               at: acceptedAt,
               event: "case-finished",
               detail:
-                "ledger-planet.task-list::default::light::iphone-14:failed:Duplicate semantic Fragment identity ledger-planet.task-list.filters#.",
+                "cold-chain-ops.exception-queue::default::light::iphone-14:failed:Duplicate semantic Fragment identity cold-chain-ops.exception-queue.filters#.",
             },
           ]
         : [],
@@ -80,7 +80,7 @@ function state(jobs: CaptureJob[]): CaptureConsoleState {
         schemaVersion: 1,
         bundleId: item.bundleId,
         workspaceId: "pbwork-local",
-        prototypeId: "ledger-planet",
+        prototypeId: "cold-chain-ops",
         status: "writable",
         createdAt: item.acceptedAt,
       },
@@ -89,7 +89,7 @@ function state(jobs: CaptureJob[]): CaptureConsoleState {
         snapshotId: `snapshot-${item.jobId}`,
         workspaceId: "pbwork-local",
         bundleId: item.bundleId,
-        prototypeId: "ledger-planet",
+        prototypeId: "cold-chain-ops",
         sourceRunId: item.runId!,
         committedAt: item.acceptedAt,
         activeSlots: item.selection.cases.map((entry) => ({
@@ -168,10 +168,10 @@ describe("capture task presentation", () => {
   it("translates duplicate semantic identities into a readable diagnosis", () => {
     expect(
       translateCaptureFailure(
-        "ledger-planet.task-list::default::light::iphone-14:failed:Duplicate semantic Fragment identity ledger-planet.task-list.filters#.",
+        "cold-chain-ops.exception-queue::default::light::iphone-14:failed:Duplicate semantic Fragment identity cold-chain-ops.exception-queue.filters#.",
       ),
     ).toMatchObject({
-      title: "任务列表存在重复采集标识",
+      title: "异常队列存在重复采集标识",
       message: "系统发现两个区域使用了相同标识，无法判断应记录哪一个。",
     });
   });

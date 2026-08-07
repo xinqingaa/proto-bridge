@@ -68,19 +68,18 @@ proto-bridge service start
 
 PBWork 与 CLI 对同一规范化 Draft 必须生成相同 Case identity 和 Matrix。
 
-仓库提供可直接执行的
-`examples/selections/ledger-planet-task-list.json`。推荐日常用：
+推荐日常用：
 
 ```bash
 # 整个原型：全部页面、状态和场景
 pnpm pb -- deliver \
-  --prototype ledger-planet \
+  --prototype cold-chain-ops \
   --target apps/flutter_pb_app
 
 # 单页：默认包含该页全部状态和场景
 pnpm pb -- deliver \
-  --prototype ledger-planet \
-  --screen task-list \
+  --prototype cold-chain-ops \
+  --screen exception-queue \
   --target apps/flutter_pb_app
 ```
 

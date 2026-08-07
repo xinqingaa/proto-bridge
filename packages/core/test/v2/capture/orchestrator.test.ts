@@ -15,7 +15,7 @@ import {
   type SelectionDraft,
 } from '../../../src/v2/capture/index.js';
 import { LocalFileStore } from '../../../src/v2/store/local-file-store.js';
-import { ledgerPlanetTaskList as fixture } from '../../../src/v2/fixtures/index.js';
+import { referenceCaseSlice as fixture } from '../../../src/v2/fixtures/index.js';
 
 const PNG_BYTES = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
@@ -109,11 +109,11 @@ function manifest(inputVersion: string): RuntimeCaptureManifest {
     ],
     screens: [
       {
-        prototypeId: 'ledger-planet',
-        screenId: 'ledger-planet.task-list',
+        prototypeId: 'sample',
+        screenId: 'sample.task-list',
         screenSlug: 'task-list',
-        path: '/prototype/ledger-planet/task-list',
-        sourcePath: 'ledger-planet/screens/TaskList.vue',
+        path: '/prototype/sample/task-list',
+        sourcePath: 'sample/screens/TaskList.vue',
         defaultVariantId: 'default',
         variants: [
           { variantId: 'default', label: '默认' },
@@ -129,10 +129,10 @@ function manifest(inputVersion: string): RuntimeCaptureManifest {
 
 function draft(variants: string[]): SelectionDraft {
   return {
-    prototypeId: 'ledger-planet',
+    prototypeId: 'sample',
     screens: [
       {
-        screenId: 'ledger-planet.task-list',
+        screenId: 'sample.task-list',
         variants: { mode: 'explicit', variantIds: variants },
         themeIds: ['light'],
         deviceIds: ['iphone-14'],
@@ -247,8 +247,8 @@ describe('V2 Capture Orchestrator + real Store', () => {
       snapshotId: result.snapshot.snapshotId,
       inputVersion: preflight.inputVersion,
       currentDependencyDigests: {
-        'manifest:ledger-planet': preflight.manifestDigest,
-        'runtime:ledger-planet.task-list': preflight.inputVersion,
+        'manifest:sample': preflight.manifestDigest,
+        'runtime:sample.task-list': preflight.inputVersion,
       },
     });
     const evaluation = await evaluateAgentHandoff({
@@ -439,8 +439,8 @@ describe('V2 Capture Orchestrator + real Store', () => {
       snapshotId: result.snapshot.snapshotId,
       inputVersion: preflight.inputVersion,
       currentDependencyDigests: {
-        'manifest:ledger-planet': preflight.manifestDigest,
-        'runtime:ledger-planet.task-list': preflight.inputVersion,
+        'manifest:sample': preflight.manifestDigest,
+        'runtime:sample.task-list': preflight.inputVersion,
       },
     });
     const evaluation = await evaluateAgentHandoff({
@@ -476,7 +476,7 @@ describe('V2 Capture Orchestrator + real Store', () => {
       now,
     });
     expect((await store.getBundle(bundleId))?.prototypeId).toBe(
-      'ledger-planet',
+      'sample',
     );
     expect(first.snapshot.activeSlots).toHaveLength(1);
     const report = await store.createStalenessReport({
@@ -484,8 +484,8 @@ describe('V2 Capture Orchestrator + real Store', () => {
       snapshotId: first.snapshot.snapshotId,
       inputVersion: preflight.inputVersion,
       currentDependencyDigests: {
-        'manifest:ledger-planet': preflight.manifestDigest,
-        'runtime:ledger-planet.task-list': preflight.inputVersion,
+        'manifest:sample': preflight.manifestDigest,
+        'runtime:sample.task-list': preflight.inputVersion,
       },
     });
     const handoff = await createAgentHandoff({

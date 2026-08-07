@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AgentHandoff, fixtures } from '../../src/v2/index.js';
 
-const f = fixtures.ledgerPlanetTaskList;
+const f = fixtures.referenceCaseSlice;
 
 describe('AgentHandoff risk acknowledgement rules', () => {
   it('a Handoff with declared risks but no acknowledgement fails validation', () => {

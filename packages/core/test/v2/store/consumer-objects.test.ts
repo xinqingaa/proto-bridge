@@ -17,7 +17,7 @@ afterEach(async () => {
 
 describe('Store-backed Consumer objects', () => {
   it('lists immutable Catalog revisions and Issues across reader restart', async () => {
-    const reference = fixtures.ledgerPlanetTaskList;
+    const reference = fixtures.referenceCaseSlice;
     const root = await mkdtemp(path.join(os.tmpdir(), 'pb-consumer-store-'));
     roots.push(root);
     const writer = new LocalFileStore({

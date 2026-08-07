@@ -23,11 +23,11 @@ function manifest(
     ],
     screens: [
       {
-        prototypeId: 'ledger-planet',
-        screenId: 'ledger-planet.task-list',
+        prototypeId: 'sample',
+        screenId: 'sample.task-list',
         screenSlug: 'task-list',
-        path: '/prototype/ledger-planet/task-list',
-        sourcePath: 'ledger-planet/screens/TaskList.vue',
+        path: '/prototype/sample/task-list',
+        sourcePath: 'sample/screens/TaskList.vue',
         defaultVariantId: 'default',
         variants: [
           { variantId: 'default', label: '默认' },
@@ -39,8 +39,8 @@ function manifest(
             actionId: 'open-claimable-task',
             kind: 'click',
             target: {
-              screenId: 'ledger-planet.task-list',
-              pbId: 'ledger-planet.task-list.list.row',
+              screenId: 'sample.task-list',
+              pbId: 'sample.task-list.list.row',
               pbKey: 't2',
             },
           },
@@ -49,18 +49,18 @@ function manifest(
           {
             scenarioId: 'open-claimable-task',
             label: '打开可领取任务',
-            ownerScreenId: 'ledger-planet.task-list',
+            ownerScreenId: 'sample.task-list',
             initialVariantId: 'default',
             actionIds: ['open-claimable-task'],
             checkpoints: [
               {
                 checkpointId: 'claimable-task-detail',
-                screenId: 'ledger-planet.task-detail',
+                screenId: 'sample.task-detail',
                 variantId: 'claimable',
                 requiredFragments: [
                   {
-                    screenId: 'ledger-planet.task-detail',
-                    pbId: 'ledger-planet.task-detail.root',
+                    screenId: 'sample.task-detail',
+                    pbId: 'sample.task-detail.root',
                   },
                 ],
               },
@@ -69,11 +69,11 @@ function manifest(
         ],
       },
       {
-        prototypeId: 'ledger-planet',
-        screenId: 'ledger-planet.task-detail',
+        prototypeId: 'sample',
+        screenId: 'sample.task-detail',
         screenSlug: 'task-detail',
-        path: '/prototype/ledger-planet/task-detail',
-        sourcePath: 'ledger-planet/screens/TaskDetail.vue',
+        path: '/prototype/sample/task-detail',
+        sourcePath: 'sample/screens/TaskDetail.vue',
         defaultVariantId: 'default',
         variants: [
           { variantId: 'default', label: '默认' },
@@ -88,10 +88,10 @@ function manifest(
 
 function draft(): SelectionDraft {
   return {
-    prototypeId: 'ledger-planet',
+    prototypeId: 'sample',
     screens: [
       {
-        screenId: 'ledger-planet.task-list',
+        screenId: 'sample.task-list',
         variants: {
           mode: 'explicit',
           variantIds: ['default', 'claimable'],
@@ -121,31 +121,31 @@ describe('V2 Selection normalization and Preflight', () => {
     expect(first.matrix).toHaveLength(3);
     expect(first.matrix.map((entry) => entry.selectedCase.caseKey)).toEqual([
       {
-        screenId: 'ledger-planet.task-detail',
+        screenId: 'sample.task-detail',
         variantId: 'claimable',
         themeId: 'light',
         deviceId: 'iphone-14',
         scenario: {
-          ownerScreenId: 'ledger-planet.task-list',
+          ownerScreenId: 'sample.task-list',
           scenarioId: 'open-claimable-task',
           checkpointId: 'claimable-task-detail',
         },
       },
       {
-        screenId: 'ledger-planet.task-list',
+        screenId: 'sample.task-list',
         variantId: 'claimable',
         themeId: 'light',
         deviceId: 'iphone-14',
       },
       {
-        screenId: 'ledger-planet.task-list',
+        screenId: 'sample.task-list',
         variantId: 'default',
         themeId: 'light',
         deviceId: 'iphone-14',
       },
     ]);
     expect(first.matrix[0]?.runtimePath).toBe(
-      '/prototype/ledger-planet/task-list',
+      '/prototype/sample/task-list',
     );
   });
 
@@ -158,8 +158,8 @@ describe('V2 Selection normalization and Preflight', () => {
     fragmentDraft.screens[0]!.scenarios = { mode: 'none' };
     fragmentDraft.screens[0]!.captureScope.fragments = [
       {
-        screenId: 'ledger-planet.task-list',
-        pbId: 'ledger-planet.task-list.list.row',
+        screenId: 'sample.task-list',
+        pbId: 'sample.task-list.list.row',
         pbKey: 't2',
       },
     ];
@@ -167,8 +167,8 @@ describe('V2 Selection normalization and Preflight', () => {
       mode: 'selected',
       targets: [
         {
-          screenId: 'ledger-planet.task-list',
-          pbId: 'ledger-planet.task-list.list.row',
+          screenId: 'sample.task-list',
+          pbId: 'sample.task-list.list.row',
           pbKey: 't2',
         },
       ],
@@ -220,7 +220,7 @@ describe('V2 Selection normalization and Preflight', () => {
     expect(preflight.interactionCoverage).toEqual({
       required: 1,
       selected: 0,
-      missingScenarioIds: ['ledger-planet.task-list/open-claimable-task'],
+      missingScenarioIds: ['sample.task-list/open-claimable-task'],
     });
     expect(preflight.unacceptedWarningIds).toContain(
       'warning-interaction-coverage',

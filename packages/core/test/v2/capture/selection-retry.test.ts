@@ -8,7 +8,7 @@ import type { RuntimeCaptureManifest } from '../../../src/v2/runtime-contract/in
 
 describe('selection retry draft', () => {
   it('round-trips persisted Case/Scope identities through the shared resolver', () => {
-    const reference = fixtures.ledgerPlanetTaskList;
+    const reference = fixtures.referenceCaseSlice;
     const original = reference.RUN_1.selection;
     const draft = selectionDraftFromSelectedCases(
       original.prototypeId,
@@ -29,7 +29,7 @@ describe('selection retry draft', () => {
           prototypeId: reference.PROTOTYPE_ID,
           screenId: reference.SCREEN_ID,
           screenSlug: 'task-list',
-          path: '/prototype/ledger-planet/task-list',
+          path: '/prototype/sample/task-list',
           defaultVariantId: reference.VARIANT_ID,
           variants: [{ variantId: reference.VARIANT_ID, label: '默认' }],
           actions: [],

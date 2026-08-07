@@ -11,7 +11,7 @@ test("overview is the default workbench destination", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "从原型继续工作" }),
   ).toBeVisible();
-  await expect(page.getByRole("link", { name: "28 组件" })).toBeVisible();
+  await expect(page.getByTestId("resource-panel")).toHaveCount(0);
 });
 
 test("primary and secondary navigation update the URL and resource view", async ({
@@ -43,7 +43,7 @@ test("primary and secondary navigation update the URL and resource view", async 
 
 test("collapsing side panels expands the content track", async ({ page }) => {
   await page.goto(
-    "/workbench/prototypes/ledger-planet/screens/task-list?variant=default&theme=light",
+    "/workbench/prototypes/cold-chain-ops/screens/exception-queue?variant=default&theme=light",
   );
   const content = page.getByTestId("content-canvas");
   const initialBox = await content.boundingBox();
@@ -77,11 +77,11 @@ test("collapsing side panels expands the content track", async ({ page }) => {
   const collapsedTree = page.locator(".collapsed-tree-popover");
   await expect(
     collapsedTree.locator(
-      'a[href="/workbench/prototypes/ledger-planet/screens/task-list"]',
+      'a[href="/workbench/prototypes/cold-chain-ops/screens/exception-queue"]',
     ),
   ).toBeVisible();
   await collapsedTree
-    .locator('a[href*="/ledger-planet/screens/task-list?variant=empty"]')
+    .locator('a[href*="/cold-chain-ops/screens/exception-queue?variant=empty"]')
     .click();
   await expect(page).toHaveURL(/variant=empty/);
 });
@@ -92,7 +92,7 @@ test("element inspector is hidden outside the canvas", async ({ page }) => {
   await expect(page.getByTestId("resource-page-shell")).toBeVisible();
 
   await page.goto(
-    "/workbench/prototypes/ledger-planet/screens/task-list?variant=default&theme=light",
+    "/workbench/prototypes/cold-chain-ops/screens/exception-queue?variant=default&theme=light",
   );
   await expect(page.getByTestId("inspector-panel")).toBeVisible();
   await expect(page.locator(".inspector-panel .panel-title")).toHaveText(

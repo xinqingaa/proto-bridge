@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { applyAttemptToActiveRevisions, decideActivation, fixtures, type ActivationCandidate } from '../../src/v2/index.js';
 
-const f = fixtures.ledgerPlanetTaskList;
+const f = fixtures.referenceCaseSlice;
 
 function primaryCandidate(overrides: Partial<ActivationCandidate> = {}): ActivationCandidate {
   return {

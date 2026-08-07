@@ -5,7 +5,6 @@ import path from "node:path";
 import {
   PlaywrightCaseCaptureDriver,
   capturePreflightToStore,
-  evaluateAgentHandoff,
   preflightSelection,
   type SelectionDraft,
 } from "@proto-bridge/core/v2/capture";
@@ -13,334 +12,17 @@ import { fixtures } from "@proto-bridge/core/v2";
 import { LocalFileStore } from "@proto-bridge/core/v2/store";
 import type { RuntimeCaptureManifest } from "@proto-bridge/core/v2/runtime-contract";
 
-test("V2 Runtime protocol captures default, stable repeated rows, Scenario Checkpoint and reset", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(
-    "/prototype/ledger-planet/task-list?variant=default&theme=light",
-  );
-  await expect(page.getByTestId("runtime-root")).toBeVisible();
-
-  async function request(
-    requestId: string,
-    payload: Record<string, unknown>,
-  ): Promise<any> {
-    for (let attempt = 0; ; attempt += 1) {
-      try {
-        return await page.evaluate(
-          async ({ id, body }) => {
-            const api = (
-              window as unknown as Record<
-                string,
-                { request(input: unknown): Promise<unknown> }
-              >
-            ).__PROTO_BRIDGE_CAPTURE_V2__;
-            if (!api) throw new Error("V2 Runtime Capture Protocol missing");
-            return api.request({
-              protocolVersion: 2,
-              requestId: id,
-              payload: body,
-            });
-          },
-          { id: requestId, body: payload },
-        );
-      } catch (error) {
-        if (
-          !(error instanceof Error) ||
-          !error.message.includes("Execution context was destroyed") ||
-          attempt >= 2
-        ) {
-          throw error;
-        }
-        await page.waitForLoadState("domcontentloaded");
-        await page.waitForFunction(() =>
-          Boolean(
-            (window as unknown as Record<string, unknown>)
-              .__PROTO_BRIDGE_CAPTURE_V2__,
-          ),
-        );
-      }
-    }
-  }
-
-  const described = await request("e2e-describe", { kind: "describe" });
-  expect(described.ok).toBe(true);
-  const taskList = described.payload.manifest.screens.find(
-    (screen: { screenId: string }) =>
-      screen.screenId === "ledger-planet.task-list",
-  );
-  expect(
-    taskList.variants.map(
-      (variant: { variantId: string }) => variant.variantId,
-    ),
-  ).toEqual(["default", "empty"]);
-  expect(
-    taskList.variants.find(
-      (variant: { variantId: string }) => variant.variantId === "default",
-    ).requiredFragments,
-  ).toEqual([
-    {
-      screenId: "ledger-planet.task-list",
-      pbId: "ledger-planet.task-list.root",
-    },
-    {
-      screenId: "ledger-planet.task-list",
-      pbId: "ledger-planet.task-list.filters",
-    },
-    {
-      screenId: "ledger-planet.task-list",
-      pbId: "ledger-planet.task-list.list",
-    },
-    {
-      screenId: "ledger-planet.task-list",
-      pbId: "ledger-planet.task-list.list.row",
-      pbKey: "t1",
-    },
-    {
-      screenId: "ledger-planet.task-list",
-      pbId: "ledger-planet.task-list.list.row",
-      pbKey: "t2",
-    },
-    {
-      screenId: "ledger-planet.task-list",
-      pbId: "ledger-planet.task-list.list.row",
-      pbKey: "t3",
-    },
-  ]);
-  expect(
-    taskList.actions.map((item: { actionId: string }) => item.actionId),
-  ).toEqual(["select-todo", "select-done", "open-claimable-task"]);
-  expect(
-    taskList.scenarios.map((item: { scenarioId: string }) => item.scenarioId),
-  ).toEqual(["filter-todo", "filter-done", "open-claimable-task"]);
-
-  const prepared = await request("e2e-prepare", {
-    kind: "prepare",
-    expected: {
-      prototypeId: "ledger-planet",
-      screenId: "ledger-planet.task-list",
-      variantId: "default",
-      themeId: "light",
-    },
-  });
-  expect(prepared.ok).toBe(true);
-
-  const ready = await request("e2e-ready", {
-    kind: "readiness",
-    expected: {
-      prototypeId: "ledger-planet",
-      screenId: "ledger-planet.task-list",
-      variantId: "default",
-      themeId: "light",
-      viewport: { width: 390, height: 844 },
-    },
-    requiredFragments: [
-      {
-        screenId: "ledger-planet.task-list",
-        pbId: "ledger-planet.task-list.list.row",
-        pbKey: "t2",
-      },
-    ],
-  });
-  expect(ready.ok).toBe(true);
-
-  const snapshot = await request("e2e-snapshot", {
-    kind: "semantic-snapshot",
-    fragments: [],
-  });
-  expect(snapshot.ok).toBe(true);
-  const rows = snapshot.payload.nodes.filter(
-    (node: { fragment: { pbId: string } }) =>
-      node.fragment.pbId === "ledger-planet.task-list.list.row",
-  );
-  expect(
-    rows.map((node: { fragment: { pbKey: string } }) => node.fragment.pbKey),
-  ).toEqual(["t1", "t2", "t3"]);
-  const scrollListOwner = {
-    kind: "fragment",
-    fragment: {
-      screenId: "ledger-planet.task-list",
-      pbId: "ledger-planet.task-list.scroll-list",
-    },
-  };
-  for (const pbId of [
-    "ledger-planet.task-list.filters",
-    "ledger-planet.task-list.list",
-  ]) {
-    const node = snapshot.payload.nodes.find(
-      (candidate: { fragment: { pbId: string } }) =>
-        candidate.fragment.pbId === pbId,
-    );
-    expect(node, pbId).toBeTruthy();
-    expect(node.scrollOwner).toEqual(scrollListOwner);
-    expect(node.scrollOwner.fragment.pbId).not.toMatch(/^ds\./);
-  }
-  const repeatedSnapshot = await request("e2e-snapshot-repeat", {
-    kind: "semantic-snapshot",
-    fragments: [],
-  });
-  expect(repeatedSnapshot.payload).toEqual(snapshot.payload);
-
-  const todoAction = await request("e2e-action-todo", {
-    kind: "execute-action",
-    scenarioId: "filter-todo",
-    actionId: "select-todo",
-  });
-  expect(todoAction.ok).toBe(true);
-  const todoCheckpoint = await request("e2e-checkpoint-todo", {
-    kind: "verify-checkpoint",
-    scenarioId: "filter-todo",
-    checkpointId: "todo-selected",
-  });
-  expect(todoCheckpoint.ok, JSON.stringify(todoCheckpoint)).toBe(true);
-  await request("e2e-reset-after-todo", { kind: "reset" });
-
-  const doneAction = await request("e2e-action-done", {
-    kind: "execute-action",
-    scenarioId: "filter-done",
-    actionId: "select-done",
-  });
-  expect(doneAction.ok).toBe(true);
-  const doneCheckpoint = await request("e2e-checkpoint-done", {
-    kind: "verify-checkpoint",
-    scenarioId: "filter-done",
-    checkpointId: "done-selected",
-  });
-  expect(doneCheckpoint.ok, JSON.stringify(doneCheckpoint)).toBe(true);
-  await request("e2e-reset-after-done", { kind: "reset" });
-
-  const action = await request("e2e-action", {
-    kind: "execute-action",
-    scenarioId: "open-claimable-task",
-    actionId: "open-claimable-task",
-  });
-  expect(action.ok).toBe(true);
-
-  const checkpoint = await request("e2e-checkpoint", {
-    kind: "verify-checkpoint",
-    scenarioId: "open-claimable-task",
-    checkpointId: "claimable-task-detail",
-  });
-  expect(checkpoint.ok).toBe(true);
-  expect(checkpoint.payload.actual).toMatchObject({
-    screenId: "ledger-planet.task-detail",
-    variantId: "claimable",
-    themeId: "light",
-  });
-
-  const reset = await request("e2e-reset", { kind: "reset" });
-  expect(reset.ok, JSON.stringify(reset)).toBe(true);
-  expect(reset.payload.actual).toMatchObject({
-    screenId: "ledger-planet.task-list",
-    variantId: "default",
-    themeId: "light",
-  });
-});
-
 test("the fixed three-page regression baseline still resolves", async ({
   page,
 }) => {
   for (const path of [
-    "/prototype/ledger-planet/task-list?variant=default&theme=light",
-    "/prototype/ledger-planet/ledger-list?variant=default&theme=light",
-    "/prototype/ledger-planet/task-detail?variant=default&theme=light",
+    "/prototype/cold-chain-ops/exception-queue?variant=default&theme=light",
+    "/prototype/cold-chain-ops/shipment-detail?variant=default&theme=light&shipment=SH-2048",
+    "/prototype/cold-chain-ops/resolution-form?variant=default&theme=light&shipment=SH-2048",
   ]) {
     await page.goto(path);
     await expect(page.getByTestId("runtime-root")).toBeVisible();
     await expect(page.getByRole("alert")).toHaveCount(0);
-  }
-});
-
-test("all PB-compliant Ledger Planet samples satisfy their authored Evidence boundary", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  for (const screenSlug of ["task-list", "task-detail", "ledger-list"]) {
-    await page.goto(
-      `/prototype/ledger-planet/${screenSlug}?variant=default&theme=light`,
-    );
-    await page.waitForFunction(() =>
-      Boolean(
-        (window as unknown as Record<string, unknown>)
-          .__PROTO_BRIDGE_CAPTURE_V2__,
-      ),
-    );
-    const result = await page.evaluate(async (slug) => {
-      const api = (
-        window as unknown as Record<
-          string,
-          { request(input: unknown): Promise<any> }
-        >
-      ).__PROTO_BRIDGE_CAPTURE_V2__;
-      if (!api) throw new Error("Runtime Capture Protocol missing");
-      const describe = await api.request({
-        protocolVersion: 2,
-        requestId: `compliance-describe-${slug}`,
-        payload: { kind: "describe" },
-      });
-      const screenId = `ledger-planet.${slug}`;
-      const screen = describe.payload.manifest.screens.find(
-        (candidate: { screenId: string }) => candidate.screenId === screenId,
-      );
-      const defaultVariant = screen.variants.find(
-        (variant: { variantId: string }) =>
-          variant.variantId === screen.defaultVariantId,
-      );
-      const requiredFragments = defaultVariant.requiredFragments;
-      const prepare = await api.request({
-        protocolVersion: 2,
-        requestId: `compliance-prepare-${slug}`,
-        payload: {
-          kind: "prepare",
-          expected: {
-            prototypeId: "ledger-planet",
-            screenId,
-            variantId: screen.defaultVariantId,
-            themeId: "light",
-          },
-        },
-      });
-      const readiness = await api.request({
-        protocolVersion: 2,
-        requestId: `compliance-ready-${slug}`,
-        payload: {
-          kind: "readiness",
-          expected: {
-            prototypeId: "ledger-planet",
-            screenId,
-            variantId: screen.defaultVariantId,
-            themeId: "light",
-            viewport: { width: 390, height: 844 },
-          },
-          requiredFragments,
-        },
-      });
-      const snapshot = await api.request({
-        protocolVersion: 2,
-        requestId: `compliance-snapshot-${slug}`,
-        payload: { kind: "semantic-snapshot", fragments: requiredFragments },
-      });
-      return { requiredFragments, prepare, readiness, snapshot };
-    }, screenSlug);
-
-    expect(result.requiredFragments.length).toBeGreaterThan(0);
-    expect(result.prepare.ok).toBe(true);
-    expect(result.readiness.ok).toBe(true);
-    expect(
-      result.snapshot.ok,
-      `${screenSlug}: ${JSON.stringify(result.snapshot)}`,
-    ).toBe(true);
-    expect(result.snapshot.payload.nodes).toHaveLength(
-      result.requiredFragments.length,
-    );
-    expect(
-      result.snapshot.payload.nodes.every(
-        (node: { visible: boolean; bbox: { width: number; height: number } }) =>
-          node.visible && node.bbox.width > 0 && node.bbox.height > 0,
-      ),
-    ).toBe(true);
-    expect((await page.screenshot()).byteLength).toBeGreaterThan(10_000);
   }
 });
 
@@ -591,12 +273,13 @@ test("cold-chain-ops satisfies every authored Variant and required Scenario boun
   }
 });
 
+
 test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenario Evidence to the V2 Store", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(
-    "/prototype/ledger-planet/task-list?variant=default&theme=light",
+    "/prototype/cold-chain-ops/exception-queue?variant=default&theme=light",
   );
   await page.waitForFunction(() =>
     Boolean(
@@ -629,21 +312,16 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
     minEvidenceLevel: "instrumented-runtime" as const,
   };
   const fullDraft: SelectionDraft = {
-    prototypeId: "ledger-planet",
+    prototypeId: "cold-chain-ops",
     screens: [
       {
-        screenId: "ledger-planet.task-list",
-        variants: {
-          mode: "explicit",
-          variantIds: manifest.screens[0]!.variants.map(
-            (variant) => variant.variantId,
-          ),
-        },
+        screenId: "cold-chain-ops.exception-queue",
+        variants: { mode: "explicit", variantIds: ["default"] },
         themeIds: ["light"],
         deviceIds: ["iphone-14"],
         scenarios: {
           mode: "explicit",
-          scenarioIds: ["filter-todo", "filter-done", "open-claimable-task"],
+          scenarioIds: ["focus-critical", "inspect-primary-exception"],
         },
         captureScope: baseScope,
       },
@@ -651,15 +329,15 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
     acceptedWarningIds: [],
   };
   const fragment = {
-    screenId: "ledger-planet.task-list",
-    pbId: "ledger-planet.task-list.list.row",
-    pbKey: "t2",
+    screenId: "cold-chain-ops.exception-queue",
+    pbId: "cold-chain-ops.exception-queue.list.row",
+    pbKey: "ex-017",
   };
   const fragmentDraft: SelectionDraft = {
-    prototypeId: "ledger-planet",
+    prototypeId: "cold-chain-ops",
     screens: [
       {
-        screenId: "ledger-planet.task-list",
+        screenId: "cold-chain-ops.exception-queue",
         variants: { mode: "explicit", variantIds: ["default"] },
         themeIds: ["light"],
         deviceIds: ["iphone-14"],
@@ -675,7 +353,7 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
   };
 
   const storeRoot = await mkdtemp(path.join(os.tmpdir(), "pb-v2-browser-e2e-"));
-  const reference = fixtures.ledgerPlanetTaskList;
+  const reference = fixtures.referenceCaseSlice;
   const store = new LocalFileStore({
     root: storeRoot,
     workspaceId: reference.WORKSPACE_ID,
@@ -698,21 +376,11 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
       runtimeBaseUrl,
       driver,
     });
-    expect(full.run.attempts).toHaveLength(4);
+    expect(full.run.attempts).toHaveLength(3);
     expect(
-      full.run.attempts.map((attempt) => ({
-        caseId: attempt.caseId,
-        result: attempt.result,
-        reason: attempt.reason,
-      })),
-    ).toEqual(
-      full.run.attempts.map((attempt) => ({
-        caseId: attempt.caseId,
-        result: "captured",
-        reason: undefined,
-      })),
-    );
-    expect(full.snapshot.coverage.counts.captured).toBe(4);
+      full.run.attempts.every((attempt) => attempt.result === "captured"),
+    ).toBe(true);
+    expect(full.snapshot.coverage.counts.captured).toBe(3);
     expect(full.run.coverage.factQuality).toMatchObject({
       heuristic: 0,
       unknown: 0,
@@ -760,7 +428,7 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
     expect(
       fact(
         defaultRevision,
-        "ledger-planet.task-list.runtime.semantic-coverage",
+        "cold-chain-ops.exception-queue.runtime.semantic-coverage",
       ),
     ).toMatchObject({
       resolution: "resolved",
@@ -770,93 +438,88 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
       },
     });
     for (const [rowId, snippets] of [
-      ["t1", ["记一笔", "今日完成 1 笔记账", "3 星币", "去完成"]],
-      ["t2", ["查看本周图表", "打开图表分析页", "5 星币", "待领取"]],
-      ["t3", ["连续记账 3 天", "成长任务", "¥3 体验券"]],
+      ["ex-017", ["上海虹桥", "生物制剂", "SH-2048"]],
+      ["ex-031", ["苏州园区", "细胞样本"]],
+      ["ex-024", ["无锡新吴", "胰岛素"]],
     ] as const) {
       const text = String(
-        fact(defaultRevision, `ledger-planet.task-list.list.row.${rowId}.text`)
-          .effectiveValue,
+        fact(
+          defaultRevision,
+          `cold-chain-ops.exception-queue.list.row.${rowId}.text`,
+        ).effectiveValue,
       );
       for (const snippet of snippets) expect(text).toContain(snippet);
     }
     expect(
-      fact(defaultRevision, "ledger-planet.task-list.list.row.t2.tag")
+      fact(defaultRevision, "cold-chain-ops.exception-queue.list.row.ex-017.tag")
         .effectiveValue,
     ).toBe("button");
     expect(
-      fact(defaultRevision, "ledger-planet.task-list.list.row.t2.bbox")
-        .effectiveValue,
+      fact(
+        defaultRevision,
+        "cold-chain-ops.exception-queue.list.row.ex-017.bbox",
+      ).effectiveValue,
     ).toMatchObject({ width: expect.any(Number), height: expect.any(Number) });
     expect(
       fact(
         defaultRevision,
-        "ledger-planet.task-list.action.open-claimable-task",
+        "cold-chain-ops.exception-queue.action.open-primary-exception",
       ),
     ).toMatchObject({
       resolution: "resolved",
       effectiveValue: {
         kind: "click",
         target: {
-          pbId: "ledger-planet.task-list.list.row",
-          pbKey: "t2",
+          pbId: "cold-chain-ops.exception-queue.list.row",
+          pbKey: "ex-017",
         },
       },
     });
 
-    const todoRevision = await revisionFor("default", "filter-todo");
+    const criticalRevision = await revisionFor("default", "focus-critical");
     expect(
-      fact(todoRevision, "ledger-planet.task-list.list.row.t1.text")
-        .effectiveValue,
-    ).toContain("记一笔");
+      fact(
+        criticalRevision,
+        "cold-chain-ops.exception-queue.list.row.ex-017.text",
+      ).effectiveValue,
+    ).toContain("上海虹桥");
     expect(
-      todoRevision.facts.some((candidate) =>
-        candidate.factId.includes("list.row.t2"),
-      ),
-    ).toBe(false);
-
-    const doneRevision = await revisionFor("default", "filter-done");
-    expect(
-      fact(doneRevision, "ledger-planet.task-list.list.row.t2.text")
-        .effectiveValue,
-    ).toContain("待领取");
-    expect(
-      doneRevision.facts.some((candidate) =>
-        candidate.factId.includes("list.row.t1"),
+      criticalRevision.facts.some((candidate) =>
+        candidate.factId.includes("list.row.ex-024"),
       ),
     ).toBe(false);
 
     const scenarioRevision = await revisionFor(
-      "claimable",
-      "open-claimable-task",
+      "active-excursion",
+      "inspect-primary-exception",
     );
     expect(
       fact(
         scenarioRevision,
-        "ledger-planet.task-list.scenario.open-claimable-task.claimable-task-detail",
+        "cold-chain-ops.exception-queue.scenario.inspect-primary-exception.shipment-opened",
       ),
     ).toMatchObject({
       resolution: "resolved",
       effectiveValue: {
-        ownerScreenId: "ledger-planet.task-list",
-        actionIds: ["open-claimable-task"],
+        ownerScreenId: "cold-chain-ops.exception-queue",
+        actionIds: ["open-primary-exception"],
         checkpoint: {
-          screenId: "ledger-planet.task-detail",
-          variantId: "claimable",
+          screenId: "cold-chain-ops.shipment-detail",
+          variantId: "active-excursion",
         },
       },
     });
     const detailText = String(
-      fact(scenarioRevision, "ledger-planet.task-detail.root.text")
+      fact(scenarioRevision, "cold-chain-ops.shipment-detail.root.text")
         .effectiveValue,
     );
-    for (const snippet of ["查看本周图表", "已达成", "领取奖励"]) {
+    for (const snippet of ["运输详情", "10.8", "箱温"]) {
       expect(detailText).toContain(snippet);
     }
     expect(
       full.run.attempts.every((attempt) =>
         attempt.revisionId
-          ? [defaultRevision, todoRevision, doneRevision, scenarioRevision]
+          ? [defaultRevision, criticalRevision, scenarioRevision]
               .find((revision) => revision.revisionId === attempt.revisionId)
               ?.facts.every((candidate) =>
                 candidate.candidates.every(
@@ -869,8 +532,7 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
     const fullBlobs = await store.listBlobRecords(reference.BUNDLE_ID);
     for (const revision of [
       defaultRevision,
-      todoRevision,
-      doneRevision,
+      criticalRevision,
       scenarioRevision,
     ]) {
       expect(
@@ -911,7 +573,7 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
     expect(
       fact(
         scopedRevision!,
-        "ledger-planet.task-list.runtime.semantic-coverage",
+        "cold-chain-ops.exception-queue.runtime.semantic-coverage",
       ),
     ).toMatchObject({
       resolution: "resolved",
@@ -924,10 +586,14 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
     expect(
       scopedRevision!.facts
         .filter((candidate) =>
-          candidate.factId.startsWith("ledger-planet.task-list.list.row."),
+          candidate.factId.startsWith(
+            "cold-chain-ops.exception-queue.list.row.",
+          ),
         )
         .every((candidate) =>
-          candidate.factId.startsWith("ledger-planet.task-list.list.row.t2."),
+          candidate.factId.startsWith(
+            "cold-chain-ops.exception-queue.list.row.ex-017.",
+          ),
         ),
     ).toBe(true);
     const repeatedScoped = await capturePreflightToStore({
@@ -944,10 +610,10 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
     expect(repeatedScoped.storedBlobIds).toHaveLength(0);
 
     const genericDraft: SelectionDraft = {
-      prototypeId: "ledger-planet",
+      prototypeId: "cold-chain-ops",
       screens: [
         {
-          screenId: "ledger-planet.task-list",
+          screenId: "cold-chain-ops.exception-queue",
           variants: { mode: "explicit", variantIds: ["default"] },
           themeIds: ["light"],
           deviceIds: ["iphone-14"],
@@ -982,10 +648,10 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
     ).toBe("generic-runtime");
 
     const screenshotDraft: SelectionDraft = {
-      prototypeId: "ledger-planet",
+      prototypeId: "cold-chain-ops",
       screens: [
         {
-          screenId: "ledger-planet.task-list",
+          screenId: "cold-chain-ops.exception-queue",
           variants: { mode: "explicit", variantIds: ["empty"] },
           themeIds: ["light"],
           deviceIds: ["iphone-14"],
@@ -1018,93 +684,6 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
         )
       )?.evidenceLevel,
     ).toBe("screenshot-only");
-
-    const sparseDraft: SelectionDraft = {
-      prototypeId: "ledger-planet",
-      screens: [
-        {
-          screenId: "ledger-planet.analytics",
-          variants: { mode: "explicit", variantIds: ["default"] },
-          themeIds: ["light"],
-          deviceIds: ["iphone-14"],
-          scenarios: { mode: "none" },
-          captureScope: baseScope,
-        },
-      ],
-      acceptedWarningIds: [],
-    };
-    const sparsePreflight = preflightSelection(sparseDraft, manifest);
-    const sparse = await capturePreflightToStore({
-      store,
-      bundleId: reference.BUNDLE_ID,
-      preflight: sparsePreflight,
-      runtimeBaseUrl,
-      driver,
-    });
-    expect(sparse.run.attempts[0]?.result).toBe("captured");
-    expect(sparse.run.coverage.factQuality).toMatchObject({
-      heuristic: 0,
-      unknown: 1,
-      conflict: 0,
-    });
-    const sparseRevision = await store.getEvidenceRevision(
-      reference.BUNDLE_ID,
-      sparse.run.attempts[0]!.revisionId!,
-    );
-    expect(sparseRevision).toBeDefined();
-    expect(
-      fact(
-        sparseRevision!,
-        "ledger-planet.analytics.runtime.semantic-coverage",
-      ),
-    ).toMatchObject({
-      resolution: "unknown",
-      issueRef: "semantic-coverage-contract-missing",
-      candidates: [
-        {
-          value: {
-            status: "undeclared",
-          },
-        },
-      ],
-    });
-    expect(sparseRevision!.requiredFactsResolved).toBeLessThan(
-      sparseRevision!.requiredFactsTotal,
-    );
-    expect(
-      sparseRevision!.facts.every((candidate) =>
-        candidate.candidates.every(
-          (value) => value.provenance.source !== "heuristic",
-        ),
-      ),
-    ).toBe(true);
-
-    const sparseStaleness = await store.createStalenessReport({
-      bundleId: reference.BUNDLE_ID,
-      snapshotId: sparse.snapshot.snapshotId,
-      inputVersion: sparsePreflight.inputVersion,
-      currentDependencyDigests: {
-        "manifest:ledger-planet": sparsePreflight.manifestDigest,
-        "runtime:ledger-planet.analytics": sparsePreflight.inputVersion,
-      },
-    });
-    const sparseHandoff = await evaluateAgentHandoff({
-      store,
-      bundleId: reference.BUNDLE_ID,
-      snapshotId: sparse.snapshot.snapshotId,
-      selectedCases: sparse.run.selection.cases,
-      stalenessReport: sparseStaleness,
-    });
-    expect(sparseHandoff.coverageStatus).toBe("complete");
-    expect(sparseHandoff.freshnessStatus).toBe("fresh");
-    expect(sparseHandoff.risks).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          kind: "required-unknown",
-          refs: ["ledger-planet.analytics.runtime.semantic-coverage"],
-        }),
-      ]),
-    );
   } finally {
     await store.close();
     await rm(storeRoot, { recursive: true, force: true });

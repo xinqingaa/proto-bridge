@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createAgentHandoff } from '../../../src/v2/capture/handoff.js';
-import { ledgerPlanetTaskList as fixture } from '../../../src/v2/fixtures/index.js';
+import { referenceCaseSlice as fixture } from '../../../src/v2/fixtures/index.js';
 import { writeDeliveryReceipt } from '../../../src/v2/store/deliver-receipt.js';
 import { LocalFileStore } from '../../../src/v2/store/local-file-store.js';
 
@@ -49,8 +49,8 @@ describe('Delivery review artifacts', () => {
       snapshotId: created.snapshot.snapshotId,
       inputVersion: 'delivery-test-v1',
       currentDependencyDigests: {
-        'registry:ledger-planet.task-list': 'registry-task-list-v1',
-        'source:ledger-planet.task-list': 'source-task-list-v1',
+        'registry:sample.task-list': 'registry-task-list-v1',
+        'source:sample.task-list': 'source-task-list-v1',
       },
     });
     const handoff = await createAgentHandoff({

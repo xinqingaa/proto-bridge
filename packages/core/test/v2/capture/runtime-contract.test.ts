@@ -8,8 +8,8 @@ import {
 } from '../../../src/v2/runtime-contract/index.js';
 
 const actual = {
-  prototypeId: 'ledger-planet',
-  screenId: 'ledger-planet.task-list',
+  prototypeId: 'sample',
+  screenId: 'sample.task-list',
   variantId: 'default',
   themeId: 'light',
   viewport: { width: 390, height: 844, deviceScaleFactor: 3 },
@@ -30,11 +30,11 @@ describe('V2 Runtime Capture Protocol schemas', () => {
       ],
       screens: [
         {
-          prototypeId: 'ledger-planet',
-          screenId: 'ledger-planet.task-list',
+          prototypeId: 'sample',
+          screenId: 'sample.task-list',
           screenSlug: 'task-list',
-          path: '/prototype/ledger-planet/task-list',
-          sourcePath: 'ledger-planet/screens/TaskList.vue',
+          path: '/prototype/sample/task-list',
+          sourcePath: 'sample/screens/TaskList.vue',
           defaultVariantId: 'default',
           variants: [
             { variantId: 'default', label: '默认' },
@@ -45,8 +45,8 @@ describe('V2 Runtime Capture Protocol schemas', () => {
               actionId: 'open-claimable-task',
               kind: 'click',
               target: {
-                screenId: 'ledger-planet.task-list',
-                pbId: 'ledger-planet.task-list.list.row',
+                screenId: 'sample.task-list',
+                pbId: 'sample.task-list.list.row',
                 pbKey: 't2',
               },
             },
@@ -55,25 +55,25 @@ describe('V2 Runtime Capture Protocol schemas', () => {
             {
               scenarioId: 'open-claimable-task',
               label: '打开可领取任务',
-              ownerScreenId: 'ledger-planet.task-list',
+              ownerScreenId: 'sample.task-list',
               initialVariantId: 'default',
               actionIds: ['open-claimable-task'],
               checkpoints: [
                 {
                   checkpointId: 'claimable-task-detail',
-                  screenId: 'ledger-planet.task-detail',
+                  screenId: 'sample.task-detail',
                   variantId: 'claimable',
                   requiredFragments: [
                     {
-                      screenId: 'ledger-planet.task-detail',
-                      pbId: 'ledger-planet.task-detail.root',
+                      screenId: 'sample.task-detail',
+                      pbId: 'sample.task-detail.root',
                     },
                   ],
                   expectedStates: [
                     {
                       fragment: {
-                        screenId: 'ledger-planet.task-detail',
-                        pbId: 'ledger-planet.task-detail.root',
+                        screenId: 'sample.task-detail',
+                        pbId: 'sample.task-detail.root',
                       },
                       key: 'selected',
                       value: 'claimable',
@@ -82,16 +82,16 @@ describe('V2 Runtime Capture Protocol schemas', () => {
                   expectedFragmentKeys: [
                     {
                       fragment: {
-                        screenId: 'ledger-planet.task-detail',
-                        pbId: 'ledger-planet.task-detail.row',
+                        screenId: 'sample.task-detail',
+                        pbId: 'sample.task-detail.row',
                       },
                       keys: ['t2'],
                     },
                   ],
                   forbiddenFragments: [
                     {
-                      screenId: 'ledger-planet.task-detail',
-                      pbId: 'ledger-planet.task-detail.error',
+                      screenId: 'sample.task-detail',
+                      pbId: 'sample.task-detail.error',
                     },
                   ],
                 },
@@ -116,8 +116,8 @@ describe('V2 Runtime Capture Protocol schemas', () => {
           nodes: [
             {
               fragment: {
-                screenId: 'ledger-planet.task-list',
-                pbId: 'ledger-planet.task-list.root',
+                screenId: 'sample.task-list',
+                pbId: 'sample.task-list.root',
               },
               role: 'page',
               tag: 'div',
@@ -173,8 +173,8 @@ describe('V2 Runtime Capture Protocol schemas', () => {
           nodes: [
             {
               fragment: {
-                screenId: 'ledger-planet.task-list',
-                pbId: 'ledger-planet.task-list.root',
+                screenId: 'sample.task-list',
+                pbId: 'sample.task-list.root',
               },
               role: 'whatever',
               tag: 'div',

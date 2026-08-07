@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { LocalFileStore } from '../../../src/v2/store/local-file-store.js';
-import { ledgerPlanetTaskList } from '../../../src/v2/fixtures/index.js';
+import { referenceCaseSlice } from '../../../src/v2/fixtures/index.js';
 import { V2ContractError } from '../../../src/v2/contracts/errors.js';
 import type { NormalizedSelection } from '../../../src/v2/contracts/run.js';
 
@@ -22,7 +22,7 @@ const {
   LIST_FRAGMENT_SCOPE_KEY,
   ATTEMPT_1_ID,
   RUN_1_ID,
-} = ledgerPlanetTaskList;
+} = referenceCaseSlice;
 
 let root: string;
 

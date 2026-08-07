@@ -18,7 +18,7 @@ import {
   Workspace,
 } from '../../src/v2/index.js';
 
-const f = fixtures.ledgerPlanetTaskList;
+const f = fixtures.referenceCaseSlice;
 
 describe('assertSupportedSchemaVersion', () => {
   it('accepts the current major version', () => {

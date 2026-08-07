@@ -36,11 +36,8 @@ type ConsoleView = "evidence" | "tasks";
 
 const capture = useCaptureStore();
 const router = useRouter();
-const selectedPrototypeId = ref(
-  loadPrototypes().find((prototype) => prototype.id === "ledger-planet")?.id ??
-    loadPrototypes()[0]?.id ??
-    "",
-);
+/** No default — task center will be redesigned; require an explicit pick. */
+const selectedPrototypeId = ref("");
 const taskFilter = ref<TaskFilter>("all");
 const consoleView = ref<ConsoleView>("evidence");
 const showTrashed = ref(false);
@@ -124,6 +121,7 @@ const draftKindLabel = computed(
 );
 
 function beginTask(kind: "custom" | "prototype") {
+  if (!selectedPrototypeId.value) return;
   if (kind === "custom") capture.beginCustom(selectedPrototypeId.value);
   else capture.beginPrototype(selectedPrototypeId.value);
   capture.openComposer();
@@ -262,14 +260,22 @@ onBeforeUnmount(() => {
           <WorkbenchSelect
             :model-value="selectedPrototypeId"
             :items="prototypeItems"
+            label="选择原型"
             aria-label="选择原型"
             class="prototype-picker"
             @update:model-value="selectedPrototypeId = $event"
           />
-          <WorkbenchButton @click="beginTask('custom')">
+          <WorkbenchButton
+            :disabled="!selectedPrototypeId"
+            @click="beginTask('custom')"
+          >
             <SquareDashedMousePointer :size="15" /> 选择页面
           </WorkbenchButton>
-          <WorkbenchButton tone="primary" @click="beginTask('prototype')">
+          <WorkbenchButton
+            tone="primary"
+            :disabled="!selectedPrototypeId"
+            @click="beginTask('prototype')"
+          >
             <Layers3 :size="15" /> 整个原型
           </WorkbenchButton>
         </section>

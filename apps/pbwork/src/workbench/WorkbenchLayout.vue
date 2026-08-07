@@ -344,7 +344,7 @@ const sectionNavigationTree = computed(() => {
     (node) => node.id === sectionId.value,
   );
   if (!current) return [];
-  if (sectionId.value === "overview") return [current];
+  if (sectionId.value === "overview") return [];
   if (sectionId.value === "capture") {
     const resultGroups = new Map<
       string,
@@ -667,6 +667,7 @@ const themeLabel = computed(() =>
 /** 元素检查仅在原型画布（Screen）出现。 */
 const isScreenCanvas = computed(() => route.meta.resourceKind === "screen");
 const showElementInspector = computed(() => isScreenCanvas.value);
+const showResourcePanel = computed(() => sectionId.value !== "overview");
 const gridStyle = computed(() => ({
   "--resource-expanded-width": `${DEFAULT_RESOURCE_WIDTH}px`,
   "--inspector-expanded-width": `${workbench.inspectorWidth}px`,
@@ -1022,10 +1023,12 @@ onMounted(() => {
         :class="{
           'is-resizing': resizingInspector,
           'is-no-inspector': !showElementInspector,
+          'is-no-resource': !showResourcePanel,
         }"
         :style="gridStyle"
       >
         <aside
+          v-if="showResourcePanel"
           class="resource-panel"
           :class="{ 'is-collapsed': !workbench.resourcePanelOpen }"
           :style="resourcePanelStyle"
@@ -1219,26 +1222,6 @@ onMounted(() => {
               <span v-if="sectionId === 'prototypes'" class="rail-mode-label"
                 >生命周期</span
               >
-              <v-tooltip
-                v-if="sectionId === 'overview'"
-                text="概览"
-                location="end"
-              >
-                <template #activator="{ props }">
-                  <v-btn
-                    v-bind="props"
-                    class="rail-nav-btn is-active"
-                    to="/workbench/overview"
-                    icon
-                    variant="text"
-                    size="small"
-                    aria-label="概览"
-                    aria-current="page"
-                  >
-                    <Home :size="18" aria-hidden="true" />
-                  </v-btn>
-                </template>
-              </v-tooltip>
               <v-tooltip
                 v-for="item in secondaryItems"
                 :key="item.id"
@@ -1541,6 +1524,12 @@ onMounted(() => {
 }
 .workbench-grid.is-no-inspector {
   grid-template-columns: auto minmax(480px, 1fr);
+}
+.workbench-grid.is-no-resource {
+  grid-template-columns: minmax(480px, 1fr) auto;
+}
+.workbench-grid.is-no-resource.is-no-inspector {
+  grid-template-columns: minmax(0, 1fr);
 }
 .workbench-grid.is-resizing {
   user-select: none;
@@ -2152,7 +2141,9 @@ onMounted(() => {
     padding: 0;
   }
   .workbench-grid,
-  .workbench-grid.is-no-inspector {
+  .workbench-grid.is-no-inspector,
+  .workbench-grid.is-no-resource,
+  .workbench-grid.is-no-resource.is-no-inspector {
     grid-template-columns: minmax(0, 1fr) !important;
   }
   .resource-panel {

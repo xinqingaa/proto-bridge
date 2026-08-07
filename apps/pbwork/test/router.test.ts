@@ -19,16 +19,16 @@ describe("PBWork routes", () => {
     expect(router.resolve("/workbench/prototypes/active").name).toBe(
       "prototypes-lifecycle",
     );
-    expect(router.resolve("/workbench/prototypes/ledger-planet").name).toBe(
+    expect(router.resolve("/workbench/prototypes/cold-chain-ops").name).toBe(
       "prototype-overview",
     );
     expect(
-      router.resolve("/workbench/prototypes/ledger-planet/screens/task-list")
+      router.resolve("/workbench/prototypes/cold-chain-ops/screens/exception-queue")
         .name,
     ).toBe("prototype-screen");
     expect(
       router.resolve(
-        "/prototype/ledger-planet/task-list?variant=default&theme=light",
+        "/prototype/cold-chain-ops/exception-queue?variant=default&theme=light",
       ).name,
     ).toBe("prototype-runtime");
   });

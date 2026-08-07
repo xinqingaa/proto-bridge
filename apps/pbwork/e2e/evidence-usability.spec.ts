@@ -13,11 +13,11 @@ async function startDeliver(page: import("@playwright/test").Page): Promise<void
   await page.getByTestId("composer-start-capture").click();
 }
 
-test("task-list delivers in one flow sheet and produces an Agent prompt", async ({
+test("exception-queue delivers in one flow sheet and produces an Agent prompt", async ({
   page,
 }) => {
   await page.goto(
-    "/workbench/prototypes/ledger-planet/screens/task-list?variant=default&theme=light",
+    "/workbench/prototypes/cold-chain-ops/screens/exception-queue?variant=default&theme=light",
   );
   const originalUrl = page.url();
   await expect(page.getByTestId("capture-current-screen")).toBeEnabled();
@@ -48,7 +48,7 @@ test("evidence viewer can reopen deliver flow for another handoff", async ({
   page,
 }, testInfo) => {
   await page.goto(
-    "/workbench/prototypes/ledger-planet/screens/task-list?variant=default&theme=light",
+    "/workbench/prototypes/cold-chain-ops/screens/exception-queue?variant=default&theme=light",
   );
   await page.getByTestId("capture-current-screen").click();
   await startDeliver(page);
