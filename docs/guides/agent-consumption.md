@@ -23,7 +23,7 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 1. 读取资源 `proto-bridge://guides/handoff-consumer`。
 2. 调用 `inspect_evidence_workspace`，校验 Workspace、projection contract version 和 capabilities。能力缺失时停止，不回退旧链路。
 3. 调用 `read_handoff_index`，在编辑前原样报告 `mandatoryRisks` 的全部风险，并固定 Screen 顺序、Case/Scenario 范围与 Screenshot digest 分组。
-4. 每个实现范围内的 Screen 调用一次 `read_screen_packet`。用 `canonicalBrief`、baseline Structure 与 state 理解主滚动边界、主 section、状态矩阵和固定业务数据；Evidence Region 用于定位与验收，不是目标侧组件边界、列表项边界或文件边界。
+4. 每个实现范围内的 Screen 调用一次 `read_screen_packet`。用 `canonicalBrief`、baseline Structure 与 state 理解主滚动边界、主 section、状态矩阵和固定业务数据；主滚动看 `canonicalBrief.primaryScroll` 与 `baseline.structure.scrollContainers`（packet 的 compact regions **不含** per-region `scrollOwner`）。Evidence Region 用于定位与验收，不是目标侧组件边界、列表项边界或文件边界。
 5. 每份不同 Screenshot 内容使用 digest group 的 `representativeBlobId` 调用 `read_evidence_screenshot`，确认 MCP ImageContent，并记录覆盖的全部 Case。相同 digest 不重复注入；metadata、base64 文本和相似 Variant 不能替代 Screenshot。
 6. 每个 Screen 在编辑前调用 `inspect_target_readiness`，记录 resolver coverage、component/token candidate/conflict/unresolved、五维 machine authority 和 blockers；没有 authority 的维度只能保持 `unverified`。用 `implementationInventory` 的 `regionId`/`caseId` 批量解析组件和 Token。`read_implementation_plan` / `read_implementation_tranche` 仅诊断或 Review 辅助，不是默认实施路径。
 7. 非 baseline 或包含状态/场景差异的 Case 调用 `read_case_delta`。Delta 使用语义 ID patch；需要来源时再定向调用 `read_evidence_detail`。

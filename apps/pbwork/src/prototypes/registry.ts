@@ -146,40 +146,6 @@ export const prototypeScreens = [
             pbKey: "ex-017",
           },
         ],
-        structureAssertions: [
-          ...[
-            "summary",
-            "search",
-            "filters",
-            "list",
-          ].map((slot) => ({
-            kind: "scroll-owner" as const,
-            fragment: {
-              screenId: "cold-chain-ops.exception-queue",
-              pbId: `cold-chain-ops.exception-queue.${slot}`,
-            },
-            owner: {
-              kind: "fragment" as const,
-              fragment: {
-                screenId: "cold-chain-ops.exception-queue",
-                pbId: "cold-chain-ops.exception-queue.scroll-list",
-              },
-            },
-          })),
-          {
-            kind: "order",
-            parent: {
-              screenId: "cold-chain-ops.exception-queue",
-              pbId: "cold-chain-ops.exception-queue.scroll-list",
-            },
-            children: ["summary", "search", "filters", "list"].map(
-              (slot) => ({
-                screenId: "cold-chain-ops.exception-queue",
-                pbId: `cold-chain-ops.exception-queue.${slot}`,
-              }),
-            ),
-          },
-        ],
       },
       {
         id: "critical-only",
@@ -229,35 +195,6 @@ export const prototypeScreens = [
           {
             screenId: "cold-chain-ops.exception-queue",
             pbId: "cold-chain-ops.exception-queue.empty",
-          },
-        ],
-        structureAssertions: [
-          ...["summary", "search", "filters", "empty"].map((slot) => ({
-            kind: "scroll-owner" as const,
-            fragment: {
-              screenId: "cold-chain-ops.exception-queue",
-              pbId: `cold-chain-ops.exception-queue.${slot}`,
-            },
-            owner: {
-              kind: "fragment" as const,
-              fragment: {
-                screenId: "cold-chain-ops.exception-queue",
-                pbId: "cold-chain-ops.exception-queue.scroll-list",
-              },
-            },
-          })),
-          {
-            kind: "order",
-            parent: {
-              screenId: "cold-chain-ops.exception-queue",
-              pbId: "cold-chain-ops.exception-queue.scroll-list",
-            },
-            children: ["summary", "search", "filters", "empty"].map(
-              (slot) => ({
-                screenId: "cold-chain-ops.exception-queue",
-                pbId: `cold-chain-ops.exception-queue.${slot}`,
-              }),
-            ),
           },
         ],
       },

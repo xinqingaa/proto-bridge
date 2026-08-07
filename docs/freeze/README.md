@@ -11,7 +11,7 @@
 | 条目 | 状态 | 说明 |
 | --- | --- | --- |
 | [MCP 表面清理](./2026-08-06-mcp-surface.md) | 待决 | tools 兼容面与 Prompt 是否拆分 |
-| [结构断言 vs 观测拓扑](./2026-08-06-structure-assertions.md) | 待复查 | 冷链 scroll-owner 断言冗余；观测已采到 |
+| [结构断言 vs 观测拓扑](./2026-08-06-structure-assertions.md) | 已落地 | 删冷链冗余断言；文档默认不写；e2e 钉观测 |
 | [PBWork 产品重置](./2026-08-06-pbwork-product-reset.md) | 待决 | DS 精修、原型收敛、采集交互重做 |
 
 后续条目按 `YYYY-MM-DD-主题.md` 追加到此表。

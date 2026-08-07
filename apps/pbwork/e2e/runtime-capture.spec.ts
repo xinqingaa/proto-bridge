@@ -157,6 +157,25 @@ test("V2 Runtime protocol captures default, stable repeated rows, Scenario Check
   expect(
     rows.map((node: { fragment: { pbKey: string } }) => node.fragment.pbKey),
   ).toEqual(["t1", "t2", "t3"]);
+  const scrollListOwner = {
+    kind: "fragment",
+    fragment: {
+      screenId: "ledger-planet.task-list",
+      pbId: "ledger-planet.task-list.scroll-list",
+    },
+  };
+  for (const pbId of [
+    "ledger-planet.task-list.filters",
+    "ledger-planet.task-list.list",
+  ]) {
+    const node = snapshot.payload.nodes.find(
+      (candidate: { fragment: { pbId: string } }) =>
+        candidate.fragment.pbId === pbId,
+    );
+    expect(node, pbId).toBeTruthy();
+    expect(node.scrollOwner).toEqual(scrollListOwner);
+    expect(node.scrollOwner.fragment.pbId).not.toMatch(/^ds\./);
+  }
   const repeatedSnapshot = await request("e2e-snapshot-repeat", {
     kind: "semantic-snapshot",
     fragments: [],
@@ -385,6 +404,18 @@ test("cold-chain-ops satisfies every authored Variant and required Scenario boun
   expect(described.ok, JSON.stringify(described)).toBe(true);
   expect(described.payload.manifest.authoringDiagnostics).toEqual([]);
 
+  const exceptionQueue = described.payload.manifest.screens.find(
+    (screen: { screenId: string }) =>
+      screen.screenId === "cold-chain-ops.exception-queue",
+  );
+  expect(exceptionQueue).toBeTruthy();
+  for (const variant of exceptionQueue.variants) {
+    expect(
+      variant.structureAssertions ?? [],
+      `${variant.variantId} must not author scroll-owner mirrors`,
+    ).toEqual([]);
+  }
+
   const screens = described.payload.manifest.screens.filter(
     (screen: { prototypeId: string }) =>
       screen.prototypeId === "cold-chain-ops",
@@ -446,6 +477,43 @@ test("cold-chain-ops satisfies every authored Variant and required Scenario boun
           }) => node.visible && node.bbox.width > 0 && node.bbox.height > 0,
         ),
       ).toBe(true);
+
+      if (
+        screen.screenId === "cold-chain-ops.exception-queue" &&
+        variant.variantId === "default"
+      ) {
+        const scrollListOwner = {
+          kind: "fragment",
+          fragment: {
+            screenId: "cold-chain-ops.exception-queue",
+            pbId: "cold-chain-ops.exception-queue.scroll-list",
+          },
+        };
+        for (const slot of ["summary", "search", "filters", "list"]) {
+          const pbId = `cold-chain-ops.exception-queue.${slot}`;
+          const node = snapshot.payload.nodes.find(
+            (candidate: { fragment: { pbId: string } }) =>
+              candidate.fragment.pbId === pbId,
+          );
+          expect(node, pbId).toBeTruthy();
+          expect(node.scrollOwner).toEqual(scrollListOwner);
+          expect(node.scrollOwner.fragment.pbId).not.toMatch(/^ds\./);
+        }
+        const topology = await request(`cold-chain-topology-${suffix}`, {
+          kind: "semantic-snapshot",
+          fragments: [
+            {
+              screenId: "cold-chain-ops.exception-queue",
+              pbId: "cold-chain-ops.exception-queue.scroll-list",
+            },
+          ],
+        });
+        expect(topology.ok, JSON.stringify(topology)).toBe(true);
+        expect(topology.payload.nodes[0]?.fragment.pbId).toBe(
+          "cold-chain-ops.exception-queue.scroll-list",
+        );
+        expect(topology.payload.nodes[0]?.role).toBe("scroll-list");
+      }
     }
   }
 
