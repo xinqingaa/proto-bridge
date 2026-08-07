@@ -1,10 +1,11 @@
 #!/usr/bin/env node
+/**
+ * Re-export surface for MCP server entry.
+ * Prefer public @proto-bridge/core/target facades; Flutter-specific query
+ * helpers remain available via the flutter-app subpath for compatibility.
+ */
 import { realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import {
-  findFlutterTargetExamples,
-  getFlutterTargetConventions,
-} from '@proto-bridge/core/target/flutter-app/query';
 import {
   findTargetExamples,
   readTargetConventions,
@@ -15,12 +16,7 @@ import { startMcpServer } from './server/stdio-json-rpc.js';
 export {
   findTargetExamples,
   readTargetConventions,
-  findFlutterTargetExamples,
-  getFlutterTargetConventions,
 };
-export type {
-  FindFlutterTargetExamplesInput,
-} from '@proto-bridge/core/target/flutter-app/query';
 export type {
   FindTargetExamplesInput,
   ReadTargetConventionsInput,

@@ -1,7 +1,7 @@
 import {
   analyzeTargetReadiness,
   detectTargetAdapter,
-  inspectFlutterTargetAuthority,
+  inspectTargetAuthority,
   resolveTargetComponents,
   resolveTargetTokens,
 } from '@proto-bridge/core/target';
@@ -40,7 +40,7 @@ export async function inspectTargetReadinessTool(
     detectTargetAdapter(targetRoot),
     resolveTargetComponents({ ...options, ids: componentIds }),
     resolveTargetTokens({ ...options, ids: tokenIds }),
-    inspectFlutterTargetAuthority(options),
+    inspectTargetAuthority(options),
   ]);
   const revisionKeys = [components.targetRevisionKey, tokens.targetRevisionKey, authority.targetRevisionKey];
   if (revisionKeys.some((item) =>

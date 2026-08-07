@@ -68,6 +68,11 @@ const structureSchema = z.object({
 export async function verifyFlutterTargetClaims(
   input: VerifyTargetClaimsInput,
 ): Promise<ReviewVerifierResult[]> {
+  for (const claim of input.claims) {
+    if (claim.dimension === 'components' || claim.dimension === 'tokens') {
+      assertFlutterOccurrenceLocator(claim.occurrence);
+    }
+  }
   const obligationById = new Map(input.obligations.map((item) => [item.obligationId, item]));
   const componentClaims = input.claims.filter((item): item is Extract<TargetImplementationClaim, { dimension: 'components' }> => item.dimension === 'components');
   const tokenClaims = input.claims.filter((item): item is Extract<TargetImplementationClaim, { dimension: 'tokens' }> => item.dimension === 'tokens');
@@ -488,11 +493,21 @@ async function verifyTokenOccurrence(
   return result(claim, 'matched', `Resolved token ${claim.accessor} is used in ${claim.ownerSymbol}.${claim.targetSlot} at the claimed Dart occurrence.`);
 }
 
+function assertFlutterOccurrenceLocator(locator: TargetOccurrenceLocator): void {
+  const normalized = locator.path.split(path.sep).join('/');
+  if (!normalized.startsWith('lib/') || !normalized.endsWith('.dart')) {
+    throw new Error('Flutter Target occurrence must be a positive location inside lib/**/*.dart.');
+  }
+}
+
 async function readOccurrenceSource(
   targetRoot: string,
   locator: TargetOccurrenceLocator,
 ): Promise<{ text: string; masked: string } | { error: string }> {
   const relative = locator.path.split(path.sep).join('/');
+  if (!relative.startsWith('lib/') || !relative.endsWith('.dart')) {
+    return { error: 'Flutter Target occurrence must be inside lib/**/*.dart.' };
+  }
   const resolved = path.resolve(targetRoot, relative);
   if (!resolved.startsWith(`${path.resolve(targetRoot)}${path.sep}`)) return { error: 'Target occurrence escapes targetRoot.' };
   try {

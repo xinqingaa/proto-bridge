@@ -85,7 +85,7 @@ Screenshot/Scenario coverage 与语义完成是两类独立事实。即使所有
 
 Target 结果是实现上下文，不是原型事实。真实目标文档/公开代码优先于 adapter fallback；机器 Contract 与政策冲突时必须保留 conflict。它不能写回 Evidence，也不能覆盖 unknown 或 conflict。
 
-Evidence Contract 可以服务任意技术栈；当前表中的 Target tools 只实现 Flutter。非 Flutter 目标在对应 Adapter 落地前仍可消费固定 Evidence，但不能宣称已完成 PB Target query/validation 闭环。
+Evidence Contract 可以服务任意技术栈；当前 Target tools 的公共门面下只实现 Flutter adapter（`packages/core/src/target/flutter-app`）。非 Flutter 目标在对应 Adapter 落地前仍可消费固定 Evidence，但不能宣称已完成 PB Target query/validation 闭环。component/token occurrence 的文件形态由当前 adapter 解释（Flutter：`lib/**/*.dart`）。
 
 Component / Token 落点以 `read_screen_packet` 的 `implementationInventory` 为准，再调用 `inspect_target_readiness` / `resolve_target_*`。Catalog revision 仍由 Producer 固定在 Snapshot 上，Consumer 不得读取当前源码目录补造旧 Snapshot 的目录事实。
 

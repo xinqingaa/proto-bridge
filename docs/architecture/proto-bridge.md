@@ -102,16 +102,20 @@ Review 的验收分母来自 Core 对 Acceptance Contract 的确定性编译：�
 
 ## Target boundary
 
-`packages/core/src/target/flutter-app` 提供：
+Target 分为**公共门面**与**栈适配器**：
 
-- Flutter 工程类型识别、文档发现、Dart inventory、显式 mapping 解析和代码校验；
-- 开放 component/token ID 的批量解析，输出 `resolved/candidate/stale/conflict/unresolved/unsupported`；
+- [`packages/core/src/target/`](../../packages/core/src/target/)：adapter 检测与分发、resolution/readiness 类型与聚合、implementation claim 信封、栈无关 occurrence 路径安全。MCP 与 Consumer 只依赖该门面。
+- [`packages/core/src/target/flutter-app/`](../../packages/core/src/target/flutter-app/)：当前唯一实现。提供 Flutter 工程识别、文档发现、Dart inventory、显式 mapping 解析与代码校验、`lib/**/*.dart` occurrence / named-argument slot 验算、Structure/State/Scenario inspector 与 Case render/replay。
+
+公共门面提供：
+
+- 开放 component/token ID 的批量解析（分发到适用 adapter），输出 `resolved/candidate/stale/conflict/unresolved/unsupported`；
 - 编辑前 readiness：汇总 resolver coverage、五维 machine authority、Case/Scenario 声明与 blockers；
 - 既有实现示例查找及 Control/candidate output 排除；
-- 目标变更路径、实际采用 mapping 和原生验证结果检查；
-- target-independent implementation claims；Flutter adapter 对 Structure 运行目标 inspector 并比较 IR，对 component/token 校验精确 Dart occurrence、owner 和 named-argument slot，对 state/interaction 比较 typed runtime proof。
+- 目标变更路径与实际采用 mapping 的只读验证；
+- target-independent implementation claims 的分发；Flutter adapter 对 Structure 运行目标 inspector 并比较 IR，对 component/token 校验精确 Dart occurrence、owner 和 named-argument slot，对 state/interaction 比较 typed runtime proof。
 
-它不拥有任何具体产品的组件/Token 映射。真实目标工程的 `AGENTS.md`、`docs/proto-bridge.md`、`docs/components.md`、`docs/theme.md` 和公开代码拥有当前约束；可选 `docs/proto-bridge.target.json` 只是这些约束的严格机器投影。政策与机器 Contract 冲突返回 `conflict`，显式声明与代码不符返回 `stale`，代码启发式最多返回 `candidate`。缺少 authority 的维度只能保持 `unverified`。Target root 来自 Agent 当前任务或单次 Tool 参数；目标仓库不需要 ProtoBridge Workspace 配置，Target 结果不写入 Bundle。
+适配器不拥有任何具体产品的组件/Token 映射。真实目标工程的 `AGENTS.md`、`docs/proto-bridge.md`、`docs/components.md`、`docs/theme.md` 和公开代码拥有当前约束；可选 `docs/proto-bridge.target.json` 只是这些约束的严格机器投影。政策与机器 Contract 冲突返回 `conflict`，显式声明与代码不符返回 `stale`，代码启发式最多返回 `candidate`。缺少 authority 的维度只能保持 `unverified`。Target root 来自 Agent 当前任务或单次 Tool 参数；目标仓库不需要 ProtoBridge Workspace 配置，Target 结果不写入 Bundle。无适用 adapter 时仍可消费固定 Evidence，但不能宣称已完成 Target query/validation 闭环。
 
 Flutter Review machine contract 可在 `review.launcher.structureCommand` 声明确定性 Structure inspector。命令接收 `{caseId}`、`{screenId}`、`{deviceId}` 插值并向 stdout 输出与当前 Consumer projection 兼容的完整 `StructureIR` JSON；Case 可用 `structureArguments` 添加参数。命令缺失、失败、Case 不一致、Schema 不完整或 Source/Target Region 含 unknown 时，verifier 返回 `unverified`，不根据 Widget 类型猜 parent 或 scroll owner。
 

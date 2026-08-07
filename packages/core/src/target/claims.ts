@@ -120,25 +120,25 @@ function assertClaims(
     if (ids.has(claim.obligationId)) throw new Error(`Duplicate Target claim ${claim.obligationId}.`);
     ids.add(claim.obligationId);
     if (claim.dimension === 'components' || claim.dimension === 'tokens') {
-      validateLocator(claim.occurrence);
+      validateOccurrencePathSafety(claim.occurrence);
     } else if (!obligation.caseIds.includes(claim.caseId)) {
       throw new Error(`Target ${claim.dimension} claim ${claim.obligationId} is not applicable to Case ${claim.caseId}.`);
     }
   }
 }
 
-function validateLocator(locator: TargetOccurrenceLocator): void {
+/** Stack-agnostic path safety only. Adapter-specific path shapes (for example Flutter lib Dart files) are enforced by the active Target adapter. */
+function validateOccurrencePathSafety(locator: TargetOccurrenceLocator): void {
   const normalized = locator.path.split(path.sep).join('/');
   if (
     path.isAbsolute(locator.path)
     || normalized.startsWith('../')
     || normalized.includes('/../')
-    || !normalized.startsWith('lib/')
-    || !normalized.endsWith('.dart')
+    || !normalized
     || !Number.isInteger(locator.line)
     || locator.line < 1
     || (locator.column !== undefined && (!Number.isInteger(locator.column) || locator.column < 1))
-  ) throw new Error('Target occurrence must be a positive location inside lib/**/*.dart.');
+  ) throw new Error('Target occurrence must be a relative path with a positive line (and optional column).');
 }
 
 async function targetIdentity(targetRoot: string): Promise<{ head: string; contentDigest: string }> {

@@ -47,8 +47,10 @@ packages/core/src/v2/
   store/              immutable local persistence
   resolver/           reference reachability and activation
 
+packages/core/src/target/
+  public facades (query, validation, claims, readiness, authority, review)
 packages/core/src/target/flutter-app/
-  query and validation, isolated from Evidence capture
+  Flutter adapter implementation, isolated from Evidence capture
 
 packages/local-service/
 packages/cli/

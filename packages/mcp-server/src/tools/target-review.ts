@@ -19,12 +19,10 @@ import {
   type ReviewSessionSeed,
 } from '@proto-bridge/core/review';
 import {
-  comparePngArtifacts,
+  compareTargetArtifacts,
   FLUTTER_COMPARATOR_VERSION,
-  renderFlutterTargetCase,
-  replayFlutterTargetScenario,
-} from '@proto-bridge/core/target/flutter-app/review';
-import {
+  renderTargetCase,
+  replayTargetScenario,
   verifyTargetClaims,
   type TargetImplementationClaim,
 } from '@proto-bridge/core/target';
@@ -119,7 +117,7 @@ export async function renderTargetCaseTool(context: ToolContext, args: JsonObjec
   const caseId = required(args, 'caseId');
   const sourceDigest = required(args, 'sourceDigest');
   const attemptId = readString(args, 'attemptId') ?? `attempt-${randomUUID()}`;
-  const receipt = await renderFlutterTargetCase({ targetRoot: session.targetRoot, caseId, attemptId, expectedTargetHead: session.targetBaselineCommit });
+  const receipt = await renderTargetCase({ targetRoot: session.targetRoot, caseId, attemptId, expectedTargetHead: session.targetBaselineCommit });
   return projectReviewSession(await context.reviews.call(`/reviews/${encodeURIComponent(reviewRunId)}/render`, {
     method: 'POST',
     body: {
@@ -135,7 +133,7 @@ export async function replayTargetScenarioTool(context: ToolContext, args: JsonO
   const reviewRunId = required(args, 'reviewRunId');
   const session = await readTargetReviewSession(context, reviewRunId);
   const caseId = required(args, 'caseId');
-  const receipt = await replayFlutterTargetScenario({ targetRoot: session.targetRoot, caseId, expectedTargetHead: session.targetBaselineCommit });
+  const receipt = await replayTargetScenario({ targetRoot: session.targetRoot, caseId, expectedTargetHead: session.targetBaselineCommit });
   return projectReviewSession(await context.reviews.call(`/reviews/${encodeURIComponent(reviewRunId)}/replay`, {
     method: 'POST',
     body: { screenId: receipt.screenId, caseId, scenarioId: receipt.scenarioId, receiptDigest: receipt.receiptDigest, targetRevision: session.targetRevision, receiptTool: 'flutter-review-scenario-v1', transition: receipt.transition },
@@ -150,7 +148,7 @@ export async function compareTargetArtifactsTool(context: ToolContext, args: Jso
   const attemptId = required(args, 'attemptId');
   const attempt = session.attempts.find((item) => item.attemptId === attemptId);
   if (!attempt) throw new V2ContractError('unknown-reference', `Unknown Review attempt ${attemptId}.`);
-  const compared = comparePngArtifacts({
+  const compared = compareTargetArtifacts({
     source: await context.reviews.readArtifact(reviewRunId, sourceDigest),
     target: await context.reviews.readArtifact(reviewRunId, targetDigest),
     owner: { screenId: attempt.screenId, caseId: attempt.caseId, attemptId },

@@ -17,7 +17,8 @@
 | Selection/Capture/Handoff | `packages/core/src/v2/capture` |
 | Store/引用 | `packages/core/src/v2/store`、`resolver` |
 | Runtime/Service Protocol | `packages/core/src/v2/runtime-contract`、`service-contract` |
-| Target query/validation | `packages/core/src/target/flutter-app` |
+| Target 公共门面 | `packages/core/src/target`（query/validation/claims/readiness/authority/review） |
+| Target Flutter adapter | `packages/core/src/target/flutter-app` |
 | Local Service | `packages/local-service` |
 | CLI | `packages/cli` |
 | MCP | `packages/mcp-server` |

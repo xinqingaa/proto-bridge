@@ -57,7 +57,7 @@ pnpm pb:mcp -- --print-config
 - `find_target_examples`
 - `validate_target_changes`
 
-这些工具通过 Target adapter 访问目标工程；当前内置 Flutter adapter，其他目标会返回 unsupported。真实目标文档与公开代码优先，可选机器 Contract 不能覆盖政策；显式 mapping 通过当前代码验证才返回 resolved，启发式结果最多为 candidate。`inspect_target_readiness` 在编辑前汇总 resolver coverage、authority、Case/Scenario 声明和 blockers，不从目标组件类名或测试退出码推断语义。`find_target_examples` 支持排除 Control/candidate output，`validate_target_changes` 可复核 Agent 实际采用的 resolved mapping。Target Tools 只读目标仓库，不读取或写入 Evidence。
+这些工具通过公共 Target 门面访问目标工程；当前内置唯一实现为 Flutter adapter，其他目标会返回 unsupported。真实目标文档与公开代码优先，可选机器 Contract 不能覆盖政策；显式 mapping 通过当前代码验证才返回 resolved，启发式结果最多为 candidate。`inspect_target_readiness` 在编辑前汇总 resolver coverage、authority、Case/Scenario 声明和 blockers，不从目标组件类名或测试退出码推断语义。`find_target_examples` 支持排除 Control/candidate output，`validate_target_changes` 可复核 Agent 实际采用的 resolved mapping。Target Tools 只读目标仓库，不读取或写入 Evidence。
 
 ## Authoritative Review Tools
 
@@ -72,7 +72,7 @@ pnpm pb:mcp -- --print-config
 
 Review 启动时把固定 Handoff 的五维 Acceptance Requirements 编译成稳定、跨 Case 去重的 Reconstruction Obligations，Local Service 会独立重算以阻止客户端缩小验收范围。Screenshot、render、compare 和 Scenario receipts 只代表 artifact coverage；每项 obligation 还必须显式 assessment。未核验、`deviation`、`unverified`、阻断 finding 或缺少 receipt 都会阻止人工完成；Agent 不能自行声明 `not-applicable`。
 
-`verify_target_claims` 不接受 Agent 自填 expected。它从固定 Review obligation 读取 Source expected：Structure 运行 Target 自有 deterministic `launcher.structureCommand` 并比较同构 IR；component/token 重新解析 mapping 并验证精确 Dart occurrence/slot；state 运行 `launcher.stateCommand` 比较 shell、visible Regions、keyed collections 和值；interaction 解析 `scenarioCommand` 的 pre/action/post/visible-result transition。Receipt 绑定 `HEAD + tracked diff + untracked bytes` 的 Target content digest，同一 Review 不能混用不同内容状态。错误 occurrence/slot、默认值、动作对象或 post-state 均返回 `deviation`；缺少 inspector、incomplete/unknown JSON 或 unresolved mapping 返回 `unverified`。State/interaction result 会自动成为 blocking assessment。
+`verify_target_claims` 不接受 Agent 自填 expected。它从固定 Review obligation 读取 Source expected：Structure 运行 Target 自有 deterministic `launcher.structureCommand` 并比较同构 IR；component/token 由当前 adapter 重新解析 mapping 并验证精确 occurrence/slot（Flutter：Dart `lib/**/*.dart`）；state 运行 `launcher.stateCommand` 比较 shell、visible Regions、keyed collections 和值；interaction 解析 `scenarioCommand` 的 pre/action/post/visible-result transition。Receipt 绑定 `HEAD + tracked diff + untracked bytes` 的 Target content digest，同一 Review 不能混用不同内容状态。错误 occurrence/slot、默认值、动作对象或 post-state 均返回 `deviation`；缺少 inspector、incomplete/unknown JSON 或 unresolved mapping 返回 `unverified`。State/interaction result 会自动成为 blocking assessment。
 
 Review tools 只返回 Session 摘要、attempt、finding、obligation 和 verifier receipt 计数，不重复完整验收分母。`read_review_obligations` 按 Screen、维度和 `unassessed/matched/deviation/unverified/not-applicable` 状态分页。新 Review 的 `matched` assessment 必须引用同一 obligation 的成功 verifier receipt；旧 event log 可恢复，但没有 verification contract 时不能完成。
 
