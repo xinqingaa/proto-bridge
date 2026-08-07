@@ -10,10 +10,6 @@ import {
 } from './resolve-target.js';
 import {
   inspectEvidenceWorkspaceTool,
-  listEvidenceHistoryTool,
-  listEvidenceBundlesTool,
-  readAgentHandoffTool,
-  readAcceptanceContractTool,
   readCaseDeltaTool,
   readEvidenceDetailTool,
   readHandoffIndexTool,
@@ -22,16 +18,7 @@ import {
   readImplementationPlanTool,
   readImplementationTrancheTool,
   summarizeReconstructionReviewTool,
-  readEvidenceBlobTool,
-  readEvidenceCatalogTool,
-  readEvidenceCaseTool,
-  readEvidenceFragmentTool,
-  readEvidenceIssueTool,
-  readEvidenceRevisionTool,
-  readEvidenceRunTool,
   readEvidenceScreenshotTool,
-  readEvidenceSnapshotTool,
-  readEvidenceStalenessTool,
 } from './read-evidence.js';
 import {
   compareTargetArtifactsTool,
@@ -59,9 +46,8 @@ const readOnly = {
   idempotentHint: true,
   openWorldHint: false,
 };
-const bundle = { bundleId: { type: 'string' } };
 const snapshot = {
-  ...bundle,
+  bundleId: { type: 'string' },
   snapshotId: { type: 'string' },
 };
 
@@ -97,17 +83,6 @@ function reviewTool(name: string, title: string, description: string, properties
 
 const toolDefinitions: JsonValue[] = [
   tool('inspect_evidence_workspace', '检查 Evidence Workspace', '返回 MCP 当前绑定的逻辑 Workspace。', {}),
-  tool('list_evidence_bundles', '列出 Evidence Bundle', '列出 Bundle 与 active Snapshot；后续读取仍必须固定 snapshotId。', {}),
-  tool('list_evidence_history', '列出 Bundle 历史', '列出固定 Snapshot、Run、Catalog、Issue、Staleness 与 Handoff。', bundle, ['bundleId']),
-  tool('read_evidence_snapshot', '读取固定 Snapshot', '按 bundleId + snapshotId 读取固定证据，不回退到 latest。', snapshot, ['bundleId', 'snapshotId']),
-  tool('read_evidence_case', '读取固定 Case', '读取固定 Snapshot 中的 Case、Facts、provenance 与截图引用。', { ...snapshot, caseId: { type: 'string' } }, ['bundleId', 'snapshotId', 'caseId']),
-  tool('read_evidence_run', '读取固定 Run', '读取不可变 Run、Selection、Attempt 与 Coverage。', { ...bundle, runId: { type: 'string' } }, ['bundleId', 'runId']),
-  tool('read_evidence_revision', '读取固定 revision', '只读取指定 Snapshot 可达的 Evidence revision。', { ...snapshot, revisionId: { type: 'string' } }, ['bundleId', 'snapshotId', 'revisionId']),
-  tool('read_evidence_fragment', '读取固定 Fragment', '按稳定 pbId/pbKey 读取 Fragment Facts。', { ...snapshot, revisionId: { type: 'string' }, pbId: { type: 'string' }, pbKey: { type: 'string' } }, ['bundleId', 'snapshotId', 'revisionId', 'pbId']),
-  tool('read_evidence_catalog', '读取 Catalog revision', '读取固定 Snapshot 可达的 Catalog revision。', { ...snapshot, catalogRevisionId: { type: 'string' } }, ['bundleId', 'snapshotId', 'catalogRevisionId']),
-  tool('read_evidence_issue', '读取 Evidence Issue', '读取固定 Issue 与 next action。', { ...bundle, issueId: { type: 'string' } }, ['bundleId', 'issueId']),
-  tool('read_evidence_staleness', '读取 Staleness Report', '读取同时匹配 Bundle 与 Snapshot 的固定报告。', { ...snapshot, reportId: { type: 'string' } }, ['bundleId', 'snapshotId', 'reportId']),
-  tool('read_agent_handoff', '读取 Agent Handoff', '读取固定 Workspace/Snapshot/revision refs 与全部 risks。', { handoffId: { type: 'string' } }, ['handoffId']),
   tool('read_handoff_index', '读取 Handoff 索引', '默认消费入口：返回固定引用、全部风险、Screen 顺序、Case/Scenario 计数和 Screenshot digest 分组，不展开完整 Facts 或 Acceptance dimensions。', { handoffId: { type: 'string' } }, ['handoffId']),
   tool('read_screen_packet', '读取 Screen 包', '按固定 Handoff 读取单个 Screen 的 Case/Scenario 地图、紧凑 baseline、canonicalBrief（主滚动/状态矩阵/业务数据）、截图分组，以及按组件/Token、regionId、role、slot 和 caseId 聚合的实施 inventory。', { handoffId: { type: 'string' }, screenId: { type: 'string' } }, ['handoffId', 'screenId']),
   tool('read_implementation_plan', '读取实施计划索引（诊断）', '诊断/Review 辅助：按 Screen 返回 Region tranche、父依赖、caseId 和五维 obligation 计数。不是默认实施路径，不得按 tranche 顺序编码。', { handoffId: { type: 'string' }, screenId: { type: 'string' } }, ['handoffId', 'screenId']),
@@ -131,7 +106,6 @@ const toolDefinitions: JsonValue[] = [
     pageSize: { type: 'integer', minimum: 1, maximum: 100 },
     cursor: { type: 'string' },
   }, ['handoffId', 'screenId']),
-  tool('read_acceptance_contract', '读取重建 Review 合同', '读取固定 Handoff 派生的选中 Case、Screenshot 与结构、组件、Token、状态、交互证据指引；不包含分数或自动通过判定。', { handoffId: { type: 'string' } }, ['handoffId']),
   tool('summarize_reconstruction_review', '汇总重建 Review', '汇总选中 Case、Screenshot、Scenario、已知偏差和未验证事项；不计算还原分数，也不把组件或 Token 映射当作配额。', {
     handoffId: { type: 'string' },
     addressedCaseIds: stringArraySchema,
@@ -152,7 +126,6 @@ const toolDefinitions: JsonValue[] = [
       },
     },
   }, ['handoffId', 'addressedCaseIds', 'viewedScreenshotBlobIds', 'replayedScenarioCaseIds', 'observations']),
-  tool('read_evidence_blob', '读取 Evidence Blob', '读取固定 Snapshot 或 Catalog 可达的 Blob。', { ...snapshot, blobId: { type: 'string' }, catalogRevisionId: { type: 'string' }, allowDebug: { type: 'boolean' } }, ['bundleId', 'snapshotId', 'blobId']),
   tool('read_evidence_screenshot', '查看 Evidence Screenshot', '把固定 Snapshot 中的 Screenshot 作为真正的 MCP 图片返回；传 reviewRunId 时仅在图片读取成功后写入 authoritative viewed receipt。', { ...snapshot, blobId: { type: 'string' }, reviewRunId: { type: 'string' } }, ['bundleId', 'snapshotId', 'blobId']),
   tool('read_target_conventions', '读取目标工程规范', '通过适用的 Target adapter 独立扫描目标工程；结果不进入 Evidence。', { targetRoot: { type: 'string' }, module: { type: 'string' }, roles: stringArraySchema, symbols: stringArraySchema }),
   tool('find_target_examples', '查找目标工程示例', '通过适用的 Target adapter 查找目标工程既有模式；结果不进入 Evidence。可排除 Control/candidate output，避免实验实现污染示例。', { targetRoot: { type: 'string' }, module: { type: 'string' }, pattern: { type: 'string' }, roles: stringArraySchema, symbols: stringArraySchema, screenId: { type: 'string' }, limit: { type: 'number' }, gitBase: { type: 'string' }, excludePaths: stringArraySchema, candidateOutputRoot: { type: 'string' } }),
@@ -220,17 +193,6 @@ export async function callTool(
 
   const handlers: Record<string, () => Promise<unknown>> = {
     inspect_evidence_workspace: () => inspectEvidenceWorkspaceTool(context),
-    list_evidence_bundles: () => listEvidenceBundlesTool(context),
-    list_evidence_history: () => listEvidenceHistoryTool(context, args),
-    read_evidence_snapshot: () => readEvidenceSnapshotTool(context, args),
-    read_evidence_case: () => readEvidenceCaseTool(context, args),
-    read_evidence_run: () => readEvidenceRunTool(context, args),
-    read_evidence_revision: () => readEvidenceRevisionTool(context, args),
-    read_evidence_fragment: () => readEvidenceFragmentTool(context, args),
-    read_evidence_catalog: () => readEvidenceCatalogTool(context, args),
-    read_evidence_issue: () => readEvidenceIssueTool(context, args),
-    read_evidence_staleness: () => readEvidenceStalenessTool(context, args),
-    read_agent_handoff: () => readAgentHandoffTool(context, args),
     read_handoff_index: () => readHandoffIndexTool(context, args),
     read_screen_packet: () => readScreenPacketTool(context, args),
     read_implementation_plan: () => readImplementationPlanTool(context, args),
@@ -238,10 +200,8 @@ export async function callTool(
     read_case_delta: () => readCaseDeltaTool(context, args),
     read_evidence_detail: () => readEvidenceDetailTool(context, args),
     read_reconstruction_obligations: () => readReconstructionObligationsTool(context, args),
-    read_acceptance_contract: () => readAcceptanceContractTool(context, args),
     summarize_reconstruction_review: () =>
       summarizeReconstructionReviewTool(context, args),
-    read_evidence_blob: () => readEvidenceBlobTool(context, args),
     read_target_conventions: () => getTargetConventionsTool(args),
     find_target_examples: () => findTargetExamplesTool(args),
     resolve_target_components: () => resolveTargetComponentsTool(args),

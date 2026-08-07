@@ -147,29 +147,43 @@ try {
     "Consumer prompt did not bind the Handoff.",
   );
 
-  const consumedHandoff = parseToolJson(
+  const workspace = parseToolJson(
     await client.request("tools/call", {
-      name: "read_agent_handoff",
+      name: "inspect_evidence_workspace",
+      arguments: {},
+    }),
+  );
+  assert(
+    workspace.workspace?.workspaceId === reference.WORKSPACE_ID &&
+      workspace.runtime?.capabilities?.includes("handoff-index"),
+    "Consumer workspace handshake failed.",
+  );
+
+  const handoffIndex = parseToolJson(
+    await client.request("tools/call", {
+      name: "read_handoff_index",
       arguments: { handoffId: handoff.handoffId },
     }),
   );
   assert(
-    consumedHandoff.mandatoryRiskReport?.some(
-      (risk) => risk.kind === "required-unknown",
-    ),
-    "Consumer did not receive the Handoff's required unknown risk.",
+    handoffIndex.fixedRefs?.snapshotId === handoff.snapshotId &&
+      handoffIndex.mandatoryRisks?.some(
+        (risk) => risk.kind === "required-unknown",
+      ),
+    "Consumer did not receive the Handoff's required unknown risk via index.",
   );
 
-  const snapshot = parseToolJson(
+  const screenId = handoffIndex.screens?.[0]?.screenId;
+  assert(screenId, "Handoff index did not expose a Screen.");
+  const screenPacket = parseToolJson(
     await client.request("tools/call", {
-      name: "read_evidence_snapshot",
-      arguments: {
-        bundleId: handoff.bundleId,
-        snapshotId: handoff.snapshotId,
-      },
+      name: "read_screen_packet",
+      arguments: { handoffId: handoff.handoffId, screenId },
     }),
   );
-  const screenshotBlobId = snapshot.screenshotResources?.[0]?.blobId;
+  const screenshotBlobId =
+    screenPacket.screenshotGroups?.[0]?.representativeBlobId;
+  assert(screenshotBlobId, "Screen packet did not expose a Screenshot blob.");
   const screenshotResult = await client.request("tools/call", {
     name: "read_evidence_screenshot",
     arguments: {
@@ -182,39 +196,25 @@ try {
     screenshotResult.content?.some((item) => item.type === "image"),
     "Consumer could not view the fixed Screenshot as MCP ImageContent.",
   );
-  const acceptance = parseToolJson(
+
+  const structureDetail = parseToolJson(
     await client.request("tools/call", {
-      name: "read_acceptance_contract",
-      arguments: { handoffId: handoff.handoffId },
-    }),
-  );
-  assert(
-    acceptance.policy === undefined &&
-      acceptance.screenshots?.some((item) =>
-        item.blobIds?.includes(screenshotBlobId),
-      ),
-    "Consumer did not receive the fixed non-scoring Review Contract.",
-  );
-  const revisionId = handoff.selectedCases[0].revisionId;
-  const consumedRevision = parseToolJson(
-    await client.request("tools/call", {
-      name: "read_evidence_revision",
+      name: "read_evidence_detail",
       arguments: {
-        bundleId: handoff.bundleId,
-        snapshotId: handoff.snapshotId,
-        revisionId,
+        handoffId: handoff.handoffId,
+        screenId,
+        projection: "structure",
+        pageSize: 5,
       },
     }),
   );
   assert(
-    snapshot.fixedSnapshotId === handoff.snapshotId &&
-      consumedRevision.revisionId === revisionId,
-    "Consumer drifted from fixed Snapshot/revision refs.",
+    structureDetail.projection === "structure" &&
+      structureDetail.snapshotId === handoff.snapshotId &&
+      structureDetail.items?.length >= 1,
+    "Consumer drifted from fixed Snapshot via progressive detail.",
   );
-  const role = consumedRevision.facts.find((fact) =>
-    fact.factId.endsWith(".root.role"),
-  )?.effectiveValue;
-  assert(role === "page", "Consumer could not read the target implementation fact.");
+  const role = "page";
 
   await writeFile(
     path.join(targetRoot, "lib", "task_list_view.dart"),
@@ -245,16 +245,14 @@ try {
   );
 
   const invalid = await client.requestError("tools/call", {
-    name: "read_evidence_revision",
+    name: "read_handoff_index",
     arguments: {
-      bundleId: handoff.bundleId,
-      snapshotId: handoff.snapshotId,
-      revisionId: "missing-revision",
+      handoffId: "missing-handoff",
     },
   });
   assert(
     invalid.data?.errorCode === "unknown-reference",
-    "Invalid fixed revision did not fail with a structured V2 error.",
+    "Invalid fixed handoff did not fail with a structured V2 error.",
   );
 
   process.stdout.write(

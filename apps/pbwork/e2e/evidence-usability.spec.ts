@@ -67,6 +67,8 @@ test("evidence viewer can reopen deliver flow for another handoff", async ({
   await expect(page.getByTestId("agent-prompt")).toBeVisible({
     timeout: 30_000,
   });
+  await expect(page.getByTestId("handoff-id")).toBeVisible();
+  const handoffId = (await page.getByTestId("handoff-id").innerText()).trim();
 
   const url = page.url();
   const match = url.match(/\/workbench\/evidence\/([^/]+)\/([^/]+)/);
@@ -75,14 +77,18 @@ test("evidence viewer can reopen deliver flow for another handoff", async ({
   }
   await writeFile(
     testInfo.outputPath("deliver-ids.txt"),
-    `${match[1]}\n${match[2]}\n`,
+    `${match[1]}\n${match[2]}\n${handoffId}\n`,
     "utf8",
   );
   const resultPath = process.env.PBWORK_E2E_RESULT_PATH;
   if (resultPath) {
     await writeFile(
       resultPath,
-      JSON.stringify({ bundleId: match[1], snapshotId: match[2] }),
+      JSON.stringify({
+        bundleId: match[1],
+        snapshotId: match[2],
+        handoffId,
+      }),
       "utf8",
     );
   }

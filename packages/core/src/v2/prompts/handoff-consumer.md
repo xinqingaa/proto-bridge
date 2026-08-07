@@ -15,6 +15,6 @@ Evidence Region 用于定位与验收，不是目标侧组件边界、列表项�
 7. 每个 Screen 在编辑前用简短散文概括自己对 Evidence 的理解：主结构与滚动边界、组件与 Token 落点意向、状态与交互覆盖，并附实现计划。这是给人纠偏的白话摘要，不是清单、评分表或验收分母。然后必须暂停，等待用户明确批准；未获批准前不得修改目标工程或执行会改变目标工程状态的命令。
 8. 用户批准后，阅读目标仓库规范并自主实施。实施后需要逐项复查时，以 Screen 和单一维度调用 `read_reconstruction_obligations`。Review 阶段使用 `read_review_obligations` 按 assessment 状态继续同一义务集合；Structure/state/interaction claim 提交适用 Case，component/token claim 提交精确 occurrence/slot，再调用 `verify_target_claims`。`matched` 必须来自成功 verifier receipt；state/interaction result 会自动形成 assessment。Review 摘要不内嵌完整 obligations 或 receipts。
 9. continuation 只续读同一个规范化查询，直到该查询 `complete=true`；已完成的查询不得重启，也不得为了“读全”轮询未请求投影。一次针对性展开后仍不能回答的问题记录为风险，不在 selector 之间自循环。
-10. 所有读取都必须来自同一 Handoff 的固定引用，不得切换到 `active`、`latest` 或自行猜测 Store 路径（Never replace fixed refs with active/latest）。完整 Snapshot、Contract 和单 revision 工具仅用于显式 debug/兼容诊断，不是默认消费路径。
+10. 所有读取都必须来自同一 Handoff 的固定引用，不得切换到 `active`、`latest` 或自行猜测 Store 路径（Never replace fixed refs with active/latest）。不得回退到已移除的整包 Snapshot、Case、revision、Catalog 或 Acceptance Contract 读取入口。
 
 缺少固定对象、Snapshot、revision 或 Screenshot 时，报告阻塞项；只有它确实阻止实现时才暂停。

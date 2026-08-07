@@ -10,7 +10,7 @@
 
 | 条目 | 状态 | 说明 |
 | --- | --- | --- |
-| [MCP 表面清理](./2026-08-06-mcp-surface.md) | 待决 | tools 兼容面与 Prompt 是否拆分 |
+| [MCP 表面清理](./2026-08-06-mcp-surface.md) | 已落地 | 过时兼容 tools 已下架（40→27）；Prompt 未拆分 |
 | [结构断言 vs 观测拓扑](./2026-08-06-structure-assertions.md) | 已落地 | 删冷链冗余断言；文档默认不写；e2e 钉观测 |
 | [PBWork 产品重置](./2026-08-06-pbwork-product-reset.md) | 待决 | DS 精修、原型收敛、采集交互重做 |
 

@@ -34,7 +34,7 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 12. 完成实现并运行目标原生验证；实施后复查使用 `read_reconstruction_obligations` 按 Screen/维度分页，不读取完整 Acceptance Contract，也不把 obligation 顺序当作编码顺序。调用 `summarize_reconstruction_review` 汇总已处理 Case、已查看 Screenshot、已重放 Scenario、已知偏差和未验证事项。
 13. 需要 authoritative Review 时调用 `start_target_review` 固定验收分母；Structure/state/interaction obligation 通过 `verify_target_claims` 提交适用 Case，component/token 提交精确 Target occurrence/slot。state/interaction result 自动形成 assessment；其他结果用 receipt digest 写入 `record_review_assessments`。没有 inspector、resolved mapping 或精确 occurrence authority 时必须保持 `unverified`，再提交 findings 和人工完成请求。
 
-`read_agent_handoff`、`read_evidence_snapshot`、`read_evidence_case`、`read_evidence_revision`、`read_evidence_fragment` 和 `read_acceptance_contract` 只保留为显式 debug/兼容入口，不属于默认消费顺序。
+整包 Snapshot、原始 Case/revision/fragment、Catalog、Issue、Staleness、`read_agent_handoff` 与 `read_acceptance_contract` 已从 MCP 表面移除；不得回退到旧整包读取路径。
 
 也可以使用 MCP Prompt `consume_evidence_handoff` 创建同一读取任务；Prompt 不放宽上述规则。权威实现纪律以 `proto-bridge://guides/handoff-consumer` 为准。
 
@@ -52,20 +52,6 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 | `read_reconstruction_obligations` | 按 Screen 和维度分页读取稳定、去重的五维还原义务 |
 | `read_evidence_screenshot` | 将代表 Screenshot 作为真正的 MCP ImageContent 返回 |
 | `summarize_reconstruction_review` | 汇总范围覆盖、视觉阅读、场景重放、偏差和未验证事项，不计算分数 |
-| 以下兼容/debug Tool | 不在默认读取链路中 |
-| `list_evidence_bundles` | 发现 Bundle；不能据此把 active 当作 Handoff 引用 |
-| `list_evidence_history` | 查看 Bundle 的固定历史对象 |
-| `read_evidence_snapshot` | 读取 Handoff 固定 Snapshot |
-| `read_evidence_case` | 读取 Snapshot 中的 Case 聚合 |
-| `read_evidence_run` | 读取 Selection、Attempt 与 Coverage |
-| `read_evidence_revision` | 读取 Snapshot 可达的固定 revision |
-| `read_evidence_fragment` | 按 `pbId`/`pbKey` 读取局部 Facts |
-| `read_evidence_catalog` | 按 `bundleId + snapshotId + catalogRevisionId` 读取固定 Snapshot 可达的目录 |
-| `read_evidence_issue` | 读取 unknown、conflict、失败原因和 next action |
-| `read_evidence_staleness` | 读取指定 Snapshot 的 freshness 判断 |
-| `read_agent_handoff` | 读取固定范围、引用和 mandatory risks |
-| `read_evidence_blob` | 读取 Snapshot/Catalog 可达的截图或经许可的调试 Blob |
-| `read_acceptance_contract` | 读取固定 Handoff 派生的非评分 Review 合同 |
 
 ## Target Tools
 
@@ -101,7 +87,7 @@ Target 结果是实现上下文，不是原型事实。真实目标文档/公开
 
 Evidence Contract 可以服务任意技术栈；当前表中的 Target tools 只实现 Flutter。非 Flutter 目标在对应 Adapter 落地前仍可消费固定 Evidence，但不能宣称已完成 PB Target query/validation 闭环。
 
-当 Handoff 范围依赖 PBWork Component 或 Token Fact 时，Agent 必须读取 Handoff/Snapshot 固定的 Catalog revision；Catalog 缺失或不能解析相关 ID 时应报告 Evidence 不完整，不得读取当前源码目录补造旧 Snapshot 的目录事实。
+Component / Token 落点以 `read_screen_packet` 的 `implementationInventory` 为准，再调用 `inspect_target_readiness` / `resolve_target_*`。Catalog revision 仍由 Producer 固定在 Snapshot 上，Consumer 不得读取当前源码目录补造旧 Snapshot 的目录事实。
 
 ## 必须报告的风险
 
@@ -127,7 +113,7 @@ Producer 对风险的确认只允许生成 Handoff，不代表 Consumer 可以�
 - Target 路径越界或目标仓库无法验证；
 - 发明 Screenshot / Fragment 未支持的视觉结构、文案或交互，却不披露偏差。
 
-不得通过切换 active/latest、拼接 Store 文件路径、忽略风险、重新解释旧对象或退回完整读取链路恢复。
+不得通过切换 active/latest、拼接 Store 文件路径、忽略风险、重新解释旧对象或退回已移除的整包读取工具恢复。
 
 ## 完成报告
 

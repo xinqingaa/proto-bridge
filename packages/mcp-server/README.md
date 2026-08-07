@@ -44,25 +44,9 @@ pnpm pb:mcp -- --print-config
 - `read_implementation_plan`
 - `read_implementation_tranche`
 
-兼容与显式 debug 路径：
-
-- `list_evidence_bundles`
-- `list_evidence_history`
-- `read_evidence_snapshot`
-- `read_evidence_case`
-- `read_evidence_run`
-- `read_evidence_revision`
-- `read_evidence_fragment`
-- `read_evidence_catalog`
-- `read_evidence_issue`
-- `read_evidence_staleness`
-- `read_agent_handoff`
-- `read_evidence_blob`
-- `read_acceptance_contract`（非评分的五维实施与复查指引）
-
 `read_screen_packet` 返回 baseline Structure、`canonicalBrief`（主滚动、状态矩阵、固定业务数据）、以及按 `regionId`/`caseId` 聚合的 inventory。`read_implementation_plan` / `read_implementation_tranche` 仅作诊断或 Review 辅助，不是默认实施路径，不得按 tranche 顺序编码。`read_case_delta` 返回以语义 ID 表达的紧凑 patch；完整 provenance 必须定向读取。`read_reconstruction_obligations` 按 Screen/维度分页，用于实施后复查，避免重新注入完整 Acceptance Contract。
 
-兼容工具不会被默认 Prompt 调用。普通 JSON 响应没有按字节截断规则；detail/obligation continuation 绑定固定 Snapshot 和规范化查询。
+普通 JSON 响应没有按字节截断规则；detail/obligation continuation 绑定固定 Snapshot 和规范化查询。整包 Snapshot / Case / revision / Catalog / Acceptance Contract 等旧入口已从 MCP 表面移除。
 
 ## Target Tools
 
@@ -95,7 +79,6 @@ Review tools 只返回 Session 摘要、attempt、finding、obligation 和 verif
 ## Resources 与 Prompt
 
 - `proto-bridge://guides/handoff-consumer`
-- `proto-bridge://evidence/{bundleId}/snapshots/{snapshotId}`
 - `proto-bridge://evidence/{bundleId}/snapshots/{snapshotId}/screenshots/{blobId}`
 - Prompt：`consume_evidence_handoff`
 

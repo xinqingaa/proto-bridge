@@ -98,17 +98,6 @@ try {
   const tools = await client.request("tools/list", {});
   for (const name of [
     "inspect_evidence_workspace",
-    "list_evidence_bundles",
-    "list_evidence_history",
-    "read_evidence_snapshot",
-    "read_evidence_case",
-    "read_evidence_run",
-    "read_evidence_revision",
-    "read_evidence_fragment",
-    "read_evidence_catalog",
-    "read_evidence_issue",
-    "read_evidence_staleness",
-    "read_agent_handoff",
     "read_handoff_index",
     "read_screen_packet",
     "read_implementation_plan",
@@ -116,13 +105,14 @@ try {
     "read_case_delta",
     "read_evidence_detail",
     "read_reconstruction_obligations",
-    "read_evidence_blob",
     "read_evidence_screenshot",
-    "read_acceptance_contract",
     "summarize_reconstruction_review",
     "resolve_target_components",
     "resolve_target_tokens",
     "inspect_target_readiness",
+    "read_target_conventions",
+    "find_target_examples",
+    "validate_target_changes",
     "start_target_review",
     "read_target_review",
     "read_review_obligations",
@@ -140,14 +130,31 @@ try {
       `tools/list is missing ${name}.`,
     );
   }
+  assert(
+    tools.tools?.length === 27,
+    `Expected 27 MCP tools, received ${tools.tools?.length ?? 0}.`,
+  );
   for (const removedName of [
+    "list_evidence_bundles",
+    "list_evidence_history",
+    "read_evidence_snapshot",
+    "read_evidence_case",
+    "read_evidence_run",
+    "read_evidence_revision",
+    "read_evidence_fragment",
+    "read_evidence_catalog",
+    "read_evidence_issue",
+    "read_evidence_staleness",
+    "read_agent_handoff",
+    "read_evidence_blob",
+    "read_acceptance_contract",
     "reconstruct_page_context",
     "validate_ui_build",
     "validate_target_page",
   ]) {
     assert(
       !tools.tools?.some((tool) => tool.name === removedName),
-      `tools/list still exposes removed V1 tool ${removedName}.`,
+      `tools/list still exposes removed tool ${removedName}.`,
     );
   }
 
@@ -296,133 +303,6 @@ try {
     "Target readiness did not report resolver coverage and missing machine authority.",
   );
 
-  const history = parseToolJson(
-    await client.request("tools/call", {
-      name: "list_evidence_history",
-      arguments: { bundleId: reference.BUNDLE_ID },
-    }),
-  );
-  assert(
-    history.catalogs?.[0]?.catalogRevisionId ===
-      "catalog-task-list-screen-v1" &&
-      history.issues?.[0]?.issueId === reference.UNKNOWN_ISSUE.issueId &&
-      history.handoffs?.[0]?.handoffId === handoff.handoffId,
-    "MCP history does not expose Catalog, Issue and Handoff refs.",
-  );
-
-  const listedBefore = parseToolJson(
-    await client.request("tools/call", {
-      name: "list_evidence_bundles",
-      arguments: {},
-    }),
-  );
-  assert(
-    listedBefore.bundles?.[0]?.activeSnapshotId === fixedSnapshotId,
-    "Bundle discovery did not expose the writer active Snapshot.",
-  );
-
-  const runResult = parseToolJson(
-    await client.request("tools/call", {
-      name: "read_evidence_run",
-      arguments: {
-        bundleId: reference.BUNDLE_ID,
-        runId: reference.RUN_1.runId,
-      },
-    }),
-  );
-  assert(
-    runResult.coverage?.counts?.selected === 1,
-    "Run reader did not expose immutable Run Coverage.",
-  );
-
-  const revisionResult = parseToolJson(
-    await client.request("tools/call", {
-      name: "read_evidence_revision",
-      arguments: {
-        bundleId: reference.BUNDLE_ID,
-        snapshotId: fixedSnapshotId,
-        revisionId: reference.PRIMARY_ACTIVE_REVISION.revisionId,
-      },
-    }),
-  );
-  assert(
-    revisionResult.revisionId === reference.PRIMARY_ACTIVE_REVISION.revisionId,
-    "Revision reader did not preserve the requested revision.",
-  );
-
-  const fragmentResult = parseToolJson(
-    await client.request("tools/call", {
-      name: "read_evidence_fragment",
-      arguments: {
-        bundleId: reference.BUNDLE_ID,
-        snapshotId: fixedSnapshotId,
-        revisionId: reference.PRIMARY_ACTIVE_REVISION.revisionId,
-        pbId: "ledger-planet.task-list.root",
-      },
-    }),
-  );
-  assert(
-    fragmentResult.facts?.[0]?.factId ===
-      "ledger-planet.task-list.root.role",
-    "Fragment reader did not return fixed-revision facts.",
-  );
-
-  const catalogResult = parseToolJson(
-    await client.request("tools/call", {
-      name: "read_evidence_catalog",
-      arguments: {
-        bundleId: reference.BUNDLE_ID,
-        snapshotId: fixedSnapshotId,
-        catalogRevisionId: "catalog-task-list-screen-v1",
-      },
-    }),
-  );
-  assert(
-    catalogResult.kind === "screen",
-    "Catalog revision is not readable.",
-  );
-
-  const issueResult = parseToolJson(
-    await client.request("tools/call", {
-      name: "read_evidence_issue",
-      arguments: {
-        bundleId: reference.BUNDLE_ID,
-        issueId: reference.UNKNOWN_ISSUE.issueId,
-      },
-    }),
-  );
-  assert(
-    issueResult.nextAction === reference.UNKNOWN_ISSUE.nextAction,
-    "Evidence Issue is not readable.",
-  );
-
-  const stalenessResult = parseToolJson(
-    await client.request("tools/call", {
-      name: "read_evidence_staleness",
-      arguments: {
-        bundleId: reference.BUNDLE_ID,
-        snapshotId: fixedSnapshotId,
-        reportId: staleness.reportId,
-      },
-    }),
-  );
-  assert(
-    stalenessResult.snapshotId === fixedSnapshotId,
-    "Staleness reader did not enforce the fixed Snapshot.",
-  );
-
-  const handoffResult = parseToolJson(
-    await client.request("tools/call", {
-      name: "read_agent_handoff",
-      arguments: { handoffId: handoff.handoffId },
-    }),
-  );
-  assert(
-    handoffResult.handoff?.snapshotId === fixedSnapshotId &&
-      Array.isArray(handoffResult.mandatoryRiskReport),
-    "Handoff reader did not return fixed refs and mandatory risks.",
-  );
-
   const handoffIndex = parseToolJson(
     await client.request("tools/call", {
       name: "read_handoff_index",
@@ -434,8 +314,9 @@ try {
       handoffIndex.screens?.[0]?.screenId === reference.SCREEN_ID &&
       handoffIndex.requiredCapabilities?.includes("evidence-detail") &&
       handoffIndex.requiredCapabilities?.includes("semantic-case-patches") &&
-      handoffIndex.omittedCategories?.includes("full-facts"),
-    "Handoff index did not preserve fixed identity or projection boundaries.",
+      handoffIndex.omittedCategories?.includes("full-facts") &&
+      Array.isArray(handoffIndex.mandatoryRisks),
+    "Handoff index did not preserve fixed identity, risks, or projection boundaries.",
   );
 
   const screenPacket = parseToolJson(
@@ -578,50 +459,11 @@ try {
     );
   }
 
-  const fixedBefore = parseToolJson(
-    await client.request("tools/call", {
-      name: "read_evidence_snapshot",
-      arguments: {
-        bundleId: reference.BUNDLE_ID,
-        snapshotId: fixedSnapshotId,
-      },
-    }),
-  );
-  assert(
-    fixedBefore.fixedSnapshotId === fixedSnapshotId,
-    "MCP did not preserve the requested fixed Snapshot ID.",
-  );
-  assert(
-    fixedBefore.evidence?.summary?.screenshots === 1,
-    "MCP read model did not expose the attached Screenshot.",
-  );
-  assert(
-    fixedBefore.evidence?.semanticStatus === "limited",
-    "MCP must preserve the fixture semantic-coverage limitation.",
-  );
-
-  const caseResult = parseToolJson(
-    await client.request("tools/call", {
-      name: "read_evidence_case",
-      arguments: {
-        bundleId: reference.BUNDLE_ID,
-        snapshotId: fixedSnapshotId,
-        caseId: reference.TASK_LIST_CASE_ID,
-      },
-    }),
-  );
-  assert(
-    caseResult.case?.revisionId ===
-      reference.PRIMARY_ACTIVE_REVISION.revisionId,
-    "Case reader returned a different Evidence Revision.",
-  );
-
-  const screenshotResource = fixedBefore.screenshotResources?.find(
-    (resource) => resource.blobId === screenshot.blobId,
-  )?.uri;
-  assert(screenshotResource, "Snapshot tool did not return a screenshot URI.");
+  const screenshotBlobId = screenPacket.screenshotGroups?.[0]?.representativeBlobId;
+  assert(screenshotBlobId, "Screen packet did not expose a Screenshot blob.");
+  const screenshotUri = `proto-bridge://evidence/${encodeURIComponent(reference.BUNDLE_ID)}/snapshots/${encodeURIComponent(fixedSnapshotId)}/screenshots/${encodeURIComponent(screenshotBlobId)}`;
   const screenshotRead = await client.request("resources/read", {
-    uri: screenshotResource,
+    uri: screenshotUri,
   });
   assert(
     screenshotRead.contents?.[0]?.blob === screenshotBytes.toString("base64"),
@@ -632,7 +474,7 @@ try {
     arguments: {
       bundleId: reference.BUNDLE_ID,
       snapshotId: fixedSnapshotId,
-      blobId: screenshot.blobId,
+      blobId: screenshotBlobId,
     },
   });
   assert(
@@ -651,24 +493,13 @@ try {
     "Screenshot tool did not return verified PNG metadata.",
   );
 
-  const acceptance = parseToolJson(
-    await client.request("tools/call", {
-      name: "read_acceptance_contract",
-      arguments: { handoffId: handoff.handoffId },
-    }),
-  );
-  assert(
-    acceptance.policy === undefined &&
-      acceptance.screenshots?.[0]?.blobIds?.includes(screenshot.blobId),
-    "Review Contract did not bind the fixed Screenshot or still contains scoring policy.",
-  );
   const review = parseToolJson(
     await client.request("tools/call", {
       name: "summarize_reconstruction_review",
       arguments: {
         handoffId: handoff.handoffId,
         addressedCaseIds: [],
-        viewedScreenshotBlobIds: [screenshot.blobId],
+        viewedScreenshotBlobIds: [screenshotBlobId],
         replayedScenarioCaseIds: [],
         observations: [],
       },
@@ -705,32 +536,6 @@ try {
     "Fixture did not create a second Snapshot.",
   );
 
-  const listedAfter = parseToolJson(
-    await client.request("tools/call", {
-      name: "list_evidence_bundles",
-      arguments: {},
-    }),
-  );
-  assert(
-    listedAfter.bundles?.[0]?.activeSnapshotId === next.snapshot.snapshotId,
-    "Bundle discovery did not advance to the new active Snapshot.",
-  );
-
-  const fixedAfter = parseToolJson(
-    await client.request("tools/call", {
-      name: "read_evidence_snapshot",
-      arguments: {
-        bundleId: reference.BUNDLE_ID,
-        snapshotId: fixedSnapshotId,
-      },
-    }),
-  );
-  assert(
-    fixedAfter.fixedSnapshotId === fixedSnapshotId &&
-      fixedAfter.evidence?.screens?.[0]?.cases?.length ===
-        fixedBefore.evidence?.screens?.[0]?.cases?.length,
-    "Reading a fixed Snapshot drifted after active Snapshot changed.",
-  );
   const projectedAfter = parseToolJson(
     await client.request("tools/call", {
       name: "read_handoff_index",

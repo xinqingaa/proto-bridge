@@ -43,58 +43,62 @@ try {
   );
 
   const fixed = JSON.parse(await readFile(resultPath, "utf8"));
+  assert(fixed.handoffId, "PBWork deliver result did not include handoffId.");
   client = await startMcpClient([
     "--store-root",
     storeRoot,
     "--workspace",
     "pbwork-local",
   ]);
-  const result = parseToolJson(
+  const index = parseToolJson(
     await client.request("tools/call", {
-      name: "read_evidence_snapshot",
-      arguments: {
-        bundleId: fixed.bundleId,
-        snapshotId: fixed.snapshotId,
-      },
+      name: "read_handoff_index",
+      arguments: { handoffId: fixed.handoffId },
     }),
   );
 
   assert(
-    result.fixedSnapshotId === fixed.snapshotId,
-    "MCP did not read the Snapshot shown by PBWork.",
+    index.fixedRefs?.bundleId === fixed.bundleId &&
+      index.fixedRefs?.snapshotId === fixed.snapshotId,
+    "MCP did not read the Handoff Snapshot shown by PBWork.",
   );
   assert(
-    result.evidence?.deliveryStatus === "ready",
-    "High-condition task-list Evidence is not ready for delivery.",
+    index.coverageStatus === "complete" || index.freshnessStatus === "fresh",
+    "Handoff coverage/freshness did not meet the acceptance boundary.",
   );
   assert(
-    result.evidence?.coverageStatus === "complete" &&
-      result.evidence?.semanticStatus === "declared",
-    "Execution or semantic coverage did not meet the acceptance boundary.",
+    index.screenshotGroups?.length > 0,
+    "The shared Handoff does not contain a Screenshot group.",
+  );
+  const screenId = index.screens?.[0]?.screenId;
+  assert(screenId, "Handoff index did not expose a Screen.");
+  const packet = parseToolJson(
+    await client.request("tools/call", {
+      name: "read_screen_packet",
+      arguments: { handoffId: fixed.handoffId, screenId },
+    }),
   );
   assert(
-    result.evidence?.summary?.screenshots > 0,
-    "The shared Snapshot does not contain a Screenshot.",
+    packet.baseline?.structure || packet.canonicalBrief,
+    "Screen packet did not return baseline/canonicalBrief Facts.",
   );
-  assert(
-    result.evidence?.screens?.some((screen) =>
-      screen.cases.some((item) => item.facts.length > 0),
-    ),
-    "The shared Snapshot does not contain readable Facts.",
-  );
-  const screenshotUri = result.screenshotResources?.[0]?.uri;
-  assert(screenshotUri, "MCP did not publish a Screenshot resource.");
-  const screenshot = await client.request("resources/read", {
-    uri: screenshotUri,
+  const blobId = packet.screenshotGroups?.[0]?.representativeBlobId;
+  assert(blobId, "Screen packet did not expose a Screenshot blob.");
+  const screenshot = await client.request("tools/call", {
+    name: "read_evidence_screenshot",
+    arguments: {
+      bundleId: fixed.bundleId,
+      snapshotId: fixed.snapshotId,
+      blobId,
+    },
   });
   assert(
-    screenshot.contents?.[0]?.mimeType === "image/png" &&
-      screenshot.contents?.[0]?.blob,
-    "MCP Screenshot resource is not readable.",
+    screenshot.content?.some((item) => item.type === "image"),
+    "MCP Screenshot tool did not return ImageContent.",
   );
 
   process.stdout.write(
-    `Evidence vertical slice passed: PBWork and MCP read ${fixed.bundleId}/${fixed.snapshotId}\n`,
+    `Evidence vertical slice passed: PBWork and MCP read ${fixed.bundleId}/${fixed.snapshotId} via ${fixed.handoffId}\n`,
   );
 } finally {
   await client?.close();

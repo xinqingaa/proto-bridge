@@ -1,9 +1,6 @@
 import type { JsonObject, JsonValue, ToolContext } from '../types.js';
 import { readString } from '../utils/args.js';
-import {
-  evidenceScreenshotUri,
-  evidenceSnapshotUri,
-} from '../services/evidence-store-reader.js';
+import { evidenceScreenshotUri } from '../services/evidence-store-reader.js';
 import {
   CONSUMER_GUIDE,
   CONSUMER_GUIDE_URI,
@@ -11,12 +8,6 @@ import {
 
 export function resourceTemplatesList(): JsonValue[] {
   return [
-    {
-      uriTemplate: 'proto-bridge://evidence/{bundleId}/snapshots/{snapshotId}',
-      name: '固定证据 Snapshot',
-      description: '读取 PBWork 与 Agent 共用的固定 Evidence Snapshot。',
-      mimeType: 'application/json',
-    },
     {
       uriTemplate:
         'proto-bridge://evidence/{bundleId}/snapshots/{snapshotId}/screenshots/{blobId}',
@@ -46,28 +37,6 @@ export async function readResource(
 
   if (uri === CONSUMER_GUIDE_URI) {
     return textContent(uri, 'text/markdown', CONSUMER_GUIDE);
-  }
-
-  const snapshotMatch = uri.match(
-    /^proto-bridge:\/\/evidence\/([^/]+)\/snapshots\/([^/]+)$/,
-  );
-  if (snapshotMatch?.[1] && snapshotMatch[2]) {
-    const bundleId = decodeURIComponent(snapshotMatch[1]);
-    const snapshotId = decodeURIComponent(snapshotMatch[2]);
-    const details = await context.evidence.readSnapshot(bundleId, snapshotId);
-    return textContent(
-      evidenceSnapshotUri(bundleId, snapshotId),
-      'application/json',
-      JSON.stringify(
-        {
-          messages: details.evidence.messages,
-          fixedSnapshotId: details.evidence.snapshotId,
-          ...details,
-        },
-        null,
-        2,
-      ),
-    );
   }
 
   const screenshotMatch = uri.match(
