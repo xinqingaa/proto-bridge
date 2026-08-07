@@ -1,88 +1,108 @@
-# PBWork 产品重置：DS 精修 · 原型收敛 · 采集交互
+# PBWork 产品重置：采集交互 · DS 对齐 · 新原型（后置）
 
-- 日期：2026-08-06
-- 范围：`apps/pbwork` 工作台、Design System、业务原型资产、Capture/Deliver GUI（不含 MCP Tool 表面，见同目录 MCP 条目）
-- 依据：`workbench/navigation.ts`、`views/WorkbenchOverview.vue`、`capture/*`、`app/stores/capture.ts`、`prototypes/registry.ts`、`docs/components|tokens`
-- 状态：**第一轮已落地（原型清理 + 壳修正）；采集交互重做 / DS 精修 / 新主 App 仍待决**
-- 相关：`2026-08-06-structure-assertions.md`（结构断言另项）；目标还原暂限 Flutter（`apps/flutter_pb_app`）
+- 日期：2026-08-06（计划修订：2026-08-07）
+- 范围：**仅** `apps/pbwork`（Workbench 导航、Capture/Deliver GUI、Design System、业务原型资产与其文档）
+- 状态：**第一轮已落地**；后续按下方 P0 → P1 → P2 推进
+- **边界（MUST）**：本条目全部是 **PBWork 人机工作台**优化。**不改** Evidence/MCP/Consumer 工作链路，**不改** `packages/core/src/target/flutter-app` 与 Target resolve/Review 行为。
 
 ## 一句话
 
-前期重心在 Evidence / Agent 链路；PBWork 作为人机工作台仍处「能跑通」阶段。封板前需要一次**产品向重置**：精修组件与 Token、清理示范原型并做 1 个完整 App 量级样板（约 6–7 屏）、重做采集与 Review 交互。
+封板剩余主线是 **PBWork 采集/交付交互重做**；其次 **DS 与 Flutter 样板在行为/语义上对齐并拆清大类型组件**；**新主 App 原型最后做**。
 
 ## 第一轮已落地（2026-08-07）
 
 | 项 | 结果 |
 | --- | --- |
 | 旧原型 | 已删除 `field-service`、`ledger-planet`（Vue + Flutter 样例 + 专用 e2e）；registry 仅 `cold-chain-ops` |
-| Core 金标 | `ledger-planet-task-list` → `reference-case-slice`（`fixtures.referenceCaseSlice`，合成 ID `sample`）；禁止按原型再分叉，见 [PBWork 开发规范 §9](../pbwork/development.md#9-新原型与测试边界) |
-| 概览 | 无左侧 `resource-panel` |
-| 任务中心 | **无默认原型**（待后续重做）；需显式选择后才能新建采集 |
+| Core 金标 | `reference-case-slice`（`fixtures.referenceCaseSlice`）；新原型禁止再分叉，见 [PBWork 开发规范 §9](../pbwork/development.md#9-新原型与测试边界) |
+| 概览 | 无左侧 `resource-panel`（本轮后续仍不动概览内容） |
+| 任务中心 | **无默认原型**；待 P0 整页重做 |
 
-## 目标（本条目对齐的产品意图）
+---
 
-1. **DS**：组件规范与 Token 从「粗可用」做到「可指导作者与 Agent 稳定落点」的一轮精修。
-2. **原型资产**：除冷链外全部清理；另做 **2–3 个** 新原型，其中至少 **1 个完整 App**（简单页 + 复杂页，**约 6–7 个页面**），并走 Flutter 还原闭环（暂不考虑其它客户端技术栈）。
-3. **工作台采集交互**：按真实操作路径重设计，先盘点后改，不继续在现有「任务中心 / 结果页 / FlowSheet」上打补丁式堆叠。
+## P0 — 采集 / 交付交互重做（主战场）
 
-## 一、Design System / Token 现状与问题
+与 DS、新原型不冲突；先做导航信息架构 + 结果页视觉统一。
 
-### 现状
+### 已拍板
 
-- Contract 约 29 个（basic + complex）；Token ~97；Foundations / Playground / 文档目录齐。
-- 权威链文档已有（`docs/tokens/overview.md`、`docs/components/overview.md`），但组件页深度、状态矩阵、反例、与 Flutter `Common*` 映射完整度不齐。
-- 冷链验收暴露：公共组件命中高，但 Token key 偏差、局部构图仍靠人审——说明 **DS 语义槽与作者纪律仍粗**。
-
-### 问题
-
-- 规范「粗」：能组页，但不足以当验收尺子（何时用 FilterBar vs 自定义、Token 槽是否齐全、业务局部 `data-pb-token-*` 门禁体验差）。
-- Playground / 文档与真实 Capture 语义（role policy、inspectId）耦合讲解不足，新人易写出「看起来对、Evidence 弱」的页。
-
-### 取舍草案
-
-| 选项 | 做法 |
+| 项 | 决策 |
 | --- | --- |
-| P0 精修包 | 定「Flutter 还原所需」最小组件集 + Token Bind 池审计；补齐文档反例与检查单 |
-| 暂缓新组件 | 封板前原则上不扩 DS 表面积，优先修现有 29 个的语义与文档 |
+| 新建入口 | **画布**：采某页 / 某控件 / 整原型；**原型侧**：维持现「采原型」 |
+| 列表主轴 | **按采集历史**（Bundle/Job 时间线），不是按原型树或 Screen 树；行内展示来自哪个原型、哪些页面等 |
+| 任务中心 | 改为以 **采集结果 / 历史** 为主（不再像运维新建台） |
+| 结果展示 | EvidenceViewer 等视觉与按屏 Review 重做（现状截图平铺、结构化证据过密） |
+| 已有交付物 | **多入口**：有旧则展示历史；支持 **查看已有**、**新生成**、**覆盖（真覆盖同一 delivery，不是另开目录冒充覆盖）** |
+| JobCenter | **顶栏铃铛保留**；去掉多余右下角入口（若仍存在）；**FlowSheet 补 case 级进度**（进度单一真相） |
+| 概览 | **本轮不动** |
 
-## 二、原型资产：清理与重建
+### 实施切分（若必须拆 PR）
 
-### 现状（第一轮后）
+1. 导航信息架构 + 结果页视觉统一  
+2. 交付物历史 / 查看 / 新生成 / 真覆盖  
+3. FlowSheet 进度 + 清理多余 FAB  
 
-| 原型 | 屏数 | 角色 |
-| --- | ---: | --- |
-| `cold-chain-ops` | 3 | **唯一现役**：Evidence/消费样板 |
+### 非目标（P0）
 
-### 目标形态（后续轮）
+- 不改 MCP Tool、Prompt、Target adapter  
+- 不改 Store Evidence 契约语义（仅 GUI 如何展示与触发既有能力）  
 
-- **保留**：冷链（复杂三页模块）。
-- **新建 2–3 个原型**，其中 **1 个主样板 App**（约 6–7 屏；简单+复杂；只还原 Flutter）。
-- 新原型测试边界见 Authoring §15 / PBWork 开发规范 §9（禁止再开 Core fixture 分叉）。
+---
 
-## 三、采集 / 工作台交互（后续轮）
+## P1 — Design System：行为/语义对齐与组件拆分
 
-主路径仍待按「选范围 → 执行感知 → 按屏 Review → 交付」重设计。第一轮仅去掉概览二级导航壳与任务中心硬编码默认；任务中心 UI 整页重做另开轮次。
+在 PBWork DS（Contract / Vue / 文档）与 Flutter 样板公共组件之间对齐；**验收停在组件级对照**，不跑冷链全流程还原。
 
-## 四、剩余工作包
+### 已拍板
+
+| 项 | 决策 |
+| --- | --- |
+| 对齐重点 | **行为、描述、语义**（role、Token 槽、状态矩阵如 loading/empty/disabled）；**不要求** Vue props 与 Dart API 一一镜像 |
+| 大类型纪律 | **禁止**「一个组件 + 胶囊/按钮、一级 Tab/二级 Tab 这类大 type」→ **拆成两个组件**，减少采集 `componentId` 歧义 |
+| 第一刀 | **先审计清单**；首个落地目标：**Tab**（一级 / 二级分拆） |
+| 载体 | **文档 + JSON 协议一起**（PBWork 组件/Token 文档与可机读对照；目标仓落点文档另属 Target，本条目只保证 Producer 侧语义清晰） |
+| 验收 | 组件级 DS ↔ Flutter 样板对齐即可 |
+
+### 非目标（P1）
+
+- 不修改 `flutter-app` resolver / Review  
+- 不把某产品 `Common*` 表硬编码进 Core  
+- 不借 P1 扩一堆新组件表面积（以拆分与文档/协议补齐为主）  
+
+---
+
+## P2 — 新原型（最后，暂定）
+
+| 项 | 决策 |
+| --- | --- |
+| 现役 | 保留 `cold-chain-ops`（3 屏复杂模块样板） |
+| 新建 | **暂缓**；选题与 6–7 屏清单未定 |
+| 测试边界 | 落地时遵守 Authoring §15 / 开发规范 §9（禁止新开 Core fixture 分叉；至多一条 Runtime 冒烟 e2e） |
+
+---
+
+## 优先级总表
 
 | 优先级 | 工作包 | 状态 |
 | --- | ---: | --- |
-| P0 | 采集交互主路径重设计 | 待决 |
-| P1 | 新主 App 原型（6–7 屏）+ Flutter 还原 | 待决 |
-| P2 | DS / Token 精修 | 待决 |
-| P2 | 第 2–3 个小原型 | 待决 |
+| — | 旧原型清理 + 金标改名 + 概览壳 / 任务中心去默认 | **已落地** |
+| P0 | 采集导航、历史结果、交付查看/覆盖、FlowSheet 进度 | 待做 |
+| P1 | DS↔Flutter 语义对齐；Tab 等大类型拆分；文档+JSON | 待做 |
+| P2 | 新主 App 原型 | **暂定** |
 
-## 五、非目标
+---
 
-- 不在本条目展开 MCP Tool 删减（见 `2026-08-06-mcp-surface.md`）。
-- 不在本阶段做 Kotlin/Swift/RN Target。
-- 不把 PBWork 做成可视化拖拽编辑器；仍以代码资产 + Agent 作者 + Workbench Review/Capture 为准。
+## 明确非目标
 
-## 六、第二轮待确认
+- **Evidence / MCP / Consumer / Target 工作链路**（含 `packages/core/src/target/flutter-app`）：本条目不改动。  
+- 不在本阶段做 Kotlin/Swift/RN Target。  
+- 不把 PBWork 做成可视化拖拽编辑器。  
+- 概览页内容重做：不在 P0。  
 
-- [ ] 新主 App 业务选题与 6–7 屏清单
-- [x] field-service / ledger-planet：已删除（非 archived）
-- [ ] JobCenter：保留弱化 vs 并入 FlowSheet 后删除 FAB
-- [ ] EvidenceViewer：是否拆「Review 工作台」与「调试证据」两模式
-- [ ] DS 精修是否绑定 Flutter `Common*` 对照表为验收物
-- [ ] 任务中心整页重做信息架构
+---
+
+## 待确认（仅剩实现细节）
+
+- [ ] P0 视觉：结果页「按屏 Review」与「调试用结构化证据」是否同一页两模式，还是两套视图  
+- [ ] Tab 审计清单：除一级/二级外，是否还有同批要拆的大类型组件  
+- [ ] P2 新原型业务选题（暂缓期间可不填）  
