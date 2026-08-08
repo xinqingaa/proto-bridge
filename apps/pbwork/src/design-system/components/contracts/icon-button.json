@@ -2,7 +2,10 @@
   "schemaVersion": 1,
   "id": "icon-button",
   "category": "basic",
-  "semantic": { "policy": "fixed", "defaultRole": "button" },
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "button"
+  },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -16,7 +19,26 @@
           "more",
           "plus",
           "search",
-          "settings"
+          "settings",
+          "home",
+          "list",
+          "user",
+          "inbox",
+          "check",
+          "chevron-down",
+          "chevron-right",
+          "alert-triangle",
+          "alert-circle",
+          "clock",
+          "refresh-cw",
+          "clipboard-check",
+          "shield-check",
+          "folder-open",
+          "thermometer",
+          "snowflake",
+          "copy",
+          "file-text",
+          "sliders-horizontal"
         ]
       },
       "size": {
@@ -99,5 +121,36 @@
     "target": "sizing.touch",
     "duration": "motion.duration-fast",
     "easing": "motion.easing-standard"
+  },
+  "playground": {
+    "presentation": "single"
+  },
+  "icons": {
+    "pack": "lucide",
+    "defaults": [
+      "more",
+      "plus",
+      "search",
+      "settings",
+      "home",
+      "list",
+      "user",
+      "inbox",
+      "check",
+      "chevron-down",
+      "chevron-right",
+      "alert-triangle",
+      "alert-circle",
+      "clock",
+      "refresh-cw",
+      "clipboard-check",
+      "shield-check",
+      "folder-open",
+      "thermometer",
+      "snowflake",
+      "copy",
+      "file-text",
+      "sliders-horizontal"
+    ]
   }
 }

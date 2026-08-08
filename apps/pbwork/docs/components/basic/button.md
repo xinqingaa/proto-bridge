@@ -1,7 +1,7 @@
 # Button
 
-> 组件 id：`button` · 分类：`basic`
-> 实现：`apps/pbwork/src/design-system/components/basic/Button.vue`
+> 组件 id：`button` · 分类：`basic`  
+> 实现：`apps/pbwork/src/design-system/components/basic/Button.vue`  
 > 契约：`apps/pbwork/src/design-system/components/contracts/button.json`
 
 表单主次操作，如提交工单、保存草稿。
@@ -10,53 +10,29 @@
 
 - **做什么**：表单提交、主次操作、空态 CTA。
 - **边界**：主操作优先 `tone="action"`；强调/链接语义才用 `primary`。不在按钮上硬编码颜色。
+- **不要用于**：纯图标操作（用 `icon-button`）。
 
-## Props
+## 行为要点
 
-| Prop | 类型 | 默认 | 说明 |
-| --- | --- | --- | --- |
-| `label` | string | `确认` | |
-| `variant` | `flat` \| `tonal` \| `outlined` \| `text` | `flat` | |
-| `tone` | `action` \| `primary` \| `secondary` \| `error` \| `success` | `action` | |
-| `size` | `sm` \| `md` \| `lg` | `md` | |
-| `loading` | boolean | `false` | |
-| `block` | boolean | `false` | |
-| `disabled` | boolean | `false` | |
-| `type` | `button` \| `submit` \| `reset` | — | |
+- `loading` / `disabled` 均不可点；同时为真时以不可点为准。
+- `variant` / `tone` 是同一 role 下的外观槽，**不拆成多个组件**。
+- Props、默认值、Token 槽以 Contract 为准。
 
-## States（Playground / Contract）
+## States
 
-- `tonal` — 柔和
-- `outlined` — 描边
-- `text` — 文字
-- `primary` — 主色
-- `loading` — 加载
-- `disabled` — 禁用
+| id | label | kind |
+| --- | --- | --- |
+| `tonal` | 柔和 | variant |
+| `outlined` | 描边 | variant |
+| `text` | 文字 | variant |
+| `primary` | 主色 | variant |
+| `loading` | 加载 | interaction |
+| `disabled` | 禁用 | interaction |
 
-## Slots / Events
-
-- **Slots**：`default`
-- **Events**：`click`
-
-## tokenBindings
-
-| 槽位 | Token |
-| --- | --- |
-| `background` | `color.action` |
-| `onBackground` | `color.on-action` |
-| `radius` | `radius.md` |
-| `elevation` | `elevation.none` |
-| `height` | `sizing.control-md` |
-| `paddingX` | `spacing.md` |
-| `typography` | `typography.label` |
-| `duration` | `motion.duration-fast` |
-| `easing` | `motion.easing-standard` |
-
-切浅色/深色只改 Theme 覆盖值，不改本表绑定。
+Playground：`presentation: tile`（默认 + 上表平铺）。
 
 ## 用法要点
 
-1. 从 `@/design-system/components/basic/...` 引入实现组件。
-2. Props 保持在契约枚举内；需要新能力先改 contract + registry + 本文。
-3. 业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`；默认 `ds.*` 只用于 Playground、组件测试或非业务预览。
-
+1. 从 `@/design-system/components/basic/Button.vue` 引入。
+2. 需要新能力先改 Contract + registry + 本文叙事。
+3. 业务原型必须传业务稳定 `inspectId`。

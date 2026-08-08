@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "id": "tabs",
+  "id": "underline-tabs",
   "category": "complex",
   "semantic": {
     "policy": "fixed",
     "defaultRole": "tab-bar"
   },
-  "summary": "页内 pill 分段：详情二级分区，或列表顶等宽状态筛选。",
+  "summary": "页内分区导航：滑线指示选中，或极简纯文字样式。",
   "behavior": [
-    "固定 pill 选中样式（primary-soft 背景 + 全圆角）",
+    "variant=underline 默认显示底部滑线；variant=minimal 无滑线、仅文字强调",
     "内容必须进具名 slot；短内容可滑用 fill",
     "swipe / mouseSwipe 分离，不可互兜底",
-    "一级 BottomNavigation 面板内禁止再嵌套带 window 的 Tabs"
+    "分段 pill 筛选请用 tabs，不要用本组件"
   ],
   "propsSchema": {
     "type": "object",
@@ -19,6 +19,13 @@
     "properties": {
       "modelValue": {
         "type": "string"
+      },
+      "variant": {
+        "type": "string",
+        "enum": [
+          "underline",
+          "minimal"
+        ]
       },
       "showIndicator": {
         "type": "boolean"
@@ -79,7 +86,8 @@
   },
   "defaultProps": {
     "modelValue": "overview",
-    "showIndicator": false,
+    "variant": "underline",
+    "showIndicator": true,
     "showDivider": false,
     "grow": false,
     "align": "start",
@@ -100,6 +108,15 @@
   },
   "states": [
     {
+      "id": "minimal",
+      "label": "极简",
+      "kind": "variant",
+      "props": {
+        "variant": "minimal",
+        "showIndicator": false
+      }
+    },
+    {
       "id": "equal",
       "label": "等宽",
       "kind": "variant",
@@ -117,11 +134,11 @@
   ],
   "tokenBindings": {
     "indicator": "color.primary",
-    "activeBackground": "color.primary-soft",
+    "activeBackground": "transparent",
     "activeColor": "color.primary",
     "inactiveColor": "color.on-surface-muted",
     "border": "border.hairline",
-    "radius": "radius.full",
+    "radius": "radius.md",
     "height": "sizing.control-md",
     "target": "sizing.touch",
     "typography": "typography.label",

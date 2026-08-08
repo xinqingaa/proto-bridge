@@ -9,14 +9,14 @@
 ## 职责
 
 - **做什么**：AppBar/工具区紧凑图标操作。
-- **边界**：`ariaLabel` 必填。图标枚举不足时先扩组件，禁止页内复制一套 IconButton。
+- **边界**：`ariaLabel` 必填。`icon` 与基础组件 `icon` 共用 `_shared/icons.ts` 策展清单；清单不足时先扩共享目录，禁止页内复制图标。
 
 ## Props
 
 | Prop | 类型 | 默认 | 说明 |
 | --- | --- | --- | --- |
 | `ariaLabel` | string | `更多` | |
-| `icon` | `more` \| `plus` \| `search` \| `settings` | `more` | |
+| `icon` | `PbIconName`（与基础 `icon` 同一策展清单） | `more` | |
 | `size` | `sm` \| `md` \| `lg` | `md` | |
 | `tone` | `primary` \| `secondary` | `secondary` | |
 | `variant` | `tonal` \| `flat` \| `outlined` \| `text` | `tonal` | |

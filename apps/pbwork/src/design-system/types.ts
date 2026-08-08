@@ -73,12 +73,18 @@ export type ComponentRecord = {
   controls: PlaygroundControl[];
 };
 
+export type ComponentStateKind = "variant" | "interaction" | "content";
+
 export type ComponentStateContract = {
   id: string;
   label: string;
   description?: string;
+  /** variant=appearance; interaction=loading/disabled; content=empty/closed. */
+  kind?: ComponentStateKind;
   props?: Record<string, unknown>;
 };
+
+export type PlaygroundPresentation = "single" | "tile" | "trigger";
 
 export type ComponentContract = {
   schemaVersion: 1;
@@ -92,12 +98,23 @@ export type ComponentContract = {
         allowedRoles: Array<Exclude<SemanticRole, "unknown">>;
       }
     | { policy: "decorative" };
+  /** One-line cross-stack behavior; Target may read this, not propsSchema. */
+  summary?: string;
+  /** Short interaction / empty / disabled commitments. */
+  behavior?: string[];
   propsSchema: Record<string, unknown>;
   defaultProps: Record<string, unknown>;
   states: ComponentStateContract[];
   slots: string[];
   events: string[];
   tokenBindings: Record<string, string>;
+  playground?: {
+    presentation: PlaygroundPresentation;
+  };
+  icons?: {
+    pack: "lucide";
+    defaults?: string[];
+  };
 };
 
 export type PrototypeLifecycle = "active" | "review" | "final" | "archived";

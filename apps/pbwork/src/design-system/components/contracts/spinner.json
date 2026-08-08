@@ -2,7 +2,10 @@
   "schemaVersion": 1,
   "id": "spinner",
   "category": "basic",
-  "semantic": { "policy": "fixed", "defaultRole": "loading-state" },
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "loading-state"
+  },
   "propsSchema": {
     "type": "object",
     "properties": {
@@ -47,5 +50,8 @@
     "size": "sizing.icon-md",
     "motion": "motion.duration-slow",
     "label": "typography.caption"
+  },
+  "playground": {
+    "presentation": "single"
   }
 }

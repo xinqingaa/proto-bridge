@@ -2,7 +2,10 @@
   "schemaVersion": 1,
   "id": "bottom-sheet",
   "category": "complex",
-  "semantic": { "policy": "fixed", "defaultRole": "sheet" },
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "sheet"
+  },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -20,7 +23,7 @@
   },
   "defaultProps": {
     "title": "操作面板",
-    "modelValue": true
+    "modelValue": false
   },
   "states": [
     {
@@ -51,5 +54,8 @@
     "elevation": "elevation.raised",
     "title": "typography.subtitle",
     "body": "typography.content"
+  },
+  "playground": {
+    "presentation": "trigger"
   }
 }

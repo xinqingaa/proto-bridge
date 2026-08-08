@@ -2,7 +2,10 @@
   "schemaVersion": 1,
   "id": "badge",
   "category": "basic",
-  "semantic": { "policy": "fixed", "defaultRole": "badge" },
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "badge"
+  },
   "propsSchema": {
     "type": "object",
     "properties": {
@@ -52,5 +55,8 @@
     "text": "color.on-error",
     "radius": "radius.full",
     "label": "typography.caption-strong"
+  },
+  "playground": {
+    "presentation": "single"
   }
 }

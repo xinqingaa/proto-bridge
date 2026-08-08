@@ -2,7 +2,10 @@
   "schemaVersion": 1,
   "id": "select",
   "category": "basic",
-  "semantic": { "policy": "fixed", "defaultRole": "field" },
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "field"
+  },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -111,5 +114,8 @@
     "selectedBackground": "color.primary-soft",
     "duration": "motion.duration-normal",
     "easing": "motion.easing-standard"
+  },
+  "playground": {
+    "presentation": "single"
   }
 }

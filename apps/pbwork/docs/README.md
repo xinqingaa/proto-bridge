@@ -65,7 +65,7 @@ apps/pbwork/src/
 | 改动 | 同一任务中必须同步 |
 | --- | --- |
 | Token | `tokens.json`、按需 `bindTokens.ts`、Theme、Token 文档和测试 |
-| Component | JSON Contract、Vue、Registry、场景、对应组件文档和测试 |
+| Component | JSON Contract（含 `playground.presentation`）、Vue、Registry、场景、对应组件文档和测试；跨栈语义见 [components/alignment-protocol.md](./components/alignment-protocol.md)；Flutter 映射属 P1.5 |
 | Shared gesture | `_shared`/组件实现、手势文档、相关组件页和浏览器测试 |
 | Prototype Screen | Registry、页面、Authoring Contract 检查和 Runtime 测试 |
 | Semantic marker | Authoring Contract、语义门禁、Registry/Runtime lint、Skill、检查单和测试 |

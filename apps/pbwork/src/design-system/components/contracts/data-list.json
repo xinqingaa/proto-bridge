@@ -2,22 +2,40 @@
   "schemaVersion": 1,
   "id": "data-list",
   "category": "complex",
-  "semantic": { "policy": "fixed", "defaultRole": "list" },
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "list"
+  },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "divided": { "type": "boolean" },
-      "inset": { "type": "boolean" },
+      "divided": {
+        "type": "boolean"
+      },
+      "inset": {
+        "type": "boolean"
+      },
       "surface": {
         "type": "string",
-        "enum": ["none", "default", "raised"]
+        "enum": [
+          "none",
+          "default",
+          "raised"
+        ]
       },
       "rounded": {
         "type": "string",
-        "enum": ["none", "sm", "md", "lg"]
+        "enum": [
+          "none",
+          "sm",
+          "md",
+          "lg"
+        ]
       },
-      "elevated": { "type": "boolean" }
+      "elevated": {
+        "type": "boolean"
+      }
     }
   },
   "defaultProps": {
@@ -31,15 +49,23 @@
     {
       "id": "plain",
       "label": "无容器",
-      "props": { "surface": "none", "rounded": "none" }
+      "props": {
+        "surface": "none",
+        "rounded": "none"
+      }
     },
     {
       "id": "raised",
       "label": "抬升容器",
-      "props": { "surface": "raised", "elevated": true }
+      "props": {
+        "surface": "raised",
+        "elevated": true
+      }
     }
   ],
-  "slots": ["default"],
+  "slots": [
+    "default"
+  ],
   "events": [],
   "tokenBindings": {
     "surface": "color.surface",
@@ -47,5 +73,8 @@
     "radius": "radius.md",
     "elevation": "elevation.card",
     "content": "typography.content"
+  },
+  "playground": {
+    "presentation": "single"
   }
 }

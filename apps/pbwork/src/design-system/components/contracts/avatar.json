@@ -2,7 +2,10 @@
   "schemaVersion": 1,
   "id": "avatar",
   "category": "basic",
-  "semantic": { "policy": "fixed", "defaultRole": "image" },
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "image"
+  },
   "propsSchema": {
     "type": "object",
     "properties": {
@@ -58,5 +61,8 @@
     "size": "sizing.avatar-md",
     "radius": "radius.full",
     "initials": "typography.label"
+  },
+  "playground": {
+    "presentation": "single"
   }
 }

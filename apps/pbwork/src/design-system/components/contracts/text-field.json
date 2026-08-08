@@ -2,7 +2,10 @@
   "schemaVersion": 1,
   "id": "text-field",
   "category": "basic",
-  "semantic": { "policy": "fixed", "defaultRole": "field" },
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "field"
+  },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -38,5 +41,8 @@
     "height": "sizing.control-md",
     "label": "typography.caption",
     "input": "typography.content"
+  },
+  "playground": {
+    "presentation": "single"
   }
 }

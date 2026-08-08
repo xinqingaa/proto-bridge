@@ -1,0 +1,296 @@
+{
+  "schemaVersion": 1,
+  "id": "icon",
+  "category": "basic",
+  "semantic": {
+    "policy": "decorative"
+  },
+  "summary": "Lucide 常用图标；按稳定 name 渲染，尺寸与颜色走 Token。",
+  "behavior": [
+    "不是按钮；可点操作使用 icon-button",
+    "name 仅允许 DS 策展清单内的 Lucide 稳定 id",
+    "无 label 时按装饰图标处理（aria-hidden）"
+  ],
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "name": {
+        "type": "string",
+        "enum": [
+          "more",
+          "plus",
+          "search",
+          "settings",
+          "home",
+          "list",
+          "user",
+          "inbox",
+          "check",
+          "chevron-down",
+          "chevron-right",
+          "alert-triangle",
+          "alert-circle",
+          "clock",
+          "refresh-cw",
+          "clipboard-check",
+          "shield-check",
+          "folder-open",
+          "thermometer",
+          "snowflake",
+          "copy",
+          "file-text",
+          "sliders-horizontal"
+        ]
+      },
+      "size": {
+        "type": "string",
+        "enum": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "tone": {
+        "type": "string",
+        "enum": [
+          "inherit",
+          "on-surface",
+          "muted",
+          "primary",
+          "action",
+          "error",
+          "success",
+          "warning"
+        ]
+      },
+      "label": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "name"
+    ]
+  },
+  "defaultProps": {
+    "name": "more",
+    "size": "md",
+    "tone": "inherit",
+    "label": ""
+  },
+  "states": [
+    {
+      "id": "plus",
+      "label": "plus",
+      "kind": "variant",
+      "props": {
+        "name": "plus"
+      }
+    },
+    {
+      "id": "search",
+      "label": "search",
+      "kind": "variant",
+      "props": {
+        "name": "search"
+      }
+    },
+    {
+      "id": "settings",
+      "label": "settings",
+      "kind": "variant",
+      "props": {
+        "name": "settings"
+      }
+    },
+    {
+      "id": "home",
+      "label": "home",
+      "kind": "variant",
+      "props": {
+        "name": "home"
+      }
+    },
+    {
+      "id": "list",
+      "label": "list",
+      "kind": "variant",
+      "props": {
+        "name": "list"
+      }
+    },
+    {
+      "id": "user",
+      "label": "user",
+      "kind": "variant",
+      "props": {
+        "name": "user"
+      }
+    },
+    {
+      "id": "inbox",
+      "label": "inbox",
+      "kind": "variant",
+      "props": {
+        "name": "inbox"
+      }
+    },
+    {
+      "id": "check",
+      "label": "check",
+      "kind": "variant",
+      "props": {
+        "name": "check"
+      }
+    },
+    {
+      "id": "chevron-down",
+      "label": "chevron-down",
+      "kind": "variant",
+      "props": {
+        "name": "chevron-down"
+      }
+    },
+    {
+      "id": "chevron-right",
+      "label": "chevron-right",
+      "kind": "variant",
+      "props": {
+        "name": "chevron-right"
+      }
+    },
+    {
+      "id": "alert-triangle",
+      "label": "alert-triangle",
+      "kind": "variant",
+      "props": {
+        "name": "alert-triangle"
+      }
+    },
+    {
+      "id": "alert-circle",
+      "label": "alert-circle",
+      "kind": "variant",
+      "props": {
+        "name": "alert-circle"
+      }
+    },
+    {
+      "id": "clock",
+      "label": "clock",
+      "kind": "variant",
+      "props": {
+        "name": "clock"
+      }
+    },
+    {
+      "id": "refresh-cw",
+      "label": "refresh-cw",
+      "kind": "variant",
+      "props": {
+        "name": "refresh-cw"
+      }
+    },
+    {
+      "id": "clipboard-check",
+      "label": "clipboard-check",
+      "kind": "variant",
+      "props": {
+        "name": "clipboard-check"
+      }
+    },
+    {
+      "id": "shield-check",
+      "label": "shield-check",
+      "kind": "variant",
+      "props": {
+        "name": "shield-check"
+      }
+    },
+    {
+      "id": "folder-open",
+      "label": "folder-open",
+      "kind": "variant",
+      "props": {
+        "name": "folder-open"
+      }
+    },
+    {
+      "id": "thermometer",
+      "label": "thermometer",
+      "kind": "variant",
+      "props": {
+        "name": "thermometer"
+      }
+    },
+    {
+      "id": "snowflake",
+      "label": "snowflake",
+      "kind": "variant",
+      "props": {
+        "name": "snowflake"
+      }
+    },
+    {
+      "id": "copy",
+      "label": "copy",
+      "kind": "variant",
+      "props": {
+        "name": "copy"
+      }
+    },
+    {
+      "id": "file-text",
+      "label": "file-text",
+      "kind": "variant",
+      "props": {
+        "name": "file-text"
+      }
+    },
+    {
+      "id": "sliders-horizontal",
+      "label": "sliders-horizontal",
+      "kind": "variant",
+      "props": {
+        "name": "sliders-horizontal"
+      }
+    }
+  ],
+  "slots": [],
+  "events": [],
+  "tokenBindings": {
+    "size": "sizing.icon-md",
+    "color": "color.on-surface"
+  },
+  "playground": {
+    "presentation": "tile"
+  },
+  "icons": {
+    "pack": "lucide",
+    "defaults": [
+      "more",
+      "plus",
+      "search",
+      "settings",
+      "home",
+      "list",
+      "user",
+      "inbox",
+      "check",
+      "chevron-down",
+      "chevron-right",
+      "alert-triangle",
+      "alert-circle",
+      "clock",
+      "refresh-cw",
+      "clipboard-check",
+      "shield-check",
+      "folder-open",
+      "thermometer",
+      "snowflake",
+      "copy",
+      "file-text",
+      "sliders-horizontal"
+    ]
+  }
+}

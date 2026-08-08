@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, toRefs } from "vue";
-import { MoreHorizontal, Plus, Search, Settings } from "lucide-vue-next";
+import Icon from "@/design-system/components/basic/Icon.vue";
+import type { PbIconName } from "@/design-system/components/_shared/icons";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import {
   elevationStyle,
@@ -10,7 +11,7 @@ import { radiusStyle } from "@/design-system/components/_shared/radius";
 
 const props = defineProps<{
   ariaLabel: string;
-  icon?: "more" | "plus" | "search" | "settings";
+  icon?: PbIconName;
   size?: ComponentSize;
   tone?: "primary" | "secondary";
   variant?: "tonal" | "flat" | "outlined" | "text";
@@ -27,23 +28,17 @@ const { ariaLabel, icon, size, tone, variant, loading, disabled, inspectId } =
 
 const resolvedVariant = computed(() => variant.value ?? "tonal");
 const resolvedTone = computed(() => tone.value ?? "secondary");
-
-const iconComponent = computed(() => {
-  if (props.icon === "plus") return Plus;
-  if (props.icon === "search") return Search;
-  if (props.icon === "settings") return Settings;
-  return MoreHorizontal;
-});
+const iconName = computed((): PbIconName => icon.value ?? "more");
 
 const visualSize = computed(() => {
   if (size.value === "sm") return 32;
   if (size.value === "lg") return 48;
   return 40;
 });
-const iconSize = computed(() => {
-  if (size.value === "sm") return 16;
-  if (size.value === "lg") return 24;
-  return 20;
+const iconSize = computed((): ComponentSize => {
+  if (size.value === "sm") return "sm";
+  if (size.value === "lg") return "lg";
+  return "md";
 });
 
 usePbInspect({
@@ -112,7 +107,7 @@ usePbInspect({
     :style="[radiusStyle('full'), elevationStyle('none')]"
     @click="$emit('click')"
   >
-    <component :is="iconComponent" :size="iconSize" />
+    <Icon :name="iconName" :size="iconSize" tone="inherit" />
   </v-btn>
 </template>
 

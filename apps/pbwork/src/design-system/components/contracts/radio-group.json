@@ -2,7 +2,10 @@
   "schemaVersion": 1,
   "id": "radio-group",
   "category": "basic",
-  "semantic": { "policy": "fixed", "defaultRole": "field" },
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "field"
+  },
   "propsSchema": {
     "type": "object",
     "properties": {
@@ -54,5 +57,8 @@
     "text": "color.on-surface",
     "label": "typography.caption",
     "option": "typography.content"
+  },
+  "playground": {
+    "presentation": "single"
   }
 }

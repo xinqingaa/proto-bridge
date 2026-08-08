@@ -2,7 +2,10 @@
   "schemaVersion": 1,
   "id": "search-bar",
   "category": "complex",
-  "semantic": { "policy": "fixed", "defaultRole": "search" },
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "search"
+  },
   "propsSchema": {
     "type": "object",
     "properties": {
@@ -49,5 +52,8 @@
     "radius": "radius.md",
     "height": "sizing.control-lg",
     "typography": "typography.content"
+  },
+  "playground": {
+    "presentation": "single"
   }
 }

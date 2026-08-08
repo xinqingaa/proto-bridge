@@ -8,8 +8,11 @@
 - [ ] FilterBar / Card 未滥用（自定义 Chip 行须 `data-no-swipe`；列表行默认非 Card）  
 - [ ] 无硬编码色值/字号/阴影等设计量  
 - [ ] 浅色 / 深色主题下关键表面可读；theme 切换不堆业务 history、不占用 variant  
-- [ ] 新增或改动的 props 已进 contract + registry + 对应 docs 页  
-- [ ] Contract、Vue、Registry、Scenario、组件文档中的 props/states/slots/events/bindings 一致
+- [ ] 新增或改动的 props 已进 contract + registry；触达文档已更新叙事（不以 props 表为权威）
+- [ ] Contract 含 `playground.presentation`；语义变更已补 `summary`/`behavior`/`states[].kind`（适用时）
+- [ ] Contract ↔ Vue ↔ Registry 经校验一致；文档与 Contract 语义不冲突
+- [ ] 未引入第二图标包；默认图标为 Lucide
+- [ ] 未用大 type 兼多语义角色（见 alignment-protocol / audit-large-types）
 
 ## 组合与手势
 

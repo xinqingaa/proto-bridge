@@ -2,12 +2,12 @@
 
 - 日期：2026-08-06（计划修订：2026-08-08）
 - 范围：**仅** `apps/pbwork`（Workbench 导航、Capture/Deliver GUI、Design System、业务原型资产与其文档）
-- 状态：**P0 已落地**；后续按下方 P1 → P2 推进
+- 状态：**P0 已落地**；**P1 已拍板并开工**（协议 / Playground / Tab 拆分 / Lucide）
 - **边界（MUST）**：本条目全部是 **PBWork 人机工作台**优化。**不改** Evidence/MCP/Consumer 工作链路，**不改** `packages/core/src/target/flutter-app` 与 Target resolve/Review 行为。
 
 ## 一句话
 
-**P0 采集/交付交互重做已完成**；剩余主线是 **DS 与 Flutter 样板在行为/语义上对齐并拆清大类型组件**；**新主 App 原型最后做**。
+**P0 采集/交付交互重做已完成**；剩余主线是 **先在 PBWork 把 DS 语义协议与展示做清（必要时拆大类型）**，**满意后再同步 Flutter 样板**；**新主 App 原型最后做**。
 
 ## 第一轮已落地（2026-08-07）
 
@@ -25,7 +25,7 @@
 ### 已拍板（2026-08-08）
 
 | 项         | 决策                                                                                                        |
-| ---------- | ----------------------------------------------------------------------------------------------------------- |
+| --------- | ----------------------------------------------------------------------------------------------------------- |
 | 一级导航   | **采集**（原「采集证据」）                                                                                  |
 | 二级导航   | **仅「采集历史」一级**；其下挂 Job 子项，点击进详情并选中该子项；历史页仍保留完整时间线                           |
 | 新建入口   | **画布**：采某页 / 某控件 / 整原型；**原型侧**：维持现「采原型」；历史页不做新建台                          |
@@ -36,13 +36,7 @@
 | Deliver    | **满宽贴底**、**固定高度**、左右滑动翻页；点蒙层收起不停任务                                                |
 | JobCenter  | 顶栏铃铛 + case 进度；无右下角 snackbar                                                                     |
 | 已有交付   | 提示词正文可直接回看；同 Snapshot 的历史交付可切换；重新生成弱化到交付信息                                  |
-| 概览       | **本轮不动内容**（仅链到采集历史文案）                                                                      |
-
-### 实施切分
-
-1. 导航 + 采集历史时间线
-2. 结果工作台 + 交付正文回看/新生成
-3. 动态采集入口 + FlowSheet 进度 + 铃铛 + 去 snackbar
+| 概览      | **本轮不动内容**（仅链到采集历史文案）                                                                      |
 
 ### 第二轮已落地（2026-08-08）
 
@@ -61,32 +55,52 @@
 
 ---
 
-## P1 — Design System：行为/语义对齐与组件拆分
+## P1 — Design System：扩展基础、语义协议、Playground 展示
 
-在 PBWork DS（Contract / Vue / 文档）与 Flutter 样板公共组件之间对齐；**验收停在组件级对照**，不跑冷链全流程还原。
+协议正文：[alignment-protocol.md](../../apps/pbwork/docs/components/alignment-protocol.md) · 审计：[audit-large-types.md](../../apps/pbwork/docs/components/audit-large-types.md)
 
-### 已拍板
+### 已拍板（2026-08-08）
 
-| 项         | 决策                                                                                                                        |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------- |
-| 对齐重点   | **行为、描述、语义**（role、Token 槽、状态矩阵如 loading/empty/disabled）；**不要求** Vue props 与 Dart API 一一镜像        |
-| 大类型纪律 | **禁止**「一个组件 + 胶囊/按钮、一级 Tab/二级 Tab 这类大 type」→ **拆成两个组件**，减少采集 `componentId` 歧义              |
-| 第一刀     | **先审计清单**；首个落地目标：**Tab**（一级 / 二级分拆）                                                                    |
-| 载体       | **文档 + JSON 协议一起**（PBWork 组件/Token 文档与可机读对照；目标仓落点文档另属 Target，本条目只保证 Producer 侧语义清晰） |
-| 验收       | 组件级 DS ↔ Flutter 样板对齐即可                                                                                            |
+| 项 | 决策 |
+| --- | --- |
+| 载体 | **文档 + 扩展既有 Contract JSON**；不新开平行协议 |
+| Schema | **`schemaVersion: 1` + 可选字段**；`playground.presentation` **必填** |
+| 对齐重点 | 行为、描述、语义；**不要求** Vue props ↔ Dart API 镜像 |
+| 同步纪律 | **分级同步**（语义→Contract+Vue；叙事→文档；Flutter→P1.5）；禁止三份全文镜像 |
+| 大类型 | 禁止一组件大 type 兼多角色；**首刀**：`tabs`（pill）+ `underline-tabs` |
+| button tone | **不拆** |
+| Playground | **`single` 默认**；**`tile` 仅 button / icon**；overlay 用 `trigger`；取消「矩阵+自由调试」双区 |
+| 图标 | Lucide 为 DS 唯一包；Flutter 换包属 P1.5 |
+| Flutter | **P1.5**；P1 验收停在 Producer |
+
+### 本轮落地范围
+
+1. Contract 字段：`summary` / `behavior` / `states[].kind` / `playground` / `icons`
+2. Playground：`single` / `tile`(仅 button·icon) / `trigger`；去掉顶栏 preset 与双预览区
+3. 新增基础组件 `icon`（Lucide 策展清单）
+4. Tab 拆分落地；审计表定稿
+5. skill / checklist / overview 同步
 
 ### 非目标（P1）
 
-- 不修改 `flutter-app` resolver / Review
-- 不把某产品 `Common*` 表硬编码进 Core
-- 不借 P1 扩一堆新组件表面积（以拆分与文档/协议补齐为主）
+- 不修改 `flutter-app` resolver / Review / MCP / Evidence 契约
+- 不做 tokens.json → Dart codegen
+- 不要求 propsSchema 与 Dart API 同构
+- 不借 P1 扩大量新组件
+
+---
+
+## P1.5 — Flutter 同步（闸门后）
+
+- 补全 `proto-bridge.md` 缺行；Demo 对照；`lucide_icons`；Tab 拆分后的 Common* 对齐
+- 仍不改 Core Target adapter 硬编码表
 
 ---
 
 ## P2 — 新原型（最后，暂定）
 
 | 项       | 决策                                                                                            |
-| -------- | ----------------------------------------------------------------------------------------------- |
+| ------- | ----------------------------------------------------------------------------------------------- |
 | 现役     | 保留 `cold-chain-ops`（3 屏复杂模块样板）                                                       |
 | 新建     | **暂缓**；选题与 6–7 屏清单未定                                                                 |
 | 测试边界 | 落地时遵守 Authoring §15 / 开发规范 §9（禁止新开 Core fixture 分叉；至多一条 Runtime 冒烟 e2e） |
@@ -99,7 +113,8 @@
 | ------ | ------------------------------------------------: | ---------- |
 | —      |   旧原型清理 + 金标改名 + 概览壳 / 任务中心去默认 | **已落地** |
 | P0     | 采集导航、历史结果、交付查看/覆盖、FlowSheet 进度 | **已落地** |
-| P1     |  DS↔Flutter 语义对齐；Tab 等大类型拆分；文档+JSON | 待做       |
+| P1     | DS 协议 + Playground 平铺/触发 + Tab 拆分 + Lucide | **进行中** |
+| P1.5   | Flutter Common* / Demo / 图标语义对照             | 未开       |
 | P2     |                                     新主 App 原型 | **暂定**   |
 
 ---
@@ -113,9 +128,11 @@
 
 ---
 
-## 待确认（仅剩实现细节）
+## 待确认
 
-- [x] P0 视觉：结果页「按屏 Review」与「调试用结构化证据」→ **同一页两模式**
-- [x] P0 采集 / 交付交互重做（导航、历史、结果工作台、Deliver、JobCenter）
-- [ ] Tab 审计清单：除一级/二级外，是否还有同批要拆的大类型组件
-- [ ] P2 新原型业务选题（暂缓期间可不填）
+- [x] P0 视觉与采集 / 交付交互重做
+- [x] P1 协议：v1 可选字段 + `playground` 必填
+- [x] P1 Flutter 同步单列 P1.5
+- [x] Tab 拆分为 `tabs` + `underline-tabs`；button 不拆
+- [ ] P1 实现收口验收（协议 + Playground + Tab + Lucide 约定）
+- [ ] P2 新原型业务选题（暂缓）

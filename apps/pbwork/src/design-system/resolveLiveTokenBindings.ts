@@ -77,16 +77,30 @@ export function resolveLiveTokenBindings(
     result.elevation = `elevation.${props.elevation}`;
   }
 
-  if (typeof props.selectionStyle === "string") {
+  const tabVariant =
+    typeof props.variant === "string"
+      ? props.variant
+      : typeof props.selectionStyle === "string" &&
+          props.selectionStyle !== "pill"
+        ? props.selectionStyle === "text"
+          ? "minimal"
+          : props.selectionStyle
+        : undefined;
+
+  if (tabVariant === "underline" || tabVariant === "minimal") {
     if ("activeBackground" in result) {
-      result.activeBackground =
-        props.selectionStyle === "pill"
-          ? (staticBindings.activeBackground ?? "color.primary-soft")
-          : "transparent";
+      result.activeBackground = "transparent";
     }
     if ("radius" in result) {
-      result.radius =
-        props.selectionStyle === "pill" ? "radius.full" : "radius.md";
+      result.radius = "radius.md";
+    }
+  } else if (props.selectionStyle === "pill") {
+    if ("activeBackground" in result) {
+      result.activeBackground =
+        staticBindings.activeBackground ?? "color.primary-soft";
+    }
+    if ("radius" in result) {
+      result.radius = "radius.full";
     }
   }
 

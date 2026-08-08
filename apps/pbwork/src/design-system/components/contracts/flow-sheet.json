@@ -2,22 +2,37 @@
   "schemaVersion": 1,
   "id": "flow-sheet",
   "category": "complex",
-  "semantic": { "policy": "fixed", "defaultRole": "sheet" },
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "sheet"
+  },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "title": { "type": "string" },
-      "modelValue": { "type": "boolean" },
-      "step": { "type": "number" },
-      "stepCount": { "type": "number" },
-      "swipe": { "type": "boolean" }
+      "title": {
+        "type": "string"
+      },
+      "modelValue": {
+        "type": "boolean"
+      },
+      "step": {
+        "type": "number"
+      },
+      "stepCount": {
+        "type": "number"
+      },
+      "swipe": {
+        "type": "boolean"
+      }
     },
-    "required": ["title"]
+    "required": [
+      "title"
+    ]
   },
   "defaultProps": {
     "title": "分步面板",
-    "modelValue": true,
+    "modelValue": false,
     "step": 0,
     "stepCount": 3,
     "swipe": true
@@ -26,16 +41,30 @@
     {
       "id": "step-one",
       "label": "第一步",
-      "props": { "modelValue": true, "step": 0, "stepCount": 3 }
+      "props": {
+        "modelValue": true,
+        "step": 0,
+        "stepCount": 3
+      }
     },
     {
       "id": "step-two",
       "label": "第二步",
-      "props": { "modelValue": true, "step": 1, "stepCount": 3 }
+      "props": {
+        "modelValue": true,
+        "step": 1,
+        "stepCount": 3
+      }
     }
   ],
-  "slots": ["default", "actions"],
-  "events": ["update:modelValue", "update:step"],
+  "slots": [
+    "default",
+    "actions"
+  ],
+  "events": [
+    "update:modelValue",
+    "update:step"
+  ],
   "tokenBindings": {
     "surface": "color.surface",
     "border": "color.border",
@@ -43,5 +72,8 @@
     "elevation": "elevation.raised",
     "title": "typography.subtitle",
     "body": "typography.content"
+  },
+  "playground": {
+    "presentation": "trigger"
   }
 }

@@ -2,7 +2,10 @@
   "schemaVersion": 1,
   "id": "progress",
   "category": "basic",
-  "semantic": { "policy": "fixed", "defaultRole": "loading-state" },
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "loading-state"
+  },
   "propsSchema": {
     "type": "object",
     "properties": {
@@ -47,5 +50,8 @@
     "motion": "motion.duration-normal",
     "text": "color.on-surface",
     "label": "typography.caption"
+  },
+  "playground": {
+    "presentation": "single"
   }
 }

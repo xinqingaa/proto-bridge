@@ -4,35 +4,19 @@
 > 实现：`apps/pbwork/src/design-system/components/complex/Tabs.vue`
 > 契约：`apps/pbwork/src/design-system/components/contracts/tabs.json`
 
-页内二级切换：详情分区，或列表顶等宽分段筛选。
+页内 pill 分段：详情二级分区，或列表顶等宽状态筛选。
 
 ## 职责
 
-- **做什么**：同一页内多分段内容（二级页或非一级主体）。
+- **做什么**：同一页内多分段内容（二级页或非一级主体），固定 pill 选中样式。
 - **边界**：页内/二级分段。一级主体 Tab 子视图内禁止再嵌套带 window 的 Tabs。内容必须进具名 slot。短内容可滑用 `fill`。
-- **不要用于**：一级 BottomNavigation 面板内部再套一层横滑 Tabs；年/月/周/日等无面板切换（用无 window 分段）。
-
-## Props
-
-| Prop | 类型 | 默认 | 说明 |
-| --- | --- | --- | --- |
-| `modelValue` | string | `overview` | |
-| `selectionStyle` | `pill` \| `underline` \| `text` | `pill` | |
-| `showIndicator` | boolean | `false` | |
-| `showDivider` | boolean | `false` | |
-| `grow` | boolean | `false` | |
-| `align` | `start` \| `center` | `start` | |
-| `size` | `sm` \| `md` \| `lg` | `md` | |
-| `swipe` | boolean | `true` | |
-| `mouseSwipe` | boolean | `true` | |
-| `fill` | boolean | `false` | |
-| `items` | array | `[{"value": "overview", "label": "概览"}, {"value": "activity", "label": "活动"}]` | |
+- **不要用于**：滑线/极简分区导航（用 `underline-tabs`）；一级 BottomNavigation 面板内部再套一层横滑 Tabs；年/月/周/日等无面板切换（用无 window 分段）。
 
 ## States（Playground / Contract）
 
-- `underline` — 滑线
-- `equal` — 等宽
-- `minimal` — 极简
+- `equal` — 等宽铺满
+
+Playground：`presentation: tile`。
 
 ## Slots / Events
 
@@ -65,4 +49,4 @@
 3. `swipe` / `mouseSwipe` 分离，不可互兜底。
 4. 一级主体子视图内禁止使用；维度切换用 recipes R7。
 5. 业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`；默认 `ds.*` 只用于 Playground、组件测试或非业务预览。
-5. 详见 [composition.md](../composition.md)、[recipes.md](../../prototypes/recipes.md)、[shared-gestures.md](../shared-gestures.md)。
+6. 详见 [composition.md](../composition.md)、[recipes.md](../../prototypes/recipes.md)、[shared-gestures.md](../shared-gestures.md)。

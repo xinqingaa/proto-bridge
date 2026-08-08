@@ -26,6 +26,20 @@ const scenarios: Record<string, ComponentScenario[]> = {
       props: { label: "查看详情", tone: "primary" },
     },
   ],
+  icon: [
+    {
+      id: "nav",
+      label: "导航图标",
+      description: "底栏或列表中的导航语义图标。",
+      props: { name: "home", tone: "primary" },
+    },
+    {
+      id: "status",
+      label: "状态提示",
+      description: "告警或空态中的提示图标。",
+      props: { name: "alert-triangle", tone: "warning", label: "告警" },
+    },
+  ],
   "icon-button": [
     {
       id: "toolbar",
@@ -274,7 +288,6 @@ const scenarios: Record<string, ComponentScenario[]> = {
       description: "工单详情中在概览与动态之间切换。",
       props: {
         modelValue: "overview",
-        selectionStyle: "pill",
         showIndicator: false,
         swipe: true,
         mouseSwipe: true,
@@ -284,10 +297,36 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "filter",
       label: "分段筛选",
-      description: "列表顶部用等宽页签做状态分段。",
+      description: "列表顶部用等宽 pill 页签做状态分段。",
       props: {
-        selectionStyle: "underline",
+        grow: true,
+        swipe: true,
+        mouseSwipe: true,
+        fill: true,
+      },
+    },
+  ],
+  "underline-tabs": [
+    {
+      id: "section",
+      label: "分区导航",
+      description: "详情页内用滑线页签切换概览与活动分区。",
+      props: {
+        modelValue: "overview",
+        variant: "underline",
         showIndicator: true,
+        swipe: true,
+        mouseSwipe: true,
+        fill: false,
+      },
+    },
+    {
+      id: "minimal",
+      label: "极简导航",
+      description: "无滑线、仅文字强调的轻量分区切换。",
+      props: {
+        variant: "minimal",
+        showIndicator: false,
         grow: true,
         swipe: true,
         mouseSwipe: true,

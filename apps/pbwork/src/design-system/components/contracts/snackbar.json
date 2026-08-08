@@ -2,7 +2,10 @@
   "schemaVersion": 1,
   "id": "snackbar",
   "category": "complex",
-  "semantic": { "policy": "fixed", "defaultRole": "toast" },
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "toast"
+  },
   "propsSchema": {
     "type": "object",
     "properties": {
@@ -26,7 +29,7 @@
     ]
   },
   "defaultProps": {
-    "modelValue": true,
+    "modelValue": false,
     "message": "工单已创建",
     "tone": "success"
   },
@@ -58,5 +61,8 @@
     "radius": "radius.lg",
     "elevation": "elevation.level-4",
     "message": "typography.content"
+  },
+  "playground": {
+    "presentation": "trigger"
   }
 }

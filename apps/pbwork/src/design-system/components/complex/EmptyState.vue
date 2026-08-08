@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { toRefs } from "vue";
-import { Inbox } from "lucide-vue-next";
 import Button from "@/design-system/components/basic/Button.vue";
+import Icon from "@/design-system/components/basic/Icon.vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 
 const props = defineProps<{
@@ -58,7 +58,7 @@ usePbInspect({
     color="transparent"
   >
     <v-avatar color="primary" variant="tonal" size="56" class="pb-empty-icon">
-      <Inbox :size="28" />
+      <Icon name="inbox" size="lg" tone="primary" />
     </v-avatar>
     <h3>{{ title }}</h3>
     <p>{{ description ?? "这里还没有内容。" }}</p>

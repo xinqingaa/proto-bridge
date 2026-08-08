@@ -2,49 +2,98 @@
   "schemaVersion": 1,
   "id": "tab-viewport",
   "category": "complex",
-  "semantic": { "policy": "fixed", "defaultRole": "tab-viewport" },
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "tab-viewport"
+  },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "modelValue": { "type": "string" },
+      "modelValue": {
+        "type": "string"
+      },
       "items": {
         "type": "array",
         "items": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["value"],
-          "properties": { "value": { "type": "string" } }
+          "required": [
+            "value"
+          ],
+          "properties": {
+            "value": {
+              "type": "string"
+            }
+          }
         }
       },
-      "swipe": { "type": "boolean" },
-      "mouseSwipe": { "type": "boolean" },
-      "keepMounted": { "type": "boolean" },
-      "transitionDuration": { "type": "number", "minimum": 0 }
+      "swipe": {
+        "type": "boolean"
+      },
+      "mouseSwipe": {
+        "type": "boolean"
+      },
+      "keepMounted": {
+        "type": "boolean"
+      },
+      "transitionDuration": {
+        "type": "number",
+        "minimum": 0
+      }
     },
-    "required": ["modelValue", "items"]
+    "required": [
+      "modelValue",
+      "items"
+    ]
   },
   "defaultProps": {
     "modelValue": "one",
-    "items": [{ "value": "one" }, { "value": "two" }, { "value": "three" }],
+    "items": [
+      {
+        "value": "one"
+      },
+      {
+        "value": "two"
+      },
+      {
+        "value": "three"
+      }
+    ],
     "swipe": true,
     "mouseSwipe": true,
     "keepMounted": true,
     "transitionDuration": 240
   },
   "states": [
-    { "id": "second", "label": "第二屏", "props": { "modelValue": "two" } },
+    {
+      "id": "second",
+      "label": "第二屏",
+      "props": {
+        "modelValue": "two"
+      }
+    },
     {
       "id": "no-swipe",
       "label": "禁用滑动",
-      "props": { "swipe": false, "mouseSwipe": false }
+      "props": {
+        "swipe": false,
+        "mouseSwipe": false
+      }
     }
   ],
-  "slots": ["item"],
-  "events": ["update:modelValue"],
+  "slots": [
+    "item"
+  ],
+  "events": [
+    "update:modelValue"
+  ],
   "tokenBindings": {
     "background": "color.background",
     "duration": "motion.duration-normal",
     "easing": "motion.easing-standard"
+  },
+  "playground": {
+    "presentation": "single"
   }
 }

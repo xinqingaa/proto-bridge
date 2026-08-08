@@ -10,6 +10,7 @@ const props = withDefaults(
   defineProps<{
     modelValue?: string;
     items: Array<{ value: string; label: string }>;
+    variant?: "underline" | "minimal";
     showIndicator?: boolean;
     showDivider?: boolean;
     grow?: boolean;
@@ -18,10 +19,11 @@ const props = withDefaults(
     swipe?: boolean;
     mouseSwipe?: boolean;
     fill?: boolean;
-    /** Page-unique inspect / comment anchor; falls back to `ds.tabs`. */
+    /** Page-unique inspect / comment anchor; falls back to `ds.underline-tabs`. */
     inspectId?: string;
   }>(),
   {
+    variant: "underline",
     swipe: true,
     mouseSwipe: true,
     fill: false,
@@ -33,6 +35,7 @@ const rootRef = usePbInspectRef();
 const {
   modelValue,
   items,
+  variant,
   showIndicator,
   showDivider,
   grow,
@@ -44,14 +47,18 @@ const {
   inspectId,
 } = toRefs(props);
 
-const indicatorVisible = computed(() => showIndicator.value ?? false);
+const resolvedVariant = computed(() => variant.value ?? "underline");
+const indicatorVisible = computed(() => {
+  if (resolvedVariant.value === "minimal") return false;
+  return showIndicator.value ?? true;
+});
 
 const tabStyle = computed(() => ({
-  "--pb-tabs-active-background": "var(--pb-color-primary-soft)",
+  "--pb-tabs-active-background": "transparent",
   "--pb-tabs-active-color": "var(--pb-color-primary)",
   "--pb-tabs-inactive-color": "var(--pb-color-on-surface-muted)",
   "--pb-tabs-typography": "var(--pb-typography-label)",
-  "--pb-tabs-radius": "var(--pb-radius-full)",
+  "--pb-tabs-radius": "var(--pb-radius-md)",
   "--pb-tabs-height": `var(--pb-sizing-control-${size.value ?? "md"})`,
 }));
 
@@ -71,13 +78,14 @@ const swipe = usePointerSwipe(
 
 usePbInspect({
   element: rootRef,
-  pbId: "ds.tabs",
+  pbId: "ds.underline-tabs",
   instanceId: inspectId,
-  componentId: "tabs",
+  componentId: "underline-tabs",
   getProps: () => ({
     modelValue: modelValue.value,
     itemCount: items.value.length,
     hasPanels: true,
+    variant: resolvedVariant.value,
     showIndicator: indicatorVisible.value,
     showDivider: showDivider.value ?? false,
     grow: grow.value ?? false,
@@ -91,11 +99,11 @@ usePbInspect({
   getState: () => ({ selected: tab.value }),
   getTokenBindings: () => ({
     indicator: "color.primary",
-    activeBackground: "color.primary-soft",
+    activeBackground: "transparent",
     activeColor: "color.primary",
     inactiveColor: "color.on-surface-muted",
     border: showDivider.value ? "border.hairline" : "transparent",
-    radius: "radius.full",
+    radius: "radius.md",
     height: `sizing.control-${size.value ?? "md"}`,
     target: "sizing.touch",
     typography: "typography.label",
@@ -105,10 +113,9 @@ usePbInspect({
   }),
   getTokens: () => [
     "color.primary",
-    "color.primary-soft",
     "color.on-surface-muted",
     "border.hairline",
-    "radius.full",
+    "radius.md",
     `sizing.control-${size.value ?? "md"}`,
     "sizing.touch",
     "typography.label",
@@ -122,10 +129,12 @@ usePbInspect({
 <template>
   <div
     ref="rootRef"
-    class="pb-tabs tab-bar style-pill"
+    class="pb-tabs tab-bar"
     :class="{
       'has-indicator': indicatorVisible,
       'has-divider': showDivider ?? false,
+      'style-underline': resolvedVariant === 'underline',
+      'style-text': resolvedVariant === 'minimal',
       'is-fill': fill,
     }"
     :style="tabStyle"
@@ -143,7 +152,7 @@ usePbInspect({
         :key="item.value"
         :value="item.value"
         class="pb-tab"
-        :data-pb-id="`${inspectId ?? 'ds.tabs'}.tab`"
+        :data-pb-id="`${inspectId ?? 'ds.underline-tabs'}.tab`"
         :data-pb-key="item.value"
         data-pb-role="tab"
       >
@@ -179,7 +188,7 @@ usePbInspect({
         <div
           v-if="tab === item.value"
           class="pb-tab-panel"
-          :data-pb-id="`${inspectId ?? 'ds.tabs'}.panel`"
+          :data-pb-id="`${inspectId ?? 'ds.underline-tabs'}.panel`"
           :data-pb-key="item.value"
           data-pb-role="tab-panel"
         >
@@ -216,20 +225,16 @@ usePbInspect({
   height: var(--v-tabs-height);
   min-height: var(--v-tabs-height);
   padding: 0 var(--pb-spacing-md, 16px);
-  border-radius: var(--pb-tabs-radius, var(--pb-radius-full));
+  border-radius: var(--pb-tabs-radius, var(--pb-radius-md));
   color: var(--pb-tabs-inactive-color, var(--pb-color-on-surface-muted));
   font: var(--pb-tabs-typography, var(--pb-typography-label));
   letter-spacing: normal;
   text-transform: none;
 }
-.pb-tabs.style-pill .pb-tab-bar :deep(.v-tab--selected) {
-  background: var(--pb-tabs-active-background, transparent);
+.pb-tabs.style-underline .pb-tab-bar :deep(.v-tab--selected),
+.pb-tabs.style-text .pb-tab-bar :deep(.v-tab--selected) {
   color: var(--pb-tabs-active-color, var(--pb-color-primary));
   font-weight: 600;
-}
-.pb-tabs.style-pill .pb-tab-bar :deep(.v-tab--selected .v-btn__overlay),
-.pb-tabs.style-pill .pb-tab-bar :deep(.v-tab--selected .v-btn__underlay) {
-  border-radius: inherit;
 }
 .pb-tab-bar :deep(.v-tabs-slider),
 .pb-tab-bar :deep(.v-tab__slider) {

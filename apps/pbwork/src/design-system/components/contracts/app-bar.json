@@ -2,7 +2,10 @@
   "schemaVersion": 1,
   "id": "app-bar",
   "category": "complex",
-  "semantic": { "policy": "fixed", "defaultRole": "app-bar" },
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "app-bar"
+  },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -27,14 +30,21 @@
       },
       "actionIcon": {
         "type": "string",
-        "enum": ["more", "plus", "search", "settings"]
+        "enum": [
+          "more",
+          "plus",
+          "search",
+          "settings"
+        ]
       },
       "actionLabel": {
         "type": "string",
         "description": "无障碍名称；未传时按 actionIcon 推导"
       }
     },
-    "required": ["title"]
+    "required": [
+      "title"
+    ]
   },
   "defaultProps": {
     "title": "项目协作",
@@ -55,13 +65,21 @@
       }
     }
   ],
-  "slots": ["append"],
-  "events": ["back", "action"],
+  "slots": [
+    "append"
+  ],
+  "events": [
+    "back",
+    "action"
+  ],
   "tokenBindings": {
     "surface": "color.surface",
     "border": "color.border",
     "text": "color.on-surface",
     "elevation": "elevation.card",
     "title": "typography.subtitle"
+  },
+  "playground": {
+    "presentation": "single"
   }
 }

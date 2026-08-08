@@ -35,7 +35,7 @@ Token.defaultValue + Theme.overrides
 
 1. Contract 声明槽位（如 `background`、`typography`）→ Bind 池内 ID。  
 2. 运行时按 Theme 解析为 CSS 变量。  
-3. 状态切换只走约定映射（`tone`、`variant`、`selectionStyle` 等），不新增临时绑定表。
+3. 状态切换只走约定映射（`tone`、`variant` 等），不新增临时绑定表。
 
 ## 业务局部节点的 Evidence
 

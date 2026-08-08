@@ -93,10 +93,10 @@ describe("design contracts", () => {
   it("ships the fixed component sample set", () => {
     expect(
       componentRecords.filter((item) => item.category === "basic"),
-    ).toHaveLength(15);
+    ).toHaveLength(16);
     expect(
       componentRecords.filter((item) => item.category === "complex"),
-    ).toHaveLength(14);
+    ).toHaveLength(15);
   });
 
   it("ships the expanded semantic token set", () => {
@@ -243,7 +243,7 @@ describe("resolveLiveTokenBindings", () => {
     expect(live.paddingX).toBe("spacing.sm");
   });
 
-  it("maps tabs selectionStyle to fixed primary tokens", async () => {
+  it("maps tab appearance props to fixed primary tokens", async () => {
     const { resolveLiveTokenBindings } =
       await import("@/design-system/resolveLiveTokenBindings");
     const pill = resolveLiveTokenBindings(
@@ -252,7 +252,7 @@ describe("resolveLiveTokenBindings", () => {
         radius: "radius.full",
         border: "border.hairline",
       },
-      { selectionStyle: "pill", showDivider: true },
+      { showDivider: true },
     );
     expect(pill.activeBackground).toBe("color.primary-soft");
     expect(pill.radius).toBe("radius.full");
@@ -264,11 +264,23 @@ describe("resolveLiveTokenBindings", () => {
         radius: "radius.full",
         border: "border.hairline",
       },
-      { selectionStyle: "underline", showDivider: false },
+      { variant: "underline", showDivider: false },
     );
     expect(underline.activeBackground).toBe("transparent");
     expect(underline.radius).toBe("radius.md");
     expect(underline.border).toBe("transparent");
+
+    const minimal = resolveLiveTokenBindings(
+      {
+        activeBackground: "color.primary-soft",
+        radius: "radius.full",
+        border: "border.hairline",
+      },
+      { variant: "minimal", showDivider: true },
+    );
+    expect(minimal.activeBackground).toBe("transparent");
+    expect(minimal.radius).toBe("radius.md");
+    expect(minimal.border).toBe("border.hairline");
   });
 });
 

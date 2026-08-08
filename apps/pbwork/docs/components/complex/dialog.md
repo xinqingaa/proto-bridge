@@ -1,7 +1,7 @@
 # Dialog
 
-> 组件 id：`dialog` · 分类：`complex`
-> 实现：`apps/pbwork/src/design-system/components/complex/DialogPanel.vue`
+> 组件 id：`dialog` · 分类：`complex`  
+> 实现：`apps/pbwork/src/design-system/components/complex/DialogPanel.vue`  
 > 契约：`apps/pbwork/src/design-system/components/contracts/dialog.json`
 
 需要确认或知悉的打断式说明，如完成工单、离线提示。
@@ -10,44 +10,23 @@
 
 - **做什么**：破坏性/确认操作。
 - **边界**：确认/阻断对话；轻提示用 Snackbar。宜与主滚动列**兄弟挂载**（见 recipes R4），打开态注册 Variant。
+- **不要用于**：多步流程（用 FlowSheet）或非阻断操作面板（用 BottomSheet）。
 
-## Props
+## 行为要点
 
-| Prop | 类型 | 默认 | 说明 |
-| --- | --- | --- | --- |
-| `modelValue` | boolean | `true` | |
-| `title` | string | `确认完成工单？` | |
-| `message` | string | `完成后将通知客户，并记录处理结果。` | |
-| `confirmLabel` | string | `确认完成` | |
-| `contained` | boolean | `true` | |
+- 默认关闭；Playground 与产品页通过触发打开。
+- `confirm` 发出后由调用方关闭；组件不擅自导航。
+- Props、Token 槽以 Contract 为准。
 
-## States（Playground / Contract）
+## States
 
-- `closed` — 关闭
+| id | label | kind |
+| --- | --- | --- |
+| `open` | 打开 | content |
 
-## Slots / Events
-
-- **Slots**：`default`
-- **Events**：`update:modelValue`, `confirm`
-
-## tokenBindings
-
-| 槽位 | Token |
-| --- | --- |
-| `scrim` | `color.scrim` |
-| `surface` | `color.surface-raised` |
-| `border` | `color.border` |
-| `text` | `color.on-surface` |
-| `radius` | `radius.xl` |
-| `elevation` | `elevation.level-5` |
-| `title` | `typography.title` |
-| `body` | `typography.content` |
-
-切浅色/深色只改 Theme 覆盖值，不改本表绑定。
+Playground：`presentation: trigger`。
 
 ## 用法要点
 
-1. 从 `@/design-system/components/complex/...` 引入实现组件。
-2. Props 保持在契约枚举内；需要新能力先改 contract + registry + 本文。
-3. 业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`；默认 `ds.*` 只用于 Playground、组件测试或非业务预览。
-4. Dialog 的语义锚点位于实际可见 surface；传入 `inspectId` 后，内部取消与确认操作分别使用稳定的 `.cancel`、`.confirm` 子身份，避免 Overlay 内部出现重复 `ds.button`。
+1. 从 `@/design-system/components/complex/DialogPanel.vue` 引入。
+2. 业务原型传稳定 `inspectId`；打开态进 Variant。

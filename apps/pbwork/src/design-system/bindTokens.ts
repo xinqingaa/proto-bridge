@@ -58,6 +58,7 @@ export const BIND_TOKEN_IDS = [
   "sizing.control-sm",
   "sizing.control-md",
   "sizing.control-lg",
+  "sizing.icon-sm",
   "sizing.icon-md",
   "sizing.icon-lg",
   "sizing.avatar-md",

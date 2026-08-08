@@ -2,7 +2,16 @@
   "schemaVersion": 1,
   "id": "dialog",
   "category": "complex",
-  "semantic": { "policy": "fixed", "defaultRole": "dialog" },
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "dialog"
+  },
+  "summary": "确认类模态对话框；需用户显式确认或关闭，不承担底栏流程。",
+  "behavior": [
+    "默认关闭；Playground 与产品页通过触发打开",
+    "confirm 发出后由调用方关闭；组件不擅自导航",
+    "不替代 BottomSheet / FlowSheet 的流程承载"
+  ],
   "propsSchema": {
     "type": "object",
     "properties": {
@@ -27,7 +36,7 @@
     ]
   },
   "defaultProps": {
-    "modelValue": true,
+    "modelValue": false,
     "title": "确认完成工单？",
     "message": "完成后将通知客户，并记录处理结果。",
     "confirmLabel": "确认完成",
@@ -35,10 +44,11 @@
   },
   "states": [
     {
-      "id": "closed",
-      "label": "关闭",
+      "id": "open",
+      "label": "打开",
+      "kind": "content",
       "props": {
-        "modelValue": false
+        "modelValue": true
       }
     }
   ],
@@ -58,5 +68,8 @@
     "elevation": "elevation.level-5",
     "title": "typography.title",
     "body": "typography.content"
+  },
+  "playground": {
+    "presentation": "trigger"
   }
 }

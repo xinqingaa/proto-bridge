@@ -30,13 +30,8 @@ import { storeToRefs } from "pinia";
 
 const props = defineProps<{ componentId: string }>();
 const playground = usePlaygroundStore();
-const {
-  scenarioId,
-  themeId,
-  resolvedProps,
-  selectedScenario,
-  highlightedPresetId,
-} = storeToRefs(playground);
+const { scenarioId, themeId, resolvedProps, selectedScenario } =
+  storeToRefs(playground);
 
 /** Stable tab ids: 内容 | 类型 | 行为 | 令牌 — never filter tabs away. */
 type ControlPanelId = "content" | "type" | "behavior" | "tokens";
@@ -69,6 +64,25 @@ const previewStyle = computed(() =>
 const vuetifyPreviewTheme = computed(() =>
   themeId.value === "dark" ? "pbworkDark" : "pbworkLight",
 );
+const presentation = computed(
+  () => contract.value?.playground?.presentation ?? "single",
+);
+const isTilePresentation = computed(() => presentation.value === "tile");
+const isTriggerPresentation = computed(() => presentation.value === "trigger");
+
+const presentationLabel = computed(() => {
+  if (isTilePresentation.value) return "平铺";
+  if (isTriggerPresentation.value) return "触发";
+  return "单预览";
+});
+
+const toolbarHint = computed(() => {
+  if (isTilePresentation.value) return "状态矩阵平铺；仅切换主题";
+  if (isTriggerPresentation.value)
+    return "点击触发按钮打开；侧栏可调文案与行为";
+  return "单预览由场景与侧栏驱动";
+});
+
 const tallPreview = computed(() =>
   [
     "bottom-sheet",
@@ -78,19 +92,33 @@ const tallPreview = computed(() =>
     "tab-viewport",
     "app-bar",
     "tabs",
+    "underline-tabs",
     "dialog",
     "snackbar",
     "bottom-navigation",
   ].includes(props.componentId),
 );
 
-const isOverlayPreview = computed(() =>
-  ["dialog", "bottom-sheet", "flow-sheet", "snackbar"].includes(
-    props.componentId,
-  ),
-);
+const isOverlayPreview = computed(() => isTriggerPresentation.value);
 
 const previewAttach = "[data-pb-scenario-preview]";
+
+type TileEntry = { id: string; label: string; props: Record<string, unknown> };
+
+const tileEntries = computed((): TileEntry[] => {
+  const defaults = contract.value?.defaultProps ?? {};
+  const entries: TileEntry[] = [
+    { id: "default", label: "默认", props: { ...defaults } },
+  ];
+  for (const state of states.value) {
+    entries.push({
+      id: state.id,
+      label: state.label,
+      props: { ...defaults, ...(state.props ?? {}) },
+    });
+  }
+  return entries;
+});
 
 const contentControlKeys = new Set([
   "label",
@@ -160,7 +188,7 @@ const activeControlGroup = computed(() =>
 );
 
 const panelPreviewSlots = computed(() =>
-  ["tabs"].includes(record.value?.id ?? "")
+  ["tabs", "underline-tabs"].includes(record.value?.id ?? "")
     ? (contract.value?.slots ?? [])
     : [],
 );
@@ -173,11 +201,11 @@ function panelSlotLabel(name: string) {
 
 const playgroundNavIcons = [Home, List, User];
 
-function previewBind() {
-  const base: Record<string, unknown> = { ...resolvedProps.value };
+function enrichBind(base: Record<string, unknown>): Record<string, unknown> {
+  const next: Record<string, unknown> = { ...base };
   if (props.componentId === "bottom-navigation") {
-    const rawItems = Array.isArray(base.items) ? base.items : [];
-    base.items = rawItems.map((item, index) => {
+    const rawItems = Array.isArray(next.items) ? next.items : [];
+    next.items = rawItems.map((item, index) => {
       const row =
         item && typeof item === "object"
           ? (item as { value?: string; label?: string })
@@ -189,13 +217,26 @@ function previewBind() {
       };
     });
   }
-  if (!isOverlayPreview.value) return base;
+  if (!isOverlayPreview.value) return next;
   return {
-    ...base,
+    ...next,
     attach: previewAttach,
     contained: true,
-    modelValue: Boolean(base.modelValue),
+    modelValue: Boolean(next.modelValue),
   };
+}
+
+/** Free-debug / trigger preview — driven by sidebar overrides. */
+function previewBind() {
+  return enrichBind({ ...resolvedProps.value });
+}
+
+function tileBind(entry: TileEntry) {
+  return enrichBind({ ...entry.props });
+}
+
+function openTriggeredPreview() {
+  playground.setOverride("modelValue", true);
 }
 
 const previewComponent = computed(() => {
@@ -234,10 +275,6 @@ function resetCurrent() {
   playground.reset();
 }
 
-function selectPreset(id: string) {
-  playground.applyPreset(id);
-}
-
 function selectScenario(id: string) {
   playground.setScenario(id);
 }
@@ -261,13 +298,23 @@ function bindingResolvedValue(tokenId: string) {
     :description="record.description"
   >
     <template #stats>
-      <WorkbenchStatChip :value="controls.length" label="个可调项" />
-      <WorkbenchStatChip :value="states.length" label="个预设" />
-      <WorkbenchStatChip :value="tokenBindings.length" label="个令牌绑定" />
+      <WorkbenchStatChip
+        v-if="!isTilePresentation"
+        :value="controls.length"
+        label="个可调项"
+      />
+      <WorkbenchStatChip :value="states.length" label="个状态" />
+      <WorkbenchStatChip :value="presentationLabel" label="展示" />
+      <WorkbenchStatChip
+        v-if="!isTilePresentation"
+        :value="tokenBindings.length"
+        label="个令牌绑定"
+      />
     </template>
 
     <template #toolbar>
       <v-select
+        v-if="!isTilePresentation"
         :model-value="scenarioId"
         :items="scenarios"
         item-title="label"
@@ -279,28 +326,7 @@ function bindingResolvedValue(tokenId: string) {
         class="scenario-select"
         @update:model-value="selectScenario(String($event))"
       />
-      <v-btn-toggle
-        :model-value="highlightedPresetId"
-        density="compact"
-        color="primary"
-        variant="outlined"
-        divided
-      >
-        <v-btn value="default" size="small" @click="selectPreset('default')"
-          >默认</v-btn
-        >
-        <v-btn
-          v-for="state in states"
-          :key="state.id"
-          :value="state.id"
-          size="small"
-          @click="selectPreset(state.id)"
-          >{{ state.label }}</v-btn
-        >
-      </v-btn-toggle>
-      <span class="preset-hint"
-        >匹配当前预览时高亮；侧栏调整后若不匹配则取消</span
-      >
+      <span class="preset-hint">{{ toolbarHint }}</span>
       <v-btn-toggle
         :model-value="themeId"
         density="compact"
@@ -316,26 +342,65 @@ function bindingResolvedValue(tokenId: string) {
       </v-btn-toggle>
     </template>
 
-    <div class="playground-grid">
+    <div
+      class="playground-grid"
+      :class="{ 'is-tile-only': isTilePresentation }"
+    >
       <div class="preview-wrap">
         <article class="scenario-preview-card" :style="previewStyle">
           <header class="scenario-header">
             <div>
-              <strong>{{ selectedScenario?.label }}</strong>
-              <span>{{ selectedScenario?.description }}</span>
+              <strong>{{
+                isTilePresentation
+                  ? "状态矩阵"
+                  : selectedScenario?.label
+              }}</strong>
+              <span>{{
+                isTilePresentation
+                  ? "Contract default + states 平铺对照"
+                  : selectedScenario?.description
+              }}</span>
             </div>
             <code>{{ `theme.${themeId}` }}</code>
           </header>
           <v-theme-provider :theme="vuetifyPreviewTheme">
+            <!-- tile: compact matrix only (button / icon) -->
             <div
+              v-if="isTilePresentation"
+              class="preview scenario-preview tile-matrix"
+              :style="previewStyle"
+            >
+              <section
+                v-for="entry in tileEntries"
+                :key="entry.id"
+                class="tile-cell"
+              >
+                <header class="tile-cell-header">{{ entry.label }}</header>
+                <div class="tile-cell-body">
+                  <component :is="previewComponent" v-bind="tileBind(entry)" />
+                </div>
+              </section>
+            </div>
+
+            <!-- trigger: open overlay -->
+            <div
+              v-else-if="isTriggerPresentation"
               class="preview scenario-preview"
               data-pb-scenario-preview
               :style="previewStyle"
-              :class="{
-                'is-tall': tallPreview,
-                'is-overlay': isOverlayPreview,
-              }"
+              :class="{ 'is-tall': tallPreview, 'is-overlay': true }"
             >
+              <div class="trigger-bar">
+                <v-btn
+                  color="primary"
+                  variant="flat"
+                  size="small"
+                  @click="openTriggeredPreview"
+                >
+                  打开{{ record.label }}
+                </v-btn>
+                <span class="trigger-hint">关闭后可再次打开</span>
+              </div>
               <component
                 :is="previewComponent"
                 v-bind="previewBind()"
@@ -363,7 +428,24 @@ function bindingResolvedValue(tokenId: string) {
                     <p>复制提示词并交付。</p>
                   </div>
                 </template>
-                <template v-else-if="record.id === 'card'"
+              </component>
+            </div>
+
+            <!-- single: one interactive preview -->
+            <div
+              v-else
+              class="preview scenario-preview"
+              data-pb-scenario-preview
+              :style="previewStyle"
+              :class="{ 'is-tall': tallPreview }"
+            >
+              <component
+                :is="previewComponent"
+                v-bind="previewBind()"
+                @update:model-value="onPreviewUpdate"
+                @update:step="setControlValue('step', $event)"
+              >
+                <template v-if="record.id === 'card'"
                   >4 个待处理 · 2 个即将超时</template
                 >
                 <template v-else-if="record.id === 'form-section'"
@@ -415,7 +497,7 @@ function bindingResolvedValue(tokenId: string) {
         </article>
       </div>
 
-      <v-form class="controls" @submit.prevent>
+      <v-form v-if="!isTilePresentation" class="controls" @submit.prevent>
         <div class="controls-header">
           <strong>调整组件</strong>
           <v-btn size="small" variant="text" @click="resetCurrent">重置</v-btn>
@@ -535,11 +617,51 @@ function bindingResolvedValue(tokenId: string) {
   font-size: 0.75rem;
   line-height: 1.35;
 }
+.tile-matrix {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+.tile-cell {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--pb-color-border, #d7dee8);
+  border-radius: 12px;
+  background: var(--pb-color-surface, #fff);
+  justify-items: center;
+  text-align: center;
+}
+.tile-cell-header {
+  color: var(--pb-color-on-surface-muted, #64748b);
+  font: var(--pb-typography-caption);
+}
+.tile-cell-body {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+}
+.trigger-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.trigger-hint {
+  color: var(--pb-color-on-surface-muted, #64748b);
+  font: var(--pb-typography-caption);
+}
 .playground-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
   gap: 20px;
   align-items: start;
+}
+.playground-grid.is-tile-only {
+  grid-template-columns: minmax(0, 1fr);
 }
 .preview-wrap,
 .controls {

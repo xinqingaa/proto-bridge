@@ -2,7 +2,14 @@
   "schemaVersion": 1,
   "id": "form-section",
   "category": "complex",
-  "semantic": { "policy": "contextual", "defaultRole": "section", "allowedRoles": ["section", "form"] },
+  "semantic": {
+    "policy": "contextual",
+    "defaultRole": "section",
+    "allowedRoles": [
+      "section",
+      "form"
+    ]
+  },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -21,7 +28,10 @@
       },
       "semanticRole": {
         "type": "string",
-        "enum": ["section", "form"]
+        "enum": [
+          "section",
+          "form"
+        ]
       }
     },
     "required": [
@@ -32,8 +42,8 @@
     "title": "客户信息",
     "description": "填写联系人和服务地址",
     "required": true,
-    "actionLabel": "编辑"
-    ,"semanticRole": "section"
+    "actionLabel": "编辑",
+    "semanticRole": "section"
   },
   "states": [
     {
@@ -68,5 +78,8 @@
     "gap": "spacing.sm-plus",
     "typography": "typography.subtitle",
     "caption": "typography.caption"
+  },
+  "playground": {
+    "presentation": "single"
   }
 }

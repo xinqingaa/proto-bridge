@@ -2,7 +2,10 @@
   "schemaVersion": 1,
   "id": "checkbox",
   "category": "basic",
-  "semantic": { "policy": "fixed", "defaultRole": "field" },
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "field"
+  },
   "propsSchema": {
     "type": "object",
     "properties": {
@@ -52,5 +55,8 @@
     "target": "sizing.touch",
     "radius": "radius.xs",
     "label": "typography.content"
+  },
+  "playground": {
+    "presentation": "single"
   }
 }

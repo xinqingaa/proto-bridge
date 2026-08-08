@@ -39,14 +39,35 @@ describe("component business scenarios", () => {
     );
     expect(controlKeys("tabs")).toEqual(
       expect.arrayContaining([
-        "selectionStyle",
         "size",
-        "showIndicator",
+        "showDivider",
+        "grow",
         "mouseSwipe",
       ]),
     );
     expect(controlKeys("tabs")).not.toEqual(
       expect.arrayContaining([
+        "selectionStyle",
+        "variant",
+        "background",
+        "activeColor",
+        "inactiveColor",
+        "activeBackground",
+        "typography",
+      ]),
+    );
+    expect(controlKeys("underline-tabs")).toEqual(
+      expect.arrayContaining([
+        "variant",
+        "showIndicator",
+        "showDivider",
+        "grow",
+        "mouseSwipe",
+      ]),
+    );
+    expect(controlKeys("underline-tabs")).not.toEqual(
+      expect.arrayContaining([
+        "selectionStyle",
         "background",
         "activeColor",
         "inactiveColor",

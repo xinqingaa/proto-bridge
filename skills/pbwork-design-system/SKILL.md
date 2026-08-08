@@ -22,16 +22,25 @@ description: >-
 
 ## 组件原子变更
 
-同一任务必须检查并同步：
+按[跨栈对齐协议](../../apps/pbwork/docs/components/alignment-protocol.md)分级同步：
 
-1. `src/design-system/components/contracts/{id}.json`
+| 变更 | 必须同批 | 可不做 |
+| --- | --- | --- |
+| 语义（role / Token 槽 / state / behavior / 拆组件） | Contract + Vue + registry + 测试 | Flutter（P1.5） |
+| 用法铁律 / 反例 | 文档短叙事 | 不抄 props 表 |
+| Playground 展示 | Contract `playground.presentation` | — |
+| 纯实现修（同语义） | Vue（+ 单测） | 无字段变更时可不改 Contract/文档 |
+
+同一任务至少检查：
+
+1. `src/design-system/components/contracts/{id}.json`（含 `playground.presentation`；语义变更补 `summary`/`behavior`/`states[].kind`）
 2. Vue 实现
 3. `components/registry.ts`
 4. `components/scenarios.ts`（适用时）
-5. `apps/pbwork/docs/components/**/{id}.md`
+5. `apps/pbwork/docs/components/**/{id}.md`（触达时按新骨架，不以 props 表为权威）
 6. Unit/Playwright tests
 
-不能只改 Vue 或只改文档。
+不能只改 Vue 或只改文档。图标包仅 Lucide。大类型嫌疑先查 [audit-large-types.md](../../apps/pbwork/docs/components/audit-large-types.md)。
 
 ## Token/Theme 原子变更
 

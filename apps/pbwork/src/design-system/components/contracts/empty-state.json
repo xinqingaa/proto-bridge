@@ -2,7 +2,10 @@
   "schemaVersion": 1,
   "id": "empty-state",
   "category": "complex",
-  "semantic": { "policy": "fixed", "defaultRole": "empty-state" },
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "empty-state"
+  },
   "propsSchema": {
     "type": "object",
     "properties": {
@@ -48,5 +51,14 @@
     "iconSize": "sizing.icon-lg",
     "typography": "typography.subtitle",
     "body": "typography.content"
+  },
+  "playground": {
+    "presentation": "single"
+  },
+  "icons": {
+    "pack": "lucide",
+    "defaults": [
+      "inbox"
+    ]
   }
 }

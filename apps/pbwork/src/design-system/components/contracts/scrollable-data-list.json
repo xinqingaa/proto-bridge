@@ -2,61 +2,106 @@
   "schemaVersion": 1,
   "id": "scrollable-data-list",
   "category": "complex",
-  "semantic": { "policy": "fixed", "defaultRole": "scroll-list" },
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "scroll-list"
+  },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,
     "properties": {
       "pullRefresh": {
         "anyOf": [
-          { "type": "boolean" },
+          {
+            "type": "boolean"
+          },
           {
             "type": "object",
             "additionalProperties": false,
-            "required": ["enabled"],
+            "required": [
+              "enabled"
+            ],
             "properties": {
-              "enabled": { "type": "boolean" },
-              "threshold": { "type": "number", "minimum": 1 },
-              "maxDistance": { "type": "number", "minimum": 1 },
-              "mouse": { "type": "boolean" }
+              "enabled": {
+                "type": "boolean"
+              },
+              "threshold": {
+                "type": "number",
+                "minimum": 1
+              },
+              "maxDistance": {
+                "type": "number",
+                "minimum": 1
+              },
+              "mouse": {
+                "type": "boolean"
+              }
             }
           }
         ]
       },
       "loadMore": {
         "anyOf": [
-          { "type": "boolean" },
+          {
+            "type": "boolean"
+          },
           {
             "type": "object",
             "additionalProperties": false,
-            "required": ["enabled"],
+            "required": [
+              "enabled"
+            ],
             "properties": {
-              "enabled": { "type": "boolean" },
-              "rootMargin": { "type": "string" },
-              "manualFallback": { "type": "boolean" }
+              "enabled": {
+                "type": "boolean"
+              },
+              "rootMargin": {
+                "type": "string"
+              },
+              "manualFallback": {
+                "type": "boolean"
+              }
             }
           }
         ]
       },
       "dragScroll": {
         "anyOf": [
-          { "type": "boolean" },
+          {
+            "type": "boolean"
+          },
           {
             "type": "object",
             "additionalProperties": false,
-            "required": ["enabled"],
+            "required": [
+              "enabled"
+            ],
             "properties": {
-              "enabled": { "type": "boolean" },
-              "mouse": { "type": "boolean" },
-              "momentum": { "type": "boolean" }
+              "enabled": {
+                "type": "boolean"
+              },
+              "mouse": {
+                "type": "boolean"
+              },
+              "momentum": {
+                "type": "boolean"
+              }
             }
           }
         ]
       },
-      "refreshing": { "type": "boolean" },
-      "loadingMore": { "type": "boolean" },
-      "hasMore": { "type": "boolean" },
-      "disabled": { "type": "boolean" }
+      "refreshing": {
+        "type": "boolean"
+      },
+      "loadingMore": {
+        "type": "boolean"
+      },
+      "hasMore": {
+        "type": "boolean"
+      },
+      "disabled": {
+        "type": "boolean"
+      }
     }
   },
   "defaultProps": {
@@ -72,26 +117,43 @@
     {
       "id": "refreshing",
       "label": "刷新中",
-      "props": { "refreshing": true }
+      "props": {
+        "refreshing": true
+      }
     },
     {
       "id": "loading-more",
       "label": "加载更多",
-      "props": { "loadingMore": true }
+      "props": {
+        "loadingMore": true
+      }
     },
     {
       "id": "complete",
       "label": "没有更多",
-      "props": { "hasMore": false }
+      "props": {
+        "hasMore": false
+      }
     }
   ],
-  "slots": ["default", "refresh-indicator", "load-footer", "no-more"],
-  "events": ["refresh", "load-more"],
+  "slots": [
+    "default",
+    "refresh-indicator",
+    "load-footer",
+    "no-more"
+  ],
+  "events": [
+    "refresh",
+    "load-more"
+  ],
   "tokenBindings": {
     "background": "color.background",
     "primary": "color.primary",
     "muted": "color.on-surface-muted",
     "footer": "typography.caption",
     "duration": "motion.duration-normal"
+  },
+  "playground": {
+    "presentation": "single"
   }
 }

@@ -2,7 +2,10 @@
   "schemaVersion": 1,
   "id": "chip",
   "category": "basic",
-  "semantic": { "policy": "fixed", "defaultRole": "chip" },
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "chip"
+  },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -44,5 +47,8 @@
     "radius": "radius.sm",
     "elevation": "elevation.card",
     "typography": "typography.caption"
+  },
+  "playground": {
+    "presentation": "single"
   }
 }

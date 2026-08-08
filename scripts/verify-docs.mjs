@@ -204,31 +204,15 @@ async function verifyComponentReferences() {
     if (!doc.includes(`组件 id：\`${contract.id}\``)) {
       errors.push(`${relative(docPath)} does not declare component id ${contract.id}`);
     }
-    for (const prop of Object.keys(contract.propsSchema?.properties ?? {})) {
-      if (!doc.includes(`| \`${prop}\` |`)) {
-        errors.push(`${relative(docPath)} is missing prop ${prop}`);
-      }
+    if (!doc.includes(`contracts/${contract.id}.json`)) {
+      errors.push(
+        `${relative(docPath)} must link or cite contracts/${contract.id}.json as SoT`,
+      );
     }
+    // Narrative docs: require state ids; props/token tables are Contract SoT (see alignment-protocol).
     for (const state of contract.states ?? []) {
       if (!doc.includes(`\`${state.id}\``)) {
         errors.push(`${relative(docPath)} is missing state ${state.id}`);
-      }
-    }
-    for (const slot of contract.slots ?? []) {
-      if (!doc.includes(`\`${slot}\``)) {
-        errors.push(`${relative(docPath)} is missing slot ${slot}`);
-      }
-    }
-    for (const event of contract.events ?? []) {
-      if (!doc.includes(`\`${event}\``)) {
-        errors.push(`${relative(docPath)} is missing event ${event}`);
-      }
-    }
-    for (const [binding, token] of Object.entries(contract.tokenBindings ?? {})) {
-      if (!doc.includes(`| \`${binding}\` | \`${token}\` |`)) {
-        errors.push(
-          `${relative(docPath)} is missing token binding ${binding} → ${token}`,
-        );
       }
     }
   }

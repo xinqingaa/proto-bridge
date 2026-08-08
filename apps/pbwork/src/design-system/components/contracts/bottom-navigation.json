@@ -2,7 +2,10 @@
   "schemaVersion": 1,
   "id": "bottom-navigation",
   "category": "complex",
-  "semantic": { "policy": "fixed", "defaultRole": "bottom-bar" },
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "bottom-bar"
+  },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -16,30 +19,54 @@
         "items": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["value", "label"],
+          "required": [
+            "value",
+            "label"
+          ],
           "properties": {
-            "value": { "type": "string" },
-            "label": { "type": "string" }
+            "value": {
+              "type": "string"
+            },
+            "label": {
+              "type": "string"
+            }
           }
         }
       },
       "display": {
         "type": "string",
-        "enum": ["icon-label", "icon", "label"]
+        "enum": [
+          "icon-label",
+          "icon",
+          "label"
+        ]
       },
       "showIndicator": {
         "type": "boolean"
       },
-      "elevated": { "type": "boolean" }
+      "elevated": {
+        "type": "boolean"
+      }
     },
-    "required": ["items"]
+    "required": [
+      "items"
+    ]
   },
   "defaultProps": {
     "modelValue": "one",
     "items": [
-      { "value": "one", "label": "首页" },
-      { "value": "two", "label": "列表" },
-      { "value": "three", "label": "我的" }
+      {
+        "value": "one",
+        "label": "首页"
+      },
+      {
+        "value": "two",
+        "label": "列表"
+      },
+      {
+        "value": "three",
+        "label": "我的"
+      }
     ],
     "display": "icon-label",
     "showIndicator": true,
@@ -69,7 +96,9 @@
     }
   ],
   "slots": [],
-  "events": ["update:modelValue"],
+  "events": [
+    "update:modelValue"
+  ],
   "tokenBindings": {
     "surface": "color.surface-raised",
     "active": "color.primary",
@@ -80,5 +109,16 @@
     "height": "sizing.bottom-navigation",
     "label": "typography.caption",
     "indicatorRadius": "radius.full"
+  },
+  "playground": {
+    "presentation": "single"
+  },
+  "icons": {
+    "pack": "lucide",
+    "defaults": [
+      "home",
+      "list",
+      "user"
+    ]
   }
 }

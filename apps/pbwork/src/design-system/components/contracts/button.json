@@ -2,30 +2,72 @@
   "schemaVersion": 1,
   "id": "button",
   "category": "basic",
-  "semantic": { "policy": "fixed", "defaultRole": "button" },
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "button"
+  },
+  "summary": "表单主次操作；flat + action 为主 CTA，loading / disabled 均不可点。",
+  "behavior": [
+    "loading 时不可点，必须有可见反馈",
+    "disabled 与 loading 同时为真时以不可点为准",
+    "tone=action 用于主操作；primary 用于强调/品牌语义，不替代 action 主 CTA",
+    "variant / tone 是同一 role 下的外观槽，不拆成多个组件"
+  ],
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "label": { "type": "string" },
+      "label": {
+        "type": "string"
+      },
       "variant": {
         "type": "string",
-        "enum": ["flat", "tonal", "outlined", "text"]
+        "enum": [
+          "flat",
+          "tonal",
+          "outlined",
+          "text"
+        ]
       },
       "tone": {
         "type": "string",
-        "enum": ["action", "primary", "secondary", "error", "success"]
+        "enum": [
+          "action",
+          "primary",
+          "secondary",
+          "error",
+          "success"
+        ]
       },
-      "size": { "type": "string", "enum": ["sm", "md", "lg"] },
-      "loading": { "type": "boolean" },
-      "block": { "type": "boolean" },
-      "disabled": { "type": "boolean" },
+      "size": {
+        "type": "string",
+        "enum": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "loading": {
+        "type": "boolean"
+      },
+      "block": {
+        "type": "boolean"
+      },
+      "disabled": {
+        "type": "boolean"
+      },
       "type": {
         "type": "string",
-        "enum": ["button", "submit", "reset"]
+        "enum": [
+          "button",
+          "submit",
+          "reset"
+        ]
       }
     },
-    "required": ["label"]
+    "required": [
+      "label"
+    ]
   },
   "defaultProps": {
     "label": "确认",
@@ -37,15 +79,61 @@
     "disabled": false
   },
   "states": [
-    { "id": "tonal", "label": "柔和", "props": { "variant": "tonal" } },
-    { "id": "outlined", "label": "描边", "props": { "variant": "outlined" } },
-    { "id": "text", "label": "文字", "props": { "variant": "text" } },
-    { "id": "primary", "label": "主色", "props": { "tone": "primary" } },
-    { "id": "loading", "label": "加载", "props": { "loading": true } },
-    { "id": "disabled", "label": "禁用", "props": { "disabled": true } }
+    {
+      "id": "tonal",
+      "label": "柔和",
+      "kind": "variant",
+      "props": {
+        "variant": "tonal"
+      }
+    },
+    {
+      "id": "outlined",
+      "label": "描边",
+      "kind": "variant",
+      "props": {
+        "variant": "outlined"
+      }
+    },
+    {
+      "id": "text",
+      "label": "文字",
+      "kind": "variant",
+      "props": {
+        "variant": "text"
+      }
+    },
+    {
+      "id": "primary",
+      "label": "主色",
+      "kind": "variant",
+      "props": {
+        "tone": "primary"
+      }
+    },
+    {
+      "id": "loading",
+      "label": "加载",
+      "kind": "interaction",
+      "props": {
+        "loading": true
+      }
+    },
+    {
+      "id": "disabled",
+      "label": "禁用",
+      "kind": "interaction",
+      "props": {
+        "disabled": true
+      }
+    }
   ],
-  "slots": ["default"],
-  "events": ["click"],
+  "slots": [
+    "default"
+  ],
+  "events": [
+    "click"
+  ],
   "tokenBindings": {
     "background": "color.action",
     "onBackground": "color.on-action",
@@ -56,5 +144,8 @@
     "typography": "typography.label",
     "duration": "motion.duration-fast",
     "easing": "motion.easing-standard"
+  },
+  "playground": {
+    "presentation": "tile"
   }
 }

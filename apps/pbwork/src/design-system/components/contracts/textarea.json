@@ -2,7 +2,10 @@
   "schemaVersion": 1,
   "id": "textarea",
   "category": "basic",
-  "semantic": { "policy": "fixed", "defaultRole": "field" },
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "field"
+  },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -49,5 +52,8 @@
     "focus": "color.primary",
     "radius": "radius.md",
     "text": "typography.content"
+  },
+  "playground": {
+    "presentation": "single"
   }
 }
