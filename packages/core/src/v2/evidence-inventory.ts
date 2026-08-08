@@ -5,6 +5,7 @@ import type { AgentHandoff } from './contracts/handoff.js';
 import type { Run } from './contracts/run.js';
 import type { BundleSnapshot } from './contracts/snapshot.js';
 import type { StalenessReport } from './contracts/staleness.js';
+import { computeScopeKey } from './contracts/scope.js';
 
 export type EvidenceInventoryStatus =
   | 'fresh'
@@ -24,6 +25,12 @@ export type EvidenceInventoryItem = {
   themeId: string;
   deviceId: string;
   caseId: string;
+  scopeKey: string;
+  fragments: Array<{
+    screenId: string;
+    pbId: string;
+    pbKey?: string | undefined;
+  }>;
   scenario?: {
     ownerScreenId: string;
     scenarioId: string;
@@ -72,10 +79,16 @@ export function buildEvidenceInventory(
   for (const input of bundles) {
     const snapshot = input.activeSnapshot;
     if (!snapshot) continue;
-    const selectedByCase = new Map(
+    const selectedBySlot = new Map(
       input.runs
         .flatMap((run) => run.selection.cases)
-        .map((selected) => [selected.caseId, selected] as const),
+        .map(
+          (selected) =>
+            [
+              `${selected.caseId}#${computeScopeKey(selected.captureScope)}`,
+              selected,
+            ] as const,
+        ),
     );
     const revisionsById = new Map(
       input.revisions.map((revision) => [revision.revisionId, revision] as const),
@@ -96,7 +109,7 @@ export function buildEvidenceInventory(
     );
 
     for (const slot of snapshot.activeSlots) {
-      const selected = selectedByCase.get(slot.caseId);
+      const selected = selectedBySlot.get(`${slot.caseId}#${slot.scopeKey}`);
       const revision = revisionsById.get(slot.revisionId);
       if (!selected || !revision) continue;
       const attempt = attemptsById.get(latestAttemptByCase.get(slot.caseId) ?? '');
@@ -132,6 +145,8 @@ export function buildEvidenceInventory(
         themeId: selected.caseKey.themeId,
         deviceId: selected.caseKey.deviceId,
         caseId: selected.caseId,
+        scopeKey: slot.scopeKey,
+        fragments: selected.captureScope.fragments ?? [],
         ...(selected.caseKey.scenario
           ? { scenario: selected.caseKey.scenario }
           : {}),

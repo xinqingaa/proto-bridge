@@ -59,6 +59,8 @@ export type StoredPreflight = {
 export type BundleSummary = {
   bundle: Bundle;
   activeSnapshot?: BundleSnapshot;
+  /** Immutable snapshots retained for exact Job → result history links. */
+  snapshots: BundleSnapshot[];
 };
 
 export type CaptureConsoleState = {
@@ -165,6 +167,23 @@ export type CreateDeliveryRequest = {
   runId?: string;
   acceptedWarningIds?: string[];
   acknowledgedRiskKinds?: string[];
+  /** When set, rewrite this delivery directory instead of creating a new timestamp id. */
+  overwriteDeliveryId?: string;
+};
+
+export type DeliveryListItem = {
+  deliveryId: string;
+  bundleId: string;
+  snapshotId: string;
+  handoffId: string;
+  createdAt: string;
+  agentPromptPath: string;
+  receiptPath: string;
+  freshnessStatus?: 'fresh' | 'stale';
+};
+
+export type DeliveryDetail = DeliveryListItem & {
+  agentPrompt: string;
 };
 
 export type DeliveryArtifact = {

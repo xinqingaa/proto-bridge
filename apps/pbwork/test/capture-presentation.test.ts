@@ -84,6 +84,7 @@ function state(jobs: CaptureJob[]): CaptureConsoleState {
         status: "writable",
         createdAt: item.acceptedAt,
       },
+      snapshots: [],
       activeSnapshot: {
         schemaVersion: 1,
         snapshotId: `snapshot-${item.jobId}`,
@@ -163,6 +164,40 @@ describe("capture task presentation", () => {
       status: "needs-attention",
       statusLabel: "采集失败",
     });
+  });
+
+  it("keeps each completed Job linked to its own immutable Snapshot", () => {
+    const older = {
+      ...job("job-older", "completed", "2026-07-30T06:20:00.000Z"),
+      bundleId: "bundle-shared",
+    } as CaptureJob;
+    const latest = {
+      ...job("job-latest", "completed", "2026-07-30T06:30:00.000Z"),
+      bundleId: "bundle-shared",
+    } as CaptureJob;
+    const generated = state([latest, older]);
+    const snapshots = generated.bundles.map((item) => ({
+      ...item.activeSnapshot!,
+      bundleId: "bundle-shared",
+    }));
+    generated.bundles = [
+      {
+        bundle: {
+          ...generated.bundles[0]!.bundle,
+          bundleId: "bundle-shared",
+        },
+        activeSnapshot: snapshots[0]!,
+        snapshots,
+      },
+    ];
+
+    const presentations = buildCaptureTaskPresentations(generated);
+    expect(
+      presentations.find((item) => item.job.jobId === "job-older")?.resultPath,
+    ).toBe("/workbench/evidence/bundle-shared/snapshot-job-older");
+    expect(
+      presentations.find((item) => item.job.jobId === "job-latest")?.resultPath,
+    ).toBe("/workbench/evidence/bundle-shared/snapshot-job-latest");
   });
 
   it("translates duplicate semantic identities into a readable diagnosis", () => {

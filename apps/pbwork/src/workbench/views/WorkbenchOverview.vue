@@ -236,7 +236,7 @@ const assetStats = computed(() => [
           <h2>最近采集</h2>
         </div>
         <RouterLink to="/workbench/capture" class="section-link">
-          任务中心 <ArrowRight :size="14" />
+          采集历史 <ArrowRight :size="14" />
         </RouterLink>
       </div>
       <div class="capture-overview">

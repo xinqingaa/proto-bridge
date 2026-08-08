@@ -595,6 +595,8 @@ export const useCaptureStore = defineStore("capture-v2", {
       }
       this.activeJob = job;
       this.selectedJob = job;
+      this.deliverStep = 1;
+      this.composerOpen = true;
     },
     async cancelActiveJob() {
       if (!this.activeJob) return;
@@ -705,6 +707,52 @@ export const useCaptureStore = defineStore("capture-v2", {
         await this.refreshConsole();
       } catch (error) {
         this.setError(error);
+      }
+    },
+    async resetWorkspaceEvidence() {
+      if (!this.session || this.session.generationId === "legacy-unavailable") {
+        this.setError(
+          new Error("当前 Workspace 无法重置（generation 不可用）。"),
+        );
+        return;
+      }
+      this.busy = true;
+      this.clearError();
+      try {
+        const plan = await captureServiceClient.previewWorkspaceReset({
+          workspaceId: this.session.workspaceId,
+        });
+        await captureServiceClient.applyWorkspaceReset({
+          planId: plan.planId,
+          workspaceId: plan.workspaceId,
+          generationId: plan.generationId,
+        });
+        captureServiceClient.disconnect();
+        this.session = null;
+        this.consoleState = null;
+        this.evidenceInventory = null;
+        this.deletePlan = null;
+        this.draft = null;
+        this.entryKind = null;
+        this.preflight = null;
+        this.activeJob = null;
+        this.selectedJob = null;
+        this.details = null;
+        this.stalenessReport = null;
+        this.handoff = null;
+        this.handoffPreview = null;
+        this.agentPrompt = null;
+        this.deliveryArtifact = null;
+        this.notice = null;
+        this.composerOpen = false;
+        this.jobCenterOpen = false;
+        this.revokeScreenshotUrls();
+        this.persistDraft();
+        await this.connect();
+      } catch (error) {
+        this.setError(error);
+      } finally {
+        this.busy = false;
       }
     },
     async createStaleRecaptureDraft() {

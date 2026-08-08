@@ -8,7 +8,7 @@ import {
   RotateCcw,
   ScanLine,
 } from "lucide-vue-next";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import ResourcePageShell from "@/workbench/views/ResourcePageShell.vue";
 import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
 import { LIFECYCLE_LABELS } from "@/design-system/types";
@@ -28,6 +28,7 @@ const props = defineProps<{
 const lifecycle = usePrototypeLifecycleStore();
 const capture = useCaptureStore();
 const route = useRoute();
+const router = useRouter();
 const transitionOpen = ref(false);
 const historyExpanded = ref(false);
 const lifecycleStages = [
@@ -45,6 +46,16 @@ const screens = computed(() =>
     (item) => item.prototypeId === props.prototypeId,
   ),
 );
+const latestPrototypeEvidence = computed(() => {
+  const items =
+    capture.evidenceInventory?.prototypes
+      .find((item) => item.prototypeId === props.prototypeId)
+      ?.screens.flatMap((screen) => screen.items)
+      .filter((item) => !["trashed", "archived"].includes(item.status)) ?? [];
+  return items.sort((left, right) =>
+    right.capturedAt.localeCompare(left.capturedAt),
+  )[0];
+});
 const screenGroups = computed(() =>
   resolveScreenGroups(screens.value, prototype.value?.screenGroups ?? []),
 );
@@ -76,10 +87,21 @@ const formatHistoryTime = (value: string) =>
     timeStyle: "short",
   }).format(new Date(value));
 
-function capturePrototype() {
+function startPrototypeCapture() {
   if (!prototype.value) return;
   capture.beginPrototype(prototype.value.id, route.fullPath);
   capture.openComposer();
+}
+
+function openPrototypeEvidence() {
+  const evidence = latestPrototypeEvidence.value;
+  if (!evidence) {
+    startPrototypeCapture();
+    return;
+  }
+  void router.push(
+    `/workbench/evidence/${evidence.bundleId}/${evidence.snapshotId}`,
+  );
 }
 </script>
 
@@ -117,8 +139,17 @@ function capturePrototype() {
         <p>原型当前处于「{{ LIFECYCLE_LABELS[effectiveLifecycle] }}」阶段</p>
       </div>
       <div class="lifecycle-actions">
-        <WorkbenchButton tone="primary" @click="capturePrototype">
-          <ScanLine :size="14" />采集此原型
+        <WorkbenchButton tone="primary" @click="openPrototypeEvidence">
+          <History v-if="latestPrototypeEvidence" :size="14" />
+          <ScanLine v-else :size="14" />
+          {{ latestPrototypeEvidence ? "查看采集结果" : "采集此原型" }}
+        </WorkbenchButton>
+        <WorkbenchButton
+          v-if="latestPrototypeEvidence"
+          tone="neutral"
+          @click="startPrototypeCapture"
+        >
+          <RotateCcw :size="14" />更新采集
         </WorkbenchButton>
         <WorkbenchButton tone="primary" @click="transitionOpen = true"
           >流转状态</WorkbenchButton
@@ -203,11 +234,7 @@ function capturePrototype() {
         </div>
         <span>{{ screens.length }} 个页面 · {{ variantTotal }} 个状态</span>
       </div>
-      <div
-        v-for="group in screenGroups"
-        :key="group.id"
-        class="gallery-group"
-      >
+      <div v-for="group in screenGroups" :key="group.id" class="gallery-group">
         <h3>{{ group.label }} · {{ group.screens.length }}</h3>
         <div class="screen-grid">
           <ScreenPreviewCard

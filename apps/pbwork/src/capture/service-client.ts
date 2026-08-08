@@ -4,6 +4,9 @@ import {
   type CaptureConsoleState,
   type CreateJobRequest,
   type CreateJobResponse,
+  type DeliveryArtifact,
+  type DeliveryDetail,
+  type DeliveryListItem,
   type HandoffPreview,
   type HandoffPreviewRequest,
   type EvidenceInventory,
@@ -11,6 +14,8 @@ import {
   type BundleDeleteResult,
   type LocalServiceSession,
   type StoredPreflight,
+  type WorkspaceResetPlan,
+  type WorkspaceResetResult,
 } from "@proto-bridge/core/v2/service-contract";
 import type {
   AgentHandoff,
@@ -18,7 +23,6 @@ import type {
   StalenessReport,
 } from "@proto-bridge/core/v2";
 import type { SelectionDraft } from "@proto-bridge/core/v2/capture";
-import type { DeliveryArtifact } from "@proto-bridge/core/v2/service-contract";
 
 const SESSION_KEY = "pbwork.capture-v2.session";
 
@@ -197,8 +201,34 @@ export class CaptureServiceClient {
     runId?: string;
     acceptedWarningIds?: string[];
     acknowledgedRiskKinds?: string[];
+    overwriteDeliveryId?: string;
   }): Promise<DeliveryArtifact> {
     return this.request("/deliveries", { method: "POST", body });
+  }
+
+  listDeliveries(
+    bundleId?: string,
+  ): Promise<{ deliveries: DeliveryListItem[] }> {
+    const query = bundleId ? `?bundleId=${encodeURIComponent(bundleId)}` : "";
+    return this.request(`/deliveries${query}`);
+  }
+
+  deliveryDetails(deliveryId: string): Promise<DeliveryDetail> {
+    return this.request(`/deliveries/${encodeURIComponent(deliveryId)}`);
+  }
+
+  previewWorkspaceReset(body: {
+    workspaceId: string;
+  }): Promise<WorkspaceResetPlan> {
+    return this.request("/workspace/reset/preview", { method: "POST", body });
+  }
+
+  applyWorkspaceReset(body: {
+    planId: string;
+    workspaceId: string;
+    generationId: string;
+  }): Promise<WorkspaceResetResult> {
+    return this.request("/workspace/reset/apply", { method: "POST", body });
   }
 
   async blobUrl(bundleId: string, blobId: string): Promise<string> {

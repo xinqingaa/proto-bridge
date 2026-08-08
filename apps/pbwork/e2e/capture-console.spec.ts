@@ -2,15 +2,6 @@ import { expect, test } from "@playwright/test";
 
 test.use({ viewport: { width: 1440, height: 1050 } });
 
-async function waitForCompletedJob(page: import("@playwright/test").Page) {
-  await page.getByRole("tab", { name: "采集任务" }).click();
-  const tasks = page.getByTestId("recent-capture-jobs");
-  await expect(tasks).toBeVisible({ timeout: 15_000 });
-  await expect(tasks.getByText("采集完成").first()).toBeVisible({
-    timeout: 30_000,
-  });
-}
-
 test("current Screen goes through Deliver FlowSheet and readable result", async ({
   page,
 }) => {
@@ -29,10 +20,10 @@ test("current Screen goes through Deliver FlowSheet and readable result", async 
   await expect(page.getByText("结果与风险").first()).toBeVisible({
     timeout: 60_000,
   });
-  await page.getByRole("button", { name: "查看详情" }).click();
+  await page.getByRole("button", { name: "查看采集结果" }).click();
   await expect(page.getByTestId("evidence-viewer")).toBeVisible();
-  await expect(page.getByText(/个视图采集成功/)).toBeVisible();
-  await expect(page.locator(".visual-evidence img").first()).toBeVisible();
+  await expect(page.locator(".result-workspace")).toBeVisible();
+  await expect(page.locator(".preview-stage img").first()).toBeVisible();
 });
 
 test("stable Fragment is shown in deliver scope and can finish to task center", async ({
@@ -56,23 +47,33 @@ test("stable Fragment is shown in deliver scope and can finish to task center", 
       .getByTestId("capture-composer")
       .getByText("cold-chain-ops.exception-queue.list.row#ex-017"),
   ).toBeVisible();
+  const jobResponsePromise = page.waitForResponse(
+    (response) =>
+      response.request().method() === "POST" &&
+      new URL(response.url()).pathname.endsWith("/jobs"),
+  );
   await page.getByTestId("composer-start-capture").click();
+  const jobResponse = (await jobResponsePromise).json() as Promise<{
+    data: { job: { jobId: string } };
+  }>;
+  const jobId = (await jobResponse).data.job.jobId;
   await page.getByLabel("关闭交付流程").click();
-  await page.getByRole("link", { name: "采集证据", exact: true }).click();
-  await waitForCompletedJob(page);
-  await page
+  await page.getByRole("link", { name: "采集", exact: true }).click();
+  const task = page
     .getByTestId("recent-capture-jobs")
-    .getByRole("button")
-    .filter({ hasText: "采集完成" })
-    .first()
-    .click();
-  await expect(page.getByText(/个视图采集成功/)).toBeVisible();
+    .locator(`[data-job-id="${jobId}"]`);
+  await expect(task.filter({ hasText: "采集完成" })).toBeVisible({
+    timeout: 60_000,
+  });
+  await task.click();
+  await expect(page.locator(".result-workspace")).toBeVisible();
 });
 
 test("page-close Job is recovered from Service state", async ({
   page,
   browser,
 }) => {
+  test.setTimeout(120_000);
   await page.goto(
     "/workbench/prototypes/cold-chain-ops/screens/shipment-detail?variant=default&theme=light&shipment=SH-2048",
   );
@@ -92,21 +93,20 @@ test("page-close Job is recovered from Service state", async ({
     data: { job: { jobId: string } };
   }>;
   const jobId = (await jobResponse).data.job.jobId;
+  await expect(page.getByText(/[1-9]\d* \/ 7 个采集项/)).toBeVisible({
+    timeout: 60_000,
+  });
   await page.close();
 
   const next = await browser.newPage();
   await next.goto("/workbench/capture");
-  await next.getByRole("tab", { name: "采集任务" }).click();
   await expect(next.getByTestId("recent-capture-jobs")).toBeVisible({
     timeout: 15_000,
   });
   const recoveryAction = next
     .getByTestId("recent-capture-jobs")
-    .locator(`[data-job-id="${jobId}"]`)
-    .filter({ hasText: "采集完成" });
+    .locator(`[data-job-id="${jobId}"]`);
   await expect(recoveryAction).toBeVisible({ timeout: 30_000 });
   await recoveryAction.click();
-  await expect(next.getByTestId("evidence-viewer")).toBeVisible({
-    timeout: 30_000,
-  });
+  await expect(next.getByTestId("capture-composer")).toBeVisible();
 });

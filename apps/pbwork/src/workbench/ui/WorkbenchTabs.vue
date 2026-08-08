@@ -3,24 +3,35 @@ export type WorkbenchTabItem = {
   label: string;
   value: string;
   count?: number;
+  testId?: string;
 };
 
-defineProps<{
-  modelValue: string;
-  items: WorkbenchTabItem[];
-  label: string;
-}>();
+withDefaults(
+  defineProps<{
+    modelValue: string;
+    items: WorkbenchTabItem[];
+    label: string;
+    fill?: boolean;
+  }>(),
+  { fill: false },
+);
 
 defineEmits<{ "update:modelValue": [value: string] }>();
 </script>
 
 <template>
-  <div class="wb-tabs" role="tablist" :aria-label="label">
+  <div
+    class="wb-tabs"
+    :class="{ 'is-fill': fill }"
+    role="tablist"
+    :aria-label="label"
+  >
     <button
       v-for="item in items"
       :key="item.value"
       type="button"
       role="tab"
+      :data-testid="item.testId"
       :aria-selected="modelValue === item.value"
       :class="{ 'is-active': modelValue === item.value }"
       @click="$emit('update:modelValue', item.value)"
@@ -40,6 +51,10 @@ defineEmits<{ "update:modelValue": [value: string] }>();
   border-radius: 9px;
   background: rgba(var(--v-theme-on-surface), 0.05);
 }
+.wb-tabs.is-fill {
+  display: flex;
+  width: 100%;
+}
 .wb-tabs button {
   display: inline-flex;
   min-height: 30px;
@@ -54,6 +69,12 @@ defineEmits<{ "update:modelValue": [value: string] }>();
   font-size: 0.72rem;
   font-weight: 700;
   cursor: pointer;
+}
+.wb-tabs.is-fill button {
+  flex: 1 1 0;
+  justify-content: center;
+  min-width: 0;
+  padding: 0 6px;
 }
 .wb-tabs button:hover {
   color: rgba(var(--v-theme-on-surface), 0.86);

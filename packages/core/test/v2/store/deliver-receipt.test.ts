@@ -98,5 +98,19 @@ describe('Delivery review artifacts', () => {
       reviewManifest.screenshots[0].path,
     );
     expect(await readFile(reviewPng)).toEqual(PNG_BYTES);
+
+    const overwritten = await writeDeliveryReceipt({
+      storeRoot,
+      targetRoot,
+      handoff,
+      source: 'gui',
+      timeZone: 'Asia/Shanghai',
+      overwriteDeliveryId: receipt.deliveryId,
+    });
+    expect(overwritten.deliveryId).toBe(receipt.deliveryId);
+    expect(overwritten.agentPromptPath).toBe(receipt.agentPromptPath);
+    expect(await readFile(overwritten.agentPromptPath, 'utf8')).toContain(
+      'read_handoff_index',
+    );
   });
 });

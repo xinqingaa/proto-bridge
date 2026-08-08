@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
-import { readFile, rm } from 'node:fs/promises';
+import { readFile, readdir, rm } from 'node:fs/promises';
+import { join as pathJoin } from 'node:path';
 import {
   createServer,
   type IncomingMessage,
@@ -51,6 +52,8 @@ import {
   type EvidenceInventory,
   type BundleDeletePlan,
   type CreateDeliveryRequest,
+  type DeliveryDetail,
+  type DeliveryListItem,
   type CreateJobRequest,
   type CreatePreflightRequest,
   type HandoffPreviewRequest,
@@ -580,16 +583,28 @@ export class ProtoBridgeLocalService {
         workspaceId: this.store.workspaceId,
         generationId: this.currentGenerationId,
         bundles: await Promise.all(
-          bundles.map(async (bundle) => ({
-            bundle,
-            ...((await this.store.getActiveSnapshot(bundle.bundleId))
-              ? {
-                  activeSnapshot: (await this.store.getActiveSnapshot(
-                    bundle.bundleId,
-                  ))!,
-                }
-              : {}),
-          })),
+          bundles.map(async (bundle) => {
+            const activeSnapshot = await this.store.getActiveSnapshot(
+              bundle.bundleId,
+            );
+            const snapshotIds = await this.store.listSnapshotIds(
+              bundle.bundleId,
+            );
+            const snapshots = (
+              await Promise.all(
+                snapshotIds.map((snapshotId) =>
+                  this.store.getSnapshot(bundle.bundleId, snapshotId),
+                ),
+              )
+            ).filter(
+              (snapshot): snapshot is BundleSnapshot => snapshot !== undefined,
+            );
+            return {
+              bundle,
+              snapshots,
+              ...(activeSnapshot ? { activeSnapshot } : {}),
+            };
+          }),
         ),
         jobs: await this.store.listJobs(),
       };
@@ -1248,6 +1263,106 @@ export class ProtoBridgeLocalService {
       return;
     }
 
+    const deliveryMatch = path.match(/^\/api\/v2\/deliveries\/([^/]+)$/);
+    if (request.method === 'GET' && deliveryMatch) {
+      const deliveryId = decodeURIComponent(deliveryMatch[1]!);
+      if (!deliveryId || /[\\/]/.test(deliveryId)) {
+        throw new V2ContractError(
+          'invalid-schema',
+          'deliveryId must be a single path segment.',
+        );
+      }
+      const deliveryDir = pathJoin(
+        deliveryRootFromStoreRoot(this.options.storeRoot),
+        deliveryId,
+      );
+      let receiptRaw: string;
+      let agentPrompt: string;
+      try {
+        [receiptRaw, agentPrompt] = await Promise.all([
+          readFile(pathJoin(deliveryDir, 'receipt.json'), 'utf8'),
+          readFile(pathJoin(deliveryDir, 'agent-prompt.md'), 'utf8'),
+        ]);
+      } catch {
+        throw new V2ContractError(
+          'unknown-reference',
+          `Delivery ${deliveryId} does not exist or is incomplete.`,
+        );
+      }
+      const receipt = JSON.parse(receiptRaw) as DeliveryListItem;
+      const detail: DeliveryDetail = {
+        deliveryId,
+        bundleId: receipt.bundleId,
+        snapshotId: receipt.snapshotId,
+        handoffId: receipt.handoffId,
+        createdAt: receipt.createdAt,
+        agentPromptPath: receipt.agentPromptPath,
+        receiptPath: receipt.receiptPath,
+        ...(receipt.freshnessStatus
+          ? { freshnessStatus: receipt.freshnessStatus }
+          : {}),
+        agentPrompt,
+      };
+      success(response, detail);
+      return;
+    }
+
+    if (request.method === 'GET' && path === '/api/v2/deliveries') {
+      const url = new URL(request.url ?? '/', 'http://127.0.0.1');
+      const bundleFilter = url.searchParams.get('bundleId')?.trim() || undefined;
+      const deliveryRoot = deliveryRootFromStoreRoot(this.options.storeRoot);
+      let entries: string[] = [];
+      try {
+        entries = await readdir(deliveryRoot);
+      } catch {
+        success(response, { deliveries: [] as DeliveryListItem[] });
+        return;
+      }
+      const deliveries: DeliveryListItem[] = [];
+      for (const entry of entries) {
+        if (entry === 'latest.json' || entry.includes('.')) continue;
+        try {
+          const receiptRaw = await readFile(
+            pathJoin(deliveryRoot, entry, 'receipt.json'),
+            'utf8',
+          );
+          const receipt = JSON.parse(receiptRaw) as {
+            deliveryId?: string;
+            bundleId?: string;
+            snapshotId?: string;
+            handoffId?: string;
+            createdAt?: string;
+            agentPromptPath?: string;
+            receiptPath?: string;
+            freshnessStatus?: 'fresh' | 'stale';
+          };
+          if (!receipt.deliveryId || !receipt.bundleId || !receipt.snapshotId) {
+            continue;
+          }
+          if (bundleFilter && receipt.bundleId !== bundleFilter) continue;
+          deliveries.push({
+            deliveryId: receipt.deliveryId,
+            bundleId: receipt.bundleId,
+            snapshotId: receipt.snapshotId,
+            handoffId: receipt.handoffId ?? '',
+            createdAt: receipt.createdAt ?? '',
+            agentPromptPath: receipt.agentPromptPath ?? '',
+            receiptPath: receipt.receiptPath ?? '',
+            ...(receipt.freshnessStatus
+              ? { freshnessStatus: receipt.freshnessStatus }
+              : {}),
+          });
+        } catch {
+          // Skip corrupt / partial delivery folders.
+        }
+      }
+      deliveries.sort((left, right) =>
+        right.createdAt.localeCompare(left.createdAt),
+      );
+      success(response, { deliveries });
+      return;
+    }
+
     if (request.method === 'POST' && path === '/api/v2/deliveries') {
       const body = (await readBody(request)) as CreateDeliveryRequest;
       const handoffId = HandoffId.parse(body.handoffId);
@@ -1265,6 +1380,13 @@ export class ProtoBridgeLocalService {
           'deliveries require targetRoot.',
         );
       }
+      const overwriteDeliveryId = body.overwriteDeliveryId?.trim();
+      if (overwriteDeliveryId && /[\\/]/.test(overwriteDeliveryId)) {
+        throw new V2ContractError(
+          'invalid-schema',
+          'overwriteDeliveryId must be a single path segment.',
+        );
+      }
       const receipt = await writeDeliveryReceipt({
         storeRoot: this.options.storeRoot,
         targetRoot,
@@ -1276,6 +1398,7 @@ export class ProtoBridgeLocalService {
         ...(body.implementationIntent
           ? { implementationIntent: body.implementationIntent }
           : {}),
+        ...(overwriteDeliveryId ? { overwriteDeliveryId } : {}),
       });
       success(
         response,
@@ -1293,7 +1416,7 @@ export class ProtoBridgeLocalService {
           bundleId: receipt.bundleId,
           snapshotId: receipt.snapshotId,
         },
-        201,
+        overwriteDeliveryId ? 200 : 201,
       );
       return;
     }

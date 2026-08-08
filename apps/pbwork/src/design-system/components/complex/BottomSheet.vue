@@ -116,3 +116,13 @@ watch(modelValue, async (value) => {
   font: var(--pb-typography-content, 400 14px/1.5 Inter, system-ui, sans-serif);
 }
 </style>
+
+<!-- Overlay attaches outside scoped tree; keep full-bleed width in phone shell. -->
+<style>
+.pb-sheet-host.v-bottom-sheet > .v-overlay__content,
+.pb-sheet-host.v-bottom-sheet > .v-bottom-sheet__content {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-inline: 0 !important;
+}
+</style>

@@ -4,15 +4,16 @@ import { RouterLink, useRouter } from "vue-router";
 import {
   Bell,
   CheckCircle2,
-  CircleAlert,
   LoaderCircle,
   ScanLine,
 } from "lucide-vue-next";
 import { useCaptureStore } from "@/app/stores/capture";
+import { loadPrototypeScreens } from "@/design-system/loaders";
 import WorkbenchIconButton from "@/workbench/ui/WorkbenchIconButton.vue";
 
 const capture = useCaptureStore();
 const router = useRouter();
+const screens = loadPrototypeScreens();
 let pollTimer: ReturnType<typeof setInterval> | undefined;
 const STATUS_LABELS = {
   queued: "等待开始",
@@ -32,18 +33,37 @@ const executing = computed(() =>
       )
     : false,
 );
+const totalCases = computed(
+  () => capture.activeJob?.selection.cases.length ?? 0,
+);
+const completedCases = computed(
+  () =>
+    capture.activeJob?.journal.filter((entry) => entry.event === "case-finished")
+      .length ?? 0,
+);
 const progress = computed(() => {
-  const total = capture.activeJob?.selection.cases.length ?? 0;
-  if (!total) return 0;
-  const completed =
-    capture.activeJob?.journal.filter(
-      (entry) => entry.event === "case-finished",
-    ).length ?? 0;
-  return Math.min(100, (completed / total) * 100);
+  if (!totalCases.value) return 0;
+  return Math.min(100, (completedCases.value / totalCases.value) * 100);
 });
 const statusLabel = computed(() => {
   const status = capture.activeJob?.status;
   return status ? STATUS_LABELS[status] : "采集任务";
+});
+const currentCaseLabel = computed(() => {
+  const job = capture.activeJob;
+  if (!job || !executing.value) return "";
+  const finished = new Set(
+    job.journal
+      .filter((entry) => entry.event === "case-finished")
+      .map((entry) => entry.detail?.split(":")[0])
+      .filter(Boolean),
+  );
+  const next = job.selection.cases.find((item) => !finished.has(item.caseId));
+  if (!next) return "";
+  const screenId = next.caseId.split("::")[0] ?? "";
+  return (
+    screens.find((screen) => screen.screenId === screenId)?.label ?? screenId
+  );
 });
 const hasCurrentItem = computed(
   () => executing.value || Boolean(capture.notice),
@@ -55,23 +75,12 @@ const activatorLabel = computed(() =>
       ? `${capture.notice.title}，打开采集任务`
       : "打开采集任务",
 );
-const noticeColor = computed(
-  () =>
-    ({
-      info: "info",
-      success: "success",
-      warning: "warning",
-      error: "error",
-    })[capture.notice?.tone ?? "info"],
-);
 
 async function refresh(includeIdle = false) {
   if (!capture.connected) {
     await capture.connect();
     return;
   }
-  // Match CaptureConsole: only poll in-flight jobs. Terminal jobs were already
-  // hydrated once; re-calling loadBundle every second revokes blob URLs.
   if (capture.activeJob && !capture.jobFinished) {
     await capture.refreshActiveJob();
     await capture.refreshConsole();
@@ -95,6 +104,14 @@ async function viewResult() {
   capture.jobCenterOpen = false;
   capture.dismissNotice();
   await router.push(`/workbench/evidence/${bundleId}/${snapshotId}`);
+}
+
+function openDeliverPanel() {
+  capture.jobCenterOpen = false;
+  if (capture.activeJob && !capture.jobFinished) {
+    capture.deliverStep = 1;
+  }
+  capture.composerOpen = true;
 }
 
 onMounted(() => {
@@ -163,7 +180,13 @@ onBeforeUnmount(() => {
           rounded
         />
         <div v-if="executing && capture.activeJob" class="job-meta">
-          <span>{{ capture.activeJob.selection.cases.length }} 个采集项</span>
+          <span
+            >{{ completedCases }} / {{ totalCases }} 个采集项<template
+              v-if="currentCaseLabel"
+            >
+              · {{ currentCaseLabel }}</template
+            ></span
+          >
           <code>{{ capture.activeJob.jobId }}</code>
         </div>
         <p class="job-detail">
@@ -175,6 +198,13 @@ onBeforeUnmount(() => {
           }}
         </p>
         <div class="job-actions">
+          <v-btn
+            v-if="executing"
+            color="primary"
+            @click="openDeliverPanel"
+          >
+            打开交付面板
+          </v-btn>
           <v-btn
             v-if="capture.notice?.snapshotId"
             color="primary"
@@ -208,42 +238,15 @@ onBeforeUnmount(() => {
         <div class="job-empty">
           <ScanLine :size="28" />
           <p>从原型、页面画布或元素检查面板发起采集。</p>
-          <v-btn to="/workbench/capture" variant="text"> 查看任务历史 </v-btn>
+          <v-btn to="/workbench/capture" variant="text"> 查看采集历史 </v-btn>
         </div>
       </template>
 
       <footer>
-        <RouterLink to="/workbench/capture">任务中心</RouterLink>
+        <RouterLink to="/workbench/capture">采集历史</RouterLink>
       </footer>
     </section>
   </v-menu>
-
-  <v-snackbar
-    :model-value="Boolean(capture.notice)"
-    :color="noticeColor"
-    location="bottom right"
-    :timeout="capture.notice?.tone === 'info' ? 3500 : 8000"
-    @update:model-value="!$event && capture.dismissNotice()"
-  >
-    <div class="notice-content">
-      <CheckCircle2 v-if="capture.notice?.tone === 'success'" :size="19" />
-      <CircleAlert v-else :size="19" />
-      <div>
-        <strong>{{ capture.notice?.title }}</strong>
-        <span>{{ capture.notice?.message }}</span>
-      </div>
-    </div>
-    <template #actions>
-      <v-btn
-        v-if="capture.notice?.snapshotId"
-        variant="text"
-        @click="viewResult"
-      >
-        查看结果
-      </v-btn>
-      <v-btn variant="text" @click="capture.dismissNotice">关闭</v-btn>
-    </template>
-  </v-snackbar>
 </template>
 
 <style scoped>
@@ -342,20 +345,6 @@ onBeforeUnmount(() => {
 .job-popover footer a {
   color: rgb(var(--v-theme-primary));
   text-decoration: none;
-}
-.notice-content {
-  display: flex;
-  align-items: start;
-  gap: 10px;
-}
-.notice-content strong,
-.notice-content span {
-  display: block;
-}
-.notice-content span {
-  margin-top: 2px;
-  font-size: 0.72rem;
-  opacity: 0.86;
 }
 @keyframes spin {
   to {

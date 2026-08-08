@@ -71,7 +71,22 @@ function onCardKeydown(event: KeyboardEvent, item: PrototypeRecord) {
   }
 }
 
+function latestPrototypeEvidence(prototypeId: string) {
+  return capture.evidenceInventory?.prototypes
+    .find((item) => item.prototypeId === prototypeId)
+    ?.screens.flatMap((screen) => screen.items)
+    .filter((item) => !["trashed", "archived"].includes(item.status))
+    .sort((left, right) => right.capturedAt.localeCompare(left.capturedAt))[0];
+}
+
 function capturePrototype(item: PrototypeRecord) {
+  const evidence = latestPrototypeEvidence(item.id);
+  if (evidence) {
+    void router.push(
+      `/workbench/evidence/${evidence.bundleId}/${evidence.snapshotId}`,
+    );
+    return;
+  }
   capture.beginPrototype(item.id, route.fullPath);
   capture.openComposer();
 }
@@ -134,26 +149,28 @@ function capturePrototype(item: PrototypeRecord) {
           </button>
         </div>
         <footer @click.stop>
-
-            <WorkbenchIconButton
-              label="采集整个原型"
-              title="采集整个原型"
-              tone="action"
-              size="large"
-              @click="capturePrototype(item)"
-            >
-              <ScanLine :size="18" />
-            </WorkbenchIconButton>
-            <WorkbenchIconButton
-              label="流转原型状态"
-              title="流转原型状态"
-              tone="strong"
-              size="large"
-              @click="editing = item"
-            >
-              <GitBranch :size="18" />
-            </WorkbenchIconButton>
-    
+          <WorkbenchIconButton
+            :label="
+              latestPrototypeEvidence(item.id) ? '查看采集结果' : '采集整个原型'
+            "
+            :title="
+              latestPrototypeEvidence(item.id) ? '查看采集结果' : '采集整个原型'
+            "
+            tone="action"
+            size="large"
+            @click="capturePrototype(item)"
+          >
+            <ScanLine :size="18" />
+          </WorkbenchIconButton>
+          <WorkbenchIconButton
+            label="流转原型状态"
+            title="流转原型状态"
+            tone="strong"
+            size="large"
+            @click="editing = item"
+          >
+            <GitBranch :size="18" />
+          </WorkbenchIconButton>
         </footer>
       </article>
     </div>
@@ -311,7 +328,7 @@ function capturePrototype(item: PrototypeRecord) {
 .prototype-card footer {
   display: flex;
   align-items: center;
-  justify-content:  space-between;
+  justify-content: space-between;
   gap: 8px;
   margin-top: 15px;
   padding: 13px 0 15px;

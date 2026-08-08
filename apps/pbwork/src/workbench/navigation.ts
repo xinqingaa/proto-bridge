@@ -69,7 +69,7 @@ export const primaryNavigation: Array<
     to: `/workbench/components/${componentRecords.find((item) => item.category === "basic")?.id ?? "button"}`,
   },
   { id: "prototypes", label: "原型", to: "/workbench/prototypes/all" },
-  { id: "capture", label: "采集证据", to: "/workbench/capture" },
+  { id: "capture", label: "采集", to: "/workbench/capture" },
 ];
 
 const tokenCategoryLabels: Record<TokenCategory, string> = {
@@ -129,11 +129,61 @@ export function buildCaptureNavigation(): WorkbenchNavigationItem[] {
   return [
     {
       id: "capture-console",
-      label: "任务中心",
+      label: "采集历史",
       group: "采集",
       to: "/workbench/capture",
     },
   ];
+}
+
+/** Sidebar: 采集历史 as the only first-level node; each job is a child. */
+export function buildCaptureHistoryNavigationNodes(
+  presentations: Array<{
+    job: { jobId: string; acceptedAt: string };
+    prototypeLabel: string;
+    scopeLabel: string;
+    resultPath?: string;
+  }>,
+): WorkbenchNavigationTreeNode[] {
+  const children = [...presentations]
+    .sort(
+      (left, right) =>
+        new Date(right.job.acceptedAt).getTime() -
+        new Date(left.job.acceptedAt).getTime(),
+    )
+    .map((item) => ({
+      id: `capture-job-${item.job.jobId}`,
+      label: `${item.prototypeLabel} · ${item.scopeLabel}`,
+      kind: "item" as const,
+      ...(item.resultPath ? { to: item.resultPath } : {}),
+    }));
+  return [
+    {
+      id: "capture-console",
+      label: "采集历史",
+      kind: "group",
+      to: "/workbench/capture",
+      count: children.length,
+      ...(children.length ? { children } : {}),
+    },
+  ];
+}
+
+export function captureJobNavigationId(jobId: string): string {
+  return `capture-job-${jobId}`;
+}
+
+export function findCaptureJobIdForEvidenceRoute(
+  presentations: Array<{
+    job: { jobId: string };
+    resultPath?: string;
+  }>,
+  bundleId: string,
+  snapshotId: string,
+): string | null {
+  const path = `/workbench/evidence/${bundleId}/${snapshotId}`;
+  const match = presentations.find((item) => item.resultPath === path);
+  return match ? captureJobNavigationId(match.job.jobId) : null;
 }
 
 export function buildPrototypeTree(
@@ -290,7 +340,7 @@ export function buildWorkbenchNavigationTree(
     },
     {
       id: "capture",
-      label: "采集证据",
+      label: "采集",
       kind: "section",
       to: "/workbench/capture",
       children: buildCaptureNavigation().map((item) => ({

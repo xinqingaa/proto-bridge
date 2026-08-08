@@ -234,3 +234,12 @@ watch(stepCount, (count) => {
   border-top: 1px solid var(--pb-color-border, #d7dee8);
 }
 </style>
+
+<style>
+.pb-flow-sheet-host.v-bottom-sheet > .v-overlay__content,
+.pb-flow-sheet-host.v-bottom-sheet > .v-bottom-sheet__content {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-inline: 0 !important;
+}
+</style>

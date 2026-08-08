@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import {
   Check,
   ChevronDown,
@@ -38,6 +38,7 @@ const capture = useCaptureStore();
 const canvas = useCanvasStore();
 const comments = useCommentsStore();
 const route = useRoute();
+const router = useRouter();
 const tab = ref<
   "overview" | "component" | "convention" | "styles" | "comments"
 >("styles");
@@ -76,6 +77,34 @@ const currentScreen = computed(() =>
       item.screenSlug === String(route.params.screenSlug ?? ""),
   ),
 );
+const currentFragmentEvidence = computed(() => {
+  const screen = currentScreen.value;
+  const ref = captureElementRef.value;
+  if (!screen || !ref?.pbId) return null;
+  const variantId =
+    typeof route.query.variant === "string"
+      ? route.query.variant
+      : screen.defaultVariantId;
+  const themeId =
+    typeof route.query.theme === "string" ? route.query.theme : "light";
+  return (
+    capture.evidenceInventory?.prototypes
+      .find((item) => item.prototypeId === screen.prototypeId)
+      ?.screens.find((item) => item.screenId === screen.screenId)
+      ?.items.find(
+        (item) =>
+          item.variantId === variantId &&
+          item.themeId === themeId &&
+          item.deviceId === canvas.deviceId &&
+          item.fragments.some(
+            (fragment) =>
+              fragment.pbId === ref.pbId &&
+              (!ref.pbKey || fragment.pbKey === ref.pbKey),
+          ) &&
+          !["trashed", "archived"].includes(item.status),
+      ) ?? null
+  );
+});
 const commentContext = computed(() => {
   const screen = currentScreen.value;
   if (!screen) return null;
@@ -145,6 +174,13 @@ function addSelectedFragmentToCapture() {
   const screen = currentScreen.value;
   const ref = captureElementRef.value;
   if (!screen || !ref?.pbId) {
+    return;
+  }
+  if (currentFragmentEvidence.value) {
+    void router.push({
+      path: `/workbench/evidence/${currentFragmentEvidence.value.bundleId}/${currentFragmentEvidence.value.snapshotId}`,
+      query: { revision: currentFragmentEvidence.value.revisionId },
+    });
     return;
   }
   const accepted = capture.beginFragment({
@@ -548,7 +584,13 @@ function downloadUnreadable() {
         data-testid="capture-selected-fragment"
         @click="addSelectedFragmentToCapture"
       >
-        {{ captureUsesSemanticParent ? "采集所属稳定元素" : "加入采集范围" }}
+        {{
+          currentFragmentEvidence
+            ? "查看已有控件证据"
+            : captureUsesSemanticParent
+              ? "采集所属稳定元素"
+              : "加入采集范围"
+        }}
       </WorkbenchButton>
       <small v-if="!captureElementRef">
         当前节点和所属语义区域都没有稳定标识；可改为采集当前页面。

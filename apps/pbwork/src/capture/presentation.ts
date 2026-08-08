@@ -26,11 +26,14 @@ export type CaptureTaskPresentation = {
   job: CaptureJob;
   prototypeId: string;
   prototypeLabel: string;
+  scopeLabel: string;
   status: CaptureTaskDisplayStatus;
   statusLabel: string;
   acceptedAtLabel: string;
   viewCount: number;
   progress: number;
+  completedCases: number;
+  currentCaseLabel?: string | undefined;
   failures: CaptureFailureDisplay[];
   resolvedBy?: CaptureJob;
   resultPath?: string;
@@ -61,19 +64,16 @@ function successfulSnapshot(
   state: CaptureConsoleState,
   job: CaptureJob,
 ): CaptureConsoleState["bundles"][number]["activeSnapshot"] | undefined {
-  const snapshot = state.bundles.find(
+  const bundle = state.bundles.find(
     (item) => item.bundle.bundleId === job.bundleId,
-  )?.activeSnapshot;
-  if (!snapshot) return undefined;
-  const counts = snapshot.coverage.counts;
-  const incomplete =
-    counts.failed +
-    counts.skipped +
-    counts.unsupported +
-    counts.cancelled +
-    counts.interrupted +
-    counts.missing;
-  return incomplete === 0 ? snapshot : undefined;
+  );
+  if (!bundle || !job.runId) return undefined;
+  return (
+    bundle.snapshots?.find((snapshot) => snapshot.sourceRunId === job.runId) ??
+    (bundle.activeSnapshot?.sourceRunId === job.runId
+      ? bundle.activeSnapshot
+      : undefined)
+  );
 }
 
 function resolvingJob(
@@ -99,6 +99,49 @@ function prototypeIdOf(job: CaptureJob): string {
     job.selection.cases[0]?.caseKey.screenId.split(".")[0] ??
     "unknown-prototype"
   );
+}
+
+function scopeLabelOf(job: CaptureJob): string {
+  const screenIds = [
+    ...new Set(job.selection.cases.map((item) => item.caseKey.screenId)),
+  ];
+  const screens = loadPrototypeScreens();
+  const labels = screenIds.map(
+    (screenId) =>
+      screens.find((screen) => screen.screenId === screenId)?.label ?? screenId,
+  );
+  const hasFragment = job.selection.cases.some(
+    (item) =>
+      item.captureScope.fragments && item.captureScope.fragments.length > 0,
+  );
+  if (hasFragment && labels.length === 1) {
+    return `${labels[0]} · 控件范围`;
+  }
+  const authoredCount = screens.filter(
+    (screen) => screen.prototypeId === prototypeIdOf(job),
+  ).length;
+  if (
+    labels.length > 1 &&
+    labels.length >= authoredCount &&
+    authoredCount > 0
+  ) {
+    return `整原型 · ${labels.length} 屏`;
+  }
+  if (labels.length === 1) return labels[0]!;
+  if (labels.length <= 3) return labels.join(" + ");
+  return `${labels.slice(0, 2).join(" + ")} 等 ${labels.length} 屏`;
+}
+
+function currentCaseLabelOf(job: CaptureJob): string | undefined {
+  if (!RUNNING_STATUSES.has(job.status)) return undefined;
+  const finished = new Set(
+    job.journal
+      .filter((entry) => entry.event === "case-finished")
+      .map((entry) => entry.detail?.split(":")[0])
+      .filter(Boolean),
+  );
+  const next = job.selection.cases.find((item) => !finished.has(item.caseId));
+  return next ? caseLabel(next.caseId) : undefined;
 }
 
 function completedCount(job: CaptureJob): number {
@@ -195,6 +238,39 @@ function failureDisplays(job: CaptureJob): CaptureFailureDisplay[] {
   ];
 }
 
+export function formatCaptureTime(iso: string, now = new Date()): string {
+  const date = new Date(iso);
+  const sameDay =
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate();
+  const sameYear = date.getFullYear() === now.getFullYear();
+  if (sameDay) {
+    return new Intl.DateTimeFormat("zh-CN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(date);
+  }
+  if (sameYear) {
+    return new Intl.DateTimeFormat("zh-CN", {
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(date);
+  }
+  return new Intl.DateTimeFormat("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date);
+}
+
 export function buildCaptureTaskPresentations(
   state: CaptureConsoleState | null,
 ): CaptureTaskPresentation[] {
@@ -240,20 +316,19 @@ export function buildCaptureTaskPresentations(
       job,
       prototypeId,
       prototypeLabel,
+      scopeLabel: scopeLabelOf(job),
       status,
       statusLabel: statusLabel[status],
-      acceptedAtLabel: new Intl.DateTimeFormat("zh-CN", {
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      }).format(new Date(job.acceptedAt)),
+      acceptedAtLabel: formatCaptureTime(job.acceptedAt),
       viewCount: job.selection.cases.length,
+      completedCases: completed,
       progress:
         job.selection.cases.length === 0
           ? 0
           : Math.min(100, (completed / job.selection.cases.length) * 100),
+      ...(currentCaseLabelOf(job)
+        ? { currentCaseLabel: currentCaseLabelOf(job)! }
+        : {}),
       failures:
         status === "needs-attention" || status === "resolved"
           ? failureDisplays(job)

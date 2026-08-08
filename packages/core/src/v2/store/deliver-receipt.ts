@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { acceptanceChecklistMarkdown } from '../acceptance-contract.js';
 import {
@@ -52,6 +52,8 @@ export type WriteDeliveryReceiptInput = {
   configPath?: string;
   implementationIntent?: string;
   timeZone?: string;
+  /** Rewrite an existing delivery directory (true overwrite). */
+  overwriteDeliveryId?: string;
 };
 
 /** Sibling of Store root: `.proto-bridge/store` → `.proto-bridge/deliveries`. */
@@ -120,9 +122,18 @@ export async function writeDeliveryReceipt(
   const now = new Date();
   const createdAt = now.toISOString();
   const timeZone = input.timeZone ?? 'Asia/Shanghai';
-  const { deliveryId, createdAtLocal } = localDeliveryTime(now, timeZone);
+  const timed = localDeliveryTime(now, timeZone);
+  const overwriteId = input.overwriteDeliveryId?.trim();
+  if (overwriteId && /[\\/]/.test(overwriteId)) {
+    throw new Error('overwriteDeliveryId must be a single path segment.');
+  }
+  const deliveryId = overwriteId || timed.deliveryId;
+  const createdAtLocal = timed.createdAtLocal;
   const deliveryRoot = deliveryRootFromStoreRoot(input.storeRoot);
   const deliveryDir = path.join(deliveryRoot, deliveryId);
+  if (overwriteId) {
+    await rm(deliveryDir, { recursive: true, force: true });
+  }
 
   const store = new LocalFileStore({
     root: input.storeRoot,

@@ -79,9 +79,11 @@ import { useCommentsStore } from "@/app/stores/comments";
 import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
 import { useCaptureStore } from "@/app/stores/capture";
 import {
+  buildCaptureHistoryNavigationNodes,
   buildPrototypeTree,
   buildWorkbenchNavigationTree,
   countPrototypesForLifecycle,
+  findCaptureJobIdForEvidenceRoute,
   getSecondaryNavigation,
   isWorkbenchSectionId,
   parsePrototypeLifecycle,
@@ -89,6 +91,7 @@ import {
   searchableNavigation,
   type WorkbenchNavigationTreeNode,
 } from "@/workbench/navigation";
+import { buildCaptureTaskPresentations } from "@/capture/presentation";
 import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
 import { LIFECYCLE_LABELS } from "@/design-system/types";
 import InspectorPanel from "@/workbench/inspector/InspectorPanel.vue";
@@ -157,7 +160,15 @@ const selectedSecondaryId = computed(() => {
   }
   if (sectionId.value === "capture") {
     if (route.meta.resourceKind === "evidence") {
-      return `bundle-${String(route.params.bundleId ?? "")}`;
+      const bundleId = String(route.params.bundleId ?? "");
+      const snapshotId = String(route.params.snapshotId ?? "");
+      return (
+        findCaptureJobIdForEvidenceRoute(
+          buildCaptureTaskPresentations(capture.consoleState),
+          bundleId,
+          snapshotId,
+        ) ?? "capture-console"
+      );
     }
     return "capture-console";
   }
@@ -339,6 +350,10 @@ const navigationTree = computed(() =>
   ),
 );
 
+const captureTaskPresentations = computed(() =>
+  buildCaptureTaskPresentations(capture.consoleState),
+);
+
 const sectionNavigationTree = computed(() => {
   const current = navigationTree.value.find(
     (node) => node.id === sectionId.value,
@@ -346,71 +361,7 @@ const sectionNavigationTree = computed(() => {
   if (!current) return [];
   if (sectionId.value === "overview") return [];
   if (sectionId.value === "capture") {
-    const resultGroups = new Map<
-      string,
-      {
-        id: string;
-        label: string;
-        kind: "group";
-        children: WorkbenchNavigationTreeNode[];
-      }
-    >();
-    for (const item of (capture.consoleState?.bundles ?? []).filter(
-      (candidate) => candidate.activeSnapshot,
-    )) {
-      const snapshot = item.activeSnapshot!;
-      const prototype = loadPrototypes().find(
-        (record) => record.id === item.bundle.prototypeId,
-      );
-      const counts = snapshot.coverage.counts;
-      const successful = counts.captured + counts.reused;
-      const resultNode: WorkbenchNavigationTreeNode = {
-        id: `bundle-${item.bundle.bundleId}`,
-        label: [
-          new Intl.DateTimeFormat("zh-CN", {
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false,
-          }).format(new Date(snapshot.committedAt)),
-          `${successful}/${counts.selected} 成功`,
-        ].join(" · "),
-        kind: "item",
-        to: `/workbench/evidence/${item.bundle.bundleId}/${snapshot.snapshotId}`,
-      };
-      const group = resultGroups.get(item.bundle.prototypeId) ?? {
-        id: `capture-result-prototype-${item.bundle.prototypeId}`,
-        label: prototype?.label ?? item.bundle.prototypeId,
-        kind: "group" as const,
-        children: [],
-      };
-      group.children.push(resultNode);
-      resultGroups.set(item.bundle.prototypeId, group);
-    }
-    const resultChildren = [...resultGroups.values()].map((group) => ({
-      ...group,
-      count: group.children.length,
-    }));
-    return [
-      {
-        id: "capture-task-group",
-        label: "任务",
-        kind: "group" as const,
-        count: current.children?.length ?? 0,
-        children: current.children ?? [],
-      },
-      {
-        id: "capture-result-group",
-        label: "采集结果",
-        kind: "group" as const,
-        count: [...resultGroups.values()].reduce(
-          (sum, group) => sum + group.children.length,
-          0,
-        ),
-        children: resultChildren,
-      },
-    ];
+    return buildCaptureHistoryNavigationNodes(captureTaskPresentations.value);
   }
   return current.children ?? [];
 });
@@ -530,6 +481,7 @@ function isPreservedExpandId(id: string): boolean {
     id.startsWith("component-") ||
     id.startsWith("capture-task-") ||
     id.startsWith("capture-result-") ||
+    id.startsWith("capture-job-") ||
     id.startsWith("bundle-") ||
     id === "capture-console"
   );
@@ -557,7 +509,11 @@ watch(
       section === "capture" ? sectionTree : tree,
       activeId,
     );
-    const next = [...new Set([...expandedTreeIds.value, ...required])];
+    const withSectionDefaults =
+      section === "capture"
+        ? [...required, "capture-console"]
+        : required;
+    const next = [...new Set([...expandedTreeIds.value, ...withSectionDefaults])];
     if (next.length === expandedTreeIds.value.length) return;
     expandedTreeIds.value = next;
     persistTreeExpanded();
@@ -602,15 +558,8 @@ const breadcrumbs = computed(() => {
       sectionId.value === "capture" &&
       route.meta.resourceKind === "evidence"
     ) {
-      const bundleId = String(route.params.bundleId ?? "");
-      const summary = capture.consoleState?.bundles.find(
-        (item) => item.bundle.bundleId === bundleId,
-      );
-      const prototype = loadPrototypes().find(
-        (record) => record.id === summary?.bundle.prototypeId,
-      );
       items.push({
-        title: prototype?.label ?? "采集结果",
+        title: "采集结果",
         disabled: true,
         to: route.fullPath,
       });
@@ -711,7 +660,13 @@ function secondaryIconFor(id: string) {
   if (foundationIcons[id]) return foundationIcons[id];
   if (id.startsWith("token-")) return SwatchBook;
   if (id.startsWith("theme-")) return Paintbrush;
-  if (id === "capture-console" || id.startsWith("bundle-")) return ScanLine;
+  if (
+    id === "capture-console" ||
+    id.startsWith("capture-job-") ||
+    id.startsWith("bundle-")
+  ) {
+    return ScanLine;
+  }
   if (id.startsWith("lifecycle-all")) return LayoutGrid;
   if (id.startsWith("lifecycle-active")) return CircleDot;
   if (id.startsWith("lifecycle-review")) return ClipboardCheck;

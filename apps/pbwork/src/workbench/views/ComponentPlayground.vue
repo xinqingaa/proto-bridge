@@ -72,6 +72,7 @@ const vuetifyPreviewTheme = computed(() =>
 const tallPreview = computed(() =>
   [
     "bottom-sheet",
+    "flow-sheet",
     "data-list",
     "scrollable-data-list",
     "tab-viewport",
@@ -84,7 +85,9 @@ const tallPreview = computed(() =>
 );
 
 const isOverlayPreview = computed(() =>
-  ["dialog", "bottom-sheet", "snackbar"].includes(props.componentId),
+  ["dialog", "bottom-sheet", "flow-sheet", "snackbar"].includes(
+    props.componentId,
+  ),
 );
 
 const previewAttach = "[data-pb-scenario-preview]";
@@ -337,10 +340,29 @@ function bindingResolvedValue(tokenId: string) {
                 :is="previewComponent"
                 v-bind="previewBind()"
                 @update:model-value="onPreviewUpdate"
+                @update:step="setControlValue('step', $event)"
               >
                 <template v-if="record.id === 'bottom-sheet'"
                   >选择状态、优先级和时间范围后应用筛选。</template
                 >
+                <template v-else-if="record.id === 'flow-sheet'">
+                  <div>
+                    <strong>步骤 1 · 确认范围</strong>
+                    <p>核对要采集的页面与状态。</p>
+                  </div>
+                  <div>
+                    <strong>步骤 2 · 执行中</strong>
+                    <p>显示 case 级进度。</p>
+                  </div>
+                  <div>
+                    <strong>步骤 3 · 结果与风险</strong>
+                    <p>Review 截图与提醒。</p>
+                  </div>
+                  <div>
+                    <strong>步骤 4 · Agent 提示词</strong>
+                    <p>复制提示词并交付。</p>
+                  </div>
+                </template>
                 <template v-else-if="record.id === 'card'"
                   >4 个待处理 · 2 个即将超时</template
                 >
@@ -563,7 +585,7 @@ function bindingResolvedValue(tokenId: string) {
 }
 .preview.is-overlay {
   overflow: visible;
-  min-height: 360px;
+  min-height: 480px;
 }
 .preview-wrap:has(.is-overlay) {
   overflow: visible;

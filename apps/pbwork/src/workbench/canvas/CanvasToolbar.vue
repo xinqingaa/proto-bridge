@@ -27,6 +27,7 @@ const props = defineProps<{
   fullscreen: boolean;
   copyFeedback?: string | null;
   captureDisabled?: boolean;
+  captureLabel?: string;
 }>();
 
 const emit = defineEmits<{
@@ -247,13 +248,13 @@ function onTogglePan() {
     <div class="toolbar-spacer" />
 
     <div class="toolbar-cluster" role="group" aria-label="链接">
-      <v-tooltip text="采集当前页面" location="bottom">
+      <v-tooltip :text="captureLabel ?? '采集当前页面'" location="bottom">
         <template #activator="{ props: tip }">
           <button
             v-bind="tip"
             type="button"
             class="tool-btn tool-primary"
-            aria-label="采集当前页面"
+            :aria-label="captureLabel ?? '采集当前页面'"
             :disabled="captureDisabled"
             data-testid="capture-current-screen"
             @click="emit('capture')"

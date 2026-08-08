@@ -608,6 +608,21 @@ describe('ProtoBridge Local Service', () => {
       '# ProtoBridge Evidence 驱动的页面实现',
     );
     expect(delivery.body.data.agentPrompt).not.toContain('# Evidence Implementation Brief');
+    const listedDeliveries = await call(
+      base,
+      `/deliveries?bundleId=${encodeURIComponent(job.bundleId)}`,
+      { token },
+    );
+    expect(listedDeliveries.body.data.deliveries).toHaveLength(1);
+    const deliveryDetail = await call(
+      base,
+      `/deliveries/${encodeURIComponent(delivery.body.data.deliveryId)}`,
+      { token },
+    );
+    expect(deliveryDetail.response.status).toBe(200);
+    expect(deliveryDetail.body.data.agentPrompt).toBe(
+      delivery.body.data.agentPrompt,
+    );
   });
 
   it('invalidates old sessions on restart and reports orphan Jobs as interrupted', async () => {

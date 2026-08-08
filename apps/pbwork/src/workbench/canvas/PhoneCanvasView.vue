@@ -74,6 +74,51 @@ const resolved = computed(() =>
     searchParams: searchParams.value,
   }),
 );
+const currentCaptureJob = computed(() => {
+  const current = resolved.value;
+  if (!current.ok) return null;
+  return (
+    capture.consoleState?.jobs.find(
+      (job) =>
+        ["queued", "discovering", "capturing", "writing"].includes(
+          job.status,
+        ) &&
+        job.selection.cases.some(
+          (item) =>
+            item.caseKey.screenId === current.screen.screenId &&
+            item.caseKey.variantId === current.variant.id &&
+            item.caseKey.themeId === current.theme.id &&
+            item.caseKey.deviceId === canvas.deviceId,
+        ),
+    ) ?? null
+  );
+});
+const currentEvidence = computed(() => {
+  const current = resolved.value;
+  if (!current.ok) return null;
+  const items =
+    capture.evidenceInventory?.prototypes
+      .find((item) => item.prototypeId === current.prototype.id)
+      ?.screens.find((item) => item.screenId === current.screen.screenId)
+      ?.items ?? [];
+  return (
+    items.find(
+      (item) =>
+        item.variantId === current.variant.id &&
+        item.themeId === current.theme.id &&
+        item.deviceId === canvas.deviceId &&
+        item.fragments.length === 0 &&
+        !["trashed", "archived"].includes(item.status),
+    ) ?? null
+  );
+});
+const captureActionLabel = computed(() =>
+  currentCaptureJob.value
+    ? "查看采集进度"
+    : currentEvidence.value
+      ? "查看当前采集结果"
+      : "采集当前页面",
+);
 
 const selectedVariantId = computed(() => {
   if (resolved.value.ok) return resolved.value.variant.id;
@@ -219,6 +264,17 @@ function copyAndOpenRuntime() {
 
 function captureCurrentScreen() {
   if (!resolved.value.ok) return;
+  if (currentCaptureJob.value) {
+    void capture.resumeJob(currentCaptureJob.value);
+    return;
+  }
+  if (currentEvidence.value) {
+    void router.push({
+      path: `/workbench/evidence/${currentEvidence.value.bundleId}/${currentEvidence.value.snapshotId}`,
+      query: { revision: currentEvidence.value.revisionId },
+    });
+    return;
+  }
   capture.beginCurrentScreen({
     prototypeId: resolved.value.prototype.id,
     screenId: resolved.value.screen.screenId,
@@ -675,6 +731,7 @@ onBeforeUnmount(() => {
       :fullscreen="canvasFullscreen"
       :copy-feedback="copyFeedback"
       :capture-disabled="!selection.runtimeReady || !resolved.ok"
+      :capture-label="captureActionLabel"
       @update:variant-id="onVariantId"
       @update:theme-id="onThemeId"
       @toggle-inspect="toggleInspect"

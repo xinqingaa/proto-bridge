@@ -13,6 +13,7 @@ import {
 import { riskKindLabel } from "@proto-bridge/core/v2/prompts/agent-prompt";
 import { useCaptureStore } from "@/app/stores/capture";
 import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
+import { usePointerSwipe } from "@/design-system/components/_shared/usePointerSwipe";
 import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
 import WorkbenchCheckbox from "@/workbench/ui/WorkbenchCheckbox.vue";
 import WorkbenchIconButton from "@/workbench/ui/WorkbenchIconButton.vue";
@@ -124,6 +125,63 @@ const successfulCount = computed(() => {
   return counts.captured + counts.reused;
 });
 const promptHtml = computed(() => renderMarkdown(capture.agentPrompt ?? ""));
+
+const STATUS_LABELS = {
+  queued: "等待开始",
+  discovering: "正在准备",
+  capturing: "正在采集",
+  writing: "正在保存",
+  completed: "采集完成",
+  failed: "采集失败",
+  cancelled: "已取消",
+  interrupted: "已中断",
+} as const;
+
+const totalCases = computed(
+  () => capture.activeJob?.selection.cases.length ?? 0,
+);
+const completedCases = computed(
+  () =>
+    capture.activeJob?.journal.filter(
+      (entry) => entry.event === "case-finished",
+    ).length ?? 0,
+);
+const caseProgress = computed(() =>
+  totalCases.value === 0
+    ? 0
+    : Math.min(100, (completedCases.value / totalCases.value) * 100),
+);
+const statusLabel = computed(() => {
+  const status = capture.activeJob?.status;
+  return status ? STATUS_LABELS[status] : "准备中";
+});
+const currentCaseLabel = computed(() => {
+  const job = capture.activeJob;
+  if (!job) return "";
+  const finished = new Set(
+    job.journal
+      .filter((entry) => entry.event === "case-finished")
+      .map((entry) => entry.detail?.split(":")[0])
+      .filter(Boolean),
+  );
+  const next = job.selection.cases.find((item) => !finished.has(item.caseId));
+  if (!next) return "";
+  const screenId = next.caseId.split("::")[0] ?? "";
+  return (
+    screens.find((screen) => screen.screenId === screenId)?.label ?? screenId
+  );
+});
+
+const stepKeys = computed(() => ["0", "1", "2", "3"]);
+const currentStepKey = computed(() => String(capture.deliverStep));
+const swipeOn = ref(true);
+const offsetPercent = computed(() => `-${capture.deliverStep * 100}%`);
+const swipeGesture = usePointerSwipe(
+  stepKeys,
+  currentStepKey,
+  (value) => capture.setDeliverStep(Number(value)),
+  { swipe: swipeOn, mouseSwipe: swipeOn },
+);
 
 watch(
   () => capture.composerOpen,
@@ -278,271 +336,331 @@ function renderMarkdown(source: string): string {
         />
       </div>
 
-      <div class="flow-scroll" data-no-swipe>
-        <v-alert
-          v-if="capture.lastError"
-          type="error"
-          variant="tonal"
-          density="comfortable"
-          closable
-          @click:close="capture.clearError"
+      <div
+        class="flow-body"
+        :class="{ 'is-dragging': swipeGesture.dragging.value }"
+        @pointerdown="swipeGesture.onPointerDown"
+        @pointermove="swipeGesture.onPointerMove"
+        @pointerup="swipeGesture.onPointerUp"
+        @pointercancel="swipeGesture.onPointerCancel"
+        @touchstart="swipeGesture.onTouchStart"
+        @touchmove="swipeGesture.onTouchMove"
+        @touchend="swipeGesture.onTouchEnd"
+        @touchcancel="swipeGesture.onTouchCancel"
+        @click.capture="swipeGesture.onClickCapture"
+      >
+        <div
+          class="flow-track"
+          :style="{ transform: `translateX(${offsetPercent})` }"
         >
-          {{ capture.lastError }}
-        </v-alert>
-
-        <!-- Step 0: scope -->
-        <section v-if="capture.deliverStep === 0" class="step-panel">
-          <div v-if="!capture.draft" class="empty">
-            <strong>还没有交付范围</strong>
-            <p>请从原型、页面画布或元素检查面板发起。</p>
-          </div>
-          <template v-else>
-            <div class="summary-grid">
-              <article>
-                <span>入口</span>
-                <strong>{{ entryLabel }}</strong>
-              </article>
-              <article>
-                <span>页面</span>
-                <strong
-                  >{{ capture.draft.screens.length }} /
-                  {{ prototypeScreens.length }}</strong
-                >
-              </article>
-              <article>
-                <span>状态</span>
-                <strong
-                  >{{ selectedVariantCount }} / {{ totalVariantCount }}</strong
-                >
-              </article>
-              <article>
-                <span>场景检查点</span>
-                <strong
-                  >{{ selectedScenarioCheckpointCount }} /
-                  {{ totalScenarioCheckpointCount }}</strong
-                >
-              </article>
-              <article>
-                <span>将采集</span>
-                <strong
-                  >{{ matrixCount || selectedCaseCount || "…" }} 项</strong
-                >
-              </article>
-            </div>
-            <p v-if="fragmentLabel" class="ok-line">
-              稳定元素：{{ fragmentLabel }}
-            </p>
-            <p v-if="omittedScreenLabels.length" class="hint">
-              未包含：{{ omittedScreenLabels.join("、") }}
-            </p>
-            <div class="scope-tools">
-              <WorkbenchButton tone="ghost" size="small" @click="copySelection">
-                <ClipboardCopy :size="14" />
-                {{ selectionCopied ? "已复制 Selection" : "复制 Selection" }}
-              </WorkbenchButton>
-            </div>
-
-            <section v-if="capture.entryKind === 'custom'" class="scope-editor">
-              <strong>选择页面</strong>
-              <div class="choice-grid">
-                <WorkbenchCheckbox
-                  v-for="screen in prototypeScreens"
-                  :key="screen.screenId"
-                  :model-value="selectedScreenIds.has(screen.screenId)"
-                  :label="screen.label"
-                  @update:model-value="
-                    capture.toggleCustomScreen(screen.screenId, $event);
-                    refreshAfterEdit();
-                  "
-                />
-              </div>
-            </section>
-
-            <section class="scope-editor">
-              <strong>逐页选择状态与行为</strong>
-              <article
-                v-for="{ selection, record } in draftScreens"
-                :key="selection.screenId"
-                class="screen-editor"
+          <div class="flow-page">
+            <div class="flow-scroll" data-no-swipe>
+              <v-alert
+                v-if="capture.lastError && capture.deliverStep === 0"
+                type="error"
+                variant="tonal"
+                density="comfortable"
+                closable
+                @click:close="capture.clearError"
               >
-                <header>
-                  <b>{{ record?.label ?? selection.screenId }}</b>
-                  <small>{{ selection.screenId }}</small>
-                </header>
-                <div class="choice-group">
-                  <span>页面状态</span>
-                  <div class="choice-grid">
-                    <WorkbenchCheckbox
-                      v-for="variant in record?.variants ?? []"
-                      :key="variant.id"
-                      :model-value="
-                        variantSelected(selection.screenId, variant.id)
-                      "
-                      :label="variant.label"
-                      @update:model-value="
-                        capture.toggleVariantId(
-                          selection.screenId,
-                          variant.id,
-                          $event,
-                        );
-                        refreshAfterEdit();
-                      "
+                {{ capture.lastError }}
+              </v-alert>
+
+              <!-- Step 0: scope -->
+              <section class="step-panel">
+                <div v-if="!capture.draft" class="empty">
+                  <strong>还没有交付范围</strong>
+                  <p>请从原型、页面画布或元素检查面板发起。</p>
+                </div>
+                <template v-else>
+                  <div class="summary-grid">
+                    <article>
+                      <span>入口</span>
+                      <strong>{{ entryLabel }}</strong>
+                    </article>
+                    <article>
+                      <span>页面</span>
+                      <strong
+                        >{{ capture.draft.screens.length }} /
+                        {{ prototypeScreens.length }}</strong
+                      >
+                    </article>
+                    <article>
+                      <span>状态</span>
+                      <strong
+                        >{{ selectedVariantCount }} /
+                        {{ totalVariantCount }}</strong
+                      >
+                    </article>
+                    <article>
+                      <span>场景检查点</span>
+                      <strong
+                        >{{ selectedScenarioCheckpointCount }} /
+                        {{ totalScenarioCheckpointCount }}</strong
+                      >
+                    </article>
+                    <article>
+                      <span>将采集</span>
+                      <strong
+                        >{{
+                          matrixCount || selectedCaseCount || "…"
+                        }}
+                        项</strong
+                      >
+                    </article>
+                  </div>
+                  <p v-if="fragmentLabel" class="ok-line">
+                    稳定元素：{{ fragmentLabel }}
+                  </p>
+                  <p v-if="omittedScreenLabels.length" class="hint">
+                    未包含：{{ omittedScreenLabels.join("、") }}
+                  </p>
+                  <div class="scope-tools">
+                    <WorkbenchButton
+                      tone="ghost"
+                      size="small"
+                      @click="copySelection"
+                    >
+                      <ClipboardCopy :size="14" />
+                      {{
+                        selectionCopied ? "已复制 Selection" : "复制 Selection"
+                      }}
+                    </WorkbenchButton>
+                  </div>
+
+                  <section
+                    v-if="capture.entryKind === 'custom'"
+                    class="scope-editor"
+                  >
+                    <strong>选择页面</strong>
+                    <div class="choice-grid">
+                      <WorkbenchCheckbox
+                        v-for="screen in prototypeScreens"
+                        :key="screen.screenId"
+                        :model-value="selectedScreenIds.has(screen.screenId)"
+                        :label="screen.label"
+                        @update:model-value="
+                          capture.toggleCustomScreen(screen.screenId, $event);
+                          refreshAfterEdit();
+                        "
+                      />
+                    </div>
+                  </section>
+
+                  <section class="scope-editor">
+                    <strong>逐页选择状态与行为</strong>
+                    <article
+                      v-for="{ selection, record } in draftScreens"
+                      :key="selection.screenId"
+                      class="screen-editor"
+                    >
+                      <header>
+                        <b>{{ record?.label ?? selection.screenId }}</b>
+                        <small>{{ selection.screenId }}</small>
+                      </header>
+                      <div class="choice-group">
+                        <span>页面状态</span>
+                        <div class="choice-grid">
+                          <WorkbenchCheckbox
+                            v-for="variant in record?.variants ?? []"
+                            :key="variant.id"
+                            :model-value="
+                              variantSelected(selection.screenId, variant.id)
+                            "
+                            :label="variant.label"
+                            @update:model-value="
+                              capture.toggleVariantId(
+                                selection.screenId,
+                                variant.id,
+                                $event,
+                              );
+                              refreshAfterEdit();
+                            "
+                          />
+                        </div>
+                      </div>
+                      <div
+                        v-if="record?.scenarios?.length"
+                        class="choice-group"
+                      >
+                        <span>行为场景</span>
+                        <div class="choice-grid">
+                          <WorkbenchCheckbox
+                            v-for="scenario in record.scenarios"
+                            :key="scenario.id"
+                            :model-value="
+                              scenarioSelected(selection.screenId, scenario.id)
+                            "
+                            :label="scenario.label"
+                            @update:model-value="
+                              capture.toggleScenarioId(
+                                selection.screenId,
+                                scenario.id,
+                                $event,
+                              );
+                              refreshAfterEdit();
+                            "
+                          />
+                        </div>
+                      </div>
+                    </article>
+                  </section>
+                  <label class="field">
+                    <span>实现意图（可选）</span>
+                    <WorkbenchTextField
+                      :model-value="capture.handoffIntent"
+                      aria-label="实现意图"
+                      placeholder="例如：在 Flutter 示例工程还原任务列表"
+                      @update:model-value="capture.handoffIntent = $event"
                     />
+                  </label>
+
+                  <section v-if="blocks.length" class="risk-block is-blocking">
+                    <strong>必须修复</strong>
+                    <div
+                      v-for="diagnostic in blocks"
+                      :key="diagnostic.diagnosticId"
+                      class="risk-row"
+                    >
+                      <AlertTriangle :size="16" />
+                      <span>{{ diagnostic.message }}</span>
+                    </div>
+                  </section>
+
+                  <section v-if="warnings.length" class="risk-block">
+                    <strong>需要确认的事项</strong>
+                    <div
+                      v-for="warning in warnings"
+                      :key="warning.warningId"
+                      class="risk-row"
+                    >
+                      <AlertTriangle :size="16" />
+                      <span>{{ warning.message }}</span>
+                      <WorkbenchCheckbox
+                        :model-value="
+                          capture.acceptedWarningIds.includes(warning.warningId)
+                        "
+                        label="我已了解并继续"
+                        @update:model-value="
+                          capture.toggleWarning(warning.warningId, $event)
+                        "
+                      />
+                    </div>
+                  </section>
+                </template>
+              </section>
+            </div>
+          </div>
+
+          <div class="flow-page">
+            <div class="flow-scroll" data-no-swipe>
+              <!-- Step 1: running -->
+              <section class="step-panel loading">
+                <LoaderCircle :size="36" class="spin" />
+                <strong>{{ statusLabel }}</strong>
+                <p>
+                  {{ completedCases }} / {{ totalCases }} 个采集项
+                  <template v-if="currentCaseLabel">
+                    · 当前 {{ currentCaseLabel }}
+                  </template>
+                </p>
+                <v-progress-linear
+                  class="case-progress"
+                  :model-value="caseProgress"
+                  color="primary"
+                  height="8"
+                  rounded
+                />
+                <p class="hint">
+                  可点蒙层或关闭收起面板；后台任务会继续，顶栏铃铛可再打开。
+                </p>
+              </section>
+            </div>
+          </div>
+
+          <div class="flow-page">
+            <div class="flow-scroll" data-no-swipe>
+              <!-- Step 2: result + risks -->
+              <section class="step-panel">
+                <div class="result-banner">
+                  <Check :size="20" />
+                  <div>
+                    <strong>{{ successfulCount }} 个视图已就绪</strong>
+                    <small>
+                      Snapshot
+                      {{ capture.details?.activeSnapshot.snapshotId ?? "—" }}
+                    </small>
                   </div>
                 </div>
-                <div v-if="record?.scenarios?.length" class="choice-group">
-                  <span>行为场景</span>
-                  <div class="choice-grid">
-                    <WorkbenchCheckbox
-                      v-for="scenario in record.scenarios"
-                      :key="scenario.id"
-                      :model-value="
-                        scenarioSelected(selection.screenId, scenario.id)
-                      "
-                      :label="scenario.label"
-                      @update:model-value="
-                        capture.toggleScenarioId(
-                          selection.screenId,
-                          scenario.id,
-                          $event,
-                        );
-                        refreshAfterEdit();
-                      "
-                    />
+
+                <section v-if="risks.length" class="risk-block">
+                  <strong
+                    >提醒（不会修改 Evidence，会写入 Agent 提示词）</strong
+                  >
+                  <div
+                    v-for="risk in risks"
+                    :key="risk.kind"
+                    class="risk-row"
+                    data-testid="deliver-risk-row"
+                  >
+                    <AlertTriangle :size="16" />
+                    <span>
+                      <b>{{ riskKindLabel(risk.kind) }}</b>
+                      <small>{{ risk.message }}</small>
+                    </span>
+                  </div>
+                </section>
+                <p v-else class="ok-line">
+                  当前没有必须确认的风险，可以直接生成交接。
+                </p>
+              </section>
+            </div>
+          </div>
+
+          <div class="flow-page">
+            <div class="flow-scroll" data-no-swipe>
+              <!-- Step 3: prompt -->
+              <section class="step-panel">
+                <div v-if="capture.handoff" class="result-banner">
+                  <Check :size="20" />
+                  <div>
+                    <strong>交接已创建</strong>
+                    <small data-testid="handoff-id">{{
+                      capture.handoff.handoffId
+                    }}</small>
                   </div>
                 </div>
-              </article>
-            </section>
-            <label class="field">
-              <span>实现意图（可选）</span>
-              <WorkbenchTextField
-                :model-value="capture.handoffIntent"
-                aria-label="实现意图"
-                placeholder="例如：在 Flutter 示例工程还原任务列表"
-                @update:model-value="capture.handoffIntent = $event"
-              />
-            </label>
-
-            <section v-if="blocks.length" class="risk-block is-blocking">
-              <strong>必须修复</strong>
-              <div
-                v-for="diagnostic in blocks"
-                :key="diagnostic.diagnosticId"
-                class="risk-row"
-              >
-                <AlertTriangle :size="16" />
-                <span>{{ diagnostic.message }}</span>
-              </div>
-            </section>
-
-            <section v-if="warnings.length" class="risk-block">
-              <strong>需要确认的事项</strong>
-              <div
-                v-for="warning in warnings"
-                :key="warning.warningId"
-                class="risk-row"
-              >
-                <AlertTriangle :size="16" />
-                <span>{{ warning.message }}</span>
-                <WorkbenchCheckbox
-                  :model-value="
-                    capture.acceptedWarningIds.includes(warning.warningId)
-                  "
-                  label="我已了解并继续"
-                  @update:model-value="
-                    capture.toggleWarning(warning.warningId, $event)
-                  "
+                <p
+                  v-if="capture.deliveryArtifact"
+                  class="ok-line"
+                  data-testid="delivery-path"
+                >
+                  已写入：{{ capture.deliveryArtifact.agentPromptPath }}
+                </p>
+                <article
+                  v-if="capture.agentPrompt"
+                  class="prompt-md"
+                  data-testid="agent-prompt"
+                  v-html="promptHtml"
                 />
-              </div>
-            </section>
-          </template>
-        </section>
-
-        <!-- Step 1: running -->
-        <section
-          v-else-if="capture.deliverStep === 1"
-          class="step-panel loading"
-        >
-          <LoaderCircle :size="36" class="spin" />
-          <strong>{{ capture.activeJob?.status ?? "准备中" }}</strong>
-          <p>
-            正在采集
-            {{ capture.activeJob?.selection.cases.length ?? 0 }} 个视图。
-            完成后会留在此面板继续交接。
-          </p>
-        </section>
-
-        <!-- Step 2: result + risks -->
-        <section v-else-if="capture.deliverStep === 2" class="step-panel">
-          <div class="result-banner">
-            <Check :size="20" />
-            <div>
-              <strong>{{ successfulCount }} 个视图已就绪</strong>
-              <small>
-                Snapshot
-                {{ capture.details?.activeSnapshot.snapshotId ?? "—" }}
-              </small>
+                <p class="hint">
+                  请到 Cursor / Codex 粘贴本提示词，并确认已配置 ProtoBridge
+                  MCP。
+                  <small>一键拉起 Agent 暂不支持。</small>
+                </p>
+              </section>
             </div>
           </div>
-
-          <section v-if="risks.length" class="risk-block">
-            <strong>提醒（不会修改 Evidence，会写入 Agent 提示词）</strong>
-            <div
-              v-for="risk in risks"
-              :key="risk.kind"
-              class="risk-row"
-              data-testid="deliver-risk-row"
-            >
-              <AlertTriangle :size="16" />
-              <span>
-                <b>{{ riskKindLabel(risk.kind) }}</b>
-                <small>{{ risk.message }}</small>
-              </span>
-            </div>
-          </section>
-          <p v-else class="ok-line">
-            当前没有必须确认的风险，可以直接生成交接。
-          </p>
-        </section>
-
-        <!-- Step 3: prompt -->
-        <section v-else class="step-panel">
-          <div v-if="capture.handoff" class="result-banner">
-            <Check :size="20" />
-            <div>
-              <strong>交接已创建</strong>
-              <small data-testid="handoff-id">{{
-                capture.handoff.handoffId
-              }}</small>
-            </div>
-          </div>
-          <p
-            v-if="capture.deliveryArtifact"
-            class="ok-line"
-            data-testid="delivery-path"
-          >
-            已写入：{{ capture.deliveryArtifact.agentPromptPath }}
-          </p>
-          <article
-            v-if="capture.agentPrompt"
-            class="prompt-md"
-            data-testid="agent-prompt"
-            v-html="promptHtml"
-          />
-          <p class="hint">
-            请到 Cursor / Codex 粘贴本提示词，并确认已配置 ProtoBridge MCP。
-            <small>一键拉起 Agent 暂不支持。</small>
-          </p>
-        </section>
+        </div>
       </div>
 
       <footer class="flow-actions">
         <WorkbenchButton
-          v-if="capture.deliverStep === 2"
+          v-if="[2, 3].includes(capture.deliverStep)"
           tone="neutral"
           @click="openDetails"
         >
-          查看详情
+          查看采集结果
         </WorkbenchButton>
         <div class="spacer" />
         <WorkbenchButton
@@ -588,12 +706,13 @@ function renderMarkdown(source: string): string {
 <style scoped>
 .deliver-flow {
   display: flex;
-  width: min(920px, calc(100vw - 32px));
+  width: 100%;
+  height: min(88vh, 820px);
   max-height: min(88vh, 820px);
-  margin-inline: auto;
+  margin-inline: 0;
   overflow: hidden;
   flex-direction: column;
-  border-radius: 24px 24px 0 0;
+  border-radius: 20px 20px 0 0;
   background: rgb(var(--v-theme-surface));
   box-shadow: 0 -24px 70px rgba(15, 23, 42, 0.18);
 }
@@ -641,8 +760,31 @@ function renderMarkdown(source: string): string {
   background: rgb(var(--v-theme-primary));
 }
 .flow-scroll {
+  height: 100%;
   overflow: auto;
   padding: 16px 28px 8px;
+}
+.flow-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: pan-y;
+}
+.flow-body.is-dragging {
+  cursor: grabbing;
+}
+.flow-track {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  transition: transform 220ms ease;
+}
+.flow-page {
+  flex: 0 0 100%;
+  min-width: 100%;
+  height: 100%;
+  min-height: 0;
 }
 .step-panel {
   display: grid;
@@ -652,6 +794,10 @@ function renderMarkdown(source: string): string {
   place-items: center;
   padding: 48px 12px;
   text-align: center;
+}
+.case-progress {
+  width: min(360px, 100%);
+  margin: 8px auto 0;
 }
 .summary-grid {
   display: grid;
@@ -808,8 +954,9 @@ function renderMarkdown(source: string): string {
 }
 @media (max-width: 600px) {
   .deliver-flow {
-    width: calc(100vw - 12px);
-    max-height: calc(100vh - 8px);
+    width: 100%;
+    height: min(92vh, 820px);
+    max-height: min(92vh, 820px);
     border-radius: 16px 16px 0 0;
   }
   .flow-header {
@@ -836,5 +983,13 @@ function renderMarkdown(source: string): string {
   .flow-actions {
     padding: 12px 14px 14px;
   }
+}
+</style>
+
+<style>
+.deliver-flow-overlay {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-inline: 0 !important;
 }
 </style>
