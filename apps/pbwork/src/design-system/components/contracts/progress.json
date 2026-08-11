@@ -48,6 +48,7 @@
     "track": "color.primary-soft",
     "radius": "radius.full",
     "motion": "motion.duration-normal",
+    "gap": "spacing.xs-plus",
     "text": "color.on-surface",
     "label": "typography.caption"
   },

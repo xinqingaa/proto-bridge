@@ -112,7 +112,7 @@ usePbInspect({
 .pb-form-section :deep(.v-card-subtitle) {
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
-  opacity: 1;
+  opacity: var(--pb-opacity-visible);
 }
 .form-content {
   display: flex;

@@ -99,8 +99,12 @@ usePbInspect({
       paddingX: controlPaddingToken(s),
       typography: "typography.label",
       disabledOpacity: "opacity.disabled",
+      overlayOpacity: "opacity.hidden",
+      loadingOpacity: "opacity.visible",
+      borderWidth: "border.width-hairline",
       duration: "motion.duration-fast",
       easing: "motion.easing-standard",
+      pressedScale: "motion.scale-pressed",
     };
   },
   getTokens: () => {
@@ -115,8 +119,12 @@ usePbInspect({
       controlPaddingToken(s),
       "typography.label",
       "opacity.disabled",
+      "opacity.hidden",
+      "opacity.visible",
+      "border.width-hairline",
       "motion.duration-fast",
       "motion.easing-standard",
+      "motion.scale-pressed",
     ];
   },
 });
@@ -157,37 +165,37 @@ usePbInspect({
 .pb-button {
   height: var(
     --pb-component-height,
-    var(--pb-sizing-control-md, 40px)
+    var(--pb-sizing-control-md)
   ) !important;
   min-height: var(
     --pb-component-height,
-    var(--pb-sizing-control-md, 40px)
+    var(--pb-sizing-control-md)
   ) !important;
   padding-inline: var(
     --pb-component-padding-x,
-    var(--pb-spacing-md, 16px)
+    var(--pb-spacing-md)
   ) !important;
-  border: 1px solid var(--pb-btn-border, transparent) !important;
-  background: var(--pb-btn-bg, var(--pb-color-action)) !important;
-  color: var(--pb-btn-fg, var(--pb-color-on-action)) !important;
-  font: var(--pb-typography-label, 600 14px/1.4 Inter, system-ui, sans-serif);
+  border: var(--pb-border-width-hairline) solid var(--pb-btn-border) !important;
+  background: var(--pb-btn-bg) !important;
+  color: var(--pb-btn-fg) !important;
+  font: var(--pb-typography-label);
   text-transform: none;
   letter-spacing: normal;
-  box-shadow: var(--pb-component-shadow, none) !important;
+  box-shadow: var(--pb-component-shadow, var(--pb-elevation-none)) !important;
   transition:
-    box-shadow var(--pb-motion-duration-fast, 120ms)
+    box-shadow var(--pb-motion-duration-fast)
       var(--pb-motion-easing-standard),
-    transform var(--pb-motion-duration-fast, 120ms)
+    transform var(--pb-motion-duration-fast)
       var(--pb-motion-easing-standard),
-    opacity var(--pb-motion-duration-fast, 120ms)
+    opacity var(--pb-motion-duration-fast)
       var(--pb-motion-easing-standard);
 }
 .pb-button :deep(.v-btn__overlay),
 .pb-button :deep(.v-btn__underlay) {
-  opacity: 0 !important;
+  opacity: var(--pb-opacity-hidden) !important;
 }
 .pb-button :deep(.v-btn__content) {
-  gap: var(--pb-spacing-xs, 4px);
+  gap: var(--pb-spacing-xs);
   color: inherit;
 }
 .pb-button__loader {
@@ -200,12 +208,12 @@ usePbInspect({
   color: currentColor;
 }
 .pb-button:active:not(.v-btn--disabled) {
-  transform: scale(0.98);
+  transform: scale(var(--pb-motion-scale-pressed));
 }
 .pb-button.v-btn--disabled {
-  opacity: var(--pb-opacity-disabled, 0.38) !important;
+  opacity: var(--pb-opacity-disabled) !important;
 }
 .pb-button.is-loading.v-btn--disabled {
-  opacity: 1 !important;
+  opacity: var(--pb-opacity-visible) !important;
 }
 </style>

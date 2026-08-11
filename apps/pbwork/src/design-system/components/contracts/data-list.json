@@ -61,7 +61,10 @@
     "divider": "color.border",
     "radius": "radius.md",
     "elevation": "elevation.card",
-    "content": "typography.content"
+    "content": "typography.content",
+    "inset": "spacing.md",
+    "dividerBorder": "border.default",
+    "restingElevation": "elevation.none"
   },
   "playground": {
     "presentation": "interactive"

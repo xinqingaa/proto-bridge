@@ -65,7 +65,10 @@
     "border": "color.border",
     "text": "color.on-surface",
     "elevation": "elevation.card",
-    "title": "typography.subtitle"
+    "title": "typography.subtitle",
+    "padding": "spacing.md",
+    "safeInsetFallback": "spacing.none",
+    "restingElevation": "elevation.none"
   },
   "playground": {
     "presentation": "interactive"

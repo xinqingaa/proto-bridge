@@ -44,6 +44,14 @@
 | `elevation`         | `elevation.raised`       |
 | `title`             | `typography.subtitle`    |
 | `body`              | `typography.content`     |
+| `stepLabel`         | `typography.micro`       |
+| `headerGap`         | `spacing.sm-plus`        |
+| `dotGap`            | `spacing.xs-plus`        |
+| `dotSize`           | `sizing.step-dot`        |
+| `fill`              | `layout.fill`            |
+| `maxHeight`         | `layout.sheet-max-height` |
+| `duration`          | `motion.duration-sheet`  |
+| `easing`            | `motion.easing-gentle`   |
 
 ## 使用检查
 

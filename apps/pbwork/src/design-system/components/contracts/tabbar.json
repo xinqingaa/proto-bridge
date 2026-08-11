@@ -56,7 +56,13 @@
     "target": "sizing.touch",
     "height": "sizing.bottom-navigation",
     "label": "typography.caption",
-    "selectedLabel": "typography.subtitle"
+    "selectedLabel": "typography.caption-strong",
+    "fill": "layout.fill",
+    "focusInset": "layout.focus-inset",
+    "contentLayer": "layer.content",
+    "safeInsetFallback": "spacing.none",
+    "overlayOpacity": "opacity.hidden",
+    "focusOutline": "border.focus"
   },
   "playground": { "presentation": "interactive" },
   "icons": { "pack": "lucide", "defaults": ["home", "list", "user"] }

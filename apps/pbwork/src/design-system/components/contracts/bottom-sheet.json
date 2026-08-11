@@ -53,7 +53,9 @@
     "radius": "radius.lg",
     "elevation": "elevation.raised",
     "title": "typography.subtitle",
-    "body": "typography.content"
+    "body": "typography.content",
+    "padding": "spacing.md",
+    "fill": "layout.fill"
   },
   "playground": {
     "presentation": "trigger"

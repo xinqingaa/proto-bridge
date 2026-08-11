@@ -43,6 +43,15 @@ PBWork 有三个 UI 分区：
 - 所有进入 Capture 的 Screen 遵守根 [Authoring Contract](../../../docs/reference/prototype-authoring.md)。
 - DS 业务实例使用业务 `inspectId`；业务局部证据节点显式声明 id、role、key 和 Token bindings，详见[语义标记与证据门禁](../../../docs/reference/semantic-authoring.md)。
 
+### 样式实现铁律
+
+Design System 与现役业务原型的样式遵循同一套基础规则：
+
+- **只用 Flex 或常规文档流布局**。禁止 `grid` / `inline-grid`、所有 `grid-*` 属性与 `place-items` / `place-content` / `place-self`；Workbench 壳不属于该约束范围。
+- **所有设计量必须消费语义 Token**。颜色、间距、尺寸、圆角、边框、排版数值、阴影、透明度、层级、动效、滤镜和变换距离只能经 `var(--pb-*)` 使用；Token 的具体值只能定义在 Foundation 与 Theme。
+- 组件和原型样式不得用 `var(--pb-*, 4px)` 一类 literal fallback 绕过 Token。缺少值时先补 Token，再消费 Token。
+- CSS 的结构语法（例如 `display: flex`、定位方式、`auto`、`none`）不是设计量；其允许范围由样式门禁固定。任何带视觉或可测量含义的值不在此例外内。
+
 ## 5. Registry 与 Contract
 
 Component 变更是一个原子工作单元：
@@ -65,6 +74,7 @@ Screen 变更必须同步 Prototype Registry、required boundary、Action/Scenar
 - Theme 只覆盖值，不改变 Token 语义和组件绑定。
 - 不在组件实例、页面 style 或 Playground 中引入自由换绑。
 - 新 Token 先证明跨组件/页面价值，再决定是否进入 Bind 池。
+- Component Contract 与 Inspector 必须完整声明组件实际消费的 Token；实现不得存在 Contract 未记录的设计值依赖。
 
 ## 7. 可访问性
 

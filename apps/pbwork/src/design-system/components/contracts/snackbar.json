@@ -60,7 +60,8 @@
     "text": "color.on-surface",
     "radius": "radius.lg",
     "elevation": "elevation.level-4",
-    "message": "typography.content"
+    "message": "typography.content",
+    "accentWidth": "border.accent-width"
   },
   "playground": {
     "presentation": "trigger"

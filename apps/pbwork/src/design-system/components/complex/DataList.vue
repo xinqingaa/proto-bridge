@@ -50,6 +50,9 @@ usePbInspect({
       rounded.value === "none" ? "radius.none" : `radius.${rounded.value}`,
     elevation: "elevation.card",
     content: "typography.content",
+    inset: "spacing.md",
+    dividerBorder: "border.default",
+    restingElevation: "elevation.none",
   }),
   getTokens: () => [
     "color.surface",
@@ -61,6 +64,9 @@ usePbInspect({
     "radius.lg",
     "elevation.card",
     "typography.content",
+    "spacing.md",
+    "border.default",
+    "elevation.none",
   ],
 });
 </script>
@@ -95,7 +101,7 @@ usePbInspect({
   min-width: 0;
   overflow: hidden;
   color: var(--pb-color-on-surface);
-  box-shadow: var(--pb-component-shadow, none) !important;
+  box-shadow: var(--pb-component-shadow, var(--pb-elevation-none)) !important;
 }
 .pb-data-list.surface-none {
   background: transparent;
@@ -107,12 +113,12 @@ usePbInspect({
   background: var(--pb-color-surface-raised, var(--pb-color-surface));
 }
 .pb-data-list.is-inset {
-  padding-inline: var(--pb-spacing-md, 16px);
+  padding-inline: var(--pb-spacing-md);
 }
 .pb-data-list.is-square {
   border-radius: 0;
 }
 .pb-data-list.is-divided :deep(> * + *) {
-  border-top: 1px solid var(--pb-color-border);
+  border-top: var(--pb-border-default);
 }
 </style>

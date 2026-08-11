@@ -11,6 +11,11 @@ import {
 import { RefreshCw } from "lucide-vue-next";
 import Spinner from "@/design-system/components/basic/Spinner.vue";
 import { usePbInspect } from "@/runtime/inspect/usePbInspect";
+import { tokenDefaultCssValue } from "@/design-system/tokenDefaults";
+
+const DEFAULT_LOAD_MORE_ROOT_MARGIN = tokenDefaultCssValue(
+  "layout.load-more-root-margin",
+);
 
 export type PullRefreshOptions = {
   enabled: boolean;
@@ -103,13 +108,13 @@ const loadConfig = computed<Required<LoadMoreOptions>>(() => {
   if (typeof value === "object") {
     return {
       enabled: value.enabled,
-      rootMargin: value.rootMargin ?? "0px 0px 120px 0px",
+      rootMargin: value.rootMargin ?? DEFAULT_LOAD_MORE_ROOT_MARGIN,
       manualFallback: value.manualFallback ?? true,
     };
   }
   return {
     enabled: value,
-    rootMargin: "0px 0px 120px 0px",
+    rootMargin: DEFAULT_LOAD_MORE_ROOT_MARGIN,
     manualFallback: true,
   };
 });
@@ -450,7 +455,18 @@ usePbInspect({
     muted: "color.on-surface-muted",
     footer: "typography.caption",
     duration: "motion.duration-normal",
+    easing: "motion.easing-gentle",
     disabledOpacity: "opacity.disabled",
+    hiddenOpacity: "opacity.hidden",
+    visibleOpacity: "opacity.visible",
+    refreshTarget: "sizing.touch",
+    footerHeight: "sizing.control-lg",
+    actionMinWidth: "sizing.refresh-action-min-width",
+    actionHeight: "sizing.refresh-action-height",
+    fill: "layout.fill",
+    refreshTranslation: "layout.translate-full-negative",
+    loadMoreRootMargin: "layout.load-more-root-margin",
+    sentinel: "border.width-hairline",
   }),
   getTokens: () => [
     "color.background",
@@ -458,7 +474,18 @@ usePbInspect({
     "color.on-surface-muted",
     "typography.caption",
     "motion.duration-normal",
+    "motion.easing-gentle",
     "opacity.disabled",
+    "opacity.hidden",
+    "opacity.visible",
+    "sizing.touch",
+    "sizing.control-lg",
+    "sizing.refresh-action-min-width",
+    "sizing.refresh-action-height",
+    "layout.fill",
+    "layout.translate-full-negative",
+    "layout.load-more-root-margin",
+    "border.width-hairline",
   ],
 });
 
@@ -553,7 +580,7 @@ onBeforeUnmount(() => {
   position: relative;
   min-width: 0;
   min-height: 0;
-  height: 100%;
+  height: var(--pb-layout-fill);
   overflow: auto;
   overscroll-behavior-y: contain;
   background: var(--pb-color-background);
@@ -568,7 +595,7 @@ onBeforeUnmount(() => {
   user-select: none;
 }
 .pb-scrollable-data-list.is-disabled {
-  opacity: var(--pb-opacity-disabled, 0.38);
+  opacity: var(--pb-opacity-disabled);
 }
 .pb-scrollable-data-list::-webkit-scrollbar {
   display: none;
@@ -581,15 +608,16 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
-  opacity: 0;
+  min-height: var(--pb-sizing-touch);
+  opacity: var(--pb-opacity-hidden);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
-  transform: translateY(-100%);
-  transition: opacity var(--pb-motion-duration-normal, 200ms) ease;
+  transform: translateY(var(--pb-layout-translate-full-negative));
+  transition: opacity var(--pb-motion-duration-normal)
+    var(--pb-motion-easing-gentle);
 }
 .pb-scrollable-data-list-refresh.is-visible {
-  opacity: 1;
+  opacity: var(--pb-opacity-visible);
   transform: translateY(0);
 }
 .pb-scrollable-data-list-refresh.is-ready {
@@ -598,29 +626,30 @@ onBeforeUnmount(() => {
 .pb-scrollable-data-list-refresh span {
   display: inline-flex;
   align-items: center;
-  gap: var(--pb-spacing-xs, 4px);
+  gap: var(--pb-spacing-xs);
 }
 .pb-scrollable-data-list-content {
   display: flex;
   flex-direction: column;
-  min-height: 100%;
-  transition: transform var(--pb-motion-duration-normal, 200ms) ease;
+  min-height: var(--pb-layout-fill);
+  transition: transform var(--pb-motion-duration-normal)
+    var(--pb-motion-easing-gentle);
   will-change: transform;
 }
 .pb-scrollable-data-list-sentinel {
-  height: 1px;
+  height: var(--pb-border-width-hairline);
 }
 .pb-scrollable-data-list-footer {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 48px;
+  min-height: var(--pb-sizing-control-lg);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
 }
 .pb-scrollable-data-list-more {
-  min-width: 96px;
-  min-height: 36px;
+  min-width: var(--pb-sizing-refresh-action-min-width);
+  min-height: var(--pb-sizing-refresh-action-height);
   border: 0;
   border-radius: var(--pb-radius-full);
   background: var(--pb-color-primary-soft);

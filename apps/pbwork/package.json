@@ -36,6 +36,7 @@
     "@vitejs/plugin-vue": "^5.2.4",
     "@vue/test-utils": "^2.4.6",
     "jsdom": "^26.1.0",
+    "postcss": "^8.5.19",
     "prettier": "^3.5.3",
     "typescript": "^5.7.2",
     "vite": "^6.4.2",

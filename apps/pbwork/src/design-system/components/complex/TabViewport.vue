@@ -1,3 +1,11 @@
+<script lang="ts">
+import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
+
+export const DEFAULT_TRANSITION_DURATION = tokenDefaultNumber(
+  "motion.duration-tab-viewport",
+);
+</script>
+
 <script setup lang="ts">
 import { computed, toRefs } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
@@ -17,7 +25,7 @@ const props = withDefaults(
     swipe: true,
     mouseSwipe: true,
     keepMounted: true,
-    transitionDuration: 240,
+    transitionDuration: DEFAULT_TRANSITION_DURATION,
   },
 );
 
@@ -60,12 +68,14 @@ usePbInspect({
   }),
   getTokenBindings: () => ({
     background: "color.background",
-    duration: "motion.duration-normal",
+    fill: "layout.fill",
+    duration: "motion.duration-tab-viewport",
     easing: "motion.easing-standard",
   }),
   getTokens: () => [
     "color.background",
-    "motion.duration-normal",
+    "layout.fill",
+    "motion.duration-tab-viewport",
     "motion.easing-standard",
   ],
 });
@@ -111,7 +121,7 @@ usePbInspect({
 .pb-tab-viewport {
   min-width: 0;
   min-height: 0;
-  height: 100%;
+  height: var(--pb-layout-fill);
   background: var(--pb-color-background);
   touch-action: pan-y;
 }
@@ -126,6 +136,6 @@ usePbInspect({
 .pb-tab-viewport :deep(.v-window-item),
 .pb-tab-viewport-panel {
   min-height: 0;
-  height: 100%;
+  height: var(--pb-layout-fill);
 }
 </style>

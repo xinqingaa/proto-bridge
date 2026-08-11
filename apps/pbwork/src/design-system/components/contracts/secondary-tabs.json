@@ -83,6 +83,13 @@
     "target": "sizing.touch",
     "typography": "typography.label",
     "panel": "typography.caption",
+    "trackGap": "spacing.sm-plus",
+    "caretOffset": "spacing.sm",
+    "caretSize": "sizing.caret",
+    "caretAnchor": "layout.half",
+    "caretTranslation": "layout.half-negative",
+    "fill": "layout.fill",
+    "reducedDuration": "motion.duration-instant",
     "duration": "motion.duration-slow",
     "easing": "motion.easing-standard"
   },

@@ -119,7 +119,7 @@ usePbInspect({
   flex: none;
   align-items: center;
   justify-content: center;
-  line-height: 0;
+  line-height: var(--pb-spacing-none);
 }
 .pb-icon :deep(svg) {
   display: block;

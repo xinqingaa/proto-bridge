@@ -72,9 +72,9 @@ usePbInspect({
 
 <style scoped>
 .pb-chip {
-  font: var(--pb-typography-caption, 400 12px/1.4 Inter, system-ui, sans-serif);
+  font: var(--pb-typography-caption);
   text-transform: none;
   letter-spacing: normal;
-  box-shadow: var(--pb-component-shadow, none) !important;
+  box-shadow: var(--pb-component-shadow, var(--pb-elevation-none)) !important;
 }
 </style>

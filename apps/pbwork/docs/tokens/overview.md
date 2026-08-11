@@ -5,14 +5,21 @@
 ```text
 Token.defaultValue + Theme.overrides
   → CSS 变量 --pb-*
-  → 组件只读 var(--pb-*)
+  → 组件与原型只读 var(--pb-*)
 ```
 
 - 权威数据：`apps/pbwork/src/design-system/tokens/tokens.json`
 - 主题覆盖：`themes/light.json`、`themes/dark.json`
 - 组件契约里的 `tokenBindings`：语义槽 → Token ID（只从 Bind 池选取）
 
-**禁止**：在页面或组件实例上改绑 Token；用内联色值覆盖语义色。
+**禁止**：在页面或组件实例上改绑 Token；用内联色值覆盖语义色；在 DS 或原型 CSS 中书写任何裸设计值，或通过 `var(--pb-*, literal)` 加入 literal fallback。
+
+## 样式值消费
+
+- 所有可见或可测量的设计量都必须来自 Token：颜色、间距、尺寸、比例尺寸、圆角、边框、排版数值、阴影、透明度、层级、动效、滤镜与变换距离。
+- CSS 只允许通过 `var(--pb-*)` 消费这些值；`calc()` 只能组合 Token 变量，不得加入裸数值。
+- Grid 不属于 PBWork DS / 现役原型的布局能力：使用 Flex 或常规文档流。完整的作用域和结构语法白名单见 [开发规范](../development.md#样式实现铁律)。
+- 若现有 Foundation 无法表达一个值，先按本页的新增流程创建语义 Token；不以组件名称或数字命名临时变量。
 
 ## 命名
 
@@ -29,7 +36,7 @@ Token.defaultValue + Theme.overrides
 
 契约校验会拒绝 Bind 池外的绑定（特殊值除外）。扩展 Token 可先只进 Foundations；确认多组件需要后再加入 Bind 池。
 
-当前 Bind 池主要覆盖：表面与文本色、品牌/反馈色、常用字阶、常用间距/尺寸/圆角、`border.hairline`、常用 elevation、motion 时长与标准缓动。完整对照见 [catalog.md](./catalog.md)。
+当前 Bind 池主要覆盖：表面与文本色、品牌/反馈色、常用字阶、常用间距/尺寸/圆角、`border.hairline`、常用 elevation、motion 时长与标准缓动。组件若实际消费任何 Foundation Token，必须在 Contract 与 Inspector 中列出；完整对照见 [catalog.md](./catalog.md)。
 
 ## tokenBindings 怎么用
 

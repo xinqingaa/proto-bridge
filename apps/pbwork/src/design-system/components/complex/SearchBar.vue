@@ -35,6 +35,7 @@ usePbInspect({
     "sizing.icon-md",
     "typography.content",
     "opacity.disabled",
+    "layout.fill",
   ],
   getTokenBindings: () => ({
     surface: "color.surface-variant",
@@ -45,6 +46,7 @@ usePbInspect({
     icon: "sizing.icon-md",
     typography: "typography.content",
     disabledOpacity: "opacity.disabled",
+    fill: "layout.fill",
   }),
 });
 </script>
@@ -82,14 +84,14 @@ usePbInspect({
 
 <style scoped>
 .pb-search {
-  width: 100%;
+  width: var(--pb-layout-fill);
 }
 .pb-search-field {
-  border-radius: var(--pb-radius-md, 12px);
+  border-radius: var(--pb-radius-md);
 }
 .pb-search-field :deep(.v-field) {
-  min-height: var(--pb-sizing-control-lg, 48px);
-  border-radius: var(--pb-radius-md, 12px);
+  min-height: var(--pb-sizing-control-lg);
+  border-radius: var(--pb-radius-md);
   background: var(--pb-color-surface-variant) !important;
   color: var(--pb-color-on-surface);
   font: var(--pb-typography-content);
@@ -98,6 +100,6 @@ usePbInspect({
   color: var(--pb-color-on-surface);
 }
 .pb-search.is-disabled {
-  opacity: var(--pb-opacity-disabled, 0.38);
+  opacity: var(--pb-opacity-disabled);
 }
 </style>

@@ -68,6 +68,7 @@ usePbInspect({
       target: "sizing.touch",
       duration: "motion.duration-fast",
       easing: "motion.easing-standard",
+      pressedScale: "motion.scale-pressed-strong",
     };
   },
   getTokens: () => {
@@ -82,6 +83,7 @@ usePbInspect({
       "sizing.touch",
       "motion.duration-fast",
       "motion.easing-standard",
+      "motion.scale-pressed-strong",
       ...(v === "flat" ? [`color.on-${t}`] : []),
     ];
   },
@@ -113,19 +115,19 @@ usePbInspect({
 
 <style scoped>
 .pb-icon-button {
-  min-width: var(--pb-sizing-touch, 44px) !important;
-  min-height: var(--pb-sizing-touch, 44px) !important;
-  box-shadow: var(--pb-component-shadow, none) !important;
+  min-width: var(--pb-sizing-touch) !important;
+  min-height: var(--pb-sizing-touch) !important;
+  box-shadow: var(--pb-component-shadow, var(--pb-elevation-none)) !important;
   transition:
-    box-shadow var(--pb-motion-duration-fast, 120ms)
+    box-shadow var(--pb-motion-duration-fast)
       var(--pb-motion-easing-standard),
-    transform var(--pb-motion-duration-fast, 120ms)
+    transform var(--pb-motion-duration-fast)
       var(--pb-motion-easing-standard);
 }
 .pb-icon-button:active:not(.v-btn--disabled) {
-  transform: scale(0.96);
+  transform: scale(var(--pb-motion-scale-pressed-strong));
 }
 .pb-icon-button.v-btn--disabled {
-  opacity: var(--pb-opacity-disabled, 0.38) !important;
+  opacity: var(--pb-opacity-disabled) !important;
 }
 </style>

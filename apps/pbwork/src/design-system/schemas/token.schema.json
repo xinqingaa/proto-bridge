@@ -22,7 +22,10 @@
         "border",
         "elevation",
         "opacity",
-        "motion"
+        "motion",
+        "layout",
+        "layer",
+        "effect"
       ]
     },
     "defaultValue": {

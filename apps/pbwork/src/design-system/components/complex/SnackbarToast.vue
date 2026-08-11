@@ -39,6 +39,7 @@ const { resync } = usePbInspect({
     "elevation.level-4",
     "spacing.md",
     "typography.content",
+    "border.accent-width",
   ],
   getTokenBindings: () => ({
     accent: `color.${tone.value ?? "success"}`,
@@ -48,6 +49,7 @@ const { resync } = usePbInspect({
     elevation: "elevation.level-4",
     padding: "spacing.md",
     message: "typography.content",
+    accentWidth: "border.accent-width",
   }),
 });
 
@@ -111,7 +113,7 @@ watch(modelValue, async (value) => {
   background: var(--pb-color-surface-raised) !important;
   color: var(--pb-color-on-surface) !important;
   box-shadow: var(--pb-elevation-level-4);
-  border-left: 4px solid var(--pb-color-success);
+  border-left: var(--pb-border-accent-width) solid var(--pb-color-success);
   font: var(--pb-typography-content);
 }
 .pb-snackbar-surface.is-error {

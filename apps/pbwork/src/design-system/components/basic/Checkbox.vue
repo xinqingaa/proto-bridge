@@ -99,23 +99,23 @@ usePbInspect({
 
 <style scoped>
 .pb-check {
-  min-height: var(--pb-sizing-touch, 44px);
+  min-height: var(--pb-sizing-touch);
   color: var(--pb-color-on-surface);
   font: var(--pb-typography-content);
 }
 .pb-check.v-input--disabled {
-  opacity: var(--pb-opacity-disabled, 0.38);
+  opacity: var(--pb-opacity-disabled);
 }
 .pb-check :deep(.v-selection-control__input > .v-icon) {
-  opacity: 1;
-  border-radius: var(--pb-radius-xs, 4px);
+  opacity: var(--pb-opacity-visible);
+  border-radius: var(--pb-radius-xs);
   color: var(--pb-check-selected, var(--pb-color-primary));
 }
 .pb-check :deep(.v-selection-control__wrapper) {
-  border-radius: var(--pb-radius-xs, 4px);
+  border-radius: var(--pb-radius-xs);
 }
 .pb-check :deep(.v-selection-control__input) {
-  border-radius: var(--pb-radius-xs, 4px);
+  border-radius: var(--pb-radius-xs);
 }
 .pb-check
   :deep(

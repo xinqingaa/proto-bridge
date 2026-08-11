@@ -46,7 +46,9 @@
     "spacing": "spacing.lg",
     "iconSize": "sizing.icon-lg",
     "typography": "typography.subtitle",
-    "body": "typography.content"
+    "body": "typography.content",
+    "titleOffset": "spacing.xs",
+    "descriptionOffset": "spacing.sm"
   },
   "playground": {
     "presentation": "interactive"

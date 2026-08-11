@@ -30,12 +30,14 @@ usePbInspect({
     "radius.full",
     "typography.caption",
     "motion.duration-normal",
+    "spacing.xs-plus",
   ],
   getTokenBindings: () => ({
     fill: "color.primary",
     track: "color.primary-soft",
     radius: "radius.full",
     motion: "motion.duration-normal",
+    gap: "spacing.xs-plus",
   }),
 });
 </script>
@@ -60,7 +62,7 @@ usePbInspect({
 .pb-progress-wrap {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--pb-spacing-xs-plus);
   color: var(--pb-color-on-surface);
   font: var(--pb-typography-caption);
 }

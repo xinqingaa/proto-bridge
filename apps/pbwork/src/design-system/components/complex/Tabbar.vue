@@ -47,6 +47,13 @@ usePbInspect({
     "typography.caption",
     "typography.subtitle",
     "radius.full",
+    "layout.fill",
+    "layout.focus-inset",
+    "layer.content",
+    "spacing.none",
+    "opacity.hidden",
+    "border.focus",
+    "typography.caption-strong",
   ],
   getTokenBindings: () => ({
     surface: "color.surface-raised",
@@ -56,7 +63,13 @@ usePbInspect({
     target: "sizing.touch",
     height: "sizing.bottom-navigation",
     label: "typography.caption",
-    selectedLabel: "typography.subtitle",
+    selectedLabel: "typography.caption-strong",
+    fill: "layout.fill",
+    focusInset: "layout.focus-inset",
+    contentLayer: "layer.content",
+    safeInsetFallback: "spacing.none",
+    overlayOpacity: "opacity.hidden",
+    focusOutline: "border.focus",
   }),
 });
 </script>
@@ -104,29 +117,29 @@ usePbInspect({
   display: flex;
   flex-direction: column;
   flex: none;
-  width: 100%;
+  width: var(--pb-layout-fill);
   background: var(--pb-color-background);
-  z-index: 1;
+  z-index: var(--pb-layer-content);
 }
 .pb-tabbar {
   --pb-bottom-nav-safe: max(
-    var(--pb-safe-bottom, 0px),
-    env(safe-area-inset-bottom, 0px)
+    var(--pb-safe-bottom, var(--pb-spacing-none)),
+    env(safe-area-inset-bottom, var(--pb-spacing-none))
   );
   border-top: var(--pb-border-hairline);
   background: var(--pb-color-surface-raised);
   padding-bottom: var(--pb-bottom-nav-safe);
 }
 .pb-tabbar-tabs {
-  --v-tabs-height: var(--pb-sizing-bottom-navigation, 64px);
+  --v-tabs-height: var(--pb-sizing-bottom-navigation);
   height: var(--v-tabs-height);
 }
 .pb-tabbar :deep(.v-slide-group__content) {
-  height: 100%;
+  height: var(--pb-layout-fill);
 }
 .pb-tabbar-item {
   box-sizing: border-box;
-  min-width: var(--pb-sizing-touch, 44px);
+  min-width: var(--pb-sizing-touch);
   height: var(--v-tabs-height);
   min-height: var(--v-tabs-height);
   padding-bottom: 0;
@@ -139,15 +152,15 @@ usePbInspect({
   gap: var(--pb-spacing-xs);
 }
 .pb-tabbar-item :deep(.v-btn__overlay) {
-  opacity: 0 !important;
+  opacity: var(--pb-opacity-hidden) !important;
 }
 .pb-tabbar-item:focus-visible {
-  outline: 2px solid var(--pb-color-navigation-active);
-  outline-offset: -4px;
+  outline: var(--pb-border-focus);
+  outline-offset: var(--pb-layout-focus-inset);
 }
 .pb-tabbar :deep(.v-tab--selected) {
   color: var(--pb-color-navigation-active);
-  font-weight: 600;
+  font: var(--pb-typography-caption-strong);
 }
 .pb-tabbar :deep(.v-tab__slider) {
   display: none !important;

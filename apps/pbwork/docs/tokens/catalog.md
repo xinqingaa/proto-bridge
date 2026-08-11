@@ -1,7 +1,7 @@
 # Token 全量目录
 
-> 权威源：`apps/pbwork/src/design-system/tokens/tokens.json`（共 103 项）
-> Bind 池：`apps/pbwork/src/design-system/bindTokens.ts`（76 项可进组件 `tokenBindings`）
+> 权威源：`apps/pbwork/src/design-system/tokens/tokens.json`（共 131 项）
+> Bind 池：`apps/pbwork/src/design-system/bindTokens.ts`（110 项可进组件 `tokenBindings`）
 
 未进 Bind 池的 Token 仍可在 Foundations 浏览，但**不得**写入通用组件契约（`transparent` / `none` 除外）。
 
@@ -46,7 +46,7 @@
 | `color.on-warning`         | 警告色上文字  | `#251a00`   | 是   |                                                               |
 | `color.on-info`            | 信息色上文字  | `#ffffff`   | 是   |                                                               |
 
-## 字体（`typography` · 12）
+## 字体（`typography` · 13）
 
 | ID                          | 标签     | 默认值                                       | Bind | 说明                           |
 | --------------------------- | -------- | -------------------------------------------- | ---- | ------------------------------ |
@@ -62,8 +62,9 @@
 | `typography.body-lg`        | 大正文   | `400 16px/1.55 Inter, system-ui, sans-serif` | 否   |                                |
 | `typography.label`          | 控件标签 | `600 14px/1.4 Inter, system-ui, sans-serif`  | 是   |                                |
 | `typography.caption-strong` | 强调说明 | `600 12px/1.4 Inter, system-ui, sans-serif`  | 是   |                                |
+| `typography.micro`          | 微型标签 | `500 0.72rem/1.2 Inter, system-ui, sans-serif` | 是 | 流程步骤等空间受限的状态标签 |
 
-## 间距（`spacing` · 11）
+## 间距（`spacing` · 12）
 
 | ID                | 标签       | 默认值 | Bind | 说明 |
 | ----------------- | ---------- | ------ | ---- | ---- |
@@ -74,12 +75,13 @@
 | `spacing.xl`      | 超大间距   | `32`   | 否   |      |
 | `spacing.none`    | 无间距     | `0`    | 否   |      |
 | `spacing.xxs`     | 极小间距   | `2`    | 否   |      |
+| `spacing.xs-plus` | 紧凑间距   | `6`    | 是   | 密集状态和进度提示 |
 | `spacing.sm-plus` | 中小间距   | `12`   | 是   |      |
 | `spacing.lg-plus` | 大间距     | `40`   | 否   |      |
 | `spacing.2xl`     | 二倍大间距 | `48`   | 否   |      |
 | `spacing.3xl`     | 三倍大间距 | `64`   | 否   |      |
 
-## 尺寸（`sizing` · 13）
+## 尺寸（`sizing` · 18）
 
 | ID                         | 标签         | 默认值 | Bind | 说明 |
 | -------------------------- | ------------ | ------ | ---- | ---- |
@@ -96,6 +98,11 @@
 | `sizing.menu-item`         | 菜单项高度   | `48`   | 是   |      |
 | `sizing.tab`               | 页签高度     | `44`   | 否   |      |
 | `sizing.bottom-navigation` | 底部导航高度 | `64`   | 是   |      |
+| `sizing.indicator-thickness` | 指示器厚度 | `3` | 是 | 页签等线性定位指示器 |
+| `sizing.caret` | 小三角尺寸 | `5` | 是 | 页签与菜单的小三角 |
+| `sizing.step-dot` | 步骤圆点 | `6` | 是 | 流程等紧凑圆点 |
+| `sizing.refresh-action-min-width` | 刷新操作最小宽度 | `96` | 是 | 列表刷新操作 |
+| `sizing.refresh-action-height` | 刷新操作高度 | `36` | 是 | 刷新辅助操作 |
 
 ## 圆角（`radius` · 7）
 
@@ -109,14 +116,16 @@
 | `radius.xs`   | 极小圆角 | `4`    | 是   |      |
 | `radius.xl`   | 超大圆角 | `24`   | 是   |      |
 
-## 边框（`border` · 4）
+## 边框（`border` · 6）
 
 | ID                | 标签     | 默认值                              | Bind | 说明 |
 | ----------------- | -------- | ----------------------------------- | ---- | ---- |
 | `border.hairline` | 细线     | `1px solid var(--pb-color-divider)` | 是   |      |
-| `border.default`  | 标准边框 | `1px solid var(--pb-color-border)`  | 否   |      |
+| `border.default`  | 标准边框 | `1px solid var(--pb-color-border)`  | 是   |      |
 | `border.strong`   | 强调边框 | `2px solid var(--pb-color-outline)` | 否   |      |
-| `border.focus`    | 焦点边框 | `2px solid var(--pb-color-primary)` | 否   |      |
+| `border.focus`    | 焦点边框 | `2px solid var(--pb-color-primary)` | 是   |      |
+| `border.width-hairline` | 细线宽度 | `1px` | 是 | 动态颜色的细线 |
+| `border.accent-width` | 强调边宽 | `4px` | 是 | 状态消息的强调边 |
 
 ## 阴影（`elevation` · 9）
 
@@ -132,7 +141,7 @@
 | `elevation.level-4` | 阴影四级 | `0 14px 32px rgba(15, 23, 42, 0.16)`                           | 是   |                          |
 | `elevation.level-5` | 阴影五级 | `0 22px 48px rgba(15, 23, 42, 0.2)`                            | 是   |                          |
 
-## 透明度（`opacity` · 6）
+## 透明度（`opacity` · 8）
 
 | ID                 | 标签           | 默认值 | Bind | 说明                           |
 | ------------------ | -------------- | ------ | ---- | ------------------------------ |
@@ -142,8 +151,10 @@
 | `opacity.hover`    | 悬停叠加       | `0.08` | 否   |                                |
 | `opacity.pressed`  | 按下叠加       | `0.14` | 否   |                                |
 | `opacity.overlay`  | 遮罩透明度     | `0.6`  | 否   |                                |
+| `opacity.hidden`   | 隐藏透明度     | `0`    | 是   |                                |
+| `opacity.visible`  | 完全可见透明度 | `1`    | 是   |                                |
 
-## 动效（`motion` · 5）
+## 动效（`motion` · 12）
 
 | ID                         | 标签     | 默认值                           | Bind | 说明 |
 | -------------------------- | -------- | -------------------------------- | ---- | ---- |
@@ -152,3 +163,35 @@
 | `motion.duration-slow`     | 缓慢时长 | `320ms`                          | 是   |      |
 | `motion.easing-standard`   | 标准缓动 | `cubic-bezier(0.2, 0, 0, 1)`     | 是   |      |
 | `motion.easing-emphasized` | 强调缓动 | `cubic-bezier(0.2, 0.8, 0.2, 1)` | 否   |      |
+| `motion.duration-instant` | 即时时长 | `0ms` | 是 | |
+| `motion.easing-gentle` | 柔和缓动 | `ease` | 是 | |
+| `motion.scale-pressed` | 常规按下缩放 | `0.98` | 是 | |
+| `motion.scale-pressed-strong` | 明显按下缩放 | `0.96` | 是 | |
+| `motion.rotate-half-turn` | 半周旋转 | `180deg` | 是 | |
+| `motion.duration-sheet` | Sheet 切换时长 | `220ms` | 是 | 流程 Sheet 视图切换 |
+| `motion.duration-tab-viewport` | 视图区切换时长 | `240ms` | 是 | 独立 Tab Viewport 水平切换 |
+
+## 布局（`layout` · 7）
+
+| ID | 标签 | 默认值 | Bind | 说明 |
+| --- | --- | --- | --- | --- |
+| `layout.fill` | 填满容器 | `100%` | 是 | |
+| `layout.half` | 容器半宽 | `50%` | 是 | |
+| `layout.half-negative` | 反向容器半宽 | `-50%` | 是 | |
+| `layout.translate-full-negative` | 反向满幅平移 | `-100%` | 是 | |
+| `layout.focus-inset` | 焦点内缩 | `-4px` | 是 | |
+| `layout.sheet-max-height` | Sheet 最大高度 | `min(62vh, 560px)` | 是 | 流程 Sheet 高度上限 |
+| `layout.load-more-root-margin` | 触底加载观察边距 | `0px 0px 120px 0px` | 是 | 列表触底加载的观察器边距 |
+
+## 层级（`layer` · 2）
+
+| ID | 标签 | 默认值 | Bind | 说明 |
+| --- | --- | --- | --- | --- |
+| `layer.base` | 基础层级 | `0` | 是 | |
+| `layer.content` | 内容层级 | `1` | 是 | |
+
+## 效果（`effect` · 1）
+
+| ID | 标签 | 默认值 | Bind | 说明 |
+| --- | --- | --- | --- | --- |
+| `effect.glass-backdrop` | 玻璃背景滤镜 | `blur(12px) saturate(1.06)` | 是 | 半透明玻璃的背景效果 |

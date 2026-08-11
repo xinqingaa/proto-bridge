@@ -6,7 +6,9 @@
 
 - [ ] 形状匹配时优先 DS 组件；局部 UI 已论证且走 Token
 - [ ] FilterBar / Card 未滥用（自定义 Chip 行须 `data-no-swipe`；列表行默认非 Card）
-- [ ] 无硬编码色值/字号/阴影等设计量
+- [ ] 无硬编码色值/字号/阴影等设计量；所有设计量仅消费 `var(--pb-*)`，不存在 literal fallback
+- [ ] DS 与现役原型没有 CSS Grid / `place-*` Grid 简写，只使用 Flex 或常规文档流
+- [ ] 新增或实际消费的 Token 已同步 Foundation、Theme、Bind 池（如需）、Contract 与 Inspector
 - [ ] 浅色 / 深色主题下关键表面可读；theme 切换不堆业务 history、不占用 variant
 - [ ] 新增或改动的 props 已进 contract + registry；触达文档已更新叙事（不以 props 表为权威）
 - [ ] Contract 含 `playground.presentation`；语义变更已补 `summary`/`behavior`/`states[].kind`（适用时）

@@ -22,16 +22,16 @@ defineProps<{ active?: boolean }>();
 .pb-liquid-glass {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: var(--pb-layer-base);
   isolation: isolate;
-  border-radius: var(--pb-tabs-selection-radius, inherit);
+  border-radius: var(--pb-tabs-selection-radius);
   pointer-events: none;
-  opacity: 0;
+  opacity: var(--pb-opacity-hidden);
   transition:
-    opacity var(--pb-motion-duration-slow, 320ms)
-      var(--pb-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
-    box-shadow var(--pb-motion-duration-slow, 320ms)
-      var(--pb-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+    opacity var(--pb-motion-duration-slow)
+      var(--pb-motion-easing-standard),
+    box-shadow var(--pb-motion-duration-slow)
+      var(--pb-motion-easing-standard);
 }
 .pb-liquid-glass.is-active {
   opacity: var(--pb-tabs-selection-opacity);
@@ -44,18 +44,18 @@ defineProps<{ active?: boolean }>();
   height: var(--pb-tabs-selection-bridge-height);
   border-radius: var(--pb-tabs-selection-arc-radius)
     var(--pb-tabs-selection-arc-radius) 0 0;
-  z-index: 0;
+  z-index: var(--pb-layer-base);
   background: transparent;
 }
 .pb-liquid-glass__surface {
   position: absolute;
   inset: 0;
-  z-index: 1;
-  border-radius: var(--pb-tabs-selection-radius, inherit);
+  z-index: var(--pb-layer-content);
+  border-radius: var(--pb-tabs-selection-radius);
   background: var(--pb-tabs-selection-surface);
   box-shadow: var(--pb-tabs-selection-elevation);
-  -webkit-backdrop-filter: blur(12px) saturate(1.06);
-  backdrop-filter: blur(12px) saturate(1.06);
+  -webkit-backdrop-filter: var(--pb-effect-glass-backdrop);
+  backdrop-filter: var(--pb-effect-glass-backdrop);
 }
 @media (prefers-reduced-motion: reduce) {
   .pb-liquid-glass {

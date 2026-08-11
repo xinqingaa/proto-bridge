@@ -61,6 +61,9 @@
 
 - **禁止**实例硬编码色值（`#hex` / `rgb()` 等）。
 - 组件样式的颜色也只能使用 `--pb-*` 语义变量：不得写十六进制、`rgb` / `rgba`、`color-mix` 或渐变；主题与 token 文件是唯一可定义颜色值的地方。
+- DS 组件 CSS 不得写裸设计量，也不得使用 `var(--pb-*, literal)` fallback：尺寸、间距、圆角、边框、排版、阴影、透明度、层级、动效、滤镜与变换距离都必须消费 `--pb-*`。`calc()` 只组合 Token 变量。
+- DS 与现役原型不用 CSS Grid：只用 Flex 或常规文档流；完整作用域和结构语法白名单见 [开发规范](../development.md#样式实现铁律)。
+- Contract 的 `tokenBindings` / Inspector Token 清单必须覆盖实现实际消费的每个设计 Token；新增 Foundation 后先补 Contract，再交付组件。
 - Playground 的「查看语义与令牌」保持只读；业务差异通过场景呈现，不改绑 Contract。
 - 声明 `disabled` 的交互组件统一消费 `opacity.disabled`（当前默认 `0.38`），阻止鼠标、键盘及原生提交；Playground 必须把可用态与禁用态并置并写明条件。
 - `loading` 阻止重复触发并保留文字/忙碌反馈，**不得**复用 disabled 的 0.38 外观。

@@ -52,6 +52,18 @@
 | `muted` | `color.on-surface-muted` |
 | `footer` | `typography.caption` |
 | `duration` | `motion.duration-normal` |
+| `easing` | `motion.easing-gentle` |
+| `disabledOpacity` | `opacity.disabled` |
+| `hiddenOpacity` | `opacity.hidden` |
+| `visibleOpacity` | `opacity.visible` |
+| `refreshTarget` | `sizing.touch` |
+| `footerHeight` | `sizing.control-lg` |
+| `actionMinWidth` | `sizing.refresh-action-min-width` |
+| `actionHeight` | `sizing.refresh-action-height` |
+| `fill` | `layout.fill` |
+| `refreshTranslation` | `layout.translate-full-negative` |
+| `loadMoreRootMargin` | `layout.load-more-root-margin` |
+| `sentinel` | `border.width-hairline` |
 
 切浅色/深色只改 Theme 覆盖值，不改本表绑定。
 

@@ -81,6 +81,7 @@ usePbInspect({
     "elevation.level-3",
     "motion.duration-normal",
     "motion.easing-standard",
+    "motion.rotate-half-turn",
     "opacity.disabled",
   ],
   getTokenBindings: () => ({
@@ -99,6 +100,7 @@ usePbInspect({
     selectedBackground: "color.primary-soft",
     duration: "motion.duration-normal",
     easing: "motion.easing-standard",
+    openRotation: "motion.rotate-half-turn",
     disabledOpacity: "opacity.disabled",
   }),
 });
@@ -153,25 +155,25 @@ usePbInspect({
 .pb-select :deep(.v-field) {
   --v-field-border-radius: var(
     --pb-component-radius,
-    var(--pb-radius-md, 12px)
+    var(--pb-radius-md)
   );
   border-radius: var(
     --pb-component-radius,
-    var(--pb-radius-md, 12px)
+    var(--pb-radius-md)
   ) !important;
-  min-height: var(--pb-sizing-control-md, 40px);
+  min-height: var(--pb-sizing-control-md);
   background: var(--pb-color-surface);
 }
 .pb-select :deep(.v-field__outline__start) {
-  border-radius: var(--pb-component-radius, var(--pb-radius-md, 12px)) 0 0
-    var(--pb-component-radius, var(--pb-radius-md, 12px)) !important;
+  border-radius: var(--pb-component-radius, var(--pb-radius-md)) 0 0
+    var(--pb-component-radius, var(--pb-radius-md)) !important;
 }
 .pb-select :deep(.v-field__outline__end) {
-  border-radius: 0 var(--pb-component-radius, var(--pb-radius-md, 12px))
-    var(--pb-component-radius, var(--pb-radius-md, 12px)) 0 !important;
+  border-radius: 0 var(--pb-component-radius, var(--pb-radius-md))
+    var(--pb-component-radius, var(--pb-radius-md)) 0 !important;
 }
 .pb-select :deep(.v-field__input) {
-  min-height: var(--pb-sizing-control-md, 40px);
+  min-height: var(--pb-sizing-control-md);
   font: var(--pb-typography-content);
 }
 .pb-select :deep(.v-field__append-inner > .v-icon) {
@@ -183,28 +185,28 @@ usePbInspect({
     var(--pb-motion-easing-standard);
 }
 .pb-select-chevron.is-open {
-  transform: rotate(180deg);
+  transform: rotate(var(--pb-motion-rotate-half-turn));
 }
 .pb-select.v-input--disabled {
-  opacity: var(--pb-opacity-disabled, 0.38);
+  opacity: var(--pb-opacity-disabled);
 }
 </style>
 
 <style>
 .pb-select-menu {
-  border: var(--pb-border-hairline, 1px solid var(--pb-color-divider));
-  border-radius: var(--pb-radius-lg, 16px) !important;
+  border: var(--pb-border-hairline);
+  border-radius: var(--pb-radius-lg) !important;
   background: var(--pb-color-surface-raised) !important;
   box-shadow: var(--pb-elevation-level-3) !important;
   overflow: hidden;
 }
 .pb-select-menu .v-list {
-  padding: var(--pb-spacing-xs, 4px);
+  padding: var(--pb-spacing-xs);
   background: transparent !important;
 }
 .pb-select-menu .pb-select-option {
-  min-height: var(--pb-sizing-menu-item, 48px);
-  border-radius: var(--pb-radius-md, 12px);
+  min-height: var(--pb-sizing-menu-item);
+  border-radius: var(--pb-radius-md);
   color: var(--pb-color-on-surface);
   font: var(--pb-typography-content);
 }

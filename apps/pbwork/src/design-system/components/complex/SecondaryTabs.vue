@@ -2,9 +2,9 @@
 import { computed, toRefs } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import { usePointerSwipe } from "@/design-system/components/_shared/usePointerSwipe";
+import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
 
-/** Matches `motion.duration-slow` (320ms) for v-window's numeric prop. */
-const SLIDE_DURATION_MS = 320;
+const SLIDE_DURATION_MS = tokenDefaultNumber("motion.duration-slow");
 
 const props = withDefaults(
   defineProps<{
@@ -95,6 +95,13 @@ usePbInspect({
     target: "sizing.touch",
     typography: "typography.label",
     panel: "typography.caption",
+    trackGap: "spacing.sm-plus",
+    caretOffset: "spacing.sm",
+    caretSize: "sizing.caret",
+    caretAnchor: "layout.half",
+    caretTranslation: "layout.half-negative",
+    fill: "layout.fill",
+    reducedDuration: "motion.duration-instant",
     duration: "motion.duration-slow",
     easing: "motion.easing-standard",
   }),
@@ -107,6 +114,13 @@ usePbInspect({
     "sizing.touch",
     "typography.label",
     "typography.caption",
+    "spacing.sm",
+    "spacing.sm-plus",
+    "sizing.caret",
+    "layout.fill",
+    "layout.half",
+    "layout.half-negative",
+    "motion.duration-instant",
     "motion.duration-slow",
     "motion.easing-standard",
   ],
@@ -191,12 +205,12 @@ usePbInspect({
 .pb-tabs {
   display: flex;
   flex-direction: column;
-  gap: var(--pb-spacing-sm-plus, 12px);
+  gap: var(--pb-spacing-sm-plus);
   min-width: 0;
   background: transparent;
 }
 .pb-tab-bar {
-  --v-tabs-height: var(--pb-tabs-height, var(--pb-sizing-control-md, 40px));
+  --v-tabs-height: var(--pb-tabs-height, var(--pb-sizing-control-md));
   height: var(--v-tabs-height);
   background: transparent;
   overflow: visible;
@@ -211,7 +225,7 @@ usePbInspect({
 .pb-tab-bar :deep(.v-tab) {
   height: var(--v-tabs-height);
   min-height: var(--v-tabs-height);
-  padding: 0 var(--pb-spacing-md, 16px);
+  padding: 0 var(--pb-spacing-md);
   border-radius: var(--pb-tabs-radius, var(--pb-radius-md));
   color: var(--pb-tabs-inactive-color, var(--pb-color-on-surface-muted));
   font: var(--pb-tabs-typography, var(--pb-typography-label));
@@ -223,7 +237,6 @@ usePbInspect({
     --pb-tabs-active-color,
     var(--pb-color-section-tab-active)
   ) !important;
-  font-weight: 600;
 }
 .pb-tab-bar :deep(.v-tabs-slider),
 .pb-tab-bar :deep(.v-tab__slider) {
@@ -237,22 +250,22 @@ usePbInspect({
 }
 .pb-tab-bar :deep(.v-tab--selected .pb-tab-label)::after {
   position: absolute;
-  bottom: -8px;
-  left: 50%;
+  bottom: calc(var(--pb-spacing-none) - var(--pb-spacing-sm));
+  left: var(--pb-layout-half);
   width: 0;
   height: 0;
-  border-bottom: 5px solid
+  border-bottom: var(--pb-sizing-caret) solid
     var(--pb-tabs-active-color, var(--pb-color-section-tab-active));
-  border-right: 5px solid transparent;
-  border-left: 5px solid transparent;
+  border-right: var(--pb-sizing-caret) solid transparent;
+  border-left: var(--pb-sizing-caret) solid transparent;
   border-top: 0 solid transparent;
   content: "";
-  transform: translateX(-50%);
+  transform: translateX(var(--pb-layout-half-negative));
 }
 .pb-tab-window {
   min-width: 0;
   touch-action: pan-y;
-  --v-window-transition-duration: var(--pb-motion-duration-slow, 320ms);
+  --v-window-transition-duration: var(--pb-motion-duration-slow);
 }
 .pb-tab-window.allows-mouse-swipe {
   cursor: grab;
@@ -262,14 +275,14 @@ usePbInspect({
   user-select: none;
 }
 .pb-tabs.is-fill {
-  height: 100%;
+  height: var(--pb-layout-fill);
   min-height: 0;
 }
 .pb-tabs.is-fill .pb-tab-window,
 .pb-tabs.is-fill .pb-tab-window :deep(.v-window__container),
 .pb-tabs.is-fill .pb-tab-window :deep(.v-window-item),
 .pb-tabs.is-fill .pb-tab-panel {
-  height: 100%;
+  height: var(--pb-layout-fill);
   min-height: 0;
 }
 .pb-tabs.is-fill .pb-tab-window {
@@ -283,23 +296,20 @@ usePbInspect({
 .pb-tab-window :deep(.v-window-x-transition-leave-active),
 .pb-tab-window :deep(.v-window-x-reverse-transition-enter-active),
 .pb-tab-window :deep(.v-window-x-reverse-transition-leave-active) {
-  transition-duration: var(--pb-motion-duration-slow, 320ms);
-  transition-timing-function: var(
-    --pb-motion-easing-standard,
-    cubic-bezier(0.2, 0, 0, 1)
-  );
+  transition-duration: var(--pb-motion-duration-slow);
+  transition-timing-function: var(--pb-motion-easing-standard);
 }
 .pb-tab-panel {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--pb-spacing-sm-plus);
   min-width: 0;
 }
 .pb-tab-panel-empty {
   margin: 0;
-  padding: 8px 0;
+  padding: var(--pb-spacing-sm) 0;
   color: var(--pb-color-on-surface-muted);
-  font: var(--pb-typography-caption, 400 12px/1.4 Inter, system-ui, sans-serif);
+  font: var(--pb-typography-caption);
 }
 @media (prefers-reduced-motion: reduce) {
   .pb-tab-window :deep(.v-window__container),
@@ -307,7 +317,7 @@ usePbInspect({
   .pb-tab-window :deep(.v-window-x-transition-leave-active),
   .pb-tab-window :deep(.v-window-x-reverse-transition-enter-active),
   .pb-tab-window :deep(.v-window-x-reverse-transition-leave-active) {
-    transition-duration: 0s;
+    transition-duration: var(--pb-motion-duration-instant);
   }
 }
 </style>

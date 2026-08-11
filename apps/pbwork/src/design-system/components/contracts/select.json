@@ -112,6 +112,7 @@
     "selectedBackground": "color.primary-soft",
     "duration": "motion.duration-normal",
     "easing": "motion.easing-standard",
+    "openRotation": "motion.rotate-half-turn",
     "disabledOpacity": "opacity.disabled"
   },
   "playground": {

@@ -76,23 +76,18 @@ usePbInspect({
   border-color: var(--pb-color-border) !important;
   background: var(--pb-color-surface);
   color: var(--pb-color-on-surface);
-  box-shadow: var(--pb-component-shadow, none) !important;
+  box-shadow: var(--pb-component-shadow, var(--pb-elevation-none)) !important;
 }
 .pb-card-title {
-  font: var(
-    --pb-typography-subtitle,
-    600 16px/1.4 Inter,
-    system-ui,
-    sans-serif
-  );
+  font: var(--pb-typography-subtitle);
   padding-bottom: 0;
 }
 .pb-card-subtitle {
   color: var(--pb-color-on-surface-muted);
-  font: var(--pb-typography-caption, 400 12px/1.4 Inter, system-ui, sans-serif);
-  opacity: 1;
+  font: var(--pb-typography-caption);
+  opacity: var(--pb-opacity-visible);
 }
 .pb-card-body {
-  padding-top: var(--pb-spacing-md, 16px);
+  padding-top: var(--pb-spacing-md);
 }
 </style>

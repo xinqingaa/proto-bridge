@@ -62,10 +62,10 @@ usePbInspect({
 
 <style scoped>
 .pb-avatar {
-  border-radius: var(--pb-radius-full, 999px);
+  border-radius: var(--pb-radius-full);
 }
 .pb-avatar-text {
   color: currentColor;
-  font: var(--pb-typography-label, 600 12px/1.2 Inter, system-ui, sans-serif);
+  font: var(--pb-typography-label);
 }
 </style>

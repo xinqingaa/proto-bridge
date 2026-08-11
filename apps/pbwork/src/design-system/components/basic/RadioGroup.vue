@@ -88,7 +88,7 @@ usePbInspect({
   font: var(--pb-typography-content);
 }
 .pb-radio.v-input--disabled {
-  opacity: var(--pb-opacity-disabled, 0.38);
+  opacity: var(--pb-opacity-disabled);
 }
 .pb-radio :deep(.v-label) {
   font: var(--pb-typography-caption);

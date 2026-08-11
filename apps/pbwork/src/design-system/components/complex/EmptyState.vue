@@ -35,6 +35,8 @@ usePbInspect({
     "radius.full",
     "sizing.icon-lg",
     "spacing.lg",
+    "spacing.xs",
+    "spacing.sm",
     "typography.subtitle",
   ],
   getTokenBindings: () => ({
@@ -45,6 +47,8 @@ usePbInspect({
     radius: "radius.full",
     spacing: "spacing.lg",
     typography: "typography.subtitle",
+    titleOffset: "spacing.xs",
+    descriptionOffset: "spacing.sm",
   }),
 });
 </script>
@@ -90,11 +94,11 @@ usePbInspect({
   color: var(--pb-color-primary) !important;
 }
 h3 {
-  margin: 4px 0 0;
+  margin: var(--pb-spacing-xs) 0 0;
   font: var(--pb-typography-subtitle);
 }
 p {
-  margin: 0 0 8px;
+  margin: 0 0 var(--pb-spacing-sm);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-content);
 }

@@ -7,10 +7,11 @@
 ## 职责与边界
 
 - 只表达 2–5 个应用根目的地和当前位置。
-- 每项始终同时呈现图标与文字；选中用 `color.navigation-active` 和 600 字重表达。
+- 每项始终同时呈现图标与文字；选中用 `color.navigation-active` 和 `typography.caption-strong` 表达。
 - 不显示顶部指示器；点击无 ripple 反馈，直接更新当前位置。
 - 不承载内容、转场或横滑手势。
 - 不用于页面内分区、筛选或临时操作。
+- 填满、焦点内缩、内容层级与无反馈覆盖层分别消费 `layout.fill`、`layout.focus-inset`、`layer.content`、`opacity.hidden`；不在组件 CSS 中写数值。
 
 ## 组合
 

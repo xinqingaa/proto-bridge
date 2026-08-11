@@ -75,15 +75,15 @@ usePbInspect({
 
 <style scoped>
 .pb-switch {
-  min-height: var(--pb-sizing-touch, 44px);
+  min-height: var(--pb-sizing-touch);
   color: var(--pb-color-on-surface);
   font: var(--pb-typography-content);
 }
 .pb-switch.v-input--disabled {
-  opacity: var(--pb-opacity-disabled, 0.38);
+  opacity: var(--pb-opacity-disabled);
 }
 .pb-switch :deep(.v-switch__track) {
-  opacity: 1;
+  opacity: var(--pb-opacity-visible);
 }
 .pb-switch :deep(.v-selection-control--dirty .v-switch__track) {
   background: var(--pb-switch-active, var(--pb-color-primary)) !important;

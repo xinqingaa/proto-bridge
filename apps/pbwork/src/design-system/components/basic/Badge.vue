@@ -58,13 +58,8 @@ usePbInspect({
 
 <style scoped>
 .pb-badge {
-  border-radius: var(--pb-radius-full, 999px);
-  font: var(
-    --pb-typography-caption-strong,
-    600 11px/1.2 Inter,
-    system-ui,
-    sans-serif
-  );
+  border-radius: var(--pb-radius-full);
+  font: var(--pb-typography-caption-strong);
   text-transform: none;
   letter-spacing: normal;
 }

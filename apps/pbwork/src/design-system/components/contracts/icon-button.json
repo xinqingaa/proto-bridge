@@ -114,6 +114,7 @@
     "target": "sizing.touch",
     "duration": "motion.duration-fast",
     "easing": "motion.easing-standard",
+    "pressedScale": "motion.scale-pressed-strong",
     "disabledOpacity": "opacity.disabled"
   },
   "playground": {

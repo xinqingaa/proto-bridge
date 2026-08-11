@@ -46,6 +46,18 @@ export const TOKEN_CATEGORY_META: Record<TokenCategory, TokenCategoryMeta> = {
     label: "动效",
     description: "时长与缓动曲线，统一组件过渡节奏。",
   },
+  layout: {
+    label: "布局",
+    description: "填充比例、相对位移和容器上限等跨端布局语义。",
+  },
+  layer: {
+    label: "层级",
+    description: "内容与承托表面的绘制顺序，避免散落的 z-index。",
+  },
+  effect: {
+    label: "效果",
+    description: "玻璃等表面的滤镜效果，避免组件直接写视觉参数。",
+  },
 };
 
 export function tokenCategoryLabel(category: TokenCategory): string {

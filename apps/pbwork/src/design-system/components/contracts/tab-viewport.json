@@ -81,7 +81,8 @@
   "events": ["update:modelValue"],
   "tokenBindings": {
     "background": "color.background",
-    "duration": "motion.duration-normal",
+    "fill": "layout.fill",
+    "duration": "motion.duration-tab-viewport",
     "easing": "motion.easing-standard"
   },
   "playground": {

@@ -49,7 +49,7 @@ usePbInspect({
   display: flex;
   align-items: center;
   gap: var(--pb-spacing-sm);
-  width: 100%;
+  width: var(--pb-layout-fill);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
 }
@@ -58,7 +58,7 @@ usePbInspect({
 }
 .pb-divider :deep(.v-divider) {
   border-color: var(--pb-color-divider);
-  opacity: 1;
+  opacity: var(--pb-opacity-visible);
 }
 .pb-divider-label {
   flex-shrink: 0;

@@ -38,7 +38,8 @@
 | 槽位         | Token                    |
 | ------------ | ------------------------ |
 | `background` | `color.background`       |
-| `duration`   | `motion.duration-normal` |
+| `fill`       | `layout.fill`            |
+| `duration`   | `motion.duration-tab-viewport` |
 | `easing`     | `motion.easing-standard` |
 
 切浅色/深色只改 Theme 覆盖值，不改本表绑定。

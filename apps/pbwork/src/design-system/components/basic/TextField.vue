@@ -64,28 +64,28 @@ usePbInspect({
 
 <style scoped>
 .pb-field {
-  font: var(--pb-typography-content, 400 14px/1.5 Inter, system-ui, sans-serif);
+  font: var(--pb-typography-content);
 }
 .pb-field :deep(.v-field) {
-  min-height: var(--pb-sizing-control-md, 40px);
+  min-height: var(--pb-sizing-control-md);
   background: var(--pb-color-surface);
 }
 .pb-field :deep(.v-field__input) {
-  min-height: var(--pb-sizing-control-md, 40px);
+  min-height: var(--pb-sizing-control-md);
 }
 .pb-field.radius-sm :deep(.v-field) {
-  --v-field-border-radius: var(--pb-radius-sm, 8px);
-  border-radius: var(--pb-radius-sm, 8px);
+  --v-field-border-radius: var(--pb-radius-sm);
+  border-radius: var(--pb-radius-sm);
 }
 .pb-field.radius-md :deep(.v-field) {
-  --v-field-border-radius: var(--pb-radius-md, 12px);
-  border-radius: var(--pb-radius-md, 12px);
+  --v-field-border-radius: var(--pb-radius-md);
+  border-radius: var(--pb-radius-md);
 }
 .pb-field.radius-lg :deep(.v-field) {
-  --v-field-border-radius: var(--pb-radius-lg, 16px);
-  border-radius: var(--pb-radius-lg, 16px);
+  --v-field-border-radius: var(--pb-radius-lg);
+  border-radius: var(--pb-radius-lg);
 }
 .pb-field.v-input--disabled {
-  opacity: var(--pb-opacity-disabled, 0.38);
+  opacity: var(--pb-opacity-disabled);
 }
 </style>

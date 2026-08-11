@@ -67,23 +67,23 @@ usePbInspect({
 .pb-textarea :deep(.v-field) {
   --v-field-border-radius: var(
     --pb-component-radius,
-    var(--pb-radius-md, 12px)
+    var(--pb-radius-md)
   );
   border-radius: var(
     --pb-component-radius,
-    var(--pb-radius-md, 12px)
+    var(--pb-radius-md)
   ) !important;
   background: var(--pb-color-surface);
 }
 .pb-textarea :deep(.v-field__outline__start) {
-  border-radius: var(--pb-component-radius, var(--pb-radius-md, 12px)) 0 0
-    var(--pb-component-radius, var(--pb-radius-md, 12px)) !important;
+  border-radius: var(--pb-component-radius, var(--pb-radius-md)) 0 0
+    var(--pb-component-radius, var(--pb-radius-md)) !important;
 }
 .pb-textarea :deep(.v-field__outline__end) {
-  border-radius: 0 var(--pb-component-radius, var(--pb-radius-md, 12px))
-    var(--pb-component-radius, var(--pb-radius-md, 12px)) 0 !important;
+  border-radius: 0 var(--pb-component-radius, var(--pb-radius-md))
+    var(--pb-component-radius, var(--pb-radius-md)) 0 !important;
 }
 .pb-textarea.v-input--disabled {
-  opacity: var(--pb-opacity-disabled, 0.38);
+  opacity: var(--pb-opacity-disabled);
 }
 </style>

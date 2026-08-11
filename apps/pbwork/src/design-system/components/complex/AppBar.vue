@@ -74,6 +74,9 @@ usePbInspect({
     border: "color.border",
     elevation: "elevation.card",
     title: "typography.subtitle",
+    padding: "spacing.md",
+    safeInsetFallback: "spacing.none",
+    restingElevation: "elevation.none",
   }),
   getTokens: () => [
     "color.surface",
@@ -83,6 +86,8 @@ usePbInspect({
     "typography.subtitle",
     "spacing.sm",
     "spacing.md",
+    "spacing.none",
+    "elevation.none",
   ],
 });
 </script>
@@ -134,32 +139,27 @@ usePbInspect({
 .pb-app-bar {
   position: relative !important;
   flex: none;
-  padding-top: var(--pb-safe-top, 0px);
+  padding-top: var(--pb-safe-top, var(--pb-spacing-none));
   border-bottom: var(--pb-border-hairline);
-  box-shadow: var(--pb-component-shadow, none) !important;
+  box-shadow: var(--pb-component-shadow, var(--pb-elevation-none)) !important;
 }
 .pb-app-bar.is-elevated {
   box-shadow: var(
     --pb-component-shadow,
-    var(--pb-elevation-card, none)
+    var(--pb-elevation-card)
   ) !important;
 }
 .pb-app-bar :deep(.v-toolbar__content) {
-  padding-inline: var(--pb-spacing-md, 16px);
+  padding-inline: var(--pb-spacing-md);
 }
 .pb-app-bar-title,
 .pb-app-bar-heading {
   margin: 0;
-  font: var(
-    --pb-typography-subtitle,
-    600 16px/1.4 Inter,
-    system-ui,
-    sans-serif
-  );
+  font: var(--pb-typography-subtitle);
 }
 .pb-app-bar-actions {
   display: flex;
   align-items: center;
-  gap: var(--pb-spacing-xs, 4px);
+  gap: var(--pb-spacing-xs);
 }
 </style>

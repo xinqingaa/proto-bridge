@@ -79,6 +79,14 @@ usePbInspect({
     elevation: "elevation.raised",
     title: "typography.subtitle",
     body: "typography.content",
+    stepLabel: "typography.micro",
+    headerGap: "spacing.sm-plus",
+    dotGap: "spacing.xs-plus",
+    dotSize: "sizing.step-dot",
+    fill: "layout.fill",
+    maxHeight: "layout.sheet-max-height",
+    duration: "motion.duration-sheet",
+    easing: "motion.easing-gentle",
   }),
   getTokens: () => [
     "color.surface",
@@ -90,6 +98,18 @@ usePbInspect({
     "elevation.raised",
     "typography.subtitle",
     "typography.content",
+    "typography.micro",
+    "spacing.xxs",
+    "spacing.xs-plus",
+    "spacing.sm",
+    "spacing.sm-plus",
+    "spacing.md",
+    "sizing.step-dot",
+    "sizing.icon-sm",
+    "layout.fill",
+    "layout.sheet-max-height",
+    "motion.duration-sheet",
+    "motion.easing-gentle",
   ],
 });
 
@@ -170,7 +190,7 @@ watch(stepCount, (count) => {
 
 <style scoped>
 .pb-flow-sheet {
-  border-radius: var(--pb-radius-lg, 16px) var(--pb-radius-lg, 16px) 0 0;
+  border-radius: var(--pb-radius-lg) var(--pb-radius-lg) 0 0;
   background: var(--pb-color-surface);
   color: var(--pb-color-on-surface);
   box-shadow: var(--pb-elevation-raised);
@@ -179,37 +199,31 @@ watch(stepCount, (count) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: var(--pb-spacing-md, 16px);
+  gap: var(--pb-spacing-sm-plus);
+  padding: var(--pb-spacing-md);
   border-bottom: var(--pb-border-hairline);
-  font: var(
-    --pb-typography-subtitle,
-    600 16px/1.4 Inter,
-    system-ui,
-    sans-serif
-  );
+  font: var(--pb-typography-subtitle);
 }
 .pb-flow-sheet-header small {
   display: block;
-  margin-top: 2px;
+  margin-top: var(--pb-spacing-xxs);
   color: var(--pb-color-on-surface-muted);
-  font-size: 0.72rem;
-  font-weight: 500;
+  font: var(--pb-typography-micro);
 }
 .pb-flow-sheet-dots {
   display: flex;
   justify-content: center;
-  gap: 6px;
-  padding: 8px 0 0;
+  gap: var(--pb-spacing-xs-plus);
+  padding: var(--pb-spacing-sm) 0 0;
 }
 .pb-flow-sheet-dots span {
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
+  width: var(--pb-sizing-step-dot);
+  height: var(--pb-sizing-step-dot);
+  border-radius: var(--pb-radius-full);
   background: var(--pb-color-outline);
 }
 .pb-flow-sheet-dots span.active {
-  width: 16px;
+  width: var(--pb-sizing-icon-sm);
   background: var(--pb-color-primary);
 }
 .pb-flow-sheet-body {
@@ -225,24 +239,25 @@ watch(stepCount, (count) => {
 }
 .pb-flow-sheet-track {
   display: flex;
-  width: 100%;
-  transition: transform 220ms ease;
+  width: var(--pb-layout-fill);
+  transition: transform var(--pb-motion-duration-sheet)
+    var(--pb-motion-easing-gentle);
 }
 .pb-flow-sheet-track > :deep(*) {
-  flex: 0 0 100%;
-  min-width: 100%;
-  max-height: min(62vh, 560px);
+  flex: 0 0 var(--pb-layout-fill);
+  min-width: var(--pb-layout-fill);
+  max-height: var(--pb-layout-sheet-max-height);
   overflow: auto;
-  padding: var(--pb-spacing-md, 16px);
+  padding: var(--pb-spacing-md);
   box-sizing: border-box;
-  font: var(--pb-typography-content, 400 14px/1.5 Inter, system-ui, sans-serif);
+  font: var(--pb-typography-content);
 }
 .pb-flow-sheet-actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 10px;
-  padding: 12px 16px 18px;
+  gap: var(--pb-spacing-sm);
+  padding: var(--pb-spacing-sm-plus) var(--pb-spacing-md) var(--pb-spacing-md);
   border-top: var(--pb-border-hairline);
 }
 </style>
@@ -250,8 +265,8 @@ watch(stepCount, (count) => {
 <style>
 .pb-flow-sheet-host.v-bottom-sheet > .v-overlay__content,
 .pb-flow-sheet-host.v-bottom-sheet > .v-bottom-sheet__content {
-  width: 100% !important;
-  max-width: 100% !important;
+  width: var(--pb-layout-fill) !important;
+  max-width: var(--pb-layout-fill) !important;
   margin-inline: 0 !important;
 }
 </style>

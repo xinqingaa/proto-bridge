@@ -36,6 +36,8 @@ const { resync } = usePbInspect({
     elevation: "elevation.raised",
     title: "typography.subtitle",
     body: "typography.content",
+    padding: "spacing.md",
+    fill: "layout.fill",
   }),
   getTokens: () => [
     "color.surface",
@@ -44,6 +46,8 @@ const { resync } = usePbInspect({
     "elevation.raised",
     "typography.subtitle",
     "typography.content",
+    "spacing.md",
+    "layout.fill",
   ],
 });
 
@@ -91,7 +95,7 @@ watch(modelValue, async (value) => {
 
 <style scoped>
 .pb-sheet {
-  border-radius: var(--pb-radius-lg, 16px) var(--pb-radius-lg, 16px) 0 0;
+  border-radius: var(--pb-radius-lg) var(--pb-radius-lg) 0 0;
   background: var(--pb-color-surface);
   color: var(--pb-color-on-surface);
   box-shadow: var(--pb-elevation-raised);
@@ -100,20 +104,15 @@ watch(modelValue, async (value) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--pb-spacing-md, 16px);
+  padding: var(--pb-spacing-md);
   border-bottom: var(--pb-border-hairline);
   color: inherit;
-  font: var(
-    --pb-typography-subtitle,
-    600 16px/1.4 Inter,
-    system-ui,
-    sans-serif
-  );
+  font: var(--pb-typography-subtitle);
 }
 .pb-sheet-body {
-  padding: var(--pb-spacing-md, 16px);
+  padding: var(--pb-spacing-md);
   color: inherit;
-  font: var(--pb-typography-content, 400 14px/1.5 Inter, system-ui, sans-serif);
+  font: var(--pb-typography-content);
 }
 </style>
 
@@ -121,8 +120,8 @@ watch(modelValue, async (value) => {
 <style>
 .pb-sheet-host.v-bottom-sheet > .v-overlay__content,
 .pb-sheet-host.v-bottom-sheet > .v-bottom-sheet__content {
-  width: 100% !important;
-  max-width: 100% !important;
+  width: var(--pb-layout-fill) !important;
+  max-width: var(--pb-layout-fill) !important;
   margin-inline: 0 !important;
 }
 </style>

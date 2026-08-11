@@ -140,6 +140,30 @@ function validateTokenValue(
     }
     return;
   }
+  if (token.category === "layer") {
+    if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
+      pushError(errors, {
+        resourceType,
+        resourceId,
+        instancePath,
+        keyword: "layer",
+        message: "layer token must be a non-negative integer",
+      });
+    }
+    return;
+  }
+  if (token.category === "layout" || token.category === "effect") {
+    if (typeof value !== "string" || value.trim() === "") {
+      pushError(errors, {
+        resourceType,
+        resourceId,
+        instancePath,
+        keyword: token.category,
+        message: `${token.category} token must be a non-empty CSS string`,
+      });
+    }
+    return;
+  }
   if (token.category === "elevation") {
     if (typeof value === "number" && value < 0) {
       pushError(errors, {

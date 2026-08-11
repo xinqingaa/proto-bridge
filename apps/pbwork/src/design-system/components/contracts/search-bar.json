@@ -53,7 +53,8 @@
     "radius": "radius.md",
     "height": "sizing.control-lg",
     "typography": "typography.content",
-    "disabledOpacity": "opacity.disabled"
+    "disabledOpacity": "opacity.disabled",
+    "fill": "layout.fill"
   },
   "playground": {
     "presentation": "interactive"

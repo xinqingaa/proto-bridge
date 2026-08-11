@@ -78,6 +78,9 @@ const tokenCategoryLabels: Record<TokenCategory, string> = {
   elevation: "阴影",
   opacity: "透明度",
   motion: "动效",
+  layout: "布局",
+  layer: "层级",
+  effect: "效果",
 };
 
 export function buildFoundationsNavigation(): WorkbenchNavigationItem[] {

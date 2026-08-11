@@ -93,8 +93,12 @@
     "paddingX": "spacing.md",
     "typography": "typography.label",
     "disabledOpacity": "opacity.disabled",
+    "overlayOpacity": "opacity.hidden",
+    "loadingOpacity": "opacity.visible",
+    "borderWidth": "border.width-hairline",
     "duration": "motion.duration-fast",
-    "easing": "motion.easing-standard"
+    "easing": "motion.easing-standard",
+    "pressedScale": "motion.scale-pressed"
   },
   "playground": {
     "presentation": "interactive"
