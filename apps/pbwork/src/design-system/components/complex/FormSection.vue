@@ -115,7 +115,8 @@ usePbInspect({
   opacity: 1;
 }
 .form-content {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--pb-spacing-sm-plus);
   padding-top: 0;
 }

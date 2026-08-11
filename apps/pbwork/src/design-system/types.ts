@@ -84,6 +84,31 @@ export type ComponentStateContract = {
   props?: Record<string, unknown>;
 };
 
+/** Cross-stack layout intent; never a CSS implementation recipe. */
+export type ComponentLayoutContract = {
+  containerWidth?: "fill-parent" | "content";
+  track?: {
+    width: "fill-container" | "content";
+    itemSizing: "content" | "equal";
+    equalState?: string;
+    overflow: "horizontal-scroll" | "none";
+  };
+  viewport?: {
+    ownership: "component" | "none";
+    transition?: "horizontal";
+  };
+};
+
+/** Cross-stack material and layer anatomy; never a CSS implementation recipe. */
+export type ComponentVisualAnatomyContract = {
+  selection?: {
+    material: "translucent-glass";
+    border: "none";
+    layering: "floating";
+    contour?: "top-transition-arc";
+  };
+};
+
 /** Producer-only presentation intent; never a Target component API. */
 export type PlaygroundPresentation = "interactive" | "gallery" | "trigger";
 
@@ -103,6 +128,10 @@ export type ComponentContract = {
   summary?: string;
   /** Short interaction / empty / disabled commitments. */
   behavior?: string[];
+  /** Optional cross-stack sizing, overflow, and owned-viewport semantics. */
+  layout?: ComponentLayoutContract;
+  /** Optional cross-stack material / layer anatomy. */
+  visualAnatomy?: ComponentVisualAnatomyContract;
   propsSchema: Record<string, unknown>;
   defaultProps: Record<string, unknown>;
   states: ComponentStateContract[];

@@ -58,7 +58,8 @@ usePbInspect({
 
 <style scoped>
 .pb-progress-wrap {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 6px;
   color: var(--pb-color-on-surface);
   font: var(--pb-typography-caption);

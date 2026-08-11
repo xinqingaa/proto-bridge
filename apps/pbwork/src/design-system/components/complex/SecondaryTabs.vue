@@ -189,7 +189,8 @@ usePbInspect({
 
 <style scoped>
 .pb-tabs {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--pb-spacing-sm-plus, 12px);
   min-width: 0;
   background: transparent;
@@ -263,7 +264,6 @@ usePbInspect({
 .pb-tabs.is-fill {
   height: 100%;
   min-height: 0;
-  grid-template-rows: auto minmax(0, 1fr);
 }
 .pb-tabs.is-fill .pb-tab-window,
 .pb-tabs.is-fill .pb-tab-window :deep(.v-window__container),
@@ -271,6 +271,9 @@ usePbInspect({
 .pb-tabs.is-fill .pb-tab-panel {
   height: 100%;
   min-height: 0;
+}
+.pb-tabs.is-fill .pb-tab-window {
+  flex: 1 1 0;
 }
 .pb-tabs.is-fill .pb-tab-panel {
   align-content: start;
@@ -287,7 +290,8 @@ usePbInspect({
   );
 }
 .pb-tab-panel {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
   min-width: 0;
 }

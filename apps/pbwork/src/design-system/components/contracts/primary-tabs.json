@@ -5,11 +5,30 @@
   "semantic": { "policy": "fixed", "defaultRole": "tab-bar" },
   "summary": "一级页内分区：轨道和选中胶囊均由主题语义表面令牌决定。",
   "behavior": [
-    "轨道使用 color.surface-recessed，当前项使用 color.surface-selected；胶囊以 opacity.glass 与 elevation.glass 形成无描边的半透明玻璃层，均不写固定色或渐变",
+    "轨道填满组件容器而非视口；默认项按内容宽排列，equal 状态才平分轨道，项过多时横向滚动",
+    "轨道使用 color.surface-recessed，当前项使用 color.surface-selected；当前项为无描边、悬浮的半透明玻璃选中面，顶部仅以低对比阴影形成承托过渡，不形成第二道表面、边框或渐变",
     "首次进入时先完成胶囊定位再开启后续切换动效，避免出现无选中态的首帧",
     "内容进入对应具名视图；可按场景启用触摸或鼠标横滑",
     "同一物理区域只有一个横滑 owner；嵌套时由页面关闭外层横滑"
   ],
+  "layout": {
+    "containerWidth": "fill-parent",
+    "track": {
+      "width": "fill-container",
+      "itemSizing": "content",
+      "equalState": "equal",
+      "overflow": "horizontal-scroll"
+    },
+    "viewport": { "ownership": "component", "transition": "horizontal" }
+  },
+  "visualAnatomy": {
+    "selection": {
+      "material": "translucent-glass",
+      "border": "none",
+      "layering": "floating",
+      "contour": "top-transition-arc"
+    }
+  },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,

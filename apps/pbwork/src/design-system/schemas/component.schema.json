@@ -75,6 +75,52 @@
       "uniqueItems": true,
       "description": "Short interaction / empty / disabled commitments for cross-stack alignment."
     },
+    "layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Cross-stack layout intent; never a CSS implementation recipe.",
+      "properties": {
+        "containerWidth": { "type": "string", "enum": ["fill-parent", "content"] },
+        "track": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["width", "itemSizing", "overflow"],
+          "properties": {
+            "width": { "type": "string", "enum": ["fill-container", "content"] },
+            "itemSizing": { "type": "string", "enum": ["content", "equal"] },
+            "equalState": { "type": "string", "minLength": 1 },
+            "overflow": { "type": "string", "enum": ["horizontal-scroll", "none"] }
+          }
+        },
+        "viewport": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ownership"],
+          "properties": {
+            "ownership": { "type": "string", "enum": ["component", "none"] },
+            "transition": { "type": "string", "enum": ["horizontal"] }
+          }
+        }
+      }
+    },
+    "visualAnatomy": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Cross-stack material and layer anatomy; never a CSS implementation recipe.",
+      "properties": {
+        "selection": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["material", "border", "layering"],
+          "properties": {
+            "material": { "const": "translucent-glass" },
+            "border": { "const": "none" },
+            "layering": { "const": "floating" },
+            "contour": { "const": "top-transition-arc" }
+          }
+        }
+      }
+    },
     "defaultProps": { "type": "object" },
     "states": {
       "type": "array",

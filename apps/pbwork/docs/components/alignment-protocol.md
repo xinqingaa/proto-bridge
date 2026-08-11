@@ -27,6 +27,8 @@
 | `tokenBindings`            | Token 槽 → Catalog id                             |
 | `states` + `states[].kind` | 状态矩阵：`variant` \| `interaction` \| `content` |
 | `summary` / `behavior`     | 一句话与交互承诺（可选但样例组件应写）            |
+| `layout`                   | 跨端容器、项宽、溢出与视图区归属；不表达 CSS      |
+| `visualAnatomy`            | 跨端材质、层级与轮廓；不表达伪元素或样式 API      |
 | `playground.presentation`  | **必填**：`interactive` \| `gallery` \| `trigger` |
 | `icons`                    | 可选；`pack` 固定 `lucide`                        |
 
@@ -69,7 +71,7 @@ Button 公开语义以色槽与行为（loading 保留文案、disabled 透明�
 
 | 变更类型                                                    | 必须同批                             | 明确可不做                         |
 | ----------------------------------------------------------- | ------------------------------------ | ---------------------------------- |
-| A. 语义（role / Token 槽 / state 矩阵 / behavior / 拆组件） | Contract + Vue + registry + 测试     | Flutter（P1.5）                    |
+| A. 语义（role / Token 槽 / state 矩阵 / behavior / 布局策略 / 视觉层级 / 拆组件） | Contract + Vue + 必要的 registry + 测试 | Flutter（P1.5） |
 | B. 用法铁律 / 反例 / 组合边界                               | 文档短叙事                           | 不抄 props 表                      |
 | C. Playground 展示                                          | Contract `presentation` + Playground | —                                  |
 | D. 纯实现修（同语义）                                       | Vue（+ 必要时单测）                  | 文档 / Contract 无字段变更时可不动 |

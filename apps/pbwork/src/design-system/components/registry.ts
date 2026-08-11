@@ -276,6 +276,8 @@ export const componentRecords = [
         options: [
           { label: "概览", value: "overview" },
           { label: "活动", value: "activity" },
+          { label: "数据", value: "data" },
+          { label: "设置", value: "settings" },
         ],
       },
       { key: "size", label: "尺寸", control: "select", options: sizeOptions },
@@ -303,6 +305,8 @@ export const componentRecords = [
         options: [
           { label: "概览", value: "overview" },
           { label: "活动", value: "activity" },
+          { label: "记录", value: "records" },
+          { label: "附件", value: "attachments" },
         ],
       },
       { key: "size", label: "尺寸", control: "select", options: sizeOptions },

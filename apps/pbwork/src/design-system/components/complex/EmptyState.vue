@@ -75,8 +75,10 @@ usePbInspect({
 
 <style scoped>
 .pb-empty {
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: var(--pb-spacing-sm);
   padding: var(--pb-spacing-lg);
   color: var(--pb-color-on-surface);

@@ -578,8 +578,9 @@ onBeforeUnmount(() => {
   top: 0;
   left: 0;
   right: 0;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-height: 44px;
   opacity: 0;
   color: var(--pb-color-on-surface-muted);
@@ -610,9 +611,10 @@ onBeforeUnmount(() => {
   height: 1px;
 }
 .pb-scrollable-data-list-footer {
-  display: grid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-height: 48px;
-  place-items: center;
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
 }

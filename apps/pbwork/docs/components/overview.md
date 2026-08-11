@@ -14,7 +14,7 @@
 
 Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`propsSchema`、`defaultProps`、`states`、`slots`、`events`、`tokenBindings`、`playground`（含 `presentation: interactive|gallery|trigger`）。
 
-可选跨栈语义字段：`summary`、`behavior`、`states[].kind`、`icons`（`pack` 仅 `lucide`）。详见 [alignment-protocol.md](./alignment-protocol.md)。
+可选跨栈语义字段：`summary`、`behavior`、`layout`、`visualAnatomy`、`states[].kind`、`icons`（`pack` 仅 `lucide`）。详见 [alignment-protocol.md](./alignment-protocol.md)。
 
 `playground.presentation`：**默认 `interactive`**；**`gallery` 仅 `icon` / `icon-button`**；overlay 用 `trigger`。互动状态必须在舞台内可观察，Token 绑定只读折叠展示。
 
@@ -51,7 +51,7 @@ Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`propsSchem
 6. 单元 / playground 相关测试
 7. 运行 `pnpm docs:verify`
 
-修改已有组件也执行同一流程。Agent 必须在开始组件任务时提醒文档同步义务，并在交付时说明更新了哪些 Contract、Registry、文档和测试。
+修改已有组件按[分级同步义务](./alignment-protocol.md#分级同步义务)选择产物：纯实现修不改 Contract 或文档；只有语义、布局策略、视觉层级、交互状态或 Playground 能力变化时，才同步对应产物。Agent 在交付时说明实际更新的范围。
 
 ## 目录
 

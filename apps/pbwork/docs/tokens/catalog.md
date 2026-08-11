@@ -32,7 +32,7 @@
 | `color.on-surface`         | 表面上文字    | `#1d1f23`   | 是   |                                                               |
 | `color.on-surface-muted`   | 表面弱化文字  | `#666b73`   | 是   | 表面上文字约 62% 透明度，用于副标题与提示                     |
 | `color.surface-variant`    | 次级表面      | `#f0f2f4`   | 是   | 弱分区、表格表头与次级容器                                    |
-| `color.surface-recessed`   | 内凹表面      | `#f0f2f4`   | 是   | 承托页内选择态的中性内凹背景；可按主题独立压深                |
+| `color.surface-recessed`   | 内凹表面      | `#f5f6f8`   | 是   | 承托页内选择态的中性内凹背景；可按主题独立压深                |
 | `color.surface-selected`   | 选中表面      | `#fbfcfd`   | 是   | 分段、Tab 等非主色选择态的中性浅灰层                          |
 | `color.surface-raised`     | 浮层表面      | `#ffffff`   | 是   | 菜单、Dialog 与悬浮工具栏                                     |
 | `color.on-background`      | 背景上文字    | `#1d1f23`   | 是   |                                                               |

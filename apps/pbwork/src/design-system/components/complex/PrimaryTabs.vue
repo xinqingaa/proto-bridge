@@ -61,6 +61,10 @@ const tabStyle = computed(() => ({
   "--pb-tabs-selection-surface": "var(--pb-color-surface-selected)",
   "--pb-tabs-selection-opacity": "var(--pb-opacity-glass)",
   "--pb-tabs-selection-elevation": "var(--pb-elevation-glass)",
+  "--pb-tabs-selection-radius": "var(--pb-radius-full)",
+  "--pb-tabs-selection-bridge-height": "var(--pb-spacing-xs)",
+  "--pb-tabs-selection-arc-inset": "var(--pb-spacing-xs)",
+  "--pb-tabs-selection-arc-radius": "var(--pb-radius-full)",
   "--pb-tabs-track-radius": "var(--pb-radius-lg)",
   "--pb-tabs-active-color": "var(--pb-color-section-tab-active)",
   "--pb-tabs-inactive-color": "var(--pb-color-on-surface-muted)",
@@ -285,7 +289,8 @@ usePbInspect({
 
 <style scoped>
 .pb-tabs {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--pb-spacing-sm-plus, 12px);
   min-width: 0;
   background: transparent;
@@ -311,7 +316,7 @@ usePbInspect({
   width: 100%;
 }
 .pb-tabs.align-center .pb-tabs-track {
-  justify-self: center;
+  align-self: center;
 }
 .pb-tabs.has-divider .pb-tabs-track {
   border-bottom: var(--pb-border-hairline);
@@ -322,8 +327,8 @@ usePbInspect({
   bottom: var(--pb-spacing-xs, 4px);
   left: 0;
   z-index: 0;
-  border-radius: var(--pb-tabs-radius, var(--pb-radius-full));
-  overflow: hidden;
+  border-radius: var(--pb-tabs-selection-radius);
+  overflow: visible;
   transition: none;
   pointer-events: none;
 }
@@ -389,7 +394,6 @@ usePbInspect({
 .pb-tabs.is-fill {
   height: 100%;
   min-height: 0;
-  grid-template-rows: auto minmax(0, 1fr);
 }
 .pb-tabs.is-fill .pb-tab-window,
 .pb-tabs.is-fill .pb-tab-window :deep(.v-window__container),
@@ -397,6 +401,9 @@ usePbInspect({
 .pb-tabs.is-fill .pb-tab-panel {
   height: 100%;
   min-height: 0;
+}
+.pb-tabs.is-fill .pb-tab-window {
+  flex: 1 1 0;
 }
 .pb-tabs.is-fill .pb-tab-panel {
   align-content: start;
@@ -413,7 +420,8 @@ usePbInspect({
   );
 }
 .pb-tab-panel {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
   min-width: 0;
 }

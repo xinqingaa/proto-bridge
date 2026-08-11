@@ -101,7 +101,8 @@ usePbInspect({
 <style scoped>
 .pb-tabbar-shell {
   position: relative !important;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   flex: none;
   width: 100%;
   background: var(--pb-color-background);
