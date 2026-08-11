@@ -11,6 +11,7 @@
 - 不显示顶部指示器；点击无 ripple 反馈，直接更新当前位置。
 - 不承载内容、转场或横滑手势。
 - 不用于页面内分区、筛选或临时操作。
+- `grow=true`（默认）时各目的地等宽平分轨道；`grow=false` 时按内容自适应宽度排列。
 - 填满、焦点内缩、内容层级与无反馈覆盖层分别消费 `layout.fill`、`layout.focus-inset`、`layer.content`、`opacity.hidden`；不在组件 CSS 中写数值。
 
 ## 组合
@@ -19,4 +20,4 @@
 
 ## 状态
 
-`tasks-selected` 是当前目的地变为任务的内容状态。切换时更新上方视图区。Playground 使用完整“视图区在上、Tabbar 在下”的互动场景。
+`tasks-selected` 是当前目的地变为任务的内容状态，`adaptive` 是按内容自适应宽度的布局状态。切换时更新上方视图区。Playground 不再使用场景下拉框，而是直接并置“自适应”和“等宽”两个完整区域。

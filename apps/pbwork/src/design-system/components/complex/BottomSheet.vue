@@ -125,4 +125,16 @@ watch(modelValue, async (value) => {
   max-width: var(--pb-layout-fill) !important;
   margin-inline: var(--pb-spacing-none) !important;
 }
+.pb-sheet-host.v-bottom-sheet
+  > .v-bottom-sheet__content.v-overlay__content
+  > .pb-sheet {
+  border-radius: var(--pb-radius-lg) var(--pb-radius-lg) var(--pb-radius-none)
+    var(--pb-radius-none) !important;
+}
+.pb-sheet-host.v-bottom-sheet
+  > .v-bottom-sheet__content.v-overlay__content
+  > .pb-sheet
+  > .pb-sheet-body {
+  padding: var(--pb-spacing-md) !important;
+}
 </style>

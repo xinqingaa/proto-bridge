@@ -122,14 +122,14 @@
 
 ## 边框（`border` · 6）
 
-| ID                      | 标签     | 默认值                              | Bind | 说明             |
-| ----------------------- | -------- | ----------------------------------- | ---- | ---------------- |
-| `border.hairline`       | 细线     | `1px solid var(--pb-color-divider)` | 是   |                  |
-| `border.default`        | 标准边框 | `1px solid var(--pb-color-border)`  | 是   |                  |
-| `border.strong`         | 强调边框 | `2px solid var(--pb-color-outline)` | 否   |                  |
-| `border.focus`          | 焦点边框 | `2px solid var(--pb-color-primary)` | 是   |                  |
-| `border.width-hairline` | 细线宽度 | `1px`                               | 是   | 动态颜色的细线   |
-| `border.accent-width`   | 强调边宽 | `4px`                               | 是   | 状态消息的强调边 |
+| ID                      | 标签     | 默认值                              | Bind | 说明                       |
+| ----------------------- | -------- | ----------------------------------- | ---- | -------------------------- |
+| `border.hairline`       | 细线     | `1px solid var(--pb-color-divider)` | 是   |                            |
+| `border.default`        | 标准边框 | `1px solid var(--pb-color-border)`  | 是   |                            |
+| `border.strong`         | 强调边框 | `2px solid var(--pb-color-outline)` | 否   |                            |
+| `border.focus`          | 焦点边框 | `2px solid var(--pb-color-primary)` | 是   |                            |
+| `border.width-hairline` | 细线宽度 | `1px`                               | 是   | 仅宽度；需与线型、颜色组合 |
+| `border.accent-width`   | 强调边宽 | `4px`                               | 是   | 仅宽度；需与线型、颜色组合 |
 
 ## 阴影（`elevation` · 9）
 

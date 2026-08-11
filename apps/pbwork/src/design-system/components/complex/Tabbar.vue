@@ -12,16 +12,21 @@ export type TabbarItem = {
   icon: Component;
 };
 
-const props = defineProps<{
-  /** Required. Count, labels, and icons are owned by the caller — no built-in destinations. */
-  items: TabbarItem[];
-  modelValue?: string;
-  /** Page-unique inspect / comment anchor; falls back to `ds.tabbar`. */
-  inspectId?: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    /** Required. Count, labels, and icons are owned by the caller — no built-in destinations. */
+    items: TabbarItem[];
+    modelValue?: string;
+    /** Equal-width destinations when true; content-width destinations when false. */
+    grow?: boolean;
+    /** Page-unique inspect / comment anchor; falls back to `ds.tabbar`. */
+    inspectId?: string;
+  }>(),
+  { grow: true },
+);
 const emit = defineEmits<{ "update:modelValue": [string] }>();
 const rootRef = usePbInspectRef();
-const { modelValue, items, inspectId } = toRefs(props);
+const { modelValue, items, grow, inspectId } = toRefs(props);
 
 const normalizedItems = computed(() => items.value ?? []);
 
@@ -38,6 +43,7 @@ usePbInspect({
   getProps: () => ({
     modelValue: activeItem.value,
     items: normalizedItems.value.map(({ value, label }) => ({ value, label })),
+    grow: grow.value,
     inspectId: inspectId.value,
   }),
   getTokens: () => [
@@ -90,7 +96,7 @@ usePbInspect({
       <v-tabs
         class="pb-tabbar-tabs"
         color="primary"
-        grow
+        :grow="grow"
         mandatory
         v-model="activeItem"
       >

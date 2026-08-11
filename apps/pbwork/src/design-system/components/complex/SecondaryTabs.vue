@@ -186,7 +186,6 @@ usePbInspect({
         :value="item.value"
       >
         <div
-          v-if="tab === item.value"
           class="pb-tab-panel"
           :data-pb-id="`${inspectId ?? 'ds.secondary-tabs'}.panel`"
           :data-pb-key="item.value"

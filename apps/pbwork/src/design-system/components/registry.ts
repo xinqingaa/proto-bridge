@@ -677,11 +677,12 @@ export const componentRecords = [
         label: "当前入口",
         control: "select",
         options: [
-          { label: "首页", value: "one" },
-          { label: "列表", value: "two" },
-          { label: "我的", value: "three" },
+          { label: "首页", value: "home" },
+          { label: "任务", value: "tasks" },
+          { label: "我的", value: "profile" },
         ],
       },
+      { key: "grow", label: "等宽铺满", control: "boolean" },
     ],
   },
   {

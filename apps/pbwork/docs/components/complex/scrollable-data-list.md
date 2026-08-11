@@ -43,6 +43,8 @@
 - **Slots**：`default`, `refresh-indicator`, `load-footer`, `no-more`
 - **Events**：`refresh`, `load-more`
 
+Playground 提供足量内容形成真实纵向溢出，并同时开放鼠标下拉/拖滚、显式“刷新”按钮和“加载更多”按钮；桌面端无需模拟触屏也能验证受控状态闭环。
+
 ## tokenBindings
 
 | 槽位                     | Token                              |

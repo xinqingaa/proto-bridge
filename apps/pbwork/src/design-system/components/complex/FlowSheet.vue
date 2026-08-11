@@ -274,4 +274,18 @@ watch(stepCount, (count) => {
   max-width: var(--pb-layout-fill) !important;
   margin-inline: var(--pb-spacing-none) !important;
 }
+.pb-flow-sheet-host.v-bottom-sheet
+  > .v-bottom-sheet__content.v-overlay__content
+  > .pb-flow-sheet {
+  border-radius: var(--pb-radius-lg) var(--pb-radius-lg) var(--pb-radius-none)
+    var(--pb-radius-none) !important;
+}
+.pb-flow-sheet-host.v-bottom-sheet
+  > .v-bottom-sheet__content.v-overlay__content
+  > .pb-flow-sheet
+  > .pb-flow-sheet-body {
+  min-width: var(--pb-spacing-none);
+  overflow: hidden;
+  padding: var(--pb-spacing-none) !important;
+}
 </style>

@@ -90,6 +90,12 @@ const isOverlayPreview = computed(() => isTriggerPresentation.value);
 const isButton = computed(() => record.value?.id === "button");
 const isTabbar = computed(() => record.value?.id === "tabbar");
 const isFilterBar = computed(() => record.value?.id === "filter-bar");
+const isScrollableDataList = computed(
+  () => record.value?.id === "scrollable-data-list",
+);
+const isSplitTabPresentation = computed(() =>
+  ["tabbar", "primary-tabs", "secondary-tabs"].includes(record.value?.id ?? ""),
+);
 const previewAttach = "[data-pb-scenario-preview]";
 
 const hasDisabledState = computed(() => {
@@ -126,7 +132,13 @@ function panelSlotLabel(name: string) {
   return `${name}视图 · 点击导航或拖动切换`;
 }
 
+const tabComparisonValues = ref<Record<string, string>>({
+  adaptive: "",
+  equal: "",
+});
+
 const playgroundNavIcons = [Home, List, User];
+const triggeredPreviewOpen = ref(false);
 function enrichBind(base: Record<string, unknown>): Record<string, unknown> {
   const next = { ...base };
   if (props.componentId === "tabbar") {
@@ -148,18 +160,64 @@ function enrichBind(base: Record<string, unknown>): Record<string, unknown> {
     ...next,
     attach: previewAttach,
     contained: true,
-    modelValue: Boolean(next.modelValue),
+    modelValue: triggeredPreviewOpen.value,
   };
 }
 
 const buttonActionBusy = ref(false);
 const buttonActionFinished = ref(false);
 let buttonActionTimer: ReturnType<typeof setTimeout> | undefined;
+const listRefreshing = ref(false);
+const listLoadingMore = ref(false);
+const listRowCount = ref(8);
+const listRefreshCount = ref(0);
+let listActionTimer: ReturnType<typeof setTimeout> | undefined;
+
+const listRows = computed(() =>
+  Array.from({ length: listRowCount.value }, (_, index) => ({
+    id: index + 1,
+    title: `业务记录 ${String(index + 1).padStart(2, "0")}`,
+    detail:
+      index === 0 && listRefreshCount.value > 0
+        ? `刚刚完成第 ${listRefreshCount.value} 次刷新`
+        : index % 2 === 0
+          ? "包含自定义摘要与状态"
+          : "行结构由业务插槽提供",
+    state: index % 3 === 0 ? "待处理" : "已同步",
+  })),
+);
 
 function previewBind() {
   const next = { ...resolvedProps.value };
   if (isButton.value && buttonActionBusy.value) next.loading = true;
   return enrichBind(next);
+}
+function scrollablePreviewBind() {
+  return enrichBind({
+    ...resolvedProps.value,
+    pullRefresh: { enabled: true, mouse: true },
+    loadMore: { enabled: true, manualFallback: true },
+    dragScroll: { enabled: true, mouse: true, momentum: true },
+    refreshing: listRefreshing.value,
+    loadingMore: listLoadingMore.value,
+    hasMore: listRowCount.value < 12,
+  });
+}
+function tabComparisonBind(modeId: string, grow: boolean) {
+  return enrichBind({
+    ...resolvedProps.value,
+    modelValue:
+      tabComparisonValues.value[modeId] ?? resolvedProps.value.modelValue,
+    grow,
+    fill: false,
+  });
+}
+function onTabComparisonUpdate(modeId: string, value: unknown) {
+  if (typeof value !== "string") return;
+  tabComparisonValues.value = {
+    ...tabComparisonValues.value,
+    [modeId]: value,
+  };
 }
 function disabledPreviewBind() {
   return enrichBind({ ...resolvedProps.value, disabled: true, loading: false });
@@ -168,9 +226,13 @@ function galleryBind(entry: GalleryEntry) {
   return enrichBind({ ...entry.props });
 }
 function openTriggeredPreview() {
-  playground.setOverride("modelValue", true);
+  triggeredPreviewOpen.value = true;
 }
 function onPreviewUpdate(value: unknown) {
+  if (isOverlayPreview.value) {
+    triggeredPreviewOpen.value = Boolean(value);
+    return;
+  }
   playground.setOverride("modelValue", value);
 }
 function onPreviewStep(value: unknown) {
@@ -184,6 +246,27 @@ function onPreviewClick() {
     buttonActionBusy.value = false;
     buttonActionFinished.value = true;
   }, 800);
+}
+
+function onListRefresh() {
+  if (listRefreshing.value || listLoadingMore.value) return;
+  listRefreshing.value = true;
+  if (listActionTimer) clearTimeout(listActionTimer);
+  listActionTimer = setTimeout(() => {
+    listRefreshing.value = false;
+    listRefreshCount.value += 1;
+  }, 700);
+}
+
+function onListLoadMore() {
+  if (listRefreshing.value || listLoadingMore.value || listRowCount.value >= 12)
+    return;
+  listLoadingMore.value = true;
+  if (listActionTimer) clearTimeout(listActionTimer);
+  listActionTimer = setTimeout(() => {
+    listRowCount.value = Math.min(12, listRowCount.value + 2);
+    listLoadingMore.value = false;
+  }, 700);
 }
 
 const previewComponent = computed(() => {
@@ -200,18 +283,18 @@ const checkboxMultiValues = ref({ sms: true, push: false, email: true });
 const isCheckboxMulti = computed(
   () => record.value?.id === "checkbox" && scenarioId.value === "multi",
 );
-const tabbarSelectedLabel = computed(() => {
+function tabbarSelectedLabel(modeId: string) {
   if (!isTabbar.value) return "";
-  const items = previewBind().items;
+  const items = tabComparisonBind(modeId, modeId === "equal").items;
   if (!Array.isArray(items)) return "当前目的地";
   const selected = items.find(
     (item) =>
       item &&
       typeof item === "object" &&
-      (item as { value?: string }).value === resolvedProps.value.modelValue,
+      (item as { value?: string }).value === tabComparisonValues.value[modeId],
   ) as { label?: string } | undefined;
   return selected?.label ?? "当前目的地";
-});
+}
 const filterRows = computed(() => {
   const selected = String(resolvedProps.value.modelValue ?? "全部");
   const rows = [
@@ -228,14 +311,35 @@ watch(
   () => props.componentId,
   (id) => {
     if (buttonActionTimer) clearTimeout(buttonActionTimer);
+    if (listActionTimer) clearTimeout(listActionTimer);
     buttonActionBusy.value = false;
     buttonActionFinished.value = false;
+    triggeredPreviewOpen.value = false;
+    listRefreshing.value = false;
+    listLoadingMore.value = false;
+    listRowCount.value = 8;
+    listRefreshCount.value = 0;
     playground.open(id);
   },
   { immediate: true },
 );
+watch(scenarioId, () => {
+  triggeredPreviewOpen.value = false;
+});
+watch(
+  [() => props.componentId, scenarioId],
+  () => {
+    const initialValue = String(resolvedProps.value.modelValue ?? "");
+    tabComparisonValues.value = {
+      adaptive: initialValue,
+      equal: initialValue,
+    };
+  },
+  { immediate: true, flush: "post" },
+);
 onBeforeUnmount(() => {
   if (buttonActionTimer) clearTimeout(buttonActionTimer);
+  if (listActionTimer) clearTimeout(listActionTimer);
 });
 
 function selectScenario(id: string) {
@@ -266,7 +370,7 @@ function bindingResolvedValue(tokenId: string) {
 
     <template #toolbar>
       <v-select
-        v-if="!isGalleryPresentation"
+        v-if="!isGalleryPresentation && !isSplitTabPresentation"
         :model-value="scenarioId"
         :items="scenarios"
         item-title="label"
@@ -299,12 +403,18 @@ function bindingResolvedValue(tokenId: string) {
         <header class="scenario-header">
           <div>
             <strong>{{
-              isGalleryPresentation ? "状态矩阵" : selectedScenario?.label
+              isGalleryPresentation
+                ? "状态矩阵"
+                : isSplitTabPresentation
+                  ? "布局对照"
+                  : selectedScenario?.label
             }}</strong>
             <span>{{
               isGalleryPresentation
                 ? "默认与 Contract 状态并置"
-                : selectedScenario?.description
+                : isSplitTabPresentation
+                  ? "自适应与等宽两种稳定布局并置"
+                  : selectedScenario?.description
             }}</span>
           </div>
           <code>{{ `theme.${themeId}` }}</code>
@@ -369,19 +479,44 @@ function bindingResolvedValue(tokenId: string) {
             data-pb-scenario-preview
             :style="previewStyle"
           >
-            <template v-if="isTabbar">
-              <div class="tabbar-demo-viewport">
-                <strong>{{ tabbarSelectedLabel }}</strong>
-                <span
-                  >视图区位于 Tabbar
-                  上方；根目的地仅点击切换，不接受横滑。</span
-                >
-              </div>
-              <component
-                :is="previewComponent"
-                v-bind="previewBind()"
-                @update:model-value="onPreviewUpdate"
-              />
+            <template v-if="isSplitTabPresentation">
+              <section
+                v-for="mode in [
+                  { id: 'adaptive', label: '自适应', grow: false },
+                  { id: 'equal', label: '等宽', grow: true },
+                ]"
+                :key="mode.id"
+                class="tab-comparison"
+                :data-tab-layout="mode.id"
+              >
+                <header>
+                  <strong>{{ mode.label }}</strong>
+                  <span>{{
+                    mode.grow ? "各项平分可用宽度" : "各项按内容宽度排列"
+                  }}</span>
+                </header>
+                <div class="tab-comparison-frame">
+                  <div v-if="isTabbar" class="tabbar-demo-viewport">
+                    <strong>{{ tabbarSelectedLabel(mode.id) }}</strong>
+                    <span>根目的地视图区；导航本身不拥有横滑手势。</span>
+                  </div>
+                  <component
+                    :is="previewComponent"
+                    v-bind="tabComparisonBind(mode.id, mode.grow)"
+                    @update:model-value="onTabComparisonUpdate(mode.id, $event)"
+                  >
+                    <template
+                      v-for="slotName in panelPreviewSlots"
+                      :key="slotName"
+                      #[slotName]
+                      ><div class="panel-slot-demo">
+                        <strong>{{ slotName }}</strong
+                        ><span>{{ panelSlotLabel(slotName) }}</span>
+                      </div></template
+                    >
+                  </component>
+                </div>
+              </section>
             </template>
 
             <template v-else-if="isFilterBar">
@@ -438,6 +573,58 @@ function bindingResolvedValue(tokenId: string) {
               />
             </div>
 
+            <div v-else-if="isScrollableDataList" class="scrollable-list-demo">
+              <div class="scrollable-list-demo-toolbar">
+                <div>
+                  <strong>桌面端交互辅助</strong>
+                  <span>也可在列表内鼠标下拉、拖拽滚动或加载更多</span>
+                </div>
+                <div class="scrollable-list-demo-actions">
+                  <v-btn
+                    color="primary"
+                    variant="tonal"
+                    size="small"
+                    :loading="listRefreshing"
+                    :disabled="listLoadingMore"
+                    @click="onListRefresh"
+                    >刷新</v-btn
+                  >
+                  <v-btn
+                    color="primary"
+                    variant="tonal"
+                    size="small"
+                    :loading="listLoadingMore"
+                    :disabled="listRefreshing || listRowCount >= 12"
+                    @click="onListLoadMore"
+                    >加载更多</v-btn
+                  >
+                </div>
+              </div>
+              <div class="scrollable-list-demo-viewport">
+                <component
+                  :is="previewComponent"
+                  v-bind="scrollablePreviewBind()"
+                  @refresh="onListRefresh"
+                  @load-more="onListLoadMore"
+                >
+                  <DataList surface="default" rounded="md" divided>
+                    <div
+                      v-for="row in listRows"
+                      :key="row.id"
+                      role="listitem"
+                      class="list-slot-demo is-record"
+                    >
+                      <div>
+                        <strong>{{ row.title }}</strong>
+                        <span>{{ row.detail }}</span>
+                      </div>
+                      <span class="list-state">{{ row.state }}</span>
+                    </div>
+                  </DataList>
+                </component>
+              </div>
+            </div>
+
             <component
               v-else
               :is="previewComponent"
@@ -453,28 +640,20 @@ function bindingResolvedValue(tokenId: string) {
                 >在这里放置该业务分组的表单字段。</template
               >
               <template v-else-if="record.id === 'data-list'">
-                <div
-                  v-for="row in ['今日流水', '本周任务', '即将过期']"
-                  :key="row"
-                  role="listitem"
-                  class="list-slot-demo"
-                >
-                  <strong>{{ row }}</strong
-                  ><span>业务完全自定义的列表项</span>
+                <div role="listitem" class="list-slot-demo is-heading">
+                  <strong>仅标题行</strong>
                 </div>
-              </template>
-              <template v-else-if="record.id === 'scrollable-data-list'">
-                <DataList surface="default" rounded="md" divided
-                  ><div
-                    v-for="row in ['今日流水', '本周任务', '即将过期']"
-                    :key="row"
-                    role="listitem"
-                    class="list-slot-demo"
-                  >
-                    <strong>{{ row }}</strong
-                    ><span>ScrollableDataList 壳 + DataList 外观</span>
-                  </div></DataList
-                >
+                <div role="listitem" class="list-slot-demo is-record">
+                  <div>
+                    <strong>双行业务记录</strong>
+                    <span>副标题、状态与密度均由调用方决定</span>
+                  </div>
+                  <span class="list-state">进行中</span>
+                </div>
+                <div role="listitem" class="list-slot-demo is-metric">
+                  <span>自定义指标</span>
+                  <strong>86%</strong>
+                </div>
               </template>
               <template v-if="record.id === 'tab-viewport'" #item="{ value }"
                 ><div class="panel-slot-demo">
@@ -661,6 +840,37 @@ function bindingResolvedValue(tokenId: string) {
   text-align: center;
   font: var(--pb-typography-caption);
 }
+.tab-comparison {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.tab-comparison:last-child {
+  margin-bottom: 0;
+}
+.tab-comparison > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--pb-color-on-surface-muted, #64748b);
+  font: var(--pb-typography-caption);
+}
+.tab-comparison > header strong {
+  color: var(--pb-color-on-surface, #1f2937);
+  font: var(--pb-typography-label);
+}
+.tab-comparison-frame {
+  display: flex;
+  flex-direction: column;
+  min-height: 200px;
+  padding: var(--pb-spacing-md, 16px);
+  overflow: hidden;
+  border: var(--pb-border-hairline, 1px solid #d7dee8);
+  border-radius: var(--pb-radius-lg, 16px);
+  background: var(--pb-color-surface, #fff);
+}
 .tabbar-demo-viewport strong,
 .panel-slot-demo strong {
   color: var(--pb-color-on-surface);
@@ -694,6 +904,56 @@ function bindingResolvedValue(tokenId: string) {
 .list-slot-demo span {
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
+}
+.list-slot-demo.is-record > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.list-slot-demo.is-heading {
+  justify-content: flex-start;
+}
+.list-slot-demo.is-metric strong {
+  color: var(--pb-color-primary);
+  font: var(--pb-typography-title);
+}
+.list-slot-demo .list-state {
+  flex: none;
+  color: var(--pb-color-primary);
+}
+.scrollable-list-demo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+.scrollable-list-demo-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.scrollable-list-demo-toolbar > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.scrollable-list-demo-toolbar > .scrollable-list-demo-actions {
+  flex: none;
+  flex-direction: row;
+  gap: 8px;
+}
+.scrollable-list-demo-toolbar strong {
+  font: var(--pb-typography-label);
+}
+.scrollable-list-demo-toolbar span {
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
+}
+.scrollable-list-demo-viewport {
+  height: 320px;
+  overflow: hidden;
+  border-radius: var(--pb-radius-lg);
 }
 .action-feedback {
   margin: 16px 0 0;

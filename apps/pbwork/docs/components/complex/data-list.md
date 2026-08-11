@@ -30,6 +30,8 @@
 - **Slots**：`default`
 - **Events**：无
 
+Playground 使用标题行、双行业务记录和指标行三种不同插槽结构，明确行内容完全由业务提供；Data List 本身不声明手势事件。
+
 ## tokenBindings
 
 | 槽位        | Token                |

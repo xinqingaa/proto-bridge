@@ -654,6 +654,9 @@ function secondaryIconFor(id: string) {
     "token-elevation": Layers2,
     "token-opacity": Blend,
     "token-motion": Timer,
+    "token-layout": LayoutGrid,
+    "token-layer": Layers3,
+    "token-effect": Sparkles,
     "theme-light": Sun,
     "theme-dark": Moon,
   };

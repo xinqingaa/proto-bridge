@@ -2,7 +2,7 @@
 
 - 日期：2026-08-06（计划修订：2026-08-08）
 - 范围：**仅** `apps/pbwork`（Workbench 导航、Capture/Deliver GUI、Design System、业务原型资产与其文档）
-- 状态：**P0、P1 已落地**；P1.5 Flutter 同步未开；P2 新原型暂缓
+- 状态：**P0 已落地、P1 已完全冻结**；P1.5 Flutter 同步未开；P2 新原型暂缓
 - **边界（MUST）**：本条目全部是 **PBWork 人机工作台**优化。**不改** Evidence/MCP/Consumer 工作链路，**不改** `packages/core/src/target/flutter-app` 与 Target resolve/Review 行为。
 
 ## 一句话
@@ -91,6 +91,20 @@
 - `cold-chain-ops` 已完成同标准整合：Grid 改为 Flex/文档流，直接 Lucide 数字尺寸改用 DS Icon 语义尺寸，固定图表几何改由 Foundation 与运行时派生 custom property 表达；**不存在历史原型豁免**。
 - 根 `AGENT.md`、PBWork DS / Prototype Skills、Authoring Contract、开发规范、Token/组件手册、检查单和本 freeze 文档已同步同一红线。
 
+### 第四轮组件稳定性收口（2026-08-11）
+
+- Foundations 修复宽度型 Border Token 的预览，并为布局、层级、效果使用不同语义图标。
+- Tabbar 补齐 `grow` 协议；Tabbar、一级 Tab、二级 Tab 的 Playground 直接并置“自适应 / 等宽”两区，移除冗余场景选择器，且两类页内 Tab 均显示真实视图区。三级 Tab（Filter Bar）保持原有场景与交互，不纳入本次调整。
+- Data List Playground 用不同插槽结构明确“列表项由业务自定义”；Scrollable Data List 形成真实溢出，并提供鼠标手势、桌面刷新与加载更多按钮的受控闭环。
+- Bottom Sheet / Flow Sheet 恢复 `radius.lg` 顶部圆角；Flow Sheet 清除 vendor body padding 覆盖并裁剪相邻步骤，不再露出下一页。
+- Contract、Registry、Vue、组件文档、静态门禁和端到端回归已同步；P1 至此从“协议完成、实现收尾”转为**完全冻结**。
+
+### P1 冻结后的维护边界
+
+- 在不改变组件职责、Props / Slots / Events、状态语义、Token binding 和布局模式的前提下，可继续做基于既有 Token 的视觉微调；这属于实现维护，不重新打开 P1 协议。
+- 新增或改变上述任何语义面，必须显式重开协议评审并同步 Contract、Registry、Vue、文档和回归测试。
+- DS 与业务原型继续执行 Token-only / Flex-only 红线；Workbench 仍不在 Flex-only 样式约束内。
+
 ### 非目标（P1）
 
 - 不修改 `flutter-app` resolver / Review / MCP / Evidence 契约
@@ -119,13 +133,13 @@
 
 ## 优先级总表
 
-| 优先级 |                                             工作包 | 状态       |
-| ------ | -------------------------------------------------: | ---------- |
-| —      |    旧原型清理 + 金标改名 + 概览壳 / 任务中心去默认 | **已落地** |
-| P0     |  采集导航、历史结果、交付查看/覆盖、FlowSheet 进度 | **已落地** |
-| P1     | DS 协议 + Playground 平铺/触发 + Tab 拆分 + Lucide + Token/Flex 门禁 | **已落地** |
-| P1.5   |              Flutter Common* / Demo / 图标语义对照 | 未开       |
-| P2     |                                      新主 App 原型 | **暂定**   |
+| 优先级 |                                                               工作包 | 状态         |
+| ------ | -------------------------------------------------------------------: | ------------ |
+| —      |                      旧原型清理 + 金标改名 + 概览壳 / 任务中心去默认 | **已落地**   |
+| P0     |                    采集导航、历史结果、交付查看/覆盖、FlowSheet 进度 | **已落地**   |
+| P1     | DS 协议 + Playground 平铺/触发 + Tab 拆分 + Lucide + Token/Flex 门禁 | **完全冻结** |
+| P1.5   |                                Flutter Common* / Demo / 图标语义对照 | 未开         |
+| P2     |                                                        新主 App 原型 | **暂定**     |
 
 ---
 

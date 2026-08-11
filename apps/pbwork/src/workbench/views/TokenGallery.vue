@@ -42,7 +42,19 @@ const numericSortCategories = new Set<TokenCategory>([
 ]);
 
 const allTokens = computed(() => loadTokens());
-const pageDescription = computed(() => tokenCategoryDescription(props.category));
+const pageDescription = computed(() =>
+  tokenCategoryDescription(props.category),
+);
+const tokenListTitle = computed(() =>
+  props.category === "border"
+    ? "复合边框与宽度值"
+    : `${TOKEN_CATEGORY_META[props.category].label}值`,
+);
+const tokenListHint = computed(() =>
+  props.category === "border"
+    ? "复合边框包含宽度、线型与颜色；宽度值只负责粗细"
+    : `通过工具栏切换 ${themeLabel.value}主题`,
+);
 
 const categoryTokens = computed(() =>
   allTokens.value.filter((token) => token.category === props.category),
@@ -105,7 +117,9 @@ const sizingGroups = computed(() =>
   sizingGroupMeta
     .map((group) => ({
       ...group,
-      tokens: tokens.value.filter((token) => sizingKind(token.id) === group.kind),
+      tokens: tokens.value.filter(
+        (token) => sizingKind(token.id) === group.kind,
+      ),
     }))
     .filter((group) => group.tokens.length > 0),
 );
@@ -165,6 +179,10 @@ function px(tokenId: string): string {
   const value = resolved.value[tokenId];
   if (typeof value === "number") return `${value}px`;
   return String(value ?? "0");
+}
+
+function isBorderWidthToken(tokenId: string): boolean {
+  return tokenId.endsWith("width-hairline") || tokenId.endsWith("accent-width");
 }
 </script>
 
@@ -226,9 +244,11 @@ function px(tokenId: string): string {
       <div class="section-heading compact-heading">
         <div>
           <p class="section-kicker">Token 对照</p>
-          <h2 id="token-list-title">{{ TOKEN_CATEGORY_META[category].label }}值</h2>
+          <h2 id="token-list-title">
+            {{ tokenListTitle }}
+          </h2>
         </div>
-        <span>通过工具栏切换 {{ themeLabel }}主题</span>
+        <span>{{ tokenListHint }}</span>
       </div>
 
       <template v-if="displayMode === 'grid'">
@@ -315,7 +335,14 @@ function px(tokenId: string): string {
             <div v-else-if="category === 'border'" class="preview-frame">
               <div
                 class="border-sample"
-                :style="{ border: String(resolved[token.id]) }"
+                :class="{ 'is-width-only': isBorderWidthToken(token.id) }"
+                :style="
+                  isBorderWidthToken(token.id)
+                    ? {
+                        '--workbench-border-width': String(resolved[token.id]),
+                      }
+                    : { border: String(resolved[token.id]) }
+                "
               />
             </div>
 
@@ -374,6 +401,11 @@ function px(tokenId: string): string {
               class="value-chip"
               >{{ formatValue(token.id) }}</span
             >
+            <small
+              v-if="category === 'border' && isBorderWidthToken(token.id)"
+              class="token-kind-note"
+              >仅宽度 · 需与线型、颜色组合</small
+            >
             <code>{{ token.id }}</code>
           </button>
         </div>
@@ -424,7 +456,9 @@ function px(tokenId: string): string {
           <dl>
             <div>
               <dt>Key</dt>
-              <dd><code>{{ selected.id }}</code></dd>
+              <dd>
+                <code>{{ selected.id }}</code>
+              </dd>
             </div>
             <div>
               <dt>Value</dt>
@@ -574,6 +608,21 @@ function px(tokenId: string): string {
   border-radius: 8px;
   background: rgb(var(--v-theme-surface));
   box-sizing: border-box;
+}
+.border-sample.is-width-only {
+  display: flex;
+  align-items: center;
+  border: none;
+  background: transparent;
+}
+.border-sample.is-width-only::before {
+  width: 100%;
+  border-top: var(--workbench-border-width) solid rgb(var(--v-theme-primary));
+  content: "";
+}
+.token-kind-note {
+  color: rgba(var(--v-theme-on-surface), 0.56);
+  font-size: 0.7rem;
 }
 .opacity-sample {
   position: relative;
