@@ -10,7 +10,8 @@ export const BIND_COLOR_TOKEN_IDS = BIND_TOKEN_IDS.filter((id) =>
   id.startsWith("color."),
 ) as BindTokenId[];
 
-export type ColorTokenRef = (typeof BIND_COLOR_TOKEN_IDS)[number] | "transparent";
+export type ColorTokenRef =
+  (typeof BIND_COLOR_TOKEN_IDS)[number] | "transparent";
 
 const ON_PAIR: Record<string, string> = {
   "color.action": "color.on-action",
@@ -23,6 +24,7 @@ const ON_PAIR: Record<string, string> = {
   "color.background": "color.on-background",
   "color.surface": "color.on-surface",
   "color.surface-variant": "color.on-surface",
+  "color.surface-selected": "color.on-surface",
   "color.surface-raised": "color.on-surface",
 };
 
@@ -53,7 +55,10 @@ export function assertColorTokenRef(
 
 /** `color.action` → `var(--pb-color-action)`; `transparent` → `transparent`. */
 export function colorTokenCss(tokenId: ColorTokenRef | string): string {
-  if (tokenId === "transparent" || BIND_TOKEN_SPECIAL_VALUES.includes(tokenId as never)) {
+  if (
+    tokenId === "transparent" ||
+    BIND_TOKEN_SPECIAL_VALUES.includes(tokenId as never)
+  ) {
     return "transparent";
   }
   return `var(--pb-${tokenId.replace(/\./g, "-")})`;

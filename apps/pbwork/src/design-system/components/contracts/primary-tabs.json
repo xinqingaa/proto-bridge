@@ -5,7 +5,7 @@
   "semantic": { "policy": "fixed", "defaultRole": "tab-bar" },
   "summary": "一级页内分区：轨道和选中胶囊均由主题语义表面令牌决定。",
   "behavior": [
-    "轨道使用 color.surface-variant，当前项使用 color.surface-raised；两者只引用主题语义表面令牌，不写固定色或渐变",
+    "轨道使用 color.surface-variant，当前项使用 color.surface-selected；两者只引用主题语义表面令牌，不写固定色或渐变",
     "内容进入对应具名视图；可按场景启用触摸或鼠标横滑",
     "同一物理区域只有一个横滑 owner；嵌套时由页面关闭外层横滑"
   ],
@@ -64,7 +64,7 @@
   "events": ["update:modelValue"],
   "tokenBindings": {
     "trackSurface": "color.surface-variant",
-    "selectionSurface": "color.surface-raised",
+    "selectionSurface": "color.surface-selected",
     "selectionBorder": "border.hairline",
     "selectionElevation": "elevation.level-1",
     "active": "color.section-tab-active",

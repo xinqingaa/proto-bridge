@@ -11,6 +11,7 @@ export const BIND_TOKEN_IDS = [
   "color.background",
   "color.surface",
   "color.surface-variant",
+  "color.surface-selected",
   "color.surface-raised",
   "color.on-background",
   "color.on-surface",

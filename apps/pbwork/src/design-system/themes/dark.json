@@ -27,6 +27,7 @@
     "color.on-surface": "#f2f3f5",
     "color.on-surface-muted": "#a9afb7",
     "color.surface-variant": "#24272b",
+    "color.surface-selected": "#292c30",
     "color.surface-raised": "#292c30",
     "color.on-background": "#f2f3f5",
     "color.on-secondary": "#17181a",

@@ -58,7 +58,7 @@ const indicatorVisible = computed(() => showIndicator.value ?? false);
 
 const tabStyle = computed(() => ({
   "--pb-tabs-track-background": "var(--pb-color-surface-variant)",
-  "--pb-tabs-selection-surface": "var(--pb-color-surface-raised)",
+  "--pb-tabs-selection-surface": "var(--pb-color-surface-selected)",
   "--pb-tabs-selection-elevation": "var(--pb-elevation-level-1)",
   "--pb-tabs-track-radius": "var(--pb-radius-lg)",
   "--pb-tabs-active-color": "var(--pb-color-section-tab-active)",
@@ -156,7 +156,7 @@ usePbInspect({
   getState: () => ({ selected: tab.value }),
   getTokenBindings: () => ({
     trackSurface: "color.surface-variant",
-    selectionSurface: "color.surface-raised",
+    selectionSurface: "color.surface-selected",
     selectionBorder: "border.hairline",
     selectionElevation: "elevation.level-1",
     activeColor: "color.section-tab-active",
@@ -173,7 +173,7 @@ usePbInspect({
   }),
   getTokens: () => [
     "color.surface-variant",
-    "color.surface-raised",
+    "color.surface-selected",
     "color.section-tab-active",
     "color.on-surface-muted",
     "border.hairline",

@@ -1,11 +1,11 @@
 # Token 全量目录
 
-> 权威源：`apps/pbwork/src/design-system/tokens/tokens.json`（共 99 项）
-> Bind 池：`apps/pbwork/src/design-system/bindTokens.ts`（72 项可进组件 `tokenBindings`）
+> 权威源：`apps/pbwork/src/design-system/tokens/tokens.json`（共 100 项）
+> Bind 池：`apps/pbwork/src/design-system/bindTokens.ts`（73 项可进组件 `tokenBindings`）
 
 未进 Bind 池的 Token 仍可在 Foundations 浏览，但**不得**写入通用组件契约（`transparent` / `none` 除外）。
 
-## 颜色（`color` · 34）
+## 颜色（`color` · 35）
 
 | ID                         | 标签          | 默认值      | Bind | 说明                                                          |
 | -------------------------- | ------------- | ----------- | ---- | ------------------------------------------------------------- |
@@ -32,6 +32,7 @@
 | `color.on-surface`         | 表面上文字    | `#1d1f23`   | 是   |                                                               |
 | `color.on-surface-muted`   | 表面弱化文字  | `#666b73`   | 是   | 表面上文字约 62% 透明度，用于副标题与提示                     |
 | `color.surface-variant`    | 次级表面      | `#f0f2f4`   | 是   | 弱分区、表格表头与次级容器                                    |
+| `color.surface-selected`   | 选中表面      | `#f7f8fa`   | 是   | 分段、Tab 等非主色选择态的中性浅灰层                          |
 | `color.surface-raised`     | 浮层表面      | `#ffffff`   | 是   | 菜单、Dialog 与悬浮工具栏                                     |
 | `color.on-background`      | 背景上文字    | `#1d1f23`   | 是   |                                                               |
 | `color.on-secondary`       | 次色上文字    | `#ffffff`   | 是   |                                                               |
