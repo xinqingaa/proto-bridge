@@ -11,6 +11,7 @@ export const BIND_TOKEN_IDS = [
   "color.background",
   "color.surface",
   "color.surface-variant",
+  "color.surface-recessed",
   "color.surface-selected",
   "color.surface-raised",
   "color.on-background",
@@ -80,6 +81,7 @@ export const BIND_TOKEN_IDS = [
   "elevation.level-1",
   "elevation.card",
   "elevation.raised",
+  "elevation.glass",
   "elevation.level-3",
   "elevation.level-4",
   "elevation.level-5",
@@ -89,6 +91,7 @@ export const BIND_TOKEN_IDS = [
   "motion.easing-standard",
   // Opacity — shared interaction states
   "opacity.disabled",
+  "opacity.glass",
 ] as const;
 
 export type BindTokenId = (typeof BIND_TOKEN_IDS)[number];

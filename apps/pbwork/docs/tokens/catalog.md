@@ -1,11 +1,11 @@
 # Token 全量目录
 
-> 权威源：`apps/pbwork/src/design-system/tokens/tokens.json`（共 100 项）
-> Bind 池：`apps/pbwork/src/design-system/bindTokens.ts`（73 项可进组件 `tokenBindings`）
+> 权威源：`apps/pbwork/src/design-system/tokens/tokens.json`（共 103 项）
+> Bind 池：`apps/pbwork/src/design-system/bindTokens.ts`（76 项可进组件 `tokenBindings`）
 
 未进 Bind 池的 Token 仍可在 Foundations 浏览，但**不得**写入通用组件契约（`transparent` / `none` 除外）。
 
-## 颜色（`color` · 35）
+## 颜色（`color` · 36）
 
 | ID                         | 标签          | 默认值      | Bind | 说明                                                          |
 | -------------------------- | ------------- | ----------- | ---- | ------------------------------------------------------------- |
@@ -32,7 +32,8 @@
 | `color.on-surface`         | 表面上文字    | `#1d1f23`   | 是   |                                                               |
 | `color.on-surface-muted`   | 表面弱化文字  | `#666b73`   | 是   | 表面上文字约 62% 透明度，用于副标题与提示                     |
 | `color.surface-variant`    | 次级表面      | `#f0f2f4`   | 是   | 弱分区、表格表头与次级容器                                    |
-| `color.surface-selected`   | 选中表面      | `#f7f8fa`   | 是   | 分段、Tab 等非主色选择态的中性浅灰层                          |
+| `color.surface-recessed`   | 内凹表面      | `#f0f2f4`   | 是   | 承托页内选择态的中性内凹背景；可按主题独立压深                |
+| `color.surface-selected`   | 选中表面      | `#fbfcfd`   | 是   | 分段、Tab 等非主色选择态的中性浅灰层                          |
 | `color.surface-raised`     | 浮层表面      | `#ffffff`   | 是   | 菜单、Dialog 与悬浮工具栏                                     |
 | `color.on-background`      | 背景上文字    | `#1d1f23`   | 是   |                                                               |
 | `color.on-secondary`       | 次色上文字    | `#ffffff`   | 是   |                                                               |
@@ -117,28 +118,30 @@
 | `border.strong`   | 强调边框 | `2px solid var(--pb-color-outline)` | 否   |      |
 | `border.focus`    | 焦点边框 | `2px solid var(--pb-color-primary)` | 否   |      |
 
-## 阴影（`elevation` · 8）
+## 阴影（`elevation` · 9）
 
-| ID                  | 标签     | 默认值                                                         | Bind | 说明 |
-| ------------------- | -------- | -------------------------------------------------------------- | ---- | ---- |
-| `elevation.none`    | 无阴影   | `none`                                                         | 是   |      |
-| `elevation.card`    | 卡片阴影 | `0 1px 2px rgba(15, 23, 42, 0.08), 0 8px 24px rgba(15, 23,...` | 是   |      |
-| `elevation.raised`  | 浮起阴影 | `0 4px 12px rgba(15, 23, 42, 0.12), 0 16px 32px rgba(15, 2...` | 是   |      |
-| `elevation.level-1` | 阴影一级 | `0 1px 3px rgba(15, 23, 42, 0.12)`                             | 是   |      |
-| `elevation.level-2` | 阴影二级 | `0 4px 10px rgba(15, 23, 42, 0.12)`                            | 否   |      |
-| `elevation.level-3` | 阴影三级 | `0 8px 20px rgba(15, 23, 42, 0.14)`                            | 是   |      |
-| `elevation.level-4` | 阴影四级 | `0 14px 32px rgba(15, 23, 42, 0.16)`                           | 是   |      |
-| `elevation.level-5` | 阴影五级 | `0 22px 48px rgba(15, 23, 42, 0.2)`                            | 是   |      |
+| ID                  | 标签     | 默认值                                                         | Bind | 说明                     |
+| ------------------- | -------- | -------------------------------------------------------------- | ---- | ------------------------ |
+| `elevation.none`    | 无阴影   | `none`                                                         | 是   |                          |
+| `elevation.card`    | 卡片阴影 | `0 1px 2px rgba(15, 23, 42, 0.08), 0 8px 24px rgba(15, 23,...` | 是   |                          |
+| `elevation.raised`  | 浮起阴影 | `0 4px 12px rgba(15, 23, 42, 0.12), 0 16px 32px rgba(15, 2...` | 是   |                          |
+| `elevation.glass`   | 玻璃阴影 | `0 6px 18px rgba(15, 23, 42, 0.08)`                            | 是   | 低浓度、宽扩散的单层阴影 |
+| `elevation.level-1` | 阴影一级 | `0 1px 3px rgba(15, 23, 42, 0.12)`                             | 是   |                          |
+| `elevation.level-2` | 阴影二级 | `0 4px 10px rgba(15, 23, 42, 0.12)`                            | 否   |                          |
+| `elevation.level-3` | 阴影三级 | `0 8px 20px rgba(15, 23, 42, 0.14)`                            | 是   |                          |
+| `elevation.level-4` | 阴影四级 | `0 14px 32px rgba(15, 23, 42, 0.16)`                           | 是   |                          |
+| `elevation.level-5` | 阴影五级 | `0 22px 48px rgba(15, 23, 42, 0.2)`                            | 是   |                          |
 
-## 透明度（`opacity` · 5）
+## 透明度（`opacity` · 6）
 
-| ID                 | 标签       | 默认值 | Bind | 说明                           |
-| ------------------ | ---------- | ------ | ---- | ------------------------------ |
-| `opacity.disabled` | 禁用透明度 | `0.38` | 是   | 所有 disabled 状态的统一透明度 |
-| `opacity.muted`    | 弱化透明度 | `0.62` | 否   |                                |
-| `opacity.hover`    | 悬停叠加   | `0.08` | 否   |                                |
-| `opacity.pressed`  | 按下叠加   | `0.14` | 否   |                                |
-| `opacity.overlay`  | 遮罩透明度 | `0.6`  | 否   |                                |
+| ID                 | 标签           | 默认值 | Bind | 说明                           |
+| ------------------ | -------------- | ------ | ---- | ------------------------------ |
+| `opacity.disabled` | 禁用透明度     | `0.38` | 是   | 所有 disabled 状态的统一透明度 |
+| `opacity.muted`    | 弱化透明度     | `0.62` | 否   |                                |
+| `opacity.glass`    | 玻璃表面透明度 | `0.76` | 是   | Tab 等半透明中性选择表面       |
+| `opacity.hover`    | 悬停叠加       | `0.08` | 否   |                                |
+| `opacity.pressed`  | 按下叠加       | `0.14` | 否   |                                |
+| `opacity.overlay`  | 遮罩透明度     | `0.6`  | 否   |                                |
 
 ## 动效（`motion` · 5）
 

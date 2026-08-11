@@ -5,7 +5,8 @@
   "semantic": { "policy": "fixed", "defaultRole": "tab-bar" },
   "summary": "一级页内分区：轨道和选中胶囊均由主题语义表面令牌决定。",
   "behavior": [
-    "轨道使用 color.surface-variant，当前项使用 color.surface-selected；两者只引用主题语义表面令牌，不写固定色或渐变",
+    "轨道使用 color.surface-recessed，当前项使用 color.surface-selected；胶囊以 opacity.glass 与 elevation.glass 形成无描边的半透明玻璃层，均不写固定色或渐变",
+    "首次进入时先完成胶囊定位再开启后续切换动效，避免出现无选中态的首帧",
     "内容进入对应具名视图；可按场景启用触摸或鼠标横滑",
     "同一物理区域只有一个横滑 owner；嵌套时由页面关闭外层横滑"
   ],
@@ -49,7 +50,9 @@
     "fill": false,
     "items": [
       { "value": "overview", "label": "概览" },
-      { "value": "activity", "label": "活动" }
+      { "value": "activity", "label": "活动" },
+      { "value": "data", "label": "数据" },
+      { "value": "settings", "label": "设置" }
     ]
   },
   "states": [
@@ -60,13 +63,13 @@
       "props": { "grow": true }
     }
   ],
-  "slots": ["overview", "activity"],
+  "slots": ["overview", "activity", "data", "settings"],
   "events": ["update:modelValue"],
   "tokenBindings": {
-    "trackSurface": "color.surface-variant",
+    "trackSurface": "color.surface-recessed",
     "selectionSurface": "color.surface-selected",
-    "selectionBorder": "border.hairline",
-    "selectionElevation": "elevation.level-1",
+    "selectionOpacity": "opacity.glass",
+    "selectionElevation": "elevation.glass",
     "active": "color.section-tab-active",
     "inactive": "color.on-surface-muted",
     "trackRadius": "radius.lg",

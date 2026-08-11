@@ -57,9 +57,10 @@ const {
 const indicatorVisible = computed(() => showIndicator.value ?? false);
 
 const tabStyle = computed(() => ({
-  "--pb-tabs-track-background": "var(--pb-color-surface-variant)",
+  "--pb-tabs-track-background": "var(--pb-color-surface-recessed)",
   "--pb-tabs-selection-surface": "var(--pb-color-surface-selected)",
-  "--pb-tabs-selection-elevation": "var(--pb-elevation-level-1)",
+  "--pb-tabs-selection-opacity": "var(--pb-opacity-glass)",
+  "--pb-tabs-selection-elevation": "var(--pb-elevation-glass)",
   "--pb-tabs-track-radius": "var(--pb-radius-lg)",
   "--pb-tabs-active-color": "var(--pb-color-section-tab-active)",
   "--pb-tabs-inactive-color": "var(--pb-color-on-surface-muted)",
@@ -86,6 +87,7 @@ const swipe = usePointerSwipe(
 );
 
 const pill = ref({ left: 0, width: 0, ready: false });
+const pillTransitionReady = ref(false);
 
 function measurePill() {
   const track = trackRef.value;
@@ -104,19 +106,29 @@ function measurePill() {
 }
 
 let resizeObserver: ResizeObserver | null = null;
+let pillTransitionFrame: number | null = null;
 
-onMounted(async () => {
-  await nextTick();
+onMounted(() => {
   measurePill();
   if (trackRef.value && typeof ResizeObserver !== "undefined") {
     resizeObserver = new ResizeObserver(() => measurePill());
     resizeObserver.observe(trackRef.value);
   }
+  pillTransitionFrame = requestAnimationFrame(() => {
+    pillTransitionFrame = requestAnimationFrame(() => {
+      pillTransitionReady.value = true;
+      pillTransitionFrame = null;
+    });
+  });
 });
 
 onBeforeUnmount(() => {
   resizeObserver?.disconnect();
   resizeObserver = null;
+  if (pillTransitionFrame !== null) {
+    cancelAnimationFrame(pillTransitionFrame);
+    pillTransitionFrame = null;
+  }
 });
 
 watch(
@@ -155,10 +167,10 @@ usePbInspect({
   }),
   getState: () => ({ selected: tab.value }),
   getTokenBindings: () => ({
-    trackSurface: "color.surface-variant",
+    trackSurface: "color.surface-recessed",
     selectionSurface: "color.surface-selected",
-    selectionBorder: "border.hairline",
-    selectionElevation: "elevation.level-1",
+    selectionOpacity: "opacity.glass",
+    selectionElevation: "elevation.glass",
     activeColor: "color.section-tab-active",
     inactiveColor: "color.on-surface-muted",
     border: showDivider.value ? "border.hairline" : "transparent",
@@ -172,12 +184,13 @@ usePbInspect({
     easing: "motion.easing-standard",
   }),
   getTokens: () => [
-    "color.surface-variant",
+    "color.surface-recessed",
     "color.surface-selected",
+    "opacity.glass",
     "color.section-tab-active",
     "color.on-surface-muted",
     "border.hairline",
-    "elevation.level-1",
+    "elevation.glass",
     "radius.lg",
     "radius.full",
     `sizing.control-${size.value ?? "md"}`,
@@ -200,6 +213,7 @@ usePbInspect({
       'is-fill': fill,
       'is-grow': grow ?? false,
       'align-center': align === 'center',
+      'is-pill-transition-ready': pillTransitionReady,
     }"
     :style="tabStyle"
     data-pb-role="tab-bar"
@@ -310,12 +324,15 @@ usePbInspect({
   z-index: 0;
   border-radius: var(--pb-tabs-radius, var(--pb-radius-full));
   overflow: hidden;
+  transition: none;
+  pointer-events: none;
+}
+.pb-tabs.is-pill-transition-ready .pb-tabs-pill {
   transition:
     transform var(--pb-tabs-pill-duration) var(--pb-tabs-pill-easing),
     width var(--pb-tabs-pill-duration) var(--pb-tabs-pill-easing),
     opacity var(--pb-motion-duration-fast, 120ms)
       var(--pb-motion-easing-standard);
-  pointer-events: none;
 }
 .pb-tab {
   position: relative;

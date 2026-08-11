@@ -24,6 +24,7 @@ const ON_PAIR: Record<string, string> = {
   "color.background": "color.on-background",
   "color.surface": "color.on-surface",
   "color.surface-variant": "color.on-surface",
+  "color.surface-recessed": "color.on-surface",
   "color.surface-selected": "color.on-surface",
   "color.surface-raised": "color.on-surface",
 };

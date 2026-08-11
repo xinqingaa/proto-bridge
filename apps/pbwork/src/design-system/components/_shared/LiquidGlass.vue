@@ -18,12 +18,11 @@ defineProps<{ active?: boolean }>();
 .pb-liquid-glass {
   position: absolute;
   inset: 0;
-  border: var(--pb-border-hairline);
   border-radius: inherit;
   background: var(--pb-tabs-selection-surface);
   box-shadow: var(--pb-tabs-selection-elevation);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(12px) saturate(1.06);
+  backdrop-filter: blur(12px) saturate(1.06);
   opacity: 0;
   transition:
     opacity var(--pb-motion-duration-slow, 320ms)
@@ -32,7 +31,7 @@ defineProps<{ active?: boolean }>();
       var(--pb-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
 }
 .pb-liquid-glass.is-active {
-  opacity: 1;
+  opacity: var(--pb-tabs-selection-opacity);
 }
 @media (prefers-reduced-motion: reduce) {
   .pb-liquid-glass {

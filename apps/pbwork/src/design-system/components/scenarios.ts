@@ -345,7 +345,7 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "detail",
       label: "详情分区",
-      description: "工单详情中在概览与动态之间切换。",
+      description: "工单详情中在概览、活动、数据与设置之间切换。",
       props: {
         modelValue: "overview",
         showIndicator: false,
@@ -370,7 +370,7 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "section",
       label: "分区导航",
-      description: "详情页内以文本下方的小三角切换概览与活动分区。",
+      description: "详情页内以文本下方的小三角切换四个子分区。",
       props: {
         modelValue: "overview",
         swipe: true,

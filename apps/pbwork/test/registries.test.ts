@@ -100,7 +100,7 @@ describe("design contracts", () => {
   });
 
   it("ships the expanded semantic token set", () => {
-    expect(loadTokens()).toHaveLength(100);
+    expect(loadTokens()).toHaveLength(103);
     expect(new Set(loadTokens().map((item) => item.category))).toEqual(
       new Set([
         "color",
