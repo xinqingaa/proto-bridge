@@ -14,23 +14,14 @@
       },
       "size": {
         "type": "string",
-        "enum": [
-          "sm",
-          "md",
-          "lg"
-        ]
+        "enum": ["sm", "md", "lg"]
       },
       "tone": {
         "type": "string",
-        "enum": [
-          "primary",
-          "secondary"
-        ]
+        "enum": ["primary", "secondary"]
       }
     },
-    "required": [
-      "name"
-    ]
+    "required": ["name"]
   },
   "defaultProps": {
     "name": "李明",
@@ -63,6 +54,6 @@
     "initials": "typography.label"
   },
   "playground": {
-    "presentation": "single"
+    "presentation": "interactive"
   }
 }

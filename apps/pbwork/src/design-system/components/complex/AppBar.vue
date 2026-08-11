@@ -135,7 +135,7 @@ usePbInspect({
   position: relative !important;
   flex: none;
   padding-top: var(--pb-safe-top, 0px);
-  border-bottom: 1px solid var(--pb-color-border, #d7dee8);
+  border-bottom: var(--pb-border-hairline);
   box-shadow: var(--pb-component-shadow, none) !important;
 }
 .pb-app-bar.is-elevated {

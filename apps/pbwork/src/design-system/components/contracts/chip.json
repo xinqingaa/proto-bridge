@@ -15,21 +15,13 @@
       },
       "tone": {
         "type": "string",
-        "enum": [
-          "primary",
-          "secondary",
-          "success",
-          "warning",
-          "error"
-        ]
+        "enum": ["primary", "secondary", "success", "warning", "error"]
       },
       "elevated": {
         "type": "boolean"
       }
     },
-    "required": [
-      "label"
-    ]
+    "required": ["label"]
   },
   "defaultProps": {
     "label": "进行中",
@@ -37,9 +29,7 @@
     "elevated": false
   },
   "states": [],
-  "slots": [
-    "default"
-  ],
+  "slots": ["default"],
   "events": [],
   "tokenBindings": {
     "background": "color.primary-soft",
@@ -49,6 +39,6 @@
     "typography": "typography.caption"
   },
   "playground": {
-    "presentation": "single"
+    "presentation": "interactive"
   }
 }

@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "id": "primary-tabs",
+  "category": "complex",
+  "semantic": { "policy": "fixed", "defaultRole": "tab-bar" },
+  "summary": "一级页内分区：轨道和选中胶囊均由主题语义表面令牌决定。",
+  "behavior": [
+    "轨道使用 color.surface-variant，当前项使用 color.surface-raised；两者只引用主题语义表面令牌，不写固定色或渐变",
+    "内容进入对应具名视图；可按场景启用触摸或鼠标横滑",
+    "同一物理区域只有一个横滑 owner；嵌套时由页面关闭外层横滑"
+  ],
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "modelValue": { "type": "string" },
+      "showIndicator": { "type": "boolean" },
+      "showDivider": { "type": "boolean" },
+      "grow": { "type": "boolean" },
+      "align": { "type": "string", "enum": ["start", "center"] },
+      "size": { "type": "string", "enum": ["sm", "md", "lg"] },
+      "swipe": { "type": "boolean" },
+      "mouseSwipe": { "type": "boolean" },
+      "fill": { "type": "boolean" },
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["value", "label"],
+          "properties": {
+            "value": { "type": "string" },
+            "label": { "type": "string" }
+          }
+        }
+      }
+    },
+    "required": ["items"]
+  },
+  "defaultProps": {
+    "modelValue": "overview",
+    "showIndicator": false,
+    "showDivider": false,
+    "grow": false,
+    "align": "start",
+    "size": "md",
+    "swipe": true,
+    "mouseSwipe": true,
+    "fill": false,
+    "items": [
+      { "value": "overview", "label": "概览" },
+      { "value": "activity", "label": "活动" }
+    ]
+  },
+  "states": [
+    {
+      "id": "equal",
+      "label": "等宽",
+      "kind": "variant",
+      "props": { "grow": true }
+    }
+  ],
+  "slots": ["overview", "activity"],
+  "events": ["update:modelValue"],
+  "tokenBindings": {
+    "trackSurface": "color.surface-variant",
+    "selectionSurface": "color.surface-raised",
+    "selectionBorder": "border.hairline",
+    "selectionElevation": "elevation.level-1",
+    "active": "color.section-tab-active",
+    "inactive": "color.on-surface-muted",
+    "trackRadius": "radius.lg",
+    "selectionRadius": "radius.full",
+    "height": "sizing.control-md",
+    "target": "sizing.touch",
+    "typography": "typography.label",
+    "panel": "typography.caption",
+    "duration": "motion.duration-slow",
+    "easing": "motion.easing-standard"
+  },
+  "playground": { "presentation": "interactive" }
+}

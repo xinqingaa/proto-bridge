@@ -125,4 +125,7 @@ usePbInspect({
 .pb-icon-button:active:not(.v-btn--disabled) {
   transform: scale(0.96);
 }
+.pb-icon-button.v-btn--disabled {
+  opacity: var(--pb-opacity-disabled, 0.38) !important;
+}
 </style>

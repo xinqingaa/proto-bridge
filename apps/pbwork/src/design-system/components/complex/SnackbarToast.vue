@@ -109,15 +109,15 @@ watch(modelValue, async (value) => {
 .pb-snackbar-surface {
   border-radius: var(--pb-radius-lg) !important;
   background: var(--pb-color-surface-raised) !important;
-  color: rgb(var(--v-theme-on-surface)) !important;
+  color: var(--pb-color-on-surface) !important;
   box-shadow: var(--pb-elevation-level-4);
-  border-left: 4px solid rgb(var(--v-theme-success));
+  border-left: 4px solid var(--pb-color-success);
   font: var(--pb-typography-content);
 }
 .pb-snackbar-surface.is-error {
-  border-left-color: rgb(var(--v-theme-error));
+  border-left-color: var(--pb-color-error);
 }
 .pb-snackbar-surface.is-info {
-  border-left-color: rgb(var(--v-theme-info));
+  border-left-color: var(--pb-color-info);
 }
 </style>

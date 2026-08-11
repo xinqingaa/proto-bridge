@@ -6,6 +6,8 @@
     "policy": "fixed",
     "defaultRole": "search"
   },
+  "summary": "上下文内搜索；disabled 阻止输入并使用 opacity.disabled。",
+  "behavior": ["disabled 时不可输入、清除或提交，整体使用 opacity.disabled"],
   "propsSchema": {
     "type": "object",
     "properties": {
@@ -29,6 +31,7 @@
     {
       "id": "empty",
       "label": "空输入",
+      "kind": "content",
       "props": {
         "modelValue": ""
       }
@@ -36,24 +39,23 @@
     {
       "id": "disabled",
       "label": "禁用",
+      "kind": "interaction",
       "props": {
         "disabled": true
       }
     }
   ],
   "slots": [],
-  "events": [
-    "update:modelValue",
-    "submit"
-  ],
+  "events": ["update:modelValue", "submit"],
   "tokenBindings": {
     "surface": "color.surface-variant",
     "text": "color.on-surface",
     "radius": "radius.md",
     "height": "sizing.control-lg",
-    "typography": "typography.content"
+    "typography": "typography.content",
+    "disabledOpacity": "opacity.disabled"
   },
   "playground": {
-    "presentation": "single"
+    "presentation": "interactive"
   }
 }

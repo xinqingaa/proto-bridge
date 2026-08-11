@@ -34,6 +34,7 @@ usePbInspect({
     "sizing.control-lg",
     "sizing.icon-md",
     "typography.content",
+    "opacity.disabled",
   ],
   getTokenBindings: () => ({
     surface: "color.surface-variant",
@@ -43,6 +44,7 @@ usePbInspect({
     height: "sizing.control-lg",
     icon: "sizing.icon-md",
     typography: "typography.content",
+    disabledOpacity: "opacity.disabled",
   }),
 });
 </script>
@@ -51,6 +53,7 @@ usePbInspect({
   <form
     ref="rootRef"
     class="pb-search"
+    :class="{ 'is-disabled': disabled ?? false }"
     data-pb-id="ds.search-bar"
     data-pb-role="search"
     role="search"
@@ -93,5 +96,8 @@ usePbInspect({
 }
 .pb-search-field :deep(.v-field__input) {
   color: var(--pb-color-on-surface);
+}
+.pb-search.is-disabled {
+  opacity: var(--pb-opacity-disabled, 0.38);
 }
 </style>

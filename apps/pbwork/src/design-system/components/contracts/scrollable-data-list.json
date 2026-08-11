@@ -6,6 +6,8 @@
     "policy": "fixed",
     "defaultRole": "scroll-list"
   },
+  "summary": "滚动壳；disabled 关闭刷新、加载和鼠标拖滚，并使用 opacity.disabled。",
+  "behavior": ["disabled 时不触发刷新或加载更多，整体使用 opacity.disabled"],
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -18,9 +20,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "enabled"
-            ],
+            "required": ["enabled"],
             "properties": {
               "enabled": {
                 "type": "boolean"
@@ -48,9 +48,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "enabled"
-            ],
+            "required": ["enabled"],
             "properties": {
               "enabled": {
                 "type": "boolean"
@@ -73,9 +71,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "enabled"
-            ],
+            "required": ["enabled"],
             "properties": {
               "enabled": {
                 "type": "boolean"
@@ -134,26 +130,27 @@
       "props": {
         "hasMore": false
       }
+    },
+    {
+      "id": "disabled",
+      "label": "禁用交互",
+      "kind": "interaction",
+      "props": {
+        "disabled": true
+      }
     }
   ],
-  "slots": [
-    "default",
-    "refresh-indicator",
-    "load-footer",
-    "no-more"
-  ],
-  "events": [
-    "refresh",
-    "load-more"
-  ],
+  "slots": ["default", "refresh-indicator", "load-footer", "no-more"],
+  "events": ["refresh", "load-more"],
   "tokenBindings": {
     "background": "color.background",
     "primary": "color.primary",
     "muted": "color.on-surface-muted",
     "footer": "typography.caption",
-    "duration": "motion.duration-normal"
+    "duration": "motion.duration-normal",
+    "disabledOpacity": "opacity.disabled"
   },
   "playground": {
-    "presentation": "single"
+    "presentation": "interactive"
   }
 }

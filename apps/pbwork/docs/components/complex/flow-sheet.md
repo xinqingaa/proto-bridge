@@ -13,13 +13,13 @@
 
 ## Props
 
-| Prop | 类型 | 默认 | 说明 |
-| --- | --- | --- | --- |
-| `title` | string | `分步面板` | |
-| `modelValue` | boolean | `true` | |
-| `step` | number | `0` | 当前步（0-based） |
-| `stepCount` | number | `3` | |
-| `swipe` | boolean | `true` | 允许左右滑 |
+| Prop         | 类型    | 默认       | 说明              |
+| ------------ | ------- | ---------- | ----------------- |
+| `title`      | string  | `分步面板` |                   |
+| `modelValue` | boolean | `true`     |                   |
+| `step`       | number  | `0`        | 当前步（0-based） |
+| `stepCount`  | number  | `3`        |                   |
+| `swipe`      | boolean | `true`     | 允许左右滑        |
 
 ## Slots / Events
 
@@ -33,14 +33,17 @@
 
 ## tokenBindings
 
-| 槽 | Token |
-| --- | --- |
-| `surface` | `color.surface` |
-| `border` | `color.border` |
-| `radius` | `radius.lg` |
-| `elevation` | `elevation.raised` |
-| `title` | `typography.subtitle` |
-| `body` | `typography.content` |
+| 槽                  | Token                    |
+| ------------------- | ------------------------ |
+| `surface`           | `color.surface`          |
+| `border`            | `color.border`           |
+| `description`       | `color.on-surface-muted` |
+| `inactiveIndicator` | `color.outline`          |
+| `activeIndicator`   | `color.primary`          |
+| `radius`            | `radius.lg`              |
+| `elevation`         | `elevation.raised`       |
+| `title`             | `typography.subtitle`    |
+| `body`              | `typography.content`     |
 
 ## 使用检查
 

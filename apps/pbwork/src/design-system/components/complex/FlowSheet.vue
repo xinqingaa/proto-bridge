@@ -72,6 +72,9 @@ usePbInspect({
   getTokenBindings: () => ({
     surface: "color.surface",
     border: "color.border",
+    description: "color.on-surface-muted",
+    inactiveIndicator: "color.outline",
+    activeIndicator: "color.primary",
     radius: "radius.lg",
     elevation: "elevation.raised",
     title: "typography.subtitle",
@@ -80,6 +83,9 @@ usePbInspect({
   getTokens: () => [
     "color.surface",
     "color.border",
+    "color.on-surface-muted",
+    "color.outline",
+    "color.primary",
     "radius.lg",
     "elevation.raised",
     "typography.subtitle",
@@ -134,7 +140,10 @@ watch(stepCount, (count) => {
       </div>
       <v-card-text
         class="pb-flow-sheet-body"
-        :class="{ 'allows-swipe': swipe, 'is-dragging': swipeGesture.dragging.value }"
+        :class="{
+          'allows-swipe': swipe,
+          'is-dragging': swipeGesture.dragging.value,
+        }"
         @pointerdown="swipeGesture.onPointerDown"
         @pointermove="swipeGesture.onPointerMove"
         @pointerup="swipeGesture.onPointerUp"
@@ -145,7 +154,10 @@ watch(stepCount, (count) => {
         @touchcancel="swipeGesture.onTouchCancel"
         @click.capture="swipeGesture.onClickCapture"
       >
-        <div class="pb-flow-sheet-track" :style="{ transform: `translateX(${offsetPercent})` }">
+        <div
+          class="pb-flow-sheet-track"
+          :style="{ transform: `translateX(${offsetPercent})` }"
+        >
           <slot />
         </div>
       </v-card-text>
@@ -159,9 +171,9 @@ watch(stepCount, (count) => {
 <style scoped>
 .pb-flow-sheet {
   border-radius: var(--pb-radius-lg, 16px) var(--pb-radius-lg, 16px) 0 0;
-  background: rgb(var(--v-theme-surface));
-  color: rgb(var(--v-theme-on-surface));
-  box-shadow: var(--pb-elevation-raised, none);
+  background: var(--pb-color-surface);
+  color: var(--pb-color-on-surface);
+  box-shadow: var(--pb-elevation-raised);
 }
 .pb-flow-sheet-header {
   display: flex;
@@ -169,7 +181,7 @@ watch(stepCount, (count) => {
   justify-content: space-between;
   gap: 12px;
   padding: var(--pb-spacing-md, 16px);
-  border-bottom: 1px solid var(--pb-color-border, #d7dee8);
+  border-bottom: var(--pb-border-hairline);
   font: var(
     --pb-typography-subtitle,
     600 16px/1.4 Inter,
@@ -180,7 +192,7 @@ watch(stepCount, (count) => {
 .pb-flow-sheet-header small {
   display: block;
   margin-top: 2px;
-  color: rgba(var(--v-theme-on-surface), 0.55);
+  color: var(--pb-color-on-surface-muted);
   font-size: 0.72rem;
   font-weight: 500;
 }
@@ -194,11 +206,11 @@ watch(stepCount, (count) => {
   width: 6px;
   height: 6px;
   border-radius: 999px;
-  background: rgba(var(--v-theme-on-surface), 0.18);
+  background: var(--pb-color-outline);
 }
 .pb-flow-sheet-dots span.active {
   width: 16px;
-  background: rgb(var(--v-theme-primary));
+  background: var(--pb-color-primary);
 }
 .pb-flow-sheet-body {
   overflow: hidden;
@@ -231,7 +243,7 @@ watch(stepCount, (count) => {
   justify-content: flex-end;
   gap: 10px;
   padding: 12px 16px 18px;
-  border-top: 1px solid var(--pb-color-border, #d7dee8);
+  border-top: var(--pb-border-hairline);
 }
 </style>
 

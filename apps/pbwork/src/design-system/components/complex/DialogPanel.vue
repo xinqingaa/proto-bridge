@@ -123,11 +123,11 @@ watch(modelValue, async (value) => {
 }
 .pb-dialog {
   border-radius: var(--pb-radius-xl) !important;
-  border: 1px solid var(--pb-color-border, #d7dee8);
+  border: var(--pb-border-hairline);
   /* surface-raised is not a Vuetify semantic; keep Token var for raised panel. */
-  background: var(--pb-color-surface-raised, #ffffff) !important;
-  color: rgb(var(--v-theme-on-surface));
-  box-shadow: var(--pb-elevation-level-5, 0 22px 48px rgba(15, 23, 42, 0.24));
+  background: var(--pb-color-surface-raised) !important;
+  color: var(--pb-color-on-surface);
+  box-shadow: var(--pb-elevation-level-5);
 }
 .pb-dialog :deep(.v-card-title) {
   color: inherit;

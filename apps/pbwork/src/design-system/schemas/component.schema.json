@@ -122,8 +122,8 @@
       "properties": {
         "presentation": {
           "type": "string",
-          "enum": ["single", "tile", "trigger"],
-          "description": "single=one preview; tile=compact state matrix (button/icon only); trigger=overlay via button."
+          "enum": ["interactive", "gallery", "trigger"],
+          "description": "interactive=live scene; gallery=compact state matrix (icon/icon-button only); trigger=overlay via button."
         }
       }
     },
@@ -144,7 +144,41 @@
   "$defs": {
     "semanticRole": {
       "type": "string",
-      "enum": ["page", "app-bar", "bottom-bar", "navigation", "section", "summary", "card", "list", "scroll-list", "list-item", "filter", "search", "form", "field", "tab-bar", "tab", "tab-panel", "tab-viewport", "chart", "empty-state", "loading-state", "error-state", "sheet", "dialog", "drawer", "toast", "button", "chip", "badge", "status", "icon", "image", "text"]
+      "enum": [
+        "page",
+        "app-bar",
+        "bottom-bar",
+        "navigation",
+        "section",
+        "summary",
+        "card",
+        "list",
+        "scroll-list",
+        "list-item",
+        "filter",
+        "search",
+        "form",
+        "field",
+        "tab-bar",
+        "tab",
+        "tab-panel",
+        "tab-viewport",
+        "chart",
+        "empty-state",
+        "loading-state",
+        "error-state",
+        "sheet",
+        "dialog",
+        "drawer",
+        "toast",
+        "button",
+        "chip",
+        "badge",
+        "status",
+        "icon",
+        "image",
+        "text"
+      ]
     }
   }
 }

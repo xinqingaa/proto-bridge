@@ -12,11 +12,7 @@ import {
 } from "@/design-system/types";
 
 export type WorkbenchSectionId =
-  | "overview"
-  | "foundations"
-  | "components"
-  | "prototypes"
-  | "capture";
+  "overview" | "foundations" | "components" | "prototypes" | "capture";
 
 export type WorkbenchNavigationItem = {
   id: string;
@@ -101,7 +97,28 @@ export function buildFoundationsNavigation(): WorkbenchNavigationItem[] {
 }
 
 export function buildComponentsNavigation(): WorkbenchNavigationItem[] {
-  return componentRecords.map((record) => ({
+  const tabOrder = [
+    "tabbar",
+    "primary-tabs",
+    "secondary-tabs",
+    "filter-bar",
+    "tab-viewport",
+  ];
+  const orderedRecords = [...componentRecords].sort((left, right) => {
+    if (left.category !== right.category)
+      return left.category === "basic" ? -1 : 1;
+    if (left.category === "basic") return 0;
+    const leftOrder = tabOrder.indexOf(left.id);
+    const rightOrder = tabOrder.indexOf(right.id);
+    if (leftOrder >= 0 || rightOrder >= 0) {
+      return (
+        (leftOrder < 0 ? tabOrder.length : leftOrder) -
+        (rightOrder < 0 ? tabOrder.length : rightOrder)
+      );
+    }
+    return 0;
+  });
+  return orderedRecords.map((record) => ({
     id: record.id,
     label: record.label,
     group: record.category === "basic" ? "基础组件" : "复杂组件",

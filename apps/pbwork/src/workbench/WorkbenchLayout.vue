@@ -510,10 +510,10 @@ watch(
       activeId,
     );
     const withSectionDefaults =
-      section === "capture"
-        ? [...required, "capture-console"]
-        : required;
-    const next = [...new Set([...expandedTreeIds.value, ...withSectionDefaults])];
+      section === "capture" ? [...required, "capture-console"] : required;
+    const next = [
+      ...new Set([...expandedTreeIds.value, ...withSectionDefaults]),
+    ];
     if (next.length === expandedTreeIds.value.length) return;
     expandedTreeIds.value = next;
     persistTreeExpanded();
@@ -689,13 +689,14 @@ function secondaryIconFor(id: string) {
     progress: ChartNoAxesColumnIncreasing,
     spinner: LoaderCircle,
     "app-bar": PanelTop,
-    tabs: ListCollapse,
+    "primary-tabs": ListCollapse,
+    "secondary-tabs": Layers2,
     "data-list": Rows3,
     "scrollable-data-list": ListRestart,
     "tab-viewport": GalleryHorizontal,
     "search-bar": Search,
     "filter-bar": SlidersHorizontal,
-    "bottom-navigation": Navigation,
+    tabbar: Navigation,
     "bottom-sheet": PanelRightOpen,
     dialog: MessageSquare,
     snackbar: Bell,

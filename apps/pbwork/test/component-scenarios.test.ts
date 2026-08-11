@@ -32,7 +32,13 @@ describe("component business scenarios", () => {
     }
 
     expect(controlKeys("button")).toEqual(
-      expect.arrayContaining(["loading", "size", "bgColor", "borderColor", "textColor"]),
+      expect.arrayContaining([
+        "loading",
+        "size",
+        "bgColor",
+        "borderColor",
+        "textColor",
+      ]),
     );
     expect(controlKeys("button")).not.toEqual(
       expect.arrayContaining(["variant", "tone"]),
@@ -53,15 +59,10 @@ describe("component business scenarios", () => {
     expect(controlKeys("icon-button")).toEqual(
       expect.arrayContaining(["loading", "variant", "tone", "size"]),
     );
-    expect(controlKeys("tabs")).toEqual(
-      expect.arrayContaining([
-        "size",
-        "showDivider",
-        "grow",
-        "mouseSwipe",
-      ]),
+    expect(controlKeys("primary-tabs")).toEqual(
+      expect.arrayContaining(["size", "showDivider", "grow", "mouseSwipe"]),
     );
-    expect(controlKeys("tabs")).not.toEqual(
+    expect(controlKeys("primary-tabs")).not.toEqual(
       expect.arrayContaining([
         "selectionStyle",
         "variant",
@@ -72,16 +73,10 @@ describe("component business scenarios", () => {
         "typography",
       ]),
     );
-    expect(controlKeys("underline-tabs")).toEqual(
-      expect.arrayContaining([
-        "variant",
-        "showIndicator",
-        "showDivider",
-        "grow",
-        "mouseSwipe",
-      ]),
+    expect(controlKeys("secondary-tabs")).toEqual(
+      expect.arrayContaining(["showDivider", "grow", "mouseSwipe"]),
     );
-    expect(controlKeys("underline-tabs")).not.toEqual(
+    expect(controlKeys("secondary-tabs")).not.toEqual(
       expect.arrayContaining([
         "selectionStyle",
         "background",
@@ -91,16 +86,16 @@ describe("component business scenarios", () => {
         "typography",
       ]),
     );
-    expect(controlKeys("bottom-navigation")).toEqual(
-      expect.arrayContaining(["display", "showIndicator"]),
+    expect(controlKeys("tabbar")).toEqual(
+      expect.arrayContaining(["modelValue"]),
     );
-    expect(controlKeys("bottom-navigation")).not.toEqual(
+    expect(controlKeys("tabbar")).not.toEqual(
       expect.arrayContaining(["showView", "mouseSwipe", "viewHeight"]),
     );
     expect(controlKeys("scrollable-data-list")).toEqual(
       expect.arrayContaining(["pullRefresh", "loadMore", "hasMore"]),
     );
-    expect(controlKeys("bottom-navigation")).not.toContain("viewHeight");
+    expect(controlKeys("tabbar")).not.toContain("viewHeight");
     expect(controlKeys("card")).not.toContain("radius");
     expect(controlKeys("select")).not.toContain("radius");
   });

@@ -45,11 +45,7 @@
       },
       "size": {
         "type": "string",
-        "enum": [
-          "sm",
-          "md",
-          "lg"
-        ]
+        "enum": ["sm", "md", "lg"]
       },
       "tone": {
         "type": "string",
@@ -68,9 +64,7 @@
         "type": "string"
       }
     },
-    "required": [
-      "name"
-    ]
+    "required": ["name"]
   },
   "defaultProps": {
     "name": "more",
@@ -263,7 +257,7 @@
     "color": "color.on-surface"
   },
   "playground": {
-    "presentation": "tile"
+    "presentation": "gallery"
   },
   "icons": {
     "pack": "lucide",

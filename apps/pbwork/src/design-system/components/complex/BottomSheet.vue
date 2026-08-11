@@ -92,16 +92,16 @@ watch(modelValue, async (value) => {
 <style scoped>
 .pb-sheet {
   border-radius: var(--pb-radius-lg, 16px) var(--pb-radius-lg, 16px) 0 0;
-  background: rgb(var(--v-theme-surface));
-  color: rgb(var(--v-theme-on-surface));
-  box-shadow: var(--pb-elevation-raised, none);
+  background: var(--pb-color-surface);
+  color: var(--pb-color-on-surface);
+  box-shadow: var(--pb-elevation-raised);
 }
 .pb-sheet-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: var(--pb-spacing-md, 16px);
-  border-bottom: 1px solid var(--pb-color-border, #d7dee8);
+  border-bottom: var(--pb-border-hairline);
   color: inherit;
   font: var(
     --pb-typography-subtitle,

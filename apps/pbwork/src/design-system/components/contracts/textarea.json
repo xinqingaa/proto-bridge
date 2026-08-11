@@ -6,6 +6,8 @@
     "policy": "fixed",
     "defaultRole": "field"
   },
+  "summary": "多行文本输入；disabled 阻止编辑并使用 opacity.disabled。",
+  "behavior": ["disabled 时不可聚焦或编辑，整体使用 opacity.disabled"],
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -23,9 +25,7 @@
         "type": "boolean"
       }
     },
-    "required": [
-      "label"
-    ]
+    "required": ["label"]
   },
   "defaultProps": {
     "label": "问题描述",
@@ -37,23 +37,23 @@
     {
       "id": "disabled",
       "label": "禁用",
+      "kind": "interaction",
       "props": {
         "disabled": true
       }
     }
   ],
   "slots": [],
-  "events": [
-    "update:modelValue"
-  ],
+  "events": ["update:modelValue"],
   "tokenBindings": {
     "surface": "color.surface",
     "border": "color.border",
     "focus": "color.primary",
     "radius": "radius.md",
-    "text": "typography.content"
+    "text": "typography.content",
+    "disabledOpacity": "opacity.disabled"
   },
   "playground": {
-    "presentation": "single"
+    "presentation": "interactive"
   }
 }

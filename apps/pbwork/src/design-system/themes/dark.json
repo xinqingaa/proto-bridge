@@ -7,6 +7,8 @@
     "color.background": "#141517",
     "color.surface": "#1c1e21",
     "color.primary": "#83b2f2",
+    "color.navigation-active": "#83b2f2",
+    "color.section-tab-active": "#f2f3f5",
     "color.primary-soft": "#213a5c",
     "color.on-primary": "#17181a",
     "color.action": "#f1f3f4",

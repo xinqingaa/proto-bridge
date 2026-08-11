@@ -35,18 +35,12 @@
         "type": "boolean"
       }
     },
-    "required": [
-      "label"
-    ]
+    "required": ["label"]
   },
   "defaultProps": {
     "label": "优先级",
     "modelValue": "普通",
-    "options": [
-      "低",
-      "普通",
-      "紧急"
-    ],
+    "options": ["低", "普通", "紧急"],
     "color": "color.primary",
     "disabled": false
   },
@@ -61,9 +55,7 @@
     }
   ],
   "slots": [],
-  "events": [
-    "update:modelValue"
-  ],
+  "events": ["update:modelValue"],
   "tokenBindings": {
     "selected": "color.primary",
     "text": "color.on-surface",
@@ -72,6 +64,6 @@
     "disabledOpacity": "opacity.disabled"
   },
   "playground": {
-    "presentation": "single"
+    "presentation": "interactive"
   }
 }

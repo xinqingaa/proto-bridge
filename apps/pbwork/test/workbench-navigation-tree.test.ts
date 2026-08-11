@@ -5,8 +5,21 @@ import {
   countPrototypesForLifecycle,
   findCaptureJobIdForEvidenceRoute,
 } from "@/workbench/navigation";
+import { buildComponentsNavigation } from "@/workbench/navigation";
 
 describe("workbench navigation tree", () => {
+  it("keeps the four tab layers consecutive in the flat complex list", () => {
+    const labels = buildComponentsNavigation()
+      .filter((item) => item.group === "复杂组件")
+      .map((item) => item.label);
+    expect(labels.slice(0, 4)).toEqual([
+      "Tabbar",
+      "一级 Tab",
+      "二级 Tab",
+      "三级 Tab（Filter Bar）",
+    ]);
+    expect(labels[4]).toBe("Tab Viewport");
+  });
   it("builds nested resource counts without lifecycle rows", () => {
     const tree = buildWorkbenchNavigationTree();
     const prototypes = tree.find((node) => node.id === "prototypes")!;
@@ -75,11 +88,7 @@ describe("workbench navigation tree", () => {
     });
     expect(nodes[0]?.children?.[0]?.to).toBeUndefined();
     expect(
-      findCaptureJobIdForEvidenceRoute(
-        presentations,
-        "bundle-b",
-        "snap-new",
-      ),
+      findCaptureJobIdForEvidenceRoute(presentations, "bundle-b", "snap-new"),
     ).toBe("capture-job-job-new");
     expect(
       findCaptureJobIdForEvidenceRoute(presentations, "missing", "snap"),

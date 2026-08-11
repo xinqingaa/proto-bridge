@@ -35,9 +35,7 @@
         "type": "boolean"
       }
     },
-    "required": [
-      "label"
-    ]
+    "required": ["label"]
   },
   "defaultProps": {
     "label": "仅查看高优先级",
@@ -65,9 +63,7 @@
     }
   ],
   "slots": [],
-  "events": [
-    "update:modelValue"
-  ],
+  "events": ["update:modelValue"],
   "tokenBindings": {
     "selected": "color.primary",
     "onSelected": "color.on-primary",
@@ -79,6 +75,6 @@
     "disabledOpacity": "opacity.disabled"
   },
   "playground": {
-    "presentation": "single"
+    "presentation": "interactive"
   }
 }

@@ -14,17 +14,10 @@
       },
       "tone": {
         "type": "string",
-        "enum": [
-          "primary",
-          "error",
-          "success",
-          "warning"
-        ]
+        "enum": ["primary", "error", "success", "warning"]
       }
     },
-    "required": [
-      "label"
-    ]
+    "required": ["label"]
   },
   "defaultProps": {
     "label": "3",
@@ -57,6 +50,6 @@
     "label": "typography.caption-strong"
   },
   "playground": {
-    "presentation": "single"
+    "presentation": "interactive"
   }
 }

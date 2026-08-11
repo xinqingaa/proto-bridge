@@ -27,8 +27,8 @@ Token / Theme
 ## 3. 组件红线
 
 - 对口组件存在时必须使用。
-- `BottomNavigation` 只导航；一级面板使用 `TabViewport`。
-- 一级主体面板内不嵌套带 window 的 `Tabs`。
+- `Tabbar` 只导航；根视图区使用 `TabViewport` 或路由内容。
+- 一级/二级 Tab 可以嵌套，但同一触摸区域只允许一个带 window 的横滑 owner；三级 Tab 绝不拥有 window。
 - `DataList` 管列表表面，`ScrollableDataList` 管纵滚、刷新和分页。
 - `FilterBar`、`SearchBar`、Dialog、Sheet、Snackbar、EmptyState 等不得页内复制。
 - 页内局部 UI 仍必须使用 Token。

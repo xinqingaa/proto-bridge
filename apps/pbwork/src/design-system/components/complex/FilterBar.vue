@@ -1,19 +1,17 @@
 <script setup lang="ts">
 import { toRefs } from "vue";
-import { SlidersHorizontal } from "lucide-vue-next";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 
 const props = defineProps<{
   items?: string[];
   modelValue?: string;
-  showFilter?: boolean;
   /** Page-unique inspect / comment anchor; falls back to `ds.filter-bar`. */
   inspectId?: string;
 }>();
-defineEmits<{ "update:modelValue": [string]; filter: [] }>();
+defineEmits<{ "update:modelValue": [string] }>();
 
 const rootRef = usePbInspectRef();
-const { items, modelValue, showFilter, inspectId } = toRefs(props);
+const { items, modelValue, inspectId } = toRefs(props);
 
 usePbInspect({
   element: rootRef,
@@ -23,7 +21,6 @@ usePbInspect({
   getProps: () => ({
     items: items.value ?? [],
     modelValue: modelValue.value ?? "全部",
-    showFilter: showFilter.value ?? true,
     inspectId: inspectId.value,
   }),
   getTokens: () => [
@@ -72,16 +69,6 @@ usePbInspect({
         {{ item }}
       </v-chip>
     </v-chip-group>
-    <v-btn
-      v-if="showFilter ?? true"
-      class="filter-action"
-      variant="outlined"
-      size="small"
-      @click="$emit('filter')"
-    >
-      <SlidersHorizontal :size="16" />
-      筛选
-    </v-btn>
   </div>
 </template>
 
@@ -89,7 +76,7 @@ usePbInspect({
 .pb-filter-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: var(--pb-spacing-sm);
 }
 .pb-filter-chips {
@@ -108,11 +95,5 @@ usePbInspect({
 .pb-filter-chips :deep(.v-chip.is-active) {
   background: var(--pb-color-surface-variant) !important;
   color: var(--pb-color-on-surface) !important;
-}
-.filter-action {
-  flex-shrink: 0;
-  text-transform: none;
-  letter-spacing: normal;
-  border-radius: var(--pb-radius-sm);
 }
 </style>

@@ -84,7 +84,8 @@ export type ComponentStateContract = {
   props?: Record<string, unknown>;
 };
 
-export type PlaygroundPresentation = "single" | "tile" | "trigger";
+/** Producer-only presentation intent; never a Target component API. */
+export type PlaygroundPresentation = "interactive" | "gallery" | "trigger";
 
 export type ComponentContract = {
   schemaVersion: 1;
@@ -159,8 +160,7 @@ export type PrototypeFragmentRef = {
 };
 
 export type PrototypeScrollOwner =
-  | { kind: "viewport" }
-  | { kind: "fragment"; fragment: PrototypeFragmentRef };
+  { kind: "viewport" } | { kind: "fragment"; fragment: PrototypeFragmentRef };
 
 export type PrototypeStructureAssertion =
   | {

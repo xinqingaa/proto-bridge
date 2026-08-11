@@ -32,6 +32,7 @@ usePbInspect({
     height: "sizing.control-md",
     label: "typography.caption",
     input: "typography.content",
+    disabledOpacity: "opacity.disabled",
   }),
   getTokens: () => [
     "color.border",
@@ -43,6 +44,7 @@ usePbInspect({
     "typography.content",
     "spacing.xs",
     "spacing.md",
+    "opacity.disabled",
   ],
 });
 </script>
@@ -66,7 +68,7 @@ usePbInspect({
 }
 .pb-field :deep(.v-field) {
   min-height: var(--pb-sizing-control-md, 40px);
-  background: var(--pb-color-surface, #fff);
+  background: var(--pb-color-surface);
 }
 .pb-field :deep(.v-field__input) {
   min-height: var(--pb-sizing-control-md, 40px);
@@ -82,5 +84,8 @@ usePbInspect({
 .pb-field.radius-lg :deep(.v-field) {
   --v-field-border-radius: var(--pb-radius-lg, 16px);
   border-radius: var(--pb-radius-lg, 16px);
+}
+.pb-field.v-input--disabled {
+  opacity: var(--pb-opacity-disabled, 0.38);
 }
 </style>

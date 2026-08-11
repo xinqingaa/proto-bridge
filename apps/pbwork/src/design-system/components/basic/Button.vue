@@ -135,6 +135,7 @@ usePbInspect({
     :elevation="0"
     :disabled="isUnavailable"
     :aria-busy="loading ? 'true' : undefined"
+    :class="{ 'is-loading': loading ?? false }"
     :style="buttonStyle"
     @click="$emit('click')"
   >
@@ -154,8 +155,14 @@ usePbInspect({
 
 <style scoped>
 .pb-button {
-  height: var(--pb-component-height, var(--pb-sizing-control-md, 40px)) !important;
-  min-height: var(--pb-component-height, var(--pb-sizing-control-md, 40px)) !important;
+  height: var(
+    --pb-component-height,
+    var(--pb-sizing-control-md, 40px)
+  ) !important;
+  min-height: var(
+    --pb-component-height,
+    var(--pb-sizing-control-md, 40px)
+  ) !important;
   padding-inline: var(
     --pb-component-padding-x,
     var(--pb-spacing-md, 16px)
@@ -197,5 +204,8 @@ usePbInspect({
 }
 .pb-button.v-btn--disabled {
   opacity: var(--pb-opacity-disabled, 0.38) !important;
+}
+.pb-button.is-loading.v-btn--disabled {
+  opacity: 1 !important;
 }
 </style>

@@ -20,12 +20,12 @@
 
 ## States
 
-| id | label | kind |
-| --- | --- | --- |
-| `unchecked` | 未选中 | content |
-| `disabled` | 禁用 | interaction |
+| id          | label  | kind        |
+| ----------- | ------ | ----------- |
+| `unchecked` | 未选中 | content     |
+| `disabled`  | 禁用   | interaction |
 
-Playground：`single`；场景「多选一组」演示多个独立 Checkbox。
+Playground：`interactive`；场景「多选一组」演示多个独立 Checkbox。
 
 ## 用法要点
 

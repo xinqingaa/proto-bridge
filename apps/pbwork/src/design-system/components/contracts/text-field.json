@@ -6,6 +6,8 @@
     "policy": "fixed",
     "defaultRole": "field"
   },
+  "summary": "单行文本输入；disabled 阻止编辑并使用 opacity.disabled。",
+  "behavior": ["disabled 时不可聚焦或编辑，整体使用 opacity.disabled"],
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -20,29 +22,33 @@
         "type": "boolean"
       }
     },
-    "required": [
-      "label"
-    ]
+    "required": ["label"]
   },
   "defaultProps": {
     "label": "标题",
     "modelValue": "",
     "disabled": false
   },
-  "states": [],
-  "slots": [],
-  "events": [
-    "update:modelValue"
+  "states": [
+    {
+      "id": "disabled",
+      "label": "禁用",
+      "kind": "interaction",
+      "props": { "disabled": true }
+    }
   ],
+  "slots": [],
+  "events": ["update:modelValue"],
   "tokenBindings": {
     "border": "color.border",
     "surface": "color.surface",
     "radius": "radius.md",
     "height": "sizing.control-md",
     "label": "typography.caption",
-    "input": "typography.content"
+    "input": "typography.content",
+    "disabledOpacity": "opacity.disabled"
   },
   "playground": {
-    "presentation": "single"
+    "presentation": "interactive"
   }
 }

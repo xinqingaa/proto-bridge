@@ -17,6 +17,8 @@ export const BIND_TOKEN_IDS = [
   "color.on-surface-muted",
   // Color — brand & feedback
   "color.primary",
+  "color.navigation-active",
+  "color.section-tab-active",
   "color.primary-soft",
   "color.on-primary",
   "color.action",
@@ -74,6 +76,7 @@ export const BIND_TOKEN_IDS = [
   // Border / elevation / motion
   "border.hairline",
   "elevation.none",
+  "elevation.level-1",
   "elevation.card",
   "elevation.raised",
   "elevation.level-3",

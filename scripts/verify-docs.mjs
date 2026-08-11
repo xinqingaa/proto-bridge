@@ -3,7 +3,10 @@ import { readdir, readFile, lstat, access } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+);
 const errors = [];
 
 const markdownFiles = await collectMarkdown(repoRoot);
@@ -111,8 +114,14 @@ async function verifySkills() {
       errors.push(`skills/${entry.name} is missing SKILL.md`);
       continue;
     }
-    if (files.some((file) => file !== "SKILL.md" && file.toLowerCase() === "skill.md")) {
-      errors.push(`skills/${entry.name} contains a non-canonical skill filename`);
+    if (
+      files.some(
+        (file) => file !== "SKILL.md" && file.toLowerCase() === "skill.md",
+      )
+    ) {
+      errors.push(
+        `skills/${entry.name} contains a non-canonical skill filename`,
+      );
     }
     const source = await readFile(path.join(directory, "SKILL.md"), "utf8");
     if (!/^---\nname: [a-z0-9-]+\ndescription:/u.test(source)) {
@@ -122,9 +131,17 @@ async function verifySkills() {
 }
 
 async function verifyCliReference() {
-  const source = await readFile(path.join(repoRoot, "packages/cli/src/cli.ts"), "utf8");
-  const readme = await readFile(path.join(repoRoot, "packages/cli/README.md"), "utf8");
-  const usage = source.match(/export function cliUsage\(\): string \{\s*return `([\s\S]*?)`;/u)?.[1];
+  const source = await readFile(
+    path.join(repoRoot, "packages/cli/src/cli.ts"),
+    "utf8",
+  );
+  const readme = await readFile(
+    path.join(repoRoot, "packages/cli/README.md"),
+    "utf8",
+  );
+  const usage = source.match(
+    /export function cliUsage\(\): string \{\s*return `([\s\S]*?)`;/u,
+  )?.[1];
   if (!usage) {
     errors.push("Unable to read CLI usage from packages/cli/src/cli.ts");
     return;
@@ -202,7 +219,9 @@ async function verifyComponentReferences() {
     }
 
     if (!doc.includes(`组件 id：\`${contract.id}\``)) {
-      errors.push(`${relative(docPath)} does not declare component id ${contract.id}`);
+      errors.push(
+        `${relative(docPath)} does not declare component id ${contract.id}`,
+      );
     }
     if (!doc.includes(`contracts/${contract.id}.json`)) {
       errors.push(
@@ -223,9 +242,12 @@ async function verifyComponentReferences() {
       if (file.endsWith(".md")) documented.push(file.replace(/\.md$/u, ""));
     }
   }
-  const contractIds = new Set(contracts.map((file) => file.replace(/\.json$/u, "")));
+  const contractIds = new Set(
+    contracts.map((file) => file.replace(/\.json$/u, "")),
+  );
   for (const id of documented) {
-    if (!contractIds.has(id)) errors.push(`Component documentation ${id} has no contract`);
+    if (!contractIds.has(id))
+      errors.push(`Component documentation ${id} has no contract`);
   }
 }
 
@@ -241,10 +263,20 @@ async function verifyTokenCatalog() {
     "utf8",
   );
   if (!catalog.includes(`共 ${tokens.length} 项`)) {
-    errors.push(`Token catalog count does not match tokens.json (${tokens.length})`);
+    errors.push(
+      `Token catalog count does not match tokens.json (${tokens.length})`,
+    );
   }
+  const catalogTokenIds = new Set(
+    catalog
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.startsWith("| `"))
+      .map((line) => line.split("|")[1]?.trim().replaceAll("`", ""))
+      .filter(Boolean),
+  );
   for (const token of tokens) {
-    if (!catalog.includes(`| \`${token.id}\` |`)) {
+    if (!catalogTokenIds.has(token.id)) {
       errors.push(`Token catalog is missing ${token.id}`);
     }
   }
@@ -276,7 +308,9 @@ async function verifyCurrentProductLanguage(files) {
     const source = await readFile(file, "utf8");
     for (const phrase of forbidden) {
       if (source.includes(phrase)) {
-        errors.push(`${relative(file)} contains historical product phrase: ${phrase}`);
+        errors.push(
+          `${relative(file)} contains historical product phrase: ${phrase}`,
+        );
       }
     }
   }

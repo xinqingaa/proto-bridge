@@ -5,10 +5,7 @@
   "semantic": {
     "policy": "contextual",
     "defaultRole": "section",
-    "allowedRoles": [
-      "section",
-      "form"
-    ]
+    "allowedRoles": ["section", "form"]
   },
   "propsSchema": {
     "type": "object",
@@ -28,15 +25,10 @@
       },
       "semanticRole": {
         "type": "string",
-        "enum": [
-          "section",
-          "form"
-        ]
+        "enum": ["section", "form"]
       }
     },
-    "required": [
-      "title"
-    ]
+    "required": ["title"]
   },
   "defaultProps": {
     "title": "客户信息",
@@ -61,13 +53,8 @@
       }
     }
   ],
-  "slots": [
-    "default",
-    "action"
-  ],
-  "events": [
-    "action"
-  ],
+  "slots": ["default", "action"],
+  "events": ["action"],
   "tokenBindings": {
     "surface": "color.surface",
     "border": "color.border",
@@ -80,6 +67,6 @@
     "caption": "typography.caption"
   },
   "playground": {
-    "presentation": "single"
+    "presentation": "interactive"
   }
 }

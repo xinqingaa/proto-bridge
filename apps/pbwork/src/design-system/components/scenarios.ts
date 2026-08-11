@@ -341,7 +341,7 @@ const scenarios: Record<string, ComponentScenario[]> = {
       },
     },
   ],
-  tabs: [
+  "primary-tabs": [
     {
       id: "detail",
       label: "详情分区",
@@ -356,8 +356,8 @@ const scenarios: Record<string, ComponentScenario[]> = {
     },
     {
       id: "filter",
-      label: "分段筛选",
-      description: "列表顶部用等宽 pill 页签做状态分段。",
+      label: "等宽主分区",
+      description: "页面主分区在紧凑宽度内均分可用空间。",
       props: {
         grow: true,
         swipe: true,
@@ -366,27 +366,23 @@ const scenarios: Record<string, ComponentScenario[]> = {
       },
     },
   ],
-  "underline-tabs": [
+  "secondary-tabs": [
     {
       id: "section",
       label: "分区导航",
-      description: "详情页内用滑线页签切换概览与活动分区。",
+      description: "详情页内以文本下方的小三角切换概览与活动分区。",
       props: {
         modelValue: "overview",
-        variant: "underline",
-        showIndicator: true,
         swipe: true,
         mouseSwipe: true,
         fill: false,
       },
     },
     {
-      id: "minimal",
-      label: "极简导航",
-      description: "无滑线、仅文字强调的轻量分区切换。",
+      id: "equal",
+      label: "等宽二级分区",
+      description: "多个子分区等宽排列，仍以小三角标出当前项。",
       props: {
-        variant: "minimal",
-        showIndicator: false,
         grow: true,
         swipe: true,
         mouseSwipe: true,
@@ -494,34 +490,28 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "orders",
       label: "工单筛选",
-      description: "快捷状态筛选，并保留高级筛选入口。",
-      props: { modelValue: "进行中", showFilter: true },
+      description: "快捷状态筛选，页面会随选择更新当前数据。",
+      props: { modelValue: "进行中" },
     },
     {
       id: "compact",
-      label: "紧凑筛选",
-      description: "空间有限时仅保留快捷状态筛选。",
-      props: { showFilter: false },
+      label: "全部数据",
+      description: "展示不受状态限制的完整数据集合。",
+      props: { modelValue: "全部" },
     },
   ],
-  "bottom-navigation": [
+  tabbar: [
     {
       id: "primary",
       label: "应用主导航",
       description: "外部传入三项入口，图标与文字同时呈现。",
-      props: {
-        display: "icon-label",
-        showIndicator: true,
-      },
+      props: { modelValue: "home" },
     },
     {
-      id: "compact",
-      label: "紧凑导航",
-      description: "文案已明确时仅展示图标入口。",
-      props: {
-        display: "icon",
-        showIndicator: true,
-      },
+      id: "tasks",
+      label: "切到任务",
+      description: "选择任务目的地，保持图标和文字同时呈现。",
+      props: { modelValue: "tasks" },
     },
   ],
   dialog: [

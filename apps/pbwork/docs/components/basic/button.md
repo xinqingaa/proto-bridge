@@ -14,7 +14,7 @@
 
 ## 行为要点
 
-- `loading` / `disabled` 均不可点；同时为真时以不可点为准。
+- `loading` / `disabled` 均不可点；loading 保持原强调度，disabled 才使用 `opacity.disabled`。
 - `loading` 时 **spinner 与文案同时可见**，不得用加载图标替换文字。
 - `disabled` 整钮使用 `opacity.disabled`。
 - 未传 `borderColor` 时与 `bgColor` 相同；未传 `textColor` 时按底色推导（实色→`on-*`，`*-soft`→对应实色，透明底→边框色或 `color.action`）。
@@ -23,12 +23,12 @@
 
 ## States
 
-| id | label | kind |
-| --- | --- | --- |
-| `loading` | 加载 | interaction |
-| `disabled` | 禁用 | interaction |
+| id         | label | kind        |
+| ---------- | ----- | ----------- |
+| `loading`  | 加载  | interaction |
+| `disabled` | 禁用  | interaction |
 
-Playground：`presentation: single`（场景 + 侧栏调色槽；「令牌」页只读）。
+Playground：`presentation: interactive`（点击触发 loading 与完成反馈；可用/禁用态在画布内对照；令牌只读折叠展示）。
 
 ## 用法要点
 

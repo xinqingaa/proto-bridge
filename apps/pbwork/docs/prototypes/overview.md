@@ -4,8 +4,8 @@
 
 `apps/pbwork/src/prototypes/registry.ts`：
 
-- `prototypes[]`：id、label、lifecycle、owners、roles、`defaultThemeId`  
-- `prototypeScreens[]`：screenId、screenSlug、path、view、variants、defaultVariantId  
+- `prototypes[]`：id、label、lifecycle、owners、roles、`defaultThemeId`
+- `prototypeScreens[]`：screenId、screenSlug、path、view、variants、defaultVariantId
 
 工作台导航与 Runtime 路由都读这份注册表，不要在别处再维护平行清单。
 
@@ -13,7 +13,7 @@
 
 ```text
 prototypes/{prototypeId}/
-├── *Shell.vue          # （可选）AppBar + 内容 / TabViewport + BottomNavigation
+├── *Shell.vue          # （可选）AppBar + 内容 / TabViewport + Tabbar
 ├── nav.ts              # （可选）进栈、返回、Tab replace
 ├── mock.ts             # 静态可演示数据
 ├── theme-session.ts    # （可选）主题会话
@@ -27,21 +27,21 @@ prototypes/{prototypeId}/
 
 ## URL
 
-| 用途 | 形态 |
-| --- | --- |
-| Runtime | `/prototype/:prototypeId/:screenSlug?variant=&theme=` |
+| 用途       | 形态                                                         |
+| ---------- | ------------------------------------------------------------ |
+| Runtime    | `/prototype/:prototypeId/:screenSlug?variant=&theme=`        |
 | 工作台预览 | `/workbench/prototypes/:prototypeId/screens/:screenSlug?...` |
 
-- `variant`：业务态（空/错/Sheet 开等）  
-- `theme`：主题预览；权威策略见 [../tokens/themes.md](../tokens/themes.md)  
+- `variant`：业务态（空/错/Sheet 开等）
+- `theme`：主题预览；权威策略见 [../tokens/themes.md](../tokens/themes.md)
 
 画布缩放/设备等状态只存工作台 localStorage，**不得**写入 Runtime URL。
 
 ## 组装原则
 
-1. 优先 DS 组件与 [composition.md](../components/composition.md) 配方。  
+1. 优先 DS 组件与 [composition.md](../components/composition.md) 配方。
 2. 满足根 [原型 Authoring Contract](../../../../docs/reference/prototype-authoring.md)。
-3. Variant 可切换且可静态见到关键列表数据。  
+3. Variant 可切换且可静态见到关键列表数据。
 4. 提供稳定 `data-pb-id` / `data-pb-key` / `data-pb-role` / `inspectId`。
 5. 业务局部证据节点显式提供实现所需 `data-pb-token-*`，不能只靠 CSS Token。
 6. default Variant 声明 required boundary；交互声明 Action/Scenario/Checkpoint。

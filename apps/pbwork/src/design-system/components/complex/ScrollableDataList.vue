@@ -162,6 +162,7 @@ function canRefresh(event?: PointerEvent, atTop = true) {
 function mouseDragEnabled(event: PointerEvent) {
   return (
     event.pointerType === "mouse" &&
+    !props.disabled &&
     dragConfig.value.enabled &&
     dragConfig.value.mouse
   );
@@ -449,6 +450,7 @@ usePbInspect({
     muted: "color.on-surface-muted",
     footer: "typography.caption",
     duration: "motion.duration-normal",
+    disabledOpacity: "opacity.disabled",
   }),
   getTokens: () => [
     "color.background",
@@ -456,6 +458,7 @@ usePbInspect({
     "color.on-surface-muted",
     "typography.caption",
     "motion.duration-normal",
+    "opacity.disabled",
   ],
 });
 
@@ -473,6 +476,7 @@ onBeforeUnmount(() => {
     :class="{
       'allows-mouse-drag': dragConfig.enabled && dragConfig.mouse,
       'is-drag-scrolling': dragScrolling,
+      'is-disabled': disabled,
     }"
     data-pb-id="ds.scrollable-data-list"
     data-pb-role="scroll-list"
@@ -562,6 +566,9 @@ onBeforeUnmount(() => {
 .pb-scrollable-data-list.is-drag-scrolling {
   cursor: grabbing;
   user-select: none;
+}
+.pb-scrollable-data-list.is-disabled {
+  opacity: var(--pb-opacity-disabled, 0.38);
 }
 .pb-scrollable-data-list::-webkit-scrollbar {
   display: none;

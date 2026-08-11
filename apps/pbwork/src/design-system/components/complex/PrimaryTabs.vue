@@ -1,7 +1,16 @@
 <script setup lang="ts">
-import { computed, toRefs } from "vue";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  toRefs,
+  watch,
+} from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import { usePointerSwipe } from "@/design-system/components/_shared/usePointerSwipe";
+import LiquidGlass from "@/design-system/components/_shared/LiquidGlass.vue";
 
 /** Matches `motion.duration-slow` (320ms) for v-window's numeric prop. */
 const SLIDE_DURATION_MS = 320;
@@ -10,7 +19,6 @@ const props = withDefaults(
   defineProps<{
     modelValue?: string;
     items: Array<{ value: string; label: string }>;
-    variant?: "underline" | "minimal";
     showIndicator?: boolean;
     showDivider?: boolean;
     grow?: boolean;
@@ -19,11 +27,10 @@ const props = withDefaults(
     swipe?: boolean;
     mouseSwipe?: boolean;
     fill?: boolean;
-    /** Page-unique inspect / comment anchor; falls back to `ds.underline-tabs`. */
+    /** Page-unique inspect / comment anchor; falls back to `ds.primary-tabs`. */
     inspectId?: string;
   }>(),
   {
-    variant: "underline",
     swipe: true,
     mouseSwipe: true,
     fill: false,
@@ -32,10 +39,10 @@ const props = withDefaults(
 const emit = defineEmits<{ "update:modelValue": [value: string] }>();
 
 const rootRef = usePbInspectRef();
+const trackRef = ref<HTMLElement | null>(null);
 const {
   modelValue,
   items,
-  variant,
   showIndicator,
   showDivider,
   grow,
@@ -47,19 +54,21 @@ const {
   inspectId,
 } = toRefs(props);
 
-const resolvedVariant = computed(() => variant.value ?? "underline");
-const indicatorVisible = computed(() => {
-  if (resolvedVariant.value === "minimal") return false;
-  return showIndicator.value ?? true;
-});
+const indicatorVisible = computed(() => showIndicator.value ?? false);
 
 const tabStyle = computed(() => ({
-  "--pb-tabs-active-background": "transparent",
-  "--pb-tabs-active-color": "var(--pb-color-primary)",
+  "--pb-tabs-track-background": "var(--pb-color-surface-variant)",
+  "--pb-tabs-selection-surface": "var(--pb-color-surface-raised)",
+  "--pb-tabs-selection-elevation": "var(--pb-elevation-level-1)",
+  "--pb-tabs-track-radius": "var(--pb-radius-lg)",
+  "--pb-tabs-active-color": "var(--pb-color-section-tab-active)",
   "--pb-tabs-inactive-color": "var(--pb-color-on-surface-muted)",
   "--pb-tabs-typography": "var(--pb-typography-label)",
-  "--pb-tabs-radius": "var(--pb-radius-md)",
+  "--pb-tabs-radius": "var(--pb-radius-full)",
   "--pb-tabs-height": `var(--pb-sizing-control-${size.value ?? "md"})`,
+  "--pb-tabs-pill-duration": "var(--pb-motion-duration-slow, 320ms)",
+  "--pb-tabs-pill-easing":
+    "var(--pb-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1))",
 }));
 
 const tab = computed({
@@ -76,16 +85,64 @@ const swipe = usePointerSwipe(
   { swipe: swipeEnabled, mouseSwipe },
 );
 
+const pill = ref({ left: 0, width: 0, ready: false });
+
+function measurePill() {
+  const track = trackRef.value;
+  if (!track) return;
+  const active = Array.from(
+    track.querySelectorAll<HTMLElement>(".pb-tab"),
+  ).find((el) => el.getAttribute("data-pb-key") === tab.value);
+  if (!active) return;
+  const trackBox = track.getBoundingClientRect();
+  const tabBox = active.getBoundingClientRect();
+  pill.value = {
+    left: tabBox.left - trackBox.left + track.scrollLeft,
+    width: tabBox.width,
+    ready: true,
+  };
+}
+
+let resizeObserver: ResizeObserver | null = null;
+
+onMounted(async () => {
+  await nextTick();
+  measurePill();
+  if (trackRef.value && typeof ResizeObserver !== "undefined") {
+    resizeObserver = new ResizeObserver(() => measurePill());
+    resizeObserver.observe(trackRef.value);
+  }
+});
+
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect();
+  resizeObserver = null;
+});
+
+watch(
+  [tab, items, grow, size, align],
+  async () => {
+    await nextTick();
+    measurePill();
+  },
+  { flush: "post" },
+);
+
+const pillStyle = computed(() => ({
+  transform: `translateX(${pill.value.left}px)`,
+  width: `${pill.value.width}px`,
+  opacity: pill.value.ready ? 1 : 0,
+}));
+
 usePbInspect({
   element: rootRef,
-  pbId: "ds.underline-tabs",
+  pbId: "ds.primary-tabs",
   instanceId: inspectId,
-  componentId: "underline-tabs",
+  componentId: "primary-tabs",
   getProps: () => ({
     modelValue: modelValue.value,
     itemCount: items.value.length,
     hasPanels: true,
-    variant: resolvedVariant.value,
     showIndicator: indicatorVisible.value,
     showDivider: showDivider.value ?? false,
     grow: grow.value ?? false,
@@ -98,12 +155,15 @@ usePbInspect({
   }),
   getState: () => ({ selected: tab.value }),
   getTokenBindings: () => ({
-    indicator: "color.primary",
-    activeBackground: "transparent",
-    activeColor: "color.primary",
+    trackSurface: "color.surface-variant",
+    selectionSurface: "color.surface-raised",
+    selectionBorder: "border.hairline",
+    selectionElevation: "elevation.level-1",
+    activeColor: "color.section-tab-active",
     inactiveColor: "color.on-surface-muted",
     border: showDivider.value ? "border.hairline" : "transparent",
-    radius: "radius.md",
+    trackRadius: "radius.lg",
+    radius: "radius.full",
     height: `sizing.control-${size.value ?? "md"}`,
     target: "sizing.touch",
     typography: "typography.label",
@@ -112,10 +172,14 @@ usePbInspect({
     easing: "motion.easing-standard",
   }),
   getTokens: () => [
-    "color.primary",
+    "color.surface-variant",
+    "color.surface-raised",
+    "color.section-tab-active",
     "color.on-surface-muted",
     "border.hairline",
-    "radius.md",
+    "elevation.level-1",
+    "radius.lg",
+    "radius.full",
     `sizing.control-${size.value ?? "md"}`,
     "sizing.touch",
     "typography.label",
@@ -129,36 +193,38 @@ usePbInspect({
 <template>
   <div
     ref="rootRef"
-    class="pb-tabs tab-bar"
+    class="pb-tabs tab-bar style-pill"
     :class="{
       'has-indicator': indicatorVisible,
       'has-divider': showDivider ?? false,
-      'style-underline': resolvedVariant === 'underline',
-      'style-text': resolvedVariant === 'minimal',
       'is-fill': fill,
+      'is-grow': grow ?? false,
+      'align-center': align === 'center',
     }"
     :style="tabStyle"
     data-pb-role="tab-bar"
   >
-    <v-tabs
-      v-model="tab"
-      class="pb-tab-bar"
-      color="primary"
-      :align-tabs="align ?? 'start'"
-      :grow="grow ?? false"
-    >
-      <v-tab
+    <div ref="trackRef" class="pb-tabs-track" role="tablist">
+      <div class="pb-tabs-pill" aria-hidden="true" :style="pillStyle">
+        <LiquidGlass :active="true" />
+      </div>
+      <button
         v-for="item in items"
+        :id="`${inspectId ?? 'ds.primary-tabs'}-tab-${item.value}`"
         :key="item.value"
-        :value="item.value"
+        type="button"
         class="pb-tab"
-        :data-pb-id="`${inspectId ?? 'ds.underline-tabs'}.tab`"
+        role="tab"
+        :aria-selected="tab === item.value"
+        :tabindex="tab === item.value ? 0 : -1"
+        :data-pb-id="`${inspectId ?? 'ds.primary-tabs'}.tab`"
         :data-pb-key="item.value"
         data-pb-role="tab"
+        @click="tab = item.value"
       >
         {{ item.label }}
-      </v-tab>
-    </v-tabs>
+      </button>
+    </div>
 
     <v-window
       v-model="tab"
@@ -188,9 +254,11 @@ usePbInspect({
         <div
           v-if="tab === item.value"
           class="pb-tab-panel"
-          :data-pb-id="`${inspectId ?? 'ds.underline-tabs'}.panel`"
+          :data-pb-id="`${inspectId ?? 'ds.primary-tabs'}.panel`"
           :data-pb-key="item.value"
           data-pb-role="tab-panel"
+          role="tabpanel"
+          :aria-labelledby="`${inspectId ?? 'ds.primary-tabs'}-tab-${item.value}`"
         >
           <slot :name="item.value">
             <p class="pb-tab-panel-empty">{{ item.label }}</p>
@@ -208,41 +276,83 @@ usePbInspect({
   min-width: 0;
   background: transparent;
 }
-.pb-tab-bar {
-  --v-tabs-height: var(--pb-tabs-height, var(--pb-sizing-control-md, 40px));
-  height: var(--v-tabs-height);
-  background: transparent;
-  overflow: visible;
+.pb-tabs-track {
+  position: relative;
+  display: inline-flex;
+  max-width: 100%;
+  align-items: stretch;
+  gap: 0;
+  min-height: var(--pb-tabs-height, var(--pb-sizing-control-md, 40px));
+  padding: var(--pb-spacing-xs, 4px);
+  overflow: auto;
+  border-radius: var(--pb-tabs-track-radius, var(--pb-radius-lg));
+  background: var(--pb-tabs-track-background);
+  scrollbar-width: none;
 }
-.pb-tabs.has-divider .pb-tab-bar {
+.pb-tabs-track::-webkit-scrollbar {
+  display: none;
+}
+.pb-tabs.is-grow .pb-tabs-track {
+  display: flex;
+  width: 100%;
+}
+.pb-tabs.align-center .pb-tabs-track {
+  justify-self: center;
+}
+.pb-tabs.has-divider .pb-tabs-track {
   border-bottom: var(--pb-border-hairline);
 }
-.pb-tab-bar :deep(.v-slide-group__container),
-.pb-tab-bar :deep(.v-slide-group__content) {
-  overflow: visible;
+.pb-tabs-pill {
+  position: absolute;
+  top: var(--pb-spacing-xs, 4px);
+  bottom: var(--pb-spacing-xs, 4px);
+  left: 0;
+  z-index: 0;
+  border-radius: var(--pb-tabs-radius, var(--pb-radius-full));
+  overflow: hidden;
+  transition:
+    transform var(--pb-tabs-pill-duration) var(--pb-tabs-pill-easing),
+    width var(--pb-tabs-pill-duration) var(--pb-tabs-pill-easing),
+    opacity var(--pb-motion-duration-fast, 120ms)
+      var(--pb-motion-easing-standard);
+  pointer-events: none;
 }
-.pb-tab-bar :deep(.v-tab) {
-  height: var(--v-tabs-height);
-  min-height: var(--v-tabs-height);
+.pb-tab {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(
+    var(--pb-tabs-height, var(--pb-sizing-control-md, 40px)) - 8px
+  );
   padding: 0 var(--pb-spacing-md, 16px);
-  border-radius: var(--pb-tabs-radius, var(--pb-radius-md));
+  border: 0;
+  border-radius: var(--pb-tabs-radius, var(--pb-radius-full));
+  background: transparent;
   color: var(--pb-tabs-inactive-color, var(--pb-color-on-surface-muted));
   font: var(--pb-tabs-typography, var(--pb-typography-label));
   letter-spacing: normal;
   text-transform: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--pb-motion-duration-fast, 120ms)
+    var(--pb-motion-easing-standard);
 }
-.pb-tabs.style-underline .pb-tab-bar :deep(.v-tab--selected),
-.pb-tabs.style-text .pb-tab-bar :deep(.v-tab--selected) {
+.pb-tabs.is-grow .pb-tab {
+  flex: 1 1 0;
+}
+.pb-tab[aria-selected="true"] {
   color: var(--pb-tabs-active-color, var(--pb-color-primary));
   font-weight: 600;
 }
-.pb-tab-bar :deep(.v-tabs-slider),
-.pb-tab-bar :deep(.v-tab__slider) {
-  display: none;
-}
-.pb-tabs.has-indicator .pb-tab-bar :deep(.v-tabs-slider),
-.pb-tabs.has-indicator .pb-tab-bar :deep(.v-tab__slider) {
-  display: block;
+.pb-tabs.has-indicator .pb-tab[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  bottom: 2px;
+  left: 12px;
   height: 3px;
   border-radius: var(--pb-radius-full) var(--pb-radius-full) 0 0;
   background: var(--pb-tabs-active-color, var(--pb-color-primary));
@@ -293,10 +403,13 @@ usePbInspect({
 .pb-tab-panel-empty {
   margin: 0;
   padding: 8px 0;
-  color: var(--pb-color-on-surface-muted, #1f29379e);
+  color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption, 400 12px/1.4 Inter, system-ui, sans-serif);
 }
 @media (prefers-reduced-motion: reduce) {
+  .pb-tabs-pill {
+    transition-duration: 0s;
+  }
   .pb-tab-window :deep(.v-window__container),
   .pb-tab-window :deep(.v-window-x-transition-enter-active),
   .pb-tab-window :deep(.v-window-x-transition-leave-active),

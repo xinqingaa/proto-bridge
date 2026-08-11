@@ -4,19 +4,19 @@
 
 同一组件必须在下列位置一致，禁止平行维护第二份列表：
 
-| 产物 | 路径 |
-| --- | --- |
-| 实现 | `components/basic|complex/*.vue` |
-| 契约 | `components/contracts/{id}.json` |
+| 产物 | 路径                                                  |
+| ---- | ----------------------------------------------------- |
+| 实现 | `components/basic                                     | complex/*.vue` |
+| 契约 | `components/contracts/{id}.json`                      |
 | 注册 | `components/registry.ts`（Playground controls、描述） |
-| 场景 | `components/scenarios.ts`（可选组合示例） |
-| 文档 | `apps/pbwork/docs/components/**` |
+| 场景 | `components/scenarios.ts`（可选组合示例）             |
+| 文档 | `apps/pbwork/docs/components/**`                      |
 
-Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`propsSchema`、`defaultProps`、`states`、`slots`、`events`、`tokenBindings`、`playground`（含 `presentation: single|tile|trigger`）。
+Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`propsSchema`、`defaultProps`、`states`、`slots`、`events`、`tokenBindings`、`playground`（含 `presentation: interactive|gallery|trigger`）。
 
 可选跨栈语义字段：`summary`、`behavior`、`states[].kind`、`icons`（`pack` 仅 `lucide`）。详见 [alignment-protocol.md](./alignment-protocol.md)。
 
-`playground.presentation`：**默认 `single`**；**`tile` 目前仅 `button` / `icon`**；overlay 用 `trigger`。
+`playground.presentation`：**默认 `interactive`**；**`gallery` 仅 `icon` / `icon-button`**；overlay 用 `trigger`。互动状态必须在舞台内可观察，Token 绑定只读折叠展示。
 
 `semantic.policy` 只能是 `fixed`、`contextual` 或 `decorative`。fixed 组件由 Contract 固定根 role；contextual 组件只允许通过公开 prop 从 `allowedRoles` 选择；decorative 组件默认不写 `data-pb-id` / `data-pb-role`，不会独立进入 Evidence。
 
@@ -26,13 +26,13 @@ Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`propsSchem
 
 只允许三类：
 
-| 分组 | 含义 | 例 |
-| --- | --- | --- |
-| 内容 | 文案与当前值 | `label`、`title`、`modelValue` |
-| 类型 | 契约内有限枚举 | `variant`、`tone`、`size` |
-| 行为 | 开关与交互态 | `disabled`、`loading`、`elevated`、`swipe` |
+| 分组 | 含义           | 例                                         |
+| ---- | -------------- | ------------------------------------------ |
+| 内容 | 文案与当前值   | `label`、`title`、`modelValue`             |
+| 类型 | 契约内有限枚举 | `variant`、`tone`、`size`                  |
+| 行为 | 开关与交互态   | `disabled`、`loading`、`elevated`、`swipe` |
 
-圆角档、阴影等级、字阶属于默认外观（经 bindings），不进自由旋钮；可用 `elevated` 等布尔表达有无阴影。
+圆角档、阴影等级、字阶属于默认外观（经 bindings），不进自由旋钮；场景切换表达业务差异，不把 props 调试器当作组件展示。
 
 ## 检查标记
 
@@ -43,11 +43,11 @@ Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`propsSchem
 
 ## 新增组件清单
 
-1. 写 `contracts/{id}.json`（Ajv / schema 通过）  
+1. 写 `contracts/{id}.json`（Ajv / schema 通过）
 2. 实现 Vue，只读 `--pb-*`，并提供 semantic role policy 与 Inspect registration
-3. 登记 `registry.ts` controls  
-4. 需要时补 `scenarios.ts`  
-5. 写本文档对应页  
+3. 登记 `registry.ts` controls
+4. 需要时补 `scenarios.ts`
+5. 写本文档对应页
 6. 单元 / playground 相关测试
 7. 运行 `pnpm docs:verify`
 
@@ -55,11 +55,11 @@ Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`propsSchem
 
 ## 目录
 
-- 跨栈对齐：[alignment-protocol.md](./alignment-protocol.md)  
-- 大类型审计：[audit-large-types.md](./audit-large-types.md)  
-- 组合铁律：[composition.md](./composition.md)  
-- 手势仲裁：[shared-gestures.md](./shared-gestures.md)  
-- 页面配方：[../prototypes/recipes.md](../prototypes/recipes.md)  
+- 跨栈对齐：[alignment-protocol.md](./alignment-protocol.md)
+- 大类型审计：[audit-large-types.md](./audit-large-types.md)
+- 组合铁律：[composition.md](./composition.md)
+- 手势仲裁：[shared-gestures.md](./shared-gestures.md)
+- 页面配方：[../prototypes/recipes.md](../prototypes/recipes.md)
 
 ### 基础（16）
 
@@ -67,4 +67,4 @@ Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`propsSchem
 
 ### 复杂（15）
 
-[app-bar](./complex/app-bar.md) · [bottom-navigation](./complex/bottom-navigation.md) · [bottom-sheet](./complex/bottom-sheet.md) · [data-list](./complex/data-list.md) · [dialog](./complex/dialog.md) · [empty-state](./complex/empty-state.md) · [filter-bar](./complex/filter-bar.md) · [flow-sheet](./complex/flow-sheet.md) · [form-section](./complex/form-section.md) · [scrollable-data-list](./complex/scrollable-data-list.md) · [search-bar](./complex/search-bar.md) · [snackbar](./complex/snackbar.md) · [tab-viewport](./complex/tab-viewport.md) · [tabs](./complex/tabs.md) · [underline-tabs](./complex/underline-tabs.md)
+[tabbar](./complex/tabbar.md) · [一级 Tab](./complex/primary-tabs.md) · [二级 Tab](./complex/secondary-tabs.md) · [三级 Tab（Filter Bar）](./complex/filter-bar.md) · [tab-viewport](./complex/tab-viewport.md) · [app-bar](./complex/app-bar.md) · [bottom-sheet](./complex/bottom-sheet.md) · [data-list](./complex/data-list.md) · [dialog](./complex/dialog.md) · [empty-state](./complex/empty-state.md) · [flow-sheet](./complex/flow-sheet.md) · [form-section](./complex/form-section.md) · [scrollable-data-list](./complex/scrollable-data-list.md) · [search-bar](./complex/search-bar.md) · [snackbar](./complex/snackbar.md)

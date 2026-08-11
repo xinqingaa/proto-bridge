@@ -2,57 +2,35 @@
   "schemaVersion": 1,
   "id": "filter-bar",
   "category": "complex",
-  "semantic": {
-    "policy": "fixed",
-    "defaultRole": "filter"
-  },
+  "semantic": { "policy": "fixed", "defaultRole": "filter" },
+  "summary": "三级 Tab：只改变当前数据集合的快捷筛选，不拥有或横滑切换视图区。",
+  "behavior": [
+    "选中筛选后由页面更新当前数据，不创建 Tab viewport",
+    "不内置右侧筛选图标或高级筛选入口；需要时由页面自行组合操作控件",
+    "筛选项可横向滚动，但横向拖动不触发页面视图切换"
+  ],
   "propsSchema": {
     "type": "object",
+    "additionalProperties": false,
     "properties": {
-      "items": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        }
-      },
-      "modelValue": {
-        "type": "string"
-      },
-      "showFilter": {
-        "type": "boolean"
-      }
+      "items": { "type": "array", "items": { "type": "string" } },
+      "modelValue": { "type": "string" }
     }
   },
   "defaultProps": {
-    "items": [
-      "全部",
-      "进行中",
-      "已超时"
-    ],
-    "modelValue": "进行中",
-    "showFilter": true
+    "items": ["全部", "进行中", "已超时"],
+    "modelValue": "进行中"
   },
   "states": [
     {
       "id": "all",
       "label": "全部",
-      "props": {
-        "modelValue": "全部"
-      }
-    },
-    {
-      "id": "compact",
-      "label": "无筛选按钮",
-      "props": {
-        "showFilter": false
-      }
+      "kind": "content",
+      "props": { "modelValue": "全部" }
     }
   ],
   "slots": [],
-  "events": [
-    "update:modelValue",
-    "filter"
-  ],
+  "events": ["update:modelValue"],
   "tokenBindings": {
     "active": "color.primary",
     "activeSurface": "color.primary-soft",
@@ -62,7 +40,5 @@
     "gap": "spacing.sm",
     "label": "typography.label"
   },
-  "playground": {
-    "presentation": "single"
-  }
+  "playground": { "presentation": "interactive" }
 }

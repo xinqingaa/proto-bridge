@@ -73,9 +73,9 @@ usePbInspect({
 
 <style scoped>
 .pb-card {
-  border-color: var(--pb-color-border, #d7dee8) !important;
-  background: var(--pb-color-surface, #fff);
-  color: var(--pb-color-on-surface, #1f2937);
+  border-color: var(--pb-color-border) !important;
+  background: var(--pb-color-surface);
+  color: var(--pb-color-on-surface);
   box-shadow: var(--pb-component-shadow, none) !important;
 }
 .pb-card-title {
@@ -88,7 +88,7 @@ usePbInspect({
   padding-bottom: 0;
 }
 .pb-card-subtitle {
-  color: var(--pb-color-on-surface-muted, #1f29379e);
+  color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption, 400 12px/1.4 Inter, system-ui, sans-serif);
   opacity: 1;
 }

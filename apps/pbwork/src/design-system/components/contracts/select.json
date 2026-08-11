@@ -6,6 +6,11 @@
     "policy": "fixed",
     "defaultRole": "field"
   },
+  "summary": "有限选项选择；loading 保持可读忙碌反馈，disabled 使用 opacity.disabled。",
+  "behavior": [
+    "loading 表示选项正在准备，不得与禁用视觉混同",
+    "disabled 阻止打开或选择，整体使用 opacity.disabled"
+  ],
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -41,18 +46,12 @@
         "type": "boolean"
       }
     },
-    "required": [
-      "label"
-    ]
+    "required": ["label"]
   },
   "defaultProps": {
     "label": "服务类型",
     "modelValue": "维修",
-    "options": [
-      "维修",
-      "巡检",
-      "安装"
-    ],
+    "options": ["维修", "巡检", "安装"],
     "placeholder": "请选择服务类型",
     "clearable": true,
     "loading": false,
@@ -64,6 +63,7 @@
     {
       "id": "open",
       "label": "展开菜单",
+      "kind": "content",
       "description": "直接体验展开后的选项菜单",
       "props": {
         "open": true
@@ -72,6 +72,7 @@
     {
       "id": "loading",
       "label": "加载",
+      "kind": "interaction",
       "props": {
         "loading": true
       }
@@ -79,6 +80,7 @@
     {
       "id": "error",
       "label": "错误",
+      "kind": "content",
       "props": {
         "error": "请选择服务类型"
       }
@@ -86,18 +88,14 @@
     {
       "id": "disabled",
       "label": "禁用",
+      "kind": "interaction",
       "props": {
         "disabled": true
       }
     }
   ],
-  "slots": [
-    "item"
-  ],
-  "events": [
-    "update:modelValue",
-    "update:open"
-  ],
+  "slots": ["item"],
+  "events": ["update:modelValue", "update:open"],
   "tokenBindings": {
     "surface": "color.surface",
     "border": "color.border",
@@ -113,9 +111,10 @@
     "menuItemHeight": "sizing.menu-item",
     "selectedBackground": "color.primary-soft",
     "duration": "motion.duration-normal",
-    "easing": "motion.easing-standard"
+    "easing": "motion.easing-standard",
+    "disabledOpacity": "opacity.disabled"
   },
   "playground": {
-    "presentation": "single"
+    "presentation": "interactive"
   }
 }

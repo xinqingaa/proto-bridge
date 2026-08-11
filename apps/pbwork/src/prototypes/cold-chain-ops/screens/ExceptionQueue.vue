@@ -220,7 +220,6 @@ function refresh() {
           <FilterBar
             v-model="filter"
             :items="['全部', '严重', '警告', '关注']"
-            :show-filter="false"
             inspect-id="cold-chain-ops.exception-queue.filters"
           />
 

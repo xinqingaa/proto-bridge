@@ -35,6 +35,7 @@ usePbInspect({
     "color.primary",
     "radius.md",
     "typography.content",
+    "opacity.disabled",
   ],
   getTokenBindings: () => ({
     surface: "color.surface",
@@ -42,6 +43,7 @@ usePbInspect({
     focus: "color.primary",
     radius: "radius.md",
     text: "typography.content",
+    disabledOpacity: "opacity.disabled",
   }),
 });
 </script>
@@ -71,7 +73,7 @@ usePbInspect({
     --pb-component-radius,
     var(--pb-radius-md, 12px)
   ) !important;
-  background: var(--pb-color-surface, #fff);
+  background: var(--pb-color-surface);
 }
 .pb-textarea :deep(.v-field__outline__start) {
   border-radius: var(--pb-component-radius, var(--pb-radius-md, 12px)) 0 0
@@ -80,5 +82,8 @@ usePbInspect({
 .pb-textarea :deep(.v-field__outline__end) {
   border-radius: 0 var(--pb-component-radius, var(--pb-radius-md, 12px))
     var(--pb-component-radius, var(--pb-radius-md, 12px)) 0 !important;
+}
+.pb-textarea.v-input--disabled {
+  opacity: var(--pb-opacity-disabled, 0.38);
 }
 </style>

@@ -100,7 +100,7 @@ describe("design contracts", () => {
   });
 
   it("ships the expanded semantic token set", () => {
-    expect(loadTokens()).toHaveLength(97);
+    expect(loadTokens()).toHaveLength(99);
     expect(new Set(loadTokens().map((item) => item.category))).toEqual(
       new Set([
         "color",
@@ -321,6 +321,25 @@ describe("bind tokens", () => {
           `${contract.id}.${slot}=${tokenId}`,
         ).toBe(true);
       }
+    }
+  });
+
+  it("makes every declared disabled state a shared 0.38 interaction rule", async () => {
+    const { loadComponentContracts } = await import("@/design-system/loaders");
+    for (const contract of loadComponentContracts()) {
+      const schema = contract.propsSchema as {
+        properties?: Record<string, unknown>;
+      };
+      if (!schema.properties?.disabled) continue;
+      expect(contract.tokenBindings.disabledOpacity, contract.id).toBe(
+        "opacity.disabled",
+      );
+      expect(
+        contract.states.some(
+          (state) => state.id === "disabled" && state.kind === "interaction",
+        ),
+        contract.id,
+      ).toBe(true);
     }
   });
 });

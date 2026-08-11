@@ -26,9 +26,7 @@
         "type": "boolean"
       }
     },
-    "required": [
-      "title"
-    ]
+    "required": ["title"]
   },
   "defaultProps": {
     "title": "分步面板",
@@ -57,17 +55,14 @@
       }
     }
   ],
-  "slots": [
-    "default",
-    "actions"
-  ],
-  "events": [
-    "update:modelValue",
-    "update:step"
-  ],
+  "slots": ["default", "actions"],
+  "events": ["update:modelValue", "update:step"],
   "tokenBindings": {
     "surface": "color.surface",
     "border": "color.border",
+    "description": "color.on-surface-muted",
+    "inactiveIndicator": "color.outline",
+    "activeIndicator": "color.primary",
     "radius": "radius.lg",
     "elevation": "elevation.raised",
     "title": "typography.subtitle",

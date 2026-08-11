@@ -261,12 +261,12 @@ export const componentRecords = [
     ],
   },
   {
-    id: "tabs",
-    label: "Tabs",
-    description: "页内 pill 分段：详情二级分区，或列表顶等宽状态筛选。",
+    id: "primary-tabs",
+    label: "一级 Tab",
+    description: "页内主分区：Liquid Glass 胶囊标出当前视图。",
     category: "complex",
-    view: "complex/Tabs.vue",
-    contract: "contracts/tabs.json",
+    view: "complex/PrimaryTabs.vue",
+    contract: "contracts/primary-tabs.json",
     example: {},
     controls: [
       {
@@ -288,12 +288,12 @@ export const componentRecords = [
     ],
   },
   {
-    id: "underline-tabs",
-    label: "Underline Tabs",
-    description: "页内分区导航：滑线指示选中，或极简纯文字样式。",
+    id: "secondary-tabs",
+    label: "二级 Tab",
+    description: "页内子分区：文字下方的居中小三角标出当前视图。",
     category: "complex",
-    view: "complex/UnderlineTabs.vue",
-    contract: "contracts/underline-tabs.json",
+    view: "complex/SecondaryTabs.vue",
+    contract: "contracts/secondary-tabs.json",
     example: {},
     controls: [
       {
@@ -305,17 +305,7 @@ export const componentRecords = [
           { label: "活动", value: "activity" },
         ],
       },
-      {
-        key: "variant",
-        label: "样式",
-        control: "select",
-        options: [
-          { label: "底部滑线", value: "underline" },
-          { label: "仅文字", value: "minimal" },
-        ],
-      },
       { key: "size", label: "尺寸", control: "select", options: sizeOptions },
-      { key: "showIndicator", label: "显示底部滑线", control: "boolean" },
       { key: "showDivider", label: "显示底部分隔线", control: "boolean" },
       { key: "grow", label: "等宽铺满", control: "boolean" },
       { key: "swipe", label: "触摸滑动切换", control: "boolean" },
@@ -481,13 +471,17 @@ export const componentRecords = [
         key: "selectedColor",
         label: "选中色 Token",
         control: "select",
-        options: colorTokenOptions.filter((item) => item.value !== "transparent"),
+        options: colorTokenOptions.filter(
+          (item) => item.value !== "transparent",
+        ),
       },
       {
         key: "uncheckedBorderColor",
         label: "未选中边框 Token",
         control: "select",
-        options: colorTokenOptions.filter((item) => item.value !== "transparent"),
+        options: colorTokenOptions.filter(
+          (item) => item.value !== "transparent",
+        ),
       },
       { key: "disabled", label: "禁用", control: "boolean" },
     ],
@@ -507,7 +501,9 @@ export const componentRecords = [
         key: "color",
         label: "选中色 Token",
         control: "select",
-        options: colorTokenOptions.filter((item) => item.value !== "transparent"),
+        options: colorTokenOptions.filter(
+          (item) => item.value !== "transparent",
+        ),
       },
       { key: "disabled", label: "禁用", control: "boolean" },
     ],
@@ -527,7 +523,9 @@ export const componentRecords = [
         key: "color",
         label: "开启色 Token",
         control: "select",
-        options: colorTokenOptions.filter((item) => item.value !== "transparent"),
+        options: colorTokenOptions.filter(
+          (item) => item.value !== "transparent",
+        ),
       },
       { key: "disabled", label: "禁用", control: "boolean" },
     ],
@@ -648,24 +646,21 @@ export const componentRecords = [
   },
   {
     id: "filter-bar",
-    label: "Filter Bar",
-    description: "快捷状态筛选，并可挂接高级筛选入口。",
+    label: "三级 Tab（Filter Bar）",
+    description: "只改变当前数据集合的快捷筛选，不切换视图区。",
     category: "complex",
     view: "complex/FilterBar.vue",
     contract: "contracts/filter-bar.json",
     example: {},
-    controls: [
-      { key: "modelValue", label: "当前筛选", control: "text" },
-      { key: "showFilter", label: "显示高级筛选", control: "boolean" },
-    ],
+    controls: [{ key: "modelValue", label: "当前筛选", control: "text" }],
   },
   {
-    id: "bottom-navigation",
-    label: "Bottom Navigation",
-    description: "应用主 Tabbar：入口数量、文案与图标均由外部传入。",
+    id: "tabbar",
+    label: "Tabbar",
+    description: "应用根目的地导航：视图区在上，底部只负责目的地切换。",
     category: "complex",
-    view: "complex/BottomNavigation.vue",
-    contract: "contracts/bottom-navigation.json",
+    view: "complex/Tabbar.vue",
+    contract: "contracts/tabbar.json",
     example: {},
     controls: [
       {
@@ -678,18 +673,6 @@ export const componentRecords = [
           { label: "我的", value: "three" },
         ],
       },
-      {
-        key: "display",
-        label: "内容形式",
-        control: "select",
-        options: [
-          { label: "图标和文字", value: "icon-label" },
-          { label: "纯图标", value: "icon" },
-          { label: "纯文字", value: "label" },
-        ],
-      },
-      { key: "showIndicator", label: "显示顶部指示器", control: "boolean" },
-      { key: "elevated", label: "显示阴影", control: "boolean" },
     ],
   },
   {

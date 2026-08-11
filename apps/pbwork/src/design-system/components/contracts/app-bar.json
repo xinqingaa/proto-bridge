@@ -30,21 +30,14 @@
       },
       "actionIcon": {
         "type": "string",
-        "enum": [
-          "more",
-          "plus",
-          "search",
-          "settings"
-        ]
+        "enum": ["more", "plus", "search", "settings"]
       },
       "actionLabel": {
         "type": "string",
         "description": "无障碍名称；未传时按 actionIcon 推导"
       }
     },
-    "required": [
-      "title"
-    ]
+    "required": ["title"]
   },
   "defaultProps": {
     "title": "项目协作",
@@ -65,13 +58,8 @@
       }
     }
   ],
-  "slots": [
-    "append"
-  ],
-  "events": [
-    "back",
-    "action"
-  ],
+  "slots": ["append"],
+  "events": ["back", "action"],
   "tokenBindings": {
     "surface": "color.surface",
     "border": "color.border",
@@ -80,6 +68,6 @@
     "title": "typography.subtitle"
   },
   "playground": {
-    "presentation": "single"
+    "presentation": "interactive"
   }
 }

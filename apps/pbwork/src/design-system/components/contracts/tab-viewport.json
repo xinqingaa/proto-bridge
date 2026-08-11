@@ -18,9 +18,7 @@
         "items": {
           "type": "object",
           "additionalProperties": false,
-          "required": [
-            "value"
-          ],
+          "required": ["value"],
           "properties": {
             "value": {
               "type": "string"
@@ -42,10 +40,7 @@
         "minimum": 0
       }
     },
-    "required": [
-      "modelValue",
-      "items"
-    ]
+    "required": ["modelValue", "items"]
   },
   "defaultProps": {
     "modelValue": "one",
@@ -82,18 +77,14 @@
       }
     }
   ],
-  "slots": [
-    "item"
-  ],
-  "events": [
-    "update:modelValue"
-  ],
+  "slots": ["item"],
+  "events": ["update:modelValue"],
   "tokenBindings": {
     "background": "color.background",
     "duration": "motion.duration-normal",
     "easing": "motion.easing-standard"
   },
   "playground": {
-    "presentation": "single"
+    "presentation": "interactive"
   }
 }

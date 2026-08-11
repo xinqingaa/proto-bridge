@@ -81,6 +81,7 @@ usePbInspect({
     "elevation.level-3",
     "motion.duration-normal",
     "motion.easing-standard",
+    "opacity.disabled",
   ],
   getTokenBindings: () => ({
     surface: "color.surface",
@@ -98,6 +99,7 @@ usePbInspect({
     selectedBackground: "color.primary-soft",
     duration: "motion.duration-normal",
     easing: "motion.easing-standard",
+    disabledOpacity: "opacity.disabled",
   }),
 });
 </script>
@@ -158,7 +160,7 @@ usePbInspect({
     var(--pb-radius-md, 12px)
   ) !important;
   min-height: var(--pb-sizing-control-md, 40px);
-  background: var(--pb-color-surface, #fff);
+  background: var(--pb-color-surface);
 }
 .pb-select :deep(.v-field__outline__start) {
   border-radius: var(--pb-component-radius, var(--pb-radius-md, 12px)) 0 0
@@ -182,6 +184,9 @@ usePbInspect({
 }
 .pb-select-chevron.is-open {
   transform: rotate(180deg);
+}
+.pb-select.v-input--disabled {
+  opacity: var(--pb-opacity-disabled, 0.38);
 }
 </style>
 

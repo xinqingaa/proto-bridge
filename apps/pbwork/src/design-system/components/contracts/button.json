@@ -11,7 +11,7 @@
     "色外观只通过 bgColor / borderColor / textColor（Bind 池 Token ID 或 transparent）表达，禁止实例硬编码色值",
     "未传 borderColor 时与 bgColor 相同；未传 textColor 时按底色推导（实色→on-*，*-soft→对应实色，透明底→边框色或 color.action）",
     "loading 时不可点，spinner 与文案同时可见，不得用加载图标替换文字",
-    "disabled 与 loading 同时为真时以不可点为准；禁用态整钮使用 opacity.disabled",
+    "loading 阻止重复触发但保留强调度；只有 disabled 使用 opacity.disabled",
     "默认主操作：bgColor=color.action（及配对文字/边框），不把公开语义绑到实现层样式枚举"
   ],
   "propsSchema": {
@@ -35,11 +35,7 @@
       },
       "size": {
         "type": "string",
-        "enum": [
-          "sm",
-          "md",
-          "lg"
-        ]
+        "enum": ["sm", "md", "lg"]
       },
       "loading": {
         "type": "boolean"
@@ -52,16 +48,10 @@
       },
       "type": {
         "type": "string",
-        "enum": [
-          "button",
-          "submit",
-          "reset"
-        ]
+        "enum": ["button", "submit", "reset"]
       }
     },
-    "required": [
-      "label"
-    ]
+    "required": ["label"]
   },
   "defaultProps": {
     "label": "确认",
@@ -91,12 +81,8 @@
       }
     }
   ],
-  "slots": [
-    "default"
-  ],
-  "events": [
-    "click"
-  ],
+  "slots": ["default"],
+  "events": ["click"],
   "tokenBindings": {
     "background": "color.action",
     "border": "color.action",
@@ -111,6 +97,6 @@
     "easing": "motion.easing-standard"
   },
   "playground": {
-    "presentation": "single"
+    "presentation": "interactive"
   }
 }
