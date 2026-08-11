@@ -297,7 +297,6 @@ function closeOverlay() {
           <div class="primary-actions">
             <Button
               label="开始处置"
-              tone="action"
               block
               inspect-id="cold-chain-ops.shipment-detail.open-actions"
               data-pb-action="open-actions"
@@ -318,7 +317,6 @@ function closeOverlay() {
         <div class="sheet-actions">
           <Button
             label="填写处置记录"
-            tone="action"
             block
             inspect-id="cold-chain-ops.shipment-detail.open-resolution"
             data-pb-action="open-resolution"
@@ -326,7 +324,9 @@ function closeOverlay() {
           />
           <Button
             label="仅确认接手"
-            variant="outlined"
+            bg-color="transparent"
+            border-color="color.action"
+            text-color="color.action"
             block
             inspect-id="cold-chain-ops.shipment-detail.acknowledge"
             @click="openAcknowledge"

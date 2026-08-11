@@ -10,41 +10,23 @@
 
 - **做什么**：设置项开闭。
 - **边界**：设置类即时开关；表单提交类二元选择优先 Checkbox。
+- **色**：`color` 为开启轨 Token-ref（默认 `color.primary`）。
 
-## Props
+## 行为要点
 
-| Prop | 类型 | 默认 | 说明 |
-| --- | --- | --- | --- |
-| `label` | string | `接收进度通知` | |
-| `modelValue` | boolean | `true` | |
-| `disabled` | boolean | `false` | |
+- 禁止实例硬编码色值。
+- `disabled` 使用 `opacity.disabled`。
+- Props、默认值、Token 槽以 Contract 为准。
 
-## States（Playground / Contract）
+## States
 
-- `off` — 关闭
-- `disabled` — 禁用
-
-## Slots / Events
-
-- **Slots**：无
-- **Events**：`update:modelValue`
-
-## tokenBindings
-
-| 槽位 | Token |
-| --- | --- |
-| `active` | `color.primary` |
-| `track` | `color.surface-variant` |
-| `thumb` | `color.surface` |
-| `text` | `color.on-surface` |
-| `target` | `sizing.touch` |
-| `label` | `typography.content` |
-
-切浅色/深色只改 Theme 覆盖值，不改本表绑定。
+| id | label | kind |
+| --- | --- | --- |
+| `off` | 关闭 | content |
+| `disabled` | 禁用 | interaction |
 
 ## 用法要点
 
-1. 从 `@/design-system/components/basic/...` 引入实现组件。
-2. Props 保持在契约枚举内；需要新能力先改 contract + registry + 本文。
-3. 业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`；默认 `ds.*` 只用于 Playground、组件测试或非业务预览。
-
+1. 从 `@/design-system/components/basic/SwitchControl.vue` 引入。
+2. 需要新能力先改 Contract + registry + 本文叙事。
+3. 业务原型必须传业务稳定 `inspectId`。

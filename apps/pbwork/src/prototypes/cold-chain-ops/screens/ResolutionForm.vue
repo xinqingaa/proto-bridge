@@ -291,7 +291,6 @@ function confirm() {
           <Button
             label="审核并提交"
             type="submit"
-            tone="action"
             block
             inspect-id="cold-chain-ops.resolution-form.submit"
             data-pb-action="submit-resolution"

@@ -1,10 +1,19 @@
 <script setup lang="ts">
-import { toRefs } from "vue";
+import { computed, toRefs } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
+import {
+  assertColorTokenRef,
+  colorTokenCss,
+  defaultTextColorForBg,
+} from "@/design-system/components/_shared/colorTokens";
 
 const props = defineProps<{
   label: string;
   modelValue?: boolean;
+  /** Checked fill Token-ref. */
+  selectedColor?: string;
+  /** Unchecked border Token-ref. */
+  uncheckedBorderColor?: string;
   disabled?: boolean;
   /** Page-unique inspect / comment anchor; falls back to `ds.checkbox`. */
   inspectId?: string;
@@ -12,7 +21,30 @@ const props = defineProps<{
 defineEmits<{ "update:modelValue": [boolean] }>();
 
 const rootRef = usePbInspectRef();
-const { label, modelValue, disabled, inspectId } = toRefs(props);
+const {
+  label,
+  modelValue,
+  selectedColor,
+  uncheckedBorderColor,
+  disabled,
+  inspectId,
+} = toRefs(props);
+
+const selected = computed(() =>
+  assertColorTokenRef(selectedColor.value, "color.primary"),
+);
+const uncheckedBorder = computed(() =>
+  assertColorTokenRef(uncheckedBorderColor.value, "color.outline"),
+);
+const onSelected = computed(() =>
+  defaultTextColorForBg(selected.value, "color.on-primary"),
+);
+
+const checkStyle = computed(() => ({
+  "--pb-check-selected": colorTokenCss(selected.value),
+  "--pb-check-on-selected": colorTokenCss(onSelected.value),
+  "--pb-check-unchecked-border": colorTokenCss(uncheckedBorder.value),
+}));
 
 usePbInspect({
   element: rootRef,
@@ -22,23 +54,29 @@ usePbInspect({
   getProps: () => ({
     label: label.value,
     modelValue: modelValue.value ?? false,
+    selectedColor: selected.value,
+    uncheckedBorderColor: uncheckedBorder.value,
     disabled: disabled.value ?? false,
     inspectId: inspectId.value,
   }),
   getTokens: () => [
-    "color.primary",
-    "color.on-primary",
+    selected.value,
+    onSelected.value,
+    uncheckedBorder.value,
     "color.on-surface",
     "sizing.touch",
     "radius.xs",
     "typography.content",
+    "opacity.disabled",
   ],
   getTokenBindings: () => ({
-    selected: "color.primary",
-    onSelected: "color.on-primary",
+    selected: selected.value,
+    onSelected: onSelected.value,
+    uncheckedBorder: uncheckedBorder.value,
     target: "sizing.touch",
     radius: "radius.xs",
     label: "typography.content",
+    disabledOpacity: "opacity.disabled",
   }),
 });
 </script>
@@ -49,12 +87,12 @@ usePbInspect({
     class="pb-check"
     data-pb-id="ds.checkbox"
     data-pb-role="field"
-    color="primary"
     density="comfortable"
     hide-details
     :label="label"
     :model-value="modelValue ?? false"
     :disabled="disabled ?? false"
+    :style="checkStyle"
     @update:model-value="$emit('update:modelValue', Boolean($event))"
   />
 </template>
@@ -65,7 +103,26 @@ usePbInspect({
   color: var(--pb-color-on-surface);
   font: var(--pb-typography-content);
 }
+.pb-check.v-input--disabled {
+  opacity: var(--pb-opacity-disabled, 0.38);
+}
 .pb-check :deep(.v-selection-control__input > .v-icon) {
   opacity: 1;
+  border-radius: var(--pb-radius-xs, 4px);
+  color: var(--pb-check-selected, var(--pb-color-primary));
+}
+.pb-check :deep(.v-selection-control__wrapper) {
+  border-radius: var(--pb-radius-xs, 4px);
+}
+.pb-check :deep(.v-selection-control__input) {
+  border-radius: var(--pb-radius-xs, 4px);
+}
+.pb-check
+  :deep(
+    .v-selection-control:not(.v-selection-control--dirty)
+      .v-selection-control__input
+      > .v-icon
+  ) {
+  color: var(--pb-check-unchecked-border, var(--pb-color-outline));
 }
 </style>

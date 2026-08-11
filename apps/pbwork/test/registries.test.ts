@@ -196,37 +196,54 @@ describe("resolveLiveTokenBindings", () => {
     expect(live.color).toBe("color.success");
   });
 
-  it("maps button tone and onBackground without aliases", async () => {
+  it("maps button color Token-ref props without style enums", async () => {
     const { resolveLiveTokenBindings } =
       await import("@/design-system/resolveLiveTokenBindings");
     const action = resolveLiveTokenBindings(
       {
         background: "color.action",
+        border: "color.action",
         onBackground: "color.on-action",
       },
-      { tone: "action", variant: "flat" },
+      {
+        bgColor: "color.action",
+        borderColor: "color.action",
+        textColor: "color.on-action",
+      },
     );
     expect(action.background).toBe("color.action");
+    expect(action.border).toBe("color.action");
     expect(action.onBackground).toBe("color.on-action");
 
     const primary = resolveLiveTokenBindings(
       {
         background: "color.action",
+        border: "color.action",
         onBackground: "color.on-action",
       },
-      { tone: "primary", variant: "flat" },
+      {
+        bgColor: "color.primary",
+        borderColor: "color.primary",
+        textColor: "color.on-primary",
+      },
     );
     expect(primary.background).toBe("color.primary");
     expect(primary.onBackground).toBe("color.on-primary");
 
-    const tonal = resolveLiveTokenBindings(
+    const soft = resolveLiveTokenBindings(
       {
         background: "color.action",
+        border: "color.action",
         onBackground: "color.on-action",
       },
-      { tone: "action", variant: "tonal" },
+      {
+        bgColor: "color.error-soft",
+        borderColor: "color.error-soft",
+        textColor: "color.error",
+      },
     );
-    expect(tonal.background).toBe("color.action-soft");
+    expect(soft.background).toBe("color.error-soft");
+    expect(soft.onBackground).toBe("color.error");
   });
 
   it("maps button size to height and paddingX tokens", async () => {

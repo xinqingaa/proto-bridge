@@ -6,8 +6,14 @@
     "policy": "fixed",
     "defaultRole": "field"
   },
+  "summary": "互斥单选；选中色为 Token-ref，禁用走 opacity.disabled。",
+  "behavior": [
+    "color 只接受 Bind 池 Token ID，禁止硬编码色值",
+    "disabled 使用 opacity.disabled"
+  ],
   "propsSchema": {
     "type": "object",
+    "additionalProperties": false,
     "properties": {
       "label": {
         "type": "string"
@@ -20,6 +26,10 @@
         "items": {
           "type": "string"
         }
+      },
+      "color": {
+        "type": "string",
+        "description": "Selected control Token-ref."
       },
       "disabled": {
         "type": "boolean"
@@ -37,12 +47,14 @@
       "普通",
       "紧急"
     ],
+    "color": "color.primary",
     "disabled": false
   },
   "states": [
     {
       "id": "disabled",
       "label": "禁用",
+      "kind": "interaction",
       "props": {
         "disabled": true
       }
@@ -56,7 +68,8 @@
     "selected": "color.primary",
     "text": "color.on-surface",
     "label": "typography.caption",
-    "option": "typography.content"
+    "option": "typography.content",
+    "disabledOpacity": "opacity.disabled"
   },
   "playground": {
     "presentation": "single"

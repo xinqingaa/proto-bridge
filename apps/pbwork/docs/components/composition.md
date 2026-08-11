@@ -66,7 +66,7 @@ FormSection
   └─ TextField / Textarea / Select / Checkbox / RadioGroup / Switch
 ```
 
-提交用 `Button`；主操作优先 `tone="action"`。
+提交用 `Button`；主操作默认 `bgColor=color.action`（及配对文字/边框）。
 
 ## 7. 反馈与叠加
 

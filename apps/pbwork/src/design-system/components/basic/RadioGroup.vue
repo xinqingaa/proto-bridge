@@ -1,11 +1,17 @@
 <script setup lang="ts">
-import { toRefs } from "vue";
+import { computed, toRefs } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
+import {
+  assertColorTokenRef,
+  colorTokenCss,
+} from "@/design-system/components/_shared/colorTokens";
 
 const props = defineProps<{
   label: string;
   modelValue?: string;
   options?: string[];
+  /** Selected control Token-ref. */
+  color?: string;
   disabled?: boolean;
   /** Page-unique inspect / comment anchor; falls back to `ds.radio-group`. */
   inspectId?: string;
@@ -13,7 +19,15 @@ const props = defineProps<{
 defineEmits<{ "update:modelValue": [string] }>();
 
 const rootRef = usePbInspectRef();
-const { label, modelValue, options, disabled, inspectId } = toRefs(props);
+const { label, modelValue, options, color, disabled, inspectId } = toRefs(props);
+
+const selected = computed(() =>
+  assertColorTokenRef(color.value, "color.primary"),
+);
+
+const radioStyle = computed(() => ({
+  "--pb-radio-selected": colorTokenCss(selected.value),
+}));
 
 usePbInspect({
   element: rootRef,
@@ -24,21 +38,24 @@ usePbInspect({
     label: label.value,
     modelValue: modelValue.value ?? "",
     options: options.value ?? [],
+    color: selected.value,
     disabled: disabled.value ?? false,
     inspectId: inspectId.value,
   }),
   getTokens: () => [
-    "color.primary",
+    selected.value,
     "color.on-surface",
     "spacing.sm",
     "typography.content",
     "typography.caption",
+    "opacity.disabled",
   ],
   getTokenBindings: () => ({
-    selected: "color.primary",
+    selected: selected.value,
     label: "typography.caption",
     option: "typography.content",
     gap: "spacing.sm",
+    disabledOpacity: "opacity.disabled",
   }),
 });
 </script>
@@ -49,11 +66,11 @@ usePbInspect({
     class="pb-radio"
     data-pb-id="ds.radio-group"
     data-pb-role="field"
-    color="primary"
     hide-details
     :label="label"
     :model-value="modelValue ?? ''"
     :disabled="disabled ?? false"
+    :style="radioStyle"
     @update:model-value="$emit('update:modelValue', String($event ?? ''))"
   >
     <v-radio
@@ -70,7 +87,13 @@ usePbInspect({
   color: var(--pb-color-on-surface);
   font: var(--pb-typography-content);
 }
+.pb-radio.v-input--disabled {
+  opacity: var(--pb-opacity-disabled, 0.38);
+}
 .pb-radio :deep(.v-label) {
   font: var(--pb-typography-caption);
+}
+.pb-radio :deep(.v-selection-control__input > .v-icon) {
+  color: var(--pb-radio-selected, var(--pb-color-primary));
 }
 </style>

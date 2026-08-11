@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { computed, toRefs } from "vue";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  toRefs,
+  watch,
+} from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import { usePointerSwipe } from "@/design-system/components/_shared/usePointerSwipe";
 
@@ -30,6 +38,7 @@ const props = withDefaults(
 const emit = defineEmits<{ "update:modelValue": [value: string] }>();
 
 const rootRef = usePbInspectRef();
+const trackRef = ref<HTMLElement | null>(null);
 const {
   modelValue,
   items,
@@ -47,12 +56,16 @@ const {
 const indicatorVisible = computed(() => showIndicator.value ?? false);
 
 const tabStyle = computed(() => ({
-  "--pb-tabs-active-background": "var(--pb-color-primary-soft)",
+  "--pb-tabs-track-background": "var(--pb-color-surface-variant)",
+  "--pb-tabs-track-radius": "var(--pb-radius-lg)",
+  "--pb-tabs-active-background": "var(--pb-color-surface)",
   "--pb-tabs-active-color": "var(--pb-color-primary)",
   "--pb-tabs-inactive-color": "var(--pb-color-on-surface-muted)",
   "--pb-tabs-typography": "var(--pb-typography-label)",
   "--pb-tabs-radius": "var(--pb-radius-full)",
   "--pb-tabs-height": `var(--pb-sizing-control-${size.value ?? "md"})`,
+  "--pb-tabs-pill-duration": "var(--pb-motion-duration-slow, 320ms)",
+  "--pb-tabs-pill-easing": "var(--pb-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1))",
 }));
 
 const tab = computed({
@@ -68,6 +81,55 @@ const swipe = usePointerSwipe(
   (value) => emit("update:modelValue", value),
   { swipe: swipeEnabled, mouseSwipe },
 );
+
+const pill = ref({ left: 0, width: 0, ready: false });
+
+function measurePill() {
+  const track = trackRef.value;
+  if (!track) return;
+  const active = Array.from(
+    track.querySelectorAll<HTMLElement>(".pb-tab"),
+  ).find((el) => el.getAttribute("data-pb-key") === tab.value);
+  if (!active) return;
+  const trackBox = track.getBoundingClientRect();
+  const tabBox = active.getBoundingClientRect();
+  pill.value = {
+    left: tabBox.left - trackBox.left + track.scrollLeft,
+    width: tabBox.width,
+    ready: true,
+  };
+}
+
+let resizeObserver: ResizeObserver | null = null;
+
+onMounted(async () => {
+  await nextTick();
+  measurePill();
+  if (trackRef.value && typeof ResizeObserver !== "undefined") {
+    resizeObserver = new ResizeObserver(() => measurePill());
+    resizeObserver.observe(trackRef.value);
+  }
+});
+
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect();
+  resizeObserver = null;
+});
+
+watch(
+  [tab, items, grow, size, align],
+  async () => {
+    await nextTick();
+    measurePill();
+  },
+  { flush: "post" },
+);
+
+const pillStyle = computed(() => ({
+  transform: `translateX(${pill.value.left}px)`,
+  width: `${pill.value.width}px`,
+  opacity: pill.value.ready ? 1 : 0,
+}));
 
 usePbInspect({
   element: rootRef,
@@ -90,11 +152,13 @@ usePbInspect({
   }),
   getState: () => ({ selected: tab.value }),
   getTokenBindings: () => ({
+    trackBackground: "color.surface-variant",
     indicator: "color.primary",
-    activeBackground: "color.primary-soft",
+    activeBackground: "color.surface",
     activeColor: "color.primary",
     inactiveColor: "color.on-surface-muted",
     border: showDivider.value ? "border.hairline" : "transparent",
+    trackRadius: "radius.lg",
     radius: "radius.full",
     height: `sizing.control-${size.value ?? "md"}`,
     target: "sizing.touch",
@@ -104,10 +168,12 @@ usePbInspect({
     easing: "motion.easing-standard",
   }),
   getTokens: () => [
+    "color.surface-variant",
+    "color.surface",
     "color.primary",
-    "color.primary-soft",
     "color.on-surface-muted",
     "border.hairline",
+    "radius.lg",
     "radius.full",
     `sizing.control-${size.value ?? "md"}`,
     "sizing.touch",
@@ -127,29 +193,31 @@ usePbInspect({
       'has-indicator': indicatorVisible,
       'has-divider': showDivider ?? false,
       'is-fill': fill,
+      'is-grow': grow ?? false,
+      'align-center': align === 'center',
     }"
     :style="tabStyle"
     data-pb-role="tab-bar"
   >
-    <v-tabs
-      v-model="tab"
-      class="pb-tab-bar"
-      color="primary"
-      :align-tabs="align ?? 'start'"
-      :grow="grow ?? false"
-    >
-      <v-tab
+    <div ref="trackRef" class="pb-tabs-track" role="tablist">
+      <div class="pb-tabs-pill" aria-hidden="true" :style="pillStyle" />
+      <button
         v-for="item in items"
+        :id="`${inspectId ?? 'ds.tabs'}-tab-${item.value}`"
         :key="item.value"
-        :value="item.value"
+        type="button"
         class="pb-tab"
+        role="tab"
+        :aria-selected="tab === item.value"
+        :tabindex="tab === item.value ? 0 : -1"
         :data-pb-id="`${inspectId ?? 'ds.tabs'}.tab`"
         :data-pb-key="item.value"
         data-pb-role="tab"
+        @click="tab = item.value"
       >
         {{ item.label }}
-      </v-tab>
-    </v-tabs>
+      </button>
+    </div>
 
     <v-window
       v-model="tab"
@@ -182,6 +250,8 @@ usePbInspect({
           :data-pb-id="`${inspectId ?? 'ds.tabs'}.panel`"
           :data-pb-key="item.value"
           data-pb-role="tab-panel"
+          role="tabpanel"
+          :aria-labelledby="`${inspectId ?? 'ds.tabs'}-tab-${item.value}`"
         >
           <slot :name="item.value">
             <p class="pb-tab-panel-empty">{{ item.label }}</p>
@@ -199,45 +269,85 @@ usePbInspect({
   min-width: 0;
   background: transparent;
 }
-.pb-tab-bar {
-  --v-tabs-height: var(--pb-tabs-height, var(--pb-sizing-control-md, 40px));
-  height: var(--v-tabs-height);
-  background: transparent;
-  overflow: visible;
+.pb-tabs-track {
+  position: relative;
+  display: inline-flex;
+  max-width: 100%;
+  align-items: stretch;
+  gap: 0;
+  min-height: var(--pb-tabs-height, var(--pb-sizing-control-md, 40px));
+  padding: var(--pb-spacing-xs, 4px);
+  overflow: auto;
+  border-radius: var(--pb-tabs-track-radius, var(--pb-radius-lg));
+  background: var(--pb-tabs-track-background, var(--pb-color-surface-variant));
+  scrollbar-width: none;
 }
-.pb-tabs.has-divider .pb-tab-bar {
+.pb-tabs-track::-webkit-scrollbar {
+  display: none;
+}
+.pb-tabs.is-grow .pb-tabs-track {
+  display: flex;
+  width: 100%;
+}
+.pb-tabs.align-center .pb-tabs-track {
+  justify-self: center;
+}
+.pb-tabs.has-divider .pb-tabs-track {
   border-bottom: var(--pb-border-hairline);
 }
-.pb-tab-bar :deep(.v-slide-group__container),
-.pb-tab-bar :deep(.v-slide-group__content) {
-  overflow: visible;
-}
-.pb-tab-bar :deep(.v-tab) {
-  height: var(--v-tabs-height);
-  min-height: var(--v-tabs-height);
-  padding: 0 var(--pb-spacing-md, 16px);
+.pb-tabs-pill {
+  position: absolute;
+  top: var(--pb-spacing-xs, 4px);
+  bottom: var(--pb-spacing-xs, 4px);
+  left: 0;
+  z-index: 0;
   border-radius: var(--pb-tabs-radius, var(--pb-radius-full));
+  background: var(--pb-tabs-active-background, var(--pb-color-surface));
+  box-shadow: var(--pb-elevation-card, 0 1px 2px rgba(15, 23, 42, 0.08));
+  transition:
+    transform var(--pb-tabs-pill-duration)
+      var(--pb-tabs-pill-easing),
+    width var(--pb-tabs-pill-duration) var(--pb-tabs-pill-easing),
+    opacity var(--pb-motion-duration-fast, 120ms)
+      var(--pb-motion-easing-standard);
+  pointer-events: none;
+}
+.pb-tab {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(
+    var(--pb-tabs-height, var(--pb-sizing-control-md, 40px)) - 8px
+  );
+  padding: 0 var(--pb-spacing-md, 16px);
+  border: 0;
+  border-radius: var(--pb-tabs-radius, var(--pb-radius-full));
+  background: transparent;
   color: var(--pb-tabs-inactive-color, var(--pb-color-on-surface-muted));
   font: var(--pb-tabs-typography, var(--pb-typography-label));
   letter-spacing: normal;
   text-transform: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--pb-motion-duration-fast, 120ms)
+    var(--pb-motion-easing-standard);
 }
-.pb-tabs.style-pill .pb-tab-bar :deep(.v-tab--selected) {
-  background: var(--pb-tabs-active-background, transparent);
+.pb-tabs.is-grow .pb-tab {
+  flex: 1 1 0;
+}
+.pb-tab[aria-selected="true"] {
   color: var(--pb-tabs-active-color, var(--pb-color-primary));
   font-weight: 600;
 }
-.pb-tabs.style-pill .pb-tab-bar :deep(.v-tab--selected .v-btn__overlay),
-.pb-tabs.style-pill .pb-tab-bar :deep(.v-tab--selected .v-btn__underlay) {
-  border-radius: inherit;
-}
-.pb-tab-bar :deep(.v-tabs-slider),
-.pb-tab-bar :deep(.v-tab__slider) {
-  display: none;
-}
-.pb-tabs.has-indicator .pb-tab-bar :deep(.v-tabs-slider),
-.pb-tabs.has-indicator .pb-tab-bar :deep(.v-tab__slider) {
-  display: block;
+.pb-tabs.has-indicator .pb-tab[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  bottom: 2px;
+  left: 12px;
   height: 3px;
   border-radius: var(--pb-radius-full) var(--pb-radius-full) 0 0;
   background: var(--pb-tabs-active-color, var(--pb-color-primary));
@@ -292,6 +402,9 @@ usePbInspect({
   font: var(--pb-typography-caption, 400 12px/1.4 Inter, system-ui, sans-serif);
 }
 @media (prefers-reduced-motion: reduce) {
+  .pb-tabs-pill {
+    transition-duration: 0s;
+  }
   .pb-tab-window :deep(.v-window__container),
   .pb-tab-window :deep(.v-window-x-transition-enter-active),
   .pb-tab-window :deep(.v-window-x-transition-leave-active),

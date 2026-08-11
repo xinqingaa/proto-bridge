@@ -32,7 +32,23 @@ describe("component business scenarios", () => {
     }
 
     expect(controlKeys("button")).toEqual(
-      expect.arrayContaining(["loading", "size", "variant", "tone"]),
+      expect.arrayContaining(["loading", "size", "bgColor", "borderColor", "textColor"]),
+    );
+    expect(controlKeys("button")).not.toEqual(
+      expect.arrayContaining(["variant", "tone"]),
+    );
+    expect(controlKeys("checkbox")).toEqual(
+      expect.arrayContaining([
+        "selectedColor",
+        "uncheckedBorderColor",
+        "disabled",
+      ]),
+    );
+    expect(controlKeys("radio-group")).toEqual(
+      expect.arrayContaining(["color", "disabled"]),
+    );
+    expect(controlKeys("switch")).toEqual(
+      expect.arrayContaining(["color", "disabled"]),
     );
     expect(controlKeys("icon-button")).toEqual(
       expect.arrayContaining(["loading", "variant", "tone", "size"]),

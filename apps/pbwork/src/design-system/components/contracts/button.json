@@ -6,12 +6,13 @@
     "policy": "fixed",
     "defaultRole": "button"
   },
-  "summary": "表单主次操作；flat + action 为主 CTA，loading / disabled 均不可点。",
+  "summary": "表单主次操作；色槽走 Token-ref，loading 保留文案，disabled 走 opacity.disabled。",
   "behavior": [
-    "loading 时不可点，必须有可见反馈",
-    "disabled 与 loading 同时为真时以不可点为准",
-    "tone=action 用于主操作；primary 用于强调/品牌语义，不替代 action 主 CTA",
-    "variant / tone 是同一 role 下的外观槽，不拆成多个组件"
+    "色外观只通过 bgColor / borderColor / textColor（Bind 池 Token ID 或 transparent）表达，禁止实例硬编码色值",
+    "未传 borderColor 时与 bgColor 相同；未传 textColor 时按底色推导（实色→on-*，*-soft→对应实色，透明底→边框色或 color.action）",
+    "loading 时不可点，spinner 与文案同时可见，不得用加载图标替换文字",
+    "disabled 与 loading 同时为真时以不可点为准；禁用态整钮使用 opacity.disabled",
+    "默认主操作：bgColor=color.action（及配对文字/边框），不把公开语义绑到实现层样式枚举"
   ],
   "propsSchema": {
     "type": "object",
@@ -20,24 +21,17 @@
       "label": {
         "type": "string"
       },
-      "variant": {
+      "bgColor": {
         "type": "string",
-        "enum": [
-          "flat",
-          "tonal",
-          "outlined",
-          "text"
-        ]
+        "description": "Background Token-ref (Bind color id or transparent)."
       },
-      "tone": {
+      "borderColor": {
         "type": "string",
-        "enum": [
-          "action",
-          "primary",
-          "secondary",
-          "error",
-          "success"
-        ]
+        "description": "Border Token-ref; defaults to bgColor."
+      },
+      "textColor": {
+        "type": "string",
+        "description": "Foreground Token-ref; defaults from bgColor pairing."
       },
       "size": {
         "type": "string",
@@ -71,46 +65,15 @@
   },
   "defaultProps": {
     "label": "确认",
-    "variant": "flat",
-    "tone": "action",
+    "bgColor": "color.action",
+    "borderColor": "color.action",
+    "textColor": "color.on-action",
     "size": "md",
     "loading": false,
     "block": false,
     "disabled": false
   },
   "states": [
-    {
-      "id": "tonal",
-      "label": "柔和",
-      "kind": "variant",
-      "props": {
-        "variant": "tonal"
-      }
-    },
-    {
-      "id": "outlined",
-      "label": "描边",
-      "kind": "variant",
-      "props": {
-        "variant": "outlined"
-      }
-    },
-    {
-      "id": "text",
-      "label": "文字",
-      "kind": "variant",
-      "props": {
-        "variant": "text"
-      }
-    },
-    {
-      "id": "primary",
-      "label": "主色",
-      "kind": "variant",
-      "props": {
-        "tone": "primary"
-      }
-    },
     {
       "id": "loading",
       "label": "加载",
@@ -136,16 +99,18 @@
   ],
   "tokenBindings": {
     "background": "color.action",
+    "border": "color.action",
     "onBackground": "color.on-action",
     "radius": "radius.md",
     "elevation": "elevation.none",
     "height": "sizing.control-md",
     "paddingX": "spacing.md",
     "typography": "typography.label",
+    "disabledOpacity": "opacity.disabled",
     "duration": "motion.duration-fast",
     "easing": "motion.easing-standard"
   },
   "playground": {
-    "presentation": "tile"
+    "presentation": "single"
   }
 }

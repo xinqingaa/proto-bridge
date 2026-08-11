@@ -65,7 +65,9 @@ usePbInspect({
     <Button
       v-if="actionLabel"
       :label="actionLabel"
-      variant="tonal"
+      bg-color="color.primary-soft"
+      border-color="color.primary-soft"
+      text-color="color.primary"
       @click="$emit('action')"
     />
   </v-sheet>

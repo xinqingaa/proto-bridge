@@ -6,14 +6,30 @@
     "policy": "fixed",
     "defaultRole": "field"
   },
+  "summary": "独立确认项；选中填充与未选中边框均为 Token-ref，勾选框圆角 radius.xs。",
+  "behavior": [
+    "selectedColor / uncheckedBorderColor 只接受 Bind 池 Token ID，禁止硬编码色值",
+    "勾选框圆角固定 radius.xs（4px）",
+    "disabled 使用 opacity.disabled",
+    "多选是多个 Checkbox 组合，本组件仍为单布尔"
+  ],
   "propsSchema": {
     "type": "object",
+    "additionalProperties": false,
     "properties": {
       "label": {
         "type": "string"
       },
       "modelValue": {
         "type": "boolean"
+      },
+      "selectedColor": {
+        "type": "string",
+        "description": "Checked fill / checkmark Token-ref."
+      },
+      "uncheckedBorderColor": {
+        "type": "string",
+        "description": "Unchecked border Token-ref."
       },
       "disabled": {
         "type": "boolean"
@@ -26,12 +42,15 @@
   "defaultProps": {
     "label": "仅查看高优先级",
     "modelValue": true,
+    "selectedColor": "color.primary",
+    "uncheckedBorderColor": "color.outline",
     "disabled": false
   },
   "states": [
     {
       "id": "unchecked",
       "label": "未选中",
+      "kind": "content",
       "props": {
         "modelValue": false
       }
@@ -39,6 +58,7 @@
     {
       "id": "disabled",
       "label": "禁用",
+      "kind": "interaction",
       "props": {
         "disabled": true
       }
@@ -51,10 +71,12 @@
   "tokenBindings": {
     "selected": "color.primary",
     "onSelected": "color.on-primary",
+    "uncheckedBorder": "color.outline",
     "text": "color.on-surface",
     "target": "sizing.touch",
     "radius": "radius.xs",
-    "label": "typography.content"
+    "label": "typography.content",
+    "disabledOpacity": "opacity.disabled"
   },
   "playground": {
     "presentation": "single"

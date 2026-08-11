@@ -30,10 +30,10 @@ describe("playground session model", () => {
   it("keeps preset highlight when side edit does not break preset props", () => {
     const store = usePlaygroundStore();
     store.open("button");
-    store.applyPreset("tonal");
+    store.applyPreset("loading");
     store.setOverride("label", "手动文案");
-    expect(store.highlightedPresetId).toBe("tonal");
-    expect(store.resolvedProps.variant).toBe("tonal");
+    expect(store.highlightedPresetId).toBe("loading");
+    expect(store.resolvedProps.loading).toBe(true);
     expect(store.resolvedProps.label).toBe("手动文案");
   });
 
@@ -43,9 +43,9 @@ describe("playground session model", () => {
     store.setOverride("label", "only-label");
     expect(store.highlightedPresetId).toBeNull();
 
-    store.applyPreset("tonal");
-    store.setOverride("loading", true);
-    // tonal + loading both match → ambiguous
+    store.applyPreset("loading");
+    store.setOverride("disabled", true);
+    // loading + disabled both match → ambiguous
     expect(store.highlightedPresetId).toBeNull();
   });
 
@@ -58,7 +58,7 @@ describe("playground session model", () => {
     expect(store.overrides).toEqual({});
     expect(store.highlightedPresetId).toBe("default");
 
-    store.applyPreset("tonal");
+    store.applyPreset("loading");
     store.applyPreset("default");
     expect(store.overrides).toEqual({});
     expect(store.highlightedPresetId).toBe("default");
@@ -71,10 +71,10 @@ describe("playground session model", () => {
     if (scenarios.length < 2) return;
     store.setScenario(scenarios[1]!.id);
     const scenarioLabel = store.resolvedProps.label;
-    store.applyPreset("tonal");
+    store.applyPreset("loading");
     expect(store.scenarioId).toBe(scenarios[1]!.id);
     expect(store.resolvedProps.label).toBe(scenarioLabel);
-    expect(store.resolvedProps.variant).toBe("tonal");
-    expect(store.highlightedPresetId).toBe("tonal");
+    expect(store.resolvedProps.loading).toBe(true);
+    expect(store.highlightedPresetId).toBe("loading");
   });
 });

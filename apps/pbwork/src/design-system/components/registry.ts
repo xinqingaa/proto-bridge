@@ -1,4 +1,5 @@
 import type { ComponentRecord } from "@/design-system/types";
+import { COLOR_TOKEN_SELECT_OPTIONS } from "@/design-system/components/_shared/colorTokens";
 
 const toneOptions = [
   { label: "Primary (color.primary)", value: "primary" },
@@ -7,16 +8,13 @@ const toneOptions = [
   { label: "Success (color.success)", value: "success" },
 ];
 
-const buttonToneOptions = [
-  { label: "Action (color.action)", value: "action" },
-  ...toneOptions,
-];
-
 const sizeOptions = [
   { label: "小", value: "sm" },
   { label: "标准", value: "md" },
   { label: "大", value: "lg" },
 ];
+
+const colorTokenOptions = COLOR_TOKEN_SELECT_OPTIONS;
 
 export const componentRecords = [
   {
@@ -30,21 +28,22 @@ export const componentRecords = [
     controls: [
       { key: "label", label: "文案", control: "text" },
       {
-        key: "variant",
-        label: "样式",
+        key: "bgColor",
+        label: "背景 Token",
         control: "select",
-        options: [
-          { label: "Flat", value: "flat" },
-          { label: "Tonal", value: "tonal" },
-          { label: "Outlined", value: "outlined" },
-          { label: "Text", value: "text" },
-        ],
+        options: colorTokenOptions,
       },
       {
-        key: "tone",
-        label: "语义色",
+        key: "borderColor",
+        label: "边框 Token",
         control: "select",
-        options: buttonToneOptions,
+        options: colorTokenOptions,
+      },
+      {
+        key: "textColor",
+        label: "文字 Token",
+        control: "select",
+        options: colorTokenOptions,
       },
       { key: "size", label: "尺寸", control: "select", options: sizeOptions },
       { key: "loading", label: "加载中", control: "boolean" },
@@ -478,6 +477,18 @@ export const componentRecords = [
     controls: [
       { key: "label", label: "选项文案", control: "text" },
       { key: "modelValue", label: "已选中", control: "boolean" },
+      {
+        key: "selectedColor",
+        label: "选中色 Token",
+        control: "select",
+        options: colorTokenOptions.filter((item) => item.value !== "transparent"),
+      },
+      {
+        key: "uncheckedBorderColor",
+        label: "未选中边框 Token",
+        control: "select",
+        options: colorTokenOptions.filter((item) => item.value !== "transparent"),
+      },
       { key: "disabled", label: "禁用", control: "boolean" },
     ],
   },
@@ -492,6 +503,12 @@ export const componentRecords = [
     controls: [
       { key: "label", label: "分组名称", control: "text" },
       { key: "modelValue", label: "当前选项", control: "text" },
+      {
+        key: "color",
+        label: "选中色 Token",
+        control: "select",
+        options: colorTokenOptions.filter((item) => item.value !== "transparent"),
+      },
       { key: "disabled", label: "禁用", control: "boolean" },
     ],
   },
@@ -506,6 +523,12 @@ export const componentRecords = [
     controls: [
       { key: "label", label: "开关文案", control: "text" },
       { key: "modelValue", label: "已开启", control: "boolean" },
+      {
+        key: "color",
+        label: "开启色 Token",
+        control: "select",
+        options: colorTokenOptions.filter((item) => item.value !== "transparent"),
+      },
       { key: "disabled", label: "禁用", control: "boolean" },
     ],
   },

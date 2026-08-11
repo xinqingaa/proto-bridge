@@ -6,14 +6,24 @@
     "policy": "fixed",
     "defaultRole": "field"
   },
+  "summary": "即时开关；开启色为 Token-ref，禁用走 opacity.disabled。",
+  "behavior": [
+    "color 只接受 Bind 池 Token ID，禁止硬编码色值",
+    "disabled 使用 opacity.disabled"
+  ],
   "propsSchema": {
     "type": "object",
+    "additionalProperties": false,
     "properties": {
       "label": {
         "type": "string"
       },
       "modelValue": {
         "type": "boolean"
+      },
+      "color": {
+        "type": "string",
+        "description": "Active track Token-ref."
       },
       "disabled": {
         "type": "boolean"
@@ -26,12 +36,14 @@
   "defaultProps": {
     "label": "接收进度通知",
     "modelValue": true,
+    "color": "color.primary",
     "disabled": false
   },
   "states": [
     {
       "id": "off",
       "label": "关闭",
+      "kind": "content",
       "props": {
         "modelValue": false
       }
@@ -39,6 +51,7 @@
     {
       "id": "disabled",
       "label": "禁用",
+      "kind": "interaction",
       "props": {
         "disabled": true
       }
@@ -54,7 +67,8 @@
     "thumb": "color.surface",
     "text": "color.on-surface",
     "target": "sizing.touch",
-    "label": "typography.content"
+    "label": "typography.content",
+    "disabledOpacity": "opacity.disabled"
   },
   "playground": {
     "presentation": "single"

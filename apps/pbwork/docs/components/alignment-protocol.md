@@ -47,10 +47,21 @@
 | 值 | Playground | 适用 |
 | --- | --- | --- |
 | **`single`（默认）** | 单个预览，由场景 + 侧栏驱动 | 绝大多数组件 |
-| **`tile`** | 仅平铺 default + states；**无场景下拉、无右侧调整栏**；只留主题切换 | **目前仅 `button`、`icon`** |
+| **`tile`** | 仅平铺 default + states；**无场景下拉、无右侧调整栏**；只留主题切换 | **目前仅 `icon`** |
 | **`trigger`** | 触发按钮打开后挂载 | dialog / sheet / snackbar / flow-sheet |
 
 禁止把 `tile` 扩大到列表、Tabs、表单、AppBar 等大块组件。
+
+### Token-ref props（色槽）
+
+部分基础控件（如 `button`、`checkbox`、`radio-group`、`switch`）允许通过 props 传入 **Bind 池 Token ID**（或 `transparent`）覆盖默认色槽。  
+约束：
+
+- **禁止**实例硬编码色值（`#hex` / `rgb()` 等）。
+- Playground **「令牌」页保持只读**（展示默认 `tokenBindings`）；色槽在「调整组件」里用枚举下拉改 prop，不是改绑 Contract。
+- 交互组件 `disabled` 统一消费 `opacity.disabled`（当前默认 `0.38`）。
+
+Button 公开语义以色槽与行为（loading 保留文案、disabled 透明度）表达，**不**把公开 API / 文档绑到实现层样式枚举。
 
 ## 分级同步义务
 
@@ -71,7 +82,7 @@
 
 ## 图标
 
-DS **唯一**图标包为 **Lucide**（稳定 icon id）。基础组件 `icon` 承载策展清单；Playground 仅对 `button` / `icon` 使用 `tile` 平铺。Flutter 换 `lucide_icons`（或同类）属 P1.5。
+DS **唯一**图标包为 **Lucide**（稳定 icon id）。基础组件 `icon` 承载策展清单；Playground 仅对 `icon` 使用 `tile` 平铺。Flutter 换 `lucide_icons`（或同类）属 P1.5。
 
 ## 非目标
 

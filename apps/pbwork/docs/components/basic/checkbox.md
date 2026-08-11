@@ -10,41 +10,25 @@
 
 - **做什么**：可独立勾选的条件。
 - **边界**：二元开关；多选一组用多个 Checkbox，互斥用 RadioGroup。
+- **色**：`selectedColor`（选中填充）与 `uncheckedBorderColor`（未选中边框）均为 Token-ref；勾选框圆角 `radius.xs`。
 
-## Props
+## 行为要点
 
-| Prop | 类型 | 默认 | 说明 |
-| --- | --- | --- | --- |
-| `label` | string | `仅查看高优先级` | |
-| `modelValue` | boolean | `true` | |
-| `disabled` | boolean | `false` | |
+- 禁止实例硬编码色值。
+- `disabled` 使用 `opacity.disabled`。
+- Props、默认值、Token 槽以 Contract 为准。
 
-## States（Playground / Contract）
+## States
 
-- `unchecked` — 未选中
-- `disabled` — 禁用
+| id | label | kind |
+| --- | --- | --- |
+| `unchecked` | 未选中 | content |
+| `disabled` | 禁用 | interaction |
 
-## Slots / Events
-
-- **Slots**：无
-- **Events**：`update:modelValue`
-
-## tokenBindings
-
-| 槽位 | Token |
-| --- | --- |
-| `selected` | `color.primary` |
-| `onSelected` | `color.on-primary` |
-| `text` | `color.on-surface` |
-| `target` | `sizing.touch` |
-| `radius` | `radius.xs` |
-| `label` | `typography.content` |
-
-切浅色/深色只改 Theme 覆盖值，不改本表绑定。
+Playground：`single`；场景「多选一组」演示多个独立 Checkbox。
 
 ## 用法要点
 
-1. 从 `@/design-system/components/basic/...` 引入实现组件。
-2. Props 保持在契约枚举内；需要新能力先改 contract + registry + 本文。
-3. 业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`；默认 `ds.*` 只用于 Playground、组件测试或非业务预览。
-
+1. 从 `@/design-system/components/basic/Checkbox.vue` 引入。
+2. 需要新能力先改 Contract + registry + 本文叙事。
+3. 业务原型必须传业务稳定 `inspectId`。

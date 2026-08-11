@@ -83,6 +83,8 @@ export const BIND_TOKEN_IDS = [
   "motion.duration-normal",
   "motion.duration-slow",
   "motion.easing-standard",
+  // Opacity — shared interaction states
+  "opacity.disabled",
 ] as const;
 
 export type BindTokenId = (typeof BIND_TOKEN_IDS)[number];

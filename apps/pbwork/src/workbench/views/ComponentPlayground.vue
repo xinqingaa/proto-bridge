@@ -263,6 +263,16 @@ function onPreviewUpdate(value: unknown) {
   playground.setOverride("modelValue", value);
 }
 
+const checkboxMultiValues = ref({
+  sms: true,
+  push: false,
+  email: true,
+});
+
+const isCheckboxMulti = computed(
+  () => record.value?.id === "checkbox" && scenarioId.value === "multi",
+);
+
 function controlValue(key: string): unknown {
   return resolvedProps.value[key];
 }
@@ -439,7 +449,41 @@ function bindingResolvedValue(tokenId: string) {
               :style="previewStyle"
               :class="{ 'is-tall': tallPreview }"
             >
+              <div v-if="isCheckboxMulti" class="checkbox-multi-demo">
+                <component
+                  :is="previewComponent"
+                  label="短信通知"
+                  :model-value="checkboxMultiValues.sms"
+                  selected-color="color.primary"
+                  unchecked-border-color="color.outline"
+                  inspect-id="ds.checkbox.multi.sms"
+                  @update:model-value="checkboxMultiValues.sms = Boolean($event)"
+                />
+                <component
+                  :is="previewComponent"
+                  label="推送通知"
+                  :model-value="checkboxMultiValues.push"
+                  selected-color="color.primary"
+                  unchecked-border-color="color.outline"
+                  inspect-id="ds.checkbox.multi.push"
+                  @update:model-value="
+                    checkboxMultiValues.push = Boolean($event)
+                  "
+                />
+                <component
+                  :is="previewComponent"
+                  label="邮件通知"
+                  :model-value="checkboxMultiValues.email"
+                  selected-color="color.success"
+                  unchecked-border-color="color.outline"
+                  inspect-id="ds.checkbox.multi.email"
+                  @update:model-value="
+                    checkboxMultiValues.email = Boolean($event)
+                  "
+                />
+              </div>
               <component
+                v-else
                 :is="previewComponent"
                 v-bind="previewBind()"
                 @update:model-value="onPreviewUpdate"
@@ -725,6 +769,12 @@ function bindingResolvedValue(tokenId: string) {
   color: var(--pb-color-on-surface-muted, #64748b);
   text-align: center;
   font: var(--pb-typography-caption, 400 12px/1.4 Inter, system-ui, sans-serif);
+}
+.checkbox-multi-demo {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  width: 100%;
 }
 .panel-slot-demo strong {
   color: var(--pb-color-on-surface);

@@ -16,6 +16,34 @@ export function resolveLiveTokenBindings(
     }
   }
 
+  // Button / control Token-ref color slots (preferred over legacy tone×variant).
+  if (typeof props.bgColor === "string" && props.bgColor.length > 0) {
+    if ("background" in result) result.background = props.bgColor;
+  }
+  if (typeof props.borderColor === "string" && props.borderColor.length > 0) {
+    if ("border" in result) result.border = props.borderColor;
+  }
+  if (typeof props.textColor === "string" && props.textColor.length > 0) {
+    if ("onBackground" in result) result.onBackground = props.textColor;
+    if ("text" in result) result.text = props.textColor;
+  }
+  if (typeof props.selectedColor === "string" && props.selectedColor.length > 0) {
+    if ("selected" in result) result.selected = props.selectedColor;
+  }
+  if (
+    typeof props.uncheckedBorderColor === "string" &&
+    props.uncheckedBorderColor.length > 0
+  ) {
+    if ("uncheckedBorder" in result) {
+      result.uncheckedBorder = props.uncheckedBorderColor;
+    }
+  }
+  if (typeof props.color === "string" && props.color.length > 0) {
+    if ("selected" in result) result.selected = props.color;
+    if ("active" in result) result.active = props.color;
+    if ("color" in result) result.color = props.color;
+  }
+
   if (typeof props.tone === "string" && props.tone.length > 0) {
     const tone = props.tone;
     for (const key of Object.keys(result)) {

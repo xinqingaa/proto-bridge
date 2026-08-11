@@ -129,7 +129,9 @@ function refresh() {
           </p>
           <Button
             label="重新加载"
-            tone="primary"
+            bg-color="color.primary"
+            border-color="color.primary"
+            text-color="color.on-primary"
             inspect-id="cold-chain-ops.exception-queue.retry"
             @click="retry"
           />
@@ -200,8 +202,9 @@ function refresh() {
             </div>
             <Button
               label="仅看严重异常"
-              variant="tonal"
-              tone="error"
+              bg-color="color.error-soft"
+              border-color="color.error-soft"
+              text-color="color.error"
               size="sm"
               inspect-id="cold-chain-ops.exception-queue.show-critical"
               data-pb-action="show-critical"

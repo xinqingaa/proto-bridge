@@ -6,12 +6,14 @@
     "policy": "fixed",
     "defaultRole": "tab-bar"
   },
-  "summary": "页内 pill 分段：详情二级分区，或列表顶等宽状态筛选。",
+  "summary": "页内 pill 分段：轨道容器带圆角背景，选中胶囊左右滑动过渡。",
   "behavior": [
-    "固定 pill 选中样式（primary-soft 背景 + 全圆角）",
+    "最外层 tab 轨道有表面背景与圆角；选中态为滑动胶囊（非瞬时换底）",
+    "切换时胶囊沿水平方向过渡（左→右或右→左）",
     "内容必须进具名 slot；短内容可滑用 fill",
     "swipe / mouseSwipe 分离，不可互兜底",
-    "一级 BottomNavigation 面板内禁止再嵌套带 window 的 Tabs"
+    "一级 BottomNavigation 面板内禁止再嵌套带 window 的 Tabs",
+    "prefers-reduced-motion: reduce 时关闭胶囊位移过渡"
   ],
   "propsSchema": {
     "type": "object",
@@ -116,11 +118,13 @@
     "update:modelValue"
   ],
   "tokenBindings": {
+    "trackBackground": "color.surface-variant",
     "indicator": "color.primary",
-    "activeBackground": "color.primary-soft",
+    "activeBackground": "color.surface",
     "activeColor": "color.primary",
     "inactiveColor": "color.on-surface-muted",
     "border": "border.hairline",
+    "trackRadius": "radius.lg",
     "radius": "radius.full",
     "height": "sizing.control-md",
     "target": "sizing.touch",
