@@ -3,6 +3,9 @@ import { toRefs } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import { radiusStyle } from "@/design-system/components/_shared/radius";
 import { elevationStyle } from "@/design-system/components/_shared/appearance";
+import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
+
+const NO_ELEVATION = tokenDefaultNumber("layer.base");
 
 const props = defineProps<{
   title: string;
@@ -58,7 +61,7 @@ usePbInspect({
     data-pb-id="ds.card"
     :data-pb-role="semanticRole ?? 'section'"
     variant="outlined"
-    :elevation="0"
+    :elevation="NO_ELEVATION"
     :style="[radiusStyle('lg'), elevationStyle(elevated ? 'card' : 'none')]"
   >
     <v-card-title class="pb-card-title">{{ title }}</v-card-title>
@@ -80,7 +83,7 @@ usePbInspect({
 }
 .pb-card-title {
   font: var(--pb-typography-subtitle);
-  padding-bottom: 0;
+  padding-bottom: var(--pb-spacing-none);
 }
 .pb-card-subtitle {
   color: var(--pb-color-on-surface-muted);

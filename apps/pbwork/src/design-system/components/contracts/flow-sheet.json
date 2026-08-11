@@ -74,7 +74,8 @@
     "fill": "layout.fill",
     "maxHeight": "layout.sheet-max-height",
     "duration": "motion.duration-sheet",
-    "easing": "motion.easing-gentle"
+    "easing": "motion.easing-gentle",
+    "trackTranslation": "layout.translate-full-negative"
   },
   "playground": {
     "presentation": "trigger"

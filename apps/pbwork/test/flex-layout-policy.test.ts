@@ -4,25 +4,46 @@ import { parse as parseSfc } from "vue/compiler-sfc";
 import postcss from "postcss";
 import { describe, expect, it } from "vitest";
 
-const designSystemDirectory = resolve("src/design-system");
+const designSystemImplementationDirectories = [
+  resolve("src/design-system/components/_shared"),
+  resolve("src/design-system/components/basic"),
+  resolve("src/design-system/components/complex"),
+];
 const prototypesDirectory = resolve("src/prototypes");
-const historicPrototypeDirectory = resolve("src/prototypes/cold-chain-ops");
-const styleFilePattern = /\.(?:vue|css|scss|sass|less)$/;
+
+const policyFilePattern = /\.(?:vue|ts|css|scss|sass|less)$/;
+const visualTemplateAttributePattern =
+  /(?:^|\s)(?::)?(?:size|width|height|min-width|min-height|max-width|max-height|offset|elevation|bg-opacity|opacity|timeout|stroke-width|rows)\s*=\s*(["'])[^"']*[+-]?(?:\d*\.\d+|\d+)[^"']*\1/gi;
+const styleTemplateAttributePattern =
+  /(?:^|\s)(?::)?style\s*=\s*(["'])[^"']*\1/gi;
+const visualScriptAssignmentPattern =
+  /\b(?:size|width|height|minWidth|minHeight|maxWidth|maxHeight|offset|elevation|opacity|timeout|strokeWidth|stroke)\s*:\s*[+-]?(?:\d*\.\d+|\d+)\b/g;
+const fixedCssLiteralPattern =
+  /(?:#[0-9a-f]{3,8}\b|[+-]?(?:\d*\.\d+|\d+)(?:px|rem|em|%|vh|vw|vmin|vmax|ms|s|deg)(?=$|[^a-z]))/gi;
+const gridSourcePattern =
+  /(?:display\s*:\s*["']?(?:inline-)?grid\b|\bgrid-(?:template|auto|column|row|gap|area)s?\s*:|\bplace-(?:items|content|self)\s*:)/gi;
 
 type StyleSource = {
   content: string;
   lineOffset: number;
 };
 
-async function findStyleFiles(directory: string): Promise<string[]> {
+type ScriptSource = {
+  content: string;
+  lineOffset: number;
+};
+
+async function findPolicyFiles(directory: string): Promise<string[]> {
   const entries = await readdir(directory, { withFileTypes: true });
   const nested = await Promise.all(
     entries.map(async (entry) => {
       const target = join(directory, entry.name);
       if (entry.isDirectory()) {
-        return target === historicPrototypeDirectory ? [] : findStyleFiles(target);
+        return findPolicyFiles(target);
       }
-      return entry.isFile() && styleFilePattern.test(entry.name) ? [target] : [];
+      return entry.isFile() && policyFilePattern.test(entry.name)
+        ? [target]
+        : [];
     }),
   );
   return nested.flat();
@@ -30,16 +51,33 @@ async function findStyleFiles(directory: string): Promise<string[]> {
 
 async function readStyleSources(file: string): Promise<StyleSource[]> {
   const source = await readFile(file, "utf8");
+  if (extname(file) === ".ts") return [];
   if (extname(file) !== ".vue") return [{ content: source, lineOffset: 0 }];
 
   const parsed = parseSfc(source, { filename: file });
   if (parsed.errors.length > 0) {
-    throw new Error(`${relative(resolve("."), file)} cannot be parsed as an SFC`);
+    throw new Error(
+      `${relative(resolve("."), file)} cannot be parsed as an SFC`,
+    );
   }
   return parsed.descriptor.styles.map((style) => ({
     content: style.content,
     lineOffset: style.loc.start.line - 1,
   }));
+}
+
+async function readScriptSources(file: string): Promise<ScriptSource[]> {
+  const source = await readFile(file, "utf8");
+  if (extname(file) === ".ts") return [{ content: source, lineOffset: 0 }];
+  if (extname(file) !== ".vue") return [];
+
+  const parsed = parseSfc(source, { filename: file });
+  return [parsed.descriptor.script, parsed.descriptor.scriptSetup]
+    .filter((block): block is NonNullable<typeof block> => Boolean(block))
+    .map((block) => ({
+      content: block.content,
+      lineOffset: block.loc.start.line - 1,
+    }));
 }
 
 function lineAt(source: string, offset: number): number {
@@ -50,9 +88,42 @@ function sourceLocation(file: string, line: number): string {
   return `${relative(resolve("."), file)}:${line}`;
 }
 
+function matchingOffsets(source: string, pattern: RegExp): number[] {
+  const offsets: number[] = [];
+  pattern.lastIndex = 0;
+  for (let match = pattern.exec(source); match; match = pattern.exec(source)) {
+    offsets.push(match.index);
+  }
+  return offsets;
+}
+
+function inlineStyleViolationOffsets(source: string): number[] {
+  const offsets: number[] = [];
+  styleTemplateAttributePattern.lastIndex = 0;
+  for (
+    let match = styleTemplateAttributePattern.exec(source);
+    match;
+    match = styleTemplateAttributePattern.exec(source)
+  ) {
+    const value = match[0];
+    if (
+      matchingOffsets(value, fixedCssLiteralPattern).length > 0 ||
+      matchingOffsets(value, gridSourcePattern).length > 0 ||
+      literalTokenFallbackOffsets(value).length > 0
+    ) {
+      offsets.push(match.index);
+    }
+  }
+  return offsets;
+}
+
 function literalTokenFallbackOffsets(value: string): number[] {
   const offsets: number[] = [];
-  for (let start = value.indexOf("var("); start >= 0; start = value.indexOf("var(", start + 4)) {
+  for (
+    let start = value.indexOf("var(");
+    start >= 0;
+    start = value.indexOf("var(", start + 4)
+  ) {
     let cursor = start + 4;
     while (/\s/.test(value[cursor] ?? "")) cursor += 1;
     if (!value.startsWith("--pb-", cursor)) continue;
@@ -78,10 +149,6 @@ function literalTokenFallbackOffsets(value: string): number[] {
   return offsets;
 }
 
-function hasLiteralTokenFallback(value: string): boolean {
-  return literalTokenFallbackOffsets(value).length > 0;
-}
-
 function stripTokenVars(value: string): string {
   let stripped = value;
   let previous = "";
@@ -92,27 +159,31 @@ function stripTokenVars(value: string): string {
   return stripped;
 }
 
-function hasBareDesignLiteral(property: string, value: string): boolean {
+function hasBareDesignLiteral(value: string): boolean {
   const remaining = stripTokenVars(value);
-  if (/(?:#[0-9a-f]{3,8}\b|\brgba?\(|\bhsla?\(|\bcolor-mix\(|\b(?:linear|radial)-gradient\()/i.test(remaining)) {
-    return true;
-  }
-  if (/[+-]?(?:\d*\.\d+|\d+)(?:px|rem|em|%|vh|vw|vmin|vmax|ms|s|deg)(?=$|[^a-z])/i.test(remaining)) {
-    return true;
-  }
   if (
-    ["opacity", "z-index", "font-weight", "line-height", "letter-spacing"].includes(property) &&
-    /[+-]?(?:\d*\.\d+|\d+)\b/.test(remaining)
+    /(?:#[0-9a-f]{3,8}\b|\brgba?\(|\bhsla?\(|\bcolor-mix\(|\b(?:linear|radial)-gradient\()/i.test(
+      remaining,
+    )
   ) {
     return true;
   }
-  if (
-    (property === "transition" || property === "transition-timing-function") &&
-    /\b(?:ease|ease-in|ease-out|ease-in-out|linear)\b/.test(remaining)
-  ) {
-    return true;
-  }
+  if (/[+-]?(?:\d*\.\d+|\d+)\b/.test(remaining)) return true;
   return false;
+}
+
+function pushOffsets(
+  violations: string[],
+  file: string,
+  source: ScriptSource,
+  offsets: number[],
+  reason: string,
+) {
+  for (const offset of offsets) {
+    violations.push(
+      `${sourceLocation(file, source.lineOffset + lineAt(source.content, offset))} (${reason})`,
+    );
+  }
 }
 
 async function findPolicyViolations(files: string[]) {
@@ -122,14 +193,65 @@ async function findPolicyViolations(files: string[]) {
     const allSource = await readFile(file, "utf8");
     if (extname(file) === ".vue") {
       const parsed = parseSfc(allSource, { filename: file });
-      for (const block of [parsed.descriptor.script, parsed.descriptor.scriptSetup]) {
-        if (!block) continue;
-        for (const offset of literalTokenFallbackOffsets(block.content)) {
-          violations.push(
-            `${sourceLocation(file, block.loc.start.line + lineAt(block.content, offset) - 1)} (literal Token fallback)`,
-          );
-        }
+      const template = parsed.descriptor.template;
+      if (template) {
+        const templateSource = {
+          content: template.content,
+          lineOffset: template.loc.start.line - 1,
+        };
+        pushOffsets(
+          violations,
+          file,
+          templateSource,
+          matchingOffsets(template.content, visualTemplateAttributePattern),
+          "visual template prop contains a fixed number",
+        );
+        pushOffsets(
+          violations,
+          file,
+          templateSource,
+          inlineStyleViolationOffsets(template.content),
+          "inline style bypasses Token-only or Flex-only policy",
+        );
+        pushOffsets(
+          violations,
+          file,
+          templateSource,
+          matchingOffsets(template.content, gridSourcePattern),
+          "CSS Grid is forbidden in template styles",
+        );
       }
+    }
+
+    for (const script of await readScriptSources(file)) {
+      pushOffsets(
+        violations,
+        file,
+        script,
+        literalTokenFallbackOffsets(script.content),
+        "literal Token fallback",
+      );
+      pushOffsets(
+        violations,
+        file,
+        script,
+        matchingOffsets(script.content, gridSourcePattern),
+        "CSS Grid is forbidden in generated styles",
+      );
+      pushOffsets(
+        violations,
+        file,
+        script,
+        matchingOffsets(script.content, fixedCssLiteralPattern),
+        "script contains a fixed CSS value",
+      );
+      pushOffsets(
+        violations,
+        file,
+        script,
+        matchingOffsets(script.content, visualScriptAssignmentPattern),
+        "visual script prop contains a fixed number",
+      );
     }
 
     for (const style of await readStyleSources(file)) {
@@ -147,12 +269,21 @@ async function findPolicyViolations(files: string[]) {
         ) {
           violations.push(`${location} (CSS Grid is forbidden)`);
         }
-        if (hasLiteralTokenFallback(value)) {
+        if (literalTokenFallbackOffsets(value).length > 0) {
           violations.push(`${location} (literal Token fallback)`);
         }
-        if (hasBareDesignLiteral(property, value)) {
-          violations.push(`${location} (${property} contains a bare design value)`);
+        if (hasBareDesignLiteral(value)) {
+          violations.push(
+            `${location} (${property} contains a bare design value)`,
+          );
         }
+      });
+      root.walkAtRules((rule) => {
+        if (!hasBareDesignLiteral(rule.params)) return;
+        const line = (rule.source?.start?.line ?? 1) + style.lineOffset;
+        violations.push(
+          `${sourceLocation(file, line)} (@${rule.name} contains a bare design value)`,
+        );
       });
     }
   }
@@ -161,15 +292,48 @@ async function findPolicyViolations(files: string[]) {
 }
 
 describe("Flex-only and Token-only style policy", () => {
-  it("keeps the design system free of CSS Grid and bare design values", async () => {
+  it("recognizes style, template, script, fallback, and Grid violations", () => {
+    expect(hasBareDesignLiteral("0")).toBe(true);
+    expect(hasBareDesignLiteral("calc(var(--pb-spacing-sm) * 2)")).toBe(true);
+    expect(hasBareDesignLiteral("var(--pb-spacing-sm)")).toBe(false);
     expect(
-      await findPolicyViolations(await findStyleFiles(designSystemDirectory)),
-    ).toEqual([]);
+      literalTokenFallbackOffsets("var(--pb-color-surface, #fff)"),
+    ).toHaveLength(1);
+    expect(
+      literalTokenFallbackOffsets(
+        "var(--pb-color-surface, var(--pb-color-background))",
+      ),
+    ).toHaveLength(0);
+    expect(
+      matchingOffsets(
+        ':size="Math.max(16, value)"',
+        visualTemplateAttributePattern,
+      ),
+    ).toHaveLength(1);
+    expect(
+      matchingOffsets("width: 16", visualScriptAssignmentPattern),
+    ).toHaveLength(1);
+    expect(matchingOffsets('display: "grid"', gridSourcePattern)).toHaveLength(
+      1,
+    );
+    expect(
+      matchingOffsets('const gap = "8px"', fixedCssLiteralPattern),
+    ).toHaveLength(1);
+    expect(inlineStyleViolationOffsets(' style="width: 8px"')).toHaveLength(1);
   });
 
-  it("keeps active prototypes free of CSS Grid and bare design values", async () => {
+  it("keeps the design-system implementation free of CSS Grid and fixed design values", async () => {
+    const files = (
+      await Promise.all(
+        designSystemImplementationDirectories.map(findPolicyFiles),
+      )
+    ).flat();
+    expect(await findPolicyViolations(files)).toEqual([]);
+  });
+
+  it("keeps prototypes free of CSS Grid and fixed design values", async () => {
     expect(
-      await findPolicyViolations(await findStyleFiles(prototypesDirectory)),
+      await findPolicyViolations(await findPolicyFiles(prototypesDirectory)),
     ).toEqual([]);
   });
 });

@@ -18,9 +18,6 @@
       "modelValue": {
         "type": "string"
       },
-      "rows": {
-        "type": "number"
-      },
       "disabled": {
         "type": "boolean"
       }
@@ -30,7 +27,6 @@
   "defaultProps": {
     "label": "问题描述",
     "modelValue": "现场设备出现异常噪声",
-    "rows": 3,
     "disabled": false
   },
   "states": [
@@ -51,7 +47,8 @@
     "focus": "color.primary",
     "radius": "radius.md",
     "text": "typography.content",
-    "disabledOpacity": "opacity.disabled"
+    "disabledOpacity": "opacity.disabled",
+    "rows": "sizing.textarea-rows"
   },
   "playground": {
     "presentation": "interactive"

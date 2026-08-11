@@ -5,6 +5,7 @@ export const vuetifyThemeBindings = {
   background: "color.background",
   surface: "color.surface",
   primary: "color.primary",
+  "primary-soft": "color.primary-soft",
   secondary: "color.secondary",
   error: "color.error",
   info: "color.info",

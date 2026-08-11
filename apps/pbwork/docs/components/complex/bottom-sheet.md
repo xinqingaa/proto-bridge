@@ -13,10 +13,10 @@
 
 ## Props
 
-| Prop | 类型 | 默认 | 说明 |
-| --- | --- | --- | --- |
-| `title` | string | `操作面板` | |
-| `modelValue` | boolean | `true` | |
+| Prop         | 类型    | 默认       | 说明 |
+| ------------ | ------- | ---------- | ---- |
+| `title`      | string  | `操作面板` |      |
+| `modelValue` | boolean | `true`     |      |
 
 ## States（Playground / Contract）
 
@@ -30,14 +30,14 @@
 
 ## tokenBindings
 
-| 槽位 | Token |
-| --- | --- |
-| `surface` | `color.surface` |
-| `border` | `color.border` |
-| `radius` | `radius.lg` |
-| `elevation` | `elevation.raised` |
-| `title` | `typography.subtitle` |
-| `body` | `typography.content` |
+| 槽位        | Token                 |
+| ----------- | --------------------- |
+| `surface`   | `color.surface`       |
+| `border`    | `color.border`        |
+| `radius`    | `radius.lg`           |
+| `elevation` | `elevation.raised`    |
+| `title`     | `typography.subtitle` |
+| `body`      | `typography.content`  |
 
 切浅色/深色只改 Theme 覆盖值，不改本表绑定。
 

@@ -13,13 +13,13 @@
 
 ## Props
 
-| Prop | 类型 | 默认 | 说明 |
-| --- | --- | --- | --- |
-| `title` | string | `客户信息` | |
-| `description` | string | `填写联系人和服务地址` | |
-| `required` | boolean | `true` | |
-| `actionLabel` | string | `编辑` | |
-| `semanticRole` | `section \| form` | `section` | contextual role，只能从 Contract `allowedRoles` 选择 |
+| Prop           | 类型              | 默认                   | 说明                                                 |
+| -------------- | ----------------- | ---------------------- | ---------------------------------------------------- |
+| `title`        | string            | `客户信息`             |                                                      |
+| `description`  | string            | `填写联系人和服务地址` |                                                      |
+| `required`     | boolean           | `true`                 |                                                      |
+| `actionLabel`  | string            | `编辑`                 |                                                      |
+| `semanticRole` | `section \| form` | `section`              | contextual role，只能从 Contract `allowedRoles` 选择 |
 
 ## States（Playground / Contract）
 
@@ -33,17 +33,17 @@
 
 ## tokenBindings
 
-| 槽位 | Token |
-| --- | --- |
-| `surface` | `color.surface` |
-| `border` | `color.border` |
-| `title` | `color.on-surface` |
+| 槽位          | Token                    |
+| ------------- | ------------------------ |
+| `surface`     | `color.surface`          |
+| `border`      | `color.border`           |
+| `title`       | `color.on-surface`       |
 | `description` | `color.on-surface-muted` |
-| `required` | `color.error` |
-| `radius` | `radius.lg` |
-| `gap` | `spacing.sm-plus` |
-| `typography` | `typography.subtitle` |
-| `caption` | `typography.caption` |
+| `required`    | `color.error`            |
+| `radius`      | `radius.lg`              |
+| `gap`         | `spacing.sm-plus`        |
+| `typography`  | `typography.subtitle`    |
+| `caption`     | `typography.caption`     |
 
 切浅色/深色只改 Theme 覆盖值，不改本表绑定。
 

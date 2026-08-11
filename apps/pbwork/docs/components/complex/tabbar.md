@@ -7,7 +7,7 @@
 ## 职责与边界
 
 - 只表达 2–5 个应用根目的地和当前位置。
-- 每项始终同时呈现图标与文字；选中用 `color.navigation-active` 和 `typography.caption-strong` 表达。
+- 每项始终同时呈现图标与文字；图标尺寸固定绑定 `sizing.icon-md`，选中用 `color.navigation-active` 和 `typography.caption-strong` 表达。
 - 不显示顶部指示器；点击无 ripple 反馈，直接更新当前位置。
 - 不承载内容、转场或横滑手势。
 - 不用于页面内分区、筛选或临时操作。

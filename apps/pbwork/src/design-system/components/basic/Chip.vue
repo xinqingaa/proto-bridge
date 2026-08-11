@@ -3,6 +3,9 @@ import { toRefs } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import { radiusStyle } from "@/design-system/components/_shared/radius";
 import { elevationStyle } from "@/design-system/components/_shared/appearance";
+import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
+
+const NO_ELEVATION = tokenDefaultNumber("layer.base");
 
 const props = defineProps<{
   label: string;
@@ -62,7 +65,7 @@ usePbInspect({
     :color="tone ?? 'primary'"
     variant="tonal"
     size="small"
-    :elevation="0"
+    :elevation="NO_ELEVATION"
     rounded="md"
     :style="[radiusStyle('sm'), elevationStyle(elevated ? 'card' : 'none')]"
   >

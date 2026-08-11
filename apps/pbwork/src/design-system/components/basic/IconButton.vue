@@ -8,6 +8,9 @@ import {
   type ComponentSize,
 } from "@/design-system/components/_shared/appearance";
 import { radiusStyle } from "@/design-system/components/_shared/radius";
+import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
+
+const NO_ELEVATION = tokenDefaultNumber("layer.base");
 
 const props = defineProps<{
   ariaLabel: string;
@@ -31,9 +34,7 @@ const resolvedTone = computed(() => tone.value ?? "secondary");
 const iconName = computed((): PbIconName => icon.value ?? "more");
 
 const visualSize = computed(() => {
-  if (size.value === "sm") return 32;
-  if (size.value === "lg") return 48;
-  return 40;
+  return tokenDefaultNumber(`sizing.control-${size.value ?? "md"}`);
 });
 const iconSize = computed((): ComponentSize => {
   if (size.value === "sm") return "sm";
@@ -69,6 +70,7 @@ usePbInspect({
       duration: "motion.duration-fast",
       easing: "motion.easing-standard",
       pressedScale: "motion.scale-pressed-strong",
+      disabledOpacity: "opacity.disabled",
     };
   },
   getTokens: () => {
@@ -84,6 +86,7 @@ usePbInspect({
       "motion.duration-fast",
       "motion.easing-standard",
       "motion.scale-pressed-strong",
+      "opacity.disabled",
       ...(v === "flat" ? [`color.on-${t}`] : []),
     ];
   },
@@ -102,7 +105,7 @@ usePbInspect({
     :color="resolvedTone"
     :variant="resolvedVariant"
     :loading="loading ?? false"
-    :elevation="0"
+    :elevation="NO_ELEVATION"
     :aria-label="ariaLabel"
     :disabled="disabled ?? false"
     rounded="circle"
@@ -119,10 +122,8 @@ usePbInspect({
   min-height: var(--pb-sizing-touch) !important;
   box-shadow: var(--pb-component-shadow, var(--pb-elevation-none)) !important;
   transition:
-    box-shadow var(--pb-motion-duration-fast)
-      var(--pb-motion-easing-standard),
-    transform var(--pb-motion-duration-fast)
-      var(--pb-motion-easing-standard);
+    box-shadow var(--pb-motion-duration-fast) var(--pb-motion-easing-standard),
+    transform var(--pb-motion-duration-fast) var(--pb-motion-easing-standard);
 }
 .pb-icon-button:active:not(.v-btn--disabled) {
   transform: scale(var(--pb-motion-scale-pressed-strong));

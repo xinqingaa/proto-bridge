@@ -20,7 +20,9 @@ defineEmits<{ "update:modelValue": [boolean] }>();
 const rootRef = usePbInspectRef();
 const { label, modelValue, color, disabled, inspectId } = toRefs(props);
 
-const active = computed(() => assertColorTokenRef(color.value, "color.primary"));
+const active = computed(() =>
+  assertColorTokenRef(color.value, "color.primary"),
+);
 
 const switchStyle = computed(() => ({
   "--pb-switch-active": colorTokenCss(active.value),
@@ -50,6 +52,7 @@ usePbInspect({
     active: active.value,
     track: "color.surface-variant",
     thumb: "color.surface",
+    text: "color.on-surface",
     target: "sizing.touch",
     label: "typography.content",
     disabledOpacity: "opacity.disabled",

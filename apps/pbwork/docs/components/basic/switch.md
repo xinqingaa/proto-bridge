@@ -20,10 +20,10 @@
 
 ## States
 
-| id | label | kind |
-| --- | --- | --- |
-| `off` | 关闭 | content |
-| `disabled` | 禁用 | interaction |
+| id         | label | kind        |
+| ---------- | ----- | ----------- |
+| `off`      | 关闭  | content     |
+| `disabled` | 禁用  | interaction |
 
 ## 用法要点
 

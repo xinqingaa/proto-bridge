@@ -10,10 +10,7 @@ import tokensJson from "@/design-system/tokens/tokens.json";
 import lightTheme from "@/design-system/themes/light.json";
 import darkTheme from "@/design-system/themes/dark.json";
 import { componentRecords } from "@/design-system/components/registry";
-import {
-  prototypes,
-  prototypeScreens,
-} from "@/prototypes/registry";
+import { prototypes, prototypeScreens } from "@/prototypes/registry";
 
 const contractModules = import.meta.glob(
   "@/design-system/components/contracts/*.json",
@@ -40,8 +37,8 @@ export function loadComponentContract(
   contractPath: string,
 ): ComponentContract | undefined {
   const normalized = contractPath.replace(/^\.\//, "");
-  const match = Object.entries(contractModules).find(([path]) =>
-    path.endsWith(normalized) || path.endsWith(`/${normalized}`),
+  const match = Object.entries(contractModules).find(
+    ([path]) => path.endsWith(normalized) || path.endsWith(`/${normalized}`),
   );
   return match?.[1];
 }

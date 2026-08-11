@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { toRefs } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
+import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
+
+const TRACK_HEIGHT = tokenDefaultNumber("sizing.progress-track");
+const TRACK_OPACITY = tokenDefaultNumber("opacity.visible");
 
 const props = defineProps<{
   label?: string;
@@ -27,10 +31,13 @@ usePbInspect({
   getTokens: () => [
     "color.primary",
     "color.primary-soft",
+    "color.on-surface",
     "radius.full",
     "typography.caption",
     "motion.duration-normal",
     "spacing.xs-plus",
+    "sizing.progress-track",
+    "opacity.visible",
   ],
   getTokenBindings: () => ({
     fill: "color.primary",
@@ -38,19 +45,28 @@ usePbInspect({
     radius: "radius.full",
     motion: "motion.duration-normal",
     gap: "spacing.xs-plus",
+    text: "color.on-surface",
+    label: "typography.caption",
+    trackHeight: "sizing.progress-track",
+    trackOpacity: "opacity.visible",
   }),
 });
 </script>
 
 <template>
-  <div ref="rootRef" class="pb-progress-wrap" data-pb-id="ds.progress" data-pb-role="loading-state">
+  <div
+    ref="rootRef"
+    class="pb-progress-wrap"
+    data-pb-id="ds.progress"
+    data-pb-role="loading-state"
+  >
     <span v-if="label" class="pb-progress-label">{{ label }}</span>
     <v-progress-linear
       class="pb-progress"
       color="primary"
-      bg-color="primary"
-      :bg-opacity="0.16"
-      height="6"
+      bg-color="primary-soft"
+      :bg-opacity="TRACK_OPACITY"
+      :height="TRACK_HEIGHT"
       rounded
       :model-value="indeterminate ? 0 : (value ?? 0)"
       :indeterminate="indeterminate ?? false"

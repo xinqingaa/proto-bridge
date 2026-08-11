@@ -80,8 +80,8 @@ usePbInspect({
   gap: var(--pb-spacing-sm);
 }
 .pb-filter-chips {
-  flex: 1;
-  min-width: 0;
+  flex: var(--pb-layout-flex-grow);
+  min-width: var(--pb-spacing-none);
 }
 .pb-filter-chips :deep(.v-chip) {
   border-color: transparent !important;

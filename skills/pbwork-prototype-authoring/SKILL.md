@@ -24,7 +24,9 @@ description: >-
 ## 硬约束
 
 - 形状匹配时必须使用 PBWork Design System 组件。
-- 业务局部 UI 的设计值全部使用现有 Token。
+- 业务原型只使用 Flex 或常规文档流；禁止 `grid` / `inline-grid`、全部 `grid-*` 和 `place-*`。
+- 业务局部 UI 的所有可见或可测量设计值都使用现有 Token；style、template、script/TS 生成样式、视觉组件 props 中不得出现固定 CSS 值、裸数值、literal fallback 或带裸数值的 `calc()`。
+- DOM 测量或交互状态产生的运行时几何值只能作为派生 custom property 使用；不得暴露固定尺寸/距离/动效等自由样式入口。缺 Token 时切换到 `pbwork-design-system` 补 Foundation。
 - 不复制组件、导航、滚动或手势实现。
 - `BottomNavigation + TabViewport`、`ScrollableDataList + DataList` 等组合遵循手册。
 - Screen/Variant/Action/Scenario 只在 `prototypes/registry.ts` 注册。
@@ -50,6 +52,7 @@ description: >-
 
 ```bash
 pnpm --filter @proto-bridge/pbwork typecheck
+pnpm --filter @proto-bridge/pbwork test -- flex-layout-policy
 pnpm --filter @proto-bridge/pbwork test
 pnpm test:e2e:runtime
 pnpm docs:verify

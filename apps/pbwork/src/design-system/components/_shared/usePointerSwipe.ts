@@ -1,4 +1,12 @@
 import { computed, ref, type Ref } from "vue";
+import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
+
+const AXIS_LOCK_DISTANCE = tokenDefaultNumber("layout.gesture-axis-lock");
+const DRAG_PREVIEW_LIMIT = tokenDefaultNumber("layout.gesture-drag-limit");
+const SWIPE_THRESHOLD = tokenDefaultNumber("layout.gesture-swipe-threshold");
+const CLICK_SUPPRESSION_DURATION = tokenDefaultNumber(
+  "motion.duration-click-suppression",
+);
 
 const GESTURE_IGNORE_SELECTOR =
   "input, textarea, select, [contenteditable=true], [data-no-swipe], [data-gesture-ignore], .pb-filter-bar, .period-segment";
@@ -7,7 +15,6 @@ const HORIZONTAL_SCROLL_SELECTOR = "[data-horizontal-scroll]";
 export type PointerSwipeOptions = {
   swipe: Ref<boolean>;
   mouseSwipe: Ref<boolean>;
-  threshold?: number;
 };
 
 /**
@@ -100,7 +107,10 @@ export function usePointerSwipe(
     if (pointerId.value !== event.pointerId) return;
     const dx = event.clientX - startX.value;
     const dy = event.clientY - startY.value;
-    if (axis.value === "pending" && Math.max(Math.abs(dx), Math.abs(dy)) >= 8) {
+    if (
+      axis.value === "pending" &&
+      Math.max(Math.abs(dx), Math.abs(dy)) >= AXIS_LOCK_DISTANCE
+    ) {
       axis.value = Math.abs(dx) > Math.abs(dy) ? "horizontal" : "vertical";
       if (axis.value === "horizontal") {
         surface?.setPointerCapture?.(event.pointerId);
@@ -112,23 +122,29 @@ export function usePointerSwipe(
     }
     if (axis.value !== "horizontal") return;
     event.preventDefault();
-    dragOffset.value = Math.max(-72, Math.min(72, dx));
+    dragOffset.value = Math.max(
+      -DRAG_PREVIEW_LIMIT,
+      Math.min(DRAG_PREVIEW_LIMIT, dx),
+    );
   }
 
   function finish(event: PointerEvent) {
     if (pointerId.value !== event.pointerId) return;
     const delta = event.clientX - startX.value;
     const currentIndex = values.value.indexOf(current.value);
-    const threshold = options.threshold ?? 44;
     const wasHorizontal = axis.value === "horizontal";
 
-    if (wasHorizontal && Math.abs(delta) >= threshold && currentIndex >= 0) {
+    if (
+      wasHorizontal &&
+      Math.abs(delta) >= SWIPE_THRESHOLD &&
+      currentIndex >= 0
+    ) {
       const nextIndex = delta < 0 ? currentIndex + 1 : currentIndex - 1;
       const next = values.value[nextIndex];
       if (next) update(next);
     }
-    if (wasHorizontal && Math.abs(delta) >= 8) {
-      suppressClickUntil = Date.now() + 450;
+    if (wasHorizontal && Math.abs(delta) >= AXIS_LOCK_DISTANCE) {
+      suppressClickUntil = Date.now() + CLICK_SUPPRESSION_DURATION;
     }
     reset();
   }
@@ -178,7 +194,7 @@ export function usePointerSwipe(
     const dy = touch.clientY - touchStartY;
     if (
       touchAxis.value === "pending" &&
-      Math.max(Math.abs(dx), Math.abs(dy)) >= 8
+      Math.max(Math.abs(dx), Math.abs(dy)) >= AXIS_LOCK_DISTANCE
     ) {
       touchAxis.value = Math.abs(dx) > Math.abs(dy) ? "horizontal" : "vertical";
     }
@@ -188,7 +204,10 @@ export function usePointerSwipe(
     }
     if (touchAxis.value !== "horizontal") return;
     event.preventDefault();
-    dragOffset.value = Math.max(-72, Math.min(72, dx));
+    dragOffset.value = Math.max(
+      -DRAG_PREVIEW_LIMIT,
+      Math.min(DRAG_PREVIEW_LIMIT, dx),
+    );
   }
 
   function finishTouch(event: TouchEvent) {
@@ -197,14 +216,17 @@ export function usePointerSwipe(
     const delta = touch.clientX - touchStartX;
     const currentIndex = values.value.indexOf(current.value);
     const wasHorizontal = touchAxis.value === "horizontal";
-    const threshold = options.threshold ?? 44;
-    if (wasHorizontal && Math.abs(delta) >= threshold && currentIndex >= 0) {
+    if (
+      wasHorizontal &&
+      Math.abs(delta) >= SWIPE_THRESHOLD &&
+      currentIndex >= 0
+    ) {
       const nextIndex = delta < 0 ? currentIndex + 1 : currentIndex - 1;
       const next = values.value[nextIndex];
       if (next) update(next);
     }
-    if (wasHorizontal && Math.abs(delta) >= 8) {
-      suppressClickUntil = Date.now() + 450;
+    if (wasHorizontal && Math.abs(delta) >= AXIS_LOCK_DISTANCE) {
+      suppressClickUntil = Date.now() + CLICK_SUPPRESSION_DURATION;
     }
     resetTouch();
   }

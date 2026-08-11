@@ -21,35 +21,34 @@ defineProps<{ active?: boolean }>();
 <style scoped>
 .pb-liquid-glass {
   position: absolute;
-  inset: 0;
+  inset: var(--pb-spacing-none);
   z-index: var(--pb-layer-base);
   isolation: isolate;
   border-radius: var(--pb-tabs-selection-radius);
   pointer-events: none;
   opacity: var(--pb-opacity-hidden);
   transition:
-    opacity var(--pb-motion-duration-slow)
-      var(--pb-motion-easing-standard),
-    box-shadow var(--pb-motion-duration-slow)
-      var(--pb-motion-easing-standard);
+    opacity var(--pb-motion-duration-slow) var(--pb-motion-easing-standard),
+    box-shadow var(--pb-motion-duration-slow) var(--pb-motion-easing-standard);
 }
 .pb-liquid-glass.is-active {
   opacity: var(--pb-tabs-selection-opacity);
 }
 .pb-liquid-glass__bridge {
   position: absolute;
-  top: calc(var(--pb-tabs-selection-bridge-height) * -1);
-  right: calc(var(--pb-tabs-selection-arc-inset) * -1);
-  left: calc(var(--pb-tabs-selection-arc-inset) * -1);
+  top: var(--pb-tabs-selection-bridge-offset);
+  right: var(--pb-tabs-selection-arc-offset);
+  left: var(--pb-tabs-selection-arc-offset);
   height: var(--pb-tabs-selection-bridge-height);
   border-radius: var(--pb-tabs-selection-arc-radius)
-    var(--pb-tabs-selection-arc-radius) 0 0;
+    var(--pb-tabs-selection-arc-radius) var(--pb-radius-none)
+    var(--pb-radius-none);
   z-index: var(--pb-layer-base);
   background: transparent;
 }
 .pb-liquid-glass__surface {
   position: absolute;
-  inset: 0;
+  inset: var(--pb-spacing-none);
   z-index: var(--pb-layer-content);
   border-radius: var(--pb-tabs-selection-radius);
   background: var(--pb-tabs-selection-surface);

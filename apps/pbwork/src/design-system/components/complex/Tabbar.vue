@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, toRefs, type Component } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
+import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
+
+const TAB_ICON_SIZE = tokenDefaultNumber("sizing.icon-md");
 
 export type TabbarItem = {
   value: string;
@@ -54,6 +57,7 @@ usePbInspect({
     "opacity.hidden",
     "border.focus",
     "typography.caption-strong",
+    "sizing.icon-md",
   ],
   getTokenBindings: () => ({
     surface: "color.surface-raised",
@@ -70,6 +74,7 @@ usePbInspect({
     safeInsetFallback: "spacing.none",
     overlayOpacity: "opacity.hidden",
     focusOutline: "border.focus",
+    iconSize: "sizing.icon-md",
   }),
 });
 </script>
@@ -101,7 +106,7 @@ usePbInspect({
           <component
             :is="item.icon"
             v-if="item.icon"
-            :size="20"
+            :size="TAB_ICON_SIZE"
             aria-hidden="true"
           />
           <span>{{ item.label }}</span>
@@ -142,7 +147,7 @@ usePbInspect({
   min-width: var(--pb-sizing-touch);
   height: var(--v-tabs-height);
   min-height: var(--v-tabs-height);
-  padding-bottom: 0;
+  padding-bottom: var(--pb-spacing-none);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
   text-transform: none;

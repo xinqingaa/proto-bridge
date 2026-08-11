@@ -80,16 +80,25 @@
       "additionalProperties": false,
       "description": "Cross-stack layout intent; never a CSS implementation recipe.",
       "properties": {
-        "containerWidth": { "type": "string", "enum": ["fill-parent", "content"] },
+        "containerWidth": {
+          "type": "string",
+          "enum": ["fill-parent", "content"]
+        },
         "track": {
           "type": "object",
           "additionalProperties": false,
           "required": ["width", "itemSizing", "overflow"],
           "properties": {
-            "width": { "type": "string", "enum": ["fill-container", "content"] },
+            "width": {
+              "type": "string",
+              "enum": ["fill-container", "content"]
+            },
             "itemSizing": { "type": "string", "enum": ["content", "equal"] },
             "equalState": { "type": "string", "minLength": 1 },
-            "overflow": { "type": "string", "enum": ["horizontal-scroll", "none"] }
+            "overflow": {
+              "type": "string",
+              "enum": ["horizontal-scroll", "none"]
+            }
           }
         },
         "viewport": {

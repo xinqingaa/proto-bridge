@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { AlertTriangle, Clock3, Snowflake, Thermometer } from "lucide-vue-next";
 import Badge from "@/design-system/components/basic/Badge.vue";
 import Button from "@/design-system/components/basic/Button.vue";
 import Card from "@/design-system/components/basic/Card.vue";
+import Icon from "@/design-system/components/basic/Icon.vue";
 import Spinner from "@/design-system/components/basic/Spinner.vue";
 import DataList from "@/design-system/components/complex/DataList.vue";
 import EmptyState from "@/design-system/components/complex/EmptyState.vue";
@@ -111,7 +111,7 @@ function refresh() {
           data-pb-token-radius="radius.lg"
           data-pb-token-spacing="spacing.md"
         >
-          <AlertTriangle :size="28" aria-hidden="true" />
+          <Icon name="alert-triangle" size="lg" tone="error" />
           <strong
             data-pb-id="cold-chain-ops.exception-queue.error.title"
             data-pb-role="text"
@@ -167,7 +167,7 @@ function refresh() {
                 data-pb-token-radius="radius.md"
                 data-pb-token-spacing="spacing.sm"
               >
-                <AlertTriangle :size="18" />
+                <Icon name="alert-triangle" size="md" />
                 <strong>{{ severityCounts.严重 }}</strong>
                 <span>严重异常</span>
               </div>
@@ -181,7 +181,7 @@ function refresh() {
                 data-pb-token-radius="radius.md"
                 data-pb-token-spacing="spacing.sm"
               >
-                <Snowflake :size="18" />
+                <Icon name="snowflake" size="md" />
                 <strong>{{ severityCounts.待接手 }}</strong>
                 <span>等待接手</span>
               </div>
@@ -195,7 +195,7 @@ function refresh() {
                 data-pb-token-radius="radius.md"
                 data-pb-token-spacing="spacing.sm"
               >
-                <Clock3 :size="18" />
+                <Icon name="clock" size="md" />
                 <strong>{{ severityCounts.最长超温 }}m</strong>
                 <span>最长超温</span>
               </div>
@@ -293,7 +293,7 @@ function refresh() {
                 >{{ item.cargo }}</span
               >
               <div class="temperature-line">
-                <Thermometer :size="17" aria-hidden="true" />
+                <Icon name="thermometer" size="sm" />
                 <strong
                   data-pb-id="cold-chain-ops.exception-queue.list.row.temperature"
                   :data-pb-key="item.id"
@@ -321,23 +321,24 @@ function refresh() {
 <style scoped>
 .queue-page,
 .queue-scroll {
-  height: 100%;
-  min-height: 0;
+  height: var(--pb-layout-fill);
+  min-height: var(--pb-spacing-none);
 }
 .queue-content {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--pb-spacing-sm-plus);
   padding: var(--pb-spacing-md);
 }
 .metric-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: flex;
   gap: var(--pb-spacing-sm);
   margin-bottom: var(--pb-spacing-sm-plus);
 }
 .metric {
-  display: grid;
-  grid-template-columns: auto 1fr;
+  display: flex;
+  flex: var(--pb-layout-flex-fill);
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--pb-spacing-xs);
   padding: var(--pb-spacing-sm);
@@ -353,20 +354,22 @@ function refresh() {
   font: var(--pb-typography-title-sm);
 }
 .metric span {
-  grid-column: 1 / -1;
+  flex-basis: var(--pb-layout-fill);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
 }
 .exception-list {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--pb-spacing-sm-plus);
 }
 .exception-row {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--pb-spacing-xs);
-  width: 100%;
+  width: var(--pb-layout-fill);
   padding: var(--pb-spacing-md);
-  border: 1px solid var(--pb-color-border);
+  border: var(--pb-border-default);
   border-radius: var(--pb-radius-lg);
   background: var(--pb-color-surface);
   color: var(--pb-color-on-surface);
@@ -384,7 +387,7 @@ function refresh() {
 .temperature-line {
   margin-top: var(--pb-spacing-sm);
   padding-top: var(--pb-spacing-sm);
-  border-top: 1px solid var(--pb-color-border);
+  border-top: var(--pb-border-default);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
 }
@@ -396,11 +399,12 @@ function refresh() {
 }
 .center-state,
 .error-state {
-  display: grid;
-  place-items: center;
-  align-content: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: var(--pb-spacing-sm-plus);
-  height: 100%;
+  height: var(--pb-layout-fill);
   padding: var(--pb-spacing-lg);
   text-align: center;
 }
@@ -413,11 +417,6 @@ function refresh() {
 }
 .error-state strong,
 .error-state p {
-  margin: 0;
-}
-@media (max-width: 360px) {
-  .metric-grid {
-    grid-template-columns: 1fr;
-  }
+  margin: var(--pb-spacing-none);
 }
 </style>

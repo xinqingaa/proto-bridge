@@ -88,6 +88,9 @@ export const componentRecords = [
           { label: "copy", value: "copy" },
           { label: "file-text", value: "file-text" },
           { label: "sliders-horizontal", value: "sliders-horizontal" },
+          { label: "map-pin", value: "map-pin" },
+          { label: "radio", value: "radio" },
+          { label: "truck", value: "truck" },
         ],
       },
       { key: "size", label: "尺寸", control: "select", options: sizeOptions },
@@ -147,6 +150,9 @@ export const componentRecords = [
           { label: "copy", value: "copy" },
           { label: "file-text", value: "file-text" },
           { label: "sliders-horizontal", value: "sliders-horizontal" },
+          { label: "map-pin", value: "map-pin" },
+          { label: "radio", value: "radio" },
+          { label: "truck", value: "truck" },
         ],
       },
       {
@@ -456,7 +462,6 @@ export const componentRecords = [
     controls: [
       { key: "label", label: "字段名称", control: "text" },
       { key: "modelValue", label: "输入内容", control: "text" },
-      { key: "rows", label: "显示行数", control: "number" },
       { key: "disabled", label: "禁用", control: "boolean" },
     ],
   },

@@ -113,7 +113,10 @@
     "duration": "motion.duration-normal",
     "easing": "motion.easing-standard",
     "openRotation": "motion.rotate-half-turn",
-    "disabledOpacity": "opacity.disabled"
+    "disabledOpacity": "opacity.disabled",
+    "menuMaxHeight": "layout.menu-max-height",
+    "menuOffset": "spacing.xs-plus",
+    "iconSize": "sizing.icon-compact"
   },
   "playground": {
     "presentation": "interactive"

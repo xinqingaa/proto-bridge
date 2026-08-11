@@ -15,7 +15,8 @@ const props = defineProps<{
 defineEmits<{ action: [] }>();
 
 const rootRef = usePbInspectRef();
-const { title, description, required, actionLabel, inspectId, semanticRole } = toRefs(props);
+const { title, description, required, actionLabel, inspectId, semanticRole } =
+  toRefs(props);
 
 usePbInspect({
   element: rootRef,
@@ -93,14 +94,14 @@ usePbInspect({
 
 <style scoped>
 .pb-form-section {
-  padding: 0;
+  padding: var(--pb-spacing-none);
   border-color: var(--pb-color-border) !important;
   border-radius: var(--pb-radius-lg) !important;
   background: var(--pb-color-surface);
   color: var(--pb-color-on-surface);
 }
 .pb-form-section h3 {
-  margin: 0;
+  margin: var(--pb-spacing-none);
   font: var(--pb-typography-subtitle);
 }
 .pb-form-section em {
@@ -118,6 +119,6 @@ usePbInspect({
   display: flex;
   flex-direction: column;
   gap: var(--pb-spacing-sm-plus);
-  padding-top: 0;
+  padding-top: var(--pb-spacing-none);
 }
 </style>

@@ -44,7 +44,10 @@
           "snowflake",
           "copy",
           "file-text",
-          "sliders-horizontal"
+          "sliders-horizontal",
+          "map-pin",
+          "radio",
+          "truck"
         ]
       },
       "size": {

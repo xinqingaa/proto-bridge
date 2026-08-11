@@ -1,22 +1,41 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import {
-  AlertTriangle,
-  MapPin,
-  Radio,
-  Snowflake,
-  Truck,
-} from "lucide-vue-next";
 import Badge from "@/design-system/components/basic/Badge.vue";
 import Button from "@/design-system/components/basic/Button.vue";
 import Card from "@/design-system/components/basic/Card.vue";
+import Icon from "@/design-system/components/basic/Icon.vue";
 import BottomSheet from "@/design-system/components/complex/BottomSheet.vue";
 import DialogPanel from "@/design-system/components/complex/DialogPanel.vue";
 import ScrollableDataList from "@/design-system/components/complex/ScrollableDataList.vue";
 import ColdChainShell from "../ColdChainShell.vue";
 import { shipmentEvents, temperatureReadings } from "../mock";
 import { openColdChainScreen, replaceColdChainVariant } from "../nav";
+import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
+
+const CHART_MIN = 4;
+const CHART_MAX = 12;
+const CHART_LIMIT = 8;
+const ROUTE_PROGRESS = 68;
+const CHART_BAR_MIN_HEIGHT = tokenDefaultNumber("sizing.icon-compact");
+const CHART_PLOT_HEIGHT = tokenDefaultNumber("layout.chart-plot-height");
+
+const routeStyle = {
+  "--pb-route-progress": `${ROUTE_PROGRESS}%`,
+};
+const chartStyle = {
+  "--pb-chart-limit-position": `${((CHART_MAX - CHART_LIMIT) / (CHART_MAX - CHART_MIN)) * 100}%`,
+};
+
+function chartBarStyle(value: number) {
+  const ratio = Math.max(
+    0,
+    Math.min(1, (value - CHART_MIN) / (CHART_MAX - CHART_MIN)),
+  );
+  return {
+    "--pb-chart-bar-height": `${Math.max(CHART_BAR_MIN_HEIGHT, ratio * CHART_PLOT_HEIGHT)}px`,
+  };
+}
 
 const route = useRoute();
 const router = useRouter();
@@ -109,7 +128,7 @@ function closeOverlay() {
             data-pb-token-radius="radius.lg"
             data-pb-token-spacing="spacing.md"
           >
-            <AlertTriangle :size="22" />
+            <Icon name="alert-triangle" size="lg" tone="error" />
             <div>
               <strong
                 data-pb-id="cold-chain-ops.shipment-detail.alert.title"
@@ -144,7 +163,7 @@ function closeOverlay() {
             data-pb-token-radius="radius.lg"
             data-pb-token-spacing="spacing.md"
           >
-            <Radio :size="22" />
+            <Icon name="radio" size="lg" tone="warning" />
             <div>
               <strong>探头 T-07 已离线 18 分钟</strong>
               <span>当前温度不可确认，请联系司机检查探头电源。</span>
@@ -157,10 +176,14 @@ function closeOverlay() {
             semantic-role="summary"
             inspect-id="cold-chain-ops.shipment-detail.summary"
           >
-            <div class="route-line">
-              <div><Snowflake :size="20" /><span>上海虹桥冷库</span></div>
+            <div class="route-line" :style="routeStyle">
+              <div>
+                <Icon name="snowflake" size="md" /><span>上海虹桥冷库</span>
+              </div>
               <span class="route-progress"><i /></span>
-              <div><MapPin :size="20" /><span>杭州临平中心</span></div>
+              <div>
+                <Icon name="map-pin" size="md" /><span>杭州临平中心</span>
+              </div>
             </div>
             <dl class="shipment-facts">
               <div>
@@ -190,6 +213,7 @@ function closeOverlay() {
           >
             <div
               class="temperature-chart"
+              :style="chartStyle"
               data-pb-id="cold-chain-ops.shipment-detail.temperature-chart"
               data-pb-role="chart"
               data-pb-token-background="color.surface-variant"
@@ -207,9 +231,7 @@ function closeOverlay() {
                   class="reading"
                   :class="{ 'is-over': reading.value > 8 }"
                 >
-                  <i
-                    :style="{ height: `${Math.max(18, reading.value * 7)}px` }"
-                  />
+                  <i :style="chartBarStyle(reading.value)" />
                   <span>{{ reading.id }}</span>
                 </div>
               </div>
@@ -302,7 +324,7 @@ function closeOverlay() {
               data-pb-action="open-actions"
               @click="openActions"
             >
-              <template #prepend><Truck :size="18" /></template>
+              <template #prepend><Icon name="truck" size="md" /></template>
             </Button>
           </div>
         </div>
@@ -350,19 +372,19 @@ function closeOverlay() {
 <style scoped>
 .detail-page,
 .detail-scroll {
-  height: 100%;
-  min-height: 0;
+  height: var(--pb-layout-fill);
+  min-height: var(--pb-spacing-none);
 }
 .detail-content {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--pb-spacing-sm-plus);
   padding: var(--pb-spacing-md);
   padding-bottom: var(--pb-spacing-2xl);
 }
 .excursion-alert,
 .sensor-error {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  display: flex;
   align-items: center;
   gap: var(--pb-spacing-sm-plus);
   padding: var(--pb-spacing-md);
@@ -371,13 +393,14 @@ function closeOverlay() {
   color: var(--pb-color-error);
 }
 .sensor-error {
-  grid-template-columns: auto minmax(0, 1fr);
   background: var(--pb-color-warning-soft);
   color: var(--pb-color-warning);
 }
 .excursion-alert div,
 .sensor-error div {
-  display: grid;
+  display: flex;
+  flex: var(--pb-layout-flex-fill);
+  flex-direction: column;
   gap: var(--pb-spacing-xs);
 }
 .excursion-alert span,
@@ -386,35 +409,40 @@ function closeOverlay() {
   font: var(--pb-typography-caption);
 }
 .route-line {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 48px minmax(0, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--pb-spacing-sm);
 }
 .route-line > div {
   display: flex;
+  flex: var(--pb-layout-flex-fill);
   align-items: center;
   gap: var(--pb-spacing-sm);
   font: var(--pb-typography-content);
 }
 .route-progress {
-  height: 2px;
+  flex: none;
+  width: var(--pb-sizing-control-lg);
+  height: var(--pb-sizing-progress-stroke);
   background: var(--pb-color-border);
 }
 .route-progress i {
   display: block;
-  width: 68%;
-  height: 100%;
+  width: var(--pb-route-progress);
+  height: var(--pb-layout-fill);
   background: var(--pb-color-primary);
 }
 .shipment-facts {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: var(--pb-spacing-md);
-  margin: var(--pb-spacing-md) 0 0;
+  margin: var(--pb-spacing-md) var(--pb-spacing-none) var(--pb-spacing-none);
 }
 .shipment-facts div {
-  display: grid;
+  display: flex;
+  flex: var(--pb-layout-flex-fill);
+  flex-direction: column;
   gap: var(--pb-spacing-xs);
 }
 .shipment-facts dt {
@@ -422,42 +450,49 @@ function closeOverlay() {
   font: var(--pb-typography-caption);
 }
 .shipment-facts dd {
-  margin: 0;
+  margin: var(--pb-spacing-none);
   font: var(--pb-typography-content);
 }
 .temperature-chart {
   position: relative;
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
-  min-height: 154px;
+  display: flex;
+  min-height: var(--pb-layout-chart-min-height);
   padding: var(--pb-spacing-sm);
   border-radius: var(--pb-radius-md);
   background: var(--pb-color-surface-variant);
 }
 .chart-scale {
   display: flex;
+  flex: none;
   flex-direction: column;
   justify-content: space-between;
+  width: var(--pb-sizing-avatar-sm);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
 }
 .chart-bars {
-  display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
+  display: flex;
+  flex: var(--pb-layout-flex-fill);
   align-items: end;
   gap: var(--pb-spacing-xs);
-  border-bottom: 1px solid var(--pb-color-border);
+  min-width: var(--pb-spacing-none);
+  border-bottom: var(--pb-border-default);
 }
 .reading {
-  display: grid;
-  justify-items: center;
-  align-items: end;
+  display: flex;
+  flex: var(--pb-layout-flex-fill);
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
   gap: var(--pb-spacing-xs);
-  height: 124px;
+  height: var(--pb-layout-chart-plot-height);
 }
 .reading i {
-  width: min(18px, 70%);
-  border-radius: var(--pb-radius-sm) var(--pb-radius-sm) 0 0;
+  width: var(--pb-sizing-icon-compact);
+  max-width: var(--pb-layout-fill);
+  height: var(--pb-chart-bar-height);
+  border-radius: var(--pb-radius-sm) var(--pb-radius-sm) var(--pb-radius-none)
+    var(--pb-radius-none);
   background: var(--pb-color-primary);
 }
 .reading.is-over i {
@@ -466,30 +501,30 @@ function closeOverlay() {
 .reading span {
   font: var(--pb-typography-caption);
   color: var(--pb-color-on-surface-muted);
-  transform: rotate(-45deg);
   white-space: nowrap;
 }
 .limit-line {
   position: absolute;
-  top: 58px;
+  top: var(--pb-chart-limit-position);
   right: var(--pb-spacing-sm);
-  left: 36px;
-  border-top: 1px dashed var(--pb-color-error);
+  left: calc(var(--pb-sizing-avatar-sm) + var(--pb-spacing-sm));
+  border-top: var(--pb-border-width-hairline) dashed var(--pb-color-error);
 }
 .limit-line span {
   position: absolute;
-  right: 0;
+  right: var(--pb-spacing-none);
   bottom: var(--pb-spacing-xs);
   color: var(--pb-color-error);
   font: var(--pb-typography-caption);
 }
 .temperature-summary {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
   margin-top: var(--pb-spacing-md);
 }
 .temperature-summary div {
-  display: grid;
+  display: flex;
+  flex: var(--pb-layout-flex-fill);
+  flex-direction: column;
   gap: var(--pb-spacing-xs);
   text-align: center;
 }
@@ -501,21 +536,23 @@ function closeOverlay() {
   font: var(--pb-typography-title);
 }
 .event-list {
-  display: grid;
+  display: flex;
+  flex-direction: column;
 }
 .event-row {
-  display: grid;
-  grid-template-columns: 10px 42px minmax(0, 1fr);
+  display: flex;
+  align-items: flex-start;
   gap: var(--pb-spacing-sm-plus);
   padding-block: var(--pb-spacing-sm-plus);
 }
 .event-row + .event-row {
-  border-top: 1px solid var(--pb-color-border);
+  border-top: var(--pb-border-default);
 }
 .event-row > i {
-  width: 9px;
-  height: 9px;
-  margin-top: 5px;
+  flex: none;
+  width: var(--pb-sizing-caret);
+  height: var(--pb-sizing-caret);
+  margin-top: var(--pb-spacing-xs);
   border-radius: var(--pb-radius-full);
   background: var(--pb-color-primary);
 }
@@ -529,11 +566,15 @@ function closeOverlay() {
   background: var(--pb-color-success);
 }
 .event-row time {
+  flex: none;
+  width: var(--pb-spacing-lg-plus);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
 }
 .event-row div {
-  display: grid;
+  display: flex;
+  flex: var(--pb-layout-flex-fill);
+  flex-direction: column;
   gap: var(--pb-spacing-xs);
 }
 .event-row span {
@@ -541,23 +582,13 @@ function closeOverlay() {
   font: var(--pb-typography-caption);
 }
 .sheet-actions {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--pb-spacing-sm-plus);
 }
 .sheet-actions p {
-  margin: 0;
+  margin: var(--pb-spacing-none);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
-}
-@media (max-width: 360px) {
-  .shipment-facts {
-    grid-template-columns: 1fr;
-  }
-  .route-line {
-    grid-template-columns: 1fr;
-  }
-  .route-progress {
-    display: none;
-  }
 }
 </style>

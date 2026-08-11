@@ -25,14 +25,6 @@
               "enabled": {
                 "type": "boolean"
               },
-              "threshold": {
-                "type": "number",
-                "minimum": 1
-              },
-              "maxDistance": {
-                "type": "number",
-                "minimum": 1
-              },
               "mouse": {
                 "type": "boolean"
               }
@@ -52,9 +44,6 @@
             "properties": {
               "enabled": {
                 "type": "boolean"
-              },
-              "rootMargin": {
-                "type": "string"
               },
               "manualFallback": {
                 "type": "boolean"
@@ -159,6 +148,9 @@
     "fill": "layout.fill",
     "refreshTranslation": "layout.translate-full-negative",
     "loadMoreRootMargin": "layout.load-more-root-margin",
+    "refreshThreshold": "layout.pull-refresh-threshold",
+    "refreshMaxDistance": "layout.pull-refresh-max-distance",
+    "refreshRestingDistance": "sizing.control-lg",
     "sentinel": "border.width-hairline"
   },
   "playground": {

@@ -2,6 +2,9 @@
 import { computed, nextTick, toRefs, watch } from "vue";
 import Button from "@/design-system/components/basic/Button.vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
+import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
+
+const DIALOG_MAX_WIDTH = tokenDefaultNumber("layout.dialog-max-width");
 
 const props = defineProps<{
   modelValue?: boolean;
@@ -55,6 +58,7 @@ const { resync } = usePbInspect({
     "elevation.level-5",
     "typography.title",
     "typography.content",
+    "layout.dialog-max-width",
   ],
   getTokenBindings: () => ({
     scrim: "color.scrim",
@@ -65,6 +69,7 @@ const { resync } = usePbInspect({
     elevation: "elevation.level-5",
     title: "typography.title",
     body: "typography.content",
+    maxWidth: "layout.dialog-max-width",
   }),
 });
 
@@ -81,7 +86,7 @@ watch(modelValue, async (value) => {
       :model-value="modelValue ?? false"
       :attach="attachTarget"
       :absolute="contained ?? true"
-      max-width="320"
+      :max-width="DIALOG_MAX_WIDTH"
       @update:model-value="$emit('update:modelValue', Boolean($event))"
     >
       <v-card

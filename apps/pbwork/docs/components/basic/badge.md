@@ -13,10 +13,10 @@
 
 ## Props
 
-| Prop | 类型 | 默认 | 说明 |
-| --- | --- | --- | --- |
-| `label` | string | `3` | |
-| `tone` | `primary` \| `error` \| `success` \| `warning` | `error` | |
+| Prop    | 类型                                           | 默认    | 说明 |
+| ------- | ---------------------------------------------- | ------- | ---- |
+| `label` | string                                         | `3`     |      |
+| `tone`  | `primary` \| `error` \| `success` \| `warning` | `error` |      |
 
 ## States（Playground / Contract）
 
@@ -30,12 +30,12 @@
 
 ## tokenBindings
 
-| 槽位 | Token |
-| --- | --- |
-| `background` | `color.error` |
-| `text` | `color.on-error` |
-| `radius` | `radius.full` |
-| `label` | `typography.caption-strong` |
+| 槽位         | Token                       |
+| ------------ | --------------------------- |
+| `background` | `color.error`               |
+| `text`       | `color.on-error`            |
+| `radius`     | `radius.full`               |
+| `label`      | `typography.caption-strong` |
 
 切浅色/深色只改 Theme 覆盖值，不改本表绑定。
 

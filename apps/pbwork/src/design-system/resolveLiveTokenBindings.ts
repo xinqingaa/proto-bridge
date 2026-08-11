@@ -27,7 +27,10 @@ export function resolveLiveTokenBindings(
     if ("onBackground" in result) result.onBackground = props.textColor;
     if ("text" in result) result.text = props.textColor;
   }
-  if (typeof props.selectedColor === "string" && props.selectedColor.length > 0) {
+  if (
+    typeof props.selectedColor === "string" &&
+    props.selectedColor.length > 0
+  ) {
     if ("selected" in result) result.selected = props.selectedColor;
   }
   if (

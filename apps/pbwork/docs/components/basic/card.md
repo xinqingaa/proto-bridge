@@ -14,12 +14,12 @@
 
 ## Props
 
-| Prop | 类型 | 默认 | 说明 |
-| --- | --- | --- | --- |
-| `title` | string | `任务卡片` | |
-| `subtitle` | string | `描述信息` | |
-| `elevated` | boolean | `true` | |
-| `semanticRole` | `section \| card \| summary` | `section` | contextual role，只能从 Contract `allowedRoles` 选择 |
+| Prop           | 类型                         | 默认       | 说明                                                 |
+| -------------- | ---------------------------- | ---------- | ---------------------------------------------------- |
+| `title`        | string                       | `任务卡片` |                                                      |
+| `subtitle`     | string                       | `描述信息` |                                                      |
+| `elevated`     | boolean                      | `true`     |                                                      |
+| `semanticRole` | `section \| card \| summary` | `section`  | contextual role，只能从 Contract `allowedRoles` 选择 |
 
 ## States（Playground / Contract）
 
@@ -32,15 +32,15 @@
 
 ## tokenBindings
 
-| 槽位 | Token |
-| --- | --- |
-| `surface` | `color.surface` |
-| `border` | `color.border` |
-| `radius` | `radius.lg` |
-| `elevation` | `elevation.card` |
-| `title` | `typography.subtitle` |
-| `subtitle` | `typography.caption` |
-| `muted` | `color.on-surface-muted` |
+| 槽位        | Token                    |
+| ----------- | ------------------------ |
+| `surface`   | `color.surface`          |
+| `border`    | `color.border`           |
+| `radius`    | `radius.lg`              |
+| `elevation` | `elevation.card`         |
+| `title`     | `typography.subtitle`    |
+| `subtitle`  | `typography.caption`     |
+| `muted`     | `color.on-surface-muted` |
 
 切浅色/深色只改 Theme 覆盖值，不改本表绑定。
 

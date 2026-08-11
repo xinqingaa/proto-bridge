@@ -6,6 +6,7 @@ import {
   type PbIconName,
 } from "@/design-system/components/_shared/icons";
 import type { ComponentSize } from "@/design-system/components/_shared/appearance";
+import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
 
 const props = withDefaults(
   defineProps<{
@@ -36,11 +37,11 @@ const { name, size, tone, label, inspectId } = toRefs(props);
 
 const iconComponent = computed(() => resolvePbIcon(name.value));
 
-const pixelSize = computed(() => {
-  if (size.value === "sm") return 16;
-  if (size.value === "lg") return 28;
-  return 20;
-});
+const sizeTokenId = computed(
+  () =>
+    `sizing.icon-${size.value === "sm" ? "sm" : size.value === "lg" ? "lg" : "md"}`,
+);
+const pixelSize = computed(() => tokenDefaultNumber(sizeTokenId.value));
 
 const colorVar = computed(() => {
   switch (tone.value) {
@@ -62,6 +63,10 @@ const colorVar = computed(() => {
       return "currentColor";
   }
 });
+const iconStyle = computed(() => ({
+  color: colorVar.value,
+  "--pb-icon-size": `var(--pb-${sizeTokenId.value.replaceAll(".", "-")})`,
+}));
 
 usePbInspect({
   element: rootRef,
@@ -77,7 +82,7 @@ usePbInspect({
     inspectId: inspectId.value,
   }),
   getTokenBindings: () => ({
-    size: `sizing.icon-${size.value === "sm" ? "sm" : size.value === "lg" ? "lg" : "md"}`,
+    size: sizeTokenId.value,
     color:
       tone.value === "inherit" || tone.value === "on-surface"
         ? "color.on-surface"
@@ -86,7 +91,7 @@ usePbInspect({
           : `color.${tone.value}`,
   }),
   getTokens: () => [
-    `sizing.icon-${size.value === "sm" ? "sm" : size.value === "lg" ? "lg" : "md"}`,
+    sizeTokenId.value,
     tone.value === "inherit" || tone.value === "on-surface"
       ? "color.on-surface"
       : tone.value === "muted"
@@ -103,11 +108,7 @@ usePbInspect({
     :aria-hidden="label ? undefined : true"
     :aria-label="label || undefined"
     :role="label ? 'img' : undefined"
-    :style="{
-      color: colorVar,
-      width: `${pixelSize}px`,
-      height: `${pixelSize}px`,
-    }"
+    :style="iconStyle"
   >
     <component :is="iconComponent" :size="pixelSize" aria-hidden="true" />
   </span>
@@ -119,6 +120,8 @@ usePbInspect({
   flex: none;
   align-items: center;
   justify-content: center;
+  width: var(--pb-icon-size);
+  height: var(--pb-icon-size);
   line-height: var(--pb-spacing-none);
 }
 .pb-icon :deep(svg) {

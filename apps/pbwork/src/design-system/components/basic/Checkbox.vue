@@ -73,6 +73,7 @@ usePbInspect({
     selected: selected.value,
     onSelected: onSelected.value,
     uncheckedBorder: uncheckedBorder.value,
+    text: "color.on-surface",
     target: "sizing.touch",
     radius: "radius.xs",
     label: "typography.content",

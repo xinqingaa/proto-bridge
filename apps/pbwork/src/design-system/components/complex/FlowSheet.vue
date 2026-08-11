@@ -36,7 +36,6 @@ const attachTarget = computed(() => attach.value ?? ".runtime-app");
 const safeStep = computed(() =>
   Math.min(Math.max(0, step.value), Math.max(0, stepCount.value - 1)),
 );
-const offsetPercent = computed(() => `-${safeStep.value * 100}%`);
 const stepKeys = computed(() =>
   Array.from({ length: Math.max(1, stepCount.value) }, (_, index) =>
     String(index),
@@ -84,6 +83,7 @@ usePbInspect({
     dotGap: "spacing.xs-plus",
     dotSize: "sizing.step-dot",
     fill: "layout.fill",
+    trackTranslation: "layout.translate-full-negative",
     maxHeight: "layout.sheet-max-height",
     duration: "motion.duration-sheet",
     easing: "motion.easing-gentle",
@@ -107,6 +107,7 @@ usePbInspect({
     "sizing.step-dot",
     "sizing.icon-sm",
     "layout.fill",
+    "layout.translate-full-negative",
     "layout.sheet-max-height",
     "motion.duration-sheet",
     "motion.easing-gentle",
@@ -176,7 +177,7 @@ watch(stepCount, (count) => {
       >
         <div
           class="pb-flow-sheet-track"
-          :style="{ transform: `translateX(${offsetPercent})` }"
+          :style="{ '--pb-flow-step-index': safeStep }"
         >
           <slot />
         </div>
@@ -190,7 +191,8 @@ watch(stepCount, (count) => {
 
 <style scoped>
 .pb-flow-sheet {
-  border-radius: var(--pb-radius-lg) var(--pb-radius-lg) 0 0;
+  border-radius: var(--pb-radius-lg) var(--pb-radius-lg) var(--pb-radius-none)
+    var(--pb-radius-none);
   background: var(--pb-color-surface);
   color: var(--pb-color-on-surface);
   box-shadow: var(--pb-elevation-raised);
@@ -214,7 +216,7 @@ watch(stepCount, (count) => {
   display: flex;
   justify-content: center;
   gap: var(--pb-spacing-xs-plus);
-  padding: var(--pb-spacing-sm) 0 0;
+  padding: var(--pb-spacing-sm) var(--pb-spacing-none) var(--pb-spacing-none);
 }
 .pb-flow-sheet-dots span {
   width: var(--pb-sizing-step-dot);
@@ -228,7 +230,7 @@ watch(stepCount, (count) => {
 }
 .pb-flow-sheet-body {
   overflow: hidden;
-  padding: 0;
+  padding: var(--pb-spacing-none);
   touch-action: pan-y;
 }
 .pb-flow-sheet-body.allows-swipe {
@@ -240,11 +242,14 @@ watch(stepCount, (count) => {
 .pb-flow-sheet-track {
   display: flex;
   width: var(--pb-layout-fill);
+  transform: translateX(
+    calc(var(--pb-layout-translate-full-negative) * var(--pb-flow-step-index))
+  );
   transition: transform var(--pb-motion-duration-sheet)
     var(--pb-motion-easing-gentle);
 }
 .pb-flow-sheet-track > :deep(*) {
-  flex: 0 0 var(--pb-layout-fill);
+  flex: none;
   min-width: var(--pb-layout-fill);
   max-height: var(--pb-layout-sheet-max-height);
   overflow: auto;
@@ -267,6 +272,6 @@ watch(stepCount, (count) => {
 .pb-flow-sheet-host.v-bottom-sheet > .v-bottom-sheet__content {
   width: var(--pb-layout-fill) !important;
   max-width: var(--pb-layout-fill) !important;
-  margin-inline: 0 !important;
+  margin-inline: var(--pb-spacing-none) !important;
 }
 </style>

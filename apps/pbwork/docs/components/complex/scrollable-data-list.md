@@ -14,20 +14,20 @@
 
 ## Props
 
-| Prop | 类型 | 默认 | 说明 |
-| --- | --- | --- | --- |
-| `pullRefresh` | boolean \| { enabled: boolean, threshold: number, maxDistance: number, mouse: boolean } | `true` | |
-| `loadMore` | boolean \| { enabled: boolean, rootMargin: string, manualFallback: boolean } | `true` | |
-| `dragScroll` | boolean \| { enabled: boolean, mouse: boolean, momentum: boolean } | `false` | |
-| `refreshing` | boolean | `false` | |
-| `loadingMore` | boolean | `false` | |
-| `hasMore` | boolean | `true` | |
-| `disabled` | boolean | `false` | |
+| Prop          | 类型                                                               | 默认    | 说明                                   |
+| ------------- | ------------------------------------------------------------------ | ------- | -------------------------------------- |
+| `pullRefresh` | boolean \| { enabled: boolean, mouse: boolean }                    | `true`  | 刷新阈值与最大位移由 Foundation 管理。 |
+| `loadMore`    | boolean \| { enabled: boolean, manualFallback: boolean }           | `true`  | 观察区边距由 Foundation 管理。         |
+| `dragScroll`  | boolean \| { enabled: boolean, mouse: boolean, momentum: boolean } | `false` |                                        |
+| `refreshing`  | boolean                                                            | `false` |                                        |
+| `loadingMore` | boolean                                                            | `false` |                                        |
+| `hasMore`     | boolean                                                            | `true`  |                                        |
+| `disabled`    | boolean                                                            | `false` |                                        |
 
 ### 配置对象
 
-- `pullRefresh`: `boolean` 或 `{ enabled, threshold?, maxDistance?, mouse? }`（默认 threshold 64、maxDistance 112、mouse false）
-- `loadMore`: `boolean` 或 `{ enabled, rootMargin?, manualFallback? }`
+- `pullRefresh`: `boolean` 或 `{ enabled, mouse? }`；阈值、最大位移分别固定绑定 `layout.pull-refresh-threshold`、`layout.pull-refresh-max-distance`
+- `loadMore`: `boolean` 或 `{ enabled, manualFallback? }`；观察区边距固定绑定 `layout.load-more-root-margin`
 - `dragScroll`: `boolean` 或 `{ enabled, mouse?, momentum? }`（鼠标拖拽纵滚；滚轮保持原生）
 - `refreshing` / `loadingMore` / `hasMore` 由业务受控；触底有重复锁
 - **loading / empty / error 整页态**应将 `pullRefresh` / `loadMore` / `dragScroll` 关闭（`enabled: false` 或布尔 false）
@@ -45,25 +45,28 @@
 
 ## tokenBindings
 
-| 槽位 | Token |
-| --- | --- |
-| `background` | `color.background` |
-| `primary` | `color.primary` |
-| `muted` | `color.on-surface-muted` |
-| `footer` | `typography.caption` |
-| `duration` | `motion.duration-normal` |
-| `easing` | `motion.easing-gentle` |
-| `disabledOpacity` | `opacity.disabled` |
-| `hiddenOpacity` | `opacity.hidden` |
-| `visibleOpacity` | `opacity.visible` |
-| `refreshTarget` | `sizing.touch` |
-| `footerHeight` | `sizing.control-lg` |
-| `actionMinWidth` | `sizing.refresh-action-min-width` |
-| `actionHeight` | `sizing.refresh-action-height` |
-| `fill` | `layout.fill` |
-| `refreshTranslation` | `layout.translate-full-negative` |
-| `loadMoreRootMargin` | `layout.load-more-root-margin` |
-| `sentinel` | `border.width-hairline` |
+| 槽位                     | Token                              |
+| ------------------------ | ---------------------------------- |
+| `background`             | `color.background`                 |
+| `primary`                | `color.primary`                    |
+| `muted`                  | `color.on-surface-muted`           |
+| `footer`                 | `typography.caption`               |
+| `duration`               | `motion.duration-normal`           |
+| `easing`                 | `motion.easing-gentle`             |
+| `disabledOpacity`        | `opacity.disabled`                 |
+| `hiddenOpacity`          | `opacity.hidden`                   |
+| `visibleOpacity`         | `opacity.visible`                  |
+| `refreshTarget`          | `sizing.touch`                     |
+| `footerHeight`           | `sizing.control-lg`                |
+| `actionMinWidth`         | `sizing.refresh-action-min-width`  |
+| `actionHeight`           | `sizing.refresh-action-height`     |
+| `fill`                   | `layout.fill`                      |
+| `refreshTranslation`     | `layout.translate-full-negative`   |
+| `loadMoreRootMargin`     | `layout.load-more-root-margin`     |
+| `refreshThreshold`       | `layout.pull-refresh-threshold`    |
+| `refreshMaxDistance`     | `layout.pull-refresh-max-distance` |
+| `refreshRestingDistance` | `sizing.control-lg`                |
+| `sentinel`               | `border.width-hairline`            |
 
 切浅色/深色只改 Theme 覆盖值，不改本表绑定。
 

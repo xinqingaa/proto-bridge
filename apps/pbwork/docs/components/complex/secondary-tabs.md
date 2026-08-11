@@ -8,7 +8,7 @@
 
 - 用于一级 Tab 或普通内容页内部的子分区；每项对应一个具名内容视图。
 - 默认 Playground 使用概览、活动、记录、附件四项，便于观察小三角在多项文本上的居中对齐。
-- 选中态只使用中性页内 Tab 激活色、`typography.label` 的 600 字重和对齐文字中心、朝上的小三角；小三角的尺寸与偏移由 `sizing.caret`、`spacing.sm` 和 `layout.half` 表达，不使用宽滑线或“极简”替代样式。
+- 选中态只使用中性页内 Tab 激活色、`typography.label` 的 600 字重和对齐文字中心、朝上的小三角；小三角的尺寸、反向偏移和锚点由 `sizing.caret`、`layout.inset-sm-negative` 和 `layout.half` 表达，不使用宽滑线或“极简”替代样式。
 - 点击不显示 ripple；内容以与一级 Tab 一致的水平过渡切换。横滑是否启用仍由页面决定。嵌套时关闭外层或内层之一，保证单一横滑 owner。
 - 不用于应用根导航和数据筛选。
 
@@ -17,6 +17,7 @@
 - 组件填满**父容器**而非视口；轨道随容器宽度填满。
 - 默认项按内容宽排列；`equal` 才令全部项平分轨道。项目过多时轨道横向滚动，不压缩文字。
 - 组件拥有与导航对应的内容视图区，并以水平转场切换。
+- Inspector / Contract 统一使用 `activeBackground`、`activeColor`、`inactiveColor` 槽位，禁止运行时与 JSON Contract 使用不同别名。
 
 ## 状态
 

@@ -45,7 +45,8 @@
     "text": "color.on-surface-muted",
     "size": "sizing.icon-md",
     "motion": "motion.duration-slow",
-    "label": "typography.caption"
+    "label": "typography.caption",
+    "stroke": "sizing.indicator-thickness"
   },
   "playground": {
     "presentation": "interactive"

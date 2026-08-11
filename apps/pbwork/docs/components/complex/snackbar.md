@@ -13,11 +13,11 @@
 
 ## Props
 
-| Prop | 类型 | 默认 | 说明 |
-| --- | --- | --- | --- |
-| `modelValue` | boolean | `true` | |
-| `message` | string | `工单已创建` | |
-| `tone` | `success` \| `error` \| `info` | `success` | |
+| Prop         | 类型                           | 默认         | 说明 |
+| ------------ | ------------------------------ | ------------ | ---- |
+| `modelValue` | boolean                        | `true`       |      |
+| `message`    | string                         | `工单已创建` |      |
+| `tone`       | `success` \| `error` \| `info` | `success`    |      |
 
 ## States（Playground / Contract）
 
@@ -31,14 +31,18 @@
 
 ## tokenBindings
 
-| 槽位 | Token |
-| --- | --- |
-| `accent` | `color.success` |
-| `surface` | `color.surface-raised` |
-| `text` | `color.on-surface` |
-| `radius` | `radius.lg` |
-| `elevation` | `elevation.level-4` |
-| `message` | `typography.content` |
+| 槽位          | Token                   |
+| ------------- | ----------------------- |
+| `accent`      | `color.success`         |
+| `surface`     | `color.surface-raised`  |
+| `text`        | `color.on-surface`      |
+| `radius`      | `radius.lg`             |
+| `elevation`   | `elevation.level-4`     |
+| `padding`     | `spacing.md`            |
+| `message`     | `typography.content`    |
+| `accentWidth` | `border.accent-width`   |
+| `duration`    | `motion.duration-toast` |
+| `iconSize`    | `sizing.icon-md`        |
 
 切浅色/深色只改 Theme 覆盖值，不改本表绑定。
 

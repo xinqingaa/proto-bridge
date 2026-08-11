@@ -126,14 +126,13 @@ const scenarios: Record<string, ComponentScenario[]> = {
       props: {
         label: "问题描述",
         modelValue: "设备运行时出现异常噪声。",
-        rows: 4,
       },
     },
     {
       id: "note",
       label: "补充备注",
       description: "可选的现场备注补充信息。",
-      props: { label: "补充备注", modelValue: "", rows: 3 },
+      props: { label: "补充备注", modelValue: "" },
     },
   ],
   checkbox: [

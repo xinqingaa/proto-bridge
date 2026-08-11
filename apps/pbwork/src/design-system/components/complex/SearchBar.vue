@@ -2,6 +2,9 @@
 import { toRefs } from "vue";
 import { Search } from "lucide-vue-next";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
+import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
+
+const SEARCH_ICON_SIZE = tokenDefaultNumber("sizing.icon-compact");
 
 const props = defineProps<{
   modelValue?: string;
@@ -32,7 +35,7 @@ usePbInspect({
     "color.on-surface-muted",
     "radius.md",
     "sizing.control-lg",
-    "sizing.icon-md",
+    "sizing.icon-compact",
     "typography.content",
     "opacity.disabled",
     "layout.fill",
@@ -43,7 +46,7 @@ usePbInspect({
     placeholder: "color.on-surface-muted",
     radius: "radius.md",
     height: "sizing.control-lg",
-    icon: "sizing.icon-md",
+    icon: "sizing.icon-compact",
     typography: "typography.content",
     disabledOpacity: "opacity.disabled",
     fill: "layout.fill",
@@ -76,7 +79,7 @@ usePbInspect({
       @click:clear="$emit('update:modelValue', '')"
     >
       <template #prepend-inner>
-        <Search :size="18" aria-hidden="true" />
+        <Search :size="SEARCH_ICON_SIZE" aria-hidden="true" />
       </template>
     </v-text-field>
   </form>

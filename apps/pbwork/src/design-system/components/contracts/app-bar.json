@@ -68,7 +68,8 @@
     "title": "typography.subtitle",
     "padding": "spacing.md",
     "safeInsetFallback": "spacing.none",
-    "restingElevation": "elevation.none"
+    "restingElevation": "elevation.none",
+    "iconSize": "sizing.icon-md"
   },
   "playground": {
     "presentation": "interactive"

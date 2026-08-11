@@ -20,9 +20,9 @@
 
 ## States
 
-| id | label | kind |
-| --- | --- | --- |
-| `disabled` | 禁用 | interaction |
+| id         | label | kind        |
+| ---------- | ----- | ----------- |
+| `disabled` | 禁用  | interaction |
 
 ## 用法要点
 

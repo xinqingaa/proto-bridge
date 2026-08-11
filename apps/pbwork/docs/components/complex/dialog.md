@@ -16,13 +16,14 @@
 
 - 默认关闭；Playground 与产品页通过触发打开。
 - `confirm` 发出后由调用方关闭；组件不擅自导航。
+- 短内容面板最大宽度固定绑定 `layout.dialog-max-width`；调用方不传固定宽度覆盖。
 - Props、Token 槽以 Contract 为准。
 
 ## States
 
-| id | label | kind |
-| --- | --- | --- |
-| `open` | 打开 | content |
+| id     | label | kind    |
+| ------ | ----- | ------- |
+| `open` | 打开  | content |
 
 Playground：`presentation: trigger`。
 

@@ -4,6 +4,10 @@ import { ArrowLeft } from "lucide-vue-next";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import IconButton from "@/design-system/components/basic/IconButton.vue";
 import { elevationStyle } from "@/design-system/components/_shared/appearance";
+import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
+
+const NO_ELEVATION = tokenDefaultNumber("layer.base");
+const BACK_ICON_SIZE = tokenDefaultNumber("sizing.icon-md");
 
 type ActionIcon = "more" | "plus" | "search" | "settings";
 
@@ -72,11 +76,13 @@ usePbInspect({
   getTokenBindings: () => ({
     surface: "color.surface",
     border: "color.border",
+    text: "color.on-surface",
     elevation: "elevation.card",
     title: "typography.subtitle",
     padding: "spacing.md",
     safeInsetFallback: "spacing.none",
     restingElevation: "elevation.none",
+    iconSize: "sizing.icon-md",
   }),
   getTokens: () => [
     "color.surface",
@@ -88,6 +94,7 @@ usePbInspect({
     "spacing.md",
     "spacing.none",
     "elevation.none",
+    "sizing.icon-md",
   ],
 });
 </script>
@@ -101,7 +108,7 @@ usePbInspect({
     flat
     color="surface"
     :density="dense ? 'compact' : 'default'"
-    :elevation="0"
+    :elevation="NO_ELEVATION"
     :style="elevationStyle(elevated ? 'card' : 'none')"
     :class="{ 'is-elevated': elevated }"
   >
@@ -113,7 +120,7 @@ usePbInspect({
         :aria-label="backLabel ?? '返回'"
         @click="$emit('back')"
       >
-        <ArrowLeft :size="20" aria-hidden="true" />
+        <ArrowLeft :size="BACK_ICON_SIZE" aria-hidden="true" />
       </v-btn>
     </template>
     <v-toolbar-title class="pb-app-bar-title">
@@ -144,17 +151,14 @@ usePbInspect({
   box-shadow: var(--pb-component-shadow, var(--pb-elevation-none)) !important;
 }
 .pb-app-bar.is-elevated {
-  box-shadow: var(
-    --pb-component-shadow,
-    var(--pb-elevation-card)
-  ) !important;
+  box-shadow: var(--pb-component-shadow, var(--pb-elevation-card)) !important;
 }
 .pb-app-bar :deep(.v-toolbar__content) {
   padding-inline: var(--pb-spacing-md);
 }
 .pb-app-bar-title,
 .pb-app-bar-heading {
-  margin: 0;
+  margin: var(--pb-spacing-none);
   font: var(--pb-typography-subtitle);
 }
 .pb-app-bar-actions {

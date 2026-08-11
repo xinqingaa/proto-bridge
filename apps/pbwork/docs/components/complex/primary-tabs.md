@@ -18,6 +18,7 @@
 - 默认项按内容宽排列；`equal` 才令全部项平分轨道。项目过多时轨道横向滚动，不压缩文字。
 - 选中面是无描边、悬浮的半透明玻璃材质；`layer.base` / `layer.content` 管理其与文字的层级，顶部只以低对比阴影形成承托过渡，不产生第二道表面、边框或额外的高对比轮廓。
 - 组件拥有与导航对应的内容视图区，并以水平转场切换。
+- Inspector / Contract 使用 `activeColor`、`inactiveColor`、`border`、`radius` 等同名槽；桥接偏移与隐藏/显示透明度分别绑定 `layout.inset-xs-negative`、`opacity.hidden`、`opacity.visible`。
 
 ## 状态与动效
 

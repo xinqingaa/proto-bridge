@@ -8,25 +8,36 @@ import {
   watch,
   type CSSProperties,
 } from "vue";
-import { RefreshCw } from "lucide-vue-next";
 import Spinner from "@/design-system/components/basic/Spinner.vue";
+import Icon from "@/design-system/components/basic/Icon.vue";
 import { usePbInspect } from "@/runtime/inspect/usePbInspect";
-import { tokenDefaultCssValue } from "@/design-system/tokenDefaults";
+import {
+  tokenDefaultCssValue,
+  tokenDefaultNumber,
+} from "@/design-system/tokenDefaults";
 
 const DEFAULT_LOAD_MORE_ROOT_MARGIN = tokenDefaultCssValue(
   "layout.load-more-root-margin",
 );
+const DEFAULT_PULL_THRESHOLD = tokenDefaultNumber(
+  "layout.pull-refresh-threshold",
+);
+const DEFAULT_PULL_MAX_DISTANCE = tokenDefaultNumber(
+  "layout.pull-refresh-max-distance",
+);
+const REFRESH_RESTING_DISTANCE = tokenDefaultNumber("sizing.control-lg");
+const AXIS_LOCK_DISTANCE = tokenDefaultNumber("layout.gesture-axis-lock");
+const CLICK_SUPPRESSION_DURATION = tokenDefaultNumber(
+  "motion.duration-click-suppression",
+);
 
 export type PullRefreshOptions = {
   enabled: boolean;
-  threshold?: number;
-  maxDistance?: number;
   mouse?: boolean;
 };
 
 export type LoadMoreOptions = {
   enabled: boolean;
-  rootMargin?: string;
   manualFallback?: boolean;
 };
 
@@ -85,39 +96,41 @@ let scrollVelocity = 0;
 let momentumFrame: number | null = null;
 let suppressClickUntil = 0;
 
-const pullConfig = computed<Required<PullRefreshOptions>>(() => {
+const pullConfig = computed(() => {
   const value = props.pullRefresh;
   if (typeof value === "object") {
     return {
       enabled: value.enabled,
-      threshold: value.threshold ?? 64,
-      maxDistance: value.maxDistance ?? 112,
+      threshold: DEFAULT_PULL_THRESHOLD,
+      maxDistance: DEFAULT_PULL_MAX_DISTANCE,
       mouse: value.mouse ?? false,
     };
   }
   return {
     enabled: value,
-    threshold: 64,
-    maxDistance: 112,
+    threshold: DEFAULT_PULL_THRESHOLD,
+    maxDistance: DEFAULT_PULL_MAX_DISTANCE,
     mouse: false,
   };
 });
 
-const loadConfig = computed<Required<LoadMoreOptions>>(() => {
-  const value = props.loadMore;
-  if (typeof value === "object") {
+const loadConfig = computed<Required<LoadMoreOptions> & { rootMargin: string }>(
+  () => {
+    const value = props.loadMore;
+    if (typeof value === "object") {
+      return {
+        enabled: value.enabled,
+        rootMargin: DEFAULT_LOAD_MORE_ROOT_MARGIN,
+        manualFallback: value.manualFallback ?? true,
+      };
+    }
     return {
-      enabled: value.enabled,
-      rootMargin: value.rootMargin ?? DEFAULT_LOAD_MORE_ROOT_MARGIN,
-      manualFallback: value.manualFallback ?? true,
+      enabled: value,
+      rootMargin: DEFAULT_LOAD_MORE_ROOT_MARGIN,
+      manualFallback: true,
     };
-  }
-  return {
-    enabled: value,
-    rootMargin: DEFAULT_LOAD_MORE_ROOT_MARGIN,
-    manualFallback: true,
-  };
-});
+  },
+);
 
 const dragConfig = computed<Required<DragScrollOptions>>(() => {
   const value = props.dragScroll;
@@ -146,8 +159,10 @@ const pullReady = computed(
 const pullProgress = computed(() =>
   Math.min(1, rawPullDistance.value / pullConfig.value.threshold),
 );
-const contentStyle = computed<CSSProperties>(() => ({
-  transform: `translate3d(0, ${props.refreshing ? 48 : pullDistance.value}px, 0)`,
+const contentStyle = computed<
+  CSSProperties & Record<"--pb-pull-offset", string>
+>(() => ({
+  "--pb-pull-offset": `${props.refreshing ? REFRESH_RESTING_DISTANCE : pullDistance.value}px`,
 }));
 
 function canRefresh(event?: PointerEvent, atTop = true) {
@@ -218,7 +233,10 @@ function onPointerMove(event: PointerEvent) {
   if (pointerId.value !== event.pointerId) return;
   const dx = event.clientX - startX.value;
   const dy = event.clientY - startY.value;
-  if (axis.value === "pending" && Math.max(Math.abs(dx), Math.abs(dy)) >= 8) {
+  if (
+    axis.value === "pending" &&
+    Math.max(Math.abs(dx), Math.abs(dy)) >= AXIS_LOCK_DISTANCE
+  ) {
     axis.value = Math.abs(dx) > Math.abs(dy) ? "horizontal" : "vertical";
   }
   if (axis.value === "horizontal") {
@@ -268,7 +286,9 @@ function finishPull(event: PointerEvent) {
     gestureMode.value === "scroll" &&
     dragConfig.value.momentum &&
     Math.abs(scrollVelocity) >= 0.04;
-  if (moved >= 8) suppressClickUntil = Date.now() + 450;
+  if (moved >= AXIS_LOCK_DISTANCE) {
+    suppressClickUntil = Date.now() + CLICK_SUPPRESSION_DURATION;
+  }
   cancelGesture();
   if (shouldRefresh) emit("refresh");
   if (shouldGlide) startMomentum();
@@ -347,7 +367,10 @@ function onTouchMove(event: TouchEvent) {
   if (!touch) return;
   const dx = touch.clientX - touchStartX;
   const dy = touch.clientY - touchStartY;
-  if (touchAxis === "pending" && Math.max(Math.abs(dx), Math.abs(dy)) >= 8) {
+  if (
+    touchAxis === "pending" &&
+    Math.max(Math.abs(dx), Math.abs(dy)) >= AXIS_LOCK_DISTANCE
+  ) {
     touchAxis = Math.abs(dx) > Math.abs(dy) ? "horizontal" : "vertical";
   }
   if (touchAxis === "horizontal" || (touchAxis === "vertical" && dy <= 0)) {
@@ -369,7 +392,9 @@ function onTouchMove(event: TouchEvent) {
 function finishTouchPull(event: TouchEvent) {
   if (!touchByIdentifier(event.changedTouches)) return;
   const shouldRefresh = pullReady.value && !props.refreshing;
-  if (rawPullDistance.value >= 8) suppressClickUntil = Date.now() + 450;
+  if (rawPullDistance.value >= AXIS_LOCK_DISTANCE) {
+    suppressClickUntil = Date.now() + CLICK_SUPPRESSION_DURATION;
+  }
   cancelTouchPull();
   if (shouldRefresh) emit("refresh");
 }
@@ -465,6 +490,9 @@ usePbInspect({
     actionHeight: "sizing.refresh-action-height",
     fill: "layout.fill",
     refreshTranslation: "layout.translate-full-negative",
+    refreshThreshold: "layout.pull-refresh-threshold",
+    refreshMaxDistance: "layout.pull-refresh-max-distance",
+    refreshRestingDistance: "sizing.control-lg",
     loadMoreRootMargin: "layout.load-more-root-margin",
     sentinel: "border.width-hairline",
   }),
@@ -484,6 +512,8 @@ usePbInspect({
     "sizing.refresh-action-height",
     "layout.fill",
     "layout.translate-full-negative",
+    "layout.pull-refresh-threshold",
+    "layout.pull-refresh-max-distance",
     "layout.load-more-root-margin",
     "border.width-hairline",
   ],
@@ -532,7 +562,7 @@ onBeforeUnmount(() => {
       >
         <Spinner v-if="refreshing" label="正在刷新" size="sm" />
         <span v-else>
-          <RefreshCw :size="16" aria-hidden="true" />
+          <Icon name="refresh-cw" size="sm" aria-hidden="true" />
           {{ pullReady ? "松开刷新" : "下拉刷新" }}
         </span>
       </slot>
@@ -578,8 +608,8 @@ onBeforeUnmount(() => {
 <style scoped>
 .pb-scrollable-data-list {
   position: relative;
-  min-width: 0;
-  min-height: 0;
+  min-width: var(--pb-spacing-none);
+  min-height: var(--pb-spacing-none);
   height: var(--pb-layout-fill);
   overflow: auto;
   overscroll-behavior-y: contain;
@@ -602,9 +632,9 @@ onBeforeUnmount(() => {
 }
 .pb-scrollable-data-list-refresh {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: var(--pb-spacing-none);
+  left: var(--pb-spacing-none);
+  right: var(--pb-spacing-none);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -618,7 +648,7 @@ onBeforeUnmount(() => {
 }
 .pb-scrollable-data-list-refresh.is-visible {
   opacity: var(--pb-opacity-visible);
-  transform: translateY(0);
+  transform: translateY(var(--pb-spacing-none));
 }
 .pb-scrollable-data-list-refresh.is-ready {
   color: var(--pb-color-primary);
@@ -632,6 +662,11 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   min-height: var(--pb-layout-fill);
+  transform: translate3d(
+    var(--pb-spacing-none),
+    var(--pb-pull-offset),
+    var(--pb-spacing-none)
+  );
   transition: transform var(--pb-motion-duration-normal)
     var(--pb-motion-easing-gentle);
   will-change: transform;
@@ -650,7 +685,7 @@ onBeforeUnmount(() => {
 .pb-scrollable-data-list-more {
   min-width: var(--pb-sizing-refresh-action-min-width);
   min-height: var(--pb-sizing-refresh-action-height);
-  border: 0;
+  border: none;
   border-radius: var(--pb-radius-full);
   background: var(--pb-color-primary-soft);
   color: var(--pb-color-primary);

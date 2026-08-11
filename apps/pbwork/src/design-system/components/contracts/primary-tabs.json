@@ -89,10 +89,11 @@
     "selectionSurface": "color.surface-selected",
     "selectionOpacity": "opacity.glass",
     "selectionElevation": "elevation.glass",
-    "active": "color.section-tab-active",
-    "inactive": "color.on-surface-muted",
+    "activeColor": "color.section-tab-active",
+    "inactiveColor": "color.on-surface-muted",
+    "border": "border.hairline",
     "trackRadius": "radius.lg",
-    "selectionRadius": "radius.full",
+    "radius": "radius.full",
     "height": "sizing.control-md",
     "target": "sizing.touch",
     "typography": "typography.label",
@@ -107,7 +108,10 @@
     "glassBackdrop": "effect.glass-backdrop",
     "reducedDuration": "motion.duration-instant",
     "duration": "motion.duration-slow",
-    "easing": "motion.easing-standard"
+    "easing": "motion.easing-standard",
+    "bridgeOffset": "layout.inset-xs-negative",
+    "hiddenOpacity": "opacity.hidden",
+    "visibleOpacity": "opacity.visible"
   },
   "playground": { "presentation": "interactive" }
 }

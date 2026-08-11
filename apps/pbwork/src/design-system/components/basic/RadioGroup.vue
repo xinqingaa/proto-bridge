@@ -19,7 +19,8 @@ const props = defineProps<{
 defineEmits<{ "update:modelValue": [string] }>();
 
 const rootRef = usePbInspectRef();
-const { label, modelValue, options, color, disabled, inspectId } = toRefs(props);
+const { label, modelValue, options, color, disabled, inspectId } =
+  toRefs(props);
 
 const selected = computed(() =>
   assertColorTokenRef(color.value, "color.primary"),
@@ -52,6 +53,7 @@ usePbInspect({
   ],
   getTokenBindings: () => ({
     selected: selected.value,
+    text: "color.on-surface",
     label: "typography.caption",
     option: "typography.content",
     gap: "spacing.sm",

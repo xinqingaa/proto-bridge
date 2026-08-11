@@ -95,7 +95,8 @@ watch(modelValue, async (value) => {
 
 <style scoped>
 .pb-sheet {
-  border-radius: var(--pb-radius-lg) var(--pb-radius-lg) 0 0;
+  border-radius: var(--pb-radius-lg) var(--pb-radius-lg) var(--pb-radius-none)
+    var(--pb-radius-none);
   background: var(--pb-color-surface);
   color: var(--pb-color-on-surface);
   box-shadow: var(--pb-elevation-raised);
@@ -122,6 +123,6 @@ watch(modelValue, async (value) => {
 .pb-sheet-host.v-bottom-sheet > .v-bottom-sheet__content {
   width: var(--pb-layout-fill) !important;
   max-width: var(--pb-layout-fill) !important;
-  margin-inline: 0 !important;
+  margin-inline: var(--pb-spacing-none) !important;
 }
 </style>

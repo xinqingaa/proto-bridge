@@ -119,8 +119,8 @@ usePbInspect({
 
 <style scoped>
 .pb-tab-viewport {
-  min-width: 0;
-  min-height: 0;
+  min-width: var(--pb-spacing-none);
+  min-height: var(--pb-spacing-none);
   height: var(--pb-layout-fill);
   background: var(--pb-color-background);
   touch-action: pan-y;
@@ -135,7 +135,7 @@ usePbInspect({
 .pb-tab-viewport :deep(.v-window__container),
 .pb-tab-viewport :deep(.v-window-item),
 .pb-tab-viewport-panel {
-  min-height: 0;
+  min-height: var(--pb-spacing-none);
   height: var(--pb-layout-fill);
 }
 </style>

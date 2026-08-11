@@ -13,15 +13,18 @@ import {
   Home,
   Inbox,
   List,
+  MapPin,
   MoreHorizontal,
   Plus,
   RefreshCw,
+  Radio,
   Search,
   Settings,
   ShieldCheck,
   SlidersHorizontal,
   Snowflake,
   Thermometer,
+  Truck,
   User,
 } from "lucide-vue-next";
 
@@ -50,6 +53,9 @@ export const PB_ICON_NAMES = [
   "copy",
   "file-text",
   "sliders-horizontal",
+  "map-pin",
+  "radio",
+  "truck",
 ] as const;
 
 export type PbIconName = (typeof PB_ICON_NAMES)[number];
@@ -78,6 +84,9 @@ const ICON_MAP: Record<PbIconName, Component> = {
   copy: Copy,
   "file-text": FileText,
   "sliders-horizontal": SlidersHorizontal,
+  "map-pin": MapPin,
+  radio: Radio,
+  truck: Truck,
 };
 
 export function resolvePbIcon(name: PbIconName | undefined): Component {

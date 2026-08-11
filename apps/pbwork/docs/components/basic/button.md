@@ -17,6 +17,7 @@
 - `loading` / `disabled` 均不可点；loading 保持原强调度，disabled 才使用 `opacity.disabled`。
 - `loading` 时 **spinner 与文案同时可见**，不得用加载图标替换文字。
 - `disabled` 整钮使用 `opacity.disabled`。
+- loading 指示器的尺寸与描边固定绑定 `sizing.icon-sm`、`sizing.progress-stroke`，不得由实例传数字覆盖。
 - 未传 `borderColor` 时与 `bgColor` 相同；未传 `textColor` 时按底色推导（实色→`on-*`，`*-soft`→对应实色，透明底→边框色或 `color.action`）。
 - 公开语义**不**绑定实现层样式枚举；软底/描边/纯文字等观感由 Token 组合达成。
 - Props、默认值、Token 槽以 Contract 为准。

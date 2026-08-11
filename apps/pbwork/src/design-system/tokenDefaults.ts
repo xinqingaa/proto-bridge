@@ -15,6 +15,7 @@ export function tokenDefaultCssValue(tokenId: string): string {
 
 export function tokenDefaultNumber(tokenId: string): number {
   const value = Number.parseFloat(tokenDefaultCssValue(tokenId));
-  if (!Number.isFinite(value)) throw new Error(`TOKEN_IS_NOT_NUMERIC:${tokenId}`);
+  if (!Number.isFinite(value))
+    throw new Error(`TOKEN_IS_NOT_NUMERIC:${tokenId}`);
   return value;
 }

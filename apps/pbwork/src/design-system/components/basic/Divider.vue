@@ -26,6 +26,7 @@ usePbInspect({
   getTokens: () => ["color.divider", "spacing.md", "typography.caption"],
   getTokenBindings: () => ({
     line: "color.divider",
+    text: "color.on-surface-muted",
     inset: "spacing.md",
     label: "typography.caption",
   }),
@@ -33,11 +34,7 @@ usePbInspect({
 </script>
 
 <template>
-  <div
-    ref="rootRef"
-    class="pb-divider"
-    :class="{ 'is-inset': inset }"
-  >
+  <div ref="rootRef" class="pb-divider" :class="{ 'is-inset': inset }">
     <v-divider />
     <span v-if="label" class="pb-divider-label">{{ label }}</span>
     <v-divider v-if="label" />
@@ -61,6 +58,6 @@ usePbInspect({
   opacity: var(--pb-opacity-visible);
 }
 .pb-divider-label {
-  flex-shrink: 0;
+  flex: none;
 }
 </style>

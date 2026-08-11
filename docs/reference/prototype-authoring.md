@@ -20,7 +20,9 @@ PBWork Token / Theme
 强制规则：
 
 - 有对口 PBWork 组件时必须使用，禁止在页面内重做 Button、Tabs、List、Dialog、Sheet、Snackbar、Navigation 或滚动/手势组件。
-- 允许业务局部 UI，但颜色、字体、间距、尺寸、圆角、边框、阴影和动效必须使用 `--pb-*` Token。
+- 允许业务局部 UI，但颜色、字体、间距、尺寸、比例尺寸、圆角、边框、阴影、透明度、层级、动效、滤镜和变换距离必须使用 `--pb-*` Token；具有设计含义的 `0` 也必须走 Token。
+- 原型只使用 Flex 或常规文档流；禁止 `grid` / `inline-grid`、所有 `grid-*` 和 `place-*`。约束同时覆盖 style、template、script/TS 生成样式与 vendor 视觉 props，不能把固定数值转移到组件参数中。
+- `calc()` 只能组合 Token 或运行时派生变量；DOM 测量/交互状态的派生几何值可经 custom property 传入，但不得形成固定默认设计值或公开样式逃生口。
 - 业务局部 UI 中需要 Agent 独立实现或验收的节点必须显式声明 `data-pb-id`、`data-pb-role` 和所需 `data-pb-token-*`；只使用 CSS Token 不构成 Token Evidence。
 - 禁止创建业务命名的共享 Token。
 - 禁止组件实例换绑 Token；Theme 只覆盖 Token 值。

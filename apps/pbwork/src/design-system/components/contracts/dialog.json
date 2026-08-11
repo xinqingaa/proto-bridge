@@ -31,9 +31,7 @@
         "type": "boolean"
       }
     },
-    "required": [
-      "title"
-    ]
+    "required": ["title"]
   },
   "defaultProps": {
     "modelValue": false,
@@ -52,13 +50,8 @@
       }
     }
   ],
-  "slots": [
-    "default"
-  ],
-  "events": [
-    "update:modelValue",
-    "confirm"
-  ],
+  "slots": ["default"],
+  "events": ["update:modelValue", "confirm"],
   "tokenBindings": {
     "scrim": "color.scrim",
     "surface": "color.surface-raised",
@@ -67,7 +60,8 @@
     "radius": "radius.xl",
     "elevation": "elevation.level-5",
     "title": "typography.title",
-    "body": "typography.content"
+    "body": "typography.content",
+    "maxWidth": "layout.dialog-max-width"
   },
   "playground": {
     "presentation": "trigger"

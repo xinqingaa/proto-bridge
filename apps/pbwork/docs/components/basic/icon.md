@@ -22,7 +22,7 @@ Lucide 常用图标；按稳定 `name` 渲染，尺寸与颜色走 Token。
 
 Playground：`presentation: gallery` — 默认 + 各 `name` 平铺。
 
-常用 id：`more` `plus` `search` `settings` `home` `list` `user` `inbox` `check` `chevron-down` `chevron-right` `alert-triangle` `alert-circle` `clock` `refresh-cw` `clipboard-check` `shield-check` `folder-open` `thermometer` `snowflake` `copy` `file-text` `sliders-horizontal`。
+常用 id：`more` `plus` `search` `settings` `home` `list` `user` `inbox` `check` `chevron-down` `chevron-right` `alert-triangle` `alert-circle` `clock` `refresh-cw` `clipboard-check` `shield-check` `folder-open` `thermometer` `snowflake` `copy` `file-text` `sliders-horizontal` `map-pin` `radio` `truck`。
 
 ## 用法要点
 

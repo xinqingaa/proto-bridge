@@ -35,12 +35,12 @@
 
 ## tokenBindings
 
-| 槽位         | Token                    |
-| ------------ | ------------------------ |
-| `background` | `color.background`       |
-| `fill`       | `layout.fill`            |
+| 槽位         | Token                          |
+| ------------ | ------------------------------ |
+| `background` | `color.background`             |
+| `fill`       | `layout.fill`                  |
 | `duration`   | `motion.duration-tab-viewport` |
-| `easing`     | `motion.easing-standard` |
+| `easing`     | `motion.easing-standard`       |
 
 切浅色/深色只改 Theme 覆盖值，不改本表绑定。
 

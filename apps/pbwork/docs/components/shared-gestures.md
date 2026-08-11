@@ -20,12 +20,14 @@
 1. 起点在忽略区 → 父级 Tab **不处理**
    - 选择器含：`input/textarea/select/[contenteditable]`、`[data-no-swipe]`、`[data-gesture-ignore]`、`.pb-filter-bar`、`.period-segment`
 2. 起点在 `[data-horizontal-scroll]` 且 `scrollWidth > clientWidth` → 父级 Tab **整次忽略**（含边缘外拖）；子级 `useHorizontalDragScroll` 接管
-3. 否则轴锁定（位移 ≥ 8px）：
+3. 否则轴锁定（位移达到 `layout.gesture-axis-lock`）：
    - 横向 → 当前拥有手势的一级 Tab、二级 Tab 或 TabViewport 翻页
    - 纵向 → 列表原生滚；仅 **开始时在顶部且向下** → 下拉刷新
 4. `swipe` 只控制 touch/pen；`mouseSwipe` 只控制 mouse；**不可互兜底**
 5. 确认横向后才 `setPointerCapture` + `preventDefault`；纵向则释放，让给列表
-6. 有效拖动（≥ 8px）后 ~450ms 内 capture 阶段抑制 click
+6. 有效拖动后，在 `motion.duration-click-suppression` 窗口内于 capture 阶段抑制 click
+
+共享阈值不得由业务或组件 props 覆盖：锁轴、拖动预览上限、翻页阈值分别绑定 `layout.gesture-axis-lock`、`layout.gesture-drag-limit`、`layout.gesture-swipe-threshold`。
 
 ## 双事件路径（触屏）
 

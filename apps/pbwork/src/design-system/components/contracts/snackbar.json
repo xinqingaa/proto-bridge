@@ -17,16 +17,10 @@
       },
       "tone": {
         "type": "string",
-        "enum": [
-          "success",
-          "error",
-          "info"
-        ]
+        "enum": ["success", "error", "info"]
       }
     },
-    "required": [
-      "message"
-    ]
+    "required": ["message"]
   },
   "defaultProps": {
     "modelValue": false,
@@ -51,17 +45,18 @@
     }
   ],
   "slots": [],
-  "events": [
-    "update:modelValue"
-  ],
+  "events": ["update:modelValue"],
   "tokenBindings": {
     "accent": "color.success",
     "surface": "color.surface-raised",
     "text": "color.on-surface",
     "radius": "radius.lg",
     "elevation": "elevation.level-4",
+    "padding": "spacing.md",
     "message": "typography.content",
-    "accentWidth": "border.accent-width"
+    "accentWidth": "border.accent-width",
+    "duration": "motion.duration-toast",
+    "iconSize": "sizing.icon-md"
   },
   "playground": {
     "presentation": "trigger"

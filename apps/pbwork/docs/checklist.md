@@ -6,13 +6,14 @@
 
 - [ ] 形状匹配时优先 DS 组件；局部 UI 已论证且走 Token
 - [ ] FilterBar / Card 未滥用（自定义 Chip 行须 `data-no-swipe`；列表行默认非 Card）
-- [ ] 无硬编码色值/字号/阴影等设计量；所有设计量仅消费 `var(--pb-*)`，不存在 literal fallback
+- [ ] style/template/script/TS helper、生成样式与 vendor 视觉 props 无固定设计值（含设计意义的 `0`）；所有设计量仅消费 `var(--pb-*)`，不存在 literal fallback
 - [ ] DS 与现役原型没有 CSS Grid / `place-*` Grid 简写，只使用 Flex 或常规文档流
+- [ ] `calc()` 只组合 Token/运行时派生变量；DOM 测量值仅经 custom property 传入，未形成固定默认值或自由样式入口
 - [ ] 新增或实际消费的 Token 已同步 Foundation、Theme、Bind 池（如需）、Contract 与 Inspector
 - [ ] 浅色 / 深色主题下关键表面可读；theme 切换不堆业务 history、不占用 variant
 - [ ] 新增或改动的 props 已进 contract + registry；触达文档已更新叙事（不以 props 表为权威）
 - [ ] Contract 含 `playground.presentation`；语义变更已补 `summary`/`behavior`/`states[].kind`（适用时）
-- [ ] Contract ↔ Vue ↔ Registry 经校验一致；文档与 Contract 语义不冲突
+- [ ] Contract ↔ Vue ↔ Registry 经校验一致，Inspector 与 JSON Contract 的 token binding 槽位集合完全一致；文档与 Contract 语义不冲突
 - [ ] 未引入第二图标包；默认图标为 Lucide
 - [ ] 未用大 type 兼多语义角色（见 alignment-protocol / audit-large-types）
 

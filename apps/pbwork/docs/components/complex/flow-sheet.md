@@ -33,25 +33,26 @@
 
 ## tokenBindings
 
-| 槽                  | Token                    |
-| ------------------- | ------------------------ |
-| `surface`           | `color.surface`          |
-| `border`            | `color.border`           |
-| `description`       | `color.on-surface-muted` |
-| `inactiveIndicator` | `color.outline`          |
-| `activeIndicator`   | `color.primary`          |
-| `radius`            | `radius.lg`              |
-| `elevation`         | `elevation.raised`       |
-| `title`             | `typography.subtitle`    |
-| `body`              | `typography.content`     |
-| `stepLabel`         | `typography.micro`       |
-| `headerGap`         | `spacing.sm-plus`        |
-| `dotGap`            | `spacing.xs-plus`        |
-| `dotSize`           | `sizing.step-dot`        |
-| `fill`              | `layout.fill`            |
-| `maxHeight`         | `layout.sheet-max-height` |
-| `duration`          | `motion.duration-sheet`  |
-| `easing`            | `motion.easing-gentle`   |
+| 槽                  | Token                            |
+| ------------------- | -------------------------------- |
+| `surface`           | `color.surface`                  |
+| `border`            | `color.border`                   |
+| `description`       | `color.on-surface-muted`         |
+| `inactiveIndicator` | `color.outline`                  |
+| `activeIndicator`   | `color.primary`                  |
+| `radius`            | `radius.lg`                      |
+| `elevation`         | `elevation.raised`               |
+| `title`             | `typography.subtitle`            |
+| `body`              | `typography.content`             |
+| `stepLabel`         | `typography.micro`               |
+| `headerGap`         | `spacing.sm-plus`                |
+| `dotGap`            | `spacing.xs-plus`                |
+| `dotSize`           | `sizing.step-dot`                |
+| `fill`              | `layout.fill`                    |
+| `maxHeight`         | `layout.sheet-max-height`        |
+| `duration`          | `motion.duration-sheet`          |
+| `easing`            | `motion.easing-gentle`           |
+| `trackTranslation`  | `layout.translate-full-negative` |
 
 ## 使用检查
 

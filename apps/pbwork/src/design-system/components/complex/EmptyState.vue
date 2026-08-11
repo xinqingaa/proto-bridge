@@ -3,6 +3,9 @@ import { toRefs } from "vue";
 import Button from "@/design-system/components/basic/Button.vue";
 import Icon from "@/design-system/components/basic/Icon.vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
+import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
+
+const ICON_SURFACE_SIZE = tokenDefaultNumber("sizing.avatar-lg");
 
 const props = defineProps<{
   title: string;
@@ -34,10 +37,12 @@ usePbInspect({
     "color.on-surface-muted",
     "radius.full",
     "sizing.icon-lg",
+    "sizing.avatar-lg",
     "spacing.lg",
     "spacing.xs",
     "spacing.sm",
     "typography.subtitle",
+    "typography.content",
   ],
   getTokenBindings: () => ({
     iconSurface: "color.primary-soft",
@@ -46,7 +51,10 @@ usePbInspect({
     description: "color.on-surface-muted",
     radius: "radius.full",
     spacing: "spacing.lg",
+    iconSize: "sizing.icon-lg",
+    iconSurfaceSize: "sizing.avatar-lg",
     typography: "typography.subtitle",
+    body: "typography.content",
     titleOffset: "spacing.xs",
     descriptionOffset: "spacing.sm",
   }),
@@ -61,7 +69,12 @@ usePbInspect({
     data-pb-role="empty-state"
     color="transparent"
   >
-    <v-avatar color="primary" variant="tonal" size="56" class="pb-empty-icon">
+    <v-avatar
+      color="primary"
+      variant="tonal"
+      :size="ICON_SURFACE_SIZE"
+      class="pb-empty-icon"
+    >
       <Icon name="inbox" size="lg" tone="primary" />
     </v-avatar>
     <h3>{{ title }}</h3>
@@ -94,11 +107,11 @@ usePbInspect({
   color: var(--pb-color-primary) !important;
 }
 h3 {
-  margin: var(--pb-spacing-xs) 0 0;
+  margin: var(--pb-spacing-xs) var(--pb-spacing-none) var(--pb-spacing-none);
   font: var(--pb-typography-subtitle);
 }
 p {
-  margin: 0 0 var(--pb-spacing-sm);
+  margin: var(--pb-spacing-none) var(--pb-spacing-none) var(--pb-spacing-sm);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-content);
 }

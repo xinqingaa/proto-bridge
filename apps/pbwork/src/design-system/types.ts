@@ -35,6 +35,7 @@ export type VuetifyThemeBindings = Record<
   | "background"
   | "surface"
   | "primary"
+  | "primary-soft"
   | "secondary"
   | "error"
   | "info"

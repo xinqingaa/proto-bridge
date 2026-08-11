@@ -116,7 +116,4 @@ export const resolutionActions = [
   "更换运输车辆",
   "持续监控",
 ];
-export const dutySupervisors = [
-  "华东值班经理 · 林岚",
-  "质量平台主管 · 陈屿",
-];
+export const dutySupervisors = ["华东值班经理 · 林岚", "质量平台主管 · 陈屿"];

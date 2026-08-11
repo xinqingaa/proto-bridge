@@ -63,7 +63,9 @@ const tabStyle = computed(() => ({
   "--pb-tabs-selection-elevation": "var(--pb-elevation-glass)",
   "--pb-tabs-selection-radius": "var(--pb-radius-full)",
   "--pb-tabs-selection-bridge-height": "var(--pb-spacing-xs)",
+  "--pb-tabs-selection-bridge-offset": "var(--pb-layout-inset-xs-negative)",
   "--pb-tabs-selection-arc-inset": "var(--pb-spacing-xs)",
+  "--pb-tabs-selection-arc-offset": "var(--pb-layout-inset-xs-negative)",
   "--pb-tabs-selection-arc-radius": "var(--pb-radius-full)",
   "--pb-tabs-track-radius": "var(--pb-radius-lg)",
   "--pb-tabs-active-color": "var(--pb-color-section-tab-active)",
@@ -89,7 +91,7 @@ const swipe = usePointerSwipe(
   { swipe: swipeEnabled, mouseSwipe },
 );
 
-const pill = ref({ left: 0, width: 0, ready: false });
+const pill = ref({ left: Number.NaN, width: Number.NaN, ready: false });
 const pillTransitionReady = ref(false);
 
 function measurePill() {
@@ -144,9 +146,8 @@ watch(
 );
 
 const pillStyle = computed(() => ({
-  transform: `translateX(${pill.value.left}px)`,
-  width: `${pill.value.width}px`,
-  opacity: pill.value.ready ? 1 : 0,
+  "--pb-tabs-pill-translation": `${pill.value.left}px`,
+  "--pb-tabs-pill-width": `${pill.value.width}px`,
 }));
 
 usePbInspect({
@@ -191,6 +192,9 @@ usePbInspect({
     fill: "layout.fill",
     selectionLayer: "layer.content",
     glassBackdrop: "effect.glass-backdrop",
+    bridgeOffset: "layout.inset-xs-negative",
+    hiddenOpacity: "opacity.hidden",
+    visibleOpacity: "opacity.visible",
     reducedDuration: "motion.duration-instant",
     duration: "motion.duration-slow",
     easing: "motion.easing-standard",
@@ -218,7 +222,9 @@ usePbInspect({
     "layer.base",
     "layer.content",
     "effect.glass-backdrop",
+    "layout.inset-xs-negative",
     "opacity.hidden",
+    "opacity.visible",
     "motion.duration-fast",
     "motion.duration-instant",
     "motion.duration-slow",
@@ -243,7 +249,12 @@ usePbInspect({
     data-pb-role="tab-bar"
   >
     <div ref="trackRef" class="pb-tabs-track" role="tablist">
-      <div class="pb-tabs-pill" aria-hidden="true" :style="pillStyle">
+      <div
+        class="pb-tabs-pill"
+        :class="{ 'is-ready': pill.ready }"
+        aria-hidden="true"
+        :style="pillStyle"
+      >
         <LiquidGlass :active="true" />
       </div>
       <button
@@ -312,7 +323,7 @@ usePbInspect({
   display: flex;
   flex-direction: column;
   gap: var(--pb-spacing-sm-plus);
-  min-width: 0;
+  min-width: var(--pb-spacing-none);
   background: transparent;
 }
 .pb-tabs-track {
@@ -320,7 +331,7 @@ usePbInspect({
   display: inline-flex;
   max-width: var(--pb-layout-fill);
   align-items: stretch;
-  gap: 0;
+  gap: var(--pb-spacing-none);
   min-height: var(--pb-tabs-height, var(--pb-sizing-control-md));
   padding: var(--pb-spacing-xs);
   overflow: auto;
@@ -345,32 +356,38 @@ usePbInspect({
   position: absolute;
   top: var(--pb-spacing-xs);
   bottom: var(--pb-spacing-xs);
-  left: 0;
+  left: var(--pb-spacing-none);
   z-index: var(--pb-layer-base);
   border-radius: var(--pb-tabs-selection-radius);
   overflow: visible;
   transition: none;
   pointer-events: none;
+  width: var(--pb-tabs-pill-width);
+  opacity: var(--pb-opacity-hidden);
+  transform: translateX(var(--pb-tabs-pill-translation));
+}
+.pb-tabs-pill.is-ready {
+  opacity: var(--pb-opacity-visible);
 }
 .pb-tabs.is-pill-transition-ready .pb-tabs-pill {
   transition:
     transform var(--pb-tabs-pill-duration) var(--pb-tabs-pill-easing),
     width var(--pb-tabs-pill-duration) var(--pb-tabs-pill-easing),
-    opacity var(--pb-motion-duration-fast)
-      var(--pb-motion-easing-standard);
+    opacity var(--pb-motion-duration-fast) var(--pb-motion-easing-standard);
 }
 .pb-tab {
   position: relative;
   z-index: var(--pb-layer-content);
   display: inline-flex;
-  flex: 0 0 auto;
+  flex: none;
   align-items: center;
   justify-content: center;
   min-height: calc(
-    var(--pb-tabs-height, var(--pb-sizing-control-md)) - var(--pb-spacing-xs) - var(--pb-spacing-xs)
+    var(--pb-tabs-height, var(--pb-sizing-control-md)) - var(--pb-spacing-xs) -
+      var(--pb-spacing-xs)
   );
-  padding: 0 var(--pb-spacing-md);
-  border: 0;
+  padding: var(--pb-spacing-none) var(--pb-spacing-md);
+  border: none;
   border-radius: var(--pb-tabs-radius, var(--pb-radius-full));
   background: transparent;
   color: var(--pb-tabs-inactive-color, var(--pb-color-on-surface-muted));
@@ -383,7 +400,7 @@ usePbInspect({
     var(--pb-motion-easing-standard);
 }
 .pb-tabs.is-grow .pb-tab {
-  flex: 1 1 0;
+  flex: var(--pb-layout-flex-fill);
 }
 .pb-tab[aria-selected="true"] {
   color: var(--pb-tabs-active-color, var(--pb-color-primary));
@@ -395,11 +412,12 @@ usePbInspect({
   bottom: var(--pb-spacing-xxs);
   left: var(--pb-spacing-sm-plus);
   height: var(--pb-sizing-indicator-thickness);
-  border-radius: var(--pb-radius-full) var(--pb-radius-full) 0 0;
+  border-radius: var(--pb-radius-full) var(--pb-radius-full)
+    var(--pb-radius-none) var(--pb-radius-none);
   background: var(--pb-tabs-active-color, var(--pb-color-primary));
 }
 .pb-tab-window {
-  min-width: 0;
+  min-width: var(--pb-spacing-none);
   touch-action: pan-y;
   --v-window-transition-duration: var(--pb-motion-duration-slow);
 }
@@ -412,17 +430,17 @@ usePbInspect({
 }
 .pb-tabs.is-fill {
   height: var(--pb-layout-fill);
-  min-height: 0;
+  min-height: var(--pb-spacing-none);
 }
 .pb-tabs.is-fill .pb-tab-window,
 .pb-tabs.is-fill .pb-tab-window :deep(.v-window__container),
 .pb-tabs.is-fill .pb-tab-window :deep(.v-window-item),
 .pb-tabs.is-fill .pb-tab-panel {
   height: var(--pb-layout-fill);
-  min-height: 0;
+  min-height: var(--pb-spacing-none);
 }
 .pb-tabs.is-fill .pb-tab-window {
-  flex: 1 1 0;
+  flex: var(--pb-layout-flex-fill);
 }
 .pb-tabs.is-fill .pb-tab-panel {
   align-content: start;
@@ -439,11 +457,11 @@ usePbInspect({
   display: flex;
   flex-direction: column;
   gap: var(--pb-spacing-sm-plus);
-  min-width: 0;
+  min-width: var(--pb-spacing-none);
 }
 .pb-tab-panel-empty {
-  margin: 0;
-  padding: var(--pb-spacing-sm) 0;
+  margin: var(--pb-spacing-none);
+  padding: var(--pb-spacing-sm) var(--pb-spacing-none);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
 }

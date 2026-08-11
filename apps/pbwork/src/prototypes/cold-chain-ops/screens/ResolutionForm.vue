@@ -1,22 +1,18 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { AlertCircle, ClipboardCheck, ShieldCheck } from "lucide-vue-next";
 import Button from "@/design-system/components/basic/Button.vue";
 import Checkbox from "@/design-system/components/basic/Checkbox.vue";
 import RadioGroup from "@/design-system/components/basic/RadioGroup.vue";
 import SelectField from "@/design-system/components/basic/SelectField.vue";
 import SwitchControl from "@/design-system/components/basic/SwitchControl.vue";
 import Textarea from "@/design-system/components/basic/Textarea.vue";
+import Icon from "@/design-system/components/basic/Icon.vue";
 import DialogPanel from "@/design-system/components/complex/DialogPanel.vue";
 import FormSection from "@/design-system/components/complex/FormSection.vue";
 import SnackbarToast from "@/design-system/components/complex/SnackbarToast.vue";
 import ColdChainShell from "../ColdChainShell.vue";
-import {
-  dutySupervisors,
-  resolutionActions,
-  resolutionCauses,
-} from "../mock";
+import { dutySupervisors, resolutionActions, resolutionCauses } from "../mock";
 import { replaceColdChainVariant } from "../nav";
 
 const route = useRoute();
@@ -71,9 +67,13 @@ watch(
   (value) => {
     dialogOpen.value = value === "confirm-dialog-open";
     toastOpen.value = value === "submitted";
-    if (["ready-to-submit", "confirm-dialog-open", "submitted"].includes(value)) {
+    if (
+      ["ready-to-submit", "confirm-dialog-open", "submitted"].includes(value)
+    ) {
       fillReadyState();
-    } else if (["approval-required", "approval-validation-error"].includes(value)) {
+    } else if (
+      ["approval-required", "approval-validation-error"].includes(value)
+    ) {
       fillReadyState(false);
       if (value === "approval-validation-error") {
         validationMessage.value =
@@ -147,7 +147,7 @@ function confirm() {
           data-pb-token-radius="radius.lg"
           data-pb-token-spacing="spacing.md"
         >
-          <ShieldCheck :size="24" />
+          <Icon name="shield-check" size="lg" />
           <div>
             <strong
               data-pb-id="cold-chain-ops.resolution-form.case-summary.title"
@@ -177,7 +177,7 @@ function confirm() {
           data-pb-token-radius="radius.md"
           data-pb-token-spacing="spacing.sm-plus"
         >
-          <AlertCircle :size="20" />
+          <Icon name="alert-circle" size="md" />
           <span>{{ validationMessage }}</span>
         </section>
 
@@ -248,7 +248,6 @@ function confirm() {
           <Textarea
             v-model="notes"
             label="处置说明"
-            :rows="4"
             inspect-id="cold-chain-ops.resolution-form.notes"
           />
         </FormSection>
@@ -285,7 +284,7 @@ function confirm() {
 
         <div class="submit-area">
           <div class="submission-note">
-            <ClipboardCheck :size="18" />
+            <Icon name="clipboard-check" size="md" />
             <span>提交后会保留当前传感器读数与操作时间。</span>
           </div>
           <Button
@@ -319,12 +318,13 @@ function confirm() {
 
 <style scoped>
 .resolution-page {
-  height: 100%;
-  min-height: 0;
+  height: var(--pb-layout-fill);
+  min-height: var(--pb-spacing-none);
   overflow: auto;
 }
 .resolution-form {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--pb-spacing-sm-plus);
   padding: var(--pb-spacing-md);
   padding-bottom: var(--pb-spacing-2xl);
@@ -340,7 +340,8 @@ function confirm() {
   color: var(--pb-color-error);
 }
 .case-summary div {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--pb-spacing-xs);
 }
 .case-summary strong {
@@ -356,7 +357,8 @@ function confirm() {
   font: var(--pb-typography-content);
 }
 .submit-area {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--pb-spacing-sm-plus);
   padding-top: var(--pb-spacing-sm);
 }
@@ -368,7 +370,7 @@ function confirm() {
   font: var(--pb-typography-caption);
 }
 .approval-policy {
-  margin: 0;
+  margin: var(--pb-spacing-none);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
 }

@@ -62,7 +62,8 @@
     "contentLayer": "layer.content",
     "safeInsetFallback": "spacing.none",
     "overlayOpacity": "opacity.hidden",
-    "focusOutline": "border.focus"
+    "focusOutline": "border.focus",
+    "iconSize": "sizing.icon-md"
   },
   "playground": { "presentation": "interactive" },
   "icons": { "pack": "lucide", "defaults": ["home", "list", "user"] }

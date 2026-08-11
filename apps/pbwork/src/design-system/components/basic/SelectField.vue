@@ -3,6 +3,11 @@ import { computed, ref, toRefs, watch } from "vue";
 import { Check, ChevronDown } from "lucide-vue-next";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import { radiusStyle } from "@/design-system/components/_shared/radius";
+import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
+
+const MENU_MAX_HEIGHT = tokenDefaultNumber("layout.menu-max-height");
+const MENU_OFFSET = tokenDefaultNumber("spacing.xs-plus");
+const COMPACT_ICON_SIZE = tokenDefaultNumber("sizing.icon-compact");
 
 const props = defineProps<{
   label: string;
@@ -83,6 +88,9 @@ usePbInspect({
     "motion.easing-standard",
     "motion.rotate-half-turn",
     "opacity.disabled",
+    "layout.menu-max-height",
+    "spacing.xs-plus",
+    "sizing.icon-compact",
   ],
   getTokenBindings: () => ({
     surface: "color.surface",
@@ -102,6 +110,9 @@ usePbInspect({
     easing: "motion.easing-standard",
     openRotation: "motion.rotate-half-turn",
     disabledOpacity: "opacity.disabled",
+    menuMaxHeight: "layout.menu-max-height",
+    menuOffset: "spacing.xs-plus",
+    iconSize: "sizing.icon-compact",
   }),
 });
 </script>
@@ -123,8 +134,8 @@ usePbInspect({
     :menu="menuOpen"
     :menu-props="{
       contentClass: 'pb-select-menu',
-      maxHeight: 304,
-      offset: 6,
+      maxHeight: MENU_MAX_HEIGHT,
+      offset: MENU_OFFSET,
     }"
     :style="radiusStyle('md')"
     @update:menu="updateMenu"
@@ -134,7 +145,7 @@ usePbInspect({
       <ChevronDown
         class="pb-select-chevron"
         :class="{ 'is-open': menuOpen }"
-        :size="18"
+        :size="COMPACT_ICON_SIZE"
       />
     </template>
     <template #item="{ props: itemProps, item }">
@@ -142,7 +153,7 @@ usePbInspect({
         <template #append>
           <Check
             v-if="item.value === modelValue"
-            :size="18"
+            :size="COMPACT_ICON_SIZE"
             class="pb-select-check"
           />
         </template>
@@ -153,24 +164,20 @@ usePbInspect({
 
 <style scoped>
 .pb-select :deep(.v-field) {
-  --v-field-border-radius: var(
-    --pb-component-radius,
-    var(--pb-radius-md)
-  );
-  border-radius: var(
-    --pb-component-radius,
-    var(--pb-radius-md)
-  ) !important;
+  --v-field-border-radius: var(--pb-component-radius, var(--pb-radius-md));
+  border-radius: var(--pb-component-radius, var(--pb-radius-md)) !important;
   min-height: var(--pb-sizing-control-md);
   background: var(--pb-color-surface);
 }
 .pb-select :deep(.v-field__outline__start) {
-  border-radius: var(--pb-component-radius, var(--pb-radius-md)) 0 0
+  border-radius: var(--pb-component-radius, var(--pb-radius-md))
+    var(--pb-radius-none) var(--pb-radius-none)
     var(--pb-component-radius, var(--pb-radius-md)) !important;
 }
 .pb-select :deep(.v-field__outline__end) {
-  border-radius: 0 var(--pb-component-radius, var(--pb-radius-md))
-    var(--pb-component-radius, var(--pb-radius-md)) 0 !important;
+  border-radius: var(--pb-radius-none)
+    var(--pb-component-radius, var(--pb-radius-md))
+    var(--pb-component-radius, var(--pb-radius-md)) var(--pb-radius-none) !important;
 }
 .pb-select :deep(.v-field__input) {
   min-height: var(--pb-sizing-control-md);

@@ -50,11 +50,13 @@
   "tokenBindings": {
     "surface": "color.surface-variant",
     "text": "color.on-surface",
+    "placeholder": "color.on-surface-muted",
     "radius": "radius.md",
     "height": "sizing.control-lg",
     "typography": "typography.content",
     "disabledOpacity": "opacity.disabled",
-    "fill": "layout.fill"
+    "fill": "layout.fill",
+    "icon": "sizing.icon-compact"
   },
   "playground": {
     "presentation": "interactive"

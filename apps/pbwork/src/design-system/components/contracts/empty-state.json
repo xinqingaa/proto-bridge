@@ -48,7 +48,8 @@
     "typography": "typography.subtitle",
     "body": "typography.content",
     "titleOffset": "spacing.xs",
-    "descriptionOffset": "spacing.sm"
+    "descriptionOffset": "spacing.sm",
+    "iconSurfaceSize": "sizing.avatar-lg"
   },
   "playground": {
     "presentation": "interactive"

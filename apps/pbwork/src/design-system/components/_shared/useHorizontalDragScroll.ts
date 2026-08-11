@@ -1,4 +1,10 @@
 import { ref, type Ref } from "vue";
+import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
+
+const AXIS_LOCK_DISTANCE = tokenDefaultNumber("layout.gesture-axis-lock");
+const CLICK_SUPPRESSION_DURATION = tokenDefaultNumber(
+  "motion.duration-click-suppression",
+);
 
 const IGNORE_SELECTOR =
   "input, textarea, select, [contenteditable=true], [data-gesture-ignore]";
@@ -62,7 +68,10 @@ export function useHorizontalDragScroll(root: Ref<HTMLElement | null>) {
     if (!element) return;
     const dx = event.clientX - startX.value;
     const dy = event.clientY - startY.value;
-    if (axis.value === "pending" && Math.max(Math.abs(dx), Math.abs(dy)) >= 8) {
+    if (
+      axis.value === "pending" &&
+      Math.max(Math.abs(dx), Math.abs(dy)) >= AXIS_LOCK_DISTANCE
+    ) {
       axis.value = Math.abs(dx) > Math.abs(dy) ? "horizontal" : "vertical";
     }
     if (axis.value === "vertical") {
@@ -88,8 +97,11 @@ export function useHorizontalDragScroll(root: Ref<HTMLElement | null>) {
 
   function onPointerUp(event: PointerEvent) {
     if (pointerId.value !== event.pointerId) return;
-    if (ownsGesture && Math.abs(event.clientX - startX.value) >= 8) {
-      suppressClickUntil = Date.now() + 450;
+    if (
+      ownsGesture &&
+      Math.abs(event.clientX - startX.value) >= AXIS_LOCK_DISTANCE
+    ) {
+      suppressClickUntil = Date.now() + CLICK_SUPPRESSION_DURATION;
     }
     reset();
   }

@@ -13,6 +13,11 @@ import {
   colorTokenCss,
   resolveButtonColors,
 } from "@/design-system/components/_shared/colorTokens";
+import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
+
+const NO_ELEVATION = tokenDefaultNumber("layer.base");
+const LOADER_SIZE = tokenDefaultNumber("sizing.icon-sm");
+const LOADER_STROKE = tokenDefaultNumber("sizing.progress-stroke");
 
 const props = defineProps<{
   label: string;
@@ -105,6 +110,8 @@ usePbInspect({
       duration: "motion.duration-fast",
       easing: "motion.easing-standard",
       pressedScale: "motion.scale-pressed",
+      loaderSize: "sizing.icon-sm",
+      loaderStroke: "sizing.progress-stroke",
     };
   },
   getTokens: () => {
@@ -125,6 +132,8 @@ usePbInspect({
       "motion.duration-fast",
       "motion.easing-standard",
       "motion.scale-pressed",
+      "sizing.icon-sm",
+      "sizing.progress-stroke",
     ];
   },
 });
@@ -140,7 +149,7 @@ usePbInspect({
     variant="flat"
     rounded="md"
     :block="block ?? false"
-    :elevation="0"
+    :elevation="NO_ELEVATION"
     :disabled="isUnavailable"
     :aria-busy="loading ? 'true' : undefined"
     :class="{ 'is-loading': loading ?? false }"
@@ -150,8 +159,8 @@ usePbInspect({
     <span v-if="loading" class="pb-button__loader" aria-hidden="true">
       <v-progress-circular
         indeterminate
-        :size="16"
-        :width="2"
+        :size="LOADER_SIZE"
+        :width="LOADER_STROKE"
         :color="undefined"
       />
     </span>
@@ -163,10 +172,7 @@ usePbInspect({
 
 <style scoped>
 .pb-button {
-  height: var(
-    --pb-component-height,
-    var(--pb-sizing-control-md)
-  ) !important;
+  height: var(--pb-component-height, var(--pb-sizing-control-md)) !important;
   min-height: var(
     --pb-component-height,
     var(--pb-sizing-control-md)
@@ -183,12 +189,9 @@ usePbInspect({
   letter-spacing: normal;
   box-shadow: var(--pb-component-shadow, var(--pb-elevation-none)) !important;
   transition:
-    box-shadow var(--pb-motion-duration-fast)
-      var(--pb-motion-easing-standard),
-    transform var(--pb-motion-duration-fast)
-      var(--pb-motion-easing-standard),
-    opacity var(--pb-motion-duration-fast)
-      var(--pb-motion-easing-standard);
+    box-shadow var(--pb-motion-duration-fast) var(--pb-motion-easing-standard),
+    transform var(--pb-motion-duration-fast) var(--pb-motion-easing-standard),
+    opacity var(--pb-motion-duration-fast) var(--pb-motion-easing-standard);
 }
 .pb-button :deep(.v-btn__overlay),
 .pb-button :deep(.v-btn__underlay) {
@@ -200,7 +203,7 @@ usePbInspect({
 }
 .pb-button__loader {
   display: inline-flex;
-  flex: 0 0 auto;
+  flex: none;
   align-items: center;
   color: inherit;
 }

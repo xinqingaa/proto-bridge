@@ -39,21 +39,22 @@ function goBack() {
 <style scoped>
 .cold-chain-shell {
   box-sizing: border-box;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  min-height: 100dvh;
-  max-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  min-height: var(--pb-layout-viewport-height);
+  max-height: var(--pb-layout-viewport-height);
   overflow: hidden;
   background: var(--pb-color-background);
   color: var(--pb-color-on-background);
 }
 main {
-  min-width: 0;
-  min-height: 0;
+  flex: var(--pb-layout-flex-fill);
+  min-width: var(--pb-spacing-none);
+  min-height: var(--pb-spacing-none);
   overflow: hidden;
 }
 :global(html.pbwork-runtime-embedded) .cold-chain-shell {
-  min-height: 100%;
-  max-height: 100%;
+  min-height: var(--pb-layout-fill);
+  max-height: var(--pb-layout-fill);
 }
 </style>

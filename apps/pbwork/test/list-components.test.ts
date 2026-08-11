@@ -104,7 +104,7 @@ describe("list component responsibilities", () => {
   it("turns a downward mouse drag at the top into one refresh request", async () => {
     const wrapper = mount(ScrollableDataList, {
       props: {
-        pullRefresh: { enabled: true, mouse: true, threshold: 48 },
+        pullRefresh: { enabled: true, mouse: true },
         dragScroll: { enabled: true, mouse: true, momentum: false },
       },
     });

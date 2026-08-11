@@ -61,9 +61,10 @@
 
 - **禁止**实例硬编码色值（`#hex` / `rgb()` 等）。
 - 组件样式的颜色也只能使用 `--pb-*` 语义变量：不得写十六进制、`rgb` / `rgba`、`color-mix` 或渐变；主题与 token 文件是唯一可定义颜色值的地方。
-- DS 组件 CSS 不得写裸设计量，也不得使用 `var(--pb-*, literal)` fallback：尺寸、间距、圆角、边框、排版、阴影、透明度、层级、动效、滤镜与变换距离都必须消费 `--pb-*`。`calc()` 只组合 Token 变量。
+- DS 组件的 style/template/script/TS helper、生成样式与 vendor 视觉 props 不得写固定设计量（含设计意义的 `0`），也不得使用 `var(--pb-*, literal)` fallback：尺寸、间距、圆角、边框、排版、阴影、透明度、层级、动效、滤镜与变换距离都必须消费 `--pb-*`。`calc()` 只组合 Token 或运行时派生变量。
 - DS 与现役原型不用 CSS Grid：只用 Flex 或常规文档流；完整作用域和结构语法白名单见 [开发规范](../development.md#样式实现铁律)。
-- Contract 的 `tokenBindings` / Inspector Token 清单必须覆盖实现实际消费的每个设计 Token；新增 Foundation 后先补 Contract，再交付组件。
+- DOM 测量与交互状态的运行时几何值可经 custom property 使用，但不得成为固定默认设计值、自由样式入口或 Contract 外依赖。
+- Contract 的 `tokenBindings` / Inspector Token 清单必须覆盖实现实际消费的每个设计 Token，且二者槽位集合完全一致；新增 Foundation 后先补 Contract，再交付组件。
 - Playground 的「查看语义与令牌」保持只读；业务差异通过场景呈现，不改绑 Contract。
 - 声明 `disabled` 的交互组件统一消费 `opacity.disabled`（当前默认 `0.38`），阻止鼠标、键盘及原生提交；Playground 必须把可用态与禁用态并置并写明条件。
 - `loading` 阻止重复触发并保留文字/忙碌反馈，**不得**复用 disabled 的 0.38 外观。
@@ -72,13 +73,13 @@ Button 公开语义以色槽与行为（loading 保留文案、disabled 透明�
 
 ## 分级同步义务
 
-| 变更类型                                                    | 必须同批                             | 明确可不做                         |
-| ----------------------------------------------------------- | ------------------------------------ | ---------------------------------- |
-| A. 语义（role / Token 槽 / state 矩阵 / behavior / 布局策略 / 视觉层级 / 拆组件） | Contract + Vue + 必要的 registry + 测试 | Flutter（P1.5） |
-| B. 用法铁律 / 反例 / 组合边界                               | 文档短叙事                           | 不抄 props 表                      |
-| C. Playground 展示                                          | Contract `presentation` + Playground | —                                  |
-| D. 纯实现修（同语义）                                       | Vue（+ 必要时单测）                  | 文档 / Contract 无字段变更时可不动 |
-| E. Target 落点 / Demo / 图标包换栈                          | —                                    | **P1.5 批量**                      |
+| 变更类型                                                                          | 必须同批                                | 明确可不做                         |
+| --------------------------------------------------------------------------------- | --------------------------------------- | ---------------------------------- |
+| A. 语义（role / Token 槽 / state 矩阵 / behavior / 布局策略 / 视觉层级 / 拆组件） | Contract + Vue + 必要的 registry + 测试 | Flutter（P1.5）                    |
+| B. 用法铁律 / 反例 / 组合边界                                                     | 文档短叙事                              | 不抄 props 表                      |
+| C. Playground 展示                                                                | Contract `presentation` + Playground    | —                                  |
+| D. 纯实现修（同语义）                                                             | Vue（+ 必要时单测）                     | 文档 / Contract 无字段变更时可不动 |
+| E. Target 落点 / Demo / 图标包换栈                                                | —                                       | **P1.5 批量**                      |
 
 文档骨架（触达组件按此写）：职责与边界 → 行为要点 → States 一览（id / label / kind）→ 用法与反例 → 「Props 与 Token 槽以 Contract 为准」。
 

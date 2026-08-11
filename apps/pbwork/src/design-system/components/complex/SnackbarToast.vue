@@ -2,6 +2,10 @@
 import { computed, nextTick, toRefs, watch } from "vue";
 import { CheckCircle2, AlertCircle } from "lucide-vue-next";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
+import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
+
+const TOAST_DURATION = tokenDefaultNumber("motion.duration-toast");
+const TOAST_ICON_SIZE = tokenDefaultNumber("sizing.icon-md");
 
 const props = defineProps<{
   modelValue?: boolean;
@@ -40,6 +44,8 @@ const { resync } = usePbInspect({
     "spacing.md",
     "typography.content",
     "border.accent-width",
+    "motion.duration-toast",
+    "sizing.icon-md",
   ],
   getTokenBindings: () => ({
     accent: `color.${tone.value ?? "success"}`,
@@ -50,6 +56,8 @@ const { resync } = usePbInspect({
     padding: "spacing.md",
     message: "typography.content",
     accentWidth: "border.accent-width",
+    duration: "motion.duration-toast",
+    iconSize: "sizing.icon-md",
   }),
 });
 
@@ -70,7 +78,7 @@ watch(modelValue, async (value) => {
     absolute
     location="bottom"
     multi-line
-    timeout="4000"
+    :timeout="TOAST_DURATION"
     @update:model-value="$emit('update:modelValue', Boolean($event))"
   >
     <div
@@ -82,7 +90,7 @@ watch(modelValue, async (value) => {
     >
       <component
         :is="tone === 'error' ? AlertCircle : CheckCircle2"
-        :size="20"
+        :size="TOAST_ICON_SIZE"
       />
       <span>{{ message }}</span>
     </div>

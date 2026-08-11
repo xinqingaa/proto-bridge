@@ -22,6 +22,8 @@
 - MCP 只读取固定 Workspace/Snapshot/revision，不猜 Store 路径，不回退 active/latest。
 - Coding Agent 自行决定目标文件、组件、路由、状态管理和 Token。
 - PBWork 原型只使用 PBWork Design System；形状匹配时禁止自行重造组件。
+- PBWork Design System 与业务原型一律 Flex / 常规文档流，禁止 CSS Grid、`grid-*` 与 `place-*`；Workbench 不在此样式约束范围。
+- PBWork DS / 原型的颜色、间距、尺寸、圆角、边框、排版、阴影、透明度、层级、动效、滤镜和变换距离不得出现固定 CSS 值（含视觉 props 与 literal fallback），具体值只存在于 Foundation / Theme。
 - DS 业务实例必须使用业务稳定 `inspectId`；strict required Fragment 禁止依赖默认 `ds.*`。
 - 业务局部证据节点必须显式提供 `data-pb-id`、`data-pb-role`、按需 `data-pb-key` 和实现所需 `data-pb-token-*`；只写 CSS Token 不构成 Evidence。
 - 严格 Screen 的 default Variant 必须具有 authored completeness boundary；其它 Variant 的未声明边界必须在 Evidence 风险中可见。
@@ -44,6 +46,7 @@
 
 - 公共 Schema、入口、状态、路径、环境变量变化必须同步文档。
 - 修改 PBWork Component/Token/Theme/手势时，必须主动提醒并同步对应手册、Contract、Registry 和测试。
+- 修改 DS 实现时必须保持 Vue Inspector `getTokenBindings` 与 JSON Contract 槽位一致，并通过 Token-only / Flex-only 静态门禁。
 - 修改语义标记、Role、Token Evidence 或门禁时，必须同步 `docs/reference/semantic-authoring.md`、Authoring Contract、相关 Skill、检查单和测试。
 - 同一概念只在权威文档详述；其它入口使用链接。
 - 主体文档只描述当前行为；历史和设计理由分别进入 `docs/history`、`docs/decisions`。

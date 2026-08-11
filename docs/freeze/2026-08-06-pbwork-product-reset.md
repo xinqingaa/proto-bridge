@@ -2,7 +2,7 @@
 
 - 日期：2026-08-06（计划修订：2026-08-08）
 - 范围：**仅** `apps/pbwork`（Workbench 导航、Capture/Deliver GUI、Design System、业务原型资产与其文档）
-- 状态：**P0 已落地**；**P1 已拍板并开工**（协议 / Playground / Tab 拆分 / Lucide）
+- 状态：**P0、P1 已落地**；P1.5 Flutter 同步未开；P2 新原型暂缓
 - **边界（MUST）**：本条目全部是 **PBWork 人机工作台**优化。**不改** Evidence/MCP/Consumer 工作链路，**不改** `packages/core/src/target/flutter-app` 与 Target resolve/Review 行为。
 
 ## 一句话
@@ -81,6 +81,16 @@
 4. Tab 拆分落地；审计表定稿
 5. skill / checklist / overview 同步
 
+### 第三轮规范收口（2026-08-11）
+
+- **Token-only 作用域封闭**：DS 与业务原型的 style、template、script/TS helper、生成样式及 vendor 视觉 props 不得出现固定设计值；具有设计含义的 `0`、literal fallback 和带裸数值的 `calc()` 同样禁止。具体值只定义在 Foundation / Theme。
+- **Flex-only 作用域封闭**：DS 与业务原型只使用 Flex 或常规文档流，禁止 CSS Grid、全部 `grid-*` 与 `place-*`；Workbench 明确不在此样式约束内。
+- Foundation 从 131 项扩展为 151 项，Bind 池从 110 项扩展为 125 项；补齐组件尺寸、浮层边界、下拉刷新、共享手势、运行时壳和紧凑图表等语义基础。
+- Button、Icon、Spinner、Progress、Select、Textarea、Tabs、ScrollableDataList、FlowSheet 等实现已移除固定视觉参数或自由样式逃生口；共享手势阈值不再由业务 props 覆盖。
+- 新增 Token-only / Flex-only 静态门禁，覆盖样式、模板、脚本/TS、Token fallback 与 Grid 负例；新增 31 个注册组件的 Inspector `getTokenBindings` ↔ JSON Contract 槽位一致性测试。
+- `cold-chain-ops` 已完成同标准整合：Grid 改为 Flex/文档流，直接 Lucide 数字尺寸改用 DS Icon 语义尺寸，固定图表几何改由 Foundation 与运行时派生 custom property 表达；**不存在历史原型豁免**。
+- 根 `AGENT.md`、PBWork DS / Prototype Skills、Authoring Contract、开发规范、Token/组件手册、检查单和本 freeze 文档已同步同一红线。
+
 ### 非目标（P1）
 
 - 不修改 `flutter-app` resolver / Review / MCP / Evidence 契约
@@ -113,7 +123,7 @@
 | ------ | -------------------------------------------------: | ---------- |
 | —      |    旧原型清理 + 金标改名 + 概览壳 / 任务中心去默认 | **已落地** |
 | P0     |  采集导航、历史结果、交付查看/覆盖、FlowSheet 进度 | **已落地** |
-| P1     | DS 协议 + Playground 平铺/触发 + Tab 拆分 + Lucide | **进行中** |
+| P1     | DS 协议 + Playground 平铺/触发 + Tab 拆分 + Lucide + Token/Flex 门禁 | **已落地** |
 | P1.5   |              Flutter Common* / Demo / 图标语义对照 | 未开       |
 | P2     |                                      新主 App 原型 | **暂定**   |
 
@@ -134,5 +144,5 @@
 - [x] P1 协议：v1 可选字段 + `playground` 必填
 - [x] P1 Flutter 同步单列 P1.5
 - [x] Tab 收口为 `tabbar` + `primary-tabs` + `secondary-tabs` + `filter-bar`；button 不拆
-- [ ] P1 实现收口验收（协议 + Playground + Tab + Lucide 约定）
+- [x] P1 实现收口验收（协议 + Playground + Tab + Lucide + Token-only / Flex-only 门禁）
 - [ ] P2 新原型业务选题（暂缓）

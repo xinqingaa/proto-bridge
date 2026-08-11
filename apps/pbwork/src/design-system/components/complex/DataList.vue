@@ -98,7 +98,7 @@ usePbInspect({
 <style scoped>
 .pb-data-list {
   box-sizing: border-box;
-  min-width: 0;
+  min-width: var(--pb-spacing-none);
   overflow: hidden;
   color: var(--pb-color-on-surface);
   box-shadow: var(--pb-component-shadow, var(--pb-elevation-none)) !important;
@@ -116,7 +116,7 @@ usePbInspect({
   padding-inline: var(--pb-spacing-md);
 }
 .pb-data-list.is-square {
-  border-radius: 0;
+  border-radius: var(--pb-radius-none);
 }
 .pb-data-list.is-divided :deep(> * + *) {
   border-top: var(--pb-border-default);

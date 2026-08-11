@@ -98,7 +98,9 @@
     "borderWidth": "border.width-hairline",
     "duration": "motion.duration-fast",
     "easing": "motion.easing-standard",
-    "pressedScale": "motion.scale-pressed"
+    "pressedScale": "motion.scale-pressed",
+    "loaderSize": "sizing.icon-sm",
+    "loaderStroke": "sizing.progress-stroke"
   },
   "playground": {
     "presentation": "interactive"

@@ -50,7 +50,9 @@
     "motion": "motion.duration-normal",
     "gap": "spacing.xs-plus",
     "text": "color.on-surface",
-    "label": "typography.caption"
+    "label": "typography.caption",
+    "trackHeight": "sizing.progress-track",
+    "trackOpacity": "opacity.visible"
   },
   "playground": {
     "presentation": "interactive"

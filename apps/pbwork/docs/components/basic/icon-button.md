@@ -14,6 +14,6 @@
 
 - 点击有按压反馈。
 - loading 阻止重复触发，但不降为禁用视觉。
-- disabled 阻止激活并统一使用 `opacity.disabled`（0.38）。
+- disabled 阻止激活并统一使用 `opacity.disabled`；尺寸、阴影层级和状态透明度均由 Contract Token 槽提供。
 
 `primary` 是强调外观状态；`loading` 是忙碌交互状态；`disabled` 是不可用交互状态。Playground 使用 `gallery`：默认、强调、loading、disabled 并置，方便比较紧凑操作的状态而不占用右侧调参栏。
