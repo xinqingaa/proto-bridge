@@ -8,6 +8,7 @@ class CommonTextField extends StatelessWidget {
     super.key,
     this.controller,
     this.label,
+    this.showLabel = false,
     this.hint,
     this.enabled = true,
     this.obscureText = false,
@@ -18,6 +19,7 @@ class CommonTextField extends StatelessWidget {
 
   final TextEditingController? controller;
   final String? label;
+  final bool showLabel;
   final String? hint;
   final bool enabled;
   final bool obscureText;
@@ -28,17 +30,24 @@ class CommonTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     TS.of(context);
-    return TextField(
-      controller: controller,
-      enabled: enabled,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      onChanged: onChanged,
-      onSubmitted: onSubmitted,
-      style: TS.textStyle.content,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
+    return Opacity(
+      opacity: enabled ? TS.opacity.visible : TS.opacity.disabled,
+      child: TextField(
+        controller: controller,
+        enabled: enabled,
+        obscureText: obscureText,
+        keyboardType: keyboardType,
+        onChanged: onChanged,
+        onSubmitted: onSubmitted,
+        style: TS.textStyle.content,
+        decoration: InputDecoration(
+          labelText: showLabel ? label : null,
+          hintText: hint,
+          filled: showLabel,
+          border: showLabel ? null : InputBorder.none,
+          enabledBorder: showLabel ? null : InputBorder.none,
+          focusedBorder: showLabel ? null : InputBorder.none,
+        ),
       ),
     );
   }

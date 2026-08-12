@@ -7,10 +7,7 @@ import 'models.dart';
 
 /// Evidence: `cold-chain-ops.exception-queue`
 class ExceptionQueueEvidencePage extends StatefulWidget {
-  const ExceptionQueueEvidencePage({
-    super.key,
-    this.variant = 'default',
-  });
+  const ExceptionQueueEvidencePage({super.key, this.variant = 'default'});
 
   /// default | critical-only | empty | error | loading
   final String variant;
@@ -27,7 +24,8 @@ class ExceptionQueueEvidencePage extends StatefulWidget {
       _ExceptionQueueEvidencePageState();
 }
 
-class _ExceptionQueueEvidencePageState extends State<ExceptionQueueEvidencePage> {
+class _ExceptionQueueEvidencePageState
+    extends State<ExceptionQueueEvidencePage> {
   static const _filters = <CommonFilterItem>[
     CommonFilterItem(value: 'all', label: '全部'),
     CommonFilterItem(value: 'critical', label: '严重'),
@@ -36,30 +34,28 @@ class _ExceptionQueueEvidencePageState extends State<ExceptionQueueEvidencePage>
   ];
 
   late String _shellVariant;
-  late Set<String> _selectedFilter;
+  late String _selectedFilter;
   String _query = '';
 
   @override
   void initState() {
     super.initState();
     _shellVariant = widget.variant;
-    _selectedFilter = {
-      if (widget.variant == 'critical-only') 'critical' else 'all',
-    };
+    _selectedFilter = widget.variant == 'critical-only' ? 'critical' : 'all';
   }
 
   List<ExceptionRow> get _visibleRows {
     if (_shellVariant == 'empty') return const [];
     var rows = List<ExceptionRow>.from(kExceptionRows);
-    if (_shellVariant == 'critical-only' ||
-        _selectedFilter.contains('critical')) {
+    if (_shellVariant == 'critical-only' || _selectedFilter == 'critical') {
       rows = rows
           .where((r) => r.severity == ExceptionSeverity.critical)
           .toList();
-    } else if (_selectedFilter.contains('warning')) {
-      rows =
-          rows.where((r) => r.severity == ExceptionSeverity.warning).toList();
-    } else if (_selectedFilter.contains('watch')) {
+    } else if (_selectedFilter == 'warning') {
+      rows = rows
+          .where((r) => r.severity == ExceptionSeverity.warning)
+          .toList();
+    } else if (_selectedFilter == 'watch') {
       rows = rows.where((r) => r.severity == ExceptionSeverity.watch).toList();
     }
     final q = _query.trim();
@@ -80,17 +76,16 @@ class _ExceptionQueueEvidencePageState extends State<ExceptionQueueEvidencePage>
   void _showCriticalOnly() {
     setState(() {
       _shellVariant = 'critical-only';
-      _selectedFilter = {'critical'};
+      _selectedFilter = 'critical';
     });
   }
 
   void _onFilter(String value) {
     setState(() {
-      _selectedFilter = {value};
+      _selectedFilter = value;
       if (value == 'critical') {
         _shellVariant = 'critical-only';
-      } else if (_shellVariant == 'critical-only' ||
-          _shellVariant == 'empty') {
+      } else if (_shellVariant == 'critical-only' || _shellVariant == 'empty') {
         _shellVariant = value == 'all' ? 'default' : 'default';
       }
       if (_visibleRows.isEmpty &&
@@ -102,8 +97,9 @@ class _ExceptionQueueEvidencePageState extends State<ExceptionQueueEvidencePage>
   }
 
   void _openShipment(ExceptionRow row) {
-    final detailVariant =
-        row.severity == ExceptionSeverity.critical ? 'active-excursion' : 'default';
+    final detailVariant = row.severity == ExceptionSeverity.critical
+        ? 'active-excursion'
+        : 'default';
     Navigator.of(context).pushNamed(
       AppRoutes.coldChainShipmentDetail,
       arguments: <String, String>{
@@ -120,7 +116,7 @@ class _ExceptionQueueEvidencePageState extends State<ExceptionQueueEvidencePage>
     setState(() {
       if (_shellVariant == 'error' || _shellVariant == 'loading') {
         _shellVariant = 'default';
-        _selectedFilter = {'all'};
+        _selectedFilter = 'all';
       }
     });
   }
@@ -133,18 +129,20 @@ class _ExceptionQueueEvidencePageState extends State<ExceptionQueueEvidencePage>
       appBar: const CommonAppBar(title: '冷链异常'),
       body: switch (_shellVariant) {
         'loading' => _LoadingBody(),
-        'error' => _ErrorBody(onRetry: () => setState(() => _shellVariant = 'default')),
+        'error' => _ErrorBody(
+          onRetry: () => setState(() => _shellVariant = 'default'),
+        ),
         _ => _QueueBody(
-            rows: _visibleRows,
-            selectedFilter: _selectedFilter,
-            filters: _filters,
-            onFilter: _onFilter,
-            onShowCritical: _showCriticalOnly,
-            onQuery: (q) => setState(() => _query = q),
-            onOpen: _openShipment,
-            onRefresh: _refresh,
-            forceEmpty: _shellVariant == 'empty',
-          ),
+          rows: _visibleRows,
+          selectedFilter: _selectedFilter,
+          filters: _filters,
+          onFilter: _onFilter,
+          onShowCritical: _showCriticalOnly,
+          onQuery: (q) => setState(() => _query = q),
+          onOpen: _openShipment,
+          onRefresh: _refresh,
+          forceEmpty: _shellVariant == 'empty',
+        ),
       },
     );
   }
@@ -164,7 +162,7 @@ class _QueueBody extends StatelessWidget {
   });
 
   final List<ExceptionRow> rows;
-  final Set<String> selectedFilter;
+  final String selectedFilter;
   final List<CommonFilterItem> filters;
   final ValueChanged<String> onFilter;
   final VoidCallback onShowCritical;
@@ -217,7 +215,7 @@ class _QueueBody extends StatelessWidget {
             child: const CommonEmptyState(
               title: '没有待处理异常',
               description: '当前筛选范围内的运输温度全部正常。',
-              icon: Icons.folder_open_outlined,
+              icon: CommonIconName.folderOpen,
             ),
           );
         }
@@ -358,79 +356,86 @@ class _ExceptionCard extends StatelessWidget {
   final VoidCallback onTap;
 
   CommonBadgeTone get _badgeTone => switch (row.severity) {
-        ExceptionSeverity.critical => CommonBadgeTone.error,
-        ExceptionSeverity.warning => CommonBadgeTone.warning,
-        ExceptionSeverity.watch => CommonBadgeTone.primary,
-      };
+    ExceptionSeverity.critical => CommonBadgeTone.error,
+    ExceptionSeverity.warning => CommonBadgeTone.warning,
+    ExceptionSeverity.watch => CommonBadgeTone.primary,
+  };
 
   @override
   Widget build(BuildContext context) {
     TS.of(context);
-    final tempColor = row.severity == ExceptionSeverity.critical ||
+    final tempColor =
+        row.severity == ExceptionSeverity.critical ||
             row.severity == ExceptionSeverity.warning
         ? TS.colors.error
         : TS.colors.onSurface;
     return CommonCard(
       elevated: false,
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  row.identity,
-                  style: TS.textStyle.caption.copyWith(
-                    color: TS.colors.onSurfaceMuted,
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    row.identity,
+                    style: TS.textStyle.caption.copyWith(
+                      color: TS.colors.onSurfaceMuted,
+                    ),
                   ),
                 ),
-              ),
-              CommonBadge(label: row.severityLabel, semanticTone: _badgeTone),
-            ],
-          ),
-          SizedBox(height: TS.spacing.xs),
-          Text(row.lane, style: TS.textStyle.subtitle),
-          SizedBox(height: TS.spacing.xxs),
-          Text(
-            row.cargo,
-            style: TS.textStyle.content.copyWith(
-              color: TS.colors.onSurfaceMuted,
+                CommonBadge(label: row.severityLabel, tone: _badgeTone),
+              ],
             ),
-          ),
-          SizedBox(height: TS.spacing.sm),
-          Divider(height: 1, color: TS.colors.border),
-          SizedBox(height: TS.spacing.sm),
-          Row(
-            children: [
-              Icon(Icons.thermostat, size: TS.sizing.iconMd, color: tempColor),
-              SizedBox(width: TS.spacing.xs),
-              Text(
-                row.temperature,
-                style: TS.textStyle.label.copyWith(color: tempColor),
+            SizedBox(height: TS.spacing.xs),
+            Text(row.lane, style: TS.textStyle.subtitle),
+            SizedBox(height: TS.spacing.xxs),
+            Text(
+              row.cargo,
+              style: TS.textStyle.content.copyWith(
+                color: TS.colors.onSurfaceMuted,
               ),
-              SizedBox(width: TS.spacing.sm),
-              Expanded(
-                child: Text(
-                  row.durationLabel.isEmpty
-                      ? row.limitLabel
-                      : '${row.limitLabel} · ${row.durationLabel}',
-                  style: TS.textStyle.caption.copyWith(
-                    color: TS.colors.onSurfaceMuted,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+            ),
+            SizedBox(height: TS.spacing.sm),
+            Divider(height: 1, color: TS.colors.border),
+            SizedBox(height: TS.spacing.sm),
+            Row(
+              children: [
+                Icon(
+                  Icons.thermostat,
+                  size: TS.sizing.iconMd,
+                  color: tempColor,
                 ),
-              ),
-              if (row.updatedAt.isNotEmpty)
+                SizedBox(width: TS.spacing.xs),
                 Text(
-                  row.updatedAt,
-                  style: TS.textStyle.caption.copyWith(
-                    color: TS.colors.onSurfaceMuted,
+                  row.temperature,
+                  style: TS.textStyle.label.copyWith(color: tempColor),
+                ),
+                SizedBox(width: TS.spacing.sm),
+                Expanded(
+                  child: Text(
+                    row.durationLabel.isEmpty
+                        ? row.limitLabel
+                        : '${row.limitLabel} · ${row.durationLabel}',
+                    style: TS.textStyle.caption.copyWith(
+                      color: TS.colors.onSurfaceMuted,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-            ],
-          ),
-        ],
+                if (row.updatedAt.isNotEmpty)
+                  Text(
+                    row.updatedAt,
+                    style: TS.textStyle.caption.copyWith(
+                      color: TS.colors.onSurfaceMuted,
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -480,8 +485,11 @@ class _ErrorBody extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.warning_amber_rounded,
-                  size: TS.sizing.iconLg * 1.4, color: TS.colors.error),
+              Icon(
+                Icons.warning_amber_rounded,
+                size: TS.sizing.iconLg * 1.4,
+                color: TS.colors.error,
+              ),
               SizedBox(height: TS.spacing.sm),
               Text(
                 '监控数据暂时不可用',

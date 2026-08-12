@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../theme/ts.dart';
 import 'button.dart';
+import 'icon.dart';
 
 /// 对齐 pbwork `EmptyState`。
 class CommonEmptyState extends StatelessWidget {
@@ -9,7 +10,7 @@ class CommonEmptyState extends StatelessWidget {
     super.key,
     required this.title,
     this.description,
-    this.icon = Icons.inbox_outlined,
+    this.icon = CommonIconName.inbox,
     this.iconColor,
     this.iconBackgroundColor,
     this.actionLabel,
@@ -18,7 +19,7 @@ class CommonEmptyState extends StatelessWidget {
 
   final String title;
   final String? description;
-  final IconData icon;
+  final CommonIconName icon;
   final Color? iconColor;
   final Color? iconBackgroundColor;
   final String? actionLabel;
@@ -35,21 +36,21 @@ class CommonEmptyState extends StatelessWidget {
           children: [
             if (iconColor == null && iconBackgroundColor == null)
               Icon(
-                icon,
+                icon.data,
                 size: TS.sizing.iconLg,
                 color: TS.colors.onSurfaceMuted,
               )
             else
               Container(
-                width: 56,
-                height: 56,
+                width: TS.sizing.avatarLg,
+                height: TS.sizing.avatarLg,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: iconBackgroundColor,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  icon,
+                  icon.data,
                   size: TS.sizing.iconLg,
                   color: iconColor ?? TS.colors.onSurfaceMuted,
                 ),

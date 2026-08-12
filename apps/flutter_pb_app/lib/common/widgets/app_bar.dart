@@ -2,48 +2,70 @@ import 'package:flutter/material.dart';
 
 import '../../theme/ts.dart';
 import 'button.dart';
+import 'icon.dart';
 import 'icon_button.dart';
 
-/// 对齐 pbwork `AppBar` — 官方 [AppBar] 配置封装。
 class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
   const CommonAppBar({
     super.key,
     required this.title,
-    this.showBack = false,
-    this.onBack,
-    this.actions,
+    this.dense = false,
     this.elevated = false,
-    this.centerTitle = true,
+    this.showBack = false,
+    this.backLabel = '返回',
+    this.onBack,
+    this.showAction = false,
+    this.actionIcon = CommonIconName.more,
+    this.actionLabel = '更多操作',
+    this.onAction,
   });
 
   final String title;
-  final bool showBack;
-  final VoidCallback? onBack;
-  final List<Widget>? actions;
+  final bool dense;
   final bool elevated;
-  final bool centerTitle;
+  final bool showBack;
+  final String backLabel;
+  final VoidCallback? onBack;
+  final bool showAction;
+  final CommonIconName actionIcon;
+  final String actionLabel;
+  final VoidCallback? onAction;
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => Size.fromHeight(dense ? 48 : kToolbarHeight);
 
   @override
   Widget build(BuildContext context) {
     TS.of(context);
     return AppBar(
-      title: Text(title, style: TS.textStyle.title),
-      centerTitle: centerTitle,
+      toolbarHeight: preferredSize.height,
+      title: Text(
+        title,
+        style: dense ? TS.textStyle.subtitle : TS.textStyle.title,
+      ),
+      centerTitle: true,
       elevation: elevated ? TS.elevation.card : TS.elevation.none,
       backgroundColor: TS.colors.surface,
       foregroundColor: TS.colors.onSurface,
       leading: showBack
           ? CommonIconButton(
-              icon: Icons.arrow_back,
-              tooltip: '返回',
+              name: CommonIconName.chevronRight,
+              label: backLabel,
               onPressed: onBack ?? () => Navigator.of(context).maybePop(),
+              quarterTurns: 2,
               variant: CommonButtonVariant.text,
             )
           : null,
-      actions: actions,
+      actions: showAction
+          ? [
+              CommonIconButton(
+                name: actionIcon,
+                label: actionLabel,
+                onPressed: onAction,
+                variant: CommonButtonVariant.text,
+              ),
+            ]
+          : null,
     );
   }
 }

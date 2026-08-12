@@ -17,11 +17,11 @@ class CommonSpinner extends StatelessWidget {
   double get _dim {
     switch (size) {
       case CommonControlSize.sm:
-        return TS.sizing.iconMd;
+        return TS.sizing.iconSm;
       case CommonControlSize.md:
-        return TS.sizing.iconLg;
+        return TS.sizing.iconMd;
       case CommonControlSize.lg:
-        return TS.sizing.controlMd;
+        return TS.sizing.iconLg;
     }
   }
 
@@ -32,7 +32,7 @@ class CommonSpinner extends StatelessWidget {
       width: _dim,
       height: _dim,
       child: CircularProgressIndicator(
-        strokeWidth: 2.5,
+        strokeWidth: TS.sizing.progressStroke,
         color: TS.colors.primary,
       ),
     );

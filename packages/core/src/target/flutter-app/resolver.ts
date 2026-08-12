@@ -178,7 +178,7 @@ async function loadInventory(
 ): Promise<Inventory> {
   const exclusions = await normalizedExclusions(targetRootRealpath, input);
   const paths = await fg(
-    ['pubspec.yaml', '**/*.md', 'docs/proto-bridge.target.json', 'lib/**/*.dart'],
+    ['pubspec.yaml', '**/*.md', 'proto-bridge.target.json', 'lib/**/*.dart'],
     {
       cwd: targetRootRealpath,
       onlyFiles: true,
@@ -228,13 +228,13 @@ async function loadInventory(
     declarations.push(...markdownDeclarations(file, sourceKind));
   }
 
-  const machine = files.find((file) => file.path === 'docs/proto-bridge.target.json');
+  const machine = files.find((file) => file.path === 'proto-bridge.target.json');
   if (machine) {
     try {
       const parsedJson = JSON.parse(machine.text) as unknown;
       const parsed = machineContract.safeParse(parsedJson);
       if (!parsed.success) {
-        warnings.push(`Invalid docs/proto-bridge.target.json: ${parsed.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`).join('; ')}`);
+        warnings.push(`Invalid proto-bridge.target.json: ${parsed.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`).join('; ')}`);
       } else {
         machineQueryExclusions = parsed.data.queryExclusions ?? [];
         reviewContract = parsed.data.review;
@@ -246,7 +246,7 @@ async function loadInventory(
         );
       }
     } catch (error) {
-      warnings.push(`Invalid docs/proto-bridge.target.json JSON: ${error instanceof Error ? error.message : String(error)}`);
+      warnings.push(`Invalid proto-bridge.target.json JSON: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -330,7 +330,7 @@ function resolveOne(inventory: Inventory, id: string, kind: MappingKind): Target
       candidates,
       validation: validateCandidate(inventory, candidates[0]!, kind),
       reason: 'One code heuristic matched, but no explicit target declaration authorizes a resolved mapping.',
-      nextQueries: ['Confirm the candidate in target documentation or docs/proto-bridge.target.json.'],
+      nextQueries: ['Confirm the candidate in target documentation or proto-bridge.target.json.'],
     };
   }
   return {

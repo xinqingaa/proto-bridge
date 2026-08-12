@@ -2,28 +2,31 @@ import 'package:flutter/material.dart';
 
 import '../../theme/ts.dart';
 
-/// 对齐 pbwork DataList `surface`。
 enum CommonDataListSurface { none, standard, raised }
 
-/// 对齐 pbwork DataList `rounded`。
 enum CommonDataListRounded { none, sm, md, lg }
 
-/// 对齐 pbwork `DataList` — 列表外观容器（分隔、表面、圆角、阴影）。
+/// Flutter 原生列表；PBWork `data-list` 的 item slot 翻译为 builder。
 class CommonDataList extends StatelessWidget {
   const CommonDataList({
     super.key,
-    required this.children,
+    required this.itemCount,
+    required this.itemBuilder,
+    this.separatorBuilder,
     this.divided = true,
     this.inset = false,
     this.surface = CommonDataListSurface.standard,
     this.rounded = CommonDataListRounded.md,
     this.elevated = false,
-    this.shrinkWrap = true,
+    this.shrinkWrap = false,
     this.physics,
     this.padding,
+    this.controller,
   });
 
-  final List<Widget> children;
+  final int itemCount;
+  final IndexedWidgetBuilder itemBuilder;
+  final IndexedWidgetBuilder? separatorBuilder;
   final bool divided;
   final bool inset;
   final CommonDataListSurface surface;
@@ -32,66 +35,58 @@ class CommonDataList extends StatelessWidget {
   final bool shrinkWrap;
   final ScrollPhysics? physics;
   final EdgeInsetsGeometry? padding;
+  final ScrollController? controller;
 
-  double get _radius {
-    switch (rounded) {
-      case CommonDataListRounded.none:
-        return TS.radius.none;
-      case CommonDataListRounded.sm:
-        return TS.radius.sm;
-      case CommonDataListRounded.md:
-        return TS.radius.md;
-      case CommonDataListRounded.lg:
-        return TS.radius.lg;
-    }
-  }
+  double get _radius => switch (rounded) {
+    CommonDataListRounded.none => TS.radius.none,
+    CommonDataListRounded.sm => TS.radius.sm,
+    CommonDataListRounded.md => TS.radius.md,
+    CommonDataListRounded.lg => TS.radius.lg,
+  };
 
-  Color? get _surfaceColor {
-    switch (surface) {
-      case CommonDataListSurface.none:
-        return null;
-      case CommonDataListSurface.standard:
-        return TS.colors.surface;
-      case CommonDataListSurface.raised:
-        return TS.colors.surfaceRaised;
-    }
-  }
+  Color? get _surfaceColor => switch (surface) {
+    CommonDataListSurface.none => null,
+    CommonDataListSurface.standard => TS.colors.surface,
+    CommonDataListSurface.raised => TS.colors.surfaceRaised,
+  };
 
   @override
   Widget build(BuildContext context) {
     TS.of(context);
+    final list = divided
+        ? ListView.separated(
+            controller: controller,
+            shrinkWrap: shrinkWrap,
+            physics: physics,
+            padding: padding,
+            itemCount: itemCount,
+            itemBuilder: itemBuilder,
+            separatorBuilder:
+                separatorBuilder ??
+                (_, _) => Divider(
+                  height: TS.border.widthHairline,
+                  thickness: TS.border.widthHairline,
+                  indent: inset ? TS.spacing.md : TS.spacing.none,
+                  endIndent: inset ? TS.spacing.md : TS.spacing.none,
+                  color: TS.colors.divider,
+                ),
+          )
+        : ListView.builder(
+            controller: controller,
+            shrinkWrap: shrinkWrap,
+            physics: physics,
+            padding: padding,
+            itemCount: itemCount,
+            itemBuilder: itemBuilder,
+          );
 
-    final items = <Widget>[];
-    for (var i = 0; i < children.length; i++) {
-      items.add(children[i]);
-      if (divided && i < children.length - 1) {
-        items.add(
-          Divider(
-            height: 1,
-            indent: inset ? TS.spacing.md : 0,
-            endIndent: inset ? TS.spacing.md : 0,
-            color: TS.colors.divider,
-          ),
-        );
-      }
-    }
-
-    final list = ListView(
-      shrinkWrap: shrinkWrap,
-      physics: physics ?? const NeverScrollableScrollPhysics(),
-      padding: padding ?? EdgeInsets.zero,
-      children: items,
-    );
-
-    final color = _surfaceColor;
-    if (color == null && !elevated && rounded == CommonDataListRounded.none) {
+    if (_surfaceColor == null && !elevated && _radius == TS.radius.none) {
       return list;
     }
-
     return Material(
-      color: color ?? Colors.transparent,
+      color: _surfaceColor ?? Colors.transparent,
       elevation: elevated ? TS.elevation.card : TS.elevation.none,
-      shadowColor: Colors.black26,
+      shadowColor: TS.colors.scrim,
       borderRadius: BorderRadius.circular(_radius),
       clipBehavior: Clip.antiAlias,
       child: DecoratedBox(
@@ -99,7 +94,7 @@ class CommonDataList extends StatelessWidget {
           borderRadius: BorderRadius.circular(_radius),
           border: surface == CommonDataListSurface.none
               ? null
-              : Border.all(color: TS.colors.border),
+              : Border.fromBorderSide(TS.border.defaultBorder),
         ),
         child: list,
       ),

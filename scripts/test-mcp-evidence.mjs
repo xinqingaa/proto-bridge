@@ -224,7 +224,7 @@ try {
     "class TS { static final colors = AppColors(); } class AppColors { int get error => 1; }\nfinal fixtureTokenUse = TS.colors.error;\n",
   );
   await writeFile(
-    path.join(targetFixture, "docs", "proto-bridge.target.json"),
+    path.join(targetFixture, "proto-bridge.target.json"),
     `${JSON.stringify({
       version: 1,
       technology: "flutter",

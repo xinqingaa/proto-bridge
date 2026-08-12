@@ -9,31 +9,16 @@ import 'package:unified_popups/unified_popups.dart';
 /// - FlowSheet → [flowSheet]
 /// - SnackbarToast → [toast]
 /// - Loading → [loading] / [hideLoading]
-/// - Select 备选 → [menu] / [dropMenu]
+/// - Menu → [dropMenu]
 abstract final class AppPop {
-  static void toast(
-    String message, {
-    ToastType type = ToastType.none,
-  }) {
-    Pop.toast(
-      ToastConfig.text(message, type: type),
-    );
+  static void toast(String message) {
+    Pop.toast(ToastConfig.text(message, type: ToastType.none));
   }
-
-  static void success(String message) =>
-      toast(message, type: ToastType.success);
-
-  static void error(String message) => toast(message, type: ToastType.error);
-
-  static void warn(String message) => toast(message, type: ToastType.warn);
 
   /// 全局阻塞 Loading；[message] 为空时仅显示转圈。
   ///
   /// 传入 [until] 时，Future settled 后自动关闭（异常仍由调用方处理）。
-  static void loading({
-    String? message,
-    Future<void>? until,
-  }) {
+  static void loading({String? message, Future<void>? until}) {
     if (message == null || message.isEmpty) {
       Pop.loading(
         LoadingConfig.indicator(
@@ -89,14 +74,14 @@ abstract final class AppPop {
   static Future<T?> sheet<T>({
     String? title,
     required Widget Function(BuildContext context, PopupHandle<T> handle)
-        builder,
+    builder,
     bool showCloseButton = true,
   }) {
     return Pop.sheet<T>(
       SheetConfig<T>(
         header: SheetHeaderConfig(
           title: title,
-          showCloseButton: title != null && showCloseButton,
+          showCloseButton: showCloseButton,
         ),
         builder: builder,
       ),
@@ -124,7 +109,7 @@ abstract final class AppPop {
         initialPage: initialPage,
         header: SheetHeaderConfig(
           title: title,
-          showCloseButton: title != null && showCloseButton,
+          showCloseButton: showCloseButton,
         ),
         size: size,
         drag: drag,
@@ -133,23 +118,7 @@ abstract final class AppPop {
     ).result;
   }
 
-  /// 锚定自定义菜单。
-  static Future<T?> menu<T>({
-    required PopupAnchorController anchor,
-    required Widget Function(BuildContext context, PopupHandle<T> handle)
-        builder,
-    MenuPlacement placement = MenuPlacement.belowStart,
-  }) {
-    return Pop.menu<T>(
-      MenuConfig<T>(
-        anchor: anchor,
-        placement: placement,
-        builder: builder,
-      ),
-    ).result;
-  }
-
-  /// 数据驱动下拉菜单（SelectField 备选方案）。
+  /// 数据驱动下拉菜单；Flutter `menu` 的唯一弹层实现。
   static Future<T?> dropMenu<T>({
     required PopupAnchorController anchor,
     required DropMenu<T> menu,

@@ -48,10 +48,7 @@ void main() {
   testWidgets('Exception queue default shows fixed Evidence rows', (
     tester,
   ) async {
-    await pumpRoute(
-      tester,
-      route: AppRoutes.coldChainExceptionQueue,
-    );
+    await pumpRoute(tester, route: AppRoutes.coldChainExceptionQueue);
     expect(find.text('冷链异常'), findsOneWidget);
     expect(find.text('当前风险'), findsOneWidget);
     expect(find.text('仅看严重异常'), findsOneWidget);
@@ -63,10 +60,7 @@ void main() {
   });
 
   testWidgets('focus-critical filters to severe rows', (tester) async {
-    await pumpRoute(
-      tester,
-      route: AppRoutes.coldChainExceptionQueue,
-    );
+    await pumpRoute(tester, route: AppRoutes.coldChainExceptionQueue);
     await tester.tap(find.text('仅看严重异常'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
@@ -77,10 +71,7 @@ void main() {
   });
 
   testWidgets('Queue opens active-excursion shipment detail', (tester) async {
-    await pumpRoute(
-      tester,
-      route: AppRoutes.coldChainExceptionQueue,
-    );
+    await pumpRoute(tester, route: AppRoutes.coldChainExceptionQueue);
     await tester.tap(find.text('EX-017 · SH-2048'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
@@ -110,7 +101,9 @@ void main() {
     expect(find.text('仅确认接手'), findsOneWidget);
   });
 
-  testWidgets('Resolution form validates incomplete submission', (tester) async {
+  testWidgets('Resolution form validates incomplete submission', (
+    tester,
+  ) async {
     await pumpRoute(
       tester,
       route: AppRoutes.coldChainResolutionForm,
@@ -123,7 +116,9 @@ void main() {
     expect(find.text('请选择处置动作'), findsOneWidget);
   });
 
-  testWidgets('Resolution ready-to-submit opens confirm dialog', (tester) async {
+  testWidgets('Resolution ready-to-submit opens confirm dialog', (
+    tester,
+  ) async {
     await pumpRoute(
       tester,
       route: AppRoutes.coldChainResolutionForm,
@@ -177,7 +172,9 @@ void main() {
     expect(find.textContaining('探头 T-07 已离线'), findsOneWidget);
   });
 
-  testWidgets('approval-validation-error shows supervisor message', (tester) async {
+  testWidgets('approval-validation-error shows supervisor message', (
+    tester,
+  ) async {
     await pumpRoute(
       tester,
       route: AppRoutes.coldChainResolutionForm,

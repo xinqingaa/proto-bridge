@@ -331,7 +331,7 @@ async function verifyTargetMappingReference() {
   );
   const targetRoot = path.join(repoRoot, "apps/flutter_pb_app");
   const mapping = JSON.parse(
-    await readFile(path.join(targetRoot, "docs/proto-bridge.target.json"), "utf8"),
+    await readFile(path.join(targetRoot, "proto-bridge.target.json"), "utf8"),
   );
   const reference = await readFile(
     path.join(targetRoot, "docs/proto-bridge.md"),

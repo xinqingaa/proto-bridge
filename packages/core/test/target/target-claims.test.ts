@@ -278,7 +278,7 @@ async function targetFixture(): Promise<string> {
   await write(root, 'state.mjs', "import { readFileSync } from 'node:fs';\nprocess.stdout.write(readFileSync('state.json', 'utf8'));\n");
   await write(root, 'scenario.json', `${JSON.stringify(fixtureTransition())}\n`);
   await write(root, 'scenario.mjs', "import { readFileSync } from 'node:fs';\nprocess.stdout.write(readFileSync('scenario.json', 'utf8'));\n");
-  await write(root, 'docs/proto-bridge.target.json', `${JSON.stringify({
+  await write(root, 'proto-bridge.target.json', `${JSON.stringify({
     version: 1,
     technology: 'flutter',
     components: { 'page.card': { symbol: 'CommonCard' } },

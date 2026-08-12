@@ -35,7 +35,7 @@ describe('Flutter authoritative Review adapter', () => {
     };
     await writeFile(path.join(root, 'scenario.json'), JSON.stringify(scenarioTransition));
     await writeFile(path.join(root, 'scenario.mjs'), "import { readFileSync } from 'node:fs'; process.stdout.write(readFileSync('scenario.json', 'utf8'));\n");
-    await writeFile(path.join(root, 'docs/proto-bridge.target.json'), JSON.stringify({
+    await writeFile(path.join(root, 'proto-bridge.target.json'), JSON.stringify({
       version: 1,
       technology: 'flutter',
       review: {

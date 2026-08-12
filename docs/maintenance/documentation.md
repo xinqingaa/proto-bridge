@@ -25,7 +25,7 @@
 | Token/Theme | PBWork token docs、catalog、Skill、Target sync 状态/基线 |
 | Component props/behavior | Contract、实现、Registry、对应组件文档、Skill/检查单、Target sync 状态/基线 |
 | Role/绑定字面量闭集 | Core vocabulary、PBWork schema/Bind 池、Authoring 文档、Target sync 门禁 |
-| Target 映射/API | Target `proto-bridge.md`、`proto-bridge.target.json`、公开 API、`proto-bridge.sync.json` |
+| Target 映射/API | Target `docs/proto-bridge.md`、根目录 `proto-bridge.target.json`、公开 API、根目录 `proto-bridge.sync.json` |
 | 手势/导航/组合 | PBWork 共享规范、相关组件页、测试 |
 
 ## PBWork 组件变更
@@ -49,6 +49,8 @@
 - 没有执行点的提案不得写成现行 `Block` 或已验证能力；升级为正式规则时，文档、实现和测试必须在同一变更中落地。
 
 Agent 在收到组件、Token、Theme 或共享手势修改任务时，必须主动提醒文档同步义务，并在交付时说明同步了哪些文档。
+
+完整 Catalog 的一次性 Agent 读取已经废弃：它会淹没任务上下文，不得作为 Target 同步或页面实现的前置步骤。Target Agent 按当前组件读取 Producer Contract、文档及必要源码；目标工程自己的完整映射文件不等于重新开放 Store Catalog。
 
 DS 连续迭代不要求每轮都做 Flutter 视觉精修，但每轮必须运行 `pnpm ds:target-sync:verify` 让 Schema、Contract、role、Token/Theme 与 Target API 漂移显式可见。稳定批次必须同时更新 Target 映射/公开 API 与完整 sync baseline，使清单恢复 `synced`；`pnpm verify` 不接受 pending、过期 fingerprint 或不一致的计数/分区/逐组件元数据。
 

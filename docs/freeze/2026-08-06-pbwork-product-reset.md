@@ -143,11 +143,11 @@
 
 ## P1.5 — Flutter 同步（2026-08-12 已落地）
 
-- `proto-bridge.target.json` 覆盖 31/31 当前组件与 106/106 实际绑定 Token；resolver 全部为 `resolved`。
-- Flutter `TS` 补全主题语义 accessor，并用 `proto_bridge_tokens.dart` 提供可执行映射检查点；新增 `CommonIcon` 语义壳，Tabbar 默认行为对齐新 Contract。
-- `proto-bridge.sync.json` 固定 DS surface、分区、逐组件 digest 与计数；`pnpm ds:target-sync:verify` 自动报告 Component/Token/Theme Schema、Contract、role、Catalog、Theme、Bind 池及 Target API 漂移，并校验完整清单元数据，接入完整产品门禁。
+- Flutter 根目录 `proto-bridge.target.json` 覆盖 31/31 当前组件与 153/153 完整 Token Catalog；不保留旧组件 id，resolver 全部为 `resolved`。
+- Flutter `TS` 补全主题语义 accessor，并用 `proto_bridge_tokens.dart` 提供可执行映射检查点；`CommonIcon` 使用 `lucide_icons_flutter` 命中 26 个稳定 id，一级/二级 Tab 分文件使用 Flutter TabBar/TabBarView，一级直接复用 `LiquidGlass`。
+- Flutter 根目录 `proto-bridge.sync.json` 固定 DS surface、分区、逐组件 digest 与计数；`pnpm ds:target-sync:verify` 自动报告 Component/Token/Theme Schema、Contract、role、Catalog、Theme、Bind 池及 Target API 漂移，并校验完整清单元数据，接入完整产品门禁。
 - Contract 的 `summary` / `behavior` / `states[].kind` 升级为强制字段；复杂组件补齐 layout / visual anatomy。`flow-sheet` 明确使用 `role=sheet` + `componentId=flow-sheet`，未增加组件同名 role。
-- Flutter 仍允许平台近似与旧 feature 兼容参数；精确视觉在具体固定 Evidence 实现时结合 Screenshot 验证。Core Target adapter 仍不包含目标工程硬编码表。
+- Flutter 使用 `ListView`、`pull_to_refresh_flutter3`、TabBar/TabBarView 与 `unified_popups` 翻译 Producer 语义，不照搬 Vue 结构；现有 feature 已同步到当前 API，不保留兼容参数。Core Target adapter 仍不包含目标工程硬编码表。
 
 ---
 

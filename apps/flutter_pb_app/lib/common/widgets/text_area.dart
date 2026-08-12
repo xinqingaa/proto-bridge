@@ -8,35 +8,42 @@ class CommonTextArea extends StatelessWidget {
     super.key,
     this.controller,
     this.label,
+    this.showLabel = false,
     this.hint,
     this.enabled = true,
-    this.minLines = 3,
-    this.maxLines = 6,
+    this.rows = 3,
     this.onChanged,
   });
 
   final TextEditingController? controller;
   final String? label;
+  final bool showLabel;
   final String? hint;
   final bool enabled;
-  final int minLines;
-  final int maxLines;
+  final int rows;
   final ValueChanged<String>? onChanged;
 
   @override
   Widget build(BuildContext context) {
     TS.of(context);
-    return TextField(
-      controller: controller,
-      enabled: enabled,
-      minLines: minLines,
-      maxLines: maxLines,
-      onChanged: onChanged,
-      style: TS.textStyle.content,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        alignLabelWithHint: true,
+    return Opacity(
+      opacity: enabled ? TS.opacity.visible : TS.opacity.disabled,
+      child: TextField(
+        controller: controller,
+        enabled: enabled,
+        minLines: rows,
+        maxLines: rows,
+        onChanged: onChanged,
+        style: TS.textStyle.content,
+        decoration: InputDecoration(
+          labelText: showLabel ? label : null,
+          hintText: hint,
+          alignLabelWithHint: true,
+          filled: showLabel,
+          border: showLabel ? null : InputBorder.none,
+          enabledBorder: showLabel ? null : InputBorder.none,
+          focusedBorder: showLabel ? null : InputBorder.none,
+        ),
       ),
     );
   }

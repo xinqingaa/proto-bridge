@@ -264,7 +264,7 @@ async function machineContract(
 ): Promise<void> {
   await write(
     root,
-    'docs/proto-bridge.target.json',
+    'proto-bridge.target.json',
     `${JSON.stringify({ version: 1, technology: 'flutter', ...values }, null, 2)}\n`,
   );
 }

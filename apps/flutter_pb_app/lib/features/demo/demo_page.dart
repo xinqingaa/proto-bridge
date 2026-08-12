@@ -20,13 +20,13 @@ class _DemoPageState extends ConsumerState<DemoPage> {
   bool _switched = false;
   String? _selectValue = 'a';
   String? _radioValue = '1';
-  final Set<String> _filters = {'all'};
+  String _filter = 'all';
   int _listCount = 12;
 
   static const _selectOptions = [
-    CommonSelectOption(value: 'a', label: '选项 A'),
-    CommonSelectOption(value: 'b', label: '选项 B'),
-    CommonSelectOption(value: 'c', label: '选项 C'),
+    CommonChoiceOption(value: 'a', label: '选项 A'),
+    CommonChoiceOption(value: 'b', label: '选项 B'),
+    CommonChoiceOption(value: 'c', label: '选项 C'),
   ];
 
   @override
@@ -39,18 +39,14 @@ class _DemoPageState extends ConsumerState<DemoPage> {
       appBar: CommonAppBar(
         title: 'Demo 对照',
         showBack: true,
-        actions: [
-          CommonIconButton(
-            icon: mode == ThemeMode.dark
-                ? Icons.light_mode
-                : Icons.dark_mode,
-            tooltip: '切换主题',
-            onPressed: () {
-              ref.read(themeModeProvider.notifier).state =
-                  mode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
-            },
-          ),
-        ],
+        showAction: true,
+        actionIcon: CommonIconName.settings,
+        actionLabel: '切换主题',
+        onAction: () {
+          ref.read(themeModeProvider.notifier).state = mode == ThemeMode.dark
+              ? ThemeMode.light
+              : ThemeMode.dark;
+        },
       ),
       body: IndexedStack(
         index: _tabIndex,
@@ -68,22 +64,22 @@ class _DemoPageState extends ConsumerState<DemoPage> {
           CommonBottomNavItem(
             value: 'basic',
             label: '基础',
-            icon: Icons.widgets_outlined,
+            icon: CommonIconName.home,
           ),
           CommonBottomNavItem(
             value: 'form',
             label: '表单',
-            icon: Icons.edit_outlined,
+            icon: CommonIconName.fileText,
           ),
           CommonBottomNavItem(
             value: 'list',
             label: '列表',
-            icon: Icons.list_alt_outlined,
+            icon: CommonIconName.list,
           ),
           CommonBottomNavItem(
             value: 'overlay',
             label: '弹层',
-            icon: Icons.layers_outlined,
+            icon: CommonIconName.more,
           ),
         ],
       ),
@@ -135,13 +131,13 @@ class _DemoPageState extends ConsumerState<DemoPage> {
                 onPressed: () {},
               ),
               CommonIconButton(
-                icon: Icons.add,
-                tooltip: '新增',
+                name: CommonIconName.plus,
+                label: '新增',
                 onPressed: () {},
               ),
               const CommonIconButton(
-                icon: Icons.add,
-                tooltip: '加载中',
+                name: CommonIconName.plus,
+                label: '加载中',
                 loading: true,
               ),
             ],
@@ -155,21 +151,22 @@ class _DemoPageState extends ConsumerState<DemoPage> {
             children: [
               const CommonChip(label: 'Chip'),
               const CommonChip(label: '待领取', tone: CommonChipTone.warning),
-              const CommonBadge(label: '99+', tone: CommonButtonTone.error),
+              const CommonBadge(label: '99+', tone: CommonBadgeTone.error),
               const CommonAvatar(name: 'Lin Rui'),
             ],
           ),
         ]),
         _section('Card / Divider / Progress / Spinner', [
           const CommonCard(
-            title: '卡片标题',
-            subtitle: '副标题说明',
-            child: Text('卡片内容'),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [Text('卡片标题'), Text('副标题说明'), Text('卡片内容')],
+            ),
           ),
           SizedBox(height: TS.spacing.md),
           const CommonDivider(label: '分隔'),
           SizedBox(height: TS.spacing.md),
-          const CommonProgress(value: 0.45, label: '进度 45%'),
+          const CommonProgress(value: 45, label: '进度 45%'),
           SizedBox(height: TS.spacing.md),
           const CommonSpinner(label: '加载中'),
         ]),
@@ -187,13 +184,19 @@ class _DemoPageState extends ConsumerState<DemoPage> {
               length: 3,
               child: Column(
                 children: [
-                  const CommonTabs(
+                  const CommonPrimaryTabs(
                     items: [
                       CommonTabItem(value: '1', label: '全部'),
                       CommonTabItem(value: '2', label: '进行中'),
                       CommonTabItem(value: '3', label: '已完成'),
                     ],
-                    selectionStyle: CommonTabSelectionStyle.pill,
+                  ),
+                  const CommonSecondaryTabs(
+                    items: [
+                      CommonTabItem(value: '1', label: '全部'),
+                      CommonTabItem(value: '2', label: '进行中'),
+                      CommonTabItem(value: '3', label: '已完成'),
+                    ],
                   ),
                   const Expanded(
                     child: CommonTabView(
@@ -230,23 +233,22 @@ class _DemoPageState extends ConsumerState<DemoPage> {
             });
           },
           children: [
-            const CommonTextField(label: '单行输入', hint: '请输入'),
+            const CommonTextField(label: '单行输入', showLabel: true, hint: '请输入'),
             SizedBox(height: TS.spacing.md),
-            const CommonTextArea(label: '多行输入'),
+            const CommonTextArea(label: '多行输入', showLabel: true),
             SizedBox(height: TS.spacing.md),
-            CommonSelect<String>(
+            CommonMenuField<String>(
               label: '选择',
               value: _selectValue,
               options: _selectOptions,
               clearable: true,
-              implementation: CommonSelectImplementation.dropMenu,
               onChanged: (v) => setState(() => _selectValue = v),
             ),
             SizedBox(height: TS.spacing.md),
             CommonCheckbox(
               label: '同意协议',
               value: _checked,
-              onChanged: (v) => setState(() => _checked = v ?? false),
+              onChanged: (v) => setState(() => _checked = v),
             ),
             CommonSwitch(
               label: '接收通知',
@@ -257,8 +259,8 @@ class _DemoPageState extends ConsumerState<DemoPage> {
               label: '单选',
               value: _radioValue,
               options: const [
-                CommonSelectOption(value: '1', label: '方案一'),
-                CommonSelectOption(value: '2', label: '方案二'),
+                CommonChoiceOption(value: '1', label: '方案一'),
+                CommonChoiceOption(value: '2', label: '方案二'),
               ],
               onChanged: (v) => setState(() => _radioValue = v),
             ),
@@ -271,18 +273,8 @@ class _DemoPageState extends ConsumerState<DemoPage> {
                 CommonFilterItem(value: 'open', label: '进行中'),
                 CommonFilterItem(value: 'done', label: '完成'),
               ],
-              selected: _filters,
-              showFilterAction: true,
-              onSelected: (v) {
-                setState(() {
-                  if (_filters.contains(v)) {
-                    _filters.remove(v);
-                  } else {
-                    _filters.add(v);
-                  }
-                });
-              },
-              onFilterTap: () => AppPop.toast('高级筛选'),
+              selected: _filter,
+              onSelected: (v) => setState(() => _filter = v),
             ),
           ],
         ),
@@ -307,7 +299,7 @@ class _DemoPageState extends ConsumerState<DemoPage> {
         return ListTile(
           title: Text('列表项 ${index + 1}', style: TS.textStyle.content),
           subtitle: Text('ScrollableDataList', style: TS.textStyle.caption),
-          trailing: const Icon(Icons.chevron_right),
+          trailing: const CommonIcon(name: CommonIconName.chevronRight),
         );
       },
     );
@@ -322,7 +314,7 @@ class _DemoPageState extends ConsumerState<DemoPage> {
         CommonButton(
           label: 'Toast',
           block: true,
-          onPressed: () => AppPop.success('操作成功'),
+          onPressed: () => AppPop.toast('操作成功'),
         ),
         SizedBox(height: TS.spacing.sm),
         CommonButton(
@@ -331,10 +323,7 @@ class _DemoPageState extends ConsumerState<DemoPage> {
           variant: CommonButtonVariant.tonal,
           tone: CommonButtonTone.primary,
           onPressed: () async {
-            final ok = await AppPop.confirm(
-              title: '确认删除',
-              content: '删除后无法恢复',
-            );
+            final ok = await AppPop.confirm(title: '确认删除', content: '删除后无法恢复');
             AppPop.toast(ok ? '已确认' : '已取消');
           },
         ),
@@ -378,7 +367,7 @@ class _DemoPageState extends ConsumerState<DemoPage> {
               message: '提交中',
               task: Future<void>.delayed(const Duration(milliseconds: 1200)),
             );
-            AppPop.success('已完成');
+            AppPop.toast('已完成');
           },
         ),
         SizedBox(height: TS.spacing.sm),
@@ -395,7 +384,7 @@ class _DemoPageState extends ConsumerState<DemoPage> {
               initialPage: _DemoFlowStepOne(controller: controller),
             );
             if (result != null) {
-              AppPop.success('完成：$result');
+              AppPop.toast('完成：$result');
             }
           },
         ),
@@ -406,7 +395,7 @@ class _DemoPageState extends ConsumerState<DemoPage> {
 
 class _DemoFlowStepOne extends FlowSheetPage<void> {
   const _DemoFlowStepOne({required this.controller})
-      : super(id: 'demo_flow_step_1');
+    : super(id: 'demo_flow_step_1');
 
   final FlowSheetController<String> controller;
 
@@ -414,8 +403,7 @@ class _DemoFlowStepOne extends FlowSheetPage<void> {
   State<_DemoFlowStepOne> createState() => _DemoFlowStepOneState();
 }
 
-class _DemoFlowStepOneState
-    extends FlowSheetPageState<_DemoFlowStepOne, void> {
+class _DemoFlowStepOneState extends FlowSheetPageState<_DemoFlowStepOne, void> {
   @override
   Widget build(BuildContext context) {
     TS.of(context);
@@ -432,9 +420,7 @@ class _DemoFlowStepOneState
             label: '下一步',
             block: true,
             onPressed: () {
-              nav.push<void>(
-                _DemoFlowStepTwo(controller: widget.controller),
-              );
+              nav.push<void>(_DemoFlowStepTwo(controller: widget.controller));
             },
           ),
         ],
@@ -445,7 +431,7 @@ class _DemoFlowStepOneState
 
 class _DemoFlowStepTwo extends FlowSheetPage<void> {
   const _DemoFlowStepTwo({required this.controller})
-      : super(id: 'demo_flow_step_2', maintainState: true);
+    : super(id: 'demo_flow_step_2', maintainState: true);
 
   final FlowSheetController<String> controller;
 
@@ -453,8 +439,7 @@ class _DemoFlowStepTwo extends FlowSheetPage<void> {
   State<_DemoFlowStepTwo> createState() => _DemoFlowStepTwoState();
 }
 
-class _DemoFlowStepTwoState
-    extends FlowSheetPageState<_DemoFlowStepTwo, void> {
+class _DemoFlowStepTwoState extends FlowSheetPageState<_DemoFlowStepTwo, void> {
   @override
   Widget build(BuildContext context) {
     TS.of(context);

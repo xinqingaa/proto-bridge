@@ -19,8 +19,8 @@ const contractRoot = path.join(
   "apps/pbwork/src/design-system/components/contracts",
 );
 const targetRoot = path.join(repoRoot, "apps/flutter_pb_app");
-const syncPath = path.join(targetRoot, "docs/proto-bridge.sync.json");
-const targetMappingPath = path.join(targetRoot, "docs/proto-bridge.target.json");
+const syncPath = path.join(targetRoot, "proto-bridge.sync.json");
+const targetMappingPath = path.join(targetRoot, "proto-bridge.target.json");
 const printBaseline = process.argv.includes("--print-baseline");
 const errors = [];
 
@@ -42,7 +42,7 @@ const themeSchema = await readJson(
   "apps/pbwork/src/design-system/schemas/theme.schema.json",
 );
 const bindTokenIds = await readBindTokenIds();
-const targetMapping = await readJson("apps/flutter_pb_app/docs/proto-bridge.target.json");
+const targetMapping = await readJson("apps/flutter_pb_app/proto-bridge.target.json");
 const tokenIds = new Set(tokens.map((token) => token.id));
 const literalIds = new Set(TOKEN_BINDING_LITERALS);
 const boundTokenIds = new Set();
@@ -76,7 +76,7 @@ const baseline = {
     components: contracts.length,
     catalogTokens: tokens.length,
     bindTokens: bindTokenIds.length,
-    mappedTokens: boundTokenIds.size,
+    mappedTokens: tokenIds.size,
     semanticRoles: SEMANTIC_ROLES.length - 1,
   },
 };
@@ -95,7 +95,7 @@ if (errors.length > 0) {
   process.stdout.write(`${JSON.stringify(baseline, null, 2)}\n`);
 } else {
   process.stdout.write(
-    `DS → Target sync verified: ${contracts.length} current components (${declaredTargetComponentIds.length} Target declarations including aliases), ${boundTokenIds.size} mapped binding tokens, surface ${surfaceDigest}.\n`,
+    `DS → Target sync verified: ${contracts.length}/${declaredTargetComponentIds.length} current components, ${tokenIds.size}/${tokens.length} Catalog tokens mapped, surface ${surfaceDigest}.\n`,
   );
 }
 
@@ -248,8 +248,15 @@ function verifyTargetMappingCoverage() {
       errors.push(`Flutter target mapping is missing component ${contract.id}.`);
     }
   }
+  const currentComponentIds = contracts.map((contract) => contract.id).sort();
+  if (canonical(declaredTargetComponentIds) !== canonical(currentComponentIds)) {
+    const legacy = declaredTargetComponentIds.filter((id) => !currentComponentIds.includes(id));
+    errors.push(
+      `Flutter target mapping must contain only current component ids (legacy/extra: ${legacy.join(", ") || "none"}).`,
+    );
+  }
   const mappedTokens = Object.keys(targetMapping.tokens ?? {}).sort();
-  const requiredTokens = [...boundTokenIds].sort();
+  const requiredTokens = [...tokenIds].sort();
   if (canonical(mappedTokens) !== canonical(requiredTokens)) {
     const missing = requiredTokens.filter((id) => !mappedTokens.includes(id));
     const extra = mappedTokens.filter((id) => !requiredTokens.includes(id));
@@ -271,7 +278,7 @@ async function verifyResolver() {
   });
   const tokenBatch = await resolveTargetTokens({
     targetRoot,
-    ids: [...boundTokenIds].sort(),
+    ids: [...tokenIds].sort(),
   });
   for (const resolution of [...componentBatch.resolutions, ...tokenBatch.resolutions]) {
     if (resolution.status !== "resolved") {
@@ -288,7 +295,7 @@ async function verifyRecordedBaseline() {
   try {
     recorded = JSON.parse(await readFile(syncPath, "utf8"));
   } catch {
-    errors.push("Missing apps/flutter_pb_app/docs/proto-bridge.sync.json.");
+    errors.push("Missing apps/flutter_pb_app/proto-bridge.sync.json.");
     return;
   }
   if (recorded.status !== "synced") {

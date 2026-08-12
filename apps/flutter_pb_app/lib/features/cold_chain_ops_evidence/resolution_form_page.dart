@@ -32,7 +32,8 @@ class ResolutionFormEvidencePage extends StatefulWidget {
       _ResolutionFormEvidencePageState();
 }
 
-class _ResolutionFormEvidencePageState extends State<ResolutionFormEvidencePage> {
+class _ResolutionFormEvidencePageState
+    extends State<ResolutionFormEvidencePage> {
   late String _variant;
   String? _cause;
   String? _action;
@@ -58,7 +59,7 @@ class _ResolutionFormEvidencePageState extends State<ResolutionFormEvidencePage>
       if (_variant == 'confirm-dialog-open') {
         _confirmSubmit(showFromVariant: true);
       } else if (_variant == 'submitted') {
-        AppPop.success('处置记录已提交，异常转为持续监控');
+        AppPop.toast('处置记录已提交，异常转为持续监控');
       }
     });
   }
@@ -70,7 +71,8 @@ class _ResolutionFormEvidencePageState extends State<ResolutionFormEvidencePage>
   }
 
   void _applyVariant(String variant) {
-    final filled = variant == 'ready-to-submit' ||
+    final filled =
+        variant == 'ready-to-submit' ||
         variant == 'approval-required' ||
         variant == 'approval-validation-error' ||
         variant == 'confirm-dialog-open' ||
@@ -111,8 +113,7 @@ class _ResolutionFormEvidencePageState extends State<ResolutionFormEvidencePage>
       _validationMessage = null;
     });
 
-    final missingBasics =
-        _cause == null || _action == null || !_checksComplete;
+    final missingBasics = _cause == null || _action == null || !_checksComplete;
     if (missingBasics) {
       setState(() {
         _variant = 'validation-error';
@@ -148,7 +149,7 @@ class _ResolutionFormEvidencePageState extends State<ResolutionFormEvidencePage>
     if (!mounted) return;
     if (ok) {
       setState(() => _variant = 'submitted');
-      AppPop.success('处置记录已提交，异常转为持续监控');
+      AppPop.toast('处置记录已提交，异常转为持续监控');
     } else {
       setState(() => _variant = 'ready-to-submit');
     }
@@ -177,13 +178,13 @@ class _ResolutionFormEvidencePageState extends State<ResolutionFormEvidencePage>
             description: '根据司机反馈与设备状态记录本次异常原因。',
             child: Column(
               children: [
-                CommonSelect<String>(
+                CommonMenuField<String>(
                   label: '异常原因',
                   value: _cause,
                   errorText: _causeError,
                   options: [
                     for (final o in kCauseOptions)
-                      CommonSelectOption(value: o.value, label: o.label),
+                      CommonChoiceOption(value: o.value, label: o.label),
                   ],
                   onChanged: (v) => setState(() {
                     _cause = v;
@@ -191,13 +192,13 @@ class _ResolutionFormEvidencePageState extends State<ResolutionFormEvidencePage>
                   }),
                 ),
                 SizedBox(height: TS.spacing.md),
-                CommonSelect<String>(
+                CommonMenuField<String>(
                   label: '处置动作',
                   value: _action,
                   errorText: _actionError,
                   options: [
                     for (final o in kActionOptions)
-                      CommonSelectOption(value: o.value, label: o.label),
+                      CommonChoiceOption(value: o.value, label: o.label),
                   ],
                   onChanged: (v) => setState(() {
                     _action = v;
@@ -210,7 +211,7 @@ class _ResolutionFormEvidencePageState extends State<ResolutionFormEvidencePage>
                   value: _outcome,
                   options: [
                     for (final o in kOutcomeOptions)
-                      CommonSelectOption(value: o.value, label: o.label),
+                      CommonChoiceOption(value: o.value, label: o.label),
                   ],
                   onChanged: (v) => setState(() => _outcome = v),
                 ),
@@ -227,17 +228,17 @@ class _ResolutionFormEvidencePageState extends State<ResolutionFormEvidencePage>
                 CommonCheckbox(
                   value: _checkDriver,
                   label: '已联系司机并确认车辆安全',
-                  onChanged: (v) => setState(() => _checkDriver = v ?? false),
+                  onChanged: (v) => setState(() => _checkDriver = v),
                 ),
                 CommonCheckbox(
                   value: _checkCooling,
                   label: '已检查主制冷与备用制冷状态',
-                  onChanged: (v) => setState(() => _checkCooling = v ?? false),
+                  onChanged: (v) => setState(() => _checkCooling = v),
                 ),
                 CommonCheckbox(
                   value: _checkCargo,
                   label: '货箱未开封且无可见损伤',
-                  onChanged: (v) => setState(() => _checkCargo = v ?? false),
+                  onChanged: (v) => setState(() => _checkCargo = v),
                 ),
               ],
             ),
@@ -257,6 +258,7 @@ class _ResolutionFormEvidencePageState extends State<ResolutionFormEvidencePage>
                 CommonTextArea(
                   controller: _notes,
                   label: '处置说明',
+                  showLabel: true,
                   hint: '补充现场情况（可选）',
                 ),
               ],
@@ -266,13 +268,13 @@ class _ResolutionFormEvidencePageState extends State<ResolutionFormEvidencePage>
           _SectionCard(
             title: '主管审批',
             description: '当前异常持续 47 分钟，已触发主管审批阈值。',
-            child: CommonSelect<String>(
+            child: CommonMenuField<String>(
               label: '值班主管',
               value: _supervisor,
               errorText: _supervisorError,
               options: [
                 for (final o in kSupervisorOptions)
-                  CommonSelectOption(value: o.value, label: o.label),
+                  CommonChoiceOption(value: o.value, label: o.label),
               ],
               onChanged: (v) => setState(() {
                 _supervisor = v;
@@ -353,7 +355,11 @@ class _ValidationBanner extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.error_outline, color: TS.colors.error, size: TS.sizing.iconMd),
+          Icon(
+            Icons.error_outline,
+            color: TS.colors.error,
+            size: TS.sizing.iconMd,
+          ),
           SizedBox(width: TS.spacing.sm),
           Expanded(
             child: Text(
@@ -383,10 +389,7 @@ class _SectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     TS.of(context);
-    final desc = [
-      if (requiredBadge) '必填',
-      ?description,
-    ].join(' · ');
+    final desc = [if (requiredBadge) '必填', ?description].join(' · ');
     return Material(
       color: TS.colors.surface,
       borderRadius: BorderRadius.circular(TS.radius.lg),

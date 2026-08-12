@@ -133,16 +133,24 @@ class CommonButton extends StatelessWidget {
   Widget build(BuildContext context) {
     TS.of(context);
 
-    final child = loading
-        ? SizedBox(
-            width: 18,
-            height: 18,
+    final child = Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (loading) ...[
+          SizedBox(
+            width: TS.sizing.iconSm,
+            height: TS.sizing.iconSm,
             child: CircularProgressIndicator(
-              strokeWidth: 2,
+              strokeWidth: TS.sizing.progressStroke,
               color: _foreground,
             ),
-          )
-        : Text(label, style: _labelStyle);
+          ),
+          SizedBox(width: TS.spacing.sm),
+        ],
+        Text(label, style: _labelStyle),
+      ],
+    );
 
     // text → TextButton；其余 → InkWell + Container
     switch (variant) {

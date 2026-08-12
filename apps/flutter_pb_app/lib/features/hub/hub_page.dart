@@ -18,16 +18,14 @@ class HubPage extends ConsumerWidget {
       backgroundColor: TS.colors.background,
       appBar: CommonAppBar(
         title: 'flutter_pb_app',
-        actions: [
-          CommonIconButton(
-            icon: mode == ThemeMode.dark ? Icons.light_mode : Icons.dark_mode,
-            tooltip: '切换主题',
-            onPressed: () {
-              ref.read(themeModeProvider.notifier).state =
-                  mode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
-            },
-          ),
-        ],
+        showAction: true,
+        actionIcon: CommonIconName.settings,
+        actionLabel: '切换主题',
+        onAction: () {
+          ref.read(themeModeProvider.notifier).state = mode == ThemeMode.dark
+              ? ThemeMode.light
+              : ThemeMode.dark;
+        },
       ),
       body: ListView(
         padding: EdgeInsets.all(TS.spacing.md),
@@ -42,14 +40,14 @@ class HubPage extends ConsumerWidget {
           _HubEntry(
             title: 'Demo 对照',
             subtitle: 'widgets / theme / AppPop',
-            icon: Icons.widgets_outlined,
+            icon: CommonIconName.home,
             route: AppRoutes.demo,
           ),
           SizedBox(height: TS.spacing.sm),
           _HubEntry(
             title: 'Cold Chain Ops',
             subtitle: 'prototypes/cold-chain-ops-evidence',
-            icon: Icons.ac_unit_outlined,
+            icon: CommonIconName.snowflake,
             route: AppRoutes.coldChainExceptionQueue,
           ),
         ],
@@ -68,16 +66,30 @@ class _HubEntry extends StatelessWidget {
 
   final String title;
   final String subtitle;
-  final IconData icon;
+  final CommonIconName icon;
   final String route;
 
   @override
   Widget build(BuildContext context) {
     return CommonCard(
-      title: title,
-      subtitle: subtitle,
-      onTap: () => Navigator.of(context).pushNamed(route),
-      child: Icon(icon, color: TS.colors.primary),
+      child: InkWell(
+        onTap: () => Navigator.of(context).pushNamed(route),
+        child: Row(
+          children: [
+            CommonIcon(name: icon, tone: CommonIconTone.primary),
+            SizedBox(width: TS.spacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: TS.textStyle.subtitle),
+                  Text(subtitle, style: TS.textStyle.caption),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

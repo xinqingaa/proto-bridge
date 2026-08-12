@@ -2,62 +2,36 @@ import 'package:flutter/material.dart';
 
 import '../../theme/ts.dart';
 
-/// 对齐 pbwork `Card`。
+enum CommonCardSemanticRole { section, card, summary }
+
+/// 只拥有 surface；业务内容和操作由 [child] 自己定义。
 class CommonCard extends StatelessWidget {
   const CommonCard({
     super.key,
-    this.title,
-    this.subtitle,
-    this.child,
+    required this.child,
     this.elevated = false,
-    this.onTap,
+    this.semanticRole = CommonCardSemanticRole.section,
   });
 
-  final String? title;
-  final String? subtitle;
-  final Widget? child;
+  final Widget child;
   final bool elevated;
-  final VoidCallback? onTap;
+  final CommonCardSemanticRole semanticRole;
 
   @override
   Widget build(BuildContext context) {
     TS.of(context);
-    final content = Padding(
-      padding: EdgeInsets.all(TS.spacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (title != null) Text(title!, style: TS.textStyle.subtitle),
-          if (subtitle != null) ...[
-            SizedBox(height: TS.spacing.xs),
-            Text(
-              subtitle!,
-              style: TS.textStyle.caption,
-            ),
-          ],
-          if (child != null) ...[
-            if (title != null || subtitle != null)
-              SizedBox(height: TS.spacing.sm),
-            child!,
-          ],
-        ],
+    return Semantics(
+      container: true,
+      child: Card(
+        color: TS.colors.surface,
+        elevation: elevated ? TS.elevation.card : TS.elevation.none,
+        shadowColor: TS.colors.scrim,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(TS.radius.lg),
+          side: TS.border.defaultBorder,
+        ),
+        child: Padding(padding: EdgeInsets.all(TS.spacing.md), child: child),
       ),
-    );
-
-    return Card(
-      color: TS.colors.surface,
-      elevation: elevated ? TS.elevation.card : TS.elevation.none,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(TS.radius.lg),
-        side: BorderSide(color: TS.colors.border),
-      ),
-      child: onTap == null
-          ? content
-          : InkWell(
-              onTap: onTap,
-              borderRadius: BorderRadius.circular(TS.radius.lg),
-              child: content,
-            ),
     );
   }
 }

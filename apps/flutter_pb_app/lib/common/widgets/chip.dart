@@ -15,17 +15,17 @@ class CommonChip extends StatelessWidget {
     this.tone = CommonChipTone.secondary,
     this.selected = false,
     this.onTap,
-    this.radius,
+    this.elevated = false,
   });
 
   final String label;
   final CommonChipTone tone;
   final bool selected;
   final VoidCallback? onTap;
-  final double? radius;
+  final bool elevated;
 
   RoundedRectangleBorder get _shape => RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(radius ?? TS.radius.full),
+    borderRadius: BorderRadius.circular(TS.radius.full),
   );
 
   Color get _bg {
@@ -64,23 +64,28 @@ class CommonChip extends StatelessWidget {
   Widget build(BuildContext context) {
     TS.of(context);
     final labelStyle = TS.textStyle.captionStrong.copyWith(color: _fg);
-    if (onTap == null) {
-      return Chip(
-        label: Text(label, style: labelStyle),
-        backgroundColor: _bg,
-        side: BorderSide.none,
-        shape: _shape,
-        padding: EdgeInsets.symmetric(horizontal: TS.spacing.xs),
-        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        visualDensity: VisualDensity.compact,
-      );
-    }
-    return ActionChip(
-      label: Text(label, style: labelStyle),
-      onPressed: onTap,
-      backgroundColor: _bg,
-      side: BorderSide(color: TS.colors.border),
-      shape: _shape,
+    final chip = onTap == null
+        ? Chip(
+            label: Text(label, style: labelStyle),
+            backgroundColor: _bg,
+            side: BorderSide.none,
+            shape: _shape,
+            padding: EdgeInsets.symmetric(horizontal: TS.spacing.xs),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            visualDensity: VisualDensity.compact,
+          )
+        : ActionChip(
+            label: Text(label, style: labelStyle),
+            onPressed: onTap,
+            backgroundColor: _bg,
+            side: TS.border.defaultBorder,
+            shape: _shape,
+          );
+    return Material(
+      type: MaterialType.transparency,
+      elevation: elevated ? TS.elevation.card : TS.elevation.none,
+      borderRadius: BorderRadius.circular(TS.radius.full),
+      child: chip,
     );
   }
 }

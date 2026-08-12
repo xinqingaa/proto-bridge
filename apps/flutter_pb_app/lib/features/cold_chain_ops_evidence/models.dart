@@ -30,8 +30,7 @@ class ExceptionRow {
   final String durationLabel;
   final String updatedAt;
 
-  String get identity =>
-      '${id.toUpperCase()} · $shipmentId';
+  String get identity => '${id.toUpperCase()} · $shipmentId';
 }
 
 /// Default keyed collection order: ex-017, ex-031, ex-024, ex-029.
@@ -88,8 +87,10 @@ const kExceptionRows = <ExceptionRow>[
   ),
 ];
 
-ExceptionRow exceptionById(String id) =>
-    kExceptionRows.firstWhere((e) => e.id == id, orElse: () => kExceptionRows.first);
+ExceptionRow exceptionById(String id) => kExceptionRows.firstWhere(
+  (e) => e.id == id,
+  orElse: () => kExceptionRows.first,
+);
 
 class TempSample {
   const TempSample({required this.label, required this.value});
@@ -245,10 +246,7 @@ const kOutcomeOptions = <SelectOptionData>[
 ];
 
 class ResolutionCaseSummary {
-  const ResolutionCaseSummary({
-    required this.title,
-    required this.detail,
-  });
+  const ResolutionCaseSummary({required this.title, required this.detail});
 
   final String title;
   final String detail;

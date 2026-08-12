@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/ts.dart';
-import 'select.dart';
+import 'choice_option.dart';
 
 /// 对齐 pbwork `RadioGroup`。
 class CommonRadioGroup<T> extends StatelessWidget {
@@ -14,7 +14,7 @@ class CommonRadioGroup<T> extends StatelessWidget {
     this.onChanged,
   });
 
-  final List<CommonSelectOption<T>> options;
+  final List<CommonChoiceOption<T>> options;
   final T? value;
   final String? label;
   final bool enabled;
@@ -23,31 +23,36 @@ class CommonRadioGroup<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     TS.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (label != null) ...[
-          Text(label!, style: TS.textStyle.label),
-          SizedBox(height: TS.spacing.xs),
-        ],
-        RadioGroup<T>(
-          groupValue: value,
-          onChanged: enabled
-              ? (onChanged ?? (_) {})
-              : (_) {},
-          child: Column(
-            children: [
-              for (final opt in options)
-                RadioListTile<T>(
-                  value: opt.value,
-                  title: Text(opt.label, style: TS.textStyle.content),
-                  contentPadding: EdgeInsets.zero,
-                  enabled: enabled,
-                ),
-            ],
+    final interactive = enabled && onChanged != null;
+    return Opacity(
+      opacity: interactive ? TS.opacity.visible : TS.opacity.disabled,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (label != null) ...[
+            Text(label!, style: TS.textStyle.label),
+            SizedBox(height: TS.spacing.xs),
+          ],
+          RadioGroup<T>(
+            groupValue: value,
+            onChanged: (next) {
+              if (interactive) onChanged!(next);
+            },
+            child: Column(
+              children: [
+                for (final opt in options)
+                  RadioListTile<T>(
+                    value: opt.value,
+                    title: Text(opt.label, style: TS.textStyle.content),
+                    contentPadding: EdgeInsets.zero,
+                    enabled: interactive,
+                    activeColor: TS.colors.primary,
+                  ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

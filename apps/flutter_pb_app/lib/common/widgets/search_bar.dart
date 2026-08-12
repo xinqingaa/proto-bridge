@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../theme/ts.dart';
 
@@ -82,25 +83,28 @@ class _CommonSearchBarState extends State<CommonSearchBar> {
     TS.of(context);
     final hasText = _controller.text.isNotEmpty;
 
-    return TextField(
-      controller: _controller,
-      enabled: widget.enabled,
-      onChanged: widget.onChanged,
-      onSubmitted: widget.onSubmitted,
-      textInputAction: TextInputAction.search,
-      style: TS.textStyle.content,
-      decoration: InputDecoration(
-        hintText: widget.hint,
-        prefixIcon: Icon(Icons.search, color: TS.colors.onSurfaceMuted),
-        suffixIcon: hasText && widget.enabled
-            ? IconButton(
-                tooltip: '清除',
-                onPressed: _clear,
-                icon: Icon(Icons.close, color: TS.colors.onSurfaceMuted),
-              )
-            : null,
-        filled: true,
-        fillColor: TS.colors.surfaceVariant,
+    return Opacity(
+      opacity: widget.enabled ? TS.opacity.visible : TS.opacity.disabled,
+      child: TextField(
+        controller: _controller,
+        enabled: widget.enabled,
+        onChanged: widget.onChanged,
+        onSubmitted: widget.onSubmitted,
+        textInputAction: TextInputAction.search,
+        style: TS.textStyle.content,
+        decoration: InputDecoration(
+          hintText: widget.hint,
+          prefixIcon: Icon(LucideIcons.search, color: TS.colors.onSurfaceMuted),
+          suffixIcon: hasText && widget.enabled
+              ? IconButton(
+                  tooltip: '清除',
+                  onPressed: _clear,
+                  icon: Icon(LucideIcons.x, color: TS.colors.onSurfaceMuted),
+                )
+              : null,
+          filled: true,
+          fillColor: TS.colors.surfaceVariant,
+        ),
       ),
     );
   }

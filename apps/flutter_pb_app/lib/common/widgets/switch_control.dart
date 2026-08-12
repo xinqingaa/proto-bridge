@@ -20,19 +20,28 @@ class CommonSwitch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     TS.of(context);
-    if (label == null) {
-      return Switch(
-        value: value,
-        onChanged: enabled ? onChanged : null,
-        activeThumbColor: TS.colors.primary,
-      );
-    }
-    return SwitchListTile(
-      value: value,
-      onChanged: enabled ? onChanged : null,
-      title: Text(label!, style: TS.textStyle.content),
-      contentPadding: EdgeInsets.zero,
-      activeThumbColor: TS.colors.primary,
+    final control = label == null
+        ? Switch(
+            value: value,
+            onChanged: enabled && onChanged != null ? onChanged : null,
+            activeThumbColor: TS.colors.primary,
+            activeTrackColor: TS.colors.primary.withValues(
+              alpha: TS.opacity.muted,
+            ),
+          )
+        : SwitchListTile(
+            value: value,
+            onChanged: enabled && onChanged != null ? onChanged : null,
+            title: Text(label!, style: TS.textStyle.content),
+            contentPadding: EdgeInsets.zero,
+            activeThumbColor: TS.colors.primary,
+            activeTrackColor: TS.colors.primary.withValues(
+              alpha: TS.opacity.muted,
+            ),
+          );
+    return Opacity(
+      opacity: enabled ? TS.opacity.visible : TS.opacity.disabled,
+      child: control,
     );
   }
 }

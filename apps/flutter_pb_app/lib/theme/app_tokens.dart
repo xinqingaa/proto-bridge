@@ -86,8 +86,10 @@ class AppMotion {
   Duration get durationSheet => const Duration(milliseconds: 220);
   Duration get durationTabViewport => const Duration(milliseconds: 240);
   Duration get durationToast => const Duration(milliseconds: 4000);
+  Duration get durationClickSuppression => const Duration(milliseconds: 450);
   Curve get easingGentle => Curves.ease;
   Curve get easingStandard => const Cubic(0.2, 0, 0, 1);
+  Curve get easingEmphasized => const Cubic(0.2, 0.8, 0.2, 1);
   double get rotateHalfTurn => 0.5;
   double get scalePressed => 0.98;
   double get scalePressedStrong => 0.96;
@@ -115,9 +117,11 @@ class AppBorderTokens {
   final AppColors colors;
 
   BorderSide get defaultBorder => BorderSide(color: colors.border);
+  BorderSide get strong => BorderSide(color: colors.outline, width: 2);
   BorderSide get focus => BorderSide(color: colors.primary, width: 2);
   BorderSide get hairline => BorderSide(color: colors.divider);
   double get widthHairline => 1;
+  double get accentWidth => 4;
 }
 
 /// 对齐跨栈布局语义；值是 Flutter 逻辑像素、比例或 Insets。
@@ -126,7 +130,12 @@ class AppLayoutTokens {
 
   double get dialogMaxWidth => 320;
   double get fill => 1;
+  double get flexFill => 1;
+  double get flexGrow => 1;
   double get focusInset => -4;
+  double get gestureAxisLock => 8;
+  double get gestureDragLimit => 72;
+  double get gestureSwipeThreshold => 44;
   double get half => 0.5;
   double get halfNegative => -0.5;
   double get insetSmNegative => -8;
@@ -137,11 +146,15 @@ class AppLayoutTokens {
   double get pullRefreshThreshold => 64;
   double get sheetMaxHeight => 560;
   double get translateFullNegative => -1;
+  double get viewportHeight => 1;
+  double get chartMinHeight => 154;
+  double get chartPlotHeight => 124;
 }
 
 class AppLayerTokens {
   const AppLayerTokens();
 
+  double get base => 0;
   double get content => 1;
 }
 

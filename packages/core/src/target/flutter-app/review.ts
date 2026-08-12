@@ -65,7 +65,7 @@ export type FlutterRenderReceipt = {
 
 export async function readFlutterReviewContract(targetRoot: string): Promise<FlutterReviewContractType> {
   const root = await realpath(targetRoot);
-  const parsed = JSON.parse(await readFile(path.join(root, 'docs/proto-bridge.target.json'), 'utf8')) as { review?: unknown };
+  const parsed = JSON.parse(await readFile(path.join(root, 'proto-bridge.target.json'), 'utf8')) as { review?: unknown };
   return FlutterReviewContract.parse(parsed.review);
 }
 

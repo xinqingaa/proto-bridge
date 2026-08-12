@@ -2,115 +2,98 @@ import 'package:flutter/material.dart';
 
 import '../../theme/ts.dart';
 import 'button.dart';
+import 'icon.dart';
 
-/// 对齐 pbwork `IconButton` — 官方 [IconButton]。
-///
-/// [loading] 时用转圈替换图标并禁用点击，对齐原型与 [CommonButton.loading]。
+/// 紧凑 Lucide 操作；[label] 同时作为 tooltip 与无障碍名称。
 class CommonIconButton extends StatelessWidget {
   const CommonIconButton({
     super.key,
-    required this.icon,
+    required this.name,
+    required this.label,
     this.onPressed,
-    this.tooltip,
     this.size = CommonControlSize.md,
     this.tone = CommonButtonTone.secondary,
     this.variant = CommonButtonVariant.tonal,
     this.loading = false,
     this.disabled = false,
+    this.quarterTurns = 0,
   });
 
-  final IconData icon;
+  final CommonIconName name;
+  final String label;
   final VoidCallback? onPressed;
-  final String? tooltip;
   final CommonControlSize size;
   final CommonButtonTone tone;
   final CommonButtonVariant variant;
   final bool loading;
   final bool disabled;
+  final int quarterTurns;
 
   bool get _enabled => !disabled && !loading && onPressed != null;
 
-  double get _iconSize {
-    switch (size) {
-      case CommonControlSize.sm:
-        return TS.sizing.iconSm;
-      case CommonControlSize.md:
-        return TS.sizing.iconMd;
-      case CommonControlSize.lg:
-        return TS.sizing.iconLg;
-    }
-  }
+  double get _iconSize => switch (size) {
+    CommonControlSize.sm => TS.sizing.iconSm,
+    CommonControlSize.md => TS.sizing.iconMd,
+    CommonControlSize.lg => TS.sizing.iconLg,
+  };
 
-  Color get _color {
-    switch (tone) {
-      case CommonButtonTone.action:
-        return TS.colors.action;
-      case CommonButtonTone.primary:
-        return TS.colors.primary;
-      case CommonButtonTone.secondary:
-        return TS.colors.secondary;
-      case CommonButtonTone.error:
-        return TS.colors.error;
-      case CommonButtonTone.success:
-        return TS.colors.success;
-    }
-  }
+  Color get _color => switch (tone) {
+    CommonButtonTone.action => TS.colors.action,
+    CommonButtonTone.primary => TS.colors.primary,
+    CommonButtonTone.secondary => TS.colors.secondary,
+    CommonButtonTone.error => TS.colors.error,
+    CommonButtonTone.success => TS.colors.success,
+  };
 
-  Color? get _background {
-    switch (variant) {
-      case CommonButtonVariant.flat:
-        return _color;
-      case CommonButtonVariant.tonal:
-        switch (tone) {
-          case CommonButtonTone.action:
-            return TS.colors.actionSoft;
-          case CommonButtonTone.primary:
-            return TS.colors.primarySoft;
-          case CommonButtonTone.secondary:
-            return TS.colors.secondarySoft;
-          case CommonButtonTone.error:
-            return TS.colors.errorSoft;
-          case CommonButtonTone.success:
-            return TS.colors.successSoft;
-        }
-      case CommonButtonVariant.outlined:
-      case CommonButtonVariant.text:
-        return null;
-    }
-  }
+  Color? get _background => switch (variant) {
+    CommonButtonVariant.flat => _color,
+    CommonButtonVariant.tonal => switch (tone) {
+      CommonButtonTone.action => TS.colors.actionSoft,
+      CommonButtonTone.primary => TS.colors.primarySoft,
+      CommonButtonTone.secondary => TS.colors.secondarySoft,
+      CommonButtonTone.error => TS.colors.errorSoft,
+      CommonButtonTone.success => TS.colors.successSoft,
+    },
+    CommonButtonVariant.outlined || CommonButtonVariant.text => null,
+  };
 
   @override
   Widget build(BuildContext context) {
     TS.of(context);
-    final fg = variant == CommonButtonVariant.flat
-        ? (tone == CommonButtonTone.primary
-            ? TS.colors.onPrimary
-            : tone == CommonButtonTone.action
-                ? TS.colors.onAction
-                : TS.colors.onSecondary)
+    final foreground = variant == CommonButtonVariant.flat
+        ? switch (tone) {
+            CommonButtonTone.primary => TS.colors.onPrimary,
+            CommonButtonTone.action => TS.colors.onAction,
+            CommonButtonTone.error => TS.colors.onError,
+            CommonButtonTone.success => TS.colors.onSuccess,
+            CommonButtonTone.secondary => TS.colors.onSecondary,
+          }
         : _color;
 
-    return IconButton(
-      onPressed: _enabled ? onPressed : null,
-      tooltip: tooltip,
-      iconSize: _iconSize,
-      style: IconButton.styleFrom(
-        foregroundColor: fg,
-        backgroundColor: _background,
-        side: variant == CommonButtonVariant.outlined
-            ? BorderSide(color: _color)
-            : null,
+    return Opacity(
+      opacity: disabled ? TS.opacity.disabled : TS.opacity.visible,
+      child: IconButton(
+        onPressed: _enabled ? onPressed : null,
+        tooltip: label,
+        iconSize: _iconSize,
+        style: IconButton.styleFrom(
+          foregroundColor: foreground,
+          backgroundColor: _background,
+          side: variant == CommonButtonVariant.outlined
+              ? BorderSide(color: _color)
+              : null,
+        ),
+        icon: loading
+            ? SizedBox(
+                width: _iconSize,
+                height: _iconSize,
+                child: CircularProgressIndicator(
+                  strokeWidth: TS.sizing.progressStroke,
+                  color: foreground,
+                ),
+              )
+            : RotatedBox(quarterTurns: quarterTurns, child: Icon(name.data)),
       ),
-      icon: loading
-          ? SizedBox(
-              width: _iconSize,
-              height: _iconSize,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: fg,
-              ),
-            )
-          : Icon(icon),
     );
   }
 }

@@ -35,7 +35,8 @@ class ShipmentDetailEvidencePage extends StatefulWidget {
       _ShipmentDetailEvidencePageState();
 }
 
-class _ShipmentDetailEvidencePageState extends State<ShipmentDetailEvidencePage> {
+class _ShipmentDetailEvidencePageState
+    extends State<ShipmentDetailEvidencePage> {
   late String _variant;
 
   @override
@@ -61,8 +62,7 @@ class _ShipmentDetailEvidencePageState extends State<ShipmentDetailEvidencePage>
 
   bool get _showSensorError => _variant == 'sensor-offline';
 
-  String get _currentTemp =>
-      _showAlert ? '10.8°C' : _data.currentTemp;
+  String get _currentTemp => _showAlert ? '10.8°C' : _data.currentTemp;
 
   Future<void> _openActionSheet({bool recordOpened = true}) async {
     if (recordOpened) setState(() => _variant = 'action-sheet-open');
@@ -131,7 +131,7 @@ class _ShipmentDetailEvidencePageState extends State<ShipmentDetailEvidencePage>
     if (!mounted) return;
     setState(() => _variant = 'active-excursion');
     if (ok) {
-      AppPop.success('已确认接手');
+      AppPop.toast('已确认接手');
     }
   }
 
@@ -168,10 +168,7 @@ class _ShipmentDetailEvidencePageState extends State<ShipmentDetailEvidencePage>
       ],
       _OverviewCard(data: data),
       SizedBox(height: TS.spacing.md),
-      _TemperatureCard(
-        data: data,
-        currentTemp: _currentTemp,
-      ),
+      _TemperatureCard(data: data, currentTemp: _currentTemp),
       SizedBox(height: TS.spacing.md),
       _TimelineCard(events: data.events),
       SizedBox(height: TS.spacing.md),
@@ -236,7 +233,7 @@ class _AlertBanner extends StatelessWidget {
               ],
             ),
           ),
-          const CommonBadge(label: '严重', semanticTone: CommonBadgeTone.error),
+          const CommonBadge(label: '严重', tone: CommonBadgeTone.error),
         ],
       ),
     );
@@ -269,8 +266,9 @@ class _SensorErrorBanner extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style:
-                      TS.textStyle.subtitle.copyWith(color: TS.colors.warning),
+                  style: TS.textStyle.subtitle.copyWith(
+                    color: TS.colors.warning,
+                  ),
                 ),
                 SizedBox(height: TS.spacing.xxs),
                 Text(
@@ -297,14 +295,21 @@ class _OverviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     TS.of(context);
     return CommonCard(
-      title: '运输概览',
-      subtitle: '${data.shipmentId} · ${data.eta}',
       elevated: false,
       child: Column(
         children: [
+          _CardHeading(
+            title: '运输概览',
+            subtitle: '${data.shipmentId} · ${data.eta}',
+          ),
+          SizedBox(height: TS.spacing.md),
           Row(
             children: [
-              Icon(Icons.ac_unit, size: TS.sizing.iconMd, color: TS.colors.primary),
+              Icon(
+                Icons.ac_unit,
+                size: TS.sizing.iconMd,
+                color: TS.colors.primary,
+              ),
               SizedBox(width: TS.spacing.xs),
               Expanded(child: Text(data.origin, style: TS.textStyle.content)),
               Expanded(
@@ -314,8 +319,11 @@ class _OverviewCard extends StatelessWidget {
                   color: TS.colors.primary,
                 ),
               ),
-              Icon(Icons.location_on_outlined,
-                  size: TS.sizing.iconMd, color: TS.colors.onSurface),
+              Icon(
+                Icons.location_on_outlined,
+                size: TS.sizing.iconMd,
+                color: TS.colors.onSurface,
+              ),
               SizedBox(width: TS.spacing.xs),
               Expanded(
                 child: Text(data.destination, style: TS.textStyle.content),
@@ -325,15 +333,23 @@ class _OverviewCard extends StatelessWidget {
           SizedBox(height: TS.spacing.md),
           Row(
             children: [
-              Expanded(child: _Kv(label: '货物', value: data.cargo)),
-              Expanded(child: _Kv(label: '车辆', value: data.vehicle)),
+              Expanded(
+                child: _Kv(label: '货物', value: data.cargo),
+              ),
+              Expanded(
+                child: _Kv(label: '车辆', value: data.vehicle),
+              ),
             ],
           ),
           SizedBox(height: TS.spacing.sm),
           Row(
             children: [
-              Expanded(child: _Kv(label: '设备', value: data.device)),
-              Expanded(child: _Kv(label: '温区', value: data.tempZone)),
+              Expanded(
+                child: _Kv(label: '设备', value: data.device),
+              ),
+              Expanded(
+                child: _Kv(label: '温区', value: data.tempZone),
+              ),
             ],
           ),
         ],
@@ -366,10 +382,7 @@ class _Kv extends StatelessWidget {
 }
 
 class _TemperatureCard extends StatelessWidget {
-  const _TemperatureCard({
-    required this.data,
-    required this.currentTemp,
-  });
+  const _TemperatureCard({required this.data, required this.currentTemp});
 
   final ShipmentDetail data;
   final String currentTemp;
@@ -378,11 +391,11 @@ class _TemperatureCard extends StatelessWidget {
   Widget build(BuildContext context) {
     TS.of(context);
     return CommonCard(
-      title: '箱温趋势',
-      subtitle: data.chartSubtitle,
       elevated: false,
       child: Column(
         children: [
+          _CardHeading(title: '箱温趋势', subtitle: data.chartSubtitle),
+          SizedBox(height: TS.spacing.md),
           SizedBox(
             height: 180,
             width: double.infinity,
@@ -391,8 +404,12 @@ class _TemperatureCard extends StatelessWidget {
           SizedBox(height: TS.spacing.md),
           Row(
             children: [
-              Expanded(child: _Metric(label: '当前', value: currentTemp)),
-              Expanded(child: _Metric(label: '最高', value: data.maxTemp)),
+              Expanded(
+                child: _Metric(label: '当前', value: currentTemp),
+              ),
+              Expanded(
+                child: _Metric(label: '最高', value: data.maxTemp),
+              ),
               Expanded(
                 child: _Metric(label: '超温', value: data.overTempDuration),
               ),
@@ -512,16 +529,23 @@ class _TempChartPainter extends CustomPainter {
       );
       x += dash * 2;
     }
-    textPainter.text = TextSpan(text: '8°C 上限', style: labelStyle.copyWith(color: limitColor));
+    textPainter.text = TextSpan(
+      text: '8°C 上限',
+      style: labelStyle.copyWith(color: limitColor),
+    );
     textPainter.layout();
-    textPainter.paint(canvas, Offset(chart.right - textPainter.width, limitY - 14));
+    textPainter.paint(
+      canvas,
+      Offset(chart.right - textPainter.width, limitY - 14),
+    );
 
     if (samples.isEmpty) return;
     final gap = chart.width / samples.length;
     final barWidth = gap * 0.55;
     for (var i = 0; i < samples.length; i++) {
       final sample = samples[i];
-      final h = ((sample.value - minY) / (maxY - minY)).clamp(0.0, 1.0) *
+      final h =
+          ((sample.value - minY) / (maxY - minY)).clamp(0.0, 1.0) *
           chart.height;
       final left = chart.left + gap * i + (gap - barWidth) / 2;
       final rect = RRect.fromRectAndRadius(
@@ -570,11 +594,11 @@ class _TimelineCard extends StatelessWidget {
   Widget build(BuildContext context) {
     TS.of(context);
     return CommonCard(
-      title: '运输事件',
-      subtitle: '自动记录与人工操作合并展示',
       elevated: false,
       child: Column(
         children: [
+          const _CardHeading(title: '运输事件', subtitle: '自动记录与人工操作合并展示'),
+          SizedBox(height: TS.spacing.md),
           for (var i = 0; i < events.length; i++) ...[
             if (i > 0) Divider(height: TS.spacing.md, color: TS.colors.border),
             Row(
@@ -617,6 +641,28 @@ class _TimelineCard extends StatelessWidget {
               ],
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _CardHeading extends StatelessWidget {
+  const _CardHeading({required this.title, required this.subtitle});
+
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: TS.textStyle.subtitle),
+          SizedBox(height: TS.spacing.xxs),
+          Text(subtitle, style: TS.textStyle.caption),
         ],
       ),
     );

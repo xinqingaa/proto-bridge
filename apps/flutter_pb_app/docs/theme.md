@@ -27,7 +27,7 @@ TS.effect
 - `opacity` / `motion` / `elevation` 负责交互状态、转场和材质层级；平台近似由公共 Theme 层统一翻译。
 - `border` / `layout` / `layer` / `effect` 负责边界、比例/约束、叠放层级与玻璃等效果；不能在 feature 中创建平行常量。
 
-具体值和类型只以 `lib/theme/app_tokens.dart` 及 Theme 实现为准，本文不复制第二份可变配置。PBWork 当前组件实际绑定的全部 Token 都在 `proto-bridge.target.json` 映射到上述 accessor，并由 `lib/theme/proto_bridge_tokens.dart` 提供可执行检查点。
+具体值和类型只以 `lib/theme/app_tokens.dart` 及 Theme 实现为准，本文不复制第二份可变配置。PBWork 当前全部 153 个 Token 都在工程根目录 `proto-bridge.target.json` 映射到上述 accessor，并由 `lib/theme/proto_bridge_tokens.dart` 提供可执行检查点；组件只消费与自身语义相关的部分。
 
 ## 颜色和文字
 
@@ -39,7 +39,7 @@ TS.effect
 
 ## 同步门禁
 
-`docs/proto-bridge.target.json` 是精确 id → accessor 表，`docs/proto-bridge.sync.json` 固定最后一次已确认的 PBWork surface。修改协议 Schema、Theme、Token accessor 或映射后从仓库根运行 `pnpm ds:target-sync:verify`；只有所有映射均为 `resolved` 且完整 fingerprint 元数据匹配才算同步。
+工程根目录的 `proto-bridge.target.json` 是精确 id → accessor 表，`proto-bridge.sync.json` 固定最后一次已确认的 PBWork surface。修改协议 Schema、Theme、Token accessor 或映射后从仓库根运行 `pnpm ds:target-sync:verify`；只有所有映射均为 `resolved` 且完整 fingerprint 元数据匹配才算同步。
 
 ## 布局规则
 

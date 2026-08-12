@@ -9,7 +9,7 @@
 | ------------------------ | -------------------------------------------------- | --------------------------------- | -------------------------------------- |
 | **1. Producer Contract** | `src/design-system/components/contracts/{id}.json` | Playground、校验、跨栈对照        | 不当作 Dart 构造参数表                 |
 | **2. Producer 文档**     | `apps/pbwork/docs/components/**`                   | 人：职责 / 边界 / 组合铁律 / 反例 | 不替代 Contract；不抄全 props/token 表 |
-| **3. Target 映射**       | Target 的 `docs/proto-bridge.md` + `proto-bridge.target.json` | Agent / resolver | 不反写进 Core；不要求 API 同构         |
+| **3. Target 映射**       | Target 的 `docs/proto-bridge.md` + 根目录 `proto-bridge.target.json` | Agent / resolver | 不反写进 Core；不要求 API 同构         |
 
 冲突裁决：
 

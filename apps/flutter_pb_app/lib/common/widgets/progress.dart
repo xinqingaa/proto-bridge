@@ -4,11 +4,7 @@ import '../../theme/ts.dart';
 
 /// 对齐 pbwork `ProgressIndicator` — 官方 [LinearProgressIndicator]。
 class CommonProgress extends StatelessWidget {
-  const CommonProgress({
-    super.key,
-    this.value,
-    this.label,
-  });
+  const CommonProgress({super.key, this.value, this.label});
 
   /// `null` = indeterminate。
   final double? value;
@@ -27,8 +23,8 @@ class CommonProgress extends StatelessWidget {
         ClipRRect(
           borderRadius: BorderRadius.circular(TS.radius.full),
           child: LinearProgressIndicator(
-            value: value,
-            minHeight: 6,
+            value: value == null ? null : (value! / 100).clamp(0, 1),
+            minHeight: TS.sizing.progressTrack,
             color: TS.colors.primary,
             backgroundColor: TS.colors.primarySoft,
           ),

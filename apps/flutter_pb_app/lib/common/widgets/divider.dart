@@ -4,11 +4,7 @@ import '../../theme/ts.dart';
 
 /// 对齐 pbwork `Divider` — 官方 [Divider]。
 class CommonDivider extends StatelessWidget {
-  const CommonDivider({
-    super.key,
-    this.label,
-    this.inset = false,
-  });
+  const CommonDivider({super.key, this.label, this.inset = false});
 
   final String? label;
   final bool inset;
@@ -18,7 +14,8 @@ class CommonDivider extends StatelessWidget {
     TS.of(context);
     final divider = Divider(
       color: TS.colors.divider,
-      height: 1,
+      height: TS.border.widthHairline,
+      thickness: TS.border.widthHairline,
       indent: inset ? TS.spacing.md : 0,
       endIndent: inset ? TS.spacing.md : 0,
     );

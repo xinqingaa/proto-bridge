@@ -11,8 +11,9 @@ class PbApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mode = ref.watch(themeModeProvider);
-    final brightness =
-        mode == ThemeMode.dark ? Brightness.dark : Brightness.light;
+    final brightness = mode == ThemeMode.dark
+        ? Brightness.dark
+        : Brightness.light;
     TS.bind(brightness);
     final theme = ThemeService.of(brightness).toThemeData();
 
