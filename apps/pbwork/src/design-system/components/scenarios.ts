@@ -300,24 +300,20 @@ const scenarios: Record<string, ComponentScenario[]> = {
   ],
   card: [
     {
-      id: "summary",
-      label: "业务摘要",
-      description: "工作台展示关键指标与摘要。",
+      id: "flat",
+      label: "平面 surface",
+      description: "默认 surface 容器；业务内容由调用方通过 slot 组织。",
       props: {
-        title: "今日工单",
-        subtitle: "华东服务中心",
-        elevated: true,
-        semanticRole: "summary",
+        elevated: false,
+        semanticRole: "section",
       },
     },
     {
-      id: "section",
-      label: "内容分区",
-      description: "详情页中的普通信息区块。",
+      id: "elevated",
+      label: "抬升 surface",
+      description: "需要与底层内容区分层级时使用的同一基础容器。",
       props: {
-        title: "客户信息",
-        subtitle: "联系人与服务地址",
-        elevated: false,
+        elevated: true,
         semanticRole: "section",
       },
     },

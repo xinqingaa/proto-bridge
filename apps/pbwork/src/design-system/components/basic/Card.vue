@@ -8,8 +8,6 @@ import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
 const NO_ELEVATION = tokenDefaultNumber("layer.base");
 
 const props = defineProps<{
-  title: string;
-  subtitle?: string;
   elevated?: boolean;
   semanticRole?: "section" | "card" | "summary";
   /** Page-unique inspect / comment anchor; falls back to `ds.card`. */
@@ -17,7 +15,7 @@ const props = defineProps<{
 }>();
 
 const rootRef = usePbInspectRef();
-const { title, subtitle, elevated, inspectId, semanticRole } = toRefs(props);
+const { elevated, inspectId, semanticRole } = toRefs(props);
 
 usePbInspect({
   element: rootRef,
@@ -25,8 +23,6 @@ usePbInspect({
   instanceId: inspectId,
   componentId: "card",
   getProps: () => ({
-    title: title.value,
-    subtitle: subtitle.value,
     elevated: elevated.value ?? false,
     inspectId: inspectId.value,
     semanticRole: semanticRole.value ?? "section",
@@ -36,20 +32,12 @@ usePbInspect({
     border: "color.border",
     radius: "radius.lg",
     elevation: "elevation.card",
-    title: "typography.subtitle",
-    subtitle: "typography.caption",
-    muted: "color.on-surface-muted",
   }),
   getTokens: () => [
     "color.surface",
     "color.border",
-    "color.on-surface",
-    "color.on-surface-muted",
     "radius.lg",
     "elevation.card",
-    "typography.subtitle",
-    "typography.caption",
-    "spacing.md",
   ],
 });
 </script>
@@ -57,20 +45,14 @@ usePbInspect({
 <template>
   <v-card
     ref="rootRef"
-    class="pb-card section card"
+    class="pb-card"
     data-pb-id="ds.card"
     :data-pb-role="semanticRole ?? 'section'"
     variant="outlined"
     :elevation="NO_ELEVATION"
     :style="[radiusStyle('lg'), elevationStyle(elevated ? 'card' : 'none')]"
   >
-    <v-card-title class="pb-card-title">{{ title }}</v-card-title>
-    <v-card-subtitle v-if="subtitle" class="pb-card-subtitle">
-      {{ subtitle }}
-    </v-card-subtitle>
-    <v-card-text class="pb-card-body">
-      <slot />
-    </v-card-text>
+    <slot />
   </v-card>
 </template>
 
@@ -80,17 +62,5 @@ usePbInspect({
   background: var(--pb-color-surface);
   color: var(--pb-color-on-surface);
   box-shadow: var(--pb-component-shadow, var(--pb-elevation-none)) !important;
-}
-.pb-card-title {
-  font: var(--pb-typography-subtitle);
-  padding-bottom: var(--pb-spacing-none);
-}
-.pb-card-subtitle {
-  color: var(--pb-color-on-surface-muted);
-  font: var(--pb-typography-caption);
-  opacity: var(--pb-opacity-visible);
-}
-.pb-card-body {
-  padding-top: var(--pb-spacing-md);
 }
 </style>

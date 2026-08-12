@@ -11,12 +11,6 @@
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "title": {
-        "type": "string"
-      },
-      "subtitle": {
-        "type": "string"
-      },
       "elevated": {
         "type": "boolean"
       },
@@ -24,26 +18,37 @@
         "type": "string",
         "enum": ["section", "card", "summary"]
       }
-    },
-    "required": ["title"]
+    }
   },
   "defaultProps": {
-    "title": "任务卡片",
-    "subtitle": "描述信息",
-    "elevated": true,
+    "elevated": false,
     "semanticRole": "section"
   },
-  "states": [],
+  "states": [
+    {
+      "id": "flat",
+      "label": "平面",
+      "kind": "variant",
+      "props": {
+        "elevated": false
+      }
+    },
+    {
+      "id": "elevated",
+      "label": "抬升",
+      "kind": "variant",
+      "props": {
+        "elevated": true
+      }
+    }
+  ],
   "slots": ["default"],
   "events": [],
   "tokenBindings": {
     "surface": "color.surface",
     "border": "color.border",
     "radius": "radius.lg",
-    "elevation": "elevation.card",
-    "title": "typography.subtitle",
-    "subtitle": "typography.caption",
-    "muted": "color.on-surface-muted"
+    "elevation": "elevation.card"
   },
   "playground": {
     "presentation": "interactive"

@@ -96,6 +96,10 @@ describe("component business scenarios", () => {
       expect.arrayContaining(["pullRefresh", "loadMore", "hasMore"]),
     );
     expect(controlKeys("tabbar")).not.toContain("viewHeight");
+    expect(controlKeys("card")).toEqual(["elevated"]);
+    expect(controlKeys("card")).not.toEqual(
+      expect.arrayContaining(["title", "subtitle"]),
+    );
     expect(controlKeys("card")).not.toContain("radius");
     expect(controlKeys("select")).not.toContain("radius");
   });

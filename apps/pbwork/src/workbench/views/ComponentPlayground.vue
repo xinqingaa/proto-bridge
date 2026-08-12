@@ -101,7 +101,6 @@ const isSplitTabPresentation = computed(() =>
 const typeScenarioIds: Record<string, string[]> = {
   button: ["submit", "secondary", "primary-accent", "outlined"],
   chip: ["status", "warning"],
-  card: ["summary", "section"],
 };
 const isWideExhibit = computed(() =>
   ["app-bar", "card", "data-list", "divider", "tab-viewport"].includes(
@@ -654,9 +653,12 @@ function bindingResolvedValue(tokenId: string) {
                 @update:model-value="onPreviewUpdate"
                 @update:step="onPreviewStep"
               >
-                <template v-if="record.id === 'card'"
-                  >4 个待处理 · 2 个即将超时</template
-                >
+                <template v-if="record.id === 'card'">
+                  <div class="card-slot-demo">
+                    <strong>外部内容</strong>
+                    <span>Card 只提供 surface；内容由调用方定义。</span>
+                  </div>
+                </template>
                 <template v-else-if="record.id === 'data-list'">
                   <div role="listitem" class="list-slot-demo is-heading">
                     <strong>仅标题行</strong>
@@ -714,9 +716,12 @@ function bindingResolvedValue(tokenId: string) {
                       :is="previewComponent"
                       v-bind="exhibitBind(scenario.props, 'type', scenario.id)"
                     >
-                      <template v-if="record.id === 'card'"
-                        >4 个待处理 · 2 个即将超时</template
-                      >
+                      <template v-if="record.id === 'card'">
+                        <div class="card-slot-demo">
+                          <strong>外部内容</strong>
+                          <span>Card 只提供 surface；内容由调用方定义。</span>
+                        </div>
+                      </template>
                       <template v-else-if="record.id === 'data-list'">
                         <div role="listitem" class="list-slot-demo is-heading">
                           <strong>仅标题行</strong>
@@ -757,9 +762,12 @@ function bindingResolvedValue(tokenId: string) {
                       :is="previewComponent"
                       v-bind="exhibitBind(state.props, 'state', state.id)"
                     >
-                      <template v-if="record.id === 'card'"
-                        >4 个待处理 · 2 个即将超时</template
-                      >
+                      <template v-if="record.id === 'card'">
+                        <div class="card-slot-demo">
+                          <strong>外部内容</strong>
+                          <span>Card 只提供 surface；内容由调用方定义。</span>
+                        </div>
+                      </template>
                       <template v-else-if="record.id === 'data-list'">
                         <div role="listitem" class="list-slot-demo is-heading">
                           <strong>仅标题行</strong>
@@ -1042,6 +1050,20 @@ function bindingResolvedValue(tokenId: string) {
 .action-feedback {
   margin: 16px 0 0;
   color: var(--pb-color-success);
+  font: var(--pb-typography-caption);
+}
+.card-slot-demo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-spacing-xs);
+  padding: var(--pb-spacing-md);
+  color: var(--pb-color-on-surface);
+}
+.card-slot-demo strong {
+  font: var(--pb-typography-subtitle);
+}
+.card-slot-demo span {
+  color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
 }
 .exhibit-stack {

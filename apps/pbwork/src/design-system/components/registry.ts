@@ -228,16 +228,13 @@ export const componentRecords = [
   {
     id: "card",
     label: "Card",
-    description: "承载业务摘要与信息区块，如今日工单、客户信息。",
+    description:
+      "只提供圆角 surface 的基础容器；内容完全由调用方的 slot 定义。",
     category: "basic",
     view: "basic/Card.vue",
     contract: "contracts/card.json",
     example: {},
-    controls: [
-      { key: "title", label: "标题", control: "text" },
-      { key: "subtitle", label: "副标题", control: "text" },
-      { key: "elevated", label: "显示阴影", control: "boolean" },
-    ],
+    controls: [{ key: "elevated", label: "显示阴影", control: "boolean" }],
   },
   {
     id: "app-bar",

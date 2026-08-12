@@ -66,7 +66,13 @@ ScrollableDataList          # 纵滚 + 刷新 + 分页 + 可选鼠标拖滚
 
 提交用 `Button`；主操作默认 `bgColor=color.action`（及配对文字/边框）。
 
-## 7. 反馈与叠加
+## 7. Card surface
+
+- Card 只提供 surface（背景、边框、圆角与可选抬升）；标题、说明、指标、列表和表单均在默认 slot 内由业务页面组织。
+- 业务摘要、内容分区等是 slot 内容组织方式，不是 Card 类型，不得写入 Card Props、Contract state 或 Playground 类型区。
+- 列表行默认不要逐行包 Card；需要列表 surface 使用 DataList。
+
+## 8. 反馈与叠加
 
 | 需求     | 组件                                        |
 | -------- | ------------------------------------------- |
@@ -79,13 +85,13 @@ ScrollableDataList          # 纵滚 + 刷新 + 分页 + 可选鼠标拖滚
 
 打开态用 Screen **Variant** 复现。Dialog / Snackbar 宜与主滚动列**兄弟挂载**（见 recipes R4）。
 
-## 8. 嵌套横向滚动
+## 9. 嵌套横向滚动
 
 - 容器标记 `data-horizontal-scroll`
 - 使用 `useHorizontalDragScroll`
 - 有横向溢出时，父级 Tab **整次手势让权**（含边界外拖）；无溢出时父级可翻页
 
-## 9. 决策速查
+## 10. 决策速查
 
 ```text
 要应用根目的地？ → Tabbar + TabViewport（或路由）

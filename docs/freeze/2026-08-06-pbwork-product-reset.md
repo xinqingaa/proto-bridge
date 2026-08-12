@@ -102,6 +102,7 @@
 ### P1 冻结后的维护边界
 
 - Playground 不再把“使用场景”作为左上角入口：主预览保留真实交互；Contract 状态以真实组件实例展示，Contract 未表达的有限类型使用样例并置。Snackbar 使用明确的成功/失败触发按钮；Icon / Icon Button 继续使用 gallery，Tabbar / 一级 Tab / 二级 Tab 继续使用专门布局对照；Filter Bar 直接通过筛选项与结果区演示。场景数据仍作为示例与测试夹具保留。禁止使用通用外层卡片包裹变体，以免改变组件尺寸、surface 层级或交互边界。
+- Card 已收口为纯 surface 容器：只负责背景、边框、圆角与可选抬升，所有业务内容走默认 slot；“业务摘要 / 内容分区”属于调用方内容组织，不是 Card 类型或 Contract state。
 
 - 在不改变组件职责、Props / Slots / Events、状态语义、Token binding 和布局模式的前提下，可继续做基于既有 Token 的视觉微调；这属于实现维护，不重新打开 P1 协议。
 - 新增或改变上述任何语义面，必须显式重开协议评审并同步 Contract、Registry、Vue、文档和回归测试。

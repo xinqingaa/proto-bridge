@@ -212,19 +212,17 @@ test("list playground demonstrates custom rows and desktop refresh/load controls
   await expect(mainList.locator('[role="listitem"]')).toHaveCount(10);
 });
 
-test("wide component exhibits retain their intended visual width and Card roles", async ({
+test("wide component exhibits retain their intended visual width and Card surface states", async ({
   page,
 }) => {
   await page.goto("/workbench/components/card");
-  await expect(
-    page.locator('[data-exhibit="type.summary"] [data-pb-role="summary"]'),
-  ).toBeVisible();
-  await expect(
-    page.locator('[data-exhibit="type.section"] [data-pb-role="section"]'),
-  ).toBeVisible();
+  await expect(page.locator('[data-exhibit="type.summary"]')).toHaveCount(0);
+  await expect(page.locator('[data-exhibit="state.flat"]')).toBeVisible();
+  await expect(page.locator('[data-exhibit="state.elevated"]')).toBeVisible();
+  await expect(page.getByText("外部内容", { exact: true })).toHaveCount(3);
   expect(
     await page
-      .locator('[data-exhibit="type.summary"] .pb-card')
+      .locator('[data-exhibit="state.elevated"] .pb-card')
       .evaluate((element) => element.getBoundingClientRect().width),
   ).toBeGreaterThan(600);
 
