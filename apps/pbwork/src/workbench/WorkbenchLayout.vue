@@ -679,7 +679,7 @@ function secondaryIconFor(id: string) {
     button: MousePointerClick,
     "icon-button": SquareMousePointer,
     "text-field": TextCursorInput,
-    select: ListFilter,
+    menu: ListFilter,
     textarea: Rows3,
     checkbox: CheckSquare,
     "radio-group": Circle,
@@ -691,6 +691,7 @@ function secondaryIconFor(id: string) {
     divider: Minus,
     progress: ChartNoAxesColumnIncreasing,
     spinner: LoaderCircle,
+    loading: LoaderCircle,
     "app-bar": PanelTop,
     "primary-tabs": ListCollapse,
     "secondary-tabs": Layers2,
@@ -701,8 +702,9 @@ function secondaryIconFor(id: string) {
     "filter-bar": SlidersHorizontal,
     tabbar: Navigation,
     "bottom-sheet": PanelRightOpen,
-    dialog: MessageSquare,
-    snackbar: Bell,
+    "flow-sheet": PanelRightOpen,
+    confirm: MessageSquare,
+    toast: Bell,
     "empty-state": Inbox,
   };
   if (componentIcons[id]) return componentIcons[id];

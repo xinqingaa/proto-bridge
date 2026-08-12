@@ -101,6 +101,6 @@ describe("component business scenarios", () => {
       expect.arrayContaining(["title", "subtitle"]),
     );
     expect(controlKeys("card")).not.toContain("radius");
-    expect(controlKeys("select")).not.toContain("radius");
+    expect(controlKeys("menu")).not.toContain("radius");
   });
 });

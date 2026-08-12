@@ -1,11 +1,15 @@
 {
   "schemaVersion": 1,
   "id": "card",
-  "category": "basic",
+  "category": "display",
   "semantic": {
     "policy": "contextual",
     "defaultRole": "section",
-    "allowedRoles": ["section", "card", "summary"]
+    "allowedRoles": [
+      "section",
+      "card",
+      "summary"
+    ]
   },
   "propsSchema": {
     "type": "object",
@@ -16,7 +20,11 @@
       },
       "semanticRole": {
         "type": "string",
-        "enum": ["section", "card", "summary"]
+        "enum": [
+          "section",
+          "card",
+          "summary"
+        ]
       }
     }
   },
@@ -42,7 +50,9 @@
       }
     }
   ],
-  "slots": ["default"],
+  "slots": [
+    "default"
+  ],
   "events": [],
   "tokenBindings": {
     "surface": "color.surface",

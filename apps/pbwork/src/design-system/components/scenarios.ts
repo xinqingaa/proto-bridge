@@ -86,16 +86,20 @@ const scenarios: Record<string, ComponentScenario[]> = {
       id: "contact",
       label: "联系人信息",
       description: "表单中填写联系人姓名。",
-      props: { label: "联系人", modelValue: "李明" },
+      props: {
+        label: "联系人",
+        showLabel: true,
+        modelValue: "李明",
+      },
     },
     {
       id: "empty",
       label: "待填写字段",
-      description: "尚未输入的联系电话字段。",
-      props: { label: "联系电话", modelValue: "" },
+      description: "plain 输入区，无标题无描边。",
+      props: { showLabel: false, modelValue: "", placeholder: "联系电话" },
     },
   ],
-  select: [
+  menu: [
     {
       id: "service",
       label: "服务类型",
@@ -125,14 +129,15 @@ const scenarios: Record<string, ComponentScenario[]> = {
       description: "记录现场问题与处理要求。",
       props: {
         label: "问题描述",
+        showLabel: true,
         modelValue: "设备运行时出现异常噪声。",
       },
     },
     {
       id: "note",
       label: "补充备注",
-      description: "可选的现场备注补充信息。",
-      props: { label: "补充备注", modelValue: "" },
+      description: "plain 多行输入，无标题。",
+      props: { showLabel: false, modelValue: "", placeholder: "补充备注" },
     },
   ],
   checkbox: [
@@ -288,14 +293,14 @@ const scenarios: Record<string, ComponentScenario[]> = {
     {
       id: "inline",
       label: "行内加载",
-      description: "局部内容等待返回时的行内反馈。",
+      description: "局部内容等待返回时的行内反馈，不阻断操作。",
       props: { label: "加载中", size: "sm" },
     },
     {
-      id: "page",
-      label: "页面加载",
-      description: "等待工单等主要内容返回。",
-      props: { label: "正在获取工单", size: "lg" },
+      id: "compact",
+      label: "标准尺寸",
+      description: "卡片或列表区域内的局部忙态。",
+      props: { label: "正在获取", size: "md" },
     },
   ],
   card: [
@@ -515,7 +520,7 @@ const scenarios: Record<string, ComponentScenario[]> = {
       props: { modelValue: "tasks" },
     },
   ],
-  dialog: [
+  confirm: [
     {
       id: "confirm",
       label: "确认操作",
@@ -539,12 +544,12 @@ const scenarios: Record<string, ComponentScenario[]> = {
       },
     },
   ],
-  snackbar: [
+  toast: [
     {
       id: "success",
       label: "操作成功",
       description: "轻量反馈刚刚完成的保存等操作。",
-      props: { message: "工单已保存", tone: "success", modelValue: true },
+      props: { message: "工单已保存", modelValue: true },
     },
     {
       id: "error",
@@ -552,9 +557,22 @@ const scenarios: Record<string, ComponentScenario[]> = {
       description: "提示失败并保留当前页面上下文。",
       props: {
         message: "保存失败，请稍后重试",
-        tone: "error",
         modelValue: true,
       },
+    },
+  ],
+  loading: [
+    {
+      id: "blocking",
+      label: "蒙层加载",
+      description: "阻断下层操作的整区加载反馈。",
+      props: { modelValue: true, label: "正在提交" },
+    },
+    {
+      id: "silent",
+      label: "无文案",
+      description: "仅指示器与蒙层，不附加说明文字。",
+      props: { modelValue: true, label: "" },
     },
   ],
   "empty-state": [

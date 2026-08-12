@@ -6,7 +6,7 @@
 
 - `components/_shared/usePointerSwipe.ts` — 一级 Tab / 二级 Tab / TabViewport
 - `components/_shared/useHorizontalDragScroll.ts` — 嵌套横向条
-- `components/complex/ScrollableDataList.vue` — 纵滚 / 下拉 / 触底 / 鼠标拖滚
+- `components/data/ScrollableDataList.vue` — 纵滚 / 下拉 / 触底 / 鼠标拖滚
 - 测试：`apps/pbwork/test/pointer-gestures.test.ts`
 
 无 window 分段须带 `data-no-swipe`（共享忽略表另含 `.pb-filter-bar`、`.period-segment` 等约定 class）。

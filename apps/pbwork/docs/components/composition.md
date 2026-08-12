@@ -74,16 +74,17 @@ ScrollableDataList          # 纵滚 + 刷新 + 分页 + 可选鼠标拖滚
 
 ## 8. 反馈与叠加
 
-| 需求     | 组件                                        |
-| -------- | ------------------------------------------- |
-| 空数据   | EmptyState                                  |
-| 加载中   | Spinner（或页级 loading Variant）           |
-| 失败     | 独立错误布局（优先）；勿默认滥用 EmptyState |
-| 短提示   | Snackbar                                    |
-| 确认     | Dialog                                      |
-| 半屏操作 | BottomSheet                                 |
+| 需求 | 组件 |
+| --- | --- |
+| 空数据 | EmptyState |
+| 局部忙态（不阻断） | Spinner |
+| 蒙层忙态（阻断） | Loading |
+| 失败 | 独立错误布局（优先）；勿默认滥用 EmptyState |
+| 短提示 | Toast |
+| 确认 | Confirm（Dialog / Confirm） |
+| 半屏操作 | BottomSheet / FlowSheet |
 
-打开态用 Screen **Variant** 复现。Dialog / Snackbar 宜与主滚动列**兄弟挂载**（见 recipes R4）。
+打开态用 Screen **Variant** 复现。Confirm / Toast / Loading 宜与主滚动列**兄弟挂载**（见 recipes R4）。
 
 ## 9. 嵌套横向滚动
 

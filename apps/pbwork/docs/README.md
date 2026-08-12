@@ -26,8 +26,8 @@ PBWork 原型既要表达产品设计，也要作为 ProtoBridge Runtime 提供�
 
 ```text
 Token / Theme
-  → basic components
-  → complex components
+  → action / input / display components
+  → navigation / data / feedback components
   → shared composition and gestures
   → Screen / Panel
   → Prototype shell + Runtime Contract
@@ -45,8 +45,8 @@ apps/pbwork/src/
 │   ├── themes/
 │   ├── components/
 │   │   ├── contracts/
-│   │   ├── basic/
-│   │   ├── complex/
+│   │   ├── action/ input/ display/
+│   │   ├── navigation/ data/ feedback/
 │   │   ├── _shared/
 │   │   ├── registry.ts
 │   │   └── scenarios.ts

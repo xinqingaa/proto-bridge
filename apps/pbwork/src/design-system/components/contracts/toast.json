@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "id": "toast",
+  "category": "feedback",
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "toast"
+  },
+  "summary": "轻量短提示；半透明黑底纯文本，timeout 后自动关闭，不阻断页面操作。",
+  "behavior": [
+    "打开后按 motion.duration-toast 自动关闭",
+    "仅展示 message 文本，无 tone 色条、图标或关闭按钮"
+  ],
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "modelValue": { "type": "boolean" },
+      "message": { "type": "string" }
+    },
+    "required": ["message"]
+  },
+  "defaultProps": {
+    "modelValue": false,
+    "message": "工单已创建"
+  },
+  "states": [
+    {
+      "id": "visible",
+      "label": "显示",
+      "kind": "content",
+      "props": { "modelValue": true, "message": "工单已保存" }
+    },
+    {
+      "id": "hidden",
+      "label": "隐藏",
+      "kind": "content",
+      "props": { "modelValue": false }
+    }
+  ],
+  "slots": [],
+  "events": ["update:modelValue"],
+  "tokenBindings": {
+    "surface": "color.toast",
+    "text": "color.on-toast",
+    "radius": "radius.lg",
+    "paddingX": "spacing.sm",
+    "paddingY": "spacing.xs-plus",
+    "message": "typography.content",
+    "duration": "motion.duration-toast"
+  },
+  "playground": {
+    "presentation": "trigger"
+  }
+}

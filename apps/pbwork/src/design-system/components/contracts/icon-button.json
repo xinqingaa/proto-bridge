@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "icon-button",
-  "category": "basic",
+  "category": "action",
   "semantic": {
     "policy": "fixed",
     "defaultRole": "button"
@@ -52,15 +52,27 @@
       },
       "size": {
         "type": "string",
-        "enum": ["sm", "md", "lg"]
+        "enum": [
+          "sm",
+          "md",
+          "lg"
+        ]
       },
       "tone": {
         "type": "string",
-        "enum": ["primary", "secondary"]
+        "enum": [
+          "primary",
+          "secondary"
+        ]
       },
       "variant": {
         "type": "string",
-        "enum": ["tonal", "flat", "outlined", "text"]
+        "enum": [
+          "tonal",
+          "flat",
+          "outlined",
+          "text"
+        ]
       },
       "loading": {
         "type": "boolean"
@@ -69,7 +81,9 @@
         "type": "boolean"
       }
     },
-    "required": ["ariaLabel"]
+    "required": [
+      "ariaLabel"
+    ]
   },
   "defaultProps": {
     "ariaLabel": "更多",
@@ -107,7 +121,9 @@
     }
   ],
   "slots": [],
-  "events": ["click"],
+  "events": [
+    "click"
+  ],
   "tokenBindings": {
     "color": "color.secondary",
     "background": "color.secondary-soft",

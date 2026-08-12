@@ -18,7 +18,7 @@
 | 异步       | `loading`                                 | 加载中                         |
 | 空         | `empty`                                   | 无数据                         |
 | 失败       | `error`                                   | 加载/业务失败                  |
-| 叠加层     | `sheet-open`、`dialog-open`、`toast-open` | Sheet / Dialog / Snackbar 打开 |
+| 叠加层     | `sheet-open`、`dialog-open`、`toast-open` | Sheet / Dialog / Toast 打开 |
 | 校验       | `validation-error`                        | 表单错误展示                   |
 | 选择/筛选  | `filtered`、某 tab 预选                   | 列表筛选或页内 Tab 预置        |
 | 其它业务态 | 按屏命名                                  | 须仍能经 URL/query 打开        |

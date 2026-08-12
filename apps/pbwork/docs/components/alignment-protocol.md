@@ -50,11 +50,11 @@
 | ------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------- |
 | **`interactive`（默认）** | 主互动预览 + Contract state 真实实例；有限类型可直接并置，**无场景下拉与常驻右侧调整栏** | 绝大多数组件                           |
 | **`gallery`**             | 平铺 default + states；无场景下拉；只留主题切换                                          | **仅 `icon`、`icon-button`**           |
-| **`trigger`**             | 触发按钮打开后挂载                                                                       | dialog / sheet / snackbar / flow-sheet |
+| **`trigger`**             | 触发按钮打开后挂载                                                                       | confirm / sheet / toast / flow-sheet / loading |
 
 禁止把 `gallery` 扩大到列表、Tabs、表单、AppBar 等大块组件。
 
-`components/scenarios.ts` 可继续提供示例数据和测试夹具，但不等于 Playground 必须暴露场景导航。Playground 不显示“使用场景”选择器（包括 Filter Bar）；内容文案不同但组件语义相同的案例只作为主预览样例。Contract state 必须直接展示为真实组件实例；仅 Contract 未表达的有限类型可使用样例并置。Icon / Icon Button 使用 gallery，Tabbar / 一级 Tab / 二级 Tab 使用各自的专门布局对照；Snackbar 等反馈类型使用含义明确的多个触发按钮。不得以通用外层卡片强制并置组件变体。
+`components/scenarios.ts` 可继续提供示例数据和测试夹具，但不等于 Playground 必须暴露场景导航。Playground 不显示“使用场景”选择器（包括 Filter Bar）；内容文案不同但组件语义相同的案例只作为主预览样例。Contract state 必须直接展示为真实组件实例；仅 Contract 未表达的有限类型可使用样例并置。Icon / Icon Button 使用 gallery，Tabbar / 一级 Tab / 二级 Tab 使用各自的专门布局对照；Toast 等反馈类型使用含义明确的多个触发按钮。不得以通用外层卡片强制并置组件变体。
 
 ### Token-ref props（色槽）
 

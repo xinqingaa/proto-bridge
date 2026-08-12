@@ -1,7 +1,7 @@
 import { nextTick } from "vue";
 import { mount } from "@vue/test-utils";
 import { describe, expect, it } from "vitest";
-import Badge from "@/design-system/components/basic/Badge.vue";
+import Badge from "@/design-system/components/display/Badge.vue";
 
 describe("repeated component Evidence", () => {
   it("keeps Badge template identity separate from its stable business key", async () => {

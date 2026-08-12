@@ -1,8 +1,11 @@
 {
   "schemaVersion": 1,
   "id": "secondary-tabs",
-  "category": "complex",
-  "semantic": { "policy": "fixed", "defaultRole": "tab-bar" },
+  "category": "navigation",
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "tab-bar"
+  },
   "summary": "二级页内分区：文字下方朝上的居中小三角标出当前视图。",
   "behavior": [
     "选中态只使用中性激活色、600 字重及与文字中心对齐、朝上的小三角；不使用宽滑线或极简替代样式",
@@ -18,34 +21,71 @@
       "equalState": "equal",
       "overflow": "horizontal-scroll"
     },
-    "viewport": { "ownership": "component", "transition": "horizontal" }
+    "viewport": {
+      "ownership": "component",
+      "transition": "horizontal"
+    }
   },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "modelValue": { "type": "string" },
-      "showDivider": { "type": "boolean" },
-      "grow": { "type": "boolean" },
-      "align": { "type": "string", "enum": ["start", "center"] },
-      "size": { "type": "string", "enum": ["sm", "md", "lg"] },
-      "swipe": { "type": "boolean" },
-      "mouseSwipe": { "type": "boolean" },
-      "fill": { "type": "boolean" },
+      "modelValue": {
+        "type": "string"
+      },
+      "showDivider": {
+        "type": "boolean"
+      },
+      "grow": {
+        "type": "boolean"
+      },
+      "align": {
+        "type": "string",
+        "enum": [
+          "start",
+          "center"
+        ]
+      },
+      "size": {
+        "type": "string",
+        "enum": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "swipe": {
+        "type": "boolean"
+      },
+      "mouseSwipe": {
+        "type": "boolean"
+      },
+      "fill": {
+        "type": "boolean"
+      },
       "items": {
         "type": "array",
         "items": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["value", "label"],
+          "required": [
+            "value",
+            "label"
+          ],
           "properties": {
-            "value": { "type": "string" },
-            "label": { "type": "string" }
+            "value": {
+              "type": "string"
+            },
+            "label": {
+              "type": "string"
+            }
           }
         }
       }
     },
-    "required": ["items"]
+    "required": [
+      "items"
+    ]
   },
   "defaultProps": {
     "modelValue": "overview",
@@ -57,10 +97,22 @@
     "mouseSwipe": true,
     "fill": false,
     "items": [
-      { "value": "overview", "label": "概览" },
-      { "value": "activity", "label": "活动" },
-      { "value": "records", "label": "记录" },
-      { "value": "attachments", "label": "附件" }
+      {
+        "value": "overview",
+        "label": "概览"
+      },
+      {
+        "value": "activity",
+        "label": "活动"
+      },
+      {
+        "value": "records",
+        "label": "记录"
+      },
+      {
+        "value": "attachments",
+        "label": "附件"
+      }
     ]
   },
   "states": [
@@ -68,11 +120,20 @@
       "id": "equal",
       "label": "等宽",
       "kind": "variant",
-      "props": { "grow": true }
+      "props": {
+        "grow": true
+      }
     }
   ],
-  "slots": ["overview", "activity", "records", "attachments"],
-  "events": ["update:modelValue"],
+  "slots": [
+    "overview",
+    "activity",
+    "records",
+    "attachments"
+  ],
+  "events": [
+    "update:modelValue"
+  ],
   "tokenBindings": {
     "indicator": "color.section-tab-active",
     "activeBackground": "transparent",
@@ -94,5 +155,7 @@
     "duration": "motion.duration-slow",
     "easing": "motion.easing-standard"
   },
-  "playground": { "presentation": "interactive" }
+  "playground": {
+    "presentation": "interactive"
+  }
 }

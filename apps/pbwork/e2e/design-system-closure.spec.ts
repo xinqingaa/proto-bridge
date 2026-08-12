@@ -122,16 +122,17 @@ test("component playgrounds expose component types and Contract states without s
     "card",
     "checkbox",
     "chip",
+    "confirm",
     "data-list",
-    "dialog",
     "divider",
     "empty-state",
     "flow-sheet",
+    "loading",
+    "menu",
     "progress",
     "radio-group",
     "scrollable-data-list",
     "search-bar",
-    "select",
     "spinner",
     "switch",
     "tab-viewport",
@@ -144,7 +145,7 @@ test("component playgrounds expose component types and Contract states without s
     await expect(page.locator(".state-compare")).toHaveCount(0);
   }
 
-  await page.goto("/workbench/components/snackbar");
+  await page.goto("/workbench/components/toast");
   await expect(page.getByLabel("使用场景")).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: "显示操作成功" }),
@@ -302,8 +303,8 @@ test("sheet surfaces keep semantic radius and FlowSheet clips adjacent pages", a
   });
   await expect(flowSheet.getByText("2 / 4", { exact: true })).toBeVisible();
 
-  await page.goto("/workbench/components/dialog");
-  await page.getByRole("button", { name: "打开Dialog" }).click();
+  await page.goto("/workbench/components/confirm");
+  await page.getByRole("button", { name: "打开Dialog / Confirm" }).click();
   const dialog = page.locator(".pb-dialog");
   await expect(dialog).toBeVisible();
   await dialog.getByRole("button", { name: "确认完成" }).click();

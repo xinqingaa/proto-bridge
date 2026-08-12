@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "tab-viewport",
-  "category": "complex",
+  "category": "navigation",
   "semantic": {
     "policy": "fixed",
     "defaultRole": "tab-viewport"
@@ -18,7 +18,9 @@
         "items": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["value"],
+          "required": [
+            "value"
+          ],
           "properties": {
             "value": {
               "type": "string"
@@ -40,7 +42,10 @@
         "minimum": 0
       }
     },
-    "required": ["modelValue", "items"]
+    "required": [
+      "modelValue",
+      "items"
+    ]
   },
   "defaultProps": {
     "modelValue": "one",
@@ -77,8 +82,12 @@
       }
     }
   ],
-  "slots": ["item"],
-  "events": ["update:modelValue"],
+  "slots": [
+    "item"
+  ],
+  "events": [
+    "update:modelValue"
+  ],
   "tokenBindings": {
     "background": "color.background",
     "fill": "layout.fill",

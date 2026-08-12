@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import AppBar from "@/design-system/components/complex/AppBar.vue";
+import AppBar from "@/design-system/components/navigation/AppBar.vue";
 import { coldChainPath } from "./nav";
 
 const props = defineProps<{

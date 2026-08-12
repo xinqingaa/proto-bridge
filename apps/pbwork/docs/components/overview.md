@@ -6,7 +6,7 @@
 
 | 产物 | 路径                                                  |
 | ---- | ----------------------------------------------------- |
-| 实现 | `components/basic                                     | complex/*.vue` |
+| 实现 | `components/{action\|input\|display\|navigation\|data\|feedback}/*.vue` |
 | 契约 | `components/contracts/{id}.json`                      |
 | 注册 | `components/registry.ts`（Playground controls、描述） |
 | 场景 | `components/scenarios.ts`（可选组合示例）             |
@@ -14,9 +14,11 @@
 
 Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`propsSchema`、`defaultProps`、`states`、`slots`、`events`、`tokenBindings`、`playground`（含 `presentation: interactive|gallery|trigger`）。
 
+`category` 按职责六类（不按 Overlay 实现）：`action` / `input` / `display` / `navigation` / `data` / `feedback`。
+
 可选跨栈语义字段：`summary`、`behavior`、`layout`、`visualAnatomy`、`states[].kind`、`icons`（`pack` 仅 `lucide`）。详见 [alignment-protocol.md](./alignment-protocol.md)。
 
-`playground.presentation`：**默认 `interactive`**；**`gallery` 仅 `icon` / `icon-button`**；overlay 用 `trigger`。互动状态必须在舞台内可观察，Token 绑定只读折叠展示。
+`playground.presentation`：**默认 `interactive`**；**`gallery` 仅 `icon` / `icon-button`**；overlay 用 `trigger`。互动状态必须在舞台内可观察，Token 绑定只读常驻表展示。
 
 `semantic.policy` 只能是 `fixed`、`contextual` 或 `decorative`。fixed 组件由 Contract 固定根 role；contextual 组件只允许通过公开 prop 从 `allowedRoles` 选择；decorative 组件默认不写 `data-pb-id` / `data-pb-role`，不会独立进入 Evidence。
 
@@ -61,10 +63,26 @@ Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`propsSchem
 - 手势仲裁：[shared-gestures.md](./shared-gestures.md)
 - 页面配方：[../prototypes/recipes.md](../prototypes/recipes.md)
 
-### 基础（16）
+### 操作（action）
 
-[avatar](./basic/avatar.md) · [badge](./basic/badge.md) · [button](./basic/button.md) · [card](./basic/card.md) · [checkbox](./basic/checkbox.md) · [chip](./basic/chip.md) · [divider](./basic/divider.md) · [icon](./basic/icon.md) · [icon-button](./basic/icon-button.md) · [progress](./basic/progress.md) · [radio-group](./basic/radio-group.md) · [select](./basic/select.md) · [spinner](./basic/spinner.md) · [switch](./basic/switch.md) · [text-field](./basic/text-field.md) · [textarea](./basic/textarea.md)
+[button](./action/button.md) · [icon](./action/icon.md) · [icon-button](./action/icon-button.md)
 
-### 复杂（14）
+### 输入（input）
 
-[tabbar](./complex/tabbar.md) · [一级 Tab](./complex/primary-tabs.md) · [二级 Tab](./complex/secondary-tabs.md) · [三级 Tab（Filter Bar）](./complex/filter-bar.md) · [tab-viewport](./complex/tab-viewport.md) · [app-bar](./complex/app-bar.md) · [bottom-sheet](./complex/bottom-sheet.md) · [data-list](./complex/data-list.md) · [dialog](./complex/dialog.md) · [empty-state](./complex/empty-state.md) · [flow-sheet](./complex/flow-sheet.md) · [scrollable-data-list](./complex/scrollable-data-list.md) · [search-bar](./complex/search-bar.md) · [snackbar](./complex/snackbar.md)
+[text-field](./input/text-field.md) · [textarea](./input/textarea.md) · [search-bar](./input/search-bar.md) · [checkbox](./input/checkbox.md) · [radio-group](./input/radio-group.md) · [switch](./input/switch.md) · [menu](./input/menu.md)
+
+### 展示（display）
+
+[chip](./display/chip.md) · [badge](./display/badge.md) · [avatar](./display/avatar.md) · [divider](./display/divider.md) · [card](./display/card.md) · [progress](./display/progress.md) · [empty-state](./display/empty-state.md) · [spinner](./display/spinner.md)
+
+### 导航（navigation）
+
+[tabbar](./navigation/tabbar.md) · [一级 Tab](./navigation/primary-tabs.md) · [二级 Tab](./navigation/secondary-tabs.md) · [三级 Tab（Filter Bar）](./navigation/filter-bar.md) · [tab-viewport](./navigation/tab-viewport.md) · [app-bar](./navigation/app-bar.md)
+
+### 数据（data）
+
+[data-list](./data/data-list.md) · [scrollable-data-list](./data/scrollable-data-list.md)
+
+### 反馈（feedback）
+
+[toast](./feedback/toast.md) · [confirm](./feedback/confirm.md) · [bottom-sheet](./feedback/bottom-sheet.md) · [flow-sheet](./feedback/flow-sheet.md) · [loading](./feedback/loading.md)

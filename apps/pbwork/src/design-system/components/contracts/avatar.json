@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "avatar",
-  "category": "basic",
+  "category": "display",
   "semantic": {
     "policy": "fixed",
     "defaultRole": "image"
@@ -14,14 +14,23 @@
       },
       "size": {
         "type": "string",
-        "enum": ["sm", "md", "lg"]
+        "enum": [
+          "sm",
+          "md",
+          "lg"
+        ]
       },
       "tone": {
         "type": "string",
-        "enum": ["primary", "secondary"]
+        "enum": [
+          "primary",
+          "secondary"
+        ]
       }
     },
-    "required": ["name"]
+    "required": [
+      "name"
+    ]
   },
   "defaultProps": {
     "name": "李明",

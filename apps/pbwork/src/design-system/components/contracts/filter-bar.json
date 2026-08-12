@@ -1,8 +1,11 @@
 {
   "schemaVersion": 1,
   "id": "filter-bar",
-  "category": "complex",
-  "semantic": { "policy": "fixed", "defaultRole": "filter" },
+  "category": "navigation",
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "filter"
+  },
   "summary": "三级 Tab：只改变当前数据集合的快捷筛选，不拥有或横滑切换视图区。",
   "behavior": [
     "选中筛选后由页面更新当前数据，不创建 Tab viewport",
@@ -13,12 +16,23 @@
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "items": { "type": "array", "items": { "type": "string" } },
-      "modelValue": { "type": "string" }
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "modelValue": {
+        "type": "string"
+      }
     }
   },
   "defaultProps": {
-    "items": ["全部", "进行中", "已超时"],
+    "items": [
+      "全部",
+      "进行中",
+      "已超时"
+    ],
     "modelValue": "进行中"
   },
   "states": [
@@ -26,11 +40,15 @@
       "id": "all",
       "label": "全部",
       "kind": "content",
-      "props": { "modelValue": "全部" }
+      "props": {
+        "modelValue": "全部"
+      }
     }
   ],
   "slots": [],
-  "events": ["update:modelValue"],
+  "events": [
+    "update:modelValue"
+  ],
   "tokenBindings": {
     "active": "color.primary",
     "activeSurface": "color.primary-soft",
@@ -40,5 +58,7 @@
     "gap": "spacing.sm",
     "label": "typography.label"
   },
-  "playground": { "presentation": "interactive" }
+  "playground": {
+    "presentation": "interactive"
+  }
 }

@@ -6,8 +6,12 @@ import { describe, expect, it } from "vitest";
 
 const designSystemImplementationDirectories = [
   resolve("src/design-system/components/_shared"),
-  resolve("src/design-system/components/basic"),
-  resolve("src/design-system/components/complex"),
+  resolve("src/design-system/components/action"),
+  resolve("src/design-system/components/input"),
+  resolve("src/design-system/components/display"),
+  resolve("src/design-system/components/navigation"),
+  resolve("src/design-system/components/data"),
+  resolve("src/design-system/components/feedback"),
 ];
 const prototypesDirectory = resolve("src/prototypes");
 

@@ -46,6 +46,8 @@ export const BIND_TOKEN_IDS = [
   "color.divider",
   "color.disabled",
   "color.scrim",
+  "color.toast",
+  "color.on-toast",
   // Typography — component common
   "typography.title",
   "typography.subtitle",

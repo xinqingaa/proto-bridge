@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import Button from "@/design-system/components/basic/Button.vue";
-import Checkbox from "@/design-system/components/basic/Checkbox.vue";
-import RadioGroup from "@/design-system/components/basic/RadioGroup.vue";
-import SelectField from "@/design-system/components/basic/SelectField.vue";
-import SwitchControl from "@/design-system/components/basic/SwitchControl.vue";
-import Textarea from "@/design-system/components/basic/Textarea.vue";
-import Icon from "@/design-system/components/basic/Icon.vue";
-import DialogPanel from "@/design-system/components/complex/DialogPanel.vue";
-import SnackbarToast from "@/design-system/components/complex/SnackbarToast.vue";
+import Button from "@/design-system/components/action/Button.vue";
+import Checkbox from "@/design-system/components/input/Checkbox.vue";
+import RadioGroup from "@/design-system/components/input/RadioGroup.vue";
+import SelectField from "@/design-system/components/input/Menu.vue";
+import SwitchControl from "@/design-system/components/input/SwitchControl.vue";
+import Textarea from "@/design-system/components/input/Textarea.vue";
+import Icon from "@/design-system/components/action/Icon.vue";
+import DialogPanel from "@/design-system/components/feedback/ConfirmDialog.vue";
+import SnackbarToast from "@/design-system/components/feedback/Toast.vue";
 import ColdChainShell from "../ColdChainShell.vue";
 import { dutySupervisors, resolutionActions, resolutionCauses } from "../mock";
 import { replaceColdChainVariant } from "../nav";
@@ -351,7 +351,6 @@ function confirm() {
       <SnackbarToast
         v-model="toastOpen"
         message="处置记录已提交，异常转为持续监控"
-        tone="success"
         inspect-id="cold-chain-ops.resolution-form.success-toast"
       />
     </div>

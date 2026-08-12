@@ -56,5 +56,5 @@ export const screenViewModules = import.meta.glob(
 );
 
 export const componentViewModules = import.meta.glob(
-  "@/design-system/components/{basic,complex}/*.vue",
+  "@/design-system/components/{action,input,display,navigation,data,feedback}/*.vue",
 );

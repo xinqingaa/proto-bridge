@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import Badge from "@/design-system/components/basic/Badge.vue";
-import Button from "@/design-system/components/basic/Button.vue";
-import Card from "@/design-system/components/basic/Card.vue";
-import Icon from "@/design-system/components/basic/Icon.vue";
-import BottomSheet from "@/design-system/components/complex/BottomSheet.vue";
-import DialogPanel from "@/design-system/components/complex/DialogPanel.vue";
-import ScrollableDataList from "@/design-system/components/complex/ScrollableDataList.vue";
+import Badge from "@/design-system/components/display/Badge.vue";
+import Button from "@/design-system/components/action/Button.vue";
+import Card from "@/design-system/components/display/Card.vue";
+import Icon from "@/design-system/components/action/Icon.vue";
+import BottomSheet from "@/design-system/components/feedback/BottomSheet.vue";
+import DialogPanel from "@/design-system/components/feedback/ConfirmDialog.vue";
+import ScrollableDataList from "@/design-system/components/data/ScrollableDataList.vue";
 import ColdChainShell from "../ColdChainShell.vue";
 import { shipmentEvents, temperatureReadings } from "../mock";
 import { openColdChainScreen, replaceColdChainVariant } from "../nav";

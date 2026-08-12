@@ -70,12 +70,20 @@ export type ComponentRecord = {
   label: string;
   /** Business-facing playground intro; shown in the page header. */
   description: string;
-  category: "basic" | "complex";
+  category: ComponentCategory;
   view: string;
   contract: string;
   example: Record<string, unknown>;
   controls: PlaygroundControl[];
 };
+
+export type ComponentCategory =
+  | "action"
+  | "input"
+  | "display"
+  | "navigation"
+  | "data"
+  | "feedback";
 
 export type ComponentStateKind = "variant" | "interaction" | "content";
 
@@ -119,7 +127,7 @@ export type PlaygroundPresentation = "interactive" | "gallery" | "trigger";
 export type ComponentContract = {
   schemaVersion: 1;
   id: string;
-  category: "basic" | "complex";
+  category: ComponentCategory;
   semantic:
     | { policy: "fixed"; defaultRole: Exclude<SemanticRole, "unknown"> }
     | {

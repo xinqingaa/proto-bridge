@@ -8,12 +8,13 @@ import {
   type Component,
 } from "vue";
 import { Home, List, User } from "lucide-vue-next";
-import DataList from "@/design-system/components/complex/DataList.vue";
+import DataList from "@/design-system/components/data/DataList.vue";
 import ResourcePageShell from "@/workbench/views/ResourcePageShell.vue";
 import WorkbenchStatChip from "@/workbench/ui/WorkbenchStatChip.vue";
 import {
   componentViewModules,
   loadComponentContract,
+  loadTokens,
 } from "@/design-system/loaders";
 import { componentRecords } from "@/design-system/components/registry";
 import {
@@ -23,6 +24,8 @@ import {
 import {
   resolveThemeTokens,
   tokensToCssVars,
+  tokenValueToCssValue,
+  normalizeTokenCssVarName,
 } from "@/design-system/resolveThemeTokens";
 import { resolveLiveTokenBindings } from "@/design-system/resolveLiveTokenBindings";
 import {
@@ -83,8 +86,9 @@ const tallPreview = computed(() =>
     "app-bar",
     "primary-tabs",
     "secondary-tabs",
-    "dialog",
-    "snackbar",
+    "confirm",
+    "toast",
+    "loading",
     "tabbar",
   ].includes(props.componentId),
 );
@@ -101,30 +105,182 @@ const isSplitTabPresentation = computed(() =>
 const typeScenarioIds: Record<string, string[]> = {
   button: ["submit", "secondary", "primary-accent", "outlined"],
   chip: ["status", "warning"],
+  "text-field": ["empty", "contact"],
+  textarea: ["note", "description"],
 };
 const isWideExhibit = computed(() =>
-  ["app-bar", "card", "data-list", "divider", "tab-viewport"].includes(
-    record.value?.id ?? "",
-  ),
+  [
+    "app-bar",
+    "card",
+    "data-list",
+    "divider",
+    "tab-viewport",
+    "text-field",
+    "textarea",
+    "search-bar",
+    "menu",
+  ].includes(record.value?.id ?? ""),
 );
-const typeExhibits = computed(() => {
+
+type ExhibitItem = {
+  id: string;
+  label: string;
+  props: Record<string, unknown>;
+};
+
+const hidesStateExhibits = computed(
+  () =>
+    isGalleryPresentation.value ||
+    isTriggerPresentation.value ||
+    isSplitTabPresentation.value ||
+    isFilterBar.value ||
+    isScrollableDataList.value,
+);
+
+const typeExhibits = computed((): ExhibitItem[] => {
   const ids = typeScenarioIds[props.componentId] ?? [];
-  return ids
-    .map((id) => scenarios.value.find((item) => item.id === id))
-    .filter((item): item is ComponentScenario => Boolean(item));
+  if (ids.length) {
+    return ids
+      .map((id) => scenarios.value.find((item) => item.id === id))
+      .filter((item): item is ComponentScenario => Boolean(item))
+      .map((item) => ({
+        id: item.id,
+        label: item.label,
+        props: item.props ?? {},
+      }));
+  }
+  if (hidesStateExhibits.value) return [];
+  return states.value
+    .filter((state) => state.kind === "variant")
+    .map((state) => ({
+      id: state.id,
+      label: state.label,
+      props: state.props ?? {},
+    }));
 });
-const stateExhibits = computed(() =>
-  isGalleryPresentation.value ||
-  isTriggerPresentation.value ||
-  isSplitTabPresentation.value ||
-  isFilterBar.value ||
-  isScrollableDataList.value
+
+function isLoadingState(state: { id: string; props?: Record<string, unknown> }) {
+  return (
+    state.id === "loading" ||
+    state.props?.loading === true ||
+    state.props?.refreshing === true ||
+    state.props?.loadingMore === true
+  );
+}
+
+function isDisabledState(state: {
+  id: string;
+  props?: Record<string, unknown>;
+}) {
+  return state.id === "disabled" || state.props?.disabled === true;
+}
+
+const interactionStates = computed(() =>
+  hidesStateExhibits.value
     ? []
-    : states.value,
+    : states.value.filter((state) => state.kind !== "variant"),
 );
-const hasExhibits = computed(
-  () => typeExhibits.value.length > 0 || stateExhibits.value.length > 0,
+
+const loadingExhibits = computed((): ExhibitItem[] =>
+  interactionStates.value
+    .filter((state) => state.kind === "interaction" && isLoadingState(state))
+    .map((state) => ({
+      id: state.id,
+      label: state.label,
+      props: state.props ?? {},
+    })),
 );
+
+const disabledExhibits = computed((): ExhibitItem[] =>
+  interactionStates.value
+    .filter((state) => state.kind === "interaction" && isDisabledState(state))
+    .map((state) => ({
+      id: state.id,
+      label: state.label,
+      props: state.props ?? {},
+    })),
+);
+
+const otherStateExhibits = computed((): ExhibitItem[] =>
+  interactionStates.value
+    .filter((state) => {
+      if (state.kind === "interaction" && isLoadingState(state)) return false;
+      if (state.kind === "interaction" && isDisabledState(state)) return false;
+      return true;
+    })
+    .map((state) => ({
+      id: state.id,
+      label: state.label,
+      props: state.props ?? {},
+    })),
+);
+
+const hasStateGroups = computed(
+  () =>
+    loadingExhibits.value.length > 0 ||
+    disabledExhibits.value.length > 0 ||
+    otherStateExhibits.value.length > 0,
+);
+
+type ExhibitGroup = {
+  id: string;
+  title: string;
+  scope: "type" | "state" | "loading" | "disabled" | "content";
+  items: ExhibitItem[];
+};
+
+const exhibitSections = computed(() => {
+  const sections: Array<{
+    id: string;
+    title: string;
+    groups: ExhibitGroup[];
+  }> = [];
+  if (typeExhibits.value.length) {
+    sections.push({
+      id: "type",
+      title: "类型",
+      groups: [
+        {
+          id: "type",
+          title: "",
+          scope: "type",
+          items: typeExhibits.value,
+        },
+      ],
+    });
+  }
+  if (hasStateGroups.value) {
+    const groups: ExhibitGroup[] = [];
+    if (loadingExhibits.value.length) {
+      groups.push({
+        id: "loading",
+        title: "加载",
+        scope: "loading",
+        items: loadingExhibits.value,
+      });
+    }
+    if (disabledExhibits.value.length) {
+      groups.push({
+        id: "disabled",
+        title: "禁用",
+        scope: "disabled",
+        items: disabledExhibits.value,
+      });
+    }
+    if (otherStateExhibits.value.length) {
+      groups.push({
+        id: "other",
+        title: groups.length ? "其他" : "",
+        scope: "state",
+        items: otherStateExhibits.value,
+      });
+    }
+    sections.push({ id: "state", title: "状态", groups });
+  }
+  return sections;
+});
+
+const hasExhibits = computed(() => exhibitSections.value.length > 0);
 const stageTitle = computed(() => {
   if (isGalleryPresentation.value) return "状态矩阵";
   if (isSplitTabPresentation.value) return "布局对照";
@@ -233,7 +389,7 @@ function previewBind() {
 }
 function exhibitBind(
   source: Record<string, unknown> | undefined,
-  scope: "type" | "state",
+  scope: "type" | "state" | "loading" | "disabled" | "content",
   id: string,
 ) {
   const next: Record<string, unknown> = {
@@ -416,14 +572,33 @@ function setPreviewTheme(value: unknown) {
   }
 }
 function bindingResolvedValue(tokenId: string) {
-  return resolvedPreviewTokens.value[tokenId];
+  const value = resolvedPreviewTokens.value[tokenId];
+  if (value === undefined) return "—";
+  return tokenValueToCssValue(tokenId, value);
 }
+
+const tokenCategoryById = computed(() => {
+  const map = new Map<string, string>();
+  for (const token of loadTokens()) {
+    map.set(token.id, token.category);
+  }
+  return map;
+});
+
+const categoryEyebrow: Record<string, string> = {
+  action: "操作组件",
+  input: "输入组件",
+  display: "展示组件",
+  navigation: "导航组件",
+  data: "数据组件",
+  feedback: "反馈组件",
+};
 </script>
 
 <template>
   <ResourcePageShell
     v-if="record && contract"
-    :eyebrow="record.category === 'basic' ? '基础组件' : '复杂组件'"
+    :eyebrow="categoryEyebrow[record.category] ?? record.category"
     :title="record.label"
     :description="record.description"
   >
@@ -485,7 +660,7 @@ function bindingResolvedValue(tokenId: string) {
             :style="previewStyle"
           >
             <div class="trigger-bar">
-              <template v-if="record.id === 'snackbar'">
+              <template v-if="record.id === 'toast'">
                 <v-btn
                   v-for="scenario in scenarios"
                   :key="scenario.id"
@@ -702,94 +877,66 @@ function bindingResolvedValue(tokenId: string) {
             </p>
 
             <section v-if="hasExhibits" class="exhibit-stack">
-              <div v-if="typeExhibits.length" class="exhibit-section">
-                <h2>类型</h2>
-                <div class="exhibit-row" :class="{ 'is-wide': isWideExhibit }">
+              <div
+                v-for="section in exhibitSections"
+                :key="section.id"
+                class="exhibit-section"
+              >
+                <h2>{{ section.title }}</h2>
+                <div
+                  v-for="group in section.groups"
+                  :key="group.id"
+                  class="exhibit-subgroup"
+                  :class="{ 'has-title': Boolean(group.title) }"
+                >
+                  <h3 v-if="group.title">{{ group.title }}</h3>
                   <div
-                    v-for="scenario in typeExhibits"
-                    :key="scenario.id"
-                    class="exhibit-item"
-                    :data-exhibit="`type.${scenario.id}`"
+                    class="exhibit-row"
+                    :class="{ 'is-wide': isWideExhibit }"
                   >
-                    <span>{{ scenario.label }}</span>
-                    <component
-                      :is="previewComponent"
-                      v-bind="exhibitBind(scenario.props, 'type', scenario.id)"
+                    <div
+                      v-for="item in group.items"
+                      :key="item.id"
+                      class="exhibit-item"
+                      :data-exhibit="`${section.id === 'type' ? 'type' : 'state'}.${item.id}`"
                     >
-                      <template v-if="record.id === 'card'">
-                        <div class="card-slot-demo">
-                          <strong>外部内容</strong>
-                          <span>Card 只提供 surface；内容由调用方定义。</span>
-                        </div>
-                      </template>
-                      <template v-else-if="record.id === 'data-list'">
-                        <div role="listitem" class="list-slot-demo is-heading">
-                          <strong>仅标题行</strong>
-                        </div>
-                        <div role="listitem" class="list-slot-demo is-record">
-                          <div>
-                            <strong>双行业务记录</strong>
-                            <span>副标题、状态与密度由调用方决定</span>
-                          </div>
-                          <span class="list-state">进行中</span>
-                        </div>
-                      </template>
-                      <template
-                        v-if="record.id === 'tab-viewport'"
-                        #item="{ value }"
+                      <span
+                        v-if="!group.title || item.label !== group.title"
+                        >{{ item.label }}</span
                       >
-                        <div class="panel-slot-demo">
-                          <strong>{{ value }}</strong>
-                          <span>由外部导航控制的保活内容视图</span>
-                        </div>
-                      </template>
-                    </component>
-                  </div>
-                </div>
-              </div>
-
-              <div v-if="stateExhibits.length" class="exhibit-section">
-                <h2>状态</h2>
-                <div class="exhibit-row" :class="{ 'is-wide': isWideExhibit }">
-                  <div
-                    v-for="state in stateExhibits"
-                    :key="state.id"
-                    class="exhibit-item"
-                    :data-exhibit="`state.${state.id}`"
-                  >
-                    <span>{{ state.label }}</span>
-                    <component
-                      :is="previewComponent"
-                      v-bind="exhibitBind(state.props, 'state', state.id)"
-                    >
-                      <template v-if="record.id === 'card'">
-                        <div class="card-slot-demo">
-                          <strong>外部内容</strong>
-                          <span>Card 只提供 surface；内容由调用方定义。</span>
-                        </div>
-                      </template>
-                      <template v-else-if="record.id === 'data-list'">
-                        <div role="listitem" class="list-slot-demo is-heading">
-                          <strong>仅标题行</strong>
-                        </div>
-                        <div role="listitem" class="list-slot-demo is-record">
-                          <div>
-                            <strong>双行业务记录</strong>
-                            <span>副标题、状态与密度由调用方决定</span>
-                          </div>
-                          <span class="list-state">进行中</span>
-                        </div>
-                      </template>
-                      <template
-                        v-if="record.id === 'tab-viewport'"
-                        #item="{ value }"
+                      <component
+                        :is="previewComponent"
+                        v-bind="exhibitBind(item.props, group.scope, item.id)"
                       >
-                        <div class="panel-slot-demo">
-                          <strong>{{ value }}</strong>
-                          <span>由外部导航控制的保活内容视图</span>
-                        </div>
-                      </template>
-                    </component>
+                        <template v-if="record.id === 'card'">
+                          <div class="card-slot-demo">
+                            <strong>外部内容</strong>
+                            <span>Card 只提供 surface；内容由调用方定义。</span>
+                          </div>
+                        </template>
+                        <template v-else-if="record.id === 'data-list'">
+                          <div role="listitem" class="list-slot-demo is-heading">
+                            <strong>仅标题行</strong>
+                          </div>
+                          <div role="listitem" class="list-slot-demo is-record">
+                            <div>
+                              <strong>双行业务记录</strong>
+                              <span>副标题、状态与密度由调用方决定</span>
+                            </div>
+                            <span class="list-state">进行中</span>
+                          </div>
+                        </template>
+                        <template
+                          v-if="record.id === 'tab-viewport'"
+                          #item="{ value }"
+                        >
+                          <div class="panel-slot-demo">
+                            <strong>{{ value }}</strong>
+                            <span>由外部导航控制的保活内容视图</span>
+                          </div>
+                        </template>
+                      </component>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -798,21 +945,36 @@ function bindingResolvedValue(tokenId: string) {
         </v-theme-provider>
       </article>
 
-      <details class="semantic-details">
-        <summary>查看语义与令牌</summary>
-        <p>
-          只读：这里展示组件固定消费的语义令牌；换肤改主题值，不在 Playground
-          改绑。
-        </p>
-        <ul v-if="tokenBindings.length" class="binding-list">
-          <li v-for="[slot, tokenId] in tokenBindings" :key="slot">
-            <span>{{ slot }}</span
-            ><code>{{ tokenId }}</code
-            ><code>{{ bindingResolvedValue(tokenId) ?? "—" }}</code>
-          </li>
-        </ul>
+      <section class="token-bindings">
+        <header>
+          <strong>语义与令牌</strong>
+          <span
+            >只读：组件固定消费的语义令牌；换肤改主题值，不在 Playground
+            改绑。</span
+          >
+        </header>
+        <table v-if="tokenBindings.length" class="binding-table">
+          <thead>
+            <tr>
+              <th>Slot</th>
+              <th>Token</th>
+              <th>CSS 值</th>
+              <th>CSS 变量</th>
+              <th>Category</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="[slot, tokenId] in tokenBindings" :key="slot">
+              <td>{{ slot }}</td>
+              <td><code>{{ tokenId }}</code></td>
+              <td><code>{{ bindingResolvedValue(tokenId) }}</code></td>
+              <td><code>{{ normalizeTokenCssVarName(tokenId) }}</code></td>
+              <td>{{ tokenCategoryById.get(tokenId) ?? "—" }}</td>
+            </tr>
+          </tbody>
+        </table>
         <p v-else class="empty">该组件未声明 tokenBindings。</p>
-      </details>
+      </section>
     </div>
   </ResourcePageShell>
   <v-alert v-else type="error" variant="tonal"
@@ -834,7 +996,7 @@ function bindingResolvedValue(tokenId: string) {
   min-width: 0;
 }
 .preview-wrap,
-.semantic-details {
+.token-bindings {
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-radius: 14px;
   background: rgb(var(--v-theme-surface));
@@ -1077,12 +1239,28 @@ function bindingResolvedValue(tokenId: string) {
 .exhibit-section {
   display: flex;
   flex-direction: column;
-  gap: var(--pb-spacing-sm);
+  gap: var(--pb-spacing-md);
 }
 .exhibit-section h2 {
   margin: var(--pb-spacing-none);
   color: var(--pb-color-on-surface);
   font: var(--pb-typography-label);
+}
+.exhibit-subgroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-spacing-sm);
+}
+.exhibit-subgroup.has-title {
+  padding: var(--pb-spacing-sm);
+  border: var(--pb-border-hairline);
+  border-radius: var(--pb-radius-md);
+  background: var(--pb-color-surface-recessed);
+}
+.exhibit-subgroup h3 {
+  margin: var(--pb-spacing-none);
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption-strong);
 }
 .exhibit-row {
   display: flex;
@@ -1105,62 +1283,60 @@ function bindingResolvedValue(tokenId: string) {
 .exhibit-row.is-wide {
   flex-direction: column;
   align-items: stretch;
+  gap: var(--pb-spacing-md);
 }
 .exhibit-row.is-wide .exhibit-item {
   width: var(--pb-layout-fill);
+  padding-bottom: var(--pb-spacing-sm);
+  border-bottom: var(--pb-border-hairline);
+}
+.exhibit-row.is-wide .exhibit-item:last-child {
+  padding-bottom: var(--pb-spacing-none);
+  border-bottom: none;
 }
 .exhibit-row.is-wide .exhibit-item > :deep(*) {
   width: var(--pb-layout-fill);
 }
-.semantic-details {
-  padding: 0 16px 16px;
+.token-bindings {
+  padding: 14px 16px 16px;
 }
-.semantic-details summary {
-  padding: 14px 0;
-  cursor: pointer;
+.token-bindings header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.token-bindings header strong {
   color: var(--pb-color-on-surface);
   font: var(--pb-typography-label);
 }
-.semantic-details > p {
-  margin: 0 0 12px;
+.token-bindings header span {
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
 }
-.binding-list {
-  display: grid;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.binding-list li {
-  display: grid;
-  grid-template-columns: minmax(90px, 1fr) minmax(150px, 1fr) minmax(
-      90px,
-      auto
-    );
-  gap: 8px;
-  align-items: center;
-  padding: 10px;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 10px;
+.binding-table {
+  width: 100%;
+  border-collapse: collapse;
   font-size: 0.75rem;
 }
-.binding-list code {
-  overflow: hidden;
+.binding-table th,
+.binding-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  text-align: left;
+  vertical-align: top;
+}
+.binding-table th {
   color: rgba(var(--v-theme-on-surface), 0.62);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-weight: 600;
+}
+.binding-table code {
+  word-break: break-word;
+  color: rgba(var(--v-theme-on-surface), 0.78);
 }
 .empty {
   margin: 0;
   color: rgba(var(--v-theme-on-surface), 0.55);
   font-size: 0.75rem;
-}
-@media (max-width: 700px) {
-  .binding-list li {
-    grid-template-columns: 1fr;
-    gap: 3px;
-  }
 }
 </style>

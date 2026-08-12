@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "data-list",
-  "category": "complex",
+  "category": "data",
   "semantic": {
     "policy": "fixed",
     "defaultRole": "list"
@@ -18,11 +18,20 @@
       },
       "surface": {
         "type": "string",
-        "enum": ["none", "default", "raised"]
+        "enum": [
+          "none",
+          "default",
+          "raised"
+        ]
       },
       "rounded": {
         "type": "string",
-        "enum": ["none", "sm", "md", "lg"]
+        "enum": [
+          "none",
+          "sm",
+          "md",
+          "lg"
+        ]
       },
       "elevated": {
         "type": "boolean"
@@ -54,7 +63,9 @@
       }
     }
   ],
-  "slots": ["default"],
+  "slots": [
+    "default"
+  ],
   "events": [],
   "tokenBindings": {
     "surface": "color.surface",

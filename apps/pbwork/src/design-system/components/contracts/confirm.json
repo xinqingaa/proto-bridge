@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "id": "confirm",
+  "category": "feedback",
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "dialog"
+  },
+  "summary": "确认类模态对话框；需用户显式确认或关闭，不承担底栏流程。",
+  "behavior": [
+    "默认关闭；Playground 与产品页通过触发打开",
+    "确认会先发出 confirm，再关闭自身；调用方决定后续业务动作与导航",
+    "不替代 BottomSheet / FlowSheet 的流程承载"
+  ],
+  "propsSchema": {
+    "type": "object",
+    "properties": {
+      "modelValue": {
+        "type": "boolean"
+      },
+      "title": {
+        "type": "string"
+      },
+      "message": {
+        "type": "string"
+      },
+      "confirmLabel": {
+        "type": "string"
+      },
+      "contained": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "title"
+    ]
+  },
+  "defaultProps": {
+    "modelValue": false,
+    "title": "确认完成工单？",
+    "message": "完成后将通知客户，并记录处理结果。",
+    "confirmLabel": "确认完成",
+    "contained": true
+  },
+  "states": [
+    {
+      "id": "open",
+      "label": "打开",
+      "kind": "content",
+      "props": {
+        "modelValue": true
+      }
+    }
+  ],
+  "slots": [
+    "default"
+  ],
+  "events": [
+    "update:modelValue",
+    "confirm"
+  ],
+  "tokenBindings": {
+    "scrim": "color.scrim",
+    "surface": "color.surface-raised",
+    "border": "color.border",
+    "text": "color.on-surface",
+    "radius": "radius.xl",
+    "elevation": "elevation.level-5",
+    "title": "typography.title",
+    "body": "typography.content",
+    "maxWidth": "layout.dialog-max-width"
+  },
+  "playground": {
+    "presentation": "trigger"
+  }
+}

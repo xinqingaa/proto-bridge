@@ -27,7 +27,7 @@
 - [ ] 唯一纵滚；顶部下拉与横滑不打架
 - [ ] 嵌套横条使用 `data-horizontal-scroll` + 共享 hook
 - [ ] 未页内复制手势仲裁
-- [ ] Dialog/Snackbar 未深埋进滚动变换层（宜兄弟挂载）
+- [ ] Dialog/Toast 未深埋进滚动变换层（宜兄弟挂载）
 
 ## 导航与 Variant
 

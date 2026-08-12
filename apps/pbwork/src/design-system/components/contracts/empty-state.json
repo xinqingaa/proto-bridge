@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "empty-state",
-  "category": "complex",
+  "category": "display",
   "semantic": {
     "policy": "fixed",
     "defaultRole": "empty-state"
@@ -19,7 +19,9 @@
         "type": "string"
       }
     },
-    "required": ["title"]
+    "required": [
+      "title"
+    ]
   },
   "defaultProps": {
     "title": "暂无工单",
@@ -36,7 +38,9 @@
     }
   ],
   "slots": [],
-  "events": ["action"],
+  "events": [
+    "action"
+  ],
   "tokenBindings": {
     "iconSurface": "color.primary-soft",
     "icon": "color.primary",
@@ -56,6 +60,8 @@
   },
   "icons": {
     "pack": "lucide",
-    "defaults": ["inbox"]
+    "defaults": [
+      "inbox"
+    ]
   }
 }

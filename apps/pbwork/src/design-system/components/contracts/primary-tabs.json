@@ -1,8 +1,11 @@
 {
   "schemaVersion": 1,
   "id": "primary-tabs",
-  "category": "complex",
-  "semantic": { "policy": "fixed", "defaultRole": "tab-bar" },
+  "category": "navigation",
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "tab-bar"
+  },
   "summary": "一级页内分区：轨道和选中胶囊均由主题语义表面令牌决定。",
   "behavior": [
     "轨道填满组件容器而非视口；默认项按内容宽排列，equal 状态才平分轨道，项过多时横向滚动",
@@ -19,7 +22,10 @@
       "equalState": "equal",
       "overflow": "horizontal-scroll"
     },
-    "viewport": { "ownership": "component", "transition": "horizontal" }
+    "viewport": {
+      "ownership": "component",
+      "transition": "horizontal"
+    }
   },
   "visualAnatomy": {
     "selection": {
@@ -33,29 +39,65 @@
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "modelValue": { "type": "string" },
-      "showIndicator": { "type": "boolean" },
-      "showDivider": { "type": "boolean" },
-      "grow": { "type": "boolean" },
-      "align": { "type": "string", "enum": ["start", "center"] },
-      "size": { "type": "string", "enum": ["sm", "md", "lg"] },
-      "swipe": { "type": "boolean" },
-      "mouseSwipe": { "type": "boolean" },
-      "fill": { "type": "boolean" },
+      "modelValue": {
+        "type": "string"
+      },
+      "showIndicator": {
+        "type": "boolean"
+      },
+      "showDivider": {
+        "type": "boolean"
+      },
+      "grow": {
+        "type": "boolean"
+      },
+      "align": {
+        "type": "string",
+        "enum": [
+          "start",
+          "center"
+        ]
+      },
+      "size": {
+        "type": "string",
+        "enum": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "swipe": {
+        "type": "boolean"
+      },
+      "mouseSwipe": {
+        "type": "boolean"
+      },
+      "fill": {
+        "type": "boolean"
+      },
       "items": {
         "type": "array",
         "items": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["value", "label"],
+          "required": [
+            "value",
+            "label"
+          ],
           "properties": {
-            "value": { "type": "string" },
-            "label": { "type": "string" }
+            "value": {
+              "type": "string"
+            },
+            "label": {
+              "type": "string"
+            }
           }
         }
       }
     },
-    "required": ["items"]
+    "required": [
+      "items"
+    ]
   },
   "defaultProps": {
     "modelValue": "overview",
@@ -68,10 +110,22 @@
     "mouseSwipe": true,
     "fill": false,
     "items": [
-      { "value": "overview", "label": "概览" },
-      { "value": "activity", "label": "活动" },
-      { "value": "data", "label": "数据" },
-      { "value": "settings", "label": "设置" }
+      {
+        "value": "overview",
+        "label": "概览"
+      },
+      {
+        "value": "activity",
+        "label": "活动"
+      },
+      {
+        "value": "data",
+        "label": "数据"
+      },
+      {
+        "value": "settings",
+        "label": "设置"
+      }
     ]
   },
   "states": [
@@ -79,11 +133,20 @@
       "id": "equal",
       "label": "等宽",
       "kind": "variant",
-      "props": { "grow": true }
+      "props": {
+        "grow": true
+      }
     }
   ],
-  "slots": ["overview", "activity", "data", "settings"],
-  "events": ["update:modelValue"],
+  "slots": [
+    "overview",
+    "activity",
+    "data",
+    "settings"
+  ],
+  "events": [
+    "update:modelValue"
+  ],
   "tokenBindings": {
     "trackSurface": "color.surface-recessed",
     "selectionSurface": "color.surface-selected",
@@ -113,5 +176,7 @@
     "hiddenOpacity": "opacity.hidden",
     "visibleOpacity": "opacity.visible"
   },
-  "playground": { "presentation": "interactive" }
+  "playground": {
+    "presentation": "interactive"
+  }
 }

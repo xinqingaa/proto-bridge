@@ -8,9 +8,9 @@ import {
 import { buildComponentsNavigation } from "@/workbench/navigation";
 
 describe("workbench navigation tree", () => {
-  it("keeps the four tab layers consecutive in the flat complex list", () => {
+  it("keeps the four tab layers consecutive in the navigation group", () => {
     const labels = buildComponentsNavigation()
-      .filter((item) => item.group === "复杂组件")
+      .filter((item) => item.group === "导航组件")
       .map((item) => item.label);
     expect(labels.slice(0, 4)).toEqual([
       "Tabbar",
@@ -33,7 +33,7 @@ describe("workbench navigation tree", () => {
     );
 
     expect(prototypes.count).toBe(1);
-    expect(components.children).toHaveLength(2);
+    expect(components.children).toHaveLength(6);
     expect(prototypes.children?.some((node) => node.kind === "lifecycle")).toBe(
       false,
     );

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "button",
-  "category": "basic",
+  "category": "action",
   "semantic": {
     "policy": "fixed",
     "defaultRole": "button"
@@ -35,7 +35,11 @@
       },
       "size": {
         "type": "string",
-        "enum": ["sm", "md", "lg"]
+        "enum": [
+          "sm",
+          "md",
+          "lg"
+        ]
       },
       "loading": {
         "type": "boolean"
@@ -48,10 +52,16 @@
       },
       "type": {
         "type": "string",
-        "enum": ["button", "submit", "reset"]
+        "enum": [
+          "button",
+          "submit",
+          "reset"
+        ]
       }
     },
-    "required": ["label"]
+    "required": [
+      "label"
+    ]
   },
   "defaultProps": {
     "label": "确认",
@@ -81,8 +91,12 @@
       }
     }
   ],
-  "slots": ["default"],
-  "events": ["click"],
+  "slots": [
+    "default"
+  ],
+  "events": [
+    "click"
+  ],
   "tokenBindings": {
     "background": "color.action",
     "border": "color.action",

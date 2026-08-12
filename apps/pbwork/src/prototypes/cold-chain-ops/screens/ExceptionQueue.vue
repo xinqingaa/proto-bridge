@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import Badge from "@/design-system/components/basic/Badge.vue";
-import Button from "@/design-system/components/basic/Button.vue";
-import Card from "@/design-system/components/basic/Card.vue";
-import Icon from "@/design-system/components/basic/Icon.vue";
-import Spinner from "@/design-system/components/basic/Spinner.vue";
-import DataList from "@/design-system/components/complex/DataList.vue";
-import EmptyState from "@/design-system/components/complex/EmptyState.vue";
-import FilterBar from "@/design-system/components/complex/FilterBar.vue";
-import ScrollableDataList from "@/design-system/components/complex/ScrollableDataList.vue";
-import SearchBar from "@/design-system/components/complex/SearchBar.vue";
+import Badge from "@/design-system/components/display/Badge.vue";
+import Button from "@/design-system/components/action/Button.vue";
+import Card from "@/design-system/components/display/Card.vue";
+import Icon from "@/design-system/components/action/Icon.vue";
+import Spinner from "@/design-system/components/display/Spinner.vue";
+import DataList from "@/design-system/components/data/DataList.vue";
+import EmptyState from "@/design-system/components/display/EmptyState.vue";
+import FilterBar from "@/design-system/components/navigation/FilterBar.vue";
+import ScrollableDataList from "@/design-system/components/data/ScrollableDataList.vue";
+import SearchBar from "@/design-system/components/input/SearchBar.vue";
 import ColdChainShell from "../ColdChainShell.vue";
 import { exceptions } from "../mock";
 import { openColdChainScreen, replaceColdChainVariant } from "../nav";

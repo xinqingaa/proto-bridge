@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "id": "loading",
+  "category": "feedback",
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "loading-state"
+  },
+  "summary": "蒙层加载；有 scrim 并阻断下层操作。局部不阻断忙态请用 spinner。",
+  "behavior": [
+    "打开时展示 scrim 与居中指示，拦截点击",
+    "关闭后恢复下层交互",
+    "不替代行内 Spinner"
+  ],
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "modelValue": { "type": "boolean" },
+      "label": { "type": "string" },
+      "contained": { "type": "boolean" }
+    }
+  },
+  "defaultProps": {
+    "modelValue": false,
+    "label": "正在加载",
+    "contained": true
+  },
+  "states": [
+    {
+      "id": "open",
+      "label": "打开",
+      "kind": "content",
+      "props": { "modelValue": true }
+    }
+  ],
+  "slots": [],
+  "events": ["update:modelValue"],
+  "tokenBindings": {
+    "scrim": "color.scrim",
+    "active": "color.primary",
+    "text": "color.on-surface",
+    "size": "sizing.icon-lg",
+    "stroke": "sizing.indicator-thickness",
+    "motion": "motion.duration-slow",
+    "label": "typography.caption"
+  },
+  "playground": {
+    "presentation": "trigger"
+  }
+}

@@ -91,16 +91,29 @@ describe("registries", () => {
 
 describe("design contracts", () => {
   it("ships the fixed component sample set", () => {
+    expect(componentRecords).toHaveLength(31);
     expect(
-      componentRecords.filter((item) => item.category === "basic"),
-    ).toHaveLength(16);
+      componentRecords.filter((item) => item.category === "action"),
+    ).toHaveLength(3);
     expect(
-      componentRecords.filter((item) => item.category === "complex"),
-    ).toHaveLength(14);
+      componentRecords.filter((item) => item.category === "input"),
+    ).toHaveLength(7);
+    expect(
+      componentRecords.filter((item) => item.category === "display"),
+    ).toHaveLength(8);
+    expect(
+      componentRecords.filter((item) => item.category === "navigation"),
+    ).toHaveLength(6);
+    expect(
+      componentRecords.filter((item) => item.category === "data"),
+    ).toHaveLength(2);
+    expect(
+      componentRecords.filter((item) => item.category === "feedback"),
+    ).toHaveLength(5);
   });
 
   it("ships the expanded semantic token set", () => {
-    expect(loadTokens()).toHaveLength(151);
+    expect(loadTokens()).toHaveLength(153);
     expect(new Set(loadTokens().map((item) => item.category))).toEqual(
       new Set([
         "color",

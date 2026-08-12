@@ -82,13 +82,13 @@ Tabbar（同一当前位置）
 
 ## R4 — 可筛选列表 + 叠加层 Variant
 
-**适用**：列表页需要搜索/筛选，并有 BottomSheet / Dialog / Snackbar 等叠加态。
+**适用**：列表页需要搜索/筛选，并有 BottomSheet / Dialog / Toast 等叠加态。
 
 **必须**：
 
 - 列表主体：`SearchBar` / `FilterBar` 或带 `data-no-swipe` 的自定义筛选条（形状匹配时优先 DS）+ `ScrollableDataList`（按需）+ `DataList`（按需）。
-- 叠加层用 DS 的 `BottomSheet` / `Dialog` / `Snackbar`。
-- **叠加层挂载**：Dialog / Snackbar 宜作为页面内容的**兄弟节点**（与主滚动列并列），避免深埋在 `ScrollableDataList` 内容变换层内导致层级/capture 异常。Sheet 可按交互放在页内。
+- 叠加层用 DS 的 `BottomSheet` / `Dialog` / `Toast`。
+- **叠加层挂载**：Dialog / Toast 宜作为页面内容的**兄弟节点**（与主滚动列并列），避免深埋在 `ScrollableDataList` 内容变换层内导致层级/capture 异常。Sheet 可按交互放在页内。
 - 打开态注册为 Screen Variant，可经 URL 复现；另备 `empty` / `error` / `loading`（按页需要）。
 
 **禁止**：

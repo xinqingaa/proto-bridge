@@ -62,7 +62,7 @@ export const primaryNavigation: Array<
   {
     id: "components",
     label: "组件",
-    to: `/workbench/components/${componentRecords.find((item) => item.category === "basic")?.id ?? "button"}`,
+    to: `/workbench/components/${componentRecords.find((item) => item.category === "action")?.id ?? "button"}`,
   },
   { id: "prototypes", label: "原型", to: "/workbench/prototypes/all" },
   { id: "capture", label: "采集", to: "/workbench/capture" },
@@ -100,6 +100,22 @@ export function buildFoundationsNavigation(): WorkbenchNavigationItem[] {
 }
 
 export function buildComponentsNavigation(): WorkbenchNavigationItem[] {
+  const categoryOrder = [
+    "action",
+    "input",
+    "display",
+    "navigation",
+    "data",
+    "feedback",
+  ] as const;
+  const categoryLabels: Record<(typeof categoryOrder)[number], string> = {
+    action: "操作组件",
+    input: "输入组件",
+    display: "展示组件",
+    navigation: "导航组件",
+    data: "数据组件",
+    feedback: "反馈组件",
+  };
   const tabOrder = [
     "tabbar",
     "primary-tabs",
@@ -108,23 +124,31 @@ export function buildComponentsNavigation(): WorkbenchNavigationItem[] {
     "tab-viewport",
   ];
   const orderedRecords = [...componentRecords].sort((left, right) => {
-    if (left.category !== right.category)
-      return left.category === "basic" ? -1 : 1;
-    if (left.category === "basic") return 0;
-    const leftOrder = tabOrder.indexOf(left.id);
-    const rightOrder = tabOrder.indexOf(right.id);
-    if (leftOrder >= 0 || rightOrder >= 0) {
-      return (
-        (leftOrder < 0 ? tabOrder.length : leftOrder) -
-        (rightOrder < 0 ? tabOrder.length : rightOrder)
-      );
+    const leftCat = categoryOrder.indexOf(
+      left.category as (typeof categoryOrder)[number],
+    );
+    const rightCat = categoryOrder.indexOf(
+      right.category as (typeof categoryOrder)[number],
+    );
+    if (leftCat !== rightCat) return leftCat - rightCat;
+    if (left.category === "navigation") {
+      const leftOrder = tabOrder.indexOf(left.id);
+      const rightOrder = tabOrder.indexOf(right.id);
+      if (leftOrder >= 0 || rightOrder >= 0) {
+        return (
+          (leftOrder < 0 ? tabOrder.length : leftOrder) -
+          (rightOrder < 0 ? tabOrder.length : rightOrder)
+        );
+      }
     }
     return 0;
   });
   return orderedRecords.map((record) => ({
     id: record.id,
     label: record.label,
-    group: record.category === "basic" ? "基础组件" : "复杂组件",
+    group:
+      categoryLabels[record.category as (typeof categoryOrder)[number]] ??
+      record.category,
     to: `/workbench/components/${record.id}`,
   }));
 }

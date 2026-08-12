@@ -3,9 +3,9 @@
 ## 1. 分层依赖
 
 ```text
-Token / Theme
-  → basic
-  → complex
+  Token / Theme
+  → action / input / display
+  → navigation / data / feedback
   → Screen / Panel
   → Prototype
 ```
@@ -17,10 +17,9 @@ Token / Theme
 页面缺少能力时依次判断：
 
 1. 现有 Token 能否表达；
-2. 现有 basic component 能否组合；
-3. 现有 complex component 是否对口；
-4. 是否真的是业务局部 UI；
-5. 是否经过至少两个独立使用场景，值得提升为共享能力。
+2. 现有职责分类下的组件能否组合；
+3. 是否真的是业务局部 UI；
+4. 是否经过至少两个独立使用场景，值得提升为共享能力。
 
 业务专用颜色、间距、组件名和页面状态不得进入共享 Token/Contract。
 
@@ -30,7 +29,7 @@ Token / Theme
 - `Tabbar` 只导航；根视图区使用 `TabViewport` 或路由内容。
 - 一级/二级 Tab 可以嵌套，但同一触摸区域只允许一个带 window 的横滑 owner；三级 Tab 绝不拥有 window。
 - `DataList` 管列表表面，`ScrollableDataList` 管纵滚、刷新和分页。
-- `FilterBar`、`SearchBar`、Dialog、Sheet、Snackbar、EmptyState 等不得页内复制。
+- `FilterBar`、`SearchBar`、Confirm、Sheet、Toast、Loading、EmptyState 等不得页内复制。
 - 页内局部 UI 仍必须使用 Token。
 - 需要 Agent 独立实现或验收的局部节点必须显式进入 Evidence；只写 CSS Token 不构成 Token binding。
 - 禁止组件实例换绑 Token。

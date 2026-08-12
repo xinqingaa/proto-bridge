@@ -1,40 +1,47 @@
 {
   "schemaVersion": 1,
   "id": "text-field",
-  "category": "basic",
+  "category": "input",
   "semantic": {
     "policy": "fixed",
     "defaultRole": "field"
   },
-  "summary": "单行文本输入；disabled 阻止编辑并使用 opacity.disabled。",
-  "behavior": ["disabled 时不可聚焦或编辑，整体使用 opacity.disabled"],
+  "summary": "单行文本输入；默认 plain 无标题无描边；showLabel 时显示标题并启用边框；disabled 使用 opacity.disabled。",
+  "behavior": [
+    "showLabel 默认 false：不渲染标题、无描边，仅保留可输入区域",
+    "showLabel 为 true 时显示 label 并启用边框",
+    "disabled 时不可聚焦或编辑，整体使用 opacity.disabled"
+  ],
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "label": {
-        "type": "string"
-      },
-      "modelValue": {
-        "type": "string"
-      },
-      "disabled": {
-        "type": "boolean"
-      }
-    },
-    "required": ["label"]
+      "label": { "type": "string" },
+      "showLabel": { "type": "boolean" },
+      "modelValue": { "type": "string" },
+      "placeholder": { "type": "string" },
+      "disabled": { "type": "boolean" }
+    }
   },
   "defaultProps": {
     "label": "标题",
+    "showLabel": false,
     "modelValue": "",
+    "placeholder": "",
     "disabled": false
   },
   "states": [
     {
+      "id": "labeled",
+      "label": "显示标题",
+      "kind": "variant",
+      "props": { "showLabel": true, "label": "联系人", "modelValue": "李明" }
+    },
+    {
       "id": "disabled",
       "label": "禁用",
       "kind": "interaction",
-      "props": { "disabled": true }
+      "props": { "disabled": true, "modelValue": "不可编辑" }
     }
   ],
   "slots": [],

@@ -237,7 +237,14 @@ async function verifyComponentReferences() {
   }
 
   const documented = [];
-  for (const category of ["basic", "complex"]) {
+  for (const category of [
+    "action",
+    "input",
+    "display",
+    "navigation",
+    "data",
+    "feedback",
+  ]) {
     for (const file of await readdir(path.join(docsRoot, category))) {
       if (file.endsWith(".md")) documented.push(file.replace(/\.md$/u, ""));
     }

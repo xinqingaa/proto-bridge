@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "icon",
-  "category": "basic",
+  "category": "action",
   "semantic": {
     "policy": "decorative"
   },
@@ -48,7 +48,11 @@
       },
       "size": {
         "type": "string",
-        "enum": ["sm", "md", "lg"]
+        "enum": [
+          "sm",
+          "md",
+          "lg"
+        ]
       },
       "tone": {
         "type": "string",
@@ -67,7 +71,9 @@
         "type": "string"
       }
     },
-    "required": ["name"]
+    "required": [
+      "name"
+    ]
   },
   "defaultProps": {
     "name": "more",

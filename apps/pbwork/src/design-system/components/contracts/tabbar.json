@@ -1,8 +1,11 @@
 {
   "schemaVersion": 1,
   "id": "tabbar",
-  "category": "complex",
-  "semantic": { "policy": "fixed", "defaultRole": "bottom-bar" },
+  "category": "navigation",
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "bottom-bar"
+  },
   "summary": "应用根目的地导航：视图区在上，底部只负责当前位置与目的地切换。",
   "behavior": [
     "固定同时展示图标与文字；适用于 2–5 个应用根目的地",
@@ -14,31 +17,53 @@
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "modelValue": { "type": "string" },
-      "grow": { "type": "boolean" },
+      "modelValue": {
+        "type": "string"
+      },
+      "grow": {
+        "type": "boolean"
+      },
       "items": {
         "type": "array",
         "minItems": 2,
         "items": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["value", "label"],
+          "required": [
+            "value",
+            "label"
+          ],
           "properties": {
-            "value": { "type": "string" },
-            "label": { "type": "string" }
+            "value": {
+              "type": "string"
+            },
+            "label": {
+              "type": "string"
+            }
           }
         }
       }
     },
-    "required": ["items"]
+    "required": [
+      "items"
+    ]
   },
   "defaultProps": {
     "modelValue": "home",
     "grow": true,
     "items": [
-      { "value": "home", "label": "首页" },
-      { "value": "tasks", "label": "任务" },
-      { "value": "profile", "label": "我的" }
+      {
+        "value": "home",
+        "label": "首页"
+      },
+      {
+        "value": "tasks",
+        "label": "任务"
+      },
+      {
+        "value": "profile",
+        "label": "我的"
+      }
     ]
   },
   "states": [
@@ -46,17 +71,23 @@
       "id": "tasks-selected",
       "label": "任务选中",
       "kind": "content",
-      "props": { "modelValue": "tasks" }
+      "props": {
+        "modelValue": "tasks"
+      }
     },
     {
       "id": "adaptive",
       "label": "自适应",
       "kind": "variant",
-      "props": { "grow": false }
+      "props": {
+        "grow": false
+      }
     }
   ],
   "slots": [],
-  "events": ["update:modelValue"],
+  "events": [
+    "update:modelValue"
+  ],
   "tokenBindings": {
     "surface": "color.surface-raised",
     "active": "color.navigation-active",
@@ -74,6 +105,15 @@
     "focusOutline": "border.focus",
     "iconSize": "sizing.icon-md"
   },
-  "playground": { "presentation": "interactive" },
-  "icons": { "pack": "lucide", "defaults": ["home", "list", "user"] }
+  "playground": {
+    "presentation": "interactive"
+  },
+  "icons": {
+    "pack": "lucide",
+    "defaults": [
+      "home",
+      "list",
+      "user"
+    ]
+  }
 }

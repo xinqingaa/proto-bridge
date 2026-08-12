@@ -1,7 +1,7 @@
 # Token 全量目录
 
-> 权威源：`apps/pbwork/src/design-system/tokens/tokens.json`（共 151 项）
-> Bind 池：`apps/pbwork/src/design-system/bindTokens.ts`（125 项可进组件 `tokenBindings`）
+> 权威源：`apps/pbwork/src/design-system/tokens/tokens.json`（共 153 项）
+> Bind 池：`apps/pbwork/src/design-system/bindTokens.ts`（127 项可进组件 `tokenBindings`）
 
 未进 Bind 池的 Token 仍可在 Foundations 浏览，但**不得**写入通用组件契约（`transparent` / `none` 除外）。
 
@@ -40,7 +40,9 @@
 | `color.outline`            | 轮廓          | `#aeb4bc`   | 是   |                                                               |
 | `color.divider`            | 分割线        | `#e5e7ea`   | 是   |                                                               |
 | `color.disabled`           | 禁用内容      | `#9aa0a8`   | 是   |                                                               |
-| `color.scrim`              | 遮罩          | `#0f172a99` | 是   |                                                               |
+| `color.scrim`              | 遮罩          | `#0f172a99` | 是   | Dialog / Loading 等蒙层                                     |
+| `color.toast`              | Toast 背景    | `#000000cc` | 是   | 短提示半透明纯黑底                                          |
+| `color.on-toast`           | Toast 文字    | `#ffffff`   | 是   | Toast 上文字                                                |
 | `color.on-error`           | 错误色上文字  | `#ffffff`   | 是   |                                                               |
 | `color.on-success`         | 成功色上文字  | `#ffffff`   | 是   |                                                               |
 | `color.on-warning`         | 警告色上文字  | `#251a00`   | 是   |                                                               |
@@ -174,7 +176,7 @@
 | `motion.rotate-half-turn`           | 半周旋转           | `180deg`                         | 是   |                               |
 | `motion.duration-sheet`             | Sheet 切换时长     | `220ms`                          | 是   | 流程 Sheet 视图切换           |
 | `motion.duration-tab-viewport`      | 视图区切换时长     | `240ms`                          | 是   | 独立 Tab Viewport 水平切换    |
-| `motion.duration-toast`             | 短提示停留时长     | `4000ms`                         | 是   | Snackbar 等短反馈默认可见时长 |
+| `motion.duration-toast`             | 短提示停留时长     | `4000ms`                         | 是   | Toast 等短反馈默认可见时长 |
 | `motion.duration-click-suppression` | 拖动后点击抑制时长 | `450ms`                          | 否   | 共享拖动完成后阻止合成 click  |
 
 ## 布局（`layout` · 21）

@@ -117,6 +117,30 @@
 
 ---
 
+## P1.6 — DS 职责重组与输入/反馈收口（2026-08-12 重开）
+
+显式重开协议面：Props、category、tokenBindings、组件 id、物理目录。范围仍 **仅** `apps/pbwork`。
+
+### 已拍板
+
+| 项 | 决策 |
+| --- | --- |
+| 分组轴 | 按职责六类：`action` / `input` / `display` / `navigation` / `data` / `feedback`；不按 Overlay 实现分类 |
+| `menu` | 原 `select` 全量改 id；分组归 **input**（跨栈命中 id=`menu`，不跟 Flutter Overlay 目录绑死） |
+| 忙态 | **`loading`** = 蒙层阻断（新建，`feedback`）；**`spinner`** 保持局部不阻断（`display`） |
+| 稳定 id | `select`→`menu`，`dialog`→`confirm`，`snackbar`→`toast` |
+| Toast | `color.toast` 半透明黑底 + 纯文本；去掉 tone 色条 / 图标 / 关闭按钮 |
+| 输入 | `showLabel` 默认 false；无 label = plain 无描边；有 label = 有边框；Search Bar 封装 Text Field |
+| Playground | 底部常驻令牌 table（Slot / Token / CSS 值 / CSS 变量 / Category） |
+
+### 非目标（P1.6）
+
+- 不改 Evidence / MCP / Flutter Target adapter
+- 不做 tokens.json → Dart codegen
+- 不借本轮扩大量无关新组件（仅新增蒙层 `loading`）
+
+---
+
 ## P1.5 — Flutter 同步（闸门后）
 
 - 补全 `proto-bridge.md` 缺行；Demo 对照；`lucide_icons`；Tab 拆分后的 Common* 对齐
@@ -141,6 +165,7 @@
 | —      |                      旧原型清理 + 金标改名 + 概览壳 / 任务中心去默认 | **已落地**   |
 | P0     |                    采集导航、历史结果、交付查看/覆盖、FlowSheet 进度 | **已落地**   |
 | P1     | DS 协议 + Playground 平铺/触发 + Tab 拆分 + Lucide + Token/Flex 门禁 | **完全冻结** |
+| P1.6   | 职责六类重组 + 输入 plain/label + Toast/Loading + id 重命名           | **已落地**   |
 | P1.5   |                                Flutter Common* / Demo / 图标语义对照 | 未开         |
 | P2     |                                                        新主 App 原型 | **暂定**     |
 
@@ -162,4 +187,5 @@
 - [x] P1 Flutter 同步单列 P1.5
 - [x] Tab 收口为 `tabbar` + `primary-tabs` + `secondary-tabs` + `filter-bar`；button 不拆
 - [x] P1 实现收口验收（协议 + Playground + Tab + Lucide + Token-only / Flex-only 门禁）
+- [x] P1.6 DS 职责六类重组 + 输入 plain/label + Toast/Loading + id 重命名
 - [ ] P2 新原型业务选题（暂缓）

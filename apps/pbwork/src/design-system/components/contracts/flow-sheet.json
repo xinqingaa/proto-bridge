@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "flow-sheet",
-  "category": "complex",
+  "category": "feedback",
   "semantic": {
     "policy": "fixed",
     "defaultRole": "sheet"
@@ -26,7 +26,9 @@
         "type": "boolean"
       }
     },
-    "required": ["title"]
+    "required": [
+      "title"
+    ]
   },
   "defaultProps": {
     "title": "分步面板",
@@ -55,8 +57,14 @@
       }
     }
   ],
-  "slots": ["default", "actions"],
-  "events": ["update:modelValue", "update:step"],
+  "slots": [
+    "default",
+    "actions"
+  ],
+  "events": [
+    "update:modelValue",
+    "update:step"
+  ],
   "tokenBindings": {
     "surface": "color.surface",
     "border": "color.border",

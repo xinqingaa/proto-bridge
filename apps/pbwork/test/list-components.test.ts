@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { mount } from "@vue/test-utils";
-import DataList from "@/design-system/components/complex/DataList.vue";
-import ScrollableDataList from "@/design-system/components/complex/ScrollableDataList.vue";
+import DataList from "@/design-system/components/data/DataList.vue";
+import ScrollableDataList from "@/design-system/components/data/ScrollableDataList.vue";
 
 describe("list component responsibilities", () => {
   it("DataList preserves arbitrary item markup and button semantics", () => {

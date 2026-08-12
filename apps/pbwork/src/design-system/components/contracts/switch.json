@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "switch",
-  "category": "basic",
+  "category": "input",
   "semantic": {
     "policy": "fixed",
     "defaultRole": "field"
@@ -29,7 +29,9 @@
         "type": "boolean"
       }
     },
-    "required": ["label"]
+    "required": [
+      "label"
+    ]
   },
   "defaultProps": {
     "label": "接收进度通知",
@@ -56,7 +58,9 @@
     }
   ],
   "slots": [],
-  "events": ["update:modelValue"],
+  "events": [
+    "update:modelValue"
+  ],
   "tokenBindings": {
     "active": "color.primary",
     "track": "color.surface-variant",
