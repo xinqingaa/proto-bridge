@@ -114,7 +114,10 @@ watch(modelValue, async (value) => {
           <Button
             :label="confirmLabel ?? '确认'"
             v-bind="inspectId ? { inspectId: `${inspectId}.confirm` } : {}"
-            @click="$emit('confirm')"
+            @click="
+              $emit('confirm');
+              $emit('update:modelValue', false);
+            "
           />
         </v-card-actions>
       </v-card>

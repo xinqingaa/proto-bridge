@@ -737,19 +737,4 @@ export const componentRecords = [
       { key: "actionLabel", label: "操作按钮", control: "text" },
     ],
   },
-  {
-    id: "form-section",
-    label: "Form Section",
-    description: "表单分组：必填客户信息，或可选补充信息。",
-    category: "complex",
-    view: "complex/FormSection.vue",
-    contract: "contracts/form-section.json",
-    example: {},
-    controls: [
-      { key: "title", label: "分组标题", control: "text" },
-      { key: "description", label: "说明", control: "text" },
-      { key: "required", label: "必填", control: "boolean" },
-      { key: "actionLabel", label: "右侧操作", control: "text" },
-    ],
-  },
 ] satisfies ComponentRecord[];

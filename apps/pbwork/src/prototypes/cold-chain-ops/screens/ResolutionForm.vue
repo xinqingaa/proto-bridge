@@ -9,7 +9,6 @@ import SwitchControl from "@/design-system/components/basic/SwitchControl.vue";
 import Textarea from "@/design-system/components/basic/Textarea.vue";
 import Icon from "@/design-system/components/basic/Icon.vue";
 import DialogPanel from "@/design-system/components/complex/DialogPanel.vue";
-import FormSection from "@/design-system/components/complex/FormSection.vue";
 import SnackbarToast from "@/design-system/components/complex/SnackbarToast.vue";
 import ColdChainShell from "../ColdChainShell.vue";
 import { dutySupervisors, resolutionActions, resolutionCauses } from "../mock";
@@ -181,106 +180,149 @@ function confirm() {
           <span>{{ validationMessage }}</span>
         </section>
 
-        <FormSection
-          title="处置判断"
-          description="根据司机反馈与设备状态记录本次异常原因。"
-          required
-          semantic-role="form"
-          inspect-id="cold-chain-ops.resolution-form.response-form"
+        <section
+          class="resolution-section"
+          data-pb-id="cold-chain-ops.resolution-form.response-form"
+          data-pb-role="form"
+          data-pb-token-background="color.surface"
+          data-pb-token-border="color.border"
+          data-pb-token-radius="radius.lg"
+          data-pb-token-spacing="spacing.sm-plus"
         >
-          <SelectField
-            v-model="cause"
-            label="异常原因"
-            placeholder="选择已确认的原因"
-            :options="resolutionCauses"
-            :error="validationMessage && !cause ? '请选择异常原因' : ''"
-            inspect-id="cold-chain-ops.resolution-form.cause"
-          />
-          <SelectField
-            v-model="action"
-            label="处置动作"
-            placeholder="选择已执行的动作"
-            :options="resolutionActions"
-            :error="validationMessage && !action ? '请选择处置动作' : ''"
-            inspect-id="cold-chain-ops.resolution-form.action"
-          />
-          <RadioGroup
-            v-model="outcome"
-            label="当前结果"
-            :options="['温度开始回落', '温度仍在上升', '暂时无法确认']"
-            inspect-id="cold-chain-ops.resolution-form.outcome"
-          />
-        </FormSection>
+          <header class="resolution-section-header">
+            <div>
+              <h2>处置判断 <em>必填</em></h2>
+              <p>根据司机反馈与设备状态记录本次异常原因。</p>
+            </div>
+          </header>
+          <div class="resolution-section-content">
+            <SelectField
+              v-model="cause"
+              label="异常原因"
+              placeholder="选择已确认的原因"
+              :options="resolutionCauses"
+              :error="validationMessage && !cause ? '请选择异常原因' : ''"
+              inspect-id="cold-chain-ops.resolution-form.cause"
+            />
+            <SelectField
+              v-model="action"
+              label="处置动作"
+              placeholder="选择已执行的动作"
+              :options="resolutionActions"
+              :error="validationMessage && !action ? '请选择处置动作' : ''"
+              inspect-id="cold-chain-ops.resolution-form.action"
+            />
+            <RadioGroup
+              v-model="outcome"
+              label="当前结果"
+              :options="['温度开始回落', '温度仍在上升', '暂时无法确认']"
+              inspect-id="cold-chain-ops.resolution-form.outcome"
+            />
+          </div>
+        </section>
 
-        <FormSection
-          title="现场确认"
-          description="以下检查项会进入交付记录。"
-          required
-          inspect-id="cold-chain-ops.resolution-form.checklist"
+        <section
+          class="resolution-section"
+          data-pb-id="cold-chain-ops.resolution-form.checklist"
+          data-pb-role="section"
+          data-pb-token-background="color.surface"
+          data-pb-token-border="color.border"
+          data-pb-token-radius="radius.lg"
+          data-pb-token-spacing="spacing.sm-plus"
         >
-          <Checkbox
-            v-model="checkedDriver"
-            label="已联系司机并确认车辆安全"
-            inspect-id="cold-chain-ops.resolution-form.check-driver"
-          />
-          <Checkbox
-            v-model="checkedCooling"
-            label="已检查主制冷与备用制冷状态"
-            inspect-id="cold-chain-ops.resolution-form.check-cooling"
-          />
-          <Checkbox
-            v-model="checkedCargo"
-            label="货箱未开封且无可见损伤"
-            inspect-id="cold-chain-ops.resolution-form.check-cargo"
-          />
-        </FormSection>
+          <header class="resolution-section-header">
+            <div>
+              <h2>现场确认 <em>必填</em></h2>
+              <p>以下检查项会进入交付记录。</p>
+            </div>
+          </header>
+          <div class="resolution-section-content">
+            <Checkbox
+              v-model="checkedDriver"
+              label="已联系司机并确认车辆安全"
+              inspect-id="cold-chain-ops.resolution-form.check-driver"
+            />
+            <Checkbox
+              v-model="checkedCooling"
+              label="已检查主制冷与备用制冷状态"
+              inspect-id="cold-chain-ops.resolution-form.check-cooling"
+            />
+            <Checkbox
+              v-model="checkedCargo"
+              label="货箱未开封且无可见损伤"
+              inspect-id="cold-chain-ops.resolution-form.check-cargo"
+            />
+          </div>
+        </section>
 
-        <FormSection
-          title="后续安排"
-          description="提交后调度中心将按此安排继续跟踪。"
-          inspect-id="cold-chain-ops.resolution-form.follow-up"
+        <section
+          class="resolution-section"
+          data-pb-id="cold-chain-ops.resolution-form.follow-up"
+          data-pb-role="section"
+          data-pb-token-background="color.surface"
+          data-pb-token-border="color.border"
+          data-pb-token-radius="radius.lg"
+          data-pb-token-spacing="spacing.sm-plus"
         >
-          <SwitchControl
-            v-model="continueMonitoring"
-            label="保持每 2 分钟温度监控"
-            inspect-id="cold-chain-ops.resolution-form.continue-monitoring"
-          />
-          <Textarea
-            v-model="notes"
-            label="处置说明"
-            inspect-id="cold-chain-ops.resolution-form.notes"
-          />
-        </FormSection>
+          <header class="resolution-section-header">
+            <div>
+              <h2>后续安排</h2>
+              <p>提交后调度中心将按此安排继续跟踪。</p>
+            </div>
+          </header>
+          <div class="resolution-section-content">
+            <SwitchControl
+              v-model="continueMonitoring"
+              label="保持每 2 分钟温度监控"
+              inspect-id="cold-chain-ops.resolution-form.continue-monitoring"
+            />
+            <Textarea
+              v-model="notes"
+              label="处置说明"
+              inspect-id="cold-chain-ops.resolution-form.notes"
+            />
+          </div>
+        </section>
 
-        <FormSection
-          title="主管审批"
-          description="持续超温超过 45 分钟时，提交前必须由值班主管复核。"
-          required
-          semantic-role="form"
-          inspect-id="cold-chain-ops.resolution-form.supervisor-approval"
+        <section
+          class="resolution-section"
+          data-pb-id="cold-chain-ops.resolution-form.supervisor-approval"
+          data-pb-role="form"
+          data-pb-token-background="color.surface"
+          data-pb-token-border="color.border"
+          data-pb-token-radius="radius.lg"
+          data-pb-token-spacing="spacing.sm-plus"
         >
-          <SelectField
-            v-model="supervisor"
-            label="值班主管"
-            placeholder="选择本次处置的复核人"
-            :options="dutySupervisors"
-            :error="
-              variant === 'approval-validation-error' && !supervisor
-                ? '请选择值班主管'
-                : ''
-            "
-            inspect-id="cold-chain-ops.resolution-form.supervisor"
-          />
-          <p
-            class="approval-policy"
-            data-pb-id="cold-chain-ops.resolution-form.approval-policy"
-            data-pb-role="text"
-            data-pb-token-typography="typography.caption"
-            data-pb-token-color="color.on-surface-muted"
-          >
-            当前异常持续 47 分钟，已触发主管审批阈值。
-          </p>
-        </FormSection>
+          <header class="resolution-section-header">
+            <div>
+              <h2>主管审批 <em>必填</em></h2>
+              <p>持续超温超过 45 分钟时，提交前必须由值班主管复核。</p>
+            </div>
+          </header>
+          <div class="resolution-section-content">
+            <SelectField
+              v-model="supervisor"
+              label="值班主管"
+              placeholder="选择本次处置的复核人"
+              :options="dutySupervisors"
+              :error="
+                variant === 'approval-validation-error' && !supervisor
+                  ? '请选择值班主管'
+                  : ''
+              "
+              inspect-id="cold-chain-ops.resolution-form.supervisor"
+            />
+            <p
+              class="approval-policy"
+              data-pb-id="cold-chain-ops.resolution-form.approval-policy"
+              data-pb-role="text"
+              data-pb-token-typography="typography.caption"
+              data-pb-token-color="color.on-surface-muted"
+            >
+              当前异常持续 47 分钟，已触发主管审批阈值。
+            </p>
+          </div>
+        </section>
 
         <div class="submit-area">
           <div class="submission-note">
@@ -373,5 +415,33 @@ function confirm() {
   margin: var(--pb-spacing-none);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
+}
+.resolution-section {
+  padding: var(--pb-spacing-md);
+  border: var(--pb-border-hairline);
+  border-radius: var(--pb-radius-lg);
+  background: var(--pb-color-surface);
+  color: var(--pb-color-on-surface);
+}
+.resolution-section-header h2 {
+  margin: var(--pb-spacing-none);
+  font: var(--pb-typography-subtitle);
+}
+.resolution-section-header p {
+  margin: var(--pb-spacing-xxs) var(--pb-spacing-none) var(--pb-spacing-none);
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
+}
+.resolution-section-header em {
+  margin-left: var(--pb-spacing-xs);
+  color: var(--pb-color-error);
+  font: var(--pb-typography-caption);
+  font-style: normal;
+}
+.resolution-section-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-spacing-sm-plus);
+  margin-top: var(--pb-spacing-sm-plus);
 }
 </style>

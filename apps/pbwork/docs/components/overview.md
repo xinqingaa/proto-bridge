@@ -32,7 +32,7 @@ Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`propsSchem
 | 类型 | 契约内有限枚举 | `variant`、`tone`、`size`                  |
 | 行为 | 开关与交互态   | `disabled`、`loading`、`elevated`、`swipe` |
 
-圆角档、阴影等级、字阶属于默认外观（经 bindings），不进自由旋钮；场景切换表达业务差异，不把 props 调试器当作组件展示。
+圆角档、阴影等级、字阶属于默认外观（经 bindings），不进自由旋钮，也不把 props 调试器当作组件展示。Playground 不提供“使用场景”下拉框：主预览展示真实交互；Contract states 直接展示为真实组件实例；没有 Contract state 的有限类型使用规范样例并置。仅 Icon / Icon Button 使用状态矩阵，Tabbar / 一级 Tab / 二级 Tab 使用专门布局对照，overlay 使用明确触发按钮；场景数据只作为展示样例与测试夹具。Filter Bar 直接操作筛选项并观察结果。
 
 ## 检查标记
 
@@ -65,6 +65,6 @@ Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`propsSchem
 
 [avatar](./basic/avatar.md) · [badge](./basic/badge.md) · [button](./basic/button.md) · [card](./basic/card.md) · [checkbox](./basic/checkbox.md) · [chip](./basic/chip.md) · [divider](./basic/divider.md) · [icon](./basic/icon.md) · [icon-button](./basic/icon-button.md) · [progress](./basic/progress.md) · [radio-group](./basic/radio-group.md) · [select](./basic/select.md) · [spinner](./basic/spinner.md) · [switch](./basic/switch.md) · [text-field](./basic/text-field.md) · [textarea](./basic/textarea.md)
 
-### 复杂（15）
+### 复杂（14）
 
-[tabbar](./complex/tabbar.md) · [一级 Tab](./complex/primary-tabs.md) · [二级 Tab](./complex/secondary-tabs.md) · [三级 Tab（Filter Bar）](./complex/filter-bar.md) · [tab-viewport](./complex/tab-viewport.md) · [app-bar](./complex/app-bar.md) · [bottom-sheet](./complex/bottom-sheet.md) · [data-list](./complex/data-list.md) · [dialog](./complex/dialog.md) · [empty-state](./complex/empty-state.md) · [flow-sheet](./complex/flow-sheet.md) · [form-section](./complex/form-section.md) · [scrollable-data-list](./complex/scrollable-data-list.md) · [search-bar](./complex/search-bar.md) · [snackbar](./complex/snackbar.md)
+[tabbar](./complex/tabbar.md) · [一级 Tab](./complex/primary-tabs.md) · [二级 Tab](./complex/secondary-tabs.md) · [三级 Tab（Filter Bar）](./complex/filter-bar.md) · [tab-viewport](./complex/tab-viewport.md) · [app-bar](./complex/app-bar.md) · [bottom-sheet](./complex/bottom-sheet.md) · [data-list](./complex/data-list.md) · [dialog](./complex/dialog.md) · [empty-state](./complex/empty-state.md) · [flow-sheet](./complex/flow-sheet.md) · [scrollable-data-list](./complex/scrollable-data-list.md) · [search-bar](./complex/search-bar.md) · [snackbar](./complex/snackbar.md)

@@ -96,7 +96,7 @@ describe("design contracts", () => {
     ).toHaveLength(16);
     expect(
       componentRecords.filter((item) => item.category === "complex"),
-    ).toHaveLength(15);
+    ).toHaveLength(14);
   });
 
   it("ships the expanded semantic token set", () => {

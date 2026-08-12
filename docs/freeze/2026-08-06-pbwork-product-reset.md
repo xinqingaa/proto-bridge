@@ -87,19 +87,21 @@
 - **Flex-only 作用域封闭**：DS 与业务原型只使用 Flex 或常规文档流，禁止 CSS Grid、全部 `grid-*` 与 `place-*`；Workbench 明确不在此样式约束内。
 - Foundation 从 131 项扩展为 151 项，Bind 池从 110 项扩展为 125 项；补齐组件尺寸、浮层边界、下拉刷新、共享手势、运行时壳和紧凑图表等语义基础。
 - Button、Icon、Spinner、Progress、Select、Textarea、Tabs、ScrollableDataList、FlowSheet 等实现已移除固定视觉参数或自由样式逃生口；共享手势阈值不再由业务 props 覆盖。
-- 新增 Token-only / Flex-only 静态门禁，覆盖样式、模板、脚本/TS、Token fallback 与 Grid 负例；新增 31 个注册组件的 Inspector `getTokenBindings` ↔ JSON Contract 槽位一致性测试。
+- 新增 Token-only / Flex-only 静态门禁，覆盖样式、模板、脚本/TS、Token fallback 与 Grid 负例；当前 30 个注册组件均有 Inspector `getTokenBindings` ↔ JSON Contract 槽位一致性测试。
 - `cold-chain-ops` 已完成同标准整合：Grid 改为 Flex/文档流，直接 Lucide 数字尺寸改用 DS Icon 语义尺寸，固定图表几何改由 Foundation 与运行时派生 custom property 表达；**不存在历史原型豁免**。
 - 根 `AGENT.md`、PBWork DS / Prototype Skills、Authoring Contract、开发规范、Token/组件手册、检查单和本 freeze 文档已同步同一红线。
 
 ### 第四轮组件稳定性收口（2026-08-11）
 
 - Foundations 修复宽度型 Border Token 的预览，并为布局、层级、效果使用不同语义图标。
-- Tabbar 补齐 `grow` 协议；Tabbar、一级 Tab、二级 Tab 的 Playground 直接并置“自适应 / 等宽”两区，移除冗余场景选择器，且两类页内 Tab 均显示真实视图区。三级 Tab（Filter Bar）保持原有场景与交互，不纳入本次调整。
+- Tabbar 补齐 `grow` 协议；Tabbar、一级 Tab、二级 Tab 的 Playground 直接并置“自适应 / 等宽”两区，移除冗余场景选择器，且两类页内 Tab 均显示真实视图区。三级 Tab（Filter Bar）同样移除场景选择器，直接通过筛选项与结果区展示内容状态。
 - Data List Playground 用不同插槽结构明确“列表项由业务自定义”；Scrollable Data List 形成真实溢出，并提供鼠标手势、桌面刷新与加载更多按钮的受控闭环。
 - Bottom Sheet / Flow Sheet 恢复 `radius.lg` 顶部圆角；Flow Sheet 清除 vendor body padding 覆盖并裁剪相邻步骤，不再露出下一页。
 - Contract、Registry、Vue、组件文档、静态门禁和端到端回归已同步；P1 至此从“协议完成、实现收尾”转为**完全冻结**。
 
 ### P1 冻结后的维护边界
+
+- Playground 不再把“使用场景”作为左上角入口：主预览保留真实交互；Contract 状态以真实组件实例展示，Contract 未表达的有限类型使用样例并置。Snackbar 使用明确的成功/失败触发按钮；Icon / Icon Button 继续使用 gallery，Tabbar / 一级 Tab / 二级 Tab 继续使用专门布局对照；Filter Bar 直接通过筛选项与结果区演示。场景数据仍作为示例与测试夹具保留。禁止使用通用外层卡片包裹变体，以免改变组件尺寸、surface 层级或交互边界。
 
 - 在不改变组件职责、Props / Slots / Events、状态语义、Token binding 和布局模式的前提下，可继续做基于既有 Token 的视觉微调；这属于实现维护，不重新打开 P1 协议。
 - 新增或改变上述任何语义面，必须显式重开协议评审并同步 Contract、Registry、Vue、文档和回归测试。

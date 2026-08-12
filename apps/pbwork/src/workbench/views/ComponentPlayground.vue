@@ -25,13 +25,15 @@ import {
   tokensToCssVars,
 } from "@/design-system/resolveThemeTokens";
 import { resolveLiveTokenBindings } from "@/design-system/resolveLiveTokenBindings";
-import { componentScenarios } from "@/design-system/components/scenarios";
+import {
+  componentScenarios,
+  type ComponentScenario,
+} from "@/design-system/components/scenarios";
 import { storeToRefs } from "pinia";
 
 const props = defineProps<{ componentId: string }>();
 const playground = usePlaygroundStore();
-const { scenarioId, themeId, resolvedProps, selectedScenario } =
-  storeToRefs(playground);
+const { scenarioId, themeId, resolvedProps } = storeToRefs(playground);
 
 const record = computed(() =>
   componentRecords.find((item) => item.id === props.componentId),
@@ -96,13 +98,49 @@ const isScrollableDataList = computed(
 const isSplitTabPresentation = computed(() =>
   ["tabbar", "primary-tabs", "secondary-tabs"].includes(record.value?.id ?? ""),
 );
-const previewAttach = "[data-pb-scenario-preview]";
-
-const hasDisabledState = computed(() => {
-  const schema = contract.value?.propsSchema as
-    { properties?: Record<string, unknown> } | undefined;
-  return Boolean(schema?.properties?.disabled);
+const typeScenarioIds: Record<string, string[]> = {
+  button: ["submit", "secondary", "primary-accent", "outlined"],
+  chip: ["status", "warning"],
+  card: ["summary", "section"],
+};
+const isWideExhibit = computed(() =>
+  ["app-bar", "card", "data-list", "divider", "tab-viewport"].includes(
+    record.value?.id ?? "",
+  ),
+);
+const typeExhibits = computed(() => {
+  const ids = typeScenarioIds[props.componentId] ?? [];
+  return ids
+    .map((id) => scenarios.value.find((item) => item.id === id))
+    .filter((item): item is ComponentScenario => Boolean(item));
 });
+const stateExhibits = computed(() =>
+  isGalleryPresentation.value ||
+  isTriggerPresentation.value ||
+  isSplitTabPresentation.value ||
+  isFilterBar.value ||
+  isScrollableDataList.value
+    ? []
+    : states.value,
+);
+const hasExhibits = computed(
+  () => typeExhibits.value.length > 0 || stateExhibits.value.length > 0,
+);
+const stageTitle = computed(() => {
+  if (isGalleryPresentation.value) return "状态矩阵";
+  if (isSplitTabPresentation.value) return "布局对照";
+  if (isTriggerPresentation.value) return "触发演示";
+  if (isFilterBar.value) return "筛选演示";
+  return "互动演示";
+});
+const stageDescription = computed(() => {
+  if (isGalleryPresentation.value) return "默认与 Contract 状态并置";
+  if (isSplitTabPresentation.value) return "自适应与等宽两种稳定布局并置";
+  if (isTriggerPresentation.value) return "通过明确操作观察组件打开与关闭";
+  if (isFilterBar.value) return "直接切换筛选项并观察结果";
+  return "直接操作组件并观察状态反馈";
+});
+const previewAttach = "[data-pb-scenario-preview]";
 
 type GalleryEntry = {
   id: string;
@@ -139,6 +177,8 @@ const tabComparisonValues = ref<Record<string, string>>({
 
 const playgroundNavIcons = [Home, List, User];
 const triggeredPreviewOpen = ref(false);
+const activeTriggerScenarioId = ref("");
+const triggeredPreviewStep = ref(0);
 function enrichBind(base: Record<string, unknown>): Record<string, unknown> {
   const next = { ...base };
   if (props.componentId === "tabbar") {
@@ -192,6 +232,31 @@ function previewBind() {
   if (isButton.value && buttonActionBusy.value) next.loading = true;
   return enrichBind(next);
 }
+function exhibitBind(
+  source: Record<string, unknown> | undefined,
+  scope: "type" | "state",
+  id: string,
+) {
+  const next: Record<string, unknown> = {
+    ...resolvedProps.value,
+    ...(source ?? {}),
+    inspectId: `ds.${props.componentId}.${scope}.${id}`,
+  };
+  if (props.componentId === "button" && scope === "type") next.block = false;
+  return enrichBind(next);
+}
+function triggerPreviewBind() {
+  const activeScenario =
+    scenarios.value.find((item) => item.id === activeTriggerScenarioId.value) ??
+    scenarios.value[0];
+  const next: Record<string, unknown> = {
+    ...(contract.value?.defaultProps ?? {}),
+    ...(activeScenario?.props ?? {}),
+  };
+  if (props.componentId === "flow-sheet")
+    next.step = triggeredPreviewStep.value;
+  return enrichBind(next);
+}
 function scrollablePreviewBind() {
   return enrichBind({
     ...resolvedProps.value,
@@ -219,13 +284,15 @@ function onTabComparisonUpdate(modeId: string, value: unknown) {
     [modeId]: value,
   };
 }
-function disabledPreviewBind() {
-  return enrichBind({ ...resolvedProps.value, disabled: true, loading: false });
-}
 function galleryBind(entry: GalleryEntry) {
   return enrichBind({ ...entry.props });
 }
-function openTriggeredPreview() {
+function openTriggeredPreview(scenarioId?: string) {
+  const id = scenarioId ?? scenarios.value[0]?.id ?? "";
+  activeTriggerScenarioId.value = id;
+  const scenario = scenarios.value.find((item) => item.id === id);
+  triggeredPreviewStep.value =
+    typeof scenario?.props?.step === "number" ? scenario.props.step : 0;
   triggeredPreviewOpen.value = true;
 }
 function onPreviewUpdate(value: unknown) {
@@ -236,6 +303,10 @@ function onPreviewUpdate(value: unknown) {
   playground.setOverride("modelValue", value);
 }
 function onPreviewStep(value: unknown) {
+  if (isOverlayPreview.value && props.componentId === "flow-sheet") {
+    if (typeof value === "number") triggeredPreviewStep.value = value;
+    return;
+  }
   playground.setOverride("step", value);
 }
 function onPreviewClick() {
@@ -279,10 +350,6 @@ const previewComponent = computed(() => {
     : null;
 });
 
-const checkboxMultiValues = ref({ sms: true, push: false, email: true });
-const isCheckboxMulti = computed(
-  () => record.value?.id === "checkbox" && scenarioId.value === "multi",
-);
 function tabbarSelectedLabel(modeId: string) {
   if (!isTabbar.value) return "";
   const items = tabComparisonBind(modeId, modeId === "equal").items;
@@ -315,6 +382,8 @@ watch(
     buttonActionBusy.value = false;
     buttonActionFinished.value = false;
     triggeredPreviewOpen.value = false;
+    activeTriggerScenarioId.value = "";
+    triggeredPreviewStep.value = 0;
     listRefreshing.value = false;
     listLoadingMore.value = false;
     listRowCount.value = 8;
@@ -342,9 +411,6 @@ onBeforeUnmount(() => {
   if (listActionTimer) clearTimeout(listActionTimer);
 });
 
-function selectScenario(id: string) {
-  playground.setScenario(id);
-}
 function setPreviewTheme(value: unknown) {
   if (value === "light" || value === "dark") {
     playground.setTheme(value as PlaygroundThemeId);
@@ -369,19 +435,6 @@ function bindingResolvedValue(tokenId: string) {
     </template>
 
     <template #toolbar>
-      <v-select
-        v-if="!isGalleryPresentation && !isSplitTabPresentation"
-        :model-value="scenarioId"
-        :items="scenarios"
-        item-title="label"
-        item-value="id"
-        label="使用场景"
-        density="compact"
-        variant="outlined"
-        hide-details
-        class="scenario-select"
-        @update:model-value="selectScenario(String($event))"
-      />
       <span class="preset-hint">{{ toolbarHint }}</span>
       <v-btn-toggle
         :model-value="themeId"
@@ -402,20 +455,8 @@ function bindingResolvedValue(tokenId: string) {
       <article class="preview-wrap" :style="previewStyle">
         <header class="scenario-header">
           <div>
-            <strong>{{
-              isGalleryPresentation
-                ? "状态矩阵"
-                : isSplitTabPresentation
-                  ? "布局对照"
-                  : selectedScenario?.label
-            }}</strong>
-            <span>{{
-              isGalleryPresentation
-                ? "默认与 Contract 状态并置"
-                : isSplitTabPresentation
-                  ? "自适应与等宽两种稳定布局并置"
-                  : selectedScenario?.description
-            }}</span>
+            <strong>{{ stageTitle }}</strong>
+            <span>{{ stageDescription }}</span>
           </div>
           <code>{{ `theme.${themeId}` }}</code>
         </header>
@@ -445,18 +486,30 @@ function bindingResolvedValue(tokenId: string) {
             :style="previewStyle"
           >
             <div class="trigger-bar">
+              <template v-if="record.id === 'snackbar'">
+                <v-btn
+                  v-for="scenario in scenarios"
+                  :key="scenario.id"
+                  color="primary"
+                  variant="flat"
+                  size="small"
+                  @click="openTriggeredPreview(scenario.id)"
+                  >显示{{ scenario.label }}</v-btn
+                >
+              </template>
               <v-btn
+                v-else
                 color="primary"
                 variant="flat"
                 size="small"
-                @click="openTriggeredPreview"
+                @click="openTriggeredPreview()"
                 >打开{{ record.label }}</v-btn
               >
               <span>关闭后可再次打开</span>
             </div>
             <component
               :is="previewComponent"
-              v-bind="previewBind()"
+              v-bind="triggerPreviewBind()"
               @update:model-value="onPreviewUpdate"
               @update:step="onPreviewStep"
             >
@@ -541,38 +594,6 @@ function bindingResolvedValue(tokenId: string) {
               </div>
             </template>
 
-            <div v-else-if="isCheckboxMulti" class="checkbox-multi-demo">
-              <component
-                :is="previewComponent"
-                label="短信通知"
-                :model-value="checkboxMultiValues.sms"
-                selected-color="color.primary"
-                unchecked-border-color="color.outline"
-                inspect-id="ds.checkbox.multi.sms"
-                @update:model-value="checkboxMultiValues.sms = Boolean($event)"
-              />
-              <component
-                :is="previewComponent"
-                label="推送通知"
-                :model-value="checkboxMultiValues.push"
-                selected-color="color.primary"
-                unchecked-border-color="color.outline"
-                inspect-id="ds.checkbox.multi.push"
-                @update:model-value="checkboxMultiValues.push = Boolean($event)"
-              />
-              <component
-                :is="previewComponent"
-                label="邮件通知"
-                :model-value="checkboxMultiValues.email"
-                selected-color="color.success"
-                unchecked-border-color="color.outline"
-                inspect-id="ds.checkbox.multi.email"
-                @update:model-value="
-                  checkboxMultiValues.email = Boolean($event)
-                "
-              />
-            </div>
-
             <div v-else-if="isScrollableDataList" class="scrollable-list-demo">
               <div class="scrollable-list-demo-toolbar">
                 <div>
@@ -625,52 +646,50 @@ function bindingResolvedValue(tokenId: string) {
               </div>
             </div>
 
-            <component
-              v-else
-              :is="previewComponent"
-              v-bind="previewBind()"
-              @click="onPreviewClick"
-              @update:model-value="onPreviewUpdate"
-              @update:step="onPreviewStep"
-            >
-              <template v-if="record.id === 'card'"
-                >4 个待处理 · 2 个即将超时</template
+            <div v-else data-primary-preview>
+              <component
+                :is="previewComponent"
+                v-bind="previewBind()"
+                v-on="isButton ? { click: onPreviewClick } : {}"
+                @update:model-value="onPreviewUpdate"
+                @update:step="onPreviewStep"
               >
-              <template v-else-if="record.id === 'form-section'"
-                >在这里放置该业务分组的表单字段。</template
-              >
-              <template v-else-if="record.id === 'data-list'">
-                <div role="listitem" class="list-slot-demo is-heading">
-                  <strong>仅标题行</strong>
-                </div>
-                <div role="listitem" class="list-slot-demo is-record">
-                  <div>
-                    <strong>双行业务记录</strong>
-                    <span>副标题、状态与密度均由调用方决定</span>
+                <template v-if="record.id === 'card'"
+                  >4 个待处理 · 2 个即将超时</template
+                >
+                <template v-else-if="record.id === 'data-list'">
+                  <div role="listitem" class="list-slot-demo is-heading">
+                    <strong>仅标题行</strong>
                   </div>
-                  <span class="list-state">进行中</span>
-                </div>
-                <div role="listitem" class="list-slot-demo is-metric">
-                  <span>自定义指标</span>
-                  <strong>86%</strong>
-                </div>
-              </template>
-              <template v-if="record.id === 'tab-viewport'" #item="{ value }"
-                ><div class="panel-slot-demo">
-                  <strong>{{ value }}</strong
-                  ><span>由外部导航控制的保活内容视图</span>
-                </div></template
-              >
-              <template
-                v-for="slotName in panelPreviewSlots"
-                :key="slotName"
-                #[slotName]
-                ><div class="panel-slot-demo">
-                  <strong>{{ slotName }}</strong
-                  ><span>{{ panelSlotLabel(slotName) }}</span>
-                </div></template
-              >
-            </component>
+                  <div role="listitem" class="list-slot-demo is-record">
+                    <div>
+                      <strong>双行业务记录</strong>
+                      <span>副标题、状态与密度均由调用方决定</span>
+                    </div>
+                    <span class="list-state">进行中</span>
+                  </div>
+                  <div role="listitem" class="list-slot-demo is-metric">
+                    <span>自定义指标</span>
+                    <strong>86%</strong>
+                  </div>
+                </template>
+                <template v-if="record.id === 'tab-viewport'" #item="{ value }"
+                  ><div class="panel-slot-demo">
+                    <strong>{{ value }}</strong
+                    ><span>由外部导航控制的保活内容视图</span>
+                  </div></template
+                >
+                <template
+                  v-for="slotName in panelPreviewSlots"
+                  :key="slotName"
+                  #[slotName]
+                  ><div class="panel-slot-demo">
+                    <strong>{{ slotName }}</strong
+                    ><span>{{ panelSlotLabel(slotName) }}</span>
+                  </div></template
+                >
+              </component>
+            </div>
 
             <p
               v-if="isButton && buttonActionFinished"
@@ -679,24 +698,92 @@ function bindingResolvedValue(tokenId: string) {
             >
               已完成；按钮已恢复可继续操作。
             </p>
-            <section
-              v-if="hasDisabledState && !isCheckboxMulti"
-              class="state-compare"
-              aria-label="可用与禁用状态对照"
-            >
-              <div>
-                <span>可操作</span
-                ><component
-                  :is="previewComponent"
-                  v-bind="enrichBind({ ...resolvedProps, loading: false })"
-                />
+
+            <section v-if="hasExhibits" class="exhibit-stack">
+              <div v-if="typeExhibits.length" class="exhibit-section">
+                <h2>类型</h2>
+                <div class="exhibit-row" :class="{ 'is-wide': isWideExhibit }">
+                  <div
+                    v-for="scenario in typeExhibits"
+                    :key="scenario.id"
+                    class="exhibit-item"
+                    :data-exhibit="`type.${scenario.id}`"
+                  >
+                    <span>{{ scenario.label }}</span>
+                    <component
+                      :is="previewComponent"
+                      v-bind="exhibitBind(scenario.props, 'type', scenario.id)"
+                    >
+                      <template v-if="record.id === 'card'"
+                        >4 个待处理 · 2 个即将超时</template
+                      >
+                      <template v-else-if="record.id === 'data-list'">
+                        <div role="listitem" class="list-slot-demo is-heading">
+                          <strong>仅标题行</strong>
+                        </div>
+                        <div role="listitem" class="list-slot-demo is-record">
+                          <div>
+                            <strong>双行业务记录</strong>
+                            <span>副标题、状态与密度由调用方决定</span>
+                          </div>
+                          <span class="list-state">进行中</span>
+                        </div>
+                      </template>
+                      <template
+                        v-if="record.id === 'tab-viewport'"
+                        #item="{ value }"
+                      >
+                        <div class="panel-slot-demo">
+                          <strong>{{ value }}</strong>
+                          <span>由外部导航控制的保活内容视图</span>
+                        </div>
+                      </template>
+                    </component>
+                  </div>
+                </div>
               </div>
-              <div>
-                <span>条件不满足 · 禁用</span
-                ><component
-                  :is="previewComponent"
-                  v-bind="disabledPreviewBind()"
-                />
+
+              <div v-if="stateExhibits.length" class="exhibit-section">
+                <h2>状态</h2>
+                <div class="exhibit-row" :class="{ 'is-wide': isWideExhibit }">
+                  <div
+                    v-for="state in stateExhibits"
+                    :key="state.id"
+                    class="exhibit-item"
+                    :data-exhibit="`state.${state.id}`"
+                  >
+                    <span>{{ state.label }}</span>
+                    <component
+                      :is="previewComponent"
+                      v-bind="exhibitBind(state.props, 'state', state.id)"
+                    >
+                      <template v-if="record.id === 'card'"
+                        >4 个待处理 · 2 个即将超时</template
+                      >
+                      <template v-else-if="record.id === 'data-list'">
+                        <div role="listitem" class="list-slot-demo is-heading">
+                          <strong>仅标题行</strong>
+                        </div>
+                        <div role="listitem" class="list-slot-demo is-record">
+                          <div>
+                            <strong>双行业务记录</strong>
+                            <span>副标题、状态与密度由调用方决定</span>
+                          </div>
+                          <span class="list-state">进行中</span>
+                        </div>
+                      </template>
+                      <template
+                        v-if="record.id === 'tab-viewport'"
+                        #item="{ value }"
+                      >
+                        <div class="panel-slot-demo">
+                          <strong>{{ value }}</strong>
+                          <span>由外部导航控制的保活内容视图</span>
+                        </div>
+                      </template>
+                    </component>
+                  </div>
+                </div>
               </div>
             </section>
           </div>
@@ -726,10 +813,6 @@ function bindingResolvedValue(tokenId: string) {
 </template>
 
 <style scoped>
-.scenario-select {
-  flex: 0 1 220px;
-  min-width: 180px;
-}
 .preset-hint {
   flex: 1 1 160px;
   min-width: 0;
@@ -821,6 +904,7 @@ function bindingResolvedValue(tokenId: string) {
 }
 .trigger-bar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
   margin-bottom: 16px;
@@ -960,22 +1044,51 @@ function bindingResolvedValue(tokenId: string) {
   color: var(--pb-color-success);
   font: var(--pb-typography-caption);
 }
-.state-compare {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
-  margin-top: 24px;
-  padding-top: 16px;
+.exhibit-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-spacing-lg);
+  margin-top: var(--pb-spacing-xl);
+  padding-top: var(--pb-spacing-lg);
   border-top: var(--pb-border-hairline);
 }
-.state-compare > div {
-  display: grid;
-  gap: 8px;
+.exhibit-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-spacing-sm);
+}
+.exhibit-section h2 {
+  margin: var(--pb-spacing-none);
+  color: var(--pb-color-on-surface);
+  font: var(--pb-typography-label);
+}
+.exhibit-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--pb-spacing-lg);
+}
+.exhibit-item {
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--pb-spacing-xs);
   min-width: 0;
 }
-.state-compare > div > span {
+.exhibit-item > span {
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
+}
+.exhibit-row.is-wide {
+  flex-direction: column;
+  align-items: stretch;
+}
+.exhibit-row.is-wide .exhibit-item {
+  width: var(--pb-layout-fill);
+}
+.exhibit-row.is-wide .exhibit-item > :deep(*) {
+  width: var(--pb-layout-fill);
 }
 .semantic-details {
   padding: 0 16px 16px;
@@ -1023,9 +1136,6 @@ function bindingResolvedValue(tokenId: string) {
   font-size: 0.75rem;
 }
 @media (max-width: 700px) {
-  .state-compare {
-    grid-template-columns: 1fr;
-  }
   .binding-list li {
     grid-template-columns: 1fr;
     gap: 3px;

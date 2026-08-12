@@ -704,7 +704,6 @@ function secondaryIconFor(id: string) {
     dialog: MessageSquare,
     snackbar: Bell,
     "empty-state": Inbox,
-    "form-section": ClipboardCheck,
   };
   if (componentIcons[id]) return componentIcons[id];
   return ComponentIcon;

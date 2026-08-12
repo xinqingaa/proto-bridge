@@ -9,7 +9,7 @@
   "summary": "确认类模态对话框；需用户显式确认或关闭，不承担底栏流程。",
   "behavior": [
     "默认关闭；Playground 与产品页通过触发打开",
-    "confirm 发出后由调用方关闭；组件不擅自导航",
+    "确认会先发出 confirm，再关闭自身；调用方决定后续业务动作与导航",
     "不替代 BottomSheet / FlowSheet 的流程承载"
   ],
   "propsSchema": {

@@ -94,17 +94,99 @@ test("tab playgrounds compare adaptive and equal layouts while FilterBar stays u
   expect(widths[1]?.widths[0]).toBeGreaterThan(widths[0]?.widths[0] ?? 0);
 
   await page.goto("/workbench/components/filter-bar");
-  await expect(page.getByLabel("使用场景")).toBeVisible();
+  await expect(page.getByLabel("使用场景")).toHaveCount(0);
   await expect(page.locator(".tab-comparison")).toHaveCount(0);
+});
+
+test("component playgrounds expose component types and Contract states without scenario selection", async ({
+  page,
+}) => {
+  for (const componentId of ["icon", "icon-button"]) {
+    await page.goto(`/workbench/components/${componentId}`);
+    await expect(page.getByLabel("使用场景")).toHaveCount(0);
+    await expect(page.locator(".gallery-matrix")).toBeVisible();
+  }
+
+  for (const componentId of ["tabbar", "primary-tabs", "secondary-tabs"]) {
+    await page.goto(`/workbench/components/${componentId}`);
+    await expect(page.getByLabel("使用场景")).toHaveCount(0);
+    await expect(page.locator(".tab-comparison")).toHaveCount(2);
+  }
+
+  for (const componentId of [
+    "app-bar",
+    "avatar",
+    "badge",
+    "bottom-sheet",
+    "button",
+    "card",
+    "checkbox",
+    "chip",
+    "data-list",
+    "dialog",
+    "divider",
+    "empty-state",
+    "flow-sheet",
+    "progress",
+    "radio-group",
+    "scrollable-data-list",
+    "search-bar",
+    "select",
+    "spinner",
+    "switch",
+    "tab-viewport",
+    "text-field",
+    "textarea",
+  ]) {
+    await page.goto(`/workbench/components/${componentId}`);
+    await expect(page.getByLabel("使用场景")).toHaveCount(0);
+    await expect(page.locator(".scenario-comparison-item")).toHaveCount(0);
+    await expect(page.locator(".state-compare")).toHaveCount(0);
+  }
+
+  await page.goto("/workbench/components/snackbar");
+  await expect(page.getByLabel("使用场景")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "显示操作成功" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "显示操作失败" }),
+  ).toBeVisible();
+
+  await page.goto("/workbench/components/filter-bar");
+  await expect(page.getByLabel("使用场景")).toHaveCount(0);
+
+  await page.goto("/workbench/components/button");
+  await expect(page.locator('[data-exhibit="type.secondary"]')).toBeVisible();
+  await expect(page.locator('[data-exhibit="type.outlined"]')).toBeVisible();
+  await expect(page.locator('[data-exhibit="state.loading"]')).toBeVisible();
+  await expect(page.locator('[data-exhibit="state.disabled"]')).toBeVisible();
+  const submitButton = page.locator(
+    '[data-primary-preview] [data-pb-id="ds.button"]',
+  );
+  await expect(submitButton).toHaveCount(1);
+  const initialHeight = await submitButton.evaluate(
+    (element) => element.getBoundingClientRect().height,
+  );
+  await submitButton.click();
+  await expect(submitButton).toHaveAttribute("aria-busy", "true");
+  expect(
+    await submitButton.evaluate(
+      (element) => element.getBoundingClientRect().height,
+    ),
+  ).toBe(initialHeight);
+  await expect(page.getByText("已完成；按钮已恢复可继续操作。")).toBeVisible();
 });
 
 test("list playground demonstrates custom rows and desktop refresh/load controls", async ({
   page,
 }) => {
   await page.goto("/workbench/components/data-list");
-  await expect(page.getByText("仅标题行", { exact: true })).toBeVisible();
-  await expect(page.getByText("双行业务记录", { exact: true })).toBeVisible();
-  await expect(page.getByText("自定义指标", { exact: true })).toBeVisible();
+  await expect(page.getByText("仅标题行", { exact: true })).toHaveCount(3);
+  await expect(page.getByText("双行业务记录", { exact: true })).toHaveCount(3);
+  await expect(page.getByText("自定义指标", { exact: true })).toHaveCount(1);
+  await expect(page.locator('[data-exhibit="state.plain"]')).toBeVisible();
+  await expect(page.locator('[data-exhibit="state.raised"]')).toBeVisible();
 
   await page.goto("/workbench/components/scrollable-data-list");
   const mainList = page
@@ -128,6 +210,39 @@ test("list playground demonstrates custom rows and desktop refresh/load controls
     .getByRole("button", { name: "加载更多", exact: true })
     .click();
   await expect(mainList.locator('[role="listitem"]')).toHaveCount(10);
+});
+
+test("wide component exhibits retain their intended visual width and Card roles", async ({
+  page,
+}) => {
+  await page.goto("/workbench/components/card");
+  await expect(
+    page.locator('[data-exhibit="type.summary"] [data-pb-role="summary"]'),
+  ).toBeVisible();
+  await expect(
+    page.locator('[data-exhibit="type.section"] [data-pb-role="section"]'),
+  ).toBeVisible();
+  expect(
+    await page
+      .locator('[data-exhibit="type.summary"] .pb-card')
+      .evaluate((element) => element.getBoundingClientRect().width),
+  ).toBeGreaterThan(600);
+
+  await page.goto("/workbench/components/divider");
+  for (const stateId of ["plain", "inset"]) {
+    expect(
+      await page
+        .locator(`[data-exhibit="state.${stateId}"] .pb-divider`)
+        .evaluate((element) => element.getBoundingClientRect().width),
+    ).toBeGreaterThan(600);
+  }
+
+  await page.goto("/workbench/components/app-bar");
+  expect(
+    await page
+      .locator('[data-exhibit="state.no-back"] .pb-app-bar')
+      .evaluate((element) => element.getBoundingClientRect().width),
+  ).toBeGreaterThan(600);
 });
 
 test("sheet surfaces keep semantic radius and FlowSheet clips adjacent pages", async ({
@@ -166,4 +281,33 @@ test("sheet surfaces keep semantic radius and FlowSheet clips adjacent pages", a
   expect(layout.overflow).toBe("hidden");
   expect(layout.firstWidth).toBeCloseTo(layout.bodyWidth, 1);
   expect(layout.secondLeft).toBeCloseTo(layout.bodyRight, 1);
+
+  const flowBody = flowSheet.locator(".pb-flow-sheet-body");
+  await flowBody.evaluate((element) => {
+    const startX = element.getBoundingClientRect().right;
+    const endX = element.getBoundingClientRect().left;
+    const pointer = {
+      pointerId: 1,
+      pointerType: "mouse",
+      button: 0,
+      clientY: element.getBoundingClientRect().top,
+    };
+    element.dispatchEvent(
+      new PointerEvent("pointerdown", { ...pointer, clientX: startX }),
+    );
+    element.dispatchEvent(
+      new PointerEvent("pointermove", { ...pointer, clientX: endX }),
+    );
+    element.dispatchEvent(
+      new PointerEvent("pointerup", { ...pointer, clientX: endX }),
+    );
+  });
+  await expect(flowSheet.getByText("2 / 4", { exact: true })).toBeVisible();
+
+  await page.goto("/workbench/components/dialog");
+  await page.getByRole("button", { name: "打开Dialog" }).click();
+  const dialog = page.locator(".pb-dialog");
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "确认完成" }).click();
+  await expect(dialog).toBeHidden();
 });

@@ -303,7 +303,12 @@ const scenarios: Record<string, ComponentScenario[]> = {
       id: "summary",
       label: "业务摘要",
       description: "工作台展示关键指标与摘要。",
-      props: { title: "今日工单", subtitle: "华东服务中心", elevated: true },
+      props: {
+        title: "今日工单",
+        subtitle: "华东服务中心",
+        elevated: true,
+        semanticRole: "summary",
+      },
     },
     {
       id: "section",
@@ -313,6 +318,7 @@ const scenarios: Record<string, ComponentScenario[]> = {
         title: "客户信息",
         subtitle: "联系人与服务地址",
         elevated: false,
+        semanticRole: "section",
       },
     },
   ],
@@ -574,30 +580,6 @@ const scenarios: Record<string, ComponentScenario[]> = {
         title: "没有找到结果",
         description: "请尝试修改关键词或筛选条件。",
         actionLabel: "清除筛选",
-      },
-    },
-  ],
-  "form-section": [
-    {
-      id: "customer",
-      label: "客户信息",
-      description: "必填客户信息分组，可带右侧编辑操作。",
-      props: {
-        title: "客户信息",
-        description: "联系人和服务地址",
-        required: true,
-        actionLabel: "编辑",
-      },
-    },
-    {
-      id: "optional",
-      label: "补充信息",
-      description: "无强制要求的可选表单分组。",
-      props: {
-        title: "补充信息",
-        description: "附件与现场备注",
-        required: false,
-        actionLabel: "",
       },
     },
   ],

@@ -62,10 +62,7 @@ ScrollableDataList          # 纵滚 + 刷新 + 分页 + 可选鼠标拖滚
 
 ## 6. 表单
 
-```text
-FormSection
-  └─ TextField / Textarea / Select / Checkbox / RadioGroup / Switch
-```
+使用语义化业务 `<section>` 组织表单分组，内部组合 TextField / Textarea / Select / Checkbox / RadioGroup / Switch；分组的标题、说明、边界与间距属于页面局部结构，必须使用 Foundation Token 并按需声明 Evidence。
 
 提交用 `Button`；主操作默认 `bgColor=color.action`（及配对文字/边框）。
 
