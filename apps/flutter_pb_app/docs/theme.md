@@ -37,6 +37,8 @@ TS.effect
 
 `transparent` / `none` 是绑定字面量，不是 Token，不创建 `TS.*` 字段。Web 百分比、shadow、filter 和 easing 在 Flutter 分别翻译为比例/逻辑像素、elevation、effect 参数和 `Curve`，不复制 CSS 字符串。
 
+Theme override 也属于同步 surface；例如深色主题的 `opacity.glass` 必须由 `ThemeService` 按亮度解析，不能把浅色默认值固定成全局常量。
+
 ## 同步门禁
 
 工程根目录的 `proto-bridge.target.json` 是精确 id → accessor 表，`proto-bridge.sync.json` 固定最后一次已确认的 PBWork surface。修改协议 Schema、Theme、Token accessor 或映射后从仓库根运行 `pnpm ds:target-sync:verify`；只有所有映射均为 `resolved` 且完整 fingerprint 元数据匹配才算同步。

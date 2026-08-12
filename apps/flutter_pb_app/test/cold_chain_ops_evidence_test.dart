@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:flutter_pb_app/app/app.dart';
-import 'package:flutter_pb_app/common/widgets/widgets.dart';
+import 'package:flutter_pb_app/common/widgets.dart';
 import 'package:flutter_pb_app/router/routes.dart';
 
 void main() {

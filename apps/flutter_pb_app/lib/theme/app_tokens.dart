@@ -63,14 +63,16 @@ class AppRadius {
 
 /// 对齐 pbwork `opacity.*` token。
 class AppOpacity {
-  const AppOpacity();
+  const AppOpacity({required this.isDark});
+
+  final bool isDark;
 
   double get disabled => 0.38;
   double get muted => 0.62;
   double get hover => 0.08;
   double get pressed => 0.14;
   double get overlay => 0.6;
-  double get glass => 0.76;
+  double get glass => isDark ? 0.8 : 0.76;
   double get hidden => 0;
   double get visible => 1;
 }

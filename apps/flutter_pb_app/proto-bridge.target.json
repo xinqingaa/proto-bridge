@@ -10,15 +10,15 @@
   "components": {
     "app-bar": {
       "symbol": "CommonAppBar",
-      "import": "common/widgets/widgets.dart"
+      "import": "common/widgets.dart"
     },
     "avatar": {
       "symbol": "CommonAvatar",
-      "import": "common/widgets/widgets.dart"
+      "import": "common/widgets.dart"
     },
     "badge": {
       "symbol": "CommonBadge",
-      "import": "common/widgets/widgets.dart"
+      "import": "common/widgets.dart"
     },
     "bottom-sheet": {
       "symbol": "AppPop.sheet",
@@ -26,19 +26,19 @@
     },
     "button": {
       "symbol": "CommonButton",
-      "import": "common/widgets/widgets.dart"
+      "import": "common/widgets.dart"
     },
     "card": {
       "symbol": "CommonCard",
-      "import": "common/widgets/widgets.dart"
+      "import": "common/widgets.dart"
     },
     "checkbox": {
       "symbol": "CommonCheckbox",
-      "import": "common/widgets/widgets.dart"
+      "import": "common/widgets.dart"
     },
     "chip": {
       "symbol": "CommonChip",
-      "import": "common/widgets/widgets.dart"
+      "import": "common/widgets.dart"
     },
     "confirm": {
       "symbol": "AppPop.confirm",
@@ -46,19 +46,19 @@
     },
     "data-list": {
       "symbol": "CommonDataList",
-      "import": "common/widgets/widgets.dart"
+      "import": "common/widgets.dart"
     },
     "divider": {
       "symbol": "CommonDivider",
-      "import": "common/widgets/widgets.dart"
+      "import": "common/widgets.dart"
     },
     "empty-state": {
       "symbol": "CommonEmptyState",
-      "import": "common/widgets/widgets.dart"
+      "import": "common/widgets.dart"
     },
     "filter-bar": {
       "symbol": "CommonFilterBar",
-      "import": "common/widgets/widgets.dart"
+      "import": "common/widgets.dart"
     },
     "flow-sheet": {
       "symbol": "AppPop.flowSheet",
@@ -66,11 +66,11 @@
     },
     "icon": {
       "symbol": "CommonIcon",
-      "import": "common/widgets/widgets.dart"
+      "import": "common/widgets.dart"
     },
     "icon-button": {
       "symbol": "CommonIconButton",
-      "import": "common/widgets/widgets.dart"
+      "import": "common/widgets.dart"
     },
     "loading": {
       "symbol": "AppPop.loading",
@@ -82,51 +82,51 @@
     },
     "primary-tabs": {
       "symbol": "CommonPrimaryTabs",
-      "import": "common/widgets/widgets.dart"
+      "import": "common/widgets.dart"
     },
     "progress": {
       "symbol": "CommonProgress",
-      "import": "common/widgets/widgets.dart"
+      "import": "common/widgets.dart"
     },
     "radio-group": {
       "symbol": "CommonRadioGroup",
-      "import": "common/widgets/widgets.dart"
+      "import": "common/widgets.dart"
     },
     "scrollable-data-list": {
       "symbol": "CommonScrollableDataList",
-      "import": "common/widgets/widgets.dart"
+      "import": "common/widgets.dart"
     },
     "search-bar": {
       "symbol": "CommonSearchBar",
-      "import": "common/widgets/widgets.dart"
+      "import": "common/widgets.dart"
     },
     "secondary-tabs": {
       "symbol": "CommonSecondaryTabs",
-      "import": "common/widgets/widgets.dart"
+      "import": "common/widgets.dart"
     },
     "spinner": {
       "symbol": "CommonSpinner",
-      "import": "common/widgets/widgets.dart"
+      "import": "common/widgets.dart"
     },
     "switch": {
       "symbol": "CommonSwitch",
-      "import": "common/widgets/widgets.dart"
+      "import": "common/widgets.dart"
     },
     "tab-viewport": {
       "symbol": "CommonTabView",
-      "import": "common/widgets/widgets.dart"
+      "import": "common/widgets.dart"
     },
     "tabbar": {
       "symbol": "CommonBottomNav",
-      "import": "common/widgets/widgets.dart"
+      "import": "common/widgets.dart"
     },
     "text-field": {
       "symbol": "CommonTextField",
-      "import": "common/widgets/widgets.dart"
+      "import": "common/widgets.dart"
     },
     "textarea": {
       "symbol": "CommonTextArea",
-      "import": "common/widgets/widgets.dart"
+      "import": "common/widgets.dart"
     },
     "toast": {
       "symbol": "AppPop.toast",

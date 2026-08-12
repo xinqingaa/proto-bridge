@@ -3,8 +3,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:unified_popups/unified_popups.dart';
 
-import 'package:flutter_pb_app/common/widgets/widgets.dart';
+import 'package:flutter_pb_app/common/widgets.dart';
 import 'package:flutter_pb_app/theme/proto_bridge_tokens.dart';
 import 'package:flutter_pb_app/theme/ts.dart';
 
@@ -79,6 +80,78 @@ void main() {
     expect(find.text('首页'), findsOneWidget);
     expect(find.byIcon(CommonIconName.home.data), findsOneWidget);
     expect(find.byType(AnimatedPositioned), findsNothing);
+  });
+
+  testWidgets('primary tabs keep the track plain and glass on selection only', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeService.of(Brightness.light).toThemeData(),
+        home: const Scaffold(
+          body: DefaultTabController(
+            length: 2,
+            child: CommonPrimaryTabs(
+              items: [
+                CommonTabItem(value: 'all', label: '全部'),
+                CommonTabItem(value: 'done', label: '完成'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final track = tester.widget<DecoratedBox>(
+      find.byKey(const ValueKey('primary-tabs-track')),
+    );
+    final decoration = track.decoration as BoxDecoration;
+    expect(decoration.color, TS.colors.surfaceRecessed);
+    expect(decoration.boxShadow, isNull);
+
+    expect(find.byType(LiquidGlass), findsOneWidget);
+    final selection = tester.widget<LiquidGlass>(
+      find.byKey(const ValueKey('primary-tabs-selection')),
+    );
+    expect(selection.enableShadow, isTrue);
+    expect(selection.blurSigma, TS.effect.glassBackdropBlur);
+  });
+
+  testWidgets(
+    'secondary tabs use compact label spacing and controlled height',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeService.of(Brightness.light).toThemeData(),
+          home: const Scaffold(
+            body: DefaultTabController(
+              length: 2,
+              child: CommonSecondaryTabs(
+                items: [
+                  CommonTabItem(value: 'all', label: '全部'),
+                  CommonTabItem(value: 'done', label: '完成'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final tabBar = tester.widget<TabBar>(find.byType(TabBar));
+      expect(
+        tabBar.labelPadding,
+        EdgeInsets.symmetric(horizontal: TS.spacing.sm),
+      );
+      expect(
+        tester.widgetList<Tab>(find.byType(Tab)).map((tab) => tab.height),
+        everyElement(TS.sizing.controlMd),
+      );
+    },
+  );
+
+  test('dark theme consumes the Producer glass-opacity override', () {
+    expect(ThemeService.of(Brightness.light).opacity.glass, 0.76);
+    expect(ThemeService.of(Brightness.dark).opacity.glass, 0.8);
   });
 
   test('all curated Lucide ids resolve', () {

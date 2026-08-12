@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:flutter_pb_app/app/app.dart';
+import 'package:flutter_pb_app/common/widgets.dart';
 
 void main() {
   testWidgets('Hub lists the current demo and prototype entries', (
@@ -32,6 +33,33 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Button / IconButton'), findsOneWidget);
-    expect(find.text('Card / Divider / Progress / Spinner'), findsOneWidget);
+    expect(find.text('Action / 操作'), findsOneWidget);
+  });
+
+  testWidgets('Demo navigation separates primary and secondary tab examples', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(const ProviderScope(child: PbApp()));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Demo 对照'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final scaffold = tester.state<ScaffoldState>(find.byType(Scaffold).last);
+    scaffold.openDrawer();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Navigation / 导航'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Primary Tabs'), findsOneWidget);
+    expect(find.text('Secondary Tabs'), findsOneWidget);
+    expect(find.byType(CommonPrimaryTabs), findsOneWidget);
+    expect(find.byType(CommonSecondaryTabs), findsOneWidget);
+    expect(find.byType(CommonTabView), findsNWidgets(2));
   });
 }

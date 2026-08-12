@@ -1,0 +1,59 @@
+import 'package:flutter/material.dart';
+
+import '../../../theme/ts.dart';
+
+/// 对齐 pbwork `TextField` — 官方 [TextField]。
+class CommonTextField extends StatelessWidget {
+  const CommonTextField({
+    super.key,
+    this.controller,
+    this.label,
+    this.showLabel = false,
+    this.hint,
+    this.enabled = true,
+    this.obscureText = false,
+    this.keyboardType,
+    this.onChanged,
+    this.onSubmitted,
+  });
+
+  final TextEditingController? controller;
+  final String? label;
+  final bool showLabel;
+  final String? hint;
+  final bool enabled;
+  final bool obscureText;
+  final TextInputType? keyboardType;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
+
+  @override
+  Widget build(BuildContext context) {
+    TS.of(context);
+    return SizedBox(
+      height: TS.sizing.controlMd,
+      child: Opacity(
+        opacity: enabled ? TS.opacity.visible : TS.opacity.disabled,
+        child: TextField(
+          controller: controller,
+          enabled: enabled,
+          obscureText: obscureText,
+          keyboardType: keyboardType,
+          onChanged: onChanged,
+          onSubmitted: onSubmitted,
+          style: TS.textStyle.content,
+          decoration: InputDecoration(
+            labelText: showLabel ? label : null,
+            labelStyle: TS.textStyle.caption,
+            hintText: hint,
+            filled: true,
+            fillColor: TS.colors.surface,
+            border: showLabel ? null : InputBorder.none,
+            enabledBorder: showLabel ? null : InputBorder.none,
+            focusedBorder: showLabel ? null : InputBorder.none,
+          ),
+        ),
+      ),
+    );
+  }
+}

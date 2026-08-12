@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../router/routes.dart';
 import '../../theme/ts.dart';
-import '../../common/widgets/widgets.dart';
+import '../../common/widgets.dart';
 
 /// App hub: Demo + prototype entry points.
 class HubPage extends ConsumerWidget {

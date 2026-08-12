@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../common/overlay/app_pop.dart';
-import '../../common/widgets/widgets.dart';
+import '../../common/widgets.dart';
 import '../../router/routes.dart';
 import '../../theme/ts.dart';
 import 'models.dart';

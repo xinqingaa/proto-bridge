@@ -1,6 +1,8 @@
 # 公共组件
 
-公共组件位于 `lib/common/widgets/`，统一从 `widgets.dart` 导入。组件负责稳定的交互语义、尺寸和 Theme 映射；业务页面只传入数据、状态和回调。弹层统一走 `lib/common/overlay/app_pop.dart` 的 `AppPop`。
+公共组件按 Producer 的职责分类位于 `lib/common/widgets/{action,input,display,navigation,data}/`，Target 自己拥有的组合壳位于 `lib/common/widgets/composition/`，业务与测试统一从 `lib/common/widgets.dart` 导入。组件负责稳定的交互语义、尺寸和 Theme 映射；业务页面只传入数据、状态和回调。弹层统一走 `lib/common/overlay/app_pop.dart` 的 `AppPop`。
+
+目录分类只组织源码，不改变 `componentId` 或 role。`CommonFormSection` 等 Target 组合壳不得进入 31 项 Producer 组件映射；`AppPop` 仍保持独立弹层边界，不由 Widget barrel 隐式导出。
 
 ## 组件职责
 
@@ -23,7 +25,7 @@
 | `CommonSwitch`                     | 二值开关设置；不能用 Checkbox 静默替代                           |
 | `CommonButton`                     | 主要、次要、危险和加载动作                                       |
 | `CommonIconButton`                 | 单图标动作（含 loading）；必须提供 tooltip                       |
-| `CommonPrimaryTabs`                | 官方 TabBar + `LiquidGlass` 的一级页内分区                       |
+| `CommonPrimaryTabs`                | 无阴影 recessed 轨道 + 选中项 `LiquidGlass` 的一级页内分区       |
 | `CommonSecondaryTabs`              | 官方 TabBar + caret 指示器的二级页内分区                         |
 | `CommonTabView`                    | 官方 TabBarView 内容切换与 swipe 所有权                           |
 | `CommonEmptyState`                 | 空数据或未配置状态                                               |

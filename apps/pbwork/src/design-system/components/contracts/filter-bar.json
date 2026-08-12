@@ -50,12 +50,14 @@
     "update:modelValue"
   ],
   "tokenBindings": {
-    "active": "color.primary",
-    "activeSurface": "color.primary-soft",
-    "surface": "color.surface",
-    "border": "color.border",
+    "active": "color.on-surface",
+    "activeSurface": "color.surface-variant",
+    "inactive": "color.on-surface-muted",
+    "inactiveSurface": "transparent",
     "radius": "radius.sm",
     "gap": "spacing.sm",
+    "minWidth": "spacing.none",
+    "grow": "layout.flex-grow",
     "label": "typography.label"
   },
   "playground": {

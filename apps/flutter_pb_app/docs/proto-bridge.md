@@ -8,36 +8,36 @@
 
 | Evidence 组件 id | 本工程目标组件 | import |
 | --- | --- | --- |
-| `app-bar` | `CommonAppBar` | `common/widgets/widgets.dart` |
-| `avatar` | `CommonAvatar` | `common/widgets/widgets.dart` |
-| `badge` | `CommonBadge` | `common/widgets/widgets.dart` |
+| `app-bar` | `CommonAppBar` | `common/widgets.dart` |
+| `avatar` | `CommonAvatar` | `common/widgets.dart` |
+| `badge` | `CommonBadge` | `common/widgets.dart` |
 | `bottom-sheet` | `AppPop.sheet` | `common/overlay/app_pop.dart` |
-| `button` | `CommonButton` | `common/widgets/widgets.dart` |
-| `card` | `CommonCard` | `common/widgets/widgets.dart` |
-| `checkbox` | `CommonCheckbox` | `common/widgets/widgets.dart` |
-| `chip` | `CommonChip` | `common/widgets/widgets.dart` |
+| `button` | `CommonButton` | `common/widgets.dart` |
+| `card` | `CommonCard` | `common/widgets.dart` |
+| `checkbox` | `CommonCheckbox` | `common/widgets.dart` |
+| `chip` | `CommonChip` | `common/widgets.dart` |
 | `confirm` | `AppPop.confirm` | `common/overlay/app_pop.dart` |
-| `data-list` | `CommonDataList` | `common/widgets/widgets.dart` |
-| `divider` | `CommonDivider` | `common/widgets/widgets.dart` |
-| `empty-state` | `CommonEmptyState` | `common/widgets/widgets.dart` |
-| `filter-bar` | `CommonFilterBar` | `common/widgets/widgets.dart` |
+| `data-list` | `CommonDataList` | `common/widgets.dart` |
+| `divider` | `CommonDivider` | `common/widgets.dart` |
+| `empty-state` | `CommonEmptyState` | `common/widgets.dart` |
+| `filter-bar` | `CommonFilterBar` | `common/widgets.dart` |
 | `flow-sheet` | `AppPop.flowSheet` | `common/overlay/app_pop.dart` |
-| `icon` | `CommonIcon` | `common/widgets/widgets.dart` |
-| `icon-button` | `CommonIconButton` | `common/widgets/widgets.dart` |
+| `icon` | `CommonIcon` | `common/widgets.dart` |
+| `icon-button` | `CommonIconButton` | `common/widgets.dart` |
 | `loading` | `AppPop.loading` | `common/overlay/app_pop.dart` |
 | `menu` | `AppPop.dropMenu` | `common/overlay/app_pop.dart` |
-| `primary-tabs` | `CommonPrimaryTabs` | `common/widgets/widgets.dart` |
-| `progress` | `CommonProgress` | `common/widgets/widgets.dart` |
-| `radio-group` | `CommonRadioGroup` | `common/widgets/widgets.dart` |
-| `scrollable-data-list` | `CommonScrollableDataList` | `common/widgets/widgets.dart` |
-| `search-bar` | `CommonSearchBar` | `common/widgets/widgets.dart` |
-| `secondary-tabs` | `CommonSecondaryTabs` | `common/widgets/widgets.dart` |
-| `spinner` | `CommonSpinner` | `common/widgets/widgets.dart` |
-| `switch` | `CommonSwitch` | `common/widgets/widgets.dart` |
-| `tab-viewport` | `CommonTabView` | `common/widgets/widgets.dart` |
-| `tabbar` | `CommonBottomNav` | `common/widgets/widgets.dart` |
-| `text-field` | `CommonTextField` | `common/widgets/widgets.dart` |
-| `textarea` | `CommonTextArea` | `common/widgets/widgets.dart` |
+| `primary-tabs` | `CommonPrimaryTabs` | `common/widgets.dart` |
+| `progress` | `CommonProgress` | `common/widgets.dart` |
+| `radio-group` | `CommonRadioGroup` | `common/widgets.dart` |
+| `scrollable-data-list` | `CommonScrollableDataList` | `common/widgets.dart` |
+| `search-bar` | `CommonSearchBar` | `common/widgets.dart` |
+| `secondary-tabs` | `CommonSecondaryTabs` | `common/widgets.dart` |
+| `spinner` | `CommonSpinner` | `common/widgets.dart` |
+| `switch` | `CommonSwitch` | `common/widgets.dart` |
+| `tab-viewport` | `CommonTabView` | `common/widgets.dart` |
+| `tabbar` | `CommonBottomNav` | `common/widgets.dart` |
+| `text-field` | `CommonTextField` | `common/widgets.dart` |
+| `textarea` | `CommonTextArea` | `common/widgets.dart` |
 | `toast` | `AppPop.toast` | `common/overlay/app_pop.dart` |
 
 `page`、`section`、`summary`、`list`、`field` 等 role 要结合 Fragment 上下文选择本地容器，不能覆盖一个已存在且更精确的 `componentId`。
@@ -60,12 +60,12 @@ Target 只翻译语义，不复制 Web 表达：例如百分比映射为 Flutter
 ## 当前适配边界
 
 - `data-list` 使用 Flutter `ListView.builder/separated`；`scrollable-data-list` 使用 `pull_to_refresh_flutter3`，并在公共壳内固定 Clamping physics、有限越界和高阻尼 spring，避免刷新完成后的二次回弹。
-- `CommonPrimaryTabs` 和 `CommonSecondaryTabs` 分文件维护，均基于官方 `TabBar`；一级轨道直接使用 `unified_popups` 导出的 `LiquidGlass`，内容切换使用 `CommonTabView` / `TabBarView`。
+- `CommonPrimaryTabs` 和 `CommonSecondaryTabs` 分文件维护，均基于官方 `TabBar`；一级轨道是无阴影的 `surface-recessed` 普通表面，只有选中项使用 `unified_popups` 导出的 `LiquidGlass`，内容切换使用 `CommonTabView` / `TabBarView`。
 - `menu` 精确映射为 `AppPop.dropMenu`；表单锚点 `CommonMenuField` 只是目标工程便利壳，不是第二套菜单实现。
 - `bottom-sheet`、`confirm`、`flow-sheet`、`loading`、`toast` 与 `menu` 全部经 `AppPop` 调用 `unified_popups`。
 - `CommonIcon` 使用 `lucide_icons_flutter` 映射 Producer 策展的 26 个稳定 id。
 - Flutter elevation、glass blur、布局比例和交互曲线属于平台语义翻译，不要求与 Web 数据结构同构。
-- 本工程只维护 31 个当前 componentId，不保留历史组件别名或旧 Dart API。
+- 本工程只维护 31 个当前 componentId，不保留历史组件别名或旧 Dart API。公共 Widget 按 `action/input/display/navigation/data` 五类放在 `lib/common/widgets/`；`feedback` 由 `AppPop` 适配层承接，目标侧组合壳单列 `composition/`，统一从 `lib/common/widgets.dart` 导入。
 
 ## 实现与验证
 

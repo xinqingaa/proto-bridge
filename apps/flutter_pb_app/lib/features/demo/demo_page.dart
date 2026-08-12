@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:unified_popups/unified_popups.dart';
 
-import '../../common/overlay/app_pop.dart';
+import '../../common/widgets.dart';
 import '../../theme/ts.dart';
-import '../../common/widgets/widgets.dart';
+import 'action_demo_section.dart';
+import 'data_demo_section.dart';
+import 'display_demo_section.dart';
+import 'feedback_demo_section.dart';
+import 'input_demo_section.dart';
+import 'navigation_demo_section.dart';
 
-/// 组件对照页：方便与 pbwork playground 肉眼对齐。
 class DemoPage extends ConsumerStatefulWidget {
   const DemoPage({super.key});
 
@@ -15,30 +18,62 @@ class DemoPage extends ConsumerStatefulWidget {
 }
 
 class _DemoPageState extends ConsumerState<DemoPage> {
-  int _tabIndex = 0;
-  bool _checked = true;
-  bool _switched = false;
-  String? _selectValue = 'a';
-  String? _radioValue = '1';
-  String _filter = 'all';
-  int _listCount = 12;
+  int _categoryIndex = 0;
 
-  static const _selectOptions = [
-    CommonChoiceOption(value: 'a', label: '选项 A'),
-    CommonChoiceOption(value: 'b', label: '选项 B'),
-    CommonChoiceOption(value: 'c', label: '选项 C'),
+  static const _categories = [
+    _DemoCategory(
+      label: 'Action',
+      description: '操作',
+      icon: CommonIconName.plus,
+      page: ActionDemoSection(),
+    ),
+    _DemoCategory(
+      label: 'Input',
+      description: '输入',
+      icon: CommonIconName.fileText,
+      page: InputDemoSection(),
+    ),
+    _DemoCategory(
+      label: 'Display',
+      description: '展示',
+      icon: CommonIconName.inbox,
+      page: DisplayDemoSection(),
+    ),
+    _DemoCategory(
+      label: 'Navigation',
+      description: '导航',
+      icon: CommonIconName.home,
+      page: NavigationDemoSection(),
+    ),
+    _DemoCategory(
+      label: 'Data',
+      description: '数据',
+      icon: CommonIconName.list,
+      page: DataDemoSection(),
+    ),
+    _DemoCategory(
+      label: 'Feedback',
+      description: '反馈',
+      icon: CommonIconName.alertCircle,
+      page: FeedbackDemoSection(),
+    ),
   ];
+
+  void _selectCategory(int index) {
+    setState(() => _categoryIndex = index);
+    Navigator.of(context).pop();
+  }
 
   @override
   Widget build(BuildContext context) {
     TS.of(context);
     final mode = ref.watch(themeModeProvider);
+    final category = _categories[_categoryIndex];
 
     return Scaffold(
       backgroundColor: TS.colors.background,
       appBar: CommonAppBar(
-        title: 'Demo 对照',
-        showBack: true,
+        title: '${category.label} · ${category.description}',
         showAction: true,
         actionIcon: CommonIconName.settings,
         actionLabel: '切换主题',
@@ -48,425 +83,44 @@ class _DemoPageState extends ConsumerState<DemoPage> {
               : ThemeMode.dark;
         },
       ),
+      drawer: NavigationDrawer(
+        selectedIndex: _categoryIndex,
+        onDestinationSelected: _selectCategory,
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              TS.spacing.md,
+              TS.spacing.lg,
+              TS.spacing.md,
+              TS.spacing.sm,
+            ),
+            child: Text('组件分类', style: TS.textStyle.titleSm),
+          ),
+          for (final category in _categories)
+            NavigationDrawerDestination(
+              icon: CommonIcon(name: category.icon),
+              label: Text('${category.label} / ${category.description}'),
+            ),
+        ],
+      ),
       body: IndexedStack(
-        index: _tabIndex,
-        children: [
-          _buildBasics(),
-          _buildForms(),
-          _buildLists(),
-          _buildOverlay(),
-        ],
-      ),
-      bottomNavigationBar: CommonBottomNav(
-        currentIndex: _tabIndex,
-        onTap: (i) => setState(() => _tabIndex = i),
-        items: const [
-          CommonBottomNavItem(
-            value: 'basic',
-            label: '基础',
-            icon: CommonIconName.home,
-          ),
-          CommonBottomNavItem(
-            value: 'form',
-            label: '表单',
-            icon: CommonIconName.fileText,
-          ),
-          CommonBottomNavItem(
-            value: 'list',
-            label: '列表',
-            icon: CommonIconName.list,
-          ),
-          CommonBottomNavItem(
-            value: 'overlay',
-            label: '弹层',
-            icon: CommonIconName.more,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _section(String title, List<Widget> children) {
-    return Padding(
-      padding: EdgeInsets.all(TS.spacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: TS.textStyle.titleSm),
-          SizedBox(height: TS.spacing.sm),
-          ...children,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBasics() {
-    return ListView(
-      children: [
-        _section('Button / IconButton', [
-          Wrap(
-            spacing: TS.spacing.sm,
-            runSpacing: TS.spacing.sm,
-            children: [
-              CommonButton(
-                label: 'Flat Action',
-                onPressed: () => AppPop.toast('flat'),
-              ),
-              CommonButton(
-                label: 'Tonal',
-                variant: CommonButtonVariant.tonal,
-                tone: CommonButtonTone.primary,
-                onPressed: () {},
-              ),
-              CommonButton(
-                label: 'Outlined',
-                variant: CommonButtonVariant.outlined,
-                tone: CommonButtonTone.primary,
-                onPressed: () {},
-              ),
-              CommonButton(
-                label: 'Text',
-                variant: CommonButtonVariant.text,
-                tone: CommonButtonTone.primary,
-                onPressed: () {},
-              ),
-              CommonIconButton(
-                name: CommonIconName.plus,
-                label: '新增',
-                onPressed: () {},
-              ),
-              const CommonIconButton(
-                name: CommonIconName.plus,
-                label: '加载中',
-                loading: true,
-              ),
-            ],
-          ),
-        ]),
-        _section('Chip / Badge / Avatar', [
-          Wrap(
-            spacing: TS.spacing.sm,
-            runSpacing: TS.spacing.sm,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              const CommonChip(label: 'Chip'),
-              const CommonChip(label: '待领取', tone: CommonChipTone.warning),
-              const CommonBadge(label: '99+', tone: CommonBadgeTone.error),
-              const CommonAvatar(name: 'Lin Rui'),
-            ],
-          ),
-        ]),
-        _section('Card / Divider / Progress / Spinner', [
-          const CommonCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [Text('卡片标题'), Text('副标题说明'), Text('卡片内容')],
-            ),
-          ),
-          SizedBox(height: TS.spacing.md),
-          const CommonDivider(label: '分隔'),
-          SizedBox(height: TS.spacing.md),
-          const CommonProgress(value: 45, label: '进度 45%'),
-          SizedBox(height: TS.spacing.md),
-          const CommonSpinner(label: '加载中'),
-        ]),
-        _section('EmptyState', [
-          const CommonEmptyState(
-            title: '暂无数据',
-            description: '对齐 pbwork EmptyState',
-            actionLabel: '刷新',
-          ),
-        ]),
-        _section('Tabs + TabView', [
-          SizedBox(
-            height: 160,
-            child: DefaultTabController(
-              length: 3,
-              child: Column(
-                children: [
-                  const CommonPrimaryTabs(
-                    items: [
-                      CommonTabItem(value: '1', label: '全部'),
-                      CommonTabItem(value: '2', label: '进行中'),
-                      CommonTabItem(value: '3', label: '已完成'),
-                    ],
-                  ),
-                  const CommonSecondaryTabs(
-                    items: [
-                      CommonTabItem(value: '1', label: '全部'),
-                      CommonTabItem(value: '2', label: '进行中'),
-                      CommonTabItem(value: '3', label: '已完成'),
-                    ],
-                  ),
-                  const Expanded(
-                    child: CommonTabView(
-                      children: [
-                        Center(child: Text('Tab 1')),
-                        Center(child: Text('Tab 2')),
-                        Center(child: Text('Tab 3')),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ]),
-      ],
-    );
-  }
-
-  Widget _buildForms() {
-    return ListView(
-      padding: EdgeInsets.all(TS.spacing.md),
-      children: [
-        CommonFormSection(
-          title: '表单分组',
-          description: '对齐 FormSection',
-          actionLabel: '重置',
-          onAction: () {
-            setState(() {
-              _selectValue = 'a';
-              _checked = true;
-              _switched = false;
-              _radioValue = '1';
-            });
-          },
-          children: [
-            const CommonTextField(label: '单行输入', showLabel: true, hint: '请输入'),
-            SizedBox(height: TS.spacing.md),
-            const CommonTextArea(label: '多行输入', showLabel: true),
-            SizedBox(height: TS.spacing.md),
-            CommonMenuField<String>(
-              label: '选择',
-              value: _selectValue,
-              options: _selectOptions,
-              clearable: true,
-              onChanged: (v) => setState(() => _selectValue = v),
-            ),
-            SizedBox(height: TS.spacing.md),
-            CommonCheckbox(
-              label: '同意协议',
-              value: _checked,
-              onChanged: (v) => setState(() => _checked = v),
-            ),
-            CommonSwitch(
-              label: '接收通知',
-              value: _switched,
-              onChanged: (v) => setState(() => _switched = v),
-            ),
-            CommonRadioGroup<String>(
-              label: '单选',
-              value: _radioValue,
-              options: const [
-                CommonChoiceOption(value: '1', label: '方案一'),
-                CommonChoiceOption(value: '2', label: '方案二'),
-              ],
-              onChanged: (v) => setState(() => _radioValue = v),
-            ),
-            SizedBox(height: TS.spacing.md),
-            const CommonSearchBar(),
-            SizedBox(height: TS.spacing.md),
-            CommonFilterBar(
-              items: const [
-                CommonFilterItem(value: 'all', label: '全部'),
-                CommonFilterItem(value: 'open', label: '进行中'),
-                CommonFilterItem(value: 'done', label: '完成'),
-              ],
-              selected: _filter,
-              onSelected: (v) => setState(() => _filter = v),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLists() {
-    return CommonScrollableDataList(
-      itemCount: _listCount,
-      hasMore: _listCount < 30,
-      onRefresh: () async {
-        await Future<void>.delayed(const Duration(milliseconds: 800));
-        setState(() => _listCount = 12);
-      },
-      onLoadMore: () async {
-        await Future<void>.delayed(const Duration(milliseconds: 800));
-        setState(() => _listCount += 6);
-      },
-      separatorBuilder: (_, _) => Divider(height: 1, color: TS.colors.divider),
-      itemBuilder: (context, index) {
-        return ListTile(
-          title: Text('列表项 ${index + 1}', style: TS.textStyle.content),
-          subtitle: Text('ScrollableDataList', style: TS.textStyle.caption),
-          trailing: const CommonIcon(name: CommonIconName.chevronRight),
-        );
-      },
-    );
-  }
-
-  Widget _buildOverlay() {
-    return ListView(
-      padding: EdgeInsets.all(TS.spacing.md),
-      children: [
-        Text('AppPop（封装 unified_popups）', style: TS.textStyle.titleSm),
-        SizedBox(height: TS.spacing.md),
-        CommonButton(
-          label: 'Toast',
-          block: true,
-          onPressed: () => AppPop.toast('操作成功'),
-        ),
-        SizedBox(height: TS.spacing.sm),
-        CommonButton(
-          label: 'Confirm',
-          block: true,
-          variant: CommonButtonVariant.tonal,
-          tone: CommonButtonTone.primary,
-          onPressed: () async {
-            final ok = await AppPop.confirm(title: '确认删除', content: '删除后无法恢复');
-            AppPop.toast(ok ? '已确认' : '已取消');
-          },
-        ),
-        SizedBox(height: TS.spacing.sm),
-        CommonButton(
-          label: 'Sheet',
-          block: true,
-          variant: CommonButtonVariant.outlined,
-          tone: CommonButtonTone.primary,
-          onPressed: () {
-            AppPop.sheet<void>(
-              title: '底部面板',
-              builder: (context, handle) {
-                return Padding(
-                  padding: EdgeInsets.all(TS.spacing.md),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('对齐 BottomSheet', style: TS.textStyle.content),
-                      SizedBox(height: TS.spacing.md),
-                      CommonButton(
-                        label: '关闭',
-                        block: true,
-                        onPressed: handle.dismiss,
-                      ),
-                    ],
-                  ),
-                );
-              },
-            );
-          },
-        ),
-        SizedBox(height: TS.spacing.sm),
-        CommonButton(
-          label: 'Loading',
-          block: true,
-          variant: CommonButtonVariant.tonal,
-          tone: CommonButtonTone.secondary,
-          onPressed: () async {
-            await AppPop.runLoading(
-              message: '提交中',
-              task: Future<void>.delayed(const Duration(milliseconds: 1200)),
-            );
-            AppPop.toast('已完成');
-          },
-        ),
-        SizedBox(height: TS.spacing.sm),
-        CommonButton(
-          label: 'FlowSheet',
-          block: true,
-          variant: CommonButtonVariant.outlined,
-          tone: CommonButtonTone.secondary,
-          onPressed: () async {
-            final controller = FlowSheetController<String>();
-            final result = await AppPop.flowSheet<String>(
-              controller: controller,
-              title: '分步面板',
-              initialPage: _DemoFlowStepOne(controller: controller),
-            );
-            if (result != null) {
-              AppPop.toast('完成：$result');
-            }
-          },
-        ),
-      ],
-    );
-  }
-}
-
-class _DemoFlowStepOne extends FlowSheetPage<void> {
-  const _DemoFlowStepOne({required this.controller})
-    : super(id: 'demo_flow_step_1');
-
-  final FlowSheetController<String> controller;
-
-  @override
-  State<_DemoFlowStepOne> createState() => _DemoFlowStepOneState();
-}
-
-class _DemoFlowStepOneState extends FlowSheetPageState<_DemoFlowStepOne, void> {
-  @override
-  Widget build(BuildContext context) {
-    TS.of(context);
-    return Padding(
-      padding: EdgeInsets.all(TS.spacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('第一步', style: TS.textStyle.subtitle),
-          SizedBox(height: TS.spacing.sm),
-          Text('对齐 FlowSheet 多步面板', style: TS.textStyle.content),
-          const Spacer(),
-          CommonButton(
-            label: '下一步',
-            block: true,
-            onPressed: () {
-              nav.push<void>(_DemoFlowStepTwo(controller: widget.controller));
-            },
-          ),
-        ],
+        index: _categoryIndex,
+        children: [for (final item in _categories) item.page],
       ),
     );
   }
 }
 
-class _DemoFlowStepTwo extends FlowSheetPage<void> {
-  const _DemoFlowStepTwo({required this.controller})
-    : super(id: 'demo_flow_step_2', maintainState: true);
+class _DemoCategory {
+  const _DemoCategory({
+    required this.label,
+    required this.description,
+    required this.icon,
+    required this.page,
+  });
 
-  final FlowSheetController<String> controller;
-
-  @override
-  State<_DemoFlowStepTwo> createState() => _DemoFlowStepTwoState();
-}
-
-class _DemoFlowStepTwoState extends FlowSheetPageState<_DemoFlowStepTwo, void> {
-  @override
-  Widget build(BuildContext context) {
-    TS.of(context);
-    return Padding(
-      padding: EdgeInsets.all(TS.spacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('第二步', style: TS.textStyle.subtitle),
-          SizedBox(height: TS.spacing.sm),
-          Text('可返回上一步或完成流程', style: TS.textStyle.content),
-          const Spacer(),
-          CommonButton(
-            label: '返回',
-            block: true,
-            variant: CommonButtonVariant.outlined,
-            tone: CommonButtonTone.primary,
-            onPressed: nav.pop,
-          ),
-          SizedBox(height: TS.spacing.sm),
-          CommonButton(
-            label: '完成',
-            block: true,
-            onPressed: () => widget.controller.closeAll('已确认'),
-          ),
-        ],
-      ),
-    );
-  }
+  final String label;
+  final String description;
+  final CommonIconName icon;
+  final Widget page;
 }

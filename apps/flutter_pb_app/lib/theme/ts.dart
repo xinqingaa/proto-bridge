@@ -24,7 +24,7 @@ class ThemeService {
   final AppSpacing spacing = const AppSpacing();
   final AppSizing sizing = const AppSizing();
   final AppRadius radius = const AppRadius();
-  final AppOpacity opacity = const AppOpacity();
+  late final AppOpacity opacity = AppOpacity(isDark: isDark);
   final AppMotion motion = const AppMotion();
   final AppElevation elevation = const AppElevation();
   late final AppBorderTokens border = AppBorderTokens(colors: colors);
