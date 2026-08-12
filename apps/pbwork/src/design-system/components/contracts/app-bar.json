@@ -6,6 +6,11 @@
     "policy": "fixed",
     "defaultRole": "app-bar"
   },
+  "summary": "页面或栈级顶部栏；统一承载标题、返回动作和一个可选尾部操作。",
+  "behavior": [
+    "showBack 控制返回入口，触发 back 事件但不自行决定路由",
+    "尾部操作必须具有可访问名称，并通过 action 事件交给页面处理"
+  ],
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -60,6 +65,7 @@
     {
       "id": "no-back",
       "label": "无返回",
+      "kind": "content",
       "props": {
         "showBack": false
       }

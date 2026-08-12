@@ -53,5 +53,6 @@
 - [ ] 若沉淀了新的**通用**规则，已写入 `apps/pbwork/docs`（不要把未定稿视觉口味写成铁律）
 - [ ] 业务个案笔记（如有）与手册不冲突；冲突以手册 + contract 为准
 - [ ] 组件、Token、Theme、手势或 Registry 变化已按 `development.md` 同步文档
+- [ ] Component/Token/Theme Schema、Contract、role、Catalog、Theme 或 Bind 池变化已运行 `pnpm ds:target-sync:verify`；连续迭代保留 pending/drift，稳定批次恢复完整 `synced` baseline
 - [ ] `pnpm docs:verify` 已通过
 - [ ] authoring lint、Registry validation 和 Runtime Capture 的 Block 为零；每个 Warning 已修复或记录理由

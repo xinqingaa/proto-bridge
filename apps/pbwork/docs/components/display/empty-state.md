@@ -1,54 +1,31 @@
 # Empty State
 
 > 组件 id：`empty-state` · 分类：`display`
-> 实现：`apps/pbwork/src/design-system/components/display/EmptyState.vue`
-> 契约：`apps/pbwork/src/design-system/components/contracts/empty-state.json`
+> 实现：[EmptyState.vue](../../../src/design-system/components/display/EmptyState.vue)
+> 契约：[empty-state.json](../../../src/design-system/components/contracts/empty-state.json)
 
-无数据或无结果时给出说明与下一步操作。
+没有可展示数据或尚未配置时的完整空态。
 
-## 职责
+## 职责与边界
 
-- **做什么**：无数据可展示时。
-- **边界**：空列表/空页；与 loading 分开。**失败态优先独立错误布局**，不要默认用 EmptyState 表达 error（除非该屏明确把「不可用」写成空态文案）。
+- 固定使用 `role=empty-state`，解释“为什么为空”以及可选下一步。
+- 空态不是通用错误页；失败、权限和离线状态应使用对应业务错误结构。
+- 可选操作只有一个恢复入口，复杂多操作由页面另行组织。
 
-## Props
+## 行为要点
 
-| Prop          | 类型   | 默认                                   | 说明 |
-| ------------- | ------ | -------------------------------------- | ---- |
-| `title`       | string | `暂无工单`                             |      |
-| `description` | string | `调整筛选条件，或创建第一张现场工单。` |      |
-| `actionLabel` | string | `新建工单`                             |      |
+- 标题与说明必须解释当前为空的原因或下一步，不使用模糊占位文案。
+- `actionLabel` 为空时不渲染操作；存在时通过 `action` 事件交给页面处理。
+- 组件不自行请求数据、跳转路由或决定恢复策略。
 
-## States（Playground / Contract）
+## States
 
-- `without-action` — 无操作
+| id | label | kind |
+| --- | --- | --- |
+| `without-action` | 无操作 | `content` |
 
-## Slots / Events
+## 用法与反例
 
-- **Slots**：无
-- **Events**：`action`
-
-## tokenBindings
-
-| 槽位                | Token                    |
-| ------------------- | ------------------------ |
-| `iconSurface`       | `color.primary-soft`     |
-| `icon`              | `color.primary`          |
-| `title`             | `color.on-surface`       |
-| `description`       | `color.on-surface-muted` |
-| `radius`            | `radius.full`            |
-| `spacing`           | `spacing.lg`             |
-| `iconSize`          | `sizing.icon-lg`         |
-| `typography`        | `typography.subtitle`    |
-| `body`              | `typography.content`     |
-| `titleOffset`       | `spacing.xs`             |
-| `descriptionOffset` | `spacing.sm`             |
-| `iconSurfaceSize`   | `sizing.avatar-lg`       |
-
-切浅色/深色只改 Theme 覆盖值，不改本表绑定。
-
-## 用法要点
-
-1. 从 `@/design-system/components/display/...` 引入实现组件。
-2. Props 保持在契约枚举内；需要新能力先改 contract + registry + 本文。
-3. 业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`；默认 `ds.*` 只用于 Playground、组件测试或非业务预览。
+- 用于无结果、尚未创建或尚未配置；整页 loading 使用 Loading/Spinner 组合。
+- 不用 Empty State 隐藏真实错误、unknown 或权限风险。
+- Props、Slots、Events、默认值与 Token 槽以 [Empty State Contract](../../../src/design-system/components/contracts/empty-state.json) 为准。

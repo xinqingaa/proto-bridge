@@ -2,6 +2,9 @@ import type {
   EvidenceCaseReadModel,
   EvidenceReadModel,
 } from './evidence-read-model.js';
+import { TOKEN_BINDING_LITERALS } from './contracts/vocabulary.js';
+
+const TOKEN_BINDING_LITERAL_SET = new Set<string>(TOKEN_BINDING_LITERALS);
 
 export const ACCEPTANCE_DIMENSIONS = [
   'structure',
@@ -166,6 +169,7 @@ export function buildReconstructionAcceptanceContract(input: {
         for (const [slot, tokenId] of Object.entries(
           region.tokenBindings ?? {},
         )) {
+          if (TOKEN_BINDING_LITERAL_SET.has(tokenId)) continue;
           dimensions.tokens.push({
             requirementId: safeId(
               `token.${evidenceCase.caseId}.${region.regionId}.${slot}`,

@@ -1,31 +1,31 @@
 # Radio Group
 
 > 组件 id：`radio-group` · 分类：`input`
-> 实现：`apps/pbwork/src/design-system/components/input/RadioGroup.vue`
-> 契约：`apps/pbwork/src/design-system/components/contracts/radio-group.json`
+> 实现：[RadioGroup.vue](../../../src/design-system/components/input/RadioGroup.vue)
+> 契约：[radio-group.json](../../../src/design-system/components/contracts/radio-group.json)
 
-互斥单选，如工单优先级、上门时段。
+在一组明确选项中进行互斥单选。
 
-## 职责
+## 职责与边界
 
-- **做什么**：互斥选项。
-- **边界**：互斥单选；不要用 Tabs 表达同一表单内的互斥选项。
-- **色**：`color` 为选中控件 Token-ref（默认 `color.primary`）。
+- 固定使用 `role=field`，拥有整组值和选项语义。
+- 只处理互斥选择，不用于多个独立布尔值或即时开关。
+- 选中色与禁用外观均来自 Contract Token 槽。
 
 ## 行为要点
 
-- 禁止实例硬编码色值。
-- `disabled` 使用 `opacity.disabled`。
-- Props、默认值、Token 槽以 Contract 为准。
+- 选择新项时更新唯一 `modelValue`，同组其它项同时取消选中。
+- `color` 只接受 Bind 池 Token ID，禁止硬编码色值。
+- disabled 阻止整组交互并使用 `opacity.disabled`。
 
 ## States
 
-| id         | label | kind        |
-| ---------- | ----- | ----------- |
-| `disabled` | 禁用  | interaction |
+| id | label | kind |
+| --- | --- | --- |
+| `disabled` | 禁用 | `interaction` |
 
-## 用法要点
+## 用法与反例
 
-1. 从 `@/design-system/components/input/RadioGroup.vue` 引入。
-2. 需要新能力先改 Contract + registry + 本文叙事。
-3. 业务原型必须传业务稳定 `inspectId`。
+- 用于配送方式、优先级等有限且互斥的业务选择。
+- 多选使用 Checkbox 组合；单一即时设置使用 Switch。
+- Props、Slots、Events、默认值与 Token 槽以 [Radio Group Contract](../../../src/design-system/components/contracts/radio-group.json) 为准。

@@ -27,6 +27,10 @@ class ThemeService {
   final AppOpacity opacity = const AppOpacity();
   final AppMotion motion = const AppMotion();
   final AppElevation elevation = const AppElevation();
+  late final AppBorderTokens border = AppBorderTokens(colors: colors);
+  final AppLayoutTokens layout = const AppLayoutTokens();
+  final AppLayerTokens layer = const AppLayerTokens();
+  final AppEffectTokens effect = const AppEffectTokens();
 
   ThemeData toThemeData() {
     final scheme = ColorScheme(
@@ -112,6 +116,10 @@ abstract final class TS {
   static AppOpacity get opacity => _service.opacity;
   static AppMotion get motion => _service.motion;
   static AppElevation get elevation => _service.elevation;
+  static AppBorderTokens get border => _service.border;
+  static AppLayoutTokens get layout => _service.layout;
+  static AppLayerTokens get layer => _service.layer;
+  static AppEffectTokens get effect => _service.effect;
 
   /// 绑定当前亮度（App 根节点 / 主题切换时调用）。
   static void bind(Brightness brightness) {

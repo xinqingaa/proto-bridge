@@ -1,23 +1,33 @@
 # Tabbar
 
-> 组件 id：`tabbar` · 契约：`contracts/tabbar.json`
+> 组件 id：`tabbar` · 分类：`navigation`
+> 实现：[Tabbar.vue](../../../src/design-system/components/navigation/Tabbar.vue)
+> 契约：[tabbar.json](../../../src/design-system/components/contracts/tabbar.json)
 
-应用最根本的目的地导航；视图区始终位于它上方。
+应用根目的地导航；底部只负责当前位置和目的地切换。
 
 ## 职责与边界
 
-- 只表达 2–5 个应用根目的地和当前位置。
-- 每项始终同时呈现图标与文字；图标尺寸固定绑定 `sizing.icon-md`，选中用 `color.navigation-active` 和 `typography.caption-strong` 表达。
-- 不显示顶部指示器；点击无 ripple 反馈，直接更新当前位置。
-- 不承载内容、转场或横滑手势。
-- 不用于页面内分区、筛选或临时操作。
-- `grow=true`（默认）时各目的地等宽平分轨道；`grow=false` 时按内容自适应宽度排列。
-- 填满、焦点内缩、内容层级与无反馈覆盖层分别消费 `layout.fill`、`layout.focus-inset`、`layer.content`、`opacity.hidden`；不在组件 CSS 中写数值。
+- 固定使用 `role=bottom-bar`，适用于 2–5 个应用根目的地。
+- Tabbar 不拥有内容视图区、转场或横滑；上方内容使用 Tab Viewport 或路由。
+- 固定同时展示图标与文字，选中态不增加顶部指示器或独立胶囊。
+- 默认等宽填满应用壳；`grow=false` 时才按内容自适应排列。
 
-## 组合
+## 行为要点
 
-页面壳把 Tabbar 与上方 TabViewport 或路由内容绑定到同一当前位置。根目的地默认通过点击切换，避免与页内一级、二级 Tab 争夺横滑手势。
+- 点击无 ripple 并立即切换受控当前位置。
+- 选中只使用 `color.navigation-active` 与受控强调字重表达。
+- 图标、文字、触控目标、底栏高度和边界全部消费 Contract Token。
 
-## 状态
+## States
 
-`tasks-selected` 是当前目的地变为任务的内容状态，`adaptive` 是按内容自适应宽度的布局状态。切换时更新上方视图区。Playground 不再使用场景下拉框，而是直接并置“自适应”和“等宽”两个完整区域。
+| id | label | kind |
+| --- | --- | --- |
+| `tasks-selected` | 任务选中 | `content` |
+| `adaptive` | 自适应 | `variant` |
+
+## 用法与反例
+
+- 页面壳用同一 value 连接 Tabbar 与 Tab Viewport/路由内容。
+- 不用 Tabbar 模拟页内一级 Tab，也不让它同时管理面板和横滑。
+- Props、Slots、Events、默认值与 Token 槽以 [Tabbar Contract](../../../src/design-system/components/contracts/tabbar.json) 为准。

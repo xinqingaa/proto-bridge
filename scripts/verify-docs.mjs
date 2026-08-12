@@ -17,6 +17,7 @@ await verifyCliReference();
 await verifyMcpReference();
 await verifyComponentReferences();
 await verifyTokenCatalog();
+await verifyTargetMappingReference();
 await verifyCurrentProductLanguage(markdownFiles);
 
 if (errors.length > 0) {
@@ -228,11 +229,37 @@ async function verifyComponentReferences() {
         `${relative(docPath)} must link or cite contracts/${contract.id}.json as SoT`,
       );
     }
-    // Narrative docs: require state ids; props/token tables are Contract SoT (see alignment-protocol).
-    for (const state of contract.states ?? []) {
-      if (!doc.includes(`\`${state.id}\``)) {
-        errors.push(`${relative(docPath)} is missing state ${state.id}`);
+    for (const heading of [
+      "## 职责与边界",
+      "## 行为要点",
+      "## States",
+      "## 用法与反例",
+    ]) {
+      if (!doc.includes(heading)) {
+        errors.push(`${relative(docPath)} is missing required narrative section ${heading}`);
       }
+    }
+    for (const forbiddenHeading of ["## Props", "## Slots / Events", "## tokenBindings"]) {
+      if (doc.includes(forbiddenHeading)) {
+        errors.push(
+          `${relative(docPath)} duplicates Contract-owned tables under ${forbiddenHeading}`,
+        );
+      }
+    }
+    if (!doc.includes("Props、Slots、Events、默认值与 Token 槽以")) {
+      errors.push(`${relative(docPath)} does not declare the Contract-owned detail boundary`);
+    }
+    // Narrative docs still expose the complete state identity tuple without copying props/tokens.
+    for (const state of contract.states ?? []) {
+      const stateRow = `| \`${state.id}\` | ${state.label} | \`${state.kind}\` |`;
+      if (!doc.includes(stateRow)) {
+        errors.push(
+          `${relative(docPath)} is missing state tuple ${state.id}/${state.label}/${state.kind}`,
+        );
+      }
+    }
+    if ((contract.states ?? []).length === 0 && !doc.includes("当前 Contract 不声明命名状态")) {
+      errors.push(`${relative(docPath)} must explicitly state that its Contract has no named states`);
     }
   }
 
@@ -285,6 +312,55 @@ async function verifyTokenCatalog() {
   for (const token of tokens) {
     if (!catalogTokenIds.has(token.id)) {
       errors.push(`Token catalog is missing ${token.id}`);
+    }
+  }
+}
+
+async function verifyTargetMappingReference() {
+  const contractRoot = path.join(
+    repoRoot,
+    "apps/pbwork/src/design-system/components/contracts",
+  );
+  const contracts = await Promise.all(
+    (await readdir(contractRoot))
+      .filter((file) => file.endsWith(".json"))
+      .sort()
+      .map(async (file) =>
+        JSON.parse(await readFile(path.join(contractRoot, file), "utf8")),
+      ),
+  );
+  const targetRoot = path.join(repoRoot, "apps/flutter_pb_app");
+  const mapping = JSON.parse(
+    await readFile(path.join(targetRoot, "docs/proto-bridge.target.json"), "utf8"),
+  );
+  const reference = await readFile(
+    path.join(targetRoot, "docs/proto-bridge.md"),
+    "utf8",
+  );
+
+  for (const contract of contracts) {
+    const target = mapping.components?.[contract.id];
+    if (!target?.symbol || !target?.import) {
+      errors.push(`Flutter target mapping is missing documented component ${contract.id}`);
+      continue;
+    }
+    const row = `| \`${contract.id}\` | \`${target.symbol}\` | \`${target.import}\` |`;
+    if (!reference.includes(row)) {
+      errors.push(
+        `apps/flutter_pb_app/docs/proto-bridge.md is missing current mapping row for ${contract.id}`,
+      );
+    }
+  }
+  for (const id of Object.keys(mapping.components ?? {})) {
+    if (!reference.includes(`\`${id}\``)) {
+      errors.push(`Flutter legacy component mapping ${id} is undocumented`);
+    }
+  }
+  for (const entrypoint of mapping.policyEntrypoints ?? []) {
+    try {
+      await access(path.join(targetRoot, entrypoint));
+    } catch {
+      errors.push(`Flutter target policy entrypoint is missing: ${entrypoint}`);
     }
   }
 }

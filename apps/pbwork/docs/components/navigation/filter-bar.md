@@ -1,16 +1,31 @@
-# 三级 Tab（Filter Bar）
+# Filter Bar
 
-> 组件 id：`filter-bar` · 契约：`contracts/filter-bar.json`
+> 组件 id：`filter-bar` · 分类：`navigation`
+> 实现：[FilterBar.vue](../../../src/design-system/components/navigation/FilterBar.vue)
+> 契约：[filter-bar.json](../../../src/design-system/components/contracts/filter-bar.json)
 
-只改变当前数据集合的快捷筛选条，不创建或横滑切换视图区。
+三级 Tab：只改变当前数据集合的快捷筛选，不拥有内容视图区。
 
 ## 职责与边界
 
-- 用于列表、队列和数据面板内的第三层筛选。
-- 选择项后由页面更新数据；筛选项自身可以横向滚动。
-- 不内置右侧图标或高级筛选入口；需要额外操作时由原型自行组合 Button 或 IconButton。
-- 不用于应用根目的地和内容视图导航。
+- 固定使用 `role=filter`，选择项只改变数据，不创建或切换 Tab viewport。
+- 不内置右侧高级筛选入口；需要额外操作时由页面与其它控件组合。
+- 筛选项可以横向滚动，但必须向父级横滑 owner 正确让权。
 
-## 状态
+## 行为要点
 
-`all` 是展示完整数据集合的内容状态。当前筛选会在 Playground 下方同步更新数据结果，证明它不拥有 viewport。
+- 选择筛选项后更新受控值，由页面重新计算当前数据集合。
+- 横向拖动只滚动筛选项，不触发一级/二级内容视图切换。
+- 组件不持有业务数据、请求或结果区域。
+
+## States
+
+| id | label | kind |
+| --- | --- | --- |
+| `all` | 全部 | `content` |
+
+## 用法与反例
+
+- 用于“全部/待处理/已完成”等只影响列表集合的快捷筛选。
+- 不用 Filter Bar 承载具名内容视图；需要视图区时使用一级或二级 Tab。
+- Props、Slots、Events、默认值与 Token 槽以 [Filter Bar Contract](../../../src/design-system/components/contracts/filter-bar.json) 为准。

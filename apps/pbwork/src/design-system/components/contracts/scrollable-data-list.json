@@ -10,6 +10,12 @@
   "behavior": [
     "disabled 时不触发刷新或加载更多，整体使用 opacity.disabled"
   ],
+  "layout": {
+    "summary": "组件拥有唯一纵向滚动容器；刷新位于顶部越界区，加载更多位于内容尾部观察区。"
+  },
+  "visualAnatomy": {
+    "summary": "滚动内容保持调用方结构；组件只叠加刷新指示、加载状态和可选手动重试入口。"
+  },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -110,6 +116,7 @@
     {
       "id": "refreshing",
       "label": "刷新中",
+      "kind": "interaction",
       "props": {
         "refreshing": true
       }
@@ -117,6 +124,7 @@
     {
       "id": "loading-more",
       "label": "加载更多",
+      "kind": "interaction",
       "props": {
         "loadingMore": true
       }
@@ -124,6 +132,7 @@
     {
       "id": "complete",
       "label": "没有更多",
+      "kind": "content",
       "props": {
         "hasMore": false
       }

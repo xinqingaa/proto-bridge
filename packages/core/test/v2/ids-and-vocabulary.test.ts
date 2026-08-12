@@ -5,6 +5,7 @@ import {
   ScopeKey,
   SemanticRole,
   ScreenId,
+  TOKEN_BINDING_LITERALS,
 } from '../../src/v2/index.js';
 
 describe('V2 stable id rules', () => {
@@ -45,5 +46,11 @@ describe('V2 semantic role vocabulary', () => {
   it('rejects free-form strings not in the closed list', () => {
     expect(SemanticRole.safeParse('super-fancy-widget').success).toBe(false);
     expect(SemanticRole.safeParse('Button').success).toBe(false);
+  });
+});
+
+describe('V2 token binding literals', () => {
+  it('keeps cross-stack literals separate from catalog Token IDs', () => {
+    expect(TOKEN_BINDING_LITERALS).toEqual(['transparent', 'none']);
   });
 });

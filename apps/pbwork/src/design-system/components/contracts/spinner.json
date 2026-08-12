@@ -6,6 +6,11 @@
     "policy": "fixed",
     "defaultRole": "loading-state"
   },
+  "summary": "局部、不阻断的忙碌指示；蒙层阻断流程必须使用 Loading。",
+  "behavior": [
+    "Spinner 不创建 scrim、不拦截下层点击，也不拥有异步任务生命周期",
+    "可选 label 提供忙碌内容说明，尺寸只使用 sm、md、lg 受控档位"
+  ],
   "propsSchema": {
     "type": "object",
     "properties": {
@@ -30,6 +35,7 @@
     {
       "id": "small",
       "label": "小尺寸",
+      "kind": "variant",
       "props": {
         "size": "sm"
       }
@@ -37,6 +43,7 @@
     {
       "id": "large",
       "label": "大尺寸",
+      "kind": "variant",
       "props": {
         "size": "lg"
       }

@@ -6,6 +6,11 @@
     "policy": "fixed",
     "defaultRole": "badge"
   },
+  "summary": "只读数量、状态或严重度徽标；不承担选择与提交交互。",
+  "behavior": [
+    "tone 只表达受控状态语义，不把 Badge 变成可点击 Chip",
+    "短标签保持单一状态含义，复杂说明由调用方另行组织"
+  ],
   "propsSchema": {
     "type": "object",
     "properties": {
@@ -34,6 +39,7 @@
     {
       "id": "success",
       "label": "成功",
+      "kind": "variant",
       "props": {
         "label": "完成",
         "tone": "success"
@@ -42,6 +48,7 @@
     {
       "id": "warning",
       "label": "警告",
+      "kind": "variant",
       "props": {
         "label": "超时",
         "tone": "warning"

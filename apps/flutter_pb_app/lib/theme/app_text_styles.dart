@@ -93,4 +93,11 @@ class AppTextStyles {
         height: 1.4,
         color: colors.onSurface,
       );
+
+  TextStyle get micro => TextStyle(
+        fontWeight: FontWeight.w500,
+        fontSize: 11.52,
+        height: 1.2,
+        color: colors.onSurfaceMuted,
+      );
 }

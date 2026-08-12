@@ -14,6 +14,7 @@
     "分段筛选使用三级 Tab，不使用本组件"
   ],
   "layout": {
+    "summary": "轨道填满组件容器，选项默认按内容宽排列，equal 状态等分；内容视口由组件所有。",
     "containerWidth": "fill-parent",
     "track": {
       "width": "fill-container",
@@ -25,6 +26,9 @@
       "ownership": "component",
       "transition": "horizontal"
     }
+  },
+  "visualAnatomy": {
+    "summary": "当前项只有激活文字和朝上的居中小三角，不绘制宽滑线、胶囊或额外表面。"
   },
   "propsSchema": {
     "type": "object",

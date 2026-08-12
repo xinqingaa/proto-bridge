@@ -1,47 +1,31 @@
 # Loading
 
 > 组件 id：`loading` · 分类：`feedback`
-> 实现：`apps/pbwork/src/design-system/components/feedback/Loading.vue`
-> 契约：`apps/pbwork/src/design-system/components/contracts/loading.json`
+> 实现：[Loading.vue](../../../src/design-system/components/feedback/Loading.vue)
+> 契约：[loading.json](../../../src/design-system/components/contracts/loading.json)
 
-蒙层加载反馈：有 scrim 并阻断下层操作。局部不阻断忙态请用 Spinner。
+带 scrim 的阻断式蒙层加载。
 
-## 职责
+## 职责与边界
 
-- **做什么**：区域或页级忙碌，打开时拦截点击。
-- **边界**：不替代行内 `spinner`；不承担业务结果提示（用 Toast）。
+- 固定使用 `role=loading-state`，覆盖目标容器或视口的完整交互区域并阻断下层操作。
+- scrim 位于内容之上，Spinner 与可选标签位于 scrim 之上。
+- 局部不阻断忙态使用 Spinner；确定进度使用 Progress。
 
-## Props
+## 行为要点
 
-| Prop | 类型 | 默认 | 说明 |
-| --- | --- | --- | --- |
-| `modelValue` | boolean | `false` | 是否打开 |
-| `label` | string | `正在加载` | 可选说明文案 |
-| `contained` | boolean | `true` | 附着容器内绝对定位 |
+- 打开时展示 scrim 与居中指示并拦截点击；关闭后恢复下层交互。
+- 标签只说明当前阻断任务，不由组件拥有异步生命周期或成功/失败状态。
+- 覆盖范围、层级、scrim、指示器尺寸和排版只消费 Contract Token。
 
-## States（Playground / Contract）
+## States
 
-- `open` — 打开
+| id | label | kind |
+| --- | --- | --- |
+| `open` | 打开 | `content` |
 
-## Slots / Events
+## 用法与反例
 
-- **Slots**：无
-- **Events**：`update:modelValue`
-
-## tokenBindings
-
-| 槽位 | Token |
-| --- | --- |
-| `scrim` | `color.scrim` |
-| `active` | `color.primary` |
-| `text` | `color.on-surface` |
-| `size` | `sizing.icon-lg` |
-| `stroke` | `sizing.indicator-thickness` |
-| `motion` | `motion.duration-slow` |
-| `label` | `typography.caption` |
-
-## 用法要点
-
-1. 从 `@/design-system/components/feedback/Loading.vue` 引入。
-2. 与主滚动列兄弟挂载；Playground 使用 trigger 打开。
-3. 业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`。
+- 用于提交、切换关键上下文等需要阻断重复操作的短流程。
+- 不用 Loading 代替局部 Spinner，也不在业务页自造遮罩层或固定 z-index。
+- Props、Slots、Events、默认值与 Token 槽以 [Loading Contract](../../../src/design-system/components/contracts/loading.json) 为准。

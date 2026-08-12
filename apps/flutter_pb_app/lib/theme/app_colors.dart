@@ -6,6 +6,8 @@ class AppColors {
     required this.background,
     required this.surface,
     required this.primary,
+    required this.navigationActive,
+    required this.sectionTabActive,
     required this.primarySoft,
     required this.onPrimary,
     required this.action,
@@ -25,6 +27,10 @@ class AppColors {
     required this.onSurfaceMuted,
     required this.surfaceVariant,
     required this.surfaceRaised,
+    required this.surfaceRecessed,
+    required this.surfaceSelected,
+    required this.toast,
+    required this.onToast,
     required this.onBackground,
     required this.onSecondary,
     required this.outline,
@@ -40,6 +46,8 @@ class AppColors {
   final Color background;
   final Color surface;
   final Color primary;
+  final Color navigationActive;
+  final Color sectionTabActive;
   final Color primarySoft;
   final Color onPrimary;
   final Color action;
@@ -59,6 +67,10 @@ class AppColors {
   final Color onSurfaceMuted;
   final Color surfaceVariant;
   final Color surfaceRaised;
+  final Color surfaceRecessed;
+  final Color surfaceSelected;
+  final Color toast;
+  final Color onToast;
   final Color onBackground;
   final Color onSecondary;
   final Color outline;
@@ -74,6 +86,8 @@ class AppColors {
     background: Color(0xFFF7F8FA),
     surface: Color(0xFFFFFFFF),
     primary: Color(0xFF2F73D2),
+    navigationActive: Color(0xFF2F73D2),
+    sectionTabActive: Color(0xFF1D1F23),
     primarySoft: Color(0xFFEAF2FD),
     onPrimary: Color(0xFFFFFFFF),
     action: Color(0xFF202124),
@@ -93,6 +107,10 @@ class AppColors {
     onSurfaceMuted: Color(0xFF666B73),
     surfaceVariant: Color(0xFFF0F2F4),
     surfaceRaised: Color(0xFFFFFFFF),
+    surfaceRecessed: Color(0xFFF5F6F8),
+    surfaceSelected: Color(0xFFFBFCFD),
+    toast: Color(0xCC000000),
+    onToast: Color(0xFFFFFFFF),
     onBackground: Color(0xFF1D1F23),
     onSecondary: Color(0xFFFFFFFF),
     outline: Color(0xFFAEB4BC),
@@ -109,6 +127,8 @@ class AppColors {
     background: Color(0xFF141517),
     surface: Color(0xFF1C1E21),
     primary: Color(0xFF83B2F2),
+    navigationActive: Color(0xFF83B2F2),
+    sectionTabActive: Color(0xFFF2F3F5),
     primarySoft: Color(0xFF213A5C),
     onPrimary: Color(0xFF17181A),
     action: Color(0xFFF1F3F4),
@@ -128,6 +148,10 @@ class AppColors {
     onSurfaceMuted: Color(0xFFA9AFB7),
     surfaceVariant: Color(0xFF24272B),
     surfaceRaised: Color(0xFF292C30),
+    surfaceRecessed: Color(0xFF181A1D),
+    surfaceSelected: Color(0xFF292C30),
+    toast: Color(0xCC000000),
+    onToast: Color(0xFFFFFFFF),
     onBackground: Color(0xFFF2F3F5),
     onSecondary: Color(0xFF17181A),
     outline: Color(0xFF747A83),

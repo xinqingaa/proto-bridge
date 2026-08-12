@@ -1,48 +1,32 @@
 # Spinner
 
 > 组件 id：`spinner` · 分类：`display`
-> 实现：`apps/pbwork/src/design-system/components/display/Spinner.vue`
-> 契约：`apps/pbwork/src/design-system/components/contracts/spinner.json`
+> 实现：[Spinner.vue](../../../src/design-system/components/display/Spinner.vue)
+> 契约：[spinner.json](../../../src/design-system/components/contracts/spinner.json)
 
-行内或整页加载等待反馈。
+局部、不阻断的忙碌指示。
 
-## 职责
+## 职责与边界
 
-- **做什么**：加载中。
-- **边界**：局部或整页加载指示；空数据用 EmptyState。
+- 固定使用 `role=loading-state`，不创建 scrim、不拦截下层点击，也不拥有异步任务生命周期。
+- 蒙层阻断流程必须使用 Loading；确定比例反馈使用 Progress。
+- 可选 label 只说明正在处理的内容，尺寸只使用受控语义档位。
 
-## Props
+## 行为要点
 
-| Prop    | 类型                 | 默认       | 说明 |
-| ------- | -------------------- | ---------- | ---- |
-| `label` | string               | `正在加载` |      |
-| `size`  | `sm` \| `md` \| `lg` | `md`       |      |
+- Spinner 始终保持局部非阻断；业务逻辑决定相关操作是否另行禁用。
+- `sm`、`md`、`lg` 只改变受控尺寸，不接受固定数字。
+- 颜色、描边与旋转动效只消费 Contract Token。
 
-## States（Playground / Contract）
+## States
 
-- `small` — 小尺寸
-- `large` — 大尺寸
+| id | label | kind |
+| --- | --- | --- |
+| `small` | 小尺寸 | `variant` |
+| `large` | 大尺寸 | `variant` |
 
-## Slots / Events
+## 用法与反例
 
-- **Slots**：无
-- **Events**：无
-
-## tokenBindings
-
-| 槽位     | Token                        |
-| -------- | ---------------------------- |
-| `active` | `color.primary`              |
-| `text`   | `color.on-surface-muted`     |
-| `size`   | `sizing.icon-md`             |
-| `motion` | `motion.duration-slow`       |
-| `label`  | `typography.caption`         |
-| `stroke` | `sizing.indicator-thickness` |
-
-切浅色/深色只改 Theme 覆盖值，不改本表绑定。
-
-## 用法要点
-
-1. 从 `@/design-system/components/display/...` 引入实现组件。
-2. Props 保持在契约枚举内；需要新能力先改 contract + registry + 本文。
-3. 业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`；默认 `ds.*` 只用于 Playground、组件测试或非业务预览。
+- 用于列表局部刷新、按钮内忙态或小区域异步反馈。
+- 不用 Spinner 自造全屏遮罩，也不把“不可点击”误写成 Spinner 自身职责。
+- Props、Slots、Events、默认值与 Token 槽以 [Spinner Contract](../../../src/design-system/components/contracts/spinner.json) 为准。

@@ -1,48 +1,33 @@
 # Card
 
 > 组件 id：`card` · 分类：`display`
-> 实现：`apps/pbwork/src/design-system/components/display/Card.vue`
-> 契约：`apps/pbwork/src/design-system/components/contracts/card.json`
+> 实现：[Card.vue](../../../src/design-system/components/display/Card.vue)
+> 契约：[card.json](../../../src/design-system/components/contracts/card.json)
 
-只提供圆角 surface 的基础容器；内容完全由调用方的默认 slot 定义。
+只提供背景、边框、圆角与可选抬升的单层 surface。
 
-## 职责
+## 职责与边界
 
-- **做什么**：为独立内容模块提供背景、边框、圆角与可选抬升。
-- **边界**：Card 不拥有标题、副标题、指标、列表或表单结构；这些都由调用方放入 slot。
-- **不要用于**：列表每一行、英雄区装饰块，或把业务内容结构固化进组件 Props。
+- Card 不拥有标题、副标题、指标、表单、点击行为或任何业务摘要类型；所有内容来自默认 slot。
+- semantic policy 为 contextual；调用方只可按真实上下文选择 `section`、`card` 或 `summary`。
+- 组件只建立一个内容容器，不插入固定标题区、操作区或内部网格。
+- 默认边框和可选 elevation 只作用于整体 surface，不叠加业务状态装饰。
 
-## Props
+## 行为要点
 
-| Prop           | 类型                         | 默认      | 说明                                                 |
-| -------------- | ---------------------------- | --------- | ---------------------------------------------------- |
-| `elevated`     | boolean                      | `false`   | 是否使用 `elevation.card` 表面层级                   |
-| `semanticRole` | `section \| card \| summary` | `section` | contextual role，只能从 Contract `allowedRoles` 选择 |
+- flat/elevated 只改变 surface 层级，不改变 slot 内容、职责或语义 identity。
+- 标题、说明、指标、列表和表单由页面用语义化结构组织。
+- 需要点击时由调用方提供真实 Button/Action，不让整个 Card 隐式成为无名按钮。
 
-## States（Playground / Contract）
+## States
 
-- `flat`：平面基础 surface。
-- `elevated`：使用 `elevation.card` 的抬升 surface。
+| id | label | kind |
+| --- | --- | --- |
+| `flat` | 平面 | `variant` |
+| `elevated` | 抬升 | `variant` |
 
-## Slots / Events
+## 用法与反例
 
-- **Slots**：`default`
-- **Events**：无
-
-## tokenBindings
-
-| 槽位        | Token            |
-| ----------- | ---------------- |
-| `surface`   | `color.surface`  |
-| `border`    | `color.border`   |
-| `radius`    | `radius.lg`      |
-| `elevation` | `elevation.card` |
-
-切浅色/深色只改 Theme 覆盖值，不改本表绑定。
-
-## 用法要点
-
-1. 从 `@/design-system/components/display/...` 引入实现组件，并在默认 slot 内组织业务标题、正文和操作。
-2. 需要不同内容组织时修改调用方，不为 Card 新增业务内容 Props 或“业务类型”。
-3. Props 保持在契约枚举内；需要新能力先改 contract + registry + 本文。
-4. 业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`；默认 `ds.*` 只用于 Playground、组件测试或非业务预览。
+- 用于独立内容 surface；列表整体 surface 优先使用 Data List。
+- 不新增“摘要卡、指标卡、表单卡”等 Card type；这些是 slot 内容组织。
+- Props、Slots、Events、默认值与 Token 槽以 [Card Contract](../../../src/design-system/components/contracts/card.json) 为准。

@@ -33,9 +33,9 @@ Token.defaultValue + Theme.overrides
 | ---------- | --------------------- | ------------------------------------------ |
 | 全量 Token | `tokens.json`         | Foundations 浏览；主题可覆盖               |
 | Bind 池    | `bindTokens.ts`       | 通用组件 `tokenBindings` **允许**引用的 ID |
-| 特殊值     | `transparent`、`none` | 可出现在 bindings，无需注册为 Token        |
+| 绑定字面量 | `transparent`、`none` | 可出现在 bindings；不是 Token，不进入 Target token mapping/obligation |
 
-契约校验会拒绝 Bind 池外的绑定（特殊值除外）。扩展 Token 可先只进 Foundations；确认多组件需要后再加入 Bind 池。
+契约校验会拒绝 Bind 池外的绑定（绑定字面量除外）。扩展 Token 可先只进 Foundations；确认多组件需要后再加入 Bind 池。字面量闭集由 Core 提供，PBWork 不复制第二套枚举。
 
 当前 Bind 池主要覆盖：表面与文本色、品牌/反馈色、常用字阶、常用间距/尺寸/圆角、`border.hairline`、常用 elevation、motion 时长与标准缓动。组件若实际消费任何 Foundation Token，必须在 Contract 与 Inspector 中列出；完整对照见 [catalog.md](./catalog.md)。
 

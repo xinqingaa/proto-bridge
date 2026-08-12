@@ -1,3 +1,5 @@
+import { TOKEN_BINDING_LITERALS } from "@proto-bridge/core/v2";
+
 /**
  * Bind tokens: the id pool that general component contracts may reference in
  * `tokenBindings`. All values still live in `tokens.json`; this file only
@@ -147,7 +149,7 @@ export const BIND_TOKEN_IDS = [
 export type BindTokenId = (typeof BIND_TOKEN_IDS)[number];
 
 /** Allowed in `tokenBindings` without being a registered token id. */
-export const BIND_TOKEN_SPECIAL_VALUES = ["transparent", "none"] as const;
+export const BIND_TOKEN_SPECIAL_VALUES = TOKEN_BINDING_LITERALS;
 
 const bindSet = new Set<string>(BIND_TOKEN_IDS);
 const specialSet = new Set<string>(BIND_TOKEN_SPECIAL_VALUES);

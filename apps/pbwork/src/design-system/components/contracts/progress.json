@@ -6,6 +6,11 @@
     "policy": "fixed",
     "defaultRole": "loading-state"
   },
+  "summary": "展示确定或不确定进度；只提供状态反馈，不阻断页面操作。",
+  "behavior": [
+    "indeterminate 表示未知完成比例，不能同时宣称精确 value",
+    "确定进度保持在有效范围内，并以 label 提供可访问说明"
+  ],
   "propsSchema": {
     "type": "object",
     "properties": {
@@ -29,6 +34,7 @@
     {
       "id": "indeterminate",
       "label": "加载中",
+      "kind": "interaction",
       "props": {
         "indeterminate": true
       }
@@ -36,6 +42,7 @@
     {
       "id": "complete",
       "label": "已完成",
+      "kind": "content",
       "props": {
         "value": 100
       }

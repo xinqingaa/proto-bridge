@@ -22,8 +22,10 @@
 | PBWork Workbench | `docs/architecture/pbwork.md`、`pbwork-workbench` Skill |
 | Prototype Contract | Authoring Contract、PBWork prototype docs、Skill、tests |
 | Identity/Role/Token Evidence/门禁 | `docs/reference/semantic-authoring.md`、Authoring Contract、ADR、相关 Skill、PBWork checklist、lint/Runtime tests |
-| Token/Theme | PBWork token docs、catalog、Skill |
-| Component props/behavior | Contract、实现、Registry、对应组件文档、Skill/检查单 |
+| Token/Theme | PBWork token docs、catalog、Skill、Target sync 状态/基线 |
+| Component props/behavior | Contract、实现、Registry、对应组件文档、Skill/检查单、Target sync 状态/基线 |
+| Role/绑定字面量闭集 | Core vocabulary、PBWork schema/Bind 池、Authoring 文档、Target sync 门禁 |
+| Target 映射/API | Target `proto-bridge.md`、`proto-bridge.target.json`、公开 API、`proto-bridge.sync.json` |
 | 手势/导航/组合 | PBWork 共享规范、相关组件页、测试 |
 
 ## PBWork 组件变更
@@ -48,6 +50,8 @@
 
 Agent 在收到组件、Token、Theme 或共享手势修改任务时，必须主动提醒文档同步义务，并在交付时说明同步了哪些文档。
 
+DS 连续迭代不要求每轮都做 Flutter 视觉精修，但每轮必须运行 `pnpm ds:target-sync:verify` 让 Schema、Contract、role、Token/Theme 与 Target API 漂移显式可见。稳定批次必须同时更新 Target 映射/公开 API 与完整 sync baseline，使清单恢复 `synced`；`pnpm verify` 不接受 pending、过期 fingerprint 或不一致的计数/分区/逐组件元数据。
+
 ## 链接与软链接
 
 `docs/pbwork` 软链接到 `apps/pbwork/docs`，后者是唯一内容源。其它入口优先使用相对 Markdown 链接：
@@ -62,6 +66,7 @@ Agent 在收到组件、Token、Theme 或共享手势修改任务时，必须主
 
 ```bash
 pnpm docs:verify
+pnpm ds:target-sync:verify
 ```
 
-文档校验至少覆盖本地链接、Skill 结构、源码路径、CLI/MCP 公共面、PBWork Contract/文档对应和禁止的过渡性表述。完整产品提交仍运行 `pnpm verify`。
+文档校验至少覆盖本地链接、Skill 结构、源码路径、CLI/MCP 公共面、PBWork Contract/文档对应、Flutter 当前/兼容映射叙事和禁止的过渡性表述。完整产品提交仍运行 `pnpm verify`；该门禁同时执行 Flutter `analyze` 与完整测试。

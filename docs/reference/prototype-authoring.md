@@ -116,7 +116,7 @@ Theme、Device、Viewport 和 Fixture 是独立 Case 维度，不得伪装成 Va
 
 `data-pb-role` 是 PB 产品语义词表，不等同于 ARIA role，也不等同于 `componentId`。语义采集要求节点同时具备 `data-pb-role` 与 `data-pb-id`；机器闭集只以 Core Contract 为准，本文不复制第二份枚举。
 
-固定语义组件使用 Contract 默认 role；上下文组件只能从 Contract 的 allowed roles 中选择；装饰组件默认不进入语义树。新 strict Screen 的 required Fragment、Action target 和 Scenario assertion 禁止使用 `unknown`。节点仍需提供正确 HTML/ARIA 语义，不能用 `data-pb-role` 代替可访问性。
+固定语义组件使用 Contract 默认 role；上下文组件只能从 Contract 的 allowed roles 中选择；装饰组件默认不进入语义树。Role 表达通用产品职责，精确 DS 身份由 `componentId` 表达，例如 `flow-sheet` 使用 `sheet` role。新 strict Screen 的 required Fragment、Action target 和 Scenario assertion 禁止使用 `unknown`。节点仍需提供正确 HTML/ARIA 语义，不能用 `data-pb-role` 代替可访问性。
 
 ## 7. Token Evidence
 

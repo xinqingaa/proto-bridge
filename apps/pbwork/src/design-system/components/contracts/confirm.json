@@ -12,6 +12,12 @@
     "确认会先发出 confirm，再关闭自身；调用方决定后续业务动作与导航",
     "不替代 BottomSheet / FlowSheet 的流程承载"
   ],
+  "layout": {
+    "summary": "对话框在视口内居中并受 dialog-max-width 约束；正文与操作区保持稳定纵向次序。"
+  },
+  "visualAnatomy": {
+    "summary": "scrim、raised dialog surface、标题/正文和确认操作构成四层固定结构。"
+  },
   "propsSchema": {
     "type": "object",
     "properties": {

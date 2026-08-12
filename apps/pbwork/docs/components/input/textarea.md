@@ -1,52 +1,32 @@
 # Textarea
 
 > 组件 id：`textarea` · 分类：`input`
-> 实现：`apps/pbwork/src/design-system/components/input/Textarea.vue`
-> 契约：`apps/pbwork/src/design-system/components/contracts/textarea.json`
+> 实现：[Textarea.vue](../../../src/design-system/components/input/Textarea.vue)
+> 契约：[textarea.json](../../../src/design-system/components/contracts/textarea.json)
 
-填写多行说明。默认 plain 无标题无描边；`showLabel` 时显示标题并启用边框。
+多行文本输入；默认是无标题、无描边的 plain 形态。
 
-## 职责
+## 职责与边界
 
-- **做什么**：多行描述。
-- **边界**：多行文本；与 TextField 分工明确，不要互相替代。
+- 固定使用 `role=field`，用于备注、说明和其它多行自由文本。
+- `showLabel=false` 时不渲染标题且不绘制边框；`showLabel=true` 同时启用标题和边框。
+- 默认可见行数来自语义 Token，不由业务页面传入固定高度绕过 Contract。
 
-## Props
+## 行为要点
 
-| Prop | 类型 | 默认 | 说明 |
-| --- | --- | --- | --- |
-| `label` | string | `问题描述` | 仅 `showLabel` 时渲染 |
-| `showLabel` | boolean | `false` | 是否显示标题（同时启用边框） |
-| `modelValue` | string | `现场设备出现异常噪声` | |
-| `placeholder` | string | `` | |
-| `disabled` | boolean | `false` | |
+- plain 与 labeled 共享同一输入、错误和可访问性行为，只改变受控结构状态。
+- disabled 时不可聚焦或编辑，整体使用 `opacity.disabled`。
+- 长内容由输入自身处理，不把页面主滚动职责转移给组件内部自由高度逻辑。
 
-可见行数不是实例样式入口，统一绑定 Foundation `sizing.textarea-rows`。
+## States
 
-## States（Playground / Contract）
+| id | label | kind |
+| --- | --- | --- |
+| `labeled` | 显示标题 | `variant` |
+| `disabled` | 禁用 | `interaction` |
 
-- `labeled` — 显示标题
-- `disabled` — 禁用
+## 用法与反例
 
-## Slots / Events
-
-- **Slots**：无
-- **Events**：`update:modelValue`
-
-## tokenBindings
-
-| 槽位 | Token |
-| --- | --- |
-| `surface` | `color.surface` |
-| `border` | `color.border` |
-| `focus` | `color.primary` |
-| `radius` | `radius.md` |
-| `text` | `typography.content` |
-| `disabledOpacity` | `opacity.disabled` |
-| `rows` | `sizing.textarea-rows` |
-
-## 用法要点
-
-1. 从 `@/design-system/components/input/Textarea.vue` 引入。
-2. 默认不传 `showLabel`，得到最简洁的多行输入区域。
-3. 业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`。
+- 用于处理说明、备注等多行内容；短单行值使用 Text Field。
+- 不在业务页写固定 rows、高度、边框或错误色来制造平行 Textarea。
+- Props、Slots、Events、默认值与 Token 槽以 [Textarea Contract](../../../src/design-system/components/contracts/textarea.json) 为准。

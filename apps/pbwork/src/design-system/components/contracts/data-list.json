@@ -6,6 +6,17 @@
     "policy": "fixed",
     "defaultRole": "list"
   },
+  "summary": "列表的表面、分隔、圆角和抬升容器；列表项结构完全由默认 slot 定义。",
+  "behavior": [
+    "不拥有滚动、刷新或分页；这些职责属于 ScrollableDataList",
+    "plain 移除容器表面，raised 只改变容器层级，不改业务列表项"
+  ],
+  "layout": {
+    "summary": "容器随父级宽度伸展；列表项由调用方提供，组件只管理相邻项分隔与可选 inset。"
+  },
+  "visualAnatomy": {
+    "summary": "可选 surface、border、radius、elevation 只作用于列表整体，不包办列表项内容层。"
+  },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -49,6 +60,7 @@
     {
       "id": "plain",
       "label": "无容器",
+      "kind": "variant",
       "props": {
         "surface": "none",
         "rounded": "none"
@@ -57,6 +69,7 @@
     {
       "id": "raised",
       "label": "抬升容器",
+      "kind": "variant",
       "props": {
         "surface": "raised",
         "elevated": true

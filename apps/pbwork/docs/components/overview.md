@@ -12,11 +12,11 @@
 | 场景 | `components/scenarios.ts`（可选组合示例）             |
 | 文档 | `apps/pbwork/docs/components/**`                      |
 
-Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`propsSchema`、`defaultProps`、`states`、`slots`、`events`、`tokenBindings`、`playground`（含 `presentation: interactive|gallery|trigger`）。
+Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`summary`、`behavior`、`propsSchema`、`defaultProps`、`states`、`slots`、`events`、`tokenBindings`、`playground`（含 `presentation: interactive|gallery|trigger`）；每个 state 必须声明 `kind`。
 
 `category` 按职责六类（不按 Overlay 实现）：`action` / `input` / `display` / `navigation` / `data` / `feedback`。
 
-可选跨栈语义字段：`summary`、`behavior`、`layout`、`visualAnatomy`、`states[].kind`、`icons`（`pack` 仅 `lucide`）。详见 [alignment-protocol.md](./alignment-protocol.md)。
+跨栈字段 `layout`、`visualAnatomy`、`icons` 按适用性声明（`pack` 仅 `lucide`）；拥有滚动/视口/复杂层级或 material 的组件必须写前两项。详见 [alignment-protocol.md](./alignment-protocol.md)。
 
 `playground.presentation`：**默认 `interactive`**；**`gallery` 仅 `icon` / `icon-button`**；overlay 用 `trigger`。互动状态必须在舞台内可观察，Token 绑定只读常驻表展示。
 
@@ -52,6 +52,7 @@ Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`propsSchem
 5. 写本文档对应页
 6. 单元 / playground 相关测试
 7. 运行 `pnpm docs:verify`
+8. 运行 `pnpm ds:target-sync:verify`；若 Target 尚未批量同步，明确保留 drift/pending，稳定后更新基线
 
 修改已有组件按[分级同步义务](./alignment-protocol.md#分级同步义务)选择产物：纯实现修不改 Contract 或文档；只有语义、布局策略、视觉层级、交互状态或 Playground 能力变化时，才同步对应产物。Agent 在交付时说明实际更新的范围。
 

@@ -110,8 +110,10 @@ test("evidence viewer can reopen deliver flow for another handoff", async ({
   await expect(page.getByTestId("handoff-id")).toBeVisible();
   const handoffId = (await page.getByTestId("handoff-id").innerText()).trim();
 
-  const url = page.url();
-  const match = url.match(/\/workbench\/evidence\/([^/]+)\/([^/]+)/);
+  const pathname = new URL(page.url()).pathname;
+  const match = pathname.match(
+    /^\/workbench\/evidence\/([^/]+)\/([^/]+)\/?$/,
+  );
   if (!match) {
     throw new Error("Evidence Viewer URL did not expose fixed IDs.");
   }

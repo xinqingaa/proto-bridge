@@ -1,104 +1,84 @@
 # ProtoBridge 目标适配
 
-本文件只描述固定 ProtoBridge Evidence 如何落到本工程，不定义本产品的一般架构。Evidence 决定源页面结构、文案、状态、交互和构图；本文件决定 Flutter 侧采用哪种已有实现。
+本文件定义 PBWork 语义在本 Flutter 工程中的翻译策略；精确、可机读的完整表位于 `proto-bridge.target.json`。Producer Contract 决定组件职责、状态、行为、布局/结构承诺和 Token 槽，Flutter 侧可以使用不同 API，但不得改变这些语义。
 
 ## 语义组件落点
 
-当 Fragment 提供可靠的 `componentId` 或 role 时，优先使用下表中的本地组件：
+优先按 `componentId` 映射；role 只在没有可靠 `componentId` 时提供通用语义回退。比如 `flow-sheet` 的身份是 `componentId=flow-sheet`，role 仍是通用的 `sheet`，不需要创建 `flow-sheet` role。
 
-| Evidence 语义 | 本工程目标组件 | import |
+| Evidence 组件 id | 本工程目标组件 | import |
 | --- | --- | --- |
 | `app-bar` | `CommonAppBar` | `common/widgets/widgets.dart` |
-| `card` / `summary` | `CommonCard` | `common/widgets/widgets.dart` |
-| `form-section` | `CommonFormSection` | `common/widgets/widgets.dart` |
+| `avatar` | `CommonAvatar` | `common/widgets/widgets.dart` |
 | `badge` | `CommonBadge` | `common/widgets/widgets.dart` |
-| `chip` | `CommonChip` | `common/widgets/widgets.dart` |
-| `filter-bar` | `CommonFilterBar` | `common/widgets/widgets.dart` |
-| `scrollable-data-list` | `CommonScrollableDataList` | `common/widgets/widgets.dart` |
-| `data-list` | `CommonDataList` | `common/widgets/widgets.dart` |
-| `search` / `search-bar` | `CommonSearchBar` | `common/widgets/widgets.dart` |
-| `select` / `select-field` | `CommonSelect` | `common/widgets/widgets.dart` |
-| `textarea` | `CommonTextArea` | `common/widgets/widgets.dart` |
-| `radio-group` | `CommonRadioGroup` | `common/widgets/widgets.dart` |
-| `checkbox` | `CommonCheckbox` | `common/widgets/widgets.dart` |
-| `switch-control` | `CommonSwitch` | `common/widgets/widgets.dart` |
-| `button` | `CommonButton` | `common/widgets/widgets.dart` |
-| `icon-button` | `CommonIconButton` | `common/widgets/widgets.dart` |
-| `tabs` | `CommonTabs` | `common/widgets/widgets.dart` |
-| `tab-viewport` | `CommonTabView` | `common/widgets/widgets.dart` |
-| `bottom-navigation` | `CommonBottomNav` | `common/widgets/widgets.dart` |
-| `empty-state` | `CommonEmptyState` | `common/widgets/widgets.dart` |
-| `dialog` | `AppPop.confirm` | `common/overlay/app_pop.dart` |
 | `bottom-sheet` | `AppPop.sheet` | `common/overlay/app_pop.dart` |
+| `button` | `CommonButton` | `common/widgets/widgets.dart` |
+| `card` | `CommonCard` | `common/widgets/widgets.dart` |
+| `checkbox` | `CommonCheckbox` | `common/widgets/widgets.dart` |
+| `chip` | `CommonChip` | `common/widgets/widgets.dart` |
+| `confirm` | `AppPop.confirm` | `common/overlay/app_pop.dart` |
+| `data-list` | `CommonDataList` | `common/widgets/widgets.dart` |
+| `divider` | `CommonDivider` | `common/widgets/widgets.dart` |
+| `empty-state` | `CommonEmptyState` | `common/widgets/widgets.dart` |
+| `filter-bar` | `CommonFilterBar` | `common/widgets/widgets.dart` |
 | `flow-sheet` | `AppPop.flowSheet` | `common/overlay/app_pop.dart` |
+| `icon` | `CommonIcon` | `common/widgets/widgets.dart` |
+| `icon-button` | `CommonIconButton` | `common/widgets/widgets.dart` |
+| `loading` | `AppPop.loading` | `common/overlay/app_pop.dart` |
+| `menu` | `CommonSelect` | `common/widgets/widgets.dart` |
+| `primary-tabs` | `CommonTabs` | `common/widgets/widgets.dart` |
+| `progress` | `CommonProgress` | `common/widgets/widgets.dart` |
+| `radio-group` | `CommonRadioGroup` | `common/widgets/widgets.dart` |
+| `scrollable-data-list` | `CommonScrollableDataList` | `common/widgets/widgets.dart` |
+| `search-bar` | `CommonSearchBar` | `common/widgets/widgets.dart` |
+| `secondary-tabs` | `CommonTabs` | `common/widgets/widgets.dart` |
+| `spinner` | `CommonSpinner` | `common/widgets/widgets.dart` |
+| `switch` | `CommonSwitch` | `common/widgets/widgets.dart` |
+| `tab-viewport` | `CommonTabView` | `common/widgets/widgets.dart` |
+| `tabbar` | `CommonBottomNav` | `common/widgets/widgets.dart` |
+| `text-field` | `CommonTextField` | `common/widgets/widgets.dart` |
+| `textarea` | `CommonTextArea` | `common/widgets/widgets.dart` |
+| `toast` | `AppPop.toast` | `common/overlay/app_pop.dart` |
+
+`page`、`section`、`summary`、`list`、`field` 等 role 要结合 Fragment 上下文选择本地容器，不能覆盖一个已存在且更精确的 `componentId`。
+
+## Component mapping 兼容别名
+
+这些别名只用于读取旧 Handoff；新 Producer 不再产生它们。
+
+| 旧 Evidence id | 本工程目标组件 | import |
+| --- | --- | --- |
+| `select` / `select-field` | `CommonSelect` | `common/widgets/widgets.dart` |
+| `switch-control` | `CommonSwitch` | `common/widgets/widgets.dart` |
+| `tabs` | `CommonTabs` | `common/widgets/widgets.dart` |
+| `bottom-navigation` | `CommonBottomNav` | `common/widgets/widgets.dart` |
+| `dialog` | `AppPop.confirm` | `common/overlay/app_pop.dart` |
 | `snackbar` | `AppPop.toast` | `common/overlay/app_pop.dart` |
+| `search` | `CommonSearchBar` | `common/widgets/widgets.dart` |
+| `card-summary` | `CommonCard` | `common/widgets/widgets.dart` |
 
-该表是目标工程自己的适配契约，不应被 ProtoBridge 核心代码硬编码到其他目标工程。
+## Token mapping
 
-## 来源优先级与 resolver 职责
+完整 Token id → `TS.*` accessor 映射只维护在 `proto-bridge.target.json`，当前覆盖所有组件 Contract 实际消费的 Catalog Token。`lib/theme/proto_bridge_tokens.dart` 提供同一映射的可执行使用点，让 resolver 同时验证“声明存在”和“当前 Dart API 可访问”。
 
-1. 本工程 `AGENTS.md`、本文件、`components.md`、`theme.md` 和公开 Dart API 是当前目标约束的首要来源。
-2. `packages/core/src/target/flutter-app` 只负责发现这些来源、解析受控表格、扫描当前 Dart inventory 并验证 symbol/import/constructor/accessor/usage；它不得内置本工程的 `Common*` 或 `TS.*` 映射。
-3. 可选 `docs/proto-bridge.target.json` 仅用于把稳定映射机器化；缺失不影响文档解析。它与 `AGENTS.md` 冲突时 resolver 返回 `conflict`，与当前代码不符时返回 `stale`，不能用优先级静默覆盖。
-4. 没有显式声明时，代码搜索只能返回 `candidate`；多个候选或未知 ID 返回 `unresolved`，由 Agent 披露或补充目标侧声明。
+`transparent` 与 `none` 是绑定字面量，不是 Foundation Token，也不得生成 `TS.*` accessor 或 Target token obligation。
 
-因此本工程文档回答“应当使用什么”，Flutter adapter 回答“声明在哪里、当前代码是否仍支持以及有哪些候选”。
+Target 只翻译语义，不复制 Web 表达：例如百分比映射为 Flutter 比例、CSS shadow 映射为 Material elevation、CSS easing 映射为 `Curve`。Theme 值由 `TS` 的 light/dark 服务提供，业务页面不得创建平行常量。
 
-## 适配规则
+## Resolver 与同步状态
 
-- 语义组件映射优先于外观相似性。`CommonChip` 不替代 `CommonBadge`，`Wrap` 不替代 `CommonFilterBar`，普通 `ListView` 不替代 `CommonScrollableDataList`。
-- 构造参数、状态和 Theme 映射以 Dart 定义及相似页面为准。
-- Evidence 没有对应本地组件时，先报告 unresolved mapping；不要在 feature 中手写平行公共组件。
-- 实现前列出 `Evidence componentId/role -> target symbol/import/依据`，最终报告保留未解决项。
+1. `proto-bridge.target.json` 是精确映射，本文解释策略，Dart 公开 API 是可执行事实；三者不一致时 resolver 必须返回 `stale` 或 `conflict`。
+2. `proto-bridge.sync.json` 记录最后一次已确认同步的 Producer surface fingerprint、分区/逐组件 digest 与计数；清单元数据必须整体一致，不能只手改总 digest。
+3. `pnpm ds:target-sync:verify` 比较 Component/Token/Theme Schema、Contract、role、Catalog、Theme、Bind 池、同步清单和 Flutter resolver；任一协议或 Target API 漂移都会失败并列出变化项。
+4. DS 连续迭代期间可以暂缓 Flutter 视觉精修，但必须把清单状态改为 `pending` 并记录原因；稳定后统一恢复 `synced`。不得靠记忆或口头提醒维持同步。
 
-## Token 对照
+## 当前适配边界
 
-| Evidence token | 目标 token |
-| --- | --- |
-| `color.action` | `TS.colors.action` |
-| `color.action-soft` | `TS.colors.actionSoft` |
-| `color.background` | `TS.colors.background` |
-| `color.border` | `TS.colors.border` |
-| `color.error` | `TS.colors.error` |
-| `color.error-soft` | `TS.colors.errorSoft` |
-| `color.on-action` | `TS.colors.onAction` |
-| `color.on-background` | `TS.colors.onBackground` |
-| `color.on-error` | `TS.colors.onError` |
-| `color.on-primary` | `TS.colors.onPrimary` |
-| `color.on-surface` | `TS.colors.onSurface` |
-| `color.on-surface-muted` | `TS.colors.onSurfaceMuted` |
-| `color.on-warning` | `TS.colors.onWarning` |
-| `color.primary` | `TS.colors.primary` |
-| `color.primary-soft` | `TS.colors.primarySoft` |
-| `color.success` | `TS.colors.success` |
-| `color.surface` | `TS.colors.surface` |
-| `color.surface-raised` | `TS.colors.surfaceRaised` |
-| `color.surface-variant` | `TS.colors.surfaceVariant` |
-| `color.warning` | `TS.colors.warning` |
-| `color.warning-soft` | `TS.colors.warningSoft` |
-| `elevation.card` | `TS.elevation.card` |
-| `elevation.level-3` | `TS.elevation.level3` |
-| `elevation.none` | `TS.elevation.none` |
-| `radius.full` | `TS.radius.full` |
-| `radius.lg` | `TS.radius.lg` |
-| `radius.md` | `TS.radius.md` |
-| `radius.sm` | `TS.radius.sm` |
-| `spacing.lg` | `TS.spacing.lg` |
-| `spacing.sm-plus` | `TS.spacing.smPlus` |
-| `spacing.md` | `TS.spacing.md` |
-| `spacing.sm` | `TS.spacing.sm` |
-| `sizing.control-md` | `TS.sizing.controlMd` |
-| `sizing.icon-lg` | `TS.sizing.iconLg` |
-| `sizing.icon-md` | `TS.sizing.iconMd` |
-| `typography.title` | `TS.textStyle.title` |
-| `typography.title-sm` | `TS.textStyle.titleSm` |
-| `typography.subtitle` | `TS.textStyle.subtitle` |
-| `typography.content` | `TS.textStyle.content` |
-| `typography.label` | `TS.textStyle.label` |
-| `typography.caption` | `TS.textStyle.caption` |
+- `CommonTabs` 同时承载一级/二级 Tab，通过目标参数翻译选择层级；不是复制 Vue props。
+- `CommonSelect` 是 `menu` 的有限选项实现；锚定式自定义菜单仍走 `AppPop.menu`。
+- Flutter elevation、glass blur、Lucide id → `IconData` 属于平台近似，最终构图仍需结合固定 Screenshot 验证。
+- 部分既有公共组件保留旧构造参数以兼容现有 feature；新 Evidence 实现只使用本表和 Producer Contract 明确的职责。
 
-Evidence 未提供的布局敏感值不能静默接受目标组件默认值；必须检查 Screenshot，仍不确定时记录剩余风险。
+## 实现与验证
 
-## 状态和验证
-
-Evidence Case/variant/interaction 必须映射到页面状态和命名路由。新增页面遵循 [routing.md](routing.md)，验证遵循 [testing.md](testing.md)，并在最终报告中说明实际执行的场景。
+实现前批量解析组件和 Token；只有 `resolved` 可视为已验证落点。Case/variant/interaction 必须映射到页面状态和命名路由；新增页面遵循 [routing.md](routing.md)，验证遵循 [testing.md](testing.md)。最终报告保留固定引用、映射结果、平台近似和未解决项。

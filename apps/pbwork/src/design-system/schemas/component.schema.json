@@ -8,6 +8,8 @@
     "id",
     "category",
     "semantic",
+    "summary",
+    "behavior",
     "propsSchema",
     "defaultProps",
     "states",
@@ -82,6 +84,7 @@
     "behavior": {
       "type": "array",
       "items": { "type": "string", "minLength": 1 },
+      "minItems": 1,
       "uniqueItems": true,
       "description": "Short interaction / empty / disabled commitments for cross-stack alignment."
     },
@@ -90,6 +93,7 @@
       "additionalProperties": false,
       "description": "Cross-stack layout intent; never a CSS implementation recipe.",
       "properties": {
+        "summary": { "type": "string", "minLength": 1 },
         "containerWidth": {
           "type": "string",
           "enum": ["fill-parent", "content"]
@@ -127,6 +131,7 @@
       "additionalProperties": false,
       "description": "Cross-stack material and layer anatomy; never a CSS implementation recipe.",
       "properties": {
+        "summary": { "type": "string", "minLength": 1 },
         "selection": {
           "type": "object",
           "additionalProperties": false,
@@ -146,7 +151,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "label"],
+        "required": ["id", "label", "kind"],
         "properties": {
           "id": {
             "type": "string",

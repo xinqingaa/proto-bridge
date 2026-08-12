@@ -1,47 +1,29 @@
 # Chip
 
 > 组件 id：`chip` · 分类：`display`
-> 实现：`apps/pbwork/src/design-system/components/display/Chip.vue`
-> 契约：`apps/pbwork/src/design-system/components/contracts/chip.json`
+> 实现：[Chip.vue](../../../src/design-system/components/display/Chip.vue)
+> 契约：[chip.json](../../../src/design-system/components/contracts/chip.json)
 
-列表中的状态标签，如进行中、即将超时。
+紧凑标签或轻量短选项表面。
 
-## 职责
+## 职责与边界
 
-- **做什么**：状态标签、筛选项展示。
-- **边界**：状态/筛选标签；不是按钮。可点击筛选应包在 button 或 FilterBar 内。
+- 固定使用 `role=chip`，表达紧凑标签或显式选择项；只读严重度优先使用 Badge。
+- tone 与 elevated 只改变受控外观，不隐式增加业务状态。
+- 标准一排筛选优先使用 Filter Bar；自定义 Chip 行必须遵守父级横滑仲裁。
 
-## Props
+## 行为要点
 
-| Prop       | 类型                                                          | 默认      | 说明 |
-| ---------- | ------------------------------------------------------------- | --------- | ---- |
-| `label`    | string                                                        | `进行中`  |      |
-| `tone`     | `primary` \| `secondary` \| `success` \| `warning` \| `error` | `primary` |      |
-| `elevated` | boolean                                                       | `false`   |      |
+- 需要选择交互时，调用方必须提供可观察的选中状态、可访问名称和明确操作语义。
+- 只读 Chip 不响应点击，也不伪装成 Button。
+- 外观只消费 Contract Token，不允许实例自由换绑。
 
-## States（Playground / Contract）
+## States
 
-- （无预置 state）
+当前 Contract 不声明命名状态；tone、elevated 与内容值仍受 Props Contract 限定，不能由文档另建枚举。
 
-## Slots / Events
+## 用法与反例
 
-- **Slots**：`default`
-- **Events**：无
-
-## tokenBindings
-
-| 槽位         | Token                |
-| ------------ | -------------------- |
-| `background` | `color.primary-soft` |
-| `color`      | `color.primary`      |
-| `radius`     | `radius.sm`          |
-| `elevation`  | `elevation.card`     |
-| `typography` | `typography.caption` |
-
-切浅色/深色只改 Theme 覆盖值，不改本表绑定。
-
-## 用法要点
-
-1. 从 `@/design-system/components/display/...` 引入实现组件。
-2. Props 保持在契约枚举内；需要新能力先改 contract + registry + 本文。
-3. 业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`；默认 `ds.*` 只用于 Playground、组件测试或非业务预览。
+- 用于紧凑标签或有限轻量选择；标准数据筛选使用 Filter Bar。
+- 不用 Chip 替代 Badge、Button 或拥有内容视图区的 Tab。
+- Props、Slots、Events、默认值与 Token 槽以 [Chip Contract](../../../src/design-system/components/contracts/chip.json) 为准。

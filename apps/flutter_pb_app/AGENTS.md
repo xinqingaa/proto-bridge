@@ -4,11 +4,14 @@
 
 收到固定 ProtoBridge Evidence 的实现任务时，先读取并遵守 `.agents/skills/proto-bridge-consumer/SKILL.md`；该 Skill 负责 Evidence 消费流程，本文件和 `docs/` 负责本工程的实现规范。
 
+收到 PBWork Design System 同步任务（没有固定 Handoff）时，改用 `.agents/skills/proto-bridge-ds-target-sync/SKILL.md`；不要伪造 Evidence 消费流程。
+
 ## 文档优先级
 
 1. 固定 ProtoBridge Evidence 决定源页面的结构、文案、状态、交互和构图。
 2. 本工程的 `AGENTS.md`、`docs/` 和实际代码决定目标侧的落点、组件职责、Theme、路由和验证方式。
 3. Target adapter 查询结果只提供目标工程上下文，不能覆盖 Screenshot、Fragment、Case 或 revision。
+4. `docs/proto-bridge.target.json` 是精确映射，`docs/proto-bridge.sync.json` 是 DS surface 同步基线；两者不能替代 Producer Contract。
 
 文档缺失或与代码冲突时，编辑前必须报告，不得用熟悉的 Flutter 默认架构补齐未知项。
 
@@ -35,6 +38,9 @@
 ```bash
 flutter analyze
 flutter test
+cd ../.. && pnpm ds:target-sync:verify
 ```
 
 视觉验证遵循 [testing.md](docs/testing.md)。最终报告必须包含固定引用、原始风险、修改文件、验证结果、已知偏差和剩余风险。
+
+仓库根 `pnpm verify` 已包含本工程的 `flutter analyze` 与 `flutter test`，稳定 DS 批次不能只通过 resolver 而跳过 Dart/Widget 验证。

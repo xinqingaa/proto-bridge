@@ -64,7 +64,7 @@
 | `pbKey` / `data-pb-key` | 重复模板的业务稳定实例 | 不使用 index、文案、随机值、时间或敏感数据 |
 | `componentId` / `data-pb-component` | PBWork DS 组件类型 | 由组件注册提供，不代替 `pbId` |
 
-`role` 描述当前节点在产品中的语义或交互职责，不描述 Vue/Flutter/Swift 类型。`componentId=card` 的实例可以按 Contract 允许的上下文承担 `card`、`section` 或 `summary`；固定行为组件如 Button 只能承担 `button`。
+`role` 描述当前节点在产品中的语义或交互职责，不描述 Vue/Flutter/Swift 类型。`componentId=card` 的实例可以按 Contract 允许的上下文承担 `card`、`section` 或 `summary`；固定行为组件如 Button 只能承担 `button`。精确身份和通用职责可以不同：`componentId=flow-sheet` 使用 `role=sheet`，不能仅因新增组件就扩展 role 闭集。
 
 ## 4. Role 规则
 
@@ -88,7 +88,7 @@
 - `elevation`
 - `motion`
 
-所有 binding value 必须是固定 Catalog 中存在的 Token ID，或 Contract 明确允许的特殊值。Capture 必须保留 binding 的真实来源：
+所有 binding value 必须是固定 Catalog 中存在的 Token ID，或 Core 闭集明确允许的绑定字面量（当前为 `transparent` / `none`）。字面量不形成 Target token mapping/obligation。Capture 必须保留 binding 的真实来源：
 
 - `component-contract`
 - `runtime-registration`

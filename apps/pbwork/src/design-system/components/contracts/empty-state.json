@@ -6,6 +6,11 @@
     "policy": "fixed",
     "defaultRole": "empty-state"
   },
+  "summary": "没有可展示数据或尚未配置时的完整空态，可选提供一个恢复操作。",
+  "behavior": [
+    "标题与说明必须解释当前为空的原因或下一步，而不是伪装错误态",
+    "actionLabel 为空时不渲染操作入口；存在时通过 action 事件交给页面处理"
+  ],
   "propsSchema": {
     "type": "object",
     "properties": {
@@ -32,6 +37,7 @@
     {
       "id": "without-action",
       "label": "无操作",
+      "kind": "content",
       "props": {
         "actionLabel": ""
       }

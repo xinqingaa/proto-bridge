@@ -26,6 +26,7 @@
     "test:e2e:evidence-slice": "node scripts/test-evidence-vertical-slice.mjs",
     "test:e2e:consumer": "node scripts/test-consumer-runner.mjs",
     "docs:verify": "node scripts/verify-docs.mjs",
+    "ds:target-sync:verify": "pnpm --filter @proto-bridge/core build && node scripts/verify-ds-target-sync.mjs",
     "consumer-contract:verify": "node scripts/verify-consumer-contract.mjs",
     "verify": "node scripts/verify-product.mjs"
   },

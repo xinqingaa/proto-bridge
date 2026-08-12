@@ -9,7 +9,7 @@
 | ------------------------ | -------------------------------------------------- | --------------------------------- | -------------------------------------- |
 | **1. Producer Contract** | `src/design-system/components/contracts/{id}.json` | Playground、校验、跨栈对照        | 不当作 Dart 构造参数表                 |
 | **2. Producer 文档**     | `apps/pbwork/docs/components/**`                   | 人：职责 / 边界 / 组合铁律 / 反例 | 不替代 Contract；不抄全 props/token 表 |
-| **3. Target 映射**       | `apps/flutter_pb_app/docs/proto-bridge.md`（P1.5） | Agent / resolver                  | 不反写进 Core；不要求 API 同构         |
+| **3. Target 映射**       | Target 的 `docs/proto-bridge.md` + `proto-bridge.target.json` | Agent / resolver | 不反写进 Core；不要求 API 同构         |
 
 冲突裁决：
 
@@ -26,7 +26,7 @@
 | `id` / `semantic`          | 组件身份与 role 策略                              |
 | `tokenBindings`            | Token 槽 → Catalog id                             |
 | `states` + `states[].kind` | 状态矩阵：`variant` \| `interaction` \| `content` |
-| `summary` / `behavior`     | 一句话与交互承诺（可选但样例组件应写）            |
+| `summary` / `behavior`     | **必填**；一句话与至少一条跨栈行为承诺             |
 | `layout`                   | 跨端容器、项宽、溢出与视图区归属；不表达 CSS      |
 | `visualAnatomy`            | 跨端材质、层级与轮廓；不表达伪元素或样式 API      |
 | `playground.presentation`  | **必填**：`interactive` \| `gallery` \| `trigger` |
@@ -42,7 +42,7 @@
 | `interaction` | 交互态      | loading、disabled          |
 | `content`     | 内容/开闭态 | empty、open、closed        |
 
-未标 kind 时 Playground 暂按 `variant` 处理；**新增或改动的 state 必须标 kind**。
+`kind` 是必填字段；未知类别不能默认降级成 `variant`。
 
 ### `playground.presentation`
 
@@ -58,7 +58,7 @@
 
 ### Token-ref props（色槽）
 
-部分基础控件（如 `button`、`checkbox`、`radio-group`、`switch`）允许通过 props 传入 **Bind 池 Token ID**（或 `transparent`）覆盖默认色槽。  
+部分基础控件（如 `button`、`checkbox`、`radio-group`、`switch`）允许通过 props 传入 **Bind 池 Token ID**（或绑定字面量 `transparent` / `none`）覆盖默认色槽。字面量不是 Catalog Token，不生成 Target token accessor 或验收 obligation。
 约束：
 
 - **禁止**实例硬编码色值（`#hex` / `rgb()` 等）。
@@ -77,11 +77,13 @@ Button 公开语义以色槽与行为（loading 保留文案、disabled 透明�
 
 | 变更类型                                                                          | 必须同批                                | 明确可不做                         |
 | --------------------------------------------------------------------------------- | --------------------------------------- | ---------------------------------- |
-| A. 语义（role / Token 槽 / state 矩阵 / behavior / 布局策略 / 视觉层级 / 拆组件） | Contract + Vue + 必要的 registry + 测试 | Flutter（P1.5）                    |
+| A. 语义（role / Token 槽 / state 矩阵 / behavior / 布局策略 / 视觉层级 / 拆组件） | Contract + Vue + 必要的 registry + 测试 + Target 漂移状态 | Flutter 视觉精修可批量              |
 | B. 用法铁律 / 反例 / 组合边界                                                     | 文档短叙事                              | 不抄 props 表                      |
 | C. Playground 展示                                                                | Contract `presentation` + Playground    | —                                  |
 | D. 纯实现修（同语义）                                                             | Vue（+ 必要时单测）                     | 文档 / Contract 无字段变更时可不动 |
-| E. Target 落点 / Demo / 图标包换栈                                                | —                                       | **P1.5 批量**                      |
+| E. Target 落点 / Demo / 图标包换栈                                                | Target 映射 + 公开 API + sync baseline  | 平台视觉近似可披露                 |
+
+连续迭代时允许暂不逐轮精修 Flutter，但不能让漂移不可见：`pnpm ds:target-sync:verify` 必须覆盖 Component/Token/Theme Schema、Contract、role、Catalog、Theme、Bind 池及 Target resolver，并列出变化组件/分区；Target 清单保持 `pending` 或验证失败。DS 稳定后统一更新目标映射、公开 API 和 `proto-bridge.sync.json`，恢复 `synced`。完整产品门禁只接受元数据完整一致的 `synced`。
 
 文档骨架（触达组件按此写）：职责与边界 → 行为要点 → States 一览（id / label / kind）→ 用法与反例 → 「Props 与 Token 槽以 Contract 为准」。
 
@@ -90,6 +92,8 @@ Button 公开语义以色槽与行为（loading 保留文案、disabled 透明�
 禁止「一个组件 + 大 type 兼多种语义角色」。嫌疑先审计，再拆；拆后各有独立 `componentId`。  
 详见 [audit-large-types.md](./audit-large-types.md)。
 
+Role 表达跨组件的产品职责，`componentId` 表达精确组件身份。`flow-sheet` 因此固定使用 `role=sheet` 与 `componentId=flow-sheet`；只有现有闭集无法表达新的产品职责时才扩展 Core role，不能为每个组件创建同名 role。
+
 ## 图标
 
 DS **唯一**图标包为 **Lucide**（稳定 icon id）。基础组件 `icon` 承载策展清单；Playground 仅对 `icon`、`icon-button` 使用 `gallery` 平铺。Flutter 换 `lucide_icons`（或同类）属 P1.5。
@@ -97,5 +101,5 @@ DS **唯一**图标包为 **Lucide**（稳定 icon id）。基础组件 `icon` �
 ## 非目标
 
 - 不要求 Vue propsSchema ↔ Dart API 同名同构
-- 不做 tokens.json → Dart codegen（可列后续）
+- 不做 tokens.json → Dart codegen；Target 维护语义 accessor 映射
 - 不把产品 `Common*` 表硬编码进 Core

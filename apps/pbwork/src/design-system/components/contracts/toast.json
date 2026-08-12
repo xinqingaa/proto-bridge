@@ -11,6 +11,12 @@
     "打开后按 motion.duration-toast 自动关闭",
     "仅展示 message 文本，无 tone 色条、图标或关闭按钮"
   ],
+  "layout": {
+    "summary": "短提示悬浮于内容上方并保持内容宽度；不占据页面流，不阻断下层布局与交互。"
+  },
+  "visualAnatomy": {
+    "summary": "单层半透明黑色 surface 包含纯文本，无 tone 色条、图标、标题或关闭按钮。"
+  },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,

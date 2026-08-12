@@ -12,6 +12,12 @@
     "关闭后恢复下层交互",
     "不替代行内 Spinner"
   ],
+  "layout": {
+    "summary": "覆盖目标容器或视口的完整可交互区域，指示器与标签在覆盖层中心组合。"
+  },
+  "visualAnatomy": {
+    "summary": "阻断输入的 scrim 位于内容之上，spinner 与可选标签位于 scrim 之上。"
+  },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,

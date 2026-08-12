@@ -1,25 +1,32 @@
 # 二级 Tab
 
-> 组件 id：`secondary-tabs` · 契约：`contracts/secondary-tabs.json`
+> 组件 id：`secondary-tabs` · 分类：`navigation`
+> 实现：[SecondaryTabs.vue](../../../src/design-system/components/navigation/SecondaryTabs.vue)
+> 契约：[secondary-tabs.json](../../../src/design-system/components/contracts/secondary-tabs.json)
 
-页面内的子分区导航，当前项以文字下方居中、朝上的小三角标识。
+页面内第二层内容分区；当前项以激活文字和居中朝上的小三角标识。
 
 ## 职责与边界
 
-- 用于一级 Tab 或普通内容页内部的子分区；每项对应一个具名内容视图。
-- 默认 Playground 使用概览、活动、记录、附件四项，便于观察小三角在多项文本上的居中对齐。
-- 选中态只使用中性页内 Tab 激活色、`typography.label` 的 600 字重和对齐文字中心、朝上的小三角；小三角的尺寸、反向偏移和锚点由 `sizing.caret`、`layout.inset-sm-negative` 和 `layout.half` 表达，不使用宽滑线或“极简”替代样式。
-- 点击不显示 ripple；内容以与一级 Tab 一致的水平过渡切换。横滑是否启用仍由页面决定。嵌套时关闭外层或内层之一，保证单一横滑 owner。
-- 不用于应用根导航和数据筛选。
+- 固定使用 `role=tab-bar`，每项对应具名内容视图；分段筛选使用 Filter Bar。
+- 轨道填满父容器，默认按内容宽排列，`equal` 才平分，过多时横向滚动。
+- 内容视图区与水平转场由组件所有；与一级 Tab 嵌套时同一区域只保留一个横滑 owner。
+- 当前项不使用宽滑线、胶囊、额外 surface 或 ripple。
 
-## 布局语义
+## 行为要点
 
-- 组件填满**父容器**而非视口；轨道随容器宽度填满。
-- 默认项按内容宽排列；`equal` 才令全部项平分轨道。项目过多时轨道横向滚动，不压缩文字。
-- 组件拥有与导航对应的内容视图区，并以水平转场切换。
-- 各具名面板在转场期间保持挂载，避免内容区先塌陷再撑开；组件不自带外边距，轨道与承载容器的外部间隙由组合层提供。
-- Inspector / Contract 统一使用 `activeBackground`、`activeColor`、`inactiveColor` 槽位，禁止运行时与 JSON Contract 使用不同别名。
+- 当前项只使用中性激活色、受控字重和与文字中心对齐的朝上小三角。
+- 点击以及允许的触摸/鼠标横滑进入对应具名视图。
+- 系统减少动效时取消位移动画，不改变内容和选中语义。
 
-## 状态
+## States
 
-`equal` 是等宽排列的外观状态；当前项为内容状态。Playground 不使用场景下拉框，直接并置“自适应”和“等宽”两个有内边距的独立区域；两区各自维护当前位置并渲染真实具名视图，允许点选和横滑观察内容及小三角的对齐。
+| id | label | kind |
+| --- | --- | --- |
+| `equal` | 等宽 | `variant` |
+
+## 用法与反例
+
+- Playground 并置自适应/等宽真实视图区；页面负责嵌套横滑仲裁。
+- 不用二级 Tab 做应用根导航、简单数据筛选或无 window 的维度分段。
+- Props、Slots、Events、默认值与 Token 槽以 [Secondary Tabs Contract](../../../src/design-system/components/contracts/secondary-tabs.json) 为准。

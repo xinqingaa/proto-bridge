@@ -13,6 +13,12 @@
     "点击无 ripple 反馈，立即切换；选中仅以 color.navigation-active 与 600 字重表达，不显示顶部指示器",
     "不拥有视图区、转场或横滑；页面壳以 TabViewport 或路由承接内容"
   ],
+  "layout": {
+    "summary": "底部导航轨道填满应用壳宽度；默认 2–5 个目的地等分，grow=false 时按内容排列。"
+  },
+  "visualAnatomy": {
+    "summary": "单一底栏 surface 上固定展示图标与文字；选中态不增加顶部指示器或独立胶囊。"
+  },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,

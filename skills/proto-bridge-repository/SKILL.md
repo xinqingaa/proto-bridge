@@ -37,6 +37,7 @@ apps/pbwork/                           Runtime and Capture control plane
 - unknown、conflict、partial、stale 和 unsupported 对用户与 Agent 可见。
 - 只有 authored Runtime Contract 可以声明 required boundary。
 - Target 扫描只读且不污染 Evidence。
+- Target 映射由目标工程文档/机器契约拥有；DS fingerprint 覆盖协议 Schema、Contract、role、Token/Theme surface，`synced/pending` 清单只做漂移门禁，不把 `Common*` / `TS.*` 硬编码进 Core。
 - MCP 不暴露 Store 布局，不用 active/latest 替代固定引用。
 
 ## 文档同步
@@ -51,5 +52,6 @@ apps/pbwork/                           Runtime and Capture control plane
 
 ```bash
 pnpm docs:verify
+pnpm ds:target-sync:verify
 pnpm verify
 ```

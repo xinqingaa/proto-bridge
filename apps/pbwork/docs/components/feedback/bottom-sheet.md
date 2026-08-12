@@ -1,50 +1,33 @@
 # Bottom Sheet
 
 > 组件 id：`bottom-sheet` · 分类：`feedback`
-> 实现：`apps/pbwork/src/design-system/components/feedback/BottomSheet.vue`
-> 契约：`apps/pbwork/src/design-system/components/contracts/bottom-sheet.json`
+> 实现：[BottomSheet.vue](../../../src/design-system/components/feedback/BottomSheet.vue)
+> 契约：[bottom-sheet.json](../../../src/design-system/components/contracts/bottom-sheet.json)
 
-从底部展开的临时面板，用于筛选或更多操作。
+从底部覆盖当前页面的半屏操作容器。
 
-## 职责
+## 职责与边界
 
-- **做什么**：次要操作、详情补充。
-- **边界**：半屏操作面板；打开态用 Screen Variant 复现。
+- 固定使用 `role=sheet`，保持独立 scrim、Sheet surface、关闭入口和焦点边界。
+- 内容高度受统一上限约束；标题区与内容区由同一 Sheet 滚动边界承载。
+- 默认 slot 完全拥有业务内容；连续多步流程使用 Flow Sheet。
+- scrim 位于页面内容之上、Sheet surface 之下，surface 使用顶部圆角和 raised elevation。
 
-## Props
+## 行为要点
 
-| Prop         | 类型    | 默认       | 说明 |
-| ------------ | ------- | ---------- | ---- |
-| `title`      | string  | `操作面板` |      |
-| `modelValue` | boolean | `true`     |      |
+- 打开时挂载 scrim、dialog 可访问语义和顶部关闭入口。
+- 关闭只更新 `modelValue` 并恢复下层交互，不替业务内容决定取消、提交或路由。
+- 点击 scrim、关闭按钮和键盘关闭路径遵循同一受控关闭边界。
 
-## States（Playground / Contract）
+## States
 
-- `open` — 打开
-- `closed` — 关闭
+| id | label | kind |
+| --- | --- | --- |
+| `open` | 打开 | `content` |
+| `closed` | 关闭 | `content` |
 
-## Slots / Events
+## 用法与反例
 
-- **Slots**：`default`
-- **Events**：`update:modelValue`
-
-## tokenBindings
-
-| 槽位        | Token                 |
-| ----------- | --------------------- |
-| `surface`   | `color.surface`       |
-| `border`    | `color.border`        |
-| `radius`    | `radius.lg`           |
-| `elevation` | `elevation.raised`    |
-| `title`     | `typography.subtitle` |
-| `body`      | `typography.content`  |
-
-切浅色/深色只改 Theme 覆盖值，不改本表绑定。
-
-## 用法要点
-
-1. 从 `@/design-system/components/feedback/...` 引入实现组件。
-2. Props 保持在契约枚举内；需要新能力先改 contract + registry + 本文。
-3. 业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`；默认 `ds.*` 只用于 Playground、组件测试或非业务预览。
-4. 关闭态通过交互切换为打开态时，组件会重新注册实际 Sheet surface，确保 Scenario Checkpoint 能读取可见、非零 bbox 的 Overlay Evidence。
-5. Overlay 宿主必须保留顶部 `radius.lg`；Vuetify 的 Bottom Sheet 默认零圆角不得覆盖该语义绑定。
+- 用于半屏操作、选择或短内容；多步确认/执行/结果使用 Flow Sheet。
+- 不在业务页面复制 scrim、焦点管理、顶部圆角或关闭手势。
+- Props、Slots、Events、默认值与 Token 槽以 [Bottom Sheet Contract](../../../src/design-system/components/contracts/bottom-sheet.json) 为准。

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
+import {
+  SEMANTIC_ROLES,
+  TOKEN_BINDING_LITERALS,
+} from "@proto-bridge/core/v2";
 import { validateRegistries } from "@/design-system/validateRegistries";
+import { BIND_TOKEN_SPECIAL_VALUES } from "@/design-system/bindTokens";
+import componentSchema from "@/design-system/schemas/component.schema.json";
 import { loadTokens, loadThemes } from "@/design-system/loaders";
 import {
   resolveThemeTokens,
@@ -90,6 +96,13 @@ describe("registries", () => {
 });
 
 describe("design contracts", () => {
+  it("derives component roles and binding literals from the Core vocabulary", () => {
+    expect(componentSchema.$defs.semanticRole.enum).toEqual(
+      SEMANTIC_ROLES.filter((role) => role !== "unknown"),
+    );
+    expect(BIND_TOKEN_SPECIAL_VALUES).toEqual(TOKEN_BINDING_LITERALS);
+  });
+
   it("ships the fixed component sample set", () => {
     expect(componentRecords).toHaveLength(31);
     expect(

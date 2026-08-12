@@ -7,7 +7,7 @@
 | 组件                               | 语义和适用场景                                                   |
 | ---------------------------------- | ---------------------------------------------------------------- |
 | `CommonAppBar`                     | 页面标题、返回和顶部操作；页面不要重复创建返回 AppBar            |
-| `CommonCard`                       | 独立内容容器，可带标题、描述、边框、抬升和点击                   |
+| `CommonCard`                       | 纯 surface 容器：背景、边框、圆角与可选抬升；业务结构由 child 组合 |
 | `CommonFormSection`                | 表单字段的标题、描述、操作和字段分组；不是内容卡片               |
 | `CommonBadge`                      | 只读状态或严重度标签；不承担选择交互                             |
 | `CommonChip`                       | 轻量标签或可点击的短选项；不能代替状态 Badge                     |
@@ -28,7 +28,8 @@
 | `CommonSpinner` / `CommonProgress` | 加载指示和进度展示                                               |
 | `CommonDivider`                    | 语义分隔线                                                       |
 | `CommonAvatar`                     | 人员或主体头像/首字母                                            |
-| `CommonBottomNav`                  | 顶级页面导航；支持 icon-label / icon / label、顶部指示条、抬升   |
+| `CommonBottomNav`                  | 顶级页面导航；默认固定 icon + label、无顶部指示条                |
+| `CommonIcon`                       | 稳定图标尺寸/颜色壳；调用方负责 Lucide id → Flutter IconData 翻译 |
 
 ## AppPop 弹层
 
@@ -42,6 +43,8 @@
 | `menu` / `dropMenu`                      | 锚定菜单 / Select 备选  |
 
 业务代码只调 `AppPop`，不直接调 `Pop`。
+
+`CommonCard` 的 `title` / `subtitle` / `onTap` 以及 `CommonBottomNav` 的显示模式/指示条参数仅为已有 feature 的过渡兼容；新 ProtoBridge 实现按 Producer Contract 组合 child 和交互，不把这些旧参数当作源 API。
 
 ## 重要语义边界
 
@@ -65,3 +68,4 @@
 - 组件内部已有的尺寸、圆角、边框和颜色必须优先通过 `TS` 继承。
 - Evidence 要求组件存在但本地组件参数不足时，先报告缺口，再决定是否扩展组件；不要在 feature 中手写第二份公共实现。
 - 组件使用示例以 `lib/features/` 和 `lib/features/demo/demo_page.dart` 为准。
+- 精确 DS component id 落点以 [proto-bridge.md](proto-bridge.md) 与 `proto-bridge.target.json` 为准；映射不是靠本表的外观描述推断。

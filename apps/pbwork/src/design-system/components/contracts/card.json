@@ -11,6 +11,17 @@
       "summary"
     ]
   },
+  "summary": "只提供背景、边框、圆角与可选抬升的 surface；业务内容全部来自默认 slot。",
+  "behavior": [
+    "Card 不拥有标题、副标题、指标、表单或点击行为等业务结构",
+    "semanticRole 只允许 section、card、summary，调用方按真实上下文选择"
+  ],
+  "layout": {
+    "summary": "Card 只建立单一内容容器，不插入固定标题区、操作区或内部网格。"
+  },
+  "visualAnatomy": {
+    "summary": "单层 surface；默认有边框，可选 elevation，但不得叠加业务状态装饰。"
+  },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,

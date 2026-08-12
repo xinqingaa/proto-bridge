@@ -80,6 +80,7 @@ Screen 变更必须同步 Prototype Registry、required boundary、Action/Scenar
 - 新 Token 先证明跨组件/页面价值，再决定是否进入 Bind 池。
 - Component Contract 与 Inspector 必须完整声明组件实际消费的 Token；实现不得存在 Contract 未记录的设计值依赖。
 - Inspector `getTokenBindings` 与 JSON Contract 的槽位集合必须完全一致；静态一致性测试阻止任一侧单独漂移。
+- 修改 Component/Token/Theme Schema、Component Contract、role、Token Catalog、Bind 池或 Theme 后运行 `pnpm ds:target-sync:verify`。连续设计迭代可暂缓 Flutter 视觉精修，但漂移必须保持可见；稳定批次统一更新 Target 映射/API 和 sync baseline。
 
 ## 7. 可访问性
 
@@ -119,6 +120,7 @@ Screen 变更必须同步 Prototype Registry、required boundary、Action/Scenar
 只要任务修改 Token、Theme、Component Contract、共享手势、Prototype Registry 或 Runtime Contract，Agent 必须：
 
 - 开始时指出需要同步的文档；
+- 主动检查 Target sync fingerprint，并说明是本轮同步还是保留 pending；
 - 在同一变更中更新文档；
 - 交付时列出已同步的文档；
 - 运行 `pnpm docs:verify`。

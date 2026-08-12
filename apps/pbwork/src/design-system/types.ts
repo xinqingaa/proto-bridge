@@ -92,12 +92,13 @@ export type ComponentStateContract = {
   label: string;
   description?: string;
   /** variant=appearance; interaction=loading/disabled; content=empty/closed. */
-  kind?: ComponentStateKind;
+  kind: ComponentStateKind;
   props?: Record<string, unknown>;
 };
 
 /** Cross-stack layout intent; never a CSS implementation recipe. */
 export type ComponentLayoutContract = {
+  summary?: string;
   containerWidth?: "fill-parent" | "content";
   track?: {
     width: "fill-container" | "content";
@@ -113,6 +114,7 @@ export type ComponentLayoutContract = {
 
 /** Cross-stack material and layer anatomy; never a CSS implementation recipe. */
 export type ComponentVisualAnatomyContract = {
+  summary?: string;
   selection?: {
     material: "translucent-glass";
     border: "none";
@@ -137,9 +139,9 @@ export type ComponentContract = {
       }
     | { policy: "decorative" };
   /** One-line cross-stack behavior; Target may read this, not propsSchema. */
-  summary?: string;
+  summary: string;
   /** Short interaction / empty / disabled commitments. */
-  behavior?: string[];
+  behavior: string[];
   /** Optional cross-stack sizing, overflow, and owned-viewport semantics. */
   layout?: ComponentLayoutContract;
   /** Optional cross-stack material / layer anatomy. */

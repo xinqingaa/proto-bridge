@@ -29,7 +29,7 @@ class CommonBottomNav extends StatelessWidget {
     required this.currentIndex,
     required this.onTap,
     this.display = CommonBottomNavDisplay.iconLabel,
-    this.showIndicator = true,
+    this.showIndicator = false,
     this.elevated = true,
   });
 
@@ -50,11 +50,7 @@ class CommonBottomNav extends StatelessWidget {
       elevation: elevated ? TS.elevation.level3 : TS.elevation.none,
       shadowColor: Colors.black26,
       child: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(color: TS.colors.border, width: 0.5),
-          ),
-        ),
+        decoration: BoxDecoration(border: Border(top: TS.border.hairline)),
         child: Padding(
           padding: EdgeInsets.only(bottom: bottomInset),
           child: SizedBox(
@@ -84,15 +80,15 @@ class CommonBottomNav extends StatelessWidget {
                         duration: TS.motion.durationNormal,
                         curve: Curves.easeOut,
                         top: 0,
-                        left: itemWidth * currentIndex +
+                        left:
+                            itemWidth * currentIndex +
                             (itemWidth - indicatorWidth) / 2,
                         width: indicatorWidth,
                         height: 3,
                         child: DecoratedBox(
                           decoration: BoxDecoration(
                             color: TS.colors.primary,
-                            borderRadius:
-                                BorderRadius.circular(TS.radius.full),
+                            borderRadius: BorderRadius.circular(TS.radius.full),
                           ),
                         ),
                       ),
@@ -122,24 +118,27 @@ class _NavTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        selected ? TS.colors.primary : TS.colors.onSurfaceMuted;
+    final color = selected
+        ? TS.colors.navigationActive
+        : TS.colors.onSurfaceMuted;
     final showIcon = display != CommonBottomNavDisplay.label;
     final showLabel = display != CommonBottomNavDisplay.icon;
-    final labelStyle = (selected
-            ? TS.textStyle.captionStrong
-            : TS.textStyle.caption)
-        .copyWith(fontSize: 11, height: 1.1, color: color);
+    final labelStyle =
+        (selected ? TS.textStyle.captionStrong : TS.textStyle.caption).copyWith(
+          color: color,
+        );
 
     return InkWell(
       onTap: onTap,
+      splashFactory: NoSplash.splashFactory,
+      overlayColor: const WidgetStatePropertyAll(Colors.transparent),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (showIcon)
             Icon(
               selected ? (item.activeIcon ?? item.icon) : item.icon,
-              size: TS.sizing.iconLg,
+              size: TS.sizing.iconMd,
               color: color,
             ),
           if (showIcon && showLabel) SizedBox(height: TS.spacing.xxs),

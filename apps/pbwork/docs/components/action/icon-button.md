@@ -1,19 +1,34 @@
 # Icon Button
 
-> 组件 id：`icon-button` · 契约：`contracts/icon-button.json`
+> 组件 id：`icon-button` · 分类：`action`
+> 实现：[IconButton.vue](../../../src/design-system/components/action/IconButton.vue)
+> 契约：[icon-button.json](../../../src/design-system/components/contracts/icon-button.json)
 
 紧凑的单一图标操作，用于工具栏、顶栏和局部快捷入口。
 
 ## 职责与边界
 
-- 必须有可读的操作名称；图形本身不能承担唯一语义。
-- 图标来自统一 Lucide 策展清单；缺项先扩共享清单，不复制页内图标。
-- 不用于带文字的提交或确认操作，后者使用 Button。
+- 固定语义为 `role=button`，必须具有可读的操作名称；图形不能承担唯一语义。
+- 图标来自统一 Lucide 策展清单；带文字的提交或确认操作使用 Button。
+- 尺寸、颜色、阴影和状态透明度均由 Contract Token 槽决定。
 
-## 交互状态
+## 行为要点
 
-- 点击有按压反馈。
-- loading 阻止重复触发，但不降为禁用视觉。
-- disabled 阻止激活并统一使用 `opacity.disabled`；尺寸、阴影层级和状态透明度均由 Contract Token 槽提供。
+- `ariaLabel` 始终说明操作目的。
+- loading 阻止重复触发，但保持操作强调度，不降为禁用视觉。
+- disabled 阻止激活并使用 `opacity.disabled`。
+- 点击提供受控按压反馈，不由业务页面复制手势或动画。
 
-`primary` 是强调外观状态；`loading` 是忙碌交互状态；`disabled` 是不可用交互状态。Playground 使用 `gallery`：默认、强调、loading、disabled 并置，方便比较紧凑操作的状态而不占用右侧调参栏。
+## States
+
+| id | label | kind |
+| --- | --- | --- |
+| `primary` | 主色 | `variant` |
+| `loading` | 加载 | `interaction` |
+| `disabled` | 禁用 | `interaction` |
+
+## 用法与反例
+
+- Playground 使用 gallery 并置默认、强调、loading 与 disabled 状态。
+- 不用 Icon Button 承载长文案，也不在业务页直接给 Icon 绑定点击。
+- Props、Slots、Events、默认值与 Token 槽以 [Icon Button Contract](../../../src/design-system/components/contracts/icon-button.json) 为准。

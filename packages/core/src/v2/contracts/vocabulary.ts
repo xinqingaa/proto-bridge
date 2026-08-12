@@ -49,6 +49,15 @@ export const OverlayShell = z.enum(OVERLAY_SHELLS);
 export type OverlayShell = z.infer<typeof OverlayShell>;
 
 /**
+ * Cross-stack binding literals are semantic values, not catalog Token IDs.
+ * Target token resolution and token-mapping Review must not require an
+ * accessor for these values.
+ */
+export const TOKEN_BINDING_LITERALS = ['transparent', 'none'] as const;
+export const TokenBindingLiteral = z.enum(TOKEN_BINDING_LITERALS);
+export type TokenBindingLiteral = z.infer<typeof TokenBindingLiteral>;
+
+/**
  * Ordered low -> high. Ordering is only used for automatic activation
  * comparisons; it never replaces per-fact provenance judgement
  * (pb-v2-spec.md "Evidence Level").

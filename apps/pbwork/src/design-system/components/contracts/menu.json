@@ -11,6 +11,12 @@
     "loading 表示选项正在准备，不得与禁用视觉混同",
     "disabled 阻止打开或选择，整体使用 opacity.disabled"
   ],
+  "layout": {
+    "summary": "触发字段占用父级可用宽度；选项面板与字段对齐并受 menu-max-height 约束。"
+  },
+  "visualAnatomy": {
+    "summary": "标签、输入表面、状态提示与浮动选项面板分层；loading 与 disabled 共享结构但不共享语义。"
+  },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,

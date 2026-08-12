@@ -6,6 +6,11 @@
     "policy": "fixed",
     "defaultRole": "chip"
   },
+  "summary": "紧凑标签或轻量短选项表面；不替代只读严重度 Badge。",
+  "behavior": [
+    "tone 与 elevated 只改变受控外观，不隐式增加业务状态",
+    "需要选择交互时由调用方显式提供可观察状态和操作语义"
+  ],
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,

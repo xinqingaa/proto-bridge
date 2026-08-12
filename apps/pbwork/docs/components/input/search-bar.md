@@ -1,53 +1,32 @@
 # Search Bar
 
 > 组件 id：`search-bar` · 分类：`input`
-> 实现：`apps/pbwork/src/design-system/components/input/SearchBar.vue`
-> 契约：`apps/pbwork/src/design-system/components/contracts/search-bar.json`
+> 实现：[SearchBar.vue](../../../src/design-system/components/input/SearchBar.vue)
+> 契约：[search-bar.json](../../../src/design-system/components/contracts/search-bar.json)
 
-在列表顶部按编号或客户搜索，支持清除。
+上下文内搜索入口，封装统一的输入、搜索图标和清除行为。
 
-## 职责
+## 职责与边界
 
-- **做什么**：列表顶搜索。
-- **边界**：搜索输入；筛选 chips 用 FilterBar。
-- **组合**：内部封装 Text Field（`showLabel=false`）。
+- 固定使用 `role=search`；查询值由页面控制，组件不自行请求网络或决定过滤范围。
+- 复用 Text Field 的输入基础，不在业务页面重新拼搜索图标、清除按钮和禁用态。
+- 复杂筛选条件使用 Filter Bar 或页面筛选表单，不塞入搜索字符串协议。
 
-## Props
+## 行为要点
 
-| Prop          | 类型    | 默认                   | 说明 |
-| ------------- | ------- | ---------------------- | ---- |
-| `modelValue`  | string  | `空调检修`             |      |
-| `placeholder` | string  | `搜索工单、客户或设备` |      |
-| `disabled`    | boolean | `false`                |      |
+- 输入变化更新受控查询值；清除操作回到空输入状态。
+- disabled 时不可输入、清除或提交，并使用 `opacity.disabled`。
+- 搜索图标和紧凑尺寸均消费 Contract Token，不接受固定数字覆盖。
 
-## States（Playground / Contract）
+## States
 
-- `empty` — 空输入
-- `disabled` — 禁用
+| id | label | kind |
+| --- | --- | --- |
+| `empty` | 空输入 | `content` |
+| `disabled` | 禁用 | `interaction` |
 
-## Slots / Events
+## 用法与反例
 
-- **Slots**：无
-- **Events**：`update:modelValue`, `submit`
-
-## tokenBindings
-
-| 槽位              | Token                    |
-| ----------------- | ------------------------ |
-| `surface`         | `color.surface-variant`  |
-| `text`            | `color.on-surface`       |
-| `placeholder`     | `color.on-surface-muted` |
-| `radius`          | `radius.md`              |
-| `height`          | `sizing.control-lg`      |
-| `icon`            | `sizing.icon-compact`    |
-| `typography`      | `typography.content`     |
-| `disabledOpacity` | `opacity.disabled`       |
-| `fill`            | `layout.fill`            |
-
-切浅色/深色只改 Theme 覆盖值，不改本表绑定。
-
-## 用法要点
-
-1. 从 `@/design-system/components/input/...` 引入实现组件。
-2. Props 保持在契约枚举内；需要新能力先改 contract + registry + 本文。
-3. 业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`；默认 `ds.*` 只用于 Playground、组件测试或非业务预览。
+- 用于当前列表或上下文的关键字搜索，并由调用方决定即时过滤或显式提交。
+- 不复制一套“带放大镜的 Text Field”，也不让 Search Bar 拥有业务数据源。
+- Props、Slots、Events、默认值与 Token 槽以 [Search Bar Contract](../../../src/design-system/components/contracts/search-bar.json) 为准。

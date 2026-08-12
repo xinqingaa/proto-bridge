@@ -60,7 +60,7 @@ try {
   assert(
     index.fixedRefs?.bundleId === fixed.bundleId &&
       index.fixedRefs?.snapshotId === fixed.snapshotId,
-    "MCP did not read the Handoff Snapshot shown by PBWork.",
+    `MCP did not read the Handoff Snapshot shown by PBWork: expected ${fixed.bundleId}/${fixed.snapshotId}, received ${index.fixedRefs?.bundleId ?? "missing"}/${index.fixedRefs?.snapshotId ?? "missing"}.`,
   );
   assert(
     index.coverageStatus === "complete" || index.freshnessStatus === "fresh",

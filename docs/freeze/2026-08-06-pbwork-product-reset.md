@@ -1,13 +1,13 @@
 # PBWork 产品重置：采集交互 · DS 对齐 · 新原型（后置）
 
-- 日期：2026-08-06（计划修订：2026-08-08）
-- 范围：**仅** `apps/pbwork`（Workbench 导航、Capture/Deliver GUI、Design System、业务原型资产与其文档）
-- 状态：**P0 已落地、P1 已完全冻结**；P1.5 Flutter 同步未开；P2 新原型暂缓
-- **边界（MUST）**：本条目全部是 **PBWork 人机工作台**优化。**不改** Evidence/MCP/Consumer 工作链路，**不改** `packages/core/src/target/flutter-app` 与 Target resolve/Review 行为。
+- 日期：2026-08-06（计划修订：2026-08-08；P1.5 收口：2026-08-12）
+- 范围：P0/P1 为 `apps/pbwork`；P1.5 扩展到 `apps/flutter_pb_app`、Target 映射文档与 DS 漂移门禁
+- 状态：**P0、P1、P1.5、P1.6 已落地**；P2 新原型暂缓
+- **边界（MUST）**：不改变 Evidence/MCP/Consumer 工作链路，不在 Core Target adapter 硬编码具体 `Common*` / `TS.*`；P1.5 只增加 Core 共用绑定字面量闭集与 Target 同步验证。
 
 ## 一句话
 
-**P0 采集/交付交互重做已完成**；剩余主线是 **先在 PBWork 把 DS 语义协议与展示做清（必要时拆大类型）**，**满意后再同步 Flutter 样板**；**新主 App 原型最后做**。
+**P0 采集/交付、PBWork DS 协议与 Flutter 语义映射已经收口**；后续 DS 变化由 fingerprint 自动提示 Target 漂移，**新主 App 原型最后做**。
 
 ## 第一轮已落地（2026-08-07）
 
@@ -64,7 +64,7 @@
 | 项          | 决策                                                                                                    |
 | ----------- | ------------------------------------------------------------------------------------------------------- |
 | 载体        | **文档 + 扩展既有 Contract JSON**；不新开平行协议                                                       |
-| Schema      | **`schemaVersion: 1` + 可选字段**；`playground.presentation` **必填**                                   |
+| Schema      | **`schemaVersion: 1`**；`summary`、`behavior`、`states[].kind`、`playground.presentation` **必填**      |
 | 对齐重点    | 行为、描述、语义；**不要求** Vue props ↔ Dart API 镜像                                                  |
 | 同步纪律    | **分级同步**（语义→Contract+Vue；叙事→文档；Flutter→P1.5）；禁止三份全文镜像                            |
 | 大类型      | 禁止一组件大 type 兼多角色；Tab 收口为 `tabbar` / `primary-tabs` / `secondary-tabs` / `filter-bar` 四层 |
@@ -141,10 +141,13 @@
 
 ---
 
-## P1.5 — Flutter 同步（闸门后）
+## P1.5 — Flutter 同步（2026-08-12 已落地）
 
-- 补全 `proto-bridge.md` 缺行；Demo 对照；`lucide_icons`；Tab 拆分后的 Common* 对齐
-- 仍不改 Core Target adapter 硬编码表
+- `proto-bridge.target.json` 覆盖 31/31 当前组件与 106/106 实际绑定 Token；resolver 全部为 `resolved`。
+- Flutter `TS` 补全主题语义 accessor，并用 `proto_bridge_tokens.dart` 提供可执行映射检查点；新增 `CommonIcon` 语义壳，Tabbar 默认行为对齐新 Contract。
+- `proto-bridge.sync.json` 固定 DS surface、分区、逐组件 digest 与计数；`pnpm ds:target-sync:verify` 自动报告 Component/Token/Theme Schema、Contract、role、Catalog、Theme、Bind 池及 Target API 漂移，并校验完整清单元数据，接入完整产品门禁。
+- Contract 的 `summary` / `behavior` / `states[].kind` 升级为强制字段；复杂组件补齐 layout / visual anatomy。`flow-sheet` 明确使用 `role=sheet` + `componentId=flow-sheet`，未增加组件同名 role。
+- Flutter 仍允许平台近似与旧 feature 兼容参数；精确视觉在具体固定 Evidence 实现时结合 Screenshot 验证。Core Target adapter 仍不包含目标工程硬编码表。
 
 ---
 
@@ -166,7 +169,7 @@
 | P0     |                    采集导航、历史结果、交付查看/覆盖、FlowSheet 进度 | **已落地**   |
 | P1     | DS 协议 + Playground 平铺/触发 + Tab 拆分 + Lucide + Token/Flex 门禁 | **完全冻结** |
 | P1.6   | 职责六类重组 + 输入 plain/label + Toast/Loading + id 重命名           | **已落地**   |
-| P1.5   |                                Flutter Common* / Demo / 图标语义对照 | 未开         |
+| P1.5   |                  Flutter 映射 / Token accessor / 自动漂移门禁 | **已落地**   |
 | P2     |                                                        新主 App 原型 | **暂定**     |
 
 ---
@@ -183,9 +186,10 @@
 ## 待确认
 
 - [x] P0 视觉与采集 / 交付交互重做
-- [x] P1 协议：v1 可选字段 + `playground` 必填
+- [x] P1 协议：v1 强制跨栈摘要/行为/state kind + `playground` 必填
 - [x] P1 Flutter 同步单列 P1.5
 - [x] Tab 收口为 `tabbar` + `primary-tabs` + `secondary-tabs` + `filter-bar`；button 不拆
 - [x] P1 实现收口验收（协议 + Playground + Tab + Lucide + Token-only / Flex-only 门禁）
 - [x] P1.6 DS 职责六类重组 + 输入 plain/label + Toast/Loading + id 重命名
+- [x] P1.5 Flutter 31 组件 / 106 Token 映射与 DS fingerprint 门禁
 - [ ] P2 新原型业务选题（暂缓）

@@ -1,46 +1,32 @@
 # Divider
 
 > 组件 id：`divider` · 分类：`display`
-> 实现：`apps/pbwork/src/design-system/components/display/Divider.vue`
-> 契约：`apps/pbwork/src/design-system/components/contracts/divider.json`
+> 实现：[Divider.vue](../../../src/design-system/components/display/Divider.vue)
+> 契约：[divider.json](../../../src/design-system/components/contracts/divider.json)
 
-分隔设置项或内容分区，可带中间标题。
+装饰性内容分隔线，可选展示居中短文案。
 
-## 职责
+## 职责与边界
 
-- **做什么**：区块或列表分隔。
-- **边界**：分隔，不承载业务操作。
+- semantic policy 为 decorative，默认不写业务 identity/role，也不形成独立 Evidence 节点。
+- 无 label 时只绘制分隔线；有 label 时仍属于同一分隔结构。
+- inset 只改变受控缩进，不赋予交互、分组或业务状态语义。
 
-## Props
+## 行为要点
 
-| Prop    | 类型    | 默认    | 说明 |
-| ------- | ------- | ------- | ---- |
-| `label` | string  | `或者`  |      |
-| `inset` | boolean | `false` |      |
+- Divider 只表达视觉分隔，不替代语义化 `section`、标题或列表结构。
+- 若业务确实需要独立验收分隔含义，应由调用方建立真实语义节点，而不是给装饰线伪造 role。
+- 线宽、颜色、间距和排版只消费 Contract Token。
 
-## States（Playground / Contract）
+## States
 
-- `plain` — 无文案
-- `inset` — 缩进
+| id | label | kind |
+| --- | --- | --- |
+| `plain` | 无文案 | `content` |
+| `inset` | 缩进 | `variant` |
 
-## Slots / Events
+## 用法与反例
 
-- **Slots**：无
-- **Events**：无
-
-## tokenBindings
-
-| 槽位    | Token                    |
-| ------- | ------------------------ |
-| `line`  | `color.divider`          |
-| `text`  | `color.on-surface-muted` |
-| `inset` | `spacing.md`             |
-| `label` | `typography.caption`     |
-
-切浅色/深色只改 Theme 覆盖值，不改本表绑定。
-
-## 用法要点
-
-1. 从 `@/design-system/components/display/...` 引入实现组件。
-2. Props 保持在契约枚举内；需要新能力先改 contract + registry + 本文。
-3. 业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`；默认 `ds.*` 只用于 Playground、组件测试或非业务预览。
+- 用于同一内容区内部的视觉分隔；真正的内容分组使用语义化容器。
+- 不把 Divider 放入 required Fragment，也不通过它表达业务状态。
+- Props、Slots、Events、默认值与 Token 槽以 [Divider Contract](../../../src/design-system/components/contracts/divider.json) 为准。

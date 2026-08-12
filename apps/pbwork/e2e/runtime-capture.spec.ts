@@ -362,8 +362,14 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
     await store.init();
     await store.createBundle({
       bundleId: reference.BUNDLE_ID,
-      prototypeId: reference.PROTOTYPE_ID,
-      run: reference.RUN_1,
+      prototypeId: "cold-chain-ops",
+      run: {
+        ...reference.RUN_1,
+        selection: {
+          ...reference.RUN_1.selection,
+          prototypeId: "cold-chain-ops",
+        },
+      },
       revisions: [reference.PRIMARY_ACTIVE_REVISION],
       coverage: reference.RUN_1.coverage,
     });
@@ -476,7 +482,10 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
       },
     });
 
-    const criticalRevision = await revisionFor("default", "focus-critical");
+    const criticalRevision = await revisionFor(
+      "critical-only",
+      "focus-critical",
+    );
     expect(
       fact(
         criticalRevision,
@@ -513,7 +522,7 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
       fact(scenarioRevision, "cold-chain-ops.shipment-detail.root.text")
         .effectiveValue,
     );
-    for (const snippet of ["运输详情", "10.8", "箱温"]) {
+    for (const snippet of ["持续超温 47 分钟", "10.8", "箱温"]) {
       expect(detailText).toContain(snippet);
     }
     expect(

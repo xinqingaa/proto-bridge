@@ -6,6 +6,18 @@
     "policy": "fixed",
     "defaultRole": "tab-viewport"
   },
+  "summary": "根目的地的独立内容视图区；负责面板保活与可选横向切换，不绘制导航。",
+  "behavior": [
+    "modelValue 与 items 决定唯一可见面板，并通过 update:modelValue 回传切换",
+    "keepMounted 保持非当前面板状态；swipe 与 mouseSwipe 分别控制触摸和鼠标手势",
+    "Tabbar 只负责导航，视图区动画与裁剪始终由 TabViewport 所有"
+  ],
+  "layout": {
+    "summary": "组件拥有单一水平裁剪视口；面板等宽排列，切换以完整视口宽度平移。"
+  },
+  "visualAnatomy": {
+    "summary": "只承载内容面板与裁剪层，不绘制 Tabbar、指示器、边框或背景 surface。"
+  },
   "propsSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -69,6 +81,7 @@
     {
       "id": "second",
       "label": "第二屏",
+      "kind": "content",
       "props": {
         "modelValue": "two"
       }
@@ -76,6 +89,7 @@
     {
       "id": "no-swipe",
       "label": "禁用滑动",
+      "kind": "interaction",
       "props": {
         "swipe": false,
         "mouseSwipe": false

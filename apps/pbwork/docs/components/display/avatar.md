@@ -1,48 +1,32 @@
 # Avatar
 
 > 组件 id：`avatar` · 分类：`display`
-> 实现：`apps/pbwork/src/design-system/components/display/Avatar.vue`
-> 契约：`apps/pbwork/src/design-system/components/contracts/avatar.json`
+> 实现：[Avatar.vue](../../../src/design-system/components/display/Avatar.vue)
+> 契约：[avatar.json](../../../src/design-system/components/contracts/avatar.json)
 
-人员标识，用于列表负责人或个人中心。
+以头像图片或稳定首字母表示人员与主体。
 
-## 职责
+## 职责与边界
 
-- **做什么**：用户/联系人头像。
-- **边界**：身份展示；不要当按钮用（需要点击时外包 IconButton/button）。
+- 固定使用 `role=image`，表达一个主体的视觉身份，不承担点击、在线状态或菜单行为。
+- 没有图片时从 `name` 生成稳定首字母，不使用随机图片或时间相关占位。
+- 尺寸只使用 Contract 的受控语义档位。
 
-## Props
+## 行为要点
 
-| Prop   | 类型                     | 默认      | 说明 |
-| ------ | ------------------------ | --------- | ---- |
-| `name` | string                   | `李明`    |      |
-| `size` | `sm` \| `md` \| `lg`     | `md`      |      |
-| `tone` | `primary` \| `secondary` | `primary` |      |
+- 图片和首字母 fallback 表达同一主体身份，切换时不改变 Evidence 槽位。
+- `sm`、`md`、`lg` 只改变受控尺寸，不改变语义或内容来源。
+- 可点击头像由调用方使用具名 Button/Action 组合，不给 Avatar 偷加交互。
 
-## States（Playground / Contract）
+## States
 
-- `small` — 小尺寸
-- `large` — 大尺寸
+| id | label | kind |
+| --- | --- | --- |
+| `small` | 小尺寸 | `variant` |
+| `large` | 大尺寸 | `variant` |
 
-## Slots / Events
+## 用法与反例
 
-- **Slots**：无
-- **Events**：无
-
-## tokenBindings
-
-| 槽位         | Token              |
-| ------------ | ------------------ |
-| `background` | `color.primary`    |
-| `text`       | `color.on-primary` |
-| `size`       | `sizing.avatar-md` |
-| `radius`     | `radius.full`      |
-| `initials`   | `typography.label` |
-
-切浅色/深色只改 Theme 覆盖值，不改本表绑定。
-
-## 用法要点
-
-1. 从 `@/design-system/components/display/...` 引入实现组件。
-2. Props 保持在契约枚举内；需要新能力先改 contract + registry + 本文。
-3. 业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`；默认 `ds.*` 只用于 Playground、组件测试或非业务预览。
+- 用于人员、组织或设备主体的稳定图像/首字母表示。
+- 不用 Avatar 代替 Badge、状态灯或没有可访问名称的图标按钮。
+- Props、Slots、Events、默认值与 Token 槽以 [Avatar Contract](../../../src/design-system/components/contracts/avatar.json) 为准。

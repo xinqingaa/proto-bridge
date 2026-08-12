@@ -5,6 +5,11 @@
   "semantic": {
     "policy": "decorative"
   },
+  "summary": "装饰性内容分隔线，可选居中文案；默认不作为独立 Evidence 节点。",
+  "behavior": [
+    "没有 label 时只绘制分隔线，有 label 时在同一分隔结构中展示短文案",
+    "inset 只改变受控缩进，不赋予交互或业务状态语义"
+  ],
   "propsSchema": {
     "type": "object",
     "properties": {
@@ -24,6 +29,7 @@
     {
       "id": "plain",
       "label": "无文案",
+      "kind": "content",
       "props": {
         "label": ""
       }
@@ -31,6 +37,7 @@
     {
       "id": "inset",
       "label": "缩进",
+      "kind": "variant",
       "props": {
         "inset": true
       }

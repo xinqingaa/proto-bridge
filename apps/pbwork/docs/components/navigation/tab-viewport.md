@@ -1,52 +1,33 @@
 # Tab Viewport
 
 > 组件 id：`tab-viewport` · 分类：`navigation`
-> 实现：`apps/pbwork/src/design-system/components/navigation/TabViewport.vue`
-> 契约：`apps/pbwork/src/design-system/components/contracts/tab-viewport.json`
+> 实现：[TabViewport.vue](../../../src/design-system/components/navigation/TabViewport.vue)
+> 契约：[tab-viewport.json](../../../src/design-system/components/contracts/tab-viewport.json)
 
-与导航解耦的内容视图，负责保活、转场与横向手势。
+应用根目的地的独立内容视图区；负责面板保活与可选横向切换，不绘制导航。
 
-## 职责
+## 职责与边界
 
-- **做什么**：Tabbar 或路由对应的多面板内容区。
-- **边界**：根目的地的保活与转场。禁止与 Tabbar 合并实现；根目的地默认关闭横滑。`keepMounted` 时各面板须遵守 Variant 所有权（见 [screens-and-variants.md](../../prototypes/screens-and-variants.md)）。
-- **不要用于**：三级筛选；与 Tabbar 抢同一职责。
+- 固定使用 `role=tab-viewport`，拥有单一水平裁剪视口和等宽内容面板。
+- Tabbar 只负责目的地导航；转场、裁剪与 keep-mounted 状态由 Tab Viewport 所有。
+- 组件不绘制 Tabbar、指示器、边框或背景 surface。
 
-## Props
+## 行为要点
 
-| Prop                 | 类型    | 默认                                                       | 说明 |
-| -------------------- | ------- | ---------------------------------------------------------- | ---- |
-| `modelValue`         | string  | `one`                                                      |      |
-| `items`              | array   | `[{"value": "one"}, {"value": "two"}, {"value": "three"}]` |      |
-| `swipe`              | boolean | `true`                                                     |      |
-| `mouseSwipe`         | boolean | `true`                                                     |      |
-| `keepMounted`        | boolean | `true`                                                     |      |
-| `transitionDuration` | number  | `240`                                                      |      |
+- `modelValue` 与 items 决定唯一可见面板，切换通过 `update:modelValue` 回传。
+- `keepMounted` 保持非当前面板状态；`swipe` 与 `mouseSwipe` 分别控制触摸和鼠标手势。
+- 面板以完整视口宽度平移；相邻面板不得从裁剪边缘泄漏。
+- 根目的地默认可以关闭横滑，由页面壳选择导航方式。
 
-## States（Playground / Contract）
+## States
 
-- `second` — 第二屏
-- `no-swipe` — 禁用滑动
+| id | label | kind |
+| --- | --- | --- |
+| `second` | 第二屏 | `content` |
+| `no-swipe` | 禁用滑动 | `interaction` |
 
-## Slots / Events
+## 用法与反例
 
-- **Slots**：`item`
-- **Events**：`update:modelValue`
-
-## tokenBindings
-
-| 槽位         | Token                          |
-| ------------ | ------------------------------ |
-| `background` | `color.background`             |
-| `fill`       | `layout.fill`                  |
-| `duration`   | `motion.duration-tab-viewport` |
-| `easing`     | `motion.easing-standard`       |
-
-切浅色/深色只改 Theme 覆盖值，不改本表绑定。
-
-## 用法要点
-
-1. 与 `Tabbar` 共用同一当前位置；手势先改 UI，URL replace 须节流。
-2. `swipe` / `mouseSwipe` 分离；仲裁见 [shared-gestures.md](../shared-gestures.md)。
-3. 壳与 history 见 [shell-and-nav.md](../../prototypes/shell-and-nav.md)；配方 R1。
-4. 业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`；默认 `ds.*` 只用于 Playground、组件测试或非业务预览。
+- 与 Tabbar 共享当前目的地值，或由路由内容替代整个视图区。
+- 不让 Tabbar 自己承载面板，也不在同一区域嵌套另一个横滑 window。
+- Props、Slots、Events、默认值与 Token 槽以 [Tab Viewport Contract](../../../src/design-system/components/contracts/tab-viewport.json) 为准。

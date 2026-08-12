@@ -26,14 +26,14 @@ description: >-
 
 | 变更 | 必须同批 | 可不做 |
 | --- | --- | --- |
-| 语义（role / Token 槽 / state / behavior / 拆组件） | Contract + Vue + registry + 测试 | Flutter（P1.5） |
+| 语义（role / Token 槽 / state / behavior / 拆组件） | Contract + Vue + registry + 测试 + Target drift 状态 | Flutter 视觉精修可批量 |
 | 用法铁律 / 反例 | 文档短叙事 | 不抄 props 表 |
 | Playground 展示 | Contract `playground.presentation` | — |
 | 纯实现修（同语义） | Vue（+ 单测） | 无字段变更时可不改 Contract/文档 |
 
 同一任务至少检查：
 
-1. `src/design-system/components/contracts/{id}.json`（含 `playground.presentation`；语义变更补 `summary`/`behavior`/`states[].kind`）
+1. `src/design-system/components/contracts/{id}.json`（`summary`、`behavior`、`states[].kind` 与 `playground.presentation` 均为强制语义）
 2. Vue 实现
 3. `components/registry.ts`
 4. `components/scenarios.ts`（适用时）
@@ -49,6 +49,7 @@ description: >-
 - 按需修改 light/dark Theme；
 - 更新 Token 文档与 catalog；
 - 验证所有组件绑定仍在允许池中。
+- 运行 DS → Target fingerprint 门禁；门禁同时覆盖 Component/Token/Theme Schema、Contract、role、Catalog、Theme 与 Bind 池。连续迭代可暂缓 Flutter 精修，但不能隐藏 drift。稳定批次更新 Target 映射/API 与完整 sync baseline。
 
 Theme 只覆盖值，不改变 Token 语义或组件绑定。
 
@@ -76,6 +77,7 @@ pnpm --filter @proto-bridge/pbwork test -- flex-layout-policy component-inspecto
 pnpm --filter @proto-bridge/pbwork test
 pnpm test:e2e:runtime
 pnpm docs:verify
+pnpm ds:target-sync:verify
 ```
 
 涉及手势、Overlay、导航或 Playground 时补跑对应 Playwright spec。

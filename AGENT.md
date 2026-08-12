@@ -47,6 +47,7 @@
 - 公共 Schema、入口、状态、路径、环境变量变化必须同步文档。
 - 修改 PBWork Component/Token/Theme/手势时，必须主动提醒并同步对应手册、Contract、Registry 和测试。
 - 修改 DS 实现时必须保持 Vue Inspector `getTokenBindings` 与 JSON Contract 槽位一致，并通过 Token-only / Flex-only 静态门禁。
+- 修改 Component/Token/Theme Schema、Component Contract、role、Token Catalog、Bind 池或 Theme 时必须运行 `pnpm ds:target-sync:verify`；稳定批次同步 Target mapping/API/baseline，连续迭代也必须显式保留 drift/pending，不能等待用户提醒。
 - 修改语义标记、Role、Token Evidence 或门禁时，必须同步 `docs/reference/semantic-authoring.md`、Authoring Contract、相关 Skill、检查单和测试。
 - 同一概念只在权威文档详述；其它入口使用链接。
 - 主体文档只描述当前行为；历史和设计理由分别进入 `docs/history`、`docs/decisions`。
@@ -62,6 +63,8 @@
 | Core | `pnpm --filter @proto-bridge/core test` |
 | CLI | `pnpm --filter @proto-bridge/cli test` |
 | PBWork | `pnpm --filter @proto-bridge/pbwork test`、`pnpm test:e2e:runtime` |
+| DS → Target | `pnpm ds:target-sync:verify` |
+| Flutter Target | `flutter analyze`、`flutter test`（`apps/flutter_pb_app`） |
 | MCP/Consumer | `pnpm test:e2e:mcp`、`pnpm test:e2e:consumer` |
 | 完整产品 | `pnpm verify` |
 

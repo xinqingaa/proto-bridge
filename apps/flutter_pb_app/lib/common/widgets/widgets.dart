@@ -12,6 +12,7 @@ export 'empty_state.dart';
 export 'filter_bar.dart';
 export 'form_section.dart';
 export 'icon_button.dart';
+export 'icon.dart';
 export 'progress.dart';
 export 'radio_group.dart';
 export 'scrollable_data_list.dart';

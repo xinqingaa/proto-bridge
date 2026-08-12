@@ -1,47 +1,32 @@
 # Badge
 
 > 组件 id：`badge` · 分类：`display`
-> 实现：`apps/pbwork/src/design-system/components/display/Badge.vue`
-> 契约：`apps/pbwork/src/design-system/components/contracts/badge.json`
+> 实现：[Badge.vue](../../../src/design-system/components/display/Badge.vue)
+> 契约：[badge.json](../../../src/design-system/components/contracts/badge.json)
 
-数量或状态角标，如未读数、已完成。
+只读数量、状态或严重度徽标。
 
-## 职责
+## 职责与边界
 
-- **做什么**：未读数、状态点。
-- **边界**：计数/状态角标；文案保持短。
+- 固定使用 `role=badge`，只表达紧凑状态，不承担选择、筛选或提交交互。
+- tone 是有限状态语义，不是业务页面自由选色入口。
+- 复杂说明、操作或多段内容应由调用方另行组织。
 
-## Props
+## 行为要点
 
-| Prop    | 类型                                           | 默认    | 说明 |
-| ------- | ---------------------------------------------- | ------- | ---- |
-| `label` | string                                         | `3`     |      |
-| `tone`  | `primary` \| `error` \| `success` \| `warning` | `error` |      |
+- 状态变化只切换 Contract 允许的 tone 和文本，不把 Badge 变成可点击 Chip。
+- 标签保持短而单义；需要辅助说明时使用独立文本 Evidence 节点。
+- 视觉尺寸、圆角、字阶和配色全部来自 Contract Token。
 
-## States（Playground / Contract）
+## States
 
-- `success` — 成功
-- `warning` — 警告
+| id | label | kind |
+| --- | --- | --- |
+| `success` | 成功 | `variant` |
+| `warning` | 警告 | `variant` |
 
-## Slots / Events
+## 用法与反例
 
-- **Slots**：无
-- **Events**：无
-
-## tokenBindings
-
-| 槽位         | Token                       |
-| ------------ | --------------------------- |
-| `background` | `color.error`               |
-| `text`       | `color.on-error`            |
-| `radius`     | `radius.full`               |
-| `label`      | `typography.caption-strong` |
-
-切浅色/深色只改 Theme 覆盖值，不改本表绑定。
-
-## 用法要点
-
-1. 从 `@/design-system/components/display/...` 引入实现组件。
-2. Props 保持在契约枚举内；需要新能力先改 contract + registry + 本文。
-3. 业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`；默认 `ds.*` 只用于 Playground、组件测试或非业务预览。
-4. 同一 Screen 中多个 Badge 共用一个模板 `inspectId` 时，必须同时传稳定业务 `pbKey`，不能把数组 index 或展示文案写入 identity。
+- 用于数量、严重度、只读状态；选择标签使用 Chip 或 Filter Bar。
+- 不给 Badge 添加点击事件，也不使用任意颜色创造 Contract 外 tone。
+- Props、Slots、Events、默认值与 Token 槽以 [Badge Contract](../../../src/design-system/components/contracts/badge.json) 为准。

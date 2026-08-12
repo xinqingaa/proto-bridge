@@ -63,7 +63,7 @@ abstract final class AppPop {
     required Future<T> task,
   }) async {
     final settled = task.then<void>((_) {});
-    loading(message: message, until: settled);
+    AppPop.loading(message: message, until: settled);
     return task;
   }
 

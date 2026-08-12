@@ -8,29 +8,34 @@ const steps = [
   ["pnpm", ["install", "--frozen-lockfile"]],
   ["pnpm", ["docs:verify"]],
   ["pnpm", ["build"]],
+  ["node", ["scripts/verify-ds-target-sync.mjs"]],
   ["pnpm", ["typecheck"]],
   ["pnpm", ["--filter", "@proto-bridge/core", "test"]],
   ["pnpm", ["--filter", "@proto-bridge/local-service", "test"]],
   ["pnpm", ["--filter", "@proto-bridge/cli", "test"]],
   ["pnpm", ["--filter", "@proto-bridge/pbwork", "test"]],
   ["pnpm", ["--filter", "@proto-bridge/pbwork", "build"]],
+  ["flutter", ["analyze"], "apps/flutter_pb_app"],
+  ["flutter", ["test"], "apps/flutter_pb_app"],
   ["pnpm", ["test:e2e:runtime"]],
   ["pnpm", ["test:e2e:mcp"]],
   ["pnpm", ["test:e2e:consumer"]],
   ["pnpm", ["test:e2e:evidence-slice"]],
 ];
 
-for (const [command, args] of steps) {
-  process.stdout.write(`\n[product] ${command} ${args.join(" ")}\n`);
-  await run(command, args);
+for (const [command, args, workingDirectory] of steps) {
+  process.stdout.write(
+    `\n[product] ${command} ${args.join(" ")}${workingDirectory ? ` (cwd: ${workingDirectory})` : ""}\n`,
+  );
+  await run(command, args, workingDirectory);
 }
 
 process.stdout.write("\nProtoBridge product verification passed.\n");
 
-function run(command, args) {
+function run(command, args, workingDirectory) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
-      cwd: repoRoot,
+      cwd: workingDirectory ? path.join(repoRoot, workingDirectory) : repoRoot,
       env: process.env,
       stdio: "inherit",
     });

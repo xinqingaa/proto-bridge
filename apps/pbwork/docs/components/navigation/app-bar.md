@@ -1,57 +1,31 @@
 # App Bar
 
 > 组件 id：`app-bar` · 分类：`navigation`
-> 实现：`apps/pbwork/src/design-system/components/navigation/AppBar.vue`
-> 契约：`apps/pbwork/src/design-system/components/contracts/app-bar.json`
+> 实现：[AppBar.vue](../../../src/design-system/components/navigation/AppBar.vue)
+> 契约：[app-bar.json](../../../src/design-system/components/contracts/app-bar.json)
 
-移动端页顶导航：首页工作台，或详情页返回与操作。
+页面或栈级顶部栏，统一承载标题、返回动作和一个可选尾部操作。
 
-## 职责
+## 职责与边界
 
-- **做什么**：页顶栏（标题、返回、右侧操作）。
-- **边界**：栈页通常需要（返回）；**一级最大导航页可选**，无统一顶栏需求时可不放。返回逻辑由页面/nav 处理，不在 AppBar 内写死路由。
-- **不要用于**：强制给每个一级 Tab 根都加一层空顶栏。
+- 固定使用 `role=app-bar`，只负责顶部结构与事件，不自行决定路由。
+- `showBack` 只控制返回入口；根目的地是否显示 App Bar 由页面组合决定。
+- 尾部仅承载一个明确操作；复杂工具栏由页面另行组织。
 
-## Props
+## 行为要点
 
-| Prop          | 类型                                       | 默认       | 说明 |
-| ------------- | ------------------------------------------ | ---------- | ---- |
-| `title`       | string                                     | `项目协作` |      |
-| `dense`       | boolean                                    | `false`    |      |
-| `elevated`    | boolean                                    | `false`    |      |
-| `showBack`    | boolean                                    | `true`     |      |
-| `backLabel`   | string                                     | `返回`     |      |
-| `showAction`  | boolean                                    | `true`     |      |
-| `actionIcon`  | `more` \| `plus` \| `search` \| `settings` | `more`     |      |
-| `actionLabel` | string                                     | `更多操作` |      |
+- 返回入口触发 `back` 事件，调用方通过统一导航辅助决定 pop、replace 或其它行为。
+- 尾部操作必须有可访问名称，并通过 `action` 事件交给页面处理。
+- 标题、图标、触控尺寸、边框和表面只消费 Contract Token。
 
-## States（Playground / Contract）
+## States
 
-- `no-back` — 无返回
+| id | label | kind |
+| --- | --- | --- |
+| `no-back` | 无返回 | `content` |
 
-## Slots / Events
+## 用法与反例
 
-- **Slots**：`append`
-- **Events**：`back`, `action`
-
-## tokenBindings
-
-| 槽位                | Token                 |
-| ------------------- | --------------------- |
-| `surface`           | `color.surface`       |
-| `border`            | `color.border`        |
-| `text`              | `color.on-surface`    |
-| `elevation`         | `elevation.card`      |
-| `title`             | `typography.subtitle` |
-| `padding`           | `spacing.md`          |
-| `safeInsetFallback` | `spacing.none`        |
-| `restingElevation`  | `elevation.none`      |
-| `iconSize`          | `sizing.icon-md`      |
-
-切浅色/深色只改 Theme 覆盖值，不改本表绑定。
-
-## 用法要点
-
-1. 从 `@/design-system/components/navigation/...` 引入实现组件。
-2. Props 保持在契约枚举内；需要新能力先改 contract + registry + 本文。
-3. 业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`；默认 `ds.*` 只用于 Playground、组件测试或非业务预览。
+- 栈页通常使用返回入口；根页只有在需要统一标题/全局操作时才添加。
+- 不在 App Bar 内塞入多行表单、Tabs 或业务列表，也不让组件读取 Router。
+- Props、Slots、Events、默认值与 Token 槽以 [App Bar Contract](../../../src/design-system/components/contracts/app-bar.json) 为准。

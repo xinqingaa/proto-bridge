@@ -1,47 +1,32 @@
 # Toast
 
 > 组件 id：`toast` · 分类：`feedback`
-> 实现：`apps/pbwork/src/design-system/components/feedback/Toast.vue`
-> 契约：`apps/pbwork/src/design-system/components/contracts/toast.json`
+> 实现：[Toast.vue](../../../src/design-system/components/feedback/Toast.vue)
+> 契约：[toast.json](../../../src/design-system/components/contracts/toast.json)
 
-轻量短提示：半透明黑底 + 纯文本，timeout 后自动关闭，不阻断页面。
+轻量短提示；半透明黑底纯文本，自动关闭且不阻断页面操作。
 
-## 职责
+## 职责与边界
 
-- **做什么**：成败或状态短反馈。
-- **边界**：不打断操作；确认类用 Confirm；蒙层忙态用 Loading。
+- 固定使用 `role=toast`，悬浮于内容上方，不占页面流也不阻断下层交互。
+- 视觉只有单层半透明黑色 surface 和纯文本，不包含 tone 色条、图标、标题或关闭按钮。
+- 需要确认或持续处理的反馈分别使用 Confirm、Bottom Sheet/Flow Sheet 或页面内状态。
 
-## Props
+## 行为要点
 
-| Prop | 类型 | 默认 | 说明 |
-| --- | --- | --- | --- |
-| `modelValue` | boolean | `false` | 是否显示 |
-| `message` | string | 必填 | 提示文案 |
+- visible 后按 `motion.duration-toast` 自动关闭。
+- 只展示 message；成功/失败含义由文案与业务上下文说明，不创建多套 tone 外观。
+- 关闭只更新可见状态，不决定业务导航或重试。
 
-## States（Playground / Contract）
+## States
 
-- `visible` — 显示
-- `hidden` — 隐藏
+| id | label | kind |
+| --- | --- | --- |
+| `visible` | 显示 | `content` |
+| `hidden` | 隐藏 | `content` |
 
-## Slots / Events
+## 用法与反例
 
-- **Slots**：无
-- **Events**：`update:modelValue`
-
-## tokenBindings
-
-| 槽位 | Token |
-| --- | --- |
-| `surface` | `color.toast` |
-| `text` | `color.on-toast` |
-| `radius` | `radius.lg` |
-| `paddingX` | `spacing.sm` |
-| `paddingY` | `spacing.xs-plus` |
-| `message` | `typography.content` |
-| `duration` | `motion.duration-toast` |
-
-## 用法要点
-
-1. 从 `@/design-system/components/feedback/Toast.vue` 引入。
-2. 与主滚动列兄弟挂载；Playground 使用 trigger。
-3. 业务原型作为 Evidence 使用时必须传业务稳定 `inspectId`。
+- 用于短暂成功、复制完成等非阻断提示。
+- 不添加色条、图标、关闭按钮或长操作；需要用户决策时使用 Confirm。
+- Props、Slots、Events、默认值与 Token 槽以 [Toast Contract](../../../src/design-system/components/contracts/toast.json) 为准。

@@ -1,28 +1,33 @@
 # 一级 Tab
 
-> 组件 id：`primary-tabs` · 契约：`contracts/primary-tabs.json`
+> 组件 id：`primary-tabs` · 分类：`navigation`
+> 实现：[PrimaryTabs.vue](../../../src/design-system/components/navigation/PrimaryTabs.vue)
+> 契约：[primary-tabs.json](../../../src/design-system/components/contracts/primary-tabs.json)
 
-页面内的主分区导航，轨道和选中胶囊均由主题语义表面令牌提供颜色。
+页面内第一层内容分区；轨道和选中胶囊由中性主题表面语义表达。
 
 ## 职责与边界
 
-- 用于同一页面的第一层内容分区；每项对应一个具名内容视图。
-- 默认 Playground 使用概览、活动、数据、设置四项，便于观察胶囊的初始定位和移动。
-- 轨道使用 `color.surface-recessed`，当前项使用 `color.surface-selected`；胶囊以 `opacity.glass`、`elevation.glass` 与 `effect.glass-backdrop` 表达半透明玻璃层，不使用描边。两者均为中性浅灰表面，深色轨道可独立压深。组件 CSS 只消费语义 Token，不写固定色、fallback 色或渐变。
-- 可按页面决定是否接受横滑；同一触摸区域只能有一个横滑 owner。
-- 不作为应用根目的地导航，也不作为只改变数据集合的筛选条。
+- 固定使用 `role=tab-bar`，每项对应一个具名内容视图；不用于应用根目的地或只改变数据集合的筛选。
+- 轨道填满父容器而非视口；默认项按内容宽排列，`equal` 才平分轨道，过多时横向滚动。
+- 内容视图区与水平转场由组件所有；同一物理区域只能有一个横滑 owner。
+- recessed 轨道上只悬浮一个无描边的半透明 glass selection，不增加第二道表面或高对比轮廓。
 
-## 布局与材质语义
+## 行为要点
 
-- 组件填满**父容器**而非视口；轨道随容器宽度填满。
-- 默认项按内容宽排列；`equal` 才令全部项平分轨道。项目过多时轨道横向滚动，不压缩文字。
-- 选中面是无描边、悬浮的半透明玻璃材质；`layer.base` / `layer.content` 管理其与文字的层级，顶部只以低对比阴影形成承托过渡，不产生第二道表面、边框或额外的高对比轮廓。
-- 组件拥有与导航对应的内容视图区，并以水平转场切换。
-- 各具名面板在转场期间保持挂载，避免内容区先塌陷再撑开；组件不自带外边距，轨道与承载容器的外部间隙由组合层提供。
-- Inspector / Contract 使用 `activeColor`、`inactiveColor`、`border`、`radius` 等同名槽；桥接偏移与隐藏/显示透明度分别绑定 `layout.inset-xs-negative`、`opacity.hidden`、`opacity.visible`。
+- 轨道消费 `color.surface-recessed`，当前项消费 `color.surface-selected`、glass opacity/elevation/effect。
+- 首次进入先完成选中胶囊定位，再启用后续切换动效，避免无选中面的首帧。
+- 点击或允许的触摸/鼠标横滑进入对应具名视图；嵌套时由页面关闭其中一层横滑。
+- 系统减少动效时取消位移动画，但不改变选中状态和内容 identity。
 
-## 状态与动效
+## States
 
-`equal` 是等宽排列的外观状态。选中项在轨道中水平移动；胶囊采用柔和背景模糊和轻度饱和，透明度与阴影随选中态过渡。系统要求减少动效时取消位移动画。Playground 不使用场景下拉框，直接并置“自适应”和“等宽”两个有内边距的独立区域；两区各自维护当前位置并渲染真实具名视图，可直接点选或横滑查看内容切换。
+| id | label | kind |
+| --- | --- | --- |
+| `equal` | 等宽 | `variant` |
 
-首次进入会先同步定位胶囊，再启用后续切换动效，因此不会出现没有选中面的首帧。
+## 用法与反例
+
+- Playground 直接并置“自适应/等宽”两个真实视图区，不使用场景下拉。
+- 不用一级 Tab 替代 Tabbar、Filter Bar 或无视图区的日/周/月分段。
+- Props、Slots、Events、默认值与 Token 槽以 [Primary Tabs Contract](../../../src/design-system/components/contracts/primary-tabs.json) 为准。

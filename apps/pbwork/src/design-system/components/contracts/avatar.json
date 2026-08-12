@@ -6,6 +6,11 @@
     "policy": "fixed",
     "defaultRole": "image"
   },
+  "summary": "以头像图片或稳定首字母表示人员与主体，尺寸只使用受控语义档位。",
+  "behavior": [
+    "没有图片时从 name 生成稳定首字母，不把随机图像作为默认内容",
+    "sm、md、lg 只改变受控尺寸，不改变主体身份"
+  ],
   "propsSchema": {
     "type": "object",
     "properties": {
@@ -41,6 +46,7 @@
     {
       "id": "small",
       "label": "小尺寸",
+      "kind": "variant",
       "props": {
         "size": "sm"
       }
@@ -48,6 +54,7 @@
     {
       "id": "large",
       "label": "大尺寸",
+      "kind": "variant",
       "props": {
         "size": "lg"
       }

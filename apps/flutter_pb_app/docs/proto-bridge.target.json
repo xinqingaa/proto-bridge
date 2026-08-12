@@ -1,0 +1,494 @@
+{
+  "version": 1,
+  "technology": "flutter",
+  "policyEntrypoints": [
+    "AGENTS.md",
+    "docs/proto-bridge.md",
+    "docs/components.md",
+    "docs/theme.md"
+  ],
+  "components": {
+    "app-bar": {
+      "symbol": "CommonAppBar",
+      "import": "common/widgets/widgets.dart"
+    },
+    "avatar": {
+      "symbol": "CommonAvatar",
+      "import": "common/widgets/widgets.dart"
+    },
+    "badge": {
+      "symbol": "CommonBadge",
+      "import": "common/widgets/widgets.dart"
+    },
+    "bottom-navigation": {
+      "symbol": "CommonBottomNav",
+      "import": "common/widgets/widgets.dart"
+    },
+    "bottom-sheet": {
+      "symbol": "AppPop.sheet",
+      "import": "common/overlay/app_pop.dart"
+    },
+    "button": {
+      "symbol": "CommonButton",
+      "import": "common/widgets/widgets.dart"
+    },
+    "card": {
+      "symbol": "CommonCard",
+      "import": "common/widgets/widgets.dart"
+    },
+    "card-summary": {
+      "symbol": "CommonCard",
+      "import": "common/widgets/widgets.dart"
+    },
+    "checkbox": {
+      "symbol": "CommonCheckbox",
+      "import": "common/widgets/widgets.dart"
+    },
+    "chip": {
+      "symbol": "CommonChip",
+      "import": "common/widgets/widgets.dart"
+    },
+    "confirm": {
+      "symbol": "AppPop.confirm",
+      "import": "common/overlay/app_pop.dart"
+    },
+    "data-list": {
+      "symbol": "CommonDataList",
+      "import": "common/widgets/widgets.dart"
+    },
+    "dialog": {
+      "symbol": "AppPop.confirm",
+      "import": "common/overlay/app_pop.dart"
+    },
+    "divider": {
+      "symbol": "CommonDivider",
+      "import": "common/widgets/widgets.dart"
+    },
+    "empty-state": {
+      "symbol": "CommonEmptyState",
+      "import": "common/widgets/widgets.dart"
+    },
+    "filter-bar": {
+      "symbol": "CommonFilterBar",
+      "import": "common/widgets/widgets.dart"
+    },
+    "flow-sheet": {
+      "symbol": "AppPop.flowSheet",
+      "import": "common/overlay/app_pop.dart"
+    },
+    "icon": {
+      "symbol": "CommonIcon",
+      "import": "common/widgets/widgets.dart"
+    },
+    "icon-button": {
+      "symbol": "CommonIconButton",
+      "import": "common/widgets/widgets.dart"
+    },
+    "loading": {
+      "symbol": "AppPop.loading",
+      "import": "common/overlay/app_pop.dart"
+    },
+    "menu": {
+      "symbol": "CommonSelect",
+      "import": "common/widgets/widgets.dart"
+    },
+    "primary-tabs": {
+      "symbol": "CommonTabs",
+      "import": "common/widgets/widgets.dart"
+    },
+    "progress": {
+      "symbol": "CommonProgress",
+      "import": "common/widgets/widgets.dart"
+    },
+    "radio-group": {
+      "symbol": "CommonRadioGroup",
+      "import": "common/widgets/widgets.dart"
+    },
+    "scrollable-data-list": {
+      "symbol": "CommonScrollableDataList",
+      "import": "common/widgets/widgets.dart"
+    },
+    "search": {
+      "symbol": "CommonSearchBar",
+      "import": "common/widgets/widgets.dart"
+    },
+    "search-bar": {
+      "symbol": "CommonSearchBar",
+      "import": "common/widgets/widgets.dart"
+    },
+    "secondary-tabs": {
+      "symbol": "CommonTabs",
+      "import": "common/widgets/widgets.dart"
+    },
+    "select": {
+      "symbol": "CommonSelect",
+      "import": "common/widgets/widgets.dart"
+    },
+    "select-field": {
+      "symbol": "CommonSelect",
+      "import": "common/widgets/widgets.dart"
+    },
+    "snackbar": {
+      "symbol": "AppPop.toast",
+      "import": "common/overlay/app_pop.dart"
+    },
+    "spinner": {
+      "symbol": "CommonSpinner",
+      "import": "common/widgets/widgets.dart"
+    },
+    "switch": {
+      "symbol": "CommonSwitch",
+      "import": "common/widgets/widgets.dart"
+    },
+    "switch-control": {
+      "symbol": "CommonSwitch",
+      "import": "common/widgets/widgets.dart"
+    },
+    "tab-viewport": {
+      "symbol": "CommonTabView",
+      "import": "common/widgets/widgets.dart"
+    },
+    "tabbar": {
+      "symbol": "CommonBottomNav",
+      "import": "common/widgets/widgets.dart"
+    },
+    "tabs": {
+      "symbol": "CommonTabs",
+      "import": "common/widgets/widgets.dart"
+    },
+    "text-field": {
+      "symbol": "CommonTextField",
+      "import": "common/widgets/widgets.dart"
+    },
+    "textarea": {
+      "symbol": "CommonTextArea",
+      "import": "common/widgets/widgets.dart"
+    },
+    "toast": {
+      "symbol": "AppPop.toast",
+      "import": "common/overlay/app_pop.dart"
+    }
+  },
+  "tokens": {
+    "border.default": {
+      "accessor": "TS.border.defaultBorder"
+    },
+    "border.focus": {
+      "accessor": "TS.border.focus"
+    },
+    "border.hairline": {
+      "accessor": "TS.border.hairline"
+    },
+    "border.width-hairline": {
+      "accessor": "TS.border.widthHairline"
+    },
+    "color.action": {
+      "accessor": "TS.colors.action"
+    },
+    "color.background": {
+      "accessor": "TS.colors.background"
+    },
+    "color.border": {
+      "accessor": "TS.colors.border"
+    },
+    "color.divider": {
+      "accessor": "TS.colors.divider"
+    },
+    "color.error": {
+      "accessor": "TS.colors.error"
+    },
+    "color.navigation-active": {
+      "accessor": "TS.colors.navigationActive"
+    },
+    "color.on-action": {
+      "accessor": "TS.colors.onAction"
+    },
+    "color.on-error": {
+      "accessor": "TS.colors.onError"
+    },
+    "color.on-primary": {
+      "accessor": "TS.colors.onPrimary"
+    },
+    "color.on-surface": {
+      "accessor": "TS.colors.onSurface"
+    },
+    "color.on-surface-muted": {
+      "accessor": "TS.colors.onSurfaceMuted"
+    },
+    "color.on-toast": {
+      "accessor": "TS.colors.onToast"
+    },
+    "color.outline": {
+      "accessor": "TS.colors.outline"
+    },
+    "color.primary": {
+      "accessor": "TS.colors.primary"
+    },
+    "color.primary-soft": {
+      "accessor": "TS.colors.primarySoft"
+    },
+    "color.scrim": {
+      "accessor": "TS.colors.scrim"
+    },
+    "color.secondary": {
+      "accessor": "TS.colors.secondary"
+    },
+    "color.secondary-soft": {
+      "accessor": "TS.colors.secondarySoft"
+    },
+    "color.section-tab-active": {
+      "accessor": "TS.colors.sectionTabActive"
+    },
+    "color.surface": {
+      "accessor": "TS.colors.surface"
+    },
+    "color.surface-raised": {
+      "accessor": "TS.colors.surfaceRaised"
+    },
+    "color.surface-recessed": {
+      "accessor": "TS.colors.surfaceRecessed"
+    },
+    "color.surface-selected": {
+      "accessor": "TS.colors.surfaceSelected"
+    },
+    "color.surface-variant": {
+      "accessor": "TS.colors.surfaceVariant"
+    },
+    "color.toast": {
+      "accessor": "TS.colors.toast"
+    },
+    "effect.glass-backdrop": {
+      "accessor": "TS.effect.glassBackdropBlur"
+    },
+    "elevation.card": {
+      "accessor": "TS.elevation.card"
+    },
+    "elevation.glass": {
+      "accessor": "TS.elevation.glass"
+    },
+    "elevation.level-3": {
+      "accessor": "TS.elevation.level3"
+    },
+    "elevation.level-5": {
+      "accessor": "TS.elevation.level5"
+    },
+    "elevation.none": {
+      "accessor": "TS.elevation.none"
+    },
+    "elevation.raised": {
+      "accessor": "TS.elevation.raised"
+    },
+    "layer.content": {
+      "accessor": "TS.layer.content"
+    },
+    "layout.dialog-max-width": {
+      "accessor": "TS.layout.dialogMaxWidth"
+    },
+    "layout.fill": {
+      "accessor": "TS.layout.fill"
+    },
+    "layout.focus-inset": {
+      "accessor": "TS.layout.focusInset"
+    },
+    "layout.half": {
+      "accessor": "TS.layout.half"
+    },
+    "layout.half-negative": {
+      "accessor": "TS.layout.halfNegative"
+    },
+    "layout.inset-sm-negative": {
+      "accessor": "TS.layout.insetSmNegative"
+    },
+    "layout.inset-xs-negative": {
+      "accessor": "TS.layout.insetXsNegative"
+    },
+    "layout.load-more-root-margin": {
+      "accessor": "TS.layout.loadMoreRootMargin"
+    },
+    "layout.menu-max-height": {
+      "accessor": "TS.layout.menuMaxHeight"
+    },
+    "layout.pull-refresh-max-distance": {
+      "accessor": "TS.layout.pullRefreshMaxDistance"
+    },
+    "layout.pull-refresh-threshold": {
+      "accessor": "TS.layout.pullRefreshThreshold"
+    },
+    "layout.sheet-max-height": {
+      "accessor": "TS.layout.sheetMaxHeight"
+    },
+    "layout.translate-full-negative": {
+      "accessor": "TS.layout.translateFullNegative"
+    },
+    "motion.duration-fast": {
+      "accessor": "TS.motion.durationFast"
+    },
+    "motion.duration-instant": {
+      "accessor": "TS.motion.durationInstant"
+    },
+    "motion.duration-normal": {
+      "accessor": "TS.motion.durationNormal"
+    },
+    "motion.duration-sheet": {
+      "accessor": "TS.motion.durationSheet"
+    },
+    "motion.duration-slow": {
+      "accessor": "TS.motion.durationSlow"
+    },
+    "motion.duration-tab-viewport": {
+      "accessor": "TS.motion.durationTabViewport"
+    },
+    "motion.duration-toast": {
+      "accessor": "TS.motion.durationToast"
+    },
+    "motion.easing-gentle": {
+      "accessor": "TS.motion.easingGentle"
+    },
+    "motion.easing-standard": {
+      "accessor": "TS.motion.easingStandard"
+    },
+    "motion.rotate-half-turn": {
+      "accessor": "TS.motion.rotateHalfTurn"
+    },
+    "motion.scale-pressed": {
+      "accessor": "TS.motion.scalePressed"
+    },
+    "motion.scale-pressed-strong": {
+      "accessor": "TS.motion.scalePressedStrong"
+    },
+    "opacity.disabled": {
+      "accessor": "TS.opacity.disabled"
+    },
+    "opacity.glass": {
+      "accessor": "TS.opacity.glass"
+    },
+    "opacity.hidden": {
+      "accessor": "TS.opacity.hidden"
+    },
+    "opacity.visible": {
+      "accessor": "TS.opacity.visible"
+    },
+    "radius.full": {
+      "accessor": "TS.radius.full"
+    },
+    "radius.lg": {
+      "accessor": "TS.radius.lg"
+    },
+    "radius.md": {
+      "accessor": "TS.radius.md"
+    },
+    "radius.sm": {
+      "accessor": "TS.radius.sm"
+    },
+    "radius.xl": {
+      "accessor": "TS.radius.xl"
+    },
+    "radius.xs": {
+      "accessor": "TS.radius.xs"
+    },
+    "sizing.avatar-lg": {
+      "accessor": "TS.sizing.avatarLg"
+    },
+    "sizing.avatar-md": {
+      "accessor": "TS.sizing.avatarMd"
+    },
+    "sizing.bottom-navigation": {
+      "accessor": "TS.sizing.bottomNavigation"
+    },
+    "sizing.caret": {
+      "accessor": "TS.sizing.caret"
+    },
+    "sizing.control-lg": {
+      "accessor": "TS.sizing.controlLg"
+    },
+    "sizing.control-md": {
+      "accessor": "TS.sizing.controlMd"
+    },
+    "sizing.icon-compact": {
+      "accessor": "TS.sizing.iconCompact"
+    },
+    "sizing.icon-lg": {
+      "accessor": "TS.sizing.iconLg"
+    },
+    "sizing.icon-md": {
+      "accessor": "TS.sizing.iconMd"
+    },
+    "sizing.icon-sm": {
+      "accessor": "TS.sizing.iconSm"
+    },
+    "sizing.indicator-thickness": {
+      "accessor": "TS.sizing.indicatorThickness"
+    },
+    "sizing.menu-item": {
+      "accessor": "TS.sizing.menuItem"
+    },
+    "sizing.progress-stroke": {
+      "accessor": "TS.sizing.progressStroke"
+    },
+    "sizing.progress-track": {
+      "accessor": "TS.sizing.progressTrack"
+    },
+    "sizing.refresh-action-height": {
+      "accessor": "TS.sizing.refreshActionHeight"
+    },
+    "sizing.refresh-action-min-width": {
+      "accessor": "TS.sizing.refreshActionMinWidth"
+    },
+    "sizing.step-dot": {
+      "accessor": "TS.sizing.stepDot"
+    },
+    "sizing.textarea-rows": {
+      "accessor": "TS.sizing.textareaRows"
+    },
+    "sizing.touch": {
+      "accessor": "TS.sizing.touch"
+    },
+    "spacing.lg": {
+      "accessor": "TS.spacing.lg"
+    },
+    "spacing.md": {
+      "accessor": "TS.spacing.md"
+    },
+    "spacing.none": {
+      "accessor": "TS.spacing.none"
+    },
+    "spacing.sm": {
+      "accessor": "TS.spacing.sm"
+    },
+    "spacing.sm-plus": {
+      "accessor": "TS.spacing.smPlus"
+    },
+    "spacing.xs": {
+      "accessor": "TS.spacing.xs"
+    },
+    "spacing.xs-plus": {
+      "accessor": "TS.spacing.xsPlus"
+    },
+    "spacing.xxs": {
+      "accessor": "TS.spacing.xxs"
+    },
+    "typography.caption": {
+      "accessor": "TS.textStyle.caption"
+    },
+    "typography.caption-strong": {
+      "accessor": "TS.textStyle.captionStrong"
+    },
+    "typography.content": {
+      "accessor": "TS.textStyle.content"
+    },
+    "typography.label": {
+      "accessor": "TS.textStyle.label"
+    },
+    "typography.micro": {
+      "accessor": "TS.textStyle.micro"
+    },
+    "typography.subtitle": {
+      "accessor": "TS.textStyle.subtitle"
+    },
+    "typography.title": {
+      "accessor": "TS.textStyle.title"
+    }
+  },
+  "queryExclusions": []
+}
+

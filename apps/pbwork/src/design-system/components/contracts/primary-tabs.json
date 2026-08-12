@@ -15,6 +15,7 @@
     "同一物理区域只有一个横滑 owner；嵌套时由页面关闭外层横滑"
   ],
   "layout": {
+    "summary": "轨道填满组件容器，选项默认按内容宽排列，equal 状态等分；内容视口由组件所有。",
     "containerWidth": "fill-parent",
     "track": {
       "width": "fill-container",
@@ -28,6 +29,7 @@
     }
   },
   "visualAnatomy": {
+    "summary": "recessed 轨道上悬浮单一半透明 glass selection，不增加描边或第二层表面。",
     "selection": {
       "material": "translucent-glass",
       "border": "none",
