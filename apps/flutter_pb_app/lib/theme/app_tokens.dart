@@ -97,13 +97,24 @@ class AppMotion {
   double get scalePressedStrong => 0.96;
 }
 
-/// 对齐 pbwork `elevation.*` — Flutter 侧用 Material elevation 近似。
+/// 对齐 pbwork `elevation.*`。
+///
+/// 常规 surface 使用 Material elevation 数字；`elevation.glass` 保留主题相关的
+/// 单层低对比阴影，以供静态玻璃 Decoration 直接绘制。
 class AppElevation {
-  const AppElevation();
+  const AppElevation({required this.isDark});
+
+  final bool isDark;
 
   double get none => 0;
   double get card => 1;
-  double get glass => 3;
+  BoxShadow get glass => BoxShadow(
+    color: isDark
+        ? const Color.fromRGBO(0, 0, 0, 0.28)
+        : const Color.fromRGBO(15, 23, 42, 0.08),
+    blurRadius: 18,
+    offset: const Offset(0, 6),
+  );
   double get raised => 4;
   double get level1 => 1;
   double get level2 => 3;

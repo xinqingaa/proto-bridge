@@ -25,14 +25,14 @@
 | `CommonSwitch`                     | 二值开关设置；不能用 Checkbox 静默替代                           |
 | `CommonButton`                     | 主要、次要、危险和加载动作                                       |
 | `CommonIconButton`                 | 单图标动作（含 loading）；必须提供 tooltip                       |
-| `CommonPrimaryTabs`                | 无阴影 recessed 轨道 + 选中项 `LiquidGlass` 的一级页内分区       |
-| `CommonSecondaryTabs`              | 官方 TabBar + caret 指示器的二级页内分区                         |
+| `CommonPrimaryTabs`                | 无阴影 recessed 轨道 + 官方 indicator 驱动的 `LiquidGlassDecoration` 选中面 |
+| `CommonSecondaryTabs`              | 官方 TabBar + 从文字行盒定位的 10×5 caret 指示器                 |
 | `CommonTabView`                    | 官方 TabBarView 内容切换与 swipe 所有权                           |
 | `CommonEmptyState`                 | 空数据或未配置状态                                               |
 | `CommonSpinner` / `CommonProgress` | 加载指示和进度展示                                               |
 | `CommonDivider`                    | 语义分隔线                                                       |
 | `CommonAvatar`                     | 人员或主体头像/首字母                                            |
-| `CommonBottomNav`                  | 顶级页面导航；默认固定 icon + label、无顶部指示条                |
+| `CommonBottomNav`                  | 2–5 个顶级页面目的地；固定 icon + label、无顶部指示条            |
 | `CommonIcon`                       | 26 个稳定 Lucide id、尺寸、tone 和装饰/无障碍语义                |
 
 ## AppPop 弹层
@@ -57,6 +57,7 @@
 - `CommonScrollableDataList` 负责刷新、加载更多和 footer，不能用普通 `ListView` 静默替代。
 - `CommonFormSection` 负责表单分组，不等于带边框的 `CommonCard`。
 - `CommonSwitch` 和 `CommonCheckbox` 的交互语义不同。
+- `LiquidGlassDecoration` 是 `CommonPrimaryTabs` 的 Target 私有材质适配，不是新的公共组件或 ProtoBridge componentId；位置、宽度、滚动与动画必须由官方 `TabBar.indicator` 管理。
 
 ## 受控交互契约
 
@@ -71,5 +72,5 @@
 - 先检查组件构造参数和相似页面，再决定视觉变体。
 - 组件内部已有的尺寸、圆角、边框和颜色必须优先通过 `TS` 继承。
 - Evidence 要求组件存在但本地组件参数不足时，先报告缺口，再决定是否扩展组件；不要在 feature 中手写第二份公共实现。
-- 组件使用示例以 `lib/features/` 和 `lib/features/demo/demo_page.dart` 为准。
+- 组件使用示例以 `lib/features/` 和 `lib/features/demo/` 为准；Demo 底部 Tabbar 本身就是根目的地导航实例，不再在 Navigation 分类中放置无内容切换的重复样例。
 - 精确 DS component id 落点以 [proto-bridge.md](proto-bridge.md) 与工程根目录 `../proto-bridge.target.json` 为准；映射不是靠本表的外观描述推断。

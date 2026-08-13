@@ -16,6 +16,7 @@ class DemoCategoryPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    TS.of(context);
     return ListView(
       padding: EdgeInsets.all(TS.spacing.md),
       children: [
@@ -43,6 +44,7 @@ class DemoGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    TS.of(context);
     return Padding(
       padding: EdgeInsets.only(bottom: TS.spacing.lg),
       child: Column(

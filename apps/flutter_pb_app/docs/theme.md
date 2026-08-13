@@ -35,7 +35,7 @@ TS.effect
 
 优先使用语义角色，而不是直接读取底层色值。例如错误状态使用 `TS.colors.error` 和 `TS.colors.errorSoft`，次要说明使用 `TS.textStyle.caption`。
 
-`transparent` / `none` 是绑定字面量，不是 Token，不创建 `TS.*` 字段。Web 百分比、shadow、filter 和 easing 在 Flutter 分别翻译为比例/逻辑像素、elevation、effect 参数和 `Curve`，不复制 CSS 字符串。
+`transparent` / `none` 是绑定字面量，不是 Token，不创建 `TS.*` 字段。Web 百分比、shadow、filter 和 easing 在 Flutter 分别翻译为比例/逻辑像素、elevation/`BoxShadow`、effect 参数和 `Curve`，不复制 CSS 字符串。常规 elevation 使用 Material 数字；`elevation.glass` 保留 light/dark 单层 `BoxShadow`，供 Target 的静态玻璃 Decoration 消费。
 
 Theme override 也属于同步 surface；例如深色主题的 `opacity.glass` 必须由 `ThemeService` 按亮度解析，不能把浅色默认值固定成全局常量。
 

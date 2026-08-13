@@ -4,10 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../common/widgets.dart';
 import '../../theme/ts.dart';
 import 'action_demo_section.dart';
-import 'data_demo_section.dart';
 import 'display_demo_section.dart';
-import 'feedback_demo_section.dart';
 import 'input_demo_section.dart';
+import 'more_demo_section.dart';
 import 'navigation_demo_section.dart';
 
 class DemoPage extends ConsumerStatefulWidget {
@@ -20,60 +19,58 @@ class DemoPage extends ConsumerStatefulWidget {
 class _DemoPageState extends ConsumerState<DemoPage> {
   int _categoryIndex = 0;
 
-  static const _categories = [
-    _DemoCategory(
+  static const _destinations = [
+    _DemoDestination(
+      value: 'action',
       label: 'Action',
       description: '操作',
       icon: CommonIconName.plus,
       page: ActionDemoSection(),
     ),
-    _DemoCategory(
+    _DemoDestination(
+      value: 'input',
       label: 'Input',
       description: '输入',
       icon: CommonIconName.fileText,
       page: InputDemoSection(),
     ),
-    _DemoCategory(
+    _DemoDestination(
+      value: 'display',
       label: 'Display',
       description: '展示',
       icon: CommonIconName.inbox,
       page: DisplayDemoSection(),
     ),
-    _DemoCategory(
+    _DemoDestination(
+      value: 'navigation',
       label: 'Navigation',
       description: '导航',
       icon: CommonIconName.home,
       page: NavigationDemoSection(),
     ),
-    _DemoCategory(
-      label: 'Data',
-      description: '数据',
-      icon: CommonIconName.list,
-      page: DataDemoSection(),
-    ),
-    _DemoCategory(
-      label: 'Feedback',
-      description: '反馈',
-      icon: CommonIconName.alertCircle,
-      page: FeedbackDemoSection(),
+    _DemoDestination(
+      value: 'more',
+      label: 'More',
+      description: '更多',
+      icon: CommonIconName.more,
+      page: MoreDemoSection(),
     ),
   ];
 
-  void _selectCategory(int index) {
+  void _selectDestination(int index) {
     setState(() => _categoryIndex = index);
-    Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
     TS.of(context);
     final mode = ref.watch(themeModeProvider);
-    final category = _categories[_categoryIndex];
+    final destination = _destinations[_categoryIndex];
 
     return Scaffold(
       backgroundColor: TS.colors.background,
       appBar: CommonAppBar(
-        title: '${category.label} · ${category.description}',
+        title: '${destination.label} · ${destination.description}',
         showAction: true,
         actionIcon: CommonIconName.settings,
         actionLabel: '切换主题',
@@ -83,42 +80,36 @@ class _DemoPageState extends ConsumerState<DemoPage> {
               : ThemeMode.dark;
         },
       ),
-      drawer: NavigationDrawer(
-        selectedIndex: _categoryIndex,
-        onDestinationSelected: _selectCategory,
-        children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              TS.spacing.md,
-              TS.spacing.lg,
-              TS.spacing.md,
-              TS.spacing.sm,
-            ),
-            child: Text('组件分类', style: TS.textStyle.titleSm),
-          ),
-          for (final category in _categories)
-            NavigationDrawerDestination(
-              icon: CommonIcon(name: category.icon),
-              label: Text('${category.label} / ${category.description}'),
-            ),
-        ],
-      ),
       body: IndexedStack(
         index: _categoryIndex,
-        children: [for (final item in _categories) item.page],
+        children: [for (final item in _destinations) item.page],
+      ),
+      bottomNavigationBar: CommonBottomNav(
+        currentIndex: _categoryIndex,
+        onTap: _selectDestination,
+        items: [
+          for (final item in _destinations)
+            CommonBottomNavItem(
+              value: item.value,
+              label: item.description,
+              icon: item.icon,
+            ),
+        ],
       ),
     );
   }
 }
 
-class _DemoCategory {
-  const _DemoCategory({
+class _DemoDestination {
+  const _DemoDestination({
+    required this.value,
     required this.label,
     required this.description,
     required this.icon,
     required this.page,
   });
 
+  final String value;
   final String label;
   final String description;
   final CommonIconName icon;

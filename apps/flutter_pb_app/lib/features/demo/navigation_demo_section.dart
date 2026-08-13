@@ -19,13 +19,13 @@ class NavigationDemoSection extends StatefulWidget {
 
 class _NavigationDemoSectionState extends State<NavigationDemoSection> {
   String _filter = 'all';
-  int _bottomIndex = 0;
 
   @override
   Widget build(BuildContext context) {
+    TS.of(context);
     return DemoCategoryPage(
       title: 'Navigation / 导航',
-      description: '三种层级各自独立：Tabs 拥有视图区，FilterBar 只改变数据。',
+      description: 'Tabs 拥有视图区，FilterBar 只改变数据；页面底部是 Tabbar 的真实根导航。',
       children: [
         DemoGroup(
           title: 'Primary Tabs',
@@ -87,30 +87,6 @@ class _NavigationDemoSectionState extends State<NavigationDemoSection> {
             ],
             selected: _filter,
             onSelected: (value) => setState(() => _filter = value),
-          ),
-        ),
-        DemoGroup(
-          title: 'Tabbar',
-          child: CommonBottomNav(
-            currentIndex: _bottomIndex,
-            onTap: (index) => setState(() => _bottomIndex = index),
-            items: const [
-              CommonBottomNavItem(
-                value: 'home',
-                label: '首页',
-                icon: CommonIconName.home,
-              ),
-              CommonBottomNavItem(
-                value: 'tasks',
-                label: '任务',
-                icon: CommonIconName.list,
-              ),
-              CommonBottomNavItem(
-                value: 'profile',
-                label: '我的',
-                icon: CommonIconName.user,
-              ),
-            ],
           ),
         ),
       ],

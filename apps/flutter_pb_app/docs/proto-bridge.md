@@ -60,7 +60,10 @@ Target 只翻译语义，不复制 Web 表达：例如百分比映射为 Flutter
 ## 当前适配边界
 
 - `data-list` 使用 Flutter `ListView.builder/separated`；`scrollable-data-list` 使用 `pull_to_refresh_flutter3`，并在公共壳内固定 Clamping physics、有限越界和高阻尼 spring，避免刷新完成后的二次回弹。
-- `CommonPrimaryTabs` 和 `CommonSecondaryTabs` 分文件维护，均基于官方 `TabBar`；一级轨道是无阴影的 `surface-recessed` 普通表面，只有选中项使用 `unified_popups` 导出的 `LiquidGlass`，内容切换使用 `CommonTabView` / `TabBarView`。
+- `CommonPrimaryTabs` 和 `CommonSecondaryTabs` 分文件维护，均基于官方 `TabBar`；一级轨道是无阴影的 `surface-recessed` 普通表面，选中面使用 Target 自有 `LiquidGlassDecoration` 并由官方 indicator 直接跟随 `TabController.animation`，内容切换使用 `CommonTabView` / `TabBarView`。Flutter 将 `sizing.control-md` 用作 40 高的选中面，并在其外叠加上下 `spacing.xs` 轨道内缩，形成 48 高点击轨道。
+- `LiquidGlassDecoration` 只复刻一级 Tab 所需的半透明 `surface-selected`、`radius.full` 和主题化 `elevation.glass`；`Decoration` 没有 Widget 合成层，无法承载 `BackdropFilter`，在统一纯色 recessed 轨道上不伪造背景模糊。这是 Flutter 平台近似，不改变 `effect.glass-backdrop` 的完整 Target 映射。
+- `CommonSecondaryTabs` 的 `sizing.caret` 表示三角单侧半宽和高度：默认总宽 10、高 5；`layout.inset-sm-negative` 从文字行盒而非整个 Tab 底边定位。
+- Demo 将 `CommonBottomNav` 作为 `Scaffold.bottomNavigationBar` 的真实根导航；遵守 2–5 个目的地约束，第五个“更多”目的地以内层一级 Tabs 承接 Data 与 Feedback，不使用 Drawer/Sheet 选择组件分类。
 - `menu` 精确映射为 `AppPop.dropMenu`；表单锚点 `CommonMenuField` 只是目标工程便利壳，不是第二套菜单实现。
 - `bottom-sheet`、`confirm`、`flow-sheet`、`loading`、`toast` 与 `menu` 全部经 `AppPop` 调用 `unified_popups`。
 - `CommonIcon` 使用 `lucide_icons_flutter` 映射 Producer 策展的 26 个稳定 id。

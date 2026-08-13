@@ -9,6 +9,7 @@ class DisplayDemoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    TS.of(context);
     return DemoCategoryPage(
       title: 'Display / 展示',
       description: '只读表面、状态信息与加载反馈。',

@@ -25,6 +25,7 @@ class _InputDemoSectionState extends State<InputDemoSection> {
 
   @override
   Widget build(BuildContext context) {
+    TS.of(context);
     return DemoCategoryPage(
       title: 'Input / 输入',
       description: '字段、有限选项与二值输入；Menu 弹层经 AppPop.dropMenu。',

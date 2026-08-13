@@ -11,6 +11,7 @@ class FeedbackDemoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    TS.of(context);
     return DemoCategoryPage(
       title: 'Feedback / 反馈',
       description: '所有弹层统一通过 AppPop 调用 unified_popups。',

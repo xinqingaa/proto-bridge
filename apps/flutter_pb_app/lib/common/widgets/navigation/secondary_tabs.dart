@@ -23,6 +23,10 @@ class CommonSecondaryTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     TS.of(context);
+    final labelStyle = TS.textStyle.label;
+    final labelHeight =
+        MediaQuery.textScalerOf(context).scale(labelStyle.fontSize!) *
+        labelStyle.height!;
     return DecoratedBox(
       decoration: BoxDecoration(
         border: showDivider ? Border(bottom: TS.border.hairline) : null,
@@ -37,8 +41,8 @@ class CommonSecondaryTabs extends StatelessWidget {
             : TabAlignment.start,
         labelColor: TS.colors.sectionTabActive,
         unselectedLabelColor: TS.colors.onSurfaceMuted,
-        labelStyle: TS.textStyle.label,
-        unselectedLabelStyle: TS.textStyle.label,
+        labelStyle: labelStyle,
+        unselectedLabelStyle: labelStyle,
         labelPadding: EdgeInsets.symmetric(horizontal: TS.spacing.sm),
         dividerColor: Colors.transparent,
         indicatorSize: TabBarIndicatorSize.label,
@@ -46,6 +50,7 @@ class CommonSecondaryTabs extends StatelessWidget {
           color: TS.colors.sectionTabActive,
           size: TS.sizing.caret,
           offset: -TS.layout.insetSmNegative,
+          labelHeight: labelHeight,
         ),
         splashFactory: NoSplash.splashFactory,
         overlayColor: const WidgetStatePropertyAll(Colors.transparent),
@@ -63,15 +68,21 @@ class _CaretIndicator extends Decoration {
     required this.color,
     required this.size,
     required this.offset,
+    required this.labelHeight,
   });
 
   final Color color;
   final double size;
   final double offset;
+  final double labelHeight;
 
   @override
-  BoxPainter createBoxPainter([VoidCallback? onChanged]) =>
-      _CaretPainter(color: color, size: size, offset: offset);
+  BoxPainter createBoxPainter([VoidCallback? onChanged]) => _CaretPainter(
+    color: color,
+    size: size,
+    offset: offset,
+    labelHeight: labelHeight,
+  );
 }
 
 class _CaretPainter extends BoxPainter {
@@ -79,17 +90,20 @@ class _CaretPainter extends BoxPainter {
     required this.color,
     required this.size,
     required this.offset,
+    required this.labelHeight,
   });
 
   final Color color;
   final double size;
   final double offset;
+  final double labelHeight;
 
   @override
   void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
     final bounds = offset & configuration.size!;
-    final center = bounds.bottomCenter.translate(0, this.offset);
-    final halfWidth = size / 2;
+    final labelBottom = bounds.center.dy + labelHeight / 2;
+    final center = Offset(bounds.center.dx, labelBottom + this.offset);
+    final halfWidth = size;
     final path = Path()
       ..moveTo(center.dx - halfWidth, center.dy)
       ..lineTo(center.dx, center.dy - size)

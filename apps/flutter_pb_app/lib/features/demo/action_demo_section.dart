@@ -10,6 +10,7 @@ class ActionDemoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    TS.of(context);
     return DemoCategoryPage(
       title: 'Action / 操作',
       description: 'Button、Icon 与 IconButton 的受控状态和语义档位。',
