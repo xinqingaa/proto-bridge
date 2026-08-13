@@ -6,15 +6,11 @@
 
 | 任务 | Skill | 前置 |
 | --- | --- | --- |
-| Core、Store、Capture、CLI、MCP、Local Service、Target | `.agents/skills/proto-bridge-repository/SKILL.md` | 相关架构文档 |
-| 通用产品定义、IA、流程和状态 | `.agents/skills/product-design/SKILL.md` | 现有需求与用户上下文 |
-| PBWork 新原型、结构重构、视觉探索、`docs/design.md` | `.agents/skills/pbwork-prototype-design/SKILL.md` | 按需组合 `product-design` 与 `frontend-design` |
-| 已批准的 PBWork Screen、Variant、导航与 Evidence 实现 | `.agents/skills/pbwork-prototype-authoring/SKILL.md` | `status: approved` 的设计基线 |
-| PBWork Token、Theme、组件、共享手势 | `.agents/skills/pbwork-design-system/SKILL.md` | PBWork 开发和 DS 手册 |
-| PBWork 工作壳、Canvas、Inspector、Capture UI | `.agents/skills/pbwork-workbench/SKILL.md` | PBWork 架构与工作壳 Skill |
-| 文档体系 | `.agents/skills/proto-bridge-repository/SKILL.md` | `docs/maintenance/documentation.md` |
+| Core、Store、Capture、CLI、MCP、Local Service、Target、仓库文档 | `.agents/skills/proto-bridge/SKILL.md` | 相关架构文档 |
+| PBWork 原型设计与制作、Token/Theme/DS、Workbench/Capture UI | `.agents/skills/pbwork/SKILL.md` | Skill 按任务加载对应 reference |
+| 通用视觉方向、构图、字体和审美探索 | `.agents/skills/frontend-design/SKILL.md` | 视觉任务的真实业务 brief |
 
-`frontend-design` 是通用视觉设计方法。PBWork 视觉任务通过 `pbwork-prototype-design` 调用它；普通 Token、组件、Contract 和缺陷维护不默认调用。
+`frontend-design` 是仓库内 vendored 的通用视觉设计方法。PBWork 视觉任务由 `pbwork` 编排它；普通 Token、组件、Contract、Workbench 和缺陷维护不默认调用。PBWork 之外的通用产品设计不由本仓库 Skill 负责，应在目标项目中定义自己的产品工作流。
 
 ## 架构红线
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "PBWork"
+  short_description: "设计、制作和维护 PBWork 原型平台与业务原型"
+  default_prompt: "使用 $pbwork 处理这个 PBWork 设计或实现任务。"

@@ -108,7 +108,19 @@ async function verifyPbworkSymlink() {
 
 async function verifySkills() {
   const skillsRoot = path.join(repoRoot, ".agents/skills");
-  for (const entry of await readdir(skillsRoot, { withFileTypes: true })) {
+  const entries = await readdir(skillsRoot, { withFileTypes: true });
+  const actualSkills = entries
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+  const expectedSkills = ["frontend-design", "pbwork", "proto-bridge"];
+  if (actualSkills.join("\n") !== expectedSkills.join("\n")) {
+    errors.push(
+      `.agents/skills must contain exactly ${expectedSkills.join(", ")}; found ${actualSkills.join(", ")}`,
+    );
+  }
+
+  for (const entry of entries) {
     if (!entry.isDirectory()) continue;
     const directory = path.join(skillsRoot, entry.name);
     const files = await readdir(directory);

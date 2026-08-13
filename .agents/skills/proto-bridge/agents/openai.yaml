@@ -1,0 +1,4 @@
+interface:
+  display_name: "ProtoBridge"
+  short_description: "维护 ProtoBridge 核心契约、采集、CLI 与 MCP"
+  default_prompt: "使用 $proto-bridge 处理这个 ProtoBridge 仓库任务。"

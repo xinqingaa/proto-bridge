@@ -17,11 +17,11 @@
 
 ### 1. 产品设计
 
-使用仓库 `product-design` Skill 闭合用户、范围、对象、信息架构、流程、状态和验收信号。页面数量和功能清单不是产品设计。
+在 PBWork 原型设计阶段闭合用户、范围、对象、信息架构、流程、状态和验收信号。页面数量和功能清单不是产品设计。
 
 ### 2. 视觉设计与探索
 
-视觉语言不明确、现有页面缺少焦点或需要比较方向时，由 `pbwork-prototype-design` 编排 `frontend-design`。视觉方案必须与业务主体、页面任务和真实内容相关，不能只给出“高级、极简”等形容词。
+视觉语言不明确、现有页面缺少焦点或需要比较方向时，由 PBWork 原型设计流程调用仓库内 `frontend-design`。视觉方案必须与业务主体、页面任务和真实内容相关，不能只给出“高级、极简”等形容词。
 
 需要真实页面比较时，探索代码只放在：
 
@@ -87,7 +87,7 @@ approvedAt: 2026-08-13 # 仅 approved 时必需
 | 分类 | 处理 |
 | --- | --- |
 | 现有 PBWork DS | 直接使用公开 Contract |
-| 通用 DS 缺口 | 切换 `pbwork-design-system`，先完成 Token/组件原子变更 |
+| 通用 DS 缺口 | 先按 PBWork Design System 规则完成 Token/组件原子变更 |
 | 业务局部 UI | 使用现有 Token，并声明独立 Evidence 节点 |
 | 外部资产/动效 | 定义资产 ID、状态、触发、时长、降级和跨端契约 |
 | 放弃或降级 | 在设计文档记录原因，不把不可交付创意静默带入正式实现 |
@@ -96,18 +96,12 @@ approvedAt: 2026-08-13 # 仅 approved 时必需
 
 ## 正式 Authoring
 
-`pbwork-prototype-authoring` 只消费 `status: approved` 的设计。正式页面遵守 Token-only、DS-first、Flex-only、Registry、semantic authoring、Action/Scenario/Checkpoint 和 Runtime 确定性约束。
+正式 Authoring 只消费 `status: approved` 的设计。正式页面遵守 Token-only、DS-first、Flex-only、Registry、semantic authoring、Action/Scenario/Checkpoint 和 Runtime 确定性约束。
 
 若实现暴露假交互、结构冲突、无法兑现的视觉方向或范围扩大，停止实现并回到设计阶段，不静默改变 `design.md`。
 
-## Skill 边界
+## Agent 边界
 
-| Skill | 负责 | 不负责 |
-| --- | --- | --- |
-| `product-design` | 产品定义、IA、流程、状态 | 具体视觉语言、PB Evidence |
-| `frontend-design` | 通用视觉发散、构图、字体、审美批评 | PB Token/DS、Flutter 映射 |
-| `pbwork-prototype-design` | 编排产品与视觉设计、探索、设计基线、晋级分类 | 正式 Runtime/Evidence 实现 |
-| `pbwork-prototype-authoring` | 正式 Screen、Registry、状态与 Evidence | 替用户决定结构性方向 |
-| `pbwork-design-system` | 共享 Token、Theme、组件和手势 | 单个业务页面的产品设计 |
+PBWork 任务统一由仓库 `pbwork` Skill 路由。该 Skill 按任务读取原型设计、正式 Authoring、Design System 或 Workbench reference，跨边界任务可以按阶段组合，但不需要在多个 PBWork Skill 之间切换。
 
-普通 Token、组件、Contract 或缺陷维护不默认调用 `frontend-design`。只有新视觉身份、跨页面视觉原语或大范围组件语言重构才先进入原型设计或视觉设计。
+`frontend-design` 只负责通用视觉发散、构图、字体和审美批评，不负责 PB Token/DS、Evidence 或 Flutter 映射。普通 Token、组件、Contract、Workbench 或缺陷维护不默认调用它；只有视觉身份、跨页面视觉原语或大范围组件语言重构才进入视觉设计。
