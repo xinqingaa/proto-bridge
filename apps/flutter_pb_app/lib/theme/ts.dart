@@ -1,12 +1,37 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../storage/providers.dart';
 import 'app_colors.dart';
 import 'app_text_styles.dart';
 import 'app_tokens.dart';
 
-/// 当前亮度（对齐 pbwork light/dark 主题）。
-final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.light);
+class ThemeModeNotifier extends Notifier<ThemeMode> {
+  @override
+  ThemeMode build() {
+    final stored = ref.watch(appPrefsProvider).readThemeMode();
+    return stored == 'dark' ? ThemeMode.dark : ThemeMode.light;
+  }
+
+  void setMode(ThemeMode mode) {
+    state = mode;
+    unawaited(
+      ref.read(appPrefsProvider).writeThemeMode(
+        mode == ThemeMode.dark ? 'dark' : 'light',
+      ),
+    );
+  }
+
+  void toggle() {
+    setMode(state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark);
+  }
+}
+
+/// 当前亮度（对齐 pbwork light/dark 主题），经 [AppPrefs] 持久化。
+final themeModeProvider =
+    NotifierProvider<ThemeModeNotifier, ThemeMode>(ThemeModeNotifier.new);
 
 /// 主题服务：组件侧请通过 [TS] 读取。
 class ThemeService {

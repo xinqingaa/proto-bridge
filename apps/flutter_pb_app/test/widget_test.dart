@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:flutter_pb_app/app/app.dart';
 import 'package:flutter_pb_app/common/widgets.dart';
 import 'package:flutter_pb_app/theme/ts.dart';
+
+import 'support/pump_app.dart';
 
 void main() {
   testWidgets('Hub lists the current demo and prototype entries', (
@@ -13,7 +13,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const ProviderScope(child: PbApp()));
+    await pumpPbApp(tester);
     await tester.pumpAndSettle();
 
     expect(find.text('flutter_pb_app'), findsOneWidget);
@@ -27,7 +27,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const ProviderScope(child: PbApp()));
+    await pumpPbApp(tester);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Demo 对照'));
     await tester.pump();
@@ -43,7 +43,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const ProviderScope(child: PbApp()));
+    await pumpPbApp(tester);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Demo 对照'));
     await tester.pump();
@@ -69,7 +69,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const ProviderScope(child: PbApp()));
+    await pumpPbApp(tester);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Demo 对照'));
     await tester.pump();
@@ -95,7 +95,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const ProviderScope(child: PbApp()));
+    await pumpPbApp(tester);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Demo 对照'));
     await tester.pump();
@@ -134,7 +134,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const ProviderScope(child: PbApp()));
+    await pumpPbApp(tester);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Demo 对照'));
     await tester.pump();

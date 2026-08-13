@@ -16,10 +16,10 @@ export type FlutterArchitectureFacet = {
   examples: FlutterArchitectureEvidence[];
 };
 
+export type FlutterStateArchitectureSource = 'target-documentation' | 'absent';
+
 export type FlutterStateArchitectureFacet = FlutterArchitectureFacet & {
-  package?: FlutterArchitectureFacet | undefined;
-  global?: FlutterArchitectureFacet | undefined;
-  page?: FlutterArchitectureFacet | undefined;
+  source: FlutterStateArchitectureSource;
 };
 
 export type FlutterRoutingArchitectureFacet = FlutterArchitectureFacet & {

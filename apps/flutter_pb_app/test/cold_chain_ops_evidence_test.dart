@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:flutter_pb_app/app/app.dart';
 import 'package:flutter_pb_app/common/widgets.dart';
 import 'package:flutter_pb_app/router/routes.dart';
+
+import 'support/pump_app.dart';
 
 void main() {
   Future<void> pumpRoute(
@@ -14,7 +14,7 @@ void main() {
   }) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(const ProviderScope(child: PbApp()));
+    await pumpPbApp(tester);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     final context = tester.element(find.text('flutter_pb_app'));
@@ -39,7 +39,7 @@ void main() {
   testWidgets('Hub lists Cold Chain Ops entry', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(const ProviderScope(child: PbApp()));
+    await pumpPbApp(tester);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('Cold Chain Ops'), findsOneWidget);

@@ -14,7 +14,7 @@ flutter test
 
 ## Widget 场景
 
-Widget test 应从 `ProviderScope(child: PbApp())` 启动应用，并通过命名路由和可见文案进入场景。需要覆盖的状态以固定 Evidence Case 为准；不要只测默认入口。
+Widget test 应从 `ProviderScope` 启动应用，并 override `sharedPreferencesProvider`（先调用 `SharedPreferences.setMockInitialValues({})`）。通过命名路由和可见文案进入场景。需要覆盖的状态以固定 Evidence Case 为准；不要只测默认入口。
 
 至少检查：
 

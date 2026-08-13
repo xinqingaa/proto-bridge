@@ -12,7 +12,6 @@ class HubPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     TS.of(context);
-    final mode = ref.watch(themeModeProvider);
 
     return Scaffold(
       backgroundColor: TS.colors.background,
@@ -22,9 +21,7 @@ class HubPage extends ConsumerWidget {
         actionIcon: CommonIconName.settings,
         actionLabel: '切换主题',
         onAction: () {
-          ref.read(themeModeProvider.notifier).state = mode == ThemeMode.dark
-              ? ThemeMode.light
-              : ThemeMode.dark;
+          ref.read(themeModeProvider.notifier).toggle();
         },
       ),
       body: ListView(

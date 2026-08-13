@@ -19,7 +19,7 @@ TS.layer
 TS.effect
 ```
 
-组件 build 内可调用 `TS.of(context)` 同步当前亮度；应用根节点由 `ThemeService` 创建 Material Theme，主题切换由 `themeModeProvider` 管理。
+组件 build 内可调用 `TS.of(context)` 同步当前亮度；应用根节点由 `ThemeService` 创建 Material Theme，主题切换由 `themeModeProvider` 管理，并经 `AppPrefs` 读写 `theme_mode`。
 
 ## Token 职责
 

@@ -64,7 +64,6 @@ class _DemoPageState extends ConsumerState<DemoPage> {
   @override
   Widget build(BuildContext context) {
     TS.of(context);
-    final mode = ref.watch(themeModeProvider);
     final destination = _destinations[_categoryIndex];
 
     return Scaffold(
@@ -75,9 +74,7 @@ class _DemoPageState extends ConsumerState<DemoPage> {
         actionIcon: CommonIconName.settings,
         actionLabel: '切换主题',
         onAction: () {
-          ref.read(themeModeProvider.notifier).state = mode == ThemeMode.dark
-              ? ThemeMode.light
-              : ThemeMode.dark;
+          ref.read(themeModeProvider.notifier).toggle();
         },
       ),
       body: IndexedStack(

@@ -49,6 +49,7 @@ describe('agent-prompt', () => {
     expect(prompt).toContain('不要凭经验补造 Evidence 未支持的容器');
     expect(prompt).toContain('仍不确定时记录风险');
     expect(prompt).toContain('AGENTS.md');
+    expect(prompt).toContain('adapter 不从 pubspec 或 Dart 用法推断状态库');
     expect(prompt).toContain(
       'Evidence `componentId/role -> target symbol/import/依据`',
     );

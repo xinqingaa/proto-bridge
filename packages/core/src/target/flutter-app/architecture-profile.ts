@@ -10,9 +10,10 @@ import type {
   FlutterRoutingArchitectureFacet,
   FlutterStateArchitectureFacet,
   FlutterTargetConventionProfile,
+  FlutterTargetDocumentationEvidence,
 } from '../../types/index.js';
 import { pathExists, toPosixPath } from '../../shared/paths.js';
-import { scanFlutterTargetDocumentation } from './documentation.js';
+import { scanFlutterTargetDocumentation, withDocumentationConflicts } from './documentation.js';
 
 type DartFile = {
   path: string;
@@ -29,45 +30,6 @@ type ComponentSignal = {
   symbol: string;
   evidence: FlutterArchitectureEvidence[];
 };
-
-const STATE_PATTERNS: Array<{ pattern: string; needles: RegExp[] }> = [
-  { pattern: 'flutter_bloc', needles: [/\bBlocProvider\b/, /\bBlocBuilder\b/, /\bBlocListener\b/, /\bCubit\s*</, /\bextends\s+Cubit\b/, /package:flutter_bloc\/flutter_bloc\.dart/] },
-  { pattern: 'getx', needles: [/\bGetView\b/, /\bGetxController\b/, /\bObx\s*\(/, /\bGetBuilder\s*</, /package:get\/get\.dart/] },
-  { pattern: 'riverpod', needles: [/\bConsumerWidget\b/, /\bWidgetRef\b/, /\bProviderScope\b/, /package:flutter_riverpod\/flutter_riverpod\.dart/, /package:riverpod\/riverpod\.dart/] },
-  { pattern: 'provider', needles: [/\bChangeNotifierProvider\b/, /\bConsumer\s*</, /\bcontext\.(watch|read)\s*</, /package:provider\/provider\.dart/] },
-  { pattern: 'stateful_widget', needles: [/\bStatefulWidget\b/, /\bsetState\s*\(/] },
-];
-
-const STATE_PACKAGE_PATTERNS: Array<{ pattern: string; needles: RegExp[] }> = [
-  { pattern: 'flutter_bloc', needles: [/^\s{0,2}flutter_bloc\s*:/m] },
-  { pattern: 'getx', needles: [/^\s{0,2}get\s*:/m] },
-  { pattern: 'riverpod', needles: [/^\s{0,2}(flutter_riverpod|riverpod)\s*:/m] },
-  { pattern: 'provider', needles: [/^\s{0,2}provider\s*:/m] },
-];
-
-const PAGE_STATE_PATTERNS: Array<{ pattern: string; needles: RegExp[] }> = [
-  { pattern: 'flutter_bloc', needles: [/\bclass\s+\w+(Cubit|Bloc)\s+extends\s+(Cubit|Bloc)\b/, /\bBlocProvider\s*<\s*\w+(Cubit|Bloc)\s*>/, /\bBlocBuilder\s*<\s*\w+(Cubit|Bloc)\s*,/] },
-  {
-    pattern: 'getx',
-    needles: [
-      /\bclass\s+\w+Controller\s+extends\s+GetxController\b/,
-      /\bextends\s+GetView\s*<\s*[\w.]+\s*>/,
-      /\bclass\s+\w+Binding\s+extends\s+Bindings\b/,
-      /\bGet\.(?:lazyPut|put|create)\s*</,
-      /\bObx\s*\(/,
-    ],
-  },
-  { pattern: 'riverpod', needles: [/\bConsumerWidget\b/, /\bWidgetRef\b/, /\b(ref\.watch|ref\.read)\s*\(/] },
-  { pattern: 'provider', needles: [/\bclass\s+\w+\s+extends\s+ChangeNotifier\b/, /\bChangeNotifierProvider\s*<\s*\w+>/] },
-  { pattern: 'stateful_widget', needles: [/\bStatefulWidget\b/, /\bsetState\s*\(/] },
-];
-
-const GLOBAL_STATE_PATTERNS: Array<{ pattern: string; needles: RegExp[] }> = [
-  { pattern: 'flutter_bloc', needles: [/\bBlocProvider\b/, /\bBlocBuilder\b/, /\bCubit\s*</, /package:flutter_bloc\/flutter_bloc\.dart/] },
-  { pattern: 'getx', needles: [/\bGetMaterialApp\b/, /\bGet\.put\b/, /package:get\/get\.dart/] },
-  { pattern: 'riverpod', needles: [/\bProviderScope\b/, /package:flutter_riverpod\/flutter_riverpod\.dart/] },
-  { pattern: 'provider', needles: [/\bMultiProvider\b/, /\bProvider\s*<\s*/, /package:provider\/provider\.dart/] },
-];
 
 const ROUTING_PATTERNS: Array<{ pattern: string; needles: RegExp[] }> = [
   { pattern: 'go_router', needles: [/\bGoRouter\b/, /\bcontext\.(go|push|replace)\s*\(/, /package:go_router\/go_router\.dart/] },
@@ -104,6 +66,9 @@ const THEME_PATTERNS: Array<{ pattern: string; needles: RegExp[] }> = [
   { pattern: 'DefaultTextStyle.of(context)', needles: [/\bDefaultTextStyle\.of\s*\(\s*context\s*\)/] },
 ];
 
+const ABSENT_STATE_EVIDENCE =
+  'Target adapter does not infer state libraries from pubspec or Dart usage. Read target architecture docs or disclose unknown.';
+
 export async function detectFlutterTargetConventions(input: {
   flutterRoot: string;
   module?: string | undefined;
@@ -113,36 +78,22 @@ export async function detectFlutterTargetConventions(input: {
     return unknownProfile([`Flutter root not found: ${flutterRoot}`]);
   }
 
-  const [pubspec, files] = await Promise.all([
+  const [pubspec, files, documentationScan] = await Promise.all([
     readPubspec(flutterRoot),
     readDartFiles(flutterRoot, ['lib/**/*.dart']),
+    scanFlutterTargetDocumentation({ flutterRoot }),
   ]);
   const commonFiles = files.filter((file) => isSharedArchitectureFile(file.path));
   const moduleFiles = input.module ? files.filter((file) => file.path.split('/').includes(input.module ?? '')) : [];
   const routeFiles = files.filter((file) => /(?:^|\/)(?:routes?|router|navigation)(?:\/|_|\.)/i.test(file.path) || /\b(?:GoRouter|GetPage|onGenerateRoute)\b/.test(file.text));
-  const appFiles = files.filter((file) => /(?:^|\/)(?:main|app|preferences?)(?:\/|_|\.)/i.test(file.path));
-  const allFiles = files;
   const nonGeneratedFiles = files.filter((file) => !file.generated);
   const nonGeneratedCommonFiles = commonFiles.filter((file) => !file.generated);
   const nonGeneratedModuleFiles = moduleFiles.filter((file) => !file.generated);
-  const moduleExampleFiles = selectModuleExampleFiles(nonGeneratedFiles, input.module);
-  const pageStateFiles = dedupeFiles([...nonGeneratedModuleFiles, ...moduleExampleFiles]);
   const scopedFiles = nonGeneratedModuleFiles.length > 0 ? [...nonGeneratedModuleFiles, ...nonGeneratedCommonFiles] : nonGeneratedFiles;
   const packageSignals = pubspecToSignals(pubspec);
   const unresolved: string[] = [];
 
-  const state = buildStateFacet({
-    packageSignals: collectPubspecPatternSignals(pubspec, STATE_PACKAGE_PATTERNS),
-    globalSignals: collectPatternSignals(appFiles.filter((file) => !file.generated), GLOBAL_STATE_PATTERNS),
-    pageSignals: [
-      ...collectPatternSignals(pageStateFiles, PAGE_STATE_PATTERNS),
-      ...detectModulePageStateSignals(pageStateFiles, input.module),
-    ],
-    fallbackSignals: [
-      ...packageSignals.state,
-      ...collectPatternSignals(scopedFiles, STATE_PATTERNS),
-    ],
-  });
+  const state = stateFacetFromDocumentation(documentationScan);
   const routing = buildRoutingFacet({
     registrationSignals: collectPatternSignals(routeFiles.filter((file) => !file.generated), ROUTING_REGISTRATION_PATTERNS),
     navigationSignals: collectPatternSignals(nonGeneratedFiles, ROUTING_NAVIGATION_PATTERNS),
@@ -159,8 +110,6 @@ export async function detectFlutterTargetConventions(input: {
   const components = collectComponentSignals(scopedFiles);
   const fileOrganization = detectFileOrganization(nonGeneratedFiles, input.module);
 
-  if (state.pattern === 'unknown') unresolved.push('state pattern was not detected from pubspec.yaml or Dart usage.');
-  if (state.page?.pattern === 'unknown') unresolved.push('page-level state pattern was not detected from target module or similar module files.');
   if (routing.pattern === 'unknown') unresolved.push('routing pattern was not detected from route files or Dart usage.');
   if (routing.navigation?.pattern === 'unknown') unresolved.push('navigation call pattern was not detected from non-generated Dart usage.');
   if (i18n.pattern === 'unknown') unresolved.push('i18n pattern was not detected from translations or Dart usage.');
@@ -186,10 +135,7 @@ export async function detectFlutterTargetConventions(input: {
     },
     fileOrganization,
   };
-  const documentation = await scanFlutterTargetDocumentation({
-    flutterRoot,
-    architectureProfile,
-  });
+  const documentation = withDocumentationConflicts(documentationScan, architectureProfile);
 
   return {
     architectureProfile,
@@ -204,12 +150,11 @@ function isSharedArchitectureFile(filePath: string): boolean {
 }
 
 function unknownProfile(unresolved: string[]): FlutterTargetConventionProfile {
-  const state = unknownStateFacet();
   const routing = unknownRoutingFacet();
   const i18n = unknownI18nFacet();
   return {
     architectureProfile: {
-      state,
+      state: absentStateFacet(),
       routing,
       i18n,
       theme: { patterns: [], confidence: 'low', evidence: [], examples: [] },
@@ -220,12 +165,35 @@ function unknownProfile(unresolved: string[]): FlutterTargetConventionProfile {
   };
 }
 
-function unknownStateFacet(): FlutterStateArchitectureFacet {
+function absentStateFacet(): FlutterStateArchitectureFacet {
   return {
-    ...unknownFacet(),
-    package: unknownFacet(),
-    global: unknownFacet(),
-    page: unknownFacet(),
+    source: 'absent',
+    pattern: 'unspecified',
+    confidence: 'low',
+    evidence: [ABSENT_STATE_EVIDENCE],
+    examples: [],
+  };
+}
+
+function stateFacetFromDocumentation(
+  documentation: FlutterTargetDocumentationEvidence,
+): FlutterStateArchitectureFacet {
+  const hints = documentation.architectureHints.filter((hint) => hint.kind === 'state');
+  const hint = hints[0];
+  if (!hint) return absentStateFacet();
+  return {
+    source: 'target-documentation',
+    pattern: hint.pattern,
+    confidence: hint.confidence,
+    evidence: [
+      `Target documentation ${hint.file} declares state pattern ${hint.pattern}.`,
+      ...hints.slice(1).map((item) => `Additional documentation hint: ${item.pattern} in ${item.file}.`),
+    ],
+    examples: [{
+      file: hint.file,
+      symbol: hint.pattern,
+      snippet: hint.evidence,
+    }],
   };
 }
 
@@ -268,36 +236,6 @@ function bestFacet(signals: PatternSignal[], label: string): FlutterArchitecture
   };
 }
 
-function buildStateFacet(input: {
-  packageSignals: PatternSignal[];
-  globalSignals: PatternSignal[];
-  pageSignals: PatternSignal[];
-  fallbackSignals: PatternSignal[];
-}): FlutterStateArchitectureFacet {
-  const packageFacet = bestFacet(input.packageSignals, 'state package');
-  const globalFacet = bestFacet(input.globalSignals, 'global state');
-  const pageFacet = bestFacet(input.pageSignals, 'page state');
-  const overall = pageFacet.pattern !== 'unknown'
-    ? pageFacet
-    : globalFacet.pattern !== 'unknown'
-      ? globalFacet
-      : packageFacet.pattern !== 'unknown'
-        ? packageFacet
-        : bestFacet(input.fallbackSignals, 'state');
-  return {
-    ...overall,
-    evidence: [
-      ...overall.evidence,
-      ...(pageFacet.pattern === 'unknown' && globalFacet.pattern !== 'unknown'
-        ? ['Only global/app-level state evidence was detected; page-level state expression remains unresolved.']
-        : []),
-    ],
-    package: packageFacet,
-    global: globalFacet,
-    page: pageFacet,
-  };
-}
-
 function buildRoutingFacet(input: {
   registrationSignals: PatternSignal[];
   navigationSignals: PatternSignal[];
@@ -332,57 +270,6 @@ function collectPatternSignals(
       evidence: collectNeedleEvidence(files, definition.pattern, definition.needles),
     }))
     .filter((signal) => signal.evidence.length > 0);
-}
-
-function detectModulePageStateSignals(files: DartFile[], module: string | undefined): PatternSignal[] {
-  const getxEvidence = getxModulePageStateEvidence(files, module);
-  return getxEvidence.length > 0 ? [{ pattern: 'getx', evidence: getxEvidence }] : [];
-}
-
-function getxModulePageStateEvidence(files: DartFile[], module: string | undefined): FlutterArchitectureEvidence[] {
-  const evidence: FlutterArchitectureEvidence[] = [];
-  const moduleFiles = module
-    ? files.filter((file) => file.path.split('/').includes(module))
-    : files;
-
-  const viewEvidence = collectNeedleEvidence(moduleFiles, 'getx-page-view', [
-    /\bextends\s+GetView\s*<\s*[\w.]+\s*>/,
-  ]);
-  evidence.push(...viewEvidence);
-
-  const controllerEvidence = collectNeedleEvidence(moduleFiles, 'getx-page-controller', [
-    /\bclass\s+\w+Controller\s+extends\s+GetxController\b/,
-  ]);
-  evidence.push(...controllerEvidence);
-
-  const bindingEvidence = collectNeedleEvidence(moduleFiles, 'getx-page-binding', [
-    /\bclass\s+\w+Binding\s+extends\s+Bindings\b/,
-    /\bGet\.(?:lazyPut|put|create)\s*</,
-  ]);
-  evidence.push(...bindingEvidence);
-
-  const paths = moduleFiles.map((file) => file.path);
-  const hasViews = paths.some((filePath) => /\/views?\/.+\.dart$/.test(filePath));
-  const hasControllers = paths.some((filePath) => /\/controllers?\/.+_controller\.dart$/.test(filePath));
-  const hasBindings = paths.some((filePath) => /\/bindings?\/.+_binding\.dart$/.test(filePath));
-  const hasGetxSyntax = evidence.length > 0 || moduleFiles.some((file) => /\b(package:get\/get\.dart|GetxController|GetView|Bindings|Get\.(?:lazyPut|put|create))\b/.test(file.text));
-
-  if (hasViews && hasControllers && hasBindings && hasGetxSyntax) {
-    const structureExamples = [
-      paths.find((filePath) => /\/views?\/.+\.dart$/.test(filePath)),
-      paths.find((filePath) => /\/controllers?\/.+_controller\.dart$/.test(filePath)),
-      paths.find((filePath) => /\/bindings?\/.+_binding\.dart$/.test(filePath)),
-    ].filter((item): item is string => Boolean(item));
-    for (const filePath of structureExamples) {
-      evidence.push({
-        file: filePath,
-        symbol: 'getx-module-structure',
-        snippet: `${module ? `module ${module}` : 'module'} contains views/controllers/bindings with GetX page evidence.`,
-      });
-    }
-  }
-
-  return dedupeEvidence(evidence).slice(0, 12);
 }
 
 function collectThemeSignals(files: DartFile[]): PatternSignal[] {
@@ -446,31 +333,6 @@ function collectNeedleEvidence(
   return evidence;
 }
 
-function selectModuleExampleFiles(files: DartFile[], module: string | undefined): DartFile[] {
-  const moduleFiles = module ? files.filter((file) => file.path.split('/').includes(module)) : [];
-  if (moduleFiles.length > 0) return moduleFiles;
-  const scored = files
-    .filter((file) => /\b(?:StatelessWidget|StatefulWidget|ConsumerWidget|GetView|Cubit|Bloc)\b/.test(file.text))
-    .map((file) => ({
-      file,
-      score: scoreModuleExample(file),
-    }))
-    .filter((item) => item.score > 0)
-    .sort((left, right) => right.score - left.score || left.file.path.localeCompare(right.file.path));
-  return scored.slice(0, 40).map((item) => item.file);
-}
-
-function scoreModuleExample(file: DartFile): number {
-  let score = 0;
-  if (/\/views?\/.+\.dart$/.test(file.path)) score += 2;
-  if (/\/controllers?\/.+_controller\.dart$/.test(file.path)) score += 2;
-  if (/\/bindings?\/.+_binding\.dart$/.test(file.path)) score += 2;
-  if (/\bextends\s+GetView\s*<\s*[\w.]+\s*>/.test(file.text)) score += 4;
-  if (/\bclass\s+\w+Controller\s+extends\s+GetxController\b/.test(file.text)) score += 4;
-  if (/\bclass\s+\w+Binding\s+extends\s+Bindings\b|\bGet\.(?:lazyPut|put|create)\s*</.test(file.text)) score += 4;
-  return score;
-}
-
 function confidenceForEvidence(evidence: FlutterArchitectureEvidence[]): FlutterArchitectureConfidence {
   const files = new Set(evidence.map((item) => item.file));
   if (evidence.length >= 4 && files.size >= 2) return 'high';
@@ -512,7 +374,6 @@ async function readPubspec(flutterRoot: string): Promise<string> {
 }
 
 function pubspecToSignals(pubspec: string): {
-  state: PatternSignal[];
   routing: PatternSignal[];
   i18n: PatternSignal[];
 } {
@@ -528,12 +389,6 @@ function pubspecToSignals(pubspec: string): {
       : [];
   };
   return {
-    state: [
-      { pattern: 'flutter_bloc', evidence: dep('flutter_bloc') },
-      { pattern: 'getx', evidence: dep('get') },
-      { pattern: 'riverpod', evidence: [...dep('flutter_riverpod'), ...dep('riverpod')] },
-      { pattern: 'provider', evidence: dep('provider') },
-    ].filter((item) => item.evidence.length > 0),
     routing: [
       { pattern: 'go_router', evidence: dep('go_router') },
       { pattern: 'getx', evidence: dep('get') },
@@ -542,36 +397,6 @@ function pubspecToSignals(pubspec: string): {
       { pattern: 'intl', evidence: dep('intl') },
     ].filter((item) => item.evidence.length > 0),
   };
-}
-
-function collectPubspecPatternSignals(
-  pubspec: string,
-  definitions: Array<{ pattern: string; needles: RegExp[] }>,
-): PatternSignal[] {
-  return definitions
-    .map((definition) => ({
-      pattern: definition.pattern,
-      evidence: collectPubspecEvidence(pubspec, definition.pattern, definition.needles),
-    }))
-    .filter((signal) => signal.evidence.length > 0);
-}
-
-function collectPubspecEvidence(
-  pubspec: string,
-  symbol: string,
-  needles: RegExp[],
-): FlutterArchitectureEvidence[] {
-  return needles
-    .filter((needle) => needle.test(pubspec))
-    .slice(0, 4)
-    .map((needle) => {
-      const match = pubspec.match(needle);
-      return {
-        file: 'pubspec.yaml',
-        symbol,
-        snippet: match?.[0]?.trim() ?? symbol,
-      };
-    });
 }
 
 function detectFileOrganization(files: DartFile[], module: string | undefined): FlutterArchitectureFacet {
@@ -620,29 +445,6 @@ function detectFileOrganization(files: DartFile[], module: string | undefined): 
     };
   }
   return unknownFacet();
-}
-
-function dedupeEvidence(evidence: FlutterArchitectureEvidence[]): FlutterArchitectureEvidence[] {
-  const seen = new Set<string>();
-  const result: FlutterArchitectureEvidence[] = [];
-  for (const item of evidence) {
-    const key = `${item.file}:${item.line ?? ''}:${item.symbol}:${item.snippet}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    result.push(item);
-  }
-  return result;
-}
-
-function dedupeFiles(files: DartFile[]): DartFile[] {
-  const seen = new Set<string>();
-  const result: DartFile[] = [];
-  for (const file of files) {
-    if (seen.has(file.path)) continue;
-    seen.add(file.path);
-    result.push(file);
-  }
-  return result;
 }
 
 function escapeRegExp(value: string): string {

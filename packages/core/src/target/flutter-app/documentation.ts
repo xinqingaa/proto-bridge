@@ -117,6 +117,16 @@ export async function scanFlutterTargetDocumentation(input: {
   };
 }
 
+export function withDocumentationConflicts(
+  documentation: FlutterTargetDocumentationEvidence,
+  architectureProfile: FlutterArchitectureProfile,
+): FlutterTargetDocumentationEvidence {
+  return {
+    ...documentation,
+    conflicts: detectDocumentationConflicts(documentation.architectureHints, architectureProfile),
+  };
+}
+
 function buildDocumentationContract(
   files: string[],
 ): FlutterTargetDocumentationEvidence['contract'] {
@@ -200,9 +210,6 @@ function detectDocumentationConflicts(
   const conflicts: string[] = [];
   for (const hint of hints) {
     if (hint.confidence === 'low') continue;
-    if (hint.kind === 'state' && scannedArchitecture.state.pattern !== 'unknown' && scannedArchitecture.state.pattern !== hint.pattern) {
-      conflicts.push(`Target documentation ${hint.file} mentions state pattern ${hint.pattern}, but code scan detected ${scannedArchitecture.state.pattern}.`);
-    }
     if (hint.kind === 'routing' && scannedArchitecture.routing.pattern !== 'unknown' && scannedArchitecture.routing.pattern !== hint.pattern) {
       conflicts.push(`Target documentation ${hint.file} mentions routing pattern ${hint.pattern}, but code scan detected ${scannedArchitecture.routing.pattern}.`);
     }

@@ -18,6 +18,8 @@
 ## 修改边界
 
 - 业务页面和页面模型放在 `lib/features/<feature>/`。
+- 页面业务状态使用 Riverpod `Notifier` / `AsyncNotifier`，不要用 `setState` 承载筛选、表单或 variant。
+- 持久化只走 `AppPrefs`；feature 不得直接使用 `SharedPreferences`。
 - 路由常量和注册表只放在 `lib/router/`。
 - 主题和语义 token 只放在 `lib/theme/`。
 - 可复用 UI 和共享弹层只放在 `lib/common/`。

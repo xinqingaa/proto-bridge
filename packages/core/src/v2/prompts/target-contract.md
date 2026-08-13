@@ -2,7 +2,7 @@
 
 目标工程是独立的产品代码库。先读取目标根目录可用的工程指令和规范文件，例如 `AGENTS.md`、`README.md`、`docs/`、`.agents/`、`.codex/` 或仓库声明的其他入口；不得假设这些文件一定存在。
 
-真实目标工程中的文档和公开代码是当前工程约束的首要来源。调用适用的 Target adapter 查询规范和示例时，adapter 只负责发现、归一化和返回带来源的目标上下文；其内置规则是缺失文档时的保守 fallback，不是另一份可覆盖目标工程的规范。Target 结果不是 Source Evidence，不能覆盖 Screenshot、Case 或 revision。
+真实目标工程中的文档和公开代码是当前工程约束的首要来源。调用适用的 Target adapter 查询规范和示例时，adapter 只负责发现、归一化和返回带来源的目标上下文；其内置规则是缺失文档时的保守 fallback，不是另一份可覆盖目标工程的规范。状态管理以目标 `docs/` 与 `AGENTS.md` 为准；adapter 不从 pubspec 或 Dart 用法推断状态库。Target 结果不是 Source Evidence，不能覆盖 Screenshot、Case 或 revision。
 
 先形成一份短摘要，至少覆盖：
 
