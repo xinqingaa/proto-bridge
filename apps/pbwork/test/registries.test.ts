@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  SEMANTIC_ROLES,
-  TOKEN_BINDING_LITERALS,
-} from "@proto-bridge/core/v2";
+import { SEMANTIC_ROLES, TOKEN_BINDING_LITERALS } from "@proto-bridge/core/v2";
 import { validateRegistries } from "@/design-system/validateRegistries";
 import { BIND_TOKEN_SPECIAL_VALUES } from "@/design-system/bindTokens";
 import componentSchema from "@/design-system/schemas/component.schema.json";
@@ -146,7 +143,10 @@ describe("design contracts", () => {
   });
 
   it("ships the registered cold-chain prototype and its screens", () => {
-    expect(prototypes.map((item) => item.id)).toEqual(["cold-chain-ops"]);
+    expect(prototypes.map((item) => item.id)).toEqual([
+      "cold-chain-ops",
+      "hengdong",
+    ]);
     const coldChainScreens = prototypeScreens.filter(
       (item) => item.prototypeId === "cold-chain-ops",
     );
@@ -188,6 +188,33 @@ describe("design contracts", () => {
       "focus-critical",
       "inspect-primary-exception",
     ]);
+  });
+
+  it("ships the registered hengdong prototype and its twelve screens", () => {
+    const hengdongScreens = prototypeScreens.filter(
+      (item) => item.prototypeId === "hengdong",
+    );
+    expect(hengdongScreens.map((item) => item.screenSlug)).toEqual([
+      "login",
+      "register",
+      "today",
+      "plans",
+      "records",
+      "profile",
+      "plan-detail",
+      "workout-session",
+      "plan-editor",
+      "record-detail",
+      "stats",
+      "goals",
+    ]);
+    expect(
+      hengdongScreens.every(
+        (screen) =>
+          (screen.variants.find((variant) => variant.id === "default")
+            ?.requiredFragments.length ?? 0) > 0,
+      ),
+    ).toBe(true);
   });
 });
 

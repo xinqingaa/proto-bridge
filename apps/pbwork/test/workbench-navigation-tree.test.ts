@@ -32,7 +32,7 @@ describe("workbench navigation tree", () => {
       (node) => node.id === "screen-cold-chain-ops.exception-queue",
     );
 
-    expect(prototypes.count).toBe(1);
+    expect(prototypes.count).toBe(2);
     expect(components.children).toHaveLength(6);
     expect(prototypes.children?.some((node) => node.kind === "lifecycle")).toBe(
       false,
@@ -102,7 +102,7 @@ describe("workbench navigation tree", () => {
     ) => (id === "cold-chain-ops" ? ("review" as const) : registered);
 
     expect(countPrototypesForLifecycle("active", effective)).toBe(0);
-    expect(countPrototypesForLifecycle("review", effective)).toBe(1);
+    expect(countPrototypesForLifecycle("review", effective)).toBe(2);
 
     const activeTree = buildWorkbenchNavigationTree(effective, "active");
     const reviewTree = buildWorkbenchNavigationTree(effective, "review");
@@ -116,6 +116,7 @@ describe("workbench navigation tree", () => {
     expect(activePrototypes?.children?.map((node) => node.id)).toEqual([]);
     expect(reviewPrototypes?.children?.map((node) => node.id)).toEqual([
       "prototype-cold-chain-ops",
+      "prototype-hengdong",
     ]);
   });
 });
