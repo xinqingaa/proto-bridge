@@ -12,7 +12,7 @@ packages/*/output/
 packages/*/.proto-bridge/
 
 # Local project-consumption skills (may contain private target conventions)
-skills/private/
+.agents/skills/private/
 
 # Runtime capture artifacts
 playwright-report/

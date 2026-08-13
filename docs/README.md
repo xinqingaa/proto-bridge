@@ -14,7 +14,7 @@ ProtoBridge（PB）把可交互原型转化为可追溯、可固定引用的 Evi
 | 理解 PB 实现 | [系统架构](./architecture/overview.md) → [ProtoBridge 实现](./architecture/proto-bridge.md) |
 | 理解 PBWork 实现 | [PBWork 架构](./architecture/pbwork.md) |
 | 修改 Contract、Store 或 Capture | [Evidence 模型](./architecture/evidence-model.md) → [采集链路](./architecture/capture-pipeline.md) |
-| 在 PBWork 制作原型 | 新原型或结构性改动先走 `skills/product-design/SKILL.md`，再读 [原型 Authoring Contract](./reference/prototype-authoring.md) → [PBWork 手册](./pbwork/README.md) |
+| 在 PBWork 设计或制作原型 | [原型设计工作流](./pbwork/prototypes/design-workflow.md) → [原型 Authoring Contract](./reference/prototype-authoring.md) → [PBWork 手册](./pbwork/README.md) |
 | 标记业务节点与设置门禁 | [语义标记与证据门禁](./reference/semantic-authoring.md) |
 | 修改 PBWork Token 或组件 | [PBWork 开发规范](./pbwork/development.md) → [组件总论](./pbwork/components/overview.md) |
 | 维护仓库 | [开发规范](./maintenance/development.md) → [文档维护](./maintenance/documentation.md) |
@@ -34,6 +34,6 @@ ProtoBridge（PB）把可交互原型转化为可追溯、可固定引用的 Evi
 - 包级命令和 API：各 `packages/*/README.md`
 - 设计取舍及理由：`docs/decisions/`
 - 历史迁移：`docs/history/`
-- Agent 执行入口：根目录 `AGENT.md` 与 `skills/*/SKILL.md`
+- Agent 执行入口：根目录 `AGENTS.md` 与 `.agents/skills/*/SKILL.md`
 
 同一规则只在所属权威文档中完整定义。其它文档应链接到该规则，不复制一份可独立漂移的说明。

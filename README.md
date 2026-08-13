@@ -15,6 +15,8 @@ PBWork 是 PB 的图形工作台、原型生产环境和 instrumented Runtime。
 
 PBWork 的 Token、组件、原型和工作壳都是代码资产；产品、设计和开发人员通过 Cursor、Codex 等 Coding Agent 遵守同一套仓库规范进行维护。
 
+新原型先完成产品设计与视觉探索，再将获批方向通过 Promotion Gate 映射为 PBWork Token、DS、业务局部 UI 和资产契约。独立探索页不进入 Evidence 闭环。
+
 ## 快速开始
 
 首次使用时初始化 Workspace；已有 `proto-bridge.json` 时跳过

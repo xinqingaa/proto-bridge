@@ -21,7 +21,7 @@
 | MCP Tool/Resource/Prompt | `packages/mcp-server/README.md`、Agent 消费指南 |
 | PBWork Workbench | `docs/architecture/pbwork.md`、`pbwork-workbench` Skill |
 | Prototype Contract | Authoring Contract、PBWork prototype docs、Skill、tests |
-| 产品设计与结构性设计增量 | 通用 `product-design` Skill；适用时记录于 `{id}/requirements.md` |
+| PBWork 产品/视觉设计与结构性增量 | 原型设计工作流、`pbwork-prototype-design` Skill、`prototypes/{id}/docs/design.md` |
 | Identity/Role/Token Evidence/门禁 | `docs/reference/semantic-authoring.md`、Authoring Contract、ADR、相关 Skill、PBWork checklist、lint/Runtime tests |
 | Token/Theme | PBWork token docs、catalog、Skill、Target sync 状态/基线 |
 | Component props/behavior | Contract、实现、Registry、对应组件文档、Skill/检查单、Target sync 状态/基线 |
@@ -61,9 +61,16 @@ DS 连续迭代不要求每轮都做 Flutter 视觉精修，但每轮必须运�
 
 - package README 需要随包独立存在；
 - Skill 需要独立 frontmatter；
-- README、AGENT 和指南面向不同任务。
+- README、AGENTS 和指南面向不同任务。
 
 不要为已删除的旧文档创建兼容软链接；更新调用方到新的权威路径。
+
+## 仓库级 Skill
+
+- 仓库 Skill 的唯一位置是 `.agents/skills/`，确保克隆仓库后可由支持 Agent Skills 的工具发现；禁止恢复根 `skills/` 平行目录。
+- `.agents/skills/frontend-design` 来自 `anthropics/skills`，当前同步 commit 为 `f17010c9bb483898c1d9c9f42dde2b3a98889434`；`SKILL.md` SHA-256 为 `1608ea77fbb6fc30d13a97d12cfa8ebf31358d40f0dd97beed24829d6b3f45dd`。
+- 保持第三方 Skill 与 `LICENSE.txt` 原样；PBWork 专属规则写入 `pbwork-prototype-design`，不直接修改上游视觉 Skill。
+- 更新第三方 Skill 时核对上游 commit、文件哈希和许可证，并运行 `pnpm docs:verify`。
 
 ## 校验
 

@@ -1,0 +1,7 @@
+interface:
+  display_name: "PBWork 原型设计"
+  short_description: "把产品与视觉方向收敛为可晋级的 PBWork 原型设计"
+  default_prompt: "使用 $pbwork-prototype-design，为这个 PBWork 原型完成设计探索、收敛与 design.md。"
+
+policy:
+  allow_implicit_invocation: true

@@ -1,9 +1,12 @@
 # 产品工作流
 
-ProtoBridge 的闭环分为原型生产、证据生产和目标实现三个阶段。PBWork 连接前两个阶段，MCP 连接后两个阶段。
+ProtoBridge 的闭环分为原型设计、正式原型生产、证据生产和目标实现四个阶段。PBWork 连接前三个阶段，MCP 连接后两个阶段。
 
 ```text
-PBWork Design Foundation / Components
+Product Design + Visual Exploration
+  → approved prototypes/{id}/docs/design.md
+  → PBWork Promotion Gate
+  → Design Foundation / Components
   → Contract-compliant Prototype Runtime
   → Selection Draft
   → Preflight + confirmed Case Matrix
@@ -16,7 +19,13 @@ PBWork Design Foundation / Components
   → canonical Reconstruction Obligations + authoritative Target Review
 ```
 
-## 1. 制作可采集原型
+## 1. 设计并晋级原型
+
+新业务原型、结构性产品改动和视觉语言改变先按 [PBWork 原型设计工作流](../pbwork/prototypes/design-workflow.md)完成产品设计、按需视觉探索、用户确认和 Promotion Gate。正式原型使用 `prototypes/{id}/docs/design.md` 作为唯一产品与体验基线；只有 `status: approved` 才进入结构性 Authoring。
+
+视觉探索位于 `apps/pbwork/src/explorations/{prototypeId}`，不进入 Prototype Registry、Capture 或 Handoff。探索中的硬编码构图、自定义控制和动画不能直接升格为可交付事实；必须分别映射到现有 DS、通用 DS 缺口、Token 驱动的业务 UI、外部资产契约或降级项。
+
+## 2. 制作可采集原型
 
 原型作者只能从 PBWork 的 Token、Theme、基础组件、复杂组件和共享手势中组装页面。没有对口组件时可以实现业务局部 UI，但设计量仍必须使用现有 Token，且不得复制已有组件职责。
 
@@ -34,7 +43,7 @@ PBWork Design Foundation / Components
 完整规则见 [原型 Authoring Contract](../reference/prototype-authoring.md)。
 节点判定与阻断等级见[语义标记与证据门禁](../reference/semantic-authoring.md)。
 
-## 2. 创建 Selection
+## 3. 创建 Selection
 
 PBWork 支持四种入口：
 
@@ -47,7 +56,7 @@ PBWork 支持四种入口：
 
 CLI 通过 JSON Selection 文件表达相同语义。入口差异在进入 Core 后消失。
 
-## 3. Preflight 与 Case Matrix
+## 4. Preflight 与 Case Matrix
 
 Preflight 从 Runtime 读取 authored manifest，校验：
 
@@ -60,7 +69,7 @@ Preflight 从 Runtime 读取 authored manifest，校验：
 
 Preflight 产生稳定 Case Matrix。用户必须在 PBWork 或 CLI 中看到实际 Case 数量、风险和范围；未确认的 warning 会阻止执行。确认不会改变风险事实，只允许任务继续。
 
-## 4. Capture Job
+## 5. Capture Job
 
 每个 Case 在隔离浏览器上下文中执行：
 
@@ -74,7 +83,7 @@ Preflight 产生稳定 Case Matrix。用户必须在 PBWork 或 CLI 中看到实
 
 Case 失败不会回写或降级已有 active Evidence。Job 的进度、取消、失败和重试由 Core JobHost 统一管理。
 
-## 5. Store 与 Review
+## 6. Store 与 Review
 
 一次已终结 Selection 形成不可变 Run。每个成功 Case 产生 Evidence revision，Snapshot 固定本次提交后的 active Evidence、latest Attempt 和 Coverage。
 
@@ -90,7 +99,7 @@ PBWork Evidence Review 按 Screen、Case 和语义区域展示：
 
 重新采集会创建新 Run 和新 Snapshot，历史 Snapshot 与 Handoff 保持可读。
 
-## 6. Deliver 与 Agent Handoff
+## 7. Deliver 与 Agent Handoff
 
 产品主路径是 Deliver（PBWork「交付到 Agent」或 CLI `deliver`）：在同一流程内完成 Capture（或续跑已有 Snapshot）、创建 Handoff，并写入 `.proto-bridge/deliveries/`（收据、供人工/debug 查看用的 Evidence Brief 与 Review、按图片内容去重的 Screenshot、Agent 提示词）。完全相同的 Screenshot 只输出一份 PNG，但保留全部 Case 和 Blob 引用。Agent 提示词不嵌入 Brief 或完整 Contract；deliveries 只是 Store 索引，默认消费通过 MCP 的固定 Handoff 投影完成。
 
@@ -105,7 +114,7 @@ Handoff 固定：
 
 Handoff 是 Evidence 索引，不是实现计划。Prompt 先要求 Agent 通过渐进投影只读核对 Screenshot、Case 差异与目标工程，输出实施计划并等待用户确认；确认后才进入实现。PBWork 与 CLI 共用同一 Core 能力。
 
-## 7. MCP 与目标实现
+## 8. MCP 与目标实现
 
 默认消费与实施顺序（Consumer projection version 4）：
 

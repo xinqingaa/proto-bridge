@@ -31,7 +31,10 @@
 
 ## 导航与 Variant
 
-- [ ] 新原型或结构性改动已有获批产品设计；导航职责、关键交互效果与视觉编排不存在影响实现的未决问题
+- [ ] 新原型或结构性改动存在 `docs/design.md` 且状态为 `approved`
+- [ ] 探索代码位于 `src/explorations`，未注册为正式 Prototype，也未被当作 Capture/Handoff 输入
+- [ ] Promotion Gate 已将视觉元素分为现有 DS、通用 DS 缺口、业务局部 UI、外部资产或降级项
+- [ ] 导航职责、关键交互效果与视觉编排不存在影响实现的未决问题
 - [ ] Tab replace / 二级 push；跨 Tab 进栈 parent 正确
 - [ ] 返回与完成流符合 shell-and-nav（含嵌入 Runtime）
 - [ ] keepMounted 下各面板 ownsVariant
@@ -51,6 +54,7 @@
 
 ## 文档
 
+- [ ] 正式 Prototype 使用 `docs/design.md`；未新增根目录 `requirements.md`、`implementation-notes.md` 或其它平铺产品文档
 - [ ] 若沉淀了新的**通用**规则，已写入 `apps/pbwork/docs`（不要把未定稿视觉口味写成铁律）
 - [ ] 业务个案笔记（如有）与手册不冲突；冲突以手册 + contract 为准
 - [ ] 组件、Token、Theme、手势或 Registry 变化已按 `development.md` 同步文档

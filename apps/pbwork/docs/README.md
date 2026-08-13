@@ -15,7 +15,7 @@ PBWork 原型既要表达产品设计，也要作为 ProtoBridge Runtime 提供�
 5. [组件总论](./components/overview.md)和 [组件组合](./components/composition.md)
 6. 按任务阅读具体组件文档
 7. 涉及滑动、刷新或横滚时阅读 [手势仲裁](./components/shared-gestures.md)
-8. 新原型或结构性改动先使用 `skills/product-design/SKILL.md` 明确并批准产品方向，再阅读：
+8. 新原型、结构性改动或视觉探索先阅读[原型设计工作流](./prototypes/design-workflow.md)，使用 `.agents/skills/pbwork-prototype-design/SKILL.md` 收敛并批准设计，再阅读：
    - [原型系统](./prototypes/overview.md)
    - [壳与导航](./prototypes/shell-and-nav.md)
    - [Screen 与 Variant](./prototypes/screens-and-variants.md)
@@ -75,7 +75,9 @@ Contract 与实现冲突时不能选择一边静默继续；应修正不一致�
 
 ## Agent 入口
 
-- 产品设计：`skills/product-design/SKILL.md`
-- 业务原型：`skills/pbwork-prototype-authoring/SKILL.md`（结构性任务须先有获批产品方向）
-- Token、Theme 和组件：`skills/pbwork-design-system/SKILL.md`
-- Workbench 与 Capture UI：`skills/pbwork-workbench/SKILL.md`
+- 产品设计：`.agents/skills/product-design/SKILL.md`
+- 通用视觉设计：`.agents/skills/frontend-design/SKILL.md`
+- PBWork 原型设计与探索：`.agents/skills/pbwork-prototype-design/SKILL.md`
+- 正式业务原型 Authoring：`.agents/skills/pbwork-prototype-authoring/SKILL.md`
+- Token、Theme 和组件：`.agents/skills/pbwork-design-system/SKILL.md`
+- Workbench 与 Capture UI：`.agents/skills/pbwork-workbench/SKILL.md`

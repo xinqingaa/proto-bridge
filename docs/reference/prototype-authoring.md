@@ -2,6 +2,8 @@
 
 本规范定义怎样制作能被 ProtoBridge 高效、精确、完整采集的原型。所有进入 PB Evidence 闭环的 PBWork Prototype、Screen 和关键状态都必须遵守。
 
+本规范只负责已批准设计的正式工程化。新原型、结构性改动和视觉语言改变必须先按[原型设计工作流](../pbwork/prototypes/design-workflow.md)形成 `status: approved` 的 `prototypes/{id}/docs/design.md`；独立视觉探索不属于本 Contract，也不能进入 Capture/Handoff。
+
 产品、设计和开发人员使用 Cursor、Codex 等 Coding Agent 修改同一套代码、Contract、Registry 和文档；PBWork 不维护按人员角色区分的第二套作者协议。节点 identity、role、component、Token Evidence 和 Block/Warning/Info 等级以[语义标记与证据门禁](./semantic-authoring.md)为唯一权威。
 
 ## 1. 只使用 PBWork 设计基础

@@ -13,15 +13,18 @@
 
 ```text
 prototypes/{prototypeId}/
-├── *Shell.vue          # （可选）AppBar + 内容 / TabViewport + Tabbar
-├── nav.ts              # （可选）进栈、返回、Tab replace
-├── mock.ts             # 静态可演示数据
-├── theme-session.ts    # （可选）主题会话
-├── panels/             # 一级 Tab 面板
-├── screens/            # 可注册为 Screen 的页面
-├── requirements.md     # （推荐）获批的产品方向、范围与设计增量；结构按产品需要组织
-└── implementation-notes.md  # 个案实现笔记（可选）
+├── docs/
+│   ├── design.md        # 必需；获批的唯一产品与体验基线
+│   └── implementation.md # 可选；个案实现说明
+├── *Shell.vue           # （可选）AppBar + 内容 / TabViewport + Tabbar
+├── nav.ts               # （可选）进栈、返回、Tab replace
+├── mock.ts              # 静态可演示数据
+├── theme-session.ts     # （可选）主题会话
+├── panels/              # 一级 Tab 面板
+└── screens/             # 可注册为 Screen 的页面
 ```
+
+设计、探索、确认和晋级规则见[原型设计工作流](./design-workflow.md)。禁止在原型根目录新增 `requirements.md` 或其它平铺设计文档。
 
 当前注册的业务原型见 `prototypes/registry.ts`（手册不绑定具体业务目录是否长期保留）。
 
@@ -48,4 +51,4 @@ prototypes/{prototypeId}/
 
 节点是否需要独立 Evidence、DS 与自定义节点的不同要求以及门禁等级见[语义标记与证据门禁](../../../../docs/reference/semantic-authoring.md)。
 
-下一步：[shell-and-nav.md](./shell-and-nav.md) · [screens-and-variants.md](./screens-and-variants.md) · [recipes.md](./recipes.md) · [../checklist.md](../checklist.md)
+下一步：[design-workflow.md](./design-workflow.md) · [shell-and-nav.md](./shell-and-nav.md) · [screens-and-variants.md](./screens-and-variants.md) · [recipes.md](./recipes.md) · [../checklist.md](../checklist.md)

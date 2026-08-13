@@ -17,12 +17,15 @@ Workbench 路由位于 `/workbench/*`。Runtime 路由位于 `/prototype/:protot
 
 制作原型时：
 
-1. 从 PBWork Design Foundation 选择语义 Token；
-2. 从基础和复杂组件中选择对口组件；
-3. 按 PBWork 组合、导航和手势规范组装 Screen；
-4. 在 Registry 声明 Screen、Variant、Action、Scenario 和 required boundary；
-5. 使用 Inspector 核对稳定 `data-pb-*` 身份；
-6. 运行 PBWork unit/typecheck 与 Runtime 浏览器测试。
+1. 按[原型设计工作流](../pbwork/prototypes/design-workflow.md)完成产品设计、视觉探索、确认和 Promotion Gate；
+2. 从 PBWork Design Foundation 选择语义 Token；
+3. 从基础和复杂组件中选择对口组件；
+4. 按 PBWork 组合、导航和手势规范组装 Screen；
+5. 在 Registry 声明 Screen、Variant、Action、Scenario 和 required boundary；
+6. 使用 Inspector 核对稳定 `data-pb-*` 身份；
+7. 运行 PBWork unit/typecheck 与 Runtime 浏览器测试。
+
+独立探索路由不属于 Runtime，不进入 Selection、Capture 或 Evidence Review。只有翻译到获批设计和正式 Authoring Contract 的结果才能交付。
 
 DS 业务实例必须传稳定 `inspectId`。业务局部证据节点必须显式提供 id、role 和实现所需 `data-pb-token-*`；CSS Token 本身不能替代 Token Evidence。完整规则见[语义标记与证据门禁](../reference/semantic-authoring.md)。
 

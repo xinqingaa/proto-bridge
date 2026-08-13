@@ -9,7 +9,7 @@ description: >-
 
 ## 必读
 
-1. `AGENT.md`
+1. `AGENTS.md`
 2. `docs/README.md`
 3. 按任务阅读：
    - Contract/Store → `docs/architecture/evidence-model.md`

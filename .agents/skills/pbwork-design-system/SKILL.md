@@ -3,7 +3,10 @@ name: pbwork-design-system
 description: >-
   Modify PBWork tokens, themes, basic or complex components, component
   contracts, registry metadata, Playground scenarios, shared gestures,
-  composition rules, or prototype design-system documentation.
+  composition rules, or prototype design-system documentation. Routine DS
+  maintenance does not require frontend-design; use PBWork prototype design
+  first only for a new visual identity, cross-page visual primitive, or broad
+  component-language redesign.
 ---
 
 # PBWork Design System Skill
@@ -22,7 +25,7 @@ description: >-
 
 ## 组件原子变更
 
-按[跨栈对齐协议](../../apps/pbwork/docs/components/alignment-protocol.md)分级同步：
+按[跨栈对齐协议](../../../apps/pbwork/docs/components/alignment-protocol.md)分级同步：
 
 | 变更 | 必须同批 | 可不做 |
 | --- | --- | --- |
@@ -40,7 +43,7 @@ description: >-
 5. `apps/pbwork/docs/components/**/{id}.md`（触达时按新骨架，不以 props 表为权威）
 6. Unit/Playwright tests
 
-不能只改 Vue 或只改文档。图标包仅 Lucide。大类型嫌疑先查 [audit-large-types.md](../../apps/pbwork/docs/components/audit-large-types.md)。
+不能只改 Vue 或只改文档。图标包仅 Lucide。大类型嫌疑先查 [audit-large-types.md](../../../apps/pbwork/docs/components/audit-large-types.md)。
 
 ## Token/Theme 原子变更
 

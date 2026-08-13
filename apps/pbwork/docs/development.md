@@ -104,7 +104,7 @@ Screen 变更必须同步 Prototype Registry、required boundary、Action/Scenar
 
 新增或替换业务原型时，MUST 遵守：
 
-产品定义、信息架构、交互与视觉编排须先经 `skills/product-design/SKILL.md` 形成获批方向；不以固定文档标题代替设计质量判断。
+产品定义、信息架构、交互与视觉编排须先按[原型设计工作流](./prototypes/design-workflow.md)形成 `status: approved` 的 `prototypes/{id}/docs/design.md`；固定路径服务于可发现性，不能代替设计质量判断。
 
 1. **`packages/core/src/v2/fixtures` 只保留一套金标**（现行：`reference-case-slice`，导出 `fixtures.referenceCaseSlice`）。禁止按原型再新增 `fixtures/<prototype>-*` 目录。
 2. Core / MCP / Consumer 单测与脚本复用该金标。需要新对象形状时，改金标或加最小变体字段，不按 App 复制整包。

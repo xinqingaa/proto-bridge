@@ -66,4 +66,4 @@
 
 ## 8. 规范升级
 
-通用规范必须来源于稳定、可复用、经过测试的行为。业务视觉偏好、单页 workaround 和未验证方向留在业务需求或局部实现，不写成全局铁律。
+通用规范必须来源于稳定、可复用、经过测试的行为。业务视觉偏好和获批方向留在对应 Prototype 的 `docs/design.md`，单页 workaround 留在局部实现或 `docs/implementation.md`；未验证方向只进入 `src/explorations`，不写成全局铁律。

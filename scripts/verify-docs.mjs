@@ -13,6 +13,7 @@ const markdownFiles = await collectMarkdown(repoRoot);
 await verifyLinks(markdownFiles);
 await verifyPbworkSymlink();
 await verifySkills();
+await verifyPrototypeDesignDocs();
 await verifyCliReference();
 await verifyMcpReference();
 await verifyComponentReferences();
@@ -106,13 +107,13 @@ async function verifyPbworkSymlink() {
 }
 
 async function verifySkills() {
-  const skillsRoot = path.join(repoRoot, "skills");
+  const skillsRoot = path.join(repoRoot, ".agents/skills");
   for (const entry of await readdir(skillsRoot, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
     const directory = path.join(skillsRoot, entry.name);
     const files = await readdir(directory);
     if (!files.includes("SKILL.md")) {
-      errors.push(`skills/${entry.name} is missing SKILL.md`);
+      errors.push(`.agents/skills/${entry.name} is missing SKILL.md`);
       continue;
     }
     if (
@@ -121,13 +122,78 @@ async function verifySkills() {
       )
     ) {
       errors.push(
-        `skills/${entry.name} contains a non-canonical skill filename`,
+        `.agents/skills/${entry.name} contains a non-canonical skill filename`,
       );
     }
     const source = await readFile(path.join(directory, "SKILL.md"), "utf8");
-    if (!/^---\nname: [a-z0-9-]+\ndescription:/u.test(source)) {
-      errors.push(`skills/${entry.name}/SKILL.md has invalid frontmatter`);
+    const name = source.match(/^---\nname: ([a-z0-9-]+)\ndescription:/u)?.[1];
+    if (!name) {
+      errors.push(`.agents/skills/${entry.name}/SKILL.md has invalid frontmatter`);
+    } else if (name !== entry.name) {
+      errors.push(
+        `.agents/skills/${entry.name}/SKILL.md declares mismatched name ${name}`,
+      );
     }
+  }
+
+  try {
+    const legacyEntries = await readdir(path.join(repoRoot, "skills"));
+    if (legacyEntries.length > 0) {
+      errors.push("Legacy root skills/ must not contain repository skills");
+    }
+  } catch {
+    // The legacy directory is expected to be absent.
+  }
+}
+
+async function verifyPrototypeDesignDocs() {
+  const registry = await readFile(
+    path.join(repoRoot, "apps/pbwork/src/prototypes/registry.ts"),
+    "utf8",
+  );
+  const prototypeIds = new Set(
+    [...registry.matchAll(/\bprototypeId:\s*"([^"]+)"/gu)].map(
+      (match) => match[1],
+    ),
+  );
+  const prototypesRoot = path.join(repoRoot, "apps/pbwork/src/prototypes");
+
+  for (const entry of await readdir(prototypesRoot, { withFileTypes: true })) {
+    if (!entry.isDirectory() || entry.name === "project") continue;
+    const prototypeRoot = path.join(prototypesRoot, entry.name);
+    for (const child of await readdir(prototypeRoot, { withFileTypes: true })) {
+      if (child.isFile() && child.name.toLowerCase().endsWith(".md")) {
+        errors.push(
+          `${relative(path.join(prototypeRoot, child.name))} must move under prototype docs/`,
+        );
+      }
+    }
+  }
+
+  for (const prototypeId of prototypeIds) {
+    const prototypeRoot = path.join(prototypesRoot, prototypeId);
+    const designPath = path.join(prototypeRoot, "docs/design.md");
+    let design;
+    try {
+      design = await readFile(designPath, "utf8");
+    } catch {
+      errors.push(
+        `Registered prototype ${prototypeId} is missing ${relative(designPath)}`,
+      );
+      continue;
+    }
+
+    const frontmatter = design.match(/^---\n([\s\S]*?)\n---\n/u)?.[1] ?? "";
+    if (!frontmatter.includes(`prototypeId: ${prototypeId}`)) {
+      errors.push(`${relative(designPath)} has a mismatched prototypeId`);
+    }
+    if (!/^status: approved$/mu.test(frontmatter)) {
+      errors.push(`${relative(designPath)} must have status: approved`);
+    }
+    if (!/^approvedAt: \d{4}-\d{2}-\d{2}$/mu.test(frontmatter)) {
+      errors.push(`${relative(designPath)} must declare approvedAt as YYYY-MM-DD`);
+    }
+
   }
 }
 

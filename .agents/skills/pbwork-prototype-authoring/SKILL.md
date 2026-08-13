@@ -3,24 +3,26 @@ name: pbwork-prototype-authoring
 description: >-
   Build or modify PBWork business prototypes, screens, variants, panels,
   shells, navigation, fixtures, authored Evidence boundaries, actions,
-  scenarios, or checkpoints in apps/pbwork. New prototypes and structural
-  product changes require an approved product design first; use product-design
-  when the direction is missing, vague, or internally inconsistent.
+  scenarios, or checkpoints in apps/pbwork from an approved design baseline.
+  Use after PBWork prototype design is approved, or for implementation-only
+  maintenance that does not change product structure or visual language. Do
+  not use for visual exploration, product-direction decisions, Token/component
+  maintenance, or Workbench UI.
 ---
 
-# PBWork 原型 Skill
+# PBWork 原型 Authoring
 
 用于业务 Prototype 和 Runtime Screen。修改共享 Token/组件时切换到 `pbwork-design-system`；修改 Workbench/Capture GUI 时使用 `pbwork-workbench`。
 
-## 产品设计前置
+## 设计前置
 
 先判断本次请求是否改变产品定义、根导航、核心流程、业务对象/状态或整体视觉语言。
 
-- 新原型或结构性改动：先使用 `product-design`。设计未获用户批准时停止实现；不要用页面数、功能清单或组件清单代替设计。
-- 局部视觉与交互改进：读取现有产品方向，说明本次设计增量后可以实施；只有出现会改变整体方向的未决问题时才暂停。
+- 新原型或结构性改动：必须读取 `src/prototypes/{prototypeId}/docs/design.md`，且文档 frontmatter 必须为 `status: approved`。缺失或未批准时切换到 `pbwork-prototype-design`。
+- 局部视觉与交互改进：若改变页面焦点、构图、视觉语法或关键行为，先由 `pbwork-prototype-design` 形成获批设计增量；纯实现精修可直接实施。
 - 安全区、明确功能缺陷、文案、Token、Evidence、Runtime 或路由修复：直接处理；不要机械要求重写完整产品 brief。
 
-产品设计可以记录在 `requirements.md`，也可以是用户已批准的对话方案；不要求固定标题或字段。实现中若发现设计无法成立、出现假交互、重复导航或需要扩大产品范围，停止实现并回到 `product-design`，不要静默替用户改方向。
+`docs/design.md` 是正式产品与体验的唯一设计基线。对话中的新决定若改变结构或视觉方向，先回写并批准该文档。实现中若发现设计无法成立、出现假交互、重复导航或需要扩大范围，停止并回到 `pbwork-prototype-design`。
 
 ## 必读
 
@@ -29,9 +31,10 @@ description: >-
 3. `apps/pbwork/docs/README.md`
 4. `apps/pbwork/docs/principles.md`
 5. `apps/pbwork/docs/components/composition.md`
-6. `apps/pbwork/docs/prototypes/overview.md`
-7. 按任务阅读 shell/navigation、Screen/Variant、recipes、组件和手势文档
-8. 完成前使用 `apps/pbwork/docs/checklist.md`
+6. `apps/pbwork/docs/prototypes/design-workflow.md`
+7. `apps/pbwork/docs/prototypes/overview.md`
+8. 按任务阅读 shell/navigation、Screen/Variant、recipes、组件和手势文档
+9. 完成前使用 `apps/pbwork/docs/checklist.md`
 
 ## 硬约束
 
@@ -55,8 +58,9 @@ description: >-
 
 | 改动 | 路径 | 同步 |
 | --- | --- | --- |
-| 产品设计或设计增量 | `src/prototypes/{prototypeId}/requirements.md`（适用时） | 由 `product-design` 形成；本文按已批准方向映射为 PBWork 实现 |
-| Screen/Panel/Shell | `src/prototypes/{prototypeId}` | Registry、业务需求/说明、tests |
+| 获批设计 | `src/prototypes/{prototypeId}/docs/design.md` | 只消费；方向改变时切换 Prototype Design Skill |
+| 个案实现说明 | `src/prototypes/{prototypeId}/docs/implementation.md`（可选） | 只记录代码组织和个案决定，不复制通用规范 |
+| Screen/Panel/Shell | `src/prototypes/{prototypeId}` | Registry、设计基线、tests |
 | Variant/Fixture | Registry、mock/fixture | required boundary、Runtime tests |
 | Action/Scenario | Registry、目标节点 | Checkpoint、browser tests |
 | 稳定通用能力 | 先切换 Design System Skill | Contract、Registry、docs、tests |
