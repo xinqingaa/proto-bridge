@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ClipboardCheck, Home, List, User } from "lucide-vue-next";
+import { Activity, CalendarCheck, House } from "lucide-vue-next";
 import { useRoute, useRouter } from "vue-router";
 import Tabbar from "@/design-system/components/navigation/Tabbar.vue";
 import TabViewport from "@/design-system/components/navigation/TabViewport.vue";
@@ -10,10 +10,9 @@ const props = defineProps<{ active: RootTab; screenId: string }>();
 const route = useRoute();
 const router = useRouter();
 const items = [
-  { value: "today", label: "今天", icon: Home },
-  { value: "plans", label: "计划", icon: ClipboardCheck },
-  { value: "records", label: "记录", icon: List },
-  { value: "profile", label: "我的", icon: User },
+  { value: "today", label: "今天", icon: House },
+  { value: "plans", label: "计划", icon: CalendarCheck },
+  { value: "progress", label: "进度", icon: Activity },
 ];
 
 function changeTab(value: string) {

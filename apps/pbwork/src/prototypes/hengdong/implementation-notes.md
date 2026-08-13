@@ -1,20 +1,9 @@
-# 恒动实现说明
+# 恒动重构实现说明
 
-## 导航
-
-- 一级页面由 `HengdongRoot` 组合 `TabViewport + Tabbar`，根目的地关闭横滑。
-- 一级 Tab 切换使用 replace；二/三级进入使用 push，并在 history state 记录 parent 与所属 Tab。
-- 栈页统一通过 `HengdongShell` 返回，嵌入 Runtime 时 replace 到 parent，深链回退到所属 Tab。
-
-## 滚动和反馈
-
-- 常规内容页只使用一个 `ScrollableDataList` 作为纵滚所有者。
-- 训练执行页使用固定摘要、单一动作列表滚动区和底部操作区。
-- Sheet、Confirm 与 Toast 使用 PBWork DS 并注册可直接打开的 Variant。
-
-## Evidence
-
-- 所有 Screen default Variant 都声明 required boundary。
-- DS 实例使用 `hengdong.{screen}.{slot}` inspectId。
-- 两个业务局部图表显式声明 id、role 与 Token bindings。
-- 核心交互覆盖开始推荐训练、打开计划和完成训练生成记录。
+- 以 `requirements.md` 的已确认产品方向为基线，注册 9 个 Screen：登录、注册、今天、计划、进度、计划详情、训练执行、训练总结、设置与目标。
+- 根导航只有“今天 / 计划 / 进度”。根目的地切换使用 `replace`，二级任务使用 `push` 与可恢复 parent。
+- 今天页不使用标准 App Bar，由安全留白与轻量设置入口消费顶部安全区；计划、进度和常规栈页使用 App Bar；训练页使用专注式头部。
+- 本地状态统一保存在 `hengdong.app.v2`：账号、目标、当前计划、训练会话、活动记录、主题和局部筛选共享同一数据源。
+- 正式训练与快速记录写入同一记录集合，进度摘要、趋势、日历和列表全部由记录派生。
+- 计划编辑和快速记录使用 FlowSheet；记录详情与筛选使用 BottomSheet；退出、删除、重置使用确认组件。
+- 业务局部可视化仅保留活动趋势与活动日历，全部使用 PBWork Token；未新增 Token 或共享 DS 组件。

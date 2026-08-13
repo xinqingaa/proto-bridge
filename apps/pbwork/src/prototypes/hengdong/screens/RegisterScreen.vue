@@ -2,123 +2,122 @@
 import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Button from "@/design-system/components/action/Button.vue";
-import Card from "@/design-system/components/display/Card.vue";
 import Checkbox from "@/design-system/components/input/Checkbox.vue";
 import TextField from "@/design-system/components/input/TextField.vue";
-import Toast from "@/design-system/components/feedback/Toast.vue";
 import { replaceHengdongScreen } from "../nav";
-import { saveProfile } from "../storage";
+import { registerHengdong } from "../storage";
 import "../hengdong.css";
 
 const route = useRoute();
 const router = useRouter();
-const name = ref("林然");
-const email = ref("demo@hengdong.local");
-const password = ref("hengdong");
-const accepted = ref(true);
-const toast = ref(false);
-const variant = computed(() => String(route.query.variant ?? "default"));
+const name = ref("");
+const username = ref("");
+const password = ref("");
+const accepted = ref(false);
+const attempted = ref(false);
+const forcedError = computed(
+  () => String(route.query.variant ?? "default") === "validation-error",
+);
+const hasError = computed(
+  () =>
+    forcedError.value ||
+    (attempted.value &&
+      (!name.value.trim() ||
+        !username.value.trim() ||
+        password.value.length < 6 ||
+        !accepted.value)),
+);
 
 function register() {
-  if (variant.value === "validation-error" || !accepted.value) {
-    toast.value = true;
-    return;
-  }
-  saveProfile({ id: "user-local", name: name.value, email: email.value });
+  attempted.value = true;
+  if (hasError.value) return;
+  const normalized = username.value.trim().toLowerCase();
+  registerHengdong({
+    id: `user-${normalized}`,
+    name: name.value.trim(),
+    username: normalized,
+    password: password.value,
+  });
   void replaceHengdongScreen(router, route, "today");
 }
 </script>
 
 <template>
-  <div
+  <main
     class="hd-auth"
     data-pb-id="hengdong.register.root"
     data-pb-role="page"
     data-pb-token-background="color.background"
     data-pb-token-color="color.on-background"
-    data-pb-token-spacing="spacing.lg"
+    data-pb-token-spacing="spacing.xl"
   >
-    <Card
-      class="hd-auth-card"
-      semantic-role="section"
-      inspect-id="hengdong.register.card"
-    >
-      <header class="hd-auth-brand">
-        <span class="hd-eyebrow">建立你的恒动档案</span>
-        <h1>从一个小目标开始</h1>
-        <p class="hd-muted">账号和训练数据只保存在当前浏览器。</p>
-      </header>
-      <form
-        class="hd-form"
-        data-pb-id="hengdong.register.form"
-        data-pb-role="form"
-        data-pb-token-spacing="spacing.md"
-        @submit.prevent="register"
-      >
-        <TextField
-          v-model="name"
-          label="昵称"
-          :show-label="true"
-          inspect-id="hengdong.register.name"
-        />
-        <TextField
-          v-model="email"
-          label="邮箱"
-          :show-label="true"
-          inspect-id="hengdong.register.email"
-        />
-        <TextField
-          v-model="password"
-          label="密码"
-          :show-label="true"
-          inspect-id="hengdong.register.password"
-        />
-        <p
-          v-if="variant === 'validation-error'"
-          class="hd-validation"
-          role="alert"
-          data-pb-id="hengdong.register.validation"
-          data-pb-role="error-state"
-          data-pb-token-color="color.error"
-          data-pb-token-typography="typography.caption"
-        >
-          请填写完整信息并同意本地存储说明。
-        </p>
-        <Checkbox
-          v-model="accepted"
-          label="我了解数据仅保存在此设备"
-          inspect-id="hengdong.register.accept"
-        />
-        <Button
-          label="创建并开始"
-          block
-          inspect-id="hengdong.register.submit"
-          data-pb-action="register"
-          @click="register"
-        />
-        <Button
-          label="返回登录"
-          bg-color="transparent"
-          border-color="transparent"
-          text-color="color.primary"
-          block
-          inspect-id="hengdong.register.back-login"
-          @click="replaceHengdongScreen(router, route, 'login')"
-        />
-      </form>
-    </Card>
-    <Toast
-      v-model="toast"
-      message="请完成必填项"
-      inspect-id="hengdong.register.toast"
-    />
-  </div>
-</template>
+    <header class="hd-auth-brand">
+      <span class="hd-overline">只保存在当前设备</span>
+      <h1>建立你的轻量节奏</h1>
+      <p class="hd-muted">不需要邮箱验证，也不会上传训练数据。</p>
+    </header>
 
-<style scoped>
-.hd-validation {
-  margin: var(--pb-spacing-none);
-  color: var(--pb-color-error);
-  font: var(--pb-typography-caption);
-}
-</style>
+    <form
+      class="hd-auth-form"
+      data-pb-id="hengdong.register.form"
+      data-pb-role="form"
+      data-pb-token-spacing="spacing.md"
+      @submit.prevent="register"
+    >
+      <TextField
+        v-model="name"
+        label="怎么称呼你"
+        :show-label="true"
+        placeholder="例如：林然"
+        inspect-id="hengdong.register.name"
+      />
+      <TextField
+        v-model="username"
+        label="账号"
+        :show-label="true"
+        placeholder="用于本地登录"
+        inspect-id="hengdong.register.username"
+      />
+      <TextField
+        v-model="password"
+        label="密码"
+        :show-label="true"
+        placeholder="至少 6 位"
+        inspect-id="hengdong.register.password"
+      />
+      <Checkbox
+        v-model="accepted"
+        label="我了解数据仅保存在此设备"
+        inspect-id="hengdong.register.accept"
+      />
+      <p
+        v-if="hasError"
+        class="hd-validation"
+        role="alert"
+        data-pb-id="hengdong.register.validation"
+        data-pb-role="error-state"
+        data-pb-token-color="color.error"
+        data-pb-token-typography="typography.caption"
+      >
+        请完成所有信息，密码至少 6 位，并确认本地存储说明。
+      </p>
+      <Button
+        label="创建并开始"
+        block
+        type="submit"
+        inspect-id="hengdong.register.submit"
+        data-pb-action="register"
+        @click="register"
+      />
+      <Button
+        label="返回登录"
+        bg-color="transparent"
+        border-color="transparent"
+        text-color="color.primary"
+        block
+        inspect-id="hengdong.register.back-login"
+        @click="replaceHengdongScreen(router, route, 'login')"
+      />
+    </form>
+  </main>
+</template>

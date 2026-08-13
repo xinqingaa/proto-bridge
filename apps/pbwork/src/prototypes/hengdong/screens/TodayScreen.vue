@@ -2,32 +2,110 @@
 import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Button from "@/design-system/components/action/Button.vue";
-import Card from "@/design-system/components/display/Card.vue";
-import Chip from "@/design-system/components/display/Chip.vue";
+import IconButton from "@/design-system/components/action/IconButton.vue";
+import Divider from "@/design-system/components/display/Divider.vue";
 import Progress from "@/design-system/components/display/ProgressIndicator.vue";
 import DataList from "@/design-system/components/data/DataList.vue";
 import ScrollableDataList from "@/design-system/components/data/ScrollableDataList.vue";
-import BottomSheet from "@/design-system/components/feedback/BottomSheet.vue";
+import FlowSheet from "@/design-system/components/feedback/FlowSheet.vue";
 import Toast from "@/design-system/components/feedback/Toast.vue";
+import Menu from "@/design-system/components/input/Menu.vue";
+import RadioGroup from "@/design-system/components/input/RadioGroup.vue";
 import HengdongRoot from "../HengdongRoot.vue";
-import { openHengdongScreen, replaceVariant } from "../nav";
-import { plans, records } from "../model";
+import WeeklyActivityBars from "../components/WeeklyActivityBars.vue";
+import {
+  HENGDONG_TODAY,
+  HENGDONG_WEEK_DATES,
+  recordsInWeek,
+  totalMinutes,
+  type ActivityType,
+  type Feeling,
+} from "../model";
+import {
+  openHengdongScreen,
+  replaceHengdongScreen,
+  replaceVariant,
+} from "../nav";
+import { hengdongState, saveRecord } from "../storage";
 import "../hengdong.css";
 
 const route = useRoute();
 const router = useRouter();
-const featuredPlan = plans[0]!;
+const step = ref(0);
+const activityType = ref<ActivityType>("步行");
+const duration = ref("20 分钟");
+const feeling = ref<Feeling>("刚好");
 const toast = ref(false);
 const variant = computed(() => String(route.query.variant ?? "default"));
 const sheetOpen = computed({
-  get: () => variant.value === "quick-checkin-open",
-  set: (open) =>
-    void replaceVariant(router, route, open ? "quick-checkin-open" : "default"),
+  get: () => variant.value === "quick-record-open",
+  set: (open) => {
+    if (!open) step.value = 0;
+    void replaceVariant(router, route, open ? "quick-record-open" : "default");
+  },
 });
+const activePlan = computed(
+  () =>
+    hengdongState.plans.find(
+      (plan) => plan.id === hengdongState.activePlanId,
+    ) ?? hengdongState.plans[0]!,
+);
+const weekRecords = computed(() => recordsInWeek(hengdongState.records));
+const todayRecords = computed(() =>
+  hengdongState.records.filter((record) => record.date === HENGDONG_TODAY),
+);
+const hasSession = computed(() => Boolean(hengdongState.workoutSession));
+const weekProgress = computed(() =>
+  Math.min(
+    100,
+    Math.round(
+      (weekRecords.value.length / hengdongState.goals.weeklySessions) * 100,
+    ),
+  ),
+);
+const weekBars = computed(() =>
+  HENGDONG_WEEK_DATES.map((date, index) => ({
+    id: date,
+    label: ["一", "二", "三", "四", "五", "六", "日"][index]!,
+    minutes: hengdongState.records
+      .filter((record) => record.date === date)
+      .reduce((sum, record) => sum + record.minutes, 0),
+  })),
+);
+const recentRecords = computed(() => hengdongState.records.slice(0, 2));
 
-function quickCheckin() {
+function openWorkout() {
+  const planId = hengdongState.workoutSession?.planId ?? activePlan.value.id;
+  void openHengdongScreen(router, route, "workout-session", "default", {
+    plan: planId,
+  });
+}
+
+function saveQuickRecord() {
+  const minutes = Number.parseInt(duration.value, 10);
+  const recordNumber =
+    hengdongState.records.filter(
+      (record) => record.date === HENGDONG_TODAY && record.kind === "quick",
+    ).length + 1;
+  saveRecord({
+    id: `quick-${HENGDONG_TODAY}-${recordNumber}`,
+    date: HENGDONG_TODAY,
+    kind: "quick",
+    activityType: activityType.value,
+    title: activityType.value,
+    minutes,
+    feeling: feeling.value,
+    note: "今天也主动活动了一会儿。",
+    completedExerciseIds: [],
+  });
   sheetOpen.value = false;
   toast.value = true;
+}
+
+function openRecord(recordId: string) {
+  void openHengdongScreen(router, route, "progress", "record-detail-open", {
+    record: recordId,
+  });
 }
 </script>
 
@@ -42,166 +120,266 @@ function quickCheckin() {
     >
       <ScrollableDataList
         class="hd-scroll"
-        :pull-refresh="true"
+        :pull-refresh="false"
         :load-more="false"
         inspect-id="hengdong.today.scroll-list"
       >
-        <div class="hd-content">
-          <header
-            class="hd-hero"
-            data-pb-id="hengdong.today.hero"
-            data-pb-role="summary"
-            data-pb-token-background="color.primary-soft"
-            data-pb-token-color="color.on-surface"
-            data-pb-token-radius="radius.xl"
-            data-pb-token-spacing="spacing.lg"
-          >
-            <span class="hd-eyebrow">8 月 13 日 · 星期四</span>
-            <h1>今天，也向自己靠近一点</h1>
-            <p class="hd-muted">连续 6 天 · 本周完成 3 / 4 次</p>
-            <Progress
-              :value="75"
-              label="本周目标 75%"
-              inspect-id="hengdong.today.week-progress"
+        <div class="hd-content hd-content-safe">
+          <div class="hd-utility-row">
+            <div class="hd-row-main">
+              <span class="hd-overline">8 月 13 日 · 星期四</span>
+              <span class="hd-caption"
+                >{{ hengdongState.profile.name }}，下午好</span
+              >
+            </div>
+            <IconButton
+              ariaLabel="设置"
+              icon="settings"
+              variant="text"
+              size="sm"
+              inspect-id="hengdong.today.settings"
+              @click="openHengdongScreen(router, route, 'settings-goals')"
             />
+          </div>
+
+          <header
+            class="hd-lead"
+            data-pb-id="hengdong.today.next-action"
+            data-pb-role="summary"
+            data-pb-token-color="color.on-surface"
+            data-pb-token-typography="typography.display"
+            data-pb-token-spacing="spacing.sm"
+          >
+            <span class="hd-overline">
+              {{
+                hasSession
+                  ? "继续上次训练"
+                  : todayRecords.length
+                    ? "今天已经动过"
+                    : "今天的下一步"
+              }}
+            </span>
+            <h1 class="hd-display">
+              {{
+                hasSession
+                  ? "接着完成剩下的动作"
+                  : todayRecords.length
+                    ? "完成比完美重要"
+                    : activePlan.name
+              }}
+            </h1>
+            <p class="hd-muted">
+              <template v-if="hasSession">
+                已完成
+                {{
+                  hengdongState.workoutSession?.completedExerciseIds.length
+                }}
+                / {{ activePlan.exercises.length }} 个动作，进度已保留。
+              </template>
+              <template v-else-if="todayRecords.length">
+                今天已记录
+                {{ totalMinutes(todayRecords) }} 分钟，可以安心停在这里。
+              </template>
+              <template v-else>
+                {{ activePlan.minutes }} 分钟 ·
+                {{ activePlan.exercises.length }} 个动作 ·
+                {{ activePlan.level }}
+              </template>
+            </p>
           </header>
 
-          <Card semantic-role="card" inspect-id="hengdong.today.recommendation">
-            <div class="hd-card-body">
-              <div class="hd-row-head">
-                <div class="hd-row-main">
-                  <span class="hd-eyebrow">今日推荐</span>
-                  <h2 class="hd-card-title">{{ featuredPlan.name }}</h2>
-                  <p class="hd-muted">{{ featuredPlan.description }}</p>
-                </div>
-                <Chip
-                  :label="`${featuredPlan.minutes} 分钟`"
-                  tone="primary"
-                  inspect-id="hengdong.today.recommendation.duration"
-                />
-              </div>
-              <div class="hd-actions">
-                <Button
-                  label="查看计划"
-                  bg-color="color.surface"
-                  border-color="color.border"
-                  text-color="color.on-surface"
-                  inspect-id="hengdong.today.open-plan"
-                  @click="
-                    openHengdongScreen(
-                      router,
-                      route,
-                      'plan-detail',
-                      'default',
-                      { plan: featuredPlan.id },
-                    )
-                  "
-                />
-                <Button
-                  label="开始训练"
-                  inspect-id="hengdong.today.start-workout"
-                  data-pb-action="start-workout"
-                  @click="
-                    openHengdongScreen(
-                      router,
-                      route,
-                      'workout-session',
-                      'default',
-                      { plan: featuredPlan.id },
-                    )
-                  "
-                />
-              </div>
-            </div>
-          </Card>
+          <div
+            class="hd-primary-action"
+            data-pb-id="hengdong.today.primary-action"
+            data-pb-role="section"
+            data-pb-token-spacing="spacing.sm"
+          >
+            <Button
+              :label="
+                hasSession
+                  ? '继续训练'
+                  : todayRecords.length
+                    ? '再做一次轻训练'
+                    : `开始 ${activePlan.minutes} 分钟`
+              "
+              block
+              inspect-id="hengdong.today.start-workout"
+              data-pb-action="start-workout"
+              @click="openWorkout"
+            />
+            <Button
+              label="记录其他活动"
+              bg-color="transparent"
+              border-color="transparent"
+              text-color="color.primary"
+              block
+              inspect-id="hengdong.today.quick-record"
+              data-pb-action="open-quick-record"
+              @click="sheetOpen = true"
+            />
+          </div>
 
-          <Card semantic-role="summary" inspect-id="hengdong.today.summary">
-            <div class="hd-card-body">
-              <h2 class="hd-card-title">本周节奏</h2>
-              <div class="hd-metrics">
-                <div class="hd-metric">
-                  <strong>3</strong><span>训练次数</span>
-                </div>
-                <div class="hd-metric">
-                  <strong>66</strong><span>累计分钟</span>
-                </div>
-                <div class="hd-metric">
-                  <strong>6</strong><span>连续天数</span>
-                </div>
+          <Divider inspect-id="hengdong.today.divider.rhythm" />
+
+          <section
+            class="hd-section"
+            data-pb-id="hengdong.today.week-summary"
+            data-pb-role="summary"
+            data-pb-token-spacing="spacing.md"
+          >
+            <div class="hd-section-heading">
+              <div class="hd-row-main">
+                <h2 class="hd-section-title">本周节奏</h2>
+                <span class="hd-caption">
+                  {{ weekRecords.length }} /
+                  {{ hengdongState.goals.weeklySessions }} 次 ·
+                  {{ totalMinutes(weekRecords) }} 分钟
+                </span>
               </div>
-              <Button
-                label="快速打卡"
-                bg-color="color.primary-soft"
-                border-color="color.primary-soft"
-                text-color="color.primary"
-                inspect-id="hengdong.today.quick-checkin"
-                data-pb-action="open-quick-checkin"
-                @click="sheetOpen = true"
-              />
+              <span class="hd-overline">{{ weekProgress }}%</span>
             </div>
-          </Card>
+            <Progress
+              :value="weekProgress"
+              :label="
+                weekRecords.length >= hengdongState.goals.weeklySessions
+                  ? '本周目标已完成'
+                  : `还差 ${hengdongState.goals.weeklySessions - weekRecords.length} 次`
+              "
+              inspect-id="hengdong.today.week-progress"
+            />
+            <WeeklyActivityBars
+              :items="weekBars"
+              inspect-id="hengdong.today.week-chart"
+              aria-label="本周活动分钟"
+            />
+          </section>
+
+          <Divider inspect-id="hengdong.today.divider.recent" />
 
           <section class="hd-section">
-            <h2 class="hd-section-title">最近完成</h2>
-            <DataList inspect-id="hengdong.today.recent-list">
+            <div class="hd-section-heading">
+              <h2 class="hd-section-title">最近记录</h2>
+              <Button
+                label="查看全部"
+                size="sm"
+                bg-color="transparent"
+                border-color="transparent"
+                text-color="color.primary"
+                inspect-id="hengdong.today.open-progress"
+                @click="replaceHengdongScreen(router, route, 'progress')"
+              />
+            </div>
+            <DataList
+              class="hd-flat-list"
+              surface="none"
+              rounded="none"
+              inspect-id="hengdong.today.recent-list"
+            >
               <button
-                v-for="record in records.slice(0, 2)"
+                v-for="record in recentRecords"
                 :key="record.id"
-                class="hd-row hd-list-button"
                 type="button"
-                @click="
-                  openHengdongScreen(
-                    router,
-                    route,
-                    'record-detail',
-                    'default',
-                    { record: record.id },
-                  )
-                "
+                class="hd-row hd-row-action"
+                data-pb-id="hengdong.today.record-row"
+                :data-pb-key="record.id"
+                data-pb-role="list-item"
+                data-pb-token-spacing="spacing.md"
+                @click="openRecord(record.id)"
               >
-                <span class="hd-row-main"
-                  ><strong>{{ record.planName }}</strong
-                  ><span class="hd-caption"
-                    >{{ record.date }} · {{ record.minutes }} 分钟</span
-                  ></span
-                >
-                <Chip :label="record.feeling" tone="success" />
+                <span class="hd-row-main">
+                  <strong class="hd-row-title">{{ record.title }}</strong>
+                  <span class="hd-caption"
+                    >{{ record.date.slice(5).replace("-", " 月 ") }} 日 ·
+                    {{ record.minutes }} 分钟</span
+                  >
+                </span>
+                <span class="hd-caption">{{ record.feeling }}</span>
               </button>
             </DataList>
           </section>
         </div>
       </ScrollableDataList>
-      <BottomSheet
+
+      <FlowSheet
         v-model="sheetOpen"
-        title="快速打卡"
-        inspect-id="hengdong.today.quick-checkin-sheet"
+        v-model:step="step"
+        title="记录其他活动"
+        :step-count="3"
+        :swipe="false"
+        inspect-id="hengdong.today.quick-record-sheet"
       >
-        <div class="hd-stack-actions">
-          <p class="hd-muted">没有完整训练也没关系，记录一次主动活动。</p>
-          <Button
-            label="散步 20 分钟"
-            bg-color="color.primary-soft"
-            border-color="color.primary-soft"
-            text-color="color.primary"
-            @click="quickCheckin"
+        <section class="hd-flow-step">
+          <h3>刚刚做了什么？</h3>
+          <p class="hd-muted">选择最接近的一项，不需要精确分类。</p>
+          <div class="hd-choice-list">
+            <button
+              v-for="item in ['步行', '拉伸', '自由活动'] as ActivityType[]"
+              :key="item"
+              type="button"
+              class="hd-choice"
+              :class="{ 'is-selected': activityType === item }"
+              @click="activityType = item"
+            >
+              <span>{{ item }}</span
+              ><span>{{ activityType === item ? "已选择" : "" }}</span>
+            </button>
+          </div>
+        </section>
+        <section class="hd-flow-step">
+          <h3>留下刚好的信息</h3>
+          <Menu
+            v-model="duration"
+            label="活动时长"
+            :options="['10 分钟', '15 分钟', '20 分钟', '30 分钟']"
+            inspect-id="hengdong.today.quick-duration"
           />
-          <Button
-            label="拉伸 10 分钟"
-            bg-color="color.primary-soft"
-            border-color="color.primary-soft"
-            text-color="color.primary"
-            @click="quickCheckin"
+          <RadioGroup
+            v-model="feeling"
+            label="完成后的体感"
+            :options="['轻松', '刚好', '吃力']"
+            inspect-id="hengdong.today.quick-feeling"
           />
+        </section>
+        <section class="hd-flow-step">
+          <h3>确认这次活动</h3>
+          <div class="hd-statline">
+            <div class="hd-stat">
+              <strong>{{ Number.parseInt(duration, 10) }}</strong
+              ><span>分钟</span>
+            </div>
+            <div class="hd-stat">
+              <strong>{{ activityType }}</strong
+              ><span>活动类型</span>
+            </div>
+            <div class="hd-stat">
+              <strong>{{ feeling }}</strong
+              ><span>完成体感</span>
+            </div>
+          </div>
+          <p class="hd-muted">保存后会立即计入今天和本周进度。</p>
+        </section>
+        <template #actions>
           <Button
-            label="完成今日打卡"
-            inspect-id="hengdong.today.confirm-checkin"
-            @click="quickCheckin"
+            v-if="step > 0"
+            label="上一步"
+            bg-color="color.surface"
+            border-color="color.border"
+            text-color="color.on-surface"
+            @click="step -= 1"
           />
-        </div>
-      </BottomSheet>
+          <Button v-if="step < 2" label="下一步" @click="step += 1" />
+          <Button
+            v-else
+            label="保存活动"
+            inspect-id="hengdong.today.save-quick-record"
+            @click="saveQuickRecord"
+          />
+        </template>
+      </FlowSheet>
+
       <Toast
         v-model="toast"
-        message="今日活动已记录"
+        message="活动已记录，本周进度已更新"
         inspect-id="hengdong.today.toast"
       />
     </section>

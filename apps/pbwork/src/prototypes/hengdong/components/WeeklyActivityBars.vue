@@ -2,6 +2,7 @@
 defineProps<{
   items: Array<{ id: string; label: string; minutes: number }>;
   inspectId: string;
+  ariaLabel?: string;
 }>();
 </script>
 
@@ -13,7 +14,7 @@ defineProps<{
     data-pb-token-background="color.surface-recessed"
     data-pb-token-color="color.primary"
     data-pb-token-spacing="spacing.sm"
-    aria-label="本周训练分钟趋势"
+    :aria-label="ariaLabel ?? '活动分钟趋势'"
   >
     <div v-for="item in items" :key="item.id" class="activity-column">
       <span class="activity-value">{{ item.minutes }}</span>

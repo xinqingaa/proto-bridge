@@ -190,7 +190,7 @@ describe("design contracts", () => {
     ]);
   });
 
-  it("ships the registered hengdong prototype and its twelve screens", () => {
+  it("ships the redesigned hengdong prototype and its nine purposeful screens", () => {
     const hengdongScreens = prototypeScreens.filter(
       (item) => item.prototypeId === "hengdong",
     );
@@ -199,14 +199,11 @@ describe("design contracts", () => {
       "register",
       "today",
       "plans",
-      "records",
-      "profile",
+      "progress",
       "plan-detail",
       "workout-session",
-      "plan-editor",
-      "record-detail",
-      "stats",
-      "goals",
+      "workout-complete",
+      "settings-goals",
     ]);
     expect(
       hengdongScreens.every(
