@@ -155,6 +155,12 @@ export const router = createRouter({
       component: () => import("@/runtime/RuntimeLayout.vue"),
     },
     {
+      path: "/explore/hengdong-visual",
+      name: "hengdong-visual-exploration",
+      component: () =>
+        import("@/explorations/hengdong/HengdongVisualExploration.vue"),
+    },
+    {
       path: "/:pathMatch(.*)*",
       redirect: "/workbench/overview",
     },

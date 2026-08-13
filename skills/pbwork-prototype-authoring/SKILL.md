@@ -1,5 +1,5 @@
 ---
-name: pbwork-prototype
+name: pbwork-prototype-authoring
 description: >-
   Build or modify PBWork business prototypes, screens, variants, panels,
   shells, navigation, fixtures, authored Evidence boundaries, actions,

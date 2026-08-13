@@ -1,5 +1,5 @@
 ---
-name: proto-bridge
+name: proto-bridge-repository
 description: >-
   Modify ProtoBridge Core contracts, Capture, Store, Local Service, CLI, MCP,
   Target query/validation, repository documentation, or product regression tests.
