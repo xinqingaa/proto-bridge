@@ -3,12 +3,24 @@ name: pbwork-prototype
 description: >-
   Build or modify PBWork business prototypes, screens, variants, panels,
   shells, navigation, fixtures, authored Evidence boundaries, actions,
-  scenarios, or checkpoints in apps/pbwork.
+  scenarios, or checkpoints in apps/pbwork. New prototypes and structural
+  product changes require an approved product design first; use product-design
+  when the direction is missing, vague, or internally inconsistent.
 ---
 
 # PBWork 原型 Skill
 
 用于业务 Prototype 和 Runtime Screen。修改共享 Token/组件时切换到 `pbwork-design-system`；修改 Workbench/Capture GUI 时使用 `pbwork-workbench`。
+
+## 产品设计前置
+
+先判断本次请求是否改变产品定义、根导航、核心流程、业务对象/状态或整体视觉语言。
+
+- 新原型或结构性改动：先使用 `product-design`。设计未获用户批准时停止实现；不要用页面数、功能清单或组件清单代替设计。
+- 局部视觉与交互改进：读取现有产品方向，说明本次设计增量后可以实施；只有出现会改变整体方向的未决问题时才暂停。
+- 安全区、明确功能缺陷、文案、Token、Evidence、Runtime 或路由修复：直接处理；不要机械要求重写完整产品 brief。
+
+产品设计可以记录在 `requirements.md`，也可以是用户已批准的对话方案；不要求固定标题或字段。实现中若发现设计无法成立、出现假交互、重复导航或需要扩大产品范围，停止实现并回到 `product-design`，不要静默替用户改方向。
 
 ## 必读
 
@@ -43,6 +55,7 @@ description: >-
 
 | 改动 | 路径 | 同步 |
 | --- | --- | --- |
+| 产品设计或设计增量 | `src/prototypes/{prototypeId}/requirements.md`（适用时） | 由 `product-design` 形成；本文按已批准方向映射为 PBWork 实现 |
 | Screen/Panel/Shell | `src/prototypes/{prototypeId}` | Registry、业务需求/说明、tests |
 | Variant/Fixture | Registry、mock/fixture | required boundary、Runtime tests |
 | Action/Scenario | Registry、目标节点 | Checkpoint、browser tests |

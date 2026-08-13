@@ -7,7 +7,8 @@
 | 任务 | Skill | 必读 |
 | --- | --- | --- |
 | Core、Store、Capture、CLI、MCP、Local Service、Target | `skills/proto-bridge-repository/SKILL.md` | `docs/architecture/*` 中相关文档 |
-| PBWork 业务原型、Screen、Variant、导航 | `skills/pbwork-prototype-authoring/SKILL.md` | Authoring Contract、PBWork 原型手册 |
+| 新产品/原型、结构性产品改动、含糊设计请求 | `skills/product-design/SKILL.md` | 现有需求、页面和用户上下文；设计获批前不实现结构性 UI |
+| PBWork 业务原型、Screen、Variant、导航 | `skills/pbwork-prototype-authoring/SKILL.md` | 已获批的产品设计或设计增量；Authoring Contract、PBWork 原型手册 |
 | PBWork Token、Theme、组件、共享手势 | `skills/pbwork-design-system/SKILL.md` | PBWork 开发、Token/组件手册 |
 | PBWork 工作壳、Canvas、Inspector、Capture UI | `skills/pbwork-workbench/SKILL.md` | PBWork 架构与工作壳 Skill |
 | 文档体系 | `skills/proto-bridge-repository/SKILL.md` | `docs/maintenance/documentation.md` |

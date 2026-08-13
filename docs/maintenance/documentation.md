@@ -21,6 +21,7 @@
 | MCP Tool/Resource/Prompt | `packages/mcp-server/README.md`、Agent 消费指南 |
 | PBWork Workbench | `docs/architecture/pbwork.md`、`pbwork-workbench` Skill |
 | Prototype Contract | Authoring Contract、PBWork prototype docs、Skill、tests |
+| 产品设计与结构性设计增量 | 通用 `product-design` Skill；适用时记录于 `{id}/requirements.md` |
 | Identity/Role/Token Evidence/门禁 | `docs/reference/semantic-authoring.md`、Authoring Contract、ADR、相关 Skill、PBWork checklist、lint/Runtime tests |
 | Token/Theme | PBWork token docs、catalog、Skill、Target sync 状态/基线 |
 | Component props/behavior | Contract、实现、Registry、对应组件文档、Skill/检查单、Target sync 状态/基线 |

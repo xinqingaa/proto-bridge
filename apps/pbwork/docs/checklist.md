@@ -31,6 +31,7 @@
 
 ## 导航与 Variant
 
+- [ ] 新原型或结构性改动已有获批产品设计；导航职责、关键交互效果与视觉编排不存在影响实现的未决问题
 - [ ] Tab replace / 二级 push；跨 Tab 进栈 parent 正确
 - [ ] 返回与完成流符合 shell-and-nav（含嵌入 Runtime）
 - [ ] keepMounted 下各面板 ownsVariant

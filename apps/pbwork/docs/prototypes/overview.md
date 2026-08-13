@@ -19,7 +19,7 @@ prototypes/{prototypeId}/
 ├── theme-session.ts    # （可选）主题会话
 ├── panels/             # 一级 Tab 面板
 ├── screens/            # 可注册为 Screen 的页面
-├── requirements.md     # 业务需求
+├── requirements.md     # （推荐）获批的产品方向、范围与设计增量；结构按产品需要组织
 └── implementation-notes.md  # 个案实现笔记（可选）
 ```
 
