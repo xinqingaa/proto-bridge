@@ -71,8 +71,11 @@ export function goBackHengdong(
   if (typeof parent === "string" && parent.startsWith("/prototype/hengdong/")) {
     return router.replace(parent);
   }
+  const scope = window.history.state?.pbScope;
   const position = Number(window.history.state?.position ?? 0);
-  if (position > 0 && window.parent === window) return router.back();
+  if (scope === "hengdong" && position > 0 && window.parent === window) {
+    return router.back();
+  }
   return router.replace(hengdongPath(route, fallback));
 }
 

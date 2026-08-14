@@ -683,6 +683,100 @@ const redesignedHengdongScreens = [
           },
           {
             screenId: "hengdong.workout-session",
+            pbId: "hengdong.workout-session.sequence",
+          },
+          {
+            screenId: "hengdong.workout-session",
+            pbId: "hengdong.workout-session.current-exercise",
+          },
+          {
+            screenId: "hengdong.workout-session",
+            pbId: "hengdong.workout-session.body-stage",
+          },
+          {
+            screenId: "hengdong.workout-session",
+            pbId: "hengdong.workout-session.actions",
+          },
+          {
+            screenId: "hengdong.workout-session",
+            pbId: "hengdong.workout-session.complete-exercise",
+          },
+        ],
+      },
+      {
+        id: "paused",
+        label: "训练暂停",
+        requiredFragments: [
+          {
+            screenId: "hengdong.workout-session",
+            pbId: "hengdong.workout-session.current-exercise",
+          },
+          {
+            screenId: "hengdong.workout-session",
+            pbId: "hengdong.workout-session.actions",
+          },
+          {
+            screenId: "hengdong.workout-session",
+            pbId: "hengdong.workout-session.resume",
+          },
+        ],
+      },
+      {
+        id: "resumed",
+        label: "中断后恢复",
+        requiredFragments: [
+          {
+            screenId: "hengdong.workout-session",
+            pbId: "hengdong.workout-session.resume-notice",
+          },
+          {
+            screenId: "hengdong.workout-session",
+            pbId: "hengdong.workout-session.resume",
+          },
+        ],
+      },
+      {
+        id: "exit-confirm-open",
+        label: "已有进度的退出选择",
+        requiredFragments: [
+          {
+            screenId: "hengdong.workout-session",
+            pbId: "hengdong.workout-session.exit-sheet",
+          },
+          {
+            screenId: "hengdong.workout-session",
+            pbId: "hengdong.workout-session.exit-results",
+          },
+          {
+            screenId: "hengdong.workout-session",
+            pbId: "hengdong.workout-session.leave-later",
+          },
+          {
+            screenId: "hengdong.workout-session",
+            pbId: "hengdong.workout-session.save-partial",
+          },
+        ],
+      },
+      {
+        id: "exit-confirm-empty",
+        label: "尚无完成动作的退出选择",
+        requiredFragments: [
+          {
+            screenId: "hengdong.workout-session",
+            pbId: "hengdong.workout-session.exit-sheet",
+          },
+          {
+            screenId: "hengdong.workout-session",
+            pbId: "hengdong.workout-session.exit-results",
+          },
+        ],
+      },
+      {
+        id: "last-exercise",
+        label: "最后一个动作",
+        requiredFragments: [
+          {
+            screenId: "hengdong.workout-session",
             pbId: "hengdong.workout-session.current-exercise",
           },
           {
@@ -692,17 +786,33 @@ const redesignedHengdongScreens = [
         ],
       },
       {
-        id: "exit-confirm-open",
-        label: "退出训练选择",
+        id: "invalid-session",
+        label: "会话无法恢复",
         requiredFragments: [
           {
             screenId: "hengdong.workout-session",
-            pbId: "hengdong.workout-session.exit-sheet",
+            pbId: "hengdong.workout-session.recovery",
           },
         ],
       },
     ],
     actions: [
+      {
+        id: "pause-workout",
+        kind: "click",
+        target: {
+          screenId: "hengdong.workout-session",
+          pbId: "hengdong.workout-session.pause",
+        },
+      },
+      {
+        id: "resume-workout",
+        kind: "click",
+        target: {
+          screenId: "hengdong.workout-session",
+          pbId: "hengdong.workout-session.resume",
+        },
+      },
       {
         id: "complete-exercise",
         kind: "click",
@@ -711,6 +821,98 @@ const redesignedHengdongScreens = [
           pbId: "hengdong.workout-session.complete-exercise",
         },
       },
+      {
+        id: "leave-for-later",
+        kind: "click",
+        target: {
+          screenId: "hengdong.workout-session",
+          pbId: "hengdong.workout-session.leave-later",
+        },
+      },
+      {
+        id: "save-partial-workout",
+        kind: "click",
+        target: {
+          screenId: "hengdong.workout-session",
+          pbId: "hengdong.workout-session.save-partial",
+        },
+      },
+    ],
+    scenarios: [
+      {
+        id: "pause-current-workout",
+        label: "暂停当前训练",
+        initialVariantId: "default",
+        actionIds: ["pause-workout"],
+        checkpoints: [
+          {
+            id: "session-paused",
+            screenId: "hengdong.workout-session",
+            variantId: "paused",
+            requiredFragments: [
+              {
+                screenId: "hengdong.workout-session",
+                pbId: "hengdong.workout-session.current-exercise",
+              },
+              {
+                screenId: "hengdong.workout-session",
+                pbId: "hengdong.workout-session.resume",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "leave-workout-for-later",
+        label: "保留进度稍后继续",
+        initialVariantId: "exit-confirm-open",
+        actionIds: ["leave-for-later"],
+        checkpoints: [
+          {
+            id: "today-shows-resume",
+            screenId: "hengdong.today",
+            variantId: "default",
+            requiredFragments: [
+              {
+                screenId: "hengdong.today",
+                pbId: "hengdong.today.next-action",
+              },
+              {
+                screenId: "hengdong.today",
+                pbId: "hengdong.today.goal-ring",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "finish-final-exercise",
+        label: "完成最后一个动作",
+        initialVariantId: "last-exercise",
+        actionIds: ["complete-exercise"],
+        checkpoints: [
+          {
+            id: "complete-summary-open",
+            screenId: "hengdong.workout-complete",
+            variantId: "default",
+            requiredFragments: [
+              {
+                screenId: "hengdong.workout-complete",
+                pbId: "hengdong.workout-complete.summary",
+              },
+              {
+                screenId: "hengdong.workout-complete",
+                pbId: "hengdong.workout-complete.reflection",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    requiredScenarioIds: [
+      "pause-current-workout",
+      "leave-workout-for-later",
+      "finish-final-exercise",
     ],
   },
   {
@@ -721,7 +923,7 @@ const redesignedHengdongScreens = [
     title: "训练总结",
     path: "/prototype/hengdong/workout-complete",
     view: "hengdong/screens/WorkoutCompleteScreen.vue",
-    queryKeys: ["plan", "partial"],
+    queryKeys: ["plan"],
     defaultVariantId: "default",
     variants: [
       {
@@ -738,11 +940,83 @@ const redesignedHengdongScreens = [
           },
           {
             screenId: "hengdong.workout-complete",
+            pbId: "hengdong.workout-complete.result-ring",
+          },
+          {
+            screenId: "hengdong.workout-complete",
+            pbId: "hengdong.workout-complete.facts",
+          },
+          {
+            screenId: "hengdong.workout-complete",
+            pbId: "hengdong.workout-complete.exercise-list",
+          },
+          {
+            screenId: "hengdong.workout-complete",
+            pbId: "hengdong.workout-complete.week-impact",
+          },
+          {
+            screenId: "hengdong.workout-complete",
+            pbId: "hengdong.workout-complete.reflection",
+          },
+          {
+            screenId: "hengdong.workout-complete",
+            pbId: "hengdong.workout-complete.actions",
+          },
+          {
+            screenId: "hengdong.workout-complete",
+            pbId: "hengdong.workout-complete.save",
+          },
+        ],
+      },
+      {
+        id: "partial",
+        label: "部分完成反馈",
+        requiredFragments: [
+          {
+            screenId: "hengdong.workout-complete",
+            pbId: "hengdong.workout-complete.summary",
+          },
+          {
+            screenId: "hengdong.workout-complete",
+            pbId: "hengdong.workout-complete.exercise-list",
+          },
+          {
+            screenId: "hengdong.workout-complete",
+            pbId: "hengdong.workout-complete.reflection",
+          },
+        ],
+      },
+      {
+        id: "ready-to-save",
+        label: "已选择体感",
+        requiredFragments: [
+          {
+            screenId: "hengdong.workout-complete",
             pbId: "hengdong.workout-complete.reflection",
           },
           {
             screenId: "hengdong.workout-complete",
             pbId: "hengdong.workout-complete.save",
+          },
+        ],
+      },
+      {
+        id: "leave-confirm-open",
+        label: "未保存离开确认",
+        requiredFragments: [
+          {
+            screenId: "hengdong.workout-complete",
+            pbId: "hengdong.workout-complete.leave-confirm",
+          },
+        ],
+      },
+      {
+        id: "invalid-summary",
+        label: "总结无法恢复",
+        requiredFragments: [
+          {
+            screenId: "hengdong.workout-complete",
+            pbId: "hengdong.workout-complete.recovery",
           },
         ],
       },
@@ -761,7 +1035,7 @@ const redesignedHengdongScreens = [
       {
         id: "save-completed-workout",
         label: "保存完成的训练",
-        initialVariantId: "default",
+        initialVariantId: "ready-to-save",
         actionIds: ["save-workout"],
         checkpoints: [
           {

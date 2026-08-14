@@ -8,17 +8,17 @@ prototypeId: hengdong
 
 ## 页面交付状态
 
-| 页面       | 页面设计 | Delivery Gate | Experience Gate |
-| ---------- | -------- | ------------- | --------------- |
-| 今天       | approved | passed        | accepted        |
-| 训练执行   | pending  | legacy-draft  | pending         |
-| 训练总结   | pending  | legacy-draft  | pending         |
-| 计划       | pending  | legacy-draft  | pending         |
-| 计划详情   | pending  | legacy-draft  | pending         |
-| 进度       | pending  | legacy-draft  | pending         |
-| 设置与目标 | pending  | legacy-draft  | pending         |
-| 登录       | pending  | legacy-draft  | pending         |
-| 注册       | pending  | legacy-draft  | pending         |
+| 页面       | 页面设计 | Delivery Gate | Experience Review |
+| ---------- | -------- | ------------- | ----------------- |
+| 今天       | approved | passed        | accepted          |
+| 训练执行   | approved | passed        | accepted          |
+| 训练总结   | approved | passed        | accepted          |
+| 计划       | pending  | legacy-draft  | pending           |
+| 计划详情   | pending  | legacy-draft  | pending           |
+| 进度       | pending  | legacy-draft  | pending           |
+| 设置与目标 | pending  | legacy-draft  | pending           |
+| 登录       | pending  | legacy-draft  | pending           |
+| 注册       | pending  | legacy-draft  | pending           |
 
 `legacy-draft` 表示现有代码可以保留用于后续调整，但不代表页面设计或体验已经通过。
 
@@ -42,9 +42,12 @@ prototypeId: hengdong
 | 最近记录列表       | 现有 DS 组合            | ScrollableDataList + DataList；只保留行间分隔                   |
 | 快速记录           | 现有 PBWork DS          | FlowSheet + 表单组件；结果在相关内容区持续反馈                  |
 | 记录详情           | 现有 PBWork DS          | BottomSheet；今天保持只读，进度页保留删除与历史管理             |
-| 动作序列           | 现有 DS 组合优先        | 待对应页面契约批准后转译                                        |
-| 动作舞台           | Token 驱动的业务局部 UI | 待训练页面契约批准后转译                                        |
-| 姿态资产           | 外部资产契约            | 第一阶段状态与降级仍待批准                                      |
+| 动作序列           | Token 驱动的业务局部 UI | 只表达已完成、当前和待进行，不承担随机跳转                      |
+| 动作舞台           | Token 驱动的业务局部 UI | 以当前姿态、目标和单条提示形成训练首屏焦点                      |
+| 姿态资产           | 原型局部 SVG 资产       | 默认动作映射关键姿态；未知动作使用中性姿态，文字提示保持权威    |
+| 训练退出选择       | 现有 PBWork DS          | BottomSheet 承载继续、稍后继续、部分保存和放弃                  |
+| 完成结果环         | Token 驱动的业务局部 UI | 从身体舞台收束为保存前的完成结果，不作为可点击控件              |
+| 训练体感与备注     | 现有 PBWork DS          | RadioGroup + Textarea；无体感时保存不可用                       |
 
 ## 今天页正式调整
 
@@ -96,4 +99,38 @@ prototypeId: hengdong
 - 长备注在 `390 × 667` 窄屏形成 Sheet 内部滚动，关闭入口持续可见，内容可以滚动到底；BottomSheet 已落实既有可滚动内容边界；
 - 七个标记的尺寸与纵向位置一致，日期保留原生按钮语义和可见焦点；完成态主按钮降低强调，区块与列表只保留表达结构所需的分隔。
 
-今天页已通过 Delivery Gate 与 Experience Gate，其余页面按 `design.md` 的旅程顺序推进。
+## 训练执行与训练总结正式调整
+
+### 确定状态
+
+- 训练执行：`default`、`paused`、`resumed`、`exit-confirm-open`、`exit-confirm-empty`、`last-exercise`、`invalid-session`；
+- 训练总结：`default`、`partial`、`ready-to-save`、`leave-confirm-open`、`invalid-summary`；
+- 会话的运行、暂停、完成部分、待保存总结、体感和备注统一写入同一持久状态；刷新和返回今天不会伪造新会话；
+- 最后一个动作只生成待保存总结，选择体感并保存后才写入活动记录并清除会话。
+
+### 独立验收节点
+
+- 训练执行根、焦点头部、动作序列、当前动作、身体舞台、提示、下一动作、底部行动区、恢复反馈和退出 Sheet；
+- 动作序列项使用动作 id 作为稳定 key，动作舞台姿态是局部资产，文本目标与提示保持权威；
+- 训练总结根、结果摘要、完成结果环、关键事实、动作列表、周节奏影响、体感与备注、保存区、恢复态和离开确认；
+- 已完成动作使用动作 id 作为稳定 key；保存、暂停、继续、稍后继续和部分保存均具有独立 Action target。
+
+### 关键 Action 与 Scenario
+
+- 暂停冻结计时并切换为单一主行动，继续后恢复计时；
+- 完成当前动作推进序列，最后一个动作进入完整总结；
+- 退出时可继续、稍后继续、保存已完成部分或放弃；未完成动作时部分保存不可用；
+- 稍后继续返回今天，今天以恢复入口重新进入暂停会话；
+- 总结页要求先选择体感，备注和体感刷新后保留；保存写入一条记录并更新今天；
+- 浏览器返回与页面返回不会静默丢失训练进度或未保存结果，分别打开退出 Sheet 和离开确认。
+
+### L2 验收结果
+
+- Delivery Gate：Token-only、DS-first、Flex-only、Registry、类型检查、121 个 PBWork 测试、Runtime e2e、生产构建和文档验证通过；
+- Experience Review：在 `390 × 844` 实际浏览器中检查训练默认态、暂停与退出 Sheet、完整总结浅色态、部分总结深色态，并用一次诊断截图修正计数重叠、舞台留白和确定 fixture；
+- 训练页无横向溢出和多余内部滚动，动作舞台、提示与底部行动保持稳定阅读顺序；暂停态计时冻结，退出 Sheet 在首屏内可操作；
+- 完整与部分总结使用不同中性文案和结果表达；体感未选时保存不可用，体感与备注刷新后仍在；
+- 真实路径已验证暂停、恢复、稍后继续、部分保存、完整完成、保存回今天，以及两类浏览器返回保护；
+- 本批达到截图上限后，其余确定性和交互检查使用 DOM 与状态验证完成，没有继续扩大截图数量。
+
+今天、训练执行和训练总结已完成核心闭环并通过对应验收；其余页面按 `design.md` 的旅程顺序推进。

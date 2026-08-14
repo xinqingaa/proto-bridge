@@ -149,6 +149,9 @@ const todayRecords = computed(() =>
   presentedRecords.value.filter((record) => record.date === HENGDONG_TODAY),
 );
 const hasSession = computed(() => Boolean(presentedSession.value));
+const hasPendingSummary = computed(
+  () => presentedSession.value?.status === "summary",
+);
 const isCompleted = computed(
   () => !hasSession.value && todayRecords.value.length > 0,
 );
@@ -190,18 +193,23 @@ const weekSummary = computed(() => {
 
 const heroKicker = computed(() => {
   if (!activePlan.value) return "今天先做一个选择";
+  if (hasPendingSummary.value) return "训练结果待保存";
   if (hasSession.value) return "继续上次训练";
   if (isCompleted.value) return "今天已经动过";
   return "今天只做一件事";
 });
 const heroTitle = computed(() => {
   if (!activePlan.value) return "选一个刚好的计划";
+  if (hasPendingSummary.value) return "完成这次记录";
   if (hasSession.value) return "接着完成剩下的动作";
   if (isCompleted.value) return "完成比完美重要";
   return activePlan.value.name;
 });
 const heroDescription = computed(() => {
   if (!activePlan.value) return "计划会决定今天的建议，之后仍然可以随时调整。";
+  if (hasPendingSummary.value) {
+    return "动作已经结束，补充体感后即可保存到本周记录。";
+  }
   if (hasSession.value) {
     return `已完成 ${presentedSession.value?.completedExerciseIds.length ?? 0} / ${activePlan.value.exercises.length} 个动作，进度已保留。`;
   }
@@ -212,12 +220,14 @@ const heroDescription = computed(() => {
 });
 const primaryLabel = computed(() => {
   if (!activePlan.value) return "选择一个计划";
+  if (hasPendingSummary.value) return "继续填写结果";
   if (hasSession.value) return "继续训练";
   if (isCompleted.value) return "再做一次轻训练";
   return `开始 ${activePlan.value.minutes} 分钟`;
 });
 const ringActionLabel = computed(() => {
   if (!activePlan.value) return "选择计划";
+  if (hasPendingSummary.value) return "继续填写结果";
   if (hasSession.value) return "继续训练";
   if (isCompleted.value) return "再练一次";
   return "开始训练";
@@ -308,9 +318,25 @@ function openPrimaryAction() {
     return;
   }
   const planId = presentedSession.value?.planId ?? activePlan.value.id;
-  void openHengdongScreen(router, route, "workout-session", "default", {
-    plan: planId,
-  });
+  if (presentedSession.value?.status === "summary") {
+    void openHengdongScreen(
+      router,
+      route,
+      "workout-complete",
+      presentedSession.value.summaryKind === "partial" ? "partial" : "default",
+      { plan: planId },
+    );
+    return;
+  }
+  void openHengdongScreen(
+    router,
+    route,
+    "workout-session",
+    presentedSession.value?.status === "paused" ? "resumed" : "default",
+    {
+      plan: planId,
+    },
+  );
 }
 
 function openQuickRecord() {

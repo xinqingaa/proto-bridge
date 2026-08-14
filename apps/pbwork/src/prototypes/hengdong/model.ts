@@ -66,7 +66,10 @@ export type WorkoutSession = {
   completedExerciseIds: string[];
   elapsedSeconds: number;
   currentExerciseSeconds: number;
-  status: "running" | "paused";
+  status: "running" | "paused" | "summary";
+  summaryKind?: "complete" | "partial";
+  summaryFeeling?: Feeling | "";
+  summaryNote?: string;
 };
 
 export const defaultPlans: FitnessPlan[] = [

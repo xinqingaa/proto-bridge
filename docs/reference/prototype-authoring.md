@@ -210,9 +210,9 @@ Runtime 在 readiness 成功前必须完成：
 - 源码命名、目标工程模式或截图推测不能补齐 required Fact。
 - 手工接受 warning 不改变 Evidence Level。
 
-## 15. 双门禁
+## 15. Delivery 与分级 Experience Review
 
-新页面或整页调整只有同时通过以下两个门禁，才可以声明完成。任一门禁导致的修复只要可能影响另一门禁，就必须重新检查另一门禁。
+PBWork Delivery Gate 始终强制。新页面或整页调整在正式实现稳定后默认执行 L1 Quick Experience Check，并按风险、用户反馈或明确指令升级。`docs/implementation.md` 分别记录 Delivery 结果和 `quick-checked`、`accepted`、`fully-audited`、`needs-focused-review` 或显式 `deferred`；Quick Check 不得描述成完整体验验收。
 
 ### PBWork Delivery Gate
 
@@ -220,18 +220,21 @@ Runtime 在 readiness 成功前必须完成：
 - Required Fragment、业务 Evidence 节点、Action、Scenario、Checkpoint、Variant fixture、readiness 和 reset 可确定复现；
 - Typecheck、范围测试、Runtime 验证和文档验证通过。
 
-### Experience Gate
+### L1 Quick Experience Check
 
-对正式 PBWork 页面再次应用 `frontend-design`，不能只验收探索草稿。必须在真实浏览器和目标视口检查截图及实际交互：
+- 查看默认状态、主要目标视口和主题的一张真实浏览器截图；按页面最大风险至多增加一张深色、窄屏、Overlay、关键状态或主要交互结果截图。
+- 检查首屏焦点、阅读顺序、签名视觉、明显热区反馈、装饰克制、重复元素对齐、文字溢出、Overlay 和固定导航遮挡。
+- 最多进行一轮截图修正；仍有实质问题时记录 `needs-focused-review` 并升级，不继续无上限迭代。
 
-- 首屏只有一个明确焦点，阅读顺序符合已批准页面契约；
-- 签名视觉经过 DS、Token 和 Evidence 转译后仍然成立；
-- 所有看起来可交互的控件或热区都有可见反馈、契约约定的结果和可见键盘焦点；
-- Divider、Card、标签、图标与装饰表达真实结构，不靠装饰堆叠制造完成感；
-- 浅色、深色、窄屏、reduced motion 和已批准的默认/关键状态保持一致；
-- 文字不溢出，重复元素对齐，Overlay 不遮挡内容，固定导航不覆盖正文。
+### L2 Focused Experience Gate
 
-截图批评发现多余配件时至少删去一个，修复后重复两个门禁；不能把已知视觉问题列表当成 Experience Gate 已通过。
+用户不满意、L1 暴露实质问题、共享视觉语法、核心旅程、数据可视化、复杂交互或承担核心任务的复杂 Overlay 页面升级到 L2。按实际风险选择三至五张截图，覆盖相关状态、交互、键盘焦点、主题或窄屏、结构性装饰、文字和 Overlay 完整性；存在已知实质缺陷时不得记录 `accepted`。
+
+### L3 Full Experience Audit
+
+只在用户明确要求、最终批次/发布验收或产品风险要求时，完整覆盖声明的主题、目标视口、reduced motion、关键状态和核心交互。发现的实质问题修复后才记录 `fully-audited`。
+
+视觉修复只重跑受影响的 Delivery 检查和当前 Experience 级别；完整仓库验证保留到页面或连贯批次完成时执行。
 
 ### 验证命令
 
