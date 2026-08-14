@@ -23,7 +23,7 @@ Product Design + Visual Exploration
 
 新业务原型、结构性产品改动和视觉语言改变先按 [PBWork 原型设计工作流](../pbwork/prototypes/design-workflow.md)完成产品设计、按需视觉探索、用户确认和 Promotion Gate。正式原型使用 `prototypes/{id}/docs/design.md` 作为唯一产品与体验基线；只有 `status: approved` 才进入结构性 Authoring。
 
-视觉探索位于 `apps/pbwork/src/explorations/{prototypeId}`，不进入 Prototype Registry、Capture 或 Handoff。探索中的硬编码构图、自定义控制和动画不能直接升格为可交付事实；必须分别映射到现有 DS、通用 DS 缺口、Token 驱动的业务 UI、外部资产契约或降级项。
+视觉探索草稿位于 `apps/pbwork/src/drafts/{prototypeId}`，不进入 Prototype Registry、Capture 或 Handoff。草稿中的硬编码构图、自定义控制和动画不能直接升格为可交付事实；必须分别映射到现有 DS、通用 DS 缺口、Token 驱动的业务 UI、外部资产契约或降级项。
 
 ## 2. 制作可采集原型
 

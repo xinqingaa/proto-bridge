@@ -31,7 +31,7 @@ then design-system work, then formal authoring.
 
 - Treat `apps/pbwork/src/prototypes/{prototypeId}/docs/design.md` as the formal
   product and experience baseline.
-- Keep exploratory code under `apps/pbwork/src/explorations/{prototypeId}/`;
+- Keep exploratory code under `apps/pbwork/src/drafts/{prototypeId}/`;
   it is not PB-compliant Evidence and must not enter Capture/Handoff.
 - Use the repository-local `frontend-design` Skill for visual identity,
   composition, typography, or aesthetic exploration. Do not use it by default

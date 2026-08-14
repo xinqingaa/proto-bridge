@@ -9,7 +9,7 @@ import {
 import BreathRingDirection from "./variants/BreathRingDirection.vue";
 import MovementSequenceDirection from "./variants/MovementSequenceDirection.vue";
 import MovementStageDirection from "./variants/MovementStageDirection.vue";
-import "./hengdong-exploration.css";
+import "./hengdong-draft.css";
 
 type DirectionId = "ring" | "sequence" | "stage";
 type ViewId = "today" | "workout";
@@ -77,7 +77,7 @@ function completeExercise() {
   exerciseIndex.value += 1;
 }
 
-function resetExploration() {
+function resetDraft() {
   paused.value = false;
   exerciseIndex.value = 1;
   completed.value = false;
@@ -91,7 +91,7 @@ function resetExploration() {
   <main class="hdx-lab" :class="{ 'is-focus-mode': focusMode }" :style="themeStyle">
     <header class="hdx-lab-header">
       <div class="hdx-lab-title">
-        <span>恒动 / 视觉实验</span>
+        <span>恒动 / 视觉草稿</span>
         <strong>同一产品，三种视觉组织</strong>
       </div>
 
@@ -108,8 +108,8 @@ function resetExploration() {
         <button
           class="hdx-toolbar-button"
           type="button"
-          aria-label="重置探索状态"
-          @click="resetExploration"
+          aria-label="重置草稿状态"
+          @click="resetDraft"
         >
           <RotateCcw aria-hidden="true" />
         </button>

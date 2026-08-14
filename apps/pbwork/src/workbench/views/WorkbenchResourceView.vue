@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { defineAsyncComponent } from "vue";
+import { computed, defineAsyncComponent } from "vue";
+import { draftRecords } from "@/drafts/registry";
 import {
   type PrototypeLifecycle,
   type TokenCategory,
@@ -24,14 +25,15 @@ const PhoneCanvasView = defineAsyncComponent(
   () => import("@/workbench/canvas/PhoneCanvasView.vue"),
 );
 
-defineProps<{
+const props = defineProps<{
   kind:
     | "token"
     | "theme"
     | "component"
     | "prototype-list"
     | "prototype"
-    | "screen";
+    | "screen"
+    | "draft";
   category?: TokenCategory;
   themeId?: string;
   componentId?: string;
@@ -39,6 +41,11 @@ defineProps<{
   prototypeId?: string;
   screenSlug?: string;
 }>();
+
+const draftComponent = computed(() => {
+  const draft = draftRecords.find((record) => record.id === props.prototypeId);
+  return draft ? defineAsyncComponent(draft.load) : null;
+});
 </script>
 
 <template>
@@ -61,4 +68,5 @@ defineProps<{
     v-else-if="kind === 'prototype-list'"
     :lifecycle="lifecycle"
   />
+  <component :is="draftComponent" v-else-if="kind === 'draft' && draftComponent" />
 </template>

@@ -26,7 +26,7 @@
 需要真实页面比较时，探索代码只放在：
 
 ```text
-apps/pbwork/src/explorations/{prototypeId}/
+apps/pbwork/src/drafts/{prototypeId}/
 ```
 
 探索页允许快速验证构图，但不进入 Prototype Registry，不受正式 Authoring 完整性门禁，不得用于 Capture/Handoff，也不得声称可以直接交付目标端。

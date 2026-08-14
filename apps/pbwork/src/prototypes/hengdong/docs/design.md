@@ -368,7 +368,7 @@ approvedAt: 2026-08-13
 
 ## 探索记录
 
-独立探索路由 `/explore/hengdong-visual` 比较过呼吸环、动作序列和动作舞台。结论不是选择一套覆盖全部页面，而是采用上述统一视觉语法与任务型构图。探索实现未进入 Prototype Registry，也不构成 PB 合规或 Flutter 交付证据。
+`drafts/hengdong` 比较过呼吸环、动作序列和动作舞台。结论不是选择一套覆盖全部页面，而是采用上述统一视觉语法与任务型构图。草稿实现未进入 Prototype Registry，也不构成 PB 合规或 Flutter 交付证据。
 
 ## 已否决的方案
 

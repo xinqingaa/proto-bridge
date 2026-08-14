@@ -16,6 +16,9 @@ describe("PBWork routes", () => {
     expect(router.resolve("/workbench/components/button").name).toBe(
       "component-playground",
     );
+    expect(router.resolve("/workbench/drafts/hengdong").name).toBe(
+      "draft-prototype",
+    );
     expect(router.resolve("/workbench/prototypes/active").name).toBe(
       "prototypes-lifecycle",
     );

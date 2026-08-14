@@ -38,7 +38,7 @@
 | MCP | `packages/mcp-server` |
 | PBWork Workbench | `apps/pbwork/src/workbench`、`src/capture` |
 | PBWork Design System | `apps/pbwork/src/design-system` |
-| Visual Exploration | `apps/pbwork/src/explorations` |
+| Visual Exploration Draft | `apps/pbwork/src/drafts` |
 | PBWork Prototype/Runtime | `apps/pbwork/src/prototypes`、`src/runtime` |
 
 ## 同步与验证

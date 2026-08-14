@@ -126,6 +126,51 @@
   gap: var(--pb-spacing-sm);
 }
 
+.hd-today-utility {
+  min-height: var(--pb-sizing-touch);
+}
+
+.hd-today-hero {
+  display: flex;
+  align-items: center;
+  gap: var(--pb-spacing-md);
+}
+
+.hd-today-copy {
+  display: flex;
+  flex: var(--pb-layout-flex-fill);
+  min-width: var(--pb-spacing-none);
+  flex-direction: column;
+  gap: var(--pb-spacing-sm);
+}
+
+.hd-today-title {
+  margin: var(--pb-spacing-none);
+  color: var(--pb-color-on-background);
+  font: var(--pb-typography-headline);
+}
+
+.hd-recent-section {
+  padding-bottom: var(--pb-spacing-lg);
+}
+
+.hd-record-note {
+  overflow: hidden;
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-body-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hd-record-result {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--pb-spacing-xs);
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
+}
+
 .hd-primary-action {
   display: flex;
   flex-direction: column;

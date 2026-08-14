@@ -1,4 +1,5 @@
 import { componentRecords } from "@/design-system/components/registry";
+import { draftRecords } from "@/drafts/registry";
 import {
   loadPrototypes,
   loadPrototypeScreens,
@@ -12,7 +13,12 @@ import {
 } from "@/design-system/types";
 
 export type WorkbenchSectionId =
-  "overview" | "foundations" | "components" | "prototypes" | "capture";
+  | "overview"
+  | "foundations"
+  | "components"
+  | "drafts"
+  | "prototypes"
+  | "capture";
 
 export type WorkbenchNavigationItem = {
   id: string;
@@ -38,6 +44,7 @@ export type WorkbenchNavigationTreeNode = {
     | "group"
     | "item"
     | "lifecycle"
+    | "draft"
     | "prototype"
     | "screen"
     | "variant";
@@ -64,6 +71,7 @@ export const primaryNavigation: Array<
     label: "组件",
     to: `/workbench/components/${componentRecords.find((item) => item.category === "action")?.id ?? "button"}`,
   },
+  { id: "drafts", label: "草稿", to: "/workbench/drafts/hengdong" },
   { id: "prototypes", label: "原型", to: "/workbench/prototypes/all" },
   { id: "capture", label: "采集", to: "/workbench/capture" },
 ];
@@ -178,6 +186,15 @@ export function buildCaptureNavigation(): WorkbenchNavigationItem[] {
       to: "/workbench/capture",
     },
   ];
+}
+
+export function buildDraftNavigation(): WorkbenchNavigationItem[] {
+  return draftRecords.map((draft) => ({
+    id: `draft-${draft.id}`,
+    label: draft.id,
+    group: "草稿",
+    to: `/workbench/drafts/${draft.id}`,
+  }));
 }
 
 /** Sidebar: 采集历史 as the only first-level node; each job is a child. */
@@ -375,6 +392,19 @@ export function buildWorkbenchNavigationTree(
       children: componentGroups,
     },
     {
+      id: "drafts",
+      label: "草稿",
+      kind: "section",
+      to: "/workbench/drafts/hengdong",
+      count: buildDraftNavigation().length,
+      children: buildDraftNavigation().map((item) => ({
+        id: item.id,
+        label: item.label,
+        kind: "draft" as const,
+        to: item.to,
+      })),
+    },
+    {
       id: "prototypes",
       label: "原型",
       kind: "section",
@@ -404,6 +434,7 @@ export function getSecondaryNavigation(
   if (sectionId === "foundations") return buildFoundationsNavigation();
   if (sectionId === "components") return buildComponentsNavigation();
   if (sectionId === "capture") return buildCaptureNavigation();
+  if (sectionId === "drafts") return buildDraftNavigation();
   return buildPrototypeLifecycleNavigation();
 }
 
@@ -417,6 +448,7 @@ export const searchableNavigation = [
   ...buildFoundationsNavigation(),
   ...buildComponentsNavigation(),
   ...buildPrototypeLifecycleNavigation(),
+  ...buildDraftNavigation(),
   ...loadPrototypes().map((prototype) => ({
     id: prototype.id,
     label: prototype.label,
@@ -448,6 +480,7 @@ export function isWorkbenchSectionId(
     value === "overview" ||
     value === "foundations" ||
     value === "components" ||
+    value === "drafts" ||
     value === "prototypes" ||
     value === "capture"
   );

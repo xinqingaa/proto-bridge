@@ -50,7 +50,7 @@ surface, motion, assets, and content voice.
 When comparison requires working screens, use:
 
 ```text
-apps/pbwork/src/explorations/{prototypeId}/
+apps/pbwork/src/drafts/{prototypeId}/
 ```
 
 Exploration code does not enter the Prototype Registry or Capture/Handoff,

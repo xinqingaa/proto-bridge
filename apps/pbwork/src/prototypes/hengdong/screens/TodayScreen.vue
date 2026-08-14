@@ -3,8 +3,8 @@ import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Button from "@/design-system/components/action/Button.vue";
 import IconButton from "@/design-system/components/action/IconButton.vue";
+import Icon from "@/design-system/components/action/Icon.vue";
 import Divider from "@/design-system/components/display/Divider.vue";
-import Progress from "@/design-system/components/display/ProgressIndicator.vue";
 import DataList from "@/design-system/components/data/DataList.vue";
 import ScrollableDataList from "@/design-system/components/data/ScrollableDataList.vue";
 import FlowSheet from "@/design-system/components/feedback/FlowSheet.vue";
@@ -12,10 +12,9 @@ import Toast from "@/design-system/components/feedback/Toast.vue";
 import Menu from "@/design-system/components/input/Menu.vue";
 import RadioGroup from "@/design-system/components/input/RadioGroup.vue";
 import HengdongRoot from "../HengdongRoot.vue";
-import WeeklyActivityBars from "../components/WeeklyActivityBars.vue";
+import WeeklyGoalRing from "../components/WeeklyGoalRing.vue";
 import {
   HENGDONG_TODAY,
-  HENGDONG_WEEK_DATES,
   recordsInWeek,
   totalMinutes,
   type ActivityType,
@@ -62,15 +61,6 @@ const weekProgress = computed(() =>
       (weekRecords.value.length / hengdongState.goals.weeklySessions) * 100,
     ),
   ),
-);
-const weekBars = computed(() =>
-  HENGDONG_WEEK_DATES.map((date, index) => ({
-    id: date,
-    label: ["一", "二", "三", "四", "五", "六", "日"][index]!,
-    minutes: hengdongState.records
-      .filter((record) => record.date === date)
-      .reduce((sum, record) => sum + record.minutes, 0),
-  })),
 );
 const recentRecords = computed(() => hengdongState.records.slice(0, 2));
 
@@ -125,7 +115,12 @@ function openRecord(recordId: string) {
         inspect-id="hengdong.today.scroll-list"
       >
         <div class="hd-content hd-content-safe">
-          <div class="hd-utility-row">
+          <div
+            class="hd-utility-row hd-today-utility"
+            data-pb-id="hengdong.today.utility"
+            data-pb-role="section"
+            data-pb-token-spacing="spacing.sm"
+          >
             <div class="hd-row-main">
               <span class="hd-overline">8 月 13 日 · 星期四</span>
               <span class="hd-caption"
@@ -142,51 +137,54 @@ function openRecord(recordId: string) {
             />
           </div>
 
-          <header
-            class="hd-lead"
+          <section
+            class="hd-today-hero"
             data-pb-id="hengdong.today.next-action"
             data-pb-role="summary"
             data-pb-token-color="color.on-surface"
-            data-pb-token-typography="typography.display"
+            data-pb-token-typography="typography.headline"
             data-pb-token-spacing="spacing.sm"
           >
-            <span class="hd-overline">
-              {{
-                hasSession
-                  ? "继续上次训练"
-                  : todayRecords.length
-                    ? "今天已经动过"
-                    : "今天的下一步"
-              }}
-            </span>
-            <h1 class="hd-display">
-              {{
-                hasSession
-                  ? "接着完成剩下的动作"
-                  : todayRecords.length
-                    ? "完成比完美重要"
-                    : activePlan.name
-              }}
-            </h1>
-            <p class="hd-muted">
-              <template v-if="hasSession">
-                已完成
+            <header class="hd-today-copy">
+              <span class="hd-overline">
                 {{
-                  hengdongState.workoutSession?.completedExerciseIds.length
+                  hasSession
+                    ? "继续上次训练"
+                    : todayRecords.length
+                      ? "今天已经动过"
+                      : "今天只做一件事"
                 }}
-                / {{ activePlan.exercises.length }} 个动作，进度已保留。
-              </template>
-              <template v-else-if="todayRecords.length">
-                今天已记录
-                {{ totalMinutes(todayRecords) }} 分钟，可以安心停在这里。
-              </template>
-              <template v-else>
-                {{ activePlan.minutes }} 分钟 ·
-                {{ activePlan.exercises.length }} 个动作 ·
-                {{ activePlan.level }}
-              </template>
-            </p>
-          </header>
+              </span>
+              <h1 class="hd-today-title">
+                {{
+                  hasSession
+                    ? "接着完成剩下的动作"
+                    : todayRecords.length
+                      ? "完成比完美重要"
+                      : activePlan.name
+                }}
+              </h1>
+              <p class="hd-muted">
+                <template v-if="hasSession">
+                  已完成
+                  {{ hengdongState.workoutSession?.completedExerciseIds.length }}
+                  / {{ activePlan.exercises.length }} 个动作，进度已保留。
+                </template>
+                <template v-else-if="todayRecords.length">
+                  今天已记录 {{ totalMinutes(todayRecords) }} 分钟，可以安心停在这里。
+                </template>
+                <template v-else>
+                  {{ activePlan.exercises.length }} 个低压力动作，让身体从久坐里醒过来。
+                </template>
+              </p>
+            </header>
+            <WeeklyGoalRing
+              :completed="weekRecords.length"
+              :target="hengdongState.goals.weeklySessions"
+              :progress="weekProgress"
+              inspect-id="hengdong.today.goal-ring"
+            />
+          </section>
 
           <div
             class="hd-primary-action"
@@ -206,7 +204,9 @@ function openRecord(recordId: string) {
               inspect-id="hengdong.today.start-workout"
               data-pb-action="start-workout"
               @click="openWorkout"
-            />
+            >
+              <template #append><Icon name="chevron-right" tone="inherit" /></template>
+            </Button>
             <Button
               label="记录其他活动"
               bg-color="transparent"
@@ -219,44 +219,14 @@ function openRecord(recordId: string) {
             />
           </div>
 
-          <Divider inspect-id="hengdong.today.divider.rhythm" />
-
-          <section
-            class="hd-section"
-            data-pb-id="hengdong.today.week-summary"
-            data-pb-role="summary"
-            data-pb-token-spacing="spacing.md"
-          >
-            <div class="hd-section-heading">
-              <div class="hd-row-main">
-                <h2 class="hd-section-title">本周节奏</h2>
-                <span class="hd-caption">
-                  {{ weekRecords.length }} /
-                  {{ hengdongState.goals.weeklySessions }} 次 ·
-                  {{ totalMinutes(weekRecords) }} 分钟
-                </span>
-              </div>
-              <span class="hd-overline">{{ weekProgress }}%</span>
-            </div>
-            <Progress
-              :value="weekProgress"
-              :label="
-                weekRecords.length >= hengdongState.goals.weeklySessions
-                  ? '本周目标已完成'
-                  : `还差 ${hengdongState.goals.weeklySessions - weekRecords.length} 次`
-              "
-              inspect-id="hengdong.today.week-progress"
-            />
-            <WeeklyActivityBars
-              :items="weekBars"
-              inspect-id="hengdong.today.week-chart"
-              aria-label="本周活动分钟"
-            />
-          </section>
-
           <Divider inspect-id="hengdong.today.divider.recent" />
 
-          <section class="hd-section">
+          <section
+            class="hd-section hd-recent-section"
+            data-pb-id="hengdong.today.recent"
+            data-pb-role="section"
+            data-pb-token-spacing="spacing.md"
+          >
             <div class="hd-section-heading">
               <h2 class="hd-section-title">最近记录</h2>
               <Button
@@ -290,10 +260,14 @@ function openRecord(recordId: string) {
                   <strong class="hd-row-title">{{ record.title }}</strong>
                   <span class="hd-caption"
                     >{{ record.date.slice(5).replace("-", " 月 ") }} 日 ·
-                    {{ record.minutes }} 分钟</span
+                    {{ record.minutes }} 分钟 · {{ record.activityType }}</span
                   >
+                  <span v-if="record.note" class="hd-record-note">{{ record.note }}</span>
                 </span>
-                <span class="hd-caption">{{ record.feeling }}</span>
+                <span class="hd-record-result">
+                  <span>{{ record.feeling }}</span>
+                  <Icon name="chevron-right" size="sm" tone="muted" />
+                </span>
               </button>
             </DataList>
           </section>

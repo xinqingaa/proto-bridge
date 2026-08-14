@@ -152,9 +152,11 @@ const redesignedHengdongScreens = [
         label: "今日下一步",
         requiredFragments: [
           { screenId: "hengdong.today", pbId: "hengdong.today.root" },
+          { screenId: "hengdong.today", pbId: "hengdong.today.utility" },
           { screenId: "hengdong.today", pbId: "hengdong.today.next-action" },
+          { screenId: "hengdong.today", pbId: "hengdong.today.goal-ring" },
           { screenId: "hengdong.today", pbId: "hengdong.today.primary-action" },
-          { screenId: "hengdong.today", pbId: "hengdong.today.week-summary" },
+          { screenId: "hengdong.today", pbId: "hengdong.today.recent" },
         ],
       },
       {
@@ -526,7 +528,7 @@ const redesignedHengdongScreens = [
               },
               {
                 screenId: "hengdong.today",
-                pbId: "hengdong.today.week-summary",
+                pbId: "hengdong.today.goal-ring",
               },
             ],
           },

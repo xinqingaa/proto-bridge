@@ -97,6 +97,20 @@ export const router = createRouter({
           },
         },
         {
+          path: "drafts/:prototypeId",
+          name: "draft-prototype",
+          component: () => import("@/workbench/views/WorkbenchResourceView.vue"),
+          props: (route) => ({
+            kind: "draft",
+            prototypeId: String(route.params.prototypeId),
+          }),
+          meta: {
+            sectionId: "drafts",
+            resourceKind: "draft",
+            title: "草稿",
+          },
+        },
+        {
           path: "prototypes/:lifecycle(all|active|review|final|archived)",
           name: "prototypes-lifecycle",
           component: () =>
@@ -158,7 +172,7 @@ export const router = createRouter({
       path: "/explore/hengdong-visual",
       name: "hengdong-visual-exploration",
       component: () =>
-        import("@/explorations/hengdong/HengdongVisualExploration.vue"),
+        import("@/drafts/hengdong/DraftPage.vue"),
     },
     {
       path: "/:pathMatch(.*)*",

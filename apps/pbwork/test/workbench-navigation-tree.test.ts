@@ -24,6 +24,7 @@ describe("workbench navigation tree", () => {
     const tree = buildWorkbenchNavigationTree();
     const prototypes = tree.find((node) => node.id === "prototypes")!;
     const components = tree.find((node) => node.id === "components")!;
+    const drafts = tree.find((node) => node.id === "drafts")!;
     const capture = tree.find((node) => node.id === "capture")!;
     const coldChain = prototypes.children?.find(
       (node) => node.id === "prototype-cold-chain-ops",
@@ -34,6 +35,14 @@ describe("workbench navigation tree", () => {
 
     expect(prototypes.count).toBe(2);
     expect(components.children).toHaveLength(6);
+    expect(drafts.children).toEqual([
+      {
+        id: "draft-hengdong",
+        label: "hengdong",
+        kind: "draft",
+        to: "/workbench/drafts/hengdong",
+      },
+    ]);
     expect(prototypes.children?.some((node) => node.kind === "lifecycle")).toBe(
       false,
     );

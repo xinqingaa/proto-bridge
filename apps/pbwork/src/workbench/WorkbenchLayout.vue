@@ -17,6 +17,7 @@ import {
   ClipboardCheck,
   Component as ComponentIcon,
   Droplets,
+  FolderOpen,
   Frame,
   Info,
   Layers2,
@@ -32,6 +33,7 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Paintbrush,
+  PencilRuler,
   Radius,
   Search,
   Settings,
@@ -157,6 +159,9 @@ const selectedSecondaryId = computed(() => {
   }
   if (sectionId.value === "components") {
     return String(route.params.componentId ?? "");
+  }
+  if (sectionId.value === "drafts") {
+    return `draft-${String(route.params.prototypeId ?? "")}`;
   }
   if (sectionId.value === "capture") {
     if (route.meta.resourceKind === "evidence") {
@@ -412,6 +417,7 @@ const activeNavigationId = computed(() => {
   if (sectionId.value === "overview") return "overview";
   if (sectionId.value === "foundations") return selectedSecondaryId.value;
   if (sectionId.value === "components") return selectedSecondaryId.value;
+  if (sectionId.value === "drafts") return selectedSecondaryId.value;
   if (sectionId.value === "capture") return selectedSecondaryId.value;
   const lifecycle = parsePrototypeLifecycle(
     String(route.params.lifecycle ?? ""),
@@ -615,6 +621,7 @@ const themeLabel = computed(() =>
 );
 /** 元素检查仅在原型画布（Screen）出现。 */
 const isScreenCanvas = computed(() => route.meta.resourceKind === "screen");
+const isDraftCanvas = computed(() => route.meta.resourceKind === "draft");
 const showElementInspector = computed(() => isScreenCanvas.value);
 const showResourcePanel = computed(() => sectionId.value !== "overview");
 const gridStyle = computed(() => ({
@@ -639,6 +646,7 @@ const primaryIcons = {
   overview: Home,
   foundations: Palette,
   components: Shapes,
+  drafts: PencilRuler,
   prototypes: Layers3,
   capture: ScanLine,
 } as const;
@@ -661,6 +669,7 @@ function secondaryIconFor(id: string) {
     "theme-dark": Moon,
   };
   if (foundationIcons[id]) return foundationIcons[id];
+  if (id.startsWith("draft-")) return FolderOpen;
   if (id.startsWith("token-")) return SwatchBook;
   if (id.startsWith("theme-")) return Paintbrush;
   if (
@@ -1216,7 +1225,10 @@ onMounted(() => {
 
         <main
           class="content-canvas"
-          :class="{ 'is-phone-canvas': isScreenCanvas }"
+          :class="{
+            'is-phone-canvas': isScreenCanvas,
+            'is-draft-canvas': isDraftCanvas,
+          }"
           tabindex="-1"
           data-testid="content-canvas"
         >
@@ -1567,6 +1579,10 @@ onMounted(() => {
   flex-direction: column;
   padding: 0;
   overflow: hidden;
+}
+
+.content-canvas.is-draft-canvas {
+  padding: var(--pb-spacing-none);
 }
 
 .content-canvas.is-phone-canvas > * {

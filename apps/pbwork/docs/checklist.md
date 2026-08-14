@@ -32,7 +32,7 @@
 ## 导航与 Variant
 
 - [ ] 新原型或结构性改动存在 `docs/design.md` 且状态为 `approved`
-- [ ] 探索代码位于 `src/explorations`，未注册为正式 Prototype，也未被当作 Capture/Handoff 输入
+- [ ] 探索草稿位于 `src/drafts`，未注册为正式 Prototype，也未被当作 Capture/Handoff 输入
 - [ ] Promotion Gate 已将视觉元素分为现有 DS、通用 DS 缺口、业务局部 UI、外部资产或降级项
 - [ ] 导航职责、关键交互效果与视觉编排不存在影响实现的未决问题
 - [ ] Tab replace / 二级 push；跨 Tab 进栈 parent 正确
