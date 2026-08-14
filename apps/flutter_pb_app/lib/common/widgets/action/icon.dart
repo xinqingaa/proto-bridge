@@ -3,7 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/ts.dart';
 
-/// PBWork `icon.name` 的 27 个稳定 Lucide id。
+/// PBWork `icon.name` 的 30 个稳定 Lucide id。
 enum CommonIconName {
   more,
   plus,
@@ -31,6 +31,10 @@ enum CommonIconName {
   mapPin,
   radio,
   truck,
+  dumbbell,
+  footprints,
+  personStanding,
+  sparkles,
 }
 
 enum CommonIconSize { sm, md, lg }
@@ -74,6 +78,10 @@ extension CommonIconNameData on CommonIconName {
     CommonIconName.mapPin => LucideIcons.mapPin,
     CommonIconName.radio => LucideIcons.radio,
     CommonIconName.truck => LucideIcons.truck,
+    CommonIconName.dumbbell => LucideIcons.dumbbell,
+    CommonIconName.footprints => LucideIcons.footprints,
+    CommonIconName.personStanding => LucideIcons.personStanding,
+    CommonIconName.sparkles => LucideIcons.sparkles,
   };
 }
 

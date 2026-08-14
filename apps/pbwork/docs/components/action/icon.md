@@ -44,6 +44,10 @@
 | `copy` | copy | `variant` |
 | `file-text` | file-text | `variant` |
 | `sliders-horizontal` | sliders-horizontal | `variant` |
+| `dumbbell` | dumbbell | `variant` |
+| `footprints` | footprints | `variant` |
+| `person-standing` | person-standing | `variant` |
+| `sparkles` | sparkles | `variant` |
 
 ## 用法与反例
 

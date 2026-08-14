@@ -38,7 +38,7 @@ describe("workbench navigation tree", () => {
     expect(drafts.children).toEqual([
       {
         id: "draft-hengdong",
-        label: "hengdong",
+        label: "恒动 · 健身自律记录",
         kind: "draft",
         to: "/workbench/drafts/hengdong",
       },

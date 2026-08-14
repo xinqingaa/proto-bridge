@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:flutter_pb_app/common/widgets.dart';
 import 'package:flutter_pb_app/common/widgets/navigation/liquid_glass_decoration.dart';
@@ -311,11 +312,15 @@ void main() {
   });
 
   test('all curated Lucide ids resolve', () {
-    expect(CommonIconName.values, hasLength(26));
+    expect(CommonIconName.values, hasLength(30));
     expect(
       CommonIconName.values.map((name) => name.data.codePoint).toSet(),
-      hasLength(26),
+      hasLength(30),
     );
+    expect(CommonIconName.dumbbell.data, LucideIcons.dumbbell);
+    expect(CommonIconName.footprints.data, LucideIcons.footprints);
+    expect(CommonIconName.personStanding.data, LucideIcons.personStanding);
+    expect(CommonIconName.sparkles.data, LucideIcons.sparkles);
   });
 
   testWidgets('pull refresh settles at the boundary without a second rebound', (

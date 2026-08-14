@@ -47,32 +47,24 @@
           "sliders-horizontal",
           "map-pin",
           "radio",
-          "truck"
+          "truck",
+          "dumbbell",
+          "footprints",
+          "person-standing",
+          "sparkles"
         ]
       },
       "size": {
         "type": "string",
-        "enum": [
-          "sm",
-          "md",
-          "lg"
-        ]
+        "enum": ["sm", "md", "lg"]
       },
       "tone": {
         "type": "string",
-        "enum": [
-          "primary",
-          "secondary"
-        ]
+        "enum": ["primary", "secondary"]
       },
       "variant": {
         "type": "string",
-        "enum": [
-          "tonal",
-          "flat",
-          "outlined",
-          "text"
-        ]
+        "enum": ["tonal", "flat", "outlined", "text"]
       },
       "loading": {
         "type": "boolean"
@@ -81,9 +73,7 @@
         "type": "boolean"
       }
     },
-    "required": [
-      "ariaLabel"
-    ]
+    "required": ["ariaLabel"]
   },
   "defaultProps": {
     "ariaLabel": "更多",
@@ -121,9 +111,7 @@
     }
   ],
   "slots": [],
-  "events": [
-    "click"
-  ],
+  "events": ["click"],
   "tokenBindings": {
     "color": "color.secondary",
     "background": "color.secondary-soft",
@@ -164,7 +152,14 @@
       "snowflake",
       "copy",
       "file-text",
-      "sliders-horizontal"
+      "sliders-horizontal",
+      "map-pin",
+      "radio",
+      "truck",
+      "dumbbell",
+      "footprints",
+      "person-standing",
+      "sparkles"
     ]
   }
 }

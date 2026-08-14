@@ -1,5 +1,6 @@
 import type { ComponentRecord } from "@/design-system/types";
 import { COLOR_TOKEN_SELECT_OPTIONS } from "@/design-system/components/_shared/colorTokens";
+import { PB_ICON_NAMES } from "@/design-system/components/_shared/icons";
 
 const toneOptions = [
   { label: "Primary (color.primary)", value: "primary" },
@@ -15,6 +16,7 @@ const sizeOptions = [
 ];
 
 const colorTokenOptions = COLOR_TOKEN_SELECT_OPTIONS;
+const iconOptions = PB_ICON_NAMES.map((name) => ({ label: name, value: name }));
 
 export const componentRecords = [
   {
@@ -64,34 +66,7 @@ export const componentRecords = [
         key: "name",
         label: "图标",
         control: "select",
-        options: [
-          { label: "more", value: "more" },
-          { label: "plus", value: "plus" },
-          { label: "search", value: "search" },
-          { label: "settings", value: "settings" },
-          { label: "home", value: "home" },
-          { label: "list", value: "list" },
-          { label: "user", value: "user" },
-          { label: "inbox", value: "inbox" },
-          { label: "check", value: "check" },
-          { label: "chevron-down", value: "chevron-down" },
-          { label: "chevron-right", value: "chevron-right" },
-          { label: "alert-triangle", value: "alert-triangle" },
-          { label: "alert-circle", value: "alert-circle" },
-          { label: "clock", value: "clock" },
-          { label: "refresh-cw", value: "refresh-cw" },
-          { label: "clipboard-check", value: "clipboard-check" },
-          { label: "shield-check", value: "shield-check" },
-          { label: "folder-open", value: "folder-open" },
-          { label: "thermometer", value: "thermometer" },
-          { label: "snowflake", value: "snowflake" },
-          { label: "copy", value: "copy" },
-          { label: "file-text", value: "file-text" },
-          { label: "sliders-horizontal", value: "sliders-horizontal" },
-          { label: "map-pin", value: "map-pin" },
-          { label: "radio", value: "radio" },
-          { label: "truck", value: "truck" },
-        ],
+        options: iconOptions,
       },
       { key: "size", label: "尺寸", control: "select", options: sizeOptions },
       {
@@ -126,34 +101,7 @@ export const componentRecords = [
         key: "icon",
         label: "图标",
         control: "select",
-        options: [
-          { label: "more", value: "more" },
-          { label: "plus", value: "plus" },
-          { label: "search", value: "search" },
-          { label: "settings", value: "settings" },
-          { label: "home", value: "home" },
-          { label: "list", value: "list" },
-          { label: "user", value: "user" },
-          { label: "inbox", value: "inbox" },
-          { label: "check", value: "check" },
-          { label: "chevron-down", value: "chevron-down" },
-          { label: "chevron-right", value: "chevron-right" },
-          { label: "alert-triangle", value: "alert-triangle" },
-          { label: "alert-circle", value: "alert-circle" },
-          { label: "clock", value: "clock" },
-          { label: "refresh-cw", value: "refresh-cw" },
-          { label: "clipboard-check", value: "clipboard-check" },
-          { label: "shield-check", value: "shield-check" },
-          { label: "folder-open", value: "folder-open" },
-          { label: "thermometer", value: "thermometer" },
-          { label: "snowflake", value: "snowflake" },
-          { label: "copy", value: "copy" },
-          { label: "file-text", value: "file-text" },
-          { label: "sliders-horizontal", value: "sliders-horizontal" },
-          { label: "map-pin", value: "map-pin" },
-          { label: "radio", value: "radio" },
-          { label: "truck", value: "truck" },
-        ],
+        options: iconOptions,
       },
       {
         key: "size",

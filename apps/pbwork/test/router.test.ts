@@ -26,13 +26,21 @@ describe("PBWork routes", () => {
       "prototype-overview",
     );
     expect(
-      router.resolve("/workbench/prototypes/cold-chain-ops/screens/exception-queue")
-        .name,
+      router.resolve(
+        "/workbench/prototypes/cold-chain-ops/screens/exception-queue",
+      ).name,
     ).toBe("prototype-screen");
     expect(
       router.resolve(
         "/prototype/cold-chain-ops/exception-queue?variant=default&theme=light",
       ).name,
     ).toBe("prototype-runtime");
+  });
+
+  it("does not retain the retired hengdong exploration route", () => {
+    const resolved = router.resolve("/explore/hengdong-visual");
+    expect(resolved.name).toBeUndefined();
+    expect(resolved.redirectedFrom).toBeUndefined();
+    expect(resolved.matched.at(-1)?.redirect).toBe("/workbench/overview");
   });
 });

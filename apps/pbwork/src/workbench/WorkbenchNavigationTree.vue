@@ -99,6 +99,7 @@ function iconSize(node: WorkbenchNavigationTreeNode): number {
         </button>
         <span
           v-else-if="
+            node.kind === 'draft' ||
             node.kind === 'prototype' ||
             node.kind === 'screen' ||
             node.kind === 'variant'

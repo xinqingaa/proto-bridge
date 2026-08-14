@@ -99,7 +99,8 @@ export const router = createRouter({
         {
           path: "drafts/:prototypeId",
           name: "draft-prototype",
-          component: () => import("@/workbench/views/WorkbenchResourceView.vue"),
+          component: () =>
+            import("@/workbench/views/WorkbenchResourceView.vue"),
           props: (route) => ({
             kind: "draft",
             prototypeId: String(route.params.prototypeId),
@@ -167,12 +168,6 @@ export const router = createRouter({
       path: "/prototype/:prototypeId/:screenSlug",
       name: "prototype-runtime",
       component: () => import("@/runtime/RuntimeLayout.vue"),
-    },
-    {
-      path: "/explore/hengdong-visual",
-      name: "hengdong-visual-exploration",
-      component: () =>
-        import("@/drafts/hengdong/DraftPage.vue"),
     },
     {
       path: "/:pathMatch(.*)*",

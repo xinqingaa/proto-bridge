@@ -8,13 +8,16 @@ import {
   ClipboardCheck,
   Clock3,
   Copy,
+  Dumbbell,
   FileText,
   FolderOpen,
+  Footprints,
   Home,
   Inbox,
   List,
   MapPin,
   MoreHorizontal,
+  PersonStanding,
   Plus,
   RefreshCw,
   Radio,
@@ -23,6 +26,7 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   Snowflake,
+  Sparkles,
   Thermometer,
   Truck,
   User,
@@ -56,6 +60,10 @@ export const PB_ICON_NAMES = [
   "map-pin",
   "radio",
   "truck",
+  "dumbbell",
+  "footprints",
+  "person-standing",
+  "sparkles",
 ] as const;
 
 export type PbIconName = (typeof PB_ICON_NAMES)[number];
@@ -87,6 +95,10 @@ const ICON_MAP: Record<PbIconName, Component> = {
   "map-pin": MapPin,
   radio: Radio,
   truck: Truck,
+  dumbbell: Dumbbell,
+  footprints: Footprints,
+  "person-standing": PersonStanding,
+  sparkles: Sparkles,
 };
 
 export function resolvePbIcon(name: PbIconName | undefined): Component {

@@ -33,7 +33,7 @@
 | `CommonDivider`                    | 语义分隔线                                                       |
 | `CommonAvatar`                     | 人员或主体头像/首字母                                            |
 | `CommonBottomNav`                  | 2–5 个顶级页面目的地；固定 icon + label、无顶部指示条            |
-| `CommonIcon`                       | 26 个稳定 Lucide id、尺寸、tone 和装饰/无障碍语义                |
+| `CommonIcon`                       | 30 个稳定 Lucide id、尺寸、tone 和装饰/无障碍语义                |
 
 ## AppPop 弹层
 

@@ -162,13 +162,28 @@
   white-space: nowrap;
 }
 
-.hd-record-result {
+.hd-record-icon {
   display: flex;
   flex: none;
   align-items: center;
-  gap: var(--pb-spacing-xs);
-  color: var(--pb-color-on-surface-muted);
-  font: var(--pb-typography-caption);
+  justify-content: center;
+  width: var(--pb-sizing-avatar-md);
+  height: var(--pb-sizing-avatar-md);
+  border-radius: var(--pb-radius-full);
+  background: var(--pb-color-primary-soft);
+}
+
+.hd-record-primary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--pb-spacing-sm);
+}
+
+.hd-record-duration {
+  flex: none;
+  color: var(--pb-color-on-surface);
+  font: var(--pb-typography-caption-strong);
 }
 
 .hd-primary-action {

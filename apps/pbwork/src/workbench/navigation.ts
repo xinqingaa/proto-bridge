@@ -189,9 +189,12 @@ export function buildCaptureNavigation(): WorkbenchNavigationItem[] {
 }
 
 export function buildDraftNavigation(): WorkbenchNavigationItem[] {
+  const prototypeLabels = new Map(
+    loadPrototypes().map((prototype) => [prototype.id, prototype.label]),
+  );
   return draftRecords.map((draft) => ({
     id: `draft-${draft.id}`,
-    label: draft.id,
+    label: prototypeLabels.get(draft.id) ?? draft.id,
     group: "草稿",
     to: `/workbench/drafts/${draft.id}`,
   }));

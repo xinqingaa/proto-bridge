@@ -43,16 +43,16 @@
           "sliders-horizontal",
           "map-pin",
           "radio",
-          "truck"
+          "truck",
+          "dumbbell",
+          "footprints",
+          "person-standing",
+          "sparkles"
         ]
       },
       "size": {
         "type": "string",
-        "enum": [
-          "sm",
-          "md",
-          "lg"
-        ]
+        "enum": ["sm", "md", "lg"]
       },
       "tone": {
         "type": "string",
@@ -71,9 +71,7 @@
         "type": "string"
       }
     },
-    "required": [
-      "name"
-    ]
+    "required": ["name"]
   },
   "defaultProps": {
     "name": "more",
@@ -257,6 +255,38 @@
       "props": {
         "name": "sliders-horizontal"
       }
+    },
+    {
+      "id": "dumbbell",
+      "label": "dumbbell",
+      "kind": "variant",
+      "props": {
+        "name": "dumbbell"
+      }
+    },
+    {
+      "id": "footprints",
+      "label": "footprints",
+      "kind": "variant",
+      "props": {
+        "name": "footprints"
+      }
+    },
+    {
+      "id": "person-standing",
+      "label": "person-standing",
+      "kind": "variant",
+      "props": {
+        "name": "person-standing"
+      }
+    },
+    {
+      "id": "sparkles",
+      "label": "sparkles",
+      "kind": "variant",
+      "props": {
+        "name": "sparkles"
+      }
     }
   ],
   "slots": [],
@@ -293,7 +323,14 @@
       "snowflake",
       "copy",
       "file-text",
-      "sliders-horizontal"
+      "sliders-horizontal",
+      "map-pin",
+      "radio",
+      "truck",
+      "dumbbell",
+      "footprints",
+      "person-standing",
+      "sparkles"
     ]
   }
 }

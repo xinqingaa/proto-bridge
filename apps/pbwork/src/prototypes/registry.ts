@@ -156,6 +156,7 @@ const redesignedHengdongScreens = [
           { screenId: "hengdong.today", pbId: "hengdong.today.next-action" },
           { screenId: "hengdong.today", pbId: "hengdong.today.goal-ring" },
           { screenId: "hengdong.today", pbId: "hengdong.today.primary-action" },
+          { screenId: "hengdong.today", pbId: "hengdong.today.week-rhythm" },
           { screenId: "hengdong.today", pbId: "hengdong.today.recent" },
         ],
       },

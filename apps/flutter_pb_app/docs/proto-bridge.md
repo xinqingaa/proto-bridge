@@ -66,7 +66,7 @@ Target 只翻译语义，不复制 Web 表达：例如百分比映射为 Flutter
 - Demo 将 `CommonBottomNav` 作为 `Scaffold.bottomNavigationBar` 的真实根导航；遵守 2–5 个目的地约束，第五个“更多”目的地以内层一级 Tabs 承接 Data 与 Feedback，不使用 Drawer/Sheet 选择组件分类。
 - `menu` 精确映射为 `AppPop.dropMenu`；表单锚点 `CommonMenuField` 只是目标工程便利壳，不是第二套菜单实现。
 - `bottom-sheet`、`confirm`、`flow-sheet`、`loading`、`toast` 与 `menu` 全部经 `AppPop` 调用 `unified_popups`。
-- `CommonIcon` 使用 `lucide_icons_flutter` 映射 Producer 策展的 26 个稳定 id。
+- `CommonIcon` 使用 `lucide_icons_flutter` 映射 Producer 策展的 30 个稳定 id；训练、步行、拉伸和自由活动所需的 `dumbbell`、`footprints`、`person-standing`、`sparkles` 均有原生映射。
 - Flutter elevation、glass blur、布局比例和交互曲线属于平台语义翻译，不要求与 Web 数据结构同构。
 - 本工程只维护 31 个当前 componentId，不保留历史组件别名或旧 Dart API。公共 Widget 按 `action/input/display/navigation/data` 五类放在 `lib/common/widgets/`；`feedback` 由 `AppPop` 适配层承接，目标侧组合壳单列 `composition/`，统一从 `lib/common/widgets.dart` 导入。
 

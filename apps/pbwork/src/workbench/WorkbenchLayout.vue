@@ -17,7 +17,6 @@ import {
   ClipboardCheck,
   Component as ComponentIcon,
   Droplets,
-  FolderOpen,
   Frame,
   Info,
   Layers2,
@@ -669,7 +668,6 @@ function secondaryIconFor(id: string) {
     "theme-dark": Moon,
   };
   if (foundationIcons[id]) return foundationIcons[id];
-  if (id.startsWith("draft-")) return FolderOpen;
   if (id.startsWith("token-")) return SwatchBook;
   if (id.startsWith("theme-")) return Paintbrush;
   if (
@@ -724,6 +722,7 @@ function navigationTreeIconFor(node: WorkbenchNavigationTreeNode) {
   if (
     node.kind === "group" ||
     node.kind === "variant" ||
+    node.kind === "draft" ||
     node.kind === "prototype"
   ) {
     return null;

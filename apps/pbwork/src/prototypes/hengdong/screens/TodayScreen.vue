@@ -13,8 +13,11 @@ import Menu from "@/design-system/components/input/Menu.vue";
 import RadioGroup from "@/design-system/components/input/RadioGroup.vue";
 import HengdongRoot from "../HengdongRoot.vue";
 import WeeklyGoalRing from "../components/WeeklyGoalRing.vue";
+import WeeklyRhythm from "../components/WeeklyRhythm.vue";
+import type { PbIconName } from "@/design-system/components/_shared/icons";
 import {
   HENGDONG_TODAY,
+  HENGDONG_WEEK_DATES,
   recordsInWeek,
   totalMinutes,
   type ActivityType,
@@ -63,6 +66,43 @@ const weekProgress = computed(() =>
   ),
 );
 const recentRecords = computed(() => hengdongState.records.slice(0, 2));
+const weekRhythm = computed(() =>
+  HENGDONG_WEEK_DATES.map((date, index) => {
+    const minutes = totalMinutes(
+      hengdongState.records.filter((record) => record.date === date),
+    );
+    return {
+      date,
+      label: ["一", "二", "三", "四", "五", "六", "日"][index]!,
+      minutes,
+      active: minutes > 0,
+      today: date === HENGDONG_TODAY,
+    };
+  }),
+);
+const activeDays = computed(
+  () => weekRhythm.value.filter((item) => item.active).length,
+);
+const weekSummary = computed(() => {
+  if (activeDays.value >= hengdongState.goals.weeklySessions) {
+    return "这周已经达成目标，保持轻松";
+  }
+  if (activeDays.value === 0) return "从一次轻活动开始就好";
+  return `已经活动 ${activeDays.value} 天，按自己的节奏继续`;
+});
+
+const activityIcons: Record<ActivityType, PbIconName> = {
+  训练: "dumbbell",
+  步行: "footprints",
+  拉伸: "person-standing",
+  自由活动: "sparkles",
+};
+
+function recordDateLabel(date: string) {
+  if (date === HENGDONG_TODAY) return "今天";
+  if (date === "2026-08-12") return "昨天";
+  return `${Number(date.slice(5, 7))} 月 ${Number(date.slice(8, 10))} 日`;
+}
 
 function openWorkout() {
   const planId = hengdongState.workoutSession?.planId ?? activePlan.value.id;
@@ -167,14 +207,18 @@ function openRecord(recordId: string) {
               <p class="hd-muted">
                 <template v-if="hasSession">
                   已完成
-                  {{ hengdongState.workoutSession?.completedExerciseIds.length }}
+                  {{
+                    hengdongState.workoutSession?.completedExerciseIds.length
+                  }}
                   / {{ activePlan.exercises.length }} 个动作，进度已保留。
                 </template>
                 <template v-else-if="todayRecords.length">
-                  今天已记录 {{ totalMinutes(todayRecords) }} 分钟，可以安心停在这里。
+                  今天已记录
+                  {{ totalMinutes(todayRecords) }} 分钟，可以安心停在这里。
                 </template>
                 <template v-else>
-                  {{ activePlan.exercises.length }} 个低压力动作，让身体从久坐里醒过来。
+                  {{ activePlan.exercises.length }}
+                  个低压力动作，让身体从久坐里醒过来。
                 </template>
               </p>
             </header>
@@ -205,7 +249,9 @@ function openRecord(recordId: string) {
               data-pb-action="start-workout"
               @click="openWorkout"
             >
-              <template #append><Icon name="chevron-right" tone="inherit" /></template>
+              <template #append
+                ><Icon name="chevron-right" tone="inherit"
+              /></template>
             </Button>
             <Button
               label="记录其他活动"
@@ -219,7 +265,12 @@ function openRecord(recordId: string) {
             />
           </div>
 
-          <Divider inspect-id="hengdong.today.divider.recent" />
+          <WeeklyRhythm
+            :items="weekRhythm"
+            :total-minutes="totalMinutes(weekRecords)"
+            :summary="weekSummary"
+            inspect-id="hengdong.today.week-rhythm"
+          />
 
           <section
             class="hd-section hd-recent-section"
@@ -256,18 +307,30 @@ function openRecord(recordId: string) {
                 data-pb-token-spacing="spacing.md"
                 @click="openRecord(record.id)"
               >
+                <span class="hd-record-icon">
+                  <Icon
+                    :name="activityIcons[record.activityType]"
+                    size="md"
+                    tone="primary"
+                    :inspect-id="`hengdong.today.record-icon.${record.id}`"
+                  />
+                </span>
                 <span class="hd-row-main">
-                  <strong class="hd-row-title">{{ record.title }}</strong>
-                  <span class="hd-caption"
-                    >{{ record.date.slice(5).replace("-", " 月 ") }} 日 ·
-                    {{ record.minutes }} 分钟 · {{ record.activityType }}</span
-                  >
-                  <span v-if="record.note" class="hd-record-note">{{ record.note }}</span>
+                  <span class="hd-record-primary">
+                    <strong class="hd-row-title">{{ record.title }}</strong>
+                    <strong class="hd-record-duration"
+                      >{{ record.minutes }} 分钟</strong
+                    >
+                  </span>
+                  <span class="hd-caption">
+                    {{ recordDateLabel(record.date) }} ·
+                    {{ record.activityType }} · 体感{{ record.feeling }}
+                  </span>
+                  <span v-if="record.note" class="hd-record-note">{{
+                    record.note
+                  }}</span>
                 </span>
-                <span class="hd-record-result">
-                  <span>{{ record.feeling }}</span>
-                  <Icon name="chevron-right" size="sm" tone="muted" />
-                </span>
+                <Icon name="chevron-right" size="sm" tone="muted" />
               </button>
             </DataList>
           </section>

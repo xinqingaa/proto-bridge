@@ -10,5 +10,6 @@ prototypeId: hengdong
 - 本地状态统一保存在 `hengdong.app.v2`：账号、目标、当前计划、训练会话、活动记录、主题和局部筛选共享同一数据源。
 - 正式训练与快速记录写入同一记录集合，进度摘要、趋势、日历和列表全部由记录派生。
 - 计划编辑和快速记录使用 FlowSheet；记录详情与筛选使用 BottomSheet；退出、删除、重置使用确认组件。
-- 今天页将周目标与今日行动合并为 Token 驱动的呼吸环，移除重复的 `week-chart`；最近记录使用信息完整的平面列表。
+- 今天页将周目标与今日行动合并为 Token 驱动的呼吸环；主操作之后使用同源七日节奏带，不恢复旧柱状 `week-chart`。最近记录使用活动类型图标与信息完整的平面列表。
+- 训练、步行、拉伸和自由活动分别使用 PBWork Icon 的 `dumbbell`、`footprints`、`person-standing` 和 `sparkles` 稳定名称，便于 Flutter 端按相同语义映射。
 - 业务局部可视化使用 PBWork Token；未新增 Token 或共享 DS 组件。
