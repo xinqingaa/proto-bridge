@@ -44,7 +44,7 @@ defineEmits<{ select: [date: string] }>();
         class="hd-week-day"
         :class="{ 'is-active': item.active, 'is-today': item.today }"
         :data-pb-id="`${inspectId}.day`"
-        :data-pb-key="item.date"
+        :data-pb-key="`day-${item.date}`"
         data-pb-role="button"
         data-pb-token-color="color.primary"
         data-pb-token-spacing="spacing.xs"

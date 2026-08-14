@@ -84,6 +84,34 @@ test("switching variant and theme updates the live iframe without remounting it"
   );
 });
 
+test("sidebar navigation opens Variants with authored business query", async ({
+  page,
+}) => {
+  await page.goto(
+    "/workbench/prototypes/hengdong/screens/today?variant=default&theme=light",
+  );
+  const frame = page.frameLocator('[data-testid="prototype-iframe"]');
+
+  await page.getByText("今天页记录详情", { exact: true }).click();
+  await expect(page).toHaveURL(
+    /\/screens\/today\?variant=record-detail-open&theme=light&record=record-20260812/,
+  );
+  await expect(frame.locator('[data-pb-role="sheet"]')).toBeVisible();
+  await expect(frame.getByRole("alert")).toHaveCount(0);
+  await expect(
+    page.getByTestId("inspector-panel").getByText("正在等待 Runtime…"),
+  ).toHaveCount(0);
+
+  await page.getByText("无记录日期反馈", { exact: true }).click();
+  await expect(page).toHaveURL(
+    /\/screens\/today\?variant=day-empty-feedback&theme=light&date=2026-08-11/,
+  );
+  await expect(
+    frame.locator('[data-pb-id="hengdong.today.day-empty-feedback"]'),
+  ).toBeVisible();
+  await expect(frame.getByRole("alert")).toHaveCount(0);
+});
+
 test("screen navigation swaps lazy views without blanking or remounting the iframe", async ({
   page,
 }) => {

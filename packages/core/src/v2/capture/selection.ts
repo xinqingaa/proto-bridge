@@ -75,6 +75,7 @@ export type CaseMatrixEntry = {
   runtimePath: string;
   initialScreenId: string;
   initialVariantId: string;
+  initialRouteQuery?: Record<string, string>;
   scenario?: CaseMatrixScenario;
 };
 
@@ -199,6 +200,7 @@ function makeEntry(input: {
   runtimePath: string;
   initialScreenId: string;
   initialVariantId: string;
+  initialRouteQuery?: Record<string, string>;
   scenario?: CaseMatrixScenario;
 }): CaseMatrixEntry {
   const normalizedScope = normalizeCaptureScope(input.captureScope);
@@ -211,6 +213,9 @@ function makeEntry(input: {
     runtimePath: input.runtimePath,
     initialScreenId: input.initialScreenId,
     initialVariantId: input.initialVariantId,
+    ...(input.initialRouteQuery
+      ? { initialRouteQuery: { ...input.initialRouteQuery } }
+      : {}),
     ...(input.scenario ? { scenario: input.scenario } : {}),
   };
 }
@@ -241,6 +246,9 @@ export function resolveSelectionMatrix(
     devices.forEach((deviceId) => resolveCaptureDevice(deviceId));
 
     for (const variantId of variants) {
+      const variant = screen.variants.find(
+        (candidate) => candidate.variantId === variantId,
+      )!;
       for (const themeId of themes) {
         for (const deviceId of devices) {
           entries.push(
@@ -255,6 +263,9 @@ export function resolveSelectionMatrix(
               runtimePath: screen.path,
               initialScreenId: screen.screenId,
               initialVariantId: variantId,
+              ...(variant.routeQuery
+                ? { initialRouteQuery: variant.routeQuery }
+                : {}),
             }),
           );
         }
@@ -262,6 +273,15 @@ export function resolveSelectionMatrix(
     }
 
     for (const scenario of selectedScenarios(screen, screenDraft.scenarios)) {
+      const initialVariant = screen.variants.find(
+        (variant) => variant.variantId === scenario.initialVariantId,
+      );
+      if (!initialVariant) {
+        throw unknownReferenceError(
+          'Scenario initial Variant manifest',
+          scenario.initialVariantId,
+        );
+      }
       for (const checkpoint of [...scenario.checkpoints].sort((a, b) =>
         a.checkpointId.localeCompare(b.checkpointId),
       )) {
@@ -312,6 +332,9 @@ export function resolveSelectionMatrix(
                 runtimePath: screen.path,
                 initialScreenId: screen.screenId,
                 initialVariantId: scenario.initialVariantId,
+                ...(initialVariant.routeQuery
+                  ? { initialRouteQuery: initialVariant.routeQuery }
+                  : {}),
                 scenario: { scenario, checkpoint },
               }),
             );

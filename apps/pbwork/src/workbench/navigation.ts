@@ -11,6 +11,8 @@ import {
   type PrototypeLifecycle,
   type TokenCategory,
 } from "@/design-system/types";
+import { workbenchPathFromRuntimeUrl } from "@/runtime/bridge";
+import { buildCanonicalRuntimeUrl } from "@/runtime/url";
 
 export type WorkbenchSectionId =
   | "overview"
@@ -250,6 +252,21 @@ export function findCaptureJobIdForEvidenceRoute(
   return match ? captureJobNavigationId(match.job.jobId) : null;
 }
 
+function buildWorkbenchVariantPath(input: {
+  prototypeId: string;
+  screenSlug: string;
+  variantId: string;
+  themeId: string;
+  query?: Record<string, string>;
+}): string {
+  const runtimeUrl = buildCanonicalRuntimeUrl(input);
+  const workbenchPath = workbenchPathFromRuntimeUrl(runtimeUrl);
+  if (!workbenchPath) {
+    throw new Error(`Unable to build Workbench route from ${runtimeUrl}.`);
+  }
+  return workbenchPath;
+}
+
 export function buildPrototypeTree(
   lifecycle: "all" | PrototypeLifecycle,
   effectiveLifecycle: (
@@ -279,7 +296,13 @@ export function buildPrototypeTree(
         children: screen.variants.map((variant) => ({
           id: `${screen.screenId}.${variant.id}`,
           label: variant.label,
-          to: `/workbench/prototypes/${prototype.id}/screens/${screen.screenSlug}?variant=${variant.id}&theme=${prototype.defaultThemeId}`,
+          to: buildWorkbenchVariantPath({
+            prototypeId: prototype.id,
+            screenSlug: screen.screenSlug,
+            variantId: variant.id,
+            themeId: prototype.defaultThemeId,
+            ...(variant.query ? { query: variant.query } : {}),
+          }),
         })),
       })),
   }));
@@ -334,7 +357,13 @@ export function buildWorkbenchNavigationTree(
             id: `variant-${screen.screenId}.${variant.id}`,
             label: variant.label,
             kind: "variant" as const,
-            to: `/workbench/prototypes/${prototype.id}/screens/${screen.screenSlug}?variant=${variant.id}&theme=${prototype.defaultThemeId}`,
+            to: buildWorkbenchVariantPath({
+              prototypeId: prototype.id,
+              screenSlug: screen.screenSlug,
+              variantId: variant.id,
+              themeId: prototype.defaultThemeId,
+              ...(variant.query ? { query: variant.query } : {}),
+            }),
           })),
         })),
       };

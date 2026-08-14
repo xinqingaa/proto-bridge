@@ -201,6 +201,15 @@ function digestText(value: string): string {
   return `registry-${(hash >>> 0).toString(16).padStart(8, "0")}`;
 }
 
+function canonicalRouteQuery(
+  query: Record<string, string> | undefined,
+): Record<string, string> | undefined {
+  if (!query || Object.keys(query).length === 0) return undefined;
+  return Object.fromEntries(
+    Object.entries(query).sort(([left], [right]) => left.localeCompare(right)),
+  );
+}
+
 function toScreenManifest(
   screen: ReturnType<typeof loadPrototypeScreens>[number],
 ): RuntimeScreenManifest {
@@ -211,16 +220,20 @@ function toScreenManifest(
     path: screen.path,
     sourcePath: screen.view,
     defaultVariantId: screen.defaultVariantId,
-    variants: screen.variants.map((variant) => ({
-      variantId: variant.id,
-      label: variant.label,
-      ...(variant.fixture ? { fixtureId: variant.fixture } : {}),
-      ...(variant.requiredFragments
-        ? { requiredFragments: variant.requiredFragments }
-        : {}),
-      ...(variant.shellPolicy ? { shellPolicy: variant.shellPolicy } : {}),
-      structureAssertions: variant.structureAssertions ?? [],
-    })),
+    variants: screen.variants.map((variant) => {
+      const routeQuery = canonicalRouteQuery(variant.query);
+      return {
+        variantId: variant.id,
+        label: variant.label,
+        ...(variant.fixture ? { fixtureId: variant.fixture } : {}),
+        ...(routeQuery ? { routeQuery } : {}),
+        ...(variant.requiredFragments
+          ? { requiredFragments: variant.requiredFragments }
+          : {}),
+        ...(variant.shellPolicy ? { shellPolicy: variant.shellPolicy } : {}),
+        structureAssertions: variant.structureAssertions ?? [],
+      };
+    }),
     actions: (screen.actions ?? []).map((action) => ({
       actionId: action.id,
       kind: action.kind,

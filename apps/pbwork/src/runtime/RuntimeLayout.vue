@@ -298,12 +298,17 @@ onMounted(() => {
           candidate.screenId === target.screenId,
       );
       if (!screen) throw new Error(`UNKNOWN_SCREEN：${target.screenId}`);
+      const variant = screen.variants.find(
+        (candidate) => candidate.id === target.variantId,
+      );
+      if (!variant) throw new Error(`UNKNOWN_VARIANT：${target.variantId}`);
       await router.replace(
         buildCanonicalRuntimeUrl({
           prototypeId: target.prototypeId,
           screenSlug: screen.screenSlug,
           variantId: target.variantId,
           themeId: target.themeId,
+          ...(variant.query ? { query: variant.query } : {}),
         }),
       );
       await nextTick();

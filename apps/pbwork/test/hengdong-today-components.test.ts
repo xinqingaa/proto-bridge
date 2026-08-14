@@ -56,7 +56,7 @@ describe("Hengdong Today interactions", () => {
     expect(days.every((day) => day.attributes("role") === undefined)).toBe(true);
     expect(wrapper.get(".hd-week-days").attributes("role")).toBe("group");
     expect(days.map((day) => day.attributes("data-pb-key"))).toEqual(
-      items.map((item) => item.date),
+      items.map((item) => `day-${item.date}`),
     );
 
     await days[2]!.trigger("click");

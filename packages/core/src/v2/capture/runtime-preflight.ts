@@ -5,6 +5,7 @@ import { RUNTIME_CAPTURE_GLOBAL } from '../runtime-contract/index.js';
 import { resolveCaptureDevice } from './devices.js';
 import { preflightSelection, type CapturePreflight } from './preflight.js';
 import { requestRuntimeCapture } from './runtime-client.js';
+import { buildRuntimeCaseUrl } from './runtime-url.js';
 import type { SelectionDraft } from './selection.js';
 
 export type InstrumentedRuntimePreflightInput = {
@@ -44,40 +45,6 @@ export async function discoverInstrumentedRuntimeManifest(input: {
   } finally {
     await browser.close();
   }
-}
-
-function runtimeUrl(
-  runtimeBaseUrl: string,
-  path: string,
-  variantId: string,
-  themeId: string,
-): string {
-  const base = new URL(runtimeBaseUrl);
-  if (
-    !['http:', 'https:'].includes(base.protocol) ||
-    base.username ||
-    base.password
-  ) {
-    throw new V2ContractError(
-      'unsafe-input',
-      'Runtime base URL must be an HTTP(S) origin without credentials.',
-    );
-  }
-  const url = new URL(path, base);
-  if (
-    url.origin !== base.origin ||
-    !url.pathname.startsWith('/prototype/') ||
-    url.hash
-  ) {
-    throw new V2ContractError(
-      'unsafe-input',
-      'Runtime navigation must remain on the configured origin and /prototype/ path.',
-    );
-  }
-  url.search = '';
-  url.searchParams.set('variant', variantId);
-  url.searchParams.set('theme', themeId);
-  return url.toString();
 }
 
 async function waitForProtocol(page: import('playwright').Page): Promise<void> {
@@ -129,12 +96,12 @@ export async function preflightInstrumentedRuntime(
       `${input.draft.prototypeId}.`.length,
     );
     await page.goto(
-      runtimeUrl(
-        input.runtimeBaseUrl,
-        `/prototype/${encodeURIComponent(input.draft.prototypeId)}/${encodeURIComponent(firstScreenSlug)}`,
-        'default',
-        firstDraft.themeIds[0] ?? 'light',
-      ),
+      buildRuntimeCaseUrl({
+        runtimeBaseUrl: input.runtimeBaseUrl,
+        path: `/prototype/${encodeURIComponent(input.draft.prototypeId)}/${encodeURIComponent(firstScreenSlug)}`,
+        variantId: 'default',
+        themeId: firstDraft.themeIds[0] ?? 'light',
+      }),
       { waitUntil: 'domcontentloaded' },
     );
     if (new URL(page.url()).origin !== allowedOrigin) {
@@ -176,12 +143,15 @@ export async function preflightInstrumentedRuntime(
       const device = resolveCaptureDevice(entry.selectedCase.caseKey.deviceId);
       await page.setViewportSize(device.viewport);
       await page.goto(
-        runtimeUrl(
-          input.runtimeBaseUrl,
-          entry.runtimePath,
-          entry.selectedCase.caseKey.variantId,
-          entry.selectedCase.caseKey.themeId,
-        ),
+        buildRuntimeCaseUrl({
+          runtimeBaseUrl: input.runtimeBaseUrl,
+          path: entry.runtimePath,
+          variantId: entry.initialVariantId,
+          themeId: entry.selectedCase.caseKey.themeId,
+          ...(entry.initialRouteQuery
+            ? { routeQuery: entry.initialRouteQuery }
+            : {}),
+        }),
         { waitUntil: 'domcontentloaded' },
       );
       await waitForProtocol(page);

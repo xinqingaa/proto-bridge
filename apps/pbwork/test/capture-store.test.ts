@@ -155,6 +155,24 @@ describe("PBWork V2 capture store", () => {
     );
   });
 
+  it("publishes authored Variant route query in the Runtime Manifest", () => {
+    const manifest = buildRuntimeCaptureManifest("hengdong");
+    const today = manifest.screens.find(
+      (screen) => screen.screenId === "hengdong.today",
+    );
+
+    expect(
+      today?.variants.find(
+        (variant) => variant.variantId === "record-detail-open",
+      )?.routeQuery,
+    ).toEqual({ record: "record-20260812" });
+    expect(
+      today?.variants.find(
+        (variant) => variant.variantId === "day-empty-feedback",
+      )?.routeQuery,
+    ).toEqual({ date: "2026-08-11" });
+  });
+
   it("supports explicit per-Screen Variant and Scenario editing", () => {
     const store = useCaptureStore();
     store.beginCurrentScreen({

@@ -26,6 +26,75 @@ test("the fixed three-page regression baseline still resolves", async ({
   }
 });
 
+test("Core Capture opens a parameterized Hengdong Variant with its authored route query", async ({
+  page,
+}) => {
+  await page.goto(
+    "/prototype/hengdong/today?variant=default&theme=light",
+  );
+  await page.waitForFunction(() =>
+    Boolean(
+      (window as unknown as Record<string, unknown>)
+        .__PROTO_BRIDGE_CAPTURE_V2__,
+    ),
+  );
+  const described = await page.evaluate(async () => {
+    const api = (
+      window as unknown as Record<
+        string,
+        { request(input: unknown): Promise<any> }
+      >
+    ).__PROTO_BRIDGE_CAPTURE_V2__;
+    if (!api) throw new Error("V2 Runtime Capture Protocol missing");
+    return api.request({
+      protocolVersion: 2,
+      requestId: "hengdong-route-query-describe",
+      payload: { kind: "describe" },
+    });
+  });
+  expect(described.ok, JSON.stringify(described)).toBe(true);
+  const manifest = described.payload.manifest as RuntimeCaptureManifest;
+  const draft: SelectionDraft = {
+    prototypeId: "hengdong",
+    screens: [
+      {
+        screenId: "hengdong.today",
+        variants: {
+          mode: "explicit",
+          variantIds: ["record-detail-open"],
+        },
+        themeIds: ["light"],
+        deviceIds: ["iphone-14"],
+        scenarios: { mode: "none" },
+        captureScope: {
+          fragments: [],
+          screenshots: { mode: "none" },
+          sourcePolicy: false,
+          debugPolicy: false,
+          evidenceInputMode: "instrumented",
+          minEvidenceLevel: "instrumented-runtime",
+        },
+      },
+    ],
+    acceptedWarningIds: ["warning-interaction-coverage"],
+  };
+  const preflight = preflightSelection(draft, manifest);
+  const entry = preflight.matrix[0]!;
+  expect(entry.initialRouteQuery).toEqual({ record: "record-20260812" });
+
+  const captured = await new PlaywrightCaseCaptureDriver().captureCase({
+    entry,
+    preflight,
+    runtimeBaseUrl: new URL(page.url()).origin,
+  });
+  expect(captured.diagnostics.pageErrors).toEqual([]);
+  expect(
+    captured.facts.some(
+      (fact) => fact.factId === "hengdong.today.record-detail.identity",
+    ),
+  ).toBe(true);
+});
+
 test("cold-chain-ops satisfies every authored Variant and required Scenario boundary", async ({
   page,
 }) => {

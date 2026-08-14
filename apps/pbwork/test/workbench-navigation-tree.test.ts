@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildCaptureHistoryNavigationNodes,
+  buildPrototypeTree,
   buildWorkbenchNavigationTree,
   countPrototypesForLifecycle,
   findCaptureJobIdForEvidenceRoute,
@@ -54,6 +55,33 @@ describe("workbench navigation tree", () => {
       to: "/workbench/capture",
     });
     expect(capture.label).toBe("采集");
+  });
+
+  it("preserves authored Variant route query in both prototype trees", () => {
+    const compactTree = buildPrototypeTree("all");
+    const compactToday = compactTree
+      .find((node) => node.id === "hengdong")
+      ?.children?.find((node) => node.id === "hengdong.today");
+    expect(
+      compactToday?.children?.find(
+        (node) => node.id === "hengdong.today.record-detail-open",
+      )?.to,
+    ).toBe(
+      "/workbench/prototypes/hengdong/screens/today?variant=record-detail-open&theme=light&record=record-20260812",
+    );
+
+    const workbenchTree = buildWorkbenchNavigationTree();
+    const today = workbenchTree
+      .find((node) => node.id === "prototypes")
+      ?.children?.find((node) => node.id === "prototype-hengdong")
+      ?.children?.find((node) => node.id === "screen-hengdong.today");
+    expect(
+      today?.children?.find(
+        (node) => node.id === "variant-hengdong.today.day-empty-feedback",
+      )?.to,
+    ).toBe(
+      "/workbench/prototypes/hengdong/screens/today?variant=day-empty-feedback&theme=light&date=2026-08-11",
+    );
   });
 
   it("nests capture jobs under 采集历史 and selects by evidence route", () => {

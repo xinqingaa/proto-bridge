@@ -115,9 +115,18 @@ function draft(): SelectionDraft {
 
 describe('V2 Selection normalization and Preflight', () => {
   it('expands explicit Variants and a Scenario Checkpoint into a stable three-Case Matrix', () => {
-    const first = resolveSelectionMatrix(draft(), manifest());
-    const second = resolveSelectionMatrix(draft(), manifest());
+    const contract = manifest();
+    const identityBaseline = resolveSelectionMatrix(draft(), contract);
+    contract.screens[0]!.variants.find(
+      (variant) => variant.variantId === 'default',
+    )!.routeQuery = { record: 'task-default' };
+    contract.screens[0]!.variants.find(
+      (variant) => variant.variantId === 'claimable',
+    )!.routeQuery = { record: 'task-claimable' };
+    const first = resolveSelectionMatrix(draft(), contract);
+    const second = resolveSelectionMatrix(draft(), contract);
     expect(first).toEqual(second);
+    expect(first.selection).toEqual(identityBaseline.selection);
     expect(first.matrix).toHaveLength(3);
     expect(first.matrix.map((entry) => entry.selectedCase.caseKey)).toEqual([
       {
@@ -147,6 +156,11 @@ describe('V2 Selection normalization and Preflight', () => {
     expect(first.matrix[0]?.runtimePath).toBe(
       '/prototype/sample/task-list',
     );
+    expect(first.matrix.map((entry) => entry.initialRouteQuery)).toEqual([
+      { record: 'task-default' },
+      { record: 'task-claimable' },
+      { record: 'task-default' },
+    ]);
   });
 
   it('normalizes a stable Fragment scope without changing Case identity', () => {

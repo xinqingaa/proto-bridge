@@ -319,7 +319,7 @@ const redesignedHengdongScreens = [
         target: {
           screenId: "hengdong.today",
           pbId: "hengdong.today.week-rhythm.day",
-          pbKey: "2026-08-12",
+          pbKey: "day-2026-08-12",
         },
       },
       {
@@ -328,7 +328,7 @@ const redesignedHengdongScreens = [
         target: {
           screenId: "hengdong.today",
           pbId: "hengdong.today.week-rhythm.day",
-          pbKey: "2026-08-11",
+          pbKey: "day-2026-08-11",
         },
       },
       {

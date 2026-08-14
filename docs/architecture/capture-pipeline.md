@@ -9,7 +9,7 @@ Runtime `describe` 返回：
 - protocol version 与 input version；
 - capabilities；
 - Prototype 和 Screen；
-- Variant 标签和 required Fragments；
+- Variant 标签、打开该状态所需的 authored route query 和 required Fragments；
 - Action；
 - Scenario、Action sequence 和 Checkpoint。
 
@@ -32,7 +32,7 @@ Draft 表达用户意图，不表达执行结果。状态和场景均使用 auth
 
 Preflight 固定 manifest/input version、规范化 Selection、warning、risk 和 Case Matrix。Preflight 有有效期；Runtime 输入变化或过期后必须重新执行。
 
-Matrix 展开顺序必须稳定。Case ID 与 Scope key 在 PBWork 和 CLI 间一致，不能包含数组位置或生成时间。
+Matrix 展开顺序必须稳定。Case ID 与 Scope key 在 PBWork 和 CLI 间一致，不能包含数组位置、生成时间或 authored route query；route query 是执行 baseline 输入，不是新的 Case identity 维度。
 
 ## 4. 浏览器隔离
 
@@ -50,7 +50,7 @@ Playwright Driver 为每个 Case 建立隔离上下文，固定：
 
 ## 5. Prepare 与 Readiness
 
-`prepare` 导航到精确 Screen/Variant/Theme/Fixture，并保存 reset baseline。Runtime 必须返回实际 dimensions；任一维度不匹配都失败。
+`prepare` 使用 Manifest 中的 authored route query 导航到精确 Screen/Variant/Theme/Fixture，并保存 reset baseline。Runtime 必须返回实际 dimensions；任一维度不匹配都失败。
 
 `readiness` 只在页面完成状态准备、语义标记稳定且 required Fragment 可解析时成功。Core 会重复观察稳定签名，防止把中间渲染状态当成最终页面。
 

@@ -14,6 +14,15 @@ export const RUNTIME_CAPTURE_PROTOCOL_VERSION = 2 as const;
 export const RUNTIME_CAPTURE_GLOBAL = '__PROTO_BRIDGE_CAPTURE_V2__' as const;
 
 const StableId = z.string().regex(/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/);
+const RuntimeRouteQueryKey = z
+  .string()
+  .regex(/^[a-z][a-z0-9_-]*$/)
+  .refine((key) => key !== 'variant' && key !== 'theme');
+export const RuntimeRouteQuery = z.record(
+  RuntimeRouteQueryKey,
+  z.string().max(512),
+);
+export type RuntimeRouteQuery = z.infer<typeof RuntimeRouteQuery>;
 const TokenBindingSlot = z
   .string()
   .regex(/^[a-z][A-Za-z0-9]*(?:[._-][A-Za-z0-9]+)*$/);
@@ -92,6 +101,8 @@ export const RuntimeVariantManifest = z
     variantId: StableId,
     label: z.string().min(1),
     fixtureId: StableId.optional(),
+    /** Canonical authored business query required to open this Variant. */
+    routeQuery: RuntimeRouteQuery.optional(),
     /**
      * Authored completeness boundary for a full instrumented capture.
      * Missing means that Runtime can expose observed markers, but cannot

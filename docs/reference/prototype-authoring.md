@@ -85,6 +85,8 @@ Variant 表达稳定业务状态，例如：
 
 Theme、Device、Viewport 和 Fixture 是独立 Case 维度，不得伪装成 Variant。
 
+Variant 依赖业务 query 才能确定性打开时，Registry 必须在该 Variant 上声明 `query`。PBWork 将其作为 canonical `routeQuery` 发布到 Runtime Manifest 并纳入 `inputVersion`；Workbench 导航、Runtime reset、Preflight 和 Capture 必须使用同一份 authored 输入。`routeQuery` 不属于 Case identity，也不能覆盖 `variant` 或 `theme`。
+
 严格 Screen 的 default Variant 必须声明非空 `requiredFragments`。其它 Variant 可以未声明 boundary，但采集和交接必须保留覆盖风险。
 
 ## 5. Runtime 标记

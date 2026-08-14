@@ -17,6 +17,7 @@ import type { CapturePreflight } from './preflight.js';
 import type { CaseMatrixEntry } from './selection.js';
 import { resolveCaptureDevice } from './devices.js';
 import { requestRuntimeCapture } from './runtime-client.js';
+import { buildRuntimeCaseUrl } from './runtime-url.js';
 
 export type CapturedBinary = {
   kind: 'screenshot' | 'trace' | 'debug';
@@ -733,10 +734,16 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
     });
     let traceStopped = false;
     try {
-      const url = new URL(input.entry.runtimePath, input.runtimeBaseUrl);
-      url.searchParams.set('variant', input.entry.initialVariantId);
-      url.searchParams.set('theme', input.entry.selectedCase.caseKey.themeId);
-      await page.goto(url.toString(), {
+      const url = buildRuntimeCaseUrl({
+        runtimeBaseUrl: input.runtimeBaseUrl,
+        path: input.entry.runtimePath,
+        variantId: input.entry.initialVariantId,
+        themeId: input.entry.selectedCase.caseKey.themeId,
+        ...(input.entry.initialRouteQuery
+          ? { routeQuery: input.entry.initialRouteQuery }
+          : {}),
+      });
+      await page.goto(url, {
         waitUntil: 'domcontentloaded',
         timeout: 30_000,
       });

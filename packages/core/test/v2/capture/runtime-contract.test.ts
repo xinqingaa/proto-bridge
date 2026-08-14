@@ -38,7 +38,11 @@ describe('V2 Runtime Capture Protocol schemas', () => {
           defaultVariantId: 'default',
           variants: [
             { variantId: 'default', label: '默认' },
-            { variantId: 'claimable', label: '可领取' },
+            {
+              variantId: 'claimable',
+              label: '可领取',
+              routeQuery: { record: 'task-claimable' },
+            },
           ],
           actions: [
             {
@@ -151,6 +155,44 @@ describe('V2 Runtime Capture Protocol schemas', () => {
           ...response,
         }).ok,
       ).toBe(true);
+    }
+    expect(manifest.screens[0]?.variants[1]?.routeQuery).toEqual({
+      record: 'task-claimable',
+    });
+  });
+
+  it('rejects reserved or malformed authored route query', () => {
+    const baseVariant = { variantId: 'default', label: '默认' };
+    for (const routeQuery of [
+      { variant: 'override' },
+      { 'Bad-Key': 'value' },
+      { record: 'x'.repeat(513) },
+    ]) {
+      expect(() =>
+        RuntimeCaptureManifest.parse({
+          protocolVersion: RUNTIME_CAPTURE_PROTOCOL_VERSION,
+          inputVersion: 'registry-invalid-route-query',
+          capabilities: [
+            'describe',
+            'prepare',
+            'readiness',
+            'semantic-snapshot',
+            'reset',
+          ],
+          screens: [
+            {
+              prototypeId: 'sample',
+              screenId: 'sample.task-list',
+              screenSlug: 'task-list',
+              path: '/prototype/sample/task-list',
+              defaultVariantId: 'default',
+              variants: [{ ...baseVariant, routeQuery }],
+              actions: [],
+              scenarios: [],
+            },
+          ],
+        }),
+      ).toThrow();
     }
   });
 
