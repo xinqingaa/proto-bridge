@@ -209,7 +209,7 @@ describe("design contracts", () => {
       hengdongScreens.every(
         (screen) =>
           (screen.variants.find((variant) => variant.id === "default")
-            ?.requiredFragments.length ?? 0) > 0,
+            ?.requiredFragments?.length ?? 0) > 0,
       ),
     ).toBe(true);
   });

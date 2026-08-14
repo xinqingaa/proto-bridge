@@ -32,8 +32,9 @@
 ## 导航与 Variant
 
 - [ ] 新原型或结构性改动存在 `docs/design.md` 且状态为 `approved`
+- [ ] 本次调整的页面设计增量已批准；其它待定页面未被当作可以任意发挥的空白
 - [ ] 探索草稿位于 `src/drafts`，未注册为正式 Prototype，也未被当作 Capture/Handoff 输入
-- [ ] Promotion Gate 已将视觉元素分为现有 DS、通用 DS 缺口、业务局部 UI、外部资产或降级项
+- [ ] `docs/implementation.md` 的 Promotion Mapping 已将视觉元素分为现有 DS、通用 DS 缺口、业务局部 UI、外部资产或降级项
 - [ ] 导航职责、关键交互效果与视觉编排不存在影响实现的未决问题
 - [ ] Tab replace / 二级 push；跨 Tab 进栈 parent 正确
 - [ ] 返回与完成流符合 shell-and-nav（含嵌入 Runtime）
@@ -51,6 +52,17 @@
 - [ ] 新 Screen 未加入 `LEGACY_EVIDENCE_SCREEN_IDS`
 - [ ] Action target 使用稳定 Fragment；Scenario/Checkpoint 实际维度可验证
 - [ ] prepare/readiness/snapshot/reset 在独立 Case 中可重复
+
+## Experience Gate
+
+- [ ] 新页面或整页重构已对正式 PBWork 实现再次应用 `frontend-design`，不是只验收过草稿
+- [ ] 已在声明的目标视口查看真实浏览器截图，首屏只有一个最高焦点且阅读顺序符合页面契约
+- [ ] 已检查浅色、深色、窄屏和页面契约要求的默认/关键状态
+- [ ] 签名视觉在 DS、Token 和 Evidence 转译后仍成立，没有退化成通用组件堆叠
+- [ ] 所有看起来可点的元素都有可观察结果、反馈和可见键盘焦点
+- [ ] Divider、Card、标签、图标和装饰都编码真实结构；已移除发现的不必要配件
+- [ ] 重复元素对齐，文字不溢出，Overlay/固定导航不遮挡内容，reduced motion 不影响理解
+- [ ] Experience Gate 发现的问题已修复，并重新通过 Delivery Gate；不是仅记录为已知缺陷
 
 ## 文档
 

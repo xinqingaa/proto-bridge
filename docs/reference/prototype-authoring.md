@@ -2,7 +2,7 @@
 
 本规范定义怎样制作能被 ProtoBridge 高效、精确、完整采集的原型。所有进入 PB Evidence 闭环的 PBWork Prototype、Screen 和关键状态都必须遵守。
 
-本规范只负责已批准设计的正式工程化。新原型、结构性改动和视觉语言改变必须先按[原型设计工作流](../pbwork/prototypes/design-workflow.md)形成 `status: approved` 的 `prototypes/{id}/docs/design.md`；独立视觉探索不属于本 Contract，也不能进入 Capture/Handoff。
+本规范只负责已批准设计的正式工程化。新原型、结构性改动和视觉语言改变必须先按[原型设计工作流](../pbwork/prototypes/design-workflow.md)形成 `status: approved` 的产品基线；新页面或整页调整还必须具有已批准的页面设计增量。独立视觉探索不属于本 Contract，也不能进入 Capture/Handoff。
 
 产品、设计和开发人员使用 Cursor、Codex 等 Coding Agent 修改同一套代码、Contract、Registry 和文档；PBWork 不维护按人员角色区分的第二套作者协议。节点 identity、role、component、Token Evidence 和 Block/Warning/Info 等级以[语义标记与证据门禁](./semantic-authoring.md)为唯一权威。
 
@@ -35,15 +35,15 @@ PBWork Token / Theme
 
 ## 2. 稳定身份
 
-| 对象 | 身份 |
-| --- | --- |
-| Prototype | 稳定 `prototypeId` |
-| Screen | `{prototypeId}.{screenSlug}` |
-| Variant | Screen 内稳定 slug |
-| Fragment | `screenId + data-pb-id + optional data-pb-key` |
-| Action | owner Screen 内稳定 slug |
-| Scenario | owner Screen 内稳定 slug |
-| Checkpoint | owner Scenario 内稳定 slug |
+| 对象       | 身份                                           |
+| ---------- | ---------------------------------------------- |
+| Prototype  | 稳定 `prototypeId`                             |
+| Screen     | `{prototypeId}.{screenSlug}`                   |
+| Variant    | Screen 内稳定 slug                             |
+| Fragment   | `screenId + data-pb-id + optional data-pb-key` |
+| Action     | owner Screen 内稳定 slug                       |
+| Scenario   | owner Screen 内稳定 slug                       |
+| Checkpoint | owner Scenario 内稳定 slug                     |
 
 禁止使用：
 
@@ -89,14 +89,14 @@ Theme、Device、Viewport 和 Fixture 是独立 Case 维度，不得伪装成 Va
 
 ## 5. Runtime 标记
 
-| 属性 | 用途 |
-| --- | --- |
-| `data-pb-id` | Screen 内稳定语义模板身份 |
-| `data-pb-key` | 同一模板下重复实例的稳定业务键 |
-| `data-pb-role` | PB 语义角色 |
-| `data-pb-shell` | `sheet`、`dialog`、`modal`、`drawer` 等叠加层 |
-| `data-pb-component` | PBWork Design System 组件身份 |
-| `data-pb-action` | authored Action 的稳定执行目标 |
+| 属性                | 用途                                          |
+| ------------------- | --------------------------------------------- |
+| `data-pb-id`        | Screen 内稳定语义模板身份                     |
+| `data-pb-key`       | 同一模板下重复实例的稳定业务键                |
+| `data-pb-role`      | PB 语义角色                                   |
+| `data-pb-shell`     | `sheet`、`dialog`、`modal`、`drawer` 等叠加层 |
+| `data-pb-component` | PBWork Design System 组件身份                 |
+| `data-pb-action`    | authored Action 的稳定执行目标                |
 
 标记放在拥有该语义的实际节点上，不为“方便采集”增加无意义包裹层。
 
@@ -210,7 +210,30 @@ Runtime 在 readiness 成功前必须完成：
 - 源码命名、目标工程模式或截图推测不能补齐 required Fact。
 - 手工接受 warning 不改变 Evidence Level。
 
-## 15. 交付门禁
+## 15. 双门禁
+
+新页面或整页调整只有同时通过以下两个门禁，才可以声明完成。任一门禁导致的修复只要可能影响另一门禁，就必须重新检查另一门禁。
+
+### PBWork Delivery Gate
+
+- Token-only、DS-first、Flex-only 和文档规定的组合方式通过；
+- Required Fragment、业务 Evidence 节点、Action、Scenario、Checkpoint、Variant fixture、readiness 和 reset 可确定复现；
+- Typecheck、范围测试、Runtime 验证和文档验证通过。
+
+### Experience Gate
+
+对正式 PBWork 页面再次应用 `frontend-design`，不能只验收探索草稿。必须在真实浏览器和目标视口检查截图及实际交互：
+
+- 首屏只有一个明确焦点，阅读顺序符合已批准页面契约；
+- 签名视觉经过 DS、Token 和 Evidence 转译后仍然成立；
+- 所有看起来可交互的控件或热区都有可见反馈、契约约定的结果和可见键盘焦点；
+- Divider、Card、标签、图标与装饰表达真实结构，不靠装饰堆叠制造完成感；
+- 浅色、深色、窄屏、reduced motion 和已批准的默认/关键状态保持一致；
+- 文字不溢出，重复元素对齐，Overlay 不遮挡内容，固定导航不覆盖正文。
+
+截图批评发现多余配件时至少删去一个，修复后重复两个门禁；不能把已知视觉问题列表当成 Experience Gate 已通过。
+
+### 验证命令
 
 ```bash
 pnpm --filter @proto-bridge/pbwork typecheck
@@ -218,7 +241,7 @@ pnpm --filter @proto-bridge/pbwork test
 pnpm test:e2e:runtime
 ```
 
-交付前还应：
+Delivery Gate 前还应：
 
 - 在浅色和深色 Theme 检查关键表面；
 - 用真实浏览器验证 required Fragment 唯一、可见、bbox 非零；

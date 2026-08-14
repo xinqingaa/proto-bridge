@@ -20,7 +20,8 @@ PBWork 原型既要表达产品设计，也要作为 ProtoBridge Runtime 提供�
    - [壳与导航](./prototypes/shell-and-nav.md)
    - [Screen 与 Variant](./prototypes/screens-and-variants.md)
    - [页面配方](./prototypes/recipes.md)
-9. 提交前执行 [交付检查单](./checklist.md)
+9. 新页面或整页调整在正式 Authoring 后再次应用 `frontend-design`，用真实截图和交互通过 Experience Gate
+10. 提交前执行 [交付检查单](./checklist.md)
 
 ## 设计基础
 
@@ -76,4 +77,4 @@ Contract 与实现冲突时不能选择一边静默继续；应修正不一致�
 ## Agent 入口
 
 - PBWork 原型设计、正式 Authoring、Token/Theme/DS、Workbench 与 Capture UI：`.agents/skills/pbwork/SKILL.md`
-- 需要视觉方向、构图、字体或审美探索时，由 `pbwork` 按需调用 `.agents/skills/frontend-design/SKILL.md`
+- 需要视觉方向、构图、字体或审美探索时，由 `pbwork` 调用 `.agents/skills/frontend-design/SKILL.md`；新页面与整页调整必须在定方向和正式 Authoring 后各应用一次

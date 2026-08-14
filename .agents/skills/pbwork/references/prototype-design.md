@@ -45,6 +45,30 @@ visual language and each page's distinct composition. Pages may use different
 structures, but must share intentional rules for type, color, spacing, icon,
 surface, motion, assets, and content voice.
 
+`status: approved` means the product definition, information architecture, core
+journeys, and shared visual grammar are stable. It does not require every page
+increment to be designed in advance. Maintain a page-design status table in the
+document and approve pages or coherent journey batches just in time.
+
+### Page design increment
+
+Before a new or materially reshaped Screen enters formal authoring, close a
+compact page contract containing:
+
+- its single responsibility and first-viewport focus;
+- named reading order;
+- apparent actions or hot zones and their observable results;
+- applicable default, in-progress, completed, no-plan, empty, error, or
+  interrupted states;
+- responsibility boundaries with other pages;
+- observable acceptance signals.
+
+The agent drafts this contract by default. A user may provide exact decisions
+or delegate the bounded page direction; delegation does not permit skipping the
+contract. Ask only when alternatives would materially change product direction,
+the core journey, or information architecture. Keep layout measurements,
+component names, CSS structure, Registry identity, and Evidence mechanics out.
+
 ### Visual exploration
 
 When comparison requires working screens, use:
@@ -89,14 +113,20 @@ graphics stay in the prototype but remain Token-based and Evidence-aware.
 Complex motion defines asset ID, states, trigger, timing, easing, loop, pause,
 and reduced-motion fallback. PB cannot infer animation from screenshots or CSS.
 
+Record the engineering classification in `docs/implementation.md`. Keep only
+the user-visible visual purpose, behavior, degradation, and acceptance result in
+`design.md`.
+
 ## Design document
 
 Follow `apps/pbwork/docs/prototypes/design-workflow.md`. Use `draft`,
-`exploring`, or `approved` status. `approved` requires explicit user agreement
-and no open decision that would change formal implementation.
+`exploring`, or `approved` for the product baseline. `approved` requires
+explicit user agreement or bounded delegated authority and no open decision that
+would change product definition, information architecture, core journeys, or
+the shared visual grammar.
 
-Keep Registry entries, file lists, test commands, and Evidence field mechanics
-out of `design.md`; they belong to authoring contracts or optional
-`docs/implementation.md`. Hand formal implementation an approved direction,
-page responsibilities, key states, acceptance signals, Promotion Gate
-classification, and the micro-decisions still left to implementation.
+Keep Promotion mapping, Registry entries, file lists, test commands, component
+mapping, and Evidence mechanics out of `design.md`; they belong to authoring
+contracts or `docs/implementation.md`. Hand formal implementation an approved
+page contract, key states, acceptance signals, and the micro-decisions still
+left to implementation.

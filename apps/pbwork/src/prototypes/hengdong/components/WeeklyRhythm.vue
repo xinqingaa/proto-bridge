@@ -11,6 +11,8 @@ defineProps<{
   summary: string;
   inspectId: string;
 }>();
+
+defineEmits<{ select: [date: string] }>();
 </script>
 
 <template>
@@ -34,18 +36,28 @@ defineProps<{
       </span>
     </figcaption>
 
-    <div class="hd-week-days" role="list" aria-label="周一至周日活动情况">
-      <span
+    <div class="hd-week-days" role="group" aria-label="周一至周日活动情况">
+      <button
         v-for="item in items"
         :key="item.date"
+        type="button"
         class="hd-week-day"
         :class="{ 'is-active': item.active, 'is-today': item.today }"
-        role="listitem"
-        :aria-label="`${item.label}${item.today ? '，今天' : ''}，${item.minutes ? `${item.minutes} 分钟活动` : '暂无活动'}`"
+        :data-pb-id="`${inspectId}.day`"
+        :data-pb-key="item.date"
+        data-pb-role="button"
+        data-pb-token-color="color.primary"
+        data-pb-token-spacing="spacing.xs"
+        data-pb-token-size="sizing.touch"
+        :data-pb-action="
+          item.active ? 'open-rhythm-day' : 'show-empty-rhythm-day'
+        "
+        :aria-label="`${item.label}${item.today ? '，今天' : ''}，${item.minutes ? `${item.minutes} 分钟活动，查看记录` : '暂无活动，查看说明'}`"
+        @click="$emit('select', item.date)"
       >
         <small>{{ item.label }}</small>
         <i aria-hidden="true" />
-      </span>
+      </button>
     </div>
   </figure>
 </template>
@@ -56,9 +68,6 @@ defineProps<{
   flex-direction: column;
   gap: var(--pb-spacing-md);
   margin: var(--pb-spacing-none);
-  padding: var(--pb-spacing-md) var(--pb-spacing-none);
-  border-top: var(--pb-border-hairline);
-  border-bottom: var(--pb-border-hairline);
 }
 
 .hd-week-rhythm-heading,
@@ -99,9 +108,25 @@ defineProps<{
 .hd-week-day {
   flex: var(--pb-layout-flex-fill);
   min-width: var(--pb-spacing-none);
+  min-height: var(--pb-sizing-touch);
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: var(--pb-spacing-xs);
+  padding: var(--pb-spacing-none);
+  border: none;
+  border-radius: var(--pb-radius-sm);
+  background: transparent;
+  cursor: pointer;
+}
+
+.hd-week-day:hover {
+  background: var(--pb-color-primary-soft);
+}
+
+.hd-week-day:focus-visible {
+  outline: var(--pb-border-focus);
+  outline-offset: var(--pb-layout-focus-inset);
 }
 
 .hd-week-day i {
@@ -120,7 +145,6 @@ defineProps<{
 
 .hd-week-day.is-today small {
   color: var(--pb-color-primary);
-  font: var(--pb-typography-caption-strong);
 }
 
 .hd-week-day.is-today i {

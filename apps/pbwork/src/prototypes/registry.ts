@@ -142,6 +142,7 @@ const redesignedHengdongScreens = [
     path: "/prototype/hengdong/today",
     view: "hengdong/screens/TodayScreen.vue",
     defaultVariantId: "default",
+    queryKeys: ["state"],
     shellFragments: [
       { screenId: "hengdong.today", pbId: "hengdong.today.tab-viewport" },
       { screenId: "hengdong.today", pbId: "hengdong.today.tabbar" },
@@ -161,6 +162,22 @@ const redesignedHengdongScreens = [
         ],
       },
       {
+        id: "in-progress",
+        label: "继续进行中的训练",
+      },
+      {
+        id: "completed",
+        label: "今天已经完成",
+      },
+      {
+        id: "no-plan",
+        label: "没有当前计划",
+      },
+      {
+        id: "recent-empty",
+        label: "最近记录为空",
+      },
+      {
         id: "quick-record-open",
         label: "快速记录流程",
         requiredFragments: [
@@ -170,14 +187,48 @@ const redesignedHengdongScreens = [
           },
         ],
       },
+      {
+        id: "record-detail-open",
+        label: "今天页记录详情",
+        query: { record: "record-20260812" },
+        requiredFragments: [
+          {
+            screenId: "hengdong.today",
+            pbId: "hengdong.today.record-detail",
+          },
+          {
+            screenId: "hengdong.today",
+            pbId: "hengdong.today.record-detail-content",
+          },
+        ],
+      },
+      {
+        id: "day-empty-feedback",
+        label: "无记录日期反馈",
+        query: { date: "2026-08-11" },
+        requiredFragments: [
+          {
+            screenId: "hengdong.today",
+            pbId: "hengdong.today.day-empty-feedback",
+          },
+        ],
+      },
     ],
     actions: [
       {
-        id: "start-workout",
+        id: "activate-primary",
         kind: "click",
         target: {
           screenId: "hengdong.today",
           pbId: "hengdong.today.start-workout",
+        },
+      },
+      {
+        id: "activate-ring",
+        kind: "click",
+        target: {
+          screenId: "hengdong.today",
+          pbId: "hengdong.today.goal-ring",
         },
       },
       {
@@ -188,13 +239,40 @@ const redesignedHengdongScreens = [
           pbId: "hengdong.today.quick-record",
         },
       },
+      {
+        id: "open-rhythm-day",
+        kind: "click",
+        target: {
+          screenId: "hengdong.today",
+          pbId: "hengdong.today.week-rhythm.day",
+          pbKey: "2026-08-12",
+        },
+      },
+      {
+        id: "show-empty-rhythm-day",
+        kind: "click",
+        target: {
+          screenId: "hengdong.today",
+          pbId: "hengdong.today.week-rhythm.day",
+          pbKey: "2026-08-11",
+        },
+      },
+      {
+        id: "open-recent-record",
+        kind: "click",
+        target: {
+          screenId: "hengdong.today",
+          pbId: "hengdong.today.record-row",
+          pbKey: "record-20260812",
+        },
+      },
     ],
     scenarios: [
       {
         id: "begin-today-workout",
         label: "开始今天的训练",
         initialVariantId: "default",
-        actionIds: ["start-workout"],
+        actionIds: ["activate-primary"],
         checkpoints: [
           {
             id: "session-focused",
@@ -213,8 +291,102 @@ const redesignedHengdongScreens = [
           },
         ],
       },
+      {
+        id: "begin-today-workout-from-ring",
+        label: "从周目标环开始训练",
+        initialVariantId: "default",
+        actionIds: ["activate-ring"],
+        checkpoints: [
+          {
+            id: "ring-session-focused",
+            screenId: "hengdong.workout-session",
+            variantId: "default",
+            requiredFragments: [
+              {
+                screenId: "hengdong.workout-session",
+                pbId: "hengdong.workout-session.root",
+              },
+              {
+                screenId: "hengdong.workout-session",
+                pbId: "hengdong.workout-session.current-exercise",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "inspect-recorded-rhythm-day",
+        label: "查看有记录的节奏日",
+        initialVariantId: "default",
+        actionIds: ["open-rhythm-day"],
+        checkpoints: [
+          {
+            id: "recorded-day-detail-open",
+            screenId: "hengdong.today",
+            variantId: "record-detail-open",
+            requiredFragments: [
+              {
+                screenId: "hengdong.today",
+                pbId: "hengdong.today.record-detail",
+              },
+              {
+                screenId: "hengdong.today",
+                pbId: "hengdong.today.record-detail-content",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "inspect-empty-rhythm-day",
+        label: "查看无记录的节奏日",
+        initialVariantId: "default",
+        actionIds: ["show-empty-rhythm-day"],
+        checkpoints: [
+          {
+            id: "empty-day-feedback-visible",
+            screenId: "hengdong.today",
+            variantId: "day-empty-feedback",
+            requiredFragments: [
+              {
+                screenId: "hengdong.today",
+                pbId: "hengdong.today.day-empty-feedback",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "inspect-recent-record",
+        label: "查看最近记录",
+        initialVariantId: "default",
+        actionIds: ["open-recent-record"],
+        checkpoints: [
+          {
+            id: "recent-record-detail-open",
+            screenId: "hengdong.today",
+            variantId: "record-detail-open",
+            requiredFragments: [
+              {
+                screenId: "hengdong.today",
+                pbId: "hengdong.today.record-detail",
+              },
+              {
+                screenId: "hengdong.today",
+                pbId: "hengdong.today.record-detail-content",
+              },
+            ],
+          },
+        ],
+      },
     ],
-    requiredScenarioIds: ["begin-today-workout"],
+    requiredScenarioIds: [
+      "begin-today-workout",
+      "begin-today-workout-from-ring",
+      "inspect-recorded-rhythm-day",
+      "inspect-empty-rhythm-day",
+      "inspect-recent-record",
+    ],
   },
   {
     prototypeId: "hengdong",

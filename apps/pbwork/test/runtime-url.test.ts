@@ -111,6 +111,21 @@ describe("resolveRuntimeRoute", () => {
       }),
     ).toMatchObject({ ok: false, code: "INVALID_QUERY" });
   });
+
+  it("accepts Today overlay state as an authored optional query", () => {
+    const result = resolveRuntimeRoute({
+      prototypeId: "hengdong",
+      screenSlug: "today",
+      searchParams: new URLSearchParams(
+        "variant=record-detail-open&theme=light&record=record-20260812&state=completed",
+      ),
+    });
+
+    expect(result).toMatchObject({
+      ok: true,
+      query: { record: "record-20260812", state: "completed" },
+    });
+  });
 });
 
 describe("device viewport presets", () => {

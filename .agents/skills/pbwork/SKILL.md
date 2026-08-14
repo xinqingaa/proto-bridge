@@ -16,12 +16,12 @@ Do not read every reference by default.
 
 ## Route the task
 
-| Task | Required reference |
-| --- | --- |
-| New prototype, product structure, navigation, visual direction, exploration, or `docs/design.md` | [prototype-design.md](references/prototype-design.md) |
-| Approved Screen, Variant, fixture, action, scenario, Runtime, or Evidence implementation | [prototype-authoring.md](references/prototype-authoring.md) |
-| Token, Theme, component, Contract, Registry, Playground, or shared gesture | [design-system.md](references/design-system.md) |
-| Workbench shell, Canvas, Inspector, Capture Console, Deliver, task center, or Evidence Review | [workbench.md](references/workbench.md) |
+| Task                                                                                             | Required reference                                          |
+| ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| New prototype, product structure, navigation, visual direction, exploration, or `docs/design.md` | [prototype-design.md](references/prototype-design.md)       |
+| Approved Screen, Variant, fixture, action, scenario, Runtime, or Evidence implementation         | [prototype-authoring.md](references/prototype-authoring.md) |
+| Token, Theme, component, Contract, Registry, Playground, or shared gesture                       | [design-system.md](references/design-system.md)             |
+| Workbench shell, Canvas, Inspector, Capture Console, Deliver, task center, or Evidence Review    | [workbench.md](references/workbench.md)                     |
 
 Read more than one reference when a task genuinely crosses boundaries. For
 example, promoting a visual exploration may require prototype design first,
@@ -34,8 +34,11 @@ then design-system work, then formal authoring.
 - Keep exploratory code under `apps/pbwork/src/drafts/{prototypeId}/`;
   it is not PB-compliant Evidence and must not enter Capture/Handoff.
 - Use the repository-local `frontend-design` Skill for visual identity,
-  composition, typography, or aesthetic exploration. Do not use it by default
-  for routine Token, component, Contract, Workbench, or defect maintenance.
+  composition, typography, or aesthetic exploration. For a new or materially
+  reshaped business Screen, apply it once while setting direction and again to
+  the formal PBWork implementation before declaring the Screen complete. Do not
+  use it by default for routine Token, component, Contract, Workbench, copy, or
+  established defect maintenance.
 - Keep product logic and PBWork delivery constraints in this Skill. Do not
   modify the vendored `frontend-design` Skill with PBWork-specific rules.
 - Prototype Runtime components and Workbench UI are separate component
@@ -43,6 +46,9 @@ then design-system work, then formal authoring.
 - If implementation exposes unresolved product structure, fake interaction,
   or an unshippable visual direction, return to prototype design instead of
   silently changing the baseline.
+- A formal business Screen is complete only after both the PBWork Delivery Gate
+  and the screenshot-based Experience Gate in `prototype-authoring.md` pass.
+  Fixes made for either gate must be checked against the other gate again.
 
 ## Baseline reading
 
