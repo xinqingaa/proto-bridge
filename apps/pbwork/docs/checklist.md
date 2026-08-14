@@ -53,16 +53,30 @@
 - [ ] Action target 使用稳定 Fragment；Scenario/Checkpoint 实际维度可验证
 - [ ] prepare/readiness/snapshot/reset 在独立 Case 中可重复
 
-## Experience Gate
+## Experience Review
 
 - [ ] 新页面或整页重构已对正式 PBWork 实现再次应用 `frontend-design`，不是只验收过草稿
-- [ ] 已在声明的目标视口查看真实浏览器截图，首屏只有一个最高焦点且阅读顺序符合页面契约
-- [ ] 已检查浅色、深色、窄屏和页面契约要求的默认/关键状态
-- [ ] 签名视觉在 DS、Token 和 Evidence 转译后仍成立，没有退化成通用组件堆叠
-- [ ] 所有看起来可点的元素都有可观察结果、反馈和可见键盘焦点
-- [ ] Divider、Card、标签、图标和装饰都编码真实结构；已移除发现的不必要配件
-- [ ] 重复元素对齐，文字不溢出，Overlay/固定导航不遮挡内容，reduced motion 不影响理解
-- [ ] Experience Gate 发现的问题已修复，并重新通过 Delivery Gate；不是仅记录为已知缺陷
+- [ ] `docs/implementation.md` 已记录 `quick-checked`、`accepted`、`fully-audited`、`needs-focused-review` 或显式 `deferred`；未把 Quick Check 描述成完整体验验收
+
+### L1 Quick Experience Check（默认）
+
+- [ ] 实现稳定后查看了默认状态、主要视口和主题的一张真实浏览器截图
+- [ ] 按页面最大风险至多增加一张深色、窄屏、Overlay、关键状态或主要交互结果截图；无次要风险时未强行补齐矩阵
+- [ ] 已检查首屏焦点与阅读顺序、签名视觉、明显热区反馈、装饰克制、重复元素对齐、文字溢出、Overlay 与固定导航遮挡
+- [ ] 截图修正循环不超过一次；仍有实质问题时记录 `needs-focused-review` 并升级，没有无限迭代或带缺陷标记 `quick-checked`
+
+### L2 Focused Experience Gate（按风险升级）
+
+- [ ] 用户不满意、L1 暴露实质问题、共享视觉语法、核心旅程、数据可视化、复杂交互或承担核心任务的复杂 Overlay 页面已升级到 L2
+- [ ] 已按实际风险选择三至五张截图，没有机械穷举主题 × 视口 × 状态
+- [ ] 相关默认/关键状态、交互反馈、键盘焦点、主题或窄屏、结构性 Divider/Card/标签/图标/装饰、文字与 Overlay 完整性均通过
+- [ ] 发现的不必要配件已移除，实质视觉缺陷已修复；未用已知缺陷换取 `accepted`
+
+### L3 Full Experience Audit（显式或批次）
+
+- [ ] 仅在用户明确要求、最终批次/发布验收或产品风险要求时执行
+- [ ] 已覆盖声明的主题、目标视口、reduced motion、关键状态与核心交互，发现的实质问题已修复后才记录 `fully-audited`
+- [ ] 视觉修复只重跑受影响的 Delivery 检查和当前 Experience 级别；完整仓库验证保留到页面或连贯批次完成时执行
 
 ## 文档
 

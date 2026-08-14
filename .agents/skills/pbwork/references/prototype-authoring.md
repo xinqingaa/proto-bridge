@@ -68,16 +68,28 @@ rewriting the baseline.
 | Change                                  | Location                                              | Synchronize                                        |
 | --------------------------------------- | ----------------------------------------------------- | -------------------------------------------------- |
 | Approved baseline                       | `src/prototypes/{prototypeId}/docs/design.md`         | Consume it; return to design for direction changes |
-| Prototype-specific implementation notes | `src/prototypes/{prototypeId}/docs/implementation.md` | Record only local code and migration decisions     |
+| Prototype-specific implementation notes | `src/prototypes/{prototypeId}/docs/implementation.md` | Record local decisions and Experience review level |
 | Screen, Panel, or Shell                 | `src/prototypes/{prototypeId}`                        | Registry, baseline, tests                          |
 | Variant or fixture                      | Registry and mock/fixture                             | Required boundary, Runtime tests                   |
 | Action or Scenario                      | Registry and target nodes                             | Checkpoint, browser tests                          |
 | Stable shared capability                | Design-system workflow first                          | Contract, Registry, docs, tests                    |
 
-## Dual acceptance
+## Delivery and experience review
 
-A new or materially reshaped business Screen is not complete until both gates
-pass. Run them again after any fix that can affect the other gate.
+Keep delivery correctness and visual confidence as separate, visible results.
+The PBWork Delivery Gate is mandatory. A new or materially reshaped business
+Screen receives the Quick Experience Check by default after its implementation
+is stable. Escalate only when risk or feedback justifies the additional cost.
+
+Record one Experience result in `docs/implementation.md`:
+
+- `quick-checked`: the default low-cost review found no obvious defect;
+- `accepted`: a Focused Experience Gate passed;
+- `fully-audited`: a Full Experience Audit passed;
+- `needs-focused-review`: the Quick Check exposed unresolved visual or
+  interaction problems;
+- `deferred`: screenshots were explicitly deferred by the user or could not be
+  obtained; record the reason and do not imply Experience acceptance.
 
 ### PBWork Delivery Gate
 
@@ -86,26 +98,58 @@ pass. Run them again after any fix that can affect the other gate.
   Variant fixtures, readiness, and reset are deterministic.
 - Typecheck, scoped tests, Runtime verification, and docs verification pass.
 
-### Experience Gate
+### Quick Experience Check
 
-Apply `frontend-design` to the formal PBWork result, not only to its source
-draft. Use a real browser and the target viewport to inspect screenshots and
-interactions for the approved page states. Verify:
+Use this level by default. Apply `frontend-design` to the stable formal PBWork
+result, not only to its source draft.
 
-- the first viewport has one clear focus and follows the contracted reading
-  order;
-- the signature idea survives DS/Token/Evidence translation;
-- every apparent control or hot zone has visible feedback and the contracted
-  result, with visible keyboard focus;
-- dividers, cards, labels, icons, and decoration encode real structure;
-- light and dark themes, narrow layout, reduced motion, and the approved
-  default/critical states remain coherent;
-- text fits, repeated elements align, overlays do not occlude content, and fixed
-  navigation does not cover it.
+- Inspect one real-browser screenshot of the default state at the primary
+  target viewport and theme.
+- Inspect at most one additional screenshot chosen by the largest page-specific
+  risk: dark theme, narrow layout, overlay, empty/completed state, or the most
+  important interaction result.
+- Check the first-viewport focus and reading order, signature survival,
+  apparent-control feedback, obvious over-decoration, repeated alignment, text
+  fit, overlay occlusion, and fixed-navigation coverage.
+- Perform no more than one corrective screenshot loop. If a material problem
+  remains, record `needs-focused-review` and escalate instead of continuing an
+  unbounded review.
 
-Critique the screenshot, remove at least one unnecessary accessory when one is
-present, fix discovered problems, and repeat both gates. Do not treat a list of
-known visual defects as a passed Experience Gate.
+Do not require a theme-by-viewport-by-state matrix at this level. A page with no
+meaningful secondary risk may pass with one screenshot.
+
+### Focused Experience Gate
+
+Use this level when the user is dissatisfied, the Quick Check finds a material
+problem, the Screen establishes shared visual grammar, or the Screen carries a
+core journey, data visualization, complex interaction, or complex/central
+overlay behavior.
+
+- Inspect three to five screenshots selected from the actual risks rather than
+  exhaustively multiplying every state, theme, and viewport.
+- Verify the relevant default and critical states, interaction feedback,
+  keyboard focus, theme or narrow-layout behavior, structural use of dividers,
+  cards, labels, icons, and decoration, plus text and overlay integrity.
+- Critique and fix discovered problems until the selected risk surface is
+  coherent. Remove unnecessary accessories when present.
+
+Do not mark known material visual defects as `accepted`.
+
+### Full Experience Audit
+
+Run this level only on explicit instruction, for final batch/release review, or
+when the product's risk requires comprehensive coverage. Inspect all declared
+target themes, viewports, reduced-motion behavior, critical states, and core
+interactions. Record `fully-audited` only after discovered material defects are
+fixed.
+
+### Proportional recheck
+
+After a visual fix, rerun the Delivery checks affected by that fix and the
+selected Experience level. After a Delivery fix that changes rendering or
+behavior, rerun the selected Experience level. Do not rerun an unaffected full
+matrix or full repository suite during every screenshot iteration; reserve full
+verification for the completed Screen or coherent delivery batch.
 
 ## Verify
 

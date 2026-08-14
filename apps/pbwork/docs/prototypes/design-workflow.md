@@ -12,7 +12,7 @@
   → 页面设计增量确认
   → Promotion Mapping
   → 正式 PBWork Authoring
-  → Delivery Gate + Experience Gate
+  → Delivery Gate + 分级 Experience Review
   → Runtime / Evidence / Handoff
 ```
 
@@ -102,12 +102,14 @@ approvedAt: 2026-08-13 # 仅 approved 时必需
 
 正式 Authoring 只消费 `status: approved` 的产品基线和已批准的页面设计增量。正式页面遵守 Token-only、DS-first、Flex-only、Registry、semantic authoring、Action/Scenario/Checkpoint 和 Runtime 确定性约束。
 
-新页面或整页重构必须通过两个门禁：
+新页面或整页重构必须通过 Delivery Gate，并在正式实现稳定后执行分级 Experience Review：
 
 - **Delivery Gate**：验证 Token、DS、Evidence、Variant、Action/Scenario、Runtime 确定性和测试。
-- **Experience Gate**：PBWork 重新调用 `frontend-design`，在真实目标视口检查正式实现的截图、视觉焦点、阅读顺序、装饰删减、可见交互反馈、键盘焦点、浅深主题和关键状态。
+- **L1 Quick Experience Check**：默认检查主要视口和主题的默认状态截图，并按最大风险至多增加一张截图；只允许一轮修正，仍有实质问题则升级。
+- **L2 Focused Experience Gate**：用户不满意、L1 暴露问题或页面承担高风险视觉与交互时，按实际风险选择三至五张截图验收。
+- **L3 Full Experience Audit**：只在用户明确要求、最终批次/发布验收或产品风险要求时完整覆盖声明的主题、视口、关键状态和核心交互。
 
-视觉探索通过不代表正式实现自动通过 Experience Gate。DS/Token/Evidence 转译后必须重新验收；任一门禁修复后都要回归另一门禁。
+视觉探索通过不代表正式实现自动通过 Experience Review。`docs/implementation.md` 分别记录 Delivery 结果和 `quick-checked`、`accepted`、`fully-audited`、`needs-focused-review` 或显式 `deferred`。视觉修复只回归受影响的 Delivery 检查与当前 Experience 级别；完整验证保留到页面或连贯批次完成时执行。
 
 若实现暴露假交互、结构冲突、无法兑现的视觉方向或范围扩大，停止实现并回到设计阶段，不静默改变 `design.md`。
 
@@ -115,4 +117,4 @@ approvedAt: 2026-08-13 # 仅 approved 时必需
 
 PBWork 任务统一由仓库 `pbwork` Skill 路由。该 Skill 按任务读取原型设计、正式 Authoring、Design System 或 Workbench reference，跨边界任务可以按阶段组合，但不需要在多个 PBWork Skill 之间切换。
 
-`frontend-design` 只负责通用视觉发散、构图、字体和审美批评，不负责 PB Token/DS、Evidence 或 Flutter 映射。普通 Token、组件、Contract、Workbench、文案或已定缺陷维护不默认调用它；新页面和整页重构则必须在定方向时和正式 Authoring 后各应用一次，由 PBWork 负责两个门禁的协调。
+`frontend-design` 只负责通用视觉发散、构图、字体和审美批评，不负责 PB Token/DS、Evidence 或 Flutter 映射。普通 Token、组件、Contract、Workbench、文案或已定缺陷维护不默认调用它；新页面和整页重构则必须在定方向时和正式 Authoring 后各应用一次，由 PBWork 负责 Delivery Gate 与分级 Experience Review 的协调。

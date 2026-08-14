@@ -35,10 +35,11 @@ then design-system work, then formal authoring.
   it is not PB-compliant Evidence and must not enter Capture/Handoff.
 - Use the repository-local `frontend-design` Skill for visual identity,
   composition, typography, or aesthetic exploration. For a new or materially
-  reshaped business Screen, apply it once while setting direction and again to
-  the formal PBWork implementation before declaring the Screen complete. Do not
-  use it by default for routine Token, component, Contract, Workbench, copy, or
-  established defect maintenance.
+  reshaped business Screen, apply it once while setting direction and run at
+  least the Quick Experience Check on the formal PBWork implementation. Escalate
+  to the Focused Experience Gate or Full Experience Audit by risk, user feedback,
+  or explicit instruction. Do not use it by default for routine Token,
+  component, Contract, Workbench, copy, or established defect maintenance.
 - Keep product logic and PBWork delivery constraints in this Skill. Do not
   modify the vendored `frontend-design` Skill with PBWork-specific rules.
 - Prototype Runtime components and Workbench UI are separate component
@@ -46,9 +47,11 @@ then design-system work, then formal authoring.
 - If implementation exposes unresolved product structure, fake interaction,
   or an unshippable visual direction, return to prototype design instead of
   silently changing the baseline.
-- A formal business Screen is complete only after both the PBWork Delivery Gate
-  and the screenshot-based Experience Gate in `prototype-authoring.md` pass.
-  Fixes made for either gate must be checked against the other gate again.
+- The PBWork Delivery Gate is always required. Record the formal Screen's
+  Experience review level separately as `quick-checked`, `accepted`,
+  `fully-audited`, `needs-focused-review`, or explicitly `deferred`; do not
+  describe a Quick Check as full Experience acceptance. Follow the escalation
+  and proportional recheck rules in `prototype-authoring.md`.
 
 ## Baseline reading
 
