@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import {
   onBeforeRouteLeave,
   onBeforeRouteUpdate,
@@ -23,10 +23,13 @@ import "../hengdong.css";
 
 const route = useRoute();
 const router = useRouter();
-const initialVariant = String(route.query.variant ?? "default");
+const variant = computed(() => String(route.query.variant ?? "default"));
+const requestedPlanId = computed(() =>
+  typeof route.query.plan === "string" ? route.query.plan : "",
+);
 const plan = computed(
   () =>
-    hengdongState.plans.find((item) => item.id === route.query.plan) ??
+    hengdongState.plans.find((item) => item.id === requestedPlanId.value) ??
     hengdongState.plans.find(
       (item) => item.id === hengdongState.workoutSession?.planId,
     ) ??
@@ -62,42 +65,31 @@ function summaryFixture(
   };
 }
 
-function prepareSummary() {
-  if (!plan.value || initialVariant === "invalid-summary") return;
+function prepareSummary(variantId: string, preserveProductSummary = false) {
+  if (!plan.value || variantId === "invalid-summary") {
+    saveWorkoutSession(null);
+    return;
+  }
   const existing = hengdongState.workoutSession;
   const hasMatchingSummary =
     existing?.planId === plan.value.id && existing.status === "summary";
-  if (initialVariant === "partial") {
-    if (!hasMatchingSummary || existing.summaryKind !== "partial") {
-      saveWorkoutSession(summaryFixture("partial"));
-    }
+  const hasMatchingKind =
+    variantId === "partial"
+      ? existing?.summaryKind === "partial"
+      : existing?.summaryKind !== "partial";
+  if (preserveProductSummary && hasMatchingSummary && hasMatchingKind) return;
+  if (variantId === "partial") {
+    saveWorkoutSession(summaryFixture("partial"));
     return;
   }
-  if (initialVariant === "ready-to-save") {
-    if (!hasMatchingSummary || !existing.summaryFeeling) {
-      saveWorkoutSession(summaryFixture("complete", true));
-    }
+  if (variantId === "ready-to-save") {
+    saveWorkoutSession(summaryFixture("complete", true));
     return;
   }
-  if (initialVariant === "leave-confirm-open") {
-    if (!hasMatchingSummary) {
-      saveWorkoutSession(summaryFixture("complete"));
-    }
-    return;
-  }
-  if (
-    !hengdongState.workoutSession ||
-    hengdongState.workoutSession.planId !== plan.value.id ||
-    hengdongState.workoutSession.status !== "summary"
-  ) {
-    saveWorkoutSession(summaryFixture("complete"));
-  }
+  saveWorkoutSession(summaryFixture("complete"));
 }
 
-prepareSummary();
-
 const session = computed(() => hengdongState.workoutSession);
-const variant = computed(() => String(route.query.variant ?? "default"));
 const partial = computed(() => session.value?.summaryKind === "partial");
 const completedExercises = computed(() => {
   if (!plan.value || !session.value) return [];
@@ -148,6 +140,37 @@ const allowNavigation = ref(false);
 const previousVariant = ref("default");
 const pendingDestination = ref("");
 const forcedLeaveConfirmOpen = ref(false);
+let preservedVariantNavigation: string | null = null;
+let hasPreparedRoute = false;
+
+function replaceVariantPreservingSummary(nextVariant: string) {
+  if (variant.value === nextVariant) return;
+  preservedVariantNavigation = nextVariant;
+  void replaceVariant(router, route, nextVariant).catch(() => {
+    if (preservedVariantNavigation === nextVariant) {
+      preservedVariantNavigation = null;
+    }
+  });
+}
+
+watch(
+  [variant, requestedPlanId],
+  ([nextVariant]) => {
+    if (preservedVariantNavigation === nextVariant) {
+      preservedVariantNavigation = null;
+      return;
+    }
+    const preserveProductSummary =
+      !hasPreparedRoute && window.history.state?.pbScope === "hengdong";
+    hasPreparedRoute = true;
+    saving.value = false;
+    pendingDestination.value = "";
+    forcedLeaveConfirmOpen.value = false;
+    prepareSummary(nextVariant, preserveProductSummary);
+  },
+  { immediate: true },
+);
+
 const leaveConfirmOpen = computed({
   get: () =>
     forcedLeaveConfirmOpen.value || variant.value === "leave-confirm-open",
@@ -155,7 +178,7 @@ const leaveConfirmOpen = computed({
     if (!open) {
       forcedLeaveConfirmOpen.value = false;
       if (variant.value === "leave-confirm-open") {
-        void replaceVariant(router, route, previousVariant.value);
+        replaceVariantPreservingSummary(previousVariant.value);
       }
     }
   },
@@ -231,7 +254,7 @@ function recoverToToday() {
     data-pb-token-background="color.background"
     data-pb-token-color="color.on-background"
   >
-    <template v-if="initialVariant === 'invalid-summary' || !plan || !session">
+    <template v-if="variant === 'invalid-summary' || !plan || !session">
       <section
         class="hd-complete-recovery"
         data-pb-id="hengdong.workout-complete.recovery"

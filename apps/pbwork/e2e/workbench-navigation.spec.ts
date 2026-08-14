@@ -100,6 +100,103 @@ test("element inspector is hidden outside the canvas", async ({ page }) => {
   );
 });
 
+test("Hengdong variants update in place without resetting product interactions", async ({
+  page,
+}) => {
+  await page.goto(
+    "/workbench/prototypes/hengdong/screens/workout-session?variant=default&theme=light",
+  );
+  const runtime = page.frameLocator("iframe");
+  const runtimeUrl = () =>
+    runtime
+      .locator("body")
+      .evaluate((body) => body.ownerDocument.location.href);
+
+  await expect(
+    runtime.getByRole("heading", { name: "颈肩环绕" }),
+  ).toBeVisible();
+  await runtime.getByRole("button", { name: "完成当前动作" }).click();
+  await expect(runtime.getByText("动作 2 / 4", { exact: true })).toBeVisible();
+
+  await runtime.getByRole("button", { name: "暂停" }).click();
+  await expect(page).toHaveURL(/variant=paused/);
+  await expect(runtime.getByText("动作 2 / 4", { exact: true })).toBeVisible();
+  await runtime.getByRole("button", { name: "继续训练" }).click();
+  await expect(page).toHaveURL(/variant=default/);
+  await expect(runtime.getByText("动作 2 / 4", { exact: true })).toBeVisible();
+
+  await page.getByRole("link", { name: "最后一个动作", exact: true }).click();
+  await expect(page).toHaveURL(/variant=last-exercise/);
+  await expect.poll(runtimeUrl).toContain("variant=last-exercise");
+  await expect(runtime.getByText("动作 4 / 4", { exact: true })).toBeVisible();
+  await expect(runtime.getByRole("button", { name: "完成训练" })).toBeVisible();
+
+  await page.getByRole("link", { name: "会话无法恢复", exact: true }).click();
+  await expect(page).toHaveURL(/variant=invalid-session/);
+  await expect.poll(runtimeUrl).toContain("variant=invalid-session");
+  await expect(
+    runtime.getByRole("heading", { name: "这次训练信息已经失效" }),
+  ).toBeVisible();
+
+  await page.getByRole("link", { name: "当前动作", exact: true }).click();
+  await expect(page).toHaveURL(/variant=default/);
+  await expect(runtime.getByText("动作 1 / 4", { exact: true })).toBeVisible();
+  await expect(
+    runtime.getByRole("heading", { name: "颈肩环绕" }),
+  ).toBeVisible();
+
+  await page.goto(
+    "/workbench/prototypes/hengdong/screens/workout-complete?variant=default&theme=light",
+  );
+  await expect(
+    runtime.getByRole("heading", { name: "这次训练完成了" }),
+  ).toBeVisible();
+
+  await page.getByRole("link", { name: "部分完成反馈", exact: true }).click();
+  await expect(page).toHaveURL(/variant=partial/);
+  await expect(
+    runtime.getByRole("heading", { name: "已完成一部分" }),
+  ).toBeVisible();
+
+  await page.getByRole("link", { name: "总结无法恢复", exact: true }).click();
+  await expect(page).toHaveURL(/variant=invalid-summary/);
+  await expect(
+    runtime.getByRole("heading", {
+      name: "这次训练还没有可保存的结果",
+    }),
+  ).toBeVisible();
+});
+
+test("Hengdong product progress survives reloads", async ({ page }) => {
+  await page.goto("/prototype/hengdong/plans?variant=default&theme=light");
+  await page.getByRole("button", { name: "开始训练", exact: true }).click();
+  await expect(page.getByText("动作 1 / 4", { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "完成当前动作" }).click();
+  await expect(page.getByText("动作 2 / 4", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("动作 2 / 4", { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "完成当前动作" }).click();
+  await page.getByRole("button", { name: "完成当前动作" }).click();
+  await page.getByRole("button", { name: "完成训练" }).click();
+  await expect(
+    page.getByRole("heading", { name: "这次训练完成了" }),
+  ).toBeVisible();
+
+  await page.getByRole("radio", { name: "刚好", exact: true }).check();
+  await page
+    .getByRole("textbox", { name: "备注（可选）" })
+    .fill("刷新后仍保留");
+  await page.reload();
+  await expect(
+    page.getByRole("radio", { name: "刚好", exact: true }),
+  ).toBeChecked();
+  await expect(
+    page.getByRole("textbox", { name: "备注（可选）" }),
+  ).toHaveValue("刷新后仍保留");
+});
+
 test("search and settings controls have usable behavior", async ({ page }) => {
   await page.getByRole("button", { name: "搜索资源" }).click();
   await page.getByRole("textbox", { name: "名称", exact: true }).fill("浅色");

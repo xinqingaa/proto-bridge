@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import {
   onBeforeRouteLeave,
   onBeforeRouteUpdate,
@@ -21,16 +21,17 @@ import "../hengdong.css";
 const FEEDBACK_DURATION = tokenDefaultNumber("motion.duration-toast");
 const route = useRoute();
 const router = useRouter();
-const initialVariant = String(route.query.variant ?? "default");
-const requestedPlanId =
-  typeof route.query.plan === "string" ? route.query.plan : "";
+const variant = computed(() => String(route.query.variant ?? "default"));
+const requestedPlanId = computed(() =>
+  typeof route.query.plan === "string" ? route.query.plan : "",
+);
 const requestedPlan = computed(() =>
-  hengdongState.plans.find((item) => item.id === requestedPlanId),
+  hengdongState.plans.find((item) => item.id === requestedPlanId.value),
 );
 const invalidSession = computed(
   () =>
-    initialVariant === "invalid-session" ||
-    (Boolean(requestedPlanId) && !requestedPlan.value),
+    variant.value === "invalid-session" ||
+    (Boolean(requestedPlanId.value) && !requestedPlan.value),
 );
 const plan = computed(
   () =>
@@ -83,35 +84,35 @@ function fixtureSession(
   };
 }
 
-function prepareSession() {
-  if (invalidSession.value || !plan.value) return;
-  if (initialVariant === "last-exercise") {
+function prepareSession(variantId: string, preserveProductSession = false) {
+  if (invalidSession.value || !plan.value) {
+    saveWorkoutSession(null);
+    return;
+  }
+  if (variantId === "last-exercise") {
     saveWorkoutSession(fixtureSession("last"));
     return;
   }
-  if (["paused", "resumed", "exit-confirm-open"].includes(initialVariant)) {
-    const existing = hengdongState.workoutSession;
-    if (existing?.planId === plan.value.id && existing.status !== "summary") {
+  const existing = hengdongState.workoutSession;
+  const hasMatchingSession =
+    existing?.planId === plan.value.id && existing.status !== "summary";
+  if (preserveProductSession && hasMatchingSession) {
+    if (["paused", "resumed", "exit-confirm-open"].includes(variantId)) {
       existing.status = "paused";
       persistHengdong();
-    } else {
-      saveWorkoutSession(fixtureSession("progress"));
     }
     return;
   }
-  if (initialVariant === "exit-confirm-empty") {
+  if (["paused", "resumed", "exit-confirm-open"].includes(variantId)) {
+    saveWorkoutSession(fixtureSession("progress"));
+    return;
+  }
+  if (variantId === "exit-confirm-empty") {
     saveWorkoutSession(fixtureSession("empty-exit"));
     return;
   }
-  if (
-    !hengdongState.workoutSession ||
-    hengdongState.workoutSession.planId !== plan.value.id
-  ) {
-    saveWorkoutSession(fixtureSession("default"));
-  }
+  saveWorkoutSession(fixtureSession("default"));
 }
-
-prepareSession();
 
 const session = computed(() => hengdongState.workoutSession);
 const exercise = computed<Exercise | null>(() => {
@@ -127,7 +128,6 @@ const isLastExercise = computed(
     Boolean(plan.value && session.value) &&
     session.value!.currentExerciseIndex >= plan.value!.exercises.length - 1,
 );
-const variant = computed(() => String(route.query.variant ?? "default"));
 const forcedExitOpen = ref(false);
 const exitOpen = computed({
   get: () =>
@@ -186,6 +186,36 @@ const allowNavigation = ref(false);
 
 let timer: number | undefined;
 let feedbackTimer: number | undefined;
+let preservedVariantNavigation: string | null = null;
+let hasPreparedRoute = false;
+
+function replaceVariantPreservingSession(nextVariant: string) {
+  if (variant.value === nextVariant) return;
+  preservedVariantNavigation = nextVariant;
+  void replaceVariant(router, route, nextVariant).catch(() => {
+    if (preservedVariantNavigation === nextVariant) {
+      preservedVariantNavigation = null;
+    }
+  });
+}
+
+watch(
+  [variant, requestedPlanId],
+  ([nextVariant]) => {
+    if (preservedVariantNavigation === nextVariant) {
+      preservedVariantNavigation = null;
+      return;
+    }
+    const preserveProductSession =
+      !hasPreparedRoute && window.history.state?.pbScope === "hengdong";
+    hasPreparedRoute = true;
+    forcedExitOpen.value = false;
+    transitionFeedback.value = "";
+    allowNavigation.value = false;
+    prepareSession(nextVariant, preserveProductSession);
+  },
+  { immediate: true },
+);
 
 function setTransitionFeedback(message: string) {
   transitionFeedback.value = message;
@@ -255,10 +285,10 @@ function togglePause() {
   if (!session.value) return;
   if (session.value.status === "paused") {
     session.value.status = "running";
-    void replaceVariant(router, route, "default");
+    replaceVariantPreservingSession("default");
   } else {
     session.value.status = "paused";
-    void replaceVariant(router, route, "paused");
+    replaceVariantPreservingSession("paused");
   }
   persistHengdong();
 }
@@ -291,7 +321,7 @@ function completeCurrent() {
   persistHengdong();
   setTransitionFeedback(`${current.name}已完成，接着做下一个动作`);
   if (variant.value !== "default") {
-    void replaceVariant(router, route, "default");
+    replaceVariantPreservingSession("default");
   }
 }
 
@@ -307,7 +337,7 @@ function previousExercise() {
       session.value.completedExerciseIds.filter((id) => id !== previous.id);
   }
   persistHengdong();
-  void replaceVariant(router, route, "default");
+  replaceVariantPreservingSession("default");
 }
 
 function openExit() {
@@ -316,9 +346,7 @@ function openExit() {
     session.value.status === "paused" ? "paused" : "running";
   session.value.status = "paused";
   persistHengdong();
-  void replaceVariant(
-    router,
-    route,
+  replaceVariantPreservingSession(
     session.value.completedExerciseIds.length > 0
       ? "exit-confirm-open"
       : "exit-confirm-empty",
@@ -331,9 +359,7 @@ function continueTraining() {
   session.value.status = exitPreviousStatus.value;
   persistHengdong();
   if (["exit-confirm-open", "exit-confirm-empty"].includes(variant.value)) {
-    void replaceVariant(
-      router,
-      route,
+    replaceVariantPreservingSession(
       session.value.status === "paused" ? "paused" : "default",
     );
   }
