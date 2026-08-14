@@ -20,6 +20,7 @@ import {
   recordsInWeek,
   totalMinutes,
   type ActivityType,
+  type Exercise,
   type Feeling,
   type WorkoutRecord,
   type WorkoutSession,
@@ -42,6 +43,11 @@ const todayStates: TodayState[] = [
   "no-plan",
   "recent-empty",
 ];
+const recordDetailVariants = [
+  "record-detail-open",
+  "record-detail-quick",
+  "record-detail-long-note",
+];
 
 const completedFixture: WorkoutRecord = {
   id: "record-20260813-completed",
@@ -55,6 +61,32 @@ const completedFixture: WorkoutRecord = {
   note: "今天已经完成，身体轻松了一些。",
   completedExerciseIds: ["neck-roll", "body-squat", "incline-push", "dead-bug"],
 };
+
+const recordDetailFixtures: WorkoutRecord[] = [
+  {
+    id: "record-detail-quick-no-note",
+    date: HENGDONG_TODAY,
+    kind: "quick",
+    activityType: "步行",
+    title: "晚饭后散步",
+    minutes: 20,
+    feeling: "轻松",
+    note: "",
+    completedExerciseIds: [],
+  },
+  {
+    id: "record-detail-long-note",
+    date: "2026-08-10",
+    kind: "session",
+    activityType: "训练",
+    planId: "full-body-basic",
+    title: "全身基础训练",
+    minutes: 31,
+    feeling: "吃力",
+    note: "前半段节奏很稳定，弓步时左侧稍微紧了一些，所以主动放慢速度并缩短了最后一组。完成后呼吸恢复得很快，下次继续保留这个节奏，不需要为了追求次数勉强加量。深蹲和俯卧撑的动作比上周更稳定，核心部分仍然容易抢速度，之后可以把注意力放回呼吸和控制。训练结束后走动了几分钟，左侧紧张感已经缓解，没有继续加练。今天的目标只是完整做完并记住身体反馈，这个程度刚好。下次开始前先做一轮轻柔活动，如果左侧仍然紧，就继续减少弓步幅度。",
+    completedExerciseIds: ["squat", "push-up", "lunge", "plank"],
+  },
+];
 
 const inProgressFixture: WorkoutSession = {
   planId: "wake-up-15",
@@ -206,10 +238,27 @@ const selectedRecord = computed(() => {
   const recordId =
     typeof route.query.record === "string" ? route.query.record : "";
   return (
-    presentedRecords.value.find((record) => record.id === recordId) ??
+    [...presentedRecords.value, ...recordDetailFixtures].find(
+      (record) => record.id === recordId,
+    ) ??
     recentRecords.value[0] ??
     null
   );
+});
+const selectedRecordPlan = computed(() => {
+  const planId = selectedRecord.value?.planId;
+  if (!planId) return null;
+  return hengdongState.plans.find((plan) => plan.id === planId) ?? null;
+});
+const selectedRecordExercises = computed<Exercise[]>(() => {
+  const record = selectedRecord.value;
+  const plan = selectedRecordPlan.value;
+  if (!record || !plan || record.kind !== "session") return [];
+  return record.completedExerciseIds
+    .map((exerciseId) =>
+      plan.exercises.find((exercise) => exercise.id === exerciseId),
+    )
+    .filter((exercise): exercise is Exercise => Boolean(exercise));
 });
 const selectedEmptyDate = computed(() =>
   typeof route.query.date === "string" ? route.query.date : "",
@@ -235,7 +284,7 @@ const quickRecordOpen = computed({
   },
 });
 const recordSheetOpen = computed({
-  get: () => variant.value === "record-detail-open",
+  get: () => recordDetailVariants.includes(variant.value),
   set: (open) => {
     if (!open) closeOverlay();
   },
@@ -613,33 +662,167 @@ function openRhythmDay(date: string) {
       >
         <div
           v-if="selectedRecord"
-          class="hd-flow-step"
+          class="hd-record-detail"
           data-pb-id="hengdong.today.record-detail-content"
           data-pb-role="summary"
           data-pb-token-color="color.on-surface"
-          data-pb-token-spacing="spacing.md"
+          data-pb-token-spacing="spacing.lg"
         >
-          <span class="hd-overline">{{
-            recordDateLabel(selectedRecord.date)
-          }}</span>
-          <h3>{{ selectedRecord.title }}</h3>
-          <div class="hd-statline">
-            <div class="hd-stat">
-              <strong>{{ selectedRecord.minutes }}</strong
-              ><span>分钟</span>
+          <header
+            class="hd-record-detail-hero"
+            data-pb-id="hengdong.today.record-detail-outcome"
+            data-pb-role="summary"
+            data-pb-token-color="color.on-surface"
+            data-pb-token-typography="typography.title"
+            data-pb-token-spacing="spacing.md"
+          >
+            <span class="hd-record-detail-mark" aria-hidden="true">
+              <Icon
+                name="clipboard-check"
+                size="lg"
+                tone="success"
+                inspect-id="hengdong.today.record-detail-icon"
+              />
+            </span>
+            <span class="hd-record-detail-copy">
+              <span class="hd-record-detail-status">
+                {{
+                  selectedRecord.kind === "session"
+                    ? "正式训练已完成"
+                    : "日常活动已记录"
+                }}
+              </span>
+              <h3>{{ selectedRecord.title }}</h3>
+              <span class="hd-record-detail-meta">
+                {{ recordDateLabel(selectedRecord.date) }} ·
+                {{
+                  selectedRecord.kind === "session"
+                    ? "来自训练计划"
+                    : "快捷记录"
+                }}
+              </span>
+            </span>
+          </header>
+
+          <div
+            class="hd-record-detail-facts"
+            data-pb-id="hengdong.today.record-detail-facts"
+            data-pb-role="section"
+            data-pb-token-spacing="spacing.sm"
+          >
+            <div class="hd-record-detail-fact">
+              <strong
+                data-pb-id="hengdong.today.record-detail-fact-value"
+                data-pb-key="duration"
+                data-pb-role="text"
+                data-pb-token-color="color.on-surface"
+                data-pb-token-typography="typography.title-lg"
+                >{{ selectedRecord.minutes }}</strong
+              >
+              <span
+                data-pb-id="hengdong.today.record-detail-fact-label"
+                data-pb-key="duration"
+                data-pb-role="text"
+                data-pb-token-color="color.on-surface-muted"
+                data-pb-token-typography="typography.caption"
+                >分钟</span
+              >
             </div>
-            <div class="hd-stat">
-              <strong>{{ selectedRecord.feeling }}</strong
-              ><span>体感</span>
+            <div class="hd-record-detail-fact">
+              <strong
+                data-pb-id="hengdong.today.record-detail-fact-value"
+                data-pb-key="activity-type"
+                data-pb-role="text"
+                data-pb-token-color="color.on-surface"
+                data-pb-token-typography="typography.title-lg"
+                >{{ selectedRecord.activityType }}</strong
+              >
+              <span
+                data-pb-id="hengdong.today.record-detail-fact-label"
+                data-pb-key="activity-type"
+                data-pb-role="text"
+                data-pb-token-color="color.on-surface-muted"
+                data-pb-token-typography="typography.caption"
+                >活动类型</span
+              >
             </div>
-            <div class="hd-stat">
-              <strong>{{ selectedRecord.activityType }}</strong
-              ><span>类型</span>
+            <div class="hd-record-detail-fact">
+              <strong
+                data-pb-id="hengdong.today.record-detail-fact-value"
+                data-pb-key="feeling"
+                data-pb-role="text"
+                data-pb-token-color="color.on-surface"
+                data-pb-token-typography="typography.title-lg"
+                >{{ selectedRecord.feeling }}</strong
+              >
+              <span
+                data-pb-id="hengdong.today.record-detail-fact-label"
+                data-pb-key="feeling"
+                data-pb-role="text"
+                data-pb-token-color="color.on-surface-muted"
+                data-pb-token-typography="typography.caption"
+                >完成体感</span
+              >
             </div>
           </div>
-          <p class="hd-muted">
-            {{ selectedRecord.note || "这次没有留下备注。" }}
-          </p>
+
+          <section
+            v-if="selectedRecord.kind === 'session'"
+            class="hd-record-detail-section"
+            data-pb-id="hengdong.today.record-detail-exercises"
+            data-pb-role="list"
+            data-pb-token-color="color.on-surface"
+            data-pb-token-spacing="spacing.sm"
+          >
+            <div class="hd-record-detail-section-heading">
+              <h4>完成内容</h4>
+              <span>{{ selectedRecordExercises.length }} 个动作</span>
+            </div>
+            <ul
+              v-if="selectedRecordExercises.length"
+              class="hd-record-exercises"
+            >
+              <li
+                v-for="exercise in selectedRecordExercises"
+                :key="exercise.id"
+                class="hd-record-exercise"
+                data-pb-id="hengdong.today.record-detail-exercise"
+                :data-pb-key="exercise.id"
+                data-pb-role="list-item"
+                data-pb-token-color="color.on-surface"
+                data-pb-token-spacing="spacing.sm"
+              >
+                <span class="hd-record-exercise-check" aria-hidden="true">
+                  <Icon
+                    name="check"
+                    size="sm"
+                    tone="success"
+                    :inspect-id="`hengdong.today.record-detail-exercise-icon.${exercise.id}`"
+                  />
+                </span>
+                <span class="hd-record-exercise-copy">
+                  <strong>{{ exercise.name }}</strong>
+                  <span>{{ exercise.prescription }}</span>
+                </span>
+              </li>
+            </ul>
+            <p v-else class="hd-record-detail-empty">
+              这次训练已保存，没有可展示的动作明细。
+            </p>
+          </section>
+
+          <section
+            class="hd-record-detail-note"
+            data-pb-id="hengdong.today.record-detail-note"
+            data-pb-role="section"
+            data-pb-token-background="color.surface-recessed"
+            data-pb-token-color="color.on-surface"
+            data-pb-token-radius="radius.md"
+            data-pb-token-spacing="spacing.md"
+          >
+            <h4>备注</h4>
+            <p>{{ selectedRecord.note || "这次没有留下备注。" }}</p>
+          </section>
         </div>
       </BottomSheet>
     </section>

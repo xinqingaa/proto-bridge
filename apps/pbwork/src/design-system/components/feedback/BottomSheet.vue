@@ -95,6 +95,7 @@ watch(modelValue, async (value) => {
 
 <style scoped>
 .pb-sheet {
+  overflow: hidden;
   border-radius: var(--pb-radius-lg) var(--pb-radius-lg) var(--pb-radius-none)
     var(--pb-radius-none);
   background: var(--pb-color-surface);
@@ -111,6 +112,7 @@ watch(modelValue, async (value) => {
   font: var(--pb-typography-subtitle);
 }
 .pb-sheet-body {
+  overflow-y: auto;
   padding: var(--pb-spacing-md);
   color: inherit;
   font: var(--pb-typography-content);

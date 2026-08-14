@@ -40,8 +40,8 @@ prototypeId: hengdong
 | 活动类型图标       | 现有 PBWork Icon        | 使用稳定 Lucide id，不引入第二套图标                            |
 | 主次按钮、设置入口 | 现有 PBWork DS          | 使用 Button / IconButton 公开 Contract                          |
 | 最近记录列表       | 现有 DS 组合            | ScrollableDataList + DataList；只保留行间分隔                   |
-| 快速记录           | 现有 PBWork DS          | FlowSheet + 表单组件；结果在相关内容区持续反馈                   |
-| 记录详情           | 现有 PBWork DS          | BottomSheet；今天与进度复用业务内容，不复制 Sheet               |
+| 快速记录           | 现有 PBWork DS          | FlowSheet + 表单组件；结果在相关内容区持续反馈                  |
+| 记录详情           | 现有 PBWork DS          | BottomSheet；今天保持只读，进度页保留删除与历史管理             |
 | 动作序列           | 现有 DS 组合优先        | 待对应页面契约批准后转译                                        |
 | 动作舞台           | Token 驱动的业务局部 UI | 待训练页面契约批准后转译                                        |
 | 姿态资产           | 外部资产契约            | 第一阶段状态与降级仍待批准                                      |
@@ -57,6 +57,8 @@ prototypeId: hengdong
 - `recent-empty`：最近记录为空，主行动不受影响。
 - `quick-record-open`：快速记录流程打开。
 - `record-detail-open`：今天页记录详情打开。
+- `record-detail-quick`：快捷记录且无备注的详情打开。
+- `record-detail-long-note`：正式训练的长备注详情打开。
 - `day-empty-feedback`：无记录节奏日反馈可见。
 
 ### 独立验收节点
@@ -64,7 +66,7 @@ prototypeId: hengdong
 - 今天页根、工具行、主行动摘要、周目标环、主行动区、本周节奏、最近记录；
 - 每个节奏日使用日期作为稳定 key；
 - 最近记录行使用记录 id 作为稳定 key；
-- 快速记录 Sheet、记录详情 Sheet 和页内状态反馈；
+- 快速记录 Sheet、记录详情的结果头部、关键事实、动作/活动内容、备注和页内状态反馈；
 - 主按钮与环分别作为同一业务结果的 Action target。
 
 ### 关键 Action 与 Scenario
@@ -88,8 +90,10 @@ prototypeId: hengdong
 ### 双门禁验收结果
 
 - Delivery Gate：Token-only、DS-first、Flex-only、Registry、类型检查、组件与 Registry 测试、Runtime e2e 和文档验证通过；
-- Experience Gate：在 `390 × 844` 实际浏览器中检查浅色、深色、进行中、完成、无计划、最近为空、两种 Overlay 和页内日期反馈；
+- Experience Gate：在 `390 × 844` 实际浏览器中检查浅色、深色、进行中、完成、无计划、最近为空、两种 Overlay 和页内日期反馈；记录详情另检查正式训练、快捷记录、无备注与长备注；
 - 环与主按钮实际进入同一训练会话；有记录日期与最近记录在今天页打开详情；无记录日期显示不遮挡底栏的反馈；
+- 记录详情按完成结果、关键事实、动作内容和备注阅读；快捷记录移除重复说明，不伪造动作序列；
+- 长备注在 `390 × 667` 窄屏形成 Sheet 内部滚动，关闭入口持续可见，内容可以滚动到底；BottomSheet 已落实既有可滚动内容边界；
 - 七个标记的尺寸与纵向位置一致，日期保留原生按钮语义和可见焦点；完成态主按钮降低强调，区块与列表只保留表达结构所需的分隔。
 
 今天页已通过 Delivery Gate 与 Experience Gate，其余页面按 `design.md` 的旅程顺序推进。

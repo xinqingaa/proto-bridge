@@ -200,6 +200,80 @@ const redesignedHengdongScreens = [
             screenId: "hengdong.today",
             pbId: "hengdong.today.record-detail-content",
           },
+          {
+            screenId: "hengdong.today",
+            pbId: "hengdong.today.record-detail-outcome",
+          },
+          {
+            screenId: "hengdong.today",
+            pbId: "hengdong.today.record-detail-facts",
+          },
+          {
+            screenId: "hengdong.today",
+            pbId: "hengdong.today.record-detail-exercises",
+          },
+          {
+            screenId: "hengdong.today",
+            pbId: "hengdong.today.record-detail-note",
+          },
+        ],
+      },
+      {
+        id: "record-detail-quick",
+        label: "今天页快捷记录详情",
+        query: { record: "record-detail-quick-no-note" },
+        requiredFragments: [
+          {
+            screenId: "hengdong.today",
+            pbId: "hengdong.today.record-detail",
+          },
+          {
+            screenId: "hengdong.today",
+            pbId: "hengdong.today.record-detail-content",
+          },
+          {
+            screenId: "hengdong.today",
+            pbId: "hengdong.today.record-detail-outcome",
+          },
+          {
+            screenId: "hengdong.today",
+            pbId: "hengdong.today.record-detail-facts",
+          },
+          {
+            screenId: "hengdong.today",
+            pbId: "hengdong.today.record-detail-note",
+          },
+        ],
+      },
+      {
+        id: "record-detail-long-note",
+        label: "今天页长备注记录详情",
+        query: { record: "record-detail-long-note" },
+        requiredFragments: [
+          {
+            screenId: "hengdong.today",
+            pbId: "hengdong.today.record-detail",
+          },
+          {
+            screenId: "hengdong.today",
+            pbId: "hengdong.today.record-detail-content",
+          },
+          {
+            screenId: "hengdong.today",
+            pbId: "hengdong.today.record-detail-outcome",
+          },
+          {
+            screenId: "hengdong.today",
+            pbId: "hengdong.today.record-detail-facts",
+          },
+          {
+            screenId: "hengdong.today",
+            pbId: "hengdong.today.record-detail-exercises",
+          },
+          {
+            screenId: "hengdong.today",
+            pbId: "hengdong.today.record-detail-note",
+          },
         ],
       },
       {
