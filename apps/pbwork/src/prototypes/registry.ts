@@ -919,7 +919,12 @@ const redesignedHengdongScreens = [
         id: "delete-and-undo-history",
         label: "删除并撤销活动记录",
         initialVariantId: "default",
-        actionIds: ["open-record", "delete-record", "confirm-delete", "undo-delete"],
+        actionIds: [
+          "open-record",
+          "delete-record",
+          "confirm-delete",
+          "undo-delete",
+        ],
         checkpoints: [
           {
             id: "history-record-restored",
@@ -964,7 +969,7 @@ const redesignedHengdongScreens = [
           {
             screenId: "hengdong.plans",
             pbId: "hengdong.plans.plan-row",
-            pbKey: "full-body-basic",
+            pbKey: "all-full-body-basic",
           },
         ],
       },
@@ -990,6 +995,13 @@ const redesignedHengdongScreens = [
           { screenId: "hengdong.plans", pbId: "hengdong.plans.plan-editor" },
         ],
       },
+      {
+        id: "plan-editor-validation",
+        label: "计划编辑校验错误",
+        requiredFragments: [
+          { screenId: "hengdong.plans", pbId: "hengdong.plans.plan-editor" },
+        ],
+      },
     ],
     actions: [
       {
@@ -1000,6 +1012,99 @@ const redesignedHengdongScreens = [
           pbId: "hengdong.plans.open-current",
         },
       },
+      {
+        id: "start-current-plan",
+        kind: "click",
+        target: {
+          screenId: "hengdong.plans",
+          pbId: "hengdong.plans.start-current",
+        },
+      },
+      {
+        id: "filter-recommended-plans",
+        kind: "click",
+        target: {
+          screenId: "hengdong.plans",
+          pbId: "hengdong.plans.filters",
+        },
+      },
+      {
+        id: "open-candidate-plan",
+        kind: "click",
+        target: {
+          screenId: "hengdong.plans",
+          pbId: "hengdong.plans.plan-row",
+          pbKey: "all-full-body-basic",
+        },
+      },
+    ],
+    scenarios: [
+      {
+        id: "open-current-plan-detail",
+        label: "查看当前计划详情",
+        initialVariantId: "default",
+        actionIds: ["open-current-plan"],
+        checkpoints: [
+          {
+            id: "current-plan-detail-visible",
+            screenId: "hengdong.plan-detail",
+            variantId: "default",
+            requiredFragments: [
+              {
+                screenId: "hengdong.plan-detail",
+                pbId: "hengdong.plan-detail.summary",
+              },
+              {
+                screenId: "hengdong.plan-detail",
+                pbId: "hengdong.plan-detail.primary",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "start-current-plan-from-plans",
+        label: "从计划页开始当前训练",
+        initialVariantId: "default",
+        actionIds: ["start-current-plan"],
+        checkpoints: [
+          {
+            id: "current-workout-visible",
+            screenId: "hengdong.workout-session",
+            variantId: "default",
+            requiredFragments: [
+              {
+                screenId: "hengdong.workout-session",
+                pbId: "hengdong.workout-session.root",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "open-candidate-plan",
+        label: "打开候选计划详情",
+        initialVariantId: "default",
+        actionIds: ["open-candidate-plan"],
+        checkpoints: [
+          {
+            id: "candidate-plan-detail-visible",
+            screenId: "hengdong.plan-detail",
+            variantId: "candidate",
+            requiredFragments: [
+              {
+                screenId: "hengdong.plan-detail",
+                pbId: "hengdong.plan-detail.start-once",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    requiredScenarioIds: [
+      "open-current-plan-detail",
+      "start-current-plan-from-plans",
+      "open-candidate-plan",
     ],
   },
   {
@@ -1331,7 +1436,19 @@ const redesignedHengdongScreens = [
           },
           {
             screenId: "hengdong.plan-detail",
+            pbId: "hengdong.plan-detail.identity",
+          },
+          {
+            screenId: "hengdong.plan-detail",
+            pbId: "hengdong.plan-detail.facts",
+          },
+          {
+            screenId: "hengdong.plan-detail",
             pbId: "hengdong.plan-detail.exercise-list",
+          },
+          {
+            screenId: "hengdong.plan-detail",
+            pbId: "hengdong.plan-detail.week",
           },
           {
             screenId: "hengdong.plan-detail",
@@ -1349,6 +1466,58 @@ const redesignedHengdongScreens = [
           },
         ],
       },
+      {
+        id: "candidate",
+        label: "候选计划分流",
+        requiredFragments: [
+          {
+            screenId: "hengdong.plan-detail",
+            pbId: "hengdong.plan-detail.summary",
+          },
+          {
+            screenId: "hengdong.plan-detail",
+            pbId: "hengdong.plan-detail.identity",
+          },
+          {
+            screenId: "hengdong.plan-detail",
+            pbId: "hengdong.plan-detail.primary",
+          },
+          {
+            screenId: "hengdong.plan-detail",
+            pbId: "hengdong.plan-detail.start-once",
+          },
+        ],
+      },
+      {
+        id: "adopted-feedback",
+        label: "采用后的撤销反馈",
+        requiredFragments: [
+          {
+            screenId: "hengdong.plan-detail",
+            pbId: "hengdong.plan-detail.adopt-feedback",
+          },
+        ],
+      },
+      {
+        id: "invalid-plan",
+        label: "无效计划",
+        requiredFragments: [
+          {
+            screenId: "hengdong.plan-detail",
+            pbId: "hengdong.plan-detail.invalid",
+          },
+        ],
+      },
+      {
+        id: "plan-editor-validation",
+        label: "计划编辑校验错误",
+        requiredFragments: [
+          {
+            screenId: "hengdong.plan-detail",
+            pbId: "hengdong.plan-detail.plan-editor",
+          },
+        ],
+      },
     ],
     actions: [
       {
@@ -1359,6 +1528,86 @@ const redesignedHengdongScreens = [
           pbId: "hengdong.plan-detail.primary",
         },
       },
+      {
+        id: "start-plan-once",
+        kind: "click",
+        target: {
+          screenId: "hengdong.plan-detail",
+          pbId: "hengdong.plan-detail.start-once",
+        },
+      },
+      {
+        id: "undo-adopt",
+        kind: "click",
+        target: {
+          screenId: "hengdong.plan-detail",
+          pbId: "hengdong.plan-detail.undo-adopt",
+        },
+      },
+    ],
+    scenarios: [
+      {
+        id: "start-current-plan-from-detail",
+        label: "从计划详情开始当前训练",
+        initialVariantId: "default",
+        actionIds: ["plan-primary"],
+        checkpoints: [
+          {
+            id: "detail-workout-visible",
+            screenId: "hengdong.workout-session",
+            variantId: "default",
+            requiredFragments: [
+              {
+                screenId: "hengdong.workout-session",
+                pbId: "hengdong.workout-session.root",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "adopt-candidate-plan",
+        label: "采用候选计划并显示撤销",
+        initialVariantId: "candidate",
+        actionIds: ["plan-primary"],
+        checkpoints: [
+          {
+            id: "candidate-adopted-feedback-visible",
+            screenId: "hengdong.plan-detail",
+            variantId: "candidate",
+            requiredFragments: [
+              {
+                screenId: "hengdong.plan-detail",
+                pbId: "hengdong.plan-detail.adopt-feedback",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "start-candidate-once",
+        label: "只开始候选计划一次",
+        initialVariantId: "candidate",
+        actionIds: ["start-plan-once"],
+        checkpoints: [
+          {
+            id: "candidate-workout-visible",
+            screenId: "hengdong.workout-session",
+            variantId: "default",
+            requiredFragments: [
+              {
+                screenId: "hengdong.workout-session",
+                pbId: "hengdong.workout-session.root",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    requiredScenarioIds: [
+      "start-current-plan-from-detail",
+      "adopt-candidate-plan",
+      "start-candidate-once",
     ],
   },
   {

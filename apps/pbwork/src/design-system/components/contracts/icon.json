@@ -49,7 +49,8 @@
           "eye-off",
           "footprints",
           "person-standing",
-          "sparkles"
+          "sparkles",
+          "x"
         ]
       },
       "size": {
@@ -305,6 +306,14 @@
       "props": {
         "name": "sparkles"
       }
+    },
+    {
+      "id": "x",
+      "label": "x",
+      "kind": "variant",
+      "props": {
+        "name": "x"
+      }
     }
   ],
   "slots": [],
@@ -350,7 +359,8 @@
       "eye-off",
       "footprints",
       "person-standing",
-      "sparkles"
+      "sparkles",
+      "x"
     ]
   }
 }

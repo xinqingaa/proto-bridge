@@ -50,6 +50,7 @@
 | `footprints` | footprints | `variant` |
 | `person-standing` | person-standing | `variant` |
 | `sparkles` | sparkles | `variant` |
+| `x` | x | `variant` |
 
 ## 用法与反例
 

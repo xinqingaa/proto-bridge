@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, toRefs, watch } from "vue";
-import Button from "@/design-system/components/action/Button.vue";
+import IconButton from "@/design-system/components/action/IconButton.vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import { usePointerSwipe } from "@/design-system/components/_shared/usePointerSwipe";
 
@@ -85,6 +85,7 @@ usePbInspect({
     fill: "layout.fill",
     trackTranslation: "layout.translate-full-negative",
     maxHeight: "layout.sheet-max-height",
+    reducedDuration: "motion.duration-instant",
     duration: "motion.duration-sheet",
     easing: "motion.easing-gentle",
   }),
@@ -109,6 +110,7 @@ usePbInspect({
     "layout.fill",
     "layout.translate-full-negative",
     "layout.sheet-max-height",
+    "motion.duration-instant",
     "motion.duration-sheet",
     "motion.easing-gentle",
   ],
@@ -146,11 +148,12 @@ watch(stepCount, (count) => {
             >{{ safeStep + 1 }} / {{ stepCount }}</small
           >
         </div>
-        <Button
-          label="关闭"
-          bg-color="transparent"
-          border-color="transparent"
-          text-color="color.on-surface-muted"
+        <IconButton
+          ariaLabel="关闭"
+          icon="x"
+          size="sm"
+          variant="text"
+          :inspect-id="`${inspectId ?? 'ds.flow-sheet'}.close`"
           @click="$emit('update:modelValue', false)"
         />
       </v-card-title>
@@ -266,6 +269,11 @@ watch(stepCount, (count) => {
   gap: var(--pb-spacing-sm);
   padding: var(--pb-spacing-sm-plus) var(--pb-spacing-md) var(--pb-spacing-md);
   border-top: var(--pb-border-hairline);
+}
+@media (prefers-reduced-motion: reduce) {
+  .pb-flow-sheet-track {
+    transition-duration: var(--pb-motion-duration-instant);
+  }
 }
 </style>
 

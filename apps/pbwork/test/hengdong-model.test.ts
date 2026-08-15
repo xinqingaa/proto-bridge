@@ -1,22 +1,83 @@
 import { describe, expect, it } from "vitest";
 import {
   activeDayCount,
+  defaultPlans,
   defaultRecords,
   latestRecords,
   isValidHengdongUsername,
   normalizeHengdongUsername,
+  nextCustomPlanId,
+  planSaveLabel,
   progressRange,
+  resolvePlanSaveMode,
   recordsInRange,
   shiftProgressAnchor,
   totalMinutes,
 } from "@/prototypes/hengdong/model";
 import {
   hengdongState,
+  adoptPlan,
   registerHengdong,
   resetHengdongData,
+  savePlanForMode,
+  setActivePlan,
 } from "@/prototypes/hengdong/storage";
 
 describe("Hengdong activity ranges", () => {
+  it("keeps plan save intent explicit across create and edit flows", () => {
+    expect(resolvePlanSaveMode(undefined, "wake-up-15")).toBe("create");
+    expect(resolvePlanSaveMode("wake-up-15", "wake-up-15")).toBe(
+      "edit-current",
+    );
+    expect(resolvePlanSaveMode("full-body-basic", "wake-up-15")).toBe(
+      "edit-candidate",
+    );
+    expect(planSaveLabel("create")).toBe("保存并设为当前计划");
+    expect(planSaveLabel("edit-current")).toBe("保存修改");
+    expect(planSaveLabel("edit-candidate")).toBe("保存计划");
+  });
+
+  it("allocates a stable custom plan id without overwriting an earlier plan", () => {
+    expect(nextCustomPlanId([])).toBe("custom-light-rhythm");
+    expect(
+      nextCustomPlanId([
+        { ...defaultPlans[0]!, id: "custom-light-rhythm" },
+        { ...defaultPlans[1]!, id: "custom-light-rhythm-2" },
+      ]),
+    ).toBe("custom-light-rhythm-3");
+  });
+
+  it("adopts a new plan while candidate edits preserve the current plan", () => {
+    resetHengdongData();
+    const newPlan = {
+      ...defaultPlans[0]!,
+      id: "custom-light-rhythm",
+      name: "我的轻量训练",
+      origin: "custom" as const,
+    };
+    savePlanForMode(newPlan, "create");
+    expect(hengdongState.activePlanId).toBe(newPlan.id);
+
+    const candidate = { ...defaultPlans[1]!, name: "全身基础训练（已调整）" };
+    savePlanForMode(candidate, "edit-candidate");
+    expect(hengdongState.activePlanId).toBe(newPlan.id);
+    expect(
+      hengdongState.plans.find((plan) => plan.id === candidate.id)?.name,
+    ).toBe("全身基础训练（已调整）");
+    resetHengdongData();
+  });
+
+  it("returns the previous plan when adopting so the change can be undone", () => {
+    resetHengdongData();
+    const previousPlanId = hengdongState.activePlanId;
+    expect(adoptPlan("full-body-basic")).toBe(previousPlanId);
+    expect(hengdongState.activePlanId).toBe("full-body-basic");
+    expect(setActivePlan(previousPlanId)).toBe(true);
+    expect(hengdongState.activePlanId).toBe(previousPlanId);
+    expect(adoptPlan("missing-plan")).toBeNull();
+    resetHengdongData();
+  });
+
   it("derives week, month, year, and custom ranges from one anchor", () => {
     expect(progressRange("week", "2026-08-13")).toEqual({
       start: "2026-08-10",
@@ -52,13 +113,15 @@ describe("Hengdong activity ranges", () => {
     expect(august).toHaveLength(5);
     expect(activeDayCount(august)).toBe(5);
     expect(totalMinutes(august)).toBe(101);
-    expect(latestRecords(defaultRecords, 5).map((record) => record.id)).toEqual([
-      "record-20260812",
-      "record-20260810",
-      "record-20260809",
-      "record-20260806",
-      "record-20260802",
-    ]);
+    expect(latestRecords(defaultRecords, 5).map((record) => record.id)).toEqual(
+      [
+        "record-20260812",
+        "record-20260810",
+        "record-20260809",
+        "record-20260806",
+        "record-20260802",
+      ],
+    );
   });
 
   it("normalizes local identities and preserves device activity facts", () => {

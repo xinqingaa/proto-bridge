@@ -312,10 +312,10 @@ void main() {
   });
 
   test('all curated Lucide ids resolve', () {
-    expect(CommonIconName.values, hasLength(32));
+    expect(CommonIconName.values, hasLength(33));
     expect(
       CommonIconName.values.map((name) => name.data.codePoint).toSet(),
-      hasLength(32),
+      hasLength(33),
     );
     expect(CommonIconName.eye.data, LucideIcons.eye);
     expect(CommonIconName.eyeOff.data, LucideIcons.eyeOff);
@@ -323,6 +323,7 @@ void main() {
     expect(CommonIconName.footprints.data, LucideIcons.footprints);
     expect(CommonIconName.personStanding.data, LucideIcons.personStanding);
     expect(CommonIconName.sparkles.data, LucideIcons.sparkles);
+    expect(CommonIconName.x.data, LucideIcons.x);
   });
 
   testWidgets('pull refresh settles at the boundary without a second rebound', (

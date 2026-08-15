@@ -10,13 +10,13 @@
   "behavior": [
     "step 是受控的零基索引，切换后通过 update:step 回传当前步骤",
     "swipe 开启时允许横向切步，但相邻步骤不得从视口边缘泄漏",
-    "关闭只更新 modelValue，不替业务流程决定提交、取消或路由"
+    "右上角使用带可访问名称的 X 图标关闭；关闭只更新 modelValue，不替业务流程决定提交、取消或路由"
   ],
   "layout": {
     "summary": "Sheet 内部只有一个裁剪视口；各步骤等宽横排，当前 step 以整页宽度平移进入视口。"
   },
   "visualAnatomy": {
-    "summary": "复用 BottomSheet 的 scrim 与 raised surface，内部增加标题、步骤指示、步骤视口和操作区。"
+    "summary": "复用 BottomSheet 的 scrim 与 raised surface，内部增加标题、X 图标关闭、步骤指示、步骤视口和操作区。"
   },
   "propsSchema": {
     "type": "object",
@@ -95,6 +95,7 @@
     "dotSize": "sizing.step-dot",
     "fill": "layout.fill",
     "maxHeight": "layout.sheet-max-height",
+    "reducedDuration": "motion.duration-instant",
     "duration": "motion.duration-sheet",
     "easing": "motion.easing-gentle",
     "trackTranslation": "layout.translate-full-negative"

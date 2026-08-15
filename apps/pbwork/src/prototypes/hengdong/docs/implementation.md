@@ -14,8 +14,8 @@ prototypeId: hengdong
 | 训练执行   | approved | passed        | accepted          |
 | 训练总结   | approved | passed        | accepted          |
 | 活动记录   | approved | passed        | accepted          |
-| 计划       | pending  | legacy-draft  | pending           |
-| 计划详情   | pending  | legacy-draft  | pending           |
+| 计划       | approved | passed        | accepted          |
+| 计划详情   | approved | passed        | accepted          |
 | 进度       | approved | passed        | accepted          |
 | 设置与目标 | pending  | legacy-draft  | pending           |
 | 登录       | approved | passed        | accepted          |
@@ -47,6 +47,10 @@ prototypeId: hengdong
 | 活动日期时间线     | Token 驱动的业务局部 UI | 月份与日期形成稳定结构节点，不使用逐行 Card                     |
 | 进度周期 Tab       | 现有 PBWork DS          | PrimaryTabs；本周、本月、本年及按需自定义拥有完整内容面板       |
 | 活动节奏图与日历   | Token 驱动的业务局部 UI | 周/月/年共享节奏语法，显式声明图表和日期 Token Evidence         |
+| 当前计划摘要       | 现有 DS 组合            | 当前计划事实、Progress、Button 和局部事实行，不新增通用 Card    |
+| 计划库分类与列表   | 现有 DS 组合            | SecondaryTabs + DataList；四个具名面板支持点击、横滑与统一过渡  |
+| 计划动作序列       | Token 驱动的业务局部 UI | 使用真实动作顺序和稳定 exercise key，不承担训练执行状态         |
+| 计划编辑流程       | DS 原子升级 + 现有组合  | FlowSheet 使用 X 图标关闭；TextField / RadioGroup / Checkbox 组成紧凑表单 |
 | 快速记录           | 现有 PBWork DS          | FlowSheet + 表单组件；结果在相关内容区持续反馈                  |
 | 记录详情           | 现有 PBWork DS          | BottomSheet；今天与进度只读，活动记录页负责删除与历史管理       |
 | 动作序列           | Token 驱动的业务局部 UI | 只表达已完成、当前和待进行，不承担随机跳转                      |
@@ -55,7 +59,7 @@ prototypeId: hengdong
 | 训练退出选择       | 现有 PBWork DS          | BottomSheet 承载继续、稍后继续、部分保存和放弃                  |
 | 完成结果环         | Token 驱动的业务局部 UI | 从身体舞台收束为保存前的完成结果，不作为可点击控件              |
 | 训练体感与备注     | 现有 PBWork DS          | RadioGroup + Textarea；无体感时保存不可用                       |
-| 认证 Logo          | Token 驱动的业务局部 UI | 抽象运动轨迹 H；使用 action/on-action Token 适配浅深主题         |
+| 认证 Logo          | Token 驱动的业务局部 UI | 抽象运动轨迹 H；使用 action/on-action Token 适配浅深主题        |
 | 账号与密码字段     | 扩展 PBWork TextField   | 增加有限密码、显隐、autocomplete 与字段错误能力                 |
 | 初始周目标         | 现有 PBWork DS          | Menu 在同一注册表单选择每周 2–5 次                              |
 | 替换本地身份确认   | 现有 PBWork DS          | Confirm 明确旧凭据失效且设备训练数据保留                        |
@@ -205,6 +209,47 @@ prototypeId: hengdong
 - 进度使用 PrimaryTabs 的选中动画与水平面板切换；周、月、年按日、周、月使用同一节奏尺，柱高按当前时间片最大值归一，本年超出一屏时横向浏览且月份标签不重叠；
 - 自定义范围作为临时 Tab 出现，关闭、取消和应用保持明确主次；进度详情只读，删除、撤销和完整历史继续由活动记录页承担；
 - 本轮 Experience 修正了 SecondaryTabs `grow + fill` 高度异常、五分类溢出、节奏柱错误等高、周期导航文字挤压、本年月标签重叠和 FlowSheet 关闭按钮强调度错误；修正后重新通过受影响测试与 Runtime Gate。
+
+## 计划与计划详情正式调整
+
+### 确定状态
+
+- 计划：`default`、`filtered`、`empty`、`plan-editor-open`、`plan-editor-validation`；计划详情：`default`、`candidate`、`adopted-feedback`、`invalid-plan`、`plan-editor-open`、`plan-editor-validation`。
+- 计划页不增加“我的计划 / 推荐”Tab；“全部 / 唤醒 / 力量 / 舒缓”改为二级 SecondaryTabs，每项拥有具名计划面板。
+- 当前计划位于二级 Tab 之上且不在面板中重复；计划列表与详情采用训练处方视觉，减少卡片和行内标签竞争。
+- FlowSheet 共享关闭入口升级为 X 图标按钮；业务步骤使用“返回”和语义化继续动作，最终保存为底部全宽主操作。
+- 新建计划 FlowSheet 保存后设为当前计划；编辑当前计划保留当前身份；编辑候选计划保存但不自动采用。
+- 候选详情使用“设为当前计划 / 只开始一次”双路径；当前详情只使用“开始这次训练”。
+
+### 独立验收节点
+
+- 计划根、App Bar、当前计划摘要、当前计划事实行、当前进度、开始/查看动作、计划库二级 Tab、具名面板、计划列表、空态和编辑 FlowSheet；
+- 计划详情根、状态标签、计划身份、执行成本、本周状态、动作处方序列、采用/只开始一次/开始训练动作、撤销反馈和编辑 FlowSheet；
+- 计划行使用分类 identity + plan id，动作行使用 exercise id 作为稳定 key；
+- 计划变化、今天页上下文和训练入口使用同一份本地状态，不生成虚假活动记录。
+
+### 关键 Action 与 Scenario
+
+- 计划打开当前详情、开始当前训练、点击或横滑切换计划分类；
+- 计划详情采用候选计划、只开始一次、开始当前计划和打开编辑；
+- 新建保存、编辑保存、无效计划回退和更换计划撤销均须有可观察结果；
+- 计划页不跨根页面打开进度，返回保留计划任务栈。
+
+### Experience Gate 目标
+
+- 本批执行 L2 Focused Experience Gate，目标结果为 `accepted`；
+- 重点检查计划默认/分类空态、SecondaryTabs 点击与横滑、候选/当前详情、FlowSheet 校验与保存、深色、窄屏长动作列表、键盘焦点和 reduced motion；
+- 任一采用语义混淆、今天状态未同步、主操作重复强调、文字溢出、底部遮挡或假交互阻止记录 `accepted`。
+
+### L2 验收结果
+
+- Delivery Gate：Token-only、DS-first、Flex-only、10 Screen Registry、131 个 PBWork 测试、生产构建、4 项 Runtime Capture e2e、113 份文档校验和 DS Target 31/31 组件、154/154 Token 同步检查通过；
+- Experience Review：在真实浏览器中检查 `390 × 844` 计划浅色默认态、`390 × 844` 候选详情、`390 × 667` FlowSheet 首步与校验态，以及 `1280 × 800` 深色桌面；桌面无横向溢出，结果为 `accepted`；
+- “全部 / 唤醒 / 力量 / 舒缓”使用二级 SecondaryTabs；点击和真实左滑都切换具名面板，过渡时长使用 DS Token，纵滚不被误触；默认 Variant 确定回到“全部”；
+- 详情页以计划承诺、执行成本、编号动作处方和本周状态形成阅读主线；推荐状态、目标、难度和频率分层对齐，不再挤在松散行内标签中；
+- FlowSheet 使用带可访问名称的 X 图标关闭；短选项改为 RadioGroup，动作 Checkbox 使用真实名称和剂量；“返回”、语义化继续动作和底部全宽保存成立，reduced motion 降级为 instant；
+- 无效计划详情只显示明确恢复结果，不静默展示另一套计划；新建、编辑和采用不生成活动记录；计划、今天和训练入口继续读取同一份本地事实；
+- 本轮 Experience 修正了默认分类受持久状态干扰、文字关闭按钮、短选项大框、通用上一步/下一步、详情身份错位和动作序列焦点不足；修正后重新通过完整 Delivery Gate 与浏览器复核。
 
 ## 训练执行与训练总结正式调整
 

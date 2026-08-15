@@ -31,15 +31,35 @@ export type FitnessPlan = {
   exercises: Exercise[];
 };
 
+export type PlanSaveMode = "create" | "edit-current" | "edit-candidate";
+
+export function resolvePlanSaveMode(
+  planId: string | undefined,
+  activePlanId: string,
+): PlanSaveMode {
+  if (!planId) return "create";
+  return planId === activePlanId ? "edit-current" : "edit-candidate";
+}
+
+export function planSaveLabel(mode: PlanSaveMode) {
+  if (mode === "create") return "保存并设为当前计划";
+  if (mode === "edit-current") return "保存修改";
+  return "保存计划";
+}
+
+export function nextCustomPlanId(plans: FitnessPlan[]) {
+  const baseId = "custom-light-rhythm";
+  if (!plans.some((plan) => plan.id === baseId)) return baseId;
+  let suffix = 2;
+  while (plans.some((plan) => plan.id === `${baseId}-${suffix}`)) suffix += 1;
+  return `${baseId}-${suffix}`;
+}
+
 export type ActivityType = "训练" | "步行" | "拉伸" | "自由活动";
 export type Feeling = "轻松" | "刚好" | "吃力";
 export type ProgressPeriod = "week" | "month" | "year" | "custom";
 export type ActivityHistoryTab =
-  | "all"
-  | "training"
-  | "walking"
-  | "stretching"
-  | "free";
+  "all" | "training" | "walking" | "stretching" | "free";
 
 export type DateRange = {
   start: string;
@@ -404,8 +424,12 @@ export function progressRange(
     return { start, end: addIsoDays(start, 6) };
   }
   if (period === "month") {
-    const start = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
-    const end = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0));
+    const start = new Date(
+      Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1),
+    );
+    const end = new Date(
+      Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0),
+    );
     return { start: isoDate(start), end: isoDate(end) };
   }
   const start = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));

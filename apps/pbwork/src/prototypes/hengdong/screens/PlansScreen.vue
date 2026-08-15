@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Button from "@/design-system/components/action/Button.vue";
-import Chip from "@/design-system/components/display/Chip.vue";
+import Icon from "@/design-system/components/action/Icon.vue";
 import Divider from "@/design-system/components/display/Divider.vue";
 import EmptyState from "@/design-system/components/display/EmptyState.vue";
 import Progress from "@/design-system/components/display/ProgressIndicator.vue";
@@ -10,47 +10,59 @@ import DataList from "@/design-system/components/data/DataList.vue";
 import ScrollableDataList from "@/design-system/components/data/ScrollableDataList.vue";
 import Toast from "@/design-system/components/feedback/Toast.vue";
 import AppBar from "@/design-system/components/navigation/AppBar.vue";
-import FilterBar from "@/design-system/components/navigation/FilterBar.vue";
+import SecondaryTabs from "@/design-system/components/navigation/SecondaryTabs.vue";
 import HengdongRoot from "../HengdongRoot.vue";
 import PlanEditorFlow from "../components/PlanEditorFlow.vue";
 import { recordsInWeek } from "../model";
 import { openHengdongScreen, replaceVariant } from "../nav";
-import { hengdongState, setActivePlan, updateHengdongUi } from "../storage";
+import { hengdongState, updateHengdongUi } from "../storage";
 import "../hengdong.css";
 
 const route = useRoute();
 const router = useRouter();
-const filter = computed({
-  get: () =>
-    String(route.query.variant ?? "default") === "filtered"
-      ? "力量"
-      : hengdongState.ui.planFilter,
-  set: (value: string) => updateHengdongUi({ planFilter: value }),
-});
+const planTabs = [
+  { value: "all", label: "全部" },
+  { value: "wake", label: "唤醒" },
+  { value: "strength", label: "力量" },
+  { value: "recovery", label: "舒缓" },
+];
+const goalByTab: Record<string, string | undefined> = {
+  all: undefined,
+  wake: "唤醒",
+  strength: "力量",
+  recovery: "舒缓",
+};
+const activePlanTab = ref(
+  String(route.query.variant ?? "default") === "filtered"
+    ? "strength"
+    : String(route.query.variant ?? "default") === "empty"
+      ? "wake"
+      : "all",
+);
+watch(activePlanTab, (value) => updateHengdongUi({ planFilter: value }));
 const toast = ref(false);
 const variant = computed(() => String(route.query.variant ?? "default"));
 const editorOpen = computed({
-  get: () => variant.value === "plan-editor-open",
+  get: () =>
+    ["plan-editor-open", "plan-editor-validation"].includes(variant.value),
   set: (open) =>
     void replaceVariant(router, route, open ? "plan-editor-open" : "default"),
 });
-const editingPlanId = computed(() =>
-  typeof route.query.plan === "string" ? route.query.plan : undefined,
-);
 const currentPlan = computed(
   () =>
     hengdongState.plans.find(
       (plan) => plan.id === hengdongState.activePlanId,
     ) ?? hengdongState.plans[0]!,
 );
-const recommendations = computed(() => {
+function recommendationsFor(goal: string) {
   if (variant.value === "empty") return [];
+  const planGoal = goalByTab[goal];
   return hengdongState.plans.filter(
     (plan) =>
       plan.id !== currentPlan.value.id &&
-      (filter.value === "全部" || plan.goal === filter.value),
+      (!planGoal || plan.goal === planGoal),
   );
-});
+}
 const completedCurrent = computed(
   () =>
     recordsInWeek(hengdongState.records).filter(
@@ -68,8 +80,7 @@ function openEditor() {
   void replaceVariant(router, route, "plan-editor-open");
 }
 
-function afterSave(planId: string) {
-  setActivePlan(planId);
+function afterSave() {
   toast.value = true;
   void replaceVariant(router, route, "default");
 }
@@ -109,36 +120,35 @@ function afterSave(planId: string) {
             data-pb-token-radius="radius.xl"
             data-pb-token-spacing="spacing.lg"
           >
-            <div class="hd-section-heading">
-              <div class="hd-row-main">
-                <span class="hd-overline">当前计划</span>
-                <h1 class="hd-display hd-display-compact">
-                  {{ currentPlan.name }}
-                </h1>
-              </div>
-              <Chip :label="currentPlan.goal" tone="primary" />
+            <span class="hd-overline">当前计划</span>
+            <div class="hd-plan-current-copy">
+              <h1 class="hd-display hd-display-compact">
+                {{ currentPlan.name }}
+              </h1>
+              <p class="hd-plan-promise">{{ currentPlan.description }}</p>
             </div>
-            <p class="hd-muted">{{ currentPlan.description }}</p>
+            <div
+              class="hd-plan-facts"
+              aria-label="当前计划信息"
+              data-pb-id="hengdong.plans.current-facts"
+              data-pb-role="text"
+              data-pb-token-color="color.on-surface-muted"
+              data-pb-token-spacing="spacing.sm"
+            >
+              <span>{{ currentPlan.goal }} · {{ currentPlan.level }}</span>
+              <span>{{ currentPlan.minutes }} 分钟</span>
+              <span>{{ currentPlan.exercises.length }} 个动作</span>
+              <span>每周 {{ currentPlan.weeklyTarget }} 次</span>
+            </div>
             <Progress
               :value="currentProgress"
               :label="`本周 ${completedCurrent} / ${currentPlan.weeklyTarget} 次`"
               inspect-id="hengdong.plans.current-progress"
             />
-            <div class="hd-action-row">
+            <div class="hd-plan-current-actions">
               <Button
-                label="查看计划"
-                bg-color="color.surface"
-                border-color="color.border"
-                text-color="color.on-surface"
-                inspect-id="hengdong.plans.open-current"
-                @click="
-                  openHengdongScreen(router, route, 'plan-detail', 'default', {
-                    plan: currentPlan.id,
-                  })
-                "
-              />
-              <Button
-                label="开始训练"
+                label="开始这次训练"
+                block
                 inspect-id="hengdong.plans.start-current"
                 @click="
                   openHengdongScreen(
@@ -150,79 +160,111 @@ function afterSave(planId: string) {
                   )
                 "
               />
+              <Button
+                class="hd-plan-link-action"
+                label="查看计划详情"
+                size="sm"
+                bg-color="transparent"
+                border-color="transparent"
+                text-color="color.primary"
+                inspect-id="hengdong.plans.open-current"
+                @click="
+                  openHengdongScreen(router, route, 'plan-detail', 'default', {
+                    plan: currentPlan.id,
+                  })
+                "
+              />
             </div>
           </section>
 
           <Divider inspect-id="hengdong.plans.divider.recommended" />
 
-          <section class="hd-section">
+          <section class="hd-section hd-plan-library">
             <div class="hd-row-main">
-              <h2 class="hd-section-title">选择下一套节奏</h2>
-              <p class="hd-caption">筛选会直接改变下方推荐内容。</p>
+              <h2 class="hd-section-title">计划库</h2>
+              <p class="hd-caption">选择一套适合最近节奏的训练。</p>
             </div>
-            <FilterBar
-              v-model="filter"
-              :items="['全部', '唤醒', '力量', '舒缓']"
+            <SecondaryTabs
+              v-model="activePlanTab"
+              :items="planTabs"
+              show-divider
+              grow
+              size="sm"
               inspect-id="hengdong.plans.filters"
-            />
-            <DataList
-              v-if="recommendations.length"
-              class="hd-flat-list"
-              surface="none"
-              rounded="none"
-              inspect-id="hengdong.plans.list"
             >
-              <button
-                v-for="plan in recommendations"
-                :key="plan.id"
-                type="button"
-                class="hd-row hd-row-action"
-                data-pb-id="hengdong.plans.plan-row"
-                :data-pb-key="plan.id"
-                data-pb-role="list-item"
-                data-pb-token-spacing="spacing.md"
-                @click="
-                  openHengdongScreen(router, route, 'plan-detail', 'default', {
-                    plan: plan.id,
-                  })
-                "
+              <template
+                v-for="tab in planTabs"
+                :key="tab.value"
+                #[tab.value]
               >
-                <span class="hd-row-main">
-                  <strong class="hd-row-title">{{ plan.name }}</strong>
-                  <span class="hd-caption"
-                    >{{ plan.minutes }} 分钟 ·
-                    {{ plan.exercises.length }} 个动作 · 每周
-                    {{ plan.weeklyTarget }} 次</span
-                  >
-                </span>
-                <Chip
-                  :label="plan.goal"
-                  :tone="
-                    plan.goal === '力量'
-                      ? 'warning'
-                      : plan.goal === '舒缓'
-                        ? 'success'
-                        : 'primary'
+                <DataList
+                  v-if="recommendationsFor(tab.value).length"
+                  class="hd-flat-list hd-plan-list"
+                  surface="none"
+                  rounded="none"
+                  :inspect-id="
+                    tab.value === activePlanTab
+                      ? 'hengdong.plans.list'
+                      : 'hengdong.plans.list.' + tab.value
                   "
+                >
+                  <button
+                    v-for="plan in recommendationsFor(tab.value)"
+                    :key="plan.id"
+                    type="button"
+                    class="hd-row hd-row-action hd-plan-library-row"
+                    data-pb-id="hengdong.plans.plan-row"
+                    :data-pb-key="tab.value + '-' + plan.id"
+                    data-pb-role="list-item"
+                    data-pb-token-spacing="spacing.md"
+                    @click="
+                      openHengdongScreen(
+                        router,
+                        route,
+                        'plan-detail',
+                        'candidate',
+                        { plan: plan.id },
+                      )
+                    "
+                  >
+                    <span class="hd-row-main">
+                      <span class="hd-overline">
+                        {{ plan.origin === "custom" ? "你的计划" : "推荐计划" }}
+                      </span>
+                      <strong class="hd-plan-list-title">{{ plan.name }}</strong>
+                      <span class="hd-caption">{{ plan.description }}</span>
+                      <span class="hd-plan-list-facts">
+                        {{ plan.goal }} · {{ plan.level }} ·
+                        {{ plan.minutes }} 分钟 · 每周 {{ plan.weeklyTarget }} 次
+                      </span>
+                    </span>
+                    <Icon name="chevron-right" size="sm" tone="muted" />
+                  </button>
+                </DataList>
+                <EmptyState
+                  v-else
+                  title="这个分类暂时没有更多计划"
+                  description="可以选择其它训练方向，或创建一套自己的计划。"
+                  action-label="新建计划"
+                  :inspect-id="
+                    tab.value === activePlanTab
+                      ? 'hengdong.plans.empty'
+                      : 'hengdong.plans.empty.' + tab.value
+                  "
+                  @action="openEditor"
                 />
-              </button>
-            </DataList>
-            <EmptyState
-              v-else
-              title="这个目标暂时没有更多计划"
-              description="可以换个筛选条件，或创建一套自己的轻量计划。"
-              action-label="新建计划"
-              inspect-id="hengdong.plans.empty"
-              @action="openEditor"
-            />
+              </template>
+            </SecondaryTabs>
           </section>
         </div>
       </ScrollableDataList>
 
       <PlanEditorFlow
         v-model="editorOpen"
-        v-bind="editingPlanId ? { planId: editingPlanId } : {}"
         inspect-id="hengdong.plans.plan-editor"
+        :initial-state="
+          variant === 'plan-editor-validation' ? 'validation-error' : 'default'
+        "
         @saved="afterSave"
       />
       <Toast

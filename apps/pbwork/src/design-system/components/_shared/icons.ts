@@ -32,6 +32,7 @@ import {
   Thermometer,
   Truck,
   User,
+  X,
 } from "lucide-vue-next";
 
 /** Curated Lucide ids used by PBWork DS. Stable across Vue / Flutter sync. */
@@ -68,6 +69,7 @@ export const PB_ICON_NAMES = [
   "footprints",
   "person-standing",
   "sparkles",
+  "x",
 ] as const;
 
 export type PbIconName = (typeof PB_ICON_NAMES)[number];
@@ -105,6 +107,7 @@ const ICON_MAP: Record<PbIconName, Component> = {
   footprints: Footprints,
   "person-standing": PersonStanding,
   sparkles: Sparkles,
+  x: X,
 };
 
 export function resolvePbIcon(name: PbIconName | undefined): Component {

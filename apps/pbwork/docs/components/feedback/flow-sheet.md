@@ -10,14 +10,15 @@
 
 - 精确身份是 `componentId=flow-sheet`，通用产品职责固定为 `role=sheet`；不为组件创建同名 role。
 - Sheet 内只有一个裁剪视口，各步骤等宽横排，当前 step 以整页宽度进入视口。
-- 复用 Bottom Sheet 的 scrim 与 raised surface，内部增加标题、步骤指示、步骤视口和操作区。
+- 复用 Bottom Sheet 的 scrim 与 raised surface，内部增加标题、X 图标关闭、步骤指示、步骤视口和操作区。
 - 关闭、提交、取消和路由仍由业务流程决定。
 
 ## 行为要点
 
 - `step` 是受控零基索引，切换通过 `update:step` 回传。
 - swipe 开启时允许横向切步，但相邻步骤不得从视口边缘泄漏。
-- 关闭只更新 `modelValue`，不替业务流程提交、取消或跳转。
+- 右上角使用带可访问名称的 X 图标关闭；关闭只更新 `modelValue`，不替业务流程提交、取消或跳转。
+- reduced motion 下步骤切换降级为 `motion.duration-instant`，内容与步骤状态保持不变。
 - Overlay 宿主保留顶部 `radius.lg`；步骤视口零内边距并裁剪横向轨道。
 
 ## States

@@ -9,6 +9,7 @@ import {
   type FitnessGoals,
   type FitnessPlan,
   type FitnessProfile,
+  type PlanSaveMode,
   type ProgressPeriod,
   type WorkoutRecord,
   type WorkoutSession,
@@ -100,7 +101,9 @@ function readSnapshot(): HengdongSnapshot {
       ui: {
         ...fallback.ui,
         ...parsedUi,
-        historyTab: historyTabs.includes(parsedUi.historyTab as ActivityHistoryTab)
+        historyTab: historyTabs.includes(
+          parsedUi.historyTab as ActivityHistoryTab,
+        )
           ? (parsedUi.historyTab as ActivityHistoryTab)
           : fallback.ui.historyTab,
         progressPeriod: progressPeriods.includes(
@@ -159,8 +162,10 @@ export function logoutHengdong() {
 }
 
 export function setActivePlan(planId: string) {
+  if (!hengdongState.plans.some((plan) => plan.id === planId)) return false;
   hengdongState.activePlanId = planId;
   persistHengdong();
+  return true;
 }
 
 export function savePlan(plan: FitnessPlan) {
@@ -168,6 +173,17 @@ export function savePlan(plan: FitnessPlan) {
   if (index >= 0) hengdongState.plans.splice(index, 1, plan);
   else hengdongState.plans.push(plan);
   persistHengdong();
+}
+
+export function savePlanForMode(plan: FitnessPlan, mode: PlanSaveMode) {
+  savePlan(plan);
+  if (mode === "create") setActivePlan(plan.id);
+}
+
+export function adoptPlan(planId: string) {
+  if (planId === hengdongState.activePlanId) return null;
+  const previousPlanId = hengdongState.activePlanId;
+  return setActivePlan(planId) ? previousPlanId : null;
 }
 
 export function saveRecord(record: WorkoutRecord) {
@@ -220,7 +236,8 @@ export function refreshHengdongRecords() {
     (left, right) =>
       right.date.localeCompare(left.date) || right.id.localeCompare(left.id),
   );
-  const changed = JSON.stringify(records) !== JSON.stringify(hengdongState.records);
+  const changed =
+    JSON.stringify(records) !== JSON.stringify(hengdongState.records);
   hengdongState.records.splice(0, hengdongState.records.length, ...records);
   return changed;
 }

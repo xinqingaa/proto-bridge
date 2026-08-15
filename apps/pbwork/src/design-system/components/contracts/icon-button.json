@@ -53,7 +53,8 @@
           "eye-off",
           "footprints",
           "person-standing",
-          "sparkles"
+          "sparkles",
+          "x"
         ]
       },
       "size": {
@@ -163,7 +164,8 @@
       "eye-off",
       "footprints",
       "person-standing",
-      "sparkles"
+      "sparkles",
+      "x"
     ]
   }
 }

@@ -1,17 +1,24 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import Button from "@/design-system/components/action/Button.vue";
 import FlowSheet from "@/design-system/components/feedback/FlowSheet.vue";
 import Checkbox from "@/design-system/components/input/Checkbox.vue";
-import Menu from "@/design-system/components/input/Menu.vue";
+import RadioGroup from "@/design-system/components/input/RadioGroup.vue";
 import TextField from "@/design-system/components/input/TextField.vue";
-import type { FitnessPlan, PlanGoal } from "../model";
-import { hengdongState, savePlan } from "../storage";
+import {
+  nextCustomPlanId,
+  planSaveLabel,
+  resolvePlanSaveMode,
+  type FitnessPlan,
+  type PlanGoal,
+} from "../model";
+import { hengdongState, savePlanForMode } from "../storage";
 
 const props = defineProps<{
   modelValue: boolean;
   planId?: string;
   inspectId: string;
+  initialState?: "default" | "validation-error";
 }>();
 
 const emit = defineEmits<{
@@ -35,6 +42,10 @@ const exercisePool = Array.from(
       .map((exercise) => [exercise.id, exercise]),
   ).values(),
 );
+const saveMode = computed(() =>
+  resolvePlanSaveMode(props.planId, hengdongState.activePlanId),
+);
+const saveLabel = computed(() => planSaveLabel(saveMode.value));
 
 function hydrate() {
   const source = hengdongState.plans.find((plan) => plan.id === props.planId);
@@ -46,8 +57,10 @@ function hydrate() {
   selectedExerciseIds.value =
     source?.exercises.map((exercise) => exercise.id) ??
     exercisePool.slice(0, 3).map((exercise) => exercise.id);
-  step.value = 0;
-  error.value = "";
+  const showValidation = props.initialState === "validation-error";
+  step.value = showValidation ? 2 : 0;
+  if (showValidation) selectedExerciseIds.value = [];
+  error.value = showValidation ? "请至少保留一个动作。" : "";
 }
 
 watch(
@@ -71,12 +84,18 @@ function toggleExercise(exerciseId: string, selected: boolean) {
 }
 
 function save() {
-  if (!name.value.trim() || selectedExerciseIds.value.length === 0) {
-    error.value = "请填写计划名称，并至少保留一个动作。";
+  const missingName = !name.value.trim();
+  const missingExercise = selectedExerciseIds.value.length === 0;
+  if (missingName || missingExercise) {
+    error.value = missingName
+      ? missingExercise
+        ? "请填写计划名称，并至少保留一个动作。"
+        : "请填写计划名称。"
+      : "请至少保留一个动作。";
     return;
   }
   const source = hengdongState.plans.find((plan) => plan.id === props.planId);
-  const id = source?.id ?? "custom-light-rhythm";
+  const id = source?.id ?? nextCustomPlanId(hengdongState.plans);
   const plan: FitnessPlan = {
     id,
     name: name.value.trim(),
@@ -91,7 +110,7 @@ function save() {
       selectedExerciseIds.value.includes(exercise.id),
     ),
   };
-  savePlan(plan);
+  savePlanForMode(plan, saveMode.value);
   emit("saved", id);
   emit("update:modelValue", false);
 }
@@ -108,20 +127,24 @@ function save() {
     @update:model-value="$emit('update:modelValue', $event)"
   >
     <section class="hd-flow-step">
-      <h3>这套计划为了什么？</h3>
+      <div class="hd-flow-intro">
+        <span class="hd-overline">计划身份</span>
+        <h3>安排训练</h3>
+        <p class="hd-muted">先说明这套计划要解决什么，再决定执行节奏。</p>
+      </div>
       <TextField
         v-model="name"
         label="计划名称"
         :show-label="true"
         inspect-id="hengdong.plan-editor.name"
       />
-      <Menu
+      <RadioGroup
         v-model="goal"
         label="训练目标"
         :options="['唤醒', '力量', '舒缓']"
         inspect-id="hengdong.plan-editor.goal"
       />
-      <Menu
+      <RadioGroup
         v-model="level"
         label="难度"
         :options="['入门', '进阶']"
@@ -129,55 +152,69 @@ function save() {
       />
     </section>
     <section class="hd-flow-step">
-      <h3>安排一个可完成的节奏</h3>
-      <Menu
+      <div class="hd-flow-intro">
+        <span class="hd-overline">训练节奏</span>
+        <h3>安排一个可完成的节奏</h3>
+        <p class="hd-muted">从稳定完成的下限开始，以后再逐步增加。</p>
+      </div>
+      <RadioGroup
         v-model="minutes"
         label="单次时长"
         :options="['12 分钟', '15 分钟', '20 分钟', '30 分钟']"
         inspect-id="hengdong.plan-editor.minutes"
       />
-      <Menu
+      <RadioGroup
         v-model="weeklyTarget"
         label="每周次数"
         :options="['每周 2 次', '每周 3 次', '每周 4 次', '每周 5 次']"
         inspect-id="hengdong.plan-editor.frequency"
       />
-      <p class="hd-muted">建议先选择能稳定完成的下限，以后再逐步增加。</p>
     </section>
     <section class="hd-flow-step">
-      <h3>选择动作</h3>
-      <div class="hd-choice-list">
-        <div v-for="exercise in exercisePool" :key="exercise.id" class="hd-row">
-          <span class="hd-row-main">
-            <strong class="hd-row-title">{{ exercise.name }}</strong>
-            <span class="hd-caption">{{ exercise.prescription }}</span>
-          </span>
+      <div class="hd-flow-intro">
+        <span class="hd-overline">动作处方</span>
+        <h3>选择动作</h3>
+        <p class="hd-muted">保留真正会完成的动作，顺序会成为训练步骤。</p>
+        <p v-if="error" class="hd-validation" role="alert">{{ error }}</p>
+      </div>
+      <div class="hd-plan-exercise-options">
+        <div v-for="exercise in exercisePool" :key="exercise.id">
           <Checkbox
+            class="hd-plan-exercise-check"
             :model-value="selectedExerciseIds.includes(exercise.id)"
-            :label="`选择 ${exercise.name}`"
-            :inspect-id="`hengdong.plan-editor.exercise.${exercise.id}`"
+            :label="exercise.name + ' · ' + exercise.prescription"
+            :inspect-id="'hengdong.plan-editor.exercise.' + exercise.id"
             @update:model-value="toggleExercise(exercise.id, $event)"
           />
         </div>
       </div>
-      <p v-if="error" class="hd-validation" role="alert">{{ error }}</p>
     </section>
     <template #actions>
-      <Button
-        v-if="step > 0"
-        label="上一步"
-        bg-color="color.surface"
-        border-color="color.border"
-        text-color="color.on-surface"
-        @click="step -= 1"
-      />
-      <Button v-if="step < 2" label="下一步" @click="step += 1" />
-      <Button
-        v-else
-        label="保存计划"
-        inspect-id="hengdong.plan-editor.save"
-        @click="save"
-      />
+      <div class="hd-plan-flow-actions">
+        <Button
+          v-if="step > 0"
+          class="hd-flow-back"
+          label="返回"
+          size="sm"
+          bg-color="transparent"
+          border-color="transparent"
+          text-color="color.primary"
+          @click="step -= 1"
+        />
+        <Button
+          v-if="step < 2"
+          :label="step === 0 ? '继续安排节奏' : '选择动作'"
+          block
+          @click="step += 1"
+        />
+        <Button
+          v-else
+          :label="saveLabel"
+          block
+          inspect-id="hengdong.plan-editor.save"
+          @click="save"
+        />
+      </div>
     </template>
   </FlowSheet>
 </template>

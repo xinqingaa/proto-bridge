@@ -279,6 +279,39 @@ describe("design contracts", () => {
       "request-identity-replacement",
       "confirm-identity-replacement",
     ]);
+
+    const plans = hengdongScreens.find(
+      (screen) => screen.screenId === "hengdong.plans",
+    );
+    expect(plans?.variants.map((variant) => variant.id)).toEqual([
+      "default",
+      "filtered",
+      "empty",
+      "plan-editor-open",
+      "plan-editor-validation",
+    ]);
+    expect(plans?.requiredScenarioIds).toEqual([
+      "open-current-plan-detail",
+      "start-current-plan-from-plans",
+      "open-candidate-plan",
+    ]);
+
+    const planDetail = hengdongScreens.find(
+      (screen) => screen.screenId === "hengdong.plan-detail",
+    );
+    expect(planDetail?.variants.map((variant) => variant.id)).toEqual([
+      "default",
+      "plan-editor-open",
+      "candidate",
+      "adopted-feedback",
+      "invalid-plan",
+      "plan-editor-validation",
+    ]);
+    expect(planDetail?.requiredScenarioIds).toEqual([
+      "start-current-plan-from-detail",
+      "adopt-candidate-plan",
+      "start-candidate-once",
+    ]);
   });
 });
 
