@@ -8,7 +8,7 @@
   },
   "summary": "多行文本输入；默认 plain 无标题无描边；showLabel 时显示标题并启用边框；disabled 使用 opacity.disabled。",
   "behavior": [
-    "showLabel 默认 false：不渲染标题、无描边，仅保留可输入区域",
+    "showLabel 默认 false：不渲染标题、无描边，填充使用 color.surface-recessed",
     "showLabel 为 true 时显示 label 并启用边框",
     "disabled 时不可聚焦或编辑，整体使用 opacity.disabled"
   ],
@@ -51,7 +51,7 @@
   "slots": [],
   "events": ["update:modelValue"],
   "tokenBindings": {
-    "surface": "color.surface",
+    "surface": "color.surface-recessed",
     "border": "color.border",
     "focus": "color.primary",
     "radius": "radius.md",

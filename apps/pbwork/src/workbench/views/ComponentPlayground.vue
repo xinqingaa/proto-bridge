@@ -103,7 +103,7 @@ const isSplitTabPresentation = computed(() =>
   ["tabbar", "primary-tabs", "secondary-tabs"].includes(record.value?.id ?? ""),
 );
 const typeScenarioIds: Record<string, string[]> = {
-  button: ["submit", "secondary", "primary-accent", "outlined"],
+  button: ["primary", "secondary", "outlined"],
   chip: ["status", "warning"],
   "text-field": ["empty", "contact"],
   textarea: ["note", "description"],

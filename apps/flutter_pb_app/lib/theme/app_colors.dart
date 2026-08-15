@@ -107,7 +107,7 @@ class AppColors {
     onSurfaceMuted: Color(0xFF666B73),
     surfaceVariant: Color(0xFFF0F2F4),
     surfaceRaised: Color(0xFFFFFFFF),
-    surfaceRecessed: Color(0xFFF5F6F8),
+    surfaceRecessed: Color(0xFFEEF0F3),
     surfaceSelected: Color(0xFFFBFCFD),
     toast: Color(0xCC000000),
     onToast: Color(0xFFFFFFFF),

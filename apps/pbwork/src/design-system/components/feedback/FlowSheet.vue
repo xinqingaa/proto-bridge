@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, toRefs, watch } from "vue";
-import IconButton from "@/design-system/components/action/IconButton.vue";
+import { computed, toRefs, watch, type CSSProperties } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import { usePointerSwipe } from "@/design-system/components/_shared/usePointerSwipe";
+import SheetHeader from "@/design-system/components/_shared/SheetHeader.vue";
 
 const props = withDefaults(
   defineProps<{
@@ -42,6 +42,7 @@ const stepKeys = computed(() =>
   ),
 );
 const currentStepKey = computed(() => String(safeStep.value));
+const showBack = computed(() => safeStep.value > 0);
 const swipeEnabled = swipe;
 const mouseSwipe = swipe;
 
@@ -51,6 +52,10 @@ const swipeGesture = usePointerSwipe(
   (value) => emit("update:step", Number(value)),
   { swipe: swipeEnabled, mouseSwipe },
 );
+
+const trackStyle = computed<CSSProperties>(() => ({
+  transform: `translateX(calc(var(--pb-layout-translate-full-negative) * ${safeStep.value} + ${swipeGesture.dragOffset.value}px))`,
+}));
 
 usePbInspect({
   element: sheetRef,
@@ -80,9 +85,11 @@ usePbInspect({
     body: "typography.content",
     stepLabel: "typography.micro",
     headerGap: "spacing.sm-plus",
+    headerControl: "sizing.touch",
     dotGap: "spacing.xs-plus",
     dotSize: "sizing.step-dot",
     fill: "layout.fill",
+    flexFill: "layout.flex-fill",
     trackTranslation: "layout.translate-full-negative",
     maxHeight: "layout.sheet-max-height",
     reducedDuration: "motion.duration-instant",
@@ -105,9 +112,11 @@ usePbInspect({
     "spacing.sm",
     "spacing.sm-plus",
     "spacing.md",
+    "sizing.touch",
     "sizing.step-dot",
     "sizing.icon-sm",
     "layout.fill",
+    "layout.flex-fill",
     "layout.translate-full-negative",
     "layout.sheet-max-height",
     "motion.duration-instant",
@@ -141,22 +150,13 @@ watch(stepCount, (count) => {
       color="surface"
       variant="flat"
     >
-      <v-card-title class="pb-flow-sheet-header">
-        <div>
-          <span>{{ title }}</span>
-          <small v-if="stepCount > 1"
-            >{{ safeStep + 1 }} / {{ stepCount }}</small
-          >
-        </div>
-        <IconButton
-          ariaLabel="关闭"
-          icon="x"
-          size="sm"
-          variant="text"
-          :inspect-id="`${inspectId ?? 'ds.flow-sheet'}.close`"
-          @click="$emit('update:modelValue', false)"
-        />
-      </v-card-title>
+      <SheetHeader
+        :title="title"
+        :show-back="showBack"
+        :inspect-id="inspectId ?? 'ds.flow-sheet'"
+        @back="emit('update:step', Math.max(0, safeStep - 1))"
+        @close="emit('update:modelValue', false)"
+      />
       <div class="pb-flow-sheet-dots" aria-hidden="true">
         <span
           v-for="index in stepCount"
@@ -182,7 +182,8 @@ watch(stepCount, (count) => {
       >
         <div
           class="pb-flow-sheet-track"
-          :style="{ '--pb-flow-step-index': safeStep }"
+          :class="{ 'is-dragging': swipeGesture.dragging.value }"
+          :style="trackStyle"
         >
           <slot />
         </div>
@@ -201,21 +202,6 @@ watch(stepCount, (count) => {
   background: var(--pb-color-surface);
   color: var(--pb-color-on-surface);
   box-shadow: var(--pb-elevation-raised);
-}
-.pb-flow-sheet-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--pb-spacing-sm-plus);
-  padding: var(--pb-spacing-md);
-  border-bottom: var(--pb-border-hairline);
-  font: var(--pb-typography-subtitle);
-}
-.pb-flow-sheet-header small {
-  display: block;
-  margin-top: var(--pb-spacing-xxs);
-  color: var(--pb-color-on-surface-muted);
-  font: var(--pb-typography-micro);
 }
 .pb-flow-sheet-dots {
   display: flex;
@@ -247,11 +233,11 @@ watch(stepCount, (count) => {
 .pb-flow-sheet-track {
   display: flex;
   width: var(--pb-layout-fill);
-  transform: translateX(
-    calc(var(--pb-layout-translate-full-negative) * var(--pb-flow-step-index))
-  );
   transition: transform var(--pb-motion-duration-sheet)
     var(--pb-motion-easing-gentle);
+}
+.pb-flow-sheet-track.is-dragging {
+  transition-duration: var(--pb-motion-duration-instant);
 }
 .pb-flow-sheet-track > :deep(*) {
   flex: none;
@@ -265,10 +251,14 @@ watch(stepCount, (count) => {
 .pb-flow-sheet-actions {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
   gap: var(--pb-spacing-sm);
   padding: var(--pb-spacing-sm-plus) var(--pb-spacing-md) var(--pb-spacing-md);
   border-top: var(--pb-border-hairline);
+}
+.pb-flow-sheet-actions > * {
+  flex: var(--pb-layout-flex-fill);
+  width: var(--pb-layout-fill);
+  min-width: var(--pb-spacing-none);
 }
 @media (prefers-reduced-motion: reduce) {
   .pb-flow-sheet-track {

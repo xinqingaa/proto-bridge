@@ -197,9 +197,7 @@ function returnToPlans() {
               <Button
                 label="撤销"
                 size="sm"
-                bg-color="transparent"
-                border-color="transparent"
-                text-color="color.success"
+                kind="outlined"
                 inspect-id="hengdong.plan-detail.undo-adopt"
                 data-pb-action="undo-adopt"
                 @click="undoAdopt"
@@ -278,9 +276,7 @@ function returnToPlans() {
               <Button
                 v-if="!isCurrent"
                 label="只开始这一次"
-                bg-color="transparent"
-                border-color="transparent"
-                text-color="color.primary"
+                kind="outlined"
                 block
                 inspect-id="hengdong.plan-detail.start-once"
                 @click="

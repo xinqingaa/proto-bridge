@@ -691,19 +691,6 @@
   min-height: var(--pb-sizing-touch);
 }
 
-.hd-plan-flow-actions {
-  display: flex;
-  flex: var(--pb-layout-flex-fill);
-  min-width: var(--pb-spacing-none);
-  flex-direction: column;
-  align-items: stretch;
-  gap: var(--pb-spacing-xs);
-}
-
-.hd-plan-flow-actions .hd-flow-back {
-  align-self: flex-start;
-}
-
 .hd-choice {
   display: flex;
   align-items: center;

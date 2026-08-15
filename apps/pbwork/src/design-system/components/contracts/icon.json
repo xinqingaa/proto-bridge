@@ -28,6 +28,7 @@
           "inbox",
           "check",
           "chevron-down",
+          "chevron-left",
           "chevron-right",
           "alert-triangle",
           "alert-circle",
@@ -153,6 +154,14 @@
       "kind": "variant",
       "props": {
         "name": "chevron-down"
+      }
+    },
+    {
+      "id": "chevron-left",
+      "label": "chevron-left",
+      "kind": "variant",
+      "props": {
+        "name": "chevron-left"
       }
     },
     {
@@ -338,6 +347,7 @@
       "inbox",
       "check",
       "chevron-down",
+      "chevron-left",
       "chevron-right",
       "alert-triangle",
       "alert-circle",

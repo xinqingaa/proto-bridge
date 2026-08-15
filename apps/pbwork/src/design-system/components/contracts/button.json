@@ -6,13 +6,13 @@
     "policy": "fixed",
     "defaultRole": "button"
   },
-  "summary": "表单主次操作；色槽走 Token-ref，loading 保留文案，disabled 走 opacity.disabled。",
+  "summary": "表单与决策区操作；公开三种类型：主要、次要、描边。loading 保留文案，disabled 走 opacity.disabled。",
   "behavior": [
-    "色外观只通过 bgColor / borderColor / textColor（Bind 池 Token ID 或 transparent）表达，禁止实例硬编码色值",
-    "未传 borderColor 时与 bgColor 相同；未传 textColor 时按底色推导（实色→on-*，*-soft→对应实色，透明底→边框色或 color.action）",
+    "公开类型只有 kind=primary / secondary / outlined，页面不配色槽",
+    "一行只有一颗按钮时使用主要类型并占满；两颗时左侧次要、右侧主要，等分撑满且文案尽量等长",
+    "描边类型是最弱档，只用于卡片内轻量动作，不进入 Confirm / Sheet / FlowSheet 决策区",
     "loading 时不可点，spinner 与文案同时可见，不得用加载图标替换文字",
-    "loading 阻止重复触发但保留强调度；只有 disabled 使用 opacity.disabled",
-    "默认主操作：bgColor=color.action（及配对文字/边框），不把公开语义绑到实现层样式枚举"
+    "loading 阻止重复触发但保留强调度；只有 disabled 使用 opacity.disabled"
   ],
   "propsSchema": {
     "type": "object",
@@ -21,25 +21,13 @@
       "label": {
         "type": "string"
       },
-      "bgColor": {
+      "kind": {
         "type": "string",
-        "description": "Background Token-ref (Bind color id or transparent)."
-      },
-      "borderColor": {
-        "type": "string",
-        "description": "Border Token-ref; defaults to bgColor."
-      },
-      "textColor": {
-        "type": "string",
-        "description": "Foreground Token-ref; defaults from bgColor pairing."
+        "enum": ["primary", "secondary", "outlined"]
       },
       "size": {
         "type": "string",
-        "enum": [
-          "sm",
-          "md",
-          "lg"
-        ]
+        "enum": ["sm", "md", "lg"]
       },
       "loading": {
         "type": "boolean"
@@ -52,22 +40,14 @@
       },
       "type": {
         "type": "string",
-        "enum": [
-          "button",
-          "submit",
-          "reset"
-        ]
+        "enum": ["button", "submit", "reset"]
       }
     },
-    "required": [
-      "label"
-    ]
+    "required": ["label"]
   },
   "defaultProps": {
     "label": "确认",
-    "bgColor": "color.action",
-    "borderColor": "color.action",
-    "textColor": "color.on-action",
+    "kind": "primary",
     "size": "md",
     "loading": false,
     "block": false,
@@ -91,12 +71,8 @@
       }
     }
   ],
-  "slots": [
-    "default"
-  ],
-  "events": [
-    "click"
-  ],
+  "slots": ["default"],
+  "events": ["click"],
   "tokenBindings": {
     "background": "color.action",
     "border": "color.action",

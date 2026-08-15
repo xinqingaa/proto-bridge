@@ -4,12 +4,12 @@
 > 实现：[TextField.vue](../../../src/design-system/components/input/TextField.vue)
 > 契约：[text-field.json](../../../src/design-system/components/contracts/text-field.json)
 
-单行文本输入；默认是无标题、无描边的 plain 形态，并支持密码显隐、自动填充和字段错误。
+单行文本输入；默认是无标题、无描边的 plain 形态，填充使用内凹表面，并支持密码显隐、自动填充和字段错误。
 
 ## 职责与边界
 
 - 固定使用 `role=field`，只处理单行输入、错误反馈与禁用状态。
-- `showLabel=false` 时不渲染标题且不绘制边框；`showLabel=true` 同时启用标题和边框。
+- `showLabel=false` 时不渲染标题、不绘制边框，填充 `color.surface-recessed`；`showLabel=true` 同时启用标题、边框和 `color.surface` 填充。
 - 密码仍属于单行文本职责；`type=password + revealable` 使用统一 Lucide 眼睛图标，不由业务页复制。
 - 搜索上下文使用 Search Bar；多行内容使用 Textarea。
 

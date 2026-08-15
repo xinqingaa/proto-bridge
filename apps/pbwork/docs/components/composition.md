@@ -63,7 +63,7 @@ ScrollableDataList          # 纵滚 + 刷新 + 分页 + 可选鼠标拖滚
 
 使用语义化业务 `<section>` 组织表单分组，内部组合 TextField / Textarea / Select / Checkbox / RadioGroup / Switch；分组的标题、说明、边界与间距属于页面局部结构，必须使用 Foundation Token 并按需声明 Evidence。
 
-提交用 `Button`；主操作默认 `bgColor=color.action`（及配对文字/边框）。
+提交用 `Button`。一行一颗时用主要类型；两颗时左侧次要类型、右侧主要类型。描边类型只用于卡片内轻量动作，不进入 Confirm / Sheet / FlowSheet 决策区。
 
 ## 7. Card surface
 
@@ -81,7 +81,7 @@ ScrollableDataList          # 纵滚 + 刷新 + 分页 + 可选鼠标拖滚
 | 失败 | 独立错误布局（优先）；勿默认滥用 EmptyState |
 | 短提示 | Toast |
 | 确认 | Confirm（Dialog / Confirm） |
-| 半屏操作 | BottomSheet / FlowSheet |
+| 半屏操作 | BottomSheet / FlowSheet；顶栏为返回（FlowSheet 非首页）/ 居中标题 / 关闭 |
 
 打开态用 Screen **Variant** 复现。Confirm / Toast / Loading 宜与主滚动列**兄弟挂载**（见 recipes R4）。
 

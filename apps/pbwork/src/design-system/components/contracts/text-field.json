@@ -8,7 +8,7 @@
   },
   "summary": "单行文本输入；支持 plain/labeled、密码显隐、autocomplete、字段错误与禁用状态。",
   "behavior": [
-    "showLabel 默认 false：不渲染标题、无描边，仅保留可输入区域",
+    "showLabel 默认 false：不渲染标题、无描边，填充使用 color.surface-recessed",
     "showLabel 为 true 时显示 label 并启用边框",
     "password 类型默认隐藏；revealable 通过 Lucide 眼睛图标切换显示状态且不改变输入值",
     "errorMessage 在字段内部建立错误状态与就近说明",
@@ -86,7 +86,7 @@
   "events": ["update:modelValue"],
   "tokenBindings": {
     "border": "color.border",
-    "surface": "color.surface",
+    "surface": "color.surface-recessed",
     "radius": "radius.md",
     "height": "sizing.control-md",
     "label": "typography.caption",

@@ -346,9 +346,7 @@ function closeOverlay() {
           />
           <Button
             label="仅确认接手"
-            bg-color="transparent"
-            border-color="color.action"
-            text-color="color.action"
+            kind="outlined"
             block
             inspect-id="cold-chain-ops.shipment-detail.acknowledge"
             @click="openAcknowledge"

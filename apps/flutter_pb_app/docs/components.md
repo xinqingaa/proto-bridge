@@ -23,7 +23,7 @@
 | `CommonRadioGroup`                 | 互斥选项集合                                                     |
 | `CommonCheckbox`                   | 独立勾选项                                                       |
 | `CommonSwitch`                     | 二值开关设置；不能用 Checkbox 静默替代                           |
-| `CommonButton`                     | 主要、次要、危险和加载动作                                       |
+| `CommonButton`                     | 主要、次要、描边类型动作                                         |
 | `CommonIconButton`                 | 单图标动作（含 loading）；必须提供 tooltip                       |
 | `CommonPrimaryTabs`                | 无阴影 recessed 轨道 + 官方 indicator 驱动的 `LiquidGlassDecoration` 选中面 |
 | `CommonSecondaryTabs`              | 官方 TabBar + 从文字行盒定位的 10×5 caret 指示器                 |
@@ -33,7 +33,7 @@
 | `CommonDivider`                    | 语义分隔线                                                       |
 | `CommonAvatar`                     | 人员或主体头像/首字母                                            |
 | `CommonBottomNav`                  | 2–5 个顶级页面目的地；固定 icon + label、无顶部指示条            |
-| `CommonIcon`                       | 30 个稳定 Lucide id、尺寸、tone 和装饰/无障碍语义                |
+| `CommonIcon`                       | 34 个稳定 Lucide id、尺寸、tone 和装饰/无障碍语义                |
 
 ## AppPop 弹层
 

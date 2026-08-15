@@ -349,7 +349,7 @@ describe("resolveLiveTokenBindings", () => {
     expect(live.color).toBe("color.success");
   });
 
-  it("maps button color Token-ref props without style enums", async () => {
+  it("maps button kind to token bindings", async () => {
     const { resolveLiveTokenBindings } =
       await import("@/design-system/resolveLiveTokenBindings");
     const action = resolveLiveTokenBindings(
@@ -358,45 +358,34 @@ describe("resolveLiveTokenBindings", () => {
         border: "color.action",
         onBackground: "color.on-action",
       },
-      {
-        bgColor: "color.action",
-        borderColor: "color.action",
-        textColor: "color.on-action",
-      },
+      { kind: "primary" },
     );
     expect(action.background).toBe("color.action");
     expect(action.border).toBe("color.action");
     expect(action.onBackground).toBe("color.on-action");
 
-    const primary = resolveLiveTokenBindings(
+    const secondary = resolveLiveTokenBindings(
       {
         background: "color.action",
         border: "color.action",
         onBackground: "color.on-action",
       },
-      {
-        bgColor: "color.primary",
-        borderColor: "color.primary",
-        textColor: "color.on-primary",
-      },
+      { kind: "secondary" },
     );
-    expect(primary.background).toBe("color.primary");
-    expect(primary.onBackground).toBe("color.on-primary");
+    expect(secondary.background).toBe("color.action-soft");
+    expect(secondary.onBackground).toBe("color.action");
 
-    const soft = resolveLiveTokenBindings(
+    const outlined = resolveLiveTokenBindings(
       {
         background: "color.action",
         border: "color.action",
         onBackground: "color.on-action",
       },
-      {
-        bgColor: "color.error-soft",
-        borderColor: "color.error-soft",
-        textColor: "color.error",
-      },
+      { kind: "outlined" },
     );
-    expect(soft.background).toBe("color.error-soft");
-    expect(soft.onBackground).toBe("color.error");
+    expect(outlined.background).toBe("transparent");
+    expect(outlined.border).toBe("color.outline");
+    expect(outlined.onBackground).toBe("color.on-surface");
   });
 
   it("maps button size to height and paddingX tokens", async () => {

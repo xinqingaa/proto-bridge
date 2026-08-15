@@ -22,7 +22,7 @@ export const componentRecords = [
   {
     id: "button",
     label: "Button",
-    description: "表单主次操作，如提交工单、保存草稿。",
+    description: "表单与决策区操作；类型为主要、次要或描边。",
     category: "action",
     view: "action/Button.vue",
     contract: "contracts/button.json",
@@ -30,22 +30,14 @@ export const componentRecords = [
     controls: [
       { key: "label", label: "文案", control: "text" },
       {
-        key: "bgColor",
-        label: "背景 Token",
+        key: "kind",
+        label: "类型",
         control: "select",
-        options: colorTokenOptions,
-      },
-      {
-        key: "borderColor",
-        label: "边框 Token",
-        control: "select",
-        options: colorTokenOptions,
-      },
-      {
-        key: "textColor",
-        label: "文字 Token",
-        control: "select",
-        options: colorTokenOptions,
+        options: [
+          { label: "主要类型", value: "primary" },
+          { label: "次要类型", value: "secondary" },
+          { label: "描边类型", value: "outlined" },
+        ],
       },
       { key: "size", label: "尺寸", control: "select", options: sizeOptions },
       { key: "loading", label: "加载中", control: "boolean" },
@@ -669,12 +661,14 @@ export const componentRecords = [
       { key: "title", label: "标题", control: "text" },
       { key: "message", label: "说明", control: "text" },
       { key: "confirmLabel", label: "确认按钮", control: "text" },
+      { key: "cancelLabel", label: "取消按钮", control: "text" },
+      { key: "showCancel", label: "显示取消", control: "boolean" },
     ],
   },
   {
     id: "bottom-sheet",
     label: "Bottom Sheet",
-    description: "从底部展开的临时面板，用于筛选或更多操作。",
+    description: "从底部展开的临时面板；顶栏为标题和关闭。",
     category: "feedback",
     view: "feedback/BottomSheet.vue",
     contract: "contracts/bottom-sheet.json",
@@ -687,7 +681,7 @@ export const componentRecords = [
   {
     id: "flow-sheet",
     label: "Flow Sheet",
-    description: "底部多步面板，页内左右滑动切换步骤。",
+    description: "底部多步面板；顶栏为返回、标题和关闭。",
     category: "feedback",
     view: "feedback/FlowSheet.vue",
     contract: "contracts/flow-sheet.json",

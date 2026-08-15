@@ -462,22 +462,6 @@ function openRhythmDay(date: string) {
             data-pb-token-spacing="spacing.sm"
           >
             <Button
-              v-if="isCompleted"
-              :label="primaryLabel"
-              bg-color="color.primary-soft"
-              border-color="color.primary-soft"
-              text-color="color.primary"
-              block
-              inspect-id="hengdong.today.start-workout"
-              data-pb-action="activate-primary"
-              @click="openPrimaryAction"
-            >
-              <template #append>
-                <Icon name="chevron-right" tone="inherit" />
-              </template>
-            </Button>
-            <Button
-              v-else
               :label="primaryLabel"
               block
               inspect-id="hengdong.today.start-workout"
@@ -490,9 +474,7 @@ function openRhythmDay(date: string) {
             </Button>
             <Button
               label="记录其他活动"
-              bg-color="transparent"
-              border-color="transparent"
-              text-color="color.primary"
+              kind="outlined"
               block
               inspect-id="hengdong.today.quick-record"
               data-pb-action="open-quick-record"
@@ -546,9 +528,7 @@ function openRhythmDay(date: string) {
                 v-if="recentRecords.length"
                 label="查看全部"
                 size="sm"
-                bg-color="transparent"
-                border-color="transparent"
-                text-color="color.primary"
+                kind="outlined"
                 inspect-id="hengdong.today.open-activity-history"
                 @click="openHengdongScreen(router, route, 'activity-history')"
               />
@@ -664,14 +644,6 @@ function openRhythmDay(date: string) {
           <p class="hd-muted">保存后会立即计入今天和本周进度。</p>
         </section>
         <template #actions>
-          <Button
-            v-if="step > 0"
-            label="上一步"
-            bg-color="color.surface"
-            border-color="color.border"
-            text-color="color.on-surface"
-            @click="step -= 1"
-          />
           <Button v-if="step < 2" label="下一步" @click="step += 1" />
           <Button
             v-else

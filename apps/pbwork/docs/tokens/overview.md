@@ -43,7 +43,7 @@ Token.defaultValue + Theme.overrides
 
 1. Contract 声明槽位（如 `background`、`typography`）→ Bind 池内 ID。
 2. 运行时按 Theme 解析为 CSS 变量。
-3. 少数控件另提供 **Token-ref props**（如 Button 的 `bgColor`）在实例上覆盖色槽；值仍必须来自 Bind 池或 `transparent`，禁止硬编码色值。
+3. 少数控件另提供 **Token-ref props**（如 Checkbox 的 `selectedColor`）在实例上覆盖色槽；值仍必须来自 Bind 池或 `transparent`，禁止硬编码色值。Button 不走色槽，只选择 `kind`（主要 / 次要 / 描边）。
 4. Playground「令牌」页只读展示绑定；换肤改 Theme，不在此改绑。
 
 ## 业务局部节点的 Evidence

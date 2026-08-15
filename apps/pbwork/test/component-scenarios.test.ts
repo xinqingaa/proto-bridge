@@ -32,16 +32,16 @@ describe("component business scenarios", () => {
     }
 
     expect(controlKeys("button")).toEqual(
+      expect.arrayContaining(["loading", "size", "kind"]),
+    );
+    expect(controlKeys("button")).not.toEqual(
       expect.arrayContaining([
-        "loading",
-        "size",
+        "variant",
+        "tone",
         "bgColor",
         "borderColor",
         "textColor",
       ]),
-    );
-    expect(controlKeys("button")).not.toEqual(
-      expect.arrayContaining(["variant", "tone"]),
     );
     expect(controlKeys("checkbox")).toEqual(
       expect.arrayContaining([

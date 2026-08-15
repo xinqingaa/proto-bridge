@@ -208,9 +208,7 @@ function backToLogin() {
             />
               <Button
                 label="返回登录"
-              bg-color="transparent"
-              border-color="transparent"
-              text-color="color.primary"
+              kind="outlined"
               block
               inspect-id="hengdong.register.back-login"
               data-pb-action="back-login"

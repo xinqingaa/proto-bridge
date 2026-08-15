@@ -58,7 +58,7 @@
 
 ### Token-ref props（色槽）
 
-部分基础控件（如 `button`、`checkbox`、`radio-group`、`switch`）允许通过 props 传入 **Bind 池 Token ID**（或绑定字面量 `transparent` / `none`）覆盖默认色槽。字面量不是 Catalog Token，不生成 Target token accessor 或验收 obligation。
+部分基础控件（如 `checkbox`、`radio-group`、`switch`）允许通过 props 传入 **Bind 池 Token ID**（或绑定字面量 `transparent` / `none`）覆盖默认色槽。字面量不是 Catalog Token，不生成 Target token accessor 或验收 obligation。
 约束：
 
 - **禁止**实例硬编码色值（`#hex` / `rgb()` 等）。
@@ -71,7 +71,7 @@
 - 声明 `disabled` 的交互组件统一消费 `opacity.disabled`（当前默认 `0.38`），阻止鼠标、键盘及原生提交；Playground 必须把可用态与禁用态并置并写明条件。
 - `loading` 阻止重复触发并保留文字/忙碌反馈，**不得**复用 disabled 的 0.38 外观。
 
-Button 公开语义以色槽与行为（loading 保留文案、disabled 透明度）表达，**不**把公开 API / 文档绑到实现层样式枚举。
+Button 公开三种类型：`kind=primary`（主要）、`secondary`（次要）、`outlined`（描边）。页面不配色槽，也不把实现层 Vuetify variant 暴露为公开 API。
 
 ## 分级同步义务
 

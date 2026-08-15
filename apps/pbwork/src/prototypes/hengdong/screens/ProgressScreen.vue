@@ -182,9 +182,7 @@ function openRecord(recordId: string) {
           <Button
             label="日期"
             size="sm"
-            bg-color="transparent"
-            border-color="transparent"
-            text-color="color.primary"
+            kind="outlined"
             inspect-id="hengdong.progress.open-custom-range"
             @click="openCustomRange"
           />
@@ -294,7 +292,9 @@ function openRecord(recordId: string) {
             <span>{{ item }}</span><span>{{ filter === item ? "已选择" : "" }}</span>
           </button>
         </div>
-        <Button label="查看结果" block @click="filterOpen = false" />
+        <template #actions>
+          <Button label="查看结果" block @click="filterOpen = false" />
+        </template>
       </BottomSheet>
 
       <FlowSheet
@@ -335,9 +335,7 @@ function openRecord(recordId: string) {
         <template #actions>
           <Button
             label="取消"
-            bg-color="transparent"
-            border-color="color.border"
-            text-color="color.on-surface"
+            kind="secondary"
             @click="customRangeOpen = false"
           />
           <Button

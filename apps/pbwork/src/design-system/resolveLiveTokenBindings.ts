@@ -2,6 +2,8 @@
  * Resolve contract tokenBindings against live playground props
  * so the inspector reflects the current size / tone / elevation / selection.
  */
+import { resolveButtonColorsFromKind } from "@/design-system/components/_shared/colorTokens";
+
 export function resolveLiveTokenBindings(
   staticBindings: Record<string, string>,
   props: Record<string, unknown>,
@@ -16,7 +18,14 @@ export function resolveLiveTokenBindings(
     }
   }
 
-  // Button / control Token-ref color slots (preferred over legacy tone×variant).
+  if (typeof props.kind === "string" && props.kind.length > 0) {
+    const colors = resolveButtonColorsFromKind(props.kind);
+    if ("background" in result) result.background = colors.bgColor;
+    if ("border" in result) result.border = colors.borderColor;
+    if ("onBackground" in result) result.onBackground = colors.textColor;
+  }
+
+  // Remaining control Token-ref color slots (checkbox / radio / switch).
   if (typeof props.bgColor === "string" && props.bgColor.length > 0) {
     if ("background" in result) result.background = props.bgColor;
   }

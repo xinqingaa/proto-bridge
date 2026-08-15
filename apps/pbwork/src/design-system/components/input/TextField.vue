@@ -74,7 +74,7 @@ usePbInspect({
   }),
   getTokenBindings: () => ({
     border: "color.border",
-    surface: "color.surface",
+    surface: labeled.value ? "color.surface" : "color.surface-recessed",
     radius: "radius.md",
     height: "sizing.control-md",
     label: "typography.caption",
@@ -88,7 +88,7 @@ usePbInspect({
   }),
   getTokens: () => [
     "color.border",
-    "color.surface",
+    labeled.value ? "color.surface" : "color.surface-recessed",
     "color.on-surface",
     "radius.md",
     "sizing.control-md",
@@ -157,6 +157,9 @@ usePbInspect({
 }
 .pb-field :deep(.v-field) {
   min-height: var(--pb-sizing-control-md);
+  background: var(--pb-color-surface-recessed);
+}
+.pb-field.is-labeled :deep(.v-field) {
   background: var(--pb-color-surface);
 }
 .pb-field :deep(.v-field__input) {

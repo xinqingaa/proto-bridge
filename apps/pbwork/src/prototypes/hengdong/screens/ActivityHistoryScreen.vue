@@ -238,9 +238,7 @@ function undoDelete() {
         <Button
           label="撤销"
           size="sm"
-          bg-color="transparent"
-          border-color="transparent"
-          text-color="color.success"
+          kind="outlined"
           inspect-id="hengdong.activity-history.undo-delete"
           @click="undoDelete"
         />
@@ -345,9 +343,7 @@ function undoDelete() {
 
         <Button
           label="删除这条记录"
-          bg-color="color.error-soft"
-          border-color="color.error-soft"
-          text-color="color.error"
+          kind="secondary"
           inspect-id="hengdong.activity-history.delete-record"
           :disabled="selectedRecord.id === longNoteFixture.id"
           @click="deleteOpen = true"

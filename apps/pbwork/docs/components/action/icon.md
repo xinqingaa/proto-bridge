@@ -31,6 +31,7 @@
 | `inbox` | inbox | `variant` |
 | `check` | check | `variant` |
 | `chevron-down` | chevron-down | `variant` |
+| `chevron-left` | chevron-left | `variant` |
 | `chevron-right` | chevron-right | `variant` |
 | `alert-triangle` | alert-triangle | `variant` |
 | `alert-circle` | alert-circle | `variant` |

@@ -164,9 +164,7 @@ function afterSave() {
                 class="hd-plan-link-action"
                 label="查看计划详情"
                 size="sm"
-                bg-color="transparent"
-                border-color="transparent"
-                text-color="color.primary"
+                kind="outlined"
                 inspect-id="hengdong.plans.open-current"
                 @click="
                   openHengdongScreen(router, route, 'plan-detail', 'default', {

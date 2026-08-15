@@ -10,13 +10,14 @@
   "behavior": [
     "默认关闭；Playground 与产品页通过触发打开",
     "确认会先发出 confirm，再关闭自身；调用方决定后续业务动作与导航",
+    "决策区走 Button 类型：一颗时主要类型占满；两颗时左侧次要类型、右侧主要类型，等分撑满容器且文案尽量等长",
     "不替代 BottomSheet / FlowSheet 的流程承载"
   ],
   "layout": {
     "summary": "对话框在视口内居中并受 dialog-max-width 约束；正文与操作区保持稳定纵向次序。"
   },
   "visualAnatomy": {
-    "summary": "scrim、raised dialog surface、标题/正文和确认操作构成四层固定结构。"
+    "summary": "scrim、raised dialog surface、标题/正文和决策区构成四层固定结构；决策区一颗主要类型占满，两颗时等分撑满。"
   },
   "propsSchema": {
     "type": "object",
@@ -33,6 +34,12 @@
       "confirmLabel": {
         "type": "string"
       },
+      "cancelLabel": {
+        "type": "string"
+      },
+      "showCancel": {
+        "type": "boolean"
+      },
       "contained": {
         "type": "boolean"
       }
@@ -45,7 +52,9 @@
     "modelValue": false,
     "title": "确认完成工单？",
     "message": "完成后将通知客户，并记录处理结果。",
-    "confirmLabel": "确认完成",
+    "confirmLabel": "确认",
+    "cancelLabel": "取消",
+    "showCancel": true,
     "contained": true
   },
   "states": [
@@ -74,7 +83,9 @@
     "elevation": "elevation.level-5",
     "title": "typography.title",
     "body": "typography.content",
-    "maxWidth": "layout.dialog-max-width"
+    "maxWidth": "layout.dialog-max-width",
+    "fill": "layout.fill",
+    "flexFill": "layout.flex-fill"
   },
   "playground": {
     "presentation": "trigger"

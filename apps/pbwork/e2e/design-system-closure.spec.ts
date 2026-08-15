@@ -301,12 +301,12 @@ test("sheet surfaces keep semantic radius and FlowSheet clips adjacent pages", a
       new PointerEvent("pointerup", { ...pointer, clientX: endX }),
     );
   });
-  await expect(flowSheet.getByText("2 / 4", { exact: true })).toBeVisible();
+  await expect(flowSheet.getByText("步骤 2")).toBeVisible();
 
   await page.goto("/workbench/components/confirm");
   await page.getByRole("button", { name: "打开Dialog / Confirm" }).click();
   const dialog = page.locator(".pb-dialog");
   await expect(dialog).toBeVisible();
-  await dialog.getByRole("button", { name: "确认完成" }).click();
+  await dialog.getByRole("button", { name: "确认" }).click();
   await expect(dialog).toBeHidden();
 });

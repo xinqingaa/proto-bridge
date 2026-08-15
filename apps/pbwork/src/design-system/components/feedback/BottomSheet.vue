@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, toRefs, watch } from "vue";
-import Button from "@/design-system/components/action/Button.vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
+import SheetHeader from "@/design-system/components/_shared/SheetHeader.vue";
 
 const props = defineProps<{
   title: string;
@@ -37,7 +37,9 @@ const { resync } = usePbInspect({
     title: "typography.subtitle",
     body: "typography.content",
     padding: "spacing.md",
+    headerControl: "sizing.touch",
     fill: "layout.fill",
+    flexFill: "layout.flex-fill",
   }),
   getTokens: () => [
     "color.surface",
@@ -47,7 +49,9 @@ const { resync } = usePbInspect({
     "typography.subtitle",
     "typography.content",
     "spacing.md",
+    "sizing.touch",
     "layout.fill",
+    "layout.flex-fill",
   ],
 });
 
@@ -78,17 +82,17 @@ watch(modelValue, async (value) => {
       color="surface"
       variant="flat"
     >
-      <v-card-title class="pb-sheet-header">
-        <span>{{ title }}</span>
-        <Button
-          label="关闭"
-          variant="text"
-          @click="$emit('update:modelValue', false)"
-        />
-      </v-card-title>
+      <SheetHeader
+        :title="title"
+        :inspect-id="inspectId ?? 'ds.bottom-sheet'"
+        @close="$emit('update:modelValue', false)"
+      />
       <v-card-text class="pb-sheet-body">
         <slot />
       </v-card-text>
+      <footer v-if="$slots.actions" class="pb-sheet-actions">
+        <slot name="actions" />
+      </footer>
     </v-card>
   </v-bottom-sheet>
 </template>
@@ -102,20 +106,23 @@ watch(modelValue, async (value) => {
   color: var(--pb-color-on-surface);
   box-shadow: var(--pb-elevation-raised);
 }
-.pb-sheet-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--pb-spacing-md);
-  border-bottom: var(--pb-border-hairline);
-  color: inherit;
-  font: var(--pb-typography-subtitle);
-}
 .pb-sheet-body {
   overflow-y: auto;
   padding: var(--pb-spacing-md);
   color: inherit;
   font: var(--pb-typography-content);
+}
+.pb-sheet-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--pb-spacing-sm);
+  padding: var(--pb-spacing-sm-plus) var(--pb-spacing-md) var(--pb-spacing-md);
+  border-top: var(--pb-border-hairline);
+}
+.pb-sheet-actions > * {
+  flex: var(--pb-layout-flex-fill);
+  width: var(--pb-layout-fill);
+  min-width: var(--pb-spacing-none);
 }
 </style>
 

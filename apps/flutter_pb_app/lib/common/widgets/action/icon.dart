@@ -3,7 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/ts.dart';
 
-/// PBWork `icon.name` 的 33 个稳定 Lucide id。
+/// PBWork `icon.name` 的 34 个稳定 Lucide id。
 enum CommonIconName {
   more,
   plus,
@@ -15,6 +15,7 @@ enum CommonIconName {
   inbox,
   check,
   chevronDown,
+  chevronLeft,
   chevronRight,
   alertTriangle,
   alertCircle,
@@ -65,6 +66,7 @@ extension CommonIconNameData on CommonIconName {
     CommonIconName.inbox => LucideIcons.inbox,
     CommonIconName.check => LucideIcons.check,
     CommonIconName.chevronDown => LucideIcons.chevronDown,
+    CommonIconName.chevronLeft => LucideIcons.chevronLeft,
     CommonIconName.chevronRight => LucideIcons.chevronRight,
     CommonIconName.alertTriangle => LucideIcons.triangleAlert,
     CommonIconName.alertCircle => LucideIcons.circleAlert,

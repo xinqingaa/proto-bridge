@@ -85,25 +85,45 @@ export function defaultTextColorForBg(
   return fallback;
 }
 
-export function resolveButtonColors(input: {
-  bgColor?: string;
-  borderColor?: string;
-  textColor?: string;
-}): {
+export const BUTTON_KINDS = ["primary", "secondary", "outlined"] as const;
+export type ButtonKind = (typeof BUTTON_KINDS)[number];
+
+const BUTTON_KIND_COLORS: Record<
+  ButtonKind,
+  {
+    bgColor: ColorTokenRef;
+    borderColor: ColorTokenRef;
+    textColor: ColorTokenRef;
+  }
+> = {
+  primary: {
+    bgColor: "color.action",
+    borderColor: "color.action",
+    textColor: "color.on-action",
+  },
+  secondary: {
+    bgColor: "color.action-soft",
+    borderColor: "color.action-soft",
+    textColor: "color.action",
+  },
+  outlined: {
+    bgColor: "transparent",
+    borderColor: "color.outline",
+    textColor: "color.on-surface",
+  },
+};
+
+export function resolveButtonKind(kind?: string): ButtonKind {
+  if (kind === "secondary" || kind === "outlined") return kind;
+  return "primary";
+}
+
+export function resolveButtonColorsFromKind(kind?: string): {
   bgColor: ColorTokenRef;
   borderColor: ColorTokenRef;
   textColor: ColorTokenRef;
 } {
-  const bgColor = assertColorTokenRef(input.bgColor, "color.action");
-  const borderColor = assertColorTokenRef(input.borderColor, bgColor);
-  const textFallback =
-    bgColor === "transparent"
-      ? borderColor === "transparent"
-        ? "color.action"
-        : borderColor
-      : defaultTextColorForBg(bgColor, "color.on-action");
-  const textColor = assertColorTokenRef(input.textColor, textFallback);
-  return { bgColor, borderColor, textColor };
+  return BUTTON_KIND_COLORS[resolveButtonKind(kind)];
 }
 
 export const COLOR_TOKEN_SELECT_OPTIONS = [

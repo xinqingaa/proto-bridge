@@ -40,7 +40,7 @@ usePbInspect({
     inspectId: inspectId.value,
   }),
   getTokens: () => [
-    "color.surface",
+    labeled.value ? "color.surface" : "color.surface-recessed",
     "color.border",
     "color.on-surface",
     "color.primary",
@@ -50,7 +50,7 @@ usePbInspect({
     "sizing.textarea-rows",
   ],
   getTokenBindings: () => ({
-    surface: "color.surface",
+    surface: labeled.value ? "color.surface" : "color.surface-recessed",
     border: "color.border",
     focus: "color.primary",
     radius: "radius.md",
@@ -85,6 +85,9 @@ usePbInspect({
 .pb-textarea :deep(.v-field) {
   --v-field-border-radius: var(--pb-component-radius, var(--pb-radius-md));
   border-radius: var(--pb-component-radius, var(--pb-radius-md)) !important;
+  background: var(--pb-color-surface-recessed);
+}
+.pb-textarea.is-labeled :deep(.v-field) {
   background: var(--pb-color-surface);
 }
 .pb-textarea.is-plain :deep(.v-field) {

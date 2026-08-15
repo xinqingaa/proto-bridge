@@ -144,9 +144,7 @@ function openRegistration() {
               />
               <Button
                 label="创建或重建本地身份"
-                bg-color="transparent"
-                border-color="transparent"
-                text-color="color.primary"
+                kind="outlined"
                 block
                 inspect-id="hengdong.login.open-register"
                 data-pb-action="open-register"

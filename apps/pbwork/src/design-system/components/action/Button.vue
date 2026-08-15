@@ -11,7 +11,9 @@ import {
 } from "@/design-system/components/_shared/appearance";
 import {
   colorTokenCss,
-  resolveButtonColors,
+  resolveButtonColorsFromKind,
+  resolveButtonKind,
+  type ButtonKind,
 } from "@/design-system/components/_shared/colorTokens";
 import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
 
@@ -21,12 +23,8 @@ const LOADER_STROKE = tokenDefaultNumber("sizing.progress-stroke");
 
 const props = defineProps<{
   label: string;
-  /** Background Token-ref (Bind color id or transparent). */
-  bgColor?: string;
-  /** Border Token-ref; defaults to bgColor. */
-  borderColor?: string;
-  /** Foreground Token-ref; defaults from bgColor pairing. */
-  textColor?: string;
+  /** 主要 / 次要 / 描边。默认主要类型。 */
+  kind?: ButtonKind;
   size?: ComponentSize;
   loading?: boolean;
   block?: boolean;
@@ -39,29 +37,12 @@ defineEmits<{ click: [] }>();
 
 const rootRef = usePbInspectRef();
 const slots = useSlots();
-const {
-  label,
-  bgColor,
-  borderColor,
-  textColor,
-  size,
-  loading,
-  block,
-  disabled,
-  type,
-  inspectId,
-} = toRefs(props);
+const { label, kind, size, loading, block, disabled, type, inspectId } =
+  toRefs(props);
 
 const resolvedSize = computed(() => size.value ?? "md");
-const colors = computed(() =>
-  resolveButtonColors({
-    ...(bgColor.value !== undefined ? { bgColor: bgColor.value } : {}),
-    ...(borderColor.value !== undefined
-      ? { borderColor: borderColor.value }
-      : {}),
-    ...(textColor.value !== undefined ? { textColor: textColor.value } : {}),
-  }),
-);
+const resolvedKind = computed(() => resolveButtonKind(kind.value));
+const colors = computed(() => resolveButtonColorsFromKind(resolvedKind.value));
 const isUnavailable = computed(
   () => Boolean(disabled.value) || Boolean(loading.value),
 );
@@ -82,9 +63,7 @@ usePbInspect({
   componentId: "button",
   getProps: () => ({
     label: label.value,
-    bgColor: colors.value.bgColor,
-    borderColor: colors.value.borderColor,
-    textColor: colors.value.textColor,
+    kind: resolvedKind.value,
     size: size.value ?? "md",
     loading: loading.value ?? false,
     block: block.value ?? false,

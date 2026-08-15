@@ -198,17 +198,13 @@ function reset() {
             </div>
             <Button
               label="退出登录"
-              bg-color="color.surface"
-              border-color="color.border"
-              text-color="color.on-surface"
+              kind="secondary"
               inspect-id="hengdong.settings-goals.logout"
               @click="logoutOpen = true"
             />
             <Button
               label="重置演示数据"
-              bg-color="color.error-soft"
-              border-color="color.error-soft"
-              text-color="color.error"
+              kind="secondary"
               inspect-id="hengdong.settings-goals.reset"
               @click="resetOpen = true"
             />

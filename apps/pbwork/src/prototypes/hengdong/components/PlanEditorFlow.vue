@@ -190,31 +190,19 @@ function save() {
       </div>
     </section>
     <template #actions>
-      <div class="hd-plan-flow-actions">
-        <Button
-          v-if="step > 0"
-          class="hd-flow-back"
-          label="返回"
-          size="sm"
-          bg-color="transparent"
-          border-color="transparent"
-          text-color="color.primary"
-          @click="step -= 1"
-        />
-        <Button
-          v-if="step < 2"
-          :label="step === 0 ? '继续安排节奏' : '选择动作'"
-          block
-          @click="step += 1"
-        />
-        <Button
-          v-else
-          :label="saveLabel"
-          block
-          inspect-id="hengdong.plan-editor.save"
-          @click="save"
-        />
-      </div>
+      <Button
+        v-if="step < 2"
+        :label="step === 0 ? '继续安排节奏' : '选择动作'"
+        block
+        @click="step += 1"
+      />
+      <Button
+        v-else
+        :label="saveLabel"
+        block
+        inspect-id="hengdong.plan-editor.save"
+        @click="save"
+      />
     </template>
   </FlowSheet>
 </template>

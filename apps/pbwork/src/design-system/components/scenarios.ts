@@ -8,48 +8,33 @@ export type ComponentScenario = {
 const scenarios: Record<string, ComponentScenario[]> = {
   button: [
     {
-      id: "submit",
-      label: "提交表单",
-      description: "表单底部的主操作，用于提交工单。",
+      id: "primary",
+      label: "主要类型",
+      description:
+        "一行只有一颗按钮时使用；两颗时作为主操作，如确认、提交、保存、继续。",
       props: {
         label: "提交工单",
+        kind: "primary",
         block: true,
-        bgColor: "color.action",
-        borderColor: "color.action",
-        textColor: "color.on-action",
       },
     },
     {
       id: "secondary",
-      label: "次要操作",
-      description: "与主按钮并列时的次要操作，如保存草稿。",
+      label: "次要类型",
+      description: "只与主要类型成对出现，如取消、保存草稿、稍后。",
       props: {
         label: "保存草稿",
-        bgColor: "color.secondary-soft",
-        borderColor: "color.secondary-soft",
-        textColor: "color.secondary",
-      },
-    },
-    {
-      id: "primary-accent",
-      label: "强调主色",
-      description: "需要用蓝强调色时的按钮，区别于默认主操作。",
-      props: {
-        label: "查看详情",
-        bgColor: "color.primary",
-        borderColor: "color.primary",
-        textColor: "color.on-primary",
+        kind: "secondary",
       },
     },
     {
       id: "outlined",
-      label: "描边操作",
-      description: "透明底 + Token 边框的次级操作。",
+      label: "描边类型",
+      description:
+        "最弱档，用于卡片内查看、了解更多等轻量动作；不进入 Confirm 与 Sheet 决策区。",
       props: {
-        label: "仅确认接手",
-        bgColor: "transparent",
-        borderColor: "color.action",
-        textColor: "color.action",
+        label: "查看详情",
+        kind: "outlined",
       },
     },
   ],
@@ -552,7 +537,7 @@ const scenarios: Record<string, ComponentScenario[]> = {
       props: {
         title: "确认完成工单？",
         message: "完成后将无法继续编辑处理记录。",
-        confirmLabel: "确认完成",
+        confirmLabel: "确认",
         modelValue: true,
       },
     },
@@ -564,6 +549,7 @@ const scenarios: Record<string, ComponentScenario[]> = {
         title: "离线数据已更新",
         message: "3 条工单将在恢复网络后同步。",
         confirmLabel: "知道了",
+        showCancel: false,
         modelValue: true,
       },
     },

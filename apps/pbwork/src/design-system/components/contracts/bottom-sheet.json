@@ -8,14 +8,14 @@
   },
   "summary": "从底部覆盖当前页面的半屏操作容器；保持独立 Sheet 外壳与关闭边界。",
   "behavior": [
-    "打开时挂载 scrim、dialog 语义和顶部关闭入口",
-    "modelValue 关闭后恢复下层交互，业务内容完全由默认 slot 提供"
+    "打开时挂载 scrim、dialog 语义和顶部关闭 Icon Button",
+    "modelValue 关闭后恢复下层交互；决策按钮放在 actions 槽，一颗主要类型占满，两颗时左次要右主要并等分撑满"
   ],
   "layout": {
     "summary": "Sheet 从视口底部抬起，内容高度受上限约束；标题区与内容区由同一滚动边界承载。"
   },
   "visualAnatomy": {
-    "summary": "scrim 位于页面内容之上、Sheet 表面之下；Sheet 使用顶部圆角、边框与 raised elevation。"
+    "summary": "scrim 位于页面内容之上、Sheet 表面之下；顶栏为居中标题与关闭 Icon Button，Sheet 使用顶部圆角、边框与 raised elevation。"
   },
   "propsSchema": {
     "type": "object",
@@ -55,7 +55,8 @@
     }
   ],
   "slots": [
-    "default"
+    "default",
+    "actions"
   ],
   "events": [
     "update:modelValue"
@@ -68,7 +69,9 @@
     "title": "typography.subtitle",
     "body": "typography.content",
     "padding": "spacing.md",
-    "fill": "layout.fill"
+    "headerControl": "sizing.touch",
+    "fill": "layout.fill",
+    "flexFill": "layout.flex-fill"
   },
   "playground": {
     "presentation": "trigger"

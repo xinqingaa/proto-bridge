@@ -9,14 +9,15 @@
   "summary": "在同一张底部 Sheet 内承载连续多步操作，并保持当前步骤与相邻页面裁剪。",
   "behavior": [
     "step 是受控的零基索引，切换后通过 update:step 回传当前步骤",
-    "swipe 开启时允许横向切步，但相邻步骤不得从视口边缘泄漏",
-    "右上角使用带可访问名称的 X 图标关闭；关闭只更新 modelValue，不替业务流程决定提交、取消或路由"
+    "swipe 开启时允许横向切步，当前步骤以整页宽度平移进入视口，拖拽时跟手、松手后完成切页",
+    "右上角使用带可访问名称的 X 图标关闭整张 Sheet；step > 0 时左上角提供返回上一屏",
+    "关闭只更新 modelValue，返回只更新 step，不替业务流程决定提交、取消或路由"
   ],
   "layout": {
     "summary": "Sheet 内部只有一个裁剪视口；各步骤等宽横排，当前 step 以整页宽度平移进入视口。"
   },
   "visualAnatomy": {
-    "summary": "复用 BottomSheet 的 scrim 与 raised surface，内部增加标题、X 图标关闭、步骤指示、步骤视口和操作区。"
+    "summary": "复用 BottomSheet 的 scrim 与 raised surface；顶栏为返回/标题/关闭且与主体无分割线，另有步骤指示、步骤视口和操作区。操作区一颗主要类型占满，两颗时等分撑满。"
   },
   "propsSchema": {
     "type": "object",
@@ -91,9 +92,11 @@
     "body": "typography.content",
     "stepLabel": "typography.micro",
     "headerGap": "spacing.sm-plus",
+    "headerControl": "sizing.touch",
     "dotGap": "spacing.xs-plus",
     "dotSize": "sizing.step-dot",
     "fill": "layout.fill",
+    "flexFill": "layout.flex-fill",
     "maxHeight": "layout.sheet-max-height",
     "reducedDuration": "motion.duration-instant",
     "duration": "motion.duration-sheet",

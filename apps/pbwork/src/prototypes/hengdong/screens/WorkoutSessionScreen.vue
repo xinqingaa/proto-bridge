@@ -448,9 +448,7 @@ function recoverToToday() {
         <Button
           label="退出"
           size="sm"
-          bg-color="transparent"
-          border-color="transparent"
-          text-color="color.on-surface-muted"
+          kind="outlined"
           inspect-id="hengdong.workout-session.exit"
           data-pb-action="open-exit"
           @click="openExit"
@@ -574,9 +572,7 @@ function recoverToToday() {
           <Button
             v-if="session.currentExerciseIndex > 0 && session.status !== 'paused'"
             label="回到上一个动作"
-            bg-color="transparent"
-            border-color="transparent"
-            text-color="color.primary"
+            kind="outlined"
             inspect-id="hengdong.workout-session.previous"
             @click="previousExercise"
           />
@@ -602,9 +598,7 @@ function recoverToToday() {
         <template v-else>
           <Button
             label="暂停"
-            bg-color="color.surface"
-            border-color="color.border"
-            text-color="color.on-surface"
+            kind="secondary"
             inspect-id="hengdong.workout-session.pause"
             data-pb-action="pause-workout"
             @click="togglePause"
@@ -643,9 +637,7 @@ function recoverToToday() {
         <Button
           label="稍后继续"
           block
-          bg-color="color.surface"
-          border-color="color.border"
-          text-color="color.on-surface"
+          kind="secondary"
           inspect-id="hengdong.workout-session.leave-later"
           data-pb-action="leave-for-later"
           @click="leaveForLater"
@@ -654,9 +646,7 @@ function recoverToToday() {
           label="保存已完成部分"
           block
           :disabled="session.completedExerciseIds.length === 0"
-          bg-color="color.primary-soft"
-          border-color="color.primary-soft"
-          text-color="color.primary"
+          kind="secondary"
           inspect-id="hengdong.workout-session.save-partial"
           data-pb-action="save-partial-workout"
           @click="savePartial"
@@ -667,9 +657,7 @@ function recoverToToday() {
         <Button
           label="放弃本次"
           block
-          bg-color="color.error-soft"
-          border-color="color.error-soft"
-          text-color="color.error"
+          kind="secondary"
           inspect-id="hengdong.workout-session.discard"
           @click="discard"
         />

@@ -11,6 +11,8 @@ const props = defineProps<{
   title: string;
   message?: string;
   confirmLabel?: string;
+  cancelLabel?: string;
+  showCancel?: boolean;
   contained?: boolean;
   /** CSS selector for overlay host; Runtime defaults to .runtime-app */
   attach?: string;
@@ -29,6 +31,8 @@ const {
   title,
   message,
   confirmLabel,
+  cancelLabel,
+  showCancel,
   contained,
   attach,
   inspectId,
@@ -46,6 +50,8 @@ const { resync } = usePbInspect({
     title: title.value,
     message: message.value ?? "",
     confirmLabel: confirmLabel.value ?? "确认",
+    cancelLabel: cancelLabel.value ?? "取消",
+    showCancel: showCancel.value !== false,
     contained: contained.value ?? false,
     inspectId: inspectId.value,
   }),
@@ -59,6 +65,8 @@ const { resync } = usePbInspect({
     "typography.title",
     "typography.content",
     "layout.dialog-max-width",
+    "layout.fill",
+    "layout.flex-fill",
   ],
   getTokenBindings: () => ({
     scrim: "color.scrim",
@@ -70,6 +78,8 @@ const { resync } = usePbInspect({
     title: "typography.title",
     body: "typography.content",
     maxWidth: "layout.dialog-max-width",
+    fill: "layout.fill",
+    flexFill: "layout.flex-fill",
   }),
 });
 
@@ -103,25 +113,24 @@ watch(modelValue, async (value) => {
       >
         <v-card-title>{{ title }}</v-card-title>
         <v-card-text>{{ message ?? "请确认是否继续。" }}</v-card-text>
-        <v-card-actions>
-          <v-spacer />
+        <footer class="pb-dialog-actions">
           <Button
-            label="取消"
-            bg-color="transparent"
-            border-color="transparent"
-            text-color="color.primary"
+            v-if="showCancel !== false"
+            :label="cancelLabel ?? '取消'"
+            kind="secondary"
             v-bind="inspectId ? { inspectId: `${inspectId}.cancel` } : {}"
             @click="$emit('update:modelValue', false)"
           />
           <Button
             :label="confirmLabel ?? '确认'"
+            kind="primary"
             v-bind="inspectId ? { inspectId: `${inspectId}.confirm` } : {}"
             @click="
               $emit('confirm');
               $emit('update:modelValue', false);
             "
           />
-        </v-card-actions>
+        </footer>
       </v-card>
     </v-dialog>
   </span>
@@ -146,5 +155,16 @@ watch(modelValue, async (value) => {
 .pb-dialog :deep(.v-card-text) {
   color: inherit;
   font: var(--pb-typography-content);
+}
+.pb-dialog-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--pb-spacing-sm);
+  padding: var(--pb-spacing-sm-plus) var(--pb-spacing-md) var(--pb-spacing-md);
+}
+.pb-dialog-actions > * {
+  flex: var(--pb-layout-flex-fill);
+  width: var(--pb-layout-fill);
+  min-width: var(--pb-spacing-none);
 }
 </style>
