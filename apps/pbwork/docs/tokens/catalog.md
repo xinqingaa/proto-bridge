@@ -1,9 +1,9 @@
 # Token 全量目录
 
-> 权威源：`apps/pbwork/src/design-system/tokens/tokens.json`（共 153 项）
-> Bind 池：`apps/pbwork/src/design-system/bindTokens.ts`（127 项可进组件 `tokenBindings`）
+> 权威源：`apps/pbwork/src/design-system/tokens/tokens.json`（共 154 项）
+> Bind 池：`apps/pbwork/src/design-system/bindTokens.ts`（128 项可进组件 `tokenBindings`）
 
-未进 Bind 池的 Token 仍可在 Foundations 浏览，但**不得**写入通用组件契约。`transparent` / `none` 是 Core 定义的绑定字面量，不属于本目录的 153 个 Token，也不要求 Target accessor。
+未进 Bind 池的 Token 仍可在 Foundations 浏览，但**不得**写入通用组件契约。`transparent` / `none` 是 Core 定义的绑定字面量，不属于本目录的 154 个 Token，也不要求 Target accessor。
 
 ## 颜色（`color` · 36）
 

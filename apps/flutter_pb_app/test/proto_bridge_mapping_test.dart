@@ -312,11 +312,13 @@ void main() {
   });
 
   test('all curated Lucide ids resolve', () {
-    expect(CommonIconName.values, hasLength(30));
+    expect(CommonIconName.values, hasLength(32));
     expect(
       CommonIconName.values.map((name) => name.data.codePoint).toSet(),
-      hasLength(30),
+      hasLength(32),
     );
+    expect(CommonIconName.eye.data, LucideIcons.eye);
+    expect(CommonIconName.eyeOff.data, LucideIcons.eyeOff);
     expect(CommonIconName.dumbbell.data, LucideIcons.dumbbell);
     expect(CommonIconName.footprints.data, LucideIcons.footprints);
     expect(CommonIconName.personStanding.data, LucideIcons.personStanding);

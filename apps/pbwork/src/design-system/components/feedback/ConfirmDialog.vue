@@ -107,7 +107,9 @@ watch(modelValue, async (value) => {
           <v-spacer />
           <Button
             label="取消"
-            variant="text"
+            bg-color="transparent"
+            border-color="transparent"
+            text-color="color.primary"
             v-bind="inspectId ? { inspectId: `${inspectId}.cancel` } : {}"
             @click="$emit('update:modelValue', false)"
           />

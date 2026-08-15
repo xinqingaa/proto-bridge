@@ -18,8 +18,8 @@ prototypeId: hengdong
 | 计划详情   | pending  | legacy-draft  | pending           |
 | 进度       | approved | passed        | accepted          |
 | 设置与目标 | pending  | legacy-draft  | pending           |
-| 登录       | approved | in-progress   | pending           |
-| 注册       | approved | in-progress   | pending           |
+| 登录       | approved | passed        | accepted          |
+| 注册       | approved | passed        | accepted          |
 
 `legacy-draft` 表示现有代码可以保留用于后续调整，但不代表页面设计或体验已经通过。
 
@@ -55,7 +55,7 @@ prototypeId: hengdong
 | 训练退出选择       | 现有 PBWork DS          | BottomSheet 承载继续、稍后继续、部分保存和放弃                  |
 | 完成结果环         | Token 驱动的业务局部 UI | 从身体舞台收束为保存前的完成结果，不作为可点击控件              |
 | 训练体感与备注     | 现有 PBWork DS          | RadioGroup + Textarea；无体感时保存不可用                       |
-| 认证起步环         | Token 驱动的业务局部 UI | 沿用恒动目标环语法作为品牌标记，不表达伪造进度                  |
+| 认证 Logo          | Token 驱动的业务局部 UI | 抽象运动轨迹 H；使用 action/on-action Token 适配浅深主题         |
 | 账号与密码字段     | 扩展 PBWork TextField   | 增加有限密码、显隐、autocomplete 与字段错误能力                 |
 | 初始周目标         | 现有 PBWork DS          | Menu 在同一注册表单选择每周 2–5 次                              |
 | 替换本地身份确认   | 现有 PBWork DS          | Confirm 明确旧凭据失效且设备训练数据保留                        |
@@ -64,8 +64,8 @@ prototypeId: hengdong
 
 ### 确定状态
 
-- 登录：`default`、`validation-error`、`invalid-credentials`、`no-identity`；
-- 注册：`default`、`validation-error`、`replace-identity`、`replace-confirm-open`；
+- 登录：`default`、`ready`、`validation-error`、`invalid-credentials`、`no-identity`；
+- 注册：`default`、`ready`、`validation-error`、`replace-identity`、`replace-confirm-open`；
 - 登录默认空表单，不展示演示密码；关键输入由 Action Scenario 确定填写；
 - 注册默认每周 3 次，替换身份只改变本地身份与目标，不删除计划和活动记录；
 - 当前设备保持登录直到设置页退出，不保留无实际行为的 remember 字段。
@@ -91,6 +91,22 @@ prototypeId: hengdong
 - 检查登录浅色默认、登录窄屏错误与密码显隐、注册浅色默认、注册深色错误或替换确认、桌面有限宽度；
 - 检查键盘焦点、字段错误、图标可访问名称、Overlay 完整性、单一主操作和无多余 Card；
 - 任一已知文字溢出、键盘遮挡、表单过宽、虚假交互或数据边界问题阻止记录 `accepted`。
+
+### L2 验收结果
+
+- Delivery Gate：Token-only、DS-first、Flex-only、10 Screen Registry、127 个 PBWork 测试、生产构建、4 项 Runtime Capture e2e、文档校验、DS Target 同步、Flutter 静态分析与测试通过；
+- Experience Review：在真实浏览器中检查 `390 × 844` 登录浅色默认、注册浅色默认和注册深色替换确认，检查 `390 × 667` 登录错误与密码显隐，并在 `1280 × 800` 检查表单有限宽度；结果为 `accepted`；
+- 登录默认保持空表单，密码默认隐藏且显隐按钮具有可访问名称；正确凭据进入今天，错误凭据停留原页并提供字段反馈；
+- 注册保存规范化账号、称呼和每周 2–5 次初始目标，首次创建与替换身份均进入今天并立即显示新称呼；替换确认取消不写入，确认后保留计划和活动记录；
+- 登录与注册互相替换路由，不形成返回循环；身份成功后替换为今天，仍维持 10 个正式 Screen，不新增 onboarding 层级；
+- 本轮 Experience 修正了认证次操作按钮过重、Confirm 两个动作强调度相同，以及确认替换时 Dialog 关闭与成功导航竞争的问题；修正后重新通过受影响交互与门禁。
+
+### 视觉重设计增量
+
+- 按用户反馈移除“恒”字目标环和上下两端分散构图，改为紧凑 Logo/字标、任务标题、plain 输入组和连续操作层级；
+- Logo 作为原型局部矢量资产实现，继续使用稳定 `brand-mark` Evidence identity，不改变 Screen、Variant、Action 或 Scenario；
+- 登录与注册复用 TextField 的最简无描边形态；plain 字段以 `label` 提供可访问名称，页面不复制输入组件；
+- 本增量继续执行 L2 Focused Experience Gate，重点复核表单首屏重心、Logo 识别、plain 输入可用性、窄屏键盘、深色主题和替换确认。
 
 ## 今天页正式调整
 

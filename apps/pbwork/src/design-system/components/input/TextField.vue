@@ -113,6 +113,7 @@ usePbInspect({
     data-pb-id="ds.text-field"
     data-pb-role="field"
     :label="labeled ? (label ?? '') : undefined"
+    :aria-label="!labeled ? (label ?? undefined) : undefined"
     :hide-details="!errorMessage"
     :flat="!labeled"
     :variant="fieldVariant"

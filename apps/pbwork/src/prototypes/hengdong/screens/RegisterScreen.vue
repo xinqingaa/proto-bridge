@@ -6,6 +6,7 @@ import Icon from "@/design-system/components/action/Icon.vue";
 import Confirm from "@/design-system/components/feedback/ConfirmDialog.vue";
 import Menu from "@/design-system/components/input/Menu.vue";
 import TextField from "@/design-system/components/input/TextField.vue";
+import HengdongLogo from "../components/HengdongLogo.vue";
 import {
   isValidHengdongUsername,
   normalizeHengdongUsername,
@@ -31,6 +32,7 @@ const password = ref(prefilled.value ? "123456" : "");
 const weeklyTarget = ref("每周 3 次");
 const attempted = ref(variant.value === "validation-error");
 const confirmOpen = ref(variant.value === "replace-confirm-open");
+const committing = ref(false);
 
 const nameError = computed(() =>
   attempted.value && !name.value.trim() ? "请输入怎么称呼你" : "",
@@ -63,6 +65,7 @@ function selectedWeeklySessions() {
 }
 
 function commitRegistration() {
+  committing.value = true;
   const normalized = normalizeHengdongUsername(username.value);
   registerHengdong(
     {
@@ -89,6 +92,7 @@ function register() {
 
 function updateConfirmOpen(value: boolean) {
   confirmOpen.value = value;
+  if (committing.value) return;
   if (!value && variant.value === "replace-confirm-open") {
     void replaceVariant(router, route, "replace-identity");
   }
@@ -109,36 +113,33 @@ function backToLogin() {
   >
     <div class="hd-auth-scroll">
       <div class="hd-auth-frame hd-auth-frame--register">
-        <header class="hd-auth-brand hd-auth-brand--compact">
-          <span
-            class="hd-auth-mark hd-auth-mark--compact"
-            aria-hidden="true"
-            data-pb-id="hengdong.register.brand-mark"
-            data-pb-role="image"
-            data-pb-token-background="color.primary-soft"
-            data-pb-token-color="color.primary"
-            data-pb-token-size="sizing.avatar-md"
-          >恒</span>
-          <div class="hd-auth-copy">
-            <span class="hd-overline">只保存在当前设备</span>
-            <h1>{{ isReplacing ? "重新建立本地身份" : "从一周三次开始" }}</h1>
-            <p class="hd-muted">
-              {{
-                isReplacing
-                  ? "新凭据会替换旧凭据，训练记录继续保留。"
-                  : "不需要邮箱验证，完成后直接进入今天。"
-              }}
-            </p>
+        <header class="hd-auth-brand">
+          <HengdongLogo pb-id="hengdong.register.brand-mark" />
+          <div class="hd-auth-wordmark">
+            <strong>恒动</strong>
+            <span>HENGDONG</span>
           </div>
         </header>
 
-        <form
-          class="hd-auth-form"
-          data-pb-id="hengdong.register.form"
-          data-pb-role="form"
-          data-pb-token-spacing="spacing.md"
-          @submit.prevent="register"
-        >
+        <div class="hd-auth-main">
+          <div class="hd-auth-intro">
+            <h1>{{ isReplacing ? "重建本地身份" : "创建本地身份" }}</h1>
+            <p class="hd-muted">
+              {{
+                isReplacing
+                  ? "更新登录凭据，训练记录继续保留。"
+                  : "设置账号和每周活动目标。"
+              }}
+            </p>
+          </div>
+
+          <form
+            class="hd-auth-form"
+            data-pb-id="hengdong.register.form"
+            data-pb-role="form"
+            data-pb-token-spacing="spacing.sm"
+            @submit.prevent="register"
+          >
           <section
             v-if="isReplacing"
             class="hd-auth-replace-note"
@@ -155,30 +156,27 @@ function backToLogin() {
           <TextField
             v-model="name"
             label="怎么称呼你"
-            :show-label="true"
             autocomplete="name"
             :error-message="nameError"
-            placeholder="例如：林然"
+            placeholder="称呼"
             inspect-id="hengdong.register.name"
           />
           <TextField
             v-model="username"
             label="账号"
-            :show-label="true"
             autocomplete="username"
             :error-message="usernameError"
-            placeholder="3–20 位字母、数字或下划线"
+            placeholder="账号"
             inspect-id="hengdong.register.username"
           />
           <TextField
             v-model="password"
             label="密码"
-            :show-label="true"
             type="password"
             autocomplete="new-password"
             revealable
             :error-message="passwordError"
-            placeholder="至少 6 位"
+            placeholder="密码（至少 6 位）"
             inspect-id="hengdong.register.password"
           />
           <Menu
@@ -197,27 +195,30 @@ function backToLogin() {
             data-pb-token-spacing="spacing.sm"
           >
             <Icon name="shield-check" size="md" tone="primary" />
-            <span>身份、计划和活动事实只保存在这台设备上。</span>
+            <span>身份、计划和活动记录只保存在当前设备。</span>
           </div>
 
           <div class="hd-auth-actions">
-            <Button
-              :label="isReplacing ? '继续替换身份' : '创建并开始'"
+              <Button
+              :label="isReplacing ? '继续' : '创建身份'"
               block
               type="submit"
               inspect-id="hengdong.register.submit"
               data-pb-action="register"
             />
-            <Button
-              label="返回登录"
-              variant="text"
+              <Button
+                label="返回登录"
+              bg-color="transparent"
+              border-color="transparent"
+              text-color="color.primary"
               block
               inspect-id="hengdong.register.back-login"
               data-pb-action="back-login"
               @click="backToLogin"
-            />
-          </div>
-        </form>
+              />
+            </div>
+          </form>
+        </div>
       </div>
     </div>
 

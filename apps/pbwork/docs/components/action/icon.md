@@ -45,6 +45,8 @@
 | `file-text` | file-text | `variant` |
 | `sliders-horizontal` | sliders-horizontal | `variant` |
 | `dumbbell` | dumbbell | `variant` |
+| `eye` | eye | `variant` |
+| `eye-off` | eye-off | `variant` |
 | `footprints` | footprints | `variant` |
 | `person-standing` | person-standing | `variant` |
 | `sparkles` | sparkles | `variant` |

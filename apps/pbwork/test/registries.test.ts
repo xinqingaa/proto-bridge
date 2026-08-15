@@ -247,6 +247,38 @@ describe("design contracts", () => {
         },
       ]),
     );
+
+    const login = hengdongScreens.find(
+      (screen) => screen.screenId === "hengdong.login",
+    );
+    expect(login?.variants.map((variant) => variant.id)).toEqual([
+      "default",
+      "ready",
+      "validation-error",
+      "invalid-credentials",
+      "no-identity",
+    ]);
+    expect(login?.requiredScenarioIds).toEqual([
+      "enter-with-local-identity",
+      "reject-invalid-credentials",
+      "open-local-registration",
+    ]);
+
+    const register = hengdongScreens.find(
+      (screen) => screen.screenId === "hengdong.register",
+    );
+    expect(register?.variants.map((variant) => variant.id)).toEqual([
+      "default",
+      "ready",
+      "validation-error",
+      "replace-identity",
+      "replace-confirm-open",
+    ]);
+    expect(register?.requiredScenarioIds).toEqual([
+      "create-local-identity",
+      "request-identity-replacement",
+      "confirm-identity-replacement",
+    ]);
   });
 });
 

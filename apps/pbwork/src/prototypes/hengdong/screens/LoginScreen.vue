@@ -3,6 +3,7 @@ import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Button from "@/design-system/components/action/Button.vue";
 import TextField from "@/design-system/components/input/TextField.vue";
+import HengdongLogo from "../components/HengdongLogo.vue";
 import { replaceHengdongScreen } from "../nav";
 import { loginHengdong } from "../storage";
 import "../hengdong.css";
@@ -70,100 +71,99 @@ function openRegistration() {
     <div class="hd-auth-scroll">
       <div class="hd-auth-frame">
         <header class="hd-auth-brand">
-          <span
-            class="hd-auth-mark"
-            aria-hidden="true"
-            data-pb-id="hengdong.login.brand-mark"
-            data-pb-role="image"
-            data-pb-token-background="color.primary-soft"
-            data-pb-token-color="color.primary"
-            data-pb-token-size="sizing.avatar-lg"
-          >恒</span>
-          <div class="hd-auth-copy">
-            <span class="hd-overline">HENGDONG · 恒动</span>
-            <h1>回来，继续动一点</h1>
-            <p class="hd-muted">你的计划和活动记录都留在这台设备上。</p>
+          <HengdongLogo pb-id="hengdong.login.brand-mark" />
+          <div class="hd-auth-wordmark">
+            <strong>恒动</strong>
+            <span>HENGDONG</span>
           </div>
         </header>
 
-        <section
-          v-if="isNoIdentity"
-          class="hd-auth-empty"
-          data-pb-id="hengdong.login.no-identity"
-          data-pb-role="status"
-          data-pb-token-background="color.primary-soft"
-          data-pb-token-color="color.on-surface"
-          data-pb-token-radius="radius.lg"
-          data-pb-token-spacing="spacing.lg"
-        >
-          <div class="hd-row-main">
-            <h2>这台设备还没有本地身份</h2>
-            <p class="hd-muted">先建立称呼、账号和每周目标，再从今天开始。</p>
+        <div class="hd-auth-main">
+          <div class="hd-auth-intro">
+            <h1>{{ isNoIdentity ? "开始使用恒动" : "欢迎回来" }}</h1>
+            <p class="hd-muted">
+              {{
+                isNoIdentity
+                  ? "先创建这台设备上的本地身份。"
+                  : "登录并继续今天的训练。"
+              }}
+            </p>
           </div>
-          <Button
-            label="建立本地身份"
-            block
-            inspect-id="hengdong.login.open-register"
-            data-pb-action="open-register"
-            @click="openRegistration"
-          />
-        </section>
 
-        <form
-          v-else
-          class="hd-auth-form"
-          data-pb-id="hengdong.login.form"
-          data-pb-role="form"
-          data-pb-token-spacing="spacing.md"
-          @submit.prevent="login"
-        >
-          <TextField
-            v-model="username"
-            label="账号"
-            :show-label="true"
-            autocomplete="username"
-            :error-message="usernameError"
-            placeholder="输入本地账号"
-            inspect-id="hengdong.login.username"
-          />
-          <TextField
-            v-model="password"
-            label="密码"
-            :show-label="true"
-            type="password"
-            autocomplete="current-password"
-            revealable
-            :error-message="passwordError"
-            placeholder="输入密码"
-            inspect-id="hengdong.login.password"
-          />
-          <div class="hd-auth-actions">
+          <section
+            v-if="isNoIdentity"
+            class="hd-auth-empty"
+            data-pb-id="hengdong.login.no-identity"
+            data-pb-role="status"
+            data-pb-token-color="color.on-surface"
+            data-pb-token-spacing="spacing.md"
+          >
+            <p class="hd-muted">创建后，身份、计划和活动记录只保存在当前设备。</p>
             <Button
-              label="进入恒动"
-              block
-              type="submit"
-              inspect-id="hengdong.login.submit"
-              data-pb-action="login"
-            />
-            <Button
-              label="建立或重建本地身份"
-              variant="text"
+              label="创建本地身份"
               block
               inspect-id="hengdong.login.open-register"
               data-pb-action="open-register"
               @click="openRegistration"
             />
-          </div>
-          <p
-            class="hd-auth-assurance"
-            data-pb-id="hengdong.login.local-note"
-            data-pb-role="text"
-            data-pb-token-color="color.on-surface-muted"
-            data-pb-token-typography="typography.caption"
+          </section>
+
+          <form
+            v-else
+            class="hd-auth-form"
+            data-pb-id="hengdong.login.form"
+            data-pb-role="form"
+            data-pb-token-spacing="spacing.sm"
+            @submit.prevent="login"
           >
-            当前设备会保持登录，直到你在设置中主动退出。
-          </p>
-        </form>
+            <TextField
+              v-model="username"
+              label="账号"
+              autocomplete="username"
+              :error-message="usernameError"
+              placeholder="账号"
+              inspect-id="hengdong.login.username"
+            />
+            <TextField
+              v-model="password"
+              label="密码"
+              type="password"
+              autocomplete="current-password"
+              revealable
+              :error-message="passwordError"
+              placeholder="密码"
+              inspect-id="hengdong.login.password"
+            />
+            <div class="hd-auth-actions">
+              <Button
+                label="登录"
+                block
+                type="submit"
+                inspect-id="hengdong.login.submit"
+                data-pb-action="login"
+              />
+              <Button
+                label="创建或重建本地身份"
+                bg-color="transparent"
+                border-color="transparent"
+                text-color="color.primary"
+                block
+                inspect-id="hengdong.login.open-register"
+                data-pb-action="open-register"
+                @click="openRegistration"
+              />
+            </div>
+            <p
+              class="hd-auth-assurance"
+              data-pb-id="hengdong.login.local-note"
+              data-pb-role="text"
+              data-pb-token-color="color.on-surface-muted"
+              data-pb-token-typography="typography.caption"
+            >
+              登录状态保留在当前设备，直到你主动退出。
+            </p>
+          </form>
+        </div>
       </div>
     </div>
   </main>

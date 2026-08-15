@@ -3,11 +3,18 @@ import {
   activeDayCount,
   defaultRecords,
   latestRecords,
+  isValidHengdongUsername,
+  normalizeHengdongUsername,
   progressRange,
   recordsInRange,
   shiftProgressAnchor,
   totalMinutes,
 } from "@/prototypes/hengdong/model";
+import {
+  hengdongState,
+  registerHengdong,
+  resetHengdongData,
+} from "@/prototypes/hengdong/storage";
 
 describe("Hengdong activity ranges", () => {
   it("derives week, month, year, and custom ranges from one anchor", () => {
@@ -52,5 +59,27 @@ describe("Hengdong activity ranges", () => {
       "record-20260806",
       "record-20260802",
     ]);
+  });
+
+  it("normalizes local identities and preserves device activity facts", () => {
+    const recordIds = hengdongState.records.map((record) => record.id);
+    expect(normalizeHengdongUsername("  Zhou_Ning ")).toBe("zhou_ning");
+    expect(isValidHengdongUsername("zhou_ning")).toBe(true);
+    expect(isValidHengdongUsername("周宁")).toBe(false);
+
+    registerHengdong(
+      {
+        id: "user-zhou_ning",
+        name: "周宁",
+        username: " Zhou_Ning ",
+        password: "123456",
+      },
+      4,
+    );
+
+    expect(hengdongState.profile.username).toBe("zhou_ning");
+    expect(hengdongState.goals.weeklySessions).toBe(4);
+    expect(hengdongState.records.map((record) => record.id)).toEqual(recordIds);
+    resetHengdongData();
   });
 });
