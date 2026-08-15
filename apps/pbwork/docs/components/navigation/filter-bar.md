@@ -4,11 +4,11 @@
 > 实现：[FilterBar.vue](../../../src/design-system/components/navigation/FilterBar.vue)
 > 契约：[filter-bar.json](../../../src/design-system/components/contracts/filter-bar.json)
 
-三级 Tab：只改变当前数据集合的快捷筛选，不拥有内容视图区。
+三级 Tab / 局部 Filter Bar：只改变当前内容区的数据集合，不拥有内容视图区。
 
 ## 职责与边界
 
-- 固定使用 `role=filter`，选择项只改变数据，不创建或切换 Tab viewport。
+- 固定使用 `role=filter`，选择项只改变当前区域的数据集合，不创建或切换 Tab viewport。
 - 不内置右侧高级筛选入口；需要额外操作时由页面与其它控件组合。
 - 筛选项可以横向滚动，但必须向父级横滑 owner 正确让权。
 
@@ -27,6 +27,6 @@
 
 ## 用法与反例
 
-- 用于“全部/待处理/已完成”等只影响列表集合的快捷筛选。
+- 用于“全部/待处理/已完成”等只影响当前区域集合的快捷筛选。时间周期、活动分类等字段只有在不形成独立内容面板时才适合本组件。
 - 不用 Filter Bar 承载具名内容视图；需要视图区时使用一级或二级 Tab。
 - Props、Slots、Events、默认值与 Token 槽以 [Filter Bar Contract](../../../src/design-system/components/contracts/filter-bar.json) 为准。

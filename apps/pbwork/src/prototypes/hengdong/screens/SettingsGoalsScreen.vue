@@ -153,7 +153,7 @@ function reset() {
               <p class="hd-caption">切换后立即预览，并保存在当前设备。</p>
             </div>
             <div
-              class="hd-period period-segment"
+              class="hd-period"
               data-no-swipe
               data-pb-id="hengdong.settings-goals.theme"
               data-pb-role="filter"

@@ -32,11 +32,10 @@ TabViewport      ◄─────────┘  swipe / mouseSwipe / keepMou
 
 | 场景            | 规则                                                                   |
 | --------------- | ---------------------------------------------------------------------- |
-| 一级 Tab        | 主内容分区；使用 Liquid Glass 胶囊与对应具名视图                       |
-| 二级 Tab        | 子分区；使用文字居中小三角与对应具名视图                               |
+| 一级 Tab        | 当前页面的主要内容分区；使用 Liquid Glass 胶囊与对应具名视图           |
+| 二级 Tab        | 当前页面内的次级内容分区；使用文字居中小三角与对应具名视图             |
 | 一级 + 二级嵌套 | 允许，但同一物理区域只有一个 `v-window` 接收横滑；另一层关闭横滑       |
-| 三级 Tab        | 使用 Filter Bar；只改数据，绝不创建 `v-window`                         |
-| 日/周/月等维度  | 不用 Tab；无 window 分段 + `data-no-swipe`，切换须改数据（recipes R7） |
+| 三级 Tab        | 局部筛选/模式/粒度分段；不创建 `v-window`，使用 `data-no-swipe`         |
 
 短内容也要可横滑：对一级或二级 Tab 开 `fill`，并保证父级高度链（`min-height: 0` / 可分配高度）传到对应 Tab。
 
@@ -57,7 +56,7 @@ ScrollableDataList          # 纵滚 + 刷新 + 分页 + 可选鼠标拖滚
 ## 5. 筛选与搜索
 
 - 搜索：`SearchBar`
-- 标准快速 chips：优先三级 Tab（`FilterBar`；自带横滑忽略）
+- 标准快速筛选：优先三级 Tab / `FilterBar`；自带横滑忽略
 - 自定义 Chip 行：合法，须 `data-no-swipe`
 
 ## 6. 表单
@@ -96,10 +95,9 @@ ScrollableDataList          # 纵滚 + 刷新 + 分页 + 可选鼠标拖滚
 
 ```text
 要应用根目的地？ → Tabbar + TabViewport（或路由）
-要页内主分段面板？ → 一级 Tab
-要页内子分段面板？ → 二级 Tab
-只改列表数据？ → 三级 Tab（Filter Bar）
-要日/周/月维度？ → 无 window 分段 + data-no-swipe（R7）
+要当前页面的主要内容面板？ → 一级 Tab
+要页面内的次级内容面板？ → 二级 Tab
+要当前区域内原地更新的筛选/模式/粒度？ → 三级 Tab / 局部分段（R7）
 要刷新/分页列表？ → ScrollableDataList + DataList
 要嵌套横滑条？ → data-horizontal-scroll + useHorizontalDragScroll
 只要标签外观？ → Chip；标准筛一排？ → 三级 Tab / Filter Bar（自定义 Chip 行亦可）

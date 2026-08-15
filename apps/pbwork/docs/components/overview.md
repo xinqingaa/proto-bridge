@@ -78,7 +78,7 @@ Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`summary`�
 
 ### 导航（navigation）
 
-[tabbar](./navigation/tabbar.md) · [一级 Tab](./navigation/primary-tabs.md) · [二级 Tab](./navigation/secondary-tabs.md) · [三级 Tab（Filter Bar）](./navigation/filter-bar.md) · [tab-viewport](./navigation/tab-viewport.md) · [app-bar](./navigation/app-bar.md)
+[tabbar](./navigation/tabbar.md) · [一级 Tab](./navigation/primary-tabs.md) · [二级 Tab](./navigation/secondary-tabs.md) · [三级 Tab（局部 Filter Bar）](./navigation/filter-bar.md) · [tab-viewport](./navigation/tab-viewport.md) · [app-bar](./navigation/app-bar.md)
 
 ### 数据（data）
 

@@ -27,7 +27,8 @@
 
 - 对口组件存在时必须使用。
 - `Tabbar` 只导航；根视图区使用 `TabViewport` 或路由内容。
-- 一级/二级 Tab 可以嵌套，但同一触摸区域只允许一个带 window 的横滑 owner；三级 Tab 绝不拥有 window。
+- 一级 Tab 表达当前页面的主要内容分区，二级 Tab 表达页面内的次级内容分区；两者对应具名内容面板并可按场景启用横滑与过渡。
+- 三级 Tab 表达当前区域内的局部筛选、模式或粒度切换，不拥有 viewport；一级/二级嵌套时同一触摸区域只允许一个横滑 owner。
 - `DataList` 管列表表面，`ScrollableDataList` 管纵滚、刷新和分页。
 - `FilterBar`、`SearchBar`、Confirm、Sheet、Toast、Loading、EmptyState 等不得页内复制。
 - 页内局部 UI 仍必须使用 Token。
@@ -38,7 +39,7 @@
 
 - 不在业务页面自造横滑、下拉刷新、拖滚或 click suppression。
 - 复用 `_shared/usePointerSwipe`、`useHorizontalDragScroll` 和 `ScrollableDataList`。
-- 嵌套横滚、表单输入和无 window 分段使用标准忽略标记。
+- 嵌套横滚、表单输入和无 viewport 局部分段使用标准忽略标记。
 - 一个页面只有一个主纵滚。
 
 ## 5. Workbench 与 Runtime

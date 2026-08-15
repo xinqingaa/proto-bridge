@@ -9,7 +9,7 @@ const CLICK_SUPPRESSION_DURATION = tokenDefaultNumber(
 );
 
 const GESTURE_IGNORE_SELECTOR =
-  "input, textarea, select, [contenteditable=true], [data-no-swipe], [data-gesture-ignore], .pb-filter-bar, .period-segment";
+  "input, textarea, select, [contenteditable=true], [data-no-swipe], [data-gesture-ignore], .pb-filter-bar";
 const HORIZONTAL_SCROLL_SELECTOR = "[data-horizontal-scroll]";
 
 export type PointerSwipeOptions = {

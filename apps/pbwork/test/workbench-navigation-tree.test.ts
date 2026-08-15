@@ -17,7 +17,7 @@ describe("workbench navigation tree", () => {
       "Tabbar",
       "一级 Tab",
       "二级 Tab",
-      "三级 Tab（Filter Bar）",
+      "三级 Tab（局部 Filter Bar）",
     ]);
     expect(labels[4]).toBe("Tab Viewport");
   });

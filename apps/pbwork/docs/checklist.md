@@ -20,7 +20,7 @@
 ## 组合与手势
 
 - [ ] Tabbar 未兼任面板/手势，根目的地默认不横滑
-- [ ] 一级/二级 Tab 嵌套时只有一个横滑 owner；三级 Tab 不拥有 viewport；维度切换用 R7
+- [ ] 一级/二级 Tab 嵌套时只有一个横滑 owner；三级 Tab 不拥有 viewport；局部原地更新使用 R7
 - [ ] 一级/二级 Tab 内容在具名 slot；`fill` 时高度链完整
 - [ ] 列表：ScrollableDataList 外包，DataList 管外观
 - [ ] 状态页（loading/empty/error）已关闭刷新/分页手势

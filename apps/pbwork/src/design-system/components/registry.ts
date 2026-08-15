@@ -533,8 +533,8 @@ export const componentRecords = [
   },
   {
     id: "filter-bar",
-    label: "三级 Tab（Filter Bar）",
-    description: "只改变当前数据集合的快捷筛选，不切换视图区。",
+    label: "三级 Tab（局部 Filter Bar）",
+    description: "当前区域内的局部筛选，不切换视图区；其它轻量分段按 R7 组合。",
     category: "navigation",
     view: "navigation/FilterBar.vue",
     contract: "contracts/filter-bar.json",

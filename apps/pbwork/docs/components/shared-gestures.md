@@ -9,7 +9,7 @@
 - `components/data/ScrollableDataList.vue` — 纵滚 / 下拉 / 触底 / 鼠标拖滚
 - 测试：`apps/pbwork/test/pointer-gestures.test.ts`
 
-无 window 分段须带 `data-no-swipe`（共享忽略表另含 `.pb-filter-bar`、`.period-segment` 等约定 class）。
+无 viewport 局部分段须带 `data-no-swipe`（共享忽略表另含 `.pb-filter-bar` 等约定 class）。
 
 ## 为什么不能页内各写一套
 
@@ -18,7 +18,7 @@
 ## 总决策表
 
 1. 起点在忽略区 → 父级 Tab **不处理**
-   - 选择器含：`input/textarea/select/[contenteditable]`、`[data-no-swipe]`、`[data-gesture-ignore]`、`.pb-filter-bar`、`.period-segment`
+   - 选择器含：`input/textarea/select/[contenteditable]`、`[data-no-swipe]`、`[data-gesture-ignore]`、`.pb-filter-bar`
 2. 起点在 `[data-horizontal-scroll]` 且 `scrollWidth > clientWidth` → 父级 Tab **整次忽略**（含边缘外拖）；子级 `useHorizontalDragScroll` 接管
 3. 否则轴锁定（位移达到 `layout.gesture-axis-lock`）：
    - 横向 → 当前拥有手势的一级 Tab、二级 Tab 或 TabViewport 翻页
