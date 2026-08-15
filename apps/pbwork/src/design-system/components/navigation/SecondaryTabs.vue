@@ -210,6 +210,7 @@ usePbInspect({
 }
 .pb-tab-bar {
   --v-tabs-height: var(--pb-tabs-height, var(--pb-sizing-control-md));
+  flex: none;
   height: var(--v-tabs-height);
   background: transparent;
   overflow: visible;
@@ -230,6 +231,11 @@ usePbInspect({
   font: var(--pb-tabs-typography, var(--pb-typography-label));
   letter-spacing: normal;
   text-transform: none;
+}
+.pb-tab-bar.v-tabs--grow :deep(.v-tab) {
+  min-width: var(--pb-spacing-none);
+  flex: var(--pb-layout-flex-fill);
+  padding-inline: var(--pb-spacing-xs);
 }
 .pb-tab-bar :deep(.v-tab--selected) {
   color: var(

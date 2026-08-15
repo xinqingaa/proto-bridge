@@ -142,6 +142,7 @@ class AppLayoutTokens {
   const AppLayoutTokens();
 
   double get dialogMaxWidth => 320;
+  double get formMaxWidth => 480;
   double get fill => 1;
   double get flexFill => 1;
   double get flexGrow => 1;

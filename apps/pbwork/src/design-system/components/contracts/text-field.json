@@ -6,10 +6,12 @@
     "policy": "fixed",
     "defaultRole": "field"
   },
-  "summary": "单行文本输入；默认 plain 无标题无描边；showLabel 时显示标题并启用边框；disabled 使用 opacity.disabled。",
+  "summary": "单行文本输入；支持 plain/labeled、密码显隐、autocomplete、字段错误与禁用状态。",
   "behavior": [
     "showLabel 默认 false：不渲染标题、无描边，仅保留可输入区域",
     "showLabel 为 true 时显示 label 并启用边框",
+    "password 类型默认隐藏；revealable 通过 Lucide 眼睛图标切换显示状态且不改变输入值",
+    "errorMessage 在字段内部建立错误状态与就近说明",
     "disabled 时不可聚焦或编辑，整体使用 opacity.disabled"
   ],
   "propsSchema": {
@@ -20,7 +22,15 @@
       "showLabel": { "type": "boolean" },
       "modelValue": { "type": "string" },
       "placeholder": { "type": "string" },
-      "disabled": { "type": "boolean" }
+      "disabled": { "type": "boolean" },
+      "clearable": { "type": "boolean" },
+      "type": { "type": "string", "enum": ["text", "password"] },
+      "autocomplete": {
+        "type": "string",
+        "enum": ["name", "username", "current-password", "new-password", "off"]
+      },
+      "errorMessage": { "type": "string" },
+      "revealable": { "type": "boolean" }
     }
   },
   "defaultProps": {
@@ -28,7 +38,12 @@
     "showLabel": false,
     "modelValue": "",
     "placeholder": "",
-    "disabled": false
+    "disabled": false,
+    "clearable": false,
+    "type": "text",
+    "autocomplete": "off",
+    "errorMessage": "",
+    "revealable": false
   },
   "states": [
     {
@@ -38,13 +53,36 @@
       "props": { "showLabel": true, "label": "联系人", "modelValue": "李明" }
     },
     {
+      "id": "password",
+      "label": "密码输入",
+      "kind": "variant",
+      "props": {
+        "showLabel": true,
+        "label": "密码",
+        "type": "password",
+        "revealable": true,
+        "modelValue": "123456"
+      }
+    },
+    {
+      "id": "error",
+      "label": "字段错误",
+      "kind": "interaction",
+      "props": {
+        "showLabel": true,
+        "label": "账号",
+        "modelValue": "ab",
+        "errorMessage": "账号至少 3 位"
+      }
+    },
+    {
       "id": "disabled",
       "label": "禁用",
       "kind": "interaction",
       "props": { "disabled": true, "modelValue": "不可编辑" }
     }
   ],
-  "slots": [],
+  "slots": ["prepend-inner", "append-inner"],
   "events": ["update:modelValue"],
   "tokenBindings": {
     "border": "color.border",
@@ -53,6 +91,11 @@
     "height": "sizing.control-md",
     "label": "typography.caption",
     "input": "typography.content",
+    "errorColor": "color.error",
+    "errorText": "typography.caption",
+    "revealColor": "color.on-surface-muted",
+    "revealSize": "sizing.icon-md",
+    "revealTarget": "sizing.touch",
     "disabledOpacity": "opacity.disabled"
   },
   "playground": {

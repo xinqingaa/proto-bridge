@@ -49,6 +49,8 @@
           "radio",
           "truck",
           "dumbbell",
+          "eye",
+          "eye-off",
           "footprints",
           "person-standing",
           "sparkles"
@@ -157,6 +159,8 @@
       "radio",
       "truck",
       "dumbbell",
+      "eye",
+      "eye-off",
       "footprints",
       "person-standing",
       "sparkles"

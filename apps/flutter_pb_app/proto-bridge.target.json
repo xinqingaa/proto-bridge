@@ -311,6 +311,9 @@
     "layout.dialog-max-width": {
       "accessor": "TS.layout.dialogMaxWidth"
     },
+    "layout.form-max-width": {
+      "accessor": "TS.layout.formMaxWidth"
+    },
     "layout.fill": {
       "accessor": "TS.layout.fill"
     },

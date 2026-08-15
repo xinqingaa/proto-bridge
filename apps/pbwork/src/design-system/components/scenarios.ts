@@ -98,6 +98,30 @@ const scenarios: Record<string, ComponentScenario[]> = {
       description: "plain 输入区，无标题无描边。",
       props: { showLabel: false, modelValue: "", placeholder: "联系电话" },
     },
+    {
+      id: "password",
+      label: "密码输入",
+      description: "默认隐藏，可通过眼睛图标显示或隐藏。",
+      props: {
+        label: "密码",
+        showLabel: true,
+        modelValue: "123456",
+        type: "password",
+        revealable: true,
+        autocomplete: "current-password",
+      },
+    },
+    {
+      id: "error",
+      label: "字段错误",
+      description: "错误状态与说明由字段自身承担。",
+      props: {
+        label: "账号",
+        showLabel: true,
+        modelValue: "ab",
+        errorMessage: "账号至少 3 位",
+      },
+    },
   ],
   menu: [
     {

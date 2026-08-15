@@ -18,7 +18,7 @@ void main() {
     final mappings = contract['tokens']! as Map<String, Object?>;
     final components = contract['components']! as Map<String, Object?>;
 
-    expect(mappings, hasLength(153));
+    expect(mappings, hasLength(154));
     expect(components, hasLength(31));
     final catalog =
         jsonDecode(

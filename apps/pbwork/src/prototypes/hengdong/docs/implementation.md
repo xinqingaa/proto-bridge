@@ -13,21 +13,23 @@ prototypeId: hengdong
 | 今天       | approved | passed        | accepted          |
 | 训练执行   | approved | passed        | accepted          |
 | 训练总结   | approved | passed        | accepted          |
+| 活动记录   | approved | passed        | accepted          |
 | 计划       | pending  | legacy-draft  | pending           |
 | 计划详情   | pending  | legacy-draft  | pending           |
-| 进度       | pending  | legacy-draft  | pending           |
+| 进度       | approved | passed        | accepted          |
 | 设置与目标 | pending  | legacy-draft  | pending           |
-| 登录       | pending  | legacy-draft  | pending           |
-| 注册       | pending  | legacy-draft  | pending           |
+| 登录       | approved | in-progress   | pending           |
+| 注册       | approved | in-progress   | pending           |
 
 `legacy-draft` 表示现有代码可以保留用于后续调整，但不代表页面设计或体验已经通过。
 
 ## 通用实现基线
 
-- 注册 9 个 Screen：登录、注册、今天、计划、进度、计划详情、训练执行、训练总结、设置与目标。
+- 注册 10 个 Screen：登录、注册、今天、活动记录、计划、进度、计划详情、训练执行、训练总结、设置与目标。
 - 根目的地切换使用 `replace`，二级任务使用 `push` 和可恢复 parent。
+- 三个根页面只通过底部 Tabbar 切换；活动记录归属今天任务栈。
 - 本地状态统一保存在 `hengdong.app.v2`；账号、目标、当前计划、训练会话、活动记录和主题共享同一数据源。
-- 正式训练与快速记录写入同一记录集合；进度摘要、趋势、日历和列表从记录派生。
+- 正式训练与快速记录写入同一记录集合；今天、活动记录和进度从同一记录事实派生。
 - 计划编辑和快速记录使用 FlowSheet；记录详情与筛选使用 BottomSheet；退出、删除和重置使用确认组件。
 - 关键页面状态使用 Variant 或确定 fixture 准备，不依赖上一次浏览器会话。
 
@@ -39,15 +41,56 @@ prototypeId: hengdong
 | 七日节奏           | Token 驱动的业务局部 UI | 每日为稳定业务热区，与活动记录同源                              |
 | 活动类型图标       | 现有 PBWork Icon        | 使用稳定 Lucide id，不引入第二套图标                            |
 | 主次按钮、设置入口 | 现有 PBWork DS          | 使用 Button / IconButton 公开 Contract                          |
-| 最近记录列表       | 现有 DS 组合            | ScrollableDataList + DataList；只保留行间分隔                   |
+| 最近记录列表       | 现有 DS 组合            | ScrollableDataList + DataList；今天只展示最近五次               |
+| 活动类型二级 Tab   | 现有 PBWork DS          | SecondaryTabs；五个具名列表面板拥有独立滚动状态                 |
+| 活动记录列表       | 现有 DS 组合            | ScrollableDataList + DataList；开启刷新与分页                   |
+| 活动日期时间线     | Token 驱动的业务局部 UI | 月份与日期形成稳定结构节点，不使用逐行 Card                     |
+| 进度周期 Tab       | 现有 PBWork DS          | PrimaryTabs；本周、本月、本年及按需自定义拥有完整内容面板       |
+| 活动节奏图与日历   | Token 驱动的业务局部 UI | 周/月/年共享节奏语法，显式声明图表和日期 Token Evidence         |
 | 快速记录           | 现有 PBWork DS          | FlowSheet + 表单组件；结果在相关内容区持续反馈                  |
-| 记录详情           | 现有 PBWork DS          | BottomSheet；今天保持只读，进度页保留删除与历史管理             |
+| 记录详情           | 现有 PBWork DS          | BottomSheet；今天与进度只读，活动记录页负责删除与历史管理       |
 | 动作序列           | Token 驱动的业务局部 UI | 只表达已完成、当前和待进行，不承担随机跳转                      |
 | 动作舞台           | Token 驱动的业务局部 UI | 以当前姿态、目标和单条提示形成训练首屏焦点                      |
 | 姿态资产           | 原型局部 SVG 资产       | 默认动作映射关键姿态；未知动作使用中性姿态，文字提示保持权威    |
 | 训练退出选择       | 现有 PBWork DS          | BottomSheet 承载继续、稍后继续、部分保存和放弃                  |
 | 完成结果环         | Token 驱动的业务局部 UI | 从身体舞台收束为保存前的完成结果，不作为可点击控件              |
 | 训练体感与备注     | 现有 PBWork DS          | RadioGroup + Textarea；无体感时保存不可用                       |
+| 认证起步环         | Token 驱动的业务局部 UI | 沿用恒动目标环语法作为品牌标记，不表达伪造进度                  |
+| 账号与密码字段     | 扩展 PBWork TextField   | 增加有限密码、显隐、autocomplete 与字段错误能力                 |
+| 初始周目标         | 现有 PBWork DS          | Menu 在同一注册表单选择每周 2–5 次                              |
+| 替换本地身份确认   | 现有 PBWork DS          | Confirm 明确旧凭据失效且设备训练数据保留                        |
+
+## 登录与注册正式调整
+
+### 确定状态
+
+- 登录：`default`、`validation-error`、`invalid-credentials`、`no-identity`；
+- 注册：`default`、`validation-error`、`replace-identity`、`replace-confirm-open`；
+- 登录默认空表单，不展示演示密码；关键输入由 Action Scenario 确定填写；
+- 注册默认每周 3 次，替换身份只改变本地身份与目标，不删除计划和活动记录；
+- 当前设备保持登录直到设置页退出，不保留无实际行为的 remember 字段。
+
+### 独立验收节点
+
+- 登录根、品牌起步环、表单、账号字段、密码字段、主操作、身份切换入口和无身份状态；
+- 注册根、品牌起步环、表单、称呼/账号/密码字段、初始目标、本地数据说明、主操作和替换身份确认；
+- `TextField` 的密码显隐、字段错误和 autocomplete 作为共享 DS 状态进入 Contract、Registry、场景、文档和 Target 同步；
+- 登录、打开注册、返回登录、注册和确认替换分别使用稳定 Action target。
+
+### 关键 Action 与 Scenario
+
+- 填写正确凭据并登录后进入今天；错误凭据留在登录并显示字段反馈；
+- 登录与注册使用 replace 往返，不形成历史循环；
+- 注册保存规范化账号、称呼和初始周目标，今天立即显示新称呼；
+- 替换身份提交先打开 Confirm，取消不写入，确认后保留计划与活动记录；
+- 设置退出后进入登录，再次登录仍使用同一设备事实。
+
+### Experience Gate 目标
+
+- 本批执行 L2 Focused Experience Gate，目标结果为 `accepted`；
+- 检查登录浅色默认、登录窄屏错误与密码显隐、注册浅色默认、注册深色错误或替换确认、桌面有限宽度；
+- 检查键盘焦点、字段错误、图标可访问名称、Overlay 完整性、单一主操作和无多余 Card；
+- 任一已知文字溢出、键盘遮挡、表单过宽、虚假交互或数据边界问题阻止记录 `accepted`。
 
 ## 今天页正式调整
 
@@ -63,6 +106,7 @@ prototypeId: hengdong
 - `record-detail-quick`：快捷记录且无备注的详情打开。
 - `record-detail-long-note`：正式训练的长备注详情打开。
 - `day-empty-feedback`：无记录节奏日反馈可见。
+- `recent-five`：最近记录展示五条并提供活动记录二级页入口。
 
 ### 独立验收节点
 
@@ -80,6 +124,7 @@ prototypeId: hengdong
 - 有记录日期打开今天页记录详情；
 - 无记录日期显示轻量反馈；
 - 最近记录打开今天页记录详情；
+- “查看全部”进入活动记录二级页，返回恢复今天局部状态；
 - 快速记录保存后更新今天和本周数据。
 
 ### Experience Gate 基线
@@ -98,6 +143,52 @@ prototypeId: hengdong
 - 记录详情按完成结果、关键事实、动作内容和备注阅读；快捷记录移除重复说明，不伪造动作序列；
 - 长备注在 `390 × 667` 窄屏形成 Sheet 内部滚动，关闭入口持续可见，内容可以滚动到底；BottomSheet 已落实既有可滚动内容边界；
 - 七个标记的尺寸与纵向位置一致，日期保留原生按钮语义和可见焦点；完成态主按钮降低强调，区块与列表只保留表达结构所需的分隔。
+
+## 活动记录与进度正式调整
+
+### 确定状态
+
+- 活动记录：`default`、`training`、`refreshing`、`loading-more`、`filtered-empty`、`empty`、`record-detail-open`、`record-detail-long-note`、`delete-confirm-open`、`undo-visible`；
+- 进度：`default`、`month`、`year`、`custom-range-open`、`custom`、`selected-date`、`filter-open`、`empty`、`record-detail-open`；
+- 活动记录的二级 Tab、滚动位置、分页和刷新状态由各面板拥有；进度的一级 Tab 拥有周期内容与横滑；
+- 自定义日期范围使用原型局部 FlowSheet 组合，不新增共享日期组件；
+- 刷新重新读取 `hengdong.app.v2` 的持久记录，不用固定延时伪造网络请求。
+
+### 独立验收节点
+
+- 活动记录根、App Bar、二级 Tab、五个列表面板、月份分组、日期分组、记录行、刷新和分页反馈；
+- 活动记录详情、删除确认和撤销反馈；记录行使用记录 id，月份和日期使用稳定日期 key；
+- 进度根、App Bar、一级 Tab、日期范围、周期摘要、活动节奏、日期视图、当前选择、筛选和自定义范围；
+- 趋势刻度使用稳定时间片 key，日期和月份使用 ISO 日期 key；
+- 今天的“查看全部”、活动记录删除、进度周期切换和自定义范围分别作为 Action target。
+
+### 关键 Action 与 Scenario
+
+- 今天“查看全部”进栈活动记录，返回后恢复今天；
+- 活动记录点击或横滑切换分类，纵滚不误触横滑，下拉刷新不触发 Tab；
+- 活动记录加载更早记录，打开详情，删除并撤销后三个页面同步；
+- 进度点击或横滑切换周、月、年，前后周期按钮改变对应数据；
+- 自定义范围取消、非法输入和成功应用具有不同结果；
+- 趋势和日期焦点互斥，活动类型筛选同步影响所有派生数据；
+- 根 Tab 只经 Tabbar 切换，今天、活动记录和进度内容不互相跳根页面。
+
+### Experience Gate 目标
+
+- 本批执行 L2 Focused Experience Gate，目标结果为 `accepted`；
+- 活动记录重点检查 SecondaryTabs、独立列表滚动、刷新/分页、长内容、删除 Overlay 和窄屏；
+- 进度重点检查 PrimaryTabs、周期横滑、节奏图、日期视图、自定义范围、深色和 reduced motion；
+- 今天按本批旅程复核最近五次、进栈/返回和保存后的即时更新；
+- 任一已知实质视觉、遮挡、手势或状态问题阻止记录 `accepted`。
+
+### L2 验收结果
+
+- Delivery Gate：Token-only、DS-first、Flex-only、10 Screen Registry、126 个 PBWork 测试、生产构建、4 项 Runtime Capture e2e、文档校验和 DS Target 同步检查通过；
+- Experience Review：在 `390 × 844` 实际浏览器中复核今天默认态与最近五次入口、活动记录浅色时间线、活动记录深色长备注和 `390 × 667` 窄屏、进度周/月切换、本年深色态与自定义日期浮层；结果为 `accepted`；
+- 今天“查看全部”进入活动记录二级页，不切换底部根 Tab；返回使用今天任务栈，三个根页面仍只通过 Tabbar 切换；
+- 活动记录五个二级 Tab 在目标视口完整可见，分类内容拥有独立横滑与纵滚边界；月份、日期和记录形成连续账本，长备注 Sheet 的关闭入口持续可见；
+- 进度使用 PrimaryTabs 的选中动画与水平面板切换；周、月、年按日、周、月使用同一节奏尺，柱高按当前时间片最大值归一，本年超出一屏时横向浏览且月份标签不重叠；
+- 自定义范围作为临时 Tab 出现，关闭、取消和应用保持明确主次；进度详情只读，删除、撤销和完整历史继续由活动记录页承担；
+- 本轮 Experience 修正了 SecondaryTabs `grow + fill` 高度异常、五分类溢出、节奏柱错误等高、周期导航文字挤压、本年月标签重叠和 FlowSheet 关闭按钮强调度错误；修正后重新通过受影响测试与 Runtime Gate。
 
 ## 训练执行与训练总结正式调整
 

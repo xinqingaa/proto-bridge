@@ -64,6 +64,7 @@ Map<String, Object> protoBridgeTokenSnapshot() => <String, Object>{
   'layout.chart-min-height': TS.layout.chartMinHeight,
   'layout.chart-plot-height': TS.layout.chartPlotHeight,
   'layout.dialog-max-width': TS.layout.dialogMaxWidth,
+  'layout.form-max-width': TS.layout.formMaxWidth,
   'layout.fill': TS.layout.fill,
   'layout.flex-fill': TS.layout.flexFill,
   'layout.flex-grow': TS.layout.flexGrow,

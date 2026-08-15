@@ -135,6 +135,7 @@ export const BIND_TOKEN_IDS = [
   "layout.load-more-root-margin",
   "layout.menu-max-height",
   "layout.dialog-max-width",
+  "layout.form-max-width",
   "layout.pull-refresh-threshold",
   "layout.pull-refresh-max-distance",
   "layout.inset-xs-negative",

@@ -148,7 +148,9 @@ watch(stepCount, (count) => {
         </div>
         <Button
           label="关闭"
-          variant="text"
+          bg-color="transparent"
+          border-color="transparent"
+          text-color="color.on-surface-muted"
           @click="$emit('update:modelValue', false)"
         />
       </v-card-title>

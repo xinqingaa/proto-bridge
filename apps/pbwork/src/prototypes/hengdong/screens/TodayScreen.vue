@@ -17,6 +17,7 @@ import WeeklyRhythm from "../components/WeeklyRhythm.vue";
 import {
   HENGDONG_TODAY,
   HENGDONG_WEEK_DATES,
+  latestRecords,
   recordsInWeek,
   totalMinutes,
   type ActivityType,
@@ -165,7 +166,7 @@ const weekProgress = computed(() =>
     ),
   ),
 );
-const recentRecords = computed(() => presentedRecords.value.slice(0, 2));
+const recentRecords = computed(() => latestRecords(presentedRecords.value, 5));
 const weekRhythm = computed(() =>
   HENGDONG_WEEK_DATES.map((date, index) => {
     const minutes = totalMinutes(
@@ -548,8 +549,8 @@ function openRhythmDay(date: string) {
                 bg-color="transparent"
                 border-color="transparent"
                 text-color="color.primary"
-                inspect-id="hengdong.today.open-progress"
-                @click="replaceHengdongScreen(router, route, 'progress')"
+                inspect-id="hengdong.today.open-activity-history"
+                @click="openHengdongScreen(router, route, 'activity-history')"
               />
             </div>
             <DataList

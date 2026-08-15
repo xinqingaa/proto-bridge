@@ -4,11 +4,15 @@ import {
   defaultPlans,
   defaultProfile,
   defaultRecords,
+  type ActivityHistoryTab,
+  type ActivityType,
   type FitnessGoals,
   type FitnessPlan,
   type FitnessProfile,
+  type ProgressPeriod,
   type WorkoutRecord,
   type WorkoutSession,
+  normalizeHengdongUsername,
 } from "./model";
 
 const STORAGE_KEY = "hengdong.app.v2";
@@ -24,8 +28,12 @@ type HengdongSnapshot = {
   theme: "light" | "dark";
   ui: {
     planFilter: string;
-    progressPeriod: "week" | "month";
-    progressFilter: string;
+    historyTab: ActivityHistoryTab;
+    progressPeriod: ProgressPeriod;
+    progressAnchor: string;
+    progressFilter: "全部" | ActivityType;
+    progressCustomStart: string;
+    progressCustomEnd: string;
   };
 };
 
@@ -41,8 +49,12 @@ function defaultSnapshot(): HengdongSnapshot {
     theme: "light",
     ui: {
       planFilter: "全部",
+      historyTab: "all",
       progressPeriod: "week",
+      progressAnchor: "2026-08-13",
       progressFilter: "全部",
+      progressCustomStart: "2026-08-01",
+      progressCustomEnd: "2026-08-13",
     },
   };
 }
@@ -54,6 +66,27 @@ function readSnapshot(): HengdongSnapshot {
     const value = window.localStorage.getItem(STORAGE_KEY);
     if (!value) return fallback;
     const parsed = JSON.parse(value) as Partial<HengdongSnapshot>;
+    const historyTabs: ActivityHistoryTab[] = [
+      "all",
+      "training",
+      "walking",
+      "stretching",
+      "free",
+    ];
+    const progressPeriods: ProgressPeriod[] = [
+      "week",
+      "month",
+      "year",
+      "custom",
+    ];
+    const activityFilters: Array<"全部" | ActivityType> = [
+      "全部",
+      "训练",
+      "步行",
+      "拉伸",
+      "自由活动",
+    ];
+    const parsedUi: Partial<HengdongSnapshot["ui"]> = parsed.ui ?? {};
     return {
       ...fallback,
       ...parsed,
@@ -64,7 +97,23 @@ function readSnapshot(): HengdongSnapshot {
         ? parsed.records
         : fallback.records,
       workoutSession: parsed.workoutSession ?? null,
-      ui: { ...fallback.ui, ...parsed.ui },
+      ui: {
+        ...fallback.ui,
+        ...parsedUi,
+        historyTab: historyTabs.includes(parsedUi.historyTab as ActivityHistoryTab)
+          ? (parsedUi.historyTab as ActivityHistoryTab)
+          : fallback.ui.historyTab,
+        progressPeriod: progressPeriods.includes(
+          parsedUi.progressPeriod as ProgressPeriod,
+        )
+          ? (parsedUi.progressPeriod as ProgressPeriod)
+          : fallback.ui.progressPeriod,
+        progressFilter: activityFilters.includes(
+          parsedUi.progressFilter as "全部" | ActivityType,
+        )
+          ? (parsedUi.progressFilter as "全部" | ActivityType)
+          : fallback.ui.progressFilter,
+      },
     };
   } catch {
     return fallback;
@@ -80,7 +129,7 @@ export function persistHengdong() {
 
 export function loginHengdong(username: string, password: string) {
   const valid =
-    username.trim() === hengdongState.profile.username &&
+    normalizeHengdongUsername(username) === hengdongState.profile.username &&
     password === hengdongState.profile.password;
   if (!valid) return false;
   hengdongState.signedIn = true;
@@ -88,8 +137,18 @@ export function loginHengdong(username: string, password: string) {
   return true;
 }
 
-export function registerHengdong(profile: FitnessProfile) {
-  hengdongState.profile = profile;
+export function registerHengdong(
+  profile: FitnessProfile,
+  weeklySessions: number,
+) {
+  hengdongState.profile = {
+    ...profile,
+    username: normalizeHengdongUsername(profile.username),
+  };
+  hengdongState.goals = {
+    ...hengdongState.goals,
+    weeklySessions,
+  };
   hengdongState.signedIn = true;
   persistHengdong();
 }
@@ -116,7 +175,11 @@ export function saveRecord(record: WorkoutRecord) {
     (item) => item.id === record.id,
   );
   if (existing >= 0) hengdongState.records.splice(existing, 1);
-  hengdongState.records.unshift(record);
+  hengdongState.records.push(record);
+  hengdongState.records.sort(
+    (left, right) =>
+      right.date.localeCompare(left.date) || right.id.localeCompare(left.id),
+  );
   persistHengdong();
 }
 
@@ -150,6 +213,16 @@ export function setThemePreference(theme: "light" | "dark") {
 export function updateHengdongUi(ui: Partial<HengdongSnapshot["ui"]>) {
   Object.assign(hengdongState.ui, ui);
   persistHengdong();
+}
+
+export function refreshHengdongRecords() {
+  const records = [...readSnapshot().records].sort(
+    (left, right) =>
+      right.date.localeCompare(left.date) || right.id.localeCompare(left.id),
+  );
+  const changed = JSON.stringify(records) !== JSON.stringify(hengdongState.records);
+  hengdongState.records.splice(0, hengdongState.records.length, ...records);
+  return changed;
 }
 
 export function resetHengdongData() {

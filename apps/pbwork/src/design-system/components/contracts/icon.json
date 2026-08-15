@@ -45,6 +45,8 @@
           "radio",
           "truck",
           "dumbbell",
+          "eye",
+          "eye-off",
           "footprints",
           "person-standing",
           "sparkles"
@@ -265,6 +267,22 @@
       }
     },
     {
+      "id": "eye",
+      "label": "eye",
+      "kind": "variant",
+      "props": {
+        "name": "eye"
+      }
+    },
+    {
+      "id": "eye-off",
+      "label": "eye-off",
+      "kind": "variant",
+      "props": {
+        "name": "eye-off"
+      }
+    },
+    {
       "id": "footprints",
       "label": "footprints",
       "kind": "variant",
@@ -328,6 +346,8 @@
       "radio",
       "truck",
       "dumbbell",
+      "eye",
+      "eye-off",
       "footprints",
       "person-standing",
       "sparkles"

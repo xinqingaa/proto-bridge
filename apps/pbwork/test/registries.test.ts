@@ -123,7 +123,7 @@ describe("design contracts", () => {
   });
 
   it("ships the expanded semantic token set", () => {
-    expect(loadTokens()).toHaveLength(153);
+    expect(loadTokens()).toHaveLength(154);
     expect(new Set(loadTokens().map((item) => item.category))).toEqual(
       new Set([
         "color",
@@ -190,7 +190,7 @@ describe("design contracts", () => {
     ]);
   });
 
-  it("ships the redesigned hengdong prototype and its nine purposeful screens", () => {
+  it("ships the redesigned hengdong prototype and its ten purposeful screens", () => {
     const hengdongScreens = prototypeScreens.filter(
       (item) => item.prototypeId === "hengdong",
     );
@@ -198,6 +198,7 @@ describe("design contracts", () => {
       "login",
       "register",
       "today",
+      "activity-history",
       "plans",
       "progress",
       "plan-detail",

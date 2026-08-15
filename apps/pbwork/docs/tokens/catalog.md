@@ -179,7 +179,7 @@
 | `motion.duration-toast`             | 短提示停留时长     | `4000ms`                         | 是   | Toast 等短反馈默认可见时长 |
 | `motion.duration-click-suppression` | 拖动后点击抑制时长 | `450ms`                          | 否   | 共享拖动完成后阻止合成 click  |
 
-## 布局（`layout` · 21）
+## 布局（`layout` · 22）
 
 | ID                                 | 标签             | 默认值              | Bind | 说明                           |
 | ---------------------------------- | ---------------- | ------------------- | ---- | ------------------------------ |
@@ -192,6 +192,7 @@
 | `layout.load-more-root-margin`     | 触底加载观察边距 | `0px 0px 120px 0px` | 是   | 列表触底加载的观察器边距       |
 | `layout.menu-max-height`           | 菜单最大高度     | `304px`             | 是   | 紧凑浮层的最大高度             |
 | `layout.dialog-max-width`          | 对话框最大宽度   | `320px`             | 是   | 确认与短内容对话框的最大宽度   |
+| `layout.form-max-width`            | 表单最大宽度     | `480px`             | 是   | 宽视口下独立表单的阅读宽度上限 |
 | `layout.pull-refresh-threshold`    | 下拉刷新阈值     | `64px`              | 是   | 进入可释放状态的标准距离       |
 | `layout.pull-refresh-max-distance` | 下拉刷新最大距离 | `112px`             | 是   | 内容位移的标准上限             |
 | `layout.inset-xs-negative`         | 反向超小内缩     | `-4px`              | 是   | 与 `spacing.xs` 对应的反向偏移 |

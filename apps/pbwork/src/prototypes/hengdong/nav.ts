@@ -4,6 +4,7 @@ export type HengdongSlug =
   | "login"
   | "register"
   | "today"
+  | "activity-history"
   | "plans"
   | "progress"
   | "plan-detail"

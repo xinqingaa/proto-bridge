@@ -35,6 +35,11 @@ export const prototypes = [
         screenSlugs: ["today", "plans", "progress"],
       },
       {
+        id: "activity-flow",
+        label: "活动记录",
+        screenSlugs: ["activity-history"],
+      },
+      {
         id: "plan-flow",
         label: "计划与训练",
         screenSlugs: ["plan-detail", "workout-session", "workout-complete"],
@@ -61,18 +66,39 @@ const redesignedHengdongScreens = [
     variants: [
       {
         id: "default",
-        label: "轻量登录",
+        label: "本地身份登录",
         requiredFragments: [
           { screenId: "hengdong.login", pbId: "hengdong.login.root" },
+          { screenId: "hengdong.login", pbId: "hengdong.login.brand-mark" },
           { screenId: "hengdong.login", pbId: "hengdong.login.form" },
+          { screenId: "hengdong.login", pbId: "hengdong.login.username" },
+          { screenId: "hengdong.login", pbId: "hengdong.login.password" },
           { screenId: "hengdong.login", pbId: "hengdong.login.submit" },
+          { screenId: "hengdong.login", pbId: "hengdong.login.local-note" },
+        ],
+      },
+      { id: "ready", label: "已填写有效凭据" },
+      {
+        id: "validation-error",
+        label: "登录必填错误",
+        requiredFragments: [
+          { screenId: "hengdong.login", pbId: "hengdong.login.username" },
+          { screenId: "hengdong.login", pbId: "hengdong.login.password" },
         ],
       },
       {
-        id: "validation-error",
-        label: "登录校验错误",
+        id: "invalid-credentials",
+        label: "账号或密码错误",
         requiredFragments: [
-          { screenId: "hengdong.login", pbId: "hengdong.login.validation" },
+          { screenId: "hengdong.login", pbId: "hengdong.login.password" },
+        ],
+      },
+      {
+        id: "no-identity",
+        label: "当前设备无本地身份",
+        requiredFragments: [
+          { screenId: "hengdong.login", pbId: "hengdong.login.no-identity" },
+          { screenId: "hengdong.login", pbId: "hengdong.login.open-register" },
         ],
       },
     ],
@@ -91,6 +117,69 @@ const redesignedHengdongScreens = [
         },
       },
     ],
+    scenarios: [
+      {
+        id: "enter-with-local-identity",
+        label: "使用本地身份进入恒动",
+        initialVariantId: "ready",
+        actionIds: ["login"],
+        checkpoints: [
+          {
+            id: "today-open",
+            screenId: "hengdong.today",
+            variantId: "default",
+            requiredFragments: [
+              { screenId: "hengdong.today", pbId: "hengdong.today.root" },
+              {
+                screenId: "hengdong.today",
+                pbId: "hengdong.today.next-action",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "reject-invalid-credentials",
+        label: "拒绝错误账号或密码",
+        initialVariantId: "invalid-credentials",
+        actionIds: ["login"],
+        checkpoints: [
+          {
+            id: "credential-error-visible",
+            screenId: "hengdong.login",
+            variantId: "invalid-credentials",
+            requiredFragments: [
+              { screenId: "hengdong.login", pbId: "hengdong.login.password" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "open-local-registration",
+        label: "从登录进入重建本地身份",
+        initialVariantId: "default",
+        actionIds: ["open-register"],
+        checkpoints: [
+          {
+            id: "replacement-registration-open",
+            screenId: "hengdong.register",
+            variantId: "replace-identity",
+            requiredFragments: [
+              { screenId: "hengdong.register", pbId: "hengdong.register.root" },
+              {
+                screenId: "hengdong.register",
+                pbId: "hengdong.register.replace-note",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    requiredScenarioIds: [
+      "enter-with-local-identity",
+      "reject-invalid-credentials",
+      "open-local-registration",
+    ],
   },
   {
     prototypeId: "hengdong",
@@ -104,20 +193,56 @@ const redesignedHengdongScreens = [
     variants: [
       {
         id: "default",
-        label: "本地注册",
+        label: "建立本地身份",
         requiredFragments: [
           { screenId: "hengdong.register", pbId: "hengdong.register.root" },
+          {
+            screenId: "hengdong.register",
+            pbId: "hengdong.register.brand-mark",
+          },
           { screenId: "hengdong.register", pbId: "hengdong.register.form" },
+          { screenId: "hengdong.register", pbId: "hengdong.register.name" },
+          { screenId: "hengdong.register", pbId: "hengdong.register.username" },
+          { screenId: "hengdong.register", pbId: "hengdong.register.password" },
+          {
+            screenId: "hengdong.register",
+            pbId: "hengdong.register.weekly-target",
+          },
+          {
+            screenId: "hengdong.register",
+            pbId: "hengdong.register.local-note",
+          },
+          { screenId: "hengdong.register", pbId: "hengdong.register.submit" },
+        ],
+      },
+      { id: "ready", label: "已填写有效身份" },
+      {
+        id: "validation-error",
+        label: "注册字段错误",
+        requiredFragments: [
+          { screenId: "hengdong.register", pbId: "hengdong.register.name" },
+          { screenId: "hengdong.register", pbId: "hengdong.register.username" },
+          { screenId: "hengdong.register", pbId: "hengdong.register.password" },
+        ],
+      },
+      {
+        id: "replace-identity",
+        label: "替换本地身份",
+        requiredFragments: [
+          {
+            screenId: "hengdong.register",
+            pbId: "hengdong.register.replace-note",
+          },
           { screenId: "hengdong.register", pbId: "hengdong.register.submit" },
         ],
       },
       {
-        id: "validation-error",
-        label: "注册校验错误",
+        id: "replace-confirm-open",
+        label: "替换身份确认",
         requiredFragments: [
           {
             screenId: "hengdong.register",
-            pbId: "hengdong.register.validation",
+            pbId: "hengdong.register.replace-confirm",
           },
         ],
       },
@@ -131,6 +256,88 @@ const redesignedHengdongScreens = [
           pbId: "hengdong.register.submit",
         },
       },
+      {
+        id: "back-login",
+        kind: "click",
+        target: {
+          screenId: "hengdong.register",
+          pbId: "hengdong.register.back-login",
+        },
+      },
+      {
+        id: "confirm-replace",
+        kind: "click",
+        target: {
+          screenId: "hengdong.register",
+          pbId: "hengdong.register.replace-confirm.confirm",
+        },
+      },
+    ],
+    scenarios: [
+      {
+        id: "create-local-identity",
+        label: "创建本地身份并进入今天",
+        initialVariantId: "ready",
+        actionIds: ["register"],
+        checkpoints: [
+          {
+            id: "today-open-for-new-identity",
+            screenId: "hengdong.today",
+            variantId: "default",
+            requiredFragments: [
+              { screenId: "hengdong.today", pbId: "hengdong.today.root" },
+              {
+                screenId: "hengdong.today",
+                pbId: "hengdong.today.utility",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "request-identity-replacement",
+        label: "提交替换本地身份",
+        initialVariantId: "replace-identity",
+        actionIds: ["register"],
+        checkpoints: [
+          {
+            id: "replacement-confirm-visible",
+            screenId: "hengdong.register",
+            variantId: "replace-confirm-open",
+            requiredFragments: [
+              {
+                screenId: "hengdong.register",
+                pbId: "hengdong.register.replace-confirm",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "confirm-identity-replacement",
+        label: "确认替换并进入今天",
+        initialVariantId: "replace-confirm-open",
+        actionIds: ["confirm-replace"],
+        checkpoints: [
+          {
+            id: "today-open-after-replacement",
+            screenId: "hengdong.today",
+            variantId: "default",
+            requiredFragments: [
+              { screenId: "hengdong.today", pbId: "hengdong.today.root" },
+              {
+                screenId: "hengdong.today",
+                pbId: "hengdong.today.utility",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    requiredScenarioIds: [
+      "create-local-identity",
+      "request-identity-replacement",
+      "confirm-identity-replacement",
     ],
   },
   {
@@ -340,6 +547,14 @@ const redesignedHengdongScreens = [
           pbKey: "record-20260812",
         },
       },
+      {
+        id: "open-activity-history",
+        kind: "click",
+        target: {
+          screenId: "hengdong.today",
+          pbId: "hengdong.today.open-activity-history",
+        },
+      },
     ],
     scenarios: [
       {
@@ -453,6 +668,30 @@ const redesignedHengdongScreens = [
           },
         ],
       },
+      {
+        id: "review-all-activity",
+        label: "查看全部活动记录",
+        initialVariantId: "default",
+        actionIds: ["open-activity-history"],
+        checkpoints: [
+          {
+            id: "activity-history-open",
+            screenId: "hengdong.activity-history",
+            variantId: "default",
+            requiredFragments: [
+              {
+                screenId: "hengdong.activity-history",
+                pbId: "hengdong.activity-history.root",
+              },
+              {
+                screenId: "hengdong.activity-history",
+                pbId: "hengdong.activity-history.timeline",
+                pbKey: "all",
+              },
+            ],
+          },
+        ],
+      },
     ],
     requiredScenarioIds: [
       "begin-today-workout",
@@ -460,7 +699,244 @@ const redesignedHengdongScreens = [
       "inspect-recorded-rhythm-day",
       "inspect-empty-rhythm-day",
       "inspect-recent-record",
+      "review-all-activity",
     ],
+  },
+  {
+    prototypeId: "hengdong",
+    screenId: "hengdong.activity-history",
+    screenSlug: "activity-history",
+    label: "活动记录",
+    title: "活动记录",
+    path: "/prototype/hengdong/activity-history",
+    view: "hengdong/screens/ActivityHistoryScreen.vue",
+    queryKeys: ["record"],
+    defaultVariantId: "default",
+    shellFragments: [
+      {
+        screenId: "hengdong.activity-history",
+        pbId: "hengdong.activity-history.app-bar",
+      },
+    ],
+    variants: [
+      {
+        id: "default",
+        label: "完整活动时间线",
+        requiredFragments: [
+          {
+            screenId: "hengdong.activity-history",
+            pbId: "hengdong.activity-history.root",
+          },
+          {
+            screenId: "hengdong.activity-history",
+            pbId: "hengdong.activity-history.tabs",
+          },
+          {
+            screenId: "hengdong.activity-history",
+            pbId: "hengdong.activity-history.timeline",
+            pbKey: "all",
+          },
+          {
+            screenId: "hengdong.activity-history",
+            pbId: "hengdong.activity-history.record-row",
+            pbKey: "all-record-20260812",
+          },
+        ],
+      },
+      {
+        id: "training",
+        label: "训练分类",
+        requiredFragments: [
+          {
+            screenId: "hengdong.activity-history",
+            pbId: "hengdong.activity-history.timeline",
+            pbKey: "training",
+          },
+          {
+            screenId: "hengdong.activity-history",
+            pbId: "hengdong.activity-history.record-row",
+            pbKey: "training-record-20260812",
+          },
+        ],
+      },
+      {
+        id: "refreshing",
+        label: "刷新中",
+        requiredFragments: [
+          {
+            screenId: "hengdong.activity-history",
+            pbId: "hengdong.activity-history.list.all",
+          },
+        ],
+      },
+      {
+        id: "loading-more",
+        label: "加载更早记录",
+        requiredFragments: [
+          {
+            screenId: "hengdong.activity-history",
+            pbId: "hengdong.activity-history.list.all",
+          },
+        ],
+      },
+      {
+        id: "filtered-empty",
+        label: "分类无记录",
+        requiredFragments: [
+          {
+            screenId: "hengdong.activity-history",
+            pbId: "hengdong.activity-history.list.free.empty",
+          },
+        ],
+      },
+      {
+        id: "empty",
+        label: "全部记录为空",
+        requiredFragments: [
+          {
+            screenId: "hengdong.activity-history",
+            pbId: "hengdong.activity-history.list.all.empty",
+          },
+        ],
+      },
+      {
+        id: "record-detail-open",
+        label: "活动详情",
+        query: { record: "record-20260812" },
+        requiredFragments: [
+          {
+            screenId: "hengdong.activity-history",
+            pbId: "hengdong.activity-history.record-detail",
+          },
+          {
+            screenId: "hengdong.activity-history",
+            pbId: "hengdong.activity-history.record-detail-content",
+          },
+        ],
+      },
+      {
+        id: "record-detail-long-note",
+        label: "长备注活动详情",
+        requiredFragments: [
+          {
+            screenId: "hengdong.activity-history",
+            pbId: "hengdong.activity-history.record-detail",
+          },
+          {
+            screenId: "hengdong.activity-history",
+            pbId: "hengdong.activity-history.record-detail-content",
+          },
+        ],
+      },
+      {
+        id: "delete-confirm-open",
+        label: "删除记录确认",
+        query: { record: "record-20260812" },
+        requiredFragments: [
+          {
+            screenId: "hengdong.activity-history",
+            pbId: "hengdong.activity-history.delete-confirm",
+          },
+        ],
+      },
+      {
+        id: "undo-visible",
+        label: "删除后可撤销",
+        requiredFragments: [
+          {
+            screenId: "hengdong.activity-history",
+            pbId: "hengdong.activity-history.undo-feedback",
+          },
+        ],
+      },
+    ],
+    actions: [
+      {
+        id: "switch-training",
+        kind: "click",
+        target: {
+          screenId: "hengdong.activity-history",
+          pbId: "hengdong.activity-history.tabs.tab",
+          pbKey: "training",
+        },
+      },
+      {
+        id: "open-record",
+        kind: "click",
+        target: {
+          screenId: "hengdong.activity-history",
+          pbId: "hengdong.activity-history.record-row",
+          pbKey: "all-record-20260812",
+        },
+      },
+      {
+        id: "delete-record",
+        kind: "click",
+        target: {
+          screenId: "hengdong.activity-history",
+          pbId: "hengdong.activity-history.delete-record",
+        },
+      },
+      {
+        id: "confirm-delete",
+        kind: "click",
+        target: {
+          screenId: "hengdong.activity-history",
+          pbId: "hengdong.activity-history.delete-confirm.confirm",
+        },
+      },
+      {
+        id: "undo-delete",
+        kind: "click",
+        target: {
+          screenId: "hengdong.activity-history",
+          pbId: "hengdong.activity-history.undo-delete",
+        },
+      },
+    ],
+    scenarios: [
+      {
+        id: "filter-training-history",
+        label: "切换到训练记录",
+        initialVariantId: "default",
+        actionIds: ["switch-training"],
+        checkpoints: [
+          {
+            id: "training-history-visible",
+            screenId: "hengdong.activity-history",
+            variantId: "default",
+            requiredFragments: [
+              {
+                screenId: "hengdong.activity-history",
+                pbId: "hengdong.activity-history.timeline",
+                pbKey: "training",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "delete-and-undo-history",
+        label: "删除并撤销活动记录",
+        initialVariantId: "default",
+        actionIds: ["open-record", "delete-record", "confirm-delete", "undo-delete"],
+        checkpoints: [
+          {
+            id: "history-record-restored",
+            screenId: "hengdong.activity-history",
+            variantId: "default",
+            requiredFragments: [
+              {
+                screenId: "hengdong.activity-history",
+                pbId: "hengdong.activity-history.record-row",
+                pbKey: "all-record-20260812",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    requiredScenarioIds: ["filter-training-history", "delete-and-undo-history"],
   },
   {
     prototypeId: "hengdong",
@@ -543,26 +1019,116 @@ const redesignedHengdongScreens = [
     variants: [
       {
         id: "default",
-        label: "周期进度",
+        label: "本周活动节奏",
         requiredFragments: [
           { screenId: "hengdong.progress", pbId: "hengdong.progress.root" },
-          { screenId: "hengdong.progress", pbId: "hengdong.progress.summary" },
           {
             screenId: "hengdong.progress",
-            pbId: "hengdong.progress.activity-chart",
+            pbId: "hengdong.progress.period-tabs",
           },
-          { screenId: "hengdong.progress", pbId: "hengdong.progress.calendar" },
           {
             screenId: "hengdong.progress",
-            pbId: "hengdong.progress.record-list",
+            pbId: "hengdong.progress.summary",
+            pbKey: "week",
+          },
+          {
+            screenId: "hengdong.progress",
+            pbId: "hengdong.progress.rhythm.week",
+          },
+          {
+            screenId: "hengdong.progress",
+            pbId: "hengdong.progress.date-view.week",
+          },
+          {
+            screenId: "hengdong.progress",
+            pbId: "hengdong.progress.record-list.week",
           },
         ],
       },
       {
-        id: "empty",
-        label: "无活动记录",
+        id: "month",
+        label: "本月活动节奏",
         requiredFragments: [
-          { screenId: "hengdong.progress", pbId: "hengdong.progress.empty" },
+          {
+            screenId: "hengdong.progress",
+            pbId: "hengdong.progress.summary",
+            pbKey: "month",
+          },
+          {
+            screenId: "hengdong.progress",
+            pbId: "hengdong.progress.rhythm.month",
+          },
+          {
+            screenId: "hengdong.progress",
+            pbId: "hengdong.progress.date-view.month",
+          },
+        ],
+      },
+      {
+        id: "year",
+        label: "本年活动节奏",
+        requiredFragments: [
+          {
+            screenId: "hengdong.progress",
+            pbId: "hengdong.progress.summary",
+            pbKey: "year",
+          },
+          {
+            screenId: "hengdong.progress",
+            pbId: "hengdong.progress.rhythm.year",
+          },
+          {
+            screenId: "hengdong.progress",
+            pbId: "hengdong.progress.date-view.year",
+          },
+        ],
+      },
+      {
+        id: "custom-range-open",
+        label: "自定义日期范围",
+        requiredFragments: [
+          {
+            screenId: "hengdong.progress",
+            pbId: "hengdong.progress.custom-range-sheet",
+          },
+          {
+            screenId: "hengdong.progress",
+            pbId: "hengdong.progress.custom-range-form",
+          },
+        ],
+      },
+      {
+        id: "custom",
+        label: "自定义范围结果",
+        requiredFragments: [
+          {
+            screenId: "hengdong.progress",
+            pbId: "hengdong.progress.summary",
+            pbKey: "custom",
+          },
+          {
+            screenId: "hengdong.progress",
+            pbId: "hengdong.progress.rhythm.custom",
+          },
+          {
+            screenId: "hengdong.progress",
+            pbId: "hengdong.progress.date-view.custom",
+          },
+        ],
+      },
+      {
+        id: "selected-date",
+        label: "日期已聚焦",
+        requiredFragments: [
+          {
+            screenId: "hengdong.progress",
+            pbId: "hengdong.progress.date-view.week.day",
+            pbKey: "date-2026-08-12",
+          },
+          {
+            screenId: "hengdong.progress",
+            pbId: "hengdong.progress.record-list.week",
+          },
         ],
       },
       {
@@ -576,25 +1142,162 @@ const redesignedHengdongScreens = [
         ],
       },
       {
+        id: "empty",
+        label: "无活动记录",
+        requiredFragments: [
+          {
+            screenId: "hengdong.progress",
+            pbId: "hengdong.progress.empty.week",
+          },
+        ],
+      },
+      {
         id: "record-detail-open",
-        label: "记录详情",
+        label: "只读记录详情",
+        query: { record: "record-20260812" },
         requiredFragments: [
           {
             screenId: "hengdong.progress",
             pbId: "hengdong.progress.record-detail",
           },
-        ],
-      },
-      {
-        id: "delete-confirm-open",
-        label: "删除记录确认",
-        requiredFragments: [
           {
             screenId: "hengdong.progress",
-            pbId: "hengdong.progress.delete-confirm",
+            pbId: "hengdong.progress.record-detail-content",
           },
         ],
       },
+    ],
+    actions: [
+      {
+        id: "switch-month",
+        kind: "click",
+        target: {
+          screenId: "hengdong.progress",
+          pbId: "hengdong.progress.period-tabs.tab",
+          pbKey: "month",
+        },
+      },
+      {
+        id: "select-recorded-date",
+        kind: "click",
+        target: {
+          screenId: "hengdong.progress",
+          pbId: "hengdong.progress.date-view.week.day",
+          pbKey: "date-2026-08-12",
+        },
+      },
+      {
+        id: "open-custom-range",
+        kind: "click",
+        target: {
+          screenId: "hengdong.progress",
+          pbId: "hengdong.progress.open-custom-range",
+        },
+      },
+      {
+        id: "apply-custom-range",
+        kind: "click",
+        target: {
+          screenId: "hengdong.progress",
+          pbId: "hengdong.progress.apply-custom-range",
+        },
+      },
+      {
+        id: "open-progress-record",
+        kind: "click",
+        target: {
+          screenId: "hengdong.progress",
+          pbId: "hengdong.progress.record-row",
+          pbKey: "week-record-20260812",
+        },
+      },
+    ],
+    scenarios: [
+      {
+        id: "review-month-progress",
+        label: "切换到本月节奏",
+        initialVariantId: "default",
+        actionIds: ["switch-month"],
+        checkpoints: [
+          {
+            id: "month-progress-visible",
+            screenId: "hengdong.progress",
+            variantId: "default",
+            requiredFragments: [
+              {
+                screenId: "hengdong.progress",
+                pbId: "hengdong.progress.summary",
+                pbKey: "month",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "focus-progress-date",
+        label: "聚焦有活动的日期",
+        initialVariantId: "default",
+        actionIds: ["select-recorded-date"],
+        checkpoints: [
+          {
+            id: "recorded-date-focused",
+            screenId: "hengdong.progress",
+            variantId: "default",
+            requiredFragments: [
+              {
+                screenId: "hengdong.progress",
+                pbId: "hengdong.progress.record-row",
+                pbKey: "week-record-20260812",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "apply-progress-custom-range",
+        label: "应用自定义日期范围",
+        initialVariantId: "default",
+        actionIds: ["open-custom-range", "apply-custom-range"],
+        checkpoints: [
+          {
+            id: "custom-progress-visible",
+            screenId: "hengdong.progress",
+            variantId: "custom",
+            requiredFragments: [
+              {
+                screenId: "hengdong.progress",
+                pbId: "hengdong.progress.summary",
+                pbKey: "custom",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "inspect-progress-record",
+        label: "查看进度中的记录事实",
+        initialVariantId: "default",
+        actionIds: ["open-progress-record"],
+        checkpoints: [
+          {
+            id: "progress-record-detail-open",
+            screenId: "hengdong.progress",
+            variantId: "record-detail-open",
+            requiredFragments: [
+              {
+                screenId: "hengdong.progress",
+                pbId: "hengdong.progress.record-detail-content",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    requiredScenarioIds: [
+      "review-month-progress",
+      "focus-progress-date",
+      "apply-progress-custom-range",
+      "inspect-progress-record",
     ],
   },
   {
