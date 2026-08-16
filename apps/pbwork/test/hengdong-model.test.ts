@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   activeDayCount,
+  catalogPlans,
   defaultPlans,
   defaultRecords,
   latestRecords,
@@ -22,6 +23,7 @@ import {
   savePlanForMode,
   setActivePlan,
 } from "@/prototypes/hengdong/storage";
+import { recordGlyph } from "@/prototypes/hengdong/glyphs";
 
 describe("Hengdong activity ranges", () => {
   it("keeps plan save intent explicit across create and edit flows", () => {
@@ -35,6 +37,18 @@ describe("Hengdong activity ranges", () => {
     expect(planSaveLabel("create")).toBe("保存并设为当前计划");
     expect(planSaveLabel("edit-current")).toBe("保存修改");
     expect(planSaveLabel("edit-candidate")).toBe("保存计划");
+  });
+
+  it("keeps the current plan in the catalog and lists it first", () => {
+    expect(
+      catalogPlans(defaultPlans, "wake-up-15").map((plan) => plan.id),
+    ).toEqual(["wake-up-15", "full-body-basic", "sleep-stretch"]);
+    expect(
+      catalogPlans(defaultPlans, "wake-up-15", "唤醒").map((plan) => plan.id),
+    ).toEqual(["wake-up-15"]);
+    expect(
+      catalogPlans(defaultPlans, "full-body-basic").map((plan) => plan.id)[0],
+    ).toBe("full-body-basic");
   });
 
   it("allocates a stable custom plan id without overwriting an earlier plan", () => {
@@ -144,5 +158,25 @@ describe("Hengdong activity ranges", () => {
     expect(hengdongState.goals.weeklySessions).toBe(4);
     expect(hengdongState.records.map((record) => record.id)).toEqual(recordIds);
     resetHengdongData();
+  });
+
+  it("picks session glyphs from plan goals instead of the shared 训练 type", () => {
+    const recent = latestRecords(defaultRecords, 5).map((record) =>
+      recordGlyph(record, defaultPlans),
+    );
+    expect(recent.map((glyph) => glyph.icon)).toEqual([
+      "sparkles",
+      "dumbbell",
+      "person-standing",
+      "footprints",
+      "sparkles",
+    ]);
+    expect(recent.map((glyph) => glyph.kind)).toEqual([
+      "wake",
+      "strength",
+      "stretch",
+      "walk",
+      "free",
+    ]);
   });
 });

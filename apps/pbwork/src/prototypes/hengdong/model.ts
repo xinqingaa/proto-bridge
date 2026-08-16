@@ -55,6 +55,21 @@ export function nextCustomPlanId(plans: FitnessPlan[]) {
   return `${baseId}-${suffix}`;
 }
 
+export function catalogPlans(
+  plans: FitnessPlan[],
+  activePlanId: string,
+  goal?: PlanGoal,
+) {
+  return plans
+    .filter((plan) => !goal || plan.goal === goal)
+    .slice()
+    .sort((left, right) => {
+      if (left.id === activePlanId) return -1;
+      if (right.id === activePlanId) return 1;
+      return 0;
+    });
+}
+
 export type ActivityType = "训练" | "步行" | "拉伸" | "自由活动";
 export type Feeling = "轻松" | "刚好" | "吃力";
 export type ProgressPeriod = "week" | "month" | "year" | "custom";

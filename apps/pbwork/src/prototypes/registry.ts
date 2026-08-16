@@ -969,6 +969,16 @@ const redesignedHengdongScreens = [
           {
             screenId: "hengdong.plans",
             pbId: "hengdong.plans.plan-row",
+            pbKey: "all-wake-up-15",
+          },
+          {
+            screenId: "hengdong.plans",
+            pbId: "hengdong.plans.plan-row.current",
+            pbKey: "all-wake-up-15",
+          },
+          {
+            screenId: "hengdong.plans",
+            pbId: "hengdong.plans.plan-row",
             pbKey: "all-full-body-basic",
           },
         ],

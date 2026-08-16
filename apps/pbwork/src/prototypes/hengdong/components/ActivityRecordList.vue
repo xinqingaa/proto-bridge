@@ -4,11 +4,12 @@ import Icon from "@/design-system/components/action/Icon.vue";
 import DataList from "@/design-system/components/data/DataList.vue";
 import ScrollableDataList from "@/design-system/components/data/ScrollableDataList.vue";
 import EmptyState from "@/design-system/components/display/EmptyState.vue";
-import type { PbIconName } from "@/design-system/components/_shared/icons";
-import type { ActivityType, WorkoutRecord } from "../model";
+import { recordGlyph } from "../glyphs";
+import type { FitnessPlan, WorkoutRecord } from "../model";
 
 const props = defineProps<{
   records: WorkoutRecord[];
+  plans: FitnessPlan[];
   visibleCount: number;
   tabKey: string;
   tabLabel: string;
@@ -22,13 +23,6 @@ defineEmits<{
   loadMore: [];
   open: [recordId: string];
 }>();
-
-const activityIcons: Record<ActivityType, PbIconName> = {
-  训练: "dumbbell",
-  步行: "footprints",
-  拉伸: "person-standing",
-  自由活动: "sparkles",
-};
 
 const sortedRecords = computed(() =>
   [...props.records].sort(
@@ -74,6 +68,10 @@ function dayLabel(date: string) {
 function weekdayLabel(date: string) {
   const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
   return `周${["日", "一", "二", "三", "四", "五", "六"][weekday]}`;
+}
+
+function glyphFor(record: WorkoutRecord) {
+  return recordGlyph(record, props.plans);
 }
 </script>
 
@@ -149,11 +147,19 @@ function weekdayLabel(date: string) {
               data-pb-action="open-record"
               @click="$emit('open', record.id)"
             >
-              <span class="history-record-icon">
+              <span
+                class="history-record-icon hd-type-icon"
+                :class="'is-' + glyphFor(record).kind"
+                data-pb-id="hengdong.activity-history.record-icon"
+                :data-pb-key="`${tabKey}-${record.id}`"
+                data-pb-role="icon"
+                data-pb-token-background="transparent"
+                :data-pb-token-color="glyphFor(record).color"
+              >
                 <Icon
-                  :name="activityIcons[record.activityType]"
+                  :name="glyphFor(record).icon"
                   size="sm"
-                  tone="primary"
+                  tone="inherit"
                   :inspect-id="`${inspectId}.icon.${record.id}`"
                 />
               </span>
@@ -269,7 +275,7 @@ function weekdayLabel(date: string) {
   width: var(--pb-sizing-avatar-sm);
   height: var(--pb-sizing-avatar-sm);
   border-radius: var(--pb-radius-full);
-  background: var(--pb-color-primary-soft);
+  background: transparent;
 }
 
 .history-record-copy {

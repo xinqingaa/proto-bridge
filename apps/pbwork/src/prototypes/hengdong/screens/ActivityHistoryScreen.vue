@@ -261,6 +261,7 @@ function undoDelete() {
         >
           <ActivityRecordList
             :records="recordsForTab(tab.value)"
+            :plans="hengdongState.plans"
             :visible-count="pageSizes[tab.value]"
             :tab-key="tab.value"
             :tab-label="tab.label"

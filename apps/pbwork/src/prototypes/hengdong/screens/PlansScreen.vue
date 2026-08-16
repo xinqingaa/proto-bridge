@@ -12,7 +12,8 @@ import AppBar from "@/design-system/components/navigation/AppBar.vue";
 import PrimaryTabs from "@/design-system/components/navigation/PrimaryTabs.vue";
 import HengdongRoot from "../HengdongRoot.vue";
 import PlanEditorFlow from "../components/PlanEditorFlow.vue";
-import { recordsInWeek } from "../model";
+import { planGlyph } from "../glyphs";
+import { catalogPlans, recordsInWeek, type FitnessPlan, type PlanGoal } from "../model";
 import { openHengdongScreen, replaceVariant } from "../nav";
 import { hengdongState, updateHengdongUi } from "../storage";
 import "../hengdong.css";
@@ -25,7 +26,7 @@ const planTabs = [
   { value: "strength", label: "力量" },
   { value: "recovery", label: "舒缓" },
 ];
-const goalByTab: Record<string, string | undefined> = {
+const goalByTab: Record<string, PlanGoal | undefined> = {
   all: undefined,
   wake: "唤醒",
   strength: "力量",
@@ -53,13 +54,27 @@ const currentPlan = computed(
       (plan) => plan.id === hengdongState.activePlanId,
     ) ?? hengdongState.plans[0]!,
 );
-function recommendationsFor(goal: string) {
+function catalogFor(tab: string) {
   if (variant.value === "empty") return [];
-  const planGoal = goalByTab[goal];
-  return hengdongState.plans.filter(
-    (plan) =>
-      plan.id !== currentPlan.value.id &&
-      (!planGoal || plan.goal === planGoal),
+  return catalogPlans(
+    hengdongState.plans,
+    currentPlan.value.id,
+    goalByTab[tab],
+  );
+}
+function isCurrent(plan: FitnessPlan) {
+  return plan.id === currentPlan.value.id;
+}
+function glyphFor(plan: FitnessPlan) {
+  return planGlyph(plan.goal);
+}
+function openPlan(plan: FitnessPlan) {
+  openHengdongScreen(
+    router,
+    route,
+    "plan-detail",
+    isCurrent(plan) ? "default" : "candidate",
+    { plan: plan.id },
   );
 }
 const completedCurrent = computed(
@@ -191,7 +206,7 @@ function afterSave() {
                 #[tab.value]
               >
                 <DataList
-                  v-if="recommendationsFor(tab.value).length"
+                  v-if="catalogFor(tab.value).length"
                   class="hd-flat-list hd-plan-list"
                   surface="none"
                   rounded="none"
@@ -202,7 +217,7 @@ function afterSave() {
                   "
                 >
                   <button
-                    v-for="plan in recommendationsFor(tab.value)"
+                    v-for="plan in catalogFor(tab.value)"
                     :key="plan.id"
                     type="button"
                     class="hd-row hd-row-action hd-plan-library-row"
@@ -210,19 +225,52 @@ function afterSave() {
                     :data-pb-key="tab.value + '-' + plan.id"
                     data-pb-role="list-item"
                     data-pb-token-spacing="spacing.md"
-                    @click="
-                      openHengdongScreen(
-                        router,
-                        route,
-                        'plan-detail',
-                        'candidate',
-                        { plan: plan.id },
-                      )
+                    :aria-label="
+                      isCurrent(plan)
+                        ? `当前计划，${plan.name}`
+                        : plan.name
                     "
+                    @click="openPlan(plan)"
                   >
+                    <span
+                      class="hd-record-icon hd-type-icon"
+                      :class="'is-' + glyphFor(plan).kind"
+                      data-pb-id="hengdong.plans.plan-row.icon"
+                      :data-pb-key="tab.value + '-' + plan.id"
+                      data-pb-role="icon"
+                      data-pb-token-background="transparent"
+                      :data-pb-token-color="glyphFor(plan).color"
+                    >
+                      <Icon
+                        :name="glyphFor(plan).icon"
+                        size="md"
+                        tone="inherit"
+                        :inspect-id="
+                          'hengdong.plans.plan-icon.' +
+                          tab.value +
+                          '-' +
+                          plan.id
+                        "
+                      />
+                    </span>
                     <span class="hd-row-main">
                       <span class="hd-record-primary">
-                        <strong class="hd-row-title">{{ plan.name }}</strong>
+                        <span class="hd-plan-list-name">
+                          <strong class="hd-row-title">{{ plan.name }}</strong>
+                          <span
+                            v-if="isCurrent(plan)"
+                            class="hd-plan-current-mark"
+                            data-pb-id="hengdong.plans.plan-row.current"
+                            :data-pb-key="tab.value + '-' + plan.id"
+                            data-pb-role="text"
+                            data-pb-token-background="color.primary-soft"
+                            data-pb-token-color="color.primary"
+                            data-pb-token-radius="radius.full"
+                            data-pb-token-spacing="spacing.sm"
+                            data-pb-token-typography="typography.caption-strong"
+                            >当前</span
+                          >
+                        </span>
                         <strong class="hd-record-duration"
                           >{{ plan.minutes }} 分钟</strong
                         >

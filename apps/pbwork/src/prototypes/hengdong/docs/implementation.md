@@ -39,7 +39,7 @@ prototypeId: hengdong
 | ------------------ | ----------------------- | --------------------------------------------------------------- |
 | 周目标环           | Token 驱动的业务局部 UI | 真实主路径热区，声明状态、Token Evidence 和 reduced-motion 行为 |
 | 七日节奏           | Token 驱动的业务局部 UI | 每日为稳定业务热区，与活动记录同源                              |
-| 活动类型图标       | 现有 PBWork Icon        | 使用稳定 Lucide id，不引入第二套图标                            |
+| 活动类型图标       | 现有 PBWork Icon        | 透明底；正式训练按计划目标（唤醒 sparkles / 力量 dumbbell / 舒缓 person-standing），快捷记录按步行/拉伸/自由活动 |
 | 主次按钮、设置入口 | 现有 PBWork DS          | 使用 Button / IconButton 公开 Contract                          |
 | 最近记录列表       | 现有 DS 组合            | ScrollableDataList + DataList；今天只展示最近五次               |
 | 活动类型二级 Tab   | 现有 PBWork DS          | SecondaryTabs；五个具名列表面板拥有独立滚动状态                 |
@@ -48,7 +48,7 @@ prototypeId: hengdong
 | 进度周期 Tab       | 现有 PBWork DS          | PrimaryTabs；本周、本月、本年及按需自定义拥有完整内容面板       |
 | 活动节奏图与日历   | Token 驱动的业务局部 UI | 周/月/年共享节奏语法，显式声明图表和日期 Token Evidence         |
 | 当前计划摘要       | 现有 DS 组合            | 摘要表面本身是详情热区；Progress 与全宽开始训练按钮，不新增通用 Card |
-| 计划分类与列表     | 现有 DS 组合            | PrimaryTabs + DataList；页内一级胶囊 Tab 等分分类，列表行含承诺与执行成本 |
+| 计划分类与列表     | 现有 DS 组合            | PrimaryTabs + DataList；目标 Icon 在行左侧；当前计划用主色软底胶囊标注 |
 | 计划动作序列       | Token 驱动的业务局部 UI | 使用真实动作顺序和稳定 exercise key，不承担训练执行状态         |
 | 计划编辑流程       | DS 原子升级 + 现有组合  | FlowSheet 使用 X 图标关闭；TextField / RadioGroup / Checkbox 组成紧凑表单 |
 | 快速记录           | 现有 PBWork DS          | FlowSheet + 表单组件；结果在相关内容区持续反馈                  |
@@ -127,6 +127,7 @@ prototypeId: hengdong
 - `record-detail-long-note`：正式训练的长备注详情打开。
 - `day-empty-feedback`：无记录节奏日反馈可见。
 - `recent-five`：最近记录展示五条并提供活动记录二级页入口。
+- 正式训练记录按所属计划目标选图标（唤醒 / 力量 / 舒缓），快捷记录按活动类型；不把所有 `activityType: 训练` 画成哑铃。
 
 ### 独立验收节点
 
@@ -216,14 +217,14 @@ prototypeId: hengdong
 
 - 计划：`default`、`filtered`、`empty`、`plan-editor-open`、`plan-editor-validation`；计划详情：`default`、`candidate`、`adopted-feedback`、`invalid-plan`、`plan-editor-open`、`plan-editor-validation`。
 - 计划页不增加“我的计划 / 推荐”Tab；“全部 / 唤醒 / 力量 / 舒缓”改为二级 SecondaryTabs，每项拥有具名计划面板。
-- 当前计划位于二级 Tab 之上且不在面板中重复；计划列表与详情采用训练处方视觉，减少卡片和行内标签竞争。
+- 当前计划位于一级 Tab 之上；分类列表包含当前计划，并以主色软底胶囊标注“当前”，不承担历史分析。
 - FlowSheet 共享关闭入口升级为 X 图标按钮；业务步骤使用“返回”和语义化继续动作，最终保存为底部全宽主操作。
 - 新建计划 FlowSheet 保存后设为当前计划；编辑当前计划保留当前身份；编辑候选计划保存但不自动采用。
 - 候选详情使用“设为当前计划 / 只开始一次”双路径；当前详情只使用“开始这次训练”。
 
 ### 独立验收节点
 
-- 计划根、App Bar、当前计划摘要、当前计划事实行、当前进度、摘要详情热区、开始训练、计划分类一级 Tab、具名面板、计划列表、空态和编辑 FlowSheet；
+- 计划根、App Bar、当前计划摘要、当前计划事实行、当前进度、摘要详情热区、开始训练、计划分类一级 Tab、具名面板、计划列表、目录当前标注、空态和编辑 FlowSheet；
 - 计划详情根、状态标签、计划身份、执行成本、本周状态、动作处方序列、采用/只开始一次/开始训练动作、撤销反馈和编辑 FlowSheet；
 - 计划行使用分类 identity + plan id，动作行使用 exercise id 作为稳定 key；
 - 计划变化、今天页上下文和训练入口使用同一份本地状态，不生成虚假活动记录。
@@ -259,6 +260,8 @@ prototypeId: hengdong
 - 当前计划与目录之间用留白换任务，不再使用分割线，也不再使用“更多计划”分区标题。
 - “全部 / 唤醒 / 力量 / 舒缓”使用页内 PrimaryTabs 胶囊轨道，等分内容宽；点击和横滑切换具名面板。
 - 目录列表行展示名称与单次时长、一句适用承诺，以及目标、难度、动作数和每周次数。
+- 目录包含当前计划，排在对应分类最前，并在名称旁用主色软底胶囊标注“当前”。不嵌套 DS Chip：整行已是详情热区，Chip 会变成按钮套按钮，且 small 体积压过行标题。
+- 目录行与今天最近记录使用同一套左侧透明底类型 Icon：唤醒 `sparkles` / 警告色，力量 `dumbbell` / 主色，舒缓 `person-standing` / 成功色。
 
 ### Experience Gate 目标
 
@@ -268,7 +271,7 @@ prototypeId: hengdong
 ### L2 验收结果
 
 - Delivery Gate：Token-only、DS-first、Flex-only、typecheck、131 个 PBWork 测试和文档校验通过。
-- Experience Review：在真实浏览器中检查 `390 × 844` 浅色默认、分类空态和深色默认；目录标题已移除，页内一级胶囊 Tab 成立，列表行含时长、适用承诺和执行成本；结果为 `accepted`。
+- Experience Review：在真实浏览器中检查 `390 × 844` 浅色默认、分类空态和深色默认；目录标题已移除，页内一级胶囊 Tab 成立，列表行含时长、适用承诺、执行成本和目标圆底 Icon；结果为 `accepted`。
 
 ## 训练执行与训练总结正式调整
 

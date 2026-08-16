@@ -10,10 +10,10 @@ import BottomSheet from "@/design-system/components/feedback/BottomSheet.vue";
 import FlowSheet from "@/design-system/components/feedback/FlowSheet.vue";
 import Menu from "@/design-system/components/input/Menu.vue";
 import RadioGroup from "@/design-system/components/input/RadioGroup.vue";
-import type { PbIconName } from "@/design-system/components/_shared/icons";
 import HengdongRoot from "../HengdongRoot.vue";
 import WeeklyGoalRing from "../components/WeeklyGoalRing.vue";
 import WeeklyRhythm from "../components/WeeklyRhythm.vue";
+import { recordGlyph } from "../glyphs";
 import {
   HENGDONG_TODAY,
   HENGDONG_WEEK_DATES,
@@ -167,6 +167,10 @@ const weekProgress = computed(() =>
   ),
 );
 const recentRecords = computed(() => latestRecords(presentedRecords.value, 5));
+
+function glyphFor(record: WorkoutRecord) {
+  return recordGlyph(record, hengdongState.plans);
+}
 const weekRhythm = computed(() =>
   HENGDONG_WEEK_DATES.map((date, index) => {
     const minutes = totalMinutes(
@@ -237,13 +241,6 @@ const ringState = computed(() => {
   if (!activePlan.value) return "select-plan" as const;
   return isCompleted.value ? ("complete" as const) : ("active" as const);
 });
-
-const activityIcons: Record<ActivityType, PbIconName> = {
-  训练: "dumbbell",
-  步行: "footprints",
-  拉伸: "person-standing",
-  自由活动: "sparkles",
-};
 
 const selectedRecord = computed(() => {
   const recordId =
@@ -552,11 +549,19 @@ function openRhythmDay(date: string) {
                 data-pb-action="open-recent-record"
                 @click="openRecord(record.id)"
               >
-                <span class="hd-record-icon">
+                <span
+                  class="hd-record-icon hd-type-icon"
+                  :class="'is-' + glyphFor(record).kind"
+                  data-pb-id="hengdong.today.record-icon"
+                  :data-pb-key="record.id"
+                  data-pb-role="icon"
+                  data-pb-token-background="transparent"
+                  :data-pb-token-color="glyphFor(record).color"
+                >
                   <Icon
-                    :name="activityIcons[record.activityType]"
+                    :name="glyphFor(record).icon"
                     size="md"
-                    tone="primary"
+                    tone="inherit"
                     :inspect-id="`hengdong.today.record-icon.${record.id}`"
                   />
                 </span>
