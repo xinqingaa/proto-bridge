@@ -104,7 +104,7 @@ function returnToPlans() {
 
 <template>
   <HengdongShell
-    title=""
+    :title="plan?.name ?? '计划'"
     screen-id="hengdong.plan-detail"
     back-to="plans"
     back-label="计划"
@@ -142,7 +142,7 @@ function returnToPlans() {
               data-pb-id="hengdong.plan-detail.summary"
               data-pb-role="summary"
               data-pb-token-color="color.on-surface"
-              data-pb-token-typography="typography.display"
+              data-pb-token-typography="typography.content"
               data-pb-token-spacing="spacing.sm"
             >
               <span class="hd-kicker">{{
@@ -152,7 +152,6 @@ function returnToPlans() {
                     ? "你的计划"
                     : "推荐计划"
               }}</span>
-              <h1 class="hd-display">{{ plan.name }}</h1>
               <p class="hd-plan-promise">{{ plan.description }}</p>
               <div
                 class="hd-plan-identity"
