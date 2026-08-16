@@ -123,7 +123,7 @@ usePbInspect({
         <ArrowLeft :size="BACK_ICON_SIZE" aria-hidden="true" />
       </v-btn>
     </template>
-    <v-toolbar-title class="pb-app-bar-title">
+    <v-toolbar-title v-if="title" class="pb-app-bar-title">
       <h2 class="pb-app-bar-heading">{{ title }}</h2>
     </v-toolbar-title>
     <template v-if="slots.append || showAction" #append>

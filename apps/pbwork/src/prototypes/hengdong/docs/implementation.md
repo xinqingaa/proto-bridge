@@ -14,8 +14,8 @@ prototypeId: hengdong
 | 训练执行   | approved | passed        | accepted          |
 | 训练总结   | approved | passed        | accepted          |
 | 活动记录   | approved | passed        | accepted          |
-| 计划       | approved | passed        | accepted          |
-| 计划详情   | approved | passed        | accepted          |
+| 计划       | approved | passed        | deferred          |
+| 计划详情   | approved | passed        | deferred          |
 | 进度       | approved | passed        | accepted          |
 | 设置与目标 | pending  | legacy-draft  | pending           |
 | 登录       | approved | passed        | accepted          |
@@ -47,8 +47,8 @@ prototypeId: hengdong
 | 活动日期时间线     | Token 驱动的业务局部 UI | 月份与日期形成稳定结构节点，不使用逐行 Card                     |
 | 进度周期 Tab       | 现有 PBWork DS          | PrimaryTabs；本周、本月、本年及按需自定义拥有完整内容面板       |
 | 活动节奏图与日历   | Token 驱动的业务局部 UI | 周/月/年共享节奏语法，显式声明图表和日期 Token Evidence         |
-| 当前计划摘要       | 现有 DS 组合            | 摘要表面本身是详情热区；Progress 与全宽开始训练按钮，不新增通用 Card |
-| 计划分类与列表     | 现有 DS 组合            | PrimaryTabs + DataList；目标 Icon 在行左侧；当前计划用主色软底胶囊标注 |
+| 当前计划摘要       | Token 驱动的业务局部 UI | 无描边表面；名称、一次成本、本周一句和全宽开始训练；摘要本身是详情热区 |
+| 计划分类与列表     | 现有 DS 组合            | PrimaryTabs + DataList；目标 Icon 在行左侧；两行：名称/时长 + 目标·难度；当前计划用主色软底胶囊标注 |
 | 计划动作序列       | Token 驱动的业务局部 UI | 使用真实动作顺序和稳定 exercise key，不承担训练执行状态         |
 | 计划编辑流程       | DS 原子升级 + 现有组合  | FlowSheet 使用 X 图标关闭；TextField / RadioGroup / Checkbox 组成紧凑表单 |
 | 快速记录           | 现有 PBWork DS          | FlowSheet + 表单组件；结果在相关内容区持续反馈                  |
@@ -272,6 +272,27 @@ prototypeId: hengdong
 
 - Delivery Gate：Token-only、DS-first、Flex-only、typecheck、131 个 PBWork 测试和文档校验通过。
 - Experience Review：在真实浏览器中检查 `390 × 844` 浅色默认、分类空态和深色默认；目录标题已移除，页内一级胶囊 Tab 成立，列表行含时长、适用承诺、执行成本和目标圆底 Icon；结果为 `accepted`。
+
+## 计划与计划详情视觉收束
+
+### 确定状态
+
+- 当前计划去掉描边和抬升容器，靠大标题字阶成为唯一物件；一次成本保留时长、目标和难度，本周完成改为一句次数。
+- 目录行收成两行：名称与时长，第二行只保留目标与难度。适用承诺、动作数和每周次数只在详情出现。
+- 详情顶栏不再重复“计划详情”；计划名称只在正文以 display 标题出现。状态、目标与难度、执行成本、本周次数各说一次。
+- 动作序号改为排版数字；本周完成不再使用凹陷卡片或线性 Progress。候选次操作使用 Button `secondary`。
+- App Bar 空标题不渲染标题节点；计划详情返回可访问名称为“计划”。
+
+### 独立验收节点
+
+- 计划根、当前计划摘要、本周一句、开始训练、分类 Tab、两行目录和当前胶囊；
+- 计划详情大标题、承诺、身份、成本、编号序列、本周一句、主操作和候选次操作。
+
+### Experience Gate 目标
+
+- 用户要求 Apple 式高级简约并确认目录用类型+难度、当前计划去边框；本轮按 L2 风险面复核。
+- 重点检查首屏只有一个最高焦点、目录明显弱于当前计划、详情三秒内可读成本与顺序、浅色/深色不靠卡片边框撑层级。
+- 截图未在本轮获取前，Experience 记为 `deferred`，不把 Delivery 通过写成体验验收。
 
 ## 训练执行与训练总结正式调整
 

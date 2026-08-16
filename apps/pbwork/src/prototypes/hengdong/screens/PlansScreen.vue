@@ -4,7 +4,6 @@ import { useRoute, useRouter } from "vue-router";
 import Button from "@/design-system/components/action/Button.vue";
 import Icon from "@/design-system/components/action/Icon.vue";
 import EmptyState from "@/design-system/components/display/EmptyState.vue";
-import Progress from "@/design-system/components/display/ProgressIndicator.vue";
 import DataList from "@/design-system/components/data/DataList.vue";
 import ScrollableDataList from "@/design-system/components/data/ScrollableDataList.vue";
 import Toast from "@/design-system/components/feedback/Toast.vue";
@@ -83,13 +82,6 @@ const completedCurrent = computed(
       (record) => record.planId === currentPlan.value.id,
     ).length,
 );
-const currentProgress = computed(() =>
-  Math.min(
-    100,
-    Math.round((completedCurrent.value / currentPlan.value.weeklyTarget) * 100),
-  ),
-);
-
 function openEditor() {
   void replaceVariant(router, route, "plan-editor-open");
 }
@@ -129,10 +121,8 @@ function afterSave() {
             class="hd-current-plan"
             data-pb-id="hengdong.plans.current"
             data-pb-role="summary"
-            data-pb-token-background="color.surface-raised"
+            data-pb-token-background="color.background"
             data-pb-token-color="color.on-surface"
-            data-pb-token-border="border.default"
-            data-pb-token-radius="radius.xl"
             data-pb-token-spacing="spacing.lg"
           >
             <button
@@ -143,7 +133,7 @@ function afterSave() {
               data-pb-role="button"
               data-pb-action="open-current-plan"
               data-pb-token-color="color.on-surface"
-              data-pb-token-typography="typography.title-lg"
+              data-pb-token-typography="typography.display"
               data-pb-token-spacing="spacing.md"
               @click="
                 openHengdongScreen(router, route, 'plan-detail', 'default', {
@@ -152,12 +142,10 @@ function afterSave() {
               "
             >
               <span class="hd-current-plan-lead">
-                <span class="hd-overline">当前计划</span>
+                <span class="hd-kicker">当前计划</span>
                 <Icon name="chevron-right" size="sm" tone="muted" />
               </span>
-              <strong class="hd-display hd-display-compact">{{
-                currentPlan.name
-              }}</strong>
+              <strong class="hd-display">{{ currentPlan.name }}</strong>
               <span
                 class="hd-plan-facts"
                 aria-label="当前计划信息"
@@ -166,16 +154,19 @@ function afterSave() {
                 data-pb-token-color="color.on-surface-muted"
                 data-pb-token-spacing="spacing.sm"
               >
-                <span>{{ currentPlan.goal }} · {{ currentPlan.level }}</span>
                 <span>{{ currentPlan.minutes }} 分钟</span>
-                <span>{{ currentPlan.exercises.length }} 个动作</span>
-                <span>每周 {{ currentPlan.weeklyTarget }} 次</span>
+                <span>{{ currentPlan.goal }}</span>
+                <span>{{ currentPlan.level }}</span>
               </span>
-              <Progress
-                :value="currentProgress"
-                :label="`本周 ${completedCurrent} / ${currentPlan.weeklyTarget} 次`"
-                inspect-id="hengdong.plans.current-progress"
-              />
+              <span
+                class="hd-caption"
+                data-pb-id="hengdong.plans.current-week"
+                data-pb-role="text"
+                data-pb-token-color="color.on-surface-muted"
+                data-pb-token-typography="typography.caption"
+              >
+                本周 {{ completedCurrent }} / {{ currentPlan.weeklyTarget }} 次
+              </span>
             </button>
             <Button
               label="开始这次训练"
@@ -276,15 +267,6 @@ function afterSave() {
                         >
                       </span>
                       <span
-                        class="hd-plan-list-promise"
-                        data-pb-id="hengdong.plans.plan-row.promise"
-                        :data-pb-key="tab.value + '-' + plan.id"
-                        data-pb-role="text"
-                        data-pb-token-color="color.on-surface-muted"
-                        data-pb-token-typography="typography.body-sm"
-                        >{{ plan.description }}</span
-                      >
-                      <span
                         class="hd-caption"
                         data-pb-id="hengdong.plans.plan-row.facts"
                         :data-pb-key="tab.value + '-' + plan.id"
@@ -292,11 +274,7 @@ function afterSave() {
                         data-pb-token-color="color.on-surface-muted"
                         data-pb-token-typography="typography.caption"
                       >
-                        {{
-                          plan.origin === "custom" ? "你的计划 · " : ""
-                        }}{{ plan.goal }} · {{ plan.level }} ·
-                        {{ plan.exercises.length }} 个动作 · 每周
-                        {{ plan.weeklyTarget }} 次
+                        {{ plan.goal }} · {{ plan.level }}
                       </span>
                     </span>
                     <Icon name="chevron-right" size="sm" tone="muted" />

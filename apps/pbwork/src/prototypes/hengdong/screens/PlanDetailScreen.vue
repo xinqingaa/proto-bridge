@@ -2,9 +2,7 @@
 import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Button from "@/design-system/components/action/Button.vue";
-import Divider from "@/design-system/components/display/Divider.vue";
 import EmptyState from "@/design-system/components/display/EmptyState.vue";
-import Progress from "@/design-system/components/display/ProgressIndicator.vue";
 import DataList from "@/design-system/components/data/DataList.vue";
 import ScrollableDataList from "@/design-system/components/data/ScrollableDataList.vue";
 import Toast from "@/design-system/components/feedback/Toast.vue";
@@ -75,11 +73,6 @@ const completed = computed(() => {
     (record) => record.planId === planId,
   ).length;
 });
-const progress = computed(() => {
-  const weeklyTarget = plan.value?.weeklyTarget;
-  if (!weeklyTarget) return 0;
-  return Math.min(100, Math.round((completed.value / weeklyTarget) * 100));
-});
 
 function adoptPlan() {
   if (!plan.value || isCurrent.value) return;
@@ -111,9 +104,10 @@ function returnToPlans() {
 
 <template>
   <HengdongShell
-    title="计划详情"
+    title=""
     screen-id="hengdong.plan-detail"
     back-to="plans"
+    back-label="计划"
     dense
     :show-action="Boolean(plan) && !planMissing"
     action-icon="more"
@@ -151,7 +145,7 @@ function returnToPlans() {
               data-pb-token-typography="typography.display"
               data-pb-token-spacing="spacing.sm"
             >
-              <span class="hd-overline">{{
+              <span class="hd-kicker">{{
                 isCurrent
                   ? "当前计划"
                   : plan.origin === "custom"
@@ -159,7 +153,7 @@ function returnToPlans() {
                     : "推荐计划"
               }}</span>
               <h1 class="hd-display">{{ plan.name }}</h1>
-              <p class="hd-plan-promise">适合：{{ plan.description }}</p>
+              <p class="hd-plan-promise">{{ plan.description }}</p>
               <div
                 class="hd-plan-identity"
                 data-pb-id="hengdong.plan-detail.identity"
@@ -167,30 +161,27 @@ function returnToPlans() {
                 data-pb-token-color="color.on-surface-muted"
                 data-pb-token-spacing="spacing.sm"
               >
-                <span>{{ plan.goal }}训练</span>
+                <span>{{ plan.goal }}</span>
                 <span>{{ plan.level }}</span>
-                <span>每周 {{ plan.weeklyTarget }} 次</span>
+              </div>
+              <div
+                class="hd-plan-cost"
+                data-pb-id="hengdong.plan-detail.facts"
+                data-pb-role="summary"
+                data-pb-token-color="color.on-surface"
+                data-pb-token-spacing="spacing.sm"
+              >
+                <span><strong>{{ plan.minutes }}</strong> 分钟</span>
+                <span><strong>{{ plan.exercises.length }}</strong> 个动作</span>
+                <span><strong>{{ plan.weeklyTarget }}</strong> 次 / 周</span>
               </div>
             </header>
-
-            <div
-              class="hd-plan-cost"
-              data-pb-id="hengdong.plan-detail.facts"
-              data-pb-role="summary"
-              data-pb-token-color="color.on-surface"
-              data-pb-token-spacing="spacing.sm"
-            >
-              <span><strong>{{ plan.minutes }}</strong> 分钟</span>
-              <span><strong>{{ plan.exercises.length }}</strong> 个动作</span>
-              <span><strong>{{ plan.weeklyTarget }}</strong> 次 / 周</span>
-            </div>
             <div
               v-if="previousPlanId"
               class="hd-undo"
               role="status"
               data-pb-id="hengdong.plan-detail.adopt-feedback"
               data-pb-role="status"
-              data-pb-token-background="color.success-soft"
               data-pb-token-color="color.success"
             >
               <span>已设为当前计划</span>
@@ -204,13 +195,8 @@ function returnToPlans() {
               />
             </div>
 
-            <Divider inspect-id="hengdong.plan-detail.divider.exercises" />
-
             <section class="hd-section hd-plan-prescription">
-              <div class="hd-row-main">
-                <h2 class="hd-section-title">这套计划会怎么进行</h2>
-                <p class="hd-caption">按顺序完成，每个动作只保留一个明确目标。</p>
-              </div>
+              <h2 class="hd-section-title">按这个顺序</h2>
               <DataList
                 class="hd-flat-list"
                 surface="none"
@@ -239,20 +225,11 @@ function returnToPlans() {
               class="hd-plan-week"
               data-pb-id="hengdong.plan-detail.week"
               data-pb-role="summary"
+              data-pb-token-color="color.on-surface-muted"
+              data-pb-token-typography="typography.caption"
               data-pb-token-spacing="spacing.md"
             >
-              <div class="hd-section-heading">
-                <div class="hd-row-main">
-                  <h2 class="hd-section-title">本周完成</h2>
-                  <p class="hd-caption">按计划保持节奏，不需要补做。</p>
-                </div>
-                <strong>{{ completed }} / {{ plan.weeklyTarget }}</strong>
-              </div>
-              <Progress
-                :value="progress"
-                :label="`本周 ${completed} / ${plan.weeklyTarget} 次`"
-                inspect-id="hengdong.plan-detail.progress"
-              />
+              本周 {{ completed }} / {{ plan.weeklyTarget }} 次
             </section>
 
             <div class="hd-primary-action">
@@ -276,7 +253,7 @@ function returnToPlans() {
               <Button
                 v-if="!isCurrent"
                 label="只开始这一次"
-                kind="outlined"
+                kind="secondary"
                 block
                 inspect-id="hengdong.plan-detail.start-once"
                 @click="

@@ -70,6 +70,7 @@
 }
 
 .hd-overline,
+.hd-kicker,
 .hd-caption,
 .hd-muted,
 .hd-page-title,
@@ -91,6 +92,11 @@
 .hd-overline {
   color: var(--pb-color-primary);
   font: var(--pb-typography-caption-strong);
+}
+
+.hd-kicker {
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
 }
 
 .hd-caption {
@@ -224,7 +230,6 @@
   border-radius: var(--pb-radius-xl);
 }
 
-.hd-current-plan,
 .hd-resume {
   background: var(--pb-color-primary-soft);
   color: var(--pb-color-on-surface);
@@ -232,8 +237,10 @@
 
 .hd-current-plan {
   gap: var(--pb-spacing-lg);
-  background: var(--pb-color-surface-raised);
-  border: var(--pb-border-default);
+  padding: var(--pb-spacing-none);
+  border: none;
+  border-radius: var(--pb-radius-none);
+  background: transparent;
 }
 
 .hd-current-plan-hit {
@@ -398,31 +405,19 @@
   color: var(--pb-color-warning);
 }
 
-.hd-plan-list-promise {
-  overflow: hidden;
-  color: var(--pb-color-on-surface-muted);
-  font: var(--pb-typography-body-sm);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .hd-plan-sequence-index {
   display: flex;
   flex: none;
   align-items: center;
-  justify-content: center;
-  width: var(--pb-sizing-icon-md);
-  height: var(--pb-sizing-icon-md);
-  border-radius: var(--pb-radius-sm);
-  background: var(--pb-color-surface-recessed);
-  color: var(--pb-color-primary);
+  min-width: var(--pb-sizing-icon-md);
+  color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption-strong);
 }
 
 .hd-plan-detail-lead {
   display: flex;
   flex-direction: column;
-  gap: var(--pb-spacing-sm);
+  gap: var(--pb-spacing-md);
 }
 
 .hd-plan-identity {
@@ -474,18 +469,8 @@
 }
 
 .hd-plan-week {
-  display: flex;
-  flex-direction: column;
-  gap: var(--pb-spacing-md);
-  padding: var(--pb-spacing-lg);
-  border-radius: var(--pb-radius-lg);
-  background: var(--pb-color-surface-recessed);
-}
-
-.hd-plan-week .hd-section-heading > strong {
-  flex: none;
-  color: var(--pb-color-on-surface);
-  font: var(--pb-typography-title);
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
 }
 
 .hd-stat {
@@ -530,9 +515,6 @@
 }
 
 .hd-undo {
-  padding: var(--pb-spacing-sm) var(--pb-spacing-md);
-  border-radius: var(--pb-radius-lg);
-  background: var(--pb-color-success-soft);
   color: var(--pb-color-success);
   font: var(--pb-typography-content);
 }

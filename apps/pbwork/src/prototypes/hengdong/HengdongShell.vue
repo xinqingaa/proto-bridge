@@ -9,6 +9,7 @@ const props = defineProps<{
   title: string;
   screenId: string;
   backTo?: RootTab;
+  backLabel?: string;
   dense?: boolean;
   showAction?: boolean;
   actionIcon?: "more" | "plus" | "search" | "settings";
@@ -32,6 +33,7 @@ function goBack() {
       :show-back="isStack"
       v-bind="{
         ...(dense !== undefined ? { dense } : {}),
+        ...(backLabel !== undefined ? { backLabel } : {}),
         ...(showAction !== undefined ? { showAction } : {}),
         ...(actionIcon !== undefined ? { actionIcon } : {}),
         ...(actionLabel !== undefined ? { actionLabel } : {}),
