@@ -40,6 +40,8 @@ const { resync } = usePbInspect({
     headerControl: "sizing.touch",
     fill: "layout.fill",
     flexFill: "layout.flex-fill",
+    duration: "motion.duration-sheet",
+    easing: "motion.easing-gentle",
   }),
   getTokens: () => [
     "color.surface",
@@ -52,6 +54,8 @@ const { resync } = usePbInspect({
     "sizing.touch",
     "layout.fill",
     "layout.flex-fill",
+    "motion.duration-sheet",
+    "motion.easing-gentle",
   ],
 });
 
@@ -133,6 +137,12 @@ watch(modelValue, async (value) => {
   width: var(--pb-layout-fill) !important;
   max-width: var(--pb-layout-fill) !important;
   margin-inline: var(--pb-spacing-none) !important;
+}
+.pb-sheet-host.v-bottom-sheet
+  > .v-bottom-sheet__content.v-overlay__content {
+  transition-property: transform !important;
+  transition-duration: var(--pb-motion-duration-sheet) !important;
+  transition-timing-function: var(--pb-motion-easing-gentle) !important;
 }
 .pb-sheet-host.v-bottom-sheet
   > .v-bottom-sheet__content.v-overlay__content

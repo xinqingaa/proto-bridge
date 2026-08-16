@@ -71,7 +71,9 @@
     "padding": "spacing.md",
     "headerControl": "sizing.touch",
     "fill": "layout.fill",
-    "flexFill": "layout.flex-fill"
+    "flexFill": "layout.flex-fill",
+    "duration": "motion.duration-sheet",
+    "easing": "motion.easing-gentle"
   },
   "playground": {
     "presentation": "trigger"

@@ -260,11 +260,6 @@ watch(stepCount, (count) => {
   width: var(--pb-layout-fill);
   min-width: var(--pb-spacing-none);
 }
-@media (prefers-reduced-motion: reduce) {
-  .pb-flow-sheet-track {
-    transition-duration: var(--pb-motion-duration-instant);
-  }
-}
 </style>
 
 <style>
@@ -273,6 +268,12 @@ watch(stepCount, (count) => {
   width: var(--pb-layout-fill) !important;
   max-width: var(--pb-layout-fill) !important;
   margin-inline: var(--pb-spacing-none) !important;
+}
+.pb-flow-sheet-host.v-bottom-sheet
+  > .v-bottom-sheet__content.v-overlay__content {
+  transition-property: transform !important;
+  transition-duration: var(--pb-motion-duration-sheet) !important;
+  transition-timing-function: var(--pb-motion-easing-gentle) !important;
 }
 .pb-flow-sheet-host.v-bottom-sheet
   > .v-bottom-sheet__content.v-overlay__content
