@@ -6,7 +6,7 @@ import Icon from "@/design-system/components/action/Icon.vue";
 import BottomSheet from "@/design-system/components/feedback/BottomSheet.vue";
 import Confirm from "@/design-system/components/feedback/ConfirmDialog.vue";
 import Toast from "@/design-system/components/feedback/Toast.vue";
-import Menu from "@/design-system/components/input/Menu.vue";
+import RadioGroup from "@/design-system/components/input/RadioGroup.vue";
 import SecondaryTabs from "@/design-system/components/navigation/SecondaryTabs.vue";
 import ActivityRecordList from "../components/ActivityRecordList.vue";
 import HengdongShell from "../HengdongShell.vue";
@@ -132,6 +132,9 @@ function monthValue(label: string) {
 
 async function locateMonth(label: string) {
   selectedMonth.value = label;
+  if (variant.value === "month-picker-open") {
+    void replaceVariant(router, route, "default");
+  }
   await nextTick();
   const month = monthValue(label);
   document
@@ -140,6 +143,20 @@ async function locateMonth(label: string) {
     )
     ?.scrollIntoView({ block: "start" });
 }
+
+const monthSheetOpen = computed({
+  get: () => variant.value === "month-picker-open",
+  set: (open) => {
+    void replaceVariant(
+      router,
+      route,
+      open ? "month-picker-open" : "default",
+    );
+  },
+});
+const monthTriggerLabel = computed(
+  () => selectedMonth.value || monthOptions.value[0] || "月份",
+);
 
 const recordSheetOpen = computed({
   get: () =>
@@ -207,6 +224,15 @@ function undoDelete() {
     screen-id="hengdong.activity-history"
     back-to="today"
   >
+    <template v-if="monthOptions.length" #append>
+      <Button
+        :label="monthTriggerLabel"
+        size="sm"
+        kind="outlined"
+        inspect-id="hengdong.activity-history.open-month"
+        @click="monthSheetOpen = true"
+      />
+    </template>
     <section
       class="history-page"
       data-pb-id="hengdong.activity-history.root"
@@ -214,17 +240,6 @@ function undoDelete() {
       data-pb-token-background="color.background"
       data-pb-token-color="color.on-background"
     >
-      <div class="history-tools">
-        <Menu
-          v-if="monthOptions.length"
-          label="定位月份"
-          :model-value="selectedMonth"
-          :options="monthOptions"
-          inspect-id="hengdong.activity-history.month-menu"
-          @update:model-value="locateMonth"
-        />
-      </div>
-
       <div
         v-if="removedRecord || variant === 'undo-visible'"
         class="history-undo"
@@ -281,6 +296,20 @@ function undoDelete() {
         </template>
       </SecondaryTabs>
     </section>
+
+    <BottomSheet
+      v-model="monthSheetOpen"
+      title="定位月份"
+      inspect-id="hengdong.activity-history.month-sheet"
+    >
+      <RadioGroup
+        label="月份"
+        :model-value="monthTriggerLabel"
+        :options="monthOptions"
+        inspect-id="hengdong.activity-history.month-options"
+        @update:model-value="locateMonth"
+      />
+    </BottomSheet>
 
     <BottomSheet
       v-model="recordSheetOpen"
@@ -380,7 +409,6 @@ function undoDelete() {
   color: var(--pb-color-on-background);
 }
 
-.history-tools,
 .history-undo {
   display: flex;
   flex: none;
@@ -388,13 +416,6 @@ function undoDelete() {
   justify-content: space-between;
   gap: var(--pb-spacing-md);
   padding: var(--pb-spacing-sm) var(--pb-spacing-lg);
-}
-
-.history-tools :deep(.pb-select) {
-  flex: var(--pb-layout-flex-fill);
-}
-
-.history-undo {
   background: var(--pb-color-success-soft);
   color: var(--pb-color-success);
   font: var(--pb-typography-content);

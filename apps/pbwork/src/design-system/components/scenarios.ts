@@ -459,6 +459,20 @@ const scenarios: Record<string, ComponentScenario[]> = {
       props: { swipe: false, mouseSwipe: false, keepMounted: true },
     },
   ],
+  "screen-transition": [
+    {
+      id: "ios-push",
+      label: "iOS 进栈",
+      description: "新页从右侧滑入。Playground 用进入/返回观察。",
+      props: { mode: "ios", navigation: "push", screenKey: "detail" },
+    },
+    {
+      id: "android-push",
+      label: "Android 进栈",
+      description: "新页淡入并轻微缩放。",
+      props: { mode: "android", navigation: "push", screenKey: "detail" },
+    },
+  ],
   "bottom-sheet": [
     {
       id: "filter",

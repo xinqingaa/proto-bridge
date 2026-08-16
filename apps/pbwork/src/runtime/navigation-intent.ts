@@ -4,6 +4,7 @@ export type RouteNavigationIntent = "push" | "replace" | "back";
 
 let lastIntent: RouteNavigationIntent = "push";
 let installed = false;
+let preserveIntentThroughReplace = false;
 
 export function getRouteNavigationIntent(): RouteNavigationIntent {
   return lastIntent;
@@ -11,6 +12,15 @@ export function getRouteNavigationIntent(): RouteNavigationIntent {
 
 export function setRouteNavigationIntent(intent: RouteNavigationIntent) {
   lastIntent = intent;
+}
+
+/**
+ * Keep a back intent across the following `history.replaceState`.
+ * Embedded Runtime returns with `replace(parent)` instead of `history.back()`.
+ */
+export function announceBackNavigation() {
+  lastIntent = "back";
+  preserveIntentThroughReplace = true;
 }
 
 /**
@@ -26,16 +36,22 @@ export function installNavigationIntentTracking() {
   const originalReplaceState = history.replaceState.bind(history);
 
   history.pushState = ((data, unused, url) => {
+    preserveIntentThroughReplace = false;
     lastIntent = "push";
     return originalPushState(data, unused, url);
   }) as History["pushState"];
 
   history.replaceState = ((data, unused, url) => {
-    lastIntent = "replace";
+    if (preserveIntentThroughReplace) {
+      preserveIntentThroughReplace = false;
+    } else {
+      lastIntent = "replace";
+    }
     return originalReplaceState(data, unused, url);
   }) as History["replaceState"];
 
   window.addEventListener("popstate", () => {
+    preserveIntentThroughReplace = false;
     lastIntent = "back";
   });
 }

@@ -581,6 +581,38 @@ export const componentRecords = [
     ],
   },
   {
+    id: "screen-transition",
+    label: "页面转场",
+    description:
+      "栈级页面转场。默认 iOS 左右侧滑，可选 Android 淡入缩放；换页的 replace 与 push 同为进入动画。",
+    category: "navigation",
+    view: "navigation/ScreenTransition.vue",
+    contract: "contracts/screen-transition.json",
+    example: {},
+    controls: [
+      {
+        key: "mode",
+        label: "模式",
+        control: "select",
+        options: [
+          { label: "iOS 侧滑", value: "ios" },
+          { label: "Android 淡入", value: "android" },
+        ],
+      },
+      {
+        key: "navigation",
+        label: "导航意图",
+        control: "select",
+        options: [
+          { label: "进栈", value: "push" },
+          { label: "替换", value: "replace" },
+          { label: "返回", value: "back" },
+        ],
+      },
+      { key: "screenKey", label: "页面键", control: "text" },
+    ],
+  },
+  {
     id: "data-list",
     label: "Data List",
     description:

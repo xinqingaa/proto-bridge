@@ -12,6 +12,7 @@ import {
   type RuntimeFragmentIdentity,
   type RuntimeScreenManifest,
 } from "@proto-bridge/core/v2/runtime-contract";
+import { TOKEN_BINDING_LITERALS } from "@proto-bridge/core/v2";
 import {
   loadComponentContracts,
   loadPrototypes,
@@ -53,6 +54,7 @@ function readDatasetTokenBindings(
   element: HTMLElement,
 ): Record<string, string> | undefined {
   const knownTokenIds = new Set(loadTokens().map((token) => token.id));
+  const allowedLiterals = new Set<string>(TOKEN_BINDING_LITERALS);
   const bindings: Record<string, string> = {};
   for (const [key, value] of Object.entries(element.dataset)) {
     if (!key.startsWith("pbToken") || !value) continue;
@@ -67,7 +69,7 @@ function readDatasetTokenBindings(
         { slot, tokenId: value },
       );
     }
-    if (!knownTokenIds.has(value)) {
+    if (!knownTokenIds.has(value) && !allowedLiterals.has(value)) {
       throw new ProtocolFailure(
         "invalid-semantic-marker",
         `Unknown Foundation Token ${value} in data-pb-token-${slot}.`,

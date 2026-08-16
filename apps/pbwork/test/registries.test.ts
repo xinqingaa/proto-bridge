@@ -101,7 +101,7 @@ describe("design contracts", () => {
   });
 
   it("ships the fixed component sample set", () => {
-    expect(componentRecords).toHaveLength(31);
+    expect(componentRecords).toHaveLength(32);
     expect(
       componentRecords.filter((item) => item.category === "action"),
     ).toHaveLength(3);
@@ -113,7 +113,7 @@ describe("design contracts", () => {
     ).toHaveLength(8);
     expect(
       componentRecords.filter((item) => item.category === "navigation"),
-    ).toHaveLength(6);
+    ).toHaveLength(7);
     expect(
       componentRecords.filter((item) => item.category === "data"),
     ).toHaveLength(2);

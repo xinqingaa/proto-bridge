@@ -217,22 +217,9 @@ const filteredPrototypeTree = computed(() => {
   if (!query) return prototypeTree.value;
   return prototypeTree.value.flatMap((prototype) => {
     const prototypeMatch = prototype.label.toLocaleLowerCase().includes(query);
-    const children = (prototype.children ?? []).flatMap((screen) => {
-      const screenMatch = screen.label.toLocaleLowerCase().includes(query);
-      const variants = (screen.children ?? []).filter((variant) =>
-        variant.label.toLocaleLowerCase().includes(query),
-      );
-      const matchingChildren =
-        prototypeMatch || screenMatch ? screen.children : variants;
-      return prototypeMatch || screenMatch || variants.length
-        ? [
-            {
-              ...screen,
-              ...(matchingChildren ? { children: matchingChildren } : {}),
-            },
-          ]
-        : [];
-    });
+    const children = (prototype.children ?? []).filter((screen) =>
+      prototypeMatch || screen.label.toLocaleLowerCase().includes(query),
+    );
     return prototypeMatch || children.length
       ? [{ ...prototype, children }]
       : [];
@@ -309,48 +296,10 @@ function openCommentCount(
   ).length;
 }
 
-function isVariantActive(variantTo: string): boolean {
-  const url = new URL(variantTo, "http://local.invalid");
-  return (
-    selectedScreenSlug.value === url.pathname.split("/").pop() &&
-    selectedVariantId.value === (url.searchParams.get("variant") ?? "")
-  );
-}
-function variantLinkTo(variantTo: string): string {
-  const currentTheme =
-    typeof route.query.theme === "string" ? route.query.theme : null;
-  if (!currentTheme) return variantTo;
-  const url = new URL(variantTo, "http://local.invalid");
-  url.searchParams.set("theme", currentTheme);
-  return `${url.pathname}?${url.searchParams.toString()}`;
-}
-
-function withCurrentTheme(
-  nodes: WorkbenchNavigationTreeNode[],
-): WorkbenchNavigationTreeNode[] {
-  const currentTheme =
-    typeof route.query.theme === "string" ? route.query.theme : null;
-  return nodes.map((node) => {
-    let to = node.to;
-    if (to && node.kind === "variant" && currentTheme) {
-      const url = new URL(to, "http://local.invalid");
-      url.searchParams.set("theme", currentTheme);
-      to = `${url.pathname}?${url.searchParams.toString()}`;
-    }
-    return {
-      ...node,
-      ...(to ? { to } : {}),
-      ...(node.children ? { children: withCurrentTheme(node.children) } : {}),
-    };
-  });
-}
-
 const navigationTree = computed(() =>
-  withCurrentTheme(
-    buildWorkbenchNavigationTree(
-      (id, registered) => prototypeLifecycle.overrides[id] ?? registered,
-      sectionId.value === "prototypes" ? activePrototypeLifecycle.value : "all",
-    ),
+  buildWorkbenchNavigationTree(
+    (id, registered) => prototypeLifecycle.overrides[id] ?? registered,
+    sectionId.value === "prototypes" ? activePrototypeLifecycle.value : "all",
   ),
 );
 
@@ -430,9 +379,6 @@ const activeNavigationId = computed(() => {
       item.screenSlug === selectedScreenSlug.value,
   );
   if (!screen) return `prototype-${prototypeId}`;
-  if (selectedVariantId.value) {
-    return `variant-${screen.screenId}.${selectedVariantId.value}`;
-  }
   return `screen-${screen.screenId}`;
 });
 
@@ -1133,7 +1079,7 @@ onMounted(() => {
                   <div class="collapsed-tree-heading">
                     <div>
                       <strong>原型树</strong>
-                      <span>原型 → 页面 → 状态</span>
+                      <span>原型 → 页面</span>
                     </div>
                     <v-btn
                       size="x-small"
@@ -1174,14 +1120,6 @@ onMounted(() => {
                         :to="screen.to"
                         class="collapsed-tree-link screen-link"
                         >{{ screen.label }}</RouterLink
-                      >
-                      <RouterLink
-                        v-for="variant in screen.children ?? []"
-                        :key="variant.id"
-                        :to="variantLinkTo(variant.to)"
-                        class="collapsed-tree-link variant-link"
-                        :class="{ 'is-active': isVariantActive(variant.to) }"
-                        >{{ variant.label }}</RouterLink
                       >
                     </div>
                   </section>
@@ -1781,11 +1719,6 @@ onMounted(() => {
 }
 .screen-link {
   font-weight: 650;
-}
-.variant-link {
-  padding-left: 8px;
-  color: rgba(var(--v-theme-on-surface), 0.62);
-  font-size: 0.72rem;
 }
 .secondary-group-label {
   display: flex;

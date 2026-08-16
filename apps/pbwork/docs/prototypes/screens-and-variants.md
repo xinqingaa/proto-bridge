@@ -29,6 +29,7 @@
 2. **主题不是 Variant**：`theme` 与业务 `variant` 分离（见 [../tokens/themes.md](../tokens/themes.md)）。
 3. 叠加层打开态必须可注册、可 capture，不要用未登记的临时弹层冒充。
 4. Variant 声明了业务 `query` 时，Workbench、Runtime Manifest/reset 和 Capture 会共同使用这份 canonical route input；不要在页面或入口层维护第二份默认值。
+5. 工作台侧边栏只列出 Screen。Variant 必须仍可经 URL、画布顶栏和 Capture 打开，但不能再作为导航树目的地。
 
 ## PB Evidence Contract
 

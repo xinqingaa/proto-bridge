@@ -7,7 +7,7 @@
 - `prototypes[]`：id、label、lifecycle、owners、roles、`defaultThemeId`
 - `prototypeScreens[]`：screenId、screenSlug、path、view、variants、defaultVariantId
 
-工作台导航与 Runtime 路由都读这份注册表，不要在别处再维护平行清单。
+工作台导航与 Runtime 路由都读这份注册表，不要在别处再维护平行清单。工作台侧边栏只导航 Prototype 和 Screen；Variant 仍由画布顶栏、Deliver 勾选和 Capture Draft 展开，不作为侧边栏子节点。
 
 ## 目录约定
 

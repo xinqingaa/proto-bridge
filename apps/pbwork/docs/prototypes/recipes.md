@@ -112,6 +112,7 @@ AppBar（showBack）
 - Screen 写入 `prototypes/registry.ts`。
 - 优先 DS 组件；局部 UI 仍走 Token。
 - 返回走统一 nav（见 shell-and-nav）。
+- 进栈/返回动画由 Runtime `ScreenTransition` 播放，页面不要再包一层平行转场。
 
 **禁止**：
 

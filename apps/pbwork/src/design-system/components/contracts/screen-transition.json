@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "id": "screen-transition",
+  "category": "navigation",
+  "semantic": {
+    "policy": "decorative"
+  },
+  "summary": "栈级页面转场；默认 iOS 左右侧滑，可选 Android 淡入缩放，不处理手势或业务路由。",
+  "behavior": [
+    "换 Screen 时 push、replace 播进入动画，back 播返回动画；首次挂载、同屏 Variant 和 reduced-motion 瞬间切换",
+    "ios 以完整视口宽度水平滑入或滑出；android 以淡入和轻微缩放替换",
+    "不提供边缘返回手势；replace 与 push 使用同一套进入动画，不把 TabViewport 横滑当成栈动画"
+  ],
+  "layout": {
+    "summary": "组件拥有全屏裁剪视口；ios 水平平移，android 淡入缩放；replace 与 push 同为进入动画。",
+    "containerWidth": "fill-parent",
+    "viewport": {
+      "ownership": "component",
+      "transition": "horizontal"
+    }
+  },
+  "visualAnatomy": {
+    "summary": "只承载当前页面与转场层，不绘制导航、指示器或背景 surface。"
+  },
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "screenKey": {
+        "type": "string"
+      },
+      "mode": {
+        "type": "string",
+        "enum": ["ios", "android"]
+      },
+      "navigation": {
+        "type": "string",
+        "enum": ["push", "replace", "back"]
+      }
+    },
+    "required": ["screenKey"]
+  },
+  "defaultProps": {
+    "screenKey": "home",
+    "mode": "ios",
+    "navigation": "replace"
+  },
+  "states": [
+    {
+      "id": "android",
+      "label": "Android 淡入",
+      "kind": "variant",
+      "props": {
+        "mode": "android",
+        "navigation": "push",
+        "screenKey": "detail"
+      }
+    },
+    {
+      "id": "push",
+      "label": "进栈",
+      "kind": "content",
+      "props": {
+        "navigation": "push",
+        "screenKey": "detail"
+      }
+    },
+    {
+      "id": "back",
+      "label": "返回",
+      "kind": "content",
+      "props": {
+        "navigation": "back",
+        "screenKey": "home"
+      }
+    }
+  ],
+  "slots": ["default"],
+  "events": [],
+  "tokenBindings": {
+    "surface": "color.background",
+    "fill": "layout.fill",
+    "enterTranslation": "layout.fill",
+    "leaveTranslation": "layout.translate-full-negative",
+    "origin": "spacing.none",
+    "duration": "motion.duration-slow",
+    "easing": "motion.easing-standard",
+    "reducedDuration": "motion.duration-instant",
+    "hidden": "opacity.hidden",
+    "visible": "opacity.visible",
+    "incomingScale": "motion.scale-pressed",
+    "restingLayer": "layer.base",
+    "incomingLayer": "layer.content",
+    "grow": "layout.flex-grow"
+  },
+  "playground": {
+    "presentation": "interactive"
+  }
+}

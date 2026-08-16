@@ -20,6 +20,7 @@ describe("workbench navigation tree", () => {
       "三级 Tab（局部 Filter Bar）",
     ]);
     expect(labels[4]).toBe("Tab Viewport");
+    expect(labels[5]).toBe("页面转场");
   });
   it("builds nested resource counts without lifecycle rows", () => {
     const tree = buildWorkbenchNavigationTree();
@@ -48,7 +49,8 @@ describe("workbench navigation tree", () => {
       false,
     );
     expect(coldChain?.count).toBe(3);
-    expect(exceptionQueue?.count).toBe(5);
+    expect(exceptionQueue?.children).toBeUndefined();
+    expect(exceptionQueue?.count).toBeUndefined();
     expect(capture.children?.[0]).toMatchObject({
       id: "capture-console",
       label: "采集历史",
@@ -57,17 +59,14 @@ describe("workbench navigation tree", () => {
     expect(capture.label).toBe("采集");
   });
 
-  it("preserves authored Variant route query in both prototype trees", () => {
+  it("lists Screens without Variant children so the sidebar stays a page map", () => {
     const compactTree = buildPrototypeTree("all");
     const compactToday = compactTree
       .find((node) => node.id === "hengdong")
       ?.children?.find((node) => node.id === "hengdong.today");
-    expect(
-      compactToday?.children?.find(
-        (node) => node.id === "hengdong.today.record-detail-open",
-      )?.to,
-    ).toBe(
-      "/workbench/prototypes/hengdong/screens/today?variant=record-detail-open&theme=light&record=record-20260812",
+    expect(compactToday?.children).toBeUndefined();
+    expect(compactToday?.to).toBe(
+      "/workbench/prototypes/hengdong/screens/today",
     );
 
     const workbenchTree = buildWorkbenchNavigationTree();
@@ -75,13 +74,8 @@ describe("workbench navigation tree", () => {
       .find((node) => node.id === "prototypes")
       ?.children?.find((node) => node.id === "prototype-hengdong")
       ?.children?.find((node) => node.id === "screen-hengdong.today");
-    expect(
-      today?.children?.find(
-        (node) => node.id === "variant-hengdong.today.day-empty-feedback",
-      )?.to,
-    ).toBe(
-      "/workbench/prototypes/hengdong/screens/today?variant=day-empty-feedback&theme=light&date=2026-08-11",
-    );
+    expect(today?.children).toBeUndefined();
+    expect(today?.to).toBe("/workbench/prototypes/hengdong/screens/today");
   });
 
   it("nests capture jobs under 采集历史 and selects by evidence route", () => {

@@ -1,4 +1,5 @@
 import type { RouteLocationNormalizedLoaded, Router } from "vue-router";
+import { announceBackNavigation } from "@/runtime/navigation-intent";
 
 export type HengdongSlug =
   | "login"
@@ -70,6 +71,7 @@ export function goBackHengdong(
 ) {
   const parent = window.history.state?.pbParent;
   if (typeof parent === "string" && parent.startsWith("/prototype/hengdong/")) {
+    announceBackNavigation();
     return router.replace(parent);
   }
   const scope = window.history.state?.pbScope;
@@ -77,6 +79,7 @@ export function goBackHengdong(
   if (scope === "hengdong" && position > 0 && window.parent === window) {
     return router.back();
   }
+  announceBackNavigation();
   return router.replace(hengdongPath(route, fallback));
 }
 

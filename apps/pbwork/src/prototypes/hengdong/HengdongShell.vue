@@ -41,7 +41,11 @@ function goBack() {
       :inspect-id="`${screenId}.app-bar`"
       @back="goBack"
       @action="$emit('action')"
-    />
+    >
+      <template v-if="$slots.append" #append>
+        <slot name="append" />
+      </template>
+    </AppBar>
     <main class="hengdong-shell-main"><slot /></main>
   </div>
 </template>

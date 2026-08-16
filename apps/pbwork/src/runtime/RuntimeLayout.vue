@@ -31,6 +31,8 @@ import {
 import { buildCanonicalRuntimeUrl, resolveRuntimeRoute } from "@/runtime/url";
 import InspectHost from "@/runtime/inspect/InspectHost.vue";
 import { installRuntimeCaptureProtocol } from "@/runtime/capture-protocol";
+import ScreenTransition from "@/design-system/components/navigation/ScreenTransition.vue";
+import type { ScreenTransitionNavigation } from "@/design-system/components/navigation/screenTransition";
 
 installNavigationIntentTracking();
 
@@ -39,6 +41,8 @@ const router = useRouter();
 const screenComponent = shallowRef<Component | null>(null);
 const loadedView = shallowRef<string | null>(null);
 const loadError = shallowRef<string | null>(null);
+const screenTransitionIntent = ref<ScreenTransitionNavigation>("replace");
+let hasPresentedScreen = false;
 const screenComponentCache = new Map<string, Component>();
 const screenComponentLoads = new Map<string, Promise<Component>>();
 let screenLoadGeneration = 0;
@@ -251,6 +255,10 @@ async function loadScreen() {
     ) {
       return;
     }
+    screenTransitionIntent.value = hasPresentedScreen
+      ? getRouteNavigationIntent()
+      : "replace";
+    hasPresentedScreen = true;
     loadedView.value = view;
     screenComponent.value = component;
   } catch (error) {
@@ -357,11 +365,13 @@ watch(
     data-testid="runtime-root"
   >
     <v-main class="runtime-main">
-      <component
-        :is="screenComponent"
-        v-if="resolved.ok && screenComponent && !loadError"
-        :key="loadedView"
-      />
+      <ScreenTransition
+        v-if="resolved.ok && screenComponent && !loadError && loadedView"
+        :screen-key="loadedView"
+        :navigation="screenTransitionIntent"
+      >
+        <component :is="screenComponent" />
+      </ScreenTransition>
       <section
         v-else-if="resolved.ok && !loadError"
         class="runtime-loading"
@@ -391,7 +401,10 @@ watch(
 
 <style scoped>
 .runtime-main {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
+  height: 100%;
 }
 
 .runtime-app {

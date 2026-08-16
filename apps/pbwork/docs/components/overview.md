@@ -34,7 +34,7 @@ Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`summary`�
 | 类型 | 契约内有限枚举 | `variant`、`tone`、`size`                  |
 | 行为 | 开关与交互态   | `disabled`、`loading`、`elevated`、`swipe` |
 
-圆角档、阴影等级、字阶属于默认外观（经 bindings），不进自由旋钮，也不把 props 调试器当作组件展示。Playground 不提供“使用场景”下拉框：主预览展示真实交互；Contract states 直接展示为真实组件实例；没有 Contract state 的有限类型使用规范样例并置。仅 Icon / Icon Button 使用状态矩阵，Tabbar / 一级 Tab / 二级 Tab 使用专门布局对照，overlay 使用明确触发按钮；场景数据只作为展示样例与测试夹具。Filter Bar 直接操作筛选项并观察结果。
+圆角档、阴影等级、字阶属于默认外观（经 bindings），不进自由旋钮，也不把 props 调试器当作组件展示。Playground 不提供“使用场景”下拉框：主预览展示真实交互；Contract states 直接展示为真实组件实例；没有 Contract state 的有限类型使用规范样例并置。仅 Icon / Icon Button 使用状态矩阵，Tabbar / 一级 Tab / 二级 Tab 使用专门布局对照，页面转场并置 iOS / Android 进入与返回，overlay 使用明确触发按钮；场景数据只作为展示样例与测试夹具。Filter Bar 直接操作筛选项并观察结果。
 
 ## 检查标记
 
@@ -78,7 +78,7 @@ Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`summary`�
 
 ### 导航（navigation）
 
-[tabbar](./navigation/tabbar.md) · [一级 Tab](./navigation/primary-tabs.md) · [二级 Tab](./navigation/secondary-tabs.md) · [三级 Tab（局部 Filter Bar）](./navigation/filter-bar.md) · [tab-viewport](./navigation/tab-viewport.md) · [app-bar](./navigation/app-bar.md)
+[tabbar](./navigation/tabbar.md) · [一级 Tab](./navigation/primary-tabs.md) · [二级 Tab](./navigation/secondary-tabs.md) · [三级 Tab（局部 Filter Bar）](./navigation/filter-bar.md) · [tab-viewport](./navigation/tab-viewport.md) · [页面转场](./navigation/screen-transition.md) · [app-bar](./navigation/app-bar.md)
 
 ### 数据（data）
 

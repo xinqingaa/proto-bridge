@@ -26,6 +26,7 @@ TabViewport      ◄─────────┘  swipe / mouseSwipe / keepMou
 ```
 
 - 根视图的 **动画与保活** 只在 TabViewport 或路由内容。
+- 栈页换页动画由 Runtime `ScreenTransition` 负责；Tab 根 `replace` 也播进入动画，同屏 Variant 不播。
 - 业务路由只记录当前 Tab 身份；手势层不直接改 history 细节（由原型 nav 统一 replace/push）。
 
 ## 3. Tabs 与分段

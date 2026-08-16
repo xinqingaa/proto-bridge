@@ -136,6 +136,7 @@ test("component playgrounds expose component types and Contract states without s
     "spinner",
     "switch",
     "tab-viewport",
+    "screen-transition",
     "text-field",
     "textarea",
   ]) {
@@ -153,6 +154,18 @@ test("component playgrounds expose component types and Contract states without s
   await expect(
     page.getByRole("button", { name: "显示操作失败" }),
   ).toBeVisible();
+
+  await page.goto("/workbench/components/screen-transition");
+  await expect(page.getByLabel("使用场景")).toHaveCount(0);
+  const iosDemo = page.locator("[data-transition-mode=ios]");
+  const androidDemo = page.locator("[data-transition-mode=android]");
+  await expect(iosDemo).toBeVisible();
+  await expect(androidDemo).toBeVisible();
+  await expect(page.getByRole("button", { name: "进入" })).toHaveCount(2);
+  await expect(page.getByRole("button", { name: "返回" })).toHaveCount(2);
+  const iosEnter = iosDemo.getByRole("button", { name: "进入" });
+  await iosEnter.click();
+  await expect(iosDemo.getByText("详情", { exact: true })).toBeVisible();
 
   await page.goto("/workbench/components/filter-bar");
   await expect(page.getByLabel("使用场景")).toHaveCount(0);

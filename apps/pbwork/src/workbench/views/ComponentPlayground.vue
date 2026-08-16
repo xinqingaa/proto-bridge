@@ -3,12 +3,22 @@ import {
   computed,
   defineAsyncComponent,
   onBeforeUnmount,
+  reactive,
   ref,
   watch,
   type Component,
 } from "vue";
 import { Home, List, User } from "lucide-vue-next";
 import DataList from "@/design-system/components/data/DataList.vue";
+import ScreenTransition from "@/design-system/components/navigation/ScreenTransition.vue";
+import type {
+  ScreenTransitionMode,
+  ScreenTransitionNavigation,
+} from "@/design-system/components/navigation/screenTransition";
+import {
+  DEFAULT_DEVICE_ID,
+  getDevicePreset,
+} from "@/workbench/canvas/devices";
 import ResourcePageShell from "@/workbench/views/ResourcePageShell.vue";
 import WorkbenchStatChip from "@/workbench/ui/WorkbenchStatChip.vue";
 import {
@@ -74,6 +84,8 @@ const presentationLabel = computed(() => {
 const toolbarHint = computed(() => {
   if (isGalleryPresentation.value) return "状态平铺；只切换主题";
   if (isTriggerPresentation.value) return "点击触发，观察打开与关闭";
+  if (isScreenTransitionDemo.value)
+    return "进入/返回对照 iOS 与 Android；两侧共用同一手机视口";
   return "直接使用组件；状态在画布内反馈";
 });
 const tallPreview = computed(() =>
@@ -83,6 +95,7 @@ const tallPreview = computed(() =>
     "data-list",
     "scrollable-data-list",
     "tab-viewport",
+    "screen-transition",
     "app-bar",
     "primary-tabs",
     "secondary-tabs",
@@ -101,6 +114,9 @@ const isScrollableDataList = computed(
 );
 const isSplitTabPresentation = computed(() =>
   ["tabbar", "primary-tabs", "secondary-tabs"].includes(record.value?.id ?? ""),
+);
+const isScreenTransitionDemo = computed(
+  () => record.value?.id === "screen-transition",
 );
 const typeScenarioIds: Record<string, string[]> = {
   button: ["primary", "secondary", "outlined"],
@@ -133,6 +149,7 @@ const hidesStateExhibits = computed(
     isGalleryPresentation.value ||
     isTriggerPresentation.value ||
     isSplitTabPresentation.value ||
+    isScreenTransitionDemo.value ||
     isFilterBar.value ||
     isScrollableDataList.value,
 );
@@ -284,6 +301,7 @@ const hasExhibits = computed(() => exhibitSections.value.length > 0);
 const stageTitle = computed(() => {
   if (isGalleryPresentation.value) return "状态矩阵";
   if (isSplitTabPresentation.value) return "布局对照";
+  if (isScreenTransitionDemo.value) return "风格对照";
   if (isTriggerPresentation.value) return "触发演示";
   if (isFilterBar.value) return "筛选演示";
   return "互动演示";
@@ -291,6 +309,8 @@ const stageTitle = computed(() => {
 const stageDescription = computed(() => {
   if (isGalleryPresentation.value) return "默认与 Contract 状态并置";
   if (isSplitTabPresentation.value) return "自适应与等宽两种稳定布局并置";
+  if (isScreenTransitionDemo.value)
+    return "iOS 侧滑与 Android 淡入并置，共用同一视口；用进入、返回切换示意页";
   if (isTriggerPresentation.value) return "通过明确操作观察组件打开与关闭";
   if (isFilterBar.value) return "直接切换筛选项并观察结果";
   return "直接操作组件并观察状态反馈";
@@ -334,6 +354,49 @@ const playgroundNavIcons = [Home, List, User];
 const triggeredPreviewOpen = ref(false);
 const activeTriggerScenarioId = ref("");
 const triggeredPreviewStep = ref(0);
+
+type ScreenTransitionDemoPage = "home" | "detail";
+type ScreenTransitionDemoPane = {
+  screenKey: ScreenTransitionDemoPage;
+  navigation: ScreenTransitionNavigation;
+};
+const screenTransitionDemoViewport = getDevicePreset(DEFAULT_DEVICE_ID);
+const screenTransitionDemoPanes = [
+  {
+    mode: "ios" as ScreenTransitionMode,
+    label: "iOS 侧滑",
+    hint: "新页从右侧进入",
+  },
+  {
+    mode: "android" as ScreenTransitionMode,
+    label: "Android 淡入",
+    hint: "新页淡入并轻微缩放",
+  },
+];
+const screenTransitionDemo = reactive<
+  Record<ScreenTransitionMode, ScreenTransitionDemoPane>
+>({
+  ios: { screenKey: "home", navigation: "replace" },
+  android: { screenKey: "home", navigation: "replace" },
+});
+
+function screenTransitionDemoTitle(page: ScreenTransitionDemoPage) {
+  return page === "home" ? "今天" : "详情";
+}
+
+function resetScreenTransitionDemo() {
+  screenTransitionDemo.ios = { screenKey: "home", navigation: "replace" };
+  screenTransitionDemo.android = { screenKey: "home", navigation: "replace" };
+}
+
+function playScreenTransitionDemo(
+  mode: ScreenTransitionMode,
+  direction: "push" | "back",
+) {
+  const pane = screenTransitionDemo[mode];
+  pane.navigation = direction;
+  pane.screenKey = direction === "push" ? "detail" : "home";
+}
 function enrichBind(base: Record<string, unknown>): Record<string, unknown> {
   const next = { ...base };
   if (props.componentId === "tabbar") {
@@ -534,6 +597,7 @@ watch(
   (id) => {
     if (buttonActionTimer) clearTimeout(buttonActionTimer);
     if (listActionTimer) clearTimeout(listActionTimer);
+    resetScreenTransitionDemo();
     buttonActionBusy.value = false;
     buttonActionFinished.value = false;
     triggeredPreviewOpen.value = false;
@@ -744,6 +808,66 @@ const categoryEyebrow: Record<string, string> = {
                   </component>
                 </div>
               </section>
+            </template>
+
+            <template v-else-if="isScreenTransitionDemo">
+              <div class="route-transition-demo-row">
+              <section
+                v-for="pane in screenTransitionDemoPanes"
+                :key="pane.mode"
+                class="tab-comparison route-transition-demo"
+                :data-transition-mode="pane.mode"
+              >
+                <header>
+                  <strong>{{ pane.label }}</strong>
+                  <span>{{ pane.hint }}</span>
+                </header>
+                <div class="route-transition-demo-actions">
+                  <v-btn
+                    color="primary"
+                    variant="tonal"
+                    size="small"
+                    :disabled="
+                      screenTransitionDemo[pane.mode].screenKey === 'detail'
+                    "
+                    @click="playScreenTransitionDemo(pane.mode, 'push')"
+                    >进入</v-btn
+                  >
+                  <v-btn
+                    color="primary"
+                    variant="tonal"
+                    size="small"
+                    :disabled="
+                      screenTransitionDemo[pane.mode].screenKey === 'home'
+                    "
+                    @click="playScreenTransitionDemo(pane.mode, 'back')"
+                    >返回</v-btn
+                  >
+                </div>
+                <div
+                  class="route-transition-demo-frame"
+                  :style="{
+                    width: `${screenTransitionDemoViewport.width}px`,
+                    height: `${screenTransitionDemoViewport.height}px`,
+                  }"
+                >
+                  <ScreenTransition
+                    :mode="pane.mode"
+                    :navigation="screenTransitionDemo[pane.mode].navigation"
+                    :screen-key="screenTransitionDemo[pane.mode].screenKey"
+                  >
+                    <div class="panel-slot-demo">
+                      <strong>{{
+                        screenTransitionDemoTitle(
+                          screenTransitionDemo[pane.mode].screenKey,
+                        )
+                      }}</strong>
+                      <span>{{ pane.label }}示意页</span>
+                    </div>
+                  </ScreenTransition>
+                </div>
+              </section>
+              </div>
             </template>
 
             <template v-else-if="isFilterBar">
@@ -1124,6 +1248,32 @@ const categoryEyebrow: Record<string, string> = {
   border: var(--pb-border-hairline, 1px solid #d7dee8);
   border-radius: var(--pb-radius-lg, 16px);
   background: var(--pb-color-surface, #fff);
+}
+.route-transition-demo-row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 24px;
+  overflow-x: auto;
+}
+.route-transition-demo-row > .tab-comparison {
+  margin-bottom: 0;
+  flex: none;
+}
+.route-transition-demo-actions {
+  display: flex;
+  gap: 8px;
+}
+.route-transition-demo-frame {
+  flex: none;
+  overflow: hidden;
+  border: var(--pb-border-hairline, 1px solid #d7dee8);
+  border-radius: var(--pb-radius-lg, 16px);
+  background: var(--pb-color-surface, #fff);
+}
+.route-transition-demo-frame :deep(.panel-slot-demo) {
+  min-height: 100%;
+  height: 100%;
 }
 .tabbar-demo-viewport strong,
 .panel-slot-demo strong {

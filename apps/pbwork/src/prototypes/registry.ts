@@ -741,6 +741,10 @@ const redesignedHengdongScreens = [
             pbId: "hengdong.activity-history.record-row",
             pbKey: "all-record-20260812",
           },
+          {
+            screenId: "hengdong.activity-history",
+            pbId: "hengdong.activity-history.open-month",
+          },
         ],
       },
       {
@@ -796,6 +800,24 @@ const redesignedHengdongScreens = [
           {
             screenId: "hengdong.activity-history",
             pbId: "hengdong.activity-history.list.all.empty",
+          },
+        ],
+      },
+      {
+        id: "month-picker-open",
+        label: "定位月份",
+        requiredFragments: [
+          {
+            screenId: "hengdong.activity-history",
+            pbId: "hengdong.activity-history.open-month",
+          },
+          {
+            screenId: "hengdong.activity-history",
+            pbId: "hengdong.activity-history.month-sheet",
+          },
+          {
+            screenId: "hengdong.activity-history",
+            pbId: "hengdong.activity-history.month-options",
           },
         ],
       },

@@ -44,7 +44,6 @@ function isExpanded(node: WorkbenchNavigationTreeNode): boolean {
 function countTooltip(node: WorkbenchNavigationTreeNode): string {
   const count = node.count ?? 0;
   if (node.kind === "prototype") return `${count} 个页面`;
-  if (node.kind === "screen") return `${count} 个状态`;
   if (node.kind === "lifecycle") return `${count} 个原型`;
   if (node.kind === "group" || node.kind === "section") return `${count} 项`;
   return `${count}`;

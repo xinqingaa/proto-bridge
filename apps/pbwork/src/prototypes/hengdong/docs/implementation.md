@@ -27,6 +27,7 @@ prototypeId: hengdong
 
 - 注册 10 个 Screen：登录、注册、今天、活动记录、计划、进度、计划详情、训练执行、训练总结、设置与目标。
 - 根目的地切换使用 `replace`，二级任务使用 `push` 和可恢复 parent。
+- 栈页转场由 Runtime `ScreenTransition` 播放，默认 iOS；换 Screen 的 `replace`（含根 Tab）播进入动画。Capture 环境 reduced-motion 仍为静帧。Flutter / Target mapping 本轮保持 pending。
 - 三个根页面只通过底部 Tabbar 切换；活动记录归属今天任务栈。
 - 本地状态统一保存在 `hengdong.app.v2`；账号、目标、当前计划、训练会话、活动记录和主题共享同一数据源。
 - 正式训练与快速记录写入同一记录集合；今天、活动记录和进度从同一记录事实派生。
@@ -169,7 +170,7 @@ prototypeId: hengdong
 
 ### 确定状态
 
-- 活动记录：`default`、`training`、`refreshing`、`loading-more`、`filtered-empty`、`empty`、`record-detail-open`、`record-detail-long-note`、`delete-confirm-open`、`undo-visible`；
+- 活动记录：`default`、`training`、`refreshing`、`loading-more`、`filtered-empty`、`empty`、`month-picker-open`、`record-detail-open`、`record-detail-long-note`、`delete-confirm-open`、`undo-visible`；
 - 进度：`default`、`month`、`year`、`custom-range-open`、`custom`、`selected-date`、`filter-open`、`empty`、`record-detail-open`；
 - 活动记录的二级 Tab、滚动位置、分页和刷新状态由各面板拥有；进度的一级 Tab 拥有周期内容与横滑；
 - 自定义日期范围使用原型局部 FlowSheet 组合，不新增共享日期组件；
@@ -327,5 +328,12 @@ prototypeId: hengdong
 - 完整与部分总结使用不同中性文案和结果表达；体感未选时保存不可用，体感与备注刷新后仍在；
 - 真实路径已验证暂停、恢复、稍后继续、部分保存、完整完成、保存回今天，以及两类浏览器返回保护；
 - 本批达到截图上限后，其余确定性和交互检查使用 DOM 与状态验证完成，没有继续扩大截图数量。
+
+## 活动记录月份定位
+
+- 月份入口从内容区 `Menu` 收到 App Bar 右侧描边按钮；选择使用 BottomSheet + RadioGroup。
+- 新增 overlay Variant `month-picker-open`，只服务 Capture / 画布顶栏，不进入工作台侧边栏。
+- 工作台侧边栏只导航 Screen；Variant 仍由画布顶栏和 Deliver 全量展开。Registry 不收缩现有 overlay / transient 夹具。
+- Experience Review：`deferred`。本轮未获取浏览器截图，不把 Delivery 通过写成体验验收。
 
 今天、训练执行和训练总结已完成核心闭环并通过对应验收；其余页面按 `design.md` 的旅程顺序推进。

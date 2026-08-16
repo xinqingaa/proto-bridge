@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import AppBar from "@/design-system/components/navigation/AppBar.vue";
+import { announceBackNavigation } from "@/runtime/navigation-intent";
 import { coldChainPath } from "./nav";
 
 const props = defineProps<{
@@ -20,6 +21,7 @@ function goBack() {
     router.back();
     return;
   }
+  announceBackNavigation();
   void router.replace(coldChainPath(route, props.backTo ?? "exception-queue"));
 }
 </script>

@@ -37,6 +37,7 @@ Shell
 | ----------- | ------------------------------------------------ | ---------------- |
 | Tabbar      | 发当前目的地                                     | 面板、动画、手势 |
 | TabViewport | 横滑、过渡、保活                                 | 业务路由语义     |
+| ScreenTransition | 换 Screen 的 push / replace 进入、back 返回 | 手势、路由表、同屏 Variant |
 | AppBar      | 标题、返回、append（**一级可选**；栈页通常需要） | 全局路由表       |
 
 ## Tab 状态与 URL
@@ -45,6 +46,8 @@ Shell
 - **手势 / 点击先更新 UI**；再由 nav **节流后** `replace` 同步 URL（建议短 debounce，避免动画中狂刷 history）。
 - Tab 切换：路由 **replace**，写入当前 Tab 身份。
 - 二级进栈：路由 **push**，并记录可返回的 parent。
+- 栈页转场由 Runtime `ScreenTransition` 播放：默认 iOS 左右侧滑，可选 Android 淡入缩放。换 Screen 的 `push` 与根 Tab `replace` 播进入动画；`back` 播返回。同屏 Variant、首次挂载和 `prefers-reduced-motion` 不播。本轮不提供边缘返回手势。
+- 嵌入 Runtime 的返回若走 `replace(parent)`，须先 `announceBackNavigation()`，否则会当成进入切页。
 - 二级页禁止直接拼业务路径字符串；统一走 nav 辅助（名称可自定，语义须覆盖下列能力）。
 
 ## History 身份（通用契约）
