@@ -3,14 +3,13 @@ import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Button from "@/design-system/components/action/Button.vue";
 import Icon from "@/design-system/components/action/Icon.vue";
-import Divider from "@/design-system/components/display/Divider.vue";
 import EmptyState from "@/design-system/components/display/EmptyState.vue";
 import Progress from "@/design-system/components/display/ProgressIndicator.vue";
 import DataList from "@/design-system/components/data/DataList.vue";
 import ScrollableDataList from "@/design-system/components/data/ScrollableDataList.vue";
 import Toast from "@/design-system/components/feedback/Toast.vue";
 import AppBar from "@/design-system/components/navigation/AppBar.vue";
-import SecondaryTabs from "@/design-system/components/navigation/SecondaryTabs.vue";
+import PrimaryTabs from "@/design-system/components/navigation/PrimaryTabs.vue";
 import HengdongRoot from "../HengdongRoot.vue";
 import PlanEditorFlow from "../components/PlanEditorFlow.vue";
 import { recordsInWeek } from "../model";
@@ -115,79 +114,75 @@ function afterSave() {
             class="hd-current-plan"
             data-pb-id="hengdong.plans.current"
             data-pb-role="summary"
-            data-pb-token-background="color.primary-soft"
+            data-pb-token-background="color.surface-raised"
             data-pb-token-color="color.on-surface"
+            data-pb-token-border="border.default"
             data-pb-token-radius="radius.xl"
             data-pb-token-spacing="spacing.lg"
           >
-            <span class="hd-overline">当前计划</span>
-            <div class="hd-plan-current-copy">
-              <h1 class="hd-display hd-display-compact">
-                {{ currentPlan.name }}
-              </h1>
-              <p class="hd-plan-promise">{{ currentPlan.description }}</p>
-            </div>
-            <div
-              class="hd-plan-facts"
-              aria-label="当前计划信息"
-              data-pb-id="hengdong.plans.current-facts"
-              data-pb-role="text"
-              data-pb-token-color="color.on-surface-muted"
-              data-pb-token-spacing="spacing.sm"
+            <button
+              type="button"
+              class="hd-current-plan-hit"
+              :aria-label="`查看计划详情，${currentPlan.name}`"
+              data-pb-id="hengdong.plans.open-current"
+              data-pb-role="button"
+              data-pb-action="open-current-plan"
+              data-pb-token-color="color.on-surface"
+              data-pb-token-typography="typography.title-lg"
+              data-pb-token-spacing="spacing.md"
+              @click="
+                openHengdongScreen(router, route, 'plan-detail', 'default', {
+                  plan: currentPlan.id,
+                })
+              "
             >
-              <span>{{ currentPlan.goal }} · {{ currentPlan.level }}</span>
-              <span>{{ currentPlan.minutes }} 分钟</span>
-              <span>{{ currentPlan.exercises.length }} 个动作</span>
-              <span>每周 {{ currentPlan.weeklyTarget }} 次</span>
-            </div>
-            <Progress
-              :value="currentProgress"
-              :label="`本周 ${completedCurrent} / ${currentPlan.weeklyTarget} 次`"
-              inspect-id="hengdong.plans.current-progress"
+              <span class="hd-current-plan-lead">
+                <span class="hd-overline">当前计划</span>
+                <Icon name="chevron-right" size="sm" tone="muted" />
+              </span>
+              <strong class="hd-display hd-display-compact">{{
+                currentPlan.name
+              }}</strong>
+              <span
+                class="hd-plan-facts"
+                aria-label="当前计划信息"
+                data-pb-id="hengdong.plans.current-facts"
+                data-pb-role="text"
+                data-pb-token-color="color.on-surface-muted"
+                data-pb-token-spacing="spacing.sm"
+              >
+                <span>{{ currentPlan.goal }} · {{ currentPlan.level }}</span>
+                <span>{{ currentPlan.minutes }} 分钟</span>
+                <span>{{ currentPlan.exercises.length }} 个动作</span>
+                <span>每周 {{ currentPlan.weeklyTarget }} 次</span>
+              </span>
+              <Progress
+                :value="currentProgress"
+                :label="`本周 ${completedCurrent} / ${currentPlan.weeklyTarget} 次`"
+                inspect-id="hengdong.plans.current-progress"
+              />
+            </button>
+            <Button
+              label="开始这次训练"
+              block
+              inspect-id="hengdong.plans.start-current"
+              @click="
+                openHengdongScreen(
+                  router,
+                  route,
+                  'workout-session',
+                  'default',
+                  { plan: currentPlan.id },
+                )
+              "
             />
-            <div class="hd-plan-current-actions">
-              <Button
-                label="开始这次训练"
-                block
-                inspect-id="hengdong.plans.start-current"
-                @click="
-                  openHengdongScreen(
-                    router,
-                    route,
-                    'workout-session',
-                    'default',
-                    { plan: currentPlan.id },
-                  )
-                "
-              />
-              <Button
-                class="hd-plan-link-action"
-                label="查看计划详情"
-                size="sm"
-                kind="outlined"
-                inspect-id="hengdong.plans.open-current"
-                @click="
-                  openHengdongScreen(router, route, 'plan-detail', 'default', {
-                    plan: currentPlan.id,
-                  })
-                "
-              />
-            </div>
           </section>
 
-          <Divider inspect-id="hengdong.plans.divider.recommended" />
-
           <section class="hd-section hd-plan-library">
-            <div class="hd-row-main">
-              <h2 class="hd-section-title">计划库</h2>
-              <p class="hd-caption">选择一套适合最近节奏的训练。</p>
-            </div>
-            <SecondaryTabs
+            <PrimaryTabs
               v-model="activePlanTab"
               :items="planTabs"
-              show-divider
               grow
-              size="sm"
               inspect-id="hengdong.plans.filters"
             >
               <template
@@ -226,14 +221,34 @@ function afterSave() {
                     "
                   >
                     <span class="hd-row-main">
-                      <span class="hd-overline">
-                        {{ plan.origin === "custom" ? "你的计划" : "推荐计划" }}
+                      <span class="hd-record-primary">
+                        <strong class="hd-row-title">{{ plan.name }}</strong>
+                        <strong class="hd-record-duration"
+                          >{{ plan.minutes }} 分钟</strong
+                        >
                       </span>
-                      <strong class="hd-plan-list-title">{{ plan.name }}</strong>
-                      <span class="hd-caption">{{ plan.description }}</span>
-                      <span class="hd-plan-list-facts">
-                        {{ plan.goal }} · {{ plan.level }} ·
-                        {{ plan.minutes }} 分钟 · 每周 {{ plan.weeklyTarget }} 次
+                      <span
+                        class="hd-plan-list-promise"
+                        data-pb-id="hengdong.plans.plan-row.promise"
+                        :data-pb-key="tab.value + '-' + plan.id"
+                        data-pb-role="text"
+                        data-pb-token-color="color.on-surface-muted"
+                        data-pb-token-typography="typography.body-sm"
+                        >{{ plan.description }}</span
+                      >
+                      <span
+                        class="hd-caption"
+                        data-pb-id="hengdong.plans.plan-row.facts"
+                        :data-pb-key="tab.value + '-' + plan.id"
+                        data-pb-role="text"
+                        data-pb-token-color="color.on-surface-muted"
+                        data-pb-token-typography="typography.caption"
+                      >
+                        {{
+                          plan.origin === "custom" ? "你的计划 · " : ""
+                        }}{{ plan.goal }} · {{ plan.level }} ·
+                        {{ plan.exercises.length }} 个动作 · 每周
+                        {{ plan.weeklyTarget }} 次
                       </span>
                     </span>
                     <Icon name="chevron-right" size="sm" tone="muted" />
@@ -241,7 +256,7 @@ function afterSave() {
                 </DataList>
                 <EmptyState
                   v-else
-                  title="这个分类暂时没有更多计划"
+                  title="这个分类暂时没有计划"
                   description="可以选择其它训练方向，或创建一套自己的计划。"
                   action-label="新建计划"
                   :inspect-id="
@@ -252,7 +267,7 @@ function afterSave() {
                   @action="openEditor"
                 />
               </template>
-            </SecondaryTabs>
+            </PrimaryTabs>
           </section>
         </div>
       </ScrollableDataList>
