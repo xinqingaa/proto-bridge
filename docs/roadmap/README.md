@@ -4,9 +4,10 @@
 
 当前 PB/PBWork 核心 Evidence 链路已经验收。现行行为以 `docs/product`、`docs/architecture`、`docs/reference` 和可执行 Schema 为准；设计取舍及理由仍进入 `docs/decisions`。
 
-| 状态 | Roadmap | 目标投入 | 主线 |
-| --- | --- | --- | --- |
-| Planned | [原型 Release、定稿采集与渲染产物验收](./prototype-release-and-rendered-artifact-review.md) | 约两周 | 不可变 Release、自动 Finalization、双轨 Review；OCR/真机/Flutter MCP 为有上限探索 |
+| 全局优先级 | 状态 | Roadmap | 目标投入 | 主线 |
+| --- | --- | --- | --- | --- |
+| P0 | Planned | [官方 Flutter MCP 与 Target 验收增强](./flutter-mcp-target-review.md) | 约两周 | 官方 MCP provider、固定 Target receipt、模拟器/真机截图与交互验收、OCR 诊断 |
+| P2 | Planned | [PBWork 原型生命周期与 Release 管理](./prototype-lifecycle-and-release.md) | 待单独排期 | 稳定 Prototype identity、不可变 v1/v2 Release、定稿采集与 Archive |
 
 ## 状态定义
 
