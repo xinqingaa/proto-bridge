@@ -464,6 +464,148 @@ export function shiftProgressAnchor(
   return isoDate(date);
 }
 
+export function addIsoMonths(value: string, amount: number) {
+  const date = parseIsoDate(value);
+  date.setUTCMonth(date.getUTCMonth() + amount);
+  return isoDate(date);
+}
+
+export function formatProgressRangeLabel(
+  period: ProgressPeriod,
+  range: DateRange,
+) {
+  const { start, end } = range;
+  if (period === "year") return `${start.slice(0, 4)} 年`;
+  if (period === "month") {
+    return `${start.slice(0, 4)} 年 ${Number(start.slice(5, 7))} 月`;
+  }
+  if (period === "week") {
+    const startYear = start.slice(0, 4);
+    const endYear = end.slice(0, 4);
+    const startMonth = Number(start.slice(5, 7));
+    const endMonth = Number(end.slice(5, 7));
+    const startDay = Number(start.slice(8));
+    const endDay = Number(end.slice(8));
+    if (startYear !== endYear) {
+      return `${startYear}年${startMonth}月${startDay}日～${endYear}年${endMonth}月${endDay}日`;
+    }
+    return `${startMonth}月${startDay}日～${endMonth}月${endDay}日`;
+  }
+  return `${start.replaceAll("-", ".")}—${end.replaceAll("-", ".")}`;
+}
+
+export type ProgressPeriodOption = {
+  anchor: string;
+  label: string;
+  disabled?: boolean;
+};
+
+export function listProgressPeriodOptions(
+  period: Exclude<ProgressPeriod, "custom">,
+  today = HENGDONG_TODAY,
+): ProgressPeriodOption[] {
+  if (period === "week") {
+    const currentStart = startOfIsoWeek(today);
+    const earliestStart = startOfIsoWeek(addIsoMonths(today, -6));
+    const options: ProgressPeriodOption[] = [];
+    let cursor = currentStart;
+    while (cursor >= earliestStart) {
+      options.push({
+        anchor: cursor,
+        label: formatProgressRangeLabel("week", progressRange("week", cursor)),
+      });
+      cursor = addIsoDays(cursor, -7);
+    }
+    return options;
+  }
+
+  if (period === "month") {
+    const year = Number(today.slice(0, 4));
+    const currentMonth = Number(today.slice(5, 7));
+    return Array.from({ length: 12 }, (_, index) => {
+      const month = index + 1;
+      return {
+        anchor: `${year}-${String(month).padStart(2, "0")}-01`,
+        label: `${month} 月`,
+        disabled: month > currentMonth,
+      };
+    });
+  }
+
+  const year = Number(today.slice(0, 4));
+  return Array.from({ length: 11 }, (_, offset) => {
+    const value = year - offset;
+    return {
+      anchor: `${value}-01-01`,
+      label: `${value} 年`,
+    };
+  });
+}
+
+function progressStart(
+  period: Exclude<ProgressPeriod, "custom">,
+  anchor: string,
+) {
+  return progressRange(period, anchor).start;
+}
+
+export function clampProgressAnchor(
+  period: Exclude<ProgressPeriod, "custom">,
+  anchor: string,
+  today = HENGDONG_TODAY,
+) {
+  const enabled = listProgressPeriodOptions(period, today).filter(
+    (option) => !option.disabled,
+  );
+  const currentStart = progressStart(period, anchor);
+  const exact = enabled.find(
+    (option) => progressStart(period, option.anchor) === currentStart,
+  );
+  if (exact) return anchor;
+
+  const latestStart = progressStart(period, today);
+  if (currentStart > latestStart) {
+    return (
+      enabled.find(
+        (option) => progressStart(period, option.anchor) === latestStart,
+      )?.anchor ??
+      enabled[0]!.anchor
+    );
+  }
+
+  return enabled.reduce((earliest, option) =>
+    progressStart(period, option.anchor) < progressStart(period, earliest.anchor)
+      ? option
+      : earliest,
+  ).anchor;
+}
+
+export function canShiftProgressAnchor(
+  period: Exclude<ProgressPeriod, "custom">,
+  anchor: string,
+  amount: -1 | 1,
+  today = HENGDONG_TODAY,
+) {
+  const next = shiftProgressAnchor(
+    period,
+    clampProgressAnchor(period, anchor, today),
+    amount,
+  );
+  const nextStart = progressStart(period, next);
+  return listProgressPeriodOptions(period, today).some(
+    (option) =>
+      !option.disabled && progressStart(period, option.anchor) === nextStart,
+  );
+}
+
+export function isProgressPeriodOptionSelected(
+  period: Exclude<ProgressPeriod, "custom">,
+  option: ProgressPeriodOption,
+  anchor: string,
+) {
+  return progressStart(period, option.anchor) === progressStart(period, anchor);
+}
+
 export function datesInRange(range: DateRange) {
   const dates: string[] = [];
   let cursor = range.start;

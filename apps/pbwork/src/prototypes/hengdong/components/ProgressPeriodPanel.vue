@@ -1,20 +1,19 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { ChevronLeft, ChevronRight } from "lucide-vue-next";
 import Button from "@/design-system/components/action/Button.vue";
 import Icon from "@/design-system/components/action/Icon.vue";
+import IconButton from "@/design-system/components/action/IconButton.vue";
 import DataList from "@/design-system/components/data/DataList.vue";
 import ScrollableDataList from "@/design-system/components/data/ScrollableDataList.vue";
-import Divider from "@/design-system/components/display/Divider.vue";
 import EmptyState from "@/design-system/components/display/EmptyState.vue";
 import {
-  HENGDONG_TODAY,
   activeDayCount,
   addIsoDays,
+  canShiftProgressAnchor,
   datesInRange,
+  formatProgressRangeLabel,
   progressRange,
   recordsInRange,
-  shiftProgressAnchor,
   totalMinutes,
   type ActivityType,
   type DateRange,
@@ -39,6 +38,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   navigate: [amount: -1 | 1];
+  pick: [];
   select: [key: string];
   open: [recordId: string];
   refresh: [];
@@ -186,25 +186,20 @@ const focusedRecords = computed(() =>
 );
 const activityDays = computed(() => activeDayCount(periodRecords.value));
 const minutes = computed(() => totalMinutes(periodRecords.value));
+const canMovePrevious = computed(() => {
+  if (props.period === "custom") return false;
+  return canShiftProgressAnchor(props.period, props.anchor, -1);
+});
 const canMoveNext = computed(() => {
   if (props.period === "custom") return false;
-  const nextAnchor = shiftProgressAnchor(props.period, props.anchor, 1);
-  return progressRange(props.period, nextAnchor).start <= HENGDONG_TODAY;
+  return canShiftProgressAnchor(props.period, props.anchor, 1);
 });
-const rangeLabel = computed(() => {
-  const { start, end } = range.value;
-  if (props.period === "year") return `${start.slice(0, 4)} 年`;
-  if (props.period === "month") {
-    return `${start.slice(0, 4)} 年 ${Number(start.slice(5, 7))} 月`;
-  }
-  if (props.period === "week" && start.slice(0, 7) === end.slice(0, 7)) {
-    return `${Number(start.slice(5, 7))} 月 ${Number(start.slice(8))}—${Number(end.slice(8))} 日`;
-  }
-  return `${start.replaceAll("-", ".")}—${end.replaceAll("-", ".")}`;
-});
+const rangeLabel = computed(() =>
+  formatProgressRangeLabel(props.period, range.value),
+);
 const focusLabel = computed(() => {
   const key = props.selectedKey;
-  if (!key) return "当前周期最近记录";
+  if (!key) return "最近记录";
   if (key.startsWith("date:")) {
     const date = key.slice(5);
     return `${Number(date.slice(5, 7))} 月 ${Number(date.slice(8))} 日`;
@@ -239,33 +234,41 @@ function select(key: string) {
         data-pb-role="toolbar"
         data-pb-token-spacing="spacing.sm"
       >
-        <Button
+        <IconButton
           v-if="period !== 'custom'"
-          label="上一周期"
+          ariaLabel="上一周期"
+          icon="chevron-left"
           size="sm"
-          kind="outlined"
+          variant="text"
+          :disabled="!canMovePrevious"
           :inspect-id="`hengdong.progress.previous.${period}`"
           @click="$emit('navigate', -1)"
-        >
-          <ChevronLeft aria-hidden="true" />
-          <span class="progress-visually-hidden">上一周期</span>
-        </Button>
-        <div class="progress-range-copy">
-          <span class="hd-overline">{{ period === 'custom' ? '自定义范围' : '当前周期' }}</span>
-          <strong>{{ rangeLabel }}</strong>
-        </div>
-        <Button
+        />
+        <button
           v-if="period !== 'custom'"
-          label="下一周期"
+          type="button"
+          class="progress-range-value"
+          data-pb-id="hengdong.progress.range-value"
+          :data-pb-key="period"
+          data-pb-role="button"
+          data-pb-token-color="color.on-surface"
+          data-pb-token-typography="typography.label"
+          data-pb-action="open-period-picker"
+          @click="$emit('pick')"
+        >
+          {{ rangeLabel }}
+        </button>
+        <strong v-else class="progress-range-value">{{ rangeLabel }}</strong>
+        <IconButton
+          v-if="period !== 'custom'"
+          ariaLabel="下一周期"
+          icon="chevron-right"
           size="sm"
-          kind="outlined"
+          variant="text"
           :disabled="!canMoveNext"
           :inspect-id="`hengdong.progress.next.${period}`"
           @click="$emit('navigate', 1)"
-        >
-          <span class="progress-visually-hidden">下一周期</span>
-          <ChevronRight aria-hidden="true" />
-        </Button>
+        />
       </div>
 
       <header
@@ -276,7 +279,6 @@ function select(key: string) {
         data-pb-token-color="color.on-surface"
         data-pb-token-spacing="spacing.md"
       >
-        <span class="hd-overline">{{ filter === '全部' ? '全部活动' : filter }}</span>
         <h1 class="hd-display">{{ periodRecords.length }} 次活动</h1>
         <p class="hd-muted">{{ conclusion }}</p>
       </header>
@@ -299,8 +301,6 @@ function select(key: string) {
         :ariaLabel="`${rangeLabel}活动节奏`"
         @select="select"
       />
-
-      <Divider :inspect-id="`hengdong.progress.divider.date.${period}`" />
 
       <section class="hd-section">
         <div class="hd-section-heading">
@@ -326,8 +326,6 @@ function select(key: string) {
           @select="select"
         />
       </section>
-
-      <Divider :inspect-id="`hengdong.progress.divider.records.${period}`" />
 
       <section class="hd-section">
         <div class="hd-section-heading">
@@ -365,7 +363,7 @@ function select(key: string) {
         <EmptyState
           v-else
           title="这个时间焦点还没有记录"
-          description="保留当前周期和筛选，下一次活动会自然出现在这里。"
+          description="保留当前范围和筛选，下一次活动会自然出现在这里。"
           :inspect-id="`hengdong.progress.empty.${period}`"
         />
       </section>
@@ -383,7 +381,6 @@ function select(key: string) {
 }
 
 .progress-range,
-.progress-range-copy,
 .progress-summary,
 .progress-goal {
   display: flex;
@@ -395,23 +392,33 @@ function select(key: string) {
   gap: var(--pb-spacing-sm);
 }
 
-.progress-range-copy,
+.progress-range-value {
+  min-width: var(--pb-spacing-none);
+  flex: var(--pb-layout-flex-fill);
+  margin: var(--pb-spacing-none);
+  padding: var(--pb-spacing-xs) var(--pb-spacing-sm);
+  border: none;
+  background: transparent;
+  color: var(--pb-color-on-surface);
+  font: var(--pb-typography-label);
+  text-align: center;
+}
+
+button.progress-range-value {
+  cursor: pointer;
+}
+
+button.progress-range-value:focus-visible {
+  outline: var(--pb-border-focus);
+  outline-offset: var(--pb-layout-focus-inset);
+}
+
 .progress-summary {
   min-width: var(--pb-spacing-none);
   flex: var(--pb-layout-flex-fill);
   flex-direction: column;
-  align-items: center;
-  gap: var(--pb-spacing-xs);
-  text-align: center;
-}
-
-.progress-range-copy strong {
-  color: var(--pb-color-on-surface);
-  font: var(--pb-typography-label);
-}
-
-.progress-summary {
   align-items: flex-start;
+  gap: var(--pb-spacing-xs);
   text-align: left;
 }
 
@@ -435,12 +442,5 @@ function select(key: string) {
   flex: none;
   color: var(--pb-color-on-surface);
   font: var(--pb-typography-label);
-}
-
-.progress-visually-hidden {
-  position: absolute;
-  width: var(--pb-spacing-none);
-  height: var(--pb-spacing-none);
-  overflow: hidden;
 }
 </style>

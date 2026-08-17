@@ -9,10 +9,15 @@ import {
   normalizeHengdongUsername,
   nextCustomPlanId,
   planSaveLabel,
+  canShiftProgressAnchor,
+  clampProgressAnchor,
+  formatProgressRangeLabel,
+  listProgressPeriodOptions,
   progressRange,
   resolvePlanSaveMode,
   recordsInRange,
   shiftProgressAnchor,
+  startOfIsoWeek,
   totalMinutes,
 } from "@/prototypes/hengdong/model";
 import {
@@ -117,6 +122,80 @@ describe("Hengdong activity ranges", () => {
     expect(shiftProgressAnchor("week", "2026-08-13", -1)).toBe("2026-08-06");
     expect(shiftProgressAnchor("month", "2026-08-13", -1)).toBe("2026-07-01");
     expect(shiftProgressAnchor("year", "2026-08-13", -1)).toBe("2025-01-01");
+  });
+
+  it("lists natural weeks, current-year months, and ten prior years", () => {
+    const weeks = listProgressPeriodOptions("week");
+    const months = listProgressPeriodOptions("month");
+    const years = listProgressPeriodOptions("year");
+
+    expect(weeks[0]).toEqual({
+      anchor: "2026-08-10",
+      label: "8月10日～8月16日",
+    });
+    expect(weeks.at(-1)).toEqual({
+      anchor: "2026-02-09",
+      label: "2月9日～2月15日",
+    });
+    expect(weeks.every((week) => startOfIsoWeek(week.anchor) === week.anchor)).toBe(
+      true,
+    );
+    expect(progressRange("week", weeks[0]!.anchor)).toEqual({
+      start: "2026-08-10",
+      end: "2026-08-16",
+    });
+    expect(
+      formatProgressRangeLabel("week", {
+        start: "2026-07-27",
+        end: "2026-08-02",
+      }),
+    ).toBe("7月27日～8月2日");
+
+    expect(months).toHaveLength(12);
+    expect(months[0]).toEqual({
+      anchor: "2026-01-01",
+      label: "1 月",
+      disabled: false,
+    });
+    expect(months[7]).toEqual({
+      anchor: "2026-08-01",
+      label: "8 月",
+      disabled: false,
+    });
+    expect(months[8]?.disabled).toBe(true);
+    expect(months[11]).toEqual({
+      anchor: "2026-12-01",
+      label: "12 月",
+      disabled: true,
+    });
+
+    expect(years.map((item) => item.label)).toEqual([
+      "2026 年",
+      "2025 年",
+      "2024 年",
+      "2023 年",
+      "2022 年",
+      "2021 年",
+      "2020 年",
+      "2019 年",
+      "2018 年",
+      "2017 年",
+      "2016 年",
+    ]);
+  });
+
+  it("clamps and bounds period navigation to the selectable window", () => {
+    expect(clampProgressAnchor("week", "2026-08-13")).toBe("2026-08-13");
+    expect(clampProgressAnchor("week", "2025-12-01")).toBe("2026-02-09");
+    expect(clampProgressAnchor("month", "2025-03-01")).toBe("2026-01-01");
+    expect(clampProgressAnchor("month", "2026-11-01")).toBe("2026-08-01");
+    expect(clampProgressAnchor("year", "2010-01-01")).toBe("2016-01-01");
+    expect(canShiftProgressAnchor("week", "2026-08-13", 1)).toBe(false);
+    expect(canShiftProgressAnchor("week", "2026-02-09", -1)).toBe(false);
+    expect(canShiftProgressAnchor("month", "2026-01-01", -1)).toBe(false);
+    expect(canShiftProgressAnchor("month", "2026-08-01", 1)).toBe(false);
+    expect(canShiftProgressAnchor("year", "2016-01-01", -1)).toBe(false);
+    expect(canShiftProgressAnchor("year", "2026-01-01", 1)).toBe(false);
   });
 
   it("keeps summaries and the latest-five list on the same activity facts", () => {

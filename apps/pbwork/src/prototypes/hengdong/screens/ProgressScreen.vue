@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from "vue";
+import { computed, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Button from "@/design-system/components/action/Button.vue";
+import Icon from "@/design-system/components/action/Icon.vue";
 import IconButton from "@/design-system/components/action/IconButton.vue";
+import DataList from "@/design-system/components/data/DataList.vue";
 import BottomSheet from "@/design-system/components/feedback/BottomSheet.vue";
 import FlowSheet from "@/design-system/components/feedback/FlowSheet.vue";
 import Toast from "@/design-system/components/feedback/Toast.vue";
@@ -12,10 +14,15 @@ import HengdongRoot from "../HengdongRoot.vue";
 import ProgressPeriodPanel from "../components/ProgressPeriodPanel.vue";
 import {
   HENGDONG_TODAY,
+  canShiftProgressAnchor,
+  clampProgressAnchor,
+  isProgressPeriodOptionSelected,
+  listProgressPeriodOptions,
   shiftProgressAnchor,
   type ActivityType,
   type DateRange,
   type ProgressPeriod,
+  type ProgressPeriodOption,
 } from "../model";
 import { replaceVariant } from "../nav";
 import {
@@ -50,7 +57,17 @@ const activePeriod = computed<ProgressPeriod>({
   },
   set: (value) => {
     selectedFocus[value] = "";
-    updateHengdongUi({ progressPeriod: value });
+    updateHengdongUi({
+      progressPeriod: value,
+      ...(value === "custom"
+        ? {}
+        : {
+            progressAnchor: clampProgressAnchor(
+              value,
+              hengdongState.ui.progressAnchor,
+            ),
+          }),
+    });
     if (["month", "year", "custom"].includes(variant.value)) {
       void replaceVariant(router, route, "default");
     }
@@ -68,13 +85,8 @@ const periodItems = computed(() => {
   return items;
 });
 
-const filter = computed<"全部" | ActivityType>({
-  get: () => hengdongState.ui.progressFilter,
-  set: (value) => {
-    selectedFocus[activePeriod.value] = "";
-    updateHengdongUi({ progressFilter: value });
-  },
-});
+const filter = computed(() => hengdongState.ui.progressFilter);
+const filterDraft = ref<"全部" | ActivityType>(hengdongState.ui.progressFilter);
 const filterOptions: Array<"全部" | ActivityType> = [
   "全部",
   "训练",
@@ -86,11 +98,32 @@ const customRange = computed<DateRange>(() => ({
   start: hengdongState.ui.progressCustomStart,
   end: hengdongState.ui.progressCustomEnd,
 }));
+const periodAnchor = computed(() => {
+  const period = activePeriod.value;
+  if (period === "custom") return hengdongState.ui.progressAnchor;
+  return clampProgressAnchor(period, hengdongState.ui.progressAnchor);
+});
 
 const filterOpen = computed({
   get: () => variant.value === "filter-open",
   set: (open) =>
     void replaceVariant(router, route, open ? "filter-open" : "default"),
+});
+watch(
+  filterOpen,
+  (open) => {
+    if (open) filterDraft.value = hengdongState.ui.progressFilter;
+  },
+  { immediate: true },
+);
+const periodPickerOpen = computed({
+  get: () => variant.value === "period-picker-open",
+  set: (open) =>
+    void replaceVariant(
+      router,
+      route,
+      open ? "period-picker-open" : "default",
+    ),
 });
 const customRangeOpen = computed({
   get: () => variant.value === "custom-range-open",
@@ -111,6 +144,12 @@ const selectedRecord = computed(() => {
   const recordId = typeof route.query.record === "string" ? route.query.record : "";
   return hengdongState.records.find((record) => record.id === recordId) ?? null;
 });
+
+function applyFilter() {
+  selectedFocus[activePeriod.value] = "";
+  updateHengdongUi({ progressFilter: filterDraft.value });
+  filterOpen.value = false;
+}
 
 function openCustomRange() {
   customDraftStart.value = hengdongState.ui.progressCustomStart;
@@ -144,10 +183,53 @@ function applyCustomRange() {
 
 function navigatePeriod(period: ProgressPeriod, amount: -1 | 1) {
   if (period === "custom") return;
+  if (!canShiftProgressAnchor(period, periodAnchor.value, amount)) {
+    return;
+  }
   selectedFocus[period] = "";
   updateHengdongUi({
-    progressAnchor: shiftProgressAnchor(period, hengdongState.ui.progressAnchor, amount),
+    progressAnchor: shiftProgressAnchor(period, periodAnchor.value, amount),
   });
+}
+
+function openPeriodPicker() {
+  const period = activePeriod.value;
+  if (period === "custom") return;
+  selectedFocus[period] = "";
+  updateHengdongUi({
+    progressPeriod: period,
+    progressAnchor: clampProgressAnchor(period, hengdongState.ui.progressAnchor),
+  });
+  periodPickerOpen.value = true;
+}
+
+const pickerPeriod = computed<Exclude<ProgressPeriod, "custom">>(() => {
+  const period = activePeriod.value;
+  return period === "custom" ? "week" : period;
+});
+const periodOptions = computed(() =>
+  listProgressPeriodOptions(pickerPeriod.value),
+);
+const pickerTitle = computed(() => {
+  if (pickerPeriod.value === "month") return "选择月份";
+  if (pickerPeriod.value === "year") return "选择年份";
+  return "选择周";
+});
+
+function choosePeriodAnchor(anchor: string, disabled?: boolean) {
+  if (disabled) return;
+  const period = pickerPeriod.value;
+  selectedFocus[period] = "";
+  updateHengdongUi({ progressAnchor: clampProgressAnchor(period, anchor) });
+  periodPickerOpen.value = false;
+}
+
+function isPickerOptionSelected(option: ProgressPeriodOption) {
+  return isProgressPeriodOptionSelected(
+    pickerPeriod.value,
+    option,
+    periodAnchor.value,
+  );
 }
 
 function selectFocus(period: ProgressPeriod, key: string) {
@@ -208,7 +290,7 @@ function openRecord(recordId: string) {
         <template #week>
           <ProgressPeriodPanel
             period="week"
-            :anchor="hengdongState.ui.progressAnchor"
+            :anchor="periodAnchor"
             :custom-range="customRange"
             :records="hengdongState.records"
             :filter="filter"
@@ -217,6 +299,7 @@ function openRecord(recordId: string) {
             :refreshing="refreshingPeriod === 'week'"
             :empty="variant === 'empty'"
             @navigate="navigatePeriod('week', $event)"
+            @pick="openPeriodPicker"
             @select="selectFocus('week', $event)"
             @open="openRecord"
             @refresh="refresh('week')"
@@ -225,7 +308,7 @@ function openRecord(recordId: string) {
         <template #month>
           <ProgressPeriodPanel
             period="month"
-            :anchor="hengdongState.ui.progressAnchor"
+            :anchor="periodAnchor"
             :custom-range="customRange"
             :records="hengdongState.records"
             :filter="filter"
@@ -234,6 +317,7 @@ function openRecord(recordId: string) {
             :refreshing="refreshingPeriod === 'month'"
             :empty="variant === 'empty'"
             @navigate="navigatePeriod('month', $event)"
+            @pick="openPeriodPicker"
             @select="selectFocus('month', $event)"
             @open="openRecord"
             @refresh="refresh('month')"
@@ -242,7 +326,7 @@ function openRecord(recordId: string) {
         <template #year>
           <ProgressPeriodPanel
             period="year"
-            :anchor="hengdongState.ui.progressAnchor"
+            :anchor="periodAnchor"
             :custom-range="customRange"
             :records="hengdongState.records"
             :filter="filter"
@@ -251,6 +335,7 @@ function openRecord(recordId: string) {
             :refreshing="refreshingPeriod === 'year'"
             :empty="variant === 'empty'"
             @navigate="navigatePeriod('year', $event)"
+            @pick="openPeriodPicker"
             @select="selectFocus('year', $event)"
             @open="openRecord"
             @refresh="refresh('year')"
@@ -259,7 +344,7 @@ function openRecord(recordId: string) {
         <template #custom>
           <ProgressPeriodPanel
             period="custom"
-            :anchor="hengdongState.ui.progressAnchor"
+            :anchor="periodAnchor"
             :custom-range="customRange"
             :records="hengdongState.records"
             :filter="filter"
@@ -276,25 +361,92 @@ function openRecord(recordId: string) {
 
       <BottomSheet
         v-model="filterOpen"
+        class="hd-sheet-plain-scroll"
         title="筛选活动"
         inspect-id="hengdong.progress.filter-sheet"
       >
-        <div class="hd-choice-list">
+        <DataList
+          :divided="false"
+          surface="none"
+          rounded="none"
+          inspect-id="hengdong.progress.filter-options"
+        >
           <button
             v-for="item in filterOptions"
             :key="item"
             type="button"
-            class="hd-choice"
-            :class="{ 'is-selected': filter === item }"
-            :aria-pressed="filter === item"
-            @click="filter = item"
+            class="hd-settings-row"
+            :class="{ 'is-selected': filterDraft === item }"
+            data-pb-id="hengdong.progress.filter-option"
+            :data-pb-key="item"
+            data-pb-role="list-item"
+            data-pb-token-spacing="spacing.md"
+            :data-pb-token-typography="
+              filterDraft === item ? 'typography.label' : 'typography.content'
+            "
+            :aria-pressed="filterDraft === item"
+            @click="filterDraft = item"
           >
-            <span>{{ item }}</span><span>{{ filter === item ? "已选择" : "" }}</span>
+            <span class="hd-settings-row__label">{{ item }}</span>
+            <Icon
+              v-if="filterDraft === item"
+              name="check"
+              size="sm"
+              tone="primary"
+            />
           </button>
-        </div>
+        </DataList>
         <template #actions>
-          <Button label="查看结果" block @click="filterOpen = false" />
+          <Button
+            label="查看结果"
+            block
+            inspect-id="hengdong.progress.apply-filter"
+            @click="applyFilter"
+          />
         </template>
+      </BottomSheet>
+
+      <BottomSheet
+        v-model="periodPickerOpen"
+        class="hd-sheet-plain-scroll"
+        :title="pickerTitle"
+        inspect-id="hengdong.progress.period-picker"
+      >
+        <DataList
+          :divided="false"
+          surface="none"
+          rounded="none"
+          inspect-id="hengdong.progress.period-options"
+        >
+          <button
+            v-for="option in periodOptions"
+            :key="option.anchor"
+            type="button"
+            class="hd-settings-row"
+            :class="{ 'is-selected': isPickerOptionSelected(option) }"
+            data-pb-id="hengdong.progress.period-option"
+            :data-pb-key="`${pickerPeriod}-${option.anchor}`"
+            data-pb-role="list-item"
+            data-pb-token-spacing="spacing.md"
+            :data-pb-token-typography="
+              isPickerOptionSelected(option)
+                ? 'typography.label'
+                : 'typography.content'
+            "
+            data-pb-action="choose-period"
+            :disabled="option.disabled"
+            :aria-pressed="isPickerOptionSelected(option)"
+            @click="choosePeriodAnchor(option.anchor, option.disabled)"
+          >
+            <span class="hd-settings-row__label">{{ option.label }}</span>
+            <Icon
+              v-if="isPickerOptionSelected(option)"
+              name="check"
+              size="sm"
+              tone="primary"
+            />
+          </button>
+        </DataList>
       </BottomSheet>
 
       <FlowSheet

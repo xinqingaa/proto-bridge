@@ -1279,6 +1279,20 @@ const redesignedHengdongScreens = [
         ],
       },
       {
+        id: "period-picker-open",
+        label: "周期选择",
+        requiredFragments: [
+          {
+            screenId: "hengdong.progress",
+            pbId: "hengdong.progress.period-picker",
+          },
+          {
+            screenId: "hengdong.progress",
+            pbId: "hengdong.progress.period-options",
+          },
+        ],
+      },
+      {
         id: "empty",
         label: "无活动记录",
         requiredFragments: [
@@ -1329,6 +1343,15 @@ const redesignedHengdongScreens = [
         target: {
           screenId: "hengdong.progress",
           pbId: "hengdong.progress.open-custom-range",
+        },
+      },
+      {
+        id: "open-period-picker",
+        kind: "click",
+        target: {
+          screenId: "hengdong.progress",
+          pbId: "hengdong.progress.range-value",
+          pbKey: "week",
         },
       },
       {
@@ -1411,6 +1434,25 @@ const redesignedHengdongScreens = [
         ],
       },
       {
+        id: "open-progress-period-picker",
+        label: "打开周选择",
+        initialVariantId: "default",
+        actionIds: ["open-period-picker"],
+        checkpoints: [
+          {
+            id: "period-picker-visible",
+            screenId: "hengdong.progress",
+            variantId: "period-picker-open",
+            requiredFragments: [
+              {
+                screenId: "hengdong.progress",
+                pbId: "hengdong.progress.period-picker",
+              },
+            ],
+          },
+        ],
+      },
+      {
         id: "inspect-progress-record",
         label: "查看进度中的记录事实",
         initialVariantId: "default",
@@ -1434,6 +1476,7 @@ const redesignedHengdongScreens = [
       "review-month-progress",
       "focus-progress-date",
       "apply-progress-custom-range",
+      "open-progress-period-picker",
       "inspect-progress-record",
     ],
   },

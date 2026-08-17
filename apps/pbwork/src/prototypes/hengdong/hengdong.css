@@ -366,9 +366,30 @@
   cursor: pointer;
 }
 
+.hd-settings-row:disabled {
+  color: var(--pb-color-on-surface-muted);
+  cursor: default;
+}
+
 .hd-settings-row__label {
   flex: var(--pb-layout-flex-fill);
   min-width: var(--pb-spacing-none);
+}
+
+.hd-settings-row.is-selected .hd-settings-row__label {
+  font: var(--pb-typography-label);
+}
+
+.hd-sheet-plain-scroll.v-bottom-sheet .pb-sheet-body {
+  scrollbar-width: none;
+}
+
+.hd-sheet-plain-scroll.v-bottom-sheet .pb-sheet-body::-webkit-scrollbar {
+  display: none;
+}
+
+.hd-sheet-plain-scroll.v-bottom-sheet .pb-sheet-actions {
+  border-top: none;
 }
 
 .hd-settings-row__value {

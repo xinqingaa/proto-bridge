@@ -47,6 +47,7 @@ prototypeId: hengdong
 | 活动记录列表       | 现有 DS 组合            | ScrollableDataList + DataList；开启刷新与分页                   |
 | 活动日期时间线     | Token 驱动的业务局部 UI | 月份与日期形成稳定结构节点，不使用逐行 Card                     |
 | 进度周期 Tab       | 现有 PBWork DS          | PrimaryTabs；本周、本月、本年及按需自定义拥有完整内容面板       |
+| 进度周期选择       | 现有 DS 组合            | 点周期值打开 BottomSheet；DataList 无分割线，选中用 check；左右为 Icon Button |
 | 活动节奏图与日历   | Token 驱动的业务局部 UI | 周/月/年共享节奏语法，显式声明图表和日期 Token Evidence         |
 | 当前计划摘要       | Token 驱动的业务局部 UI | 无描边表面；名称、一次成本、本周一句和全宽开始训练；摘要本身是详情热区 |
 | 计划分类与列表     | 现有 DS 组合            | PrimaryTabs + DataList；目标 Icon 在行左侧；两行：名称/时长 + 目标·难度；当前计划用主色软底胶囊标注 |
@@ -175,7 +176,7 @@ prototypeId: hengdong
 ### 确定状态
 
 - 活动记录：`default`、`training`、`refreshing`、`loading-more`、`filtered-empty`、`empty`、`month-picker-open`、`record-detail-open`、`record-detail-long-note`、`delete-confirm-open`、`undo-visible`；
-- 进度：`default`、`month`、`year`、`custom-range-open`、`custom`、`selected-date`、`filter-open`、`empty`、`record-detail-open`；
+- 进度：`default`、`month`、`year`、`custom-range-open`、`custom`、`selected-date`、`filter-open`、`period-picker-open`、`empty`、`record-detail-open`；
 - 活动记录的二级 Tab、滚动位置、分页和刷新状态由各面板拥有；进度的一级 Tab 拥有周期内容与横滑；
 - 自定义日期范围使用原型局部 FlowSheet 组合，不新增共享日期组件；
 - 刷新重新读取 `hengdong.app.v2` 的持久记录，不用固定延时伪造网络请求。
@@ -184,7 +185,7 @@ prototypeId: hengdong
 
 - 活动记录根、App Bar、二级 Tab、五个列表面板、月份分组、日期分组、记录行、刷新和分页反馈；
 - 活动记录详情、删除确认和撤销反馈；记录行使用记录 id，月份和日期使用稳定日期 key；
-- 进度根、App Bar、一级 Tab、日期范围、周期摘要、活动节奏、日期视图、当前选择、筛选和自定义范围；
+- 进度根、App Bar、一级 Tab、日期范围、周期值热区、周期摘要、活动节奏、日期视图、当前选择、筛选、周期选择和自定义范围；
 - 趋势刻度使用稳定时间片 key，日期和月份使用 ISO 日期 key；
 - 今天的“查看全部”、活动记录删除、进度周期切换和自定义范围分别作为 Action target。
 
@@ -193,7 +194,7 @@ prototypeId: hengdong
 - 今天“查看全部”进栈活动记录，返回后恢复今天；
 - 活动记录点击或横滑切换分类，纵滚不误触横滑，下拉刷新不触发 Tab；
 - 活动记录加载更早记录，打开详情，删除并撤销后三个页面同步；
-- 进度点击或横滑切换周、月、年，前后周期按钮改变对应数据；
+- 进度点击或横滑切换周、月、年；点周期值打开选择层，左右箭头只做相邻步进；
 - 自定义范围取消、非法输入和成功应用具有不同结果；
 - 趋势和日期焦点互斥，活动类型筛选同步影响所有派生数据；
 - 根 Tab 只经 Tabbar 切换，今天、活动记录和进度内容不互相跳根页面。
@@ -368,6 +369,25 @@ prototypeId: hengdong
 
 - Delivery Gate：Token-only、DS-first、Flex-only、typecheck 和 137 个 PBWork 测试通过。`docs:verify` 现有 Flutter `screen-transition` mapping 缺口与本页无关。
 - Experience Review：在真实浏览器 `390 × 844` 检查浅色默认和深色默认；分组列表、右对齐开关、周次数与时间右侧取值、居中退出/重置均成立。第一轮截图发现开关在左、时间仍是灰输入框，修正后复检通过。结果为 `quick-checked`。
+
+## 进度周期选择
+
+### 确定状态
+
+- 点当前周期值打开 `period-picker-open`；周列表为周一至周日的自然周，文案为「8月10日～8月16日」，最多往前约半年；月列表为当年 1–12 月，未来月禁用；年列表为今年及往前十年。
+- 选择层隐藏滚动条；当前选中项使用 `typography.label` 加粗，并保留右侧 check。
+- 左右箭头保留为 Icon Button，步进范围与选择层同一窗口。
+- 筛选选项只更新草稿，点「查看结果」后才写入并关闭；关闭或取消不改变页面数据。选择层无行间分割线，操作区也不再使用顶部分割线。
+- 页面去掉“当前周期”“全部活动”说明行，以及节奏/日期/记录之间的 Divider。
+
+### 独立验收节点
+
+- 周期值按钮、上一周期/下一周期 Icon Button、周期选择 Sheet 与选项行；选项 key 为 `{period}-{anchor}`。
+- 筛选选项行使用活动类型 key，选中只显示 check。
+
+### L1 验收结果
+
+- Delivery Gate：本轮完成模型边界、Screen/Variant/Action 与 Token-only 实现；Experience Review 待真实浏览器截图后记录，当前为 `deferred`。
 
 今天、训练执行、训练总结和设置已覆盖核心闭环；Experience 结果在对应章节记录。
 
