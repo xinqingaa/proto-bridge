@@ -8,9 +8,7 @@ test("overview is the default workbench destination", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL(/\/workbench\/overview$/);
   await expect(page.getByTestId("workbench-overview")).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "从原型继续工作" }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "继续制作" })).toBeVisible();
   await expect(page.getByTestId("resource-panel")).toHaveCount(0);
 });
 
