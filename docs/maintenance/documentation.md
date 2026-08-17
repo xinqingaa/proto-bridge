@@ -9,6 +9,14 @@
 - 规范使用 MUST/禁止时，应存在 Contract、测试、检查单或明确人工验收。
 - 业务原型的临时视觉偏好不提升为通用规范。
 
+## Roadmap
+
+- 尚未实施的产品演进统一进入 `docs/roadmap/`，不得混入描述当前行为的主体文档；
+- Roadmap 必须声明当前基线、状态、目标投入、主线与探索项、依赖、退出标准和范围缩减顺序；
+- Roadmap 中的 MUST、Block、Schema 和 Tool 只表示目标设计，不因文档评审自动成为现行 Contract；
+- 能力落地时按所有权矩阵同步现行文档、Schema、实现和测试；未落地内容继续留在 Roadmap；
+- 已交付 Roadmap 可保留为规划记录，但当前行为仍由 Product、Architecture、Reference 和可执行 Schema 定义。
+
 ## 所有权
 
 | 变化 | 必须同步 |

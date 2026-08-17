@@ -18,6 +18,7 @@ ProtoBridge（PB）把可交互原型转化为可追溯、可固定引用的 Evi
 | 标记业务节点与设置门禁 | [语义标记与证据门禁](./reference/semantic-authoring.md) |
 | 修改 PBWork Token 或组件 | [PBWork 开发规范](./pbwork/development.md) → [组件总论](./pbwork/components/overview.md) |
 | 维护仓库 | [开发规范](./maintenance/development.md) → [文档维护](./maintenance/documentation.md) |
+| 评审后续产品投入 | [产品演进 Roadmap](./roadmap/README.md) |
 | 理解架构转型背景 | [从 V1 到 Evidence 架构](./history/v1-to-evidence-architecture.md) |
 | 理解渐进消费与按需读取 | [渐进消费：按需读取到底是谁在按需？](./history/progressive-evidence-consumption.md) |
 
@@ -33,6 +34,7 @@ ProtoBridge（PB）把可交互原型转化为可追溯、可固定引用的 Evi
 - PBWork Token、组件、手势和页面组装：`apps/pbwork/docs/`，根目录下的 `docs/pbwork` 是其软链接
 - 包级命令和 API：各 `packages/*/README.md`
 - 设计取舍及理由：`docs/decisions/`
+- 计划性演进、投入与退出标准：`docs/roadmap/`；不代表当前行为或现行 Contract
 - 历史迁移：`docs/history/`
 - Agent 执行入口：根目录 `AGENTS.md` 与 `.agents/skills/*/SKILL.md`
 
