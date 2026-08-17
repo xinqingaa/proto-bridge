@@ -13,7 +13,7 @@ Runtime `describe` 返回：
 - Action；
 - Scenario、Action sequence 和 Checkpoint。
 
-Core 使用浏览器安全 Schema 校验响应。缺字段、未知引用、重复身份或不受支持的协议会阻止 Preflight。
+Core 使用浏览器安全 Schema 校验响应。缺字段、未知引用、重复身份或不受支持的协议会阻止 Preflight。身份字段失败时，错误必须给出 Screen/Variant/Fragment 身份和实际值，而不是原始 Zod JSON。Registry validation 在采集前拦截非法 `pbId` / `pbKey`。
 
 读取 Runtime 前运行 PBWork authoring lint：确定性违反 Contract 的结果直接 Block，只能启发式判断的 CSS-only 疑似遗漏形成 Warning。精确等级见[语义标记与证据门禁](../reference/semantic-authoring.md)。
 
@@ -25,7 +25,7 @@ Draft 表达用户意图，不表达执行结果。状态和场景均使用 auth
 - 非稳定 Fragment；
 - 互相冲突的维度；
 - 空或越界 Scope；
-- 超过容量的组合；
+- 超过容量的组合（默认 `capture.maxCases` 为 200）；
 - 未逐项接受的 warning。
 
 ## 3. Preflight

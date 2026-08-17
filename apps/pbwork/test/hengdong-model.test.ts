@@ -8,6 +8,7 @@ import {
   isValidHengdongUsername,
   normalizeHengdongUsername,
   nextCustomPlanId,
+  weeklyTargetKey,
   planSaveLabel,
   canShiftProgressAnchor,
   clampProgressAnchor,
@@ -64,6 +65,11 @@ describe("Hengdong activity ranges", () => {
         { ...defaultPlans[1]!, id: "custom-light-rhythm-2" },
       ]),
     ).toBe("custom-light-rhythm-3");
+  });
+
+  it("uses a letter-prefixed key for weekly target options", () => {
+    expect(weeklyTargetKey(3)).toBe("times-3");
+    expect(weeklyTargetKey(4)).toBe("times-4");
   });
 
   it("adopts a new plan while candidate edits preserve the current plan", () => {

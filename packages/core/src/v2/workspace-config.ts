@@ -22,6 +22,9 @@ export const OBSOLETE_WORKSPACE_CONFIG_KEYS = [
   'output',
 ] as const;
 
+/** Default Preflight Case cap. A 10-screen authored Prototype with Variants and Scenarios can exceed 100. */
+export const DEFAULT_CAPTURE_MAX_CASES = 200;
+
 export const V2WorkspaceConfig = z
   .object({
     schemaVersion: z.literal(V2_SCHEMA_MAJOR),
@@ -41,10 +44,10 @@ export const V2WorkspaceConfig = z
       .strict(),
     capture: z
       .object({
-        maxCases: z.number().int().positive().default(100),
+        maxCases: z.number().int().positive().default(DEFAULT_CAPTURE_MAX_CASES),
       })
       .strict()
-      .default({ maxCases: 100 }),
+      .default({ maxCases: DEFAULT_CAPTURE_MAX_CASES }),
     service: z
       .object({
         host: z.enum(['127.0.0.1', '::1']).default('127.0.0.1'),

@@ -6,18 +6,21 @@ import { z } from 'zod';
  * random classes or incrementing counters, and never a CSS selector or
  * DOM path. Segments are alphanumeric, joined by `.`, `-` or `_`.
  */
-const STABLE_ID_PATTERN = /^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/;
+export const STABLE_ID_PATTERN = /^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/;
+export const STABLE_ID_RULE =
+  "must be a stable lowercase identifier (letters, digits, '.', '-', '_'); " +
+  'CSS selectors, DOM paths, and array indices are not allowed';
+
+function stableIdMessage(label: string) {
+  return `${label} ${STABLE_ID_RULE}`;
+}
 
 function stableId(label: string, maxLength = 200) {
   return z
     .string()
     .min(1, `${label} must not be empty`)
     .max(maxLength, `${label} must be at most ${maxLength} characters`)
-    .regex(
-      STABLE_ID_PATTERN,
-      `${label} must be a stable lowercase identifier (letters, digits, '.', '-', '_'); ` +
-        'CSS selectors, DOM paths, and array indices are not allowed',
-    )
+    .regex(STABLE_ID_PATTERN, stableIdMessage(label))
     .describe(label);
 }
 

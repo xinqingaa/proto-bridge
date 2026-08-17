@@ -2,6 +2,8 @@ import { z } from 'zod';
 import { SemanticRole } from '../contracts/vocabulary.js';
 import { CatalogEntry, CatalogKind } from '../contracts/catalog.js';
 import { AuthoringDiagnostic } from '../contracts/authoring-diagnostic.js';
+import { FragmentRef } from '../contracts/fragment.js';
+import { STABLE_ID_PATTERN, STABLE_ID_RULE } from '../contracts/ids.js';
 
 /**
  * Browser-safe V2 Runtime Capture Protocol.
@@ -13,7 +15,7 @@ import { AuthoringDiagnostic } from '../contracts/authoring-diagnostic.js';
 export const RUNTIME_CAPTURE_PROTOCOL_VERSION = 2 as const;
 export const RUNTIME_CAPTURE_GLOBAL = '__PROTO_BRIDGE_CAPTURE_V2__' as const;
 
-const StableId = z.string().regex(/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/);
+const StableId = z.string().regex(STABLE_ID_PATTERN, STABLE_ID_RULE);
 const RuntimeRouteQueryKey = z
   .string()
   .regex(/^[a-z][a-z0-9_-]*$/)
@@ -27,14 +29,8 @@ const TokenBindingSlot = z
   .string()
   .regex(/^[a-z][A-Za-z0-9]*(?:[._-][A-Za-z0-9]+)*$/);
 
-export const RuntimeFragmentIdentity = z
-  .object({
-    screenId: StableId,
-    pbId: StableId,
-    pbKey: StableId.optional(),
-  })
-  .strict();
-export type RuntimeFragmentIdentity = z.infer<typeof RuntimeFragmentIdentity>;
+export const RuntimeFragmentIdentity = FragmentRef;
+export type RuntimeFragmentIdentity = FragmentRef;
 
 export const RuntimePositioning = z.enum([
   'flow',

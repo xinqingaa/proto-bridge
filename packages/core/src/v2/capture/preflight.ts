@@ -9,6 +9,7 @@ import type { NormalizedSelection } from '../contracts/run.js';
 import { V2ContractError } from '../contracts/errors.js';
 import type { CaseMatrixEntry, SelectionDraft } from './selection.js';
 import { resolveSelectionMatrix } from './selection.js';
+import { DEFAULT_CAPTURE_MAX_CASES } from '../workspace-config.js';
 
 export type PreflightWarning = {
   warningId: string;
@@ -67,7 +68,7 @@ export function preflightSelection(
 ): CapturePreflight {
   const { selection, matrix } = resolveSelectionMatrix(draft, manifest);
   const catalogInputs = manifest.catalogs ?? [];
-  const maxCases = options.maxCases ?? 100;
+  const maxCases = options.maxCases ?? DEFAULT_CAPTURE_MAX_CASES;
   if (matrix.length > maxCases) {
     throw new V2ContractError(
       'capacity-exceeded',

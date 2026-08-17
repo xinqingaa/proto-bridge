@@ -16,7 +16,7 @@ describe('V2 Workspace config', () => {
         store: { root: '.proto-bridge/store' },
       }),
     ).toMatchObject({
-      capture: { maxCases: 100 },
+      capture: { maxCases: 200 },
       service: { host: '127.0.0.1', port: 3988 },
       store: { retainArchivedSnapshots: 1 },
     });

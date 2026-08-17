@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { DEFAULT_CAPTURE_MAX_CASES } from '@proto-bridge/core/v2';
 import { ProtoBridgeLocalService } from './service.js';
 
 export * from './service.js';
@@ -27,7 +28,7 @@ async function main(): Promise<void> {
       process.env.PB_STORE_ROOT ??
       path.resolve(process.cwd(), '.proto-bridge/store'),
     workspaceId: process.env.PB_WORKSPACE_ID ?? 'pbwork-local',
-    maxCases: envNumber('PB_MAX_CASES', 100),
+    maxCases: envNumber('PB_MAX_CASES', DEFAULT_CAPTURE_MAX_CASES),
   });
   const address = await service.start();
   process.stdout.write(

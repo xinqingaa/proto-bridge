@@ -12,7 +12,11 @@ import {
   type RuntimeFragmentIdentity,
   type RuntimeScreenManifest,
 } from "@proto-bridge/core/v2/runtime-contract";
-import { TOKEN_BINDING_LITERALS } from "@proto-bridge/core/v2";
+import {
+  formatSchemaIssues,
+  isZodError,
+  TOKEN_BINDING_LITERALS,
+} from "@proto-bridge/core/v2";
 import {
   loadComponentContracts,
   loadPrototypes,
@@ -1092,26 +1096,35 @@ export function installRuntimeCaptureProtocol(
           ok: false,
           error: {
             code: "invalid-request",
-            message: error instanceof Error ? error.message : String(error),
+            message: isZodError(error)
+              ? formatSchemaIssues(error, rawRequest)
+              : error instanceof Error
+                ? error.message
+                : String(error),
           },
         });
       }
+      let successEnvelope: unknown;
       try {
-        const payload = await handle(request.payload);
-        return RuntimeCaptureResponse.parse({
+        successEnvelope = {
           protocolVersion: RUNTIME_CAPTURE_PROTOCOL_VERSION,
           requestId: request.requestId,
           kind: request.payload.kind,
           ok: true,
-          payload,
-        });
+          payload: await handle(request.payload),
+        };
+        return RuntimeCaptureResponse.parse(successEnvelope);
       } catch (error) {
         const failure =
           error instanceof ProtocolFailure
             ? error
             : new ProtocolFailure(
                 "command-failed",
-                error instanceof Error ? error.message : String(error),
+                isZodError(error)
+                  ? formatSchemaIssues(error, successEnvelope)
+                  : error instanceof Error
+                    ? error.message
+                    : String(error),
               );
         return RuntimeCaptureResponse.parse({
           protocolVersion: RUNTIME_CAPTURE_PROTOCOL_VERSION,

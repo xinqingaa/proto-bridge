@@ -47,7 +47,7 @@
 - [ ] 列表与选项数据在源码中可见
 - [ ] 已先列出所有需要 Agent 独立实现或验收的证据节点
 - [ ] DS 业务实例使用业务稳定 `inspectId`；required Fragment 不依赖 `ds.*`
-- [ ] 业务局部证据节点的 `data-pb-id` / `data-pb-role` 成对，重复实例使用稳定 `data-pb-key`
+- [ ] 业务局部证据节点的 `data-pb-id` / `data-pb-role` 成对，重复实例使用稳定 `data-pb-key`（字母开头，不用纯数字）
 - [ ] 业务局部证据节点显式声明实现所需 `data-pb-token-*`，没有只靠 CSS Token
 - [ ] 严格 Screen 的 default Variant 已声明非空 `requiredFragments`
 - [ ] required Fragment 在真实 Runtime 中唯一、role 非 unknown、可见且有非零 bbox

@@ -18,6 +18,7 @@ import {
   saveGoals,
   setThemePreference,
 } from "../storage";
+import { weeklyTargetKey } from "../model";
 import "../hengdong.css";
 
 const WEEKLY_COUNTS = [2, 3, 4, 5] as const;
@@ -359,7 +360,7 @@ function reset() {
             type="button"
             class="hd-settings-row"
             data-pb-id="hengdong.settings-goals.weekly-option"
-            :data-pb-key="String(count)"
+            :data-pb-key="weeklyTargetKey(count)"
             data-pb-role="list-item"
             data-pb-token-spacing="spacing.md"
             data-pb-action="choose-weekly-target"

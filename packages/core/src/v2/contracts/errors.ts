@@ -1,4 +1,4 @@
-import type { ZodError } from 'zod';
+import type { ZodError, ZodIssue } from 'zod';
 
 /**
  * Error classification shared by Core, CLI, MCP and Service so no entry
@@ -45,15 +45,108 @@ export class V2ContractError extends Error {
   }
 }
 
+export function isZodError(error: unknown): error is ZodError {
+  return Boolean(
+    error &&
+      typeof error === 'object' &&
+      (error as { name?: string }).name === 'ZodError' &&
+      Array.isArray((error as { issues?: unknown }).issues),
+  );
+}
+
+export function formatSchemaIssues(error: ZodError, data?: unknown): string {
+  return error.issues.map((issue) => formatSchemaIssue(issue, data)).join('; ');
+}
+
 export function invalidSchemaError(
   objectKind: string,
   error: ZodError,
+  data?: unknown,
 ): V2ContractError {
   return new V2ContractError(
     'invalid-schema',
-    `${objectKind} failed schema validation: ${error.issues.map((issue) => `${issue.path.join('.') || '<root>'}: ${issue.message}`).join('; ')}`,
+    `${objectKind} failed schema validation: ${formatSchemaIssues(error, data)}`,
     error.issues,
   );
+}
+
+function formatSchemaIssue(issue: ZodIssue, data?: unknown): string {
+  const locator = formatSchemaPath(issue.path, data);
+  const received =
+    data === undefined ? undefined : valueAtPath(data, issue.path);
+  const receivedSuffix =
+    received === undefined ? '' : ` (got ${previewReceived(received)})`;
+  return `${locator}: ${issue.message}${receivedSuffix}`;
+}
+
+function formatSchemaPath(path: PropertyKey[], data?: unknown): string {
+  if (path.length === 0) return '<root>';
+  const parts: string[] = [];
+  let current: unknown = data;
+  for (const segment of path) {
+    if (typeof segment === 'number') {
+      const item = Array.isArray(current) ? current[segment] : undefined;
+      const label = identityLabel(item);
+      parts.push(label ?? `[${segment}]`);
+      current = item;
+      continue;
+    }
+    parts.push(String(segment));
+    current =
+      current && typeof current === 'object'
+        ? (current as Record<string, unknown>)[String(segment)]
+        : undefined;
+  }
+  return parts.join('.');
+}
+
+function valueAtPath(data: unknown, path: PropertyKey[]): unknown {
+  let current: unknown = data;
+  for (const segment of path) {
+    if (current == null) return undefined;
+    if (typeof segment === 'number') {
+      current = Array.isArray(current) ? current[segment] : undefined;
+      continue;
+    }
+    current =
+      typeof current === 'object'
+        ? (current as Record<string, unknown>)[String(segment)]
+        : undefined;
+  }
+  return current;
+}
+
+function identityLabel(value: unknown): string | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const record = value as Record<string, unknown>;
+  if (typeof record.pbId === 'string') {
+    return typeof record.pbKey === 'string'
+      ? `${record.pbId}#${record.pbKey}`
+      : record.pbId;
+  }
+  if (typeof record.screenId === 'string' && typeof record.prototypeId === 'string') {
+    return record.screenId;
+  }
+  if (typeof record.variantId === 'string') return record.variantId;
+  if (typeof record.actionId === 'string') return record.actionId;
+  if (typeof record.scenarioId === 'string') return record.scenarioId;
+  if (typeof record.checkpointId === 'string') return record.checkpointId;
+  return undefined;
+}
+
+function previewReceived(value: unknown): string {
+  if (typeof value === 'string') {
+    const preview = value.length > 80 ? `${value.slice(0, 77)}...` : value;
+    return JSON.stringify(preview);
+  }
+  if (
+    typeof value === 'number' ||
+    typeof value === 'boolean' ||
+    value === null
+  ) {
+    return JSON.stringify(value);
+  }
+  return typeof value;
 }
 
 export function unknownReferenceError(

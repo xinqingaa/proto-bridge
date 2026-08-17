@@ -157,6 +157,75 @@ function caseLabel(caseId: string | undefined): string {
   );
 }
 
+export function formatCaptureError(error: unknown): string {
+  const code =
+    error && typeof error === "object" && "code" in error
+      ? String((error as { code?: unknown }).code)
+      : undefined;
+  const raw =
+    error instanceof Error ? error.message : "证据采集操作失败。";
+  if (code === "capacity-exceeded") {
+    const counts = capacityCounts(error, raw);
+    return `采集上限不够：需要 ${counts.selected} 项，当前上限 ${counts.maxCases}。`;
+  }
+  const readable = readableSchemaMessage(raw);
+  if (
+    code === "invalid-schema" ||
+    code === "command-failed" ||
+    readable !== raw
+  ) {
+    return readable.startsWith("采集无法开始")
+      ? readable
+      : `采集无法开始。${readable}`;
+  }
+  return readable;
+}
+
+function capacityCounts(error: unknown, message: string) {
+  const details =
+    error && typeof error === "object" && "details" in error
+      ? (error as { details?: unknown }).details
+      : undefined;
+  const record =
+    details && typeof details === "object"
+      ? (details as Record<string, unknown>)
+      : undefined;
+  const fromMessage = /expands to (\d+) Cases; the configured maximum is (\d+)/.exec(
+    message,
+  );
+  return {
+    selected:
+      typeof record?.selected === "number"
+        ? record.selected
+        : Number(fromMessage?.[1] ?? "?"),
+    maxCases:
+      typeof record?.maxCases === "number"
+        ? record.maxCases
+        : Number(fromMessage?.[2] ?? "?"),
+  };
+}
+
+function readableSchemaMessage(message: string): string {
+  const trimmed = message.trim();
+  if (!trimmed.startsWith("[")) return message;
+  try {
+    const parsed = JSON.parse(trimmed) as unknown;
+    if (!Array.isArray(parsed) || parsed.length === 0) return message;
+    const lines = parsed.flatMap((item) => {
+      if (!item || typeof item !== "object") return [];
+      const issue = item as { path?: unknown; message?: unknown };
+      if (typeof issue.message !== "string") return [];
+      const path = Array.isArray(issue.path)
+        ? issue.path.map(String).join(".")
+        : "<root>";
+      return [`${path}: ${issue.message}`];
+    });
+    return lines.length ? lines.join("; ") : message;
+  } catch {
+    return message;
+  }
+}
+
 export function translateCaptureFailure(detail: string): CaptureFailureDisplay {
   const marker = ":failed:";
   const markerIndex = detail.indexOf(marker);
@@ -170,6 +239,18 @@ export function translateCaptureFailure(detail: string): CaptureFailureDisplay {
       title: `${caseLabel(caseId)}存在重复采集标识`,
       message: "系统发现两个区域使用了相同标识，无法判断应记录哪一个。",
       technicalDetail: detail,
+    };
+  }
+  if (
+    reason.includes("must be a stable lowercase identifier") ||
+    reason.includes("failed schema validation")
+  ) {
+    return {
+      ...(caseId ? { caseId } : {}),
+      title: "原型身份不合法",
+      message:
+        "有 Screen、Fragment 或 pbKey 不符合稳定身份规则。请先改 Registry 和页面上的 data-pb-key，不要使用纯数字、CSS selector 或 DOM path。",
+      technicalDetail: readableSchemaMessage(reason),
     };
   }
   if (reason.includes("Bundle does not exist")) {

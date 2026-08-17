@@ -28,6 +28,9 @@ describe('V2 stable id rules', () => {
   it('rejects pure numeric pbKey values that look like array indices', () => {
     expect(PbKey.safeParse('0').success).toBe(false);
     expect(PbKey.safeParse('1').success).toBe(false);
+    expect(PbKey.safeParse('3').error?.issues[0]?.message).toContain(
+      'stable lowercase identifier',
+    );
   });
 
   it('only accepts scopeKey values shaped like computeScopeKey output', () => {

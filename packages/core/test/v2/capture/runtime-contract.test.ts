@@ -6,6 +6,7 @@ import {
   RuntimeCaptureResponse,
   RuntimeSemanticNode,
 } from '../../../src/v2/runtime-contract/index.js';
+import { formatSchemaIssues } from '../../../src/v2/contracts/errors.js';
 
 const actual = {
   prototypeId: 'sample',
@@ -194,6 +195,64 @@ describe('V2 Runtime Capture Protocol schemas', () => {
         }),
       ).toThrow();
     }
+  });
+
+  it('names the Screen, Variant and received pbKey when a numeric instance key is authored', () => {
+    const manifest = {
+      protocolVersion: RUNTIME_CAPTURE_PROTOCOL_VERSION,
+      inputVersion: 'registry-invalid-pb-key',
+      capabilities: [
+        'describe',
+        'prepare',
+        'readiness',
+        'semantic-snapshot',
+        'reset',
+      ],
+      screens: [
+        {
+          prototypeId: 'hengdong',
+          screenId: 'hengdong.settings-goals',
+          screenSlug: 'settings-goals',
+          path: '/prototype/hengdong/settings-goals',
+          defaultVariantId: 'default',
+          variants: [
+            {
+              variantId: 'weekly-open',
+              label: '选择每周活动',
+              requiredFragments: [
+                {
+                  screenId: 'hengdong.settings-goals',
+                  pbId: 'hengdong.settings-goals.weekly-option',
+                  pbKey: '3',
+                },
+              ],
+            },
+          ],
+          actions: [
+            {
+              actionId: 'choose-weekly-target',
+              kind: 'click',
+              target: {
+                screenId: 'hengdong.settings-goals',
+                pbId: 'hengdong.settings-goals.weekly-option',
+                pbKey: '4',
+              },
+            },
+          ],
+          scenarios: [],
+        },
+      ],
+    };
+    const parsed = RuntimeCaptureManifest.safeParse(manifest);
+    expect(parsed.success).toBe(false);
+    if (parsed.success) return;
+    const message = formatSchemaIssues(parsed.error, manifest);
+    expect(message).toContain('screens.hengdong.settings-goals');
+    expect(message).toContain('variants.weekly-open');
+    expect(message).toContain('hengdong.settings-goals.weekly-option#3');
+    expect(message).toContain('got "3"');
+    expect(message).toContain('stable lowercase identifier');
+    expect(message).not.toContain('"Invalid"');
   });
 
   it('rejects protocol mismatch, malformed requests, and invalid semantic roles', () => {

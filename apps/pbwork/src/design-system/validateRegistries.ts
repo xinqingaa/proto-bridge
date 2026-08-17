@@ -19,6 +19,8 @@ import { vuetifyThemeBindings } from "@/design-system/themes/vuetify-bindings";
 import type {
   ComponentContract,
   ComponentRecord,
+  PrototypeFragmentRef,
+  PrototypeStructureAssertion,
   RegistryValidationError,
   ScreenRecord,
   ThemeRecord,
@@ -30,6 +32,7 @@ import {
   RESOURCE_ID_PATTERN,
   SLUG_ID_PATTERN,
 } from "@/design-system/types";
+import { PbId, PbKey, ScreenId } from "@proto-bridge/core/v2";
 import {
   LEGACY_EVIDENCE_SCREEN_IDS,
   requiresStrictEvidence,
@@ -82,6 +85,63 @@ function mapAjvErrors(
     if (resourceId !== undefined) mapped.resourceId = resourceId;
     return mapped;
   });
+}
+
+function firstIssueMessage(result: { error: { issues: Array<{ message: string }> } }) {
+  return result.error.issues[0]?.message ?? "invalid stable identity";
+}
+
+function validateFragmentIdentity(
+  errors: RegistryValidationError[],
+  fragment: PrototypeFragmentRef,
+  resourceType: RegistryValidationError["resourceType"],
+  resourceId: string,
+  instancePath: string,
+) {
+  const screenId = ScreenId.safeParse(fragment.screenId);
+  if (!screenId.success) {
+    pushError(errors, {
+      resourceType,
+      resourceId,
+      instancePath: `${instancePath}/screenId`,
+      keyword: "pattern",
+      message: firstIssueMessage(screenId),
+    });
+  }
+  const pbId = PbId.safeParse(fragment.pbId);
+  if (!pbId.success) {
+    pushError(errors, {
+      resourceType,
+      resourceId,
+      instancePath: `${instancePath}/pbId`,
+      keyword: "pattern",
+      message: firstIssueMessage(pbId),
+    });
+  }
+  if (fragment.pbKey === undefined) return;
+  const pbKey = PbKey.safeParse(fragment.pbKey);
+  if (!pbKey.success) {
+    pushError(errors, {
+      resourceType,
+      resourceId,
+      instancePath: `${instancePath}/pbKey`,
+      keyword: "pattern",
+      message: firstIssueMessage(pbKey),
+    });
+  }
+}
+
+function fragmentsFromAssertion(
+  assertion: PrototypeStructureAssertion,
+): PrototypeFragmentRef[] {
+  if (assertion.kind === "parent") return [assertion.child, assertion.parent];
+  if (assertion.kind === "scroll-owner") {
+    return assertion.owner.kind === "fragment"
+      ? [assertion.fragment, assertion.owner.fragment]
+      : [assertion.fragment];
+  }
+  if (assertion.kind === "order") return [assertion.parent, ...assertion.children];
+  return [assertion.fragment];
 }
 
 function validateTokenValue(
@@ -638,6 +698,27 @@ export function validateRegistries(input?: {
     }
     screenPaths.add(screen.path);
 
+    for (const [index, fragment] of (screen.shellFragments ?? []).entries()) {
+      validateFragmentIdentity(
+        errors,
+        fragment,
+        "screen",
+        screen.screenId,
+        `/shellFragments/${index}`,
+      );
+    }
+    for (const [index, assertion] of (screen.structureAssertions ?? []).entries()) {
+      for (const fragment of fragmentsFromAssertion(assertion)) {
+        validateFragmentIdentity(
+          errors,
+          fragment,
+          "screen",
+          screen.screenId,
+          `/structureAssertions/${index}`,
+        );
+      }
+    }
+
     const slugSet =
       slugByPrototype.get(screen.prototypeId) ?? new Set<string>();
     if (slugSet.has(screen.screenSlug)) {
@@ -760,7 +841,14 @@ export function validateRegistries(input?: {
             "PB-compliant default Variant requires an authored Evidence completeness boundary",
         });
       }
-      for (const fragment of variant.requiredFragments ?? []) {
+      for (const [index, fragment] of (variant.requiredFragments ?? []).entries()) {
+        validateFragmentIdentity(
+          errors,
+          fragment,
+          "variant",
+          `${screen.screenId}.${variant.id}`,
+          `/requiredFragments/${index}`,
+        );
         if (fragment.screenId !== screen.screenId) {
           pushError(errors, {
             resourceType: "variant",
@@ -769,6 +857,19 @@ export function validateRegistries(input?: {
             keyword: "const",
             message: `Variant Fragment must belong to ${screen.screenId}`,
           });
+        }
+      }
+      for (const [index, assertion] of (
+        variant.structureAssertions ?? []
+      ).entries()) {
+        for (const fragment of fragmentsFromAssertion(assertion)) {
+          validateFragmentIdentity(
+            errors,
+            fragment,
+            "variant",
+            `${screen.screenId}.${variant.id}`,
+            `/structureAssertions/${index}`,
+          );
         }
       }
     }
@@ -820,6 +921,13 @@ export function validateRegistries(input?: {
           message: `unknown Action target Screen ${action.target.screenId}`,
         });
       }
+      validateFragmentIdentity(
+        errors,
+        action.target,
+        "screen",
+        screen.screenId,
+        `/actions/${action.id}/target`,
+      );
     }
 
     const scenarioIds = new Set<string>();
@@ -898,7 +1006,14 @@ export function validateRegistries(input?: {
           ),
           ...(checkpoint.forbiddenFragments ?? []),
         ];
-        for (const fragment of assertionFragments) {
+        for (const [index, fragment] of assertionFragments.entries()) {
+          validateFragmentIdentity(
+            errors,
+            fragment,
+            "screen",
+            screen.screenId,
+            `/scenarios/${scenario.id}/checkpoints/${checkpoint.id}/fragments/${index}`,
+          );
           if (fragment.screenId !== checkpoint.screenId) {
             pushError(errors, {
               resourceType: "screen",
@@ -918,6 +1033,31 @@ export function validateRegistries(input?: {
               keyword: "uniqueItems",
               message: `Checkpoint expected keys for ${expected.fragment.pbId} must be unique`,
             });
+          }
+          for (const [index, key] of expected.keys.entries()) {
+            const parsed = PbKey.safeParse(key);
+            if (!parsed.success) {
+              pushError(errors, {
+                resourceType: "screen",
+                resourceId: screen.screenId,
+                instancePath: `/scenarios/${scenario.id}/checkpoints/${checkpoint.id}/expectedFragmentKeys/${index}`,
+                keyword: "pattern",
+                message: firstIssueMessage(parsed),
+              });
+            }
+          }
+        }
+        for (const [index, assertion] of (
+          checkpoint.structureAssertions ?? []
+        ).entries()) {
+          for (const fragment of fragmentsFromAssertion(assertion)) {
+            validateFragmentIdentity(
+              errors,
+              fragment,
+              "screen",
+              screen.screenId,
+              `/scenarios/${scenario.id}/checkpoints/${checkpoint.id}/structureAssertions/${index}`,
+            );
           }
         }
       }

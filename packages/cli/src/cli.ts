@@ -11,6 +11,7 @@ import {
   V2ContractError,
   V2_SCHEMA_MAJOR,
   V2WorkspaceConfig,
+  DEFAULT_CAPTURE_MAX_CASES,
   WorkspaceId,
   buildEvidenceReadModel,
   computeScopeKey,
@@ -174,7 +175,7 @@ async function initWorkspace(args: CliArgs, io: CliIo): Promise<number> {
         ? {}
         : { maxBytes: numberFlag(args, 'max-store-bytes') }),
     },
-    capture: { maxCases: numberFlag(args, 'max-cases') ?? 100 },
+    capture: { maxCases: numberFlag(args, 'max-cases') ?? DEFAULT_CAPTURE_MAX_CASES },
     service: {
       host: flag(args, 'service-host') ?? '127.0.0.1',
       port: servicePort,

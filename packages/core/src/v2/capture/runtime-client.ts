@@ -14,6 +14,7 @@ import {
   type RuntimeCaptureSuccess,
 } from '../runtime-contract/index.js';
 import { generateOperationalId } from '../store/id-generator.js';
+import { formatSchemaIssues } from '../contracts/errors.js';
 
 export class RuntimeProtocolError extends Error {
   constructor(
@@ -84,7 +85,15 @@ export async function requestRuntimeCapture<
       );
     }
   }
-  const response = RuntimeCaptureResponse.parse(raw);
+  const parsed = RuntimeCaptureResponse.safeParse(raw);
+  if (!parsed.success) {
+    throw new RuntimeProtocolError(
+      'command-failed',
+      formatSchemaIssues(parsed.error, raw),
+      parsed.error.issues,
+    );
+  }
+  const response = parsed.data;
   if (!response.ok) {
     throw new RuntimeProtocolError(
       response.error.code,

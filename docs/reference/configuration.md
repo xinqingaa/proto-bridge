@@ -12,7 +12,7 @@
 | `runtime.allowedOrigins` | Runtime 允许来源 |
 | `store.root` | 相对配置文件的 Store root |
 | `store.maxBytes` | 可选容量上限 |
-| `capture.maxCases` | Preflight Case 数量上限 |
+| `capture.maxCases` | Preflight Case 数量上限，默认 200 |
 | `service.host/port` | Local Service loopback 地址 |
 | `service.allowedOrigins` | 可调用 Service 的 Workbench origins |
 

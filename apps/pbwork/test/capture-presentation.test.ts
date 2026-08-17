@@ -3,6 +3,7 @@ import type { CaptureJob } from "@proto-bridge/core/v2";
 import type { CaptureConsoleState } from "@proto-bridge/core/v2/service-contract";
 import {
   buildCaptureTaskPresentations,
+  formatCaptureError,
   translateCaptureFailure,
 } from "@/capture/presentation";
 
@@ -209,5 +210,64 @@ describe("capture task presentation", () => {
       title: "异常队列存在重复采集标识",
       message: "系统发现两个区域使用了相同标识，无法判断应记录哪一个。",
     });
+  });
+
+  it("translates illegal pbKey schema failures into an authoring diagnosis", () => {
+    expect(
+      translateCaptureFailure(
+        'payload.manifest.screens.hengdong.settings-goals.variants.weekly-open.requiredFragments.hengdong.settings-goals.weekly-option#3.pbKey: pbKey must be a stable lowercase identifier (letters, digits, \'.\', \'-\', \'_\'); CSS selectors, DOM paths, and array indices are not allowed (got "3")',
+      ),
+    ).toMatchObject({
+      title: "原型身份不合法",
+    });
+  });
+
+  it("explains Case capacity errors in Chinese", () => {
+    const error = Object.assign(
+      new Error(
+        "Selection expands to 101 Cases; the configured maximum is 100.",
+      ),
+      {
+        code: "capacity-exceeded",
+        details: { selected: 101, maxCases: 100 },
+      },
+    );
+    expect(formatCaptureError(error)).toBe(
+      "采集上限不够：需要 101 项，当前上限 100。",
+    );
+  });
+
+  it("rewrites raw Zod issue dumps into a capture start message", () => {
+    const error = Object.assign(
+      new Error(
+        JSON.stringify(
+          [
+            {
+              validation: "regex",
+              code: "invalid_string",
+              message: "Invalid",
+              path: [
+                "payload",
+                "manifest",
+                "screens",
+                6,
+                "variants",
+                2,
+                "requiredFragments",
+                1,
+                "pbKey",
+              ],
+            },
+          ],
+          null,
+          2,
+        ),
+      ),
+      { code: "command-failed" },
+    );
+    expect(formatCaptureError(error)).toContain("采集无法开始");
+    expect(formatCaptureError(error)).toContain(
+      "payload.manifest.screens.6.variants.2.requiredFragments.1.pbKey: Invalid",
+    );
   });
 });

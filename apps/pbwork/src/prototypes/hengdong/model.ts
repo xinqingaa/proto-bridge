@@ -47,6 +47,10 @@ export function planSaveLabel(mode: PlanSaveMode) {
   return "保存计划";
 }
 
+export function weeklyTargetKey(count: number) {
+  return `times-${count}`;
+}
+
 export function nextCustomPlanId(plans: FitnessPlan[]) {
   const baseId = "custom-light-rhythm";
   if (!plans.some((plan) => plan.id === baseId)) return baseId;

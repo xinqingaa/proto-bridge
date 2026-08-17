@@ -3,6 +3,7 @@ import { createPinia, setActivePinia } from "pinia";
 import { useCaptureStore } from "@/app/stores/capture";
 import { captureServiceClient } from "@/capture/service-client";
 import { resolveSelectionMatrix } from "@proto-bridge/core/v2/capture";
+import { DEFAULT_CAPTURE_MAX_CASES } from "@proto-bridge/core/v2";
 import { buildRuntimeCaptureManifest } from "@/runtime/capture-protocol";
 
 describe("PBWork V2 capture store", () => {
@@ -150,9 +151,18 @@ describe("PBWork V2 capture store", () => {
       "focus-critical",
       false,
     );
-    expect(resolveSelectionMatrix(store.draft!, manifest).matrix).toHaveLength(
-      6,
-    );
+    expect(
+      resolveSelectionMatrix(store.draft!, manifest).matrix,
+    ).toHaveLength(6);
+  });
+
+  it("keeps a whole Hengdong Prototype under the default Case cap", () => {
+    const store = useCaptureStore();
+    const manifest = buildRuntimeCaptureManifest("hengdong");
+    store.beginPrototype("hengdong");
+    const count = resolveSelectionMatrix(store.draft!, manifest).matrix.length;
+    expect(count).toBe(101);
+    expect(count).toBeLessThanOrEqual(DEFAULT_CAPTURE_MAX_CASES);
   });
 
   it("publishes authored Variant route query in the Runtime Manifest", () => {

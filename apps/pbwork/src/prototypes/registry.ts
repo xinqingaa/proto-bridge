@@ -2160,7 +2160,7 @@ const redesignedHengdongScreens = [
           {
             screenId: "hengdong.settings-goals",
             pbId: "hengdong.settings-goals.weekly-option",
-            pbKey: "3",
+            pbKey: "times-3",
           },
         ],
       },
@@ -2214,7 +2214,7 @@ const redesignedHengdongScreens = [
         target: {
           screenId: "hengdong.settings-goals",
           pbId: "hengdong.settings-goals.weekly-option",
-          pbKey: "4",
+          pbKey: "times-4",
         },
       },
       {

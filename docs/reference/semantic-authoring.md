@@ -61,7 +61,7 @@
 | --- | --- | --- |
 | `screenId` | Fragment 所属 Screen | 固定为 `{prototypeId}.{screenSlug}` |
 | `pbId` / `data-pb-id` | Screen 内的业务语义槽位模板 | 新业务节点使用 `{screenId}.{slotPath}` |
-| `pbKey` / `data-pb-key` | 重复模板的业务稳定实例 | 不使用 index、文案、随机值、时间或敏感数据 |
+| `pbKey` / `data-pb-key` | 重复模板的业务稳定实例 | 小写字母开头的稳定标识；不使用纯数字、index、文案、随机值、时间或敏感数据 |
 | `componentId` / `data-pb-component` | PBWork DS 组件类型 | 由组件注册提供，不代替 `pbId` |
 
 `role` 描述当前节点在产品中的语义或交互职责，不描述 Vue/Flutter/Swift 类型。`componentId=card` 的实例可以按 Contract 允许的上下文承担 `card`、`section` 或 `summary`；固定行为组件如 Button 只能承担 `button`。精确身份和通用职责可以不同：`componentId=flow-sheet` 使用 `role=sheet`，不能仅因新增组件就扩展 role 闭集。
@@ -118,6 +118,7 @@
 - required Fragment 缺失、重复、不可见、零 bbox、非法 role 或使用 `unknown`；
 - `data-pb-id` / `data-pb-role` 只出现一个；
 - 重复 `pbId` 缺少唯一稳定 `pbKey`；
+- `pbId` / `pbKey` 不是稳定小写标识（字母开头；禁止纯数字、CSS selector、DOM path）；
 - strict 业务 required Fragment 使用 `ds.*`；
 - Action/Scenario/Checkpoint 引用不能精确解析；
 - 证据节点声明了未知 Token、非法 slot 或与组件 Contract 冲突的 binding；

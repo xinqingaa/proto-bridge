@@ -10,7 +10,7 @@
     "retainArchivedSnapshots": 1
   },
   "capture": {
-    "maxCases": 100
+    "maxCases": 200
   },
   "service": {
     "host": "127.0.0.1",

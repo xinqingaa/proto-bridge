@@ -20,6 +20,7 @@ import {
   captureServiceClient,
   LocalServiceClientError,
 } from "@/capture/service-client";
+import { formatCaptureError } from "@/capture/presentation";
 import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
 
 export type CaptureEntryKind =
@@ -206,8 +207,7 @@ export const useCaptureStore = defineStore("capture-v2", {
   },
   actions: {
     setError(error: unknown) {
-      this.lastError =
-        error instanceof Error ? error.message : "证据采集操作失败。";
+      this.lastError = formatCaptureError(error);
       this.lastErrorCode =
         error instanceof LocalServiceClientError ? error.code : "unknown";
     },

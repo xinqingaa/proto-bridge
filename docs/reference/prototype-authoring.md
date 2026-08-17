@@ -48,7 +48,7 @@ PBWork Token / Theme
 禁止使用：
 
 - DOM path、CSS selector、Vue component instance；
-- 数组 index、当前排序位置；
+- 数组 index、当前排序位置、纯数字 `pbKey`（如 `"3"`）；
 - 生成时间、随机值；
 - 可编辑展示文案；
 - Workbench 临时 handle；

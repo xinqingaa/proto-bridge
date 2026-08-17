@@ -35,6 +35,43 @@ describe("registries", () => {
     ).toBe(true);
   });
 
+  it("rejects numeric pbKey values on required Fragments and Actions", () => {
+    const settings = prototypeScreens.find(
+      (screen) => screen.screenId === "hengdong.settings-goals",
+    )!;
+    const screens = prototypeScreens.map((screen) =>
+      screen.screenId === settings.screenId
+        ? {
+            ...screen,
+            variants: screen.variants.map((variant) =>
+              variant.id === "weekly-open"
+                ? {
+                    ...variant,
+                    requiredFragments: variant.requiredFragments?.map(
+                      (fragment) =>
+                        fragment.pbId ===
+                        "hengdong.settings-goals.weekly-option"
+                          ? { ...fragment, pbKey: "3" }
+                          : fragment,
+                    ),
+                  }
+                : variant,
+            ),
+          }
+        : screen,
+    );
+    const errors = validateRegistries({
+      screens: screens as typeof prototypeScreens,
+    });
+    expect(
+      errors.some(
+        (error) =>
+          error.instancePath.endsWith("/pbKey") &&
+          error.message.includes("stable lowercase identifier"),
+      ),
+    ).toBe(true);
+  });
+
   it("rejects duplicate screen ids and bad screenId formula", () => {
     const screens = [
       ...prototypeScreens,
@@ -312,6 +349,31 @@ describe("design contracts", () => {
       "adopt-candidate-plan",
       "start-candidate-once",
     ]);
+
+    const settings = hengdongScreens.find(
+      (screen) => screen.screenId === "hengdong.settings-goals",
+    );
+    expect(
+      settings?.variants.find((variant) => variant.id === "weekly-open")
+        ?.requiredFragments,
+    ).toEqual(
+      expect.arrayContaining([
+        {
+          screenId: "hengdong.settings-goals",
+          pbId: "hengdong.settings-goals.weekly-option",
+          pbKey: "times-3",
+        },
+      ]),
+    );
+    expect(
+      settings?.actions?.find((action) => action.id === "choose-weekly-target")
+        ?.target,
+    ).toEqual(
+      expect.objectContaining({
+        pbId: "hengdong.settings-goals.weekly-option",
+        pbKey: "times-4",
+      }),
+    );
   });
 });
 
