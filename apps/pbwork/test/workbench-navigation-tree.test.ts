@@ -41,13 +41,13 @@ describe("workbench navigation tree", () => {
       {
         id: "draft-hengdong",
         label: "恒动 · 健身自律记录",
-        kind: "draft",
+        kind: "item",
         to: "/workbench/drafts/hengdong",
       },
       {
         id: "draft-workbench-overview",
         label: "工作台概览",
-        kind: "draft",
+        kind: "item",
         to: "/workbench/drafts/workbench-overview",
       },
     ]);

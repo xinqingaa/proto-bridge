@@ -43,7 +43,6 @@ export type WorkbenchNavigationTreeNode = {
     | "group"
     | "item"
     | "lifecycle"
-    | "draft"
     | "prototype"
     | "screen"
     | "variant";
@@ -390,7 +389,7 @@ export function buildWorkbenchNavigationTree(
       children: buildDraftNavigation().map((item) => ({
         id: item.id,
         label: item.label,
-        kind: "draft" as const,
+        kind: "item" as const,
         to: item.to,
       })),
     },

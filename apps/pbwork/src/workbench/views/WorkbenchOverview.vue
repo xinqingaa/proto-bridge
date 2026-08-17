@@ -783,7 +783,6 @@ onMounted(() => {
   flex-direction: column;
   gap: 22px;
   padding: 4px 2px 28px;
-
 }
 
 .block-header {

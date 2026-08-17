@@ -616,6 +616,7 @@ function secondaryIconFor(id: string) {
   if (foundationIcons[id]) return foundationIcons[id];
   if (id.startsWith("token-")) return SwatchBook;
   if (id.startsWith("theme-")) return Paintbrush;
+  if (id.startsWith("draft-")) return PencilRuler;
   if (
     id === "capture-console" ||
     id.startsWith("capture-job-") ||
@@ -668,7 +669,6 @@ function navigationTreeIconFor(node: WorkbenchNavigationTreeNode) {
   if (
     node.kind === "group" ||
     node.kind === "variant" ||
-    node.kind === "draft" ||
     node.kind === "prototype"
   ) {
     return null;
