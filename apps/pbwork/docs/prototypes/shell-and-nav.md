@@ -76,6 +76,8 @@ Shell
 | 完成流回首页 | 保存/提交/删除等结束后回到 Tab home：优先折叠到根位置；需要丢弃中间栈时允许强制 `replace` home（如 `preferBack: false`）                                  |
 | 深链兜底     | 任意二级深链打开后，返回必须能落到所属 Tab home，不能依赖「用户曾经点过底栏」                                                                             |
 
+产品页若用 `onBeforeRouteLeave` 拦截返回或未保存离开，必须先放行 `isForcedRuntimeNavigation()`。Workbench 树 / 画布顶栏 / Capture 换页走 Runtime 强制导航，不是用户在 App 内离开。
+
 ## 共享 Tab 根与 keepMounted
 
 多个一级 home 若共用**同一个** Screen / Shell 实例，且 `TabViewport` `keepMounted`：

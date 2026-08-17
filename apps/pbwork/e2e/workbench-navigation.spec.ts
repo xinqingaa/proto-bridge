@@ -197,6 +197,50 @@ test("Hengdong product progress survives reloads", async ({ page }) => {
   ).toHaveValue("刷新后仍保留");
 });
 
+test("Workbench screen tree bypasses in-app leave confirmations", async ({
+  page,
+}) => {
+  await page.goto(
+    "/workbench/prototypes/hengdong/screens/workout-session?variant=default&theme=light",
+  );
+  const runtime = page.frameLocator("iframe");
+  const runtimeUrl = () =>
+    runtime
+      .locator("body")
+      .evaluate((body) => body.ownerDocument.location.href);
+
+  await expect(
+    runtime.getByRole("heading", { name: "颈肩环绕" }),
+  ).toBeVisible();
+
+  await page
+    .locator('a[href="/workbench/prototypes/hengdong/screens/today"]')
+    .click();
+  await expect(page).toHaveURL(/\/screens\/today/);
+  await expect.poll(runtimeUrl).toContain("/prototype/hengdong/today");
+  await expect(
+    runtime.getByRole("button", { name: "稍后继续" }),
+  ).toHaveCount(0);
+  await expect(runtime.getByRole("tab", { name: "今天" })).toBeVisible();
+
+  await page.goto(
+    "/workbench/prototypes/hengdong/screens/workout-complete?variant=default&theme=light",
+  );
+  await expect(
+    runtime.getByRole("heading", { name: "这次训练完成了" }),
+  ).toBeVisible();
+
+  await page
+    .locator('a[href="/workbench/prototypes/hengdong/screens/plans"]')
+    .click();
+  await expect(page).toHaveURL(/\/screens\/plans/);
+  await expect.poll(runtimeUrl).toContain("/prototype/hengdong/plans");
+  await expect(
+    runtime.getByRole("button", { name: "放弃并离开" }),
+  ).toHaveCount(0);
+  await expect(runtime.getByRole("tab", { name: "计划" })).toBeVisible();
+});
+
 test("search and settings controls have usable behavior", async ({ page }) => {
   await page.getByRole("button", { name: "搜索资源" }).click();
   await page.getByRole("textbox", { name: "名称", exact: true }).fill("浅色");

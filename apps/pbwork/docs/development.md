@@ -40,6 +40,7 @@ PBWork 有三个 UI 分区：
 - 页内局部 UI 仅用于业务特有结构，全部设计值走 `--pb-*`。
 - 使用组件公开 props/slots/events，不复制其样式或手势实现。
 - 页面必须遵守统一壳、导航、滚动、Overlay 和 Variant 规范。
+- 产品 `onBeforeRouteLeave` 必须放行 Runtime 强制导航（Workbench 树 / Capture 换页）；拦截只留给 App 内返回。
 - 所有进入 Capture 的 Screen 遵守根 [Authoring Contract](../../../docs/reference/prototype-authoring.md)。
 - DS 业务实例使用业务 `inspectId`；业务局部证据节点显式声明 id、role、key 和 Token bindings，详见[语义标记与证据门禁](../../../docs/reference/semantic-authoring.md)。
 

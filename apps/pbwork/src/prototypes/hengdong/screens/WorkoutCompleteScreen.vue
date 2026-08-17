@@ -17,6 +17,7 @@ import {
   type Feeling,
   type WorkoutSession,
 } from "../model";
+import { isForcedRuntimeNavigation } from "@/runtime/forced-navigation";
 import { replaceHengdongScreen, replaceVariant } from "../nav";
 import { hengdongState, persistHengdong, saveRecord, saveWorkoutSession } from "../storage";
 import "../hengdong.css";
@@ -185,6 +186,7 @@ const leaveConfirmOpen = computed({
 });
 
 function guardSummaryNavigation(to: RouteLocationNormalized) {
+  if (isForcedRuntimeNavigation()) return true;
   if (to.params.screenSlug === route.params.screenSlug) return true;
   if (allowNavigation.value || !session.value) return true;
   pendingDestination.value = to.fullPath;

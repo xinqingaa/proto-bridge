@@ -24,6 +24,7 @@ import {
   type RuntimeBridgeMessage,
   type WorkbenchBridgeMessage,
 } from "@/runtime/bridge";
+import { runForcedRuntimeNavigation } from "@/runtime/forced-navigation";
 import {
   getRouteNavigationIntent,
   installNavigationIntentTracking,
@@ -195,7 +196,7 @@ function onMessage(event: MessageEvent) {
       return;
     const destination = `${target.pathname}${target.search}${target.hash}`;
     lastPostedRoute.value = `${window.location.origin}${destination}`;
-    void router.replace(destination);
+    void runForcedRuntimeNavigation(() => router.replace(destination));
     return;
   }
   if (msg.type === "inspect-mode") {
@@ -310,14 +311,16 @@ onMounted(() => {
         (candidate) => candidate.id === target.variantId,
       );
       if (!variant) throw new Error(`UNKNOWN_VARIANT：${target.variantId}`);
-      await router.replace(
-        buildCanonicalRuntimeUrl({
-          prototypeId: target.prototypeId,
-          screenSlug: screen.screenSlug,
-          variantId: target.variantId,
-          themeId: target.themeId,
-          ...(variant.query ? { query: variant.query } : {}),
-        }),
+      await runForcedRuntimeNavigation(() =>
+        router.replace(
+          buildCanonicalRuntimeUrl({
+            prototypeId: target.prototypeId,
+            screenSlug: screen.screenSlug,
+            variantId: target.variantId,
+            themeId: target.themeId,
+            ...(variant.query ? { query: variant.query } : {}),
+          }),
+        ),
       );
       await nextTick();
     },

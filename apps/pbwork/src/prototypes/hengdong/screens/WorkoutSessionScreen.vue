@@ -11,6 +11,7 @@ import Button from "@/design-system/components/action/Button.vue";
 import BottomSheet from "@/design-system/components/feedback/BottomSheet.vue";
 import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
 import { formatDuration, type Exercise, type WorkoutSession } from "../model";
+import { isForcedRuntimeNavigation } from "@/runtime/forced-navigation";
 import { goBackHengdong, openHengdongScreen, replaceHengdongScreen, replaceVariant } from "../nav";
 import { hengdongState, persistHengdong, saveWorkoutSession } from "../storage";
 import WorkoutPose, {
@@ -261,6 +262,7 @@ onBeforeUnmount(() => {
 });
 
 function guardSessionNavigation(to: RouteLocationNormalized) {
+  if (isForcedRuntimeNavigation()) return true;
   if (to.params.screenSlug === route.params.screenSlug) return true;
   if (
     allowNavigation.value ||
