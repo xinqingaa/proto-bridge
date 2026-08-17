@@ -1,5 +1,5 @@
 import { componentRecords } from "@/design-system/components/registry";
-import { draftRecords } from "@/drafts/registry";
+import { draftLabels, draftRecords } from "@/drafts/registry";
 import {
   loadPrototypes,
   loadPrototypeScreens,
@@ -194,7 +194,7 @@ export function buildDraftNavigation(): WorkbenchNavigationItem[] {
   );
   return draftRecords.map((draft) => ({
     id: `draft-${draft.id}`,
-    label: prototypeLabels.get(draft.id) ?? draft.id,
+    label: draftLabels[draft.id] ?? prototypeLabels.get(draft.id) ?? draft.id,
     group: "草稿",
     to: `/workbench/drafts/${draft.id}`,
   }));

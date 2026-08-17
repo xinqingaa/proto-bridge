@@ -44,6 +44,12 @@ describe("workbench navigation tree", () => {
         kind: "draft",
         to: "/workbench/drafts/hengdong",
       },
+      {
+        id: "draft-workbench-overview",
+        label: "工作台概览",
+        kind: "draft",
+        to: "/workbench/drafts/workbench-overview",
+      },
     ]);
     expect(prototypes.children?.some((node) => node.kind === "lifecycle")).toBe(
       false,
