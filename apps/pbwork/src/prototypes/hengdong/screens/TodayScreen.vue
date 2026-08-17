@@ -10,7 +10,6 @@ import BottomSheet from "@/design-system/components/feedback/BottomSheet.vue";
 import FlowSheet from "@/design-system/components/feedback/FlowSheet.vue";
 import Menu from "@/design-system/components/input/Menu.vue";
 import RadioGroup from "@/design-system/components/input/RadioGroup.vue";
-import HengdongRoot from "../HengdongRoot.vue";
 import WeeklyGoalRing from "../components/WeeklyGoalRing.vue";
 import WeeklyRhythm from "../components/WeeklyRhythm.vue";
 import { recordGlyph } from "../glyphs";
@@ -28,6 +27,8 @@ import {
 } from "../model";
 import {
   openHengdongScreen,
+  ownedHengdongVariant,
+  ownsHengdongHome,
   replaceHengdongScreen,
   replaceVariant,
 } from "../nav";
@@ -106,8 +107,9 @@ const duration = ref("20 分钟");
 const feeling = ref<Feeling>("刚好");
 const savedFeedback = ref(false);
 
-const variant = computed(() => String(route.query.variant ?? "default"));
+const variant = computed(() => ownedHengdongVariant(route, "today"));
 const pageState = computed<TodayState>(() => {
+  if (!ownsHengdongHome(route, "today")) return "default";
   const stateQuery = String(route.query.state ?? "");
   if (todayStates.includes(stateQuery as TodayState)) {
     return stateQuery as TodayState;
@@ -390,8 +392,7 @@ function openRhythmDay(date: string) {
 </script>
 
 <template>
-  <HengdongRoot active="today" screen-id="hengdong.today">
-    <section
+  <section
       class="hd-page"
       data-pb-id="hengdong.today.root"
       data-pb-role="page"
@@ -830,5 +831,4 @@ function openRhythmDay(date: string) {
         </div>
       </BottomSheet>
     </section>
-  </HengdongRoot>
 </template>

@@ -9,11 +9,10 @@ import ScrollableDataList from "@/design-system/components/data/ScrollableDataLi
 import Toast from "@/design-system/components/feedback/Toast.vue";
 import AppBar from "@/design-system/components/navigation/AppBar.vue";
 import PrimaryTabs from "@/design-system/components/navigation/PrimaryTabs.vue";
-import HengdongRoot from "../HengdongRoot.vue";
 import PlanEditorFlow from "../components/PlanEditorFlow.vue";
 import { planGlyph } from "../glyphs";
 import { catalogPlans, recordsInWeek, type FitnessPlan, type PlanGoal } from "../model";
-import { openHengdongScreen, replaceVariant } from "../nav";
+import { openHengdongScreen, ownedHengdongVariant, replaceVariant } from "../nav";
 import { hengdongState, updateHengdongUi } from "../storage";
 import "../hengdong.css";
 
@@ -31,16 +30,18 @@ const goalByTab: Record<string, PlanGoal | undefined> = {
   strength: "力量",
   recovery: "舒缓",
 };
-const activePlanTab = ref(
-  String(route.query.variant ?? "default") === "filtered"
-    ? "strength"
-    : String(route.query.variant ?? "default") === "empty"
-      ? "wake"
-      : "all",
+const toast = ref(false);
+const variant = computed(() => ownedHengdongVariant(route, "plans"));
+const activePlanTab = ref("all");
+watch(
+  variant,
+  (value) => {
+    if (value === "filtered") activePlanTab.value = "strength";
+    else if (value === "empty") activePlanTab.value = "wake";
+  },
+  { immediate: true },
 );
 watch(activePlanTab, (value) => updateHengdongUi({ planFilter: value }));
-const toast = ref(false);
-const variant = computed(() => String(route.query.variant ?? "default"));
 const editorOpen = computed({
   get: () =>
     ["plan-editor-open", "plan-editor-validation"].includes(variant.value),
@@ -93,8 +94,7 @@ function afterSave() {
 </script>
 
 <template>
-  <HengdongRoot active="plans" screen-id="hengdong.plans">
-    <section
+  <section
       class="hd-page"
       data-pb-id="hengdong.plans.root"
       data-pb-role="page"
@@ -312,5 +312,4 @@ function afterSave() {
         inspect-id="hengdong.plans.toast"
       />
     </section>
-  </HengdongRoot>
 </template>

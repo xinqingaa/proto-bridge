@@ -27,7 +27,7 @@ prototypeId: hengdong
 
 - 注册 10 个 Screen：登录、注册、今天、活动记录、计划、进度、计划详情、训练执行、训练总结、设置与目标。
 - 根目的地切换使用 `replace`，二级任务使用 `push` 和可恢复 parent。
-- 栈页转场由 Runtime `ScreenTransition` 播放，默认 iOS；换 Screen 的 `replace`（含根 Tab）播进入动画。Capture 环境 reduced-motion 仍为静帧。Flutter / Target mapping 本轮保持 pending。
+- 今天、计划、进度共用 `HengdongMain` 主壳：底栏切换只换保活面板，不卸载主树，也不走 `ScreenTransition`。栈页 `push` / 非主壳 `replace` 仍播进入动画，`back` 播返回。Capture 环境 reduced-motion 仍为静帧。Flutter / Target mapping 本轮保持 pending。
 - 三个根页面只通过底部 Tabbar 切换；活动记录归属今天任务栈。
 - 本地状态统一保存在 `hengdong.app.v2`；账号、目标、当前计划、训练会话、活动记录和主题共享同一数据源。
 - 正式训练与快速记录写入同一记录集合；今天、活动记录和进度从同一记录事实派生。
@@ -46,7 +46,7 @@ prototypeId: hengdong
 | 活动类型二级 Tab   | 现有 PBWork DS          | SecondaryTabs；五个具名列表面板拥有独立滚动状态                 |
 | 活动记录列表       | 现有 DS 组合            | ScrollableDataList + DataList；开启刷新与分页                   |
 | 活动日期时间线     | Token 驱动的业务局部 UI | 月份与日期形成稳定结构节点，不使用逐行 Card                     |
-| 进度周期 Tab       | 现有 PBWork DS          | PrimaryTabs；本周、本月、本年及按需自定义拥有完整内容面板       |
+| 根 Tab 主壳         | 现有 DS 组合            | 今天、计划、进度共用 `HengdongMain`；TabViewport 保活且即时切换，不走栈转场 |
 | 进度周期选择       | 现有 DS 组合            | 点周期值打开 BottomSheet；DataList 无分割线，选中用 check；左右为 Icon Button |
 | 活动节奏图与日历   | Token 驱动的业务局部 UI | 周/月/年共享节奏语法，显式声明图表和日期 Token Evidence         |
 | 当前计划摘要       | Token 驱动的业务局部 UI | 无描边表面；名称、一次成本、本周一句和全宽开始训练；摘要本身是详情热区 |

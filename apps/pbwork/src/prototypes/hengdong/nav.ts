@@ -55,13 +55,34 @@ export function replaceHengdongScreen(
   variant = "default",
   extra: Record<string, string> = {},
 ) {
-  return router.replace(hengdongPath(route, slug, variant, extra));
+  return router.replace({
+    ...hengdongPath(route, slug, variant, extra),
+    state: {
+      pbScope: "hengdong",
+      pbTab: rootForSlug(slug),
+    },
+  });
 }
 
 export function rootForSlug(slug: HengdongSlug): RootTab {
   if (["plans", "plan-detail"].includes(slug)) return "plans";
   if (slug === "progress") return "progress";
   return "today";
+}
+
+export function ownsHengdongHome(
+  route: Pick<RouteLocationNormalizedLoaded, "params">,
+  home: RootTab,
+) {
+  return String(route.params.screenSlug) === home;
+}
+
+export function ownedHengdongVariant(
+  route: Pick<RouteLocationNormalizedLoaded, "params" | "query">,
+  home: RootTab,
+) {
+  if (!ownsHengdongHome(route, home)) return "default";
+  return String(route.query.variant ?? "default");
 }
 
 export function goBackHengdong(

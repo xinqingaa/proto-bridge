@@ -14,7 +14,7 @@
 
 ## 行为要点
 
-- `push` 与换页的 `replace`（含根 Tab）播进入动画；`back` 播返回动画。
+- `push` 与换页的 `replace` 播进入动画；`back` 播返回动画。同一主壳内的根 Tab 切换不换 `screenKey`，因此不播。
 - 首次挂载只有一页，以及 `prefers-reduced-motion: reduce`，瞬间切换。
 - 默认 `mode=ios`：新页从右侧滑入，返回时当前页向右滑出。
 - `mode=android`：新页淡入并轻微缩放（Fade Through），不使用水平滑入。

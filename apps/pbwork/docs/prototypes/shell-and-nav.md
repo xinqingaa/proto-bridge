@@ -46,7 +46,7 @@ Shell
 - **手势 / 点击先更新 UI**；再由 nav **节流后** `replace` 同步 URL（建议短 debounce，避免动画中狂刷 history）。
 - Tab 切换：路由 **replace**，写入当前 Tab 身份。
 - 二级进栈：路由 **push**，并记录可返回的 parent。
-- 栈页转场由 Runtime `ScreenTransition` 播放：默认 iOS 左右侧滑，可选 Android 淡入缩放。换 Screen 的 `push` 与根 Tab `replace` 播进入动画；`back` 播返回。同屏 Variant、首次挂载和 `prefers-reduced-motion` 不播。本轮不提供边缘返回手势。
+- 栈页转场由 Runtime `ScreenTransition` 播放：默认 iOS 左右侧滑，可选 Android 淡入缩放。换 Screen 的 `push` 与非主 Tab 的 `replace` 播进入动画；`back` 播返回。同屏 Variant、同一主壳内的根 Tab 切换、首次挂载和 `prefers-reduced-motion` 不播。本轮不提供边缘返回手势。
 - 嵌入 Runtime 的返回若走 `replace(parent)`，须先 `announceBackNavigation()`，否则会当成进入切页。
 - 二级页禁止直接拼业务路径字符串；统一走 nav 辅助（名称可自定，语义须覆盖下列能力）。
 
@@ -82,3 +82,4 @@ Shell
 
 - home slug 变化**不得**卸载整棵一级树。
 - 各面板对 `variant` 必须做**所有权判断**（见 [screens-and-variants.md](./screens-and-variants.md)）。
+- 根 Tab 切换只更新 URL 与可见面板，不走 `ScreenTransition`；面板过渡默认关闭或使用即时时长。

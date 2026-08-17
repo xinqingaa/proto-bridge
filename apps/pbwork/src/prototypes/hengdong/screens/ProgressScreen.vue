@@ -10,7 +10,6 @@ import FlowSheet from "@/design-system/components/feedback/FlowSheet.vue";
 import Toast from "@/design-system/components/feedback/Toast.vue";
 import AppBar from "@/design-system/components/navigation/AppBar.vue";
 import PrimaryTabs from "@/design-system/components/navigation/PrimaryTabs.vue";
-import HengdongRoot from "../HengdongRoot.vue";
 import ProgressPeriodPanel from "../components/ProgressPeriodPanel.vue";
 import {
   HENGDONG_TODAY,
@@ -24,7 +23,7 @@ import {
   type ProgressPeriod,
   type ProgressPeriodOption,
 } from "../model";
-import { replaceVariant } from "../nav";
+import { ownedHengdongVariant, replaceVariant } from "../nav";
 import {
   hengdongState,
   refreshHengdongRecords,
@@ -34,7 +33,7 @@ import "../hengdong.css";
 
 const route = useRoute();
 const router = useRouter();
-const variant = computed(() => String(route.query.variant ?? "default"));
+const variant = computed(() => ownedHengdongVariant(route, "progress"));
 const refreshingPeriod = ref<ProgressPeriod | null>(null);
 const refreshToast = ref(false);
 const refreshMessage = ref("已是最新");
@@ -251,8 +250,7 @@ function openRecord(recordId: string) {
 </script>
 
 <template>
-  <HengdongRoot active="progress" screen-id="hengdong.progress">
-    <section
+  <section
       class="progress-page"
       data-pb-id="hengdong.progress.root"
       data-pb-role="page"
@@ -535,7 +533,6 @@ function openRecord(recordId: string) {
         inspect-id="hengdong.progress.refresh-toast"
       />
     </section>
-  </HengdongRoot>
 </template>
 
 <style scoped>

@@ -347,7 +347,7 @@ const redesignedHengdongScreens = [
     label: "今天",
     title: "今天",
     path: "/prototype/hengdong/today",
-    view: "hengdong/screens/TodayScreen.vue",
+    view: "hengdong/screens/HengdongMain.vue",
     defaultVariantId: "default",
     queryKeys: ["state"],
     shellFragments: [
@@ -972,7 +972,7 @@ const redesignedHengdongScreens = [
     label: "计划",
     title: "计划",
     path: "/prototype/hengdong/plans",
-    view: "hengdong/screens/PlansScreen.vue",
+    view: "hengdong/screens/HengdongMain.vue",
     queryKeys: ["plan"],
     defaultVariantId: "default",
     shellFragments: [
@@ -1146,7 +1146,7 @@ const redesignedHengdongScreens = [
     label: "进度",
     title: "进度",
     path: "/prototype/hengdong/progress",
-    view: "hengdong/screens/ProgressScreen.vue",
+    view: "hengdong/screens/HengdongMain.vue",
     queryKeys: ["record"],
     defaultVariantId: "default",
     shellFragments: [

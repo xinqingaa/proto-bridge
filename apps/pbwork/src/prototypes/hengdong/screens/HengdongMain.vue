@@ -1,12 +1,17 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { Activity, CalendarCheck, House } from "lucide-vue-next";
 import { useRoute, useRouter } from "vue-router";
 import Tabbar from "@/design-system/components/navigation/Tabbar.vue";
 import TabViewport from "@/design-system/components/navigation/TabViewport.vue";
-import { replaceHengdongScreen, type RootTab } from "./nav";
-import "./hengdong.css";
+import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
+import { replaceHengdongScreen, type RootTab } from "../nav";
+import PlansScreen from "./PlansScreen.vue";
+import ProgressScreen from "./ProgressScreen.vue";
+import TodayScreen from "./TodayScreen.vue";
+import "../hengdong.css";
 
-const props = defineProps<{ active: RootTab; screenId: string }>();
+const INSTANT_DURATION = tokenDefaultNumber("motion.duration-instant");
 const route = useRoute();
 const router = useRouter();
 const items = [
@@ -15,8 +20,15 @@ const items = [
   { value: "progress", label: "进度", icon: Activity },
 ];
 
+const active = computed<RootTab>(() => {
+  const slug = String(route.params.screenSlug);
+  return items.some((item) => item.value === slug) ? (slug as RootTab) : "today";
+});
+const screenId = computed(() => `hengdong.${active.value}`);
+
 function changeTab(value: string) {
   if (!items.some((item) => item.value === value)) return;
+  if (value === active.value) return;
   void replaceHengdongScreen(router, route, value as RootTab);
 }
 </script>
@@ -29,12 +41,14 @@ function changeTab(value: string) {
       :swipe="false"
       :mouse-swipe="false"
       :keep-mounted="true"
+      :transition-duration="INSTANT_DURATION"
       :inspect-id="`${screenId}.tab-viewport`"
       @update:model-value="changeTab"
     >
       <template #item="{ value }">
-        <slot v-if="value === active" />
-        <div v-else class="inactive-tab-placeholder" aria-hidden="true" />
+        <TodayScreen v-if="value === 'today'" />
+        <PlansScreen v-else-if="value === 'plans'" />
+        <ProgressScreen v-else-if="value === 'progress'" />
       </template>
     </TabViewport>
     <Tabbar
@@ -57,13 +71,12 @@ function changeTab(value: string) {
   background: var(--pb-color-background);
   color: var(--pb-color-on-background);
 }
+
 .hengdong-root :deep(.pb-tab-viewport) {
   flex: var(--pb-layout-flex-fill);
   min-height: var(--pb-spacing-none);
 }
-.inactive-tab-placeholder {
-  height: var(--pb-layout-fill);
-}
+
 :global(html.pbwork-runtime-embedded) .hengdong-root {
   min-height: var(--pb-layout-fill);
   max-height: var(--pb-layout-fill);
