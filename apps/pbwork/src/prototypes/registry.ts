@@ -2046,8 +2046,8 @@ const redesignedHengdongScreens = [
     prototypeId: "hengdong",
     screenId: "hengdong.settings-goals",
     screenSlug: "settings-goals",
-    label: "设置与目标",
-    title: "设置与目标",
+    label: "设置",
+    title: "设置",
     path: "/prototype/hengdong/settings-goals",
     view: "hengdong/screens/SettingsGoalsScreen.vue",
     defaultVariantId: "default",
@@ -2060,7 +2060,7 @@ const redesignedHengdongScreens = [
     variants: [
       {
         id: "default",
-        label: "目标与本地偏好",
+        label: "偏好分组",
         requiredFragments: [
           {
             screenId: "hengdong.settings-goals",
@@ -2068,29 +2068,182 @@ const redesignedHengdongScreens = [
           },
           {
             screenId: "hengdong.settings-goals",
-            pbId: "hengdong.settings-goals.form",
+            pbId: "hengdong.settings-goals.weekly",
           },
           {
             screenId: "hengdong.settings-goals",
-            pbId: "hengdong.settings-goals.target",
+            pbId: "hengdong.settings-goals.reminder-enabled",
           },
           {
             screenId: "hengdong.settings-goals",
-            pbId: "hengdong.settings-goals.save",
+            pbId: "hengdong.settings-goals.reminder-time",
+          },
+          {
+            screenId: "hengdong.settings-goals",
+            pbId: "hengdong.settings-goals.dark-mode",
+          },
+          {
+            screenId: "hengdong.settings-goals",
+            pbId: "hengdong.settings-goals.logout",
+          },
+          {
+            screenId: "hengdong.settings-goals",
+            pbId: "hengdong.settings-goals.reset",
+          },
+        ],
+      },
+      {
+        id: "reminder-off",
+        label: "提醒关闭",
+        requiredFragments: [
+          {
+            screenId: "hengdong.settings-goals",
+            pbId: "hengdong.settings-goals.reminder-enabled",
+          },
+          {
+            screenId: "hengdong.settings-goals",
+            pbId: "hengdong.settings-goals.dark-mode",
+          },
+        ],
+      },
+      {
+        id: "weekly-open",
+        label: "选择每周活动",
+        requiredFragments: [
+          {
+            screenId: "hengdong.settings-goals",
+            pbId: "hengdong.settings-goals.weekly-sheet",
+          },
+          {
+            screenId: "hengdong.settings-goals",
+            pbId: "hengdong.settings-goals.weekly-option",
+            pbKey: "3",
+          },
+        ],
+      },
+      {
+        id: "reminder-time-open",
+        label: "编辑提醒时间",
+        requiredFragments: [
+          {
+            screenId: "hengdong.settings-goals",
+            pbId: "hengdong.settings-goals.reminder-time-sheet",
+          },
+          {
+            screenId: "hengdong.settings-goals",
+            pbId: "hengdong.settings-goals.reminder-time-field",
+          },
+        ],
+      },
+      {
+        id: "logout-confirm-open",
+        label: "退出登录确认",
+        requiredFragments: [
+          {
+            screenId: "hengdong.settings-goals",
+            pbId: "hengdong.settings-goals.logout-confirm",
+          },
+        ],
+      },
+      {
+        id: "reset-confirm-open",
+        label: "重置演示数据确认",
+        requiredFragments: [
+          {
+            screenId: "hengdong.settings-goals",
+            pbId: "hengdong.settings-goals.reset-confirm",
           },
         ],
       },
     ],
     actions: [
       {
-        id: "save-settings",
+        id: "open-weekly-target",
         kind: "click",
         target: {
           screenId: "hengdong.settings-goals",
-          pbId: "hengdong.settings-goals.save",
+          pbId: "hengdong.settings-goals.weekly",
+        },
+      },
+      {
+        id: "choose-weekly-target",
+        kind: "click",
+        target: {
+          screenId: "hengdong.settings-goals",
+          pbId: "hengdong.settings-goals.weekly-option",
+          pbKey: "4",
+        },
+      },
+      {
+        id: "open-reminder-time",
+        kind: "click",
+        target: {
+          screenId: "hengdong.settings-goals",
+          pbId: "hengdong.settings-goals.reminder-time",
+        },
+      },
+      {
+        id: "logout",
+        kind: "click",
+        target: {
+          screenId: "hengdong.settings-goals",
+          pbId: "hengdong.settings-goals.logout",
+        },
+      },
+      {
+        id: "reset",
+        kind: "click",
+        target: {
+          screenId: "hengdong.settings-goals",
+          pbId: "hengdong.settings-goals.reset",
         },
       },
     ],
+    scenarios: [
+      {
+        id: "change-weekly-target",
+        label: "把每周活动改为 4 次",
+        initialVariantId: "weekly-open",
+        actionIds: ["choose-weekly-target"],
+        checkpoints: [
+          {
+            id: "weekly-row-updated",
+            screenId: "hengdong.settings-goals",
+            variantId: "default",
+            requiredFragments: [
+              {
+                screenId: "hengdong.settings-goals",
+                pbId: "hengdong.settings-goals.weekly",
+              },
+              {
+                screenId: "hengdong.settings-goals",
+                pbId: "hengdong.settings-goals.weekly-value",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "confirm-logout",
+        label: "打开退出登录确认",
+        initialVariantId: "default",
+        actionIds: ["logout"],
+        checkpoints: [
+          {
+            id: "logout-confirm-visible",
+            screenId: "hengdong.settings-goals",
+            variantId: "logout-confirm-open",
+            requiredFragments: [
+              {
+                screenId: "hengdong.settings-goals",
+                pbId: "hengdong.settings-goals.logout-confirm",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    requiredScenarioIds: ["change-weekly-target"],
   },
 ] satisfies ScreenRecord[];
 

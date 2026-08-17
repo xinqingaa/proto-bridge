@@ -317,11 +317,88 @@
 }
 
 .hd-row-action:focus-visible,
+.hd-settings-row:focus-visible,
 .hd-period button:focus-visible,
 .hd-calendar-day:focus-visible,
 .hd-choice:focus-visible {
   outline: var(--pb-border-focus);
   outline-offset: var(--pb-layout-focus-inset);
+}
+
+.hd-settings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-spacing-lg);
+  padding: var(--pb-spacing-md);
+}
+
+.hd-settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-spacing-xs);
+}
+
+.hd-settings-heading,
+.hd-settings-footer {
+  margin: var(--pb-spacing-none);
+  padding-inline: var(--pb-spacing-md);
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
+}
+
+.hd-settings-actions .hd-settings-footer {
+  padding-inline: var(--pb-spacing-none);
+}
+
+.hd-settings-row {
+  display: flex;
+  box-sizing: border-box;
+  align-items: center;
+  gap: var(--pb-spacing-sm);
+  width: var(--pb-layout-fill);
+  min-height: var(--pb-sizing-touch);
+  padding: var(--pb-spacing-none) var(--pb-spacing-md);
+  border: none;
+  background: transparent;
+  color: var(--pb-color-on-surface);
+  text-align: left;
+  font: var(--pb-typography-content);
+  cursor: pointer;
+}
+
+.hd-settings-row__label {
+  flex: var(--pb-layout-flex-fill);
+  min-width: var(--pb-spacing-none);
+}
+
+.hd-settings-row__value {
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-content);
+}
+
+.hd-settings-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-spacing-sm);
+}
+
+.hd-settings-row--switch {
+  cursor: default;
+}
+
+.hd-settings-row--switch .pb-switch,
+.hd-settings-row--switch .v-input,
+.hd-settings-row--switch .v-input__control {
+  width: var(--pb-layout-fill);
+  min-width: var(--pb-spacing-none);
+}
+
+.hd-settings-row--switch .v-selection-control {
+  display: flex;
+  width: var(--pb-layout-fill);
+  min-height: var(--pb-sizing-touch);
+  flex-direction: row-reverse;
+  justify-content: space-between;
 }
 
 .hd-action-row > *,
@@ -1333,10 +1410,6 @@
 
 .hd-spacer {
   flex: var(--pb-layout-flex-grow);
-}
-
-.hd-danger-zone {
-  padding-top: var(--pb-spacing-lg);
 }
 
 @media (prefers-reduced-motion: reduce) {

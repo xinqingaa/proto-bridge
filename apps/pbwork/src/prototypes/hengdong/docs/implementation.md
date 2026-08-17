@@ -17,11 +17,11 @@ prototypeId: hengdong
 | 计划       | approved | passed        | deferred          |
 | 计划详情   | approved | passed        | deferred          |
 | 进度       | approved | passed        | accepted          |
-| 设置与目标 | pending  | legacy-draft  | pending           |
+| 设置与目标 | approved  | passed        | quick-checked     |
 | 登录       | approved | passed        | accepted          |
 | 注册       | approved | passed        | accepted          |
 
-`legacy-draft` 表示现有代码可以保留用于后续调整，但不代表页面设计或体验已经通过。
+设置页已按 iOS 分组列表重写；Delivery 与 Experience 结果见下方设置章节。
 
 ## 通用实现基线
 
@@ -64,6 +64,10 @@ prototypeId: hengdong
 | 账号与密码字段     | 扩展 PBWork TextField   | 增加有限密码、显隐、autocomplete 与字段错误能力                 |
 | 初始周目标         | 现有 PBWork DS          | Menu 在同一注册表单选择每周 2–5 次                              |
 | 替换本地身份确认   | 现有 PBWork DS          | Confirm 明确旧凭据失效且设备训练数据保留                        |
+| 设置分组列表       | 现有 DS 组合            | ScrollableDataList + DataList 白底圆角分组；行内左标签右值     |
+| 每周活动选择       | 现有 PBWork DS          | 设置行进入 BottomSheet，选项带稳定 key 与选中勾                |
+| 提醒与深色模式     | 现有 PBWork DS          | SwitchControl；提醒关闭后隐藏时间行；改动立即写入               |
+| 退出与重置         | 现有 PBWork DS          | 退出描边、重置次要类型 + Confirm；危险结果由确认层承担          |
 
 ## 登录与注册正式调整
 
@@ -336,4 +340,34 @@ prototypeId: hengdong
 - 工作台侧边栏只导航 Screen；Variant 仍由画布顶栏和 Deliver 全量展开。Registry 不收缩现有 overlay / transient 夹具。
 - Experience Review：`deferred`。本轮未获取浏览器截图，不把 Delivery 通过写成体验验收。
 
-今天、训练执行和训练总结已完成核心闭环并通过对应验收；其余页面按 `design.md` 的旅程顺序推进。
+## 设置页 iOS 分组列表
+
+### 确定状态
+
+- `default`、`reminder-off`、`weekly-open`、`reminder-time-open`、`logout-confirm-open`、`reset-confirm-open`；
+- 周次数、提醒和深色模式立即写入本地偏好，不再使用保存按钮；
+- 提醒关闭时隐藏时间行；每周活动与提醒时间通过 BottomSheet 选择或编辑；
+- 退出为描边 Button，重置为次要类型，均先确认。
+
+### 独立验收节点
+
+- 设置根、每周活动行与当前次数、每日提醒开关、提醒时间、深色模式开关、退出登录、重置演示数据和本地数据说明；
+- 周次数选项使用 `2`–`5` 作为稳定 key；选择层、退出确认和重置确认均为 overlay Variant。
+
+### 关键 Action 与 Scenario
+
+- 打开每周活动选择层并选定 4 次后，选择层关闭，行内次数立即更新；
+- 点击退出登录打开确认，不直接离开。
+
+### Experience Gate 目标
+
+- 用户要求 iOS 系统设置风格，外观必须是深色模式开关。本轮默认做 L1 Quick Experience Check。
+- 重点检查灰底白分组、左标签右控件、无进度条/保存按钮/胶囊轨道，以及浅色默认与深色开关后的层级。
+
+### L1 验收结果
+
+- Delivery Gate：Token-only、DS-first、Flex-only、typecheck 和 137 个 PBWork 测试通过。`docs:verify` 现有 Flutter `screen-transition` mapping 缺口与本页无关。
+- Experience Review：在真实浏览器 `390 × 844` 检查浅色默认和深色默认；分组列表、右对齐开关、周次数与时间右侧取值、居中退出/重置均成立。第一轮截图发现开关在左、时间仍是灰输入框，修正后复检通过。结果为 `quick-checked`。
+
+今天、训练执行、训练总结和设置已覆盖核心闭环；Experience 结果在对应章节记录。
+
