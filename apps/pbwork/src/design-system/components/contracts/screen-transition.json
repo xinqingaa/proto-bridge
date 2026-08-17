@@ -7,7 +7,7 @@
   },
   "summary": "栈级页面转场；默认 iOS 左右侧滑，可选 Android 淡入缩放，不处理手势或业务路由。",
   "behavior": [
-    "换 Screen 时 push、replace 播进入动画，back 播返回动画；首次挂载、同屏 Variant、同一主壳内的根 Tab 切换和 reduced-motion 瞬间切换",
+    "换 Screen（已加载 view / screenKey 变化）时 push、replace 播进入动画，back 播返回；首次挂载、同屏 Variant、共用壳的根 Tab（view 不变）和 reduced-motion 瞬间切换",
     "ios 以完整视口宽度水平滑入或滑出；android 以淡入和轻微缩放替换",
     "不提供边缘返回手势；replace 与 push 使用同一套进入动画，不把根 Tab 切换或 TabViewport 横滑当成栈动画"
   ],

@@ -26,8 +26,8 @@ prototypeId: hengdong
 ## 通用实现基线
 
 - 注册 10 个 Screen：登录、注册、今天、活动记录、计划、进度、计划详情、训练执行、训练总结、设置与目标。
-- 根目的地切换使用 `replace`，二级任务使用 `push` 和可恢复 parent。
-- 今天、计划、进度共用 `HengdongMain` 主壳：底栏切换只换保活面板，不卸载主树，也不走 `ScreenTransition`。栈页 `push` / 非主壳 `replace` 仍播进入动画，`back` 播返回。Capture 环境 reduced-motion 仍为静帧。Flutter / Target mapping 本轮保持 pending。
+- 根目的地切换使用 `replace`，二级任务使用 `push` 和可恢复 parent。壳、滚动条与强制导航的通用做法见 `apps/pbwork/docs/prototypes/shell-and-nav.md`。
+- 今天、计划、进度的 `view` 为 `HengdongMain.vue`。栈页使用各自的 view。Capture 环境 reduced-motion 仍为静帧。Flutter / Target mapping 本轮保持 pending。
 - 三个根页面只通过底部 Tabbar 切换；活动记录归属今天任务栈。
 - 本地状态统一保存在 `hengdong.app.v2`；账号、目标、当前计划、训练会话、活动记录和主题共享同一数据源。
 - 正式训练与快速记录写入同一记录集合；今天、活动记录和进度从同一记录事实派生。

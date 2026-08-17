@@ -20,7 +20,9 @@ For a new product or structural change, determine:
 
 - target user, usage context, current friction, product promise, and success;
 - scope, non-goals, core objects, relationships, and lifecycle;
-- root navigation, page map, page responsibility, entry, return, and deep link;
+- root navigation, page map, page responsibility, entry, return, and deep link.
+  Bottom-tab roots: one Screen per home, and those Screens share one shell view.
+  Capture identity stays per Screen; stack pages keep their own views.
 - primary journey plus loading, empty, error, disabled, interruption, recovery,
   persistence, and observable success states;
 - assumptions, rejected directions, unresolved decisions, and acceptance signals.

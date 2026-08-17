@@ -19,11 +19,11 @@ TabViewport（items + v-model + keepMounted；根目的地默认关闭 swipe / m
 Tabbar（同一当前位置）
 ```
 
-- `Tabbar` 与 `TabViewport` 共用同一当前位置。
-- 面板切换动画与保活只在 `TabViewport`。
-- 底栏只发当前位置，不做面板容器、不做手势。
+- 每个根目的地注册独立 Screen，`view` 指向同一壳文件。
+- 壳内 `Tabbar` 与 `TabViewport` 共用当前位置；TabViewport `keepMounted`，关闭横滑，时长 `motion.duration-instant`。
+- 切 Tab 用 `replace` 更新 home slug；Runtime 保持已加载 view，面板即时切换。
 - **AppBar 可选**：一级最大导航页可以没有顶栏。
-- UI 先更新，URL `replace` 须节流；`keepMounted` 时各面板遵守 Variant 所有权（见 screens-and-variants）。
+- UI 先更新，URL `replace` 须节流；各保活面板只消费自己 home 的 variant（见 screens-and-variants）。
 - History / 返回语义见 [shell-and-nav.md](./shell-and-nav.md)。
 
 **禁止**：
@@ -90,6 +90,8 @@ Tabbar（同一当前位置）
 - 叠加层用 DS 的 `BottomSheet` / `Dialog` / `Toast`。
 - **叠加层挂载**：Dialog / Toast 宜作为页面内容的**兄弟节点**（与主滚动列并列），避免深埋在 `ScrollableDataList` 内容变换层内导致层级/capture 异常。Sheet 可按交互放在页内。
 - 打开态注册为 Screen Variant，可经 URL 复现；另备 `empty` / `error` / `loading`（按页需要）。
+- `FilterBar`：选中即更新当前集合。会改结果列表的 Sheet：选项写入草稿，确认按钮提交，关闭丢弃。点选即生效的设置项保持点选即用。
+- 选项 Sheet：选中行右侧 `check` Icon，标签用 `typography.label`；选项 `DataList` 默认不分隔线。
 
 **禁止**：
 

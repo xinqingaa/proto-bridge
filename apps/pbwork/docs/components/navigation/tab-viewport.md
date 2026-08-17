@@ -16,8 +16,8 @@
 
 - `modelValue` 与 items 决定唯一可见面板，切换通过 `update:modelValue` 回传。
 - `keepMounted` 保持非当前面板状态；`swipe` 与 `mouseSwipe` 分别控制触摸和鼠标手势。
+- 根目的地关闭横滑，`transitionDuration` 使用 `motion.duration-instant`。
 - 面板以完整视口宽度平移；相邻面板不得从裁剪边缘泄漏。
-- 根目的地默认可以关闭横滑，由页面壳选择导航方式。
 
 ## States
 
@@ -28,6 +28,5 @@
 
 ## 用法与反例
 
-- 与 Tabbar 共享当前目的地值，或由路由内容替代整个视图区。
-- 不让 Tabbar 自己承载面板，也不在同一区域嵌套另一个横滑 window。
+- 与 Tabbar 共享当前目的地值；多个根 Screen 指向同一壳文件时，本组件负责面板切换。
 - Props、Slots、Events、默认值与 Token 槽以 [Tab Viewport Contract](../../../src/design-system/components/contracts/tab-viewport.json) 为准。

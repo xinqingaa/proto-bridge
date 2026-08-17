@@ -190,13 +190,13 @@ Runtime 在 readiness 成功前必须完成：
 ## 12. 页面结构
 
 - 一个页面只有一个主滚动所有者。
-- 一级多面板使用 `TabViewport + BottomNavigation`。
+- 一级多面板：每个根目的地注册独立 Screen，`view` 指向同一壳；壳内 `TabViewport + Tabbar`，切 Tab 更新 home slug。
 - 一级主体面板内禁止再嵌套带 window 的 `Tabs`。
 - 列表外观使用 `DataList`，滚动/刷新/分页使用 `ScrollableDataList`。
 - 状态页关闭不适用的刷新和分页手势。
 - Dialog、Sheet、Snackbar 等 Overlay 与主内容保持清晰语义边界。
 - 多 Tab 与栈页使用统一导航辅助，确保深链、返回和跨 Tab 进栈可复现。
-- 产品离开拦截只约束 App 内返回与页面返回；Workbench 树、画布顶栏和 Capture 换页必须经 Runtime 强制导航放行。
+- 产品离开拦截写在 `onBeforeRouteLeave` 时先认 `isForcedRuntimeNavigation()`；Workbench 树、画布顶栏和 Capture 换页由 Runtime 强制导航打开目标页。
 
 ## 13. 数据与状态
 

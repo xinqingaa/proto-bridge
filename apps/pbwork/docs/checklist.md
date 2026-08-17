@@ -19,7 +19,7 @@
 
 ## 组合与手势
 
-- [ ] Tabbar 未兼任面板/手势，根目的地默认不横滑
+- [ ] Tabbar 发目的地；根目的地关闭横滑，TabViewport 时长 `motion.duration-instant`
 - [ ] 一级/二级 Tab 嵌套时只有一个横滑 owner；三级 Tab 不拥有 viewport；局部原地更新使用 R7
 - [ ] 一级/二级 Tab 内容在具名 slot；`fill` 时高度链完整
 - [ ] 列表：ScrollableDataList 外包，DataList 管外观
@@ -27,6 +27,7 @@
 - [ ] 唯一纵滚；顶部下拉与横滑不打架
 - [ ] 嵌套横条使用 `data-horizontal-scroll` + 共享 hook
 - [ ] 未页内复制手势仲裁
+- [ ] 原型表面默认隐藏滚动条，内容仍可滚动；仅页面明确要求时露出
 - [ ] Dialog/Toast 未深埋进滚动变换层（宜兄弟挂载）
 
 ## 导航与 Variant
@@ -36,9 +37,11 @@
 - [ ] 探索草稿位于 `src/drafts`，未注册为正式 Prototype，也未被当作 Capture/Handoff 输入
 - [ ] `docs/implementation.md` 的 Promotion Mapping 已将视觉元素分为现有 DS、通用 DS 缺口、业务局部 UI、外部资产或降级项
 - [ ] 导航职责、关键交互效果与视觉编排不存在影响实现的未决问题
-- [ ] Tab replace / 二级 push；跨 Tab 进栈 parent 正确
+- [ ] 根目的地各注册 Screen、共用壳 `view`；切 Tab 用 `replace` 更新 slug；栈页 `push`；跨 Tab 进栈 parent 正确
 - [ ] 返回与完成流符合 shell-and-nav（含嵌入 Runtime）
+- [ ] 产品离开拦截先认 `isForcedRuntimeNavigation()`；Workbench / Capture 换页由 Runtime 强制导航打开目标页
 - [ ] keepMounted 下各面板 ownsVariant
+- [ ] 选项 Sheet 选中行使用 `check` Icon 与 `typography.label`
 - [ ] Screen / Variant 已注册且可经 URL 打开
 - [ ] 叠加/校验等关键态有 Variant；theme ≠ variant
 - [ ] 列表与选项数据在源码中可见

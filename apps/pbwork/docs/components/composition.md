@@ -12,8 +12,8 @@
 
 - **一级最大导航页**：`AppBar` **可选**；需要统一标题/全局操作时再加，否则顶区可放在各面板内。
 - **栈页**：通常需要 `AppBar`（`showBack`）+ 业务 `goBack` / nav 辅助函数。
-- 根目的地：内容区用 **TabViewport**（或路由内容），底栏用 **Tabbar**，二者共用同一当前位置。
-- **禁止**让 Tabbar 同时当面板容器和手势层；根目的地默认不接受横滑。
+- 根目的地：内容区用 **TabViewport**，底栏用 **Tabbar**，二者共用同一当前位置。
+- Tabbar 只发当前位置；面板、保活和过渡在 TabViewport。根目的地关闭横滑。
 
 ## 2. 一级多面板
 
@@ -25,9 +25,10 @@ TabViewport      ◄─────────┘  swipe / mouseSwipe / keepMou
   └─ panel C
 ```
 
-- 根视图的 **动画与保活** 只在 TabViewport 或路由内容。
-- 栈页换页动画由 Runtime `ScreenTransition` 负责；Tab 根 `replace` 也播进入动画，同屏 Variant 不播。
-- 业务路由只记录当前 Tab 身份；手势层不直接改 history 细节（由原型 nav 统一 replace/push）。
+- 每个根目的地注册独立 Screen，这些记录的 `view` 指向**同一壳文件**。
+- 切 Tab 时 `replace` 更新 home slug；Runtime 保持已加载 view，面板在 TabViewport 即时切换（关横滑，时长 `motion.duration-instant`）。
+- 栈页使用自己的 view。已加载 view / `screenKey` 变化时，Runtime `ScreenTransition` 播放进入或返回。同屏 Variant 保持 `screenKey`。
+- 业务路由记录当前 Tab 身份；手势层不直接改 history（由原型 nav 统一 replace/push）。
 
 ## 3. Tabs 与分段
 
@@ -57,7 +58,8 @@ ScrollableDataList          # 纵滚 + 刷新 + 分页 + 可选鼠标拖滚
 ## 5. 筛选与搜索
 
 - 搜索：`SearchBar`
-- 标准快速筛选：优先三级 Tab / `FilterBar`；自带横滑忽略
+- 标准快速筛选：优先三级 Tab / `FilterBar`；选中即更新当前集合，自带横滑忽略
+- 会改结果列表的 Sheet：选项写入草稿，确认按钮提交，关闭丢弃
 - 自定义 Chip 行：合法，须 `data-no-swipe`
 
 ## 6. 表单
@@ -95,7 +97,7 @@ ScrollableDataList          # 纵滚 + 刷新 + 分页 + 可选鼠标拖滚
 ## 10. 决策速查
 
 ```text
-要应用根目的地？ → Tabbar + TabViewport（或路由）
+要应用根目的地？ → 各注册 Screen，共用壳 view；Tabbar + TabViewport
 要当前页面的主要内容面板？ → 一级 Tab
 要页面内的次级内容面板？ → 二级 Tab
 要当前区域内原地更新的筛选/模式/粒度？ → 三级 Tab / 局部分段（R7）

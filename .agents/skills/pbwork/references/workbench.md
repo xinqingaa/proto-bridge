@@ -49,6 +49,8 @@ Prototype Screens or their Design System.
 - Validate origin, source window, `runtimeId`, and `requestId`.
 - Re-handshake after iframe load and invalidate old messages.
 - Use explicit push/replace/back route semantics, not timing heuristics.
+- Workbench tree, canvas chrome, and Capture protocol navigate with Runtime
+  forced navigation so the iframe opens the requested Screen.
 - Keep the Workbench Bridge separate from the Capture Protocol.
 
 ## Verify

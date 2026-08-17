@@ -46,7 +46,12 @@ rewriting the baseline.
   If a semantic value is missing, use the design-system reference to add it.
 - Do not copy component, navigation, scrolling, or gesture implementations.
 - Follow documented compositions such as `BottomNavigation + TabViewport` and
-  `ScrollableDataList + DataList`.
+  `ScrollableDataList + DataList`. Root destinations each register a Screen and
+  share one shell `view`; TabViewport keeps panels mounted and switches with
+  `motion.duration-instant`. See `apps/pbwork/docs/prototypes/shell-and-nav.md`.
+- Product `onBeforeRouteLeave` guards return true when
+  `isForcedRuntimeNavigation()` is set. Workbench and Capture open the target
+  page through Runtime forced navigation.
 - Register Screens, Variants, Actions, and Scenarios only in
   `prototypes/registry.ts`.
 - Give strict default Screens a non-empty authored `requiredFragments`

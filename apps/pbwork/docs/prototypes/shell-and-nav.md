@@ -29,7 +29,7 @@ Shell
 - Shell 固定高度（如 `100dvh`），内部 `minmax(0,1fr)`。
 - 默认 panel 可 `overflow: auto`。
 - 内含 `.pb-scrollable-data-list` 时父级改为 `overflow: hidden`，把纵滚交给列表。
-- 原型内可隐藏滚动条，但必须仍可滚动。
+- 原型表面**默认隐藏滚动条**，内容仍可滚动。页面明确需要可见滚动条时再露出。Workbench 不在此列。
 
 ## 职责拆分
 
@@ -44,9 +44,9 @@ Shell
 
 - Tabbar 与 TabViewport **共用**同一当前位置。
 - **手势 / 点击先更新 UI**；再由 nav **节流后** `replace` 同步 URL（建议短 debounce，避免动画中狂刷 history）。
-- Tab 切换：路由 **replace**，写入当前 Tab 身份。
+- Tab 切换：路由 **replace**，写入当前 Tab 身份（home slug）。共用壳时已加载 view 不变，`ScreenTransition` 不播放，面板在 TabViewport 即时切换。
 - 二级进栈：路由 **push**，并记录可返回的 parent。
-- 栈页转场由 Runtime `ScreenTransition` 播放：默认 iOS 左右侧滑，可选 Android 淡入缩放。换 Screen 的 `push` 与非主 Tab 的 `replace` 播进入动画；`back` 播返回。同屏 Variant、同一主壳内的根 Tab 切换、首次挂载和 `prefers-reduced-motion` 不播。本轮不提供边缘返回手势。
+- 栈页转场由 Runtime `ScreenTransition` 播放：已加载 view / `screenKey` 变化时，`push` 与换 view 的 `replace` 播进入，`back` 播返回。同屏 Variant、首次挂载和 `prefers-reduced-motion` 瞬间切换。默认 iOS 左右侧滑，可选 Android 淡入缩放。本轮不提供边缘返回手势。
 - 嵌入 Runtime 的返回若走 `replace(parent)`，须先 `announceBackNavigation()`，否则会当成进入切页。
 - 二级页禁止直接拼业务路径字符串；统一走 nav 辅助（名称可自定，语义须覆盖下列能力）。
 
@@ -76,12 +76,15 @@ Shell
 | 完成流回首页 | 保存/提交/删除等结束后回到 Tab home：优先折叠到根位置；需要丢弃中间栈时允许强制 `replace` home（如 `preferBack: false`）                                  |
 | 深链兜底     | 任意二级深链打开后，返回必须能落到所属 Tab home，不能依赖「用户曾经点过底栏」                                                                             |
 
-产品页若用 `onBeforeRouteLeave` 拦截返回或未保存离开，必须先放行 `isForcedRuntimeNavigation()`。Workbench 树 / 画布顶栏 / Capture 换页走 Runtime 强制导航，不是用户在 App 内离开。
+产品离开拦截写在 `onBeforeRouteLeave` 时，先认 `isForcedRuntimeNavigation()`：为真则放行并打开目标页。Workbench 树、画布顶栏和 Capture 换页由 Runtime `runForcedRuntimeNavigation` 执行。手机内返回和页内离开继续走产品确认。
 
-## 共享 Tab 根与 keepMounted
+## 共享 Tab 根
 
-多个一级 home 若共用**同一个** Screen / Shell 实例，且 `TabViewport` `keepMounted`：
+有 2–5 个底栏根目的地时：
 
-- home slug 变化**不得**卸载整棵一级树。
-- 各面板对 `variant` 必须做**所有权判断**（见 [screens-and-variants.md](./screens-and-variants.md)）。
-- 根 Tab 切换只更新 URL 与可见面板，不走 `ScreenTransition`；面板过渡默认关闭或使用即时时长。
+1. 每个根目的地注册独立 Screen，Capture 按 Screen 采集。
+2. 这些 Screen 的 `view` 指向**同一个壳文件**。
+3. 壳内使用 `Tabbar` + `TabViewport`：`keepMounted`，关闭横滑，`transitionDuration` 为 `motion.duration-instant`。
+4. 切 Tab 时 `replace` 更新 home slug。Runtime 发现已加载 view 不变，保持 `screenKey`，只切换可见面板。
+5. 栈页（登录、会话、设置、二级任务）使用自己的 view。view 变化时 Runtime 播放 `ScreenTransition`。
+6. 保活面板只消费自己 home 的 `variant`（见 [screens-and-variants.md](./screens-and-variants.md)）。

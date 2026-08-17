@@ -14,8 +14,9 @@
 
 ## 行为要点
 
-- `push` 与换页的 `replace` 播进入动画；`back` 播返回动画。同一主壳内的根 Tab 切换不换 `screenKey`，因此不播。
-- 首次挂载只有一页，以及 `prefers-reduced-motion: reduce`，瞬间切换。
+- `screenKey` 使用已加载 view。view / `screenKey` 变化时：`push` 与换 view 的 `replace` 播进入，`back` 播返回。
+- 共用壳的根 Tab 只改 home slug，已加载 view 不变，瞬间切换。
+- 同屏 Variant、首次挂载，以及 `prefers-reduced-motion: reduce`，瞬间切换。
 - 默认 `mode=ios`：新页从右侧滑入，返回时当前页向右滑出。
 - `mode=android`：新页淡入并轻微缩放（Fade Through），不使用水平滑入。
 - Runtime 默认 iOS；模式不进入 URL 或 Case identity。Capture 环境强制 reduced-motion，截图仍为静帧。
@@ -32,6 +33,6 @@
 ## 用法与反例
 
 - 由 Runtime 包住当前 Screen：`screenKey` 用已加载的 view，`navigation` 用路由意图。
-- 同屏 Overlay / 空态等 Variant 不要为了播动画去改 `screenKey`。
-- 不要在页面里再包一层平行转场，也不要把 TabViewport 横滑当成栈动画。
+- 同屏 Overlay / 空态等 Variant 保持 `screenKey`，用 query 打开。
+- 根 Tab 面板切换交给 TabViewport；栈页转场只由本组件播放。
 - Props、Slots、Events、默认值与 Token 槽以 [页面转场 Contract](../../../src/design-system/components/contracts/screen-transition.json) 为准。

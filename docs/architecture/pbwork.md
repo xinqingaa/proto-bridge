@@ -97,7 +97,7 @@ Workbench 与 iframe 使用带 `runtimeId` 和 `requestId` 的消息信封：
 - iframe 重载后旧 runtimeId 和未完成请求全部失效；
 - payload 有大小与字段约束；
 - Workbench 只镜像导航语义，不用时间窗口猜测 iframe 状态；
-- Workbench 树、画布顶栏和 Capture Protocol 的换页是作者跳转：Runtime 以强制导航执行，产品页的离开拦截（退出 Sheet、未保存确认）不得拦住。产品内返回与页面返回仍走拦截。
+- Workbench 树、画布顶栏和 Capture Protocol 换页由 Runtime 强制导航执行，产品页按目标打开。手机内返回仍走产品离开确认。
 
 临时 Inspector handle 只服务当前 Workbench session。持久 Evidence identity 必须转换为稳定 Fragment。
 

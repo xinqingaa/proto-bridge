@@ -6,6 +6,7 @@
 
 - 稳定 `screenId` / `screenSlug` / `path`
 - `view` 指向真实 Vue 文件
+- 多个根目的地各自注册 Screen；这些记录可以指向**同一个壳 `view`**，Capture 仍按 Screen 身份采集
 - `defaultVariantId` + `variants[]`（至少能演示主路径）
 
 ## Variant 基线
@@ -49,11 +50,11 @@
 
 ## keepMounted 下的 Variant 所有权
 
-一级多面板共用 Screen 且面板保活时：
+一级多面板共用壳 `view` 且面板保活时：
 
-- 全局 `route.query.variant` 只应由**当前 home 对应的面板**消费。
-- 其它已挂载面板必须忽略该 variant（视为 `default`），否则一个 Tab 的 `empty`/`error` 会污染兄弟面板。
-- 判定方式：`screenSlug === 本面板 home slug`（或等价 owns 标志）为真才读 variant。
+- 每个根目的地仍是独立 Screen。
+- 全局 `route.query.variant` 由**当前 home 对应的面板**消费；其它已挂载面板视为 `default`。
+- 判定：`screenSlug === 本面板 home slug`（或等价 owns 标志）为真才读 variant。
 
 ## 错误与空态展示
 
