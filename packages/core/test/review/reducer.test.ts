@@ -34,8 +34,12 @@ const seed: ReviewSessionSeed = {
 };
 
 function chain(...items: Array<{ actor: ReviewActor; payload: ReviewEventPayload; tool?: string }>): ReviewEvent[] {
+  return chainFor(seed, ...items);
+}
+
+function chainFor(customSeed: ReviewSessionSeed, ...items: Array<{ actor: ReviewActor; payload: ReviewEventPayload; tool?: string }>): ReviewEvent[] {
   const events: ReviewEvent[] = [];
-  for (const [index, item] of [{ actor: 'operator' as const, payload: { kind: 'session-started' as const, seed } }, ...items].entries()) {
+  for (const [index, item] of [{ actor: 'operator' as const, payload: { kind: 'session-started' as const, seed: customSeed } }, ...items].entries()) {
     events.push(createReviewEvent({
       eventId: `event-${index}`,
       previousEventDigest: events.at(-1)?.eventDigest ?? null,
@@ -230,5 +234,51 @@ describe('authoritative Review reducer', () => {
     );
     expect(reduceReviewEvents(rounds)).toMatchObject({ status: 'needs-human', stopReason: 'tranche-round-limit' });
     expect(() => reduceReviewEvents(chain(), { generationId: 'generation-other' })).toThrow(/generation/);
+  });
+
+  it('closes L1/L2 without granting the L3 completed meaning', () => {
+    const quickSeed: ReviewSessionSeed = {
+      ...seed,
+      reviewProfile: { contractVersion: 1, coverageProfile: 'l1-quick', reasonCodes: ['local-low-risk-change'], excludedCaseIds: [], excludedScenarioCaseIds: [] },
+      runtimeProvider: { required: false },
+    };
+    const ready = [
+      ...coverageEvents(),
+      { actor: 'agent' as const, payload: { kind: 'obligations-assessed' as const, assessments: matchedAssessments } },
+      { actor: 'agent' as const, payload: { kind: 'findings-recorded' as const, findings: [] } },
+    ];
+    expect(() => reduceReviewEvents(chainFor(quickSeed, ...ready, {
+      actor: 'human', payload: { kind: 'human-finalized', confirmationRef: 'human', decision: 'complete' },
+    }))).toThrow(/cannot be marked completed/);
+    expect(reduceReviewEvents(chainFor(quickSeed, ...ready, {
+      actor: 'human', payload: { kind: 'human-finalized', confirmationRef: 'human', decision: 'accept' },
+    }))).toMatchObject({ status: 'closed', reviewOutcome: 'quick-checked', codeReviewStatus: 'reviewed', runtimeReviewStatus: 'not-applicable' });
+  });
+
+  it('records at most three provider failures and terminates Runtime without fallback', () => {
+    const profiledSeed: ReviewSessionSeed = {
+      ...seed,
+      reviewProfile: { contractVersion: 1, coverageProfile: 'l1-quick', reasonCodes: ['local-low-risk-change'], excludedCaseIds: [], excludedScenarioCaseIds: [] },
+      runtimeProvider: { required: true, providerId: 'dart-flutter-mcp' },
+    };
+    const failure = (attemptOrdinal: 1 | 2 | 3): ReviewEventPayload => ({
+      kind: 'provider-call-failed',
+      failure: {
+        operationId: 'operation-screenshot', operation: 'screenshot', attemptOrdinal,
+        errorCode: 'mcp-timeout', retryable: true,
+        startedAt: `2026-08-04T00:00:0${attemptOrdinal}.000Z`,
+        finishedAt: `2026-08-04T00:00:0${attemptOrdinal}.500Z`,
+        detailDigest: `sha256:failure-${attemptOrdinal}`,
+      },
+    });
+    const session = reduceReviewEvents(chainFor(
+      profiledSeed,
+      { actor: 'runner', payload: failure(1) },
+      { actor: 'runner', payload: failure(2) },
+      { actor: 'runner', payload: failure(3) },
+      { actor: 'runner', payload: { kind: 'runtime-provider-terminated', runtimeStatus: 'unavailable', reason: 'retry-budget-exhausted' } },
+    ));
+    expect(session).toMatchObject({ status: 'unverified', runtimeReviewStatus: 'unavailable', reviewOutcome: 'runtime-unverified' });
+    expect(session.providerFailures).toHaveLength(3);
   });
 });

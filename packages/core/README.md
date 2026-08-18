@@ -11,6 +11,7 @@ ProtoBridge 的唯一产品语义层，包含可执行 Evidence Contract、Captu
 - 不可变本地 Store、active activation、防降级、fork/archive/clean；
 - Evidence Read Model；
 - Target adapter conventions、examples 和 change validation；当前内置 Flutter adapter。
+- 风险驱动的 L1/L2/L3 Review Profile、Code/Runtime 双轨状态、Runtime provider receipt 与有界失败 reducer。
 
 ## 公共导出
 

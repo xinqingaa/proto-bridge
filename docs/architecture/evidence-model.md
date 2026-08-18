@@ -123,6 +123,10 @@ Handoff 创建前可以要求用户逐项确认风险，但确认不会修改风
 
 每个 Handoff 还可确定性派生 Reconstruction Acceptance Contract。该合同不修改 Evidence，而是把固定 revision 中的 topology、componentId、Token binding、Variant/Checkpoint、Scenario 与 Screenshot 组织成五维要求。Authoritative Review 再将等价的 per-Case requirements 编译为稳定、去重的 Reconstruction Obligations；全部 obligation 都必须有明确 assessment，artifact coverage 不能替代该验收分母。Target implementation claim 把 obligation 绑定到固定 Target revision 的运行时 Structure IR 或源码 occurrence/slot；verifier receipt 属于 Review 事实，不写回 Source Evidence。
 
+Review Profile Contract 使用固定风险信号确定 `l1-quick`、`l2-focused` 或 `l3-full`，并把选中的 Case、Scenario、obligation 与排除原因写入 Session seed。Agent 可以请求更高等级，不能把 Core 推导的等级或范围降级。Review 分别保留 Code/Semantic 与 Runtime/Visual 状态；只有 `l3-full` 可以进入 `completed`，L1/L2 只能形成有明确范围的关闭结果。缺少 Profile 的旧 event log 归一为 legacy full 读取语义，不因此获得新的完成权限。
+
+Runtime provider 的 session、App/build identity、operation 和失败尝试是 Review 事实，不属于 Source Evidence。Provider 调用最多记录三次有序尝试；不可重试错误或第三次失败必须产生 terminal Runtime 状态，不能由入口重新开启一轮无界重试。
+
 ## Blob
 
 Blob 保存 Screenshot、调试数据或目录附件。Blob 必须具有 owner ref，并能从请求的 Snapshot 或 Catalog 到达。Debug/Trace 需要显式许可；MCP 不按文件路径读取 Blob。

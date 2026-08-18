@@ -28,9 +28,20 @@ function session(): ReviewSession {
     obligationContractVersion: 1,
     requiredObligations: obligations,
     verificationContractVersion: 1,
+    reviewProfile: {
+      contractVersion: 1,
+      coverageProfile: 'l1-quick',
+      reasonCodes: ['local-low-risk-change'],
+      excludedCaseIds: [],
+      excludedScenarioCaseIds: [],
+    },
+    runtimeProvider: { required: true, providerId: 'dart-flutter-mcp' },
     comparatorVersion: 'compare-v1',
     createdAt: '2026-08-05T00:00:00.000Z',
     status: 'active',
+    codeReviewStatus: 'pending',
+    runtimeReviewStatus: 'pending',
+    reviewOutcome: 'pending',
     eventHeadDigest: 'sha256:event',
     eventCount: 2,
     viewedSourceDigests: [],
@@ -41,6 +52,8 @@ function session(): ReviewSession {
     findings: [],
     obligationAssessments: [{ obligationId: 'obligation-a', status: 'matched', detail: 'verified', evidenceDigests: ['sha256:receipt'] }],
     verifierReceipts: [],
+    providerFailures: [],
+    runtimeOperationReceipts: [],
     artifacts: [],
   };
 }
@@ -60,6 +73,11 @@ describe('Review progressive projection', () => {
     ]);
     expect(JSON.stringify(projected)).not.toContain('expected-value-a');
     expect(projected).not.toHaveProperty('requiredObligations');
+    expect(projected).toMatchObject({
+      projectionVersion: 2,
+      reviewProfile: { coverageProfile: 'l1-quick' },
+      runtimeProvider: { required: true, providerId: 'dart-flutter-mcp', connected: false, operationReceipts: 0 },
+    });
   });
 
   it('pages and filters obligations by fixed Review assessment state', () => {
@@ -70,7 +88,7 @@ describe('Review progressive projection', () => {
       pageSize: 1,
     });
     expect(first.items).toHaveLength(1);
-    expect(first.continuation).toMatch(/^pbrp1\./);
+    expect(first.continuation).toMatch(/^pbrp2\./);
     const second = projectReviewObligations(session(), {
       reviewRunId: 'review-test',
       screenId: 'screen-a',

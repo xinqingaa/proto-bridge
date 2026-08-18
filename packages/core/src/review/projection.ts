@@ -8,7 +8,7 @@ import type {
 } from './contracts.js';
 import type { ReconstructionObligation } from './obligations.js';
 
-export const REVIEW_PROJECTION_VERSION = 1 as const;
+export const REVIEW_PROJECTION_VERSION = 2 as const;
 export type ReviewObligationFilterStatus = ReviewAssessmentStatus | 'unassessed';
 
 export type ReviewSessionProjection = {
@@ -22,6 +22,10 @@ export type ReviewSessionProjection = {
   targetRevision: string;
   verificationContractVersion: ReviewSession['verificationContractVersion'];
   status: ReviewSession['status'];
+  reviewProfile: ReviewSession['reviewProfile'];
+  codeReviewStatus: ReviewSession['codeReviewStatus'];
+  runtimeReviewStatus: ReviewSession['runtimeReviewStatus'];
+  reviewOutcome: ReviewSession['reviewOutcome'];
   selectedCaseIds: string[];
   requiredSourceDigests: string[];
   requiredScenarioCaseIds: string[];
@@ -47,6 +51,17 @@ export type ReviewSessionProjection = {
     unverified: number;
   };
   verifierTargetContentDigest?: string;
+  runtimeProvider: {
+    required: boolean;
+    providerId?: string;
+    connected: boolean;
+    providerFingerprint?: string;
+    sessionIdentityDigest?: string;
+    applicationIdentity?: string;
+    appBuildDigest?: string;
+    operationReceipts: number;
+    failures: ReviewSession['providerFailures'];
+  };
   stopReason?: string;
   completedAt?: string;
 };
@@ -116,6 +131,15 @@ export function projectReviewSession(session: ReviewSession): ReviewSessionProje
     targetRevision: session.targetRevision,
     verificationContractVersion: session.verificationContractVersion ?? 'legacy-unavailable',
     status: session.status,
+    reviewProfile: {
+      ...session.reviewProfile,
+      reasonCodes: [...session.reviewProfile.reasonCodes],
+      excludedCaseIds: session.reviewProfile.excludedCaseIds.map((item) => ({ ...item })),
+      excludedScenarioCaseIds: session.reviewProfile.excludedScenarioCaseIds.map((item) => ({ ...item })),
+    },
+    codeReviewStatus: session.codeReviewStatus,
+    runtimeReviewStatus: session.runtimeReviewStatus,
+    reviewOutcome: session.reviewOutcome,
     selectedCaseIds: [...session.selectedCaseIds],
     requiredSourceDigests: [...session.requiredSourceDigests],
     requiredScenarioCaseIds: [...session.requiredScenarioCaseIds],
@@ -139,6 +163,19 @@ export function projectReviewSession(session: ReviewSession): ReviewSessionProje
       matched: verifierResults.filter((item) => item.status === 'matched').length,
       deviation: verifierResults.filter((item) => item.status === 'deviation').length,
       unverified: verifierResults.filter((item) => item.status === 'unverified').length,
+    },
+    runtimeProvider: {
+      required: session.runtimeProvider.required,
+      ...(session.runtimeProvider.providerId ? { providerId: session.runtimeProvider.providerId } : {}),
+      connected: session.providerSession !== undefined,
+      ...(session.providerSession ? {
+        providerFingerprint: session.providerSession.providerFingerprint,
+        sessionIdentityDigest: session.providerSession.sessionIdentityDigest,
+        applicationIdentity: session.providerSession.application.applicationIdentity,
+        appBuildDigest: session.providerSession.application.appBuildDigest,
+      } : {}),
+      operationReceipts: session.runtimeOperationReceipts.length,
+      failures: session.providerFailures.map((item) => ({ ...item })),
     },
     ...(session.verifierTargetContentDigest ? { verifierTargetContentDigest: session.verifierTargetContentDigest } : {}),
     ...(session.stopReason ? { stopReason: session.stopReason } : {}),
@@ -202,12 +239,12 @@ function uniqueQueries(obligations: ReconstructionObligation[]): Array<{ screenI
 
 function encodeCursor(payload: ReviewCursor): string {
   const json = canonical(payload);
-  return `pbrp1.${sha1Hex(json)}.${encodeURIComponent(json).replaceAll('.', '%2E')}`;
+  return `pbrp2.${sha1Hex(json)}.${encodeURIComponent(json).replaceAll('.', '%2E')}`;
 }
 
 function decodeCursor(value: string, expected: Pick<ReviewCursor, 'reviewRunId' | 'snapshotId' | 'queryDigest'>): ReviewCursor {
   const [prefix, checksum, encoded, ...rest] = value.split('.');
-  if (prefix !== 'pbrp1' || !checksum || !encoded || rest.length > 0) throw invalidCursor('Review continuation format is invalid.');
+  if (prefix !== 'pbrp2' || !checksum || !encoded || rest.length > 0) throw invalidCursor('Review continuation format is invalid.');
   let parsed: unknown;
   try { parsed = JSON.parse(decodeURIComponent(encoded)); } catch { throw invalidCursor('Review continuation payload is invalid.'); }
   if (sha1Hex(canonical(parsed)) !== checksum) throw invalidCursor('Review continuation checksum is invalid.');

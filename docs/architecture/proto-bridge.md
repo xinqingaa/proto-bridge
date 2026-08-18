@@ -62,6 +62,7 @@ Capture Driver 只报告观测结果。它不能用 Target 扫描或源码命名
 - reset 使用 Store 外持久化的 `planId + generation + inventory digest` 两阶段 Contract，范围覆盖 Evidence、Delivery 与未导出 Review；
 - writer 校验 root/lock 身份，外部破坏后停止旧 writer，禁止在原进程内自动重建。
 - authoritative Review 启动时从固定 Handoff 独立重算 canonical Reconstruction Obligations，拒绝客户端缩小验收分母；append-only event log 保存逐项 assessment，Reducer 在人工完成事件上重新执行 artifact coverage 与语义门禁。
+- Core Review reducer 固定 L1/L2/L3 Profile、Code/Runtime 双轨状态、provider session/App/build receipt 与最多三次 provider 尝试；L1/L2 关闭结果不复用 L3 `completed` 语义。
 
 Service Contract 来自 `@proto-bridge/core/v2/service-contract`。PBWork client 不应根据 HTTP 状态猜测第二套产品错误。
 
@@ -99,6 +100,8 @@ MCP 不创建 Capture Job，不接受 Store 文件路径作为对象引用，不
 Consumer projection version 4 是当前默认契约：Screen packet 含 `canonicalBrief`；inventory 与 Case delta 面向 Agent 使用 `regionId` / `caseId`；Case delta 不重复完整 Fact/provenance；Review response 不内嵌全部 obligations。Evidence obligations 按 Handoff/Screen/维度分页；Review obligations 额外支持 assessment 状态过滤。continuation 前缀为 `pbcp4` / `pbop4`，绑定固定 Snapshot 与规范化查询，不能跨维度复用。Evidence Region 是 Source 定位与验收单元，不等于目标侧组件、列表项或文件边界。
 
 Review 的验收分母来自 Core 对 Acceptance Contract 的确定性编译：等价的 per-Case requirements 按 Screen、维度、kind、subject 和 canonical expected 去重，同时保留全部 Case 与 Evidence refs。Assessment 使用显式 last-write 语义；`deviation`、`unverified`、未 assessment、阻断 finding 和缺少必要 receipt 都会阻止完成。`matched` 必须绑定固定 Target revision 上同一 obligation 的机器 verifier receipt；`not-applicable` 仅允许 operator/human 附 Target basis 写入。旧 event log 仍可恢复，但缺少 obligation 或 verification contract 时禁止完成。
+
+Review projection version 2 公开 `reviewProfile`、`codeReviewStatus`、`runtimeReviewStatus`、`reviewOutcome` 与脱敏的 provider progress。Provider session URI、VM service URI 和设备敏感 identity 不属于 Consumer projection。
 
 ## Target boundary
 
