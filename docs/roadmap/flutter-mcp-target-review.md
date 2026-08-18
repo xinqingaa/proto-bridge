@@ -4,7 +4,7 @@
 
 方案评审：用户已确认；按阶段实现并逐阶段提交
 
-当前执行约束：本轮只实现与执行静态/Fake Provider 回归，不由 Agent 连接真实设备或运行真实 App 验收；真实能力 Spike 与业务 E2E 等待用户另行启动。
+当前执行约束：按阶段实现冷链 Flutter Target 与 Review Harness；只有 Harness 静态门禁完成、用户自行启动已连接 DTD 的 debug App 后，Agent 才通过官方 Flutter MCP 执行真实 Runtime Review。不得使用固定 Simulator、设备启动命令、Target launcher 或任何 Runtime fallback。
 
 全局优先级：P0
 
@@ -15,6 +15,8 @@
 ## 当前实施进度
 
 截至 2026-08-18，代码阶段已完成：Core 分级与双轨 contract、Local Service attach-only provider、官方 MCP Screenshot/Scenario 编排、App/build/Target identity、typed Runtime observation、五维 verifier 回接、Flutter-only provider 规则、L1/L2/L3 完成语义、protocol v3 客户端迁移，以及旧 launcher Runtime 删除。
+
+2026-08-18 已清空旧 Workspace generation 并重采冷链 Source baseline：`bundle-2026-08-18t093451589-63c91d18` / `snapshot-2026-08-18t093517248-e18da98e` / `handoff-2026-08-18t093518522-92976ac4`。该 Handoff 覆盖 26 个 Case、7 个 Scenario 和 20 张 Source Screenshot，coverage 为 `complete`、freshness 为 `fresh`、mandatory risks 为空；后续 Flutter 实现与 Review 必须固定消费此引用，直到下一次显式重采。
 
 尚未执行：真实 DTD/App attach spike、真实设备 Screenshot/interaction、真实 Handoff 的 L1/L2/L3 对照、OCR/文字 bbox、Flutter/Runtime E2E 和完整 `pnpm verify`。这些项目不能由 Fake Provider 结果代替。
 
