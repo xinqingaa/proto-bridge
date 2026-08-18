@@ -12,6 +12,14 @@
 
 目标投入：约 2–3 周；先完成真实 App attach spike，再锁定后续 tranche
 
+## 当前实施进度
+
+截至 2026-08-18，代码阶段已完成：Core 分级与双轨 contract、Local Service attach-only provider、官方 MCP Screenshot/Scenario 编排、App/build/Target identity、typed Runtime observation、五维 verifier 回接、Flutter-only provider 规则、L1/L2/L3 完成语义、protocol v3 客户端迁移，以及旧 launcher Runtime 删除。
+
+尚未执行：真实 DTD/App attach spike、真实设备 Screenshot/interaction、真实 Handoff 的 L1/L2/L3 对照、OCR/文字 bbox、Flutter/Runtime E2E 和完整 `pnpm verify`。这些项目不能由 Fake Provider 结果代替。
+
+当前静态文档门禁仍有一项仓库既存 Target drift：Flutter target mapping 缺少已记录的 `screen-transition` component；它与本 Roadmap 的 Runtime provider 改造无关，未在本轮越界修改。
+
 ## Roadmap 定位
 
 PB/PBWork 核心 Evidence 链路已经完成验收，并继续作为当前产品基线：

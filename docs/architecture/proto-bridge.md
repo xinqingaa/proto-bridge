@@ -65,7 +65,7 @@ Capture Driver 只报告观测结果。它不能用 Target 扫描或源码命名
 - Core Review reducer 固定 L1/L2/L3 Profile、Code/Runtime 双轨状态、provider session/App/build receipt 与最多三次 provider 尝试；L1/L2 关闭结果不复用 L3 `completed` 语义。
 - Flutter Runtime provider 在 Local Service 内按需创建标准 stdio MCP client，执行 initialize、`tools/list` 与 DTD attach；Service 关闭、Target root 改变、进程退出或 session fingerprint 漂移都会关闭旧 client。该 provider 禁止设备发现、App 启停和 launcher fallback。
 
-Service Contract 来自 `@proto-bridge/core/v2/service-contract`。PBWork client 不应根据 HTTP 状态猜测第二套产品错误。
+Service Contract 来自 `@proto-bridge/core/v2/service-contract`。当前 Local Service protocol version 3 把 Flutter render/replay 改为 Service 执行请求，客户端不再上传自述 Runtime artifact/receipt；PBWork、CLI 和 MCP client 会拒绝不匹配的 protocol。PBWork client 不应根据 HTTP 状态猜测第二套产品错误。
 
 ## CLI
 

@@ -1,5 +1,6 @@
 import {
   LocalServiceEnvelope,
+  LOCAL_SERVICE_PROTOCOL_VERSION,
   type BundleEvidenceDetails,
   type HandoffPreview,
   type StoredPreflight,
@@ -8,6 +9,7 @@ import {
   type WorkspaceResetApplyRequest,
   type CreateReviewApprovalRequest,
   type ReviewApprovalToken,
+  type LocalServiceSession,
 } from '@proto-bridge/core/v2/service-contract';
 import type { ReviewSession } from '@proto-bridge/core/review';
 import type { AgentHandoff, CaptureJob } from '@proto-bridge/core/v2';
@@ -72,7 +74,7 @@ export async function probeLocalService(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 400);
   try {
-    const session = await requestJson<{ workspaceId: string }>(
+    const session = await requestJson<LocalServiceSession>(
       `${baseUrl}/session`,
       {
         method: 'POST',
@@ -81,7 +83,8 @@ export async function probeLocalService(
         signal: controller.signal,
       },
     );
-    return session.workspaceId === loaded.value.workspaceId;
+    return session.protocolVersion === LOCAL_SERVICE_PROTOCOL_VERSION
+      && session.workspaceId === loaded.value.workspaceId;
   } catch {
     return false;
   } finally {
@@ -94,14 +97,17 @@ export async function connectLocalService(
 ): Promise<CliServiceClient> {
   const baseUrl = serviceBaseUrl(loaded);
   const origin = serviceOrigin(loaded);
-  const session = await requestJson<{
-    sessionToken: string;
-    workspaceId: string;
-  }>(`${baseUrl}/session`, {
+  const session = await requestJson<LocalServiceSession>(`${baseUrl}/session`, {
     method: 'POST',
     origin,
     body: {},
   });
+  if (session.protocolVersion !== LOCAL_SERVICE_PROTOCOL_VERSION) {
+    throw new CliServiceClientError(
+      'incompatible-protocol',
+      `Local Service protocol ${String(session.protocolVersion)} is incompatible with required version ${LOCAL_SERVICE_PROTOCOL_VERSION}.`,
+    );
+  }
   if (session.workspaceId !== loaded.value.workspaceId) {
     throw new CliServiceClientError(
       'workspace-mismatch',

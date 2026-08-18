@@ -1,5 +1,9 @@
 import { V2ContractError } from '@proto-bridge/core/v2';
-import type { LocalServiceEnvelope, LocalServiceSession } from '@proto-bridge/core/v2/service-contract';
+import {
+  LOCAL_SERVICE_PROTOCOL_VERSION,
+  type LocalServiceEnvelope,
+  type LocalServiceSession,
+} from '@proto-bridge/core/v2/service-contract';
 import type { ServerOptions } from '../types.js';
 
 export class ReviewServiceClient {
@@ -61,7 +65,11 @@ export class ReviewServiceClient {
       });
       const envelope = await response.json() as LocalServiceEnvelope;
       if (!envelope.ok) throw new Error(envelope.error.message);
-      this.session = envelope.data as LocalServiceSession;
+      const session = envelope.data as LocalServiceSession;
+      if (session.protocolVersion !== LOCAL_SERVICE_PROTOCOL_VERSION) {
+        throw new Error(`Local Service protocol ${String(session.protocolVersion)} is incompatible with required version ${LOCAL_SERVICE_PROTOCOL_VERSION}.`);
+      }
+      this.session = session;
       return this.session;
     } catch (error) {
       throw unavailable(error instanceof Error ? error.message : String(error));

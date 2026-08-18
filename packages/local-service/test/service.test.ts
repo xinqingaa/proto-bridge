@@ -229,6 +229,7 @@ describe('ProtoBridge Local Service', () => {
     const unauthorized = await call(base, '/console');
     expect(unauthorized.response.status).toBe(401);
     const session = await call(base, '/session', { method: 'POST' });
+    expect(session.body.data.protocolVersion).toBe(3);
     expect(session.response.status).toBe(201);
     expect(session.body.data.sessionToken).not.toContain('/');
     const state = await call(base, '/console', {

@@ -1,5 +1,6 @@
 import {
   LocalServiceEnvelope,
+  LOCAL_SERVICE_PROTOCOL_VERSION,
   type BundleEvidenceDetails,
   type CaptureConsoleState,
   type CreateJobRequest,
@@ -53,6 +54,12 @@ export class CaptureServiceClient {
       method: "POST",
       authenticated: false,
     });
+    if (session.protocolVersion !== LOCAL_SERVICE_PROTOCOL_VERSION) {
+      throw new LocalServiceClientError(
+        "incompatible-protocol",
+        `Local Service protocol ${String(session.protocolVersion)} is incompatible with required version ${LOCAL_SERVICE_PROTOCOL_VERSION}.`,
+      );
+    }
     this.token = session.sessionToken;
     window.sessionStorage.setItem(SESSION_KEY, session.sessionToken);
     return session;
