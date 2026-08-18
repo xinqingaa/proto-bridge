@@ -69,6 +69,7 @@
 ## 4. Role 规则
 
 - 机器闭集只由 Core `SEMANTIC_ROLES` 定义；文档不维护第二套枚举。
+- 正式 PBWork 原型的静态 `data-pb-role` 必须逐个属于 Core `SEMANTIC_ROLES`。`pnpm --filter @proto-bridge/pbwork authoring:lint` 在开发、构建、类型检查和测试前执行；词表不同步时立即阻断，不等待 Capture。动态绑定仍由其 Runtime/Component Contract 验证。
 - role 必须表达节点真实产品职责，并与 HTML/ARIA 语义同时成立。
 - DS Component Contract 应声明 `fixed`、`contextual` 或 `decorative` role policy、默认 role 和允许的 role。
 - `unknown` 只用于无法升级的兼容或低质量输入；新 strict Screen 的 required Fragment、Action target 和 Scenario assertion 禁止使用 `unknown`。
@@ -116,6 +117,7 @@
 ### Block：必须阻断 Preflight、Capture、Handoff 或 CI
 
 - required Fragment 缺失、重复、不可见、零 bbox、非法 role 或使用 `unknown`；
+- 正式 PBWork 原型存在不属于 Core `SEMANTIC_ROLES` 的静态 `data-pb-role`；
 - `data-pb-id` / `data-pb-role` 只出现一个；
 - 重复 `pbId` 缺少唯一稳定 `pbKey`；
 - `pbId` / `pbKey` 不是稳定小写标识（字母开头；禁止纯数字、CSS selector、DOM path）；

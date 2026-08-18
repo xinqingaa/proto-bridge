@@ -177,7 +177,7 @@ function closeOverlay() {
             <div
               class="card-body"
               data-pb-id="cold-chain-ops.shipment-detail.summary.body"
-              data-pb-role="group"
+              data-pb-role="section"
               data-pb-token-spacing="spacing.md"
             >
               <header class="card-heading">
@@ -223,7 +223,7 @@ function closeOverlay() {
             <div
               class="card-body"
               data-pb-id="cold-chain-ops.shipment-detail.temperature-body"
-              data-pb-role="group"
+              data-pb-role="section"
               data-pb-token-spacing="spacing.md"
             >
               <header class="card-heading">
@@ -298,7 +298,7 @@ function closeOverlay() {
             <div
               class="card-body"
               data-pb-id="cold-chain-ops.shipment-detail.timeline-body"
-              data-pb-role="group"
+              data-pb-role="section"
               data-pb-token-spacing="spacing.md"
             >
               <header class="card-heading">

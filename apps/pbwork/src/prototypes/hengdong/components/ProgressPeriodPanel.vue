@@ -231,7 +231,7 @@ function select(key: string) {
       <div
         class="progress-range"
         :data-pb-id="`hengdong.progress.range.${period}`"
-        data-pb-role="toolbar"
+        data-pb-role="navigation"
         data-pb-token-spacing="spacing.sm"
       >
         <IconButton

@@ -195,7 +195,7 @@ function refresh() {
             <div
               class="card-body"
               data-pb-id="cold-chain-ops.exception-queue.summary.body"
-              data-pb-role="group"
+              data-pb-role="section"
               data-pb-token-spacing="spacing.md"
             >
               <header class="card-heading">

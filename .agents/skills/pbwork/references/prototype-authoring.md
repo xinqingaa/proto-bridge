@@ -61,6 +61,9 @@ rewriting the baseline.
 - Give prototype-local Evidence nodes explicit `data-pb-id`, `data-pb-role`,
   optional `data-pb-key`, and required `data-pb-token-*`. CSS Token usage does
   not substitute for a binding Fact.
+- Every static `data-pb-role` in a formal prototype must be a Core
+  `SEMANTIC_ROLES` member. Run the static authoring lint before Runtime Capture;
+  never add a local role word to make an invalid marker pass.
 - List independent implementation and acceptance nodes before editing. Warn
   when completeness is uncertain; add a missing marker when it is known to be
   in delivery scope.

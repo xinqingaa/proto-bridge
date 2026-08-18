@@ -49,6 +49,7 @@ describe('V2 semantic role vocabulary', () => {
   it('rejects free-form strings not in the closed list', () => {
     expect(SemanticRole.safeParse('super-fancy-widget').success).toBe(false);
     expect(SemanticRole.safeParse('Button').success).toBe(false);
+    expect(SemanticRole.safeParse('group').success).toBe(false);
   });
 });
 
