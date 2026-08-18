@@ -6,7 +6,7 @@
 
 | 全局优先级 | 状态 | Roadmap | 目标投入 | 主线 |
 | --- | --- | --- | --- | --- |
-| P0 | Planned | [官方 Flutter MCP 与 Target 验收增强](./flutter-mcp-target-review.md) | 约两周 | 官方 MCP provider、固定 Target receipt、模拟器/真机截图与交互验收、OCR 诊断 |
+| P0 | Planned | [官方 Flutter MCP 与分级 Target 验收](./flutter-mcp-target-review.md) | 约 2–3 周 | attach-only 官方 MCP、真实 App/build receipt、有界重试、L1/L2/L3、视觉/OCR 诊断 |
 | P2 | Planned | [PBWork 原型生命周期与 Release 管理](./prototype-lifecycle-and-release.md) | 待单独排期 | 稳定 Prototype identity、不可变 v1/v2 Release、定稿采集与 Archive |
 
 ## 状态定义
