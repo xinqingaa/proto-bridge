@@ -22,7 +22,7 @@ import type {
   ReviewSessionSeed,
 } from '../../review/contracts.js';
 
-export const LOCAL_SERVICE_PROTOCOL_VERSION = 2 as const;
+export const LOCAL_SERVICE_PROTOCOL_VERSION = 3 as const;
 
 export const LocalServiceError = z
   .object({
@@ -207,24 +207,15 @@ export type RecordScreenshotViewedRequest = ReviewArtifactUpload & {
   screenId: string;
   caseIds: string[];
 };
-export type RecordTargetRenderRequest = ReviewArtifactUpload & {
-  screenId: string;
+export type RunTargetRenderRequest = {
   caseId: string;
   sourceDigest: string;
   tranche: number;
   round: number;
   attemptId: string;
-  targetRevision: string;
-  receiptTool: string;
 };
-export type RecordScenarioReplayRequest = {
-  screenId: string;
+export type RunScenarioReplayRequest = {
   caseId: string;
-  scenarioId: string;
-  receiptDigest: string;
-  targetRevision: string;
-  receiptTool: string;
-  transition?: import('../../review/contracts.js').TargetScenarioTransition;
 };
 export type RecordArtifactCompareRequest = {
   screenId: string;

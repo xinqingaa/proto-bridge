@@ -38,7 +38,7 @@ class FakeTransport implements FlutterMcpTransport {
 }
 
 const tools = [
-  'dtd', 'flutter_driver_command', 'widget_inspector', 'get_runtime_errors',
+  'dtd', 'vm_service', 'flutter_driver_command', 'widget_inspector', 'get_runtime_errors',
   'launch_app', 'list_devices',
 ].map((name) => ({ name }));
 
@@ -48,7 +48,7 @@ describe('attach-only Flutter MCP provider', () => {
       if (name !== 'dtd') throw new Error(`Unexpected tool ${name}`);
       if (args.command === 'listDtdUris') return { content: [{ type: 'text', text: JSON.stringify({ dtdUris: [{ uri: 'ws://sensitive-dtd', workingDirectory: '/target' }] }) }] };
       if (args.command === 'connect') return { content: [{ type: 'text', text: 'connected' }] };
-      return { content: [{ type: 'text', text: JSON.stringify({ apps: [{ appId: 'app-1', name: 'sample' }] }) }] };
+      return { content: [{ type: 'text', text: JSON.stringify({ apps: [{ appId: 'app-1', name: 'sample', uri: 'ws://sensitive-app' }] }) }] };
     });
     const provider = new FlutterMcpProvider({ transportFactory: () => transport, retryDelayMs: 0 });
     const attached = await provider.attach('/target', 'app-1');
@@ -56,7 +56,7 @@ describe('attach-only Flutter MCP provider', () => {
     expect(attached.value.handshake).toMatchObject({
       providerId: 'dart-flutter-mcp',
       providerVersion: '3.12.0',
-      capabilities: { dtd: true, driver: true, inspector: true, screenshot: true, interaction: true, runtimeErrors: true },
+      capabilities: { dtd: true, vmService: true, driver: true, inspector: true, screenshot: true, interaction: true, runtimeErrors: true },
     });
     expect(attached.value.dtdSelectionDigest).toMatch(/^sha256:/);
     expect(JSON.stringify(attached.value)).not.toContain('sensitive-dtd');
@@ -76,7 +76,7 @@ describe('attach-only Flutter MCP provider', () => {
           : { content: [{ type: 'text', text: JSON.stringify({ dtdUris: [{ uri: 'ws://dtd', workingDirectory: '/target' }] }) }] };
       }
       if (args.command === 'connect') return {};
-      return { content: [{ type: 'text', text: JSON.stringify({ apps: [{ appId: 'app-1' }] }) }] };
+      return { content: [{ type: 'text', text: JSON.stringify({ apps: [{ appId: 'app-1', uri: 'ws://app' }] }) }] };
     });
     const provider = new FlutterMcpProvider({ transportFactory: () => transport, retryDelayMs: 0 });
     const attached = await provider.attach('/target');

@@ -3,6 +3,7 @@ import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import path from 'node:path';
 import { StringDecoder } from 'node:string_decoder';
 import type {
+  ReviewApplicationReceipt,
   ReviewProviderCapabilities,
   ReviewProviderFailure,
   ReviewRuntimeOperation,
@@ -93,6 +94,8 @@ export class FlutterMcpProvider {
   private targetRoot: string | undefined;
   private handshake: FlutterMcpCapabilityHandshake | undefined;
   private tools = new Map<string, McpToolDefinition>();
+  private attached: FlutterMcpAttachResult | undefined;
+  private appUri: string | undefined;
 
   constructor(options: FlutterMcpProviderOptions = {}) {
     this.command = options.command ?? 'dart';
@@ -152,6 +155,10 @@ export class FlutterMcpProvider {
   }
 
   async attach(targetRoot: string, expectedApplicationIdentity?: string): Promise<FlutterMcpOperationResult<FlutterMcpAttachResult>> {
+    if (this.attached && this.targetRoot === path.resolve(targetRoot) && this.appUri) {
+      const at = this.now().toISOString();
+      return { operationId: `flutter-mcp-${randomUUID()}`, attemptOrdinal: 1, startedAt: at, finishedAt: at, value: this.attached, failures: [] };
+    }
     return this.runWithRetry('connect', async () => {
       const handshake = await this.ensureSession(targetRoot);
       this.requireTool('dtd');
@@ -162,12 +169,50 @@ export class FlutterMcpProvider {
       const connected = await this.callToolOnce('dtd', { command: 'listConnectedApps' });
       const applications = extractApplicationCandidates(connected);
       const selectedApplication = selectApplicationCandidate(applications, expectedApplicationIdentity);
-      return {
+      const appUri = firstString(selectedApplication, ['uri', 'vmServiceUri', 'appUri']);
+      if (!appUri) throw new FlutterMcpProviderError('app-identity-incomplete', 'Connected App does not expose a VM Service URI.', false);
+      this.appUri = appUri;
+      this.attached = {
         handshake,
         dtdSelectionDigest: digest(JSON.stringify(redactDtdCandidate(selectedDtd))),
-        applicationSelectionDigest: digest(JSON.stringify(selectedApplication)),
+        applicationSelectionDigest: digest(JSON.stringify(redactApplicationCandidate(selectedApplication))),
       };
+      return this.attached;
     });
+  }
+
+  async probeApplicationIdentity(serviceExtension: string): Promise<FlutterMcpOperationResult<ReviewApplicationReceipt>> {
+    const result = await this.invokeServiceExtension('inspect', serviceExtension, {});
+    return { ...result, value: parseApplicationReceipt(result.value) };
+  }
+
+  async invokeServiceExtension<T = unknown>(
+    operation: ReviewRuntimeOperation,
+    serviceExtension: string,
+    args: Record<string, unknown>,
+  ): Promise<FlutterMcpOperationResult<T>> {
+    if (!/^ext\.[A-Za-z0-9_.-]+$/.test(serviceExtension)) throw new FlutterMcpProviderError('service-extension-invalid', 'Flutter Runtime service extension name is invalid.', false);
+    const targetRoot = this.targetRoot;
+    const appUri = this.appUri;
+    if (!targetRoot || !appUri) throw new FlutterMcpProviderError('provider-session-missing', 'Flutter MCP App session is not attached.', true);
+    return this.runWithRetry(operation, async () => {
+      await this.ensureSession(targetRoot);
+      this.requireTool('vm_service');
+      const vm = await this.callToolOnce('vm_service', { command: 'callMethod', appUri, method: 'getVM' });
+      const isolateId = extractIsolateId(vm);
+      const response = await this.callToolOnce('vm_service', { command: 'callMethod', appUri, method: serviceExtension, isolateId, arguments: args });
+      return extractServiceExtensionValue(response) as T;
+    });
+  }
+
+  async callForApp<T = unknown>(
+    operation: ReviewRuntimeOperation,
+    toolName: string,
+    args: Record<string, unknown>,
+    options: { retryAfterDispatch?: boolean } = {},
+  ): Promise<FlutterMcpOperationResult<T>> {
+    if (!this.appUri) throw new FlutterMcpProviderError('provider-session-missing', 'Flutter MCP App session is not attached.', true);
+    return this.call<T>(operation, toolName, { ...args, appUri: this.appUri }, options);
   }
 
   async call<T = unknown>(
@@ -202,6 +247,8 @@ export class FlutterMcpProvider {
     this.transport = undefined;
     this.targetRoot = undefined;
     this.handshake = undefined;
+    this.attached = undefined;
+    this.appUri = undefined;
     this.tools.clear();
     await transport?.close().catch(() => undefined);
   }
@@ -380,6 +427,7 @@ export class StdioFlutterMcpTransport implements FlutterMcpTransport {
 function capabilityInventory(tools: Map<string, McpToolDefinition>): ReviewProviderCapabilities {
   return {
     dtd: tools.has('dtd'),
+    vmService: tools.has('vm_service'),
     driver: tools.has('flutter_driver_command'),
     inspector: tools.has('widget_inspector'),
     screenshot: tools.has('flutter_driver_command'),
@@ -415,7 +463,7 @@ type ApplicationCandidate = Record<string, string | number | boolean>;
 
 function extractApplicationCandidates(value: unknown): ApplicationCandidate[] {
   return uniqueObjects(extractObjects(value).flatMap((item) => {
-    const identity = firstString(item, ['applicationIdentity', 'appId', 'id', 'name', 'deviceId']);
+    const identity = firstString(item, ['applicationIdentity', 'appId', 'id', 'name', 'deviceId', 'uri', 'vmServiceUri', 'appUri']);
     if (!identity) return [];
     const candidate = Object.fromEntries(Object.entries(item).filter(([, entry]) => ['string', 'number', 'boolean'].includes(typeof entry))) as ApplicationCandidate;
     return [candidate];
@@ -460,6 +508,67 @@ function uniqueObjects<T>(items: T[], identity: (item: T) => string): T[] {
 
 function redactDtdCandidate(candidate: DtdCandidate): Record<string, string> {
   return { uriDigest: digest(candidate.uri), ...(candidate.workingDirectory ? { workingDirectoryDigest: digest(path.resolve(candidate.workingDirectory)) } : {}) };
+}
+
+function redactApplicationCandidate(candidate: ApplicationCandidate): Record<string, string | number | boolean> {
+  return Object.fromEntries(Object.entries(candidate).map(([key, value]) => [/(?:uri|device|id)/i.test(key) ? `${key}Digest` : key, /(?:uri|device|id)/i.test(key) ? digest(String(value)) : value]));
+}
+
+function extractIsolateId(value: unknown): string {
+  for (const item of extractObjects(value)) {
+    if (Array.isArray(item.isolates)) {
+      for (const isolate of item.isolates) {
+        if (isolate && typeof isolate === 'object' && typeof (isolate as { id?: unknown }).id === 'string') return (isolate as { id: string }).id;
+      }
+    }
+  }
+  throw new FlutterMcpProviderError('app-identity-incomplete', 'Flutter App VM response does not expose an isolate ID.', false);
+}
+
+function extractServiceExtensionValue(value: unknown): unknown {
+  const objects = extractObjects(value);
+  for (const item of objects) {
+    if (item.result && typeof item.result === 'object') return item.result;
+    if (item.response && typeof item.response === 'object') return item.response;
+  }
+  return objects.at(-1) ?? value;
+}
+
+function parseApplicationReceipt(value: unknown): ReviewApplicationReceipt {
+  const candidate = extractObjects(value).find((item) => [
+    'applicationIdentity', 'targetCommit', 'targetContentDigest', 'appBuildDigest', 'reviewHarnessVersion', 'platform',
+  ].every((key) => typeof item[key] === 'string' && item[key]));
+  if (!candidate) throw new FlutterMcpProviderError('app-identity-incomplete', 'Flutter Runtime identity service extension returned an incomplete receipt.', false);
+  const size = (key: string): { width: number; height: number } | undefined => {
+    const item = candidate[key];
+    return item && typeof item === 'object' && typeof (item as { width?: unknown }).width === 'number' && typeof (item as { height?: unknown }).height === 'number'
+      ? { width: (item as { width: number }).width, height: (item as { height: number }).height }
+      : undefined;
+  };
+  const optionalString = (key: string) => typeof candidate[key] === 'string' ? candidate[key] as string : undefined;
+  const optionalNumber = (key: string) => typeof candidate[key] === 'number' ? candidate[key] as number : undefined;
+  const receipt: ReviewApplicationReceipt = {
+    applicationIdentity: candidate.applicationIdentity as string,
+    targetCommit: candidate.targetCommit as string,
+    targetContentDigest: candidate.targetContentDigest as string,
+    appBuildDigest: candidate.appBuildDigest as string,
+    reviewHarnessVersion: candidate.reviewHarnessVersion as string,
+    platform: candidate.platform as string,
+    ...(optionalString('runtimeOrOsVersion') ? { runtimeOrOsVersion: optionalString('runtimeOrOsVersion')! } : {}),
+    ...(size('logicalSize') ? { logicalSize: size('logicalSize')! } : {}),
+    ...(size('pixelSize') ? { pixelSize: size('pixelSize')! } : {}),
+    ...(optionalNumber('dpr') ? { dpr: optionalNumber('dpr')! } : {}),
+    ...(optionalString('orientation') ? { orientation: optionalString('orientation')! } : {}),
+    ...(optionalString('locale') ? { locale: optionalString('locale')! } : {}),
+    ...(optionalString('theme') ? { theme: optionalString('theme')! } : {}),
+    ...(optionalNumber('textScale') ? { textScale: optionalNumber('textScale')! } : {}),
+    ...(optionalString('safeArea') ? { safeArea: optionalString('safeArea')! } : {}),
+    ...(optionalString('fontEnvironment') ? { fontEnvironment: optionalString('fontEnvironment')! } : {}),
+    ...(typeof candidate.textEntryEmulation === 'boolean' ? { textEntryEmulation: candidate.textEntryEmulation } : {}),
+    ...(optionalString('settlePolicy') ? { settlePolicy: optionalString('settlePolicy')! } : {}),
+    ...(optionalString('systemChromePolicy') ? { systemChromePolicy: optionalString('systemChromePolicy')! } : {}),
+  };
+  return receipt;
 }
 
 function classifyProviderError(error: unknown, fallbackCode: string): FlutterMcpProviderError {

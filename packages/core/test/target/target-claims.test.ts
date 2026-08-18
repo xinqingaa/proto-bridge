@@ -50,7 +50,7 @@ describe('Target claim verifier', () => {
     expect(wrongSlot.results[0]).toMatchObject({ status: 'deviation', detail: expect.stringContaining('has no color') });
   });
 
-  it('compares deterministic Target Structure IR and catches a scroll-owner mutation', async () => {
+  it('leaves Runtime semantic dimensions unverified until Flutter MCP receipts are recorded', async () => {
     const root = await targetFixture();
     const head = await commit(root);
     const obligations = fixtureObligations();
@@ -59,53 +59,18 @@ describe('Target claim verifier', () => {
       dimension: 'structure',
       caseId: CASE,
     };
-    const matched = await verify(root, head, obligations, [structureClaim]);
-    expect(matched.results[0]).toMatchObject({ status: 'matched' });
-
-    const resized = fixtureStructure();
-    resized.regions.find((item) => item.regionId === `${SCREEN}.content`)!.bbox = { x: 8, y: 96, width: 374, height: 580 };
-    await write(root, 'structure.json', `${JSON.stringify(resized)}\n`);
-    const semanticMatch = await verify(root, head, obligations, [structureClaim]);
-    expect(semanticMatch.results[0]).toMatchObject({ status: 'matched' });
-
-    const mutated = fixtureStructure();
-    mutated.regions.find((item) => item.regionId === `${SCREEN}.content`)!.scrollOwner = { kind: 'viewport' };
-    await write(root, 'structure.json', `${JSON.stringify(mutated)}\n`);
-    const failed = await verify(root, head, obligations, [structureClaim]);
-    expect(failed.results[0]).toMatchObject({ status: 'deviation', detail: expect.stringContaining('scroll-owner') });
-  });
-
-  it('verifies typed state and transition receipts and rejects state/interaction mutations', async () => {
-    const root = await targetFixture();
-    const head = await commit(root);
-    const obligations = fixtureObligations();
     const stateClaim: TargetImplementationClaim = { obligationId: 'obligation-state', dimension: 'states', caseId: CASE };
     const actionClaim: TargetImplementationClaim = { obligationId: 'obligation-action', dimension: 'interactions', caseId: SCENARIO_CASE };
     const transitionClaim: TargetImplementationClaim = { obligationId: 'obligation-transition', dimension: 'interactions', caseId: SCENARIO_CASE };
 
-    const matched = await verify(root, head, obligations, [stateClaim, actionClaim, transitionClaim]);
-    expect(matched.results.map((item) => item.status)).toEqual(['matched', 'matched', 'matched']);
-    expect(matched.results[0]?.stateProof?.values).toContainEqual({ regionId: `${SCREEN}.filter`, key: 'selected', value: 'all' });
-    expect(matched.results[2]?.transitionProof?.actions).toHaveLength(1);
-
-    const wrongDefault = fixtureState();
-    wrongDefault.values[0]!.value = 'delayed';
-    await write(root, 'state.json', `${JSON.stringify(wrongDefault)}\n`);
-    const defaultFailure = await verify(root, head, obligations, [stateClaim]);
-    expect(defaultFailure.results[0]).toMatchObject({ status: 'deviation', detail: expect.stringContaining('value:sample.screen.filter.selected') });
-
-    const wrongObject = fixtureTransition();
-    wrongObject.actions[0]!.targetRegionId = `${SCREEN}.unrelated`;
-    await write(root, 'scenario.json', `${JSON.stringify(wrongObject)}\n`);
-    const objectFailure = await verify(root, head, obligations, [actionClaim]);
-    expect(objectFailure.results[0]).toMatchObject({ status: 'deviation', detail: expect.stringContaining('action-target') });
-
-    const unchanged = fixtureTransition();
-    unchanged.postState.shell.variantId = 'default';
-    unchanged.postState.values[0]!.value = false;
-    await write(root, 'scenario.json', `${JSON.stringify(unchanged)}\n`);
-    const transitionFailure = await verify(root, head, obligations, [transitionClaim]);
-    expect(transitionFailure.results[0]).toMatchObject({ status: 'deviation', detail: expect.stringMatching(/postState\.variantId|value:/) });
+    const result = await verify(root, head, obligations, [structureClaim, stateClaim, actionClaim, transitionClaim]);
+    expect(result.results.map((item) => item.status)).toEqual(['unverified', 'unverified', 'unverified', 'unverified']);
+    expect(result.results.map((item) => item.detail)).toEqual([
+      expect.stringContaining('Widget Inspector receipt'),
+      expect.stringContaining('Runtime observation receipt'),
+      expect.stringContaining('Scenario receipt'),
+      expect.stringContaining('Scenario receipt'),
+    ]);
   });
 });
 
@@ -272,24 +237,29 @@ async function targetFixture(): Promise<string> {
     'class AppColors { int get surface => 1; }',
   ].join('\n'));
   await write(root, 'lib/features/page.dart', validPageSource());
-  await write(root, 'structure.json', `${JSON.stringify(fixtureStructure())}\n`);
-  await write(root, 'structure.mjs', "import { readFileSync } from 'node:fs';\nprocess.stdout.write(readFileSync('structure.json', 'utf8'));\n");
-  await write(root, 'state.json', `${JSON.stringify(fixtureState())}\n`);
-  await write(root, 'state.mjs', "import { readFileSync } from 'node:fs';\nprocess.stdout.write(readFileSync('state.json', 'utf8'));\n");
-  await write(root, 'scenario.json', `${JSON.stringify(fixtureTransition())}\n`);
-  await write(root, 'scenario.mjs', "import { readFileSync } from 'node:fs';\nprocess.stdout.write(readFileSync('scenario.json', 'utf8'));\n");
   await write(root, 'proto-bridge.target.json', `${JSON.stringify({
     version: 1,
     technology: 'flutter',
     components: { 'page.card': { symbol: 'CommonCard' } },
     tokens: { 'color.surface': { accessor: 'TS.colors.surface' } },
     review: {
-      version: 1,
-      platform: 'ios-simulator',
-      launcher: { command: ['node', 'render.mjs'], structureCommand: ['node', 'structure.mjs'], stateCommand: ['node', 'state.mjs'], scenarioCommand: ['node', 'scenario.mjs'] },
-      device: { udid: 'fixture', runtime: 'fixture', logicalWidth: 390, logicalHeight: 844, dpr: 3, locale: 'zh-CN', theme: 'light', textScale: 1, safeArea: 'fixture', settle: 'fixture' },
+      version: 2,
+      provider: 'dart-flutter-mcp',
+      runtime: {
+        applicationIdentity: 'target-claim-fixture',
+        identityServiceExtension: 'ext.protoBridge.identity',
+        prepareServiceExtension: 'ext.protoBridge.prepare',
+        observeServiceExtension: 'ext.protoBridge.observe',
+        reviewHarnessVersion: '1',
+        textEntryEmulation: true,
+      },
       cases: { [CASE]: { screenId: SCREEN }, [SCENARIO_CASE]: { screenId: SCREEN } },
-      scenarios: { [SCENARIO_CASE]: { screenId: SCREEN, scenarioId: 'select-row' } },
+      scenarios: {
+        [SCENARIO_CASE]: {
+          screenId: SCREEN, scenarioId: 'select-row', checkpointId: 'selected',
+          actions: [{ actionId: 'select-row', kind: 'tap', targetRegionId: `${SCREEN}.row.row-2`, finder: { kind: 'value-key', value: 'row-2' } }],
+        },
+      },
     },
   }, null, 2)}\n`);
   return root;

@@ -26,40 +26,45 @@ const machineMapping = z.object({
   constructorHints: z.array(z.string().min(1)).optional(),
   usageHints: z.array(z.string().min(1)).optional(),
 }).strict();
+const flutterFinder = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('value-key'), value: z.string().min(1) }).strict(),
+  z.object({ kind: z.literal('semantics-label'), value: z.string().min(1), isRegExp: z.boolean().optional() }).strict(),
+  z.object({ kind: z.literal('text'), value: z.string().min(1) }).strict(),
+  z.object({ kind: z.literal('tooltip'), value: z.string().min(1) }).strict(),
+  z.object({ kind: z.literal('type'), value: z.string().min(1) }).strict(),
+]);
+const flutterScenarioAction = z.discriminatedUnion('kind', [
+  z.object({ actionId: z.string().min(1), kind: z.literal('tap'), targetRegionId: z.string().min(1), finder: flutterFinder }).strict(),
+  z.object({ actionId: z.string().min(1), kind: z.literal('enter-text'), targetRegionId: z.string().min(1), finder: flutterFinder, text: z.string() }).strict(),
+  z.object({ actionId: z.string().min(1), kind: z.literal('scroll'), targetRegionId: z.string().min(1), finder: flutterFinder, dx: z.number(), dy: z.number(), durationMicros: z.number().int().positive(), frequency: z.number().int().positive() }).strict(),
+  z.object({ actionId: z.string().min(1), kind: z.literal('scroll-into-view'), targetRegionId: z.string().min(1), finder: flutterFinder, alignment: z.number().min(0).max(1) }).strict(),
+  z.object({ actionId: z.string().min(1), kind: z.literal('wait-for'), targetRegionId: z.string().min(1), finder: flutterFinder }).strict(),
+]);
 export const FlutterReviewContract = z.object({
-  version: z.literal(1),
-  platform: z.literal('ios-simulator'),
-  launcher: z.object({
-    command: z.array(z.string().min(1)).min(1),
-    scenarioCommand: z.array(z.string().min(1)).min(1).optional(),
-    structureCommand: z.array(z.string().min(1)).min(1).optional(),
-    stateCommand: z.array(z.string().min(1)).min(1).optional(),
-    environment: z.record(z.string()).optional(),
-    timeoutMs: z.number().int().min(1_000).max(300_000).optional(),
-  }).strict(),
-  device: z.object({
-    udid: z.string().min(1),
-    runtime: z.string().min(1),
-    logicalWidth: z.number().int().positive(),
-    logicalHeight: z.number().int().positive(),
-    dpr: z.number().positive(),
-    locale: z.string().min(1),
-    theme: z.string().min(1),
-    textScale: z.number().positive(),
-    safeArea: z.string().min(1),
-    settle: z.string().min(1),
+  version: z.literal(2),
+  provider: z.literal('dart-flutter-mcp'),
+  runtime: z.object({
+    applicationIdentity: z.string().min(1),
+    identityServiceExtension: z.string().regex(/^ext\.[A-Za-z0-9_.-]+$/),
+    prepareServiceExtension: z.string().regex(/^ext\.[A-Za-z0-9_.-]+$/),
+    observeServiceExtension: z.string().regex(/^ext\.[A-Za-z0-9_.-]+$/),
+    reviewHarnessVersion: z.string().min(1),
+    textEntryEmulation: z.boolean(),
+    settleTimeoutMs: z.number().int().min(100).max(30_000).optional(),
   }).strict(),
   cases: z.record(z.string().min(1), z.object({
     screenId: z.string().min(1),
-    arguments: z.array(z.string()).optional(),
-    structureArguments: z.array(z.string()).optional(),
-    stateArguments: z.array(z.string()).optional(),
+    route: z.string().min(1).optional(),
+    fixture: z.string().min(1).optional(),
+    variantId: z.string().min(1).optional(),
     stateSeed: z.string().optional(),
+    regions: z.record(z.string().min(1), flutterFinder).optional(),
   }).strict()),
   scenarios: z.record(z.string().min(1), z.object({
     screenId: z.string().min(1),
     scenarioId: z.string().min(1),
-    arguments: z.array(z.string()).optional(),
+    checkpointId: z.string().min(1),
+    actions: z.array(flutterScenarioAction).min(1),
   }).strict()).optional(),
 }).strict();
 export type FlutterReviewContract = z.infer<typeof FlutterReviewContract>;
@@ -131,9 +136,9 @@ export async function inspectFlutterTargetAuthority(input: {
     authorities: {
       components: authority(true, 'target-component-occurrence-verifier', 'Component occurrence verifier is unavailable.'),
       tokens: authority(true, 'target-token-slot-verifier', 'Token slot verifier is unavailable.'),
-      structure: authority(Boolean(review?.launcher.structureCommand), 'target-structure-inspector', 'Target contract does not declare a Structure inspector.'),
-      states: authority(Boolean(review?.launcher.stateCommand), 'target-state-inspector', 'Target contract does not declare a State inspector.'),
-      interactions: authority(Boolean(review?.launcher.scenarioCommand), 'target-scenario-transition-inspector', 'Target contract does not declare a Scenario transition inspector.'),
+      structure: authority(Boolean(review), 'flutter-mcp-widget-inspector', 'Target contract does not declare Flutter MCP Case bindings.'),
+      states: authority(Boolean(review), 'flutter-mcp-runtime-observer', 'Target contract does not declare a Flutter MCP Runtime observer.'),
+      interactions: authority(Boolean(review?.scenarios), 'flutter-mcp-scenario-driver', 'Target contract does not declare Flutter MCP Scenario bindings.'),
     },
     ...(review ? { declaredCaseIds: Object.keys(review.cases).sort() } : {}),
     ...(review?.scenarios ? { declaredScenarioIds: Object.values(review.scenarios).map((item) => item.scenarioId).sort() } : {}),

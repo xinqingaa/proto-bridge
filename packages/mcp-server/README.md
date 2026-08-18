@@ -72,7 +72,9 @@ pnpm pb:mcp -- --print-config
 
 Review 启动时把固定 Handoff 的五维 Acceptance Requirements 编译成稳定、跨 Case 去重的 Reconstruction Obligations，Local Service 会独立重算以阻止客户端缩小验收范围。Screenshot、render、compare 和 Scenario receipts 只代表 artifact coverage；每项 obligation 还必须显式 assessment。未核验、`deviation`、`unverified`、阻断 finding 或缺少 receipt 都会阻止人工完成；Agent 不能自行声明 `not-applicable`。
 
-`verify_target_claims` 不接受 Agent 自填 expected。它从固定 Review obligation 读取 Source expected：Structure 运行 Target 自有 deterministic `launcher.structureCommand` 并比较同构 IR；component/token 由当前 adapter 重新解析 mapping 并验证精确 occurrence/slot（Flutter：Dart `lib/**/*.dart`）；state 运行 `launcher.stateCommand` 比较 shell、visible Regions、keyed collections 和值；interaction 解析 `scenarioCommand` 的 pre/action/post/visible-result transition。Receipt 绑定 `HEAD + tracked diff + untracked bytes` 的 Target content digest，同一 Review 不能混用不同内容状态。错误 occurrence/slot、默认值、动作对象或 post-state 均返回 `deviation`；缺少 inspector、incomplete/unknown JSON 或 unresolved mapping 返回 `unverified`。State/interaction result 会自动成为 blocking assessment。
+`verify_target_claims` 不接受 Agent 自填 expected。component/token 由当前 adapter 重新解析 mapping 并验证精确 occurrence/slot（Flutter：Dart `lib/**/*.dart`）；Structure/state/interaction 只有绑定固定 Flutter MCP App session 的 Runtime receipt 才可核验，代码 verifier 不执行 Target 自有命令，缺失 Runtime receipt 时返回 `unverified`。Receipt 绑定 `HEAD + tracked diff + untracked bytes` 的 Target content digest，同一 Review 不能混用不同内容状态。
+
+Flutter 的 `render_target_case` / `replay_target_scenario` 只把声明式请求交给 Local Service。Service attach 已运行的官方 Dart/Flutter MCP session，校验 App/build/Target identity，然后用 `widget_inspector`、`flutter_driver_command`、`get_runtime_errors` 和受控 debug service extension 采集 Runtime 证据。工具不会发现设备、启动或停止 App，也不会回退到 target-defined launcher；连接不可用时最多尝试三次并关闭 Runtime 轨。
 
 Review tools 只返回 Session 摘要、attempt、finding、obligation 和 verifier receipt 计数，不重复完整验收分母。`read_review_obligations` 按 Screen、维度和 `unassessed/matched/deviation/unverified/not-applicable` 状态分页。新 Review 的 `matched` assessment 必须引用同一 obligation 的成功 verifier receipt；旧 event log 可恢复，但没有 verification contract 时不能完成。
 

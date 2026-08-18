@@ -1,20 +1,8 @@
-import { execFile } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { promisify } from 'node:util';
-import { z } from 'zod';
 import type { ReconstructionObligation } from '../../review/obligations.js';
+import type { ReviewVerifierResult } from '../../review/contracts.js';
 import type {
-  ReviewVerifierResult,
-  TargetScenarioTransition,
-  TargetStateSnapshot,
-} from '../../review/contracts.js';
-import {
-  compareStructureIR,
-  type StructureIR,
-} from '../../v2/consumer-projection.js';
-import type {
-  ExpectedTargetStructure,
   TargetImplementationClaim,
   TargetOccurrenceLocator,
   VerifyTargetClaimsInput,
@@ -23,47 +11,6 @@ import {
   resolveFlutterTargetComponents,
   resolveFlutterTargetTokens,
 } from './resolver.js';
-import {
-  inspectFlutterTargetState,
-  readFlutterReviewContract,
-  replayFlutterTargetScenario,
-} from './review.js';
-
-const execFileAsync = promisify(execFile);
-
-const scrollOwnerSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('viewport') }).strict(),
-  z.object({ kind: z.literal('region'), regionId: z.string().min(1) }).strict(),
-  z.object({ kind: z.literal('unknown') }).strict(),
-]);
-const bboxSchema = z.object({
-  x: z.number(), y: z.number(), width: z.number(), height: z.number(),
-}).strict();
-const structureSchema = z.object({
-  caseId: z.string().min(1),
-  regions: z.array(z.object({
-    regionId: z.string().min(1),
-    role: z.string().optional(),
-    parentRegionId: z.string().optional(),
-    ancestorRegionIds: z.array(z.string()),
-    documentOrder: z.number().nullable(),
-    scrollOwner: scrollOwnerSchema,
-    positioning: z.enum(['flow', 'sticky', 'fixed', 'overlay', 'unknown']),
-    pinned: z.boolean(),
-    visible: z.boolean().optional(),
-    bbox: bboxSchema.optional(),
-    unknownFields: z.array(z.string()),
-  }).strict()),
-  rootRegionIds: z.array(z.string()),
-  siblingGroups: z.array(z.object({ parentRegionId: z.string().nullable(), childRegionIds: z.array(z.string()) }).strict()),
-  siblingRelations: z.array(z.object({
-    parentRegionId: z.string().nullable(), regionId: z.string(), nextRegionId: z.string(),
-    relation: z.enum(['above', 'below', 'left-of', 'right-of', 'overlap', 'diagonal', 'unknown']),
-  }).strict()),
-  scrollContainers: z.array(z.object({ owner: scrollOwnerSchema, memberRegionIds: z.array(z.string()), pinnedRegionIds: z.array(z.string()) }).strict()),
-  complete: z.boolean(),
-  unknownRegionIds: z.array(z.string()),
-}).strict();
 
 export async function verifyFlutterTargetClaims(
   input: VerifyTargetClaimsInput,
@@ -76,17 +23,11 @@ export async function verifyFlutterTargetClaims(
   const obligationById = new Map(input.obligations.map((item) => [item.obligationId, item]));
   const componentClaims = input.claims.filter((item): item is Extract<TargetImplementationClaim, { dimension: 'components' }> => item.dimension === 'components');
   const tokenClaims = input.claims.filter((item): item is Extract<TargetImplementationClaim, { dimension: 'tokens' }> => item.dimension === 'tokens');
-  const structureClaims = input.claims.filter((item): item is Extract<TargetImplementationClaim, { dimension: 'structure' }> => item.dimension === 'structure');
-  const stateClaims = input.claims.filter((item): item is Extract<TargetImplementationClaim, { dimension: 'states' }> => item.dimension === 'states');
-  const interactionClaims = input.claims.filter((item): item is Extract<TargetImplementationClaim, { dimension: 'interactions' }> => item.dimension === 'interactions');
   const componentIds = componentClaims.flatMap((claim) => expectedString(obligationById.get(claim.obligationId), 'componentId'));
   const tokenIds = tokenClaims.flatMap((claim) => expectedString(obligationById.get(claim.obligationId), 'tokenId'));
-  const [components, tokens, structures, states, transitions] = await Promise.all([
+  const [components, tokens] = await Promise.all([
     resolveFlutterTargetComponents({ targetRoot: input.targetRoot, ids: componentIds }),
     resolveFlutterTargetTokens({ targetRoot: input.targetRoot, ids: tokenIds }),
-    inspectStructures(input.targetRoot, structureClaims, input.expectedStructures),
-    inspectStates(input.targetRoot, stateClaims),
-    inspectTransitions(input, interactionClaims),
   ]);
   const componentById = new Map(components.resolutions.map((item) => [item.id, item]));
   const tokenById = new Map(tokens.resolutions.map((item) => [item.id, item]));
@@ -95,7 +36,7 @@ export async function verifyFlutterTargetClaims(
   for (const claim of input.claims) {
     const obligation = obligationById.get(claim.obligationId)!;
     if (claim.dimension === 'structure') {
-      results.push(structureResult(claim, obligation, structures.get(claim.caseId)));
+      results.push(result(claim, 'unverified', 'Structure requires a Flutter MCP Widget Inspector receipt from the fixed Runtime session.'));
       continue;
     }
     if (claim.dimension === 'components') {
@@ -113,11 +54,11 @@ export async function verifyFlutterTargetClaims(
       continue;
     }
     if (claim.dimension === 'states') {
-      results.push(stateResult(claim, obligation, states.get(claim.caseId)));
+      results.push(result(claim, 'unverified', 'State requires a Flutter MCP Runtime observation receipt from the fixed App session.'));
       continue;
     }
     if (claim.dimension === 'interactions') {
-      results.push(interactionResult(claim, obligation, transitions.get(claim.caseId)));
+      results.push(result(claim, 'unverified', 'Interaction requires a Flutter MCP Scenario receipt from the fixed App session.'));
       continue;
     }
     const tokenId = expectedString(obligation, 'tokenId')[0];
@@ -133,328 +74,6 @@ export async function verifyFlutterTargetClaims(
     results.push(await verifyTokenOccurrence(input.targetRoot, claim));
   }
   return results;
-}
-
-type SemanticInspection<T> = { actual?: T; error?: string };
-
-async function inspectStates(
-  targetRoot: string,
-  claims: Array<Extract<TargetImplementationClaim, { dimension: 'states' }>>,
-): Promise<Map<string, SemanticInspection<TargetStateSnapshot>>> {
-  const results = new Map<string, SemanticInspection<TargetStateSnapshot>>();
-  await Promise.all([...new Set(claims.map((item) => item.caseId))].map(async (caseId) => {
-    try {
-      results.set(caseId, { actual: await inspectFlutterTargetState({ targetRoot, caseId }) });
-    } catch (error) {
-      results.set(caseId, { error: `Target State inspector failed: ${errorMessage(error)}` });
-    }
-  }));
-  return results;
-}
-
-async function inspectTransitions(
-  input: VerifyTargetClaimsInput,
-  claims: Array<Extract<TargetImplementationClaim, { dimension: 'interactions' }>>,
-): Promise<Map<string, SemanticInspection<TargetScenarioTransition>>> {
-  const results = new Map<string, SemanticInspection<TargetScenarioTransition>>();
-  await Promise.all([...new Set(claims.map((item) => item.caseId))].map(async (caseId) => {
-    try {
-      const replay = await replayFlutterTargetScenario({
-        targetRoot: input.targetRoot,
-        caseId,
-        expectedTargetHead: input.expectedTargetHead,
-      });
-      results.set(caseId, { actual: replay.transition });
-    } catch (error) {
-      results.set(caseId, { error: `Target Scenario inspector failed: ${errorMessage(error)}` });
-    }
-  }));
-  return results;
-}
-
-function stateResult(
-  claim: Extract<TargetImplementationClaim, { dimension: 'states' }>,
-  obligation: ReconstructionObligation,
-  inspection: SemanticInspection<TargetStateSnapshot> | undefined,
-): ReviewVerifierResult {
-  if (obligation.kind !== 'keyed-state-snapshot') {
-    return result(claim, 'unverified', `State obligation kind ${obligation.kind} has no typed verifier.`);
-  }
-  if (!inspection?.actual) return result(claim, 'unverified', inspection?.error ?? 'Target State inspection did not run.');
-  const expected = objectValue(obligation.expected);
-  if (!expected) return result(claim, 'unverified', 'Source State snapshot is not an object.');
-  if (expected.semanticCoverage !== 'declared') {
-    return result(claim, 'unverified', `Source State semantic coverage is ${String(expected.semanticCoverage)}.`);
-  }
-  if (!inspection.actual.complete || inspection.actual.unknownKeys.length > 0) {
-    return semanticResult(claim, 'unverified', `Target State snapshot is incomplete; unknown keys: ${inspection.actual.unknownKeys.join(', ') || '<unspecified>'}.`, { stateProof: inspection.actual });
-  }
-  const mismatches = compareStateSnapshot(expected, inspection.actual);
-  const sourceUnknown = mismatches.some((item) => item.startsWith('source-'));
-  return semanticResult(
-    claim,
-    sourceUnknown ? 'unverified' : mismatches.length ? 'deviation' : 'matched',
-    mismatches.length
-      ? `Target State differs: ${mismatches.join(', ')}.`
-      : 'Target State matches shell, visible Regions, keyed collections and declared values.',
-    { stateProof: inspection.actual },
-  );
-}
-
-function interactionResult(
-  claim: Extract<TargetImplementationClaim, { dimension: 'interactions' }>,
-  obligation: ReconstructionObligation,
-  inspection: SemanticInspection<TargetScenarioTransition> | undefined,
-): ReviewVerifierResult {
-  if (!inspection?.actual) return result(claim, 'unverified', inspection?.error ?? 'Target Scenario inspection did not run.');
-  const expected = objectValue(obligation.expected);
-  if (!expected) return result(claim, 'unverified', 'Source Interaction expectation is not an object.');
-  const transition = inspection.actual;
-  if (
-    !transition.preState.complete
-    || !transition.postState.complete
-    || transition.preState.unknownKeys.length > 0
-    || transition.postState.unknownKeys.length > 0
-  ) {
-    return semanticResult(claim, 'unverified', 'Target Scenario pre-state or post-state is incomplete.', { transitionProof: transition });
-  }
-  const mismatches = obligation.kind === 'action'
-    ? compareAction(expected, transition, obligation)
-    : obligation.kind === 'scenario-checkpoint'
-      ? compareTransition(expected, transition, obligation)
-      : [`unsupported-kind:${obligation.kind}`];
-  if (mismatches.some((item) => item.startsWith('unsupported-kind:'))) {
-    return result(claim, 'unverified', `Interaction obligation kind ${obligation.kind} has no typed verifier.`);
-  }
-  const sourceUnknown = mismatches.some((item) => item.startsWith('source-'));
-  return semanticResult(
-    claim,
-    sourceUnknown ? 'unverified' : mismatches.length ? 'deviation' : 'matched',
-    mismatches.length
-      ? `Target Interaction differs: ${mismatches.join(', ')}.`
-      : 'Target Interaction matches required pre-state, actions, post-state and visible result.',
-    { transitionProof: transition },
-  );
-}
-
-function compareStateSnapshot(expected: Record<string, unknown>, actual: TargetStateSnapshot): string[] {
-  const mismatches: string[] = [];
-  const shell = objectValue(expected.shell);
-  if (typeof shell?.screenId !== 'string' || typeof shell.variantId !== 'string') return ['source-shell-unknown'];
-  if (shell.screenId !== actual.shell.screenId) mismatches.push('shell.screenId');
-  if (shell.variantId !== actual.shell.variantId) mismatches.push('shell.variantId');
-  const expectedVisible = stringArray(expected.visibleRegionIds);
-  if (!expectedVisible || !sameStringSet(expectedVisible, actual.visibleRegionIds)) mismatches.push('visibleRegionIds');
-  const expectedCollections = collectionMap(expected.keyedCollections);
-  if (!expectedCollections) mismatches.push('keyedCollections.source-unknown');
-  else {
-    const actualCollections = new Map(actual.keyedCollections.map((item) => [item.collectionId, [...item.keys].sort()]));
-    for (const [collectionId, keys] of expectedCollections) {
-      if (!sameStringArray(keys, actualCollections.get(collectionId) ?? [])) mismatches.push(`collection:${collectionId}`);
-    }
-  }
-  const actualValues = new Map(actual.values.map((item) => [`${item.regionId}\0${item.key}`, item.value]));
-  const expectedValues = Array.isArray(expected.values) ? expected.values : [];
-  for (const value of expectedValues) {
-    const item = objectValue(value);
-    if (typeof item?.regionId !== 'string' || typeof item.key !== 'string' || !isStateScalar(item.value)) {
-      mismatches.push('state-values.source-unknown');
-      continue;
-    }
-    if (actualValues.get(`${item.regionId}\0${item.key}`) !== item.value) mismatches.push(`value:${item.regionId}.${item.key}`);
-  }
-  return [...new Set(mismatches)];
-}
-
-function compareAction(expected: Record<string, unknown>, transition: TargetScenarioTransition, obligation: ReconstructionObligation): string[] {
-  const prefix = `${obligation.screenId}.action.`;
-  const actionId = typeof expected.actionId === 'string'
-    ? expected.actionId
-    : obligation.subject.startsWith(prefix)
-      ? obligation.subject.slice(prefix.length)
-      : undefined;
-  const expectedKind = typeof expected.kind === 'string' ? expected.kind : undefined;
-  const expectedTarget = fragmentRegionId(expected.target);
-  if (!actionId || !expectedKind || !expectedTarget) return ['source-action-unknown'];
-  const actual = transition.actions.find((item) => item.actionId === actionId);
-  if (!actual) return [`action-not-executed:${actionId}`];
-  return [
-    ...(actual.kind !== expectedKind ? [`action-kind:${actionId}`] : []),
-    ...(actual.targetRegionId !== expectedTarget ? [`action-target:${actionId}`] : []),
-  ];
-}
-
-function compareTransition(expected: Record<string, unknown>, transition: TargetScenarioTransition, obligation: ReconstructionObligation): string[] {
-  const mismatches: string[] = [];
-  const checkpoint = objectValue(expected.checkpoint);
-  if (!checkpoint) return ['source-checkpoint-unknown'];
-  const scenarioPrefix = `${obligation.screenId}.scenario.`;
-  const checkpointId = typeof checkpoint.checkpointId === 'string' ? checkpoint.checkpointId : undefined;
-  const scenarioId = typeof expected.scenarioId === 'string'
-    ? expected.scenarioId
-    : checkpointId && obligation.subject.startsWith(scenarioPrefix) && obligation.subject.endsWith(`.${checkpointId}`)
-      ? obligation.subject.slice(scenarioPrefix.length, -(checkpointId.length + 1))
-      : undefined;
-  if (!scenarioId || scenarioId !== transition.scenarioId) mismatches.push('scenarioId');
-  if (typeof expected.ownerScreenId === 'string' && expected.ownerScreenId !== transition.screenId) mismatches.push('screenId');
-  if (typeof expected.initialVariantId !== 'string' || expected.initialVariantId !== transition.preState.shell.variantId) mismatches.push('preState.variantId');
-  if (typeof checkpoint.checkpointId !== 'string' || checkpoint.checkpointId !== transition.checkpointId) mismatches.push('checkpointId');
-  if (typeof checkpoint.screenId !== 'string' || checkpoint.screenId !== transition.postState.shell.screenId) mismatches.push('postState.screenId');
-  if (typeof checkpoint.variantId !== 'string' || checkpoint.variantId !== transition.postState.shell.variantId) mismatches.push('postState.variantId');
-  const actionIds = stringArray(expected.actionIds);
-  if (!actionIds || !sameStringArray(actionIds, transition.actions.map((item) => item.actionId))) mismatches.push('actions');
-  for (const required of Array.isArray(checkpoint.requiredFragments) ? checkpoint.requiredFragments : []) {
-    const regionId = fragmentRegionId(required);
-    if (!regionId || !transition.postState.visibleRegionIds.includes(regionId)) mismatches.push(`required-visible:${regionId ?? '<unknown>'}`);
-  }
-  for (const forbidden of Array.isArray(checkpoint.forbiddenFragments) ? checkpoint.forbiddenFragments : []) {
-    const regionId = fragmentRegionId(forbidden);
-    if (!regionId || transition.postState.visibleRegionIds.includes(regionId)) mismatches.push(`forbidden-visible:${regionId ?? '<unknown>'}`);
-  }
-  const postExpected: Record<string, unknown> = {
-    shell: { screenId: checkpoint.screenId, variantId: checkpoint.variantId },
-    visibleRegionIds: transition.postState.visibleRegionIds,
-    keyedCollections: Array.isArray(checkpoint.expectedFragmentKeys)
-      ? checkpoint.expectedFragmentKeys.map((value) => {
-          const item = objectValue(value);
-          return { collectionId: fragmentRegionId(item?.fragment), keys: item?.keys };
-        })
-      : [],
-    values: Array.isArray(checkpoint.expectedStates)
-      ? checkpoint.expectedStates.map((value) => {
-          const item = objectValue(value);
-          return { regionId: fragmentRegionId(item?.fragment), key: item?.key, value: item?.value };
-        })
-      : [],
-  };
-  mismatches.push(...compareStateSnapshot(postExpected, transition.postState).filter((item) => !item.startsWith('visibleRegionIds')));
-  if (!sameStringSet(transition.visibleResult.visibleRegionIds, transition.postState.visibleRegionIds)) mismatches.push('visibleResult');
-  return [...new Set(mismatches)];
-}
-
-function collectionMap(value: unknown): Map<string, string[]> | undefined {
-  if (!Array.isArray(value)) return undefined;
-  const result = new Map<string, string[]>();
-  for (const entry of value) {
-    const item = objectValue(entry);
-    const keys = stringArray(item?.keys);
-    if (typeof item?.collectionId !== 'string' || !keys) return undefined;
-    result.set(item.collectionId, [...keys].sort());
-  }
-  return result;
-}
-
-function stringArray(value: unknown): string[] | undefined {
-  return Array.isArray(value) && value.every((item) => typeof item === 'string') ? value as string[] : undefined;
-}
-
-function sameStringSet(left: string[], right: string[]): boolean {
-  return sameStringArray([...left].sort(), [...right].sort());
-}
-
-function sameStringArray(left: string[], right: string[]): boolean {
-  return JSON.stringify(left) === JSON.stringify(right);
-}
-
-function isStateScalar(value: unknown): value is string | number | boolean | null {
-  return value === null || ['string', 'number', 'boolean'].includes(typeof value);
-}
-
-type StructureInspection = { expected?: StructureIR; actual?: StructureIR; error?: string };
-
-async function inspectStructures(
-  targetRoot: string,
-  claims: Array<Extract<TargetImplementationClaim, { dimension: 'structure' }>>,
-  expectedStructures: ExpectedTargetStructure[],
-): Promise<Map<string, StructureInspection>> {
-  const results = new Map<string, StructureInspection>();
-  if (claims.length === 0) return results;
-  let contract: Awaited<ReturnType<typeof readFlutterReviewContract>>;
-  try {
-    contract = await readFlutterReviewContract(targetRoot);
-  } catch (error) {
-    const detail = `Target Structure inspector contract is unavailable: ${errorMessage(error)}`;
-    for (const caseId of new Set(claims.map((item) => item.caseId))) results.set(caseId, { error: detail });
-    return results;
-  }
-  if (!contract.launcher.structureCommand) {
-    for (const caseId of new Set(claims.map((item) => item.caseId))) results.set(caseId, { error: 'Target Review contract does not declare launcher.structureCommand.' });
-    return results;
-  }
-  for (const caseId of new Set(claims.map((item) => item.caseId))) {
-    const expected = expectedStructures.find((item) => item.caseId === caseId);
-    const selected = contract.cases[caseId];
-    if (!expected || !selected) {
-      results.set(caseId, { error: `Target Structure inspector has no fixed Case ${caseId}.` });
-      continue;
-    }
-    try {
-      const variables = { caseId, screenId: expected.screenId, deviceId: contract.device.udid };
-      const command = [
-        ...contract.launcher.structureCommand.map((item) => interpolate(item, variables)),
-        ...(selected.structureArguments ?? []).map((item) => interpolate(item, variables)),
-      ];
-      const execution = await execFileAsync(command[0]!, command.slice(1), {
-        cwd: targetRoot,
-        env: { ...process.env, ...contract.launcher.environment },
-        timeout: contract.launcher.timeoutMs ?? 120_000,
-        maxBuffer: 10 * 1024 * 1024,
-      });
-      const actual = structureSchema.parse(JSON.parse(execution.stdout)) as StructureIR;
-      if (actual.caseId !== caseId) throw new Error(`Inspector returned Case ${actual.caseId}.`);
-      results.set(caseId, { expected: expected.structure, actual });
-    } catch (error) {
-      results.set(caseId, { error: `Target Structure inspector failed: ${errorMessage(error)}` });
-    }
-  }
-  return results;
-}
-
-function structureResult(
-  claim: Extract<TargetImplementationClaim, { dimension: 'structure' }>,
-  obligation: ReconstructionObligation,
-  inspection: StructureInspection | undefined,
-): ReviewVerifierResult {
-  if (obligation.kind !== 'semantic-region-topology') return result(claim, 'unverified', `Structure obligation kind ${obligation.kind} has no Target IR verifier.`);
-  if (!inspection?.actual || !inspection.expected) return result(claim, 'unverified', inspection?.error ?? 'Target Structure inspection did not run.');
-  const expected = objectValue(obligation.expected);
-  if (!expected) return result(claim, 'unverified', 'Structure obligation expected value is not an object.');
-  const expectedRegion = inspection.expected.regions.find((item) => item.regionId === obligation.subject);
-  if (!expectedRegion) return result(claim, 'unverified', `Source Structure IR is missing Region ${obligation.subject}.`);
-  if (expectedRegion.unknownFields.length > 0) return result(claim, 'unverified', `Source Structure Region ${obligation.subject} has unknown fields: ${expectedRegion.unknownFields.join(', ')}.`);
-  const actualRegion = inspection.actual.regions.find((item) => item.regionId === obligation.subject);
-  if (!actualRegion) return result(claim, 'deviation', `Target Structure IR is missing Region ${obligation.subject}.`);
-  if (actualRegion.unknownFields.length > 0) return result(claim, 'unverified', `Target Structure Region ${obligation.subject} has unknown fields: ${actualRegion.unknownFields.join(', ')}.`);
-  const mismatches = compareStructureIRForSubject(obligation.subject, inspection.expected, inspection.actual, expected);
-  return mismatches.length
-    ? result(claim, 'deviation', `Target Structure Region ${obligation.subject} differs: ${mismatches.join(', ')}.`)
-    : result(claim, 'matched', `Target Structure Region ${obligation.subject} matches parent, scroll owner, positioning, order and bbox relations.`);
-}
-
-function compareStructureIRForSubject(subject: string, expected: StructureIR, actual: StructureIR, expectedValue: Record<string, unknown>): string[] {
-  const region = actual.regions.find((item) => item.regionId === subject);
-  if (!region) return ['missing-region'];
-  const mismatches: string[] = [];
-  const expectedParent = fragmentRegionId(expectedValue.semanticParent);
-  if ((expectedParent ?? undefined) !== region.parentRegionId) mismatches.push('parent');
-  const expectedAncestors = Array.isArray(expectedValue.semanticAncestors)
-    ? expectedValue.semanticAncestors.flatMap((item) => fragmentRegionId(item) ?? [])
-    : undefined;
-  if (expectedAncestors && JSON.stringify(expectedAncestors) !== JSON.stringify(region.ancestorRegionIds)) mismatches.push('ancestors');
-  const expectedScroll = expectedScrollOwner(expectedValue.scrollOwner);
-  if (expectedScroll && JSON.stringify(expectedScroll) !== JSON.stringify(region.scrollOwner)) mismatches.push('scroll-owner');
-  if (typeof expectedValue.positioning === 'string' && expectedValue.positioning !== region.positioning) mismatches.push('positioning');
-  if (typeof expectedValue.documentOrder === 'number' && expectedValue.documentOrder !== region.documentOrder) mismatches.push('document-order');
-  if (typeof expectedValue.role === 'string' && expectedValue.role !== region.role) mismatches.push('role');
-  if (typeof expectedValue.visible === 'boolean' && expectedValue.visible !== region.visible) mismatches.push('visible');
-  for (const mismatch of compareStructureIR(expected, actual)) {
-    if (
-      mismatch.regionId === subject
-      || JSON.stringify(mismatch.expected).includes(subject)
-      || JSON.stringify(mismatch.actual).includes(subject)
-    ) mismatches.push(mismatch.kind);
-  }
-  return [...new Set(mismatches)];
 }
 
 async function verifyComponentOccurrence(
@@ -645,21 +264,6 @@ function result(claim: TargetImplementationClaim, status: ReviewVerifierResult['
   };
 }
 
-function semanticResult(
-  claim: Extract<TargetImplementationClaim, { dimension: 'states' | 'interactions' }>,
-  status: ReviewVerifierResult['status'],
-  detail: string,
-  proof: Pick<ReviewVerifierResult, 'stateProof' | 'transitionProof'>,
-): ReviewVerifierResult {
-  return {
-    obligationId: claim.obligationId,
-    dimension: claim.dimension,
-    status,
-    detail,
-    ...proof,
-  };
-}
-
 function expectedString(obligation: ReconstructionObligation | undefined, key: string): string[] {
   const value = objectValue(obligation?.expected)?.[key];
   return typeof value === 'string' ? [value] : [];
@@ -669,24 +273,6 @@ function objectValue(value: unknown): Record<string, unknown> | undefined {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
     ? value as Record<string, unknown>
     : undefined;
-}
-
-function fragmentRegionId(value: unknown): string | undefined {
-  const object = objectValue(value);
-  return typeof object?.pbId === 'string'
-    ? `${object.pbId}${typeof object.pbKey === 'string' ? `.${object.pbKey}` : ''}`
-    : undefined;
-}
-
-function expectedScrollOwner(value: unknown): StructureIR['regions'][number]['scrollOwner'] | undefined {
-  if (value === 'viewport') return { kind: 'viewport' };
-  const object = objectValue(value);
-  if (object?.kind === 'viewport') return { kind: 'viewport' };
-  if (object?.kind === 'fragment') {
-    const regionId = fragmentRegionId(object.fragment);
-    return regionId ? { kind: 'region', regionId } : undefined;
-  }
-  return undefined;
 }
 
 function offsetForLine(text: string, line: number): number | undefined {
@@ -710,12 +296,4 @@ function accessorPattern(accessor: string): RegExp {
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function interpolate(value: string, variables: Record<string, string>): string {
-  return value.replace(/\{(caseId|screenId|deviceId)\}/g, (_, key: string) => variables[key] ?? '');
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }

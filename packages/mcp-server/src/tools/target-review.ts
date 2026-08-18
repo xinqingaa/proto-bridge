@@ -21,8 +21,6 @@ import {
 import {
   compareTargetArtifacts,
   FLUTTER_COMPARATOR_VERSION,
-  renderTargetCase,
-  replayTargetScenario,
   verifyTargetClaims,
   type TargetImplementationClaim,
 } from '@proto-bridge/core/target';
@@ -113,30 +111,25 @@ export async function readReviewObligationsTool(context: ToolContext, args: Json
 
 export async function renderTargetCaseTool(context: ToolContext, args: JsonObject): Promise<ReviewSessionProjection> {
   const reviewRunId = required(args, 'reviewRunId');
-  const session = await readTargetReviewSession(context, reviewRunId);
+  await readTargetReviewSession(context, reviewRunId);
   const caseId = required(args, 'caseId');
   const sourceDigest = required(args, 'sourceDigest');
   const attemptId = readString(args, 'attemptId') ?? `attempt-${randomUUID()}`;
-  const receipt = await renderTargetCase({ targetRoot: session.targetRoot, caseId, attemptId, expectedTargetHead: session.targetBaselineCommit });
   return projectReviewSession(await context.reviews.call(`/reviews/${encodeURIComponent(reviewRunId)}/render`, {
     method: 'POST',
     body: {
-      screenId: receipt.artifact.owner.screenId, caseId, sourceDigest,
-      tranche: requiredInteger(args, 'tranche'), round: requiredInteger(args, 'round'), attemptId,
-      targetRevision: session.targetRevision, receiptTool: 'flutter-review-runner-v1',
-      artifact: receipt.artifact, bytesBase64: Buffer.from(receipt.bytes).toString('base64'),
+      caseId, sourceDigest, tranche: requiredInteger(args, 'tranche'), round: requiredInteger(args, 'round'), attemptId,
     },
   }));
 }
 
 export async function replayTargetScenarioTool(context: ToolContext, args: JsonObject): Promise<ReviewSessionProjection> {
   const reviewRunId = required(args, 'reviewRunId');
-  const session = await readTargetReviewSession(context, reviewRunId);
+  await readTargetReviewSession(context, reviewRunId);
   const caseId = required(args, 'caseId');
-  const receipt = await replayTargetScenario({ targetRoot: session.targetRoot, caseId, expectedTargetHead: session.targetBaselineCommit });
   return projectReviewSession(await context.reviews.call(`/reviews/${encodeURIComponent(reviewRunId)}/replay`, {
     method: 'POST',
-    body: { screenId: receipt.screenId, caseId, scenarioId: receipt.scenarioId, receiptDigest: receipt.receiptDigest, targetRevision: session.targetRevision, receiptTool: 'flutter-review-scenario-v1', transition: receipt.transition },
+    body: { caseId },
   }));
 }
 

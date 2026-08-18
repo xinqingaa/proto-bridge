@@ -109,7 +109,7 @@ Review projection version 2 公开 `reviewProfile`、`codeReviewStatus`、`runti
 Target 分为**公共门面**与**栈适配器**：
 
 - [`packages/core/src/target/`](../../packages/core/src/target/)：adapter 检测与分发、resolution/readiness 类型与聚合、implementation claim 信封、栈无关 occurrence 路径安全。MCP 与 Consumer 只依赖该门面。
-- [`packages/core/src/target/flutter-app/`](../../packages/core/src/target/flutter-app/)：当前唯一实现。提供 Flutter 工程识别、文档发现、Dart inventory、显式 mapping 解析与代码校验、`lib/**/*.dart` occurrence / named-argument slot 验算、Structure/State/Scenario inspector 与 Case render/replay。
+- [`packages/core/src/target/flutter-app/`](../../packages/core/src/target/flutter-app/)：当前唯一实现。提供 Flutter 工程识别、文档发现、Dart inventory、显式 mapping 解析与代码校验、`lib/**/*.dart` occurrence / named-argument slot 验算，以及声明式 Flutter MCP Review contract；它不执行 Target 自定义命令。
 
 公共门面提供：
 
@@ -117,13 +117,13 @@ Target 分为**公共门面**与**栈适配器**：
 - 编辑前 readiness：汇总 resolver coverage、五维 machine authority、Case/Scenario 声明与 blockers；
 - 既有实现示例查找及 Control/candidate output 排除；
 - 目标变更路径与实际采用 mapping 的只读验证；
-- target-independent implementation claims 的分发；Flutter adapter 对 Structure 运行目标 inspector 并比较 IR，对 component/token 校验精确 Dart occurrence、owner 和 named-argument slot，对 state/interaction 比较 typed runtime proof。
+- target-independent implementation claims 的分发；Flutter adapter 对 component/token 校验精确 Dart occurrence、owner 和 named-argument slot。Structure、state、interaction 必须绑定 Local Service 从固定 Flutter MCP App session 取得的 Runtime receipt，代码 claim verifier 本身不会执行 Target 命令或把缺失 Runtime 证据猜成 matched。
 
 适配器不拥有任何具体产品的组件/Token 映射。真实目标工程的 `AGENTS.md`、`docs/proto-bridge.md`、`docs/components.md`、`docs/theme.md` 和公开代码拥有当前约束；可选的根目录 `proto-bridge.target.json` 只是这些约束的严格机器投影。政策与机器 Contract 冲突返回 `conflict`，显式声明与代码不符返回 `stale`，代码启发式最多返回 `candidate`。缺少 authority 的维度只能保持 `unverified`。Target root 来自 Agent 当前任务或单次 Tool 参数；目标仓库不需要 ProtoBridge Workspace 配置，Target 结果不写入 Bundle。无适用 adapter 时仍可消费固定 Evidence，但不能宣称已完成 Target query/validation 闭环。
 
-Flutter Review machine contract 可在 `review.launcher.structureCommand` 声明确定性 Structure inspector。命令接收 `{caseId}`、`{screenId}`、`{deviceId}` 插值并向 stdout 输出与当前 Consumer projection 兼容的完整 `StructureIR` JSON；Case 可用 `structureArguments` 添加参数。命令缺失、失败、Case 不一致、Schema 不完整或 Source/Target Region 含 unknown 时，verifier 返回 `unverified`，不根据 Widget 类型猜 parent 或 scroll owner。
+Flutter Review machine contract 使用 `review.version: 2` 与 `provider: "dart-flutter-mcp"`。Contract 只声明 App identity、受控 debug-only identity/prepare/observe service extension、Case/fixture/route/state seed，以及 Scenario 的 finder/action；不包含 platform、设备 UDID、固定尺寸或任意 launcher command。Local Service 只 attach 已运行且已连接 DTD 的 App，通过官方 `vm_service` 调用受控 extension，通过 `widget_inspector`、`flutter_driver_command` 与 `get_runtime_errors` 采集结构、截图、交互和异常。App identity、Target commit/content、build digest 或 provider session 不匹配时，Runtime 证据无效。
 
-同一 contract 可用 `review.launcher.stateCommand` 输出 typed State snapshot：Case/shell identity、visible Region IDs、以业务 identity 表达的 keyed collections、selected/default 等标量 values，以及 `complete/unknownKeys`。`scenarioCommand` 输出 Scenario transition：pre-state、实际 action ID/kind/target/input、post-state、checkpoint identity 和 visible result。Verifier 从固定 obligation 读取 Source expected，逐键验证 shell、集合、值、动作目标、required/forbidden visibility 和 checkpoint；不比较原型与 Flutter 的内部状态对象，也不接受 Agent 自填 expected。Case 可分别用 `stateArguments` 和 Scenario `arguments` 增补命令参数。缺少命令、JSON 不完整、状态 unknown 或只有退出码/stdout hash 时返回 `unverified`。
+设备发现、App 启停和连接责任留给 Flutter 官方 MCP 与操作者；ProtoBridge 不指定 iOS/Android/真机，也不提供 launcher fallback。Provider 操作共享最多三次尝试预算；歧义、能力缺失和副作用结果未知会立即终止。Runtime 失败关闭 Runtime 轨并保留 Code Review 结果，不进入无界重试。
 
 ## 公共导出
 

@@ -20,6 +20,7 @@ export type ReviewSessionProjection = {
   snapshotId: string;
   handoffId: string;
   targetRevision: string;
+  targetContentDigest?: string;
   verificationContractVersion: ReviewSession['verificationContractVersion'];
   status: ReviewSession['status'];
   reviewProfile: ReviewSession['reviewProfile'];
@@ -129,6 +130,7 @@ export function projectReviewSession(session: ReviewSession): ReviewSessionProje
     snapshotId: session.snapshotId,
     handoffId: session.handoffId,
     targetRevision: session.targetRevision,
+    ...(session.targetContentDigest ? { targetContentDigest: session.targetContentDigest } : {}),
     verificationContractVersion: session.verificationContractVersion ?? 'legacy-unavailable',
     status: session.status,
     reviewProfile: {

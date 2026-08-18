@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { readFile, readdir, rm } from 'node:fs/promises';
 import { join as pathJoin } from 'node:path';
 import {
@@ -44,7 +44,12 @@ import {
   buildAcceptanceContractFromStore,
   type V2Store,
 } from '@proto-bridge/core/v2/store';
-import { compileReconstructionObligations } from '@proto-bridge/core/review';
+import {
+  compileReconstructionObligations,
+  type ReviewProviderFailure,
+  type ReviewProviderSessionReceipt,
+  type ReviewSession,
+} from '@proto-bridge/core/review';
 import {
   LOCAL_SERVICE_PROTOCOL_VERSION,
   type BundleEvidenceDetails,
@@ -64,8 +69,8 @@ import {
   type WorkspaceResetResult,
   type StartTargetReviewRequest,
   type RecordScreenshotViewedRequest,
-  type RecordTargetRenderRequest,
-  type RecordScenarioReplayRequest,
+  type RunTargetRenderRequest,
+  type RunScenarioReplayRequest,
   type RecordArtifactCompareRequest,
   type RecordReviewFindingsRequest,
   type RecordReviewAssessmentsRequest,
@@ -75,6 +80,8 @@ import {
 } from '@proto-bridge/core/v2/service-contract';
 import { ReviewRepository } from './review-repository.js';
 import { FlutterMcpProvider } from './flutter-mcp-provider.js';
+import { FlutterReviewRuntime, runtimeErrorsDetected } from './flutter-review-runtime.js';
+import { FlutterMcpProviderError } from './flutter-mcp-provider.js';
 
 const BODY_LIMIT_BYTES = 1024 * 1024;
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
@@ -350,6 +357,79 @@ export class ProtoBridgeLocalService {
   getFlutterMcpProvider(): FlutterMcpProvider {
     this.flutterMcpProvider ??= this.options.flutterMcpProviderFactory?.() ?? new FlutterMcpProvider();
     return this.flutterMcpProvider;
+  }
+
+  private async appendRuntimeProgress(
+    reviewRunId: string,
+    session: ReviewSession,
+    providerSession: ReviewProviderSessionReceipt,
+    failures: ReviewProviderFailure[],
+  ): Promise<void> {
+    for (const failure of failures) {
+      await this.reviews.append({ reviewRunId, actor: 'runner', tool: providerSession.providerId, payload: { kind: 'provider-call-failed', failure } });
+    }
+    if (session.providerSession?.sessionIdentityDigest === providerSession.sessionIdentityDigest) return;
+    if (session.providerSession) {
+      await this.reviews.append({
+        reviewRunId,
+        actor: 'runner',
+        tool: providerSession.providerId,
+        payload: { kind: 'runtime-provider-session-invalidated', reason: 'provider-session-changed' },
+      });
+    }
+    await this.reviews.append({
+      reviewRunId,
+      actor: 'runner',
+      tool: providerSession.providerId,
+      payload: { kind: 'runtime-provider-connected', receipt: providerSession },
+    });
+  }
+
+  private async recordProviderError(reviewRunId: string, error: unknown): Promise<ReviewSession> {
+    const providerError = error instanceof FlutterMcpProviderError
+      ? error
+      : new FlutterMcpProviderError('runtime-provider-failed', error instanceof Error ? error.message : String(error), false);
+    const providerId = this.getFlutterMcpProvider().currentHandshake()?.providerId ?? 'dart-flutter-mcp';
+    const failures = providerError.failures.length > 0 ? providerError.failures : [this.syntheticRuntimeFailure(providerError.code, providerError.message)];
+    for (const failure of failures) {
+      await this.reviews.append({ reviewRunId, actor: 'runner', tool: providerId, payload: { kind: 'provider-call-failed', failure } });
+    }
+    const runtimeStatus = providerError.code === 'side-effect-outcome-unknown'
+      ? 'needs-human' as const
+      : /(?:not-found|ambiguous|capability-missing|process|transport|timeout)/.test(providerError.code)
+        ? 'unavailable' as const
+        : 'unverified' as const;
+    return this.reviews.append({
+      reviewRunId,
+      actor: 'runner',
+      tool: providerId,
+      payload: { kind: 'runtime-provider-terminated', runtimeStatus, reason: providerError.code },
+    });
+  }
+
+  private async recordRuntimeTerminal(
+    reviewRunId: string,
+    providerId: string,
+    runtimeStatus: 'unavailable' | 'unverified' | 'needs-human',
+    reason: string,
+  ): Promise<ReviewSession> {
+    const failure = this.syntheticRuntimeFailure(reason, reason);
+    await this.reviews.append({ reviewRunId, actor: 'runner', tool: providerId, payload: { kind: 'provider-call-failed', failure } });
+    return this.reviews.append({ reviewRunId, actor: 'runner', tool: providerId, payload: { kind: 'runtime-provider-terminated', runtimeStatus, reason } });
+  }
+
+  private syntheticRuntimeFailure(code: string, detail: string): ReviewProviderFailure {
+    const at = new Date().toISOString();
+    return {
+      operationId: `flutter-mcp-terminal-${randomUUID()}`,
+      operation: 'inspect',
+      attemptOrdinal: 1,
+      errorCode: code,
+      retryable: false,
+      startedAt: at,
+      finishedAt: at,
+      detailDigest: `sha256:${createHash('sha256').update(detail).digest('hex')}`,
+    };
   }
 
   private assertOrigin(request: IncomingMessage): void {
@@ -680,25 +760,50 @@ export class ProtoBridgeLocalService {
         return;
       }
       if (operation === 'render') {
-        const body = (await readBody(request)) as RecordTargetRenderRequest;
-        const bytes = decodeArtifactBytes(body.bytesBase64);
-        await this.reviews.putArtifact(reviewRunId, body.artifact, bytes);
-        success(response, await this.reviews.append({
-          reviewRunId,
-          actor: 'runner',
-          tool: body.receiptTool,
-          payload: { kind: 'target-rendered', screenId: body.screenId, caseId: body.caseId, sourceDigest: body.sourceDigest, tranche: body.tranche, round: body.round, attemptId: body.attemptId, targetRevision: body.targetRevision, target: body.artifact },
-        }), 201);
+        const body = (await readBody(request)) as RunTargetRenderRequest;
+        const session = await this.reviews.read(reviewRunId);
+        try {
+          const rendered = await new FlutterReviewRuntime(this.getFlutterMcpProvider()).render(session, body);
+          await this.appendRuntimeProgress(reviewRunId, session, rendered.providerSession, rendered.failures);
+          await this.reviews.putArtifact(reviewRunId, rendered.artifact, rendered.bytes);
+          let updated = await this.reviews.append({
+            reviewRunId,
+            actor: 'runner',
+            tool: rendered.providerSession.providerId,
+            payload: {
+              kind: 'target-rendered', screenId: rendered.artifact.owner.screenId, caseId: body.caseId,
+              sourceDigest: body.sourceDigest, tranche: body.tranche, round: body.round, attemptId: body.attemptId,
+              targetRevision: session.targetRevision, target: rendered.artifact, runtimeReceipt: rendered.runtimeReceipt,
+            },
+          });
+          if (runtimeErrorsDetected(rendered.runtimeErrors)) updated = await this.recordRuntimeTerminal(reviewRunId, rendered.providerSession.providerId, 'needs-human', 'runtime-errors-detected');
+          success(response, updated, 201);
+        } catch (error) {
+          success(response, await this.recordProviderError(reviewRunId, error), 200);
+        }
         return;
       }
       if (operation === 'replay') {
-        const body = (await readBody(request)) as RecordScenarioReplayRequest;
-        success(response, await this.reviews.append({
-          reviewRunId,
-          actor: 'runner',
-          tool: body.receiptTool,
-          payload: { kind: 'scenario-replayed', screenId: body.screenId, caseId: body.caseId, scenarioId: body.scenarioId, receiptDigest: body.receiptDigest, targetRevision: body.targetRevision, ...(body.transition ? { transition: body.transition } : {}) },
-        }), 201);
+        const body = (await readBody(request)) as RunScenarioReplayRequest;
+        const session = await this.reviews.read(reviewRunId);
+        try {
+          const replayed = await new FlutterReviewRuntime(this.getFlutterMcpProvider()).replay(session, body);
+          await this.appendRuntimeProgress(reviewRunId, session, replayed.providerSession, replayed.failures);
+          let updated = await this.reviews.append({
+            reviewRunId,
+            actor: 'runner',
+            tool: replayed.providerSession.providerId,
+            payload: {
+              kind: 'scenario-replayed', screenId: replayed.transition.screenId, caseId: body.caseId,
+              scenarioId: replayed.transition.scenarioId, receiptDigest: replayed.runtimeReceipt.resultDigest,
+              targetRevision: session.targetRevision, transition: replayed.transition, runtimeReceipt: replayed.runtimeReceipt,
+            },
+          });
+          if (runtimeErrorsDetected(replayed.runtimeErrors)) updated = await this.recordRuntimeTerminal(reviewRunId, replayed.providerSession.providerId, 'needs-human', 'runtime-errors-detected');
+          success(response, updated, 201);
+        } catch (error) {
+          success(response, await this.recordProviderError(reviewRunId, error), 200);
+        }
         return;
       }
       if (operation === 'compare') {

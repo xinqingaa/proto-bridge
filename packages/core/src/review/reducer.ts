@@ -107,6 +107,7 @@ export function reduceReviewEvents(
         || !receipt.providerId.trim()
         || event.tool !== receipt.providerId
         || receipt.application.targetCommit !== session.targetBaselineCommit
+        || (session.targetContentDigest !== undefined && receipt.application.targetContentDigest !== session.targetContentDigest)
         || !receipt.application.targetContentDigest.trim()
         || !receipt.application.appBuildDigest.trim()
         || !receipt.application.applicationIdentity.trim()
@@ -115,6 +116,12 @@ export function reduceReviewEvents(
       if (session.providerSession && session.providerSession.sessionIdentityDigest !== receipt.sessionIdentityDigest) throw new Error('Runtime provider session identity changed without invalidation.');
       session.providerSession = receipt;
       session.runtimeReviewStatus = 'pending';
+      delete session.stopReason;
+    } else if (payload.kind === 'runtime-provider-session-invalidated') {
+      if (event.actor !== 'runner' || !event.tool) throw new Error('Runtime provider session invalidation requires a runner receipt.');
+      delete session.providerSession;
+      session.runtimeReviewStatus = session.runtimeProvider.required ? 'pending' : 'not-applicable';
+      session.stopReason = payload.reason;
     } else if (payload.kind === 'provider-call-failed') {
       if (event.actor !== 'runner' || !event.tool) throw new Error('Runtime provider failure requires a runner receipt.');
       const { failure } = payload;

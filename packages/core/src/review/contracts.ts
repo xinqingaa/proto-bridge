@@ -37,6 +37,7 @@ export type ReviewRuntimeProviderRequirement = {
 
 export type ReviewProviderCapabilities = {
   dtd: boolean;
+  vmService: boolean;
   driver: boolean;
   inspector: boolean;
   screenshot: boolean;
@@ -188,7 +189,7 @@ export type TargetStateSnapshot = {
 
 export type TargetScenarioAction = {
   actionId: string;
-  kind: 'click' | 'input' | 'select' | 'submit' | 'custom';
+  kind: 'click' | 'input' | 'select' | 'submit' | 'scroll' | 'wait' | 'custom';
   targetRegionId?: string;
   input?: ReviewStateScalar;
 };
@@ -228,6 +229,7 @@ export type ReviewSessionSeed = {
   targetRoot: string;
   targetBaselineCommit: string;
   targetRevision: string;
+  targetContentDigest?: string;
   selectedCaseIds: string[];
   requiredSourceDigests: string[];
   requiredScenarioCaseIds: string[];
@@ -243,6 +245,7 @@ export type ReviewSessionSeed = {
 export type ReviewEventPayload =
   | { kind: 'session-started'; seed: ReviewSessionSeed }
   | { kind: 'runtime-provider-connected'; receipt: ReviewProviderSessionReceipt }
+  | { kind: 'runtime-provider-session-invalidated'; reason: string }
   | { kind: 'provider-call-failed'; failure: ReviewProviderFailure }
   | { kind: 'runtime-provider-terminated'; runtimeStatus: 'unavailable' | 'unverified' | 'needs-human'; reason: string }
   | { kind: 'tranche-authorized'; screenId: string; tranche: number; approvalRef: string }
