@@ -56,6 +56,9 @@ describe('agent-prompt', () => {
     expect(prompt).toContain(
       'Evidence Case/variant/interaction -> target state/navigation',
     );
+    expect(prompt).toContain('review.version: 2');
+    expect(prompt).toContain('debug-only identity、prepare、observe service extension');
+    expect(prompt).toContain('Flutter Driver extension');
     expect(prompt).toContain('优先复用目标工程已声明或扫描确认的组件');
     expect(prompt).toContain('相对 Screenshot/Fragment 的已知偏差');
     expect(prompt).toContain('summarize_reconstruction_review');
