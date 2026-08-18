@@ -40,13 +40,6 @@ class HubPage extends ConsumerWidget {
             icon: CommonIconName.home,
             route: AppRoutes.demo,
           ),
-          SizedBox(height: TS.spacing.smPlus),
-          _HubEntry(
-            title: '冷链异常',
-            subtitle: '华东区域运输温度异常队列',
-            icon: CommonIconName.alertTriangle,
-            route: AppRoutes.coldChainExceptionQueue,
-          ),
         ],
       ),
     );
