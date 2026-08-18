@@ -90,3 +90,20 @@ Target 只翻译语义，不复制 Web 表达：例如百分比映射为 Flutter
 ## 实现与验证
 
 实现前批量解析组件和 Token；`resolved` 只证明映射 symbol/accessor 可定位，组件完成还必须通过状态、交互和 Token 消费测试。Case/variant/interaction 必须映射到页面状态和命名路由；新增页面遵循 [routing.md](routing.md)，验证遵循 [testing.md](testing.md)。最终报告保留固定引用、映射结果、平台近似和未解决项。
+
+## Flutter authoritative review Harness
+
+正式 Runtime/Visual Review 使用 `review.version: 2` contract 和
+`dart-flutter-mcp` provider。它只 attach 到用户或 IDE 已启动的 debug App；
+Target 不提供设备选择、启动脚本或 stdout/图片 fallback。
+
+当前基础设施在 debug App 中注册三个 VM service extension：identity、prepare
+和 observe，并启用 Flutter Driver text-entry emulation。业务 feature 必须在实际
+路由和 Riverpod state 已存在后安装 delegate，才能在 `proto-bridge.target.json`
+中声明固定 Handoff 的 Case、Scenario 与 finder；未绑定时 extension 会明确拒绝
+请求，不能伪造 Runtime receipt。
+
+启动供 Review attach 的 App 时，调用方必须用 `--dart-define` 传入实际 build 的
+`PB_TARGET_COMMIT`、`PB_TARGET_CONTENT_DIGEST` 和 `PB_APP_BUILD_DIGEST`。identity
+extension 将从运行 App 返回这些值，Local Service 会把它们与 Review 固定的 Target
+revision 交叉校验。

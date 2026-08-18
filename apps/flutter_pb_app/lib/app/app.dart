@@ -4,6 +4,7 @@ import 'package:unified_popups/unified_popups.dart';
 
 import '../theme/ts.dart';
 import '../router/router.dart';
+import '../review/authoritative_review_harness.dart';
 
 class PbApp extends ConsumerWidget {
   const PbApp({super.key});
@@ -23,6 +24,7 @@ class PbApp extends ConsumerWidget {
       theme: theme,
       darkTheme: ThemeService.of(Brightness.dark).toThemeData(),
       themeMode: mode,
+      navigatorKey: ProtoBridgeReviewHarness.navigatorKey,
       navigatorObservers: [Pop.routeObserver],
       builder: (context, child) {
         return Pop.hostBuilder(
