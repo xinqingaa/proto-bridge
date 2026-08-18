@@ -30,6 +30,8 @@ describe("PBWork V2 capture store", () => {
       variantIds: [
         "default",
         "critical-only",
+        "warning-only",
+        "attention-only",
         "loading",
         "empty",
         "error",
@@ -125,13 +127,13 @@ describe("PBWork V2 capture store", () => {
     expect(store.acceptedWarningIds).toEqual([]);
   });
 
-  it("expands cold-chain whole-Prototype and one-Screen defaults to 24 and 7 Cases", () => {
+  it("expands cold-chain whole-Prototype and one-Screen defaults to 26 and 9 Cases", () => {
     const store = useCaptureStore();
     const manifest = buildRuntimeCaptureManifest("cold-chain-ops");
 
     store.beginPrototype("cold-chain-ops");
     expect(resolveSelectionMatrix(store.draft!, manifest).matrix).toHaveLength(
-      24,
+      26,
     );
 
     store.beginCurrentScreen({
@@ -143,7 +145,7 @@ describe("PBWork V2 capture store", () => {
       returnTo: "/workbench/prototypes/cold-chain-ops/screens/exception-queue",
     });
     expect(resolveSelectionMatrix(store.draft!, manifest).matrix).toHaveLength(
-      7,
+      9,
     );
 
     store.toggleScenarioId(
@@ -153,7 +155,7 @@ describe("PBWork V2 capture store", () => {
     );
     expect(
       resolveSelectionMatrix(store.draft!, manifest).matrix,
-    ).toHaveLength(6);
+    ).toHaveLength(8);
   });
 
   it("keeps a whole Hengdong Prototype under the default Case cap", () => {
@@ -199,6 +201,8 @@ describe("PBWork V2 capture store", () => {
       variantIds: [
         "default",
         "critical-only",
+        "warning-only",
+        "attention-only",
         "loading",
         "empty",
         "error",

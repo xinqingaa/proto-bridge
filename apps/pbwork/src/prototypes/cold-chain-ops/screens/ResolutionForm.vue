@@ -191,8 +191,32 @@ function confirm() {
         >
           <header class="resolution-section-header">
             <div>
-              <h2>处置判断 <em>必填</em></h2>
-              <p>根据司机反馈与设备状态记录本次异常原因。</p>
+              <h2
+                data-pb-id="cold-chain-ops.resolution-form.section-title"
+                data-pb-key="response-form"
+                data-pb-role="text"
+                data-pb-token-color="color.on-surface"
+                data-pb-token-typography="typography.subtitle"
+              >
+                处置判断
+                <em
+                  data-pb-id="cold-chain-ops.resolution-form.required-mark"
+                  data-pb-key="response-form"
+                  data-pb-role="text"
+                  data-pb-token-color="color.error"
+                  data-pb-token-typography="typography.caption"
+                  >必填</em
+                >
+              </h2>
+              <p
+                data-pb-id="cold-chain-ops.resolution-form.section-description"
+                data-pb-key="response-form"
+                data-pb-role="text"
+                data-pb-token-color="color.on-surface-muted"
+                data-pb-token-typography="typography.caption"
+              >
+                根据司机反馈与设备状态记录本次异常原因。
+              </p>
             </div>
           </header>
           <div class="resolution-section-content">
@@ -232,8 +256,32 @@ function confirm() {
         >
           <header class="resolution-section-header">
             <div>
-              <h2>现场确认 <em>必填</em></h2>
-              <p>以下检查项会进入交付记录。</p>
+              <h2
+                data-pb-id="cold-chain-ops.resolution-form.section-title"
+                data-pb-key="checklist"
+                data-pb-role="text"
+                data-pb-token-color="color.on-surface"
+                data-pb-token-typography="typography.subtitle"
+              >
+                现场确认
+                <em
+                  data-pb-id="cold-chain-ops.resolution-form.required-mark"
+                  data-pb-key="checklist"
+                  data-pb-role="text"
+                  data-pb-token-color="color.error"
+                  data-pb-token-typography="typography.caption"
+                  >必填</em
+                >
+              </h2>
+              <p
+                data-pb-id="cold-chain-ops.resolution-form.section-description"
+                data-pb-key="checklist"
+                data-pb-role="text"
+                data-pb-token-color="color.on-surface-muted"
+                data-pb-token-typography="typography.caption"
+              >
+                以下检查项会进入交付记录。
+              </p>
             </div>
           </header>
           <div class="resolution-section-content">
@@ -266,8 +314,24 @@ function confirm() {
         >
           <header class="resolution-section-header">
             <div>
-              <h2>后续安排</h2>
-              <p>提交后调度中心将按此安排继续跟踪。</p>
+              <h2
+                data-pb-id="cold-chain-ops.resolution-form.section-title"
+                data-pb-key="follow-up"
+                data-pb-role="text"
+                data-pb-token-color="color.on-surface"
+                data-pb-token-typography="typography.subtitle"
+              >
+                后续安排
+              </h2>
+              <p
+                data-pb-id="cold-chain-ops.resolution-form.section-description"
+                data-pb-key="follow-up"
+                data-pb-role="text"
+                data-pb-token-color="color.on-surface-muted"
+                data-pb-token-typography="typography.caption"
+              >
+                提交后调度中心将按此安排继续跟踪。
+              </p>
             </div>
           </header>
           <div class="resolution-section-content">
@@ -295,8 +359,32 @@ function confirm() {
         >
           <header class="resolution-section-header">
             <div>
-              <h2>主管审批 <em>必填</em></h2>
-              <p>持续超温超过 45 分钟时，提交前必须由值班主管复核。</p>
+              <h2
+                data-pb-id="cold-chain-ops.resolution-form.section-title"
+                data-pb-key="supervisor-approval"
+                data-pb-role="text"
+                data-pb-token-color="color.on-surface"
+                data-pb-token-typography="typography.subtitle"
+              >
+                主管审批
+                <em
+                  data-pb-id="cold-chain-ops.resolution-form.required-mark"
+                  data-pb-key="supervisor-approval"
+                  data-pb-role="text"
+                  data-pb-token-color="color.error"
+                  data-pb-token-typography="typography.caption"
+                  >必填</em
+                >
+              </h2>
+              <p
+                data-pb-id="cold-chain-ops.resolution-form.section-description"
+                data-pb-key="supervisor-approval"
+                data-pb-role="text"
+                data-pb-token-color="color.on-surface-muted"
+                data-pb-token-typography="typography.caption"
+              >
+                持续超温超过 45 分钟时，提交前必须由值班主管复核。
+              </p>
             </div>
           </header>
           <div class="resolution-section-content">
@@ -384,6 +472,7 @@ function confirm() {
   display: flex;
   flex-direction: column;
   gap: var(--pb-spacing-xs);
+  min-width: var(--pb-spacing-none);
 }
 .case-summary strong {
   color: var(--pb-color-on-surface);

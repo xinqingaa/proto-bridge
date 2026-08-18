@@ -171,146 +171,179 @@ function closeOverlay() {
           </section>
 
           <Card
-            title="运输概览"
-            :subtitle="`${shipmentId} · 预计 16:20 到达`"
             semantic-role="summary"
             inspect-id="cold-chain-ops.shipment-detail.summary"
           >
-            <div class="route-line" :style="routeStyle">
-              <div>
-                <Icon name="snowflake" size="md" /><span>上海虹桥冷库</span>
+            <div
+              class="card-body"
+              data-pb-id="cold-chain-ops.shipment-detail.summary.body"
+              data-pb-role="group"
+              data-pb-token-spacing="spacing.md"
+            >
+              <header class="card-heading">
+                <div>
+                  <h2>运输概览</h2>
+                  <p>{{ shipmentId }} · 预计 16:20 到达</p>
+                </div>
+              </header>
+              <div class="route-line" :style="routeStyle">
+                <div>
+                  <Icon name="snowflake" size="md" /><span>上海虹桥冷库</span>
+                </div>
+                <span class="route-progress"><i /></span>
+                <div>
+                  <Icon name="map-pin" size="md" /><span>杭州临平中心</span>
+                </div>
               </div>
-              <span class="route-progress"><i /></span>
-              <div>
-                <Icon name="map-pin" size="md" /><span>杭州临平中心</span>
-              </div>
+              <dl class="shipment-facts">
+                <div>
+                  <dt>货物</dt>
+                  <dd>生物制剂 · 18 箱</dd>
+                </div>
+                <div>
+                  <dt>车辆</dt>
+                  <dd>沪A·7K21 · 周其明</dd>
+                </div>
+                <div>
+                  <dt>设备</dt>
+                  <dd>探头 T-07 · 2 分钟/次</dd>
+                </div>
+                <div>
+                  <dt>温区</dt>
+                  <dd>2–8°C</dd>
+                </div>
+              </dl>
             </div>
-            <dl class="shipment-facts">
-              <div>
-                <dt>货物</dt>
-                <dd>生物制剂 · 18 箱</dd>
-              </div>
-              <div>
-                <dt>车辆</dt>
-                <dd>沪A·7K21 · 周其明</dd>
-              </div>
-              <div>
-                <dt>设备</dt>
-                <dd>探头 T-07 · 2 分钟/次</dd>
-              </div>
-              <div>
-                <dt>温区</dt>
-                <dd>2–8°C</dd>
-              </div>
-            </dl>
           </Card>
 
           <Card
-            title="箱温趋势"
-            subtitle="最近 70 分钟 · 上限 8°C"
             semantic-role="section"
             inspect-id="cold-chain-ops.shipment-detail.temperature-section"
           >
             <div
-              class="temperature-chart"
-              :style="chartStyle"
-              data-pb-id="cold-chain-ops.shipment-detail.temperature-chart"
-              data-pb-role="chart"
-              data-pb-token-background="color.surface-variant"
-              data-pb-token-color="color.on-surface"
-              data-pb-token-radius="radius.md"
-              data-pb-token-spacing="spacing.sm"
+              class="card-body"
+              data-pb-id="cold-chain-ops.shipment-detail.temperature-body"
+              data-pb-role="group"
+              data-pb-token-spacing="spacing.md"
             >
-              <div class="chart-scale">
-                <span>12°</span><span>8°</span><span>4°</span>
-              </div>
-              <div class="chart-bars" aria-label="温度从 5.4 度升至 10.8 度">
-                <div
-                  v-for="reading in temperatureReadings"
-                  :key="reading.id"
-                  class="reading"
-                  :class="{ 'is-over': reading.value > 8 }"
-                >
-                  <i :style="chartBarStyle(reading.value)" />
-                  <span>{{ reading.id }}</span>
+              <header class="card-heading">
+                <div>
+                  <h2>箱温趋势</h2>
+                  <p>最近 70 分钟 · 上限 8°C</p>
                 </div>
-              </div>
-              <div class="limit-line"><span>8°C 上限</span></div>
-            </div>
-            <div class="temperature-summary">
+              </header>
               <div
-                data-pb-id="cold-chain-ops.shipment-detail.temperature.metric"
-                data-pb-key="current"
-                data-pb-role="status"
-                data-pb-token-typography="typography.title"
-                data-pb-token-color="color.error"
-              >
-                <span>当前</span
-                ><strong>{{ hasExcursion ? "10.8°C" : "6.1°C" }}</strong>
-              </div>
-              <div
-                data-pb-id="cold-chain-ops.shipment-detail.temperature.metric"
-                data-pb-key="maximum"
-                data-pb-role="status"
-                data-pb-token-typography="typography.title"
+                class="temperature-chart"
+                :style="chartStyle"
+                data-pb-id="cold-chain-ops.shipment-detail.temperature-chart"
+                data-pb-role="chart"
+                data-pb-token-background="color.surface-variant"
                 data-pb-token-color="color.on-surface"
+                data-pb-token-radius="radius.md"
+                data-pb-token-spacing="spacing.sm"
               >
-                <span>最高</span><strong>10.8°C</strong>
+                <div class="chart-scale">
+                  <span>12°</span><span>8°</span><span>4°</span>
+                </div>
+                <div class="chart-bars" aria-label="温度从 5.4 度升至 10.8 度">
+                  <div
+                    v-for="reading in temperatureReadings"
+                    :key="reading.id"
+                    class="reading"
+                    :class="{ 'is-over': reading.value > 8 }"
+                  >
+                    <i :style="chartBarStyle(reading.value)" />
+                    <span>{{ reading.id }}</span>
+                  </div>
+                </div>
+                <div class="limit-line"><span>8°C 上限</span></div>
               </div>
-              <div
-                data-pb-id="cold-chain-ops.shipment-detail.temperature.metric"
-                data-pb-key="duration"
-                data-pb-role="status"
-                data-pb-token-typography="typography.title"
-                data-pb-token-color="color.on-surface"
-              >
-                <span>超温</span><strong>47m</strong>
+              <div class="temperature-summary">
+                <div
+                  data-pb-id="cold-chain-ops.shipment-detail.temperature.metric"
+                  data-pb-key="current"
+                  data-pb-role="status"
+                  data-pb-token-typography="typography.title"
+                  data-pb-token-color="color.error"
+                >
+                  <span>当前</span
+                  ><strong>{{ hasExcursion ? "10.8°C" : "6.1°C" }}</strong>
+                </div>
+                <div
+                  data-pb-id="cold-chain-ops.shipment-detail.temperature.metric"
+                  data-pb-key="maximum"
+                  data-pb-role="status"
+                  data-pb-token-typography="typography.title"
+                  data-pb-token-color="color.on-surface"
+                >
+                  <span>最高</span><strong>10.8°C</strong>
+                </div>
+                <div
+                  data-pb-id="cold-chain-ops.shipment-detail.temperature.metric"
+                  data-pb-key="duration"
+                  data-pb-role="status"
+                  data-pb-token-typography="typography.title"
+                  data-pb-token-color="color.on-surface"
+                >
+                  <span>超温</span><strong>47m</strong>
+                </div>
               </div>
             </div>
           </Card>
 
           <Card
-            title="运输事件"
-            subtitle="自动记录与人工操作合并展示"
             semantic-role="section"
             inspect-id="cold-chain-ops.shipment-detail.timeline-card"
           >
             <div
-              class="event-list"
-              data-pb-id="cold-chain-ops.shipment-detail.timeline"
-              data-pb-role="list"
+              class="card-body"
+              data-pb-id="cold-chain-ops.shipment-detail.timeline-body"
+              data-pb-role="group"
               data-pb-token-spacing="spacing.md"
-              data-pb-token-color="color.on-surface"
             >
+              <header class="card-heading">
+                <div>
+                  <h2>运输事件</h2>
+                  <p>自动记录与人工操作合并展示</p>
+                </div>
+              </header>
               <div
-                v-for="event in shipmentEvents"
-                :key="event.id"
-                class="event-row"
-                data-pb-id="cold-chain-ops.shipment-detail.timeline.event"
-                :data-pb-key="event.id"
-                data-pb-role="list-item"
-                data-pb-token-spacing="spacing.sm-plus"
+                class="event-list"
+                data-pb-id="cold-chain-ops.shipment-detail.timeline"
+                data-pb-role="list"
+                data-pb-token-spacing="spacing.md"
                 data-pb-token-color="color.on-surface"
               >
-                <i :class="`tone-${event.tone}`" />
-                <time>{{ event.time }}</time>
-                <div>
-                  <strong
-                    data-pb-id="cold-chain-ops.shipment-detail.timeline.event.title"
-                    :data-pb-key="event.id"
-                    data-pb-role="text"
-                    data-pb-token-typography="typography.content"
-                    data-pb-token-color="color.on-surface"
-                    >{{ event.title }}</strong
-                  >
-                  <span
-                    data-pb-id="cold-chain-ops.shipment-detail.timeline.event.detail"
-                    :data-pb-key="event.id"
-                    data-pb-role="text"
-                    data-pb-token-typography="typography.caption"
-                    data-pb-token-color="color.on-surface-muted"
-                    >{{ event.detail }}</span
-                  >
+                <div
+                  v-for="event in shipmentEvents"
+                  :key="event.id"
+                  class="event-row"
+                  data-pb-id="cold-chain-ops.shipment-detail.timeline.event"
+                  :data-pb-key="event.id"
+                  data-pb-role="list-item"
+                  data-pb-token-spacing="spacing.sm-plus"
+                  data-pb-token-color="color.on-surface"
+                >
+                  <i :class="`tone-${event.tone}`" />
+                  <time>{{ event.time }}</time>
+                  <div>
+                    <strong
+                      data-pb-id="cold-chain-ops.shipment-detail.timeline.event.title"
+                      :data-pb-key="event.id"
+                      data-pb-role="text"
+                      data-pb-token-typography="typography.content"
+                      data-pb-token-color="color.on-surface"
+                      >{{ event.title }}</strong
+                    >
+                    <span
+                      data-pb-id="cold-chain-ops.shipment-detail.timeline.event.detail"
+                      :data-pb-key="event.id"
+                      data-pb-role="text"
+                      data-pb-token-typography="typography.caption"
+                      data-pb-token-color="color.on-surface-muted"
+                      >{{ event.detail }}</span
+                    >
+                  </div>
                 </div>
               </div>
             </div>
@@ -380,6 +413,31 @@ function closeOverlay() {
   padding: var(--pb-spacing-md);
   padding-bottom: var(--pb-spacing-2xl);
 }
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-spacing-sm-plus);
+  padding: var(--pb-spacing-md);
+}
+.card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--pb-spacing-sm);
+}
+.card-heading h2,
+.card-heading p {
+  margin: var(--pb-spacing-none);
+}
+.card-heading h2 {
+  color: var(--pb-color-on-surface);
+  font: var(--pb-typography-subtitle);
+}
+.card-heading p {
+  margin-top: var(--pb-spacing-xxs);
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
+}
 .excursion-alert,
 .sensor-error {
   display: flex;
@@ -417,6 +475,7 @@ function closeOverlay() {
   flex: var(--pb-layout-flex-fill);
   align-items: center;
   gap: var(--pb-spacing-sm);
+  min-width: var(--pb-spacing-none);
   font: var(--pb-typography-content);
 }
 .route-progress {
@@ -442,6 +501,7 @@ function closeOverlay() {
   flex: var(--pb-layout-flex-fill);
   flex-direction: column;
   gap: var(--pb-spacing-xs);
+  min-width: var(--pb-spacing-none);
 }
 .shipment-facts dt {
   color: var(--pb-color-on-surface-muted);

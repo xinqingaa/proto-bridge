@@ -2330,7 +2330,12 @@ const registeredScreens = [
           },
           {
             screenId: "cold-chain-ops.exception-queue",
-            pbId: "cold-chain-ops.exception-queue.filters",
+            pbId: "cold-chain-ops.exception-queue.severity-tabs",
+          },
+          {
+            screenId: "cold-chain-ops.exception-queue",
+            pbId: "cold-chain-ops.exception-queue.severity-tabs.tab",
+            pbKey: "all",
           },
           {
             screenId: "cold-chain-ops.exception-queue",
@@ -2339,7 +2344,7 @@ const registeredScreens = [
           {
             screenId: "cold-chain-ops.exception-queue",
             pbId: "cold-chain-ops.exception-queue.list.row",
-            pbKey: "ex-017",
+            pbKey: "all-ex-017",
           },
         ],
       },
@@ -2353,7 +2358,12 @@ const registeredScreens = [
           },
           {
             screenId: "cold-chain-ops.exception-queue",
-            pbId: "cold-chain-ops.exception-queue.filters",
+            pbId: "cold-chain-ops.exception-queue.severity-tabs",
+          },
+          {
+            screenId: "cold-chain-ops.exception-queue",
+            pbId: "cold-chain-ops.exception-queue.severity-tabs.tab",
+            pbKey: "critical",
           },
           {
             screenId: "cold-chain-ops.exception-queue",
@@ -2362,7 +2372,55 @@ const registeredScreens = [
           {
             screenId: "cold-chain-ops.exception-queue",
             pbId: "cold-chain-ops.exception-queue.list.row",
-            pbKey: "ex-017",
+            pbKey: "critical-ex-017",
+          },
+        ],
+      },
+      {
+        id: "warning-only",
+        label: "仅警告异常",
+        requiredFragments: [
+          {
+            screenId: "cold-chain-ops.exception-queue",
+            pbId: "cold-chain-ops.exception-queue.root",
+          },
+          {
+            screenId: "cold-chain-ops.exception-queue",
+            pbId: "cold-chain-ops.exception-queue.severity-tabs.tab",
+            pbKey: "warning",
+          },
+          {
+            screenId: "cold-chain-ops.exception-queue",
+            pbId: "cold-chain-ops.exception-queue.list",
+          },
+          {
+            screenId: "cold-chain-ops.exception-queue",
+            pbId: "cold-chain-ops.exception-queue.list.row",
+            pbKey: "warning-ex-024",
+          },
+        ],
+      },
+      {
+        id: "attention-only",
+        label: "仅关注异常",
+        requiredFragments: [
+          {
+            screenId: "cold-chain-ops.exception-queue",
+            pbId: "cold-chain-ops.exception-queue.root",
+          },
+          {
+            screenId: "cold-chain-ops.exception-queue",
+            pbId: "cold-chain-ops.exception-queue.severity-tabs.tab",
+            pbKey: "attention",
+          },
+          {
+            screenId: "cold-chain-ops.exception-queue",
+            pbId: "cold-chain-ops.exception-queue.list",
+          },
+          {
+            screenId: "cold-chain-ops.exception-queue",
+            pbId: "cold-chain-ops.exception-queue.list.row",
+            pbKey: "attention-ex-029",
           },
         ],
       },
@@ -2424,7 +2482,7 @@ const registeredScreens = [
         target: {
           screenId: "cold-chain-ops.exception-queue",
           pbId: "cold-chain-ops.exception-queue.list.row",
-          pbKey: "ex-017",
+          pbKey: "all-ex-017",
         },
       },
     ],
@@ -2442,12 +2500,17 @@ const registeredScreens = [
             requiredFragments: [
               {
                 screenId: "cold-chain-ops.exception-queue",
+                pbId: "cold-chain-ops.exception-queue.severity-tabs.tab",
+                pbKey: "critical",
+              },
+              {
+                screenId: "cold-chain-ops.exception-queue",
                 pbId: "cold-chain-ops.exception-queue.list",
               },
               {
                 screenId: "cold-chain-ops.exception-queue",
                 pbId: "cold-chain-ops.exception-queue.list.row",
-                pbKey: "ex-017",
+                pbKey: "critical-ex-017",
               },
             ],
             expectedFragmentKeys: [
@@ -2456,14 +2519,14 @@ const registeredScreens = [
                   screenId: "cold-chain-ops.exception-queue",
                   pbId: "cold-chain-ops.exception-queue.list.row",
                 },
-                keys: ["ex-017", "ex-031"],
+                keys: ["critical-ex-017", "critical-ex-031"],
               },
             ],
             forbiddenFragments: [
               {
                 screenId: "cold-chain-ops.exception-queue",
                 pbId: "cold-chain-ops.exception-queue.list.row",
-                pbKey: "ex-024",
+                pbKey: "warning-ex-024",
               },
             ],
           },

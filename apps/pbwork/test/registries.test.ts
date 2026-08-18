@@ -209,6 +209,8 @@ describe("design contracts", () => {
     expect(queue?.variants.map((item) => item.id)).toEqual([
       "default",
       "critical-only",
+      "warning-only",
+      "attention-only",
       "loading",
       "empty",
       "error",

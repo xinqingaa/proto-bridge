@@ -8,17 +8,43 @@ import Icon from "@/design-system/components/action/Icon.vue";
 import Spinner from "@/design-system/components/display/Spinner.vue";
 import DataList from "@/design-system/components/data/DataList.vue";
 import EmptyState from "@/design-system/components/display/EmptyState.vue";
-import FilterBar from "@/design-system/components/navigation/FilterBar.vue";
+import PrimaryTabs from "@/design-system/components/navigation/PrimaryTabs.vue";
 import ScrollableDataList from "@/design-system/components/data/ScrollableDataList.vue";
 import SearchBar from "@/design-system/components/input/SearchBar.vue";
 import ColdChainShell from "../ColdChainShell.vue";
-import { exceptions } from "../mock";
+import { exceptions, type ColdChainException } from "../mock";
 import { openColdChainScreen, replaceColdChainVariant } from "../nav";
 
 const route = useRoute();
 const router = useRouter();
 const query = ref("");
-const filter = ref("全部");
+const severityTabs = [
+  { value: "all", label: "全部" },
+  { value: "critical", label: "严重" },
+  { value: "warning", label: "警告" },
+  { value: "attention", label: "关注" },
+] satisfies Array<{ value: string; label: string }>;
+type SeverityTab = (typeof severityTabs)[number]["value"];
+
+const severityByTab: Record<SeverityTab, ColdChainException["severity"] | undefined> = {
+  all: undefined,
+  critical: "严重",
+  warning: "警告",
+  attention: "关注",
+};
+const variantByTab: Record<SeverityTab, string> = {
+  all: "default",
+  critical: "critical-only",
+  warning: "warning-only",
+  attention: "attention-only",
+};
+const tabByVariant: Record<string, SeverityTab> = {
+  default: "all",
+  "critical-only": "critical",
+  "warning-only": "warning",
+  "attention-only": "attention",
+};
+const filter = ref<SeverityTab>("all");
 const refreshing = ref(false);
 const variant = computed(() =>
   typeof route.query.variant === "string" ? route.query.variant : "default",
@@ -27,18 +53,18 @@ const variant = computed(() =>
 watch(
   variant,
   (value) => {
-    filter.value = value === "critical-only" ? "严重" : "全部";
+    filter.value = tabByVariant[value] ?? "all";
     query.value = "";
   },
   { immediate: true },
 );
 
-const visibleExceptions = computed(() => {
+function exceptionsForTab(tab: SeverityTab) {
   if (variant.value === "empty") return [];
+  const severity = severityByTab[tab];
+  const needle = query.value.trim().toLowerCase();
   return exceptions.filter((item) => {
-    const matchesFilter =
-      filter.value === "全部" || item.severity === filter.value;
-    const needle = query.value.trim().toLowerCase();
+    const matchesFilter = !severity || item.severity === severity;
     const matchesQuery =
       !needle ||
       `${item.id} ${item.shipmentId} ${item.lane} ${item.cargo}`
@@ -46,7 +72,16 @@ const visibleExceptions = computed(() => {
         .includes(needle);
     return matchesFilter && matchesQuery;
   });
-});
+}
+
+const emptyTitle = computed(() =>
+  query.value.trim() ? "没有匹配的异常" : "没有待处理异常",
+);
+const emptyDescription = computed(() =>
+  query.value.trim()
+    ? "可以尝试搜索其他运单、线路或异常编号。"
+    : "当前筛选范围内的运输温度全部正常。",
+);
 
 const severityCounts = computed(() => ({
   严重: exceptions.filter((item) => item.severity === "严重").length,
@@ -54,8 +89,16 @@ const severityCounts = computed(() => ({
   最长超温: Math.max(...exceptions.map((item) => item.durationMinutes)),
 }));
 
+function selectSeverity(value: string) {
+  if (!severityTabs.some((tab) => tab.value === value)) return;
+  const tab = value as SeverityTab;
+  const nextVariant = variantByTab[tab];
+  if (!nextVariant) return;
+  void replaceColdChainVariant(router, route, nextVariant);
+}
+
 function showCritical() {
-  void replaceColdChainVariant(router, route, "critical-only");
+  selectSeverity("critical");
 }
 
 function openException(shipmentId: string, severity: string) {
@@ -138,22 +181,44 @@ function refresh() {
       <ScrollableDataList
         v-else
         class="queue-scroll"
-        :pull-refresh="{ enabled: true, mouse: true }"
-        :drag-scroll="{ enabled: true, mouse: true, momentum: true }"
-        :load-more="true"
-        :has-more="false"
+        :pull-refresh="{ enabled: true, mouse: false }"
+        :load-more="false"
         :refreshing="refreshing"
         inspect-id="cold-chain-ops.exception-queue.scroll-list"
         @refresh="refresh"
       >
         <div class="queue-content">
           <Card
-            title="当前风险"
-            subtitle="华东区域 · 14:35 更新"
             semantic-role="summary"
             inspect-id="cold-chain-ops.exception-queue.summary"
           >
-            <div class="metric-grid">
+            <div
+              class="card-body"
+              data-pb-id="cold-chain-ops.exception-queue.summary.body"
+              data-pb-role="group"
+              data-pb-token-spacing="spacing.md"
+            >
+              <header class="card-heading">
+                <div>
+                  <h2
+                    data-pb-id="cold-chain-ops.exception-queue.summary.title"
+                    data-pb-role="text"
+                    data-pb-token-color="color.on-surface"
+                    data-pb-token-typography="typography.subtitle"
+                  >
+                    当前风险
+                  </h2>
+                  <p
+                    data-pb-id="cold-chain-ops.exception-queue.summary.subtitle"
+                    data-pb-role="text"
+                    data-pb-token-color="color.on-surface-muted"
+                    data-pb-token-typography="typography.caption"
+                  >
+                    华东区域 · 14:35 更新
+                  </p>
+                </div>
+              </header>
+              <div class="metric-grid">
               <div
                 class="metric is-critical"
                 data-pb-id="cold-chain-ops.exception-queue.summary.metric"
@@ -196,15 +261,16 @@ function refresh() {
                 <strong>{{ severityCounts.最长超温 }}m</strong>
                 <span>最长超温</span>
               </div>
+              </div>
+              <Button
+                label="仅看严重异常"
+                kind="secondary"
+                block
+                inspect-id="cold-chain-ops.exception-queue.show-critical"
+                data-pb-action="show-critical"
+                @click="showCritical"
+              />
             </div>
-            <Button
-              label="仅看严重异常"
-              kind="secondary"
-              size="sm"
-              inspect-id="cold-chain-ops.exception-queue.show-critical"
-              data-pb-action="show-critical"
-              @click="showCritical"
-            />
           </Card>
 
           <SearchBar
@@ -212,101 +278,123 @@ function refresh() {
             placeholder="搜索异常、运单或线路"
             inspect-id="cold-chain-ops.exception-queue.search"
           />
-          <FilterBar
+          <PrimaryTabs
             v-model="filter"
-            :items="['全部', '严重', '警告', '关注']"
-            inspect-id="cold-chain-ops.exception-queue.filters"
-          />
-
-          <EmptyState
-            v-if="visibleExceptions.length === 0"
-            title="没有待处理异常"
-            description="当前筛选范围内的运输温度全部正常。"
-            inspect-id="cold-chain-ops.exception-queue.empty"
-          />
-
-          <DataList
-            v-else
-            class="exception-list"
-            :divided="false"
-            surface="none"
-            rounded="none"
-            inspect-id="cold-chain-ops.exception-queue.list"
+            :items="severityTabs"
+            grow
+            inspect-id="cold-chain-ops.exception-queue.severity-tabs"
+            @update:model-value="selectSeverity"
           >
-            <button
-              v-for="item in visibleExceptions"
-              :key="item.id"
-              type="button"
-              class="exception-row"
-              data-pb-id="cold-chain-ops.exception-queue.list.row"
-              :data-pb-key="item.id"
-              data-pb-role="list-item"
-              data-pb-token-background="color.surface"
-              data-pb-token-radius="radius.lg"
-              data-pb-token-spacing="spacing.md"
-              :data-pb-action="
-                item.id === 'ex-017' ? 'open-primary-exception' : undefined
-              "
-              @click="openException(item.shipmentId, item.severity)"
+            <template
+              v-for="tab in severityTabs"
+              :key="tab.value"
+              #[tab.value]
             >
-              <div class="row-heading">
-                <span
-                  data-pb-id="cold-chain-ops.exception-queue.list.row.identity"
-                  :data-pb-key="item.id"
-                  data-pb-role="text"
-                  data-pb-token-typography="typography.caption-strong"
-                  data-pb-token-color="color.on-surface-muted"
-                  >{{ item.id.toUpperCase() }} · {{ item.shipmentId }}</span
-                >
-                <Badge
-                  :label="item.severity"
-                  :tone="
-                    item.severity === '严重'
-                      ? 'error'
-                      : item.severity === '警告'
-                        ? 'warning'
-                        : 'primary'
-                  "
-                  inspect-id="cold-chain-ops.exception-queue.list.row.severity"
-                  :pb-key="item.id"
-                />
-              </div>
-              <strong
-                data-pb-id="cold-chain-ops.exception-queue.list.row.lane"
-                :data-pb-key="item.id"
-                data-pb-role="text"
-                data-pb-token-typography="typography.subtitle"
-                data-pb-token-color="color.on-surface"
-                >{{ item.lane }}</strong
+              <EmptyState
+                v-if="exceptionsForTab(tab.value).length === 0"
+                :title="emptyTitle"
+                :description="emptyDescription"
+                :inspect-id="
+                  tab.value === filter
+                    ? 'cold-chain-ops.exception-queue.empty'
+                    : 'cold-chain-ops.exception-queue.empty.' + tab.value
+                "
+              />
+
+              <DataList
+                v-else
+                class="exception-list"
+                :divided="false"
+                surface="none"
+                rounded="none"
+                :inspect-id="
+                  tab.value === filter
+                    ? 'cold-chain-ops.exception-queue.list'
+                    : 'cold-chain-ops.exception-queue.list.' + tab.value
+                "
               >
-              <span
-                data-pb-id="cold-chain-ops.exception-queue.list.row.cargo"
-                :data-pb-key="item.id"
-                data-pb-role="text"
-                data-pb-token-typography="typography.caption"
-                data-pb-token-color="color.on-surface-muted"
-                >{{ item.cargo }}</span
-              >
-              <div class="temperature-line">
-                <Icon name="thermometer" size="sm" />
-                <strong
-                  data-pb-id="cold-chain-ops.exception-queue.list.row.temperature"
-                  :data-pb-key="item.id"
-                  data-pb-role="status"
-                  data-pb-token-typography="typography.title-sm"
-                  :data-pb-token-color="
-                    item.severity === '严重' ? 'color.error' : 'color.warning'
+                <button
+                  v-for="item in exceptionsForTab(tab.value)"
+                  :key="item.id"
+                  type="button"
+                  class="exception-row"
+                  data-pb-id="cold-chain-ops.exception-queue.list.row"
+                  :data-pb-key="tab.value + '-' + item.id"
+                  data-pb-role="list-item"
+                  data-pb-token-background="color.surface"
+                  data-pb-token-radius="radius.lg"
+                  data-pb-token-spacing="spacing.md"
+                  :data-pb-action="
+                    tab.value === filter && item.id === 'ex-017'
+                      ? 'open-primary-exception'
+                      : undefined
                   "
-                  >{{ item.currentTemperature.toFixed(1) }}°C</strong
+                  @click="openException(item.shipmentId, item.severity)"
                 >
-                <span
-                  >上限 {{ item.upperLimit }}°C · 已持续
-                  {{ item.durationMinutes }} 分钟</span
-                >
-                <small>{{ item.updatedAt }}</small>
-              </div>
-            </button>
-          </DataList>
+                    <div class="row-heading">
+                      <span
+                        data-pb-id="cold-chain-ops.exception-queue.list.row.identity"
+                        :data-pb-key="tab.value + '-' + item.id"
+                        data-pb-role="text"
+                        data-pb-token-typography="typography.caption-strong"
+                        data-pb-token-color="color.on-surface-muted"
+                        >{{ item.id.toUpperCase() }} · {{ item.shipmentId }}</span
+                      >
+                      <Badge
+                        :label="item.severity"
+                        :tone="
+                          item.severity === '严重'
+                            ? 'error'
+                            : item.severity === '警告'
+                              ? 'warning'
+                              : 'primary'
+                        "
+                        :inspect-id="
+                          tab.value === filter
+                            ? 'cold-chain-ops.exception-queue.list.row.severity'
+                            : 'cold-chain-ops.exception-queue.list.row.severity.' + tab.value
+                        "
+                        :pb-key="tab.value + '-' + item.id"
+                      />
+                    </div>
+                    <strong
+                      data-pb-id="cold-chain-ops.exception-queue.list.row.lane"
+                      :data-pb-key="tab.value + '-' + item.id"
+                      data-pb-role="text"
+                      data-pb-token-typography="typography.subtitle"
+                      data-pb-token-color="color.on-surface"
+                      >{{ item.lane }}</strong
+                    >
+                    <span
+                      data-pb-id="cold-chain-ops.exception-queue.list.row.cargo"
+                      :data-pb-key="tab.value + '-' + item.id"
+                      data-pb-role="text"
+                      data-pb-token-typography="typography.caption"
+                      data-pb-token-color="color.on-surface-muted"
+                      >{{ item.cargo }}</span
+                    >
+                    <div class="temperature-line">
+                      <Icon name="thermometer" size="sm" />
+                      <strong
+                        data-pb-id="cold-chain-ops.exception-queue.list.row.temperature"
+                        :data-pb-key="tab.value + '-' + item.id"
+                        data-pb-role="status"
+                        data-pb-token-typography="typography.title-sm"
+                        :data-pb-token-color="
+                          item.severity === '严重' ? 'color.error' : 'color.warning'
+                        "
+                        >{{ item.currentTemperature.toFixed(1) }}°C</strong
+                      >
+                      <span
+                        >上限 {{ item.upperLimit }}°C · 已持续
+                        {{ item.durationMinutes }} 分钟</span
+                      >
+                      <small>{{ item.updatedAt }}</small>
+                    </div>
+                </button>
+              </DataList>
+            </template>
+          </PrimaryTabs>
         </div>
       </ScrollableDataList>
     </div>
@@ -325,10 +413,35 @@ function refresh() {
   gap: var(--pb-spacing-sm-plus);
   padding: var(--pb-spacing-md);
 }
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-spacing-sm-plus);
+  padding: var(--pb-spacing-md);
+}
+.card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--pb-spacing-sm);
+}
+.card-heading h2,
+.card-heading p {
+  margin: var(--pb-spacing-none);
+}
+.card-heading h2 {
+  color: var(--pb-color-on-surface);
+  font: var(--pb-typography-subtitle);
+}
+.card-heading p {
+  margin-top: var(--pb-spacing-xxs);
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
+}
 .metric-grid {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--pb-spacing-sm);
-  margin-bottom: var(--pb-spacing-sm-plus);
 }
 .metric {
   display: flex;
@@ -336,6 +449,7 @@ function refresh() {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--pb-spacing-xs);
+  min-width: var(--pb-sizing-control-lg);
   padding: var(--pb-spacing-sm);
   border-radius: var(--pb-radius-md);
   background: var(--pb-color-surface-variant);
@@ -370,6 +484,10 @@ function refresh() {
   color: var(--pb-color-on-surface);
   text-align: left;
 }
+.exception-row:focus-visible {
+  outline: var(--pb-border-focus);
+  outline-offset: var(--pb-spacing-xxs);
+}
 .row-heading,
 .temperature-line {
   display: flex;
@@ -385,6 +503,9 @@ function refresh() {
   border-top: var(--pb-border-default);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
+}
+.temperature-line span {
+  min-width: var(--pb-spacing-none);
 }
 .temperature-line strong {
   color: var(--pb-color-error);
