@@ -11,6 +11,7 @@ export const SEMANTIC_ROLES = [
   'bottom-bar',
   'navigation',
   'section',
+  'group',
   'summary',
   'card',
   'list',
