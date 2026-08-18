@@ -65,7 +65,7 @@ Capture Driver 只报告观测结果。它不能用 Target 扫描或源码命名
 - Core Review reducer 固定 L1/L2/L3 Profile、Code/Runtime 双轨状态、provider session/App/build receipt 与最多三次 provider 尝试；L1/L2 关闭结果不复用 L3 `completed` 语义。
 - Flutter Runtime provider 在 Local Service 内按需创建标准 stdio MCP client，执行 initialize、`tools/list` 与 DTD attach；Service 关闭、Target root 改变、进程退出或 session fingerprint 漂移都会关闭旧 client。该 provider 禁止设备发现、App 启停和 launcher fallback。
 
-Service Contract 来自 `@proto-bridge/core/v2/service-contract`。当前 Local Service protocol version 3 把 Flutter render/replay 改为 Service 执行请求，客户端不再上传自述 Runtime artifact/receipt；PBWork、CLI 和 MCP client 会拒绝不匹配的 protocol。PBWork client 不应根据 HTTP 状态猜测第二套产品错误。
+Service Contract 来自 `@proto-bridge/core/v2/service-contract`。当前 Local Service protocol version 4 把 Flutter render/replay 和 runtime-error receipt 固定到 Review/Profile/Case/App/provider/session；客户端不再上传自述 Runtime artifact/receipt，PBWork、CLI 和 MCP client 会拒绝不匹配的 protocol。PBWork client 不应根据 HTTP 状态猜测第二套产品错误。
 
 ## CLI
 
@@ -121,9 +121,9 @@ Target 分为**公共门面**与**栈适配器**：
 
 适配器不拥有任何具体产品的组件/Token 映射。真实目标工程的 `AGENTS.md`、`docs/proto-bridge.md`、`docs/components.md`、`docs/theme.md` 和公开代码拥有当前约束；可选的根目录 `proto-bridge.target.json` 只是这些约束的严格机器投影。政策与机器 Contract 冲突返回 `conflict`，显式声明与代码不符返回 `stale`，代码启发式最多返回 `candidate`。缺少 authority 的维度只能保持 `unverified`。Target root 来自 Agent 当前任务或单次 Tool 参数；目标仓库不需要 ProtoBridge Workspace 配置，Target 结果不写入 Bundle。无适用 adapter 时仍可消费固定 Evidence，但不能宣称已完成 Target query/validation 闭环。
 
-Flutter Review machine contract 使用 `review.version: 2` 与 `provider: "dart-flutter-mcp"`。Contract 只声明 App identity、受控 debug-only identity/prepare/observe service extension、`observationContractVersion: 1`、Case/fixture/route/state seed，以及 Scenario 的 finder/action；不包含 platform、设备 UDID、固定尺寸或任意 launcher command。Local Service 只 attach 已运行且已连接 DTD 的 App，通过官方 `vm_service` 调用受控 extension，通过 `widget_inspector`、`flutter_driver_command` 与 `get_runtime_errors` 采集结构、截图、交互和异常。observe extension 在同一 App session 返回 typed State/Structure observation，随后由公共五维 verifier 与固定 Source expected 比较；App identity、Target commit/content、build digest 或 provider session 不匹配时，Runtime 证据无效。
+Flutter Review machine contract 使用 `review.version: 3` 与 `provider: "dart-flutter-mcp"`。Contract 声明 `operator-dtd-uri` attach、debug Runtime、Driver Bridge finder、Case/fixture/route/state seed，以及 Scenario finder/action；不包含 DTD URI、设备 UDID、固定尺寸或任意 launcher command。Local Service 只调用官方 `connect_dart_tooling_daemon`、`get_widget_tree`、`flutter_driver` 与 `get_runtime_errors`。App identity、Case prepare 和 typed State/Structure observation 通过 debug-only Driver Bridge 节点读取，不依赖官方 MCP 未提供的通用 VM service 工具。随后公共五维 verifier 将 observation 与固定 Source expected 比较；App identity、Target commit/content、build digest 或 provider session 不匹配时，Runtime 证据无效。
 
-设备发现、App 启停和连接责任留给 Flutter 官方 MCP 与操作者；ProtoBridge 不指定 iOS/Android/真机，也不提供 launcher fallback。Provider 操作共享最多三次尝试预算；歧义、能力缺失和副作用结果未知会立即终止。Runtime 失败关闭 Runtime 轨并保留 Code Review 结果，不进入无界重试。
+设备发现和 App 启停责任留给操作者；操作者通过 `PB_FLUTTER_DTD_URI` 把 IDE 当前 App 的 DTD URI 交给 Local Service，原始 URI 不进入 Store、receipt 或 MCP projection。ProtoBridge 不指定 iOS/Android/真机，也不提供 launcher fallback。Provider 操作共享最多三次尝试预算；能力缺失、identity 漂移和副作用结果未知会立即终止。Runtime 失败关闭 Runtime 轨并保留 Code Review 结果，不进入无界重试。
 
 ## 公共导出
 

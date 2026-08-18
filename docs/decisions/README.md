@@ -12,5 +12,6 @@
 | [0006](./0006-explicit-semantic-evidence.md) | 实现相关语义必须显式进入 Evidence |
 | [0007](./0007-reconstruction-acceptance-contract.md) | 高保真重建使用独立 Acceptance Contract |
 | [0008](./0008-workspace-generation-and-reset.md) | Workspace generation 与绑定式 Reset |
+| [0009](./0009-flutter-official-mcp-driver-bridge.md) | Flutter 官方 MCP 使用操作者 DTD URI 与 Driver Bridge |
 
 ADR 被后续决策替代时保留原文，并在状态中链接替代项；不要改写旧决策以伪装从未发生变化。

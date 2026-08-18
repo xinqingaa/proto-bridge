@@ -27,12 +27,16 @@ class PbApp extends ConsumerWidget {
       navigatorKey: ProtoBridgeReviewHarness.navigatorKey,
       navigatorObservers: [Pop.routeObserver],
       builder: (context, child) {
-        return Pop.hostBuilder(
-          context,
-          TsBinder(child: child ?? const SizedBox.shrink()),
+        return ProtoBridgeReviewBridge(
+          child: Pop.hostBuilder(
+            context,
+            TsBinder(child: child ?? const SizedBox.shrink()),
+          ),
         );
       },
-      initialRoute: AppRoutes.hub,
+      initialRoute: ProtoBridgeReviewHarness.reviewMode
+          ? ProtoBridgeReviewHarness.reviewRoute
+          : AppRoutes.hub,
       routes: appRoutes,
     );
   }

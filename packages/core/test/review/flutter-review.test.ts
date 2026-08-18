@@ -23,16 +23,23 @@ describe('Flutter authoritative Review adapter', () => {
       version: 1,
       technology: 'flutter',
       review: {
-        version: 2,
+        version: 3,
         provider: 'dart-flutter-mcp',
         runtime: {
           applicationIdentity: 'example.app',
-          identityServiceExtension: 'ext.protoBridge.identity',
-          prepareServiceExtension: 'ext.protoBridge.prepare',
-          observeServiceExtension: 'ext.protoBridge.observe',
+          attachMode: 'operator-dtd-uri',
+          runtimeMode: 'debug',
           observationContractVersion: 1,
           reviewHarnessVersion: '1',
           textEntryEmulation: true,
+          bridge: {
+            identityFinder: { kind: 'value-key', value: 'pb.review.identity' },
+            controlFinder: { kind: 'value-key', value: 'pb.review.control' },
+            caseInputFinder: { kind: 'value-key', value: 'pb.review.case-input' },
+            prepareFinder: { kind: 'value-key', value: 'pb.review.prepare' },
+            readyFinder: { kind: 'value-key', value: 'pb.review.ready' },
+            observationFinder: { kind: 'value-key', value: 'pb.review.observation' },
+          },
         },
         cases: { 'open.case.default': { screenId: 'open.screen', route: '/open' } },
         scenarios: {
@@ -44,7 +51,7 @@ describe('Flutter authoritative Review adapter', () => {
       },
     }));
     await expect(readFlutterReviewContract(root)).resolves.toMatchObject({
-      version: 2,
+      version: 3,
       provider: 'dart-flutter-mcp',
       runtime: { applicationIdentity: 'example.app' },
     });

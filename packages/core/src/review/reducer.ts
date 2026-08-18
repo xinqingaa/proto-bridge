@@ -155,7 +155,8 @@ export function reduceReviewEvents(
     } else if (payload.kind === 'target-rendered') {
       if (event.actor !== 'runner' || !event.tool) throw new Error('Target render facts require a successful runner receipt.');
       if (session.reviewProfile.contractVersion === 1 && session.runtimeProvider.required) {
-        assertRuntimeReceipt(session, payload.runtimeReceipt, 'screenshot');
+        assertRuntimeReceipt(session, payload.runtimeReceipt, { operation: 'screenshot', caseId: payload.caseId, screenId: payload.screenId });
+        assertRuntimeErrorReceipts(session, payload.runtimeErrorReceipts, payload.caseId, payload.screenId);
       }
       if (payload.targetRevision !== session.targetRevision) throw new Error('Target revision drifted during Review.');
       if (!session.authorizedTranches.some((item) => item.screenId === payload.screenId && item.tranche === payload.tranche)) throw new Error('Target render requires an authorized Screen tranche.');
@@ -184,6 +185,7 @@ export function reduceReviewEvents(
         } : {}),
       });
       if (payload.runtimeReceipt) session.runtimeOperationReceipts.push(payload.runtimeReceipt);
+      if (payload.runtimeErrorReceipts) session.runtimeOperationReceipts.push(...payload.runtimeErrorReceipts);
       if (payload.structureObservation) {
         if (payload.structureObservation.caseId !== payload.caseId) throw new Error('Runtime Structure observation is outside the rendered Case.');
         session.runtimeStructureObservations = replaceByCase(session.runtimeStructureObservations, payload.structureObservation);
@@ -197,7 +199,8 @@ export function reduceReviewEvents(
     } else if (payload.kind === 'scenario-replayed') {
       if (event.actor !== 'runner' || !event.tool) throw new Error('Scenario replay facts require a successful runner receipt.');
       if (session.reviewProfile.contractVersion === 1 && session.runtimeProvider.required) {
-        assertRuntimeReceipt(session, payload.runtimeReceipt, 'scenario');
+        assertRuntimeReceipt(session, payload.runtimeReceipt, { operation: 'scenario', caseId: payload.caseId, screenId: payload.screenId, scenarioId: payload.scenarioId });
+        assertRuntimeErrorReceipts(session, payload.runtimeErrorReceipts, payload.caseId, payload.screenId, payload.scenarioId);
       }
       if (payload.targetRevision !== session.targetRevision || !session.requiredScenarioCaseIds.includes(payload.caseId)) throw new Error('Scenario receipt is outside the fixed Review target revision/selection.');
       if (payload.transition && (
@@ -209,6 +212,7 @@ export function reduceReviewEvents(
       )) throw new Error('Structured Scenario receipt identity does not match its Review event.');
       session.replayedScenarioCaseIds.push(payload.caseId);
       if (payload.runtimeReceipt) session.runtimeOperationReceipts.push(payload.runtimeReceipt);
+      if (payload.runtimeErrorReceipts) session.runtimeOperationReceipts.push(...payload.runtimeErrorReceipts);
       if (payload.transition) session.runtimeScenarioTransitions = replaceByCase(session.runtimeScenarioTransitions, payload.transition);
     } else if (payload.kind === 'artifacts-compared') {
       if (event.actor !== 'runner' || !event.tool) throw new Error('Compare facts require a successful comparator receipt.');
@@ -336,6 +340,7 @@ function assertCompletionGates(session: ReviewSession): void {
   const missingScenarios = session.runtimeProvider.required
     ? session.requiredScenarioCaseIds.filter((item) => !session.replayedScenarioCaseIds.includes(item))
     : [];
+  const missingComparisons = session.attempts.filter((item) => !item.diffDigest).map((item) => item.attemptId);
   const openBlocking = session.findings.filter((item) => ['Critical', 'Major'].includes(item.severity) && item.status === 'open');
   const unverified = session.findings.filter((item) => item.severity === 'Unverified' || item.status === 'unverified');
   const assessedById = new Map(session.obligationAssessments.map((item) => [item.obligationId, item]));
@@ -345,21 +350,21 @@ function assertCompletionGates(session: ReviewSession): void {
   const legacyObligationContractMissing = session.obligationContractVersion !== 1;
   const legacyVerificationContractMissing = session.verificationContractVersion !== 1;
   const runtimeNotVerified = session.runtimeProvider.required && session.reviewProfile.contractVersion === 1 && session.runtimeReviewStatus !== 'verified';
-  if (missingViewed.length || missingRendered.length || missingScenarios.length || openBlocking.length || unverified.length || missingObligations.length || unverifiedObligations.length || deviatingObligations.length || legacyObligationContractMissing || legacyVerificationContractMissing || runtimeNotVerified || session.status === 'unverified') {
-    throw new Error(`Review completion gates failed: ${JSON.stringify({ missingViewed, missingRendered, missingScenarios, openBlocking: openBlocking.map((item) => item.findingId), unverified: unverified.map((item) => item.findingId), missingObligations, unverifiedObligations, deviatingObligations, legacyObligationContractMissing, legacyVerificationContractMissing, runtimeNotVerified })}`);
+  if (missingViewed.length || missingRendered.length || missingScenarios.length || missingComparisons.length || openBlocking.length || unverified.length || missingObligations.length || unverifiedObligations.length || deviatingObligations.length || legacyObligationContractMissing || legacyVerificationContractMissing || runtimeNotVerified || session.status === 'unverified') {
+    throw new Error(`Review completion gates failed: ${JSON.stringify({ missingViewed, missingRendered, missingScenarios, missingComparisons, openBlocking: openBlocking.map((item) => item.findingId), unverified: unverified.map((item) => item.findingId), missingObligations, unverifiedObligations, deviatingObligations, legacyObligationContractMissing, legacyVerificationContractMissing, runtimeNotVerified })}`);
   }
 }
 
 function assertRuntimeReceipt(
   session: ReviewSession,
   receipt: ReviewRuntimeOperationReceipt | undefined,
-  expectedOperation: 'screenshot' | 'scenario',
+  expected: { operation: ReviewRuntimeOperationReceipt['operation']; caseId: string; screenId: string; scenarioId?: string },
 ): asserts receipt is ReviewRuntimeOperationReceipt {
   const provider = session.providerSession;
   if (!provider || !receipt) throw new Error('Runtime operation requires a connected provider session receipt.');
   if (
     receipt.receiptVersion !== 1
-    || receipt.operation !== expectedOperation
+    || receipt.operation !== expected.operation
     || receipt.providerId !== provider.providerId
     || receipt.providerFingerprint !== provider.providerFingerprint
     || receipt.sessionIdentityDigest !== provider.sessionIdentityDigest
@@ -370,7 +375,29 @@ function assertRuntimeReceipt(
     || receipt.attemptOrdinal < 1
     || receipt.attemptOrdinal > 3
   ) throw new Error('Runtime operation receipt is outside the fixed provider/App/Target session.');
+  if ('attach' in provider.capabilities && (
+    receipt.reviewRunId !== session.reviewRunId
+    || receipt.coverageProfile !== session.reviewProfile.coverageProfile
+    || receipt.caseId !== expected.caseId
+    || receipt.screenId !== expected.screenId
+    || receipt.scenarioId !== expected.scenarioId
+  )) throw new Error('Runtime operation receipt is outside the fixed Review/Profile/Case selection.');
   if (session.runtimeOperationReceipts.some((item) => item.operationId === receipt.operationId)) throw new Error('Runtime operation receipt is duplicated.');
+}
+
+function assertRuntimeErrorReceipts(
+  session: ReviewSession,
+  receipts: ReviewRuntimeOperationReceipt[] | undefined,
+  caseId: string,
+  screenId: string,
+  scenarioId?: string,
+): void {
+  if (!session.providerSession || !('attach' in session.providerSession.capabilities)) return;
+  if (!receipts || receipts.length !== 2) throw new Error('Runtime operation requires before/after runtime-error receipts.');
+  for (const receipt of receipts) {
+    assertRuntimeReceipt(session, receipt, { operation: 'runtime-errors', caseId, screenId, ...(scenarioId ? { scenarioId } : {}) });
+  }
+  if (new Set(receipts.map((item) => item.capability)).size !== 2) throw new Error('Runtime-error receipts must bind distinct before/after windows.');
 }
 
 function refreshReviewTrackStatus(session: ReviewSession): void {
@@ -385,8 +412,9 @@ function refreshReviewTrackStatus(session: ReviewSession): void {
   } else if (!['unavailable', 'unverified', 'needs-human'].includes(session.runtimeReviewStatus)) {
     const rendered = session.requiredSourceDigests.every((item) => session.renderedSourceDigests.includes(item));
     const replayed = session.requiredScenarioCaseIds.every((item) => session.replayedScenarioCaseIds.includes(item));
+    const compared = session.attempts.length > 0 && session.attempts.every((item) => item.diffDigest !== undefined);
     const providerReady = session.reviewProfile.contractVersion === 'legacy-unavailable' || session.providerSession !== undefined;
-    session.runtimeReviewStatus = rendered && replayed && providerReady ? 'verified' : 'pending';
+    session.runtimeReviewStatus = rendered && replayed && compared && providerReady ? 'verified' : 'pending';
   }
 
   if (session.status === 'invalidated') session.reviewOutcome = 'invalidated';

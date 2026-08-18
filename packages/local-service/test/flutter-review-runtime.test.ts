@@ -14,30 +14,29 @@ class ScenarioTransport implements FlutterMcpTransport {
   readonly calls: Array<{ name: string; args: Record<string, unknown> }> = [];
   private observations = 0;
 
-  constructor(private readonly targetRoot: string) {}
-
   async initialize() {
     return { protocolVersion: '2025-06-18', serverInfo: { name: 'dart-mcp-server', version: 'fixture' } };
   }
 
   async listTools(): Promise<McpToolDefinition[]> {
-    return ['dtd', 'flutter_driver_command', 'widget_inspector', 'get_runtime_errors', 'vm_service'].map((name) => ({ name }));
+    return [
+      { name: 'connect_dart_tooling_daemon' },
+      { name: 'get_widget_tree' },
+      { name: 'get_runtime_errors' },
+      { name: 'flutter_driver', inputSchema: { type: 'object', properties: { command: { type: 'string', enum: ['get_text', 'tap', 'enter_text', 'waitFor', 'scroll', 'scrollIntoView', 'screenshot'] } } } },
+    ];
   }
 
   async callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
     this.calls.push({ name, args });
-    if (name === 'dtd' && args.command === 'listDtdUris') return { dtdUris: [{ uri: 'ws://fixture-dtd', workingDirectory: this.targetRoot }] };
-    if (name === 'dtd' && args.command === 'connect') return { connected: true };
-    if (name === 'dtd' && args.command === 'listConnectedApps') return { apps: [{ applicationIdentity: 'runtime-test', uri: 'ws://fixture-app' }] };
-    if (name === 'vm_service' && args.method === 'getVM') return { isolates: [{ id: 'isolates/1' }] };
-    if (name === 'vm_service' && args.method === 'ext.protoBridge.identity') return { result: applicationReceipt() };
-    if (name === 'vm_service' && args.method === 'ext.protoBridge.prepare') return { result: { ready: true } };
-    if (name === 'vm_service' && args.method === 'ext.protoBridge.observe') {
+    if (name === 'connect_dart_tooling_daemon') return { connected: true };
+    if (name === 'flutter_driver' && args.command === 'get_text' && args.keyValueString === 'pb.review.identity') return { content: [{ type: 'text', text: JSON.stringify(applicationReceipt()) }] };
+    if (name === 'flutter_driver' && args.command === 'get_text' && args.keyValueString === 'pb.review.observation') {
       this.observations += 1;
-      return { result: state(this.observations === 1 ? 'closed' : 'open') };
+      return { content: [{ type: 'text', text: JSON.stringify(state(this.observations === 1 ? 'closed' : 'open')) }] };
     }
-    if (name === 'widget_inspector') return { result: { summaryTree: 'fixture' } };
-    if (name === 'flutter_driver_command' && args.command === 'tap') return { result: { tapped: true } };
+    if (name === 'get_widget_tree') return { result: { summaryTree: 'fixture' } };
+    if (name === 'flutter_driver' && ['tap', 'enter_text', 'waitFor'].includes(String(args.command))) return { result: { ok: true } };
     if (name === 'get_runtime_errors') return { content: [{ type: 'text', text: 'No recent runtime errors.' }] };
     throw new Error(`Unexpected fake Flutter MCP call ${name}:${String(args.command ?? args.method)}`);
   }
@@ -60,16 +59,23 @@ describe('Flutter Review Runtime', () => {
       version: 1,
       technology: 'flutter',
       review: {
-        version: 2,
+        version: 3,
         provider: 'dart-flutter-mcp',
         runtime: {
           applicationIdentity: 'runtime-test',
-          identityServiceExtension: 'ext.protoBridge.identity',
-          prepareServiceExtension: 'ext.protoBridge.prepare',
-          observeServiceExtension: 'ext.protoBridge.observe',
+          attachMode: 'operator-dtd-uri',
+          runtimeMode: 'debug',
           observationContractVersion: 1,
           reviewHarnessVersion: '1',
           textEntryEmulation: true,
+          bridge: {
+            identityFinder: { kind: 'value-key', value: 'pb.review.identity' },
+            controlFinder: { kind: 'value-key', value: 'pb.review.control' },
+            caseInputFinder: { kind: 'value-key', value: 'pb.review.case-input' },
+            prepareFinder: { kind: 'value-key', value: 'pb.review.prepare' },
+            readyFinder: { kind: 'value-key', value: 'pb.review.ready' },
+            observationFinder: { kind: 'value-key', value: 'pb.review.observation' },
+          },
         },
         cases: { 'sample::open': { screenId: 'sample', route: '/sample' } },
         scenarios: {
@@ -80,8 +86,8 @@ describe('Flutter Review Runtime', () => {
         },
       },
     }));
-    const transport = new ScenarioTransport(root);
-    const provider = new FlutterMcpProvider({ retryDelayMs: 0, transportFactory: () => transport });
+    const transport = new ScenarioTransport();
+    const provider = new FlutterMcpProvider({ dtdUri: 'ws://fixture-dtd', retryDelayMs: 0, transportFactory: () => transport });
     const replayed = await new FlutterReviewRuntime(provider).replay(session(root), { caseId: 'sample::open' });
 
     expect(replayed.transition).toMatchObject({
@@ -94,7 +100,8 @@ describe('Flutter Review Runtime', () => {
       operation: 'scenario', providerId: 'dart-flutter-mcp', targetCommit: 'baseline',
       targetContentDigest: 'sha256:target-content', appBuildDigest: 'sha256:app-build',
     });
-    expect(transport.calls.some((item) => item.name === 'flutter_driver_command' && item.args.command === 'tap' && item.args.appUri === 'ws://fixture-app')).toBe(true);
+    expect(transport.calls.some((item) => item.name === 'flutter_driver' && item.args.command === 'tap')).toBe(true);
+    expect(transport.calls.every((item) => !('appUri' in item.args))).toBe(true);
     expect(transport.calls.some((item) => ['launch_app', 'list_devices', 'stop_app'].includes(item.name))).toBe(false);
   });
 });

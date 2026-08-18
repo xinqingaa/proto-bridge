@@ -41,38 +41,40 @@ class ServiceFlutterMcpTransport implements FlutterMcpTransport {
   }
 
   async listTools(): Promise<McpToolDefinition[]> {
-    return ['dtd', 'flutter_driver_command', 'widget_inspector', 'get_runtime_errors', 'vm_service'].map((name) => ({ name }));
+    return [
+      { name: 'connect_dart_tooling_daemon' },
+      { name: 'get_widget_tree' },
+      { name: 'get_runtime_errors' },
+      { name: 'flutter_driver', inputSchema: { type: 'object', properties: { command: { type: 'string', enum: ['get_text', 'tap', 'enter_text', 'waitFor', 'scroll', 'scrollIntoView', 'screenshot'] } } } },
+    ];
   }
 
   async callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
-    if (name === 'dtd' && args.command === 'listDtdUris') return { dtdUris: [{ uri: 'ws://fixture-dtd', workingDirectory: this.targetRoot }] };
-    if (name === 'dtd' && args.command === 'connect') return { connected: true };
-    if (name === 'dtd' && args.command === 'listConnectedApps') return { apps: [{ applicationIdentity: 'target-service-test', uri: 'ws://fixture-app' }] };
-    if (name === 'vm_service' && args.method === 'getVM') return { isolates: [{ id: 'isolates/1' }] };
-    if (name === 'vm_service' && args.method === 'ext.protoBridge.identity') {
+    if (name === 'connect_dart_tooling_daemon') return { connected: true };
+    if (name === 'flutter_driver' && args.command === 'get_text' && args.keyValueString === 'pb.review.identity') {
       const identity = await readTargetIdentity(this.targetRoot);
-      return { result: {
+      return { content: [{ type: 'text', text: JSON.stringify({
         applicationIdentity: 'target-service-test', targetCommit: identity.head,
         targetContentDigest: identity.contentDigest, appBuildDigest: 'sha256:fixture-app',
         reviewHarnessVersion: '1', platform: 'fixture-device', textEntryEmulation: true,
-      } };
+      }) }] };
     }
-    if (name === 'vm_service' && args.method === 'ext.protoBridge.prepare') return { result: { ready: true } };
-    if (name === 'vm_service' && args.method === 'ext.protoBridge.observe') {
-      const caseId = String((args.arguments as Record<string, unknown> | undefined)?.caseId);
-      return { result: {
+    if (name === 'flutter_driver' && args.command === 'get_text' && args.keyValueString === 'pb.review.observation') {
+      return { content: [{ type: 'text', text: JSON.stringify({
         state: {
-          caseId, shell: { screenId: 'sample.task-list', variantId: 'default' },
+          caseId: this.caseId, shell: { screenId: 'sample.task-list', variantId: 'default' },
           visibleRegionIds: [], keyedCollections: [], values: [], complete: true, unknownKeys: [],
         },
         structure: {
-          caseId, regions: [], rootRegionIds: [], siblingGroups: [], siblingRelations: [], scrollContainers: [],
+          caseId: this.caseId, regions: [], rootRegionIds: [], siblingGroups: [], siblingRelations: [], scrollContainers: [],
           complete: true, unknownRegionIds: [],
         },
-      } };
+      }) }] };
     }
-    if (name === 'widget_inspector') return { result: { summaryTree: 'fixture' } };
-    if (name === 'flutter_driver_command' && args.command === 'screenshot') {
+    if (name === 'get_widget_tree') return { result: { summaryTree: 'fixture' } };
+    if (name === 'flutter_driver' && args.command === 'enter_text') { this.caseId = String(args.text); return { result: { entered: true } }; }
+    if (name === 'flutter_driver' && ['tap', 'waitFor'].includes(String(args.command))) return { result: { ok: true } };
+    if (name === 'flutter_driver' && args.command === 'screenshot') {
       return { content: [{ type: 'image', mimeType: 'image/png', data: TARGET_PNG_BYTES.toString('base64') }] };
     }
     if (name === 'get_runtime_errors') return { content: [{ type: 'text', text: 'No recent runtime errors.' }] };
@@ -80,6 +82,8 @@ class ServiceFlutterMcpTransport implements FlutterMcpTransport {
   }
 
   async close(): Promise<void> {}
+
+  private caseId = '';
 }
 
 function manifest(): RuntimeCaptureManifest {
@@ -190,6 +194,7 @@ async function start(preflightTtlMs = 60_000) {
     }),
     driverFactory: () => new FakeDriver(),
     flutterMcpProviderFactory: () => new FlutterMcpProvider({
+      dtdUri: 'ws://fixture-dtd',
       retryDelayMs: 0,
       transportFactory: ({ cwd }) => new ServiceFlutterMcpTransport(cwd),
     }),
@@ -229,7 +234,7 @@ describe('ProtoBridge Local Service', () => {
     const unauthorized = await call(base, '/console');
     expect(unauthorized.response.status).toBe(401);
     const session = await call(base, '/session', { method: 'POST' });
-    expect(session.body.data.protocolVersion).toBe(3);
+    expect(session.body.data.protocolVersion).toBe(4);
     expect(session.response.status).toBe(201);
     expect(session.body.data.sessionToken).not.toContain('/');
     const state = await call(base, '/console', {
@@ -615,16 +620,23 @@ describe('ProtoBridge Local Service', () => {
       version: 1,
       technology: 'flutter',
       review: {
-        version: 2,
+        version: 3,
         provider: 'dart-flutter-mcp',
         runtime: {
           applicationIdentity: 'target-service-test',
-          identityServiceExtension: 'ext.protoBridge.identity',
-          prepareServiceExtension: 'ext.protoBridge.prepare',
-          observeServiceExtension: 'ext.protoBridge.observe',
+          attachMode: 'operator-dtd-uri',
+          runtimeMode: 'debug',
           observationContractVersion: 1,
           reviewHarnessVersion: '1',
           textEntryEmulation: true,
+          bridge: {
+            identityFinder: { kind: 'value-key', value: 'pb.review.identity' },
+            controlFinder: { kind: 'value-key', value: 'pb.review.control' },
+            caseInputFinder: { kind: 'value-key', value: 'pb.review.case-input' },
+            prepareFinder: { kind: 'value-key', value: 'pb.review.prepare' },
+            readyFinder: { kind: 'value-key', value: 'pb.review.ready' },
+            observationFinder: { kind: 'value-key', value: 'pb.review.observation' },
+          },
         },
         cases: { [caseId]: { screenId: 'sample.task-list' } },
       },
@@ -673,7 +685,8 @@ describe('ProtoBridge Local Service', () => {
     const targetDigest = rendered.body.data.attempts[0].targetDigest as string;
     const targetArtifact = rendered.body.data.artifacts.find((item: any) => item.digest === targetDigest);
     const diffArtifact = { ...targetArtifact, kind: 'diff' };
-    await call(base, `/reviews/${reviewRunId}/compare`, { method: 'POST', token, body: { screenId: 'sample.task-list', caseId, attemptId: 'attempt-1', sourceDigest: source.digest, targetDigest, diff: { artifact: diffArtifact, bytesBase64: PNG_BYTES.toString('base64') }, comparable: true, normalizedDiffSignature: 'sha256:fixture', receiptTool: 'fixture-compare' } });
+    const compared = await call(base, `/reviews/${reviewRunId}/compare`, { method: 'POST', token, body: { screenId: 'sample.task-list', caseId, attemptId: 'attempt-1', sourceDigest: source.digest, targetDigest, diff: { artifact: diffArtifact, bytesBase64: TARGET_PNG_BYTES.toString('base64') }, comparable: true, normalizedDiffSignature: 'sha256:fixture', receiptTool: 'fixture-compare' } });
+    expect(compared.response.status, JSON.stringify(compared.body)).toBe(201);
     await call(base, `/reviews/${reviewRunId}/findings`, { method: 'POST', token, body: { actor: 'agent', findings: [] } });
     const incompleteApproval = await call(base, '/review-approvals', { method: 'POST', token, body: { kind: 'finalize', reviewRunId, confirmationRef: 'human-before-semantic-review', actor: 'human' } });
     const incomplete = await call(base, `/reviews/${reviewRunId}/finalize`, { method: 'POST', token, body: { approvalToken: incompleteApproval.body.data.token } });
@@ -697,6 +710,7 @@ describe('ProtoBridge Local Service', () => {
     expect(assessed.body.data.obligationAssessments).toHaveLength(requiredObligations.length);
     const finalizeApproval = await call(base, '/review-approvals', { method: 'POST', token, body: { kind: 'finalize', reviewRunId, confirmationRef: 'human-confirmed', actor: 'human' } });
     const finalized = await call(base, `/reviews/${reviewRunId}/finalize`, { method: 'POST', token, body: { approvalToken: finalizeApproval.body.data.token } });
+    expect(finalized.response.status, JSON.stringify(finalized.body)).toBe(201);
     expect(finalized.body.data.status).toBe('closed');
     expect(finalized.body.data.reviewOutcome).toBe('focused-accepted');
     const delivery = await call(base, '/deliveries', {

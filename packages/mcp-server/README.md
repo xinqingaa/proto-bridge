@@ -74,7 +74,7 @@ Review 启动时由 Core 根据固定 Handoff 风险选择 L1/L2/L3，并把选�
 
 `verify_target_claims` 不接受 Agent 自填 expected。component/token 由当前 adapter 重新解析 mapping 并验证精确 occurrence/slot（Flutter：Dart `lib/**/*.dart`）；Structure/state/interaction 只读取 Local Service 已记录且绑定固定 Flutter MCP App session 的 typed Runtime observation，代码 verifier 不执行 Target 自有命令，缺失 Runtime receipt 时返回 `unverified`。Receipt 绑定 `HEAD + tracked diff + untracked bytes` 的 Target content digest，同一 Review 不能混用不同内容状态。
 
-Flutter 的 `render_target_case` / `replay_target_scenario` 只把声明式请求交给 Local Service。Service attach 已运行的官方 Dart/Flutter MCP session，校验 App/build/Target identity，然后用 `widget_inspector`、`flutter_driver_command`、`get_runtime_errors` 和受控 debug service extension 采集 Runtime 证据。工具不会发现设备、启动或停止 App，也不会回退到 target-defined launcher；连接不可用时最多尝试三次并关闭 Runtime 轨。
+Flutter 的 `render_target_case` / `replay_target_scenario` 只把声明式请求交给 Local Service。Service 使用操作者提供的 DTD URI 调用官方 `connect_dart_tooling_daemon`，校验 Driver Bridge 暴露的 App/build/Target identity，再通过 `get_widget_tree`、`flutter_driver` 和 `get_runtime_errors` 采集 Runtime 证据。工具不会发现设备、启动或停止 App，也不会回退到 target-defined launcher；连接不可用时最多尝试三次并关闭 Runtime 轨。每次 render/scenario 都固定 before/after runtime-error receipt，完成前每个 render attempt 必须存在 artifact compare。
 
 Review tools 只返回 Session 摘要、attempt、finding、obligation 和 verifier receipt 计数，不重复完整验收分母。`read_review_obligations` 按 Screen、维度和 `unassessed/matched/deviation/unverified/not-applicable` 状态分页。新 Review 的 `matched` assessment 必须引用同一 obligation 的成功 verifier receipt；旧 event log 可恢复，但没有 verification contract 时不能完成。
 

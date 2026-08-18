@@ -22,7 +22,7 @@ import type {
   ReviewSessionSeed,
 } from '../../review/contracts.js';
 
-export const LOCAL_SERVICE_PROTOCOL_VERSION = 3 as const;
+export const LOCAL_SERVICE_PROTOCOL_VERSION = 4 as const;
 
 export const LocalServiceError = z
   .object({

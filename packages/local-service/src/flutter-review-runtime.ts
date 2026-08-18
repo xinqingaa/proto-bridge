@@ -27,6 +27,7 @@ export type FlutterRuntimeRenderResult = {
   artifact: ReviewArtifact;
   bytes: Uint8Array;
   runtimeReceipt: ReviewRuntimeOperationReceipt;
+  runtimeErrorReceipts: ReviewRuntimeOperationReceipt[];
   runtimeErrors: unknown;
   structureObservation: StructureIR;
   stateObservation: TargetStateSnapshot;
@@ -37,6 +38,7 @@ export type FlutterRuntimeScenarioResult = {
   failures: ReviewProviderFailure[];
   transition: TargetScenarioTransition;
   runtimeReceipt: ReviewRuntimeOperationReceipt;
+  runtimeErrorReceipts: ReviewRuntimeOperationReceipt[];
   runtimeErrors: unknown;
 };
 
@@ -51,22 +53,15 @@ export class FlutterReviewRuntime {
     const failures = [...connected.failures];
     const cleared = await this.provider.callForApp('runtime-errors', 'get_runtime_errors', { clearRuntimeErrors: true });
     failures.push(...cleared.failures);
-    const prepared = await this.provider.invokeServiceExtension('wait', contract.runtime.prepareServiceExtension, {
-      caseId: input.caseId,
-      screenId: selected.screenId,
-      ...(selected.route ? { route: selected.route } : {}),
-      ...(selected.fixture ? { fixture: selected.fixture } : {}),
-      ...(selected.variantId ? { variantId: selected.variantId } : {}),
-      ...(selected.stateSeed !== undefined ? { stateSeed: selected.stateSeed } : {}),
-    });
+    const prepared = await this.prepare(contract, input.caseId);
     failures.push(...prepared.failures);
-    const inspected = await this.provider.callForApp('inspect', 'widget_inspector', { command: 'get_widget_tree', summaryOnly: false });
+    const inspected = await this.provider.callForApp('inspect', 'get_widget_tree', { summaryOnly: false });
     failures.push(...inspected.failures);
     const observed = await this.observe(contract, input.caseId, true);
     failures.push(...observed.failures);
-    const screenshot = await this.provider.callForApp('screenshot', 'flutter_driver_command', {
+    const screenshot = await this.provider.callForApp('screenshot', 'flutter_driver', {
       command: 'screenshot',
-      timeout: String(contract.runtime.settleTimeoutMs ?? 5_000),
+      timeout: contract.runtime.settleTimeoutMs ?? 5_000,
     });
     failures.push(...screenshot.failures);
     const bytes = extractImage(screenshot.value);
@@ -84,7 +79,17 @@ export class FlutterReviewRuntime {
         owner: { screenId: selected.screenId, caseId: input.caseId, attemptId: input.attemptId },
       },
       bytes,
-      runtimeReceipt: operationReceipt(screenshot, connected.application, connected.providerSession, 'screenshot', 'flutter_driver_command:screenshot', targetDigest),
+      runtimeReceipt: operationReceipt(screenshot, connected.application, connected.providerSession, 'screenshot', 'flutter_driver:screenshot', targetDigest, {
+        session, caseId: input.caseId, screenId: selected.screenId,
+      }),
+      runtimeErrorReceipts: [
+        operationReceipt(cleared, connected.application, connected.providerSession, 'runtime-errors', 'get_runtime_errors:before', digest(JSON.stringify(cleared.value)), {
+          session, caseId: input.caseId, screenId: selected.screenId,
+        }),
+        operationReceipt(runtimeErrors, connected.application, connected.providerSession, 'runtime-errors', 'get_runtime_errors:after', digest(JSON.stringify(runtimeErrors.value)), {
+          session, caseId: input.caseId, screenId: selected.screenId,
+        }),
+      ],
       runtimeErrors: runtimeErrors.value,
       structureObservation: observed.value.structure,
       stateObservation: observed.value.state,
@@ -101,15 +106,7 @@ export class FlutterReviewRuntime {
     const failures = [...connected.failures];
     const cleared = await this.provider.callForApp('runtime-errors', 'get_runtime_errors', { clearRuntimeErrors: true });
     failures.push(...cleared.failures);
-    const prepared = await this.provider.invokeServiceExtension('wait', contract.runtime.prepareServiceExtension, {
-      caseId: input.caseId,
-      screenId: selectedCase.screenId,
-      scenarioId: scenario.scenarioId,
-      ...(selectedCase.route ? { route: selectedCase.route } : {}),
-      ...(selectedCase.fixture ? { fixture: selectedCase.fixture } : {}),
-      ...(selectedCase.variantId ? { variantId: selectedCase.variantId } : {}),
-      ...(selectedCase.stateSeed !== undefined ? { stateSeed: selectedCase.stateSeed } : {}),
-    });
+    const prepared = await this.prepare(contract, input.caseId);
     failures.push(...prepared.failures);
     const pre = await this.observe(contract, input.caseId, false);
     failures.push(...pre.failures);
@@ -117,7 +114,7 @@ export class FlutterReviewRuntime {
     const operationDigests: string[] = [];
     let maximumAttempt: 1 | 2 | 3 = 1;
     for (const action of scenario.actions) {
-      const inspected = await this.provider.callForApp('inspect', 'widget_inspector', { command: 'get_widget_tree', summaryOnly: false });
+      const inspected = await this.provider.callForApp('inspect', 'get_widget_tree', { summaryOnly: false });
       failures.push(...inspected.failures);
       const performed = await this.performAction(action, contract.runtime.settleTimeoutMs ?? 5_000);
       failures.push(...performed.failures);
@@ -149,6 +146,12 @@ export class FlutterReviewRuntime {
       transition,
       runtimeReceipt: {
         receiptVersion: 1,
+        reviewRunId: session.reviewRunId,
+        coverageProfile: session.reviewProfile.coverageProfile,
+        caseId: input.caseId,
+        screenId: scenario.screenId,
+        scenarioId: scenario.scenarioId,
+        checkpointId: scenario.checkpointId,
         operationId: `flutter-mcp-scenario-${randomUUID()}`,
         operation: 'scenario',
         providerId: connected.providerSession.providerId,
@@ -161,9 +164,17 @@ export class FlutterReviewRuntime {
         attemptOrdinal: maximumAttempt,
         startedAt,
         finishedAt: this.now().toISOString(),
-        capability: 'flutter_driver_command:scenario',
+        capability: 'flutter_driver:scenario',
         resultDigest,
       },
+      runtimeErrorReceipts: [
+        operationReceipt(cleared, connected.application, connected.providerSession, 'runtime-errors', 'get_runtime_errors:before', digest(JSON.stringify(cleared.value)), {
+          session, caseId: input.caseId, screenId: scenario.screenId, scenarioId: scenario.scenarioId, checkpointId: scenario.checkpointId,
+        }),
+        operationReceipt(runtimeErrors, connected.application, connected.providerSession, 'runtime-errors', 'get_runtime_errors:after', digest(JSON.stringify(runtimeErrors.value)), {
+          session, caseId: input.caseId, screenId: scenario.screenId, scenarioId: scenario.scenarioId, checkpointId: scenario.checkpointId,
+        }),
+      ],
       runtimeErrors: runtimeErrors.value,
     };
   }
@@ -173,9 +184,13 @@ export class FlutterReviewRuntime {
     application: ReviewApplicationReceipt;
     failures: ReviewProviderFailure[];
   }> {
-    const attached = await this.provider.attach(session.targetRoot, contract.runtime.applicationIdentity);
-    const identity = await this.provider.probeApplicationIdentity(contract.runtime.identityServiceExtension);
-    const application = identity.value;
+    const attached = await this.provider.attach(session.targetRoot);
+    const identity = await this.provider.callForApp('inspect', 'flutter_driver', {
+      command: 'get_text',
+      ...driverFinder(contract.runtime.bridge.identityFinder),
+      timeout: contract.runtime.settleTimeoutMs ?? 5_000,
+    });
+    const application = parseApplicationReceipt(identity.value);
     if (
       application.applicationIdentity !== contract.runtime.applicationIdentity
       || application.targetCommit !== session.targetBaselineCommit
@@ -195,28 +210,57 @@ export class FlutterReviewRuntime {
     caseId: string,
     requireStructure: boolean,
   ): Promise<FlutterMcpOperationResult<{ state: TargetStateSnapshot; structure: StructureIR }>> {
-    const observed = await this.provider.invokeServiceExtension('inspect', contract.runtime.observeServiceExtension, { caseId });
+    const observed = await this.provider.callForApp('inspect', 'flutter_driver', {
+      command: 'get_text',
+      ...driverFinder(contract.runtime.bridge.observationFinder),
+      timeout: contract.runtime.settleTimeoutMs ?? 5_000,
+    });
     const state = parseStateSnapshot(observed.value, caseId);
     const structure = parseStructureObservation(observed.value, caseId);
     if (requireStructure && !structure) throw new FlutterMcpProviderError('runtime-observation-invalid', 'Flutter Runtime observer did not return a complete Structure observation.', false);
     return { ...observed, value: { state, structure: structure ?? emptyStructure(caseId) } };
   }
 
+  private async prepare(contract: FlutterContract, caseId: string): Promise<FlutterMcpOperationResult<unknown>> {
+    const timeout = contract.runtime.settleTimeoutMs ?? 5_000;
+    const control = await this.provider.callForApp('tap', 'flutter_driver', {
+      command: 'tap', ...driverFinder(contract.runtime.bridge.controlFinder), timeout,
+    });
+    const tapped = await this.provider.callForApp('tap', 'flutter_driver', {
+      command: 'tap', ...driverFinder(contract.runtime.bridge.caseInputFinder), timeout,
+    });
+    const entered = await this.provider.callForApp('input', 'flutter_driver', {
+      command: 'enter_text', text: caseId, timeout,
+    });
+    const prepared = await this.provider.callForApp('tap', 'flutter_driver', {
+      command: 'tap', ...driverFinder(contract.runtime.bridge.prepareFinder), timeout,
+    });
+    const ready = await this.provider.callForApp('wait', 'flutter_driver', {
+      command: 'waitFor', ...driverFinder(contract.runtime.bridge.readyFinder), timeout,
+    });
+    return {
+      ...ready,
+      attemptOrdinal: Math.max(control.attemptOrdinal, tapped.attemptOrdinal, entered.attemptOrdinal, prepared.attemptOrdinal, ready.attemptOrdinal) as 1 | 2 | 3,
+      startedAt: control.startedAt,
+      failures: [...control.failures, ...tapped.failures, ...entered.failures, ...prepared.failures, ...ready.failures],
+    };
+  }
+
   private performAction(action: FlutterScenario['actions'][number], timeoutMs: number): Promise<FlutterMcpOperationResult<unknown>> {
     const finder = driverFinder(action.finder);
-    if (action.kind === 'tap') return this.provider.callForApp('tap', 'flutter_driver_command', { command: 'tap', ...finder, timeout: String(timeoutMs) });
+    if (action.kind === 'tap') return this.provider.callForApp('tap', 'flutter_driver', { command: 'tap', ...finder, timeout: timeoutMs });
     if (action.kind === 'enter-text') return this.performTextEntry(action, finder, timeoutMs);
-    if (action.kind === 'scroll') return this.provider.callForApp('scroll', 'flutter_driver_command', {
+    if (action.kind === 'scroll') return this.provider.callForApp('scroll', 'flutter_driver', {
       command: 'scroll', ...finder, dx: String(action.dx), dy: String(action.dy),
-      duration: String(action.durationMicros), frequency: String(action.frequency), timeout: String(timeoutMs),
+      duration: String(action.durationMicros), frequency: String(action.frequency), timeout: timeoutMs,
     });
-    if (action.kind === 'scroll-into-view') return this.provider.callForApp('scroll', 'flutter_driver_command', { command: 'scrollIntoView', ...finder, alignment: String(action.alignment), timeout: String(timeoutMs) });
-    return this.provider.callForApp('wait', 'flutter_driver_command', { command: 'waitFor', ...finder, timeout: String(timeoutMs) });
+    if (action.kind === 'scroll-into-view') return this.provider.callForApp('scroll', 'flutter_driver', { command: 'scrollIntoView', ...finder, alignment: String(action.alignment), timeout: timeoutMs });
+    return this.provider.callForApp('wait', 'flutter_driver', { command: 'waitFor', ...finder, timeout: timeoutMs });
   }
 
   private async performTextEntry(action: Extract<FlutterScenario['actions'][number], { kind: 'enter-text' }>, finder: Record<string, string>, timeoutMs: number): Promise<FlutterMcpOperationResult<unknown>> {
-    const tapped = await this.provider.callForApp('tap', 'flutter_driver_command', { command: 'tap', ...finder, timeout: String(timeoutMs) });
-    const entered = await this.provider.callForApp('input', 'flutter_driver_command', { command: 'enter_text', text: action.text, timeout: String(timeoutMs) });
+    const tapped = await this.provider.callForApp('tap', 'flutter_driver', { command: 'tap', ...finder, timeout: timeoutMs });
+    const entered = await this.provider.callForApp('input', 'flutter_driver', { command: 'enter_text', text: action.text, timeout: timeoutMs });
     return {
       ...entered,
       attemptOrdinal: Math.max(tapped.attemptOrdinal, entered.attemptOrdinal) as 1 | 2 | 3,
@@ -240,9 +284,22 @@ function operationReceipt(
   kind: ReviewRuntimeOperationReceipt['operation'],
   capability: string,
   resultDigest: string,
+  binding: {
+    session: ReviewSession;
+    caseId: string;
+    screenId: string;
+    scenarioId?: string;
+    checkpointId?: string;
+  },
 ): ReviewRuntimeOperationReceipt {
   return {
     receiptVersion: 1,
+    reviewRunId: binding.session.reviewRunId,
+    coverageProfile: binding.session.reviewProfile.coverageProfile,
+    caseId: binding.caseId,
+    screenId: binding.screenId,
+    ...(binding.scenarioId ? { scenarioId: binding.scenarioId } : {}),
+    ...(binding.checkpointId ? { checkpointId: binding.checkpointId } : {}),
     operationId: operation.operationId,
     operation: kind,
     providerId: provider.providerId,
@@ -273,6 +330,42 @@ function logicalAction(action: FlutterScenario['actions'][number]): TargetScenar
   if (action.kind === 'enter-text') return { actionId: action.actionId, kind: 'input', targetRegionId: action.targetRegionId, input: action.text };
   if (action.kind === 'wait-for') return { actionId: action.actionId, kind: 'wait', targetRegionId: action.targetRegionId };
   return { actionId: action.actionId, kind: 'scroll', targetRegionId: action.targetRegionId };
+}
+
+function parseApplicationReceipt(value: unknown): ReviewApplicationReceipt {
+  const candidate = findObject(value, (item) => [
+    'applicationIdentity', 'targetCommit', 'targetContentDigest', 'appBuildDigest', 'reviewHarnessVersion', 'platform',
+  ].every((key) => typeof item[key] === 'string' && item[key]));
+  if (!candidate) throw new FlutterMcpProviderError('app-identity-incomplete', 'Flutter Review Bridge returned an incomplete application identity.', false);
+  const size = (key: string): { width: number; height: number } | undefined => {
+    const item = object(candidate[key]);
+    return item && typeof item.width === 'number' && typeof item.height === 'number'
+      ? { width: item.width, height: item.height }
+      : undefined;
+  };
+  const optionalString = (key: string) => typeof candidate[key] === 'string' ? candidate[key] as string : undefined;
+  const optionalNumber = (key: string) => typeof candidate[key] === 'number' ? candidate[key] as number : undefined;
+  return {
+    applicationIdentity: candidate.applicationIdentity as string,
+    targetCommit: candidate.targetCommit as string,
+    targetContentDigest: candidate.targetContentDigest as string,
+    appBuildDigest: candidate.appBuildDigest as string,
+    reviewHarnessVersion: candidate.reviewHarnessVersion as string,
+    platform: candidate.platform as string,
+    ...(optionalString('runtimeOrOsVersion') ? { runtimeOrOsVersion: optionalString('runtimeOrOsVersion')! } : {}),
+    ...(size('logicalSize') ? { logicalSize: size('logicalSize')! } : {}),
+    ...(size('pixelSize') ? { pixelSize: size('pixelSize')! } : {}),
+    ...(optionalNumber('dpr') !== undefined ? { dpr: optionalNumber('dpr')! } : {}),
+    ...(optionalString('orientation') ? { orientation: optionalString('orientation')! } : {}),
+    ...(optionalString('locale') ? { locale: optionalString('locale')! } : {}),
+    ...(optionalString('theme') ? { theme: optionalString('theme')! } : {}),
+    ...(optionalNumber('textScale') !== undefined ? { textScale: optionalNumber('textScale')! } : {}),
+    ...(optionalString('safeArea') ? { safeArea: optionalString('safeArea')! } : {}),
+    ...(optionalString('fontEnvironment') ? { fontEnvironment: optionalString('fontEnvironment')! } : {}),
+    ...(typeof candidate.textEntryEmulation === 'boolean' ? { textEntryEmulation: candidate.textEntryEmulation } : {}),
+    ...(optionalString('settlePolicy') ? { settlePolicy: optionalString('settlePolicy')! } : {}),
+    ...(optionalString('systemChromePolicy') ? { systemChromePolicy: optionalString('systemChromePolicy')! } : {}),
+  };
 }
 
 function parseStateSnapshot(value: unknown, caseId: string): TargetStateSnapshot {

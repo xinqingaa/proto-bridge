@@ -121,6 +121,18 @@ describe('authoritative Review reducer', () => {
     expect(() => reduceReviewEvents(partialAssessments)).toThrow(/obligation-token/);
   });
 
+  it('requires every render attempt to have an artifact comparison before completion', () => {
+    const withoutCompare = coverageEvents().filter(
+      (item) => item.payload.kind !== 'artifacts-compared',
+    );
+    expect(() => reduceReviewEvents(chain(
+      ...withoutCompare,
+      { actor: 'agent', payload: { kind: 'obligations-assessed', assessments: matchedAssessments } },
+      { actor: 'agent', payload: { kind: 'findings-recorded', findings: [] } },
+      { actor: 'human', payload: { kind: 'human-finalized', confirmationRef: 'human', decision: 'complete' } },
+    ))).toThrow(/missingComparisons/);
+  });
+
   it('blocks unverified and deviating obligations, while all matched obligations may complete with no findings', () => {
     for (const status of ['unverified', 'deviation'] as const) {
       const assessments = matchedAssessments.map((item, index) => {

@@ -268,16 +268,23 @@ async function targetFixture(): Promise<string> {
     components: { 'page.card': { symbol: 'CommonCard' } },
     tokens: { 'color.surface': { accessor: 'TS.colors.surface' } },
     review: {
-      version: 2,
+      version: 3,
       provider: 'dart-flutter-mcp',
       runtime: {
         applicationIdentity: 'target-claim-fixture',
-        identityServiceExtension: 'ext.protoBridge.identity',
-        prepareServiceExtension: 'ext.protoBridge.prepare',
-        observeServiceExtension: 'ext.protoBridge.observe',
+        attachMode: 'operator-dtd-uri',
+        runtimeMode: 'debug',
         observationContractVersion: 1,
         reviewHarnessVersion: '1',
         textEntryEmulation: true,
+        bridge: {
+          identityFinder: { kind: 'value-key', value: 'pb.review.identity' },
+          controlFinder: { kind: 'value-key', value: 'pb.review.control' },
+          caseInputFinder: { kind: 'value-key', value: 'pb.review.case-input' },
+          prepareFinder: { kind: 'value-key', value: 'pb.review.prepare' },
+          readyFinder: { kind: 'value-key', value: 'pb.review.ready' },
+          observationFinder: { kind: 'value-key', value: 'pb.review.observation' },
+        },
       },
       cases: { [CASE]: { screenId: SCREEN }, [SCENARIO_CASE]: { screenId: SCREEN } },
       scenarios: {

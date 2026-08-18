@@ -1,66 +1,15 @@
 import 'dart:convert';
-import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_driver/driver_extension.dart';
 
-/// Debug-only bridge used by ProtoBridge's official Flutter MCP provider.
-///
-/// It intentionally exposes no fallback launcher, device selection, or
-/// agent-supplied runtime result. Product features install a delegate only
-/// after they own the fixed Handoff's route and Riverpod state bindings.
 abstract interface class ProtoBridgeReviewDelegate {
-  Future<ProtoBridgeReviewObservation> prepare(
-    ProtoBridgeReviewPrepareRequest request,
-  );
+  Future<ProtoBridgeReviewObservation> prepare(String caseId);
 
   ProtoBridgeReviewObservation observe(String caseId);
 }
 
-class ProtoBridgeReviewPrepareRequest {
-  const ProtoBridgeReviewPrepareRequest({
-    required this.caseId,
-    required this.screenId,
-    this.route,
-    this.fixture,
-    this.variantId,
-    this.stateSeed,
-    this.scenarioId,
-  });
-
-  final String caseId;
-  final String screenId;
-  final String? route;
-  final String? fixture;
-  final String? variantId;
-  final String? stateSeed;
-  final String? scenarioId;
-
-  factory ProtoBridgeReviewPrepareRequest.fromParameters(
-    Map<String, String> parameters,
-  ) {
-    String required(String name) {
-      final value = parameters[name];
-      if (value == null || value.isEmpty) {
-        throw ArgumentError.value(value, name, 'must be provided');
-      }
-      return value;
-    }
-
-    return ProtoBridgeReviewPrepareRequest(
-      caseId: required('caseId'),
-      screenId: required('screenId'),
-      route: parameters['route'],
-      fixture: parameters['fixture'],
-      variantId: parameters['variantId'],
-      stateSeed: parameters['stateSeed'],
-      scenarioId: parameters['scenarioId'],
-    );
-  }
-}
-
-/// The exact JSON shapes consumed by Local Service's typed runtime parser.
 class ProtoBridgeReviewObservation {
   const ProtoBridgeReviewObservation({
     required this.state,
@@ -75,37 +24,69 @@ class ProtoBridgeReviewObservation {
 
 abstract final class ProtoBridgeReviewHarness {
   static const applicationIdentity = 'flutter-pb-app';
-  static const reviewHarnessVersion = '1';
-  static const identityExtension = 'ext.proto_bridge.review.identity';
-  static const prepareExtension = 'ext.proto_bridge.review.prepare';
-  static const observeExtension = 'ext.proto_bridge.review.observe';
+  static const reviewHarnessVersion = '2';
+  static const reviewRoute = '/_proto_bridge/review';
+  static const reviewMode = bool.fromEnvironment('PB_REVIEW_MODE');
+
+  static const identityKey = ValueKey<String>('pb.review.identity');
+  static const controlKey = ValueKey<String>('pb.review.control');
+  static const caseInputKey = ValueKey<String>('pb.review.case-input');
+  static const prepareKey = ValueKey<String>('pb.review.prepare');
+  static const readyKey = ValueKey<String>('pb.review.ready');
+  static const observationKey = ValueKey<String>('pb.review.observation');
 
   static final navigatorKey = GlobalKey<NavigatorState>();
+  static final caseController = TextEditingController();
+  static final ValueNotifier<String?> _readyCaseId = ValueNotifier(null);
+  static final ValueNotifier<ProtoBridgeReviewObservation?> _observation =
+      ValueNotifier(null);
   static ProtoBridgeReviewDelegate? _delegate;
   static bool _enabled = false;
 
-  /// Called by the cold-chain feature once its routes and state bindings are
-  /// real. Replacing a delegate is intentional for hot restart/test setup.
   static void installDelegate(ProtoBridgeReviewDelegate delegate) {
     _delegate = delegate;
   }
 
-  /// Registers Dart VM extensions and Flutter Driver only in a debug build.
-  /// It is safe to call repeatedly during debug hot reload.
   static void enable() {
-    if (_enabled) return;
+    if (_enabled || !reviewMode) return;
     _enabled = true;
     enableFlutterDriverExtension(enableTextEntryEmulation: true);
-    developer.registerExtension(identityExtension, _identity);
-    developer.registerExtension(prepareExtension, _prepare);
-    developer.registerExtension(observeExtension, _observe);
   }
 
-  static Future<developer.ServiceExtensionResponse> _identity(
-    String method,
-    Map<String, String> parameters,
-  ) async {
-    return _result({
+  static Future<void> prepareCurrentCase() async {
+    final caseId = caseController.text.trim();
+    final delegate = _delegate;
+    _readyCaseId.value = null;
+    if (caseId.isEmpty || delegate == null) return;
+    final observation = await delegate.prepare(caseId);
+    _observation.value = observation;
+    _readyCaseId.value = caseId;
+  }
+
+  static void publishObservation(ProtoBridgeReviewObservation observation) {
+    _observation.value = observation;
+  }
+
+  static void refreshObservation() {
+    final caseId = _readyCaseId.value;
+    final delegate = _delegate;
+    if (caseId != null && delegate != null) {
+      _observation.value = delegate.observe(caseId);
+    }
+  }
+
+  static void showControl() {
+    navigatorKey.currentState?.pushNamedAndRemoveUntil(
+      reviewRoute,
+      (route) => false,
+    );
+  }
+
+  static String identityJson(BuildContext context) {
+    final media = MediaQuery.maybeOf(context);
+    final logicalSize = media?.size;
+    final dpr = media?.devicePixelRatio;
+    return jsonEncode({
       'applicationIdentity': applicationIdentity,
       'targetCommit': const String.fromEnvironment(
         'PB_TARGET_COMMIT',
@@ -121,65 +102,118 @@ abstract final class ProtoBridgeReviewHarness {
       ),
       'reviewHarnessVersion': reviewHarnessVersion,
       'platform': defaultTargetPlatform.name,
+      'logicalSize': logicalSize == null
+          ? null
+          : {'width': logicalSize.width, 'height': logicalSize.height},
+      'pixelSize': logicalSize == null || dpr == null
+          ? null
+          : {
+              'width': logicalSize.width * dpr,
+              'height': logicalSize.height * dpr,
+            },
+      'dpr': dpr,
+      'orientation': media?.orientation.name,
+      'locale': Localizations.maybeLocaleOf(context)?.toLanguageTag(),
+      'theme': Theme.of(context).brightness.name,
+      'textScale': media?.textScaler.scale(1),
       'textEntryEmulation': true,
     });
   }
+}
 
-  static Future<developer.ServiceExtensionResponse> _prepare(
-    String _,
-    Map<String, String> parameters,
-  ) async {
-    final delegate = _delegate;
-    if (delegate == null) {
-      return _error(
-        'review-delegate-unavailable',
-        'The fixed Handoff has not been bound to product routes and state.',
-      );
-    }
-    try {
-      final observation = await delegate.prepare(
-        ProtoBridgeReviewPrepareRequest.fromParameters(parameters),
-      );
-      return _result(observation.toJson());
-    } on ArgumentError catch (error) {
-      return _error('invalid-prepare-request', error.message.toString());
-    } catch (error) {
-      return _error('prepare-failed', error.toString());
-    }
-  }
+class ProtoBridgeReviewBridge extends StatelessWidget {
+  const ProtoBridgeReviewBridge({required this.child, super.key});
 
-  static Future<developer.ServiceExtensionResponse> _observe(
-    String _,
-    Map<String, String> parameters,
-  ) async {
-    final delegate = _delegate;
-    final caseId = parameters['caseId'];
-    if (caseId == null || caseId.isEmpty) {
-      return _error('invalid-observe-request', 'caseId must be provided.');
-    }
-    if (delegate == null) {
-      return _error(
-        'review-delegate-unavailable',
-        'The fixed Handoff has not been bound to product routes and state.',
-      );
-    }
-    try {
-      return _result(delegate.observe(caseId).toJson());
-    } catch (error) {
-      return _error('observe-failed', error.toString());
-    }
-  }
+  final Widget child;
 
-  static developer.ServiceExtensionResponse _result(Object value) {
-    return developer.ServiceExtensionResponse.result(
-      jsonEncode({'result': value}),
+  @override
+  Widget build(BuildContext context) {
+    if (!ProtoBridgeReviewHarness.reviewMode) return child;
+    return Stack(
+      children: [
+        child,
+        Positioned.fill(
+          child: IgnorePointer(
+            child: Opacity(
+              opacity: 0,
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      ProtoBridgeReviewHarness.identityJson(context),
+                      key: ProtoBridgeReviewHarness.identityKey,
+                    ),
+                    ValueListenableBuilder<String?>(
+                      valueListenable: ProtoBridgeReviewHarness._readyCaseId,
+                      builder: (context, caseId, child) => caseId == null
+                          ? const SizedBox.shrink()
+                          : Text(
+                              caseId,
+                              key: ProtoBridgeReviewHarness.readyKey,
+                            ),
+                    ),
+                    ValueListenableBuilder<ProtoBridgeReviewObservation?>(
+                      valueListenable: ProtoBridgeReviewHarness._observation,
+                      builder: (context, observation, child) =>
+                          observation == null
+                          ? const SizedBox.shrink()
+                          : Text(
+                              jsonEncode(observation.toJson()),
+                              key: ProtoBridgeReviewHarness.observationKey,
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          right: 0,
+          bottom: 0,
+          width: 48,
+          height: 48,
+          child: Opacity(
+            opacity: 0,
+            child: IconButton(
+              key: ProtoBridgeReviewHarness.controlKey,
+              onPressed: ProtoBridgeReviewHarness.showControl,
+              icon: const Icon(Icons.settings),
+            ),
+          ),
+        ),
+      ],
     );
   }
+}
 
-  static developer.ServiceExtensionResponse _error(String code, String detail) {
-    return developer.ServiceExtensionResponse.error(
-      developer.ServiceExtensionResponse.extensionError,
-      jsonEncode({'code': code, 'detail': detail}),
+class ProtoBridgeReviewControlPage extends StatelessWidget {
+  const ProtoBridgeReviewControlPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('ProtoBridge Review')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              key: ProtoBridgeReviewHarness.caseInputKey,
+              controller: ProtoBridgeReviewHarness.caseController,
+            ),
+            const SizedBox(height: 12),
+            FilledButton(
+              key: ProtoBridgeReviewHarness.prepareKey,
+              onPressed: ProtoBridgeReviewHarness.prepareCurrentCase,
+              child: const Text('Prepare'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

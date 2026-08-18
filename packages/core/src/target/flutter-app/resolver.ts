@@ -41,16 +41,23 @@ const flutterScenarioAction = z.discriminatedUnion('kind', [
   z.object({ actionId: z.string().min(1), kind: z.literal('wait-for'), targetRegionId: z.string().min(1), finder: flutterFinder }).strict(),
 ]);
 export const FlutterReviewContract = z.object({
-  version: z.literal(2),
+  version: z.literal(3),
   provider: z.literal('dart-flutter-mcp'),
   runtime: z.object({
     applicationIdentity: z.string().min(1),
-    identityServiceExtension: z.string().regex(/^ext\.[A-Za-z0-9_.-]+$/),
-    prepareServiceExtension: z.string().regex(/^ext\.[A-Za-z0-9_.-]+$/),
-    observeServiceExtension: z.string().regex(/^ext\.[A-Za-z0-9_.-]+$/),
+    attachMode: z.literal('operator-dtd-uri'),
+    runtimeMode: z.literal('debug'),
     observationContractVersion: z.literal(1),
     reviewHarnessVersion: z.string().min(1),
     textEntryEmulation: z.boolean(),
+    bridge: z.object({
+      identityFinder: flutterFinder,
+      controlFinder: flutterFinder,
+      caseInputFinder: flutterFinder,
+      prepareFinder: flutterFinder,
+      readyFinder: flutterFinder,
+      observationFinder: flutterFinder,
+    }).strict(),
     settleTimeoutMs: z.number().int().min(100).max(30_000).optional(),
   }).strict(),
   cases: z.record(z.string().min(1), z.object({
@@ -137,7 +144,7 @@ export async function inspectFlutterTargetAuthority(input: {
     authorities: {
       components: authority(true, 'target-component-occurrence-verifier', 'Component occurrence verifier is unavailable.'),
       tokens: authority(true, 'target-token-slot-verifier', 'Token slot verifier is unavailable.'),
-      structure: authority(Boolean(review), 'flutter-mcp-widget-inspector', 'Target contract does not declare Flutter MCP Case bindings.'),
+      structure: authority(Boolean(review), 'flutter-mcp-structure-observer', 'Target contract does not declare Flutter MCP Case bindings.'),
       states: authority(Boolean(review), 'flutter-mcp-runtime-observer', 'Target contract does not declare a Flutter MCP Runtime observer.'),
       interactions: authority(Boolean(review?.scenarios), 'flutter-mcp-scenario-driver', 'Target contract does not declare Flutter MCP Scenario bindings.'),
     },

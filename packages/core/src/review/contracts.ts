@@ -37,10 +37,11 @@ export type ReviewRuntimeProviderRequirement = {
 };
 
 export type ReviewProviderCapabilities = {
-  dtd: boolean;
-  vmService: boolean;
-  driver: boolean;
-  inspector: boolean;
+  attach: boolean;
+  applicationIdentity: boolean;
+  casePreparation: boolean;
+  structureObservation: boolean;
+  stateObservation: boolean;
   screenshot: boolean;
   interaction: boolean;
   runtimeErrors: boolean;
@@ -87,6 +88,12 @@ export type ReviewRuntimeOperation = 'connect' | 'inspect' | 'screenshot' | 'tap
 
 export type ReviewRuntimeOperationReceipt = {
   receiptVersion: 1;
+  reviewRunId: string;
+  coverageProfile: ReviewCoverageProfile;
+  caseId: string;
+  screenId: string;
+  scenarioId?: string;
+  checkpointId?: string;
   operationId: string;
   operation: ReviewRuntimeOperation;
   providerId: string;
@@ -251,8 +258,8 @@ export type ReviewEventPayload =
   | { kind: 'runtime-provider-terminated'; runtimeStatus: 'unavailable' | 'unverified' | 'needs-human'; reason: string }
   | { kind: 'tranche-authorized'; screenId: string; tranche: number; approvalRef: string }
   | { kind: 'screenshot-viewed'; screenId: string; caseIds: string[]; source: ReviewArtifact }
-  | { kind: 'target-rendered'; screenId: string; caseId: string; sourceDigest: string; tranche: number; round: number; attemptId: string; targetRevision: string; target: ReviewArtifact; runtimeReceipt?: ReviewRuntimeOperationReceipt; structureObservation?: StructureIR; stateObservation?: TargetStateSnapshot }
-  | { kind: 'scenario-replayed'; screenId: string; caseId: string; scenarioId: string; receiptDigest: string; targetRevision: string; transition?: TargetScenarioTransition; runtimeReceipt?: ReviewRuntimeOperationReceipt }
+  | { kind: 'target-rendered'; screenId: string; caseId: string; sourceDigest: string; tranche: number; round: number; attemptId: string; targetRevision: string; target: ReviewArtifact; runtimeReceipt?: ReviewRuntimeOperationReceipt; runtimeErrorReceipts?: ReviewRuntimeOperationReceipt[]; structureObservation?: StructureIR; stateObservation?: TargetStateSnapshot }
+  | { kind: 'scenario-replayed'; screenId: string; caseId: string; scenarioId: string; receiptDigest: string; targetRevision: string; transition?: TargetScenarioTransition; runtimeReceipt?: ReviewRuntimeOperationReceipt; runtimeErrorReceipts?: ReviewRuntimeOperationReceipt[] }
   | { kind: 'artifacts-compared'; screenId: string; caseId: string; attemptId: string; sourceDigest: string; targetDigest: string; diff: ReviewArtifact; overlay?: ReviewArtifact; comparable: boolean; normalizedDiffSignature?: string; reason?: string }
   | { kind: 'target-claims-verified'; receipt: ReviewVerifierReceipt }
   | { kind: 'findings-recorded'; findings: ReviewFinding[] }

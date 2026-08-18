@@ -3,7 +3,6 @@ import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import path from 'node:path';
 import { StringDecoder } from 'node:string_decoder';
 import type {
-  ReviewApplicationReceipt,
   ReviewProviderCapabilities,
   ReviewProviderFailure,
   ReviewRuntimeOperation,
@@ -12,6 +11,12 @@ import type {
 export const FLUTTER_MCP_PROVIDER_ID = 'dart-flutter-mcp' as const;
 const DEFAULT_PROTOCOL_VERSION = '2025-06-18';
 const FORBIDDEN_LIFECYCLE_TOOLS = new Set(['launch_app', 'list_devices', 'list_running_apps', 'stop_app', 'get_app_logs']);
+const ALLOWED_RUNTIME_TOOLS = new Set([
+  'connect_dart_tooling_daemon',
+  'get_widget_tree',
+  'flutter_driver',
+  'get_runtime_errors',
+]);
 
 export type McpToolDefinition = {
   name: string;
@@ -78,6 +83,8 @@ export type FlutterMcpProviderOptions = {
   protocolVersion?: string;
   requestTimeoutMs?: number;
   retryDelayMs?: number;
+  dtdUri?: string;
+  dtdUriProvider?: () => string | undefined;
   transportFactory?: (input: { command: string; args: string[]; cwd: string; requestTimeoutMs: number }) => FlutterMcpTransport;
   now?: () => Date;
 };
@@ -88,6 +95,7 @@ export class FlutterMcpProvider {
   private readonly protocolVersion: string;
   private readonly requestTimeoutMs: number;
   private readonly retryDelayMs: number;
+  private readonly dtdUriProvider: () => string | undefined;
   private readonly transportFactory: NonNullable<FlutterMcpProviderOptions['transportFactory']>;
   private readonly now: () => Date;
   private transport: FlutterMcpTransport | undefined;
@@ -95,8 +103,7 @@ export class FlutterMcpProvider {
   private handshake: FlutterMcpCapabilityHandshake | undefined;
   private tools = new Map<string, McpToolDefinition>();
   private attached: FlutterMcpAttachResult | undefined;
-  private appUri: string | undefined;
-  private attachedExpectation: string | undefined;
+  private attachedDtdDigest: string | undefined;
 
   constructor(options: FlutterMcpProviderOptions = {}) {
     this.command = options.command ?? 'dart';
@@ -104,6 +111,7 @@ export class FlutterMcpProvider {
     this.protocolVersion = options.protocolVersion ?? DEFAULT_PROTOCOL_VERSION;
     this.requestTimeoutMs = options.requestTimeoutMs ?? 30_000;
     this.retryDelayMs = options.retryDelayMs ?? 150;
+    this.dtdUriProvider = options.dtdUriProvider ?? (() => options.dtdUri ?? process.env.PB_FLUTTER_DTD_URI);
     this.transportFactory = options.transportFactory ?? ((input) => new StdioFlutterMcpTransport(input));
     this.now = options.now ?? (() => new Date());
   }
@@ -155,58 +163,28 @@ export class FlutterMcpProvider {
     }
   }
 
-  async attach(targetRoot: string, expectedApplicationIdentity?: string): Promise<FlutterMcpOperationResult<FlutterMcpAttachResult>> {
-    if (this.attached && this.targetRoot === path.resolve(targetRoot) && this.appUri && this.attachedExpectation === expectedApplicationIdentity) {
+  async attach(targetRoot: string): Promise<FlutterMcpOperationResult<FlutterMcpAttachResult>> {
+    const dtdUri = this.dtdUriProvider()?.trim();
+    if (!dtdUri) throw new FlutterMcpProviderError('dtd-uri-required', 'Attach-only Flutter Review requires an operator-provided DTD URI.', false);
+    if (!/^(?:ws|wss|http|https):\/\//.test(dtdUri)) throw new FlutterMcpProviderError('dtd-uri-invalid', 'The operator-provided DTD URI is invalid.', false);
+    const dtdSelectionDigest = digest(dtdUri);
+    if (this.attached && this.targetRoot === path.resolve(targetRoot) && this.attachedDtdDigest === dtdSelectionDigest) {
       const at = this.now().toISOString();
       return { operationId: `flutter-mcp-${randomUUID()}`, attemptOrdinal: 1, startedAt: at, finishedAt: at, value: this.attached, failures: [] };
     }
     this.attached = undefined;
-    this.appUri = undefined;
-    this.attachedExpectation = undefined;
+    this.attachedDtdDigest = undefined;
     return this.runWithRetry('connect', async () => {
       const handshake = await this.ensureSession(targetRoot);
-      this.requireTool('dtd');
-      const listed = await this.callToolOnce('dtd', { command: 'listDtdUris' });
-      const candidates = extractDtdCandidates(listed);
-      const selectedDtd = selectDtdCandidate(candidates, path.resolve(targetRoot));
-      await this.callToolOnce('dtd', { command: 'connect', uri: selectedDtd.uri });
-      const connected = await this.callToolOnce('dtd', { command: 'listConnectedApps' });
-      const applications = extractApplicationCandidates(connected);
-      const selectedApplication = selectApplicationCandidate(applications, expectedApplicationIdentity);
-      const appUri = firstString(selectedApplication, ['uri', 'vmServiceUri', 'appUri']);
-      if (!appUri) throw new FlutterMcpProviderError('app-identity-incomplete', 'Connected App does not expose a VM Service URI.', false);
-      this.appUri = appUri;
-      this.attachedExpectation = expectedApplicationIdentity;
+      this.requireTool('connect_dart_tooling_daemon');
+      await this.callToolOnce('connect_dart_tooling_daemon', { uri: dtdUri });
+      this.attachedDtdDigest = dtdSelectionDigest;
       this.attached = {
         handshake,
-        dtdSelectionDigest: digest(JSON.stringify(redactDtdCandidate(selectedDtd))),
-        applicationSelectionDigest: digest(JSON.stringify(redactApplicationCandidate(selectedApplication))),
+        dtdSelectionDigest,
+        applicationSelectionDigest: digest(JSON.stringify({ dtdSelectionDigest, targetRoot: path.resolve(targetRoot) })),
       };
       return this.attached;
-    });
-  }
-
-  async probeApplicationIdentity(serviceExtension: string): Promise<FlutterMcpOperationResult<ReviewApplicationReceipt>> {
-    const result = await this.invokeServiceExtension('inspect', serviceExtension, {});
-    return { ...result, value: parseApplicationReceipt(result.value) };
-  }
-
-  async invokeServiceExtension<T = unknown>(
-    operation: ReviewRuntimeOperation,
-    serviceExtension: string,
-    args: Record<string, unknown>,
-  ): Promise<FlutterMcpOperationResult<T>> {
-    if (!/^ext\.[A-Za-z0-9_.-]+$/.test(serviceExtension)) throw new FlutterMcpProviderError('service-extension-invalid', 'Flutter Runtime service extension name is invalid.', false);
-    const targetRoot = this.targetRoot;
-    const appUri = this.appUri;
-    if (!targetRoot || !appUri) throw new FlutterMcpProviderError('provider-session-missing', 'Flutter MCP App session is not attached.', true);
-    return this.runWithRetry(operation, async () => {
-      await this.ensureSession(targetRoot);
-      this.requireTool('vm_service');
-      const vm = await this.callToolOnce('vm_service', { command: 'callMethod', appUri, method: 'getVM' });
-      const isolateId = extractIsolateId(vm);
-      const response = await this.callToolOnce('vm_service', { command: 'callMethod', appUri, method: serviceExtension, isolateId, arguments: args });
-      return extractServiceExtensionValue(response) as T;
     });
   }
 
@@ -216,8 +194,8 @@ export class FlutterMcpProvider {
     args: Record<string, unknown>,
     options: { retryAfterDispatch?: boolean } = {},
   ): Promise<FlutterMcpOperationResult<T>> {
-    if (!this.appUri) throw new FlutterMcpProviderError('provider-session-missing', 'Flutter MCP App session is not attached.', true);
-    return this.call<T>(operation, toolName, { ...args, appUri: this.appUri }, options);
+    if (!this.attached) throw new FlutterMcpProviderError('provider-session-missing', 'Flutter MCP App session is not attached.', true);
+    return this.call<T>(operation, toolName, args, options);
   }
 
   async call<T = unknown>(
@@ -253,8 +231,7 @@ export class FlutterMcpProvider {
     this.targetRoot = undefined;
     this.handshake = undefined;
     this.attached = undefined;
-    this.appUri = undefined;
-    this.attachedExpectation = undefined;
+    this.attachedDtdDigest = undefined;
     this.tools.clear();
     await transport?.close().catch(() => undefined);
   }
@@ -265,6 +242,7 @@ export class FlutterMcpProvider {
 
   private requireTool(name: string): void {
     if (FORBIDDEN_LIFECYCLE_TOOLS.has(name)) throw new FlutterMcpProviderError('device-lifecycle-forbidden', `Flutter MCP lifecycle tool ${name} is outside the attach-only provider boundary.`, false);
+    if (!ALLOWED_RUNTIME_TOOLS.has(name)) throw new FlutterMcpProviderError('mcp-tool-forbidden', `Flutter MCP tool ${name} is outside the Runtime Review allowlist.`, false);
     if (!this.transport || !this.handshake) throw new FlutterMcpProviderError('provider-session-missing', 'Flutter MCP provider session is not initialized.', true);
     if (!this.tools.has(name)) throw new FlutterMcpProviderError('mcp-capability-missing', `Flutter MCP tool ${name} is not available in the negotiated session.`, false);
   }
@@ -431,13 +409,16 @@ export class StdioFlutterMcpTransport implements FlutterMcpTransport {
 }
 
 function capabilityInventory(tools: Map<string, McpToolDefinition>): ReviewProviderCapabilities {
+  const driverCommands = toolEnum(tools.get('flutter_driver'), 'command');
+  const hasDriverCommands = (...commands: string[]) => commands.every((command) => driverCommands.has(command));
   return {
-    dtd: tools.has('dtd'),
-    vmService: tools.has('vm_service'),
-    driver: tools.has('flutter_driver_command'),
-    inspector: tools.has('widget_inspector'),
-    screenshot: tools.has('flutter_driver_command'),
-    interaction: tools.has('flutter_driver_command'),
+    attach: tools.has('connect_dart_tooling_daemon'),
+    applicationIdentity: hasDriverCommands('get_text'),
+    casePreparation: hasDriverCommands('tap', 'enter_text', 'waitFor'),
+    structureObservation: tools.has('get_widget_tree'),
+    stateObservation: hasDriverCommands('get_text'),
+    screenshot: hasDriverCommands('screenshot'),
+    interaction: hasDriverCommands('tap', 'enter_text', 'scroll', 'scrollIntoView', 'waitFor'),
     runtimeErrors: tools.has('get_runtime_errors'),
   };
 }
@@ -446,44 +427,14 @@ function requiredCapabilityFailures(capabilities: ReviewProviderCapabilities): s
   return Object.entries(capabilities).flatMap(([name, available]) => available ? [] : [`missing-${name}`]).sort();
 }
 
-type DtdCandidate = { uri: string; workingDirectory?: string };
-
-function extractDtdCandidates(value: unknown): DtdCandidate[] {
-  return uniqueObjects(extractObjects(value).flatMap((item) => {
-    const uri = firstString(item, ['dtdUri', 'dtdURI', 'uri']);
-    if (!uri || !/^(?:ws|wss|http|https):/.test(uri)) return [];
-    const workingDirectory = firstString(item, ['workingDirectory', 'working_directory', 'cwd', 'projectRoot']);
-    return [{ uri, ...(workingDirectory ? { workingDirectory } : {}) }];
-  }), (item) => item.uri);
-}
-
-function selectDtdCandidate(candidates: DtdCandidate[], targetRoot: string): DtdCandidate {
-  if (candidates.length === 0) throw new FlutterMcpProviderError('dtd-not-found', 'No Dart Tooling Daemon was discovered for a running App.', true);
-  const matching = candidates.filter((item) => item.workingDirectory && path.resolve(item.workingDirectory) === targetRoot);
-  if (matching.length === 1) return matching[0]!;
-  if (matching.length > 1 || candidates.length > 1) throw new FlutterMcpProviderError('dtd-ambiguous', 'Multiple Dart Tooling Daemons were discovered and Target root did not identify exactly one.', false);
-  return candidates[0]!;
-}
-
-type ApplicationCandidate = Record<string, string | number | boolean>;
-
-function extractApplicationCandidates(value: unknown): ApplicationCandidate[] {
-  return uniqueObjects(extractObjects(value).flatMap((item) => {
-    const identity = firstString(item, ['applicationIdentity', 'appId', 'id', 'name', 'deviceId', 'uri', 'vmServiceUri', 'appUri']);
-    if (!identity) return [];
-    const candidate = Object.fromEntries(Object.entries(item).filter(([, entry]) => ['string', 'number', 'boolean'].includes(typeof entry))) as ApplicationCandidate;
-    return [candidate];
-  }), (item) => JSON.stringify(item));
-}
-
-function selectApplicationCandidate(candidates: ApplicationCandidate[], expected?: string): ApplicationCandidate {
-  if (candidates.length === 0) throw new FlutterMcpProviderError('app-not-found', 'DTD has no connected running App.', true);
-  if (expected) {
-    const matching = candidates.filter((item) => Object.values(item).some((value) => String(value) === expected));
-    if (matching.length === 1) return matching[0]!;
-  }
-  if (candidates.length !== 1) throw new FlutterMcpProviderError('app-ambiguous', 'Multiple running Apps are connected and application identity did not identify exactly one.', false);
-  return candidates[0]!;
+function toolEnum(tool: McpToolDefinition | undefined, property: string): Set<string> {
+  if (!tool?.inputSchema || typeof tool.inputSchema !== 'object') return new Set();
+  const properties = (tool.inputSchema as { properties?: unknown }).properties;
+  if (!properties || typeof properties !== 'object') return new Set();
+  const definition = (properties as Record<string, unknown>)[property];
+  if (!definition || typeof definition !== 'object') return new Set();
+  const values = (definition as { enum?: unknown }).enum;
+  return new Set(Array.isArray(values) ? values.filter((item): item is string => typeof item === 'string') : []);
 }
 
 function extractObjects(value: unknown): Array<Record<string, unknown>> {
@@ -503,79 +454,6 @@ function extractObjects(value: unknown): Array<Record<string, unknown>> {
   return result;
 }
 
-function firstString(item: Record<string, unknown>, keys: string[]): string | undefined {
-  for (const key of keys) if (typeof item[key] === 'string' && item[key]) return item[key] as string;
-  return undefined;
-}
-
-function uniqueObjects<T>(items: T[], identity: (item: T) => string): T[] {
-  return [...new Map(items.map((item) => [identity(item), item])).values()];
-}
-
-function redactDtdCandidate(candidate: DtdCandidate): Record<string, string> {
-  return { uriDigest: digest(candidate.uri), ...(candidate.workingDirectory ? { workingDirectoryDigest: digest(path.resolve(candidate.workingDirectory)) } : {}) };
-}
-
-function redactApplicationCandidate(candidate: ApplicationCandidate): Record<string, string | number | boolean> {
-  return Object.fromEntries(Object.entries(candidate).map(([key, value]) => [/(?:uri|device|id)/i.test(key) ? `${key}Digest` : key, /(?:uri|device|id)/i.test(key) ? digest(String(value)) : value]));
-}
-
-function extractIsolateId(value: unknown): string {
-  for (const item of extractObjects(value)) {
-    if (Array.isArray(item.isolates)) {
-      for (const isolate of item.isolates) {
-        if (isolate && typeof isolate === 'object' && typeof (isolate as { id?: unknown }).id === 'string') return (isolate as { id: string }).id;
-      }
-    }
-  }
-  throw new FlutterMcpProviderError('app-identity-incomplete', 'Flutter App VM response does not expose an isolate ID.', false);
-}
-
-function extractServiceExtensionValue(value: unknown): unknown {
-  const objects = extractObjects(value);
-  for (const item of objects) {
-    if (item.result && typeof item.result === 'object') return item.result;
-    if (item.response && typeof item.response === 'object') return item.response;
-  }
-  return objects.at(-1) ?? value;
-}
-
-function parseApplicationReceipt(value: unknown): ReviewApplicationReceipt {
-  const candidate = extractObjects(value).find((item) => [
-    'applicationIdentity', 'targetCommit', 'targetContentDigest', 'appBuildDigest', 'reviewHarnessVersion', 'platform',
-  ].every((key) => typeof item[key] === 'string' && item[key]));
-  if (!candidate) throw new FlutterMcpProviderError('app-identity-incomplete', 'Flutter Runtime identity service extension returned an incomplete receipt.', false);
-  const size = (key: string): { width: number; height: number } | undefined => {
-    const item = candidate[key];
-    return item && typeof item === 'object' && typeof (item as { width?: unknown }).width === 'number' && typeof (item as { height?: unknown }).height === 'number'
-      ? { width: (item as { width: number }).width, height: (item as { height: number }).height }
-      : undefined;
-  };
-  const optionalString = (key: string) => typeof candidate[key] === 'string' ? candidate[key] as string : undefined;
-  const optionalNumber = (key: string) => typeof candidate[key] === 'number' ? candidate[key] as number : undefined;
-  const receipt: ReviewApplicationReceipt = {
-    applicationIdentity: candidate.applicationIdentity as string,
-    targetCommit: candidate.targetCommit as string,
-    targetContentDigest: candidate.targetContentDigest as string,
-    appBuildDigest: candidate.appBuildDigest as string,
-    reviewHarnessVersion: candidate.reviewHarnessVersion as string,
-    platform: candidate.platform as string,
-    ...(optionalString('runtimeOrOsVersion') ? { runtimeOrOsVersion: optionalString('runtimeOrOsVersion')! } : {}),
-    ...(size('logicalSize') ? { logicalSize: size('logicalSize')! } : {}),
-    ...(size('pixelSize') ? { pixelSize: size('pixelSize')! } : {}),
-    ...(optionalNumber('dpr') ? { dpr: optionalNumber('dpr')! } : {}),
-    ...(optionalString('orientation') ? { orientation: optionalString('orientation')! } : {}),
-    ...(optionalString('locale') ? { locale: optionalString('locale')! } : {}),
-    ...(optionalString('theme') ? { theme: optionalString('theme')! } : {}),
-    ...(optionalNumber('textScale') ? { textScale: optionalNumber('textScale')! } : {}),
-    ...(optionalString('safeArea') ? { safeArea: optionalString('safeArea')! } : {}),
-    ...(optionalString('fontEnvironment') ? { fontEnvironment: optionalString('fontEnvironment')! } : {}),
-    ...(typeof candidate.textEntryEmulation === 'boolean' ? { textEntryEmulation: candidate.textEntryEmulation } : {}),
-    ...(optionalString('settlePolicy') ? { settlePolicy: optionalString('settlePolicy')! } : {}),
-    ...(optionalString('systemChromePolicy') ? { systemChromePolicy: optionalString('systemChromePolicy')! } : {}),
-  };
-  return receipt;
-}
 
 function classifyProviderError(error: unknown, fallbackCode: string): FlutterMcpProviderError {
   if (error instanceof FlutterMcpProviderError) return error;

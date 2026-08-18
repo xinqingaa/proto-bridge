@@ -32,6 +32,7 @@
 | `PB_MAX_CASES` | Preflight Case 上限 |
 | `PBWORK_ORIGIN` | Workbench origin |
 | `PBWORK_RUNTIME_ORIGIN` | Runtime origin |
+| `PB_FLUTTER_DTD_URI` | 操作者从当前已运行 debug App 复制的 DTD URI；只供 Local Service 内存 attach 使用 |
 
 CLI 配置文件和显式参数的优先级以对应入口实现为准。MCP 支持 `PB_STORE_ROOT` 与 `PB_WORKSPACE_ID`。
 
@@ -43,6 +44,7 @@ CLI 配置文件和显式参数的优先级以对应入口实现为准。MCP 支
 - Session token 只通过 `Authorization` header 传递，不能进入 URL、日志或持久对象。
 - Session 有有效期，Service 重启后旧 session 失效。
 - 请求体有容量限制。
+- Flutter Review 不发现或启动设备；缺少 `PB_FLUTTER_DTD_URI` 时 Runtime 轨明确返回未验证。
 - Preflight 有有效期，过期后必须重新检查。
 
 ## Store

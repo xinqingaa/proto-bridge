@@ -4,7 +4,7 @@
 
 方案评审：用户已确认；按阶段实现并逐阶段提交
 
-当前执行约束：按阶段实现冷链 Flutter Target 与 Review Harness；只有 Harness 静态门禁完成、用户自行启动已连接 DTD 的 debug App 后，Agent 才通过官方 Flutter MCP 执行真实 Runtime Review。不得使用固定 Simulator、设备启动命令、Target launcher 或任何 Runtime fallback。
+当前执行约束：按阶段实现冷链 Flutter Target 与 Review Harness；只有 Harness 静态门禁完成、用户自行启动带 Review build identity 的 debug App 并提供 DTD URI 后，Agent 才通过官方 Flutter MCP 执行真实 Runtime Review。不得使用固定 Simulator、设备启动命令、Target launcher 或任何 Runtime fallback。
 
 全局优先级：P0
 
@@ -14,11 +14,11 @@
 
 ## 当前实施进度
 
-截至 2026-08-18，代码阶段已完成：Core 分级与双轨 contract、Local Service attach-only provider、官方 MCP Screenshot/Scenario 编排、App/build/Target identity、typed Runtime observation、五维 verifier 回接、Flutter-only provider 规则、L1/L2/L3 完成语义、protocol v3 客户端迁移，以及旧 launcher Runtime 删除。
+截至 2026-08-18，已完成当前官方 MCP 协议修正：真实 `initialize` / `tools/list` 回归测试、provider-neutral capability、Local Service operator-DTD attach、官方 Screenshot/Scenario 编排、debug Driver Bridge、App/build/Target identity、typed Runtime observation、before/after runtime-error receipt、artifact compare 完成门禁、Flutter-only provider 规则、L1/L2/L3 完成语义、Local Service protocol v4 迁移，以及旧 launcher/VM-service 假协议删除。
 
 2026-08-18 已清空旧 Workspace generation 并重采冷链 Source baseline：`bundle-2026-08-18t093451589-63c91d18` / `snapshot-2026-08-18t093517248-e18da98e` / `handoff-2026-08-18t093518522-92976ac4`。该 Handoff 覆盖 26 个 Case、7 个 Scenario 和 20 张 Source Screenshot，coverage 为 `complete`、freshness 为 `fresh`、mandatory risks 为空；后续 Flutter 实现与 Review 必须固定消费此引用，直到下一次显式重采。
 
-尚未执行：真实 DTD/App attach spike、真实设备 Screenshot/interaction、真实 Handoff 的 L1/L2/L3 对照、OCR/文字 bbox、Flutter/Runtime E2E 和完整 `pnpm verify`。这些项目不能由 Fake Provider 结果代替。
+尚未执行：由操作者提供 DTD URI 的真实 App attach、真实设备 Screenshot/interaction、真实冷链 Handoff 的业务 Delegate 与 L1/L2/L3 对照、OCR/文字 bbox 和 Flutter/Runtime 设备 E2E。这些项目不能由 Fake Provider 或仅启动官方 server 的协议回归结果代替。
 
 ## Roadmap 定位
 
@@ -61,17 +61,18 @@ PBWork 原型生命周期、v1/v2 Release 和 Archive 属于独立路线，不�
 - Review reducer 会阻止缺失 receipt、assessment，或存在 deviation/unverified 的全量完成请求；
 - Screenshot compare 可以生成 diff、overlay 和 normalized signature，但不输出综合分数。
 
-### 当前实现不构成真实 Runtime 验收的部分
+### Roadmap 启动时的缺口与当前状态
 
-- Flutter Review Contract 固定 `ios-simulator`、UDID、runtime、尺寸、DPR、locale、theme、safe area 和 settle policy；这些字段来自配置，不是实际设备观测；
-- `render_target_case` 执行目标仓库任意 `launcher.command` 并读取 PNG；命令可以复制已有图片，不能证明真实 App 已渲染；
-- Structure/State/Scenario inspector 读取目标命令 stdout JSON；Schema 和 identity 校验成立，但不能证明 JSON 来自同一真实运行 App；
-- render 只核对 Git HEAD，尚未把运行 App build 与 Target content digest 绑定；
-- MCP Server 当前先执行目标命令，再向 Local Service 提交自述 receipt；Local Service 尚未拥有 Runtime provider session；
-- provider 调用失败时直接抛错，不持久化失败尝试，也没有统一 retry budget；
-- 当前 Review 只支持全 Case、全 Scenario、全部 obligations 的单一完成语义；
-- 仓库真实 Flutter 示例工程尚未声明可运行的 Review contract，现有 Review 测试使用 synthetic command fixture；
-- 代码中没有官方 Dart/Flutter MCP client、session handshake 或真实 App receipt。
+| 启动时缺口 | 当前状态 |
+| --- | --- |
+| 固定 `ios-simulator`、UDID 与 target launcher | 已删除；新 Contract 仅接受 `operator-dtd-uri` attach |
+| Screenshot/Structure/State/Scenario 来自 Target command 或 stdout | 已删除；Local Service 仅编排四个 allowlisted 官方 Runtime Tool |
+| 运行 App 未绑定 Target revision/build | 已通过 debug Driver Bridge identity 与 provider/session receipt 固定 |
+| MCP Server 接收客户端自述 Runtime receipt | 已删除；Local Service 持有 provider session 并生成权威 receipt |
+| provider 失败无统一预算和记录 | 已实现最多三次尝试、typed failure 与 terminal Runtime 状态 |
+| Review 只有全量完成语义 | 已实现 Core L1/L2/L3 Profile 与 Code/Runtime 双轨状态 |
+| 示例 Flutter 工程没有真实 Review Contract | 已升级为 `review.version: 3`，并提供 debug-only Driver Bridge 与 demo delegate |
+| 缺少真实官方 server 回归 | 已增加真实 `initialize` / `tools/list` 协议测试；真实设备 attach 仍待操作者提供 DTD URI |
 
 ### 五维义务与验证 authority
 
@@ -87,7 +88,7 @@ PBWork 原型生命周期、v1/v2 Release 和 Archive 属于独立路线，不�
 
 MCP 不可用时仍可完成五维 code review，但不得把无法由代码证明的结构、状态、交互写成 Runtime `matched`。
 
-## 建议批准的最终产品决策
+## 已采用的最终产品决策
 
 ### 1. 官方 MCP 是 Flutter Runtime Review 的唯一 provider
 
@@ -103,8 +104,8 @@ MCP 不可用时仍可完成五维 code review，但不得把无法由代码证�
 - 不建立 Android Emulator 或物理设备矩阵；
 - 不由 PB 调用 device discovery、`launch_app`、`flutter run`、`simctl` 或其它设备启动命令；
 - App 由用户、IDE 或目标工程既有工作流运行；
-- Provider 使用 DTD 发现并连接已运行的 debug/profile App；
-- 没有 App、App 不唯一且无法消歧、App 未启用所需 capability 时，按 typed failure 终止；
+- Provider 使用操作者提供的 DTD URI 连接已运行的 debug App；
+- 没有 URI、URI 无效、attach 失败或 App 未启用所需 capability 时，按 typed failure 终止；
 - receipt 中的 platform、runtime、尺寸和设备环境必须来自真实 session 观测，敏感 device identity 只保存脱敏摘要。
 
 ### 3. Local Service 拥有 provider 生命周期
@@ -128,7 +129,7 @@ applicationIdentity
 reviewHarnessVersion
 ```
 
-identity 可以通过受控 build manifest、Dart define 或同一 App 上的 debug-only service extension 暴露，但不能由 Agent 参数自述。缺少 identity 或与 Review 固定 Target 不一致时返回 `unverified` 或 `environment-drift`，不得生成成功 Runtime receipt。
+identity 通过受控 build manifest、Dart define 和同一 App 上的 debug-only Driver Bridge 节点暴露，不能由 Agent 参数自述。缺少 identity 或与 Review 固定 Target 不一致时返回 `unverified` 或 `environment-drift`，不得生成成功 Runtime receipt。
 
 ### 5. Target 只保留声明式 Case binding
 
@@ -162,7 +163,7 @@ Coding Agent
               -> Flutter RuntimeProvider
                   -> official Dart and Flutter MCP server
                       -> DTD attach to an already running App
-                      -> Widget Inspector / runtime errors
+                      -> Widget tree / runtime errors
                       -> Flutter Driver screenshot / tap / input / scroll
                   -> fixed provider/session/app/build receipts
               -> Code/Semantic verifier
@@ -178,12 +179,11 @@ Coding Agent
 
 | 官方能力 | PB 用途 | 限制 |
 | --- | --- | --- |
-| `dtd`：list/connect/list apps/disconnect | 发现并绑定已经运行的 App | debug/profile App 必须注册到 DTD；多 App 必须消歧 |
-| `vm_service` | 在已绑定 App isolate 上调用受控 identity/prepare/observe debug extension | extension 必须返回 observation contract v1，且不能由 Agent 参数自述 identity |
-| `widget_inspector` | 读取真实 Widget tree 和 finder 候选 | 不能凭 Widget 类型猜 PB Region、parent 或 expected |
-| `flutter_driver_command:screenshot` | 生成 Target Screenshot artifact | 移动/桌面 App 必须启用 Flutter Driver extension |
+| `connect_dart_tooling_daemon` | 连接操作者提供的当前 App DTD URI | 官方 server 不自动枚举任意外部 App；断连后需要新 URI |
+| `get_widget_tree` | 读取真实 Widget tree 和 finder 候选 | 不能凭 Widget 类型猜 PB Region、parent 或 expected |
+| `flutter_driver:screenshot` | 生成 Target Screenshot artifact | App 必须启用 Flutter Driver extension |
 | `tap` / `enter_text` / `scroll` / `scrollIntoView` | 回放 Scenario Action | finder 必须来自真实 tree 与声明式 binding |
-| `waitFor*` / `get_text` / `get_offset` / diagnostics tree | settle 与局部 observation | 结果仍需映射到 PB typed observation |
+| `flutter_driver` 的 `waitFor*` / `get_text` / `get_offset` / diagnostics tree | Driver Bridge、settle 与局部 observation | 结果仍需映射到 PB typed observation |
 | `get_runtime_errors` | Runtime error gate | 必须绑定同一 App session 和执行窗口 |
 | `hot_reload` / `hot_restart` | 实施期 diagnostic | 不构成验收成功证明 |
 
@@ -275,13 +275,14 @@ providerVersion
 protocolVersion
 serverCommandDigest
 availableTools
-dtdCapability
-vmServiceCapability
-driverCapability
-inspectorCapability
-screenshotCapability
-interactionCapability
-runtimeErrorCapability
+attach
+applicationIdentity
+casePreparation
+structureObservation
+stateObservation
+screenshot
+interaction
+runtimeErrors
 unsupportedReasons
 sessionStartedAt
 ```
@@ -344,13 +345,13 @@ Provider operation 使用最多三次总尝试，初次调用计为第一次。P
 - MCP request timeout；
 - 官方 MCP 子进程在调用期间异常退出；
 - 已建立的 DTD/App session 短暂断连；
-- App 正在启动且尚未完成 DTD 注册；
+- 已建立的 DTD/App session 出现明确的短暂通信故障；
 - 明确标记为 transient 的 Driver command failure。
 
 ### 不可重试错误
 
-- 没有运行中的 App，经过一次有界 rediscovery 仍为空；
-- 多个 App 且声明式 identity 无法唯一选择；
+- 操作者未提供 DTD URI 或 URI 非法；
+- DTD attach 成功但 Driver Bridge identity 无法读取；
 - Flutter Driver extension 未启用；
 - 必需 Tool/capability 缺失；
 - App build、Target revision 或 content digest 不一致；
@@ -438,7 +439,7 @@ ProtoBridge MCP 保留 provider-neutral 名称，并在返回中加入 Profile�
 
 ## 实施 Tranche
 
-### Tranche 0：真实能力 Spike 与 Contract 冻结
+### Tranche 0：真实能力 Spike 与 Contract 冻结（协议 Spike 已完成，设备 E2E 待验证）
 
 - 使用仓库真实 Flutter App 验证 DTD attach、Widget tree、Screenshot、tap/input/scroll 和 runtime errors；
 - 验证真机或用户当前实际运行设备，不建立 canonical Simulator；
@@ -447,15 +448,15 @@ ProtoBridge MCP 保留 provider-neutral 名称，并在返回中加入 Profile�
 - 固定 provider-neutral capability、typed failure、session 和 operation receipt Schema；
 - 给出 go/no-go 报告；官方 MCP 无法产生可信 Screenshot/interaction 时不进入后续实现。
 
-### Tranche 1：Local Service attach-only Provider
+### Tranche 1：Local Service attach-only Provider（已实现）
 
 - 在 Local Service 实现受控 MCP stdio client；
-- 实现 initialize、tool discovery、DTD discovery/connect、App identity selection、session invalidation 和关闭；
+- 实现 initialize、tool discovery、operator-DTD connect、Driver Bridge identity、session invalidation 和关闭；
 - 不启用或调用 device lifecycle tools；
 - 实现最多三次总尝试、typed failure、timeout 和 terminal receipt；
 - provider version、capability 或 App identity 改变时使旧 session 失效。
 
-### Tranche 2：真实 Screenshot 与 Scenario
+### Tranche 2：真实 Screenshot 与 Scenario（实现完成，待真实设备验证）
 
 - 将 `render_target_case` 切换为官方 MCP Screenshot；
 - 实现声明式 Case prepare/reset 和 finder binding；
@@ -464,7 +465,7 @@ ProtoBridge MCP 保留 provider-neutral 名称，并在返回中加入 Profile�
 - 固定 Target revision/content digest/app build/provider/session/artifact；
 - 删除 `ios-simulator`、device UDID、launcher command 和 Runtime stdout JSON fallback。
 
-### Tranche 3：分级 Review 与双轨状态
+### Tranche 3：分级 Review 与双轨状态（已实现）
 
 - 在 Core 实现 L1/L2/L3 Profile selector 和升级原因；
 - Review seed 固定 Profile、selected Cases/Scenarios/obligations 和排除原因；
@@ -473,7 +474,7 @@ ProtoBridge MCP 保留 provider-neutral 名称，并在返回中加入 Profile�
 - MCP 最终失败保留 code-only outcome 并阻止 Runtime success；
 - 更新 progressive Review projection，避免默认注入全量 obligations。
 
-### Tranche 4：Visual diagnostic 与真实 E2E
+### Tranche 4：Visual diagnostic 与真实 E2E（待实施/验证）
 
 - 在可信 Target Screenshot 基础上保留 diff/overlay；
 - 按风险加入 OCR、文字 bbox、裁切和遮挡 diagnostic；
@@ -487,7 +488,7 @@ ProtoBridge MCP 保留 provider-neutral 名称，并在返回中加入 Profile�
 ### Provider 与 session
 
 - initialize、`tools/list`、未知/缺失 Tool、版本变化和 protocol 不兼容；
-- 没有 DTD、没有 App、多个 App、App identity 不匹配；
+- 没有 DTD URI、URI 非法、attach 失败、App identity 不匹配；
 - Flutter Driver 未启用、text-entry mode 不一致；
 - timeout、disconnect、MCP 进程退出和 session 漂移；
 - 第一次成功、重试后成功、第三次失败和不可重试立即退出；
@@ -525,7 +526,7 @@ ProtoBridge MCP 保留 provider-neutral 名称，并在返回中加入 Profile�
 
 | 级别 | 范围 | 完成含义 |
 | --- | --- | --- |
-| P0 | 真实 App spike、attach-only 官方 MCP provider、App/build identity、有界重试、真实 Screenshot/Scenario receipt、L1/L2/L3 Contract | 新 Runtime Review 主链路成立 |
+| P0 | 操作者 DTD attach 的真实 App spike、官方 MCP provider、App/build identity、有界重试、真实 Screenshot/Scenario receipt、L1/L2/L3 Contract | 新 Runtime Review 主链路成立 |
 | P1 | Widget/runtime observation 增强、OCR/文字 bbox diagnostic、一个真实 Handoff 的 L3 E2E | 有证据的视觉增强与完整验收 |
 | P2 | Web、Kotlin、Swift、React Native 等独立 RuntimeProvider | 后续 Roadmap |
 

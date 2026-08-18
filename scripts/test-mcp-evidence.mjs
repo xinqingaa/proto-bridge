@@ -206,6 +206,11 @@ try {
       targetTokens.resolutions?.[0]?.candidates?.[0]?.accessor === "TS.colors.error",
     "Target component/token resolver did not honor target-owned declarations and current code.",
   );
+  const flutterTargetCommit = targetComponents.targetRevisionKey?.currentRevision;
+  assert(
+    typeof flutterTargetCommit === "string" && flutterTargetCommit.length > 0,
+    "Target resolver did not expose the current Flutter commit.",
+  );
 
   targetFixture = await mkdtemp(path.join(os.tmpdir(), "pb-mcp-target-"));
   await mkdir(path.join(targetFixture, "lib", "theme"), { recursive: true });
@@ -518,7 +523,7 @@ try {
       arguments: {
         handoffId: handoff.handoffId,
         targetRoot: path.join(repoRoot, "apps/flutter_pb_app"),
-        targetBaselineCommit: "baseline",
+        targetBaselineCommit: flutterTargetCommit,
         targetRevision: "revision",
       },
     }),

@@ -430,7 +430,7 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
   const fragment = {
     screenId: "cold-chain-ops.exception-queue",
     pbId: "cold-chain-ops.exception-queue.list.row",
-    pbKey: "ex-017",
+    pbKey: "all-ex-017",
   };
   const fragmentDraft: SelectionDraft = {
     prototypeId: "cold-chain-ops",
@@ -542,27 +542,27 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
         scopeSource: "variant-contract",
       },
     });
-    for (const [rowId, snippets] of [
-      ["ex-017", ["上海虹桥", "生物制剂", "SH-2048"]],
-      ["ex-031", ["苏州园区", "细胞样本"]],
-      ["ex-024", ["无锡新吴", "胰岛素"]],
+    for (const [rowKey, snippets] of [
+      ["all-ex-017", ["上海虹桥", "生物制剂", "SH-2048"]],
+      ["all-ex-031", ["苏州园区", "细胞样本"]],
+      ["all-ex-024", ["无锡新吴", "胰岛素"]],
     ] as const) {
       const text = String(
         fact(
           defaultRevision,
-          `cold-chain-ops.exception-queue.list.row.${rowId}.text`,
+          `cold-chain-ops.exception-queue.list.row.${rowKey}.text`,
         ).effectiveValue,
       );
       for (const snippet of snippets) expect(text).toContain(snippet);
     }
     expect(
-      fact(defaultRevision, "cold-chain-ops.exception-queue.list.row.ex-017.tag")
+      fact(defaultRevision, "cold-chain-ops.exception-queue.list.row.all-ex-017.tag")
         .effectiveValue,
     ).toBe("button");
     expect(
       fact(
         defaultRevision,
-        "cold-chain-ops.exception-queue.list.row.ex-017.bbox",
+        "cold-chain-ops.exception-queue.list.row.all-ex-017.bbox",
       ).effectiveValue,
     ).toMatchObject({ width: expect.any(Number), height: expect.any(Number) });
     expect(
@@ -576,7 +576,7 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
         kind: "click",
         target: {
           pbId: "cold-chain-ops.exception-queue.list.row",
-          pbKey: "ex-017",
+          pbKey: "all-ex-017",
         },
       },
     });
@@ -588,12 +588,12 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
     expect(
       fact(
         criticalRevision,
-        "cold-chain-ops.exception-queue.list.row.ex-017.text",
+        "cold-chain-ops.exception-queue.list.row.critical-ex-017.text",
       ).effectiveValue,
     ).toContain("上海虹桥");
     expect(
       criticalRevision.facts.some((candidate) =>
-        candidate.factId.includes("list.row.ex-024"),
+        candidate.factId.includes("list.row.warning-ex-024"),
       ),
     ).toBe(false);
 
@@ -700,7 +700,7 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
         )
         .every((candidate) =>
           candidate.factId.startsWith(
-            "cold-chain-ops.exception-queue.list.row.ex-017.",
+            "cold-chain-ops.exception-queue.list.row.all-ex-017.",
           ),
         ),
     ).toBe(true);

@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app/app.dart';
 import 'review/authoritative_review_harness.dart';
+import 'review/demo_review_delegate.dart';
 import 'storage/providers.dart';
 
 Future<void> main() async {
@@ -12,6 +13,9 @@ Future<void> main() async {
   // already started; release builds do not expose these extensions.
   assert(() {
     ProtoBridgeReviewHarness.enable();
+    if (ProtoBridgeReviewHarness.reviewMode) {
+      ProtoBridgeReviewHarness.installDelegate(DemoReviewDelegate());
+    }
     return true;
   }());
   WidgetsFlutterBinding.ensureInitialized();

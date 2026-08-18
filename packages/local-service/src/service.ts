@@ -833,6 +833,7 @@ export class ProtoBridgeLocalService {
               kind: 'target-rendered', screenId: rendered.artifact.owner.screenId, caseId: body.caseId,
               sourceDigest: body.sourceDigest, tranche: body.tranche, round: body.round, attemptId: body.attemptId,
               targetRevision: session.targetRevision, target: rendered.artifact, runtimeReceipt: rendered.runtimeReceipt,
+              runtimeErrorReceipts: rendered.runtimeErrorReceipts,
               structureObservation: rendered.structureObservation,
               stateObservation: rendered.stateObservation,
             },
@@ -861,6 +862,7 @@ export class ProtoBridgeLocalService {
               kind: 'scenario-replayed', screenId: replayed.transition.screenId, caseId: body.caseId,
               scenarioId: replayed.transition.scenarioId, receiptDigest: replayed.runtimeReceipt.resultDigest,
               targetRevision: session.targetRevision, transition: replayed.transition, runtimeReceipt: replayed.runtimeReceipt,
+              runtimeErrorReceipts: replayed.runtimeErrorReceipts,
             },
           });
           if (runtimeErrorsDetected(replayed.runtimeErrors)) updated = await this.recordRuntimeTerminal(reviewRunId, replayed.providerSession.providerId, 'needs-human', 'runtime-errors-detected');

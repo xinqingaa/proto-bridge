@@ -37,66 +37,56 @@ class FakeTransport implements FlutterMcpTransport {
   }
 }
 
-const tools = [
-  'dtd', 'vm_service', 'flutter_driver_command', 'widget_inspector', 'get_runtime_errors',
-  'launch_app', 'list_devices',
-].map((name) => ({ name }));
+const driverCommands = ['get_text', 'tap', 'enter_text', 'waitFor', 'scroll', 'scrollIntoView', 'screenshot'];
+const tools: McpToolDefinition[] = [
+  { name: 'connect_dart_tooling_daemon', inputSchema: { type: 'object', properties: { uri: { type: 'string' } } } },
+  { name: 'get_widget_tree', inputSchema: { type: 'object', properties: { summaryOnly: { type: 'boolean' } } } },
+  { name: 'flutter_driver', inputSchema: { type: 'object', properties: { command: { type: 'string', enum: driverCommands } } } },
+  { name: 'get_runtime_errors', inputSchema: { type: 'object', properties: { clearRuntimeErrors: { type: 'boolean' } } } },
+  { name: 'launch_app' },
+  { name: 'list_devices' },
+];
 
 describe('attach-only Flutter MCP provider', () => {
   it('negotiates capabilities once and attaches to one already-running App without lifecycle tools', async () => {
-    const transport = new FakeTransport(tools, (name, args) => {
-      if (name !== 'dtd') throw new Error(`Unexpected tool ${name}`);
-      if (args.command === 'listDtdUris') return { content: [{ type: 'text', text: JSON.stringify({ dtdUris: [{ uri: 'ws://sensitive-dtd', workingDirectory: '/target' }] }) }] };
-      if (args.command === 'connect') return { content: [{ type: 'text', text: 'connected' }] };
-      return { content: [{ type: 'text', text: JSON.stringify({ apps: [{ appId: 'app-1', name: 'sample', uri: 'ws://sensitive-app' }] }) }] };
+    const transport = new FakeTransport(tools, (name) => {
+      if (name !== 'connect_dart_tooling_daemon') throw new Error(`Unexpected tool ${name}`);
+      return { content: [{ type: 'text', text: 'connected' }] };
     });
-    const provider = new FlutterMcpProvider({ transportFactory: () => transport, retryDelayMs: 0 });
-    const attached = await provider.attach('/target', 'app-1');
+    const provider = new FlutterMcpProvider({ dtdUri: 'ws://sensitive-dtd', transportFactory: () => transport, retryDelayMs: 0 });
+    const attached = await provider.attach('/target');
     expect(attached.attemptOrdinal).toBe(1);
     expect(attached.value.handshake).toMatchObject({
       providerId: 'dart-flutter-mcp',
       providerVersion: '3.12.0',
-      capabilities: { dtd: true, vmService: true, driver: true, inspector: true, screenshot: true, interaction: true, runtimeErrors: true },
+      capabilities: { attach: true, applicationIdentity: true, casePreparation: true, structureObservation: true, stateObservation: true, screenshot: true, interaction: true, runtimeErrors: true },
     });
     expect(attached.value.dtdSelectionDigest).toMatch(/^sha256:/);
     expect(JSON.stringify(attached.value)).not.toContain('sensitive-dtd');
-    expect(transport.toolCalls.map((item) => [item.name, item.args.command])).toEqual([
-      ['dtd', 'listDtdUris'], ['dtd', 'connect'], ['dtd', 'listConnectedApps'],
-    ]);
+    expect(transport.toolCalls).toEqual([{ name: 'connect_dart_tooling_daemon', args: { uri: 'ws://sensitive-dtd' } }]);
     expect(transport.initializeCalls).toBe(1);
   });
 
   it('uses one three-attempt budget and returns every failed attempt before success', async () => {
-    let discoveries = 0;
-    const transport = new FakeTransport(tools, (_name, args) => {
-      if (args.command === 'listDtdUris') {
-        discoveries += 1;
-        return discoveries < 3
-          ? { content: [{ type: 'text', text: JSON.stringify({ dtdUris: [] }) }] }
-          : { content: [{ type: 'text', text: JSON.stringify({ dtdUris: [{ uri: 'ws://dtd', workingDirectory: '/target' }] }) }] };
-      }
-      if (args.command === 'connect') return {};
-      return { content: [{ type: 'text', text: JSON.stringify({ apps: [{ appId: 'app-1', uri: 'ws://app' }] }) }] };
+    let connects = 0;
+    const transport = new FakeTransport(tools, () => {
+      connects += 1;
+      if (connects < 3) throw new FlutterMcpProviderError('mcp-timeout', 'DTD is starting.', true);
+      return {};
     });
-    const provider = new FlutterMcpProvider({ transportFactory: () => transport, retryDelayMs: 0 });
+    const provider = new FlutterMcpProvider({ dtdUri: 'ws://dtd', transportFactory: () => transport, retryDelayMs: 0 });
     const attached = await provider.attach('/target');
     expect(attached.attemptOrdinal).toBe(3);
     expect(attached.failures.map((item) => [item.attemptOrdinal, item.errorCode, item.retryable])).toEqual([
-      [1, 'dtd-not-found', true], [2, 'dtd-not-found', true],
+      [1, 'mcp-timeout', true], [2, 'mcp-timeout', true],
     ]);
   });
 
-  it('stops immediately for ambiguity and forbids device lifecycle tools', async () => {
-    const transport = new FakeTransport(tools, (_name, args) => {
-      if (args.command === 'listDtdUris') return { content: [{ type: 'text', text: JSON.stringify({ dtdUris: [
-        { uri: 'ws://one', workingDirectory: '/target' },
-        { uri: 'ws://two', workingDirectory: '/target' },
-      ] }) }] };
-      return {};
-    });
+  it('requires an operator DTD URI and forbids device lifecycle tools', async () => {
+    const transport = new FakeTransport(tools, () => ({}));
     const provider = new FlutterMcpProvider({ transportFactory: () => transport, retryDelayMs: 0 });
-    await expect(provider.attach('/target')).rejects.toMatchObject({ code: 'dtd-ambiguous', retryable: false, failures: [{ attemptOrdinal: 1 }] });
-    expect(transport.toolCalls).toHaveLength(1);
+    await expect(provider.attach('/target')).rejects.toMatchObject({ code: 'dtd-uri-required', retryable: false });
+    expect(transport.toolCalls).toHaveLength(0);
 
     const ready = new FakeTransport(tools, () => ({}));
     const lifecycleProvider = new FlutterMcpProvider({ transportFactory: () => ready, retryDelayMs: 0 });
@@ -111,7 +101,7 @@ describe('attach-only Flutter MCP provider', () => {
     });
     const provider = new FlutterMcpProvider({ transportFactory: () => transport, retryDelayMs: 0 });
     await provider.ensureSession('/target');
-    await expect(provider.call('tap', 'flutter_driver_command', { command: 'tap' })).rejects.toMatchObject({
+    await expect(provider.call('tap', 'flutter_driver', { command: 'tap' })).rejects.toMatchObject({
       code: 'side-effect-outcome-unknown',
       failures: [{ attemptOrdinal: 1, retryable: false }],
     });
