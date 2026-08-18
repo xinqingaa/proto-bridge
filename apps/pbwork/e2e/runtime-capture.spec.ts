@@ -26,6 +26,36 @@ test("the fixed three-page regression baseline still resolves", async ({
   }
 });
 
+test("Runtime describes a full Prototype before a Screen route resolves", async ({
+  page,
+}) => {
+  await page.goto("/prototype/cold-chain-ops/__manifest__");
+  await page.waitForFunction(() =>
+    Boolean(
+      (window as unknown as Record<string, unknown>)
+        .__PROTO_BRIDGE_CAPTURE_V2__,
+    ),
+  );
+  const described = await page.evaluate(async () => {
+    const api = (
+      window as unknown as Record<
+        string,
+        { request(input: unknown): Promise<any> }
+      >
+    ).__PROTO_BRIDGE_CAPTURE_V2__;
+    if (!api) throw new Error("V2 Runtime Capture Protocol missing");
+    return api.request({
+      protocolVersion: 2,
+      requestId: "cold-chain-manifest-describe",
+      payload: { kind: "describe" },
+    });
+  });
+  expect(described.ok, JSON.stringify(described)).toBe(true);
+  expect(described.payload.manifest.screens.filter(
+    (screen: { prototypeId: string }) => screen.prototypeId === "cold-chain-ops",
+  )).toHaveLength(3);
+});
+
 test("Core Capture opens a parameterized Hengdong Variant with its authored route query", async ({
   page,
 }) => {
@@ -240,7 +270,7 @@ test("cold-chain-ops satisfies every authored Variant and required Scenario boun
             pbId: "cold-chain-ops.exception-queue.scroll-list",
           },
         };
-        for (const slot of ["summary", "search", "filters", "list"]) {
+        for (const slot of ["summary", "search", "severity-tabs", "list"]) {
           const pbId = `cold-chain-ops.exception-queue.${slot}`;
           const node = snapshot.payload.nodes.find(
             (candidate: { fragment: { pbId: string } }) =>

@@ -41,6 +41,8 @@ type RuntimeContext = {
 
 type CaptureProtocolOptions = {
   getContext(): RuntimeContext | null;
+  /** Allows `describe` to expose a Prototype manifest before a Screen resolves. */
+  getManifestPrototypeId?(): string | null;
   navigate(input: RuntimeContext): Promise<void>;
   waitForStable(): Promise<void>;
 };
@@ -856,6 +858,16 @@ export function installRuntimeCaptureProtocol(
     payload: RuntimeCaptureRequestPayload,
   ): Promise<unknown> {
     const context = options.getContext();
+    if (payload.kind === "describe") {
+      const prototypeId = context?.prototypeId ?? options.getManifestPrototypeId?.();
+      if (!prototypeId) {
+        throw new ProtocolFailure(
+          "runtime-not-ready",
+          "Runtime route has not resolved.",
+        );
+      }
+      return { manifest: buildRuntimeCaptureManifest(prototypeId) };
+    }
     if (!context) {
       throw new ProtocolFailure(
         "runtime-not-ready",
@@ -863,8 +875,6 @@ export function installRuntimeCaptureProtocol(
       );
     }
     const manifest = buildRuntimeCaptureManifest(context.prototypeId);
-
-    if (payload.kind === "describe") return { manifest };
 
     if (payload.kind === "prepare") {
       if (!sameDimensions(context, payload.expected)) {

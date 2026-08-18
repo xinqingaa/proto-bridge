@@ -11,6 +11,7 @@ import {
 } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
+  loadPrototypes,
   loadPrototypeScreens,
   screenViewModules,
 } from "@/design-system/loaders";
@@ -297,8 +298,14 @@ onMounted(() => {
         themeId: effectiveThemeId.value,
         ...(resolved.value.variant.fixture
           ? { fixtureId: resolved.value.variant.fixture }
-          : {}),
+        : {}),
       };
+    },
+    getManifestPrototypeId: () => {
+      const prototypeId = String(route.params.prototypeId);
+      return loadPrototypes().some((item) => item.id === prototypeId)
+        ? prototypeId
+        : null;
     },
     navigate: async (target) => {
       const screen = loadPrototypeScreens().find(
