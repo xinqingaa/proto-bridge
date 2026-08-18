@@ -4,6 +4,7 @@ import { DEFAULT_CAPTURE_MAX_CASES } from '@proto-bridge/core/v2';
 import { ProtoBridgeLocalService } from './service.js';
 
 export * from './service.js';
+export * from './flutter-mcp-provider.js';
 
 function envNumber(name: string, fallback: number): number {
   const value = process.env[name];

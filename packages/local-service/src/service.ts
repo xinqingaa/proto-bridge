@@ -74,6 +74,7 @@ import {
   type ConsumeReviewApprovalRequest,
 } from '@proto-bridge/core/v2/service-contract';
 import { ReviewRepository } from './review-repository.js';
+import { FlutterMcpProvider } from './flutter-mcp-provider.js';
 
 const BODY_LIMIT_BYTES = 1024 * 1024;
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
@@ -103,6 +104,7 @@ export type LocalServiceOptions = {
     draft: SelectionDraft,
   ) => Promise<{ preflight: CapturePreflight }>;
   driverFactory?: () => CaseCaptureDriver;
+  flutterMcpProviderFactory?: () => FlutterMcpProvider;
 };
 
 function json(response: ServerResponse, status: number, body: unknown): void {
@@ -261,6 +263,7 @@ export class ProtoBridgeLocalService {
   private workspaceResetting = false;
   private currentGenerationId: string | 'legacy-unavailable' = 'legacy-unavailable';
   private externalStoreDestroyed = false;
+  private flutterMcpProvider: FlutterMcpProvider | undefined;
 
   constructor(options: LocalServiceOptions) {
     this.options = {
@@ -338,8 +341,15 @@ export class ProtoBridgeLocalService {
         server.close((error) => (error ? reject(error) : resolve())),
       );
     }
+    await this.flutterMcpProvider?.close();
+    this.flutterMcpProvider = undefined;
     await this.reviews.close();
     await this.store.close();
+  }
+
+  getFlutterMcpProvider(): FlutterMcpProvider {
+    this.flutterMcpProvider ??= this.options.flutterMcpProviderFactory?.() ?? new FlutterMcpProvider();
+    return this.flutterMcpProvider;
   }
 
   private assertOrigin(request: IncomingMessage): void {
