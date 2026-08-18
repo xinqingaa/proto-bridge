@@ -1,7 +1,15 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { ReconstructionObligation } from '../../review/obligations.js';
-import type { ReviewVerifierResult } from '../../review/contracts.js';
+import type {
+  ReviewVerifierResult,
+  TargetScenarioTransition,
+  TargetStateSnapshot,
+} from '../../review/contracts.js';
+import {
+  compareStructureIR,
+  type StructureIR,
+} from '../../v2/consumer-projection.js';
 import type {
   TargetImplementationClaim,
   TargetOccurrenceLocator,
@@ -31,12 +39,16 @@ export async function verifyFlutterTargetClaims(
   ]);
   const componentById = new Map(components.resolutions.map((item) => [item.id, item]));
   const tokenById = new Map(tokens.resolutions.map((item) => [item.id, item]));
+  const structureByCase = new Map((input.runtimeStructures ?? []).map((item) => [item.caseId, item]));
+  const expectedStructureByCase = new Map(input.expectedStructures.map((item) => [item.caseId, item.structure]));
+  const stateByCase = new Map((input.runtimeStates ?? []).map((item) => [item.caseId, item]));
+  const transitionByCase = new Map((input.runtimeTransitions ?? []).map((item) => [item.caseId, item]));
   const results: ReviewVerifierResult[] = [];
 
   for (const claim of input.claims) {
     const obligation = obligationById.get(claim.obligationId)!;
     if (claim.dimension === 'structure') {
-      results.push(result(claim, 'unverified', 'Structure requires a Flutter MCP Widget Inspector receipt from the fixed Runtime session.'));
+      results.push(structureResult(claim, obligation, expectedStructureByCase.get(claim.caseId), structureByCase.get(claim.caseId)));
       continue;
     }
     if (claim.dimension === 'components') {
@@ -54,11 +66,11 @@ export async function verifyFlutterTargetClaims(
       continue;
     }
     if (claim.dimension === 'states') {
-      results.push(result(claim, 'unverified', 'State requires a Flutter MCP Runtime observation receipt from the fixed App session.'));
+      results.push(stateResult(claim, obligation, stateByCase.get(claim.caseId)));
       continue;
     }
     if (claim.dimension === 'interactions') {
-      results.push(result(claim, 'unverified', 'Interaction requires a Flutter MCP Scenario receipt from the fixed App session.'));
+      results.push(interactionResult(claim, obligation, transitionByCase.get(claim.caseId)));
       continue;
     }
     const tokenId = expectedString(obligation, 'tokenId')[0];
@@ -74,6 +86,189 @@ export async function verifyFlutterTargetClaims(
     results.push(await verifyTokenOccurrence(input.targetRoot, claim));
   }
   return results;
+}
+
+function stateResult(
+  claim: Extract<TargetImplementationClaim, { dimension: 'states' }>,
+  obligation: ReconstructionObligation,
+  actual: TargetStateSnapshot | undefined,
+): ReviewVerifierResult {
+  if (obligation.kind !== 'keyed-state-snapshot') return result(claim, 'unverified', `State obligation kind ${obligation.kind} has no typed verifier.`);
+  if (!actual) return result(claim, 'unverified', 'State requires a Flutter MCP Runtime observation receipt from the fixed App session.');
+  const expected = objectValue(obligation.expected);
+  if (!expected) return result(claim, 'unverified', 'Source State snapshot is not an object.');
+  if (expected.semanticCoverage !== 'declared') return result(claim, 'unverified', `Source State semantic coverage is ${String(expected.semanticCoverage)}.`);
+  if (!actual.complete || actual.unknownKeys.length > 0) {
+    return semanticResult(claim, 'unverified', `Target State snapshot is incomplete; unknown keys: ${actual.unknownKeys.join(', ') || '<unspecified>'}.`, { stateProof: actual });
+  }
+  const mismatches = compareStateSnapshot(expected, actual);
+  return semanticResult(
+    claim,
+    mismatches.some((item) => item.startsWith('source-')) ? 'unverified' : mismatches.length ? 'deviation' : 'matched',
+    mismatches.length ? `Target State differs: ${mismatches.join(', ')}.` : 'Target State matches shell, visible Regions, keyed collections and declared values.',
+    { stateProof: actual },
+  );
+}
+
+function interactionResult(
+  claim: Extract<TargetImplementationClaim, { dimension: 'interactions' }>,
+  obligation: ReconstructionObligation,
+  transition: TargetScenarioTransition | undefined,
+): ReviewVerifierResult {
+  if (!transition) return result(claim, 'unverified', 'Interaction requires a Flutter MCP Scenario receipt from the fixed App session.');
+  const expected = objectValue(obligation.expected);
+  if (!expected) return result(claim, 'unverified', 'Source Interaction expectation is not an object.');
+  if (!transition.preState.complete || !transition.postState.complete || transition.preState.unknownKeys.length > 0 || transition.postState.unknownKeys.length > 0) {
+    return semanticResult(claim, 'unverified', 'Target Scenario pre-state or post-state is incomplete.', { transitionProof: transition });
+  }
+  const mismatches = obligation.kind === 'action'
+    ? compareAction(expected, transition, obligation)
+    : obligation.kind === 'scenario-checkpoint'
+      ? compareTransition(expected, transition, obligation)
+      : [`unsupported-kind:${obligation.kind}`];
+  if (mismatches.some((item) => item.startsWith('unsupported-kind:'))) return result(claim, 'unverified', `Interaction obligation kind ${obligation.kind} has no typed verifier.`);
+  return semanticResult(
+    claim,
+    mismatches.some((item) => item.startsWith('source-')) ? 'unverified' : mismatches.length ? 'deviation' : 'matched',
+    mismatches.length ? `Target Interaction differs: ${mismatches.join(', ')}.` : 'Target Interaction matches required pre-state, actions, post-state and visible result.',
+    { transitionProof: transition },
+  );
+}
+
+function structureResult(
+  claim: Extract<TargetImplementationClaim, { dimension: 'structure' }>,
+  obligation: ReconstructionObligation,
+  expectedStructure: StructureIR | undefined,
+  actualStructure: StructureIR | undefined,
+): ReviewVerifierResult {
+  if (obligation.kind !== 'semantic-region-topology') return result(claim, 'unverified', `Structure obligation kind ${obligation.kind} has no Target IR verifier.`);
+  if (!actualStructure || !expectedStructure) return result(claim, 'unverified', 'Structure requires a Flutter MCP Runtime Structure receipt from the fixed App session.');
+  const expected = objectValue(obligation.expected);
+  if (!expected) return result(claim, 'unverified', 'Structure obligation expected value is not an object.');
+  const expectedRegion = expectedStructure.regions.find((item) => item.regionId === obligation.subject);
+  if (!expectedRegion) return result(claim, 'unverified', `Source Structure IR is missing Region ${obligation.subject}.`);
+  if (expectedRegion.unknownFields.length > 0) return result(claim, 'unverified', `Source Structure Region ${obligation.subject} has unknown fields: ${expectedRegion.unknownFields.join(', ')}.`);
+  const actualRegion = actualStructure.regions.find((item) => item.regionId === obligation.subject);
+  if (!actualRegion) return result(claim, 'deviation', `Target Structure IR is missing Region ${obligation.subject}.`);
+  if (actualRegion.unknownFields.length > 0) return result(claim, 'unverified', `Target Structure Region ${obligation.subject} has unknown fields: ${actualRegion.unknownFields.join(', ')}.`);
+  const mismatches = compareStructureIRForSubject(obligation.subject, expectedStructure, actualStructure, expected);
+  return mismatches.length
+    ? result(claim, 'deviation', `Target Structure Region ${obligation.subject} differs: ${mismatches.join(', ')}.`)
+    : result(claim, 'matched', `Target Structure Region ${obligation.subject} matches parent, scroll owner, positioning, order and bbox relations.`);
+}
+
+function compareStateSnapshot(expected: Record<string, unknown>, actual: TargetStateSnapshot): string[] {
+  const mismatches: string[] = [];
+  const shell = objectValue(expected.shell);
+  if (typeof shell?.screenId !== 'string' || typeof shell.variantId !== 'string') return ['source-shell-unknown'];
+  if (shell.screenId !== actual.shell.screenId) mismatches.push('shell.screenId');
+  if (shell.variantId !== actual.shell.variantId) mismatches.push('shell.variantId');
+  const expectedVisible = stringArray(expected.visibleRegionIds);
+  if (!expectedVisible || !sameStringSet(expectedVisible, actual.visibleRegionIds)) mismatches.push('visibleRegionIds');
+  const expectedCollections = collectionMap(expected.keyedCollections);
+  if (!expectedCollections) mismatches.push('keyedCollections.source-unknown');
+  else {
+    const actualCollections = new Map(actual.keyedCollections.map((item) => [item.collectionId, [...item.keys].sort()]));
+    for (const [collectionId, keys] of expectedCollections) if (!sameStringArray(keys, actualCollections.get(collectionId) ?? [])) mismatches.push(`collection:${collectionId}`);
+  }
+  const actualValues = new Map(actual.values.map((item) => [`${item.regionId}\0${item.key}`, item.value]));
+  for (const value of Array.isArray(expected.values) ? expected.values : []) {
+    const item = objectValue(value);
+    if (typeof item?.regionId !== 'string' || typeof item.key !== 'string' || !isStateScalar(item.value)) mismatches.push('state-values.source-unknown');
+    else if (actualValues.get(`${item.regionId}\0${item.key}`) !== item.value) mismatches.push(`value:${item.regionId}.${item.key}`);
+  }
+  return [...new Set(mismatches)];
+}
+
+function compareAction(expected: Record<string, unknown>, transition: TargetScenarioTransition, obligation: ReconstructionObligation): string[] {
+  const prefix = `${obligation.screenId}.action.`;
+  const actionId = typeof expected.actionId === 'string' ? expected.actionId : obligation.subject.startsWith(prefix) ? obligation.subject.slice(prefix.length) : undefined;
+  const expectedKind = typeof expected.kind === 'string' ? expected.kind : undefined;
+  const expectedTarget = fragmentRegionId(expected.target);
+  if (!actionId || !expectedKind || !expectedTarget) return ['source-action-unknown'];
+  const actual = transition.actions.find((item) => item.actionId === actionId);
+  if (!actual) return [`action-not-executed:${actionId}`];
+  return [...(actual.kind !== expectedKind ? [`action-kind:${actionId}`] : []), ...(actual.targetRegionId !== expectedTarget ? [`action-target:${actionId}`] : [])];
+}
+
+function compareTransition(expected: Record<string, unknown>, transition: TargetScenarioTransition, obligation: ReconstructionObligation): string[] {
+  const mismatches: string[] = [];
+  const checkpoint = objectValue(expected.checkpoint);
+  if (!checkpoint) return ['source-checkpoint-unknown'];
+  const scenarioPrefix = `${obligation.screenId}.scenario.`;
+  const checkpointId = typeof checkpoint.checkpointId === 'string' ? checkpoint.checkpointId : undefined;
+  const scenarioId = typeof expected.scenarioId === 'string' ? expected.scenarioId : checkpointId && obligation.subject.startsWith(scenarioPrefix) && obligation.subject.endsWith(`.${checkpointId}`) ? obligation.subject.slice(scenarioPrefix.length, -(checkpointId.length + 1)) : undefined;
+  if (!scenarioId || scenarioId !== transition.scenarioId) mismatches.push('scenarioId');
+  if (typeof expected.ownerScreenId === 'string' && expected.ownerScreenId !== transition.screenId) mismatches.push('screenId');
+  if (typeof expected.initialVariantId !== 'string' || expected.initialVariantId !== transition.preState.shell.variantId) mismatches.push('preState.variantId');
+  if (typeof checkpoint.checkpointId !== 'string' || checkpoint.checkpointId !== transition.checkpointId) mismatches.push('checkpointId');
+  if (typeof checkpoint.screenId !== 'string' || checkpoint.screenId !== transition.postState.shell.screenId) mismatches.push('postState.screenId');
+  if (typeof checkpoint.variantId !== 'string' || checkpoint.variantId !== transition.postState.shell.variantId) mismatches.push('postState.variantId');
+  const actionIds = stringArray(expected.actionIds);
+  if (!actionIds || !sameStringArray(actionIds, transition.actions.map((item) => item.actionId))) mismatches.push('actions');
+  for (const required of Array.isArray(checkpoint.requiredFragments) ? checkpoint.requiredFragments : []) {
+    const regionId = fragmentRegionId(required);
+    if (!regionId || !transition.postState.visibleRegionIds.includes(regionId)) mismatches.push(`required-visible:${regionId ?? '<unknown>'}`);
+  }
+  for (const forbidden of Array.isArray(checkpoint.forbiddenFragments) ? checkpoint.forbiddenFragments : []) {
+    const regionId = fragmentRegionId(forbidden);
+    if (!regionId || transition.postState.visibleRegionIds.includes(regionId)) mismatches.push(`forbidden-visible:${regionId ?? '<unknown>'}`);
+  }
+  const postExpected: Record<string, unknown> = {
+    shell: { screenId: checkpoint.screenId, variantId: checkpoint.variantId },
+    visibleRegionIds: transition.postState.visibleRegionIds,
+    keyedCollections: Array.isArray(checkpoint.expectedFragmentKeys) ? checkpoint.expectedFragmentKeys.map((value) => { const item = objectValue(value); return { collectionId: fragmentRegionId(item?.fragment), keys: item?.keys }; }) : [],
+    values: Array.isArray(checkpoint.expectedStates) ? checkpoint.expectedStates.map((value) => { const item = objectValue(value); return { regionId: fragmentRegionId(item?.fragment), key: item?.key, value: item?.value }; }) : [],
+  };
+  mismatches.push(...compareStateSnapshot(postExpected, transition.postState).filter((item) => !item.startsWith('visibleRegionIds')));
+  if (!sameStringSet(transition.visibleResult.visibleRegionIds, transition.postState.visibleRegionIds)) mismatches.push('visibleResult');
+  return [...new Set(mismatches)];
+}
+
+function compareStructureIRForSubject(subject: string, expected: StructureIR, actual: StructureIR, expectedValue: Record<string, unknown>): string[] {
+  const region = actual.regions.find((item) => item.regionId === subject);
+  if (!region) return ['missing-region'];
+  const mismatches: string[] = [];
+  const expectedParent = fragmentRegionId(expectedValue.semanticParent);
+  if ((expectedParent ?? undefined) !== region.parentRegionId) mismatches.push('parent');
+  const expectedAncestors = Array.isArray(expectedValue.semanticAncestors) ? expectedValue.semanticAncestors.flatMap((item) => fragmentRegionId(item) ?? []) : undefined;
+  if (expectedAncestors && JSON.stringify(expectedAncestors) !== JSON.stringify(region.ancestorRegionIds)) mismatches.push('ancestors');
+  const expectedScroll = expectedScrollOwner(expectedValue.scrollOwner);
+  if (expectedScroll && JSON.stringify(expectedScroll) !== JSON.stringify(region.scrollOwner)) mismatches.push('scroll-owner');
+  if (typeof expectedValue.positioning === 'string' && expectedValue.positioning !== region.positioning) mismatches.push('positioning');
+  if (typeof expectedValue.documentOrder === 'number' && expectedValue.documentOrder !== region.documentOrder) mismatches.push('document-order');
+  if (typeof expectedValue.role === 'string' && expectedValue.role !== region.role) mismatches.push('role');
+  if (typeof expectedValue.visible === 'boolean' && expectedValue.visible !== region.visible) mismatches.push('visible');
+  for (const mismatch of compareStructureIR(expected, actual)) if (mismatch.regionId === subject || JSON.stringify(mismatch.expected).includes(subject) || JSON.stringify(mismatch.actual).includes(subject)) mismatches.push(mismatch.kind);
+  return [...new Set(mismatches)];
+}
+
+function collectionMap(value: unknown): Map<string, string[]> | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const result = new Map<string, string[]>();
+  for (const entry of value) {
+    const item = objectValue(entry);
+    const keys = stringArray(item?.keys);
+    if (typeof item?.collectionId !== 'string' || !keys) return undefined;
+    result.set(item.collectionId, [...keys].sort());
+  }
+  return result;
+}
+
+function stringArray(value: unknown): string[] | undefined {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string') ? value as string[] : undefined;
+}
+
+function sameStringSet(left: string[], right: string[]): boolean {
+  return sameStringArray([...left].sort(), [...right].sort());
+}
+
+function sameStringArray(left: string[], right: string[]): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function isStateScalar(value: unknown): value is string | number | boolean | null {
+  return value === null || ['string', 'number', 'boolean'].includes(typeof value);
 }
 
 async function verifyComponentOccurrence(
@@ -264,6 +459,15 @@ function result(claim: TargetImplementationClaim, status: ReviewVerifierResult['
   };
 }
 
+function semanticResult(
+  claim: Extract<TargetImplementationClaim, { dimension: 'states' | 'interactions' }>,
+  status: ReviewVerifierResult['status'],
+  detail: string,
+  proof: Pick<ReviewVerifierResult, 'stateProof' | 'transitionProof'>,
+): ReviewVerifierResult {
+  return { obligationId: claim.obligationId, dimension: claim.dimension, status, detail, ...proof };
+}
+
 function expectedString(obligation: ReconstructionObligation | undefined, key: string): string[] {
   const value = objectValue(obligation?.expected)?.[key];
   return typeof value === 'string' ? [value] : [];
@@ -273,6 +477,24 @@ function objectValue(value: unknown): Record<string, unknown> | undefined {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
     ? value as Record<string, unknown>
     : undefined;
+}
+
+function fragmentRegionId(value: unknown): string | undefined {
+  const object = objectValue(value);
+  return typeof object?.pbId === 'string'
+    ? `${object.pbId}${typeof object.pbKey === 'string' ? `.${object.pbKey}` : ''}`
+    : undefined;
+}
+
+function expectedScrollOwner(value: unknown): StructureIR['regions'][number]['scrollOwner'] | undefined {
+  if (value === 'viewport') return { kind: 'viewport' };
+  const object = objectValue(value);
+  if (object?.kind === 'viewport') return { kind: 'viewport' };
+  if (object?.kind === 'fragment') {
+    const regionId = fragmentRegionId(object.fragment);
+    return regionId ? { kind: 'region', regionId } : undefined;
+  }
+  return undefined;
 }
 
 function offsetForLine(text: string, line: number): number | undefined {

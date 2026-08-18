@@ -1,5 +1,9 @@
-import type { ReconstructionObligation } from './obligations.js';
+import {
+  compileReconstructionObligations,
+  type ReconstructionObligation,
+} from './obligations.js';
 import type { ReviewCoverageProfile, ReviewProfile } from './contracts.js';
+import type { ConsumerProjectionInput } from '../v2/consumer-projection.js';
 
 export type ReviewRiskSignal =
   | 'user-requested-full'
@@ -104,6 +108,40 @@ export function selectReviewProfile(input: SelectReviewProfileInput): SelectedRe
     selectedScenarioCaseIds,
     selectedObligations,
   };
+}
+
+export function selectReviewProfileForConsumer(
+  input: ConsumerProjectionInput,
+  requestedProfile?: ReviewCoverageProfile,
+): SelectedReviewProfile {
+  const cases: ReviewCaseCandidate[] = input.evidence.screens.flatMap((screen) => {
+    const baseline = screen.cases.find((item) => !item.scenario && item.variantId === 'default')
+      ?? screen.cases.find((item) => !item.scenario)
+      ?? screen.cases[0];
+    return screen.cases.map((item) => ({
+      caseId: item.caseId,
+      screenId: screen.screenId,
+      scenarioCase: item.scenario !== undefined,
+      tags: [
+        ...(item.caseId === baseline?.caseId ? ['baseline' as const] : []),
+        ...(baseline && item.themeId !== baseline.themeId ? ['theme' as const] : []),
+        ...(baseline && item.deviceId !== baseline.deviceId ? ['narrow' as const] : []),
+        ...(item.scenario ? ['key-state' as const, 'core-journey' as const] : []),
+      ],
+    }));
+  });
+  const riskSignals: ReviewRiskSignal[] = [
+    ...(input.evidence.screens.length > 1 ? ['multi-screen' as const] : []),
+    ...(cases.some((item) => item.tags.includes('theme')) ? ['theme' as const] : []),
+    ...(cases.some((item) => item.scenarioCase) ? ['state-transition' as const] : []),
+    ...(input.handoff.risks.length > 0 ? ['uncertain-observation' as const] : []),
+  ];
+  return selectReviewProfile({
+    ...(requestedProfile ? { requestedProfile } : {}),
+    riskSignals,
+    cases,
+    obligations: compileReconstructionObligations(input.acceptance),
+  });
 }
 
 function selectQuick(cases: ReviewCaseCandidate[]): ReviewCaseCandidate[] {

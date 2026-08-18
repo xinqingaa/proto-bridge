@@ -32,7 +32,7 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 10. Agent 自行决定文件、组件、状态、路由和 Token，但不得发明证据未支持的容器形态、文案、交互或状态；优先复用 Evidence/Source 固定业务数据；布局敏感 prop 缺失时对照 Screenshot，仍不确定则披露为剩余风险。
 11. continuation 只能续读同一规范化查询直到 `complete=true`。完成后不得重启；不得为“读全”轮询所有投影或在 selector 之间循环。一次针对性展开仍不能解决时，记录未知或风险。
 12. 完成实现并运行目标原生验证；实施后复查使用 `read_reconstruction_obligations` 按 Screen/维度分页，不读取完整 Acceptance Contract，也不把 obligation 顺序当作编码顺序。调用 `summarize_reconstruction_review` 汇总已处理 Case、已查看 Screenshot、已重放 Scenario、已知偏差和未验证事项。
-13. 需要 authoritative Review 时调用 `start_target_review` 固定验收分母；Structure/state/interaction obligation 通过 `verify_target_claims` 提交适用 Case，component/token 提交精确 Target occurrence/slot。state/interaction result 自动形成 assessment；其他结果用 receipt digest 写入 `record_review_assessments`。没有 inspector、resolved mapping 或精确 occurrence authority 时必须保持 `unverified`，再提交 findings 和人工完成请求。
+13. 需要 authoritative Review 时调用 `start_target_review`；Core 从固定风险选择 L1/L2/L3，`requestedProfile` 只能升级。Flutter Review 的 render/replay 由 Local Service attach 已运行 App 的官方 MCP session；不得自行启动设备或回退 launcher。Structure/state/interaction obligation 通过 `verify_target_claims` 读取已持久化 typed Runtime observation，component/token 提交精确 Target occurrence/slot。没有 Runtime receipt、resolved mapping 或精确 occurrence authority时必须保持 `unverified`。L1/L2 只能人工接受为 `closed`，只有 L3 可 `completed`。
 
 整包 Snapshot、原始 Case/revision/fragment、Catalog、Issue、Staleness、`read_agent_handoff` 与 `read_acceptance_contract` 已从 MCP 表面移除；不得回退到旧整包读取路径。
 
@@ -66,16 +66,16 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 
 ## Authoritative Target Review
 
-`start_target_review` 将固定 Acceptance Requirements 规范化并跨 Case 去重，得到 target-independent Reconstruction Obligations。每项义务保留适用的 Case、Evidence refs、预期值和五维分类；Local Service 会从持久 Handoff 独立重算，拒绝客户端删减或改写。
+`start_target_review` 从固定 Handoff 风险确定 L1/L2/L3，选择 Case/Scenario/Screenshot 后再将适用 Acceptance Requirements 规范化并跨 Case 去重。每项义务保留适用的 Case、Evidence refs、预期值和五维分类；Local Service 会从持久 Handoff 与当前 Target 独立重算，拒绝客户端删减或改写。Flutter 自动固定 `dart-flutter-mcp` 为必需 Runtime provider；非 Flutter 不启动它。
 
 | Tool | 用途 |
 | --- | --- |
-| `start_target_review` | 固定 Screenshot、Scenario 和五维 Reconstruction Obligations |
+| `start_target_review` | 固定风险 Profile、Screenshot、Scenario 和五维 Reconstruction Obligations；请求只能升级 Profile |
 | `read_target_review` | 恢复 append-only Session 摘要、artifact coverage 和 obligation 计数，不内嵌完整义务 |
 | `read_review_obligations` | 按 Screen、维度和 assessment 状态分页读取 Review obligations |
-| `render_target_case` / `compare_target_artifacts` | 记录目标渲染与视觉比较回执 |
-| `replay_target_scenario` | 记录包含 pre-state、实际 action/input、post-state 和 visible result 的 Scenario 回执 |
-| `verify_target_claims` | 对 Structure/state/interaction 运行 typed Target inspector；对 component/token 验证精确 occurrence/slot，并写入机器 receipt |
+| `render_target_case` / `compare_target_artifacts` | 由 Local Service 经官方 Flutter MCP 采集 Screenshot、Widget/State/Structure observation，并生成视觉比较回执 |
+| `replay_target_scenario` | 经同一 App session 记录 pre-state、实际 action/input、post-state 和 visible result |
+| `verify_target_claims` | 比较已持久化 Flutter MCP Structure/state/interaction observation；对 component/token 验证精确 occurrence/slot，并写入机器 receipt |
 | `record_review_assessments` | 对固定 obligation 写入 `matched`、`deviation` 或 `unverified`；`matched` 必须引用成功 verifier receipt，后写结果显式替代旧 assessment |
 | `record_review_findings` | 记录偏差、严重度和处理状态；不能代替 obligation assessment |
 | `request_review_tranche` | 消费由 PBWork/CLI/operator 或 MCP host approval 预先签发的一次性授权 token；普通参数不能自证授权 |

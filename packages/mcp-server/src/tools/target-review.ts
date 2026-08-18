@@ -1,16 +1,16 @@
 import { createHash, randomUUID } from 'node:crypto';
 import {
   buildHandoffIndex,
-  buildScreenPacket,
   buildStructureIR,
   V2ContractError,
   type AcceptanceDimension,
 } from '@proto-bridge/core/v2';
 import {
-  compileReconstructionObligations,
   RECONSTRUCTION_OBLIGATION_CONTRACT_VERSION,
   projectReviewObligations,
   projectReviewSession,
+  selectReviewProfileForConsumer,
+  type ReviewCoverageProfile,
   type ReviewFinding,
   type ReviewObligationFilterStatus,
   type ReviewObligationAssessment,
@@ -20,7 +20,9 @@ import {
 } from '@proto-bridge/core/review';
 import {
   compareTargetArtifacts,
+  detectTargetAdapter,
   FLUTTER_COMPARATOR_VERSION,
+  readTargetIdentity,
   verifyTargetClaims,
   type TargetImplementationClaim,
 } from '@proto-bridge/core/target';
@@ -64,7 +66,23 @@ export async function startTargetReviewTool(context: ToolContext, args: JsonObje
   const input = await context.evidence.readConsumerProjectionInput(handoffId);
   const index = buildHandoffIndex(input);
   const workspace = await context.evidence.workspace();
-  const scenarioCaseIds = index.screens.flatMap((screen) => buildScreenPacket(input, screen.screenId).scenarioMap.map((item) => item.caseId));
+  const targetRoot = required(args, 'targetRoot');
+  const requestedProfile = optionalReviewProfile(args, 'requestedProfile');
+  const selected = selectReviewProfileForConsumer(input, requestedProfile);
+  const selectedSet = new Set(selected.selectedCaseIds);
+  const targetIdentity = await readTargetIdentity(targetRoot);
+  const targetBaselineCommit = required(args, 'targetBaselineCommit');
+  if (targetIdentity.head !== targetBaselineCommit) {
+    throw new V2ContractError('invalid-schema', `Target commit drifted before Review start: expected ${targetBaselineCommit}, received ${targetIdentity.head}.`);
+  }
+  const adapter = await detectTargetAdapter(targetRoot);
+  const selectedGroups = index.screenshotGroups.filter((group) => group.caseIds.some((caseId) => selectedSet.has(caseId)));
+  const requiredSourceDigests = [...new Set(selectedGroups.flatMap((group) => group.digest ? [group.digest] : []))].sort();
+  if (adapter.adapterId === 'flutter') {
+    const coveredCases = new Set(selectedGroups.filter((group) => group.digest).flatMap((group) => group.caseIds));
+    const missingCases = selected.selectedCaseIds.filter((caseId) => !coveredCases.has(caseId));
+    if (missingCases.length > 0) throw new V2ContractError('unknown-reference', `Flutter Runtime Review requires fixed Source Screenshot evidence for selected Cases: ${missingCases.join(', ')}.`);
+  }
   const seed: ReviewSessionSeed = {
     reviewRunId: readString(args, 'reviewRunId') ?? `review-${randomUUID()}`,
     workspaceId: index.fixedRefs.workspaceId,
@@ -72,19 +90,24 @@ export async function startTargetReviewTool(context: ToolContext, args: JsonObje
     bundleId: index.fixedRefs.bundleId,
     snapshotId: index.fixedRefs.snapshotId,
     handoffId,
-    targetRoot: required(args, 'targetRoot'),
-    targetBaselineCommit: required(args, 'targetBaselineCommit'),
+    targetRoot,
+    targetBaselineCommit,
     targetRevision: required(args, 'targetRevision'),
-    selectedCaseIds: index.screens.flatMap((screen) => screen.caseIds),
-    requiredSourceDigests: index.screenshotGroups.flatMap((group) => group.digest ? [group.digest] : []),
-    requiredScenarioCaseIds: [...new Set(scenarioCaseIds)].sort(),
+    targetContentDigest: targetIdentity.contentDigest,
+    selectedCaseIds: selected.selectedCaseIds,
+    requiredSourceDigests,
+    requiredScenarioCaseIds: selected.selectedScenarioCaseIds,
     obligationContractVersion: RECONSTRUCTION_OBLIGATION_CONTRACT_VERSION,
-    requiredObligations: compileReconstructionObligations(input.acceptance),
+    requiredObligations: selected.selectedObligations,
     verificationContractVersion: 1,
+    reviewProfile: selected.profile,
+    runtimeProvider: adapter.adapterId === 'flutter'
+      ? { required: true, providerId: 'dart-flutter-mcp' }
+      : { required: false },
     comparatorVersion: FLUTTER_COMPARATOR_VERSION,
     createdAt: new Date().toISOString(),
   };
-  if (seed.requiredSourceDigests.length !== index.screenshotGroups.length) {
+  if (selectedGroups.some((group) => !group.digest)) {
     throw new V2ContractError('unknown-reference', 'Authoritative Review cannot start while a selected Screenshot digest is missing.');
   }
   return projectReviewSession(await context.reviews.call('/reviews', { method: 'POST', body: { seed } }));
@@ -184,6 +207,9 @@ export async function verifyTargetClaimsTool(context: ToolContext, args: JsonObj
     obligations: session.requiredObligations,
     claims,
     expectedStructures,
+    runtimeStructures: session.runtimeStructureObservations,
+    runtimeStates: session.runtimeStateObservations,
+    runtimeTransitions: session.runtimeScenarioTransitions,
   });
   const updated = await context.reviews.call<ReviewSession>(`/reviews/${encodeURIComponent(reviewRunId)}/claims`, {
     method: 'POST',
@@ -237,6 +263,13 @@ function requiredInteger(args: JsonObject, key: string): number {
   const value = readNumber(args, key);
   if (!Number.isInteger(value)) throw new V2ContractError('invalid-schema', `${key} must be an integer.`);
   return value!;
+}
+
+function optionalReviewProfile(args: JsonObject, key: string): ReviewCoverageProfile | undefined {
+  const value = readString(args, key);
+  if (value === undefined) return undefined;
+  if (!['l1-quick', 'l2-focused', 'l3-full'].includes(value)) throw new V2ContractError('invalid-schema', `${key} must be l1-quick, l2-focused, or l3-full.`);
+  return value as ReviewCoverageProfile;
 }
 
 function parseTargetClaims(value: unknown): TargetImplementationClaim[] {

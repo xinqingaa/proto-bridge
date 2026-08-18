@@ -1,11 +1,14 @@
 import { access, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
+import { promisify } from 'node:util';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { Fact } from '@proto-bridge/core/v2';
 import type { AgentHandoff } from '@proto-bridge/core/v2';
 import { compileReconstructionObligations, reviewVerifierReceiptDigest } from '@proto-bridge/core/review';
 import { buildAcceptanceContractFromStore } from '@proto-bridge/core/v2/store';
+import { readTargetIdentity } from '@proto-bridge/core/target';
 import type { RuntimeCaptureManifest } from '@proto-bridge/core/v2/runtime-contract';
 import {
   preflightSelection,
@@ -22,6 +25,7 @@ import {
 } from '../src/flutter-mcp-provider.js';
 
 const origin = 'http://127.0.0.1:3977';
+const execFileAsync = promisify(execFile);
 const PNG_BYTES = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
   'base64',
@@ -46,13 +50,27 @@ class ServiceFlutterMcpTransport implements FlutterMcpTransport {
     if (name === 'dtd' && args.command === 'listConnectedApps') return { apps: [{ applicationIdentity: 'target-service-test', uri: 'ws://fixture-app' }] };
     if (name === 'vm_service' && args.method === 'getVM') return { isolates: [{ id: 'isolates/1' }] };
     if (name === 'vm_service' && args.method === 'ext.protoBridge.identity') {
+      const identity = await readTargetIdentity(this.targetRoot);
       return { result: {
-        applicationIdentity: 'target-service-test', targetCommit: 'baseline',
-        targetContentDigest: 'sha256:fixture-content', appBuildDigest: 'sha256:fixture-app',
+        applicationIdentity: 'target-service-test', targetCommit: identity.head,
+        targetContentDigest: identity.contentDigest, appBuildDigest: 'sha256:fixture-app',
         reviewHarnessVersion: '1', platform: 'fixture-device', textEntryEmulation: true,
       } };
     }
     if (name === 'vm_service' && args.method === 'ext.protoBridge.prepare') return { result: { ready: true } };
+    if (name === 'vm_service' && args.method === 'ext.protoBridge.observe') {
+      const caseId = String((args.arguments as Record<string, unknown> | undefined)?.caseId);
+      return { result: {
+        state: {
+          caseId, shell: { screenId: 'sample.task-list', variantId: 'default' },
+          visibleRegionIds: [], keyedCollections: [], values: [], complete: true, unknownKeys: [],
+        },
+        structure: {
+          caseId, regions: [], rootRegionIds: [], siblingGroups: [], siblingRelations: [], scrollContainers: [],
+          complete: true, unknownRegionIds: [],
+        },
+      } };
+    }
     if (name === 'widget_inspector') return { result: { summaryTree: 'fixture' } };
     if (name === 'flutter_driver_command' && args.command === 'screenshot') {
       return { content: [{ type: 'image', mimeType: 'image/png', data: TARGET_PNG_BYTES.toString('base64') }] };
@@ -588,12 +606,42 @@ describe('ProtoBridge Local Service', () => {
     const requiredObligations = compileReconstructionObligations(
       (await buildAcceptanceContractFromStore({ store: service!.store, handoff: fixedHandoff })).contract,
     );
+    const targetRoot = path.join(root!, 'target');
+    await mkdir(path.join(targetRoot, 'lib'), { recursive: true });
+    await writeFile(path.join(targetRoot, 'pubspec.yaml'), 'name: target_service_test\ndependencies:\n  flutter:\n    sdk: flutter\n');
+    await writeFile(path.join(targetRoot, 'lib', 'main.dart'), 'void main() {}\n');
+    await writeFile(path.join(targetRoot, 'proto-bridge.target.json'), JSON.stringify({
+      version: 1,
+      technology: 'flutter',
+      review: {
+        version: 2,
+        provider: 'dart-flutter-mcp',
+        runtime: {
+          applicationIdentity: 'target-service-test',
+          identityServiceExtension: 'ext.protoBridge.identity',
+          prepareServiceExtension: 'ext.protoBridge.prepare',
+          observeServiceExtension: 'ext.protoBridge.observe',
+          observationContractVersion: 1,
+          reviewHarnessVersion: '1',
+          textEntryEmulation: true,
+        },
+        cases: { [caseId]: { screenId: 'sample.task-list' } },
+      },
+    }));
+    await execFileAsync('git', ['init', '-q'], { cwd: targetRoot });
+    await execFileAsync('git', ['config', 'user.email', 'service@example.invalid'], { cwd: targetRoot });
+    await execFileAsync('git', ['config', 'user.name', 'Service Test'], { cwd: targetRoot });
+    await execFileAsync('git', ['add', '.'], { cwd: targetRoot });
+    await execFileAsync('git', ['commit', '-qm', 'fixture'], { cwd: targetRoot });
+    const targetIdentity = await readTargetIdentity(targetRoot);
     const reviewSeed = {
       reviewRunId, workspaceId: 'workspace-service-test', generationId: session.body.data.generationId,
       bundleId: job.bundleId, snapshotId: request.snapshotId, handoffId: created.body.data.handoff.handoffId,
-      targetRoot: path.join(root!, 'target'), targetBaselineCommit: 'baseline', targetRevision: 'revision-a',
+      targetRoot, targetBaselineCommit: targetIdentity.head, targetRevision: 'revision-a', targetContentDigest: targetIdentity.contentDigest,
       selectedCaseIds: [caseId], requiredSourceDigests: [source.digest], requiredScenarioCaseIds: [],
       obligationContractVersion: 1, requiredObligations, verificationContractVersion: 1,
+      reviewProfile: { contractVersion: 1, coverageProfile: 'l2-focused', reasonCodes: ['uncertain-observation'], excludedCaseIds: [], excludedScenarioCaseIds: [] },
+      runtimeProvider: { required: true, providerId: 'dart-flutter-mcp' },
       comparatorVersion: 'compare-v1', createdAt: '2026-08-04T00:00:00.000Z',
     };
     const forgedReview = await call(base, '/reviews', {
@@ -607,24 +655,11 @@ describe('ProtoBridge Local Service', () => {
       body: { seed: reviewSeed },
     });
     expect(review.response.status).toBe(201);
-    await mkdir(reviewSeed.targetRoot, { recursive: true });
-    await writeFile(path.join(reviewSeed.targetRoot, 'proto-bridge.target.json'), JSON.stringify({
-      version: 1,
-      technology: 'flutter',
-      review: {
-        version: 2,
-        provider: 'dart-flutter-mcp',
-        runtime: {
-          applicationIdentity: 'target-service-test',
-          identityServiceExtension: 'ext.protoBridge.identity',
-          prepareServiceExtension: 'ext.protoBridge.prepare',
-          observeServiceExtension: 'ext.protoBridge.observe',
-          reviewHarnessVersion: '1',
-          textEntryEmulation: true,
-        },
-        cases: { [caseId]: { screenId: 'sample.task-list' } },
-      },
-    }));
+    expect(review.body.data).toMatchObject({
+      reviewProfile: { coverageProfile: 'l2-focused', reasonCodes: ['uncertain-observation'] },
+      runtimeProvider: { required: true, providerId: 'dart-flutter-mcp' },
+      targetContentDigest: targetIdentity.contentDigest,
+    });
     const forged = await call(base, `/reviews/${reviewRunId}/tranches`, { method: 'POST', token, body: { approvalToken: 'ordinary-tool-parameter' } });
     expect(forged.response.status).toBe(401);
     const trancheApproval = await call(base, '/review-approvals', { method: 'POST', token, body: { kind: 'tranche', reviewRunId, screenId: 'sample.task-list', tranche: 1, approvalRef: 'operator-approved', actor: 'operator' } });
@@ -649,7 +684,7 @@ describe('ProtoBridge Local Service', () => {
       adapterId: 'fixture',
       targetRevision: reviewSeed.targetRevision,
       targetHead: reviewSeed.targetBaselineCommit,
-      targetContentDigest: 'sha256:fixture-content',
+      targetContentDigest: targetIdentity.contentDigest,
       results: requiredObligations.map((item) => ({ obligationId: item.obligationId, dimension: item.dimension, status: 'matched' as const, detail: 'Machine verified.' })),
     };
     const verifierReceipt = { ...unsignedVerifierReceipt, receiptDigest: reviewVerifierReceiptDigest(unsignedVerifierReceipt) };
@@ -661,7 +696,8 @@ describe('ProtoBridge Local Service', () => {
     expect(assessed.body.data.obligationAssessments).toHaveLength(requiredObligations.length);
     const finalizeApproval = await call(base, '/review-approvals', { method: 'POST', token, body: { kind: 'finalize', reviewRunId, confirmationRef: 'human-confirmed', actor: 'human' } });
     const finalized = await call(base, `/reviews/${reviewRunId}/finalize`, { method: 'POST', token, body: { approvalToken: finalizeApproval.body.data.token } });
-    expect(finalized.body.data.status).toBe('completed');
+    expect(finalized.body.data.status).toBe('closed');
+    expect(finalized.body.data.reviewOutcome).toBe('focused-accepted');
     const delivery = await call(base, '/deliveries', {
       method: 'POST',
       token,

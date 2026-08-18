@@ -243,7 +243,8 @@ describe('authoritative Review reducer', () => {
       runtimeProvider: { required: false },
     };
     const ready = [
-      ...coverageEvents(),
+      { actor: 'mcp' as const, payload: { kind: 'screenshot-viewed' as const, screenId: 'screen', caseIds: quickSeed.selectedCaseIds, source } },
+      { actor: 'runner' as const, tool: verifierReceipt.verifierId, payload: { kind: 'target-claims-verified' as const, receipt: verifierReceipt } },
       { actor: 'agent' as const, payload: { kind: 'obligations-assessed' as const, assessments: matchedAssessments } },
       { actor: 'agent' as const, payload: { kind: 'findings-recorded' as const, findings: [] } },
     ];

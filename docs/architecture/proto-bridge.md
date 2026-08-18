@@ -61,7 +61,7 @@ Capture Driver 只报告观测结果。它不能用 Target 扫描或源码命名
 - session/console 绑定 Workspace generation；generation 变化后撤销旧 session，并由 PBWork 清空 Workspace 范围缓存；
 - reset 使用 Store 外持久化的 `planId + generation + inventory digest` 两阶段 Contract，范围覆盖 Evidence、Delivery 与未导出 Review；
 - writer 校验 root/lock 身份，外部破坏后停止旧 writer，禁止在原进程内自动重建。
-- authoritative Review 启动时从固定 Handoff 独立重算 canonical Reconstruction Obligations，拒绝客户端缩小验收分母；append-only event log 保存逐项 assessment，Reducer 在人工完成事件上重新执行 artifact coverage 与语义门禁。
+- authoritative Review 启动时从固定 Handoff 独立推导风险 Profile，并只对 Profile 选中的 Case 重算 canonical Reconstruction Obligations、Screenshot 和 Scenario 分母；客户端请求只能升级 L1/L2/L3，不能缩小 Core 推导范围。append-only event log 保存逐项 assessment，Reducer 在人工完成事件上重新执行 artifact coverage 与语义门禁。
 - Core Review reducer 固定 L1/L2/L3 Profile、Code/Runtime 双轨状态、provider session/App/build receipt 与最多三次 provider 尝试；L1/L2 关闭结果不复用 L3 `completed` 语义。
 - Flutter Runtime provider 在 Local Service 内按需创建标准 stdio MCP client，执行 initialize、`tools/list` 与 DTD attach；Service 关闭、Target root 改变、进程退出或 session fingerprint 漂移都会关闭旧 client。该 provider 禁止设备发现、App 启停和 launcher fallback。
 
@@ -102,7 +102,7 @@ Consumer projection version 4 是当前默认契约：Screen packet 含 `canonic
 
 Review 的验收分母来自 Core 对 Acceptance Contract 的确定性编译：等价的 per-Case requirements 按 Screen、维度、kind、subject 和 canonical expected 去重，同时保留全部 Case 与 Evidence refs。Assessment 使用显式 last-write 语义；`deviation`、`unverified`、未 assessment、阻断 finding 和缺少必要 receipt 都会阻止完成。`matched` 必须绑定固定 Target revision 上同一 obligation 的机器 verifier receipt；`not-applicable` 仅允许 operator/human 附 Target basis 写入。旧 event log 仍可恢复，但缺少 obligation 或 verification contract 时禁止完成。
 
-Review projection version 2 公开 `reviewProfile`、`codeReviewStatus`、`runtimeReviewStatus`、`reviewOutcome` 与脱敏的 provider progress。Provider session URI、VM service URI 和设备敏感 identity 不属于 Consumer projection。
+Review projection version 2 公开 `reviewProfile`、`codeReviewStatus`、`runtimeReviewStatus`、`reviewOutcome`，以及脱敏的 provider progress 和 typed observation 计数；完整 Widget/State/Structure/Scenario observation 留在 authoritative event log，不默认注入摘要。Provider session URI、VM service URI 和设备敏感 identity 不属于 Consumer projection。
 
 ## Target boundary
 
@@ -121,7 +121,7 @@ Target 分为**公共门面**与**栈适配器**：
 
 适配器不拥有任何具体产品的组件/Token 映射。真实目标工程的 `AGENTS.md`、`docs/proto-bridge.md`、`docs/components.md`、`docs/theme.md` 和公开代码拥有当前约束；可选的根目录 `proto-bridge.target.json` 只是这些约束的严格机器投影。政策与机器 Contract 冲突返回 `conflict`，显式声明与代码不符返回 `stale`，代码启发式最多返回 `candidate`。缺少 authority 的维度只能保持 `unverified`。Target root 来自 Agent 当前任务或单次 Tool 参数；目标仓库不需要 ProtoBridge Workspace 配置，Target 结果不写入 Bundle。无适用 adapter 时仍可消费固定 Evidence，但不能宣称已完成 Target query/validation 闭环。
 
-Flutter Review machine contract 使用 `review.version: 2` 与 `provider: "dart-flutter-mcp"`。Contract 只声明 App identity、受控 debug-only identity/prepare/observe service extension、Case/fixture/route/state seed，以及 Scenario 的 finder/action；不包含 platform、设备 UDID、固定尺寸或任意 launcher command。Local Service 只 attach 已运行且已连接 DTD 的 App，通过官方 `vm_service` 调用受控 extension，通过 `widget_inspector`、`flutter_driver_command` 与 `get_runtime_errors` 采集结构、截图、交互和异常。App identity、Target commit/content、build digest 或 provider session 不匹配时，Runtime 证据无效。
+Flutter Review machine contract 使用 `review.version: 2` 与 `provider: "dart-flutter-mcp"`。Contract 只声明 App identity、受控 debug-only identity/prepare/observe service extension、`observationContractVersion: 1`、Case/fixture/route/state seed，以及 Scenario 的 finder/action；不包含 platform、设备 UDID、固定尺寸或任意 launcher command。Local Service 只 attach 已运行且已连接 DTD 的 App，通过官方 `vm_service` 调用受控 extension，通过 `widget_inspector`、`flutter_driver_command` 与 `get_runtime_errors` 采集结构、截图、交互和异常。observe extension 在同一 App session 返回 typed State/Structure observation，随后由公共五维 verifier 与固定 Source expected 比较；App identity、Target commit/content、build digest 或 provider session 不匹配时，Runtime 证据无效。
 
 设备发现、App 启停和连接责任留给 Flutter 官方 MCP 与操作者；ProtoBridge 不指定 iOS/Android/真机，也不提供 launcher fallback。Provider 操作共享最多三次尝试预算；歧义、能力缺失和副作用结果未知会立即终止。Runtime 失败关闭 Runtime 轨并保留 Code Review 结果，不进入无界重试。
 

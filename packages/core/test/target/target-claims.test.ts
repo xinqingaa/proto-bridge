@@ -66,11 +66,34 @@ describe('Target claim verifier', () => {
     const result = await verify(root, head, obligations, [structureClaim, stateClaim, actionClaim, transitionClaim]);
     expect(result.results.map((item) => item.status)).toEqual(['unverified', 'unverified', 'unverified', 'unverified']);
     expect(result.results.map((item) => item.detail)).toEqual([
-      expect.stringContaining('Widget Inspector receipt'),
+      expect.stringContaining('Runtime Structure receipt'),
       expect.stringContaining('Runtime observation receipt'),
       expect.stringContaining('Scenario receipt'),
       expect.stringContaining('Scenario receipt'),
     ]);
+  });
+
+  it('verifies Structure, State and Interaction only from fixed Flutter MCP observations', async () => {
+    const root = await targetFixture();
+    const head = await commit(root);
+    const obligations = fixtureObligations();
+    const claims: TargetImplementationClaim[] = [
+      { obligationId: 'obligation-structure', dimension: 'structure', caseId: CASE },
+      { obligationId: 'obligation-state', dimension: 'states', caseId: CASE },
+      { obligationId: 'obligation-action', dimension: 'interactions', caseId: SCENARIO_CASE },
+      { obligationId: 'obligation-transition', dimension: 'interactions', caseId: SCENARIO_CASE },
+    ];
+    const matched = await verify(root, head, obligations, claims, {
+      runtimeStructures: [fixtureStructure()],
+      runtimeStates: [fixtureState()],
+      runtimeTransitions: [fixtureTransition()],
+    });
+    expect(matched.results.map((item) => item.status)).toEqual(['matched', 'matched', 'matched', 'matched']);
+
+    const drifted = fixtureTransition();
+    drifted.actions[0]!.targetRegionId = `${SCREEN}.unrelated`;
+    const failed = await verify(root, head, obligations, [claims[2]!], { runtimeTransitions: [drifted] });
+    expect(failed.results[0]).toMatchObject({ status: 'deviation', detail: expect.stringContaining('action-target') });
   });
 });
 
@@ -79,6 +102,7 @@ async function verify(
   head: string,
   obligations: ReconstructionObligation[],
   claims: TargetImplementationClaim[],
+  runtime: Pick<Parameters<typeof verifyTargetClaims>[0], 'runtimeStructures' | 'runtimeStates' | 'runtimeTransitions'> = {},
 ) {
   return verifyTargetClaims({
     targetRoot: root,
@@ -87,6 +111,7 @@ async function verify(
     obligations,
     claims,
     expectedStructures: [{ screenId: SCREEN, caseId: CASE, structure: fixtureStructure() }],
+    ...runtime,
   });
 }
 
@@ -250,6 +275,7 @@ async function targetFixture(): Promise<string> {
         identityServiceExtension: 'ext.protoBridge.identity',
         prepareServiceExtension: 'ext.protoBridge.prepare',
         observeServiceExtension: 'ext.protoBridge.observe',
+        observationContractVersion: 1,
         reviewHarnessVersion: '1',
         textEntryEmulation: true,
       },

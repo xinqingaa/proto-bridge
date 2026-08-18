@@ -96,6 +96,7 @@ export class FlutterMcpProvider {
   private tools = new Map<string, McpToolDefinition>();
   private attached: FlutterMcpAttachResult | undefined;
   private appUri: string | undefined;
+  private attachedExpectation: string | undefined;
 
   constructor(options: FlutterMcpProviderOptions = {}) {
     this.command = options.command ?? 'dart';
@@ -155,10 +156,13 @@ export class FlutterMcpProvider {
   }
 
   async attach(targetRoot: string, expectedApplicationIdentity?: string): Promise<FlutterMcpOperationResult<FlutterMcpAttachResult>> {
-    if (this.attached && this.targetRoot === path.resolve(targetRoot) && this.appUri) {
+    if (this.attached && this.targetRoot === path.resolve(targetRoot) && this.appUri && this.attachedExpectation === expectedApplicationIdentity) {
       const at = this.now().toISOString();
       return { operationId: `flutter-mcp-${randomUUID()}`, attemptOrdinal: 1, startedAt: at, finishedAt: at, value: this.attached, failures: [] };
     }
+    this.attached = undefined;
+    this.appUri = undefined;
+    this.attachedExpectation = undefined;
     return this.runWithRetry('connect', async () => {
       const handshake = await this.ensureSession(targetRoot);
       this.requireTool('dtd');
@@ -172,6 +176,7 @@ export class FlutterMcpProvider {
       const appUri = firstString(selectedApplication, ['uri', 'vmServiceUri', 'appUri']);
       if (!appUri) throw new FlutterMcpProviderError('app-identity-incomplete', 'Connected App does not expose a VM Service URI.', false);
       this.appUri = appUri;
+      this.attachedExpectation = expectedApplicationIdentity;
       this.attached = {
         handshake,
         dtdSelectionDigest: digest(JSON.stringify(redactDtdCandidate(selectedDtd))),
@@ -249,6 +254,7 @@ export class FlutterMcpProvider {
     this.handshake = undefined;
     this.attached = undefined;
     this.appUri = undefined;
+    this.attachedExpectation = undefined;
     this.tools.clear();
     await transport?.close().catch(() => undefined);
   }

@@ -1,4 +1,5 @@
 import type { ReconstructionObligation } from './obligations.js';
+import type { StructureIR } from '../v2/consumer-projection.js';
 
 export type ReviewStatus =
   | 'active'
@@ -250,7 +251,7 @@ export type ReviewEventPayload =
   | { kind: 'runtime-provider-terminated'; runtimeStatus: 'unavailable' | 'unverified' | 'needs-human'; reason: string }
   | { kind: 'tranche-authorized'; screenId: string; tranche: number; approvalRef: string }
   | { kind: 'screenshot-viewed'; screenId: string; caseIds: string[]; source: ReviewArtifact }
-  | { kind: 'target-rendered'; screenId: string; caseId: string; sourceDigest: string; tranche: number; round: number; attemptId: string; targetRevision: string; target: ReviewArtifact; runtimeReceipt?: ReviewRuntimeOperationReceipt }
+  | { kind: 'target-rendered'; screenId: string; caseId: string; sourceDigest: string; tranche: number; round: number; attemptId: string; targetRevision: string; target: ReviewArtifact; runtimeReceipt?: ReviewRuntimeOperationReceipt; structureObservation?: StructureIR; stateObservation?: TargetStateSnapshot }
   | { kind: 'scenario-replayed'; screenId: string; caseId: string; scenarioId: string; receiptDigest: string; targetRevision: string; transition?: TargetScenarioTransition; runtimeReceipt?: ReviewRuntimeOperationReceipt }
   | { kind: 'artifacts-compared'; screenId: string; caseId: string; attemptId: string; sourceDigest: string; targetDigest: string; diff: ReviewArtifact; overlay?: ReviewArtifact; comparable: boolean; normalizedDiffSignature?: string; reason?: string }
   | { kind: 'target-claims-verified'; receipt: ReviewVerifierReceipt }
@@ -307,6 +308,9 @@ export type ReviewSession = Omit<ReviewSessionSeed, 'reviewProfile' | 'runtimePr
   providerSession?: ReviewProviderSessionReceipt;
   providerFailures: ReviewProviderFailure[];
   runtimeOperationReceipts: ReviewRuntimeOperationReceipt[];
+  runtimeStructureObservations: StructureIR[];
+  runtimeStateObservations: TargetStateSnapshot[];
+  runtimeScenarioTransitions: TargetScenarioTransition[];
   artifacts: ReviewArtifact[];
   stopReason?: string;
   completedAt?: string;

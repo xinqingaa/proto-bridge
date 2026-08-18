@@ -61,6 +61,9 @@ export type ReviewSessionProjection = {
     applicationIdentity?: string;
     appBuildDigest?: string;
     operationReceipts: number;
+    structureObservations: number;
+    stateObservations: number;
+    scenarioTransitions: number;
     failures: ReviewSession['providerFailures'];
   };
   stopReason?: string;
@@ -177,6 +180,9 @@ export function projectReviewSession(session: ReviewSession): ReviewSessionProje
         appBuildDigest: session.providerSession.application.appBuildDigest,
       } : {}),
       operationReceipts: session.runtimeOperationReceipts.length,
+      structureObservations: (session.runtimeStructureObservations ?? []).length,
+      stateObservations: (session.runtimeStateObservations ?? []).length,
+      scenarioTransitions: (session.runtimeScenarioTransitions ?? []).length,
       failures: session.providerFailures.map((item) => ({ ...item })),
     },
     ...(session.verifierTargetContentDigest ? { verifierTargetContentDigest: session.verifierTargetContentDigest } : {}),

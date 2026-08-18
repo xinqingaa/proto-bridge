@@ -30,6 +30,7 @@ describe('Flutter authoritative Review adapter', () => {
           identityServiceExtension: 'ext.protoBridge.identity',
           prepareServiceExtension: 'ext.protoBridge.prepare',
           observeServiceExtension: 'ext.protoBridge.observe',
+          observationContractVersion: 1,
           reviewHarnessVersion: '1',
           textEntryEmulation: true,
         },

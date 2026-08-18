@@ -67,6 +67,7 @@ describe('Flutter Review Runtime', () => {
           identityServiceExtension: 'ext.protoBridge.identity',
           prepareServiceExtension: 'ext.protoBridge.prepare',
           observeServiceExtension: 'ext.protoBridge.observe',
+          observationContractVersion: 1,
           reviewHarnessVersion: '1',
           textEntryEmulation: true,
         },
@@ -127,6 +128,7 @@ function session(targetRoot: string): ReviewSession {
     runtimeReviewStatus: 'pending', reviewOutcome: 'pending', eventHeadDigest: 'sha256:event', eventCount: 1,
     viewedSourceDigests: [], renderedSourceDigests: [], replayedScenarioCaseIds: [], authorizedTranches: [],
     attempts: [], findings: [], obligationAssessments: [], verifierReceipts: [], providerFailures: [],
-    runtimeOperationReceipts: [], artifacts: [],
+    runtimeOperationReceipts: [], runtimeStructureObservations: [], runtimeStateObservations: [],
+    runtimeScenarioTransitions: [], artifacts: [],
   };
 }

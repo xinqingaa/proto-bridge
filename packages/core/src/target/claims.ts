@@ -10,6 +10,7 @@ import {
   type ReviewVerifierResult,
 } from '../review/index.js';
 import type { StructureIR } from '../v2/consumer-projection.js';
+import type { TargetScenarioTransition, TargetStateSnapshot } from '../review/contracts.js';
 import { detectTargetAdapter } from './query.js';
 import { verifyFlutterTargetClaims } from './flutter-app/claims.js';
 
@@ -68,6 +69,9 @@ export type VerifyTargetClaimsInput = {
   obligations: ReconstructionObligation[];
   claims: TargetImplementationClaim[];
   expectedStructures: ExpectedTargetStructure[];
+  runtimeStructures?: StructureIR[];
+  runtimeStates?: TargetStateSnapshot[];
+  runtimeTransitions?: TargetScenarioTransition[];
 };
 
 export async function verifyTargetClaims(
@@ -75,7 +79,7 @@ export async function verifyTargetClaims(
 ): Promise<ReviewVerifierReceipt> {
   assertClaims(input.obligations, input.claims);
   const targetRoot = path.resolve(input.targetRoot);
-  const identity = await targetIdentity(targetRoot);
+  const identity = await readTargetIdentity(targetRoot);
   if (identity.head !== input.expectedTargetHead) {
     throw new Error(`Target commit drifted: expected ${input.expectedTargetHead}, received ${identity.head}.`);
   }
@@ -141,7 +145,7 @@ function validateOccurrencePathSafety(locator: TargetOccurrenceLocator): void {
   ) throw new Error('Target occurrence must be a relative path with a positive line (and optional column).');
 }
 
-async function targetIdentity(targetRoot: string): Promise<{ head: string; contentDigest: string }> {
+export async function readTargetIdentity(targetRoot: string): Promise<{ head: string; contentDigest: string }> {
   const head = (await execFileAsync('git', ['rev-parse', 'HEAD'], { cwd: targetRoot })).stdout.trim();
   const diff = (await execFileAsync('git', ['diff', '--binary', 'HEAD', '--'], { cwd: targetRoot, maxBuffer: 32 * 1024 * 1024 })).stdout;
   const untracked = (await execFileAsync('git', ['ls-files', '--others', '--exclude-standard', '-z'], { cwd: targetRoot })).stdout

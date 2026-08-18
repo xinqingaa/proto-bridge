@@ -1,8 +1,10 @@
 # Roadmap：官方 Flutter MCP 与分级 Target 验收
 
-状态：Planned
+状态：In Progress
 
-方案评审：待用户确认；确认后才进入实现
+方案评审：用户已确认；按阶段实现并逐阶段提交
+
+当前执行约束：本轮只实现与执行静态/Fake Provider 回归，不由 Agent 连接真实设备或运行真实 App 验收；真实能力 Spike 与业务 E2E 等待用户另行启动。
 
 全局优先级：P0
 
@@ -169,6 +171,7 @@ Coding Agent
 | 官方能力 | PB 用途 | 限制 |
 | --- | --- | --- |
 | `dtd`：list/connect/list apps/disconnect | 发现并绑定已经运行的 App | debug/profile App 必须注册到 DTD；多 App 必须消歧 |
+| `vm_service` | 在已绑定 App isolate 上调用受控 identity/prepare/observe debug extension | extension 必须返回 observation contract v1，且不能由 Agent 参数自述 identity |
 | `widget_inspector` | 读取真实 Widget tree 和 finder 候选 | 不能凭 Widget 类型猜 PB Region、parent 或 expected |
 | `flutter_driver_command:screenshot` | 生成 Target Screenshot artifact | 移动/桌面 App 必须启用 Flutter Driver extension |
 | `tap` / `enter_text` / `scroll` / `scrollIntoView` | 回放 Scenario Action | finder 必须来自真实 tree 与声明式 binding |
@@ -265,6 +268,7 @@ protocolVersion
 serverCommandDigest
 availableTools
 dtdCapability
+vmServiceCapability
 driverCapability
 inspectorCapability
 screenshotCapability

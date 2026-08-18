@@ -81,6 +81,9 @@ export function reduceReviewEvents(
         verifierReceipts: [],
         providerFailures: [],
         runtimeOperationReceipts: [],
+        runtimeStructureObservations: [],
+        runtimeStateObservations: [],
+        runtimeScenarioTransitions: [],
         artifacts: [],
       };
       if (session.obligationContractVersion === 1 && session.requiredObligations.length === 0) {
@@ -181,6 +184,14 @@ export function reduceReviewEvents(
         } : {}),
       });
       if (payload.runtimeReceipt) session.runtimeOperationReceipts.push(payload.runtimeReceipt);
+      if (payload.structureObservation) {
+        if (payload.structureObservation.caseId !== payload.caseId) throw new Error('Runtime Structure observation is outside the rendered Case.');
+        session.runtimeStructureObservations = replaceByCase(session.runtimeStructureObservations, payload.structureObservation);
+      }
+      if (payload.stateObservation) {
+        if (payload.stateObservation.caseId !== payload.caseId || payload.stateObservation.shell.screenId !== payload.screenId) throw new Error('Runtime State observation is outside the rendered Case.');
+        session.runtimeStateObservations = replaceByCase(session.runtimeStateObservations, payload.stateObservation);
+      }
       session.renderedSourceDigests.push(payload.sourceDigest);
       session.artifacts.push(payload.target);
     } else if (payload.kind === 'scenario-replayed') {
@@ -198,6 +209,7 @@ export function reduceReviewEvents(
       )) throw new Error('Structured Scenario receipt identity does not match its Review event.');
       session.replayedScenarioCaseIds.push(payload.caseId);
       if (payload.runtimeReceipt) session.runtimeOperationReceipts.push(payload.runtimeReceipt);
+      if (payload.transition) session.runtimeScenarioTransitions = replaceByCase(session.runtimeScenarioTransitions, payload.transition);
     } else if (payload.kind === 'artifacts-compared') {
       if (event.actor !== 'runner' || !event.tool) throw new Error('Compare facts require a successful comparator receipt.');
       const attempt = session.attempts.find((item) => item.attemptId === payload.attemptId);
@@ -318,8 +330,12 @@ export function reduceReviewEvents(
 
 function assertCompletionGates(session: ReviewSession): void {
   const missingViewed = session.requiredSourceDigests.filter((item) => !session.viewedSourceDigests.includes(item));
-  const missingRendered = session.requiredSourceDigests.filter((item) => !session.renderedSourceDigests.includes(item));
-  const missingScenarios = session.requiredScenarioCaseIds.filter((item) => !session.replayedScenarioCaseIds.includes(item));
+  const missingRendered = session.runtimeProvider.required
+    ? session.requiredSourceDigests.filter((item) => !session.renderedSourceDigests.includes(item))
+    : [];
+  const missingScenarios = session.runtimeProvider.required
+    ? session.requiredScenarioCaseIds.filter((item) => !session.replayedScenarioCaseIds.includes(item))
+    : [];
   const openBlocking = session.findings.filter((item) => ['Critical', 'Major'].includes(item.severity) && item.status === 'open');
   const unverified = session.findings.filter((item) => item.severity === 'Unverified' || item.status === 'unverified');
   const assessedById = new Map(session.obligationAssessments.map((item) => [item.obligationId, item]));
@@ -389,4 +405,8 @@ function normalizeSession(session: ReviewSession): ReviewSession {
   session.providerFailures.sort((a, b) => a.operationId.localeCompare(b.operationId) || a.attemptOrdinal - b.attemptOrdinal);
   session.authorizedTranches.sort((a, b) => a.screenId.localeCompare(b.screenId) || a.tranche - b.tranche);
   return session;
+}
+
+function replaceByCase<T extends { caseId: string }>(items: T[], value: T): T[] {
+  return [...items.filter((item) => item.caseId !== value.caseId), value].sort((a, b) => a.caseId.localeCompare(b.caseId));
 }

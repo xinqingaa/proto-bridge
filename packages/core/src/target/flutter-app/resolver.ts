@@ -48,6 +48,7 @@ export const FlutterReviewContract = z.object({
     identityServiceExtension: z.string().regex(/^ext\.[A-Za-z0-9_.-]+$/),
     prepareServiceExtension: z.string().regex(/^ext\.[A-Za-z0-9_.-]+$/),
     observeServiceExtension: z.string().regex(/^ext\.[A-Za-z0-9_.-]+$/),
+    observationContractVersion: z.literal(1),
     reviewHarnessVersion: z.string().min(1),
     textEntryEmulation: z.boolean(),
     settleTimeoutMs: z.number().int().min(100).max(30_000).optional(),

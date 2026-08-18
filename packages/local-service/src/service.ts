@@ -17,6 +17,7 @@ import {
   SnapshotId,
   StalenessReportId,
   V2ContractError,
+  buildHandoffIndex,
   buildEvidenceInventory,
   computeScopeKey,
   type BundleSnapshot,
@@ -45,11 +46,16 @@ import {
   type V2Store,
 } from '@proto-bridge/core/v2/store';
 import {
-  compileReconstructionObligations,
+  selectReviewProfileForConsumer,
   type ReviewProviderFailure,
   type ReviewProviderSessionReceipt,
   type ReviewSession,
+  type ReviewSessionSeed,
 } from '@proto-bridge/core/review';
+import {
+  detectTargetAdapter,
+  readTargetIdentity,
+} from '@proto-bridge/core/target';
 import {
   LOCAL_SERVICE_PROTOCOL_VERSION,
   type BundleEvidenceDetails,
@@ -217,6 +223,20 @@ function matrixIdentity(preflight: CapturePreflight): string {
   );
 }
 
+function reviewSeedSelection(seed: ReviewSessionSeed): object {
+  return {
+    targetContentDigest: seed.targetContentDigest,
+    selectedCaseIds: seed.selectedCaseIds,
+    requiredSourceDigests: seed.requiredSourceDigests,
+    requiredScenarioCaseIds: seed.requiredScenarioCaseIds,
+    obligationContractVersion: seed.obligationContractVersion,
+    requiredObligations: seed.requiredObligations,
+    verificationContractVersion: seed.verificationContractVersion,
+    reviewProfile: seed.reviewProfile,
+    runtimeProvider: seed.runtimeProvider,
+  };
+}
+
 async function selectedCasesForSnapshot(
   store: V2Store,
   bundleId: BundleId,
@@ -368,7 +388,10 @@ export class ProtoBridgeLocalService {
     for (const failure of failures) {
       await this.reviews.append({ reviewRunId, actor: 'runner', tool: providerSession.providerId, payload: { kind: 'provider-call-failed', failure } });
     }
-    if (session.providerSession?.sessionIdentityDigest === providerSession.sessionIdentityDigest) return;
+    if (
+      session.providerSession?.sessionIdentityDigest === providerSession.sessionIdentityDigest
+      && JSON.stringify(session.providerSession.application) === JSON.stringify(providerSession.application)
+    ) return;
     if (session.providerSession) {
       await this.reviews.append({
         reviewRunId,
@@ -708,13 +731,46 @@ export class ProtoBridgeLocalService {
       if (!handoff || handoff.bundleId !== body.seed.bundleId || handoff.snapshotId !== body.seed.snapshotId) {
         throw new V2ContractError('unknown-reference', 'Review seed does not match a persisted Handoff/Bundle/Snapshot.');
       }
-      const requiredObligations = compileReconstructionObligations(
-        (await buildAcceptanceContractFromStore({ store: this.store, handoff })).contract,
-      );
-      if (body.seed.obligationContractVersion !== 1 || body.seed.verificationContractVersion !== 1 || JSON.stringify(body.seed.requiredObligations) !== JSON.stringify(requiredObligations)) {
-        throw new V2ContractError('invalid-schema', 'Review seed obligations do not match the fixed Handoff Acceptance Contract.');
+      const built = await buildAcceptanceContractFromStore({ store: this.store, handoff });
+      const blobs = await this.store.listBlobRecords(handoff.bundleId);
+      const consumer = { handoff, evidence: built.evidence, acceptance: built.contract, blobs };
+      const selected = selectReviewProfileForConsumer(consumer, body.seed.reviewProfile?.coverageProfile);
+      const index = buildHandoffIndex(consumer);
+      const selectedSet = new Set(selected.selectedCaseIds);
+      const selectedGroups = index.screenshotGroups.filter((group) => group.caseIds.some((caseId) => selectedSet.has(caseId)));
+      const requiredSourceDigests = [...new Set(selectedGroups.flatMap((group) => group.digest ? [group.digest] : []))].sort();
+      const adapter = await detectTargetAdapter(body.seed.targetRoot);
+      const targetIdentity = await readTargetIdentity(body.seed.targetRoot);
+      if (targetIdentity.head !== body.seed.targetBaselineCommit) {
+        throw new V2ContractError('invalid-schema', 'Review Target baseline commit does not match the current Target HEAD.');
       }
-      success(response, await this.reviews.start(body.seed), 201);
+      if (adapter.adapterId === 'flutter') {
+        const coveredCases = new Set(selectedGroups.filter((group) => group.digest).flatMap((group) => group.caseIds));
+        const missingCases = selected.selectedCaseIds.filter((caseId) => !coveredCases.has(caseId));
+        if (missingCases.length > 0) throw new V2ContractError('unknown-reference', `Flutter Runtime Review requires fixed Source Screenshot evidence for selected Cases: ${missingCases.join(', ')}.`);
+      }
+      const authoritative = {
+        targetContentDigest: targetIdentity.contentDigest,
+        selectedCaseIds: selected.selectedCaseIds,
+        requiredSourceDigests,
+        requiredScenarioCaseIds: selected.selectedScenarioCaseIds,
+        obligationContractVersion: 1 as const,
+        requiredObligations: selected.selectedObligations,
+        verificationContractVersion: 1 as const,
+        reviewProfile: selected.profile,
+        runtimeProvider: adapter.adapterId === 'flutter'
+          ? { required: true, providerId: 'dart-flutter-mcp' }
+          : { required: false },
+      };
+      if (
+        body.seed.obligationContractVersion !== 1
+        || body.seed.verificationContractVersion !== 1
+        || selectedGroups.some((group) => !group.digest)
+        || JSON.stringify(reviewSeedSelection(body.seed)) !== JSON.stringify(reviewSeedSelection({ ...body.seed, ...authoritative }))
+      ) {
+        throw new V2ContractError('invalid-schema', 'Review seed Profile, selection, Runtime provider, or obligations do not match the authoritative Handoff/Target calculation.');
+      }
+      success(response, await this.reviews.start({ ...body.seed, ...authoritative }), 201);
       return;
     }
 
@@ -762,6 +818,9 @@ export class ProtoBridgeLocalService {
       if (operation === 'render') {
         const body = (await readBody(request)) as RunTargetRenderRequest;
         const session = await this.reviews.read(reviewRunId);
+        if (!session.runtimeProvider.required || session.runtimeProvider.providerId !== 'dart-flutter-mcp') {
+          throw new V2ContractError('invalid-schema', 'This Review has no Flutter Runtime provider; render is not applicable.');
+        }
         try {
           const rendered = await new FlutterReviewRuntime(this.getFlutterMcpProvider()).render(session, body);
           await this.appendRuntimeProgress(reviewRunId, session, rendered.providerSession, rendered.failures);
@@ -774,6 +833,8 @@ export class ProtoBridgeLocalService {
               kind: 'target-rendered', screenId: rendered.artifact.owner.screenId, caseId: body.caseId,
               sourceDigest: body.sourceDigest, tranche: body.tranche, round: body.round, attemptId: body.attemptId,
               targetRevision: session.targetRevision, target: rendered.artifact, runtimeReceipt: rendered.runtimeReceipt,
+              structureObservation: rendered.structureObservation,
+              stateObservation: rendered.stateObservation,
             },
           });
           if (runtimeErrorsDetected(rendered.runtimeErrors)) updated = await this.recordRuntimeTerminal(reviewRunId, rendered.providerSession.providerId, 'needs-human', 'runtime-errors-detected');
@@ -786,6 +847,9 @@ export class ProtoBridgeLocalService {
       if (operation === 'replay') {
         const body = (await readBody(request)) as RunScenarioReplayRequest;
         const session = await this.reviews.read(reviewRunId);
+        if (!session.runtimeProvider.required || session.runtimeProvider.providerId !== 'dart-flutter-mcp') {
+          throw new V2ContractError('invalid-schema', 'This Review has no Flutter Runtime provider; Scenario replay is not applicable.');
+        }
         try {
           const replayed = await new FlutterReviewRuntime(this.getFlutterMcpProvider()).replay(session, body);
           await this.appendRuntimeProgress(reviewRunId, session, replayed.providerSession, replayed.failures);
@@ -852,7 +916,15 @@ export class ProtoBridgeLocalService {
       }
       const body = (await readBody(request)) as ConsumeReviewApprovalRequest;
       const approval = consumeReviewApproval(this.reviewApprovals, body.approvalToken, 'finalize', reviewRunId) as Extract<CreateReviewApprovalRequest, { kind: 'finalize' }>;
-      success(response, await this.reviews.append({ reviewRunId, actor: approval.actor, payload: { kind: 'human-finalized', confirmationRef: approval.confirmationRef, decision: 'complete' } }), 201);
+      const session = await this.reviews.read(reviewRunId);
+      success(response, await this.reviews.append({
+        reviewRunId,
+        actor: approval.actor,
+        payload: {
+          kind: 'human-finalized', confirmationRef: approval.confirmationRef,
+          decision: session.reviewProfile.coverageProfile === 'l3-full' ? 'complete' : 'accept',
+        },
+      }), 201);
       return;
     }
 

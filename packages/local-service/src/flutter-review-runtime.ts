@@ -10,6 +10,7 @@ import type {
   TargetScenarioTransition,
   TargetStateSnapshot,
 } from '@proto-bridge/core/review';
+import type { StructureIR } from '@proto-bridge/core/v2';
 import { readFlutterReviewContract } from '@proto-bridge/core/target';
 import {
   FlutterMcpProvider,
@@ -27,6 +28,8 @@ export type FlutterRuntimeRenderResult = {
   bytes: Uint8Array;
   runtimeReceipt: ReviewRuntimeOperationReceipt;
   runtimeErrors: unknown;
+  structureObservation: StructureIR;
+  stateObservation: TargetStateSnapshot;
 };
 
 export type FlutterRuntimeScenarioResult = {
@@ -59,6 +62,8 @@ export class FlutterReviewRuntime {
     failures.push(...prepared.failures);
     const inspected = await this.provider.callForApp('inspect', 'widget_inspector', { command: 'get_widget_tree', summaryOnly: false });
     failures.push(...inspected.failures);
+    const observed = await this.observe(contract, input.caseId, true);
+    failures.push(...observed.failures);
     const screenshot = await this.provider.callForApp('screenshot', 'flutter_driver_command', {
       command: 'screenshot',
       timeout: String(contract.runtime.settleTimeoutMs ?? 5_000),
@@ -81,6 +86,8 @@ export class FlutterReviewRuntime {
       bytes,
       runtimeReceipt: operationReceipt(screenshot, connected.application, connected.providerSession, 'screenshot', 'flutter_driver_command:screenshot', targetDigest),
       runtimeErrors: runtimeErrors.value,
+      structureObservation: observed.value.structure,
+      stateObservation: observed.value.state,
     };
   }
 
@@ -104,7 +111,7 @@ export class FlutterReviewRuntime {
       ...(selectedCase.stateSeed !== undefined ? { stateSeed: selectedCase.stateSeed } : {}),
     });
     failures.push(...prepared.failures);
-    const pre = await this.observe(contract, input.caseId);
+    const pre = await this.observe(contract, input.caseId, false);
     failures.push(...pre.failures);
     const actions: TargetScenarioAction[] = [];
     const operationDigests: string[] = [];
@@ -118,7 +125,7 @@ export class FlutterReviewRuntime {
       operationDigests.push(digest(JSON.stringify(performed.value)));
       actions.push(logicalAction(action));
     }
-    const post = await this.observe(contract, input.caseId);
+    const post = await this.observe(contract, input.caseId, false);
     failures.push(...post.failures);
     const runtimeErrors = await this.provider.callForApp('runtime-errors', 'get_runtime_errors', { clearRuntimeErrors: false });
     failures.push(...runtimeErrors.failures);
@@ -127,12 +134,12 @@ export class FlutterReviewRuntime {
       screenId: scenario.screenId,
       scenarioId: scenario.scenarioId,
       checkpointId: scenario.checkpointId,
-      preState: pre.value,
+      preState: pre.value.state,
       actions,
-      postState: post.value,
+      postState: post.value.state,
       visibleResult: {
-        visibleRegionIds: [...post.value.visibleRegionIds],
-        changedRegionIds: changedRegions(pre.value, post.value),
+        visibleRegionIds: [...post.value.state.visibleRegionIds],
+        changedRegionIds: changedRegions(pre.value.state, post.value.state),
       },
     };
     const resultDigest = digest(JSON.stringify({ transition, operationDigests }));
@@ -183,9 +190,16 @@ export class FlutterReviewRuntime {
     };
   }
 
-  private async observe(contract: FlutterContract, caseId: string): Promise<FlutterMcpOperationResult<TargetStateSnapshot>> {
+  private async observe(
+    contract: FlutterContract,
+    caseId: string,
+    requireStructure: boolean,
+  ): Promise<FlutterMcpOperationResult<{ state: TargetStateSnapshot; structure: StructureIR }>> {
     const observed = await this.provider.invokeServiceExtension('inspect', contract.runtime.observeServiceExtension, { caseId });
-    return { ...observed, value: parseStateSnapshot(observed.value, caseId) };
+    const state = parseStateSnapshot(observed.value, caseId);
+    const structure = parseStructureObservation(observed.value, caseId);
+    if (requireStructure && !structure) throw new FlutterMcpProviderError('runtime-observation-invalid', 'Flutter Runtime observer did not return a complete Structure observation.', false);
+    return { ...observed, value: { state, structure: structure ?? emptyStructure(caseId) } };
   }
 
   private performAction(action: FlutterScenario['actions'][number], timeoutMs: number): Promise<FlutterMcpOperationResult<unknown>> {
@@ -269,6 +283,26 @@ function parseStateSnapshot(value: unknown, caseId: string): TargetStateSnapshot
   const unknownKeys = stringArray(candidate.unknownKeys);
   if (!visibleRegionIds || !unknownKeys || typeof candidate.complete !== 'boolean' || !Array.isArray(candidate.keyedCollections) || !Array.isArray(candidate.values)) throw new FlutterMcpProviderError('runtime-observation-invalid', 'Flutter Runtime observer returned an incomplete State snapshot.', false);
   return candidate as unknown as TargetStateSnapshot;
+}
+
+function parseStructureObservation(value: unknown, caseId: string): StructureIR | undefined {
+  const candidate = findObject(value, (item) => item.caseId === caseId && Array.isArray(item.regions) && Array.isArray(item.rootRegionIds));
+  if (
+    !candidate
+    || !Array.isArray(candidate.siblingGroups)
+    || !Array.isArray(candidate.siblingRelations)
+    || !Array.isArray(candidate.scrollContainers)
+    || typeof candidate.complete !== 'boolean'
+    || !Array.isArray(candidate.unknownRegionIds)
+  ) return undefined;
+  return candidate as unknown as StructureIR;
+}
+
+function emptyStructure(caseId: string): StructureIR {
+  return {
+    caseId, regions: [], rootRegionIds: [], siblingGroups: [], siblingRelations: [], scrollContainers: [],
+    complete: false, unknownRegionIds: ['<not-requested>'],
+  };
 }
 
 function changedRegions(before: TargetStateSnapshot, after: TargetStateSnapshot): string[] {
