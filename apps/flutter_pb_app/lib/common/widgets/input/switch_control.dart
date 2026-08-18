@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/ts.dart';
 
-/// 对齐 pbwork `SwitchControl`。
+/// 对齐 pbwork `Switch`。默认开启色为 `color.primary`。
+/// Flutter 暂不暴露 Token-ref 色槽参数。
 class CommonSwitch extends StatelessWidget {
   const CommonSwitch({
     super.key,

@@ -24,6 +24,7 @@ export 'widgets/navigation/app_bar.dart';
 export 'widgets/navigation/bottom_nav.dart';
 export 'widgets/navigation/filter_bar.dart';
 export 'widgets/navigation/primary_tabs.dart';
+export 'widgets/navigation/screen_transition.dart';
 export 'widgets/navigation/secondary_tabs.dart';
 export 'widgets/navigation/tab_item.dart';
 export 'widgets/navigation/tab_view.dart';

@@ -96,6 +96,10 @@
       "symbol": "CommonScrollableDataList",
       "import": "common/widgets.dart"
     },
+    "screen-transition": {
+      "symbol": "PbPageTransitions.theme",
+      "import": "common/widgets.dart"
+    },
     "search-bar": {
       "symbol": "CommonSearchBar",
       "import": "common/widgets.dart"

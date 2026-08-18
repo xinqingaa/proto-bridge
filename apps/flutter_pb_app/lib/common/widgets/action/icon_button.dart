@@ -4,7 +4,15 @@ import '../../../theme/ts.dart';
 import 'button.dart';
 import 'icon.dart';
 
+/// 对齐 pbwork Icon Button `tone`。
+enum CommonIconButtonTone { primary, secondary }
+
+/// 对齐 pbwork Icon Button `variant`。
+enum CommonIconButtonVariant { tonal, flat, outlined, text }
+
 /// 紧凑 Lucide 操作；[label] 同时作为 tooltip 与无障碍名称。
+///
+/// [quarterTurns] 是 Target 便利参数，用于旋转图标（例如返回箭头），不是 Producer prop。
 class CommonIconButton extends StatelessWidget {
   const CommonIconButton({
     super.key,
@@ -12,8 +20,8 @@ class CommonIconButton extends StatelessWidget {
     required this.label,
     this.onPressed,
     this.size = CommonControlSize.md,
-    this.tone = CommonButtonTone.secondary,
-    this.variant = CommonButtonVariant.tonal,
+    this.tone = CommonIconButtonTone.secondary,
+    this.variant = CommonIconButtonVariant.tonal,
     this.loading = false,
     this.disabled = false,
     this.quarterTurns = 0,
@@ -23,8 +31,8 @@ class CommonIconButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
   final CommonControlSize size;
-  final CommonButtonTone tone;
-  final CommonButtonVariant variant;
+  final CommonIconButtonTone tone;
+  final CommonIconButtonVariant variant;
   final bool loading;
   final bool disabled;
   final int quarterTurns;
@@ -43,35 +51,26 @@ class CommonIconButton extends StatelessWidget {
   };
 
   Color get _color => switch (tone) {
-    CommonButtonTone.action => TS.colors.action,
-    CommonButtonTone.primary => TS.colors.primary,
-    CommonButtonTone.secondary => TS.colors.secondary,
-    CommonButtonTone.error => TS.colors.error,
-    CommonButtonTone.success => TS.colors.success,
+    CommonIconButtonTone.primary => TS.colors.primary,
+    CommonIconButtonTone.secondary => TS.colors.secondary,
   };
 
   Color? get _background => switch (variant) {
-    CommonButtonVariant.flat => _color,
-    CommonButtonVariant.tonal => switch (tone) {
-      CommonButtonTone.action => TS.colors.actionSoft,
-      CommonButtonTone.primary => TS.colors.primarySoft,
-      CommonButtonTone.secondary => TS.colors.secondarySoft,
-      CommonButtonTone.error => TS.colors.errorSoft,
-      CommonButtonTone.success => TS.colors.successSoft,
+    CommonIconButtonVariant.flat => _color,
+    CommonIconButtonVariant.tonal => switch (tone) {
+      CommonIconButtonTone.primary => TS.colors.primarySoft,
+      CommonIconButtonTone.secondary => TS.colors.secondarySoft,
     },
-    CommonButtonVariant.outlined || CommonButtonVariant.text => null,
+    CommonIconButtonVariant.outlined || CommonIconButtonVariant.text => null,
   };
 
   @override
   Widget build(BuildContext context) {
     TS.of(context);
-    final foreground = variant == CommonButtonVariant.flat
+    final foreground = variant == CommonIconButtonVariant.flat
         ? switch (tone) {
-            CommonButtonTone.primary => TS.colors.onPrimary,
-            CommonButtonTone.action => TS.colors.onAction,
-            CommonButtonTone.error => TS.colors.onError,
-            CommonButtonTone.success => TS.colors.onSuccess,
-            CommonButtonTone.secondary => TS.colors.onSecondary,
+            CommonIconButtonTone.primary => TS.colors.onPrimary,
+            CommonIconButtonTone.secondary => TS.colors.onSecondary,
           }
         : _color;
 
@@ -86,8 +85,8 @@ class CommonIconButton extends StatelessWidget {
           shape: const CircleBorder(),
           foregroundColor: foreground,
           backgroundColor: _background,
-          side: variant == CommonButtonVariant.outlined
-              ? BorderSide(color: _color)
+          side: variant == CommonIconButtonVariant.outlined
+              ? BorderSide(color: _color, width: TS.border.widthHairline)
               : null,
         ),
         icon: loading

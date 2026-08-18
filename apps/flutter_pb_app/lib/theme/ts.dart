@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../common/widgets/navigation/screen_transition.dart';
 import '../storage/providers.dart';
 import 'app_colors.dart';
 import 'app_text_styles.dart';
@@ -18,9 +19,9 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
   void setMode(ThemeMode mode) {
     state = mode;
     unawaited(
-      ref.read(appPrefsProvider).writeThemeMode(
-        mode == ThemeMode.dark ? 'dark' : 'light',
-      ),
+      ref
+          .read(appPrefsProvider)
+          .writeThemeMode(mode == ThemeMode.dark ? 'dark' : 'light'),
     );
   }
 
@@ -30,8 +31,9 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
 }
 
 /// 当前亮度（对齐 pbwork light/dark 主题），经 [AppPrefs] 持久化。
-final themeModeProvider =
-    NotifierProvider<ThemeModeNotifier, ThemeMode>(ThemeModeNotifier.new);
+final themeModeProvider = NotifierProvider<ThemeModeNotifier, ThemeMode>(
+  ThemeModeNotifier.new,
+);
 
 /// 主题服务：组件侧请通过 [TS] 读取。
 class ThemeService {
@@ -74,6 +76,7 @@ class ThemeService {
       useMaterial3: true,
       brightness: _brightness,
       colorScheme: scheme,
+      pageTransitionsTheme: PbPageTransitions.theme(),
       scaffoldBackgroundColor: colors.background,
       dividerColor: colors.divider,
       appBarTheme: AppBarTheme(

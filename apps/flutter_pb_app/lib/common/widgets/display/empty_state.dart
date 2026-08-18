@@ -11,8 +11,6 @@ class CommonEmptyState extends StatelessWidget {
     required this.title,
     this.description,
     this.icon = CommonIconName.inbox,
-    this.iconColor,
-    this.iconBackgroundColor,
     this.actionLabel,
     this.onAction,
   });
@@ -20,8 +18,6 @@ class CommonEmptyState extends StatelessWidget {
   final String title;
   final String? description;
   final CommonIconName icon;
-  final Color? iconColor;
-  final Color? iconBackgroundColor;
   final String? actionLabel;
   final VoidCallback? onAction;
 
@@ -39,13 +35,13 @@ class CommonEmptyState extends StatelessWidget {
               height: TS.sizing.avatarLg,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: iconBackgroundColor ?? TS.colors.primarySoft,
+                color: TS.colors.primarySoft,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 icon.data,
                 size: TS.sizing.iconLg,
-                color: iconColor ?? TS.colors.primary,
+                color: TS.colors.primary,
               ),
             ),
             SizedBox(height: TS.spacing.smPlus),
@@ -66,12 +62,7 @@ class CommonEmptyState extends StatelessWidget {
             ],
             if (actionLabel != null) ...[
               SizedBox(height: TS.spacing.sm),
-              CommonButton(
-                label: actionLabel!,
-                variant: CommonButtonVariant.tonal,
-                tone: CommonButtonTone.primary,
-                onPressed: onAction,
-              ),
+              CommonButton(label: actionLabel!, onPressed: onAction),
             ],
           ],
         ),

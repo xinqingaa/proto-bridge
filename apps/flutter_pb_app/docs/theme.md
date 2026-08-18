@@ -27,7 +27,7 @@ TS.effect
 - `opacity` / `motion` / `elevation` 负责交互状态、转场和材质层级；平台近似由公共 Theme 层统一翻译。
 - `border` / `layout` / `layer` / `effect` 负责边界、比例/约束、叠放层级与玻璃等效果；不能在 feature 中创建平行常量。
 
-具体值和类型只以 `lib/theme/app_tokens.dart` 及 Theme 实现为准，本文不复制第二份可变配置。PBWork 当前全部 153 个 Token 都在工程根目录 `proto-bridge.target.json` 映射到上述 accessor，并由 `lib/theme/proto_bridge_tokens.dart` 提供可执行检查点；组件只消费与自身语义相关的部分。
+具体值和类型只以 `lib/theme/app_tokens.dart` 及 Theme 实现为准，本文不复制第二份可变配置。PBWork 当前全部 154 个 Token 都在工程根目录 `proto-bridge.target.json` 映射到上述 accessor，并由 `lib/theme/proto_bridge_tokens.dart` 提供可执行检查点；组件只消费与自身语义相关的部分。手势、图表、玻璃模糊等 Token 已映射，但 Flutter 组件暂不消费，见 [proto-bridge.md](proto-bridge.md#flutter-实现暂不需要)。
 
 ## 颜色和文字
 

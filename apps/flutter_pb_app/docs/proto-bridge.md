@@ -30,6 +30,7 @@
 | `progress` | `CommonProgress` | `common/widgets.dart` |
 | `radio-group` | `CommonRadioGroup` | `common/widgets.dart` |
 | `scrollable-data-list` | `CommonScrollableDataList` | `common/widgets.dart` |
+| `screen-transition` | `PbPageTransitions.theme` | `common/widgets.dart` |
 | `search-bar` | `CommonSearchBar` | `common/widgets.dart` |
 | `secondary-tabs` | `CommonSecondaryTabs` | `common/widgets.dart` |
 | `spinner` | `CommonSpinner` | `common/widgets.dart` |
@@ -44,7 +45,7 @@
 
 ## Token mapping
 
-完整 Token id → `TS.*` accessor 映射只维护在根目录 `proto-bridge.target.json`，当前覆盖 PBWork 全部 153 个 Token，而不只覆盖组件已绑定的 106 个。`lib/theme/proto_bridge_tokens.dart` 提供同一映射的可执行使用点，让 resolver 同时验证“声明存在”和“当前 Dart API 可访问”。这份 Target 映射不等于恢复 MCP 完整 Catalog 读取；Agent 仍按当前任务读取必要的 Producer Contract、文档和源码。
+完整 Token id → `TS.*` accessor 映射只维护在根目录 `proto-bridge.target.json`，当前覆盖 PBWork 全部 154 个 Token，而不只覆盖组件已绑定的 128 个。`lib/theme/proto_bridge_tokens.dart` 提供同一映射的可执行使用点，让 resolver 同时验证“声明存在”和“当前 Dart API 可访问”。这份 Target 映射不等于恢复 MCP 完整 Catalog 读取；Agent 仍按当前任务读取必要的 Producer Contract、文档和源码。
 
 `transparent` 与 `none` 是绑定字面量，不是 Foundation Token，也不得生成 `TS.*` accessor 或 Target token obligation。
 
@@ -67,8 +68,24 @@ Target 只翻译语义，不复制 Web 表达：例如百分比映射为 Flutter
 - `menu` 精确映射为 `AppPop.dropMenu`；表单锚点 `CommonMenuField` 只是目标工程便利壳，不是第二套菜单实现。
 - `bottom-sheet`、`confirm`、`flow-sheet`、`loading`、`toast` 与 `menu` 全部经 `AppPop` 调用 `unified_popups`。
 - `CommonIcon` 使用 `lucide_icons_flutter` 映射 Producer 策展的 34 个稳定 id 。
+- `CommonButton` 只公开 `kind=primary|secondary|outlined`，配色由组件内部绑定 `color.action` / `color.action-soft` / `color.outline`；不保留 variant/tone 矩阵或 `text` 类型。
+- `CommonTextField` / `CommonTextArea` 在 `showLabel=false` 时无描边并填充 `color.surface-recessed`；`showLabel=true` 时显示标题、边框并填充 `color.surface`。
+- `screen-transition` 映射为 `PbPageTransitions.theme`：默认全部平台使用 iOS 侧滑（`CupertinoPageTransitionsBuilder`）；Android Fade Through 近似为 `ZoomPageTransitionsBuilder`，经 `PbPageTransitions.theme(mode: android)` 选择。不提供包住页面的容器，也不暴露 `screenKey` / `navigation`。
 - Flutter elevation、glass blur、布局比例和交互曲线属于平台语义翻译，不要求与 Web 数据结构同构。
-- 本工程只维护 31 个当前 componentId，不保留历史组件别名或旧 Dart API。公共 Widget 按 `action/input/display/navigation/data` 五类放在 `lib/common/widgets/`；`feedback` 由 `AppPop` 适配层承接，目标侧组合壳单列 `composition/`，统一从 `lib/common/widgets.dart` 导入。
+- 本工程只维护 32 个当前 componentId，不保留历史组件别名或旧 Dart API。公共 Widget 按 `action/input/display/navigation/data` 五类放在 `lib/common/widgets/`；`feedback` 由 `AppPop` 适配层承接，目标侧组合壳单列 `composition/`，统一从 `lib/common/widgets.dart` 导入。
+
+## Flutter 实现暂不需要
+
+下列 Producer 能力保持差异，Flutter 公开 API 不镜像：
+
+- 手势仲裁 Token（`layout.gesture-*`、`motion.duration-click-suppression`）的组件消费；Tab/列表使用官方 Gesture Arena。
+- 一级 Tab 玻璃 `effect.glass-backdrop` 与顶部过渡弧；选中面仍是静态 `LiquidGlassDecoration`。
+- Button / Icon Button 按压缩放。
+- TextField `clearable`（清除由 `CommonSearchBar` 承担）。
+- Checkbox / Switch / Radio 的实例 Token-ref 色槽参数；只保留 Contract 默认色。
+- FlowSheet 步骤点、`layout.sheet-max-height` 与弹层时长；`AppPop` 继续交给 `unified_popups` 默认几何。
+- 图表 Token 的业务消费。
+- `CommonIconButton.quarterTurns` 是 Target 便利参数，不是 Producer prop。
 
 ## 实现与验证
 

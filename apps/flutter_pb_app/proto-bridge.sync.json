@@ -3,9 +3,9 @@
   "producer": "apps/pbwork",
   "target": "apps/flutter_pb_app",
   "status": "synced",
-  "surfaceDigest": "sha256:05f105a6b72f30c046f087079ad22b17013d5411054202c5e819313dd0b7ff37",
+  "surfaceDigest": "sha256:a57a25dbd927122741702c207eb3ca02094e650073a46327b77e6e5485e8c08e",
   "sectionDigests": {
-    "components": "sha256:c672146eec8c6d23a6c4d0962d134d894a6940bdff64a76388ac0a962910493a",
+    "components": "sha256:9aec138bdf9466ee71063e6341956f1596b1507c7f2a471ac55c04780767ac5b",
     "roles": "sha256:7d60fc91350acf9551c7865b79d084ce278945a8c2c8c5856be8d5540ba19a93",
     "protocolSchemas": "sha256:3789806f9fda33c557afae78958cba4651854a2ed5a68fea81d01d456f0112a6",
     "tokenCatalog": "sha256:bf57eeab6a8d0d0ff3154fc21510af58725b62d746c7da447356fa6967485c83",
@@ -13,7 +13,7 @@
     "bindPool": "sha256:f1412469d8c5f5c0d4e0f71bb6208344e0d2fdc7fa64360078936aa0f16dd15c"
   },
   "componentDigests": {
-    "app-bar": "sha256:07598067cc46923ff0c1666bc5b5911850a206d7f87341fbc18d8918dbe2e9f1",
+    "app-bar": "sha256:e84eae6fcbfec2b6fd2503782b738456cbfb49331838b437ed1fdc8a3fb17d65",
     "avatar": "sha256:da1026541a7ecb9e67726351b7023b42e8f668d08bce7279c2f202a00c4ae06f",
     "badge": "sha256:2f3ccf870fecbbc8b97b2bdeab93ab138f2964409a03701d05936e1613a5c6ae",
     "bottom-sheet": "sha256:dbcad13e1141a1599c7f3a17c114d74e143873db9b43dac3d44d601fb54e0c60",
@@ -34,19 +34,20 @@
     "primary-tabs": "sha256:f29b3bd7512caaf7b7bb686c13405c4816690a7309762775731247e4938bd2af",
     "progress": "sha256:5eef798b5e68a1045c299580a75f0124441f5ef6878afc5f0fc7db36d98ccaf1",
     "radio-group": "sha256:74d36b1f144e6dbdde559a646a88619b6bbe9de74a4df79cd6f32465d096023f",
+    "screen-transition": "sha256:732bfd4335394758f160012a985dee419175e742faab4f6833674bcbc7a0b3a9",
     "scrollable-data-list": "sha256:ed601db766c3273f72e82a03f6f9f18f5b4e57ed66d5244fad55f0507b463718",
     "search-bar": "sha256:cd6d705c2e19b342b15cdab21978113ad5f0f9a3be1d97255f4be405c9fb2641",
     "secondary-tabs": "sha256:8d6238ad1ffc560200931f595d7ab8e7f03d8195494c3f574d0a28e3f0b85f0d",
     "spinner": "sha256:445401dc80a458abc33b87afe77b808489560ef1b0f9aec8377069f9c3bea161",
     "switch": "sha256:45394e0868dc3a4a7e78a9686e7650bfdbd00f429a1792c48dd50a34a73fb4b4",
     "tab-viewport": "sha256:d612bf20580e6c5b46fa15e6be6e49fe935e6af3ca620a6dfdeea7076ead9eb4",
-    "tabbar": "sha256:e03eb339ac625c64e7d0836956075618f5e9bb1834b8799dd974bd21c481da6c",
+    "tabbar": "sha256:724672a0960b89673f65011d2d2284b40fda19356a2de964dae164a8657adca5",
     "text-field": "sha256:bb94b48d9afe9ee6189c9313e6a011200be56b519ac4d08ff818205e2d95cce8",
     "textarea": "sha256:373dd9b794a19e366dc70ec9b1e38553e5ba7c715d906b7727e3674286935cf2",
     "toast": "sha256:8b416c7595816bc98ce9c8329e30a30455bcb7dca06ab76ca11fe107385eba65"
   },
   "counts": {
-    "components": 31,
+    "components": 32,
     "catalogTokens": 154,
     "bindTokens": 128,
     "mappedTokens": 154,

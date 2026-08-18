@@ -18,8 +18,6 @@
 
 尚未执行：真实 DTD/App attach spike、真实设备 Screenshot/interaction、真实 Handoff 的 L1/L2/L3 对照、OCR/文字 bbox、Flutter/Runtime E2E 和完整 `pnpm verify`。这些项目不能由 Fake Provider 结果代替。
 
-当前静态文档门禁仍有一项仓库既存 Target drift：Flutter target mapping 缺少已记录的 `screen-transition` component；它与本 Roadmap 的 Runtime provider 改造无关，未在本轮越界修改。
-
 ## Roadmap 定位
 
 PB/PBWork 核心 Evidence 链路已经完成验收，并继续作为当前产品基线：

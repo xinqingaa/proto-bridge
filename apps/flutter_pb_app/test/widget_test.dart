@@ -7,9 +7,7 @@ import 'package:flutter_pb_app/theme/ts.dart';
 import 'support/pump_app.dart';
 
 void main() {
-  testWidgets('Hub lists the current demo and prototype entries', (
-    tester,
-  ) async {
+  testWidgets('Hub lists the Demo entry', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -18,7 +16,6 @@ void main() {
 
     expect(find.text('flutter_pb_app'), findsOneWidget);
     expect(find.text('Demo 对照'), findsOneWidget);
-    expect(find.text('Cold Chain Ops'), findsOneWidget);
   });
 
   testWidgets('Demo entry opens the shared component comparison', (

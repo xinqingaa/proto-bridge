@@ -64,7 +64,9 @@ class _CommonTextFieldState extends State<CommonTextField> {
             hintText: widget.hint,
             errorText: widget.errorText,
             filled: true,
-            fillColor: TS.colors.surface,
+            fillColor: widget.showLabel
+                ? TS.colors.surface
+                : TS.colors.surfaceRecessed,
             border: widget.showLabel ? null : InputBorder.none,
             enabledBorder: widget.showLabel ? null : InputBorder.none,
             focusedBorder: widget.showLabel ? null : InputBorder.none,

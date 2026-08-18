@@ -30,8 +30,7 @@ class FeedbackDemoSection extends StatelessWidget {
               CommonButton(
                 label: 'Confirm',
                 block: true,
-                variant: CommonButtonVariant.tonal,
-                tone: CommonButtonTone.primary,
+                kind: CommonButtonKind.secondary,
                 onPressed: () async {
                   final ok = await AppPop.confirm(
                     title: '确认删除',
@@ -44,8 +43,7 @@ class FeedbackDemoSection extends StatelessWidget {
               CommonButton(
                 label: 'BottomSheet',
                 block: true,
-                variant: CommonButtonVariant.outlined,
-                tone: CommonButtonTone.primary,
+                kind: CommonButtonKind.outlined,
                 onPressed: () {
                   AppPop.sheet<void>(
                     title: '底部面板',
@@ -71,8 +69,7 @@ class FeedbackDemoSection extends StatelessWidget {
               CommonButton(
                 label: 'Loading',
                 block: true,
-                variant: CommonButtonVariant.tonal,
-                tone: CommonButtonTone.secondary,
+                kind: CommonButtonKind.secondary,
                 onPressed: () async {
                   await AppPop.runLoading(
                     message: '提交中',
@@ -87,8 +84,7 @@ class FeedbackDemoSection extends StatelessWidget {
               CommonButton(
                 label: 'FlowSheet',
                 block: true,
-                variant: CommonButtonVariant.outlined,
-                tone: CommonButtonTone.secondary,
+                kind: CommonButtonKind.outlined,
                 onPressed: () async {
                   final controller = FlowSheetController<String>();
                   final result = await AppPop.flowSheet<String>(
@@ -169,8 +165,7 @@ class _DemoFlowStepTwoState extends FlowSheetPageState<_DemoFlowStepTwo, void> {
           CommonButton(
             label: '返回',
             block: true,
-            variant: CommonButtonVariant.outlined,
-            tone: CommonButtonTone.primary,
+            kind: CommonButtonKind.outlined,
             onPressed: nav.pop,
           ),
           SizedBox(height: TS.spacing.sm),

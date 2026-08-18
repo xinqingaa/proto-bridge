@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -19,7 +20,7 @@ void main() {
     final components = contract['components']! as Map<String, Object?>;
 
     expect(mappings, hasLength(154));
-    expect(components, hasLength(31));
+    expect(components, hasLength(32));
     final catalog =
         jsonDecode(
               File(
@@ -311,6 +312,25 @@ void main() {
     expect(dark.color, const Color.fromRGBO(0, 0, 0, 0.28));
   });
 
+  test('default page transitions use iOS on every platform', () {
+    final theme = ThemeService.of(Brightness.light).toThemeData();
+    expect(
+      theme.pageTransitionsTheme.builders[TargetPlatform.iOS],
+      isA<CupertinoPageTransitionsBuilder>(),
+    );
+    expect(
+      theme.pageTransitionsTheme.builders[TargetPlatform.android],
+      isA<CupertinoPageTransitionsBuilder>(),
+    );
+    expect(PbPageTransitions.android, isA<ZoomPageTransitionsBuilder>());
+    expect(
+      PbPageTransitions.theme(
+        mode: PbPageTransitionMode.android,
+      ).builders[TargetPlatform.android],
+      isA<ZoomPageTransitionsBuilder>(),
+    );
+  });
+
   test('all curated Lucide ids resolve', () {
     expect(CommonIconName.values, hasLength(34));
     expect(
@@ -386,4 +406,53 @@ void main() {
       expect(progress.value, closeTo(0.68, 0.001));
     },
   );
+
+  testWidgets('button kinds use action tokens', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeService.of(Brightness.light).toThemeData(),
+        home: const Scaffold(
+          body: Column(
+            children: [
+              CommonButton(label: '主要'),
+              CommonButton(label: '次要', kind: CommonButtonKind.secondary),
+              CommonButton(label: '描边', kind: CommonButtonKind.outlined),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    BoxDecoration decorationOf(String label) {
+      return tester
+              .widget<Ink>(
+                find.descendant(
+                  of: find.widgetWithText(CommonButton, label),
+                  matching: find.byType(Ink),
+                ),
+              )
+              .decoration!
+          as BoxDecoration;
+    }
+
+    expect(decorationOf('主要').color, TS.colors.action);
+    expect(decorationOf('次要').color, TS.colors.actionSoft);
+    expect(decorationOf('描边').color, Colors.transparent);
+    expect(decorationOf('描边').border?.top.color, TS.colors.outline);
+  });
+
+  testWidgets('unlabeled text fields fill with surface-recessed', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeService.of(Brightness.light).toThemeData(),
+        home: const Scaffold(body: CommonTextField(hint: '无标题输入')),
+      ),
+    );
+
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.decoration?.fillColor, TS.colors.surfaceRecessed);
+    expect(field.decoration?.border, InputBorder.none);
+  });
 }

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/ts.dart';
 
-/// 对齐 pbwork `Checkbox`。
+/// 对齐 pbwork `Checkbox`。默认选中色为 `color.primary`。
+/// Flutter 暂不暴露 Token-ref 色槽参数。
 class CommonCheckbox extends StatelessWidget {
   const CommonCheckbox({
     super.key,
@@ -27,7 +28,10 @@ class CommonCheckbox extends StatelessWidget {
           : null,
       activeColor: TS.colors.primary,
       checkColor: TS.colors.onPrimary,
-      side: TS.border.strong,
+      side: BorderSide(
+        color: TS.colors.outline,
+        width: TS.border.widthHairline,
+      ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(TS.radius.xs),
       ),
@@ -53,7 +57,10 @@ class CommonCheckbox extends StatelessWidget {
         checkboxShape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(TS.radius.xs),
         ),
-        side: TS.border.strong,
+        side: BorderSide(
+          color: TS.colors.outline,
+          width: TS.border.widthHairline,
+        ),
       ),
     );
   }

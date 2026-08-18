@@ -2,26 +2,19 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/ts.dart';
 
-/// 对齐 pbwork Button `variant`。
-enum CommonButtonVariant { flat, tonal, outlined, text }
-
-/// 对齐 pbwork Button `tone`。
-enum CommonButtonTone { action, primary, secondary, error, success }
+/// 对齐 pbwork Button `kind`：主要、次要、描边。页面不配色槽。
+enum CommonButtonKind { primary, secondary, outlined }
 
 /// 对齐 pbwork `size`。
 enum CommonControlSize { sm, md, lg }
 
 /// 对齐 pbwork `Button`。
-///
-/// - [CommonButtonVariant.text] → 官方 [TextButton]
-/// - 其余 → [InkWell]/[GestureDetector] + [Container]
 class CommonButton extends StatelessWidget {
   const CommonButton({
     super.key,
     required this.label,
     this.onPressed,
-    this.variant = CommonButtonVariant.flat,
-    this.tone = CommonButtonTone.action,
+    this.kind = CommonButtonKind.primary,
     this.size = CommonControlSize.md,
     this.loading = false,
     this.block = false,
@@ -30,8 +23,7 @@ class CommonButton extends StatelessWidget {
 
   final String label;
   final VoidCallback? onPressed;
-  final CommonButtonVariant variant;
-  final CommonButtonTone tone;
+  final CommonButtonKind kind;
   final CommonControlSize size;
   final bool loading;
   final bool block;
@@ -50,89 +42,28 @@ class CommonButton extends StatelessWidget {
     }
   }
 
-  TextStyle get _labelStyle {
-    final base = size == CommonControlSize.sm
-        ? TS.textStyle.captionStrong
-        : TS.textStyle.label;
-    return base.copyWith(color: _foreground);
-  }
+  Color get _background => switch (kind) {
+    CommonButtonKind.primary => TS.colors.action,
+    CommonButtonKind.secondary => TS.colors.actionSoft,
+    CommonButtonKind.outlined => Colors.transparent,
+  };
 
-  Color get _foreground {
-    switch (variant) {
-      case CommonButtonVariant.flat:
-        switch (tone) {
-          case CommonButtonTone.action:
-            return TS.colors.onAction;
-          case CommonButtonTone.primary:
-            return TS.colors.onPrimary;
-          case CommonButtonTone.secondary:
-            return TS.colors.onSecondary;
-          case CommonButtonTone.error:
-            return TS.colors.onError;
-          case CommonButtonTone.success:
-            return TS.colors.onSuccess;
-        }
-      case CommonButtonVariant.tonal:
-      case CommonButtonVariant.outlined:
-      case CommonButtonVariant.text:
-        switch (tone) {
-          case CommonButtonTone.action:
-            return TS.colors.action;
-          case CommonButtonTone.primary:
-            return TS.colors.primary;
-          case CommonButtonTone.secondary:
-            return TS.colors.secondary;
-          case CommonButtonTone.error:
-            return TS.colors.error;
-          case CommonButtonTone.success:
-            return TS.colors.success;
-        }
-    }
-  }
+  Color get _borderColor => switch (kind) {
+    CommonButtonKind.primary => TS.colors.action,
+    CommonButtonKind.secondary => TS.colors.actionSoft,
+    CommonButtonKind.outlined => TS.colors.outline,
+  };
 
-  Color get _background {
-    switch (variant) {
-      case CommonButtonVariant.flat:
-        switch (tone) {
-          case CommonButtonTone.action:
-            return TS.colors.action;
-          case CommonButtonTone.primary:
-            return TS.colors.primary;
-          case CommonButtonTone.secondary:
-            return TS.colors.secondary;
-          case CommonButtonTone.error:
-            return TS.colors.error;
-          case CommonButtonTone.success:
-            return TS.colors.success;
-        }
-      case CommonButtonVariant.tonal:
-        switch (tone) {
-          case CommonButtonTone.action:
-            return TS.colors.actionSoft;
-          case CommonButtonTone.primary:
-            return TS.colors.primarySoft;
-          case CommonButtonTone.secondary:
-            return TS.colors.secondarySoft;
-          case CommonButtonTone.error:
-            return TS.colors.errorSoft;
-          case CommonButtonTone.success:
-            return TS.colors.successSoft;
-        }
-      case CommonButtonVariant.outlined:
-      case CommonButtonVariant.text:
-        return Colors.transparent;
-    }
-  }
-
-  Border? get _border {
-    if (variant != CommonButtonVariant.outlined) return null;
-    return Border.all(color: _foreground);
-  }
+  Color get _foreground => switch (kind) {
+    CommonButtonKind.primary => TS.colors.onAction,
+    CommonButtonKind.secondary => TS.colors.action,
+    CommonButtonKind.outlined => TS.colors.onSurface,
+  };
 
   @override
   Widget build(BuildContext context) {
     TS.of(context);
-
+    final radius = BorderRadius.circular(TS.radius.md);
     final child = Row(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -148,47 +79,41 @@ class CommonButton extends StatelessWidget {
           ),
           SizedBox(width: TS.spacing.sm),
         ],
-        Text(label, style: _labelStyle),
+        Text(
+          label,
+          style:
+              (size == CommonControlSize.sm
+                      ? TS.textStyle.captionStrong
+                      : TS.textStyle.label)
+                  .copyWith(color: _foreground),
+        ),
       ],
     );
 
-    // text → TextButton；其余 → InkWell + Container
-    switch (variant) {
-      case CommonButtonVariant.text:
-        return SizedBox(
-          width: block ? double.infinity : null,
-          height: _height,
-          child: TextButton(
-            onPressed: _enabled ? onPressed : null,
-            child: child,
-          ),
-        );
-      case CommonButtonVariant.flat:
-      case CommonButtonVariant.tonal:
-      case CommonButtonVariant.outlined:
-        final radius = BorderRadius.circular(TS.radius.md);
-        return SizedBox(
-          width: block ? double.infinity : null,
-          height: _height,
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: _enabled ? onPressed : null,
+    return SizedBox(
+      width: block ? double.infinity : null,
+      height: _height,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _enabled ? onPressed : null,
+          borderRadius: radius,
+          child: Ink(
+            decoration: BoxDecoration(
+              color: _background,
               borderRadius: radius,
-              child: Ink(
-                decoration: BoxDecoration(
-                  color: _background,
-                  borderRadius: radius,
-                  border: _border,
-                ),
-                child: Opacity(
-                  opacity: disabled ? TS.opacity.disabled : 1,
-                  child: Center(child: child),
-                ),
+              border: Border.all(
+                color: _borderColor,
+                width: TS.border.widthHairline,
               ),
             ),
+            child: Opacity(
+              opacity: disabled ? TS.opacity.disabled : TS.opacity.visible,
+              child: Center(child: child),
+            ),
           ),
-        );
-    }
+        ),
+      ),
+    );
   }
 }

@@ -5,10 +5,4 @@
 abstract final class AppRoutes {
   static const hub = '/';
   static const demo = '/demo';
-  static const coldChainExceptionQueue =
-      '/prototypes/cold-chain-ops-evidence/exception-queue';
-  static const coldChainShipmentDetail =
-      '/prototypes/cold-chain-ops-evidence/shipment-detail';
-  static const coldChainResolutionForm =
-      '/prototypes/cold-chain-ops-evidence/resolution-form';
 }

@@ -11,7 +11,7 @@ class CommonTextArea extends StatelessWidget {
     this.showLabel = false,
     this.hint,
     this.enabled = true,
-    this.rows = 3,
+    this.rows,
     this.onChanged,
   });
 
@@ -20,19 +20,20 @@ class CommonTextArea extends StatelessWidget {
   final bool showLabel;
   final String? hint;
   final bool enabled;
-  final int rows;
+  final int? rows;
   final ValueChanged<String>? onChanged;
 
   @override
   Widget build(BuildContext context) {
     TS.of(context);
+    final visibleRows = rows ?? TS.sizing.textareaRows;
     return Opacity(
       opacity: enabled ? TS.opacity.visible : TS.opacity.disabled,
       child: TextField(
         controller: controller,
         enabled: enabled,
-        minLines: rows,
-        maxLines: rows,
+        minLines: visibleRows,
+        maxLines: visibleRows,
         onChanged: onChanged,
         style: TS.textStyle.content,
         decoration: InputDecoration(
@@ -41,7 +42,7 @@ class CommonTextArea extends StatelessWidget {
           hintText: hint,
           alignLabelWithHint: true,
           filled: true,
-          fillColor: TS.colors.surface,
+          fillColor: showLabel ? TS.colors.surface : TS.colors.surfaceRecessed,
           border: showLabel ? null : InputBorder.none,
           enabledBorder: showLabel ? null : InputBorder.none,
           focusedBorder: showLabel ? null : InputBorder.none,

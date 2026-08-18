@@ -43,8 +43,7 @@ class CommonFormSection extends StatelessWidget {
             if (actionLabel != null)
               CommonButton(
                 label: actionLabel!,
-                variant: CommonButtonVariant.text,
-                tone: CommonButtonTone.primary,
+                kind: CommonButtonKind.outlined,
                 onPressed: onAction,
               ),
           ],

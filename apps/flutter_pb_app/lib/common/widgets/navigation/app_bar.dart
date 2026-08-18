@@ -51,7 +51,7 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
               label: backLabel,
               onPressed: onBack ?? () => Navigator.of(context).maybePop(),
               quarterTurns: 2,
-              variant: CommonButtonVariant.text,
+              variant: CommonIconButtonVariant.text,
             )
           : null,
       actions: showAction
@@ -61,7 +61,7 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
                 label: actionLabel,
                 onPressed: onAction,
                 size: CommonControlSize.sm,
-                variant: CommonButtonVariant.text,
+                variant: CommonIconButtonVariant.text,
               ),
             ]
           : null,

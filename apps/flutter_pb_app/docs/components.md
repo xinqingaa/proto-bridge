@@ -2,7 +2,7 @@
 
 公共组件按 Producer 的职责分类位于 `lib/common/widgets/{action,input,display,navigation,data}/`，Target 自己拥有的组合壳位于 `lib/common/widgets/composition/`，业务与测试统一从 `lib/common/widgets.dart` 导入。组件负责稳定的交互语义、尺寸和 Theme 映射；业务页面只传入数据、状态和回调。弹层统一走 `lib/common/overlay/app_pop.dart` 的 `AppPop`。
 
-目录分类只组织源码，不改变 `componentId` 或 role。`CommonFormSection` 等 Target 组合壳不得进入 31 项 Producer 组件映射；`AppPop` 仍保持独立弹层边界，不由 Widget barrel 隐式导出。
+目录分类只组织源码，不改变 `componentId` 或 role。`CommonFormSection` 等 Target 组合壳不得进入 32 项 Producer 组件映射；`AppPop` 仍保持独立弹层边界，不由 Widget barrel 隐式导出。`PbPageTransitions` 承接 `screen-transition`，由 Theme 应用，不是页面可组合的业务 Widget。
 
 ## 组件职责
 
@@ -18,13 +18,14 @@
 | `CommonScrollableDataList`         | `pull_to_refresh_flutter3` 下拉刷新、加载更多与回弹约束           |
 | `CommonSearchBar`                  | 搜索输入、提交、清除                                             |
 | `CommonMenuField`                  | `AppPop.dropMenu` 的表单锚点；不是第二套菜单实现                 |
-| `CommonTextField`                  | 单行文本输入                                                     |
-| `CommonTextArea`                   | 多行文本输入                                                     |
+| `CommonTextField`                  | 单行文本输入；无标题时 recessed 填充                             |
+| `CommonTextArea`                   | 多行文本输入；无标题时 recessed 填充                             |
 | `CommonRadioGroup`                 | 互斥选项集合                                                     |
 | `CommonCheckbox`                   | 独立勾选项                                                       |
 | `CommonSwitch`                     | 二值开关设置；不能用 Checkbox 静默替代                           |
-| `CommonButton`                     | 主要、次要、描边类型动作                                         |
+| `CommonButton`                     | 主要、次要、描边三种类型动作；页面不配色槽                     |
 | `CommonIconButton`                 | 单图标动作（含 loading）；必须提供 tooltip                       |
+| `PbPageTransitions`                | 栈级页面转场；默认 iOS 侧滑，可选 Android zoom                   |
 | `CommonPrimaryTabs`                | 无阴影 recessed 轨道 + 官方 indicator 驱动的 `LiquidGlassDecoration` 选中面 |
 | `CommonSecondaryTabs`              | 官方 TabBar + 从文字行盒定位的 10×5 caret 指示器                 |
 | `CommonTabView`                    | 官方 TabBarView 内容切换与 swipe 所有权                           |

@@ -11,16 +11,7 @@
 
 ## 参数
 
-需要参数时通过 `RouteSettings.arguments` 传递，并在目标页面集中解析：
-
-```dart
-Navigator.of(context).pushNamed(
-  AppRoutes.coldChainShipmentDetail,
-  arguments: {'shipmentId': 'SH-2048'},
-);
-```
-
-目标页面提供 `fromRouteArgs` 或等价的集中解析入口；不要在多个 widget 中重复解析同一参数。
+需要参数时通过 `RouteSettings.arguments` 传递，并在目标页面集中解析；不要在多个 widget 中重复解析同一参数。当前工程只有 Hub 与 Demo 两条无参路由；新增带参业务页时再提供 `fromRouteArgs` 或等价入口。
 
 ## 新增路由检查表
 

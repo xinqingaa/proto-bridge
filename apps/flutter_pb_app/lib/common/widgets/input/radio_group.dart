@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../theme/ts.dart';
 import 'choice_option.dart';
 
-/// 对齐 pbwork `RadioGroup`。
+/// 对齐 pbwork `RadioGroup`。默认选中色为 `color.primary`。
+/// Flutter 暂不暴露 Token-ref 色槽参数。
 class CommonRadioGroup<T> extends StatelessWidget {
   const CommonRadioGroup({
     super.key,

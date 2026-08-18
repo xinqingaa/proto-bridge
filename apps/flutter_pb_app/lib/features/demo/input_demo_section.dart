@@ -43,6 +43,8 @@ class _InputDemoSectionState extends State<InputDemoSection> {
             });
           },
           children: [
+            const CommonTextField(hint: '无标题输入'),
+            SizedBox(height: TS.spacing.md),
             const CommonTextField(label: '单行输入', showLabel: true, hint: '请输入'),
             SizedBox(height: TS.spacing.md),
             const CommonTextArea(label: '多行输入', showLabel: true),

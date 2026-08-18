@@ -22,25 +22,17 @@ class ActionDemoSection extends StatelessWidget {
             runSpacing: TS.spacing.sm,
             children: [
               CommonButton(
-                label: 'Flat Action',
-                onPressed: () => AppPop.toast('flat'),
+                label: '主要',
+                onPressed: () => AppPop.toast('primary'),
               ),
               CommonButton(
-                label: 'Tonal',
-                variant: CommonButtonVariant.tonal,
-                tone: CommonButtonTone.primary,
+                label: '次要',
+                kind: CommonButtonKind.secondary,
                 onPressed: () {},
               ),
               CommonButton(
-                label: 'Outlined',
-                variant: CommonButtonVariant.outlined,
-                tone: CommonButtonTone.primary,
-                onPressed: () {},
-              ),
-              CommonButton(
-                label: 'Text',
-                variant: CommonButtonVariant.text,
-                tone: CommonButtonTone.primary,
+                label: '描边',
+                kind: CommonButtonKind.outlined,
                 onPressed: () {},
               ),
               CommonIconButton(
