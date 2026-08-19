@@ -1,8 +1,10 @@
 # ADR 0009：Flutter 官方 MCP 使用操作者 DTD URI 与 Driver Bridge
 
-状态：Accepted
+状态：Superseded by [ADR 0010](./0010-flutter-mcp-remains-experimental.md)
 
 日期：2026-08-18
+
+本 ADR 记录当时实验实现采用的协议边界，不再描述当前默认产品行为。
 
 ## 背景
 

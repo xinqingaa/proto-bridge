@@ -3,8 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_pb_app/common/widgets.dart';
 import 'package:flutter_pb_app/features/cold_chain_ops/cold_chain_models.dart';
-import 'package:flutter_pb_app/review/authoritative_review_harness.dart';
-import 'package:flutter_pb_app/router/routes.dart';
+import 'package:flutter_pb_app/router/router.dart';
 
 import 'support/pump_app.dart';
 
@@ -21,8 +20,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
   }
 
-  NavigatorState navigator() =>
-      ProtoBridgeReviewHarness.navigatorKey.currentState!;
+  NavigatorState navigator() => appNavigatorKey.currentState!;
 
   testWidgets('Hub opens the cold-chain exception queue', (tester) async {
     await pumpPhone(tester);

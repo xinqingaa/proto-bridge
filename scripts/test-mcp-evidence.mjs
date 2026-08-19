@@ -113,17 +113,6 @@ try {
     "read_target_conventions",
     "find_target_examples",
     "validate_target_changes",
-    "start_target_review",
-    "read_target_review",
-    "read_review_obligations",
-    "verify_target_claims",
-    "render_target_case",
-    "replay_target_scenario",
-    "compare_target_artifacts",
-    "record_review_findings",
-    "record_review_assessments",
-    "request_review_tranche",
-    "finalize_target_review",
   ]) {
     assert(
       tools.tools?.some((tool) => tool.name === name),
@@ -131,8 +120,8 @@ try {
     );
   }
   assert(
-    tools.tools?.length === 27,
-    `Expected 27 MCP tools, received ${tools.tools?.length ?? 0}.`,
+    tools.tools?.length === 16,
+    `Expected 16 default MCP tools, received ${tools.tools?.length ?? 0}.`,
   );
   for (const removedName of [
     "list_evidence_bundles",
@@ -151,6 +140,17 @@ try {
     "reconstruct_page_context",
     "validate_ui_build",
     "validate_target_page",
+    "start_target_review",
+    "read_target_review",
+    "read_review_obligations",
+    "verify_target_claims",
+    "render_target_case",
+    "replay_target_scenario",
+    "compare_target_artifacts",
+    "record_review_findings",
+    "record_review_assessments",
+    "request_review_tranche",
+    "finalize_target_review",
   ]) {
     assert(
       !tools.tools?.some((tool) => tool.name === removedName),
@@ -206,12 +206,6 @@ try {
       targetTokens.resolutions?.[0]?.candidates?.[0]?.accessor === "TS.colors.error",
     "Target component/token resolver did not honor target-owned declarations and current code.",
   );
-  const flutterTargetCommit = targetComponents.targetRevisionKey?.currentRevision;
-  assert(
-    typeof flutterTargetCommit === "string" && flutterTargetCommit.length > 0,
-    "Target resolver did not expose the current Flutter commit.",
-  );
-
   targetFixture = await mkdtemp(path.join(os.tmpdir(), "pb-mcp-target-"));
   await mkdir(path.join(targetFixture, "lib", "theme"), { recursive: true });
   await mkdir(path.join(targetFixture, "lib", "common"), { recursive: true });
@@ -517,19 +511,6 @@ try {
       review.overallScore === undefined,
     "Review summary did not report Case omission without a score.",
   );
-  await expectToolErrorCode(
-    client.request("tools/call", {
-      name: "start_target_review",
-      arguments: {
-        handoffId: handoff.handoffId,
-        targetRoot: path.join(repoRoot, "apps/flutter_pb_app"),
-        targetBaselineCommit: flutterTargetCommit,
-        targetRevision: "revision",
-      },
-    }),
-    "review-service-unavailable",
-  );
-
   const next = await writer.commitRun({
     bundleId: reference.BUNDLE_ID,
     run: reference.RUN_2,

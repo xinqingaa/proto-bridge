@@ -20,25 +20,10 @@ import {
   summarizeReconstructionReviewTool,
   readEvidenceScreenshotTool,
 } from './read-evidence.js';
-import {
-  compareTargetArtifactsTool,
-  finalizeTargetReviewTool,
-  readTargetReviewTool,
-  readReviewObligationsTool,
-  recordReviewFindingsTool,
-  recordReviewAssessmentsTool,
-  recordScreenshotViewedTool,
-  renderTargetCaseTool,
-  replayTargetScenarioTool,
-  requestReviewTrancheTool,
-  startTargetReviewTool,
-  verifyTargetClaimsTool,
-} from './target-review.js';
 import { inspectTargetReadinessTool } from './inspect-target-readiness.js';
 
 const objectSchema = { type: 'object', additionalProperties: false };
 const stringArraySchema = { type: 'array', items: { type: 'string' } };
-const targetOccurrenceSchema = { type: 'object', additionalProperties: false, properties: { path: { type: 'string' }, line: { type: 'integer', minimum: 1 }, column: { type: 'integer', minimum: 1 } }, required: ['path', 'line'] };
 const outputSchema = { type: 'object', additionalProperties: true };
 const readOnly = {
   readOnlyHint: true,
@@ -68,15 +53,6 @@ function tool(
       properties,
       ...(required.length ? { required } : {}),
     },
-    outputSchema,
-  };
-}
-
-function reviewTool(name: string, title: string, description: string, properties: JsonObject, required: string[]): JsonObject {
-  return {
-    name, title, description,
-    annotations: { title, readOnlyHint: name === 'read_target_review', destructiveHint: false, idempotentHint: name === 'read_target_review', openWorldHint: true },
-    inputSchema: { ...objectSchema, properties, required },
     outputSchema,
   };
 }
@@ -126,43 +102,13 @@ const toolDefinitions: JsonValue[] = [
       },
     },
   }, ['handoffId', 'addressedCaseIds', 'viewedScreenshotBlobIds', 'replayedScenarioCaseIds', 'observations']),
-  tool('read_evidence_screenshot', '查看 Evidence Screenshot', '把固定 Snapshot 中的 Screenshot 作为真正的 MCP 图片返回；传 reviewRunId 时仅在图片读取成功后写入 authoritative viewed receipt。', { ...snapshot, blobId: { type: 'string' }, reviewRunId: { type: 'string' } }, ['bundleId', 'snapshotId', 'blobId']),
+  tool('read_evidence_screenshot', '查看 Evidence Screenshot', '把固定 Snapshot 中的 Screenshot 作为真正的 MCP 图片返回。', { ...snapshot, blobId: { type: 'string' } }, ['bundleId', 'snapshotId', 'blobId']),
   tool('read_target_conventions', '读取目标工程规范', '通过适用的 Target adapter 独立扫描目标工程；结果不进入 Evidence。', { targetRoot: { type: 'string' }, module: { type: 'string' }, roles: stringArraySchema, symbols: stringArraySchema }),
   tool('find_target_examples', '查找目标工程示例', '通过适用的 Target adapter 查找目标工程既有模式；结果不进入 Evidence。可排除 Control/candidate output，避免实验实现污染示例。', { targetRoot: { type: 'string' }, module: { type: 'string' }, pattern: { type: 'string' }, roles: stringArraySchema, symbols: stringArraySchema, screenId: { type: 'string' }, limit: { type: 'number' }, gitBase: { type: 'string' }, excludePaths: stringArraySchema, candidateOutputRoot: { type: 'string' } }),
   tool('resolve_target_components', '解析目标组件', '批量解析开放 Evidence component ID；目标文档优先，机器 Contract 不得覆盖政策，resolved 必须通过当前代码校验。', { targetRoot: { type: 'string' }, componentIds: stringArraySchema, gitBase: { type: 'string' }, excludePaths: stringArraySchema, candidateOutputRoot: { type: 'string' } }, ['targetRoot', 'componentIds']),
   tool('resolve_target_tokens', '解析目标 Token', '批量解析开放 Evidence token ID，并校验 accessor、定义、import 与当前目标 revision；启发式结果最多为 candidate。', { targetRoot: { type: 'string' }, tokenIds: stringArraySchema, gitBase: { type: 'string' }, excludePaths: stringArraySchema, candidateOutputRoot: { type: 'string' } }, ['targetRoot', 'tokenIds']),
-  tool('inspect_target_readiness', '检查 Target readiness', '编辑前读取固定 Handoff inventory，报告组件/Token resolver 覆盖、五维 inspector authority、只能 unverified 的维度、Case/Scenario 声明缺口和 Review blockers。', { handoffId: { type: 'string' }, targetRoot: { type: 'string' }, screenId: { type: 'string' }, gitBase: { type: 'string' }, excludePaths: stringArraySchema, candidateOutputRoot: { type: 'string' } }, ['handoffId', 'targetRoot']),
+  tool('inspect_target_readiness', '检查 Target readiness', '编辑前读取固定 Handoff inventory，报告组件/Token resolver 覆盖、五维 machine authority、实施 blockers 和未验证边界；缺少实验性 Runtime authority 不要求修改目标工程。', { handoffId: { type: 'string' }, targetRoot: { type: 'string' }, screenId: { type: 'string' }, gitBase: { type: 'string' }, excludePaths: stringArraySchema, candidateOutputRoot: { type: 'string' } }, ['handoffId', 'targetRoot']),
   tool('validate_target_changes', '验证目标工程变更', '通过适用的 Target adapter 只读验证目标变更，并复核实际采用的 resolved mapping 仍存在；目标仓库无需 ProtoBridge 配置。', { targetRoot: { type: 'string' }, gitBase: { type: 'string' }, allowedPaths: stringArraySchema, expectedFiles: stringArraySchema, resolvedMappings: { type: 'array', items: { type: 'object', additionalProperties: false, properties: { id: { type: 'string' }, kind: { type: 'string', enum: ['component', 'token'] }, symbol: { type: 'string' }, accessor: { type: 'string' }, importPath: { type: 'string' } }, required: ['id', 'kind'] } } }),
-  reviewTool('start_target_review', '开始 Target Review', '从固定 Handoff 与 Target 风险派生 authoritative L1/L2/L3 Review；requestedProfile 只能提升 Core 推导的覆盖级别。Flutter 自动要求官方 MCP Runtime，其他技术栈不启动 Flutter MCP。', { handoffId: { type: 'string' }, targetRoot: { type: 'string' }, targetBaselineCommit: { type: 'string' }, targetRevision: { type: 'string' }, reviewRunId: { type: 'string' }, requestedProfile: { type: 'string', enum: ['l1-quick', 'l2-focused', 'l3-full'] } }, ['handoffId', 'targetRoot', 'targetBaselineCommit', 'targetRevision']),
-  reviewTool('read_target_review', '读取 Target Review', '从 Local Service 恢复并校验 append-only Review event chain。', { reviewRunId: { type: 'string' } }, ['reviewRunId']),
-  reviewTool('read_review_obligations', '读取 Review 义务', '按 Screen、维度和 assessment 状态分页读取固定 Review obligations；Review 摘要不内嵌完整验收分母。', {
-    reviewRunId: { type: 'string' },
-    screenId: { type: 'string' },
-    dimension: { type: 'string', enum: ['structure', 'components', 'tokens', 'states', 'interactions'] },
-    status: { type: 'string', enum: ['unassessed', 'matched', 'deviation', 'unverified', 'not-applicable'] },
-    pageSize: { type: 'integer', minimum: 1, maximum: 100 },
-    cursor: { type: 'string' },
-  }, ['reviewRunId']),
-  reviewTool('render_target_case', '渲染 Target Case', '由 Local Service attach 已运行的官方 Flutter MCP App session，准备声明式 Case 并记录截图与 Runtime identity receipt；不发现设备、不启动 App、不执行 Target launcher。', { reviewRunId: { type: 'string' }, caseId: { type: 'string' }, sourceDigest: { type: 'string' }, tranche: { type: 'integer', minimum: 1 }, round: { type: 'integer', minimum: 1, maximum: 3 }, attemptId: { type: 'string' } }, ['reviewRunId', 'caseId', 'sourceDigest', 'tranche', 'round']),
-  reviewTool('replay_target_scenario', '回放 Target Scenario', '由 Local Service 经固定 Flutter MCP App session 执行声明式 finder/action，并记录 typed pre/action/post/visible-result 与 Runtime identity receipt。', { reviewRunId: { type: 'string' }, caseId: { type: 'string' } }, ['reviewRunId', 'caseId']),
-  reviewTool('compare_target_artifacts', '比较 Target artifacts', '生成可视 diff/overlay 和 normalized stop signature；不输出综合分数。', { reviewRunId: { type: 'string' }, attemptId: { type: 'string' }, sourceDigest: { type: 'string' }, targetDigest: { type: 'string' } }, ['reviewRunId', 'attemptId', 'sourceDigest', 'targetDigest']),
-  reviewTool('verify_target_claims', '验证 Target Claims', '把固定 obligation 绑定到 Target Structure/State/Scenario IR 或由当前 adapter 解释的精确 occurrence/slot，并记录机器 verifier receipt；不接受 Agent 自填 expected（目前内置：Flutter Dart occurrence）。', {
-    reviewRunId: { type: 'string' },
-    claims: { type: 'array', minItems: 1, maxItems: 100, items: { oneOf: [
-      { type: 'object', additionalProperties: false, properties: { obligationId: { type: 'string' }, dimension: { const: 'structure' }, caseId: { type: 'string' } }, required: ['obligationId', 'dimension', 'caseId'] },
-      { type: 'object', additionalProperties: false, properties: { obligationId: { type: 'string' }, dimension: { const: 'components' }, symbol: { type: 'string' }, occurrence: targetOccurrenceSchema, ownerSymbol: { type: 'string' }, targetSlot: { type: 'string' } }, required: ['obligationId', 'dimension', 'symbol', 'occurrence'] },
-      { type: 'object', additionalProperties: false, properties: { obligationId: { type: 'string' }, dimension: { const: 'tokens' }, accessor: { type: 'string' }, occurrence: targetOccurrenceSchema, ownerSymbol: { type: 'string' }, targetSlot: { type: 'string' } }, required: ['obligationId', 'dimension', 'accessor', 'occurrence', 'ownerSymbol', 'targetSlot'] },
-      { type: 'object', additionalProperties: false, properties: { obligationId: { type: 'string' }, dimension: { const: 'states' }, caseId: { type: 'string' } }, required: ['obligationId', 'dimension', 'caseId'] },
-      { type: 'object', additionalProperties: false, properties: { obligationId: { type: 'string' }, dimension: { const: 'interactions' }, caseId: { type: 'string' } }, required: ['obligationId', 'dimension', 'caseId'] },
-    ] } },
-  }, ['reviewRunId', 'claims']),
-  reviewTool('record_review_findings', '记录 Review findings', '记录 Agent finding；Agent 不能自证 Accepted deviation 或人工完成。', { reviewRunId: { type: 'string' }, findings: { type: 'array', items: { type: 'object', additionalProperties: true } } }, ['reviewRunId', 'findings']),
-  reviewTool('record_review_assessments', '核验还原义务', '逐项记录固定还原义务的 matched/deviation/unverified 结论；matched 必须引用 verify_target_claims 返回的成功 verifier receipt。', {
-    reviewRunId: { type: 'string' },
-    assessments: { type: 'array', items: { type: 'object', additionalProperties: false, properties: { obligationId: { type: 'string' }, status: { type: 'string', enum: ['matched', 'deviation', 'unverified'] }, detail: { type: 'string' }, evidenceDigests: stringArraySchema, verifierReceiptDigest: { type: 'string' }, targetBasis: { type: 'string' } }, required: ['obligationId', 'status', 'detail', 'evidenceDigests'] } },
-  }, ['reviewRunId', 'assessments']),
-  reviewTool('request_review_tranche', '应用 Review tranche 授权', '消费由 PBWork/CLI/operator 或 MCP host approval 预先签发的一次性 token；普通参数不能自证授权。', { reviewRunId: { type: 'string' }, approvalToken: { type: 'string' } }, ['reviewRunId', 'approvalToken']),
-  reviewTool('finalize_target_review', '人工完成 Target Review', '消费人工一次性确认 token；Reducer 会重新检查全部完成门禁。', { reviewRunId: { type: 'string' }, confirmationToken: { type: 'string' } }, ['reviewRunId', 'confirmationToken']),
 ];
 
 export function toolsList(): JsonValue[] {
@@ -183,7 +129,6 @@ export async function callTool(
 
   if (name === 'read_evidence_screenshot') {
     const screenshot = await readEvidenceScreenshotTool(context, args);
-    await recordScreenshotViewedTool(context, args, screenshot);
     return toolImage({
       data: screenshot.data,
       mimeType: screenshot.mimeType,
@@ -208,17 +153,6 @@ export async function callTool(
     resolve_target_tokens: () => resolveTargetTokensTool(args),
     inspect_target_readiness: () => inspectTargetReadinessTool(context, args),
     validate_target_changes: () => validateTargetChangesTool(args),
-    start_target_review: () => startTargetReviewTool(context, args),
-    read_target_review: () => readTargetReviewTool(context, args),
-    read_review_obligations: () => readReviewObligationsTool(context, args),
-    render_target_case: () => renderTargetCaseTool(context, args),
-    replay_target_scenario: () => replayTargetScenarioTool(context, args),
-    compare_target_artifacts: () => compareTargetArtifactsTool(context, args),
-    verify_target_claims: () => verifyTargetClaimsTool(context, args),
-    record_review_findings: () => recordReviewFindingsTool(context, args),
-    record_review_assessments: () => recordReviewAssessmentsTool(context, args),
-    request_review_tranche: () => requestReviewTrancheTool(context, args),
-    finalize_target_review: () => finalizeTargetReviewTool(context, args),
   };
   const handler = handlers[name];
   if (!handler) throw new Error(`Unknown tool: ${name}`);

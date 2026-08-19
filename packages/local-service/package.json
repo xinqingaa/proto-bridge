@@ -20,7 +20,8 @@
     "pretypecheck": "pnpm --filter @proto-bridge/core build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "pretest": "pnpm --filter @proto-bridge/core build",
-    "test": "vitest run"
+    "test": "vitest run --exclude test/flutter-mcp-official.test.ts",
+    "test:flutter-mcp-official": "vitest run test/flutter-mcp-official.test.ts"
   },
   "dependencies": {
     "@proto-bridge/core": "workspace:*"

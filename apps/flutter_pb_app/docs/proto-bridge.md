@@ -91,22 +91,7 @@ Target 只翻译语义，不复制 Web 表达：例如百分比映射为 Flutter
 
 实现前批量解析组件和 Token；`resolved` 只证明映射 symbol/accessor 可定位，组件完成还必须通过状态、交互和 Token 消费测试。Case/variant/interaction 必须映射到页面状态和命名路由；新增页面遵循 [routing.md](routing.md)，验证遵循 [testing.md](testing.md)。最终报告保留固定引用、映射结果、平台近似和未解决项。
 
-## Flutter authoritative review Harness
-
-正式 Runtime/Visual Review 使用 `review.version: 3` contract 和
-`dart-flutter-mcp` provider。它只 attach 到用户或 IDE 已启动的 debug App；
-Target 不提供设备选择、启动脚本或 stdout/图片 fallback。
-
-debug App 使用 Flutter Driver Bridge 暴露 identity、Review Control、Case ready 和
-typed observation 节点。Local Service 只调用官方
-`connect_dart_tooling_daemon`、`get_widget_tree`、`flutter_driver` 和
-`get_runtime_errors`，不依赖官方 server 未提供的通用 VM service Tool。业务 feature
-通过 delegate 把固定 Case 绑定到真实路由和 Riverpod state；当前 Demo delegate
-只用于官方 MCP capability spike，不替代冷链 Handoff 的业务实现与 L3 验收。
-
-启动供 Review attach 的 App 时，调用方必须用 `--dart-define` 传入实际 build 的
-`PB_TARGET_COMMIT`、`PB_TARGET_CONTENT_DIGEST` 和 `PB_APP_BUILD_DIGEST`。可先运行
-`pnpm pb:flutter-review-env -- apps/flutter_pb_app` 生成本次 build 的 `flutterArgs`。
-Driver Bridge 将从运行 App 返回这些值，Local Service 会把它们与 Review 固定的
-Target revision 交叉校验。App 启动后由操作者从 IDE 复制 DTD URI，并以
-`PB_FLUTTER_DTD_URI` 启动或重启 Local Service；URI 不进入 Store 或 MCP 返回。
+官方 Flutter MCP Runtime Review 的实验实现不属于当前目标工程 Contract。目标工程
+只维护业务代码、组件/Token 映射、路由和原生测试，不携带 ProtoBridge 专属 Driver
+Bridge、Case/Scenario 副本或 App build identity。实验背景、保留代码位置和重新评估
+条件见仓库 Roadmap。

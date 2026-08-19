@@ -23,4 +23,4 @@ flutter run
 cd ../.. && pnpm ds:target-sync:verify
 ```
 
-仓库根 `pnpm verify` 会执行上述 Flutter 静态分析与完整测试，以及 Producer/Target 同步和产品端到端门禁。
+仓库不因实验 Flutter MCP 固定 Flutter SDK；目标工程使用当前开发环境中的 Flutter。仓库根 `pnpm verify` 会执行上述 Flutter 静态分析与完整测试，以及 Producer/Target 同步和产品端到端门禁。

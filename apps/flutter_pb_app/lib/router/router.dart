@@ -6,10 +6,11 @@ import '../features/cold_chain_ops/resolution_form_page.dart';
 import '../features/cold_chain_ops/shipment_detail_page.dart';
 import '../features/demo/demo_page.dart';
 import '../features/hub/hub_page.dart';
-import '../review/authoritative_review_harness.dart';
 import 'routes.dart';
 
 export 'routes.dart';
+
+final appNavigatorKey = GlobalKey<NavigatorState>();
 
 final Map<String, WidgetBuilder> appRoutes = {
   AppRoutes.hub: (_) => const HubPage(),
@@ -32,6 +33,4 @@ final Map<String, WidgetBuilder> appRoutes = {
     );
     return ResolutionFormPage(args: args);
   },
-  ProtoBridgeReviewHarness.reviewRoute: (_) =>
-      const ProtoBridgeReviewControlPage(),
 };

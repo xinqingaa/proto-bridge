@@ -16,7 +16,7 @@ Product Design + Visual Exploration
   → Deliver (Handoff + human/debug artifacts + agent-prompt)
   → MCP fixed progressive projections
   → Agent implementation + target validation
-  → canonical Reconstruction Obligations + authoritative Target Review
+  → canonical Reconstruction Obligations + Target validation + consumer summary
 ```
 
 ## 1. 设计并晋级原型
@@ -128,7 +128,7 @@ inspect_evidence_workspace
   → 编辑前按 Screen 白话理解摘要与实现计划
   → 等待用户确认
   → Agent 自主实施
-  → 实施后 obligations / verify / Review
+  → 实施后 obligations / Target validation / summary
 ```
 
 Agent 通过 MCP：
@@ -140,11 +140,9 @@ Agent 通过 MCP：
 5. 非 baseline 状态读取紧凑 `read_case_delta`；只有明确来源问题才展开 `read_evidence_detail`；
 6. 每个 Screen 在编码前用简短散文概括 Evidence 理解（结构与滚动、组件/Token 落点意向、状态与交互）并附实现计划；这不是评分表，也不是验收分母；然后暂停等待用户明确批准；
 7. 用户批准后，阅读目标仓库自身规范与既有代码并自主组织实现；`read_implementation_plan` / `read_implementation_tranche` 仅诊断或 Review 辅助，不是默认实施路径；
-8. 实现并运行目标原生测试；实施后按 Screen/维度分页读取 Reconstruction Obligations，再调用 Target validation 与 authoritative Review。
+8. 实现并运行目标原生测试；实施后按 Screen/维度分页读取 Reconstruction Obligations，调用适用的 Target validation，并形成五维 Reconstruction Review summary。
 
-实现后的 authoritative Target Review 从固定 Handoff 的五维 Acceptance Contract 编译稳定、去重的 Reconstruction Obligations。Local Service 会独立重算并固定这组义务，客户端不能删减验收分母。Screenshot viewed、target render、artifact compare 和 Scenario replay 只证明所需 artifact 已覆盖；每项 structure、component、Token、state 和 interaction 义务仍需 `matched`、`deviation` 或 `unverified` assessment。五维 `matched` 都必须引用同一 obligation 的 verifier receipt；state/interaction verifier 会从 structured proof 自动写入 assessment，失败立即成为完成门禁。
-
-完成门禁要求全部义务已核验，且不存在 `deviation`、`unverified`、阻断 finding 或缺失 artifact receipt。`not-applicable` 只能由 operator/human 基于明确 Target 依据确认。旧 Review 日志可以读取，但没有 obligation contract 的旧 Session 不能继续完成。
+实现后的五维复查从固定 Handoff 的 Acceptance Contract 编译稳定、跨 Case 去重的 Reconstruction Obligations。Agent 结合固定 Screenshot、Target mapping、实际代码和目标原生测试报告 `matched`、`deviation`、`unverified` 或有依据的 `not-applicable`，最后调用 `summarize_reconstruction_review` 汇总 Case、Screenshot、Scenario 和五维结论。该结果的 authority 明确是 `consumer-reported-review`，不替代独立 Runtime 或最终视觉验收。
 
 Target 查询与 Capture Evidence 互相隔离。目标仓库的既有组件和约定可以指导实现，但不能覆盖原型 Evidence 中的 unknown 或 conflict。只有 resolver 返回 `resolved` 的映射才可视为已验证落点；`candidate`/`stale`/`conflict`/`unresolved` 必须披露，不能升格为已确认。
 

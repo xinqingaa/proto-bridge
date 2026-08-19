@@ -1,3 +1,7 @@
+/**
+ * @experimental Retained for the deferred Flutter MCP Roadmap. These handlers
+ * are intentionally not registered by the default MCP tool registry.
+ */
 import { createHash, randomUUID } from 'node:crypto';
 import {
   buildHandoffIndex,

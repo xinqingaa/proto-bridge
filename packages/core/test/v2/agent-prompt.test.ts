@@ -56,12 +56,16 @@ describe('agent-prompt', () => {
     expect(prompt).toContain(
       'Evidence Case/variant/interaction -> target state/navigation',
     );
-    expect(prompt).toContain('review.version: 3');
-    expect(prompt).toContain('debug-only Driver Bridge');
-    expect(prompt).toContain('operator-DTD attach');
-    expect(prompt).toContain('Flutter Driver extension');
+    expect(prompt).not.toContain('review.version: 3');
+    expect(prompt).not.toContain('Driver Bridge');
+    expect(prompt).not.toContain('operator-DTD');
+    expect(prompt).not.toContain('Flutter Driver extension');
+    expect(prompt).not.toContain('start_target_review');
+    expect(prompt).not.toContain('verify_target_claims');
     expect(prompt).toContain('优先复用目标工程已声明或扫描确认的组件');
     expect(prompt).toContain('相对 Screenshot/Fragment 的已知偏差');
+    expect(prompt).toContain('read_reconstruction_obligations');
+    expect(prompt).toContain('validate_target_changes');
     expect(prompt).toContain('summarize_reconstruction_review');
     expect(prompt).not.toMatch(/目标总分|最低总分|不得低于 80|加权分数/);
     expect(prompt).not.toContain('通用 Flutter 架构');

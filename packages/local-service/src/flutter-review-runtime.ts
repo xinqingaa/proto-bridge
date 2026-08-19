@@ -1,3 +1,7 @@
+/**
+ * @experimental Runtime orchestration retained for isolated tests and future
+ * Flutter MCP evaluation; it is not part of the default Consumer contract.
+ */
 import { createHash, randomUUID } from 'node:crypto';
 import type {
   ReviewApplicationReceipt,

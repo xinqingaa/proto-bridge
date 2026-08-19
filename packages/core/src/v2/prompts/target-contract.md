@@ -14,6 +14,4 @@
 
 如果没有可靠的 Target adapter 或目标工程规范，根据实际扫描到的代码和文档做有限判断，并明确报告未知项。不要把另一种工程的架构、组件命名、状态库或平台默认值带入当前目标。
 
-## Flutter authoritative Review readiness
-
-当 `inspect_target_readiness` 识别到 Flutter Target 时，实施计划必须同时报告 Runtime Review authority。缺少或无法覆盖固定 Handoff 的 `review.version: 3` Contract 时，计划必须包含 Harness 补齐工作：声明 `dart-flutter-mcp` provider、`operator-dtd-uri` attach、Case/Scenario route/fixture/state binding 和稳定 finder；在 debug-only App 中提供 identity/control/case-input/prepare/ready/observation Driver Bridge；启用 Flutter Driver extension；从同一运行 App 返回 typed State/Structure observation，并把 App build、Target commit/content digest 与 Review 固定绑定。该 Harness 只能在用户批准实施计划后实现。官方 MCP 只 attach 已运行 App，DTD URI 由操作者提供且不得进入 Store、receipt 或 MCP projection；不得把模拟器 UDID、设备选择、启动/停止命令、target launcher 或自述 stdout 作为 Runtime fallback。非 Flutter Target 不要求或启动此 Harness。
+`inspect_target_readiness` 中缺少 machine authority 表示该维度不能获得确定性的目标侧机器证明，不等于目标工程必须补充 Runtime Harness。实施仍以可靠的 mapping、目标工程规范、固定 Evidence 和实际测试为依据；最终报告必须披露未验证边界。

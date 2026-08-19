@@ -12,3 +12,4 @@
 - 按 Case 报告是否已处理、Screenshot 是否查看、Scenario 是否重放；按五个视角列出重要匹配、已知偏差和未验证事项，不输出自评分数。
 - 每份不同 Screenshot 内容实际通过 `read_evidence_screenshot` 查看过的代表 blobId，以及它覆盖的 Case；相同 digest 的别名 blobId 不要求重复读取。
 - 实际展开的 Screen packet、Case delta 和 detail projection，以及因没有实现问题而有意未读取的维度；不把未读取维度伪装为已验证。
+- 只有存在明显的最终视觉不确定性时，才在末尾提示用户可补充当前真机运行截图进行一次人工对照；未提供 Target 截图不阻止本次实现交付。

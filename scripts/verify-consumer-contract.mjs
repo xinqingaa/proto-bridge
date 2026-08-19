@@ -24,14 +24,16 @@ for (const capability of ['implementation-plan', 'implementation-tranche', 'targ
 for (const marker of ['read_implementation_plan', 'read_implementation_tranche', 'inspect_target_readiness']) {
   if (!prompt.includes(marker)) failures.push(`Core consumer contract missing ${marker}`);
 }
-for (const marker of ['verify_target_claims', 'state/interaction', 'projection contract version']) {
+for (const marker of ['read_reconstruction_obligations', 'summarize_reconstruction_review', 'projection contract version']) {
   if (!prompt.includes(marker)) failures.push(`Core consumer contract missing verifier/schema marker ${marker}`);
 }
 for (const marker of ['MCP_TOOL_CONTRACT_VERSION', 'CONSUMER_PROJECTION_VERSION']) {
   if (!runtime.includes(marker)) failures.push(`MCP runtime missing contract marker ${marker}`);
 }
-for (const marker of ['verify_target_claims', 'Target Structure/State/Scenario']) {
-  if (!registry.includes(marker)) failures.push(`MCP registry missing verifier schema marker ${marker}`);
+for (const marker of ['start_target_review', 'verify_target_claims', 'render_target_case', 'target-review-authoritative']) {
+  if (prompt.includes(marker) || registry.includes(`'${marker}'`) || runtime.includes(`'${marker}'`)) {
+    failures.push(`Default consumer surface still exposes experimental Flutter Review marker ${marker}`);
+  }
 }
 if (failures.length) {
   console.error(`Consumer contract verification failed (${failures.length}):\n- ${failures.join('\n- ')}`);

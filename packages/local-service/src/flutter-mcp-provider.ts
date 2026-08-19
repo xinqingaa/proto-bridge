@@ -1,3 +1,7 @@
+/**
+ * @experimental Retained for the deferred Flutter MCP Roadmap. The default
+ * Evidence workflow never constructs this provider.
+ */
 import { createHash, randomUUID } from 'node:crypto';
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import path from 'node:path';

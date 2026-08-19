@@ -1,7 +1,7 @@
 # 人工五维保真对照模板
 
 > 用途：实施会话已结束，且操作者明确要求「生成人工验收骨架/归档」之后，对照 Source 原型 / Evidence 与目标实施代码做人工 Review 归档。  
-> **不是** Agent 实施合同，**不是** authoritative Target Review。  
+> **不是** Agent 实施合同，也不生成机器 Runtime receipt。
 > **硬边界：** 不得写回 Prompt / Skill / MCP 默认链路；不得作为下一次实施的输入；不得驱动 Agent 按本文档反复改代码。
 
 ## 何时生成（旁路归档）
@@ -119,4 +119,4 @@
 
 ## 十、证据限制
 
-本记录结论来自：固定 refs、Source 原型、实施代码、人工对照。未宣称像素级自动验收，也不替代 authoritative Target Review。操作时间线为近似记录，不作为性能基准。
+本记录结论来自：固定 refs、Source 原型、实施代码、人工对照。未宣称像素级自动验收或机器 Runtime authority。操作时间线为近似记录，不作为性能基准。
