@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app/app.dart';
+import 'features/cold_chain_ops/cold_chain_review_delegate.dart';
 import 'review/authoritative_review_harness.dart';
-import 'review/demo_review_delegate.dart';
 import 'storage/providers.dart';
 
 Future<void> main() async {
@@ -14,7 +14,7 @@ Future<void> main() async {
   assert(() {
     ProtoBridgeReviewHarness.enable();
     if (ProtoBridgeReviewHarness.reviewMode) {
-      ProtoBridgeReviewHarness.installDelegate(DemoReviewDelegate());
+      ProtoBridgeReviewHarness.installDelegate(AppReviewDelegate());
     }
     return true;
   }());

@@ -649,6 +649,250 @@
         "screenId": "flutter-pb-app.demo",
         "route": "/demo",
         "variantId": "default"
+      },
+      "cold-chain-ops.exception-queue::attention-only::light::iphone-14": {
+        "screenId": "cold-chain-ops.exception-queue",
+        "route": "/cold-chain/exceptions",
+        "variantId": "attention-only"
+      },
+      "cold-chain-ops.exception-queue::critical-only::light::iphone-14": {
+        "screenId": "cold-chain-ops.exception-queue",
+        "route": "/cold-chain/exceptions",
+        "variantId": "critical-only"
+      },
+      "cold-chain-ops.exception-queue::critical-only::light::iphone-14::scenario=cold-chain-ops.exception-queue.focus-critical@critical-filtered": {
+        "screenId": "cold-chain-ops.exception-queue",
+        "route": "/cold-chain/exceptions",
+        "variantId": "critical-only"
+      },
+      "cold-chain-ops.exception-queue::default::light::iphone-14": {
+        "screenId": "cold-chain-ops.exception-queue",
+        "route": "/cold-chain/exceptions",
+        "variantId": "default"
+      },
+      "cold-chain-ops.exception-queue::empty::light::iphone-14": {
+        "screenId": "cold-chain-ops.exception-queue",
+        "route": "/cold-chain/exceptions",
+        "variantId": "empty"
+      },
+      "cold-chain-ops.exception-queue::error::light::iphone-14": {
+        "screenId": "cold-chain-ops.exception-queue",
+        "route": "/cold-chain/exceptions",
+        "variantId": "error"
+      },
+      "cold-chain-ops.exception-queue::loading::light::iphone-14": {
+        "screenId": "cold-chain-ops.exception-queue",
+        "route": "/cold-chain/exceptions",
+        "variantId": "loading"
+      },
+      "cold-chain-ops.exception-queue::warning-only::light::iphone-14": {
+        "screenId": "cold-chain-ops.exception-queue",
+        "route": "/cold-chain/exceptions",
+        "variantId": "warning-only"
+      },
+      "cold-chain-ops.resolution-form::approval-required::light::iphone-14": {
+        "screenId": "cold-chain-ops.resolution-form",
+        "route": "/cold-chain/resolution",
+        "variantId": "approval-required"
+      },
+      "cold-chain-ops.resolution-form::approval-validation-error::light::iphone-14": {
+        "screenId": "cold-chain-ops.resolution-form",
+        "route": "/cold-chain/resolution",
+        "variantId": "approval-validation-error"
+      },
+      "cold-chain-ops.resolution-form::approval-validation-error::light::iphone-14::scenario=cold-chain-ops.resolution-form.reject-missing-supervisor-approval@supervisor-required-visible": {
+        "screenId": "cold-chain-ops.resolution-form",
+        "route": "/cold-chain/resolution",
+        "variantId": "approval-validation-error"
+      },
+      "cold-chain-ops.resolution-form::confirm-dialog-open::light::iphone-14": {
+        "screenId": "cold-chain-ops.resolution-form",
+        "route": "/cold-chain/resolution",
+        "variantId": "confirm-dialog-open"
+      },
+      "cold-chain-ops.resolution-form::confirm-dialog-open::light::iphone-14::scenario=cold-chain-ops.resolution-form.confirm-complete-resolution@confirmation-visible": {
+        "screenId": "cold-chain-ops.resolution-form",
+        "route": "/cold-chain/resolution",
+        "variantId": "confirm-dialog-open"
+      },
+      "cold-chain-ops.resolution-form::default::light::iphone-14": {
+        "screenId": "cold-chain-ops.resolution-form",
+        "route": "/cold-chain/resolution",
+        "variantId": "default"
+      },
+      "cold-chain-ops.resolution-form::ready-to-submit::light::iphone-14": {
+        "screenId": "cold-chain-ops.resolution-form",
+        "route": "/cold-chain/resolution",
+        "variantId": "ready-to-submit"
+      },
+      "cold-chain-ops.resolution-form::ready-to-submit::light::iphone-14::scenario=cold-chain-ops.shipment-detail.start-resolution@resolution-ready": {
+        "screenId": "cold-chain-ops.resolution-form",
+        "route": "/cold-chain/resolution",
+        "variantId": "ready-to-submit"
+      },
+      "cold-chain-ops.resolution-form::submitted::light::iphone-14": {
+        "screenId": "cold-chain-ops.resolution-form",
+        "route": "/cold-chain/resolution",
+        "variantId": "submitted"
+      },
+      "cold-chain-ops.resolution-form::validation-error::light::iphone-14": {
+        "screenId": "cold-chain-ops.resolution-form",
+        "route": "/cold-chain/resolution",
+        "variantId": "validation-error"
+      },
+      "cold-chain-ops.resolution-form::validation-error::light::iphone-14::scenario=cold-chain-ops.resolution-form.reject-incomplete-resolution@required-fields-visible": {
+        "screenId": "cold-chain-ops.resolution-form",
+        "route": "/cold-chain/resolution",
+        "variantId": "validation-error"
+      },
+      "cold-chain-ops.shipment-detail::acknowledge-dialog-open::light::iphone-14": {
+        "screenId": "cold-chain-ops.shipment-detail",
+        "route": "/cold-chain/shipment",
+        "variantId": "acknowledge-dialog-open"
+      },
+      "cold-chain-ops.shipment-detail::action-sheet-open::light::iphone-14": {
+        "screenId": "cold-chain-ops.shipment-detail",
+        "route": "/cold-chain/shipment",
+        "variantId": "action-sheet-open"
+      },
+      "cold-chain-ops.shipment-detail::action-sheet-open::light::iphone-14::scenario=cold-chain-ops.shipment-detail.reveal-response-options@response-sheet-visible": {
+        "screenId": "cold-chain-ops.shipment-detail",
+        "route": "/cold-chain/shipment",
+        "variantId": "action-sheet-open"
+      },
+      "cold-chain-ops.shipment-detail::active-excursion::light::iphone-14": {
+        "screenId": "cold-chain-ops.shipment-detail",
+        "route": "/cold-chain/shipment",
+        "variantId": "active-excursion"
+      },
+      "cold-chain-ops.shipment-detail::active-excursion::light::iphone-14::scenario=cold-chain-ops.exception-queue.inspect-primary-exception@shipment-opened": {
+        "screenId": "cold-chain-ops.shipment-detail",
+        "route": "/cold-chain/shipment",
+        "variantId": "active-excursion"
+      },
+      "cold-chain-ops.shipment-detail::default::light::iphone-14": {
+        "screenId": "cold-chain-ops.shipment-detail",
+        "route": "/cold-chain/shipment",
+        "variantId": "default"
+      },
+      "cold-chain-ops.shipment-detail::sensor-offline::light::iphone-14": {
+        "screenId": "cold-chain-ops.shipment-detail",
+        "route": "/cold-chain/shipment",
+        "variantId": "sensor-offline"
+      }
+    },
+    "scenarios": {
+      "cold-chain-ops.exception-queue::critical-only::light::iphone-14::scenario=cold-chain-ops.exception-queue.focus-critical@critical-filtered": {
+        "screenId": "cold-chain-ops.exception-queue",
+        "scenarioId": "cold-chain-ops.exception-queue.focus-critical",
+        "checkpointId": "critical-filtered",
+        "actions": [
+          {
+            "actionId": "wait-critical-row",
+            "kind": "wait-for",
+            "targetRegionId": "cold-chain-ops.exception-queue.list.row",
+            "finder": {
+              "kind": "text",
+              "value": "EX-017 · SH-2048"
+            }
+          }
+        ]
+      },
+      "cold-chain-ops.shipment-detail::active-excursion::light::iphone-14::scenario=cold-chain-ops.exception-queue.inspect-primary-exception@shipment-opened": {
+        "screenId": "cold-chain-ops.shipment-detail",
+        "scenarioId": "cold-chain-ops.exception-queue.inspect-primary-exception",
+        "checkpointId": "shipment-opened",
+        "actions": [
+          {
+            "actionId": "wait-open-actions",
+            "kind": "wait-for",
+            "targetRegionId": "cold-chain-ops.shipment-detail.open-actions",
+            "finder": {
+              "kind": "value-key",
+              "value": "cold-chain-ops.shipment-detail.open-actions"
+            }
+          }
+        ]
+      },
+      "cold-chain-ops.resolution-form::ready-to-submit::light::iphone-14::scenario=cold-chain-ops.shipment-detail.start-resolution@resolution-ready": {
+        "screenId": "cold-chain-ops.resolution-form",
+        "scenarioId": "cold-chain-ops.shipment-detail.start-resolution",
+        "checkpointId": "resolution-ready",
+        "actions": [
+          {
+            "actionId": "wait-submit",
+            "kind": "wait-for",
+            "targetRegionId": "cold-chain-ops.resolution-form.submit",
+            "finder": {
+              "kind": "value-key",
+              "value": "cold-chain-ops.resolution-form.submit"
+            }
+          }
+        ]
+      },
+      "cold-chain-ops.resolution-form::confirm-dialog-open::light::iphone-14::scenario=cold-chain-ops.resolution-form.confirm-complete-resolution@confirmation-visible": {
+        "screenId": "cold-chain-ops.resolution-form",
+        "scenarioId": "cold-chain-ops.resolution-form.confirm-complete-resolution",
+        "checkpointId": "confirmation-visible",
+        "actions": [
+          {
+            "actionId": "wait-confirm",
+            "kind": "wait-for",
+            "targetRegionId": "cold-chain-ops.resolution-form.confirm-dialog",
+            "finder": {
+              "kind": "text",
+              "value": "确认提交"
+            }
+          }
+        ]
+      },
+      "cold-chain-ops.resolution-form::validation-error::light::iphone-14::scenario=cold-chain-ops.resolution-form.reject-incomplete-resolution@required-fields-visible": {
+        "screenId": "cold-chain-ops.resolution-form",
+        "scenarioId": "cold-chain-ops.resolution-form.reject-incomplete-resolution",
+        "checkpointId": "required-fields-visible",
+        "actions": [
+          {
+            "actionId": "wait-required",
+            "kind": "wait-for",
+            "targetRegionId": "cold-chain-ops.resolution-form.validation-error",
+            "finder": {
+              "kind": "text",
+              "value": "请补全异常原因、处置动作和三项现场确认。"
+            }
+          }
+        ]
+      },
+      "cold-chain-ops.resolution-form::approval-validation-error::light::iphone-14::scenario=cold-chain-ops.resolution-form.reject-missing-supervisor-approval@supervisor-required-visible": {
+        "screenId": "cold-chain-ops.resolution-form",
+        "scenarioId": "cold-chain-ops.resolution-form.reject-missing-supervisor-approval",
+        "checkpointId": "supervisor-required-visible",
+        "actions": [
+          {
+            "actionId": "wait-supervisor",
+            "kind": "wait-for",
+            "targetRegionId": "cold-chain-ops.resolution-form.validation-error",
+            "finder": {
+              "kind": "text",
+              "value": "超温已持续 47 分钟，必须指定值班主管后才能提交。"
+            }
+          }
+        ]
+      },
+      "cold-chain-ops.shipment-detail::action-sheet-open::light::iphone-14::scenario=cold-chain-ops.shipment-detail.reveal-response-options@response-sheet-visible": {
+        "screenId": "cold-chain-ops.shipment-detail",
+        "scenarioId": "cold-chain-ops.shipment-detail.reveal-response-options",
+        "checkpointId": "response-sheet-visible",
+        "actions": [
+          {
+            "actionId": "wait-sheet",
+            "kind": "wait-for",
+            "targetRegionId": "cold-chain-ops.shipment-detail.action-sheet",
+            "finder": {
+              "kind": "text",
+              "value": "填写处置记录"
+            }
+          }
+        ]
       }
     }
   }

@@ -11,7 +11,13 @@
 
 ## 参数
 
-需要参数时通过 `RouteSettings.arguments` 传递，并在目标页面集中解析；不要在多个 widget 中重复解析同一参数。当前工程只有 Hub 与 Demo 两条无参路由；新增带参业务页时再提供 `fromRouteArgs` 或等价入口。
+需要参数时通过 `RouteSettings.arguments` 传递，并在目标页面集中解析；不要在多个 widget 中重复解析同一参数。当前业务路由：
+
+- `/` Hub
+- `/demo` Demo 对照
+- `/cold-chain/exceptions` 异常队列，参数 `ExceptionQueueArgs.variantId`
+- `/cold-chain/shipment` 运输详情，参数 `ShipmentDetailArgs`
+- `/cold-chain/resolution` 处置表单，参数 `ResolutionFormArgs`
 
 ## 新增路由检查表
 

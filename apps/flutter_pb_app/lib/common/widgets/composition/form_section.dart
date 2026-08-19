@@ -12,6 +12,7 @@ class CommonFormSection extends StatelessWidget {
     this.description,
     this.actionLabel,
     this.onAction,
+    this.showRequiredMark = false,
   });
 
   final String title;
@@ -19,6 +20,7 @@ class CommonFormSection extends StatelessWidget {
   final List<Widget> children;
   final String? actionLabel;
   final VoidCallback? onAction;
+  final bool showRequiredMark;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +34,22 @@ class CommonFormSection extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: TS.textStyle.subtitle),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(title, style: TS.textStyle.subtitle),
+                      ),
+                      if (showRequiredMark) ...[
+                        SizedBox(width: TS.spacing.xs),
+                        Text(
+                          '必填',
+                          style: TS.textStyle.caption.copyWith(
+                            color: TS.colors.error,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                   if (description != null) ...[
                     SizedBox(height: TS.spacing.xxs),
                     Text(description!, style: TS.textStyle.caption),
