@@ -10,6 +10,7 @@ import {
 } from "../data";
 
 const focused = focusPrototype;
+const focusedLifecycle = "active" as const;
 </script>
 
 <template>
@@ -40,7 +41,7 @@ const focused = focusPrototype;
           ><b>{{ prototypeStats(focused.id).variants }}</b> 状态</span
         >
         <span
-          ><b>{{ LIFECYCLE_LABELS[focused.lifecycle] }}</b> 当前阶段</span
+          ><b>{{ LIFECYCLE_LABELS[focusedLifecycle] }}</b> 当前阶段</span
         >
       </div>
       <div class="cnt-log">

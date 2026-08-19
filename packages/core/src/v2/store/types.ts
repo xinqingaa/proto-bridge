@@ -30,6 +30,13 @@ import type {
 } from '../contracts/vocabulary.js';
 import type { EvidenceLevel } from '../contracts/vocabulary.js';
 import type { NormalizedCaptureScope } from '../contracts/scope.js';
+import type {
+  PrototypeFinalizedArtifacts,
+  PrototypeLifecycleEvent,
+  PrototypeLifecycleOperation,
+  PrototypeLifecycleRecord,
+  PrototypeLifecycleStage,
+} from '../contracts/prototype-lifecycle.js';
 
 export type CreateJobInput = {
   bundleId: BundleId;
@@ -172,6 +179,29 @@ export type WorkspaceStoreResetResult = {
   newGenerationId: string;
 };
 
+export type ImportPrototypeLifecycleInput = {
+  prototypeId: PrototypeId;
+  stage: PrototypeLifecycleStage;
+  artifacts: PrototypeFinalizedArtifacts | null;
+  note?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type UpdatePrototypeLifecycleOperationInput = {
+  prototypeId: PrototypeId;
+  expectedRevision: number;
+  operation: PrototypeLifecycleOperation;
+};
+
+export type TransitionPrototypeLifecycleInput = {
+  prototypeId: PrototypeId;
+  expectedRevision: number;
+  to: PrototypeLifecycleStage;
+  note?: string;
+  artifacts?: PrototypeFinalizedArtifacts | null;
+};
+
 /**
  * Store interface (pb-v2-implementation-guide.md "Evidence Store 落地"):
  * CLI, MCP and Service must depend on this interface, never construct
@@ -189,6 +219,18 @@ export interface V2Store {
   getWorkspaceLifecycle(refresh?: boolean): Promise<WorkspaceLifecycle>;
   assertHealthy(): Promise<void>;
   resetWorkspace(expectedGenerationId: string): Promise<WorkspaceStoreResetResult>;
+
+  ensurePrototypeLifecycle(prototypeId: PrototypeId): Promise<PrototypeLifecycleRecord>;
+  importPrototypeLifecycle(input: ImportPrototypeLifecycleInput): Promise<PrototypeLifecycleRecord>;
+  getPrototypeLifecycle(prototypeId: PrototypeId): Promise<PrototypeLifecycleRecord | undefined>;
+  listPrototypeLifecycles(): Promise<PrototypeLifecycleRecord[]>;
+  listPrototypeLifecycleEvents(prototypeId: PrototypeId): Promise<PrototypeLifecycleEvent[]>;
+  updatePrototypeLifecycleOperation(
+    input: UpdatePrototypeLifecycleOperationInput,
+  ): Promise<PrototypeLifecycleRecord>;
+  transitionPrototypeLifecycle(
+    input: TransitionPrototypeLifecycleInput,
+  ): Promise<{ record: PrototypeLifecycleRecord; event: PrototypeLifecycleEvent }>;
 
   createBundle(
     input: CreateBundleInput,

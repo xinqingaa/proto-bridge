@@ -74,6 +74,7 @@ export const StalenessReportId = stableId('stalenessReportId');
 export const HandoffId = stableId('handoffId');
 export const IssueId = stableId('issueId');
 export const BlobId = stableId('blobId');
+export const PrototypeLifecycleEventId = stableId('prototypeLifecycleEventId');
 
 /** Produced only by `computeScopeKey`; never authored by hand. */
 export const ScopeKey = z
@@ -108,4 +109,5 @@ export type StalenessReportId = z.infer<typeof StalenessReportId>;
 export type HandoffId = z.infer<typeof HandoffId>;
 export type IssueId = z.infer<typeof IssueId>;
 export type BlobId = z.infer<typeof BlobId>;
+export type PrototypeLifecycleEventId = z.infer<typeof PrototypeLifecycleEventId>;
 export type ScopeKey = z.infer<typeof ScopeKey>;

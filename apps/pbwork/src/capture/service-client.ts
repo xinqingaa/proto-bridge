@@ -17,11 +17,17 @@ import {
   type StoredPreflight,
   type WorkspaceResetPlan,
   type WorkspaceResetResult,
+  type PrototypeLifecycleState,
 } from "@proto-bridge/core/v2/service-contract";
 import type {
   AgentHandoff,
   CaptureJob,
   StalenessReport,
+  PrototypeLifecycleOperation,
+  PrototypeLifecycleStage,
+  PrototypeFinalizedArtifacts,
+  PrototypeLifecycleRecord,
+  PrototypeLifecycleEvent,
 } from "@proto-bridge/core/v2";
 import type { SelectionDraft } from "@proto-bridge/core/v2/capture";
 
@@ -72,6 +78,55 @@ export class CaptureServiceClient {
 
   consoleState(): Promise<CaptureConsoleState> {
     return this.request("/console");
+  }
+
+  prototypeLifecycles(): Promise<PrototypeLifecycleState> {
+    return this.request("/prototype-lifecycles");
+  }
+
+  ensurePrototypeLifecycles(prototypeIds: string[]): Promise<PrototypeLifecycleState> {
+    return this.request("/prototype-lifecycles/ensure", {
+      method: "POST",
+      body: { prototypeIds },
+    });
+  }
+
+  importPrototypeLifecycle(body: {
+    prototypeId: string;
+    stage: PrototypeLifecycleStage;
+    artifacts: PrototypeFinalizedArtifacts | null;
+    note?: string;
+    createdAt?: string;
+    updatedAt?: string;
+  }): Promise<PrototypeLifecycleRecord> {
+    return this.request(`/prototype-lifecycles/${encodeURIComponent(body.prototypeId)}/import`, {
+      method: "POST",
+      body,
+    });
+  }
+
+  updatePrototypeLifecycleOperation(
+    prototypeId: string,
+    expectedRevision: number,
+    operation: PrototypeLifecycleOperation,
+  ): Promise<PrototypeLifecycleRecord> {
+    return this.request(`/prototype-lifecycles/${encodeURIComponent(prototypeId)}/operation`, {
+      method: "POST",
+      body: { expectedRevision, operation },
+    });
+  }
+
+  transitionPrototypeLifecycle(body: {
+    prototypeId: string;
+    expectedRevision: number;
+    to: PrototypeLifecycleStage;
+    note?: string;
+    artifacts?: PrototypeFinalizedArtifacts | null;
+  }): Promise<{ record: PrototypeLifecycleRecord; event: PrototypeLifecycleEvent }> {
+    return this.request(`/prototype-lifecycles/${encodeURIComponent(body.prototypeId)}/transition`, {
+      method: "POST",
+      body,
+    });
   }
 
   evidenceInventory(): Promise<EvidenceInventory> {

@@ -945,5 +945,24 @@ export const useCaptureStore = defineStore("capture-v2", {
         this.busy = false;
       }
     },
+    async loadDelivery(deliveryId: string) {
+      this.busy = true;
+      this.clearError();
+      try {
+        const delivery = await captureServiceClient.deliveryDetails(deliveryId);
+        this.agentPrompt = delivery.agentPrompt;
+        this.deliveryArtifact = {
+          deliveryId: delivery.deliveryId,
+          agentPromptPath: delivery.agentPromptPath,
+          receiptPath: delivery.receiptPath,
+        };
+        return true;
+      } catch (error) {
+        this.setError(error);
+        return false;
+      } finally {
+        this.busy = false;
+      }
+    },
   },
 });

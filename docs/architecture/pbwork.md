@@ -127,7 +127,7 @@ Evidence Viewer 可以按 Screen、Case 和 Fragment组织内容，但必须保�
 
 ## 本地工作台状态
 
-画布设备、缩放、Inspector 和评论等工作台偏好可以使用 localStorage。Prototype lifecycle 也使用独立、版本化的 localStorage schema，但它是 PBWork 生命周期及正式产物关联的事实源，不是 Registry override。每类数据必须有独立 schema、容量边界、错误恢复和 key；读取失败不能静默覆盖原值。
+画布设备、缩放、Inspector 和评论等工作台偏好可以使用 localStorage。Prototype lifecycle 不使用 localStorage 作为事实源：Core Store 通过 Local Service 保存 record、immutable event history、operation 和 optimistic revision。旧的 `pbwork.prototype-lifecycle.v2` 仅作为一次性迁移输入；远端已有记录优先，只有引用能够由 Core/Delivery 校验的 `final`/`archived` 记录才会导入，否则从 `active` 初始化。Store reset 会一并移除生命周期记录。
 
 这些本地状态不能改变 Registry Contract、Store Evidence 或 Runtime URL 的业务语义。
 

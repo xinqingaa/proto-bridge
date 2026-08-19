@@ -1,13 +1,17 @@
 import { defineStore } from "pinia";
-import type { CaptureJob } from "@proto-bridge/core/v2";
+import type {
+  CaptureJob,
+  PrototypeFinalizedArtifacts,
+  PrototypeLifecycleEvent,
+  PrototypeLifecycleOperation,
+  PrototypeLifecycleRecord,
+  PrototypeLifecycleStage,
+} from "@proto-bridge/core/v2";
 import type { PrototypeLifecycle, PrototypeRecord } from "@/design-system/types";
 import { useCaptureStore } from "@/app/stores/capture";
 import { captureServiceClient } from "@/capture/service-client";
 
-const STORAGE_KEY = "pbwork.prototype-lifecycle.v2";
-const LEGACY_STORAGE_KEY = "pbwork.prototype-lifecycle.v1";
-const HISTORY_LIMIT = 500;
-
+const LEGACY_STORAGE_KEY = "pbwork.prototype-lifecycle.v2";
 const TERMINAL_JOB_STATUSES = new Set([
   "completed",
   "cancelled",
@@ -25,54 +29,12 @@ export const lifecycleTransitions: Record<
   archived: [],
 };
 
-export type FinalizationPhase =
-  | "preflighting"
-  | "awaiting-confirmation"
-  | "capturing"
-  | "awaiting-risks"
-  | "building-prompt";
-
-export type LifecycleOperation =
-  | { kind: "idle" }
-  | {
-      kind: "finalizing";
-      phase: FinalizationPhase;
-      startedAt: string;
-      jobId?: string;
-      bundleId?: string;
-      snapshotId?: string;
-    }
-  | {
-      kind: "rolling-back";
-      startedAt: string;
-      bundleIds: string[];
-    }
-  | {
-      kind: "failed";
-      action: "finalize" | "rollback";
-      message: string;
-      failedAt: string;
-    };
-
-export type FinalizedArtifacts = {
-  jobId: string;
-  bundleId: string;
-  snapshotId: string;
-  handoffId: string;
-  deliveryId: string;
-  agentPromptPath: string;
-  receiptPath: string;
-  finalizedAt: string;
-};
-
-export type PrototypeLifecycleRecord = {
-  prototypeId: string;
-  stage: PrototypeLifecycle;
-  operation: LifecycleOperation;
-  artifacts: FinalizedArtifacts | null;
-  createdAt: string;
-  updatedAt: string;
-};
+export type FinalizationPhase = Extract<
+  PrototypeLifecycleOperation,
+  { kind: "finalizing" }
+>["phase"];
+export type LifecycleOperation = PrototypeLifecycleOperation;
+export type FinalizedArtifacts = PrototypeFinalizedArtifacts;
 
 export type LifecycleHistoryEntry = {
   id: string;
@@ -84,35 +46,24 @@ export type LifecycleHistoryEntry = {
 };
 
 type LifecycleState = {
-  version: 2;
   records: Record<string, PrototypeLifecycleRecord>;
   history: LifecycleHistoryEntry[];
   storageError: string | null;
+  loading: boolean;
+  loaded: boolean;
 };
 
-function isLifecycle(value: unknown): value is PrototypeLifecycle {
-  return (
-    value === "active" ||
-    value === "review" ||
-    value === "final" ||
-    value === "archived"
-  );
-}
+type LegacyRecord = {
+  prototypeId: string;
+  stage: PrototypeLifecycleStage;
+  artifacts: PrototypeFinalizedArtifacts | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
 
-function isOperation(value: unknown): value is LifecycleOperation {
+function validArtifacts(value: unknown): value is PrototypeFinalizedArtifacts {
   if (!value || typeof value !== "object") return false;
-  const candidate = value as Partial<LifecycleOperation>;
-  return (
-    candidate.kind === "idle" ||
-    candidate.kind === "finalizing" ||
-    candidate.kind === "rolling-back" ||
-    candidate.kind === "failed"
-  );
-}
-
-function isArtifacts(value: unknown): value is FinalizedArtifacts {
-  if (!value || typeof value !== "object") return false;
-  const item = value as Partial<FinalizedArtifacts>;
+  const item = value as Partial<PrototypeFinalizedArtifacts>;
   return [
     item.jobId,
     item.bundleId,
@@ -125,148 +76,64 @@ function isArtifacts(value: unknown): value is FinalizedArtifacts {
   ].every((field) => typeof field === "string" && field.length > 0);
 }
 
-function createRecord(
-  prototypeId: string,
-  stage: PrototypeLifecycle = "active",
-): PrototypeLifecycleRecord {
-  const now = new Date().toISOString();
-  return {
-    prototypeId,
-    stage,
-    operation: { kind: "idle" },
-    artifacts: null,
-    createdAt: now,
-    updatedAt: now,
-  };
-}
-
-function parseRecord(
-  prototypeId: string,
-  value: unknown,
-): PrototypeLifecycleRecord | null {
-  if (!value || typeof value !== "object") return null;
-  const item = value as Partial<PrototypeLifecycleRecord>;
-  if (
-    item.prototypeId !== prototypeId ||
-    !isLifecycle(item.stage) ||
-    !isOperation(item.operation) ||
-    typeof item.createdAt !== "string" ||
-    typeof item.updatedAt !== "string"
-  ) {
-    return null;
-  }
-  const artifacts = isArtifacts(item.artifacts) ? item.artifacts : null;
-  if (item.stage === "final" && !artifacts) {
-    return {
-      ...createRecord(prototypeId, "review"),
-      createdAt: item.createdAt,
-      updatedAt: item.updatedAt,
-    };
-  }
-  return {
-    prototypeId,
-    stage: item.stage,
-    operation: item.operation,
-    artifacts,
-    createdAt: item.createdAt,
-    updatedAt: item.updatedAt,
-  };
-}
-
-function parseHistory(value: unknown): LifecycleHistoryEntry[] {
-  if (!Array.isArray(value)) return [];
-  return value
-    .filter((entry): entry is LifecycleHistoryEntry => {
-      if (!entry || typeof entry !== "object") return false;
-      const item = entry as Partial<LifecycleHistoryEntry>;
-      return (
-        typeof item.id === "string" &&
-        typeof item.prototypeId === "string" &&
-        isLifecycle(item.from) &&
-        isLifecycle(item.to) &&
-        typeof item.note === "string" &&
-        typeof item.changedAt === "string"
-      );
-    })
-    .slice(0, HISTORY_LIMIT);
-}
-
-function loadLegacyState(): LifecycleState {
-  const empty: LifecycleState = {
-    version: 2,
-    records: {},
-    history: [],
-    storageError: null,
-  };
-  const raw = window.localStorage.getItem(LEGACY_STORAGE_KEY);
-  if (!raw) return empty;
+function legacyRecords(): Record<string, LegacyRecord> {
+  if (typeof window === "undefined") return {};
   try {
-    const parsed = JSON.parse(raw) as {
-      overrides?: Record<string, unknown>;
-      history?: unknown;
-    };
-    for (const [prototypeId, value] of Object.entries(parsed.overrides ?? {})) {
-      if (!isLifecycle(value)) continue;
-      const stage = value === "final" ? "review" : value;
-      empty.records[prototypeId] = createRecord(prototypeId, stage);
+    const raw = window.localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as { records?: Record<string, unknown> };
+    const records: Record<string, LegacyRecord> = {};
+    for (const [prototypeId, value] of Object.entries(parsed.records ?? {})) {
+      if (!value || typeof value !== "object") continue;
+      const item = value as Partial<LegacyRecord>;
+      if (
+        item.prototypeId !== prototypeId ||
+        !["active", "review", "final", "archived"].includes(item.stage ?? "")
+      ) {
+        continue;
+      }
+      records[prototypeId] = {
+        prototypeId,
+        stage: item.stage!,
+        artifacts: validArtifacts(item.artifacts) ? item.artifacts : null,
+        ...(typeof item.createdAt === "string" ? { createdAt: item.createdAt } : {}),
+        ...(typeof item.updatedAt === "string" ? { updatedAt: item.updatedAt } : {}),
+      };
     }
-    empty.history = parseHistory(parsed.history);
-    return empty;
+    return records;
   } catch {
-    return {
-      ...empty,
-      storageError: "旧生命周期状态无法读取；新原型将从进行中开始。",
-    };
+    return {};
   }
 }
 
-function loadState(): LifecycleState {
-  if (typeof window === "undefined") {
-    return { version: 2, records: {}, history: [], storageError: null };
-  }
-  const raw = window.localStorage.getItem(STORAGE_KEY);
-  if (!raw) return loadLegacyState();
-  try {
-    const parsed = JSON.parse(raw) as Partial<LifecycleState>;
-    if (parsed.version !== 2 || !parsed.records) {
-      throw new Error("unsupported lifecycle state");
-    }
-    const records = Object.fromEntries(
-      Object.entries(parsed.records)
-        .map(([prototypeId, value]) => [
-          prototypeId,
-          parseRecord(prototypeId, value),
-        ])
-        .filter((entry): entry is [string, PrototypeLifecycleRecord] =>
-          Boolean(entry[1]),
-        ),
-    );
-    return {
-      version: 2,
-      records,
-      history: parseHistory(parsed.history),
-      storageError: null,
-    };
-  } catch {
-    return {
-      version: 2,
-      records: {},
-      history: [],
-      storageError:
-        "生命周期状态文件无法读取。原值已保留，请修复或清除后重试。",
-    };
-  }
+function toHistory(event: PrototypeLifecycleEvent): LifecycleHistoryEntry | null {
+  if (!event.from) return null;
+  return {
+    id: event.eventId,
+    prototypeId: event.prototypeId,
+    from: event.from,
+    to: event.to,
+    note: event.note,
+    changedAt: event.changedAt,
+  };
 }
 
 function jobFailure(job: CaptureJob, fallback?: string | null): string {
-  const lastJournal = job.journal.at(-1)?.detail;
-  if (lastJournal) return lastJournal;
-  if (fallback) return fallback;
-  return `整原型采集以 ${job.status} 结束。`;
+  return (
+    job.journal.at(-1)?.detail ??
+    fallback ??
+    `整原型采集以 ${job.status} 结束。`
+  );
 }
 
 export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
-  state: loadState,
+  state: (): LifecycleState => ({
+    records: {},
+    history: [],
+    storageError: null,
+    loading: false,
+    loaded: false,
+  }),
   getters: {
     recordFor: (state) =>
       (prototypeId: string): PrototypeLifecycleRecord | null =>
@@ -286,161 +153,184 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
   },
   actions: {
     persist() {
-      if (typeof window === "undefined" || this.storageError) return;
-      window.localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-          version: 2,
-          records: this.records,
-          history: this.history.slice(0, HISTORY_LIMIT),
-          storageError: null,
-        } satisfies LifecycleState),
+      // Core Store is authoritative. Retained as a compatibility no-op.
+    },
+    applyRecord(record: PrototypeLifecycleRecord) {
+      this.records = { ...this.records, [record.prototypeId]: record };
+    },
+    applyEvent(event: PrototypeLifecycleEvent) {
+      const entry = toHistory(event);
+      if (!entry) return;
+      this.history = [entry, ...this.history.filter((item) => item.id !== entry.id)];
+    },
+    applyRemoteState(state: {
+      records: PrototypeLifecycleRecord[];
+      events: Record<string, PrototypeLifecycleEvent[]>;
+    }) {
+      this.records = Object.fromEntries(
+        state.records.map((record) => [record.prototypeId, record]),
       );
+      this.history = Object.values(state.events)
+        .flat()
+        .map(toHistory)
+        .filter((entry): entry is LifecycleHistoryEntry => Boolean(entry))
+        .sort((left, right) => right.changedAt.localeCompare(left.changedAt));
+    },
+    async initialize(prototypes: PrototypeRecord[]) {
+      if (this.loading) return;
+      this.loading = true;
+      this.storageError = null;
+      const capture = useCaptureStore();
+      try {
+        if (!capture.connected) await capture.connect();
+        if (!capture.connected) {
+          throw new Error(capture.lastError ?? "生命周期服务未连接。");
+        }
+        const remote = await captureServiceClient.prototypeLifecycles();
+        this.applyRemoteState(remote);
+
+        const legacy = legacyRecords();
+        for (const prototype of prototypes) {
+          if (this.records[prototype.id]) continue;
+          const candidate = legacy[prototype.id];
+          if (!candidate) continue;
+          if (
+            (candidate.stage === "final" || candidate.stage === "archived") &&
+            !candidate.artifacts
+          ) {
+            continue;
+          }
+          try {
+            const imported = await captureServiceClient.importPrototypeLifecycle({
+              prototypeId: prototype.id,
+              stage: candidate.stage,
+              artifacts: candidate.artifacts,
+              note: "Validated import from PBWork local lifecycle v2",
+              ...(candidate.createdAt ? { createdAt: candidate.createdAt } : {}),
+              ...(candidate.updatedAt ? { updatedAt: candidate.updatedAt } : {}),
+            });
+            this.applyRecord(imported);
+          } catch {
+            // Invalid local refs intentionally fall through to active initialization.
+          }
+        }
+
+        const missing = prototypes
+          .map((prototype) => prototype.id)
+          .filter((prototypeId) => !this.records[prototypeId]);
+        if (missing.length) {
+          const ensured = await captureServiceClient.ensurePrototypeLifecycles(missing);
+          for (const record of ensured.records) this.applyRecord(record);
+        }
+        this.loaded = true;
+      } catch (error) {
+        this.storageError =
+          error instanceof Error ? error.message : "生命周期状态无法读取。";
+      } finally {
+        this.loading = false;
+      }
     },
     ensurePrototypes(prototypes: PrototypeRecord[]) {
-      if (this.storageError) return;
-      let changed = false;
-      const records = { ...this.records };
-      for (const prototype of prototypes) {
-        if (records[prototype.id]) continue;
-        records[prototype.id] = createRecord(prototype.id, "active");
-        changed = true;
-      }
-      if (!changed) return;
-      this.records = records;
-      this.persist();
+      void this.initialize(prototypes);
     },
     requireRecord(prototypeId: string): PrototypeLifecycleRecord {
-      const existing = this.records[prototypeId];
-      if (existing) return existing;
-      const record = createRecord(prototypeId);
-      this.records = { ...this.records, [prototypeId]: record };
-      this.persist();
+      const record = this.records[prototypeId];
+      if (!record) throw new Error("生命周期尚未从 Core Store 加载完成。");
       return record;
     },
-    replaceRecord(record: PrototypeLifecycleRecord) {
-      this.records = { ...this.records, [record.prototypeId]: record };
-      this.persist();
+    async refresh(prototypes: PrototypeRecord[]) {
+      this.loaded = false;
+      await this.initialize(prototypes);
     },
-    appendHistory(
+    async setOperation(
       prototypeId: string,
-      from: PrototypeLifecycle,
+      operation: PrototypeLifecycleOperation,
+    ) {
+      const current = this.requireRecord(prototypeId);
+      const updated = await captureServiceClient.updatePrototypeLifecycleOperation(
+        prototypeId,
+        current.revision,
+        operation,
+      );
+      this.applyRecord(updated);
+      return updated;
+    },
+    async transition(
+      prototype: PrototypeRecord,
       to: PrototypeLifecycle,
       note = "",
+      artifacts?: PrototypeFinalizedArtifacts | null,
     ) {
-      const changedAt = new Date().toISOString();
-      this.history = [
-        {
-          id: `${prototypeId}-${changedAt}-${Math.random().toString(36).slice(2, 8)}`,
-          prototypeId,
-          from,
-          to,
-          note: note.trim(),
-          changedAt,
-        },
-        ...this.history,
-      ].slice(0, HISTORY_LIMIT);
-    },
-    transition(prototype: PrototypeRecord, to: PrototypeLifecycle, note = "") {
       const current = this.requireRecord(prototype.id);
-      const from = current.stage;
-      if (!lifecycleTransitions[from].includes(to)) {
-        throw new Error(`不允许从 ${from} 流转到 ${to}`);
-      }
-      if (from === "review" && to === "final") {
-        throw new Error("进入已定稿必须完成整原型自动采集。");
-      }
-      if (from === "final" && to === "review") {
-        throw new Error("回退待确定必须先清理定稿 Evidence。");
-      }
-      if (current.operation.kind !== "idle" && current.operation.kind !== "failed") {
-        throw new Error("当前生命周期操作尚未结束。");
-      }
-      const now = new Date().toISOString();
-      this.appendHistory(prototype.id, from, to, note);
-      this.replaceRecord({
-        ...current,
-        stage: to,
-        operation: { kind: "idle" },
-        updatedAt: now,
+      const result = await captureServiceClient.transitionPrototypeLifecycle({
+        prototypeId: prototype.id,
+        expectedRevision: current.revision,
+        to,
+        note: note.trim(),
+        ...(artifacts === undefined ? {} : { artifacts }),
       });
+      this.applyRecord(result.record);
+      this.applyEvent(result.event);
+      return result.record;
     },
-    failOperation(prototypeId: string, action: "finalize" | "rollback", message: string) {
-      const current = this.requireRecord(prototypeId);
-      this.replaceRecord({
-        ...current,
-        operation: {
+    async failOperation(
+      prototypeId: string,
+      action: "finalize" | "rollback",
+      message: string,
+    ) {
+      try {
+        await this.setOperation(prototypeId, {
           kind: "failed",
           action,
           message,
           failedAt: new Date().toISOString(),
-        },
-        updatedAt: new Date().toISOString(),
-      });
+        });
+      } catch (error) {
+        this.storageError =
+          error instanceof Error ? error.message : "生命周期失败状态无法保存。";
+      }
     },
-    clearFailure(prototypeId: string) {
+    async clearFailure(prototypeId: string) {
       const current = this.requireRecord(prototypeId);
       if (current.operation.kind !== "failed") return;
-      this.replaceRecord({
-        ...current,
-        operation: { kind: "idle" },
-        updatedAt: new Date().toISOString(),
-      });
+      await this.setOperation(prototypeId, { kind: "idle" });
     },
     async prepareFinalization(prototype: PrototypeRecord) {
       const current = this.requireRecord(prototype.id);
-      if (current.stage !== "review") {
-        throw new Error("只有待确定原型可以定稿。");
-      }
+      if (current.stage !== "review") throw new Error("只有待确定原型可以定稿。");
       const startedAt = new Date().toISOString();
-      this.replaceRecord({
-        ...current,
-        operation: { kind: "finalizing", phase: "preflighting", startedAt },
-        updatedAt: startedAt,
+      await this.setOperation(prototype.id, {
+        kind: "finalizing",
+        phase: "preflighting",
+        startedAt,
       });
-
       const capture = useCaptureStore();
       if (!capture.connected) await capture.connect();
       if (!capture.connected) {
-        this.failOperation(
-          prototype.id,
-          "finalize",
-          capture.lastError ?? "采集服务未连接。",
-        );
+        await this.failOperation(prototype.id, "finalize", capture.lastError ?? "采集服务未连接。");
         return false;
       }
-      capture.beginPrototype(
-        prototype.id,
-        `/workbench/prototypes/${prototype.id}`,
-      );
+      capture.beginPrototype(prototype.id, `/workbench/prototypes/${prototype.id}`);
       await capture.runPreflight();
       if (!capture.preflight) {
-        this.failOperation(
-          prototype.id,
-          "finalize",
-          capture.lastError ?? "整原型预检失败。",
-        );
+        await this.failOperation(prototype.id, "finalize", capture.lastError ?? "整原型预检失败。");
         return false;
       }
       if (
         !capture.preflight.result.ready &&
         capture.preflight.result.unacceptedWarningIds.length === 0
       ) {
-        this.failOperation(
+        await this.failOperation(
           prototype.id,
           "finalize",
           "整原型预检未通过，且没有可确认的 warning。",
         );
         return false;
       }
-      this.replaceRecord({
-        ...this.requireRecord(prototype.id),
-        operation: {
-          kind: "finalizing",
-          phase: "awaiting-confirmation",
-          startedAt,
-        },
-        updatedAt: new Date().toISOString(),
+      await this.setOperation(prototype.id, {
+        kind: "finalizing",
+        phase: "awaiting-confirmation",
+        startedAt,
       });
       return true;
     },
@@ -457,18 +347,11 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
       if (!capture.preflight || !capture.warningsAccepted) {
         throw new Error("请逐项确认预检 warning。");
       }
-      this.replaceRecord({
-        ...current,
-        operation: {
-          ...current.operation,
-          phase: "capturing",
-        },
-        updatedAt: new Date().toISOString(),
-      });
+      await this.setOperation(prototype.id, { ...current.operation, phase: "capturing" });
       await capture.createJob();
       const job = capture.activeJob;
       if (!job) {
-        this.failOperation(
+        await this.failOperation(
           prototype.id,
           "finalize",
           capture.lastError ?? "整原型采集任务创建失败。",
@@ -476,16 +359,12 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
         return false;
       }
       capture.closeComposer();
-      this.replaceRecord({
-        ...this.requireRecord(prototype.id),
-        operation: {
-          kind: "finalizing",
-          phase: "capturing",
-          startedAt: current.operation.startedAt,
-          jobId: job.jobId,
-          bundleId: job.bundleId,
-        },
-        updatedAt: new Date().toISOString(),
+      await this.setOperation(prototype.id, {
+        kind: "finalizing",
+        phase: "capturing",
+        startedAt: current.operation.startedAt,
+        jobId: job.jobId,
+        bundleId: job.bundleId,
       });
       return true;
     },
@@ -496,45 +375,32 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
         current.operation.kind !== "finalizing" ||
         current.operation.phase !== "capturing" ||
         !current.operation.jobId
-      ) {
-        return;
-      }
+      ) return;
       const capture = useCaptureStore();
       if (!capture.connected) await capture.connect();
       if (!capture.connected) return;
-
       try {
         if (capture.activeJob?.jobId !== current.operation.jobId) {
-          capture.activeJob = await captureServiceClient.getJob(
-            current.operation.jobId,
-          );
+          capture.activeJob = await captureServiceClient.getJob(current.operation.jobId);
         }
         await capture.refreshActiveJob();
       } catch (error) {
         capture.setError(error);
-        this.failOperation(
-          prototype.id,
-          "finalize",
-          capture.lastError ?? "读取采集任务失败。",
-        );
+        await this.failOperation(prototype.id, "finalize", capture.lastError ?? "读取采集任务失败。");
         return;
       }
-
       const job = capture.activeJob;
       if (!job || !TERMINAL_JOB_STATUSES.has(job.status)) return;
       if (job.status !== "completed") {
-        this.failOperation(
-          prototype.id,
-          "finalize",
-          jobFailure(job, capture.lastError),
-        );
+        await this.failOperation(prototype.id, "finalize", jobFailure(job, capture.lastError));
         return;
       }
-
-      if (!capture.details) await capture.loadBundle(job.bundleId);
+      if (!capture.details || capture.details.bundle.bundleId !== job.bundleId) {
+        await capture.loadBundle(job.bundleId);
+      }
       const details = capture.details;
       if (!details || details.bundle.bundleId !== job.bundleId) {
-        this.failOperation(
+        await this.failOperation(
           prototype.id,
           "finalize",
           capture.lastError ?? "采集已结束，但无法读取定稿 Evidence。",
@@ -543,49 +409,31 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
       }
       const counts = details.activeSnapshot.coverage.counts;
       const incomplete =
-        counts.failed +
-        counts.unsupported +
-        counts.cancelled +
-        counts.interrupted +
-        counts.skipped;
+        counts.failed + counts.unsupported + counts.cancelled + counts.interrupted + counts.skipped;
       if (incomplete > 0) {
-        const failedAttempt = details.runs
-          .flatMap((run) => run.attempts)
-          .find(
-            (attempt) =>
-              attempt.result !== "captured" && attempt.result !== "reused",
-          );
-        const failureDetail = failedAttempt
-          ? ` ${failedAttempt.caseId}：${failedAttempt.reason ?? failedAttempt.result}`
-          : "";
-        this.failOperation(
+        await this.failOperation(
           prototype.id,
           "finalize",
-          `整原型采集未完整：${counts.captured + counts.reused} 项成功或复用，${incomplete} 项未完成。${failureDetail}`,
+          `整原型采集未完整：${counts.captured + counts.reused} 项成功或复用，${incomplete} 项未完成。`,
         );
         return;
       }
-
       await capture.previewCurrentHandoff();
       if (!capture.handoffPreview) {
-        this.failOperation(
+        await this.failOperation(
           prototype.id,
           "finalize",
           capture.lastError ?? "Handoff 风险评估失败。",
         );
         return;
       }
-      this.replaceRecord({
-        ...this.requireRecord(prototype.id),
-        operation: {
-          kind: "finalizing",
-          phase: "awaiting-risks",
-          startedAt: current.operation.startedAt,
-          jobId: job.jobId,
-          bundleId: job.bundleId,
-          snapshotId: details.activeSnapshot.snapshotId,
-        },
-        updatedAt: new Date().toISOString(),
+      await this.setOperation(prototype.id, {
+        kind: "finalizing",
+        phase: "awaiting-risks",
+        startedAt: current.operation.startedAt,
+        jobId: job.jobId,
+        bundleId: job.bundleId,
+        snapshotId: details.activeSnapshot.snapshotId,
       });
       if (capture.handoffPreview.risks.length === 0) {
         await this.completeFinalization(prototype);
@@ -600,56 +448,43 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
         !current.operation.jobId ||
         !current.operation.bundleId ||
         !current.operation.snapshotId
-      ) {
-        throw new Error("定稿 Evidence 尚未准备完成。");
-      }
+      ) throw new Error("定稿 Evidence 尚未准备完成。");
       const capture = useCaptureStore();
-      if (!capture.risksAccepted) {
-        throw new Error("请逐项确认 Handoff risk。");
-      }
-      this.replaceRecord({
-        ...current,
-        operation: { ...current.operation, phase: "building-prompt" },
-        updatedAt: new Date().toISOString(),
-      });
+      if (!capture.risksAccepted) throw new Error("请逐项确认 Handoff risk。");
+      await this.setOperation(prototype.id, { ...current.operation, phase: "building-prompt" });
       await capture.createCurrentHandoff();
       if (!capture.handoff || !capture.deliveryArtifact) {
-        this.failOperation(
+        await this.failOperation(
           prototype.id,
           "finalize",
           capture.lastError ?? "Agent 提示词生成失败。",
         );
         return false;
       }
-      const finalizedAt = new Date().toISOString();
-      this.appendHistory(prototype.id, "review", "final", "整原型采集与提示词生成完成");
-      this.replaceRecord({
-        ...this.requireRecord(prototype.id),
-        stage: "final",
-        operation: { kind: "idle" },
-        artifacts: {
-          jobId: current.operation.jobId,
-          bundleId: current.operation.bundleId,
-          snapshotId: current.operation.snapshotId,
-          handoffId: capture.handoff.handoffId,
-          deliveryId: capture.deliveryArtifact.deliveryId,
-          agentPromptPath: capture.deliveryArtifact.agentPromptPath,
-          receiptPath: capture.deliveryArtifact.receiptPath,
-          finalizedAt,
-        },
-        updatedAt: finalizedAt,
-      });
-      capture.closeComposer();
+      const artifacts: PrototypeFinalizedArtifacts = {
+        jobId: current.operation.jobId,
+        bundleId: current.operation.bundleId,
+        snapshotId: current.operation.snapshotId,
+        handoffId: capture.handoff.handoffId,
+        deliveryId: capture.deliveryArtifact.deliveryId,
+        agentPromptPath: capture.deliveryArtifact.agentPromptPath,
+        receiptPath: capture.deliveryArtifact.receiptPath,
+        finalizedAt: new Date().toISOString(),
+      };
+      await this.transition(prototype, "final", "整原型采集与提示词生成完成", artifacts);
       await capture.refreshConsole();
       return true;
     },
     async recoverFinalization(prototype: PrototypeRecord) {
       const current = this.requireRecord(prototype.id);
       if (current.operation.kind !== "finalizing") return;
-      if (
-        current.operation.phase === "preflighting" ||
-        current.operation.phase === "awaiting-confirmation"
-      ) {
+      if (current.operation.phase === "preflighting") {
+        await this.prepareFinalization(prototype);
+        return;
+      }
+      if (current.operation.phase === "awaiting-confirmation") {
+        const capture = useCaptureStore();
+        if (capture.preflight?.result.selection.prototypeId === prototype.id) return;
         await this.prepareFinalization(prototype);
         return;
       }
@@ -658,33 +493,22 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
         return;
       }
       if (!current.operation.bundleId || !current.operation.snapshotId) {
-        this.failOperation(
-          prototype.id,
-          "finalize",
-          "定稿任务缺少 Bundle 或 Snapshot 引用。",
-        );
+        await this.failOperation(prototype.id, "finalize", "定稿任务缺少 Bundle 或 Snapshot 引用。");
         return;
       }
       const capture = useCaptureStore();
       if (!capture.connected) await capture.connect();
-      await capture.loadSnapshot(
-        current.operation.bundleId,
-        current.operation.snapshotId,
-      );
+      await capture.loadSnapshot(current.operation.bundleId, current.operation.snapshotId);
       await capture.previewCurrentHandoff();
       if (!capture.handoffPreview) {
-        this.failOperation(
+        await this.failOperation(
           prototype.id,
           "finalize",
           capture.lastError ?? "无法恢复 Handoff 风险确认。",
         );
         return;
       }
-      this.replaceRecord({
-        ...this.requireRecord(prototype.id),
-        operation: { ...current.operation, phase: "awaiting-risks" },
-        updatedAt: new Date().toISOString(),
-      });
+      await this.setOperation(prototype.id, { ...current.operation, phase: "awaiting-risks" });
       if (capture.handoffPreview.risks.length === 0) {
         await this.completeFinalization(prototype);
       }
@@ -694,20 +518,16 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
       if (current.stage !== "final" || !current.artifacts) {
         throw new Error("只有具有完整定稿产物的已定稿原型可以回退。");
       }
-      const startedAt = new Date().toISOString();
-      this.replaceRecord({
-        ...current,
-        operation: {
-          kind: "rolling-back",
-          startedAt,
-          bundleIds: [current.artifacts.bundleId],
-        },
-        updatedAt: startedAt,
+      const bundleId = current.artifacts.bundleId;
+      await this.setOperation(prototype.id, {
+        kind: "rolling-back",
+        startedAt: new Date().toISOString(),
+        bundleIds: [bundleId],
       });
       const capture = useCaptureStore();
       if (!capture.connected) await capture.connect();
       if (!capture.connected) {
-        this.failOperation(
+        await this.failOperation(
           prototype.id,
           "rollback",
           capture.lastError ?? "采集服务未连接，无法清理定稿 Evidence。",
@@ -715,27 +535,19 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
         return false;
       }
       try {
-        await captureServiceClient.trashBundles([current.artifacts.bundleId]);
+        await captureServiceClient.trashBundles([bundleId]);
         await capture.refreshConsole();
+        await this.transition(prototype, "review", note || "清理定稿 Evidence 后回退", null);
+        return true;
       } catch (error) {
         capture.setError(error);
-        this.failOperation(
+        await this.failOperation(
           prototype.id,
           "rollback",
           capture.lastError ?? "定稿 Evidence 清理失败。",
         );
         return false;
       }
-      const completedAt = new Date().toISOString();
-      this.appendHistory(prototype.id, "final", "review", note || "清理定稿 Evidence 后回退");
-      this.replaceRecord({
-        ...this.requireRecord(prototype.id),
-        stage: "review",
-        operation: { kind: "idle" },
-        artifacts: null,
-        updatedAt: completedAt,
-      });
-      return true;
     },
   },
 });

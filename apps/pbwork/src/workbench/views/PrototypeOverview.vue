@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import {
   Check,
   ChevronDown,
@@ -19,6 +19,7 @@ import WorkbenchStatChip from "@/workbench/ui/WorkbenchStatChip.vue";
 import LifecycleTransitionDialog, {
   type LifecycleIntent,
 } from "@/workbench/prototypes/LifecycleTransitionDialog.vue";
+import LifecycleFinalizationSheet from "@/workbench/prototypes/LifecycleFinalizationSheet.vue";
 import PrototypeFlowRail from "@/workbench/prototypes/PrototypeFlowRail.vue";
 import ScreenPreviewCard from "@/workbench/prototypes/ScreenPreviewCard.vue";
 import { resolveScreenGroups } from "@/workbench/prototypes/resolveScreenGroups";
@@ -31,6 +32,7 @@ const router = useRouter();
 const transitionOpen = ref(false);
 const transitionIntent = ref<LifecycleIntent>("advance");
 const historyExpanded = ref(false);
+let pollTimer: ReturnType<typeof setInterval> | undefined;
 const lifecycleStages = [
   { id: "active", label: "进行中" },
   { id: "review", label: "待确定" },
@@ -93,6 +95,22 @@ function openTransition(intent: LifecycleIntent) {
   transitionIntent.value = intent;
   transitionOpen.value = true;
 }
+
+async function pollOperation() {
+  if (!prototype.value) return;
+  const operation = lifecycle.recordFor(prototype.value.id)?.operation;
+  if (operation?.kind === "finalizing" && operation.phase === "capturing") {
+    await lifecycle.pollFinalization(prototype.value);
+  }
+}
+
+onMounted(() => {
+  void pollOperation();
+  pollTimer = setInterval(() => void pollOperation(), 1000);
+});
+onBeforeUnmount(() => {
+  if (pollTimer) clearInterval(pollTimer);
+});
 </script>
 
 <template>
@@ -261,10 +279,15 @@ function openTransition(intent: LifecycleIntent) {
     >未知原型：{{ prototypeId }}</v-alert
   >
   <LifecycleTransitionDialog
-    v-if="prototype"
+    v-if="prototype && transitionIntent !== 'finalize'"
     v-model="transitionOpen"
     :prototype="prototype"
     :intent="transitionIntent"
+  />
+  <LifecycleFinalizationSheet
+    v-if="prototype && transitionIntent === 'finalize'"
+    v-model="transitionOpen"
+    :prototype="prototype"
   />
 </template>
 
@@ -278,28 +301,19 @@ function openTransition(intent: LifecycleIntent) {
 .lifecycle-hero {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 18px 24px;
+  grid-template-columns: minmax(130px, 0.45fr) minmax(360px, 1.5fr) auto;
+  gap: 12px 22px;
+  align-items: center;
   overflow: hidden;
-  padding: 22px 24px 20px;
+  padding: 14px 16px;
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 18px;
-  background:
-    radial-gradient(
-      circle at 88% 12%,
-      color-mix(in srgb, rgb(var(--v-theme-primary)) 16%, transparent),
-      transparent 32%
-    ),
-    color-mix(
-      in srgb,
-      rgb(var(--v-theme-primary)) 7%,
-      rgb(var(--v-theme-surface))
-    );
+  border-radius: 8px;
+  background: rgb(var(--v-theme-surface));
 }
 .lifecycle-hero::before {
   position: absolute;
   inset: 0 auto 0 0;
-  width: 4px;
+  width: 3px;
   background: rgb(var(--v-theme-primary));
   content: "";
 }
@@ -313,12 +327,12 @@ function openTransition(intent: LifecycleIntent) {
 }
 .lifecycle-copy > strong {
   display: block;
-  margin-top: 8px;
-  font-size: 1.75rem;
+  margin-top: 5px;
+  font-size: 1.22rem;
   line-height: 1.1;
 }
 .lifecycle-copy > p {
-  margin: 6px 0 0;
+  margin: 3px 0 0;
   color: rgba(var(--v-theme-on-surface), 0.56);
   font-size: 0.75rem;
 }
@@ -335,10 +349,8 @@ function openTransition(intent: LifecycleIntent) {
 }
 .stage-track {
   position: relative;
-  grid-column: 1 / -1;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin-top: 2px;
 }
 .stage-line,
 .stage-progress {
@@ -413,7 +425,7 @@ function openTransition(intent: LifecycleIntent) {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  padding-top: 12px;
+  padding-top: 9px;
   border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   color: rgba(var(--v-theme-on-surface), 0.55);
   font-size: 0.68rem;
@@ -450,9 +462,9 @@ function openTransition(intent: LifecycleIntent) {
   transform: rotate(180deg);
 }
 .flow-panel {
-  padding: 14px 16px;
+  padding: 12px 14px;
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 14px;
+  border-radius: 8px;
   background: rgb(var(--v-theme-surface));
 }
 .section-heading,

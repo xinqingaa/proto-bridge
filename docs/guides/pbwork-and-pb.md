@@ -33,16 +33,16 @@ DS 业务实例必须传稳定 `inspectId`。业务局部证据节点必须显�
 
 ## 交付阶段
 
-PBWork 的正式交付由“待确定 → 已定稿”生命周期动作触发。动作自动把整个原型转换为 `SelectionDraft`，并连续完成：
+PBWork 的正式交付由“待确定 → 已定稿”生命周期动作触发。生命周期记录和操作阶段由 Core Store 持久化，PBWork 通过 Local Service 以 `expectedRevision` 更新；动作自动把整个原型转换为 `SelectionDraft`，并连续完成：
 
 1. 整原型 Preflight；
 2. 用户逐项确认现有 warning，并确认候选方案已经收敛；
 3. 执行整原型采集；
 4. 用户逐项确认现有 mandatory risk；
-5. 自动创建 Handoff 和唯一 Agent 提示词，同时写入 `.proto-bridge/deliveries/`；
+5. 自动创建 Handoff 和唯一 Agent 提示词，同时写入 `.proto-bridge/deliveries/`，并让 Core 校验 Delivery receipt、提示词文件及 Bundle/Snapshot/Handoff 绑定；
 6. 只有全部成功后才提交“已定稿”。
 
-PBWork 不显示范围选择、页面采集、控件采集、重新采集或提示词生成/重生成按钮。已定稿和已归档只读取生命周期记录绑定的 Evidence 与提示词。已定稿若需修改，先清理该次定稿绑定的 Bundle 和正式产物引用，再回退到待确定；已归档永久只读。
+PBWork 不显示范围选择、页面采集、控件采集、重新采集或提示词生成/重生成按钮。已定稿和已归档只读取生命周期记录绑定的 Evidence 与提示词；刷新后按 `deliveryId` 回读已存在的 Agent prompt。已定稿若需修改，先清理该次定稿绑定的 Bundle 和正式产物引用，再回退到待确定；已归档永久只读。
 
 CLI 不受 PBWork 生命周期约束，继续支持 `deliver --prototype <id>`、`--screen <id|slug>`、`--only-variant <id>`、`--only-scenario <id>` 和 `--selection`。CLI 产生的 Bundle 不改变 PBWork 生命周期，也不会自动出现在“定稿采集”页。
 

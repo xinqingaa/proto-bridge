@@ -7,6 +7,13 @@ import type { CaptureJob } from '../contracts/job.js';
 import type { Run } from '../contracts/run.js';
 import type { BundleSnapshot } from '../contracts/snapshot.js';
 import type { StalenessReport } from '../contracts/staleness.js';
+import type {
+  PrototypeFinalizedArtifacts,
+  PrototypeLifecycleEvent,
+  PrototypeLifecycleOperation,
+  PrototypeLifecycleRecord,
+  PrototypeLifecycleStage,
+} from '../contracts/prototype-lifecycle.js';
 import type { CapturePreflight } from '../capture/preflight.js';
 import type { SelectionDraft } from '../capture/selection.js';
 import type { EvidenceInventory } from '../evidence-inventory.js';
@@ -22,7 +29,7 @@ import type {
   ReviewSessionSeed,
 } from '../../review/contracts.js';
 
-export const LOCAL_SERVICE_PROTOCOL_VERSION = 4 as const;
+export const LOCAL_SERVICE_PROTOCOL_VERSION = 5 as const;
 
 export const LocalServiceError = z
   .object({
@@ -68,6 +75,41 @@ export type CaptureConsoleState = {
   generationId: string | 'legacy-unavailable';
   bundles: BundleSummary[];
   jobs: CaptureJob[];
+};
+
+export type PrototypeLifecycleState = {
+  records: PrototypeLifecycleRecord[];
+  events: Record<string, PrototypeLifecycleEvent[]>;
+};
+
+export type EnsurePrototypeLifecyclesRequest = {
+  prototypeIds: string[];
+};
+
+export type ImportPrototypeLifecycleRequest = {
+  prototypeId: string;
+  stage: PrototypeLifecycleStage;
+  artifacts: PrototypeFinalizedArtifacts | null;
+  note?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type UpdatePrototypeLifecycleOperationRequest = {
+  expectedRevision: number;
+  operation: PrototypeLifecycleOperation;
+};
+
+export type TransitionPrototypeLifecycleRequest = {
+  expectedRevision: number;
+  to: PrototypeLifecycleStage;
+  note?: string;
+  artifacts?: PrototypeFinalizedArtifacts | null;
+};
+
+export type PrototypeLifecycleTransitionResponse = {
+  record: PrototypeLifecycleRecord;
+  event: PrototypeLifecycleEvent;
 };
 
 export type WorkspaceResetScopeSummary = {

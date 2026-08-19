@@ -92,7 +92,7 @@ async function initialize() {
   consequenceAccepted.value = false;
   if (props.intent !== "finalize") return;
   const op = operation.value;
-  if (op.kind === "failed") lifecycle.clearFailure(props.prototype.id);
+  if (op.kind === "failed") await lifecycle.clearFailure(props.prototype.id);
   if (op.kind === "finalizing") {
     await lifecycle.recoverFinalization(props.prototype);
   } else {
@@ -120,11 +120,11 @@ async function submitSimple() {
   submitting.value = true;
   try {
     if (props.intent === "advance") {
-      lifecycle.transition(props.prototype, "review", note.value);
+      await lifecycle.transition(props.prototype, "review", note.value);
     } else if (props.intent === "return-active") {
-      lifecycle.transition(props.prototype, "active", note.value);
+      await lifecycle.transition(props.prototype, "active", note.value);
     } else if (props.intent === "archive") {
-      lifecycle.transition(props.prototype, "archived", note.value);
+      await lifecycle.transition(props.prototype, "archived", note.value);
     } else if (props.intent === "rollback") {
       const completed = await lifecycle.rollbackToReview(
         props.prototype,

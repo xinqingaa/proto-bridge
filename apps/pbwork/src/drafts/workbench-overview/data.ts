@@ -76,7 +76,7 @@ export const lifecycleCards: Array<{
     (id) => ({
       id,
       label: LIFECYCLE_LABELS[id],
-      count: prototypes.filter((item) => item.lifecycle === id).length,
+      count: id === "active" ? prototypes.length : 0,
     }),
   ),
 ];
@@ -116,7 +116,7 @@ export const caseRows = prototypes.map((prototype) => {
   return {
     id: prototype.id,
     label: prototype.label,
-    lifecycle: prototype.lifecycle,
+    lifecycle: "active" as const,
     screens: screenGroups,
     caseCount: screenGroups.reduce((sum, group) => sum + group.cells.length, 0),
   };

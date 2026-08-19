@@ -24,6 +24,7 @@ import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
 import LifecycleTransitionDialog, {
   type LifecycleIntent,
 } from "@/workbench/prototypes/LifecycleTransitionDialog.vue";
+import LifecycleFinalizationSheet from "@/workbench/prototypes/LifecycleFinalizationSheet.vue";
 
 const props = defineProps<{
   lifecycle?: "all" | PrototypeLifecycle | undefined;
@@ -86,11 +87,15 @@ const stats = (id: string) => {
   );
   return {
     screens: screens.length,
+    variants: screens.reduce((sum, screen) => sum + screen.variants.length, 0),
     comments: comments.comments.filter(
       (comment) => comment.prototypeId === id && comment.status === "open",
     ).length,
   };
 };
+
+const stageIndex = (item: PrototypeRecord) =>
+  stages.findIndex((stage) => stage.id === state.effectiveLifecycle(item));
 
 function record(item: PrototypeRecord) {
   return state.recordFor(item.id);
@@ -210,20 +215,38 @@ onBeforeUnmount(() => {
     </section>
 
     <div v-if="items.length" class="prototype-ledger">
+      <div class="ledger-columns" aria-hidden="true">
+        <span>原型资产</span>
+        <span>生命周期</span>
+        <span>定稿产物</span>
+        <span>规模与变化</span>
+        <span>下一步</span>
+      </div>
       <article v-for="item in items" :key="item.id" class="prototype-row">
         <button class="prototype-identity" type="button" @click="openPrototype(item)">
           <span class="identity-mark">{{ item.label.slice(0, 1) }}</span>
           <span>
             <strong>{{ item.label }}</strong>
+            <small>{{ item.summary }}</small>
             <code>{{ item.id }}</code>
           </span>
         </button>
 
-        <div class="row-stage">
-          <span>当前阶段</span>
-          <WorkbenchBadge :tone="state.effectiveLifecycle(item)">
-            {{ LIFECYCLE_LABELS[state.effectiveLifecycle(item)] }}
-          </WorkbenchBadge>
+        <div class="row-stage" :aria-label="`当前阶段：${LIFECYCLE_LABELS[state.effectiveLifecycle(item)]}`">
+          <div class="asset-spine" aria-hidden="true">
+            <span
+              v-for="(stage, index) in stages"
+              :key="stage.id"
+              :class="{
+                current: index === stageIndex(item),
+                complete: index < stageIndex(item),
+              }"
+            >
+              <CheckCircle2 v-if="index < stageIndex(item)" :size="11" />
+              <i v-else />
+            </span>
+          </div>
+          <strong>{{ LIFECYCLE_LABELS[state.effectiveLifecycle(item)] }}</strong>
         </div>
 
         <div class="row-evidence" :class="{ failed: record(item)?.operation.kind === 'failed' }">
@@ -235,7 +258,7 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="row-meta">
-          <span><FileStack :size="13" />{{ stats(item.id).screens }} 页面</span>
+          <span><FileStack :size="13" />{{ stats(item.id).screens }} 页面 · {{ stats(item.id).variants }} 状态</span>
           <span><MessageSquareText :size="13" />{{ stats(item.id).comments }} 待处理</span>
           <time>{{ formatTime(record(item)?.updatedAt) }}</time>
         </div>
@@ -286,11 +309,17 @@ onBeforeUnmount(() => {
   </ResourcePageShell>
 
   <LifecycleTransitionDialog
-    v-if="editing"
+    v-if="editing && intent !== 'finalize'"
     :model-value="true"
     :prototype="editing"
     :intent="intent"
     @changed="editing = null"
+    @update:model-value="!$event && (editing = null)"
+  />
+  <LifecycleFinalizationSheet
+    v-if="editing && intent === 'finalize'"
+    :model-value="true"
+    :prototype="editing"
     @update:model-value="!$event && (editing = null)"
   />
 </template>
@@ -301,7 +330,7 @@ onBeforeUnmount(() => {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   overflow: hidden;
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 14px;
+  border-radius: 8px;
   background: rgb(var(--v-theme-surface));
 }
 .rail-stage {
@@ -397,7 +426,7 @@ onBeforeUnmount(() => {
 .gallery-empty {
   padding: 18px;
   border: 1px solid color-mix(in srgb, rgb(var(--v-theme-error)) 35%, transparent);
-  border-radius: 12px;
+  border-radius: 8px;
   background: color-mix(in srgb, rgb(var(--v-theme-error)) 8%, transparent);
   color: rgb(var(--v-theme-error));
   font-size: 0.78rem;
@@ -405,12 +434,26 @@ onBeforeUnmount(() => {
 .prototype-ledger {
   overflow: hidden;
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 14px;
+  border-radius: 8px;
   background: rgb(var(--v-theme-surface));
+}
+.ledger-columns {
+  display: grid;
+  grid-template-columns: minmax(250px, 1.45fr) minmax(190px, 0.9fr) minmax(145px, 0.75fr) minmax(140px, 0.75fr) minmax(190px, auto);
+  gap: 16px;
+  padding: 9px 17px;
+  border-bottom: 1px solid rgba(var(--v-border-color), 0.13);
+  background: rgba(var(--v-theme-on-surface), 0.025);
+  color: rgba(var(--v-theme-on-surface), 0.42);
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+.ledger-columns span:last-child {
+  text-align: right;
 }
 .prototype-row {
   display: grid;
-  grid-template-columns: minmax(190px, 1.3fr) minmax(100px, 0.65fr) minmax(165px, 1fr) minmax(130px, 0.8fr) minmax(190px, auto);
+  grid-template-columns: minmax(250px, 1.45fr) minmax(190px, 0.9fr) minmax(145px, 0.75fr) minmax(140px, 0.75fr) minmax(190px, auto);
   gap: 16px;
   align-items: center;
   min-height: 96px;
@@ -463,17 +506,71 @@ onBeforeUnmount(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.prototype-identity small {
+  display: block;
+  overflow: hidden;
+  margin-top: 3px;
+  color: rgba(var(--v-theme-on-surface), 0.57);
+  font-size: 0.68rem;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .prototype-identity code {
+  display: block;
+  margin-top: 3px;
   color: rgba(var(--v-theme-on-surface), 0.43);
   font-size: 0.64rem;
 }
-.row-stage > span,
 .row-evidence > span {
   color: rgba(var(--v-theme-on-surface), 0.42);
   font-size: 0.62rem;
 }
-.row-stage .wb-badge {
-  justify-self: start;
+.row-stage > strong {
+  color: rgb(var(--v-theme-on-surface));
+  font-size: 0.7rem;
+}
+.asset-spine {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.asset-spine::before {
+  position: absolute;
+  right: 8px;
+  left: 8px;
+  height: 1px;
+  background: rgba(var(--v-theme-on-surface), 0.13);
+  content: "";
+}
+.asset-spine > span {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.22);
+  border-radius: 50%;
+  background: rgb(var(--v-theme-surface));
+  color: rgba(var(--v-theme-on-surface), 0.35);
+}
+.asset-spine > span.complete {
+  border-color: rgb(var(--v-theme-success));
+  background: rgb(var(--v-theme-success));
+  color: rgb(var(--v-theme-on-success));
+}
+.asset-spine > span.current {
+  border-color: rgb(var(--v-theme-primary));
+  box-shadow: 0 0 0 3px color-mix(in srgb, rgb(var(--v-theme-primary)) 12%, transparent);
+}
+.asset-spine i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
 }
 .row-evidence strong {
   font-size: 0.75rem;
@@ -529,12 +626,30 @@ onBeforeUnmount(() => {
   .rail-stage:nth-child(2) {
     border-right: 0;
   }
+  .ledger-columns {
+    display: none;
+  }
   .prototype-row {
-    grid-template-columns: minmax(190px, 1.4fr) minmax(100px, 0.7fr) minmax(150px, 1fr);
+    grid-template-columns: minmax(240px, 1.4fr) minmax(180px, 0.9fr) minmax(150px, 1fr);
   }
   .row-meta,
   .row-actions {
     grid-column: span 1;
+  }
+}
+@media (max-width: 1350px) {
+  .prototype-row {
+    grid-template-columns: minmax(220px, 1.2fr) minmax(180px, 1fr);
+  }
+  .row-evidence {
+    grid-column: 2;
+  }
+  .row-meta {
+    grid-column: 1;
+  }
+  .row-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
   }
 }
 @media (max-width: 760px) {

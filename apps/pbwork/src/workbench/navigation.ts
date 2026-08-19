@@ -254,12 +254,12 @@ export function buildPrototypeTree(
   effectiveLifecycle: (
     prototypeId: string,
     registered: PrototypeLifecycle,
-  ) => PrototypeLifecycle = (_, registered) => registered,
+  ) => PrototypeLifecycle = () => "active",
 ): PrototypeTreeNode[] {
   const prototypes = loadPrototypes().filter(
     (item) =>
       lifecycle === "all" ||
-      effectiveLifecycle(item.id, item.lifecycle) === lifecycle,
+      effectiveLifecycle(item.id, "active") === lifecycle,
   );
   return prototypes.map((prototype) => ({
     id: prototype.id,
@@ -283,12 +283,12 @@ export function countPrototypesForLifecycle(
   effectiveLifecycle: (
     prototypeId: string,
     registered: PrototypeLifecycle,
-  ) => PrototypeLifecycle = (_, registered) => registered,
+  ) => PrototypeLifecycle = () => "active",
 ): number {
   return loadPrototypes().filter(
     (prototype) =>
       lifecycle === "all" ||
-      effectiveLifecycle(prototype.id, prototype.lifecycle) === lifecycle,
+      effectiveLifecycle(prototype.id, "active") === lifecycle,
   ).length;
 }
 
@@ -296,13 +296,13 @@ export function buildWorkbenchNavigationTree(
   effectiveLifecycle: (
     prototypeId: string,
     registered: PrototypeLifecycle,
-  ) => PrototypeLifecycle = (_, registered) => registered,
+  ) => PrototypeLifecycle = () => "active",
   lifecycleFilter: "all" | PrototypeLifecycle = "all",
 ): WorkbenchNavigationTreeNode[] {
   const prototypes = loadPrototypes().filter(
     (prototype) =>
       lifecycleFilter === "all" ||
-      effectiveLifecycle(prototype.id, prototype.lifecycle) === lifecycleFilter,
+      effectiveLifecycle(prototype.id, "active") === lifecycleFilter,
   );
   const screens = loadPrototypeScreens();
 

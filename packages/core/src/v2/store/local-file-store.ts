@@ -41,6 +41,15 @@ import { computeScopeKey } from '../contracts/scope.js';
 import { BundleSnapshot } from '../contracts/snapshot.js';
 import { StalenessReport } from '../contracts/staleness.js';
 import {
+  PROTOTYPE_LIFECYCLE_TRANSITIONS,
+  PrototypeFinalizedArtifacts,
+  PrototypeLifecycleEvent,
+  PrototypeLifecycleOperation,
+  PrototypeLifecycleRecord,
+  PrototypeLifecycleStage,
+  type PrototypeFinalizedArtifacts as PrototypeFinalizedArtifactsType,
+} from '../contracts/prototype-lifecycle.js';
+import {
   EVIDENCE_LEVELS,
   evidenceLevelAtLeast,
   type ExecutingJobStatus,
@@ -92,6 +101,10 @@ import {
   stalenessReportPath,
   stalenessReportsDir,
   workspaceManifestPath,
+  prototypeLifecycleEventPath,
+  prototypeLifecycleEventsDir,
+  prototypeLifecycleRecordPath,
+  prototypeLifecyclesDir,
 } from './paths.js';
 import { buildNextSnapshot } from './snapshot-builder.js';
 import type {
@@ -106,9 +119,12 @@ import type {
   FindReusableEvidenceInput,
   ForkBundleInput,
   InitResult,
+  ImportPrototypeLifecycleInput,
   JobJournalEntryInput,
   PutBlobInput,
   StoreCapacity,
+  TransitionPrototypeLifecycleInput,
+  UpdatePrototypeLifecycleOperationInput,
   V2Store,
 } from './types.js';
 import { acquireWriterLock } from './writer-lock.js';
@@ -355,6 +371,316 @@ export class LocalFileStore implements V2Store {
       );
     }
     await this.assertHealthy();
+  }
+
+  // ------------------------------------------------------ Prototype lifecycle
+
+  private lifecycleEventId(prototypeId: PrototypeId, revision: number) {
+    return `${prototypeId}.lifecycle.r${revision}` as import('../contracts/ids.js').PrototypeLifecycleEventId;
+  }
+
+  private async assertPrototypeArtifacts(
+    prototypeId: PrototypeId,
+    artifacts: PrototypeFinalizedArtifactsType,
+  ): Promise<void> {
+    const parsed = PrototypeFinalizedArtifacts.parse(artifacts);
+    const bundle = await this.getBundle(parsed.bundleId);
+    if (!bundle || bundle.prototypeId !== prototypeId || bundle.status === 'trashed') {
+      throw new V2ContractError(
+        'unknown-reference',
+        `Prototype ${prototypeId} lifecycle artifacts require a non-trashed Bundle owned by that Prototype.`,
+      );
+    }
+    const [snapshot, handoff, job] = await Promise.all([
+      this.getSnapshot(parsed.bundleId, parsed.snapshotId),
+      this.getHandoff(parsed.handoffId),
+      this.getJob(parsed.jobId),
+    ]);
+    if (!snapshot || snapshot.prototypeId !== prototypeId) {
+      throw unknownReferenceError('Prototype lifecycle Snapshot', parsed.snapshotId);
+    }
+    if (
+      !handoff ||
+      handoff.bundleId !== parsed.bundleId ||
+      handoff.snapshotId !== parsed.snapshotId
+    ) {
+      throw unknownReferenceError('Prototype lifecycle Handoff', parsed.handoffId);
+    }
+    if (!job || job.bundleId !== parsed.bundleId || job.status !== 'completed') {
+      throw unknownReferenceError('Prototype lifecycle completed Job', parsed.jobId);
+    }
+  }
+
+  private async readPrototypeLifecycle(
+    prototypeId: PrototypeId,
+  ): Promise<PrototypeLifecycleRecord | undefined> {
+    const raw = await readJson<unknown>(
+      prototypeLifecycleRecordPath(this.root, prototypeId),
+    );
+    if (raw === undefined) return undefined;
+    const parsed = PrototypeLifecycleRecord.safeParse(raw);
+    if (!parsed.success) {
+      throw invalidSchemaError('PrototypeLifecycleRecord', parsed.error, raw);
+    }
+    if (
+      parsed.data.workspaceId !== this.workspaceId ||
+      parsed.data.prototypeId !== prototypeId
+    ) {
+      throw new V2ContractError(
+        'workspace-mismatch',
+        `Prototype lifecycle ${prototypeId} does not belong to Workspace ${this.workspaceId}.`,
+      );
+    }
+    return parsed.data;
+  }
+
+  async ensurePrototypeLifecycle(
+    prototypeId: PrototypeId,
+  ): Promise<PrototypeLifecycleRecord> {
+    await this.assertWritableStore();
+    const parsedId = (await import('../contracts/ids.js')).PrototypeId.parse(prototypeId);
+    const existing = await this.readPrototypeLifecycle(parsedId);
+    if (existing) return existing;
+    const now = new Date().toISOString();
+    const record = PrototypeLifecycleRecord.parse({
+      schemaVersion: V2_SCHEMA_MAJOR,
+      workspaceId: this.workspaceId,
+      prototypeId: parsedId,
+      stage: 'active',
+      operation: { kind: 'idle' },
+      artifacts: null,
+      revision: 1,
+      createdAt: now,
+      updatedAt: now,
+    });
+    const event = PrototypeLifecycleEvent.parse({
+      schemaVersion: V2_SCHEMA_MAJOR,
+      eventId: this.lifecycleEventId(parsedId, 1),
+      workspaceId: this.workspaceId,
+      prototypeId: parsedId,
+      from: null,
+      to: 'active',
+      note: 'Initialized in Core Store',
+      artifacts: null,
+      recordRevision: 1,
+      changedAt: now,
+    });
+    await writeImmutableJson(
+      prototypeLifecycleEventPath(this.root, parsedId, event.eventId),
+      'PrototypeLifecycleEvent',
+      event,
+    );
+    await writeJsonAtomic(prototypeLifecycleRecordPath(this.root, parsedId), record);
+    return record;
+  }
+
+  async importPrototypeLifecycle(
+    input: ImportPrototypeLifecycleInput,
+  ): Promise<PrototypeLifecycleRecord> {
+    await this.assertWritableStore();
+    const prototypeId = (await import('../contracts/ids.js')).PrototypeId.parse(input.prototypeId);
+    if (await this.readPrototypeLifecycle(prototypeId)) {
+      throw new V2ContractError(
+        'lifecycle-conflict',
+        `Prototype ${prototypeId} already has a persisted lifecycle record.`,
+      );
+    }
+    const stage = PrototypeLifecycleStage.parse(input.stage);
+    const artifacts = input.artifacts
+      ? PrototypeFinalizedArtifacts.parse(input.artifacts)
+      : null;
+    if ((stage === 'final' || stage === 'archived') && !artifacts) {
+      throw new V2ContractError(
+        'invalid-schema',
+        `Imported ${stage} lifecycle requires validated finalized artifacts.`,
+      );
+    }
+    if ((stage === 'active' || stage === 'review') && artifacts) {
+      throw new V2ContractError(
+        'invalid-schema',
+        `Imported ${stage} lifecycle cannot retain finalized artifacts.`,
+      );
+    }
+    if (artifacts) await this.assertPrototypeArtifacts(prototypeId, artifacts);
+    const createdAt = input.createdAt ?? new Date().toISOString();
+    const updatedAt = input.updatedAt ?? createdAt;
+    const record = PrototypeLifecycleRecord.parse({
+      schemaVersion: V2_SCHEMA_MAJOR,
+      workspaceId: this.workspaceId,
+      prototypeId,
+      stage,
+      operation: { kind: 'idle' },
+      artifacts,
+      revision: 1,
+      createdAt,
+      updatedAt,
+    });
+    const event = PrototypeLifecycleEvent.parse({
+      schemaVersion: V2_SCHEMA_MAJOR,
+      eventId: this.lifecycleEventId(prototypeId, 1),
+      workspaceId: this.workspaceId,
+      prototypeId,
+      from: null,
+      to: stage,
+      note: input.note?.trim() || 'Validated import from PBWork local lifecycle v2',
+      artifacts,
+      recordRevision: 1,
+      changedAt: updatedAt,
+    });
+    await writeImmutableJson(
+      prototypeLifecycleEventPath(this.root, prototypeId, event.eventId),
+      'PrototypeLifecycleEvent',
+      event,
+    );
+    await writeJsonAtomic(prototypeLifecycleRecordPath(this.root, prototypeId), record);
+    return record;
+  }
+
+  async getPrototypeLifecycle(
+    prototypeId: PrototypeId,
+  ): Promise<PrototypeLifecycleRecord | undefined> {
+    return this.readPrototypeLifecycle(prototypeId);
+  }
+
+  async listPrototypeLifecycles(): Promise<PrototypeLifecycleRecord[]> {
+    let entries: import('node:fs').Dirent[];
+    try {
+      entries = await readdir(prototypeLifecyclesDir(this.root), {
+        withFileTypes: true,
+      });
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return [];
+      throw error;
+    }
+    const records = await Promise.all(
+      entries
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => this.readPrototypeLifecycle(entry.name as PrototypeId)),
+    );
+    return records
+      .filter((record): record is PrototypeLifecycleRecord => Boolean(record))
+      .sort((left, right) => left.prototypeId.localeCompare(right.prototypeId));
+  }
+
+  async listPrototypeLifecycleEvents(
+    prototypeId: PrototypeId,
+  ): Promise<PrototypeLifecycleEvent[]> {
+    const ids = await listJsonIds(
+      prototypeLifecycleEventsDir(this.root, prototypeId),
+    );
+    const events = await Promise.all(
+      ids.map(async (eventId) => {
+        const raw = await readJson<unknown>(
+          prototypeLifecycleEventPath(
+            this.root,
+            prototypeId,
+            eventId as import('../contracts/ids.js').PrototypeLifecycleEventId,
+          ),
+        );
+        const parsed = PrototypeLifecycleEvent.safeParse(raw);
+        if (!parsed.success) {
+          throw invalidSchemaError('PrototypeLifecycleEvent', parsed.error, raw);
+        }
+        return parsed.data;
+      }),
+    );
+    return events.sort((left, right) =>
+      right.changedAt.localeCompare(left.changedAt),
+    );
+  }
+
+  async updatePrototypeLifecycleOperation(
+    input: UpdatePrototypeLifecycleOperationInput,
+  ): Promise<PrototypeLifecycleRecord> {
+    await this.assertWritableStore();
+    const current = await this.readPrototypeLifecycle(input.prototypeId);
+    if (!current) {
+      throw unknownReferenceError('Prototype lifecycle', input.prototypeId);
+    }
+    if (current.revision !== input.expectedRevision) {
+      throw new V2ContractError(
+        'lifecycle-conflict',
+        `Prototype ${input.prototypeId} lifecycle revision is ${current.revision}, expected ${input.expectedRevision}.`,
+        { currentRevision: current.revision },
+      );
+    }
+    const record = PrototypeLifecycleRecord.parse({
+      ...current,
+      operation: PrototypeLifecycleOperation.parse(input.operation),
+      revision: current.revision + 1,
+      updatedAt: new Date().toISOString(),
+    });
+    await writeJsonAtomic(
+      prototypeLifecycleRecordPath(this.root, input.prototypeId),
+      record,
+    );
+    return record;
+  }
+
+  async transitionPrototypeLifecycle(
+    input: TransitionPrototypeLifecycleInput,
+  ): Promise<{ record: PrototypeLifecycleRecord; event: PrototypeLifecycleEvent }> {
+    await this.assertWritableStore();
+    const current = await this.readPrototypeLifecycle(input.prototypeId);
+    if (!current) {
+      throw unknownReferenceError('Prototype lifecycle', input.prototypeId);
+    }
+    if (current.revision !== input.expectedRevision) {
+      throw new V2ContractError(
+        'lifecycle-conflict',
+        `Prototype ${input.prototypeId} lifecycle revision is ${current.revision}, expected ${input.expectedRevision}.`,
+        { currentRevision: current.revision },
+      );
+    }
+    const to = PrototypeLifecycleStage.parse(input.to);
+    if (!PROTOTYPE_LIFECYCLE_TRANSITIONS[current.stage].includes(to)) {
+      throw new V2ContractError(
+        'lifecycle-conflict',
+        `Prototype lifecycle cannot transition from ${current.stage} to ${to}.`,
+      );
+    }
+    const artifacts =
+      to === 'final'
+        ? PrototypeFinalizedArtifacts.parse(input.artifacts)
+        : to === 'archived'
+          ? current.artifacts
+          : null;
+    if (artifacts) await this.assertPrototypeArtifacts(input.prototypeId, artifacts);
+    if (to === 'final' && artifacts) {
+      await this.archiveBundle(artifacts.bundleId);
+    }
+    const changedAt = new Date().toISOString();
+    const revision = current.revision + 1;
+    const record = PrototypeLifecycleRecord.parse({
+      ...current,
+      stage: to,
+      operation: { kind: 'idle' },
+      artifacts,
+      revision,
+      updatedAt: changedAt,
+    });
+    const event = PrototypeLifecycleEvent.parse({
+      schemaVersion: V2_SCHEMA_MAJOR,
+      eventId: this.lifecycleEventId(input.prototypeId, revision),
+      workspaceId: this.workspaceId,
+      prototypeId: input.prototypeId,
+      from: current.stage,
+      to,
+      note: input.note?.trim() ?? '',
+      artifacts,
+      recordRevision: revision,
+      changedAt,
+    });
+    await writeImmutableJson(
+      prototypeLifecycleEventPath(this.root, input.prototypeId, event.eventId),
+      'PrototypeLifecycleEvent',
+      event,
+    );
+    await writeJsonAtomic(
+      prototypeLifecycleRecordPath(this.root, input.prototypeId),
+      record,
+    );
+    return { record, event };
   }
 
   // ---------------------------------------------------------------- Bundle
