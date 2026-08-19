@@ -30,4 +30,18 @@ describe('Flutter target documentation scan', () => {
     expect(result.contract.components).toEqual(['docs/components.md']);
     expect(result.contract.complete).toBe(false);
   });
+
+  it('does not treat English token bindings as a GetX state hint', async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), 'pb-flutter-docs-bindings-'));
+    temporaryRoots.push(root);
+    await mkdir(path.join(root, '.agents', 'skills', 'ds-sync'), { recursive: true });
+    await writeFile(
+      path.join(root, '.agents', 'skills', 'ds-sync', 'SKILL.md'),
+      '# Sync\nTranslate component anatomy and token bindings.\n',
+    );
+
+    const result = await scanFlutterTargetDocumentation({ flutterRoot: root });
+
+    expect(result.architectureHints.filter((hint) => hint.kind === 'state')).toEqual([]);
+  });
 });

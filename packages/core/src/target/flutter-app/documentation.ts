@@ -46,10 +46,34 @@ const HINT_PATTERNS: Array<{
   confidence: FlutterArchitectureConfidence;
   needles: RegExp[];
 }> = [
-  { kind: 'state', pattern: 'getx', confidence: 'medium', needles: [/\bGetxController\b/i, /\bGetView\b/i, /\bBindings\b/i] },
+  {
+    kind: 'state',
+    pattern: 'getx',
+    confidence: 'medium',
+    needles: [
+      /\bGetxController\b/i,
+      /\bGetView\b/i,
+      /\bGetBuilder\b/i,
+      /\bObx\b/,
+      /\bBindingsBuilder\b/i,
+      /\bextends\s+Bindings\b/,
+      /package:get\/get\.dart/,
+    ],
+  },
   { kind: 'state', pattern: 'flutter_bloc', confidence: 'medium', needles: [/\bBlocProvider\b/i, /\bBlocBuilder\b/i, /\bCubit\b/i, /\bflutter_bloc\b/i] },
   { kind: 'state', pattern: 'riverpod', confidence: 'medium', needles: [/\bConsumerWidget\b/i, /\bWidgetRef\b/i, /\briverpod\b/i] },
-  { kind: 'state', pattern: 'provider', confidence: 'medium', needles: [/\bChangeNotifierProvider\b/i, /\bcontext\.(watch|read)\b/i, /\bprovider\b/i] },
+  {
+    kind: 'state',
+    pattern: 'provider',
+    confidence: 'medium',
+    needles: [
+      /\bChangeNotifierProvider\b/i,
+      /\bListenableProvider\b/i,
+      /\bMultiProvider\b/i,
+      /\bcontext\.(watch|read)\s*\(/,
+      /package:provider\/provider\.dart/,
+    ],
+  },
   { kind: 'routing', pattern: 'getx', confidence: 'medium', needles: [/\bGetPage\b/i, /\bGet\.toNamed\b/i, /\bGetMaterialApp\b/i] },
   { kind: 'routing', pattern: 'go_router', confidence: 'medium', needles: [/\bGoRouter\b/i, /\bcontext\.(go|push|replace)\b/i] },
   { kind: 'routing', pattern: 'navigator', confidence: 'low', needles: [/\bNavigator\.(push|pop|pushNamed)\b/i] },
@@ -102,7 +126,9 @@ export async function scanFlutterTargetDocumentation(input: {
     }
   }
 
-  const architectureHints = dedupeHints(documents.flatMap((document) => hintsForDocument(document)));
+  const architectureHints = sortHintsByAuthority(
+    dedupeHints(documents.flatMap((document) => hintsForDocument(document))),
+  );
   const contract = buildDocumentationContract(documents.map((document) => document.path));
   return {
     files: documents.map((document) => ({
@@ -115,6 +141,36 @@ export async function scanFlutterTargetDocumentation(input: {
     conflicts: input.architectureProfile ? detectDocumentationConflicts(architectureHints, input.architectureProfile) : [],
     warnings,
   };
+}
+
+function documentationAuthorityRank(file: string): number {
+  const normalized = toPosixPath(file).replace(/^\.\//, '').toLowerCase();
+  if (normalized === 'docs/architecture.md') return 100;
+  if (normalized === 'agents.md' || normalized === 'agent.md') return 90;
+  if (normalized.startsWith('docs/')) return 70;
+  if (normalized === 'readme.md') return 50;
+  if (
+    normalized.startsWith('.agents/')
+    || normalized.startsWith('.cursor/')
+    || normalized.startsWith('.codex/')
+    || normalized.startsWith('.claude/')
+    || normalized === '.cursorrules'
+    || normalized.endsWith('/cursorrules')
+  ) {
+    return 10;
+  }
+  return 40;
+}
+
+export function authoritativeStateHints(
+  hints: FlutterTargetDocumentationEvidence['architectureHints'],
+): FlutterTargetDocumentationEvidence['architectureHints'] {
+  const stateHints = hints.filter((hint) => hint.kind === 'state');
+  if (stateHints.length === 0) return [];
+  const topRank = Math.max(...stateHints.map((hint) => documentationAuthorityRank(hint.file)));
+  return stateHints
+    .filter((hint) => documentationAuthorityRank(hint.file) === topRank)
+    .sort((left, right) => left.file.localeCompare(right.file) || left.pattern.localeCompare(right.pattern));
 }
 
 export function withDocumentationConflicts(
@@ -207,7 +263,7 @@ function detectDocumentationConflicts(
   hints: DocumentationHint[],
   scannedArchitecture: FlutterArchitectureProfile,
 ): string[] {
-  const conflicts: string[] = [];
+  const conflicts: string[] = [...detectStateDocumentationConflicts(hints)];
   for (const hint of hints) {
     if (hint.confidence === 'low') continue;
     if (hint.kind === 'routing' && scannedArchitecture.routing.pattern !== 'unknown' && scannedArchitecture.routing.pattern !== hint.pattern) {
@@ -221,6 +277,29 @@ function detectDocumentationConflicts(
     }
   }
   return dedupe(conflicts);
+}
+
+function detectStateDocumentationConflicts(hints: DocumentationHint[]): string[] {
+  const top = authoritativeStateHints(hints);
+  const patterns = [...new Set(top.map((hint) => hint.pattern))];
+  if (patterns.length <= 1) return [];
+  return [
+    `Target documentation declares conflicting state patterns at the same authority (${patterns.join(', ')}): ${
+      top.map((hint) => `${hint.pattern} in ${hint.file}`).join('; ')
+    }.`,
+  ];
+}
+
+function sortHintsByAuthority(hints: DocumentationHint[]): DocumentationHint[] {
+  return [...hints].sort((left, right) => {
+    const rank = documentationAuthorityRank(right.file) - documentationAuthorityRank(left.file);
+    if (rank !== 0) return rank;
+    const kind = left.kind.localeCompare(right.kind);
+    if (kind !== 0) return kind;
+    const pattern = left.pattern.localeCompare(right.pattern);
+    if (pattern !== 0) return pattern;
+    return left.file.localeCompare(right.file);
+  });
 }
 
 function dedupeHints(hints: DocumentationHint[]): DocumentationHint[] {

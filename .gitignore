@@ -42,3 +42,6 @@ proto-bridge.config.json
 
 # Cursor
 .cursor-tmp/
+
+# FVM Version Cache
+.fvm/

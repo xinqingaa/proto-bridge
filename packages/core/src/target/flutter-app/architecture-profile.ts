@@ -13,7 +13,11 @@ import type {
   FlutterTargetDocumentationEvidence,
 } from '../../types/index.js';
 import { pathExists, toPosixPath } from '../../shared/paths.js';
-import { scanFlutterTargetDocumentation, withDocumentationConflicts } from './documentation.js';
+import {
+  authoritativeStateHints,
+  scanFlutterTargetDocumentation,
+  withDocumentationConflicts,
+} from './documentation.js';
 
 type DartFile = {
   path: string;
@@ -179,7 +183,34 @@ function stateFacetFromDocumentation(
   documentation: FlutterTargetDocumentationEvidence,
 ): FlutterStateArchitectureFacet {
   const hints = documentation.architectureHints.filter((hint) => hint.kind === 'state');
-  const hint = hints[0];
+  const top = authoritativeStateHints(hints);
+  if (top.length === 0) return absentStateFacet();
+  const patterns = [...new Set(top.map((hint) => hint.pattern))];
+  const additional = (excluded: Array<{ file: string; pattern: string }>) => {
+    const skip = new Set(excluded.map((item) => `${item.file}:${item.pattern}`));
+    return hints
+      .filter((item) => !skip.has(`${item.file}:${item.pattern}`))
+      .map((item) => `Additional documentation hint: ${item.pattern} in ${item.file}.`);
+  };
+  if (patterns.length > 1) {
+    return {
+      source: 'target-documentation',
+      pattern: 'unspecified',
+      confidence: 'low',
+      evidence: [
+        `Target documentation declares conflicting state patterns: ${
+          top.map((hint) => `${hint.pattern} in ${hint.file}`).join('; ')
+        }.`,
+        ...additional(top),
+      ],
+      examples: top.slice(0, 8).map((hint) => ({
+        file: hint.file,
+        symbol: hint.pattern,
+        snippet: hint.evidence,
+      })),
+    };
+  }
+  const hint = top[0];
   if (!hint) return absentStateFacet();
   return {
     source: 'target-documentation',
@@ -187,7 +218,7 @@ function stateFacetFromDocumentation(
     confidence: hint.confidence,
     evidence: [
       `Target documentation ${hint.file} declares state pattern ${hint.pattern}.`,
-      ...hints.slice(1).map((item) => `Additional documentation hint: ${item.pattern} in ${item.file}.`),
+      ...additional([hint]),
     ],
     examples: [{
       file: hint.file,
