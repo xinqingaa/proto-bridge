@@ -270,16 +270,23 @@ test("cold-chain-ops satisfies every authored Variant and required Scenario boun
             pbId: "cold-chain-ops.exception-queue.scroll-list",
           },
         };
-        for (const slot of ["summary", "search", "severity-tabs", "list"]) {
+        for (const slot of ["summary", "search", "severity-tabs"]) {
           const pbId = `cold-chain-ops.exception-queue.${slot}`;
           const node = snapshot.payload.nodes.find(
             (candidate: { fragment: { pbId: string } }) =>
               candidate.fragment.pbId === pbId,
           );
           expect(node, pbId).toBeTruthy();
-          expect(node.scrollOwner).toEqual(scrollListOwner);
-          expect(node.scrollOwner.fragment.pbId).not.toMatch(/^ds\./);
+          expect(node.scrollOwner).toEqual({ kind: "viewport" });
         }
+        const listNode = snapshot.payload.nodes.find(
+          (candidate: { fragment: { pbId: string } }) =>
+            candidate.fragment.pbId ===
+            "cold-chain-ops.exception-queue.list",
+        );
+        expect(listNode, "cold-chain-ops.exception-queue.list").toBeTruthy();
+        expect(listNode.scrollOwner).toEqual(scrollListOwner);
+        expect(listNode.scrollOwner.fragment.pbId).not.toMatch(/^ds\./);
         const topology = await request(`cold-chain-topology-${suffix}`, {
           kind: "semantic-snapshot",
           fragments: [

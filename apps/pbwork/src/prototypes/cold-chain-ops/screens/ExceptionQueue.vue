@@ -45,7 +45,7 @@ const tabByVariant: Record<string, SeverityTab> = {
   "attention-only": "attention",
 };
 const filter = ref<SeverityTab>("all");
-const refreshing = ref(false);
+const refreshingTab = ref<SeverityTab | null>(null);
 const variant = computed(() =>
   typeof route.query.variant === "string" ? route.query.variant : "default",
 );
@@ -115,10 +115,17 @@ function retry() {
   void replaceColdChainVariant(router, route, "default");
 }
 
-function refresh() {
-  refreshing.value = true;
+function inspectIdFor(slot: string, tab: string) {
+  return tab === filter.value
+    ? `cold-chain-ops.exception-queue.${slot}`
+    : `cold-chain-ops.exception-queue.${slot}.${tab}`;
+}
+
+function refresh(tab: string) {
+  if (!severityTabs.some((item) => item.value === tab)) return;
+  refreshingTab.value = tab as SeverityTab;
   window.setTimeout(() => {
-    refreshing.value = false;
+    refreshingTab.value = null;
   }, 450);
 }
 </script>
@@ -178,16 +185,8 @@ function refresh() {
         </section>
       </template>
 
-      <ScrollableDataList
-        v-else
-        class="queue-scroll"
-        :pull-refresh="{ enabled: true, mouse: false }"
-        :load-more="false"
-        :refreshing="refreshing"
-        inspect-id="cold-chain-ops.exception-queue.scroll-list"
-        @refresh="refresh"
-      >
-        <div class="queue-content">
+      <div v-else class="queue-content">
+        <div class="queue-header">
           <Card
             semantic-role="summary"
             inspect-id="cold-chain-ops.exception-queue.summary"
@@ -278,59 +277,66 @@ function refresh() {
             placeholder="搜索异常、运单或线路"
             inspect-id="cold-chain-ops.exception-queue.search"
           />
-          <PrimaryTabs
-            v-model="filter"
-            :items="severityTabs"
-            grow
-            inspect-id="cold-chain-ops.exception-queue.severity-tabs"
-            @update:model-value="selectSeverity"
+        </div>
+        <PrimaryTabs
+          v-model="filter"
+          class="queue-tabs"
+          :items="severityTabs"
+          grow
+          fill
+          inspect-id="cold-chain-ops.exception-queue.severity-tabs"
+          @update:model-value="selectSeverity"
+        >
+          <template
+            v-for="tab in severityTabs"
+            :key="tab.value"
+            #[tab.value]
           >
-            <template
-              v-for="tab in severityTabs"
-              :key="tab.value"
-              #[tab.value]
+            <ScrollableDataList
+              class="queue-tab-scroll"
+              :pull-refresh="{
+                enabled: exceptionsForTab(tab.value).length > 0,
+                mouse: false,
+              }"
+              :load-more="false"
+              :refreshing="refreshingTab === tab.value"
+              :inspect-id="inspectIdFor('scroll-list', tab.value)"
+              @refresh="refresh(tab.value)"
             >
-              <EmptyState
-                v-if="exceptionsForTab(tab.value).length === 0"
-                :title="emptyTitle"
-                :description="emptyDescription"
-                :inspect-id="
-                  tab.value === filter
-                    ? 'cold-chain-ops.exception-queue.empty'
-                    : 'cold-chain-ops.exception-queue.empty.' + tab.value
-                "
-              />
+              <div class="queue-tab-content">
+                <EmptyState
+                  v-if="exceptionsForTab(tab.value).length === 0"
+                  :title="emptyTitle"
+                  :description="emptyDescription"
+                  :inspect-id="inspectIdFor('empty', tab.value)"
+                />
 
-              <DataList
-                v-else
-                class="exception-list"
-                :divided="false"
-                surface="none"
-                rounded="none"
-                :inspect-id="
-                  tab.value === filter
-                    ? 'cold-chain-ops.exception-queue.list'
-                    : 'cold-chain-ops.exception-queue.list.' + tab.value
-                "
-              >
-                <button
-                  v-for="item in exceptionsForTab(tab.value)"
-                  :key="item.id"
-                  type="button"
-                  class="exception-row"
-                  data-pb-id="cold-chain-ops.exception-queue.list.row"
-                  :data-pb-key="tab.value + '-' + item.id"
-                  data-pb-role="list-item"
-                  data-pb-token-background="color.surface"
-                  data-pb-token-radius="radius.lg"
-                  data-pb-token-spacing="spacing.md"
-                  :data-pb-action="
-                    tab.value === filter && item.id === 'ex-017'
-                      ? 'open-primary-exception'
-                      : undefined
-                  "
-                  @click="openException(item.shipmentId, item.severity)"
+                <DataList
+                  v-else
+                  class="exception-list"
+                  :divided="false"
+                  surface="none"
+                  rounded="none"
+                  :inspect-id="inspectIdFor('list', tab.value)"
                 >
+                  <button
+                    v-for="item in exceptionsForTab(tab.value)"
+                    :key="item.id"
+                    type="button"
+                    class="exception-row"
+                    data-pb-id="cold-chain-ops.exception-queue.list.row"
+                    :data-pb-key="tab.value + '-' + item.id"
+                    data-pb-role="list-item"
+                    data-pb-token-background="color.surface"
+                    data-pb-token-radius="radius.lg"
+                    data-pb-token-spacing="spacing.md"
+                    :data-pb-action="
+                      tab.value === filter && item.id === 'ex-017'
+                        ? 'open-primary-exception'
+                        : undefined
+                    "
+                    @click="openException(item.shipmentId, item.severity)"
+                  >
                     <div class="row-heading">
                       <span
                         data-pb-id="cold-chain-ops.exception-queue.list.row.identity"
@@ -350,9 +356,7 @@ function refresh() {
                               : 'primary'
                         "
                         :inspect-id="
-                          tab.value === filter
-                            ? 'cold-chain-ops.exception-queue.list.row.severity'
-                            : 'cold-chain-ops.exception-queue.list.row.severity.' + tab.value
+                          inspectIdFor('list.row.severity', tab.value)
                         "
                         :pb-key="tab.value + '-' + item.id"
                       />
@@ -391,27 +395,56 @@ function refresh() {
                       >
                       <small>{{ item.updatedAt }}</small>
                     </div>
-                </button>
-              </DataList>
-            </template>
-          </PrimaryTabs>
-        </div>
-      </ScrollableDataList>
+                  </button>
+                </DataList>
+              </div>
+            </ScrollableDataList>
+          </template>
+        </PrimaryTabs>
+      </div>
     </div>
   </ColdChainShell>
 </template>
 
 <style scoped>
 .queue-page,
-.queue-scroll {
-  height: var(--pb-layout-fill);
+.queue-content,
+.queue-tabs {
   min-height: var(--pb-spacing-none);
+  overflow: hidden;
 }
+.queue-page,
 .queue-content {
   display: flex;
   flex-direction: column;
+  height: var(--pb-layout-fill);
+}
+.queue-content,
+.queue-tabs,
+.queue-tab-scroll {
+  flex: var(--pb-layout-flex-fill);
+}
+.queue-content {
   gap: var(--pb-spacing-sm-plus);
-  padding: var(--pb-spacing-md);
+}
+.queue-header,
+.queue-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-spacing-sm-plus);
+}
+.queue-header {
+  padding: var(--pb-spacing-md) var(--pb-spacing-md) var(--pb-spacing-none);
+}
+.queue-tabs {
+  padding: var(--pb-spacing-none) var(--pb-spacing-md);
+}
+.queue-tab-scroll {
+  height: var(--pb-layout-fill);
+  min-height: var(--pb-spacing-none);
+}
+.queue-tab-content {
+  padding-bottom: var(--pb-spacing-md);
 }
 .card-body {
   display: flex;
