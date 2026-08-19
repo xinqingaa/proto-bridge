@@ -7,7 +7,7 @@
 | 全局优先级 | 状态 | Roadmap | 目标投入 | 主线 |
 | --- | --- | --- | --- | --- |
 | P2 | Deferred | [官方 Flutter MCP 与分级 Target 验收](./flutter-mcp-target-review.md) | 暂不投入 | 保留实验代码与复盘；满足恢复条件后重新 spike |
-| P2 | Planned | [PBWork 原型生命周期与 Release 管理](./prototype-lifecycle-and-release.md) | 待单独排期 | 稳定 Prototype identity、不可变 v1/v2 Release、定稿采集与 Archive |
+| P2 | Planned | [PBWork 原型生命周期设计包](./prototype-lifecycle-and-release.md) | 设计确认后拆分 | 四阶段职责、自动全原型 Evidence/Prompt、不可变 vN、指纹/Staleness 与永久归档 |
 
 ## 状态定义
 
