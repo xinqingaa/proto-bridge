@@ -339,7 +339,7 @@ export const TOKEN_CATEGORIES: TokenCategory[] = [
 
 export const LIFECYCLE_LABELS: Record<PrototypeLifecycle, string> = {
   active: "进行中",
-  review: "待确认",
+  review: "待确定",
   final: "已定稿",
   archived: "已归档",
 };

@@ -19,7 +19,7 @@ export const prototypes = [
   {
     id: "hengdong",
     label: "恒动 · 健身自律记录",
-    lifecycle: "review",
+    lifecycle: "active",
     owners: ["个人健康产品"],
     roles: ["健身入门用户", "自律记录用户"],
     defaultThemeId: "light",

@@ -1,7 +1,7 @@
 # PBWork Workbench
 
 Use this workflow for the PBWork management shell, navigation, Canvas,
-Inspector, prototype management, Capture Console, Deliver flow, task center,
+Inspector, prototype lifecycle management, finalized Capture, task center,
 Evidence Review, and Workbench-only UI primitives. It does not govern business
 Prototype Screens or their Design System.
 
@@ -29,11 +29,19 @@ Prototype Screens or their Design System.
 
 ## Capture and Evidence
 
-- Keep "Deliver to Agent" as the primary flow: confirm scope, capture, expose
-  result/risk, generate the Agent prompt, and write `.proto-bridge/deliveries/`.
-- Deliver may run automatic preflight, but starting delivery requires explicit
-  confirmation. Confirm warnings and risks individually; do not add skip-all.
-- Produce the same Core Selection Draft as CLI `deliver`; do not duplicate Core logic.
+- PBWork delivery begins only at the `review -> final` lifecycle transition.
+  Build the whole-Prototype Draft automatically; do not expose range selection
+  or manual Screen, Fragment, Component, control, or Prototype capture buttons.
+- Run Preflight, Capture, Handoff, and prompt creation as one finalization flow.
+  Require the convergence confirmation and confirm warnings and risks
+  individually; do not add skip-all.
+- Commit `final` only after the existing Core flow produced Evidence, Handoff,
+  Delivery, and the one bound Agent prompt. Final/archived views may only read
+  and copy it; do not expose generate or regenerate actions.
+- Rolling `final` back to `review` must first trash its bound Bundle and clear
+  all formal artifact refs. `archived` is terminal. Never expose Prototype delete.
+- Keep CLI capture independent from PBWork lifecycle. Produce the same Core
+  Selection Draft as CLI `deliver`; do not duplicate Core logic.
 - Read Job, Run, Attempt, revision, and Snapshot states from Core Contracts.
 - Keep background history in task center, details in Evidence Review, and the
   active delivery progress in Deliver UI.

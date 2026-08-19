@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   Image,
   Palette,
-  RefreshCw,
   Route,
 } from "lucide-vue-next";
 import {
@@ -19,7 +18,6 @@ import { useCaptureStore } from "@/app/stores/capture";
 import { loadPrototypeScreens } from "@/design-system/loaders";
 import EvidencePreview from "@/capture/EvidencePreview.vue";
 import EvidenceDeliveryPanel from "@/capture/EvidenceDeliveryPanel.vue";
-import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
 import WorkbenchTabs, {
   type WorkbenchTabItem,
 } from "@/workbench/ui/WorkbenchTabs.vue";
@@ -129,10 +127,6 @@ function selectCase(item: EvidenceCaseReadModel) {
 function factSummary(fact: EvidenceReadableFact) {
   return friendlyValue(fact.value);
 }
-async function recaptureSelected() {
-  if (!selectedCase.value) return;
-  await capture.recaptureEvidence(props.bundleId, selectedCase.value.caseId);
-}
 async function load() {
   if (!capture.connected) await capture.connect();
   await capture.loadSnapshot(props.bundleId, props.snapshotId);
@@ -166,7 +160,7 @@ watch(
     <header class="viewer-header">
       <div class="title-row">
         <RouterLink to="/workbench/capture" class="back-link">
-          <ArrowLeft :size="15" />采集历史
+          <ArrowLeft :size="15" />定稿采集
         </RouterLink>
         <div>
           <h1>采集结果</h1>
@@ -213,14 +207,6 @@ watch(
             <span>{{ selectedCase.scenario ? "交互结果" : "页面状态" }}</span>
             <h2>{{ caseTitle(selectedCase) }}</h2>
           </div>
-          <WorkbenchButton
-            size="small"
-            tone="neutral"
-            :loading="capture.busy"
-            @click="recaptureSelected"
-          >
-            <RefreshCw :size="13" />重新采集
-          </WorkbenchButton>
         </header>
 
         <div class="inspector-tabs">

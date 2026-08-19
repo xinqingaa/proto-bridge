@@ -71,7 +71,7 @@ export const primaryNavigation: Array<
   },
   { id: "drafts", label: "草稿", to: "/workbench/drafts/hengdong" },
   { id: "prototypes", label: "原型", to: "/workbench/prototypes/all" },
-  { id: "capture", label: "采集", to: "/workbench/capture" },
+  { id: "capture", label: "定稿采集", to: "/workbench/capture" },
 ];
 
 const tokenCategoryLabels: Record<TokenCategory, string> = {
@@ -180,8 +180,8 @@ export function buildCaptureNavigation(): WorkbenchNavigationItem[] {
   return [
     {
       id: "capture-console",
-      label: "采集历史",
-      group: "采集",
+      label: "定稿采集",
+      group: "已定稿",
       to: "/workbench/capture",
     },
   ];
@@ -199,7 +199,7 @@ export function buildDraftNavigation(): WorkbenchNavigationItem[] {
   }));
 }
 
-/** Sidebar: 采集历史 as the only first-level node; each job is a child. */
+/** Sidebar: 定稿采集 as the only first-level node; each finalized job is a child. */
 export function buildCaptureHistoryNavigationNodes(
   presentations: Array<{
     job: { jobId: string; acceptedAt: string };
@@ -223,7 +223,7 @@ export function buildCaptureHistoryNavigationNodes(
   return [
     {
       id: "capture-console",
-      label: "采集历史",
+      label: "定稿采集",
       kind: "group",
       to: "/workbench/capture",
       count: children.length,
@@ -403,7 +403,7 @@ export function buildWorkbenchNavigationTree(
     },
     {
       id: "capture",
-      label: "采集",
+      label: "定稿采集",
       kind: "section",
       to: "/workbench/capture",
       children: buildCaptureNavigation().map((item) => ({

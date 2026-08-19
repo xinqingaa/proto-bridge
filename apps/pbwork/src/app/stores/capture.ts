@@ -576,9 +576,6 @@ export const useCaptureStore = defineStore("capture-v2", {
           this.deliverStep = 2;
           this.acknowledgedRiskKinds = [];
           await this.previewCurrentHandoff();
-          // Auto-ack risks for deliver continuity; risks stay in the Agent prompt.
-          this.acknowledgedRiskKinds =
-            this.handoffPreview?.risks.map((risk) => risk.kind) ?? [];
         }
       } catch (error) {
         this.setError(error);
@@ -870,8 +867,7 @@ export const useCaptureStore = defineStore("capture-v2", {
       this.composerOpen = true;
       this.handoffSheetOpen = false;
       void this.previewCurrentHandoff().then(() => {
-        this.acknowledgedRiskKinds =
-          this.handoffPreview?.risks.map((risk) => risk.kind) ?? [];
+        this.acknowledgedRiskKinds = [];
       });
     },
     closeHandoffSheet() {

@@ -9,7 +9,6 @@ import {
   MousePointer2,
   Plus,
   RefreshCw,
-  ScanLine,
   SlidersHorizontal,
 } from "lucide-vue-next";
 import { useCanvasStore } from "@/app/stores/canvas";
@@ -26,8 +25,6 @@ const props = defineProps<{
   isDark: boolean;
   fullscreen: boolean;
   copyFeedback?: string | null;
-  captureDisabled?: boolean;
-  captureLabel?: string;
 }>();
 
 const emit = defineEmits<{
@@ -38,7 +35,6 @@ const emit = defineEmits<{
   fullscreen: [];
   copy: [];
   "copy-and-open": [];
-  capture: [];
 }>();
 
 const canvas = useCanvasStore();
@@ -248,22 +244,6 @@ function onTogglePan() {
     <div class="toolbar-spacer" />
 
     <div class="toolbar-cluster" role="group" aria-label="链接">
-      <v-tooltip :text="captureLabel ?? '采集当前页面'" location="bottom">
-        <template #activator="{ props: tip }">
-          <button
-            v-bind="tip"
-            type="button"
-            class="tool-btn tool-primary"
-            :aria-label="captureLabel ?? '采集当前页面'"
-            :disabled="captureDisabled"
-            data-testid="capture-current-screen"
-            @click="emit('capture')"
-          >
-            <ScanLine :size="15" aria-hidden="true" />
-          </button>
-        </template>
-      </v-tooltip>
-      <span class="cluster-sep" aria-hidden="true" />
       <v-tooltip text="刷新" location="bottom">
         <template #activator="{ props: tip }">
           <button

@@ -32,7 +32,7 @@ try {
       "test",
       "e2e/evidence-usability.spec.ts",
       "--grep",
-      "evidence viewer can reopen deliver flow",
+      "lifecycle finalization produces one fixed Evidence",
     ],
     {
       PBWORK_E2E_PORT: String(uiPort),

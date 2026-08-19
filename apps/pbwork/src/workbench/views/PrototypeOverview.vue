@@ -4,36 +4,36 @@ import {
   Check,
   ChevronDown,
   CircleDot,
+  FolderOpen,
   History,
   RotateCcw,
   ScanLine,
 } from "lucide-vue-next";
-import { useRoute, useRouter } from "vue-router";
+import { useRouter } from "vue-router";
 import ResourcePageShell from "@/workbench/views/ResourcePageShell.vue";
 import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
 import { LIFECYCLE_LABELS } from "@/design-system/types";
 import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
 import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
-import WorkbenchBadge from "@/workbench/ui/WorkbenchBadge.vue";
 import WorkbenchStatChip from "@/workbench/ui/WorkbenchStatChip.vue";
-import LifecycleTransitionDialog from "@/workbench/prototypes/LifecycleTransitionDialog.vue";
+import LifecycleTransitionDialog, {
+  type LifecycleIntent,
+} from "@/workbench/prototypes/LifecycleTransitionDialog.vue";
 import PrototypeFlowRail from "@/workbench/prototypes/PrototypeFlowRail.vue";
 import ScreenPreviewCard from "@/workbench/prototypes/ScreenPreviewCard.vue";
 import { resolveScreenGroups } from "@/workbench/prototypes/resolveScreenGroups";
-import { useCaptureStore } from "@/app/stores/capture";
 
 const props = defineProps<{
   prototypeId: string;
 }>();
 const lifecycle = usePrototypeLifecycleStore();
-const capture = useCaptureStore();
-const route = useRoute();
 const router = useRouter();
 const transitionOpen = ref(false);
+const transitionIntent = ref<LifecycleIntent>("advance");
 const historyExpanded = ref(false);
 const lifecycleStages = [
   { id: "active", label: "进行中" },
-  { id: "review", label: "待确认" },
+  { id: "review", label: "待确定" },
   { id: "final", label: "已定稿" },
   { id: "archived", label: "已归档" },
 ] as const;
@@ -41,21 +41,15 @@ const lifecycleStages = [
 const prototype = computed(() =>
   loadPrototypes().find((item) => item.id === props.prototypeId),
 );
+lifecycle.ensurePrototypes(loadPrototypes());
 const screens = computed(() =>
   loadPrototypeScreens().filter(
     (item) => item.prototypeId === props.prototypeId,
   ),
 );
-const latestPrototypeEvidence = computed(() => {
-  const items =
-    capture.evidenceInventory?.prototypes
-      .find((item) => item.prototypeId === props.prototypeId)
-      ?.screens.flatMap((screen) => screen.items)
-      .filter((item) => !["trashed", "archived"].includes(item.status)) ?? [];
-  return items.sort((left, right) =>
-    right.capturedAt.localeCompare(left.capturedAt),
-  )[0];
-});
+const finalizedArtifacts = computed(
+  () => lifecycle.recordFor(props.prototypeId)?.artifacts ?? null,
+);
 const screenGroups = computed(() =>
   resolveScreenGroups(screens.value, prototype.value?.screenGroups ?? []),
 );
@@ -87,21 +81,17 @@ const formatHistoryTime = (value: string) =>
     timeStyle: "short",
   }).format(new Date(value));
 
-function startPrototypeCapture() {
-  if (!prototype.value) return;
-  capture.beginPrototype(prototype.value.id, route.fullPath);
-  capture.openComposer();
-}
-
 function openPrototypeEvidence() {
-  const evidence = latestPrototypeEvidence.value;
-  if (!evidence) {
-    startPrototypeCapture();
-    return;
-  }
+  const evidence = finalizedArtifacts.value;
+  if (!evidence) return;
   void router.push(
     `/workbench/evidence/${evidence.bundleId}/${evidence.snapshotId}`,
   );
+}
+
+function openTransition(intent: LifecycleIntent) {
+  transitionIntent.value = intent;
+  transitionOpen.value = true;
 }
 </script>
 
@@ -129,37 +119,56 @@ function openPrototypeEvidence() {
         <div class="lifecycle-kicker">
           <CircleDot :size="15" />
           当前生命周期
-          <WorkbenchBadge
-            v-if="lifecycle.hasOverride(prototype.id)"
-            tone="warning"
-            >本地状态</WorkbenchBadge
-          >
         </div>
         <strong>{{ LIFECYCLE_LABELS[effectiveLifecycle] }}</strong>
         <p>原型当前处于「{{ LIFECYCLE_LABELS[effectiveLifecycle] }}」阶段</p>
       </div>
       <div class="lifecycle-actions">
-        <WorkbenchButton tone="primary" @click="openPrototypeEvidence">
-          <History v-if="latestPrototypeEvidence" :size="14" />
-          <ScanLine v-else :size="14" />
-          {{ latestPrototypeEvidence ? "查看采集结果" : "采集此原型" }}
+        <WorkbenchButton
+          v-if="effectiveLifecycle === 'active'"
+          tone="primary"
+          @click="openTransition('advance')"
+        >
+          送交待确定
         </WorkbenchButton>
         <WorkbenchButton
-          v-if="latestPrototypeEvidence"
-          tone="neutral"
-          @click="startPrototypeCapture"
+          v-if="effectiveLifecycle === 'review'"
+          tone="primary"
+          @click="openTransition('finalize')"
         >
-          <RotateCcw :size="14" />更新采集
+          <ScanLine :size="14" />定稿并自动采集
         </WorkbenchButton>
-        <WorkbenchButton tone="primary" @click="transitionOpen = true"
-          >流转状态</WorkbenchButton
-        >
         <WorkbenchButton
-          v-if="lifecycle.hasOverride(prototype.id)"
+          v-if="effectiveLifecycle === 'review'"
           tone="ghost"
-          @click="lifecycle.reset(prototype)"
-          ><RotateCcw :size="13" />恢复注册状态</WorkbenchButton
+          @click="openTransition('return-active')"
         >
+          退回进行中
+        </WorkbenchButton>
+        <WorkbenchButton
+          v-if="finalizedArtifacts"
+          tone="primary"
+          @click="openPrototypeEvidence"
+        >
+          <FolderOpen :size="14" />查看定稿产物
+        </WorkbenchButton>
+        <WorkbenchButton
+          v-if="effectiveLifecycle === 'final'"
+          tone="ghost"
+          @click="openTransition('rollback')"
+        >
+          <RotateCcw :size="14" />回退待确定
+        </WorkbenchButton>
+        <WorkbenchButton
+          v-if="effectiveLifecycle === 'final'"
+          tone="ghost"
+          @click="openTransition('archive')"
+        >
+          归档
+        </WorkbenchButton>
+        <span v-if="effectiveLifecycle === 'archived'" class="archived-note">
+          永久只读，不可回退或删除
+        </span>
       </div>
 
       <div class="stage-track">
@@ -255,6 +264,7 @@ function openPrototypeEvidence() {
     v-if="prototype"
     v-model="transitionOpen"
     :prototype="prototype"
+    :intent="transitionIntent"
   />
 </template>
 
@@ -318,6 +328,10 @@ function openPrototypeEvidence() {
   align-items: flex-start;
   justify-content: flex-end;
   gap: 7px;
+}
+.archived-note {
+  color: rgba(var(--v-theme-on-surface), 0.52);
+  font-size: 0.72rem;
 }
 .stage-track {
   position: relative;

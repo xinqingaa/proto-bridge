@@ -19,7 +19,6 @@ import {
 import { useCanvasStore } from "@/app/stores/canvas";
 import { useWorkbenchStore } from "@/app/stores/workbench";
 import { useSelectionStore } from "@/app/stores/selection";
-import { useCaptureStore } from "@/app/stores/capture";
 import CanvasToolbar from "@/workbench/canvas/CanvasToolbar.vue";
 import PhoneStage from "@/workbench/canvas/PhoneStage.vue";
 
@@ -33,7 +32,6 @@ const router = useRouter();
 const canvas = useCanvasStore();
 const workbench = useWorkbenchStore();
 const selection = useSelectionStore();
-const capture = useCaptureStore();
 
 const stageRef = ref<InstanceType<typeof PhoneStage> | null>(null);
 const iframeWindow = ref<Window | null>(null);
@@ -74,52 +72,6 @@ const resolved = computed(() =>
     searchParams: searchParams.value,
   }),
 );
-const currentCaptureJob = computed(() => {
-  const current = resolved.value;
-  if (!current.ok) return null;
-  return (
-    capture.consoleState?.jobs.find(
-      (job) =>
-        ["queued", "discovering", "capturing", "writing"].includes(
-          job.status,
-        ) &&
-        job.selection.cases.some(
-          (item) =>
-            item.caseKey.screenId === current.screen.screenId &&
-            item.caseKey.variantId === current.variant.id &&
-            item.caseKey.themeId === current.theme.id &&
-            item.caseKey.deviceId === canvas.deviceId,
-        ),
-    ) ?? null
-  );
-});
-const currentEvidence = computed(() => {
-  const current = resolved.value;
-  if (!current.ok) return null;
-  const items =
-    capture.evidenceInventory?.prototypes
-      .find((item) => item.prototypeId === current.prototype.id)
-      ?.screens.find((item) => item.screenId === current.screen.screenId)
-      ?.items ?? [];
-  return (
-    items.find(
-      (item) =>
-        item.variantId === current.variant.id &&
-        item.themeId === current.theme.id &&
-        item.deviceId === canvas.deviceId &&
-        item.fragments.length === 0 &&
-        !["trashed", "archived"].includes(item.status),
-    ) ?? null
-  );
-});
-const captureActionLabel = computed(() =>
-  currentCaptureJob.value
-    ? "查看采集进度"
-    : currentEvidence.value
-      ? "查看当前采集结果"
-      : "采集当前页面",
-);
-
 const selectedVariantId = computed(() => {
   if (resolved.value.ok) return resolved.value.variant.id;
   if (typeof route.query.variant === "string") return route.query.variant;
@@ -260,30 +212,6 @@ async function copyLink(options?: { openRuntime?: boolean }) {
 
 function copyAndOpenRuntime() {
   void copyLink({ openRuntime: true });
-}
-
-function captureCurrentScreen() {
-  if (!resolved.value.ok) return;
-  if (currentCaptureJob.value) {
-    void capture.resumeJob(currentCaptureJob.value);
-    return;
-  }
-  if (currentEvidence.value) {
-    void router.push({
-      path: `/workbench/evidence/${currentEvidence.value.bundleId}/${currentEvidence.value.snapshotId}`,
-      query: { revision: currentEvidence.value.revisionId },
-    });
-    return;
-  }
-  capture.beginCurrentScreen({
-    prototypeId: resolved.value.prototype.id,
-    screenId: resolved.value.screen.screenId,
-    variantId: resolved.value.variant.id,
-    themeId: resolved.value.theme.id,
-    deviceId: canvas.deviceId,
-    returnTo: route.fullPath,
-  });
-  capture.openComposer();
 }
 
 function postToRuntime(
@@ -730,8 +658,6 @@ onBeforeUnmount(() => {
       :is-dark="isDark"
       :fullscreen="canvasFullscreen"
       :copy-feedback="copyFeedback"
-      :capture-disabled="!selection.runtimeReady || !resolved.ok"
-      :capture-label="captureActionLabel"
       @update:variant-id="onVariantId"
       @update:theme-id="onThemeId"
       @toggle-inspect="toggleInspect"
@@ -739,7 +665,6 @@ onBeforeUnmount(() => {
       @fullscreen="fullscreen"
       @copy="copyLink"
       @copy-and-open="copyAndOpenRuntime"
-      @capture="captureCurrentScreen"
     />
   </section>
   <v-alert v-else type="error" variant="tonal">

@@ -1,140 +1,111 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import {
-  ArrowDownUp,
+  Archive,
   CheckCircle2,
   CircleAlert,
   Eye,
-  Play,
-  RotateCcw,
-  ScanLine,
+  FileCheck2,
   Search,
-  Trash2,
 } from "lucide-vue-next";
+import type { PrototypeLifecycle } from "@/design-system/types";
+import { LIFECYCLE_LABELS } from "@/design-system/types";
+import { loadPrototypes } from "@/design-system/loaders";
 import { useCaptureStore } from "@/app/stores/capture";
-import {
-  buildCaptureTaskPresentations,
-  type CaptureTaskPresentation,
-} from "@/capture/presentation";
+import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
+import { buildCaptureTaskPresentations } from "@/capture/presentation";
+import WorkbenchBadge from "@/workbench/ui/WorkbenchBadge.vue";
 import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
 import WorkbenchIconButton from "@/workbench/ui/WorkbenchIconButton.vue";
 import WorkbenchTabs from "@/workbench/ui/WorkbenchTabs.vue";
 
-type TaskFilter = "all" | "running" | "attention" | "completed";
-type SortOrder = "newest" | "oldest";
+type LifecycleFilter = "all" | "final" | "archived";
 
 const capture = useCaptureStore();
+const lifecycle = usePrototypeLifecycleStore();
 const router = useRouter();
-const taskFilter = ref<TaskFilter>("all");
-const sortOrder = ref<SortOrder>("newest");
+const lifecycleFilter = ref<LifecycleFilter>("all");
 const searchQuery = ref("");
-const confirmClearAll = ref(false);
-const pendingClearJobId = ref<string | null>(null);
-let pollTimer: ReturnType<typeof setInterval> | undefined;
+const prototypes = loadPrototypes();
+lifecycle.ensurePrototypes(prototypes);
 
 const taskPresentations = computed(() =>
   buildCaptureTaskPresentations(capture.consoleState),
 );
-const runningTasks = computed(() =>
-  taskPresentations.value.filter((item) => item.status === "running"),
+const rows = computed(() =>
+  lifecycle.finalizedRecords
+    .map((record) => ({
+      record,
+      prototype:
+        prototypes.find((prototype) => prototype.id === record.prototypeId) ??
+        null,
+      task:
+        taskPresentations.value.find(
+          (item) => item.job.jobId === record.artifacts?.jobId,
+        ) ?? null,
+    }))
+    .filter((item) => {
+      if (
+        lifecycleFilter.value !== "all" &&
+        item.record.stage !== lifecycleFilter.value
+      ) {
+        return false;
+      }
+      const query = searchQuery.value.trim().toLocaleLowerCase();
+      if (!query) return true;
+      return [
+        item.prototype?.label,
+        item.record.prototypeId,
+        item.record.artifacts?.bundleId,
+        item.record.artifacts?.deliveryId,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLocaleLowerCase()
+        .includes(query);
+    })
+    .sort((left, right) =>
+      (right.record.artifacts?.finalizedAt ?? "").localeCompare(
+        left.record.artifacts?.finalizedAt ?? "",
+      ),
+    ),
 );
-const attentionTasks = computed(() =>
-  taskPresentations.value.filter((item) => item.status === "needs-attention"),
-);
-const completedTasks = computed(() =>
-  taskPresentations.value.filter(
-    (item) => item.status === "completed" || item.status === "resolved",
-  ),
-);
-const taskTabs = computed(() => [
-  { label: "全部", value: "all", count: taskPresentations.value.length },
-  { label: "进行中", value: "running", count: runningTasks.value.length },
-  { label: "需处理", value: "attention", count: attentionTasks.value.length },
-  { label: "已完成", value: "completed", count: completedTasks.value.length },
+const tabs = computed(() => [
+  { label: "全部", value: "all", count: lifecycle.finalizedRecords.length },
+  {
+    label: "已定稿",
+    value: "final",
+    count: lifecycle.finalizedRecords.filter((item) => item.stage === "final")
+      .length,
+  },
+  {
+    label: "已归档",
+    value: "archived",
+    count: lifecycle.finalizedRecords.filter(
+      (item) => item.stage === "archived",
+    ).length,
+  },
 ]);
 
-const filteredTasks = computed(() => {
-  let list = taskPresentations.value;
-  if (taskFilter.value === "running") list = runningTasks.value;
-  else if (taskFilter.value === "attention") list = attentionTasks.value;
-  else if (taskFilter.value === "completed") list = completedTasks.value;
-  const q = searchQuery.value.trim().toLocaleLowerCase();
-  if (q) {
-    list = list.filter((item) => {
-      const hay = [
-        item.prototypeLabel,
-        item.scopeLabel,
-        item.statusLabel,
-        item.job.jobId,
-        item.job.bundleId,
-      ]
-        .join(" ")
-        .toLocaleLowerCase();
-      return hay.includes(q);
-    });
-  }
-  return [...list].sort((left, right) => {
-    const delta =
-      new Date(right.job.acceptedAt).getTime() -
-      new Date(left.job.acceptedAt).getTime();
-    return sortOrder.value === "newest" ? delta : -delta;
-  });
-});
-
-const pendingClearItem = computed(
-  () =>
-    taskPresentations.value.find(
-      (item) => item.job.jobId === pendingClearJobId.value,
-    ) ?? null,
-);
-
-async function openTask(item: CaptureTaskPresentation) {
-  if (item.status === "running") {
-    await capture.resumeJob(item.job);
-    return;
-  }
-  if (item.resultPath) {
-    await router.push(item.resultPath);
-    return;
-  }
-  await capture.resumeJob(item.job);
+function lifecycleTone(stage: PrototypeLifecycle) {
+  return stage === "archived" ? "archived" : "final";
 }
 
-async function viewResult(item: CaptureTaskPresentation, event: Event) {
-  event.stopPropagation();
-  if (item.resultPath) await router.push(item.resultPath);
+function formatTime(value: string) {
+  return new Intl.DateTimeFormat("zh-CN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
 }
 
-function toggleSort() {
-  sortOrder.value = sortOrder.value === "newest" ? "oldest" : "newest";
-}
-
-async function confirmClearItem() {
-  const item = pendingClearItem.value;
-  if (!item) return;
-  pendingClearJobId.value = null;
-  await capture.trashBundles([item.job.bundleId]);
-}
-
-async function confirmResetAll() {
-  confirmClearAll.value = false;
-  await capture.resetWorkspaceEvidence();
+function openResult(bundleId: string, snapshotId: string) {
+  void router.push(`/workbench/evidence/${bundleId}/${snapshotId}`);
 }
 
 onMounted(async () => {
   if (!capture.connected) await capture.connect();
   else await capture.refreshConsole();
-  pollTimer = setInterval(() => {
-    if (capture.activeJob && !capture.jobFinished) {
-      void capture.refreshActiveJob();
-      void capture.refreshConsole();
-    }
-  }, 1000);
-});
-
-onBeforeUnmount(() => {
-  if (pollTimer) clearInterval(pollTimer);
 });
 </script>
 
@@ -143,17 +114,14 @@ onBeforeUnmount(() => {
     <div class="console-frame">
       <header class="console-header">
         <div>
-          <h1>采集历史</h1>
-          <p>按时间查看每次采集。新建请从画布、检查面板或原型发起。</p>
+          <p>Finalized evidence</p>
+          <h1>定稿采集</h1>
+          <span>这里只展示已定稿或已归档原型自动生成的完整 Evidence 与唯一提示词。</span>
         </div>
-        <WorkbenchButton
-          tone="danger"
-          size="small"
-          data-testid="clear-all-evidence"
-          @click="confirmClearAll = true"
-        >
-          <Trash2 :size="14" /> 清空所有原型证据
-        </WorkbenchButton>
+        <div class="finalized-mark">
+          <FileCheck2 :size="18" />
+          <span><strong>{{ lifecycle.finalizedRecords.length }}</strong> 份正式产物</span>
+        </div>
       </header>
 
       <v-alert
@@ -171,7 +139,7 @@ onBeforeUnmount(() => {
         <CircleAlert :size="24" />
         <div>
           <strong>采集服务未连接</strong>
-          <span>连接后即可查看采集历史。</span>
+          <span>连接后才能读取已定稿产物。</span>
         </div>
         <WorkbenchButton :loading="capture.connecting" @click="capture.connect">
           重新连接
@@ -179,371 +147,251 @@ onBeforeUnmount(() => {
       </section>
 
       <template v-else>
-        <section
-          v-if="capture.draft && !capture.composerOpen"
-          class="pending-draft"
-        >
-          <ScanLine :size="18" />
-          <strong>有未完成的交付草稿</strong>
-          <div>
-            <WorkbenchButton tone="ghost" @click="capture.discardDraft"
-              >放弃</WorkbenchButton
-            >
-            <WorkbenchButton tone="primary" @click="capture.openComposer"
-              >继续</WorkbenchButton
-            >
-          </div>
-        </section>
-
         <section class="toolbar">
           <WorkbenchTabs
-            :model-value="taskFilter"
-            :items="taskTabs"
-            label="筛选采集历史"
-            @update:model-value="taskFilter = $event as TaskFilter"
+            :model-value="lifecycleFilter"
+            :items="tabs"
+            label="筛选定稿产物"
+            @update:model-value="lifecycleFilter = $event as LifecycleFilter"
           />
           <label class="search">
             <Search :size="15" aria-hidden="true" />
             <input
               v-model="searchQuery"
               type="search"
-              placeholder="搜索原型、范围、Job…"
-              aria-label="搜索采集历史"
+              placeholder="搜索原型、Bundle、Delivery…"
+              aria-label="搜索定稿产物"
             />
           </label>
-          <WorkbenchButton size="small" tone="ghost" @click="toggleSort">
-            <ArrowDownUp :size="14" />
-            {{ sortOrder === "newest" ? "新→旧" : "旧→新" }}
-          </WorkbenchButton>
         </section>
 
-        <section class="history-section" data-testid="recent-capture-jobs">
-          <div v-if="!filteredTasks.length" class="history-empty">
-            <ScanLine :size="28" />
-            <strong>还没有采集记录</strong>
-            <p>去画布采一页 / 采控件，或在原型里「采原型」。</p>
+        <section class="history-section" data-testid="finalized-capture-list">
+          <div v-if="!rows.length" class="history-empty">
+            <FileCheck2 :size="28" />
+            <strong>还没有定稿产物</strong>
+            <p>前往“原型生命周期”，将待确定原型定稿后会自动出现在这里。</p>
+            <WorkbenchButton
+              tone="primary"
+              @click="router.push('/workbench/prototypes/all')"
+            >
+              打开原型生命周期
+            </WorkbenchButton>
           </div>
 
           <ul v-else class="history-list">
-            <li
-              v-for="item in filteredTasks"
-              :key="item.job.jobId"
-              class="history-item"
-            >
+            <li v-for="item in rows" :key="item.record.prototypeId" class="history-item">
               <button
                 type="button"
                 class="history-row"
-                :data-job-id="item.job.jobId"
-                :class="`is-${item.status}`"
-                @click="openTask(item)"
+                @click="
+                  openResult(
+                    item.record.artifacts!.bundleId,
+                    item.record.artifacts!.snapshotId,
+                  )
+                "
               >
                 <span class="status-mark" aria-hidden="true">
-                  <CheckCircle2
-                    v-if="
-                      item.status === 'completed' || item.status === 'resolved'
-                    "
-                    :size="15"
-                  />
-                  <Play v-else-if="item.status === 'running'" :size="14" />
-                  <CircleAlert v-else :size="15" />
+                  <Archive v-if="item.record.stage === 'archived'" :size="16" />
+                  <CheckCircle2 v-else :size="16" />
                 </span>
                 <span class="history-main">
-                  <strong
-                    >{{ item.prototypeLabel }} · {{ item.scopeLabel }}</strong
-                  >
+                  <strong>{{ item.prototype?.label ?? item.record.prototypeId }}</strong>
                   <small>
-                    {{ item.acceptedAtLabel }}
-                    <template v-if="item.currentCaseLabel">
-                      · 当前 {{ item.currentCaseLabel }}
-                    </template>
+                    整个原型 · {{ item.task?.viewCount ?? "—" }} 个 case ·
+                    {{ formatTime(item.record.artifacts!.finalizedAt) }}
                   </small>
-                  <v-progress-linear
-                    v-if="item.status === 'running'"
-                    class="row-progress"
-                    :model-value="item.progress"
-                    color="primary"
-                    height="4"
-                    rounded
-                  />
+                  <code>{{ item.record.artifacts!.bundleId }}</code>
                 </span>
-                <span class="case-count" title="已完成 / 总 case">
-                  <b>{{ item.completedCases }}</b
-                  >/{{ item.viewCount }}
-                  <em>case</em>
+                <WorkbenchBadge :tone="lifecycleTone(item.record.stage)">
+                  {{ LIFECYCLE_LABELS[item.record.stage] }}
+                </WorkbenchBadge>
+                <span class="artifact-state">
+                  <FileCheck2 :size="14" />Evidence + 提示词
                 </span>
-                <span class="status-badge" :class="`is-${item.status}`">{{
-                  item.statusLabel
-                }}</span>
-                <span class="row-icons">
-                  <WorkbenchIconButton
-                    v-if="item.resultPath"
-                    label="查看结果"
-                    size="small"
-                    @click="viewResult(item, $event)"
-                  >
-                    <Eye :size="16" />
-                  </WorkbenchIconButton>
-                  <WorkbenchIconButton
-                    v-if="item.status === 'needs-attention'"
-                    label="重试"
-                    size="small"
-                    @click.stop="capture.retryJob(item.job)"
-                  >
-                    <RotateCcw :size="15" />
-                  </WorkbenchIconButton>
-                  <WorkbenchIconButton
-                    label="清理此项"
-                    size="small"
-                    @click.stop="pendingClearJobId = item.job.jobId"
-                  >
-                    <Trash2 :size="15" />
-                  </WorkbenchIconButton>
-                </span>
+                <WorkbenchIconButton label="查看定稿结果" size="small">
+                  <Eye :size="16" />
+                </WorkbenchIconButton>
               </button>
             </li>
           </ul>
         </section>
       </template>
     </div>
-
-    <v-dialog v-model="confirmClearAll" max-width="440">
-      <v-card>
-        <v-card-title>清空所有原型证据？</v-card-title>
-        <v-card-text>
-          将重置当前 Workspace 的 Store、deliveries 与 reviews，并断开后重新连接。此操作不可恢复。
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="confirmClearAll = false">取消</v-btn>
-          <v-btn
-            color="error"
-            :loading="capture.busy"
-            data-testid="confirm-clear-all"
-            @click="confirmResetAll"
-          >
-            确认清空
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <v-dialog
-      :model-value="Boolean(pendingClearJobId)"
-      max-width="420"
-      @update:model-value="!$event && (pendingClearJobId = null)"
-    >
-      <v-card>
-        <v-card-title>清理此项？</v-card-title>
-        <v-card-text>
-          将把 Bundle
-          <code>{{ pendingClearItem?.job.bundleId }}</code>
-          移入回收站（
-          {{ pendingClearItem?.prototypeLabel }} ·
-          {{ pendingClearItem?.scopeLabel }} ）。
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="pendingClearJobId = null">取消</v-btn>
-          <v-btn color="error" @click="confirmClearItem">确认清理</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </main>
 </template>
 
 <style scoped>
 .capture-console {
-  height: 100%;
-  overflow: auto;
-  padding: 20px 24px 40px;
+  width: 100%;
 }
 .console-frame {
-  width: min(1080px, 100%);
-  margin: 0 auto;
   display: grid;
-  gap: 14px;
+  gap: 18px;
 }
 .console-header {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 12px;
-}
-.console-header h1 {
-  margin: 0;
-  font-size: 1.35rem;
-  font-weight: 800;
+  gap: 20px;
 }
 .console-header p {
-  margin: 4px 0 0;
-  color: rgba(var(--v-theme-on-surface), 0.55);
-  font-size: 0.82rem;
+  margin: 0 0 5px;
+  color: rgb(var(--v-theme-primary));
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
 }
-.connection-panel,
-.pending-draft,
-.history-empty {
+.console-header h1 {
+  margin: 0 0 7px;
+  font-size: 1.7rem;
+}
+.console-header span {
+  color: rgba(var(--v-theme-on-surface), 0.55);
+  font-size: 0.78rem;
+}
+.finalized-mark {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  padding: 16px 18px;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 14px;
-  background: rgb(var(--v-theme-surface));
+  gap: 9px;
+  padding: 10px 13px;
+  border: 1px solid color-mix(in srgb, rgb(var(--v-theme-success)) 28%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, rgb(var(--v-theme-success)) 8%, transparent);
+  color: rgb(var(--v-theme-success));
 }
-.history-empty {
-  flex-direction: column;
-  justify-content: center;
-  min-height: 180px;
-  color: rgba(var(--v-theme-on-surface), 0.55);
-  text-align: center;
+.finalized-mark strong {
+  font: 800 1rem ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 .toolbar {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  padding: 9px 11px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 11px;
+  background: rgb(var(--v-theme-surface));
 }
 .search {
   display: flex;
+  min-width: 220px;
+  flex: 1;
   align-items: center;
-  gap: 6px;
-  min-width: 200px;
-  flex: 1 1 220px;
-  padding: 6px 10px;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 10px;
-  background: rgb(var(--v-theme-surface));
+  gap: 7px;
+  padding: 0 9px;
+  border: 1px solid rgba(var(--v-border-color), 0.15);
+  border-radius: 7px;
+  background: rgba(var(--v-theme-on-surface), 0.025);
 }
 .search input {
-  flex: 1;
-  min-width: 0;
+  width: 100%;
+  height: 30px;
   border: 0;
   outline: 0;
   background: transparent;
   color: inherit;
-  font-size: 0.82rem;
-}
-.history-section {
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 14px;
-  background: rgb(var(--v-theme-surface));
-  overflow: hidden;
+  font: inherit;
+  font-size: 0.72rem;
 }
 .history-list {
-  list-style: none;
+  display: grid;
+  gap: 8px;
   margin: 0;
   padding: 0;
-}
-.history-item + .history-item {
-  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  list-style: none;
 }
 .history-row {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto auto auto;
-  gap: 10px 12px;
-  align-items: center;
+  gap: 12px;
   width: 100%;
+  align-items: center;
   padding: 12px 14px;
-  border: 0;
-  background: transparent;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 10px;
+  background: rgb(var(--v-theme-surface));
   color: inherit;
   text-align: left;
   cursor: pointer;
 }
-.history-row:hover {
-  background: rgba(var(--v-theme-on-surface), 0.035);
+.history-row:hover,
+.history-row:focus-visible {
+  border-color: color-mix(in srgb, rgb(var(--v-theme-primary)) 40%, transparent);
+  outline: none;
 }
 .status-mark {
   display: grid;
+  width: 28px;
+  height: 28px;
   place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
-  background: rgba(var(--v-theme-on-surface), 0.06);
-}
-.history-row.is-running .status-mark {
-  color: rgb(var(--v-theme-primary));
-}
-.history-row.is-completed .status-mark,
-.history-row.is-resolved .status-mark {
+  border-radius: 50%;
+  background: color-mix(in srgb, rgb(var(--v-theme-success)) 12%, transparent);
   color: rgb(var(--v-theme-success));
-}
-.history-row.is-needs-attention .status-mark {
-  color: rgb(var(--v-theme-error));
 }
 .history-main {
   display: grid;
-  gap: 2px;
   min-width: 0;
+  gap: 3px;
 }
 .history-main strong {
+  font-size: 0.8rem;
+}
+.history-main small,
+.history-main code {
   overflow: hidden;
+  color: rgba(var(--v-theme-on-surface), 0.48);
+  font-size: 0.65rem;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.9rem;
 }
-.history-main small {
-  color: rgba(var(--v-theme-on-surface), 0.52);
-  font-size: 0.72rem;
-}
-.row-progress {
-  margin-top: 4px;
-  max-width: 240px;
-}
-.case-count {
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  font-size: 0.85rem;
-}
-.case-count b {
-  font-size: 1.05rem;
-  font-weight: 800;
-}
-.case-count em {
-  margin-left: 2px;
-  font-style: normal;
-  color: rgba(var(--v-theme-on-surface), 0.5);
-  font-size: 0.7rem;
-}
-.status-badge {
-  padding: 3px 8px;
-  border-radius: 999px;
+.artifact-state {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: rgba(var(--v-theme-on-surface), 0.62);
   font-size: 0.68rem;
   font-weight: 700;
-  white-space: nowrap;
-  background: rgba(var(--v-theme-on-surface), 0.06);
 }
-.status-badge.is-completed,
-.status-badge.is-resolved {
-  color: rgb(var(--v-theme-success));
-  background: color-mix(in srgb, rgb(var(--v-theme-success)) 12%, transparent);
-}
-.status-badge.is-running {
-  color: rgb(var(--v-theme-primary));
-  background: color-mix(in srgb, rgb(var(--v-theme-primary)) 12%, transparent);
-}
-.status-badge.is-needs-attention {
-  color: rgb(var(--v-theme-error));
-  background: color-mix(in srgb, rgb(var(--v-theme-error)) 12%, transparent);
-}
-.row-icons {
-  display: inline-flex;
+.connection-panel,
+.history-empty {
+  display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 13px;
+  padding: 22px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 12px;
+  background: rgb(var(--v-theme-surface));
+}
+.connection-panel > div,
+.history-empty {
+  display: grid;
+  gap: 4px;
+}
+.connection-panel span,
+.history-empty p {
+  margin: 0;
+  color: rgba(var(--v-theme-on-surface), 0.55);
+  font-size: 0.72rem;
+}
+.connection-panel .wb-button {
+  margin-left: auto;
+}
+.history-empty {
+  justify-items: center;
+  padding: 44px 20px;
+  text-align: center;
 }
 @media (max-width: 820px) {
+  .console-header,
+  .toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
   .history-row {
     grid-template-columns: auto minmax(0, 1fr) auto;
   }
-  .case-count,
-  .status-badge {
-    grid-row: 2;
-  }
-  .row-icons {
-    grid-column: 3;
-    grid-row: 1 / span 2;
+  .artifact-state {
+    grid-column: 2 / -1;
   }
 }
 </style>

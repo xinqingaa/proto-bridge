@@ -59,10 +59,10 @@ describe("workbench navigation tree", () => {
     expect(exceptionQueue?.count).toBeUndefined();
     expect(capture.children?.[0]).toMatchObject({
       id: "capture-console",
-      label: "采集历史",
+      label: "定稿采集",
       to: "/workbench/capture",
     });
-    expect(capture.label).toBe("采集");
+    expect(capture.label).toBe("定稿采集");
   });
 
   it("lists Screens without Variant children so the sidebar stays a page map", () => {
@@ -84,7 +84,7 @@ describe("workbench navigation tree", () => {
     expect(today?.to).toBe("/workbench/prototypes/hengdong/screens/today");
   });
 
-  it("nests capture jobs under 采集历史 and selects by evidence route", () => {
+  it("nests finalized jobs under 定稿采集 and selects by evidence route", () => {
     const presentations = [
       {
         job: { jobId: "job-old", acceptedAt: "2026-08-01T10:00:00.000Z" },
@@ -108,7 +108,7 @@ describe("workbench navigation tree", () => {
     expect(nodes).toHaveLength(1);
     expect(nodes[0]).toMatchObject({
       id: "capture-console",
-      label: "采集历史",
+      label: "定稿采集",
       kind: "group",
       to: "/workbench/capture",
       count: 3,
@@ -132,14 +132,14 @@ describe("workbench navigation tree", () => {
     ).toBeNull();
   });
 
-  it("filters prototypes by lifecycle and counts overrides", () => {
+  it("filters prototypes by the lifecycle store result", () => {
     const effective = (
       id: string,
       registered: "active" | "review" | "final" | "archived",
     ) => (id === "cold-chain-ops" ? ("review" as const) : registered);
 
-    expect(countPrototypesForLifecycle("active", effective)).toBe(0);
-    expect(countPrototypesForLifecycle("review", effective)).toBe(2);
+    expect(countPrototypesForLifecycle("active", effective)).toBe(1);
+    expect(countPrototypesForLifecycle("review", effective)).toBe(1);
 
     const activeTree = buildWorkbenchNavigationTree(effective, "active");
     const reviewTree = buildWorkbenchNavigationTree(effective, "review");
@@ -150,10 +150,11 @@ describe("workbench navigation tree", () => {
       (node) => node.id === "prototypes",
     );
 
-    expect(activePrototypes?.children?.map((node) => node.id)).toEqual([]);
+    expect(activePrototypes?.children?.map((node) => node.id)).toEqual([
+      "prototype-hengdong",
+    ]);
     expect(reviewPrototypes?.children?.map((node) => node.id)).toEqual([
       "prototype-cold-chain-ops",
-      "prototype-hengdong",
     ]);
   });
 });

@@ -1,39 +1,70 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
 import {
+  Archive,
+  ArrowRight,
+  CheckCircle2,
+  CircleDot,
+  Clock3,
   FileStack,
-  GitBranch,
+  FolderOpen,
   MessageSquareText,
   RotateCcw,
   ScanLine,
-  Users,
 } from "lucide-vue-next";
-import type {
-  PrototypeLifecycle,
-  PrototypeRecord,
-} from "@/design-system/types";
+import type { PrototypeLifecycle, PrototypeRecord } from "@/design-system/types";
 import { LIFECYCLE_LABELS } from "@/design-system/types";
 import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
 import { useCommentsStore } from "@/app/stores/comments";
 import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
 import ResourcePageShell from "@/workbench/views/ResourcePageShell.vue";
-import WorkbenchIconButton from "@/workbench/ui/WorkbenchIconButton.vue";
 import WorkbenchBadge from "@/workbench/ui/WorkbenchBadge.vue";
-import WorkbenchStatChip from "@/workbench/ui/WorkbenchStatChip.vue";
-import LifecycleTransitionDialog from "@/workbench/prototypes/LifecycleTransitionDialog.vue";
-import { useCaptureStore } from "@/app/stores/capture";
+import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
+import LifecycleTransitionDialog, {
+  type LifecycleIntent,
+} from "@/workbench/prototypes/LifecycleTransitionDialog.vue";
 
 const props = defineProps<{
   lifecycle?: "all" | PrototypeLifecycle | undefined;
 }>();
 const router = useRouter();
-const route = useRoute();
-const capture = useCaptureStore();
 const state = usePrototypeLifecycleStore();
 const comments = useCommentsStore();
-const editing = ref<PrototypeRecord | null>(null);
 const all = loadPrototypes();
+state.ensurePrototypes(all);
+
+const editing = ref<PrototypeRecord | null>(null);
+const intent = ref<LifecycleIntent>("advance");
+let pollTimer: ReturnType<typeof setInterval> | undefined;
+
+const stages = [
+  {
+    id: "active" as const,
+    title: "进行中",
+    copy: "制作与完善",
+    icon: CircleDot,
+  },
+  {
+    id: "review" as const,
+    title: "待确定",
+    copy: "确认与收敛",
+    icon: Clock3,
+  },
+  {
+    id: "final" as const,
+    title: "已定稿",
+    copy: "证据已固定",
+    icon: CheckCircle2,
+  },
+  {
+    id: "archived" as const,
+    title: "已归档",
+    copy: "永久只读",
+    icon: Archive,
+  },
+];
+
 const items = computed(() =>
   all.filter(
     (item) =>
@@ -45,322 +76,487 @@ const items = computed(() =>
 const title = computed(() =>
   props.lifecycle && props.lifecycle !== "all"
     ? LIFECYCLE_LABELS[props.lifecycle]
-    : "全部原型",
+    : "原型生命周期",
 );
+const stageCount = (stage: PrototypeLifecycle) =>
+  all.filter((item) => state.effectiveLifecycle(item) === stage).length;
 const stats = (id: string) => {
   const screens = loadPrototypeScreens().filter(
     (screen) => screen.prototypeId === id,
   );
   return {
     screens: screens.length,
-    variants: screens.reduce((sum, screen) => sum + screen.variants.length, 0),
     comments: comments.comments.filter(
       (comment) => comment.prototypeId === id && comment.status === "open",
     ).length,
   };
 };
 
+function record(item: PrototypeRecord) {
+  return state.recordFor(item.id);
+}
+
+function artifactLabel(item: PrototypeRecord) {
+  const current = record(item);
+  if (current?.operation.kind === "failed") {
+    return current.operation.action === "rollback" ? "清理失败" : "定稿失败";
+  }
+  if (current?.operation.kind === "finalizing") {
+    if (current.operation.phase === "capturing") return "整原型采集中";
+    if (current.operation.phase === "building-prompt") return "提示词生成中";
+    return "等待确认";
+  }
+  if (current?.operation.kind === "rolling-back") return "Evidence 清理中";
+  if (current?.artifacts) return "Evidence + 提示词";
+  return "尚未生成";
+}
+
+function operationFailure(item: PrototypeRecord) {
+  const operation = record(item)?.operation;
+  return operation?.kind === "failed" ? operation.message : "";
+}
+
+function formatTime(value?: string) {
+  if (!value) return "—";
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
 function openPrototype(item: PrototypeRecord) {
   void router.push(`/workbench/prototypes/${item.id}`);
 }
 
-function onCardKeydown(event: KeyboardEvent, item: PrototypeRecord) {
-  if (event.key === "Enter" || event.key === " ") {
-    event.preventDefault();
-    openPrototype(item);
+function openArtifacts(item: PrototypeRecord) {
+  const artifacts = record(item)?.artifacts;
+  if (!artifacts) return;
+  void router.push(
+    `/workbench/evidence/${artifacts.bundleId}/${artifacts.snapshotId}`,
+  );
+}
+
+function openTransition(item: PrototypeRecord, nextIntent: LifecycleIntent) {
+  editing.value = item;
+  intent.value = nextIntent;
+}
+
+async function pollOperations() {
+  for (const item of all) {
+    const operation = record(item)?.operation;
+    if (
+      operation?.kind === "finalizing" &&
+      operation.phase === "capturing"
+    ) {
+      await state.pollFinalization(item);
+    }
   }
 }
 
-function latestPrototypeEvidence(prototypeId: string) {
-  return capture.evidenceInventory?.prototypes
-    .find((item) => item.prototypeId === prototypeId)
-    ?.screens.flatMap((screen) => screen.items)
-    .filter((item) => !["trashed", "archived"].includes(item.status))
-    .sort((left, right) => right.capturedAt.localeCompare(left.capturedAt))[0];
-}
-
-function capturePrototype(item: PrototypeRecord) {
-  const evidence = latestPrototypeEvidence(item.id);
-  if (evidence) {
-    void router.push(
-      `/workbench/evidence/${evidence.bundleId}/${evidence.snapshotId}`,
-    );
-    return;
-  }
-  capture.beginPrototype(item.id, route.fullPath);
-  capture.openComposer();
-}
+onMounted(() => {
+  void pollOperations();
+  pollTimer = setInterval(() => void pollOperations(), 1000);
+});
+onBeforeUnmount(() => {
+  if (pollTimer) clearInterval(pollTimer);
+});
 </script>
 
 <template>
   <ResourcePageShell
-    eyebrow="原型资产"
+    eyebrow="Prototype control"
     :title="title"
-    description="以独立产品资产管理原型、页面、状态与评审进度；工作台状态可直接流转，不依赖源码写回。"
+    description="生命周期决定原型何时可以修改、何时自动形成完整证据，以及何时永久封存。"
   >
-    <template #stats>
-      <WorkbenchStatChip :value="items.length" label="个原型" />
-    </template>
-    <div v-if="items.length" class="prototype-grid">
-      <article
-        v-for="item in items"
-        :key="item.id"
-        class="prototype-card"
-        role="link"
-        tabindex="0"
-        :aria-label="`查看原型 ${item.label}`"
-        @click="openPrototype(item)"
-        @keydown="onCardKeydown($event, item)"
+    <section class="lifecycle-rail" aria-label="原型生命周期筛选">
+      <button
+        v-for="(stage, index) in stages"
+        :key="stage.id"
+        type="button"
+        class="rail-stage"
+        :class="[`is-${stage.id}`, { active: props.lifecycle === stage.id }]"
+        :aria-current="props.lifecycle === stage.id ? 'page' : undefined"
+        @click="router.push(`/workbench/prototypes/${stage.id}`)"
       >
-        <div class="card-visual" aria-hidden="true">
-          <span /><span /><span /><i />
-        </div>
-        <div class="card-heading">
-          <div>
-            <p>{{ item.id }}</p>
-            <h2>{{ item.label }}</h2>
-          </div>
+        <span class="stage-sequence">{{ String(index + 1).padStart(2, "0") }}</span>
+        <component :is="stage.icon" :size="17" aria-hidden="true" />
+        <span class="stage-copy">
+          <strong>{{ stage.title }}</strong>
+          <small>{{ stage.copy }}</small>
+        </span>
+        <b>{{ stageCount(stage.id) }}</b>
+        <ArrowRight v-if="index < stages.length - 1" class="stage-arrow" :size="15" />
+      </button>
+    </section>
+
+    <div class="ledger-heading">
+      <div>
+        <strong>{{ props.lifecycle === "all" || !props.lifecycle ? "全部资产" : title }}</strong>
+        <span>{{ items.length }} 个原型</span>
+      </div>
+      <button
+        v-if="props.lifecycle && props.lifecycle !== 'all'"
+        type="button"
+        @click="router.push('/workbench/prototypes/all')"
+      >
+        查看全部
+      </button>
+    </div>
+
+    <section v-if="state.storageError" class="storage-error" role="alert">
+      {{ state.storageError }}
+    </section>
+
+    <div v-if="items.length" class="prototype-ledger">
+      <article v-for="item in items" :key="item.id" class="prototype-row">
+        <button class="prototype-identity" type="button" @click="openPrototype(item)">
+          <span class="identity-mark">{{ item.label.slice(0, 1) }}</span>
+          <span>
+            <strong>{{ item.label }}</strong>
+            <code>{{ item.id }}</code>
+          </span>
+        </button>
+
+        <div class="row-stage">
+          <span>当前阶段</span>
           <WorkbenchBadge :tone="state.effectiveLifecycle(item)">
             {{ LIFECYCLE_LABELS[state.effectiveLifecycle(item)] }}
           </WorkbenchBadge>
         </div>
-        <div class="card-metrics">
-          <span><FileStack :size="14" />{{ stats(item.id).screens }} 页面</span>
-          <span
-            ><GitBranch :size="14" />{{ stats(item.id).variants }} 状态</span
-          >
-          <span
-            ><MessageSquareText :size="14" />{{
-              stats(item.id).comments
-            }}
-            评论</span
-          >
+
+        <div class="row-evidence" :class="{ failed: record(item)?.operation.kind === 'failed' }">
+          <span>定稿产物</span>
+          <strong>{{ artifactLabel(item) }}</strong>
+          <small v-if="record(item)?.operation.kind === 'failed'">
+            {{ operationFailure(item) }}
+          </small>
         </div>
-        <p class="card-people">
-          <Users :size="14" />{{
-            [...(item.owners ?? []), ...(item.roles ?? [])].join(" · ") ||
-            "未设置参与者"
-          }}
-        </p>
-        <div v-if="state.hasOverride(item.id)" class="local-state" @click.stop>
-          <span>本地工作台状态</span>
-          <button type="button" @click="state.reset(item)">
-            <RotateCcw :size="12" />恢复注册状态
-          </button>
+
+        <div class="row-meta">
+          <span><FileStack :size="13" />{{ stats(item.id).screens }} 页面</span>
+          <span><MessageSquareText :size="13" />{{ stats(item.id).comments }} 待处理</span>
+          <time>{{ formatTime(record(item)?.updatedAt) }}</time>
         </div>
-        <footer @click.stop>
-          <WorkbenchIconButton
-            :label="
-              latestPrototypeEvidence(item.id) ? '查看采集结果' : '采集整个原型'
-            "
-            :title="
-              latestPrototypeEvidence(item.id) ? '查看采集结果' : '采集整个原型'
-            "
-            tone="action"
-            size="large"
-            @click="capturePrototype(item)"
-          >
-            <ScanLine :size="18" />
-          </WorkbenchIconButton>
-          <WorkbenchIconButton
-            label="流转原型状态"
-            title="流转原型状态"
-            tone="strong"
-            size="large"
-            @click="editing = item"
-          >
-            <GitBranch :size="18" />
-          </WorkbenchIconButton>
-        </footer>
+
+        <div class="row-actions">
+          <template v-if="state.effectiveLifecycle(item) === 'active'">
+            <WorkbenchButton tone="primary" @click="openTransition(item, 'advance')">
+              送交待确定<ArrowRight :size="14" />
+            </WorkbenchButton>
+            <WorkbenchButton tone="ghost" @click="openPrototype(item)">打开原型</WorkbenchButton>
+          </template>
+
+          <template v-else-if="state.effectiveLifecycle(item) === 'review'">
+            <WorkbenchButton tone="primary" @click="openTransition(item, 'finalize')">
+              <ScanLine :size="14" />定稿并采集
+            </WorkbenchButton>
+            <WorkbenchButton tone="ghost" @click="openTransition(item, 'return-active')">
+              退回进行中
+            </WorkbenchButton>
+          </template>
+
+          <template v-else-if="state.effectiveLifecycle(item) === 'final'">
+            <WorkbenchButton tone="primary" @click="openArtifacts(item)">
+              <FolderOpen :size="14" />查看定稿产物
+            </WorkbenchButton>
+            <WorkbenchButton tone="ghost" @click="openTransition(item, 'rollback')">
+              <RotateCcw :size="14" />回退待确定
+            </WorkbenchButton>
+            <WorkbenchButton tone="ghost" @click="openTransition(item, 'archive')">
+              归档
+            </WorkbenchButton>
+          </template>
+
+          <template v-else>
+            <WorkbenchButton tone="neutral" @click="openArtifacts(item)">
+              <Archive :size="14" />查看归档产物
+            </WorkbenchButton>
+          </template>
+        </div>
       </article>
     </div>
+
     <div v-else class="gallery-empty">
-      <GitBranch :size="30" />
+      <CircleDot :size="28" />
       <h2>此阶段还没有原型</h2>
-      <p>可从其他生命周期流转到「{{ title }}」，列表和原型树会立即同步。</p>
+      <p>生命周期流转后，原型会自动出现在这里。</p>
     </div>
   </ResourcePageShell>
+
   <LifecycleTransitionDialog
     v-if="editing"
     :model-value="true"
     :prototype="editing"
+    :intent="intent"
+    @changed="editing = null"
     @update:model-value="!$event && (editing = null)"
   />
 </template>
 
 <style scoped>
-.prototype-grid {
+.lifecycle-rail {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-.prototype-card {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   overflow: hidden;
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 15px;
+  border-radius: 14px;
   background: rgb(var(--v-theme-surface));
-  cursor: pointer;
-  transition:
-    transform 0.16s ease,
-    box-shadow 0.16s ease,
-    border-color 0.16s ease;
 }
-.prototype-card:hover,
-.prototype-card:focus-visible {
-  transform: translateY(-2px);
-  border-color: color-mix(
-    in srgb,
-    rgb(var(--v-theme-primary)) 40%,
-    transparent
-  );
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
-  outline: none;
-}
-.prototype-card:focus-visible {
-  box-shadow:
-    0 0 0 2px color-mix(in srgb, rgb(var(--v-theme-primary)) 35%, transparent),
-    0 14px 30px rgba(15, 23, 42, 0.08);
-}
-.card-visual {
+.rail-stage {
   position: relative;
   display: grid;
-  grid-template-columns: 56px 1fr;
-  grid-template-rows: 22px 52px;
-  gap: 7px;
-  height: 108px;
-  padding: 16px;
-  background: linear-gradient(
-    135deg,
-    color-mix(
-      in srgb,
-      rgb(var(--v-theme-primary)) 13%,
-      rgb(var(--v-theme-surface))
-    ),
-    rgba(var(--v-theme-on-surface), 0.025)
-  );
-  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+  min-height: 78px;
+  padding: 13px 18px;
+  border: 0;
+  border-right: 1px solid rgba(var(--v-border-color), 0.14);
+  background: transparent;
+  color: rgba(var(--v-theme-on-surface), 0.72);
+  text-align: left;
+  cursor: pointer;
 }
-.card-visual span {
-  border-radius: 5px;
-  background: rgba(var(--v-theme-on-surface), 0.1);
+.rail-stage:last-child {
+  border-right: 0;
 }
-.card-visual span:first-child {
-  grid-row: 1 / 3;
+.rail-stage:hover,
+.rail-stage:focus-visible,
+.rail-stage.active {
+  background: rgba(var(--v-theme-on-surface), 0.045);
+  outline: none;
 }
-.card-visual span:nth-child(3) {
-  width: 70%;
+.rail-stage.active {
+  box-shadow: inset 0 -3px rgb(var(--v-theme-primary));
 }
-.card-visual i {
+.rail-stage.is-review.active {
+  box-shadow: inset 0 -3px rgb(var(--v-theme-warning));
+}
+.rail-stage.is-final.active {
+  box-shadow: inset 0 -3px rgb(var(--v-theme-success));
+}
+.rail-stage.is-archived.active {
+  box-shadow: inset 0 -3px rgba(var(--v-theme-on-surface), 0.45);
+}
+.stage-sequence {
+  color: rgba(var(--v-theme-on-surface), 0.32);
+  font: 700 0.65rem ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.stage-copy {
+  display: grid;
+  gap: 2px;
+}
+.stage-copy strong {
+  color: rgb(var(--v-theme-on-surface));
+  font-size: 0.8rem;
+}
+.stage-copy small {
+  color: rgba(var(--v-theme-on-surface), 0.46);
+  font-size: 0.65rem;
+}
+.rail-stage b {
+  font: 800 1.2rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: rgb(var(--v-theme-on-surface));
+}
+.stage-arrow {
   position: absolute;
-  right: 17px;
-  bottom: 14px;
-  width: 46px;
-  height: 18px;
-  border-radius: 6px;
-  background: color-mix(in srgb, rgb(var(--v-theme-primary)) 55%, transparent);
+  right: -8px;
+  z-index: 1;
+  padding: 2px;
+  border-radius: 50%;
+  background: rgb(var(--v-theme-surface));
+  color: rgba(var(--v-theme-on-surface), 0.3);
 }
-.card-heading,
-.card-metrics,
-.card-people,
-.local-state,
-.prototype-card footer {
-  margin-inline: 16px;
-}
-.card-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: start;
-  gap: 12px;
-  margin-top: 15px;
-}
-.card-heading p {
-  margin: 0 0 3px;
-  color: rgba(var(--v-theme-on-surface), 0.45);
-  font:
-    600 0.66rem ui-monospace,
-    monospace;
-}
-.card-heading h2 {
-  margin: 0;
-  font-size: 1.05rem;
-}
-.card-metrics {
-  display: flex;
-  gap: 13px;
-  margin-top: 15px;
-}
-.card-metrics span,
-.card-people {
+.ledger-heading {
   display: flex;
   align-items: center;
-  gap: 5px;
-  color: rgba(var(--v-theme-on-surface), 0.62);
-  font-size: 0.72rem;
+  justify-content: space-between;
+  padding: 2px 2px 0;
 }
-.card-people {
-  margin-top: 10px;
-  margin-bottom: 0;
-  white-space: nowrap;
+.ledger-heading div {
+  display: flex;
+  gap: 9px;
+  align-items: baseline;
+}
+.ledger-heading strong {
+  font-size: 0.85rem;
+}
+.ledger-heading span,
+.ledger-heading button {
+  color: rgba(var(--v-theme-on-surface), 0.48);
+  font-size: 0.7rem;
+}
+.ledger-heading button {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.storage-error,
+.gallery-empty {
+  padding: 18px;
+  border: 1px solid color-mix(in srgb, rgb(var(--v-theme-error)) 35%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, rgb(var(--v-theme-error)) 8%, transparent);
+  color: rgb(var(--v-theme-error));
+  font-size: 0.78rem;
+}
+.prototype-ledger {
   overflow: hidden;
-  text-overflow: ellipsis;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 14px;
+  background: rgb(var(--v-theme-surface));
 }
-.local-state {
-  display: flex;
-  justify-content: space-between;
+.prototype-row {
+  display: grid;
+  grid-template-columns: minmax(190px, 1.3fr) minmax(100px, 0.65fr) minmax(165px, 1fr) minmax(130px, 0.8fr) minmax(190px, auto);
+  gap: 16px;
   align-items: center;
-  margin-top: 12px;
-  padding: 7px 9px;
-  border-radius: 8px;
-  background: color-mix(in srgb, rgb(var(--v-theme-warning)) 9%, transparent);
-  font-size: 0.68rem;
+  min-height: 96px;
+  padding: 15px 17px;
+  border-bottom: 1px solid rgba(var(--v-border-color), 0.13);
 }
-.local-state button {
+.prototype-row:last-child {
+  border-bottom: 0;
+}
+.prototype-row:hover {
+  background: rgba(var(--v-theme-on-surface), 0.018);
+}
+.prototype-identity {
   display: flex;
+  min-width: 0;
   align-items: center;
-  gap: 4px;
+  gap: 11px;
+  padding: 0;
   border: 0;
   background: transparent;
   color: inherit;
+  text-align: left;
   cursor: pointer;
-  font: inherit;
-  font-weight: 700;
 }
-.prototype-card footer {
+.identity-mark {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, rgb(var(--v-theme-primary)) 34%, transparent);
+  border-radius: 9px;
+  background: color-mix(in srgb, rgb(var(--v-theme-primary)) 10%, transparent);
+  color: rgb(var(--v-theme-primary));
+  font-size: 0.85rem;
+  font-weight: 900;
+}
+.prototype-identity > span:last-child,
+.row-stage,
+.row-evidence,
+.row-meta {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+}
+.prototype-identity strong {
+  overflow: hidden;
+  font-size: 0.83rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.prototype-identity code {
+  color: rgba(var(--v-theme-on-surface), 0.43);
+  font-size: 0.64rem;
+}
+.row-stage > span,
+.row-evidence > span {
+  color: rgba(var(--v-theme-on-surface), 0.42);
+  font-size: 0.62rem;
+}
+.row-stage .wb-badge {
+  justify-self: start;
+}
+.row-evidence strong {
+  font-size: 0.75rem;
+}
+.row-evidence small {
+  color: rgb(var(--v-theme-error));
+  font-size: 0.62rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.row-meta {
+  color: rgba(var(--v-theme-on-surface), 0.56);
+  font-size: 0.67rem;
+}
+.row-meta span {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 15px;
-  padding: 13px 0 15px;
-  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  gap: 5px;
+}
+.row-meta time {
+  color: rgba(var(--v-theme-on-surface), 0.38);
+}
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
 }
 .gallery-empty {
   display: grid;
   justify-items: center;
-  padding: 64px 20px;
-  border: 1px dashed rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 15px;
-  color: rgba(var(--v-theme-on-surface), 0.52);
+  gap: 7px;
+  border-color: rgba(var(--v-border-color), var(--v-border-opacity));
+  background: rgb(var(--v-theme-surface));
+  color: rgba(var(--v-theme-on-surface), 0.55);
   text-align: center;
 }
-.gallery-empty h2 {
-  margin: 12px 0 4px;
-  color: rgb(var(--v-theme-on-surface));
-  font-size: 1rem;
-}
+.gallery-empty h2,
 .gallery-empty p {
   margin: 0;
-  font-size: 0.78rem;
 }
-.footer-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
+.gallery-empty h2 {
+  color: rgb(var(--v-theme-on-surface));
+  font-size: 0.9rem;
 }
-@media (max-width: 860px) {
-  .prototype-grid {
+.gallery-empty p {
+  font-size: 0.72rem;
+}
+@media (max-width: 1180px) {
+  .lifecycle-rail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .rail-stage:nth-child(2) {
+    border-right: 0;
+  }
+  .prototype-row {
+    grid-template-columns: minmax(190px, 1.4fr) minmax(100px, 0.7fr) minmax(150px, 1fr);
+  }
+  .row-meta,
+  .row-actions {
+    grid-column: span 1;
+  }
+}
+@media (max-width: 760px) {
+  .lifecycle-rail,
+  .prototype-row {
     grid-template-columns: 1fr;
+  }
+  .rail-stage {
+    border-right: 0;
+    border-bottom: 1px solid rgba(var(--v-border-color), 0.14);
+  }
+  .stage-arrow {
+    display: none;
+  }
+  .row-actions {
+    justify-content: flex-start;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rail-stage,
+  .prototype-row {
+    transition: none;
   }
 }
 </style>

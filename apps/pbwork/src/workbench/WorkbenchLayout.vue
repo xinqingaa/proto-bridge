@@ -97,7 +97,6 @@ import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
 import { LIFECYCLE_LABELS } from "@/design-system/types";
 import InspectorPanel from "@/workbench/inspector/InspectorPanel.vue";
 import WorkbenchNavigationTree from "@/workbench/WorkbenchNavigationTree.vue";
-import DeliverFlowSheet from "@/capture/DeliverFlowSheet.vue";
 import CaptureJobCenter from "@/capture/CaptureJobCenter.vue";
 
 /** Keep in sync with `.resource-panel` / `.inspector-panel` width transition. */
@@ -125,6 +124,7 @@ const selection = useSelectionStore();
 const comments = useCommentsStore();
 const prototypeLifecycle = usePrototypeLifecycleStore();
 const capture = useCaptureStore();
+prototypeLifecycle.ensurePrototypes(loadPrototypes());
 const searchOpen = ref(false);
 const searchQuery = ref("");
 const treeQuery = ref("");
@@ -207,8 +207,8 @@ const activePrototypeLifecycle = computed(() => {
 const prototypeTree = computed(() =>
   sectionId.value === "prototypes"
     ? buildPrototypeTree(
-        activePrototypeLifecycle.value,
-        (id, registered) => prototypeLifecycle.overrides[id] ?? registered,
+      activePrototypeLifecycle.value,
+        (id) => prototypeLifecycle.records[id]?.stage ?? "active",
       )
     : [],
 );
@@ -249,7 +249,7 @@ const lifecycleMenuItems = computed(() =>
       lifecycle,
       count: countPrototypesForLifecycle(
         lifecycle,
-        (id, registered) => prototypeLifecycle.overrides[id] ?? registered,
+        (id) => prototypeLifecycle.records[id]?.stage ?? "active",
       ),
     };
   }),
@@ -262,7 +262,7 @@ const lifecycleFilterLabel = computed(() =>
 const lifecycleFilterCount = computed(() =>
   countPrototypesForLifecycle(
     activePrototypeLifecycle.value,
-    (id, registered) => prototypeLifecycle.overrides[id] ?? registered,
+    (id) => prototypeLifecycle.records[id]?.stage ?? "active",
   ),
 );
 
@@ -298,13 +298,17 @@ function openCommentCount(
 
 const navigationTree = computed(() =>
   buildWorkbenchNavigationTree(
-    (id, registered) => prototypeLifecycle.overrides[id] ?? registered,
+    (id) => prototypeLifecycle.records[id]?.stage ?? "active",
     sectionId.value === "prototypes" ? activePrototypeLifecycle.value : "all",
   ),
 );
 
 const captureTaskPresentations = computed(() =>
-  buildCaptureTaskPresentations(capture.consoleState),
+  buildCaptureTaskPresentations(capture.consoleState).filter((item) =>
+    prototypeLifecycle.finalizedRecords.some(
+      (record) => record.artifacts?.jobId === item.job.jobId,
+    ),
+  ),
 );
 
 const sectionNavigationTree = computed(() => {
@@ -1281,7 +1285,6 @@ onMounted(() => {
         </v-card-text>
       </v-card>
     </v-dialog>
-    <DeliverFlowSheet />
   </v-app>
 </template>
 

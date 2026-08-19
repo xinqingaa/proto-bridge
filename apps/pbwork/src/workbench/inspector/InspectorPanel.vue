@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 import {
   Check,
   ChevronDown,
@@ -12,7 +12,6 @@ import {
   RotateCcw,
 } from "lucide-vue-next";
 import { useSelectionStore } from "@/app/stores/selection";
-import { useCaptureStore } from "@/app/stores/capture";
 import { useCanvasStore } from "@/app/stores/canvas";
 import {
   COMMENT_MAX_LENGTH,
@@ -34,11 +33,9 @@ import WorkbenchIconButton from "@/workbench/ui/WorkbenchIconButton.vue";
 import WorkbenchSegmented from "@/workbench/ui/WorkbenchSegmented.vue";
 
 const selection = useSelectionStore();
-const capture = useCaptureStore();
 const canvas = useCanvasStore();
 const comments = useCommentsStore();
 const route = useRoute();
-const router = useRouter();
 const tab = ref<
   "overview" | "component" | "convention" | "styles" | "comments"
 >("styles");
@@ -61,15 +58,6 @@ const expandedCommentIds = ref<Set<string>>(new Set());
 
 const selected = computed(() => selection.selected);
 const element = computed(() => selected.value?.element ?? null);
-const captureElementRef = computed(() => {
-  const current = element.value;
-  if (current?.ref.pbId) return current.ref;
-  if (current?.semanticParent?.pbId) return current.semanticParent;
-  return null;
-});
-const captureUsesSemanticParent = computed(() =>
-  Boolean(captureElementRef.value && !element.value?.ref.pbId),
-);
 const currentScreen = computed(() =>
   loadPrototypeScreens().find(
     (item) =>
@@ -77,34 +65,6 @@ const currentScreen = computed(() =>
       item.screenSlug === String(route.params.screenSlug ?? ""),
   ),
 );
-const currentFragmentEvidence = computed(() => {
-  const screen = currentScreen.value;
-  const ref = captureElementRef.value;
-  if (!screen || !ref?.pbId) return null;
-  const variantId =
-    typeof route.query.variant === "string"
-      ? route.query.variant
-      : screen.defaultVariantId;
-  const themeId =
-    typeof route.query.theme === "string" ? route.query.theme : "light";
-  return (
-    capture.evidenceInventory?.prototypes
-      .find((item) => item.prototypeId === screen.prototypeId)
-      ?.screens.find((item) => item.screenId === screen.screenId)
-      ?.items.find(
-        (item) =>
-          item.variantId === variantId &&
-          item.themeId === themeId &&
-          item.deviceId === canvas.deviceId &&
-          item.fragments.some(
-            (fragment) =>
-              fragment.pbId === ref.pbId &&
-              (!ref.pbKey || fragment.pbKey === ref.pbKey),
-          ) &&
-          !["trashed", "archived"].includes(item.status),
-      ) ?? null
-  );
-});
 const commentContext = computed(() => {
   const screen = currentScreen.value;
   if (!screen) return null;
@@ -168,41 +128,6 @@ function elementDisplayLabel(summary: ElementSummary): string {
   if (text) return text.length > 42 ? `${text.slice(0, 42)}…` : text;
   if (summary.pbRole) return summary.pbRole;
   return `<${summary.tag}>`;
-}
-
-function addSelectedFragmentToCapture() {
-  const screen = currentScreen.value;
-  const ref = captureElementRef.value;
-  if (!screen || !ref?.pbId) {
-    return;
-  }
-  if (currentFragmentEvidence.value) {
-    void router.push({
-      path: `/workbench/evidence/${currentFragmentEvidence.value.bundleId}/${currentFragmentEvidence.value.snapshotId}`,
-      query: { revision: currentFragmentEvidence.value.revisionId },
-    });
-    return;
-  }
-  const accepted = capture.beginFragment({
-    prototypeId: screen.prototypeId,
-    screenId: screen.screenId,
-    variantId:
-      typeof route.query.variant === "string"
-        ? route.query.variant
-        : screen.defaultVariantId,
-    themeId:
-      typeof route.query.theme === "string" ? route.query.theme : "light",
-    deviceId: canvas.deviceId,
-    returnTo: route.fullPath,
-    fragment: {
-      screenId: screen.screenId,
-      pbId: ref.pbId,
-      ...(ref.pbKey ? { pbKey: ref.pbKey } : {}),
-    },
-  });
-  if (accepted) {
-    capture.openComposer();
-  }
 }
 
 function commentTitle(item: LocalComment): string {
@@ -575,35 +500,6 @@ function downloadUnreadable() {
           item.count
         }}</span>
       </button>
-    </div>
-
-    <div v-if="selected" class="capture-fragment-action">
-      <WorkbenchButton
-        tone="primary"
-        :disabled="!captureElementRef"
-        data-testid="capture-selected-fragment"
-        @click="addSelectedFragmentToCapture"
-      >
-        {{
-          currentFragmentEvidence
-            ? "查看已有控件证据"
-            : captureUsesSemanticParent
-              ? "采集所属稳定元素"
-              : "加入采集范围"
-        }}
-      </WorkbenchButton>
-      <small v-if="!captureElementRef">
-        当前节点和所属语义区域都没有稳定标识；可改为采集当前页面。
-      </small>
-      <small v-else-if="captureUsesSemanticParent">
-        当前叶节点没有稳定标识，将采集所属区域
-        {{ captureElementRef.pbId
-        }}{{ captureElementRef.pbKey ? `#${captureElementRef.pbKey}` : "" }}。
-      </small>
-      <small v-else>
-        {{ captureElementRef.pbId
-        }}{{ captureElementRef.pbKey ? `#${captureElementRef.pbKey}` : "" }}
-      </small>
     </div>
 
     <div
@@ -1467,17 +1363,6 @@ function downloadUnreadable() {
 }
 .comments-pane {
   padding-bottom: 8px;
-}
-.capture-fragment-action {
-  display: grid;
-  gap: 6px;
-  padding: 10px 12px;
-  border-bottom: 1px solid rgba(var(--v-border-color), 0.16);
-}
-.capture-fragment-action small {
-  overflow: hidden;
-  color: rgb(var(--v-theme-on-surface-variant));
-  text-overflow: ellipsis;
 }
 .comment-composer,
 .comment-callout {

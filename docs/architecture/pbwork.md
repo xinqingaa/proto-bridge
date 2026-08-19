@@ -2,7 +2,7 @@
 
 PBWork 是一个 Vue 3 + TypeScript + Vuetify 应用，由 Workbench、Prototype Runtime、Design System 和 Capture UI 组成。
 
-PBWork 的全部作者资产由产品、设计和开发人员通过 Coding Agent 修改。Workbench 是浏览、检查、采集和 Review 控制面，不是独立可视化编辑器或聊天式作者入口。
+PBWork 的全部作者资产由产品、设计和开发人员通过 Coding Agent 修改。Workbench 是浏览、检查、生命周期流转和 Review 控制面，不是独立可视化编辑器或聊天式作者入口。
 
 ## 目录与职责
 
@@ -27,7 +27,7 @@ apps/pbwork/src/
 - Prototype 生命周期、Screen 树和画布；
 - iframe Runtime 预览；
 - Inspector、Highlight 和本地评论；
-- Capture Console、Deliver FlowSheet、Job Center 和 Evidence Viewer。
+- 原型生命周期控制台、定稿采集结果、Job Center 和 Evidence Viewer。
 
 Workbench 组件统一从 `src/workbench/ui` 复用或封装。该层可以使用 Vuetify，但业务视图不能随意创建不一致的原生控件。
 
@@ -58,7 +58,7 @@ Component Contract 还应固定组件的 semantic role policy；业务局部证�
 
 ## Registry
 
-`prototypes/registry.ts` 是 Prototype、Screen、Variant、Action 和 Scenario 的唯一注册源。Router、Workbench navigation、Runtime manifest 和 Capture Preflight 都从该注册表读取。
+`prototypes/registry.ts` 是 Prototype、Screen、Variant、Action 和 Scenario 的唯一注册源。Router、Workbench navigation、Runtime manifest 和 Capture Preflight 都从该注册表读取。运行时生命周期不以 Registry 字段为事实源，而由 `prototypeLifecycle` Store 独立管理；新发现的 Prototype ID 一律初始化为“进行中”。
 
 启动校验至少拒绝：
 
@@ -103,7 +103,19 @@ Workbench 与 iframe 使用带 `runtimeId` 和 `requestId` 的消息信封：
 
 ## Capture UI
 
-Capture UI 的 store 只保存展示和会话状态，持久事实仍在 Local Service/Store。四类 Capture 入口生成同一种 Draft；Preflight 和 Job 状态使用 Core Service Contract。
+PBWork 不提供页面、控件、Fragment 或整个原型的手工采集入口。待确定原型执行“定稿并采集”时，生命周期 Store 使用现有 Capture Store/Local Service 自动构造整原型 Draft，依次完成 Preflight、warning 确认、Capture Job、risk 确认、Handoff 与唯一 Agent 提示词生成；用户不选择采集范围，也不单独点击生成提示词。
+
+生命周期 Store 只编排动作并保存正式产物引用，不复制 Selection、Case identity、Coverage 或 risk 算法。持久 Evidence 仍由 Local Service/Store 管理，Preflight、Job、Handoff 和 Delivery 仍使用 Core Service Contract。只有生命周期记录绑定的已定稿或已归档产物出现在“定稿采集”页；CLI 和其它入口创建的 Bundle 不会自动成为 PBWork 定稿产物。
+
+稳定生命周期只允许：
+
+```text
+进行中 → 待确定 → 已定稿 → 已归档
+   ↑         │        │
+   └─────────┘        └─ 清理绑定 Evidence 后回到待确定
+```
+
+已归档没有任何出边。所有阶段都不提供删除原型操作。已定稿回退时必须先把该次定稿绑定的 Bundle 移入 Store trash，并解除 Snapshot、Handoff、Delivery 和 Prompt 引用；清理失败则仍保持已定稿。
 
 Evidence Viewer 可以按 Screen、Case 和 Fragment组织内容，但必须保留：
 
@@ -115,7 +127,7 @@ Evidence Viewer 可以按 Screen、Case 和 Fragment组织内容，但必须保�
 
 ## 本地工作台状态
 
-画布设备、缩放、Inspector、评论、Prototype lifecycle override 等工作台偏好可以使用 localStorage。每类数据必须有独立 schema、容量边界、错误恢复和 key；读取失败不能静默覆盖原值。
+画布设备、缩放、Inspector 和评论等工作台偏好可以使用 localStorage。Prototype lifecycle 也使用独立、版本化的 localStorage schema，但它是 PBWork 生命周期及正式产物关联的事实源，不是 Registry override。每类数据必须有独立 schema、容量边界、错误恢复和 key；读取失败不能静默覆盖原值。
 
 这些本地状态不能改变 Registry Contract、Store Evidence 或 Runtime URL 的业务语义。
 

@@ -106,12 +106,9 @@ async function viewResult() {
   await router.push(`/workbench/evidence/${bundleId}/${snapshotId}`);
 }
 
-function openDeliverPanel() {
+function openLifecycle() {
   capture.jobCenterOpen = false;
-  if (capture.activeJob && !capture.jobFinished) {
-    capture.deliverStep = 1;
-  }
-  capture.composerOpen = true;
+  void router.push("/workbench/prototypes/all");
 }
 
 onMounted(() => {
@@ -201,9 +198,9 @@ onBeforeUnmount(() => {
           <v-btn
             v-if="executing"
             color="primary"
-            @click="openDeliverPanel"
+            @click="openLifecycle"
           >
-            打开交付面板
+            查看生命周期
           </v-btn>
           <v-btn
             v-if="capture.notice?.snapshotId"
@@ -220,30 +217,19 @@ onBeforeUnmount(() => {
           >
             取消任务
           </v-btn>
-          <v-btn
-            v-if="
-              !executing &&
-              capture.notice?.tone === 'error' &&
-              capture.activeJob
-            "
-            variant="outlined"
-            @click="capture.retryActiveJob"
-          >
-            重试未完成项
-          </v-btn>
         </div>
       </template>
 
       <template v-else>
         <div class="job-empty">
           <ScanLine :size="28" />
-          <p>从原型、页面画布或元素检查面板发起采集。</p>
-          <v-btn to="/workbench/capture" variant="text"> 查看采集历史 </v-btn>
+          <p>原型定稿时会自动采集整个原型。</p>
+          <v-btn to="/workbench/capture" variant="text"> 查看定稿采集 </v-btn>
         </div>
       </template>
 
       <footer>
-        <RouterLink to="/workbench/capture">采集历史</RouterLink>
+        <RouterLink to="/workbench/capture">定稿采集</RouterLink>
       </footer>
     </section>
   </v-menu>
