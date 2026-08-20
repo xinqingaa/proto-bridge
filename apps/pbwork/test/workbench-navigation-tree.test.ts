@@ -50,6 +50,12 @@ describe("workbench navigation tree", () => {
         kind: "item",
         to: "/workbench/drafts/workbench-overview",
       },
+      {
+        id: "draft-workbench-prototypes",
+        label: "全部原型 / 详情",
+        kind: "item",
+        to: "/workbench/drafts/workbench-prototypes",
+      },
     ]);
     expect(prototypes.children?.some((node) => node.kind === "lifecycle")).toBe(
       false,
