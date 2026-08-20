@@ -63,7 +63,7 @@ Capture Driver 只报告观测结果。它不能用 Target 扫描或源码命名
 - writer 校验 root/lock 身份，外部破坏后停止旧 writer，禁止在原进程内自动重建。
 - 仓库保留 L1/L2/L3 Review reducer、event log 和 Flutter Runtime provider 的实验实现；默认 MCP 不注册对应工具，正常 Capture、Delivery 和 Evidence 消费不会进入该路径。实验代码位置、协议限制和恢复条件由 Flutter MCP Roadmap 维护。
 
-Service Contract 来自 `@proto-bridge/core/v2/service-contract`。当前 Local Service protocol version 5 包含 PBWork Prototype lifecycle Store API，同时继续兼容仓库内保留的实验 Review 类型；默认 MCP Consumer 不调用这些内部入口。PBWork client 不应根据 HTTP 状态猜测第二套产品错误。
+Service Contract 来自 `@proto-bridge/core/v2/service-contract`。当前 Local Service protocol version 4 覆盖 Capture、Delivery、Workspace reset，以及仓库内保留的实验 Review 类型；默认 MCP Consumer 不调用这些内部入口。PBWork Prototype lifecycle 由浏览器 Pinia/localStorage 管理，不进入 Service Contract。PBWork client 不应根据 HTTP 状态猜测第二套产品错误。
 
 ## CLI
 

@@ -172,7 +172,7 @@ export type PrototypeScreenGroup = {
 export type PrototypeRecord = {
   id: string;
   label: string;
-  summary?: string;
+  lifecycle: PrototypeLifecycle;
   owners?: string[];
   roles?: string[];
   defaultThemeId: string;

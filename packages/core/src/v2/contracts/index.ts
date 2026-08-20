@@ -8,7 +8,6 @@ export * from './fragment.js';
 export * from './scope.js';
 export * from './case.js';
 export * from './bundle.js';
-export * from './prototype-lifecycle.js';
 export * from './issue.js';
 export * from './evidence.js';
 export * from './catalog.js';

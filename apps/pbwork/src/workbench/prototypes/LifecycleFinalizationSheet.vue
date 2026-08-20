@@ -67,7 +67,7 @@ const successfulCases = computed(() => {
 const statusText = computed(() => {
   const current = operation.value;
   if (current.kind === "failed") return current.message;
-  if (final.value) return "定稿已写入 Core Store，Evidence 与提示词已经固定。";
+  if (final.value) return "定稿已写入本地生命周期记录，Evidence 与提示词已经固定。";
   if (current.kind !== "finalizing") return "正在准备定稿检查。";
   if (current.phase === "preflighting") return "正在检查整个原型的正式范围。";
   if (current.phase === "awaiting-confirmation") return "预检完成，等待确认候选方案已经收敛。";

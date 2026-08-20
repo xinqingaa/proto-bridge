@@ -234,77 +234,13 @@ describe('ProtoBridge Local Service', () => {
     const unauthorized = await call(base, '/console');
     expect(unauthorized.response.status).toBe(401);
     const session = await call(base, '/session', { method: 'POST' });
-    expect(session.body.data.protocolVersion).toBe(5);
+    expect(session.body.data.protocolVersion).toBe(4);
     expect(session.response.status).toBe(201);
     expect(session.body.data.sessionToken).not.toContain('/');
     const state = await call(base, '/console', {
       token: session.body.data.sessionToken,
     });
     expect(state.body.data.workspaceId).toBe('workspace-service-test');
-  });
-
-  it('persists prototype lifecycle records, events and optimistic revisions', async () => {
-    const base = await start();
-    const session = await call(base, '/session', { method: 'POST' });
-    const token = session.body.data.sessionToken as string;
-    const ensured = await call(base, '/prototype-lifecycles/ensure', {
-      method: 'POST',
-      token,
-      body: { prototypeIds: ['sample'] },
-    });
-    expect(ensured.response.status).toBe(200);
-    expect(ensured.body.data.records[0]).toMatchObject({
-      prototypeId: 'sample',
-      stage: 'active',
-      revision: 1,
-    });
-    const transitioned = await call(
-      base,
-      '/prototype-lifecycles/sample/transition',
-      {
-        method: 'POST',
-        token,
-        body: { expectedRevision: 1, to: 'review', note: '送交待确定' },
-      },
-    );
-    expect(transitioned.response.status).toBe(200);
-    expect(transitioned.body.data.record).toMatchObject({
-      stage: 'review',
-      revision: 2,
-    });
-    expect(transitioned.body.data.event).toMatchObject({
-      from: 'active',
-      to: 'review',
-      recordRevision: 2,
-    });
-    const stale = await call(
-      base,
-      '/prototype-lifecycles/sample/operation',
-      {
-        method: 'POST',
-        token,
-        body: {
-          expectedRevision: 1,
-          operation: { kind: 'idle' },
-        },
-      },
-    );
-    expect(stale.response.status).toBe(400);
-    expect(stale.body.error.code).toBe('lifecycle-conflict');
-    const illegal = await call(
-      base,
-      '/prototype-lifecycles/sample/transition',
-      {
-        method: 'POST',
-        token,
-        body: { expectedRevision: 2, to: 'archived' },
-      },
-    );
-    expect(illegal.response.status).toBe(400);
-    expect(illegal.body.error.code).toBe('lifecycle-conflict');
-    const state = await call(base, '/prototype-lifecycles', { token });
-    expect(state.body.data.records).toHaveLength(1);
-    expect(state.body.data.events.sample).toHaveLength(2);
   });
 
   it('runs one durable background Job after Preflight and exposes its Snapshot to a new request', async () => {

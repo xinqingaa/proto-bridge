@@ -745,6 +745,10 @@ export const useCaptureStore = defineStore("capture-v2", {
         this.jobCenterOpen = false;
         this.revokeScreenshotUrls();
         this.persistDraft();
+        const { usePrototypeLifecycleStore } = await import(
+          "@/app/stores/prototypeLifecycle"
+        );
+        usePrototypeLifecycleStore().resetAfterWorkspaceReset(loadPrototypes());
         await this.connect();
       } catch (error) {
         this.setError(error);

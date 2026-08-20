@@ -227,7 +227,6 @@ onBeforeUnmount(() => {
           <span class="identity-mark">{{ item.label.slice(0, 1) }}</span>
           <span>
             <strong>{{ item.label }}</strong>
-            <small>{{ item.summary }}</small>
             <code>{{ item.id }}</code>
           </span>
         </button>
@@ -503,16 +502,6 @@ onBeforeUnmount(() => {
 .prototype-identity strong {
   overflow: hidden;
   font-size: 0.83rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.prototype-identity small {
-  display: block;
-  overflow: hidden;
-  margin-top: 3px;
-  color: rgba(var(--v-theme-on-surface), 0.57);
-  font-size: 0.68rem;
-  line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

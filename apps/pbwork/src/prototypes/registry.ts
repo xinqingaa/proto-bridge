@@ -4,7 +4,7 @@ export const prototypes = [
   {
     id: "cold-chain-ops",
     label: "冷链异常处置台",
-    summary: "从异常队列定位高风险运输，核对温度证据并完成可追溯处置。",
+    lifecycle: "active",
     owners: ["冷链运营"],
     roles: ["值守专员", "调度主管"],
     defaultThemeId: "light",
@@ -19,7 +19,7 @@ export const prototypes = [
   {
     id: "hengdong",
     label: "恒动 · 健身自律记录",
-    summary: "让健身新手快速明确今天的下一步，并把每次完成沉淀为连续记录。",
+    lifecycle: "active",
     owners: ["个人健康产品"],
     roles: ["健身入门用户", "自律记录用户"],
     defaultThemeId: "light",

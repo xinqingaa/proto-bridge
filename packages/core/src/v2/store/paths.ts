@@ -10,8 +10,6 @@ import type {
   RunId,
   SnapshotId,
   StalenessReportId,
-  PrototypeId,
-  PrototypeLifecycleEventId,
 } from '../contracts/ids.js';
 
 /**
@@ -141,24 +139,4 @@ export function blobsDir(root: string, bundleId: BundleId): string {
 
 export function stagingDir(root: string): string {
   return path.join(root, '.staging');
-}
-
-export function prototypeLifecycleRecordPath(root: string, prototypeId: PrototypeId): string {
-  return path.join(root, 'prototype-lifecycles', prototypeId, 'record.json');
-}
-
-export function prototypeLifecycleEventsDir(root: string, prototypeId: PrototypeId): string {
-  return path.join(root, 'prototype-lifecycles', prototypeId, 'events');
-}
-
-export function prototypeLifecycleEventPath(
-  root: string,
-  prototypeId: PrototypeId,
-  eventId: PrototypeLifecycleEventId,
-): string {
-  return path.join(prototypeLifecycleEventsDir(root, prototypeId), `${eventId}.json`);
-}
-
-export function prototypeLifecyclesDir(root: string): string {
-  return path.join(root, 'prototype-lifecycles');
 }

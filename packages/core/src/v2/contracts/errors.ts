@@ -24,7 +24,6 @@ export type V2ErrorCode =
   | 'review-event-log-corrupt'
   | 'review-service-unavailable'
   | 'bundle-archived'
-  | 'lifecycle-conflict'
   | 'capacity-exceeded'
   | 'blob-rejected'
   | 'clean-plan-stale'

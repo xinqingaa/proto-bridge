@@ -33,7 +33,7 @@ PBWork 有三个 UI 分区：
 - 一级导航保留可访问名称和 Tooltip。
 - 空态、失败态、滚动、焦点和深浅主题在真实工作台宽度下验证。
 - Evidence 展示不改写 Store JSON，不隐藏 fixed refs、unknown、conflict 和 risk。
-- Prototype lifecycle Store 是 Core Store 的 PBWork 客户端；Registry 只描述原型结构，不再包含运行时 lifecycle 字段，也不得重新成为运行时默认值或重置目标。localStorage 只允许作为旧 v2 记录的迁移输入。
+- Prototype lifecycle Store 以 localStorage（`pbwork.prototype-lifecycle.v2`）为事实源；Registry 可标注 `lifecycle`，但缺记录时一律从“进行中”开始，不得把 Registry 或 Core Store 当作运行时恢复源。Workspace reset 必须同步清空这些本地记录。
 - 新 Prototype ID 必须从“进行中”开始；禁止在 UI、迁移或测试夹具中跳过前序阶段。
 - PBWork 的正式 Capture 只由“待确定 → 已定稿”触发，固定为整原型范围；画布、Inspector、原型列表和 Evidence 详情不提供手工采集或重生成入口。
 - 已定稿回退必须先清理该记录绑定的 Bundle 并解除正式产物引用；已归档没有出边，所有生命周期都不提供删除原型操作。

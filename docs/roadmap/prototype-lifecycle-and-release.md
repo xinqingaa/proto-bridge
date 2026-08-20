@@ -6,7 +6,7 @@
 
 ## 1. 目标与边界
 
-本页的早期基线已被当前实现替代：Prototype lifecycle 现在由 Core Store 持久化，Registry 不再携带 lifecycle 字段；localStorage 只用于受校验的旧记录迁移。当前行为以 `docs/architecture/pbwork.md`、本指南和可执行 Contract 为准。
+本页的早期基线已被当前实现替代：Prototype lifecycle 由 PBWork Pinia Store 写入 `pbwork.prototype-lifecycle.v2`；Core Store 只保存被引用的 Evidence。Registry 可携带 `lifecycle` 字段作作者标注，但空存储一律初始化为“进行中”。当前行为以 `docs/architecture/pbwork.md`、本指南和代码为准。
 
 本轮目标是把它改成 PBWork 内真实可用的生命周期：
 
@@ -246,7 +246,7 @@ PBWork 固定调用现有的“整个原型”入口：
 
 ### 6.1 定位
 
-重新设计 `prototypeLifecycle` Pinia Store，使其成为 Core Store lifecycle API 的客户端，并以 record/event/revision 读取和更新状态；保留旧 localStorage key 仅作为迁移输入，不作为事实源。
+重新设计 `prototypeLifecycle` Pinia Store，使其成为 PBWork 生命周期和定稿产物关联的本地事实源；写入版本化 localStorage，不进入 Core Store 或 Local Service protocol。
 
 Registry 继续描述原型、页面和 Runtime Contract；不再作为运行时生命周期事实源。
 

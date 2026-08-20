@@ -15,9 +15,6 @@ import {
   JobId,
   RiskKind,
   SnapshotId,
-  PrototypeId,
-  PrototypeLifecycleOperation,
-  PrototypeLifecycleStage,
   StalenessReportId,
   V2ContractError,
   buildHandoffIndex,
@@ -86,11 +83,6 @@ import {
   type RecordTargetClaimsVerifiedRequest,
   type CreateReviewApprovalRequest,
   type ConsumeReviewApprovalRequest,
-  type EnsurePrototypeLifecyclesRequest,
-  type ImportPrototypeLifecycleRequest,
-  type UpdatePrototypeLifecycleOperationRequest,
-  type TransitionPrototypeLifecycleRequest,
-  type PrototypeLifecycleState,
 } from '@proto-bridge/core/v2/service-contract';
 import { ReviewRepository } from './review-repository.js';
 import { FlutterMcpProvider } from './flutter-mcp-provider.js';
@@ -385,66 +377,6 @@ export class ProtoBridgeLocalService {
   getFlutterMcpProvider(): FlutterMcpProvider {
     this.flutterMcpProvider ??= this.options.flutterMcpProviderFactory?.() ?? new FlutterMcpProvider();
     return this.flutterMcpProvider;
-  }
-
-  private async assertLifecycleDelivery(input: {
-    prototypeId: string;
-    artifacts: {
-      bundleId: string;
-      snapshotId: string;
-      handoffId: string;
-      deliveryId: string;
-      agentPromptPath: string;
-      receiptPath: string;
-    };
-  }): Promise<void> {
-    const { artifacts } = input;
-    if (!artifacts.deliveryId || /[\\/]/.test(artifacts.deliveryId)) {
-      throw new V2ContractError(
-        'invalid-schema',
-        'Prototype lifecycle deliveryId must be a single path segment.',
-      );
-    }
-    const deliveryDir = pathJoin(
-      deliveryRootFromStoreRoot(this.options.storeRoot),
-      artifacts.deliveryId,
-    );
-    const receiptPath = pathJoin(deliveryDir, 'receipt.json');
-    const agentPromptPath = pathJoin(deliveryDir, 'agent-prompt.md');
-    let receipt: DeliveryListItem & { workspaceId?: string };
-    let agentPrompt: string;
-    try {
-      const [receiptRaw, promptRaw] = await Promise.all([
-        readFile(receiptPath, 'utf8'),
-        readFile(agentPromptPath, 'utf8'),
-      ]);
-      receipt = JSON.parse(receiptRaw) as DeliveryListItem & {
-        workspaceId?: string;
-      };
-      agentPrompt = promptRaw;
-    } catch {
-      throw new V2ContractError(
-        'unknown-reference',
-        `Prototype ${input.prototypeId} lifecycle requires a complete Delivery ${artifacts.deliveryId}.`,
-      );
-    }
-    if (
-      !agentPrompt.trim() ||
-      receipt.workspaceId !== this.store.workspaceId ||
-      receipt.deliveryId !== artifacts.deliveryId ||
-      receipt.bundleId !== artifacts.bundleId ||
-      receipt.snapshotId !== artifacts.snapshotId ||
-      receipt.handoffId !== artifacts.handoffId ||
-      receipt.agentPromptPath !== artifacts.agentPromptPath ||
-      receipt.receiptPath !== artifacts.receiptPath ||
-      receipt.agentPromptPath !== agentPromptPath ||
-      receipt.receiptPath !== receiptPath
-    ) {
-      throw new V2ContractError(
-        'unknown-reference',
-        `Delivery ${artifacts.deliveryId} does not match the finalized lifecycle artifacts.`,
-      );
-    }
   }
 
   private async appendRuntimeProgress(
@@ -756,85 +688,6 @@ export class ProtoBridgeLocalService {
         'workspace-resetting',
         'Workspace reset is in progress; retry this request shortly.',
       );
-    }
-
-    if (request.method === 'GET' && path === '/api/v2/prototype-lifecycles') {
-      const records = await this.store.listPrototypeLifecycles();
-      const state: PrototypeLifecycleState = {
-        records,
-        events: Object.fromEntries(
-          await Promise.all(
-            records.map(async (record) => [
-              record.prototypeId,
-              await this.store.listPrototypeLifecycleEvents(record.prototypeId),
-            ]),
-          ),
-        ),
-      };
-      success(response, state);
-      return;
-    }
-
-    if (request.method === 'POST' && path === '/api/v2/prototype-lifecycles/ensure') {
-      const body = (await readBody(request)) as EnsurePrototypeLifecyclesRequest;
-      const prototypeIds = PrototypeId.array().min(1).parse(body.prototypeIds);
-      const records = await Promise.all(
-        [...new Set(prototypeIds)].map((prototypeId) =>
-          this.store.ensurePrototypeLifecycle(prototypeId),
-        ),
-      );
-      success(response, { records, events: {} });
-      return;
-    }
-
-    const lifecycleImportMatch = path.match(/^\/api\/v2\/prototype-lifecycles\/([^/]+)\/import$/);
-    if (request.method === 'POST' && lifecycleImportMatch) {
-      const prototypeId = PrototypeId.parse(decodeURIComponent(lifecycleImportMatch[1]!));
-      const body = (await readBody(request)) as ImportPrototypeLifecycleRequest;
-      const input = {
-        ...body,
-        prototypeId,
-        stage: PrototypeLifecycleStage.parse(body.stage),
-      };
-      if ((input.stage === 'final' || input.stage === 'archived') && input.artifacts) {
-        await this.assertLifecycleDelivery({ prototypeId, artifacts: input.artifacts });
-      }
-      success(response, await this.store.importPrototypeLifecycle(input), 201);
-      return;
-    }
-
-    const lifecycleOperationMatch = path.match(/^\/api\/v2\/prototype-lifecycles\/([^/]+)\/operation$/);
-    if (request.method === 'POST' && lifecycleOperationMatch) {
-      const prototypeId = PrototypeId.parse(decodeURIComponent(lifecycleOperationMatch[1]!));
-      const body = (await readBody(request)) as UpdatePrototypeLifecycleOperationRequest;
-      success(
-        response,
-        await this.store.updatePrototypeLifecycleOperation({
-          prototypeId,
-          expectedRevision: Number(body.expectedRevision),
-          operation: PrototypeLifecycleOperation.parse(body.operation),
-        }),
-      );
-      return;
-    }
-
-    const lifecycleTransitionMatch = path.match(/^\/api\/v2\/prototype-lifecycles\/([^/]+)\/transition$/);
-    if (request.method === 'POST' && lifecycleTransitionMatch) {
-      const prototypeId = PrototypeId.parse(decodeURIComponent(lifecycleTransitionMatch[1]!));
-      const body = (await readBody(request)) as TransitionPrototypeLifecycleRequest;
-      const to = PrototypeLifecycleStage.parse(body.to);
-      if (to === 'final' && body.artifacts) {
-        await this.assertLifecycleDelivery({ prototypeId, artifacts: body.artifacts });
-      }
-      const result = await this.store.transitionPrototypeLifecycle({
-        prototypeId,
-        expectedRevision: Number(body.expectedRevision),
-        to,
-        ...(body.note === undefined ? {} : { note: body.note }),
-        ...(body.artifacts === undefined ? {} : { artifacts: body.artifacts }),
-      });
-      success(response, result);
-      return;
     }
 
     if (request.method === 'GET' && path === '/api/v2/console') {
