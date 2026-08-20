@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, type Component } from "vue";
 import { useRouter } from "vue-router";
 import {
   Archive,
   ArrowRight,
   CheckCircle2,
   CircleDot,
-  Clock3,
   FileStack,
   FolderOpen,
   MessageSquareText,
@@ -19,12 +18,13 @@ import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
 import { useCommentsStore } from "@/app/stores/comments";
 import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
 import ResourcePageShell from "@/workbench/views/ResourcePageShell.vue";
-import WorkbenchBadge from "@/workbench/ui/WorkbenchBadge.vue";
-import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
+import WorkbenchIconButton from "@/workbench/ui/WorkbenchIconButton.vue";
+import WorkbenchSegmented from "@/workbench/ui/WorkbenchSegmented.vue";
 import LifecycleTransitionDialog, {
   type LifecycleIntent,
 } from "@/workbench/prototypes/LifecycleTransitionDialog.vue";
 import LifecycleFinalizationSheet from "@/workbench/prototypes/LifecycleFinalizationSheet.vue";
+import { prototypeSummary } from "@/workbench/prototypes/prototypePresentation";
 
 const props = defineProps<{
   lifecycle?: "all" | PrototypeLifecycle | undefined;
@@ -40,47 +40,35 @@ const intent = ref<LifecycleIntent>("advance");
 let pollTimer: ReturnType<typeof setInterval> | undefined;
 
 const stages = [
-  {
-    id: "active" as const,
-    title: "进行中",
-    copy: "制作与完善",
-    icon: CircleDot,
-  },
-  {
-    id: "review" as const,
-    title: "待确定",
-    copy: "确认与收敛",
-    icon: Clock3,
-  },
-  {
-    id: "final" as const,
-    title: "已定稿",
-    copy: "证据已固定",
-    icon: CheckCircle2,
-  },
-  {
-    id: "archived" as const,
-    title: "已归档",
-    copy: "永久只读",
-    icon: Archive,
-  },
+  { id: "active" as const, title: "进行中" },
+  { id: "review" as const, title: "待确定" },
+  { id: "final" as const, title: "已定稿" },
+  { id: "archived" as const, title: "已归档" },
 ];
 
+const selectedFilter = computed(() => props.lifecycle ?? "all");
 const items = computed(() =>
   all.filter(
     (item) =>
-      !props.lifecycle ||
-      props.lifecycle === "all" ||
-      state.effectiveLifecycle(item) === props.lifecycle,
+      selectedFilter.value === "all" ||
+      state.effectiveLifecycle(item) === selectedFilter.value,
   ),
 );
 const title = computed(() =>
-  props.lifecycle && props.lifecycle !== "all"
-    ? LIFECYCLE_LABELS[props.lifecycle]
-    : "原型生命周期",
+  selectedFilter.value === "all"
+    ? "全部原型"
+    : LIFECYCLE_LABELS[selectedFilter.value],
 );
 const stageCount = (stage: PrototypeLifecycle) =>
   all.filter((item) => state.effectiveLifecycle(item) === stage).length;
+const filterItems = computed(() => [
+  { value: "all", label: "全部", count: all.length },
+  ...stages.map((stage) => ({
+    value: stage.id,
+    label: stage.title,
+    count: stageCount(stage.id),
+  })),
+]);
 const stats = (id: string) => {
   const screens = loadPrototypeScreens().filter(
     (screen) => screen.prototypeId === id,
@@ -96,6 +84,13 @@ const stats = (id: string) => {
 
 const stageIndex = (item: PrototypeRecord) =>
   stages.findIndex((stage) => stage.id === state.effectiveLifecycle(item));
+
+type RowAction = {
+  label: string;
+  tone: "primary" | "neutral" | "danger";
+  icon: Component;
+  run: () => void;
+};
 
 function record(item: PrototypeRecord) {
   return state.recordFor(item.id);
@@ -148,13 +143,74 @@ function openTransition(item: PrototypeRecord, nextIntent: LifecycleIntent) {
   intent.value = nextIntent;
 }
 
+function rowActions(item: PrototypeRecord): RowAction[] {
+  const stage = state.effectiveLifecycle(item);
+  if (stage === "active") {
+    return [
+      {
+        label: "送交待确定",
+        tone: "primary",
+        icon: ArrowRight,
+        run: () => openTransition(item, "advance"),
+      },
+    ];
+  }
+  if (stage === "review") {
+    return [
+      {
+        label: "定稿并采集",
+        tone: "primary",
+        icon: ScanLine,
+        run: () => openTransition(item, "finalize"),
+      },
+      {
+        label: "退回进行中",
+        tone: "neutral",
+        icon: RotateCcw,
+        run: () => openTransition(item, "return-active"),
+      },
+    ];
+  }
+  if (stage === "final") {
+    return [
+      {
+        label: "查看定稿产物",
+        tone: "primary",
+        icon: FolderOpen,
+        run: () => openArtifacts(item),
+      },
+      {
+        label: "回退待确定",
+        tone: "neutral",
+        icon: RotateCcw,
+        run: () => openTransition(item, "rollback"),
+      },
+      {
+        label: "归档",
+        tone: "danger",
+        icon: Archive,
+        run: () => openTransition(item, "archive"),
+      },
+    ];
+  }
+  return [
+    {
+      label: "查看归档产物",
+      tone: "neutral",
+      icon: Archive,
+      run: () => openArtifacts(item),
+    },
+  ];
+}
+
+function selectFilter(value: string) {
+  void router.push(`/workbench/prototypes/${value}`);
+}
+
 async function pollOperations() {
   for (const item of all) {
     const operation = record(item)?.operation;
-    if (
-      operation?.kind === "finalizing" &&
-      operation.phase === "capturing"
-    ) {
+    if (operation?.kind === "finalizing" && operation.phase === "capturing") {
       await state.pollFinalization(item);
     }
   }
@@ -170,45 +226,18 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <ResourcePageShell
-    eyebrow="Prototype control"
-    :title="title"
-    description="生命周期决定原型何时可以修改、何时自动形成完整证据，以及何时永久封存。"
-  >
-    <section class="lifecycle-rail" aria-label="原型生命周期筛选">
-      <button
-        v-for="(stage, index) in stages"
-        :key="stage.id"
-        type="button"
-        class="rail-stage"
-        :class="[`is-${stage.id}`, { active: props.lifecycle === stage.id }]"
-        :aria-current="props.lifecycle === stage.id ? 'page' : undefined"
-        @click="router.push(`/workbench/prototypes/${stage.id}`)"
-      >
-        <span class="stage-sequence">{{ String(index + 1).padStart(2, "0") }}</span>
-        <component :is="stage.icon" :size="17" aria-hidden="true" />
-        <span class="stage-copy">
-          <strong>{{ stage.title }}</strong>
-          <small>{{ stage.copy }}</small>
-        </span>
-        <b>{{ stageCount(stage.id) }}</b>
-        <ArrowRight v-if="index < stages.length - 1" class="stage-arrow" :size="15" />
-      </button>
-    </section>
+  <ResourcePageShell :title="title">
+    <template #stats>
+      <span class="catalog-count">{{ items.length }} 个原型</span>
+    </template>
 
-    <div class="ledger-heading">
-      <div>
-        <strong>{{ props.lifecycle === "all" || !props.lifecycle ? "全部资产" : title }}</strong>
-        <span>{{ items.length }} 个原型</span>
-      </div>
-      <button
-        v-if="props.lifecycle && props.lifecycle !== 'all'"
-        type="button"
-        @click="router.push('/workbench/prototypes/all')"
-      >
-        查看全部
-      </button>
-    </div>
+    <WorkbenchSegmented
+      fill
+      :model-value="selectedFilter"
+      :items="filterItems"
+      label="筛选原型"
+      @update:model-value="selectFilter"
+    />
 
     <section v-if="state.storageError" class="storage-error" role="alert">
       {{ state.storageError }}
@@ -216,22 +245,26 @@ onBeforeUnmount(() => {
 
     <div v-if="items.length" class="prototype-ledger">
       <div class="ledger-columns" aria-hidden="true">
-        <span>原型资产</span>
+        <span>原型</span>
         <span>生命周期</span>
         <span>定稿产物</span>
         <span>规模与变化</span>
         <span>下一步</span>
       </div>
       <article v-for="item in items" :key="item.id" class="prototype-row">
-        <button class="prototype-identity" type="button" @click="openPrototype(item)">
-          <span class="identity-mark">{{ item.label.slice(0, 1) }}</span>
-          <span>
-            <strong>{{ item.label }}</strong>
-            <code>{{ item.id }}</code>
-          </span>
+        <button
+          class="prototype-identity"
+          type="button"
+          @click="openPrototype(item)"
+        >
+          <strong>{{ item.label }}</strong>
+          <small>{{ prototypeSummary(item) }}</small>
         </button>
 
-        <div class="row-stage" :aria-label="`当前阶段：${LIFECYCLE_LABELS[state.effectiveLifecycle(item)]}`">
+        <div
+          class="row-stage"
+          :aria-label="`当前阶段：${LIFECYCLE_LABELS[state.effectiveLifecycle(item)]}`"
+        >
           <div class="asset-spine" aria-hidden="true">
             <span
               v-for="(stage, index) in stages"
@@ -245,11 +278,15 @@ onBeforeUnmount(() => {
               <i v-else />
             </span>
           </div>
-          <strong>{{ LIFECYCLE_LABELS[state.effectiveLifecycle(item)] }}</strong>
+          <strong>{{
+            LIFECYCLE_LABELS[state.effectiveLifecycle(item)]
+          }}</strong>
         </div>
 
-        <div class="row-evidence" :class="{ failed: record(item)?.operation.kind === 'failed' }">
-          <span>定稿产物</span>
+        <div
+          class="row-evidence"
+          :class="{ failed: record(item)?.operation.kind === 'failed' }"
+        >
           <strong>{{ artifactLabel(item) }}</strong>
           <small v-if="record(item)?.operation.kind === 'failed'">
             {{ operationFailure(item) }}
@@ -257,45 +294,35 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="row-meta">
-          <span><FileStack :size="13" />{{ stats(item.id).screens }} 页面 · {{ stats(item.id).variants }} 状态</span>
-          <span><MessageSquareText :size="13" />{{ stats(item.id).comments }} 待处理</span>
+          <span
+            ><FileStack :size="13" />{{ stats(item.id).screens }} 页面 ·
+            {{ stats(item.id).variants }} 状态</span
+          >
+          <span
+            ><MessageSquareText :size="13" />{{ stats(item.id).comments }}
+            待处理</span
+          >
           <time>{{ formatTime(record(item)?.updatedAt) }}</time>
         </div>
 
         <div class="row-actions">
-          <template v-if="state.effectiveLifecycle(item) === 'active'">
-            <WorkbenchButton tone="primary" @click="openTransition(item, 'advance')">
-              送交待确定<ArrowRight :size="14" />
-            </WorkbenchButton>
-            <WorkbenchButton tone="ghost" @click="openPrototype(item)">打开原型</WorkbenchButton>
-          </template>
-
-          <template v-else-if="state.effectiveLifecycle(item) === 'review'">
-            <WorkbenchButton tone="primary" @click="openTransition(item, 'finalize')">
-              <ScanLine :size="14" />定稿并采集
-            </WorkbenchButton>
-            <WorkbenchButton tone="ghost" @click="openTransition(item, 'return-active')">
-              退回进行中
-            </WorkbenchButton>
-          </template>
-
-          <template v-else-if="state.effectiveLifecycle(item) === 'final'">
-            <WorkbenchButton tone="primary" @click="openArtifacts(item)">
-              <FolderOpen :size="14" />查看定稿产物
-            </WorkbenchButton>
-            <WorkbenchButton tone="ghost" @click="openTransition(item, 'rollback')">
-              <RotateCcw :size="14" />回退待确定
-            </WorkbenchButton>
-            <WorkbenchButton tone="ghost" @click="openTransition(item, 'archive')">
-              归档
-            </WorkbenchButton>
-          </template>
-
-          <template v-else>
-            <WorkbenchButton tone="neutral" @click="openArtifacts(item)">
-              <Archive :size="14" />查看归档产物
-            </WorkbenchButton>
-          </template>
+          <v-tooltip
+            v-for="action in rowActions(item)"
+            :key="action.label"
+            :text="action.label"
+            location="top"
+          >
+            <template #activator="{ props: tip }">
+              <WorkbenchIconButton
+                v-bind="tip"
+                :label="action.label"
+                :tone="action.tone"
+                @click="action.run"
+              >
+                <component :is="action.icon" :size="16" />
+              </WorkbenchIconButton>
+            </template>
+          </v-tooltip>
         </div>
       </article>
     </div>
@@ -324,102 +351,9 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.lifecycle-rail {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  overflow: hidden;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 8px;
-  background: rgb(var(--v-theme-surface));
-}
-.rail-stage {
-  position: relative;
-  display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
-  gap: 9px;
-  align-items: center;
-  min-height: 78px;
-  padding: 13px 18px;
-  border: 0;
-  border-right: 1px solid rgba(var(--v-border-color), 0.14);
-  background: transparent;
-  color: rgba(var(--v-theme-on-surface), 0.72);
-  text-align: left;
-  cursor: pointer;
-}
-.rail-stage:last-child {
-  border-right: 0;
-}
-.rail-stage:hover,
-.rail-stage:focus-visible,
-.rail-stage.active {
-  background: rgba(var(--v-theme-on-surface), 0.045);
-  outline: none;
-}
-.rail-stage.active {
-  box-shadow: inset 0 -3px rgb(var(--v-theme-primary));
-}
-.rail-stage.is-review.active {
-  box-shadow: inset 0 -3px rgb(var(--v-theme-warning));
-}
-.rail-stage.is-final.active {
-  box-shadow: inset 0 -3px rgb(var(--v-theme-success));
-}
-.rail-stage.is-archived.active {
-  box-shadow: inset 0 -3px rgba(var(--v-theme-on-surface), 0.45);
-}
-.stage-sequence {
-  color: rgba(var(--v-theme-on-surface), 0.32);
-  font: 700 0.65rem ui-monospace, SFMono-Regular, Menlo, monospace;
-}
-.stage-copy {
-  display: grid;
-  gap: 2px;
-}
-.stage-copy strong {
-  color: rgb(var(--v-theme-on-surface));
-  font-size: 0.8rem;
-}
-.stage-copy small {
-  color: rgba(var(--v-theme-on-surface), 0.46);
-  font-size: 0.65rem;
-}
-.rail-stage b {
-  font: 800 1.2rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
-  color: rgb(var(--v-theme-on-surface));
-}
-.stage-arrow {
-  position: absolute;
-  right: -8px;
-  z-index: 1;
-  padding: 2px;
-  border-radius: 50%;
-  background: rgb(var(--v-theme-surface));
-  color: rgba(var(--v-theme-on-surface), 0.3);
-}
-.ledger-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 2px 2px 0;
-}
-.ledger-heading div {
-  display: flex;
-  gap: 9px;
-  align-items: baseline;
-}
-.ledger-heading strong {
-  font-size: 0.85rem;
-}
-.ledger-heading span,
-.ledger-heading button {
+.catalog-count {
   color: rgba(var(--v-theme-on-surface), 0.48);
-  font-size: 0.7rem;
-}
-.ledger-heading button {
-  border: 0;
-  background: transparent;
-  cursor: pointer;
+  font-size: 0.78rem;
 }
 .storage-error,
 .gallery-empty {
@@ -431,15 +365,25 @@ onBeforeUnmount(() => {
   font-size: 0.78rem;
 }
 .prototype-ledger {
+  container-type: inline-size;
   overflow: hidden;
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-radius: 8px;
   background: rgb(var(--v-theme-surface));
 }
-.ledger-columns {
+.ledger-columns,
+.prototype-row {
   display: grid;
-  grid-template-columns: minmax(250px, 1.45fr) minmax(190px, 0.9fr) minmax(145px, 0.75fr) minmax(140px, 0.75fr) minmax(190px, auto);
+  grid-template-columns:
+    minmax(220px, 1.45fr)
+    minmax(150px, 0.85fr)
+    minmax(120px, 0.7fr)
+    minmax(130px, 0.75fr)
+    118px;
   gap: 16px;
+  align-items: center;
+}
+.ledger-columns {
   padding: 9px 17px;
   border-bottom: 1px solid rgba(var(--v-border-color), 0.13);
   background: rgba(var(--v-theme-on-surface), 0.025);
@@ -451,11 +395,7 @@ onBeforeUnmount(() => {
   text-align: right;
 }
 .prototype-row {
-  display: grid;
-  grid-template-columns: minmax(250px, 1.45fr) minmax(190px, 0.9fr) minmax(145px, 0.75fr) minmax(140px, 0.75fr) minmax(190px, auto);
-  gap: 16px;
-  align-items: center;
-  min-height: 96px;
+  min-height: 88px;
   padding: 15px 17px;
   border-bottom: 1px solid rgba(var(--v-border-color), 0.13);
 }
@@ -466,10 +406,9 @@ onBeforeUnmount(() => {
   background: rgba(var(--v-theme-on-surface), 0.018);
 }
 .prototype-identity {
-  display: flex;
+  display: grid;
   min-width: 0;
-  align-items: center;
-  gap: 11px;
+  gap: 4px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -477,21 +416,16 @@ onBeforeUnmount(() => {
   text-align: left;
   cursor: pointer;
 }
-.identity-mark {
-  display: inline-flex;
-  width: 34px;
-  height: 34px;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid color-mix(in srgb, rgb(var(--v-theme-primary)) 34%, transparent);
-  border-radius: 9px;
-  background: color-mix(in srgb, rgb(var(--v-theme-primary)) 10%, transparent);
-  color: rgb(var(--v-theme-primary));
-  font-size: 0.85rem;
-  font-weight: 900;
+.prototype-identity strong {
+  overflow: hidden;
+  font-size: 0.86rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.prototype-identity > span:last-child,
+.prototype-identity small {
+  color: rgba(var(--v-theme-on-surface), 0.46);
+  font-size: 0.68rem;
+}
 .row-stage,
 .row-evidence,
 .row-meta {
@@ -499,25 +433,10 @@ onBeforeUnmount(() => {
   min-width: 0;
   gap: 5px;
 }
-.prototype-identity strong {
-  overflow: hidden;
-  font-size: 0.83rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.prototype-identity code {
-  display: block;
-  margin-top: 3px;
-  color: rgba(var(--v-theme-on-surface), 0.43);
-  font-size: 0.64rem;
-}
-.row-evidence > span {
-  color: rgba(var(--v-theme-on-surface), 0.42);
-  font-size: 0.62rem;
-}
-.row-stage > strong {
+.row-stage > strong,
+.row-evidence strong {
   color: rgb(var(--v-theme-on-surface));
-  font-size: 0.7rem;
+  font-size: 0.72rem;
 }
 .asset-spine {
   position: relative;
@@ -553,16 +472,14 @@ onBeforeUnmount(() => {
 }
 .asset-spine > span.current {
   border-color: rgb(var(--v-theme-primary));
-  box-shadow: 0 0 0 3px color-mix(in srgb, rgb(var(--v-theme-primary)) 12%, transparent);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, rgb(var(--v-theme-primary)) 12%, transparent);
 }
 .asset-spine i {
   width: 5px;
   height: 5px;
   border-radius: 50%;
   background: currentColor;
-}
-.row-evidence strong {
-  font-size: 0.75rem;
 }
 .row-evidence small {
   color: rgb(var(--v-theme-error));
@@ -584,9 +501,9 @@ onBeforeUnmount(() => {
 }
 .row-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: flex-end;
-  gap: 6px;
+  gap: 4px;
 }
 .gallery-empty {
   display: grid;
@@ -608,59 +525,23 @@ onBeforeUnmount(() => {
 .gallery-empty p {
   font-size: 0.72rem;
 }
-@media (max-width: 1180px) {
-  .lifecycle-rail {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .rail-stage:nth-child(2) {
-    border-right: 0;
-  }
+@container (max-width: 860px) {
   .ledger-columns {
     display: none;
   }
   .prototype-row {
-    grid-template-columns: minmax(240px, 1.4fr) minmax(180px, 0.9fr) minmax(150px, 1fr);
+    grid-template-columns: minmax(0, 1fr) 118px;
+    align-items: start;
   }
-  .row-meta,
-  .row-actions {
-    grid-column: span 1;
-  }
-}
-@media (max-width: 1350px) {
-  .prototype-row {
-    grid-template-columns: minmax(220px, 1.2fr) minmax(180px, 1fr);
-  }
-  .row-evidence {
-    grid-column: 2;
-  }
+  .row-stage,
+  .row-evidence,
   .row-meta {
     grid-column: 1;
   }
   .row-actions {
-    grid-column: 1 / -1;
-    justify-content: flex-start;
-  }
-}
-@media (max-width: 760px) {
-  .lifecycle-rail,
-  .prototype-row {
-    grid-template-columns: 1fr;
-  }
-  .rail-stage {
-    border-right: 0;
-    border-bottom: 1px solid rgba(var(--v-border-color), 0.14);
-  }
-  .stage-arrow {
-    display: none;
-  }
-  .row-actions {
-    justify-content: flex-start;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .rail-stage,
-  .prototype-row {
-    transition: none;
+    grid-column: 2;
+    grid-row: 1 / 5;
+    align-self: center;
   }
 }
 </style>

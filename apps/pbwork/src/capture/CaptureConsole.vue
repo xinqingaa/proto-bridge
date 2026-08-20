@@ -169,12 +169,12 @@ onMounted(async () => {
           <div v-if="!rows.length" class="history-empty">
             <FileCheck2 :size="28" />
             <strong>还没有定稿产物</strong>
-            <p>前往“原型生命周期”，将待确定原型定稿后会自动出现在这里。</p>
+            <p>前往全部原型，将待确定原型定稿后会自动出现在这里。</p>
             <WorkbenchButton
               tone="primary"
               @click="router.push('/workbench/prototypes/all')"
             >
-              打开原型生命周期
+              打开全部原型
             </WorkbenchButton>
           </div>
 

@@ -27,7 +27,7 @@ apps/pbwork/src/
 - Prototype 生命周期、Screen 树和画布；
 - iframe Runtime 预览；
 - Inspector、Highlight 和本地评论；
-- 原型生命周期控制台、定稿采集结果、Job Center 和 Evidence Viewer。
+- 原型目录、生命周期流转、定稿采集结果、Job Center 和 Evidence Viewer。
 
 Workbench 组件统一从 `src/workbench/ui` 复用或封装。该层可以使用 Vuetify，但业务视图不能随意创建不一致的原生控件。
 

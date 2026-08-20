@@ -7,11 +7,12 @@ test("lifecycle console starts new prototypes in active and does not skip review
 }) => {
   await page.goto("/workbench/prototypes/all");
 
-  await expect(page.getByRole("heading", { name: "原型生命周期" })).toBeVisible();
-  await expect(page.getByLabel("原型生命周期筛选")).toContainText("进行中");
-  await expect(page.getByLabel("原型生命周期筛选")).toContainText("待确定");
-  await expect(page.getByLabel("原型生命周期筛选")).toContainText("已定稿");
-  await expect(page.getByLabel("原型生命周期筛选")).toContainText("已归档");
+  await expect(page.getByRole("heading", { name: "全部原型" })).toBeVisible();
+  await expect(page.getByLabel("筛选原型")).toContainText("全部");
+  await expect(page.getByLabel("筛选原型")).toContainText("进行中");
+  await expect(page.getByLabel("筛选原型")).toContainText("待确定");
+  await expect(page.getByLabel("筛选原型")).toContainText("已定稿");
+  await expect(page.getByLabel("筛选原型")).toContainText("已归档");
 
   const coldChain = page.locator("article").filter({ hasText: "冷链异常处置台" });
   await expect(coldChain).toContainText("进行中");

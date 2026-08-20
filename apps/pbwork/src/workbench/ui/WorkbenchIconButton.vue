@@ -1,10 +1,12 @@
 <script setup lang="ts">
+defineOptions({ inheritAttrs: false });
+
 withDefaults(
   defineProps<{
     label: string;
     active?: boolean;
     disabled?: boolean;
-    tone?: "neutral" | "action" | "strong" | "danger";
+    tone?: "neutral" | "action" | "strong" | "danger" | "primary";
     size?: "small" | "medium" | "large";
   }>(),
   {
@@ -19,6 +21,7 @@ defineEmits<{ click: [event: MouseEvent] }>();
 
 <template>
   <button
+    v-bind="$attrs"
     type="button"
     class="wb-icon-button"
     :class="[`is-${tone}`, `is-${size}`, { 'is-active': active }]"
@@ -65,6 +68,19 @@ defineEmits<{ click: [event: MouseEvent] }>();
 }
 .wb-icon-button.is-action {
   color: rgb(var(--v-theme-action));
+}
+.wb-icon-button.is-primary {
+  border-color: rgb(var(--v-theme-action));
+  background: rgb(var(--v-theme-action));
+  color: rgb(var(--v-theme-on-action));
+}
+.wb-icon-button.is-primary:hover {
+  filter: brightness(1.08);
+  background: rgb(var(--v-theme-action));
+  color: rgb(var(--v-theme-on-action));
+}
+.wb-icon-button.is-primary:active:not(:disabled) {
+  transform: scale(0.96);
 }
 .wb-icon-button.is-strong {
   border-color: rgb(var(--v-theme-on-surface));

@@ -1,15 +1,24 @@
 <script setup lang="ts">
-defineProps<{
-  modelValue: string;
-  items: Array<{ value: string; label: string; count?: number }>;
-  label: string;
-}>();
+withDefaults(
+  defineProps<{
+    modelValue: string;
+    items: Array<{ value: string; label: string; count?: number }>;
+    label: string;
+    fill?: boolean;
+  }>(),
+  { fill: false },
+);
 
 defineEmits<{ "update:modelValue": [value: string] }>();
 </script>
 
 <template>
-  <div class="wb-segmented" role="group" :aria-label="label">
+  <div
+    class="wb-segmented"
+    :class="{ 'is-fill': fill }"
+    role="group"
+    :aria-label="label"
+  >
     <button
       v-for="item in items"
       :key="item.value"
@@ -34,6 +43,15 @@ defineEmits<{ "update:modelValue": [value: string] }>();
   border-radius: 8px;
   background: rgba(var(--v-theme-on-surface), 0.035);
 }
+.wb-segmented.is-fill {
+  display: flex;
+  width: 100%;
+}
+.wb-segmented.is-fill button {
+  flex: 1 1 0;
+  justify-content: center;
+  min-width: 0;
+}
 button {
   display: inline-flex;
   min-height: 27px;
@@ -49,7 +67,9 @@ button {
   font-weight: 700;
   cursor: pointer;
 }
-button:hover { color: rgba(var(--v-theme-on-surface), 0.9); }
+button:hover {
+  color: rgba(var(--v-theme-on-surface), 0.9);
+}
 button.is-active {
   background: rgb(var(--v-theme-surface));
   color: rgb(var(--v-theme-primary));

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 import {
   ArrowRight,
@@ -32,7 +32,10 @@ import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
 import { useCaptureStore } from "@/app/stores/capture";
 import { buildCaptureTaskPresentations } from "@/capture/presentation";
 import WorkbenchBadge from "@/workbench/ui/WorkbenchBadge.vue";
-import WorkbenchTabs from "@/workbench/ui/WorkbenchTabs.vue";
+import {
+  atmosphereStyle,
+  prototypeShortLabel,
+} from "@/workbench/prototypes/prototypePresentation";
 
 const prototypes = loadPrototypes();
 const screens = loadPrototypeScreens();
@@ -45,14 +48,18 @@ const defaultPrototype =
     (prototype) => lifecycleStore.effectiveLifecycle(prototype) === "active",
   ) ?? prototypes[0];
 const selectedPrototypeId = ref(defaultPrototype?.id ?? "");
-const previewReady = ref(false);
-
-const prototypeTabs = computed(() =>
-  prototypes.slice(0, 4).map((prototype) => ({
-    label: prototype.label,
-    value: prototype.id,
-  })),
-);
+const committedPrototypeId = ref(selectedPrototypeId.value);
+const shownPreviewPath = ref("");
+const incomingPreviewPath = ref("");
+const stageEl = ref<HTMLElement | null>(null);
+const reveal = ref<{
+  prototypeId: string;
+  x: string;
+  y: string;
+  expanding: boolean;
+} | null>(null);
+let revealFrame = 0;
+let revealTimer = 0;
 
 const selectedPrototype = computed<PrototypeRecord | undefined>(
   () =>
@@ -105,6 +112,77 @@ const selectedScreenPath = computed(() => {
   if (!prototype || !screen) return "";
   return `/workbench/prototypes/${prototype.id}/screens/${screen.screenSlug}`;
 });
+
+const stagedPrototypes = computed(() => {
+  const selected = selectedPrototype.value;
+  if (prototypes.length <= 3) return prototypes;
+  const rest = prototypes
+    .filter((prototype) => prototype.id !== selected?.id)
+    .slice(0, 2);
+  return selected ? [selected, ...rest] : prototypes.slice(0, 3);
+});
+
+const committedAtmosphere = computed(() =>
+  atmosphereStyle(committedPrototypeId.value),
+);
+const revealAtmosphere = computed(() => {
+  if (!reveal.value) return undefined;
+  return {
+    ...atmosphereStyle(reveal.value.prototypeId),
+    "--reveal-x": reveal.value.x,
+    "--reveal-y": reveal.value.y,
+  };
+});
+
+function prefersReducedMotion() {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function finishReveal() {
+  window.clearTimeout(revealTimer);
+  if (reveal.value) committedPrototypeId.value = reveal.value.prototypeId;
+  reveal.value = null;
+}
+
+function selectStagedPrototype(prototypeId: string, event: MouseEvent) {
+  if (prototypeId === selectedPrototypeId.value && !reveal.value) return;
+  selectedPrototypeId.value = prototypeId;
+  if (prefersReducedMotion() || !stageEl.value) {
+    committedPrototypeId.value = prototypeId;
+    reveal.value = null;
+    return;
+  }
+  if (reveal.value) committedPrototypeId.value = reveal.value.prototypeId;
+  const stageBox = stageEl.value.getBoundingClientRect();
+  const origin = (event.currentTarget as HTMLElement).getBoundingClientRect();
+  reveal.value = {
+    prototypeId,
+    x: `${origin.left + origin.width / 2 - stageBox.left}px`,
+    y: `${origin.top + origin.height / 2 - stageBox.top}px`,
+    expanding: false,
+  };
+  cancelAnimationFrame(revealFrame);
+  window.clearTimeout(revealTimer);
+  revealFrame = requestAnimationFrame(() => {
+    revealFrame = requestAnimationFrame(() => {
+      if (reveal.value?.prototypeId === prototypeId) {
+        reveal.value = { ...reveal.value, expanding: true };
+        revealTimer = window.setTimeout(finishReveal, 720);
+      }
+    });
+  });
+}
+
+function onRevealEnd(event: TransitionEvent) {
+  if (event.propertyName !== "clip-path") return;
+  finishReveal();
+}
+
+const prototypeOverviewPath = computed(() =>
+  selectedPrototype.value
+    ? `/workbench/prototypes/${selectedPrototype.value.id}`
+    : "",
+);
 
 const openComments = computed(() =>
   comments.comments.filter((comment) => comment.status === "open"),
@@ -203,39 +281,82 @@ function resultPrototypeLabel(item: (typeof captureResults.value)[number]) {
   );
 }
 
-watch(selectedPrototypeId, () => {
-  previewReady.value = false;
+watch(
+  runtimePreviewPath,
+  (next) => {
+    if (!next || next === shownPreviewPath.value) return;
+    incomingPreviewPath.value = next;
+  },
+  { immediate: true },
+);
+
+const previewPaths = computed(() => {
+  const paths = new Set<string>();
+  if (shownPreviewPath.value) paths.add(shownPreviewPath.value);
+  if (incomingPreviewPath.value) paths.add(incomingPreviewPath.value);
+  return [...paths];
 });
+
+function onPreviewLoad(path: string) {
+  if (path !== incomingPreviewPath.value) return;
+  shownPreviewPath.value = path;
+  incomingPreviewPath.value = "";
+}
 
 onMounted(() => {
   if (!capture.connected) void capture.connect();
   else void capture.refreshConsole();
 });
+onBeforeUnmount(() => {
+  cancelAnimationFrame(revealFrame);
+  window.clearTimeout(revealTimer);
+});
 </script>
 
 <template>
   <section class="overview-page" data-testid="workbench-overview">
-    <section v-if="selectedPrototype" class="prototype-stage">
-      <div class="stage-orbit" aria-hidden="true" />
-      <header class="stage-header">
-        <div>
-          <p>PBWork 概览</p>
-          <h1>继续制作</h1>
-        </div>
-        <RouterLink to="/workbench/prototypes/all" class="stage-all-link">
-          全部原型 <ArrowRight :size="15" />
-        </RouterLink>
-      </header>
-
-      <WorkbenchTabs
-        v-model="selectedPrototypeId"
-        class="prototype-switcher"
-        :items="prototypeTabs"
-        label="切换当前原型"
-      />
+    <section
+      v-if="selectedPrototype"
+      ref="stageEl"
+      class="prototype-stage"
+      :style="committedAtmosphere"
+    >
+      <div class="stage-room" aria-hidden="true">
+        <i class="stage-ground" />
+        <i class="stage-glow" />
+        <i class="stage-mist" />
+        <i class="stage-orbit" />
+      </div>
+      <div
+        v-if="reveal && revealAtmosphere"
+        :key="`${reveal.prototypeId}-${reveal.x}-${reveal.y}`"
+        class="stage-room is-reveal"
+        :class="{ 'is-expanding': reveal.expanding }"
+        :style="revealAtmosphere"
+        aria-hidden="true"
+        @transitionend="onRevealEnd"
+      >
+        <i class="stage-ground" />
+        <i class="stage-glow" />
+        <i class="stage-mist" />
+        <i class="stage-orbit" />
+      </div>
 
       <div class="stage-content">
         <div class="stage-copy">
+          <nav class="work-switcher" aria-label="台上作品">
+            <button
+              v-for="prototype in stagedPrototypes"
+              :key="prototype.id"
+              type="button"
+              :class="{ 'is-current': prototype.id === selectedPrototypeId }"
+              :aria-pressed="prototype.id === selectedPrototypeId"
+              @click="selectStagedPrototype(prototype.id, $event)"
+            >
+              {{ prototypeShortLabel(prototype) }}
+            </button>
+          </nav>
+
           <WorkbenchBadge
             :tone="lifecycleStore.effectiveLifecycle(selectedPrototype)"
           >
@@ -245,7 +366,15 @@ onMounted(() => {
               ]
             }}
           </WorkbenchBadge>
-          <h2>{{ selectedPrototype.label }}</h2>
+
+          <RouterLink
+            v-if="prototypeOverviewPath"
+            class="stage-title"
+            :to="prototypeOverviewPath"
+          >
+            <h1 :title="selectedPrototype.label">{{ selectedPrototype.label }}</h1>
+          </RouterLink>
+          <h1 v-else :title="selectedPrototype.label">{{ selectedPrototype.label }}</h1>
           <p v-if="selectedScreen">
             {{ selectedScreen.label }} ·
             {{
@@ -253,22 +382,6 @@ onMounted(() => {
             }}
           </p>
           <p v-else>这个原型还没有可预览页面。</p>
-
-          <div class="stage-actions">
-            <RouterLink
-              v-if="selectedScreenPath"
-              :to="selectedScreenPath"
-              class="stage-primary-action"
-            >
-              继续工作 <ArrowRight :size="15" />
-            </RouterLink>
-            <RouterLink
-              :to="`/workbench/prototypes/${selectedPrototype.id}`"
-              class="stage-secondary-action"
-            >
-              打开原型
-            </RouterLink>
-          </div>
 
           <div class="stage-metrics">
             <span
@@ -291,19 +404,31 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="runtime-stage" :class="{ ready: previewReady }">
-          <div v-if="runtimePreviewPath" class="runtime-frame">
+        <div class="runtime-stage">
+          <RouterLink
+            v-if="selectedScreenPath"
+            class="runtime-frame"
+            :to="selectedScreenPath"
+            :aria-label="`打开画布：${selectedScreen?.label ?? selectedPrototype.label}`"
+            data-testid="overview-phone"
+          >
             <iframe
-              :key="runtimePreviewPath"
-              :src="runtimePreviewPath"
+              v-for="path in previewPaths"
+              :key="path"
+              :class="{
+                'is-shown':
+                  path === shownPreviewPath ||
+                  (!shownPreviewPath && path === incomingPreviewPath),
+              }"
+              :src="path"
               :title="`${selectedPrototype.label} · ${selectedScreen?.label ?? '页面预览'}`"
               width="390"
               height="844"
               tabindex="-1"
-              loading="eager"
-              @load="previewReady = true"
+              @load="onPreviewLoad(path)"
             />
-          </div>
+            <span class="runtime-hint">打开画布</span>
+          </RouterLink>
           <div v-else class="runtime-empty">
             <Layers3 :size="26" />
             <span>还没有可预览页面</span>
@@ -319,9 +444,6 @@ onMounted(() => {
           <h2>原型流转</h2>
           <span>从正在制作到确认与归档，每个原型只出现一次。</span>
         </div>
-        <RouterLink to="/workbench/prototypes/all">
-          查看全部原型 <ArrowRight :size="14" />
-        </RouterLink>
       </header>
 
       <div class="lifecycle-track">
@@ -521,170 +643,167 @@ onMounted(() => {
 }
 
 .prototype-stage {
+  --stage-ground: #16181c;
+  --stage-glow: rgba(160, 170, 186, 0.22);
+  --stage-mist: rgba(200, 208, 220, 0.08);
+  --stage-ink: #f4f6f8;
+  --stage-muted: rgba(244, 246, 248, 0.54);
+  --stage-orbit: rgba(244, 246, 248, 0.08);
+  box-sizing: border-box;
   position: relative;
-  min-height: 520px;
+  display: flex;
+  width: 100%;
+  aspect-ratio: 1.618 / 1;
   overflow: hidden;
-  padding: 28px 32px 0;
-  border: 1px solid rgba(119, 148, 213, 0.2);
+  flex-direction: column;
+  padding: 22px 32px 0;
+  border: 1px solid color-mix(in srgb, var(--stage-ink) 12%, transparent);
   border-radius: 24px;
-  background:
-    radial-gradient(
-      circle at 82% 18%,
-      rgba(112, 143, 222, 0.3),
-      transparent 29%
-    ),
-    radial-gradient(
-      circle at 96% 88%,
-      rgba(111, 91, 201, 0.18),
-      transparent 33%
-    ),
-    linear-gradient(132deg, #161b24 0%, #202735 58%, #172132 100%);
-  color: #f7f9fd;
+  background: var(--stage-ground);
+  color: var(--stage-ink);
   box-shadow: 0 20px 54px rgba(8, 12, 20, 0.18);
 }
 
+.stage-room {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.stage-ground,
+.stage-glow,
+.stage-mist,
 .stage-orbit {
   position: absolute;
-  right: -105px;
-  bottom: -285px;
-  width: 660px;
-  height: 660px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  display: block;
+}
+
+.stage-ground {
+  inset: 0;
+  background: var(--stage-ground);
+}
+
+.stage-glow {
+  top: -80px;
+  right: -20px;
+  width: 520px;
+  height: 520px;
+  border-radius: 50%;
+  background: var(--stage-glow);
+  filter: blur(8px);
+}
+
+.stage-mist {
+  right: 20px;
+  bottom: -80px;
+  width: 460px;
+  height: 460px;
+  border-radius: 50%;
+  background: var(--stage-mist);
+  filter: blur(14px);
+}
+
+.stage-orbit {
+  right: -120px;
+  bottom: -300px;
+  width: 680px;
+  height: 680px;
+  border: 1px solid var(--stage-orbit);
   border-radius: 50%;
   box-shadow:
-    0 0 0 70px rgba(255, 255, 255, 0.018),
-    0 0 0 140px rgba(255, 255, 255, 0.012);
+    0 0 0 70px color-mix(in srgb, var(--stage-ink) 2%, transparent),
+    0 0 0 140px color-mix(in srgb, var(--stage-ink) 1.2%, transparent);
 }
 
-.stage-header {
-  position: relative;
-  z-index: 2;
+.stage-room.is-reveal {
+  z-index: 1;
+  clip-path: circle(0 at var(--reveal-x) var(--reveal-y));
+}
+
+.stage-room.is-reveal.is-expanding {
+  clip-path: circle(160% at var(--reveal-x) var(--reveal-y));
+  transition: clip-path 1640ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.work-switcher {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-}
-
-.stage-header p,
-.block-header p {
-  margin: 0 0 5px;
-  color: #8ba9ee;
-  font-size: 0.7rem;
-  font-weight: 750;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.stage-header h1 {
-  margin: 0;
-  font-size: 1.15rem;
-  letter-spacing: -0.025em;
-}
-
-.stage-all-link,
-.block-header > a {
-  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  color: inherit;
-  font-size: 0.72rem;
+  gap: 4px;
+  margin-bottom: 28px;
+}
+
+.work-switcher button {
+  min-height: 30px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--stage-muted);
+  font: inherit;
+  font-size: 0.78rem;
   font-weight: 700;
   text-decoration: none;
+  cursor: pointer;
 }
 
-.stage-all-link {
-  color: rgba(247, 249, 253, 0.68);
+.work-switcher button:hover {
+  color: var(--stage-ink);
 }
 
-.prototype-switcher {
-  position: relative;
-  z-index: 2;
-  margin-top: 18px;
-}
-
-.prototype-switcher :deep(.wb-tabs) {
-  max-width: 100%;
-  overflow-x: auto;
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.prototype-switcher :deep(button) {
-  color: rgba(247, 249, 253, 0.55);
-  white-space: nowrap;
-}
-
-.prototype-switcher :deep(button:hover) {
-  color: rgba(247, 249, 253, 0.88);
-}
-
-.prototype-switcher :deep(button.is-active) {
-  background: rgba(255, 255, 255, 0.13);
-  color: #ffffff;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+.work-switcher button.is-current {
+  background: color-mix(in srgb, var(--stage-ink) 12%, transparent);
+  color: var(--stage-ink);
 }
 
 .stage-content {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: flex;
-  min-height: 415px;
-  align-items: center;
+  flex: 1;
+  min-height: 0;
   justify-content: space-between;
-  gap: 42px;
+  gap: 36px;
 }
 
 .stage-copy {
   position: relative;
   z-index: 2;
-  width: min(53%, 560px);
-  padding: 38px 0 54px 52px;
+  min-width: 0;
+  width: min(54%, 560px);
+  padding: 16px 0 24px 20px;
 }
 
-.stage-copy h2 {
-  max-width: 540px;
-  margin: 16px 0 0;
-  font-size: clamp(2.5rem, 5vw, 4.65rem);
-  font-weight: 650;
-  letter-spacing: -0.065em;
-  line-height: 0.99;
-}
-
-.stage-copy > p {
-  margin: 17px 0 0;
-  color: rgba(247, 249, 253, 0.54);
-  font-size: 0.8rem;
-}
-
-.stage-actions {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-top: 27px;
-}
-
-.stage-primary-action,
-.stage-secondary-action {
-  display: inline-flex;
-  min-height: 40px;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 0 15px;
-  border-radius: 10px;
-  font-size: 0.76rem;
-  font-weight: 750;
+.stage-title {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  color: inherit;
   text-decoration: none;
 }
 
-.stage-primary-action {
-  background: #f7f9fd;
-  color: #171c26;
+.stage-copy h1 {
+  overflow: hidden;
+  margin: 14px 0 0;
+  font-size: clamp(1.7rem, 3vw, 2.6rem);
+  font-weight: 650;
+  letter-spacing: -0.04em;
+  line-height: 1.15;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
-.stage-secondary-action {
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  color: rgba(247, 249, 253, 0.78);
-  background: rgba(255, 255, 255, 0.04);
+.stage-title:hover h1,
+.stage-title:focus-visible h1 {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 8px;
+}
+
+.stage-copy > p {
+  margin: 16px 0 0;
+  color: var(--stage-muted);
+  font-size: 0.8rem;
 }
 
 .stage-metrics {
@@ -692,19 +811,19 @@ onMounted(() => {
   flex-wrap: wrap;
   align-items: center;
   gap: 19px;
-  margin-top: 35px;
+  margin-top: 32px;
 }
 
 .stage-metrics > span {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  color: rgba(247, 249, 253, 0.42);
+  color: color-mix(in srgb, var(--stage-ink) 42%, transparent);
   font-size: 0.62rem;
 }
 
 .stage-metrics b {
-  color: rgba(247, 249, 253, 0.88);
+  color: color-mix(in srgb, var(--stage-ink) 88%, transparent);
   font-size: 0.88rem;
 }
 
@@ -719,63 +838,102 @@ onMounted(() => {
 }
 
 .runtime-stage {
-  position: relative;
-  align-self: stretch;
-  flex: 1;
-  min-width: 360px;
-  overflow: hidden;
-  opacity: 0.45;
-  transition:
-    opacity 220ms ease,
-    transform 220ms ease;
-  transform: translateY(7px);
-}
-
-.runtime-stage.ready {
-  opacity: 1;
-  transform: translateY(0);
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
 }
 
 .runtime-frame {
   position: absolute;
-  top: 32px;
-  right: 68px;
-  width: 230px;
-  height: 498px;
+  right: 52px;
+  bottom: -80px;
+  width: 304px;
+  height: 658px;
   overflow: hidden;
-  border-radius: 24px 24px 0 0;
+  pointer-events: auto;
+  border-radius: 24px;
   background: #ffffff;
   box-shadow:
     0 0 0 7px #111419,
-    0 0 0 8px rgba(255, 255, 255, 0.1),
+    0 0 0 8px color-mix(in srgb, var(--stage-ink) 12%, transparent),
     0 28px 64px rgba(3, 6, 12, 0.42);
-  transform: rotate(1.5deg);
+  transform: rotate(6.5deg);
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.runtime-frame:hover,
+.runtime-frame:focus-visible {
+  transform: rotate(6.5deg) translateY(-8px);
+  box-shadow:
+    0 0 0 7px #111419,
+    0 0 0 8px color-mix(in srgb, var(--stage-ink) 18%, transparent),
+    0 34px 70px rgba(3, 6, 12, 0.48);
+  outline: none;
 }
 
 .runtime-frame iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
   display: block;
   width: 390px;
   height: 844px;
   border: 0;
   background: #ffffff;
   pointer-events: none;
-  transform: scale(0.59);
+  opacity: 0;
+  transform: scale(0.78);
   transform-origin: top left;
+  transition: opacity 280ms ease;
+}
+
+.runtime-frame iframe.is-shown {
+  opacity: 1;
+}
+
+.runtime-hint {
+  position: absolute;
+  right: 16px;
+  bottom: 96px;
+  z-index: 2;
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(17, 20, 25, 0.72);
+  color: #f7f9fd;
+  font-size: 0.68rem;
+  font-weight: 700;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+}
+
+.runtime-frame:hover .runtime-hint,
+.runtime-frame:focus-visible .runtime-hint {
+  opacity: 1;
 }
 
 .runtime-empty {
   position: absolute;
-  inset: 60px 68px 60px auto;
+  top: 50%;
+  right: 72px;
   display: flex;
-  width: 230px;
+  width: 304px;
+  min-height: 220px;
   align-items: center;
   justify-content: center;
   flex-direction: column;
   gap: 9px;
-  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border: 1px dashed color-mix(in srgb, var(--stage-ink) 18%, transparent);
   border-radius: 24px;
-  color: rgba(247, 249, 253, 0.45);
+  color: var(--stage-muted);
   font-size: 0.72rem;
+  transform: translateY(-50%);
 }
 
 .overview-block {
@@ -793,7 +951,12 @@ onMounted(() => {
 }
 
 .block-header p {
+  margin: 0 0 5px;
   color: rgb(var(--v-theme-primary));
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .block-header h2 {
@@ -810,7 +973,13 @@ onMounted(() => {
 }
 
 .block-header > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: rgb(var(--v-theme-primary));
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-decoration: none;
 }
 
 .lifecycle-block {
@@ -1204,10 +1373,6 @@ onMounted(() => {
     padding-left: 12px;
   }
 
-  .runtime-frame {
-    right: 34px;
-  }
-
   .capture-signal {
     grid-template-columns: 1fr;
   }
@@ -1233,12 +1398,13 @@ onMounted(() => {
   }
 
   .prototype-stage {
-    min-height: 760px;
-    padding: 24px 22px 0;
+    aspect-ratio: auto;
+    padding: 20px 20px 0;
   }
 
   .stage-content {
-    min-height: 650px;
+    flex: none;
+    height: auto;
     align-items: flex-start;
     flex-direction: column;
     gap: 0;
@@ -1246,22 +1412,36 @@ onMounted(() => {
 
   .stage-copy {
     width: 100%;
-    padding: 34px 0 20px;
-  }
-
-  .stage-copy h2 {
-    font-size: 2.65rem;
+    padding: 8px 0 16px;
   }
 
   .runtime-stage {
+    position: relative;
+    inset: auto;
     width: 100%;
-    min-width: 0;
-    min-height: 360px;
+    height: 360px;
+    overflow: hidden;
+    pointer-events: auto;
   }
 
   .runtime-frame {
-    top: 20px;
-    right: calc(50% - 115px);
+    right: 50%;
+    bottom: -120px;
+    transform: translateX(50%) rotate(6.5deg);
+  }
+
+  .runtime-frame:hover,
+  .runtime-frame:focus-visible {
+    transform: translateX(50%) rotate(6.5deg) translateY(-8px);
+  }
+
+  .runtime-empty {
+    position: relative;
+    top: auto;
+    right: auto;
+    min-height: 220px;
+    margin: 24px auto;
+    transform: none;
   }
 
   .lifecycle-track,
@@ -1335,8 +1515,27 @@ onMounted(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .runtime-stage {
+  .stage-ground,
+  .stage-glow,
+  .stage-mist,
+  .stage-orbit,
+  .stage-room.is-reveal.is-expanding,
+  .runtime-frame,
+  .runtime-frame iframe,
+  .runtime-hint {
     transition: none;
+  }
+
+  .runtime-frame:hover,
+  .runtime-frame:focus-visible {
+    transform: rotate(6.5deg);
+  }
+}
+
+@media (max-width: 760px) and (prefers-reduced-motion: reduce) {
+  .runtime-frame:hover,
+  .runtime-frame:focus-visible {
+    transform: translateX(50%) rotate(6.5deg);
   }
 }
 </style>

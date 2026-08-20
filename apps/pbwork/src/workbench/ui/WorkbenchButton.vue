@@ -66,6 +66,9 @@ defineEmits<{ click: [event: MouseEvent] }>();
 .wb-button.is-primary:hover {
   filter: brightness(1.08);
 }
+.wb-button:active:not(:disabled) {
+  transform: scale(0.98);
+}
 .wb-button.is-ghost {
   border-color: transparent;
   background: transparent;
