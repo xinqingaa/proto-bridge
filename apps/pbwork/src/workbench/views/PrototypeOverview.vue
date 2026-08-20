@@ -1,28 +1,28 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
-import {
-  Check,
-  ChevronDown,
-  CircleDot,
-  FolderOpen,
-  History,
-  RotateCcw,
-  ScanLine,
-} from "lucide-vue-next";
-import { useRouter } from "vue-router";
-import ResourcePageShell from "@/workbench/views/ResourcePageShell.vue";
+import { RouterLink, useRouter } from "vue-router";
+import { ArrowRight, ChevronDown } from "lucide-vue-next";
 import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
 import { LIFECYCLE_LABELS } from "@/design-system/types";
 import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
 import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
-import WorkbenchStatChip from "@/workbench/ui/WorkbenchStatChip.vue";
+import AtmosphereLayer from "@/workbench/prototypes/AtmosphereLayer.vue";
 import LifecycleTransitionDialog, {
   type LifecycleIntent,
 } from "@/workbench/prototypes/LifecycleTransitionDialog.vue";
 import LifecycleFinalizationSheet from "@/workbench/prototypes/LifecycleFinalizationSheet.vue";
-import PrototypeFlowRail from "@/workbench/prototypes/PrototypeFlowRail.vue";
-import ScreenPreviewCard from "@/workbench/prototypes/ScreenPreviewCard.vue";
-import { resolveScreenGroups } from "@/workbench/prototypes/resolveScreenGroups";
+import {
+  atmosphereStyle,
+  prototypeShortLabel,
+  prototypeSummary,
+} from "@/workbench/prototypes/prototypePresentation";
+import {
+  canvasPath,
+  formatLastEvent,
+  operationCaption,
+  ownersAndRoles,
+  prototypeChapters,
+} from "@/workbench/prototypes/workMap";
 
 const props = defineProps<{
   prototypeId: string;
@@ -31,14 +31,8 @@ const lifecycle = usePrototypeLifecycleStore();
 const router = useRouter();
 const transitionOpen = ref(false);
 const transitionIntent = ref<LifecycleIntent>("advance");
-const historyExpanded = ref(false);
 let pollTimer: ReturnType<typeof setInterval> | undefined;
-const lifecycleStages = [
-  { id: "active", label: "进行中" },
-  { id: "review", label: "待确定" },
-  { id: "final", label: "已定稿" },
-  { id: "archived", label: "已归档" },
-] as const;
+const stages = ["active", "review", "final", "archived"] as const;
 
 const prototype = computed(() =>
   loadPrototypes().find((item) => item.id === props.prototypeId),
@@ -49,39 +43,35 @@ const screens = computed(() =>
     (item) => item.prototypeId === props.prototypeId,
   ),
 );
+const chapters = computed(() =>
+  prototype.value
+    ? prototypeChapters(screens.value, prototype.value.screenGroups ?? [])
+    : [],
+);
 const finalizedArtifacts = computed(
   () => lifecycle.recordFor(props.prototypeId)?.artifacts ?? null,
-);
-const screenGroups = computed(() =>
-  resolveScreenGroups(screens.value, prototype.value?.screenGroups ?? []),
-);
-const variantTotal = computed(() =>
-  screens.value.reduce((sum, screen) => sum + screen.variants.length, 0),
 );
 const effectiveLifecycle = computed(() =>
   prototype.value ? lifecycle.effectiveLifecycle(prototype.value) : "active",
 );
 const currentStageIndex = computed(() =>
-  lifecycleStages.findIndex((stage) => stage.id === effectiveLifecycle.value),
+  stages.findIndex((stage) => stage === effectiveLifecycle.value),
 );
-const stageProgress = computed(() =>
-  currentStageIndex.value < 0
-    ? 0
-    : (currentStageIndex.value / (lifecycleStages.length - 1)) * 75,
+const lastEvent = computed(() => {
+  const history = lifecycle.historyFor(props.prototypeId);
+  return formatLastEvent(history[0]);
+});
+const operation = computed(
+  () => lifecycle.recordFor(props.prototypeId)?.operation,
 );
-const lifecycleHistory = computed(() =>
-  lifecycle.historyFor(props.prototypeId),
+const busy = computed(
+  () =>
+    operation.value?.kind === "finalizing" ||
+    operation.value?.kind === "rolling-back",
 );
-const visibleHistory = computed(() =>
-  historyExpanded.value
-    ? lifecycleHistory.value
-    : lifecycleHistory.value.slice(0, 1),
+const caption = computed(() =>
+  operationCaption(operation.value, Boolean(finalizedArtifacts.value)),
 );
-const formatHistoryTime = (value: string) =>
-  new Intl.DateTimeFormat("zh-CN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
 
 function openPrototypeEvidence() {
   const evidence = finalizedArtifacts.value;
@@ -98,8 +88,8 @@ function openTransition(intent: LifecycleIntent) {
 
 async function pollOperation() {
   if (!prototype.value) return;
-  const operation = lifecycle.recordFor(prototype.value.id)?.operation;
-  if (operation?.kind === "finalizing" && operation.phase === "capturing") {
+  const current = lifecycle.recordFor(prototype.value.id)?.operation;
+  if (current?.kind === "finalizing" && current.phase === "capturing") {
     await lifecycle.pollFinalization(prototype.value);
   }
 }
@@ -114,170 +104,138 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <ResourcePageShell v-if="prototype" eyebrow="原型" :title="prototype.label">
-    <template #stats>
-      <div class="meta-cluster">
-        <WorkbenchStatChip :value="screens.length" label="页面" />
-        <WorkbenchStatChip :value="variantTotal" label="状态" />
-        <WorkbenchStatChip
-          v-for="owner in prototype.owners ?? []"
-          :key="`owner-${owner}`"
-          :label="owner"
-        />
-        <WorkbenchStatChip
-          v-for="role in prototype.roles ?? []"
-          :key="`role-${role}`"
-          :label="role"
-        />
-      </div>
-    </template>
-
-    <section class="lifecycle-hero" :class="`stage-${effectiveLifecycle}`">
-      <div class="lifecycle-copy">
-        <div class="lifecycle-kicker">
-          <CircleDot :size="15" />
-          当前生命周期
+  <section v-if="prototype" class="detail-page">
+    <header class="hero" :style="atmosphereStyle(prototype.id)">
+      <AtmosphereLayer />
+      <div class="hero-copy">
+        <span class="kicker">{{ prototypeShortLabel(prototype) }}</span>
+        <h1 :title="prototype.label">{{ prototype.label }}</h1>
+        <p class="summary">
+          {{ prototypeSummary(prototype) }} · {{ ownersAndRoles(prototype) }}
+        </p>
+        <div class="hero-actions">
+          <WorkbenchButton
+            v-if="effectiveLifecycle === 'active'"
+            tone="primary"
+            :disabled="busy"
+            :loading="busy"
+            @click="openTransition('advance')"
+          >
+            送交待确定
+          </WorkbenchButton>
+          <WorkbenchButton
+            v-if="effectiveLifecycle === 'review'"
+            tone="primary"
+            :disabled="busy"
+            :loading="busy"
+            @click="openTransition('finalize')"
+          >
+            定稿并采集
+          </WorkbenchButton>
+          <WorkbenchButton
+            v-if="effectiveLifecycle === 'review'"
+            tone="ghost"
+            :disabled="busy"
+            @click="openTransition('return-active')"
+          >
+            退回进行中
+          </WorkbenchButton>
+          <WorkbenchButton
+            v-if="finalizedArtifacts"
+            tone="primary"
+            @click="openPrototypeEvidence"
+          >
+            {{
+              effectiveLifecycle === "archived"
+                ? "查看归档产物"
+                : "查看定稿产物"
+            }}
+          </WorkbenchButton>
+          <WorkbenchButton
+            v-if="effectiveLifecycle === 'final'"
+            tone="ghost"
+            :disabled="busy"
+            @click="openTransition('rollback')"
+          >
+            回退待确定
+          </WorkbenchButton>
+          <WorkbenchButton
+            v-if="effectiveLifecycle === 'final'"
+            tone="ghost"
+            :disabled="busy"
+            @click="openTransition('archive')"
+          >
+            归档
+          </WorkbenchButton>
+          <span v-if="effectiveLifecycle === 'archived'" class="archived">
+            永久只读，不可回退或删除
+          </span>
         </div>
-        <strong>{{ LIFECYCLE_LABELS[effectiveLifecycle] }}</strong>
-        <p>原型当前处于「{{ LIFECYCLE_LABELS[effectiveLifecycle] }}」阶段</p>
       </div>
-      <div class="lifecycle-actions">
-        <WorkbenchButton
-          v-if="effectiveLifecycle === 'active'"
-          tone="primary"
-          @click="openTransition('advance')"
-        >
-          送交待确定
-        </WorkbenchButton>
-        <WorkbenchButton
-          v-if="effectiveLifecycle === 'review'"
-          tone="primary"
-          @click="openTransition('finalize')"
-        >
-          <ScanLine :size="14" />定稿并自动采集
-        </WorkbenchButton>
-        <WorkbenchButton
-          v-if="effectiveLifecycle === 'review'"
-          tone="ghost"
-          @click="openTransition('return-active')"
-        >
-          退回进行中
-        </WorkbenchButton>
-        <WorkbenchButton
-          v-if="finalizedArtifacts"
-          tone="primary"
-          @click="openPrototypeEvidence"
-        >
-          <FolderOpen :size="14" />查看定稿产物
-        </WorkbenchButton>
-        <WorkbenchButton
-          v-if="effectiveLifecycle === 'final'"
-          tone="ghost"
-          @click="openTransition('rollback')"
-        >
-          <RotateCcw :size="14" />回退待确定
-        </WorkbenchButton>
-        <WorkbenchButton
-          v-if="effectiveLifecycle === 'final'"
-          tone="ghost"
-          @click="openTransition('archive')"
-        >
-          归档
-        </WorkbenchButton>
-        <span v-if="effectiveLifecycle === 'archived'" class="archived-note">
-          永久只读，不可回退或删除
-        </span>
-      </div>
-
-      <div class="stage-track">
-        <span class="stage-line" />
-        <span class="stage-progress" :style="{ width: `${stageProgress}%` }" />
-        <div
-          v-for="(stage, index) in lifecycleStages"
-          :key="stage.id"
-          class="stage-item"
+      <div class="hero-track" aria-label="当前生命周期">
+        <span
+          v-for="(id, index) in stages"
+          :key="id"
           :class="{
-            current: index === currentStageIndex,
-            complete: index < currentStageIndex,
+            'is-done': index < currentStageIndex,
+            'is-here': index === currentStageIndex,
+            'is-archive': id === 'archived',
           }"
         >
-          <span>
-            <Check v-if="index < currentStageIndex" :size="13" />
-            <i v-else />
-          </span>
-          <strong>{{ stage.label }}</strong>
-        </div>
+          <i aria-hidden="true" />
+          {{ LIFECYCLE_LABELS[id] }}
+        </span>
       </div>
+      <p class="last">{{ lastEvent }}</p>
+      <p v-if="caption.status" class="status">{{ caption.status }}</p>
+      <p v-if="caption.failure" class="failure">{{ caption.failure }}</p>
+    </header>
 
-      <div v-if="visibleHistory.length" class="history-summary">
-        <History :size="14" />
-        <ol>
-          <li v-for="entry in visibleHistory" :key="entry.id">
-            <span
-              >{{ LIFECYCLE_LABELS[entry.from] }} →
-              {{ LIFECYCLE_LABELS[entry.to] }}</span
+    <div v-if="chapters.length" class="map">
+      <section
+        v-for="chapter in chapters"
+        :key="chapter.id"
+        class="chapter"
+      >
+        <h2>{{ chapter.label }} · {{ chapter.screens.length }} 页</h2>
+        <div :class="chapter.sequential ? 'flow' : 'destinations'">
+          <template
+            v-for="(screen, index) in chapter.screens"
+            :key="screen.slug"
+          >
+            <RouterLink
+              class="screen-card"
+              :to="canvasPath(prototype.id, screen.slug)"
             >
-            <time>{{ formatHistoryTime(entry.changedAt) }}</time>
-          </li>
-        </ol>
-        <button
-          v-if="lifecycleHistory.length > 1"
-          type="button"
-          :aria-expanded="historyExpanded"
-          @click="historyExpanded = !historyExpanded"
-        >
-          {{ historyExpanded ? "收起" : "全部记录" }}
-          <ChevronDown
-            :size="13"
-            :class="{ rotated: historyExpanded }"
-            aria-hidden="true"
-          />
-        </button>
-      </div>
-    </section>
-
-    <section class="flow-panel">
-      <div class="section-heading">
-        <div>
-          <p>页面结构</p>
-          <h2>模块分组</h2>
+              <span class="pageface" aria-hidden="true">
+                <i class="pageface-bar" />
+                <i class="pageface-hero" />
+                <i class="pageface-line" />
+                <i class="pageface-line is-short" />
+              </span>
+              <span class="screen-copy">
+                <strong>{{ screen.label }}</strong>
+                <small
+                  >{{ screen.variantLabel }} · {{ screen.variantCount }}
+                  个状态</small
+                >
+              </span>
+            </RouterLink>
+            <span
+              v-if="chapter.sequential && index < chapter.screens.length - 1"
+              class="arrow"
+              aria-hidden="true"
+            >
+              <ArrowRight :size="14" class="arrow-h" />
+              <ChevronDown :size="14" class="arrow-v" />
+            </span>
+          </template>
         </div>
-        <span
-          >{{ screens.length }} 个页面 · {{ screenGroups.length }} 个模块</span
-        >
-      </div>
-      <PrototypeFlowRail
-        :prototype-id="prototype.id"
-        :screens="screens"
-        :groups="prototype.screenGroups ?? []"
-      />
-    </section>
-
-    <section class="gallery-section">
-      <div class="gallery-heading">
-        <div>
-          <p>页面画廊</p>
-          <h2>页面</h2>
-        </div>
-        <span>{{ screens.length }} 个页面 · {{ variantTotal }} 个状态</span>
-      </div>
-      <div v-for="group in screenGroups" :key="group.id" class="gallery-group">
-        <h3>{{ group.label }} · {{ group.screens.length }}</h3>
-        <div class="screen-grid">
-          <ScreenPreviewCard
-            v-for="screen in group.screens"
-            :key="screen.screenId"
-            density="compact"
-            :prototype-id="prototype.id"
-            :screen="screen"
-          />
-        </div>
-      </div>
-    </section>
-  </ResourcePageShell>
-  <v-alert v-else type="error" variant="tonal"
-    >未知原型：{{ prototypeId }}</v-alert
-  >
+      </section>
+    </div>
+    <p v-else class="empty-map">这个原型还没有可打开的页面。</p>
+  </section>
+  <p v-else class="unknown" role="alert">未知原型：{{ prototypeId }}</p>
   <LifecycleTransitionDialog
     v-if="prototype && transitionIntent !== 'finalize'"
     v-model="transitionOpen"
@@ -292,263 +250,301 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.meta-cluster {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  justify-content: flex-end;
+.detail-page {
+  width: min(1240px, 100%);
+  margin: 0 auto;
 }
-.lifecycle-hero {
+
+.hero {
   position: relative;
-  display: grid;
-  grid-template-columns: minmax(130px, 0.45fr) minmax(360px, 1.5fr) auto;
-  gap: 12px 22px;
-  align-items: center;
   overflow: hidden;
-  padding: 14px 16px;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 8px;
-  background: rgb(var(--v-theme-surface));
+  min-height: 248px;
+  padding: 28px 32px 24px;
+  border: 1px solid color-mix(in srgb, var(--stage-ink) 12%, transparent);
+  border-radius: 24px;
+  background: var(--stage-ground);
+  color: var(--stage-ink);
+  box-shadow: 0 18px 40px rgba(8, 12, 20, 0.16);
 }
-.lifecycle-hero::before {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 3px;
-  background: rgb(var(--v-theme-primary));
-  content: "";
-}
-.lifecycle-kicker {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  color: rgb(var(--v-theme-primary));
-  font-size: 0.72rem;
-  font-weight: 750;
-}
-.lifecycle-copy > strong {
-  display: block;
-  margin-top: 5px;
-  font-size: 1.22rem;
-  line-height: 1.1;
-}
-.lifecycle-copy > p {
-  margin: 3px 0 0;
-  color: rgba(var(--v-theme-on-surface), 0.56);
-  font-size: 0.75rem;
-}
-.lifecycle-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: flex-end;
-  gap: 7px;
-}
-.archived-note {
-  color: rgba(var(--v-theme-on-surface), 0.52);
-  font-size: 0.72rem;
-}
-.stage-track {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-.stage-line,
-.stage-progress {
-  position: absolute;
-  top: 14px;
-  left: 12.5%;
-  height: 2px;
-}
-.stage-line {
-  right: 12.5%;
-  background: rgba(var(--v-theme-on-surface), 0.13);
-}
-.stage-progress {
-  max-width: 75%;
-  background: rgb(var(--v-theme-primary));
-}
-.stage-item {
+
+.hero-copy,
+.hero-track,
+.last,
+.status,
+.failure {
   position: relative;
   z-index: 1;
-  display: grid;
-  justify-items: center;
+}
+
+.kicker {
+  color: var(--stage-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  overflow: hidden;
+  margin: 14px 0 0;
+  font-size: clamp(1.7rem, 3vw, 2.4rem);
+  font-weight: 650;
+  letter-spacing: -0.045em;
+  line-height: 1.12;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary {
+  margin: 8px 0 0;
+  color: var(--stage-muted);
+  font-size: 0.86rem;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.hero-actions :deep(.wb-button.is-primary),
+.hero-actions :deep(.wb-button.is-primary:hover:not(:disabled)) {
+  border-color: var(--stage-ink);
+  background: var(--stage-ink);
+  color: var(--stage-ground);
+}
+
+.hero-actions :deep(.wb-button.is-ghost) {
+  border-color: transparent;
+  background: transparent;
+  color: var(--stage-muted);
+}
+
+.archived {
+  color: var(--stage-muted);
+  font-size: 0.74rem;
+}
+
+.hero-track {
+  display: flex;
+  margin-top: 28px;
+}
+
+.hero-track span {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
   gap: 7px;
-  color: rgba(var(--v-theme-on-surface), 0.42);
-}
-.stage-item > span {
-  display: grid;
-  width: 29px;
-  height: 29px;
-  place-items: center;
-  border: 2px solid
-    color-mix(
-      in srgb,
-      rgb(var(--v-theme-surface)) 80%,
-      rgba(var(--v-theme-on-surface), 0.14)
-    );
-  border-radius: 50%;
-  background: color-mix(
-    in srgb,
-    rgb(var(--v-theme-on-surface)) 8%,
-    rgb(var(--v-theme-surface))
-  );
-}
-.stage-item i {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-}
-.stage-item strong {
-  font-size: 0.68rem;
+  color: color-mix(in srgb, var(--stage-ink) 38%, transparent);
+  font-size: 0.66rem;
   font-weight: 650;
 }
-.stage-item.complete,
-.stage-item.current {
-  color: rgb(var(--v-theme-primary));
+
+.hero-track span + span::before {
+  position: absolute;
+  top: 6px;
+  right: calc(100% - 10px);
+  left: -100%;
+  height: 1px;
+  background: color-mix(in srgb, var(--stage-ink) 18%, transparent);
+  content: "";
 }
-.stage-item.complete > span,
-.stage-item.current > span {
-  border-color: rgb(var(--v-theme-primary));
-  background: rgb(var(--v-theme-primary));
-  color: rgb(var(--v-theme-on-primary));
+
+.hero-track i {
+  position: relative;
+  z-index: 1;
+  width: 13px;
+  height: 13px;
+  border: 1.5px solid color-mix(in srgb, var(--stage-ink) 28%, transparent);
+  border-radius: 50%;
+  background: var(--stage-ground);
 }
-.stage-item.current > span {
-  box-shadow: 0 0 0 5px
-    color-mix(in srgb, rgb(var(--v-theme-primary)) 13%, transparent);
+
+.hero-track .is-archive i {
+  border-radius: 2px;
 }
-.stage-item.current strong {
-  font-weight: 800;
+
+.hero-track .is-done,
+.hero-track .is-here {
+  color: var(--stage-ink);
 }
-.history-summary {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding-top: 9px;
-  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  color: rgba(var(--v-theme-on-surface), 0.55);
-  font-size: 0.68rem;
+
+.hero-track .is-done i,
+.hero-track .is-here i {
+  border-color: var(--stage-ink);
+  background: var(--stage-ink);
 }
-.history-summary ol {
-  flex: 1;
-  display: grid;
-  gap: 5px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+
+.hero-track .is-here i {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--stage-ink) 16%, transparent);
 }
-.history-summary li {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-}
-.history-summary button {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: rgb(var(--v-theme-primary));
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
-}
-.history-summary button svg {
-  transition: transform 160ms ease;
-}
-.history-summary button svg.rotated {
-  transform: rotate(180deg);
-}
-.flow-panel {
-  padding: 12px 14px;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 8px;
-  background: rgb(var(--v-theme-surface));
-}
-.section-heading,
-.gallery-heading {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 14px;
-}
-.section-heading {
-  margin-bottom: 8px;
-}
-.section-heading h2,
-.gallery-heading h2 {
-  margin: 0;
-  font-size: 1.05rem;
-}
-.section-heading p,
-.gallery-heading p {
-  margin: 0 0 3px;
-  color: rgb(var(--v-theme-primary));
-  font-size: 0.68rem;
-  font-weight: 750;
-}
-.section-heading > span,
-.gallery-heading > span {
-  color: rgba(var(--v-theme-on-surface), 0.48);
+
+.last,
+.status,
+.failure {
+  margin: 14px 0 0;
   font-size: 0.7rem;
 }
-.gallery-section {
-  display: grid;
-  gap: 18px;
-  margin-top: 2px;
+
+.last {
+  color: var(--stage-muted);
 }
-.gallery-heading h2 {
-  font-size: 1.12rem;
+
+.status,
+.failure {
+  font-weight: 700;
 }
-.gallery-group {
-  display: grid;
-  gap: 10px;
+
+.failure {
+  color: #f0a39b;
 }
-.gallery-group h3 {
-  margin: 0;
+
+.map {
+  margin-top: 28px;
+}
+
+.chapter + .chapter {
+  margin-top: 22px;
+}
+
+.chapter h2 {
+  margin: 0 0 10px;
   color: rgba(var(--v-theme-on-surface), 0.52);
   font-size: 0.72rem;
   font-weight: 750;
+  letter-spacing: 0.04em;
 }
-.screen-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+
+.flow,
+.destinations {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px 14px;
 }
-@media (max-width: 1279px) {
-  .meta-cluster {
-    justify-content: flex-start;
-  }
-  .screen-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
+
+.screen-card {
+  display: flex;
+  width: 168px;
+  flex: none;
+  flex-direction: column;
+  overflow: hidden;
+  aspect-ratio: 1 / 1.618;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 16px;
+  background: rgb(var(--v-theme-surface));
+  color: inherit;
+  text-decoration: none;
 }
-@media (max-width: 960px) {
-  .screen-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+
+.screen-card:hover,
+.screen-card:focus-visible {
+  border-color: rgba(var(--v-theme-on-surface), 0.28);
 }
-@media (max-width: 720px) {
-  .lifecycle-hero {
-    grid-template-columns: 1fr;
+
+.pageface {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  gap: 7px;
+  padding: 12px 12px 0;
+  background: rgba(var(--v-theme-on-surface), 0.04);
+}
+
+.pageface-bar,
+.pageface-hero,
+.pageface-line {
+  display: block;
+  border-radius: 3px;
+  background: rgba(var(--v-theme-on-surface), 0.12);
+}
+
+.pageface-bar {
+  width: 42%;
+  height: 6px;
+}
+
+.pageface-hero {
+  width: 100%;
+  height: 38%;
+  border-radius: 6px;
+  background: rgba(var(--v-theme-on-surface), 0.08);
+}
+
+.pageface-line {
+  width: 78%;
+  height: 5px;
+}
+
+.pageface-line.is-short {
+  width: 52%;
+}
+
+.screen-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px 12px;
+}
+
+.screen-copy strong {
+  overflow: hidden;
+  font-size: 0.8rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.screen-copy small {
+  overflow: hidden;
+  color: rgba(var(--v-theme-on-surface), 0.52);
+  font-size: 0.64rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arrow {
+  display: flex;
+  align-self: center;
+  color: rgba(var(--v-theme-on-surface), 0.32);
+}
+
+.arrow-v {
+  display: none;
+}
+
+.empty-map,
+.unknown {
+  margin: 24px 0 0;
+  color: rgba(var(--v-theme-on-surface), 0.56);
+  font-size: 0.84rem;
+}
+
+@media (max-width: 760px) {
+  .hero {
+    padding: 22px 20px 20px;
   }
-  .lifecycle-actions {
-    justify-content: flex-start;
-  }
-  .screen-grid {
-    grid-template-columns: 1fr;
-  }
-  .gallery-heading {
-    align-items: start;
+
+  .flow {
     flex-direction: column;
-    gap: 4px;
   }
-}
-@media (prefers-reduced-motion: reduce) {
-  .history-summary button svg {
-    transition: none;
+
+  .arrow {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .arrow-h {
+    display: none;
+  }
+
+  .arrow-v {
+    display: block;
   }
 }
 </style>

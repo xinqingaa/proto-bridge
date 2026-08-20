@@ -21,13 +21,13 @@ apps/pbwork/src/
 
 `/workbench/*` 提供：
 
-- Overview；
+- Overview（续做一件作品，含 Runtime 预览）；
 - Foundations Token/Theme 浏览；
 - Component Playground；
-- Prototype 生命周期、Screen 树和画布；
-- iframe Runtime 预览；
+- 原型目录与详情（作品身份、生命周期流转、页面地图；这两页不嵌 iframe）；
+- Prototype Screen 树和画布（iframe Runtime 预览）；
 - Inspector、Highlight 和本地评论；
-- 原型目录、生命周期流转、定稿采集结果、Job Center 和 Evidence Viewer。
+- 定稿采集结果、Job Center 和 Evidence Viewer。
 
 Workbench 组件统一从 `src/workbench/ui` 复用或封装。该层可以使用 Vuetify，但业务视图不能随意创建不一致的原生控件。
 

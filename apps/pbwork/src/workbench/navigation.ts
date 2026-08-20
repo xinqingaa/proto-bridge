@@ -489,3 +489,10 @@ export function parsePrototypeLifecycle(
   }
   return null;
 }
+
+/** Catalog filter follows the list URL only. Detail and canvas stay on 全部. */
+export function catalogLifecycleFromRoute(
+  lifecycleParam?: string,
+): "all" | PrototypeLifecycle {
+  return parsePrototypeLifecycle(lifecycleParam ?? "") ?? "all";
+}

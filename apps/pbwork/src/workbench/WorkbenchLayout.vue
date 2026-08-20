@@ -83,6 +83,7 @@ import {
   buildCaptureHistoryNavigationNodes,
   buildPrototypeTree,
   buildWorkbenchNavigationTree,
+  catalogLifecycleFromRoute,
   countPrototypesForLifecycle,
   findCaptureJobIdForEvidenceRoute,
   getSecondaryNavigation,
@@ -177,37 +178,19 @@ const selectedSecondaryId = computed(() => {
     return "capture-console";
   }
   if (sectionId.value === "prototypes") {
-    const lifecycle = parsePrototypeLifecycle(
+    return `lifecycle-${catalogLifecycleFromRoute(
       String(route.params.lifecycle ?? ""),
-    );
-    if (lifecycle) return `lifecycle-${lifecycle}`;
-    const prototypeId = route.params.prototypeId;
-    if (typeof prototypeId === "string") {
-      const prototype = loadPrototypes().find(
-        (item) => item.id === prototypeId,
-      );
-      if (prototype)
-        return `lifecycle-${prototypeLifecycle.effectiveLifecycle(prototype)}`;
-    }
+    )}`;
   }
   return "";
 });
-const activePrototypeLifecycle = computed(() => {
-  const fromParam = parsePrototypeLifecycle(
-    String(route.params.lifecycle ?? ""),
-  );
-  if (fromParam) return fromParam;
-  const prototypeId = route.params.prototypeId;
-  if (typeof prototypeId === "string") {
-    const prototype = loadPrototypes().find((item) => item.id === prototypeId);
-    if (prototype) return prototypeLifecycle.effectiveLifecycle(prototype);
-  }
-  return "all" as const;
-});
+const activePrototypeLifecycle = computed(() =>
+  catalogLifecycleFromRoute(String(route.params.lifecycle ?? "")),
+);
 const prototypeTree = computed(() =>
   sectionId.value === "prototypes"
     ? buildPrototypeTree(
-      activePrototypeLifecycle.value,
+        activePrototypeLifecycle.value,
         (id) => prototypeLifecycle.records[id]?.stage ?? "active",
       )
     : [],

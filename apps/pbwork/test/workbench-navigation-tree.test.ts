@@ -3,6 +3,7 @@ import {
   buildCaptureHistoryNavigationNodes,
   buildPrototypeTree,
   buildWorkbenchNavigationTree,
+  catalogLifecycleFromRoute,
   countPrototypesForLifecycle,
   findCaptureJobIdForEvidenceRoute,
 } from "@/workbench/navigation";
@@ -136,6 +137,13 @@ describe("workbench navigation tree", () => {
     expect(
       findCaptureJobIdForEvidenceRoute(presentations, "missing", "snap"),
     ).toBeNull();
+  });
+
+  it("keeps catalog filter on the list URL instead of a prototype stage", () => {
+    expect(catalogLifecycleFromRoute("all")).toBe("all");
+    expect(catalogLifecycleFromRoute("review")).toBe("review");
+    expect(catalogLifecycleFromRoute(undefined)).toBe("all");
+    expect(catalogLifecycleFromRoute("cold-chain-ops")).toBe("all");
   });
 
   it("filters prototypes by the lifecycle store result", () => {

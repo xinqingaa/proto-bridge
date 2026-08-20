@@ -1,30 +1,32 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, type Component } from "vue";
-import { useRouter } from "vue-router";
-import {
-  Archive,
-  ArrowRight,
-  CheckCircle2,
-  CircleDot,
-  FileStack,
-  FolderOpen,
-  MessageSquareText,
-  RotateCcw,
-  ScanLine,
-} from "lucide-vue-next";
-import type { PrototypeLifecycle, PrototypeRecord } from "@/design-system/types";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { RouterLink, useRouter } from "vue-router";
+import type {
+  PrototypeLifecycle,
+  PrototypeRecord,
+} from "@/design-system/types";
 import { LIFECYCLE_LABELS } from "@/design-system/types";
 import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
 import { useCommentsStore } from "@/app/stores/comments";
 import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
-import ResourcePageShell from "@/workbench/views/ResourcePageShell.vue";
-import WorkbenchIconButton from "@/workbench/ui/WorkbenchIconButton.vue";
-import WorkbenchSegmented from "@/workbench/ui/WorkbenchSegmented.vue";
+import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
+import AtmosphereLayer from "@/workbench/prototypes/AtmosphereLayer.vue";
 import LifecycleTransitionDialog, {
   type LifecycleIntent,
 } from "@/workbench/prototypes/LifecycleTransitionDialog.vue";
 import LifecycleFinalizationSheet from "@/workbench/prototypes/LifecycleFinalizationSheet.vue";
-import { prototypeSummary } from "@/workbench/prototypes/prototypePresentation";
+import {
+  atmosphereStyle,
+  prototypeShortLabel,
+  prototypeSummary,
+} from "@/workbench/prototypes/prototypePresentation";
+import {
+  operationCaption,
+  ownersAndRoles,
+  prototypeChapters,
+  prototypeStats,
+  screensLine,
+} from "@/workbench/prototypes/workMap";
 
 const props = defineProps<{
   lifecycle?: "all" | PrototypeLifecycle | undefined;
@@ -33,17 +35,18 @@ const router = useRouter();
 const state = usePrototypeLifecycleStore();
 const comments = useCommentsStore();
 const all = loadPrototypes();
+const screens = loadPrototypeScreens();
 state.ensurePrototypes(all);
 
 const editing = ref<PrototypeRecord | null>(null);
 const intent = ref<LifecycleIntent>("advance");
 let pollTimer: ReturnType<typeof setInterval> | undefined;
 
-const stages = [
-  { id: "active" as const, title: "进行中" },
-  { id: "review" as const, title: "待确定" },
-  { id: "final" as const, title: "已定稿" },
-  { id: "archived" as const, title: "已归档" },
+const stages: PrototypeLifecycle[] = [
+  "active",
+  "review",
+  "final",
+  "archived",
 ];
 
 const selectedFilter = computed(() => props.lifecycle ?? "all");
@@ -54,41 +57,17 @@ const items = computed(() =>
       state.effectiveLifecycle(item) === selectedFilter.value,
   ),
 );
-const title = computed(() =>
-  selectedFilter.value === "all"
-    ? "全部原型"
-    : LIFECYCLE_LABELS[selectedFilter.value],
-);
-const stageCount = (stage: PrototypeLifecycle) =>
-  all.filter((item) => state.effectiveLifecycle(item) === stage).length;
-const filterItems = computed(() => [
-  { value: "all", label: "全部", count: all.length },
-  ...stages.map((stage) => ({
-    value: stage.id,
-    label: stage.title,
-    count: stageCount(stage.id),
+const rail = computed(() =>
+  stages.map((id) => ({
+    id,
+    label: LIFECYCLE_LABELS[id],
+    count: all.filter((item) => state.effectiveLifecycle(item) === id).length,
   })),
-]);
-const stats = (id: string) => {
-  const screens = loadPrototypeScreens().filter(
-    (screen) => screen.prototypeId === id,
-  );
-  return {
-    screens: screens.length,
-    variants: screens.reduce((sum, screen) => sum + screen.variants.length, 0),
-    comments: comments.comments.filter(
-      (comment) => comment.prototypeId === id && comment.status === "open",
-    ).length,
-  };
-};
+);
 
-const stageIndex = (item: PrototypeRecord) =>
-  stages.findIndex((stage) => stage.id === state.effectiveLifecycle(item));
-
-type RowAction = {
+type RoomAction = {
   label: string;
-  tone: "primary" | "neutral" | "danger";
-  icon: Component;
+  tone: "primary" | "ghost" | "danger";
   run: () => void;
 };
 
@@ -96,38 +75,36 @@ function record(item: PrototypeRecord) {
   return state.recordFor(item.id);
 }
 
-function artifactLabel(item: PrototypeRecord) {
-  const current = record(item);
-  if (current?.operation.kind === "failed") {
-    return current.operation.action === "rollback" ? "清理失败" : "定稿失败";
-  }
-  if (current?.operation.kind === "finalizing") {
-    if (current.operation.phase === "capturing") return "整原型采集中";
-    if (current.operation.phase === "building-prompt") return "提示词生成中";
-    return "等待确认";
-  }
-  if (current?.operation.kind === "rolling-back") return "Evidence 清理中";
-  if (current?.artifacts) return "Evidence + 提示词";
-  return "尚未生成";
+function chaptersOf(item: PrototypeRecord) {
+  return prototypeChapters(
+    screens.filter((screen) => screen.prototypeId === item.id),
+    item.screenGroups ?? [],
+  );
 }
 
-function operationFailure(item: PrototypeRecord) {
+function statsOf(item: PrototypeRecord) {
+  const counts = prototypeStats(
+    screens.filter((screen) => screen.prototypeId === item.id),
+  );
+  return {
+    ...counts,
+    chapters: chaptersOf(item).length,
+    comments: comments.comments.filter(
+      (comment) => comment.prototypeId === item.id && comment.status === "open",
+    ).length,
+  };
+}
+
+function isBusy(item: PrototypeRecord) {
   const operation = record(item)?.operation;
-  return operation?.kind === "failed" ? operation.message : "";
+  return (
+    operation?.kind === "finalizing" || operation?.kind === "rolling-back"
+  );
 }
 
-function formatTime(value?: string) {
-  if (!value) return "—";
-  return new Intl.DateTimeFormat("zh-CN", {
-    month: "numeric",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
-}
-
-function openPrototype(item: PrototypeRecord) {
-  void router.push(`/workbench/prototypes/${item.id}`);
+function captionOf(item: PrototypeRecord) {
+  const current = record(item);
+  return operationCaption(current?.operation, Boolean(current?.artifacts));
 }
 
 function openArtifacts(item: PrototypeRecord) {
@@ -143,14 +120,13 @@ function openTransition(item: PrototypeRecord, nextIntent: LifecycleIntent) {
   intent.value = nextIntent;
 }
 
-function rowActions(item: PrototypeRecord): RowAction[] {
+function roomActions(item: PrototypeRecord): RoomAction[] {
   const stage = state.effectiveLifecycle(item);
   if (stage === "active") {
     return [
       {
         label: "送交待确定",
         tone: "primary",
-        icon: ArrowRight,
         run: () => openTransition(item, "advance"),
       },
     ];
@@ -160,13 +136,11 @@ function rowActions(item: PrototypeRecord): RowAction[] {
       {
         label: "定稿并采集",
         tone: "primary",
-        icon: ScanLine,
         run: () => openTransition(item, "finalize"),
       },
       {
         label: "退回进行中",
-        tone: "neutral",
-        icon: RotateCcw,
+        tone: "ghost",
         run: () => openTransition(item, "return-active"),
       },
     ];
@@ -176,19 +150,16 @@ function rowActions(item: PrototypeRecord): RowAction[] {
       {
         label: "查看定稿产物",
         tone: "primary",
-        icon: FolderOpen,
         run: () => openArtifacts(item),
       },
       {
         label: "回退待确定",
-        tone: "neutral",
-        icon: RotateCcw,
+        tone: "ghost",
         run: () => openTransition(item, "rollback"),
       },
       {
         label: "归档",
         tone: "danger",
-        icon: Archive,
         run: () => openTransition(item, "archive"),
       },
     ];
@@ -196,14 +167,13 @@ function rowActions(item: PrototypeRecord): RowAction[] {
   return [
     {
       label: "查看归档产物",
-      tone: "neutral",
-      icon: Archive,
+      tone: "primary",
       run: () => openArtifacts(item),
     },
   ];
 }
 
-function selectFilter(value: string) {
+function selectFilter(value: "all" | PrototypeLifecycle) {
   void router.push(`/workbench/prototypes/${value}`);
 }
 
@@ -226,113 +196,116 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <ResourcePageShell :title="title">
-    <template #stats>
-      <span class="catalog-count">{{ items.length }} 个原型</span>
-    </template>
+  <section class="catalog-page">
+    <header class="catalog-head">
+      <h1>全部原型</h1>
+      <p>
+        {{ items.length }}
+        {{ selectedFilter === "all" ? "件在制作品" : "件在此阶段" }}
+      </p>
+    </header>
 
-    <WorkbenchSegmented
-      fill
-      :model-value="selectedFilter"
-      :items="filterItems"
-      label="筛选原型"
-      @update:model-value="selectFilter"
-    />
+    <nav class="rail" aria-label="筛选原型">
+      <button
+        type="button"
+        class="rail-all"
+        :class="{ 'is-current': selectedFilter === 'all' }"
+        :aria-pressed="selectedFilter === 'all'"
+        @click="selectFilter('all')"
+      >
+        全部 <b>{{ all.length }}</b>
+      </button>
+      <div class="rail-track">
+        <button
+          v-for="station in rail"
+          :key="station.id"
+          type="button"
+          :class="{
+            'is-empty': station.count === 0,
+            'is-current': selectedFilter === station.id,
+          }"
+          :aria-pressed="selectedFilter === station.id"
+          @click="selectFilter(station.id)"
+        >
+          {{ station.label }} <b>{{ station.count }}</b>
+        </button>
+      </div>
+    </nav>
 
     <section v-if="state.storageError" class="storage-error" role="alert">
       {{ state.storageError }}
     </section>
 
-    <div v-if="items.length" class="prototype-ledger">
-      <div class="ledger-columns" aria-hidden="true">
-        <span>原型</span>
-        <span>生命周期</span>
-        <span>定稿产物</span>
-        <span>规模与变化</span>
-        <span>下一步</span>
-      </div>
-      <article v-for="item in items" :key="item.id" class="prototype-row">
-        <button
-          class="prototype-identity"
-          type="button"
-          @click="openPrototype(item)"
+    <div v-if="items.length" class="wall">
+      <article
+        v-for="item in items"
+        :key="item.id"
+        class="room"
+        :style="atmosphereStyle(item.id)"
+      >
+        <AtmosphereLayer compact />
+        <RouterLink
+          class="room-open"
+          :to="`/workbench/prototypes/${item.id}`"
+          :aria-label="`打开 ${item.label}`"
         >
-          <strong>{{ item.label }}</strong>
-          <small>{{ prototypeSummary(item) }}</small>
-        </button>
-
-        <div
-          class="row-stage"
-          :aria-label="`当前阶段：${LIFECYCLE_LABELS[state.effectiveLifecycle(item)]}`"
-        >
-          <div class="asset-spine" aria-hidden="true">
-            <span
-              v-for="(stage, index) in stages"
-              :key="stage.id"
-              :class="{
-                current: index === stageIndex(item),
-                complete: index < stageIndex(item),
-              }"
-            >
-              <CheckCircle2 v-if="index < stageIndex(item)" :size="11" />
-              <i v-else />
-            </span>
+          <div class="room-top">
+            <span class="kicker">{{ prototypeShortLabel(item) }}</span>
+            <span class="stage-pill">{{
+              LIFECYCLE_LABELS[state.effectiveLifecycle(item)]
+            }}</span>
           </div>
-          <strong>{{
-            LIFECYCLE_LABELS[state.effectiveLifecycle(item)]
-          }}</strong>
-        </div>
-
-        <div
-          class="row-evidence"
-          :class="{ failed: record(item)?.operation.kind === 'failed' }"
-        >
-          <strong>{{ artifactLabel(item) }}</strong>
-          <small v-if="record(item)?.operation.kind === 'failed'">
-            {{ operationFailure(item) }}
-          </small>
-        </div>
-
-        <div class="row-meta">
-          <span
-            ><FileStack :size="13" />{{ stats(item.id).screens }} 页面 ·
-            {{ stats(item.id).variants }} 状态</span
-          >
-          <span
-            ><MessageSquareText :size="13" />{{ stats(item.id).comments }}
-            待处理</span
-          >
-          <time>{{ formatTime(record(item)?.updatedAt) }}</time>
-        </div>
-
-        <div class="row-actions">
-          <v-tooltip
-            v-for="action in rowActions(item)"
+          <h2>{{ item.label }}</h2>
+          <p class="summary">{{ prototypeSummary(item) }}</p>
+          <p class="people">{{ ownersAndRoles(item) }}</p>
+          <ul class="chapters">
+            <li v-for="chapter in chaptersOf(item)" :key="chapter.id">
+              <em>{{ chapter.label }}</em>
+              <span>{{
+                screensLine(
+                  chapter.sequential,
+                  chapter.screens.map((screen) => screen.label),
+                )
+              }}</span>
+            </li>
+          </ul>
+          <div class="metrics">
+            <span
+              ><b>{{ statsOf(item).screens }}</b> 页面</span
+            >
+            <span
+              ><b>{{ statsOf(item).variants }}</b> 状态</span
+            >
+            <span
+              ><b>{{ statsOf(item).chapters }}</b> 模块</span
+            >
+            <span v-if="statsOf(item).comments"
+              ><b>{{ statsOf(item).comments }}</b> 条评审</span
+            >
+          </div>
+        </RouterLink>
+        <p v-if="captionOf(item).status" class="status">
+          {{ captionOf(item).status }}
+        </p>
+        <p v-if="captionOf(item).failure" class="failure">
+          {{ captionOf(item).failure }}
+        </p>
+        <div class="room-actions">
+          <WorkbenchButton
+            v-for="action in roomActions(item)"
             :key="action.label"
-            :text="action.label"
-            location="top"
+            :tone="action.tone"
+            :disabled="isBusy(item)"
+            :loading="isBusy(item) && action.tone === 'primary'"
+            @click="action.run"
           >
-            <template #activator="{ props: tip }">
-              <WorkbenchIconButton
-                v-bind="tip"
-                :label="action.label"
-                :tone="action.tone"
-                @click="action.run"
-              >
-                <component :is="action.icon" :size="16" />
-              </WorkbenchIconButton>
-            </template>
-          </v-tooltip>
+            {{ action.label }}
+          </WorkbenchButton>
         </div>
       </article>
     </div>
-
-    <div v-else class="gallery-empty">
-      <CircleDot :size="28" />
-      <h2>此阶段还没有原型</h2>
-      <p>生命周期流转后，原型会自动出现在这里。</p>
-    </div>
-  </ResourcePageShell>
+    <p v-else class="empty">此阶段还没有作品。</p>
+  </section>
 
   <LifecycleTransitionDialog
     v-if="editing && intent !== 'finalize'"
@@ -351,197 +324,323 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.catalog-count {
-  color: rgba(var(--v-theme-on-surface), 0.48);
-  font-size: 0.78rem;
+.catalog-page {
+  width: min(1240px, 100%);
+  margin: 0 auto;
+  color: rgb(var(--v-theme-on-surface));
 }
+
+.catalog-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.catalog-head h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  font-weight: 650;
+  letter-spacing: -0.045em;
+}
+
+.catalog-head p {
+  margin: 0;
+  color: rgba(var(--v-theme-on-surface), 0.52);
+  font-size: 0.8rem;
+}
+
+.rail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.rail button {
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.rail-all,
+.rail-track button {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 11px;
+  border-radius: 9px;
+  font-size: 0.75rem;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.rail-all {
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)) !important;
+  background: transparent;
+  color: rgba(var(--v-theme-on-surface), 0.48);
+}
+
+.rail-all b,
+.rail-track b {
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.rail-all.is-current {
+  border-color: rgb(var(--v-theme-on-surface)) !important;
+  background: rgb(var(--v-theme-on-surface));
+  color: rgb(var(--v-theme-surface));
+}
+
+.rail-track {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  padding: 3px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 10px;
+  background: rgba(var(--v-theme-on-surface), 0.04);
+}
+
+
+.rail-track button {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  flex: 1;
+  justify-content: center;
+  background: transparent;
+  color: rgba(var(--v-theme-on-surface), 0.42);
+}
+
+.rail-track button.is-empty {
+  opacity: 0.42;
+}
+
+.rail-track button.is-current {
+  background: rgb(var(--v-theme-on-surface));
+  color: rgb(var(--v-theme-surface));
+  opacity: 1;
+}
+
 .storage-error,
-.gallery-empty {
+.empty {
   padding: 18px;
+  border-radius: 12px;
+  font-size: 0.84rem;
+}
+
+.storage-error {
   border: 1px solid color-mix(in srgb, rgb(var(--v-theme-error)) 35%, transparent);
-  border-radius: 8px;
   background: color-mix(in srgb, rgb(var(--v-theme-error)) 8%, transparent);
   color: rgb(var(--v-theme-error));
-  font-size: 0.78rem;
 }
-.prototype-ledger {
-  container-type: inline-size;
+
+.empty {
+  color: rgba(var(--v-theme-on-surface), 0.52);
+}
+
+.wall {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 18px;
+}
+
+.room {
+  position: relative;
+  display: flex;
+  width: calc(50% - 9px);
+  min-height: 520px;
+  flex-direction: column;
   overflow: hidden;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 8px;
-  background: rgb(var(--v-theme-surface));
+  border: 1px solid color-mix(in srgb, var(--stage-ink) 12%, transparent);
+  border-radius: 24px;
+  background: var(--stage-ground);
+  color: var(--stage-ink);
+  box-shadow: 0 18px 40px rgba(8, 12, 20, 0.16);
 }
-.ledger-columns,
-.prototype-row {
-  display: grid;
-  grid-template-columns:
-    minmax(220px, 1.45fr)
-    minmax(150px, 0.85fr)
-    minmax(120px, 0.7fr)
-    minmax(130px, 0.75fr)
-    118px;
-  gap: 16px;
-  align-items: center;
+
+.room-open,
+.room-actions,
+.status,
+.failure {
+  position: relative;
+  z-index: 1;
 }
-.ledger-columns {
-  padding: 9px 17px;
-  border-bottom: 1px solid rgba(var(--v-border-color), 0.13);
-  background: rgba(var(--v-theme-on-surface), 0.025);
-  color: rgba(var(--v-theme-on-surface), 0.42);
-  font-size: 0.62rem;
-  font-weight: 700;
-}
-.ledger-columns span:last-child {
-  text-align: right;
-}
-.prototype-row {
-  min-height: 88px;
-  padding: 15px 17px;
-  border-bottom: 1px solid rgba(var(--v-border-color), 0.13);
-}
-.prototype-row:last-child {
-  border-bottom: 0;
-}
-.prototype-row:hover {
-  background: rgba(var(--v-theme-on-surface), 0.018);
-}
-.prototype-identity {
-  display: grid;
+
+.room-open {
+  display: flex;
   min-width: 0;
-  gap: 4px;
-  padding: 0;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 26px 26px 8px;
   border: 0;
   background: transparent;
   color: inherit;
   text-align: left;
+  text-decoration: none;
   cursor: pointer;
 }
-.prototype-identity strong {
+
+.room-open:focus-visible {
+  outline: 2px solid var(--stage-ink);
+  outline-offset: -8px;
+}
+
+.room-top {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.kicker {
+  color: var(--stage-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.stage-pill {
+  padding: 3px 8px;
+  border: 1px solid color-mix(in srgb, var(--stage-ink) 22%, transparent);
+  border-radius: 999px;
+  font-size: 0.64rem;
+  font-weight: 750;
+}
+
+.room-open h2 {
   overflow: hidden;
-  font-size: 0.86rem;
+  width: 100%;
+  margin: 16px 0 0;
+  font-size: clamp(1.45rem, 2.2vw, 2rem);
+  font-weight: 650;
+  letter-spacing: -0.045em;
+  line-height: 1.12;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.prototype-identity small {
-  color: rgba(var(--v-theme-on-surface), 0.46);
-  font-size: 0.68rem;
+
+.summary {
+  margin: 8px 0 0;
+  color: var(--stage-muted);
+  font-size: 0.88rem;
 }
-.row-stage,
-.row-evidence,
-.row-meta {
-  display: grid;
-  min-width: 0;
-  gap: 5px;
-}
-.row-stage > strong,
-.row-evidence strong {
-  color: rgb(var(--v-theme-on-surface));
+
+.people {
+  margin: 6px 0 0;
+  color: color-mix(in srgb, var(--stage-ink) 58%, transparent);
   font-size: 0.72rem;
 }
-.asset-spine {
-  position: relative;
+
+.chapters {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  width: 100%;
+  flex: 1;
+  flex-direction: column;
+  gap: 12px;
+  margin: 22px 0 0;
+  padding: 16px 0 0;
+  border-top: 1px solid color-mix(in srgb, var(--stage-ink) 14%, transparent);
+  list-style: none;
 }
-.asset-spine::before {
-  position: absolute;
-  right: 8px;
-  left: 8px;
-  height: 1px;
-  background: rgba(var(--v-theme-on-surface), 0.13);
-  content: "";
+
+.chapters li {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
-.asset-spine > span {
-  position: relative;
-  z-index: 1;
-  display: inline-flex;
-  width: 18px;
-  height: 18px;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.22);
-  border-radius: 50%;
-  background: rgb(var(--v-theme-surface));
-  color: rgba(var(--v-theme-on-surface), 0.35);
+
+.chapters em {
+  color: color-mix(in srgb, var(--stage-ink) 52%, transparent);
+  font-size: 0.64rem;
+  font-style: normal;
+  font-weight: 750;
+  letter-spacing: 0.06em;
 }
-.asset-spine > span.complete {
-  border-color: rgb(var(--v-theme-success));
-  background: rgb(var(--v-theme-success));
-  color: rgb(var(--v-theme-on-success));
-}
-.asset-spine > span.current {
-  border-color: rgb(var(--v-theme-primary));
-  box-shadow: 0 0 0 3px
-    color-mix(in srgb, rgb(var(--v-theme-primary)) 12%, transparent);
-}
-.asset-spine i {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: currentColor;
-}
-.row-evidence small {
-  color: rgb(var(--v-theme-error));
-  font-size: 0.62rem;
+
+.chapters span {
+  font-size: 0.8rem;
   line-height: 1.45;
-  overflow-wrap: anywhere;
 }
-.row-meta {
-  color: rgba(var(--v-theme-on-surface), 0.56);
-  font-size: 0.67rem;
-}
-.row-meta span {
+
+.metrics {
   display: flex;
-  align-items: center;
-  gap: 5px;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 20px;
+  color: var(--stage-muted);
+  font-size: 0.66rem;
 }
-.row-meta time {
-  color: rgba(var(--v-theme-on-surface), 0.38);
+
+.metrics b {
+  display: block;
+  color: var(--stage-ink);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
 }
-.row-actions {
-  display: flex;
-  flex-wrap: nowrap;
-  justify-content: flex-end;
-  gap: 4px;
-}
-.gallery-empty {
-  display: grid;
-  justify-items: center;
-  gap: 7px;
-  border-color: rgba(var(--v-border-color), var(--v-border-opacity));
-  background: rgb(var(--v-theme-surface));
-  color: rgba(var(--v-theme-on-surface), 0.55);
-  text-align: center;
-}
-.gallery-empty h2,
-.gallery-empty p {
+
+.status,
+.failure {
   margin: 0;
-}
-.gallery-empty h2 {
-  color: rgb(var(--v-theme-on-surface));
-  font-size: 0.9rem;
-}
-.gallery-empty p {
+  padding: 0 26px;
   font-size: 0.72rem;
+  font-weight: 700;
 }
-@container (max-width: 860px) {
-  .ledger-columns {
-    display: none;
+
+.failure {
+  color: #f0a39b;
+}
+
+.room-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px 26px 22px;
+}
+
+.room-actions :deep(.wb-button.is-primary),
+.room-actions :deep(.wb-button.is-primary:hover:not(:disabled)) {
+  border-color: var(--stage-ink);
+  background: var(--stage-ink);
+  color: var(--stage-ground);
+}
+
+.room-actions :deep(.wb-button.is-ghost) {
+  border-color: color-mix(in srgb, var(--stage-ink) 22%, transparent);
+  background: transparent;
+  color: var(--stage-ink);
+}
+
+.room-actions :deep(.wb-button.is-danger) {
+  border-color: transparent;
+  background: transparent;
+  color: #f0a39b;
+}
+
+@media (max-width: 860px) {
+  .room {
+    width: 100%;
+    min-height: 0;
   }
-  .prototype-row {
-    grid-template-columns: minmax(0, 1fr) 118px;
-    align-items: start;
-  }
-  .row-stage,
-  .row-evidence,
-  .row-meta {
-    grid-column: 1;
-  }
-  .row-actions {
-    grid-column: 2;
-    grid-row: 1 / 5;
-    align-self: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rail-all,
+  .rail-track button {
+    transition: none;
   }
 }
 </style>
