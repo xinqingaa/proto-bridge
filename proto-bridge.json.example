@@ -12,6 +12,9 @@
   "capture": {
     "maxCases": 200
   },
+   "delivery": {
+    "targetRoot": "apps/flutter_pb_app"
+  },
   "service": {
     "host": "127.0.0.1",
     "port": 3988,
