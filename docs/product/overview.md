@@ -1,30 +1,12 @@
 # 产品总览
 
-ProtoBridge（PB）是本地原型证据基础设施。它从遵循 PB Authoring Contract 的 Runtime 采集页面结构、状态、交互、截图和来源信息，将结果保存为不可变 Evidence，并通过 PBWork、CLI 和 MCP 交给 Coding Agent。
+ProtoBridge（PB）让编程助手通过 MCP，按固定 Evidence 在目标工程里还原可交互原型。PB 从遵循 Authoring Contract 的 Runtime 采集结构、状态、交互和截图，保存为不可变 Evidence；助手结合目标仓库自身规范决定文件、组件、路由、状态管理和具体代码。
+
+![从可交互原型，到目标应用还原](../images/01-overview.png)
+
+先固定页面事实，再让助手按事实还原。系统不负责直接写出成品代码。后文分别展开[怎么走完](./workflow.md)、[系统怎么接](../architecture/overview.md)、[助手怎么读](../guides/agent-consumption.md)和[怎样算过关](../guides/agent-consumption.md#怎样算过关)。
 
 PBWork 的原型、设计基础、组件和工作壳均是代码资产。产品、设计和开发人员通过 Cursor、Codex 等 Coding Agent 使用同一套仓库 Skill、Contract 和 CI 维护这些资产；当前产品不建设独立的可视化编辑器或面向作者的聊天入口。
-
-PB 的产品输出是 Evidence，不是目标工程实现计划。Agent 结合 Evidence 与目标仓库自身规范决定文件、组件、路由、状态管理、Token 和具体代码。
-
-## 产品组成
-
-| 组成 | 职责 |
-| --- | --- |
-| Core | 定义 Contract、稳定身份、Selection、Preflight、Case Matrix、Capture、Store、Snapshot、Handoff 和 Target 只读边界 |
-| PBWork | 提供原型设计基础、业务原型、工作台 GUI、instrumented Runtime、采集控制面和 Evidence Review |
-| Local Service | 在浏览器 PBWork 与 Node/Playwright/Store 之间提供受限的本地进程边界 |
-| CLI | 使用 Core 执行自动化采集、Workspace 管理和 Bundle 生命周期操作 |
-| MCP | 让 Agent 按固定逻辑 ID 读取 Evidence，并独立查询、验证目标仓库 |
-| Coding Agent | 读取固定 Evidence 与目标工程上下文，完成实现并运行目标工程验证 |
-
-## PBWork 与 PB
-
-PBWork 同时承担两个相互隔离的角色：
-
-1. **Workbench**：面向人的图形界面，用于浏览设计基础和 Agent 制作的原型、执行检查、流转生命周期、确认整原型定稿采集、查看任务和 Review Evidence。
-2. **Runtime**：面向 PB Capture 的确定性页面环境，通过 authored Contract 声明 Screen、Variant、Fragment、Action、Scenario 和 Checkpoint。
-
-Workbench 不拥有第二套 Capture 语义。它把用户操作归一为 Core 的 Selection Draft，并通过 Local Service 调用同一套 Preflight、Capture、Store 和 Handoff 能力。CLI 也使用相同 Core，因此 GUI 与自动化入口不会产生不同的 Case、状态或引用规则。
 
 ## 产品边界
 
@@ -47,6 +29,26 @@ PB 不负责：
 - 在 Handoff 消费时用 active/latest 替换固定引用；
 - 提供云端账号、多人审批或远程共享 Store；
 - 从未标记的 CSS/DOM 猜测作者希望独立实现的节点和 Token binding。
+
+## 产品组成
+
+| 组成 | 职责 |
+| --- | --- |
+| Core | Contract、采集、Store、Handoff 和 Target 只读边界 |
+| PBWork | 设计基础、业务原型、工作台、Runtime、采集控制面和 Evidence Review |
+| Local Service | 浏览器工作台与 Node/Playwright/Store 之间的本地进程边界 |
+| CLI | 自动化采集、Workspace 和 Bundle 生命周期 |
+| MCP | 按固定逻辑 ID 读取 Evidence，并只读查询、验证目标仓库 |
+| Coding Agent | 读取固定 Evidence 与目标工程上下文，完成实现并验证 |
+
+## PBWork 与 PB
+
+PBWork 同时承担两个相互隔离的角色：
+
+1. **Workbench**：面向人的图形界面，用于浏览设计基础和 Agent 制作的原型、执行检查、流转生命周期、确认整原型定稿采集、查看任务和 Review Evidence。
+2. **Runtime**：面向 PB Capture 的确定性页面环境，通过 authored Contract 声明 Screen、Variant、Fragment、Action、Scenario 和 Checkpoint。
+
+Workbench 不拥有第二套 Capture 语义。它把用户操作归一为 Core 的 Selection Draft，并通过 Local Service 调用同一套 Preflight、Capture、Store 和 Handoff 能力。CLI 也使用相同 Core，因此 GUI 与自动化入口不会产生不同的 Case、状态或引用规则。
 
 ## Target 能力边界
 

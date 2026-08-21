@@ -83,7 +83,7 @@ pnpm pb:mcp -- --print-config
 ```
 
 对照或配置 Codex。不要把带生命周期日志的包管理器命令登记为 stdio server。
-MCP 必须绑定到 Handoff 所属 Workspace。Agent 的读取顺序见 [Agent 消费指南](./agent-consumption.md)。
+MCP 必须绑定到 Handoff 所属 Workspace。助手、MCP 与文档如何分工，以及读取顺序，见 [Agent 消费指南](./agent-consumption.md)。
 
 把 `agent-prompt.md`（或定稿面板内复制的提示词）交给 Cursor / Codex 即可开始只读消费。提示词只携带固定身份、风险与渐进读取协议，不内嵌 Evidence Brief 或完整 Review Contract；Agent 通过 Handoff index 和按需投影建立理解，首轮只输出摘要与实施计划。`inspect_evidence_workspace` 返回的 `deliveryTargetRoot` 应与提示词中的目标路径一致。
 

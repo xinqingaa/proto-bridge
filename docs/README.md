@@ -2,6 +2,18 @@
 
 ProtoBridge（PB）把可交互原型转化为可追溯、可固定引用的 Evidence，供 Coding Agent 实现和验证目标工程。PBWork 是 PB 的图形工作台、原型生产环境和 instrumented Runtime。
 
+## 看图理解
+
+产品闭环图是同一条故事的分层展开：总览建立全貌，后四张分别放大流程、架构、协作和验收。每张图只在权威页嵌入。
+
+| 图 | 讲什么 | 权威页 |
+| --- | --- | --- |
+| [总览](./images/01-overview.png) | 从可交互原型到目标应用还原 | [产品总览](./product/overview.md) |
+| [产品流程](./images/02-workflow.png) | 怎么走完，两道人工门 | [完整工作流](./product/workflow.md) |
+| [系统架构](./images/03-architecture.png) | 系统怎么接，谁写谁读 | [系统架构](./architecture/overview.md) |
+| [MCP 协作](./images/04-collaboration.png) | 助手、MCP、文档如何分工 | [Agent 消费指南](./guides/agent-consumption.md) |
+| [对照验收](./images/05-acceptance.png) | 怎样算还原过关 | [怎样算过关](./guides/agent-consumption.md#怎样算过关) |
+
 ## 按任务阅读
 
 | 任务 | 必读 |

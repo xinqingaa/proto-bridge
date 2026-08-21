@@ -1,23 +1,20 @@
 # 产品工作流
 
-ProtoBridge 的闭环分为原型设计、正式原型生产、证据生产和目标实现四个阶段。PBWork 连接前三个阶段，MCP 连接后两个阶段。
+ProtoBridge 的闭环按时间走完：人确认关键节点，系统固定页面事实，编程助手按事实在目标工程里还原。PBWork 连接设计到交接；MCP 连接读取到实现。
 
-```text
-Product Design + Visual Exploration
-  → approved prototypes/{id}/docs/design.md
-  → PBWork Promotion Gate
-  → Design Foundation / Components
-  → Contract-compliant Prototype Runtime
-  → Selection Draft
-  → Preflight + confirmed Case Matrix
-  → isolated Capture Job
-  → immutable Run + Evidence revisions + Snapshot
-  → Evidence Review + Staleness
-  → Deliver (Handoff + human/debug artifacts + agent-prompt)
-  → MCP fixed progressive projections
-  → Agent implementation + target validation
-  → canonical Reconstruction Obligations + Target validation + consumer summary
-```
+![端到端：从原型到目标应用还原](../images/02-workflow.png)
+
+阶段与两道人工门：
+
+1. 把产品设计做完整并批准
+2. 做成可交互、可采集的原型
+3. **采集前确认**：人确认范围和风险，然后整份采集并封存当时的页面事实
+4. 把封存结果交给编程助手
+5. 助手先只读理解，写出还原计划
+6. **改代码前确认**：人批准计划后，助手才在目标工程里实现
+7. 对照验收
+
+系统怎么接见 [系统架构](../architecture/overview.md)。助手怎么读、怎样算过关见 [Agent 消费指南](../guides/agent-consumption.md)。
 
 ## 1. 设计并晋级原型
 
@@ -43,111 +40,44 @@ Product Design + Visual Exploration
 完整规则见 [原型 Authoring Contract](../reference/prototype-authoring.md)。
 节点判定与阻断等级见[语义标记与证据门禁](../reference/semantic-authoring.md)。
 
-## 3. 创建 Selection
+## 3. 采集前确认、封存与交接
 
-PBWork 支持四种入口：
+产品主路径是 PBWork「待确定 → 定稿并采集」：人逐项确认 warning 和 risk 后，系统采集整个原型并写出 Handoff。未确认的 warning 会阻止执行；确认不会改变风险事实，只允许任务继续。
 
-- 当前 Screen；
-- Inspector 选中的稳定 Fragment；
-- 用户选择的自定义 Screen/Variant/Scenario 范围；
-- 整个 Prototype。
+### Selection
 
-四种入口只负责产生不同的 `SelectionDraft`。Draft 包含 Prototype、Screen、Variant、Theme、Device、Fixture、Scenario 和 Capture Scope 等意图，不直接启动浏览器，也不创建 Store 对象。
+PBWork 正式定稿只采集整个 Prototype。Core 仍把入口归一为 `SelectionDraft`（Prototype、Screen、Variant、Theme、Device、Fixture、Scenario、Capture Scope）；Draft 不直接启动浏览器，也不创建 Store 对象。CLI 可通过 JSON Selection 表达相同语义，属于非正式诊断，不改变 PBWork 生命周期。入口差异在进入 Core 后消失。
 
-CLI 通过 JSON Selection 文件表达相同语义。入口差异在进入 Core 后消失。
+### Preflight 与 Case Matrix
 
-## 4. Preflight 与 Case Matrix
+Preflight 从 Runtime 读取 authored manifest，校验 Screen、Variant、Action、Scenario、Fragment、协议版本、Capture Scope、required boundary、Case 容量和 warning 接受状态，并产生稳定 Case Matrix。用户必须看到实际 Case 数量、风险和范围。
 
-Preflight 从 Runtime 读取 authored manifest，校验：
+### Capture Job
 
-- Screen、Variant、Action、Scenario 和 Fragment 引用；
-- Runtime capability 与协议版本；
-- 输入维度和 Capture Scope；
-- required boundary；
-- Case 数量限制和组合风险；
-- warning 是否逐项确认。
-
-Preflight 产生稳定 Case Matrix。用户必须在 PBWork 或 CLI 中看到实际 Case 数量、风险和范围；未确认的 warning 会阻止执行。确认不会改变风险事实，只允许任务继续。
-
-## 5. Capture Job
-
-每个 Case 在隔离浏览器上下文中执行：
-
-1. 固定 viewport、device scale、theme、Variant 和 fixture；
-2. 调用 Runtime `prepare`；
-3. 等待 readiness 与语义标记稳定；
-4. 执行 Scenario Action；
-5. 在 Checkpoint 读取 required Fragment；
-6. 同一 Case 内采集语义 Facts、provenance、截图和诊断信息；
-7. 调用 reset 或关闭隔离上下文。
+每个 Case 在隔离浏览器上下文中执行：固定 viewport、theme、Variant 和 fixture；调用 Runtime `prepare`；等待 readiness；执行 Scenario；在 Checkpoint 读取 required Fragment；同一 Case 内采集语义 Facts、provenance、截图和诊断信息；最后 reset 或关闭隔离上下文。
 
 Case 失败不会回写或降级已有 active Evidence。Job 的进度、取消、失败和重试由 Core JobHost 统一管理。
 
-## 6. Store 与 Review
+### Store 与 Review
 
-一次已终结 Selection 形成不可变 Run。每个成功 Case 产生 Evidence revision，Snapshot 固定本次提交后的 active Evidence、latest Attempt 和 Coverage。
+一次已终结 Selection 形成不可变 Run。每个成功 Case 产生 Evidence revision，Snapshot 固定本次提交后的 active Evidence、latest Attempt 和 Coverage。重新采集会创建新 Run 和新 Snapshot，历史 Snapshot 与 Handoff 保持可读。
 
-PBWork Evidence Review 按 Screen、Case 和语义区域展示：
+PBWork Evidence Review 按 Screen、Case 和语义区域展示 Facts、Screenshot、required Fragment 完整性、unknown/conflict/Issue、active revision 与 latest Attempt 的差异、Staleness，以及当前 Snapshot 是否适合交接。
 
-- 实际 Facts 和来源；
-- Screenshot；
-- required Fragment 的完整性；
-- unknown、conflict 和 Issue；
-- active successful revision 与 latest Attempt 的差异；
-- Staleness Report；
-- 当前 Snapshot 是否适合 Handoff。
+### Deliver 与 Agent Handoff
 
-重新采集会创建新 Run 和新 Snapshot，历史 Snapshot 与 Handoff 保持可读。
-
-## 7. Deliver 与 Agent Handoff
-
-产品主路径是 PBWork 待确定 → 定稿并自动采集：在同一流程内完成整原型 Capture、创建 Handoff，并写入 `.proto-bridge/deliveries/`（收据、供人工/debug 查看用的 Evidence Brief 与 Review、按图片内容去重的 Screenshot、Agent 提示词）。完全相同的 Screenshot 只输出一份 PNG，但保留全部 Case 和 Blob 引用。Agent 提示词不嵌入 Brief 或完整 Contract；deliveries 只是 Store 索引，默认消费通过 MCP 的固定 Handoff 投影完成。提示词中的目标路径来自 Workspace `delivery.targetRoot`，该字段不进入 Evidence。
+定稿成功后写入 `.proto-bridge/deliveries/`（收据、供人工/debug 查看用的 Evidence Brief 与 Review、按图片内容去重的 Screenshot、Agent 提示词）。完全相同的 Screenshot 只输出一份 PNG，但保留全部 Case 和 Blob 引用。Agent 提示词不嵌入 Brief 或完整 Contract；deliveries 只是 Store 索引。提示词中的目标路径来自 Workspace `delivery.targetRoot`，该字段不进入 Evidence。
 
 CLI `deliver` 是非正式诊断入口，使用同一 Core 能力，但不改变 PBWork 生命周期。非交互使用必须 `--acknowledge-unofficial-capture`。
 
-Handoff 固定：
+Handoff 固定 Workspace、Bundle、Snapshot、Staleness Report、实现范围、具体 Case/revision/Fragment 和 `mandatoryRiskReport`。Handoff 是 Evidence 索引，不是实现计划。
 
-- Workspace；
-- Bundle 与 Snapshot；
-- Staleness Report；
-- 实现范围；
-- 具体 Case、revision 和 Fragment；
-- `mandatoryRiskReport`。
+GUI 定稿操作见 [PBWork 与 PB](../guides/pbwork-and-pb.md)。对象关系见 [Evidence 模型](../architecture/evidence-model.md)。
 
-Handoff 是 Evidence 索引，不是实现计划。Prompt 先要求 Agent 通过渐进投影只读核对 Screenshot、Case 差异与目标工程，输出实施计划并等待用户确认；确认后才进入实现。PBWork 与 CLI 共用同一 Core 能力。
+## 4. 读取、实现与验收
 
-## 8. MCP 与目标实现
+消费从 MCP 开始：助手按固定 Handoff 只读理解，写出还原计划并等待人批准；批准后才改目标工程，最后对照验收。
 
-默认消费与实施顺序（Consumer projection version 4）：
+默认读取顺序、MCP 工具、文档与技能分工见 [助手怎么读](../guides/agent-consumption.md)。采集完整、写完代码和助手自报都还不够，完成判据见 [怎样算过关](../guides/agent-consumption.md#怎样算过关)。
 
-```text
-inspect_evidence_workspace
-  → read_handoff_index
-  → read_screen_packet（含 canonicalBrief）
-  → read_evidence_screenshot
-  → inspect_target_readiness + resolve
-  → 按需 read_case_delta / read_evidence_detail
-  → 编辑前按 Screen 白话理解摘要与实现计划
-  → 等待用户确认
-  → Agent 自主实施
-  → 实施后 obligations / Target validation / summary
-```
-
-Agent 通过 MCP：
-
-1. 用 `inspect_evidence_workspace` 确认 Workspace、契约版本与能力；
-2. 用 `read_handoff_index` 固定范围并在编辑前报告全部 mandatory risks；
-3. 每个 Screen 读取 `read_screen_packet`：用 `canonicalBrief`、baseline Structure（parent、scroll owner/member、pinning、ordering）与 inventory 理解主滚动、主 section、状态矩阵和固定业务数据；Evidence Region 用于定位与验收，不是目标侧组件/文件边界；
-4. 查看每个不同 digest 的 Screenshot；编辑前调用 `inspect_target_readiness`，并用 inventory 的 `regionId`/`caseId` 批量 resolve 组件与 Token；
-5. 非 baseline 状态读取紧凑 `read_case_delta`；只有明确来源问题才展开 `read_evidence_detail`；
-6. 每个 Screen 在编码前用简短散文概括 Evidence 理解（结构与滚动、组件/Token 落点意向、状态与交互）并附实现计划；这不是评分表，也不是验收分母；然后暂停等待用户明确批准；
-7. 用户批准后，阅读目标仓库自身规范与既有代码并自主组织实现；`read_implementation_plan` / `read_implementation_tranche` 仅诊断或 Review 辅助，不是默认实施路径；
-8. 实现并运行目标原生测试；实施后按 Screen/维度分页读取 Reconstruction Obligations，调用适用的 Target validation，并形成五维 Reconstruction Review summary。
-
-实现后的五维复查从固定 Handoff 的 Acceptance Contract 编译稳定、跨 Case 去重的 Reconstruction Obligations。Agent 结合固定 Screenshot、Target mapping、实际代码和目标原生测试报告 `matched`、`deviation`、`unverified` 或有依据的 `not-applicable`，最后调用 `summarize_reconstruction_review` 汇总 Case、Screenshot、Scenario 和五维结论。该结果的 authority 明确是 `consumer-reported-review`，不替代独立 Runtime 或最终视觉验收。
-
-Target 查询与 Capture Evidence 互相隔离。目标仓库的既有组件和约定可以指导实现，但不能覆盖原型 Evidence 中的 unknown 或 conflict。只有 resolver 返回 `resolved` 的映射才可视为已验证落点；`candidate`/`stale`/`conflict`/`unresolved` 必须披露，不能升格为已确认。
-
-Evidence 层面允许任意 Target；当前内置 Target query/validation 只支持 Flutter。新增 Kotlin、Swift、React Native 或其它 Adapter 时必须复用相同 Handoff 和 Evidence 读取纪律。
-
-详细对象关系见 [Evidence 模型](../architecture/evidence-model.md)，操作指南见 [PBWork 与 PB](../guides/pbwork-and-pb.md)和 [Agent 消费指南](../guides/agent-consumption.md)。
+Target 查询与 Capture Evidence 互相隔离。目标仓库的既有组件和约定可以指导实现，但不能覆盖原型 Evidence 中的 unknown 或 conflict。Evidence 层面允许任意 Target；当前内置 Target query/validation 只支持 Flutter。

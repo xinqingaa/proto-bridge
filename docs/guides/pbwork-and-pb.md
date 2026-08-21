@@ -71,7 +71,7 @@ Review 先回答 Evidence 是否足够，而不是页面“看起来是否差不
 
 ## Agent 消费
 
-交付产物（`agent-prompt.md`）是 Store 索引，不嵌入完整 Evidence Brief/Review Contract；Agent 通过 MCP 按固定 Handoff / Snapshot 渐进读取 Handoff index、Screen packet、Screenshot 和必要的 Case/detail 差量。顺序见 [Agent 消费指南](./agent-consumption.md)。
+交付产物（`agent-prompt.md`）是 Store 索引，不嵌入完整 Evidence Brief/Review Contract；Agent 通过 MCP 按固定 Handoff / Snapshot 渐进读取。助手怎么读、怎样算过关见 [Agent 消费指南](./agent-consumption.md)。
 
 ## 边界
 

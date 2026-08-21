@@ -68,7 +68,7 @@ pnpm pb:mcp -- --print-config
 
 省略 `targetRoot` 时 Prompt 填入 MCP 绑定的 `delivery.targetRoot`。
 
-默认顺序是 `inspect → handoff index → Screen packet → Screenshot → readiness/resolver → 按需 Case delta/detail → 实施计划确认 → 实施 → 目标验证 → 五维 obligations/summary`。详细规则见 [Agent 消费指南](../../docs/guides/agent-consumption.md)。
+默认顺序是 `inspect → handoff index → Screen packet → Screenshot → readiness/resolver → 按需 Case delta/detail → 实施计划确认 → 实施 → 目标验证 → 五维 obligations/summary`。协作关系与完成判据见 [Agent 消费指南](../../docs/guides/agent-consumption.md)。
 
 ## 开发
 

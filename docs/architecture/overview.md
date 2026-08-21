@@ -2,6 +2,14 @@
 
 ProtoBridge 采用 Core-owned semantics：所有对象、状态、引用和执行规则在 Core 中定义，PBWork、CLI、Local Service 和 MCP 只适配各自的进程与 IO。
 
+![系统怎么接在一起](../images/03-architecture.png)
+
+页面事实只由采集写入本地证据库，且只追加、不改已经封存的内容。给编程助手的 MCP 只读证据库，也只读查询目标工程；查询结果不能写回 Evidence。禁止：MCP 去采集、目标工程代码覆盖封存事实、助手绕过接口翻原始文件。助手怎么读见 [Agent 消费指南](../guides/agent-consumption.md)。
+
+## 实现视图
+
+工作台与 Runtime 同在浏览器中，经 Local Service 和 Capture Protocol 接到 Node 侧的 Store：
+
 ```text
 ┌──────────────── PBWork browser ────────────────┐
 │ Workbench UI ── Selection / Review             │
@@ -86,4 +94,3 @@ Workbench 选中的临时 DOM handle 可以帮助创建 Fragment Draft，但持�
 - Target 工具受明确 Target root 和路径边界约束。
 
 对象模型见 [Evidence 模型](./evidence-model.md)，各模块实现见 [ProtoBridge 实现](./proto-bridge.md)和 [PBWork 架构](./pbwork.md)。
-

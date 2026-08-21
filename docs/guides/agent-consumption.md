@@ -4,6 +4,12 @@
 
 Handoff 是固定 Evidence 索引，不是实现计划。Agent 必须使用 Handoff 指定的 Workspace、Snapshot、Staleness Report 和 revision，不能改读 active/latest，也不能直接解析 Store 目录。
 
+![编程助手如何读取并开始还原](../images/04-collaboration.png)
+
+三方分工：MCP 只读提供固定事实和目标工程查询；仓库规范、Skill 和目标工程文档告诉助手怎么读、怎么落地；助手先理解、写计划、等人批准后再改代码。页面事实与目标工程习惯冲突时，以封存事实为准，习惯只决定怎么实现。没看截图、没理解完、人没批准计划，不能改目标工程。
+
+怎样算过关见下文 [怎样算过关](#怎样算过关)。端到端阶段见 [产品工作流](../product/workflow.md)。
+
 ## MCP 配置
 
 构建仓库后，MCP server 的等价启动命令为：
@@ -20,6 +26,8 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 
 ## 强制读取顺序
 
+图中的建议顺序对应下列 Tool 调用。权威实现纪律以 `proto-bridge://guides/handoff-consumer` 为准。
+
 1. 读取资源 `proto-bridge://guides/handoff-consumer`。
 2. 调用 `inspect_evidence_workspace`，校验 Workspace、projection contract version 和 capabilities。能力缺失时停止，不回退旧链路。
 3. 调用 `read_handoff_index`，在编辑前原样报告 `mandatoryRisks` 的全部风险，并固定 Screen 顺序、Case/Scenario 范围与 Screenshot digest 分组。
@@ -35,7 +43,7 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 
 整包 Snapshot、原始 Case/revision/fragment、Catalog、Issue、Staleness、`read_agent_handoff` 与 `read_acceptance_contract` 已从 MCP 表面移除；不得回退到旧整包读取路径。
 
-也可以使用 MCP Prompt `consume_evidence_handoff` 创建同一读取任务；Prompt 不放宽上述规则。权威实现纪律以 `proto-bridge://guides/handoff-consumer` 为准。
+也可以使用 MCP Prompt `consume_evidence_handoff` 创建同一读取任务；Prompt 不放宽上述规则。
 
 ## Evidence Tools
 
@@ -63,11 +71,19 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 | `validate_target_changes` | 验证变更范围、文件与实际采用的 resolved mapping |
 | `inspect_target_readiness` | 编辑前报告 resolver coverage、machine authority、实施 blockers 和未验证边界 |
 
-## 五维实施后复查
+## 怎样算过关
+
+采集完整、事实足够用来还原、目标应用已经对照过关，不是同一件事。只有第三件算还原过关。
+
+![怎样算还原过关](../images/05-acceptance.png)
+
+对照要对上结构、组件、颜色与文字、状态和操作。必须看原页截图，不能只看文字描述。对不上的标成差异；看不准的标成未验证，不能当成已经过关。助手汇总只是自报，最终仍要人看原页和成品是否一致。
 
 `read_reconstruction_obligations` 从固定 Handoff 的 Acceptance Contract 投影稳定、跨 Case 去重的 structure、components、tokens、states 和 interactions 义务。组件与 Token 结合 resolver、实际采用代码和 `validate_target_changes`；结构、状态与交互结合固定 Evidence、目标代码和实际测试。没有可靠验证依据时必须保持 `unverified`。
 
 `summarize_reconstruction_review` 汇总已处理 Case、已查看 Screenshot、已重放 Scenario、偏差和未验证事项，不计算还原分数。它的 `validationAuthority` 是 `consumer-reported-review`，不能被描述成独立 Runtime 或最终视觉验收。官方 Flutter MCP Runtime Review 的保留实验实现不在默认 MCP Tool 表面，见 [Roadmap](../roadmap/flutter-mcp-target-review.md)。
+
+一次性人工五维对照记录使用 [验收模板](../acceptance/README.md)，不替代本节判据，也不驱动 Agent 按验收文档改代码。
 
 Target 结果是实现上下文，不是原型事实。真实目标文档/公开代码优先于 adapter fallback；机器 Contract 与政策冲突时必须保留 conflict。它不能写回 Evidence，也不能覆盖 unknown 或 conflict。
 

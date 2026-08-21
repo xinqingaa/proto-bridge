@@ -1,19 +1,12 @@
 # ProtoBridge
 
-ProtoBridge（PB）从符合 Authoring Contract 的原型 Runtime 采集语义、状态、交互与截图，保存为不可变 Evidence，并通过 PBWork、CLI 和 MCP 交给 Coding Agent。
+ProtoBridge（PB）让编程助手通过 MCP，按固定下来的页面事实在目标工程里还原可交互原型。PB 的产品输出是 Evidence，不是成品代码。
 
-```text
-PBWork Prototype + Runtime Contract
-  → Selection / Preflight / Case Matrix
-  → Capture / Store / Snapshot
-  → Evidence Review / Handoff
-  → MCP fixed read
-  → Agent implementation / target validation
-```
+![从可交互原型，到目标应用还原](docs/images/01-overview.png)
 
-PBWork 是 PB 的图形工作台、原型生产环境和 instrumented Runtime。PB 证明原型事实；Agent 结合目标仓库自身规范决定具体实现。
+系统证明页面当时长什么样；助手结合目标仓库自身规范实现。后四张图分别展开[怎么走完](docs/product/workflow.md)、[系统怎么接](docs/architecture/overview.md)、[助手怎么读](docs/guides/agent-consumption.md)和[怎样算过关](docs/guides/agent-consumption.md#怎样算过关)。
 
-PBWork 的 Token、组件、原型和工作壳都是代码资产；产品、设计和开发人员通过 Cursor、Codex 等 Coding Agent 遵守同一套仓库规范进行维护。
+PBWork 是 PB 的图形工作台、原型生产环境和 instrumented Runtime。Token、组件、原型和工作壳都是代码资产；产品、设计和开发人员通过 Cursor、Codex 等 Coding Agent 遵守同一套仓库规范进行维护。
 
 新原型先完成产品设计与视觉探索，再将获批方向通过 Promotion Gate 映射为 PBWork Token、DS、业务局部 UI 和资产契约。独立探索页不进入 Evidence 闭环。
 
