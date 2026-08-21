@@ -30,6 +30,7 @@ const emit = defineEmits<{
 const lifecycle = usePrototypeLifecycleStore();
 const capture = useCaptureStore();
 const router = useRouter();
+const deliveryTargetRoot = computed(() => capture.deliveryTargetRoot);
 const converged = ref(false);
 const submitting = ref(false);
 const polling = ref(false);
@@ -213,6 +214,12 @@ onBeforeUnmount(() => {
           <div class="section-lead">
             <strong>确认正式入口已经收敛</strong>
             <p>本次会采集所有正式页面、状态和场景，成功后固定 Evidence、Handoff 与唯一提示词。</p>
+            <p v-if="deliveryTargetRoot" class="delivery-target">
+              Agent 提示词将指向：<code>{{ deliveryTargetRoot }}</code>
+            </p>
+            <p class="delivery-target-hint">
+              改路径请编辑 proto-bridge.json 的 delivery.targetRoot，然后重启 pnpm pb:up。
+            </p>
           </div>
           <WorkbenchCheckbox
             v-model="converged"
@@ -457,6 +464,11 @@ onBeforeUnmount(() => {
   color: rgba(var(--v-theme-on-surface), 0.58);
   font-size: 0.76rem;
   line-height: 1.55;
+}
+.delivery-target code {
+  display: inline;
+  overflow-wrap: anywhere;
+  font-size: 0.72rem;
 }
 .check-list {
   overflow: hidden;

@@ -182,12 +182,15 @@ afterEach(async () => {
 
 async function start(preflightTtlMs = 60_000) {
   root = await mkdtemp(path.join(os.tmpdir(), 'pb-local-service-'));
+  const deliveryTargetRoot = path.join(root, 'delivery-target');
+  await mkdir(deliveryTargetRoot, { recursive: true });
   service = new ProtoBridgeLocalService({
     port: 0,
     allowedOrigins: [origin],
     runtimeBaseUrl: origin,
     storeRoot: path.join(root, 'store'),
     workspaceId: 'workspace-service-test',
+    deliveryTargetRoot,
     preflightTtlMs,
     preflightProvider: async (selection) => ({
       preflight: preflightSelection(selection, manifest()),
@@ -235,6 +238,9 @@ describe('ProtoBridge Local Service', () => {
     expect(unauthorized.response.status).toBe(401);
     const session = await call(base, '/session', { method: 'POST' });
     expect(session.body.data.protocolVersion).toBe(4);
+    expect(session.body.data.deliveryTargetRoot).toBe(
+      path.join(root!, 'delivery-target'),
+    );
     expect(session.response.status).toBe(201);
     expect(session.body.data.sessionToken).not.toContain('/');
     const state = await call(base, '/console', {
@@ -718,10 +724,20 @@ describe('ProtoBridge Local Service', () => {
       token,
       body: {
         handoffId: created.body.data.handoff.handoffId,
-        targetRoot: 'apps/flutter_pb_app',
+        targetRoot: path.join(root!, 'delivery-target'),
       },
     });
     expect(delivery.response.status).toBe(201);
+    const mismatched = await call(base, '/deliveries', {
+      method: 'POST',
+      token,
+      body: {
+        handoffId: created.body.data.handoff.handoffId,
+        targetRoot: path.join(root!, 'other-target'),
+      },
+    });
+    expect(mismatched.response.status).toBe(400);
+    expect(mismatched.body.error.code).toBe('invalid-schema');
     expect(delivery.body.data.agentPrompt).toContain(
       '# ProtoBridge Evidence 驱动的页面实现',
     );
@@ -759,6 +775,7 @@ describe('ProtoBridge Local Service', () => {
       runtimeBaseUrl: origin,
       storeRoot: path.join(root!, 'store'),
       workspaceId: 'workspace-service-test',
+      deliveryTargetRoot: path.join(root!, 'delivery-target'),
       preflightProvider: async (selection) => ({
         preflight: preflightSelection(selection, manifest()),
       }),

@@ -24,15 +24,15 @@ pnpm pb -- workspace reset --apply --plan-id <id> --generation <id>
 ## 命令
 
 ```text
-proto-bridge workspace init [--config <file>]
+proto-bridge workspace init [--config <file>] [--target <dir>]
 proto-bridge workspace doctor [--json]
 proto-bridge workspace doctor repair [--json]
 proto-bridge workspace reset [--apply --plan-id <id> --generation <id>] [--json]
 proto-bridge workspace reinitialize --confirm-destroyed <workspaceId> [--json]
 proto-bridge preflight --selection <file> [--manifest <file>]
-proto-bridge capture run --selection <file> [--bundle <id>]
-proto-bridge deliver (--selection <file> | --prototype <id> [--screen <id|slug>]) [--target <dir>]
-proto-bridge deliver --bundle <id> --snapshot <id> [--ack-risk <kind>] [--target <dir>]
+proto-bridge capture run --selection <file> [--bundle <id>] [--acknowledge-unofficial-capture]
+proto-bridge deliver --prototype <id> [--target <dir>] [--acknowledge-unofficial-capture]
+proto-bridge deliver --bundle <id> --snapshot <id> [--ack-risk <kind>] [--target <dir>] [--acknowledge-unofficial-capture]
 proto-bridge job status|cancel|retry --job <id>
 proto-bridge bundle list|inspect|fork|archive|clean
 proto-bridge snapshot|run|case inspect
@@ -52,7 +52,9 @@ proto-bridge service start
 - Handoff risk 使用可重复的 `--ack-risk <riskKind>` 逐项确认；
 - 不提供 `--force`；
 - `deliver` 一次完成采集、Handoff 与 `.proto-bridge/deliveries/*/agent-prompt.md`（收据只是 Store 索引；MCP 仍按 Handoff/Snapshot 读 Store）；
-- `deliver` 默认选择指定范围内全部 authored Screens、Variants 和 Scenarios；使用 `--only-variant` / `--only-scenario`（需配合 `--screen`）缩小范围；
+- 官方定稿在 PBWork：待确定 → 定稿并自动采集。CLI `capture run` / `deliver` 是非正式诊断，不改变生命周期；非 TTY 或 `--json` 必须 `--acknowledge-unofficial-capture`。该旗标不能替代 `--accept-warning` / `--ack-risk`；
+- 省略 `--target` 时使用 `proto-bridge.json` 的 `delivery.targetRoot`；`--target` 只覆盖这一次命令；
+- `deliver` 默认采集整个 Prototype；`--screen` / `--fragment` / `--selection` / `--only-variant` / `--only-scenario` 是窄范围诊断，需要第二层确认；
 - `workspace doctor` 与 inspect/list/show 以只读方式打开 Store，可与 `pnpm pb:up` 并存；
 - `workspace reset` 默认只预览 Evidence、Delivery、未导出 Review 和运行任务范围，并把 plan 写入 Store 外的 `reset-plans`；apply 必须带回同一 `planId + generation`，任何范围漂移都会拒绝。成功后保留配置/plan audit 并创建新 generation；Service 存活时自动经 Service drain；
 - root/lock 被外部删除或替换时不会自动建目录。先停 Service；`workspace doctor repair` 只处理不改变 Evidence 身份的状态，root 整体丢失必须使用 `workspace reinitialize --confirm-destroyed <workspaceId>`，旧 Evidence 不可恢复；
@@ -71,19 +73,19 @@ PBWork 与 CLI 对同一规范化 Draft 必须生成相同 Case identity 和 Mat
 推荐日常用：
 
 ```bash
-# 整个原型：全部页面、状态和场景
+# 非正式整原型诊断；目标路径来自 delivery.targetRoot
 pnpm pb -- deliver \
   --prototype cold-chain-ops \
-  --target apps/flutter_pb_app
+  --acknowledge-unofficial-capture
 
-# 单页：默认包含该页全部状态和场景
+# 单页诊断：默认包含该页全部状态和场景，需要第二层确认
 pnpm pb -- deliver \
   --prototype cold-chain-ops \
   --screen exception-queue \
-  --target apps/flutter_pb_app
+  --acknowledge-unofficial-capture
 ```
 
-PBWork「交付到 Agent」与 CLI `deliver` 写入同一套 `.proto-bridge/deliveries/` 产物。
+PBWork 定稿与 CLI `deliver` 写入同一套 `.proto-bridge/deliveries/` 产物。CLI 结果不会出现在「定稿采集」页。
 
 ## 开发
 

@@ -34,7 +34,7 @@ export async function dispatch(context: ToolContext, method: string, params: Jso
     case 'prompts/list':
       return { prompts: promptsList() };
     case 'prompts/get':
-      return getPrompt(params);
+      return getPrompt(params, context.options.deliveryTargetRoot);
     default:
       throw new Error(`Unsupported MCP method: ${method}`);
   }

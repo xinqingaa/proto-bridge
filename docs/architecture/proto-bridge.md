@@ -52,7 +52,7 @@ Capture Driver 只报告观测结果。它不能用 Target 扫描或源码命名
 
 - 只允许 loopback host 和本地 Runtime origin；
 - 校验允许的 Workbench origins；
-- 建立有过期时间的 session；
+- 建立有过期时间的 session，并在 session 上加法返回已解析的 `deliveryTargetRoot`；
 - 请求体有固定容量限制；
 - 保存短期 Preflight；
 - 运行 Core JobHost；
@@ -76,16 +76,17 @@ Service Contract 来自 `@proto-bridge/core/v2/service-contract`。当前 Local 
 - `snapshot`、`run`、`case` 检查；
 - `stale check`；
 - `handoff` 创建、显示和导出；
+- `deliver`（非正式；默认目标来自 `delivery.targetRoot`）；
 - `service start`。
 
-CLI 只解析参数、加载 Workspace 配置、调用 Core、格式化文本/JSON 并映射退出码。完整参考见 [CLI README](../../packages/cli/README.md)。
+CLI 只解析参数、加载 Workspace 配置、调用 Core、格式化文本/JSON 并映射退出码。`capture run` / `deliver` 在非 PBWork 定稿路径上发出非正式采集确认。完整参考见 [CLI README](../../packages/cli/README.md)。
 
 ## MCP
 
 `packages/mcp-server` 是正式 Consumer：
 
 - 通过 stdio JSON-RPC 暴露 Tools、Resources 和 Prompt；
-- 启动时固定 Store root 与 Workspace；
+- 启动时固定 Store root、Workspace 与 `delivery.targetRoot`；
 - 使用 Core Evidence Read Model 和 Store Reader；
 - 以 `HandoffIndex → Screen Packet（含 canonicalBrief 与 semantic inventory）→ compact CaseDelta → paged Obligations → EvidenceDetail` 提供固定、闭集、按需投影；Screen packet 表达主滚动边界、Region 语义关系、inventory occurrence，以及状态矩阵所需的固定业务数据摘要；
 - 握手公开 Workspace、能力、契约版本、源码构建指纹、进程身份和 Store generation；
@@ -94,7 +95,7 @@ CLI 只解析参数、加载 Workspace 配置、调用 Core、格式化文本/JS
 - 独立提供 Target conventions、examples、readiness 与 validation；
 - 提供 Target conventions、resolver、readiness 与变更 validation；五维实施后复查使用固定 Reconstruction Obligations 和 consumer-reported summary。
 
-MCP 不创建 Capture Job，不接受 Store 文件路径作为对象引用，不替 Agent 选择实现。完整 Snapshot/Contract 读取仅为兼容和显式 debug，默认 Prompt 不调用。`read_implementation_plan` / `read_implementation_tranche` 保留为诊断能力，不是默认实施路径。普通响应不按字节阈值截断；detail continuation 只按稳定逻辑查询边界产生。完整参考见 [MCP README](../../packages/mcp-server/README.md)。
+MCP 不创建 Capture Job，不接受 Store 文件路径作为对象引用，不替 Agent 选择实现。Target 工具省略 `targetRoot` 时使用绑定的 `delivery.targetRoot`，禁止回落到 cwd。完整 Snapshot/Contract 读取仅为兼容和显式 debug，默认 Prompt 不调用。`read_implementation_plan` / `read_implementation_tranche` 保留为诊断能力，不是默认实施路径。普通响应不按字节阈值截断；detail continuation 只按稳定逻辑查询边界产生。完整参考见 [MCP README](../../packages/mcp-server/README.md)。
 
 Consumer projection version 4 是当前默认契约：Screen packet 含 `canonicalBrief`；inventory 与 Case delta 面向 Agent 使用 `regionId` / `caseId`；Case delta 不重复完整 Fact/provenance。Evidence obligations 按 Handoff/Screen/维度分页，continuation 前缀为 `pbcp4` / `pbop4`，绑定固定 Snapshot 与规范化查询，不能跨维度复用。Evidence Region 是 Source 定位与验收单元，不等于目标侧组件、列表项或文件边界。
 

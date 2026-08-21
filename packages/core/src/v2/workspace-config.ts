@@ -25,6 +25,12 @@ export const OBSOLETE_WORKSPACE_CONFIG_KEYS = [
 /** Default Preflight Case cap. A 10-screen authored Prototype with Variants and Scenarios can exceed 100. */
 export const DEFAULT_CAPTURE_MAX_CASES = 200;
 
+/**
+ * `workspace init` template only. Runtime CLI/PBWork/MCP must read
+ * `delivery.targetRoot` from Workspace config instead of this literal.
+ */
+export const DEFAULT_INIT_DELIVERY_TARGET_ROOT = 'apps/flutter_pb_app';
+
 export const V2WorkspaceConfig = z
   .object({
     schemaVersion: z.literal(V2_SCHEMA_MAJOR),
@@ -60,6 +66,11 @@ export const V2WorkspaceConfig = z
         port: 3988,
         allowedOrigins: [],
       }),
+    delivery: z
+      .object({
+        targetRoot: z.string().min(1),
+      })
+      .strict(),
   })
   .strict();
 

@@ -453,6 +453,7 @@ async function verifyCurrentProductLanguage(files) {
     "reconstruct_page_context",
     "ui-build-plan.json",
     "ui-build-review.md",
+    "交付到 Agent",
     "阶段一完成",
     "阶段二完成",
     "阶段三完成",

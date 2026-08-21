@@ -49,6 +49,8 @@ try {
     storeRoot,
     "--workspace",
     "pbwork-local",
+    "--target-root",
+    path.join(repoRoot, "apps/flutter_pb_app"),
   ]);
   const index = parseToolJson(
     await client.request("tools/call", {

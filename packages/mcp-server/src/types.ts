@@ -22,6 +22,7 @@ export type ServerOptions = {
   workspaceId?: string;
   serviceUrl?: string;
   serviceOrigin?: string;
+  deliveryTargetRoot?: string;
 };
 
 export type ToolContext = {

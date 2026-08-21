@@ -14,5 +14,6 @@
 | [0008](./0008-workspace-generation-and-reset.md) | Workspace generation 与绑定式 Reset |
 | [0009](./0009-flutter-official-mcp-driver-bridge.md) | Flutter 官方 MCP 使用操作者 DTD URI 与 Driver Bridge |
 | [0010](./0010-flutter-mcp-remains-experimental.md) | Flutter MCP 保留为未注册的实验实现 |
+| [0011](./0011-producer-git-and-npm-tooling.md) | Producer 用 git 分发 PBWork；npm 计划只覆盖 Core/CLI/MCP |
 
 ADR 被后续决策替代时保留原文，并在状态中链接替代项；不要改写旧决策以伪装从未发生变化。

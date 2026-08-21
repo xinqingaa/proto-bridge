@@ -161,7 +161,6 @@ export const useCaptureStore = defineStore("capture-v2", {
         agentPromptPath: string;
         receiptPath: string;
       } | null,
-      deliverTargetRoot: "apps/flutter_pb_app",
       recaptureBundleId: null as string | null,
       screenshotUrls: {} as Record<string, string>,
       composerOpen: false,
@@ -176,6 +175,7 @@ export const useCaptureStore = defineStore("capture-v2", {
   },
   getters: {
     connected: (state) => state.session !== null,
+    deliveryTargetRoot: (state) => state.session?.deliveryTargetRoot ?? "",
     warningsAccepted(state): boolean {
       const required =
         state.preflight?.result.warnings.map((warning) => warning.warningId) ??
@@ -889,7 +889,7 @@ export const useCaptureStore = defineStore("capture-v2", {
       try {
         const delivery = await captureServiceClient.createDelivery({
           handoffId: handoff.handoffId,
-          targetRoot: this.deliverTargetRoot,
+          targetRoot: this.deliveryTargetRoot,
           ...(handoff.implementationIntent
             ? { implementationIntent: handoff.implementationIntent }
             : {}),
@@ -929,7 +929,7 @@ export const useCaptureStore = defineStore("capture-v2", {
         await this.loadSnapshot(bundleId, snapshotId);
         const delivery = await captureServiceClient.createDelivery({
           handoffId: this.handoff.handoffId,
-          targetRoot: this.deliverTargetRoot,
+          targetRoot: this.deliveryTargetRoot,
           ...(intent.trim() ? { implementationIntent: intent.trim() } : {}),
           runId: this.details.activeSnapshot.sourceRunId,
           acceptedWarningIds: this.acceptedWarningIds,

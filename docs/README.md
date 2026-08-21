@@ -19,6 +19,7 @@ ProtoBridge（PB）把可交互原型转化为可追溯、可固定引用的 Evi
 | 修改 PBWork Token 或组件 | [PBWork 开发规范](./pbwork/development.md) → [组件总论](./pbwork/components/overview.md) |
 | 维护仓库 | [开发规范](./maintenance/development.md) → [文档维护](./maintenance/documentation.md) |
 | 评审后续产品投入 | [产品演进 Roadmap](./roadmap/README.md) |
+| 理解 git 分发与 npm 计划 | [ADR 0011](./decisions/0011-producer-git-and-npm-tooling.md) → [分发与 npm Roadmap](./roadmap/distribution-and-npm.md) |
 | 理解架构转型背景 | [从 V1 到 Evidence 架构](./history/v1-to-evidence-architecture.md) |
 | 理解渐进消费与按需读取 | [渐进消费：按需读取到底是谁在按需？](./history/progressive-evidence-consumption.md) |
 

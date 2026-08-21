@@ -47,6 +47,7 @@ export type LocalServiceSession = {
   generationId: string | 'legacy-unavailable';
   expiresAt: string;
   finalizedOrphanJobIds: string[];
+  deliveryTargetRoot: string;
 };
 
 export type StoredPreflight = {
@@ -162,7 +163,7 @@ export type HandoffPreview = {
 
 export type CreateDeliveryRequest = {
   handoffId: string;
-  targetRoot: string;
+  targetRoot?: string;
   implementationIntent?: string;
   runId?: string;
   acceptedWarningIds?: string[];

@@ -43,6 +43,8 @@ function recorder(cwd: string): {
       cwd,
       stdout: (value) => stdout.push(value),
       stderr: (value) => stderr.push(value),
+      isInteractive: false,
+      confirm: async () => false,
     },
     stdout,
     stderr,
@@ -203,7 +205,9 @@ describe('ProtoBridge CLI', () => {
     expect(await runCli(['--help'], output.io)).toBe(CLI_EXIT_CODES.ok);
     const usage = output.stdout.join('\n');
     expect(usage).toContain('proto-bridge workspace init');
-    expect(usage).toContain('proto-bridge deliver');
+    expect(usage).toContain('proto-bridge deliver --prototype <id>');
+    expect(usage).toContain('--acknowledge-unofficial-capture');
+    expect(usage).toContain('delivery.targetRoot');
     expect(usage).not.toContain('proto-bridge v2');
     expect(usage).not.toContain('proto-bridge generate');
   });
@@ -231,6 +235,7 @@ describe('ProtoBridge CLI', () => {
     expect(config).toMatchObject({
       schemaVersion: 1,
       workspaceId: 'cli-test',
+      delivery: { targetRoot: 'apps/flutter_pb_app' },
       service: {
         allowedOrigins: ['http://127.0.0.1:3977'],
       },
@@ -369,6 +374,7 @@ describe('ProtoBridge CLI', () => {
       runtimeBaseUrl: 'http://127.0.0.1:3977',
       storeRoot,
       workspaceId: 'cli-live-reset-test',
+      deliveryTargetRoot: path.join(root, 'delivery-target'),
     });
     const address = await liveService.start();
     try {
@@ -453,6 +459,7 @@ describe('ProtoBridge CLI', () => {
           screenshotPath,
           '--bundle',
           'cli-screenshot',
+          '--acknowledge-unofficial-capture',
           '--json',
         ],
         output.io,
@@ -547,6 +554,7 @@ describe('ProtoBridge CLI', () => {
           screenshotPath,
           '--bundle',
           'cli-screenshot',
+          '--acknowledge-unofficial-capture',
         ],
         output.io,
       ),
@@ -560,6 +568,53 @@ describe('ProtoBridge CLI', () => {
       CLI_EXIT_CODES.error,
     );
     expect(output.stderr.join('\n')).toContain('--force is not supported');
+  });
+
+  it('blocks unofficial capture without acknowledgement in non-interactive mode', async () => {
+    const root = await tempRoot();
+    const output = recorder(root);
+    await runCli(
+      [
+        'workspace',
+        'init',
+        '--workspace',
+        'cli-test',
+        '--runtime',
+        'http://127.0.0.1:3977',
+      ],
+      output.io,
+    );
+    const manifestPath = path.join(root, 'manifest.json');
+    const selectionPath = path.join(root, 'selection.json');
+    const screenshotPath = path.join(root, 'screen.png');
+    await writeFile(manifestPath, JSON.stringify(manifest()), 'utf8');
+    await writeFile(selectionPath, JSON.stringify(screenshotDraft()), 'utf8');
+    await writeFile(
+      screenshotPath,
+      Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+        'base64',
+      ),
+    );
+    expect(
+      await runCli(
+        [
+          'capture',
+          'run',
+          '--selection',
+          selectionPath,
+          '--manifest',
+          manifestPath,
+          '--screenshot',
+          screenshotPath,
+          '--bundle',
+          'cli-unofficial',
+          '--json',
+        ],
+        output.io,
+      ),
+    ).toBe(CLI_EXIT_CODES.blocked);
+    expect(output.stderr.join('\n')).toContain('--acknowledge-unofficial-capture');
   });
 
   it('produces the same Matrix as the PBWork Local Service', async () => {
@@ -600,6 +655,7 @@ describe('ProtoBridge CLI', () => {
       runtimeBaseUrl: origin,
       storeRoot: path.join(root, 'service-store'),
       workspaceId: 'matrix-test',
+      deliveryTargetRoot: path.join(root, 'delivery-target'),
       preflightProvider: async (draft) => ({
         preflight: preflightSelection(draft, manifest()),
       }),

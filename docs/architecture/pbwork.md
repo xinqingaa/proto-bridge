@@ -103,7 +103,7 @@ Workbench 与 iframe 使用带 `runtimeId` 和 `requestId` 的消息信封：
 
 ## Capture UI
 
-PBWork 不提供页面、控件、Fragment 或整个原型的手工采集入口。待确定原型执行“定稿并采集”时，生命周期 Store 使用现有 Capture Store/Local Service 自动构造整原型 Draft，依次完成 Preflight、warning 确认、Capture Job、risk 确认、Handoff 与唯一 Agent 提示词生成；用户不选择采集范围，也不单独点击生成提示词。
+PBWork 不提供页面、控件、Fragment 或整个原型的手工采集入口。待确定原型执行“定稿并采集”时，生命周期 Store 使用现有 Capture Store/Local Service 自动构造整原型 Draft，依次完成 Preflight、warning 确认、Capture Job、risk 确认、Handoff 与唯一 Agent 提示词生成；用户不选择采集范围，也不单独点击生成提示词。定稿确认页只读展示 Agent 提示词将指向的绝对路径（Local Service session 上的 `deliveryTargetRoot`，来自 `proto-bridge.json` 的 `delivery.targetRoot`）。改路径只能改配置后重启 `pnpm pb:up`。
 
 生命周期 Store 只编排动作并保存正式产物引用，不复制 Selection、Case identity、Coverage 或 risk 算法。持久 Evidence 仍由 Local Service/Store 管理，Preflight、Job、Handoff 和 Delivery 仍使用 Core Service Contract。只有生命周期记录绑定的已定稿或已归档产物出现在“定稿采集”页；CLI 和其它入口创建的 Bundle 不会自动成为 PBWork 定稿产物。
 

@@ -14,6 +14,16 @@ function envNumber(name: string, fallback: number): number {
   return parsed;
 }
 
+function requiredEnv(name: string): string {
+  const value = process.env[name]?.trim();
+  if (!value) {
+    throw new Error(
+      `${name} is required. Start Local Service through pnpm pb:up or pass the resolved Workspace delivery.targetRoot.`,
+    );
+  }
+  return value;
+}
+
 async function main(): Promise<void> {
   const port = envNumber('PB_SERVICE_PORT', 3988);
   const service = new ProtoBridgeLocalService({
@@ -29,6 +39,7 @@ async function main(): Promise<void> {
       process.env.PB_STORE_ROOT ??
       path.resolve(process.cwd(), '.proto-bridge/store'),
     workspaceId: process.env.PB_WORKSPACE_ID ?? 'pbwork-local',
+    deliveryTargetRoot: requiredEnv('PB_DELIVERY_TARGET_ROOT'),
     maxCases: envNumber('PB_MAX_CASES', DEFAULT_CAPTURE_MAX_CASES),
   });
   const address = await service.start();

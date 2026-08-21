@@ -19,7 +19,10 @@ export async function inspectTargetReadinessTool(
   args: JsonObject,
 ): Promise<unknown> {
   const handoffId = required(args, 'handoffId');
-  const targetRoot = resolveRuntimeTargetRoot(readString(args, 'targetRoot'));
+  const targetRoot = resolveRuntimeTargetRoot(
+    readString(args, 'targetRoot'),
+    context.options.deliveryTargetRoot,
+  );
   const input = await context.evidence.readConsumerProjectionInput(handoffId);
   const requestedScreenId = readString(args, 'screenId');
   const availableScreenIds = input.evidence.screens.map((screen) => screen.screenId);

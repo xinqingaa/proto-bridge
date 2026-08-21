@@ -10,6 +10,7 @@ import {
   tcpReachable,
   userArgv,
   validateWorkspaceConfigWithCore,
+  resolveWorkspaceDeliveryTargetRoot,
 } from "./lib/pb-script-utils.mjs";
 
 const argv = userArgv();
@@ -54,6 +55,21 @@ if (workspace) {
   try {
     await validateWorkspaceConfigWithCore(workspace);
     record("pass", "Workspace schema", "validated by Core V2WorkspaceConfig");
+    try {
+      const deliveryTargetRoot = await resolveWorkspaceDeliveryTargetRoot(
+        workspace,
+      );
+      await access(path.join(deliveryTargetRoot, "pubspec.yaml"));
+      await access(path.join(deliveryTargetRoot, "lib"));
+      record("pass", "Delivery target", deliveryTargetRoot);
+    } catch (error) {
+      record(
+        "fail",
+        "Delivery target",
+        error instanceof Error ? error.message : String(error),
+        "Set delivery.targetRoot in proto-bridge.json to a Flutter project that contains pubspec.yaml and lib/, then restart pnpm pb:up.",
+      );
+    }
   } catch (error) {
     record(
       "fail",

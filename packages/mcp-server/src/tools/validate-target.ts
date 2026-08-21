@@ -1,12 +1,18 @@
 import { validateTargetChanges } from '@proto-bridge/core/target';
 import type { ValidateTargetChangesInput } from '@proto-bridge/core/target';
-import type { JsonObject } from '../types.js';
+import type { JsonObject, ToolContext } from '../types.js';
 import { readString, readStringArray } from '../utils/args.js';
 import { resolveRuntimeTargetRoot } from '../services/config.js';
 
-export async function validateTargetChangesTool(args: JsonObject): Promise<unknown> {
+export async function validateTargetChangesTool(
+  context: ToolContext,
+  args: JsonObject,
+): Promise<unknown> {
   const input: ValidateTargetChangesInput = {
-    targetRoot: resolveRuntimeTargetRoot(readString(args, 'targetRoot')),
+    targetRoot: resolveRuntimeTargetRoot(
+      readString(args, 'targetRoot'),
+      context.options.deliveryTargetRoot,
+    ),
     ...(readString(args, 'gitBase')
       ? { gitBase: readString(args, 'gitBase')! }
       : {}),

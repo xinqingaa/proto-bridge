@@ -1,12 +1,18 @@
 import { findTargetExamples } from '@proto-bridge/core/target';
 import type { FindTargetExamplesInput } from '@proto-bridge/core/target';
-import type { JsonObject } from '../types.js';
+import type { JsonObject, ToolContext } from '../types.js';
 import { readNumber, readString, readStringArray } from '../utils/args.js';
 import { resolveRuntimeTargetRoot } from '../services/config.js';
 
-export async function findTargetExamplesTool(args: JsonObject): Promise<unknown> {
+export async function findTargetExamplesTool(
+  context: ToolContext,
+  args: JsonObject,
+): Promise<unknown> {
   const input: FindTargetExamplesInput = {
-    targetRoot: resolveRuntimeTargetRoot(readString(args, 'targetRoot')),
+    targetRoot: resolveRuntimeTargetRoot(
+      readString(args, 'targetRoot'),
+      context.options.deliveryTargetRoot,
+    ),
     module: readString(args, 'module'),
     pattern: readString(args, 'pattern'),
     roles: readStringArray(args, 'roles'),

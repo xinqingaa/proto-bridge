@@ -2,12 +2,28 @@ export type CliIo = {
   stdout(value: string): void;
   stderr(value: string): void;
   cwd: string;
+  isInteractive: boolean;
+  confirm(prompt: string): Promise<boolean>;
 };
 
 export const processIo: CliIo = {
   stdout: (value) => process.stdout.write(`${value}\n`),
   stderr: (value) => process.stderr.write(`${value}\n`),
   cwd: process.cwd(),
+  isInteractive: Boolean(process.stdin.isTTY && process.stdout.isTTY),
+  async confirm(prompt) {
+    const { createInterface } = await import('node:readline/promises');
+    const rl = createInterface({
+      input: process.stdin,
+      output: process.stderr,
+    });
+    try {
+      const answer = (await rl.question(prompt)).trim().toLowerCase();
+      return answer === 'y' || answer === 'yes';
+    } finally {
+      rl.close();
+    }
+  },
 };
 
 export function emit(

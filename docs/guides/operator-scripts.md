@@ -9,7 +9,7 @@
 | `pnpm pb:doctor` | 检查环境、配置、浏览器、构建、Store 和服务可达性 | 否 |
 | `pnpm pb:up` | 按 Workspace 配置启动 PBWork 与 Local Service | Service 可以在启动恢复时终结 orphan Job |
 | `pnpm pb -- <args>` | 从仓库根目录调用正式 CLI（含 `deliver`） | 由具体 CLI 命令决定 |
-| `pnpm pb:mcp` | 从配置解析 Store/Workspace 并启动 stdio MCP | 否 |
+| `pnpm pb:mcp` | 从配置解析 Store/Workspace/`delivery.targetRoot` 并启动 stdio MCP | 否 |
 
 `pnpm pbwork` 是 `pnpm pb:up` 的兼容别名。
 
@@ -27,6 +27,7 @@ pnpm pb:doctor -- --json
 - Workspace 配置和 loopback 边界；
 - `service.allowedOrigins` 是否包含 Workbench origin；
 - Store 的逻辑 Workspace；
+- `delivery.targetRoot` 是否存在且像 Flutter 工程（`pubspec.yaml` + `lib/`）；
 - CLI/MCP 构建产物；
 - Playwright Chromium；
 - Runtime 与 Local Service 端口。
@@ -40,7 +41,7 @@ pnpm pb:up
 pnpm pb:up -- --config /absolute/path/to/proto-bridge.json
 ```
 
-脚本读取配置中的 Runtime URL、Service 端口、Store、Workspace 和 Case 上限，启动 PBWork 与 Local Service，等待两个端口可达后打印 Workbench URL。`Ctrl+C` 同时停止两个子进程。
+脚本读取配置中的 Runtime URL、Service 端口、Store、Workspace、Case 上限和 `delivery.targetRoot`，启动 PBWork 与 Local Service，等待两个端口可达后打印 Workbench URL 与绑定的目标路径。`Ctrl+C` 同时停止两个子进程。更改 `delivery.targetRoot` 后必须重启。
 
 ## 调用 CLI
 
@@ -49,8 +50,7 @@ pnpm pb -- workspace doctor
 pnpm pb -- bundle list
 pnpm pb -- deliver \
   --prototype cold-chain-ops \
-  --screen exception-queue \
-  --target apps/flutter_pb_app
+  --acknowledge-unofficial-capture
 ```
 
 包装脚本只缩短可执行路径；全部参数、输出和退出码仍由 `@proto-bridge/cli` 决定。构建产物缺失时会先运行根 `pnpm build`。
@@ -81,7 +81,7 @@ pnpm pb:mcp
 pnpm pb:mcp -- --config /absolute/path/to/proto-bridge.json
 ```
 
-MCP wrapper 从配置解析绝对 Store root 和 Workspace，并通过 stdio 启动正式 MCP server。stdio 的 stdout 只用于 JSON-RPC，启动信息写入 stderr。
+MCP wrapper 从配置解析绝对 Store root、Workspace 和 `delivery.targetRoot`，并通过 stdio 启动正式 MCP server。stdio 的 stdout 只用于 JSON-RPC，启动信息写入 stderr。
 
 查看 Cursor/Codex 可用的配置材料：
 
@@ -89,12 +89,12 @@ MCP wrapper 从配置解析绝对 Store root 和 Workspace，并通过 stdio 启
 pnpm pb:mcp -- --print-config
 ```
 
-输出只包含命令、参数、Workspace 和 Store，不启动 MCP。
+输出只包含命令、参数、Workspace、Store 和交付目标，不启动 MCP。
 Agent 客户端应使用输出中的直接 `node scripts/pb-mcp.mjs` 命令，避免包管理器的生命周期日志进入 stdio。MCP 启动不会隐式构建；构建缺失时先运行 `pnpm build`。
 
 ## Deliver（产品主路径）
 
-GUI「交付到 Agent」与 CLI `deliver` 都会：采集（或续跑已有 Snapshot）→ 创建 Handoff → 写入：
+产品主路径是 PBWork 待确定 → 定稿并自动采集。系统会：采集整个原型 → 创建 Handoff → 写入：
 
 ```text
 .proto-bridge/deliveries/<timestamp>/
@@ -110,11 +110,11 @@ GUI「交付到 Agent」与 CLI `deliver` 都会：采集（或续跑已有 Snap
 ```bash
 pnpm pb -- deliver \
   --prototype cold-chain-ops \
-  --screen exception-queue \
-  --target apps/flutter_pb_app
+  --acknowledge-unofficial-capture
 ```
 
-Review 按 PNG 内容去重：完全相同的 Screenshot 只写一份图片，并列出其对应的全部 Case。Agent 提示词先要求只读理解 Evidence 和目标工程、提交实现计划并等待确认；确认后才在同一任务中实施。收据只是 Store 索引；MCP 仍按 Handoff / Snapshot 从 Store 按需读取。也可用
-`--selection <file>`，或 `--bundle` + `--snapshot` 在已有 Evidence 上续跑交接。
+CLI `deliver` 是非正式诊断，不改变 PBWork 生命周期。非交互使用必须 `--acknowledge-unofficial-capture`；该旗标不能替代 `--accept-warning` / `--ack-risk`。省略 `--target` 时使用 `delivery.targetRoot`。`--screen` / `--fragment` / `--selection` 属于窄范围，需要第二层确认。
+
+Review 按 PNG 内容去重：完全相同的 Screenshot 只写一份图片，并列出其对应的全部 Case。Agent 提示词先要求只读理解 Evidence 和目标工程、提交实现计划并等待确认；确认后才在同一任务中实施。收据只是 Store 索引；MCP 仍按 Handoff / Snapshot 从 Store 按需读取。也可用 `--bundle` + `--snapshot` 在已有 Evidence 上续跑交接，同样视为非正式。
 
 稳定的 Agent 读取规则见 [Agent 消费指南](./agent-consumption.md)。

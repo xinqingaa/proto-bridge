@@ -203,7 +203,7 @@ export class CaptureServiceClient {
 
   createDelivery(body: {
     handoffId: string;
-    targetRoot: string;
+    targetRoot?: string;
     implementationIntent?: string;
     runId?: string;
     acceptedWarningIds?: string[];

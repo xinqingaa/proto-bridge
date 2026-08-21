@@ -7,10 +7,11 @@ ProtoBridge MCP 是 Coding Agent 读取持久 Evidence 的正式边界。它只�
 ```bash
 proto-bridge-mcp \
   --store-root .proto-bridge/store \
-  --workspace pbwork-local
+  --workspace pbwork-local \
+  --target-root /absolute/path/to/flutter_app
 ```
 
-也可使用 `PB_STORE_ROOT` 与 `PB_WORKSPACE_ID`。本仓库 wrapper 可以从 `proto-bridge.json` 解析两者：
+也可使用 `PB_STORE_ROOT`、`PB_WORKSPACE_ID` 与 `PB_DELIVERY_TARGET_ROOT`。本仓库 wrapper 从 `proto-bridge.json` 解析 Store、Workspace 和 `delivery.targetRoot`：
 
 ```bash
 pnpm pb:mcp
@@ -47,6 +48,8 @@ pnpm pb:mcp -- --print-config
 - `find_target_examples`
 - `validate_target_changes`
 
+`inspect_evidence_workspace` 返回绑定的 `deliveryTargetRoot`。Target 工具的 `targetRoot` 可省略，省略时使用该绑定路径；显式传入仍覆盖。禁止回落到 `process.cwd()`。缺绑定且工具未传路径时，错误会提示使用 `pnpm pb:mcp` 或 `--target-root`。
+
 这些工具通过公共 Target 门面只读访问目标工程；当前内置实现为 Flutter adapter。真实目标文档与公开代码优先，可选机器 Contract 不能覆盖政策；显式 mapping 通过当前代码验证才返回 `resolved`，启发式结果最多为 `candidate`。
 
 `inspect_target_readiness` 汇总 resolver coverage、machine authority 和 blockers。缺少 Structure/State/Interaction machine authority 表示对应维度需要结合固定 Evidence、目标代码和实际测试判断，不要求向目标工程加入 Runtime Harness。`validate_target_changes` 复核变更路径、预期文件和实际采用的 resolved mapping。Target 结果不写入 Evidence。
@@ -62,6 +65,8 @@ pnpm pb:mcp -- --print-config
 - `proto-bridge://guides/handoff-consumer`
 - `proto-bridge://evidence/{bundleId}/snapshots/{snapshotId}/screenshots/{blobId}`
 - Prompt：`consume_evidence_handoff`
+
+省略 `targetRoot` 时 Prompt 填入 MCP 绑定的 `delivery.targetRoot`。
 
 默认顺序是 `inspect → handoff index → Screen packet → Screenshot → readiness/resolver → 按需 Case delta/detail → 实施计划确认 → 实施 → 目标验证 → 五维 obligations/summary`。详细规则见 [Agent 消费指南](../../docs/guides/agent-consumption.md)。
 

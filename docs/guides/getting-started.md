@@ -1,6 +1,6 @@
 # 快速上手
 
-本指南在本地启动 PBWork、初始化 Workspace、交付 Evidence，并为 Agent 启动 MCP。
+本指南在本地启动 PBWork、初始化 Workspace、定稿采集 Evidence，并为 Agent 启动 MCP。Producer 安装面是 clone 本仓库后执行 `pnpm pb:up`。
 
 ## 环境
 
@@ -33,7 +33,7 @@ pnpm pb -- workspace init \
 pnpm pb -- workspace doctor
 ```
 
-默认配置文件是 `proto-bridge.json`，默认 Store 是 `.proto-bridge/store`。端口或 Store 不同，应以 `pnpm pb:up` 输出和实际配置为准。
+默认配置文件是 `proto-bridge.json`，默认 Store 是 `.proto-bridge/store`。`delivery.targetRoot` 是本 Workspace 默认的 Agent 目标工程，相对配置文件目录解析。端口或 Store 不同，应以 `pnpm pb:up` 输出和实际配置为准。
 
 ## 启动 PBWork
 
@@ -47,29 +47,27 @@ pnpm pb:up
 Runtime 使用 `/prototype/:prototypeId/:screenSlug`，工作台使用
 `/workbench/*`。
 
-## 通过 PBWork 交付
+## 通过 PBWork 定稿
 
-1. 在原型树中打开 Screen，并确认 Runtime 可以加载目标 Variant。
-2. 点击「交付到 Agent」（当前页 / 所选元素 / 原型范围均可）。
-3. 在 Deliver FlowSheet 中核对范围；有 warning 时逐项确认。
-4. 点击「开始交付」，在同一 Sheet 内等待采集完成。
-5. 查看结果摘要与风险提醒，生成交接与 Agent 提示词。
-6. 复制提示词，或打开已写入的 `.proto-bridge/deliveries/*/agent-prompt.md`。Agent 会先只读理解 Evidence 与目标工程，给出实现计划并等待确认，确认后再实施。
+1. 打开 Workbench 原型目录，确认 Runtime 可以加载正式页面。
+2. 将原型推到「待确定」，再执行「定稿并采集」。系统自动采集整个原型，不选择单页或 Fragment。
+3. 确认候选方案已经收敛，并逐项确认 warning。定稿确认页只读展示 Agent 提示词将指向的绝对路径（来自 `delivery.targetRoot`）。
+4. 等待整原型采集完成，再逐项确认 risk。
+5. 成功后生命周期变为已定稿，并写出唯一 Agent 提示词。复制提示词，或打开 `.proto-bridge/deliveries/*/agent-prompt.md`。Agent 会先只读理解 Evidence 与目标工程，给出实现计划并等待确认，确认后再实施。
 
-任务中心保留为后台历史；「采集结果」页仍可按需查看详情。详细语义见 [PBWork 与 PB 协作](./pbwork-and-pb.md)。
+改目标路径 = 编辑 `proto-bridge.json` 的 `delivery.targetRoot` 后重启 `pnpm pb:up`。不要在浏览器里改路径。详细语义见 [PBWork 与 PB 协作](./pbwork-and-pb.md)。
 
-## 通过 CLI 交付
+## 通过 CLI 诊断（非正式）
 
-推荐一条命令完成采集、Handoff 与提示词：
+CLI `deliver` / `capture run` 不改变 PBWork 生命周期，也不会出现在「定稿采集」页。交互终端输入 `y` / `yes`；非 TTY 或 `--json` 必须加 `--acknowledge-unofficial-capture`。该旗标不能替代 `--accept-warning` / `--ack-risk`。窄范围（`--screen` / `--fragment` / `--selection` / `--only-*`）还有第二层确认。
 
 ```bash
 pnpm pb -- deliver \
   --prototype cold-chain-ops \
-  --screen exception-queue \
-  --target apps/flutter_pb_app
+  --acknowledge-unofficial-capture
 ```
 
-也可用 Selection JSON（Core `SelectionDraft`）：由 Workbench「交付到 Agent」导出，或手写后交给 `--selection`。
+省略 `--target` 时使用 Workspace `delivery.targetRoot`。`--target` 只覆盖这一次命令。也可用 Selection JSON（Core `SelectionDraft`）交给 `--selection`，同样视为非正式窄范围。
 
 warning / risk 使用可重复的 `--accept-warning` / `--ack-risk` 逐项确认。CLI 不提供 `--force`。
 
@@ -87,15 +85,15 @@ pnpm pb:mcp -- --print-config
 对照或配置 Codex。不要把带生命周期日志的包管理器命令登记为 stdio server。
 MCP 必须绑定到 Handoff 所属 Workspace。Agent 的读取顺序见 [Agent 消费指南](./agent-consumption.md)。
 
-把 `agent-prompt.md`（或 Sheet 内复制的提示词）交给 Cursor / Codex 即可开始只读消费。提示词只携带固定身份、风险与渐进读取协议，不内嵌 Evidence Brief 或完整 Review Contract；Agent 通过 Handoff index 和按需投影建立理解，首轮只输出摘要与实施计划。
+把 `agent-prompt.md`（或定稿面板内复制的提示词）交给 Cursor / Codex 即可开始只读消费。提示词只携带固定身份、风险与渐进读取协议，不内嵌 Evidence Brief 或完整 Review Contract；Agent 通过 Handoff index 和按需投影建立理解，首轮只输出摘要与实施计划。`inspect_evidence_workspace` 返回的 `deliveryTargetRoot` 应与提示词中的目标路径一致。
 
-已经成功采集且原型没有变化时，不需要重新采集。在「采集结果」中点击「重新生成 Agent 提示词」，会复用当前 Snapshot 和已有 Handoff，只重新写 Delivery。CLI 等价方式是：
+已经成功定稿且原型没有变化时，不需要重新采集。已定稿视图只读取绑定的提示词。CLI 在已有 Evidence 上续跑交接仍是非正式诊断：
 
 ```bash
 pnpm pb -- deliver \
   --bundle <bundle-id> \
   --snapshot <snapshot-id> \
-  --target apps/flutter_pb_app
+  --acknowledge-unofficial-capture
 ```
 
 所有根脚本和参数见[本地操作脚本](./operator-scripts.md)。

@@ -36,6 +36,7 @@ import {
 } from '@proto-bridge/core/v2/capture';
 import {
   LocalFileStore,
+  assertDeliveryTargetRootMatch,
   deliveryRootFromStoreRoot,
   generateOperationalId,
   createWorkspaceResetPlan,
@@ -110,6 +111,7 @@ export type LocalServiceOptions = {
   runtimeBaseUrl: string;
   storeRoot: string;
   workspaceId: string;
+  deliveryTargetRoot: string;
   maxCases?: number;
   preflightTtlMs?: number;
   maxStoreBytes?: number;
@@ -302,6 +304,12 @@ export class ProtoBridgeLocalService {
     this.allowedOrigins = new Set(
       options.allowedOrigins.map((origin) => new URL(origin).origin),
     );
+    if (!options.deliveryTargetRoot?.trim()) {
+      throw new V2ContractError(
+        'invalid-schema',
+        'Local Service requires deliveryTargetRoot from Workspace delivery.targetRoot.',
+      );
+    }
     const runtimeOrigin = new URL(options.runtimeBaseUrl);
     if (
       !['127.0.0.1', 'localhost', '::1'].includes(runtimeOrigin.hostname) ||
@@ -578,6 +586,7 @@ export class ProtoBridgeLocalService {
         generationId: this.currentGenerationId,
         expiresAt: new Date(expiresAt).toISOString(),
         finalizedOrphanJobIds: this.finalizedOrphanJobIds,
+        deliveryTargetRoot: this.options.deliveryTargetRoot,
       };
       success(response, session, 201);
       return;
@@ -1562,13 +1571,10 @@ export class ProtoBridgeLocalService {
           `Handoff ${handoffId} does not exist.`,
         );
       }
-      const targetRoot = String(body.targetRoot ?? '').trim();
-      if (!targetRoot) {
-        throw new V2ContractError(
-          'invalid-schema',
-          'deliveries require targetRoot.',
-        );
-      }
+      const targetRoot = await assertDeliveryTargetRootMatch(
+        this.options.deliveryTargetRoot,
+        body.targetRoot,
+      );
       const overwriteDeliveryId = body.overwriteDeliveryId?.trim();
       if (overwriteDeliveryId && /[\\/]/.test(overwriteDeliveryId)) {
         throw new V2ContractError(

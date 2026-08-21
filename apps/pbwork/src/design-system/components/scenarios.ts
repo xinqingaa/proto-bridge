@@ -492,13 +492,13 @@ const scenarios: Record<string, ComponentScenario[]> = {
       id: "deliver",
       label: "交付分步",
       description: "确认范围、执行、结果、提示词四步示意。",
-      props: { title: "交付到 Agent", modelValue: true, step: 0, stepCount: 4 },
+      props: { title: "非正式采集", modelValue: true, step: 0, stepCount: 4 },
     },
     {
       id: "mid-step",
       label: "执行中",
       description: "滑到中间步骤，展示进度页。",
-      props: { title: "交付到 Agent", modelValue: true, step: 1, stepCount: 4 },
+      props: { title: "非正式采集", modelValue: true, step: 1, stepCount: 4 },
     },
   ],
   "search-bar": [

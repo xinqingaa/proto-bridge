@@ -79,6 +79,18 @@ export async function validateWorkspaceConfigWithCore(workspace) {
   return core.V2WorkspaceConfig.parse(workspace.value);
 }
 
+export async function resolveWorkspaceDeliveryTargetRoot(workspace) {
+  const [{ V2WorkspaceConfig }, { resolveDeliveryTargetRoot }] = await Promise.all([
+    import(pathToFileURL(path.join(repoRoot, "packages/core/dist/v2/index.js")).href),
+    import(pathToFileURL(path.join(repoRoot, "packages/core/dist/v2/store/index.js")).href),
+  ]);
+  const config = V2WorkspaceConfig.parse(workspace.value);
+  return resolveDeliveryTargetRoot({
+    config,
+    configDir: path.dirname(workspace.configPath),
+  });
+}
+
 export async function ensureBuilt(entries, message = "Building ProtoBridge packages…") {
   const missing = [];
   for (const entry of entries) {

@@ -120,6 +120,8 @@ try {
     storeRoot,
     "--workspace",
     reference.WORKSPACE_ID,
+    "--target-root",
+    targetRoot,
   ]);
 
   const resources = await client.request("resources/list", {});

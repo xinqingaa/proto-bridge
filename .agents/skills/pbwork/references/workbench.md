@@ -41,7 +41,11 @@ Prototype Screens or their Design System.
 - Rolling `final` back to `review` must first trash its bound Bundle and clear
   all formal artifact refs. `archived` is terminal. Never expose Prototype delete.
 - Keep CLI capture independent from PBWork lifecycle. Produce the same Core
-  Selection Draft as CLI `deliver`; do not duplicate Core logic.
+  Selection Draft as CLI `deliver`; do not duplicate Core logic. CLI capture
+  and deliver must warn that they are unofficial; they never mark a prototype
+  `final`. Default Agent target comes from session `deliveryTargetRoot`
+  (`proto-bridge.json` `delivery.targetRoot`), shown read-only on the
+  finalization confirmation step.
 - Read Job, Run, Attempt, revision, and Snapshot states from Core Contracts.
 - Keep background history in task center, details in Evidence Review, and the
   active delivery progress in Deliver UI.

@@ -101,7 +101,9 @@ PBWork Evidence Review 按 Screen、Case 和语义区域展示：
 
 ## 7. Deliver 与 Agent Handoff
 
-产品主路径是 Deliver（PBWork「交付到 Agent」或 CLI `deliver`）：在同一流程内完成 Capture（或续跑已有 Snapshot）、创建 Handoff，并写入 `.proto-bridge/deliveries/`（收据、供人工/debug 查看用的 Evidence Brief 与 Review、按图片内容去重的 Screenshot、Agent 提示词）。完全相同的 Screenshot 只输出一份 PNG，但保留全部 Case 和 Blob 引用。Agent 提示词不嵌入 Brief 或完整 Contract；deliveries 只是 Store 索引，默认消费通过 MCP 的固定 Handoff 投影完成。
+产品主路径是 PBWork 待确定 → 定稿并自动采集：在同一流程内完成整原型 Capture、创建 Handoff，并写入 `.proto-bridge/deliveries/`（收据、供人工/debug 查看用的 Evidence Brief 与 Review、按图片内容去重的 Screenshot、Agent 提示词）。完全相同的 Screenshot 只输出一份 PNG，但保留全部 Case 和 Blob 引用。Agent 提示词不嵌入 Brief 或完整 Contract；deliveries 只是 Store 索引，默认消费通过 MCP 的固定 Handoff 投影完成。提示词中的目标路径来自 Workspace `delivery.targetRoot`，该字段不进入 Evidence。
+
+CLI `deliver` 是非正式诊断入口，使用同一 Core 能力，但不改变 PBWork 生命周期。非交互使用必须 `--acknowledge-unofficial-capture`。
 
 Handoff 固定：
 

@@ -9,6 +9,7 @@ const BOOLEAN_FLAGS = new Set([
   'help',
   'local-store',
   'via-service',
+  'acknowledge-unofficial-capture',
 ]);
 
 export function parseCliArgs(argv: string[]): CliArgs {

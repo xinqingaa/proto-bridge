@@ -1,8 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const deliveryTargetRoot = path.join(repoRoot, "apps/flutter_pb_app");
 const channel = process.env.PLAYWRIGHT_CHANNEL;
-const port = Number(process.env.PBWORK_E2E_PORT ?? 3977);
-const servicePort = Number(process.env.PBWORK_E2E_SERVICE_PORT ?? 3988);
+const port = Number(process.env.PBWORK_E2E_PORT ?? 4900 + (process.pid % 300));
+const servicePort = Number(process.env.PBWORK_E2E_SERVICE_PORT ?? port + 1);
 const storeRootCommand = process.env.PBWORK_E2E_STORE_ROOT
   ? JSON.stringify(process.env.PBWORK_E2E_STORE_ROOT)
   : "$(mktemp -d)";
@@ -21,6 +25,7 @@ export default defineConfig({
         `PBWORK_ORIGIN=http://127.0.0.1:${port} ` +
         `PBWORK_RUNTIME_ORIGIN=http://127.0.0.1:${port} ` +
         `PB_STORE_ROOT=${storeRootCommand} ` +
+        `PB_DELIVERY_TARGET_ROOT=${JSON.stringify(deliveryTargetRoot)} ` +
         `pnpm --filter @proto-bridge/local-service exec tsx --conditions=source src/index.ts`,
       port: servicePort,
       reuseExistingServer: false,

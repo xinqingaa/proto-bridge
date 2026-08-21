@@ -6,6 +6,7 @@
 
 | 全局优先级 | 状态 | Roadmap | 目标投入 | 主线 |
 | --- | --- | --- | --- | --- |
+| P2 | Planned | [Producer git 分发与 npm 工具链](./distribution-and-npm.md) | 本轮不 publish | git clone + `pnpm pb:up` 分发 PBWork；预留 Core/CLI/MCP npm |
 | P2 | Deferred | [官方 Flutter MCP 与分级 Target 验收](./flutter-mcp-target-review.md) | 暂不投入 | 保留实验代码与复盘；满足恢复条件后重新 spike |
 | P2 | Delivered | [PBWork 原型生命周期管理](./prototype-lifecycle-and-release.md) | 已完成 | PBWork 四阶段职责、定稿自动整原型采集、回退清理、归档终态与生命周期控制台 |
 

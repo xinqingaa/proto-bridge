@@ -105,9 +105,9 @@ const toolDefinitions: JsonValue[] = [
   tool('read_evidence_screenshot', '查看 Evidence Screenshot', '把固定 Snapshot 中的 Screenshot 作为真正的 MCP 图片返回。', { ...snapshot, blobId: { type: 'string' } }, ['bundleId', 'snapshotId', 'blobId']),
   tool('read_target_conventions', '读取目标工程规范', '通过适用的 Target adapter 独立扫描目标工程；结果不进入 Evidence。', { targetRoot: { type: 'string' }, module: { type: 'string' }, roles: stringArraySchema, symbols: stringArraySchema }),
   tool('find_target_examples', '查找目标工程示例', '通过适用的 Target adapter 查找目标工程既有模式；结果不进入 Evidence。可排除 Control/candidate output，避免实验实现污染示例。', { targetRoot: { type: 'string' }, module: { type: 'string' }, pattern: { type: 'string' }, roles: stringArraySchema, symbols: stringArraySchema, screenId: { type: 'string' }, limit: { type: 'number' }, gitBase: { type: 'string' }, excludePaths: stringArraySchema, candidateOutputRoot: { type: 'string' } }),
-  tool('resolve_target_components', '解析目标组件', '批量解析开放 Evidence component ID；目标文档优先，机器 Contract 不得覆盖政策，resolved 必须通过当前代码校验。', { targetRoot: { type: 'string' }, componentIds: stringArraySchema, gitBase: { type: 'string' }, excludePaths: stringArraySchema, candidateOutputRoot: { type: 'string' } }, ['targetRoot', 'componentIds']),
-  tool('resolve_target_tokens', '解析目标 Token', '批量解析开放 Evidence token ID，并校验 accessor、定义、import 与当前目标 revision；启发式结果最多为 candidate。', { targetRoot: { type: 'string' }, tokenIds: stringArraySchema, gitBase: { type: 'string' }, excludePaths: stringArraySchema, candidateOutputRoot: { type: 'string' } }, ['targetRoot', 'tokenIds']),
-  tool('inspect_target_readiness', '检查 Target readiness', '编辑前读取固定 Handoff inventory，报告组件/Token resolver 覆盖、五维 machine authority、实施 blockers 和未验证边界；缺少实验性 Runtime authority 不要求修改目标工程。', { handoffId: { type: 'string' }, targetRoot: { type: 'string' }, screenId: { type: 'string' }, gitBase: { type: 'string' }, excludePaths: stringArraySchema, candidateOutputRoot: { type: 'string' } }, ['handoffId', 'targetRoot']),
+  tool('resolve_target_components', '解析目标组件', '批量解析开放 Evidence component ID；目标文档优先，机器 Contract 不得覆盖政策，resolved 必须通过当前代码校验。省略 targetRoot 时使用 Workspace delivery.targetRoot。', { targetRoot: { type: 'string' }, componentIds: stringArraySchema, gitBase: { type: 'string' }, excludePaths: stringArraySchema, candidateOutputRoot: { type: 'string' } }, ['componentIds']),
+  tool('resolve_target_tokens', '解析目标 Token', '批量解析开放 Evidence token ID，并校验 accessor、定义、import 与当前目标 revision；启发式结果最多为 candidate。省略 targetRoot 时使用 Workspace delivery.targetRoot。', { targetRoot: { type: 'string' }, tokenIds: stringArraySchema, gitBase: { type: 'string' }, excludePaths: stringArraySchema, candidateOutputRoot: { type: 'string' } }, ['tokenIds']),
+  tool('inspect_target_readiness', '检查 Target readiness', '编辑前读取固定 Handoff inventory，报告组件/Token resolver 覆盖、五维 machine authority、实施 blockers 和未验证边界；缺少实验性 Runtime authority 不要求修改目标工程。省略 targetRoot 时使用 Workspace delivery.targetRoot。', { handoffId: { type: 'string' }, targetRoot: { type: 'string' }, screenId: { type: 'string' }, gitBase: { type: 'string' }, excludePaths: stringArraySchema, candidateOutputRoot: { type: 'string' } }, ['handoffId']),
   tool('validate_target_changes', '验证目标工程变更', '通过适用的 Target adapter 只读验证目标变更，并复核实际采用的 resolved mapping 仍存在；目标仓库无需 ProtoBridge 配置。', { targetRoot: { type: 'string' }, gitBase: { type: 'string' }, allowedPaths: stringArraySchema, expectedFiles: stringArraySchema, resolvedMappings: { type: 'array', items: { type: 'object', additionalProperties: false, properties: { id: { type: 'string' }, kind: { type: 'string', enum: ['component', 'token'] }, symbol: { type: 'string' }, accessor: { type: 'string' }, importPath: { type: 'string' } }, required: ['id', 'kind'] } } }),
 ];
 
@@ -147,12 +147,12 @@ export async function callTool(
     read_reconstruction_obligations: () => readReconstructionObligationsTool(context, args),
     summarize_reconstruction_review: () =>
       summarizeReconstructionReviewTool(context, args),
-    read_target_conventions: () => getTargetConventionsTool(args),
-    find_target_examples: () => findTargetExamplesTool(args),
-    resolve_target_components: () => resolveTargetComponentsTool(args),
-    resolve_target_tokens: () => resolveTargetTokensTool(args),
+    read_target_conventions: () => getTargetConventionsTool(context, args),
+    find_target_examples: () => findTargetExamplesTool(context, args),
+    resolve_target_components: () => resolveTargetComponentsTool(context, args),
+    resolve_target_tokens: () => resolveTargetTokensTool(context, args),
     inspect_target_readiness: () => inspectTargetReadinessTool(context, args),
-    validate_target_changes: () => validateTargetChangesTool(args),
+    validate_target_changes: () => validateTargetChangesTool(context, args),
   };
   const handler = handlers[name];
   if (!handler) throw new Error(`Unknown tool: ${name}`);

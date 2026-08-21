@@ -19,8 +19,7 @@ PBWork 的 Token、组件、原型和工作壳都是代码资产；产品、设�
 
 ## 快速开始
 
-首次使用时初始化 Workspace；已有 `proto-bridge.json` 时跳过
-`workspace init`：
+Producer 安装面是 clone 本仓库后启动 PBWork。首次使用时初始化 Workspace；已有 `proto-bridge.json` 时跳过 `workspace init`：
 
 ```bash
 pnpm install
@@ -33,24 +32,25 @@ pnpm pb:doctor
 pnpm pb:up
 ```
 
+在 Workbench 把原型从待确定转为定稿：系统会采集整个原型并写出唯一 Agent 提示词。提示词指向 `proto-bridge.json` 的 `delivery.targetRoot`（本仓库示例为 `apps/flutter_pb_app`；真实 Target 可以在仓库外）。产物在 `.proto-bridge/deliveries/`（提示词 + receipt；MCP 仍读 Store）。
+
 生成 Cursor/Codex 的 MCP 配置：
 
 ```bash
 pnpm pb:mcp -- --print-config
 ```
 
-保留一次可交给 Agent 的真实 Evidence：
+CLI `deliver` 是非正式诊断，不改变 PBWork 生命周期。非交互使用必须加 `--acknowledge-unofficial-capture`：
 
 ```bash
 pnpm pb -- deliver \
   --prototype cold-chain-ops \
-  --screen exception-queue \
-  --target apps/flutter_pb_app
+  --acknowledge-unofficial-capture
 ```
 
-也可在 PBWork 点击「交付到 Agent」。产物在 `.proto-bridge/deliveries/`（提示词 + receipt；MCP 仍读 Store）。
+`--target` 只覆盖这一次命令；省略时使用 Workspace `delivery.targetRoot`。
 
-完整步骤见 [快速上手](docs/guides/getting-started.md)和[本地操作脚本](docs/guides/operator-scripts.md)。
+完整步骤见 [快速上手](docs/guides/getting-started.md)和[本地操作脚本](docs/guides/operator-scripts.md)。分发边界见 [ADR 0011](docs/decisions/0011-producer-git-and-npm-tooling.md)。
 
 ## 仓库组成
 

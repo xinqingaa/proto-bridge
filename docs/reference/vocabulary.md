@@ -45,7 +45,8 @@ PBWork 工作台主文案用中文；产品词可作次要标注。验收与指�
 
 | 产品词 | GUI 主文案 |
 | --- | --- |
-| Deliver / Deliver FlowSheet | 交付到 Agent |
+| Finalization | 定稿并采集 |
+| Deliver / Deliver FlowSheet | 非正式采集（诊断入口，不改变生命周期） |
 | Selection / Draft | 采集范围 |
 | Preflight | 范围检查 |
 | Case Matrix | 将采集 N 项 / 将执行的采集项 |

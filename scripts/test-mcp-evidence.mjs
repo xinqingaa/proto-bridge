@@ -93,6 +93,8 @@ try {
     storeRoot,
     "--workspace",
     reference.WORKSPACE_ID,
+    "--target-root",
+    path.join(repoRoot, "apps/flutter_pb_app"),
   ]);
 
   const tools = await client.request("tools/list", {});
@@ -169,6 +171,10 @@ try {
     "MCP is not bound to the expected logical Workspace.",
   );
   assert(
+    workspace.deliveryTargetRoot === path.join(repoRoot, "apps/flutter_pb_app"),
+    "MCP did not bind delivery.targetRoot from --target-root.",
+  );
+  assert(
     workspace.runtime?.build?.fingerprint?.startsWith("sha256:") &&
       workspace.runtime?.processStartedAt &&
       workspace.runtime?.contracts?.projectionVersion === 4 &&
@@ -205,6 +211,17 @@ try {
       targetTokens.resolutions?.[0]?.status === "resolved" &&
       targetTokens.resolutions?.[0]?.candidates?.[0]?.accessor === "TS.colors.error",
     "Target component/token resolver did not honor target-owned declarations and current code.",
+  );
+  const boundComponents = parseToolJson(
+    await client.request("tools/call", {
+      name: "resolve_target_components",
+      arguments: { componentIds: ["app-bar"] },
+    }),
+  );
+  assert(
+    boundComponents.resolutions?.[0]?.status === "resolved" &&
+      boundComponents.resolutions?.[0]?.candidates?.[0]?.symbol === "CommonAppBar",
+    "Omitting targetRoot did not use the MCP-bound delivery.targetRoot.",
   );
   targetFixture = await mkdtemp(path.join(os.tmpdir(), "pb-mcp-target-"));
   await mkdir(path.join(targetFixture, "lib", "theme"), { recursive: true });

@@ -8,6 +8,7 @@ import {
   shellQuote,
   userArgv,
   validateWorkspaceConfigWithCore,
+  resolveWorkspaceDeliveryTargetRoot,
 } from "./lib/pb-script-utils.mjs";
 
 const argv = userArgv();
@@ -26,6 +27,12 @@ if (argv.includes("--print-config")) {
       {
         workspaceId: workspace.workspaceId,
         storeRoot: workspace.storeRoot,
+        deliveryTargetRoot: workspace.value?.delivery?.targetRoot
+          ? path.resolve(
+              path.dirname(workspace.configPath),
+              workspace.value.delivery.targetRoot,
+            )
+          : undefined,
         stdio: { command, args, cwd: repoRoot },
         cursor: {
           mcpServers: {
@@ -51,9 +58,10 @@ await requireBuilt([
   "packages/mcp-server/dist/index.js",
 ]);
 await validateWorkspaceConfigWithCore(workspace);
+const deliveryTargetRoot = await resolveWorkspaceDeliveryTargetRoot(workspace);
 
 process.stderr.write(
-  `ProtoBridge MCP: workspace=${workspace.workspaceId} store=${workspace.storeRoot}\n`,
+  `ProtoBridge MCP: workspace=${workspace.workspaceId} store=${workspace.storeRoot} target=${deliveryTargetRoot}\n`,
 );
 const child = spawn(
   process.execPath,
@@ -63,6 +71,8 @@ const child = spawn(
     workspace.storeRoot,
     "--workspace",
     workspace.workspaceId,
+    "--target-root",
+    deliveryTargetRoot,
     "--service-url",
     `http://${workspace.serviceHost}:${workspace.servicePort}/api/v2`,
     "--service-origin",

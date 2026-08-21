@@ -5,6 +5,7 @@ import {
   spawnInherited,
   userArgv,
   validateWorkspaceConfigWithCore,
+  resolveWorkspaceDeliveryTargetRoot,
   waitForTcp,
 } from "./lib/pb-script-utils.mjs";
 
@@ -16,6 +17,7 @@ const runtimePort = Number(
 
 await runInherited("pnpm", ["--filter", "@proto-bridge/core", "build"]);
 await validateWorkspaceConfigWithCore(workspace);
+const deliveryTargetRoot = await resolveWorkspaceDeliveryTargetRoot(workspace);
 
 const sharedEnv = {
   ...process.env,
@@ -25,6 +27,7 @@ const sharedEnv = {
   PB_STORE_ROOT: workspace.storeRoot,
   PB_WORKSPACE_ID: workspace.workspaceId,
   PB_MAX_CASES: String(workspace.maxCases),
+  PB_DELIVERY_TARGET_ROOT: deliveryTargetRoot,
 };
 
 const service = spawnInherited(
@@ -78,6 +81,7 @@ try {
       `Runtime:   ${workspace.runtimeOrigin}`,
       `Workspace: ${workspace.workspaceId}`,
       `Store:     ${workspace.storeRoot}`,
+      `Target:    ${deliveryTargetRoot}`,
       "Stop:      Ctrl+C",
       "",
     ].join("\n"),

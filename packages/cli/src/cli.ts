@@ -12,6 +12,7 @@ import {
   V2_SCHEMA_MAJOR,
   V2WorkspaceConfig,
   DEFAULT_CAPTURE_MAX_CASES,
+  DEFAULT_INIT_DELIVERY_TARGET_ROOT,
   WorkspaceId,
   buildEvidenceReadModel,
   computeScopeKey,
@@ -40,6 +41,7 @@ import {
   deliveryRootFromStoreRoot,
   generateOperationalId,
   reviewsRootFromStoreRoot,
+  resolveDeliveryTargetRoot,
   validateWorkspaceResetPlan,
   writeDeliveryReceipt,
 } from '@proto-bridge/core/v2/store';
@@ -176,6 +178,9 @@ async function initWorkspace(args: CliArgs, io: CliIo): Promise<number> {
         : { maxBytes: numberFlag(args, 'max-store-bytes') }),
     },
     capture: { maxCases: numberFlag(args, 'max-cases') ?? DEFAULT_CAPTURE_MAX_CASES },
+    delivery: {
+      targetRoot: flag(args, 'target') ?? DEFAULT_INIT_DELIVERY_TARGET_ROOT,
+    },
     service: {
       host: flag(args, 'service-host') ?? '127.0.0.1',
       port: servicePort,
@@ -686,21 +691,87 @@ async function createDeliverHandoff(
   }
 }
 
+function isNarrowCaptureScope(args: CliArgs): boolean {
+  return Boolean(
+    flag(args, 'screen') ||
+      flag(args, 'fragment') ||
+      flag(args, 'selection') ||
+      flags(args, 'only-variant').length > 0 ||
+      flags(args, 'only-scenario').length > 0,
+  );
+}
+
+async function confirmUnofficialProducerAction(
+  args: CliArgs,
+  io: CliIo,
+  options: { narrowScope: boolean },
+): Promise<number> {
+  const lines = [
+    'Official finalization happens in PBWork: 待确定 → 定稿并自动采集 (whole prototype + one Agent prompt).',
+    'This CLI result does not change PBWork lifecycle and will not appear on the 定稿采集 page.',
+  ];
+  if (options.narrowScope) {
+    lines.push(
+      'Capturing a page, fragment, or custom selection is not recommended. Missing Screens cannot be filled in later; the Agent can only read what this Snapshot contains.',
+    );
+  }
+  lines.push(
+    'Prefer PBWork lifecycle. Continue anyway only if you need a diagnostic Bundle.',
+  );
+
+  if (booleanFlag(args, 'acknowledge-unofficial-capture')) {
+    return EXIT.ok;
+  }
+
+  const interactive =
+    io.isInteractive && !booleanFlag(args, 'json') && typeof io.confirm === 'function';
+  if (!interactive) {
+    io.stderr(
+      [
+        ...lines,
+        'Re-run with --acknowledge-unofficial-capture, or type y/yes in an interactive terminal.',
+      ].join('\n'),
+    );
+    return EXIT.blocked;
+  }
+
+  io.stderr(lines.join('\n'));
+  const first = await io.confirm(
+    options.narrowScope
+      ? 'Continue unofficial narrow CLI capture? [y/yes] '
+      : 'Continue unofficial CLI capture? [y/yes] ',
+  );
+  if (!first) return EXIT.blocked;
+  if (options.narrowScope) {
+    const second = await io.confirm(
+      'This will not produce a complete prototype Snapshot. Continue? [y/yes] ',
+    );
+    if (!second) return EXIT.blocked;
+  }
+  return EXIT.ok;
+}
+
 async function deliverCommand(
   args: CliArgs,
   io: CliIo,
   loaded: LoadedCliConfig,
 ): Promise<number> {
-  const targetRoot = path.resolve(
-    io.cwd,
-    flag(args, 'target') ?? 'apps/flutter_pb_app',
-  );
+  const unofficial = await confirmUnofficialProducerAction(args, io, {
+    narrowScope: isNarrowCaptureScope(args),
+  });
+  if (unofficial !== EXIT.ok) return unofficial;
+
+  const targetRoot = resolveDeliveryTargetRoot({
+    config: loaded.value,
+    configDir: loaded.dir,
+    override: flag(args, 'target'),
+  });
   try {
     await access(targetRoot);
   } catch {
     throw new V2ContractError(
       'invalid-schema',
-      `Agent target is not reachable: ${targetRoot}`,
+      `Agent target is not reachable: ${targetRoot}. Set delivery.targetRoot in ${loaded.path} or pass --target.`,
     );
   }
 
@@ -1044,6 +1115,10 @@ async function captureCommand(
   io: CliIo,
   loaded: LoadedCliConfig,
 ): Promise<number> {
+  const unofficial = await confirmUnofficialProducerAction(args, io, {
+    narrowScope: isNarrowCaptureScope(args),
+  });
+  if (unofficial !== EXIT.ok) return unofficial;
   const result = await runCapture(args, loaded);
   emit(
     io,
@@ -1543,6 +1618,7 @@ async function serviceStart(
     runtimeBaseUrl: config.runtime.baseUrl,
     storeRoot: loaded.storeRoot,
     workspaceId: config.workspaceId,
+    deliveryTargetRoot: loaded.deliveryTargetRoot,
     maxCases: config.capture.maxCases,
     ...(config.store.maxBytes === undefined
       ? {}
@@ -1647,15 +1723,15 @@ function exitForRun(run: {
 
 export function cliUsage(): string {
   return `Usage:
-  proto-bridge workspace init [--config <file>]
+  proto-bridge workspace init [--config <file>] [--target <dir>]
   proto-bridge workspace doctor [--json]
   proto-bridge workspace doctor repair [--json]
   proto-bridge workspace reset [--apply --plan-id <id> --generation <id>] [--json]
   proto-bridge workspace reinitialize --confirm-destroyed <workspaceId> [--json]
   proto-bridge preflight --selection <file> [--manifest <file>]
-  proto-bridge capture run --selection <file> [--bundle <id>]
-  proto-bridge deliver (--selection <file> | --prototype <id> [--screen <id|slug>]) [--target <dir>]
-  proto-bridge deliver --bundle <id> --snapshot <id> [--ack-risk <kind>] [--target <dir>]
+  proto-bridge capture run --selection <file> [--bundle <id>] [--acknowledge-unofficial-capture]
+  proto-bridge deliver --prototype <id> [--target <dir>] [--acknowledge-unofficial-capture]
+  proto-bridge deliver --bundle <id> --snapshot <id> [--ack-risk <kind>] [--target <dir>] [--acknowledge-unofficial-capture]
   proto-bridge job status|cancel|retry --job <id>
   proto-bridge bundle list|inspect|fork|archive|clean
   proto-bridge snapshot|run|case inspect
@@ -1668,13 +1744,16 @@ export function cliUsage(): string {
 
 Rules:
   --config defaults to ./proto-bridge.json.
+  delivery.targetRoot in that file is the default Agent target for deliver, PBWork
+  finalization, and MCP Target tools. --target overrides it for one CLI command.
+  Official finalization is PBWork 待确定 → 定稿并自动采集. CLI capture/deliver is
+  unofficial; non-interactive use requires --acknowledge-unofficial-capture.
   deliver captures, creates a Handoff, and writes .proto-bridge/deliveries/*/agent-prompt.md
   (Store index only; MCP still reads Evidence from the Store).
-  deliver defaults to all authored Screens, Variants and Scenarios in scope.
+  deliver defaults to the whole Prototype. --screen / --fragment / --selection are
+  diagnostic; they require the unofficial acknowledgement and a second confirmation.
   workspace reset previews by default; --apply requires the preview planId and generation,
   clears Store + deliveries + unexported reviews, preserves config/audit, and creates a new generation.
-  With --screen, repeat --only-variant <id> or --only-scenario <id> to narrow.
-  Use --selection for an exact multi-Screen matrix.
   Repeat --accept-warning <id> and --ack-risk <kind> explicitly.
   --force is intentionally unsupported.
   Write commands auto-route through Local Service when it is reachable

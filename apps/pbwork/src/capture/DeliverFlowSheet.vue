@@ -299,7 +299,7 @@ function renderMarkdown(source: string): string {
   >
     <section
       class="deliver-flow"
-      aria-label="交付到 Agent"
+      aria-label="非正式采集"
       data-testid="deliver-flow-sheet"
     >
       <header class="flow-header">
@@ -313,14 +313,14 @@ function renderMarkdown(source: string): string {
           <ScanLine v-else :size="22" />
         </div>
         <div>
-          <h2>交付到 Agent</h2>
+          <h2>非正式采集</h2>
           <p>
             {{ STEP_TITLES[capture.deliverStep] }} ·
             {{ prototype?.label ?? capture.draft?.prototypeId ?? "未选择" }}
           </p>
         </div>
         <WorkbenchIconButton
-          label="关闭交付流程"
+          label="关闭非正式采集"
           size="large"
           @click="capture.closeComposer"
         >

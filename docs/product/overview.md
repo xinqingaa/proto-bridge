@@ -21,7 +21,7 @@ PB 的产品输出是 Evidence，不是目标工程实现计划。Agent 结合 E
 
 PBWork 同时承担两个相互隔离的角色：
 
-1. **Workbench**：面向人的图形界面，用于浏览设计基础和 Agent 制作的原型、执行检查、选择采集范围、确认 Case Matrix、查看任务和 Review Evidence。
+1. **Workbench**：面向人的图形界面，用于浏览设计基础和 Agent 制作的原型、执行检查、流转生命周期、确认整原型定稿采集、查看任务和 Review Evidence。
 2. **Runtime**：面向 PB Capture 的确定性页面环境，通过 authored Contract 声明 Screen、Variant、Fragment、Action、Scenario 和 Checkpoint。
 
 Workbench 不拥有第二套 Capture 语义。它把用户操作归一为 Core 的 Selection Draft，并通过 Local Service 调用同一套 Preflight、Capture、Store 和 Handoff 能力。CLI 也使用相同 Core，因此 GUI 与自动化入口不会产生不同的 Case、状态或引用规则。
