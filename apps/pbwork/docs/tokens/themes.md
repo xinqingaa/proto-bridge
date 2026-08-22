@@ -20,9 +20,10 @@ Schema：`schemas/theme.schema.json`。
 
 1. **只用已注册主题**（`light` / `dark` 或后续注册 id），禁止页内写死第二套色板。
 2. **`theme` 不是 Screen Variant**，不占用业务 `variant` 枚举。
-3. **会话偏好为权威**（如 localStorage）：URL `theme` 用于分享/预览；独立 Runtime 应将历史条目中的主题 query **规范为当前偏好**，避免前进/后退把皮肤「回滚」。
-4. **切换主题用 replace**（或等价不新增业务 history 条目的方式），不要为切皮肤堆栈。
+3. **会话偏好为权威**（`pbwork.runtime.theme.v1` / 产品 localStorage）：URL `theme` 用于分享、Workbench 预览和 Capture Case 钉。独立 Runtime 应将历史条目中的主题 query **规范为当前偏好**，避免前进/后退把皮肤「回滚」。
+4. **切换主题用 replace**（或等价不新增业务 history 条目的方式），不要为切皮肤堆栈，并保留 `pbParent` 等 history state。
 5. 切换后应通知 Runtime / 工作台（事件或既有 bridge），保证壳与 iframe 一致。
+6. **采集安全**：`goto` / `prepare` / Workbench 强制导航和带显式 `?theme=` 的打开以 URL 为准并回写偏好。禁止在这些路径上用偏好覆盖 URL。只有返回、前进和恢复 `pbParent` 时忽略历史 `theme`。
 
 ## 检查
 

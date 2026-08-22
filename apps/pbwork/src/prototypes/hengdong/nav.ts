@@ -1,5 +1,9 @@
 import type { RouteLocationNormalizedLoaded, Router } from "vue-router";
 import { announceBackNavigation } from "@/runtime/navigation-intent";
+import {
+  readRuntimeThemePreference,
+  stampThemeOnHref,
+} from "@/runtime/theme-preference";
 
 export type HengdongSlug =
   | "login"
@@ -19,6 +23,22 @@ function themeOf(route: RouteLocationNormalizedLoaded) {
   return route.query.theme === "dark" ? "dark" : "light";
 }
 
+function currentTheme(route: RouteLocationNormalizedLoaded) {
+  const preferred = readRuntimeThemePreference();
+  return preferred === "dark" || preferred === "light"
+    ? preferred
+    : themeOf(route);
+}
+
+function hengdongHistoryState() {
+  const state = window.history.state;
+  const next: Record<string, string> = {};
+  if (typeof state?.pbScope === "string") next.pbScope = state.pbScope;
+  if (typeof state?.pbParent === "string") next.pbParent = state.pbParent;
+  if (typeof state?.pbTab === "string") next.pbTab = state.pbTab;
+  return next;
+}
+
 export function hengdongPath(
   route: RouteLocationNormalizedLoaded,
   slug: HengdongSlug,
@@ -27,7 +47,7 @@ export function hengdongPath(
 ) {
   return {
     path: `/prototype/hengdong/${slug}`,
-    query: { variant, theme: themeOf(route), ...extra },
+    query: { variant, theme: currentTheme(route), ...extra },
   };
 }
 
@@ -93,7 +113,7 @@ export function goBackHengdong(
   const parent = window.history.state?.pbParent;
   if (typeof parent === "string" && parent.startsWith("/prototype/hengdong/")) {
     announceBackNavigation();
-    return router.replace(parent);
+    return router.replace(stampThemeOnHref(parent, currentTheme(route)));
   }
   const scope = window.history.state?.pbScope;
   const position = Number(window.history.state?.position ?? 0);
@@ -104,6 +124,17 @@ export function goBackHengdong(
   return router.replace(hengdongPath(route, fallback));
 }
 
+export function replaceHengdongTheme(
+  router: Router,
+  route: RouteLocationNormalizedLoaded,
+  theme: "light" | "dark",
+) {
+  return router.replace({
+    query: { ...route.query, theme },
+    state: hengdongHistoryState(),
+  });
+}
+
 export function replaceVariant(
   router: Router,
   route: RouteLocationNormalizedLoaded,
@@ -112,5 +143,6 @@ export function replaceVariant(
 ) {
   return router.replace({
     query: { ...route.query, variant, ...extra },
+    state: hengdongHistoryState(),
   });
 }

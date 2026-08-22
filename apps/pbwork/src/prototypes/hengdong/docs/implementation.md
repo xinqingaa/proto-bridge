@@ -347,6 +347,7 @@ prototypeId: hengdong
 
 - `default`、`reminder-off`、`weekly-open`、`reminder-time-open`、`logout-confirm-open`、`reset-confirm-open`；
 - 周次数、提醒和深色模式立即写入本地偏好，不再使用保存按钮；
+- 深色模式以会话偏好为权威，用 `replace` 同步 URL `theme`，不新增 history；AppBar / 浏览器返回忽略上一帧 `theme`，采集仍只认 URL 上的 Case `themeId`；
 - 提醒关闭时隐藏时间行；每周活动与提醒时间通过 BottomSheet 选择或编辑；
 - 退出为描边 Button，重置为次要类型，均先确认。
 

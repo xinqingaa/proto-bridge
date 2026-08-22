@@ -1,9 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { RouteLocationNormalizedLoaded, Router } from "vue-router";
 import {
+  goBackHengdong,
   ownedHengdongVariant,
   ownsHengdongHome,
   rootForSlug,
 } from "@/prototypes/hengdong/nav";
+import { writeRuntimeThemePreference } from "@/runtime/theme-preference";
 
 function route(slug: string, variant?: string) {
   return {
@@ -31,5 +34,36 @@ describe("Hengdong shared tab root", () => {
       "default",
     );
     expect(ownedHengdongVariant(route("today"), "today")).toBe("default");
+  });
+});
+
+describe("goBackHengdong", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
+  it("restores pbParent with the current theme instead of the frozen query", () => {
+    writeRuntimeThemePreference("dark");
+    window.history.replaceState(
+      {
+        pbParent: "/prototype/hengdong/today?variant=default&theme=light",
+        pbScope: "hengdong",
+      },
+      "",
+    );
+    const replace = vi.fn();
+    goBackHengdong(
+      { replace, back: vi.fn() } as unknown as Router,
+      {
+        query: { variant: "default", theme: "dark" },
+        fullPath:
+          "/prototype/hengdong/settings-goals?variant=default&theme=dark",
+        params: { screenSlug: "settings-goals" },
+      } as unknown as RouteLocationNormalizedLoaded,
+      "today",
+    );
+    expect(replace).toHaveBeenCalledWith(
+      "/prototype/hengdong/today?variant=default&theme=dark",
+    );
   });
 });

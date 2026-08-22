@@ -72,7 +72,7 @@ Shell
 | 进栈         | `push` 二级；写入 parent = 当前 fullPath（见跨 Tab）                                                                                                      |
 | 跨 Tab 进栈  | 若当前停在**另一 Tab 的 home**，先把 parent 规范为**目标 Tab 的 home**（必要时先 replace），再 push。禁止把错误 Tab 的 home 当作返回落点                  |
 | 替换当前屏   | `replace` 同级屏，保留既有 parent                                                                                                                         |
-| 返回         | 有 parent 时：嵌入 Runtime（iframe / `parent !== window`）用 **replace(parent)**；独立窗口可用 `history.back()`。无 parent 时 **replace 到所属 Tab home** |
+| 返回         | 有 parent 时：嵌入 Runtime（iframe / `parent !== window`）用 **replace(parent)**；独立窗口可用 `history.back()`。无 parent 时 **replace 到所属 Tab home**。恢复 Screen / `variant` / 业务 query 时把 `theme` 规范为当前会话偏好，Workbench 父页 `router.back()` 后同样盖 theme |
 | 完成流回首页 | 保存/提交/删除等结束后回到 Tab home：优先折叠到根位置；需要丢弃中间栈时允许强制 `replace` home（如 `preferBack: false`）                                  |
 | 深链兜底     | 任意二级深链打开后，返回必须能落到所属 Tab home，不能依赖「用户曾经点过底栏」                                                                             |
 

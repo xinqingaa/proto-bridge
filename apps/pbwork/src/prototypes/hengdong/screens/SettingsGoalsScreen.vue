@@ -10,7 +10,7 @@ import BottomSheet from "@/design-system/components/feedback/BottomSheet.vue";
 import SwitchControl from "@/design-system/components/input/SwitchControl.vue";
 import TextField from "@/design-system/components/input/TextField.vue";
 import HengdongShell from "../HengdongShell.vue";
-import { replaceHengdongScreen, replaceVariant } from "../nav";
+import { replaceHengdongScreen, replaceHengdongTheme, replaceVariant } from "../nav";
 import {
   hengdongState,
   logoutHengdong,
@@ -42,7 +42,7 @@ const theme = computed({
   get: () => (route.query.theme === "dark" ? "dark" : "light"),
   set: (value: "light" | "dark") => {
     setThemePreference(value);
-    void router.replace({ query: { ...route.query, theme: value } });
+    void replaceHengdongTheme(router, route, value);
   },
 });
 
@@ -138,7 +138,7 @@ function reset() {
   weeklySessions.value = hengdongState.goals.weeklySessions;
   reminderEnabled.value = hengdongState.goals.reminderEnabled;
   reminderTime.value = hengdongState.goals.reminderTime;
-  void router.replace({ query: { ...route.query, variant: "default", theme: "light" } });
+  void replaceVariant(router, route, "default", { theme: "light" });
 }
 </script>
 

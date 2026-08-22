@@ -8,6 +8,11 @@ import {
 } from "@/design-system/loaders";
 import { buildCanonicalRuntimeUrl, resolveRuntimeRoute } from "@/runtime/url";
 import {
+  readRuntimeThemePreference,
+  resolveWorkbenchSessionTheme,
+  writeRuntimeThemePreference,
+} from "@/runtime/theme-preference";
+import {
   HANDSHAKE_TIMEOUT_MS,
   contextMatches,
   createWorkbenchEnvelope,
@@ -78,12 +83,28 @@ const selectedVariantId = computed(() => {
   return screen.value?.defaultVariantId ?? "default";
 });
 
+const sessionThemeId = ref<string | null>(null);
+
 const selectedThemeId = computed(() => {
+  if (sessionThemeId.value) return sessionThemeId.value;
   if (resolved.value.ok) return resolved.value.theme.id;
   if (typeof route.query.theme === "string") return route.query.theme;
   return prototype.value?.defaultThemeId ?? "light";
 });
 const isDark = computed(() => selectedThemeId.value === "dark");
+
+function adoptCanvasTheme(themeId: string) {
+  sessionThemeId.value = themeId;
+  writeRuntimeThemePreference(themeId);
+}
+
+function workbenchQuery(): Record<string, string> {
+  const next: Record<string, string> = {};
+  for (const [key, value] of Object.entries(route.query)) {
+    if (typeof value === "string") next[key] = value;
+  }
+  return next;
+}
 
 const canonicalRuntimePath = computed(() => {
   if (!prototype.value || !screen.value) return "";
@@ -92,7 +113,7 @@ const canonicalRuntimePath = computed(() => {
       prototypeId: prototype.value.id,
       screenSlug: screen.value.screenSlug,
       variantId: resolved.value.variant.id,
-      themeId: resolved.value.theme.id,
+      themeId: selectedThemeId.value,
       query: resolved.value.query,
     });
   }
@@ -135,7 +156,7 @@ const bridgeContext = computed((): BridgeContext | null => {
     prototypeId: resolved.value.prototype.id,
     screenId: resolved.value.screen.screenId,
     variantId: resolved.value.variant.id,
-    themeId: resolved.value.theme.id,
+    themeId: selectedThemeId.value,
   };
 });
 
@@ -166,6 +187,7 @@ function onVariantId(variantId: string) {
 }
 
 function onThemeId(themeId: string) {
+  adoptCanvasTheme(themeId);
   replaceWorkbenchQuery({
     variantId: selectedVariantId.value,
     themeId,
@@ -288,7 +310,7 @@ function sendInit(contentWindow: Window | null) {
         prototypeId: resolved.value.prototype.id,
         screenId: resolved.value.screen.screenId,
         variantId: resolved.value.variant.id,
-        themeId: resolved.value.theme.id,
+        themeId: selectedThemeId.value,
       },
       { canonicalRuntimeUrl: absoluteRuntimeUrl.value },
     ),
@@ -357,11 +379,22 @@ function applyRuntimeNavigation(
     return;
   }
 
+  const nextTheme = resolveWorkbenchSessionTheme({
+    navigation,
+    destinationThemeId: check.theme.id,
+    sessionThemeId: sessionThemeId.value,
+  });
+  if (navigation !== "back") {
+    adoptCanvasTheme(nextTheme);
+  } else if (!sessionThemeId.value) {
+    adoptCanvasTheme(nextTheme);
+  }
+
   const canonical = buildCanonicalRuntimeUrl({
     prototypeId: check.prototype.id,
     screenSlug: check.screen.screenSlug,
     variantId: check.variant.id,
-    themeId: check.theme.id,
+    themeId: nextTheme,
     query: check.query,
   });
   const workbenchPath = workbenchPathFromRuntimeUrl(canonical);
@@ -511,6 +544,17 @@ function onShellKeydown(event: KeyboardEvent) {
 }
 
 watch(
+  () => [route.fullPath, selectedThemeId.value] as const,
+  () => {
+    if (!prototype.value || !screen.value || !selectedThemeId.value) return;
+    if (route.query.theme === selectedThemeId.value) return;
+    void router.replace({
+      query: { ...workbenchQuery(), theme: selectedThemeId.value },
+    });
+  },
+);
+
+watch(
   absoluteRuntimeUrl,
   (next) => {
     if (suppressRuntimeNavigation) return;
@@ -563,13 +607,23 @@ onBeforeRouteLeave(() => {
 });
 
 onBeforeMount(() => {
+  if (typeof route.query.theme === "string") {
+    adoptCanvasTheme(route.query.theme);
+  } else {
+    adoptCanvasTheme(
+      readRuntimeThemePreference() ??
+        (resolved.value.ok
+          ? resolved.value.theme.id
+          : (prototype.value?.defaultThemeId ?? "light")),
+    );
+  }
   if (resolved.value.ok && prototype.value && screen.value) {
     const canonicalWorkbenchPath = workbenchPathFromRuntimeUrl(
       buildCanonicalRuntimeUrl({
         prototypeId: prototype.value.id,
         screenSlug: screen.value.screenSlug,
         variantId: resolved.value.variant.id,
-        themeId: resolved.value.theme.id,
+        themeId: selectedThemeId.value,
         query: resolved.value.query,
       }),
     );

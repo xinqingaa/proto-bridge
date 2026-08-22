@@ -15,6 +15,7 @@ import {
   type WorkoutSession,
   normalizeHengdongUsername,
 } from "./model";
+import { writeRuntimeThemePreference } from "@/runtime/theme-preference";
 
 const STORAGE_KEY = "hengdong.app.v2";
 
@@ -224,6 +225,7 @@ export function saveWorkoutSession(session: WorkoutSession | null) {
 export function setThemePreference(theme: "light" | "dark") {
   hengdongState.theme = theme;
   persistHengdong();
+  writeRuntimeThemePreference(theme);
 }
 
 export function updateHengdongUi(ui: Partial<HengdongSnapshot["ui"]>) {
@@ -245,4 +247,5 @@ export function refreshHengdongRecords() {
 export function resetHengdongData() {
   Object.assign(hengdongState, defaultSnapshot());
   persistHengdong();
+  writeRuntimeThemePreference("light");
 }

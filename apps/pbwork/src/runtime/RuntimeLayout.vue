@@ -25,11 +25,21 @@ import {
   type RuntimeBridgeMessage,
   type WorkbenchBridgeMessage,
 } from "@/runtime/bridge";
-import { runForcedRuntimeNavigation } from "@/runtime/forced-navigation";
 import {
+  isForcedRuntimeNavigation,
+  runForcedRuntimeNavigation,
+} from "@/runtime/forced-navigation";
+import {
+  announceBackNavigation,
   getRouteNavigationIntent,
   installNavigationIntentTracking,
 } from "@/runtime/navigation-intent";
+import {
+  readRuntimeThemePreference,
+  resolveThemeSync,
+  routeHasExplicitTheme,
+  writeRuntimeThemePreference,
+} from "@/runtime/theme-preference";
 import { buildCanonicalRuntimeUrl, resolveRuntimeRoute } from "@/runtime/url";
 import InspectHost from "@/runtime/inspect/InspectHost.vue";
 import { installRuntimeCaptureProtocol } from "@/runtime/capture-protocol";
@@ -70,10 +80,33 @@ const resolved = computed(() =>
   }),
 );
 
-const effectiveThemeId = computed(() => {
-  if (!resolved.value.ok) return "light";
-  return resolved.value.theme.id;
-});
+function themeSync() {
+  if (!resolved.value.ok) {
+    return { action: "keep" as const, themeId: "light" };
+  }
+  return resolveThemeSync({
+    intent: getRouteNavigationIntent(),
+    urlThemeId: resolved.value.theme.id,
+    preference: readRuntimeThemePreference(),
+    forced: isForcedRuntimeNavigation(),
+    themeExplicit: routeHasExplicitTheme(route.fullPath),
+  });
+}
+
+const effectiveThemeId = computed(() => themeSync().themeId);
+
+function applyThemePreference() {
+  const result = themeSync();
+  if (result.action === "write-preference") {
+    writeRuntimeThemePreference(result.themeId);
+    return result;
+  }
+  if (result.action === "stamp-url") {
+    announceBackNavigation();
+    void router.replace({ query: { ...route.query, theme: result.themeId } });
+  }
+  return result;
+}
 
 const themeStyle = computed(() => {
   if (!resolved.value.ok) return {};
@@ -107,7 +140,7 @@ const bridgeContext = computed((): BridgeContext | null => {
     prototypeId: resolved.value.prototype.id,
     screenId: resolved.value.screen.screenId,
     variantId: resolved.value.variant.id,
-    themeId: resolved.value.theme.id,
+    themeId: effectiveThemeId.value,
   };
 });
 
@@ -197,6 +230,8 @@ function onMessage(event: MessageEvent) {
       return;
     const destination = `${target.pathname}${target.search}${target.hash}`;
     lastPostedRoute.value = `${window.location.origin}${destination}`;
+    const pinnedTheme = target.searchParams.get("theme");
+    if (pinnedTheme) writeRuntimeThemePreference(pinnedTheme);
     void runForcedRuntimeNavigation(() => router.replace(destination));
     return;
   }
@@ -276,9 +311,10 @@ async function loadScreen() {
 watch(
   () => route.fullPath,
   async () => {
+    const result = applyThemePreference();
     await loadScreen();
     await nextTick();
-    sendRouteIfChanged();
+    if (result.action !== "stamp-url") sendRouteIfChanged();
   },
   { immediate: true, flush: "post" },
 );
@@ -318,6 +354,7 @@ onMounted(() => {
         (candidate) => candidate.id === target.variantId,
       );
       if (!variant) throw new Error(`UNKNOWN_VARIANT：${target.variantId}`);
+      writeRuntimeThemePreference(target.themeId);
       await runForcedRuntimeNavigation(() =>
         router.replace(
           buildCanonicalRuntimeUrl({
