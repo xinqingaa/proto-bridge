@@ -12,18 +12,19 @@ PBWork 是 PB 的图形工作台、原型生产环境和 instrumented Runtime。
 
 ## 快速开始
 
-Producer 安装面是 clone 本仓库后启动 PBWork。首次使用时初始化 Workspace；已有 `proto-bridge.json` 时跳过 `workspace init`：
+Producer 安装面是 clone 本仓库后使用六个 ProtoBridge 日常入口：
 
 ```bash
-pnpm install
+pnpm pb:install
 pnpm build
-pnpm pb -- workspace init \
-  --workspace pbwork-local \
-  --runtime http://127.0.0.1:3977
-
+pnpm pb:init
 pnpm pb:doctor
 pnpm pb:up
 ```
+
+`pnpm pb:install` 会安装依赖并准备 Playwright Chromium。`pnpm pb:init` 默认使用仓库配置，也可以选择逐项自定义。需要自动化或高级参数时，仍可显式运行 `pnpm pb -- workspace init`。
+
+`pnpm pb:up` 在交互终端缺少配置时会进入 init 引导；非交互环境会明确提示先运行 `pnpm pb:init`。日常清理使用 `pnpm pb:reset`（保留 `proto-bridge.json`）；彻底移除本地配置和 Evidence 使用交互确认的 `pnpm pb:clean`。
 
 在 Workbench 把原型从待确定转为定稿：系统会采集整个原型并写出唯一 Agent 提示词。提示词指向 `proto-bridge.json` 的 `delivery.targetRoot`（本仓库示例为 `apps/flutter_pb_app`；真实 Target 可以在仓库外）。产物在 `.proto-bridge/deliveries/`（提示词 + receipt；MCP 仍读 Store）。
 

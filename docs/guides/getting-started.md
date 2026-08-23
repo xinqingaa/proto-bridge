@@ -1,6 +1,6 @@
 # 快速上手
 
-本指南在本地启动 PBWork、初始化 Workspace、定稿采集 Evidence，并为 Agent 启动 MCP。Producer 安装面是 clone 本仓库后执行 `pnpm pb:up`。
+本指南在本地安装依赖、初始化 Workspace、启动 PBWork、定稿采集 Evidence，并为 Agent 启动 MCP。日常入口是 `pb:install`、`pb:init`、`pb:doctor`、`pb:up`、`pb:reset` 和 `pb:clean`。
 
 ## 环境
 
@@ -11,39 +11,37 @@
 安装并构建：
 
 ```bash
-pnpm install
+pnpm pb:install
 pnpm build
 ```
 
-首次安装 Playwright 浏览器时执行：
-
-```bash
-pnpm exec playwright install chromium
-```
+`pnpm pb:install` 会安装 workspace 依赖并在缺失时安装 Playwright Chromium。离线或 CI 环境可用 `PB_SKIP_BROWSER_INSTALL=1` 跳过浏览器下载，再由环境自行提供浏览器。官方 `pnpm install` 仍可单独使用，但不是 ProtoBridge 的安装入口。
 
 ## 初始化 CLI Workspace
 
-首次使用时创建 Workspace；已有 `proto-bridge.json` 时不要重复初始化：
+首次使用时运行 init。默认模式使用仓库默认值；交互时选择自定义即可逐项填写：
 
 ```bash
-pnpm pb -- workspace init \
-  --workspace pbwork-local \
-  --runtime http://127.0.0.1:3977
-
-pnpm pb -- workspace doctor
+pnpm pb:init
 ```
+
+非交互或自动化使用：
+
+```bash
+pnpm pb:init -- --yes
+```
+
+已有配置不会覆盖；需要修改配置时使用 `pnpm pb:init -- --reconfigure`。高级自动化仍可使用 `pnpm pb -- workspace init`。
 
 默认配置文件是 `proto-bridge.json`，默认 Store 是 `.proto-bridge/store`。`delivery.targetRoot` 是本 Workspace 默认的 Agent 目标工程，相对配置文件目录解析。端口或 Store 不同，应以 `pnpm pb:up` 输出和实际配置为准。
 
 ## 启动 PBWork
 
 ```bash
-pnpm pb:doctor
 pnpm pb:up
 ```
 
-启动前 Doctor 检查配置、浏览器和构建。`pb:up` 启动 PBWork Web
-应用和 Local Service，终端会输出实际 URL、Workspace 和服务连接信息。
+启动前 Doctor 检查配置、浏览器和构建。`pb:up` 启动 PBWork Web 应用和 Local Service，终端会输出实际 URL、Workspace 和服务连接信息。交互终端缺少配置时，`pb:up` 会进入 `pb:init` 引导；非交互环境会提示先运行 `pnpm pb:init`。环境缺失时会按问题提示运行 `pnpm pb:install` 或 `pnpm pb:doctor`，不会启动半套服务。
 Runtime 使用 `/prototype/:prototypeId/:screenSlug`，工作台使用
 `/workbench/*`。
 
@@ -97,6 +95,15 @@ pnpm pb -- deliver \
 ```
 
 所有根脚本和参数见[本地操作脚本](./operator-scripts.md)。
+
+## 清理本地状态
+
+```bash
+pnpm pb:reset
+pnpm pb:clean
+```
+
+`pb:reset` 预览并清理 Evidence、Deliveries 和未导出 Review，保留 `proto-bridge.json`。`pb:clean` 会先停止由 `pb:up` 管理的进程，再删除 `proto-bridge.json` 与整个 `.proto-bridge`；交互终端要求输入 `DELETE`，非交互环境使用 `pnpm pb:clean -- --yes`。
 
 ## 验证仓库
 

@@ -19,6 +19,8 @@ pnpm pb -- workspace reset --json
 pnpm pb -- workspace reset --apply --plan-id <id> --generation <id>
 ```
 
+仓库根目录提供六个日常入口：`pnpm pb:install`、`pnpm pb:init`、`pnpm pb:doctor`、`pnpm pb:up`、`pnpm pb:reset` 和 `pnpm pb:clean`。其中 `pb:reset` 自动完成 preview、交互确认和 apply；非交互环境使用 `pnpm pb:reset -- --yes`。彻底删除本地配置和 `.proto-bridge` 属于根脚本 `pnpm pb:clean`，不属于 CLI Store reset。
+
 默认配置是 `./proto-bridge.json`，默认 Store 是相对配置文件的 `.proto-bridge/store`。
 
 ## 命令

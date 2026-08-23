@@ -5,6 +5,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import {
   loadWorkspaceConfig,
+  optionValue,
   repoRoot,
   runCaptured,
   tcpReachable,
@@ -43,11 +44,16 @@ try {
   workspace = await loadWorkspaceConfig(argv);
   record("pass", "Workspace config", workspace.configPath);
 } catch (error) {
+  const configInput = optionValue(argv, "--config");
+  const configPath = path.resolve(repoRoot, configInput ?? "proto-bridge.json");
+  const missing = error instanceof Error && "code" in error && error.code === "ENOENT";
   record(
     "fail",
     "Workspace config",
     error instanceof Error ? error.message : String(error),
-    "Run pnpm pb -- workspace init, or pass --config <file>.",
+    missing
+      ? "Run pnpm pb:init to create the repository default Workspace config."
+      : "Run pnpm pb:init -- --reconfigure, or pass --config <file>.",
   );
 }
 
@@ -122,10 +128,10 @@ if (workspace) {
     );
   } catch {
     record(
-      "warn",
+      "fail",
       "Evidence Store",
       `${workspace.storeRoot} is not initialized`,
-      "Run pnpm pb -- workspace doctor after workspace init.",
+      "Run pnpm pb:init, or if an existing Store root was destroyed, stop Service and use workspace reinitialize with explicit confirmation.",
     );
   }
 
@@ -185,7 +191,7 @@ try {
     "fail",
     "Playwright Chromium",
     "browser executable is missing",
-    "Run pnpm exec playwright install chromium.",
+    "Run pnpm pb:install.",
   );
 }
 

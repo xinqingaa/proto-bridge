@@ -5,7 +5,7 @@
 
 ## 决策
 
-当前 Producer 工作台按 **git clone 本仓库 + `pnpm pb:up`** 安装和启动。本轮不 `npm publish`，不改 `UNLICENSED`，也不把 `@proto-bridge/local-service` 或 `@proto-bridge/pbwork` 改为 public。
+当前 Producer 工作台按 **git clone 本仓库 + `pnpm pb:install` / `pnpm pb:init` / `pnpm pb:up`** 安装和启动。本轮不 `npm publish`，不改 `UNLICENSED`，也不把 `@proto-bridge/local-service` 或 `@proto-bridge/pbwork` 改为 public。
 
 日后 npm 计划只覆盖：
 
@@ -27,7 +27,7 @@ Core、CLI 和 MCP 才是可在目标工程或 Agent 客户端独立安装的工
 
 ## 后果
 
-- 操作者 clone 仓库、执行 `pnpm install` / `pnpm build` / `pnpm pb:up`，在 PBWork 走待确定 → 定稿并自动采集。
+- 操作者 clone 仓库、执行 `pnpm pb:install` / `pnpm pb:init` / `pnpm pb:up`，在 PBWork 走待确定 → 定稿并自动采集。
 - CLI `capture` / `deliver` 是非正式诊断：不改变 PBWork 生命周期，非交互使用必须 `--acknowledge-unofficial-capture`。
 - 本仓库 `apps/flutter_pb_app` 只是示例 Target。真实目标可以在仓库外，由当前 Workspace 的 `delivery.targetRoot` 指向。
 - npm 许可证、`local-service` 发布方式、MCP 原生读配置、`proto-bridge doctor` 和隐藏实验 `review *` 帮助，都留在 [分发 Roadmap](../roadmap/distribution-and-npm.md)，本轮不实施。

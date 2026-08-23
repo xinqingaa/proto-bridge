@@ -6,12 +6,14 @@
 
 | 命令 | 用途 | 是否写入持久状态 |
 | --- | --- | --- |
-| `pnpm pb:doctor` | 检查环境、配置、浏览器、构建、Store 和服务可达性 | 否 |
+| `pnpm pb:install` | 安装 workspace 依赖并准备 Playwright Chromium | 依赖和浏览器状态 |
+| `pnpm pb:init` | 使用默认值或交互式自定义创建/重配 Workspace 配置和 Store | 创建配置和 Store；重配保留 Store |
+| `pnpm pb:doctor` | 检查环境、配置、浏览器、构建、Store 和服务可达性，不修改文件 | 否 |
 | `pnpm pb:up` | 按 Workspace 配置启动 PBWork 与 Local Service | Service 可以在启动恢复时终结 orphan Job |
+| `pnpm pb:reset` | 预览并清理当前 Workspace 的 Evidence、Deliveries 和未导出 Review，保留配置 | 是；创建新 generation |
+| `pnpm pb:clean` | 停止受管 PB 进程，删除默认配置和整个 `.proto-bridge` | 是；不可恢复 |
 | `pnpm pb -- <args>` | 从仓库根目录调用正式 CLI（含 `deliver`） | 由具体 CLI 命令决定 |
 | `pnpm pb:mcp` | 从配置解析 Store/Workspace/`delivery.targetRoot` 并启动 stdio MCP | 否 |
-
-`pnpm pbwork` 是 `pnpm pb:up` 的兼容别名。
 
 ## Doctor
 
@@ -32,7 +34,20 @@ pnpm pb:doctor -- --json
 - Playwright Chromium；
 - Runtime 与 Local Service 端口。
 
-Doctor 不安装依赖、不启动服务、不修改配置。
+配置文件不存在时，Doctor 只报告缺失并提示 `pnpm pb:init`；不会覆盖已有配置，也不会自动重建一个已存在但被破坏的 Store。显式传入的缺失 `--config` 同样不会自动创建。
+
+`pb:up` 内部使用同一套检查；`--require-running` 仍把 Runtime 和 Local Service 不可达视为失败。
+
+## Install 和 Init
+
+```bash
+pnpm pb:install
+pnpm pb:init
+pnpm pb:init -- --yes
+pnpm pb:init -- --reconfigure
+```
+
+`pb:init` 默认使用仓库默认值；交互时选择自定义后逐项询问 Workspace ID、Runtime URL、Service、Store、Case 上限和 Target。已有配置不会覆盖；`--reconfigure` 先展示新配置，确认后写入并保留已有 Store。
 
 ## 启动 PBWork
 
@@ -41,7 +56,9 @@ pnpm pb:up
 pnpm pb:up -- --config /absolute/path/to/proto-bridge.json
 ```
 
-脚本读取配置中的 Runtime URL、Service 端口、Store、Workspace、Case 上限和 `delivery.targetRoot`，启动 PBWork 与 Local Service，等待两个端口可达后打印 Workbench URL 与绑定的目标路径。`Ctrl+C` 同时停止两个子进程。更改 `delivery.targetRoot` 后必须重启。
+脚本读取配置中的 Runtime URL、Service 端口、Store、Workspace、Case 上限和 `delivery.targetRoot`，先完成 `--for-up` 前置检查，再启动 PBWork 与 Local Service，等待两个端口可达后打印 Workbench URL 与绑定的目标路径。`Ctrl+C` 同时停止两个子进程，并清理 `.proto-bridge/runtime/pb-up.json`。更改 `delivery.targetRoot` 后必须重启。
+
+如果配置、依赖、Chromium、目标工程或 Store 未就绪，`pb:up` 不启动半套服务，而是指出应运行 `pnpm pb:install`、`pnpm pb:init` 或 `pnpm pb:doctor`。
 
 ## 调用 CLI
 
@@ -56,6 +73,14 @@ pnpm pb -- deliver \
 包装脚本只缩短可执行路径；全部参数、输出和退出码仍由 `@proto-bridge/cli` 决定。构建产物缺失时会先运行根 `pnpm build`。
 
 ### 清理旧采集数据
+
+日常入口：
+
+```bash
+pnpm pb:reset
+```
+
+该 wrapper 先调用现有 `workspace reset` 生成 preview，再要求交互输入 `yes`；非交互使用 `pnpm pb:reset -- --yes`。它保留 `proto-bridge.json` 和 reset plan audit，创建新 generation，使旧 Handoff、Session 和 MCP task 失效。
 
 不要手动只删除 `.proto-bridge/store`。先预览精确清理范围，再显式执行：
 
@@ -73,6 +98,15 @@ pnpm pb -- workspace reinitialize --confirm-destroyed <workspaceId>
 ```
 
 reinitialize 创建新 generation，不能恢复旧 Handoff。固定验收 Workspace 禁止 reset/reinitialize。
+
+彻底重新开始：
+
+```bash
+pnpm pb:clean
+pnpm pb:clean -- --yes
+```
+
+`pb:clean` 只删除仓库默认的 `proto-bridge.json` 和 `.proto-bridge`，不会删除源代码、目标工程、`node_modules`、构建产物或 Playwright 浏览器。它只会停止带有受管运行状态的 PB 进程；发现未知进程占用 PB 端口时会拒绝删除。
 
 ## 启动 MCP
 

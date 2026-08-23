@@ -8,7 +8,7 @@
 
 ## 当前基线
 
-Producer 安装面是 git clone 本仓库后执行 `pnpm pb:up`（`pnpm pbwork` 是兼容别名）。Workspace 配置 `delivery.targetRoot` 是 CLI 交付、PBWork 定稿和 MCP Target 工具的唯一默认目标工程路径。CLI `capture` / `deliver` 对非正式采集发出两层确认。PBWork 生命周期仍在浏览器 localStorage，不进入 Local Service 或 Store。
+Producer 安装面是 git clone 本仓库后执行 `pnpm pb:install`、`pnpm pb:init`、`pnpm pb:doctor`、`pnpm pb:up`。Workspace 配置 `delivery.targetRoot` 是 CLI 交付、PBWork 定稿和 MCP Target 工具的唯一默认目标工程路径。CLI `capture` / `deliver` 对非正式采集发出两层确认。PBWork 生命周期仍在浏览器 localStorage，不进入 Local Service 或 Store。
 
 包可见性保持现状：`core` / `cli` / `mcp-server` 已标 public 字段，但仓库许可证为 `UNLICENSED`，且本轮不执行 `npm publish`。`local-service` 与 `pbwork` 保持 private。
 
@@ -40,7 +40,7 @@ Producer 安装面是 git clone 本仓库后执行 `pnpm pb:up`（`pnpm pbwork` 
 ## 退出标准
 
 - 本轮不 publish；本文件保持 Planned，直到有独立任务完成许可证与发布面。
-- 现行文档继续写 git clone + `pnpm pb:up`，不把未来 npm 命令写成当前步骤。
+- 现行文档继续写 git clone + 六个日常 `pb:*` 入口，不把未来 npm 命令写成当前步骤。
 - 一旦开始 publish：`core` / `cli` / `mcp-server` 版本对齐；CLI 安装后可启动或调用同版本 Local Service；MCP 省略 `targetRoot` 时仍使用绑定的 `delivery.targetRoot`。
 - 帮助隐藏实验 `review *` 之前，文档不得把这些命令写成产品步骤（当前已满足）。
 
