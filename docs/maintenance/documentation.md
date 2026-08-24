@@ -3,7 +3,7 @@
 ## 写作原则
 
 - 主体文档描述当前产品，不写阶段完成记录或旧版本操作。
-- 产品闭环图以 `docs/images/01-overview.png`–`05-acceptance.png` 为准；同一张图只在一个权威页嵌入，其它文档链接过去。
+- 产品闭环图以 `docs/images/01-overview.png`–`05-acceptance.png` 为准；根 README 可以作为产品导览连续展示五张图，文档正文只在各自权威页嵌入对应图片，其它位置链接到权威页。
 - 历史比较只进入 `docs/history`，设计理由进入 `docs/decisions`。
 - 一个概念只有一个完整定义，其余文档链接到权威来源。
 - 命令、Tool、字段、路径和状态必须能由源码或测试验证。
@@ -22,7 +22,7 @@
 
 | 变化 | 必须同步 |
 | --- | --- |
-| 产品职责/闭环 | `docs/product`、根 README、相关 ADR、`docs/images/01-overview.png`–`05-acceptance.png`（闭环或验收叙事变了先改权威文案再改图；每张图只在一个权威页嵌入） |
+| 产品职责/闭环 | `docs/product`、根 README、相关 ADR、`docs/images/01-overview.png`–`05-acceptance.png`（闭环或验收叙事变了先改权威文案再改图；根 README 可展示全组，文档正文每张图只在一个权威页嵌入） |
 | Evidence Schema/引用 | `docs/architecture/evidence-model.md`、词汇、Core README |
 | Capture/Runtime Protocol | `docs/architecture/capture-pipeline.md`、Authoring Contract |
 | Workspace/环境变量/安全 | `docs/reference/configuration.md`、使用指南 |
