@@ -42,7 +42,7 @@ PBWork 的正式交付由“待确定 → 已定稿”生命周期动作触发�
 5. 自动创建 Handoff 和唯一 Agent 提示词，同时写入 `.proto-bridge/deliveries/`；
 6. 只有全部成功后才把本地生命周期提交为“已定稿”，并保存该次 Job/Bundle/Snapshot/Handoff/Delivery 引用。
 
-PBWork 不显示范围选择、页面采集、控件采集、重新采集或提示词生成/重生成按钮。已定稿和已归档只读取生命周期记录绑定的 Evidence 与提示词；刷新后按 `deliveryId` 回读已存在的 Agent prompt。已定稿若需修改，先清理该次定稿绑定的 Bundle 和正式产物引用，再回退到待确定；已归档永久只读。
+PBWork 不显示范围选择、页面采集、控件采集、重新采集或提示词生成/重生成按钮。已定稿和已归档只读取生命周期记录绑定的 Evidence 与提示词；刷新后按 `deliveryId` 回读已存在的 Agent prompt。已定稿若需修改，先清理该次定稿绑定的 Bundle 和正式产物引用，再回退到待确定；已归档永久只读。全量 Store 清理走 `pnpm pb:reset`；Workbench 下次同步 session generation 时把本地生命周期打回进行中，不提供对等清空按钮。
 
 CLI 不受 PBWork 生命周期约束，继续支持 `deliver --prototype <id>`、`--screen <id|slug>`、`--only-variant <id>`、`--only-scenario <id>` 和 `--selection`。这些入口会发出非正式采集警告：交互终端确认 `y` / `yes`，非 TTY / `--json` 需要 `--acknowledge-unofficial-capture`。CLI 产生的 Bundle 不改变 PBWork 生命周期，也不会自动出现在“定稿采集”页。默认目标路径来自 Workspace `delivery.targetRoot`，`--target` 只覆盖单次命令。
 

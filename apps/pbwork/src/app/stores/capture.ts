@@ -22,6 +22,7 @@ import {
 } from "@/capture/service-client";
 import { formatCaptureError } from "@/capture/presentation";
 import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
+import { knownBundleIdsFromEvidence } from "@/app/stores/workspace-generation";
 
 export type CaptureEntryKind =
   "current-screen" | "fragment" | "custom" | "prototype";
@@ -251,7 +252,9 @@ export const useCaptureStore = defineStore("capture-v2", {
       this.handoffPreview = null;
       this.persistDraft();
     },
-    clearWorkspaceScopedState() {
+    clearStaleWorkspaceUi() {
+      this.entryKind = null;
+      this.returnTo = "/workbench/overview";
       this.draft = null;
       this.preflight = null;
       this.acceptedWarningIds = [];
@@ -264,11 +267,42 @@ export const useCaptureStore = defineStore("capture-v2", {
       this.acknowledgedRiskKinds = [];
       this.agentPrompt = null;
       this.deliveryArtifact = null;
-      this.evidenceInventory = null;
       this.deletePlan = null;
-      this.consoleState = null;
-      this.screenshotUrls = {};
+      this.composerOpen = false;
+      this.jobCenterOpen = false;
+      this.handoffSheetOpen = false;
+      this.revokeScreenshotUrls();
       this.persistDraft();
+    },
+    clearWorkspaceScopedState() {
+      this.clearStaleWorkspaceUi();
+      this.evidenceInventory = null;
+      this.consoleState = null;
+    },
+    async reconcileLocalWorkspaceCache() {
+      if (!this.session || this.session.generationId === "legacy-unavailable") {
+        return false;
+      }
+      const { usePrototypeLifecycleStore } = await import(
+        "@/app/stores/prototypeLifecycle"
+      );
+      const reset = usePrototypeLifecycleStore().syncWithWorkspace({
+        workspaceId: this.session.workspaceId,
+        generationId: this.session.generationId,
+        knownBundleIds: knownBundleIdsFromEvidence(
+          this.evidenceInventory,
+          this.consoleState,
+        ),
+        prototypes: loadPrototypes(),
+      });
+      if (!reset) return false;
+      this.clearStaleWorkspaceUi();
+      this.notice = {
+        tone: "info",
+        title: "Workspace 已重置",
+        message: "Store 已换新 generation，本地生命周期已回到进行中。",
+      };
+      return true;
     },
     persistDraft() {
       window.sessionStorage.setItem(
@@ -299,11 +333,12 @@ export const useCaptureStore = defineStore("capture-v2", {
       try {
         const nextConsoleState = await captureServiceClient.consoleState();
         if (this.session && nextConsoleState.generationId !== this.session.generationId) {
-          this.clearWorkspaceScopedState();
+          this.clearStaleWorkspaceUi();
           this.session.generationId = nextConsoleState.generationId;
         }
         this.consoleState = nextConsoleState;
         this.evidenceInventory = await captureServiceClient.evidenceInventory();
+        await this.reconcileLocalWorkspaceCache();
         if (this.activeJob) {
           const refreshed = this.consoleState.jobs.find(
             (job) => job.jobId === this.activeJob?.jobId,
@@ -726,25 +761,8 @@ export const useCaptureStore = defineStore("capture-v2", {
         });
         captureServiceClient.disconnect();
         this.session = null;
-        this.consoleState = null;
-        this.evidenceInventory = null;
-        this.deletePlan = null;
-        this.draft = null;
-        this.entryKind = null;
-        this.preflight = null;
-        this.activeJob = null;
-        this.selectedJob = null;
-        this.details = null;
-        this.stalenessReport = null;
-        this.handoff = null;
-        this.handoffPreview = null;
-        this.agentPrompt = null;
-        this.deliveryArtifact = null;
         this.notice = null;
-        this.composerOpen = false;
-        this.jobCenterOpen = false;
-        this.revokeScreenshotUrls();
-        this.persistDraft();
+        this.clearWorkspaceScopedState();
         const { usePrototypeLifecycleStore } = await import(
           "@/app/stores/prototypeLifecycle"
         );

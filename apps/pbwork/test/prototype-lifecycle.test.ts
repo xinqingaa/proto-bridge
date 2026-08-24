@@ -161,4 +161,68 @@ describe("prototype lifecycle workspace state", () => {
       JSON.parse(localStorage.getItem(STORAGE_KEY)!).records[prototype.id].stage,
     ).toBe("active");
   });
+
+  it("returns every prototype to active when Store generation changes", () => {
+    const store = usePrototypeLifecycleStore();
+    const prototype = prototypes[0]!;
+    store.replaceRecord(finalizedRecord(prototype.id));
+    store.syncWithWorkspace({
+      workspaceId: "pbwork-local",
+      generationId: "generation-a",
+      knownBundleIds: ["bundle-1"],
+      prototypes,
+    });
+
+    const reset = store.syncWithWorkspace({
+      workspaceId: "pbwork-local",
+      generationId: "generation-b",
+      knownBundleIds: [],
+      prototypes,
+    });
+
+    expect(reset).toBe(true);
+    expect(store.effectiveLifecycle(prototype)).toBe("active");
+    expect(store.recordFor(prototype.id)?.artifacts).toBeNull();
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toMatchObject({
+      generationId: "generation-b",
+      workspaceId: "pbwork-local",
+    });
+  });
+
+  it("preserves review state on first generation bind when artifacts still exist", () => {
+    const store = usePrototypeLifecycleStore();
+    const prototype = prototypes[0]!;
+    store.ensurePrototypes(prototypes);
+    store.transition(prototype, "review", "送交待确定");
+
+    const reset = store.syncWithWorkspace({
+      workspaceId: "pbwork-local",
+      generationId: "generation-a",
+      knownBundleIds: [],
+      prototypes,
+    });
+
+    expect(reset).toBe(false);
+    expect(store.effectiveLifecycle(prototype)).toBe("review");
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).generationId).toBe(
+      "generation-a",
+    );
+  });
+
+  it("clears unbound finalized records whose Evidence is already gone", () => {
+    const store = usePrototypeLifecycleStore();
+    const prototype = prototypes[0]!;
+    store.replaceRecord(finalizedRecord(prototype.id));
+
+    const reset = store.syncWithWorkspace({
+      workspaceId: "pbwork-local",
+      generationId: "generation-new",
+      knownBundleIds: [],
+      prototypes,
+    });
+
+    expect(reset).toBe(true);
+    expect(store.effectiveLifecycle(prototype)).toBe("active");
+    expect(store.historyFor(prototype.id)).toEqual([]);
+  });
 });

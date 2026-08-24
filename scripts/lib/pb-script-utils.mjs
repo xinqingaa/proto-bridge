@@ -202,6 +202,51 @@ export function shellQuote(value) {
   return `'${String(value).replaceAll("'", "'\\''")}'`;
 }
 
+export function isPromptInterrupt(error) {
+  if (!error || typeof error !== "object") return false;
+  const name = "name" in error ? error.name : undefined;
+  const code = "code" in error ? error.code : undefined;
+  return name === "AbortError" || code === "ABORT_ERR";
+}
+
+export async function confirmPrompt(
+  prompt,
+  expected,
+  options = {},
+) {
+  const io = options.io ?? { input: process.stdin, output: process.stderr };
+  const normalize = options.ignoreCase
+    ? (value) => value.trim().toLowerCase()
+    : (value) => value.trim();
+  const createInterface =
+    options.createInterface ??
+    (await import("node:readline/promises")).createInterface;
+  const rl = createInterface({ input: io.input, output: io.output });
+  try {
+    const answer = await rl.question(prompt);
+    return {
+      confirmed: normalize(answer) === normalize(expected),
+      interrupted: false,
+    };
+  } catch (error) {
+    if (isPromptInterrupt(error)) {
+      return { confirmed: false, interrupted: true };
+    }
+    throw error;
+  } finally {
+    rl.close();
+  }
+}
+
+export function exitIfInterrupted(
+  result,
+  message = "Cancelled. Nothing was deleted.",
+) {
+  if (!result.interrupted) return;
+  process.stderr.write(`\n${message}\n`);
+  process.exit(130);
+}
+
 function requiredString(value, pathLabel) {
   if (typeof value !== "string" || value.length === 0) {
     throw new Error(`Workspace config requires ${pathLabel}.`);

@@ -1,14 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
 import { useCaptureStore } from "@/app/stores/capture";
+import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
 import { captureServiceClient } from "@/capture/service-client";
 import { resolveSelectionMatrix } from "@proto-bridge/core/v2/capture";
 import { DEFAULT_CAPTURE_MAX_CASES } from "@proto-bridge/core/v2";
+import { LOCAL_SERVICE_PROTOCOL_VERSION } from "@proto-bridge/core/v2/service-contract";
 import { buildRuntimeCaptureManifest } from "@/runtime/capture-protocol";
+import { prototypes } from "@/prototypes/registry";
 
 describe("PBWork V2 capture store", () => {
   beforeEach(() => {
     sessionStorage.clear();
+    localStorage.clear();
     setActivePinia(createPinia());
     vi.restoreAllMocks();
   });
@@ -216,6 +220,68 @@ describe("PBWork V2 capture store", () => {
     expect(store.draft?.screens[0]?.scenarios).toEqual({
       mode: "explicit",
       scenarioIds: ["inspect-primary-exception"],
+    });
+  });
+
+  it("drops local lifecycle after CLI reset when the session generation changes", async () => {
+    localStorage.clear();
+    const lifecycle = usePrototypeLifecycleStore();
+    const prototype = prototypes[0]!;
+    lifecycle.replaceRecord({
+      prototypeId: prototype.id,
+      stage: "final",
+      operation: { kind: "idle" },
+      artifacts: {
+        jobId: "job-1",
+        bundleId: "bundle-1",
+        snapshotId: "snapshot-1",
+        handoffId: "handoff-1",
+        deliveryId: "delivery-1",
+        agentPromptPath: "/delivery/agent-prompt.md",
+        receiptPath: "/delivery/receipt.json",
+        finalizedAt: "2026-08-24T00:00:00.000Z",
+      },
+      createdAt: "2026-08-24T00:00:00.000Z",
+      updatedAt: "2026-08-24T00:00:00.000Z",
+    });
+    lifecycle.syncWithWorkspace({
+      workspaceId: "pbwork-local",
+      generationId: "generation-old",
+      knownBundleIds: ["bundle-1"],
+      prototypes,
+    });
+
+    vi.spyOn(captureServiceClient, "connect").mockResolvedValue({
+      protocolVersion: LOCAL_SERVICE_PROTOCOL_VERSION,
+      serviceInstanceId: "service-1",
+      sessionToken: "token-new",
+      workspaceId: "pbwork-local",
+      generationId: "generation-new",
+      expiresAt: "2026-08-24T01:00:00.000Z",
+      finalizedOrphanJobIds: [],
+      deliveryTargetRoot: "/tmp/target",
+    });
+    vi.spyOn(captureServiceClient, "consoleState").mockResolvedValue({
+      workspaceId: "pbwork-local",
+      generationId: "generation-new",
+      bundles: [],
+      jobs: [],
+    });
+    vi.spyOn(captureServiceClient, "evidenceInventory").mockResolvedValue({
+      workspaceId: "pbwork-local",
+      generatedAt: "2026-08-24T00:00:00.000Z",
+      prototypes: [],
+    });
+
+    const store = useCaptureStore();
+    store.beginPrototype("cold-chain-ops");
+    await store.connect();
+
+    expect(lifecycle.effectiveLifecycle(prototype)).toBe("active");
+    expect(lifecycle.recordFor(prototype.id)?.artifacts).toBeNull();
+    expect(store.draft).toBeNull();
+    expect(store.notice).toMatchObject({
+      title: "Workspace 已重置",
     });
   });
 });

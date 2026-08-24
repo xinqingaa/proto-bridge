@@ -3,6 +3,10 @@ import type { CaptureJob } from "@proto-bridge/core/v2";
 import type { PrototypeLifecycle, PrototypeRecord } from "@/design-system/types";
 import { useCaptureStore } from "@/app/stores/capture";
 import { captureServiceClient } from "@/capture/service-client";
+import {
+  hasDanglingArtifactRefs,
+  shouldResetLocalWorkspaceState,
+} from "@/app/stores/workspace-generation";
 
 const STORAGE_KEY = "pbwork.prototype-lifecycle.v2";
 const LEGACY_STORAGE_KEY = "pbwork.prototype-lifecycle.v1";
@@ -87,8 +91,27 @@ type LifecycleState = {
   version: 2;
   records: Record<string, PrototypeLifecycleRecord>;
   history: LifecycleHistoryEntry[];
+  workspaceId: string | null;
+  generationId: string | null;
   storageError: string | null;
 };
+
+function emptyLifecycleState(
+  storageError: string | null = null,
+): LifecycleState {
+  return {
+    version: 2,
+    records: {},
+    history: [],
+    workspaceId: null,
+    generationId: null,
+    storageError,
+  };
+}
+
+function parseBindingField(value: unknown): string | null {
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
 
 function isLifecycle(value: unknown): value is PrototypeLifecycle {
   return (
@@ -192,12 +215,7 @@ function parseHistory(value: unknown): LifecycleHistoryEntry[] {
 }
 
 function loadLegacyState(): LifecycleState {
-  const empty: LifecycleState = {
-    version: 2,
-    records: {},
-    history: [],
-    storageError: null,
-  };
+  const empty = emptyLifecycleState();
   const raw = window.localStorage.getItem(LEGACY_STORAGE_KEY);
   if (!raw) return empty;
   try {
@@ -213,16 +231,15 @@ function loadLegacyState(): LifecycleState {
     empty.history = parseHistory(parsed.history);
     return empty;
   } catch {
-    return {
-      ...empty,
-      storageError: "旧生命周期状态无法读取；新原型将从进行中开始。",
-    };
+    return emptyLifecycleState(
+      "旧生命周期状态无法读取；新原型将从进行中开始。",
+    );
   }
 }
 
 function loadState(): LifecycleState {
   if (typeof window === "undefined") {
-    return { version: 2, records: {}, history: [], storageError: null };
+    return emptyLifecycleState();
   }
   const raw = window.localStorage.getItem(STORAGE_KEY);
   if (!raw) return loadLegacyState();
@@ -245,16 +262,14 @@ function loadState(): LifecycleState {
       version: 2,
       records,
       history: parseHistory(parsed.history),
+      workspaceId: parseBindingField(parsed.workspaceId),
+      generationId: parseBindingField(parsed.generationId),
       storageError: null,
     };
   } catch {
-    return {
-      version: 2,
-      records: {},
-      history: [],
-      storageError:
-        "生命周期状态文件无法读取。原值已保留，请修复或清除后重试。",
-    };
+    return emptyLifecycleState(
+      "生命周期状态文件无法读取。原值已保留，请修复或清除后重试。",
+    );
   }
 }
 
@@ -293,6 +308,8 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
           version: 2,
           records: this.records,
           history: this.history.slice(0, HISTORY_LIMIT),
+          workspaceId: this.workspaceId,
+          generationId: this.generationId,
           storageError: null,
         } satisfies LifecycleState),
       );
@@ -689,12 +706,53 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
         await this.completeFinalization(prototype);
       }
     },
-    resetAfterWorkspaceReset(prototypes: PrototypeRecord[]) {
+    resetAfterWorkspaceReset(
+      prototypes: PrototypeRecord[],
+      binding?: { workspaceId: string; generationId: string },
+    ) {
       this.storageError = null;
       this.records = {};
       this.history = [];
+      this.workspaceId = binding?.workspaceId ?? null;
+      this.generationId = binding?.generationId ?? null;
       this.persist();
       this.ensurePrototypes(prototypes);
+    },
+    syncWithWorkspace(input: {
+      workspaceId: string;
+      generationId: string;
+      knownBundleIds: Iterable<string>;
+      prototypes: PrototypeRecord[];
+    }): boolean {
+      if (this.storageError) return false;
+      const knownBundleIds = new Set(input.knownBundleIds);
+      const reset = shouldResetLocalWorkspaceState(
+        {
+          workspaceId: this.workspaceId,
+          generationId: this.generationId,
+        },
+        {
+          workspaceId: input.workspaceId,
+          generationId: input.generationId,
+        },
+        hasDanglingArtifactRefs(this.records, knownBundleIds),
+      );
+      if (reset) {
+        this.resetAfterWorkspaceReset(input.prototypes, {
+          workspaceId: input.workspaceId,
+          generationId: input.generationId,
+        });
+        return true;
+      }
+      if (
+        this.workspaceId !== input.workspaceId ||
+        this.generationId !== input.generationId
+      ) {
+        this.workspaceId = input.workspaceId;
+        this.generationId = input.generationId;
+        this.persist();
+      }
+      return false;
     },
     async rollbackToReview(prototype: PrototypeRecord, note = "") {
       const current = this.requireRecord(prototype.id);

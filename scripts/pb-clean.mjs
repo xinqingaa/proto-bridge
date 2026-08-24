@@ -1,7 +1,14 @@
 #!/usr/bin/env node
 import { access, readFile, rm } from "node:fs/promises";
 import path from "node:path";
-import { optionValue, repoRoot, tcpReachable, userArgv } from "./lib/pb-script-utils.mjs";
+import {
+  confirmPrompt,
+  exitIfInterrupted,
+  optionValue,
+  repoRoot,
+  tcpReachable,
+  userArgv,
+} from "./lib/pb-script-utils.mjs";
 
 const argv = userArgv();
 const yes = argv.includes("--yes");
@@ -26,11 +33,16 @@ try {
 if (!yes && !(process.stdin.isTTY && process.stdout.isTTY)) {
   throw new Error("pb:clean is destructive and requires --yes outside an interactive terminal.");
 }
-if (!yes && !(await confirm(
-  "This deletes proto-bridge.json and the entire .proto-bridge directory. Type DELETE to continue: ",
-))) {
-  process.stdout.write("Clean cancelled. Nothing was deleted.\n");
-  process.exit(0);
+if (!yes) {
+  const answer = await confirmPrompt(
+    "This deletes proto-bridge.json and the entire .proto-bridge directory. Type DELETE to continue: ",
+    "DELETE",
+  );
+  exitIfInterrupted(answer);
+  if (!answer.confirmed) {
+    process.stdout.write("Clean cancelled. Nothing was deleted.\n");
+    process.exit(0);
+  }
 }
 
 await stopManagedProcesses(statePath, config);
@@ -87,10 +99,4 @@ async function stopManagedProcesses(file, workspace) {
 function isAlive(pid) {
   if (!Number.isInteger(pid) || pid <= 1) return false;
   try { process.kill(pid, 0); return true; } catch { return false; }
-}
-
-async function confirm(prompt) {
-  const { createInterface } = await import("node:readline/promises");
-  const rl = createInterface({ input: process.stdin, output: process.stderr });
-  try { return (await rl.question(prompt)).trim() === "DELETE"; } finally { rl.close(); }
 }

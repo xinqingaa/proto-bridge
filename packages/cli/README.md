@@ -58,7 +58,7 @@ proto-bridge service start
 - 省略 `--target` 时使用 `proto-bridge.json` 的 `delivery.targetRoot`；`--target` 只覆盖这一次命令；
 - `deliver` 默认采集整个 Prototype；`--screen` / `--fragment` / `--selection` / `--only-variant` / `--only-scenario` 是窄范围诊断，需要第二层确认；
 - `workspace doctor` 与 inspect/list/show 以只读方式打开 Store，可与 `pnpm pb:up` 并存；
-- `workspace reset` 默认只预览 Evidence、Delivery、未导出 Review 和运行任务范围，并把 plan 写入 Store 外的 `reset-plans`；apply 必须带回同一 `planId + generation`，任何范围漂移都会拒绝。成功后保留配置/plan audit 并创建新 generation；Service 存活时自动经 Service drain；
+- `workspace reset` 默认只预览 Evidence、Delivery、未导出 Review 和运行任务范围，并把 plan 写入 Store 外的 `reset-plans`；apply 必须带回同一 `planId + generation`，任何范围漂移都会拒绝。成功后保留配置/plan audit 并创建新 generation；Service 存活时自动经 Service drain。PBWork 下次 connect 时按新 generation 清空本地生命周期缓存，不提供 Workbench 清空按钮；
 - root/lock 被外部删除或替换时不会自动建目录。先停 Service；`workspace doctor repair` 只处理不改变 Evidence 身份的状态，root 整体丢失必须使用 `workspace reinitialize --confirm-destroyed <workspaceId>`，旧 Evidence 不可恢复；
 - `capture run`、`handoff create`、`job cancel`、`deliver` 等写命令在 Local Service 可达时自动经 HTTP 写入（与 GUI 共用同一 writer）；不可达时回退到本地写锁；
 - 可用 `--via-service` 强制走 Service，或 `--local-store` 强制本地写（需停掉占用 Store 的 Service）；

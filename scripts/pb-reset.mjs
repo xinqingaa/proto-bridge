@@ -1,7 +1,13 @@
 #!/usr/bin/env node
 import { spawn } from "node:child_process";
 import path from "node:path";
-import { repoRoot, runInherited, userArgv } from "./lib/pb-script-utils.mjs";
+import {
+  confirmPrompt,
+  exitIfInterrupted,
+  repoRoot,
+  runInherited,
+  userArgv,
+} from "./lib/pb-script-utils.mjs";
 
 const input = userArgv();
 const yes = input.includes("--yes");
@@ -33,11 +39,16 @@ if (passthrough.includes("--apply")) {
       process.exitCode = 1;
     }
     if (plan) {
-      const confirmed = yes || (process.stdin.isTTY && process.stdout.isTTY
-        ? await confirm(
-            `Reset Workspace ${plan.workspaceId}: delete ${plan.evidence?.objects ?? 0} Evidence objects, ${plan.deliveries?.objects ?? 0} Deliveries, and ${plan.reviews?.objects ?? 0} Reviews? Type yes to continue: `,
-          )
-        : false);
+      let confirmed = yes;
+      if (!confirmed && process.stdin.isTTY && process.stdout.isTTY) {
+        const answer = await confirmPrompt(
+          `Reset Workspace ${plan.workspaceId}: delete ${plan.evidence?.objects ?? 0} Evidence objects, ${plan.deliveries?.objects ?? 0} Deliveries, and ${plan.reviews?.objects ?? 0} Reviews? Type yes to continue: `,
+          "yes",
+          { ignoreCase: true },
+        );
+        exitIfInterrupted(answer);
+        confirmed = answer.confirmed;
+      }
       if (!confirmed) {
         if (!yes && !(process.stdin.isTTY && process.stdout.isTTY)) {
           if (json) process.stdout.write(`${JSON.stringify(plan, null, 2)}\n`);
@@ -81,14 +92,4 @@ function runCli(args) {
     child.once("error", reject);
     child.once("exit", (code, signal) => resolve({ code, signal, stdout, stderr }));
   });
-}
-
-async function confirm(prompt) {
-  const { createInterface } = await import("node:readline/promises");
-  const rl = createInterface({ input: process.stdin, output: process.stderr });
-  try {
-    return (await rl.question(prompt)).trim().toLowerCase() === "yes";
-  } finally {
-    rl.close();
-  }
 }

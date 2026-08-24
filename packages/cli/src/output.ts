@@ -20,6 +20,16 @@ export const processIo: CliIo = {
     try {
       const answer = (await rl.question(prompt)).trim().toLowerCase();
       return answer === 'y' || answer === 'yes';
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        (error.name === 'AbortError' ||
+          ('code' in error && error.code === 'ABORT_ERR'))
+      ) {
+        process.stderr.write('\nCancelled.\n');
+        process.exit(130);
+      }
+      throw error;
     } finally {
       rl.close();
     }

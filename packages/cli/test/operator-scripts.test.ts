@@ -40,3 +40,56 @@ describe('root operator scripts', () => {
     expect(result.stdout).toContain('skipped Playwright Chromium installation');
   });
 });
+
+describe('operator script confirmation', () => {
+  it('recognizes readline Ctrl+C as an interrupt', async () => {
+    const { isPromptInterrupt } = await import('../../../scripts/lib/pb-script-utils.mjs');
+    expect(isPromptInterrupt(Object.assign(new Error('Aborted with Ctrl+C'), {
+      name: 'AbortError',
+      code: 'ABORT_ERR',
+    }))).toBe(true);
+    expect(isPromptInterrupt(new Error('boom'))).toBe(false);
+  });
+
+  it('treats prompt AbortError as cancelled without throwing', async () => {
+    const { confirmPrompt } = await import('../../../scripts/lib/pb-script-utils.mjs');
+    const abort = Object.assign(new Error('Aborted with Ctrl+C'), {
+      name: 'AbortError',
+      code: 'ABORT_ERR',
+    });
+    await expect(
+      confirmPrompt('Type yes: ', 'yes', {
+        createInterface: () => ({
+          question: async () => {
+            throw abort;
+          },
+          close() {},
+        }),
+      }),
+    ).resolves.toEqual({
+      confirmed: false,
+      interrupted: true,
+    });
+  });
+
+  it('accepts case-insensitive yes and exact DELETE', async () => {
+    const { confirmPrompt } = await import('../../../scripts/lib/pb-script-utils.mjs');
+    await expect(
+      confirmPrompt('Type yes: ', 'yes', {
+        ignoreCase: true,
+        createInterface: () => ({
+          question: async () => 'YES',
+          close() {},
+        }),
+      }),
+    ).resolves.toEqual({ confirmed: true, interrupted: false });
+    await expect(
+      confirmPrompt('Type DELETE: ', 'DELETE', {
+        createInterface: () => ({
+          question: async () => 'delete',
+          close() {},
+        }),
+      }),
+    ).resolves.toEqual({ confirmed: false, interrupted: false });
+  });
+});

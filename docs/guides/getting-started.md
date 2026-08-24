@@ -103,7 +103,7 @@ pnpm pb:reset
 pnpm pb:clean
 ```
 
-`pb:reset` 预览并清理 Evidence、Deliveries 和未导出 Review，保留 `proto-bridge.json`。`pb:clean` 会先停止由 `pb:up` 管理的进程，再删除 `proto-bridge.json` 与整个 `.proto-bridge`；交互终端要求输入 `DELETE`，非交互环境使用 `pnpm pb:clean -- --yes`。
+`pb:reset` 预览并清理 Evidence、Deliveries 和未导出 Review，保留 `proto-bridge.json`。Workbench 会在下次同步 session generation 时把本地生命周期打回进行中。`pb:clean` 会先停止由 `pb:up` 管理的进程，再删除 `proto-bridge.json` 与整个 `.proto-bridge`；交互终端要求输入 `DELETE`，非交互环境使用 `pnpm pb:clean -- --yes`。两个命令在确认提示处 `Ctrl+C` 都会干净取消，不删除任何对象。
 
 ## 验证仓库
 

@@ -127,7 +127,7 @@ Evidence Viewer 可以按 Screen、Case 和 Fragment组织内容，但必须保�
 
 ## 本地工作台状态
 
-画布设备、缩放、Inspector、评论和 Prototype lifecycle 都可以使用 localStorage。生命周期事实源是 `prototypeLifecycle` Pinia Store，写入 `pbwork.prototype-lifecycle.v2`：阶段、进行中的定稿/回退操作、正式产物引用和流转历史都保存在浏览器里。缺记录或清缓存后，新发现的 Prototype ID 一律初始化为“进行中”；Registry 的 `lifecycle` 字段只作作者标注，不覆盖空存储。Workspace reset 会同时清空这些本地记录，避免界面仍显示已定稿而 Evidence 已经不在。持久 Evidence 仍在 Core Store；清浏览器缓存不会删除磁盘上的 Bundle 或 Delivery。
+画布设备、缩放、Inspector、评论和 Prototype lifecycle 都可以使用 localStorage。生命周期事实源是 `prototypeLifecycle` Pinia Store，写入 `pbwork.prototype-lifecycle.v2`：阶段、进行中的定稿/回退操作、正式产物引用、流转历史，以及当前绑定的 Workspace/generation。缺记录或清缓存后，新发现的 Prototype ID 一律初始化为“进行中”；Registry 的 `lifecycle` 字段只作作者标注，不覆盖空存储。Workbench **没有** Workspace reset 按钮；`pnpm pb:reset` / CLI `workspace reset` 才是全量清理入口。PBWork 在 connect 或 console 刷新时对比 session generation：generation 变化、Workspace 变化，或尚未绑定 generation 且本地 `final`/`archived` 产物已不在 Store 时，会清空这些本地生命周期记录并回到进行中，避免界面仍显示已定稿而 Evidence 已经不在。画布偏好和评论不随 reset 丢弃。持久 Evidence 仍在 Core Store；清浏览器缓存不会删除磁盘上的 Bundle 或 Delivery。
 
 这些本地状态不能改变 Registry Contract、Store Evidence 或 Runtime URL 的业务语义。
 

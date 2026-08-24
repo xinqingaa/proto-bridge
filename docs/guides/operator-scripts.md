@@ -80,7 +80,7 @@ pnpm pb -- deliver \
 pnpm pb:reset
 ```
 
-该 wrapper 先调用现有 `workspace reset` 生成 preview，再要求交互输入 `yes`；非交互使用 `pnpm pb:reset -- --yes`。它保留 `proto-bridge.json` 和 reset plan audit，创建新 generation，使旧 Handoff、Session 和 MCP task 失效。
+该 wrapper 先调用现有 `workspace reset` 生成 preview，再要求交互输入 `yes`；非交互使用 `pnpm pb:reset -- --yes`。它保留 `proto-bridge.json` 和 reset plan audit，创建新 generation，使旧 Handoff、Session 和 MCP task 失效。Workbench 没有对等清空按钮；下次 connect 或 console 刷新会按新 generation 丢掉本地生命周期缓存。确认提示处 `Ctrl+C` 视为取消：打印 `Cancelled. Nothing was deleted.` 并以退出码 130 结束，不删除任何对象，也不抛出 `AbortError` 堆栈。
 
 不要手动只删除 `.proto-bridge/store`。先预览精确清理范围，再显式执行：
 
@@ -106,7 +106,7 @@ pnpm pb:clean
 pnpm pb:clean -- --yes
 ```
 
-`pb:clean` 只删除仓库默认的 `proto-bridge.json` 和 `.proto-bridge`，不会删除源代码、目标工程、`node_modules`、构建产物或 Playwright 浏览器。它只会停止带有受管运行状态的 PB 进程；发现未知进程占用 PB 端口时会拒绝删除。
+`pb:clean` 只删除仓库默认的 `proto-bridge.json` 和 `.proto-bridge`，不会删除源代码、目标工程、`node_modules`、构建产物或 Playwright 浏览器。它只会停止带有受管运行状态的 PB 进程；发现未知进程占用 PB 端口时会拒绝删除。确认提示处 `Ctrl+C` 同样视为取消并以退出码 130 结束。
 
 ## 启动 MCP
 
