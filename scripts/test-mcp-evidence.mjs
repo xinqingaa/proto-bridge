@@ -524,9 +524,11 @@ try {
   assert(
     review.coverageStatus === "partial" &&
       review.visualReviewStatus === "reviewed" &&
+      review.reviewCompleteness?.status === "partial" &&
+      review.reviewCompleteness?.missingRequirementIds?.length > 0 &&
       review.validationAuthority === "consumer-reported-review" &&
       review.overallScore === undefined,
-    "Review summary did not report Case omission without a score.",
+    "Review summary did not report Case/observation omission without a score.",
   );
   const next = await writer.commitRun({
     bundleId: reference.BUNDLE_ID,

@@ -78,7 +78,7 @@ DS 连续迭代不要求每轮都做 Flutter 视觉精修，但每轮必须运�
 
 - 仓库 Skill 的唯一位置是 `.agents/skills/`，确保克隆仓库后可由支持 Agent Skills 的工具发现；禁止恢复根 `skills/` 平行目录。
 - `.agents/skills/frontend-design` 来自 `anthropics/skills`，当前同步 commit 为 `f17010c9bb483898c1d9c9f42dde2b3a98889434`；`SKILL.md` SHA-256 为 `1608ea77fbb6fc30d13a97d12cfa8ebf31358d40f0dd97beed24829d6b3f45dd`。
-- 仓库只保留 `frontend-design`、`pbwork` 和 `proto-bridge` 三个 Skill 入口。PBWork 的不同任务通过 `pbwork/references/` 按需加载，不再拆成多个相互跳转的 Skill。
+- 仓库只保留 `acceptance`、`frontend-design`、`pbwork` 和 `proto-bridge` 四个 Skill 入口。`acceptance` 只路由到 Core 的权威验收纪律，不复制第二套规则；PBWork 的不同任务通过 `pbwork/references/` 按需加载，不再拆成多个相互跳转的 Skill。
 - 保持第三方 Skill 与 `LICENSE.txt` 原样；PBWork 专属规则写入 `pbwork`，不直接修改上游视觉 Skill。
 - 通用产品设计不是 ProtoBridge 的仓库职责。其它项目应在自己的仓库中安装所需视觉 Skill，并由该项目的 Skill 或 `AGENTS.md` 定义产品文档工作流。
 - 更新第三方 Skill 时核对上游 commit、文件哈希和许可证，并运行 `pnpm docs:verify`。

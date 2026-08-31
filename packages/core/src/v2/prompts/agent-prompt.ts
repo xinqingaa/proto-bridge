@@ -1,6 +1,6 @@
 import type { Risk } from '../contracts/handoff.js';
 import { RISK_KINDS, type RiskKind } from '../contracts/vocabulary.js';
-import { PROMPT_ASSETS } from './generated-assets.js';
+import { buildConsumerContractText } from './consumer-contract.js';
 
 export const RISK_KIND_LABELS: Record<RiskKind, string> = {
   'partial-coverage': '覆盖不完整',
@@ -50,14 +50,7 @@ export function buildAgentPrompt(input: BuildAgentPromptInput): string {
           '',
         ].join('\n')
       : '';
-  const sections = [
-    PROMPT_ASSETS['handoff-consumer'],
-    PROMPT_ASSETS['target-contract'],
-    PROMPT_ASSETS['implementation-discipline'],
-    PROMPT_ASSETS['verification'],
-    PROMPT_ASSETS['acceptance-discipline'],
-    PROMPT_ASSETS['final-report'],
-  ].join('\n\n');
+  const sections = buildConsumerContractText();
 
   return `# ProtoBridge Evidence 驱动的页面实现
 

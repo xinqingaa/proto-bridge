@@ -138,9 +138,8 @@ export async function summarizeReconstructionReviewTool(
   const contract = await context.evidence.readAcceptanceContract(
     requiredString(args, "handoffId"),
   );
-  const rawObservations = args.observations;
   const observations = ReconstructionReviewObservation.array().parse(
-    Array.isArray(rawObservations) ? rawObservations : [],
+    args.observations,
   );
   return summarizeReconstructionReview({
     contract,

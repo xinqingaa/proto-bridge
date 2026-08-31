@@ -330,7 +330,7 @@ export function acceptanceChecklistMarkdown(
         `| ${dimension} | ${contract.dimensions[dimension].length} |`,
     ),
     '',
-    'These requirements are compiled into canonical Reconstruction Obligations for authoritative Target Review. They are not weighted points or a substitute for Screenshot review; every obligation must receive an explicit assessment before completion.',
+    'These requirements are compiled into canonical Reconstruction Obligations for Consumer Review. They are not weighted points or a substitute for Screenshot review. Every obligation must receive exactly one supported assessment before Review completeness can be reported as complete; the resulting summary remains consumer-reported and is not final visual acceptance.',
     '',
   ];
   if (contract.readiness.blockers.length > 0) {

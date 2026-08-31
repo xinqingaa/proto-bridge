@@ -38,7 +38,14 @@ describe('agent-prompt', () => {
     expect(prompt).toContain('# Target Contract');
     expect(prompt).toContain('# Implementation Discipline');
     expect(prompt).toContain('# Verification');
+    expect(prompt).toContain('# Acceptance Discipline');
     expect(prompt).toContain('# Final Report');
+    expect(prompt.indexOf('# Acceptance Discipline')).toBeGreaterThan(
+      prompt.indexOf('# Verification'),
+    );
+    expect(prompt.indexOf('# Final Report')).toBeGreaterThan(
+      prompt.indexOf('# Acceptance Discipline'),
+    );
     expect(prompt).toContain('read_evidence_screenshot');
     expect(prompt).toContain('# ProtoBridge Evidence 驱动的页面实现');
     expect(prompt).toContain('当前阶段：只读分析与实现计划');
@@ -67,7 +74,12 @@ describe('agent-prompt', () => {
     expect(prompt).toContain('read_reconstruction_obligations');
     expect(prompt).toContain('validate_target_changes');
     expect(prompt).toContain('summarize_reconstruction_review');
+    expect(prompt).toContain('只验收 Handoff 选中的 Screen、Case、Variant 和 Scenario');
+    expect(prompt).toContain('缺少可靠 mapping 时保持 `unverified`');
+    expect(prompt).toContain('Review completeness');
+    expect(prompt).toContain('validationAuthority: consumer-reported-review');
     expect(prompt).not.toMatch(/目标总分|最低总分|不得低于 80|加权分数/);
+    expect(prompt).not.toContain('状态命中：6.5');
     expect(prompt).not.toContain('通用 Flutter 架构');
   });
 });

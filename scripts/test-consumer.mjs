@@ -140,12 +140,18 @@ try {
       guideText.includes("never substitute active/latest"),
     "Consumer guide does not preserve fixed-reference policy.",
   );
+  assert(
+    guideText.includes("# Acceptance Discipline") &&
+      guideText.includes("Review completeness"),
+    "Consumer guide does not include the canonical acceptance discipline.",
+  );
   const prompt = await client.request("prompts/get", {
     name: "consume_evidence_handoff",
     arguments: { handoffId: handoff.handoffId, targetRoot },
   });
   assert(
-    prompt.messages?.[0]?.content?.text?.includes(handoff.handoffId),
+    prompt.messages?.[0]?.content?.text?.includes(handoff.handoffId) &&
+      prompt.messages?.[0]?.content?.text?.includes("# Acceptance Discipline"),
     "Consumer prompt did not bind the Handoff.",
   );
 
@@ -157,6 +163,7 @@ try {
   );
   assert(
     workspace.workspace?.workspaceId === reference.WORKSPACE_ID &&
+      workspace.runtime?.contracts?.toolVersion === 3 &&
       workspace.runtime?.capabilities?.includes("handoff-index"),
     "Consumer workspace handshake failed.",
   );

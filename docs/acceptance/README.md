@@ -16,6 +16,8 @@
 触发时机：实施会话已结束，且操作者明确要求「生成人工验收骨架/归档」。  
 硬边界：仅写入 `docs/acceptance/runs/...`；不得写回 Prompt / Skill / MCP；不得驱动 Agent 按验收文档改代码。
 
+Agent 完成报告中的 `Human Verification Checklist` 是本次 Consumer Review 的即时复查输入，不自动写入本目录，也不等于人工已经接受。只有操作者明确要求归档时，才使用下方模板创建一次性记录。
+
 ## 记录
 
 - [2026-08-06 冷链 ops_evidence 人工五维对照](./runs/2026-08-06-cold-chain-ops-evidence-human-fidelity-01/manual-acceptance.md)

@@ -20,6 +20,8 @@ pnpm pb:mcp -- --print-config
 
 第二个命令只打印 Cursor/Codex 可使用的 stdio 配置材料，不启动 server。成功的 `tools/call` 对声明了 `outputSchema` 的工具同时返回 JSON 文本 `content` 与等价的 `structuredContent`。
 
+当前 MCP Tool Contract version 为 3；`summarize_reconstruction_review` 使用严格 observation 输入和 Review completeness 输出，不兼容旧的空依据 Review 语义。Consumer 必须先通过 `inspect_evidence_workspace` 核对版本与 capabilities。
+
 ## Evidence Tools
 
 默认消费路径：
@@ -35,7 +37,7 @@ pnpm pb:mcp -- --print-config
 
 诊断工具 `read_implementation_plan` / `read_implementation_tranche` 不属于默认实施路径，不得按 tranche 顺序编码。
 
-`read_screen_packet` 返回 baseline Structure、`canonicalBrief` 与按 `regionId`/`caseId` 聚合的 inventory。`read_case_delta` 返回紧凑语义 patch；完整 provenance 必须定向读取。`read_reconstruction_obligations` 按 Screen/维度分页，用于实施后五维复查。`summarize_reconstruction_review` 只形成 consumer-reported summary，不冒充独立 Runtime 或视觉验收。
+`read_screen_packet` 返回 baseline Structure、`canonicalBrief` 与按 `regionId`/`caseId` 聚合的 inventory。`read_case_delta` 返回紧凑语义 patch；完整 provenance 必须定向读取。`read_reconstruction_obligations` 按 Screen/维度分页，用于实施后五维复查。`summarize_reconstruction_review` 严格校验每个 observation 的依据和理由，分别输出 Case/Screenshot/Scenario/obligation Review completeness 与五维 findings；它仍是 consumer-reported summary，不冒充独立 Runtime 或视觉验收。
 
 普通 JSON 响应没有按字节截断规则；detail/obligation continuation 绑定固定 Snapshot 和规范化查询。整包 Snapshot、Case、revision、Catalog 和 Acceptance Contract 等旧入口不在 MCP 表面。
 
@@ -68,7 +70,9 @@ pnpm pb:mcp -- --print-config
 
 省略 `targetRoot` 时 Prompt 填入 MCP 绑定的 `delivery.targetRoot`。
 
-默认顺序是 `inspect → handoff index → Screen packet → Screenshot → readiness/resolver → 按需 Case delta/detail → 实施计划确认 → 实施 → 目标验证 → 五维 obligations/summary`。协作关系与完成判据见 [Agent 消费指南](../../docs/guides/agent-consumption.md)。
+Consumer Guide Resource、MCP Prompt 和 Delivery `agent-prompt.md` 使用 Core 的同一 Consumer Contract 组合，其中包含权威 `acceptance-discipline`。因此无论使用正式 Resource 还是 Prompt 进入，都获得相同的实施后验收纪律。
+
+默认顺序是 `inspect → handoff index → Screen packet → Screenshot → readiness/resolver → 按需 Case delta/detail → 实施计划确认 → 实施 → 目标验证 → Acceptance Discipline → 五维 obligations/summary → 人工验收清单`。协作关系与完成判据见 [Agent 消费指南](../../docs/guides/agent-consumption.md)。
 
 ## 开发
 

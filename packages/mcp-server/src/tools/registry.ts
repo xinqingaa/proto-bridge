@@ -82,7 +82,7 @@ const toolDefinitions: JsonValue[] = [
     pageSize: { type: 'integer', minimum: 1, maximum: 100 },
     cursor: { type: 'string' },
   }, ['handoffId', 'screenId']),
-  tool('summarize_reconstruction_review', '汇总重建 Review', '汇总选中 Case、Screenshot、Scenario、已知偏差和未验证事项；不计算还原分数，也不把组件或 Token 映射当作配额。', {
+  tool('summarize_reconstruction_review', '汇总重建 Review', '严格校验 observations，汇总选中 Case、Screenshot、Scenario、五维 Review 完整度、偏差和未验证事项；不计算还原分数。', {
     handoffId: { type: 'string' },
     addressedCaseIds: stringArraySchema,
     viewedScreenshotBlobIds: stringArraySchema,

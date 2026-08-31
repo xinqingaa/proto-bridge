@@ -76,8 +76,8 @@ GUI 定稿操作见 [PBWork 与 PB](../guides/pbwork-and-pb.md)。对象关系�
 
 ## 4. 读取、实现与验收
 
-消费从 MCP 开始：助手按固定 Handoff 只读理解，写出还原计划并等待人批准；批准后才改目标工程，最后对照验收。
+消费从 MCP 开始：助手按固定 Handoff 只读理解，写出还原计划并等待人批准；批准后才改目标工程。实施和原生验证完成后，助手只对 Handoff 选中的 Case、Variant 和 Scenario 执行五维验收纪律，分别报告 Review completeness 与 matched/deviation/unverified/not-applicable findings，并生成人工复查清单。
 
-默认读取顺序、MCP 工具、文档与技能分工见 [助手怎么读](../guides/agent-consumption.md)。采集完整、写完代码和助手自报都还不够，完成判据见 [怎样算过关](../guides/agent-consumption.md#怎样算过关)。
+默认读取顺序、MCP 工具、文档与技能分工见 [助手怎么读](../guides/agent-consumption.md)。采集完整、写完代码、Review complete 和助手自报都不等于最终视觉验收通过，完成判据见 [怎样算过关](../guides/agent-consumption.md#怎样算过关)。
 
 Target 查询与 Capture Evidence 互相隔离。目标仓库的既有组件和约定可以指导实现，但不能覆盖原型 Evidence 中的 unknown 或 conflict。Evidence 层面允许任意 Target；当前内置 Target query/validation 只支持 Flutter。

@@ -93,13 +93,13 @@ CLI 只解析参数、加载 Workspace 配置、调用 Core、格式化文本/JS
 - 校验 Snapshot/revision/Blob 的可达性；
 - 返回可见 risks、unknown 和 conflicts；
 - 独立提供 Target conventions、examples、readiness 与 validation；
-- 提供 Target conventions、resolver、readiness 与变更 validation；五维实施后复查使用固定 Reconstruction Obligations 和 consumer-reported summary。
+- 提供 Target conventions、resolver、readiness 与变更 validation；五维实施后复查使用固定 Reconstruction Obligations、严格 observation 语义和 consumer-reported summary。
 
-MCP 不创建 Capture Job，不接受 Store 文件路径作为对象引用，不替 Agent 选择实现。Target 工具省略 `targetRoot` 时使用绑定的 `delivery.targetRoot`，禁止回落到 cwd。完整 Snapshot/Contract 读取仅为兼容和显式 debug，默认 Prompt 不调用。`read_implementation_plan` / `read_implementation_tranche` 保留为诊断能力，不是默认实施路径。普通响应不按字节阈值截断；detail continuation 只按稳定逻辑查询边界产生。完整参考见 [MCP README](../../packages/mcp-server/README.md)。
+MCP 不创建 Capture Job，不接受 Store 文件路径作为对象引用，不替 Agent 选择实现。Target 工具省略 `targetRoot` 时使用绑定的 `delivery.targetRoot`，禁止回落到 cwd。完整 Snapshot/Contract 读取仅为显式 debug，默认 Prompt 不调用。`read_implementation_plan` / `read_implementation_tranche` 保留为诊断能力，不是默认实施路径。普通响应不按字节阈值截断；detail continuation 只按稳定逻辑查询边界产生。当前 MCP Tool Contract version 3 直接采用严格 Reconstruction Review observation 语义，不保留旧的空依据 Review 逻辑。完整参考见 [MCP README](../../packages/mcp-server/README.md)。
 
 Consumer projection version 4 是当前默认契约：Screen packet 含 `canonicalBrief`；inventory 与 Case delta 面向 Agent 使用 `regionId` / `caseId`；Case delta 不重复完整 Fact/provenance。Evidence obligations 按 Handoff/Screen/维度分页，continuation 前缀为 `pbcp4` / `pbop4`，绑定固定 Snapshot 与规范化查询，不能跨维度复用。Evidence Region 是 Source 定位与验收单元，不等于目标侧组件、列表项或文件边界。
 
-五维复查分母来自 Core 对 Acceptance Contract 的确定性编译：等价的 per-Case requirements 按 Screen、维度、kind、subject 和 canonical expected 去重，同时保留全部 Case 与 Evidence refs。默认 MCP 通过 `summarize_reconstruction_review` 输出 consumer-reported coverage、偏差与未验证事项，不将它提升为独立 Runtime receipt。
+五维复查分母来自 Core 对 Acceptance Contract 的确定性编译：等价的 per-Case requirements 按 Screen、维度、kind、subject 和 canonical expected 去重，同时保留全部 Case 与 Evidence refs。`summarize_reconstruction_review` 要求每个 requirement 最多一个 observation：`matched` / `deviation` 必须有依据，`deviation` / `unverified` / `not-applicable` 必须有理由；它分别输出范围覆盖、observation Review completeness、五维 findings 和人工复查输入，不将 Consumer 自报提升为独立 Runtime receipt。
 
 ## Target boundary
 

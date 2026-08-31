@@ -5,15 +5,22 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const prompt = await readFile(path.join(root, 'packages/core/src/v2/prompts/handoff-consumer.md'), 'utf8');
+const acceptance = await readFile(path.join(root, 'packages/core/src/v2/prompts/acceptance-discipline.md'), 'utf8');
 const generated = await readFile(path.join(root, 'packages/core/src/v2/prompts/generated-assets.ts'), 'utf8');
 const guide = await readFile(path.join(root, 'packages/mcp-server/src/consumer-guide.ts'), 'utf8');
+const consumerContract = await readFile(path.join(root, 'packages/core/src/v2/prompts/consumer-contract.ts'), 'utf8');
+const acceptanceSkill = await readFile(path.join(root, '.agents/skills/acceptance/SKILL.md'), 'utf8');
 const registry = await readFile(path.join(root, 'packages/mcp-server/src/tools/registry.ts'), 'utf8');
 const runtime = await readFile(path.join(root, 'packages/mcp-server/src/runtime-info.ts'), 'utf8');
 const projection = await readFile(path.join(root, 'packages/core/src/v2/consumer-projection.ts'), 'utf8');
 const failures = [];
 
 if (!generated.includes(JSON.stringify(prompt).slice(1, -1))) failures.push('generated Core prompt asset drifted from handoff-consumer.md');
-if (!guide.includes("PROMPT_ASSETS['handoff-consumer']")) failures.push('MCP consumer guide is not derived from Core prompt asset');
+if (!generated.includes(JSON.stringify(acceptance).slice(1, -1))) failures.push('generated Core prompt asset drifted from acceptance-discipline.md');
+if (!consumerContract.includes("'acceptance-discipline'")) failures.push('Core consumer contract omits acceptance discipline');
+if (!guide.includes('buildConsumerContractText()')) failures.push('MCP consumer guide is not derived from the complete Core consumer contract');
+if (!acceptanceSkill.includes('../../../packages/core/src/v2/prompts/acceptance-discipline.md')) failures.push('Acceptance Skill does not route to the canonical Core discipline');
+if (acceptanceSkill.includes('状态命中：6.5') || acceptanceSkill.includes('warning-soft')) failures.push('Acceptance Skill still duplicates prototype-specific acceptance rules');
 for (const name of ['read_implementation_plan', 'read_implementation_tranche', 'inspect_target_readiness']) {
   if (!registry.includes(`'${name}'`)) failures.push(`MCP registry missing ${name}`);
 }
@@ -26,6 +33,9 @@ for (const marker of ['read_implementation_plan', 'read_implementation_tranche',
 }
 for (const marker of ['read_reconstruction_obligations', 'summarize_reconstruction_review', 'projection contract version']) {
   if (!prompt.includes(marker)) failures.push(`Core consumer contract missing verifier/schema marker ${marker}`);
+}
+for (const marker of ['Review completeness', 'consumer-reported-review', 'unverified']) {
+  if (!acceptance.includes(marker)) failures.push(`Core acceptance discipline missing ${marker}`);
 }
 for (const marker of ['MCP_TOOL_CONTRACT_VERSION', 'CONSUMER_PROJECTION_VERSION']) {
   if (!runtime.includes(marker)) failures.push(`MCP runtime missing contract marker ${marker}`);

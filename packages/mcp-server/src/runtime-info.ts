@@ -7,7 +7,7 @@ import {
   MCP_PACKAGE_VERSION,
 } from './generated-build-info.js';
 
-export const MCP_TOOL_CONTRACT_VERSION = 2 as const;
+export const MCP_TOOL_CONTRACT_VERSION = 3 as const;
 export const MCP_PROCESS_STARTED_AT = new Date().toISOString();
 
 export function mcpRuntimeInfo(generation: string | 'legacy-unavailable' = 'legacy-unavailable') {

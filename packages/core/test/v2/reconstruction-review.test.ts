@@ -56,6 +56,7 @@ describe('Reconstruction review summary', () => {
       addressedCaseIds: [],
       viewedScreenshotBlobIds: [],
       replayedScenarioCaseIds: [],
+      observations: [],
     });
     expect(result.coverageStatus).toBe('partial');
     expect(result.visualReviewStatus).toBe('partial');
@@ -66,6 +67,13 @@ describe('Reconstruction review summary', () => {
       'blob-screenshot',
     ]);
     expect(result.dimensions.interactions.guidanceReferences).toBe(0);
+    expect(result.reviewCompleteness.status).toBe('partial');
+    expect(result.reviewCompleteness.missingRequirementIds).toEqual([
+      'structure.reference',
+      'components.reference',
+      'tokens.reference',
+      'states.reference',
+    ]);
     expect(result).not.toHaveProperty('overallScore');
     expect(result).not.toHaveProperty('hardGatesPassed');
   });
@@ -89,5 +97,89 @@ describe('Reconstruction review summary', () => {
     expect(result.visualReviewStatus).toBe('reviewed');
     expect(result.dimensions.tokens.unverified).toBe(1);
     expect(result.disclosures.unverified).toHaveLength(1);
+    expect(result.reviewCompleteness.status).toBe('partial');
+    expect(result.humanVerification.screens[0]?.findings).toHaveLength(1);
+  });
+
+  it('reports a complete review only when every selected obligation is observed', () => {
+    const result = summarizeReconstructionReview({
+      contract: contract(),
+      addressedCaseIds: ['sample.screen::default::light::phone'],
+      viewedScreenshotBlobIds: ['blob-screenshot'],
+      replayedScenarioCaseIds: [],
+      observations: [
+        ...['structure', 'components', 'tokens', 'states'].map((dimension) => ({
+          requirementId: `${dimension}.reference`,
+          status: 'matched' as const,
+          evidence: [`target:${dimension}`],
+        })),
+      ],
+    });
+
+    expect(result.reviewCompleteness).toEqual({
+      status: 'complete',
+      requiredObservations: 4,
+      reportedObservations: 4,
+      missingRequirementIds: [],
+    });
+    expect(result.dimensions.structure.missingRequirementIds).toEqual([]);
+    expect(result.humanVerification.screens[0]?.stateChecks).toHaveLength(1);
+  });
+
+  it('rejects unsupported completion claims and duplicate observations', () => {
+    expect(() =>
+      summarizeReconstructionReview({
+        contract: contract(),
+        addressedCaseIds: ['sample.screen::default::light::phone'],
+        viewedScreenshotBlobIds: ['blob-screenshot'],
+        replayedScenarioCaseIds: [],
+        observations: [
+          {
+            requirementId: 'tokens.reference',
+            status: 'matched',
+            evidence: [],
+          },
+        ],
+      }),
+    ).toThrow(/supporting evidence/);
+
+    expect(() =>
+      summarizeReconstructionReview({
+        contract: contract(),
+        addressedCaseIds: ['sample.screen::default::light::phone'],
+        viewedScreenshotBlobIds: ['blob-screenshot'],
+        replayedScenarioCaseIds: [],
+        observations: [
+          {
+            requirementId: 'tokens.reference',
+            status: 'unverified',
+            evidence: [],
+          },
+        ],
+      }),
+    ).toThrow(/require a reason/);
+
+    expect(() =>
+      summarizeReconstructionReview({
+        contract: contract(),
+        addressedCaseIds: ['sample.screen::default::light::phone'],
+        viewedScreenshotBlobIds: ['blob-screenshot'],
+        replayedScenarioCaseIds: [],
+        observations: [
+          {
+            requirementId: 'tokens.reference',
+            status: 'unverified',
+            evidence: [],
+            detail: 'No exact target mapping exists.',
+          },
+          {
+            requirementId: 'tokens.reference',
+            status: 'unverified',
+            evidence: [],
+            detail: 'No exact target mapping exists.',
+          },
+        ],
+      }),
+    ).toThrow(/Duplicate review observations/);
   });
 });

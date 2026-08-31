@@ -39,7 +39,7 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 9. 用户批准后，阅读目标仓库自己的 AGENT、README、架构、测试、公共 API 和既有实现。Target adapter 只发现和归一化这些上下文；内置 fallback 不能覆盖真实目标文档。
 10. Agent 自行决定文件、组件、状态、路由和 Token，但不得发明证据未支持的容器形态、文案、交互或状态；优先复用 Evidence/Source 固定业务数据；布局敏感 prop 缺失时对照 Screenshot，仍不确定则披露为剩余风险。
 11. continuation 只能续读同一规范化查询直到 `complete=true`。完成后不得重启；不得为“读全”轮询所有投影或在 selector 之间循环。一次针对性展开仍不能解决时，记录未知或风险。
-12. 完成实现并运行目标原生验证；实施后复查使用 `read_reconstruction_obligations` 按 Screen/维度分页，不读取完整 Acceptance Contract，也不把 obligation 顺序当作编码顺序。调用 `summarize_reconstruction_review` 汇总已处理 Case、已查看 Screenshot、已重放 Scenario、已知偏差和未验证事项。
+12. 完成实现并运行目标原生验证；随后按 Core `acceptance-discipline` 对固定 Handoff 选中范围执行验收。使用 `read_reconstruction_obligations` 按 Screen/维度分页，不读取完整 Acceptance Contract，也不把 obligation 顺序当作编码顺序。最后调用 `summarize_reconstruction_review` 汇总范围、Screenshot、Scenario、observation 完整度和五维 findings。
 
 整包 Snapshot、原始 Case/revision/fragment、Catalog、Issue、Staleness、`read_agent_handoff` 与 `read_acceptance_contract` 已从 MCP 表面移除；不得回退到旧整包读取路径。
 
@@ -93,35 +93,34 @@ Component / Token 落点以 `read_screen_packet` 的 `implementationInventory` �
 
 ## 验收纪律
 
-验收纪律（`acceptance-discipline`）已集成到 MCP Prompt Asset，在调用 `summarize_reconstruction_review` 前自动提供强制检查清单。所有 Agent（codex、cursor、claude code）通过 MCP 消费 Handoff 时都会收到。
+验收纪律的唯一完整规则源是 Core Prompt Asset `packages/core/src/v2/prompts/acceptance-discipline.md`。Delivery Prompt、MCP Prompt `consume_evidence_handoff` 与 MCP Resource `proto-bridge://guides/handoff-consumer` 都由同一 Consumer Contract 组合函数生成；仓库 `acceptance` Skill 只负责触发和路由，不复制规则。
 
-### 强制检查项
+### 范围与状态
 
-1. **Evidence 完整读取** - 所有 Screenshot 必须通过 `read_evidence_screenshot` 查看为真实 ImageContent，不能只读文字描述
-2. **固定业务数据精确对照** - 数值、时间戳、选项列表必须与 Evidence 完全一致，不能因"Evidence 不够详细"而自行简化
-3. **Token 精确匹配** - `warning-soft` ≠ `surfaceVariant`，不能用"看起来差不多的值"替代
-4. **组件精确映射** - 不能"该用公共组件却自造"或"错用相似组件"
-5. **结构对照 Screenshot** - 对照 Screenshot 推理代码视觉，主滚动边界、组件内部构图必须一致
-6. **状态与交互完整性** - 所有 Variant 已实现，表单校验规则完整，导航参数已消费
-7. **Unverified 诚实标记** - 动画、精确间距可标记为 unverified；固定业务数据、Token key、组件映射不能标记为 unverified
+- 只验收 Handoff 选中的 Screen、Case、Variant 和 Scenario，不扩展未选中状态。
+- Evidence 明确证明完整的固定数据必须精确复用；partial、unknown 或 conflict 时禁止猜测补全。
+- resolver 为 `resolved` 且当前实现真实使用时才能支持组件或 Token `matched`；其它 resolver 状态保持 `unverified` 或报告 blocker。
+- 公共组件是合法实现选择，但可见结果不同仍属于需要披露的 `deviation`。
+- 没有 Target 视觉结果时，可以结合固定 Evidence、目标代码和测试判断结构语义，不能冒充像素级视觉验证。
 
-### 完成报告结构
+每个适用 obligation 且只能提交一个 observation：
 
-验收报告必须包含三部分：
+- `matched` 必须有可靠 evidence；
+- `deviation` 必须有 evidence、原因和影响；
+- `unverified` 必须说明缺少什么验证依据；
+- `not-applicable` 必须说明为什么对当前选中 Case 不适用。
 
-**Verified（已验证）** - 列出已确认的检查项和依据  
-**Deviations（已知偏差）** - 每个偏差说明原因和影响  
-**Unverified（未验证）** - 每个未验证项说明为什么无法验证
+`unverified` 是合法且必要的诚实状态；空 observations 只能产生 partial Review。用空数组掩盖未验证范围、无依据的 `matched` 和把 partial Review 描述成完成才是违规。
 
-### 人工验收清单
+### Review completeness 与人工复查
 
-报告末尾必须生成人工验收清单，基于本次实施动态生成：
+`summarize_reconstruction_review` 分开报告：
 
-- 列出所有实施的 Screen 及其 baseline Screenshot
-- 对每个 Screen，列出基于实际 Deviations、Unverified 和关键固定数据的检查项
-- 不硬编码具体原型的检查项
+1. Case、Screenshot、Scenario 和 obligation observations 是否完整；
+2. matched、deviation、unverified、not-applicable findings；
+3. 用于人工复查的 Screen、Case、Screenshot blob、deviations、unverified 和固定状态检查项。
 
-验收纪律详见 `.agents/skills/acceptance/SKILL.md` 或 MCP Prompt Asset `acceptance-discipline`。
+缺失 `observations` 参数会被拒绝；空数组或缺少 obligation observation 会使 Review completeness 为 `partial`。报告末尾必须基于结构化 summary 生成人工验收清单；默认使用实际 `screenId`、`caseId` 和 Screenshot blob ID，只有 Delivery manifest 提供路径时才写文件名。Consumer 可以交付 partial Review，但不能声称还原已经验收通过。
 
 ## 必须报告的风险
 
@@ -159,7 +158,10 @@ Agent 最终至少报告：
 - 使用了哪些目标工程既有模式；
 - 运行的原生测试和结果；
 - 适用 adapter 的变更校验结果（若存在）；
+- Review completeness 与缺失的 requirement IDs；
+- 五维 matched、deviation、unverified、not-applicable findings；
 - 相对 Evidence 的已知偏差；
 - 尚未解决的 Evidence 或实现风险。
+- 针对本次 Screen/Case/Blob 的 Human Verification Checklist。
 
-这里的完成报告是范围与验证事实摘要，不是还原度评分。组件或 Token Evidence 无法逐项映射时可以继续结合 Screenshot 和目标规范实施，但五维 summary 必须将对应 obligation 标为 `deviation` 或 `unverified`，不能用空 observations 隐去；不要为了填满映射表而弱化最终视觉。
+这里的完成报告是范围与验证事实摘要，不是还原度评分。Review complete 只表示验收动作完整，不代表最终视觉验收通过。组件或 Token Evidence 无法逐项映射时可以继续结合 Screenshot 和目标规范实施，但五维 summary 必须将对应 obligation 标为 `deviation` 或 `unverified`；不要为了填满映射表而弱化最终视觉。

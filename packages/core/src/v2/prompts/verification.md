@@ -7,10 +7,8 @@
 3. 运行目标工程声明的静态检查和测试。
 4. 如果本次实际执行了目标平台视觉验证，报告设备环境和结果；未执行时明确标为未验证，但不为此临时引入设备自动化或 Runtime Harness。
 5. 仅当存在适用的 Target adapter 时调用 `validate_target_changes`，并传入限制性的 `allowedPaths` 和预期文件。
-6. 以 `read_reconstruction_obligations` 按 Screen 和维度复查 structure、components、tokens、states、interactions。组件和 Token 结合 Target resolver、实际使用点与 `validate_target_changes`；结构、状态和交互结合固定 Evidence、目标代码与实际测试。没有可靠依据时保持 `unverified`。
-7. 根据实际风险按需复查 structure/components/tokens/interactions/provenance；状态差异以 `read_case_delta` 为准。不要为复查默认展开完整 Contract，不要计算分数，也不要把 Evidence reference 当作必须逐项填满的配额。
-8. 调用 `summarize_reconstruction_review` 汇总已处理 Case、已查看 Screenshot、已重放 Scenario、已知偏差和未验证事项；该汇总不代表独立视觉验收。
+6. 完成上述验证后应用后续 `Acceptance Discipline`，按固定 selected scope 形成五维 observations 和 Review completeness；不要计算分数。
 
-“完成”只表示 Handoff 选中范围已经实施或明确披露未实施项，不能替代对 Screenshot 最终视觉效果的判断。没有执行的视觉或交互验证必须标为未验证。
+“实施完成”只表示 Handoff 选中范围已经实现或明确披露未实现项；“Review complete”只表示验收动作完整。两者都不能替代对 Screenshot 最终视觉效果的判断。没有执行的视觉或交互验证必须标为 `unverified`。
 
 不要把桌面、Web 或不同尺寸设备的结果当作固定移动 Screenshot 的等价验收。
