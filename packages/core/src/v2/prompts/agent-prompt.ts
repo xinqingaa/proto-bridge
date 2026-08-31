@@ -55,6 +55,7 @@ export function buildAgentPrompt(input: BuildAgentPromptInput): string {
     PROMPT_ASSETS['target-contract'],
     PROMPT_ASSETS['implementation-discipline'],
     PROMPT_ASSETS['verification'],
+    PROMPT_ASSETS['acceptance-discipline'],
     PROMPT_ASSETS['final-report'],
   ].join('\n\n');
 

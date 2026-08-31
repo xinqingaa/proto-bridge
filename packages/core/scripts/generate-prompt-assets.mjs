@@ -9,6 +9,7 @@ const names = [
   'target-contract',
   'implementation-discipline',
   'verification',
+  'acceptance-discipline',
   'final-report',
 ];
 

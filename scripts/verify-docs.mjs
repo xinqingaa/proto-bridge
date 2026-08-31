@@ -113,7 +113,7 @@ async function verifySkills() {
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
     .sort();
-  const expectedSkills = ["frontend-design", "pbwork", "proto-bridge"];
+  const expectedSkills = ["acceptance", "frontend-design", "pbwork", "proto-bridge"];
   if (actualSkills.join("\n") !== expectedSkills.join("\n")) {
     errors.push(
       `.agents/skills must contain exactly ${expectedSkills.join(", ")}; found ${actualSkills.join(", ")}`,
