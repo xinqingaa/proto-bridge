@@ -91,6 +91,38 @@ Evidence Contract 可以服务任意技术栈；当前 Target tools 的公共门
 
 Component / Token 落点以 `read_screen_packet` 的 `implementationInventory` 为准，再调用 `inspect_target_readiness` / `resolve_target_*`。Catalog revision 仍由 Producer 固定在 Snapshot 上，Consumer 不得读取当前源码目录补造旧 Snapshot 的目录事实。
 
+## 验收纪律
+
+验收纪律（`acceptance-discipline`）已集成到 MCP Prompt Asset，在调用 `summarize_reconstruction_review` 前自动提供强制检查清单。所有 Agent（codex、cursor、claude code）通过 MCP 消费 Handoff 时都会收到。
+
+### 强制检查项
+
+1. **Evidence 完整读取** - 所有 Screenshot 必须通过 `read_evidence_screenshot` 查看为真实 ImageContent，不能只读文字描述
+2. **固定业务数据精确对照** - 数值、时间戳、选项列表必须与 Evidence 完全一致，不能因"Evidence 不够详细"而自行简化
+3. **Token 精确匹配** - `warning-soft` ≠ `surfaceVariant`，不能用"看起来差不多的值"替代
+4. **组件精确映射** - 不能"该用公共组件却自造"或"错用相似组件"
+5. **结构对照 Screenshot** - 对照 Screenshot 推理代码视觉，主滚动边界、组件内部构图必须一致
+6. **状态与交互完整性** - 所有 Variant 已实现，表单校验规则完整，导航参数已消费
+7. **Unverified 诚实标记** - 动画、精确间距可标记为 unverified；固定业务数据、Token key、组件映射不能标记为 unverified
+
+### 完成报告结构
+
+验收报告必须包含三部分：
+
+**Verified（已验证）** - 列出已确认的检查项和依据  
+**Deviations（已知偏差）** - 每个偏差说明原因和影响  
+**Unverified（未验证）** - 每个未验证项说明为什么无法验证
+
+### 人工验收清单
+
+报告末尾必须生成人工验收清单，基于本次实施动态生成：
+
+- 列出所有实施的 Screen 及其 baseline Screenshot
+- 对每个 Screen，列出基于实际 Deviations、Unverified 和关键固定数据的检查项
+- 不硬编码具体原型的检查项
+
+验收纪律详见 `.agents/skills/acceptance/SKILL.md` 或 MCP Prompt Asset `acceptance-discipline`。
+
 ## 必须报告的风险
 
 - `partial-coverage`
