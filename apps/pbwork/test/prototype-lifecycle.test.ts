@@ -85,6 +85,179 @@ describe("prototype lifecycle workspace state", () => {
     });
   });
 
+  describe("capturing finalization polls", () => {
+    const startedAt = "2026-09-25T02:35:44.713Z";
+    const jobId = "job-1";
+    const bundleId = "bundle-1";
+    const runId = "run-1";
+
+    function capturingRecord(prototypeId: string) {
+      return {
+        prototypeId,
+        stage: "review" as const,
+        operation: {
+          kind: "finalizing" as const,
+          phase: "capturing" as const,
+          startedAt,
+          jobId,
+          bundleId,
+        },
+        artifacts: null,
+        createdAt: startedAt,
+        updatedAt: startedAt,
+      };
+    }
+
+    function completedJob(caseIds: string[]) {
+      return {
+        jobId,
+        bundleId,
+        runId,
+        status: "completed",
+        selection: { cases: caseIds.map((caseId) => ({ caseId })) },
+        journal: caseIds.map((caseId) => ({
+          at: startedAt,
+          event: "case-finished",
+          detail: `${caseId}:captured`,
+        })),
+      } as never;
+    }
+
+    function details(
+      attempts: Array<{ caseId: string; result: string; reason?: string }>,
+    ) {
+      const failed = attempts.filter((item) => item.result === "failed").length;
+      return {
+        bundle: { bundleId },
+        activeSnapshot: {
+          snapshotId: "snapshot-1",
+          coverage: {
+            counts: {
+              selected: attempts.length,
+              captured: attempts.length - failed,
+              reused: 0,
+              failed,
+              skipped: 0,
+              unsupported: 0,
+              cancelled: 0,
+              interrupted: 0,
+              missing: 0,
+              stale: 0,
+            },
+          },
+        },
+        runs: [{ runId, attempts }],
+      } as never;
+    }
+
+    function connectedCapture() {
+      const capture = useCaptureStore();
+      capture.session = {} as never;
+      vi.spyOn(capture, "refreshConsole").mockResolvedValue(true);
+      return capture;
+    }
+
+    it("creates one Handoff when the page and the sheet poll at the same time", async () => {
+      const store = usePrototypeLifecycleStore();
+      const capture = connectedCapture();
+      const prototype = prototypes[0]!;
+      store.replaceRecord(capturingRecord(prototype.id));
+      vi.spyOn(captureServiceClient, "getJob").mockResolvedValue(
+        completedJob(["case-a"]),
+      );
+      vi.spyOn(capture, "loadBundle").mockImplementation(async () => {
+        capture.details = details([{ caseId: "case-a", result: "captured" }]);
+      });
+      vi.spyOn(capture, "previewCurrentHandoff").mockImplementation(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        capture.handoffPreview = { risks: [], coverageStatus: "complete" } as never;
+      });
+      const createHandoff = vi
+        .spyOn(capture, "createCurrentHandoff")
+        .mockImplementation(async () => {
+          await new Promise((resolve) => setTimeout(resolve, 5));
+          capture.handoff = { handoffId: "handoff-1" } as never;
+          capture.deliveryArtifact = {
+            deliveryId: "delivery-1",
+            agentPromptPath: "/delivery/agent-prompt.md",
+            receiptPath: "/delivery/receipt.json",
+          } as never;
+        });
+
+      await Promise.all([
+        store.pollFinalization(prototype),
+        store.pollFinalization(prototype),
+      ]);
+      await store.pollFinalization(prototype);
+
+      expect(createHandoff).toHaveBeenCalledTimes(1);
+      expect(store.recordFor(prototype.id)).toMatchObject({
+        stage: "final",
+        artifacts: { handoffId: "handoff-1", deliveryId: "delivery-1" },
+      });
+    });
+
+    it("keeps every failed Case of an incomplete capture and skips the Handoff", async () => {
+      const store = usePrototypeLifecycleStore();
+      const capture = connectedCapture();
+      const prototype = prototypes[0]!;
+      store.replaceRecord(capturingRecord(prototype.id));
+      vi.spyOn(captureServiceClient, "getJob").mockResolvedValue(
+        completedJob(["case-a", "case-b", "case-c"]),
+      );
+      vi.spyOn(capture, "loadBundle").mockImplementation(async () => {
+        capture.details = details([
+          { caseId: "case-a", result: "captured" },
+          { caseId: "case-b", result: "failed", reason: "Fragment b/ is missing." },
+          {
+            caseId: "case-c",
+            result: "failed",
+            reason: "Required Fragment c/ is occluded at its center point.",
+          },
+        ]);
+      });
+      const preview = vi.spyOn(capture, "previewCurrentHandoff");
+
+      await store.pollFinalization(prototype);
+
+      expect(preview).not.toHaveBeenCalled();
+      expect(store.recordFor(prototype.id)?.operation).toMatchObject({
+        kind: "failed",
+        message: expect.stringContaining("1/3 项有效，2 项失败"),
+        failedCases: [
+          { caseId: "case-b", reason: "Fragment b/ is missing." },
+          {
+            caseId: "case-c",
+            reason: "Required Fragment c/ is occluded at its center point.",
+          },
+        ],
+      });
+      setActivePinia(createPinia());
+      expect(
+        usePrototypeLifecycleStore().recordFor(prototype.id)?.operation,
+      ).toMatchObject({ kind: "failed", failedCases: expect.any(Array) });
+    });
+
+    it("keeps capturing and explains a lost connection instead of failing", async () => {
+      const store = usePrototypeLifecycleStore();
+      const capture = connectedCapture();
+      const prototype = prototypes[0]!;
+      store.replaceRecord(capturingRecord(prototype.id));
+      vi.spyOn(captureServiceClient, "getJob").mockRejectedValue(
+        new TypeError("Failed to fetch"),
+      );
+
+      await store.pollFinalization(prototype);
+
+      expect(store.recordFor(prototype.id)?.operation).toMatchObject({
+        kind: "finalizing",
+        phase: "capturing",
+        jobId,
+      });
+      expect(store.connectionIssues[prototype.id]).toContain("仍在后台运行");
+    });
+  });
+
   it("clears the bound Evidence before rolling a finalized prototype back", async () => {
     const store = usePrototypeLifecycleStore();
     const capture = useCaptureStore();

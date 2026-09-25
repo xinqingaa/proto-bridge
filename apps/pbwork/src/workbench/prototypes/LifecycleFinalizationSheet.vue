@@ -14,6 +14,8 @@ import {
 import type { PrototypeRecord } from "@/design-system/types";
 import { useCaptureStore } from "@/app/stores/capture";
 import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
+import { groupCaptureFailures } from "@/capture/presentation";
+import CaptureFailureGroups from "@/capture/CaptureFailureGroups.vue";
 import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
 import WorkbenchCheckbox from "@/workbench/ui/WorkbenchCheckbox.vue";
 import WorkbenchIconButton from "@/workbench/ui/WorkbenchIconButton.vue";
@@ -52,12 +54,31 @@ const step = computed(() => {
   return 0;
 });
 const steps = ["确认收敛", "预检与采集", "风险确认", "Evidence 与提示词"];
-const completedCases = computed(
-  () =>
-    capture.activeJob?.journal.filter((entry) => entry.event === "case-finished")
-      .length ?? 0,
+const jobProgress = computed(() => {
+  const tracked = lifecycle.progress[props.prototype.id];
+  if (tracked) return tracked;
+  const current = operation.value;
+  const job = capture.activeJob;
+  if (current.kind !== "finalizing" || !job || job.jobId !== current.jobId) {
+    return { completed: 0, total: 0 };
+  }
+  return {
+    completed: job.journal.filter((entry) => entry.event === "case-finished")
+      .length,
+    total: job.selection.cases.length,
+  };
+});
+const completedCases = computed(() => jobProgress.value.completed);
+const totalCases = computed(() => jobProgress.value.total);
+const connectionIssue = computed(
+  () => lifecycle.connectionIssues[props.prototype.id] ?? "",
 );
-const totalCases = computed(() => capture.activeJob?.selection.cases.length ?? 0);
+const failureGroups = computed(() => {
+  const current = operation.value;
+  return current.kind === "failed"
+    ? groupCaptureFailures(current.failedCases ?? [])
+    : [];
+});
 const progress = computed(() =>
   totalCases.value ? (completedCases.value / totalCases.value) * 100 : 0,
 );
@@ -91,12 +112,17 @@ async function initialize() {
     }
     return;
   }
-  if (current.kind === "failed") await lifecycle.clearFailure(props.prototype.id);
+  if (current.kind === "failed") return;
   if (current.kind === "finalizing") {
     await lifecycle.recoverFinalization(props.prototype);
   } else if (record.value?.stage === "review") {
     await lifecycle.prepareFinalization(props.prototype);
   }
+}
+
+async function recheck() {
+  lifecycle.clearFailure(props.prototype.id);
+  await initialize();
 }
 
 async function poll() {
@@ -201,10 +227,32 @@ onBeforeUnmount(() => {
       </ol>
 
       <div class="flow-body">
-        <section v-if="operation.kind === 'failed'" class="flow-failure" role="alert">
-          <AlertTriangle :size="22" />
-          <div><strong>定稿未完成</strong><p>{{ operation.message }}</p></div>
-          <WorkbenchButton tone="neutral" @click="initialize">重新检查</WorkbenchButton>
+        <p v-if="connectionIssue" class="flow-connection" role="status">
+          <AlertTriangle :size="16" />{{ connectionIssue }}
+        </p>
+
+        <section
+          v-if="operation.kind === 'failed'"
+          class="flow-failure-report"
+          data-testid="finalization-failure"
+        >
+          <div class="flow-failure" role="alert">
+            <AlertTriangle :size="22" />
+            <div><strong>定稿未完成</strong><p>{{ operation.message }}</p></div>
+            <WorkbenchButton tone="neutral" @click="recheck">
+              修复后重新检查
+            </WorkbenchButton>
+          </div>
+          <CaptureFailureGroups v-if="failureGroups.length" :groups="failureGroups" />
+        </section>
+
+        <section
+          v-else-if="operation.kind === 'finalizing' && operation.phase === 'preflighting'"
+          class="capture-progress"
+          aria-live="polite"
+        >
+          <LoaderCircle :size="34" class="spin" />
+          <strong>正在检查整个原型的正式范围</strong>
         </section>
 
         <section
@@ -524,6 +572,28 @@ onBeforeUnmount(() => {
 }
 .flow-failure p {
   margin-top: 3px;
+  font-size: 0.74rem;
+}
+.flow-failure-report {
+  display: flex;
+  max-width: 760px;
+  margin: 0 auto;
+  flex-direction: column;
+  gap: 12px;
+}
+.flow-failure-report .flow-failure {
+  width: 100%;
+  margin: 0;
+}
+.flow-connection {
+  display: flex;
+  max-width: 760px;
+  margin: 0 auto 14px;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 13px;
+  border-radius: 8px;
+  background: color-mix(in srgb, rgb(var(--v-theme-warning)) 12%, transparent);
   font-size: 0.74rem;
 }
 .result-heading,

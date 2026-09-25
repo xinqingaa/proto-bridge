@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { loadPrototypeScreens, loadPrototypes } from "@/design-system/loaders";
 import {
+  finalizeActionLabel,
   formatLastEvent,
   operationCaption,
   prototypeChapters,
@@ -77,5 +78,26 @@ describe("prototype work map", () => {
         false,
       ),
     ).toEqual({ status: "定稿失败", failure: "采集失败" });
+  });
+
+  it("lets an unfinished finalization reopen its sheet", () => {
+    const startedAt = "2026-08-20T04:00:00.000Z";
+    expect(finalizeActionLabel({ kind: "idle" })).toBe("定稿并采集");
+    expect(
+      finalizeActionLabel({
+        kind: "finalizing",
+        phase: "awaiting-confirmation",
+        startedAt,
+      }),
+    ).toBe("继续定稿");
+    expect(
+      finalizeActionLabel({ kind: "finalizing", phase: "capturing", startedAt }),
+    ).toBe("查看定稿进度");
+    expect(
+      operationCaption(
+        { kind: "finalizing", phase: "awaiting-risks", startedAt },
+        false,
+      ).status,
+    ).toBe("等待你确认风险");
   });
 });

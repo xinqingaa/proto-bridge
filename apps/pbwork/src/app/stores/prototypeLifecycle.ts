@@ -1,8 +1,12 @@
 import { defineStore } from "pinia";
-import type { CaptureJob } from "@proto-bridge/core/v2";
+import { incompleteCaseCount, type CaptureJob } from "@proto-bridge/core/v2";
 import type { PrototypeLifecycle, PrototypeRecord } from "@/design-system/types";
 import { useCaptureStore } from "@/app/stores/capture";
-import { captureServiceClient } from "@/capture/service-client";
+import {
+  captureServiceClient,
+  LocalServiceClientError,
+} from "@/capture/service-client";
+import { parseFailedCaseDetail } from "@/capture/presentation";
 import {
   hasDanglingArtifactRefs,
   shouldResetLocalWorkspaceState,
@@ -56,7 +60,12 @@ export type LifecycleOperation =
       action: "finalize" | "rollback";
       message: string;
       failedAt: string;
+      failedCases?: FinalizationFailedCase[];
     };
+
+export type FinalizationFailedCase = { caseId: string; reason: string };
+
+export type FinalizationProgress = { completed: number; total: number };
 
 export type FinalizedArtifacts = {
   jobId: string;
@@ -280,8 +289,33 @@ function jobFailure(job: CaptureJob, fallback?: string | null): string {
   return `整原型采集以 ${job.status} 结束。`;
 }
 
+function journalFailures(job: CaptureJob): FinalizationFailedCase[] {
+  return job.journal
+    .filter((entry) => entry.event === "case-finished" && entry.detail)
+    .map((entry) => parseFailedCaseDetail(entry.detail!))
+    .filter((item): item is FinalizationFailedCase => Boolean(item));
+}
+
+function isFinalizingCapture(
+  record: PrototypeLifecycleRecord | undefined,
+  jobId: string,
+): boolean {
+  return (
+    record?.stage === "review" &&
+    record.operation.kind === "finalizing" &&
+    record.operation.phase === "capturing" &&
+    record.operation.jobId === jobId
+  );
+}
+
+const pollsInFlight = new Map<string, Promise<void>>();
+
 export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
-  state: loadState,
+  state: () => ({
+    ...loadState(),
+    connectionIssues: {} as Record<string, string>,
+    progress: {} as Record<string, FinalizationProgress>,
+  }),
   getters: {
     recordFor: (state) =>
       (prototypeId: string): PrototypeLifecycleRecord | null =>
@@ -382,8 +416,14 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
         updatedAt: now,
       });
     },
-    failOperation(prototypeId: string, action: "finalize" | "rollback", message: string) {
+    failOperation(
+      prototypeId: string,
+      action: "finalize" | "rollback",
+      message: string,
+      failedCases: FinalizationFailedCase[] = [],
+    ) {
       const current = this.requireRecord(prototypeId);
+      this.clearConnectionIssue(prototypeId);
       this.replaceRecord({
         ...current,
         operation: {
@@ -391,9 +431,18 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
           action,
           message,
           failedAt: new Date().toISOString(),
+          ...(failedCases.length ? { failedCases } : {}),
         },
         updatedAt: new Date().toISOString(),
       });
+    },
+    setConnectionIssue(prototypeId: string, message: string) {
+      this.connectionIssues = { ...this.connectionIssues, [prototypeId]: message };
+    },
+    clearConnectionIssue(prototypeId: string) {
+      if (!(prototypeId in this.connectionIssues)) return;
+      const { [prototypeId]: _removed, ...rest } = this.connectionIssues;
+      this.connectionIssues = rest;
     },
     clearFailure(prototypeId: string) {
       const current = this.requireRecord(prototypeId);
@@ -506,7 +555,17 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
       });
       return true;
     },
-    async pollFinalization(prototype: PrototypeRecord) {
+    /** Advances a capturing finalization; concurrent callers share one in-flight poll per prototype. */
+    pollFinalization(prototype: PrototypeRecord): Promise<void> {
+      const pending = pollsInFlight.get(prototype.id);
+      if (pending) return pending;
+      const poll = this.pollFinalizationOnce(prototype).finally(() => {
+        pollsInFlight.delete(prototype.id);
+      });
+      pollsInFlight.set(prototype.id, poll);
+      return poll;
+    },
+    async pollFinalizationOnce(prototype: PrototypeRecord) {
       const current = this.requireRecord(prototype.id);
       if (
         current.stage !== "review" ||
@@ -516,39 +575,63 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
       ) {
         return;
       }
+      const jobId = current.operation.jobId;
       const capture = useCaptureStore();
       if (!capture.connected) await capture.connect();
-      if (!capture.connected) return;
-
-      try {
-        if (capture.activeJob?.jobId !== current.operation.jobId) {
-          capture.activeJob = await captureServiceClient.getJob(
-            current.operation.jobId,
-          );
-        }
-        await capture.refreshActiveJob();
-      } catch (error) {
-        capture.setError(error);
-        this.failOperation(
+      if (!capture.connected) {
+        this.setConnectionIssue(
           prototype.id,
-          "finalize",
-          capture.lastError ?? "读取采集任务失败。",
+          `采集服务未连接${capture.lastError ? `：${capture.lastError}` : ""}。采集任务可能仍在后台运行，恢复连接后会自动继续。`,
         );
         return;
       }
 
-      const job = capture.activeJob;
-      if (!job || !TERMINAL_JOB_STATUSES.has(job.status)) return;
+      let job: CaptureJob;
+      try {
+        job = await captureServiceClient.getJob(jobId);
+      } catch (error) {
+        capture.setError(error);
+        if (error instanceof LocalServiceClientError) {
+          this.failOperation(
+            prototype.id,
+            "finalize",
+            capture.lastError ?? "读取采集任务失败。",
+          );
+        } else {
+          this.setConnectionIssue(
+            prototype.id,
+            `暂时读不到采集任务：${capture.lastError ?? "网络错误"}。任务可能仍在后台运行，稍后会自动重试。`,
+          );
+        }
+        return;
+      }
+      this.clearConnectionIssue(prototype.id);
+      if (!isFinalizingCapture(this.records[prototype.id], jobId)) return;
+      this.progress = {
+        ...this.progress,
+        [prototype.id]: {
+          completed: job.journal.filter(
+            (entry) => entry.event === "case-finished",
+          ).length,
+          total: job.selection.cases.length,
+        },
+      };
+
+      if (!TERMINAL_JOB_STATUSES.has(job.status)) return;
       if (job.status !== "completed") {
         this.failOperation(
           prototype.id,
           "finalize",
           jobFailure(job, capture.lastError),
+          journalFailures(job),
         );
         return;
       }
 
-      if (!capture.details) await capture.loadBundle(job.bundleId);
+      if (capture.details?.bundle.bundleId !== job.bundleId) {
+        await capture.loadBundle(job.bundleId);
+      }
+      if (!isFinalizingCapture(this.records[prototype.id], jobId)) return;
       const details = capture.details;
       if (!details || details.bundle.bundleId !== job.bundleId) {
         this.failOperation(
@@ -559,31 +642,30 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
         return;
       }
       const counts = details.activeSnapshot.coverage.counts;
-      const incomplete =
-        counts.failed +
-        counts.unsupported +
-        counts.cancelled +
-        counts.interrupted +
-        counts.skipped;
+      const incomplete = incompleteCaseCount(counts);
       if (incomplete > 0) {
-        const failedAttempt = details.runs
-          .flatMap((run) => run.attempts)
-          .find(
+        const failedCases = (
+          details.runs.find((run) => run.runId === job.runId)?.attempts ?? []
+        )
+          .filter(
             (attempt) =>
               attempt.result !== "captured" && attempt.result !== "reused",
-          );
-        const failureDetail = failedAttempt
-          ? ` ${failedAttempt.caseId}：${failedAttempt.reason ?? failedAttempt.result}`
-          : "";
+          )
+          .map((attempt) => ({
+            caseId: attempt.caseId,
+            reason: attempt.reason ?? attempt.result,
+          }));
         this.failOperation(
           prototype.id,
           "finalize",
-          `整原型采集未完整：${counts.captured + counts.reused} 项成功或复用，${incomplete} 项未完成。${failureDetail}`,
+          `整原型采集未完整：${counts.captured + counts.reused}/${counts.selected} 项有效，${incomplete} 项失败，尚未生成 Handoff 和提示词。`,
+          failedCases,
         );
         return;
       }
 
       await capture.previewCurrentHandoff();
+      if (!isFinalizingCapture(this.records[prototype.id], jobId)) return;
       if (!capture.handoffPreview) {
         this.failOperation(
           prototype.id,

@@ -1,4 +1,4 @@
-import type { CaptureJob } from "@proto-bridge/core/v2";
+import { incompleteCaseCount, type CaptureJob } from "@proto-bridge/core/v2";
 import { riskKindLabel } from "@proto-bridge/core/v2/prompts/agent-prompt";
 import type { CaptureConsoleState } from "@proto-bridge/core/v2/service-contract";
 import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
@@ -76,6 +76,14 @@ function successfulSnapshot(
   );
 }
 
+function incompleteCasesOf(
+  state: CaptureConsoleState,
+  job: CaptureJob,
+): number {
+  const snapshot = successfulSnapshot(state, job);
+  return snapshot ? incompleteCaseCount(snapshot.coverage.counts) : 0;
+}
+
 function resolvingJob(
   state: CaptureConsoleState,
   failedJob: CaptureJob,
@@ -86,7 +94,8 @@ function resolvingJob(
       (candidate) =>
         candidate.status === "completed" &&
         candidate.acceptedAt > failedJob.acceptedAt &&
-        Boolean(successfulSnapshot(state, candidate)),
+        Boolean(successfulSnapshot(state, candidate)) &&
+        incompleteCasesOf(state, candidate) === 0,
     )
     .find((candidate) => {
       const candidateKeys = selectionKeys(candidate);
@@ -155,6 +164,153 @@ function caseLabel(caseId: string | undefined): string {
     loadPrototypeScreens().find((screen) => screen.screenId === screenId)
       ?.label ?? screenId
   );
+}
+
+/** "页面 · 状态" or "页面 · 场景「…」" for one Case identity. */
+export function caseDisplayLabel(caseId: string): string {
+  const [screenId = "", variantId = "", , , scenarioPart] = caseId.split("::");
+  const screens = loadPrototypeScreens();
+  const screen = screens.find((item) => item.screenId === screenId);
+  const screenLabel = screen?.label ?? screenId;
+  if (scenarioPart?.startsWith("scenario=")) {
+    const [scenarioRef = "", checkpointId = ""] = scenarioPart
+      .slice("scenario=".length)
+      .split("@");
+    const scenario = screens
+      .flatMap((owner) =>
+        (owner.scenarios ?? []).map((item) => ({
+          ref: `${owner.screenId}.${item.id}`,
+          label: item.label,
+        })),
+      )
+      .find((item) => item.ref === scenarioRef);
+    return `${screenLabel} · 场景「${scenario?.label ?? (checkpointId || scenarioRef)}」`;
+  }
+  const variantLabel =
+    screen?.variants.find((variant) => variant.id === variantId)?.label ??
+    variantId;
+  return variantLabel ? `${screenLabel} · ${variantLabel}` : screenLabel;
+}
+
+export type CaptureFailureKind =
+  | "occluded"
+  | "missing-fragment"
+  | "missing-role"
+  | "invalid-identity"
+  | "duplicate-identity"
+  | "result-unavailable"
+  | "unknown";
+
+type FailureCopy = { title: string; message: string; action: string };
+
+const FAILURE_COPY: Record<CaptureFailureKind, FailureCopy> = {
+  occluded: {
+    title: "区域被其它层遮挡",
+    message: "这些必需区域的中心点被别的元素盖住，采集无法确认用户能看到并点到它们。",
+    action: "检查浮层、底部栏、固定定位或 z-index 层级；重新采集不能解决。",
+  },
+  "missing-fragment": {
+    title: "必需区域没有出现",
+    message: "页面或场景检查点要求的区域在采集时不存在。",
+    action: "确认场景动作确实会让该区域出现，并核对 data-pb-id 与 Registry 声明一致。",
+  },
+  "missing-role": {
+    title: "区域缺少语义角色",
+    message: "节点有 data-pb-id，但没有 data-pb-role，无法判断它是哪种控件。",
+    action: "给节点补 data-pb-role，或改用已声明角色的 DS 组件。",
+  },
+  "invalid-identity": {
+    title: "原型身份不合法",
+    message: "有 Screen、Fragment 或 pbKey 不符合稳定身份规则。",
+    action: "改 Registry 和页面上的 data-pb-key：只用小写字母、数字、'.'、'-'、'_'，不要用中文显示文字、纯数字、CSS selector 或 DOM path。",
+  },
+  "duplicate-identity": {
+    title: "存在重复采集标识",
+    message: "两个区域使用了相同标识，无法判断应记录哪一个。",
+    action: "为重复的节点提供不同的 data-pb-key。",
+  },
+  "result-unavailable": {
+    title: "任务结果已经不可用",
+    message: "这次失败没有形成可检查的采集结果。",
+    action: "可以重新发起采集。",
+  },
+  unknown: {
+    title: "采集未完成",
+    message: "采集没有得到可信结果。",
+    action: "展开原文查看具体原因。",
+  },
+};
+
+export function classifyCaptureFailure(reason: string): CaptureFailureKind {
+  if (reason.includes("is occluded at its center point")) return "occluded";
+  if (reason.includes("without data-pb-role")) return "missing-role";
+  if (/Fragment \S+ is missing/.test(reason)) return "missing-fragment";
+  if (reason.includes("Duplicate semantic Fragment identity")) {
+    return "duplicate-identity";
+  }
+  if (
+    reason.includes("must be a stable lowercase identifier") ||
+    reason.includes("failed schema validation")
+  ) {
+    return "invalid-identity";
+  }
+  if (reason.includes("Bundle does not exist")) return "result-unavailable";
+  return "unknown";
+}
+
+function failedFragmentOf(reason: string): string | undefined {
+  const match = /Fragment (\S+?)\/(\S*?)(?:\s|$)/.exec(reason);
+  if (!match) return undefined;
+  return match[2] ? `${match[1]}#${match[2]}` : match[1];
+}
+
+export type CaptureFailureCase = {
+  caseId: string;
+  label: string;
+  fragment?: string;
+  technicalDetail: string;
+};
+
+export type CaptureFailureGroup = FailureCopy & {
+  kind: CaptureFailureKind;
+  cases: CaptureFailureCase[];
+};
+
+/** Groups failed Case reasons by cause, in the order causes first appear. */
+export function groupCaptureFailures(
+  failures: Array<{ caseId: string; reason: string }>,
+): CaptureFailureGroup[] {
+  const groups = new Map<CaptureFailureKind, CaptureFailureGroup>();
+  for (const failure of failures) {
+    const kind = classifyCaptureFailure(failure.reason);
+    const group =
+      groups.get(kind) ?? { kind, ...FAILURE_COPY[kind], cases: [] };
+    const fragment = failedFragmentOf(failure.reason);
+    group.cases.push({
+      caseId: failure.caseId,
+      label: caseDisplayLabel(failure.caseId),
+      ...(fragment ? { fragment } : {}),
+      technicalDetail:
+        kind === "invalid-identity"
+          ? readableSchemaMessage(failure.reason)
+          : failure.reason,
+    });
+    groups.set(kind, group);
+  }
+  return [...groups.values()];
+}
+
+/** Splits a Job journal `case-finished` detail into Case and reason. */
+export function parseFailedCaseDetail(
+  detail: string,
+): { caseId: string; reason: string } | null {
+  const marker = ":failed:";
+  const index = detail.indexOf(marker);
+  if (index < 0) return null;
+  return {
+    caseId: detail.slice(0, index),
+    reason: detail.slice(index + marker.length),
+  };
 }
 
 export function formatCaptureError(error: unknown): string {
@@ -227,45 +383,21 @@ function readableSchemaMessage(message: string): string {
 }
 
 export function translateCaptureFailure(detail: string): CaptureFailureDisplay {
-  const marker = ":failed:";
-  const markerIndex = detail.indexOf(marker);
-  const caseId = markerIndex >= 0 ? detail.slice(0, markerIndex) : undefined;
-  const reason =
-    markerIndex >= 0 ? detail.slice(markerIndex + marker.length) : detail;
-
-  if (reason.includes("Duplicate semantic Fragment identity")) {
-    return {
-      ...(caseId ? { caseId } : {}),
-      title: `${caseLabel(caseId)}存在重复采集标识`,
-      message: "系统发现两个区域使用了相同标识，无法判断应记录哪一个。",
-      technicalDetail: detail,
-    };
-  }
-  if (
-    reason.includes("must be a stable lowercase identifier") ||
-    reason.includes("failed schema validation")
-  ) {
-    return {
-      ...(caseId ? { caseId } : {}),
-      title: "原型身份不合法",
-      message:
-        "有 Screen、Fragment 或 pbKey 不符合稳定身份规则。请先改 Registry 和页面上的 data-pb-key，不要使用纯数字、CSS selector 或 DOM path。",
-      technicalDetail: readableSchemaMessage(reason),
-    };
-  }
-  if (reason.includes("Bundle does not exist")) {
-    return {
-      ...(caseId ? { caseId } : {}),
-      title: "任务结果已经不可用",
-      message: "这次失败没有形成可检查的采集结果，可以重新发起采集。",
-      technicalDetail: detail,
-    };
-  }
+  const parsed = parseFailedCaseDetail(detail);
+  const caseId = parsed?.caseId;
+  const reason = parsed?.reason ?? detail;
+  const kind = classifyCaptureFailure(reason);
+  const copy = FAILURE_COPY[kind];
+  const title =
+    kind === "duplicate-identity" || kind === "unknown"
+      ? `${caseLabel(caseId)}${copy.title}`
+      : copy.title;
   return {
     ...(caseId ? { caseId } : {}),
-    title: `${caseLabel(caseId)}采集未完成`,
-    message: "采集过程没有形成可信结果，请重新采集这一范围。",
-    technicalDetail: detail,
+    title,
+    message: `${copy.message}${copy.action}`,
+    technicalDetail:
+      kind === "invalid-identity" ? readableSchemaMessage(reason) : detail,
   };
 }
 
@@ -361,8 +493,12 @@ export function buildCaptureTaskPresentations(
     const prototypeLabel =
       loadPrototypes().find((prototype) => prototype.id === prototypeId)
         ?.label ?? prototypeId;
+    const incomplete =
+      job.status === "completed" ? incompleteCasesOf(state, job) : 0;
     const resolvedBy =
-      job.status === "failed" || job.status === "interrupted"
+      job.status === "failed" ||
+      job.status === "interrupted" ||
+      incomplete > 0
         ? resolvingJob(state, job)
         : undefined;
     const snapshot =
@@ -375,7 +511,7 @@ export function buildCaptureTaskPresentations(
       ? "running"
       : resolvedBy
         ? "resolved"
-        : job.status === "completed"
+        : job.status === "completed" && incomplete === 0
           ? "completed"
           : job.status === "cancelled"
             ? "cancelled"
@@ -387,7 +523,12 @@ export function buildCaptureTaskPresentations(
           : job.status === "writing"
             ? "正在保存"
             : "正在采集",
-      "needs-attention": job.status === "interrupted" ? "采集中断" : "采集失败",
+      "needs-attention":
+        job.status === "interrupted"
+          ? "采集中断"
+          : incomplete > 0
+            ? `部分失败 · ${incomplete} 项`
+            : "采集失败",
       resolved: "已由后续采集解决",
       completed: "采集完成",
       cancelled: "已取消",

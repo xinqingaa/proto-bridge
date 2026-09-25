@@ -18,6 +18,7 @@ import {
 } from "@/workbench/prototypes/prototypePresentation";
 import {
   canvasPath,
+  finalizeActionLabel,
   formatLastEvent,
   operationCaption,
   ownersAndRoles,
@@ -126,11 +127,10 @@ onBeforeUnmount(() => {
           <WorkbenchButton
             v-if="effectiveLifecycle === 'review'"
             tone="primary"
-            :disabled="busy"
-            :loading="busy"
+            :disabled="operation?.kind === 'rolling-back'"
             @click="openTransition('finalize')"
           >
-            定稿并采集
+            {{ finalizeActionLabel(operation) }}
           </WorkbenchButton>
           <WorkbenchButton
             v-if="effectiveLifecycle === 'review'"

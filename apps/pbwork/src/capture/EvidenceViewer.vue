@@ -18,6 +18,9 @@ import { useCaptureStore } from "@/app/stores/capture";
 import { loadPrototypeScreens } from "@/design-system/loaders";
 import EvidencePreview from "@/capture/EvidencePreview.vue";
 import EvidenceDeliveryPanel from "@/capture/EvidenceDeliveryPanel.vue";
+import CaptureFailureGroups from "@/capture/CaptureFailureGroups.vue";
+import { groupCaptureFailures } from "@/capture/presentation";
+import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
 import WorkbenchTabs, {
   type WorkbenchTabItem,
 } from "@/workbench/ui/WorkbenchTabs.vue";
@@ -72,6 +75,26 @@ const successfulCount = computed(
   () =>
     (model.value?.summary.captured ?? 0) + (model.value?.summary.reused ?? 0),
 );
+const failuresOpen = ref(false);
+const failureGroups = computed(() =>
+  groupCaptureFailures(
+    (model.value?.failedAttempts ?? []).map((attempt) => ({
+      caseId: attempt.caseId,
+      reason: attempt.reason ?? attempt.result,
+    })),
+  ),
+);
+const verdictTitle = computed(() => {
+  const current = model.value;
+  if (!current) return "";
+  if (current.coverageStatus === "partial") {
+    return `采集不完整：${successfulCount.value}/${current.summary.selected} 项有效，${current.summary.selected - successfulCount.value} 项没有可用结果`;
+  }
+  if (current.deliveryStatus === "attention") {
+    return "采集完整，但有需要注意的事实";
+  }
+  return "采集完整，所有事实已解析";
+});
 const tokenFacts = computed(() =>
   (selectedCase.value?.contextFacts ?? []).filter((fact) =>
     /theme|token|color|font|space|radius|shadow/i.test(
@@ -193,6 +216,34 @@ watch(
     >
       {{ capture.lastError }}
     </v-alert>
+
+    <section
+      v-if="model"
+      class="verdict"
+      :class="`is-${model.deliveryStatus}`"
+      data-testid="evidence-verdict"
+    >
+      <div class="verdict-line">
+        <CheckCircle2 v-if="model.deliveryStatus === 'ready'" :size="18" />
+        <AlertTriangle v-else :size="18" />
+        <div>
+          <strong>{{ verdictTitle }}</strong>
+          <p v-for="message in model.messages" :key="message">{{ message }}</p>
+        </div>
+        <WorkbenchButton
+          v-if="failureGroups.length"
+          tone="neutral"
+          size="small"
+          :aria-expanded="failuresOpen"
+          @click="failuresOpen = !failuresOpen"
+        >
+          {{ failuresOpen ? "收起失败项" : `查看 ${model.failedAttempts.length} 项失败` }}
+        </WorkbenchButton>
+      </div>
+      <div v-if="failuresOpen && failureGroups.length" class="verdict-failures">
+        <CaptureFailureGroups :groups="failureGroups" />
+      </div>
+    </section>
 
     <div v-if="model && selectedCase" class="result-workspace">
       <EvidencePreview
@@ -378,7 +429,12 @@ watch(
       </aside>
     </div>
 
-    <section v-else class="loading-panel" aria-busy="true">
+    <section v-else-if="model" class="loading-panel">
+      <AlertTriangle :size="24" />
+      <span>这次采集没有成功的视图，请先按上方失败项修复原型。</span>
+    </section>
+
+    <section v-else-if="!capture.lastError" class="loading-panel" aria-busy="true">
       <v-progress-circular indeterminate color="primary" />
       <span>正在加载采集结果…</span>
     </section>
@@ -436,6 +492,45 @@ h1 {
   color: rgb(var(--v-theme-primary));
   font-size: 0.74rem;
   font-weight: 700;
+}
+.verdict {
+  flex: 0 0 auto;
+  padding: 10px 20px;
+  border-bottom: 1px solid rgba(var(--v-border-color), 0.14);
+  background: color-mix(in srgb, rgb(var(--v-theme-warning)) 9%, rgb(var(--v-theme-surface)));
+}
+.verdict.is-ready {
+  background: color-mix(in srgb, rgb(var(--v-theme-success)) 8%, rgb(var(--v-theme-surface)));
+}
+.verdict-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.verdict-line > svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: rgb(var(--v-theme-warning));
+}
+.verdict.is-ready .verdict-line > svg {
+  color: rgb(var(--v-theme-success));
+}
+.verdict-line > div {
+  min-width: 0;
+  flex: 1;
+}
+.verdict-line strong {
+  font-size: 0.84rem;
+}
+.verdict-line p {
+  margin: 3px 0 0;
+  color: rgba(var(--v-theme-on-surface), 0.62);
+  font-size: 0.72rem;
+}
+.verdict-failures {
+  max-height: 42vh;
+  margin-top: 10px;
+  overflow: auto;
 }
 .result-workspace {
   display: grid;

@@ -1,4 +1,6 @@
+import type { CaseAttempt } from "./contracts/attempt.js";
 import type { BlobRecord } from "./contracts/blob.js";
+import { incompleteCaseCount } from "./contracts/coverage.js";
 import type {
   CaseEvidenceRevision,
   Fact,
@@ -82,6 +84,28 @@ export type EvidenceScreenReadModel = {
   cases: EvidenceCaseReadModel[];
 };
 
+/** Latest Attempt of a Snapshot slot whose result is neither captured nor reused. */
+export type EvidenceFailedAttemptReadModel = {
+  caseId: string;
+  scopeKey: string;
+  screenId: string;
+  variantId: string;
+  themeId: string;
+  deviceId: string;
+  scenario?: {
+    ownerScreenId: string;
+    scenarioId: string;
+    checkpointId: string;
+  };
+  scopeKind: "page" | "fragment";
+  attemptId: string;
+  runId: string;
+  result: Exclude<CaseAttempt["result"], "captured" | "reused">;
+  reason?: string;
+  /** An earlier revision still occupies this slot; it is not this Attempt's result. */
+  hasActiveRevision: boolean;
+};
+
 export type EvidenceReadModel = {
   bundleId: string;
   snapshotId: string;
@@ -105,6 +129,7 @@ export type EvidenceReadModel = {
     conflicts: number;
   };
   screens: EvidenceScreenReadModel[];
+  failedAttempts: EvidenceFailedAttemptReadModel[];
   messages: string[];
 };
 
@@ -385,6 +410,47 @@ export function buildEvidenceReadModel(
     screens.set(model.screenId, existing);
   }
 
+  const attempts = new Map(
+    input.runs.flatMap((run) =>
+      run.attempts.map((attempt) => [attempt.attemptId, attempt] as const),
+    ),
+  );
+  const activeSlotKeys = new Set(
+    input.snapshot.activeSlots.map((slot) => `${slot.caseId}#${slot.scopeKey}`),
+  );
+  const failedAttempts: EvidenceFailedAttemptReadModel[] = [];
+  for (const ref of input.snapshot.latestAttempts) {
+    const attempt = attempts.get(ref.attemptId);
+    const selected = cases.get(ref.caseId);
+    if (!attempt || !selected) continue;
+    if (attempt.result === "captured" || attempt.result === "reused") continue;
+    const scenario = selected.caseKey.scenario;
+    failedAttempts.push({
+      caseId: ref.caseId,
+      scopeKey: ref.scopeKey,
+      screenId: selected.caseKey.screenId,
+      variantId: selected.caseKey.variantId,
+      themeId: selected.caseKey.themeId,
+      deviceId: selected.caseKey.deviceId,
+      ...(scenario
+        ? {
+            scenario: {
+              ownerScreenId: scenario.ownerScreenId,
+              scenarioId: scenario.scenarioId,
+              checkpointId: scenario.checkpointId,
+            },
+          }
+        : {}),
+      scopeKind:
+        attempt.captureScope.fragments.length > 0 ? "fragment" : "page",
+      attemptId: attempt.attemptId,
+      runId: attempt.runId,
+      result: attempt.result,
+      ...(attempt.reason ? { reason: attempt.reason } : {}),
+      hasActiveRevision: activeSlotKeys.has(`${ref.caseId}#${ref.scopeKey}`),
+    });
+  }
+
   const screenModels = [...screens.entries()].map(
     ([screenId, screenCases]) => ({
       screenId,
@@ -414,14 +480,7 @@ export function buildEvidenceReadModel(
       (evidenceLevelCounts.get(item.evidenceLevel) ?? 0) + 1,
     );
   }
-  const partial =
-    counts.failed +
-      counts.skipped +
-      counts.unsupported +
-      counts.cancelled +
-      counts.interrupted +
-      counts.missing >
-    0;
+  const partial = incompleteCaseCount(counts) > 0;
   const messages: string[] = [];
   if (partial) {
     messages.push("部分选择没有成功 Evidence；请检查失败项或重采。");
@@ -463,6 +522,7 @@ export function buildEvidenceReadModel(
       conflicts,
     },
     screens: screenModels,
+    failedAttempts,
     messages,
   };
 }

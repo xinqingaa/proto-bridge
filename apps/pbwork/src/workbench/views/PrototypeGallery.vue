@@ -21,6 +21,7 @@ import {
   prototypeSummary,
 } from "@/workbench/prototypes/prototypePresentation";
 import {
+  finalizeActionLabel,
   operationCaption,
   ownersAndRoles,
   prototypeChapters,
@@ -69,6 +70,8 @@ type RoomAction = {
   label: string;
   tone: "primary" | "ghost" | "danger";
   run: () => void;
+  /** Stays usable during an unfinished finalization so its sheet can reopen. */
+  resumesFinalization?: boolean;
 };
 
 function record(item: PrototypeRecord) {
@@ -100,6 +103,10 @@ function isBusy(item: PrototypeRecord) {
   return (
     operation?.kind === "finalizing" || operation?.kind === "rolling-back"
   );
+}
+
+function isFinalizing(item: PrototypeRecord) {
+  return record(item)?.operation.kind === "finalizing";
 }
 
 function captionOf(item: PrototypeRecord) {
@@ -134,9 +141,10 @@ function roomActions(item: PrototypeRecord): RoomAction[] {
   if (stage === "review") {
     return [
       {
-        label: "定稿并采集",
+        label: finalizeActionLabel(record(item)?.operation),
         tone: "primary",
         run: () => openTransition(item, "finalize"),
+        resumesFinalization: true,
       },
       {
         label: "退回进行中",
@@ -295,8 +303,8 @@ onBeforeUnmount(() => {
             v-for="action in roomActions(item)"
             :key="action.label"
             :tone="action.tone"
-            :disabled="isBusy(item)"
-            :loading="isBusy(item) && action.tone === 'primary'"
+            :disabled="isBusy(item) && !(action.resumesFinalization && isFinalizing(item))"
+            :loading="record(item)?.operation.kind === 'rolling-back' && action.tone === 'primary'"
             @click="action.run"
           >
             {{ action.label }}

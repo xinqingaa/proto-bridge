@@ -23,6 +23,18 @@ export const CoverageCounts = z
   .strict();
 export type CoverageCounts = z.infer<typeof CoverageCounts>;
 
+/** Selected Cases without a captured or reused revision; any value above zero means partial Coverage. */
+export function incompleteCaseCount(counts: CoverageCounts): number {
+  return (
+    counts.failed +
+    counts.skipped +
+    counts.unsupported +
+    counts.cancelled +
+    counts.interrupted +
+    counts.missing
+  );
+}
+
 export const EvidenceLevelBreakdown = z.record(EvidenceLevel, z.number().int().min(0)).default(
   Object.fromEntries(EVIDENCE_LEVELS.map((level) => [level, 0])) as Record<EvidenceLevel, number>,
 );

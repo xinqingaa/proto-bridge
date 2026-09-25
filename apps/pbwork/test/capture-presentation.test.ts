@@ -4,6 +4,7 @@ import type { CaptureConsoleState } from "@proto-bridge/core/v2/service-contract
 import {
   buildCaptureTaskPresentations,
   formatCaptureError,
+  groupCaptureFailures,
   translateCaptureFailure,
 } from "@/capture/presentation";
 
@@ -208,7 +209,69 @@ describe("capture task presentation", () => {
       ),
     ).toMatchObject({
       title: "异常队列存在重复采集标识",
-      message: "系统发现两个区域使用了相同标识，无法判断应记录哪一个。",
+      message: expect.stringContaining("两个区域使用了相同标识"),
+    });
+  });
+
+  it("groups the real hengdong failures by cause with authoring actions", () => {
+    const groups = groupCaptureFailures([
+      {
+        caseId: "hengdong.today::default::light::iphone-14",
+        reason: "Required Fragment hengdong.today.recent/ is occluded at its center point.",
+      },
+      {
+        caseId: "hengdong.workout-complete::default::light::iphone-14",
+        reason: "Required Fragment hengdong.workout-complete.save/ is occluded at its center point.",
+      },
+      {
+        caseId:
+          "hengdong.activity-history::default::light::iphone-14::scenario=hengdong.activity-history.delete-and-undo-history@history-record-restored",
+        reason: "Fragment hengdong.activity-history.delete-record/ is missing.",
+      },
+      {
+        caseId: "hengdong.progress::selected-date::light::iphone-14",
+        reason:
+          "Required Fragment hengdong.progress.date-view.week.day/date-2026-08-12 has data-pb-id without data-pb-role.",
+      },
+      {
+        caseId: "hengdong.progress::filter-open::light::iphone-14",
+        reason:
+          'payload.nodes.[88].fragment.pbKey: pbKey must be a stable lowercase identifier (letters, digits, \'.\', \'-\', \'_\'); CSS selectors, DOM paths, and array indices are not allowed (got "全部")',
+      },
+    ]);
+
+    expect(groups.map((group) => [group.kind, group.cases.length])).toEqual([
+      ["occluded", 2],
+      ["missing-fragment", 1],
+      ["missing-role", 1],
+      ["invalid-identity", 1],
+    ]);
+    expect(groups[0]!.action).toContain("重新采集不能解决");
+    expect(groups[0]!.cases[0]).toMatchObject({
+      fragment: "hengdong.today.recent",
+    });
+    expect(groups[1]!.cases[0]!.label).toContain("场景「");
+    expect(groups[2]!.cases[0]!.fragment).toBe(
+      "hengdong.progress.date-view.week.day#date-2026-08-12",
+    );
+  });
+
+  it("does not report a completed Job with failed Cases as a success", () => {
+    const partial = job(
+      "job-partial",
+      "completed",
+      "2026-07-30T06:19:32.962Z",
+    );
+    const generated = state([partial]);
+    const counts = generated.bundles[0]!.activeSnapshot!.coverage.counts;
+    counts.captured = 0;
+    counts.failed = 1;
+
+    expect(buildCaptureTaskPresentations(generated)[0]).toMatchObject({
+      status: "needs-attention",
+      statusLabel: "部分失败 · 1 项",
+      resultPath:
+        "/workbench/evidence/bundle-job-partial/snapshot-job-partial",
     });
   });
 

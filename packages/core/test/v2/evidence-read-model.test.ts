@@ -37,6 +37,46 @@ describe("Evidence read model", () => {
     expect(model.messages.join(" ")).toContain("完整语义覆盖");
   });
 
+  it("lists latest failed Attempts with their Case identity and reason", () => {
+    const reference = fixtures.referenceCaseSlice;
+    const model = buildEvidenceReadModel({
+      snapshot: reference.PARTIAL_SNAPSHOT,
+      runs: [reference.RUN_1, reference.RUN_2, reference.PARTIAL_RUN],
+      revisions: [
+        reference.PRIMARY_ACTIVE_REVISION,
+        reference.FRAGMENT_SCOPED_ACTIVE_REVISION,
+      ],
+      blobs: [],
+    });
+
+    expect(model.coverageStatus).toBe("partial");
+    expect(model.failedAttempts).toEqual([
+      expect.objectContaining({
+        caseId: reference.TASK_LIST_CASE_ID,
+        scopeKey: reference.LIST_FRAGMENT_SCOPE_KEY,
+        screenId: "sample.task-list",
+        scopeKind: "fragment",
+        result: "failed",
+        reason: reference.PARTIAL_FRAGMENT_ATTEMPT.reason,
+        hasActiveRevision: true,
+      }),
+    ]);
+  });
+
+  it("reports no failed Attempts for complete coverage", () => {
+    const reference = fixtures.referenceCaseSlice;
+    const model = buildEvidenceReadModel({
+      snapshot: reference.SNAPSHOT,
+      runs: [reference.RUN_1, reference.RUN_2],
+      revisions: [
+        reference.PRIMARY_ACTIVE_REVISION,
+        reference.FRAGMENT_SCOPED_ACTIVE_REVISION,
+      ],
+      blobs: [],
+    });
+    expect(model.failedAttempts).toEqual([]);
+  });
+
   it("does not turn binding literals into Target token obligations", () => {
     const reference = fixtures.referenceCaseSlice;
     const model = buildEvidenceReadModel({

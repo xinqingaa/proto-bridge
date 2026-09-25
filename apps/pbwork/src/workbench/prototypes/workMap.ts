@@ -89,13 +89,33 @@ export function operationCaption(
     if (operation.phase === "building-prompt") {
       return { status: "提示词生成中", failure: "" };
     }
-    return { status: "等待确认", failure: "" };
+    if (operation.phase === "preflighting") {
+      return { status: "定稿预检中", failure: "" };
+    }
+    return {
+      status:
+        operation.phase === "awaiting-risks"
+          ? "等待你确认风险"
+          : "等待你确认开始采集",
+      failure: "",
+    };
   }
   if (operation?.kind === "rolling-back") {
     return { status: "Evidence 清理中", failure: "" };
   }
   if (hasArtifacts) return { status: "Evidence + 提示词", failure: "" };
   return { status: "", failure: "" };
+}
+
+/** Label of the finalize entry; an unfinished finalization reopens its sheet instead of locking the button. */
+export function finalizeActionLabel(
+  operation: LifecycleOperation | undefined,
+): string {
+  if (operation?.kind !== "finalizing") return "定稿并采集";
+  return operation.phase === "capturing" ||
+    operation.phase === "building-prompt"
+    ? "查看定稿进度"
+    : "继续定稿";
 }
 
 export function ownersAndRoles(prototype: PrototypeRecord): string {
