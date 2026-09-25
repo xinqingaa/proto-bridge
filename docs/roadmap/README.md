@@ -1,8 +1,18 @@
 # ProtoBridge 产品收口计划
 
-> 状态：待实施；核实日期：2026-09-25。本文是唯一在执行的产品 Roadmap，不代表现行 Contract。
+> 状态：实施中；A.1 门禁修复与 A.2 止血已交付，下一步 A.3–A.5；核实日期：2026-09-25。本文是唯一在执行的产品 Roadmap，不代表现行 Contract。
 >
 > 里程碑：P0 可靠性与 P1 PBWork 体验同批交付。P2 只保留进入条件，不进入本次完成定义。
+
+## 进度
+
+| 步骤 | 状态 | 证据 / 剩余缺口 |
+| --- | --- | --- |
+| A.1 门禁修复与浏览器回归 | **已交付 2026-09-25** | Flutter analyze 0 诊断；Runtime E2E 5/5、Evidence vertical slice 1/1、新增 `finalization-regression.spec.ts` 2/2、PBWork 单测 193/193、文档 123 份与 DS→Target 32/32 组件、154/154 Token 均通过；完整 `pnpm verify` 通过。浏览器回归发现并修复任务中心刷新后漏显“部分失败”的缺陷 |
+| A.2 止血 | **已交付 2026-09-25** | PBWork 单测 193、Core 264、CLI 17、Local Service 18 通过；并发轮询用例在原实现上复现两次 Handoff，修复后一次；用户已在 `pb:up` 手工确认失败原因可见、不再无限转圈。未覆盖：跨页签、关闭浏览器后收尾、Service 重启恢复（归 A.3–A.5） |
+| A.3–A.5 持久生命周期与幂等 | **下一步** | A.1 门禁已全绿；跨页签、关闭浏览器与 Service 重启后的收尾及业务幂等仍未实现 |
+| A.6 恒动 10 项 authored 缺陷 | 未开始 | 可与 A.3–A.5 并行；遮挡项需按 PBWork 视觉评审 |
+| B.7–B.11、C.12 | 未开始 | Review/概览完整重排先出草稿评审 |
 
 ## 当前基线与核实结果
 
@@ -10,26 +20,26 @@
 - 2026-09-25 本地恒动 Job 已 `completed`，Snapshot 覆盖 101 Case，其中 91 captured、10 failed；该 Snapshot 没有 Handoff。现行 `pollFinalization` 若执行会把不完整覆盖转为失败态。此记录证明 Store 与生命周期可能脱节，但本机浏览器生命周期状态未被持久化到 Workspace，无法仅凭 Store 证明当时 UI 的具体显示。
 - 定稿面板打开时轮询；原型详情页和原型列表页在挂载期间也轮询。离开这些页面或关闭浏览器后，Local Service 可完成 Job，但没有持久化的定稿收尾 owner。Job Center 只刷新 Job，不推进生命周期。关闭面板本身不必然中断收尾。
 - 同一冷链 Snapshot 有两份 Handoff（`02:41:34.852Z`、`02:41:38.981Z`）和两份 Delivery，各相隔约 4 秒。代码嫌疑已具体化：定稿面板从 `PrototypeOverview` 打开时，页面与面板各有每秒一次的 `pollFinalization`，只有面板自身有 `polling` 锁；两路都能到达 `completeFinalization`，后一路还会把 `building-prompt` 覆盖回 `awaiting-risks`。时序吻合，且 `apps/pbwork/test/prototype-lifecycle.test.ts` 的并发用例在原实现上复现出两次 Handoff 创建；止血版已用共享 in-flight 锁与 phase 复核修复浏览器内的这一路径，跨页签与崩溃恢复的幂等仍由持久化方案负责。Capture Store 只有全局 `activeJob`、`details`、`preflight` 等查看与操作状态，不同原型的轮询会互相替换。
-- 原型列表与详情页的“定稿并采集”按钮在任何 `finalizing` phase 都同时 `disabled` 与 `loading`，包括等待人工确认的 `preflighting`、`awaiting-confirmation`、`awaiting-risks`；这些 phase 没有轮询推进。收起面板后按钮永久转圈且无法重开面板。重开面板时 `initialize()` 先 `clearFailure` 再重跑 Preflight，已有失败原因被抹掉。`refreshActiveJob` 内部吞掉错误，`pollFinalization` 的 catch 不可达；未连接时直接 `return`，无错误、无超时。失败文案只取第一条 Attempt 的 Core 英文原文。
+- **A.2 已修复：** 原先原型列表与详情页的“定稿并采集”按钮在任何 `finalizing` phase（含等待人工确认）都禁用并转圈，收起面板后无法重开；重开面板会 `clearFailure` 抹掉失败原因；读取 Job 的错误被 `refreshActiveJob` 吞掉，未连接时静默返回；失败文案只取第一条英文原因；任务中心把含失败 Case 的 `completed` Job 显示为“采集完成”；Evidence Review 不含失败 Case，全失败时永久显示“加载中”。现行为：按钮改为“继续定稿/查看定稿进度”，失败 operation 保存全部失败 Case 并分组显示，断线显示后台可能仍在运行，任务中心显示“部分失败 · N 项”，Review 顶部显示结论与失败项。仍存在：收尾依赖已挂载页面（PB-001）、全局 Capture Store 共享状态（PB-003）。
 - Bundle Schema 没有 CLI/Workbench 来源字段；只有部分 Delivery receipt 记录来源。现存未绑定 Bundle 不能可靠倒推出创建入口，也不能自动认领为正式产物。
 - Workbench 画布有四种手机预设，Core Capture 的 `resolveCaptureDevice` 目前只注册 `iphone-14`。支持其它三种正式采集需要先扩展 Core 设备配置。默认 Case 上限是 200；例如 26 个 Case 同时采集两种 Theme × 四种设备会成为 208 项，必须在执行前提示超限。
 - `pb:up` 已在交互终端缺配置时引导 `pb:init`，并在启动前运行 Doctor；`pb:install` 负责依赖和 Chromium。PB-105 的缺口是这些步骤和 MCP 客户端配置尚未收敛成可恢复的首次使用流程，不能写成现有启动完全没有引导。
-- 本次 `pnpm verify`：文档、构建、DS 同步、Core/Service/CLI/PBWork 单测通过；Flutter analyze 因两条 `unnecessary_import` 退出 1，后续步骤未执行。单独执行 Runtime E2E，5/5 因 Playwright 配置以各进程 PID 派生不同端口而 `ERR_CONNECTION_REFUSED`。单独执行 Evidence vertical slice，旧断言寻找已移除的“预检完成，等待定稿确认”文案，1/1 失败；更新断言后仍须确认有无产品故障。
+- A.1 单跑结果（2026-09-25）：`cd apps/flutter_pb_app && flutter analyze` 0 诊断；`pnpm test:e2e:runtime` 5/5；`pnpm test:e2e:evidence-slice` 1/1；`pnpm --filter @proto-bridge/pbwork exec playwright test e2e/finalization-regression.spec.ts --reporter=line` 2/2；`pnpm --filter @proto-bridge/pbwork typecheck` 通过，`pnpm --filter @proto-bridge/pbwork test` 193/193；`pnpm docs:verify` 123 份文档通过；`pnpm ds:target-sync:verify` 32/32 组件、154/154 Token 通过。随后完整 `pnpm verify` 通过，含 Flutter 30 项测试、Core 264、Local Service 18、CLI 17、PBWork 193 项单测及 Runtime 5/5、Evidence vertical slice 1/1。旧失败快照没有 Dialog，是测试仍寻找已停用的 `LifecycleTransitionDialog` finalize 分支；现行 Sheet 在更新定位后的真实采集中出现并完成流程。新增失败 Case 回归先揭示任务中心在刷新后漏显“部分失败”，修复后通过。
 - 静态检查确认 `DeliverFlowSheet.vue` 没有生产 import；多个 Capture Store action 仅被它或旧测试调用；`LifecycleTransitionDialog.vue` 的 finalize 分支在两个调用页均不可达。删除范围仍需 production import graph 和完整调用关系复核。
 
 ## 问题台账
 
-状态口径：**已证实**指代码、Store 或本次测试可复核；**观察/待验证**指体验判断或根因尚未由回归固定。下列事项的实施与验收均尚未开始。
+状态口径：**已证实**指代码、Store 或本次测试可复核；**观察/待验证**指体验判断或根因尚未由回归固定。进度以上方“进度”表为准；台账只记录各问题当前证据与缺口。
 
 | ID | 优先级 | 问题与证据状态 | 完成结果 | 依赖 |
 | --- | --- | --- | --- | --- |
-| PB-001 | P0 | 定稿自动收尾依赖已挂载页面；已证实架构缺口 | Job 终结后可靠进入失败、待人工确认或正式完成 | PB-002/003 |
+| PB-001 | P0 | 定稿自动收尾依赖已挂载页面；已证实架构缺口。A.2 已消除“等待确认时按钮锁死”，离页/关浏览器后的收尾仍未解决 | Job 终结后可靠进入失败、待人工确认或正式完成 | PB-002/003 |
 | PB-002 | P0 | 生命周期与正式产物关联仅在 localStorage；已证实 | 清浏览器状态、换浏览器、Service 重启后可恢复固定绑定 | PB-001/003 |
-| PB-003 | P0 | 全局临时状态与缺少业务幂等；已证实风险；同页双轮询导致重复 Handoff 已由单测复现并止血，跨页签/崩溃幂等未解决 | 同一 operation 不产生重复正式产物，不同原型互不污染 | PB-001/002 |
-| PB-004 | P0 | 产品级门禁为红；已复现三类失败 | `pnpm verify` 及相关单跑全部通过，并覆盖恢复/幂等 | 无 |
-| PB-005 | P0 | 恒动当前 101 Case 中 10 项失败；Store Attempt 可复核 | 修复原型语义/交互后重采 101/101，并以真实定稿产物验收 | PB-001/004 |
+| PB-003 | P0 | 全局临时状态与缺少业务幂等；**部分缓解**：同页双轮询导致重复 Handoff 已由单测复现并在 A.2 修复，轮询进度改为按原型记录；跨页签/崩溃幂等与全局 `details`/`preflight` 共享未解决 | 同一 operation 不产生重复正式产物，不同原型互不污染 | PB-001/002 |
+| PB-004 | P0 | A.1 已交付：`pnpm verify` 与相关单跑全绿；A.2 的失败终态、重开面板和刷新保留已有浏览器回归。跨页签与 Service 重启恢复、业务幂等仍归 PB-001/003 的 A.3–A.5 | 保持产品门禁为绿，并在 A.3–A.5 补持久恢复与幂等回归 | 无 |
+| PB-005 | P0 | 恒动当前 101 Case 中 10 项失败；Store Attempt 可复核；A.2 后失败已在定稿面板与 Review 按原因可见，缺陷本身未修 | 修复原型语义/交互后重采 101/101，并以真实定稿产物验收 | PB-001/004 |
 | PB-101 | P1 | 概览显示所有 active Snapshot，定稿页只显示生命周期绑定；已证实 | 正式、诊断、未绑定、运行中/失败状态清楚标识 | PB-002 |
-| PB-102 | P1 | Evidence Viewer 先呈现导航和事实结构；体验判断待用户验证 | 先见交付结论、阻断与覆盖，再能追溯 Screenshot/Fact | PB-101 |
+| PB-102 | P1 | Evidence Viewer 先呈现导航和事实结构；体验判断待用户验证；A.2 已加顶部结论与失败分组，问题索引与下钻未做 | 先见交付结论、阻断与覆盖，再能追溯 Screenshot/Fact | PB-101 |
 | PB-103 | P1 | Viewer 三栏只在 1100px 调宽，窄屏无模式切换；已证实实现缺口 | 390/768px 可查看结果、定位问题、返回上层 | PB-102 |
 | PB-104 | P1 | 概览大卡片与多信号并列；体验判断待设计验证 | 首屏明确待处理、进行中、最近正式结果及异常 | PB-101 |
 | PB-105 | P1 | 已有局部引导，但安装、初始化与 MCP 配置未形成可恢复的一条路径；已证实 | 一条清楚的首次设置路径，可恢复失败步骤 | 无 |
@@ -43,7 +53,7 @@
 | PB-001 | Job 由 Service 跑完；生命周期收尾靠已挂载的 PBWork 页面轮询。离开页面后可能停在 `capturing`。 | 把自动收尾交给持久 operation 的 Service worker：按固定 Job ID 检查终态和 Coverage，生成风险预览；需人工 warning/risk 时持久停在等待态。PBWork 改为查询与提交确认。 | 关页或重启 Service 后仍能从记录继续；101 项中 10 项失败会进入可见失败态且不生成 Handoff。 |
 | PB-002 | 阶段、操作与正式产物绑定仅在 localStorage；清缓存后磁盘 Evidence 仍在，PBWork 当作新原型。 | 在 Workspace 侧持久化轻量生命周期记录，绑定 generation 和准确的 Job/Bundle/Snapshot/Handoff/Delivery ID；提供迁移和引用校验，接入 reset、clean、trash。 | 换浏览器可恢复已知正式绑定；旧浏览器数据只有固定引用验证通过才迁移。没有记录的旧 Bundle 仍标为未绑定，不从 active/latest 猜正式身份。 |
 | PB-003 | 全局 Capture Store 状态可能被多个原型/页签覆盖；Handoff 与 Delivery 是两个独立 POST，重试可能再次创建。 | 给每次正式操作稳定 ID 和状态版本；Local Service 对同一操作加单 writer/CAS，并让正式 Handoff、Delivery 用 operation key 做 get-or-create，冲突请求返回错误；PBWork 的全局 Store 只承载查看态。 | 同时点击、重试、崩溃后恢复仍返回同一组固定 ID；不同原型的 Job/风险不会串用。需用断点故障注入证明，重复 Handoff 的既有记录只作为风险线索。 |
-| PB-004 | Flutter analyze、Runtime E2E 和 Evidence vertical slice 为红；`pnpm verify` 在 analyze 后停住。 | 删除两条多余 import；由测试包装进程一次注入 E2E 端口；按当前 Sheet 语义重写旧定位，并检查失败画面为何无对话框；补收尾、恢复、幂等的浏览器回归。 | 全链路门禁真实通过，失败会定位到产品阶段；不再把 5 个端口错误或旧文案超时当作 Capture 缺陷。 |
+| PB-004 | Flutter analyze、Runtime E2E 和 Evidence vertical slice 为红；`pnpm verify` 在 analyze 后停住。 | 删除两条多余 import；Playwright 配置只选一次端口并让 worker 继承；按当前 Sheet 语义重写旧定位；新增 A.2 失败终态、刷新保留和继续定稿的浏览器回归；修复回归揭示的任务中心漏显状态。 | `pnpm verify` 通过；Flutter analyze 0 诊断、Runtime 5/5、Evidence vertical slice 1/1、新增回归 2/2。持久恢复与幂等仍归 A.3–A.5。 |
 | PB-005 | 恒动 Job 已结束但仅 91/101 Case 成功，10 项失败；没有 Handoff。 | 先让错误可见并能定位，再修复 2 项缺少必需节点、5 项中心点遮挡、2 项缺语义 role、1 项非法 `pbKey`；复采整个原型。 | 用户能看到真实阻断与对应 Screen/Variant；修复后以新 Run 证明 101/101，才可生成正式 Handoff/Delivery。遮挡项先看页面层级和截图，不靠放宽门禁蒙混通过。 |
 | PB-101 | 概览列出所有 active Snapshot，定稿页只认 localStorage 绑定；Bundle 本身无可靠创建来源。 | 建立共享结果分类投影：只有精确生命周期绑定才是“正式”；其它结果显示“未绑定/诊断”，已有 receipt 可显示已知来源，来源未知就明说未知；运行和失败 Job 单独呈现。 | 同一结果在概览、任务中心、定稿页身份一致；用户不会把 CLI 或旧 Bundle 误认成正式交付。 |
 | PB-102/103/104 | Viewer 先展示 Case/Fact 三栏，概览并列展示多个信号；390px 仍挤三栏。 | 基于 Core Coverage/Issue/Handoff risk 建立结论与问题索引；默认先给可交付性、失败范围和动作，再下钻 Screenshot/Fact。桌面保留多栏，窄屏改为单栏“结论 → 问题 → Case/截图 → 事实”的逐层导航；概览用同一状态投影排序待处理任务。 | 100–200 Case 不逐条展开也能找到失败 Screen；390/768px 可查看和定位，原始 Fact、unknown/conflict 与固定引用仍可追溯。体验改善需用真实数据和人工检查确认。 |
@@ -133,11 +143,11 @@ PB-203 重新立项时再拆分：分发涉及许可证、Local Service 随 CLI 
 
 ### A. 固定基线与可靠性方案
 
-1. 修复 Flutter 两条 import 诊断、Playwright 端口注入及 Evidence vertical slice 的旧定位；调查失败快照中 Sheet 未出现的原因，逐项单跑后再跑完整 `pnpm verify`。新增失败 Case 进入可见终态、离开原型路由后完成、刷新恢复与重复请求的回归。不得用更新测试文案掩盖产品故障。
-2. **止血（持久化前先交付）：** 等待人工确认的 phase 不再让按钮禁用和转圈，按钮改为“继续定稿”重开面板；重开面板保留失败原因，只在用户点“重新检查”时清除；失败 operation 记录全部失败 Case 并按原因分组显示中文说明、修复方向与原文；`pollFinalization` 对同一原型共享 in-flight 锁，异步返回后重新校验 phase，读取 Job 失败显式报错，未连接时显示“任务可能仍在后台运行”；任务中心与概览按对应 Snapshot Coverage 显示“部分失败”；Core 读模型补失败 Case，Evidence Review 顶部显示交付结论与失败列表。这些改动在持久化落地后保留呈现部分，轮询锁随轮询一起删除。
-3. 在 Core 定义持久 operation Schema、状态转移、固定引用与冲突规则；保留 Core 对 Coverage、warning、risk、Handoff 的唯一语义权威。每个原型有稳定 finalization operation ID、Job/Bundle/Snapshot 引用与终态。人工 warning/risk 确认前持久停在等待态，不自动代人接受。
-4. 在配置的 Store root 内增加上文明确的 `pbwork/<workspaceId>/lifecycle-v1.json`，由 Local Service 持久化并执行自动阶段及启动 reconciliation；PBWork 只提交人的确认和显示状态。Service 提供读取状态、发起转移、逐项确认和回滚的版本化 API；写请求都校验 generation 与 expectedRevision。sidecar 不复制 Evidence/图片，不猜 active/latest，以原子写和同一 Store writer 所有权证明跨页签行为。
-5. 先实施可恢复的单 operation 收尾，再让 Job/Handoff/Delivery 按 operation key 与请求摘要实现幂等和冲突检查；Delivery 临时目录完整发布后，才把 PBWork 全局 Capture Store 缩为查看态。迁移 localStorage 时校验 Workspace generation 与全部固定引用；冲突、缺失或清理过的引用显示明确错误。`pb:reset`、`pb:clean`、Bundle trash 与 sidecar 一同验证。
+1. **已交付 2026-09-25。** 删除 Flutter 两条多余 import；Playwright 配置将选定的端口写入 worker 继承的环境变量；Evidence vertical slice 改按现行 `LifecycleFinalizationSheet` 定位并在访问底层列表前关闭 Sheet。`apps/pbwork/e2e/finalization-regression.spec.ts` 覆盖失败 Case 可见终态与分组原因、任务中心和 Evidence Review、刷新后失败保留与重新预检、等待确认时收起后“继续定稿”。失败快照无 Dialog 的原因是旧测试定位不可达分支；回归还发现任务中心刷新后漏显“部分失败”，已修复。以上单跑及完整 `pnpm verify` 均通过；跨页签、离页/关浏览器后收尾、Service 重启恢复与幂等留待 A.3–A.5。
+2. **已交付 2026-09-25。止血（持久化前先交付）：** 等待人工确认的 phase 不再让按钮禁用和转圈，按钮改为“继续定稿”重开面板；重开面板保留失败原因，只在用户点“重新检查”时清除；失败 operation 记录全部失败 Case 并按原因分组显示中文说明、修复方向与原文；`pollFinalization` 对同一原型共享 in-flight 锁，异步返回后重新校验 phase，读取 Job 失败显式报错，未连接时显示“任务可能仍在后台运行”；任务中心与概览按对应 Snapshot Coverage 显示“部分失败”；Core 读模型补失败 Case，Evidence Review 顶部显示交付结论与失败列表。这些改动在持久化落地后保留呈现部分，轮询锁随轮询一起删除。
+3. **下一步。** 在 Core 定义持久 operation Schema、状态转移、固定引用与冲突规则；保留 Core 对 Coverage、warning、risk、Handoff 的唯一语义权威。每个原型有稳定 finalization operation ID、Job/Bundle/Snapshot 引用与终态。人工 warning/risk 确认前持久停在等待态，不自动代人接受。
+4. **下一步。** 在配置的 Store root 内增加上文明确的 `pbwork/<workspaceId>/lifecycle-v1.json`，由 Local Service 持久化并执行自动阶段及启动 reconciliation；PBWork 只提交人的确认和显示状态。Service 提供读取状态、发起转移、逐项确认和回滚的版本化 API；写请求都校验 generation 与 expectedRevision。sidecar 不复制 Evidence/图片，不猜 active/latest，以原子写和同一 Store writer 所有权证明跨页签行为。
+5. **下一步。** 先实施可恢复的单 operation 收尾，再让 Job/Handoff/Delivery 按 operation key 与请求摘要实现幂等和冲突检查；Delivery 临时目录完整发布后，才把 PBWork 全局 Capture Store 缩为查看态。迁移 localStorage 时校验 Workspace generation 与全部固定引用；冲突、缺失或清理过的引用显示明确错误。`pb:reset`、`pb:clean`、Bundle trash 与 sidecar 一同验证。
 6. 修恒动 10 项 authored 缺陷并全量重采；只有新 Run 达到 101/101、风险经过逐项确认且正式产物齐全时才算定稿成功。
 
 ### B. PBWork 使用体验设计与交付

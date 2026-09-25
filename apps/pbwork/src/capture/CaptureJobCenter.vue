@@ -9,12 +9,18 @@ import {
 } from "lucide-vue-next";
 import { useCaptureStore } from "@/app/stores/capture";
 import { loadPrototypeScreens } from "@/design-system/loaders";
+import { buildCaptureTaskPresentations } from "@/capture/presentation";
 import WorkbenchIconButton from "@/workbench/ui/WorkbenchIconButton.vue";
 
 const capture = useCaptureStore();
 const router = useRouter();
 const screens = loadPrototypeScreens();
 let pollTimer: ReturnType<typeof setInterval> | undefined;
+const attentionTask = computed(() =>
+  buildCaptureTaskPresentations(capture.consoleState)
+    .filter((task) => task.status === "needs-attention")
+    .sort((left, right) => right.job.acceptedAt.localeCompare(left.job.acceptedAt))[0],
+);
 const STATUS_LABELS = {
   queued: "等待开始",
   discovering: "正在准备",
@@ -66,13 +72,15 @@ const currentCaseLabel = computed(() => {
   );
 });
 const hasCurrentItem = computed(
-  () => executing.value || Boolean(capture.notice),
+  () => executing.value || Boolean(capture.notice) || Boolean(attentionTask.value),
 );
 const activatorLabel = computed(() =>
   executing.value
     ? `${statusLabel.value}，打开采集任务`
-    : capture.notice
-      ? `${capture.notice.title}，打开采集任务`
+    : attentionTask.value
+      ? `${attentionTask.value.statusLabel}，打开采集任务`
+      : capture.notice
+        ? `${capture.notice.title}，打开采集任务`
       : "打开采集任务",
 );
 
@@ -90,6 +98,12 @@ async function refresh(includeIdle = false) {
 }
 
 async function viewResult() {
+  if (attentionTask.value?.resultPath) {
+    capture.jobCenterOpen = false;
+    capture.dismissNotice();
+    await router.push(attentionTask.value.resultPath);
+    return;
+  }
   const bundleId =
     capture.notice?.bundleId ??
     capture.details?.bundle.bundleId ??
@@ -145,7 +159,7 @@ onBeforeUnmount(() => {
         />
         <Bell v-else :size="18" aria-hidden="true" />
         <span
-          v-if="executing || capture.notice"
+          v-if="executing || capture.notice || attentionTask"
           class="job-indicator"
           :class="{ 'is-running': executing }"
           aria-hidden="true"
@@ -161,7 +175,7 @@ onBeforeUnmount(() => {
             {{
               executing
                 ? statusLabel
-                : (capture.notice?.title ?? "没有正在执行的任务")
+                : (attentionTask?.statusLabel ?? capture.notice?.title ?? "没有正在执行的任务")
             }}
           </h3>
         </div>
@@ -191,7 +205,7 @@ onBeforeUnmount(() => {
             executing
               ? (capture.activeJob?.journal.at(-1)?.detail ??
                 "任务已经开始，可以继续浏览工作台。")
-              : capture.notice?.message
+              : (attentionTask?.failures[0]?.message ?? capture.notice?.message)
           }}
         </p>
         <div class="job-actions">
@@ -203,7 +217,7 @@ onBeforeUnmount(() => {
             查看生命周期
           </v-btn>
           <v-btn
-            v-if="capture.notice?.snapshotId"
+            v-if="capture.notice?.snapshotId || attentionTask?.resultPath"
             color="primary"
             @click="viewResult"
           >

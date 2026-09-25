@@ -7,6 +7,10 @@ const deliveryTargetRoot = path.join(repoRoot, "apps/flutter_pb_app");
 const channel = process.env.PLAYWRIGHT_CHANNEL;
 const port = Number(process.env.PBWORK_E2E_PORT ?? 4900 + (process.pid % 300));
 const servicePort = Number(process.env.PBWORK_E2E_SERVICE_PORT ?? port + 1);
+// Playwright loads this config again in workers. Pin the chosen ports in the
+// parent environment so every worker uses the same webServer URLs.
+process.env.PBWORK_E2E_PORT ??= String(port);
+process.env.PBWORK_E2E_SERVICE_PORT ??= String(servicePort);
 const storeRootCommand = process.env.PBWORK_E2E_STORE_ROOT
   ? JSON.stringify(process.env.PBWORK_E2E_STORE_ROOT)
   : "$(mktemp -d)";

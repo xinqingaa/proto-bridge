@@ -18,30 +18,30 @@ async function finalizeColdChain(page: Page) {
   await expect(row).toContainText("待确定");
 
   await row.getByRole("button", { name: "定稿并采集" }).click();
-  const dialog = page.getByRole("dialog");
-  await expect(dialog.getByText("预检完成，等待定稿确认")).toBeVisible({
+  const sheet = page.getByTestId("lifecycle-finalization-sheet");
+  await expect(sheet.getByText("预检完成，等待确认候选方案已经收敛。")).toBeVisible({
     timeout: 30_000,
   });
-  await dialog
+  await sheet
     .getByRole("checkbox", {
-      name: "我确认候选方案已经收敛，正式入口和 Registry 中只保留唯一方案",
+      name: "候选方案已经收敛，正式入口和 Registry 只保留唯一方案",
     })
     .check();
-  await acceptAll(dialog);
-  await dialog.getByRole("button", { name: "确认并开始完整采集" }).click();
+  await acceptAll(sheet);
+  await sheet.getByRole("button", { name: "开始完整采集" }).click();
 
   await expect
     .poll(
       async () => {
         if (await row.getByText("已定稿", { exact: true }).isVisible()) return "final";
         if (
-          await dialog
-            .getByRole("button", { name: "确认风险并自动生成提示词" })
+          await sheet
+            .getByRole("button", { name: "确认并生成提示词" })
             .isVisible()
         ) {
           return "risks";
         }
-        const failure = dialog.locator(".operation-status.failed");
+        const failure = sheet.getByTestId("finalization-failure");
         if (await failure.isVisible()) return `failed:${await failure.innerText()}`;
         return "capturing";
       },
@@ -50,13 +50,13 @@ async function finalizeColdChain(page: Page) {
     .toMatch(/^(final|risks)$/);
 
   if (
-    await dialog
-      .getByRole("button", { name: "确认风险并自动生成提示词" })
+    await sheet
+      .getByRole("button", { name: "确认并生成提示词" })
       .isVisible()
   ) {
-    await acceptAll(dialog);
-    await dialog
-      .getByRole("button", { name: "确认风险并自动生成提示词" })
+    await acceptAll(sheet);
+    await sheet
+      .getByRole("button", { name: "确认并生成提示词" })
       .click();
   }
 
@@ -64,6 +64,8 @@ async function finalizeColdChain(page: Page) {
     timeout: 30_000,
   });
   await expect(row).toContainText("Evidence + 提示词");
+  await sheet.getByRole("button", { name: "完成" }).click();
+  await expect(sheet).toBeHidden();
   return row;
 }
 
