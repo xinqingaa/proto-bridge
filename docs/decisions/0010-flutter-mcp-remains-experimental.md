@@ -12,7 +12,7 @@
 - Flutter 目标工程不携带 ProtoBridge 专属 Runtime Harness、Case/Scenario 副本或 build identity；
 - 当前验收继续使用固定 Evidence Screenshot、五维 Reconstruction Obligations、Target resolver/validation、目标原生测试和 consumer-reported summary；
 - 已实现的 Core Review、Local Service provider/runtime 和 MCP Review tool 代码继续保留并接受隔离单测，但不代表现行产品能力；
-- 未来只有先完成独立真实 Handoff spike 并满足 Roadmap 恢复条件，才能重新提议注册到默认工具表面。
+- 未来只有先完成独立真实 Handoff spike 并满足[实验记录](../history/flutter-mcp-experiment-2026-08.md#重新启用条件)中的恢复条件，才能重新提议注册到默认工具表面。
 
 ## 理由
 
@@ -25,4 +25,4 @@
 - 缺少 Structure/State/Interaction machine authority 时必须如实标记未验证，但不会触发 Harness 实施；
 - `summarize_reconstruction_review` 明确是 consumer-reported review，不冒充 Runtime receipt；
 - 真机 Target Screenshot 可以作为用户主动提供的追加诊断，但不进入固定工作链路；
-- 实验代码的真实官方 server 测试不进入默认 `pnpm verify`，协议适配由 Roadmap 恢复任务承担。
+- 实验代码的真实官方 server 测试不进入默认 `pnpm verify`，协议适配须满足[实验记录](../history/flutter-mcp-experiment-2026-08.md#重新启用条件)后另行立项。

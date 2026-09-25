@@ -60,7 +60,7 @@ pnpm pb:mcp -- --print-config
 
 仓库保留 L1/L2/L3 Review、claim verifier、Flutter MCP render/replay/compare 和 Review event log 实现，但默认 registry 不注册这些 Tools，默认 capability 也不声明 `target-review-authoritative`。它们不属于当前 Agent 消费 Contract。
 
-保留代码、已知协议问题、实验测试和重新启用条件见 [Flutter MCP Roadmap](../../docs/roadmap/flutter-mcp-target-review.md)。不得通过猜测工具名或直接调用 Local Service 内部 endpoint 绕过默认 MCP 表面。
+保留代码、已知协议问题、实验测试和重新启用条件见 [Flutter MCP 实验记录](../../docs/history/flutter-mcp-experiment-2026-08.md)。不得通过猜测工具名或直接调用 Local Service 内部 endpoint 绕过默认 MCP 表面。
 
 ## Resources 与 Prompt
 

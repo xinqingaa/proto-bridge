@@ -81,7 +81,7 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 
 `read_reconstruction_obligations` 从固定 Handoff 的 Acceptance Contract 投影稳定、跨 Case 去重的 structure、components、tokens、states 和 interactions 义务。组件与 Token 结合 resolver、实际采用代码和 `validate_target_changes`；结构、状态与交互结合固定 Evidence、目标代码和实际测试。没有可靠验证依据时必须保持 `unverified`。
 
-`summarize_reconstruction_review` 汇总已处理 Case、已查看 Screenshot、已重放 Scenario、偏差和未验证事项，不计算还原分数。它的 `validationAuthority` 是 `consumer-reported-review`，不能被描述成独立 Runtime 或最终视觉验收。官方 Flutter MCP Runtime Review 的保留实验实现不在默认 MCP Tool 表面，见 [Roadmap](../roadmap/flutter-mcp-target-review.md)。
+`summarize_reconstruction_review` 汇总已处理 Case、已查看 Screenshot、已重放 Scenario、偏差和未验证事项，不计算还原分数。它的 `validationAuthority` 是 `consumer-reported-review`，不能被描述成独立 Runtime 或最终视觉验收。官方 Flutter MCP Runtime Review 的保留实验实现不在默认 MCP Tool 表面，见 [实验记录](../history/flutter-mcp-experiment-2026-08.md)。
 
 一次性人工五维对照记录使用 [验收模板](../acceptance/README.md)，不替代本节判据，也不驱动 Agent 按验收文档改代码。
 

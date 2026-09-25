@@ -1,6 +1,6 @@
-# Roadmap：官方 Flutter MCP 与分级 Target 验收
+# 官方 Flutter MCP 与分级 Target 验收实验记录
 
-状态：Deferred
+状态：历史复盘；实验能力仍未注册
 
 日期：2026-08-19
 

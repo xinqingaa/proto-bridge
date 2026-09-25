@@ -118,7 +118,7 @@ Target 分为**公共门面**与**栈适配器**：
 
 适配器不拥有任何具体产品的组件/Token 映射。真实目标工程的 `AGENTS.md`、`docs/proto-bridge.md`、`docs/components.md`、`docs/theme.md` 和公开代码拥有当前约束；可选的根目录 `proto-bridge.target.json` 只是这些约束的严格机器投影。政策与机器 Contract 冲突返回 `conflict`，显式声明与代码不符返回 `stale`，代码启发式最多返回 `candidate`。缺少 authority 的维度只能保持 `unverified`。Target root 来自 Agent 当前任务或单次 Tool 参数；目标仓库不需要 ProtoBridge Workspace 配置，Target 结果不写入 Bundle。无适用 adapter 时仍可消费固定 Evidence，但不能宣称已完成 Target query/validation 闭环。
 
-Flutter MCP `review.version: 3`、DTD attach、Driver Bridge、App/build identity 和 Runtime receipt 仍保留在实验代码与测试中，但不属于当前 Target Contract、默认 MCP Tool 或 Agent Prompt。当前 Flutter 目标工程只拥有组件/Token mapping、公开代码、路由和目标原生测试。详见 [Flutter MCP Roadmap](../roadmap/flutter-mcp-target-review.md)。
+Flutter MCP `review.version: 3`、DTD attach、Driver Bridge、App/build identity 和 Runtime receipt 仍保留在实验代码与测试中，但不属于当前 Target Contract、默认 MCP Tool 或 Agent Prompt。当前 Flutter 目标工程只拥有组件/Token mapping、公开代码、路由和目标原生测试。详见 [Flutter MCP 实验记录](../history/flutter-mcp-experiment-2026-08.md)。
 
 ## 公共导出
 
