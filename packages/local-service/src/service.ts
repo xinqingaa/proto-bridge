@@ -2124,6 +2124,42 @@ export class ProtoBridgeLocalService {
       return;
     }
 
+    const screenshotIndexMatch = path.match(
+      /^\/api\/v2\/bundles\/([^/]+)\/snapshots\/([^/]+)\/screenshots$/,
+    );
+    if (request.method === 'GET' && screenshotIndexMatch) {
+      const bundleId = BundleId.parse(screenshotIndexMatch[1]);
+      const snapshotId = SnapshotId.parse(screenshotIndexMatch[2]);
+      const snapshot = await this.store.getSnapshot(bundleId, snapshotId);
+      if (!snapshot) {
+        throw new V2ContractError(
+          'unknown-reference',
+          'Bundle Snapshot does not exist.',
+        );
+      }
+      const caseByRevision = new Map(
+        snapshot.activeSlots.map(
+          (slot) => [slot.revisionId, slot.caseId] as const,
+        ),
+      );
+      const shots = (await this.store.listBlobRecords(bundleId))
+        .filter((blob) => blob.kind === 'screenshot')
+        .flatMap((blob) =>
+          blob.ownerRefs
+            .filter(
+              (owner) =>
+                owner.kind === 'revision' && caseByRevision.has(owner.objectId),
+            )
+            .map((owner) => ({
+              caseId: caseByRevision.get(owner.objectId)!,
+              revisionId: owner.objectId,
+              blobId: blob.blobId,
+            })),
+        );
+      success(response, { bundleId, snapshotId, shots });
+      return;
+    }
+
     const staleDraftMatch = path.match(
       /^\/api\/v2\/bundles\/([^/]+)\/stale-draft$/,
     );

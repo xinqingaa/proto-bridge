@@ -856,6 +856,19 @@ describe('ProtoBridge Local Service', () => {
     expect(fixedSnapshot.body.data.activeSnapshot.snapshotId).toBe(
       details.body.data.activeSnapshot.snapshotId,
     );
+    const shots = await call(
+      base,
+      `/bundles/${job.bundleId}/snapshots/${details.body.data.activeSnapshot.snapshotId}/screenshots`,
+      { token },
+    );
+    expect(shots.response.status).toBe(200);
+    expect(shots.body.data.shots).toEqual([
+      {
+        caseId: details.body.data.activeSnapshot.activeSlots[0].caseId,
+        revisionId: details.body.data.activeSnapshot.activeSlots[0].revisionId,
+        blobId: details.body.data.blobs[0].blobId,
+      },
+    ]);
   });
 
   it('recovers a fixed finalization across Service restart and creates one Handoff and Delivery', async () => {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 import {
   ArrowRight,
@@ -52,15 +52,6 @@ const selectedPrototypeId = ref(defaultPrototype?.id ?? "");
 const committedPrototypeId = ref(selectedPrototypeId.value);
 const shownPreviewPath = ref("");
 const incomingPreviewPath = ref("");
-const stageEl = ref<HTMLElement | null>(null);
-const reveal = ref<{
-  prototypeId: string;
-  x: string;
-  y: string;
-  expanding: boolean;
-} | null>(null);
-let revealFrame = 0;
-let revealTimer = 0;
 
 const selectedPrototype = computed<PrototypeRecord | undefined>(
   () =>
@@ -126,57 +117,11 @@ const stagedPrototypes = computed(() => {
 const committedAtmosphere = computed(() =>
   atmosphereStyle(committedPrototypeId.value),
 );
-const revealAtmosphere = computed(() => {
-  if (!reveal.value) return undefined;
-  return {
-    ...atmosphereStyle(reveal.value.prototypeId),
-    "--reveal-x": reveal.value.x,
-    "--reveal-y": reveal.value.y,
-  };
-});
 
-function prefersReducedMotion() {
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
-
-function finishReveal() {
-  window.clearTimeout(revealTimer);
-  if (reveal.value) committedPrototypeId.value = reveal.value.prototypeId;
-  reveal.value = null;
-}
-
-function selectStagedPrototype(prototypeId: string, event: MouseEvent) {
-  if (prototypeId === selectedPrototypeId.value && !reveal.value) return;
+function selectStagedPrototype(prototypeId: string) {
+  if (prototypeId === selectedPrototypeId.value) return;
   selectedPrototypeId.value = prototypeId;
-  if (prefersReducedMotion() || !stageEl.value) {
-    committedPrototypeId.value = prototypeId;
-    reveal.value = null;
-    return;
-  }
-  if (reveal.value) committedPrototypeId.value = reveal.value.prototypeId;
-  const stageBox = stageEl.value.getBoundingClientRect();
-  const origin = (event.currentTarget as HTMLElement).getBoundingClientRect();
-  reveal.value = {
-    prototypeId,
-    x: `${origin.left + origin.width / 2 - stageBox.left}px`,
-    y: `${origin.top + origin.height / 2 - stageBox.top}px`,
-    expanding: false,
-  };
-  cancelAnimationFrame(revealFrame);
-  window.clearTimeout(revealTimer);
-  revealFrame = requestAnimationFrame(() => {
-    revealFrame = requestAnimationFrame(() => {
-      if (reveal.value?.prototypeId === prototypeId) {
-        reveal.value = { ...reveal.value, expanding: true };
-        revealTimer = window.setTimeout(finishReveal, 720);
-      }
-    });
-  });
-}
-
-function onRevealEnd(event: TransitionEvent) {
-  if (event.propertyName !== "clip-path") return;
-  finishReveal();
+  committedPrototypeId.value = prototypeId;
 }
 
 const prototypeOverviewPath = computed(() =>
@@ -296,39 +241,17 @@ onMounted(() => {
   if (!capture.connected) void capture.connect();
   else void capture.refreshConsole();
 });
-onBeforeUnmount(() => {
-  cancelAnimationFrame(revealFrame);
-  window.clearTimeout(revealTimer);
-});
 </script>
 
 <template>
   <section class="overview-page" data-testid="workbench-overview">
     <section
       v-if="selectedPrototype"
-      ref="stageEl"
       class="prototype-stage"
       :style="committedAtmosphere"
     >
       <div class="stage-room" aria-hidden="true">
         <i class="stage-ground" />
-        <i class="stage-glow" />
-        <i class="stage-mist" />
-        <i class="stage-orbit" />
-      </div>
-      <div
-        v-if="reveal && revealAtmosphere"
-        :key="`${reveal.prototypeId}-${reveal.x}-${reveal.y}`"
-        class="stage-room is-reveal"
-        :class="{ 'is-expanding': reveal.expanding }"
-        :style="revealAtmosphere"
-        aria-hidden="true"
-        @transitionend="onRevealEnd"
-      >
-        <i class="stage-ground" />
-        <i class="stage-glow" />
-        <i class="stage-mist" />
-        <i class="stage-orbit" />
       </div>
 
       <div class="stage-content">
@@ -340,7 +263,7 @@ onBeforeUnmount(() => {
               type="button"
               :class="{ 'is-current': prototype.id === selectedPrototypeId }"
               :aria-pressed="prototype.id === selectedPrototypeId"
-              @click="selectStagedPrototype(prototype.id, $event)"
+              @click="selectStagedPrototype(prototype.id)"
             >
               {{ prototypeShortLabel(prototype) }}
             </button>
@@ -642,7 +565,7 @@ onBeforeUnmount(() => {
   position: relative;
   display: flex;
   width: 100%;
-  aspect-ratio: 1.618 / 1;
+  min-height: 520px;
   overflow: hidden;
   flex-direction: column;
   padding: 22px 32px 0;
@@ -660,10 +583,7 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 
-.stage-ground,
-.stage-glow,
-.stage-mist,
-.stage-orbit {
+.stage-ground {
   position: absolute;
   display: block;
 }
@@ -671,48 +591,6 @@ onBeforeUnmount(() => {
 .stage-ground {
   inset: 0;
   background: var(--stage-ground);
-}
-
-.stage-glow {
-  top: -80px;
-  right: -20px;
-  width: 520px;
-  height: 520px;
-  border-radius: 50%;
-  background: var(--stage-glow);
-  filter: blur(8px);
-}
-
-.stage-mist {
-  right: 20px;
-  bottom: -80px;
-  width: 460px;
-  height: 460px;
-  border-radius: 50%;
-  background: var(--stage-mist);
-  filter: blur(14px);
-}
-
-.stage-orbit {
-  right: -120px;
-  bottom: -300px;
-  width: 680px;
-  height: 680px;
-  border: 1px solid var(--stage-orbit);
-  border-radius: 50%;
-  box-shadow:
-    0 0 0 70px color-mix(in srgb, var(--stage-ink) 2%, transparent),
-    0 0 0 140px color-mix(in srgb, var(--stage-ink) 1.2%, transparent);
-}
-
-.stage-room.is-reveal {
-  z-index: 1;
-  clip-path: circle(0 at var(--reveal-x) var(--reveal-y));
-}
-
-.stage-room.is-reveal.is-expanding {
-  clip-path: circle(160% at var(--reveal-x) var(--reveal-y));
-  transition: clip-path 1640ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .work-switcher {
@@ -1504,11 +1382,6 @@ onBeforeUnmount(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .stage-ground,
-  .stage-glow,
-  .stage-mist,
-  .stage-orbit,
-  .stage-room.is-reveal.is-expanding,
   .runtime-frame,
   .runtime-frame iframe,
   .runtime-hint {

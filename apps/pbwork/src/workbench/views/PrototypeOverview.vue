@@ -1,17 +1,19 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import { ArrowRight, ChevronDown } from "lucide-vue-next";
 import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
 import { LIFECYCLE_LABELS } from "@/design-system/types";
 import { useCaptureStore } from "@/app/stores/capture";
 import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
+import { captureServiceClient } from "@/capture/service-client";
+import ScreenshotThumb from "@/capture/ScreenshotThumb.vue";
+import type { ScreenshotIndex } from "@proto-bridge/core/v2/service-contract";
 import {
   classifyWorkbenchResults,
   presentPrototypeResult,
 } from "@/capture/result-classification";
 import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
-import AtmosphereLayer from "@/workbench/prototypes/AtmosphereLayer.vue";
 import LifecycleTransitionDialog, {
   type LifecycleIntent,
 } from "@/workbench/prototypes/LifecycleTransitionDialog.vue";
@@ -59,6 +61,8 @@ const chapters = computed(() =>
 const finalizedArtifacts = computed(
   () => lifecycle.recordFor(props.prototypeId)?.artifacts ?? null,
 );
+const shots = ref<ScreenshotIndex["shots"]>([]);
+const shotsState = ref<"idle" | "ready" | "unavailable">("idle");
 const effectiveLifecycle = computed(() =>
   prototype.value ? lifecycle.effectiveLifecycle(prototype.value) : "active",
 );
@@ -111,7 +115,52 @@ async function pollOperation() {
   }
 }
 
+function thumbBlobId(slug: string) {
+  const screen = screens.value.find((item) => item.screenSlug === slug);
+  if (!screen) return "";
+  const matches = shots.value.filter((shot: ScreenshotIndex["shots"][number]) =>
+    shot.caseId.startsWith(`${screen.screenId}::`),
+  );
+  return (
+    matches.find((shot) => {
+      const [, variantId = "", , , scenario = ""] = shot.caseId.split("::");
+      return variantId === screen.defaultVariantId && !scenario.startsWith("scenario=");
+    })?.blobId ??
+    matches[0]?.blobId ??
+    ""
+  );
+}
+
+async function loadShots() {
+  const artifacts = finalizedArtifacts.value;
+  shots.value = [];
+  shotsState.value = "idle";
+  if (!artifacts || !capture.connected) return;
+  try {
+    const index = await captureServiceClient.screenshotIndex(
+      artifacts.bundleId,
+      artifacts.snapshotId,
+    );
+    if (
+      finalizedArtifacts.value?.bundleId === artifacts.bundleId &&
+      finalizedArtifacts.value.snapshotId === artifacts.snapshotId
+    ) {
+      shots.value = index.shots;
+      shotsState.value = "ready";
+    }
+  } catch {
+    shots.value = [];
+    shotsState.value = "unavailable";
+  }
+}
+
+watch(finalizedArtifacts, () => {
+  void loadShots();
+});
+
 onMounted(() => {
+  if (!capture.connected) void capture.connect().then(() => loadShots());
+  else void loadShots();
   void pollOperation();
   pollTimer = setInterval(() => void pollOperation(), 1000);
 });
@@ -123,7 +172,6 @@ onBeforeUnmount(() => {
 <template>
   <section v-if="prototype" class="detail-page">
     <header class="hero" :style="atmosphereStyle(prototype.id)">
-      <AtmosphereLayer />
       <div class="hero-copy">
         <span class="kicker">{{ prototypeShortLabel(prototype) }}</span>
         <h1 :title="prototype.label">{{ prototype.label }}</h1>
@@ -223,11 +271,19 @@ onBeforeUnmount(() => {
               class="screen-card"
               :to="canvasPath(prototype.id, screen.slug)"
             >
-              <span class="pageface" aria-hidden="true">
-                <i class="pageface-bar" />
-                <i class="pageface-hero" />
-                <i class="pageface-line" />
-                <i class="pageface-line is-short" />
+              <span class="pageface">
+                <ScreenshotThumb
+                  v-if="finalizedArtifacts && thumbBlobId(screen.slug)"
+                  :bundle-id="finalizedArtifacts.bundleId"
+                  :blob-id="thumbBlobId(screen.slug)"
+                  :alt="screen.label"
+                  :width="168"
+                />
+                <small v-else>{{
+                  shotsState === "unavailable"
+                    ? "画面暂时读不到"
+                    : "还没有这次的画面"
+                }}</small>
               </span>
               <span class="screen-copy">
                 <strong>{{ screen.label }}</strong>
@@ -462,42 +518,18 @@ onBeforeUnmount(() => {
 }
 
 .pageface {
-  display: flex;
+  display: grid;
   flex: 1;
   min-height: 0;
-  flex-direction: column;
-  gap: 7px;
-  padding: 12px 12px 0;
+  place-items: center;
+  overflow: hidden;
   background: rgba(var(--v-theme-on-surface), 0.04);
+  color: rgba(var(--v-theme-on-surface), 0.46);
+  font-size: 0.68rem;
 }
 
-.pageface-bar,
-.pageface-hero,
-.pageface-line {
-  display: block;
-  border-radius: 3px;
-  background: rgba(var(--v-theme-on-surface), 0.12);
-}
-
-.pageface-bar {
-  width: 42%;
-  height: 6px;
-}
-
-.pageface-hero {
-  width: 100%;
-  height: 38%;
-  border-radius: 6px;
-  background: rgba(var(--v-theme-on-surface), 0.08);
-}
-
-.pageface-line {
-  width: 78%;
-  height: 5px;
-}
-
-.pageface-line.is-short {
-  width: 52%;
+.pageface :deep(.shot-thumb) {
+  min-height: 120px;
 }
 
 .screen-copy {

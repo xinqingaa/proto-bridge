@@ -158,6 +158,17 @@ export type BundleEvidenceDetails = {
   handoffs: AgentHandoff[];
 };
 
+/** Screenshot identities for one Snapshot. Bytes stay on the blob route. */
+export type ScreenshotIndex = {
+  bundleId: string;
+  snapshotId: string;
+  shots: Array<{
+    caseId: string;
+    revisionId: string;
+    blobId: string;
+  }>;
+};
+
 export type CreatePreflightRequest = {
   draft: SelectionDraft;
 };

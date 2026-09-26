@@ -15,7 +15,6 @@ import {
   presentPrototypeResult,
 } from "@/capture/result-classification";
 import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
-import AtmosphereLayer from "@/workbench/prototypes/AtmosphereLayer.vue";
 import LifecycleTransitionDialog, {
   type LifecycleIntent,
 } from "@/workbench/prototypes/LifecycleTransitionDialog.vue";
@@ -269,7 +268,6 @@ onBeforeUnmount(() => {
         class="room"
         :style="atmosphereStyle(item.id)"
       >
-        <AtmosphereLayer compact />
         <RouterLink
           class="room-open"
           :to="`/workbench/prototypes/${item.id}`"
@@ -281,6 +279,12 @@ onBeforeUnmount(() => {
               LIFECYCLE_LABELS[state.effectiveLifecycle(item)]
             }}</span>
           </div>
+          <p v-if="captionOf(item).status" class="status">
+            {{ captionOf(item).status }}
+          </p>
+          <p v-if="captionOf(item).failure" class="failure">
+            {{ captionOf(item).failure }}
+          </p>
           <h2>{{ item.label }}</h2>
           <p class="summary">{{ prototypeSummary(item) }}</p>
           <p class="people">{{ ownersAndRoles(item) }}</p>
@@ -310,12 +314,6 @@ onBeforeUnmount(() => {
             >
           </div>
         </RouterLink>
-        <p v-if="captionOf(item).status" class="status">
-          {{ captionOf(item).status }}
-        </p>
-        <p v-if="captionOf(item).failure" class="failure">
-          {{ captionOf(item).failure }}
-        </p>
         <div class="room-actions">
           <WorkbenchButton
             v-for="action in roomActions(item)"
@@ -484,7 +482,6 @@ onBeforeUnmount(() => {
   position: relative;
   display: flex;
   width: calc(50% - 9px);
-  min-height: 520px;
   flex-direction: column;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--stage-ink) 12%, transparent);

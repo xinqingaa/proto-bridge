@@ -7,10 +7,15 @@ import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
 import { captureServiceClient } from "@/capture/service-client";
 import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
 
-const props = defineProps<{
-  bundleId: string;
-  snapshotId: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    bundleId: string;
+    snapshotId: string;
+    compact?: boolean;
+  }>(),
+  { compact: false },
+);
+const expanded = ref(false);
 
 const capture = useCaptureStore();
 const lifecycle = usePrototypeLifecycleStore();
@@ -75,6 +80,14 @@ watch(
     <div v-if="loading" class="delivery-empty">
       <LoaderCircle :size="20" class="spin" />正在读取定稿提示词…
     </div>
+    <WorkbenchButton
+      v-else-if="detail && compact && !expanded"
+      size="small"
+      tone="neutral"
+      @click="expanded = true"
+    >
+      查看提示词
+    </WorkbenchButton>
     <pre
       v-else-if="detail"
       class="prompt-body"

@@ -14,7 +14,8 @@ import {
 import type { PrototypeRecord } from "@/design-system/types";
 import { useCaptureStore } from "@/app/stores/capture";
 import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
-import { groupCaptureFailures } from "@/capture/presentation";
+import { caseDisplayLabel, groupCaptureFailures } from "@/capture/presentation";
+import { presentRiskChecklist, presentWarning } from "@/capture/review-copy";
 import {
   classifyWorkbenchResults,
   presentPrototypeResult,
@@ -46,7 +47,20 @@ let pollTimer: ReturnType<typeof setInterval> | undefined;
 const record = computed(() => lifecycle.recordFor(props.prototype.id));
 const operation = computed(() => record.value?.operation ?? { kind: "idle" as const });
 const warnings = computed(() => lifecycle.preflightFor(props.prototype.id)?.result.warnings ?? []);
+const warningChecks = computed(() => warnings.value.map((warning) => presentWarning(warning)));
 const risks = computed(() => lifecycle.handoffPreviewFor(props.prototype.id)?.risks ?? []);
+const riskChecks = computed(() => {
+  const names = new Map(
+    (lifecycle.evidenceFor(props.prototype.id)?.activeRevisions ?? []).map((revision) => [
+      revision.revisionId,
+      caseDisplayLabel(revision.caseId),
+    ]),
+  );
+  return presentRiskChecklist(
+    risks.value,
+    (revisionId) => names.get(revisionId) ?? "一个页面状态",
+  );
+});
 const final = computed(() => record.value?.stage === "final" && record.value.artifacts);
 const step = computed(() => {
   if (final.value) return 3;
@@ -108,8 +122,8 @@ const statusText = computed(() => {
   if (current.phase === "preflighting") return "正在检查整个原型的正式范围。";
   if (current.phase === "awaiting-confirmation") return "预检完成，等待确认候选方案已经收敛。";
   if (current.phase === "capturing") return `正在采集整个原型 · ${completedCases.value}/${totalCases.value}`;
-  if (current.phase === "awaiting-risks") return "Evidence 已完成，等待逐项确认风险。";
-  return "正在创建 Handoff、Delivery 和唯一 Agent 提示词。";
+  if (current.phase === "awaiting-risks") return "采集已经完成，请逐项确认下面这些提醒。";
+  return "正在固定交付结果和给 Agent 的提示词。";
 });
 
 async function initialize() {
@@ -194,6 +208,22 @@ watch(
   { immediate: true },
 );
 watch(
+  () =>
+    props.modelValue && record.value?.stage === "final"
+      ? record.value.artifacts?.deliveryId
+      : "",
+  (deliveryId) => {
+    if (!deliveryId) return;
+    if (
+      capture.deliveryArtifact?.deliveryId === deliveryId &&
+      capture.agentPrompt
+    ) {
+      return;
+    }
+    void capture.loadDelivery(deliveryId);
+  },
+);
+watch(
   () => record.value?.stage,
   (stage) => {
     if (stage === "final") emit("changed");
@@ -215,7 +245,7 @@ onBeforeUnmount(() => {
       <header class="flow-header">
         <span class="flow-mark"><ScanLine :size="20" /></span>
         <div>
-          <p>Prototype finalization</p>
+          <p>定稿</p>
           <h2>定稿并采集 · {{ prototype.label }}</h2>
           <span>
             <span
@@ -280,7 +310,7 @@ onBeforeUnmount(() => {
         >
           <div class="section-lead">
             <strong>确认正式入口已经收敛</strong>
-            <p>本次会采集所有正式页面、状态和场景，成功后固定 Evidence、Handoff 与唯一提示词。</p>
+            <p>本次会采集所有正式页面、状态和场景。成功后，页面结果和唯一提示词会固定下来。</p>
             <p v-if="deliveryTargetRoot" class="delivery-target">
               Agent 提示词将指向：<code>{{ deliveryTargetRoot }}</code>
             </p>
@@ -292,14 +322,24 @@ onBeforeUnmount(() => {
             v-model="converged"
             label="候选方案已经收敛，正式入口和 Registry 只保留唯一方案"
           />
-          <div v-if="warnings.length" class="check-list">
-            <article v-for="warning in warnings" :key="warning.warningId">
+          <div v-if="warningChecks.length" class="check-list">
+            <article v-for="check in warningChecks" :key="check.id">
               <AlertTriangle :size="16" />
-              <span>{{ warning.message }}</span>
+              <div class="check-copy">
+                <strong>{{ check.title }}</strong>
+                <p>{{ check.body }}</p>
+                <ul v-if="check.lines.length">
+                  <li v-for="line in check.lines.slice(0, 6)" :key="line">{{ line }}</li>
+                </ul>
+                <details>
+                  <summary>技术原文</summary>
+                  <pre>{{ check.technical }}</pre>
+                </details>
+              </div>
               <WorkbenchCheckbox
-                :model-value="lifecycle.acceptedWarningsFor(props.prototype.id).includes(warning.warningId)"
+                :model-value="lifecycle.acceptedWarningsFor(props.prototype.id).includes(check.id)"
                 label="已了解"
-                @update:model-value="lifecycle.toggleWarning(props.prototype.id, warning.warningId, $event)"
+                @update:model-value="lifecycle.toggleWarning(props.prototype.id, check.id, $event)"
               />
             </article>
           </div>
@@ -321,21 +361,32 @@ onBeforeUnmount(() => {
           class="flow-section"
         >
           <div class="section-lead">
-            <strong>{{ successfulCases }} 个 Case 已形成 Evidence</strong>
-            <p>确认不会改变 Evidence；所有风险会原样写入 Agent 提示词。</p>
+            <strong>{{ successfulCases }} 个页面状态已经采到</strong>
+            <p>勾选不会改采集结果。这些提醒会原样写进给 Agent 的提示词。</p>
           </div>
-          <div v-if="risks.length" class="check-list">
-            <article v-for="risk in risks" :key="risk.kind">
+          <div v-if="riskChecks.length" class="check-list">
+            <article v-for="check in riskChecks" :key="check.id">
               <AlertTriangle :size="16" />
-              <span>{{ risk.message }}</span>
+              <div class="check-copy">
+                <strong>{{ check.title }}</strong>
+                <p>{{ check.body }}</p>
+                <ul v-if="check.lines.length">
+                  <li v-for="line in check.lines.slice(0, 8)" :key="line">{{ line }}</li>
+                  <li v-if="check.lines.length > 8">还有 {{ check.lines.length - 8 }} 处，见技术原文。</li>
+                </ul>
+                <details>
+                  <summary>技术原文</summary>
+                  <pre>{{ check.technical }}</pre>
+                </details>
+              </div>
               <WorkbenchCheckbox
-                :model-value="lifecycle.acknowledgedRisksFor(props.prototype.id).includes(risk.kind)"
+                :model-value="lifecycle.acknowledgedRisksFor(props.prototype.id).includes(check.id)"
                 label="已了解"
-                @update:model-value="lifecycle.toggleRisk(props.prototype.id, risk.kind, $event)"
+                @update:model-value="lifecycle.toggleRisk(props.prototype.id, check.id, $event)"
               />
             </article>
           </div>
-          <p v-else class="quiet-result">当前没有必须确认的风险。</p>
+          <p v-else class="quiet-result">当前没有必须确认的提醒。</p>
         </section>
 
         <section
@@ -353,19 +404,20 @@ onBeforeUnmount(() => {
             <span><FileCheck2 :size="20" /></span>
             <div>
               <strong>定稿完成</strong>
-              <p>Bundle 已归档为只读，提示词与当前 Snapshot 固定绑定。</p>
+              <p>这一版已经锁定。提示词对应刚才采到的页面，不会跟着后来的修改变。</p>
             </div>
           </div>
           <div class="prompt-toolbar">
             <div>
-              <strong>Agent 提示词</strong>
+              <strong>给 Agent 的提示词</strong>
               <code>{{ record?.artifacts?.deliveryId }}</code>
             </div>
             <WorkbenchButton tone="neutral" @click="copyPrompt">
               <ClipboardCopy :size="15" />{{ copied ? "已复制" : "复制提示词" }}
             </WorkbenchButton>
           </div>
-          <pre data-testid="final-agent-prompt">{{ capture.agentPrompt }}</pre>
+          <p v-if="!capture.agentPrompt" class="quiet-result">正在读取提示词…</p>
+          <pre v-else data-testid="final-agent-prompt">{{ capture.agentPrompt }}</pre>
         </section>
       </div>
 
@@ -393,7 +445,7 @@ onBeforeUnmount(() => {
           <CheckCircle2 :size="15" />确认并生成提示词
         </WorkbenchButton>
         <template v-else-if="final">
-          <WorkbenchButton tone="neutral" @click="openEvidence">查看 Evidence</WorkbenchButton>
+          <WorkbenchButton tone="neutral" @click="openEvidence">查看采集结果</WorkbenchButton>
           <WorkbenchButton tone="primary" @click="emit('update:modelValue', false)">完成</WorkbenchButton>
         </template>
       </footer>
@@ -555,10 +607,33 @@ onBeforeUnmount(() => {
 .check-list article > svg {
   color: rgb(var(--v-theme-warning));
 }
-.check-list article > span {
+.check-copy {
+  display: grid;
   min-width: 0;
   flex: 1;
+  gap: 4px;
+}
+.check-copy strong {
+  font-size: 0.78rem;
+}
+.check-copy p,
+.check-copy li {
+  margin: 0;
+  color: rgba(var(--v-theme-on-surface), 0.72);
   font-size: 0.74rem;
+}
+.check-copy ul {
+  margin: 0;
+  padding-left: 1.1em;
+}
+.check-copy details {
+  font-size: 0.7rem;
+}
+.check-copy pre {
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 .capture-progress {
   display: flex;

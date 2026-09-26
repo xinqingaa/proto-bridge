@@ -11,6 +11,7 @@ import {
   type HandoffPreview,
   type HandoffPreviewRequest,
   type EvidenceInventory,
+  type ScreenshotIndex,
   type BundleDeletePlan,
   type BundleDeleteResult,
   type LocalServiceSession,
@@ -181,6 +182,12 @@ export class CaptureServiceClient {
   ): Promise<BundleEvidenceDetails> {
     return this.request(
       `/bundles/${encodeURIComponent(bundleId)}/snapshots/${encodeURIComponent(snapshotId)}`,
+    );
+  }
+
+  screenshotIndex(bundleId: string, snapshotId: string): Promise<ScreenshotIndex> {
+    return this.request(
+      `/bundles/${encodeURIComponent(bundleId)}/snapshots/${encodeURIComponent(snapshotId)}/screenshots`,
     );
   }
 

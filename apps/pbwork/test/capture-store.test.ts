@@ -294,5 +294,6 @@ describe("PBWork V2 capture store", () => {
     expect(store.notice).toMatchObject({
       title: "Workspace 已重置",
     });
+    expect(captureServiceClient.evidenceInventory).not.toHaveBeenCalled();
   });
 });

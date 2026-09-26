@@ -13,6 +13,8 @@ import type { PrototypeRecord } from "@/design-system/types";
 import { LIFECYCLE_LABELS } from "@/design-system/types";
 import { useCaptureStore } from "@/app/stores/capture";
 import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
+import { caseDisplayLabel } from "@/capture/presentation";
+import { presentRiskChecklist, presentWarning } from "@/capture/review-copy";
 import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
 import WorkbenchCheckbox from "@/workbench/ui/WorkbenchCheckbox.vue";
 
@@ -46,7 +48,20 @@ const record = computed(() => lifecycle.recordFor(props.prototype.id));
 const current = computed(() => record.value?.stage ?? "active");
 const operation = computed(() => record.value?.operation ?? { kind: "idle" as const });
 const warnings = computed(() => capture.preflight?.result.warnings ?? []);
+const warningChecks = computed(() => warnings.value.map((warning) => presentWarning(warning)));
 const risks = computed(() => capture.handoffPreview?.risks ?? []);
+const riskChecks = computed(() => {
+  const names = new Map(
+    (capture.details?.activeRevisions ?? []).map((revision) => [
+      revision.revisionId,
+      caseDisplayLabel(revision.caseId),
+    ]),
+  );
+  return presentRiskChecklist(
+    risks.value,
+    (revisionId) => names.get(revisionId) ?? "一个页面状态",
+  );
+});
 const target = computed(() => {
   if (props.intent === "advance") return "review";
   if (props.intent === "return-active") return "active";
@@ -74,8 +89,8 @@ const progressLabel = computed(() => {
     const total = job?.selection.cases.length ?? 0;
     return total ? `正在采集整个原型 · ${completed}/${total}` : "正在创建整原型 Evidence…";
   }
-  if (op.phase === "awaiting-risks") return "Evidence 已完成，等待风险确认";
-  return "正在生成唯一 Agent 提示词…";
+  if (op.phase === "awaiting-risks") return "采集已经完成，等待确认提醒";
+  return "正在生成唯一提示词…";
 });
 const canConfirmFinalization = computed(
   () => converged.value && capture.warningsAccepted,
@@ -248,12 +263,15 @@ onBeforeUnmount(() => {
           />
           <section v-if="warnings.length" class="warning-block">
             <strong>预检提醒</strong>
-            <div v-for="warning in warnings" :key="warning.warningId" class="check-row">
-              <span>{{ warning.message }}</span>
+            <div v-for="check in warningChecks" :key="check.id" class="check-row">
+              <span>
+                <strong>{{ check.title }}</strong>
+                {{ check.body }}
+              </span>
               <WorkbenchCheckbox
-                :model-value="capture.acceptedWarningIds.includes(warning.warningId)"
+                :model-value="capture.acceptedWarningIds.includes(check.id)"
                 label="我已了解"
-                @update:model-value="capture.toggleWarning(warning.warningId, $event)"
+                @update:model-value="capture.toggleWarning(check.id, $event)"
               />
             </div>
           </section>
@@ -263,13 +281,16 @@ onBeforeUnmount(() => {
           v-if="operation.kind === 'finalizing' && operation.phase === 'awaiting-risks'"
           class="warning-block"
         >
-          <strong>这些风险会原样写入提示词</strong>
-          <div v-for="risk in risks" :key="risk.kind" class="check-row">
-            <span>{{ risk.message }}</span>
+          <strong>这些提醒会写入提示词</strong>
+          <div v-for="check in riskChecks" :key="check.id" class="check-row">
+            <span>
+              <strong>{{ check.title }}</strong>
+              {{ check.body }}
+            </span>
             <WorkbenchCheckbox
-              :model-value="capture.acknowledgedRiskKinds.includes(risk.kind)"
+              :model-value="capture.acknowledgedRiskKinds.includes(check.id as typeof capture.acknowledgedRiskKinds[number])"
               label="我已了解"
-              @update:model-value="capture.toggleRisk(risk.kind, $event)"
+              @update:model-value="capture.toggleRisk(check.id as typeof capture.acknowledgedRiskKinds[number], $event)"
             />
           </div>
         </section>

@@ -21,6 +21,8 @@ import EvidencePreview from "@/capture/EvidencePreview.vue";
 import EvidenceDeliveryPanel from "@/capture/EvidenceDeliveryPanel.vue";
 import CaptureFailureGroups from "@/capture/CaptureFailureGroups.vue";
 import { groupCaptureFailures } from "@/capture/presentation";
+import { speakEvidenceMessage } from "@/capture/review-copy";
+import ScreenshotThumb from "@/capture/ScreenshotThumb.vue";
 import {
   classifyWorkbenchResults,
   evidenceMessagesForClassification,
@@ -117,7 +119,9 @@ const verdictMessages = computed(() => {
   const current = model.value;
   const kind = resultCopy.value?.kind;
   if (!current || !kind) return current?.messages ?? [];
-  return evidenceMessagesForClassification(current.messages, kind);
+  return evidenceMessagesForClassification(current.messages, kind).map(
+    speakEvidenceMessage,
+  );
 });
 const tokenFacts = computed(() =>
   (selectedCase.value?.contextFacts ?? []).filter((fact) =>
@@ -144,12 +148,14 @@ function caseTitle(item: EvidenceCaseReadModel) {
   return `${screenLabel(item.screenId)} · ${variantLabel(item)}`;
 }
 function scenarioSummary(item: EvidenceCaseReadModel) {
-  if (!item.scenario) return "页面状态";
-  return `从「${screenLabel(item.scenario.ownerScreenId)}」进入「${screenLabel(item.screenId)}」`;
-}
-function thumbUrl(item: EvidenceCaseReadModel) {
-  const blobId = item.screenshotBlobIds[0];
-  return blobId ? capture.screenshotUrls[blobId] : "";
+  if (!item.scenario) return "页面本身的状态";
+  const owner = screenRecord(item.scenario.ownerScreenId);
+  const scenario = owner?.scenarios?.find(
+    (candidate) => candidate.id === item.scenario?.scenarioId,
+  );
+  const name = scenario?.label ?? item.scenario.scenarioId;
+  if (item.scenario.ownerScreenId === item.screenId) return `完成「${name}」之后`;
+  return `从「${screenLabel(item.scenario.ownerScreenId)}」完成「${name}」之后`;
 }
 function friendlyValue(value: unknown) {
   if (typeof value === "string") return value;
@@ -271,12 +277,19 @@ watch(
       <div v-if="failuresOpen && failureGroups.length" class="verdict-failures">
         <CaptureFailureGroups :groups="failureGroups" />
       </div>
+      <EvidenceDeliveryPanel
+        v-if="resultCopy?.kind === 'officially-finalized'"
+        class="verdict-prompt"
+        compact
+        :bundle-id="bundleId"
+        :snapshot-id="snapshotId"
+      />
     </section>
 
     <div v-if="model && selectedCase" class="result-workspace">
       <EvidencePreview
+        :bundle-id="bundleId"
         :evidence="selectedCase"
-        :screenshot-urls="capture.screenshotUrls"
         :title="caseTitle(selectedCase)"
       />
 
@@ -301,8 +314,10 @@ watch(
           <template v-if="inspectorTab === 'summary'">
             <p class="lead">{{ scenarioSummary(selectedCase) }}</p>
             <div v-if="selectedCase.fragmentLabels.length" class="scope-notice">
-              只采集：{{ selectedCase.fragmentLabels.join("、") }}
+              这次只采集了页面里的 {{ selectedCase.fragmentLabels.length }} 个区域。
             </div>
+            <details class="technical-details">
+              <summary>查看本页采集记录（{{ selectedCase.contextFacts.length }} 项）</summary>
             <ul class="fact-list">
               <li
                 v-for="fact in selectedCase.contextFacts"
@@ -326,6 +341,7 @@ watch(
                 </div>
               </li>
             </ul>
+            </details>
             <details class="technical-details">
               <summary>技术详情</summary>
               <code>Case: {{ selectedCase.caseId }}</code>
@@ -438,9 +454,10 @@ watch(
             @click="selectCase(item)"
           >
             <span class="thumb">
-              <img
-                v-if="thumbUrl(item)"
-                :src="thumbUrl(item)"
+              <ScreenshotThumb
+                v-if="item.screenshotBlobIds[0]"
+                :bundle-id="bundleId"
+                :blob-id="item.screenshotBlobIds[0]"
                 :alt="caseTitle(item)"
               />
               <Image v-else :size="14" aria-hidden="true" />
@@ -559,6 +576,9 @@ h1 {
   max-height: 42vh;
   margin-top: 10px;
   overflow: auto;
+}
+.verdict-prompt {
+  margin-top: 10px;
 }
 .result-workspace {
   display: grid;

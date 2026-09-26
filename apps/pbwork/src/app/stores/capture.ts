@@ -1,3 +1,4 @@
+import { markRaw } from "vue";
 import { defineStore } from "pinia";
 import type {
   AgentHandoff,
@@ -345,7 +346,6 @@ export const useCaptureStore = defineStore("capture-v2", {
           };
         }
         this.consoleState = nextConsoleState;
-        this.evidenceInventory = await captureServiceClient.evidenceInventory();
         await this.reconcileLocalWorkspaceCache();
         if (this.activeJob) {
           const refreshed = this.consoleState.jobs.find(
@@ -640,8 +640,7 @@ export const useCaptureStore = defineStore("capture-v2", {
       try {
         const details = await captureServiceClient.bundleDetails(bundleId);
         this.revokeScreenshotUrls();
-        this.details = details;
-        await this.loadScreenshotUrls(bundleId);
+        this.details = markRaw(details);
       } catch (error) {
         this.setError(error);
       }
@@ -654,23 +653,7 @@ export const useCaptureStore = defineStore("capture-v2", {
           snapshotId,
         );
         this.revokeScreenshotUrls();
-        this.details = details;
-        await this.loadScreenshotUrls(bundleId);
-      } catch (error) {
-        this.setError(error);
-      }
-    },
-    async loadScreenshotUrls(bundleId: string) {
-      if (!this.details) return;
-      try {
-        for (const blob of this.details.blobs.filter(
-          (candidate) => candidate.kind === "screenshot",
-        )) {
-          this.screenshotUrls[blob.blobId] = await captureServiceClient.blobUrl(
-            bundleId,
-            blob.blobId,
-          );
-        }
+        this.details = markRaw(details);
       } catch (error) {
         this.setError(error);
       }

@@ -2,24 +2,41 @@
 import { computed, ref, watch } from "vue";
 import { Image, Maximize2 } from "lucide-vue-next";
 import type { EvidenceCaseReadModel } from "@proto-bridge/core/v2/evidence-read-model";
+import ScreenshotThumb from "@/capture/ScreenshotThumb.vue";
+import { loadScreenshot } from "@/capture/screenshot-cache";
 
 const props = defineProps<{
+  bundleId: string;
   evidence: EvidenceCaseReadModel;
-  screenshotUrls: Record<string, string>;
   title: string;
 }>();
 
 const selectedBlobId = ref("");
+const selectedUrl = ref("");
 const blobIds = computed(() => props.evidence.screenshotBlobIds);
-const selectedUrl = computed(() =>
-  selectedBlobId.value ? props.screenshotUrls[selectedBlobId.value] : "",
-);
 
 watch(
   blobIds,
   (ids) => {
     if (!ids.includes(selectedBlobId.value)) {
       selectedBlobId.value = ids[0] ?? "";
+    }
+  },
+  { immediate: true },
+);
+
+watch(
+  () => [props.bundleId, selectedBlobId.value] as const,
+  async ([bundleId, blobId]) => {
+    selectedUrl.value = "";
+    if (!blobId) return;
+    try {
+      const url = await loadScreenshot(bundleId, blobId);
+      if (selectedBlobId.value === blobId && props.bundleId === bundleId) {
+        selectedUrl.value = url;
+      }
+    } catch {
+      selectedUrl.value = "";
     }
   },
   { immediate: true },
@@ -52,6 +69,10 @@ function openOriginal() {
 
     <div class="preview-stage">
       <img v-if="selectedUrl" :src="selectedUrl" :alt="`${title} 截图`" />
+      <div v-else-if="blobIds.length" class="preview-empty">
+        <Image :size="28" />
+        <strong>正在读取画面…</strong>
+      </div>
       <div v-else class="preview-empty">
         <Image :size="28" />
         <strong>没有可显示的截图</strong>
@@ -66,10 +87,11 @@ function openOriginal() {
         :class="{ active: blobId === selectedBlobId }"
         @click="selectedBlobId = blobId"
       >
-        <img
-          v-if="screenshotUrls[blobId]"
-          :src="screenshotUrls[blobId]"
+        <ScreenshotThumb
+          :bundle-id="bundleId"
+          :blob-id="blobId"
           :alt="`截图 ${index + 1}`"
+          :width="116"
         />
         <span>{{ index + 1 }}</span>
       </button>
@@ -171,10 +193,8 @@ h2 {
 .shot-strip button.active {
   border-color: rgb(var(--v-theme-primary));
 }
-.shot-strip img {
-  width: 100%;
+.shot-strip :deep(.shot-thumb) {
   height: 54px;
-  object-fit: cover;
 }
 .shot-strip span {
   position: absolute;
