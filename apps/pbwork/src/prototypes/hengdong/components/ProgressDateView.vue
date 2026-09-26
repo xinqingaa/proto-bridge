@@ -130,6 +130,12 @@ function dateAria(cell: DayCell) {
         :aria-pressed="selectedKey === month.id"
         :data-pb-id="`${inspectId}.month`"
         :data-pb-key="month.id.replaceAll(':', '-')"
+        data-pb-role="button"
+        :data-pb-token-background="selectedKey === month.id ? 'color.primary' : month.active ? 'color.success-soft' : 'color.surface-recessed'"
+        :data-pb-token-color="selectedKey === month.id ? 'color.on-primary' : month.active ? 'color.success' : 'color.on-surface'"
+        data-pb-token-radius="radius.md"
+        data-pb-token-size="sizing.touch"
+        data-pb-token-spacing="spacing.sm"
         @click="$emit('select', month.id)"
       >
         <span>{{ month.label }}</span>
@@ -159,6 +165,12 @@ function dateAria(cell: DayCell) {
             :aria-pressed="selectedKey === cell.id"
             :data-pb-id="`${inspectId}.day`"
             :data-pb-key="cell.id.replaceAll(':', '-')"
+            data-pb-role="button"
+            :data-pb-token-background="selectedKey === cell.id ? 'color.primary' : cell.state === 'done' ? 'color.success-soft' : 'transparent'"
+            :data-pb-token-color="selectedKey === cell.id ? 'color.on-primary' : cell.state === 'done' ? 'color.success' : cell.state === 'today' ? 'color.primary' : 'color.on-surface-muted'"
+            :data-pb-token-typography="cell.state === 'today' ? 'typography.caption-strong' : 'typography.caption'"
+            data-pb-token-radius="radius.md"
+            data-pb-token-size="sizing.touch"
             @click="$emit('select', cell.id)"
           >
             {{ cell.label }}

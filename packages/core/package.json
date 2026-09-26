@@ -38,6 +38,10 @@
       "types": "./dist/v2/evidence-read-model.d.ts",
       "import": "./dist/v2/evidence-read-model.js"
     },
+    "./v2/result-classification": {
+      "types": "./dist/v2/result-classification.d.ts",
+      "import": "./dist/v2/result-classification.js"
+    },
     "./v2/prompts/agent-prompt": {
       "types": "./dist/v2/prompts/agent-prompt.d.ts",
       "import": "./dist/v2/prompts/agent-prompt.js"

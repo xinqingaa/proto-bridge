@@ -13,7 +13,7 @@
 
 | 改动 | 主要路径 |
 | --- | --- |
-| Evidence Contract/Read Model | `packages/core/src/v2/contracts`、`evidence-read-model.ts` |
+| Evidence Contract/Read Model | `packages/core/src/v2/contracts`、`evidence-read-model.ts`、`result-classification.ts` |
 | Selection/Capture/Handoff | `packages/core/src/v2/capture` |
 | Store/引用 | `packages/core/src/v2/store`、`resolver` |
 | Runtime/Service Protocol | `packages/core/src/v2/runtime-contract`、`service-contract` |

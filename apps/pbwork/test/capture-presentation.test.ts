@@ -77,6 +77,9 @@ function state(jobs: CaptureJob[]): CaptureConsoleState {
     workspaceId: "pbwork-local",
     generationId: "generation-test",
     jobs,
+    receipts: [],
+    handoffs: [],
+    unreadableSnapshots: [],
     bundles: completed.map((item) => ({
       bundle: {
         schemaVersion: 1,

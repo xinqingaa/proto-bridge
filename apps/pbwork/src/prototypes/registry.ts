@@ -809,7 +809,7 @@ const redesignedHengdongScreens = [
         requiredFragments: [
           {
             screenId: "hengdong.activity-history",
-            pbId: "hengdong.activity-history.open-month",
+            pbId: "hengdong.activity-history.month-sheet.close",
           },
           {
             screenId: "hengdong.activity-history",

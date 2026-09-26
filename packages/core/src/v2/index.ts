@@ -6,6 +6,7 @@
 export * from './contracts/index.js';
 export * from './resolver/index.js';
 export * from './evidence-read-model.js';
+export * from './result-classification.js';
 export * from './consumer-projection.js';
 export * from './implementation-plan.js';
 export * from './consumer-quality.js';

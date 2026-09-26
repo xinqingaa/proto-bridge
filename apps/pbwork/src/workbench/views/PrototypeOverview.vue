@@ -4,7 +4,12 @@ import { RouterLink, useRouter } from "vue-router";
 import { ArrowRight, ChevronDown } from "lucide-vue-next";
 import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
 import { LIFECYCLE_LABELS } from "@/design-system/types";
+import { useCaptureStore } from "@/app/stores/capture";
 import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
+import {
+  classifyWorkbenchResults,
+  presentPrototypeResult,
+} from "@/capture/result-classification";
 import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
 import AtmosphereLayer from "@/workbench/prototypes/AtmosphereLayer.vue";
 import LifecycleTransitionDialog, {
@@ -30,6 +35,7 @@ const props = defineProps<{
   prototypeId: string;
 }>();
 const lifecycle = usePrototypeLifecycleStore();
+const capture = useCaptureStore();
 const router = useRouter();
 const transitionOpen = ref(false);
 const transitionIntent = ref<LifecycleIntent>("advance");
@@ -72,7 +78,16 @@ const busy = computed(
     operation.value?.kind === "rolling-back",
 );
 const caption = computed(() =>
-  operationCaption(operation.value, Boolean(finalizedArtifacts.value)),
+  operationCaption(
+    operation.value,
+    presentPrototypeResult(
+      classifyWorkbenchResults({
+        records: lifecycle.records,
+        consoleState: capture.consoleState,
+      }),
+      props.prototypeId,
+    )?.headline ?? null,
+  ),
 );
 
 function openPrototypeEvidence() {

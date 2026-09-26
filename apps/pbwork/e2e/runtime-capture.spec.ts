@@ -125,6 +125,159 @@ test("Core Capture opens a parameterized Hengdong Variant with its authored rout
   ).toBe(true);
 });
 
+test("Hengdong sequential Sheet actions resolve at their actual scenario step", async ({
+  page,
+}) => {
+  await page.goto("/prototype/hengdong/today?variant=default&theme=light");
+  await page.waitForFunction(() =>
+    Boolean(
+      (window as unknown as Record<string, unknown>)
+        .__PROTO_BRIDGE_CAPTURE_V2__,
+    ),
+  );
+  const manifest = await page.evaluate(async () => {
+    const api = (
+      window as unknown as Record<
+        string,
+        { request(input: unknown): Promise<any> }
+      >
+    ).__PROTO_BRIDGE_CAPTURE_V2__;
+    if (!api) throw new Error("V2 Runtime Capture Protocol missing");
+    const response = await api.request({
+      protocolVersion: 2,
+      requestId: "hengdong-sequential-describe",
+      payload: { kind: "describe" },
+    });
+    return response.payload.manifest as RuntimeCaptureManifest;
+  });
+  const captureScope = {
+    fragments: [],
+    screenshots: { mode: "none" as const },
+    sourcePolicy: false,
+    debugPolicy: false,
+    evidenceInputMode: "instrumented" as const,
+    minEvidenceLevel: "instrumented-runtime" as const,
+  };
+  const draft: SelectionDraft = {
+    prototypeId: "hengdong",
+    screens: [
+      {
+        screenId: "hengdong.activity-history",
+        variants: { mode: "explicit", variantIds: ["default"] },
+        themeIds: ["light"],
+        deviceIds: ["iphone-14"],
+        scenarios: {
+          mode: "explicit",
+          scenarioIds: ["delete-and-undo-history"],
+        },
+        captureScope,
+      },
+      {
+        screenId: "hengdong.progress",
+        variants: { mode: "explicit", variantIds: ["custom"] },
+        themeIds: ["light"],
+        deviceIds: ["iphone-14"],
+        scenarios: {
+          mode: "explicit",
+          scenarioIds: ["apply-progress-custom-range"],
+        },
+        captureScope,
+      },
+    ],
+    acceptedWarningIds: [],
+  };
+  const preflight = preflightSelection(draft, manifest);
+  const driver = new PlaywrightCaseCaptureDriver();
+  const scenarioEntries = preflight.matrix.filter(
+    (entry) => entry.selectedCase.caseKey.scenario,
+  );
+  expect(scenarioEntries).toHaveLength(2);
+  for (const entry of scenarioEntries) {
+    const captured = await driver.captureCase({
+      entry,
+      preflight,
+      runtimeBaseUrl: new URL(page.url()).origin,
+    });
+    expect(captured.diagnostics.pageErrors, entry.selectedCase.caseId).toEqual([]);
+    expect(captured.facts.length, entry.selectedCase.caseId).toBeGreaterThan(0);
+  }
+});
+
+test("Runtime occlusion blocks painted overlays but not scrolled or hit-test-exempt content", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(
+    "/prototype/cold-chain-ops/exception-queue?variant=default&theme=light",
+  );
+  await page.waitForFunction(() =>
+    Boolean(
+      (window as unknown as Record<string, unknown>)
+        .__PROTO_BRIDGE_CAPTURE_V2__,
+    ),
+  );
+  const screenId = "cold-chain-ops.exception-queue";
+  const expected = {
+    prototypeId: "cold-chain-ops",
+    screenId,
+    variantId: "default",
+    themeId: "light",
+  };
+  await page.evaluate(() => {
+    const root = document.createElement("div");
+    root.style.cssText = "position:fixed;inset:0;z-index:10000;background:white";
+    root.innerHTML = `
+      <div style="position:absolute;inset:0;overflow:auto">
+        <div data-pb-id="probe.exempt" data-pb-role="button"
+          style="position:absolute;top:40px;left:20px;width:200px;height:48px;pointer-events:none;background:#ccc"></div>
+        <div data-pb-id="probe.covered" data-pb-role="section"
+          style="position:absolute;top:140px;left:20px;width:200px;height:48px;background:#ccc"></div>
+        <div data-pb-id="probe.covered-exempt" data-pb-role="button"
+          style="position:absolute;top:200px;left:20px;width:200px;height:48px;pointer-events:none;background:#ccc"></div>
+        <div data-pb-id="probe.tall" data-pb-role="section"
+          style="position:absolute;top:300px;left:20px;width:200px;height:900px;background:#ddd"></div>
+      </div>
+      <div style="position:absolute;top:120px;left:0;right:0;height:140px;background:rgba(0,0,0,.4)"></div>
+      <div style="position:absolute;left:0;right:0;bottom:0;height:144px;background:#eee"></div>`;
+    document.body.appendChild(root);
+  });
+
+  async function readiness(pbId: string): Promise<any> {
+    return page.evaluate(
+      async ({ requestId, body }) => {
+        const api = (
+          window as unknown as Record<
+            string,
+            { request(input: unknown): Promise<unknown> }
+          >
+        ).__PROTO_BRIDGE_CAPTURE_V2__;
+        if (!api) throw new Error("V2 Runtime Capture Protocol missing");
+        return api.request({ protocolVersion: 2, requestId, payload: body });
+      },
+      {
+        requestId: `occlusion-${pbId}`,
+        body: {
+          kind: "readiness",
+          expected: { ...expected, viewport: { width: 390, height: 844 } },
+          requiredFragments: [{ screenId, pbId }],
+        },
+      },
+    );
+  }
+
+  // Top visible, geometric center under the fixed bottom bar.
+  const tall = await readiness("probe.tall");
+  expect(tall.ok, JSON.stringify(tall)).toBe(true);
+  // Disabled-style element that opts out of hit testing and is not covered.
+  const exempt = await readiness("probe.exempt");
+  expect(exempt.ok, JSON.stringify(exempt)).toBe(true);
+  for (const pbId of ["probe.covered", "probe.covered-exempt"]) {
+    const covered = await readiness(pbId);
+    expect(covered.ok, `${pbId}: ${JSON.stringify(covered)}`).toBe(false);
+    expect(covered.error.code, pbId).toBe("fragment-occluded");
+  }
+});
+
 test("cold-chain-ops satisfies every authored Variant and required Scenario boundary", async ({
   page,
 }) => {

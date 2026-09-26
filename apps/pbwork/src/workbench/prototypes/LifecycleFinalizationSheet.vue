@@ -15,6 +15,10 @@ import type { PrototypeRecord } from "@/design-system/types";
 import { useCaptureStore } from "@/app/stores/capture";
 import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
 import { groupCaptureFailures } from "@/capture/presentation";
+import {
+  classifyWorkbenchResults,
+  presentPrototypeResult,
+} from "@/capture/result-classification";
 import CaptureFailureGroups from "@/capture/CaptureFailureGroups.vue";
 import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
 import WorkbenchCheckbox from "@/workbench/ui/WorkbenchCheckbox.vue";
@@ -86,6 +90,16 @@ const successfulCases = computed(() => {
   const counts = lifecycle.evidenceFor(props.prototype.id)?.activeSnapshot.coverage.counts;
   return counts ? counts.captured + counts.reused : 0;
 });
+const resultHeadline = computed(
+  () =>
+    presentPrototypeResult(
+      classifyWorkbenchResults({
+        records: lifecycle.records,
+        consoleState: capture.consoleState,
+      }),
+      props.prototype.id,
+    )?.headline ?? "",
+);
 const statusText = computed(() => {
   const current = operation.value;
   if (current.kind === "failed") return current.message;
@@ -203,7 +217,13 @@ onBeforeUnmount(() => {
         <div>
           <p>Prototype finalization</p>
           <h2>定稿并采集 · {{ prototype.label }}</h2>
-          <span>{{ statusText }}</span>
+          <span>
+            <span
+              v-if="resultHeadline"
+              data-testid="finalization-result-classification"
+            >{{ resultHeadline }}</span>
+            {{ statusText }}
+          </span>
         </div>
         <WorkbenchIconButton
           label="收起定稿流程"

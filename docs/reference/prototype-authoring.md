@@ -169,6 +169,8 @@ Scenario 声明：
 - 有序 Action IDs；
 - 一个或多个 Checkpoint。
 
+Action target 按场景顺序在各自执行前验收；第二步及后续 target 可以由前一步真实交互渲染，不要求初始 Variant 同时显示全部 Action target。
+
 Checkpoint 必须声明实际 Screen、Variant 和非空 required Fragments。Runtime 执行后发现任一维度不匹配，应确定性失败。
 
 会卸载当前 document 且无法保持 Capture Protocol 连续性的导航必须标记 unsupported。不要用延时或忽略窗口伪装成功。

@@ -79,6 +79,8 @@ Scenario 从 declared initial Variant 开始，按稳定 Action ID 执行。每�
 - 执行后验证实际 Screen/Variant；
 - 在 Checkpoint 重新检查 required boundary。
 
+初始 readiness 只检查第一步 Action 的 target；后续 target 可能由前一步打开的 Sheet 或状态切换渲染。Runtime 在执行**每一步**前检查该步 target 的身份、role、可见性和遮挡，不能把后续 target 缺失提前判为初始态不完整。
+
 导致 document 卸载且无法维持协议连续性的导航必须报告 unsupported，不能假装完成。
 
 ## 8. Attempt 与 Revision

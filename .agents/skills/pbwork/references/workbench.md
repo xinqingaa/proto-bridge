@@ -60,6 +60,18 @@ Prototype Screens or their Design System.
   (`proto-bridge.json` `delivery.targetRoot`), shown read-only on the
   finalization confirmation step.
 - Read Job, Run, Attempt, revision, and Snapshot states from Core Contracts.
+- Take result identity from Core `classifyCaptureResults`. Official means the
+  lifecycle record's artifacts bind that exact Bundle, Snapshot, Handoff, and
+  Delivery. In-progress phases and a failed finalize stay operation states.
+  Every other result, including a coverage-complete CLI or historical Bundle,
+  is diagnostic-only. A trashed or deleted binding is reference-invalid. An
+  unreadable listed Snapshot is read-failed; do not substitute another active
+  Snapshot. Show GUI or CLI only when a receipt recorded `source`; otherwise
+  the origin is unknown. Do not infer identity or origin from ids, filenames,
+  timestamps, or active/latest, and do not offer a claim action.
+- Overview, task center, the finalization sheet, and Evidence Review render
+  that projection. A diagnostic result must not read as deliverable or
+  finalized. Keep partial-failure counts, failure groups, and “继续定稿”.
 - Keep background history in task center, details in Evidence Review, and the
   active delivery progress in Deliver UI.
 - Reorganize Evidence presentation by Screen/Case/Fragment without rewriting

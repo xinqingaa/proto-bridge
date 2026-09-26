@@ -61,6 +61,7 @@ export default defineConfig({
     ],
     exclude: [
       "@proto-bridge/core/v2",
+      "@proto-bridge/core/v2/result-classification",
       "@proto-bridge/core/v2/prompts/agent-prompt",
       "@proto-bridge/core/v2/capture",
       "@proto-bridge/core/v2/runtime-contract",

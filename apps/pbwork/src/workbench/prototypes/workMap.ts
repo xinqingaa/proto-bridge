@@ -74,36 +74,16 @@ export function formatLastEvent(entry?: LifecycleHistoryEntry): string {
 
 export function operationCaption(
   operation: LifecycleOperation | undefined,
-  hasArtifacts: boolean,
+  resultHeadline: string | null,
 ): { status: string; failure: string } {
-  if (operation?.kind === "failed") {
-    return {
-      status: operation.action === "rollback" ? "回退失败" : "定稿失败",
-      failure: operation.message,
-    };
-  }
-  if (operation?.kind === "finalizing") {
-    if (operation.phase === "capturing") {
-      return { status: "整原型采集中", failure: "" };
-    }
-    if (operation.phase === "building-prompt") {
-      return { status: "提示词生成中", failure: "" };
-    }
-    if (operation.phase === "preflighting") {
-      return { status: "定稿预检中", failure: "" };
-    }
-    return {
-      status:
-        operation.phase === "awaiting-risks"
-          ? "等待你确认风险"
-          : "等待你确认开始采集",
-      failure: "",
-    };
+  const failure = operation?.kind === "failed" ? operation.message : "";
+  if (operation?.kind === "failed" && operation.action === "rollback") {
+    return { status: "回退失败", failure };
   }
   if (operation?.kind === "rolling-back") {
-    return { status: "Evidence 清理中", failure: "" };
+    return { status: resultHeadline ?? "Evidence 清理中", failure: "" };
   }
-  if (hasArtifacts) return { status: "Evidence + 提示词", failure: "" };
+  if (resultHeadline) return { status: resultHeadline, failure };
   return { status: "", failure: "" };
 }
 

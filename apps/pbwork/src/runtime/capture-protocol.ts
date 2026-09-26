@@ -707,25 +707,21 @@ async function waitForFragments(
             { fragment, bbox: { width: rect.width, height: rect.height } },
           );
         }
-        const rect = element.getBoundingClientRect();
-        const hit = document.elementFromPoint(
-          rect.left + rect.width / 2,
-          rect.top + rect.height / 2,
-        );
-        if (hit && !element.contains(hit)) {
+        const occluder = findOccluder(element);
+        if (occluder) {
           return new ProtocolFailure(
             "fragment-occluded",
             `Required Fragment ${fragment.pbId}/${fragment.pbKey ?? ""} is occluded at its center point.`,
             {
               fragment,
               occluder:
-                hit instanceof HTMLElement
+                occluder instanceof HTMLElement
                   ? {
-                      tag: hit.tagName.toLowerCase(),
-                      pbId: hit.dataset.pbId,
-                      className: hit.className,
+                      tag: occluder.tagName.toLowerCase(),
+                      pbId: occluder.dataset.pbId,
+                      className: occluder.className,
                     }
-                  : { tag: hit.nodeName.toLowerCase() },
+                  : { tag: occluder.nodeName.toLowerCase() },
             },
           );
         }
@@ -750,6 +746,56 @@ async function waitForFragments(
     `Fragment ${missing?.pbId ?? "unknown"}/${missing?.pbKey ?? ""} is missing.`,
     missing,
   );
+}
+
+/**
+ * Part of the element left on screen by the viewport and its overflow-clipping
+ * ancestors. Content scrolled beyond a clip is out of view, not occluded.
+ */
+function visibleClientRect(element: HTMLElement): DOMRect | null {
+  const rect = element.getBoundingClientRect();
+  let left = Math.max(rect.left, 0);
+  let top = Math.max(rect.top, 0);
+  let right = Math.min(rect.right, window.innerWidth);
+  let bottom = Math.min(rect.bottom, window.innerHeight);
+  let node: HTMLElement = element;
+  while (window.getComputedStyle(node).position !== "fixed" && node.parentElement) {
+    node = node.parentElement;
+    const style = window.getComputedStyle(node);
+    const clip = node.getBoundingClientRect();
+    if (style.overflowX !== "visible") {
+      left = Math.max(left, clip.left);
+      right = Math.min(right, clip.right);
+    }
+    if (style.overflowY !== "visible") {
+      top = Math.max(top, clip.top);
+      bottom = Math.min(bottom, clip.bottom);
+    }
+  }
+  if (right <= left || bottom <= top) return null;
+  return new DOMRect(left, top, right - left, bottom - top);
+}
+
+/**
+ * Hit-tests the center of the visible part. An element that opts out of hit
+ * testing (for example a disabled button) resolves to its own ancestor there;
+ * only a non-ancestor hit is something painted over the element.
+ */
+function findOccluder(element: HTMLElement): Element | null {
+  const visible = visibleClientRect(element);
+  if (!visible) return null;
+  const hit = document.elementFromPoint(
+    visible.left + visible.width / 2,
+    visible.top + visible.height / 2,
+  );
+  if (!hit || element.contains(hit)) return null;
+  if (
+    hit.contains(element) &&
+    window.getComputedStyle(element).pointerEvents === "none"
+  ) {
+    return null;
+  }
+  return hit;
 }
 
 function isVisible(element: HTMLElement): boolean {
@@ -1041,6 +1087,12 @@ export function installRuntimeCaptureProtocol(
           `Unknown Action ${payload.actionId}.`,
         );
       }
+      await waitForFragments(
+        options,
+        context,
+        [action.target],
+        ownerScreen?.evidencePolicy === "strict",
+      );
       const target = findFragment(action.target, context);
       if (!target) {
         throw new ProtocolFailure(

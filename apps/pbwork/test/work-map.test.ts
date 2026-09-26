@@ -59,13 +59,13 @@ describe("prototype work map", () => {
     ).toMatch(/进行中 → 待确定/);
   });
 
-  it("keeps finalized artifact copy for the catalog room", () => {
-    expect(operationCaption({ kind: "idle" }, false)).toEqual({
+  it("uses the shared result headline for the catalog room", () => {
+    expect(operationCaption({ kind: "idle" }, null)).toEqual({
       status: "",
       failure: "",
     });
-    expect(operationCaption({ kind: "idle" }, true)).toEqual({
-      status: "Evidence + 提示词",
+    expect(operationCaption({ kind: "idle" }, "已正式定稿 · GUI")).toEqual({
+      status: "已正式定稿 · GUI",
       failure: "",
     });
     expect(
@@ -76,9 +76,9 @@ describe("prototype work map", () => {
           message: "采集失败",
           failedAt: "2026-08-20T04:00:00.000Z",
         },
-        false,
+        "定稿未完成 · 来源未知",
       ),
-    ).toEqual({ status: "定稿失败", failure: "采集失败" });
+    ).toEqual({ status: "定稿未完成 · 来源未知", failure: "采集失败" });
   });
 
   it("lets an unfinished finalization reopen its sheet", () => {
@@ -104,9 +104,9 @@ describe("prototype work map", () => {
     expect(
       operationCaption(
         { ...confirmation, phase: "awaiting-risks" },
-        false,
+        "待逐项确认 · 来源未知",
       ).status,
-    ).toBe("等待你确认风险");
+    ).toBe("待逐项确认 · 来源未知");
   });
 
   it("offers a rollback retry when Service persisted a rollback failure", () => {
@@ -127,7 +127,7 @@ describe("prototype work map", () => {
           message: "Bundle 清理失败。",
           failedAt: "2026-08-20T04:00:00.000Z",
         },
-        true,
+        "已正式定稿 · GUI",
       ).status,
     ).toBe("回退失败");
   });

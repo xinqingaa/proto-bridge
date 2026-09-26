@@ -57,6 +57,20 @@ PBWork 展示 Core 返回的：
 
 任务中心保留后台任务状态与恢复；「定稿采集」页只列出生命周期 Store 已绑定的已定稿/已归档产物，并用于只读 Review 详情。术语对照见 [词汇表](../reference/vocabulary.md#gui-对照)。
 
+同一结果在概览、任务中心、定稿面板和 Evidence Review 上使用 Core `classifyCaptureResults` 的同一句身份：分类 · 来源。该 Snapshot 的 Coverage 不完整时，后面再加“部分失败 · N 项”。
+
+| 分类 | 含义 |
+| --- | --- |
+| 已正式定稿 | 生命周期 artifacts 精确绑定这一组 Bundle、Snapshot、Handoff、Delivery，且对象仍在 |
+| 定稿进行中 | 预检、采集或生成提示词尚未结束 |
+| 待逐项确认 | 停在 warning 或 mandatory risk 的逐项确认 |
+| 定稿未完成 | 这次定稿失败，尚未成为正式产物 |
+| 仅诊断 | 没有这组精确绑定，包括 Coverage 完整的历史 Bundle 和 CLI 采集 |
+| 引用失效 | 绑定对象被删除或移入回收站 |
+| 结果读取失败 | 对应 Snapshot 读不到；不改读另一份 active Snapshot |
+
+来源只有 GUI、CLI、来源未知三种。只有 receipt 写了 `source` 才显示 GUI 或 CLI，否则是来源未知。仅诊断的结果不出现“可交付”或“已定稿”。失败项分组和“继续定稿”仍然可用。没有把未绑定结果认领为正式定稿的入口。
+
 PBWork 可以重组显示顺序，但不能改写 Store JSON、隐藏风险、发明状态词汇或重新计算 active 引用。
 
 ## Review 阶段

@@ -8,18 +8,40 @@ import {
   ScanLine,
 } from "lucide-vue-next";
 import { useCaptureStore } from "@/app/stores/capture";
-import { loadPrototypeScreens } from "@/design-system/loaders";
+import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
+import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
 import { buildCaptureTaskPresentations } from "@/capture/presentation";
+import { listClassifiedCaptureResults } from "@/capture/result-classification";
 import WorkbenchIconButton from "@/workbench/ui/WorkbenchIconButton.vue";
 
 const capture = useCaptureStore();
+const lifecycle = usePrototypeLifecycleStore();
 const router = useRouter();
 const screens = loadPrototypeScreens();
+const prototypes = loadPrototypes();
 let pollTimer: ReturnType<typeof setInterval> | undefined;
 const attentionTask = computed(() =>
-  buildCaptureTaskPresentations(capture.consoleState)
+  buildCaptureTaskPresentations(capture.consoleState, lifecycle.records)
     .filter((task) => task.status === "needs-attention")
     .sort((left, right) => right.job.acceptedAt.localeCompare(left.job.acceptedAt))[0],
+);
+const classifiedSnapshots = computed(() =>
+  listClassifiedCaptureResults({
+    records: lifecycle.records,
+    consoleState: capture.consoleState,
+  }).map((item) => ({
+    key: `${item.bundleId}/${item.snapshotId}`,
+    path: item.path,
+    label:
+      prototypes.find((prototype) => prototype.id === item.prototypeId)?.label ??
+      item.prototypeId,
+    headline: item.headline,
+  })),
+);
+const attentionHeadline = computed(
+  () =>
+    attentionTask.value?.resultClassification?.headline ??
+    attentionTask.value?.statusLabel,
 );
 const STATUS_LABELS = {
   queued: "等待开始",
@@ -78,7 +100,7 @@ const activatorLabel = computed(() =>
   executing.value
     ? `${statusLabel.value}，打开采集任务`
     : attentionTask.value
-      ? `${attentionTask.value.statusLabel}，打开采集任务`
+      ? `${attentionHeadline.value}，打开采集任务`
       : capture.notice
         ? `${capture.notice.title}，打开采集任务`
       : "打开采集任务",
@@ -175,7 +197,7 @@ onBeforeUnmount(() => {
             {{
               executing
                 ? statusLabel
-                : (attentionTask?.statusLabel ?? capture.notice?.title ?? "没有正在执行的任务")
+                : (attentionHeadline ?? capture.notice?.title ?? "没有正在执行的任务")
             }}
           </h3>
         </div>
@@ -241,6 +263,18 @@ onBeforeUnmount(() => {
           <v-btn to="/workbench/capture" variant="text"> 查看定稿采集 </v-btn>
         </div>
       </template>
+
+      <ul
+        v-if="classifiedSnapshots.length"
+        class="job-result-list"
+        data-testid="task-result-classifications"
+      >
+        <li v-for="item in classifiedSnapshots" :key="item.key">
+          <RouterLink :to="item.path" data-testid="task-result-classification">
+            {{ item.label }} · {{ item.headline }}
+          </RouterLink>
+        </li>
+      </ul>
 
       <footer>
         <RouterLink to="/workbench/capture">定稿采集</RouterLink>
@@ -335,6 +369,19 @@ onBeforeUnmount(() => {
 }
 .job-empty p {
   margin: 0;
+}
+.job-result-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0 18px 12px;
+  list-style: none;
+}
+.job-result-list a {
+  color: rgba(var(--v-theme-on-surface), 0.78);
+  font-size: 0.74rem;
+  text-decoration: none;
 }
 .job-popover footer {
   padding: 10px 18px;

@@ -93,6 +93,13 @@ const filterOptions: Array<"全部" | ActivityType> = [
   "拉伸",
   "自由活动",
 ];
+const filterOptionKeys: Record<"全部" | ActivityType, string> = {
+  全部: "all",
+  训练: "training",
+  步行: "walking",
+  拉伸: "stretching",
+  自由活动: "free",
+};
 const customRange = computed<DateRange>(() => ({
   start: hengdongState.ui.progressCustomStart,
   end: hengdongState.ui.progressCustomEnd,
@@ -376,7 +383,7 @@ function openRecord(recordId: string) {
             class="hd-settings-row"
             :class="{ 'is-selected': filterDraft === item }"
             data-pb-id="hengdong.progress.filter-option"
-            :data-pb-key="item"
+            :data-pb-key="filterOptionKeys[item]"
             data-pb-role="list-item"
             data-pb-token-spacing="spacing.md"
             :data-pb-token-typography="

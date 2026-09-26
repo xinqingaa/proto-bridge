@@ -84,7 +84,7 @@ test("a pending risk confirmation survives another tab and a page reload", async
 
     if (path === "/session" && route.request().method() === "POST") {
       return respond({
-        protocolVersion: 5,
+        protocolVersion: 6,
         serviceInstanceId: "lifecycle-browser-service",
         sessionToken: "browser-test-token",
         workspaceId: "pbwork-local",
@@ -100,6 +100,9 @@ test("a pending risk confirmation survives another tab and a page reload", async
         generationId: document.generationId,
         bundles: [],
         jobs: [],
+        receipts: [],
+        handoffs: [],
+        unreadableSnapshots: [],
       });
     }
     if (path === "/evidence-inventory") {

@@ -1,7 +1,16 @@
-import { incompleteCaseCount, type CaptureJob } from "@proto-bridge/core/v2";
+import {
+  incompleteCaseCount,
+  type CaptureJob,
+  type PrototypeLifecycleRecord,
+} from "@proto-bridge/core/v2";
 import { riskKindLabel } from "@proto-bridge/core/v2/prompts/agent-prompt";
 import type { CaptureConsoleState } from "@proto-bridge/core/v2/service-contract";
 import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
+import {
+  classifyWorkbenchResults,
+  presentJobResult,
+  type ResultSurfaceCopy,
+} from "@/capture/result-classification";
 
 export { riskKindLabel };
 
@@ -29,6 +38,7 @@ export type CaptureTaskPresentation = {
   scopeLabel: string;
   status: CaptureTaskDisplayStatus;
   statusLabel: string;
+  resultClassification: ResultSurfaceCopy | null;
   acceptedAtLabel: string;
   viewCount: number;
   progress: number;
@@ -486,8 +496,10 @@ export function formatCaptureTime(iso: string, now = new Date()): string {
 
 export function buildCaptureTaskPresentations(
   state: CaptureConsoleState | null,
+  records: Readonly<Record<string, PrototypeLifecycleRecord>> = {},
 ): CaptureTaskPresentation[] {
   if (!state) return [];
+  const classified = classifyWorkbenchResults({ records, consoleState: state });
   return state.jobs.map((job) => {
     const prototypeId = prototypeIdOf(job);
     const prototypeLabel =
@@ -541,6 +553,7 @@ export function buildCaptureTaskPresentations(
       scopeLabel: scopeLabelOf(job),
       status,
       statusLabel: statusLabel[status],
+      resultClassification: presentJobResult(classified, job.jobId),
       acceptedAtLabel: formatCaptureTime(job.acceptedAt),
       viewCount: job.selection.cases.length,
       completedCases: completed,

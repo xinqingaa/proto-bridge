@@ -31,6 +31,7 @@ import { useCommentsStore } from "@/app/stores/comments";
 import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
 import { useCaptureStore } from "@/app/stores/capture";
 import { buildCaptureTaskPresentations } from "@/capture/presentation";
+import { listClassifiedCaptureResults } from "@/capture/result-classification";
 import WorkbenchBadge from "@/workbench/ui/WorkbenchBadge.vue";
 import {
   atmosphereStyle,
@@ -188,7 +189,13 @@ const openComments = computed(() =>
   comments.comments.filter((comment) => comment.status === "open"),
 );
 const captureTasks = computed(() =>
-  buildCaptureTaskPresentations(capture.consoleState),
+  buildCaptureTaskPresentations(capture.consoleState, lifecycleStore.records),
+);
+const classifiedCaptureResults = computed(() =>
+  listClassifiedCaptureResults({
+    records: lifecycleStore.records,
+    consoleState: capture.consoleState,
+  }),
 );
 const attentionTasks = computed(() =>
   captureTasks.value.filter((item) => item.status === "needs-attention"),
@@ -203,16 +210,8 @@ const selectedAttentionCount = computed(
     ).length,
 );
 
-const captureResults = computed(() =>
-  (capture.consoleState?.bundles ?? [])
-    .filter((item) => item.activeSnapshot)
-    .slice(0, 2),
-);
-const captureResultCount = computed(
-  () =>
-    (capture.consoleState?.bundles ?? []).filter((item) => item.activeSnapshot)
-      .length,
-);
+const captureResults = computed(() => classifiedCaptureResults.value.slice(0, 2));
+const captureResultCount = computed(() => classifiedCaptureResults.value.length);
 
 const lifecycleOrder: PrototypeLifecycle[] = [
   "active",
@@ -253,31 +252,21 @@ const componentCategories = computed(
   () => new Set(componentRecords.map((component) => component.category)).size,
 );
 
-function captureResultPath(
-  item: (typeof captureResults.value)[number],
-): string {
-  return `/workbench/evidence/${item.bundle.bundleId}/${item.activeSnapshot!.snapshotId}`;
-}
-
-function captureResultLabel(item: (typeof captureResults.value)[number]) {
-  const counts = item.activeSnapshot!.coverage.counts;
-  return `${counts.captured + counts.reused}/${counts.selected} 成功`;
-}
-
 function captureResultTime(item: (typeof captureResults.value)[number]) {
+  if (!item.committedAt) return "";
   return new Intl.DateTimeFormat("zh-CN", {
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-  }).format(new Date(item.activeSnapshot!.committedAt));
+  }).format(new Date(item.committedAt));
 }
 
 function resultPrototypeLabel(item: (typeof captureResults.value)[number]) {
   return (
-    prototypes.find((prototype) => prototype.id === item.bundle.prototypeId)
-      ?.label ?? item.bundle.prototypeId
+    prototypes.find((prototype) => prototype.id === item.prototypeId)?.label ??
+    item.prototypeId
   );
 }
 
@@ -540,14 +529,14 @@ onBeforeUnmount(() => {
           </header>
           <RouterLink
             v-for="item in captureResults"
-            :key="item.bundle.bundleId"
-            :to="captureResultPath(item)"
+            :key="`${item.bundleId}/${item.snapshotId}`"
+            :to="item.path"
           >
             <span class="result-icon"><ScanLine :size="15" /></span>
             <span>
               <strong>{{ resultPrototypeLabel(item) }}</strong>
-              <small>
-                {{ captureResultLabel(item) }} · {{ captureResultTime(item) }}
+              <small data-testid="overview-result-classification">
+                {{ item.headline }}<template v-if="captureResultTime(item)"> · {{ captureResultTime(item) }}</template>
               </small>
             </span>
             <ArrowRight :size="14" />

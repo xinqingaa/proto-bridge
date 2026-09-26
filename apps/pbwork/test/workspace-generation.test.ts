@@ -106,6 +106,9 @@ describe("workspace generation cache binding", () => {
         workspaceId: "ws",
         generationId: "generation-a",
         jobs: [],
+        receipts: [],
+        handoffs: [],
+        unreadableSnapshots: [],
         bundles: [{ bundle: { bundleId: "from-console" } as never, snapshots: [] }],
       },
     );

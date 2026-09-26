@@ -68,6 +68,9 @@ import {
   LOCAL_SERVICE_PROTOCOL_VERSION,
   type BundleEvidenceDetails,
   type CaptureConsoleState,
+  type CaptureResultHandoffFact,
+  type CaptureResultReceiptFact,
+  type CaptureSnapshotReadFailure,
   type EvidenceInventory,
   type BundleDeletePlan,
   type CreateDeliveryRequest,
@@ -518,6 +521,43 @@ export class ProtoBridgeLocalService {
         `Browser Origin ${origin ?? '<missing>'} is not allowed by this Local Service.`,
       );
     }
+  }
+
+  private async deliveryReceiptFacts(): Promise<CaptureResultReceiptFact[]> {
+    const deliveryRoot = deliveryRootFromStoreRoot(this.options.storeRoot);
+    let entries: string[] = [];
+    try {
+      entries = await readdir(deliveryRoot);
+    } catch {
+      return [];
+    }
+    const receipts: CaptureResultReceiptFact[] = [];
+    for (const entry of entries) {
+      if (entry === 'latest.json' || entry.includes('.')) continue;
+      try {
+        const receiptRaw = await readFile(pathJoin(deliveryRoot, entry, 'receipt.json'), 'utf8');
+        const receipt = JSON.parse(receiptRaw) as {
+          deliveryId?: string;
+          bundleId?: string;
+          snapshotId?: string;
+          handoffId?: string;
+          source?: unknown;
+        };
+        if (!receipt.deliveryId || !receipt.bundleId || !receipt.snapshotId || !receipt.handoffId) {
+          continue;
+        }
+        receipts.push({
+          deliveryId: receipt.deliveryId,
+          bundleId: receipt.bundleId,
+          snapshotId: receipt.snapshotId,
+          handoffId: receipt.handoffId,
+          ...(receipt.source === 'cli' || receipt.source === 'gui' ? { source: receipt.source } : {}),
+        });
+      } catch {
+        // Skip corrupt or partial delivery folders. Absence is not a guessed source.
+      }
+    }
+    return receipts;
   }
 
   private async evidenceDetails(
@@ -1520,34 +1560,46 @@ export class ProtoBridgeLocalService {
 
     if (request.method === 'GET' && path === '/api/v2/console') {
       const bundles = await this.store.listBundles();
+      const unreadableSnapshots: CaptureSnapshotReadFailure[] = [];
+      const bundleSummaries = await Promise.all(
+        bundles.map(async (bundle) => {
+          const snapshotIds = await this.store.listSnapshotIds(bundle.bundleId);
+          const snapshots: BundleSnapshot[] = [];
+          for (const snapshotId of snapshotIds) {
+            try {
+              const snapshot = await this.store.getSnapshot(bundle.bundleId, snapshotId);
+              if (snapshot) snapshots.push(snapshot);
+              else unreadableSnapshots.push({ bundleId: bundle.bundleId, snapshotId });
+            } catch {
+              unreadableSnapshots.push({ bundleId: bundle.bundleId, snapshotId });
+            }
+          }
+          let activeSnapshot: BundleSnapshot | undefined;
+          try {
+            activeSnapshot = await this.store.getActiveSnapshot(bundle.bundleId);
+          } catch {
+            activeSnapshot = undefined;
+          }
+          return {
+            bundle,
+            snapshots,
+            ...(activeSnapshot ? { activeSnapshot } : {}),
+          };
+        }),
+      );
+      const handoffs: CaptureResultHandoffFact[] = (await this.store.listHandoffs()).map((handoff) => ({
+        handoffId: handoff.handoffId,
+        bundleId: handoff.bundleId,
+        snapshotId: handoff.snapshotId,
+      }));
       const state: CaptureConsoleState = {
         workspaceId: this.store.workspaceId,
         generationId: this.currentGenerationId,
-        bundles: await Promise.all(
-          bundles.map(async (bundle) => {
-            const activeSnapshot = await this.store.getActiveSnapshot(
-              bundle.bundleId,
-            );
-            const snapshotIds = await this.store.listSnapshotIds(
-              bundle.bundleId,
-            );
-            const snapshots = (
-              await Promise.all(
-                snapshotIds.map((snapshotId) =>
-                  this.store.getSnapshot(bundle.bundleId, snapshotId),
-                ),
-              )
-            ).filter(
-              (snapshot): snapshot is BundleSnapshot => snapshot !== undefined,
-            );
-            return {
-              bundle,
-              snapshots,
-              ...(activeSnapshot ? { activeSnapshot } : {}),
-            };
-          }),
-        ),
+        bundles: bundleSummaries,
         jobs: await this.store.listJobs(),
+        receipts: await this.deliveryReceiptFacts(),
+        handoffs,
+        unreadableSnapshots,
       };
       success(response, state);
       return;
@@ -2483,6 +2535,7 @@ export class ProtoBridgeLocalService {
             agentPromptPath?: string;
             receiptPath?: string;
             freshnessStatus?: 'fresh' | 'stale';
+            source?: unknown;
           };
           if (!receipt.deliveryId || !receipt.bundleId || !receipt.snapshotId) {
             continue;
@@ -2498,6 +2551,9 @@ export class ProtoBridgeLocalService {
             receiptPath: receipt.receiptPath ?? '',
             ...(receipt.freshnessStatus
               ? { freshnessStatus: receipt.freshnessStatus }
+              : {}),
+            ...(receipt.source === 'cli' || receipt.source === 'gui'
+              ? { source: receipt.source }
               : {}),
           });
         } catch {

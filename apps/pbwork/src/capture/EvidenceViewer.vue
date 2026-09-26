@@ -15,11 +15,17 @@ import {
   type EvidenceReadableFact,
 } from "@proto-bridge/core/v2/evidence-read-model";
 import { useCaptureStore } from "@/app/stores/capture";
+import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
 import { loadPrototypeScreens } from "@/design-system/loaders";
 import EvidencePreview from "@/capture/EvidencePreview.vue";
 import EvidenceDeliveryPanel from "@/capture/EvidenceDeliveryPanel.vue";
 import CaptureFailureGroups from "@/capture/CaptureFailureGroups.vue";
 import { groupCaptureFailures } from "@/capture/presentation";
+import {
+  classifyWorkbenchResults,
+  evidenceMessagesForClassification,
+  presentEvidenceResult,
+} from "@/capture/result-classification";
 import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
 import WorkbenchTabs, {
   type WorkbenchTabItem,
@@ -32,6 +38,7 @@ const props = defineProps<{
 
 const route = useRoute();
 const capture = useCaptureStore();
+const lifecycle = usePrototypeLifecycleStore();
 const screens = loadPrototypeScreens();
 const selectedRevisionId = ref("");
 const inspectorTab = ref<
@@ -84,7 +91,18 @@ const failureGroups = computed(() =>
     })),
   ),
 );
-const verdictTitle = computed(() => {
+const resultCopy = computed(() => {
+  if (!capture.consoleState) return null;
+  return presentEvidenceResult(
+    classifyWorkbenchResults({
+      records: lifecycle.records,
+      consoleState: capture.consoleState,
+    }),
+    props.bundleId,
+    props.snapshotId,
+  );
+});
+const coverageTitle = computed(() => {
   const current = model.value;
   if (!current) return "";
   if (current.coverageStatus === "partial") {
@@ -94,6 +112,12 @@ const verdictTitle = computed(() => {
     return "采集完整，但有需要注意的事实";
   }
   return "采集完整，所有事实已解析";
+});
+const verdictMessages = computed(() => {
+  const current = model.value;
+  const kind = resultCopy.value?.kind;
+  if (!current || !kind) return current?.messages ?? [];
+  return evidenceMessagesForClassification(current.messages, kind);
 });
 const tokenFacts = computed(() =>
   (selectedCase.value?.contextFacts ?? []).filter((fact) =>
@@ -152,7 +176,10 @@ function factSummary(fact: EvidenceReadableFact) {
 }
 async function load() {
   if (!capture.connected) await capture.connect();
-  await capture.loadSnapshot(props.bundleId, props.snapshotId);
+  await Promise.all([
+    capture.loadSnapshot(props.bundleId, props.snapshotId),
+    capture.refreshConsole(),
+  ]);
 }
 
 watch(
@@ -199,10 +226,10 @@ watch(
           </span>
         </div>
       </div>
-      <div v-if="model" class="coverage-badge">
-        <CheckCircle2 v-if="model.coverageStatus === 'complete'" :size="16" />
+      <div v-if="resultCopy" class="coverage-badge" data-testid="evidence-result-classification">
+        <CheckCircle2 v-if="resultCopy.kind === 'officially-finalized'" :size="16" />
         <AlertTriangle v-else :size="16" />
-        {{ model.coverageStatus === "complete" ? "采集完整" : "部分完成" }}
+        {{ resultCopy.classificationLabel }}
       </div>
     </header>
 
@@ -218,17 +245,18 @@ watch(
     </v-alert>
 
     <section
-      v-if="model"
+      v-if="model || resultCopy"
       class="verdict"
-      :class="`is-${model.deliveryStatus}`"
+      :class="model ? `is-${model.deliveryStatus}` : 'is-attention'"
       data-testid="evidence-verdict"
     >
       <div class="verdict-line">
-        <CheckCircle2 v-if="model.deliveryStatus === 'ready'" :size="18" />
+        <CheckCircle2 v-if="resultCopy?.kind === 'officially-finalized'" :size="18" />
         <AlertTriangle v-else :size="18" />
         <div>
-          <strong>{{ verdictTitle }}</strong>
-          <p v-for="message in model.messages" :key="message">{{ message }}</p>
+          <strong v-if="resultCopy">{{ resultCopy.headline }}</strong>
+          <p v-if="coverageTitle">{{ coverageTitle }}</p>
+          <p v-for="message in verdictMessages" :key="message">{{ message }}</p>
         </div>
         <WorkbenchButton
           v-if="failureGroups.length"
@@ -237,7 +265,7 @@ watch(
           :aria-expanded="failuresOpen"
           @click="failuresOpen = !failuresOpen"
         >
-          {{ failuresOpen ? "收起失败项" : `查看 ${model.failedAttempts.length} 项失败` }}
+          {{ failuresOpen ? "收起失败项" : `查看 ${model?.failedAttempts.length ?? 0} 项失败` }}
         </WorkbenchButton>
       </div>
       <div v-if="failuresOpen && failureGroups.length" class="verdict-failures">

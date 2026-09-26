@@ -107,6 +107,22 @@ PBWork 不提供页面、控件、Fragment 或整个原型的手工采集入口�
 
 生命周期 Store 只编排动作并保存正式产物引用，不复制 Selection、Case identity、Coverage 或 risk 算法。持久 Evidence 仍由 Local Service/Store 管理，Preflight、Job、Handoff 和 Delivery 仍使用 Core Service Contract。只有生命周期记录绑定的已定稿或已归档产物出现在“定稿采集”页；CLI 和其它入口创建的 Bundle 不会自动成为 PBWork 定稿产物。PBWork 在 Capture Service Contract 上提交人类确认并显示服务端生命周期文档；Job 接受后，Local Service reconciliation 负责恢复和推进自动阶段。不同原型的 Preflight、warning 与 risk 确认按 Prototype ID 隔离；未提交的 UI 勾选只存在当前页签，warning 在创建 Job 前、risk 在开始提示词生成前写入 Workspace 生命周期记录。
 
+结果身份只由 Core `classifyCaptureResults`（`@proto-bridge/core/v2/result-classification`）投影。输入是生命周期文档、Bundle/Snapshot/Job 元数据，以及 console 上实际读到的 Delivery receipt 与 Handoff。PBWork 只映射中文、排序和展示，不重新判断身份，也不提供把未绑定结果认领为正式的入口。
+
+| 分类 | 判定 |
+| --- | --- |
+| 已正式定稿 | 生命周期 record 的 artifacts 精确绑定这一组 Bundle、Snapshot、Handoff、Delivery，且这些对象仍可读、Bundle 未进入 trash |
+| 定稿进行中 | `finalizing` 且 phase 为 `preflighting`、`capturing` 或 `building-prompt` |
+| 待逐项确认 | `finalizing` 且 phase 为 `awaiting-confirmation` 或 `awaiting-risks` |
+| 定稿未完成 | `failed` 且 `action` 为 `finalize`，由 Job 的 `operationKey` 连到该次操作 |
+| 引用失效 | 绑定的 Bundle 被删除或移入 trash，或绑定的 Snapshot、Handoff、Delivery 对不上。对象清单尚未加载时，不把缺失当成删除；已经读到的 trash 仍算失效 |
+| 结果读取失败 | 列出的对应 Snapshot 读不到。不改用另一份 active Snapshot 的 Coverage，未读到的 Snapshot 不计失败项 |
+| 仅诊断 | 其余结果，包括 Coverage 完整的历史 Bundle 和 CLI 采集 |
+
+来源只在 receipt 记录了 `source: cli | gui` 时显示 GUI 或 CLI。没有 receipt、字段缺失，或同一 Snapshot 上多张 receipt 的来源冲突时，显示来源未知。不从 Bundle ID、文件名、时间或 active/latest 推断身份或来源。正式绑定按 `deliveryId` 精确匹配 receipt；未绑定结果只汇总与该 Bundle、Snapshot（以及已知 Handoff）一致的 receipt。
+
+概览、任务中心、定稿面板和 Evidence Review 对同一结果显示同一句：分类 · 来源，该 Snapshot Coverage 不完整时再加“部分失败 · N 项”。展示候选先列生命周期绑定的 Snapshot，再列各 Bundle 的 active Snapshot；active 只决定是否出现在列表中，不决定身份。生命周期阶段芯片仍用“已定稿”，与结果标签“已正式定稿”分开。回退失败的目录状态仍是“回退失败”，并保留“重试回退”；被绑定结果的身份保持已正式定稿。仅诊断结果不显示“可交付”或“已定稿”。失败分组和“继续定稿”保持不变。
+
 稳定生命周期只允许：
 
 ```text
@@ -135,7 +151,7 @@ Workbench **没有** Workspace reset 按钮；`pnpm pb:reset` / CLI `workspace r
 
 ## 测试边界
 
-- Unit：Registry、Router、Runtime URL、Bridge snapshot、组件场景、手势、主题、Capture presentation/store。
+- Unit：Registry、Router、Runtime URL、Bridge snapshot、组件场景、手势、主题、Capture presentation/store、结果分类文案。
 - Browser：Workbench navigation、Canvas、Inspector、Comments、业务 Prototype、Runtime layout、Capture 和 Evidence usability。
 - Product slice：PBWork Runtime → Core Capture → Store → MCP。
 

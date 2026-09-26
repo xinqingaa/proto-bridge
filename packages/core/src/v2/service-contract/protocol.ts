@@ -27,7 +27,7 @@ import type {
   ReviewSessionSeed,
 } from '../../review/contracts.js';
 
-export const LOCAL_SERVICE_PROTOCOL_VERSION = 5 as const;
+export const LOCAL_SERVICE_PROTOCOL_VERSION = 6 as const;
 
 export const LocalServiceError = z
   .object({
@@ -69,11 +69,35 @@ export type BundleSummary = {
   snapshots: BundleSnapshot[];
 };
 
+/** Receipt fields needed to classify a result. `source` is omitted when the file did not record one. */
+export type CaptureResultReceiptFact = {
+  deliveryId: string;
+  bundleId: string;
+  snapshotId: string;
+  handoffId: string;
+  source?: 'cli' | 'gui';
+};
+
+export type CaptureResultHandoffFact = {
+  handoffId: string;
+  bundleId: string;
+  snapshotId: string;
+};
+
+/** A Snapshot id that was listed but could not be read. Callers must not replace it with another Snapshot. */
+export type CaptureSnapshotReadFailure = {
+  bundleId: string;
+  snapshotId: string;
+};
+
 export type CaptureConsoleState = {
   workspaceId: string;
   generationId: string | 'legacy-unavailable';
   bundles: BundleSummary[];
   jobs: CaptureJob[];
+  receipts: CaptureResultReceiptFact[];
+  handoffs: CaptureResultHandoffFact[];
+  unreadableSnapshots: CaptureSnapshotReadFailure[];
 };
 
 export type WorkspaceResetScopeSummary = {
@@ -203,6 +227,8 @@ export type DeliveryListItem = {
   agentPromptPath: string;
   receiptPath: string;
   freshnessStatus?: 'fresh' | 'stale';
+  /** Present only when receipt.json recorded `source`. */
+  source?: 'cli' | 'gui';
 };
 
 export type DeliveryDetail = DeliveryListItem & {

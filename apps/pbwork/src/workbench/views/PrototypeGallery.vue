@@ -8,7 +8,12 @@ import type {
 import { LIFECYCLE_LABELS } from "@/design-system/types";
 import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
 import { useCommentsStore } from "@/app/stores/comments";
+import { useCaptureStore } from "@/app/stores/capture";
 import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
+import {
+  classifyWorkbenchResults,
+  presentPrototypeResult,
+} from "@/capture/result-classification";
 import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
 import AtmosphereLayer from "@/workbench/prototypes/AtmosphereLayer.vue";
 import LifecycleTransitionDialog, {
@@ -35,6 +40,7 @@ const props = defineProps<{
 }>();
 const router = useRouter();
 const state = usePrototypeLifecycleStore();
+const capture = useCaptureStore();
 const comments = useCommentsStore();
 const all = loadPrototypes();
 const screens = loadPrototypeScreens();
@@ -110,9 +116,19 @@ function isFinalizing(item: PrototypeRecord) {
   return record(item)?.operation.kind === "finalizing";
 }
 
+const classifiedResults = computed(() =>
+  classifyWorkbenchResults({
+    records: state.records,
+    consoleState: capture.consoleState,
+  }),
+);
+
 function captionOf(item: PrototypeRecord) {
   const current = record(item);
-  return operationCaption(current?.operation, Boolean(current?.artifacts));
+  return operationCaption(
+    current?.operation,
+    presentPrototypeResult(classifiedResults.value, item.id)?.headline ?? null,
+  );
 }
 
 function openArtifacts(item: PrototypeRecord) {

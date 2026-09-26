@@ -15,6 +15,10 @@ import { loadPrototypes } from "@/design-system/loaders";
 import { useCaptureStore } from "@/app/stores/capture";
 import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
 import { buildCaptureTaskPresentations } from "@/capture/presentation";
+import {
+  classifyWorkbenchResults,
+  presentPrototypeResult,
+} from "@/capture/result-classification";
 import WorkbenchBadge from "@/workbench/ui/WorkbenchBadge.vue";
 import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
 import WorkbenchIconButton from "@/workbench/ui/WorkbenchIconButton.vue";
@@ -31,7 +35,13 @@ const prototypes = loadPrototypes();
 lifecycle.ensurePrototypes(prototypes);
 
 const taskPresentations = computed(() =>
-  buildCaptureTaskPresentations(capture.consoleState),
+  buildCaptureTaskPresentations(capture.consoleState, lifecycle.records),
+);
+const classifiedResults = computed(() =>
+  classifyWorkbenchResults({
+    records: lifecycle.records,
+    consoleState: capture.consoleState,
+  }),
 );
 const rows = computed(() =>
   lifecycle.finalizedRecords
@@ -206,7 +216,9 @@ onMounted(async () => {
                   {{ LIFECYCLE_LABELS[item.record.stage] }}
                 </WorkbenchBadge>
                 <span class="artifact-state">
-                  <FileCheck2 :size="14" />Evidence + 提示词
+                  <FileCheck2 :size="14" />{{
+                    presentPrototypeResult(classifiedResults, item.record.prototypeId)?.headline
+                  }}
                 </span>
                 <WorkbenchIconButton label="查看定稿结果" size="small">
                   <Eye :size="16" />

@@ -261,6 +261,9 @@ describe("PBWork V2 capture store", () => {
       generationId: "generation-new",
       bundles: [],
       jobs: [],
+      receipts: [],
+      handoffs: [],
+      unreadableSnapshots: [],
     });
     vi.spyOn(captureServiceClient, "evidenceInventory").mockResolvedValue({
       workspaceId: "pbwork-local",

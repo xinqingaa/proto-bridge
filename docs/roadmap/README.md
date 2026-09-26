@@ -1,6 +1,6 @@
 # ProtoBridge 产品收口计划
 
-> 状态：A.1–A.5 已交付；A.6 与 P1 体验工作尚未开始；核实日期：2026-09-26。本文是唯一在执行的产品 Roadmap，不代表现行 Contract。
+> 状态：A.1–A.6、B.7 已交付；B.8 起的 P1 体验工作尚未开始；核实日期：2026-09-26。本文是唯一在执行的产品 Roadmap，不代表现行 Contract。
 >
 > 里程碑：P0 可靠性与 P1 PBWork 体验同批交付。P2 只保留进入条件，不进入本次完成定义。
 
@@ -11,16 +11,17 @@
 | A.1 门禁修复与浏览器回归 | **已交付 2026-09-25** | Flutter analyze 0 诊断；Runtime E2E 5/5、Evidence vertical slice 1/1、新增 `finalization-regression.spec.ts` 2/2、PBWork 单测 193/193、文档 123 份与 DS→Target 32/32 组件、154/154 Token 均通过；完整 `pnpm verify` 通过。浏览器回归发现并修复任务中心刷新后漏显“部分失败”的缺陷 |
 | A.2 止血 | **已交付 2026-09-25** | PBWork 单测 193、Core 264、CLI 17、Local Service 18 通过；并发轮询用例在原实现上复现两次 Handoff，修复后一次；用户已在 `pb:up` 手工确认失败原因可见、不再无限转圈。未覆盖：跨页签、关闭浏览器后收尾、Service 重启恢复（归 A.3–A.5） |
 | A.3–A.5 持久生命周期与幂等 | **已交付 2026-09-26** | Core lifecycle contract + Workspace sidecar；Local Service 自动 reconciliation；Job/Handoff/Delivery operation key 与摘要幂等；Delivery 原子发布；旧 localStorage 固定引用迁移；Service 失败/重启、两页签/刷新、完整 PBWork→MCP vertical slice 均通过。验收修复：rollback 按 record 隔离异常并持久化失败原因；failedCases 优先从 Run attempts 还原并保留含 `::` 的 Case ID；Core 加严 finalizing/rollback 转移与 Snapshot 完整性断言；原子 JSON 写入增加文件及目录 fsync；PBWork 只发起回退并轮询 Service 结果，失败可重试。故障注入覆盖 Handoff/Delivery 已落盘但生命周期未更新、回滚中断后的重启收敛。正式定稿按 Prototype ID 隔离 warning/risk 输入；`pnpm verify`、`finalization-regression.spec.ts` 与 `lifecycle-persistence.spec.ts` 均通过 |
-| A.6 恒动 10 项 authored 缺陷 | 未开始 | 可与 A.3–A.5 并行；遮挡项需按 PBWork 视觉评审 |
-| B.7–B.11、C.12 | 未开始 | P1 结果分类/Review/窄屏/setup/profile 与旧 Capture 代码清理均未在本轮开始 |
+| A.6 恒动 10 项 authored 缺陷 | **已交付 2026-09-26** | PBWork 正式定稿：Job `job-2026-09-26t032417211-40e6830f` 101/101 captured，Snapshot `snapshot-2026-09-26t033131378-19c4d268`、Handoff `handoff-2026-09-26t035226855-98e574a5`、Delivery `operation-47c8739fc2ba433c3607c6b7`（Coverage complete、fresh）绑定到 lifecycle，stage `final`。4 条缺 shell 声明 warning 与 38 项 mandatory risk（缺 shell 声明、6 项 `semantic-coverage` unknown）由用户逐项确认，留作后续 authoring。遮挡门禁修复由 Runtime E2E “occlusion blocks painted overlays but not scrolled or hit-test-exempt content” 覆盖。`pnpm verify` 通过：文档 124、Core 284/284、Local Service 24/24、CLI 17/17、PBWork 195/195、Flutter analyze 0、Flutter 30/30、DS→Target 32/32 组件与 154/154 Token、Runtime E2E 7/7、MCP 与 Consumer E2E、Evidence slice 1/1、定稿回归 3/3、生命周期回归 1/1 |
+| B.7 统一结果分类 | **已交付 2026-09-26** | Core `classifyCaptureResults` 单测 15/15：精确绑定才是已正式定稿，完整但未绑定为仅诊断，trash 为引用失效，无 `source` 的 receipt 为来源未知。PBWork presentation 4/4 证明同一数据在概览、任务中心、定稿面板和 Evidence Review 文案一致。Local Service protocol 6 的 console 提供 receipt、Handoff 与读失败 Snapshot。`finalization-regression.spec.ts` 3/3：失败终态仍含“部分失败 · 1 项”；正式定稿与 CLI 未绑定结果标签一致且不混淆。`pnpm verify` 通过：文档 124、Core 284/284、Local Service 24/24、CLI 17/17、PBWork 195/195、Flutter analyze 0、Flutter 30/30、DS→Target 32/32 组件与 154/154 Token、Runtime E2E 6/6、MCP 与 Consumer E2E 通过、Evidence slice 1/1、定稿回归 3/3、生命周期回归 1/1。README 写入本行后再次 `pnpm docs:verify` |
+| B.8–B.11、C.12 | 未开始 | Review 信息层级、窄屏、setup、profile 与旧 Capture 代码清理尚未开始 |
 
 ## 当前基线与核实结果
 
 - Core Store 持久化 Job、Run、Snapshot、revision、Blob、Handoff 和 PBWork lifecycle sidecar；生命周期位于配置的 Store root 下 `pbwork/<workspaceId>/lifecycle-v1.json`，Delivery 位于同级 `.proto-bridge/deliveries/`。PBWork localStorage 不再是 lifecycle 事实源；旧 `pbwork.prototype-lifecycle.v2` 仅按固定引用校验迁移。`.proto-bridge/` 不进 Git。
-- 2026-09-25 本地恒动 Job 已 `completed`，Snapshot 覆盖 101 Case，其中 91 captured、10 failed；该 Snapshot 没有 Handoff。现行 `pollFinalization` 若执行会把不完整覆盖转为失败态。此记录证明 Store 与生命周期可能脱节，但本机浏览器生命周期状态未被持久化到 Workspace，无法仅凭 Store 证明当时 UI 的具体显示。
+- 2026-09-25 本地恒动 Job 已 `completed`，Snapshot 覆盖 101 Case，其中 91 captured、10 failed；该 Snapshot 没有 Handoff。现行 `pollFinalization` 若执行会把不完整覆盖转为失败态。此记录证明 Store 与生命周期可能脱节，但本机浏览器生命周期状态未被持久化到 Workspace，无法仅凭 Store 证明当时 UI 的具体显示。2026-09-26 A.6 修复后新正式 Job 101/101 并定稿，旧失败 Job 保留作诊断。
 - Job 被接受后，Local Service worker 按 lifecycle sidecar 的固定 operation/Job/Bundle/Snapshot refs 推进状态；切页、刷新、关闭浏览器不再承担收尾职责。人工确认仍停在持久阶段，不由后台代确认。Service 重启从 Store Job/Handoff/Delivery 继续 reconciliation。
 - 历史冷链 Snapshot 有两份 Handoff（`02:41:34.852Z`、`02:41:38.981Z`）和两份 Delivery，各相隔约 4 秒。原因为详情页与面板重复轮询、客户端可重复创建 Handoff/Delivery；A.2 先加同页轮询锁，A.3–A.5 再以 operation key + request digest、Store single-writer 与 Service reconciliation 收口。当前 Local Service 重启集成回归验证一个固定 operation 最终只有一份 Handoff 和 Delivery。普通 Capture UI 的 `activeJob`/`preflight` 仍是 UI 状态；正式定稿直接调用 Capture Service Contract，warning/risk 勾选按 Prototype ID 隔离。
-- **A.2 已修复：** 原先原型列表与详情页的“定稿并采集”按钮在任何 `finalizing` phase（含等待人工确认）都禁用并转圈，收起面板后无法重开；重开面板会 `clearFailure` 抹掉失败原因；读取 Job 的错误被 `refreshActiveJob` 吞掉，未连接时静默返回；失败文案只取第一条英文原因；任务中心把含失败 Case 的 `completed` Job 显示为“采集完成”；Evidence Review 不含失败 Case，全失败时永久显示“加载中”。现行为：按钮改为“继续定稿/查看定稿进度”，失败 operation 保存全部失败 Case 并分组显示，断线显示后台可能仍在运行，任务中心显示“部分失败 · N 项”，Review 顶部显示结论与失败项。A.3–A.5 已把正式收尾与固定身份移到持久化服务文档；A.6 authored 缺陷仍未修。
+- **A.2 已修复：** 原先原型列表与详情页的“定稿并采集”按钮在任何 `finalizing` phase（含等待人工确认）都禁用并转圈，收起面板后无法重开；重开面板会 `clearFailure` 抹掉失败原因；读取 Job 的错误被 `refreshActiveJob` 吞掉，未连接时静默返回；失败文案只取第一条英文原因；任务中心把含失败 Case 的 `completed` Job 显示为“采集完成”；Evidence Review 不含失败 Case，全失败时永久显示“加载中”。现行为：按钮改为“继续定稿/查看定稿进度”，失败 operation 保存全部失败 Case 并分组显示，断线显示后台可能仍在运行，任务中心显示“部分失败 · N 项”，Review 顶部显示结论与失败项。A.3–A.5 已把正式收尾与固定身份移到持久化服务文档；恒动失败已由 A.6 修复并正式定稿。
 - Bundle Schema 没有 CLI/Workbench 来源字段；只有部分 Delivery receipt 记录来源。现存未绑定 Bundle 不能可靠倒推出创建入口，也不能自动认领为正式产物。
 - Workbench 画布有四种手机预设，Core Capture 的 `resolveCaptureDevice` 目前只注册 `iphone-14`。支持其它三种正式采集需要先扩展 Core 设备配置。默认 Case 上限是 200；例如 26 个 Case 同时采集两种 Theme × 四种设备会成为 208 项，必须在执行前提示超限。
 - `pb:up` 已在交互终端缺配置时引导 `pb:init`，并在启动前运行 Doctor；`pb:install` 负责依赖和 Chromium。PB-105 的缺口是这些步骤和 MCP 客户端配置尚未收敛成可恢复的首次使用流程，不能写成现有启动完全没有引导。
@@ -39,8 +40,8 @@
 | PB-002 | P0 | **已交付：** Core Store sidecar 持久化 stage/operation/history/fixed refs 并校验 Workspace generation + CAS revision；旧 localStorage 仅一次迁移，Service 验证 Job/Run/Snapshot/Coverage/Handoff/Delivery Receipt/Prompt | 跨页签与刷新读取同一服务端文档；未验证的旧正式引用降为待确定并保留诊断，未绑定 Evidence 不可认领 | PB-001/003 |
 | PB-003 | P0 | **已交付：** Job/Handoff/Delivery 同 operation key + 摘要复用，摘要不一致冲突；Delivery staging 后原子发布；服务重启回归确认单 Job、单 Handoff、单 Delivery。正式定稿直接调用 Capture Service Contract，warning/risk 输入按 Prototype ID 隔离，不使用全局 Capture Store 的可变字段 | 正式生命周期不从全局 Capture 缓存恢复；服务端固定引用隔离不同 Prototype operation，同页多原型确认状态有单测覆盖 | PB-001/002 |
 | PB-004 | P0 | **已交付：** A.1 门禁与 A.2 浏览器回归已纳入 `pnpm verify`；A.3–A.5 增加 failure/restart、旧迁移拒绝、双页签/刷新、产物写入 crash-cut 收敛和 rollback retry 回归。2026-09-26 最新完整 `pnpm verify` 通过：Core 269/269、Local Service 24/24、CLI 17/17、PBWork 191/191、Flutter 30/30、Runtime 5/5、Evidence slice 1/1、定稿回归 2/2、生命周期回归 1/1 | 保持门禁为绿；每个正式 operation 在恢复和重试后仍引用同一组产物 | 无 |
-| PB-005 | P0 | 恒动当前 101 Case 中 10 项失败；Store Attempt 可复核；A.2 后失败已在定稿面板与 Review 按原因可见，缺陷本身未修 | 修复原型语义/交互后重采 101/101，并以真实定稿产物验收 | PB-001/004 |
-| PB-101 | P1 | 概览显示所有 active Snapshot，定稿页只显示生命周期绑定；已证实 | 正式、诊断、未绑定、运行中/失败状态清楚标识 | PB-002 |
+| PB-005 | P0 | **已交付：** 2 项缺节点为 Driver 初始 readiness 过早检查后续步骤 target；2 项缺 role、1 项中文 `pbKey` 为 authored 缺陷；月份 Sheet 遮挡为 Contract 边界错误；其余 4 项“遮挡”是门禁对长内容滚动与禁用按钮的误判，修门禁而非原型。正式定稿 Job `job-2026-09-26t032417211-40e6830f` 101/101，Handoff、Delivery 已绑定，stage `final` | 修复原型语义/交互后重采 101/101，并以真实定稿产物验收 | PB-001/004 |
+| PB-101 | P1 | **已交付：** Core `classifyCaptureResults` 只把精确生命周期 artifacts 标为已正式定稿；其余结果为仅诊断；receipt 无 source 为来源未知；删除或 trash 为引用失效；读不到的 Snapshot 为结果读取失败且不借用 active。概览、任务中心、定稿面板、Evidence Review 使用同一句标签。2026-09-26 `pnpm verify` 通过，定稿回归 3/3 | 同一结果身份一致；CLI 或未绑定 Bundle 不显示成可交付或已定稿 | PB-002 |
 | PB-102 | P1 | Evidence Viewer 先呈现导航和事实结构；体验判断待用户验证；A.2 已加顶部结论与失败分组，问题索引与下钻未做 | 先见交付结论、阻断与覆盖，再能追溯 Screenshot/Fact | PB-101 |
 | PB-103 | P1 | Viewer 三栏只在 1100px 调宽，窄屏无模式切换；已证实实现缺口 | 390/768px 可查看结果、定位问题、返回上层 | PB-102 |
 | PB-104 | P1 | 概览大卡片与多信号并列；体验判断待设计验证 | 首屏明确待处理、进行中、最近正式结果及异常 | PB-101 |
@@ -57,13 +58,13 @@
 | PB-003 | 全局 Capture Store 状态可能被多个原型/页签覆盖；Handoff 与 Delivery 是两个独立 POST，重试可能再次创建。 | 给每次正式操作稳定 ID 和状态版本；Local Service 对同一操作加单 writer/CAS，并让正式 Handoff、Delivery 用 operation key 做 get-or-create，冲突请求返回错误；正式定稿直接使用 Capture Service Contract，按 Prototype ID 隔离预检与人工确认输入。 | 同时点击、重试、崩溃后恢复仍返回同一组固定 ID；不同原型的 Job/风险不会串用。Service restart、跨页签与同页多原型状态隔离回归通过。 |
 | PB-004 | Flutter analyze、Runtime E2E 和 Evidence vertical slice 为红；`pnpm verify` 在 analyze 后停住。 | 删除两条多余 import；Playwright 配置只选一次端口并让 worker 继承；按当前 Sheet 语义重写旧定位；新增 A.2 失败终态、刷新保留和继续定稿的浏览器回归；修复回归揭示的任务中心漏显状态。 | `pnpm verify` 通过；Flutter analyze 0 诊断、Runtime 5/5、Evidence vertical slice 1/1、新增回归 2/2。持久恢复与幂等仍归 A.3–A.5。 |
 | PB-005 | 恒动 Job 已结束但仅 91/101 Case 成功，10 项失败；没有 Handoff。 | 先让错误可见并能定位，再修复 2 项缺少必需节点、5 项中心点遮挡、2 项缺语义 role、1 项非法 `pbKey`；复采整个原型。 | 用户能看到真实阻断与对应 Screen/Variant；修复后以新 Run 证明 101/101，才可生成正式 Handoff/Delivery。遮挡项先看页面层级和截图，不靠放宽门禁蒙混通过。 |
-| PB-101 | 概览列出所有 active Snapshot，定稿页只认 localStorage 绑定；Bundle 本身无可靠创建来源。 | 建立共享结果分类投影：只有精确生命周期绑定才是“正式”；其它结果显示“未绑定/诊断”，已有 receipt 可显示已知来源，来源未知就明说未知；运行和失败 Job 单独呈现。 | 同一结果在概览、任务中心、定稿页身份一致；用户不会把 CLI 或旧 Bundle 误认成正式交付。 |
+| PB-101 | 概览列出所有 active Snapshot，定稿页只认 localStorage 绑定；Bundle 本身无可靠创建来源。 | 建立共享结果分类投影：只有精确生命周期绑定才是“正式”；其它结果显示“未绑定/诊断”，已有 receipt 可显示已知来源，来源未知就明说未知；运行和失败 Job 单独呈现。 | 概览、任务中心、定稿面板和 Evidence Review 对同一结果显示同一句“分类 · 来源”；Coverage 不完整时附加“部分失败 · N 项”。完整但未绑定的结果标“仅诊断”，不出现“可交付”或“已定稿”。 |
 | PB-102/103/104 | Viewer 先展示 Case/Fact 三栏，概览并列展示多个信号；390px 仍挤三栏。 | 基于 Core Coverage/Issue/Handoff risk 建立结论与问题索引；默认先给可交付性、失败范围和动作，再下钻 Screenshot/Fact。桌面保留多栏，窄屏改为单栏“结论 → 问题 → Case/截图 → 事实”的逐层导航；概览用同一状态投影排序待处理任务。 | 100–200 Case 不逐条展开也能找到失败 Screen；390/768px 可查看和定位，原始 Fact、unknown/conflict 与固定引用仍可追溯。体验改善需用真实数据和人工检查确认。 |
 | PB-105 | `pb:up` 有缺配置引导和 Doctor，但首次安装、构建、目标路径、MCP 配置仍跨多个入口。 | 增加可重入的首次 setup 入口，复用现有 install/init/doctor/build，不复制检查逻辑；按步骤报告完成与继续命令，生成 MCP 客户端配置供人确认，日常继续使用 `pb:up`。 | 新 Workspace 有单一首次路径，失败后重跑不会覆盖现有配置；日常启动不再重复首次设置说明。 |
 | PB-106 | `beginPrototype` 对所有 Screen 硬编码默认 Theme + `iphone-14`，其它画布手机设备不能被 Core Capture 识别。 | Prototype Registry 增加可选 authored profile；Core 注册其余三种手机设备并校验 viewport；正式 Draft 从 profile 展开主组合全量 Variant/Scenario，次要组合按声明为全量或 default-only，Preflight 前预览 Case 数并执行 200 默认上限。 | 默认原型仍只采当前组合；声明了多组合的原型可稳定复采，default-only 组合在 Coverage/Handoff 中如实标注。超限明确阻断或由 Workspace 显式调整上限，不静默漏采。 |
 | PB-107 | 无挂载 FlowSheet、旧 action 与重复 finalize Dialog 仍在源码和测试中。 | 在现行流程回归固定后按 import/call graph 删除死代码及只保护旧入口的测试，保留 CLI/Core/Service 公共 Selection、retry 和 Store 管理。 | PBWork 只暴露生命周期正式采集，代码与测试不再暗示旧手工 composer 可用，公共命令回归仍通过。 |
 
-## 具体技术方案与用户可见差异（A.1–A.5 已交付；B/C 待实施）
+## 具体技术方案与用户可见差异（A.1–A.6、B.7 已交付；B.8 起与 C 待实施）
 
 ### 1. 原型生命周期：固定身份、持久操作与恢复
 
@@ -87,7 +88,7 @@ PBWork 发起/确认操作（携带 expectedRevision）
 
 ### 2. 恒动：先修状态表达，再修 10 个真实失败
 
-本地 Job 的 `completed` 仅表示执行并写入 Run/Snapshot；其 Coverage 是 91 captured、10 failed，历时约 94 秒、Bundle 约 56 MiB。`capture/presentation.ts` 目前先把任何 `completed` Job 显示为“采集完成”，而失败明细只挂到“需处理/已解决”状态。定稿页虽有 Coverage 检查，但轮询受页面挂载约束；按钮在等待人工确认的 phase 也永久 `loading` 且禁用，重开面板又会清除失败原因。这些共同解释用户所见的“转圈且没说原因”。本机没有当时浏览器 localStorage，具体那一次转圈的 phase 仍需复现，不能把推断当成已证明根因。
+本地 Job 的 `completed` 仅表示执行并写入 Run/Snapshot；其 Coverage 是 91 captured、10 failed，历时约 94 秒、Bundle 约 56 MiB。A.2 之前，completed Job 会被显示成采集成功，等待确认时按钮永久转圈，重开面板会清掉失败原因。A.2 已改为“部分失败 · N 项”、可重开的“继续定稿”和保留失败原因；B.7 再把概览、任务中心、定稿面板和 Review 统一到 Core 结果分类。本机没有当时浏览器 localStorage，具体那一次转圈的 phase 仍无法仅凭 Store 复盘。
 
 先改任务/概览投影：Job 终结时从对应 Run/Snapshot 的 Coverage 算“执行完成 101/101、有效 91/101、失败 10”，失败 Case 不得映射为成功；无法读到对应 Snapshot 时显示“结果读取失败”，不能借用其它 active Snapshot。再让 Service 操作终态驱动定稿 Sheet，关闭页面、换路由或重启后的状态一致。失败摘要示例：**“恒动定稿未完成：91/101 项有效，10 项失败，尚未生成 Handoff/提示词。”** 下方按原因分组：遮挡 5、缺必需节点 2、缺语义角色 2、非法标识 1；每项连接到 Screen、Variant、Case 和原始 Attempt。失败 Case 没有截图时明确说明，不放一张旧截图冒充本次结果。
 
@@ -97,7 +98,7 @@ PBWork 发起/确认操作（携带 expectedRevision）
 
 现行 `buildEvidenceReadModel` 只遍历 `activeSlots`，失败 Case 在读模型中不存在；它已计算的 `deliveryStatus`、`messages` 与 unknown/conflict 计数在 PBWork 中没有任何渲染。Snapshot 的 `latestAttempts` 与 Run Attempt 已含全部 Case 及失败原因，因此失败 Case 投影在 Core 读模型中补齐，PBWork 只负责按原因分组的中文说明与修复方向，原文保留在技术详情。
 
-统一由固定绑定、Core Coverage/Issue 和 risk 生成只读结果投影；状态用“已正式定稿 / 待逐项确认 / 定稿未完成 / 仅诊断”，不根据 active/latest 或文件名猜身份。面向恒动的目标文案和信息顺序如下：
+B.7 已让概览、任务中心、定稿面板和 Evidence Review 共用 Core 分类：已正式定稿、定稿进行中、待逐项确认、定稿未完成、仅诊断、引用失效、结果读取失败；来源只来自 receipt 的 GUI、CLI，否则为来源未知。不根据 active/latest 或文件名猜身份。下表的信息层级、问题索引和窄屏导航仍是 B.8–B.9，本步没有改布局。面向恒动的目标文案和信息顺序如下：
 
 | 页面 | 当前阅读负担 | 调整后的首屏与下一层 |
 | --- | --- | --- |
@@ -150,11 +151,11 @@ PB-203 重新立项时再拆分：分发涉及许可证、Local Service 随 CLI 
 3. **已交付 2026-09-26。** Core 新增生命周期 document/record/operation Schema、合法阶段转移、固定 Job/Bundle/Snapshot/Handoff/Delivery refs、operation key + SHA-256 request digest、revision conflict 与 idempotency conflict Contract。Coverage、warning、risk 和 Handoff 判定仍只由 Core 提供；最终用户 warning/risk 确认前保存在明确的 `awaiting-confirmation` / `awaiting-risks` phase。
 4. **已交付 2026-09-26。** Core Store 在配置 root 下原子持久化 `pbwork/<workspaceId>/lifecycle-v1.json`；Local Service 增加 protocol v5 读取、CAS 更新、受限迁移和自动 reconciliation。已验 Service 重启恢复、失败 Case 持久 failed、人工确认不被跳过；reset 删除 sidecar，clean 保留固定 lifecycle refs，trash/delete 会拒绝有效正式绑定。PBWork 生命周期 Store 自动构造整原型 Draft，直接通过 Capture Service Contract 发起预检和经确认后的 Job；warning/risk UI 输入按 Prototype ID 隔离。Job 被接受后 Service 接手自动收尾。
 5. **已交付 2026-09-26。** Job/Handoff/Delivery 对相同 operation key + request digest 复用固定产物，对不同摘要报告冲突；Delivery 使用 staging directory 完成后 rename 发布。旧 localStorage 只在空 sidecar 和 Workspace/generation 匹配时请求单次迁移，Service 逐项验证 Job/Run/Snapshot 完整 Coverage/Handoff/Receipt/Prompt；不匹配的旧 final/archived 降为待确定并写入诊断失败原因，不提供未绑定 Evidence 认领。`pb:reset`、`pb:clean`、trash/delete 的保护与清理路径纳入回归。既有 Capture UI/公开能力仍保留；旧入口清理留在 C.12。
-6. 修恒动 10 项 authored 缺陷并全量重采；只有新 Run 达到 101/101、风险经过逐项确认且正式产物齐全时才算定稿成功。
+6. **已交付 2026-09-26。** 10 项逐项根因与处理见[恒动 A.6 工作记录](../../apps/pbwork/src/prototypes/hengdong/docs/a6-work-record.md)。Core Driver 初始 readiness 只查首步 target，Runtime 每一步前查该步 target；进度日期按钮补 role 与 Token Evidence，筛选 `pbKey` 改为稳定英文值；月份 Sheet 打开态 boundary 改为 Sheet 内真实内容。Runtime 遮挡门禁改为对节点可见部分中心做命中测试，并豁免自身 `pointer-events: none` 且命中祖先的节点，真实 Overlay 仍阻断（[Semantic Authoring §6](../reference/semantic-authoring.md)）；为让旧门禁通过而做的原型改动全部撤回。PBWork 正式定稿 101/101，用户逐项接受 4 条缺 shell 声明 warning 并确认 mandatory risk 后进入 `final`。
 
 ### B. PBWork 使用体验设计与交付
 
-7. 统一结果分类事实：正式产物由生命周期固定绑定判定；其它结果统一显示为未绑定/诊断。仅在已有 receipt 提供可信来源时显示 CLI/GUI 来源，旧 Bundle 来源未知就标未知，不补写猜测。概览、任务中心和定稿页共用分类与状态表达。
+7. **已交付 2026-09-26。** Core 新增 `classifyCaptureResults`。已正式定稿只来自生命周期 artifacts 对同一组 Bundle、Snapshot、Handoff、Delivery 的精确绑定；定稿进行中、待逐项确认、定稿未完成来自 operation phase 或 failed finalize；其余结果，包括 Coverage 完整的历史 Bundle 和 CLI 采集，都是仅诊断。绑定对象被删除或移入 trash 为引用失效；列出的 Snapshot 读不到为结果读取失败，不改读其它 active Snapshot。来源仅当 receipt 记录了 `cli` 或 `gui` 时显示，否则为来源未知。Local Service protocol 6 的 console 提供这些事实，PBWork 只做中文、排序和展示。概览、任务中心、定稿面板和 Evidence Review 共用该投影。不提供认领入口，不改变 CLI 非正式采集。信息层级与窄屏仍归 B.8–B.9。
 8. 以真实 100–200 Case 数据设计 Evidence Review：默认先展示定稿结论、Block/Warning/mandatory risk、覆盖缺口和受影响 Screen；从任何问题可进入 Case、Screenshot、Fact、provenance 和固定引用。unknown/conflict 保持可见。概览以“下一步该做什么”为主，并用真实原型内容验证层级。视觉方案按 `pbwork` 与 `frontend-design` 工作流评审。
 9. 窄屏只要求查看结果、定位问题与返回，不要求手机上完成定稿或风险确认。在 390px、768px 和桌面宽度验证导航、Screenshot、问题定位、滚动、焦点；需要桌面完成的动作给出清楚说明。
 10. 增加可重入的首次 setup 入口，复用现有 install/init/doctor/build，失败时显示已完成步骤和继续方法；生成 MCP 客户端配置供用户确认写入。日常启动继续使用 `pb:up`，不把首次设置操作塞入日常流程。

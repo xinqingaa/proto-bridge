@@ -23,6 +23,17 @@ prototypeId: hengdong
 
 设置页已按 iOS 分组列表重写；Delivery 与 Experience 结果见下方设置章节。
 
+## Roadmap A.6 authored 缺陷复核
+
+固定失败 Run 的 10 个 Case ID、原始 reason、逐项根因、五项遮挡的层级截图和正式定稿 ID 见 [A.6 工作记录](./a6-work-record.md)。本批没有更改产品职责、导航、布局或 `design.md` 基线。
+
+- 活动历史的月份 Sheet 打开后，遮罩按设计盖住背景触发按钮；其 overlay Variant 改以 Sheet 内关闭入口、Sheet 与月份选项声明完整性，默认 Variant 仍要求触发按钮。
+- 进度日期按钮补齐合法 `button` role 与对应 Token Evidence；筛选 `pbKey` 改为稳定英文业务值，中文继续只作为显示文案。
+- 删除后撤销和自定义范围的 Action target 只会在上一步打开的 Sheet 中渲染。Core 初始 readiness 现在只查首步目标，Runtime 在每一步执行前逐一查目标；Scenario 动作与 checkpoint boundary 均保留。
+- 今天最近记录、进度月日历、训练总结部分完成态和禁用保存按钮的“遮挡”是 Runtime 门禁误判（长内容滚到固定底栏下、禁用按钮不参与命中测试）。修复在遮挡门禁本身，原型未改；判定规则见 Semantic Authoring §6。
+
+恒动已以 101/101 定稿（stage `final`），Handoff 与 Delivery 已绑定。4 个 strict Screen 缺 shell 声明与 6 项 `semantic-coverage` unknown 由用户逐项接受，仍是后续 authoring 待办。
+
 ## 通用实现基线
 
 - 注册 10 个 Screen：登录、注册、今天、活动记录、计划、进度、计划详情、训练执行、训练总结、设置与目标。
@@ -391,4 +402,3 @@ prototypeId: hengdong
 - Delivery Gate：本轮完成模型边界、Screen/Variant/Action 与 Token-only 实现；Experience Review 待真实浏览器截图后记录，当前为 `deferred`。
 
 今天、训练执行、训练总结和设置已覆盖核心闭环；Experience 结果在对应章节记录。
-

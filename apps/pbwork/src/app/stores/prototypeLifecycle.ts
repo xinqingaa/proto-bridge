@@ -731,6 +731,7 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
         if (latest.operation.kind === "finalizing" && latest.operation.phase === "awaiting-risks") {
           await this.loadRiskReview(prototype, latest.operation);
         }
+        await capture.refreshConsole();
       } catch (error) {
         capture.setError(error);
         this.setConnectionIssue(

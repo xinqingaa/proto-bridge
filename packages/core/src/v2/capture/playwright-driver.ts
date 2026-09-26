@@ -829,13 +829,13 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
               screen.screenId ===
               input.entry.scenario!.scenario.ownerScreenId,
           );
+          // Only the first action must exist in the initial state. Later
+          // targets can be revealed by earlier actions (for example a Sheet).
+          // Runtime checks every target immediately before executing it.
+          const firstActionId = input.entry.scenario.scenario.actionIds[0];
           const actionTargets =
             ownerScreen?.actions
-              .filter((action) =>
-                input.entry.scenario!.scenario.actionIds.includes(
-                  action.actionId,
-                ),
-              )
+              .filter((action) => action.actionId === firstActionId)
               .map((action) => action.target) ?? [];
           const initialReady = await requestRuntimeCapture(page, {
             kind: 'readiness',

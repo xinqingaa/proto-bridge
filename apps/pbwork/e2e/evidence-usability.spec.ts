@@ -63,7 +63,7 @@ async function finalizeColdChain(page: Page) {
   await expect(row.getByText("已定稿", { exact: true })).toBeVisible({
     timeout: 30_000,
   });
-  await expect(row).toContainText("Evidence + 提示词");
+  await expect(row).toContainText("已正式定稿");
   await sheet.getByRole("button", { name: "完成" }).click();
   await expect(sheet).toBeHidden();
   return row;

@@ -112,6 +112,8 @@
 
 任一条件不满足时不得声明 semantic completeness。
 
+遮挡按节点的**可见部分**判定：先用视口和祖先滚动/裁剪容器求出节点实际可见的矩形，再对该矩形中心做命中测试。命中节点自身或其后代即未遮挡；长内容滚到固定底栏、Tabbar 或 footer 下方的部分不算遮挡。节点自身 `pointer-events: none`（如禁用按钮）且命中其祖先时视为命中测试豁免，不算遮挡；但被 scrim、Sheet、Dialog 或其它非祖先层覆盖时仍按遮挡阻断，与节点能否接收指针无关。
+
 ## 7. 门禁等级
 
 ### Block：必须阻断 Preflight、Capture、Handoff 或 CI

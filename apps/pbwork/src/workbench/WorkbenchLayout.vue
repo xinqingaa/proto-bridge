@@ -169,7 +169,10 @@ const selectedSecondaryId = computed(() => {
       const snapshotId = String(route.params.snapshotId ?? "");
       return (
         findCaptureJobIdForEvidenceRoute(
-          buildCaptureTaskPresentations(capture.consoleState),
+          buildCaptureTaskPresentations(
+            capture.consoleState,
+            prototypeLifecycle.records,
+          ),
           bundleId,
           snapshotId,
         ) ?? "capture-console"
@@ -287,7 +290,10 @@ const navigationTree = computed(() =>
 );
 
 const captureTaskPresentations = computed(() =>
-  buildCaptureTaskPresentations(capture.consoleState).filter((item) =>
+  buildCaptureTaskPresentations(
+    capture.consoleState,
+    prototypeLifecycle.records,
+  ).filter((item) =>
     prototypeLifecycle.finalizedRecords.some(
       (record) => record.artifacts?.jobId === item.job.jobId,
     ),
