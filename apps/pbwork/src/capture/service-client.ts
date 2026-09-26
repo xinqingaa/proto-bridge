@@ -17,6 +17,8 @@ import {
   type StoredPreflight,
   type WorkspaceResetPlan,
   type WorkspaceResetResult,
+  type UpdatePrototypeLifecycleRequest,
+  type MigratePrototypeLifecycleRequest,
 } from "@proto-bridge/core/v2/service-contract";
 import type {
   AgentHandoff,
@@ -72,6 +74,22 @@ export class CaptureServiceClient {
 
   consoleState(): Promise<CaptureConsoleState> {
     return this.request("/console");
+  }
+
+  prototypeLifecycle(): Promise<UpdatePrototypeLifecycleRequest["document"]> {
+    return this.request("/prototype-lifecycle");
+  }
+
+  updatePrototypeLifecycle(
+    body: UpdatePrototypeLifecycleRequest,
+  ): Promise<UpdatePrototypeLifecycleRequest["document"]> {
+    return this.request("/prototype-lifecycle", { method: "PUT", body });
+  }
+
+  migratePrototypeLifecycle(
+    body: MigratePrototypeLifecycleRequest,
+  ): Promise<MigratePrototypeLifecycleRequest["document"]> {
+    return this.request("/prototype-lifecycle/migrate", { method: "POST", body });
   }
 
   evidenceInventory(): Promise<EvidenceInventory> {
@@ -263,7 +281,7 @@ export class CaptureServiceClient {
   private async request<T>(
     path: string,
     options: {
-      method?: "GET" | "POST";
+      method?: "GET" | "POST" | "PUT";
       body?: unknown;
       authenticated?: boolean;
     } = {},

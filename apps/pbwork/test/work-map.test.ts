@@ -5,6 +5,7 @@ import {
   formatLastEvent,
   operationCaption,
   prototypeChapters,
+  rollbackActionLabel,
   screensLine,
 } from "@/workbench/prototypes/workMap";
 
@@ -82,22 +83,52 @@ describe("prototype work map", () => {
 
   it("lets an unfinished finalization reopen its sheet", () => {
     const startedAt = "2026-08-20T04:00:00.000Z";
+    const operationKey = "00000000-0000-4000-8000-000000000001";
+    const confirmation = {
+      kind: "finalizing" as const,
+      operationKey,
+      startedAt,
+      acceptedWarningIds: [],
+      acknowledgedRiskKinds: [],
+    };
     expect(finalizeActionLabel({ kind: "idle" })).toBe("定稿并采集");
     expect(
       finalizeActionLabel({
-        kind: "finalizing",
+        ...confirmation,
         phase: "awaiting-confirmation",
-        startedAt,
       }),
     ).toBe("继续定稿");
     expect(
-      finalizeActionLabel({ kind: "finalizing", phase: "capturing", startedAt }),
+      finalizeActionLabel({ ...confirmation, phase: "capturing" }),
     ).toBe("查看定稿进度");
     expect(
       operationCaption(
-        { kind: "finalizing", phase: "awaiting-risks", startedAt },
+        { ...confirmation, phase: "awaiting-risks" },
         false,
       ).status,
     ).toBe("等待你确认风险");
+  });
+
+  it("offers a rollback retry when Service persisted a rollback failure", () => {
+    expect(rollbackActionLabel({ kind: "idle" })).toBe("回退待确定");
+    expect(
+      rollbackActionLabel({
+        kind: "failed",
+        action: "rollback",
+        message: "Bundle 清理失败。",
+        failedAt: "2026-08-20T04:00:00.000Z",
+      }),
+    ).toBe("重试回退");
+    expect(
+      operationCaption(
+        {
+          kind: "failed",
+          action: "rollback",
+          message: "Bundle 清理失败。",
+          failedAt: "2026-08-20T04:00:00.000Z",
+        },
+        true,
+      ).status,
+    ).toBe("回退失败");
   });
 });

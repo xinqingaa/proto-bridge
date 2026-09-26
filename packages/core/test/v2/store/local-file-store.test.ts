@@ -101,6 +101,68 @@ describe('LocalFileStore: commit + read', () => {
     expect(await reader.getEvidenceRevision(BUNDLE_ID, PRIMARY_REVISION_ID)).toEqual(PRIMARY_ACTIVE_REVISION);
     await reader.close();
   });
+
+  it('persists lifecycle documents with revision compare-and-set', async () => {
+    const store = new LocalFileStore({ root, workspaceId: WORKSPACE_ID });
+    await store.init();
+    const empty = await store.getPrototypeLifecycleDocument();
+    const now = new Date().toISOString();
+    const next = {
+      ...empty,
+      revision: 1,
+      records: {
+        [PROTOTYPE_ID]: {
+          prototypeId: PROTOTYPE_ID,
+          stage: 'active',
+          operation: { kind: 'idle' },
+          artifacts: null,
+          createdAt: now,
+          updatedAt: now,
+        },
+      },
+      updatedAt: now,
+    } as never;
+    await store.compareAndSetPrototypeLifecycleDocument({
+      expectedRevision: 0,
+      document: next,
+    });
+    await expect(
+      store.compareAndSetPrototypeLifecycleDocument({
+        expectedRevision: 0,
+        document: next,
+      }),
+    ).rejects.toMatchObject({ code: 'revision-conflict' });
+    await store.close();
+
+    const reader = new LocalFileStore({ root, workspaceId: WORKSPACE_ID });
+    await reader.init();
+    await expect(reader.getPrototypeLifecycleDocument()).resolves.toMatchObject({
+      revision: 1,
+      records: { [PROTOTYPE_ID]: { stage: 'active', operation: { kind: 'idle' } } },
+    });
+    await reader.close();
+  });
+
+  it('reuses a Job for the same operation key and digest and rejects changed input', async () => {
+    const store = await freshStoreWithBundle();
+    const operationKey = '00000000-0000-4000-8000-000000000011';
+    const operationRequestDigest = `sha256:${'b'.repeat(64)}`;
+    const input = {
+      bundleId: BUNDLE_ID,
+      selection: RUN_1.selection,
+      inputVersion: RUN_1.inputVersion,
+      operationKey,
+      operationRequestDigest,
+    };
+    const [first, concurrent] = await Promise.all([
+      store.createJob(input),
+      store.createJob(input),
+    ]);
+    expect(concurrent.jobId).toBe(first.jobId);
+    await expect(
+      store.createJob({ ...input, operationRequestDigest: `sha256:${'c'.repeat(64)}` }),
+    ).rejects.toMatchObject({ code: 'idempotency-conflict' });
+  });
 });
 
 describe('LocalFileStore: reference integrity and transactional failure', () => {

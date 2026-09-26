@@ -21,6 +21,10 @@
     "test:e2e:console": "playwright test e2e/capture-console.spec.ts",
     "pretest:e2e:evidence": "pnpm --filter @proto-bridge/local-service build && pnpm build",
     "test:e2e:evidence": "playwright test e2e/evidence-usability.spec.ts",
+    "pretest:e2e:lifecycle": "pnpm --filter @proto-bridge/local-service build && pnpm build",
+    "test:e2e:lifecycle": "playwright test e2e/lifecycle-persistence.spec.ts",
+    "pretest:e2e:finalization": "pnpm --filter @proto-bridge/local-service build && pnpm build",
+    "test:e2e:finalization": "playwright test e2e/finalization-regression.spec.ts",
     "format": "prettier --write ."
   },
   "dependencies": {

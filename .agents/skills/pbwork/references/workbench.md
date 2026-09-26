@@ -29,6 +29,17 @@ Prototype Screens or their Design System.
 
 ## Capture and Evidence
 
+- Lifecycle facts live in the Core Store root at
+  `pbwork/<workspaceId>/lifecycle-v1.json`; Local Service validates generation
+  and `expectedRevision`, persists transitions, and reconciles automated phases.
+  The lifecycle Pinia Store is a document cache; formal finalization calls the
+  Capture Service Contract directly and keeps warning/risk UI state keyed by
+  Prototype ID. Do not route finalization through Capture Store's global draft,
+  preflight, Job, or risk fields. Do not restore
+  formal identity from Registry, active/latest, or an unbound Bundle. The old
+  `pbwork.prototype-lifecycle.v2` key may be imported only into an empty
+  sidecar after Service verifies every fixed artifact reference; rejected
+  legacy Evidence remains diagnostic. Workspace reset clears the sidecar.
 - PBWork delivery begins only at the `review -> final` lifecycle transition.
   Build the whole-Prototype Draft automatically; do not expose range selection
   or manual Screen, Fragment, Component, control, or Prototype capture buttons.
@@ -38,8 +49,10 @@ Prototype Screens or their Design System.
 - Commit `final` only after the existing Core flow produced Evidence, Handoff,
   Delivery, and the one bound Agent prompt. Final/archived views may only read
   and copy it; do not expose generate or regenerate actions.
-- Rolling `final` back to `review` must first trash its bound Bundle and clear
-  all formal artifact refs. `archived` is terminal. Never expose Prototype delete.
+- PBWork rollback only persists a `rolling-back` operation; Local Service trashes
+  the bound Bundle and clears formal artifact refs before returning to `review`.
+  Failure stays visible as `failed(action: rollback)` and exposes “重试回退”.
+  `archived` is terminal. Never expose Prototype delete.
 - Keep CLI capture independent from PBWork lifecycle. Produce the same Core
   Selection Draft as CLI `deliver`; do not duplicate Core logic. CLI capture
   and deliver must warn that they are unofficial; they never mark a prototype

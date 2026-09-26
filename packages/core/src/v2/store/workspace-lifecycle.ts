@@ -37,6 +37,7 @@ export async function createWorkspaceResetPlan(input: {
     evidence: inventory.evidence,
     deliveries: inventory.deliveries,
     reviews: inventory.reviews,
+    prototypeLifecycle: inventory.prototypeLifecycle,
     runningTasks: [...(input.runningTasks ?? [])].sort(),
     createdAt,
     expiresAt,
@@ -84,6 +85,7 @@ export async function validateWorkspaceResetPlan(input: {
 }
 
 export async function inspectWorkspaceResetScope(input: {
+  workspaceId: string;
   storeRoot: string;
   deliveriesRoot: string;
   reviewsRoot: string;
@@ -91,21 +93,27 @@ export async function inspectWorkspaceResetScope(input: {
   evidence: WorkspaceResetScopeSummary;
   deliveries: WorkspaceResetScopeSummary;
   reviews: WorkspaceResetScopeSummary;
+  prototypeLifecycle: WorkspaceResetScopeSummary;
   inventoryDigest: string;
 }> {
-  const [evidence, deliveries, reviews] = await Promise.all([
-    inspectTree(input.storeRoot, new Set(['.lock'])),
+  const [evidence, deliveries, reviews, prototypeLifecycle] = await Promise.all([
+    inspectTree(input.storeRoot, new Set(['.lock', 'pbwork'])),
     inspectTree(input.deliveriesRoot),
     inspectTree(input.reviewsRoot),
+    inspectTree(path.join(input.storeRoot, 'pbwork', input.workspaceId)),
   ]);
   const digest = createHash('sha256');
-  for (const [kind, tree] of [['evidence', evidence], ['deliveries', deliveries], ['reviews', reviews]] as const) {
+  for (const [kind, tree] of [['evidence', evidence], ['deliveries', deliveries], ['reviews', reviews], ['prototype-lifecycle', prototypeLifecycle]] as const) {
     for (const entry of tree.entries) digest.update(`${kind}\0${entry.path}\0${entry.bytes}\0${entry.digest}\n`);
   }
   return {
     evidence: { objects: evidence.entries.length, bytes: evidence.bytes },
     deliveries: { objects: deliveries.entries.length, bytes: deliveries.bytes },
     reviews: { objects: reviews.entries.length, bytes: reviews.bytes },
+    prototypeLifecycle: {
+      objects: prototypeLifecycle.entries.length,
+      bytes: prototypeLifecycle.bytes,
+    },
     inventoryDigest: `sha256:${digest.digest('hex')}`,
   };
 }

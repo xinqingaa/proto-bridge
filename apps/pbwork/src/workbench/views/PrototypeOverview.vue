@@ -23,6 +23,7 @@ import {
   operationCaption,
   ownersAndRoles,
   prototypeChapters,
+  rollbackActionLabel,
 } from "@/workbench/prototypes/workMap";
 
 const props = defineProps<{
@@ -90,7 +91,7 @@ function openTransition(intent: LifecycleIntent) {
 async function pollOperation() {
   if (!prototype.value) return;
   const current = lifecycle.recordFor(prototype.value.id)?.operation;
-  if (current?.kind === "finalizing" && current.phase === "capturing") {
+  if (current?.kind === "finalizing" || current?.kind === "rolling-back") {
     await lifecycle.pollFinalization(prototype.value);
   }
 }
@@ -157,7 +158,7 @@ onBeforeUnmount(() => {
             :disabled="busy"
             @click="openTransition('rollback')"
           >
-            回退待确定
+            {{ rollbackActionLabel(operation) }}
           </WorkbenchButton>
           <WorkbenchButton
             v-if="effectiveLifecycle === 'final'"

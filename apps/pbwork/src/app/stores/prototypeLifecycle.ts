@@ -1,27 +1,35 @@
 import { defineStore } from "pinia";
-import { incompleteCaseCount, type CaptureJob } from "@proto-bridge/core/v2";
-import type { PrototypeLifecycle, PrototypeRecord } from "@/design-system/types";
-import { useCaptureStore } from "@/app/stores/capture";
+import {
+  LifecycleOperationKey,
+  OperationRequestDigest,
+  FinalizedArtifacts as FinalizedArtifactsSchema,
+  PrototypeLifecycleDocument,
+  PrototypeLifecycleHistoryEntry,
+  PrototypeLifecycleRecord as PrototypeLifecycleRecordSchema,
+  type PrototypeLifecycleDocument as LifecycleDocument,
+  type PrototypeLifecycleHistoryEntry as LifecycleHistoryEntry,
+  type PrototypeLifecycleOperation as LifecycleOperation,
+  type PrototypeLifecycleRecord,
+  type PrototypeLifecycleStage as PrototypeLifecycle,
+} from "@proto-bridge/core/v2";
+import type { PrototypeRecord } from "@/design-system/types";
+import type { RiskKind } from "@proto-bridge/core/v2";
+import {
+  createPrototypeCaptureDraft,
+  useCaptureStore,
+} from "@/app/stores/capture";
+import type {
+  BundleEvidenceDetails,
+  HandoffPreview,
+  StoredPreflight,
+} from "@proto-bridge/core/v2/service-contract";
 import {
   captureServiceClient,
   LocalServiceClientError,
 } from "@/capture/service-client";
-import { parseFailedCaseDetail } from "@/capture/presentation";
-import {
-  hasDanglingArtifactRefs,
-  shouldResetLocalWorkspaceState,
-} from "@/app/stores/workspace-generation";
-
-const STORAGE_KEY = "pbwork.prototype-lifecycle.v2";
-const LEGACY_STORAGE_KEY = "pbwork.prototype-lifecycle.v1";
 const HISTORY_LIMIT = 500;
-
-const TERMINAL_JOB_STATUSES = new Set([
-  "completed",
-  "cancelled",
-  "interrupted",
-  "failed",
-]);
+const LEGACY_STORAGE_KEY = "pbwork.prototype-lifecycle.v2";
+const legacyMigrationAttempted = new Set<string>();
 
 export const lifecycleTransitions: Record<
   PrototypeLifecycle,
@@ -33,128 +41,44 @@ export const lifecycleTransitions: Record<
   archived: [],
 };
 
-export type FinalizationPhase =
-  | "preflighting"
-  | "awaiting-confirmation"
-  | "capturing"
-  | "awaiting-risks"
-  | "building-prompt";
-
-export type LifecycleOperation =
-  | { kind: "idle" }
-  | {
-      kind: "finalizing";
-      phase: FinalizationPhase;
-      startedAt: string;
-      jobId?: string;
-      bundleId?: string;
-      snapshotId?: string;
-    }
-  | {
-      kind: "rolling-back";
-      startedAt: string;
-      bundleIds: string[];
-    }
-  | {
-      kind: "failed";
-      action: "finalize" | "rollback";
-      message: string;
-      failedAt: string;
-      failedCases?: FinalizationFailedCase[];
-    };
-
+export type FinalizationPhase = NonNullable<
+  Extract<LifecycleOperation, { kind: "finalizing" }>["phase"]
+>;
+export type { LifecycleHistoryEntry, LifecycleOperation };
 export type FinalizationFailedCase = { caseId: string; reason: string };
-
 export type FinalizationProgress = { completed: number; total: number };
+export type FinalizedArtifacts = NonNullable<PrototypeLifecycleRecord["artifacts"]>;
 
-export type FinalizedArtifacts = {
-  jobId: string;
-  bundleId: string;
-  snapshotId: string;
-  handoffId: string;
-  deliveryId: string;
-  agentPromptPath: string;
-  receiptPath: string;
-  finalizedAt: string;
-};
-
-export type PrototypeLifecycleRecord = {
-  prototypeId: string;
-  stage: PrototypeLifecycle;
-  operation: LifecycleOperation;
-  artifacts: FinalizedArtifacts | null;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type LifecycleHistoryEntry = {
-  id: string;
-  prototypeId: string;
-  from: PrototypeLifecycle;
-  to: PrototypeLifecycle;
-  note: string;
-  changedAt: string;
-};
-
-type LifecycleState = {
-  version: 2;
+export type LifecycleState = {
   records: Record<string, PrototypeLifecycleRecord>;
   history: LifecycleHistoryEntry[];
   workspaceId: string | null;
   generationId: string | null;
+  revision: number;
+  hydrated: boolean;
   storageError: string | null;
+  preflights: Record<string, StoredPreflight>;
+  acceptedWarnings: Record<string, string[]>;
+  evidence: Record<string, BundleEvidenceDetails>;
+  handoffPreviews: Record<string, HandoffPreview>;
+  acknowledgedRisks: Record<string, RiskKind[]>;
 };
 
-function emptyLifecycleState(
-  storageError: string | null = null,
-): LifecycleState {
+function emptyLifecycleState(): LifecycleState {
   return {
-    version: 2,
     records: {},
     history: [],
     workspaceId: null,
     generationId: null,
-    storageError,
+    revision: 0,
+    hydrated: false,
+    storageError: null,
+    preflights: {},
+    acceptedWarnings: {},
+    evidence: {},
+    handoffPreviews: {},
+    acknowledgedRisks: {},
   };
-}
-
-function parseBindingField(value: unknown): string | null {
-  return typeof value === "string" && value.length > 0 ? value : null;
-}
-
-function isLifecycle(value: unknown): value is PrototypeLifecycle {
-  return (
-    value === "active" ||
-    value === "review" ||
-    value === "final" ||
-    value === "archived"
-  );
-}
-
-function isOperation(value: unknown): value is LifecycleOperation {
-  if (!value || typeof value !== "object") return false;
-  const candidate = value as Partial<LifecycleOperation>;
-  return (
-    candidate.kind === "idle" ||
-    candidate.kind === "finalizing" ||
-    candidate.kind === "rolling-back" ||
-    candidate.kind === "failed"
-  );
-}
-
-function isArtifacts(value: unknown): value is FinalizedArtifacts {
-  if (!value || typeof value !== "object") return false;
-  const item = value as Partial<FinalizedArtifacts>;
-  return [
-    item.jobId,
-    item.bundleId,
-    item.snapshotId,
-    item.handoffId,
-    item.deliveryId,
-    item.agentPromptPath,
-    item.receiptPath,
-    item.finalizedAt,
-  ].every((field) => typeof field === "string" && field.length > 0);
 }
 
 function createRecord(
@@ -172,128 +96,144 @@ function createRecord(
   };
 }
 
-function parseRecord(
-  prototypeId: string,
-  value: unknown,
-): PrototypeLifecycleRecord | null {
-  if (!value || typeof value !== "object") return null;
-  const item = value as Partial<PrototypeLifecycleRecord>;
+async function migrateLegacyLifecycle(
+  document: LifecycleDocument,
+  raw: string,
+): Promise<LifecycleDocument | null> {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (!parsed || typeof parsed !== "object") return null;
+  const legacy = parsed as {
+    version?: unknown;
+    workspaceId?: unknown;
+    generationId?: unknown;
+    records?: unknown;
+    history?: unknown;
+  };
   if (
-    item.prototypeId !== prototypeId ||
-    !isLifecycle(item.stage) ||
-    !isOperation(item.operation) ||
-    typeof item.createdAt !== "string" ||
-    typeof item.updatedAt !== "string"
+    legacy.version !== 2 ||
+    legacy.workspaceId !== document.workspaceId ||
+    legacy.generationId !== document.generationId ||
+    !legacy.records ||
+    typeof legacy.records !== "object" ||
+    Array.isArray(legacy.records)
   ) {
     return null;
   }
-  const artifacts = isArtifacts(item.artifacts) ? item.artifacts : null;
-  if (item.stage === "final" && !artifacts) {
-    return {
-      ...createRecord(prototypeId, "review"),
-      createdAt: item.createdAt,
-      updatedAt: item.updatedAt,
-    };
-  }
-  return {
-    prototypeId,
-    stage: item.stage,
-    operation: item.operation,
-    artifacts,
-    createdAt: item.createdAt,
-    updatedAt: item.updatedAt,
-  };
-}
 
-function parseHistory(value: unknown): LifecycleHistoryEntry[] {
-  if (!Array.isArray(value)) return [];
-  return value
-    .filter((entry): entry is LifecycleHistoryEntry => {
-      if (!entry || typeof entry !== "object") return false;
-      const item = entry as Partial<LifecycleHistoryEntry>;
-      return (
-        typeof item.id === "string" &&
-        typeof item.prototypeId === "string" &&
-        isLifecycle(item.from) &&
-        isLifecycle(item.to) &&
-        typeof item.note === "string" &&
-        typeof item.changedAt === "string"
-      );
-    })
-    .slice(0, HISTORY_LIMIT);
-}
+  const records: Record<string, PrototypeLifecycleRecord> = {};
+  for (const [prototypeId, value] of Object.entries(legacy.records)) {
+    if (!value || typeof value !== "object") continue;
+    const old = value as Partial<PrototypeLifecycleRecord>;
+    const createdAt = typeof old.createdAt === "string" ? old.createdAt : new Date().toISOString();
+    const updatedAt = typeof old.updatedAt === "string" ? old.updatedAt : createdAt;
+    const validStage = ["active", "review", "final", "archived"].includes(String(old.stage));
+    if (old.prototypeId !== prototypeId || !validStage) continue;
 
-function loadLegacyState(): LifecycleState {
-  const empty = emptyLifecycleState();
-  const raw = window.localStorage.getItem(LEGACY_STORAGE_KEY);
-  if (!raw) return empty;
-  try {
-    const parsed = JSON.parse(raw) as {
-      overrides?: Record<string, unknown>;
-      history?: unknown;
-    };
-    for (const [prototypeId, value] of Object.entries(parsed.overrides ?? {})) {
-      if (!isLifecycle(value)) continue;
-      const stage = value === "final" ? "review" : value;
-      empty.records[prototypeId] = createRecord(prototypeId, stage);
+    let stage = old.stage as PrototypeLifecycle;
+    let artifacts: PrototypeLifecycleRecord["artifacts"] = null;
+    let operation: LifecycleOperation = { kind: "idle" };
+    const oldOperation = old.operation;
+    let diagnostic: string | null = null;
+    if (oldOperation?.kind === "finalizing" || oldOperation?.kind === "rolling-back") {
+      stage = stage === "active" ? "active" : "review";
+      operation = {
+        kind: "failed",
+        action: oldOperation.kind === "rolling-back" ? "rollback" : "finalize",
+        message: "旧浏览器操作没有可恢复的服务端 operationKey；仅保留诊断状态，请重新检查后继续。",
+        failedAt: new Date().toISOString(),
+      };
+    } else if (oldOperation?.kind === "failed") {
+      operation = {
+        kind: "failed",
+        action: oldOperation.action === "rollback" ? "rollback" : "finalize",
+        message: typeof oldOperation.message === "string" && oldOperation.message.trim()
+          ? oldOperation.message
+          : "旧浏览器操作失败；请重新检查后继续。",
+        failedAt: typeof oldOperation.failedAt === "string" ? oldOperation.failedAt : new Date().toISOString(),
+        ...(Array.isArray(oldOperation.failedCases)
+          ? { failedCases: oldOperation.failedCases.filter((item): item is { caseId: string; reason: string } =>
+              !!item && typeof item.caseId === "string" && typeof item.reason === "string",
+            ) }
+          : {}),
+      };
     }
-    empty.history = parseHistory(parsed.history);
-    return empty;
-  } catch {
-    return emptyLifecycleState(
-      "旧生命周期状态无法读取；新原型将从进行中开始。",
-    );
-  }
-}
 
-function loadState(): LifecycleState {
-  if (typeof window === "undefined") {
-    return emptyLifecycleState();
-  }
-  const raw = window.localStorage.getItem(STORAGE_KEY);
-  if (!raw) return loadLegacyState();
-  try {
-    const parsed = JSON.parse(raw) as Partial<LifecycleState>;
-    if (parsed.version !== 2 || !parsed.records) {
-      throw new Error("unsupported lifecycle state");
+    if ((stage === "final" || stage === "archived") && old.artifacts) {
+      const legacyArtifacts = old.artifacts as Record<string, unknown>;
+      const fixedRefs = {
+        jobId: legacyArtifacts.jobId,
+        bundleId: legacyArtifacts.bundleId,
+        snapshotId: legacyArtifacts.snapshotId,
+        handoffId: legacyArtifacts.handoffId,
+        deliveryId: legacyArtifacts.deliveryId,
+        agentPromptPath: legacyArtifacts.agentPromptPath,
+        receiptPath: legacyArtifacts.receiptPath,
+        finalizedAt: legacyArtifacts.finalizedAt,
+      };
+      try {
+        const digestBytes = await crypto.subtle.digest(
+          "SHA-256",
+          new TextEncoder().encode(JSON.stringify({
+            workspaceId: document.workspaceId,
+            generationId: document.generationId,
+            prototypeId,
+            ...fixedRefs,
+          })),
+        );
+        const requestDigest = OperationRequestDigest.parse(
+          `sha256:${Array.from(new Uint8Array(digestBytes), (byte) => byte.toString(16).padStart(2, "0")).join("")}`,
+        );
+        artifacts = FinalizedArtifactsSchema.parse({
+          ...fixedRefs,
+          operationKey: LifecycleOperationKey.parse(crypto.randomUUID()),
+          requestDigest,
+        });
+      } catch {
+        diagnostic = "旧定稿记录缺少完整、有效的固定产物引用。";
+      }
+    } else if (stage === "final" || stage === "archived") {
+      diagnostic = "旧定稿记录缺少固定产物引用。";
     }
-    const records = Object.fromEntries(
-      Object.entries(parsed.records)
-        .map(([prototypeId, value]) => [
-          prototypeId,
-          parseRecord(prototypeId, value),
-        ])
-        .filter((entry): entry is [string, PrototypeLifecycleRecord] =>
-          Boolean(entry[1]),
-        ),
-    );
-    return {
-      version: 2,
-      records,
-      history: parseHistory(parsed.history),
-      workspaceId: parseBindingField(parsed.workspaceId),
-      generationId: parseBindingField(parsed.generationId),
-      storageError: null,
-    };
-  } catch {
-    return emptyLifecycleState(
-      "生命周期状态文件无法读取。原值已保留，请修复或清除后重试。",
-    );
+
+    if (diagnostic) {
+      stage = "review";
+      artifacts = null;
+      operation = {
+        kind: "failed",
+        action: "finalize",
+        message: `旧浏览器定稿绑定未通过迁移前检查，未作为正式定稿恢复；Evidence 仅作诊断：${diagnostic}`,
+        failedAt: new Date().toISOString(),
+      };
+    }
+    const candidate = PrototypeLifecycleRecordSchema.safeParse({
+      prototypeId,
+      stage,
+      operation,
+      artifacts,
+      createdAt,
+      updatedAt,
+    });
+    if (candidate.success) records[prototypeId] = candidate.data;
   }
-}
 
-function jobFailure(job: CaptureJob, fallback?: string | null): string {
-  const lastJournal = job.journal.at(-1)?.detail;
-  if (lastJournal) return lastJournal;
-  if (fallback) return fallback;
-  return `整原型采集以 ${job.status} 结束。`;
-}
-
-function journalFailures(job: CaptureJob): FinalizationFailedCase[] {
-  return job.journal
-    .filter((entry) => entry.event === "case-finished" && entry.detail)
-    .map((entry) => parseFailedCaseDetail(entry.detail!))
-    .filter((item): item is FinalizationFailedCase => Boolean(item));
+  const history = Array.isArray(legacy.history)
+    ? legacy.history.flatMap((entry) => {
+        const candidate = PrototypeLifecycleHistoryEntry.safeParse(entry);
+        return candidate.success ? [candidate.data] : [];
+      }).slice(0, HISTORY_LIMIT)
+    : [];
+  return PrototypeLifecycleDocument.parse({
+    ...document,
+    revision: 1,
+    records,
+    history,
+    updatedAt: new Date().toISOString(),
+  });
 }
 
 function isFinalizingCapture(
@@ -308,11 +248,12 @@ function isFinalizingCapture(
   );
 }
 
+let lifecycleSaveTail: Promise<void> = Promise.resolve();
 const pollsInFlight = new Map<string, Promise<void>>();
 
 export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
   state: () => ({
-    ...loadState(),
+    ...emptyLifecycleState(),
     connectionIssues: {} as Record<string, string>,
     progress: {} as Record<string, FinalizationProgress>,
   }),
@@ -332,24 +273,130 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
           (record.stage === "final" || record.stage === "archived") &&
           record.artifacts,
       ),
+    preflightFor: (state) =>
+      (prototypeId: string): StoredPreflight | null =>
+        state.preflights[prototypeId] ?? null,
+    acceptedWarningsFor: (state) =>
+      (prototypeId: string): string[] =>
+        state.acceptedWarnings[prototypeId] ?? [],
+    warningsAcceptedFor: (state) =>
+      (prototypeId: string): boolean => {
+        const required = state.preflights[prototypeId]?.result.warnings.map(
+          (warning) => warning.warningId,
+        ) ?? [];
+        const accepted = new Set(state.acceptedWarnings[prototypeId] ?? []);
+        return required.every((warningId) => accepted.has(warningId));
+      },
+    evidenceFor: (state) =>
+      (prototypeId: string): BundleEvidenceDetails | null =>
+        state.evidence[prototypeId] ?? null,
+    handoffPreviewFor: (state) =>
+      (prototypeId: string): HandoffPreview | null =>
+        state.handoffPreviews[prototypeId] ?? null,
+    acknowledgedRisksFor: (state) =>
+      (prototypeId: string): string[] =>
+        state.acknowledgedRisks[prototypeId] ?? [],
+    risksAcceptedFor: (state) =>
+      (prototypeId: string): boolean => {
+        const required = state.handoffPreviews[prototypeId]?.risks.map(
+          (risk) => risk.kind,
+        ) ?? [];
+        const accepted = new Set(state.acknowledgedRisks[prototypeId] ?? []);
+        return required.every((kind) => accepted.has(kind));
+      },
   },
   actions: {
-    persist() {
-      if (typeof window === "undefined" || this.storageError) return;
-      window.localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-          version: 2,
-          records: this.records,
-          history: this.history.slice(0, HISTORY_LIMIT),
+    async hydrateFromService(document: LifecycleDocument, prototypes: PrototypeRecord[] = []) {
+      let resolved = document;
+      if (document.revision === 0 && Object.keys(document.records).length === 0) {
+        const migrationKey = `${document.workspaceId}:${document.generationId}`;
+        if (!legacyMigrationAttempted.has(migrationKey)) {
+          legacyMigrationAttempted.add(migrationKey);
+          let raw: string | null = null;
+          try {
+            raw = window.localStorage.getItem(LEGACY_STORAGE_KEY);
+          } catch {
+            // Browser storage may be disabled; the Service document remains authoritative.
+          }
+          if (raw) {
+            try {
+              const migrated = await migrateLegacyLifecycle(document, raw);
+              if (migrated) {
+                try {
+                  resolved = await captureServiceClient.migratePrototypeLifecycle({ document: migrated });
+                  window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+                } catch (error) {
+                  const remote = await captureServiceClient.prototypeLifecycle();
+                  if (remote.revision > 0 || Object.keys(remote.records).length > 0) {
+                    resolved = remote;
+                    window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+                  } else {
+                    throw error;
+                  }
+                }
+              }
+            } catch (error) {
+              this.storageError = `旧浏览器生命周期未迁移：${error instanceof Error ? error.message : "Local Service 暂不可用"}。当前仍以服务端状态为准。`;
+            }
+          }
+        }
+      }
+      this.records = { ...resolved.records };
+      this.history = [...resolved.history];
+      this.workspaceId = resolved.workspaceId;
+      this.generationId = resolved.generationId;
+      this.revision = resolved.revision;
+      this.hydrated = true;
+      if (!this.storageError?.startsWith("旧浏览器生命周期未迁移：")) {
+        this.storageError = null;
+      }
+      this.ensurePrototypes(prototypes);
+    },
+    persist(): Promise<void> {
+      if (!this.hydrated || !this.workspaceId || !this.generationId) {
+        return Promise.resolve();
+      }
+      const save = lifecycleSaveTail.then(async () => {
+        const document = PrototypeLifecycleDocument.parse({
+          schemaVersion: 1,
           workspaceId: this.workspaceId,
           generationId: this.generationId,
-          storageError: null,
-        } satisfies LifecycleState),
-      );
+          revision: this.revision + 1,
+          records: this.records,
+          history: this.history.slice(0, HISTORY_LIMIT),
+          updatedAt: new Date().toISOString(),
+        });
+        try {
+          const saved = await captureServiceClient.updatePrototypeLifecycle({
+            expectedRevision: this.revision,
+            document,
+          });
+          this.revision = saved.revision;
+          this.storageError = null;
+        } catch (error) {
+          if (error instanceof LocalServiceClientError && error.code === "revision-conflict") {
+            try {
+              const remote = await captureServiceClient.prototypeLifecycle();
+              this.records = { ...remote.records };
+              this.history = [...remote.history];
+              this.workspaceId = remote.workspaceId;
+              this.generationId = remote.generationId;
+              this.revision = remote.revision;
+            } catch {
+              // Keep the known revision and report the original write conflict.
+            }
+            this.storageError = "另一个页签已更新生命周期。当前页已载入最新版本，请重新检查后继续。";
+          } else {
+            this.storageError = error instanceof Error ? error.message : "生命周期保存失败。";
+          }
+          throw error;
+        }
+      });
+      lifecycleSaveTail = save.catch(() => undefined);
+      return save;
     },
     ensurePrototypes(prototypes: PrototypeRecord[]) {
-      if (this.storageError) return;
+      if (this.storageError && !this.storageError.startsWith("旧浏览器生命周期未迁移：")) return;
       let changed = false;
       const records = { ...this.records };
       for (const prototype of prototypes) {
@@ -359,19 +406,19 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
       }
       if (!changed) return;
       this.records = records;
-      this.persist();
+      void this.persist().catch(() => undefined);
     },
     requireRecord(prototypeId: string): PrototypeLifecycleRecord {
       const existing = this.records[prototypeId];
       if (existing) return existing;
       const record = createRecord(prototypeId);
       this.records = { ...this.records, [prototypeId]: record };
-      this.persist();
+      void this.persist().catch(() => undefined);
       return record;
     },
     replaceRecord(record: PrototypeLifecycleRecord) {
       this.records = { ...this.records, [record.prototypeId]: record };
-      this.persist();
+      void this.persist().catch(() => undefined);
     },
     appendHistory(
       prototypeId: string,
@@ -428,6 +475,9 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
         ...current,
         operation: {
           kind: "failed",
+          ...(current.operation.kind === "finalizing" || current.operation.kind === "rolling-back"
+            ? { operationKey: current.operation.operationKey }
+            : {}),
           action,
           message,
           failedAt: new Date().toISOString(),
@@ -447,6 +497,16 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
     clearFailure(prototypeId: string) {
       const current = this.requireRecord(prototypeId);
       if (current.operation.kind !== "failed") return;
+      const { [prototypeId]: _preflight, ...preflights } = this.preflights;
+      const { [prototypeId]: _evidence, ...evidence } = this.evidence;
+      const { [prototypeId]: _preview, ...handoffPreviews } = this.handoffPreviews;
+      const { [prototypeId]: _accepted, ...acceptedWarnings } = this.acceptedWarnings;
+      const { [prototypeId]: _risks, ...acknowledgedRisks } = this.acknowledgedRisks;
+      this.preflights = preflights;
+      this.evidence = evidence;
+      this.handoffPreviews = handoffPreviews;
+      this.acceptedWarnings = acceptedWarnings;
+      this.acknowledgedRisks = acknowledgedRisks;
       this.replaceRecord({
         ...current,
         operation: { kind: "idle" },
@@ -458,12 +518,34 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
       if (current.stage !== "review") {
         throw new Error("只有待确定原型可以定稿。");
       }
-      const startedAt = new Date().toISOString();
+      const existingOperation = current.operation.kind === "finalizing" ? current.operation : undefined;
+      const startedAt = existingOperation
+        ? existingOperation.startedAt
+        : new Date().toISOString();
+      const operationKey = existingOperation
+        ? existingOperation.operationKey
+        : crypto.randomUUID();
+      const phase = existingOperation?.phase === "awaiting-confirmation"
+        ? "awaiting-confirmation"
+        : "preflighting";
       this.replaceRecord({
         ...current,
-        operation: { kind: "finalizing", phase: "preflighting", startedAt },
+        operation: {
+          kind: "finalizing",
+          operationKey,
+          phase,
+          startedAt,
+          acceptedWarningIds: existingOperation?.acceptedWarningIds ?? [],
+          acknowledgedRiskKinds: existingOperation?.acknowledgedRiskKinds ?? [],
+        },
         updatedAt: startedAt,
       });
+      this.clearConnectionIssue(prototype.id);
+      this.acceptedWarnings = {
+        ...this.acceptedWarnings,
+        [prototype.id]: [...(existingOperation?.acceptedWarningIds ?? [])],
+      };
+      await this.persist();
 
       const capture = useCaptureStore();
       if (!capture.connected) await capture.connect();
@@ -475,12 +557,18 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
         );
         return false;
       }
-      capture.beginPrototype(
-        prototype.id,
-        `/workbench/prototypes/${prototype.id}`,
-      );
-      await capture.runPreflight();
-      if (!capture.preflight) {
+      const draft = createPrototypeCaptureDraft(prototype.id);
+      if (!draft) {
+        this.failOperation(prototype.id, "finalize", "找不到原型或正式页面，无法创建整原型预检。");
+        return false;
+      }
+      try {
+        this.preflights = {
+          ...this.preflights,
+          [prototype.id]: await captureServiceClient.createPreflight(draft),
+        };
+      } catch (error) {
+        capture.setError(error);
         this.failOperation(
           prototype.id,
           "finalize",
@@ -488,9 +576,18 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
         );
         return false;
       }
+      const preflight = this.preflights[prototype.id];
+      if (!preflight) {
+        this.failOperation(
+          prototype.id,
+          "finalize",
+          "整原型预检失败。",
+        );
+        return false;
+      }
       if (
-        !capture.preflight.result.ready &&
-        capture.preflight.result.unacceptedWarningIds.length === 0
+        !preflight.result.ready &&
+        preflight.result.unacceptedWarningIds.length === 0
       ) {
         this.failOperation(
           prototype.id,
@@ -503,11 +600,23 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
         ...this.requireRecord(prototype.id),
         operation: {
           kind: "finalizing",
+          operationKey,
           phase: "awaiting-confirmation",
           startedAt,
+          acceptedWarningIds: [...(existingOperation?.acceptedWarningIds ?? [])],
+          acknowledgedRiskKinds: [],
         },
         updatedAt: new Date().toISOString(),
       });
+      try {
+        await this.persist();
+      } catch {
+        this.setConnectionIssue(
+          prototype.id,
+          this.storageError ?? "无法保存本次 warning 确认；没有创建采集 Job，请刷新后重新检查。",
+        );
+        return false;
+      }
       return true;
     },
     async startFinalization(prototype: PrototypeRecord) {
@@ -520,20 +629,39 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
         throw new Error("定稿预检尚未完成。");
       }
       const capture = useCaptureStore();
-      if (!capture.preflight || !capture.warningsAccepted) {
+      const preflight = this.preflights[prototype.id];
+      const acceptedWarningIds = this.acceptedWarnings[prototype.id] ?? [];
+      const requiredWarnings = preflight?.result.warnings.map((warning) => warning.warningId) ?? [];
+      const accepted = new Set(acceptedWarningIds);
+      if (!preflight || !requiredWarnings.every((warningId) => accepted.has(warningId))) {
         throw new Error("请逐项确认预检 warning。");
       }
       this.replaceRecord({
         ...current,
         operation: {
           ...current.operation,
-          phase: "capturing",
+          acceptedWarningIds: [...acceptedWarningIds].sort(),
         },
         updatedAt: new Date().toISOString(),
       });
-      await capture.createJob();
-      const job = capture.activeJob;
-      if (!job) {
+      try {
+        await this.persist();
+      } catch {
+        this.setConnectionIssue(
+          prototype.id,
+          this.storageError ?? "无法保存本次 warning 确认；尚未创建采集 Job，请恢复连接后重试。",
+        );
+        return false;
+      }
+      try {
+        await captureServiceClient.createJob({
+          preflightId: preflight.preflightId,
+          acceptedWarningIds: [...acceptedWarningIds].sort(),
+          operationKey: current.operation.operationKey,
+        });
+        await capture.refreshConsole();
+      } catch (error) {
+        capture.setError(error);
         this.failOperation(
           prototype.id,
           "finalize",
@@ -541,19 +669,26 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
         );
         return false;
       }
-      capture.closeComposer();
-      this.replaceRecord({
-        ...this.requireRecord(prototype.id),
-        operation: {
-          kind: "finalizing",
-          phase: "capturing",
-          startedAt: current.operation.startedAt,
-          jobId: job.jobId,
-          bundleId: job.bundleId,
-        },
-        updatedAt: new Date().toISOString(),
-      });
+      await this.hydrateFromService(await captureServiceClient.prototypeLifecycle());
       return true;
+    },
+    toggleWarning(prototypeId: string, warningId: string, accepted: boolean) {
+      const current = new Set(this.acceptedWarnings[prototypeId] ?? []);
+      if (accepted) current.add(warningId);
+      else current.delete(warningId);
+      this.acceptedWarnings = {
+        ...this.acceptedWarnings,
+        [prototypeId]: [...current],
+      };
+    },
+    toggleRisk(prototypeId: string, kind: RiskKind, accepted: boolean) {
+      const current = new Set(this.acknowledgedRisks[prototypeId] ?? []);
+      if (accepted) current.add(kind);
+      else current.delete(kind);
+      this.acknowledgedRisks = {
+        ...this.acknowledgedRisks,
+        [prototypeId]: [...current],
+      };
     },
     /** Advances a capturing finalization; concurrent callers share one in-flight poll per prototype. */
     pollFinalization(prototype: PrototypeRecord): Promise<void> {
@@ -566,16 +701,6 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
       return poll;
     },
     async pollFinalizationOnce(prototype: PrototypeRecord) {
-      const current = this.requireRecord(prototype.id);
-      if (
-        current.stage !== "review" ||
-        current.operation.kind !== "finalizing" ||
-        current.operation.phase !== "capturing" ||
-        !current.operation.jobId
-      ) {
-        return;
-      }
-      const jobId = current.operation.jobId;
       const capture = useCaptureStore();
       if (!capture.connected) await capture.connect();
       if (!capture.connected) {
@@ -586,108 +711,75 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
         return;
       }
 
-      let job: CaptureJob;
       try {
-        job = await captureServiceClient.getJob(jobId);
+        const document = await captureServiceClient.prototypeLifecycle();
+        await this.hydrateFromService(document);
+        const latest = this.requireRecord(prototype.id);
+        const jobId = latest.operation.kind === "finalizing" ? latest.operation.jobId : undefined;
+        if (jobId) {
+          const job = await captureServiceClient.getJob(jobId);
+          if (job) {
+            this.progress = {
+              ...this.progress,
+              [prototype.id]: {
+                completed: job.journal.filter((entry) => entry.event === "case-finished").length,
+                total: job.selection.cases.length,
+              },
+            };
+          }
+        }
+        if (latest.operation.kind === "finalizing" && latest.operation.phase === "awaiting-risks") {
+          await this.loadRiskReview(prototype, latest.operation);
+        }
       } catch (error) {
         capture.setError(error);
-        if (error instanceof LocalServiceClientError) {
-          this.failOperation(
-            prototype.id,
-            "finalize",
-            capture.lastError ?? "读取采集任务失败。",
-          );
-        } else {
-          this.setConnectionIssue(
-            prototype.id,
-            `暂时读不到采集任务：${capture.lastError ?? "网络错误"}。任务可能仍在后台运行，稍后会自动重试。`,
-          );
-        }
+        this.setConnectionIssue(
+          prototype.id,
+          `暂时读不到定稿状态：${capture.lastError ?? "网络错误"}。Local Service 会在恢复后继续处理。`,
+        );
         return;
       }
       this.clearConnectionIssue(prototype.id);
-      if (!isFinalizingCapture(this.records[prototype.id], jobId)) return;
-      this.progress = {
-        ...this.progress,
-        [prototype.id]: {
-          completed: job.journal.filter(
-            (entry) => entry.event === "case-finished",
-          ).length,
-          total: job.selection.cases.length,
-        },
-      };
-
-      if (!TERMINAL_JOB_STATUSES.has(job.status)) return;
-      if (job.status !== "completed") {
-        this.failOperation(
-          prototype.id,
-          "finalize",
-          jobFailure(job, capture.lastError),
-          journalFailures(job),
+    },
+    async loadRiskReview(
+      prototype: PrototypeRecord,
+      operation: Extract<LifecycleOperation, { kind: "finalizing" }>,
+    ) {
+      if (!operation.bundleId || !operation.snapshotId) return false;
+      if (this.evidence[prototype.id] && this.handoffPreviews[prototype.id]) return true;
+      const capture = useCaptureStore();
+      if (!capture.connected) await capture.connect();
+      if (!capture.connected) return false;
+      try {
+        const details = await captureServiceClient.snapshotDetails(
+          operation.bundleId,
+          operation.snapshotId,
         );
-        return;
-      }
-
-      if (capture.details?.bundle.bundleId !== job.bundleId) {
-        await capture.loadBundle(job.bundleId);
-      }
-      if (!isFinalizingCapture(this.records[prototype.id], jobId)) return;
-      const details = capture.details;
-      if (!details || details.bundle.bundleId !== job.bundleId) {
-        this.failOperation(
+        const preview = await captureServiceClient.previewHandoff({
+          bundleId: operation.bundleId,
+          snapshotId: operation.snapshotId,
+          ...(operation.implementationIntent?.trim()
+            ? { implementationIntent: operation.implementationIntent.trim() }
+            : {}),
+          acknowledgedRiskKinds: [],
+        });
+        this.evidence = { ...this.evidence, [prototype.id]: details };
+        this.handoffPreviews = { ...this.handoffPreviews, [prototype.id]: preview };
+        if (!(prototype.id in this.acknowledgedRisks)) {
+          this.acknowledgedRisks = {
+            ...this.acknowledgedRisks,
+            [prototype.id]: [...operation.acknowledgedRiskKinds],
+          };
+        }
+        this.clearConnectionIssue(prototype.id);
+        return true;
+      } catch (error) {
+        capture.setError(error);
+        this.setConnectionIssue(
           prototype.id,
-          "finalize",
-          capture.lastError ?? "采集已结束，但无法读取定稿 Evidence。",
+          capture.lastError ?? "无法恢复 Handoff 风险确认，Workspace 中的 Operation 仍然保留。",
         );
-        return;
-      }
-      const counts = details.activeSnapshot.coverage.counts;
-      const incomplete = incompleteCaseCount(counts);
-      if (incomplete > 0) {
-        const failedCases = (
-          details.runs.find((run) => run.runId === job.runId)?.attempts ?? []
-        )
-          .filter(
-            (attempt) =>
-              attempt.result !== "captured" && attempt.result !== "reused",
-          )
-          .map((attempt) => ({
-            caseId: attempt.caseId,
-            reason: attempt.reason ?? attempt.result,
-          }));
-        this.failOperation(
-          prototype.id,
-          "finalize",
-          `整原型采集未完整：${counts.captured + counts.reused}/${counts.selected} 项有效，${incomplete} 项失败，尚未生成 Handoff 和提示词。`,
-          failedCases,
-        );
-        return;
-      }
-
-      await capture.previewCurrentHandoff();
-      if (!isFinalizingCapture(this.records[prototype.id], jobId)) return;
-      if (!capture.handoffPreview) {
-        this.failOperation(
-          prototype.id,
-          "finalize",
-          capture.lastError ?? "Handoff 风险评估失败。",
-        );
-        return;
-      }
-      this.replaceRecord({
-        ...this.requireRecord(prototype.id),
-        operation: {
-          kind: "finalizing",
-          phase: "awaiting-risks",
-          startedAt: current.operation.startedAt,
-          jobId: job.jobId,
-          bundleId: job.bundleId,
-          snapshotId: details.activeSnapshot.snapshotId,
-        },
-        updatedAt: new Date().toISOString(),
-      });
-      if (capture.handoffPreview.risks.length === 0) {
-        await this.completeFinalization(prototype);
+        return false;
       }
     },
     async completeFinalization(prototype: PrototypeRecord) {
@@ -702,48 +794,40 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
       ) {
         throw new Error("定稿 Evidence 尚未准备完成。");
       }
-      const capture = useCaptureStore();
-      if (!capture.risksAccepted) {
+      const preview = this.handoffPreviews[prototype.id];
+      const acknowledgedRiskKinds = this.acknowledgedRisks[prototype.id] ?? [];
+      const requiredRiskKinds = preview?.risks.map((risk) => risk.kind) ?? [];
+      const acknowledged = new Set(acknowledgedRiskKinds);
+      if (!preview || !requiredRiskKinds.every((kind) => acknowledged.has(kind))) {
         throw new Error("请逐项确认 Handoff risk。");
       }
       this.replaceRecord({
         ...current,
-        operation: { ...current.operation, phase: "building-prompt" },
+        operation: {
+          ...current.operation,
+          phase: "building-prompt",
+          acknowledgedRiskKinds: [...acknowledgedRiskKinds].sort(),
+          implementationIntent: "",
+        },
         updatedAt: new Date().toISOString(),
       });
-      await capture.createCurrentHandoff();
-      if (!capture.handoff || !capture.deliveryArtifact) {
-        this.failOperation(
+      try {
+        await this.persist();
+      } catch {
+        this.setConnectionIssue(
           prototype.id,
-          "finalize",
-          capture.lastError ?? "Agent 提示词生成失败。",
+          this.storageError ?? "无法保存风险确认；服务端尚未开始生成提示词，请恢复连接后重试。",
         );
         return false;
       }
-      const finalizedAt = new Date().toISOString();
-      this.appendHistory(prototype.id, "review", "final", "整原型采集与提示词生成完成");
-      this.replaceRecord({
-        ...this.requireRecord(prototype.id),
-        stage: "final",
-        operation: { kind: "idle" },
-        artifacts: {
-          jobId: current.operation.jobId,
-          bundleId: current.operation.bundleId,
-          snapshotId: current.operation.snapshotId,
-          handoffId: capture.handoff.handoffId,
-          deliveryId: capture.deliveryArtifact.deliveryId,
-          agentPromptPath: capture.deliveryArtifact.agentPromptPath,
-          receiptPath: capture.deliveryArtifact.receiptPath,
-          finalizedAt,
-        },
-        updatedAt: finalizedAt,
-      });
-      capture.closeComposer();
-      await capture.refreshConsole();
-      return true;
+      return false;
     },
     async recoverFinalization(prototype: PrototypeRecord) {
       const current = this.requireRecord(prototype.id);
+      if (current.operation.kind === "rolling-back") {
+        await this.pollFinalization(prototype);
+        return;
+      }
       if (current.operation.kind !== "finalizing") return;
       if (
         current.operation.phase === "preflighting" ||
@@ -752,39 +836,23 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
         await this.prepareFinalization(prototype);
         return;
       }
-      if (current.operation.phase === "capturing") {
+      if (
+        current.operation.phase === "capturing" ||
+        current.operation.phase === "building-prompt"
+      ) {
         await this.pollFinalization(prototype);
         return;
       }
-      if (!current.operation.bundleId || !current.operation.snapshotId) {
-        this.failOperation(
+      if (current.operation.phase !== "awaiting-risks") return;
+      await this.loadRiskReview(prototype, current.operation);
+      if (!this.handoffPreviews[prototype.id]) {
+        this.setConnectionIssue(
           prototype.id,
-          "finalize",
-          "定稿任务缺少 Bundle 或 Snapshot 引用。",
+          "无法恢复 Handoff 风险确认，Workspace 中的 Operation 仍然保留。",
         );
         return;
       }
-      const capture = useCaptureStore();
-      if (!capture.connected) await capture.connect();
-      await capture.loadSnapshot(
-        current.operation.bundleId,
-        current.operation.snapshotId,
-      );
-      await capture.previewCurrentHandoff();
-      if (!capture.handoffPreview) {
-        this.failOperation(
-          prototype.id,
-          "finalize",
-          capture.lastError ?? "无法恢复 Handoff 风险确认。",
-        );
-        return;
-      }
-      this.replaceRecord({
-        ...this.requireRecord(prototype.id),
-        operation: { ...current.operation, phase: "awaiting-risks" },
-        updatedAt: new Date().toISOString(),
-      });
-      if (capture.handoffPreview.risks.length === 0) {
+      if (this.handoffPreviews[prototype.id]!.risks.length === 0) {
         await this.completeFinalization(prototype);
       }
     },
@@ -797,48 +865,26 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
       this.history = [];
       this.workspaceId = binding?.workspaceId ?? null;
       this.generationId = binding?.generationId ?? null;
-      this.persist();
+      this.revision = 0;
+      this.hydrated = false;
+      this.preflights = {};
+      this.acceptedWarnings = {};
+      this.evidence = {};
+      this.handoffPreviews = {};
+      this.acknowledgedRisks = {};
+      if (binding) this.hydrated = true;
       this.ensurePrototypes(prototypes);
-    },
-    syncWithWorkspace(input: {
-      workspaceId: string;
-      generationId: string;
-      knownBundleIds: Iterable<string>;
-      prototypes: PrototypeRecord[];
-    }): boolean {
-      if (this.storageError) return false;
-      const knownBundleIds = new Set(input.knownBundleIds);
-      const reset = shouldResetLocalWorkspaceState(
-        {
-          workspaceId: this.workspaceId,
-          generationId: this.generationId,
-        },
-        {
-          workspaceId: input.workspaceId,
-          generationId: input.generationId,
-        },
-        hasDanglingArtifactRefs(this.records, knownBundleIds),
-      );
-      if (reset) {
-        this.resetAfterWorkspaceReset(input.prototypes, {
-          workspaceId: input.workspaceId,
-          generationId: input.generationId,
-        });
-        return true;
-      }
-      if (
-        this.workspaceId !== input.workspaceId ||
-        this.generationId !== input.generationId
-      ) {
-        this.workspaceId = input.workspaceId;
-        this.generationId = input.generationId;
-        this.persist();
-      }
-      return false;
     },
     async rollbackToReview(prototype: PrototypeRecord, note = "") {
       const current = this.requireRecord(prototype.id);
-      if (current.stage !== "final" || !current.artifacts) {
+      const retryingFailedRollback =
+        current.operation.kind === "failed" &&
+        current.operation.action === "rollback";
+      if (
+        current.stage !== "final" ||
+        !current.artifacts ||
+        (current.operation.kind !== "idle" && !retryingFailedRollback)
+      ) {
         throw new Error("只有具有完整定稿产物的已定稿原型可以回退。");
       }
       const startedAt = new Date().toISOString();
@@ -846,43 +892,15 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
         ...current,
         operation: {
           kind: "rolling-back",
+          operationKey: crypto.randomUUID(),
           startedAt,
           bundleIds: [current.artifacts.bundleId],
+          ...(note.trim() ? { note: note.trim() } : {}),
         },
         updatedAt: startedAt,
       });
-      const capture = useCaptureStore();
-      if (!capture.connected) await capture.connect();
-      if (!capture.connected) {
-        this.failOperation(
-          prototype.id,
-          "rollback",
-          capture.lastError ?? "采集服务未连接，无法清理定稿 Evidence。",
-        );
-        return false;
-      }
-      try {
-        await captureServiceClient.trashBundles([current.artifacts.bundleId]);
-        await capture.refreshConsole();
-      } catch (error) {
-        capture.setError(error);
-        this.failOperation(
-          prototype.id,
-          "rollback",
-          capture.lastError ?? "定稿 Evidence 清理失败。",
-        );
-        return false;
-      }
-      const completedAt = new Date().toISOString();
-      this.appendHistory(prototype.id, "final", "review", note || "清理定稿 Evidence 后回退");
-      this.replaceRecord({
-        ...this.requireRecord(prototype.id),
-        stage: "review",
-        operation: { kind: "idle" },
-        artifacts: null,
-        updatedAt: completedAt,
-      });
-      return true;
+      await this.persist();
+      return false;
     },
   },
 });

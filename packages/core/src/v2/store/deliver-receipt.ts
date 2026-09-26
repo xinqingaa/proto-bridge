@@ -1,5 +1,5 @@
-import { createHash } from 'node:crypto';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { createHash, randomBytes } from 'node:crypto';
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { acceptanceChecklistMarkdown } from '../acceptance-contract.js';
 import {
@@ -8,12 +8,20 @@ import {
 } from '../evidence-brief.js';
 import { buildAgentPrompt } from '../prompts/agent-prompt.js';
 import type { AgentHandoff } from '../contracts/handoff.js';
+import { V2ContractError } from '../contracts/errors.js';
+import type {
+  LifecycleOperationKey,
+  OperationRequestDigest,
+} from '../contracts/prototype-lifecycle.js';
+import { syncDirectory, writeJsonAtomic } from './atomic-file.js';
 import { LocalFileStore } from './local-file-store.js';
 import { buildAcceptanceContractFromStore } from './acceptance.js';
 
 export type DeliveryReceipt = {
   schemaVersion: 2;
   deliveryId: string;
+  operationKey?: LifecycleOperationKey;
+  operationRequestDigest?: OperationRequestDigest;
   createdAt: string;
   createdAtLocal: string;
   timeZone: string;
@@ -54,6 +62,8 @@ export type WriteDeliveryReceiptInput = {
   timeZone?: string;
   /** Rewrite an existing delivery directory (true overwrite). */
   overwriteDeliveryId?: string;
+  operationKey?: LifecycleOperationKey;
+  operationRequestDigest?: OperationRequestDigest;
 };
 
 /** Sibling of Store root: `.proto-bridge/store` → `.proto-bridge/deliveries`. */
@@ -123,17 +133,62 @@ export async function writeDeliveryReceipt(
   const createdAt = now.toISOString();
   const timeZone = input.timeZone ?? 'Asia/Shanghai';
   const timed = localDeliveryTime(now, timeZone);
+  if (
+    (input.operationKey === undefined) !==
+    (input.operationRequestDigest === undefined)
+  ) {
+    throw new Error('operationKey and operationRequestDigest must be supplied together.');
+  }
   const overwriteId = input.overwriteDeliveryId?.trim();
   if (overwriteId && /[\\/]/.test(overwriteId)) {
     throw new Error('overwriteDeliveryId must be a single path segment.');
   }
-  const deliveryId = overwriteId || timed.deliveryId;
+  if (input.operationKey && overwriteId) {
+    throw new Error('Idempotent deliveries cannot overwrite another delivery ID.');
+  }
+  const deliveryId =
+    overwriteId ||
+    (input.operationKey
+      ? `operation-${createHash('sha256').update(input.operationKey).digest('hex').slice(0, 24)}`
+      : timed.deliveryId);
   const createdAtLocal = timed.createdAtLocal;
   const deliveryRoot = deliveryRootFromStoreRoot(input.storeRoot);
   const deliveryDir = path.join(deliveryRoot, deliveryId);
+  if (input.operationKey) {
+    try {
+      const existing = JSON.parse(
+        await readFile(path.join(deliveryDir, 'receipt.json'), 'utf8'),
+      ) as DeliveryReceipt;
+      if (
+        existing.operationKey === input.operationKey &&
+        existing.operationRequestDigest === input.operationRequestDigest
+      ) {
+        return existing;
+      }
+      throw new V2ContractError(
+        'idempotency-conflict',
+        `Delivery operation ${input.operationKey} already exists with different input.`,
+      );
+    } catch (error) {
+      if (isEnoent(error)) {
+        // No complete receipt means the deterministic publication path is free.
+      } else {
+        throw error;
+      }
+    }
+    await rm(deliveryDir, { recursive: true, force: true });
+  }
   if (overwriteId) {
     await rm(deliveryDir, { recursive: true, force: true });
   }
+  await mkdir(deliveryRoot, { recursive: true });
+  const stagingDir = input.operationKey
+    ? path.join(
+        deliveryRoot,
+        `.tmp-${deliveryId}-${randomBytes(6).toString('hex')}`,
+      )
+    : deliveryDir;
+  await mkdir(stagingDir, { recursive: true });
 
   const store = new LocalFileStore({
     root: input.storeRoot,
@@ -145,13 +200,12 @@ export async function writeDeliveryReceipt(
     store,
     handoff: input.handoff,
   });
-  await mkdir(deliveryDir, { recursive: true });
   const acceptanceContractPath = path.join(
-    deliveryDir,
+    stagingDir,
     'acceptance-contract.json',
   );
   const acceptanceChecklistPath = path.join(
-    deliveryDir,
+    stagingDir,
     'acceptance-checklist.md',
   );
   const contractJson = `${JSON.stringify(contract, null, 2)}\n`;
@@ -162,7 +216,7 @@ export async function writeDeliveryReceipt(
     'utf8',
   );
 
-  const reviewDir = path.join(deliveryDir, 'review');
+  const reviewDir = path.join(stagingDir, 'review');
   const screenshotsDir = path.join(reviewDir, 'screenshots');
   await mkdir(screenshotsDir, { recursive: true });
   type ReviewEntry = EvidenceBriefScreenshotGroup & {
@@ -256,7 +310,7 @@ export async function writeDeliveryReceipt(
     'utf8',
   );
 
-  const evidenceBriefPath = path.join(deliveryDir, 'evidence-brief.md');
+  const evidenceBriefPath = path.join(stagingDir, 'evidence-brief.md');
   const evidenceBrief = reconstructionEvidenceBriefMarkdown({
     contract,
     screenshotGroups: reviewEntries.map((entry) => ({
@@ -277,12 +331,18 @@ export async function writeDeliveryReceipt(
       : {}),
     risks: input.handoff.risks,
   });
-  const agentPromptPath = path.join(deliveryDir, 'agent-prompt.md');
+  const agentPromptPath = path.join(stagingDir, 'agent-prompt.md');
   await writeFile(agentPromptPath, agentPrompt, 'utf8');
 
   const receipt: DeliveryReceipt = {
     schemaVersion: 2,
     deliveryId,
+    ...(input.operationKey
+      ? {
+          operationKey: input.operationKey,
+          operationRequestDigest: input.operationRequestDigest,
+        }
+      : {}),
     createdAt,
     createdAtLocal,
     timeZone,
@@ -298,26 +358,31 @@ export async function writeDeliveryReceipt(
     coverageStatus: input.handoff.coverageStatus,
     freshnessStatus: input.handoff.freshnessStatus,
     mandatoryRisks: input.handoff.risks,
-    agentPromptPath,
-    acceptanceContractPath,
-    acceptanceChecklistPath,
-    evidenceBriefPath,
-    reviewManifestPath,
-    reviewIndexPath,
+    agentPromptPath: path.join(deliveryDir, 'agent-prompt.md'),
+    acceptanceContractPath: path.join(deliveryDir, 'acceptance-contract.json'),
+    acceptanceChecklistPath: path.join(deliveryDir, 'acceptance-checklist.md'),
+    evidenceBriefPath: path.join(deliveryDir, 'evidence-brief.md'),
+    reviewManifestPath: path.join(deliveryDir, 'review', 'manifest.json'),
+    reviewIndexPath: path.join(deliveryDir, 'review', 'index.md'),
     screenshotCount: reviewEntries.length,
     receiptPath: path.join(deliveryDir, 'receipt.json'),
     source: input.source,
     ...(input.configPath ? { configPath: input.configPath } : {}),
   };
-  await writeFile(
-    receipt.receiptPath,
-    `${JSON.stringify(receipt, null, 2)}\n`,
-    'utf8',
-  );
-  await writeFile(
-    path.join(deliveryRoot, 'latest.json'),
-    `${JSON.stringify(receipt, null, 2)}\n`,
-    'utf8',
-  );
+  await writeJsonAtomic(path.join(stagingDir, 'receipt.json'), receipt);
+  if (input.operationKey) {
+    await rename(stagingDir, deliveryDir);
+    await syncDirectory(deliveryRoot);
+  }
+  await writeJsonAtomic(path.join(deliveryRoot, 'latest.json'), receipt);
   return receipt;
+}
+
+function isEnoent(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code?: unknown }).code === 'ENOENT'
+  );
 }

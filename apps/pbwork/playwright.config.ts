@@ -5,7 +5,9 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const deliveryTargetRoot = path.join(repoRoot, "apps/flutter_pb_app");
 const channel = process.env.PLAYWRIGHT_CHANNEL;
-const port = Number(process.env.PBWORK_E2E_PORT ?? 4900 + (process.pid % 300));
+// Keep automatically selected UI ports in a browser-safe range. Chromium
+// rejects some conventional ports (including 5060) before the test can run.
+const port = Number(process.env.PBWORK_E2E_PORT ?? 42_000 + (process.pid % 5_000));
 const servicePort = Number(process.env.PBWORK_E2E_SERVICE_PORT ?? port + 1);
 // Playwright loads this config again in workers. Pin the chosen ports in the
 // parent environment so every worker uses the same webServer URLs.

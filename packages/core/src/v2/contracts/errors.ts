@@ -15,6 +15,8 @@ export type V2ErrorCode =
   | 'writer-lock-held'
   | 'workspace-resetting'
   | 'workspace-generation-mismatch'
+  | 'revision-conflict'
+  | 'idempotency-conflict'
   | 'reset-plan-expired'
   | 'reset-plan-drift'
   | 'external-store-destroyed'

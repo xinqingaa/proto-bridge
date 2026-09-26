@@ -240,17 +240,12 @@ describe("PBWork V2 capture store", () => {
         agentPromptPath: "/delivery/agent-prompt.md",
         receiptPath: "/delivery/receipt.json",
         finalizedAt: "2026-08-24T00:00:00.000Z",
+        operationKey: "00000000-0000-4000-8000-000000000001",
+        requestDigest: `sha256:${"a".repeat(64)}`,
       },
       createdAt: "2026-08-24T00:00:00.000Z",
       updatedAt: "2026-08-24T00:00:00.000Z",
     });
-    lifecycle.syncWithWorkspace({
-      workspaceId: "pbwork-local",
-      generationId: "generation-old",
-      knownBundleIds: ["bundle-1"],
-      prototypes,
-    });
-
     vi.spyOn(captureServiceClient, "connect").mockResolvedValue({
       protocolVersion: LOCAL_SERVICE_PROTOCOL_VERSION,
       serviceInstanceId: "service-1",
@@ -272,10 +267,23 @@ describe("PBWork V2 capture store", () => {
       generatedAt: "2026-08-24T00:00:00.000Z",
       prototypes: [],
     });
+    vi.spyOn(captureServiceClient, "prototypeLifecycle").mockResolvedValue({
+      schemaVersion: 1,
+      workspaceId: "pbwork-local",
+      generationId: "generation-new",
+      revision: 0,
+      records: {},
+      history: [],
+      updatedAt: "2026-08-24T00:00:00.000Z",
+    } as never);
 
     const store = useCaptureStore();
+    store.session = {
+      workspaceId: "pbwork-local",
+      generationId: "generation-old",
+    } as never;
     store.beginPrototype("cold-chain-ops");
-    await store.connect();
+    await store.refreshConsole();
 
     expect(lifecycle.effectiveLifecycle(prototype)).toBe("active");
     expect(lifecycle.recordFor(prototype.id)?.artifacts).toBeNull();

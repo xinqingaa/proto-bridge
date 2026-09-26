@@ -1,13 +1,13 @@
-import { access, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Fact } from '@proto-bridge/core/v2';
 import type { AgentHandoff } from '@proto-bridge/core/v2';
 import { compileReconstructionObligations, reviewVerifierReceiptDigest } from '@proto-bridge/core/review';
-import { buildAcceptanceContractFromStore } from '@proto-bridge/core/v2/store';
+import { buildAcceptanceContractFromStore, LocalFileStore } from '@proto-bridge/core/v2/store';
 import { readTargetIdentity } from '@proto-bridge/core/target';
 import type { RuntimeCaptureManifest } from '@proto-bridge/core/v2/runtime-contract';
 import {
@@ -170,6 +170,40 @@ class FakeDriver implements CaseCaptureDriver {
   }
 }
 
+class FailingDriver implements CaseCaptureDriver {
+  async captureCase(): Promise<CapturedCase> {
+    throw new Error('fixture case failed for finalization recovery');
+  }
+}
+
+class SuccessThenWaitDriver extends FakeDriver {
+  calls = 0;
+  private resolveSecond!: () => void;
+  private rejectSecond!: (reason: Error) => void;
+  readonly secondCaseStarted = new Promise<void>((resolve) => {
+    this.resolveSecond = resolve;
+  });
+
+  override async captureCase(input: CaptureCaseInput): Promise<CapturedCase> {
+    this.calls += 1;
+    if (this.calls === 1) return super.captureCase(input);
+    this.resolveSecond();
+    return new Promise<CapturedCase>((_resolve, reject) => {
+      this.rejectSecond = reject;
+      const cancel = () => reject(new Error('cancelled by lifecycle test'));
+      if (input.signal?.aborted) {
+        cancel();
+        return;
+      }
+      input.signal?.addEventListener('abort', cancel, { once: true });
+    });
+  }
+
+  failPendingCase(): void {
+    this.rejectSecond?.(new Error('simulated abandoned Service process'));
+  }
+}
+
 let root: string | undefined;
 let service: ProtoBridgeLocalService | undefined;
 
@@ -180,7 +214,10 @@ afterEach(async () => {
   root = undefined;
 });
 
-async function start(preflightTtlMs = 60_000) {
+async function start(
+  preflightTtlMs = 60_000,
+  driverFactory: () => CaseCaptureDriver = () => new FakeDriver(),
+) {
   root = await mkdtemp(path.join(os.tmpdir(), 'pb-local-service-'));
   const deliveryTargetRoot = path.join(root, 'delivery-target');
   await mkdir(deliveryTargetRoot, { recursive: true });
@@ -195,7 +232,7 @@ async function start(preflightTtlMs = 60_000) {
     preflightProvider: async (selection) => ({
       preflight: preflightSelection(selection, manifest()),
     }),
-    driverFactory: () => new FakeDriver(),
+    driverFactory,
     flutterMcpProviderFactory: () => new FlutterMcpProvider({
       dtdUri: 'ws://fixture-dtd',
       retryDelayMs: 0,
@@ -237,7 +274,7 @@ describe('ProtoBridge Local Service', () => {
     const unauthorized = await call(base, '/console');
     expect(unauthorized.response.status).toBe(401);
     const session = await call(base, '/session', { method: 'POST' });
-    expect(session.body.data.protocolVersion).toBe(4);
+    expect(session.body.data.protocolVersion).toBe(5);
     expect(session.body.data.deliveryTargetRoot).toBe(
       path.join(root!, 'delivery-target'),
     );
@@ -247,6 +284,535 @@ describe('ProtoBridge Local Service', () => {
       token: session.body.data.sessionToken,
     });
     expect(state.body.data.workspaceId).toBe('workspace-service-test');
+  });
+
+  it('migrates an old final record only as diagnostic when fixed Evidence references do not verify', async () => {
+    const base = await start();
+    const session = await call(base, '/session', { method: 'POST' });
+    const token = session.body.data.sessionToken as string;
+    const startedAt = new Date().toISOString();
+    const document = {
+      schemaVersion: 1,
+      workspaceId: 'workspace-service-test',
+      generationId: session.body.data.generationId,
+      revision: 1,
+      records: {
+        sample: {
+          prototypeId: 'sample',
+          stage: 'final',
+          operation: { kind: 'idle' },
+          artifacts: {
+            jobId: 'job-missing',
+            bundleId: 'bundle-missing',
+            snapshotId: 'snapshot-missing',
+            handoffId: 'handoff-missing',
+            deliveryId: 'old-delivery',
+            agentPromptPath: path.join(root!, 'deliveries', 'old-delivery', 'agent-prompt.md'),
+            receiptPath: path.join(root!, 'deliveries', 'old-delivery', 'receipt.json'),
+            finalizedAt: startedAt,
+            operationKey: '00000000-0000-4000-8000-000000000031',
+            requestDigest: `sha256:${'a'.repeat(64)}`,
+          },
+          createdAt: startedAt,
+          updatedAt: startedAt,
+        },
+      },
+      history: [],
+      updatedAt: startedAt,
+    };
+    const migrated = await call(base, '/prototype-lifecycle/migrate', {
+      method: 'POST',
+      token,
+      body: { document },
+    });
+    expect(migrated.response.status).toBe(201);
+    expect(migrated.body.data.records.sample).toMatchObject({
+      stage: 'review',
+      operation: {
+        kind: 'failed',
+        action: 'finalize',
+        message: expect.stringContaining('Evidence 仅作诊断'),
+      },
+      artifacts: null,
+    });
+    const repeated = await call(base, '/prototype-lifecycle/migrate', {
+      method: 'POST',
+      token,
+      body: { document },
+    });
+    expect(repeated.response.status).toBe(409);
+  });
+
+  it('lists only unsuccessful Run attempts for a cancelled finalization and preserves composite Case IDs', async () => {
+    const driver = new SuccessThenWaitDriver();
+    const base = await start(60_000, () => driver);
+    const session = await call(base, '/session', { method: 'POST' });
+    const token = session.body.data.sessionToken as string;
+    const startedAt = new Date().toISOString();
+    const prototypeId = 'sample';
+    const operationKey = '00000000-0000-4000-8000-000000000052';
+    const lifecycle = await call(base, '/prototype-lifecycle', { token });
+    const activeRecord = {
+      prototypeId,
+      stage: 'active',
+      operation: { kind: 'idle' },
+      artifacts: null,
+      createdAt: startedAt,
+      updatedAt: startedAt,
+    };
+    const activeDocument = {
+      ...lifecycle.body.data,
+      revision: 1,
+      records: { [prototypeId]: activeRecord },
+      updatedAt: startedAt,
+    };
+    const activeSaved = await call(base, '/prototype-lifecycle', {
+      method: 'PUT',
+      token,
+      body: { expectedRevision: 0, document: activeDocument },
+    });
+    const document = {
+      ...activeSaved.body.data,
+      revision: 2,
+      records: {
+        [prototypeId]: {
+          ...activeRecord,
+          stage: 'review',
+          operation: {
+            kind: 'finalizing',
+            operationKey,
+            phase: 'preflighting',
+            startedAt,
+            acceptedWarningIds: [],
+            acknowledgedRiskKinds: [],
+          },
+        },
+      },
+      updatedAt: startedAt,
+    };
+    const finalizationStarted = await call(base, '/prototype-lifecycle', {
+      method: 'PUT',
+      token,
+      body: { expectedRevision: 1, document },
+    });
+    expect(finalizationStarted.response.status).toBe(200);
+    const confirmationDocument = {
+      ...finalizationStarted.body.data,
+      revision: 3,
+      records: {
+        [prototypeId]: {
+          ...finalizationStarted.body.data.records[prototypeId],
+          operation: {
+            ...finalizationStarted.body.data.records[prototypeId].operation,
+            phase: 'awaiting-confirmation',
+          },
+        },
+      },
+      updatedAt: new Date().toISOString(),
+    };
+    const confirmation = await call(base, '/prototype-lifecycle', {
+      method: 'PUT',
+      token,
+      body: { expectedRevision: 2, document: confirmationDocument },
+    });
+    expect(confirmation.response.status).toBe(200);
+
+    const selection = draft();
+    const screen = selection.screens[0]!;
+    screen.variants = { mode: 'explicit', variantIds: ['default', 'claimable'] };
+    const preflight = await call(base, '/preflights', {
+      method: 'POST',
+      token,
+      body: { draft: selection },
+    });
+    const accepted = await call(base, '/jobs', {
+      method: 'POST',
+      token,
+      body: {
+        preflightId: preflight.body.data.preflightId,
+        acceptedWarningIds: [],
+        operationKey,
+      },
+    });
+    expect(accepted.response.status).toBe(202);
+    await driver.secondCaseStarted;
+    await call(base, `/jobs/${accepted.body.data.job.jobId}/cancel`, {
+      method: 'POST',
+      token,
+    });
+
+    let failedRecord: any;
+    let terminalJob: any;
+    for (let index = 0; index < 100; index += 1) {
+      const [currentLifecycle, currentJob] = await Promise.all([
+        call(base, '/prototype-lifecycle', { token }),
+        call(base, `/jobs/${accepted.body.data.job.jobId}`, { token }),
+      ]);
+      failedRecord = currentLifecycle.body.data.records[prototypeId];
+      terminalJob = currentJob.body.data;
+      if (failedRecord?.operation.kind === 'failed' && terminalJob?.status === 'cancelled') break;
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    expect(terminalJob.status).toBe('cancelled');
+    const run = await service!.store.getRun(terminalJob.bundleId, terminalJob.runId);
+    const unsuccessfulAttempts = run!.attempts.filter(
+      (attempt) => !['captured', 'reused'].includes(attempt.result),
+    );
+    expect(unsuccessfulAttempts).toHaveLength(1);
+    expect(unsuccessfulAttempts[0]!.caseId).toContain('::');
+    expect(failedRecord.operation.failedCases).toEqual([
+      {
+        caseId: unsuccessfulAttempts[0]!.caseId,
+        reason: unsuccessfulAttempts[0]!.reason ?? unsuccessfulAttempts[0]!.result,
+      },
+    ]);
+  });
+
+  it('uses the journal only when an interrupted Job has no Run attempts', async () => {
+    const driver = new SuccessThenWaitDriver();
+    let base = await start(60_000, () => driver);
+    let session = await call(base, '/session', { method: 'POST' });
+    let token = session.body.data.sessionToken as string;
+    const startedAt = new Date().toISOString();
+    const prototypeId = 'sample';
+    const operationKey = '00000000-0000-4000-8000-000000000055';
+    const lifecycle = await call(base, '/prototype-lifecycle', { token });
+    const activeRecord = {
+      prototypeId,
+      stage: 'active',
+      operation: { kind: 'idle' },
+      artifacts: null,
+      createdAt: startedAt,
+      updatedAt: startedAt,
+    };
+    const activeSaved = await call(base, '/prototype-lifecycle', {
+      method: 'PUT',
+      token,
+      body: {
+        expectedRevision: 0,
+        document: {
+          ...lifecycle.body.data,
+          revision: 1,
+          records: { [prototypeId]: activeRecord },
+          updatedAt: startedAt,
+        },
+      },
+    });
+    const finalizingSaved = await call(base, '/prototype-lifecycle', {
+      method: 'PUT',
+      token,
+      body: {
+        expectedRevision: 1,
+        document: {
+          ...activeSaved.body.data,
+          revision: 2,
+          records: {
+            [prototypeId]: {
+              ...activeRecord,
+              stage: 'review',
+              operation: {
+                kind: 'finalizing',
+                operationKey,
+                phase: 'preflighting',
+                startedAt,
+                acceptedWarningIds: [],
+                acknowledgedRiskKinds: [],
+              },
+            },
+          },
+          updatedAt: startedAt,
+        },
+      },
+    });
+    const confirmation = await call(base, '/prototype-lifecycle', {
+      method: 'PUT',
+      token,
+      body: {
+        expectedRevision: 2,
+        document: {
+          ...finalizingSaved.body.data,
+          revision: 3,
+          records: {
+            [prototypeId]: {
+              ...finalizingSaved.body.data.records[prototypeId],
+              operation: {
+                ...finalizingSaved.body.data.records[prototypeId].operation,
+                phase: 'awaiting-confirmation',
+              },
+            },
+          },
+          updatedAt: new Date().toISOString(),
+        },
+      },
+    });
+    expect(confirmation.response.status).toBe(200);
+    const selection = draft();
+    selection.screens[0]!.variants = {
+      mode: 'explicit',
+      variantIds: ['default', 'claimable'],
+    };
+    const preflight = await call(base, '/preflights', {
+      method: 'POST',
+      token,
+      body: { draft: selection },
+    });
+    const accepted = await call(base, '/jobs', {
+      method: 'POST',
+      token,
+      body: {
+        preflightId: preflight.body.data.preflightId,
+        acceptedWarningIds: [],
+        operationKey,
+      },
+    });
+    const jobId = accepted.body.data.job.jobId as string;
+    const secondCaseId = accepted.body.data.job.selection.cases[1].caseId as string;
+    await driver.secondCaseStarted;
+    await service!.store.appendJobJournal(jobId, {
+      event: 'case-finished',
+      detail: `${secondCaseId}:failed:journal reason: with a colon`,
+    });
+
+    await service!.close();
+    driver.failPendingCase();
+    service = new ProtoBridgeLocalService({
+      port: 0,
+      allowedOrigins: [origin],
+      runtimeBaseUrl: origin,
+      storeRoot: path.join(root!, 'store'),
+      workspaceId: 'workspace-service-test',
+      deliveryTargetRoot: path.join(root!, 'delivery-target'),
+      preflightProvider: async (selectionDraft) => ({
+        preflight: preflightSelection(selectionDraft, manifest()),
+      }),
+      driverFactory: () => new FakeDriver(),
+    });
+    const address = await service.start();
+    base = `http://${address.host}:${address.port}/api/v2`;
+    session = await call(base, '/session', { method: 'POST' });
+    token = session.body.data.sessionToken as string;
+
+    let failedRecord: any;
+    let interruptedJob: any;
+    for (let index = 0; index < 100; index += 1) {
+      const [currentLifecycle, currentJob] = await Promise.all([
+        call(base, '/prototype-lifecycle', { token }),
+        call(base, `/jobs/${jobId}`, { token }),
+      ]);
+      failedRecord = currentLifecycle.body.data.records[prototypeId];
+      interruptedJob = currentJob.body.data;
+      if (failedRecord?.operation.kind === 'failed') break;
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    expect(interruptedJob.status).toBe('interrupted');
+    expect(failedRecord.operation.failedCases).toEqual([
+      { caseId: secondCaseId, reason: 'journal reason: with a colon' },
+    ]);
+    expect(failedRecord.operation.failedCases[0].caseId).toContain('::');
+  });
+
+  it('records one rollback failure and still reconciles later lifecycle records', async () => {
+    root = await mkdtemp(path.join(os.tmpdir(), 'pb-local-service-rollback-'));
+    const storeRoot = path.join(root, 'store');
+    const deliveryTargetRoot = path.join(root, 'delivery-target');
+    await mkdir(deliveryTargetRoot, { recursive: true });
+    const seedStore = new LocalFileStore({
+      root: storeRoot,
+      workspaceId: 'workspace-service-test',
+    });
+    await seedStore.init();
+    const empty = await seedStore.getPrototypeLifecycleDocument();
+    await seedStore.close();
+    const startedAt = new Date().toISOString();
+    const makeRecord = (prototypeId: string, suffix: string) => {
+      const operationKey = `00000000-0000-4000-8000-${suffix.padStart(12, '0')}`;
+      const bundleId = `bundle-rollback-${suffix}`;
+      return {
+        prototypeId,
+        stage: 'final',
+        operation: {
+          kind: 'rolling-back',
+          operationKey,
+          startedAt,
+          bundleIds: [bundleId],
+          note: `rollback ${prototypeId}`,
+        },
+        artifacts: {
+          jobId: `job-rollback-${suffix}`,
+          bundleId,
+          snapshotId: `snapshot-rollback-${suffix}`,
+          handoffId: `handoff-rollback-${suffix}`,
+          deliveryId: `delivery-rollback-${suffix}`,
+          agentPromptPath: `/deliveries/${suffix}/agent-prompt.md`,
+          receiptPath: `/deliveries/${suffix}/receipt.json`,
+          finalizedAt: startedAt,
+          operationKey,
+          requestDigest: `sha256:${'b'.repeat(64)}`,
+        },
+        createdAt: startedAt,
+        updatedAt: startedAt,
+      };
+    };
+    const document = {
+      ...empty,
+      revision: 1,
+      records: {
+        sample: makeRecord('sample', '061'),
+        'sample-other': makeRecord('sample-other', '062'),
+      },
+      updatedAt: startedAt,
+    };
+    const lifecyclePath = path.join(
+      storeRoot,
+      'pbwork',
+      'workspace-service-test',
+      'lifecycle-v1.json',
+    );
+    await mkdir(path.dirname(lifecyclePath), { recursive: true });
+    await writeFile(lifecyclePath, `${JSON.stringify(document, null, 2)}\n`);
+
+    service = new ProtoBridgeLocalService({
+      port: 0,
+      allowedOrigins: [origin],
+      runtimeBaseUrl: origin,
+      storeRoot,
+      workspaceId: 'workspace-service-test',
+      deliveryTargetRoot,
+      preflightProvider: async (selection) => ({ preflight: preflightSelection(selection, manifest()) }),
+      driverFactory: () => new FakeDriver(),
+    });
+    vi.spyOn(service.store, 'getBundle').mockResolvedValue({ status: 'active' } as never);
+    let trashCalls = 0;
+    vi.spyOn(service.store, 'trashBundle').mockImplementation(async () => {
+      trashCalls += 1;
+      if (trashCalls === 1) throw new Error('fixture trash failure');
+      return {} as never;
+    });
+    await service.start();
+
+    const reconciled = await service.store.getPrototypeLifecycleDocument();
+    expect(reconciled.records.sample).toMatchObject({
+      stage: 'final',
+      operation: {
+        kind: 'failed',
+        action: 'rollback',
+        message: expect.stringContaining('fixture trash failure'),
+      },
+      artifacts: { bundleId: 'bundle-rollback-061' },
+    });
+    expect(reconciled.records['sample-other']).toMatchObject({
+      stage: 'review',
+      operation: { kind: 'idle' },
+      artifacts: null,
+    });
+    expect(trashCalls).toBe(2);
+  });
+
+  it('reconciles a failed Case into a durable terminal state without creating a Handoff', async () => {
+    const base = await start(60_000, () => new FailingDriver());
+    const session = await call(base, '/session', { method: 'POST' });
+    const token = session.body.data.sessionToken as string;
+    const startedAt = new Date().toISOString();
+    const prototypeId = 'sample';
+    let lifecycle = await call(base, '/prototype-lifecycle', { token });
+    const activeRecord = {
+      prototypeId,
+      stage: 'active',
+      operation: { kind: 'idle' },
+      artifacts: null,
+      createdAt: startedAt,
+      updatedAt: startedAt,
+    };
+    let document = {
+      ...lifecycle.body.data,
+      revision: 1,
+      records: { [prototypeId]: activeRecord },
+      updatedAt: startedAt,
+    };
+    let updated = await call(base, '/prototype-lifecycle', {
+      method: 'PUT',
+      token,
+      body: { expectedRevision: 0, document },
+    });
+    document = {
+      ...updated.body.data,
+      revision: 2,
+      records: {
+        [prototypeId]: {
+          ...activeRecord,
+          stage: 'review',
+          operation: {
+            kind: 'finalizing',
+            operationKey: '00000000-0000-4000-8000-000000000041',
+            phase: 'preflighting',
+            startedAt,
+            acceptedWarningIds: [],
+            acknowledgedRiskKinds: [],
+          },
+        },
+      },
+      updatedAt: new Date().toISOString(),
+    };
+    updated = await call(base, '/prototype-lifecycle', {
+      method: 'PUT',
+      token,
+      body: { expectedRevision: 1, document },
+    });
+    document = {
+      ...updated.body.data,
+      revision: 3,
+      records: {
+        [prototypeId]: {
+          ...updated.body.data.records[prototypeId],
+          operation: {
+            ...updated.body.data.records[prototypeId].operation,
+            phase: 'awaiting-confirmation',
+          },
+        },
+      },
+      updatedAt: new Date().toISOString(),
+    };
+    updated = await call(base, '/prototype-lifecycle', {
+      method: 'PUT',
+      token,
+      body: { expectedRevision: 2, document },
+    });
+    expect(updated.response.status).toBe(200);
+
+    const preflight = await call(base, '/preflights', {
+      method: 'POST',
+      token,
+      body: { draft: draft() },
+    });
+    const accepted = await call(base, '/jobs', {
+      method: 'POST',
+      token,
+      body: {
+        preflightId: preflight.body.data.preflightId,
+        acceptedWarningIds: [],
+        operationKey: '00000000-0000-4000-8000-000000000041',
+      },
+    });
+    expect(accepted.response.status).toBe(202);
+
+    let failedRecord: any;
+    for (let index = 0; index < 100; index += 1) {
+      lifecycle = await call(base, '/prototype-lifecycle', { token });
+      failedRecord = lifecycle.body.data.records[prototypeId];
+      if (failedRecord?.operation.kind === 'failed') break;
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    expect(failedRecord.stage).toBe('review');
+    expect(failedRecord.operation).toMatchObject({
+      kind: 'failed',
+      action: 'finalize',
+      operationKey: '00000000-0000-4000-8000-000000000041',
+    });
+    expect(failedRecord.operation.failedCases).toHaveLength(1);
+    expect(failedRecord.artifacts).toBeNull();
+    expect(await service!.store.listHandoffs(accepted.body.data.job.bundleId)).toHaveLength(0);
+    const deliveries = await call(base, `/deliveries?bundleId=${encodeURIComponent(accepted.body.data.job.bundleId)}`, { token });
+    expect(deliveries.body.data.deliveries).toHaveLength(0);
   });
 
   it('runs one durable background Job after Preflight and exposes its Snapshot to a new request', async () => {
@@ -290,6 +856,389 @@ describe('ProtoBridge Local Service', () => {
     expect(fixedSnapshot.body.data.activeSnapshot.snapshotId).toBe(
       details.body.data.activeSnapshot.snapshotId,
     );
+  });
+
+  it('recovers a fixed finalization across Service restart and creates one Handoff and Delivery', async () => {
+    let base = await start();
+    let session = await call(base, '/session', { method: 'POST' });
+    let token = session.body.data.sessionToken as string;
+    let lifecycle = await call(base, '/prototype-lifecycle', { token });
+    const operationKey = '00000000-0000-4000-8000-000000000021';
+    const startedAt = new Date().toISOString();
+    const prototypeId = 'sample';
+    const activeRecord = {
+      prototypeId,
+      stage: 'active',
+      operation: { kind: 'idle' },
+      artifacts: null,
+      createdAt: startedAt,
+      updatedAt: startedAt,
+    };
+    let document = {
+      ...lifecycle.body.data,
+      revision: 1,
+      records: { [prototypeId]: activeRecord },
+      updatedAt: startedAt,
+    };
+    let updated = await call(base, '/prototype-lifecycle', {
+      method: 'PUT',
+      token,
+      body: { expectedRevision: 0, document },
+    });
+    expect(updated.response.status).toBe(200);
+    document = {
+      ...updated.body.data,
+      revision: 2,
+      records: {
+        [prototypeId]: {
+          ...activeRecord,
+          stage: 'review',
+          operation: {
+            kind: 'finalizing',
+            operationKey,
+            phase: 'preflighting',
+            startedAt,
+            acceptedWarningIds: [],
+            acknowledgedRiskKinds: [],
+          },
+        },
+      },
+      updatedAt: new Date().toISOString(),
+    };
+    updated = await call(base, '/prototype-lifecycle', {
+      method: 'PUT',
+      token,
+      body: { expectedRevision: 1, document },
+    });
+    expect(updated.response.status).toBe(200);
+    document = {
+      ...updated.body.data,
+      revision: 3,
+      records: {
+        [prototypeId]: {
+          ...updated.body.data.records[prototypeId],
+          operation: {
+            ...updated.body.data.records[prototypeId].operation,
+            phase: 'awaiting-confirmation',
+          },
+        },
+      },
+      updatedAt: new Date().toISOString(),
+    };
+    updated = await call(base, '/prototype-lifecycle', {
+      method: 'PUT',
+      token,
+      body: { expectedRevision: 2, document },
+    });
+    expect(updated.response.status).toBe(200);
+
+    const preflight = await call(base, '/preflights', {
+      method: 'POST',
+      token,
+      body: { draft: draft() },
+    });
+    const createBody = {
+      preflightId: preflight.body.data.preflightId,
+      acceptedWarningIds: [],
+      operationKey,
+    };
+    const accepted = await call(base, '/jobs', {
+      method: 'POST',
+      token,
+      body: createBody,
+    });
+    expect(accepted.response.status).toBe(202);
+    const repeated = await call(base, '/jobs', {
+      method: 'POST',
+      token,
+      body: createBody,
+    });
+    expect(repeated.body.data.job.jobId).toBe(accepted.body.data.job.jobId);
+
+    let operation: any;
+    for (let index = 0; index < 100; index += 1) {
+      lifecycle = await call(base, '/prototype-lifecycle', { token });
+      operation = lifecycle.body.data.records[prototypeId]?.operation;
+      if (lifecycle.body.data.records[prototypeId]?.stage === 'final' || operation?.phase === 'awaiting-risks' || operation?.phase === 'building-prompt' || operation?.kind === 'failed') break;
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    expect(operation?.kind).toBe('finalizing');
+    expect(operation?.snapshotId).toBeTruthy();
+    expect(['awaiting-risks', 'building-prompt']).toContain(operation.phase);
+
+    await service!.close();
+    service = new ProtoBridgeLocalService({
+      port: 0,
+      allowedOrigins: [origin],
+      runtimeBaseUrl: origin,
+      storeRoot: path.join(root!, 'store'),
+      workspaceId: 'workspace-service-test',
+      deliveryTargetRoot: path.join(root!, 'delivery-target'),
+      preflightProvider: async (selection) => ({ preflight: preflightSelection(selection, manifest()) }),
+      driverFactory: () => new FakeDriver(),
+    });
+    const address = await service.start();
+    base = `http://${address.host}:${address.port}/api/v2`;
+    session = await call(base, '/session', { method: 'POST' });
+    token = session.body.data.sessionToken as string;
+    lifecycle = await call(base, '/prototype-lifecycle', { token });
+    let recovered = lifecycle.body.data.records[prototypeId];
+    if (recovered.stage !== 'final') {
+      expect(recovered.operation).toMatchObject({
+        kind: 'finalizing',
+        operationKey,
+        jobId: accepted.body.data.job.jobId,
+      });
+    }
+
+    operation = recovered.operation;
+    if (recovered.stage !== 'final' && operation.phase === 'awaiting-risks') {
+      const preview = await call(base, '/handoffs/preview', {
+        method: 'POST',
+        token,
+        body: {
+          bundleId: operation.bundleId,
+          snapshotId: operation.snapshotId,
+          acknowledgedRiskKinds: [],
+        },
+      });
+      expect(preview.response.status).toBe(200);
+      const acknowledgedRiskKinds = [...new Set(preview.body.data.risks.map((risk: any) => risk.kind))];
+      const latest = await call(base, '/prototype-lifecycle', { token });
+      const next = {
+        ...latest.body.data,
+        revision: latest.body.data.revision + 1,
+        records: {
+          ...latest.body.data.records,
+          [prototypeId]: {
+            ...latest.body.data.records[prototypeId],
+            operation: {
+              ...latest.body.data.records[prototypeId].operation,
+              phase: 'building-prompt',
+              acknowledgedRiskKinds,
+            },
+          },
+        },
+        updatedAt: new Date().toISOString(),
+      };
+      const confirmation = await call(base, '/prototype-lifecycle', {
+        method: 'PUT',
+        token,
+        body: { expectedRevision: latest.body.data.revision, document: next },
+      });
+      expect(confirmation.response.status).toBe(200);
+    }
+
+    let finalized: any;
+    for (let index = 0; index < 100; index += 1) {
+      const latest = await call(base, '/prototype-lifecycle', { token });
+      finalized = latest.body.data.records[prototypeId];
+      if (finalized.stage === 'final' || finalized.operation.kind === 'failed') break;
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    expect(finalized.stage, JSON.stringify(finalized.operation)).toBe('final');
+    expect(finalized.artifacts).toMatchObject({ operationKey, jobId: accepted.body.data.job.jobId });
+    const handoffs = await service.store.listHandoffs(finalized.artifacts.bundleId);
+    expect(handoffs).toHaveLength(1);
+    const deliveries = await call(base, `/deliveries?bundleId=${encodeURIComponent(finalized.artifacts.bundleId)}`, { token });
+    expect(deliveries.body.data.deliveries).toHaveLength(1);
+
+    await service!.close();
+    await rm(
+      path.join(root!, 'store', 'pbwork', 'workspace-service-test', 'lifecycle-v1.json'),
+      { force: true },
+    );
+    service = new ProtoBridgeLocalService({
+      port: 0,
+      allowedOrigins: [origin],
+      runtimeBaseUrl: origin,
+      storeRoot: path.join(root!, 'store'),
+      workspaceId: 'workspace-service-test',
+      deliveryTargetRoot: path.join(root!, 'delivery-target'),
+      preflightProvider: async (selection) => ({ preflight: preflightSelection(selection, manifest()) }),
+      driverFactory: () => new FakeDriver(),
+    });
+    const migrationAddress = await service.start();
+    const migrationBase = `http://${migrationAddress.host}:${migrationAddress.port}/api/v2`;
+    const migrationSession = await call(migrationBase, '/session', { method: 'POST' });
+    const migrationDocument = {
+      schemaVersion: 1,
+      workspaceId: 'workspace-service-test',
+      generationId: migrationSession.body.data.generationId,
+      revision: 1,
+      records: { [prototypeId]: finalized },
+      history: [],
+      updatedAt: new Date().toISOString(),
+    };
+    const imported = await call(migrationBase, '/prototype-lifecycle/migrate', {
+      method: 'POST',
+      token: migrationSession.body.data.sessionToken,
+      body: { document: migrationDocument },
+    });
+    expect(imported.response.status).toBe(201);
+    expect(imported.body.data.records[prototypeId]).toMatchObject({
+      stage: 'final',
+      artifacts: {
+        jobId: finalized.artifacts.jobId,
+        bundleId: finalized.artifacts.bundleId,
+        snapshotId: finalized.artifacts.snapshotId,
+        handoffId: finalized.artifacts.handoffId,
+        deliveryId: finalized.artifacts.deliveryId,
+      },
+    });
+
+    let recoveryBase = migrationBase;
+    let recoveryToken = migrationSession.body.data.sessionToken as string;
+    const sidecarPath = path.join(
+      root!,
+      'store',
+      'pbwork',
+      'workspace-service-test',
+      'lifecycle-v1.json',
+    );
+    const receipt = JSON.parse(
+      await readFile(finalized.artifacts.receiptPath, 'utf8'),
+    );
+    const job = await service.store.getJob(finalized.artifacts.jobId);
+    const baseOperation = {
+      kind: 'finalizing' as const,
+      operationKey: finalized.artifacts.operationKey,
+      requestDigest: job!.operationRequestDigest,
+      phase: 'building-prompt' as const,
+      startedAt: finalized.artifacts.finalizedAt,
+      jobId: finalized.artifacts.jobId,
+      bundleId: finalized.artifacts.bundleId,
+      snapshotId: finalized.artifacts.snapshotId,
+      acceptedWarningIds: receipt.acceptedWarningIds,
+      acknowledgedRiskKinds: receipt.acknowledgedRiskKinds,
+      implementationIntent: '',
+    };
+    const persistCrashState = async (record: Record<string, unknown>) => {
+      const current = await service!.store.getPrototypeLifecycleDocument();
+      const interrupted = {
+        ...current,
+        revision: current.revision + 1,
+        records: { ...current.records, [prototypeId]: record },
+        updatedAt: new Date().toISOString(),
+      };
+      await service!.close();
+      await writeFile(sidecarPath, `${JSON.stringify(interrupted, null, 2)}\n`);
+    };
+    const restart = async () => {
+      service = new ProtoBridgeLocalService({
+        port: 0,
+        allowedOrigins: [origin],
+        runtimeBaseUrl: origin,
+        storeRoot: path.join(root!, 'store'),
+        workspaceId: 'workspace-service-test',
+        deliveryTargetRoot: path.join(root!, 'delivery-target'),
+        preflightProvider: async (selection) => ({ preflight: preflightSelection(selection, manifest()) }),
+        driverFactory: () => new FakeDriver(),
+      });
+      const restartedAddress = await service.start();
+      recoveryBase = `http://${restartedAddress.host}:${restartedAddress.port}/api/v2`;
+      const restartedSession = await call(recoveryBase, '/session', { method: 'POST' });
+      recoveryToken = restartedSession.body.data.sessionToken as string;
+    };
+    const waitForFinal = async () => {
+      let record: any;
+      for (let index = 0; index < 100; index += 1) {
+        const latest = await call(recoveryBase, '/prototype-lifecycle', { token: recoveryToken });
+        record = latest.body.data.records[prototypeId];
+        if (record.stage === 'final' || record.operation.kind === 'failed') break;
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      }
+      expect(record.stage, JSON.stringify(record.operation)).toBe('final');
+      return record;
+    };
+
+    // Crash cut: Handoff is durable, but its ID and the later Delivery are not in lifecycle.
+    const handoffOnlyRecord = {
+      ...imported.body.data.records[prototypeId],
+      stage: 'review',
+      operation: baseOperation,
+      artifacts: null,
+      updatedAt: new Date().toISOString(),
+    };
+    await persistCrashState(handoffOnlyRecord);
+    await rm(path.dirname(finalized.artifacts.receiptPath), { recursive: true, force: true });
+    await restart();
+    let recoveredFinal = await waitForFinal();
+    expect(recoveredFinal.artifacts.handoffId).toBe(finalized.artifacts.handoffId);
+    expect(await service.store.listHandoffs(finalized.artifacts.bundleId)).toHaveLength(1);
+    let recoveredDeliveries = await call(
+      recoveryBase,
+      `/deliveries?bundleId=${encodeURIComponent(finalized.artifacts.bundleId)}`,
+      { token: recoveryToken },
+    );
+    expect(recoveredDeliveries.body.data.deliveries).toHaveLength(1);
+
+    // Crash cut: receipt directory rename completed, but lifecycle.deliveryId was not saved.
+    const receiptWrittenRecord = {
+      ...recoveredFinal,
+      stage: 'review',
+      operation: {
+        ...baseOperation,
+        handoffId: finalized.artifacts.handoffId,
+      },
+      artifacts: null,
+      updatedAt: new Date().toISOString(),
+    };
+    await persistCrashState(receiptWrittenRecord);
+    await restart();
+    recoveredFinal = await waitForFinal();
+    expect(recoveredFinal.artifacts.deliveryId).toBe(finalized.artifacts.deliveryId);
+    expect(await service.store.listHandoffs(finalized.artifacts.bundleId)).toHaveLength(1);
+    recoveredDeliveries = await call(
+      recoveryBase,
+      `/deliveries?bundleId=${encodeURIComponent(finalized.artifacts.bundleId)}`,
+      { token: recoveryToken },
+    );
+    expect(recoveredDeliveries.body.data.deliveries).toHaveLength(1);
+
+    // Crash cut: Service persisted rolling-back and trashed the Bundle, then stopped before lifecycle CAS.
+    const lifecycleBeforeRollback = await service.store.getPrototypeLifecycleDocument();
+    const rollingBackRecord = {
+      ...recoveredFinal,
+      operation: {
+        kind: 'rolling-back',
+        operationKey: '00000000-0000-4000-8000-000000000054',
+        startedAt: new Date().toISOString(),
+        bundleIds: [finalized.artifacts.bundleId],
+        note: 'crash cut during rollback',
+      },
+      updatedAt: new Date().toISOString(),
+    };
+    const interruptedRollback = {
+      ...lifecycleBeforeRollback,
+      revision: lifecycleBeforeRollback.revision + 1,
+      records: { ...lifecycleBeforeRollback.records, [prototypeId]: rollingBackRecord },
+      updatedAt: new Date().toISOString(),
+    };
+    await service.close();
+    await writeFile(sidecarPath, `${JSON.stringify(interruptedRollback, null, 2)}\n`);
+    const crashStore = new LocalFileStore({
+      root: path.join(root!, 'store'),
+      workspaceId: 'workspace-service-test',
+    });
+    await crashStore.init();
+    await crashStore.trashBundle(finalized.artifacts.bundleId);
+    await crashStore.close();
+    await restart();
+    const rollbackState = await call(recoveryBase, '/prototype-lifecycle', {
+      token: recoveryToken,
+    });
+    expect(rollbackState.body.data.records[prototypeId]).toMatchObject({
+      stage: 'review',
+      operation: { kind: 'idle' },
+      artifacts: null,
+    });
+    expect((await service.store.getBundle(finalized.artifacts.bundleId))?.status).toBe('trashed');
+    expect(
+      rollbackState.body.data.history.filter(
+        (entry: any) => entry.prototypeId === prototypeId && entry.from === 'final' && entry.to === 'review',
+      ),
+    ).toHaveLength(1);
   });
 
   it('serves Evidence Inventory and enforces the trash-before-delete lifecycle', async () => {

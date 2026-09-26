@@ -103,8 +103,7 @@ async function initialize() {
 async function poll() {
   if (
     polling.value ||
-    operation.value.kind !== "finalizing" ||
-    operation.value.phase !== "capturing"
+    (operation.value.kind !== "finalizing" && operation.value.kind !== "rolling-back")
   ) {
     return;
   }
@@ -173,6 +172,18 @@ watch(
 
 watch(current, (stage) => {
   if (props.modelValue && props.intent === "finalize" && stage === "final") {
+    emit("changed");
+    close();
+  }
+});
+
+watch([current, () => operation.value.kind], ([stage, kind]) => {
+  if (
+    props.modelValue &&
+    props.intent === "rollback" &&
+    stage === "review" &&
+    kind === "idle"
+  ) {
     emit("changed");
     close();
   }
@@ -272,6 +283,22 @@ onBeforeUnmount(() => {
       </template>
 
       <template v-else>
+        <div
+          v-if="intent === 'rollback' && operation.kind === 'rolling-back'"
+          class="operation-status"
+          aria-live="polite"
+        >
+          <LoaderCircle :size="17" class="spin" />
+          <span>Local Service 正在清理定稿 Evidence…</span>
+        </div>
+        <div
+          v-else-if="intent === 'rollback' && operation.kind === 'failed' && operation.action === 'rollback'"
+          class="operation-status failed"
+          role="alert"
+        >
+          <AlertTriangle :size="17" />
+          <span>{{ operation.message }}</span>
+        </div>
         <section class="consequence-block">
           <strong v-if="intent === 'advance'">进入方案确认阶段</strong>
           <strong v-else-if="intent === 'return-active'">继续制作原型</strong>
@@ -313,13 +340,18 @@ onBeforeUnmount(() => {
           :tone="intent === 'rollback' || intent === 'archive' ? 'danger' : 'primary'"
           :loading="submitting"
           :disabled="
-            (intent === 'rollback' || intent === 'archive') && !consequenceAccepted
+            (intent === 'rollback' || intent === 'archive') &&
+              (!consequenceAccepted || operation.kind === 'rolling-back')
           "
           @click="submitSimple"
         >
           <Archive v-if="intent === 'archive'" :size="14" />
           <RotateCcw v-else-if="intent === 'rollback'" :size="14" />
-          确认{{ title }}
+          {{
+            intent === 'rollback' && operation.kind === 'failed' && operation.action === 'rollback'
+              ? '重试回退'
+              : `确认${title}`
+          }}
         </WorkbenchButton>
         <WorkbenchButton
           v-else-if="operation.kind === 'finalizing' && operation.phase === 'awaiting-confirmation'"

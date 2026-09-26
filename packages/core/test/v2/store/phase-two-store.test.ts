@@ -391,13 +391,29 @@ describe('Phase 2 Store: reuse and dependency-level stale', () => {
       handoffId: 'handoff-store-boundary',
       snapshotId: snapshot.snapshotId,
       stalenessReportId: report.reportId,
+      operationKey: '00000000-0000-4000-8000-000000000051',
+      operationRequestDigest: `sha256:${'d'.repeat(64)}`,
     };
-    await expect(store.putHandoff(handoff)).resolves.toBeUndefined();
+    const persisted = await store.putHandoff(handoff);
+    await expect(store.putHandoff({
+      ...handoff,
+      handoffId: 'handoff-store-boundary-retry',
+    })).resolves.toMatchObject({
+      handoffId: handoff.handoffId,
+    });
+    await expect(store.putHandoff({
+      ...handoff,
+      handoffId: 'handoff-store-boundary-conflict',
+      operationRequestDigest: `sha256:${'e'.repeat(64)}`,
+    })).rejects.toMatchObject({ code: 'idempotency-conflict' });
+    expect(persisted.handoffId).toBe(handoff.handoffId);
     await expect(
       store.putHandoff({
         ...handoff,
         handoffId: 'handoff-store-boundary-invalid',
         snapshotId: 'missing-snapshot',
+        operationKey: '00000000-0000-4000-8000-000000000052',
+        operationRequestDigest: `sha256:${'f'.repeat(64)}`,
       }),
     ).rejects.toMatchObject({ code: 'unknown-reference' });
   });

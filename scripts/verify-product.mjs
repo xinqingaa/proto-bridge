@@ -21,6 +21,8 @@ const steps = [
   ["pnpm", ["test:e2e:mcp"]],
   ["pnpm", ["test:e2e:consumer"]],
   ["pnpm", ["test:e2e:evidence-slice"]],
+  ["pnpm", ["test:e2e:finalization"]],
+  ["pnpm", ["test:e2e:lifecycle"]],
 ];
 
 for (const [command, args, workingDirectory] of steps) {

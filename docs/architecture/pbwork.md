@@ -103,9 +103,9 @@ Workbench 与 iframe 使用带 `runtimeId` 和 `requestId` 的消息信封：
 
 ## Capture UI
 
-PBWork 不提供页面、控件、Fragment 或整个原型的手工采集入口。待确定原型执行“定稿并采集”时，生命周期 Store 使用现有 Capture Store/Local Service 自动构造整原型 Draft，依次完成 Preflight、warning 确认、Capture Job、risk 确认、Handoff 与唯一 Agent 提示词生成；用户不选择采集范围，也不单独点击生成提示词。定稿确认页只读展示 Agent 提示词将指向的绝对路径（Local Service session 上的 `deliveryTargetRoot`，来自 `proto-bridge.json` 的 `delivery.targetRoot`）。改路径只能改配置后重启 `pnpm pb:up`。
+PBWork 不提供页面、控件、Fragment 或整个原型的手工采集入口。待确定原型执行“定稿并采集”时，生命周期 Store 自动构造整原型 Draft，并直接通过 Capture Service Contract 创建 Preflight 与用户确认后的 Job；warning/risk 勾选以 `prototypeId` 隔离，不读写 Capture Store 的全局 draft、preflight、Job 或风险确认字段。Capture Store 在此流程只提供 Service 连接、任务/证据查看和交付路径等 UI 状态。用户不选择采集范围，也不单独点击生成提示词。定稿确认页只读展示 Agent 提示词将指向的绝对路径（Local Service session 上的 `deliveryTargetRoot`，来自 `proto-bridge.json` 的 `delivery.targetRoot`）。改路径只能改配置后重启 `pnpm pb:up`。
 
-生命周期 Store 只编排动作并保存正式产物引用，不复制 Selection、Case identity、Coverage 或 risk 算法。持久 Evidence 仍由 Local Service/Store 管理，Preflight、Job、Handoff 和 Delivery 仍使用 Core Service Contract。只有生命周期记录绑定的已定稿或已归档产物出现在“定稿采集”页；CLI 和其它入口创建的 Bundle 不会自动成为 PBWork 定稿产物。
+生命周期 Store 只编排动作并保存正式产物引用，不复制 Selection、Case identity、Coverage 或 risk 算法。持久 Evidence 仍由 Local Service/Store 管理，Preflight、Job、Handoff 和 Delivery 仍使用 Core Service Contract。只有生命周期记录绑定的已定稿或已归档产物出现在“定稿采集”页；CLI 和其它入口创建的 Bundle 不会自动成为 PBWork 定稿产物。PBWork 在 Capture Service Contract 上提交人类确认并显示服务端生命周期文档；Job 接受后，Local Service reconciliation 负责恢复和推进自动阶段。不同原型的 Preflight、warning 与 risk 确认按 Prototype ID 隔离；未提交的 UI 勾选只存在当前页签，warning 在创建 Job 前、risk 在开始提示词生成前写入 Workspace 生命周期记录。
 
 稳定生命周期只允许：
 
@@ -115,7 +115,7 @@ PBWork 不提供页面、控件、Fragment 或整个原型的手工采集入口�
    └─────────┘        └─ 清理绑定 Evidence 后回到待确定
 ```
 
-已归档没有任何出边。所有阶段都不提供删除原型操作。已定稿回退时必须先把该次定稿绑定的 Bundle 移入 Store trash，并解除 Snapshot、Handoff、Delivery 和 Prompt 引用；清理失败则仍保持已定稿。
+已归档没有任何出边。所有阶段都不提供删除原型操作。已定稿回退时 PBWork 只持久化 `rolling-back` 意图；Local Service 把该次定稿绑定的 Bundle 移入 Store trash 后，才清除 Snapshot、Handoff、Delivery 和 Prompt 引用并转回待确定。失败原因持久为 `failed(action: rollback)`，原型仍保持已定稿，界面提供“重试回退”；重试继续使用同一绑定 Bundle。
 
 Evidence Viewer 可以按 Screen、Case 和 Fragment组织内容，但必须保留：
 
@@ -127,7 +127,9 @@ Evidence Viewer 可以按 Screen、Case 和 Fragment组织内容，但必须保�
 
 ## 本地工作台状态
 
-画布设备、缩放、Inspector、评论和 Prototype lifecycle 都可以使用 localStorage。生命周期事实源是 `prototypeLifecycle` Pinia Store，写入 `pbwork.prototype-lifecycle.v2`：阶段、进行中的定稿/回退操作、正式产物引用、流转历史，以及当前绑定的 Workspace/generation。缺记录或清缓存后，新发现的 Prototype ID 一律初始化为“进行中”；Registry 的 `lifecycle` 字段只作作者标注，不覆盖空存储。Workbench **没有** Workspace reset 按钮；`pnpm pb:reset` / CLI `workspace reset` 才是全量清理入口。PBWork 在 connect 或 console 刷新时对比 session generation：generation 变化、Workspace 变化，或尚未绑定 generation 且本地 `final`/`archived` 产物已不在 Store 时，会清空这些本地生命周期记录并回到进行中，避免界面仍显示已定稿而 Evidence 已经不在。画布偏好和评论不随 reset 丢弃。持久 Evidence 仍在 Core Store；清浏览器缓存不会删除磁盘上的 Bundle 或 Delivery。
+画布设备、缩放、Inspector 和评论等偏好可以使用 localStorage；生命周期事实源位于配置的 Store root 下 `pbwork/<workspaceId>/lifecycle-v1.json`。Core 定义 Schema/转移与固定引用规则，Local Service 通过 generation 与 `expectedRevision` 校验执行写入，并在启动及运行期间 reconciliation；Pinia Store 只缓存服务端文档、提交人工确认和显示状态。新发现的 Prototype ID 一律初始化为“进行中”；Registry 的 `lifecycle` 字段只作作者标注，不覆盖空存储。旧 `pbwork.prototype-lifecycle.v2` 只在 sidecar 为空且 Workspace/generation 完全匹配时迁移；final/archived 的 Job、Run、Snapshot、Coverage、Handoff、Delivery Receipt 和 Prompt 路径均须验证，未通过则降为待确定并标注 Evidence 仅供诊断。旧状态中的进行中操作不会被自动续跑。
+
+Workbench **没有** Workspace reset 按钮；`pnpm pb:reset` / CLI `workspace reset` 才是全量清理入口。Core reset 会清除 sidecar；clean/trash 保护仍被有效生命周期引用的固定产物，回退操作完成后才解除绑定。清浏览器缓存不会删除磁盘上的 Bundle 或 Delivery；未绑定的旧 Bundle 即使 Coverage 完整也仅供诊断，不提供人工认领入口。
 
 这些本地状态不能改变 Registry Contract、Store Evidence 或 Runtime URL 的业务语义。
 

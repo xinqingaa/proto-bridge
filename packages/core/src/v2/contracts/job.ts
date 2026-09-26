@@ -10,6 +10,10 @@ import {
   type TerminalJobStatus,
 } from './vocabulary.js';
 import { V2_SCHEMA_MAJOR } from './version.js';
+import {
+  LifecycleOperationKey,
+  OperationRequestDigest,
+} from './prototype-lifecycle.js';
 
 /**
  * One append-only entry in a Job's execution journal. The journal is the
@@ -72,6 +76,9 @@ export const CaptureJob = z
     selection: NormalizedSelection,
     /** Input version Preflight validated this Selection against; carried onto the Run this Job produces. */
     inputVersion: z.string().min(1),
+    /** Optional idempotency identity for a higher-level producer operation. */
+    operationKey: LifecycleOperationKey.optional(),
+    operationRequestDigest: OperationRequestDigest.optional(),
     status: JobStatusSchema,
     acceptedAt: z.string().datetime(),
     startedAt: z.string().datetime().optional(),
@@ -82,6 +89,13 @@ export const CaptureJob = z
   })
   .strict()
   .superRefine((job, ctx) => {
+    if ((job.operationKey === undefined) !== (job.operationRequestDigest === undefined)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'operationKey and operationRequestDigest must be supplied together',
+        path: ['operationRequestDigest'],
+      });
+    }
     const terminal = isTerminalJobStatus(job.status);
     if (job.status === 'queued') {
       if (job.startedAt !== undefined) {

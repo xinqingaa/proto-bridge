@@ -59,6 +59,7 @@ CLI 配置文件和显式参数的优先级以对应入口实现为准。MCP 支
 - Store root 应位于明确 Workspace 目录，不能指向仓库根或用户主目录。
 - Store 只允许单 writer。
 - `pnpm pb:reset` 必须经过 Core generation-bound reset 安全检查，不能手工递归删除 Store 内容。
+- Reset 预览与结果单独计入 Store root 下 `pbwork/<workspaceId>/lifecycle-v1.json`；确认 reset 后清除此 sidecar。它只供 Local Service/PBWork lifecycle 恢复，不是 MCP Consumer 文件入口。
 - `pnpm pb:clean` 是本地安装销毁命令，只允许删除仓库默认 `proto-bridge.json` 和 `.proto-bridge`，并必须先停止受管 PB 进程。
 - `.proto-bridge/store` 不提交 Git。
 - Consumer 不读取 Store 文件布局。

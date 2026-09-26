@@ -11,6 +11,11 @@ import type { CapturePreflight } from '../capture/preflight.js';
 import type { SelectionDraft } from '../capture/selection.js';
 import type { EvidenceInventory } from '../evidence-inventory.js';
 import type {
+  LifecycleOperationKey,
+  OperationRequestDigest,
+  PrototypeLifecycleDocument,
+} from '../contracts/prototype-lifecycle.js';
+import type {
   BundleDeletePlan,
   BundleDeleteResult,
 } from '../store/types.js';
@@ -22,7 +27,7 @@ import type {
   ReviewSessionSeed,
 } from '../../review/contracts.js';
 
-export const LOCAL_SERVICE_PROTOCOL_VERSION = 4 as const;
+export const LOCAL_SERVICE_PROTOCOL_VERSION = 5 as const;
 
 export const LocalServiceError = z
   .object({
@@ -84,6 +89,7 @@ export type WorkspaceResetPlan = {
   evidence: WorkspaceResetScopeSummary;
   deliveries: WorkspaceResetScopeSummary;
   reviews: WorkspaceResetScopeSummary;
+  prototypeLifecycle: WorkspaceResetScopeSummary;
   runningTasks: string[];
   createdAt: string;
   expiresAt: string;
@@ -108,6 +114,7 @@ export type WorkspaceResetResult = {
     evidence: WorkspaceResetScopeSummary;
     deliveries: WorkspaceResetScopeSummary;
     reviews: WorkspaceResetScopeSummary;
+    prototypeLifecycle: WorkspaceResetScopeSummary;
   };
   revokedSessionCount: number;
   stoppedJobIds: string[];
@@ -135,6 +142,17 @@ export type CreateJobRequest = {
   preflightId: string;
   acceptedWarningIds: string[];
   bundleId?: string;
+  operationKey?: LifecycleOperationKey;
+  operationRequestDigest?: OperationRequestDigest;
+};
+
+export type UpdatePrototypeLifecycleRequest = {
+  expectedRevision: number;
+  document: PrototypeLifecycleDocument;
+};
+
+export type MigratePrototypeLifecycleRequest = {
+  document: PrototypeLifecycleDocument;
 };
 
 export type CreateJobResponse = {
@@ -146,6 +164,8 @@ export type HandoffPreviewRequest = {
   snapshotId: string;
   implementationIntent?: string;
   acknowledgedRiskKinds: string[];
+  operationKey?: LifecycleOperationKey;
+  operationRequestDigest?: OperationRequestDigest;
 };
 
 export type HandoffPreview = {
@@ -170,6 +190,8 @@ export type CreateDeliveryRequest = {
   acknowledgedRiskKinds?: string[];
   /** When set, rewrite this delivery directory instead of creating a new timestamp id. */
   overwriteDeliveryId?: string;
+  operationKey?: LifecycleOperationKey;
+  operationRequestDigest?: OperationRequestDigest;
 };
 
 export type DeliveryListItem = {

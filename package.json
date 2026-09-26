@@ -25,6 +25,8 @@
     "test": "pnpm --filter @proto-bridge/core test",
     "test:e2e:mcp": "pnpm --filter @proto-bridge/core build && pnpm --filter @proto-bridge/mcp-server build && node scripts/test-mcp-evidence.mjs",
     "test:e2e:runtime": "pnpm --filter @proto-bridge/pbwork test:e2e:capture",
+    "test:e2e:lifecycle": "pnpm --filter @proto-bridge/pbwork test:e2e:lifecycle",
+    "test:e2e:finalization": "pnpm --filter @proto-bridge/pbwork test:e2e:finalization",
     "test:e2e:evidence-slice": "node scripts/test-evidence-vertical-slice.mjs",
     "test:e2e:consumer": "pnpm --filter @proto-bridge/core build && pnpm --filter @proto-bridge/mcp-server build && node scripts/test-consumer.mjs",
     "test:experimental:flutter-mcp": "pnpm --filter @proto-bridge/local-service test:flutter-mcp-official",

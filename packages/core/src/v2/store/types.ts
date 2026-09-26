@@ -30,11 +30,18 @@ import type {
 } from '../contracts/vocabulary.js';
 import type { EvidenceLevel } from '../contracts/vocabulary.js';
 import type { NormalizedCaptureScope } from '../contracts/scope.js';
+import type {
+  PrototypeLifecycleDocument,
+  LifecycleOperationKey,
+  OperationRequestDigest,
+} from '../contracts/prototype-lifecycle.js';
 
 export type CreateJobInput = {
   bundleId: BundleId;
   selection: NormalizedSelection;
   inputVersion: string;
+  operationKey?: LifecycleOperationKey;
+  operationRequestDigest?: OperationRequestDigest;
 };
 
 export type JobJournalEntryInput = {
@@ -189,6 +196,11 @@ export interface V2Store {
   getWorkspaceLifecycle(refresh?: boolean): Promise<WorkspaceLifecycle>;
   assertHealthy(): Promise<void>;
   resetWorkspace(expectedGenerationId: string): Promise<WorkspaceStoreResetResult>;
+  getPrototypeLifecycleDocument(): Promise<PrototypeLifecycleDocument>;
+  compareAndSetPrototypeLifecycleDocument(input: {
+    expectedRevision: number;
+    document: PrototypeLifecycleDocument;
+  }): Promise<PrototypeLifecycleDocument>;
 
   createBundle(
     input: CreateBundleInput,
@@ -217,6 +229,7 @@ export interface V2Store {
   finalizeJob(jobId: JobId, status: TerminalJobStatus): Promise<CaptureJob>;
   getJob(jobId: JobId): Promise<CaptureJob | undefined>;
   listJobs(): Promise<CaptureJob[]>;
+  findJobByOperationKey(operationKey: LifecycleOperationKey): Promise<CaptureJob | undefined>;
   listNonTerminalJobs(): Promise<CaptureJob[]>;
 
   getRun(bundleId: BundleId, runId: RunId): Promise<Run | undefined>;
@@ -270,8 +283,9 @@ export interface V2Store {
     reportId: StalenessReportId,
   ): Promise<StalenessReport | undefined>;
   listStalenessReports(bundleId?: BundleId): Promise<StalenessReport[]>;
-  putHandoff(handoff: AgentHandoff): Promise<void>;
+  putHandoff(handoff: AgentHandoff): Promise<AgentHandoff>;
   getHandoff(handoffId: HandoffId): Promise<AgentHandoff | undefined>;
+  findHandoffByOperationKey(operationKey: LifecycleOperationKey): Promise<AgentHandoff | undefined>;
   listHandoffs(bundleId?: BundleId): Promise<AgentHandoff[]>;
 
   getCapacity(): Promise<StoreCapacity>;

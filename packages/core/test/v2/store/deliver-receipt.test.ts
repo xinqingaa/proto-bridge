@@ -62,6 +62,19 @@ describe('Delivery review artifacts', () => {
       currentInputVersion: staleness.inputVersion,
       acknowledgedRiskKinds: ['reconstruction-readiness'],
     });
+    const operationKey = '00000000-0000-4000-8000-000000000061';
+    const operationRequestDigest = `sha256:${'7'.repeat(64)}`;
+    const idempotentHandoff = await createAgentHandoff({
+      store,
+      bundleId: fixture.BUNDLE_ID,
+      snapshotId: created.snapshot.snapshotId,
+      selectedCases: fixture.RUN_1.selection.cases,
+      stalenessReport: staleness,
+      currentInputVersion: staleness.inputVersion,
+      acknowledgedRiskKinds: ['reconstruction-readiness'],
+      operationKey,
+      operationRequestDigest,
+    });
     await store.close();
 
     const receipt = await writeDeliveryReceipt({
@@ -98,6 +111,24 @@ describe('Delivery review artifacts', () => {
       reviewManifest.screenshots[0].path,
     );
     expect(await readFile(reviewPng)).toEqual(PNG_BYTES);
+
+    const keyedInput = {
+      storeRoot,
+      targetRoot,
+      handoff: idempotentHandoff,
+      source: 'gui' as const,
+      operationKey,
+      operationRequestDigest,
+    };
+    const keyedReceipt = await writeDeliveryReceipt(keyedInput);
+    const repeatedReceipt = await writeDeliveryReceipt(keyedInput);
+    expect(repeatedReceipt.deliveryId).toBe(keyedReceipt.deliveryId);
+    await expect(
+      writeDeliveryReceipt({
+        ...keyedInput,
+        operationRequestDigest: `sha256:${'8'.repeat(64)}`,
+      }),
+    ).rejects.toMatchObject({ code: 'idempotency-conflict' });
 
     const overwritten = await writeDeliveryReceipt({
       storeRoot,

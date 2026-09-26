@@ -33,16 +33,16 @@ DS 业务实例必须传稳定 `inspectId`。业务局部证据节点必须显�
 
 ## 交付阶段
 
-PBWork 的正式交付由“待确定 → 已定稿”生命周期动作触发。生命周期记录和操作阶段由 PBWork 的 `prototypeLifecycle` Pinia Store 写入 localStorage；动作自动把整个原型转换为 `SelectionDraft`，并连续完成：
+PBWork 的正式交付由“待确定 → 已定稿”生命周期动作触发。阶段、操作和固定产物引用保存在 Core Store root 下 `pbwork/<workspaceId>/lifecycle-v1.json`，由 Local Service 校验 Workspace generation 与 revision 后写入，并在 Job 结束或 Service 重启后继续 reconciliation。PBWork 的 `prototypeLifecycle` Pinia Store 缓存服务端文档；正式定稿直接调用 Capture Service Contract 创建 Preflight/Job，warning 与 risk UI 状态按 Prototype ID 隔离，不依赖 Capture Store 的全局采集字段。它触发整原型 `SelectionDraft` 并提交人的确认：
 
 1. 整原型 Preflight；
 2. 用户逐项确认现有 warning，并确认候选方案已经收敛；
 3. 执行整原型采集；
 4. 用户逐项确认现有 mandatory risk；
-5. 自动创建 Handoff 和唯一 Agent 提示词，同时写入 `.proto-bridge/deliveries/`；
-6. 只有全部成功后才把本地生命周期提交为“已定稿”，并保存该次 Job/Bundle/Snapshot/Handoff/Delivery 引用。
+5. Local Service 用同一 operation key 创建或复用 Handoff 和 Delivery，并原子发布 Agent Prompt、Receipt 与 Review 产物；
+6. 只有固定 Job/Bundle/Snapshot/Handoff/Delivery 都验证成功后，服务端才提交“已定稿”及该组引用。
 
-PBWork 不显示范围选择、页面采集、控件采集、重新采集或提示词生成/重生成按钮。已定稿和已归档只读取生命周期记录绑定的 Evidence 与提示词；刷新后按 `deliveryId` 回读已存在的 Agent prompt。已定稿若需修改，先清理该次定稿绑定的 Bundle 和正式产物引用，再回退到待确定；已归档永久只读。全量 Store 清理走 `pnpm pb:reset`；Workbench 下次同步 session generation 时把本地生命周期打回进行中，不提供对等清空按钮。
+PBWork 不显示范围选择、页面采集、控件采集、重新采集或提示词生成/重生成按钮。已定稿和已归档只读取生命周期记录绑定的 Evidence 与提示词；刷新后按 `deliveryId` 回读已存在的 Agent prompt。已定稿若需修改，点击“回退待确定”后由 Local Service 清理该次定稿绑定的 Bundle 并解除正式产物引用；回退期间界面轮询服务端结果，失败会显示原因并提供“重试回退”。已归档永久只读。全量 Store 清理走 `pnpm pb:reset`，会同时清除生命周期 sidecar；Workbench 不提供对等清空按钮。旧 `pbwork.prototype-lifecycle.v2` 只在 sidecar 为空且 Workspace/generation 匹配时尝试迁移，Service 逐项验证 Job、Run、Snapshot Coverage、Handoff、Delivery Receipt 和 Prompt 固定引用；缺件或不一致的 final/archived 记录会降为“待确定”，明确标记 Evidence 仅作诊断。未绑定历史 Evidence 不提供人工认领。
 
 CLI 不受 PBWork 生命周期约束，继续支持 `deliver --prototype <id>`、`--screen <id|slug>`、`--only-variant <id>`、`--only-scenario <id>` 和 `--selection`。这些入口会发出非正式采集警告：交互终端确认 `y` / `yes`，非 TTY / `--json` 需要 `--acknowledge-unofficial-capture`。CLI 产生的 Bundle 不改变 PBWork 生命周期，也不会自动出现在“定稿采集”页。默认目标路径来自 Workspace `delivery.targetRoot`，`--target` 只覆盖单次命令。
 

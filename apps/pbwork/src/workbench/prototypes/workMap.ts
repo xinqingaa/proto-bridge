@@ -78,7 +78,7 @@ export function operationCaption(
 ): { status: string; failure: string } {
   if (operation?.kind === "failed") {
     return {
-      status: operation.action === "rollback" ? "清理失败" : "定稿失败",
+      status: operation.action === "rollback" ? "回退失败" : "定稿失败",
       failure: operation.message,
     };
   }
@@ -116,6 +116,14 @@ export function finalizeActionLabel(
     operation.phase === "building-prompt"
     ? "查看定稿进度"
     : "继续定稿";
+}
+
+export function rollbackActionLabel(
+  operation: LifecycleOperation | undefined,
+): string {
+  return operation?.kind === "failed" && operation.action === "rollback"
+    ? "重试回退"
+    : "回退待确定";
 }
 
 export function ownersAndRoles(prototype: PrototypeRecord): string {

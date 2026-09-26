@@ -26,6 +26,7 @@ import {
   ownersAndRoles,
   prototypeChapters,
   prototypeStats,
+  rollbackActionLabel,
   screensLine,
 } from "@/workbench/prototypes/workMap";
 
@@ -129,6 +130,7 @@ function openTransition(item: PrototypeRecord, nextIntent: LifecycleIntent) {
 
 function roomActions(item: PrototypeRecord): RoomAction[] {
   const stage = state.effectiveLifecycle(item);
+  const operation = record(item)?.operation;
   if (stage === "active") {
     return [
       {
@@ -161,7 +163,7 @@ function roomActions(item: PrototypeRecord): RoomAction[] {
         run: () => openArtifacts(item),
       },
       {
-        label: "回退待确定",
+        label: rollbackActionLabel(operation),
         tone: "ghost",
         run: () => openTransition(item, "rollback"),
       },
@@ -188,7 +190,7 @@ function selectFilter(value: "all" | PrototypeLifecycle) {
 async function pollOperations() {
   for (const item of all) {
     const operation = record(item)?.operation;
-    if (operation?.kind === "finalizing" && operation.phase === "capturing") {
+    if (operation?.kind === "finalizing" || operation?.kind === "rolling-back") {
       await state.pollFinalization(item);
     }
   }

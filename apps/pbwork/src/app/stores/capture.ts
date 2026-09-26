@@ -22,7 +22,6 @@ import {
 } from "@/capture/service-client";
 import { formatCaptureError } from "@/capture/presentation";
 import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
-import { knownBundleIdsFromEvidence } from "@/app/stores/workspace-generation";
 
 export type CaptureEntryKind =
   "current-screen" | "fragment" | "custom" | "prototype";
@@ -113,6 +112,23 @@ function allSelections(screenId: string) {
       ? { mode: "explicit" as const, scenarioIds }
       : { mode: "none" as const },
   };
+}
+
+/** Build the stable default whole-prototype selection used by formal finalization. */
+export function createPrototypeCaptureDraft(prototypeId: string): SelectionDraft | null {
+  const prototype = loadPrototypes().find((item) => item.id === prototypeId);
+  if (!prototype) return null;
+  const screens = loadPrototypeScreens()
+    .filter((screen) => screen.prototypeId === prototypeId)
+    .map((screen) => ({
+      screenId: screen.screenId,
+      ...allSelections(screen.screenId),
+      themeIds: [prototype.defaultThemeId],
+      deviceIds: ["iphone-14"],
+      captureScope: defaultScope(),
+    }));
+  if (!screens.length) return null;
+  return { prototypeId, screens, acceptedWarningIds: [] };
 }
 
 function currentScreenDraft(input: CurrentScreenInput): SelectionDraft {
@@ -286,23 +302,10 @@ export const useCaptureStore = defineStore("capture-v2", {
       const { usePrototypeLifecycleStore } = await import(
         "@/app/stores/prototypeLifecycle"
       );
-      const reset = usePrototypeLifecycleStore().syncWithWorkspace({
-        workspaceId: this.session.workspaceId,
-        generationId: this.session.generationId,
-        knownBundleIds: knownBundleIdsFromEvidence(
-          this.evidenceInventory,
-          this.consoleState,
-        ),
-        prototypes: loadPrototypes(),
-      });
-      if (!reset) return false;
-      this.clearStaleWorkspaceUi();
-      this.notice = {
-        tone: "info",
-        title: "Workspace 已重置",
-        message: "Store 已换新 generation，本地生命周期已回到进行中。",
-      };
-      return true;
+      const lifecycle = usePrototypeLifecycleStore();
+      const document = await captureServiceClient.prototypeLifecycle();
+      await lifecycle.hydrateFromService(document, loadPrototypes());
+      return false;
     },
     persistDraft() {
       window.sessionStorage.setItem(
@@ -335,6 +338,11 @@ export const useCaptureStore = defineStore("capture-v2", {
         if (this.session && nextConsoleState.generationId !== this.session.generationId) {
           this.clearStaleWorkspaceUi();
           this.session.generationId = nextConsoleState.generationId;
+          this.notice = {
+            tone: "info",
+            title: "Workspace 已重置",
+            message: "Local Service 已切换到新 generation，原型生命周期将从 Workspace 元数据重新载入。",
+          };
         }
         this.consoleState = nextConsoleState;
         this.evidenceInventory = await captureServiceClient.evidenceInventory();
@@ -413,25 +421,11 @@ export const useCaptureStore = defineStore("capture-v2", {
       this.invalidatePreflight();
     },
     beginPrototype(prototypeId: string, returnTo = "/workbench/overview") {
-      const prototype = loadPrototypes().find(
-        (item) => item.id === prototypeId,
-      );
-      if (!prototype) return;
+      const draft = createPrototypeCaptureDraft(prototypeId);
+      if (!draft) return;
       this.entryKind = "prototype";
       this.returnTo = returnTo;
-      this.draft = {
-        prototypeId,
-        screens: loadPrototypeScreens()
-          .filter((screen) => screen.prototypeId === prototypeId)
-          .map((screen) => ({
-            screenId: screen.screenId,
-            ...allSelections(screen.screenId),
-            themeIds: [prototype.defaultThemeId],
-            deviceIds: ["iphone-14"],
-            captureScope: defaultScope(),
-          })),
-        acceptedWarningIds: [],
-      };
+      this.draft = draft;
       this.recaptureBundleId = null;
       this.invalidatePreflight();
     },
@@ -522,8 +516,8 @@ export const useCaptureStore = defineStore("capture-v2", {
         ? [...new Set([...this.acceptedWarningIds, warningId])]
         : this.acceptedWarningIds.filter((item) => item !== warningId);
     },
-    async createJob(bundleId?: string) {
-      if (!this.preflight || !this.warningsAccepted) return;
+    async createJob(bundleId?: string, operationKey?: string) {
+      if (!this.preflight || !this.warningsAccepted) return null;
       this.busy = true;
       this.clearError();
       try {
@@ -531,6 +525,7 @@ export const useCaptureStore = defineStore("capture-v2", {
         const result = await captureServiceClient.createJob({
           preflightId: this.preflight.preflightId,
           acceptedWarningIds: this.acceptedWarningIds,
+          ...(operationKey ? { operationKey } : {}),
           ...(targetBundleId ? { bundleId: targetBundleId } : {}),
         });
         this.activeJob = result.job;
@@ -550,6 +545,7 @@ export const useCaptureStore = defineStore("capture-v2", {
           bundleId: result.job.bundleId,
         };
         await this.refreshConsole();
+        return result.job;
       } catch (error) {
         this.setError(error);
       } finally {

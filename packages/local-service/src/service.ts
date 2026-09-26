@@ -1,6 +1,6 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { readFile, readdir, rm } from 'node:fs/promises';
-import { join as pathJoin } from 'node:path';
+import { join as pathJoin, relative as pathRelative, resolve as pathResolve, sep as pathSep } from 'node:path';
 import {
   createServer,
   type IncomingMessage,
@@ -17,6 +17,13 @@ import {
   SnapshotId,
   StalenessReportId,
   V2ContractError,
+  LifecycleOperationKey,
+  OperationRequestDigest,
+  PrototypeLifecycleDocument,
+  FinalizationFailedCase,
+  incompleteCaseCount,
+  PrototypeLifecycleRecord,
+  type PrototypeLifecycleOperation,
   buildHandoffIndex,
   buildEvidenceInventory,
   computeScopeKey,
@@ -74,6 +81,8 @@ import {
   type WorkspaceResetApplyRequest,
   type WorkspaceResetPreviewRequest,
   type WorkspaceResetResult,
+  type UpdatePrototypeLifecycleRequest,
+  type MigratePrototypeLifecycleRequest,
   type StartTargetReviewRequest,
   type RecordScreenshotViewedRequest,
   type RunTargetRenderRequest,
@@ -154,6 +163,7 @@ function errorStatus(code: string): number {
   if (code === 'unknown-reference') return 404;
   if (code === 'preflight-expired') return 409;
   if (code === 'writer-lock-held') return 409;
+  if (code === 'revision-conflict' || code === 'idempotency-conflict') return 409;
   if ([
     'workspace-resetting',
     'workspace-generation-mismatch',
@@ -225,6 +235,21 @@ function matrixIdentity(preflight: CapturePreflight): string {
   );
 }
 
+function canonicalJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`)
+      .join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function operationRequestDigest(value: unknown): OperationRequestDigest {
+  return `sha256:${createHash('sha256').update(canonicalJson(value)).digest('hex')}`;
+}
+
 function reviewSeedSelection(seed: ReviewSessionSeed): object {
   return {
     targetContentDigest: seed.targetContentDigest,
@@ -286,8 +311,11 @@ export class ProtoBridgeLocalService {
   private readonly sessions = new Map<string, SessionRecord>();
   private readonly preflights = new Map<string, PreflightRecord>();
   private readonly reviewApprovals = new Map<string, ReviewApprovalRecord>();
+  private readonly operationLocks = new Map<string, Promise<void>>();
   private readonly jobHost = new CaptureJobHost();
   private server: Server | undefined;
+  private lifecycleReconciliationTimer: ReturnType<typeof setInterval> | undefined;
+  private lifecycleReconciliationInFlight: Promise<void> | undefined;
   private finalizedOrphanJobIds: string[] = [];
   private workspaceResetting = false;
   private currentGenerationId: string | 'legacy-unavailable' = 'legacy-unavailable';
@@ -339,6 +367,16 @@ export class ProtoBridgeLocalService {
     const initialized = await this.store.init();
     this.finalizedOrphanJobIds = initialized.finalizedOrphanJobs;
     this.currentGenerationId = initialized.lifecycle.generationId;
+    await this.cleanupIncompleteDeliveries();
+    await this.reconcilePrototypeLifecycle().catch((error: unknown) => {
+      console.error('Prototype lifecycle reconciliation failed during Service startup.', error);
+    });
+    this.lifecycleReconciliationTimer = setInterval(
+      () => void this.reconcilePrototypeLifecycle().catch((error: unknown) => {
+        console.error('Prototype lifecycle reconciliation failed.', error);
+      }),
+      1000,
+    );
     this.server = createServer((request, response) => {
       void this.handle(request, response).catch((error: unknown) => {
         const schemaError =
@@ -369,6 +407,10 @@ export class ProtoBridgeLocalService {
   }
 
   async close(): Promise<void> {
+    if (this.lifecycleReconciliationTimer) {
+      clearInterval(this.lifecycleReconciliationTimer);
+      this.lifecycleReconciliationTimer = undefined;
+    }
     const server = this.server;
     this.server = undefined;
     if (server) {
@@ -549,6 +591,731 @@ export class ProtoBridgeLocalService {
     }
   }
 
+  private async withOperationLock<T>(key: string, operation: () => Promise<T>): Promise<T> {
+    const previous = this.operationLocks.get(key) ?? Promise.resolve();
+    let release!: () => void;
+    const current = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const queued = previous.then(() => current);
+    this.operationLocks.set(key, queued);
+    await previous;
+    try {
+      return await operation();
+    } finally {
+      release();
+      if (this.operationLocks.get(key) === queued) {
+        this.operationLocks.delete(key);
+      }
+    }
+  }
+
+  private async updateFinalizationOperation(
+    operationKey: LifecycleOperationKey,
+    update: (operation: PrototypeLifecycleOperation) => PrototypeLifecycleOperation,
+  ): Promise<void> {
+    await this.updateFinalizationRecord(operationKey, (record) => {
+      if (record.operation.kind !== 'finalizing') return record;
+      return {
+        ...record,
+        operation: update(record.operation),
+        updatedAt: new Date().toISOString(),
+      };
+    });
+  }
+
+  private async updateFinalizationRecord(
+    operationKey: LifecycleOperationKey,
+    update: (record: PrototypeLifecycleRecord) => PrototypeLifecycleRecord,
+    historyEntry?: {
+      id: string;
+      prototypeId: string;
+      from: 'active' | 'review' | 'final' | 'archived';
+      to: 'active' | 'review' | 'final' | 'archived';
+      note: string;
+      changedAt: string;
+    },
+  ): Promise<PrototypeLifecycleRecord | undefined> {
+    let result: PrototypeLifecycleRecord | undefined;
+    await this.withOperationLock(`lifecycle:${this.store.workspaceId}`, async () => {
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const document = await this.store.getPrototypeLifecycleDocument();
+        const entry = Object.entries(document.records).find(([, record]) =>
+          (record.operation.kind === 'finalizing' || record.operation.kind === 'rolling-back' || record.operation.kind === 'failed') &&
+          record.operation.operationKey === operationKey,
+        );
+        if (!entry) return;
+        const [prototypeId, record] = entry;
+        const nextRecord = PrototypeLifecycleRecord.parse(update(record));
+        const next = PrototypeLifecycleDocument.parse({
+          ...document,
+          revision: document.revision + 1,
+          history: historyEntry
+            ? [historyEntry, ...document.history].slice(0, 500)
+            : document.history,
+          records: {
+            ...document.records,
+            [prototypeId]: nextRecord,
+          },
+          updatedAt: new Date().toISOString(),
+        });
+        try {
+          await this.store.compareAndSetPrototypeLifecycleDocument({
+            expectedRevision: document.revision,
+            document: next,
+          });
+          result = nextRecord;
+          return;
+        } catch (error) {
+          if (
+            !(error instanceof V2ContractError) ||
+            error.code !== 'revision-conflict'
+          ) {
+            throw error;
+          }
+        }
+      }
+      throw new V2ContractError(
+        'revision-conflict',
+        'Could not update the finalization record because it kept changing.',
+      );
+    });
+    return result;
+  }
+
+  private async assertClientLifecycleUpdate(
+    previous: PrototypeLifecycleDocument,
+    next: PrototypeLifecycleDocument,
+  ): Promise<void> {
+    for (const [prototypeId, oldRecord] of Object.entries(previous.records)) {
+      const nextRecord = next.records[prototypeId];
+      if (!nextRecord) continue;
+      if (nextRecord.stage === 'final' && oldRecord.stage !== 'final') {
+        throw new V2ContractError('unsafe-input', 'Only Local Service reconciliation may mark a prototype final.');
+      }
+      const oldOperation = oldRecord.operation;
+      const nextOperation = nextRecord.operation;
+      if (oldOperation.kind === 'finalizing' && nextOperation.kind === 'finalizing') {
+        for (const field of ['jobId', 'bundleId', 'snapshotId', 'handoffId', 'deliveryId'] as const) {
+          if (oldOperation[field] !== nextOperation[field]) {
+            throw new V2ContractError('unsafe-input', `PBWork cannot change server-owned finalization reference ${field}.`);
+          }
+        }
+        if (oldOperation.phase !== nextOperation.phase) {
+          const userTransitions =
+            (oldOperation.phase === 'preflighting' && nextOperation.phase === 'awaiting-confirmation') ||
+            (oldOperation.phase === 'awaiting-risks' && nextOperation.phase === 'building-prompt');
+          if (!userTransitions) {
+            throw new V2ContractError('unsafe-input', 'This finalization phase is owned by Local Service.');
+          }
+          if (nextOperation.phase === 'building-prompt') {
+            const bundleId = oldOperation.bundleId;
+            const snapshotId = oldOperation.snapshotId;
+            if (!bundleId || !snapshotId) {
+              throw new V2ContractError('unknown-reference', '风险确认缺少固定 Bundle/Snapshot 引用。');
+            }
+            const evaluated = await this.evaluateHandoffForSnapshot(bundleId, snapshotId);
+            const acknowledged = new Set(nextOperation.acknowledgedRiskKinds);
+            const missing = evaluated.evaluation.risks
+              .map((risk) => risk.kind)
+              .filter((kind) => !acknowledged.has(kind));
+            if (missing.length) {
+              throw new V2ContractError('invalid-schema', `仍需逐项确认风险：${[...new Set(missing)].join('、')}。`);
+            }
+          }
+        }
+      }
+      if (oldRecord.stage === 'final' && nextRecord.stage === 'review') {
+        if (oldOperation.kind !== 'rolling-back') {
+          throw new V2ContractError('unsafe-input', '定稿产物必须先进入回退操作后才能清除绑定。');
+        }
+        for (const bundleId of oldOperation.bundleIds) {
+          const bundle = await this.store.getBundle(bundleId);
+          if (bundle && bundle.status !== 'trashed') {
+            throw new V2ContractError('unsafe-input', `Bundle ${bundleId} 尚未移入回收站。`);
+          }
+        }
+      }
+    }
+  }
+
+  private async validateMigratedArtifacts(
+    record: PrototypeLifecycleRecord,
+  ): Promise<string | null> {
+    const artifacts = record.artifacts;
+    if (!artifacts) return '旧定稿记录没有固定产物引用。';
+    const bundle = await this.store.getBundle(artifacts.bundleId);
+    if (!bundle || bundle.status === 'trashed') return '绑定的 Bundle 不存在或已移入回收站。';
+    const job = await this.store.getJob(artifacts.jobId);
+    if (!job || job.bundleId !== artifacts.bundleId || job.status !== 'completed' || !job.runId) {
+      return '绑定的采集 Job 不存在、未完成，或不属于该 Bundle。';
+    }
+    const snapshot = await this.store.getSnapshot(artifacts.bundleId, artifacts.snapshotId);
+    if (!snapshot || snapshot.sourceRunId !== job.runId) {
+      return '绑定的 Snapshot 不存在，或与采集 Job 的 Run 不一致。';
+    }
+    if (incompleteCaseCount(snapshot.coverage.counts) > 0) {
+      return '绑定的 Snapshot Coverage 不完整。';
+    }
+    const handoff = await this.store.getHandoff(artifacts.handoffId);
+    if (
+      !handoff ||
+      handoff.workspaceId !== this.store.workspaceId ||
+      handoff.bundleId !== artifacts.bundleId ||
+      handoff.snapshotId !== artifacts.snapshotId
+    ) {
+      return '绑定的 Handoff 不存在，或与 Bundle/Snapshot 不一致。';
+    }
+    if (!/^[a-zA-Z0-9._+-]+$/.test(artifacts.deliveryId) || artifacts.deliveryId === '.' || artifacts.deliveryId === '..') {
+      return '绑定的 Delivery ID 不是安全的固定目录名。';
+    }
+    const deliveryRoot = deliveryRootFromStoreRoot(this.options.storeRoot);
+    const deliveryDir = pathResolve(deliveryRoot, artifacts.deliveryId);
+    const expectedReceiptPath = pathResolve(deliveryDir, 'receipt.json');
+    const expectedPromptPath = pathResolve(deliveryDir, 'agent-prompt.md');
+    const receiptPath = pathResolve(artifacts.receiptPath);
+    const promptPath = pathResolve(artifacts.agentPromptPath);
+    const insideDelivery = (candidate: string) => {
+      const relative = pathRelative(deliveryRoot, candidate);
+      return relative !== '' && relative !== '..' && !relative.startsWith(`..${pathSep}`);
+    };
+    if (
+      receiptPath !== expectedReceiptPath ||
+      promptPath !== expectedPromptPath ||
+      !insideDelivery(receiptPath) ||
+      !insideDelivery(promptPath)
+    ) {
+      return '绑定的 Delivery 文件路径与固定目录不一致。';
+    }
+    try {
+      const [receiptText, promptText] = await Promise.all([
+        readFile(receiptPath, 'utf8'),
+        readFile(promptPath, 'utf8'),
+      ]);
+      const receipt = JSON.parse(receiptText) as Record<string, unknown>;
+      if (
+        receipt.deliveryId !== artifacts.deliveryId ||
+        receipt.workspaceId !== this.store.workspaceId ||
+        receipt.bundleId !== artifacts.bundleId ||
+        receipt.runId !== job.runId ||
+        receipt.snapshotId !== artifacts.snapshotId ||
+        receipt.handoffId !== artifacts.handoffId ||
+        pathResolve(String(receipt.receiptPath ?? '')) !== expectedReceiptPath ||
+        pathResolve(String(receipt.agentPromptPath ?? '')) !== expectedPromptPath ||
+        promptText.trim().length === 0
+      ) {
+        return 'Delivery Receipt 与生命周期记录中的固定引用不一致。';
+      }
+    } catch {
+      return '绑定的 Delivery Receipt 或 Agent Prompt 缺失或无法读取。';
+    }
+    return null;
+  }
+
+  private async validateLifecycleMigration(
+    input: MigratePrototypeLifecycleRequest,
+  ): Promise<PrototypeLifecycleDocument> {
+    const candidate = PrototypeLifecycleDocument.parse(input.document);
+    if (
+      candidate.workspaceId !== this.store.workspaceId ||
+      candidate.generationId !== this.currentGenerationId ||
+      candidate.revision !== 1
+    ) {
+      throw new V2ContractError('workspace-generation-mismatch', 'Lifecycle migration must match the current Workspace generation.');
+    }
+    const current = await this.store.getPrototypeLifecycleDocument();
+    if (current.revision !== 0 || Object.keys(current.records).length !== 0) {
+      throw new V2ContractError('revision-conflict', 'Lifecycle migration is only allowed before lifecycle records exist.', current);
+    }
+    const records = { ...candidate.records };
+    const rejected = new Set<string>();
+    for (const [prototypeId, record] of Object.entries(records)) {
+      if (record.stage !== 'final' && record.stage !== 'archived') continue;
+      const reason = await this.validateMigratedArtifacts(record);
+      if (!reason) continue;
+      rejected.add(prototypeId);
+      records[prototypeId] = {
+        ...record,
+        stage: 'review',
+        operation: {
+          kind: 'failed',
+          action: 'finalize',
+          message: `旧浏览器定稿绑定未通过固定引用校验，未迁移为正式定稿；Evidence 仅作诊断：${reason}`,
+          failedAt: new Date().toISOString(),
+        },
+        artifacts: null,
+        updatedAt: new Date().toISOString(),
+      };
+    }
+    const sanitized = PrototypeLifecycleDocument.parse({
+      ...candidate,
+      records,
+      history: candidate.history.filter((entry) =>
+        !rejected.has(entry.prototypeId) || (entry.to !== 'final' && entry.to !== 'archived'),
+      ),
+    });
+    return this.store.importPrototypeLifecycleDocument(sanitized);
+  }
+
+  private async reconcilePrototypeLifecycle(): Promise<void> {
+    if (this.lifecycleReconciliationInFlight) {
+      return this.lifecycleReconciliationInFlight;
+    }
+    const reconciliation = this.reconcilePrototypeLifecycleOnce().finally(() => {
+      this.lifecycleReconciliationInFlight = undefined;
+    });
+    this.lifecycleReconciliationInFlight = reconciliation;
+    return reconciliation;
+  }
+
+  private async cleanupIncompleteDeliveries(): Promise<void> {
+    const root = deliveryRootFromStoreRoot(this.options.storeRoot);
+    let entries: string[];
+    try {
+      entries = await readdir(root);
+    } catch (error) {
+      if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT') return;
+      throw error;
+    }
+    for (const entry of entries) {
+      if (entry.startsWith('.tmp-operation-')) {
+        await rm(pathJoin(root, entry), { recursive: true, force: true });
+        continue;
+      }
+      if (!entry.startsWith('operation-')) continue;
+      try {
+        await readFile(pathJoin(root, entry, 'receipt.json'));
+      } catch (error) {
+        if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT') {
+          await rm(pathJoin(root, entry), { recursive: true, force: true });
+          continue;
+        }
+        throw error;
+      }
+    }
+  }
+
+  private async reconcilePrototypeLifecycleOnce(): Promise<void> {
+    await this.store.assertHealthy();
+    const document = await this.store.getPrototypeLifecycleDocument();
+    for (const record of Object.values(document.records)) {
+      if (record.operation.kind === 'rolling-back') {
+        try {
+          await this.reconcileRollback(record);
+        } catch (error) {
+          const message = `定稿回退失败：${error instanceof Error ? error.message : '未知错误'}。修复后可重试回退。`;
+          try {
+            await this.failRollback(record.operation.operationKey, message);
+          } catch (persistError) {
+            console.error(
+              `Could not persist rollback failure for ${record.prototypeId}; the Service will retry reconciliation on restart.`,
+              persistError,
+            );
+          }
+        }
+      } else if (record.operation.kind === 'finalizing') {
+        try {
+          await this.reconcileFinalization(record);
+        } catch (error) {
+          await this.failFinalization(
+            record.operation.operationKey,
+            `后台定稿收尾失败：${error instanceof Error ? error.message : '未知错误'}。修复后可重新检查。`,
+          );
+        }
+      }
+    }
+  }
+
+  private async failFinalization(
+    operationKey: LifecycleOperationKey,
+    message: string,
+    failedCases: Array<{ caseId: string; reason: string }> = [],
+  ): Promise<void> {
+    await this.updateFinalizationRecord(operationKey, (record) => {
+      if (record.operation.kind !== 'finalizing') return record;
+      const failedAt = new Date().toISOString();
+      return {
+        ...record,
+        operation: {
+          kind: 'failed',
+          operationKey,
+          action: 'finalize',
+          message,
+          failedAt,
+          ...(failedCases.length ? { failedCases } : {}),
+        },
+        updatedAt: failedAt,
+      };
+    });
+  }
+
+  private async failRollback(
+    operationKey: LifecycleOperationKey,
+    message: string,
+  ): Promise<void> {
+    await this.updateFinalizationRecord(operationKey, (record) => {
+      if (record.operation.kind !== 'rolling-back') return record;
+      const failedAt = new Date().toISOString();
+      return {
+        ...record,
+        operation: {
+          kind: 'failed',
+          operationKey,
+          action: 'rollback',
+          message,
+          failedAt,
+        },
+        updatedAt: failedAt,
+      };
+    });
+  }
+
+  private async failedCasesForJob(
+    job: Awaited<ReturnType<LocalFileStore['getJob']>> & {},
+  ): Promise<Array<{ caseId: string; reason: string }>> {
+    const run = job.runId
+      ? await this.store.getRun(job.bundleId, job.runId)
+      : undefined;
+    const failedAttempts = (run?.attempts ?? []).filter(
+      (attempt) => !['captured', 'reused'].includes(attempt.result),
+    );
+    if (failedAttempts.length > 0) {
+      return failedAttempts.map((attempt) => ({
+        caseId: attempt.caseId,
+        reason: attempt.reason ?? attempt.result,
+      }));
+    }
+    if (run?.attempts.length) return [];
+
+    return job.journal
+      .filter((entry) => entry.event === 'case-finished' && entry.detail)
+      .flatMap((entry) => {
+        const detail = entry.detail!;
+        const failedMarker = detail.lastIndexOf(':failed:');
+        if (failedMarker >= 0) {
+          return [{
+            caseId: detail.slice(0, failedMarker),
+            reason: detail.slice(failedMarker + ':failed:'.length) || '采集失败',
+          }];
+        }
+        const separator = detail.lastIndexOf(':');
+        if (separator < 1) return [];
+        const caseId = detail.slice(0, separator);
+        const result = detail.slice(separator + 1);
+        if (result === 'captured' || result === 'reused') return [];
+        if (result === 'failed') return [{ caseId, reason: '采集失败' }];
+        if (result === 'cancelled' || result === 'interrupted' || result === 'unsupported' || result === 'skipped') {
+          return [{ caseId, reason: result }];
+        }
+        return [{ caseId, reason: result || '采集失败' }];
+      });
+  }
+
+  private async reconcileFinalization(
+    record: PrototypeLifecycleRecord,
+  ): Promise<void> {
+    if (record.operation.kind !== 'finalizing') return;
+    const operation = record.operation;
+    if (operation.phase === 'awaiting-confirmation') {
+      const existing = await this.store.findJobByOperationKey(operation.operationKey);
+      if (existing) {
+        await this.updateFinalizationOperation(operation.operationKey, (current) =>
+          current.kind === 'finalizing'
+            ? {
+                ...current,
+                phase: 'capturing',
+                jobId: existing.jobId,
+                bundleId: existing.bundleId,
+                requestDigest: existing.operationRequestDigest,
+              }
+            : current,
+        );
+      }
+      return;
+    }
+    if (operation.phase === 'capturing') {
+      if (!operation.jobId || !operation.bundleId) {
+        await this.failFinalization(operation.operationKey, '定稿 operation 缺少固定 Job/Bundle 引用。');
+        return;
+      }
+      const job = await this.store.getJob(operation.jobId);
+      if (!job || job.bundleId !== operation.bundleId || job.operationKey !== operation.operationKey) {
+        await this.failFinalization(operation.operationKey, '无法找到与定稿 operation 固定绑定的采集 Job。');
+        return;
+      }
+      if (!['completed', 'failed', 'cancelled', 'interrupted'].includes(job.status)) return;
+      if (job.status !== 'completed') {
+        const failedCases = await this.failedCasesForJob(job);
+        await this.failFinalization(operation.operationKey, `整原型采集以 ${job.status} 结束。`, failedCases);
+        return;
+      }
+      const snapshot = await this.store.getActiveSnapshot(job.bundleId);
+      if (!snapshot || snapshot.sourceRunId !== job.runId) {
+        await this.failFinalization(operation.operationKey, '采集 Job 已结束，但找不到其固定 Run 对应的 Snapshot。');
+        return;
+      }
+      const incomplete = incompleteCaseCount(snapshot.coverage.counts);
+      if (incomplete > 0) {
+        const run = job.runId ? await this.store.getRun(job.bundleId, job.runId) : undefined;
+        const failedCases = (run?.attempts ?? [])
+          .filter((attempt) => !['captured', 'reused'].includes(attempt.result))
+          .map((attempt) => ({
+            caseId: attempt.caseId,
+            reason: attempt.reason ?? attempt.result,
+          }));
+        const counts = snapshot.coverage.counts;
+        await this.failFinalization(
+          operation.operationKey,
+          `整原型采集未完整：${counts.captured + counts.reused}/${counts.selected} 项有效，${incomplete} 项失败，尚未生成 Handoff 和提示词。`,
+          failedCases,
+        );
+        return;
+      }
+      await this.updateFinalizationOperation(operation.operationKey, (current) =>
+        current.kind === 'finalizing'
+          ? {
+              ...current,
+              phase: 'awaiting-risks',
+              snapshotId: snapshot.snapshotId,
+              acknowledgedRiskKinds: [],
+            }
+          : current,
+      );
+      return;
+    }
+    if (operation.phase === 'awaiting-risks') {
+      if (!operation.bundleId || !operation.snapshotId) {
+        await this.failFinalization(operation.operationKey, '风险确认阶段缺少固定 Bundle/Snapshot 引用。');
+        return;
+      }
+      let evaluated: Awaited<ReturnType<typeof this.evaluateHandoffForSnapshot>>;
+      try {
+        evaluated = await this.evaluateHandoffForSnapshot(operation.bundleId, operation.snapshotId);
+      } catch (error) {
+        await this.failFinalization(
+          operation.operationKey,
+          `定稿风险评估失败：${error instanceof Error ? error.message : '未知错误'}。修复后可重新检查。`,
+        );
+        return;
+      }
+      const requiredRiskKinds = new Set(evaluated.evaluation.risks.map((risk) => risk.kind));
+      const acknowledgedRiskKinds = new Set(operation.acknowledgedRiskKinds);
+      const missing = [...requiredRiskKinds].filter((kind) => !acknowledgedRiskKinds.has(kind));
+      if (missing.length > 0) return;
+      await this.updateFinalizationOperation(operation.operationKey, (current) =>
+        current.kind === 'finalizing' && current.phase === 'awaiting-risks'
+          ? { ...current, phase: 'building-prompt' }
+          : current,
+      );
+      return;
+    }
+    if (operation.phase !== 'building-prompt') return;
+    try {
+      await this.withOperationLock(`operation:${operation.operationKey}`, () =>
+        this.buildFinalizationArtifacts(record),
+      );
+    } catch (error) {
+      await this.failFinalization(
+        operation.operationKey,
+        `Agent 提示词生成失败：${error instanceof Error ? error.message : '未知错误'}。修复后可重新检查。`,
+      );
+    }
+  }
+
+  private async evaluateHandoffForSnapshot(bundleId: string, snapshotId: string) {
+    const snapshot = await this.store.getSnapshot(BundleId.parse(bundleId), SnapshotId.parse(snapshotId));
+    if (!snapshot) throw new V2ContractError('unknown-reference', '定稿 Snapshot 不存在。');
+    const run = await this.store.getRun(bundleId as never, snapshot.sourceRunId);
+    if (!run) throw new V2ContractError('unknown-reference', '定稿 Snapshot 的来源 Run 不存在。');
+    const activeCases = await selectedCasesForSnapshot(this.store, BundleId.parse(bundleId), snapshot);
+    let current: CapturePreflight | undefined;
+    try {
+      current = (await this.runPreflight(selectionDraftFromSelectedCases(run.selection.prototypeId, activeCases))).preflight;
+    } catch (error) {
+      if (!(error instanceof V2ContractError) || error.code !== 'unknown-reference') throw error;
+    }
+    const interactionCoverage = current
+      ? {
+          required: current.interactionCoverage.required,
+          captured: current.interactionCoverage.selected,
+          missingScenarioIds: current.interactionCoverage.missingScenarioIds,
+        }
+      : { required: 1, captured: 0, missingScenarioIds: ['authored-reference-removed'] };
+    const dependencyDigests: Record<string, string> = current
+      ? { [`manifest:${run.selection.prototypeId}`]: current.manifestDigest }
+      : {};
+    if (current) {
+      for (const selected of activeCases) dependencyDigests[`runtime:${selected.caseKey.screenId}`] = current.inputVersion;
+    }
+    const report = await this.store.createStalenessReport({
+      bundleId: BundleId.parse(bundleId),
+      snapshotId: SnapshotId.parse(snapshotId),
+      inputVersion: current?.inputVersion ?? 'authored-reference-removed',
+      currentDependencyDigests: dependencyDigests,
+    });
+    const evaluation = await evaluateAgentHandoff({
+      store: this.store,
+      bundleId: BundleId.parse(bundleId),
+      snapshotId: SnapshotId.parse(snapshotId),
+      selectedCases: run.selection.cases,
+      stalenessReport: report,
+      interactionCoverage,
+    });
+    return { snapshot, run, activeCases, current, report, evaluation, interactionCoverage };
+  }
+
+  private async buildFinalizationArtifacts(record: PrototypeLifecycleRecord): Promise<void> {
+    if (record.operation.kind !== 'finalizing') return;
+    const operation = record.operation;
+    if (!operation.jobId || !operation.bundleId || !operation.snapshotId || !operation.requestDigest) {
+      await this.failFinalization(operation.operationKey, '定稿 operation 缺少固定 Job、Bundle、Snapshot 或请求摘要。');
+      return;
+    }
+    const job = await this.store.getJob(operation.jobId);
+    if (!job || job.status !== 'completed' || job.bundleId !== operation.bundleId || job.operationKey !== operation.operationKey) {
+      await this.failFinalization(operation.operationKey, '定稿 Job 引用已失效或未成功完成。');
+      return;
+    }
+    const snapshot = await this.store.getSnapshot(
+      BundleId.parse(operation.bundleId),
+      SnapshotId.parse(operation.snapshotId),
+    );
+    if (!snapshot) {
+      await this.failFinalization(operation.operationKey, '定稿 Snapshot 不存在，未生成 Handoff 和提示词。');
+      return;
+    }
+    if (snapshot.sourceRunId !== job.runId) {
+      await this.failFinalization(
+        operation.operationKey,
+        '定稿 Snapshot 与 Job 固定绑定的来源 Run 不一致，未生成 Handoff 和提示词。',
+      );
+      return;
+    }
+    const incomplete = incompleteCaseCount(snapshot.coverage.counts);
+    if (incomplete !== 0) {
+      const failedCases = await this.failedCasesForJob(job);
+      await this.failFinalization(
+        operation.operationKey,
+        `定稿 Snapshot 仍有 ${incomplete} 项未完成，未生成 Handoff 和提示词。`,
+        failedCases,
+      );
+      return;
+    }
+    const evaluated = await this.evaluateHandoffForSnapshot(operation.bundleId, operation.snapshotId);
+    const requiredRiskKinds = new Set(evaluated.evaluation.risks.map((risk) => risk.kind));
+    const acknowledged = new Set(operation.acknowledgedRiskKinds);
+    const missing = [...requiredRiskKinds].filter((kind) => !acknowledged.has(kind));
+    if (missing.length) {
+      await this.failFinalization(operation.operationKey, `缺少风险确认：${missing.join('、')}。请重新检查风险后再开始生成提示词。`);
+      return;
+    }
+    const handoffDigest = operationRequestDigest({
+      bundleId: operation.bundleId,
+      snapshotId: operation.snapshotId,
+      implementationIntent: operation.implementationIntent ?? '',
+      acknowledgedRiskKinds: [...operation.acknowledgedRiskKinds].sort(),
+    });
+    const handoff = await createAgentHandoff({
+      store: this.store,
+      bundleId: BundleId.parse(operation.bundleId),
+      snapshotId: SnapshotId.parse(operation.snapshotId),
+      selectedCases: evaluated.run.selection.cases,
+      stalenessReport: evaluated.report,
+      currentInputVersion: evaluated.current?.inputVersion ?? 'authored-reference-removed',
+      interactionCoverage: evaluated.interactionCoverage,
+      ...(operation.implementationIntent ? { implementationIntent: operation.implementationIntent } : {}),
+      acknowledgedRiskKinds: operation.acknowledgedRiskKinds,
+      operationKey: operation.operationKey,
+      operationRequestDigest: handoffDigest,
+    });
+    await this.updateFinalizationOperation(operation.operationKey, (current) =>
+      current.kind === 'finalizing' ? { ...current, handoffId: handoff.handoffId } : current,
+    );
+    const acceptedWarningIds = operation.acceptedWarningIds;
+    const deliveryDigest = operationRequestDigest({
+      handoffId: handoff.handoffId,
+      targetRoot: this.options.deliveryTargetRoot,
+      implementationIntent: operation.implementationIntent ?? '',
+      runId: job.runId ?? '',
+      acceptedWarningIds: [...acceptedWarningIds].sort(),
+      acknowledgedRiskKinds: [...operation.acknowledgedRiskKinds].sort(),
+    });
+    const receipt = await writeDeliveryReceipt({
+      storeRoot: this.options.storeRoot,
+      targetRoot: this.options.deliveryTargetRoot,
+      handoff,
+      source: 'gui',
+      ...(job.runId ? { runId: job.runId } : {}),
+      acceptedWarningIds,
+      acknowledgedRiskKinds: operation.acknowledgedRiskKinds,
+      ...(operation.implementationIntent ? { implementationIntent: operation.implementationIntent } : {}),
+      operationKey: operation.operationKey,
+      operationRequestDigest: deliveryDigest,
+    });
+    await this.updateFinalizationOperation(operation.operationKey, (current) =>
+      current.kind === 'finalizing'
+        ? { ...current, deliveryId: receipt.deliveryId }
+        : current,
+    );
+    const finalizedAt = new Date().toISOString();
+    const historyEntry = {
+      id: `${record.prototypeId}-${finalizedAt}-${randomUUID().slice(0, 8)}`,
+      prototypeId: record.prototypeId,
+      from: 'review' as const,
+      to: 'final' as const,
+      note: '整原型采集与提示词生成完成',
+      changedAt: finalizedAt,
+    };
+    await this.updateFinalizationRecord(operation.operationKey, (latest) => {
+      if (latest.operation.kind !== 'finalizing') return latest;
+      return PrototypeLifecycleRecord.parse({
+        ...latest,
+        stage: 'final',
+        operation: { kind: 'idle' },
+        artifacts: {
+          jobId: operation.jobId,
+          bundleId: operation.bundleId,
+          snapshotId: operation.snapshotId,
+          handoffId: handoff.handoffId,
+          deliveryId: receipt.deliveryId,
+          agentPromptPath: receipt.agentPromptPath,
+          receiptPath: receipt.receiptPath,
+          finalizedAt,
+          operationKey: operation.operationKey,
+          requestDigest: deliveryDigest,
+        },
+        updatedAt: finalizedAt,
+      });
+    }, historyEntry);
+  }
+
+  private async reconcileRollback(record: PrototypeLifecycleRecord): Promise<void> {
+    if (record.operation.kind !== 'rolling-back') return;
+    for (const bundleId of record.operation.bundleIds) {
+      const bundle = await this.store.getBundle(bundleId);
+      if (bundle && bundle.status !== 'trashed') await this.store.trashBundle(bundleId);
+    }
+    const completedAt = new Date().toISOString();
+    const historyEntry = {
+      id: `${record.prototypeId}-${completedAt}-${randomUUID().slice(0, 8)}`,
+      prototypeId: record.prototypeId,
+      from: 'final' as const,
+      to: 'review' as const,
+      note: record.operation.note ?? '清理定稿 Evidence 后回退',
+      changedAt: completedAt,
+    };
+    await this.updateFinalizationRecord(record.operation.operationKey, (latest) => {
+      if (latest.operation.kind !== 'rolling-back') return latest;
+      return PrototypeLifecycleRecord.parse({
+        ...latest,
+        stage: 'review',
+        operation: { kind: 'idle' },
+        artifacts: null,
+        updatedAt: completedAt,
+      });
+    }, historyEntry);
+  }
+
   private async runPreflight(
     draft: SelectionDraft,
   ): Promise<{ preflight: CapturePreflight }> {
@@ -680,6 +1447,7 @@ export class ProtoBridgeLocalService {
             evidence: plan.evidence,
             deliveries: plan.deliveries,
             reviews: plan.reviews,
+            prototypeLifecycle: plan.prototypeLifecycle,
           },
           revokedSessionCount,
           stoppedJobIds: runningJobs.map((job) => job.jobId),
@@ -697,6 +1465,57 @@ export class ProtoBridgeLocalService {
         'workspace-resetting',
         'Workspace reset is in progress; retry this request shortly.',
       );
+    }
+
+    if (request.method === 'GET' && path === '/api/v2/prototype-lifecycle') {
+      success(response, await this.store.getPrototypeLifecycleDocument());
+      return;
+    }
+
+    if (request.method === 'POST' && path === '/api/v2/prototype-lifecycle/migrate') {
+      const body = (await readBody(request)) as MigratePrototypeLifecycleRequest;
+      const migrated = await this.withOperationLock(
+        `lifecycle:${this.store.workspaceId}`,
+        () => this.validateLifecycleMigration(body),
+      );
+      success(response, migrated, 201);
+      return;
+    }
+
+    if (request.method === 'PUT' && path === '/api/v2/prototype-lifecycle') {
+      const body = (await readBody(request)) as UpdatePrototypeLifecycleRequest;
+      if (!Number.isInteger(body.expectedRevision) || body.expectedRevision < 0) {
+        throw new V2ContractError(
+          'invalid-schema',
+          'expectedRevision must be a non-negative integer.',
+        );
+      }
+      const document = PrototypeLifecycleDocument.parse(body.document);
+      if (document.workspaceId !== this.store.workspaceId) {
+        throw new V2ContractError(
+          'workspace-mismatch',
+          'Prototype lifecycle update belongs to another Workspace.',
+        );
+      }
+      if (document.generationId !== this.currentGenerationId) {
+        throw new V2ContractError(
+          'workspace-generation-mismatch',
+          'Prototype lifecycle update belongs to an earlier Workspace generation.',
+        );
+      }
+      const saved = await this.withOperationLock(
+        `lifecycle:${this.store.workspaceId}`,
+        async () => {
+          const previous = await this.store.getPrototypeLifecycleDocument();
+          await this.assertClientLifecycleUpdate(previous, document);
+          return this.store.compareAndSetPrototypeLifecycleDocument({
+            expectedRevision: body.expectedRevision,
+            document,
+          });
+        },
+      );
+      success(response, saved);
+      return;
     }
 
     if (request.method === 'GET' && path === '/api/v2/console') {
@@ -1042,49 +1861,129 @@ export class ProtoBridgeLocalService {
 
     if (request.method === 'POST' && path === '/api/v2/jobs') {
       const body = (await readBody(request)) as CreateJobRequest;
-      const record = this.preflights.get(body.preflightId);
-      if (!record || Date.parse(record.expiresAt) <= Date.now()) {
-        throw new V2ContractError(
-          'preflight-expired',
-          'Preflight expired; run it again before creating a Job.',
-        );
+      const operationKey = body.operationKey
+        ? LifecycleOperationKey.parse(body.operationKey)
+        : undefined;
+      const create = async () => {
+        const existing = operationKey
+          ? await this.store.findJobByOperationKey(operationKey)
+          : undefined;
+        const record = this.preflights.get(body.preflightId);
+        if (!record || Date.parse(record.expiresAt) <= Date.now()) {
+          if (existing && body.operationRequestDigest) {
+            const digest = OperationRequestDigest.parse(
+              body.operationRequestDigest,
+            );
+            if (digest === existing.operationRequestDigest) {
+              success(response, { job: existing }, 202);
+              return;
+            }
+            throw new V2ContractError(
+              'idempotency-conflict',
+              `Capture operation ${operationKey} was already accepted with different input.`,
+              { jobId: existing.jobId },
+            );
+          }
+          throw new V2ContractError(
+            'preflight-expired',
+            'Preflight expired; run it again before creating a Job.',
+          );
+        }
+        const acceptedWarningIds = [...new Set(body.acceptedWarningIds ?? [])].sort();
+        const refreshedDraft = SelectionDraft.parse({
+          ...record.draft,
+          acceptedWarningIds,
+        });
+        const refreshed = (await this.runPreflight(refreshedDraft)).preflight;
+        if (
+          refreshed.inputVersion !== record.result.inputVersion ||
+          refreshed.manifestDigest !== record.result.manifestDigest ||
+          matrixIdentity(refreshed) !== matrixIdentity(record.result)
+        ) {
+          throw new V2ContractError(
+            'preflight-expired',
+            'Runtime input or Case Matrix changed after Preflight.',
+          );
+        }
+        if (!refreshed.ready) {
+          throw new V2ContractError(
+            'invalid-schema',
+            `Warnings must be accepted individually: ${refreshed.unacceptedWarningIds.join(', ')}.`,
+          );
+        }
+        const bundleId = existing?.bundleId ?? (body.bundleId
+          ? BundleId.parse(body.bundleId)
+          : (generateOperationalId('bundle') as BundleId));
+        const digest = operationRequestDigest({
+          bundleId,
+          selection: refreshed.selection,
+          inputVersion: refreshed.inputVersion,
+          acceptedWarningIds,
+        });
+        if (
+          body.operationRequestDigest &&
+          OperationRequestDigest.parse(body.operationRequestDigest) !== digest
+        ) {
+          throw new V2ContractError(
+            'idempotency-conflict',
+            `Capture operation ${operationKey} request changed after confirmation.`,
+          );
+        }
+        if (existing) {
+          if (existing.operationRequestDigest !== digest) {
+            throw new V2ContractError(
+              'idempotency-conflict',
+              `Capture operation ${operationKey} was already accepted with different input.`,
+              { jobId: existing.jobId },
+            );
+          }
+          if (operationKey) {
+            await this.updateFinalizationOperation(operationKey, (operation) =>
+              operation.kind === 'finalizing'
+                ? {
+                    ...operation,
+                    phase: 'capturing',
+                    jobId: existing.jobId,
+                    bundleId: existing.bundleId,
+                    requestDigest: digest,
+                    acceptedWarningIds,
+                  }
+                : operation,
+            );
+          }
+          success(response, { job: existing }, 202);
+          return;
+        }
+        const accepted = await this.jobHost.accept({
+          store: this.store,
+          bundleId,
+          preflight: refreshed,
+          runtimeBaseUrl: this.options.runtimeBaseUrl,
+          ...(operationKey ? { operationKey, operationRequestDigest: digest } : {}),
+          driver:
+            this.options.driverFactory?.() ?? new PlaywrightCaseCaptureDriver(),
+        });
+        if (operationKey) {
+          await this.updateFinalizationOperation(operationKey, (operation) =>
+            operation.kind === 'finalizing'
+                ? {
+                    ...operation,
+                    phase: 'capturing',
+                    jobId: accepted.job.jobId,
+                  bundleId: accepted.job.bundleId,
+                  requestDigest: digest,
+                  acceptedWarningIds,
+                }
+              : operation,
+          );
+        }
+        success(response, { job: accepted.job }, 202);
+      };
+      if (operationKey) {
+        await this.withOperationLock(`operation:${operationKey}`, create);
+      } else {
+        await create();
       }
-      const acceptedWarningIds = [
-        ...new Set(body.acceptedWarningIds ?? []),
-      ].sort();
-      const refreshedDraft = SelectionDraft.parse({
-        ...record.draft,
-        acceptedWarningIds,
-      });
-      const refreshed = (await this.runPreflight(refreshedDraft)).preflight;
-      if (
-        refreshed.inputVersion !== record.result.inputVersion ||
-        refreshed.manifestDigest !== record.result.manifestDigest ||
-        matrixIdentity(refreshed) !== matrixIdentity(record.result)
-      ) {
-        throw new V2ContractError(
-          'preflight-expired',
-          'Runtime input or Case Matrix changed after Preflight.',
-        );
-      }
-      if (!refreshed.ready) {
-        throw new V2ContractError(
-          'invalid-schema',
-          `Warnings must be accepted individually: ${refreshed.unacceptedWarningIds.join(', ')}.`,
-        );
-      }
-      const bundleId = body.bundleId
-        ? BundleId.parse(body.bundleId)
-        : (generateOperationalId('bundle') as BundleId);
-      const accepted = await this.jobHost.accept({
-        store: this.store,
-        bundleId,
-        preflight: refreshed,
-        runtimeBaseUrl: this.options.runtimeBaseUrl,
-        driver:
-          this.options.driverFactory?.() ?? new PlaywrightCaseCaptureDriver(),
-      });
-      success(response, { job: accepted.job }, 202);
       return;
     }
 
@@ -1364,6 +2263,49 @@ export class ProtoBridgeLocalService {
       const body = (await readBody(request)) as HandoffPreviewRequest;
       const bundleId = BundleId.parse(body.bundleId);
       const snapshotId = SnapshotId.parse(body.snapshotId);
+      const operationKey = body.operationKey
+        ? LifecycleOperationKey.parse(body.operationKey)
+        : undefined;
+      const acknowledgedRiskKinds = RiskKind.array().parse(
+        body.acknowledgedRiskKinds,
+      );
+      const requestDigest = operationKey
+        ? operationRequestDigest({
+            bundleId,
+            snapshotId,
+            implementationIntent: body.implementationIntent ?? '',
+            acknowledgedRiskKinds: [...acknowledgedRiskKinds].sort(),
+          })
+        : undefined;
+      if (
+        body.operationRequestDigest &&
+        OperationRequestDigest.parse(body.operationRequestDigest) !==
+          requestDigest
+      ) {
+        throw new V2ContractError(
+          'idempotency-conflict',
+          `Handoff operation ${operationKey} request changed after confirmation.`,
+        );
+      }
+      if (operationKey && !path.endsWith('/preview')) {
+        const existing = await this.store.findHandoffByOperationKey(operationKey);
+        if (existing) {
+          if (existing.operationRequestDigest !== requestDigest) {
+            throw new V2ContractError(
+              'idempotency-conflict',
+              `Handoff operation ${operationKey} was already created with different input.`,
+              { handoffId: existing.handoffId },
+            );
+          }
+          await this.updateFinalizationOperation(operationKey, (operation) =>
+            operation.kind === 'finalizing'
+              ? { ...operation, handoffId: existing.handoffId }
+              : operation,
+          );
+          success(response, { handoff: existing, persisted: true }, 200);
+          return;
+        }
+      }
       const snapshot = await this.store.getSnapshot(bundleId, snapshotId);
       if (!snapshot)
         throw new V2ContractError(
@@ -1453,10 +2395,18 @@ export class ProtoBridgeLocalService {
         ...(body.implementationIntent
           ? { implementationIntent: body.implementationIntent }
           : {}),
-        acknowledgedRiskKinds: RiskKind.array().parse(
-          body.acknowledgedRiskKinds,
-        ),
+        acknowledgedRiskKinds,
+        ...(operationKey && requestDigest
+          ? { operationKey, operationRequestDigest: requestDigest }
+          : {}),
       });
+      if (operationKey) {
+        await this.updateFinalizationOperation(operationKey, (operation) =>
+          operation.kind === 'finalizing'
+            ? { ...operation, handoffId: handoff.handoffId }
+            : operation,
+        );
+      }
       success(response, { handoff, persisted: true }, 201);
       return;
     }
@@ -1563,56 +2513,113 @@ export class ProtoBridgeLocalService {
 
     if (request.method === 'POST' && path === '/api/v2/deliveries') {
       const body = (await readBody(request)) as CreateDeliveryRequest;
-      const handoffId = HandoffId.parse(body.handoffId);
-      const handoff = await this.store.getHandoff(handoffId);
-      if (!handoff) {
-        throw new V2ContractError(
-          'unknown-reference',
-          `Handoff ${handoffId} does not exist.`,
-        );
-      }
-      const targetRoot = await assertDeliveryTargetRootMatch(
-        this.options.deliveryTargetRoot,
-        body.targetRoot,
-      );
-      const overwriteDeliveryId = body.overwriteDeliveryId?.trim();
-      if (overwriteDeliveryId && /[\\/]/.test(overwriteDeliveryId)) {
+      const operationKey = body.operationKey
+        ? LifecycleOperationKey.parse(body.operationKey)
+        : undefined;
+      if (
+        (operationKey === undefined) !==
+        (body.operationRequestDigest === undefined)
+      ) {
         throw new V2ContractError(
           'invalid-schema',
-          'overwriteDeliveryId must be a single path segment.',
+          'operationKey and operationRequestDigest must be supplied together.',
         );
       }
-      const receipt = await writeDeliveryReceipt({
-        storeRoot: this.options.storeRoot,
-        targetRoot,
-        handoff,
-        source: 'gui',
-        ...(body.runId ? { runId: body.runId } : {}),
-        acceptedWarningIds: body.acceptedWarningIds ?? [],
-        acknowledgedRiskKinds: body.acknowledgedRiskKinds ?? [],
-        ...(body.implementationIntent
-          ? { implementationIntent: body.implementationIntent }
-          : {}),
-        ...(overwriteDeliveryId ? { overwriteDeliveryId } : {}),
-      });
-      success(
-        response,
-        {
-          deliveryId: receipt.deliveryId,
-          agentPrompt: await readFile(receipt.agentPromptPath, 'utf8'),
-          agentPromptPath: receipt.agentPromptPath,
-          acceptanceContractPath: receipt.acceptanceContractPath,
-          acceptanceChecklistPath: receipt.acceptanceChecklistPath,
-          evidenceBriefPath: receipt.evidenceBriefPath,
-          reviewIndexPath: receipt.reviewIndexPath,
-          screenshotCount: receipt.screenshotCount,
-          receiptPath: receipt.receiptPath,
-          handoffId: receipt.handoffId,
-          bundleId: receipt.bundleId,
-          snapshotId: receipt.snapshotId,
-        },
-        overwriteDeliveryId ? 200 : 201,
-      );
+      const create = async () => {
+        const handoffId = HandoffId.parse(body.handoffId);
+        const handoff = await this.store.getHandoff(handoffId);
+        if (!handoff) {
+          throw new V2ContractError(
+            'unknown-reference',
+            `Handoff ${handoffId} does not exist.`,
+          );
+        }
+        if (operationKey && handoff.operationKey !== operationKey) {
+          throw new V2ContractError(
+            'idempotency-conflict',
+            'Delivery operation key does not match its fixed Handoff.',
+          );
+        }
+        const targetRoot = await assertDeliveryTargetRootMatch(
+          this.options.deliveryTargetRoot,
+          body.targetRoot,
+        );
+        const overwriteDeliveryId = body.overwriteDeliveryId?.trim();
+        if (overwriteDeliveryId && /[\\/]/.test(overwriteDeliveryId)) {
+          throw new V2ContractError(
+            'invalid-schema',
+            'overwriteDeliveryId must be a single path segment.',
+          );
+        }
+        const acceptedWarningIds = [...new Set(body.acceptedWarningIds ?? [])].sort();
+        const acknowledgedRiskKinds = [...new Set(body.acknowledgedRiskKinds ?? [])].sort();
+        const requestDigest = operationKey
+          ? operationRequestDigest({
+              handoffId,
+              targetRoot,
+              implementationIntent: body.implementationIntent ?? '',
+              runId: body.runId ?? '',
+              acceptedWarningIds,
+              acknowledgedRiskKinds,
+            })
+          : undefined;
+        if (
+          body.operationRequestDigest &&
+          OperationRequestDigest.parse(body.operationRequestDigest) !==
+            requestDigest
+        ) {
+          throw new V2ContractError(
+            'idempotency-conflict',
+            `Delivery operation ${operationKey} request changed after confirmation.`,
+          );
+        }
+        const receipt = await writeDeliveryReceipt({
+          storeRoot: this.options.storeRoot,
+          targetRoot,
+          handoff,
+          source: 'gui',
+          ...(body.runId ? { runId: body.runId } : {}),
+          acceptedWarningIds,
+          acknowledgedRiskKinds,
+          ...(body.implementationIntent
+            ? { implementationIntent: body.implementationIntent }
+            : {}),
+          ...(overwriteDeliveryId ? { overwriteDeliveryId } : {}),
+          ...(operationKey && requestDigest
+            ? { operationKey, operationRequestDigest: requestDigest }
+            : {}),
+        });
+        if (operationKey) {
+          await this.updateFinalizationOperation(operationKey, (operation) =>
+            operation.kind === 'finalizing'
+              ? { ...operation, deliveryId: receipt.deliveryId }
+              : operation,
+          );
+        }
+        success(
+          response,
+          {
+            deliveryId: receipt.deliveryId,
+            agentPrompt: await readFile(receipt.agentPromptPath, 'utf8'),
+            agentPromptPath: receipt.agentPromptPath,
+            acceptanceContractPath: receipt.acceptanceContractPath,
+            acceptanceChecklistPath: receipt.acceptanceChecklistPath,
+            evidenceBriefPath: receipt.evidenceBriefPath,
+            reviewIndexPath: receipt.reviewIndexPath,
+            screenshotCount: receipt.screenshotCount,
+            receiptPath: receipt.receiptPath,
+            handoffId: receipt.handoffId,
+            bundleId: receipt.bundleId,
+            snapshotId: receipt.snapshotId,
+          },
+          overwriteDeliveryId ? 200 : 201,
+        );
+      };
+      if (operationKey) {
+        await this.withOperationLock(`operation:${operationKey}`, create);
+      } else {
+        await create();
+      }
       return;
     }
 

@@ -17,6 +17,13 @@ import { CaseEvidenceRevision } from '../contracts/evidence.js';
 import { AgentHandoff } from '../contracts/handoff.js';
 import { Issue } from '../contracts/issue.js';
 import {
+  assertPrototypeLifecycleMigration,
+  assertPrototypeLifecycleUpdate,
+  emptyPrototypeLifecycleDocument,
+  PrototypeLifecycleDocument,
+  type LifecycleOperationKey,
+} from '../contracts/prototype-lifecycle.js';
+import {
   V2ContractError,
   invalidSchemaError,
   unknownReferenceError,
@@ -91,6 +98,7 @@ import {
   stalenessReportPath,
   stalenessReportsDir,
   workspaceManifestPath,
+  prototypeLifecyclePath,
 } from './paths.js';
 import { buildNextSnapshot } from './snapshot-builder.js';
 import type {
@@ -198,6 +206,8 @@ export class LocalFileStore implements V2Store {
   private lockIdentity: FileIdentity | undefined;
   private lifecycle: import('./types.js').WorkspaceLifecycle | undefined;
   private resetInterrupted = false;
+  private lifecycleWriteTail: Promise<void> = Promise.resolve();
+  private readonly operationWriteTails = new Map<string, Promise<void>>();
 
   constructor(options: LocalFileStoreOptions) {
     this.root = options.root;
@@ -346,6 +356,125 @@ export class LocalFileStore implements V2Store {
     return { oldGenerationId: current.generationId, newGenerationId: this.lifecycle.generationId as string };
   }
 
+  async getPrototypeLifecycleDocument(): Promise<PrototypeLifecycleDocument> {
+    await this.assertHealthy();
+    const workspaceLifecycle = await this.getWorkspaceLifecycle(true);
+    if (workspaceLifecycle.generationId === 'legacy-unavailable') {
+      throw new V2ContractError(
+        'workspace-generation-mismatch',
+        'Workspace lifecycle metadata requires an initialized generation.',
+      );
+    }
+    const stored = await readJson<unknown>(
+      prototypeLifecyclePath(this.root, this.workspaceId),
+    );
+    if (stored === undefined) {
+      return emptyPrototypeLifecycleDocument({
+        workspaceId: this.workspaceId,
+        generationId: workspaceLifecycle.generationId,
+      });
+    }
+    const document = PrototypeLifecycleDocument.parse(stored);
+    if (
+      document.workspaceId !== this.workspaceId ||
+      document.generationId !== workspaceLifecycle.generationId
+    ) {
+      throw new V2ContractError(
+        'workspace-generation-mismatch',
+        'Persisted PBWork lifecycle metadata belongs to a different Workspace generation.',
+        {
+          storedWorkspaceId: document.workspaceId,
+          storedGenerationId: document.generationId,
+          workspaceId: this.workspaceId,
+          generationId: workspaceLifecycle.generationId,
+        },
+      );
+    }
+    return document;
+  }
+
+  async compareAndSetPrototypeLifecycleDocument(input: {
+    expectedRevision: number;
+    document: PrototypeLifecycleDocument;
+  }): Promise<PrototypeLifecycleDocument> {
+    const write = this.lifecycleWriteTail.then(async () => {
+      await this.assertWritableStore();
+      const current = await this.getPrototypeLifecycleDocument();
+      if (current.revision !== input.expectedRevision) {
+        throw new V2ContractError(
+          'revision-conflict',
+          `Prototype lifecycle revision changed from ${input.expectedRevision} to ${current.revision}.`,
+          current,
+        );
+      }
+      const next = PrototypeLifecycleDocument.parse(input.document);
+      let validated: PrototypeLifecycleDocument;
+      try {
+        validated = assertPrototypeLifecycleUpdate(current, next);
+      } catch (error) {
+        throw new V2ContractError(
+          'invalid-schema',
+          error instanceof Error
+            ? error.message
+            : 'Prototype lifecycle transition is invalid.',
+        );
+      }
+      const workspaceLifecycle = await this.getWorkspaceLifecycle(true);
+      if (
+        validated.workspaceId !== this.workspaceId ||
+        validated.generationId !== workspaceLifecycle.generationId
+      ) {
+        throw new V2ContractError(
+          'workspace-generation-mismatch',
+          'Prototype lifecycle update does not match the current Workspace generation.',
+        );
+      }
+      const filePath = prototypeLifecyclePath(this.root, this.workspaceId);
+      await mkdir(path.dirname(filePath), { recursive: true, mode: 0o700 });
+      await writeJsonAtomic(filePath, validated);
+      return validated;
+    });
+    this.lifecycleWriteTail = write.then(
+      () => undefined,
+      () => undefined,
+    );
+    return write;
+  }
+
+  async importPrototypeLifecycleDocument(
+    documentInput: PrototypeLifecycleDocument,
+  ): Promise<PrototypeLifecycleDocument> {
+    const write = this.lifecycleWriteTail.then(async () => {
+      await this.assertWritableStore();
+      const current = await this.getPrototypeLifecycleDocument();
+      if (current.revision !== 0 || Object.keys(current.records).length !== 0) {
+        throw new V2ContractError(
+          'revision-conflict',
+          'Lifecycle migration is only allowed before this Workspace has lifecycle records.',
+          current,
+        );
+      }
+      let validated: PrototypeLifecycleDocument;
+      try {
+        validated = assertPrototypeLifecycleMigration(documentInput, {
+          workspaceId: this.workspaceId,
+          generationId: current.generationId,
+        });
+      } catch (error) {
+        throw new V2ContractError(
+          'invalid-schema',
+          error instanceof Error ? error.message : 'Lifecycle migration is invalid.',
+        );
+      }
+      const filePath = prototypeLifecyclePath(this.root, this.workspaceId);
+      await mkdir(path.dirname(filePath), { recursive: true, mode: 0o700 });
+      await writeJsonAtomic(filePath, validated);
+      return validated;
+    });
+    this.lifecycleWriteTail = write.then(() => undefined, () => undefined);
+    return write;
+  }
+
   private async assertWritableStore(): Promise<void> {
     if (this.readOnly) {
       throw new V2ContractError(
@@ -354,6 +483,28 @@ export class LocalFileStore implements V2Store {
       );
     }
     await this.assertHealthy();
+  }
+
+  private async withOperationWriteLock<T>(
+    operationKey: LifecycleOperationKey,
+    write: () => Promise<T>,
+  ): Promise<T> {
+    const previous = this.operationWriteTails.get(operationKey) ?? Promise.resolve();
+    let release!: () => void;
+    const current = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const queued = previous.then(() => current);
+    this.operationWriteTails.set(operationKey, queued);
+    await previous;
+    try {
+      return await write();
+    } finally {
+      release();
+      if (this.operationWriteTails.get(operationKey) === queued) {
+        this.operationWriteTails.delete(operationKey);
+      }
+    }
   }
 
   // ---------------------------------------------------------------- Bundle
@@ -557,6 +708,22 @@ export class LocalFileStore implements V2Store {
     await this.assertWritableStore();
     const bundle = await this.requireBundle(bundleId);
     if (bundle.status === 'trashed') return bundle;
+    const lifecycle = await this.getPrototypeLifecycleDocument();
+    const otherLifecycleOwner = Object.values(lifecycle.records).some((record) => {
+      const referencesBundle = record.artifacts?.bundleId === bundleId ||
+        (record.operation.kind === 'finalizing' && record.operation.bundleId === bundleId) ||
+        (record.operation.kind === 'rolling-back' && record.operation.bundleIds.includes(bundleId));
+      return referencesBundle && !(
+        record.operation.kind === 'rolling-back' &&
+        record.operation.bundleIds.includes(bundleId)
+      );
+    });
+    if (otherLifecycleOwner) {
+      throw new V2ContractError(
+        'unsafe-input',
+        `Bundle ${bundleId} is bound to a PBWork lifecycle. Roll back the prototype before moving its Evidence to trash.`,
+      );
+    }
     const activeJobs = (await this.listNonTerminalJobs()).filter(
       (job) => job.bundleId === bundleId,
     );
@@ -590,6 +757,18 @@ export class LocalFileStore implements V2Store {
 
   private async bundleDeleteCandidate(bundleId: BundleId) {
     const bundle = await this.requireBundle(bundleId);
+    const lifecycle = await this.getPrototypeLifecycleDocument();
+    const referenced = Object.values(lifecycle.records).some((record) =>
+      record.artifacts?.bundleId === bundleId ||
+      (record.operation.kind === 'finalizing' && record.operation.bundleId === bundleId) ||
+      (record.operation.kind === 'rolling-back' && record.operation.bundleIds.includes(bundleId)),
+    );
+    if (referenced) {
+      throw new V2ContractError(
+        'unsafe-input',
+        `Bundle ${bundleId} is still referenced by a PBWork lifecycle record.`,
+      );
+    }
     if (bundle.status !== 'trashed') {
       throw new V2ContractError(
         'invalid-schema',
@@ -802,7 +981,41 @@ export class LocalFileStore implements V2Store {
   // -------------------------------------------------------------------- Job
 
   async createJob(input: CreateJobInput): Promise<CaptureJob> {
+    if (!input.operationKey) return this.createJobForInput(input);
+    return this.withOperationWriteLock(input.operationKey, () =>
+      this.createJobForInput(input),
+    );
+  }
+
+  private async createJobForInput(input: CreateJobInput): Promise<CaptureJob> {
     await this.assertWritableStore();
+    if (
+      (input.operationKey === undefined) !==
+      (input.operationRequestDigest === undefined)
+    ) {
+      throw new V2ContractError(
+        'invalid-schema',
+        'operationKey and operationRequestDigest must be supplied together.',
+      );
+    }
+    if (input.operationKey) {
+      const existing = await this.findJobByOperationKey(input.operationKey);
+      if (existing) {
+        if (
+          existing.operationRequestDigest !== input.operationRequestDigest ||
+          existing.bundleId !== input.bundleId ||
+          existing.inputVersion !== input.inputVersion ||
+          !isDeepStrictEqual(existing.selection, input.selection)
+        ) {
+          throw new V2ContractError(
+            'idempotency-conflict',
+            `Capture operation ${input.operationKey} was already accepted with different input.`,
+            { jobId: existing.jobId },
+          );
+        }
+        return existing;
+      }
+    }
     const bundle = await this.getBundle(input.bundleId);
     if (bundle) {
       this.requireWritableBundle(bundle);
@@ -821,6 +1034,12 @@ export class LocalFileStore implements V2Store {
       bundleId: input.bundleId,
       selection: input.selection,
       inputVersion: input.inputVersion,
+      ...(input.operationKey
+        ? {
+            operationKey: input.operationKey,
+            operationRequestDigest: input.operationRequestDigest,
+          }
+        : {}),
       status: 'queued',
       acceptedAt: now,
       journal: [{ at: now, event: 'queued' }],
@@ -931,6 +1150,22 @@ export class LocalFileStore implements V2Store {
     return jobs.sort((left, right) =>
       right.acceptedAt.localeCompare(left.acceptedAt),
     );
+  }
+
+  async findJobByOperationKey(
+    operationKey: LifecycleOperationKey,
+  ): Promise<CaptureJob | undefined> {
+    const matches = (await this.listJobs()).filter(
+      (job) => job.operationKey === operationKey,
+    );
+    if (matches.length > 1) {
+      throw new V2ContractError(
+        'immutable-violation',
+        `Capture operation ${operationKey} resolves to multiple Jobs.`,
+        matches.map((job) => job.jobId),
+      );
+    }
+    return matches[0];
   }
 
   /**
@@ -1621,9 +1856,34 @@ export class LocalFileStore implements V2Store {
       .sort((left, right) => right.checkedAt.localeCompare(left.checkedAt));
   }
 
-  async putHandoff(handoff: AgentHandoff): Promise<void> {
+  async putHandoff(handoff: AgentHandoff): Promise<AgentHandoff> {
+    if (!handoff.operationKey) return this.persistHandoff(handoff);
+    return this.withOperationWriteLock(handoff.operationKey, () =>
+      this.persistHandoff(handoff),
+    );
+  }
+
+  private async persistHandoff(handoff: AgentHandoff): Promise<AgentHandoff> {
     await this.assertWritableStore();
     const parsed = this.parseOrThrow(AgentHandoff, handoff, 'AgentHandoff');
+    if (parsed.operationKey) {
+      const existing = await this.findHandoffByOperationKey(
+        parsed.operationKey,
+      );
+      if (existing) {
+        if (
+          existing.operationRequestDigest !==
+          parsed.operationRequestDigest
+        ) {
+          throw new V2ContractError(
+            'idempotency-conflict',
+            `Handoff operation ${parsed.operationKey} was already persisted with different input.`,
+            { handoffId: existing.handoffId },
+          );
+        }
+        return existing;
+      }
+    }
     if (parsed.workspaceId !== this.workspaceId) {
       throw new V2ContractError(
         'workspace-mismatch',
@@ -1664,6 +1924,7 @@ export class LocalFileStore implements V2Store {
       'AgentHandoff',
       parsed,
     );
+    return parsed;
   }
 
   async getHandoff(handoffId: HandoffId): Promise<AgentHandoff | undefined> {
@@ -1684,6 +1945,22 @@ export class LocalFileStore implements V2Store {
           (bundleId === undefined || handoff.bundleId === bundleId),
       )
       .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+  }
+
+  async findHandoffByOperationKey(
+    operationKey: LifecycleOperationKey,
+  ): Promise<AgentHandoff | undefined> {
+    const matches = (await this.listHandoffs()).filter(
+      (handoff) => handoff.operationKey === operationKey,
+    );
+    if (matches.length > 1) {
+      throw new V2ContractError(
+        'immutable-violation',
+        `Handoff operation ${operationKey} resolves to multiple Handoffs.`,
+        matches.map((handoff) => handoff.handoffId),
+      );
+    }
+    return matches[0];
   }
 
   // ----------------------------------------------------- Capacity / clean
@@ -1716,6 +1993,13 @@ export class LocalFileStore implements V2Store {
     }
     const protectedSnapshotIds =
       await this.collectWorkspaceProtectedSnapshotIds();
+    const lifecycle = await this.getPrototypeLifecycleDocument();
+    for (const record of Object.values(lifecycle.records)) {
+      if (record.artifacts?.snapshotId) protectedSnapshotIds.add(record.artifacts.snapshotId);
+      if (record.operation.kind === 'finalizing' && record.operation.snapshotId) {
+        protectedSnapshotIds.add(record.operation.snapshotId);
+      }
+    }
     const candidates: CleanCandidate[] = [];
 
     for (const bundleId of await this.listBundleIds()) {

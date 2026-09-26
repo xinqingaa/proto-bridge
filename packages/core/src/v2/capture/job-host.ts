@@ -4,6 +4,10 @@ import { isTerminalJobStatus } from '../contracts/vocabulary.js';
 import type { V2Store } from '../store/types.js';
 import type { CaseCaptureDriver } from './playwright-driver.js';
 import type { CapturePreflight } from './preflight.js';
+import type {
+  LifecycleOperationKey,
+  OperationRequestDigest,
+} from '../contracts/prototype-lifecycle.js';
 import {
   capturePreflightToStore,
   type CaptureOrchestratorResult,
@@ -15,6 +19,8 @@ export type AcceptCaptureJobInput = {
   preflight: CapturePreflight;
   runtimeBaseUrl: string;
   driver: CaseCaptureDriver;
+  operationKey?: LifecycleOperationKey;
+  operationRequestDigest?: OperationRequestDigest;
 };
 
 export type AcceptedCaptureJob = {
@@ -38,6 +44,12 @@ export class CaptureJobHost {
       bundleId: input.bundleId,
       selection: input.preflight.selection,
       inputVersion: input.preflight.inputVersion,
+      ...(input.operationKey
+        ? {
+            operationKey: input.operationKey,
+            operationRequestDigest: input.operationRequestDigest,
+          }
+        : {}),
     });
     const controller = new AbortController();
     this.controllers.set(job.jobId, controller);

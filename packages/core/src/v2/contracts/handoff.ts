@@ -13,6 +13,10 @@ import {
 import { computeScopeKey, NormalizedCaptureScope } from './scope.js';
 import { CoverageStatus, FreshnessStatus, RiskKind } from './vocabulary.js';
 import { V2_SCHEMA_MAJOR } from './version.js';
+import {
+  LifecycleOperationKey,
+  OperationRequestDigest,
+} from './prototype-lifecycle.js';
 
 export const Risk = z
   .object({
@@ -89,6 +93,9 @@ export const AgentHandoff = z
   .object({
     schemaVersion: z.literal(V2_SCHEMA_MAJOR),
     handoffId: HandoffId,
+    /** Optional correlation fields for a producer's resumable operation. */
+    operationKey: LifecycleOperationKey.optional(),
+    operationRequestDigest: OperationRequestDigest.optional(),
     workspaceId: WorkspaceId,
     bundleId: BundleId,
     snapshotId: SnapshotId,
@@ -114,6 +121,13 @@ export const AgentHandoff = z
   })
   .strict()
   .superRefine((handoff, ctx) => {
+    if ((handoff.operationKey === undefined) !== (handoff.operationRequestDigest === undefined)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'operationKey and operationRequestDigest must be supplied together',
+        path: ['operationRequestDigest'],
+      });
+    }
     if (!handoff.selectedCases.some((selectedCase) => selectedCase.resolution === 'resolved')) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,

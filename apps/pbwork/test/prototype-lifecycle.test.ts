@@ -5,9 +5,11 @@ import { useCaptureStore } from "@/app/stores/capture";
 import { captureServiceClient } from "@/capture/service-client";
 import { prototypes } from "@/prototypes/registry";
 
-const STORAGE_KEY = "pbwork.prototype-lifecycle.v2";
+const OPERATION_KEY = "00000000-0000-4000-8000-000000000001";
+const REQUEST_DIGEST = `sha256:${"a".repeat(64)}`;
+const STARTED_AT = "2026-09-25T02:35:44.713Z";
 
-function finalizedRecord(prototypeId: string, now = new Date().toISOString()) {
+function finalRecord(prototypeId: string) {
   return {
     prototypeId,
     stage: "final" as const,
@@ -20,14 +22,48 @@ function finalizedRecord(prototypeId: string, now = new Date().toISOString()) {
       deliveryId: "delivery-1",
       agentPromptPath: "/delivery/agent-prompt.md",
       receiptPath: "/delivery/receipt.json",
-      finalizedAt: now,
+      finalizedAt: STARTED_AT,
+      operationKey: OPERATION_KEY,
+      requestDigest: REQUEST_DIGEST,
     },
-    createdAt: now,
-    updatedAt: now,
+    createdAt: STARTED_AT,
+    updatedAt: STARTED_AT,
   };
 }
 
-describe("prototype lifecycle workspace state", () => {
+function capturingRecord(prototypeId: string) {
+  return {
+    prototypeId,
+    stage: "review" as const,
+    operation: {
+      kind: "finalizing" as const,
+      operationKey: OPERATION_KEY,
+      phase: "capturing" as const,
+      acceptedWarningIds: [],
+      acknowledgedRiskKinds: [],
+      startedAt: STARTED_AT,
+      jobId: "job-1",
+      bundleId: "bundle-1",
+    },
+    artifacts: null,
+    createdAt: STARTED_AT,
+    updatedAt: STARTED_AT,
+  };
+}
+
+function lifecycleDocument(prototypeId: string, record: unknown, revision = 1) {
+  return {
+    schemaVersion: 1,
+    workspaceId: "pbwork-local",
+    generationId: "generation-test",
+    revision,
+    records: { [prototypeId]: record },
+    history: [],
+    updatedAt: STARTED_AT,
+  } as never;
+}
+
+describe("Workspace-persisted prototype lifecycle", () => {
   beforeEach(() => {
     localStorage.clear();
     sessionStorage.clear();
@@ -35,367 +71,265 @@ describe("prototype lifecycle workspace state", () => {
     vi.restoreAllMocks();
   });
 
-  it("initializes every new prototype as active and supports the review loop", () => {
+  it("renders active defaults before service hydration and never writes lifecycle to localStorage", () => {
     const store = usePrototypeLifecycleStore();
     store.ensurePrototypes(prototypes);
-
-    expect(
-      prototypes.every((item) => store.effectiveLifecycle(item) === "active"),
-    ).toBe(true);
-
-    const prototype = prototypes[0]!;
-    store.transition(prototype, "review", "送交待确定");
-    store.transition(prototype, "active", "继续修改");
-
-    expect(store.effectiveLifecycle(prototype)).toBe("active");
-    expect(
-      store.historyFor(prototype.id).map(({ from, to }) => ({ from, to })),
-    ).toEqual([
-      { from: "review", to: "active" },
-      { from: "active", to: "review" },
-    ]);
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).records[prototype.id].stage).toBe(
-      "active",
-    );
+    expect(prototypes.every((item) => store.effectiveLifecycle(item) === "active")).toBe(true);
+    expect(localStorage.length).toBe(0);
   });
 
-  it("rejects skipping stages and bypassing finalization or cleanup", () => {
+  it("hydrates fixed stages and artifacts from the Service document after a page reload", async () => {
+    const prototype = prototypes[0]!;
+    const store = usePrototypeLifecycleStore();
+    await store.hydrateFromService(lifecycleDocument(prototype.id, finalRecord(prototype.id)));
+    expect(store.effectiveLifecycle(prototype)).toBe("final");
+    expect(store.finalizedRecords[0]?.artifacts).toMatchObject({
+      jobId: "job-1",
+      bundleId: "bundle-1",
+      snapshotId: "snapshot-1",
+      handoffId: "handoff-1",
+      deliveryId: "delivery-1",
+      operationKey: OPERATION_KEY,
+    });
+  });
+
+  it("imports legacy lifecycle state only for the matching Workspace and clears it after Service accepts", async () => {
+    const prototype = prototypes[0]!;
+    const legacy = {
+      version: 2,
+      workspaceId: "pbwork-local",
+      generationId: "generation-test",
+      records: { [prototype.id]: finalRecord(prototype.id) },
+      history: [],
+      storageError: null,
+    };
+    localStorage.setItem("pbwork.prototype-lifecycle.v2", JSON.stringify(legacy));
+    const migrate = vi.spyOn(captureServiceClient, "migratePrototypeLifecycle");
+    migrate.mockImplementation(async ({ document }) => document);
+    const empty = {
+      schemaVersion: 1,
+      workspaceId: "pbwork-local",
+      generationId: "generation-test",
+      revision: 0,
+      records: {},
+      history: [],
+      updatedAt: STARTED_AT,
+    } as never;
+
+    const store = usePrototypeLifecycleStore();
+    await store.hydrateFromService(empty);
+
+    expect(migrate).toHaveBeenCalledOnce();
+    const request = migrate.mock.calls[0]?.[0];
+    expect(request?.document.records[prototype.id]?.stage).toBe("final");
+    expect(request?.document.records[prototype.id]?.artifacts?.operationKey).toMatch(
+      /^[0-9a-f-]{36}$/,
+    );
+    expect(request?.document.records[prototype.id]?.artifacts?.requestDigest).toMatch(
+      /^sha256:[a-f0-9]{64}$/,
+    );
+    expect(localStorage.getItem("pbwork.prototype-lifecycle.v2")).toBeNull();
+    expect(store.effectiveLifecycle(prototype)).toBe("final");
+  });
+
+  it("rejects skipping lifecycle stages or marking a prototype final directly", () => {
     const store = usePrototypeLifecycleStore();
     const prototype = prototypes[0]!;
-
     expect(() => store.transition(prototype, "final")).toThrow("不允许");
     store.transition(prototype, "review");
     expect(() => store.transition(prototype, "final")).toThrow("自动采集");
-
-    store.replaceRecord(finalizedRecord(prototype.id));
-    expect(() => store.transition(prototype, "review")).toThrow(
-      "清理定稿 Evidence",
-    );
+    store.replaceRecord(finalRecord(prototype.id));
+    expect(() => store.transition(prototype, "review")).toThrow("清理定稿 Evidence");
   });
 
-  it("keeps review when finalization fails", () => {
-    const store = usePrototypeLifecycleStore();
+  it("coalesces same-tab polls and only reads Service-owned operation state", async () => {
     const prototype = prototypes[0]!;
-    store.transition(prototype, "review");
-    store.failOperation(prototype.id, "finalize", "整原型预检失败。");
+    const lifecycle = usePrototypeLifecycleStore();
+    const capture = useCaptureStore();
+    capture.session = {} as never;
+    const createHandoff = vi.spyOn(capture, "createCurrentHandoff");
+    lifecycle.replaceRecord(capturingRecord(prototype.id));
+    const refresh = vi.spyOn(captureServiceClient, "prototypeLifecycle").mockImplementation(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      return lifecycleDocument(prototype.id, capturingRecord(prototype.id));
+    });
+    await Promise.all([
+      lifecycle.pollFinalization(prototype),
+      lifecycle.pollFinalization(prototype),
+    ]);
 
-    expect(store.recordFor(prototype.id)).toMatchObject({
-      stage: "review",
-      operation: { kind: "failed", action: "finalize" },
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(createHandoff).not.toHaveBeenCalled();
+    expect(lifecycle.recordFor(prototype.id)?.operation).toMatchObject({
+      kind: "finalizing",
+      operationKey: OPERATION_KEY,
     });
   });
 
-  describe("capturing finalization polls", () => {
-    const startedAt = "2026-09-25T02:35:44.713Z";
-    const jobId = "job-1";
-    const bundleId = "bundle-1";
-    const runId = "run-1";
-
-    function capturingRecord(prototypeId: string) {
-      return {
-        prototypeId,
-        stage: "review" as const,
-        operation: {
-          kind: "finalizing" as const,
-          phase: "capturing" as const,
-          startedAt,
-          jobId,
-          bundleId,
-        },
-        artifacts: null,
-        createdAt: startedAt,
-        updatedAt: startedAt,
-      };
-    }
-
-    function completedJob(caseIds: string[]) {
-      return {
-        jobId,
-        bundleId,
-        runId,
-        status: "completed",
-        selection: { cases: caseIds.map((caseId) => ({ caseId })) },
-        journal: caseIds.map((caseId) => ({
-          at: startedAt,
-          event: "case-finished",
-          detail: `${caseId}:captured`,
-        })),
-      } as never;
-    }
-
-    function details(
-      attempts: Array<{ caseId: string; result: string; reason?: string }>,
-    ) {
-      const failed = attempts.filter((item) => item.result === "failed").length;
-      return {
-        bundle: { bundleId },
-        activeSnapshot: {
-          snapshotId: "snapshot-1",
-          coverage: {
-            counts: {
-              selected: attempts.length,
-              captured: attempts.length - failed,
-              reused: 0,
-              failed,
-              skipped: 0,
-              unsupported: 0,
-              cancelled: 0,
-              interrupted: 0,
-              missing: 0,
-              stale: 0,
-            },
-          },
-        },
-        runs: [{ runId, attempts }],
-      } as never;
-    }
-
-    function connectedCapture() {
-      const capture = useCaptureStore();
-      capture.session = {} as never;
-      vi.spyOn(capture, "refreshConsole").mockResolvedValue(true);
-      return capture;
-    }
-
-    it("creates one Handoff when the page and the sheet poll at the same time", async () => {
-      const store = usePrototypeLifecycleStore();
-      const capture = connectedCapture();
-      const prototype = prototypes[0]!;
-      store.replaceRecord(capturingRecord(prototype.id));
-      vi.spyOn(captureServiceClient, "getJob").mockResolvedValue(
-        completedJob(["case-a"]),
-      );
-      vi.spyOn(capture, "loadBundle").mockImplementation(async () => {
-        capture.details = details([{ caseId: "case-a", result: "captured" }]);
-      });
-      vi.spyOn(capture, "previewCurrentHandoff").mockImplementation(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 5));
-        capture.handoffPreview = { risks: [], coverageStatus: "complete" } as never;
-      });
-      const createHandoff = vi
-        .spyOn(capture, "createCurrentHandoff")
-        .mockImplementation(async () => {
-          await new Promise((resolve) => setTimeout(resolve, 5));
-          capture.handoff = { handoffId: "handoff-1" } as never;
-          capture.deliveryArtifact = {
-            deliveryId: "delivery-1",
-            agentPromptPath: "/delivery/agent-prompt.md",
-            receiptPath: "/delivery/receipt.json",
-          } as never;
-        });
-
-      await Promise.all([
-        store.pollFinalization(prototype),
-        store.pollFinalization(prototype),
-      ]);
-      await store.pollFinalization(prototype);
-
-      expect(createHandoff).toHaveBeenCalledTimes(1);
-      expect(store.recordFor(prototype.id)).toMatchObject({
-        stage: "final",
-        artifacts: { handoffId: "handoff-1", deliveryId: "delivery-1" },
-      });
-    });
-
-    it("keeps every failed Case of an incomplete capture and skips the Handoff", async () => {
-      const store = usePrototypeLifecycleStore();
-      const capture = connectedCapture();
-      const prototype = prototypes[0]!;
-      store.replaceRecord(capturingRecord(prototype.id));
-      vi.spyOn(captureServiceClient, "getJob").mockResolvedValue(
-        completedJob(["case-a", "case-b", "case-c"]),
-      );
-      vi.spyOn(capture, "loadBundle").mockImplementation(async () => {
-        capture.details = details([
-          { caseId: "case-a", result: "captured" },
-          { caseId: "case-b", result: "failed", reason: "Fragment b/ is missing." },
-          {
-            caseId: "case-c",
-            result: "failed",
-            reason: "Required Fragment c/ is occluded at its center point.",
-          },
-        ]);
-      });
-      const preview = vi.spyOn(capture, "previewCurrentHandoff");
-
-      await store.pollFinalization(prototype);
-
-      expect(preview).not.toHaveBeenCalled();
-      expect(store.recordFor(prototype.id)?.operation).toMatchObject({
+  it("shows server-persisted failure details after hydration", async () => {
+    const prototype = prototypes[0]!;
+    const lifecycle = usePrototypeLifecycleStore();
+    const capture = useCaptureStore();
+    capture.session = {} as never;
+    const createHandoff = vi.spyOn(capture, "createCurrentHandoff");
+    const failedRecord = {
+      prototypeId: prototype.id,
+      stage: "review",
+      operation: {
         kind: "failed",
-        message: expect.stringContaining("1/3 项有效，2 项失败"),
+        operationKey: OPERATION_KEY,
+        action: "finalize",
+        message: "整原型采集未完整：1/3 项有效，2 项失败。",
+        failedAt: STARTED_AT,
         failedCases: [
           { caseId: "case-b", reason: "Fragment b/ is missing." },
-          {
-            caseId: "case-c",
-            reason: "Required Fragment c/ is occluded at its center point.",
-          },
+          { caseId: "case-c", reason: "Required Fragment c/ is occluded." },
         ],
-      });
-      setActivePinia(createPinia());
-      expect(
-        usePrototypeLifecycleStore().recordFor(prototype.id)?.operation,
-      ).toMatchObject({ kind: "failed", failedCases: expect.any(Array) });
+      },
+      artifacts: null,
+      createdAt: STARTED_AT,
+      updatedAt: STARTED_AT,
+    };
+    vi.spyOn(captureServiceClient, "prototypeLifecycle").mockResolvedValue(
+      lifecycleDocument(prototype.id, failedRecord, 2),
+    );
+
+    await lifecycle.pollFinalization(prototype);
+
+    expect(lifecycle.recordFor(prototype.id)?.operation).toMatchObject({
+      kind: "failed",
+      failedCases: [
+        { caseId: "case-b", reason: "Fragment b/ is missing." },
+        { caseId: "case-c", reason: "Required Fragment c/ is occluded." },
+      ],
     });
-
-    it("keeps capturing and explains a lost connection instead of failing", async () => {
-      const store = usePrototypeLifecycleStore();
-      const capture = connectedCapture();
-      const prototype = prototypes[0]!;
-      store.replaceRecord(capturingRecord(prototype.id));
-      vi.spyOn(captureServiceClient, "getJob").mockRejectedValue(
-        new TypeError("Failed to fetch"),
-      );
-
-      await store.pollFinalization(prototype);
-
-      expect(store.recordFor(prototype.id)?.operation).toMatchObject({
-        kind: "finalizing",
-        phase: "capturing",
-        jobId,
-      });
-      expect(store.connectionIssues[prototype.id]).toContain("仍在后台运行");
-    });
+    expect(createHandoff).not.toHaveBeenCalled();
   });
 
-  it("clears the bound Evidence before rolling a finalized prototype back", async () => {
-    const store = usePrototypeLifecycleStore();
+  it("keeps formal warning and risk confirmations isolated per prototype", () => {
+    const lifecycle = usePrototypeLifecycleStore();
+    const capture = useCaptureStore();
+    const [first, second] = prototypes;
+    if (!first || !second) throw new Error("expected at least two prototypes");
+
+    lifecycle.preflights = {
+      [first.id]: { result: { warnings: [{ warningId: "warning-a" }] } } as never,
+      [second.id]: { result: { warnings: [{ warningId: "warning-b" }] } } as never,
+    };
+    lifecycle.handoffPreviews = {
+      [first.id]: { risks: [{ kind: "required-unknown" }] } as never,
+      [second.id]: { risks: [{ kind: "partial-coverage" }] } as never,
+    };
+
+    lifecycle.toggleWarning(first.id, "warning-a", true);
+    lifecycle.toggleRisk(first.id, "required-unknown", true);
+
+    expect(lifecycle.warningsAcceptedFor(first.id)).toBe(true);
+    expect(lifecycle.warningsAcceptedFor(second.id)).toBe(false);
+    expect(lifecycle.risksAcceptedFor(first.id)).toBe(true);
+    expect(lifecycle.risksAcceptedFor(second.id)).toBe(false);
+    expect(capture.acceptedWarningIds).toEqual([]);
+    expect(capture.acknowledgedRiskKinds).toEqual([]);
+  });
+
+  it("keeps the operation visible during a Service connection interruption", async () => {
+    const prototype = prototypes[0]!;
+    const lifecycle = usePrototypeLifecycleStore();
+    const capture = useCaptureStore();
+    capture.session = {} as never;
+    lifecycle.replaceRecord(capturingRecord(prototype.id));
+    vi.spyOn(captureServiceClient, "prototypeLifecycle").mockRejectedValue(
+      new TypeError("Failed to fetch"),
+    );
+
+    await lifecycle.pollFinalization(prototype);
+
+    expect(lifecycle.recordFor(prototype.id)?.operation).toMatchObject({
+      kind: "finalizing",
+      phase: "capturing",
+      jobId: "job-1",
+    });
+    expect(lifecycle.connectionIssues[prototype.id]).toContain("Local Service 会在恢复后继续处理");
+  });
+
+  it("persists rollback intent only and lets Service complete the cleanup", async () => {
+    const lifecycle = usePrototypeLifecycleStore();
     const capture = useCaptureStore();
     const prototype = prototypes[0]!;
-    store.replaceRecord(finalizedRecord(prototype.id));
     capture.session = {} as never;
-    const trash = vi
-      .spyOn(captureServiceClient, "trashBundles")
-      .mockResolvedValue({});
-    vi.spyOn(capture, "refreshConsole").mockResolvedValue(true);
+    const update = vi.spyOn(captureServiceClient, "updatePrototypeLifecycle");
+    const trash = vi.spyOn(captureServiceClient, "trashBundles");
+    update.mockImplementation(async ({ document }) => document);
+    await lifecycle.hydrateFromService(
+      lifecycleDocument(prototype.id, finalRecord(prototype.id)),
+    );
 
-    await expect(
-      store.rollbackToReview(prototype, "方案需要调整"),
-    ).resolves.toBe(true);
+    await expect(lifecycle.rollbackToReview(prototype, "方案需要调整")).resolves.toBe(false);
+    expect(lifecycle.recordFor(prototype.id)).toMatchObject({
+      stage: "final",
+      operation: {
+        kind: "rolling-back",
+        bundleIds: ["bundle-1"],
+        note: "方案需要调整",
+      },
+      artifacts: { bundleId: "bundle-1" },
+    });
+    expect(trash).not.toHaveBeenCalled();
+    expect(update).toHaveBeenCalled();
 
-    expect(trash).toHaveBeenCalledWith(["bundle-1"]);
-    expect(store.recordFor(prototype.id)).toMatchObject({
+    vi.spyOn(captureServiceClient, "prototypeLifecycle").mockResolvedValue(
+      lifecycleDocument(
+        prototype.id,
+        {
+          ...lifecycle.recordFor(prototype.id),
+          stage: "review",
+          operation: { kind: "idle" },
+          artifacts: null,
+        },
+        5,
+      ),
+    );
+    await lifecycle.pollFinalization(prototype);
+    expect(lifecycle.recordFor(prototype.id)).toMatchObject({
       stage: "review",
       operation: { kind: "idle" },
       artifacts: null,
     });
-    expect(store.historyFor(prototype.id)[0]).toMatchObject({
-      from: "final",
-      to: "review",
-      note: "方案需要调整",
-    });
+    expect(trash).not.toHaveBeenCalled();
   });
 
-  it("keeps archived prototypes terminal and immutable", () => {
-    const store = usePrototypeLifecycleStore();
+  it("offers a new rollback operation after a persisted rollback failure", async () => {
+    const lifecycle = usePrototypeLifecycleStore();
+    const capture = useCaptureStore();
     const prototype = prototypes[0]!;
-    store.replaceRecord(finalizedRecord(prototype.id));
-
-    store.transition(prototype, "archived", "历史封存");
-
-    expect(store.recordFor(prototype.id)?.stage).toBe("archived");
-    expect(() => store.transition(prototype, "final")).toThrow("不允许");
-    expect(() => store.transition(prototype, "review")).toThrow("不允许");
-  });
-
-  it("restores persisted records after reload and treats missing records as active", () => {
-    const prototype = prototypes[0]!;
-    const first = usePrototypeLifecycleStore();
-    first.ensurePrototypes(prototypes);
-    first.transition(prototype, "review", "送交待确定");
-
-    setActivePinia(createPinia());
-    const reloaded = usePrototypeLifecycleStore();
-    expect(reloaded.effectiveLifecycle(prototype)).toBe("review");
-
-    localStorage.clear();
-    setActivePinia(createPinia());
-    const cleared = usePrototypeLifecycleStore();
-    cleared.ensurePrototypes(prototypes);
-    expect(
-      prototypes.every((item) => cleared.effectiveLifecycle(item) === "active"),
-    ).toBe(true);
-  });
-
-  it("returns every prototype to active after a workspace reset", () => {
-    const store = usePrototypeLifecycleStore();
-    const prototype = prototypes[0]!;
-    store.replaceRecord(finalizedRecord(prototype.id));
-    store.appendHistory(prototype.id, "review", "final", "定稿");
-
-    store.resetAfterWorkspaceReset(prototypes);
-
-    expect(
-      prototypes.every((item) => store.effectiveLifecycle(item) === "active"),
-    ).toBe(true);
-    expect(store.recordFor(prototype.id)?.artifacts).toBeNull();
-    expect(store.historyFor(prototype.id)).toEqual([]);
-    expect(
-      JSON.parse(localStorage.getItem(STORAGE_KEY)!).records[prototype.id].stage,
-    ).toBe("active");
-  });
-
-  it("returns every prototype to active when Store generation changes", () => {
-    const store = usePrototypeLifecycleStore();
-    const prototype = prototypes[0]!;
-    store.replaceRecord(finalizedRecord(prototype.id));
-    store.syncWithWorkspace({
-      workspaceId: "pbwork-local",
-      generationId: "generation-a",
-      knownBundleIds: ["bundle-1"],
-      prototypes,
-    });
-
-    const reset = store.syncWithWorkspace({
-      workspaceId: "pbwork-local",
-      generationId: "generation-b",
-      knownBundleIds: [],
-      prototypes,
-    });
-
-    expect(reset).toBe(true);
-    expect(store.effectiveLifecycle(prototype)).toBe("active");
-    expect(store.recordFor(prototype.id)?.artifacts).toBeNull();
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toMatchObject({
-      generationId: "generation-b",
-      workspaceId: "pbwork-local",
-    });
-  });
-
-  it("preserves review state on first generation bind when artifacts still exist", () => {
-    const store = usePrototypeLifecycleStore();
-    const prototype = prototypes[0]!;
-    store.ensurePrototypes(prototypes);
-    store.transition(prototype, "review", "送交待确定");
-
-    const reset = store.syncWithWorkspace({
-      workspaceId: "pbwork-local",
-      generationId: "generation-a",
-      knownBundleIds: [],
-      prototypes,
-    });
-
-    expect(reset).toBe(false);
-    expect(store.effectiveLifecycle(prototype)).toBe("review");
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).generationId).toBe(
-      "generation-a",
+    capture.session = {} as never;
+    const trash = vi.spyOn(captureServiceClient, "trashBundles");
+    vi.spyOn(captureServiceClient, "updatePrototypeLifecycle").mockImplementation(
+      async ({ document }) => document,
     );
-  });
+    const failedRecord = {
+      ...finalRecord(prototype.id),
+      operation: {
+        kind: "failed",
+        operationKey: "00000000-0000-4000-8000-000000000099",
+        action: "rollback",
+        message: "回退失败：fixture IO error。修复后可重试回退。",
+        failedAt: STARTED_AT,
+      },
+    };
+    await lifecycle.hydrateFromService(
+      lifecycleDocument(prototype.id, failedRecord),
+    );
 
-  it("clears unbound finalized records whose Evidence is already gone", () => {
-    const store = usePrototypeLifecycleStore();
-    const prototype = prototypes[0]!;
-    store.replaceRecord(finalizedRecord(prototype.id));
+    await lifecycle.rollbackToReview(prototype);
 
-    const reset = store.syncWithWorkspace({
-      workspaceId: "pbwork-local",
-      generationId: "generation-new",
-      knownBundleIds: [],
-      prototypes,
+    expect(lifecycle.recordFor(prototype.id)?.operation).toMatchObject({
+      kind: "rolling-back",
+      bundleIds: ["bundle-1"],
     });
-
-    expect(reset).toBe(true);
-    expect(store.effectiveLifecycle(prototype)).toBe("active");
-    expect(store.historyFor(prototype.id)).toEqual([]);
+    expect(lifecycle.recordFor(prototype.id)?.operation).not.toMatchObject({
+      operationKey: "00000000-0000-4000-8000-000000000099",
+    });
+    expect(trash).not.toHaveBeenCalled();
   });
 });

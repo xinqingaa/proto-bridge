@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
-import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, open, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
 import { V2ContractError } from '../contracts/errors.js';
 
@@ -16,12 +16,29 @@ export async function writeJsonAtomic(filePath: string, value: unknown): Promise
   await mkdir(dir, { recursive: true });
   const tempPath = path.join(dir, `.tmp-${path.basename(filePath)}-${randomBytes(6).toString('hex')}`);
   const serialized = `${JSON.stringify(value, null, 2)}\n`;
-  await writeFile(tempPath, serialized, { encoding: 'utf8', flag: 'w' });
   try {
+    const temp = await open(tempPath, 'w');
+    try {
+      await temp.writeFile(serialized, 'utf8');
+      await temp.sync();
+    } finally {
+      await temp.close();
+    }
     await rename(tempPath, filePath);
+    await syncDirectory(dir);
   } catch (error) {
     await rm(tempPath, { force: true });
     throw error;
+  }
+}
+
+/** Flush directory-entry changes after an atomic rename. */
+export async function syncDirectory(directoryPath: string): Promise<void> {
+  const directory = await open(directoryPath, 'r');
+  try {
+    await directory.sync();
+  } finally {
+    await directory.close();
   }
 }
 

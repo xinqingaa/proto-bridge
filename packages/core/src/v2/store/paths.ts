@@ -22,6 +22,10 @@ export function workspaceManifestPath(root: string): string {
   return path.join(root, 'workspace.json');
 }
 
+export function prototypeLifecyclePath(root: string, workspaceId: string): string {
+  return path.join(root, 'pbwork', workspaceId, 'lifecycle-v1.json');
+}
+
 export function writerLockPath(root: string): string {
   return path.join(root, '.lock');
 }

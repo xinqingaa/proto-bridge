@@ -140,9 +140,50 @@ const details = {
 };
 
 async function routeFailedCapture(page: Page) {
+  let lifecycleDocument: any;
   await page.route("**/__pb_v2/**", async (route) => {
     const url = new URL(route.request().url());
     const path = url.pathname;
+    if (path === "/__pb_v2/prototype-lifecycle") {
+      if (route.request().method() === "GET") {
+        if (!lifecycleDocument) {
+          const response = await route.fetch();
+          const envelope = await response.json();
+          const timestamp = new Date().toISOString();
+          lifecycleDocument = {
+            schemaVersion: 1,
+            workspaceId: envelope.data.workspaceId,
+            generationId: envelope.data.generationId,
+            revision: 0,
+            records: {
+              [prototypeId]: {
+                prototypeId,
+                stage: "review",
+                operation: {
+                  kind: "failed",
+                  operationKey: "00000000-0000-4000-8000-000000000041",
+                  action: "finalize",
+                  message: "整原型采集未完整：0/1 项有效，1 项失败。",
+                  failedAt: timestamp,
+                  failedCases: [{ caseId, reason }],
+                },
+                artifacts: null,
+                createdAt: timestamp,
+                updatedAt: timestamp,
+              },
+            },
+            history: [],
+            updatedAt: timestamp,
+          };
+        }
+        return route.fulfill({ json: { ok: true, data: lifecycleDocument } });
+      }
+      if (route.request().method() === "PUT") {
+        const body = route.request().postDataJSON() as { document: unknown };
+        lifecycleDocument = body.document;
+        return route.fulfill({ json: { ok: true, data: lifecycleDocument } });
+      }
+    }
     if (route.request().method() !== "GET") return route.continue();
     if (path === "/__pb_v2/console") {
       const response = await route.fetch();
@@ -171,44 +212,11 @@ async function routeFailedCapture(page: Page) {
   });
 }
 
-async function seedCapturingOperation(page: Page) {
-  await page.goto("/workbench/prototypes/all");
-  await expect.poll(() => page.evaluate(() =>
-    JSON.parse(localStorage.getItem("pbwork.prototype-lifecycle.v2") ?? "null")?.version,
-  )).toBe(2);
-  await page.evaluate(
-    ({ id, bundle, job }) => {
-      const current = JSON.parse(
-        localStorage.getItem("pbwork.prototype-lifecycle.v2") ?? "{}",
-      );
-      const timestamp = new Date().toISOString();
-      current.records ??= {};
-      current.records[id] = {
-        prototypeId: id,
-        stage: "review",
-        operation: {
-          kind: "finalizing",
-          phase: "capturing",
-          startedAt: timestamp,
-          jobId: job,
-          bundleId: bundle,
-        },
-        artifacts: null,
-        createdAt: timestamp,
-        updatedAt: timestamp,
-      };
-      localStorage.setItem("pbwork.prototype-lifecycle.v2", JSON.stringify(current));
-    },
-    { id: prototypeId, bundle: bundleId, job: jobId },
-  );
-  await page.reload();
-}
-
 test("failed finalization reaches a visible grouped terminal state and survives refresh", async ({
   page,
 }) => {
   await routeFailedCapture(page);
-  await seedCapturingOperation(page);
+  await page.goto("/workbench/prototypes/all");
   const row = page.locator("article").filter({ hasText: "冷链异常处置台" });
   await expect(row.getByText("定稿失败")).toBeVisible({ timeout: 15_000 });
   await row.getByRole("button", { name: "定稿并采集" }).click();

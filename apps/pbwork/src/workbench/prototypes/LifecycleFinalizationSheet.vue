@@ -41,8 +41,8 @@ let pollTimer: ReturnType<typeof setInterval> | undefined;
 
 const record = computed(() => lifecycle.recordFor(props.prototype.id));
 const operation = computed(() => record.value?.operation ?? { kind: "idle" as const });
-const warnings = computed(() => capture.preflight?.result.warnings ?? []);
-const risks = computed(() => capture.handoffPreview?.risks ?? []);
+const warnings = computed(() => lifecycle.preflightFor(props.prototype.id)?.result.warnings ?? []);
+const risks = computed(() => lifecycle.handoffPreviewFor(props.prototype.id)?.risks ?? []);
 const final = computed(() => record.value?.stage === "final" && record.value.artifacts);
 const step = computed(() => {
   if (final.value) return 3;
@@ -83,7 +83,7 @@ const progress = computed(() =>
   totalCases.value ? (completedCases.value / totalCases.value) * 100 : 0,
 );
 const successfulCases = computed(() => {
-  const counts = capture.details?.activeSnapshot.coverage.counts;
+  const counts = lifecycle.evidenceFor(props.prototype.id)?.activeSnapshot.coverage.counts;
   return counts ? counts.captured + counts.reused : 0;
 });
 const statusText = computed(() => {
@@ -128,8 +128,7 @@ async function recheck() {
 async function poll() {
   if (
     polling.value ||
-    operation.value.kind !== "finalizing" ||
-    operation.value.phase !== "capturing"
+    (operation.value.kind !== "finalizing" && operation.value.kind !== "rolling-back")
   ) return;
   polling.value = true;
   try {
@@ -278,9 +277,9 @@ onBeforeUnmount(() => {
               <AlertTriangle :size="16" />
               <span>{{ warning.message }}</span>
               <WorkbenchCheckbox
-                :model-value="capture.acceptedWarningIds.includes(warning.warningId)"
+                :model-value="lifecycle.acceptedWarningsFor(props.prototype.id).includes(warning.warningId)"
                 label="已了解"
-                @update:model-value="capture.toggleWarning(warning.warningId, $event)"
+                @update:model-value="lifecycle.toggleWarning(props.prototype.id, warning.warningId, $event)"
               />
             </article>
           </div>
@@ -310,9 +309,9 @@ onBeforeUnmount(() => {
               <AlertTriangle :size="16" />
               <span>{{ risk.message }}</span>
               <WorkbenchCheckbox
-                :model-value="capture.acknowledgedRiskKinds.includes(risk.kind)"
+                :model-value="lifecycle.acknowledgedRisksFor(props.prototype.id).includes(risk.kind)"
                 label="已了解"
-                @update:model-value="capture.toggleRisk(risk.kind, $event)"
+                @update:model-value="lifecycle.toggleRisk(props.prototype.id, risk.kind, $event)"
               />
             </article>
           </div>
@@ -359,7 +358,7 @@ onBeforeUnmount(() => {
           v-if="operation.kind === 'finalizing' && operation.phase === 'awaiting-confirmation'"
           tone="primary"
           :loading="submitting"
-          :disabled="!converged || !capture.warningsAccepted"
+          :disabled="!converged || !lifecycle.warningsAcceptedFor(props.prototype.id)"
           @click="advance"
         >
           <ScanLine :size="15" />开始完整采集
@@ -368,7 +367,7 @@ onBeforeUnmount(() => {
           v-else-if="operation.kind === 'finalizing' && operation.phase === 'awaiting-risks'"
           tone="primary"
           :loading="submitting"
-          :disabled="!capture.risksAccepted"
+          :disabled="!lifecycle.risksAcceptedFor(props.prototype.id)"
           @click="advance"
         >
           <CheckCircle2 :size="15" />确认并生成提示词

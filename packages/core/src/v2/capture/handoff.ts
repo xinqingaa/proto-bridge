@@ -9,6 +9,10 @@ import type {
   RiskKind,
 } from '../contracts/vocabulary.js';
 import { V2_SCHEMA_MAJOR } from '../contracts/version.js';
+import type {
+  LifecycleOperationKey,
+  OperationRequestDigest,
+} from '../contracts/prototype-lifecycle.js';
 import {
   ambiguousReferenceError,
   unknownReferenceError,
@@ -324,12 +328,38 @@ export type CreateAgentHandoffInput = EvaluateHandoffInput & {
   currentInputVersion: string;
   implementationIntent?: string;
   acknowledgedRiskKinds: RiskKind[];
+  operationKey?: LifecycleOperationKey;
+  operationRequestDigest?: OperationRequestDigest;
   persist?: boolean;
 };
 
 export async function createAgentHandoff(
   input: CreateAgentHandoffInput,
 ): Promise<AgentHandoff> {
+  if (
+    (input.operationKey === undefined) !==
+    (input.operationRequestDigest === undefined)
+  ) {
+    throw new V2ContractError(
+      'invalid-schema',
+      'operationKey and operationRequestDigest must be supplied together.',
+    );
+  }
+  if (input.operationKey) {
+    const existing = await input.store.findHandoffByOperationKey(
+      input.operationKey,
+    );
+    if (existing) {
+      if (existing.operationRequestDigest !== input.operationRequestDigest) {
+        throw new V2ContractError(
+          'idempotency-conflict',
+          `Handoff operation ${input.operationKey} was already created with different input.`,
+          { handoffId: existing.handoffId },
+        );
+      }
+      return existing;
+    }
+  }
   if (input.stalenessReport.inputVersion !== input.currentInputVersion) {
     throw new V2ContractError(
       'preflight-expired',
@@ -341,6 +371,12 @@ export async function createAgentHandoff(
   const handoff = AgentHandoff.parse({
     schemaVersion: V2_SCHEMA_MAJOR,
     handoffId: generateOperationalId('handoff'),
+    ...(input.operationKey
+      ? {
+          operationKey: input.operationKey,
+          operationRequestDigest: input.operationRequestDigest,
+        }
+      : {}),
     workspaceId: input.store.workspaceId,
     bundleId: input.bundleId,
     snapshotId: input.snapshotId,
@@ -375,6 +411,6 @@ export async function createAgentHandoff(
       })),
     ],
   });
-  if (input.persist !== false) await input.store.putHandoff(handoff);
+  if (input.persist !== false) return input.store.putHandoff(handoff);
   return handoff;
 }

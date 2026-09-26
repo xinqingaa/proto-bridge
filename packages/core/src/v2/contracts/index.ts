@@ -20,3 +20,4 @@ export * from './snapshot.js';
 export * from './staleness.js';
 export * from './handoff.js';
 export * from './immutable.js';
+export * from './prototype-lifecycle.js';
