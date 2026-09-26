@@ -1156,7 +1156,7 @@ onMounted(() => {
         <main
           class="content-canvas"
           :class="{
-            'is-phone-canvas': isScreenCanvas,
+            'is-phone-canvas': isScreenCanvas || route.meta.resourceKind === 'evidence',
             'is-draft-canvas': isDraftCanvas,
           }"
           tabindex="-1"
@@ -2051,6 +2051,9 @@ onMounted(() => {
   }
   .content-canvas {
     padding: 20px 16px;
+  }
+  .content-canvas.is-phone-canvas {
+    padding: 0;
   }
 }
 </style>

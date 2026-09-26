@@ -61,6 +61,8 @@ watch(
   () => void loadDelivery(),
   { immediate: true },
 );
+
+defineExpose({ copyPrompt });
 </script>
 
 <template>

@@ -79,11 +79,11 @@ test("lifecycle finalization produces one fixed Evidence and Agent prompt", asyn
   await expect(page.getByTestId("evidence-viewer")).toBeVisible();
   await expect(page.locator(".result-workspace")).toBeVisible();
   await expect(page.locator(".preview-stage img").first()).toBeVisible();
-  await page.getByTestId("evidence-tab-delivery").click();
+  await expect(page.getByRole("button", { name: "复制提示词" })).toBeVisible();
+  await page.getByRole("button", { name: "查看提示词" }).click();
   await expect(page.getByTestId("saved-agent-prompt")).toContainText(
     "read_handoff_index",
   );
-  await expect(page.getByRole("button", { name: "复制提示词" })).toBeVisible();
   await expect(page.getByRole("button", { name: /生成|重新生成/ })).toHaveCount(0);
 
   const pathname = new URL(page.url()).pathname;

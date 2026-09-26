@@ -4,10 +4,13 @@ import { RouterLink, useRoute } from "vue-router";
 import {
   AlertTriangle,
   ArrowLeft,
+  Check,
   CheckCircle2,
+  Copy,
   Image,
   Palette,
   Route,
+  X,
 } from "lucide-vue-next";
 import {
   buildEvidenceReadModel,
@@ -22,6 +25,12 @@ import EvidenceDeliveryPanel from "@/capture/EvidenceDeliveryPanel.vue";
 import CaptureFailureGroups from "@/capture/CaptureFailureGroups.vue";
 import { groupCaptureFailures } from "@/capture/presentation";
 import { speakEvidenceMessage } from "@/capture/review-copy";
+import {
+  cssViewportForScreenshot,
+  idsOnScreen,
+  marksForBoxes,
+} from "@/capture/screen-marks";
+import { structureOutline } from "@/capture/structure-outline";
 import ScreenshotThumb from "@/capture/ScreenshotThumb.vue";
 import {
   classifyWorkbenchResults,
@@ -43,16 +52,21 @@ const capture = useCaptureStore();
 const lifecycle = usePrototypeLifecycleStore();
 const screens = loadPrototypeScreens();
 const selectedRevisionId = ref("");
-const inspectorTab = ref<
-  "summary" | "structure" | "interaction" | "tokens" | "delivery"
->("summary");
+const inspectorTab = ref<"summary" | "structure" | "interaction" | "tokens">(
+  "summary",
+);
+const detailsOpen = ref(false);
+const activeMarkId = ref("");
+const screenshotSize = ref<{ width: number; height: number } | null>(null);
+const promptOpen = ref(false);
+const promptCopied = ref(false);
+const promptPanel = ref<{ copyPrompt: () => Promise<void> } | null>(null);
 
 const inspectorTabs: WorkbenchTabItem[] = [
   { label: "概览", value: "summary", testId: "evidence-tab-summary" },
   { label: "结构", value: "structure", testId: "evidence-tab-structure" },
   { label: "交互", value: "interaction", testId: "evidence-tab-interaction" },
   { label: "Token", value: "tokens", testId: "evidence-tab-tokens" },
-  { label: "提示词", value: "delivery", testId: "evidence-tab-delivery" },
 ];
 
 const model = computed(() => {
@@ -130,6 +144,89 @@ const tokenFacts = computed(() =>
     ),
   ),
 );
+const structureRows = computed(() =>
+  selectedCase.value ? structureOutline(selectedCase.value.regions) : [],
+);
+const markGeometry = computed(() => {
+  const current = selectedCase.value;
+  const size = screenshotSize.value;
+  if (!current || !size) return null;
+  const labels = new Map(
+    structureRows.value.map((row) => [
+      row.regionId,
+      row.name ? `${row.role}：${row.name}` : row.role,
+    ]),
+  );
+  const regions = current.regions.flatMap((region) =>
+    region.bbox
+      ? [
+          {
+            id: region.regionId,
+            label: labels.get(region.regionId) ?? region.label,
+            ...region.bbox,
+          },
+        ]
+      : [],
+  );
+  const viewport = cssViewportForScreenshot(size.width, size.height, regions);
+  return { regions, viewport, onScreen: idsOnScreen(regions, viewport) };
+});
+const screenMarks = computed(() => {
+  const current = selectedCase.value;
+  const geometry = markGeometry.value;
+  if (!detailsOpen.value || !current || !geometry || !activeMarkId.value) {
+    return [];
+  }
+  if (
+    inspectorTab.value !== "structure" &&
+    inspectorTab.value !== "interaction"
+  ) {
+    return [];
+  }
+  return marksForBoxes(
+    geometry.regions.filter((region) => region.id === activeMarkId.value),
+    geometry.viewport,
+    { keepFullScreen: true },
+  );
+});
+
+watch(inspectorTab, () => {
+  activeMarkId.value = "";
+});
+
+function regionKey(current: EvidenceCaseReadModel, regionId: string) {
+  const region = current.regions.find((item) => item.regionId === regionId);
+  const identity = region?.identity;
+  if (!identity) return "";
+  return `${identity.screenId}:${identity.pbId}:${identity.pbKey ?? ""}`;
+}
+function fragmentKeys(fact: EvidenceReadableFact) {
+  const value = fact.value;
+  if (!value || typeof value !== "object") return [];
+  const record = value as Record<string, unknown>;
+  return [record.target, ...requiredFragments(record)].flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const fragment = item as Record<string, unknown>;
+    if (typeof fragment.pbId !== "string") return [];
+    return [
+      `${typeof fragment.screenId === "string" ? fragment.screenId : ""}:${fragment.pbId}:${typeof fragment.pbKey === "string" ? fragment.pbKey : ""}`,
+    ];
+  });
+}
+function requiredFragments(record: Record<string, unknown>) {
+  const checkpoint = record.checkpoint;
+  if (!checkpoint || typeof checkpoint !== "object") return [];
+  const fragments = (checkpoint as Record<string, unknown>).requiredFragments;
+  return Array.isArray(fragments) ? fragments : [];
+}
+function factMarks(fact: EvidenceReadableFact) {
+  const current = selectedCase.value;
+  if (!current) return [];
+  const keys = new Set(fragmentKeys(fact));
+  return current.regions
+    .filter((region) => keys.has(regionKey(current, region.regionId)))
+    .map((region) => region.regionId);
+}
 
 function screenRecord(screenId: string) {
   return screens.find((screen) => screen.screenId === screenId);
@@ -176,6 +273,24 @@ function colorSwatch(value: unknown): string | null {
 }
 function selectCase(item: EvidenceCaseReadModel) {
   selectedRevisionId.value = item.revisionId;
+  activeMarkId.value = "";
+  screenshotSize.value = null;
+}
+
+function selectMark(id: string) {
+  if (!id) return;
+  activeMarkId.value = id;
+  if (!detailsOpen.value) detailsOpen.value = true;
+  document
+    .querySelector(`[data-mark-id="${CSS.escape(id)}"]`)
+    ?.scrollIntoView({ block: "nearest" });
+}
+async function copyPrompt() {
+  await promptPanel.value?.copyPrompt();
+  promptCopied.value = true;
+  window.setTimeout(() => {
+    promptCopied.value = false;
+  }, 1400);
 }
 function factSummary(fact: EvidenceReadableFact) {
   return friendlyValue(fact.value);
@@ -232,10 +347,22 @@ watch(
           </span>
         </div>
       </div>
-      <div v-if="resultCopy" class="coverage-badge" data-testid="evidence-result-classification">
-        <CheckCircle2 v-if="resultCopy.kind === 'officially-finalized'" :size="16" />
-        <AlertTriangle v-else :size="16" />
-        {{ resultCopy.classificationLabel }}
+      <div class="header-actions">
+        <template v-if="resultCopy?.kind === 'officially-finalized'">
+          <WorkbenchButton size="small" tone="neutral" @click="copyPrompt">
+            <Check v-if="promptCopied" :size="14" />
+            <Copy v-else :size="14" />
+            {{ promptCopied ? "已复制" : "复制提示词" }}
+          </WorkbenchButton>
+          <WorkbenchButton size="small" tone="neutral" @click="promptOpen = true">
+            查看提示词
+          </WorkbenchButton>
+        </template>
+        <div v-if="resultCopy" class="coverage-badge" data-testid="evidence-result-classification">
+          <CheckCircle2 v-if="resultCopy.kind === 'officially-finalized'" :size="16" />
+          <AlertTriangle v-else :size="16" />
+          {{ resultCopy.classificationLabel }}
+        </div>
       </div>
     </header>
 
@@ -259,7 +386,7 @@ watch(
       <div class="verdict-line">
         <CheckCircle2 v-if="resultCopy?.kind === 'officially-finalized'" :size="18" />
         <AlertTriangle v-else :size="18" />
-        <div>
+        <div class="verdict-copy">
           <strong v-if="resultCopy">{{ resultCopy.headline }}</strong>
           <p v-if="coverageTitle">{{ coverageTitle }}</p>
           <p v-for="message in verdictMessages" :key="message">{{ message }}</p>
@@ -277,28 +404,80 @@ watch(
       <div v-if="failuresOpen && failureGroups.length" class="verdict-failures">
         <CaptureFailureGroups :groups="failureGroups" />
       </div>
-      <EvidenceDeliveryPanel
-        v-if="resultCopy?.kind === 'officially-finalized'"
-        class="verdict-prompt"
-        compact
-        :bundle-id="bundleId"
-        :snapshot-id="snapshotId"
-      />
     </section>
 
     <div v-if="model && selectedCase" class="result-workspace">
-      <EvidencePreview
-        :bundle-id="bundleId"
-        :evidence="selectedCase"
-        :title="caseTitle(selectedCase)"
-      />
+      <aside class="evidence-nav">
+        <div class="panel-heading">
+          <span>页面状态</span>
+          <strong>{{ cases.length }} 个</strong>
+        </div>
+        <section
+          v-for="screenGroup in model.screens"
+          :key="screenGroup.screenId"
+          class="screen-group"
+        >
+          <h2>{{ screenLabel(screenGroup.screenId) }}</h2>
+          <button
+            v-for="item in screenGroup.cases"
+            :key="item.revisionId"
+            type="button"
+            class="case-item"
+            :class="{ active: item.revisionId === selectedCase.revisionId }"
+            @click="selectCase(item)"
+          >
+            <span class="thumb">
+              <ScreenshotThumb
+                v-if="item.screenshotBlobIds[0]"
+                :bundle-id="bundleId"
+                :blob-id="item.screenshotBlobIds[0]"
+                :alt="caseTitle(item)"
+              />
+              <Image v-else :size="14" aria-hidden="true" />
+            </span>
+            <span class="case-copy">
+              <strong>
+                <Route v-if="item.scenario" :size="12" />
+                {{ variantLabel(item) }}
+              </strong>
+              <small>{{ scenarioSummary(item) }}</small>
+            </span>
+          </button>
+        </section>
+      </aside>
 
-      <aside class="evidence-inspector">
+      <div class="stage" :class="{ 'has-details': detailsOpen }">
+        <EvidencePreview
+          :bundle-id="bundleId"
+          :evidence="selectedCase"
+          :title="caseTitle(selectedCase)"
+          :marks="screenMarks"
+          :active-mark-id="activeMarkId"
+          @measured="screenshotSize = $event"
+          @select-mark="selectMark"
+        >
+          <template #actions>
+            <WorkbenchButton
+              size="small"
+              tone="neutral"
+              :aria-expanded="detailsOpen"
+              @click="detailsOpen = !detailsOpen"
+            >
+              {{ detailsOpen ? "收起说明" : "对照说明" }}
+            </WorkbenchButton>
+          </template>
+        </EvidencePreview>
+      </div>
+
+      <aside v-if="detailsOpen" class="evidence-inspector">
         <header class="inspector-heading">
           <div>
             <span>{{ selectedCase.scenario ? "交互结果" : "页面状态" }}</span>
             <h2>{{ caseTitle(selectedCase) }}</h2>
           </div>
+          <button type="button" class="close-detail" aria-label="收起说明" @click="detailsOpen = false">
+            <X :size="16" />
+          </button>
         </header>
 
         <div class="inspector-tabs">
@@ -313,6 +492,7 @@ watch(
         <div class="inspector-body">
           <template v-if="inspectorTab === 'summary'">
             <p class="lead">{{ scenarioSummary(selectedCase) }}</p>
+            <p class="lead-note">在「结构」或「交互」里点一项，它在画面上的位置会被标出来。</p>
             <div v-if="selectedCase.fragmentLabels.length" class="scope-notice">
               这次只采集了页面里的 {{ selectedCase.fragmentLabels.length }} 个区域。
             </div>
@@ -351,23 +531,38 @@ watch(
           </template>
 
           <template v-else-if="inspectorTab === 'structure'">
-            <article
-              v-for="region in selectedCase.regions"
-              :key="region.regionId"
-              class="region-card"
-            >
-              <strong>{{ region.label }}</strong>
-              <small>
-                {{
-                  [region.componentId, region.role]
-                    .filter(Boolean)
-                    .join(" · ") || "页面区域"
-                }}
-              </small>
-              <p v-if="region.text && region.text !== region.label">
-                {{ region.text }}
-              </p>
-            </article>
+            <ul v-if="structureRows.length" class="structure-tree">
+              <li
+                v-for="row in structureRows"
+                :key="row.regionId"
+                class="structure-row"
+                :class="{
+                  active: row.regionId === activeMarkId,
+                  'is-offscreen':
+                    markGeometry && !markGeometry.onScreen.has(row.regionId),
+                }"
+                :style="{ '--depth': row.depth }"
+                :data-mark-id="row.regionId"
+                tabindex="0"
+                @click="selectMark(row.regionId)"
+                @keydown.enter="selectMark(row.regionId)"
+              >
+                <span class="row-role">{{ row.role }}</span>
+                <span v-if="row.name" class="row-name">{{ row.name }}</span>
+                <span v-else-if="row.childCount" class="row-meta">
+                  含 {{ row.childCount }} 项
+                </span>
+                <span
+                  v-if="markGeometry && !markGeometry.onScreen.has(row.regionId)"
+                  class="row-meta"
+                >
+                  不在这张画面里
+                </span>
+                <code v-if="row.component" class="row-component">{{
+                  row.component
+                }}</code>
+              </li>
+            </ul>
             <p v-if="!selectedCase.regions.length" class="empty-copy">
               没有采集到可展示的页面结构。
             </p>
@@ -378,6 +573,11 @@ watch(
               v-for="fact in selectedCase.interactionFacts"
               :key="fact.factId"
               class="interaction-card"
+              :class="{ active: factMarks(fact).includes(activeMarkId) }"
+              :data-mark-id="factMarks(fact)[0]"
+              tabindex="0"
+              @click="selectMark(factMarks(fact)[0] ?? '')"
+              @keydown.enter="selectMark(factMarks(fact)[0] ?? '')"
             >
               <Route :size="14" />
               <div>
@@ -425,53 +625,29 @@ watch(
               <p>主题上下文仍保留在“概览”；这里不混入目标工程 Token。</p>
             </div>
           </template>
-
-          <EvidenceDeliveryPanel
-            v-else
-            :bundle-id="bundleId"
-            :snapshot-id="snapshotId"
-          />
         </div>
       </aside>
+    </div>
 
-      <aside class="evidence-nav">
-        <div class="panel-heading">
-          <span>证据导航</span>
-          <strong>{{ cases.length }} 个视图</strong>
-        </div>
-        <section
-          v-for="screenGroup in model.screens"
-          :key="screenGroup.screenId"
-          class="screen-group"
-        >
-          <h2>{{ screenLabel(screenGroup.screenId) }}</h2>
-          <button
-            v-for="item in screenGroup.cases"
-            :key="item.revisionId"
-            type="button"
-            class="case-item"
-            :class="{ active: item.revisionId === selectedCase.revisionId }"
-            @click="selectCase(item)"
-          >
-            <span class="thumb">
-              <ScreenshotThumb
-                v-if="item.screenshotBlobIds[0]"
-                :bundle-id="bundleId"
-                :blob-id="item.screenshotBlobIds[0]"
-                :alt="caseTitle(item)"
-              />
-              <Image v-else :size="14" aria-hidden="true" />
-            </span>
-            <span class="case-copy">
-              <strong>
-                <Route v-if="item.scenario" :size="12" />
-                {{ variantLabel(item) }}
-              </strong>
-              <small>{{ scenarioSummary(item) }}</small>
-            </span>
-          </button>
-        </section>
-      </aside>
+    <div
+      v-if="resultCopy?.kind === 'officially-finalized'"
+      class="prompt-layer"
+      :hidden="!promptOpen"
+      role="dialog"
+      aria-modal="true"
+      aria-label="定稿提示词"
+      @click.self="promptOpen = false"
+    >
+      <section class="prompt-card">
+        <button type="button" class="close-detail" aria-label="关闭提示词" @click="promptOpen = false">
+          <X :size="16" />
+        </button>
+        <EvidenceDeliveryPanel
+          ref="promptPanel"
+          :bundle-id="bundleId"
+          :snapshot-id="snapshotId"
+        />
+      </section>
     </div>
 
     <section v-else-if="model" class="loading-panel">
@@ -498,11 +674,11 @@ watch(
 }
 .viewer-header {
   display: flex;
-  min-height: 78px;
+  min-height: 52px;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  padding: 12px 20px;
+  padding: 6px 16px;
   border-bottom: 1px solid rgba(var(--v-border-color), 0.14);
   background: rgb(var(--v-theme-surface));
 }
@@ -527,6 +703,11 @@ h1 {
   color: rgba(var(--v-theme-on-surface), 0.56);
   font-size: 0.74rem;
 }
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 .coverage-badge {
   display: inline-flex;
   align-items: center;
@@ -540,7 +721,7 @@ h1 {
 }
 .verdict {
   flex: 0 0 auto;
-  padding: 10px 20px;
+  padding: 6px 16px;
   border-bottom: 1px solid rgba(var(--v-border-color), 0.14);
   background: color-mix(in srgb, rgb(var(--v-theme-warning)) 9%, rgb(var(--v-theme-surface)));
 }
@@ -560,15 +741,19 @@ h1 {
 .verdict.is-ready .verdict-line > svg {
   color: rgb(var(--v-theme-success));
 }
-.verdict-line > div {
+.verdict-copy {
+  display: flex;
   min-width: 0;
   flex: 1;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 12px;
 }
 .verdict-line strong {
   font-size: 0.84rem;
 }
 .verdict-line p {
-  margin: 3px 0 0;
+  margin: 0;
   color: rgba(var(--v-theme-on-surface), 0.62);
   font-size: 0.72rem;
 }
@@ -577,15 +762,26 @@ h1 {
   margin-top: 10px;
   overflow: auto;
 }
-.verdict-prompt {
-  margin-top: 10px;
-}
 .result-workspace {
+  position: relative;
   display: grid;
   min-height: 0;
   flex: 1;
-  grid-template-columns: minmax(220px, 360px) minmax(0, 1fr) 200px;
+  grid-template-columns: 280px minmax(0, 1fr);
   overflow: hidden;
+  --details-width: 400px;
+}
+.stage {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+.stage.has-details :deep(.preview-stage) {
+  padding-right: calc(var(--details-width) + 16px);
+}
+.stage :deep(.evidence-preview) {
+  flex: 1;
+  min-width: 0;
 }
 .evidence-nav,
 .evidence-inspector {
@@ -594,7 +790,58 @@ h1 {
   background: rgb(var(--v-theme-surface));
 }
 .evidence-nav {
-  border-left: 1px solid rgba(var(--v-border-color), 0.14);
+  border-right: 1px solid rgba(var(--v-border-color), 0.14);
+}
+.evidence-inspector {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--details-width);
+  z-index: 2;
+  border-left: 1px solid rgba(var(--v-border-color), 0.16);
+  box-shadow: -16px 0 40px rgba(8, 12, 20, 0.12);
+}
+.close-detail {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.prompt-layer[hidden] {
+  display: none;
+}
+.prompt-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  background: rgba(8, 12, 20, 0.42);
+}
+.prompt-card {
+  display: flex;
+  width: min(860px, 100%);
+  max-height: min(78vh, 760px);
+  flex-direction: column;
+  overflow: auto;
+  padding: 18px 18px 8px;
+  border-radius: 16px;
+  background: rgb(var(--v-theme-surface));
+  box-shadow: 0 24px 70px rgba(8, 12, 20, 0.28);
+}
+.prompt-card .close-detail {
+  align-self: flex-end;
+}
+.prompt-card :deep(.prompt-body) {
+  min-height: 0;
+  max-height: none;
 }
 .panel-heading,
 .inspector-heading {
@@ -695,6 +942,11 @@ h1 {
   overflow: auto;
   padding: 16px;
 }
+.lead-note {
+  margin: 6px 0 0;
+  color: rgba(var(--v-theme-on-surface), 0.55);
+  font-size: 0.75rem;
+}
 .lead {
   margin: 0 0 14px;
   font-size: 0.8rem;
@@ -764,12 +1016,64 @@ h1 {
   margin-top: 7px;
   overflow-wrap: anywhere;
 }
+.structure-tree {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.structure-row {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 6px;
+  padding: 5px 8px 5px calc(8px + var(--depth) * 14px);
+  border-radius: 6px;
+  font-size: 0.74rem;
+  cursor: pointer;
+}
+.structure-row:hover {
+  background: rgba(var(--v-theme-on-surface), 0.04);
+}
+.structure-row.active {
+  background: rgba(var(--v-theme-primary), 0.1);
+  box-shadow: inset 2px 0 0 rgb(var(--v-theme-primary));
+}
+.structure-row.is-offscreen {
+  opacity: 0.55;
+}
+.row-role {
+  flex: 0 0 auto;
+  font-weight: 650;
+}
+.row-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.row-meta {
+  flex: 0 0 auto;
+  color: rgba(var(--v-theme-on-surface), 0.5);
+  font-size: 0.68rem;
+}
+.row-component {
+  margin-left: auto;
+  flex: 0 0 auto;
+  color: rgba(var(--v-theme-on-surface), 0.45);
+  font-size: 0.64rem;
+}
 .region-card,
 .interaction-card {
   margin-bottom: 8px;
   padding: 10px;
   border: 1px solid rgba(var(--v-border-color), 0.12);
   border-radius: 8px;
+  cursor: pointer;
+}
+.region-card.active,
+.interaction-card.active {
+  border-color: rgb(var(--v-theme-primary));
+  background: rgba(var(--v-theme-primary), 0.08);
 }
 .region-card {
   display: grid;
@@ -818,7 +1122,10 @@ h1 {
 }
 @media (max-width: 1100px) {
   .result-workspace {
-    grid-template-columns: minmax(200px, 300px) minmax(0, 1fr) 180px;
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+  .result-workspace {
+    --details-width: 340px;
   }
 }
 </style>
