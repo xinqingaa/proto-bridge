@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+  <title>ProtoBridge × PBWork｜视频开场动画</title>
+  <style>
+    :root { --paper:#f5f8fb; --white:#fff; --ink:#142a3d; --muted:#607589; --line:#cad9e5; --blue:#2563eb; --blue-light:#eaf2ff; --mint:#168a74; --mint-light:#e8f7f2; --orange:#b66824; --orange-light:#fff2e4; --shadow:0 20px 50px rgba(22,60,94,.09); }
+    * { box-sizing:border-box; }
+    html,body { width:100%;height:100%;margin:0;overflow:hidden; }
+    body { background:#dfe8f0;color:var(--ink);font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",Arial,sans-serif;-webkit-font-smoothing:antialiased; }
+    button { font:inherit; }
+    #scale-wrap { position:absolute;left:50%;top:50%;width:1600px;height:900px;transform-origin:center; }
+    #stage { position:relative;width:1600px;height:900px;overflow:hidden;background:var(--paper); }
+    #stage:before { content:"";position:absolute;inset:0 0 auto;height:8px;background:linear-gradient(90deg,var(--blue) 0 56%,#8bbef4 56% 75%,#14b8a6 75%); }
+    .mast { position:absolute;z-index:5;top:37px;left:76px;right:76px;display:flex;align-items:center;justify-content:space-between; }
+    .wordmark { font:800 28px/1 "Avenir Next","Helvetica Neue",Arial,sans-serif;letter-spacing:-.045em; }
+    .mast-section { color:var(--muted);font:800 15px "Avenir Next",Arial,sans-serif;letter-spacing:.16em; }
+    .scene { position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity .42s ease,visibility .42s; }
+    .scene.active { opacity:1;visibility:visible; }
+    .titlebox { position:absolute;top:125px;left:76px;right:76px; }
+    .eyebrow { color:var(--blue);font-size:17px;font-weight:800;letter-spacing:.06em; }
+    h1,h2,h3,p { margin:0; }
+    .titlebox h1,.titlebox h2 { margin-top:14px;font-size:55px;line-height:1.23;letter-spacing:-.045em;font-weight:800; }
+    .titlebox p { margin-top:20px;color:var(--muted);font-size:23px;line-height:1.48; }
+    .reveal { opacity:0;transform:translateY(19px);transition:opacity .48s ease,transform .48s ease; }
+    .reveal.shown { opacity:1;transform:translateY(0); }
+    .rail-label { position:absolute;left:76px;bottom:68px;color:#70869a;font-size:15px; }
+    .readout { position:absolute;right:76px;bottom:68px;color:#70869a;font:800 15px "Avenir Next",Arial,sans-serif; }
+    .rail { position:absolute;left:76px;right:76px;bottom:55px;height:2px;background:#d5e1eb; }
+    .rail-fill { height:100%;background:var(--blue);transition:width .4s ease; }
+    .card { border:1.5px solid var(--line);border-radius:18px;background:var(--white);box-shadow:var(--shadow); }
+    .micro { color:var(--muted);font:800 15px "Avenir Next",Arial,sans-serif;letter-spacing:.08em; }
+    .chip { display:inline-flex;align-items:center;padding:10px 14px;border-radius:8px;font-size:18px;font-weight:750; }
+
+    /* The opening gives the speaker time to introduce the product before the problem diagram. */
+    .intro-main { position:absolute;left:76px;right:76px;top:139px; }
+    .intro-main .eyebrow { font-size:21px; }
+    .intro-main h1 { margin-top:22px;font:800 83px/1.12 "Avenir Next","PingFang SC","Microsoft YaHei",Arial,sans-serif;letter-spacing:-.055em; }
+    .intro-main p { margin-top:27px;color:var(--muted);font-size:29px;line-height:1.5; }
+    .intro-steps { position:absolute;left:76px;right:76px;top:536px;display:flex;gap:24px; }
+    .intro-step { flex:1;min-height:202px;padding:27px 29px; }
+    .intro-step b { color:var(--blue);font:800 17px "Avenir Next",Arial,sans-serif; }
+    .intro-step strong { display:block;margin-top:15px;font-size:30px; }
+    .intro-step span { display:block;margin-top:13px;color:var(--muted);font-size:21px; }
+    .intro-scene.active .intro-step { animation:intro-rise .55s both; }
+    .intro-scene.active .intro-step:nth-child(2) { animation-delay:.15s; }
+    .intro-scene.active .intro-step:nth-child(3) { animation-delay:.3s; }
+    @keyframes intro-rise { from { opacity:0;transform:translateY(20px); } to { opacity:1;transform:translateY(0); } }
+
+    /* 1. The break in the handoff is the only dramatic motion. */
+    .old-flow { position:absolute;left:76px;right:76px;top:378px;height:272px;display:flex;align-items:center;gap:27px; }
+    .old-node { width:385px;height:258px;padding:27px 29px; }
+    .old-node h3 { margin-top:14px;font-size:29px; }
+    .old-node p { margin-top:17px;color:var(--muted);font-size:20px;line-height:1.5; }
+    .old-node .mini-pages { display:flex;gap:9px;margin-top:25px; }
+    .mini-pages i { display:block;width:52px;height:45px;border:2px solid #b9cde0;border-radius:6px;background:linear-gradient(#d9e7f5 0 13px,transparent 13px),linear-gradient(90deg,#edf4fa,#fff); }
+    .old-node.target { border-color:#aac1d8; }
+    .old-arrow { flex:1;height:3px;background:#c8d9e8;position:relative; }
+    .old-arrow:after { content:"";position:absolute;right:-2px;top:-7px;border-left:13px solid #a8bfd3;border-top:8px solid transparent;border-bottom:8px solid transparent; }
+    .questions { position:absolute;left:440px;top:619px;width:725px;display:flex;justify-content:center;flex-wrap:wrap;gap:12px; }
+    .questions .chip { background:var(--orange-light);color:#995a22;box-shadow:0 10px 24px rgba(137,87,39,.09); }
+    .friction-bar { position:absolute;left:76px;right:76px;bottom:142px;height:78px;display:flex;align-items:center;gap:17px;padding:0 24px;border-left:5px solid var(--orange);border-radius:8px;background:#fff7ed;font-size:23px;font-weight:750;color:#79542f; }
+    .friction-bar strong { color:#a75b1e; }
+
+    /* 2. PBWork is shown as a real production workbench, not a drag-and-drop canvas. */
+    .work-layout { position:absolute;left:76px;right:76px;top:360px;display:flex;gap:38px;height:420px; }
+    .work-window { flex:1;overflow:hidden;border-color:#a9c3dc; }
+    .window-bar { height:53px;display:flex;align-items:center;gap:15px;padding:0 21px;border-bottom:1px solid #dbe6ef;background:#f9fbfd; }
+    .pb-logo { display:inline-block;width:28px;height:28px;flex:none; }
+    .window-bar strong { font:800 19px "Avenir Next","Helvetica Neue",Arial,sans-serif; }
+    .window-bar span:last-child { margin-left:auto;color:var(--muted);font-size:15px; }
+    .work-inner { height:365px;display:flex; }
+    .work-side { width:177px;flex:none;padding:20px 16px;background:#f6f9fc;border-right:1px solid #dce6ef; }
+    .work-side div { padding:12px 10px;margin-bottom:6px;border-radius:7px;color:#678095;font-size:17px;font-weight:700; }
+    .work-side .selected { background:var(--blue-light);color:var(--blue); }
+    .work-main { flex:1;padding:25px 30px; }
+    .work-main .micro { margin-bottom:15px; }
+    .screen-row { display:flex;gap:18px; }
+    .mock-screen { width:140px;height:203px;padding:13px;border:2px solid #c8d8e6;border-radius:12px;background:#fff; }
+    .mock-screen:first-child { border-color:var(--blue);background:#f9fbff; }
+    .mock-screen b { display:block;height:12px;width:68px;border-radius:3px;background:#a9c4de; }
+    .mock-screen i { display:block;height:37px;margin-top:18px;border-radius:6px;background:#dfebf5; }
+    .mock-screen i:nth-child(3) { height:30px;margin-top:9px; }
+    .mock-screen span { display:block;margin-top:17px;color:#577187;font-size:15px;font-weight:700;text-align:center; }
+    .work-bottom { display:flex;gap:14px;margin-top:20px; }
+    .work-bottom .chip { background:var(--blue-light);color:var(--blue);font-size:15px; }
+    .work-facts { width:435px;display:flex;flex-direction:column;gap:14px;justify-content:center; }
+    .work-fact { padding:22px 24px;min-height:126px; }
+    .work-fact b { display:block;color:var(--blue);font-size:17px; }
+    .work-fact strong { display:block;margin-top:8px;font-size:25px; }
+    .work-fact p { margin-top:5px;color:var(--muted);font-size:17px;line-height:1.4; }
+
+    /* 3. The fixed information sheet bridges the project and implementation. */
+    .bridge { position:absolute;left:76px;right:76px;top:354px;display:grid;grid-template-columns:375px 418px 375px;justify-content:space-between;align-items:center;height:366px; }
+    .bridge:before { content:"";position:absolute;z-index:0;left:130px;right:130px;top:182px;height:3px;background:#bfd3e4; }
+    .bridge:after { content:"";position:absolute;right:121px;top:175px;border-left:15px solid #a4bfd4;border-top:9px solid transparent;border-bottom:9px solid transparent; }
+    .bridge-card { position:relative;z-index:1;height:351px;padding:26px 27px; }
+    .bridge-card h3 { margin-top:10px;font-size:30px; }
+    .bridge-card p { margin-top:14px;color:var(--muted);font-size:19px;line-height:1.48; }
+    .bridge-card .line { display:flex;align-items:center;gap:11px;height:49px;border-top:1px solid #e0e9f0;font-size:18px;font-weight:700; }
+    .bridge-card .line:first-of-type { margin-top:19px; }
+    .bridge-card .line b { display:grid;place-items:center;width:26px;height:26px;border-radius:6px;background:var(--mint-light);color:var(--mint);font-size:14px; }
+    .bridge-card.pbwork { border-color:#b0c9de; }
+    .bridge-card.evidence { border-color:#abd6cb; }
+    .bridge-card.agent { border-color:#bfcae9; }
+    .fixed-stamp { position:absolute;right:25px;bottom:25px;padding:7px 10px;border:2px solid var(--mint);border-radius:6px;transform:rotate(-5deg);color:var(--mint);font-size:18px;font-weight:850; }
+    .bridge-caption { position:absolute;left:76px;right:76px;bottom:116px;text-align:center;color:var(--muted);font-size:22px; }
+    .bridge-caption strong { color:var(--ink); }
+    .approval { margin-top:18px;padding:12px 14px;border-radius:8px;background:var(--orange-light);color:#995a22;font-size:17px;font-weight:750; }
+
+    /* 4. Value is explained through observable changes, not fabricated speed metrics. */
+    .value-layout { position:absolute;left:76px;right:76px;top:367px;height:405px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px; }
+    .value-card { padding:34px 30px; }
+    .value-card .num { color:var(--blue);font:800 18px "Avenir Next",Arial,sans-serif; }
+    .value-card h3 { margin-top:21px;font-size:30px;line-height:1.28; }
+    .value-card p { margin-top:21px;color:var(--muted);font-size:21px;line-height:1.52; }
+    .value-card .value-tail { margin-top:31px;padding-top:20px;border-top:1px solid #dce7ef;color:var(--mint);font-size:18px;font-weight:800; }
+    .next-card { position:absolute;inset:105px 70px 106px;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:var(--paper); }
+    .next-card h2 { margin-top:18px;font-size:72px;line-height:1.18;letter-spacing:-.045em; }
+    .next-card p { margin-top:21px;color:var(--muted);font-size:26px; }
+    .next-card .down { margin-top:27px;color:var(--blue);font-size:54px;line-height:1; }
+
+    #hud { position:fixed;right:22px;bottom:22px;z-index:20;display:flex;gap:8px;padding:7px;border:1px solid #c8d7e4;border-radius:12px;background:rgba(255,255,255,.94);box-shadow:0 7px 22px rgba(16,48,80,.13); }
+    #hud.hidden { display:none; }
+    #hud button { min-width:43px;height:38px;padding:0 11px;border:0;border-radius:7px;background:#edf3f8;color:var(--ink);font-size:14px;font-weight:750;cursor:pointer; }
+    #hud button:hover,#hud button:focus-visible { outline:2px solid var(--blue);outline-offset:1px;background:var(--blue-light); }
+    #help { position:fixed;inset:0;z-index:30;display:none;place-items:center;background:rgba(20,42,61,.46); }
+    #help.open { display:grid; }
+    #help>div { width:min(520px,90vw);padding:32px 36px;border-radius:18px;background:white;box-shadow:var(--shadow);font-size:18px;line-height:2; }
+    #help h2 { margin-bottom:12px;font-size:27px; }
+    kbd { padding:2px 7px;border:1px solid #bdd0df;border-radius:5px;background:#f2f6fa;font:700 14px Arial,sans-serif; }
+    @media (prefers-reduced-motion:reduce) { *,*:before,*:after { transition-duration:.01ms !important;animation-duration:.01ms !important; } }
+  </style>
+</head>
+<body>
+  <div id="scale-wrap"><main id="stage" aria-label="ProtoBridge 与 PBWork 视频开场动画">
+    <div class="mast"><div class="wordmark">ProtoBridge</div><div class="mast-section" id="mast-section">01 / 产品介绍</div></div>
+
+    <section class="scene intro-scene" data-scene="intro" aria-label="ProtoBridge 与 PBWork 产品介绍">
+      <div class="intro-main"><div class="eyebrow">今天介绍我做的项目</div><h1>ProtoBridge<br>× PBWork</h1><p>让 AI Coding 更清楚地理解原型，更快交付客户端 App。</p></div>
+      <div class="intro-steps"><div class="intro-step card"><b>01 / PBWork</b><strong>先把原型跑起来</strong><span>页面、状态和操作都能看</span></div><div class="intro-step card"><b>02 / ProtoBridge</b><strong>再固定确认的一版</strong><span>交给 AI 一份能查的资料</span></div><div class="intro-step card"><b>03 / 目标 App</b><strong>实现后回头核对</strong><span>把差异说清楚，再修改</span></div></div>
+    </section>
+
+    <section class="scene" data-scene="friction" aria-label="AI Coding 交付客户端时的难点">
+      <div class="titlebox"><div class="eyebrow">AI Coding 已经在写客户端</div><h1>代码写得更快了，<br>为什么交付还会反复？</h1><p>过去：设计稿 → 标注和解释 → 开发 → 验收。现在，AI 可以直接读取设计。</p></div>
+      <div class="old-flow">
+        <div class="old-node card"><div class="micro">Figma MCP</div><h3>设计信息</h3><p>页面结构、组件、变量<br>以及视觉参考</p><div class="mini-pages"><i></i><i></i><i></i></div></div>
+        <div class="old-arrow"></div>
+        <div class="old-node card"><div class="micro">AI CODING</div><h3>编程助手实现</h3><p>结合目标工程，决定<br>组件、页面和交互</p></div>
+        <div class="old-arrow"></div>
+        <div class="old-node card target"><div class="micro">客户端</div><h3>目标 App</h3><p>运行起来之后，<br>还要和设计核对</p></div>
+      </div>
+      <div class="questions reveal" data-at="2"><span class="chip">组件怎么复用？</span><span class="chip">异常状态在哪？</span><span class="chip">点击后去哪？</span><span class="chip">按哪版验收？</span></div>
+      <div class="friction-bar reveal" data-at="3"><strong>卡点</strong><span>设计信息已经送到了 AI 手里；业务状态、工程约定和验收范围仍要明确交接。</span></div>
+    </section>
+
+    <section class="scene" data-scene="work" aria-label="PBWork 把设计变成可检查的原型">
+      <div class="titlebox"><div class="eyebrow">让 AI 有可运行的交付对象</div><h2>PBWork：先把页面和状态<br>做成能操作的原型。</h2><p>原型由代码制作，共用设计基础、组件和交互规则。</p></div>
+      <div class="work-layout">
+        <div class="work-window card">
+          <div class="window-bar"><svg class="pb-logo" viewBox="0 0 64 64" role="img" aria-label="PBWork 官方标识"><defs><linearGradient id="pb-surface" x1="8" y1="6" x2="57" y2="60" gradientUnits="userSpaceOnUse"><stop stop-color="#2563EB"/><stop offset="1" stop-color="#14B8A6"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#pb-surface)"/><path d="M18 21h13c7.2 0 12 4.3 12 10.5S38.2 42 31 42H18" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 21v27" fill="none" stroke="white" stroke-width="5" stroke-linecap="round"/><circle cx="20" cy="21" r="4.25" fill="#D9FFFA"/><circle cx="43" cy="31.5" r="4.25" fill="white"/><circle cx="20" cy="47" r="4.25" fill="#D9FFFA"/></svg><strong>PBWork</strong><span>工作台 · 示意</span></div>
+          <div class="work-inner"><div class="work-side"><div>概览</div><div>设计基础</div><div>组件</div><div class="selected">原型</div><div>定稿采集</div></div><div class="work-main"><div class="micro">原型页面</div><div class="screen-row"><div class="mock-screen"><b></b><i></i><i></i><span>页面 A</span></div><div class="mock-screen"><b></b><i></i><i></i><span>页面 B</span></div><div class="mock-screen"><b></b><i></i><i></i><span>页面 C</span></div></div><div class="work-bottom"><span class="chip">默认状态</span><span class="chip">关键状态</span><span class="chip">操作反馈</span></div></div></div>
+        </div>
+        <div class="work-facts"><div class="work-fact card reveal" data-at="5"><b>01 / 共用一套规则</b><strong>组件和样式可以复用</strong><p>不必在每个页面重新解释和制作。</p></div><div class="work-fact card reveal" data-at="5"><b>02 / 真正打开状态</b><strong>关键画面能反复查看</strong><p>评审、采集、实现能看同一状态。</p></div></div>
+      </div>
+    </section>
+
+    <section class="scene" data-scene="bridge" aria-label="ProtoBridge 固定资料并交给客户端实现者">
+      <div class="titlebox"><div class="eyebrow">把原型交给 AI，而不是只给一个链接</div><h2>ProtoBridge：把确认过的原型，<br>变成固定的交付依据。</h2><p>哪一版、哪个状态、怎样操作，都能查到。</p></div>
+      <div class="bridge">
+        <div class="bridge-card pbwork card"><div class="micro">PBWork · 定稿原型</div><h3>人先确认</h3><p>确认页面范围、关键状态和需要说明的问题。</p><div class="line"><b>1</b> 页面可操作</div><div class="line"><b>2</b> 状态可复现</div></div>
+        <div class="bridge-card evidence card reveal" data-at="6"><div class="micro">ProtoBridge · 固定资料</div><h3>采集这一版</h3><div class="line"><b>✓</b> 页面结构与文字</div><div class="line"><b>✓</b> 状态、交互与截图</div><div class="line"><b>✓</b> 问题与不确定处</div><div class="fixed-stamp reveal" data-at="6">固定引用</div></div>
+        <div class="bridge-card agent card reveal" data-at="7"><div class="micro">MCP · 目标工程</div><h3>编程助手读取</h3><p>按固定引用读取资料，结合目标代码先写实现计划。</p><div class="approval reveal" data-at="7">人确认计划 → 实现 → 对照检查</div></div>
+      </div>
+      <div class="bridge-caption reveal" data-at="6"><strong>同一份资料，贯穿开发与复查。</strong> 后续修改会形成新的版本。</div>
+    </section>
+
+    <section class="scene" data-scene="value" aria-label="交付速度提升的三个机制">
+      <div class="titlebox"><div class="eyebrow">交付速度从哪里改善</div><h2>让 AI 少猜一些，<br>让返工尽量早一点暴露。</h2><p>先把原型讲清楚，再把实现放到同一版资料上核对。</p></div>
+      <div class="value-layout"><div class="value-card card"><div class="num">01 / 先确认</div><h3>页面和状态<br>在原型里跑通</h3><p>需求讨论时就能看到关键操作，而不是开发后再补想象。</p><div class="value-tail">少漏状态</div></div><div class="value-card card"><div class="num">02 / 再交接</div><h3>把确认的一版<br>固定下来</h3><p>页面、截图和问题有同一份引用，AI 不用猜版本。</p><div class="value-tail">少来回确认</div></div><div class="value-card card"><div class="num">03 / 最后核对</div><h3>原型与 App<br>按同一状态比较</h3><p>差异能具体指出来，修改也更有目标。</p><div class="value-tail">少后期返工</div></div></div>
+      <div class="next-card reveal" data-at="9"><div class="eyebrow">概念到这里</div><h2>现在看真实 PBWork</h2><p>工作台 → 原型页面 → 固定资料 → App 效果</p><div class="down">↓</div></div>
+    </section>
+
+    <div class="rail-label">概念示意 · 讲述者手动推进</div><div class="readout" id="readout">01 / 10</div><div class="rail"><div class="rail-fill" id="rail-fill"></div></div>
+  </main></div>
+  <div id="hud" aria-label="动画操作"><button id="prev" type="button" aria-label="上一步">←</button><button id="next" type="button" aria-label="下一步">→</button><button id="fullscreen" type="button">全屏</button><button id="help-button" type="button">?</button></div>
+  <div id="help" role="dialog" aria-modal="true" aria-label="操作说明"><div><h2>录制时的按键</h2><div><kbd>空格</kbd> / <kbd>→</kbd> 下一步</div><div><kbd>←</kbd> 上一步</div><div><kbd>R</kbd> 回到开头</div><div><kbd>F</kbd> 全屏</div><div><kbd>H</kbd> 隐藏右下角操作按钮</div><div><kbd>?</kbd> 帮助，<kbd>Esc</kbd> 关闭帮助</div></div></div>
+  <script>
+    const TOTAL = 10;
+    const scenes = [...document.querySelectorAll('.scene')];
+    const reveals = [...document.querySelectorAll('[data-at]')];
+    const help = document.getElementById('help');
+    const hud = document.getElementById('hud');
+    const names = {intro:'01 / 产品介绍',friction:'02 / AI 交付难点',work:'03 / PBWork',bridge:'04 / ProtoBridge',value:'05 / 交付价值'};
+    let step = Math.max(0,Math.min(TOTAL-1,Number(new URLSearchParams(location.hash.slice(1)).get('step'))||0));
+    function sceneFor(n) { return n === 0 ? 'intro' : n <= 3 ? 'friction' : n <= 5 ? 'work' : n <= 7 ? 'bridge' : 'value'; }
+    function paint() {
+      const current = sceneFor(step);
+      scenes.forEach(el => { const active = el.dataset.scene === current; el.classList.toggle('active',active); el.setAttribute('aria-hidden',String(!active)); });
+      reveals.forEach(el => el.classList.toggle('shown',el.closest('.scene').dataset.scene === current && step >= Number(el.dataset.at)));
+      document.getElementById('mast-section').textContent = names[current];
+      document.getElementById('readout').textContent = `${String(step+1).padStart(2,'0')} / ${TOTAL}`;
+      document.getElementById('rail-fill').style.width = `${(step+1)/TOTAL*100}%`;
+      history.replaceState(null,'',`${location.pathname}${location.search}#step=${step}`);
+    }
+    function go(delta) { step=Math.max(0,Math.min(TOTAL-1,step+delta)); paint(); }
+    function fit() { document.getElementById('scale-wrap').style.transform=`translate(-50%,-50%) scale(${Math.min(innerWidth/1600,innerHeight/900)})`; }
+    async function fullscreen() { if(document.fullscreenElement) await document.exitFullscreen(); else await document.documentElement.requestFullscreen(); }
+    document.getElementById('prev').addEventListener('click',()=>go(-1));
+    document.getElementById('next').addEventListener('click',()=>go(1));
+    document.getElementById('fullscreen').addEventListener('click',fullscreen);
+    document.getElementById('help-button').addEventListener('click',()=>help.classList.add('open'));
+    help.addEventListener('click',e=>{if(e.target===help)help.classList.remove('open');});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'){help.classList.remove('open');return;}if(help.classList.contains('open'))return;if([' ','ArrowRight','PageDown'].includes(e.key)){e.preventDefault();go(1);}else if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();go(-1);}else if(e.key.toLowerCase()==='r'){step=0;paint();}else if(e.key.toLowerCase()==='f')fullscreen();else if(e.key.toLowerCase()==='h')hud.classList.toggle('hidden');else if(e.key==='?')help.classList.add('open');});
+    addEventListener('resize',fit);fit();paint();
+  </script>
+</body>
+</html>
