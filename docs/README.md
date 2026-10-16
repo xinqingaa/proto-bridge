@@ -28,6 +28,7 @@ ProtoBridge（PB）把可交互原型转化为可追溯、可固定引用的 Evi
 | 修改 Contract、Store 或 Capture | [Evidence 模型](./architecture/evidence-model.md) → [采集链路](./architecture/capture-pipeline.md) |
 | 在 PBWork 设计或制作原型 | [原型设计工作流](./pbwork/prototypes/design-workflow.md) → [原型 Authoring Contract](./reference/prototype-authoring.md) → [PBWork 手册](./pbwork/README.md) |
 | 标记业务节点与设置门禁 | [语义标记与证据门禁](./reference/semantic-authoring.md) |
+| 修改主题包解析模块 | [主题包解析模型](./architecture/theme-packs.md) |
 | 修改 PBWork Token 或组件 | [PBWork 开发规范](./pbwork/development.md) → [组件总论](./pbwork/components/overview.md) |
 | 维护仓库 | [开发规范](./maintenance/development.md) → [文档维护](./maintenance/documentation.md) |
 | 评审后续产品投入 | [路线图](./roadmap/README.md) → [PBWork 与 PB 平台升级](./roadmap/pbwork-platform-upgrade.md) → [「一刻」原型](./roadmap/yike-prototype.md) |

@@ -17,6 +17,7 @@ import { CatalogRevision } from '../contracts/catalog.js';
 import { CaseEvidenceRevision } from '../contracts/evidence.js';
 import { AgentHandoff } from '../contracts/handoff.js';
 import { Issue } from '../contracts/issue.js';
+import { issueContentRef, pinIssueReferences } from './issue-content.js';
 import {
   assertPrototypeLifecycleMigration,
   assertPrototypeLifecycleUpdate,
@@ -604,9 +605,12 @@ export class LocalFileStore implements V2Store {
       );
     }
     assertRunReferences(run);
-    const revisions = input.revisions.map((revision) =>
-      this.parseOrThrow(CaseEvidenceRevision, revision, 'CaseEvidenceRevision'),
+    const issues = (input.issues ?? []).map((issue) =>
+      this.parseOrThrow(Issue, issue, 'Issue'),
     );
+    const revisions = pinIssueReferences(input.revisions.map((revision) =>
+      this.parseOrThrow(CaseEvidenceRevision, revision, 'CaseEvidenceRevision'),
+    ), issues);
     const catalogs = (input.catalogs ?? []).map((catalog) =>
       this.parseOrThrow(CatalogRevision, catalog, 'CatalogRevision'),
     );
@@ -643,9 +647,6 @@ export class LocalFileStore implements V2Store {
       snapshot,
       [run],
       [...revisionsById.values()],
-    );
-    const issues = (input.issues ?? []).map((issue) =>
-      this.parseOrThrow(Issue, issue, 'Issue'),
     );
     const blobs = input.stagedJobId
       ? await this.collectStagedBlobs(
@@ -1793,9 +1794,12 @@ export class LocalFileStore implements V2Store {
       }
     }
 
-    const revisions = input.revisions.map((revision) =>
-      this.parseOrThrow(CaseEvidenceRevision, revision, 'CaseEvidenceRevision'),
+    const issues = (input.issues ?? []).map((issue) =>
+      this.parseOrThrow(Issue, issue, 'Issue'),
     );
+    const revisions = pinIssueReferences(input.revisions.map((revision) =>
+      this.parseOrThrow(CaseEvidenceRevision, revision, 'CaseEvidenceRevision'),
+    ), issues);
     const catalogs = (input.catalogs ?? []).map((catalog) =>
       this.parseOrThrow(CatalogRevision, catalog, 'CatalogRevision'),
     );
@@ -1853,9 +1857,6 @@ export class LocalFileStore implements V2Store {
       ...revisionsById.values(),
     ];
     this.assertSnapshotGraph(bundle, nextSnapshot, allRuns, allRevisions);
-    const issues = (input.issues ?? []).map((issue) =>
-      this.parseOrThrow(Issue, issue, 'Issue'),
-    );
     const blobs = input.stagedJobId
       ? await this.collectStagedBlobs(
           input.stagedJobId,
@@ -1903,7 +1904,7 @@ export class LocalFileStore implements V2Store {
         catalog,
       );
     }
-    const retainedIssueIds = await this.writeIssuesAndBlobs(
+    await this.writeIssuesAndBlobs(
       this.root,
       bundleId,
       issues,
@@ -1928,7 +1929,6 @@ export class LocalFileStore implements V2Store {
       run,
       snapshot: nextSnapshot,
       blobIds: blobs.map((blob) => blob.record.blobId as BlobId),
-      retainedIssueIds,
     };
   }
 
@@ -1996,7 +1996,7 @@ export class LocalFileStore implements V2Store {
     const parsed = this.parseOrThrow(Issue, issue, 'Issue');
     await this.assertCapacity(this.serializedBytes(parsed));
     await writeImmutableJson(
-      issuePath(this.root, bundleId, parsed.issueId),
+      issuePath(this.root, bundleId, issueContentRef(parsed)),
       'Issue',
       parsed,
     );
@@ -2010,15 +2010,30 @@ export class LocalFileStore implements V2Store {
       issuePath(this.root, bundleId, issueId),
     );
     if (raw === undefined) return undefined;
-    return this.parseOrThrow(Issue, raw, 'Issue');
+    const issue = this.parseOrThrow(Issue, raw, 'Issue');
+    if (issueId.includes('@') && issueContentRef(issue) !== issueId) {
+      throw new V2ContractError('immutable-violation', `Issue content does not match ${issueId}.`);
+    }
+    return issue;
   }
 
   async listIssues(bundleId: BundleId): Promise<Issue[]> {
     await this.requireBundle(bundleId);
-    const ids = (await listJsonIds(issuesDir(this.root, bundleId))) as IssueId[];
-    const issues = await Promise.all(
-      ids.map((issueId) => this.getIssue(bundleId, issueId)),
-    );
+    const legacyIds = await listJsonIds(issuesDir(this.root, bundleId));
+    const contentDir = path.join(issuesDir(this.root, bundleId), 'content');
+    const digests = await listJsonIds(contentDir);
+    const issues = await Promise.all([
+      ...legacyIds.map((id) => this.getIssue(bundleId, id)),
+      ...digests.map(async (digest) => {
+        const raw = await readJson<unknown>(path.join(contentDir, `${digest}.json`));
+        const issue = this.parseOrThrow(Issue, raw, 'Issue');
+        const ref = issueContentRef(issue);
+        if (ref.split('@sha256:')[1] !== digest) {
+          throw new V2ContractError('immutable-violation', `Issue content does not match ${digest}.`);
+        }
+        return issue;
+      }),
+    ]);
     return issues
       .filter((issue): issue is Issue => issue !== undefined)
       .sort((left, right) => left.issueId.localeCompare(right.issueId));
@@ -2189,28 +2204,16 @@ export class LocalFileStore implements V2Store {
     return bytes;
   }
 
-  /**
-   * Transaction-internal writes before the Run/Snapshot/pointer. An Issue ID
-   * that is already persisted with different content keeps the persisted
-   * Issue (immutable, first write wins) and is reported to the caller.
-   */
+  /** Content-addressed Issue writes deduplicate identical content without losing later observations. */
   private async writeIssuesAndBlobs(
     targetRoot: string,
     bundleId: BundleId,
     issues: Issue[],
     blobs: Array<{ record: BlobRecord; bytes: Uint8Array }>,
-  ): Promise<IssueId[]> {
-    const retained: IssueId[] = [];
+  ): Promise<void> {
     for (const issue of issues) {
-      const persisted = await readJson<unknown>(
-        issuePath(this.root, bundleId, issue.issueId),
-      );
-      if (persisted !== undefined && !isDeepStrictEqual(persisted, issue)) {
-        retained.push(issue.issueId as IssueId);
-        continue;
-      }
       await writeImmutableJson(
-        issuePath(targetRoot, bundleId, issue.issueId),
+        issuePath(targetRoot, bundleId, issueContentRef(issue)),
         'Issue',
         issue,
       );
@@ -2227,7 +2230,6 @@ export class LocalFileStore implements V2Store {
         blob.record,
       );
     }
-    return retained;
   }
 
   async getBlob(

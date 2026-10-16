@@ -14,7 +14,7 @@ function key(
   valueType: ThemeKeyDefinition['valueType'],
   extra: Partial<ThemeKeyDefinition> = {},
 ): ThemeKeyDefinition {
-  return { id, tier, valueType, bindable: true, modeVariant: false, accentable: false, ...extra };
+  return { id, tier, valueType, bindable: true, modeVariant: false, ...extra };
 }
 
 export function makeCatalog(): ThemeKeyCatalog {
@@ -24,10 +24,10 @@ export function makeCatalog(): ThemeKeyCatalog {
       key('color.background', 'semantic', 'color', { modeVariant: true }),
       key('color.surface', 'semantic', 'color', { modeVariant: true }),
       key('color.on-surface', 'semantic', 'color', { modeVariant: true }),
-      key('color.primary', 'semantic', 'color', { modeVariant: true, accentable: true }),
-      key('color.on-primary', 'semantic', 'color', { modeVariant: true, accentable: true }),
+      key('color.primary', 'semantic', 'color', { modeVariant: true }),
+      key('color.on-primary', 'semantic', 'color', { modeVariant: true }),
       key('color.warning', 'semantic', 'color', { modeVariant: true }),
-      key('color.on-warning', 'semantic', 'color', { modeVariant: true, accentable: true }),
+      key('color.on-warning', 'semantic', 'color', { modeVariant: true }),
       key('density', 'semantic', 'enum', { bindable: false, enumValues: ['compact', 'regular', 'comfortable'] }),
       key('surface.treatment', 'semantic', 'enum', { bindable: false, enumValues: ['solid', 'outlined', 'glass'] }),
       key('space.inset', 'semantic', 'length'),
@@ -37,11 +37,10 @@ export function makeCatalog(): ThemeKeyCatalog {
       key('motion.easing', 'semantic', 'easing'),
       key('elevation.surface', 'semantic', 'shadow', { modeVariant: true }),
       key('surface.glass-backdrop', 'semantic', 'filter', { modeVariant: true }),
-      key('font.text', 'semantic', 'font', { bindable: false }),
-      key('font.numeric', 'semantic', 'font', { bindable: false }),
       key('typography.title', 'semantic', 'typography'),
       key('typography.body', 'semantic', 'typography'),
-      key('border.default', 'semantic', 'border', { modeVariant: true }),
+      key('typography.numeric-content', 'semantic', 'typography'),
+      key('border.default', 'semantic', 'border'),
       key('asset.brand-mark', 'semantic', 'asset', { modeVariant: true }),
       key('button.primary-background', 'component', 'color', { modeVariant: true, default: '{color.primary}' }),
       key('button.primary-text', 'component', 'color', { modeVariant: true, default: '{color.on-primary}' }),
@@ -83,8 +82,8 @@ export function makeBase(): ThemePackSource {
       scope: 'base',
       modes: ['light', 'dark'],
       defaultMode: 'light',
-      accentKeys: ['color.primary', 'color.on-primary', 'color.on-warning'],
-      defaultAccent: 'default',
+      themes: [{ id: 'default', label: 'Default' }, { id: 'teal', label: 'Teal' }],
+      defaultTheme: 'default',
     },
     primitives: {
       values: {
@@ -116,13 +115,14 @@ export function makeBase(): ThemePackSource {
         'motion.easing': 'ease',
         'elevation.surface': 'none',
         'surface.glass-backdrop': 'none',
-        'font.text': { family: ['system-ui', 'sans-serif'] },
-        'font.numeric': { family: ['ui-monospace', 'monospace'], features: ['tnum'] },
-        'typography.title': { family: '{font.text}', weight: 650, size: 20, lineHeight: 1.3 },
-        'typography.body': { family: ['system-ui'], weight: 400, size: '1rem', lineHeight: 1.5 },
+        'typography.title': { weight: 650, size: 20, lineHeight: 1.3 },
+        'typography.body': { weight: 400, size: '1rem', lineHeight: 1.5 },
+        'typography.numeric-content': { weight: 650, size: 20, lineHeight: 1.3 },
         'border.default': { width: 1, style: 'solid', color: '{color.on-surface}' },
         'asset.brand-mark': 'none',
       },
+      themes: { teal: { values: { 'color.primary': '{teal.600}' } } },
+      themeModes: { teal: { dark: { 'color.primary': '{teal.300}' } } },
       modes: {
         dark: {
           'color.background': '#101010',
@@ -134,16 +134,7 @@ export function makeBase(): ThemePackSource {
       },
     },
     component: { values: { 'tabbar.treatment': 'glass' } },
-    accents: {
-      accents: {
-        default: { label: 'Default' },
-        teal: {
-          label: 'Teal',
-          values: { 'color.primary': '{teal.600}' },
-          modes: { dark: { 'color.primary': '{teal.300}' } },
-        },
-      },
-    },
+
   };
 }
 
@@ -157,6 +148,8 @@ export function makeChild(overrides: Partial<ThemePackSource> = {}, id = 'brand'
       scope: 'prototype',
       modes: ['light', 'dark'],
       defaultMode: 'light',
+      themes: [{ id: 'default', label: 'Default' }, { id: 'teal', label: 'Teal' }],
+      defaultTheme: 'default',
     },
     ownerPrototypeId: id,
     ...overrides,
@@ -178,7 +171,7 @@ export function validate(
 export function find(
   diagnostics: ThemeDiagnostic[],
   code: ThemeDiagnostic['code'],
-  match: Partial<Pick<ThemeDiagnostic, 'key' | 'packId' | 'severity' | 'mode' | 'accent'>> = {},
+  match: Partial<Pick<ThemeDiagnostic, 'key' | 'packId' | 'severity' | 'mode' | 'theme'>> = {},
 ): ThemeDiagnostic | undefined {
   return diagnostics.find(
     (diagnostic) =>
@@ -187,7 +180,7 @@ export function find(
       (match.packId === undefined || diagnostic.packId === match.packId) &&
       (match.severity === undefined || diagnostic.severity === match.severity) &&
       (match.mode === undefined || diagnostic.mode === match.mode) &&
-      (match.accent === undefined || diagnostic.accent === match.accent),
+      (match.theme === undefined || diagnostic.theme === match.theme),
   );
 }
 

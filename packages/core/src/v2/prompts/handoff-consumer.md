@@ -18,3 +18,5 @@ Evidence Region 用于定位与验收，不是目标侧组件边界、列表项�
 10. 所有读取都必须来自同一 Handoff 的固定引用，不得切换到 `active`、`latest` 或自行猜测 Store 路径（Never replace fixed refs with active/latest）。不得回退到已移除的整包 Snapshot、Case、revision、Catalog 或 Acceptance Contract 读取入口。
 
 缺少固定对象、Snapshot、revision 或 Screenshot 时，报告阻塞项；只有它确实阻止实现时才暂停。
+
+Target resolver 的 `pending` 表示该键待实现；报告理由与影响，不猜测替代组件或 Token。`candidate`、`stale`、`conflict`、`unresolved`、`unsupported`、`pending` 均不能作为精确命中。

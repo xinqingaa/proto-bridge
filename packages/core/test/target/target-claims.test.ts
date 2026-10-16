@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
@@ -48,6 +48,21 @@ describe('Target claim verifier', () => {
     await write(root, 'lib/features/page.dart', wrongTokenSlotSource());
     const wrongSlot = await verify(root, head, obligations, [claims[1]!]);
     expect(wrongSlot.results[0]).toMatchObject({ status: 'deviation', detail: expect.stringContaining('has no color') });
+  });
+
+  it('keeps pending component and token claims unverified even when matching source occurrences exist', async () => {
+    const root = await targetFixture();
+    const contractPath = path.join(root, 'proto-bridge.target.json');
+    const contract = JSON.parse(await readFile(contractPath, 'utf8'));
+    contract.components['page.card'] = { status: 'pending', reason: '组件待移植' };
+    contract.tokens['color.surface'] = { status: 'pending', reason: 'Token 待移植' };
+    await write(root, 'proto-bridge.target.json', JSON.stringify(contract));
+    const head = await commit(root);
+
+    const result = await verify(root, head, fixtureObligations(), fixtureClaims());
+    expect(result.results.map((item) => item.status)).toEqual(['unverified', 'unverified']);
+    expect(result.results[0]?.detail).toContain('pending (Target 待实现): 组件待移植');
+    expect(result.results[1]?.detail).toContain('pending (Target 待实现): Token 待移植');
   });
 
   it('leaves Runtime semantic dimensions unverified until Flutter MCP receipts are recorded', async () => {

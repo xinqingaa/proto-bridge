@@ -40,3 +40,7 @@ pnpm --filter @proto-bridge/core test
 ```
 
 架构说明见 [ProtoBridge 实现](../../docs/architecture/proto-bridge.md)和 [Evidence 模型](../../docs/architecture/evidence-model.md)。
+
+Issue 持久化与 Fact 固定引用遵守 [Evidence 模型](../../docs/architecture/evidence-model.md#issue-与-coverage)。Store 的 `issueContentRef(issue)` 返回内容固定引用，`getIssue(bundleId, ref)` 只读取该引用，`listIssues` 保留同一逻辑 ID 的全部内容版本。
+
+主题包模块通过 `./v2/theme` 和 `./v2` 导出，负责包内多套主题、模式、继承、解析值、引用链、摘要与校验。输入、身份和 API 见 [主题包解析模型](../../docs/architecture/theme-packs.md)；该模块不执行文件 I/O，也不自动把取值写入 Capture Evidence。

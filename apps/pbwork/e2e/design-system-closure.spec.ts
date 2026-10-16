@@ -199,8 +199,8 @@ test("list playground demonstrates custom rows and desktop refresh/load controls
   await expect(page.getByText("仅标题行", { exact: true })).toHaveCount(3);
   await expect(page.getByText("双行业务记录", { exact: true })).toHaveCount(3);
   await expect(page.getByText("自定义指标", { exact: true })).toHaveCount(1);
-  await expect(page.locator('[data-exhibit="state.plain"]')).toBeVisible();
-  await expect(page.locator('[data-exhibit="state.raised"]')).toBeVisible();
+  await expect(page.locator('[data-exhibit="type.plain"]')).toBeVisible();
+  await expect(page.locator('[data-exhibit="type.raised"]')).toBeVisible();
 
   await page.goto("/workbench/components/scrollable-data-list");
   const mainList = page
@@ -231,12 +231,12 @@ test("wide component exhibits retain their intended visual width and Card surfac
 }) => {
   await page.goto("/workbench/components/card");
   await expect(page.locator('[data-exhibit="type.summary"]')).toHaveCount(0);
-  await expect(page.locator('[data-exhibit="state.flat"]')).toBeVisible();
-  await expect(page.locator('[data-exhibit="state.elevated"]')).toBeVisible();
+  await expect(page.locator('[data-exhibit="type.flat"]')).toBeVisible();
+  await expect(page.locator('[data-exhibit="type.elevated"]')).toBeVisible();
   await expect(page.getByText("外部内容", { exact: true })).toHaveCount(3);
   expect(
     await page
-      .locator('[data-exhibit="state.elevated"] .pb-card')
+      .locator('[data-exhibit="type.elevated"] .pb-card')
       .evaluate((element) => element.getBoundingClientRect().width),
   ).toBeGreaterThan(600);
 
@@ -244,7 +244,7 @@ test("wide component exhibits retain their intended visual width and Card surfac
   for (const stateId of ["plain", "inset"]) {
     expect(
       await page
-        .locator(`[data-exhibit="state.${stateId}"] .pb-divider`)
+        .locator(`[data-exhibit="${stateId === "plain" ? "state" : "type"}.${stateId}"] .pb-divider`)
         .evaluate((element) => element.getBoundingClientRect().width),
     ).toBeGreaterThan(600);
   }

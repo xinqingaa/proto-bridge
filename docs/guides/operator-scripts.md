@@ -154,3 +154,5 @@ CLI `deliver` 是非正式诊断，不改变 PBWork 生命周期。非交互使�
 Review 按 PNG 内容去重：完全相同的 Screenshot 只写一份图片，并列出其对应的全部 Case。Agent 提示词先要求只读理解 Evidence 和目标工程、提交实现计划并等待确认；确认后才在同一任务中实施。收据只是 Store 索引；MCP 仍按 Handoff / Snapshot 从 Store 按需读取。也可用 `--bundle` + `--snapshot` 在已有 Evidence 上续跑交接，同样视为非正式。
 
 稳定的 Agent 读取规则见 [Agent 消费指南](./agent-consumption.md)。
+
+`pb:clean` 在缺少受管进程状态时，通过 Core 的统一 Service 启动配置检查服务地址，并按 `runtime.baseUrl` 检查 Runtime 地址；端口被占用则拒绝清理，不终止未知进程。

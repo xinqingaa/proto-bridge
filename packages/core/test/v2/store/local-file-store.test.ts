@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { LocalFileStore } from '../../../src/v2/store/local-file-store.js';
 import { referenceCaseSlice } from '../../../src/v2/fixtures/index.js';
 import { V2ContractError } from '../../../src/v2/contracts/errors.js';
+import { issueContentRef, pinIssueReferences } from '../../../src/v2/store/issue-content.js';
+import { Issue } from '../../../src/v2/contracts/issue.js';
 import type { NormalizedSelection } from '../../../src/v2/contracts/run.js';
 
 const {
@@ -69,6 +71,55 @@ describe('LocalFileStore: commit + read', () => {
 
     const revision = await store.getEvidenceRevision(BUNDLE_ID, PRIMARY_REVISION_ID);
     expect(revision).toEqual(PRIMARY_ACTIVE_REVISION);
+  });
+
+  it('pins same-ID Issue observations by digest across runs and deduplicates identical content', async () => {
+    const store = new LocalFileStore({ root, workspaceId: WORKSPACE_ID });
+    await store.init();
+    const issue = Issue.parse({
+      schemaVersion: PRIMARY_ACTIVE_REVISION.schemaVersion, issueId: 'shared-warning', severity: 'warning',
+      reason: 'First observation', affectedCaseIds: [TASK_LIST_CASE_ID],
+      evidenceRefs: [PRIMARY_ACTIVE_REVISION.facts[0]!.factId, FRAGMENT_SCOPED_ACTIVE_REVISION.facts[0]!.factId], nextAction: 'Inspect the source',
+    });
+    const firstRevision = {
+      ...PRIMARY_ACTIVE_REVISION,
+      facts: PRIMARY_ACTIVE_REVISION.facts.map((fact) => ({ ...fact, issueRef: issue.issueId })),
+    };
+    const first = await store.createBundle({
+      bundleId: BUNDLE_ID, prototypeId: PROTOTYPE_ID, run: RUN_1,
+      revisions: [firstRevision], coverage: RUN_1.coverage, issues: [issue],
+    });
+    const changed = { ...issue, reason: 'Second observation', affectedCaseIds: [FRAGMENT_SCOPED_ACTIVE_REVISION.caseId] };
+    const second = await store.commitRun({
+      bundleId: BUNDLE_ID, run: RUN_2,
+      revisions: [{ ...FRAGMENT_SCOPED_ACTIVE_REVISION,
+        facts: FRAGMENT_SCOPED_ACTIVE_REVISION.facts.map((fact) => ({ ...fact, issueRef: issue.issueId })),
+      }], coverage: SNAPSHOT.coverage, issues: [changed],
+    });
+    expect(first.snapshot.snapshotId).not.toBe(second.snapshot.snapshotId);
+    const firstStored = await store.getEvidenceRevision(BUNDLE_ID, PRIMARY_REVISION_ID);
+    const secondStored = await store.getEvidenceRevision(BUNDLE_ID, FRAGMENT_SCOPED_ACTIVE_REVISION.revisionId);
+    expect(firstStored?.facts[0]?.issueRef).toBe(issueContentRef(issue));
+    expect(secondStored?.facts[0]?.issueRef).toBe(issueContentRef(changed));
+    const reader = new LocalFileStore({ root, workspaceId: WORKSPACE_ID });
+    expect(await reader.getIssue(BUNDLE_ID, firstStored!.facts[0]!.issueRef!)).toEqual(issue);
+    expect(await reader.getIssue(BUNDLE_ID, secondStored!.facts[0]!.issueRef!)).toEqual(changed);
+    await store.putIssue(BUNDLE_ID, issue);
+    await store.putIssue(BUNDLE_ID, { ...changed });
+    expect(await store.listIssues(BUNDLE_ID)).toHaveLength(2);
+    expect(firstRevision.facts[0]?.issueRef).toBe('shared-warning');
+    // Different observations in one transaction remain pinned to their own facts.
+    const otherIssue = { ...issue, reason: 'Another fact', evidenceRefs: ['other.fact'] };
+    const shared = { ...issue, evidenceRefs: [firstRevision.facts[0]!.factId] };
+    const pinned = pinIssueReferences([{
+      ...firstRevision,
+      facts: [...firstRevision.facts, { ...firstRevision.facts[0]!, factId: 'other.fact' }],
+    }], [shared, otherIssue]);
+    expect(pinned[0]?.facts.map((fact) => fact.issueRef)).toEqual([
+      issueContentRef(shared), issueContentRef(otherIssue),
+    ]);
+
+    await expect(reader.getIssue(BUNDLE_ID, '../escape')).rejects.toThrow();
   });
 
   it('folds a second, Fragment-scope Run on top and reproduces the exact golden fixture Snapshot content', async () => {

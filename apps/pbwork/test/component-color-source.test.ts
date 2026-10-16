@@ -24,7 +24,8 @@ describe("design-system color sources", () => {
   it("keeps colors token-driven outside token and theme definitions", async () => {
     const files = (await findVueFiles(designSystemDirectory)).filter((file) => {
       const path = relative(designSystemDirectory, file);
-      return !path.startsWith("themes/") && !path.startsWith("tokens/");
+      const isThemePackValues = /^theme-packs\/[^/]+\/(primitives|semantic|component)\.json$/.test(path);
+      return !path.startsWith("themes/") && !path.startsWith("tokens/") && !isThemePackValues;
     });
     const offenders = (
       await Promise.all(

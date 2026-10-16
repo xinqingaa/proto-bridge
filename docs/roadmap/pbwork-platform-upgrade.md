@@ -1,6 +1,6 @@
 # PBWork 与 PB 平台升级
 
-> 状态：执行中。第 1 步代码已实现、待验收；第 2 步已落地键目录、基础包与 Target 状态，尚未接入 Runtime。全部改动在分支 `dev-platform`，未合入 `main`。核实日期：2026-10-16。本文是计划，不代表现行 Contract。
+> 状态：执行中。第 1 步实现与验收已完成；第 2 步已落地键目录、基础包与 Target 状态，尚未接入 Runtime。代码位于 `dev-platform`。本次提交已获用户明确授权；后续提交或合入 `main` 仍需另行授权。第 2 步继续实施。核实日期：2026-10-16。本文是计划，不代表现行 Contract。
 >
 > 实施设计见[原型主题包与授权设计](./prototype-theme-and-authoring-design.md)。「一刻」原型见[下一份计划](./yike-prototype.md)，以本计划的第 2、3、4、5 步交付的能力为前置条件。
 
@@ -33,7 +33,7 @@ PBWork 现在能产出可采集的原型，但三处明显不足：
 
 - **字体移出范围。** 主题包不声明字体文件，不引入 FontFace、字体 Blob 与许可证校验；字族固定为系统字体栈，字阶角色与字重、字号、行高留在主题包内。字体问题一律不作为门禁项。
 - **Flutter 与其它交付端移出本轮范围。** 本轮不改 `apps/flutter_pb_app`，不要求它命中新键名。验收范围为 PBWork 与 Core，`verify` 中的 Flutter 两步不计入退出标准；本机 Flutter 3.44 下的失败作为已知环境问题记录，不作为本计划的未完成项。Target 同步检查仍需通过，但只要求如实报告未命中项，不要求清零。
-- **不兼容现有原型。** 旧样例原型（健身自律记录）已移除，不迁移。冷链原型保留为回归样本，并迁移到本计划的新写法；迁移中出现的报错按新规则修复，不为旧写法保留兼容层。
+- **不兼容现有原型。** 旧样例原型已移除，不迁移。冷链原型保留为回归样本，并迁移到本计划的新写法；迁移中出现的报错按新规则修复，不为旧写法保留兼容层。
 - **Core 仍是唯一语义层。** 主题包身份、主题一致性判定、`pending` 状态等新语义都由 Core 定义；PBWork、CLI、MCP 与 Local Service 只适配。
 - **不做的事：** 组件层 Token 全量发布、多手机设备正式采集、Evidence Review 信息层级与窄屏、首次 setup、npm 分发、交付端适配（均在[未排期议题](./README.md#未排期议题)）。
 
@@ -41,8 +41,8 @@ PBWork 现在能产出可采集的原型，但三处明显不足：
 
 | 步骤 | 状态 | 证据 / 剩余缺口 |
 | --- | --- | --- |
-| 第 1 步 采集可靠性收口 | 代码已实现，待验收 | 旧样例原型与旧 Capture 死代码已清除（`docs/history` 之外全仓 `rg` 旧原型关键词无结果），本地 `capture.maxCases` 已改 200 并 `pnpm pb:reset`。8 项可靠性问题各有回归或故障注入用例：`packages/core/test/v2/capture/capture-reliability.test.ts`（必需 Blob、Issue 写入、崩溃恢复）、`packages/local-service/test/service-reliability.test.ts`（对账缓存、Delivery ID、Host 头）、`packages/core/test/v2/store/{atomic-file,delivery-id,service-launch}.test.ts`、`workspace-config.test.ts`、`local-service/test/launch-config.test.ts`；均验证过在旧实现上失败。当前通过：core 313、local-service 38、cli 20、pbwork 177 个单测；`test:e2e:runtime/mcp/consumer/evidence-slice/finalization/lifecycle` 通过。遗留：PBWork Playwright 6 个用例失败（`canvas`、`comments`、`design-system-closure`、`workbench-navigation`），在收敛前的 `main` HEAD 上同样失败，属原型目录重排后的过期断言；`verify` 的 Flutter 两步因环境失败，按「范围约束」不计入。 |
-| 第 2 步 主题包 | 进行中 | Core 主题模块（`packages/core/src/v2/theme/`：schema、expression、resolve、contrast、digest、validate、index，已导出并加 `./v2/theme` 子路径）已交付，需按收敛后的范围复核。键目录与基础包（`design-system/theme/key-catalog.json`、`constants.json`、`legacy-migration.json`、`sources.ts`；`theme-packs/base/`）已落地但未接入 Runtime，待按收敛后的范围调整：删除字体声明与主题色轴，改为多套主题声明，组件层收缩为性格键，间距采用「键名不变、只改用途说明」的方案。Target 状态已完成：core target 测试 31 个通过、`ds:target-sync:verify` 通过、`test:e2e:mcp` 通过。未开始：Runtime 与 Vuetify 接入、DS 组件迁移、冷链等价迁移、样例主题包、Playground 对比、字体与主题色轴相关代码的删除。 |
+| 第 1 步 采集可靠性收口 | 实现与验收已完成（未合入 main） | 2026-10-16 收尾：Issue 按内容摘要存储并固定 Fact 引用（不改公共 Schema 字段）、`pb:clean` 共用 Core 启动配置、三份提示模板与 pending claim 专项测试、[ADR 0013](../decisions/0013-capture-reliability.md)。修复 6 个过期断言，并修复 Runtime 返回退出工作台的缺陷、生命周期 E2E 共享 sidecar 与漏 mock Job 的问题、主题包定义被旧颜色门禁误报的问题。验证：build/typecheck、core 435、local-service 39、cli 20、pbwork 198 个单测通过（另 11 个主题迁移 todo 保留给第 2 步）；PBWork Playwright 41 个用例均已有通过记录（最后全量 40 通过，唯一失败的 lifecycle-persistence 修复后单独通过）；runtime/mcp/consumer/evidence-slice/finalization/lifecycle 均覆盖通过。冷链真实定稿与固定引用见下方验收记录。 |
+| 第 2 步 主题包 | 进行中（底层模型与基础包已按收敛范围调整） | 第一批：Core 已删除字体声明/文件/许可证与独立主题色轴；包内声明多套主题，身份为 `packId@digest/theme/mode`，按 `themeModes → themes → modes → values → 继承链` 解析。基础数据移除 `font.*`，公共语义键 113 个（110 可绑定），原有语义间距保留 `spacing.*` 刻度 ID 与基础值；新增按 valueType 生成 CSS 的函数，尚未接入可见 Runtime。当前行为见[主题包解析模型](../architecture/theme-packs.md)。本批验证记录见下方；剩余：组件层少量性格/等价键、Runtime/Vuetify、DS 与冷链迁移、样例包、Gallery/Playground 接入。11 个组件层旧键的等价测试仍为 todo。 |
 | 第 3 步 采集质量 | 未开始 | 依赖第 2 步。含主题身份接入 Core、Handoff 固定取值表、MCP 读取、主题一致性探针、可声明时钟。 |
 | 第 4 步 制作效率 | 未开始 | 依赖第 2 步的键名。含 `v-pb` 与 `pbStyle()`、键类型生成、就近声明与自动汇总、共享原型运行套件、脚手架、实时门禁。 |
 | 第 5 步 DS 通用组件与收口 | 未开始 | 依赖第 4 步的写法与第 2 步的键名。组件清单见该步。 |
@@ -76,13 +76,21 @@ flowchart LR
    - 新增 ADR，记录采集可靠性设计（逐 Case staging 恢复、Workspace 单飞队列、Service 只从配置启动）。
    - 补 `packages/core/src/v2/prompts/` 三份提示模板的 Target `pending` 状态列表与 claim 路径的 `pending` 专项测试。
 3. 记录已知未处理项，不阻塞本步：`activeJob` 去掉 composer 后无写入方；`archiveCurrentBundle`、`forkCurrentBundle`、`resetWorkspaceEvidence`、`trashBundles` 等 store 成员零调用方但保留；旧样例原型「进度刷新后保留」的 E2E 已删除且无等价替换。
-4. 合入 `main`。合入前按工作流整理提交历史（两次交付的改动目前混在同一工作树）。
+4. 改动保留在工作区；只有用户明确授权后才整理提交并合入 `main`。
 
 ### 退出标准
 
 - `pnpm docs:verify`、`pnpm build`、`pnpm typecheck`、core / local-service / cli / pbwork 单测、PBWork Playwright 全部通过；`test:e2e:runtime/mcp/consumer/evidence-slice/finalization/lifecycle` 通过。Flutter 两步不计入。
 - 冷链通过 Workbench 完整定稿一次：Job 全部 captured，Handoff 与 Delivery 绑定，stage `final`。
-- 改动合入 `main`。
+- Git 提交与合入 `main` 由用户另行明确授权；当前不执行，也不阻塞继续第 2 步。
+
+### 本次验收记录（2026-10-16）
+
+- 在隔离的 Playwright Workspace 经 Workbench 完整定稿，未改动日常 Workspace 的 Evidence。Job `job-2026-10-16t123812711-541f5889`：26/26 captured，其余计数为 0；生命周期 `stage: final`。
+- Bundle `bundle-2026-10-16t123812710-1158cdfb`、Snapshot `snapshot-2026-10-16t123833968-e4a94eac`、Handoff `handoff-2026-10-16t123837959-9e4644f6`、Delivery `operation-e0950f0f178da732583b4a02` 精确绑定；Core 只读 Store 检查通过。
+- 使用现有 `test-evidence-vertical-slice.mjs` 的 MCP 断言段复查上述同一组产物，跳过重复 build 与重复浏览器采集：固定 Snapshot、Screen Packet 与 Screenshot ImageContent 均通过。
+- 验证入口：`pnpm build`；Core/Local Service/CLI/PBWork 的 `vitest run`；`pnpm --filter @proto-bridge/pbwork exec playwright test --workers=2`；`node scripts/test-mcp-evidence.mjs`；`node scripts/test-consumer.mjs`；`node scripts/verify-ds-target-sync.mjs`；`pnpm docs:verify`。类型检查覆盖 Core、Local Service、CLI、MCP 与 PBWork。Flutter 按范围约束跳过。
+- 已知不阻塞项保持不变：Capture Store 的 `activeJob` 无新的创建写入方；`archiveCurrentBundle`、`forkCurrentBundle`、`resetWorkspaceEvidence`、`trashBundles` 暂留；旧样例的进度持久化 E2E 无等价替换。本轮不清理这些成员。
 
 ---
 
@@ -105,6 +113,12 @@ flowchart LR
 8. **DS 组件迁移。** DS 组件 CSS 与 `tokenBindings` 换成新键名；模块级 `tokenDefault*` 读取（约 40 处）改为响应式或常量。毛玻璃由一个共享的表面组件按 `surface.treatment` 驱动。
 9. **冷链等价迁移。** 冷链三个 Screen 的 `var(--pb-*)` 与 `data-pb-token-*` 按映射表换成新键名，视觉与迁移前一致。
 10. **Workbench 预览。** Token Gallery 与 Component Playground 可以选择主题包、主题与模式，用该包渲染全部 DS 组件，便于评审「这个原型像不像它自己」。
+
+### 第 2 步第一批进度（2026-10-16）
+
+- 主题解析底层与基础数据已收敛，CSS 生成器已提供；Runtime、Capture 和 Handoff 尚未改用新模型。没有修改 Flutter 代码。本批按用户授权提交一次，未合并 main；后续改动保留在工作区。
+- 验证通过：`pnpm --filter @proto-bridge/core exec vitest run test/v2/theme`（110 项）；`pnpm --filter @proto-bridge/pbwork exec vitest run test/theme-base-pack.test.ts test/theme-equivalence.test.ts test/theme-css-vars.test.ts`（25 项，另 11 项组件迁移 todo）；Core `tsc -p tsconfig.json` 与 PBWork `vue-tsc -p tsconfig.json --noEmit`；`pnpm docs:verify`；`node scripts/verify-ds-target-sync.mjs`。Target 检查仍针对当前可见 Runtime 的 154 个旧键，新键接入时再更新 Target 状态。没有重跑第 1 步已通过的浏览器与全链路验收。
+- 下一批接入 Runtime/Vuetify 前，先固定冷链 default Variant 的迁移前截图；再按少量组件键与现有映射表完成 DS/冷链迁移，保留 6 条基础配对豁免，不混入修色。
 
 ### 退出标准
 

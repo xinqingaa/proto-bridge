@@ -10,6 +10,7 @@ import {
 } from './expression.js';
 import {
   THEME_BORDER_STYLES,
+  THEME_SYSTEM_FONT_FAMILY,
   THEME_TYPOGRAPHY_PART_FIELDS,
   createThemeDiagnostic,
   hasThemeBlock,
@@ -42,8 +43,8 @@ export interface ThemeResolveCommonInput {
 export interface ResolveThemePackInput extends ThemeResolveCommonInput {
   packId: string;
   mode: string;
-  /** Defaults to the pack's effective `defaultAccent`. */
-  accent?: string | undefined;
+  /** Defaults to the pack's effective `defaultTheme`. */
+  theme?: string | undefined;
 }
 
 export interface ResolveAllThemeTablesInput extends ThemeResolveCommonInput {
@@ -51,7 +52,7 @@ export interface ResolveAllThemeTablesInput extends ThemeResolveCommonInput {
 }
 
 export interface ResolveThemePackResult {
-  /** `null` when any block diagnostic exists anywhere in the pack (all modes x accents). */
+  /** `null` when any block diagnostic exists anywhere in the pack (all modes x themes). */
   table: ResolvedThemeTable | null;
   diagnostics: ThemeDiagnostic[];
 }
@@ -59,7 +60,7 @@ export interface ResolveThemePackResult {
 export interface ResolveAllThemeTablesResult {
   /** `null` when any block diagnostic exists. */
   digest: string | null;
-  /** All declared modes x all Accents; empty when `digest` is `null`. */
+  /** All declared modes x all Themes; empty when `digest` is `null`. */
   tables: ResolvedThemeTable[];
   diagnostics: ThemeDiagnostic[];
 }
@@ -75,7 +76,7 @@ export interface ThemePackChainResult {
 // ---------------------------------------------------------------------------
 
 /** Internal evaluation type. Parts of a typography role use `family-list`/number/length. */
-type EvalType = ThemeValueType | 'family' | 'family-list' | 'border-style';
+type EvalType = ThemeValueType | 'family-list' | 'border-style';
 
 export interface ThemeKeyInfo {
   id: string;
@@ -84,7 +85,6 @@ export interface ThemeKeyInfo {
   valueType: ThemeValueType | 'family-list';
   bindable: boolean;
   modeVariant: boolean;
-  accentable: boolean;
   enumValues?: readonly string[] | undefined;
   default?: ThemeExpression | undefined;
   part?: { role: string; field: ThemeTypographyPartField } | undefined;
@@ -106,7 +106,6 @@ export function buildThemeKeyIndex(catalog: ThemeKeyCatalog): Map<string, ThemeK
       valueType: key.valueType,
       bindable: key.bindable,
       modeVariant: key.modeVariant,
-      accentable: key.accentable,
       enumValues: key.enumValues,
       default: key.default,
     });
@@ -119,7 +118,6 @@ export function buildThemeKeyIndex(catalog: ThemeKeyCatalog): Map<string, ThemeK
         valueType: PART_VALUE_TYPE[field],
         bindable: false,
         modeVariant: false,
-        accentable: false,
         part: { role: key.id, field },
       });
     }
@@ -214,9 +212,8 @@ interface Prepared {
   keyIndex: Map<string, ThemeKeyInfo>;
   sortedKeyIds: string[];
   modes: string[];
-  accentIds: string[];
-  accentPackId: string | undefined;
-  defaultAccent: string;
+  themeIds: string[];
+  defaultTheme: string;
 }
 
 function compareStrings(a: string, b: string): number {
@@ -240,10 +237,8 @@ function prepare(
     constantValues[constant.id] = constant.value;
   }
 
-  const accentPack = chainPacks.find((pack) => pack.accents !== undefined);
-  const accentIds = accentPack ? Object.keys(accentPack.accents?.accents ?? {}) : ['default'];
-  const defaultAccent =
-    chainPacks.find((pack) => pack.manifest.defaultAccent !== undefined)?.manifest.defaultAccent ?? 'default';
+  const themeIds = target.manifest.themes.map((theme) => theme.id);
+  const defaultTheme = target.manifest.defaultTheme;
 
   return {
     prepared: {
@@ -258,21 +253,11 @@ function prepare(
       keyIndex,
       sortedKeyIds: [...keyIndex.keys()].sort(compareStrings),
       modes: [...target.manifest.modes],
-      accentIds,
-      accentPackId: accentPack?.manifest.id,
-      defaultAccent,
+      themeIds,
+      defaultTheme,
     },
     diagnostics: [],
   };
-}
-
-/** Nearest declared `accentKeys` walking from `chain[0]` upward; `[]` when none. */
-function effectiveAccentKeys(packs: ReadonlyMap<string, ThemePackSource>, chain: readonly string[]): string[] {
-  for (const id of chain) {
-    const keys = packs.get(id)?.manifest.accentKeys;
-    if (keys !== undefined) return keys;
-  }
-  return [];
 }
 
 // ---------------------------------------------------------------------------
@@ -288,7 +273,7 @@ function lintChain(prepared: Prepared): ThemeDiagnostic[] {
     extra: { key?: string; path?: string } = {},
   ) => out.push(createThemeDiagnostic(code, packId, message, extra));
 
-  prepared.chain.forEach((packId, chainIndex) => {
+  prepared.chain.forEach((packId) => {
     const pack = prepared.packs.get(packId) as ThemePackSource;
     const manifest = pack.manifest;
     const declaredModes = new Set(manifest.modes);
@@ -299,27 +284,15 @@ function lintChain(prepared: Prepared): ThemeDiagnostic[] {
       });
     }
 
-    const accentKeys = effectiveAccentKeys(prepared.packs, prepared.chain.slice(chainIndex));
-    if (manifest.accentKeys !== undefined) {
-      for (const key of manifest.accentKeys) {
-        const info = prepared.keyIndex.get(key);
-        if (prepared.constants.has(key)) {
-          emit('theme.tier-violation', packId, `accentKeys must not contain constant "${key}".`, {
-            key,
-            path: 'manifest.accentKeys',
-          });
-        } else if (!info) {
-          emit('theme.unknown-key', packId, `accentKeys contains unknown key "${key}".`, {
-            key,
-            path: 'manifest.accentKeys',
-          });
-        } else if (!info.accentable) {
-          emit('theme.accent-out-of-scope', packId, `accentKeys contains non-accentable key "${key}".`, {
-            key,
-            path: 'manifest.accentKeys',
-          });
-        }
-      }
+    const declaredThemes = new Set(manifest.themes.map((theme) => theme.id));
+    if (!declaredThemes.has(manifest.defaultTheme)) {
+      emit('theme.theme-undeclared', packId, `defaultTheme "${manifest.defaultTheme}" is not listed in themes.`, {
+        path: 'manifest.defaultTheme',
+      });
+    }
+    const defaults = manifest.themes.filter((theme) => theme.default);
+    if (defaults.length > 1 || (defaults.length === 1 && defaults[0]!.id !== manifest.defaultTheme)) {
+      emit('theme.theme-undeclared', packId, 'Theme default flags must agree with defaultTheme.', { path: 'manifest.themes' });
     }
 
     lintPrimitives(prepared, pack, emit);
@@ -339,19 +312,18 @@ function lintChain(prepared: Prepared): ThemeDiagnostic[] {
         }
         lintExpressionMap(prepared, packId, map, `${layerName}.modes.${mode}`, tier, 'mode', emit);
       }
-    }
-
-    if (pack.accents) {
-      for (const [accentId, accent] of Object.entries(pack.accents.accents)) {
-        const base = `accents.${accentId}`;
-        lintExpressionMap(prepared, packId, accent.values, `${base}.values`, undefined, 'accent', emit, accentKeys);
-        for (const [mode, map] of Object.entries(accent.modes ?? {})) {
-          if (!declaredModes.has(mode)) {
-            emit('theme.mode-undeclared', packId, `Accent "${accentId}" declares mode "${mode}" which is not in pack modes.`, {
-              path: `${base}.modes.${mode}`,
-            });
-          }
-          lintExpressionMap(prepared, packId, map, `${base}.modes.${mode}`, undefined, 'accent+mode', emit, accentKeys);
+      for (const [theme, override] of Object.entries(layer.themes ?? {})) {
+        if (!declaredThemes.has(theme)) emit('theme.theme-undeclared', packId,
+          `Undeclared theme "${theme}".`, { path: `${layerName}.themes.${theme}` });
+        lintExpressionMap(prepared, packId, override.values, `${layerName}.themes.${theme}.values`, tier, undefined, emit);
+      }
+      for (const [theme, modes] of Object.entries(layer.themeModes ?? {})) {
+        if (!declaredThemes.has(theme)) emit('theme.theme-undeclared', packId,
+          `Undeclared theme "${theme}".`, { path: `${layerName}.themeModes.${theme}` });
+        for (const [mode, map] of Object.entries(modes)) {
+          if (!declaredModes.has(mode)) emit('theme.mode-undeclared', packId,
+            `Undeclared mode "${mode}".`, { path: `${layerName}.themeModes.${theme}.${mode}` });
+          lintExpressionMap(prepared, packId, map, `${layerName}.themeModes.${theme}.${mode}`, tier, 'mode', emit);
         }
       }
     }
@@ -372,9 +344,8 @@ function lintExpressionMap(
   map: Readonly<Record<string, ThemeExpression>> | undefined,
   path: string,
   tier: ThemeKeyTier | undefined,
-  kind: 'mode' | 'accent' | 'accent+mode' | undefined,
+  kind: 'mode' | undefined,
   emit: Emit,
-  accentKeys?: readonly string[],
 ): void {
   if (!map) return;
   for (const key of Object.keys(map)) {
@@ -391,6 +362,10 @@ function lintExpressionMap(
       emit('theme.unknown-key', packId, `"${key}" is not a key of the Key Catalog.`, { key, path: keyPath });
       continue;
     }
+    if (info.part?.field === 'family') {
+      emit('theme.unknown-key', packId, `"${key}" is a read-only system font part.`, { key, path: keyPath });
+      continue;
+    }
     if (tier !== undefined && info.tier !== tier) {
       emit(
         'theme.tier-violation',
@@ -400,25 +375,13 @@ function lintExpressionMap(
       );
       continue;
     }
-    if ((kind === 'mode' || kind === 'accent+mode') && !info.modeVariant) {
+    if (kind === 'mode' && !info.modeVariant) {
       emit('theme.mode-variant-forbidden', packId, `Key "${key}" is not modeVariant and cannot be overridden per mode.`, {
         key,
         path: keyPath,
       });
     }
-    if (kind === 'accent' || kind === 'accent+mode') {
-      if (!info.accentable) {
-        emit('theme.accent-out-of-scope', packId, `Accent overrides non-accentable key "${key}".`, {
-          key,
-          path: keyPath,
-        });
-      } else if (accentKeys && !accentKeys.includes(key)) {
-        emit('theme.accent-out-of-scope', packId, `Accent overrides "${key}" which is not listed in accentKeys.`, {
-          key,
-          path: keyPath,
-        });
-      }
-    }
+
   }
 }
 
@@ -457,11 +420,6 @@ function lintPrimitives(prepared: Prepared, pack: ThemePackSource, emit: Emit): 
 // Evaluation
 // ---------------------------------------------------------------------------
 
-interface FamilyValue {
-  family: string[];
-  features: string[];
-}
-
 type EvalResult = { ok: true; value: unknown; tail: string[] } | { ok: false };
 const FAIL: { ok: false } = { ok: false };
 
@@ -469,8 +427,6 @@ type KeyResult =
   | {
       ok: true;
       value: unknown;
-      /** Part `.family` only: the features that travel with the family list. */
-      features?: string[];
       chain: string[];
       sourcePackId: string;
       owner: string;
@@ -524,7 +480,7 @@ class Evaluator {
   constructor(
     private readonly p: Prepared,
     private readonly mode: string,
-    private readonly accent: string,
+    private readonly theme: string,
   ) {
     this.levels = { semantic: this.buildLevels('semantic'), component: this.buildLevels('component') };
   }
@@ -549,17 +505,11 @@ class Evaluator {
 
   private buildLevels(tier: ThemeKeyTier): Level[] {
     const levels: Level[] = [];
-    const accentPackId = this.p.accentPackId;
-    if (accentPackId !== undefined) {
-      const accentPack = this.p.packs.get(accentPackId) as ThemePackSource;
-      const file = accentPack.accents?.accents[this.accent];
-      const sourcePackId = `${accentPackId}#${this.accent}`;
-      levels.push({ sourcePackId, owner: accentPackId, scope: accentPackId, exprs: file?.modes?.[this.mode] });
-      levels.push({ sourcePackId, owner: accentPackId, scope: accentPackId, exprs: file?.values });
-    }
     for (const pack of this.p.chainPacks) {
       const id = pack.manifest.id;
       const layer = tier === 'semantic' ? pack.semantic : pack.component;
+      levels.push({ sourcePackId: id, owner: id, scope: id, exprs: layer?.themeModes?.[this.theme]?.[this.mode] });
+      levels.push({ sourcePackId: id, owner: id, scope: id, exprs: layer?.themes?.[this.theme]?.values });
       levels.push({ sourcePackId: id, owner: id, scope: id, exprs: layer?.modes?.[this.mode] });
       levels.push({ sourcePackId: id, owner: id, scope: id, exprs: layer?.values });
     }
@@ -587,7 +537,7 @@ class Evaluator {
     const diagnostic = createThemeDiagnostic(code, packId, message, {
       ...extra,
       mode: this.mode,
-      accent: this.accent,
+      theme: this.theme,
     });
     const dedupeKey = `${diagnostic.code}|${diagnostic.packId}|${diagnostic.key ?? ''}|${diagnostic.path ?? ''}|${diagnostic.message}`;
     if (this.seen.has(dedupeKey)) return;
@@ -710,7 +660,7 @@ class Evaluator {
       ok: true,
       value: {
         family: family.value as string[],
-        features: family.features ?? [],
+        features: info.id.startsWith('typography.numeric-') ? ['tnum'] : [],
         weight: (parts.get('weight') as { value: unknown }).value,
         size: (parts.get('size') as { value: unknown }).value,
         lineHeight: (parts.get('line-height') as { value: unknown }).value,
@@ -723,25 +673,19 @@ class Evaluator {
 
   private computePart(info: ThemeKeyInfo): KeyResult {
     const { role, field } = info.part as NonNullable<ThemeKeyInfo['part']>;
+    if (field === 'family') {
+      const base = this.evalRoleBase(this.p.keyIndex.get(role) as ThemeKeyInfo);
+      if (!base.ok) return FAIL;
+      return { ...base, value: [...THEME_SYSTEM_FONT_FAMILY], chain: [info.id, ...base.chain] };
+    }
     const roleInfo = this.p.keyIndex.get(role) as ThemeKeyInfo;
     const found = this.findLevel([info.id, role], info.tier);
     if (found && found.id === info.id) {
       const level = found.level;
       const expression = (level.exprs as Record<string, ThemeExpression>)[info.id] as ThemeExpression;
-      const type: EvalType = field === 'family' ? 'family' : field === 'size' ? 'length' : 'number';
+      const type: EvalType = field === 'size' ? 'length' : 'number';
       const result = this.evalTyped(expression, type, this.contextFor(info, level));
       if (!result.ok) return FAIL;
-      if (field === 'family') {
-        const family = result.value as FamilyValue;
-        return {
-          ok: true,
-          value: family.family,
-          features: family.features,
-          chain: [info.id, ...result.tail],
-          sourcePackId: level.sourcePackId,
-          owner: level.owner,
-        };
-      }
       return {
         ok: true,
         value: result.value,
@@ -760,16 +704,6 @@ class Evaluator {
       lineHeight: number;
     };
     const chain = [info.id, ...base.chain];
-    if (field === 'family') {
-      return {
-        ok: true,
-        value: typography.family,
-        features: typography.features,
-        chain,
-        sourcePackId: base.sourcePackId,
-        owner: base.owner,
-      };
-    }
     const value = field === 'weight' ? typography.weight : field === 'size' ? typography.size : typography.lineHeight;
     return { ok: true, value, chain, sourcePackId: base.sourcePackId, owner: base.owner };
   }
@@ -819,11 +753,6 @@ class Evaluator {
       case 'asset':
         if (value === 'none') return ok('none');
         return this.typeError(ctx, "'none' or { file, mediaType, alt }", value);
-      case 'family':
-        if (Array.isArray(value) && value.length > 0 && value.every((item) => typeof item === 'string' && item.length > 0)) {
-          return ok({ family: [...value], features: [] } satisfies FamilyValue);
-        }
-        return this.typeError(ctx, 'a font family list (string[])', value);
       default:
         return this.typeError(ctx, type, value);
     }
@@ -842,40 +771,23 @@ class Evaluator {
     };
     switch (type) {
       case 'typography': {
-        if (!requireFields(['family', 'weight', 'size', 'lineHeight'])) return FAIL;
-        const family = this.evalTyped(expression.family as ThemeExpression, 'family', ctx);
+        if (!requireFields(['weight', 'size', 'lineHeight'])) return FAIL;
+        if (expression.family !== undefined && expression.family !== '$default') return this.typeError(ctx, 'the fixed system family', expression.family);
         const weight = this.evalTyped(expression.weight as ThemeExpression, 'number', ctx);
         const size = this.evalTyped(expression.size as ThemeExpression, 'length', ctx);
         const lineHeight = this.evalTyped(expression.lineHeight as ThemeExpression, 'number', ctx);
-        if (!family.ok || !weight.ok || !size.ok || !lineHeight.ok) return FAIL;
-        const familyValue = family.value as FamilyValue;
+        if (!weight.ok || !size.ok || !lineHeight.ok) return FAIL;
         return {
           ok: true,
           value: {
-            family: familyValue.family,
-            features: familyValue.features,
+            family: [...THEME_SYSTEM_FONT_FAMILY],
+            features: ctx.key.startsWith('typography.numeric-') ? ['tnum'] : [],
             weight: weight.value,
             size: size.value,
             lineHeight: lineHeight.value,
           },
           tail: [],
         };
-      }
-      case 'font':
-      case 'family': {
-        if (!requireFields(['family'])) return FAIL;
-        const family = expression.family;
-        const features = expression.features ?? [];
-        if (
-          !Array.isArray(family) ||
-          family.length === 0 ||
-          !family.every((item) => typeof item === 'string' && item.length > 0) ||
-          !Array.isArray(features) ||
-          !features.every((item) => typeof item === 'string')
-        ) {
-          return this.typeError(ctx, '{ family: string[], features?: string[] }', expression);
-        }
-        return { ok: true, value: { family: [...family], features: [...features] } satisfies FamilyValue, tail: [] };
       }
       case 'border': {
         if (!requireFields(['width', 'style', 'color'])) return FAIL;
@@ -1022,17 +934,6 @@ class Evaluator {
       });
       return FAIL;
     };
-    if (type === 'family') {
-      if (info.valueType === 'font') return { ok: true, value: target.value, tail };
-      if (info.valueType === 'family-list') {
-        return {
-          ok: true,
-          value: { family: target.value as string[], features: target.features ?? [] } satisfies FamilyValue,
-          tail,
-        };
-      }
-      return mismatch();
-    }
     if (type === 'border-style') {
       if (
         info.valueType === 'enum' &&
@@ -1068,37 +969,27 @@ class Evaluator {
 // Public API
 // ---------------------------------------------------------------------------
 
-/** Resolves every declared mode x every Accent of `packId` and computes the pack digest. */
+/** Resolves every declared mode x every Theme of `packId` and computes the pack digest. */
 export function resolveAllThemeTables(input: ResolveAllThemeTablesInput): ResolveAllThemeTablesResult {
   const { prepared, diagnostics: chainDiagnostics } = prepare(input, input.packId);
   if (!prepared) return { digest: null, tables: [], diagnostics: chainDiagnostics };
 
   const diagnostics: ThemeDiagnostic[] = lintChain(prepared);
-  if (!prepared.accentIds.includes(prepared.defaultAccent)) {
-    diagnostics.push(
-      createThemeDiagnostic(
-        'theme.unresolved-reference',
-        prepared.targetId,
-        `defaultAccent "${prepared.defaultAccent}" is not defined by the accents file of the pack chain.`,
-        { path: 'manifest.defaultAccent' },
-      ),
-    );
-  }
 
-  const evaluations: Array<{ mode: string; accent: string; output: EvaluationOutput }> = [];
+  const evaluations: Array<{ mode: string; theme: string; output: EvaluationOutput }> = [];
   for (const mode of prepared.modes) {
-    for (const accent of prepared.accentIds) {
-      const evaluator = new Evaluator(prepared, mode, accent);
+    for (const theme of prepared.themeIds) {
+      const evaluator = new Evaluator(prepared, mode, theme);
       const output = evaluator.run();
       diagnostics.push(...evaluator.diagnostics);
-      evaluations.push({ mode, accent, output });
+      evaluations.push({ mode, theme, output });
     }
   }
   if (hasThemeBlock(diagnostics)) return { digest: null, tables: [], diagnostics };
 
   const resolved: Record<string, Record<string, Record<string, ResolvedThemeValue>>> = {};
-  for (const { mode, accent, output } of evaluations) {
-    (resolved[mode] ??= {})[accent] = output.values;
+  for (const { mode, theme, output } of evaluations) {
+    (resolved[theme] ??= {})[mode] = output.values;
   }
   const files: Record<string, string> = {};
   for (const pack of prepared.chainPacks) {
@@ -1111,13 +1002,13 @@ export function resolveAllThemeTables(input: ResolveAllThemeTablesInput): Resolv
     keyCatalogDigest: computeKeyCatalogDigest(prepared.catalog),
     modes: prepared.modes,
     defaultMode: target.manifest.defaultMode,
-    accents: prepared.accentIds,
-    defaultAccent: prepared.defaultAccent,
+    themes: prepared.themeIds,
+    defaultTheme: prepared.defaultTheme,
     resolved,
     files,
   });
-  const tables: ResolvedThemeTable[] = evaluations.map(({ mode, accent, output }) => ({
-    identity: { packId: prepared.targetId, packDigest: digest, mode, accent },
+  const tables: ResolvedThemeTable[] = evaluations.map(({ mode, theme, output }) => ({
+    identity: { packId: prepared.targetId, packDigest: digest, mode, theme },
     values: output.values,
     provenance: output.provenance,
     constants: { ...prepared.constantValues },
@@ -1126,16 +1017,16 @@ export function resolveAllThemeTables(input: ResolveAllThemeTablesInput): Resolv
 }
 
 /**
- * Resolves one `(packId, mode, accent)`. The pack is always evaluated as a
- * whole (its digest covers every mode x Accent), so `table` is `null` when any
- * mode or Accent of the pack has a block diagnostic.
+ * Resolves one `(packId, mode, theme)`. The pack is always evaluated as a
+ * whole (its digest covers every theme x mode), so `table` is `null` when any
+ * theme or mode of the pack has a block diagnostic.
  */
 export function resolveThemePack(input: ResolveThemePackInput): ResolveThemePackResult {
   const { prepared, diagnostics: chainDiagnostics } = prepare(input, input.packId);
   if (!prepared) return { table: null, diagnostics: chainDiagnostics };
 
   const target = prepared.chainPacks[0] as ThemePackSource;
-  const accent = input.accent ?? prepared.defaultAccent;
+  const theme = input.theme ?? prepared.defaultTheme;
   const requestDiagnostics: ThemeDiagnostic[] = [];
   if (!target.manifest.modes.includes(input.mode)) {
     requestDiagnostics.push(
@@ -1145,11 +1036,11 @@ export function resolveThemePack(input: ResolveThemePackInput): ResolveThemePack
       }),
     );
   }
-  if (!prepared.accentIds.includes(accent)) {
+  if (!prepared.themeIds.includes(theme)) {
     requestDiagnostics.push(
-      createThemeDiagnostic('theme.unresolved-reference', input.packId, `Accent "${accent}" is not defined for pack "${input.packId}".`, {
-        accent,
-        path: 'accent',
+      createThemeDiagnostic('theme.theme-undeclared', input.packId, `Theme "${theme}" is not defined for pack "${input.packId}".`, {
+        theme,
+        path: 'theme',
       }),
     );
   }
@@ -1157,6 +1048,6 @@ export function resolveThemePack(input: ResolveThemePackInput): ResolveThemePack
   const all = resolveAllThemeTables(input);
   const diagnostics = [...requestDiagnostics, ...all.diagnostics];
   if (requestDiagnostics.length > 0 || all.digest === null) return { table: null, diagnostics };
-  const table = all.tables.find((entry) => entry.identity.mode === input.mode && entry.identity.accent === accent);
+  const table = all.tables.find((entry) => entry.identity.mode === input.mode && entry.identity.theme === theme);
   return { table: table ?? null, diagnostics };
 }

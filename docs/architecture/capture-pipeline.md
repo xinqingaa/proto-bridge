@@ -108,7 +108,7 @@ Blob 写入失败按必要性区分：
 
 所有 Case 终结后，Core 构建 Run、Coverage、Issue、revision 和 Snapshot。Store 在同一次 Bundle 级提交锁内先写 Issue 与 staging 中的 Blob，再写不可变 Run/revision/Snapshot，最后原子更新 active pointer。
 
-Issue 按 ID 保持首次写入：同 ID 已存在且内容不同（`issueRef` 在 Case 或 Run 间共享）时保留已存内容，并在 journal 记录 `issue-retained`。
+Issue 按内容摘要追加保存，同逻辑 ID 的不同内容并存、相同内容去重；Store 在新 revision 写入前将 Fact 的 `issueRef` 固定到具体摘要，后续 Run 不会改变历史 revision 的解释。精确引用格式见 [Evidence 模型](./evidence-model.md#issue-与-coverage)。
 
 提交失败（例如 Issue 写入 IO 错误）时：
 

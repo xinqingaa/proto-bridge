@@ -133,6 +133,15 @@ test("a pending risk confirmation survives another tab and a page reload", async
       document = body.document;
       return respond(document);
     }
+    if (path === "/jobs/browser-job") {
+      return respond({
+        jobId: "browser-job",
+        bundleId: "browser-bundle",
+        status: "completed",
+        selection: { cases: [{ caseId: "browser-case" }] },
+        journal: [{ at: startedAt, event: "case-finished" }],
+      });
+    }
     if (path === "/bundles/browser-bundle/snapshots/browser-snapshot") {
       return respond(snapshotDetails);
     }

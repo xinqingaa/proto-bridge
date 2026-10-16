@@ -413,14 +413,6 @@ async function executeStartedJob(
         ...transaction,
         prototypeId: input.preflight.selection.prototypeId,
       });
-  const retainedIssueIds =
-    'retainedIssueIds' in committed ? committed.retainedIssueIds ?? [] : [];
-  if (retainedIssueIds.length > 0) {
-    await store.appendJobJournal(jobId, {
-      event: 'issue-retained',
-      detail: `Issue ID(s) already persisted with different content were kept unchanged: ${retainedIssueIds.join(', ')}`.slice(0, 2000),
-    });
-  }
   await store.finalizeJob(jobId, terminationReason);
   return {
     run: committed.run,

@@ -1,3 +1,4 @@
+import { isolateLifecycleDocument } from "./support/lifecycle";
 import { expect, test, type Page } from "@playwright/test";
 import {
   Bundle,
@@ -260,6 +261,7 @@ test("failed finalization reaches a visible grouped terminal state and survives 
 test("a sheet closed during confirmation reopens through 继续定稿", async ({
   page,
 }) => {
+  await isolateLifecycleDocument(page);
   await page.goto("/workbench/prototypes/all");
   const row = page.locator("article").filter({ hasText: "冷链异常处置台" });
   await row.getByRole("button", { name: "送交待确定" }).click();

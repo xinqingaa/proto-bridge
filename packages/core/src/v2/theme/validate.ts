@@ -30,18 +30,18 @@ export const THEME_CATALOG_DIAGNOSTIC_PACK_ID = '(catalog)';
 /** `packId` used for diagnostics that belong to the constant table. */
 export const THEME_CONSTANTS_DIAGNOSTIC_PACK_ID = '(constants)';
 
-type Extra = { key?: string | undefined; mode?: string | undefined; accent?: string | undefined; path?: string | undefined };
+type Extra = { key?: string | undefined; mode?: string | undefined; theme?: string | undefined; path?: string | undefined };
 
 interface CollectedEntry {
   diagnostic: ThemeDiagnostic;
   modes: Set<string | undefined>;
-  accents: Set<string | undefined>;
+  themes: Set<string | undefined>;
 }
 
 /**
  * Deduplicates diagnostics by (code, packId, key, path, message). When the
- * same diagnostic occurs in several mode/Accent combinations, `mode` /
- * `accent` survive only if all occurrences agree on them.
+ * same diagnostic occurs in several mode/Theme combinations, `mode` /
+ * `theme` survive only if all occurrences agree on them.
  */
 class Collector {
   private readonly entries = new Map<string, CollectedEntry>();
@@ -51,13 +51,13 @@ class Collector {
     const existing = this.entries.get(id);
     if (existing) {
       existing.modes.add(diagnostic.mode);
-      existing.accents.add(diagnostic.accent);
+      existing.themes.add(diagnostic.theme);
       return;
     }
     this.entries.set(id, {
       diagnostic: { ...diagnostic },
       modes: new Set([diagnostic.mode]),
-      accents: new Set([diagnostic.accent]),
+      themes: new Set([diagnostic.theme]),
     });
   }
 
@@ -66,12 +66,12 @@ class Collector {
   }
 
   list(): ThemeDiagnostic[] {
-    return [...this.entries.values()].map(({ diagnostic, modes, accents }) => {
+    return [...this.entries.values()].map(({ diagnostic, modes, themes }) => {
       const result = { ...diagnostic };
       const [mode] = [...modes];
       if (modes.size !== 1 || mode === undefined) delete result.mode;
-      const [accent] = [...accents];
-      if (accents.size !== 1 || accent === undefined) delete result.accent;
+      const [theme] = [...themes];
+      if (themes.size !== 1 || theme === undefined) delete result.theme;
       return result;
     });
   }
@@ -101,8 +101,8 @@ function collectSchemaIssues(
 
 /**
  * Validates the Key Catalog, the constant table and every pack:
- * structure (`theme.schema`), resolution of every declared mode x Accent
- * (all resolver diagnostics), fonts, assets, contrast, scope and prototype
+ * structure (`theme.schema`), resolution of every declared mode x Theme
+ * (all resolver diagnostics), assets, contrast, scope and prototype
  * bindings.
  *
  * Contrast waivers bind to concrete foreground/background value pairs: a
@@ -186,7 +186,6 @@ export function validateThemePacks(input: ValidateThemePacksInput): ThemeDiagnos
   // -- per pack --------------------------------------------------------------
   for (const [id, pack] of input.packs) {
     if (invalid.has(id)) continue;
-    checkFonts(collector, id, pack);
     checkPackScope(collector, id, pack);
 
     const resolution = resolutionOf(id);
@@ -234,38 +233,6 @@ export function validateThemePacks(input: ValidateThemePacksInput): ThemeDiagnos
   return collector.list();
 }
 
-function checkFonts(collector: Collector, packId: string, pack: ThemePackSource): void {
-  const files = pack.files ?? {};
-  const present = (path: string) => typeof files[path] === 'string' && (files[path] as string).length > 0;
-  (pack.manifest.fonts ?? []).forEach((font, index) => {
-    const base = `manifest.fonts[${index}]`;
-    if (font.license.trim().length === 0) {
-      collector.emit('theme.font-license-missing', packId, `Font "${font.family}" has no license.`, {
-        path: `${base}.license`,
-      });
-    }
-    if (font.licenseFile.trim().length === 0) {
-      collector.emit('theme.font-license-missing', packId, `Font "${font.family}" has no licenseFile.`, {
-        path: `${base}.licenseFile`,
-      });
-    } else if (!present(font.licenseFile)) {
-      collector.emit(
-        'theme.font-file-missing',
-        packId,
-        `License file "${font.licenseFile}" of font "${font.family}" is not in files.`,
-        { path: `${base}.licenseFile` },
-      );
-    }
-    for (const file of font.files) {
-      if (!present(file)) {
-        collector.emit('theme.font-file-missing', packId, `Font file "${file}" of font "${font.family}" is not in files.`, {
-          path: `${base}.files`,
-        });
-      }
-    }
-  });
-}
-
 function checkPackScope(collector: Collector, packId: string, pack: ThemePackSource): void {
   if (pack.manifest.scope !== 'prototype') return;
   if (pack.ownerPrototypeId === undefined) {
@@ -287,13 +254,13 @@ function waiverMatches(
   foreground: string,
   background: string,
   mode: string,
-  accent: string,
+  theme: string,
 ): boolean {
   return (
     waiver.pair[0] === foreground &&
     waiver.pair[1] === background &&
     (waiver.modes === undefined || waiver.modes.includes(mode)) &&
-    (waiver.accents === undefined || waiver.accents.includes(accent))
+    (waiver.themes === undefined || waiver.themes.includes(theme))
   );
 }
 
@@ -318,16 +285,16 @@ function checkContrast(
   const used = new Set<number>();
   const ancestors = listPackChain(input.packs, packId).chain.slice(1);
 
-  const ancestorDefaultAccent = (ancestorId: string): string => {
+  const ancestorDefaultTheme = (ancestorId: string): string => {
     for (const id of listPackChain(input.packs, ancestorId).chain) {
-      const accent = input.packs.get(id)?.manifest.defaultAccent;
-      if (accent !== undefined) return accent;
+      const theme = input.packs.get(id)?.manifest.defaultTheme;
+      if (theme !== undefined) return theme;
     }
     return 'default';
   };
 
   for (const table of tables) {
-    const { mode, accent } = table.identity;
+    const { mode, theme } = table.identity;
     for (const pair of catalog.contrastPairs) {
       const foregroundValue = table.values[pair.foreground];
       const backgroundValue = table.values[pair.background];
@@ -340,7 +307,7 @@ function checkContrast(
           'theme.value-type',
           packId,
           `Contrast pair ${pair.foreground} / ${pair.background}: "${side}" is not a parseable color.`,
-          { key: side, mode, accent, path },
+          { key: side, mode, theme, path },
         );
         continue;
       }
@@ -351,12 +318,12 @@ function checkContrast(
       if (ratio + 1e-9 >= threshold) continue;
 
       const summary = `Contrast ${pair.foreground} on ${pair.background} is ${ratio.toFixed(2)}:1, below the ${threshold}:1 ${pair.level} threshold`;
-      const extra = { key: pair.foreground, mode, accent, path };
+      const extra = { key: pair.foreground, mode, theme, path };
 
       // 1. The pack's own waiver.
       const own: number[] = [];
       waivers.forEach((waiver, index) => {
-        if (waiverMatches(waiver, pair.foreground, pair.background, mode, accent)) {
+        if (waiverMatches(waiver, pair.foreground, pair.background, mode, theme)) {
           own.push(index);
           used.add(index);
         }
@@ -374,14 +341,14 @@ function checkContrast(
         const ancestorPack = input.packs.get(ancestorId);
         const candidates = ancestorTables(ancestorId);
         if (!ancestorPack || !candidates) continue;
-        const ancestorAccents = new Set(candidates.map((candidate) => candidate.identity.accent));
-        const ancestorAccent = ancestorAccents.has(accent) ? accent : ancestorDefaultAccent(ancestorId);
+        const ancestorThemes = new Set(candidates.map((candidate) => candidate.identity.theme));
+        const ancestorTheme = ancestorThemes.has(theme) ? theme : ancestorDefaultTheme(ancestorId);
         const match = (ancestorPack.manifest.contrastWaivers ?? []).find((waiver) =>
-          waiverMatches(waiver, pair.foreground, pair.background, mode, ancestorAccent),
+          waiverMatches(waiver, pair.foreground, pair.background, mode, ancestorTheme),
         );
         if (!match) continue;
         const ancestorTable = candidates.find(
-          (candidate) => candidate.identity.mode === mode && candidate.identity.accent === ancestorAccent,
+          (candidate) => candidate.identity.mode === mode && candidate.identity.theme === ancestorTheme,
         );
         if (!ancestorTable) continue;
         const changed: string[] = [];
@@ -442,7 +409,7 @@ function emitInherited(
   tables: readonly ResolvedThemeTable[],
 ): void {
   const table =
-    tables.find((entry) => entry.identity.mode === pack.manifest.defaultMode) ??
+    tables.find((entry) => entry.identity.theme === pack.manifest.defaultTheme && entry.identity.mode === pack.manifest.defaultMode) ??
     (tables[0] as ResolvedThemeTable | undefined);
   if (!table) return;
   for (const [key, provenance] of Object.entries(table.provenance)) {
@@ -450,7 +417,7 @@ function emitInherited(
     collector.emit('theme.inherited', packId, `Key "${key}" inherits its value from "${provenance.sourcePackId}".`, {
       key,
       mode: table.identity.mode,
-      accent: table.identity.accent,
+      theme: table.identity.theme,
     });
   }
 }

@@ -99,7 +99,7 @@ Issue 持久说明：
 - Evidence Level 限制；
 - 建议 next action。
 
-Issue 不可变：同 ID 已存储且内容不同时保留首次写入的内容。
+Issue 不可变且按内容摘要存储：同一逻辑 `issueId` 的不同内容分别保留，相同内容去重。新 revision 的 Fact `issueRef` 固定为 `issueId@sha256:<内容摘要>`，读取时校验摘要，不回退同 ID 的其它版本。历史 revision 的裸 ID 引用仍只读取对应历史对象。
 
 Coverage 说明 Selection 中哪些 Case 成功、失败、取消、跳过或不支持。Coverage 不能用“有一张截图”替代完整 Case 计数。
 

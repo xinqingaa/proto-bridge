@@ -85,7 +85,10 @@ Prototype Screens or their Design System.
 
 - Validate origin, source window, `runtimeId`, and `requestId`.
 - Re-handshake after iframe load and invalidate old messages.
-- Use explicit push/replace/back route semantics, not timing heuristics.
+- Use explicit push/replace/back route semantics, not timing heuristics. For
+  Runtime back, pop parent history only when its back path matches the validated
+  destination; otherwise replace that destination. An iframe can give an initial
+  parent entry a positive history position without a previous Workbench route.
 - Workbench tree, canvas chrome, and Capture protocol navigate with Runtime
   forced navigation so the iframe opens the requested Screen.
 - Keep the Workbench Bridge separate from the Capture Protocol.

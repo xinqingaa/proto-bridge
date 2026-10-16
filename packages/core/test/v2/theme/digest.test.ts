@@ -51,7 +51,7 @@ describe('pack digest', () => {
   it('ignores labels', () => {
     const base = makeBase();
     base.manifest.label = 'Renamed';
-    base.accents!.accents.teal!.label = 'Renamed teal';
+    base.manifest.themes[1]!.label = 'Renamed teal';
     expect(digestOf(base)).toBe(digestOf(makeBase()));
   });
 
@@ -68,7 +68,7 @@ describe('pack digest', () => {
     expect(digestOf(base)).not.toBe(digestOf(makeBase()));
   });
 
-  it('changes when an Accent value changes', () => {
+  it('changes when an theme value changes', () => {
     const base = makeBase();
     base.primitives!.values['teal.600'] = '#0e7490';
     expect(digestOf(base)).not.toBe(digestOf(makeBase()));
@@ -131,12 +131,12 @@ describe('theme identity', () => {
     packId: 'cold-chain-ops',
     packDigest: `sha1:${'ab'.repeat(20)}`,
     mode: 'dark',
-    accent: 'teal',
+    theme: 'teal',
   };
 
   it('round-trips', () => {
     const text = formatThemeIdentity(identity);
-    expect(text).toBe(`cold-chain-ops@sha1:${'ab'.repeat(20)}/dark/teal`);
+    expect(text).toBe(`cold-chain-ops@sha1:${'ab'.repeat(20)}/teal/dark`);
     expect(parseThemeIdentity(text)).toEqual(identity);
   });
 

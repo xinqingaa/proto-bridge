@@ -6,6 +6,7 @@ import {
   exitIfInterrupted,
   optionValue,
   repoRoot,
+  resolveWorkspaceServiceLaunch,
   tcpReachable,
   userArgv,
 } from "./lib/pb-script-utils.mjs";
@@ -89,9 +90,13 @@ async function stopManagedProcesses(file, workspace) {
     return;
   }
 
-  const runtimePort = Number(workspace?.runtime?.baseUrl ? new URL(workspace.runtime.baseUrl).port || 80 : 3977);
-  const servicePort = Number(workspace?.service?.port ?? 3988);
-  if (await tcpReachable("127.0.0.1", runtimePort) || await tcpReachable("127.0.0.1", servicePort)) {
+  // With no configuration or managed state there are no configured processes to stop.
+  if (!workspace) return;
+  const launch = await resolveWorkspaceServiceLaunch({ value: workspace, configPath });
+  const runtimeUrl = new URL(launch.runtimeBaseUrl);
+  const runtimePort = Number(runtimeUrl.port || (runtimeUrl.protocol === "https:" ? 443 : 80));
+  if (await tcpReachable(runtimeUrl.hostname.replace(/^\[|\]$/g, ""), runtimePort) ||
+      await tcpReachable(launch.host, launch.port)) {
     throw new Error("PB ports are in use but no managed pb:up state was found; refusing to kill unknown processes.");
   }
 }

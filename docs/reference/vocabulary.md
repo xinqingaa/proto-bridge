@@ -65,3 +65,5 @@ PBWork 工作台主文案用中文；产品词可作次要标注。验收与指�
 | Staleness / freshness | 新鲜 / 已过期 |
 
 状态、风险和错误码的机器权威在 `@proto-bridge/core/v2` Schema 中。
+
+Issue 的逻辑 ID 与内容固定引用的区别见 [Evidence 模型](../architecture/evidence-model.md#issue-与-coverage)。

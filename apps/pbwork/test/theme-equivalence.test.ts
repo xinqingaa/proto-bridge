@@ -10,7 +10,11 @@ import {
   resolveThemeTokens,
   tokenValueToCssValue,
 } from "@/design-system/resolveThemeTokens";
-import type { ThemeRecord, TokenRecord, TokenValue } from "@/design-system/types";
+import type {
+  ThemeRecord,
+  TokenRecord,
+  TokenValue,
+} from "@/design-system/types";
 import tokensJson from "@/design-system/tokens/tokens.json";
 import lightThemeJson from "@/design-system/themes/light.json";
 import darkThemeJson from "@/design-system/themes/dark.json";
@@ -25,14 +29,19 @@ type Mode = (typeof MODES)[number];
 
 const oldTokens = tokensJson as unknown as TokenRecord[];
 const oldThemes = [lightThemeJson, darkThemeJson] as unknown as ThemeRecord[];
-const migration = (migrationJson as unknown as { keys: Record<string, MigrationEntry> }).keys;
+const migration = (
+  migrationJson as unknown as { keys: Record<string, MigrationEntry> }
+).keys;
 
 const sources = loadBaseThemeSources();
 const catalogTypes = new Map<string, ThemeValueType>(
   sources.keyCatalog.keys.map((key) => [key.id, key.valueType]),
 );
 const constantTypes = new Map<string, ThemeValueType>(
-  sources.constants.constants.map((constant) => [constant.id, constant.valueType]),
+  sources.constants.constants.map((constant) => [
+    constant.id,
+    constant.valueType,
+  ]),
 );
 const constantValues = new Map(
   sources.constants.constants.map((constant) => [constant.id, constant.value]),
@@ -47,22 +56,34 @@ const tables = Object.fromEntries(
   resolution.tables.map((table) => [table.identity.mode, table]),
 ) as Record<Mode, ResolvedThemeTable>;
 const basePack = sources.packs.get("pbwork-base")!;
-const primitives = (basePack.primitives?.values ?? {}) as Record<string, unknown>;
+const primitives = (basePack.primitives?.values ?? {}) as Record<
+  string,
+  unknown
+>;
 
-// Q2-A：基础包字体为纯系统字体栈
-const SYSTEM_STACK = ["system-ui", "-apple-system", "PingFang SC", "sans-serif"];
+// 基础包字族固定为系统字体栈
+const SYSTEM_STACK = [
+  "system-ui",
+  "-apple-system",
+  "PingFang SC",
+  "sans-serif",
+];
 
 /** 旧取值（resolveThemeTokens + tokenValueToCssValue），旧 border 里的 var() 替换为本模式旧解析值。 */
 function oldCssFor(mode: Mode): Record<string, string> {
   const resolved = resolveThemeTokens(mode, oldTokens, oldThemes);
   const css: Record<string, string> = {};
   for (const token of oldTokens) {
-    css[token.id] = tokenValueToCssValue(token.id, resolved[token.id] as TokenValue);
+    css[token.id] = tokenValueToCssValue(
+      token.id,
+      resolved[token.id] as TokenValue,
+    );
   }
   for (const token of oldTokens) {
     css[token.id] = css[token.id]!.replace(
       /var\(--pb-([a-z0-9-]+?)-([a-z0-9-]+)\)/g,
-      (_match, category: string, name: string) => css[`${category}.${name}`] ?? _match,
+      (_match, category: string, name: string) =>
+        css[`${category}.${name}`] ?? _match,
     );
   }
   return css;
@@ -99,7 +120,12 @@ function sameCss(actual: string, expected: string): boolean {
 function parseOldTypography(value: TokenValue) {
   const match = /^(\d+) ([\d.]+(?:px|rem))\/([\d.]+) (.+)$/.exec(String(value));
   if (!match) throw new Error(`UNPARSEABLE_TYPOGRAPHY:${value}`);
-  return { weight: Number(match[1]), size: match[2]!, lineHeight: Number(match[3]), family: match[4]! };
+  return {
+    weight: Number(match[1]),
+    size: match[2]!,
+    lineHeight: Number(match[3]),
+    family: match[4]!,
+  };
 }
 
 function entriesOfTier(tier: Tier): Array<[string, MigrationEntry]> {
@@ -114,27 +140,42 @@ describe("legacy-migration 覆盖性", () => {
       "utf8",
     );
     // 逐键出现次数：JSON.parse 会静默合并重复键，这里直接数原文
-    const occurrences = [...raw.matchAll(/^ {4}"([a-z0-9.-]+)": \{/gm)].map((m) => m[1]!);
+    const occurrences = [...raw.matchAll(/^ {4}"([a-z0-9.-]+)": \{/gm)].map(
+      (m) => m[1]!,
+    );
     expect(occurrences).toHaveLength(154);
     expect(new Set(occurrences).size).toBe(154);
-    expect(new Set(Object.keys(migration))).toEqual(new Set(oldTokens.map((token) => token.id)));
+    expect(new Set(Object.keys(migration))).toEqual(
+      new Set(oldTokens.map((token) => token.id)),
+    );
   });
 
   it("分层计数：语义 102、组件 11、Primitive 9、常量 32", () => {
-    const counts = Object.values(migration).reduce<Record<string, number>>((acc, entry) => {
-      acc[entry.tier] = (acc[entry.tier] ?? 0) + 1;
-      return acc;
-    }, {});
-    expect(counts).toEqual({ semantic: 102, component: 11, primitive: 9, constant: 32 });
+    const counts = Object.values(migration).reduce<Record<string, number>>(
+      (acc, entry) => {
+        acc[entry.tier] = (acc[entry.tier] ?? 0) + 1;
+        return acc;
+      },
+      {},
+    );
+    expect(counts).toEqual({
+      semantic: 102,
+      component: 11,
+      primitive: 9,
+      constant: 32,
+    });
   });
 
   it("targets 非空；语义/常量/Primitive 目标全部存在", () => {
     for (const [oldId, entry] of Object.entries(migration)) {
       expect(entry.targets.length, oldId).toBeGreaterThan(0);
       for (const target of entry.targets) {
-        if (entry.tier === "semantic") expect(catalogTypes.has(target), `${oldId} → ${target}`).toBe(true);
-        if (entry.tier === "constant") expect(constantValues.has(target), `${oldId} → ${target}`).toBe(true);
-        if (entry.tier === "primitive") expect(target in primitives, `${oldId} → ${target}`).toBe(true);
+        if (entry.tier === "semantic")
+          expect(catalogTypes.has(target), `${oldId} → ${target}`).toBe(true);
+        if (entry.tier === "constant")
+          expect(constantValues.has(target), `${oldId} → ${target}`).toBe(true);
+        if (entry.tier === "primitive")
+          expect(target in primitives, `${oldId} → ${target}`).toBe(true);
       }
     }
   });
@@ -146,11 +187,13 @@ describe("legacy-migration 覆盖性", () => {
     }
   });
 
-  it("目录中未被旧键映射到的键恰为 14 个新增键", () => {
+  it("目录中未被旧键映射到的键恰为 11 个新增键", () => {
     const targeted = new Set(
       entriesOfTier("semantic").flatMap(([, entry]) => entry.targets),
     );
-    const untouched = [...catalogTypes.keys()].filter((id) => !targeted.has(id)).sort();
+    const untouched = [...catalogTypes.keys()]
+      .filter((id) => !targeted.has(id))
+      .sort();
     expect(untouched).toEqual(
       [
         "asset.brand-mark",
@@ -159,9 +202,6 @@ describe("legacy-migration 覆盖性", () => {
         "asset.launch-image",
         "border.width-strong",
         "density",
-        "font.display",
-        "font.numeric",
-        "font.text",
         "motion.personality",
         "surface.treatment",
         "typography.numeric-content",
@@ -177,13 +217,18 @@ describe.each(MODES)("新旧取值等价（%s）", (mode) => {
   const old = oldCss[mode];
 
   it("语义层（非字阶）：每个旧键的每个 target 与旧 CSS 值相等", () => {
-    const rows = entriesOfTier("semantic").filter(([oldId]) => !oldId.startsWith("typography."));
+    const rows = entriesOfTier("semantic").filter(
+      ([oldId]) => !oldId.startsWith("typography."),
+    );
     expect(rows.length).toBe(102 - 13);
     for (const [oldId, entry] of rows) {
       for (const target of entry.targets) {
         const valueType = catalogTypes.get(target)!;
         const actual = toCss(valueType, table.values[target]);
-        expect(sameCss(actual, old[oldId]!), `${oldId} → ${target}: ${actual} ≠ ${old[oldId]}`).toBe(true);
+        expect(
+          sameCss(actual, old[oldId]!),
+          `${oldId} → ${target}: ${actual} ≠ ${old[oldId]}`,
+        ).toBe(true);
       }
     }
   });
@@ -195,19 +240,34 @@ describe.each(MODES)("新旧取值等价（%s）", (mode) => {
       for (const target of entry.targets) {
         const valueType = constantTypes.get(target)!;
         const actual = toCss(valueType, constantValues.get(target));
-        expect(sameCss(actual, old[oldId]!), `${oldId} → ${target}: ${actual} ≠ ${old[oldId]}`).toBe(true);
-        expect(table.constants[target], target).toEqual(constantValues.get(target));
+        expect(
+          sameCss(actual, old[oldId]!),
+          `${oldId} → ${target}: ${actual} ≠ ${old[oldId]}`,
+        ).toBe(true);
+        expect(table.constants[target], target).toEqual(
+          constantValues.get(target),
+        );
       }
     }
   });
 
   it("字阶：字重、字号（含单位）、行高与旧值一致，字族为系统字体栈", () => {
-    const rows = entriesOfTier("semantic").filter(([oldId]) => oldId.startsWith("typography."));
+    const rows = entriesOfTier("semantic").filter(([oldId]) =>
+      oldId.startsWith("typography."),
+    );
     expect(rows).toHaveLength(13);
     const typo = (id: string) =>
-      table.values[id] as { family: string[]; features: string[]; weight: number; size: number | string; lineHeight: number };
+      table.values[id] as {
+        family: string[];
+        features: string[];
+        weight: number;
+        size: number | string;
+        lineHeight: number;
+      };
     for (const [oldId, entry] of rows) {
-      const expected = parseOldTypography(oldTokens.find((token) => token.id === oldId)!.defaultValue);
+      const expected = parseOldTypography(
+        oldTokens.find((token) => token.id === oldId)!.defaultValue,
+      );
       const actual = typo(entry.targets[0]!);
       expect(actual.weight, oldId).toBe(expected.weight);
       expect(lengthCss(actual.size), oldId).toBe(expected.size);
@@ -227,9 +287,6 @@ describe.each(MODES)("新旧取值等价（%s）", (mode) => {
       expect(typo(numeric).family).toEqual(SYSTEM_STACK);
       expect(typo(numeric).features).toEqual(["tnum"]);
     }
-    expect(table.values["font.text"]).toEqual({ family: SYSTEM_STACK, features: [] });
-    expect(table.values["font.display"]).toEqual({ family: SYSTEM_STACK, features: [] });
-    expect(table.values["font.numeric"]).toEqual({ family: SYSTEM_STACK, features: ["tnum"] });
   });
 
   it("Primitive：基础包 Primitive 值与旧值相等（模式专属的分别比较）", () => {
@@ -246,12 +303,15 @@ describe.each(MODES)("新旧取值等价（%s）", (mode) => {
         typeof value === "object" && value !== null
           ? toCss("border", value)
           : tokenValueToCssValue(oldId, value as TokenValue);
-      expect(sameCss(actual, old[oldId]!), `${oldId} → ${target}: ${actual} ≠ ${old[oldId]}`).toBe(true);
+      expect(
+        sameCss(actual, old[oldId]!),
+        `${oldId} → ${target}: ${actual} ≠ ${old[oldId]}`,
+      ).toBe(true);
     }
   });
 });
 
-describe("组件层（S5 接手）", () => {
+describe("组件层（第 2 步组件迁移批次）", () => {
   const rows = entriesOfTier("component");
 
   it("11 个旧键均给出非空 targets", () => {
@@ -262,6 +322,6 @@ describe("组件层（S5 接手）", () => {
   });
 
   for (const [oldId, entry] of rows) {
-    it.todo(`S5：${oldId} → ${entry.targets.join(", ")} 的组件层取值等价`);
+    it.todo(`组件迁移：${oldId} → ${entry.targets.join(", ")} 的组件层取值等价`);
   }
 });

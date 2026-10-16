@@ -24,7 +24,7 @@
       "targets": [
         "tabbar.active"
       ],
-      "note": "默认 {color.primary}，两态取值与 primary 相同；组件键由 S5 定义"
+      "note": "默认 {color.primary}，两态取值与 primary 相同；组件键由 第 2 步组件迁移批次 定义"
     },
     "color.section-tab-active": {
       "tier": "component",
@@ -33,7 +33,7 @@
         "secondary-tabs.active-color",
         "secondary-tabs.indicator"
       ],
-      "note": "默认 {color.on-surface}，两态相同；组件键由 S5 定义"
+      "note": "默认 {color.on-surface}，两态相同；组件键由 第 2 步组件迁移批次 定义"
     },
     "color.primary-soft": {
       "tier": "semantic",
@@ -142,57 +142,56 @@
       "targets": [
         "typography.title"
       ],
-      "note": "拆分为角色复合值；字族按 Q2-A 取系统字体栈"
+      "note": "拆分为角色复合值；字族使用固定系统字体栈"
     },
     "typography.subtitle": {
       "tier": "semantic",
       "targets": [
         "typography.subtitle"
       ],
-      "note": "拆分为角色复合值；字族按 Q2-A 取系统字体栈"
+      "note": "拆分为角色复合值；字族使用固定系统字体栈"
     },
     "typography.content": {
       "tier": "semantic",
       "targets": [
         "typography.content"
       ],
-      "note": "拆分为角色复合值；字族按 Q2-A 取系统字体栈"
+      "note": "拆分为角色复合值；字族使用固定系统字体栈"
     },
     "typography.caption": {
       "tier": "semantic",
       "targets": [
         "typography.caption"
       ],
-      "note": "拆分为角色复合值；字族按 Q2-A 取系统字体栈"
+      "note": "拆分为角色复合值；字族使用固定系统字体栈"
     },
     "spacing.xs": {
       "tier": "semantic",
       "targets": [
-        "space.inline-tight",
-        "space.stack-tight"
-      ]
+        "spacing.xs"
+      ],
+      "note": "保留现有刻度 ID 与基础值；不逐消费位置重新判定用途。"
     },
     "spacing.sm": {
       "tier": "semantic",
       "targets": [
-        "space.inline",
-        "space.stack-compact",
-        "space.inset-compact"
-      ]
+        "spacing.sm"
+      ],
+      "note": "保留现有刻度 ID 与基础值；不逐消费位置重新判定用途。"
     },
     "spacing.md": {
       "tier": "semantic",
       "targets": [
-        "space.inset-surface",
-        "space.inset-page",
-        "space.stack-loose"
-      ]
+        "spacing.md"
+      ],
+      "note": "保留现有刻度 ID 与基础值；不逐消费位置重新判定用途。"
     },
     "spacing.lg": {
       "tier": "semantic",
       "targets": [
-        "space.section"
-      ]
+        "spacing.lg"
+      ],
+      "note": "保留现有刻度 ID 与基础值；不逐消费位置重新判定用途。"
     },
     "spacing.xl": {
       "tier": "primitive",
@@ -359,56 +358,56 @@
       "targets": [
         "typography.display"
       ],
-      "note": "拆分为角色复合值；字族按 Q2-A 取系统字体栈"
+      "note": "拆分为角色复合值；字族使用固定系统字体栈"
     },
     "typography.headline": {
       "tier": "semantic",
       "targets": [
         "typography.headline"
       ],
-      "note": "拆分为角色复合值；字族按 Q2-A 取系统字体栈"
+      "note": "拆分为角色复合值；字族使用固定系统字体栈"
     },
     "typography.title-sm": {
       "tier": "semantic",
       "targets": [
         "typography.title-sm"
       ],
-      "note": "拆分为角色复合值；字族按 Q2-A 取系统字体栈"
+      "note": "拆分为角色复合值；字族使用固定系统字体栈"
     },
     "typography.title-lg": {
       "tier": "semantic",
       "targets": [
         "typography.title-lg"
       ],
-      "note": "拆分为角色复合值；字族按 Q2-A 取系统字体栈"
+      "note": "拆分为角色复合值；字族使用固定系统字体栈"
     },
     "typography.body-sm": {
       "tier": "semantic",
       "targets": [
         "typography.body-sm"
       ],
-      "note": "拆分为角色复合值；字族按 Q2-A 取系统字体栈"
+      "note": "拆分为角色复合值；字族使用固定系统字体栈"
     },
     "typography.body-lg": {
       "tier": "semantic",
       "targets": [
         "typography.body-lg"
       ],
-      "note": "拆分为角色复合值；字族按 Q2-A 取系统字体栈"
+      "note": "拆分为角色复合值；字族使用固定系统字体栈"
     },
     "typography.label": {
       "tier": "semantic",
       "targets": [
         "typography.label"
       ],
-      "note": "拆分为角色复合值；字族按 Q2-A 取系统字体栈"
+      "note": "拆分为角色复合值；字族使用固定系统字体栈"
     },
     "typography.caption-strong": {
       "tier": "semantic",
       "targets": [
         "typography.caption-strong"
       ],
-      "note": "拆分为角色复合值；字族按 Q2-A 取系统字体栈"
+      "note": "拆分为角色复合值；字族使用固定系统字体栈"
     },
     "spacing.none": {
       "tier": "constant",
@@ -419,28 +418,30 @@
     "spacing.xxs": {
       "tier": "semantic",
       "targets": [
-        "space.hairline"
-      ]
+        "spacing.xxs"
+      ],
+      "note": "保留现有刻度 ID 与基础值；不逐消费位置重新判定用途。"
     },
     "spacing.sm-plus": {
       "tier": "semantic",
       "targets": [
-        "space.inline-loose",
-        "space.stack",
-        "space.inset-control"
-      ]
+        "spacing.sm-plus"
+      ],
+      "note": "保留现有刻度 ID 与基础值；不逐消费位置重新判定用途。"
     },
     "spacing.lg-plus": {
       "tier": "semantic",
       "targets": [
-        "space.section-loose"
-      ]
+        "spacing.lg-plus"
+      ],
+      "note": "保留现有刻度 ID 与基础值；不逐消费位置重新判定用途。"
     },
     "spacing.2xl": {
       "tier": "semantic",
       "targets": [
-        "space.page-end"
-      ]
+        "spacing.2xl"
+      ],
+      "note": "保留现有刻度 ID 与基础值；不逐消费位置重新判定用途。"
     },
     "spacing.3xl": {
       "tier": "primitive",
@@ -520,7 +521,7 @@
       "targets": [
         "menu.menu-item-height"
       ],
-      "note": "默认 {size.control-large}；组件键由 S5 定义"
+      "note": "默认 {size.control-large}；组件键由 第 2 步组件迁移批次 定义"
     },
     "sizing.tab": {
       "tier": "primitive",
@@ -689,7 +690,7 @@
       "targets": [
         "space.6"
       ],
-      "note": "仅组件层使用；组件键由 S5 确定，此处 targets 记录承载该值的 Primitive（基础包 component.json 将引用 space.6）"
+      "note": "仅组件层使用；组件键由 第 2 步组件迁移批次 确定，此处 targets 记录承载该值的 Primitive（基础包 component.json 将引用 space.6）"
     },
     "sizing.indicator-thickness": {
       "tier": "semantic",
@@ -714,14 +715,14 @@
       "targets": [
         "scrollable-data-list.action-min-width"
       ],
-      "note": "基础包字面量；组件键由 S5 定义"
+      "note": "基础包字面量；组件键由 第 2 步组件迁移批次 定义"
     },
     "sizing.refresh-action-height": {
       "tier": "component",
       "targets": [
         "scrollable-data-list.action-height"
       ],
-      "note": "基础包字面量；组件键由 S5 定义"
+      "note": "基础包字面量；组件键由 第 2 步组件迁移批次 定义"
     },
     "sizing.progress-stroke": {
       "tier": "semantic",
@@ -734,14 +735,14 @@
       "targets": [
         "progress.track-height"
       ],
-      "note": "基础包字面量；组件键由 S5 定义"
+      "note": "基础包字面量；组件键由 第 2 步组件迁移批次 定义"
     },
     "sizing.textarea-rows": {
       "tier": "component",
       "targets": [
         "textarea.rows"
       ],
-      "note": "基础包字面量；组件键由 S5 定义"
+      "note": "基础包字面量；组件键由 第 2 步组件迁移批次 定义"
     },
     "border.width-hairline": {
       "tier": "semantic",
@@ -804,7 +805,7 @@
       "targets": [
         "typography.micro"
       ],
-      "note": "拆分为角色复合值；字族按 Q2-A 取系统字体栈"
+      "note": "拆分为角色复合值；字族使用固定系统字体栈"
     },
     "layout.fill": {
       "tier": "constant",
@@ -964,21 +965,21 @@
         "flow-sheet.duration",
         "bottom-sheet.duration"
       ],
-      "note": "基础包字面量 220ms；组件键由 S5 定义"
+      "note": "基础包字面量 220ms；组件键由 第 2 步组件迁移批次 定义"
     },
     "motion.duration-tab-viewport": {
       "tier": "component",
       "targets": [
         "tab-viewport.duration"
       ],
-      "note": "基础包字面量 240ms；组件键由 S5 定义"
+      "note": "基础包字面量 240ms；组件键由 第 2 步组件迁移批次 定义"
     },
     "motion.duration-toast": {
       "tier": "component",
       "targets": [
         "toast.duration"
       ],
-      "note": "基础包字面量 4000ms；组件键由 S5 定义"
+      "note": "基础包字面量 4000ms；组件键由 第 2 步组件迁移批次 定义"
     },
     "motion.duration-click-suppression": {
       "tier": "constant",

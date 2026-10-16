@@ -79,8 +79,6 @@ export type CommitRunResult = {
   snapshot: BundleSnapshot;
   /** Blobs committed from Job staging by this transaction. */
   blobIds?: BlobId[];
-  /** Issue IDs already persisted with different content; the persisted Issue was kept. */
-  retainedIssueIds?: IssueId[];
 };
 
 export type CreateBundleInput = {
@@ -315,7 +313,8 @@ export interface V2Store {
   ): Promise<CatalogRevision | undefined>;
   listCatalogRevisions(bundleId: BundleId): Promise<CatalogRevision[]>;
   putIssue(bundleId: BundleId, issue: Issue): Promise<void>;
-  getIssue(bundleId: BundleId, issueId: IssueId): Promise<Issue | undefined>;
+  /** Read an exact Fact.issueRef (logical ID + content digest), or a historical bare ID. */
+  getIssue(bundleId: BundleId, issueId: string): Promise<Issue | undefined>;
   listIssues(bundleId: BundleId): Promise<Issue[]>;
   putBlob(input: PutBlobInput): Promise<BlobRecord>;
   getBlob(

@@ -142,7 +142,7 @@ test("screen navigation swaps lazy views without blanking or remounting the ifra
 
   await frame
     .locator(
-      '[data-pb-id="cold-chain-ops.exception-queue.list.row"][data-pb-key="ex-017"]',
+      '[data-pb-id="cold-chain-ops.exception-queue.list.row"][data-pb-key="all-ex-017"]',
     )
     .click();
   await expect(page).toHaveURL(/\/screens\/shipment-detail\?variant=active-excursion/);

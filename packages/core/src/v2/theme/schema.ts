@@ -18,9 +18,9 @@ export const THEME_KEY_ID_PATTERN = /^[a-z][a-z0-9-]*(\.[a-z0-9-]+)*$/;
 export const THEME_PRIMITIVE_NAME_PATTERN = /^[a-z0-9]+(\.[a-z0-9-]+)+$/;
 /** Whole-string reference `{key}`; no interpolation. */
 export const THEME_REFERENCE_PATTERN = /^\{([a-z0-9][a-z0-9.-]*)\}$/;
-/** Mode and Accent names. */
+/** Mode and theme names. */
 export const THEME_MODE_PATTERN = /^[a-z][a-z0-9-]*$/;
-export const THEME_ACCENT_ID_PATTERN = /^[a-z][a-z0-9-]*$/;
+export const THEME_ID_PATTERN = /^[a-z][a-z0-9-]*$/;
 /** Pack ids must not contain `@` or `/` because they appear in the identity string. */
 export const THEME_PACK_ID_PATTERN = /^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$/;
 export const THEME_DIGEST_PATTERN = /^sha1:[0-9a-f]{40}$/;
@@ -37,7 +37,6 @@ export const THEME_VALUE_TYPES = [
   'easing',
   'shadow',
   'border',
-  'font',
   'filter',
   'enum',
   'asset',
@@ -49,7 +48,9 @@ export type ThemeValueType = z.infer<typeof ThemeValueType>;
 /** Value types whose keys may never vary by mode (geometry must stay stable). */
 export const THEME_MODE_INVARIANT_VALUE_TYPES: readonly ThemeValueType[] = [
   'length',
-  'font',
+  'duration',
+  'easing',
+  'border',
   'enum',
   'typography',
 ];
@@ -73,14 +74,10 @@ export type ThemeSwitchExpression = {
   cases: Record<string, ThemeExpression>;
 };
 export type ThemeTypographyExpression = {
-  family: ThemeExpression;
+  family?: '$default' | undefined;
   weight: ThemeExpression;
   size: ThemeExpression;
   lineHeight: ThemeExpression;
-};
-export type ThemeFontExpression = {
-  family: string[];
-  features?: string[] | undefined;
 };
 export type ThemeBorderExpression = {
   width: ThemeExpression;
@@ -93,43 +90,29 @@ export type ThemeAssetExpression = {
   alt: string;
 };
 
-/**
- * A theme expression:
- * 1. literal string / number (including `none`, `transparent`);
- * 2. whole-string reference `"{key}"`;
- * 3. `{ $switch, cases }`;
- * 4. composite object (typography / font / border / asset);
- * plus a bare `string[]` font-family list, which is only valid where a font
- * family is expected (`font.family` through `typography.family`, or a switch
- * over such lists). The resolver rejects it elsewhere with `theme.value-type`.
- */
+/** Literals, whole-key references, enum switches, or typed composite values. */
 export type ThemeExpression =
   | string
   | number
-  | string[]
   | ThemeSwitchExpression
   | ThemeTypographyExpression
-  | ThemeFontExpression
   | ThemeBorderExpression
   | ThemeAssetExpression;
 
-const FamilyList = z.array(z.string().min(1)).min(1);
+/** Fixed system stack; packs do not select or distribute fonts. */
+export const THEME_SYSTEM_FONT_FAMILY = ['system-ui', '-apple-system', 'PingFang SC', 'sans-serif'] as const;
 
 export const ThemeExpression: z.ZodType<ThemeExpression> = z.lazy(() =>
   z.union([
     z.string(),
     z.number().finite(),
-    FamilyList,
     z.object({ $switch: z.string().min(1), cases: z.record(z.string(), ThemeExpression) }).strict(),
-    z
-      .object({
-        family: ThemeExpression,
-        weight: ThemeExpression,
-        size: ThemeExpression,
-        lineHeight: ThemeExpression,
-      })
-      .strict(),
-    z.object({ family: FamilyList, features: z.array(z.string().min(1)).optional() }).strict(),
+    z.object({
+      family: z.literal('$default').optional(),
+      weight: ThemeExpression,
+      size: ThemeExpression,
+      lineHeight: ThemeExpression,
+    }).strict(),
     z.object({ width: ThemeExpression, style: ThemeExpression, color: ThemeExpression }).strict(),
     z.object({ file: z.string().min(1), mediaType: z.string().min(1), alt: z.string() }).strict(),
   ]),
@@ -149,7 +132,6 @@ export const ThemeKeyDefinition = z
     valueType: ThemeValueType,
     bindable: z.boolean(),
     modeVariant: z.boolean(),
-    accentable: z.boolean(),
     enumValues: z.array(z.string().min(1)).optional(),
     /** Lowest-priority value; component tier only. Resolved in the base pack context. */
     default: ThemeExpression.optional(),
@@ -170,9 +152,6 @@ export const ThemeKeyDefinition = z
     }
     if (key.default !== undefined && key.tier !== 'component') {
       ctx.addIssue({ code: 'custom', path: ['default'], message: 'default is only allowed for component-tier keys' });
-    }
-    if (key.accentable && key.valueType !== 'color') {
-      ctx.addIssue({ code: 'custom', path: ['accentable'], message: 'only color keys may be accentable' });
     }
     if (key.modeVariant && THEME_MODE_INVARIANT_VALUE_TYPES.includes(key.valueType)) {
       ctx.addIssue({
@@ -283,24 +262,11 @@ export type ThemeConstantTable = z.infer<typeof ThemeConstantTable>;
 export const ThemePackScope = z.enum(['base', 'prototype', 'playground']);
 export type ThemePackScope = z.infer<typeof ThemePackScope>;
 
-export const ThemeFontDeclaration = z
-  .object({
-    family: z.string().min(1),
-    files: z.array(z.string().min(1)).min(1),
-    weights: z.array(z.number().int().positive()).min(1),
-    style: z.enum(['normal', 'italic']),
-    /** Empty values are reported as `theme.font-license-missing`, not as a schema error. */
-    license: z.string(),
-    licenseFile: z.string(),
-  })
-  .strict();
-export type ThemeFontDeclaration = z.infer<typeof ThemeFontDeclaration>;
-
 export const ThemeContrastWaiver = z
   .object({
     pair: z.tuple([z.string().min(1), z.string().min(1)]),
     modes: z.array(z.string().min(1)).optional(),
-    accents: z.array(z.string().min(1)).optional(),
+    themes: z.array(z.string().min(1)).optional(),
     reason: z.string().refine((value) => value.trim().length > 0, 'waiver reason must not be empty'),
   })
   .strict();
@@ -318,9 +284,12 @@ export const ThemePackManifest = z
       .min(1)
       .refine((modes) => new Set(modes).size === modes.length, 'modes must be unique'),
     defaultMode: z.string().regex(THEME_MODE_PATTERN),
-    accentKeys: z.array(z.string().min(1)).optional(),
-    defaultAccent: z.string().regex(THEME_ACCENT_ID_PATTERN).optional(),
-    fonts: z.array(ThemeFontDeclaration).optional(),
+    themes: z.array(z.object({
+      id: z.string().regex(THEME_ID_PATTERN),
+      label: z.string().min(1),
+      default: z.boolean().optional(),
+    }).strict()).min(1).refine((themes) => new Set(themes.map((theme) => theme.id)).size === themes.length, 'themes must be unique'),
+    defaultTheme: z.string().regex(THEME_ID_PATTERN),
     contrastWaivers: z.array(ThemeContrastWaiver).optional(),
   })
   .strict();
@@ -331,26 +300,12 @@ const ExpressionMap = z.record(z.string(), ThemeExpression);
 export const ThemePackLayer = z
   .object({
     values: ExpressionMap.optional(),
+    themes: z.record(z.string(), z.object({ values: ExpressionMap.optional() }).strict()).optional(),
     modes: z.record(z.string(), ExpressionMap).optional(),
+    themeModes: z.record(z.string(), z.record(z.string(), ExpressionMap)).optional(),
   })
   .strict();
 export type ThemePackLayer = z.infer<typeof ThemePackLayer>;
-
-export const ThemeAccentFile = z
-  .object({
-    accents: z.record(
-      z.string().regex(THEME_ACCENT_ID_PATTERN, 'accent id must match ^[a-z][a-z0-9-]*$'),
-      z
-        .object({
-          label: z.string().min(1),
-          values: ExpressionMap.optional(),
-          modes: z.record(z.string(), ExpressionMap).optional(),
-        })
-        .strict(),
-    ),
-  })
-  .strict();
-export type ThemeAccentFile = z.infer<typeof ThemeAccentFile>;
 
 export const ThemePrimitiveTable = z
   .object({
@@ -368,7 +323,6 @@ export const ThemePackSource = z
     primitives: ThemePrimitiveTable.optional(),
     semantic: ThemePackLayer.optional(),
     component: ThemePackLayer.optional(),
-    accents: ThemeAccentFile.optional(),
     /** Relative path -> sha1 hex of the file bytes; supplied by the caller. */
     files: z.record(z.string(), z.string()).optional(),
     /** Prototype that owns a `scope: prototype` pack; annotated by the caller. */
@@ -386,17 +340,12 @@ export const ThemeIdentity = z
     packId: z.string().regex(THEME_PACK_ID_PATTERN),
     packDigest: z.string().regex(THEME_DIGEST_PATTERN),
     mode: z.string().regex(THEME_MODE_PATTERN),
-    accent: z.string().regex(THEME_ACCENT_ID_PATTERN),
+    theme: z.string().regex(THEME_ID_PATTERN),
   })
   .strict();
 export type ThemeIdentity = z.infer<typeof ThemeIdentity>;
 
 const ResolvedLength = z.union([z.number(), z.string()]);
-
-export const ResolvedThemeFont = z
-  .object({ family: z.array(z.string()), features: z.array(z.string()) })
-  .strict();
-export type ResolvedThemeFont = z.infer<typeof ResolvedThemeFont>;
 
 export const ResolvedThemeTypography = z
   .object({
@@ -432,14 +381,13 @@ export type ResolvedThemeAsset = z.infer<typeof ResolvedThemeAsset>;
 /**
  * Resolved value by `valueType`: color/easing/shadow/filter/enum/`none` asset
  * -> string; length -> number (px) or unit string; number/duration/weight/
- * line-height -> number; font -> `ResolvedThemeFont`; typography ->
+ * line-height -> number; typography ->
  * `ResolvedThemeTypography`; typography `.family` part -> `string[]`.
  */
 export const ResolvedThemeValue = z.union([
   z.string(),
   z.number(),
   z.array(z.string()),
-  ResolvedThemeFont,
   ResolvedThemeTypography,
   ResolvedThemeBorder,
   ResolvedThemeAsset,
@@ -478,11 +426,9 @@ export const THEME_DIAGNOSTIC_SEVERITY = {
   'theme.extends-cycle': 'block',
   'theme.value-type': 'block',
   'theme.mode-variant-forbidden': 'block',
-  'theme.accent-out-of-scope': 'block',
+  'theme.theme-undeclared': 'block',
   'theme.mode-undeclared': 'block',
   'theme.base-incomplete': 'block',
-  'theme.font-license-missing': 'block',
-  'theme.font-file-missing': 'block',
   'theme.asset-missing': 'block',
   'theme.contrast-insufficient': 'block',
   'theme.contrast-waived': 'warning',
@@ -503,7 +449,7 @@ export const ThemeDiagnostic = z
     packId: z.string(),
     key: z.string().optional(),
     mode: z.string().optional(),
-    accent: z.string().optional(),
+    theme: z.string().optional(),
     message: z.string(),
     path: z.string().optional(),
   })
@@ -514,7 +460,7 @@ export type ThemeDiagnostic = {
   packId: string;
   key?: string | undefined;
   mode?: string | undefined;
-  accent?: string | undefined;
+  theme?: string | undefined;
   message: string;
   path?: string | undefined;
 };
@@ -523,7 +469,7 @@ export function createThemeDiagnostic(
   code: ThemeDiagnosticCode,
   packId: string,
   message: string,
-  extra: { key?: string | undefined; mode?: string | undefined; accent?: string | undefined; path?: string | undefined } = {},
+  extra: { key?: string | undefined; mode?: string | undefined; theme?: string | undefined; path?: string | undefined } = {},
 ): ThemeDiagnostic {
   const diagnostic: ThemeDiagnostic = {
     code,
@@ -533,7 +479,7 @@ export function createThemeDiagnostic(
   };
   if (extra.key !== undefined) diagnostic.key = extra.key;
   if (extra.mode !== undefined) diagnostic.mode = extra.mode;
-  if (extra.accent !== undefined) diagnostic.accent = extra.accent;
+  if (extra.theme !== undefined) diagnostic.theme = extra.theme;
   if (extra.path !== undefined) diagnostic.path = extra.path;
   return diagnostic;
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   listPackChain,
+  THEME_SYSTEM_FONT_FAMILY,
   resolveAllThemeTables,
   resolveThemePack,
   type ResolvedThemeTable,
@@ -9,26 +10,26 @@ import {
 } from '../../../src/v2/theme/index.js';
 import { makeBase, makeCatalog, makeChild, makeConstants, packMap } from './fixtures.js';
 
-function resolve(packs: Map<string, ThemePackSource>, packId: string, mode = 'light', accent?: string) {
+function resolve(packs: Map<string, ThemePackSource>, packId: string, mode = 'light', theme?: string) {
   return resolveThemePack({
     keyCatalog: makeCatalog(),
     constants: makeConstants(),
     packs,
     packId,
     mode,
-    ...(accent === undefined ? {} : { accent }),
+    ...(theme === undefined ? {} : { theme }),
   });
 }
 
-function table(packs: Map<string, ThemePackSource>, packId: string, mode = 'light', accent?: string): ResolvedThemeTable {
-  const result = resolve(packs, packId, mode, accent);
+function table(packs: Map<string, ThemePackSource>, packId: string, mode = 'light', theme?: string): ResolvedThemeTable {
+  const result = resolve(packs, packId, mode, theme);
   expect(result.diagnostics).toEqual([]);
   expect(result.table).not.toBeNull();
   return result.table as ResolvedThemeTable;
 }
 
 describe('base pack resolution', () => {
-  it('resolves every key for all modes and Accents', () => {
+  it('resolves every key for all modes and themes', () => {
     const result = resolveAllThemeTables({
       keyCatalog: makeCatalog(),
       constants: makeConstants(),
@@ -36,7 +37,7 @@ describe('base pack resolution', () => {
       packId: 'base',
     });
     expect(result.diagnostics).toEqual([]);
-    expect(result.tables.map((t) => `${t.identity.mode}/${t.identity.accent}`).sort()).toEqual([
+    expect(result.tables.map((t) => `${t.identity.mode}/${t.identity.theme}`).sort()).toEqual([
       'dark/default',
       'dark/teal',
       'light/default',
@@ -56,8 +57,6 @@ describe('base pack resolution', () => {
     expect(t.values['motion.duration-short']).toBe(120);
     expect(t.values['elevation.surface']).toBe('none');
     expect(t.values['asset.brand-mark']).toBe('none');
-    expect(t.values['font.text']).toEqual({ family: ['system-ui', 'sans-serif'], features: [] });
-    expect(t.values['font.numeric']).toEqual({ family: ['ui-monospace', 'monospace'], features: ['tnum'] });
     expect(t.values['border.default']).toEqual({ width: 1, style: 'solid', color: '#111111' });
     expect(t.values['tabbar.height']).toBe(48);
     expect(t.values['tabbar.treatment']).toBe('glass');
@@ -87,41 +86,44 @@ describe('base pack resolution', () => {
   });
 });
 
-describe('Accent priority', () => {
-  it('accent.modes > accent.values > pack modes > pack values', () => {
+describe('Theme priority', () => {
+  it('theme.modes > theme.values > pack modes > pack values', () => {
     const packs = packMap(makeBase());
-    // accent.modes (dark) wins
+    // theme.modes (dark) wins
     const darkTeal = table(packs, 'base', 'dark', 'teal');
     expect(darkTeal.values['color.primary']).toBe('#5eead4');
-    expect(darkTeal.provenance['color.primary']?.sourcePackId).toBe('base#teal');
-    // accent.values wins over pack values in light
+    expect(darkTeal.provenance['color.primary']?.sourcePackId).toBe('base');
+    // theme.values wins over pack values in light
     expect(table(packs, 'base', 'light', 'teal').values['color.primary']).toBe('#0f766e');
-    // default accent without overrides: pack modes then pack values
+    // default theme without overrides: pack modes then pack values
     expect(table(packs, 'base', 'dark', 'default').values['color.primary']).toBe('#8ab4ff');
     expect(table(packs, 'base', 'light', 'default').values['color.primary']).toBe('#1f5fbf');
   });
 
-  it('accent.values wins over pack modes', () => {
+  it('theme.values wins over pack modes', () => {
     const base = makeBase();
-    delete base.accents!.accents.teal!.modes;
+    delete base.semantic!.themeModes;
     const t = table(packMap(base), 'base', 'dark', 'teal');
     expect(t.values['color.primary']).toBe('#0f766e');
   });
 
-  it('uses the pack default accent when none is requested', () => {
+  it('uses the pack default theme when none is requested', () => {
     const base = makeBase();
-    base.manifest.defaultAccent = 'teal';
+    base.manifest.defaultTheme = 'teal';
     const t = table(packMap(base), 'base');
-    expect(t.identity.accent).toBe('teal');
+    expect(t.identity.theme).toBe('teal');
     expect(t.values['color.primary']).toBe('#0f766e');
   });
 
-  it('a pack without an accents file implicitly has only "default"', () => {
+  it('a single-theme pack evaluates exactly its declared combinations', () => {
     const base = makeBase();
-    delete base.accents;
+    base.manifest.themes = [{ id: 'default', label: 'Default' }];
+    delete base.semantic!.themes;
+    delete base.semantic!.themeModes;
     const result = resolveAllThemeTables({ keyCatalog: makeCatalog(), constants: makeConstants(), packs: packMap(base), packId: 'base' });
-    expect(result.tables.map((t) => t.identity.accent)).toEqual(['default', 'default']);
+    expect(result.tables.map((t) => t.identity.theme)).toEqual(['default', 'default']);
   });
+
 });
 
 describe('$switch and Primitive scope', () => {
@@ -203,10 +205,11 @@ describe('inheritance and provenance', () => {
     expect(listPackChain(packs, 'base')).toEqual({ chain: ['base'], diagnostics: [] });
   });
 
-  it('inherits the Accent file from the base pack', () => {
+  it('a child value overrides the ancestor theme while untouched keys inherit', () => {
     const t = table(packs, 'brand', 'light', 'teal');
-    expect(t.values['color.primary']).toBe('#0f766e');
-    expect(t.provenance['color.primary']).toMatchObject({ sourcePackId: 'base#teal', inherited: true });
+    expect(t.values['color.primary']).toBe('#a01c5a');
+    expect(t.provenance['color.primary']).toMatchObject({ sourcePackId: 'brand', inherited: false });
+    expect(t.values['color.surface']).toBe('#ffffff');
   });
 });
 
@@ -214,13 +217,13 @@ describe('typography', () => {
   it('derives parts and reassembles roles', () => {
     const t = table(packMap(makeBase()), 'base');
     expect(t.values['typography.title']).toEqual({
-      family: ['system-ui', 'sans-serif'],
+      family: [...THEME_SYSTEM_FONT_FAMILY],
       features: [],
       weight: 650,
       size: 20,
       lineHeight: 1.3,
     });
-    expect(t.values['typography.title.family']).toEqual(['system-ui', 'sans-serif']);
+    expect(t.values['typography.title.family']).toEqual([...THEME_SYSTEM_FONT_FAMILY]);
     expect(t.values['typography.title.weight']).toBe(650);
     expect(t.values['typography.title.size']).toBe(20);
     expect(t.values['typography.title.line-height']).toBe(1.3);
@@ -232,7 +235,7 @@ describe('typography', () => {
     const child = makeChild({ semantic: { values: { 'typography.title.size': 24, 'typography.title.weight': 700 } } });
     const t = table(packMap(makeBase(), child), 'brand');
     expect(t.values['typography.title']).toEqual({
-      family: ['system-ui', 'sans-serif'],
+      family: [...THEME_SYSTEM_FONT_FAMILY],
       features: [],
       weight: 700,
       size: 24,
@@ -246,7 +249,7 @@ describe('typography', () => {
   it('a role override in a nearer layer supersedes a part override in a farther layer', () => {
     const middle = makeChild({ semantic: { values: { 'typography.title.size': 24 } } }, 'middle');
     const top = makeChild(
-      { semantic: { values: { 'typography.title': { family: '{font.text}', weight: 500, size: 30, lineHeight: 1.2 } } } },
+      { semantic: { values: { 'typography.title': { weight: 500, size: 30, lineHeight: 1.2 } } } },
       'top',
       'middle',
     );
@@ -264,26 +267,20 @@ describe('typography', () => {
     expect(t2.values['typography.title']).toMatchObject({ size: 18, weight: 500 });
   });
 
-  it('a font reference supplies family and features', () => {
-    const child = makeChild({
-      semantic: { values: { 'typography.body': { family: '{font.numeric}', weight: 500, size: 14, lineHeight: 1.4 } } },
+  it('numeric roles use the system stack and tabular numbers', () => {
+    const t = table(packMap(makeBase()), 'base');
+    expect(t.values['typography.numeric-content']).toMatchObject({
+      family: [...THEME_SYSTEM_FONT_FAMILY], features: ['tnum'],
     });
-    const t = table(packMap(makeBase(), child), 'brand');
-    expect(t.values['typography.body']).toEqual({
-      family: ['ui-monospace', 'monospace'],
-      features: ['tnum'],
-      weight: 500,
-      size: 14,
-      lineHeight: 1.4,
-    });
-    expect(t.values['typography.body.family']).toEqual(['ui-monospace', 'monospace']);
   });
 
-  it('a part family can be overridden with a font reference and reassembles features', () => {
-    const child = makeChild({ semantic: { values: { 'typography.title.family': '{font.numeric}' } } });
-    const t = table(packMap(makeBase(), child), 'brand');
-    expect(t.values['typography.title']).toMatchObject({ family: ['ui-monospace', 'monospace'], features: ['tnum'] });
+  it('does not allow a pack to override the system family part', () => {
+    const child = makeChild({ semantic: { values: { 'typography.title.family': 'Brand Sans' } } });
+    const result = resolve(packMap(makeBase(), child), 'brand');
+    expect(result.table).toBeNull();
+    expect(result.diagnostics.some((d) => d.code === 'theme.unknown-key')).toBe(true);
   });
+
 });
 
 describe('composites', () => {
@@ -319,10 +316,10 @@ describe('resolveThemePack requests', () => {
     expect(result.diagnostics.find((d) => d.code === 'theme.mode-undeclared')).toMatchObject({ severity: 'block' });
   });
 
-  it('reports an unknown Accent', () => {
+  it('reports an unknown Theme', () => {
     const result = resolve(packMap(makeBase()), 'base', 'light', 'pink');
     expect(result.table).toBeNull();
-    expect(result.diagnostics.find((d) => d.code === 'theme.unresolved-reference')).toMatchObject({ accent: 'pink' });
+    expect(result.diagnostics.find((d) => d.code === 'theme.theme-undeclared')).toMatchObject({ theme: 'pink' });
   });
 
   it('returns a null table when the pack has block diagnostics', () => {

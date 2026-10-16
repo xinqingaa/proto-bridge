@@ -22,7 +22,7 @@ test("adds, persists, resolves and deletes a local element comment", async ({
 
   await frame
     .locator(
-      '[data-pb-id="cold-chain-ops.exception-queue.list.row"][data-pb-key="ex-017"]',
+      '[data-pb-id="cold-chain-ops.exception-queue.list.row"][data-pb-key="all-ex-017"]',
     )
     .click({ position: { x: 16, y: 14 } });
 

@@ -406,8 +406,11 @@ function applyRuntimeNavigation(
   routeError.value = null;
   if (route.fullPath === workbenchPath) return;
   if (navigation === "back") {
-    const position = Number(window.history.state?.position ?? 0);
-    if (position > 0) {
+    // The joint iframe history can give the initial parent entry a positive
+    // position without a previous Workbench route. Only pop an exact parent;
+    // otherwise use the Runtime's validated destination as the deep-link fallback.
+    const previousPath = window.history.state?.back;
+    if (typeof previousPath === "string" && previousPath === workbenchPath) {
       router.back();
       return;
     }

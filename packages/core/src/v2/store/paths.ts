@@ -1,3 +1,4 @@
+import { assertIssueReference } from './issue-content.js';
 import path from 'node:path';
 import type {
   BlobId,
@@ -107,7 +108,11 @@ export function catalogRevisionsDir(root: string, bundleId: BundleId): string {
 }
 
 export function issuePath(root: string, bundleId: BundleId, issueId: IssueId): string {
-  return path.join(bundleDir(root, bundleId), 'issues', `${issueId}.json`);
+  assertIssueReference(issueId);
+  if (issueId.includes('@')) {
+    return path.join(issuesDir(root, bundleId), 'content', `${issueId.split('@sha256:')[1]!}.json`);
+  }
+  return path.join(issuesDir(root, bundleId), `${issueId}.json`);
 }
 
 export function issuesDir(root: string, bundleId: BundleId): string {

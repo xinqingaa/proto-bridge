@@ -28,7 +28,7 @@
 
 ### Components
 
-`resolved` mapping 必须在本次 Target 变更的真实使用点采用。公共组件可以是正确实现选择，但只要最终可见结果与 Screenshot 不同，仍记录为 `deviation` 并说明 Target 规范依据、差异和影响。`candidate`、`stale`、`conflict`、`unresolved` 或 `unsupported` 不能报告为匹配。
+`resolved` mapping 必须在本次 Target 变更的真实使用点采用。公共组件可以是正确实现选择，但只要最终可见结果与 Screenshot 不同，仍记录为 `deviation` 并说明 Target 规范依据、差异和影响。`candidate`、`stale`、`conflict`、`unresolved`、`unsupported` 或 `pending` 不能报告为匹配；`pending` 必须保持 `unverified`，说明 Target 待实现的理由。
 
 ### Tokens
 

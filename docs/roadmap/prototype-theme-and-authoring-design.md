@@ -1,6 +1,6 @@
 # 原型主题包与授权设计
 
-> 本文是[平台升级计划](./pbwork-platform-upgrade.md)第 2、3、4 步的实施设计，只描述未实施的计划，不代表现行 Contract。实施完成、稳定行为迁入 `docs/architecture` 与 `docs/reference` 之后，本文移入 `docs/history`。
+> 本文是[平台升级计划](./pbwork-platform-upgrade.md)第 2、3、4 步的实施设计。已落地的主题解析模块以[主题包解析模型](../architecture/theme-packs.md)为准；其余段落仍是计划，不代表现行 Contract。实施完成、稳定行为迁入 `docs/architecture` 与 `docs/reference` 之后，本文移入 `docs/history`。
 >
 > 范围：键目录与主题包格式、解析与校验、Core 主题身份、Runtime 与 Workbench 接入、主题一致性探针、`pbStyle` 键类型生成。字体、Flutter 适配与组件层全量发布不在范围内，理由见计划正文「范围约束」。
 
@@ -76,7 +76,7 @@ components/contracts/*.json 组件层键随 Contract 发布（`componentTokens` 
 }
 ```
 
-- `valueType`：`color | length | number | duration | easing | shadow | border | font-family | font-weight | font-features | filter | enum | asset | typography`。CSS 单位只由 `valueType` 决定，不再由键前缀正则决定。
+- `valueType`：`color | length | number | duration | easing | shadow | border | filter | enum | asset | typography`。CSS 单位只由 `valueType` 决定，不再由键前缀正则决定。
 - `modeVariant`：只有 color、shadow、opacity 类 number、filter、asset 可为 `true`。长度、enum 不允许随模式变化，使明暗两态几何不变——这是主题一致性探针能够成立的前提。
 - `bindable`：是否可被 `tokenBindings` 与 `pbStyle` 引用；常量与字阶部件为 `false`。
 
@@ -84,9 +84,7 @@ components/contracts/*.json 组件层键随 Contract 发布（`componentTokens` 
 
 **颜色（36，全部 `modeVariant`）**：`color.background`、`on-background`、`surface`、`on-surface`、`on-surface-muted`、`surface-variant`、`surface-recessed`、`surface-selected`、`surface-raised`、`inverse-surface`、`on-inverse-surface`、`primary`、`primary-soft`、`on-primary`、`action`、`action-soft`、`on-action`、`secondary`、`secondary-soft`、`on-secondary`、`error`、`error-soft`、`on-error`、`success`、`success-soft`、`on-success`、`warning`、`warning-soft`、`on-warning`、`info`、`on-info`、`border`、`outline`、`divider`、`disabled`、`scrim`。
 
-**间距（12，`length`，不可随模式变化）**：沿用现有刻度 ID，只改用途说明，不改变数值——B 方案：
-
-`space.xxs`(2)、`space.xs`(4)、`space.sm`(8)、`space.sm-plus`(12)、`space.md`(16)、`space.lg`(24)、`space.lg-plus`(32)、`space.xl`(40)、`space.2xl`(48)、`space.3xl`(64)，以及 `space.none`(0)。数值沿用旧键现值，由等价测试锁定。
+**间距（保留现有刻度 ID，`length`，不可随模式变化）**：以计划正文的 B 方案为准，旧语义间距键保留 `spacing.xxs`(2)、`spacing.xs`(4)、`spacing.sm`(8)、`spacing.sm-plus`(12)、`spacing.md`(16)、`spacing.lg`(24)、`spacing.lg-plus`(40)、`spacing.2xl`(48)，只更新用途说明。其余旧间距的分层去向仍按第 2.6 节；不引入用途型 `space.*` 公共键，也不逐消费位置改绑。
 
 **字阶（16 个角色，可绑定）**：保留 13 个旧角色 ID（`typography.display`、`headline`、`title-lg`、`title`、`title-sm`、`subtitle`、`body-lg`、`content`、`body-sm`、`label`、`caption`、`caption-strong`、`micro`），新增 `typography.numeric-display`、`numeric-title`、`numeric-content`（等宽数字）。
 
@@ -96,7 +94,7 @@ components/contracts/*.json 组件层键随 Contract 发布（`componentTokens` 
 "typography.title": { "family": "$default", "weight": 650, "size": 20, "lineHeight": 1.3 }
 ```
 
-派生部件键 `typography.{role}.family|weight|size|line-height`：属于语义层、可被包覆盖，但不可绑定；Evidence 与 Target 只认角色。CSS 输出 `--pb-typography-title`（`font` 简写）、四个部件变量与 `--pb-typography-title-variant-numeric`。
+派生部件键 `typography.{role}.family|weight|size|line-height`：不可绑定；字族只读，其余部件可被包覆盖；Evidence 与 Target 只认角色。CSS 输出 `--pb-typography-title`（`font` 简写）、四个部件变量与 `--pb-typography-title-variant-numeric`。
 
 **圆角（6）**：`radius.mark`(4)、`radius.control-compact`(8)、`radius.control`(12)、`radius.surface`(16)、`radius.overlay`(24)、`radius.pill`(999)。
 
@@ -205,7 +203,7 @@ Contract 新增段：
 | `motion.duration-instant` / `rotate-half-turn` / `duration-click-suppression` | 常量 | ID 不变 |
 | `effect.glass-backdrop` | 语义 | `surface.glass-backdrop` |
 
-旧刻度名只作为基础包 Primitive 名存在（如 `space.4`、`radius.12`），对 Agent、Evidence 与 Target 不可见。
+间距刻度名继续对 Agent 与 Evidence 可见；包私有 Primitive（如 `space.4`、`radius.12`）仍不对外发布。
 
 ## 3. 主题包
 
@@ -221,164 +219,9 @@ apps/pbwork/src/prototypes/{prototypeId}/theme/
 
 原型包 `id` 必须等于 `prototypeId`。冷链使用基础包，不建目录。
 
-### 3.2 文件 Schema
+### 3.2 已落地的解析模型
 
-`pack.json`：
-
-```json
-{
-  "schemaVersion": 1,
-  "id": "yike",
-  "label": "一刻",
-  "extends": "pbwork-base",
-  "scope": "prototype",
-  "themes": [
-    { "id": "mechanical", "label": "机械", "default": true },
-    { "id": "water", "label": "水位" },
-    { "id": "sundial", "label": "日影" }
-  ],
-  "defaultTheme": "mechanical",
-  "modes": ["light", "dark"],
-  "defaultMode": "light",
-  "contrastWaivers": [
-    { "pair": ["color.on-warning", "color.warning"], "themes": ["mechanical"], "modes": ["light"], "reason": "…" }
-  ]
-}
-```
-
-- `scope`：`base`（仅 pbwork-base）、`prototype`、`playground`（样例包，不能被原型登记引用）。
-- 一个包声明一组主题，每套主题有自己的语义层取值与 `light` / `dark` 两种模式。这是「Accent」概念的统一形式：只改颜色键的一套主题就是主题色轴，不再单独设计。
-- `modes` 至少含 `defaultMode`；`system` 不是包模式，是 Runtime 偏好值，运行时解析为包内 light / dark。
-- 基础包 `extends` 为空，其余包必须 `extends` 一个包（可多级）。
-
-`primitives.json`：`{ "values": { "blue.600": "#1F5FBF", "space.16": 16 } }`，键名自由但须匹配 `^[a-z0-9]+(\.[a-z0-9-]+)+$`。
-
-`semantic.json` / `component.json`：
-
-```json
-{
-  "values": { "color.primary": "{blue.600}", "radius.control": 12 },
-  "themes": {
-    "water": { "values": { "color.primary": "{moss.600}" } }
-  },
-  "modes": { "dark": { "color.primary": "{blue.300}" } },
-  "themeModes": { "water": { "dark": { "color.primary": "{moss.300}" } } }
-}
-```
-
-`values` 是所有主题、所有模式共享的取值；`themes.{id}.values` 覆盖该主题；`modes.{mode}` 覆盖模式相关键；`themeModes.{theme}.{mode}` 覆盖该主题该模式。优先级：`themeModes` → `themes` → `modes` → `values` → 继承链。
-
-### 3.3 表达式
-
-值只能是以下四种：
-
-1. 字面量：string、number、`none`、`transparent`。
-2. 整串引用 `"{key}"`：可引用本包或祖先包的 Primitive、语义键、组件键、字阶部件。不支持字符串内插与颜色运算。
-3. `{ "$switch": "<enum key>", "cases": { "<value>": <expr>, … } }`：`cases` 必须覆盖 enum 全部值。
-4. 复合对象：typography、border、asset，字段内可嵌套 1–3。
-
-Primitive 只能引用 Primitive；语义键不能引用组件键（`theme.tier-violation`）。
-
-### 3.4 解析与校验
-
-解析输入：`KeyCatalog`、`ConstantTable`、包集合、目标 `(packId, theme, mode)`。
-
-1. **继承链**：从目标包沿 `extends` 走到 `pbwork-base`。重复访问即报 `theme.extends-cycle`，链必须终止于 `scope: base` 的包。
-2. **有效表达式**：按第 3.2 节的优先级取；基础包必须为全部键给出取值（`theme.base-incomplete`）。
-3. **Primitive 作用域**：Primitive 引用按「表达式所在包」的 Primitive 表解析，在选中表达式时立即内联；语义键与组件键引用保持晚绑定，在目标包上下文解析。因此子包改 `color.primary` 会影响基础包中引用它的组件默认值，而基础包私有 Primitive 永远不被子包误改。
-4. **求值**：深度优先，维护访问栈；`$switch` 的选择键也算依赖。回到栈中节点即报 `theme.reference-cycle`，附完整环路径。
-5. **类型检查**：按 `valueType` 校验结果（`theme.value-type`）；enum 必须在值域内。
-6. **输出** `ResolvedThemeTable`：
-
-```ts
-interface ResolvedThemeTable {
-  identity: { packId: string; packDigest: string; theme: string; mode: string };
-  values: Record<string, ResolvedTokenValue>;    // 语义 + 组件 + 字阶部件
-  provenance: Record<string, { sourcePackId: string; chain: string[]; inherited: boolean }>;
-  constants: Record<string, ResolvedTokenValue>; // 原样带出，供 CSS 生成
-}
-```
-
-`chain` 是引用链（如 `["primary-tabs.active-color", "color.on-surface", "base:gray.900"]`），供 Gallery 与 MCP 展示；`inherited` 表示该键沿用祖先包取值。
-
-校验规则（`ThemeDiagnostic { code, severity, packId, key?, theme?, mode?, message, path? }`，复用 Authoring Diagnostic 的 block / warning 语义）：
-
-| code | 级别 | 规则 |
-| --- | --- | --- |
-| `theme.unknown-key` | block | 出现键目录与 Contract 之外的键 |
-| `theme.tier-violation` | block | 覆盖常量；Primitive 引用非 Primitive；语义键引用组件键 |
-| `theme.unresolved-reference` | block | 引用不存在 |
-| `theme.reference-cycle` | block | 引用环（含 `$switch` 选择键） |
-| `theme.extends-cycle` | block | 继承环或链未终止于基础包 |
-| `theme.value-type` | block | 值不符合 `valueType` 或 enum 值域 |
-| `theme.mode-variant-forbidden` | block | 非 `modeVariant` 键在 `modes.*` 或 `themeModes.*` 中被覆盖 |
-| `theme.mode-undeclared` | block | 出现 `pack.modes` 之外的模式；`defaultMode` 不在 `modes` |
-| `theme.theme-undeclared` | block | 出现 `pack.themes` 之外的主题；`defaultTheme` 不在 `themes` |
-| `theme.base-incomplete` | block | 基础包缺键 |
-| `theme.asset-missing` | block | 资产文件不存在或哈希缺失 |
-| `theme.contrast-insufficient` | block | 未豁免的对比度失败 |
-| `theme.contrast-waived` | warning | 已在 `contrastWaivers` 声明且理由非空的失败 |
-| `theme.contrast-waiver-unused` | warning | 声明的豁免没有命中任何配对 |
-| `theme.scope-violation` | block | 原型登记引用 `scope: playground` 包；原型包 id 与 prototypeId 不一致 |
-| `theme.inherited` | info | 键沿用祖先值（Gallery 用来显示「沿用基础值」） |
-
-对比度配对写在键目录 `contrastPairs`，组件级配对写在 Contract `componentTokens` 旁：
-
-```json
-{ "foreground": "color.on-warning", "background": "color.warning", "level": "text", "backdrop": "color.background" }
-```
-
-`level: text` 要求 4.5:1，`ui` 要求 3:1。任一侧带 alpha 时先合成到 `backdrop`（缺省 `color.background`）再计算。每个包对每个主题 × 模式组合全部检查。
-
-初始语义配对（text）：`on-background/background`、`on-surface` 对 `surface`、`surface-variant`、`surface-raised`、`surface-recessed`、`surface-selected`，`on-surface-muted/surface`、`on-primary/primary`、`primary/primary-soft`、`on-action/action`、`on-secondary/secondary`、`secondary/secondary-soft`、`on-error/error`、`error/error-soft`、`error/surface`、`on-success/success`、`success/success-soft`、`on-warning/warning`、`warning/warning-soft`、`on-info/info`、`on-inverse-surface/inverse-surface`。初始配对（ui）：`outline/surface`、`primary/surface`。初始组件配对：`tabbar.active/tabbar.surface`、`primary-tabs.active-color/primary-tabs.selection-surface`、`button.primary-text/button.primary-background`、`switch.thumb/switch.track`。`color.disabled` 与 `opacity.disabled` 相关组合按 WCAG 豁免，不入表。
-
-基础包首批豁免第 1 节的 6 个配对。豁免绑定到「具体的前景/背景解析值对」而不是声明它的包：子包经 `extends` 继承时，若该配对在同一主题同一模式下前景与背景的解析值都与声明豁免的祖先包相同，豁免随之继承，仍报 warning；只要改变了配对中任一侧的解析值，继承的豁免即失效，必须重新满足 AA 或自行声明豁免。
-
-### 3.5 Digest
-
-`packDigest = "sha1:" + sha1Hex(canonicalJson(digestInput))`，使用 Core 已有的浏览器安全 `contracts/hash-sha1.ts`：
-
-```text
-digestInput = {
-  packId, extendsChain, keyCatalogDigest,
-  themes: [ids], defaultTheme, modes, defaultMode,
-  resolved: { [theme]: { [mode]: values } },   // 全部主题 × 全部模式的解析结果
-  files: { [relativePath]: sha1 }              // 资产字节
-}
-```
-
-不计入：`label`、描述、表达式写法、Primitive 名。因此等价重构不改变 digest，任何可见取值变化必然改变 digest。`keyCatalogDigest` 是键目录（不含描述）的 sha1，键目录变化同样改变全部包的 digest。
-
-### 3.6 Core 模块与公开 API
-
-`packages/core/src/v2/theme/`（浏览器安全，不引入 Node API），从 `@proto-bridge/core/v2` 导出并新增子路径 `./v2/theme`：
-
-| 文件 | 内容 |
-| --- | --- |
-| `schema.ts` | `KeyCatalog`、`KeyDefinition`、`ConstantTable`、`ThemePackManifest`、`ThemePackLayer`、`ThemeIdentity`、`ResolvedThemeTable` 的 zod schema |
-| `expression.ts` | 表达式解析、引用抽取、依赖图 |
-| `resolve.ts` | `resolveThemePack(input): ThemeResolution`、`listPackChain` |
-| `digest.ts` | `computeThemePackDigest`、`computeKeyCatalogDigest`、`formatThemeIdentity` / `parseThemeIdentity`（`packId@sha1:…/theme/mode`） |
-| `contrast.ts` | sRGB 相对亮度、alpha 合成、`contrastRatio` |
-| `validate.ts` | `validateThemePacks(input): ThemeDiagnostic[]` |
-| `index.ts` | 公开出口 |
-
-```ts
-export function resolveThemePack(input: {
-  keyCatalog: KeyCatalog;
-  constants: ConstantTable;
-  packs: ReadonlyMap<string, ThemePackSource>;
-  packId: string;
-  theme: string;
-  mode: string;
-}): { table: ResolvedThemeTable; diagnostics: ThemeDiagnostic[] };
-
-export function resolveAllThemeTables(input): { digest: string; tables: ResolvedThemeTable[]; diagnostics: ThemeDiagnostic[] };
-```
-
-文件字节哈希由调用方提供（PBWork 用 Vite `?url` 加构建期哈希，Node 脚本直接读文件），Core 不做 I/O。
-
-首个实现（`schema.ts`、`expression.ts`、`resolve.ts`、`contrast.ts`、`digest.ts`、`validate.ts`、`index.ts`）已在 2026-10-16 落地，需按本节范围复核：删除字体声明与字体文件校验、把 Accent 换成主题声明。
+主题包 Schema、表达式、解析优先级、诊断、摘要和 Core API 已落地，统一见[主题包解析模型](../architecture/theme-packs.md)。字体声明和独立主题色轴已移除；身份为 `packId@digest/theme/mode`。Runtime、组件与 Capture 接入仍按下文实施。
 
 ## 4. 主题身份接入 Core
 

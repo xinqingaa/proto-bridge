@@ -16,5 +16,6 @@
 | [0010](./0010-flutter-mcp-remains-experimental.md) | Flutter MCP 保留为未注册的实验实现 |
 | [0011](./0011-producer-git-and-npm-tooling.md) | Producer 用 git 分发 PBWork；npm 计划只覆盖 Core/CLI/MCP |
 | [0012](./0012-pbwork-ds-is-foundation-not-ceiling.md) | PBWork DS 是原型的基础而不是上限 |
+| [0013](./0013-capture-reliability.md) | 逐 Case 恢复、Workspace 单飞与统一 Service 配置 |
 
 ADR 被后续决策替代时保留原文，并在状态中链接替代项；不要改写旧决策以伪装从未发生变化。

@@ -30,3 +30,7 @@ Schema：`schemas/theme.schema.json`。
 - [ ] 切深色再返回上级，主题不因旧 history query 复原成浅色（或反之）
 - [ ] 浏览器前进/后退不把主题当成业务页状态来回跳
 - [ ] 业务 Variant（empty/sheet-open…）与 theme 可独立组合
+
+## 主题包准备模块
+
+Core 已提供包内多套主题与模式的解析模块，PBWork 已有基础包、键目录、常量与按 valueType 生成 CSS 的函数。模型和 API 见[主题包解析模型](../../../../docs/architecture/theme-packs.md)。本页上方的现行 Runtime 链路仍使用 light/dark Theme，尚未切换到主题包；可见页面与 Capture 不因准备数据存在而自动换用新值。

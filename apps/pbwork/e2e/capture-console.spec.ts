@@ -1,4 +1,9 @@
 import { expect, test } from "@playwright/test";
+import { isolateLifecycleDocument } from "./support/lifecycle";
+
+test.beforeEach(async ({ page }) => {
+  await isolateLifecycleDocument(page);
+});
 
 test.use({ viewport: { width: 1440, height: 1050 } });
 

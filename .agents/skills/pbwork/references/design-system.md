@@ -22,6 +22,11 @@ leave business-specific shapes in the prototype.
 4. Gesture work: `components/shared-gestures.md`.
 5. `docs/reference/prototype-authoring.md` and `semantic-authoring.md`.
 
+For theme-pack parser, preparation data, or typed CSS generation, also read
+`docs/architecture/theme-packs.md`. The current Runtime still uses the legacy
+Token/Theme chain until the planned migration is wired; do not claim that
+prepared theme tables already appear in Capture/Handoff.
+
 ## Component atomicity
 
 Follow `apps/pbwork/docs/components/alignment-protocol.md`:

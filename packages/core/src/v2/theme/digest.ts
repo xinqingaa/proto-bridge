@@ -1,6 +1,6 @@
 import { sha1Hex } from '../contracts/hash-sha1.js';
 import {
-  THEME_ACCENT_ID_PATTERN,
+  THEME_ID_PATTERN,
   THEME_DIGEST_PATTERN,
   THEME_MODE_PATTERN,
   THEME_PACK_ID_PATTERN,
@@ -59,9 +59,9 @@ export interface ThemePackDigestInput {
   keyCatalogDigest: string;
   modes: readonly string[];
   defaultMode: string;
-  accents: readonly string[];
-  defaultAccent: string;
-  /** mode -> accent -> resolved values (all modes x all accents). */
+  themes: readonly string[];
+  defaultTheme: string;
+  /** theme -> mode -> resolved values (all themes x all modes). */
   resolved: Readonly<Record<string, Readonly<Record<string, Readonly<Record<string, ResolvedThemeValue>>>>>>;
   /** `packId/relativePath` -> sha1 for every file of every pack in the chain. */
   files: Readonly<Record<string, string>>;
@@ -79,8 +79,8 @@ export function computeThemePackDigest(input: ThemePackDigestInput): string {
     keyCatalogDigest: input.keyCatalogDigest,
     modes: [...input.modes].sort(compareStrings),
     defaultMode: input.defaultMode,
-    accents: [...input.accents].sort(compareStrings),
-    defaultAccent: input.defaultAccent,
+    themes: [...input.themes].sort(compareStrings),
+    defaultTheme: input.defaultTheme,
     resolved: input.resolved,
     files: input.files,
   };
@@ -88,15 +88,15 @@ export function computeThemePackDigest(input: ThemePackDigestInput): string {
 }
 
 const IDENTITY_PATTERN = new RegExp(
-  `^(${THEME_PACK_ID_PATTERN.source.slice(1, -1)})@(${THEME_DIGEST_PATTERN.source.slice(1, -1)})/(${THEME_MODE_PATTERN.source.slice(1, -1)})/(${THEME_ACCENT_ID_PATTERN.source.slice(1, -1)})$`,
+  `^(${THEME_PACK_ID_PATTERN.source.slice(1, -1)})@(${THEME_DIGEST_PATTERN.source.slice(1, -1)})/(${THEME_MODE_PATTERN.source.slice(1, -1)})/(${THEME_ID_PATTERN.source.slice(1, -1)})$`,
 );
 
 /**
- * `packId@sha1:<hex>/mode/accent`. Throws `Error` when a component would not
+ * `packId@sha1:<hex>/theme/mode`. Throws `Error` when a component would not
  * survive `parseThemeIdentity` (so every formatted string round-trips).
  */
 export function formatThemeIdentity(identity: ThemeIdentity): string {
-  const text = `${identity.packId}@${identity.packDigest}/${identity.mode}/${identity.accent}`;
+  const text = `${identity.packId}@${identity.packDigest}/${identity.theme}/${identity.mode}`;
   if (!IDENTITY_PATTERN.test(text)) {
     throw new Error(`Invalid theme identity components: ${text}`);
   }
@@ -110,7 +110,7 @@ export function parseThemeIdentity(text: string): ThemeIdentity | null {
   return {
     packId: match[1] as string,
     packDigest: match[2] as string,
-    mode: match[3] as string,
-    accent: match[4] as string,
+    theme: match[3] as string,
+    mode: match[4] as string,
   };
 }

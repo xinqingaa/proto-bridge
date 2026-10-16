@@ -10,8 +10,10 @@
 - 目录边界、依赖方向、状态管理、路由、主题/token、组件和验证命令；
 - Evidence `componentId/role -> target symbol/import/依据` 映射；
 - Evidence Case/variant/interaction -> target state/navigation 映射；
-- 影响实现的 unresolved 映射及其剩余风险。
+- 影响实现的 unresolved、pending 映射及其剩余风险。
 
 如果没有可靠的 Target adapter 或目标工程规范，根据实际扫描到的代码和文档做有限判断，并明确报告未知项。不要把另一种工程的架构、组件命名、状态库或平台默认值带入当前目标。
 
 `inspect_target_readiness` 中缺少 machine authority 表示该维度不能获得确定性的目标侧机器证明，不等于目标工程必须补充 Runtime Harness。实施仍以可靠的 mapping、目标工程规范、固定 Evidence 和实际测试为依据；最终报告必须披露未验证边界。
+
+Target 映射状态为 `resolved`、`candidate`、`stale`、`conflict`、`unresolved`、`unsupported` 或 `pending`。`pending` 表示 Target 已明确声明待实现；保留返回的理由，不猜测替代组件或 Token，不报告为精确命中。

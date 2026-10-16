@@ -1,4 +1,4 @@
-import type {
+import {
   ThemeConstantTable,
   ThemeKeyCatalog,
   ThemePackSource,
@@ -9,7 +9,6 @@ import basePackJson from "@/design-system/theme-packs/base/pack.json";
 import basePrimitivesJson from "@/design-system/theme-packs/base/primitives.json";
 import baseSemanticJson from "@/design-system/theme-packs/base/semantic.json";
 import baseComponentJson from "@/design-system/theme-packs/base/component.json";
-import baseAccentsJson from "@/design-system/theme-packs/base/accents.json";
 
 export type BaseThemeSources = {
   keyCatalog: ThemeKeyCatalog;
@@ -19,7 +18,7 @@ export type BaseThemeSources = {
 
 /**
  * Synchronous assembly of the key catalog, constant table and base pack from
- * static JSON. Used by tests and later slices (S5/S6); not wired into the
+ * static JSON. Used by theme preparation tests; not wired into the
  * runtime loaders yet.
  */
 export function loadBaseThemeSources(): BaseThemeSources {
@@ -28,11 +27,12 @@ export function loadBaseThemeSources(): BaseThemeSources {
     primitives: basePrimitivesJson,
     semantic: baseSemanticJson,
     component: baseComponentJson,
-    accents: baseAccentsJson,
-  } as unknown as ThemePackSource;
+  };
   return {
-    keyCatalog: keyCatalogJson as unknown as ThemeKeyCatalog,
-    constants: constantsJson as unknown as ThemeConstantTable,
-    packs: new Map<string, ThemePackSource>([[basePackJson.id, basePack]]),
+    keyCatalog: ThemeKeyCatalog.parse(keyCatalogJson),
+    constants: ThemeConstantTable.parse(constantsJson),
+    packs: new Map<string, ThemePackSource>([
+      [basePackJson.id, ThemePackSource.parse(basePack)],
+    ]),
   };
 }

@@ -14,3 +14,4 @@ export * from './workspace-lifecycle.js';
 export * from './delivery-target.js';
 export * from './service-launch.js';
 export { generateOperationalId } from './id-generator.js';
+export { issueContentRef } from './issue-content.js';

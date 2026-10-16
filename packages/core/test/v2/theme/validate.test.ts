@@ -35,10 +35,12 @@ describe('clean fixtures', () => {
   });
 
   it('emits theme.inherited only when includeInfo is set', () => {
-    const packs = packMap(makeBase(), brand());
+    const child = brand();
+    child.manifest.defaultTheme = 'teal';
+    const packs = packMap(makeBase(), child);
     expect(validate(packs).some((d) => d.code === 'theme.inherited')).toBe(false);
     const info = validate(packs, { includeInfo: true });
-    expect(find(info, 'theme.inherited', { packId: 'brand', key: 'color.surface', severity: 'info' })).toBeDefined();
+    expect(find(info, 'theme.inherited', { packId: 'brand', key: 'color.surface', severity: 'info', theme: 'teal' })).toBeDefined();
     expect(find(info, 'theme.inherited', { packId: 'brand', key: 'color.primary' })).toBeUndefined();
   });
 });
@@ -69,14 +71,13 @@ describe('schema', () => {
   it('validates the catalog', () => {
     const catalog = makeCatalog();
     catalog.keys.push({ ...catalog.keys[0]! });
-    catalog.keys.push({ id: 'broken.enum', tier: 'semantic', valueType: 'enum', bindable: false, modeVariant: false, accentable: false });
+    catalog.keys.push({ id: 'broken.enum', tier: 'semantic', valueType: 'enum', bindable: false, modeVariant: false });
     catalog.keys.push({
       id: 'broken.default',
       tier: 'semantic',
       valueType: 'color',
       bindable: true,
       modeVariant: false,
-      accentable: false,
       default: '#fff',
     });
     catalog.contrastPairs.push({ foreground: 'missing.key', background: 'color.surface', level: 'text' });
@@ -283,7 +284,7 @@ describe('value types', () => {
   });
 });
 
-describe('modes and Accents', () => {
+describe('modes and themes', () => {
   it('mode-variant-forbidden for non-modeVariant keys in layer modes', () => {
     const base = makeBase();
     setModeValue(base, 'semantic', 'dark', 'radius.control', 8);
@@ -293,32 +294,32 @@ describe('modes and Accents', () => {
     expect(find(diagnostics, 'theme.mode-variant-forbidden', { key: 'tabbar.height', packId: 'base' })).toBeDefined();
   });
 
-  it('mode-variant-forbidden for non-modeVariant keys in Accent modes', () => {
+  it('mode-variant-forbidden for non-modeVariant keys in theme modes', () => {
     const base = makeBase();
-    base.accents!.accents.teal!.modes!.dark!['density'] = 'compact';
+    base.semantic!.themeModes!.teal!.dark!['density'] = 'compact';
     const diagnostics = validate(packMap(base));
     expect(find(diagnostics, 'theme.mode-variant-forbidden', { key: 'density', packId: 'base' })).toBeDefined();
   });
 
-  it('accent-out-of-scope: key not in accentKeys', () => {
+  it('themes can change geometry and non-brand colors outside mode overrides', () => {
     const base = makeBase();
-    base.manifest.accentKeys = ['color.primary', 'color.on-primary'];
-    base.accents!.accents.teal!.values!['color.on-warning'] = '#222222';
-    const diagnostics = validate(packMap(base));
-    expect(find(diagnostics, 'theme.accent-out-of-scope', { key: 'color.on-warning', packId: 'base', severity: 'block' })).toBeDefined();
+    base.semantic!.themes!.teal!.values!['radius.control'] = 24;
+    base.semantic!.themes!.teal!.values!['color.background'] = '#eeeeee';
+    expect(blocks(validate(packMap(base)))).toEqual([]);
   });
 
-  it('accent-out-of-scope: key is not accentable', () => {
+  it('theme-undeclared: theme layer and combined layer must reference declared themes', () => {
     const base = makeBase();
-    base.accents!.accents.teal!.values!['color.surface'] = '#eeeeee';
+    base.semantic!.themes!.pink = { values: { 'color.primary': '#111111' } };
+    base.semantic!.themeModes!.pink = { light: { 'color.primary': '#111111' } };
     const diagnostics = validate(packMap(base));
-    expect(find(diagnostics, 'theme.accent-out-of-scope', { key: 'color.surface', packId: 'base' })).toBeDefined();
+    expect(find(diagnostics, 'theme.theme-undeclared', { packId: 'base' })).toBeDefined();
   });
 
-  it('accent-out-of-scope: accentKeys lists a non-accentable key', () => {
+  it('theme-undeclared: defaultTheme must be declared', () => {
     const base = makeBase();
-    base.manifest.accentKeys = ['color.primary', 'color.surface'];
-    expect(find(validate(packMap(base)), 'theme.accent-out-of-scope', { key: 'color.surface', packId: 'base' })).toBeDefined();
+    base.manifest.defaultTheme = 'pink';
+    expect(find(validate(packMap(base)), 'theme.theme-undeclared', { packId: 'base' })).toBeDefined();
   });
 
   it('mode-undeclared: layer modes outside pack modes', () => {
@@ -336,44 +337,7 @@ describe('modes and Accents', () => {
   });
 });
 
-describe('fonts and assets', () => {
-  const font = (overrides: Record<string, unknown> = {}) => ({
-    family: 'Brand Sans',
-    files: ['fonts/brand-sans-600.woff2'],
-    weights: [600],
-    style: 'normal' as const,
-    license: 'OFL-1.1',
-    licenseFile: 'fonts/OFL.txt',
-    ...overrides,
-  });
-  const files = { 'fonts/brand-sans-600.woff2': 'd'.repeat(40), 'fonts/OFL.txt': 'e'.repeat(40) };
-
-  it('accepts a complete font declaration', () => {
-    const child = makeChild({ files });
-    child.manifest.fonts = [font()];
-    expect(blocks(validate(packMap(makeBase(), child)))).toEqual([]);
-  });
-
-  it('font-license-missing for empty license or licenseFile', () => {
-    const child = makeChild({ files });
-    child.manifest.fonts = [font({ license: '' }), font({ licenseFile: '' })];
-    const licenses = validate(packMap(makeBase(), child)).filter((d) => d.code === 'theme.font-license-missing');
-    expect(licenses).toHaveLength(2);
-    expect(licenses.every((d) => d.packId === 'brand' && d.severity === 'block')).toBe(true);
-  });
-
-  it('font-file-missing for font files and the license file', () => {
-    const child = makeChild({ files: { 'fonts/OFL.txt': 'e'.repeat(40) } });
-    child.manifest.fonts = [font()];
-    const missingFont = find(validate(packMap(makeBase(), child)), 'theme.font-file-missing', { packId: 'brand', severity: 'block' });
-    expect(missingFont?.message).toContain('brand-sans-600.woff2');
-
-    const noLicenseFile = makeChild({ files: { 'fonts/brand-sans-600.woff2': 'd'.repeat(40) } });
-    noLicenseFile.manifest.fonts = [font()];
-    const missingLicense = find(validate(packMap(makeBase(), noLicenseFile)), 'theme.font-file-missing', { packId: 'brand' });
-    expect(missingLicense?.message).toContain('OFL.txt');
-  });
-
+describe('assets', () => {
   it('asset-missing when the file is not in the pack files', () => {
     const child = makeChild({
       semantic: { values: { 'asset.brand-mark': { file: 'assets/logo.svg', mediaType: 'image/svg+xml', alt: 'Logo' } } },
@@ -412,6 +376,14 @@ describe('contrast', () => {
     expect(waived?.message).toMatch(/\d+\.\d\d:1/);
     expect(waived?.message).toContain('brand amber on white');
     expect(find(diagnostics, 'theme.contrast-waiver-unused')).toBeUndefined();
+  });
+
+  it('a waiver restricted to one theme leaves other themes blocking', () => {
+    const base = makeWaivedBase();
+    base.manifest.contrastWaivers![0]!.themes = ['default'];
+    const diagnostics = validate(packMap(base));
+    expect(find(diagnostics, 'theme.contrast-waived', { theme: 'default' })).toBeDefined();
+    expect(find(diagnostics, 'theme.contrast-insufficient', { theme: 'teal' })).toBeDefined();
   });
 
   it('a waiver restricted to light leaves dark blocking', () => {
