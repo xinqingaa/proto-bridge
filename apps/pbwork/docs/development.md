@@ -14,7 +14,7 @@ PBWork 有三个 UI 分区：
 
 - Workbench 复用携带 `data-pb-*` 的 Prototype 组件；
 - Prototype 使用 `src/workbench/ui`；
-- 页面直接绕开组件库创建另一套通用控件；
+- 页面在形状与风格都匹配时绕开组件库创建另一套通用控件；
 - UI 层复制 Core Selection、Job、Evidence 或风险枚举。
 
 ## 2. Vue 与 TypeScript
@@ -41,8 +41,8 @@ PBWork 有三个 UI 分区：
 
 ## 4. Prototype UI
 
-- 形状匹配时必须使用 PBWork Design System 组件。
-- 页内局部 UI 仅用于业务特有结构，全部设计值走 `--pb-*`。
+- 以 PBWork Design System 为基础，按 `docs/implementation.md` 的 Promotion Mapping 选用组件：形状与风格都匹配时使用 DS 组件或其公开变体；与已批准风格冲突时使用 DS 扩展或原型自有组件，并记录 DS 缺口。
+- 原型自有组件与页内局部 UI 的全部设计值走 `--pb-*`。
 - 使用组件公开 props/slots/events，不复制其样式或手势实现。
 - 页面必须遵守统一壳、导航、滚动、Overlay 和 Variant 规范。
 - 产品 `onBeforeRouteLeave` 先认 `isForcedRuntimeNavigation()`；Workbench 树和 Capture 换页由 Runtime 强制导航打开目标页。

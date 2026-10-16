@@ -9,10 +9,52 @@ exploration, or revision of a prototype design baseline.
 1. Existing `apps/pbwork/src/prototypes/{prototypeId}/docs/design.md`, pages,
    and user-provided references.
 2. `apps/pbwork/docs/prototypes/design-workflow.md`.
-3. Before promotion, `apps/pbwork/docs/principles.md`, Token documentation,
+3. `.agents/skills/frontend-design/SKILL.md` whenever the task sets or changes
+   visual direction (see [Visual direction](#visual-direction)).
+4. Before promotion, `apps/pbwork/docs/principles.md`, Token documentation,
    `apps/pbwork/docs/components/composition.md`, and prototype manuals.
-4. For visual direction, read and apply
-   `.agents/skills/frontend-design/SKILL.md` in addition to this reference.
+
+Plan documents under `docs/roadmap` are input, not a substitute for the brief.
+Confirm their product draft with the user, and do not inherit a visual
+direction or component assignment that the user has not chosen.
+
+## Brief intake
+
+Run this step for a new prototype, a new visual direction, a whole-page
+redesign, or visual dissatisfaction without a stated direction. Skip it for
+local fixes, copy, Token, Evidence, Runtime, and established defects.
+
+The fields are fixed; the questions are not. Every brief must settle:
+
+1. Product positioning and core scenario.
+2. User group and usage context.
+3. Style: about three mood words, plus reference apps the user likes or
+   rejects and what about them.
+4. Platform and viewport: iOS, Android or both; phone or tablet.
+5. Scope: must-have features, optional features, and explicit non-goals.
+6. Brand starting point: a new brand, an existing prototype, or an existing
+   customer brand or Flutter App theme.
+7. Target Flutter constraints: an existing App, theme, or component library
+   the delivery must respect. Delivery is always to the Flutter Target; never
+   treat "only a look" as permission to skip the formal constraints.
+
+Protocol:
+
+- Extract what the prompt, attachments, existing docs, and memory already
+  answer. Ask only for missing or contradictory fields.
+- Ask with the structured question tool: at most five questions per round,
+  concrete options plus free input, at most three rounds.
+- When style cannot be settled in words (the user is undecided, answers "you
+  choose", or two directions stay open), ask whether to build two or three
+  style drafts first. Do not build them without asking, and do not silently
+  pick one.
+- A field the user explicitly delegates becomes a stated assumption, not a
+  silent default.
+- Before designing, show the brief as a short summary and get confirmation.
+  Record it in `design.md` (product definition and visual sections).
+
+Do not replace a missing brief with the current PBWork look. PBWork Tokens,
+Theme, and DS are the foundation for formal delivery, not a style answer.
 
 ## Close product logic first
 
@@ -27,8 +69,8 @@ For a new product or structural change, determine:
   persistence, and observable success states;
 - assumptions, rejected directions, unresolved decisions, and acceptance signals.
 
-Do not turn ambiguity into a long questionnaire. Infer low-risk details, state
-important assumptions, and pause only when alternatives materially change the
+After the brief is confirmed, infer low-risk product details and state
+important assumptions. Pause again only when alternatives materially change the
 product direction, core flow, or information architecture. Do not draw an
 unimplemented capability as an interactive control.
 
@@ -85,11 +127,48 @@ It may use exploratory composition and local visual values, but must record
 gaps against PBWork Token, DS, Evidence, accessibility, and cross-platform
 asset contracts. Do not move exploration code directly into formal pages.
 
+Declare each draft as one of two kinds on the draft page itself:
+
+- **Style draft** answers "what does it look like". One or two key screens,
+  static or lightly interactive, are enough.
+- **Journey draft** answers "does it work". Walk every must-have journey from
+  the brief in a real browser before reporting, and list what is missing.
+
+When the brand starting point is a new brand, do not inject the PBWork Theme
+or `--pb-*` variables into the draft. Give the draft its own palette, type,
+and component shapes derived from the chosen direction. Use PBWork DS in a
+draft only when the brief says to start from it or a comparison asks for it.
+
 ## Visual direction
 
-When applying `frontend-design`, ground the result in the real business object
-and page task. Define a concrete visual thesis, type roles, palette, layout,
-signature element, motion, and self-critique. Also specify:
+Applying `frontend-design` is mandatory when setting or changing direction for
+a new prototype, a style draft, a whole-page redesign, or visual
+dissatisfaction. It is not used for routine maintenance.
+
+PBWork overrides two defaults of that vendored Skill:
+
+- It tells the designer to pin the subject and audience itself. In PBWork,
+  take them from the confirmed brief; if a field is missing, return to
+  [Brief intake](#brief-intake).
+- It says to show ideas only when confident. In PBWork, present two or three
+  distinct directions (palette, type roles, signature element, layout sketch)
+  and let the user choose before building drafts or formal pages.
+
+`frontend-design` is written for web pages. For an App, also decide its
+identity across:
+
+- navigation chrome: tab bar, top bar or large title, back and close;
+- signature components the product is remembered by, and which other
+  components take a variant of the base shape;
+- type roles, including numerals when numbers carry the product;
+- iconography style, illustration and image role;
+- motion personality, plus sound and haptic intent;
+- copy voice for actions, empty states, and errors;
+- light and dark behavior.
+
+Ground the result in the real business object and page task. Define a concrete
+visual thesis, type roles, palette, layout, signature element, motion, and
+self-critique. Also specify:
 
 - the product-level grammar shared across pages;
 - the single focus and reading order of each page type;
@@ -102,22 +181,44 @@ direction without these decisions.
 
 ## Promotion Gate
 
-Classify each important visual element exactly once:
+PBWork DS is the foundation, not the ceiling. Classify each important visual
+element exactly once, walking this ladder from the top and stopping at the
+first step that keeps the approved direction intact:
 
-1. Existing PBWork DS capability.
-2. New or extended shared DS capability.
-3. Prototype-local UI using existing Tokens.
-4. External asset or animation with an explicit cross-platform contract.
-5. Rejected or degraded because of cost, accessibility, or Evidence risk.
+1. Existing DS component as-is.
+2. Existing DS component through its public variant, props, or slots.
+3. New shared DS variant or component, when the need is generic and reusable.
+4. Prototype-local component, when the shape is business-specific or the
+   approved style conflicts with every DS option.
+5. External asset or animation with an explicit cross-platform contract.
+6. Rejected or degraded because of cost, accessibility, or Evidence risk.
 
-Only stable, reusable capabilities belong in the shared DS. Business-specific
-graphics stay in the prototype but remain Token-based and Evidence-aware.
-Complex motion defines asset ID, states, trigger, timing, easing, loop, pause,
-and reduced-motion fallback. PB cannot infer animation from screenshots or CSS.
+When the approved style conflicts with a DS component, the style wins: do not
+degrade the direction to fit the DS. Choose step 3 or 4 and record the conflict
+as a DS gap. Two limits stay:
 
-Record the engineering classification in `docs/implementation.md`. Keep only
-the user-visible visual purpose, behavior, degradation, and acceptance result in
-`design.md`.
+- Interaction mechanics are never copied: gesture arbitration, scrolling,
+  overlay focus and dismissal, and navigation reuse the shared
+  implementations, restyled through public props or slots or a DS extension.
+- A prototype-local component obeys the same Token-only, Flex-only, and
+  Evidence rules as a DS component.
+
+Brand values are a separate gap. Formal pages can only use registered
+Foundation and Theme Tokens, and Themes are global (`light`, `dark`), so a
+brand color or typeface that no existing Token expresses has no formal home
+yet. Record it as a brand-layer gap and let the user decide before formal
+authoring: wait for prototype theme packs (platform upgrade plan W2), or map
+to existing Tokens with the degradation written in `design.md`. Never add a
+business-named shared Token or a page-local palette to work around it.
+
+Business-specific graphics stay in the prototype but remain Token-based and
+Evidence-aware. Complex motion defines asset ID, states, trigger, timing,
+easing, loop, pause, and reduced-motion fallback. PB cannot infer animation
+from screenshots or CSS.
+
+Record the engineering classification and DS gaps in `docs/implementation.md`.
+Keep only the user-visible visual purpose, behavior, degradation, and
+acceptance result in `design.md`.
 
 ## Design document
 

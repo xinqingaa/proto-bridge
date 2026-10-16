@@ -12,26 +12,27 @@
 
 每一层只消费下层公开 props、slots、events 和 `tokenBindings`。禁止复制下层实现、依赖私有 class 或读取内部状态。
 
-## 2. 复用优先
+## 2. DS 是基础，不是上限
 
-页面缺少能力时依次判断：
+DS 维护颜色、字体、间距等 Foundation 和基础组件；每个原型在它之上形成自己的视觉身份。组件按[原型设计工作流的 Promotion Mapping](./prototypes/design-workflow.md#promotion-mapping)自上而下选用：
 
-1. 现有 Token 能否表达；
-2. 现有职责分类下的组件能否组合；
-3. 是否真的是业务局部 UI；
-4. 是否经过至少两个独立使用场景，值得提升为共享能力。
+1. 形状与风格都匹配时原样使用 DS 组件；
+2. 通过公开 variant、props 或 slots 满足方向；
+3. 需求通用且可复用时扩展 DS；
+4. 形状属于本业务，或已批准风格与所有 DS 选项冲突时，实现原型自有组件。
 
-业务专用颜色、间距、组件名和页面状态不得进入共享 Token/Contract。
+风格与 DS 冲突时以已批准风格为准，并把冲突记为 DS 缺口。提升为共享能力前须经过至少两个独立使用场景。业务专用颜色、间距、组件名和页面状态不得进入共享 Token/Contract。
 
 ## 3. 组件红线
 
-- 对口组件存在时必须使用。
+- 形状与风格都匹配的 DS 组件存在时必须使用；不用时在 `docs/implementation.md` 记录原因。
 - `Tabbar` 只导航；根视图区使用 `TabViewport`。多个根目的地各注册 Screen，`view` 指向同一壳文件。
 - 一级 Tab 表达当前页面的主要内容分区，二级 Tab 表达页面内的次级内容分区；两者对应具名内容面板并可按场景启用横滑与过渡。
 - 三级 Tab 表达当前区域内的局部筛选、模式或粒度切换，不拥有 viewport；一级/二级嵌套时同一触摸区域只允许一个横滑 owner。
 - `DataList` 管列表表面，`ScrollableDataList` 管纵滚、刷新和分页。
-- `FilterBar`、`SearchBar`、Confirm、Sheet、Toast、Loading、EmptyState 等不得页内复制。
-- 页内局部 UI 仍必须使用 Token。
+- `FilterBar`、`SearchBar`、Confirm、Sheet、Toast、Loading、EmptyState 等的交互机制（焦点、关闭、手势、滚动）不得页内复制；外观差异通过公开 props、slots 或 DS 扩展实现。
+- 原型自有组件与页内局部 UI 仍必须使用 Token、Flex 与显式 Evidence。
+- 不通过私有 class 覆盖 DS 组件内部样式。
 - 需要 Agent 独立实现或验收的局部节点必须显式进入 Evidence；只写 CSS Token 不构成 Token binding。
 - 禁止组件实例换绑 Token。
 

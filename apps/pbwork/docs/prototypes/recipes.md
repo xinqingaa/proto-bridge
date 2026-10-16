@@ -86,7 +86,7 @@ Tabbar（同一当前位置）
 
 **必须**：
 
-- 列表主体：`SearchBar` / `FilterBar` 或带 `data-no-swipe` 的自定义筛选条（形状匹配时优先 DS）+ `ScrollableDataList`（按需）+ `DataList`（按需）。
+- 列表主体：`SearchBar` / `FilterBar` 或带 `data-no-swipe` 的自定义筛选条（形状与风格都匹配时优先 DS）+ `ScrollableDataList`（按需）+ `DataList`（按需）。
 - 叠加层用 DS 的 `BottomSheet` / `Dialog` / `Toast`。
 - **叠加层挂载**：Dialog / Toast 宜作为页面内容的**兄弟节点**（与主滚动列并列），避免深埋在 `ScrollableDataList` 内容变换层内导致层级/capture 异常。Sheet 可按交互放在页内。
 - 打开态注册为 Screen Variant，可经 URL 复现；另备 `empty` / `error` / `loading`（按页需要）。

@@ -11,7 +11,7 @@
 | 通用视觉方向、构图、字体和审美探索 | `.agents/skills/frontend-design/SKILL.md` | 视觉任务的真实业务 brief |
 | Target 还原验收：五维对照复查与完成报告 | `.agents/skills/acceptance/SKILL.md` | 实施完成，准备 `summarize_reconstruction_review` 前 |
 
-`frontend-design` 是仓库内 vendored 的通用视觉设计方法。PBWork 视觉任务由 `pbwork` 编排它；普通 Token、组件、Contract、Workbench 和缺陷维护不默认调用。PBWork 之外的通用产品设计不由本仓库 Skill 负责，应在目标项目中定义自己的产品工作流。
+`frontend-design` 是仓库内 vendored 的通用视觉设计方法，由 `pbwork` 编排。新原型、新视觉方向、风格草稿、整页重构和用户对视觉不满意时必须读取并应用它，PBWork 对它的覆盖规则见 `pbwork` 的 `prototype-design` reference；普通 Token、组件、Contract、Workbench 和缺陷维护不默认调用。新原型或新视觉方向先做需求采访：用户提示信息不足时必须提问，不能用 PBWork 现有外观填补。PBWork 之外的通用产品设计不由本仓库 Skill 负责，应在目标项目中定义自己的产品工作流。
 
 ## 架构红线
 
@@ -22,7 +22,7 @@
 - Target query/validation 与 Capture 隔离，Target 事实不进入 Evidence。
 - MCP 只读取固定 Workspace/Snapshot/revision，不猜 Store 路径，不回退 active/latest。
 - Coding Agent 自行决定目标文件、组件、路由、状态管理和 Token。
-- PBWork 正式原型只使用 PBWork DS；形状匹配时禁止重造组件。
+- PBWork DS 是正式原型的基础而不是上限：形状与风格都匹配时使用 DS 组件或其公开变体；与已批准风格冲突时以风格为准，改用 DS 扩展或原型自有组件，并在 `docs/implementation.md` 记录 DS 缺口。手势、滚动、Overlay 和导航机制不得复制。
 - PBWork DS 与正式业务原型只使用 Flex/常规文档流，禁止 CSS Grid、`grid-*` 和 `place-*`；Workbench 与独立探索不在此样式门禁内。
 - 正式 DS/原型的可见设计量不得出现固定 CSS 值，具体值只存在于 Foundation/Theme。
 - DS 业务实例使用稳定 `inspectId`；业务局部证据节点显式提供 `data-pb-id`、`data-pb-role`、按需 `data-pb-key` 和所需 Token Evidence。

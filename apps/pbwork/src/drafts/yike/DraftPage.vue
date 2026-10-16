@@ -95,7 +95,7 @@ function reset() {
   <main class="yk-lab" :style="labStyle">
     <header class="yk-lab-header">
       <div class="yk-lab-title">
-        <span>一刻 / 视觉草稿</span>
+        <span>一刻 / 风格草稿</span>
         <strong>同一个专注与打卡工具，两条实现路径</strong>
       </div>
 

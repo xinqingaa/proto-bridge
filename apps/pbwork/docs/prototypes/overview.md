@@ -42,7 +42,7 @@ prototypes/{prototypeId}/
 
 ## 组装原则
 
-1. 优先 DS 组件与 [composition.md](../components/composition.md) 配方。
+1. 以 DS 组件与 [composition.md](../components/composition.md) 配方为基础，按[原型设计工作流](./design-workflow.md#promotion-mapping)的 Promotion Mapping 选用；与已批准风格冲突时使用 DS 扩展或原型自有组件。
 2. 满足根 [原型 Authoring Contract](../../../../docs/reference/prototype-authoring.md)。
 3. Variant 可切换且可静态见到关键列表数据。
 4. 提供稳定 `data-pb-id` / `data-pb-key` / `data-pb-role` / `inspectId`。

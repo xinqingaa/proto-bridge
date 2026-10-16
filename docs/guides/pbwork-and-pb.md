@@ -17,9 +17,9 @@ Workbench 路由位于 `/workbench/*`。Runtime 路由位于 `/prototype/:protot
 
 制作原型时：
 
-1. 按[原型设计工作流](../pbwork/prototypes/design-workflow.md)完成产品设计、视觉探索、确认和 Promotion Gate；
+1. 按[原型设计工作流](../pbwork/prototypes/design-workflow.md)完成需求采访、产品设计、视觉方向、确认和 Promotion Gate；
 2. 从 PBWork Design Foundation 选择语义 Token；
-3. 从基础和复杂组件中选择对口组件；
+3. 按 Promotion Mapping 选用基础和复杂组件、其公开变体、DS 扩展或原型自有组件；
 4. 按 PBWork 组合、导航和手势规范组装 Screen；
 5. 在 Registry 声明 Screen、Variant、Action、Scenario 和 required boundary；
 6. 使用 Inspector 核对稳定 `data-pb-*` 身份；

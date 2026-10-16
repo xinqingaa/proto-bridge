@@ -15,7 +15,7 @@ PBWork 原型既要表达产品设计，也要作为 ProtoBridge Runtime 提供�
 5. [组件总论](./components/overview.md)和 [组件组合](./components/composition.md)
 6. 按任务阅读具体组件文档
 7. 涉及滑动、刷新或横滚时阅读 [手势仲裁](./components/shared-gestures.md)
-8. 新原型、结构性改动或视觉探索先阅读[原型设计工作流](./prototypes/design-workflow.md)，通过 `.agents/skills/pbwork/SKILL.md` 收敛并批准设计，再阅读：
+8. 新原型、结构性改动或视觉探索先阅读[原型设计工作流](./prototypes/design-workflow.md)，通过 `.agents/skills/pbwork/SKILL.md` 完成需求采访、收敛并批准设计，再阅读：
    - [原型系统](./prototypes/overview.md)
    - [壳与导航](./prototypes/shell-and-nav.md)
    - [Screen 与 Variant](./prototypes/screens-and-variants.md)
@@ -34,7 +34,7 @@ Token / Theme
   → Prototype shell + Runtime Contract
 ```
 
-任何层只能消费下层公开 Contract，不复制实现、不读取私有状态、不绕开 Design System 创建平行基础。
+任何层只能消费下层公开 Contract，不复制实现、不读取私有状态、不绕开 Design System 创建平行基础。DS 是原型的基础而不是上限：原型可以在其上形成自己的视觉身份，组件选用规则见[原则与边界](./principles.md#2-ds-是基础不是上限)。
 
 ## 代码地图
 
@@ -77,4 +77,4 @@ Contract 与实现冲突时不能选择一边静默继续；应修正不一致�
 ## Agent 入口
 
 - PBWork 原型设计、正式 Authoring、Token/Theme/DS、Workbench 与 Capture UI：`.agents/skills/pbwork/SKILL.md`
-- 需要视觉方向、构图、字体或审美探索时，由 `pbwork` 调用 `.agents/skills/frontend-design/SKILL.md`；新页面与整页调整必须在定方向和正式 Authoring 后各应用一次，正式实现的体验复核级别按 [交付检查单](./checklist.md) 记录
+- 新原型、新视觉方向、风格草稿、整页调整和用户对视觉不满意时，由 `pbwork` 先做需求采访，再读取并应用 `.agents/skills/frontend-design/SKILL.md`；新页面与整页调整在正式 Authoring 后再应用一次，正式实现的体验复核级别按 [交付检查单](./checklist.md) 记录

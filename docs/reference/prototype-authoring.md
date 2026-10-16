@@ -6,7 +6,7 @@
 
 产品、设计和开发人员使用 Cursor、Codex 等 Coding Agent 修改同一套代码、Contract、Registry 和文档；PBWork 不维护按人员角色区分的第二套作者协议。节点 identity、role、component、Token Evidence 和 Block/Warning/Info 等级以[语义标记与证据门禁](./semantic-authoring.md)为唯一权威。
 
-## 1. 只使用 PBWork 设计基础
+## 1. 以 PBWork 设计基础为底座
 
 原型依赖顺序固定为：
 
@@ -21,8 +21,9 @@ PBWork Token / Theme
 
 强制规则：
 
-- 有对口 PBWork 组件时必须使用，禁止在页面内重做 Button、Tabs、List、Dialog、Sheet、Snackbar、Navigation 或滚动/手势组件。
-- 允许业务局部 UI，但颜色、字体、间距、尺寸、比例尺寸、圆角、边框、阴影、透明度、层级、动效、滤镜和变换距离必须使用 `--pb-*` Token；具有设计含义的 `0` 也必须走 Token。
+- 形状与风格都匹配的 PBWork 组件存在时必须使用，含其公开变体；与已批准风格冲突时按[原型设计工作流](../pbwork/prototypes/design-workflow.md#promotion-mapping)使用 DS 扩展或原型自有组件，并在 `docs/implementation.md` 记录 DS 缺口。
+- 禁止在页面内复制 Dialog、Sheet、Snackbar、Navigation 或滚动/手势组件的交互机制，也不得通过私有 class 覆盖 DS 组件内部样式。
+- 允许原型自有组件与业务局部 UI，但颜色、字体、间距、尺寸、比例尺寸、圆角、边框、阴影、透明度、层级、动效、滤镜和变换距离必须使用 `--pb-*` Token；具有设计含义的 `0` 也必须走 Token。
 - 原型只使用 Flex 或常规文档流；禁止 `grid` / `inline-grid`、所有 `grid-*` 和 `place-*`。约束同时覆盖 style、template、script/TS 生成样式与 vendor 视觉 props，不能把固定数值转移到组件参数中。
 - `calc()` 只能组合 Token 或运行时派生变量；DOM 测量/交互状态的派生几何值可经 custom property 传入，但不得形成固定默认设计值或公开样式逃生口。
 - 业务局部 UI 中需要 Agent 独立实现或验收的节点必须显式声明 `data-pb-id`、`data-pb-role` 和所需 `data-pb-token-*`；只使用 CSS Token 不构成 Token Evidence。
@@ -221,7 +222,7 @@ PBWork Delivery Gate 始终强制。新页面或整页调整在正式实现稳�
 
 ### PBWork Delivery Gate
 
-- Token-only、DS-first、Flex-only 和文档规定的组合方式通过；
+- Token-only、Flex-only、已记录的 Promotion Mapping 和文档规定的组合方式通过，原型自有组件满足与 DS 组件相同的规则；
 - Required Fragment、业务 Evidence 节点、Action、Scenario、Checkpoint、Variant fixture、readiness 和 reset 可确定复现；
 - Typecheck、范围测试、Runtime 验证和文档验证通过。
 

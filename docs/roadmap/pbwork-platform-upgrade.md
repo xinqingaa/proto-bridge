@@ -270,7 +270,7 @@ SwipeActions、LargeTitleHeader、Timeline、DatePicker、ColorSwatchPicker、Ba
 - [语义标记与证据门禁](../reference/semantic-authoring.md)、[原型 Authoring Contract](../reference/prototype-authoring.md)、PBWork Skill 的 references、`apps/pbwork/docs/checklist.md`、Token 与 Theme 手册、组件总论。
 - [Evidence 模型](../architecture/evidence-model.md)与[采集链路](../architecture/capture-pipeline.md)：主题包身份、时钟声明、逐 Case staging 与崩溃恢复。
 - [配置参考](../reference/configuration.md)与[本地操作脚本](../guides/operator-scripts.md)：`pb:up` 配置来源、`pb:new-prototype`。
-- 新增 ADR 0012（三层 Token 与原型主题包）与 ADR 0013（以主题一致性探针替代多主题采集）。
+- 新增 ADR 0013（三层 Token 与原型主题包）与 ADR 0014（以主题一致性探针替代多主题采集）。ADR 0012 已确立“DS 是基础而不是上限”与组件选用阶梯，W2 交付后把其中的品牌层缺口改为由原型主题包承接。
 
 ---
 

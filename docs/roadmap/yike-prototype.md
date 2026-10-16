@@ -94,39 +94,37 @@ flowchart TD
 
 每个页面在 `design.md` 中再写成完整的页面契约：首屏焦点、阅读顺序、热区与结果、关键状态、跨页分工和验收信号。
 
-## 视觉方向：“安静的仪表”
+## 视觉方向（待定）
 
-- **视觉命题**：像一块安静的仪表盘，数字本身就是主角，不靠卡片堆叠来制造层次。
-- **签名元素**：专注页的大号等宽数字，外面一圈细环表示进度；打卡与回顾沿用同一圈环和同一套数字字阶。
-- **主题包**：
-  - 模式：浅色用暖纸色背景，深色接近纯黑，另有跟随系统；
-  - 主题色：番茄红（默认）、墨绿、靛蓝、琥珀，只替换 accent 一组键；
-  - 字体：文本字族与数字字族各一个，数字字族必须支持等宽数字；具体字体在视觉方向阶段比较后确定，并附本地字体文件与许可证。
-- **层级**：页面背景安静，大部分内容直接排在页面上；设置使用分组列表；全页只有一种强调色。
-- **动效**：只服务计时推进、完成确认、浮层进出和模式切换；减少动效时信息与结果完整。
-- **视口与可访问性**：首要视口为 `390 × 844`，窄屏不横向溢出；可交互元素有可读名称、完整触控区域和可见焦点；浅色、深色和四个主题色下层级与对比度一致。
+视觉方向不在本计划中预设，按[原型设计工作流](../pbwork/prototypes/design-workflow.md)先做需求采访，再应用仓库内 `frontend-design` 向用户呈现两到三个方向，由用户选定。
 
-视觉方向先用仓库内 `frontend-design` Skill 定稿，必要时在 `apps/pbwork/src/drafts/yike/` 做探索页比较，探索代码不进入正式原型。
+已有输入：
 
-## 组件归属
+- `apps/pbwork/src/drafts/yike/` 并排两版风格草稿：A 不依赖 PBWork DS 与主题（番茄扇面表盘、打孔周历、独立色板与数字字体），B 只用现有 DS 与主题。用户倾向 A，即全新品牌起点。
+- 模式（浅色、深色、跟随系统）、主题色轴和数字字体是本草案提出的候选，在采访中确认后才进入 `design.md`。
 
-| 元素 | 归属 |
+不随方向变化的约束：首要视口为 `390 × 844`，窄屏不横向溢出；可交互元素有可读名称、完整触控区域和可见焦点；减少动效时信息与结果完整；所有模式与主题色下层级与对比度一致。
+
+## 组件选用
+
+组件在视觉方向选定后按 [Promotion Mapping](../pbwork/prototypes/design-workflow.md#promotion-mapping) 自上而下选用，并写入 `apps/pbwork/src/prototypes/yike/docs/implementation.md`。与所选风格冲突时以风格为准，改用 DS 扩展或原型自有组件并记录 DS 缺口。
+
+下表只列出平台升级 W5 中可能承接这些元素的 DS 候选，不预设最终归属：
+
+| 元素 | 可能的 DS 候选 |
 | --- | --- |
-| 模式切换（番茄、正计时、倒计时）、回顾的周/月切换、设置的模式选择 | DS：SegmentedControl |
-| 专注进度环、习惯完成环 | DS：RingProgress |
-| 计时大数字、回顾中的统计数字 | DS：Metric、NumberTicker，配合 `font.numeric` |
-| 番茄时长、倒计时时长、提醒时间 | DS：DurationPicker、TimePicker |
-| 设置页、习惯详情的信息行 | DS：GroupedList、ListCell |
-| 习惯年度热力图、回顾月历 | DS：Heatmap、MonthCalendar |
-| 回顾的每日分钟柱 | DS：MiniBars |
-| 打卡撤销 | DS：带撤销动作的 Snackbar |
-| 放弃确认、删除确认 | DS：ActionSheet 或现有 Confirm |
-| 启动页 | DS：LaunchScreen 模式 + BrandMark 插槽 |
-| 专注表盘（环、数字、状态文案、主操作的组合） | 原型内部组合 |
-| 打卡行（图标、名称、本周进度、一次点击完成） | 原型内部 |
-| 启动动效 | 原型内部，声明资产 ID、时长、降级方式 |
+| 模式切换、回顾的周/月切换、设置的模式选择 | SegmentedControl |
+| 专注进度、习惯完成进度 | RingProgress |
+| 计时大数字、回顾中的统计数字 | Metric、NumberTicker，配合 `font.numeric` |
+| 番茄时长、倒计时时长、提醒时间 | DurationPicker、TimePicker |
+| 设置页、习惯详情的信息行 | GroupedList、ListCell |
+| 习惯年度热力图、回顾月历 | Heatmap、MonthCalendar |
+| 回顾的每日分钟柱 | MiniBars |
+| 打卡撤销 | 带撤销动作的 Snackbar |
+| 放弃确认、删除确认 | ActionSheet 或现有 Confirm |
+| 启动页 | LaunchScreen 模式 + BrandMark 插槽 |
 
-实施时如发现某个元素需要的能力 DS 还没有，先按 DS 规则补齐，不在原型内重造与 DS 形状相同的组件。完整的 Promotion Mapping 写入 `apps/pbwork/src/prototypes/yike/docs/implementation.md`。
+专注表盘、打卡行和启动动效预计是原型自有组件或外部资产，最终以 Promotion Mapping 为准。
 
 ## Evidence 方案
 
@@ -140,7 +138,8 @@ flowchart TD
 
 | 步骤 | 产出 | 门禁 |
 | --- | --- | --- |
-| 1. 视觉方向 | 视觉命题、字体与色板候选、必要的探索页 | 用户选定方向 |
+| 0. 需求采访 | 确认 brief 七个字段，修订本计划的产品草案 | 用户确认 brief 摘要 |
+| 1. 视觉方向 | 应用 `frontend-design` 呈现两到三个方向，必要的风格草稿 | 用户选定方向 |
 | 2. 产品基线 | `design.md`（产品定义、信息架构、核心旅程、共享视觉语法、页面设计状态） | 用户批准，`status: approved` |
 | 3. 页面契约 | 逐页或按旅程批次写入 `design.md` | 页面状态为 approved 才进入正式制作 |
 | 4. 主题包 | `prototypes/yike/theme/`，含两种模式、四个主题色、字体文件 | 校验器通过；在 Playground 中用一刻主题包渲染全部 DS 组件，用户评审通过 |
@@ -155,7 +154,8 @@ flowchart TD
 | 步骤 | 状态 | 证据 / 剩余缺口 |
 | --- | --- | --- |
 | 前置条件检查 | 未满足 | 平台升级未开始：缺原型主题包与主题色轴、`font.numeric`、可声明时钟，以及 RingProgress、SegmentedControl、Heatmap、MonthCalendar、MiniBars、带撤销 Snackbar 等 DS 组件；Core 采集时钟仍写死为 2026-07-28 |
-| 1. 视觉方向 | 进行中 | `apps/pbwork/src/drafts/yike/` 并排两版：A 不依赖 PBWork DS 与主题（番茄扇面表盘），B 只用现有 DS 与主题；两版差距清单列在草稿页内。待用户选定方向 |
+| 0. 需求采访 | 未开始 | 两版草稿制作前未做采访；用户已表明倾向 A（全新品牌），其余字段待确认 |
+| 1. 视觉方向 | 进行中 | `apps/pbwork/src/drafts/yike/` 并排两版风格草稿：A 不依赖 PBWork DS 与主题（番茄扇面表盘），B 只用现有 DS 与主题；两版差距清单列在草稿页内。用户倾向 A，采访后在 A 的方向内呈现候选再定稿 |
 | 2. 产品基线 | 未开始 | — |
 | 3. 页面契约 | 未开始 | — |
 | 4. 主题包 | 未开始 | — |
@@ -170,5 +170,5 @@ flowchart TD
 - 番茄完成一轮后进入休息；正计时可以计圈；倒计时到点有明确的可见反馈。
 - 打卡一次点击完成，可以撤销；打卡与专注完成后，回顾立即变化。
 - 浅色、深色、跟随系统与四个主题色下层级、对比度一致；主题一致性探针通过。
-- 原型中没有硬编码的设计值，没有在原型内重造与 DS 形状相同的组件。
+- 原型中没有硬编码的设计值；组件选用符合 Promotion Mapping，原型自有组件与 DS 扩展都记录了 DS 缺口。
 - 正式定稿完成，Handoff 可通过 MCP 读取，包括主题包与时钟声明。
