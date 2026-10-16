@@ -6,7 +6,6 @@ import {
   resolveThemeTokens,
   tokensToCssVars,
 } from "@/design-system/resolveThemeTokens";
-import DsDirection from "./ds/DsDirection.vue";
 import FreeDirection from "./free/FreeDirection.vue";
 import {
   FREE_ACCENTS,
@@ -15,11 +14,26 @@ import {
 } from "./free/accents";
 import { DIRECTION_NOTES } from "./data";
 import { ROOT_TABS, type RootTab, type YikeModel } from "./model";
+import YikeScreen from "./styles/YikeScreen.vue";
+import { STYLE_DIRECTIONS } from "./styles/directions";
+import { GALLERY, GALLERY_SCREEN_COUNT } from "./styles/gallery";
+import type { StyleDirectionId } from "./styles/sample";
 import "./yike-draft.css";
+import "./styles/styles.css";
+
+type LabView = "suite" | "a";
 
 const route = useRoute();
 const router = useRouter();
 
+const view = computed<LabView>(() => (route.query.view === "a" ? "a" : "suite"));
+const face = computed<StyleDirectionId>(() => {
+  const value = String(route.query.face ?? "mechanical");
+  return STYLE_DIRECTIONS.some((item) => item.id === value)
+    ? (value as StyleDirectionId)
+    : "mechanical";
+});
+const direction = computed(() => STYLE_DIRECTIONS.find((item) => item.id === face.value)!);
 const tab = computed<RootTab>(() => {
   const value = String(route.query.tab ?? "focus");
   return ROOT_TABS.some((item) => item.value === value)
@@ -54,10 +68,8 @@ const labStyle = computed(() =>
 );
 
 const freeNote = DIRECTION_NOTES.find((note) => note.id === "free")!;
-const dsNote = DIRECTION_NOTES.find((note) => note.id === "ds")!;
 
 const freeRef = ref<{ model: YikeModel } | null>(null);
-const dsRef = ref<{ model: YikeModel } | null>(null);
 
 function updateQuery(next: Record<string, string>) {
   void router.replace({ query: { ...route.query, ...next } });
@@ -78,15 +90,13 @@ function setFreeAppearance(next: FreeAppearance) {
 
 function fastForward() {
   freeRef.value?.model.fastForward();
-  dsRef.value?.model.fastForward();
 }
 
 function reset() {
   freeRef.value?.model.reset();
-  dsRef.value?.model.reset();
   freeAppearance.value = "light";
   void router.replace({
-    query: { tab: "focus", theme: "light", accent: "tomato" },
+    query: { view: view.value, face: "mechanical", tab: "focus", theme: "light", accent: "tomato" },
   });
 }
 </script>
@@ -96,11 +106,25 @@ function reset() {
     <header class="yk-lab-header">
       <div class="yk-lab-title">
         <span>一刻 / 风格草稿</span>
-        <strong>同一个专注与打卡工具，两条实现路径</strong>
+        <strong>
+          {{ view === "suite" ? `全部页面 · ${direction.label}` : "可交互版 A" }}
+        </strong>
       </div>
 
       <div class="yk-lab-actions">
-        <nav class="yk-lab-tabs" aria-label="页面">
+        <nav v-if="view === 'suite'" class="yk-lab-tabs" aria-label="表盘主题">
+          <button
+            v-for="item in STYLE_DIRECTIONS"
+            :key="item.id"
+            type="button"
+            :class="{ 'is-active': face === item.id }"
+            :aria-pressed="face === item.id"
+            @click="updateQuery({ face: item.id })"
+          >
+            {{ item.faceName }}
+          </button>
+        </nav>
+        <nav v-else class="yk-lab-tabs" aria-label="页面">
           <button
             v-for="item in ROOT_TABS"
             :key="item.value"
@@ -112,10 +136,29 @@ function reset() {
             {{ item.label }}
           </button>
         </nav>
+        <nav class="yk-lab-tabs" aria-label="视图">
+          <button
+            type="button"
+            :class="{ 'is-active': view === 'suite' }"
+            :aria-pressed="view === 'suite'"
+            @click="updateQuery({ view: 'suite' })"
+          >
+            全部页面
+          </button>
+          <button
+            type="button"
+            :class="{ 'is-active': view === 'a' }"
+            :aria-pressed="view === 'a'"
+            @click="updateQuery({ view: 'a' })"
+          >
+            可交互 A
+          </button>
+        </nav>
         <button
+          v-if="view === 'a'"
           class="yk-lab-icon"
           type="button"
-          title="两版都快进到本轮最后 3 秒"
+          title="快进到本轮最后 3 秒"
           aria-label="快进到本轮结束"
           @click="fastForward"
         >
@@ -141,7 +184,45 @@ function reset() {
       </div>
     </header>
 
-    <section class="yk-lab-stage">
+    <div v-if="view === 'suite'" class="yk-suite">
+      <header class="yk-lab-column-head">
+        <p>{{ direction.thesis }}</p>
+        <p class="yk-compare-signature">{{ direction.signature }}</p>
+        <ul class="yk-compare-palette" aria-label="色板">
+          <li v-for="swatch in direction.palette" :key="swatch.hex">
+            <i :style="{ background: swatch.hex }" />
+            <span>{{ swatch.name }}</span>
+          </li>
+        </ul>
+        <p class="yk-compare-type">
+          {{ direction.type }} · 共 {{ GALLERY_SCREEN_COUNT }} 屏 · 在「设置」里切换表盘
+        </p>
+        <details class="yk-lab-gaps">
+          <summary>与正式原型的差距（{{ direction.gaps.length }}）</summary>
+          <ul>
+            <li v-for="gap in direction.gaps" :key="gap">{{ gap }}</li>
+          </ul>
+        </details>
+      </header>
+
+      <section v-for="section in GALLERY" :key="section.id" class="yk-suite-section">
+        <h2>
+          {{ section.title }}
+          <span>{{ section.screens.length }} 屏</span>
+        </h2>
+        <div class="yk-suite-row">
+          <YikeScreen
+            v-for="spec in section.screens"
+            :key="`${face}-${spec.page}-${spec.state}`"
+            :spec="spec"
+            :theme="face"
+            :dark="dark"
+          />
+        </div>
+      </section>
+    </div>
+
+    <section v-else class="yk-lab-stage">
       <article class="yk-lab-column">
         <header class="yk-lab-column-head">
           <strong>{{ freeNote.label }}</strong>
@@ -163,28 +244,6 @@ function reset() {
           <summary>与正式原型的差距（{{ freeNote.gaps.length }}）</summary>
           <ul>
             <li v-for="gap in freeNote.gaps" :key="gap">{{ gap }}</li>
-          </ul>
-        </details>
-      </article>
-
-      <article class="yk-lab-column">
-        <header class="yk-lab-column-head">
-          <strong>{{ dsNote.label }}</strong>
-          <p>{{ dsNote.thesis }}</p>
-        </header>
-        <div class="yk-lab-device is-ds">
-          <DsDirection
-            ref="dsRef"
-            :tab="tab"
-            :dark="dark"
-            @update:tab="setTab"
-            @update:dark="setDark"
-          />
-        </div>
-        <details class="yk-lab-gaps">
-          <summary>与正式原型的差距（{{ dsNote.gaps.length }}）</summary>
-          <ul>
-            <li v-for="gap in dsNote.gaps" :key="gap">{{ gap }}</li>
           </ul>
         </details>
       </article>

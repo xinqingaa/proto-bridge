@@ -19,7 +19,7 @@
 .yk-lab-header {
   display: flex;
   width: 100%;
-  max-width: 900px;
+  max-width: 1060px;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
@@ -132,25 +132,6 @@
 .yk-lab-device {
   display: flex;
   padding: 10px;
-}
-
-.yk-lab-device.is-ds .yd-device {
-  /* Contain Vuetify's fixed scrims inside the device frame. */
-  transform: translateZ(0);
-  width: 390px;
-  height: 844px;
-  border-radius: 44px;
-  box-shadow:
-    0 0 0 10px #101114,
-    0 0 0 11px #2a2c31,
-    0 30px 60px rgba(0, 0, 0, 0.18);
-}
-
-/* Vuetify offsets snackbars by the Workbench rail; Runtime has no rail. */
-.yk-lab-device.is-ds .v-snackbar {
-  --v-layout-left: 0px !important;
-  --v-layout-right: 0px !important;
-  --v-layout-top: 0px !important;
 }
 
 .yk-lab-gaps {
