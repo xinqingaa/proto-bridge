@@ -66,10 +66,34 @@ export async function loadWorkspaceConfig(argv = process.argv.slice(2)) {
     runtimeOrigin: runtimeUrl.origin,
     storeRoot,
     workspaceId: requiredString(value?.workspaceId, "workspaceId"),
-    serviceHost: requiredString(value?.service?.host, "service.host"),
-    servicePort: requiredNumber(value?.service?.port, "service.port"),
-    maxCases: requiredNumber(value?.capture?.maxCases, "capture.maxCases"),
   };
+}
+
+/**
+ * Local Service launch parameters resolved by Core from the Workspace config.
+ * `pb:up`, `pb:doctor` and `pb:mcp` must use these instead of raw fields.
+ */
+export async function resolveWorkspaceServiceLaunch(workspace) {
+  const [{ V2WorkspaceConfig }, { resolveLocalServiceLaunchConfig }] = await Promise.all([
+    import(pathToFileURL(path.join(repoRoot, "packages/core/dist/v2/index.js")).href),
+    import(pathToFileURL(path.join(repoRoot, "packages/core/dist/v2/store/index.js")).href),
+  ]);
+  return resolveLocalServiceLaunchConfig({
+    config: V2WorkspaceConfig.parse(workspace.value),
+    configPath: workspace.configPath,
+  });
+}
+
+export function serviceApiUrl(launch) {
+  const host = launch.host.includes(":") ? `[${launch.host}]` : launch.host;
+  return `http://${host}:${launch.port}/api/v2`;
+}
+
+/** The browser Origin a local tool presents to Local Service. */
+export function serviceClientOrigin(launch, runtimeOrigin) {
+  return launch.allowedOrigins.includes(runtimeOrigin)
+    ? runtimeOrigin
+    : launch.allowedOrigins[0];
 }
 
 export async function validateWorkspaceConfigWithCore(workspace) {
@@ -77,18 +101,6 @@ export async function validateWorkspaceConfigWithCore(workspace) {
     pathToFileURL(path.join(repoRoot, "packages/core/dist/v2/index.js")).href
   );
   return core.V2WorkspaceConfig.parse(workspace.value);
-}
-
-export async function resolveWorkspaceDeliveryTargetRoot(workspace) {
-  const [{ V2WorkspaceConfig }, { resolveDeliveryTargetRoot }] = await Promise.all([
-    import(pathToFileURL(path.join(repoRoot, "packages/core/dist/v2/index.js")).href),
-    import(pathToFileURL(path.join(repoRoot, "packages/core/dist/v2/store/index.js")).href),
-  ]);
-  const config = V2WorkspaceConfig.parse(workspace.value);
-  return resolveDeliveryTargetRoot({
-    config,
-    configDir: path.dirname(workspace.configPath),
-  });
 }
 
 export async function ensureBuilt(entries, message = "Building ProtoBridge packages…") {
@@ -250,13 +262,6 @@ export function exitIfInterrupted(
 function requiredString(value, pathLabel) {
   if (typeof value !== "string" || value.length === 0) {
     throw new Error(`Workspace config requires ${pathLabel}.`);
-  }
-  return value;
-}
-
-function requiredNumber(value, pathLabel) {
-  if (!Number.isFinite(value)) {
-    throw new Error(`Workspace config requires numeric ${pathLabel}.`);
   }
   return value;
 }

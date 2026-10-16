@@ -147,7 +147,7 @@ describe("Workspace-persisted prototype lifecycle", () => {
     const lifecycle = usePrototypeLifecycleStore();
     const capture = useCaptureStore();
     capture.session = {} as never;
-    const createHandoff = vi.spyOn(capture, "createCurrentHandoff");
+    const createHandoff = vi.spyOn(captureServiceClient, "createHandoff");
     lifecycle.replaceRecord(capturingRecord(prototype.id));
     const refresh = vi.spyOn(captureServiceClient, "prototypeLifecycle").mockImplementation(async () => {
       await new Promise((resolve) => setTimeout(resolve, 5));
@@ -171,7 +171,7 @@ describe("Workspace-persisted prototype lifecycle", () => {
     const lifecycle = usePrototypeLifecycleStore();
     const capture = useCaptureStore();
     capture.session = {} as never;
-    const createHandoff = vi.spyOn(capture, "createCurrentHandoff");
+    const createHandoff = vi.spyOn(captureServiceClient, "createHandoff");
     const failedRecord = {
       prototypeId: prototype.id,
       stage: "review",
@@ -208,9 +208,10 @@ describe("Workspace-persisted prototype lifecycle", () => {
 
   it("keeps formal warning and risk confirmations isolated per prototype", () => {
     const lifecycle = usePrototypeLifecycleStore();
-    const capture = useCaptureStore();
-    const [first, second] = prototypes;
-    if (!first || !second) throw new Error("expected at least two prototypes");
+    const first = prototypes[0];
+    if (!first) throw new Error("expected a registered prototype");
+    // The store keys confirmations by prototype id only; a neutral id is enough.
+    const second = { id: "isolation-fixture-prototype" };
 
     lifecycle.preflights = {
       [first.id]: { result: { warnings: [{ warningId: "warning-a" }] } } as never,
@@ -228,8 +229,6 @@ describe("Workspace-persisted prototype lifecycle", () => {
     expect(lifecycle.warningsAcceptedFor(second.id)).toBe(false);
     expect(lifecycle.risksAcceptedFor(first.id)).toBe(true);
     expect(lifecycle.risksAcceptedFor(second.id)).toBe(false);
-    expect(capture.acceptedWarningIds).toEqual([]);
-    expect(capture.acknowledgedRiskKinds).toEqual([]);
   });
 
   it("keeps the operation visible during a Service connection interruption", async () => {

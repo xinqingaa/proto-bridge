@@ -1,6 +1,6 @@
 # PBWork 与 PB 平台升级
 
-> 状态：未开始；核实日期：2026-10-16。本文是计划，不代表现行 Contract。完成后按 [路线图维护规则](./README.md#维护规则)把现行行为写入权威文档。
+> 状态：已暂停（2026-10-16），W0、W1 已实现待验收，W2 进行到 S0–S3（S1 代码已齐，S2 主体已落地）；恢复前先读[暂停记录](#暂停记录2026-10-16)。核实日期：2026-10-16。本文是计划，不代表现行 Contract。完成后按 [路线图维护规则](./README.md#维护规则)把现行行为写入权威文档。
 >
 > 本计划不制作新原型。「一刻」原型见[下一份计划](./yike-prototype.md)，以本计划达到「总退出标准」为前置条件。
 
@@ -15,7 +15,7 @@
 
 ## 范围约束
 
-- **不兼容现有原型。** 恒动原型直接移除，不迁移。冷链原型保留，作为回归验证样本，并迁移到本计划的新写法；冷链在迁移中出现的报错按新规则修复，不为旧写法保留兼容层。
+- **不兼容现有原型。** 旧样例原型（健身自律记录）已移除，不迁移。冷链原型保留，作为回归验证样本，并迁移到本计划的新写法；冷链在迁移中出现的报错按新规则修复，不为旧写法保留兼容层。
 - **Flutter Target 采用“PBWork 先行”。** `apps/flutter_pb_app` 只适配三层键名与基础主题包取值，保证冷链在 Target 中仍可编译、测试通过；本计划新增的 DS 组件在 Target 映射中显式标为 `pending`，漂移状态如实显示，不在本计划内补齐 Flutter 组件。
 - **Core 仍是唯一语义层。** 主题包身份、Theme 一致性判定、`pending` 状态等新语义都由 Core 定义；PBWork、CLI、MCP 与 Local Service 只适配。
 - **不做的事：** 多手机设备正式采集、Evidence Review 信息层级与窄屏、首次 setup、npm 分发（均在[未排期议题](./README.md#未排期议题)）。
@@ -24,9 +24,9 @@
 
 | 工作流 | 状态 | 证据 / 剩余缺口 |
 | --- | --- | --- |
-| W0 基线清理 | 未开始 | — |
-| W1 Core 与 Service 可靠性 | 未开始 | — |
-| W2 三层 Token 与原型主题包 | 未开始 | — |
+| W0 基线清理 | 已实现，待验收（暂停，WIP 分支） | 旧样例原型及其 Workbench 硬编码入口、单测、E2E 已清除，样例改用冷链或中性 fixture，旧样例原型关键词门禁（`docs/history` 之外全仓 rg）无结果；旧 Capture 死代码（`DeliverFlowSheet.vue`、`LifecycleTransitionDialog` 的 finalize 分支、`app/stores/capture.ts` 中仅服务它们的 state/action 与对应测试）已按 production import graph 删除，CLI/Core/Local Service 公开能力未动；本地 `capture.maxCases=200` 并已 `pnpm pb:reset`，`getting-started.md` 默认值与 Core 一致。`docs:verify`、PBWork 单测 177 项通过；干净 worktree（HEAD+W0 补丁）中 install→build→typecheck→各包单测→pbwork build 通过，`test:e2e:runtime/mcp/consumer/evidence-slice/finalization/lifecycle` 通过。真实 Store 中冷链已通过 Workbench 定稿一次：Job `job-2026-10-16t061104179-57606ffc` completed，26 个 Case 全部有效，Handoff `handoff-2026-10-16t061132459-20a127a5`（coverage complete、无风险）与 Delivery `operation-bf2e4da7666bf37cf68d4eb7` 绑定，生命周期 stage `final`。遗留：本机 `flutter analyze/test` 因 Flutter 3.44 下 `CupertinoPageTransitionsBuilder` 未定义失败（未改动 `apps/flutter_pb_app`，与 W0 无关）；`canvas.spec` 的屏幕切换、`workbench-navigation` 的组件导航与折叠面板、`comments`、`design-system-closure` 两项在纯 HEAD 同样失败（原型目录重排后遗留的过期断言），不属于 W0 |
+| W1 Core 与 Service 可靠性 | 已实现，待验收（暂停，WIP 分支） | 8 项均有回归/故障注入用例：`core/test/v2/capture/capture-reliability.test.ts`（第 2、3、8 项，旧实现 6/7 失败）、`local-service/test/service-reliability.test.ts`（第 1、6 项与 Host 头，旧实现 6/10 失败）、`core/test/v2/store/{atomic-file,delivery-id,service-launch}.test.ts`、`workspace-config.test.ts`、`local-service/test/launch-config.test.ts`；第 8 项竞态已复现（后提交的 pointer 覆盖前者），已加 Bundle 提交锁与 Workspace 单飞队列。`pnpm verify` 中 install/docs/build/typecheck 与 core 313、local-service 38、cli 20、pbwork 177 个单测全部通过，随后停在 `flutter analyze`（本机 Flutter 3.44 下 `CupertinoPageTransitionsBuilder` 未定义，`apps/flutter_pb_app` 未改动，与 W1 无关）；单独补跑：`test:e2e:mcp`、`consumer`、`evidence-slice` 通过，PBWork Playwright 32/41 通过，9 个失败均位于 W0 正在修改的 spec/UI（canvas、comments、design-system-closure、finalization-regression、lifecycle-persistence、workbench-navigation），未见 Service 启动/Origin/Host 问题，待 W0 完成后复跑确认。W0 完成后 `finalization`、`lifecycle` E2E 已通过，剩余 6 个失败在 HEAD 上同样存在。原待决两项已有决定，连同 `pb-clean.mjs` 与 ADR 0014 见[暂停记录](#暂停记录2026-10-16) |
+| W2 三层 Token 与原型主题包 | 进行中（暂停，`dev/platform`） | [W2 设计稿](./pbwork-platform-upgrade-w2-design.md)已定稿，待决问题 Q1–Q4 均选 A，成本上调已获用户确认。S0 视觉基线已截取（`output/w2-baseline/` 70 张不提交：冷链 6、Playground 64；Playground 因 Local Service 未运行被标为 error，需复核或重截）。S1 代码已齐：`packages/core/src/v2/theme/` 含 schema、expression、resolve、contrast、digest、validate、index，已从 `v2/index.ts` 导出，`package.json` 有 `./v2/theme`；测试在 `packages/core/test/v2/theme/`。豁免按具体前景/背景解析值对继承，并有对应用例；另有设计稿表之外的 `theme.schema`、`theme.contrast-waiver-unused`。暂停时未复跑 S1/S2 测试。S2 主体已落地、未接入 Runtime：`design-system/theme/`（key-catalog、constants、legacy-migration、sources.ts）与 `theme-packs/base/`（pack、primitives、semantic、accents）；`component.json` 的 values 为空。`theme-base-pack.test.ts`、`theme-equivalence.test.ts` 覆盖 154 个旧键分层与 light/dark 等价，11 个组件层旧键为 `it.todo`。S3 Target `pending` 已完成（core target 测试 31 个通过、`ds:target-sync:verify` 通过且 pending 0、`test:e2e:mcp` 通过）。S4 及之后未开始（无 `generated/keys.ts`，Contract 无 `componentTokens`） |
 | W3 主题一致性探针 | 未开始 | — |
 | W4 降低原型制作成本 | 未开始 | — |
 | W5 DS 扩展 | 未开始 | — |
@@ -54,18 +54,18 @@ W3 与 W4 都依赖 W2 的主题包身份，二者可以并行。W5 的组件要
 
 ### 问题与证据
 
-- 恒动原型体量大（`registry.ts` 中约 2200 行，10 个 Screen、101 个 Case），迁移到新写法的成本高于价值；它的引用散布在 Workbench、单测、E2E 和 Core 测试中。
+- 旧样例原型体量大（`registry.ts` 中约 2200 行，10 个 Screen、101 个 Case），迁移到新写法的成本高于价值；它的引用散布在 Workbench、单测、E2E 和 Core 测试中。
 - 旧 Capture 路径仍留在源码中：`apps/pbwork/src/capture/DeliverFlowSheet.vue` 没有生产 import；`LifecycleTransitionDialog` 的 finalize 分支不可达（调用方在 `intent === 'finalize'` 时挂载的是 `LifecycleFinalizationSheet`，见 `workbench/views/PrototypeOverview.vue` 与 `PrototypeGallery.vue`）。
 - 本地 `proto-bridge.json` 的 `capture.maxCases` 为 100，小于 Core 默认值 200（[workspace-config.ts](../../packages/core/src/v2/workspace-config.ts) 第 25–26 行）。该文件不进 Git。
 
 ### 方案
 
-1. 删除恒动：
-   - `apps/pbwork/src/prototypes/hengdong/` 与 `apps/pbwork/src/drafts/hengdong/`；
-   - [registry.ts](../../apps/pbwork/src/prototypes/registry.ts) 中的恒动 `PrototypeRecord` 与全部恒动 Screen 记录；
+1. 删除旧样例原型：
+   - 它在 `apps/pbwork/src/prototypes/` 与 `apps/pbwork/src/drafts/` 下各有一个同名目录；
+   - [registry.ts](../../apps/pbwork/src/prototypes/registry.ts) 中该原型的 `PrototypeRecord` 与全部 Screen 记录；
    - Workbench 中的硬编码入口与展示：`workbench/navigation.ts`、`workbench/prototypes/prototypePresentation.ts`、`drafts/workbench-overview/data.ts`、`drafts/workbench-overview/variants/QueueDirection.vue`、`drafts/registry.ts`；
-   - 只服务恒动的单测：`apps/pbwork/test/hengdong-*.test.ts`；
-   - 以恒动为样例的测试改用冷链：`capture-store`、`router`、`theme-preference`、`runtime-url`、`registries`、`work-map`、`prototype-presentation`、`result-classification-presentation`、`capture-presentation`、`review-copy`、`screen-transition`、`workbench-navigation-tree`；
+   - 只服务该原型的单测（`apps/pbwork/test/` 下以其名称为前缀的三个文件）；
+   - 以该原型为样例的测试改用冷链：`capture-store`、`router`、`theme-preference`、`runtime-url`、`registries`、`work-map`、`prototype-presentation`、`result-classification-presentation`、`capture-presentation`、`review-copy`、`screen-transition`、`workbench-navigation-tree`；
    - E2E 改用冷链：`workbench-navigation.spec.ts`、`runtime-capture.spec.ts`、`canvas.spec.ts`、`finalization-regression.spec.ts`；
    - Core 测试样例改用中性 fixture：`packages/core/test/v2/result-classification.test.ts`、`packages/core/test/v2/capture/runtime-contract.test.ts`。
 2. 删除旧 Capture 死代码：先生成 production import graph，再删除 `DeliverFlowSheet.vue`、`LifecycleTransitionDialog` 的 finalize 分支、`app/stores/capture.ts` 中只被它们调用的 action / state，以及只保护这些入口的测试。CLI、Core、Local Service 的 Selection、retry、Bundle 管理等公开能力保留。
@@ -73,7 +73,7 @@ W3 与 W4 都依赖 W2 的主题包身份，二者可以并行。W5 的组件要
 
 ### 退出标准
 
-- 仓库内（`docs/history` 除外）不再有 `hengdong` / 恒动引用；`rg -i "hengdong|恒动" --glob '!docs/history/**'` 无结果。
+- 仓库内（`docs/history` 除外）不再有旧样例原型的英文 ID 与中文名引用：以这两个词做大小写不敏感的 `rg` 检索（`--glob '!docs/history/**'`），结果为空。
 - `pnpm verify` 全绿；冷链完整定稿一次（Job 全部 captured，Handoff 与 Delivery 绑定，stage `final`）。
 
 ---
@@ -184,10 +184,10 @@ Evidence 记录的是 Token 键名与绑定关系；[语义标记规则](../refe
 
 ### 问题与证据
 
-以即将移除的恒动为样本：
+以已移除的旧样例原型为样本：
 
-- 每个证据节点要手写 `data-pb-id`、`data-pb-role`、`data-pb-key` 与 `data-pb-token-*`（共约 120 个 `data-pb-id`、245 个 token 属性），同一 Token 还要在 CSS 中再写一遍 `var(--pb-*)`（`hengdong.css` 1451 行）。规则明确 CSS 使用 Token 不会自动形成证据，两处必须手工保持一致。
-- `registry.ts` 中每个 Fragment 和 Action 目标都重复写 `screenId` 与 `pbId`，恒动一份就约 2200 行。
+- 每个证据节点要手写 `data-pb-id`、`data-pb-role`、`data-pb-key` 与 `data-pb-token-*`（共约 120 个 `data-pb-id`、245 个 token 属性），同一 Token 还要在 CSS 中再写一遍 `var(--pb-*)`（该原型的样式文件 1451 行）。规则明确 CSS 使用 Token 不会自动形成证据，两处必须手工保持一致。
+- `registry.ts` 中每个 Fragment 和 Action 目标都重复写 `screenId` 与 `pbId`，该原型一份就约 2200 行。
 - `nav.ts`、`storage.ts`、外壳组件、主题偏好同步每个原型都要重写。
 - 时钟由 Core 写死为 `2026-07-28`（`playwright-driver.ts` 第 703 行），原型只能自己再硬编码一个“今天”。
 - 没有脚手架；门禁问题要等整份 Preflight 才暴露。
@@ -280,7 +280,46 @@ SwipeActions、LargeTitleHeader、Timeline、DatePicker、ColorSwatchPicker、Ba
 - 冷链按新写法完整定稿采集一次，Handoff 可通过 MCP 读到主题包与时钟声明。
 - 基础包之外的示例主题包在 Playground 中能明显看出差异。
 - 脚手架生成的空原型可直接通过 Preflight。
-- 仓库（`docs/history` 除外）不再引用恒动；旧 Capture 死代码已删除。
+- 仓库（`docs/history` 除外）不再引用旧样例原型；旧 Capture 死代码已删除。
+
+## 暂停记录（2026-10-16）
+
+计划按用户要求暂停。`d7a2134`（`docs: 平台升级计划确定`）在 `main`；其后的全部实现与本暂停记录在 `dev/platform`，未合入 `main`。W0、W1、W2 在同一工作树并行实施，提交未按工作流拆分；恢复后先完成验收，再决定是否整理提交历史。`output/w2-baseline/` 不入库。
+
+### 验证现状
+
+- `pnpm docs:verify` 通过；`pnpm --filter @proto-bridge/core typecheck` 通过；core 313、local-service 38、cli 20、pbwork 177 个单测在 W1 收尾时全部通过。
+- `pnpm verify` 未全绿：停在 `flutter analyze`，本机 Flutter 3.44 SDK 下 `CupertinoPageTransitionsBuilder` 未定义，`apps/flutter_pb_app` 相对 HEAD 未改动，但总退出标准要求修复。
+- PBWork Playwright 6 个用例失败（见 W0 行），均在 HEAD 上同样失败；`evidence-slice` 曾因并行构建删除 `packages/core/dist` 失败一次，重跑通过。
+- 本地 Store 中残留一个失败 Job `job-2026-10-16t060459599-6726ec2f`；冷链首次定稿曾报 "Execution context was destroyed"，重试通过，原因未确认。
+- 工作区原有的 `packages/core/src/v2/prompts/generated-assets.ts` 未提交改动已被 `prompts:generate` 按源 `.md` 重新生成，现与 HEAD 一致，原内容不可恢复。
+
+### 已决但未执行的事项
+
+W1 遗留：
+
+- 同一 Issue ID 不同内容：不接受当前“首写保留”。恢复后先调查 Issue 存储，按内容摘要分别存储、Revision 固定引用到具体摘要、同内容去重；若必须改公共 Schema，先确认再做。
+- awaiting-risks 期间不额外跑 Preflight：接受“在用户确认、构建 Handoff 或其他 Preflight 时才感知 Runtime 变化”，Handoff 构建会重跑 Preflight，不会产出过期 Handoff。
+- Service 不再放行自身端口 Origin：接受，只使用配置解析出的 `allowedOrigins`。
+- `scripts/pb-clean.mjs` 改用 Core 统一的 Service 启动配置（目前仍自行读取 `service.port` 并写死 `127.0.0.1`）。
+- 新增 ADR 0014 记录采集可靠性设计（逐 Case staging 恢复、Workspace 单飞队列、Service 只从配置启动）。
+
+W2 执行约定（已写入设计稿第 8 节）：
+
+- 对比度豁免绑定具体前景/背景解析值对：子包未改该配对任一侧则继承豁免（warning），改动任一侧即失效。该规则已在 `packages/core/src/v2/theme/validate.ts` 实现，用例在 `packages/core/test/v2/theme/validate.test.ts` 的 waiver inheritance 段；暂停时未复跑。
+- S5 之后 Flutter 未映射的新键临时标为条目级 `pending`；S12 完成时 Token 键 pending 必须清零，之后只允许 W5 新组件保持 pending。
+
+### 其他遗留
+
+- `packages/core/src/v2/prompts/` 下三份提示模板的 Target 状态列表还没有 `pending`；claim 路径缺少 `pending` 专项测试。
+- W0 留下的待确认项：`activeJob` 去掉 composer 后已无写入方；`archiveCurrentBundle`、`forkCurrentBundle`、`resetWorkspaceEvidence`、`trashBundles` 等 store 成员零调用方但保留；部分 DS 组件不再能从 `main.ts` 静态到达；旧样例原型的“进度刷新后保留”E2E 已删除，没有等价替换。
+
+### 恢复顺序
+
+1. 修复 `flutter analyze`，复跑 PBWork Playwright，处理 6 个历史失败用例，使 `pnpm verify` 全绿，完成 W0、W1 验收。
+2. 执行上面 W1 遗留的已决事项。
+3. W2：复跑 S1、S2 测试；复核或重截 S0 的 Playground 基线。S2 主体已完成，下一步是 S5（组件层取值、Contract `componentTokens`，含 11 个 `it.todo`）再 S4，然后 S6；S9 起按设计稿第 7 节继续。
+4. 之后按原依赖进行 W3/W4 → W5，W6 视情况，W7 随行。
 
 ## 风险与缩减顺序
 

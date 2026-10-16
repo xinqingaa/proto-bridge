@@ -45,7 +45,7 @@ export const V2WorkspaceConfig = z
       .object({
         root: z.string().min(1),
         maxBytes: z.number().int().positive().optional(),
-        retainArchivedSnapshots: z.number().int().min(0).default(1),
+        retainArchivedSnapshots: z.number().int().min(1).default(1),
       })
       .strict(),
     capture: z

@@ -5,14 +5,19 @@ PBWork browser 与 ProtoBridge Node 能力之间的本地安全边界。
 ## 职责
 
 - 只监听 loopback；
-- 校验 Workbench Origin；
+- 校验 Host hostname（`127.0.0.1`、`localhost`、`::1`）和 Workbench Origin；
 - 创建有期限的 session；
 - 通过 Authorization header 验证请求；
 - 调用 Core Preflight、Capture JobHost、Store 和 Handoff；
 - 提供 PBWork Capture Console 和 Evidence Viewer 所需 View；
+- 同一 Workspace 同时只运行一个 Capture Job，其余保持 `queued`；
 - 重启时终结 orphan Job 并使旧 session 失效。
 
 Local Service 不拥有 Selection、Job、Evidence 或风险语义；协议来自 `@proto-bridge/core/v2/service-contract`。仓库仍保留 Flutter MCP Runtime Review 的实验实现和单元测试，但默认 MCP 不注册对应工具，正常 Capture、Delivery 与 Evidence 消费不会创建 provider。代码位置和重新启用条件见 [Flutter MCP 实验记录](../../docs/history/flutter-mcp-experiment-2026-08.md)。
+
+## 启动
+
+入口只接受 `--config <proto-bridge.json>`，host、port、allowedOrigins、Store、交付目标和容量均由 Core 从该配置解析，不读取 Service 环境变量。
 
 ## 开发
 

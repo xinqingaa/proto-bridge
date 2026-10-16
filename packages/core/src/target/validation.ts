@@ -25,6 +25,7 @@ export type TargetValidationResult =
       outsideAllowedPaths: string[];
       missingExpectedFiles: string[];
       fileIssues: [];
+      pendingNotices: [];
       validationHints: string[];
     };
 
@@ -43,6 +44,7 @@ export async function validateTargetChanges(
       outsideAllowedPaths: [],
       missingExpectedFiles: [],
       fileIssues: [],
+      pendingNotices: [],
       validationHints: ['No applicable Target adapter is registered for this project.'],
     };
   }

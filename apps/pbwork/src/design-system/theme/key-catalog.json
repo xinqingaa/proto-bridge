@@ -1,0 +1,1367 @@
+{
+  "schemaVersion": 1,
+  "keys": [
+    {
+      "id": "color.background",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "背景",
+      "description": "页面背景色"
+    },
+    {
+      "id": "color.on-background",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "背景上文字",
+      "description": "页面背景上的文字与图标"
+    },
+    {
+      "id": "color.surface",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "表面",
+      "description": "卡片与面板表面色"
+    },
+    {
+      "id": "color.on-surface",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "表面上文字",
+      "description": "表面上的文字与图标"
+    },
+    {
+      "id": "color.on-surface-muted",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "表面弱化文字",
+      "description": "表面上文字约 62% 透明度，用于副标题与提示"
+    },
+    {
+      "id": "color.surface-variant",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "次级表面",
+      "description": "弱分区、表格表头与次级容器"
+    },
+    {
+      "id": "color.surface-recessed",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "内凹表面",
+      "description": "承托页内选择态与最简输入的中性内凹背景；浅色须明显低于页面背景"
+    },
+    {
+      "id": "color.surface-selected",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "选中表面",
+      "description": "中性浅灰选中层，用于分段、Tab 等非主色选择态"
+    },
+    {
+      "id": "color.surface-raised",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "浮层表面",
+      "description": "菜单、Dialog 与悬浮工具栏"
+    },
+    {
+      "id": "color.inverse-surface",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "反色表面",
+      "description": "半透明纯黑，用于 Toast 等短提示浮层背景（原 color.toast）"
+    },
+    {
+      "id": "color.on-inverse-surface",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "反色表面上文字",
+      "description": "反色表面上的文字与图标（原 color.on-toast）"
+    },
+    {
+      "id": "color.primary",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": true,
+      "label": "主色",
+      "description": "克制强调色，仅用于选择、焦点、链接与进度"
+    },
+    {
+      "id": "color.primary-soft",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": true,
+      "label": "主色软底",
+      "description": "主色混合实色软底（非 alpha），用于 Chip / tonal"
+    },
+    {
+      "id": "color.on-primary",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": true,
+      "label": "主色上文字",
+      "description": "主色上的文字与图标"
+    },
+    {
+      "id": "color.action",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "主操作",
+      "description": "实心主按钮使用的中性色，不复用强调色"
+    },
+    {
+      "id": "color.action-soft",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "主操作软底",
+      "description": "主操作混合实色软底，用于次要类型按钮"
+    },
+    {
+      "id": "color.on-action",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "主操作上文字",
+      "description": "主操作色上的文字与图标"
+    },
+    {
+      "id": "color.secondary",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "次色",
+      "description": "次要强调色，用于次级操作与辅助图标"
+    },
+    {
+      "id": "color.secondary-soft",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "次色软底",
+      "description": "次色混合实色软底"
+    },
+    {
+      "id": "color.on-secondary",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "次色上文字",
+      "description": "次色上的文字与图标"
+    },
+    {
+      "id": "color.error",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "错误",
+      "description": "错误与危险状态色"
+    },
+    {
+      "id": "color.error-soft",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "错误软底",
+      "description": "错误色混合实色软底"
+    },
+    {
+      "id": "color.on-error",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "错误色上文字",
+      "description": "错误色上的文字与图标"
+    },
+    {
+      "id": "color.success",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "成功",
+      "description": "成功状态色"
+    },
+    {
+      "id": "color.success-soft",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "成功软底",
+      "description": "成功色混合实色软底"
+    },
+    {
+      "id": "color.on-success",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "成功色上文字",
+      "description": "成功色上的文字与图标"
+    },
+    {
+      "id": "color.warning",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "警告",
+      "description": "警告状态色"
+    },
+    {
+      "id": "color.warning-soft",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "警告软底",
+      "description": "警告色混合实色软底"
+    },
+    {
+      "id": "color.on-warning",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "警告色上文字",
+      "description": "警告色上的文字与图标"
+    },
+    {
+      "id": "color.info",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "信息",
+      "description": "信息色：比主色更冷、更灰，避免与品牌色撞车"
+    },
+    {
+      "id": "color.on-info",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "信息色上文字",
+      "description": "信息色上的文字与图标"
+    },
+    {
+      "id": "color.border",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "边框",
+      "description": "标准边框与分隔描边色"
+    },
+    {
+      "id": "color.outline",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "轮廓",
+      "description": "控件轮廓与未选中描边色"
+    },
+    {
+      "id": "color.divider",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "分割线",
+      "description": "列表与区块分割线色"
+    },
+    {
+      "id": "color.disabled",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "禁用内容",
+      "description": "禁用状态下的内容色"
+    },
+    {
+      "id": "color.scrim",
+      "tier": "semantic",
+      "valueType": "color",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "遮罩",
+      "description": "模态遮罩色"
+    },
+    {
+      "id": "font.text",
+      "tier": "semantic",
+      "valueType": "font",
+      "bindable": false,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "正文字体",
+      "description": "常规正文与控件文字的字体族"
+    },
+    {
+      "id": "font.display",
+      "tier": "semantic",
+      "valueType": "font",
+      "bindable": false,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "展示字体",
+      "description": "展示标题、页面标题与各级标题的字体族"
+    },
+    {
+      "id": "font.numeric",
+      "tier": "semantic",
+      "valueType": "font",
+      "bindable": false,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "数字字体",
+      "description": "数据、计数与指标数字的字体族，带等宽数字特性"
+    },
+    {
+      "id": "typography.display",
+      "tier": "semantic",
+      "valueType": "typography",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "展示标题",
+      "description": "展示标题字阶角色（字体、字重、字号、行高）"
+    },
+    {
+      "id": "typography.headline",
+      "tier": "semantic",
+      "valueType": "typography",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "页面标题",
+      "description": "页面标题字阶角色（字体、字重、字号、行高）"
+    },
+    {
+      "id": "typography.title-lg",
+      "tier": "semantic",
+      "valueType": "typography",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "大标题",
+      "description": "大标题字阶角色（字体、字重、字号、行高）"
+    },
+    {
+      "id": "typography.title",
+      "tier": "semantic",
+      "valueType": "typography",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "标题",
+      "description": "标题字阶角色（字体、字重、字号、行高）"
+    },
+    {
+      "id": "typography.title-sm",
+      "tier": "semantic",
+      "valueType": "typography",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "小标题",
+      "description": "小标题字阶角色（字体、字重、字号、行高）"
+    },
+    {
+      "id": "typography.subtitle",
+      "tier": "semantic",
+      "valueType": "typography",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "副标题",
+      "description": "副标题字阶角色（字体、字重、字号、行高）"
+    },
+    {
+      "id": "typography.body-lg",
+      "tier": "semantic",
+      "valueType": "typography",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "大正文",
+      "description": "大正文字阶角色（字体、字重、字号、行高）"
+    },
+    {
+      "id": "typography.content",
+      "tier": "semantic",
+      "valueType": "typography",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "正文",
+      "description": "正文字阶角色（字体、字重、字号、行高）"
+    },
+    {
+      "id": "typography.body-sm",
+      "tier": "semantic",
+      "valueType": "typography",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "小正文",
+      "description": "小正文字阶角色（字体、字重、字号、行高）"
+    },
+    {
+      "id": "typography.label",
+      "tier": "semantic",
+      "valueType": "typography",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "控件标签",
+      "description": "控件标签字阶角色（字体、字重、字号、行高）"
+    },
+    {
+      "id": "typography.caption",
+      "tier": "semantic",
+      "valueType": "typography",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "辅助说明",
+      "description": "辅助说明字阶角色（字体、字重、字号、行高）"
+    },
+    {
+      "id": "typography.caption-strong",
+      "tier": "semantic",
+      "valueType": "typography",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "强调说明",
+      "description": "强调说明字阶角色（字体、字重、字号、行高）"
+    },
+    {
+      "id": "typography.micro",
+      "tier": "semantic",
+      "valueType": "typography",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "微型标签",
+      "description": "流程步骤等空间受限的状态标签"
+    },
+    {
+      "id": "typography.numeric-display",
+      "tier": "semantic",
+      "valueType": "typography",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "数字展示",
+      "description": "大号展示数字字阶，沿用展示标题的字重、字号与行高"
+    },
+    {
+      "id": "typography.numeric-title",
+      "tier": "semantic",
+      "valueType": "typography",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "数字标题",
+      "description": "标题级数字字阶，沿用标题的字重、字号与行高"
+    },
+    {
+      "id": "typography.numeric-content",
+      "tier": "semantic",
+      "valueType": "typography",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "数字正文",
+      "description": "正文级数字字阶，沿用正文的字重、字号与行高"
+    },
+    {
+      "id": "radius.mark",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "标记圆角",
+      "description": "徽标、小标记"
+    },
+    {
+      "id": "radius.control-compact",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "紧凑控件圆角",
+      "description": "紧凑控件、标签"
+    },
+    {
+      "id": "radius.control",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "控件圆角",
+      "description": "按钮、输入框、Tab"
+    },
+    {
+      "id": "radius.surface",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "表面圆角",
+      "description": "卡片、列表容器"
+    },
+    {
+      "id": "radius.overlay",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "浮层圆角",
+      "description": "Sheet、Dialog"
+    },
+    {
+      "id": "radius.pill",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "胶囊圆角",
+      "description": "胶囊形状"
+    },
+    {
+      "id": "space.hairline",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "微调间距",
+      "description": "视觉微调（随 density 取值）"
+    },
+    {
+      "id": "space.inline-tight",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "紧邻横向间距",
+      "description": "图标与文字等紧邻横向间距（随 density 取值）"
+    },
+    {
+      "id": "space.inline",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "横向间距",
+      "description": "常规横向间距（随 density 取值）"
+    },
+    {
+      "id": "space.inline-loose",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "宽松横向间距",
+      "description": "宽松横向间距（随 density 取值）"
+    },
+    {
+      "id": "space.stack-tight",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "紧邻纵向间距",
+      "description": "标题与副标题等紧邻纵向间距（随 density 取值）"
+    },
+    {
+      "id": "space.stack-compact",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "紧凑纵向间距",
+      "description": "紧凑纵向间距（随 density 取值）"
+    },
+    {
+      "id": "space.stack",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "纵向间距",
+      "description": "常规纵向间距（随 density 取值）"
+    },
+    {
+      "id": "space.stack-loose",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "宽松纵向间距",
+      "description": "宽松纵向间距（随 density 取值）"
+    },
+    {
+      "id": "space.inset-compact",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "紧凑内边距",
+      "description": "紧凑内边距（随 density 取值）"
+    },
+    {
+      "id": "space.inset-control",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "控件内边距",
+      "description": "控件内边距（随 density 取值）"
+    },
+    {
+      "id": "space.inset-surface",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "表面内边距",
+      "description": "卡片与容器内边距（随 density 取值）"
+    },
+    {
+      "id": "space.inset-page",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "页面边距",
+      "description": "页面左右边距（随 density 取值）"
+    },
+    {
+      "id": "space.section",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "区块间距",
+      "description": "区块间距（随 density 取值）"
+    },
+    {
+      "id": "space.section-loose",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "大区块间距",
+      "description": "大区块间距（随 density 取值）"
+    },
+    {
+      "id": "space.page-end",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "页面末尾留白",
+      "description": "页面末尾留白（随 density 取值）"
+    },
+    {
+      "id": "size.control-compact",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "紧凑控件高度",
+      "description": "紧凑控件高度（原 sizing.control-sm，随 density 取值）"
+    },
+    {
+      "id": "size.control",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "标准控件高度",
+      "description": "标准控件高度（原 sizing.control-md，随 density 取值）"
+    },
+    {
+      "id": "size.control-large",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "大控件高度",
+      "description": "大控件高度（原 sizing.control-lg，随 density 取值）"
+    },
+    {
+      "id": "size.touch",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "最小触控目标",
+      "description": "最小触控目标尺寸"
+    },
+    {
+      "id": "size.icon-inline",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "行内图标",
+      "description": "小图标（原 sizing.icon-sm）"
+    },
+    {
+      "id": "size.icon-compact",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "紧凑图标",
+      "description": "表单尾部、搜索等紧凑控件内的图标尺寸"
+    },
+    {
+      "id": "size.icon",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "标准图标",
+      "description": "标准图标（原 sizing.icon-md）"
+    },
+    {
+      "id": "size.icon-prominent",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "突出图标",
+      "description": "大图标（原 sizing.icon-lg）"
+    },
+    {
+      "id": "size.avatar-compact",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "紧凑头像",
+      "description": "小头像（原 sizing.avatar-sm）"
+    },
+    {
+      "id": "size.avatar",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "标准头像",
+      "description": "标准头像（原 sizing.avatar-md）"
+    },
+    {
+      "id": "size.avatar-large",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "大头像",
+      "description": "大头像（原 sizing.avatar-lg）"
+    },
+    {
+      "id": "size.navigation-bar",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "导航栏高度",
+      "description": "底部导航栏高度（原 sizing.bottom-navigation）"
+    },
+    {
+      "id": "size.stroke",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "进度描边",
+      "description": "环形加载与进度反馈的标准描边宽度"
+    },
+    {
+      "id": "size.indicator",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "指示器厚度",
+      "description": "页签等线性定位指示器的标准厚度"
+    },
+    {
+      "id": "size.caret",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "小三角尺寸",
+      "description": "页签与菜单的小三角指示器尺寸"
+    },
+    {
+      "id": "size.marker",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "步骤圆点",
+      "description": "步骤、流程等紧凑圆点的标准尺寸（原 sizing.step-dot）"
+    },
+    {
+      "id": "border.width",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "细线宽度",
+      "description": "细线宽度（原 border.width-hairline），不含线型与颜色"
+    },
+    {
+      "id": "border.width-strong",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "强调线宽",
+      "description": "较粗描边宽度（焦点边框等），不含线型与颜色"
+    },
+    {
+      "id": "border.width-accent",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "强调边宽",
+      "description": "强调边宽度（原 border.accent-width），用于状态消息等动态组合边框"
+    },
+    {
+      "id": "border.hairline",
+      "tier": "semantic",
+      "valueType": "border",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "细线",
+      "description": "分割线描边：宽度、线型与颜色的复合值"
+    },
+    {
+      "id": "border.default",
+      "tier": "semantic",
+      "valueType": "border",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "标准边框",
+      "description": "标准边框：宽度、线型与颜色的复合值"
+    },
+    {
+      "id": "border.focus",
+      "tier": "semantic",
+      "valueType": "border",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "焦点边框",
+      "description": "焦点环：宽度、线型与颜色的复合值"
+    },
+    {
+      "id": "elevation.surface",
+      "tier": "semantic",
+      "valueType": "shadow",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "表面阴影",
+      "description": "卡片阴影（原 elevation.card）"
+    },
+    {
+      "id": "elevation.raised",
+      "tier": "semantic",
+      "valueType": "shadow",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "浮起阴影",
+      "description": "浮起阴影（原 elevation.raised）"
+    },
+    {
+      "id": "elevation.floating",
+      "tier": "semantic",
+      "valueType": "shadow",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "悬浮阴影",
+      "description": "低浓度、宽扩散的单层悬浮阴影，用于半透明中性表面（原 elevation.glass）"
+    },
+    {
+      "id": "elevation.menu",
+      "tier": "semantic",
+      "valueType": "shadow",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "菜单阴影",
+      "description": "菜单与弹出层阴影（原 elevation.level-3）"
+    },
+    {
+      "id": "elevation.overlay",
+      "tier": "semantic",
+      "valueType": "shadow",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "浮层阴影",
+      "description": "Dialog 与最高层浮层阴影（原 elevation.level-5）"
+    },
+    {
+      "id": "opacity.disabled",
+      "tier": "semantic",
+      "valueType": "number",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "禁用透明度",
+      "description": "禁用状态的内容透明度"
+    },
+    {
+      "id": "opacity.translucent",
+      "tier": "semantic",
+      "valueType": "number",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "半透明表面透明度",
+      "description": "半透明中性表面的填充强度，用于 Tab 等玻璃质感选择态（原 opacity.glass）"
+    },
+    {
+      "id": "opacity.hover",
+      "tier": "semantic",
+      "valueType": "number",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "悬停叠加",
+      "description": "悬停状态的叠加透明度"
+    },
+    {
+      "id": "opacity.pressed",
+      "tier": "semantic",
+      "valueType": "number",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "按下叠加",
+      "description": "按下状态的叠加透明度"
+    },
+    {
+      "id": "motion.personality",
+      "tier": "semantic",
+      "valueType": "enum",
+      "bindable": false,
+      "modeVariant": false,
+      "accentable": false,
+      "enumValues": [
+        "calm",
+        "standard",
+        "lively"
+      ],
+      "label": "动效性格",
+      "description": "动效性格：calm 舒缓、standard 标准、lively 活泼；时长与按压缩放由主题包按此键取值"
+    },
+    {
+      "id": "motion.duration-short",
+      "tier": "semantic",
+      "valueType": "duration",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "短时长",
+      "description": "快速反馈时长（原 motion.duration-fast）"
+    },
+    {
+      "id": "motion.duration-medium",
+      "tier": "semantic",
+      "valueType": "duration",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "中时长",
+      "description": "标准过渡时长（原 motion.duration-normal）"
+    },
+    {
+      "id": "motion.duration-long",
+      "tier": "semantic",
+      "valueType": "duration",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "长时长",
+      "description": "缓慢过渡时长（原 motion.duration-slow）"
+    },
+    {
+      "id": "motion.easing-standard",
+      "tier": "semantic",
+      "valueType": "easing",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "标准缓动",
+      "description": "标准缓动曲线"
+    },
+    {
+      "id": "motion.easing-emphasized",
+      "tier": "semantic",
+      "valueType": "easing",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "强调缓动",
+      "description": "强调缓动曲线"
+    },
+    {
+      "id": "motion.easing-gentle",
+      "tier": "semantic",
+      "valueType": "easing",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "柔和缓动",
+      "description": "柔和缓动曲线"
+    },
+    {
+      "id": "motion.press-scale",
+      "tier": "semantic",
+      "valueType": "number",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "常规按压缩放",
+      "description": "常规按下缩放比例（原 motion.scale-pressed）"
+    },
+    {
+      "id": "motion.press-scale-strong",
+      "tier": "semantic",
+      "valueType": "number",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "明显按压缩放",
+      "description": "明显按下缩放比例（原 motion.scale-pressed-strong）"
+    },
+    {
+      "id": "surface.treatment",
+      "tier": "semantic",
+      "valueType": "enum",
+      "bindable": false,
+      "modeVariant": false,
+      "accentable": false,
+      "enumValues": [
+        "solid",
+        "outlined",
+        "glass"
+      ],
+      "label": "表面处理",
+      "description": "表面材质处理：solid 实色、outlined 描边、glass 玻璃；由组件层 *-treatment 键默认引用"
+    },
+    {
+      "id": "surface.glass-backdrop",
+      "tier": "semantic",
+      "valueType": "filter",
+      "bindable": true,
+      "modeVariant": false,
+      "accentable": false,
+      "label": "玻璃背景滤镜",
+      "description": "半透明玻璃表面的背景模糊与饱和度（原 effect.glass-backdrop）"
+    },
+    {
+      "id": "density",
+      "tier": "semantic",
+      "valueType": "enum",
+      "bindable": false,
+      "modeVariant": false,
+      "accentable": false,
+      "enumValues": [
+        "compact",
+        "regular",
+        "comfortable"
+      ],
+      "label": "密度",
+      "description": "界面密度：compact 紧凑、regular 常规、comfortable 宽松；间距与控件高度由主题包按此键取值"
+    },
+    {
+      "id": "asset.brand-mark",
+      "tier": "semantic",
+      "valueType": "asset",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "品牌标记",
+      "description": "品牌标记图形资产，none 表示不提供"
+    },
+    {
+      "id": "asset.brand-wordmark",
+      "tier": "semantic",
+      "valueType": "asset",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "品牌字标",
+      "description": "品牌字标资产，none 表示不提供"
+    },
+    {
+      "id": "asset.launch-image",
+      "tier": "semantic",
+      "valueType": "asset",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "启动图",
+      "description": "启动与欢迎页图像资产，none 表示不提供"
+    },
+    {
+      "id": "asset.empty-illustration",
+      "tier": "semantic",
+      "valueType": "asset",
+      "bindable": true,
+      "modeVariant": true,
+      "accentable": false,
+      "label": "空状态插画",
+      "description": "空状态插画资产，none 表示不提供"
+    }
+  ],
+  "contrastPairs": [
+    {
+      "foreground": "color.on-background",
+      "background": "color.background",
+      "level": "text"
+    },
+    {
+      "foreground": "color.on-surface",
+      "background": "color.surface",
+      "level": "text"
+    },
+    {
+      "foreground": "color.on-surface",
+      "background": "color.surface-variant",
+      "level": "text"
+    },
+    {
+      "foreground": "color.on-surface",
+      "background": "color.surface-raised",
+      "level": "text"
+    },
+    {
+      "foreground": "color.on-surface",
+      "background": "color.surface-recessed",
+      "level": "text"
+    },
+    {
+      "foreground": "color.on-surface",
+      "background": "color.surface-selected",
+      "level": "text"
+    },
+    {
+      "foreground": "color.on-surface-muted",
+      "background": "color.surface",
+      "level": "text"
+    },
+    {
+      "foreground": "color.on-primary",
+      "background": "color.primary",
+      "level": "text"
+    },
+    {
+      "foreground": "color.primary",
+      "background": "color.primary-soft",
+      "level": "text"
+    },
+    {
+      "foreground": "color.on-action",
+      "background": "color.action",
+      "level": "text"
+    },
+    {
+      "foreground": "color.on-secondary",
+      "background": "color.secondary",
+      "level": "text"
+    },
+    {
+      "foreground": "color.secondary",
+      "background": "color.secondary-soft",
+      "level": "text"
+    },
+    {
+      "foreground": "color.on-error",
+      "background": "color.error",
+      "level": "text"
+    },
+    {
+      "foreground": "color.error",
+      "background": "color.error-soft",
+      "level": "text"
+    },
+    {
+      "foreground": "color.error",
+      "background": "color.surface",
+      "level": "text"
+    },
+    {
+      "foreground": "color.on-success",
+      "background": "color.success",
+      "level": "text"
+    },
+    {
+      "foreground": "color.success",
+      "background": "color.success-soft",
+      "level": "text"
+    },
+    {
+      "foreground": "color.on-warning",
+      "background": "color.warning",
+      "level": "text"
+    },
+    {
+      "foreground": "color.warning",
+      "background": "color.warning-soft",
+      "level": "text"
+    },
+    {
+      "foreground": "color.on-info",
+      "background": "color.info",
+      "level": "text"
+    },
+    {
+      "foreground": "color.on-inverse-surface",
+      "background": "color.inverse-surface",
+      "level": "text"
+    },
+    {
+      "foreground": "color.outline",
+      "background": "color.surface",
+      "level": "ui"
+    },
+    {
+      "foreground": "color.primary",
+      "background": "color.surface",
+      "level": "ui"
+    }
+  ]
+}

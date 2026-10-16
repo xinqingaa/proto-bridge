@@ -1,3 +1,4 @@
+import type { CaseAttempt } from '../contracts/attempt.js';
 import type { Bundle } from '../contracts/bundle.js';
 import type { BlobKind, BlobOwnerRef, BlobRecord } from '../contracts/blob.js';
 import type { CatalogRevision } from '../contracts/catalog.js';
@@ -64,11 +65,22 @@ export type CommitRunInput = {
   coverage: CoverageSummary;
   /** New or reused immutable Catalog revisions fixed by the next Snapshot. */
   catalogs?: CatalogRevision[];
+  /** Issues written in the same transaction, before the active pointer flips. */
+  issues?: Issue[];
+  /**
+   * Job whose staged Case Blobs are committed in the same transaction.
+   * Only Blobs owned by this Run or by its `revisions` are committed.
+   */
+  stagedJobId?: JobId;
 };
 
 export type CommitRunResult = {
   run: Run;
   snapshot: BundleSnapshot;
+  /** Blobs committed from Job staging by this transaction. */
+  blobIds?: BlobId[];
+  /** Issue IDs already persisted with different content; the persisted Issue was kept. */
+  retainedIssueIds?: IssueId[];
 };
 
 export type CreateBundleInput = {
@@ -78,6 +90,35 @@ export type CreateBundleInput = {
   revisions: CaseEvidenceRevision[];
   coverage: CoverageSummary;
   catalogs?: CatalogRevision[];
+  issues?: Issue[];
+  stagedJobId?: JobId;
+};
+
+export type StagedBinaryInput = {
+  kind: BlobKind;
+  mediaType: string;
+  bytes: Uint8Array;
+  /** `revision` binds the Blob to the staged revision; `run` to the Job's Run. */
+  owner: 'revision' | 'run';
+};
+
+export type StagedBinaryRef = Omit<StagedBinaryInput, 'bytes'> & {
+  digest: string;
+  byteLength: number;
+};
+
+export type StageJobCaseInput = {
+  attempt: CaseAttempt;
+  /** Required for `captured` Attempts; never staged for other results. */
+  revision?: CaseEvidenceRevision;
+  binaries?: StagedBinaryInput[];
+};
+
+export type StagedJobCase = {
+  sequence: number;
+  attempt: CaseAttempt;
+  revision?: CaseEvidenceRevision;
+  binaries: StagedBinaryRef[];
 };
 
 export type ForkBundleInput = {
@@ -204,7 +245,7 @@ export interface V2Store {
 
   createBundle(
     input: CreateBundleInput,
-  ): Promise<{ bundle: Bundle; run: Run; snapshot: BundleSnapshot }>;
+  ): Promise<{ bundle: Bundle; run: Run; snapshot: BundleSnapshot; blobIds?: BlobId[] }>;
   getBundle(bundleId: BundleId): Promise<Bundle | undefined>;
   listBundles(): Promise<Bundle[]>;
   archiveBundle(bundleId: BundleId): Promise<Bundle>;
@@ -228,6 +269,17 @@ export interface V2Store {
   ): Promise<CaptureJob>;
   finalizeJob(jobId: JobId, status: TerminalJobStatus): Promise<CaptureJob>;
   getJob(jobId: JobId): Promise<CaptureJob | undefined>;
+  /** Durably fixes the Catalog revisions an executing Job will commit, so restart recovery can commit them too. */
+  stageJobCatalogs(jobId: JobId, catalogs: CatalogRevision[]): Promise<void>;
+  /**
+   * Durably records one finished Case of an executing Job (Attempt, optional
+   * revision, Blob bytes) before the next Case starts. Rejects when a Blob
+   * cannot be accepted or written; nothing for that Case is staged then.
+   * Staging is committed by `commitRun`/`createBundle` with `stagedJobId`,
+   * or by restart recovery, and is discarded once the Job is terminal.
+   */
+  stageJobCase(jobId: JobId, input: StageJobCaseInput): Promise<void>;
+  listStagedJobCases(jobId: JobId): Promise<StagedJobCase[]>;
   listJobs(): Promise<CaptureJob[]>;
   findJobByOperationKey(operationKey: LifecycleOperationKey): Promise<CaptureJob | undefined>;
   listNonTerminalJobs(): Promise<CaptureJob[]>;
@@ -275,6 +327,10 @@ export interface V2Store {
     input: FindReusableEvidenceInput,
   ): Promise<CaseEvidenceRevision | undefined>;
   createStalenessReport(
+    input: CreateStalenessReportInput,
+  ): Promise<StalenessReport>;
+  /** Same evaluation as `createStalenessReport`, without persisting the report. */
+  previewStalenessReport(
     input: CreateStalenessReportInput,
   ): Promise<StalenessReport>;
 

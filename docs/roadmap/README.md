@@ -8,7 +8,7 @@
 
 | 顺序 | 计划 | 状态 | 前置条件 | 完成定义 |
 | --- | --- | --- | --- | --- |
-| 1 | [PBWork 与 PB 平台升级](./pbwork-platform-upgrade.md) | 未开始 | 无 | 该计划的「总退出标准」全部满足 |
+| 1 | [PBWork 与 PB 平台升级](./pbwork-platform-upgrade.md) | 已暂停（W0/W1 待验收，W2 进行到 S1 完成、S2 主体落地、S3 完成，改动在 `dev/platform`） | 无 | 该计划的「总退出标准」全部满足 |
 | 2 | [「一刻」原型](./yike-prototype.md) | 未开始 | 计划一达到总退出标准 | 该计划的「验收信号」全部满足，并完成正式定稿 |
 
 ```mermaid

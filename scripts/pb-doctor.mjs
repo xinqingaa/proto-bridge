@@ -11,7 +11,7 @@ import {
   tcpReachable,
   userArgv,
   validateWorkspaceConfigWithCore,
-  resolveWorkspaceDeliveryTargetRoot,
+  resolveWorkspaceServiceLaunch,
 } from "./lib/pb-script-utils.mjs";
 
 const argv = userArgv();
@@ -57,25 +57,13 @@ try {
   );
 }
 
+let launch;
+let schemaValid = false;
 if (workspace) {
   try {
     await validateWorkspaceConfigWithCore(workspace);
+    schemaValid = true;
     record("pass", "Workspace schema", "validated by Core V2WorkspaceConfig");
-    try {
-      const deliveryTargetRoot = await resolveWorkspaceDeliveryTargetRoot(
-        workspace,
-      );
-      await access(path.join(deliveryTargetRoot, "pubspec.yaml"));
-      await access(path.join(deliveryTargetRoot, "lib"));
-      record("pass", "Delivery target", deliveryTargetRoot);
-    } catch (error) {
-      record(
-        "fail",
-        "Delivery target",
-        error instanceof Error ? error.message : String(error),
-        "Set delivery.targetRoot in proto-bridge.json to a Flutter project that contains pubspec.yaml and lib/, then restart pnpm pb:up.",
-      );
-    }
   } catch (error) {
     record(
       "fail",
@@ -84,25 +72,50 @@ if (workspace) {
       "Run pnpm build if Core output is missing, then correct the config.",
     );
   }
-  const serviceOrigins = workspace.value?.service?.allowedOrigins ?? [];
+}
+if (workspace && schemaValid) {
+  try {
+    launch = await resolveWorkspaceServiceLaunch(workspace);
+  } catch (error) {
+    record(
+      "fail",
+      "Local Service launch",
+      error instanceof Error ? error.message : String(error),
+      "Core could not resolve the Local Service launch config; correct service/runtime/store/capture/delivery in the Workspace config.",
+    );
+  }
+}
+if (launch) {
+  try {
+    await access(path.join(launch.deliveryTargetRoot, "pubspec.yaml"));
+    await access(path.join(launch.deliveryTargetRoot, "lib"));
+    record("pass", "Delivery target", launch.deliveryTargetRoot);
+  } catch (error) {
+    record(
+      "fail",
+      "Delivery target",
+      error instanceof Error ? error.message : String(error),
+      "Set delivery.targetRoot in proto-bridge.json to a Flutter project that contains pubspec.yaml and lib/, then restart pnpm pb:up.",
+    );
+  }
+}
+if (workspace && launch) {
+  // These are the exact parameters pnpm pb:up and proto-bridge service start launch with.
+  const originAllowed = launch.allowedOrigins.includes(workspace.runtimeOrigin);
   record(
-    serviceOrigins.includes(workspace.runtimeOrigin) ? "pass" : "fail",
+    originAllowed ? "pass" : "fail",
     "Workbench origin",
-    serviceOrigins.includes(workspace.runtimeOrigin)
-      ? `${workspace.runtimeOrigin} is allowed`
-      : `${workspace.runtimeOrigin} is missing from service.allowedOrigins`,
-    serviceOrigins.includes(workspace.runtimeOrigin)
+    originAllowed
+      ? `${workspace.runtimeOrigin} is allowed (${launch.allowedOrigins.join(", ")})`
+      : `${workspace.runtimeOrigin} is not among the Local Service allowed origins (${launch.allowedOrigins.join(", ")})`,
+    originAllowed
       ? undefined
-      : `Add ${JSON.stringify(workspace.runtimeOrigin)} to service.allowedOrigins.`,
-  );
-  const localServiceHost = ["127.0.0.1", "::1", "localhost"].includes(
-    workspace.serviceHost,
+      : `Local Service allows service.allowedOrigins if non-empty, else runtime.allowedOrigins if non-empty, else the origin of runtime.baseUrl. Add ${JSON.stringify(workspace.runtimeOrigin)} to service.allowedOrigins, or empty it to fall back to runtime.allowedOrigins / runtime.baseUrl.`,
   );
   record(
-    localServiceHost ? "pass" : "fail",
-    "Local Service host",
-    workspace.serviceHost,
-    localServiceHost ? undefined : "Use a loopback host such as 127.0.0.1.",
+    "info",
+    "Local Service launch",
+    `${launch.host}:${launch.port}, allowedOrigins=[${launch.allowedOrigins.join(", ")}], maxCases=${launch.maxCases}, maxStoreBytes=${launch.maxStoreBytes ?? "unlimited"}`,
   );
   const localRuntimeHost = ["127.0.0.1", "::1", "localhost"].includes(
     workspace.runtimeUrl.hostname,
@@ -149,15 +162,12 @@ if (workspace) {
     runtimeRunning ? `${workspace.runtimeOrigin} is reachable` : "not running",
     runtimeRunning ? undefined : "Start it with pnpm pb:up.",
   );
-  const serviceRunning = await tcpReachable(
-    workspace.serviceHost,
-    workspace.servicePort,
-  );
+  const serviceRunning = await tcpReachable(launch.host, launch.port);
   record(
     serviceRunning ? "pass" : requireRunning ? "fail" : "info",
     "Local Service",
     serviceRunning
-      ? `${workspace.serviceHost}:${workspace.servicePort} is reachable`
+      ? `${launch.host}:${launch.port} is reachable`
       : "not running",
     serviceRunning ? undefined : "Start it with pnpm pb:up.",
   );

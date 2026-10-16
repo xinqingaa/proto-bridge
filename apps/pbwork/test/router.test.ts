@@ -16,7 +16,7 @@ describe("PBWork routes", () => {
     expect(router.resolve("/workbench/components/button").name).toBe(
       "component-playground",
     );
-    expect(router.resolve("/workbench/drafts/hengdong").name).toBe(
+    expect(router.resolve("/workbench/drafts/workbench-overview").name).toBe(
       "draft-prototype",
     );
     expect(router.resolve("/workbench/prototypes/active").name).toBe(
@@ -37,8 +37,8 @@ describe("PBWork routes", () => {
     ).toBe("prototype-runtime");
   });
 
-  it("does not retain the retired hengdong exploration route", () => {
-    const resolved = router.resolve("/explore/hengdong-visual");
+  it("does not retain the retired exploration route", () => {
+    const resolved = router.resolve("/explore/retired-visual");
     expect(resolved.name).toBeUndefined();
     expect(resolved.redirectedFrom).toBeUndefined();
     expect(resolved.matched.at(-1)?.redirect).toBe("/workbench/overview");

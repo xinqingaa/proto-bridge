@@ -87,7 +87,7 @@ Workbench 选中的临时 DOM handle 可以帮助创建 Fragment Draft，但持�
 
 ## 可靠性边界
 
-- Local Service 只监听 loopback，校验 Origin，session token 只经 Authorization header 传递。
+- Local Service 只监听 loopback，校验 Host 与 Origin，session token 只经 Authorization header 传递。
 - Store 单 writer，原子提交不可变对象，失败时旧 active Snapshot 不变。
 - Snapshot 可达性决定 revision 和 Blob 是否允许读取。
 - MCP 只接受逻辑 ID，不暴露 Store 布局。

@@ -5,9 +5,11 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
+  TARGET_PENDING_NOTICE,
   findTargetExamples,
   resolveTargetComponents,
   resolveTargetTokens,
+  validateTargetChanges,
 } from '../../src/target/index.js';
 
 const roots: string[] = [];
@@ -228,6 +230,114 @@ describe('Target component/token resolver', () => {
 
     expect(examples.examples.map((item) => item.path)).toContain('lib/features/baseline/invoice_page.dart');
     expect(examples.examples.map((item) => item.path)).not.toContain('lib/features/candidate/invoice_copy.dart');
+  });
+
+  describe('entry-level pending', () => {
+    it('returns pending for a pending token without heuristics or candidates', async () => {
+      const root = await flutterTarget();
+      // `TS.colors.error` exists in code and would be a heuristic candidate for this id; pending must not look.
+      await machineContract(root, {
+        tokens: { 'palette.error': { status: 'pending', reason: 'Flutter 暂无该 Token' } },
+      });
+      const result = await resolveTargetTokens({ targetRoot: root, ids: ['palette.error'] });
+      expect(result.warnings).toEqual([]);
+      expect(result.resolutions[0]).toMatchObject({
+        id: 'palette.error',
+        kind: 'token',
+        status: 'pending',
+        candidates: [],
+        nextQueries: [],
+        pending: { notice: TARGET_PENDING_NOTICE, reason: 'Flutter 暂无该 Token' },
+        validation: { exists: false, importable: false, signatureCompatible: false, usageFound: false },
+      });
+      expect(result.resolutions[0]?.reason).toBe('Target 待实现：Flutter 暂无该 Token');
+      expect(TARGET_PENDING_NOTICE).toBe('Target 待实现');
+    });
+
+    it('returns pending for a pending component without candidate substitutes', async () => {
+      const root = await flutterTarget();
+      // CommonCard would be a heuristic candidate for `card`.
+      await machineContract(root, {
+        components: {
+          card: { status: 'pending', reason: '  组件尚未移植  ' },
+          'other.panel': { symbol: 'CommonCard', import: 'common/widgets/widgets.dart' },
+        },
+      });
+      const result = await resolveTargetComponents({ targetRoot: root, ids: ['card', 'other.panel'] });
+      expect(result.resolutions[0]).toMatchObject({
+        status: 'pending',
+        candidates: [],
+        pending: { notice: 'Target 待实现', reason: '组件尚未移植' },
+      });
+      expect(result.resolutions[0]?.declarationSources.map((item) => item.kind)).toEqual(['machine-contract']);
+      expect(result.resolutions[1]?.status).toBe('resolved');
+    });
+
+    it('rejects a pending entry with a missing or blank reason as a per-entry conflict, not a silent pending', async () => {
+      const root = await flutterTarget();
+      await machineContract(root, {
+        components: {
+          'blank.reason': { status: 'pending', reason: '   ' },
+          'missing.reason': { status: 'pending' },
+          'ok.component': { symbol: 'CommonCard', import: 'common/widgets/widgets.dart' },
+        },
+      });
+      const result = await resolveTargetComponents({
+        targetRoot: root,
+        ids: ['blank.reason', 'missing.reason', 'ok.component'],
+      });
+      expect(result.warnings).toEqual([]);
+      expect(result.resolutions.map((item) => item.status)).toEqual(['conflict', 'conflict', 'resolved']);
+      expect(result.resolutions[0]?.pending).toBeUndefined();
+      expect(result.resolutions[0]?.reason).toMatch(/non-empty reason/);
+    });
+
+    it('reports a conflict when pending coexists with a concrete mapping for the same id', async () => {
+      const root = await flutterTarget();
+      await write(
+        root,
+        'docs/proto-bridge.md',
+        `# Adapter\n\n## Token mapping\n\n| Evidence token | Target token |\n| --- | --- |\n| \`palette.critical\` | \`TS.colors.error\` |\n`,
+      );
+      await machineContract(root, { tokens: { 'palette.critical': { status: 'pending', reason: 'later' } } });
+      const result = await resolveTargetTokens({ targetRoot: root, ids: ['palette.critical'] });
+      expect(result.resolutions[0]).toMatchObject({ status: 'conflict', candidates: [] });
+    });
+
+    it('still treats an unknown entry status as an invalid manifest warning', async () => {
+      const root = await flutterTarget();
+      await machineContract(root, { tokens: { 'palette.x': { status: 'done', reason: 'x' } } });
+      const result = await resolveTargetTokens({ targetRoot: root, ids: ['palette.x'] });
+      expect(result.warnings.join('\n')).toMatch(/Invalid proto-bridge\.target\.json/);
+    });
+
+    it('gives validation a hint-level pending notice instead of a conflict or needs-review', async () => {
+      const root = await flutterTarget();
+      await machineContract(root, {
+        components: { 'glass.card': { status: 'pending', reason: 'glass 分支未实现' } },
+        tokens: { 'asset.logo': { status: 'pending', reason: 'Flutter 无资产键' } },
+      });
+      await git(root, ['init']);
+      await git(root, ['config', 'user.email', 'resolver@example.invalid']);
+      await git(root, ['config', 'user.name', 'Resolver Test']);
+      await git(root, ['add', '.']);
+      await git(root, ['commit', '-m', 'baseline']);
+
+      const validation = await validateTargetChanges({
+        targetRoot: root,
+        resolvedMappings: [
+          { id: 'glass.card', kind: 'component', symbol: 'CommonCard' },
+          { id: 'asset.logo', kind: 'token', accessor: 'TS.assets.logo' },
+        ],
+      });
+      expect(validation).toMatchObject({ adapterId: 'flutter', status: 'ok', mappingIssues: [] });
+      if (validation.adapterId !== 'flutter') throw new Error('expected flutter adapter');
+      expect(validation.pendingNotices).toEqual([
+        expect.objectContaining({ id: 'glass.card', kind: 'component', notice: 'Target 待实现', reason: 'glass 分支未实现' }),
+        expect.objectContaining({ id: 'asset.logo', kind: 'token', notice: 'Target 待实现', reason: 'Flutter 无资产键' }),
+      ]);
+      expect(validation.pendingNotices[0]?.detail).toContain('Target 待实现');
+    });
   });
 
   it('returns unsupported resolutions without inventing a Flutter mapping', async () => {

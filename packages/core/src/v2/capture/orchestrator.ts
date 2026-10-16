@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import {
   CaseAttempt,
   type CaseAttempt as CaseAttemptType,
@@ -7,24 +6,23 @@ import {
   CaseEvidenceRevision,
   type CaseEvidenceRevision as CaseEvidenceRevisionType,
 } from '../contracts/evidence.js';
-import {
-  CoverageSummary,
-  type CoverageSummary as CoverageSummaryType,
-} from '../contracts/coverage.js';
 import { Run, type Run as RunType } from '../contracts/run.js';
-import { Issue } from '../contracts/issue.js';
 import { CatalogRevision, type CatalogRevision as CatalogRevisionType } from '../contracts/catalog.js';
 import { computeScopeKey } from '../contracts/scope.js';
 import {
   evidenceLevelAtLeast,
+  isTerminalJobStatus,
   type AttemptResult,
-  type EvidenceLevel,
 } from '../contracts/vocabulary.js';
 import { V2_SCHEMA_MAJOR } from '../contracts/version.js';
 import type { BundleSnapshot } from '../contracts/snapshot.js';
 import type { JobId } from '../contracts/ids.js';
-import type { V2Store } from '../store/types.js';
+import type { StagedBinaryInput, V2Store } from '../store/types.js';
 import { generateOperationalId } from '../store/id-generator.js';
+import {
+  computeAttemptCoverage,
+  issuesForCapturedRevisions,
+} from '../store/snapshot-builder.js';
 import type { CapturedBinary, CaseCaptureDriver } from './playwright-driver.js';
 import { CaseCaptureFailure } from './playwright-driver.js';
 import {
@@ -52,86 +50,6 @@ export type CaptureOrchestratorResult = {
   storedBlobIds: string[];
 };
 
-type PendingBinary = {
-  binary: CapturedBinary;
-  owner:
-    { kind: 'revision'; objectId: string } | { kind: 'run'; objectId: string };
-};
-
-function groupPendingBinaries(pending: PendingBinary[]): Array<{
-  binary: CapturedBinary;
-  owners: PendingBinary['owner'][];
-}> {
-  const groups = new Map<
-    string,
-    { binary: CapturedBinary; owners: PendingBinary['owner'][] }
-  >();
-  for (const item of pending) {
-    const digest = createHash('sha256').update(item.binary.bytes).digest('hex');
-    const key = `${item.binary.kind}/${item.binary.mediaType}/${digest}`;
-    const existing = groups.get(key);
-    if (existing) {
-      existing.owners.push(item.owner);
-    } else {
-      groups.set(key, { binary: item.binary, owners: [item.owner] });
-    }
-  }
-  return [...groups.values()];
-}
-
-function emptyCounts(selected: number): CoverageSummaryType['counts'] {
-  return {
-    selected,
-    captured: 0,
-    reused: 0,
-    failed: 0,
-    skipped: 0,
-    unsupported: 0,
-    cancelled: 0,
-    interrupted: 0,
-    missing: 0,
-    stale: 0,
-  };
-}
-
-function coverageFor(
-  attempts: CaseAttemptType[],
-  revisions: CaseEvidenceRevisionType[],
-): CoverageSummaryType {
-  const counts = emptyCounts(attempts.length);
-  for (const attempt of attempts) counts[attempt.result] += 1;
-  const evidenceLevelBreakdown: Partial<Record<EvidenceLevel, number>> = {};
-  let traceable = 0;
-  let heuristic = 0;
-  let unknown = 0;
-  let conflict = 0;
-  for (const revision of revisions) {
-    evidenceLevelBreakdown[revision.evidenceLevel] =
-      (evidenceLevelBreakdown[revision.evidenceLevel] ?? 0) + 1;
-    for (const fact of revision.facts) {
-      if (fact.resolution === 'unknown') unknown += 1;
-      else if (fact.resolution === 'unresolved-conflict') conflict += 1;
-      else if (
-        fact.candidates.some(
-          (candidate) =>
-            candidate.provenance.source === 'heuristic' ||
-            candidate.provenance.confidence === 'low',
-        )
-      ) {
-        heuristic += 1;
-      } else {
-        traceable += 1;
-      }
-    }
-  }
-  return CoverageSummary.parse({
-    counts,
-    evidenceLevelBreakdown,
-    factQuality: { traceable, heuristic, unknown, conflict },
-    denominator: attempts.length,
-  });
-}
-
 function resultReason(error: unknown): string {
   return (error instanceof Error ? error.message : String(error)).slice(
     0,
@@ -151,9 +69,18 @@ function attemptResultToTermination(
     : 'failed';
 }
 
+function stagedBinaries(
+  binaries: readonly CapturedBinary[],
+  owner: StagedBinaryInput['owner'],
+): StagedBinaryInput[] {
+  return binaries.map((binary) => ({ ...binary, owner }));
+}
+
 /**
  * Executes a Preflight-fixed Matrix, isolates Case failures, and commits
- * one immutable Run/Snapshot through the real V2Store transaction.
+ * one immutable Run/Snapshot through the real V2Store transaction. Every
+ * finished Case is durably staged before the next one starts, so a writer
+ * crash only loses the Case in flight (see `V2Store.stageJobCase`).
  */
 export async function capturePreflightToStore(
   input: CaptureOrchestratorInput,
@@ -181,12 +108,118 @@ export async function capturePreflightToStore(
     );
   }
   await input.store.startJob(job.jobId, runId);
-  await input.store.advanceJob(job.jobId, 'capturing');
+  try {
+    return await executeStartedJob(input, job.jobId, job.acceptedAt, runId, now);
+  } catch (error) {
+    const current = await input.store.getJob(job.jobId).catch(() => undefined);
+    if (current && !isTerminalJobStatus(current.status)) {
+      await input.store
+        .appendJobJournal(job.jobId, {
+          event: current.status === 'writing' ? 'commit-failed' : 'execution-failed',
+          detail: resultReason(error),
+        })
+        .catch(() => undefined);
+      await input.store.finalizeJob(job.jobId, 'failed');
+    }
+    throw error;
+  }
+}
+
+async function executeStartedJob(
+  input: CaptureOrchestratorInput,
+  jobId: JobId,
+  acceptedAt: string,
+  runId: string,
+  now: () => Date,
+): Promise<CaptureOrchestratorResult> {
+  const { store } = input;
+  await store.advanceJob(jobId, 'capturing');
+
+  const existingCatalogs = (await store.getBundle(input.bundleId))
+    ? await store.listCatalogRevisions(input.bundleId)
+    : [];
+  const catalogs: CatalogRevisionType[] = input.preflight.catalogInputs.map(
+    (catalog) =>
+      existingCatalogs.find(
+        (candidate) =>
+          candidate.kind === catalog.kind &&
+          candidate.inputDigest === catalog.inputDigest,
+      ) ??
+      CatalogRevision.parse({
+        schemaVersion: V2_SCHEMA_MAJOR,
+        catalogRevisionId: generateOperationalId('catalog', now()),
+        workspaceId: store.workspaceId,
+        bundleId: input.bundleId,
+        prototypeId: input.preflight.selection.prototypeId,
+        kind: catalog.kind,
+        inputDigest: catalog.inputDigest,
+        createdAt: now().toISOString(),
+        entries: catalog.entries,
+      }),
+  );
+  await store.stageJobCatalogs(jobId, catalogs);
 
   const attempts: CaseAttemptType[] = [];
   const revisions: CaseEvidenceRevisionType[] = [];
-  const pendingBinaries: PendingBinary[] = [];
   let cancelled = false;
+
+  const finishCase = async (
+    attempt: CaseAttemptType,
+    revision: CaseEvidenceRevisionType | undefined,
+    binaries: StagedBinaryInput[],
+  ): Promise<void> => {
+    let staged = { attempt, revision };
+    try {
+      await store.stageJobCase(jobId, {
+        attempt,
+        ...(revision ? { revision } : {}),
+        binaries,
+      });
+    } catch (error) {
+      const required = revision
+        ? binaries.filter((binary) => binary.kind === 'screenshot')
+        : [];
+      const optional = binaries.filter((binary) => !required.includes(binary));
+      let recovered = false;
+      if (optional.length > 0) {
+        await store.appendJobJournal(jobId, {
+          event: 'blob-write-failed',
+          detail: `${attempt.caseId}:${resultReason(error)}`,
+        });
+        try {
+          await store.stageJobCase(jobId, {
+            attempt,
+            ...(revision ? { revision } : {}),
+            binaries: required,
+          });
+          recovered = true;
+        } catch (retryError) {
+          error = retryError;
+        }
+      }
+      if (!recovered) {
+        if (!revision || required.length === 0) throw error;
+        // A captured Case without its required screenshot is not Evidence.
+        const { revisionId: _dropped, ...rest } = attempt;
+        const failed = CaseAttempt.parse({
+          ...rest,
+          result: 'failed',
+          reason: `Required screenshot Blob could not be written: ${resultReason(error)}`.slice(0, 2000),
+        });
+        await store.stageJobCase(jobId, { attempt: failed });
+        staged = { attempt: failed, revision: undefined };
+      }
+    }
+    attempts.push(staged.attempt);
+    if (staged.revision) revisions.push(staged.revision);
+    await store.appendJobJournal(jobId, {
+      event: 'case-finished',
+      detail:
+        staged.attempt.result === 'failed'
+          ? `${staged.attempt.caseId}:failed:${staged.attempt.reason ?? ''}`
+          : `${staged.attempt.caseId}:${staged.attempt.result}`,
+    });
+  };
 
   for (const entry of input.preflight.matrix) {
     if (input.signal?.aborted) {
@@ -194,17 +227,25 @@ export async function capturePreflightToStore(
       break;
     }
     const startedAt = now().toISOString();
-    await input.store.appendJobJournal(job.jobId, {
+    await store.appendJobJournal(jobId, {
       event: 'case-started',
       detail: entry.selectedCase.caseId,
     });
     const scopeKey = computeScopeKey(entry.selectedCase.captureScope);
+    const baseAttempt = {
+      schemaVersion: V2_SCHEMA_MAJOR,
+      runId,
+      caseId: entry.selectedCase.caseId,
+      captureScope: entry.selectedCase.captureScope,
+      scopeKey,
+      startedAt,
+    };
     const inputDigest = digestCaptureInput({
       manifestDigest: input.preflight.manifestDigest,
       caseKey: entry.selectedCase.caseKey,
       scenario: entry.scenario,
     });
-    const reusable = await input.store.findReusableEvidence({
+    const reusable = await store.findReusableEvidence({
       bundleId: input.bundleId,
       caseId: entry.selectedCase.caseId,
       captureScope: entry.selectedCase.captureScope,
@@ -212,22 +253,17 @@ export async function capturePreflightToStore(
       minimumEvidenceLevel: entry.selectedCase.captureScope.minEvidenceLevel,
     });
     if (reusable) {
-      attempts.push(
-        CaseAttempt.parse({
-          schemaVersion: V2_SCHEMA_MAJOR,
-          attemptId: generateOperationalId('attempt', now()),
-          runId,
-          caseId: entry.selectedCase.caseId,
-          captureScope: entry.selectedCase.captureScope,
-          scopeKey,
-          result: 'reused',
-          revisionId: reusable.revisionId,
-          startedAt,
-          endedAt: now().toISOString(),
-        }),
-      );
+      const attempt = CaseAttempt.parse({
+        ...baseAttempt,
+        attemptId: generateOperationalId('attempt', now()),
+        result: 'reused',
+        revisionId: reusable.revisionId,
+        endedAt: now().toISOString(),
+      });
+      await store.stageJobCase(jobId, { attempt });
+      attempts.push(attempt);
       revisions.push(reusable);
-      await input.store.appendJobJournal(job.jobId, {
+      await store.appendJobJournal(jobId, {
         event: 'case-finished',
         detail: `${entry.selectedCase.caseId}:reused`,
       });
@@ -247,31 +283,24 @@ export async function capturePreflightToStore(
           entry.selectedCase.captureScope.minEvidenceLevel,
         )
       ) {
-        attempts.push(
+        await finishCase(
           CaseAttempt.parse({
-            schemaVersion: V2_SCHEMA_MAJOR,
+            ...baseAttempt,
             attemptId: generateOperationalId('attempt', now()),
-            runId,
-            caseId: entry.selectedCase.caseId,
-            captureScope: entry.selectedCase.captureScope,
-            scopeKey,
             result: 'unsupported',
             reason: `Captured Evidence Level ${captured.evidenceLevel} is below required ${entry.selectedCase.captureScope.minEvidenceLevel}.`,
-            startedAt,
             endedAt: now().toISOString(),
           }),
+          undefined,
+          [],
         );
-        await input.store.appendJobJournal(job.jobId, {
-          event: 'case-finished',
-          detail: `${entry.selectedCase.caseId}:unsupported`,
-        });
         continue;
       }
       const revisionId = generateOperationalId('revision', now());
       const revision = CaseEvidenceRevision.parse({
         schemaVersion: V2_SCHEMA_MAJOR,
         revisionId,
-        workspaceId: input.store.workspaceId,
+        workspaceId: store.workspaceId,
         bundleId: input.bundleId,
         caseId: entry.selectedCase.caseId,
         captureScope: entry.selectedCase.captureScope,
@@ -293,65 +322,35 @@ export async function capturePreflightToStore(
         requiredFactsTotal: captured.requiredFactsTotal,
         requiredFactsResolved: captured.requiredFactsResolved,
       });
-      revisions.push(revision);
-      attempts.push(
+      await finishCase(
         CaseAttempt.parse({
-          schemaVersion: V2_SCHEMA_MAJOR,
+          ...baseAttempt,
           attemptId: generateOperationalId('attempt', now()),
-          runId,
-          caseId: entry.selectedCase.caseId,
-          captureScope: entry.selectedCase.captureScope,
-          scopeKey,
           result: 'captured',
           revisionId,
-          startedAt,
           endedAt: now().toISOString(),
         }),
+        revision,
+        stagedBinaries(captured.binaries, 'revision'),
       );
-      for (const binary of captured.binaries) {
-        pendingBinaries.push({
-          binary,
-          owner: { kind: 'revision', objectId: revisionId },
-        });
-      }
-      await input.store.appendJobJournal(job.jobId, {
-        event: 'case-finished',
-        detail: `${entry.selectedCase.caseId}:captured`,
-      });
     } catch (error) {
       const result: AttemptResult = input.signal?.aborted
         ? 'cancelled'
         : 'failed';
       if (result === 'cancelled') cancelled = true;
-      attempts.push(
+      await finishCase(
         CaseAttempt.parse({
-          schemaVersion: V2_SCHEMA_MAJOR,
+          ...baseAttempt,
           attemptId: generateOperationalId('attempt', now()),
-          runId,
-          caseId: entry.selectedCase.caseId,
-          captureScope: entry.selectedCase.captureScope,
-          scopeKey,
           result,
           ...(result === 'failed' ? { reason: resultReason(error) } : {}),
-          startedAt,
           endedAt: now().toISOString(),
         }),
+        undefined,
+        error instanceof CaseCaptureFailure
+          ? stagedBinaries(error.binaries, 'run')
+          : [],
       );
-      if (error instanceof CaseCaptureFailure) {
-        for (const binary of error.binaries) {
-          pendingBinaries.push({
-            binary,
-            owner: { kind: 'run', objectId: runId },
-          });
-        }
-      }
-      await input.store.appendJobJournal(job.jobId, {
-        event: 'case-finished',
-        detail:
-          result === 'failed'
-            ? `${entry.selectedCase.caseId}:${result}:${resultReason(error)}`
-            : `${entry.selectedCase.caseId}:${result}`,
-      });
     }
   }
 
@@ -375,134 +374,58 @@ export async function capturePreflightToStore(
     }
   }
 
-  const coverage = coverageFor(attempts, revisions);
+  const coverage = computeAttemptCoverage(attempts, revisions);
   const terminationReason = attemptResultToTermination(attempts, cancelled);
   const run = Run.parse({
     schemaVersion: V2_SCHEMA_MAJOR,
     runId,
-    workspaceId: input.store.workspaceId,
+    workspaceId: store.workspaceId,
     bundleId: input.bundleId,
     selection: input.preflight.selection,
     inputVersion: input.preflight.inputVersion,
-    startedAt: job.acceptedAt,
+    startedAt: acceptedAt,
     endedAt: now().toISOString(),
     terminationReason,
     attempts,
     coverage,
   });
 
-  await input.store.advanceJob(job.jobId, 'writing');
-  try {
-    const existingCatalogs = (await input.store.getBundle(input.bundleId))
-      ? await input.store.listCatalogRevisions(input.bundleId)
-      : [];
-    const catalogs: CatalogRevisionType[] = input.preflight.catalogInputs.map(
-      (catalog) =>
-        existingCatalogs.find(
-          (candidate) =>
-            candidate.kind === catalog.kind &&
-            candidate.inputDigest === catalog.inputDigest,
-        ) ??
-        CatalogRevision.parse({
-          schemaVersion: V2_SCHEMA_MAJOR,
-          catalogRevisionId: generateOperationalId('catalog', now()),
-          workspaceId: input.store.workspaceId,
-          bundleId: input.bundleId,
-          prototypeId: input.preflight.selection.prototypeId,
-          kind: catalog.kind,
-          inputDigest: catalog.inputDigest,
-          createdAt: now().toISOString(),
-          entries: catalog.entries,
-        }),
-    );
-    const newlyCaptured = revisions.filter((revision) =>
-      attempts.some(
-        (attempt) =>
-          attempt.result === 'captured' &&
-          attempt.revisionId === revision.revisionId,
-      ),
-    );
-    const existingBundle = await input.store.getBundle(input.bundleId);
-    const committed = existingBundle
-      ? await input.store.commitRun({
-          bundleId: input.bundleId,
-          run,
-          revisions: newlyCaptured,
-          coverage,
-          catalogs,
-        })
-      : await input.store.createBundle({
-          bundleId: input.bundleId,
-          prototypeId: input.preflight.selection.prototypeId,
-          run,
-          revisions: newlyCaptured,
-          coverage,
-          catalogs,
-        });
-    const storedBlobIds: string[] = [];
-    const issues = new Map(
-      newlyCaptured.flatMap((revision) =>
-        revision.facts
-          .filter(
-            (fact) =>
-              fact.issueRef &&
-              (fact.resolution === 'unknown' ||
-                fact.resolution === 'unresolved-conflict'),
-          )
-          .map((fact) => {
-            const issue = Issue.parse({
-              schemaVersion: V2_SCHEMA_MAJOR,
-              issueId: fact.issueRef,
-              severity: 'warning',
-              reason:
-                fact.resolution === 'unknown'
-                  ? `Fact ${fact.factId} is required but remains unknown.`
-                  : `Fact ${fact.factId} has an unresolved conflict.`,
-              affectedCaseIds: [revision.caseId],
-              evidenceRefs: [fact.factId],
-              nextAction:
-                'Add an explicit Variant, Scenario Checkpoint or higher-level Evidence source, then recapture.',
-            });
-            return [issue.issueId, issue] as const;
-          }),
-      ),
-    );
-    for (const issue of issues.values()) {
-      try {
-        await input.store.putIssue(input.bundleId, issue);
-      } catch (error) {
-        await input.store.appendJobJournal(job.jobId, {
-          event: 'issue-write-failed',
-          detail: resultReason(error),
-        });
-      }
-    }
-    for (const pending of groupPendingBinaries(pendingBinaries)) {
-      try {
-        const record = await input.store.putBlob({
-          bundleId: input.bundleId,
-          kind: pending.binary.kind,
-          mediaType: pending.binary.mediaType,
-          bytes: pending.binary.bytes,
-          ownerRefs: pending.owners,
-        });
-        storedBlobIds.push(record.blobId);
-      } catch (error) {
-        await input.store.appendJobJournal(job.jobId, {
-          event: 'blob-write-failed',
-          detail: resultReason(error),
-        });
-      }
-    }
-    await input.store.finalizeJob(job.jobId, terminationReason);
-    return {
-      run: committed.run,
-      snapshot: committed.snapshot,
-      jobId: job.jobId,
-      storedBlobIds,
-    };
-  } catch (error) {
-    await input.store.finalizeJob(job.jobId, 'failed');
-    throw error;
+  await store.advanceJob(jobId, 'writing');
+  const newlyCaptured = revisions.filter((revision) =>
+    attempts.some(
+      (attempt) =>
+        attempt.result === 'captured' &&
+        attempt.revisionId === revision.revisionId,
+    ),
+  );
+  const transaction = {
+    bundleId: input.bundleId,
+    run,
+    revisions: newlyCaptured,
+    coverage,
+    catalogs,
+    issues: issuesForCapturedRevisions(newlyCaptured),
+    stagedJobId: jobId,
+  };
+  const committed = (await store.getBundle(input.bundleId))
+    ? await store.commitRun(transaction)
+    : await store.createBundle({
+        ...transaction,
+        prototypeId: input.preflight.selection.prototypeId,
+      });
+  const retainedIssueIds =
+    'retainedIssueIds' in committed ? committed.retainedIssueIds ?? [] : [];
+  if (retainedIssueIds.length > 0) {
+    await store.appendJobJournal(jobId, {
+      event: 'issue-retained',
+      detail: `Issue ID(s) already persisted with different content were kept unchanged: ${retainedIssueIds.join(', ')}`.slice(0, 2000),
+    });
   }
+  await store.finalizeJob(jobId, terminationReason);
+  return {
+    run: committed.run,
+    snapshot: committed.snapshot,
+    jobId,
+    storedBlobIds: committed.blobIds ?? [],
+  };
 }

@@ -1,8 +1,9 @@
 import type { AcceptanceDimension } from '../v2/acceptance-contract.js';
-import type {
-  TargetResolutionBatch,
-  TargetResolutionStatus,
-  TargetRevisionKey,
+import {
+  TARGET_PENDING_NOTICE,
+  type TargetResolutionBatch,
+  type TargetResolutionStatus,
+  type TargetRevisionKey,
 } from './types.js';
 
 export const TARGET_READINESS_CONTRACT_VERSION = 1 as const;
@@ -52,6 +53,15 @@ export type TargetResolutionCoverage = {
   staleIds: string[];
   unresolvedIds: string[];
   unsupportedIds: string[];
+  /** Entry-level `pending` keys; counted as not ready but never mixed into unresolved/conflict. */
+  pendingIds: string[];
+  pendingItems: TargetPendingItem[];
+};
+
+export type TargetPendingItem = {
+  id: string;
+  kind: 'component' | 'token';
+  reason: string;
 };
 
 export type TargetReadinessBlocker = {
@@ -61,6 +71,7 @@ export type TargetReadinessBlocker = {
     | 'mapping-candidate'
     | 'mapping-conflict'
     | 'mapping-stale'
+    | 'mapping-pending'
     | 'inspector-missing'
     | 'case-not-declared'
     | 'scenario-not-declared';
@@ -77,6 +88,12 @@ export type TargetReadinessReport = {
     components: TargetResolutionCoverage;
     tokens: TargetResolutionCoverage;
   };
+  /** Pending entries across components and tokens, listed separately from other mapping blockers. */
+  pending: {
+    count: number;
+    notice: typeof TARGET_PENDING_NOTICE;
+    items: TargetPendingItem[];
+  };
   dimensions: Record<AcceptanceDimension, TargetAuthorityFact & {
     required: boolean;
     status: 'authoritative' | 'unverified';
@@ -89,7 +106,7 @@ export type TargetReadinessReport = {
 };
 
 const STATUS_ORDER: TargetResolutionStatus[] = [
-  'resolved', 'candidate', 'stale', 'conflict', 'unresolved', 'unsupported',
+  'resolved', 'candidate', 'stale', 'conflict', 'unresolved', 'unsupported', 'pending',
 ];
 
 const EXPECTED_AUTHORITY: Record<AcceptanceDimension, string> = {
@@ -146,6 +163,11 @@ export function analyzeTargetReadiness(input: TargetReadinessInput): TargetReadi
     adapter: input.adapter,
     targetRevisionKey: input.targetRevisionKey,
     mapping: { components: componentCoverage, tokens: tokenCoverage },
+    pending: {
+      count: componentCoverage.pendingItems.length + tokenCoverage.pendingItems.length,
+      notice: TARGET_PENDING_NOTICE,
+      items: [...componentCoverage.pendingItems, ...tokenCoverage.pendingItems],
+    },
     dimensions,
     expectedReviewAuthority: EXPECTED_AUTHORITY,
     blockers,
@@ -171,6 +193,15 @@ function coverage(batch: TargetResolutionBatch): TargetResolutionCoverage {
     staleIds: ids.stale,
     unresolvedIds: ids.unresolved,
     unsupportedIds: ids.unsupported,
+    pendingIds: ids.pending,
+    pendingItems: batch.resolutions
+      .filter((resolution) => resolution.status === 'pending')
+      .map((resolution) => ({
+        id: resolution.id,
+        kind: resolution.kind,
+        reason: resolution.pending?.reason ?? resolution.reason,
+      }))
+      .sort((left, right) => left.id.localeCompare(right.id)),
   };
 }
 
@@ -184,6 +215,7 @@ function addMappingBlockers(
     ['mapping-candidate', item.candidateIds, 'Resolver found only a candidate mapping; authoritative Review cannot rely on heuristics.'],
     ['mapping-conflict', item.conflictIds, 'Target declarations conflict and require reconciliation.'],
     ['mapping-stale', item.staleIds, 'Declared mapping is stale against the current Target revision.'],
+    ['mapping-pending', item.pendingIds, `${TARGET_PENDING_NOTICE}: the Target declares these keys as pending; disclose them and do not substitute another implementation.`],
   ] as const) {
     if (ids.length) blockers.push({ code, dimension, ids: [...ids].sort(), detail });
   }

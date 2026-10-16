@@ -25,18 +25,6 @@ const FALLBACK_ATMOSPHERE: StageAtmosphere = {
 };
 
 const PRESENTATION: Record<string, PrototypePresentation> = {
-  hengdong: {
-    shortLabel: "恒动",
-    summary: "健身自律",
-    atmosphere: {
-      ground: "#2a1810",
-      glow: "rgba(232, 132, 64, 0.58)",
-      mist: "rgba(255, 196, 140, 0.22)",
-      ink: "#fff3e8",
-      muted: "rgba(255, 243, 232, 0.62)",
-      orbit: "rgba(255, 196, 140, 0.16)",
-    },
-  },
   "cold-chain-ops": {
     shortLabel: "冷链",
     summary: "冷链值守",

@@ -2,7 +2,11 @@ import type { CaseEvidenceRevision } from '../contracts/evidence.js';
 import { evidenceQualityScore } from '../contracts/evidence.js';
 import type { CaseEvidenceRevisionId, CaseId, ScopeKey, SnapshotId } from '../contracts/ids.js';
 import type { Run } from '../contracts/run.js';
-import type { CoverageSummary } from '../contracts/coverage.js';
+import type { CaseAttempt } from '../contracts/attempt.js';
+import { CoverageSummary } from '../contracts/coverage.js';
+import type { EvidenceLevel } from '../contracts/vocabulary.js';
+import { Issue } from '../contracts/issue.js';
+import { V2_SCHEMA_MAJOR } from '../contracts/version.js';
 import type { ActiveSlot, BundleSnapshot, LatestAttemptRef, SnapshotCatalogRef } from '../contracts/snapshot.js';
 import { unknownReferenceError } from '../contracts/errors.js';
 import type { ActivationCandidate, CaseActiveState, ExistingActiveRevision } from '../resolver/activation.js';
@@ -95,6 +99,105 @@ function stateToSlots(caseId: CaseId, state: CaseActiveState): ActiveSlot[] {
  * output (referential integrity, schema) before committing anything, and
  * a failed validation leaves the previous Snapshot's active pointer alone.
  */
+/**
+ * Run/Snapshot Coverage for one set of Attempts: Attempt results become
+ * counts, and Fact quality is taken from the revisions those Attempts made
+ * active. Shared by the capture orchestrator and restart recovery so both
+ * paths report the same partial/complete truth.
+ */
+export function computeAttemptCoverage(
+  attempts: readonly CaseAttempt[],
+  revisions: readonly CaseEvidenceRevision[],
+): CoverageSummary {
+  const counts: CoverageSummary['counts'] = {
+    selected: attempts.length,
+    captured: 0,
+    reused: 0,
+    failed: 0,
+    skipped: 0,
+    unsupported: 0,
+    cancelled: 0,
+    interrupted: 0,
+    missing: 0,
+    stale: 0,
+  };
+  for (const attempt of attempts) counts[attempt.result] += 1;
+  const evidenceLevelBreakdown: Partial<Record<EvidenceLevel, number>> = {};
+  let traceable = 0;
+  let heuristic = 0;
+  let unknown = 0;
+  let conflict = 0;
+  for (const revision of revisions) {
+    evidenceLevelBreakdown[revision.evidenceLevel] =
+      (evidenceLevelBreakdown[revision.evidenceLevel] ?? 0) + 1;
+    for (const fact of revision.facts) {
+      if (fact.resolution === 'unknown') unknown += 1;
+      else if (fact.resolution === 'unresolved-conflict') conflict += 1;
+      else if (
+        fact.candidates.some(
+          (candidate) =>
+            candidate.provenance.source === 'heuristic' ||
+            candidate.provenance.confidence === 'low',
+        )
+      ) {
+        heuristic += 1;
+      } else {
+        traceable += 1;
+      }
+    }
+  }
+  return CoverageSummary.parse({
+    counts,
+    evidenceLevelBreakdown,
+    factQuality: { traceable, heuristic, unknown, conflict },
+    denominator: attempts.length,
+  });
+}
+
+/** Immutable Issues for required unknown/conflict Facts in newly captured revisions. */
+export function issuesForCapturedRevisions(
+  revisions: readonly CaseEvidenceRevision[],
+): Issue[] {
+  const issues = new Map<string, Issue>();
+  for (const revision of revisions) {
+    for (const fact of revision.facts) {
+      if (
+        !fact.issueRef ||
+        (fact.resolution !== 'unknown' &&
+          fact.resolution !== 'unresolved-conflict')
+      ) {
+        continue;
+      }
+      const existing = issues.get(fact.issueRef);
+      if (existing) {
+        issues.set(fact.issueRef, {
+          ...existing,
+          affectedCaseIds: [...new Set([...existing.affectedCaseIds, revision.caseId])].sort(),
+          evidenceRefs: [...new Set([...existing.evidenceRefs, fact.factId])].sort(),
+        });
+        continue;
+      }
+      issues.set(
+        fact.issueRef,
+        Issue.parse({
+          schemaVersion: V2_SCHEMA_MAJOR,
+          issueId: fact.issueRef,
+          severity: 'warning',
+          reason:
+            fact.resolution === 'unknown'
+              ? `Fact ${fact.factId} is required but remains unknown.`
+              : `Fact ${fact.factId} has an unresolved conflict.`,
+          affectedCaseIds: [revision.caseId],
+          evidenceRefs: [fact.factId],
+          nextAction:
+            'Add an explicit Variant, Scenario Checkpoint or higher-level Evidence source, then recapture.',
+        }),
+      );
+    }
+  }
+  return [...issues.values()];
+}
+
 export function buildNextSnapshot(input: BuildNextSnapshotInput): BundleSnapshot {
   const { previousSnapshot, run, revisionsById, snapshotId, committedAt, coverage } = input;
 

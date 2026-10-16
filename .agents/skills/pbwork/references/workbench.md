@@ -73,7 +73,7 @@ Prototype Screens or their Design System.
   that projection. A diagnostic result must not read as deliverable or
   finalized. Keep partial-failure counts, failure groups, and “继续定稿”.
 - Keep background history in task center, details in Evidence Review, and the
-  active delivery progress in Deliver UI.
+  active finalization progress in the finalization sheet.
 - Reorganize Evidence presentation by Screen/Case/Fragment without rewriting
   Store JSON. Keep fixed refs, provenance, unknown, conflict, Coverage, Issue,
   and risk traceable.

@@ -62,7 +62,7 @@ Agent 在收到组件、Token、Theme 或共享手势修改任务时，必须主
 
 完整 Catalog 的一次性 Agent 读取已经废弃：它会淹没任务上下文，不得作为 Target 同步或页面实现的前置步骤。Target Agent 按当前组件读取 Producer Contract、文档及必要源码；目标工程自己的完整映射文件不等于重新开放 Store Catalog。
 
-DS 连续迭代不要求每轮都做 Flutter 视觉精修，但每轮必须运行 `pnpm ds:target-sync:verify` 让 Schema、Contract、role、Token/Theme 与 Target API 漂移显式可见。稳定批次必须同时更新 Target 映射/公开 API 与完整 sync baseline，使清单恢复 `synced`；`pnpm verify` 不接受 pending、过期 fingerprint 或不一致的计数/分区/逐组件元数据。
+DS 连续迭代不要求每轮都做 Flutter 视觉精修，但每轮必须运行 `pnpm ds:target-sync:verify` 让 Schema、Contract、role、Token/Theme 与 Target API 漂移显式可见。稳定批次必须同时更新 Target 映射/公开 API 与完整 sync baseline，使清单恢复 `synced`；`pnpm verify` 不接受批次状态 pending（条目级 `pending` 是逐键事实，单独列出、不判失败，见 Target 适配器文档）、过期 fingerprint 或不一致的计数/分区/逐组件元数据。
 
 ## 链接与软链接
 

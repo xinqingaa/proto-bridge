@@ -25,7 +25,7 @@ Evidence Region 用于定位与验收事实；它们不是 Widget 边界、ListV
 仅在用户明确批准后进入本阶段。
 
 1. 区分页面 Variant、局部交互状态、导航、弹层，以及提交/刷新状态。显式覆盖每个选中 Evidence Case；不要只实现默认 Case。
-2. 用 `docs/components.md` 和真实 Dart 构造函数，把 Evidence role/component 映射到目标 symbol。目标工程已有语义组件时，不要用外观相近的通用 widget 静默替代。
+2. 用 `docs/components.md` 和真实 Dart 构造函数，把 Evidence role/component 映射到目标 symbol。目标工程已有语义组件时，不要用外观相近的通用 widget 静默替代。resolver 返回 `pending`（Target 待实现）的组件/Token 必须披露，不得自行替换实现。
 3. 遵守本工程的架构、Theme、路由和共享弹层边界。业务代码放 `lib/features/<feature>/`，路由放 `lib/router/`，Token 放 `lib/theme/`，可复用 UI 放 `lib/common/`。用自然的 Flutter 组合表达滚动与层级；不要把每个 Evidence Region 映射成 builder 下标、类或文件。
 4. 优先复用 Evidence/Source 的固定业务数据（key、文案、选项、默认值、序列），不要自行发明 mock。
 5. 只实现所选 Evidence 支持的可观察行为。Evidence 缺失或冲突时，记录缺口并选择对目标工程扰动最小的本地行为；不要静默发明产品状态。

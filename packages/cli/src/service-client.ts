@@ -14,6 +14,7 @@ import {
 import type { ReviewSession } from '@proto-bridge/core/review';
 import type { AgentHandoff, CaptureJob } from '@proto-bridge/core/v2';
 import type { SelectionDraft } from '@proto-bridge/core/v2/capture';
+import { resolveLocalServiceLaunchConfig } from '@proto-bridge/core/v2/store';
 import type { LoadedCliConfig } from './config.js';
 
 export class CliServiceClientError extends Error {
@@ -56,15 +57,17 @@ export type CliServiceClient = {
   createReviewApproval(input: CreateReviewApprovalRequest): Promise<ReviewApprovalToken>;
 };
 
+function launchConfig(loaded: LoadedCliConfig) {
+  return resolveLocalServiceLaunchConfig({ config: loaded.value, configPath: loaded.path });
+}
+
 function serviceBaseUrl(loaded: LoadedCliConfig): string {
-  const { host, port } = loaded.value.service;
-  return `http://${host}:${port}/api/v2`;
+  const { host, port } = launchConfig(loaded);
+  return `http://${host.includes(':') ? `[${host}]` : host}:${port}/api/v2`;
 }
 
 function serviceOrigin(loaded: LoadedCliConfig): string {
-  const allowed = loaded.value.service.allowedOrigins[0];
-  if (allowed) return new URL(allowed).origin;
-  return new URL(loaded.value.runtime.baseUrl).origin;
+  return launchConfig(loaded).allowedOrigins[0]!;
 }
 
 export async function probeLocalService(

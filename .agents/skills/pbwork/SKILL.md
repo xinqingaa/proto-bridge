@@ -3,7 +3,7 @@ name: pbwork
 description: >-
   Design, build, or maintain PBWork business prototypes, visual explorations,
   Runtime/Evidence authoring, tokens, themes, design-system components,
-  shared gestures, Workbench, Canvas, Inspector, Capture, and Deliver UI.
+  shared gestures, Workbench, Canvas, Inspector, Capture, and finalization UI.
   Use for any task under apps/pbwork. For visual direction, coordinate the
   repository-local frontend-design skill; do not use for ProtoBridge Core,
   Store, CLI, MCP, or Target implementation outside PBWork.
@@ -21,7 +21,7 @@ Do not read every reference by default.
 | New prototype, product structure, navigation, visual direction, exploration, or `docs/design.md` | [prototype-design.md](references/prototype-design.md)       |
 | Approved Screen, Variant, fixture, action, scenario, Runtime, or Evidence implementation         | [prototype-authoring.md](references/prototype-authoring.md) |
 | Token, Theme, component, Contract, Registry, Playground, or shared gesture                       | [design-system.md](references/design-system.md)             |
-| Workbench shell, Canvas, Inspector, Capture Console, Deliver, task center, or Evidence Review    | [workbench.md](references/workbench.md)                     |
+| Workbench shell, Canvas, Inspector, Capture Console, finalization sheet, task center, or Evidence Review    | [workbench.md](references/workbench.md)                     |
 
 Read more than one reference when a task genuinely crosses boundaries. For
 example, promoting a visual exploration may require prototype design first,

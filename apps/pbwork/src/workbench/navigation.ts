@@ -69,7 +69,7 @@ export const primaryNavigation: Array<
     label: "组件",
     to: `/workbench/components/${componentRecords.find((item) => item.category === "action")?.id ?? "button"}`,
   },
-  { id: "drafts", label: "草稿", to: "/workbench/drafts/hengdong" },
+  { id: "drafts", label: "草稿", to: "/workbench/drafts/workbench-overview" },
   { id: "prototypes", label: "原型", to: "/workbench/prototypes/all" },
   { id: "capture", label: "定稿采集", to: "/workbench/capture" },
 ];
@@ -384,7 +384,7 @@ export function buildWorkbenchNavigationTree(
       id: "drafts",
       label: "草稿",
       kind: "section",
-      to: "/workbench/drafts/hengdong",
+      to: "/workbench/drafts/workbench-overview",
       count: buildDraftNavigation().length,
       children: buildDraftNavigation().map((item) => ({
         id: item.id,

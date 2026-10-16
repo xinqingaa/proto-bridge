@@ -110,13 +110,13 @@ Target 分为**公共门面**与**栈适配器**：
 
 公共门面提供：
 
-- 开放 component/token ID 的批量解析（分发到适用 adapter），输出 `resolved/candidate/stale/conflict/unresolved/unsupported`；
+- 开放 component/token ID 的批量解析（分发到适用 adapter），输出 `resolved/candidate/stale/conflict/unresolved/unsupported/pending`；
 - 编辑前 readiness：汇总 resolver coverage、五维 machine authority、实施 blockers 与未验证边界；
 - 既有实现示例查找及 Control/candidate output 排除；
 - 目标变更路径与实际采用 mapping 的只读验证；
 - 目标变更 validation 复核实际采用的 mapping；缺少 Structure、State 或 Interaction machine authority 时保持未验证，不要求补实验 Harness。
 
-适配器不拥有任何具体产品的组件/Token 映射。真实目标工程的 `AGENTS.md`、`docs/proto-bridge.md`、`docs/components.md`、`docs/theme.md` 和公开代码拥有当前约束；可选的根目录 `proto-bridge.target.json` 只是这些约束的严格机器投影。政策与机器 Contract 冲突返回 `conflict`，显式声明与代码不符返回 `stale`，代码启发式最多返回 `candidate`。缺少 authority 的维度只能保持 `unverified`。Target root 来自 Agent 当前任务或单次 Tool 参数；目标仓库不需要 ProtoBridge Workspace 配置，Target 结果不写入 Bundle。无适用 adapter 时仍可消费固定 Evidence，但不能宣称已完成 Target query/validation 闭环。
+适配器不拥有任何具体产品的组件/Token 映射。真实目标工程的 `AGENTS.md`、`docs/proto-bridge.md`、`docs/components.md`、`docs/theme.md` 和公开代码拥有当前约束；可选的根目录 `proto-bridge.target.json` 只是这些约束的严格机器投影。政策与机器 Contract 冲突返回 `conflict`，显式声明与代码不符返回 `stale`，代码启发式最多返回 `candidate`。机器 Contract 的 `components.<id>` / `tokens.<id>` 条目可声明 `{ "status": "pending", "reason": "<非空理由>" }` 表示 Target 尚未实现该键（条目状态）：resolver 直接返回 `pending`，固定说明「Target 待实现」并携带 `reason`，不跑启发式、不给候选替代；`reason` 缺失或为空，或 `pending` 与同一 ID 的具体映射并存，返回 `conflict`。readiness 将 `pending` 计为未就绪项，以 `mapping-pending` blocker 与顶层 `pending` 计数/清单单独列出；`validate_target_changes` 对绑定到 `pending` 键的采用项只在 `pendingNotices` 给出提示，不改变 `status`；claim 验证对 `pending` 保持 `unverified`。条目状态与 `proto-bridge.sync.json` 的批次状态（synced/pending）是两个概念，参见目标工程的 Resolver 文档。缺少 authority 的维度只能保持 `unverified`。Target root 来自 Agent 当前任务或单次 Tool 参数；目标仓库不需要 ProtoBridge Workspace 配置，Target 结果不写入 Bundle。无适用 adapter 时仍可消费固定 Evidence，但不能宣称已完成 Target query/validation 闭环。
 
 Flutter MCP `review.version: 3`、DTD attach、Driver Bridge、App/build identity 和 Runtime receipt 仍保留在实验代码与测试中，但不属于当前 Target Contract、默认 MCP Tool 或 Agent Prompt。当前 Flutter 目标工程只拥有组件/Token mapping、公开代码、路由和目标原生测试。详见 [Flutter MCP 实验记录](../history/flutter-mcp-experiment-2026-08.md)。
 

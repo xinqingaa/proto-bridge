@@ -216,28 +216,28 @@ describe("capture task presentation", () => {
     });
   });
 
-  it("groups the real hengdong failures by cause with authoring actions", () => {
+  it("groups real capture failures by cause with authoring actions", () => {
     const groups = groupCaptureFailures([
       {
-        caseId: "hengdong.today::default::light::iphone-14",
-        reason: "Required Fragment hengdong.today.recent/ is occluded at its center point.",
+        caseId: "cold-chain-ops.exception-queue::default::light::iphone-14",
+        reason: "Required Fragment cold-chain-ops.exception-queue.summary/ is occluded at its center point.",
       },
       {
-        caseId: "hengdong.workout-complete::default::light::iphone-14",
-        reason: "Required Fragment hengdong.workout-complete.save/ is occluded at its center point.",
+        caseId: "cold-chain-ops.resolution-form::default::light::iphone-14",
+        reason: "Required Fragment cold-chain-ops.resolution-form.submit/ is occluded at its center point.",
       },
       {
         caseId:
-          "hengdong.activity-history::default::light::iphone-14::scenario=hengdong.activity-history.delete-and-undo-history@history-record-restored",
-        reason: "Fragment hengdong.activity-history.delete-record/ is missing.",
+          "cold-chain-ops.shipment-detail::default::light::iphone-14::scenario=cold-chain-ops.shipment-detail.reveal-response-options@response-sheet-visible",
+        reason: "Fragment cold-chain-ops.shipment-detail.response-sheet/ is missing.",
       },
       {
-        caseId: "hengdong.progress::selected-date::light::iphone-14",
+        caseId: "cold-chain-ops.exception-queue::critical-only::light::iphone-14",
         reason:
-          "Required Fragment hengdong.progress.date-view.week.day/date-2026-08-12 has data-pb-id without data-pb-role.",
+          "Required Fragment cold-chain-ops.exception-queue.list.row/critical-ex-017 has data-pb-id without data-pb-role.",
       },
       {
-        caseId: "hengdong.progress::filter-open::light::iphone-14",
+        caseId: "cold-chain-ops.exception-queue::warning-only::light::iphone-14",
         reason:
           'payload.nodes.[88].fragment.pbKey: pbKey must be a stable lowercase identifier (letters, digits, \'.\', \'-\', \'_\'); CSS selectors, DOM paths, and array indices are not allowed (got "全部")',
       },
@@ -251,11 +251,11 @@ describe("capture task presentation", () => {
     ]);
     expect(groups[0]!.action).toContain("重新采集不能解决");
     expect(groups[0]!.cases[0]).toMatchObject({
-      fragment: "hengdong.today.recent",
+      fragment: "cold-chain-ops.exception-queue.summary",
     });
     expect(groups[1]!.cases[0]!.label).toContain("场景「");
     expect(groups[2]!.cases[0]!.fragment).toBe(
-      "hengdong.progress.date-view.week.day#date-2026-08-12",
+      "cold-chain-ops.exception-queue.list.row#critical-ex-017",
     );
   });
 
@@ -281,7 +281,7 @@ describe("capture task presentation", () => {
   it("translates illegal pbKey schema failures into an authoring diagnosis", () => {
     expect(
       translateCaptureFailure(
-        'payload.manifest.screens.hengdong.settings-goals.variants.weekly-open.requiredFragments.hengdong.settings-goals.weekly-option#3.pbKey: pbKey must be a stable lowercase identifier (letters, digits, \'.\', \'-\', \'_\'); CSS selectors, DOM paths, and array indices are not allowed (got "3")',
+        'payload.manifest.screens.cold-chain-ops.exception-queue.variants.default.requiredFragments.cold-chain-ops.exception-queue.severity-tabs.tab#3.pbKey: pbKey must be a stable lowercase identifier (letters, digits, \'.\', \'-\', \'_\'); CSS selectors, DOM paths, and array indices are not allowed (got "3")',
       ),
     ).toMatchObject({
       title: "原型身份不合法",

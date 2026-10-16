@@ -71,6 +71,30 @@ export function deliveryRootFromStoreRoot(storeRoot: string): string {
   return path.join(path.dirname(path.resolve(storeRoot)), 'deliveries');
 }
 
+/**
+ * Delivery IDs are generated as `operation-<hex>` or a local timestamp such as
+ * `2026-10-16T13-48-18+08-00`. A leading letter or digit excludes `.`, `..`
+ * and the hidden `.tmp-*` publication directories.
+ */
+const DELIVERY_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._+-]{0,127}$/;
+
+export function isSafeDeliveryId(deliveryId: string): boolean {
+  return DELIVERY_ID_PATTERN.test(deliveryId);
+}
+
+/** Resolves `<deliveryRoot>/<deliveryId>` and rejects anything that is not a direct child. */
+export function resolveDeliveryDir(deliveryRoot: string, deliveryId: string): string {
+  const root = path.resolve(deliveryRoot);
+  const dir = path.resolve(root, deliveryId);
+  if (!isSafeDeliveryId(deliveryId) || path.relative(root, dir) !== deliveryId) {
+    throw new V2ContractError(
+      'invalid-schema',
+      `Delivery ID ${JSON.stringify(deliveryId)} is not a safe single directory name.`,
+    );
+  }
+  return dir;
+}
+
 function localDeliveryTime(date: Date, timeZone: string): {
   deliveryId: string;
   createdAtLocal: string;
@@ -140,7 +164,7 @@ export async function writeDeliveryReceipt(
     throw new Error('operationKey and operationRequestDigest must be supplied together.');
   }
   const overwriteId = input.overwriteDeliveryId?.trim();
-  if (overwriteId && /[\\/]/.test(overwriteId)) {
+  if (overwriteId && !isSafeDeliveryId(overwriteId)) {
     throw new Error('overwriteDeliveryId must be a single path segment.');
   }
   if (input.operationKey && overwriteId) {
@@ -153,7 +177,7 @@ export async function writeDeliveryReceipt(
       : timed.deliveryId);
   const createdAtLocal = timed.createdAtLocal;
   const deliveryRoot = deliveryRootFromStoreRoot(input.storeRoot);
-  const deliveryDir = path.join(deliveryRoot, deliveryId);
+  const deliveryDir = resolveDeliveryDir(deliveryRoot, deliveryId);
   if (input.operationKey) {
     try {
       const existing = JSON.parse(

@@ -1,4 +1,6 @@
 import { execFile } from 'node:child_process';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
@@ -38,6 +40,63 @@ describe('root operator scripts', () => {
     const result = await runScript('pb-install.mjs', [], { PB_SKIP_BROWSER_INSTALL: '1' });
     expect(result.code).toBe(0);
     expect(result.stdout).toContain('skipped Playwright Chromium installation');
+  });
+});
+
+type DoctorCheck = { status: string; name: string; detail: string; fix?: string };
+
+async function doctorChecks(service: Record<string, unknown> | undefined, runtime: Record<string, unknown> = {}) {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'pb-doctor-'));
+  try {
+    const configPath = path.join(dir, 'proto-bridge.json');
+    await writeFile(
+      configPath,
+      JSON.stringify({
+        schemaVersion: 1,
+        workspaceId: 'doctor-workspace',
+        runtime: { baseUrl: 'http://127.0.0.1:43977', allowedOrigins: [], ...runtime },
+        store: { root: 'store', maxBytes: 1_048_576 },
+        capture: { maxCases: 33 },
+        ...(service ? { service } : {}),
+        delivery: { targetRoot: 'target' },
+      }),
+    );
+    const result = await runScript('pb-doctor.mjs', ['--json', '--config', configPath]);
+    const report = JSON.parse(result.stdout) as { checks: DoctorCheck[] };
+    return (name: string) => report.checks.find((check) => check.name === name);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
+describe('pb:doctor Local Service launch config', () => {
+  it('accepts the Workbench origin through the runtime.baseUrl fallback and reports the resolved launch', async () => {
+    const check = await doctorChecks({ host: '127.0.0.1', port: 43988, allowedOrigins: [] });
+    expect(check('Workbench origin')).toMatchObject({ status: 'pass' });
+    expect(check('Workbench origin')?.detail).toContain('http://127.0.0.1:43977');
+    const launch = check('Local Service launch');
+    expect(launch?.status).toBe('info');
+    expect(launch?.detail).toContain('127.0.0.1:43988');
+    expect(launch?.detail).toContain('allowedOrigins=[http://127.0.0.1:43977]');
+    expect(launch?.detail).toContain('maxCases=33');
+    expect(launch?.detail).toContain('maxStoreBytes=1048576');
+  });
+
+  it('applies schema defaults when service is omitted and falls back to runtime.allowedOrigins', async () => {
+    const check = await doctorChecks(undefined, { allowedOrigins: ['http://127.0.0.1:43977'] });
+    expect(check('Workbench origin')?.status).toBe('pass');
+    expect(check('Local Service launch')?.detail).toContain('127.0.0.1:3988');
+  });
+
+  it('fails when service.allowedOrigins excludes the Workbench origin and explains the fallback rule', async () => {
+    const check = await doctorChecks({
+      host: '127.0.0.1',
+      port: 43988,
+      allowedOrigins: ['http://localhost:9999'],
+    });
+    expect(check('Workbench origin')?.status).toBe('fail');
+    expect(check('Workbench origin')?.detail).toContain('http://localhost:9999');
+    expect(check('Workbench origin')?.fix).toContain('runtime.baseUrl');
   });
 });
 

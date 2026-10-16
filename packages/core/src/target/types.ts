@@ -4,7 +4,11 @@ export type TargetResolutionStatus =
   | 'stale'
   | 'conflict'
   | 'unresolved'
-  | 'unsupported';
+  | 'unsupported'
+  | 'pending';
+
+/** Fixed disclosure text returned with every `pending` resolution. Entry points reuse it verbatim. */
+export const TARGET_PENDING_NOTICE = 'Target 待实现' as const;
 
 export type TargetDeclarationSource = {
   kind: 'target-policy' | 'machine-contract' | 'target-documentation' | 'code-heuristic';
@@ -23,6 +27,8 @@ export type TargetMappingDeclaration = {
   definitionPath?: string;
   constructorHints: string[];
   usageHints: string[];
+  /** Entry-level `{ status: "pending", reason }` declaration; carries no symbol/accessor. */
+  pending?: { reason: string };
   source: TargetDeclarationSource;
 };
 
@@ -53,6 +59,8 @@ export type TargetResolution = {
   validation: TargetCodeValidation;
   reason: string;
   nextQueries: string[];
+  /** Present only when `status === 'pending'`: fixed `TARGET_PENDING_NOTICE` and the Target-declared reason. */
+  pending?: { notice: typeof TARGET_PENDING_NOTICE; reason: string };
 };
 
 export type TargetRevisionKey = {

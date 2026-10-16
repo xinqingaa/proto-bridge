@@ -36,15 +36,9 @@ describe("workbench navigation tree", () => {
       (node) => node.id === "screen-cold-chain-ops.exception-queue",
     );
 
-    expect(prototypes.count).toBe(2);
+    expect(prototypes.count).toBe(1);
     expect(components.children).toHaveLength(6);
     expect(drafts.children).toEqual([
-      {
-        id: "draft-hengdong",
-        label: "恒动 · 健身自律记录",
-        kind: "item",
-        to: "/workbench/drafts/hengdong",
-      },
       {
         id: "draft-workbench-overview",
         label: "工作台概览",
@@ -74,21 +68,25 @@ describe("workbench navigation tree", () => {
 
   it("lists Screens without Variant children so the sidebar stays a page map", () => {
     const compactTree = buildPrototypeTree("all");
-    const compactToday = compactTree
-      .find((node) => node.id === "hengdong")
-      ?.children?.find((node) => node.id === "hengdong.today");
-    expect(compactToday?.children).toBeUndefined();
-    expect(compactToday?.to).toBe(
-      "/workbench/prototypes/hengdong/screens/today",
+    const compactQueue = compactTree
+      .find((node) => node.id === "cold-chain-ops")
+      ?.children?.find((node) => node.id === "cold-chain-ops.exception-queue");
+    expect(compactQueue?.children).toBeUndefined();
+    expect(compactQueue?.to).toBe(
+      "/workbench/prototypes/cold-chain-ops/screens/exception-queue",
     );
 
     const workbenchTree = buildWorkbenchNavigationTree();
-    const today = workbenchTree
+    const queue = workbenchTree
       .find((node) => node.id === "prototypes")
-      ?.children?.find((node) => node.id === "prototype-hengdong")
-      ?.children?.find((node) => node.id === "screen-hengdong.today");
-    expect(today?.children).toBeUndefined();
-    expect(today?.to).toBe("/workbench/prototypes/hengdong/screens/today");
+      ?.children?.find((node) => node.id === "prototype-cold-chain-ops")
+      ?.children?.find(
+        (node) => node.id === "screen-cold-chain-ops.exception-queue",
+      );
+    expect(queue?.children).toBeUndefined();
+    expect(queue?.to).toBe(
+      "/workbench/prototypes/cold-chain-ops/screens/exception-queue",
+    );
   });
 
   it("nests finalized jobs under 定稿采集 and selects by evidence route", () => {
@@ -152,7 +150,7 @@ describe("workbench navigation tree", () => {
       registered: "active" | "review" | "final" | "archived",
     ) => (id === "cold-chain-ops" ? ("review" as const) : registered);
 
-    expect(countPrototypesForLifecycle("active", effective)).toBe(1);
+    expect(countPrototypesForLifecycle("active", effective)).toBe(0);
     expect(countPrototypesForLifecycle("review", effective)).toBe(1);
 
     const activeTree = buildWorkbenchNavigationTree(effective, "active");
@@ -164,9 +162,7 @@ describe("workbench navigation tree", () => {
       (node) => node.id === "prototypes",
     );
 
-    expect(activePrototypes?.children?.map((node) => node.id)).toEqual([
-      "prototype-hengdong",
-    ]);
+    expect(activePrototypes?.children?.map((node) => node.id)).toEqual([]);
     expect(reviewPrototypes?.children?.map((node) => node.id)).toEqual([
       "prototype-cold-chain-ops",
     ]);

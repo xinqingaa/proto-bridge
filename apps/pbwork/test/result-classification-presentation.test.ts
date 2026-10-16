@@ -91,7 +91,7 @@ function consoleState(): CaptureConsoleState {
     generationId: "generation-b7",
     jobs: [
       job("job-official", "bundle-official", "run-official", "cold-chain-ops", true),
-      job("job-cli", "bundle-cli", "run-cli", "hengdong"),
+      job("job-cli", "bundle-cli", "run-cli", "cold-chain-ops"),
     ],
     receipts: [
       {
@@ -141,24 +141,24 @@ function consoleState(): CaptureConsoleState {
           schemaVersion: 1,
           bundleId: "bundle-cli",
           workspaceId: "pbwork-local",
-          prototypeId: "hengdong",
+          prototypeId: "cold-chain-ops",
           status: "writable",
           createdAt: now,
         },
-        snapshots: [snapshot("bundle-cli", "snapshot-cli", "run-cli", "hengdong")],
-        activeSnapshot: snapshot("bundle-cli", "snapshot-cli", "run-cli", "hengdong"),
+        snapshots: [snapshot("bundle-cli", "snapshot-cli", "run-cli", "cold-chain-ops")],
+        activeSnapshot: snapshot("bundle-cli", "snapshot-cli", "run-cli", "cold-chain-ops"),
       },
       {
         bundle: {
           schemaVersion: 1,
           bundleId: "bundle-unknown",
           workspaceId: "pbwork-local",
-          prototypeId: "hengdong",
+          prototypeId: "cold-chain-ops",
           status: "writable",
           createdAt: now,
         },
-        snapshots: [snapshot("bundle-unknown", "snapshot-unknown", "run-unknown", "hengdong")],
-        activeSnapshot: snapshot("bundle-unknown", "snapshot-unknown", "run-unknown", "hengdong"),
+        snapshots: [snapshot("bundle-unknown", "snapshot-unknown", "run-unknown", "cold-chain-ops")],
+        activeSnapshot: snapshot("bundle-unknown", "snapshot-unknown", "run-unknown", "cold-chain-ops"),
       },
     ],
   };

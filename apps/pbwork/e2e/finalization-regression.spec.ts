@@ -296,7 +296,7 @@ test("formal and unbound results keep the same classification across overview, t
   const cliBundle = Bundle.parse({
     ...bundle,
     bundleId: cliBundleId,
-    prototypeId: "hengdong",
+    prototypeId,
   });
   const officialSnapshot = BundleSnapshot.parse({
     ...snapshot,
@@ -309,7 +309,7 @@ test("formal and unbound results keep the same classification across overview, t
     ...snapshot,
     bundleId: cliBundleId,
     snapshotId: cliSnapshotId,
-    prototypeId: "hengdong",
+    prototypeId,
     sourceRunId: cliRunId,
     coverage: completeCoverage,
   });
@@ -327,7 +327,7 @@ test("formal and unbound results keep the same classification across overview, t
     jobId: cliJobId,
     workspaceId: "pbwork-local",
     bundleId: cliBundleId,
-    selection: { ...selection, prototypeId: "hengdong" },
+    selection: { ...selection, prototypeId },
     inputVersion: "a1-browser-fixture",
     status: "completed",
     acceptedAt: now,

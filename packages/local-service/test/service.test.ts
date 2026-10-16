@@ -177,6 +177,10 @@ class FailingDriver implements CaseCaptureDriver {
 }
 
 class SuccessThenWaitDriver extends FakeDriver {
+  constructor(private readonly succeedingCases = 1) {
+    super();
+  }
+
   calls = 0;
   private resolveSecond!: () => void;
   private rejectSecond!: (reason: Error) => void;
@@ -186,7 +190,7 @@ class SuccessThenWaitDriver extends FakeDriver {
 
   override async captureCase(input: CaptureCaseInput): Promise<CapturedCase> {
     this.calls += 1;
-    if (this.calls === 1) return super.captureCase(input);
+    if (this.calls <= this.succeedingCases) return super.captureCase(input);
     this.resolveSecond();
     return new Promise<CapturedCase>((_resolve, reject) => {
       this.rejectSecond = reject;
@@ -468,8 +472,8 @@ describe('ProtoBridge Local Service', () => {
     ]);
   });
 
-  it('uses the journal only when an interrupted Job has no Run attempts', async () => {
-    const driver = new SuccessThenWaitDriver();
+  async function interruptFinalizationAfter(succeedingCases: number) {
+    const driver = new SuccessThenWaitDriver(succeedingCases);
     let base = await start(60_000, () => driver);
     let session = await call(base, '/session', { method: 'POST' });
     let token = session.body.data.sessionToken as string;
@@ -566,11 +570,11 @@ describe('ProtoBridge Local Service', () => {
       },
     });
     const jobId = accepted.body.data.job.jobId as string;
-    const secondCaseId = accepted.body.data.job.selection.cases[1].caseId as string;
+    const pendingCaseId = accepted.body.data.job.selection.cases[succeedingCases].caseId as string;
     await driver.secondCaseStarted;
     await service!.store.appendJobJournal(jobId, {
       event: 'case-finished',
-      detail: `${secondCaseId}:failed:journal reason: with a colon`,
+      detail: `${pendingCaseId}:failed:journal reason: with a colon`,
     });
 
     await service!.close();
@@ -605,10 +609,28 @@ describe('ProtoBridge Local Service', () => {
       await new Promise((resolve) => setTimeout(resolve, 20));
     }
     expect(interruptedJob.status).toBe('interrupted');
+    return { failedRecord, interruptedJob, pendingCaseId };
+  }
+
+  it('uses the journal only when an interrupted Job has no Run attempts', async () => {
+    const { failedRecord, interruptedJob, pendingCaseId } = await interruptFinalizationAfter(0);
+    const run = interruptedJob.runId
+      ? await service!.store.getRun(interruptedJob.bundleId, interruptedJob.runId)
+      : undefined;
+    expect(run?.attempts ?? []).toEqual([]);
     expect(failedRecord.operation.failedCases).toEqual([
-      { caseId: secondCaseId, reason: 'journal reason: with a colon' },
+      { caseId: pendingCaseId, reason: 'journal reason: with a colon' },
     ]);
     expect(failedRecord.operation.failedCases[0].caseId).toContain('::');
+  });
+
+  it('reports recovered Run attempts once a staged Case survived the writer crash', async () => {
+    const { failedRecord, interruptedJob, pendingCaseId } = await interruptFinalizationAfter(1);
+    const run = await service!.store.getRun(interruptedJob.bundleId, interruptedJob.runId);
+    expect(run?.attempts.map((attempt) => attempt.result)).toEqual(['captured', 'interrupted']);
+    expect(failedRecord.operation.failedCases).toEqual([
+      { caseId: pendingCaseId, reason: 'The writer stopped before this Case finished.' },
+    ]);
   });
 
   it('records one rollback failure and still reconciles later lifecycle records', async () => {

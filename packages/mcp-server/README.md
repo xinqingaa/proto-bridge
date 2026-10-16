@@ -52,9 +52,9 @@ pnpm pb:mcp -- --print-config
 
 `inspect_evidence_workspace` 返回绑定的 `deliveryTargetRoot`。Target 工具的 `targetRoot` 可省略，省略时使用该绑定路径；显式传入仍覆盖。禁止回落到 `process.cwd()`。缺绑定且工具未传路径时，错误会提示使用 `pnpm pb:mcp` 或 `--target-root`。
 
-这些工具通过公共 Target 门面只读访问目标工程；当前内置实现为 Flutter adapter。真实目标文档与公开代码优先，可选机器 Contract 不能覆盖政策；显式 mapping 通过当前代码验证才返回 `resolved`，启发式结果最多为 `candidate`。
+这些工具通过公共 Target 门面只读访问目标工程；当前内置实现为 Flutter adapter。真实目标文档与公开代码优先，可选机器 Contract 不能覆盖政策；显式 mapping 通过当前代码验证才返回 `resolved`，启发式结果最多为 `candidate`；目标工程在 `proto-bridge.target.json` 中以 `{ "status": "pending", "reason": "…" }` 声明尚未实现的组件/Token 时，resolver 如实返回 `pending`、固定说明「Target 待实现」与 `reason`，不跑启发式、不给候选替代，Agent 必须披露且不得自行替换实现。
 
-`inspect_target_readiness` 汇总 resolver coverage、machine authority 和 blockers。缺少 Structure/State/Interaction machine authority 表示对应维度需要结合固定 Evidence、目标代码和实际测试判断，不要求向目标工程加入 Runtime Harness。`validate_target_changes` 复核变更路径、预期文件和实际采用的 resolved mapping。Target 结果不写入 Evidence。
+`inspect_target_readiness` 汇总 resolver coverage、machine authority 和 blockers；`pending` 条目计为未就绪项，以 `mapping-pending` blocker 与顶层 `pending`（计数 + 清单 + reason）单独列出，不混入 unresolved/conflict。缺少 Structure/State/Interaction machine authority 表示对应维度需要结合固定 Evidence、目标代码和实际测试判断，不要求向目标工程加入 Runtime Harness。`validate_target_changes` 复核变更路径、预期文件和实际采用的 resolved mapping；采用项绑定到 `pending` 组件/Token 时在 `pendingNotices` 返回「Target 待实现」提示，不改变 `status`，也不是 conflict。Target 结果不写入 Evidence。
 
 ## 保留的实验实现
 

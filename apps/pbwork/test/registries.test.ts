@@ -36,21 +36,21 @@ describe("registries", () => {
   });
 
   it("rejects numeric pbKey values on required Fragments and Actions", () => {
-    const settings = prototypeScreens.find(
-      (screen) => screen.screenId === "hengdong.settings-goals",
+    const queue = prototypeScreens.find(
+      (screen) => screen.screenId === "cold-chain-ops.exception-queue",
     )!;
     const screens = prototypeScreens.map((screen) =>
-      screen.screenId === settings.screenId
+      screen.screenId === queue.screenId
         ? {
             ...screen,
             variants: screen.variants.map((variant) =>
-              variant.id === "weekly-open"
+              variant.id === "default"
                 ? {
                     ...variant,
                     requiredFragments: variant.requiredFragments?.map(
                       (fragment) =>
                         fragment.pbId ===
-                        "hengdong.settings-goals.weekly-option"
+                        "cold-chain-ops.exception-queue.severity-tabs.tab"
                           ? { ...fragment, pbKey: "3" }
                           : fragment,
                     ),
@@ -180,10 +180,7 @@ describe("design contracts", () => {
   });
 
   it("ships the registered cold-chain prototype and its screens", () => {
-    expect(prototypes.map((item) => item.id)).toEqual([
-      "cold-chain-ops",
-      "hengdong",
-    ]);
+    expect(prototypes.map((item) => item.id)).toEqual(["cold-chain-ops"]);
     const coldChainScreens = prototypeScreens.filter(
       (item) => item.prototypeId === "cold-chain-ops",
     );
@@ -227,155 +224,6 @@ describe("design contracts", () => {
       "focus-critical",
       "inspect-primary-exception",
     ]);
-  });
-
-  it("ships the redesigned hengdong prototype and its ten purposeful screens", () => {
-    const hengdongScreens = prototypeScreens.filter(
-      (item) => item.prototypeId === "hengdong",
-    );
-    expect(hengdongScreens.map((item) => item.screenSlug)).toEqual([
-      "login",
-      "register",
-      "today",
-      "activity-history",
-      "plans",
-      "progress",
-      "plan-detail",
-      "workout-session",
-      "workout-complete",
-      "settings-goals",
-    ]);
-    expect(
-      hengdongScreens.every(
-        (screen) =>
-          (screen.variants.find((variant) => variant.id === "default")
-            ?.requiredFragments?.length ?? 0) > 0,
-      ),
-    ).toBe(true);
-
-    const today = hengdongScreens.find(
-      (screen) => screen.screenId === "hengdong.today",
-    );
-    expect(today?.variants.map((variant) => variant.id)).toEqual(
-      expect.arrayContaining([
-        "record-detail-open",
-        "record-detail-quick",
-        "record-detail-long-note",
-      ]),
-    );
-    expect(
-      today?.variants.find((variant) => variant.id === "record-detail-open")
-        ?.requiredFragments,
-    ).toEqual(
-      expect.arrayContaining([
-        {
-          screenId: "hengdong.today",
-          pbId: "hengdong.today.record-detail-outcome",
-        },
-        {
-          screenId: "hengdong.today",
-          pbId: "hengdong.today.record-detail-facts",
-        },
-        {
-          screenId: "hengdong.today",
-          pbId: "hengdong.today.record-detail-exercises",
-        },
-        {
-          screenId: "hengdong.today",
-          pbId: "hengdong.today.record-detail-note",
-        },
-      ]),
-    );
-
-    const login = hengdongScreens.find(
-      (screen) => screen.screenId === "hengdong.login",
-    );
-    expect(login?.variants.map((variant) => variant.id)).toEqual([
-      "default",
-      "ready",
-      "validation-error",
-      "invalid-credentials",
-      "no-identity",
-    ]);
-    expect(login?.requiredScenarioIds).toEqual([
-      "enter-with-local-identity",
-      "reject-invalid-credentials",
-      "open-local-registration",
-    ]);
-
-    const register = hengdongScreens.find(
-      (screen) => screen.screenId === "hengdong.register",
-    );
-    expect(register?.variants.map((variant) => variant.id)).toEqual([
-      "default",
-      "ready",
-      "validation-error",
-      "replace-identity",
-      "replace-confirm-open",
-    ]);
-    expect(register?.requiredScenarioIds).toEqual([
-      "create-local-identity",
-      "request-identity-replacement",
-      "confirm-identity-replacement",
-    ]);
-
-    const plans = hengdongScreens.find(
-      (screen) => screen.screenId === "hengdong.plans",
-    );
-    expect(plans?.variants.map((variant) => variant.id)).toEqual([
-      "default",
-      "filtered",
-      "empty",
-      "plan-editor-open",
-      "plan-editor-validation",
-    ]);
-    expect(plans?.requiredScenarioIds).toEqual([
-      "open-current-plan-detail",
-      "start-current-plan-from-plans",
-      "open-candidate-plan",
-    ]);
-
-    const planDetail = hengdongScreens.find(
-      (screen) => screen.screenId === "hengdong.plan-detail",
-    );
-    expect(planDetail?.variants.map((variant) => variant.id)).toEqual([
-      "default",
-      "plan-editor-open",
-      "candidate",
-      "adopted-feedback",
-      "invalid-plan",
-      "plan-editor-validation",
-    ]);
-    expect(planDetail?.requiredScenarioIds).toEqual([
-      "start-current-plan-from-detail",
-      "adopt-candidate-plan",
-      "start-candidate-once",
-    ]);
-
-    const settings = hengdongScreens.find(
-      (screen) => screen.screenId === "hengdong.settings-goals",
-    );
-    expect(
-      settings?.variants.find((variant) => variant.id === "weekly-open")
-        ?.requiredFragments,
-    ).toEqual(
-      expect.arrayContaining([
-        {
-          screenId: "hengdong.settings-goals",
-          pbId: "hengdong.settings-goals.weekly-option",
-          pbKey: "times-3",
-        },
-      ]),
-    );
-    expect(
-      settings?.actions?.find((action) => action.id === "choose-weekly-target")
-        ?.target,
-    ).toEqual(
-      expect.objectContaining({
-        pbId: "hengdong.settings-goals.weekly-option",
-        pbKey: "times-4",
-      }),
-    );
   });
 });
 

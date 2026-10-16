@@ -10,7 +10,8 @@ import {
 } from 'node:fs/promises';
 import path from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
-import { BlobRecord } from '../contracts/blob.js';
+import { CaseAttempt } from '../contracts/attempt.js';
+import { BlobRecord, type BlobKind, type BlobOwnerRef } from '../contracts/blob.js';
 import { Bundle } from '../contracts/bundle.js';
 import { CatalogRevision } from '../contracts/catalog.js';
 import { CaseEvidenceRevision } from '../contracts/evidence.js';
@@ -88,6 +89,11 @@ import {
   issuesDir,
   jobPath,
   jobsDir,
+  jobStagingBlobPath,
+  jobStagingCasesDir,
+  jobStagingCatalogsPath,
+  jobStagingDir,
+  jobStagingRoot,
   legacyBlobContentPath,
   resetInProgressPath,
   runPath,
@@ -100,7 +106,11 @@ import {
   workspaceManifestPath,
   prototypeLifecyclePath,
 } from './paths.js';
-import { buildNextSnapshot } from './snapshot-builder.js';
+import {
+  buildNextSnapshot,
+  computeAttemptCoverage,
+  issuesForCapturedRevisions,
+} from './snapshot-builder.js';
 import type {
   CleanCandidate,
   CleanPlan,
@@ -115,6 +125,9 @@ import type {
   InitResult,
   JobJournalEntryInput,
   PutBlobInput,
+  StageJobCaseInput,
+  StagedBinaryRef,
+  StagedJobCase,
   StoreCapacity,
   V2Store,
 } from './types.js';
@@ -145,6 +158,35 @@ function readPngDimensions(bytes: Uint8Array): {
     );
   }
   return { width, height };
+}
+
+function normalizeBlobOwnerRefs(ownerRefs: readonly BlobOwnerRef[]): BlobOwnerRef[] {
+  return [
+    ...new Map(
+      ownerRefs
+        .map((ownerRef) => [`${ownerRef.kind}:${ownerRef.objectId}`, ownerRef] as const)
+        .sort(([left], [right]) => left.localeCompare(right)),
+    ).values(),
+  ];
+}
+
+function blobIdFor(
+  contentHash: string,
+  kind: BlobKind,
+  mediaType: string,
+  ownerRefs: readonly BlobOwnerRef[],
+): BlobId {
+  const logicalHash = createHash('sha256')
+    .update(
+      JSON.stringify({
+        digest: `sha256:${contentHash}`,
+        kind,
+        mediaType,
+        ownerRefs,
+      }),
+    )
+    .digest('hex');
+  return `blob-${contentHash.slice(0, 24)}-${logicalHash.slice(0, 15)}` as BlobId;
 }
 
 type ActiveSnapshotPointer = { snapshotId: SnapshotId };
@@ -485,8 +527,23 @@ export class LocalFileStore implements V2Store {
     await this.assertHealthy();
   }
 
-  private async withOperationWriteLock<T>(
+  private withOperationWriteLock<T>(
     operationKey: LifecycleOperationKey,
+    write: () => Promise<T>,
+  ): Promise<T> {
+    return this.withWriteLock(`operation:${operationKey}`, write);
+  }
+
+  /** Serializes read-validate-flip transactions on one Bundle within this writer. */
+  private withBundleWriteLock<T>(
+    bundleId: BundleId,
+    write: () => Promise<T>,
+  ): Promise<T> {
+    return this.withWriteLock(`bundle:${bundleId}`, write);
+  }
+
+  private async withWriteLock<T>(
+    operationKey: string,
     write: () => Promise<T>,
   ): Promise<T> {
     const previous = this.operationWriteTails.get(operationKey) ?? Promise.resolve();
@@ -509,9 +566,17 @@ export class LocalFileStore implements V2Store {
 
   // ---------------------------------------------------------------- Bundle
 
-  async createBundle(
+  createBundle(
     input: CreateBundleInput,
-  ): Promise<{ bundle: Bundle; run: Run; snapshot: BundleSnapshot }> {
+  ): Promise<{ bundle: Bundle; run: Run; snapshot: BundleSnapshot; blobIds: BlobId[] }> {
+    return this.withBundleWriteLock(input.bundleId, () =>
+      this.createBundleLocked(input),
+    );
+  }
+
+  private async createBundleLocked(
+    input: CreateBundleInput,
+  ): Promise<{ bundle: Bundle; run: Run; snapshot: BundleSnapshot; blobIds: BlobId[] }> {
     await this.assertWritableStore();
     if (await this.getBundle(input.bundleId)) {
       throw new V2ContractError(
@@ -579,6 +644,17 @@ export class LocalFileStore implements V2Store {
       [run],
       [...revisionsById.values()],
     );
+    const issues = (input.issues ?? []).map((issue) =>
+      this.parseOrThrow(Issue, issue, 'Issue'),
+    );
+    const blobs = input.stagedJobId
+      ? await this.collectStagedBlobs(
+          input.stagedJobId,
+          bundle.bundleId,
+          run,
+          new Set(revisions.map((revision) => revision.revisionId)),
+        )
+      : [];
 
     const estimatedBytes = this.serializedBytes(
       bundle,
@@ -586,7 +662,9 @@ export class LocalFileStore implements V2Store {
       snapshot,
       ...revisions,
       ...catalogs,
-    );
+      ...issues,
+      ...blobs.map((blob) => blob.record),
+    ) + blobs.reduce((sum, blob) => sum + blob.record.byteLength, 0);
     await this.assertCapacity(estimatedBytes);
 
     const transactionRoot = path.join(
@@ -621,6 +699,12 @@ export class LocalFileStore implements V2Store {
           catalog,
         );
       }
+      await this.writeIssuesAndBlobs(
+        transactionRoot,
+        bundle.bundleId,
+        issues,
+        blobs,
+      );
       await writeImmutableJson(
         runPath(transactionRoot, bundle.bundleId, run.runId),
         'Run',
@@ -643,7 +727,12 @@ export class LocalFileStore implements V2Store {
     } finally {
       await rm(transactionRoot, { recursive: true, force: true });
     }
-    return { bundle, run, snapshot };
+    return {
+      bundle,
+      run,
+      snapshot,
+      blobIds: blobs.map((blob) => blob.record.blobId as BlobId),
+    };
   }
 
   async getBundle(bundleId: BundleId): Promise<Bundle | undefined> {
@@ -1134,7 +1223,187 @@ export class LocalFileStore implements V2Store {
       ],
     });
     await writeJsonAtomic(jobPath(this.root, jobId), next);
+    await rm(jobStagingDir(this.root, jobId), { recursive: true, force: true });
     return next;
+  }
+
+  private async requireExecutingJob(jobId: JobId): Promise<CaptureJob & { runId: RunId }> {
+    const job = await this.requireJob(jobId);
+    if (isTerminalJobStatus(job.status) || job.runId === undefined) {
+      throw new V2ContractError(
+        'immutable-violation',
+        `Job ${jobId} is ${job.status}; only an executing Job can stage Case results.`,
+      );
+    }
+    return job as CaptureJob & { runId: RunId };
+  }
+
+  async stageJobCatalogs(
+    jobId: JobId,
+    catalogs: CatalogRevision[],
+  ): Promise<void> {
+    await this.assertWritableStore();
+    const job = await this.requireExecutingJob(jobId);
+    const parsed = catalogs.map((catalog) =>
+      this.parseOrThrow(CatalogRevision, catalog, 'CatalogRevision'),
+    );
+    for (const catalog of parsed) {
+      if (
+        catalog.workspaceId !== this.workspaceId ||
+        catalog.bundleId !== job.bundleId
+      ) {
+        throw new V2ContractError(
+          'workspace-mismatch',
+          `CatalogRevision ${catalog.catalogRevisionId} does not belong to Job ${jobId}'s Bundle ${job.bundleId}.`,
+        );
+      }
+    }
+    await this.assertCapacity(this.serializedBytes(parsed));
+    await writeJsonAtomic(jobStagingCatalogsPath(this.root, jobId), parsed);
+  }
+
+  async stageJobCase(jobId: JobId, input: StageJobCaseInput): Promise<void> {
+    await this.assertWritableStore();
+    const job = await this.requireExecutingJob(jobId);
+    const attempt = this.parseOrThrow(CaseAttempt, input.attempt, 'CaseAttempt');
+    if (
+      attempt.runId !== job.runId ||
+      !job.selection.cases.some((selected) => selected.caseId === attempt.caseId)
+    ) {
+      throw new V2ContractError(
+        'workspace-mismatch',
+        `Attempt ${attempt.attemptId} does not belong to Job ${jobId}/${job.runId}.`,
+      );
+    }
+    const revision = input.revision
+      ? this.parseOrThrow(CaseEvidenceRevision, input.revision, 'CaseEvidenceRevision')
+      : undefined;
+    if (
+      (attempt.result === 'captured') !== (revision !== undefined) ||
+      (revision &&
+        (revision.revisionId !== attempt.revisionId ||
+          revision.caseId !== attempt.caseId ||
+          revision.bundleId !== job.bundleId ||
+          revision.workspaceId !== this.workspaceId))
+    ) {
+      throw new V2ContractError(
+        'invalid-schema',
+        `Staged Case ${attempt.caseId} must carry exactly the revision of its captured Attempt.`,
+      );
+    }
+    const staged = await this.listStagedJobCases(jobId);
+    if (staged.some((item) => item.attempt.caseId === attempt.caseId)) {
+      throw new V2ContractError(
+        'immutable-violation',
+        `Case ${attempt.caseId} is already staged for Job ${jobId}.`,
+      );
+    }
+    const binaries = input.binaries ?? [];
+    const refs: StagedBinaryRef[] = [];
+    let newBytes = 0;
+    for (const binary of binaries) {
+      if (binary.owner === 'revision' && !revision) {
+        throw new V2ContractError(
+          'blob-rejected',
+          `A revision-owned Blob needs a captured revision for Case ${attempt.caseId}.`,
+        );
+      }
+      this.validateBlobBytes(binary.kind, binary.mediaType, binary.bytes);
+      const digest = `sha256:${createHash('sha256').update(binary.bytes).digest('hex')}`;
+      if ((await fileByteLength(jobStagingBlobPath(this.root, jobId, digest))) === 0) {
+        newBytes += binary.bytes.byteLength;
+      }
+      refs.push({
+        kind: binary.kind,
+        mediaType: binary.mediaType,
+        owner: binary.owner,
+        digest,
+        byteLength: binary.bytes.byteLength,
+      });
+    }
+    const sequence = staged.length + 1;
+    const record: StagedJobCase = {
+      sequence,
+      attempt,
+      ...(revision ? { revision } : {}),
+      binaries: refs,
+    };
+    // Staged bytes are copied into the Bundle at commit; reserve both.
+    await this.assertCapacity(2 * newBytes + this.serializedBytes(record));
+    for (const [index, binary] of binaries.entries()) {
+      await writeImmutableBytes(
+        jobStagingBlobPath(this.root, jobId, refs[index]!.digest),
+        'Staged Blob content',
+        binary.bytes,
+      );
+    }
+    await writeImmutableJson(
+      path.join(
+        jobStagingCasesDir(this.root, jobId),
+        `${String(sequence).padStart(6, '0')}-${attempt.attemptId}.json`,
+      ),
+      'StagedJobCase',
+      record,
+    );
+  }
+
+  async listStagedJobCases(jobId: JobId): Promise<StagedJobCase[]> {
+    const ids = (await listJsonIds(jobStagingCasesDir(this.root, jobId))).sort();
+    const cases: StagedJobCase[] = [];
+    for (const id of ids) {
+      const raw = await readJson<{
+        sequence?: unknown;
+        attempt?: unknown;
+        revision?: unknown;
+        binaries?: unknown;
+      }>(path.join(jobStagingCasesDir(this.root, jobId), `${id}.json`));
+      if (!raw) continue;
+      const binaries = Array.isArray(raw.binaries)
+        ? (raw.binaries as StagedBinaryRef[])
+        : [];
+      cases.push({
+        sequence: Number(raw.sequence),
+        attempt: this.parseOrThrow(CaseAttempt, raw.attempt, 'CaseAttempt'),
+        ...(raw.revision === undefined
+          ? {}
+          : {
+              revision: this.parseOrThrow(
+                CaseEvidenceRevision,
+                raw.revision,
+                'CaseEvidenceRevision',
+              ),
+            }),
+        binaries,
+      });
+    }
+    return cases.sort((left, right) => left.sequence - right.sequence);
+  }
+
+  private async readStagedCatalogs(jobId: JobId): Promise<CatalogRevision[] | undefined> {
+    const raw = await readJson<unknown[]>(jobStagingCatalogsPath(this.root, jobId));
+    if (!Array.isArray(raw)) return undefined;
+    return raw.map((catalog) =>
+      this.parseOrThrow(CatalogRevision, catalog, 'CatalogRevision'),
+    );
+  }
+
+  /** Drops staging left by Jobs that are already terminal or no longer exist. */
+  private async sweepJobStaging(): Promise<void> {
+    let entries: string[];
+    try {
+      entries = await readdir(jobStagingRoot(this.root));
+    } catch (error) {
+      if (this.isEnoent(error)) return;
+      throw error;
+    }
+    for (const entry of entries) {
+      const job = await this.getJob(entry as JobId).catch(() => undefined);
+      if (job && !isTerminalJobStatus(job.status)) continue;
+      await rm(path.join(jobStagingRoot(this.root), entry), {
+        recursive: true,
+        force: true,
+      });
+    }
   }
 
   async listNonTerminalJobs(): Promise<CaptureJob[]> {
@@ -1173,9 +1442,11 @@ export class LocalFileStore implements V2Store {
    * 终结为 interrupted Run、Coverage 和 Snapshot"): every Job still
    * any non-terminal phase when this process starts belonged to a writer that
    * never reached a terminal state (crash, kill, or an unclean shutdown).
-   * Each one is finalized as `interrupted` and, if it ever started
-   * executing, produces a zero-Attempt interrupted Run whose Snapshot
-   * carries forward the Bundle's existing active Evidence untouched.
+   * Each one is finalized as `interrupted`. Cases the Job staged before the
+   * crash are committed with their Blobs; every other selected Case gets an
+   * `interrupted` Attempt, so Coverage stays partial. A Job without staged
+   * Cases produces a zero-Attempt interrupted Run whose Snapshot carries
+   * forward the Bundle's existing active Evidence untouched.
    */
   private async finalizeOrphanJobs(): Promise<JobId[]> {
     const nonTerminal = await this.listNonTerminalJobs();
@@ -1184,10 +1455,27 @@ export class LocalFileStore implements V2Store {
       await this.finalizeOrphanJob(job);
       finalized.push(job.jobId);
     }
+    await this.sweepJobStaging();
     return finalized;
   }
 
   private async finalizeOrphanJob(job: CaptureJob): Promise<void> {
+    if (job.runId) {
+      const committed = await this.getRun(job.bundleId, job.runId);
+      if (committed) {
+        await this.finalizeOrphanJobRecord(
+          job,
+          committed.terminationReason,
+          `Run ${job.runId} was already committed before the writer stopped`,
+        );
+        return;
+      }
+      const staged = await this.listStagedJobCases(job.jobId);
+      if (staged.length > 0) {
+        await this.recoverStagedJob(job as CaptureJob & { runId: RunId }, staged);
+        return;
+      }
+    }
     const now = new Date().toISOString();
     const runId = job.runId ?? generateOperationalId('run');
     const selectedCount = job.selection.cases.length;
@@ -1254,6 +1542,143 @@ export class LocalFileStore implements V2Store {
         ],
       }),
     );
+    await rm(jobStagingDir(this.root, job.jobId), { recursive: true, force: true });
+  }
+
+  private async finalizeOrphanJobRecord(
+    job: CaptureJob,
+    status: TerminalJobStatus,
+    detail: string,
+  ): Promise<void> {
+    const now = new Date().toISOString();
+    await writeJsonAtomic(
+      jobPath(this.root, job.jobId),
+      CaptureJob.parse({
+        ...job,
+        status,
+        startedAt: job.startedAt ?? job.acceptedAt,
+        endedAt: now,
+        journal: [...job.journal, { at: now, event: 'finalized-orphan', detail }],
+      }),
+    );
+    await rm(jobStagingDir(this.root, job.jobId), { recursive: true, force: true });
+  }
+
+  /**
+   * Commits the Cases an interrupted Job durably staged. Staged Cases whose
+   * required Blob bytes did not survive are downgraded to `failed`; every
+   * unfinished Case becomes an `interrupted` Attempt.
+   */
+  private async recoverStagedJob(
+    job: CaptureJob & { runId: RunId },
+    staged: StagedJobCase[],
+  ): Promise<void> {
+    const now = new Date().toISOString();
+    const attempts: CaseAttempt[] = [];
+    const revisions: CaseEvidenceRevision[] = [];
+    for (const item of staged) {
+      if (item.revision) {
+        const missing = await this.firstMissingStagedBlob(job.jobId, item.binaries);
+        if (missing) {
+          const { revisionId: _lost, ...attempt } = item.attempt;
+          attempts.push(
+            CaseAttempt.parse({
+              ...attempt,
+              result: 'failed',
+              reason: `Staged ${missing.kind} Blob did not survive the writer restart.`,
+            }),
+          );
+          continue;
+        }
+        revisions.push(item.revision);
+      }
+      attempts.push(item.attempt);
+    }
+    const stagedCaseIds = new Set(attempts.map((attempt) => attempt.caseId));
+    for (const selected of job.selection.cases) {
+      if (stagedCaseIds.has(selected.caseId)) continue;
+      attempts.push(
+        CaseAttempt.parse({
+          schemaVersion: V2_SCHEMA_MAJOR,
+          attemptId: generateOperationalId('attempt'),
+          runId: job.runId,
+          caseId: selected.caseId,
+          captureScope: selected.captureScope,
+          scopeKey: computeScopeKey(selected.captureScope),
+          result: 'interrupted',
+          reason: 'The writer stopped before this Case finished.',
+          startedAt: now,
+          endedAt: now,
+        }),
+      );
+    }
+    const reused: CaseEvidenceRevision[] = [];
+    for (const attempt of attempts) {
+      if (attempt.result !== 'reused' || !attempt.revisionId) continue;
+      const revision = await this.getEvidenceRevision(job.bundleId, attempt.revisionId);
+      if (revision) reused.push(revision);
+    }
+    const run = Run.parse({
+      schemaVersion: V2_SCHEMA_MAJOR,
+      runId: job.runId,
+      workspaceId: this.workspaceId,
+      bundleId: job.bundleId,
+      selection: job.selection,
+      inputVersion: job.inputVersion,
+      startedAt: job.startedAt ?? job.acceptedAt,
+      endedAt: now,
+      terminationReason: 'interrupted',
+      attempts,
+      coverage: computeAttemptCoverage(attempts, [...revisions, ...reused]),
+    });
+    const catalogs = await this.readStagedCatalogs(job.jobId);
+    const transaction = {
+      bundleId: job.bundleId,
+      run,
+      revisions,
+      coverage: run.coverage,
+      ...(catalogs ? { catalogs } : {}),
+      issues: issuesForCapturedRevisions(revisions),
+      stagedJobId: job.jobId,
+    };
+    const capturedCount = revisions.length;
+    let detail: string;
+    try {
+      const bundle = await this.getBundle(job.bundleId);
+      if (bundle && bundle.status !== 'writable') {
+        detail = `Bundle ${job.bundleId} is ${bundle.status}; ${capturedCount} staged Case(s) were not committed`;
+      } else if (bundle) {
+        await this.commitRun(transaction);
+        detail = `recovered ${capturedCount} staged Case(s) into interrupted Run ${job.runId}`;
+      } else if (capturedCount > 0) {
+        await this.createBundle({
+          ...transaction,
+          prototypeId: job.selection.prototypeId,
+          catalogs: catalogs ?? [],
+        });
+        detail = `recovered ${capturedCount} staged Case(s) into interrupted Run ${job.runId} and created Bundle ${job.bundleId}`;
+      } else {
+        detail = `interrupted before the first trustworthy Snapshot; pending Bundle ${job.bundleId} was not created`;
+      }
+    } catch (error) {
+      detail = `staged Cases could not be committed: ${error instanceof Error ? error.message : String(error)}`.slice(0, 2000);
+    }
+    await this.finalizeOrphanJobRecord(job, 'interrupted', detail);
+  }
+
+  private async firstMissingStagedBlob(
+    jobId: JobId,
+    binaries: readonly StagedBinaryRef[],
+  ): Promise<StagedBinaryRef | undefined> {
+    for (const binary of binaries) {
+      if (binary.owner !== 'revision') continue;
+      try {
+        await this.readStagedBlob(jobId, binary);
+      } catch {
+        return binary;
+      }
+    }
+    return undefined;
   }
 
   // ------------------------------------------------------------------- Run
@@ -1322,7 +1747,13 @@ export class LocalFileStore implements V2Store {
 
   // ---------------------------------------------------------------- Commit
 
-  async commitRun(input: CommitRunInput): Promise<CommitRunResult> {
+  commitRun(input: CommitRunInput): Promise<CommitRunResult> {
+    return this.withBundleWriteLock(input.bundleId, () =>
+      this.commitRunLocked(input),
+    );
+  }
+
+  private async commitRunLocked(input: CommitRunInput): Promise<CommitRunResult> {
     await this.assertWritableStore();
     const { bundleId, coverage } = input;
     const run = this.parseOrThrow(Run, input.run, 'Run');
@@ -1422,8 +1853,36 @@ export class LocalFileStore implements V2Store {
       ...revisionsById.values(),
     ];
     this.assertSnapshotGraph(bundle, nextSnapshot, allRuns, allRevisions);
+    const issues = (input.issues ?? []).map((issue) =>
+      this.parseOrThrow(Issue, issue, 'Issue'),
+    );
+    const blobs = input.stagedJobId
+      ? await this.collectStagedBlobs(
+          input.stagedJobId,
+          bundleId,
+          run,
+          new Set(revisions.map((revision) => revision.revisionId)),
+        )
+      : [];
+    let newBlobBytes = 0;
+    for (const blob of blobs) {
+      if (
+        (await fileByteLength(
+          blobContentPath(this.root, bundleId, blob.record.digest),
+        )) === 0
+      ) {
+        newBlobBytes += blob.record.byteLength;
+      }
+    }
     await this.assertCapacity(
-      this.serializedBytes(run, nextSnapshot, ...revisions, ...catalogs),
+      this.serializedBytes(
+        run,
+        nextSnapshot,
+        ...revisions,
+        ...catalogs,
+        ...issues,
+        ...blobs.map((blob) => blob.record),
+      ) + newBlobBytes,
     );
 
     // Every step above only reads or validates; nothing on disk changes until we're certain the whole
@@ -1444,6 +1903,12 @@ export class LocalFileStore implements V2Store {
         catalog,
       );
     }
+    const retainedIssueIds = await this.writeIssuesAndBlobs(
+      this.root,
+      bundleId,
+      issues,
+      blobs,
+    );
     await writeImmutableJson(
       runPath(this.root, bundleId, run.runId),
       'Run',
@@ -1459,7 +1924,12 @@ export class LocalFileStore implements V2Store {
       snapshotId,
     } satisfies ActiveSnapshotPointer);
 
-    return { run, snapshot: nextSnapshot };
+    return {
+      run,
+      snapshot: nextSnapshot,
+      blobIds: blobs.map((blob) => blob.record.blobId as BlobId),
+      retainedIssueIds,
+    };
   }
 
   // ------------------------------------------------------- Catalog / Blob
@@ -1558,49 +2028,24 @@ export class LocalFileStore implements V2Store {
     await this.assertWritableStore();
     const bundle = await this.requireBundle(input.bundleId);
     this.requireWritableBundle(bundle);
-    if (input.bytes.byteLength > this.maxBlobBytes) {
-      throw new V2ContractError(
-        'blob-rejected',
-        `Blob is ${input.bytes.byteLength} bytes; the per-Blob limit is ${this.maxBlobBytes} bytes.`,
-      );
-    }
-    if (!this.isAllowedBlobMediaType(input.mediaType)) {
-      throw new V2ContractError(
-        'blob-rejected',
-        `Blob media type ${input.mediaType} is not allowed.`,
-      );
-    }
+    const image = this.validateBlobBytes(
+      input.kind,
+      input.mediaType,
+      input.bytes,
+    );
     if (input.ownerRefs.length === 0) {
       throw new V2ContractError(
         'blob-rejected',
         'A Blob must have at least one logical owner reference.',
       );
     }
-    const image =
-      input.kind === 'screenshot' && input.mediaType === 'image/png'
-        ? readPngDimensions(input.bytes)
-        : undefined;
-    const ownerRefs = [...new Map(
-      input.ownerRefs
-        .map((ownerRef) => [`${ownerRef.kind}:${ownerRef.objectId}`, ownerRef] as const)
-        .sort(([left], [right]) => left.localeCompare(right)),
-    ).values()];
+    const ownerRefs = normalizeBlobOwnerRefs(input.ownerRefs);
     for (const ownerRef of ownerRefs) {
       await this.assertBlobOwnerExists(input.bundleId, ownerRef);
     }
 
     const hash = createHash('sha256').update(input.bytes).digest('hex');
-    const logicalHash = createHash('sha256')
-      .update(
-        JSON.stringify({
-          digest: `sha256:${hash}`,
-          kind: input.kind,
-          mediaType: input.mediaType,
-          ownerRefs,
-        }),
-      )
-      .digest('hex');
-    const blobId = `blob-${hash.slice(0, 24)}-${logicalHash.slice(0, 15)}` as BlobId;
+    const blobId = blobIdFor(hash, input.kind, input.mediaType, ownerRefs);
     const existing = await this.getBlob(input.bundleId, blobId);
     if (existing) return existing.record;
     const record = BlobRecord.parse({
@@ -1637,6 +2082,152 @@ export class LocalFileStore implements V2Store {
       record,
     );
     return record;
+  }
+
+  private validateBlobBytes(
+    kind: BlobKind,
+    mediaType: string,
+    bytes: Uint8Array,
+  ): { width: number; height: number } | undefined {
+    if (bytes.byteLength > this.maxBlobBytes) {
+      throw new V2ContractError(
+        'blob-rejected',
+        `Blob is ${bytes.byteLength} bytes; the per-Blob limit is ${this.maxBlobBytes} bytes.`,
+      );
+    }
+    if (!this.isAllowedBlobMediaType(mediaType)) {
+      throw new V2ContractError(
+        'blob-rejected',
+        `Blob media type ${mediaType} is not allowed.`,
+      );
+    }
+    return kind === 'screenshot' && mediaType === 'image/png'
+      ? readPngDimensions(bytes)
+      : undefined;
+  }
+
+  /**
+   * Resolves the staged Blobs a commit fixes: only binaries of Attempts in
+   * this Run, owned by this Run or by a revision committed with it.
+   */
+  private async collectStagedBlobs(
+    jobId: JobId,
+    bundleId: BundleId,
+    run: Run,
+    revisionIds: ReadonlySet<string>,
+  ): Promise<Array<{ record: BlobRecord; bytes: Uint8Array }>> {
+    const attemptIds = new Set(run.attempts.map((attempt) => attempt.attemptId));
+    const groups = new Map<
+      string,
+      { binary: StagedBinaryRef; owners: BlobOwnerRef[] }
+    >();
+    for (const staged of await this.listStagedJobCases(jobId)) {
+      if (!attemptIds.has(staged.attempt.attemptId)) continue;
+      for (const binary of staged.binaries) {
+        let owner: BlobOwnerRef;
+        if (binary.owner === 'revision') {
+          if (!staged.revision || !revisionIds.has(staged.revision.revisionId)) continue;
+          owner = { kind: 'revision', objectId: staged.revision.revisionId };
+        } else {
+          owner = { kind: 'run', objectId: run.runId };
+        }
+        const key = `${binary.kind}/${binary.mediaType}/${binary.digest}`;
+        const group = groups.get(key);
+        if (group) group.owners.push(owner);
+        else groups.set(key, { binary, owners: [owner] });
+      }
+    }
+    const blobs: Array<{ record: BlobRecord; bytes: Uint8Array }> = [];
+    for (const { binary, owners } of groups.values()) {
+      const bytes = await this.readStagedBlob(jobId, binary);
+      const ownerRefs = normalizeBlobOwnerRefs(owners);
+      const hash = binary.digest.replace(/^sha256:/, '');
+      const image = this.validateBlobBytes(binary.kind, binary.mediaType, bytes);
+      blobs.push({
+        bytes,
+        record: BlobRecord.parse({
+          schemaVersion: V2_SCHEMA_MAJOR,
+          blobId: blobIdFor(hash, binary.kind, binary.mediaType, ownerRefs),
+          workspaceId: this.workspaceId,
+          bundleId,
+          kind: binary.kind,
+          mediaType: binary.mediaType,
+          byteLength: bytes.byteLength,
+          digest: binary.digest,
+          createdAt: new Date().toISOString(),
+          ...(image ? { image } : {}),
+          ownerRefs,
+        }),
+      });
+    }
+    return blobs;
+  }
+
+  private async readStagedBlob(
+    jobId: JobId,
+    binary: StagedBinaryRef,
+  ): Promise<Uint8Array> {
+    let bytes: Uint8Array;
+    try {
+      bytes = await readFile(jobStagingBlobPath(this.root, jobId, binary.digest));
+    } catch (error) {
+      if (this.isEnoent(error)) {
+        throw new V2ContractError(
+          'unknown-reference',
+          `Staged ${binary.kind} Blob ${binary.digest} of Job ${jobId} is missing.`,
+        );
+      }
+      throw error;
+    }
+    const digest = `sha256:${createHash('sha256').update(bytes).digest('hex')}`;
+    if (digest !== binary.digest || bytes.byteLength !== binary.byteLength) {
+      throw new V2ContractError(
+        'immutable-violation',
+        `Staged ${binary.kind} Blob ${binary.digest} of Job ${jobId} does not match its staged digest.`,
+      );
+    }
+    return bytes;
+  }
+
+  /**
+   * Transaction-internal writes before the Run/Snapshot/pointer. An Issue ID
+   * that is already persisted with different content keeps the persisted
+   * Issue (immutable, first write wins) and is reported to the caller.
+   */
+  private async writeIssuesAndBlobs(
+    targetRoot: string,
+    bundleId: BundleId,
+    issues: Issue[],
+    blobs: Array<{ record: BlobRecord; bytes: Uint8Array }>,
+  ): Promise<IssueId[]> {
+    const retained: IssueId[] = [];
+    for (const issue of issues) {
+      const persisted = await readJson<unknown>(
+        issuePath(this.root, bundleId, issue.issueId),
+      );
+      if (persisted !== undefined && !isDeepStrictEqual(persisted, issue)) {
+        retained.push(issue.issueId as IssueId);
+        continue;
+      }
+      await writeImmutableJson(
+        issuePath(targetRoot, bundleId, issue.issueId),
+        'Issue',
+        issue,
+      );
+    }
+    for (const blob of blobs) {
+      await writeImmutableBytes(
+        blobContentPath(targetRoot, bundleId, blob.record.digest),
+        'Blob content',
+        blob.bytes,
+      );
+      await writeImmutableJson(
+        blobRecordPath(targetRoot, bundleId, blob.record.blobId as BlobId),
+        'BlobRecord',
+        blob.record,
+      );
+    }
+    return retained;
   }
 
   async getBlob(
@@ -1747,6 +2338,14 @@ export class LocalFileStore implements V2Store {
     input: CreateStalenessReportInput,
   ): Promise<StalenessReport> {
     await this.assertWritableStore();
+    const report = await this.previewStalenessReport(input);
+    await this.putStalenessReport(report);
+    return report;
+  }
+
+  async previewStalenessReport(
+    input: CreateStalenessReportInput,
+  ): Promise<StalenessReport> {
     const bundle = await this.requireBundle(input.bundleId);
     const snapshot = await this.getSnapshot(input.bundleId, input.snapshotId);
     if (!snapshot)
@@ -1792,7 +2391,7 @@ export class LocalFileStore implements V2Store {
           : {}),
       });
     }
-    const report = StalenessReport.parse({
+    return StalenessReport.parse({
       schemaVersion: V2_SCHEMA_MAJOR,
       reportId: generateOperationalId('staleness'),
       workspaceId: this.workspaceId,
@@ -1802,8 +2401,6 @@ export class LocalFileStore implements V2Store {
       inputVersion: input.inputVersion,
       perRevision,
     });
-    await this.putStalenessReport(report);
-    return report;
   }
 
   async putStalenessReport(report: StalenessReport): Promise<void> {

@@ -51,9 +51,9 @@ describe("announceBackNavigation", () => {
     installNavigationIntentTracking();
     setRouteNavigationIntent("push");
     announceBackNavigation();
-    window.history.replaceState({}, "", "/prototype/hengdong/today");
+    window.history.replaceState({}, "", "/prototype/cold-chain-ops/exception-queue");
     expect(getRouteNavigationIntent()).toBe("back");
-    window.history.replaceState({}, "", "/prototype/hengdong/plans");
+    window.history.replaceState({}, "", "/prototype/cold-chain-ops/shipment-detail");
     expect(getRouteNavigationIntent()).toBe("replace");
   });
 });

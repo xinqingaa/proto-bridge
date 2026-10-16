@@ -177,7 +177,7 @@ describe('capture result classification', () => {
       bundles: [
         bundle({
           bundleId: 'bundle-cli',
-          prototypeId: 'hengdong',
+          prototypeId: 'sample-app',
           snapshots: [
             {
               snapshotId: 'snapshot-cli',

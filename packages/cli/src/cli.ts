@@ -42,10 +42,14 @@ import {
   generateOperationalId,
   reviewsRootFromStoreRoot,
   resolveDeliveryTargetRoot,
+  resolveLocalServiceLaunchConfig,
   validateWorkspaceResetPlan,
   writeDeliveryReceipt,
 } from '@proto-bridge/core/v2/store';
-import { ProtoBridgeLocalService } from '@proto-bridge/local-service';
+import {
+  ProtoBridgeLocalService,
+  localServiceOptionsFromLaunchConfig,
+} from '@proto-bridge/local-service';
 import {
   booleanFlag,
   flag,
@@ -1607,29 +1611,11 @@ async function serviceStart(
   loaded: LoadedCliConfig,
 ): Promise<number> {
   const config = loaded.value;
-  const allowedOrigins =
-    config.service.allowedOrigins.length > 0
-      ? config.service.allowedOrigins
-      : config.runtime.allowedOrigins;
-  if (allowedOrigins.length === 0) {
-    throw new V2ContractError(
-      'invalid-schema',
-      'service.allowedOrigins must contain at least one explicit local origin.',
-    );
-  }
-  const service = new ProtoBridgeLocalService({
-    host: config.service.host,
-    port: config.service.port,
-    allowedOrigins,
-    runtimeBaseUrl: config.runtime.baseUrl,
-    storeRoot: loaded.storeRoot,
-    workspaceId: config.workspaceId,
-    deliveryTargetRoot: loaded.deliveryTargetRoot,
-    maxCases: config.capture.maxCases,
-    ...(config.store.maxBytes === undefined
-      ? {}
-      : { maxStoreBytes: config.store.maxBytes }),
-  });
+  const service = new ProtoBridgeLocalService(
+    localServiceOptionsFromLaunchConfig(
+      resolveLocalServiceLaunchConfig({ config, configPath: loaded.path }),
+    ),
+  );
   const address = await service.start();
   emit(
     io,

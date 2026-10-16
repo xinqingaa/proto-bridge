@@ -97,16 +97,39 @@ Case 执行总会形成 Attempt。只有通过 Schema、完整性和激活规则
 - 用户取消；
 - Store 容量或 writer lock 阻塞。
 
+每个 Case 终结（captured、failed、reused、cancelled）后，Core 先把该 Attempt 写入 Store root 下的 Job staging（`job-staging/<jobId>/`：`catalogs.json`、`cases/<序号>-<attemptId>.json`、`blobs/<hex>.bin`），captured Case 同时暂存 Revision 与 Blob 字节，之后才写 journal `case-finished`。staging 是 Job 内部的待提交区，不属于公共 Contract，也不会被 Snapshot 或 MCP 到达；Job finalize 后删除，Store 初始化时清理已终结或缺失 Job 的遗留 staging。
+
+Blob 写入失败按必要性区分：
+
+- 可选二进制（非 Screenshot）暂存失败：该 Case 去掉这些二进制后重试，journal 记录 `blob-write-failed`；
+- 必需 Screenshot Blob 写不进去：该 Case 成为 `failed` Attempt，原因为 `Required screenshot Blob could not be written: …`，在 Coverage 中计为失败并进入失败 Case 分组。
+
 ## 9. Run 与 Snapshot Commit
 
-所有 Case 终结后，Core 构建 Run、Coverage、Issue、revision 和 Snapshot。Store 先写不可变对象，再原子更新 active pointer。
+所有 Case 终结后，Core 构建 Run、Coverage、Issue、revision 和 Snapshot。Store 在同一次 Bundle 级提交锁内先写 Issue 与 staging 中的 Blob，再写不可变 Run/revision/Snapshot，最后原子更新 active pointer。
 
-提交失败时：
+Issue 按 ID 保持首次写入：同 ID 已存在且内容不同（`issueRef` 在 Case 或 Run 间共享）时保留已存内容，并在 journal 记录 `issue-retained`。
 
-- Job 为 failed；
+提交失败（例如 Issue 写入 IO 错误）时：
+
+- journal 记录 `commit-failed`，Job 为 failed；
 - 一致性 Issue 保留；
 - 不能返回成功 Snapshot；
 - 旧 active pointer 不变。
+
+提交之外的执行错误记录 `execution-failed`，Job 同样为 failed。
+
+### Job 调度
+
+同一 Workspace writer（同一 Store 实例）同一时间只运行一个 Capture Job。后续被接受的 Job 仍会持久化并以 `queued` 状态可见，直到前面的 Job 终结后依次执行。取消 `queued` Job 会直接终结为 `cancelled`，不执行任何 Case。
+
+### Orphan 恢复
+
+Store 初始化时对非终结的 orphan Job 执行 `finalizeOrphanJobs`：
+
+- 有已暂存 Case：这些 Attempt 作为 Run 提交，termination reason 为 `interrupted`；被选中但没有暂存 Attempt 的 Case 形成 `interrupted` Attempt，原因为 `The writer stopped before this Case finished.`；已暂存的 captured Case 缺 Blob 时降为 `failed`。Coverage 为 partial，Job 终结为 `interrupted`，journal 记录 `finalized-orphan`；
+- 无已暂存 Case：沿用零 Attempt 的终结行为，journal 中的 Case 结果仅在 Run 没有 Attempt 时作为失败 Case 报告的后备；
+- Bundle 不可写（例如已移入回收站）时跳过提交。
 
 ## 10. Handoff
 
@@ -118,4 +141,6 @@ Handoff 创建前评估：
 - Evidence Level；
 - 是否存在手工提升或接受风险。
 
-所有 mandatory risks 固定进入 Handoff。Consumer 读取顺序见 [Agent 消费指南](../guides/agent-consumption.md)。
+所有 mandatory risks 固定进入 Handoff。
+
+PBWork 定稿的 `awaiting-risks` 阶段由 Local Service 每秒 reconciliation 推进。该 tick 复用按 Bundle/Snapshot 缓存的风险评估，只在以下情况重新执行 Preflight：没有缓存、用户确认风险（进入 `building-prompt`）、构建 Handoff，或该原型之后的 Preflight 观察到不同的 `inputVersion` / `manifestDigest`。Staleness Report 只在构建 Handoff 以及显式 `POST /api/v2/staleness` 时持久化；`POST /api/v2/handoffs/preview` 只预览，不写报告。Consumer 读取顺序见 [Agent 消费指南](../guides/agent-consumption.md)。

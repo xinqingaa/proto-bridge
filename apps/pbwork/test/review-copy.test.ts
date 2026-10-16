@@ -4,11 +4,11 @@ import { presentRiskChecklist, presentWarning, speakEvidenceMessage } from "@/ca
 describe("review copy", () => {
   it("turns a shell warning into a screen the reviewer can recognize", () => {
     const check = presentWarning({
-      warningId: "reconstruction-shell-hengdong.today-0",
+      warningId: "reconstruction-shell-cold-chain-ops.exception-queue-0",
       code: "reconstruction.shell-contract-missing",
       message:
-        "Strict Screen hengdong.today must declare shellFragments or explicitly mark every Variant shellPolicy=replace before high-fidelity delivery.",
-      source: { kind: "registry", screenId: "hengdong.today" },
+        "Strict Screen cold-chain-ops.exception-queue must declare shellFragments or explicitly mark every Variant shellPolicy=replace before high-fidelity delivery.",
+      source: { kind: "registry", screenId: "cold-chain-ops.exception-queue" },
     });
     expect(check.title).not.toMatch(/Strict Screen|shellFragments/);
     expect(check.technical).toContain("shellFragments");

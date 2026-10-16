@@ -4,7 +4,7 @@ import {
   type TargetResolutionBatch,
 } from '../../src/target/index.js';
 
-function batch(kind: 'component' | 'token', statuses: Array<'resolved' | 'candidate'>): TargetResolutionBatch {
+function batch(kind: 'component' | 'token', statuses: Array<'resolved' | 'candidate' | 'pending'>): TargetResolutionBatch {
   return {
     adapterId: 'synthetic',
     supported: true,
@@ -23,6 +23,7 @@ function batch(kind: 'component' | 'token', statuses: Array<'resolved' | 'candid
       validation: { exists: true, importable: true, signatureCompatible: true, usageFound: true, details: [] },
       reason: status,
       nextQueries: [],
+      ...(status === 'pending' ? { pending: { notice: 'Target 待实现' as const, reason: `${kind}.${index} 未实现` } } : {}),
     })),
     policySources: [],
     warnings: [],
@@ -56,6 +57,52 @@ describe('target readiness analyzer', () => {
     ]));
     expect(report.dimensions.structure.status).toBe('unverified');
     expect(report.authoritativeReviewReady).toBe(false);
+  });
+
+  it('counts pending entries as not ready and lists them apart from unresolved and conflict', () => {
+    const report = analyzeTargetReadiness({
+      adapter: { id: 'synthetic', supported: true, confidence: 'high', reason: 'synthetic adapter' },
+      targetRevisionKey: batch('component', ['resolved']).targetRevisionKey,
+      components: batch('component', ['resolved', 'pending']),
+      tokens: batch('token', ['pending', 'resolved', 'pending']),
+      requiredDimensions: [],
+      requiredCaseIds: [],
+      authorities: {},
+    });
+    expect(report.mapping.components.byStatus).toMatchObject({ resolved: 1, pending: 1, unresolved: 0, conflict: 0 });
+    expect(report.mapping.tokens.byStatus).toMatchObject({ resolved: 1, pending: 2, unresolved: 0, conflict: 0 });
+    expect(report.mapping.tokens.pendingIds).toEqual(['token.0', 'token.2']);
+    expect(report.mapping.tokens.unresolvedIds).toEqual([]);
+    expect(report.mapping.tokens.conflictIds).toEqual([]);
+    expect(report.pending).toEqual({
+      count: 3,
+      notice: 'Target 待实现',
+      items: [
+        { id: 'component.1', kind: 'component', reason: 'component.1 未实现' },
+        { id: 'token.0', kind: 'token', reason: 'token.0 未实现' },
+        { id: 'token.2', kind: 'token', reason: 'token.2 未实现' },
+      ],
+    });
+    expect(report.blockers).toEqual([
+      expect.objectContaining({ code: 'mapping-pending', dimension: 'components', ids: ['component.1'] }),
+      expect.objectContaining({ code: 'mapping-pending', dimension: 'tokens', ids: ['token.0', 'token.2'] }),
+    ]);
+    expect(report.implementationReady).toBe(false);
+  });
+
+  it('reports an empty pending list when nothing is pending', () => {
+    const report = analyzeTargetReadiness({
+      adapter: { id: 'synthetic', supported: true, confidence: 'high', reason: 'synthetic adapter' },
+      targetRevisionKey: batch('component', []).targetRevisionKey,
+      components: batch('component', ['resolved']),
+      tokens: batch('token', ['resolved']),
+      requiredDimensions: [],
+      requiredCaseIds: [],
+      authorities: {},
+    });
+    expect(report.pending).toMatchObject({ count: 0, items: [] });
+    expect(report.blockers).toEqual([]);
+    expect(report.implementationReady).toBe(true);
   });
 
   it('blocks undeclared Cases and Scenarios without guessing from code', () => {

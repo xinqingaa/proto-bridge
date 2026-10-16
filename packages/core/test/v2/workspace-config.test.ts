@@ -30,6 +30,26 @@ describe('V2 Workspace config', () => {
     });
   });
 
+  it('requires store.retainArchivedSnapshots to be an integer >= 1 (matching planClean) and defaults to 1', () => {
+    const withRetain = (retainArchivedSnapshots: number) =>
+      V2WorkspaceConfig.safeParse({
+        ...workspaceBase,
+        store: { ...workspaceBase.store, retainArchivedSnapshots },
+      });
+
+    expect(withRetain(0).success).toBe(false);
+    expect(withRetain(-1).success).toBe(false);
+    expect(withRetain(1.5).success).toBe(false);
+    const accepted = withRetain(1);
+    expect(accepted.success).toBe(true);
+    expect(accepted.data?.store.retainArchivedSnapshots).toBe(1);
+    expect(withRetain(3).data?.store.retainArchivedSnapshots).toBe(3);
+
+    const omitted = V2WorkspaceConfig.safeParse(workspaceBase);
+    expect(omitted.success).toBe(true);
+    expect(omitted.data?.store.retainArchivedSnapshots).toBe(1);
+  });
+
   it('requires delivery.targetRoot and resolves it relative to the config directory', () => {
     expect(() =>
       V2WorkspaceConfig.parse({

@@ -33,7 +33,7 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 3. 调用 `read_handoff_index`，在编辑前原样报告 `mandatoryRisks` 的全部风险，并固定 Screen 顺序、Case/Scenario 范围与 Screenshot digest 分组。
 4. 每个实现范围内的 Screen 调用一次 `read_screen_packet`。用 `canonicalBrief`、baseline Structure 与 state 理解主滚动边界、主 section、状态矩阵和固定业务数据；主滚动看 `canonicalBrief.primaryScroll` 与 `baseline.structure.scrollContainers`（packet 的 compact regions **不含** per-region `scrollOwner`）。Evidence Region 用于定位与验收，不是目标侧组件边界、列表项边界或文件边界。
 5. 每份不同 Screenshot 内容使用 digest group 的 `representativeBlobId` 调用 `read_evidence_screenshot`，确认 MCP ImageContent，并记录覆盖的全部 Case。相同 digest 不重复注入；metadata、base64 文本和相似 Variant 不能替代 Screenshot。
-6. 每个 Screen 在编辑前调用 `inspect_target_readiness`，记录 resolver coverage、component/token candidate/conflict/unresolved、五维 machine authority 和 blockers。用 `implementationInventory` 的 `regionId`/`caseId` 批量解析组件和 Token。缺少 machine authority 的维度在最终结论中保持未验证或说明人工依据，不要求向目标工程加入实验性 Runtime Harness。`read_implementation_plan` / `read_implementation_tranche` 仅诊断或 Review 辅助，不是默认实施路径。
+6. 每个 Screen 在编辑前调用 `inspect_target_readiness`，记录 resolver coverage、component/token candidate/conflict/unresolved 与 `pending`（Target 待实现，必须披露、不得替换实现；语义见 [Target 适配器](../architecture/proto-bridge.md)）、五维 machine authority 和 blockers。用 `implementationInventory` 的 `regionId`/`caseId` 批量解析组件和 Token。缺少 machine authority 的维度在最终结论中保持未验证或说明人工依据，不要求向目标工程加入实验性 Runtime Harness。`read_implementation_plan` / `read_implementation_tranche` 仅诊断或 Review 辅助，不是默认实施路径。
 7. 非 baseline 或包含状态/场景差异的 Case 调用 `read_case_delta`。Delta 使用语义 ID patch；需要来源时再定向调用 `read_evidence_detail`。
 8. 每个 Screen 在编辑前用简短散文概括 Evidence 理解：主结构与滚动边界、组件与 Token 落点意向、状态与交互覆盖，并附实现计划（预计修改文件、验证方式、剩余风险）。这是给人纠偏的白话摘要，不是清单或评分表。然后必须暂停，等待用户明确批准；未获批准前不得修改目标工程，也不得执行会改变目标工程状态的命令。Deliver 提示词与此门禁一致，见 [快速上手](./getting-started.md)。
 9. 用户批准后，阅读目标仓库自己的 AGENT、README、架构、测试、公共 API 和既有实现。Target adapter 只发现和归一化这些上下文；内置 fallback 不能覆盖真实目标文档。
@@ -99,7 +99,7 @@ Component / Token 落点以 `read_screen_packet` 的 `implementationInventory` �
 
 - 只验收 Handoff 选中的 Screen、Case、Variant 和 Scenario，不扩展未选中状态。
 - Evidence 明确证明完整的固定数据必须精确复用；partial、unknown 或 conflict 时禁止猜测补全。
-- resolver 为 `resolved` 且当前实现真实使用时才能支持组件或 Token `matched`；其它 resolver 状态保持 `unverified` 或报告 blocker。
+- resolver 为 `resolved` 且当前实现真实使用时才能支持组件或 Token `matched`；其它 resolver 状态（含 `pending`）保持 `unverified` 或报告 blocker。
 - 公共组件是合法实现选择，但可见结果不同仍属于需要披露的 `deviation`。
 - 没有 Target 视觉结果时，可以结合固定 Evidence、目标代码和测试判断结构语义，不能冒充像素级视觉验证。
 

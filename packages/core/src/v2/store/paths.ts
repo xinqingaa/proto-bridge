@@ -144,3 +144,24 @@ export function blobsDir(root: string, bundleId: BundleId): string {
 export function stagingDir(root: string): string {
   return path.join(root, '.staging');
 }
+
+/** Per-Job durable staging; unlike `.staging`, it survives restart for recovery. */
+export function jobStagingRoot(root: string): string {
+  return path.join(root, 'job-staging');
+}
+
+export function jobStagingDir(root: string, jobId: JobId): string {
+  return path.join(jobStagingRoot(root), jobId);
+}
+
+export function jobStagingCasesDir(root: string, jobId: JobId): string {
+  return path.join(jobStagingDir(root, jobId), 'cases');
+}
+
+export function jobStagingCatalogsPath(root: string, jobId: JobId): string {
+  return path.join(jobStagingDir(root, jobId), 'catalogs.json');
+}
+
+export function jobStagingBlobPath(root: string, jobId: JobId, digest: string): string {
+  return path.join(jobStagingDir(root, jobId), 'blobs', `${digest.replace(/^sha256:/, '')}.bin`);
+}

@@ -9,7 +9,7 @@ import { focusPrototypes, prototypeStats, wallScreens } from "../data";
     <header class="gal-head">
       <div>
         <span>原型收藏</span>
-        <h1>两件作品，十三个真实页面。</h1>
+        <h1>一件作品，三个真实页面。</h1>
       </div>
       <a href="#" @click.prevent>全部原型 <ArrowRight :size="15" /></a>
     </header>

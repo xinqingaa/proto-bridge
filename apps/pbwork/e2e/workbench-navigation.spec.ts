@@ -1,4 +1,9 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+
+async function selectPreviewSetting(page: Page, label: string, option: string) {
+  await page.getByLabel(label).press("ArrowDown");
+  await page.getByRole("option", { name: option, exact: true }).click();
+}
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/workbench/foundations/tokens/color");
@@ -100,11 +105,61 @@ test("element inspector is hidden outside the canvas", async ({ page }) => {
   );
 });
 
-test("Hengdong variants update in place without resetting product interactions", async ({
+test("cold-chain variants update the live Runtime in place", async ({
   page,
 }) => {
   await page.goto(
-    "/workbench/prototypes/hengdong/screens/workout-session?variant=default&theme=light",
+    "/workbench/prototypes/cold-chain-ops/screens/shipment-detail?variant=default&theme=light",
+  );
+  const runtime = page.frameLocator("iframe");
+  const runtimeUrl = () =>
+    runtime
+      .locator("body")
+      .evaluate((body) => body.ownerDocument.location.href);
+  const root = runtime.locator(
+    '[data-pb-id="cold-chain-ops.shipment-detail.root"]',
+  );
+
+  await expect(root).toBeVisible();
+  // Mark the Runtime document: a reload or remount would drop the marker.
+  await runtime
+    .locator("body")
+    .evaluate((body) => {
+      (body.ownerDocument.defaultView as Window & { __pbMarker?: string }).__pbMarker =
+        "kept";
+    });
+
+  await page.getByRole("button", { name: "预览设置" }).click();
+  await selectPreviewSetting(page, "Variant", "持续超温");
+  await expect(page).toHaveURL(/variant=active-excursion/);
+  await expect.poll(runtimeUrl).toContain("variant=active-excursion");
+
+  await selectPreviewSetting(page, "Variant", "处置操作打开");
+  await expect(page).toHaveURL(/variant=action-sheet-open/);
+  await expect.poll(runtimeUrl).toContain("variant=action-sheet-open");
+  await expect(runtime.locator('[data-pb-role="sheet"]')).toBeVisible();
+
+  await selectPreviewSetting(page, "Variant", "运输正常");
+  await expect(page).toHaveURL(/variant=default/);
+  await expect.poll(runtimeUrl).toContain("variant=default");
+  await expect(root).toBeVisible();
+  await expect(runtime.locator('[data-pb-role="sheet"]')).toHaveCount(0);
+
+  const marker = await runtime
+    .locator("body")
+    .evaluate(
+      (body) =>
+        (body.ownerDocument.defaultView as Window & { __pbMarker?: string })
+          .__pbMarker,
+    );
+  expect(marker).toBe("kept");
+});
+
+test("Workbench screen tree bypasses in-app confirmations", async ({
+  page,
+}) => {
+  await page.goto(
+    "/workbench/prototypes/cold-chain-ops/screens/resolution-form?variant=confirm-dialog-open&theme=light",
   );
   const runtime = page.frameLocator("iframe");
   const runtimeUrl = () =>
@@ -113,132 +168,37 @@ test("Hengdong variants update in place without resetting product interactions",
       .evaluate((body) => body.ownerDocument.location.href);
 
   await expect(
-    runtime.getByRole("heading", { name: "颈肩环绕" }),
-  ).toBeVisible();
-  await runtime.getByRole("button", { name: "完成当前动作" }).click();
-  await expect(runtime.getByText("动作 2 / 4", { exact: true })).toBeVisible();
-
-  await runtime.getByRole("button", { name: "暂停" }).click();
-  await expect(page).toHaveURL(/variant=paused/);
-  await expect(runtime.getByText("动作 2 / 4", { exact: true })).toBeVisible();
-  await runtime.getByRole("button", { name: "继续训练" }).click();
-  await expect(page).toHaveURL(/variant=default/);
-  await expect(runtime.getByText("动作 2 / 4", { exact: true })).toBeVisible();
-
-  await page.getByRole("link", { name: "最后一个动作", exact: true }).click();
-  await expect(page).toHaveURL(/variant=last-exercise/);
-  await expect.poll(runtimeUrl).toContain("variant=last-exercise");
-  await expect(runtime.getByText("动作 4 / 4", { exact: true })).toBeVisible();
-  await expect(runtime.getByRole("button", { name: "完成训练" })).toBeVisible();
-
-  await page.getByRole("link", { name: "会话无法恢复", exact: true }).click();
-  await expect(page).toHaveURL(/variant=invalid-session/);
-  await expect.poll(runtimeUrl).toContain("variant=invalid-session");
-  await expect(
-    runtime.getByRole("heading", { name: "这次训练信息已经失效" }),
-  ).toBeVisible();
-
-  await page.getByRole("link", { name: "当前动作", exact: true }).click();
-  await expect(page).toHaveURL(/variant=default/);
-  await expect(runtime.getByText("动作 1 / 4", { exact: true })).toBeVisible();
-  await expect(
-    runtime.getByRole("heading", { name: "颈肩环绕" }),
-  ).toBeVisible();
-
-  await page.goto(
-    "/workbench/prototypes/hengdong/screens/workout-complete?variant=default&theme=light",
-  );
-  await expect(
-    runtime.getByRole("heading", { name: "这次训练完成了" }),
-  ).toBeVisible();
-
-  await page.getByRole("link", { name: "部分完成反馈", exact: true }).click();
-  await expect(page).toHaveURL(/variant=partial/);
-  await expect(
-    runtime.getByRole("heading", { name: "已完成一部分" }),
-  ).toBeVisible();
-
-  await page.getByRole("link", { name: "总结无法恢复", exact: true }).click();
-  await expect(page).toHaveURL(/variant=invalid-summary/);
-  await expect(
-    runtime.getByRole("heading", {
-      name: "这次训练还没有可保存的结果",
-    }),
-  ).toBeVisible();
-});
-
-test("Hengdong product progress survives reloads", async ({ page }) => {
-  await page.goto("/prototype/hengdong/plans?variant=default&theme=light");
-  await page.getByRole("button", { name: "开始训练", exact: true }).click();
-  await expect(page.getByText("动作 1 / 4", { exact: true })).toBeVisible();
-
-  await page.getByRole("button", { name: "完成当前动作" }).click();
-  await expect(page.getByText("动作 2 / 4", { exact: true })).toBeVisible();
-  await page.reload();
-  await expect(page.getByText("动作 2 / 4", { exact: true })).toBeVisible();
-
-  await page.getByRole("button", { name: "完成当前动作" }).click();
-  await page.getByRole("button", { name: "完成当前动作" }).click();
-  await page.getByRole("button", { name: "完成训练" }).click();
-  await expect(
-    page.getByRole("heading", { name: "这次训练完成了" }),
-  ).toBeVisible();
-
-  await page.getByRole("radio", { name: "刚好", exact: true }).check();
-  await page
-    .getByRole("textbox", { name: "备注（可选）" })
-    .fill("刷新后仍保留");
-  await page.reload();
-  await expect(
-    page.getByRole("radio", { name: "刚好", exact: true }),
-  ).toBeChecked();
-  await expect(
-    page.getByRole("textbox", { name: "备注（可选）" }),
-  ).toHaveValue("刷新后仍保留");
-});
-
-test("Workbench screen tree bypasses in-app leave confirmations", async ({
-  page,
-}) => {
-  await page.goto(
-    "/workbench/prototypes/hengdong/screens/workout-session?variant=default&theme=light",
-  );
-  const runtime = page.frameLocator("iframe");
-  const runtimeUrl = () =>
-    runtime
-      .locator("body")
-      .evaluate((body) => body.ownerDocument.location.href);
-
-  await expect(
-    runtime.getByRole("heading", { name: "颈肩环绕" }),
+    runtime.getByText("确认提交处置记录？", { exact: true }),
   ).toBeVisible();
 
   await page
-    .locator('a[href="/workbench/prototypes/hengdong/screens/today"]')
+    .locator(
+      'a[href="/workbench/prototypes/cold-chain-ops/screens/exception-queue"]',
+    )
     .click();
-  await expect(page).toHaveURL(/\/screens\/today/);
-  await expect.poll(runtimeUrl).toContain("/prototype/hengdong/today");
+  await expect(page).toHaveURL(/\/screens\/exception-queue/);
+  await expect
+    .poll(runtimeUrl)
+    .toContain("/prototype/cold-chain-ops/exception-queue");
   await expect(
-    runtime.getByRole("button", { name: "稍后继续" }),
-  ).toHaveCount(0);
-  await expect(runtime.getByRole("tab", { name: "今天" })).toBeVisible();
-
-  await page.goto(
-    "/workbench/prototypes/hengdong/screens/workout-complete?variant=default&theme=light",
-  );
-  await expect(
-    runtime.getByRole("heading", { name: "这次训练完成了" }),
+    runtime.locator('[data-pb-id="cold-chain-ops.exception-queue.root"]'),
   ).toBeVisible();
+  await expect(
+    runtime.getByText("确认提交处置记录？", { exact: true }),
+  ).toHaveCount(0);
 
   await page
-    .locator('a[href="/workbench/prototypes/hengdong/screens/plans"]')
+    .locator(
+      'a[href="/workbench/prototypes/cold-chain-ops/screens/shipment-detail"]',
+    )
     .click();
-  await expect(page).toHaveURL(/\/screens\/plans/);
-  await expect.poll(runtimeUrl).toContain("/prototype/hengdong/plans");
+  await expect(page).toHaveURL(/\/screens\/shipment-detail/);
+  await expect
+    .poll(runtimeUrl)
+    .toContain("/prototype/cold-chain-ops/shipment-detail");
   await expect(
-    runtime.getByRole("button", { name: "放弃并离开" }),
-  ).toHaveCount(0);
-  await expect(runtime.getByRole("tab", { name: "计划" })).toBeVisible();
+    runtime.locator('[data-pb-id="cold-chain-ops.shipment-detail.root"]'),
+  ).toBeVisible();
 });
 
 test("search and settings controls have usable behavior", async ({ page }) => {

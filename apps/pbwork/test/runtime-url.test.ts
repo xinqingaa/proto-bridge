@@ -112,18 +112,18 @@ describe("resolveRuntimeRoute", () => {
     ).toMatchObject({ ok: false, code: "INVALID_QUERY" });
   });
 
-  it("accepts Today overlay state as an authored optional query", () => {
+  it("accepts an authored optional query key", () => {
     const result = resolveRuntimeRoute({
-      prototypeId: "hengdong",
-      screenSlug: "today",
+      prototypeId: "cold-chain-ops",
+      screenSlug: "shipment-detail",
       searchParams: new URLSearchParams(
-        "variant=record-detail-open&theme=light&record=record-20260812&state=completed",
+        "variant=default&theme=light&shipment=SH-2048",
       ),
     });
 
     expect(result).toMatchObject({
       ok: true,
-      query: { record: "record-20260812", state: "completed" },
+      query: { shipment: "SH-2048" },
     });
   });
 });

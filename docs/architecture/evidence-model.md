@@ -45,7 +45,7 @@ Capture Scope 可以是 Screen 或稳定 Fragment 集合。Scope key 是可复�
 
 ## Job、Run 与 Attempt
 
-Job 是可恢复的执行控制对象，可以 queued、running、cancelling 或终结。Job journal 支持进程恢复，但不是 Evidence 成功证明。
+Job 是可恢复的执行控制对象，可以 queued、running、cancelling 或终结。同一 Workspace writer 同时只运行一个 Job，其余保持 queued。Job journal 支持进程恢复，但不是 Evidence 成功证明。
 
 Run 是一次已终结 Selection 的不可变记录。可信 Run 即使零成功也会形成 Coverage 和新 Snapshot；Store 提交失败则不能宣称 Run/Snapshot 已更新。
 
@@ -99,6 +99,8 @@ Issue 持久说明：
 - Evidence Level 限制；
 - 建议 next action。
 
+Issue 不可变：同 ID 已存储且内容不同时保留首次写入的内容。
+
 Coverage 说明 Selection 中哪些 Case 成功、失败、取消、跳过或不支持。Coverage 不能用“有一张截图”替代完整 Case 计数。
 
 ## Staleness
@@ -130,6 +132,8 @@ Runtime provider 的 session、App/build identity、operation 和失败尝试是
 ## Blob
 
 Blob 保存 Screenshot、调试数据或目录附件。Blob 必须具有 owner ref，并能从请求的 Snapshot 或 Catalog 到达。Debug/Trace 需要显式许可；MCP 不按文件路径读取 Blob。
+
+Blob 字节按临时文件、fsync、rename、目录 fsync 的顺序持久写入，失败时清理临时文件，与 JSON 原子写入同等耐久。Case 级暂存、必需 Screenshot Blob 失败语义和提交顺序见[采集链路](./capture-pipeline.md)。
 
 ## 事实与来源
 

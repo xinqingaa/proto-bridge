@@ -10,7 +10,7 @@ import {
   spawnInherited,
   userArgv,
   validateWorkspaceConfigWithCore,
-  resolveWorkspaceDeliveryTargetRoot,
+  resolveWorkspaceServiceLaunch,
   waitForTcp,
 } from "./lib/pb-script-utils.mjs";
 
@@ -44,7 +44,7 @@ try {
 
 await runInherited("pnpm", ["--filter", "@proto-bridge/core", "build"]);
 await validateWorkspaceConfigWithCore(workspace);
-const deliveryTargetRoot = await resolveWorkspaceDeliveryTargetRoot(workspace);
+const launch = await resolveWorkspaceServiceLaunch(workspace);
 const configArg = optionValue(argv, "--config");
 await runInherited("pnpm", [
   "pb:doctor",
@@ -53,15 +53,12 @@ await runInherited("pnpm", [
   ...(configArg ? ["--config", configArg] : []),
 ]);
 
-const sharedEnv = {
+// Local Service reads every launch parameter from the same config file; the
+// Workbench dev server only needs to know where to proxy `/__pb_v2`.
+const workbenchEnv = {
   ...process.env,
-  PB_SERVICE_PORT: String(workspace.servicePort),
-  PBWORK_ORIGIN: workspace.runtimeOrigin,
-  PBWORK_RUNTIME_ORIGIN: workspace.runtimeOrigin,
-  PB_STORE_ROOT: workspace.storeRoot,
-  PB_WORKSPACE_ID: workspace.workspaceId,
-  PB_MAX_CASES: String(workspace.maxCases),
-  PB_DELIVERY_TARGET_ROOT: deliveryTargetRoot,
+  PB_SERVICE_HOST: launch.host,
+  PB_SERVICE_PORT: String(launch.port),
 };
 
 const statePath = path.join(path.dirname(workspace.storeRoot), "runtime", "pb-up.json");
@@ -77,8 +74,9 @@ const service = spawnInherited(
     "tsx",
     "--conditions=source",
     "src/index.ts",
+    "--config",
+    launch.configPath,
   ],
-  { env: sharedEnv },
 );
 const workbench = spawnInherited(
   "pnpm",
@@ -92,7 +90,7 @@ const workbench = spawnInherited(
     "--port",
     String(runtimePort),
   ],
-  { env: sharedEnv },
+  { env: workbenchEnv },
 );
 
 try {
@@ -102,7 +100,7 @@ try {
     workbenchPid: workbench.pid,
     workspaceId: workspace.workspaceId,
     runtimePort,
-    servicePort: workspace.servicePort,
+    servicePort: launch.port,
     startedAt: new Date().toISOString(),
   }, null, 2)}\n`, { flag: "wx" });
 } catch (error) {
@@ -128,7 +126,7 @@ process.once("SIGTERM", () => stop("SIGTERM"));
 
 try {
   await Promise.all([
-    waitForTcp(workspace.serviceHost, workspace.servicePort),
+    waitForTcp(launch.host, launch.port),
     waitForTcp(workspace.runtimeUrl.hostname, runtimePort),
   ]);
   process.stdout.write(
@@ -139,7 +137,7 @@ try {
       `Runtime:   ${workspace.runtimeOrigin}`,
       `Workspace: ${workspace.workspaceId}`,
       `Store:     ${workspace.storeRoot}`,
-      `Target:    ${deliveryTargetRoot}`,
+      `Target:    ${launch.deliveryTargetRoot}`,
       "Stop:      Ctrl+C",
       "",
     ].join("\n"),

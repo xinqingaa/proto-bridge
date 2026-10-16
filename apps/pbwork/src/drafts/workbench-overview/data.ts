@@ -45,12 +45,12 @@ export function screenLabel(prototypeId: string, screenSlug: string) {
   );
 }
 
-export const focusPrototypes = prototypes.slice(0, 2);
+export const focusPrototypes = prototypes.slice(0, 1);
 
 export const wallScreens = [
-  { prototypeId: "hengdong", screenSlug: "today" },
   { prototypeId: "cold-chain-ops", screenSlug: "exception-queue" },
-  { prototypeId: "hengdong", screenSlug: "plans" },
+  { prototypeId: "cold-chain-ops", screenSlug: "shipment-detail" },
+  { prototypeId: "cold-chain-ops", screenSlug: "resolution-form" },
 ].map((item) => ({
   ...item,
   key: `${item.prototypeId}.${item.screenSlug}`,
@@ -133,14 +133,9 @@ export const coverage = {
   pending: allCells.filter((cell) => cell.status === "pending").length,
 };
 
-export const captureStats = { running: 1, attention: 1, results: 2 };
+export const captureStats = { running: 1, attention: 1, results: 1 };
 
 export const captureResults = [
-  {
-    id: "hengdong",
-    label: "恒动 · 健身自律记录",
-    detail: "8/8 成功 · 08/16 16:02",
-  },
   {
     id: "cold-chain-ops",
     label: "冷链异常处置台",
@@ -149,8 +144,8 @@ export const captureResults = [
 ];
 
 export const comments = [
-  { id: "1", label: "开始训练按钮", content: "主按钮和目标环抢焦点。" },
-  { id: "2", label: "登录错误态", content: "失败后缺少下一步说明。" },
+  { id: "1", label: "提交处置按钮", content: "主按钮和风险提示抢焦点。" },
+  { id: "2", label: "表单校验错误态", content: "失败后缺少下一步说明。" },
 ];
 
 export const assetStats = [

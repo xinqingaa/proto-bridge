@@ -27,12 +27,14 @@ pnpm pb:doctor -- --json
 
 - Node.js 与 pnpm；
 - Workspace 配置和 loopback 边界；
-- `service.allowedOrigins` 是否包含 Workbench origin；
+- Core 解析出的 Local Service 启动值：Workbench origin 必须在解析后的 allowedOrigins 中（`service.allowedOrigins` → `runtime.allowedOrigins` → `runtime.baseUrl` origin），host 必须是 loopback；
 - Store 的逻辑 Workspace；
 - `delivery.targetRoot` 是否存在且像 Flutter 工程（`pubspec.yaml` + `lib/`）；
 - CLI/MCP 构建产物；
 - Playwright Chromium；
-- Runtime 与 Local Service 端口。
+- Runtime 与 Local Service 端口（Service 按解析出的 host/port 检查可达性）。
+
+输出包含一行 “Local Service launch” 摘要：host:port、allowedOrigins、Case 上限和容量上限，即 `pb:up` 与 CLI `service start` 实际使用的值。
 
 配置文件不存在时，Doctor 只报告缺失并提示 `pnpm pb:init`；不会覆盖已有配置，也不会自动重建一个已存在但被破坏的 Store。显式传入的缺失 `--config` 同样不会自动创建。
 
@@ -56,7 +58,7 @@ pnpm pb:up
 pnpm pb:up -- --config /absolute/path/to/proto-bridge.json
 ```
 
-脚本读取配置中的 Runtime URL、Service 端口、Store、Workspace、Case 上限和 `delivery.targetRoot`，先完成 `--for-up` 前置检查，再启动 PBWork 与 Local Service，等待两个端口可达后打印 Workbench URL 与绑定的目标路径。`Ctrl+C` 同时停止两个子进程，并清理 `.proto-bridge/runtime/pb-up.json`。更改 `delivery.targetRoot` 后必须重启。
+脚本通过 Core 从配置解析 Local Service 启动值（`service.host/port`、allowedOrigins、`store.root`、`store.maxBytes`、`capture.maxCases`、`delivery.targetRoot`，规则见[配置与安全边界](../reference/configuration.md)），以 `--config` 启动 Service；Service 不读取环境变量。脚本只向 Vite dev server 传入 `PB_SERVICE_HOST` / `PB_SERVICE_PORT` 供 `/__pb_v2` 代理使用。先完成 `--for-up` 前置检查，再启动 PBWork 与 Local Service，等待两个端口可达后打印 Workbench URL 与绑定的目标路径。`Ctrl+C` 同时停止两个子进程，并清理 `.proto-bridge/runtime/pb-up.json`。更改 `delivery.targetRoot` 后必须重启。
 
 如果配置、依赖、Chromium、目标工程或 Store 未就绪，`pb:up` 不启动半套服务，而是指出应运行 `pnpm pb:install`、`pnpm pb:init` 或 `pnpm pb:doctor`。
 

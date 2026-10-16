@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
-import { mkdir, open, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, open, readdir, readFile, rename, rm, stat } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
 import { V2ContractError } from '../contracts/errors.js';
 
@@ -12,14 +12,22 @@ import { V2ContractError } from '../contracts/errors.js';
  * (pb-v2-implementation-guide.md "写入中断后 Reader 仍读取旧完整 Snapshot").
  */
 export async function writeJsonAtomic(filePath: string, value: unknown): Promise<void> {
+  await writeFileDurably(filePath, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+/**
+ * Shared durable writer: temp file (`wx`) -> write -> fsync -> close ->
+ * rename -> fsync directory. The temp file is removed on any failure so a
+ * failed write never leaves `.tmp-` residue or a partial final file.
+ */
+async function writeFileDurably(filePath: string, data: string | Uint8Array): Promise<void> {
   const dir = path.dirname(filePath);
   await mkdir(dir, { recursive: true });
   const tempPath = path.join(dir, `.tmp-${path.basename(filePath)}-${randomBytes(6).toString('hex')}`);
-  const serialized = `${JSON.stringify(value, null, 2)}\n`;
   try {
-    const temp = await open(tempPath, 'w');
+    const temp = await open(tempPath, 'wx');
     try {
-      await temp.writeFile(serialized, 'utf8');
+      await temp.writeFile(data);
       await temp.sync();
     } finally {
       await temp.close();
@@ -97,16 +105,7 @@ export async function writeImmutableBytes(filePath: string, objectKind: string, 
   } catch (error) {
     if (!isEnoent(error)) throw error;
   }
-  const dir = path.dirname(filePath);
-  await mkdir(dir, { recursive: true });
-  const tempPath = path.join(dir, `.tmp-${path.basename(filePath)}-${randomBytes(6).toString('hex')}`);
-  await writeFile(tempPath, value, { flag: 'wx' });
-  try {
-    await rename(tempPath, filePath);
-  } catch (error) {
-    await rm(tempPath, { force: true });
-    throw error;
-  }
+  await writeFileDurably(filePath, value);
 }
 
 export async function fileByteLength(filePath: string): Promise<number> {

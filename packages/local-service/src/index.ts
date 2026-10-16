@@ -1,47 +1,51 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DEFAULT_CAPTURE_MAX_CASES } from '@proto-bridge/core/v2';
-import { ProtoBridgeLocalService } from './service.js';
+import {
+  loadLocalServiceLaunchConfig,
+  type LocalServiceLaunchConfig,
+} from '@proto-bridge/core/v2/store';
+import { ProtoBridgeLocalService, type LocalServiceOptions } from './service.js';
 
 export * from './service.js';
 export * from './flutter-mcp-provider.js';
 
-function envNumber(name: string, fallback: number): number {
-  const value = process.env[name];
-  if (!value) return fallback;
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) throw new Error(`${name} must be a number.`);
-  return parsed;
+/** Maps the Core-resolved launch config onto Service options without reinterpreting it. */
+export function localServiceOptionsFromLaunchConfig(
+  launch: LocalServiceLaunchConfig,
+): LocalServiceOptions {
+  return {
+    host: launch.host,
+    port: launch.port,
+    allowedOrigins: launch.allowedOrigins,
+    runtimeBaseUrl: launch.runtimeBaseUrl,
+    storeRoot: launch.storeRoot,
+    workspaceId: launch.workspaceId,
+    deliveryTargetRoot: launch.deliveryTargetRoot,
+    maxCases: launch.maxCases,
+    ...(launch.maxStoreBytes === undefined
+      ? {}
+      : { maxStoreBytes: launch.maxStoreBytes }),
+  };
 }
 
-function requiredEnv(name: string): string {
-  const value = process.env[name]?.trim();
-  if (!value) {
+function configArgument(argv: string[]): string {
+  const index = argv.indexOf('--config');
+  const value = index === -1 ? undefined : argv[index + 1];
+  if (!value || value.startsWith('--')) {
     throw new Error(
-      `${name} is required. Start Local Service through pnpm pb:up or pass the resolved Workspace delivery.targetRoot.`,
+      'Local Service requires --config <proto-bridge.json>. Start it through pnpm pb:up or proto-bridge service start.',
     );
   }
   return value;
 }
 
 async function main(): Promise<void> {
-  const port = envNumber('PB_SERVICE_PORT', 3988);
-  const service = new ProtoBridgeLocalService({
-    host: '127.0.0.1',
-    port,
-    allowedOrigins: [
-      process.env.PBWORK_ORIGIN ?? 'http://127.0.0.1:3977',
-      `http://127.0.0.1:${port}`,
-    ],
-    runtimeBaseUrl:
-      process.env.PBWORK_RUNTIME_ORIGIN ?? 'http://127.0.0.1:3977',
-    storeRoot:
-      process.env.PB_STORE_ROOT ??
-      path.resolve(process.cwd(), '.proto-bridge/store'),
-    workspaceId: process.env.PB_WORKSPACE_ID ?? 'pbwork-local',
-    deliveryTargetRoot: requiredEnv('PB_DELIVERY_TARGET_ROOT'),
-    maxCases: envNumber('PB_MAX_CASES', DEFAULT_CAPTURE_MAX_CASES),
-  });
+  const launch = await loadLocalServiceLaunchConfig(
+    configArgument(process.argv.slice(2)),
+  );
+  const service = new ProtoBridgeLocalService(
+    localServiceOptionsFromLaunchConfig(launch),
+  );
   const address = await service.start();
   process.stdout.write(
     `ProtoBridge Local Service listening on http://${address.host}:${address.port}\n`,

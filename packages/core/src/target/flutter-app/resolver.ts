@@ -5,8 +5,9 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import fg from 'fast-glob';
 import { z } from 'zod';
-import type {
-  ResolveTargetMappingsInput,
+import {
+  TARGET_PENDING_NOTICE,
+  type ResolveTargetMappingsInput,
   TargetCodeValidation,
   TargetDeclarationSource,
   TargetMappingDeclaration,
@@ -18,7 +19,7 @@ import type {
 import type { TargetAdapterAuthorityInspection } from '../readiness.js';
 
 const execFileAsync = promisify(execFile);
-const machineMapping = z.object({
+const machineAccessorMapping = z.object({
   symbol: z.string().min(1).optional(),
   accessor: z.string().min(1).optional(),
   import: z.string().min(1).optional(),
@@ -26,6 +27,16 @@ const machineMapping = z.object({
   constructorHints: z.array(z.string().min(1)).optional(),
   usageHints: z.array(z.string().min(1)).optional(),
 }).strict();
+/**
+ * Entry-level pending: the Target declares the key but has not implemented it.
+ * `reason` is deliberately lenient here so a missing or empty reason is reported
+ * as a per-entry `conflict` by the resolver instead of invalidating the whole manifest.
+ */
+const machinePendingMapping = z.object({
+  status: z.literal('pending'),
+  reason: z.string().optional(),
+}).strict();
+const machineMapping = z.union([machinePendingMapping, machineAccessorMapping]);
 const flutterFinder = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('value-key'), value: z.string().min(1) }).strict(),
   z.object({ kind: z.literal('semantics-label'), value: z.string().min(1), isRegExp: z.boolean().optional() }).strict(),
@@ -295,6 +306,8 @@ function resolveOne(inventory: Inventory, id: string, kind: MappingKind): Target
   const declarations = inventory.declarations
     .filter((item) => item.kind === kind && item.id === id)
     .sort((left, right) => right.source.priority - left.source.priority || left.source.path.localeCompare(right.source.path));
+  const pendingResolution = resolvePending(declarations, id, kind);
+  if (pendingResolution) return pendingResolution;
   const distinct = new Map<string, TargetMappingDeclaration>();
   for (const declaration of declarations) distinct.set(mappingIdentity(declaration), declaration);
   if (distinct.size > 1) {
@@ -360,6 +373,50 @@ function resolveOne(inventory: Inventory, id: string, kind: MappingKind): Target
   };
 }
 
+/**
+ * Entry-level pending short-circuits resolution: no heuristics, no candidates.
+ * A pending declaration that coexists with a concrete mapping, or that has an
+ * empty reason, is a manifest error and surfaces as `conflict` for that entry.
+ */
+function resolvePending(
+  declarations: TargetMappingDeclaration[],
+  id: string,
+  kind: MappingKind,
+): TargetResolution | undefined {
+  const pending = declarations.filter((item) => item.pending);
+  if (pending.length === 0) return undefined;
+  const sources = declarations.map((item) => item.source);
+  const concrete = declarations.filter((item) => !item.pending);
+  const blankReason = pending.find((item) => !item.pending!.reason.trim());
+  if (blankReason || concrete.length > 0) {
+    const detail = blankReason
+      ? 'pending declaration must carry a non-empty reason.'
+      : 'pending declaration coexists with a concrete mapping for the same ID.';
+    return {
+      id,
+      kind,
+      status: 'conflict',
+      declarationSources: sources,
+      candidates: [],
+      validation: emptyValidation(`Invalid ${kind} manifest entry ${id}: ${detail}`),
+      reason: `Invalid Target manifest entry: ${detail}`,
+      nextQueries: pending.concat(concrete).map((item) => `Fix ${item.source.path}${item.source.location ? `:${item.source.location.line}` : ''}.`),
+    };
+  }
+  const declared = pending[0]!.pending!.reason.trim();
+  return {
+    id,
+    kind,
+    status: 'pending',
+    declarationSources: sources,
+    candidates: [],
+    validation: emptyValidation(`${TARGET_PENDING_NOTICE}: no code lookup was performed.`),
+    reason: `${TARGET_PENDING_NOTICE}：${declared}`,
+    nextQueries: [],
+    pending: { notice: TARGET_PENDING_NOTICE, reason: declared },
+  };
+}
+
 function markdownDeclarations(
   file: InventoryFile,
   sourceKind: TargetDeclarationSource['kind'],
@@ -402,7 +459,28 @@ function machineDeclarations(
   kind: MappingKind,
   source: TargetDeclarationSource,
 ): TargetMappingDeclaration[] {
-  return Object.entries(mappings).map(([id, mapping]) => ({
+  return Object.entries(mappings).map(([id, mapping]): TargetMappingDeclaration => {
+    if ('status' in mapping) {
+      return {
+        id,
+        kind,
+        constructorHints: [],
+        usageHints: [],
+        pending: { reason: mapping.reason ?? '' },
+        source,
+      };
+    }
+    return machineAccessorDeclaration(id, kind, mapping, source);
+  });
+}
+
+function machineAccessorDeclaration(
+  id: string,
+  kind: MappingKind,
+  mapping: z.infer<typeof machineAccessorMapping>,
+  source: TargetDeclarationSource,
+): TargetMappingDeclaration {
+  return {
     id,
     kind,
     ...(mapping.symbol ? { symbol: mapping.symbol } : {}),
@@ -412,7 +490,7 @@ function machineDeclarations(
     constructorHints: mapping.constructorHints ?? [],
     usageHints: mapping.usageHints ?? [],
     source,
-  }));
+  };
 }
 
 function validateCandidate(

@@ -210,19 +210,19 @@ describe('V2 Runtime Capture Protocol schemas', () => {
       ],
       screens: [
         {
-          prototypeId: 'hengdong',
-          screenId: 'hengdong.settings-goals',
-          screenSlug: 'settings-goals',
-          path: '/prototype/hengdong/settings-goals',
+          prototypeId: 'sample-app',
+          screenId: 'sample-app.settings',
+          screenSlug: 'settings',
+          path: '/prototype/sample-app/settings',
           defaultVariantId: 'default',
           variants: [
             {
-              variantId: 'weekly-open',
-              label: '选择每周活动',
+              variantId: 'plan-open',
+              label: '选择套餐',
               requiredFragments: [
                 {
-                  screenId: 'hengdong.settings-goals',
-                  pbId: 'hengdong.settings-goals.weekly-option',
+                  screenId: 'sample-app.settings',
+                  pbId: 'sample-app.settings.plan-option',
                   pbKey: '3',
                 },
               ],
@@ -230,11 +230,11 @@ describe('V2 Runtime Capture Protocol schemas', () => {
           ],
           actions: [
             {
-              actionId: 'choose-weekly-target',
+              actionId: 'choose-plan',
               kind: 'click',
               target: {
-                screenId: 'hengdong.settings-goals',
-                pbId: 'hengdong.settings-goals.weekly-option',
+                screenId: 'sample-app.settings',
+                pbId: 'sample-app.settings.plan-option',
                 pbKey: '4',
               },
             },
@@ -247,9 +247,9 @@ describe('V2 Runtime Capture Protocol schemas', () => {
     expect(parsed.success).toBe(false);
     if (parsed.success) return;
     const message = formatSchemaIssues(parsed.error, manifest);
-    expect(message).toContain('screens.hengdong.settings-goals');
-    expect(message).toContain('variants.weekly-open');
-    expect(message).toContain('hengdong.settings-goals.weekly-option#3');
+    expect(message).toContain('screens.sample-app.settings');
+    expect(message).toContain('variants.plan-open');
+    expect(message).toContain('sample-app.settings.plan-option#3');
     expect(message).toContain('got "3"');
     expect(message).toContain('stable lowercase identifier');
     expect(message).not.toContain('"Invalid"');

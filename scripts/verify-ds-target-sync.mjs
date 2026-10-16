@@ -23,6 +23,7 @@ const syncPath = path.join(targetRoot, "proto-bridge.sync.json");
 const targetMappingPath = path.join(targetRoot, "proto-bridge.target.json");
 const printBaseline = process.argv.includes("--print-baseline");
 const errors = [];
+const pendingEntries = [];
 
 const contracts = await readContracts();
 const tokens = await readJson(
@@ -95,8 +96,19 @@ if (errors.length > 0) {
   process.stdout.write(`${JSON.stringify(baseline, null, 2)}\n`);
 } else {
   process.stdout.write(
-    `DS → Target sync verified: ${contracts.length}/${declaredTargetComponentIds.length} current components, ${tokenIds.size}/${tokens.length} Catalog tokens mapped, surface ${surfaceDigest}.\n`,
+    `DS → Target sync verified: ${contracts.length}/${declaredTargetComponentIds.length} current components, ${tokenIds.size}/${tokens.length} Catalog tokens mapped, surface ${surfaceDigest}${pendingSummary()}\n`,
   );
+}
+
+// Entry-level pending (per-key fact) is reported here; the batch-level synced/pending
+// status in proto-bridge.sync.json is a different concept and is checked separately.
+function pendingSummary() {
+  if (pendingEntries.length === 0) return "; pending 0.";
+  const list = [...pendingEntries]
+    .sort((left, right) => `${left.kind} ${left.id}`.localeCompare(`${right.kind} ${right.id}`))
+    .map((entry) => `${entry.kind} ${entry.id} (${entry.reason})`)
+    .join(", ");
+  return `; pending ${pendingEntries.length}: ${list}.`;
 }
 
 async function readContracts() {
@@ -255,6 +267,19 @@ function verifyTargetMappingCoverage() {
       `Flutter target mapping must contain only current component ids (legacy/extra: ${legacy.join(", ") || "none"}).`,
     );
   }
+  for (const [section, entries] of [
+    ["component", targetMapping.components ?? {}],
+    ["token", targetMapping.tokens ?? {}],
+  ]) {
+    for (const [id, entry] of Object.entries(entries)) {
+      if (entry?.status === undefined) continue;
+      if (entry.status !== "pending") {
+        errors.push(`Flutter ${section} mapping ${id} has unsupported entry status ${JSON.stringify(entry.status)}.`);
+      } else if (typeof entry.reason !== "string" || entry.reason.trim() === "") {
+        errors.push(`Flutter ${section} mapping ${id} is pending but has no non-empty reason.`);
+      }
+    }
+  }
   const mappedTokens = Object.keys(targetMapping.tokens ?? {}).sort();
   const requiredTokens = [...tokenIds].sort();
   if (canonical(mappedTokens) !== canonical(requiredTokens)) {
@@ -281,7 +306,13 @@ async function verifyResolver() {
     ids: [...tokenIds].sort(),
   });
   for (const resolution of [...componentBatch.resolutions, ...tokenBatch.resolutions]) {
-    if (resolution.status !== "resolved") {
+    if (resolution.status === "pending") {
+      pendingEntries.push({
+        kind: resolution.kind,
+        id: resolution.id,
+        reason: resolution.pending?.reason ?? resolution.reason,
+      });
+    } else if (resolution.status !== "resolved") {
       errors.push(`${resolution.kind} ${resolution.id} resolved as ${resolution.status}.`);
     }
   }

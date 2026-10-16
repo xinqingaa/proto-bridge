@@ -56,11 +56,11 @@ test("Runtime describes a full Prototype before a Screen route resolves", async 
   )).toHaveLength(3);
 });
 
-test("Core Capture opens a parameterized Hengdong Variant with its authored route query", async ({
+test("Core Capture opens a cold-chain Variant with its authored Screen route and Fragment identity", async ({
   page,
 }) => {
   await page.goto(
-    "/prototype/hengdong/today?variant=default&theme=light",
+    "/prototype/cold-chain-ops/shipment-detail?variant=default&theme=light&shipment=SH-2048",
   );
   await page.waitForFunction(() =>
     Boolean(
@@ -78,20 +78,20 @@ test("Core Capture opens a parameterized Hengdong Variant with its authored rout
     if (!api) throw new Error("V2 Runtime Capture Protocol missing");
     return api.request({
       protocolVersion: 2,
-      requestId: "hengdong-route-query-describe",
+      requestId: "cold-chain-variant-describe",
       payload: { kind: "describe" },
     });
   });
   expect(described.ok, JSON.stringify(described)).toBe(true);
   const manifest = described.payload.manifest as RuntimeCaptureManifest;
   const draft: SelectionDraft = {
-    prototypeId: "hengdong",
+    prototypeId: "cold-chain-ops",
     screens: [
       {
-        screenId: "hengdong.today",
+        screenId: "cold-chain-ops.shipment-detail",
         variants: {
           mode: "explicit",
-          variantIds: ["record-detail-open"],
+          variantIds: ["active-excursion"],
         },
         themeIds: ["light"],
         deviceIds: ["iphone-14"],
@@ -110,7 +110,6 @@ test("Core Capture opens a parameterized Hengdong Variant with its authored rout
   };
   const preflight = preflightSelection(draft, manifest);
   const entry = preflight.matrix[0]!;
-  expect(entry.initialRouteQuery).toEqual({ record: "record-20260812" });
 
   const captured = await new PlaywrightCaseCaptureDriver().captureCase({
     entry,
@@ -119,16 +118,18 @@ test("Core Capture opens a parameterized Hengdong Variant with its authored rout
   });
   expect(captured.diagnostics.pageErrors).toEqual([]);
   expect(
-    captured.facts.some(
-      (fact) => fact.factId === "hengdong.today.record-detail.identity",
+    captured.facts.some((fact) =>
+      fact.factId.startsWith("cold-chain-ops.shipment-detail."),
     ),
   ).toBe(true);
 });
 
-test("Hengdong sequential Sheet actions resolve at their actual scenario step", async ({
+test("cold-chain sequential Sheet actions resolve at their actual scenario step", async ({
   page,
 }) => {
-  await page.goto("/prototype/hengdong/today?variant=default&theme=light");
+  await page.goto(
+    "/prototype/cold-chain-ops/shipment-detail?variant=default&theme=light&shipment=SH-2048",
+  );
   await page.waitForFunction(() =>
     Boolean(
       (window as unknown as Record<string, unknown>)
@@ -145,7 +146,7 @@ test("Hengdong sequential Sheet actions resolve at their actual scenario step", 
     if (!api) throw new Error("V2 Runtime Capture Protocol missing");
     const response = await api.request({
       protocolVersion: 2,
-      requestId: "hengdong-sequential-describe",
+      requestId: "cold-chain-sequential-describe",
       payload: { kind: "describe" },
     });
     return response.payload.manifest as RuntimeCaptureManifest;
@@ -159,27 +160,19 @@ test("Hengdong sequential Sheet actions resolve at their actual scenario step", 
     minEvidenceLevel: "instrumented-runtime" as const,
   };
   const draft: SelectionDraft = {
-    prototypeId: "hengdong",
+    prototypeId: "cold-chain-ops",
     screens: [
       {
-        screenId: "hengdong.activity-history",
-        variants: { mode: "explicit", variantIds: ["default"] },
-        themeIds: ["light"],
-        deviceIds: ["iphone-14"],
-        scenarios: {
+        screenId: "cold-chain-ops.shipment-detail",
+        variants: {
           mode: "explicit",
-          scenarioIds: ["delete-and-undo-history"],
+          variantIds: ["active-excursion", "action-sheet-open"],
         },
-        captureScope,
-      },
-      {
-        screenId: "hengdong.progress",
-        variants: { mode: "explicit", variantIds: ["custom"] },
         themeIds: ["light"],
         deviceIds: ["iphone-14"],
         scenarios: {
           mode: "explicit",
-          scenarioIds: ["apply-progress-custom-range"],
+          scenarioIds: ["reveal-response-options", "start-resolution"],
         },
         captureScope,
       },

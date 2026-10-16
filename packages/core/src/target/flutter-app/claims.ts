@@ -10,6 +10,7 @@ import {
   compareStructureIR,
   type StructureIR,
 } from '../../v2/consumer-projection.js';
+import { TARGET_PENDING_NOTICE, type TargetResolution } from '../types.js';
 import type {
   TargetImplementationClaim,
   TargetOccurrenceLocator,
@@ -55,7 +56,7 @@ export async function verifyFlutterTargetClaims(
       const componentId = expectedString(obligation, 'componentId')[0];
       const resolution = componentId ? componentById.get(componentId) : undefined;
       if (!componentId || resolution?.status !== 'resolved') {
-        results.push(result(claim, 'unverified', `Component mapping ${componentId ?? '<missing>'} is not resolved at the fixed Target revision.`));
+        results.push(result(claim, 'unverified', unresolvedMappingDetail('Component', componentId, resolution)));
         continue;
       }
       if (!resolution.candidates.some((item) => item.symbol === claim.symbol)) {
@@ -76,7 +77,7 @@ export async function verifyFlutterTargetClaims(
     const tokenId = expectedString(obligation, 'tokenId')[0];
     const resolution = tokenId ? tokenById.get(tokenId) : undefined;
     if (!tokenId || resolution?.status !== 'resolved') {
-      results.push(result(claim, 'unverified', `Token mapping ${tokenId ?? '<missing>'} is not resolved at the fixed Target revision.`));
+      results.push(result(claim, 'unverified', unresolvedMappingDetail('Token', tokenId, resolution)));
       continue;
     }
     if (!resolution.candidates.some((item) => item.accessor === claim.accessor)) {
@@ -439,6 +440,14 @@ function maskDartNonCode(text: string): string {
     index += 1;
   }
   return chars.join('');
+}
+
+/** A `pending` mapping can never be reported as matched: the Target declares the key as not implemented. */
+function unresolvedMappingDetail(label: 'Component' | 'Token', id: string | undefined, resolution: TargetResolution | undefined): string {
+  if (resolution?.status === 'pending') {
+    return `${label} mapping ${id} is pending (${TARGET_PENDING_NOTICE}): ${resolution.pending?.reason ?? resolution.reason}`;
+  }
+  return `${label} mapping ${id ?? '<missing>'} is not resolved at the fixed Target revision.`;
 }
 
 function result(claim: TargetImplementationClaim, status: ReviewVerifierResult['status'], detail: string): ReviewVerifierResult {

@@ -27,15 +27,17 @@ describe("prototype work map", () => {
     ).toContain("→");
   });
 
-  it("treats hengdong root tabs as parallel destinations", () => {
-    const prototype = loadPrototypes().find((item) => item.id === "hengdong")!;
+  it("treats root-tabs groups as parallel destinations", () => {
     const screens = loadPrototypeScreens().filter(
-      (item) => item.prototypeId === "hengdong",
+      (item) => item.prototypeId === "cold-chain-ops",
     );
-    const tabs = prototypeChapters(
-      screens,
-      prototype.screenGroups ?? [],
-    ).find((chapter) => chapter.id === "root-tabs");
+    const tabs = prototypeChapters(screens, [
+      {
+        id: "root-tabs",
+        label: "一级目的地",
+        screenSlugs: ["exception-queue", "shipment-detail"],
+      },
+    ]).find((chapter) => chapter.id === "root-tabs");
     expect(tabs?.sequential).toBe(false);
     expect(
       screensLine(

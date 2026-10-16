@@ -159,7 +159,7 @@ test("a pending risk confirmation survives another tab and a page reload", async
   await expect(row.getByRole("button", { name: "继续定稿" })).toBeVisible();
   await row.getByRole("button", { name: "继续定稿" }).click();
   const firstSheet = firstTab.getByTestId("lifecycle-finalization-sheet");
-  await expect(firstSheet.getByText("需要在目标实现中人工复核重建完整度。")).toBeVisible();
+  await expect(firstSheet.getByText("还不能按高保真还原页面结构")).toBeVisible();
   await firstSheet.getByRole("button", { name: "收起定稿流程" }).click();
 
   const secondTab = await context.newPage();
@@ -168,7 +168,7 @@ test("a pending risk confirmation survives another tab and a page reload", async
   await expect(secondRow.getByRole("button", { name: "继续定稿" })).toBeVisible();
   await secondRow.getByRole("button", { name: "继续定稿" }).click();
   const secondSheet = secondTab.getByTestId("lifecycle-finalization-sheet");
-  await expect(secondSheet.getByText("需要在目标实现中人工复核重建完整度。")).toBeVisible();
+  await expect(secondSheet.getByText("还不能按高保真还原页面结构")).toBeVisible();
   await secondSheet.getByRole("checkbox", { name: "已了解" }).check();
   await secondSheet.getByRole("button", { name: "确认并生成提示词" }).click();
   await expect(secondSheet.getByText("正在固定交付产物")).toBeVisible();

@@ -9,7 +9,7 @@ import {
 import { comments, focusPrototypes, prototypeStats } from "../data";
 
 const primary = focusPrototypes[0];
-const secondary = focusPrototypes[1];
+const secondary = focusPrototypes[1] ?? primary;
 </script>
 
 <template>
@@ -28,10 +28,10 @@ const secondary = focusPrototypes[1];
         <span class="que-icon"><Play :size="16" fill="currentColor" /></span>
         <span class="que-copy">
           <small>继续设计 · 约 20 分钟</small>
-          <strong>{{ primary?.label ?? "恒动 · 健身自律记录" }}</strong>
+          <strong>{{ primary?.label ?? "冷链异常处置台" }}</strong>
           <em
             >{{
-              prototypeStats(primary?.id ?? "hengdong").screens
+              prototypeStats(primary?.id ?? "cold-chain-ops").screens
             }}
             页面正在推进，返回上次编辑位置</em
           >
@@ -63,7 +63,7 @@ const secondary = focusPrototypes[1];
     </section>
 
     <footer class="que-foot">
-      <span><Check :size="15" /> 已完成：更新恒动今天页</span>
+      <span><Check :size="15" /> 已完成：更新冷链异常队列页</span>
       <span
         ><Check :size="15" /> 已完成：检查 {{ comments.length }} 条评审</span
       >

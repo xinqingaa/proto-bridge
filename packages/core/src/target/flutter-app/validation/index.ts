@@ -3,12 +3,26 @@ import { execFile } from 'node:child_process';
 import { access, readFile } from 'node:fs/promises';
 import { promisify } from 'node:util';
 import fg from 'fast-glob';
+import { TARGET_PENDING_NOTICE } from '../../types.js';
+import {
+  resolveFlutterTargetComponents,
+  resolveFlutterTargetTokens,
+} from '../resolver.js';
 
 const execFileAsync = promisify(execFile);
 
 export type FlutterTargetFileIssue = {
   file: string;
   issue: string;
+};
+
+/** Hint-level disclosure: the change is bound to a key the Target declares as pending. Never a blocker. */
+export type FlutterTargetPendingNotice = {
+  id: string;
+  kind: 'component' | 'token';
+  notice: typeof TARGET_PENDING_NOTICE;
+  reason: string;
+  detail: string;
 };
 
 export type FlutterTargetValidationResult = {
@@ -20,6 +34,8 @@ export type FlutterTargetValidationResult = {
   expectedFiles: string[];
   missingExpectedFiles: string[];
   mappingIssues: FlutterTargetFileIssue[];
+  /** Adopted mappings bound to Target-declared `pending` keys; informational and excluded from `status`. */
+  pendingNotices: FlutterTargetPendingNotice[];
   validationHints: string[];
   status: 'ok' | 'needs-review';
 };
@@ -59,10 +75,11 @@ export async function validateFlutterTargetChanges(
     targetRoot,
     changedFiles.filter((file) => file.endsWith('.dart')),
   );
-  const mappingIssues = await validateAdoptedMappings(
+  const { pendingNotices, activeMappings } = await partitionPendingMappings(
     targetRoot,
     input.resolvedMappings ?? [],
   );
+  const mappingIssues = await validateAdoptedMappings(targetRoot, activeMappings);
   return buildFlutterTargetValidationResult({
     targetRoot,
     changedFiles,
@@ -72,7 +89,47 @@ export async function validateFlutterTargetChanges(
     expectedFiles,
     missingExpectedFiles,
     mappingIssues,
+    pendingNotices,
   });
+}
+
+async function partitionPendingMappings(
+  targetRoot: string,
+  mappings: FlutterAdoptedMapping[],
+): Promise<{ pendingNotices: FlutterTargetPendingNotice[]; activeMappings: FlutterAdoptedMapping[] }> {
+  if (mappings.length === 0) return { pendingNotices: [], activeMappings: [] };
+  const idsOf = (kind: 'component' | 'token') => [...new Set(mappings.filter((item) => item.kind === kind).map((item) => item.id))];
+  const [components, tokens] = await Promise.all([
+    resolveFlutterTargetComponents({ targetRoot, ids: idsOf('component') }),
+    resolveFlutterTargetTokens({ targetRoot, ids: idsOf('token') }),
+  ]);
+  const pendingByKey = new Map<string, string>();
+  for (const resolution of [...components.resolutions, ...tokens.resolutions]) {
+    if (resolution.status === 'pending') {
+      pendingByKey.set(`${resolution.kind}:${resolution.id}`, resolution.pending?.reason ?? resolution.reason);
+    }
+  }
+  const pendingNotices: FlutterTargetPendingNotice[] = [];
+  const activeMappings: FlutterAdoptedMapping[] = [];
+  const seen = new Set<string>();
+  for (const mapping of mappings) {
+    const key = `${mapping.kind}:${mapping.id}`;
+    const reason = pendingByKey.get(key);
+    if (reason === undefined) {
+      activeMappings.push(mapping);
+      continue;
+    }
+    if (seen.has(key)) continue;
+    seen.add(key);
+    pendingNotices.push({
+      id: mapping.id,
+      kind: mapping.kind,
+      notice: TARGET_PENDING_NOTICE,
+      reason,
+      detail: `${TARGET_PENDING_NOTICE}: ${mapping.kind} ${mapping.id} is declared pending by the Target (${reason}). Disclose it; do not substitute another implementation.`,
+    });
+  }
+  return { pendingNotices, activeMappings };
 }
 
 async function collectChangedFiles(
@@ -182,6 +239,7 @@ export function buildFlutterTargetValidationResult(input: {
   expectedFiles?: string[] | undefined;
   missingExpectedFiles?: string[] | undefined;
   mappingIssues?: FlutterTargetFileIssue[] | undefined;
+  pendingNotices?: FlutterTargetPendingNotice[] | undefined;
 }): FlutterTargetValidationResult {
   const outsideAllowedPaths = input.allowedPaths.length
     ? input.changedFiles.filter((file) => !input.allowedPaths.some((allowedPath) => file === allowedPath || file.startsWith(ensureTrailingSlash(allowedPath))))
@@ -197,6 +255,7 @@ export function buildFlutterTargetValidationResult(input: {
     expectedFiles: input.expectedFiles ?? [],
     missingExpectedFiles,
     mappingIssues,
+    pendingNotices: input.pendingNotices ?? [],
     validationHints: input.validationHints ?? [],
     status: outsideAllowedPaths.length || input.fileIssues.length || missingExpectedFiles.length || mappingIssues.length ? 'needs-review' : 'ok',
   };

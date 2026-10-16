@@ -55,8 +55,17 @@ Target 只翻译语义，不复制 Web 表达：例如百分比映射为 Flutter
 
 1. 根目录 `proto-bridge.target.json` 是精确映射，本文解释策略，Dart 公开 API 是可执行事实；三者不一致时 resolver 必须返回 `stale` 或 `conflict`。
 2. 根目录 `proto-bridge.sync.json` 记录最后一次已确认同步的 Producer surface fingerprint、分区/逐组件 digest 与计数；清单元数据必须整体一致，不能只手改总 digest。
-3. `pnpm ds:target-sync:verify` 比较 Component/Token/Theme Schema、Contract、role、Catalog、Theme、Bind 池、同步清单和 Flutter resolver；任一协议或 Target API 漂移都会失败并列出变化项。
+3. `pnpm ds:target-sync:verify` 比较 Component/Token/Theme Schema、Contract、role、Catalog、Theme、Bind 池、同步清单和 Flutter resolver（要求每个键为 `resolved` 或条目 `pending`）；任一协议或 Target API 漂移都会失败并列出变化项，条目 `pending` 在成功输出末尾列出。
 4. DS 连续迭代期间可以暂缓 Flutter 视觉精修，但必须把清单状态改为 `pending` 并记录原因；稳定后统一恢复 `synced`。不得靠记忆或口头提醒维持同步。
+
+本节出现两个不同的 `pending`，必须分开命名：
+
+| 概念 | 位置 | 含义 | 处理 |
+| --- | --- | --- | --- |
+| **批次状态** | `proto-bridge.sync.json` 的 `status: synced \| pending` | 整个 Producer surface 批次是否已确认同步 | `pending` 使 `pnpm ds:target-sync:verify` 失败 |
+| **条目状态**（entry status） | `proto-bridge.target.json` 中 `components.<id>` / `tokens.<id>` 的 `{ "status": "pending", "reason": "…" }` | 逐键事实：Target 尚未实现该组件或 Token（例如 Flutter 暂不实现的 `asset.*`、glass 分支、`motion.personality`） | resolver 返回 `pending` 并说明「Target 待实现」，附声明的 `reason`，不跑启发式、不给候选替代；同步脚本单独计数并列出，不判失败 |
+
+条目 `pending` 必须带非空 `reason`；缺失或为空是清单错误（resolver 对该键返回 `conflict`，同步脚本失败）。`pending` 与同一 ID 的具体映射（含本文表格）并存同样返回 `conflict`。未声明又缺失的键仍然失败，不能用 `pending` 以外的方式暂缓。`readiness` 把 `pending` 计为未就绪项并单独列出，`validate_target_changes` 对绑定到 `pending` 键的变更只给「Target 待实现」提示。Agent 遇到条目 `pending` 必须披露，不得自行替换实现。Core 语义见 [Target 适配器](../../../docs/architecture/proto-bridge.md)。
 
 ## 当前适配边界
 

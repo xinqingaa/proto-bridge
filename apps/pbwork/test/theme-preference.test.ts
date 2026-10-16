@@ -86,18 +86,18 @@ describe("stampThemeOnHref", () => {
   it("rewrites theme without dropping variant or business query", () => {
     expect(
       stampThemeOnHref(
-        "/prototype/hengdong/today?variant=default&theme=light",
+        "/prototype/cold-chain-ops/exception-queue?variant=default&theme=light",
         "dark",
       ),
-    ).toBe("/prototype/hengdong/today?variant=default&theme=dark");
+    ).toBe("/prototype/cold-chain-ops/exception-queue?variant=default&theme=dark");
   });
 });
 
 describe("routeHasExplicitTheme", () => {
   it("detects the reserved theme query", () => {
-    expect(routeHasExplicitTheme("/prototype/hengdong/today")).toBe(false);
+    expect(routeHasExplicitTheme("/prototype/cold-chain-ops/exception-queue")).toBe(false);
     expect(
-      routeHasExplicitTheme("/prototype/hengdong/today?variant=default&theme=dark"),
+      routeHasExplicitTheme("/prototype/cold-chain-ops/exception-queue?variant=default&theme=dark"),
     ).toBe(true);
   });
 });

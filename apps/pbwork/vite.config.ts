@@ -3,9 +3,10 @@ import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import vuetify from "vite-plugin-vuetify";
 
+const serviceHost = process.env.PB_SERVICE_HOST ?? "127.0.0.1";
 const serviceProxy = {
   "/__pb_v2": {
-    target: `http://127.0.0.1:${process.env.PB_SERVICE_PORT ?? "3988"}`,
+    target: `http://${serviceHost.includes(":") ? `[${serviceHost}]` : serviceHost}:${process.env.PB_SERVICE_PORT ?? "3988"}`,
     changeOrigin: false,
     rewrite: (path: string) => path.replace(/^\/__pb_v2/, "/api/v2"),
   },

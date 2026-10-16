@@ -45,6 +45,7 @@ import {
   LocalFileStore,
   assertDeliveryTargetRootMatch,
   deliveryRootFromStoreRoot,
+  resolveDeliveryDir,
   generateOperationalId,
   createWorkspaceResetPlan,
   reviewsRootFromStoreRoot,
@@ -103,6 +104,7 @@ import { FlutterReviewRuntime, runtimeErrorsDetected } from './flutter-review-ru
 import { FlutterMcpProviderError } from './flutter-mcp-provider.js';
 
 const BODY_LIMIT_BYTES = 1024 * 1024;
+const LOOPBACK_HOSTNAMES = new Set(['127.0.0.1', 'localhost', '[::1]', '::1']);
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 
 type PreflightRecord = StoredPreflight & {
@@ -319,6 +321,16 @@ export class ProtoBridgeLocalService {
   private server: Server | undefined;
   private lifecycleReconciliationTimer: ReturnType<typeof setInterval> | undefined;
   private lifecycleReconciliationInFlight: Promise<void> | undefined;
+  private readonly riskEvaluations = new Map<string, {
+    prototypeId: string;
+    inputVersion: string | undefined;
+    manifestDigest: string | undefined;
+    evaluated: Awaited<ReturnType<ProtoBridgeLocalService['evaluateHandoffForSnapshotUncached']>>;
+  }>();
+  private readonly observedRuntimeInputs = new Map<string, {
+    inputVersion: string;
+    manifestDigest: string;
+  }>();
   private finalizedOrphanJobIds: string[] = [];
   private workspaceResetting = false;
   private currentGenerationId: string | 'legacy-unavailable' = 'legacy-unavailable';
@@ -506,6 +518,27 @@ export class ProtoBridgeLocalService {
       finishedAt: at,
       detailDigest: `sha256:${createHash('sha256').update(detail).digest('hex')}`,
     };
+  }
+
+  /**
+   * DNS rebinding defense: a page on an attacker domain that resolves to
+   * 127.0.0.1 still sends its own name as Host. Any port is accepted because
+   * the PBWork dev proxy forwards the browser's Host unchanged.
+   */
+  private assertLoopbackHost(request: IncomingMessage): void {
+    const host = request.headers.host;
+    let hostname: string | undefined;
+    try {
+      hostname = host ? new URL(`http://${host}`).hostname : undefined;
+    } catch {
+      hostname = undefined;
+    }
+    if (!hostname || !LOOPBACK_HOSTNAMES.has(hostname)) {
+      throw new V2ContractError(
+        'unsafe-input',
+        `Host ${host ?? '<missing>'} is not a loopback name accepted by this Local Service.`,
+      );
+    }
   }
 
   private assertOrigin(request: IncomingMessage): void {
@@ -806,11 +839,13 @@ export class ProtoBridgeLocalService {
     ) {
       return '绑定的 Handoff 不存在，或与 Bundle/Snapshot 不一致。';
     }
-    if (!/^[a-zA-Z0-9._+-]+$/.test(artifacts.deliveryId) || artifacts.deliveryId === '.' || artifacts.deliveryId === '..') {
+    const deliveryRoot = deliveryRootFromStoreRoot(this.options.storeRoot);
+    let deliveryDir: string;
+    try {
+      deliveryDir = resolveDeliveryDir(deliveryRoot, artifacts.deliveryId);
+    } catch {
       return '绑定的 Delivery ID 不是安全的固定目录名。';
     }
-    const deliveryRoot = deliveryRootFromStoreRoot(this.options.storeRoot);
-    const deliveryDir = pathResolve(deliveryRoot, artifacts.deliveryId);
     const expectedReceiptPath = pathResolve(deliveryDir, 'receipt.json');
     const expectedPromptPath = pathResolve(deliveryDir, 'agent-prompt.md');
     const receiptPath = pathResolve(artifacts.receiptPath);
@@ -938,6 +973,19 @@ export class ProtoBridgeLocalService {
   private async reconcilePrototypeLifecycleOnce(): Promise<void> {
     await this.store.assertHealthy();
     const document = await this.store.getPrototypeLifecycleDocument();
+    const waitingSnapshots = new Set(
+      Object.values(document.records).flatMap((record) =>
+        record.operation.kind === 'finalizing' &&
+        record.operation.phase === 'awaiting-risks' &&
+        record.operation.bundleId &&
+        record.operation.snapshotId
+          ? [`${record.operation.bundleId}/${record.operation.snapshotId}`]
+          : [],
+      ),
+    );
+    for (const key of this.riskEvaluations.keys()) {
+      if (!waitingSnapshots.has(key)) this.riskEvaluations.delete(key);
+    }
     for (const record of Object.values(document.records)) {
       if (record.operation.kind === 'rolling-back') {
         try {
@@ -1130,7 +1178,7 @@ export class ProtoBridgeLocalService {
       }
       let evaluated: Awaited<ReturnType<typeof this.evaluateHandoffForSnapshot>>;
       try {
-        evaluated = await this.evaluateHandoffForSnapshot(operation.bundleId, operation.snapshotId);
+        evaluated = await this.cachedRiskEvaluationForSnapshot(operation.bundleId, operation.snapshotId);
       } catch (error) {
         await this.failFinalization(
           operation.operationKey,
@@ -1162,7 +1210,47 @@ export class ProtoBridgeLocalService {
     }
   }
 
-  private async evaluateHandoffForSnapshot(bundleId: string, snapshotId: string) {
+  /**
+   * Reconciliation ticks reuse the last risk evaluation of a waiting
+   * finalization. It is recomputed when no evaluation exists yet or when a
+   * later Preflight of the prototype observed a different Runtime input.
+   */
+  private async cachedRiskEvaluationForSnapshot(bundleId: string, snapshotId: string) {
+    const key = `${bundleId}/${snapshotId}`;
+    const cached = this.riskEvaluations.get(key);
+    if (cached) {
+      const observed = this.observedRuntimeInputs.get(cached.prototypeId);
+      if (
+        !observed ||
+        (observed.inputVersion === cached.inputVersion &&
+          observed.manifestDigest === cached.manifestDigest)
+      ) {
+        return cached.evaluated;
+      }
+    }
+    return this.evaluateHandoffForSnapshot(bundleId, snapshotId);
+  }
+
+  private async evaluateHandoffForSnapshot(
+    bundleId: string,
+    snapshotId: string,
+    options: { persistStalenessReport?: boolean } = {},
+  ) {
+    const evaluated = await this.evaluateHandoffForSnapshotUncached(bundleId, snapshotId, options);
+    this.riskEvaluations.set(`${bundleId}/${snapshotId}`, {
+      prototypeId: evaluated.run.selection.prototypeId,
+      inputVersion: evaluated.current?.inputVersion,
+      manifestDigest: evaluated.current?.manifestDigest,
+      evaluated,
+    });
+    return evaluated;
+  }
+
+  private async evaluateHandoffForSnapshotUncached(
+    bundleId: string,
+    snapshotId: string,
+    options: { persistStalenessReport?: boolean },
+  ) {
     const snapshot = await this.store.getSnapshot(BundleId.parse(bundleId), SnapshotId.parse(snapshotId));
     if (!snapshot) throw new V2ContractError('unknown-reference', '定稿 Snapshot 不存在。');
     const run = await this.store.getRun(bundleId as never, snapshot.sourceRunId);
@@ -1187,12 +1275,15 @@ export class ProtoBridgeLocalService {
     if (current) {
       for (const selected of activeCases) dependencyDigests[`runtime:${selected.caseKey.screenId}`] = current.inputVersion;
     }
-    const report = await this.store.createStalenessReport({
+    const stalenessInput = {
       bundleId: BundleId.parse(bundleId),
       snapshotId: SnapshotId.parse(snapshotId),
       inputVersion: current?.inputVersion ?? 'authored-reference-removed',
       currentDependencyDigests: dependencyDigests,
-    });
+    };
+    const report = options.persistStalenessReport
+      ? await this.store.createStalenessReport(stalenessInput)
+      : await this.store.previewStalenessReport(stalenessInput);
     const evaluation = await evaluateAgentHandoff({
       store: this.store,
       bundleId: BundleId.parse(bundleId),
@@ -1241,7 +1332,9 @@ export class ProtoBridgeLocalService {
       );
       return;
     }
-    const evaluated = await this.evaluateHandoffForSnapshot(operation.bundleId, operation.snapshotId);
+    const evaluated = await this.evaluateHandoffForSnapshot(operation.bundleId, operation.snapshotId, {
+      persistStalenessReport: true,
+    });
     const requiredRiskKinds = new Set(evaluated.evaluation.risks.map((risk) => risk.kind));
     const acknowledged = new Set(operation.acknowledgedRiskKinds);
     const missing = [...requiredRiskKinds].filter((kind) => !acknowledged.has(kind));
@@ -1359,22 +1452,27 @@ export class ProtoBridgeLocalService {
   private async runPreflight(
     draft: SelectionDraft,
   ): Promise<{ preflight: CapturePreflight }> {
-    if (this.options.preflightProvider) {
-      return this.options.preflightProvider(draft);
-    }
-    return preflightInstrumentedRuntime({
-      draft,
-      runtimeBaseUrl: this.options.runtimeBaseUrl,
-      ...(this.options.maxCases === undefined
-        ? {}
-        : { maxCases: this.options.maxCases }),
+    const result = this.options.preflightProvider
+      ? await this.options.preflightProvider(draft)
+      : await preflightInstrumentedRuntime({
+          draft,
+          runtimeBaseUrl: this.options.runtimeBaseUrl,
+          ...(this.options.maxCases === undefined
+            ? {}
+            : { maxCases: this.options.maxCases }),
+        });
+    this.observedRuntimeInputs.set(draft.prototypeId, {
+      inputVersion: result.preflight.inputVersion,
+      manifestDigest: result.preflight.manifestDigest,
     });
+    return result;
   }
 
   private async handle(
     request: IncomingMessage,
     response: ServerResponse,
   ): Promise<void> {
+    this.assertLoopbackHost(request);
     this.assertOrigin(request);
     const url = new URL(request.url ?? '/', 'http://local.invalid');
     const path = url.pathname;
@@ -2450,12 +2548,15 @@ export class ProtoBridgeLocalService {
             current.inputVersion;
         }
       }
-      const report = await this.store.createStalenessReport({
+      const stalenessInput = {
         bundleId,
         snapshotId,
         inputVersion: current?.inputVersion ?? 'authored-reference-removed',
         currentDependencyDigests: dependencyDigests,
-      });
+      };
+      const report = path.endsWith('/preview')
+        ? await this.store.previewStalenessReport(stalenessInput)
+        : await this.store.createStalenessReport(stalenessInput);
       const evaluation = await evaluateAgentHandoff({
         store: this.store,
         bundleId,
@@ -2501,14 +2602,13 @@ export class ProtoBridgeLocalService {
 
     const deliveryMatch = path.match(/^\/api\/v2\/deliveries\/([^/]+)$/);
     if (request.method === 'GET' && deliveryMatch) {
-      const deliveryId = decodeURIComponent(deliveryMatch[1]!);
-      if (!deliveryId || /[\\/]/.test(deliveryId)) {
-        throw new V2ContractError(
-          'invalid-schema',
-          'deliveryId must be a single path segment.',
-        );
+      let deliveryId: string;
+      try {
+        deliveryId = decodeURIComponent(deliveryMatch[1]!);
+      } catch {
+        throw new V2ContractError('invalid-schema', 'deliveryId is not valid percent-encoding.');
       }
-      const deliveryDir = pathJoin(
+      const deliveryDir = resolveDeliveryDir(
         deliveryRootFromStoreRoot(this.options.storeRoot),
         deliveryId,
       );

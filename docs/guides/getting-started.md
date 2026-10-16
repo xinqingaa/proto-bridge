@@ -31,7 +31,7 @@ pnpm pb:init
 pnpm pb:init -- --yes
 ```
 
-已有配置不会覆盖；需要修改配置时使用 `pnpm pb:init -- --reconfigure`。高级自动化仍可使用 `pnpm pb -- workspace init`。
+已有配置不会覆盖；需要修改配置时使用 `pnpm pb:init -- --reconfigure`。高级自动化仍可使用 `pnpm pb -- workspace init`。`capture.maxCases`（Preflight Case 数量上限）的默认值是 200，与 Core 默认值一致；已有 `proto-bridge.json` 保留自己的取值，调整后需要重启 `pnpm pb:up` 才会生效。
 
 默认配置文件是 `proto-bridge.json`，默认 Store 是 `.proto-bridge/store`。`delivery.targetRoot` 是本 Workspace 默认的 Agent 目标工程，相对配置文件目录解析。端口或 Store 不同，应以 `pnpm pb:up` 输出和实际配置为准。
 

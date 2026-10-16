@@ -1,0 +1,211 @@
+{
+  "schemaVersion": 1,
+  "constants": [
+    {
+      "id": "layout.fill",
+      "valueType": "length",
+      "value": "100%",
+      "label": "填满容器"
+    },
+    {
+      "id": "layout.half",
+      "valueType": "length",
+      "value": "50%",
+      "label": "容器半宽"
+    },
+    {
+      "id": "layout.half-negative",
+      "valueType": "length",
+      "value": "-50%",
+      "label": "反向容器半宽"
+    },
+    {
+      "id": "layout.translate-full-negative",
+      "valueType": "length",
+      "value": "-100%",
+      "label": "反向满幅平移"
+    },
+    {
+      "id": "layout.focus-inset",
+      "valueType": "length",
+      "value": "-4px",
+      "label": "焦点内缩"
+    },
+    {
+      "id": "layout.sheet-max-height",
+      "valueType": "length",
+      "value": "min(62vh, 560px)",
+      "label": "Sheet 最大高度",
+      "description": "流程 Sheet 在小屏与大屏下的上限"
+    },
+    {
+      "id": "layout.load-more-root-margin",
+      "valueType": "length",
+      "value": "0px 0px 120px 0px",
+      "label": "触底加载观察边距",
+      "description": "列表触底加载触发前的观察器边距"
+    },
+    {
+      "id": "layout.menu-max-height",
+      "valueType": "length",
+      "value": "304px",
+      "label": "菜单最大高度",
+      "description": "选择菜单等紧凑浮层的最大高度"
+    },
+    {
+      "id": "layout.dialog-max-width",
+      "valueType": "length",
+      "value": "320px",
+      "label": "对话框最大宽度",
+      "description": "确认与短内容对话框的标准最大宽度"
+    },
+    {
+      "id": "layout.form-max-width",
+      "valueType": "length",
+      "value": "480px",
+      "label": "表单最大宽度",
+      "description": "登录、注册与独立编辑表单在宽视口下的阅读宽度上限"
+    },
+    {
+      "id": "layout.pull-refresh-threshold",
+      "valueType": "length",
+      "value": "64px",
+      "label": "下拉刷新阈值",
+      "description": "下拉刷新进入可释放状态的标准距离"
+    },
+    {
+      "id": "layout.pull-refresh-max-distance",
+      "valueType": "length",
+      "value": "112px",
+      "label": "下拉刷新最大距离",
+      "description": "下拉刷新内容位移的标准上限"
+    },
+    {
+      "id": "layout.inset-xs-negative",
+      "valueType": "length",
+      "value": "-4px",
+      "label": "反向超小内缩",
+      "description": "与 spacing.xs 对应的反向结构偏移"
+    },
+    {
+      "id": "layout.inset-sm-negative",
+      "valueType": "length",
+      "value": "-8px",
+      "label": "反向小内缩",
+      "description": "与 spacing.sm 对应的反向结构偏移"
+    },
+    {
+      "id": "layout.flex-fill",
+      "valueType": "length",
+      "value": "1 1 0px",
+      "label": "Flex 填充",
+      "description": "需要等分剩余空间的 Flex item 完整语义值"
+    },
+    {
+      "id": "layout.flex-grow",
+      "valueType": "number",
+      "value": 1,
+      "label": "Flex 伸展",
+      "description": "仅需开启伸展能力的 Flex item 语义值"
+    },
+    {
+      "id": "layout.gesture-axis-lock",
+      "valueType": "length",
+      "value": "8px",
+      "label": "手势锁轴阈值",
+      "description": "共享手势在判断横纵方向前需要跨越的最小位移"
+    },
+    {
+      "id": "layout.gesture-drag-limit",
+      "valueType": "length",
+      "value": "72px",
+      "label": "手势拖动预览上限",
+      "description": "共享分页手势拖动预览的最大绝对位移"
+    },
+    {
+      "id": "layout.gesture-swipe-threshold",
+      "valueType": "length",
+      "value": "44px",
+      "label": "手势翻页阈值",
+      "description": "共享分页手势触发相邻页面切换的最小位移"
+    },
+    {
+      "id": "layout.viewport-height",
+      "valueType": "length",
+      "value": "100dvh",
+      "label": "运行时视口高度",
+      "description": "独立运行时壳的动态视口高度"
+    },
+    {
+      "id": "layout.chart-min-height",
+      "valueType": "length",
+      "value": "154px",
+      "label": "图表最小高度",
+      "description": "紧凑业务图表的统一最小展示高度"
+    },
+    {
+      "id": "layout.chart-plot-height",
+      "valueType": "length",
+      "value": "124px",
+      "label": "图表绘图区高度",
+      "description": "紧凑柱状图的统一绘图区高度"
+    },
+    {
+      "id": "layout.zero",
+      "valueType": "length",
+      "value": 0,
+      "label": "零值",
+      "description": "取代 spacing.none 与 radius.none 的零长度"
+    },
+    {
+      "id": "layer.base",
+      "valueType": "number",
+      "value": 0,
+      "label": "基础层级"
+    },
+    {
+      "id": "layer.content",
+      "valueType": "number",
+      "value": 1,
+      "label": "内容层级"
+    },
+    {
+      "id": "opacity.hidden",
+      "valueType": "number",
+      "value": 0,
+      "label": "隐藏透明度"
+    },
+    {
+      "id": "opacity.visible",
+      "valueType": "number",
+      "value": 1,
+      "label": "完全可见透明度"
+    },
+    {
+      "id": "motion.duration-instant",
+      "valueType": "duration",
+      "value": 0,
+      "label": "即时动效时长"
+    },
+    {
+      "id": "motion.rotate-half-turn",
+      "valueType": "number",
+      "value": "180deg",
+      "label": "半周旋转",
+      "description": "半周旋转角度，带单位原样输出"
+    },
+    {
+      "id": "motion.duration-click-suppression",
+      "valueType": "duration",
+      "value": 450,
+      "label": "拖动后点击抑制时长",
+      "description": "共享拖动手势完成后阻止合成 click 的时间窗口"
+    },
+    {
+      "id": "elevation.none",
+      "valueType": "shadow",
+      "value": "none",
+      "label": "无阴影"
+    }
+  ]
+}

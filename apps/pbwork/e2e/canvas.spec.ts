@@ -84,32 +84,33 @@ test("switching variant and theme updates the live iframe without remounting it"
   );
 });
 
-test("sidebar navigation opens Variants with authored business query", async ({
+test("preview Variant setting opens Variants on the Runtime route and keeps the theme", async ({
   page,
 }) => {
   await page.goto(
-    "/workbench/prototypes/hengdong/screens/today?variant=default&theme=light",
+    "/workbench/prototypes/cold-chain-ops/screens/shipment-detail?variant=default&theme=light",
   );
   const frame = page.frameLocator('[data-testid="prototype-iframe"]');
+  await page.getByRole("button", { name: "预览设置" }).click();
 
-  await page.getByText("今天页记录详情", { exact: true }).click();
+  await selectPreviewSetting(page, "Variant", "处置操作打开");
   await expect(page).toHaveURL(
-    /\/screens\/today\?variant=record-detail-open&theme=light&record=record-20260812/,
+    /\/screens\/shipment-detail\?variant=action-sheet-open&theme=light/,
   );
   await expect(frame.locator('[data-pb-role="sheet"]')).toBeVisible();
-  await expect(frame.getByRole("alert")).toHaveCount(0);
+  await expect(frame.locator(".runtime-error")).toHaveCount(0);
   await expect(
     page.getByTestId("inspector-panel").getByText("正在等待 Runtime…"),
   ).toHaveCount(0);
 
-  await page.getByText("无记录日期反馈", { exact: true }).click();
+  await selectPreviewSetting(page, "Variant", "持续超温");
   await expect(page).toHaveURL(
-    /\/screens\/today\?variant=day-empty-feedback&theme=light&date=2026-08-11/,
+    /\/screens\/shipment-detail\?variant=active-excursion&theme=light/,
   );
   await expect(
-    frame.locator('[data-pb-id="hengdong.today.day-empty-feedback"]'),
+    frame.locator('[data-pb-id="cold-chain-ops.shipment-detail.root"]'),
   ).toBeVisible();
-  await expect(frame.getByRole("alert")).toHaveCount(0);
+  await expect(frame.locator(".runtime-error")).toHaveCount(0);
 });
 
 test("screen navigation swaps lazy views without blanking or remounting the iframe", async ({
