@@ -1,5 +1,5 @@
 /**
- * Theme Pack module (W2 S1): Key Catalog / constants / pack schemas,
+ * Theme Pack module: Key Catalog / constants / pack schemas,
  * expression parsing, resolution, digest, contrast and validation.
  * Browser-safe: no Node API and no I/O. File hashes are supplied by callers.
  */

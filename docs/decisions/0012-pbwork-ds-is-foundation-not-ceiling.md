@@ -26,4 +26,4 @@
 
 - 原型可以拥有与 PBWork 不同的组件形态与构图，同时 Evidence 结构、Token 绑定与 Flutter 交付约束保持不变。
 - DS 缺口在各原型的 `docs/implementation.md` 中可见，DS 扩展有了需求来源。
-- 品牌取值的完整支持依赖[平台升级计划](../roadmap/pbwork-platform-upgrade.md) W2 的原型主题包；在此之前，品牌值只能在草稿中完整表达。
+- 品牌取值的完整支持依赖[平台升级计划](../roadmap/pbwork-platform-upgrade.md)第 2 步的原型主题包；在此之前，品牌值只能在草稿中完整表达。字体不属于品牌层，统一使用默认字体栈。

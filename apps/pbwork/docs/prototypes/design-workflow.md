@@ -145,7 +145,7 @@ PBWork DS 是原型的基础，不是上限。探索方向进入正式 Authoring
 - 手势仲裁、滚动、Overlay 焦点与关闭、导航等交互机制不复制，外观差异通过公开 props、slots 或 DS 扩展实现；
 - 原型自有组件与 DS 组件遵守同样的 Token-only、Flex-only 和 Evidence 规则。
 
-品牌取值是另一类缺口。正式页面只能使用已注册的 Foundation 与 Theme Token，而 Theme 目前只有全局的 `light` 与 `dark`，现有 Token 无法表达的品牌色或字体在正式实现中还没有归属。进入正式 Authoring 前把它记为品牌层缺口，由用户决定：等待原型主题包能力（[平台升级计划 W2](../../../../docs/roadmap/pbwork-platform-upgrade.md)），或映射到现有 Token 并在 `design.md` 写明降级。不得为此新增业务命名的共享 Token 或页内色板。
+品牌取值是另一类缺口。正式页面只能使用已注册的 Foundation 与 Theme Token，而 Theme 目前只有全局的 `light` 与 `dark`，现有 Token 无法表达的品牌色在正式实现中还没有归属。进入正式 Authoring 前把它记为品牌层缺口，由用户决定：等待原型主题包能力（[平台升级计划第 2 步](../../../../docs/roadmap/pbwork-platform-upgrade.md)），或映射到现有 Token 并在 `design.md` 写明降级。不得为此新增业务命名的共享 Token 或页内色板。字体不属于品牌层：使用默认字体栈，不按原型、主题或风格方向切换字体。
 
 只有跨页面或跨业务稳定复用的能力才进入共享层；业务专属形状留在原型内。
 

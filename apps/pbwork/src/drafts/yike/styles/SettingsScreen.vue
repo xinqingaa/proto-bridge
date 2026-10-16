@@ -45,7 +45,7 @@ const POMODORO_ROWS = [
           <span>{{ face.faceName }}</span>
         </button>
       </div>
-      <p class="y-note">表盘决定整个一刻的配色和字体，打卡页的打孔卡布局不变。</p>
+      <p class="y-note">表盘决定整个一刻的配色和签名图形，打卡页的打孔卡布局不变。</p>
     </section>
 
     <section class="y-section">

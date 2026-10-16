@@ -11,12 +11,10 @@
   --yf-rest: #6a7f92;
   --yf-rest-soft: #d5dde4;
   --yf-shadow: 0 1px 0 #ffffff inset, 0 10px 30px rgba(22, 24, 28, 0.08);
-  --yf-font-text:
-    "Avenir Next", "PingFang SC", "Hiragino Sans GB", system-ui, sans-serif;
-  --yf-font-digits:
-    "DIN Alternate", "DIN Condensed", "Avenir Next Condensed",
-    "Roboto Condensed", sans-serif;
-  --yf-font-mono: "SF Mono", ui-monospace, Menlo, monospace;
+  /* 字体统一使用 PBWork 默认系统字体栈。 */
+  --yf-font-text: system-ui, -apple-system, "PingFang SC", sans-serif;
+  --yf-font-digits: var(--yf-font-text);
+  --yf-font-mono: var(--yf-font-text);
 
   position: relative;
   display: flex;

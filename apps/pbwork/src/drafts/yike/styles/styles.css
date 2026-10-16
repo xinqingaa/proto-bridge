@@ -94,6 +94,14 @@
 }
 
 .ys-phone {
+  /* 字体不随表盘变化：统一使用 PBWork 默认系统字体栈。 */
+  --ys-font: system-ui, -apple-system, "PingFang SC", sans-serif;
+  --ys-text: var(--ys-font);
+  --ys-num: var(--ys-font);
+  --ys-display: var(--ys-font);
+  --ym-mono: var(--ys-font);
+  --yd-kai: var(--ys-font);
+
   zoom: 0.74;
   display: flex;
   width: 390px;
@@ -117,7 +125,7 @@
   flex: 0 0 auto;
   align-items: flex-end;
   padding: 0 34px 6px;
-  font: 600 15px/1 -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif;
+  font: 600 15px/1 var(--ys-font);
 }
 
 .ys-phone-body {
@@ -165,16 +173,12 @@
   --ys-danger: #b4442a;
   --ys-lift: rgba(29, 34, 32, 0.1);
   --ys-scrim: rgba(20, 24, 22, 0.34);
-  --ys-text: "Avenir Next", "PingFang SC", sans-serif;
-  --ys-num: "DIN Alternate", "DIN Condensed", "Avenir Next Condensed", sans-serif;
-  --ys-display: "Avenir Next", "PingFang SC", sans-serif;
   --ys-title-weight: 700;
   --ys-title-spacing: -0.01em;
   --ys-heading-weight: 700;
   --ys-radius: 18px;
   --ys-radius-sm: 12px;
   --ym-rim: #d9dcd9;
-  --ym-mono: "SF Mono", ui-monospace, monospace;
 }
 
 .ys-mechanical.is-dark {
@@ -208,9 +212,6 @@
   --ys-danger: #a4553f;
   --ys-lift: rgba(30, 41, 37, 0.08);
   --ys-scrim: rgba(18, 26, 22, 0.32);
-  --ys-text: "PingFang SC", "Avenir Next", sans-serif;
-  --ys-num: "Avenir Next", "Helvetica Neue", sans-serif;
-  --ys-display: "PingFang SC", "Avenir Next", sans-serif;
   --ys-title-weight: 300;
   --ys-title-spacing: 0;
   --ys-heading-weight: 400;
@@ -256,9 +257,6 @@
   --ys-danger: #a63a2b;
   --ys-lift: rgba(28, 27, 25, 0.1);
   --ys-scrim: rgba(20, 19, 17, 0.32);
-  --ys-text: "PingFang SC", sans-serif;
-  --ys-num: "Optima", "Avenir Next", sans-serif;
-  --ys-display: "Songti SC", "STSong", serif;
   --ys-title-weight: 400;
   --ys-title-spacing: 0.12em;
   --ys-heading-weight: 400;
@@ -266,7 +264,6 @@
   --ys-radius-sm: 4px;
   --yd-shadow: rgba(28, 27, 25, 0.2);
   --yd-shadow-strong: rgba(28, 27, 25, 0.3);
-  --yd-kai: "Kaiti SC", "STKaiti", serif;
 }
 
 .ys-sundial.is-dark {

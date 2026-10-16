@@ -205,11 +205,13 @@ as a DS gap. Two limits stay:
 
 Brand values are a separate gap. Formal pages can only use registered
 Foundation and Theme Tokens, and Themes are global (`light`, `dark`), so a
-brand color or typeface that no existing Token expresses has no formal home
-yet. Record it as a brand-layer gap and let the user decide before formal
-authoring: wait for prototype theme packs (platform upgrade plan W2), or map
-to existing Tokens with the degradation written in `design.md`. Never add a
+brand color that no existing Token expresses has no formal home yet. Record it
+as a brand-layer gap and let the user decide before formal authoring: wait for
+prototype theme packs (platform upgrade plan, step 2), or map to existing
+Tokens with the degradation written in `design.md`. Never add a
 business-named shared Token or a page-local palette to work around it.
+Typefaces are not part of a prototype's brand layer: use the default PBWork
+font stack and do not switch typefaces per prototype, theme, or style direction.
 
 Business-specific graphics stay in the prototype but remain Token-based and
 Evidence-aware. Complex motion defines asset ID, states, trigger, timing,

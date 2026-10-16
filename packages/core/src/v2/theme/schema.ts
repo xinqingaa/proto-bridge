@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /**
- * Theme Pack module schemas (W2 S1). Browser-safe: no Node API, no I/O.
+ * Theme Pack module schemas. Browser-safe: no Node API, no I/O.
  *
  * Core only receives the Key Catalog, the constant table and the Theme Pack
  * sources as input. File bytes are hashed by the caller and passed in as
