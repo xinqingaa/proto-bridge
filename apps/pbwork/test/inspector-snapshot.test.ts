@@ -8,8 +8,8 @@ import {
   stylePropertyRole,
 } from "@/runtime/inspect/snapshot";
 import { registerInspect } from "@/runtime/inspect/registry";
-import { normalizeTokenCssVarName } from "@/design-system/resolveThemeTokens";
-import { loadTokens } from "@/design-system/loaders";
+import { normalizeTokenCssVarName } from "@/design-system/theme/presentation";
+import { loadTokenPresentations } from "@/design-system/loaders";
 
 describe("stylePropertyGroup", () => {
   it("maps whitelist properties into semantic inspector groups", () => {
@@ -36,7 +36,7 @@ describe("stylePropertyRole", () => {
 
 describe("readWhitelistedStyles", () => {
   it("marks binding only when own contract slot covers the property", () => {
-    const surface = loadTokens().find((token) => token.id === "color.surface");
+    const surface = loadTokenPresentations().find((token) => token.id === "color.surface");
     expect(surface).toBeTruthy();
 
     const host = document.createElement("div");
@@ -70,7 +70,7 @@ describe("readWhitelistedStyles", () => {
   });
 
   it("does not treat ancestor preferred tokens as explicit bindings", () => {
-    const surface = loadTokens().find((token) => token.id === "color.surface");
+    const surface = loadTokenPresentations().find((token) => token.id === "color.surface");
     expect(surface).toBeTruthy();
 
     const host = document.createElement("div");
@@ -96,7 +96,7 @@ describe("readWhitelistedStyles", () => {
   });
 
   it("does not match border-color when border is not visible", () => {
-    const onSurface = loadTokens().find(
+    const onSurface = loadTokenPresentations().find(
       (token) => token.id === "color.on-surface",
     );
     expect(onSurface).toBeTruthy();
@@ -126,7 +126,7 @@ describe("readWhitelistedStyles", () => {
   });
 
   it("collapses matching typography into a single font row", () => {
-    const caption = loadTokens().find(
+    const caption = loadTokenPresentations().find(
       (token) => token.id === "typography.caption",
     );
     expect(caption).toBeTruthy();
@@ -157,7 +157,7 @@ describe("readWhitelistedStyles", () => {
   });
 
   it("does not bind part-slot typography (title/subtitle) on the root", () => {
-    const subtitle = loadTokens().find(
+    const subtitle = loadTokenPresentations().find(
       (token) => token.id === "typography.subtitle",
     );
     expect(subtitle).toBeTruthy();
@@ -193,7 +193,7 @@ describe("readWhitelistedStyles", () => {
   });
 
   it("matches soft background tokens by resolved color", () => {
-    const soft = loadTokens().find((token) => token.id === "color.primary-soft");
+    const soft = loadTokenPresentations().find((token) => token.id === "color.primary-soft");
     expect(soft).toBeTruthy();
 
     const host = document.createElement("div");
@@ -218,7 +218,7 @@ describe("readWhitelistedStyles", () => {
   });
 
   it("reports effective background from nearest opaque ancestor", () => {
-    const surface = loadTokens().find((token) => token.id === "color.surface");
+    const surface = loadTokenPresentations().find((token) => token.id === "color.surface");
     expect(surface).toBeTruthy();
 
     const host = document.createElement("div");

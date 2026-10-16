@@ -7,9 +7,7 @@
     "defaultRole": "scroll-list"
   },
   "summary": "滚动壳；disabled 关闭刷新、加载和鼠标拖滚，并使用 opacity.disabled。",
-  "behavior": [
-    "disabled 时不触发刷新或加载更多，整体使用 opacity.disabled"
-  ],
+  "behavior": ["disabled 时不触发刷新或加载更多，整体使用 opacity.disabled"],
   "layout": {
     "summary": "组件拥有唯一纵向滚动容器；刷新位于顶部越界区，加载更多位于内容尾部观察区。"
   },
@@ -28,9 +26,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "enabled"
-            ],
+            "required": ["enabled"],
             "properties": {
               "enabled": {
                 "type": "boolean"
@@ -50,9 +46,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "enabled"
-            ],
+            "required": ["enabled"],
             "properties": {
               "enabled": {
                 "type": "boolean"
@@ -72,9 +66,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "enabled"
-            ],
+            "required": ["enabled"],
             "properties": {
               "enabled": {
                 "type": "boolean"
@@ -146,39 +138,38 @@
       }
     }
   ],
-  "slots": [
-    "default",
-    "refresh-indicator",
-    "load-footer",
-    "no-more"
-  ],
-  "events": [
-    "refresh",
-    "load-more"
-  ],
+  "slots": ["default", "refresh-indicator", "load-footer", "no-more"],
+  "events": ["refresh", "load-more"],
   "tokenBindings": {
     "background": "color.background",
     "primary": "color.primary",
     "muted": "color.on-surface-muted",
     "footer": "typography.caption",
-    "duration": "motion.duration-normal",
+    "duration": "motion.duration-medium",
     "easing": "motion.easing-gentle",
     "disabledOpacity": "opacity.disabled",
-    "hiddenOpacity": "opacity.hidden",
-    "visibleOpacity": "opacity.visible",
-    "refreshTarget": "sizing.touch",
-    "footerHeight": "sizing.control-lg",
-    "actionMinWidth": "sizing.refresh-action-min-width",
-    "actionHeight": "sizing.refresh-action-height",
-    "fill": "layout.fill",
-    "refreshTranslation": "layout.translate-full-negative",
-    "loadMoreRootMargin": "layout.load-more-root-margin",
-    "refreshThreshold": "layout.pull-refresh-threshold",
-    "refreshMaxDistance": "layout.pull-refresh-max-distance",
-    "refreshRestingDistance": "sizing.control-lg",
-    "sentinel": "border.width-hairline"
+    "refreshTarget": "size.touch",
+    "footerHeight": "size.control-large",
+    "actionMinWidth": "scrollable-data-list.action-min-width",
+    "actionHeight": "scrollable-data-list.action-height",
+    "refreshRestingDistance": "size.control-large",
+    "sentinel": "border.width"
   },
   "playground": {
     "presentation": "interactive"
+  },
+  "componentTokens": {
+    "action-min-width": {
+      "valueType": "length",
+      "default": 96,
+      "modeVariant": false,
+      "bindable": true
+    },
+    "action-height": {
+      "valueType": "length",
+      "default": 36,
+      "modeVariant": false,
+      "bindable": true
+    }
   }
 }

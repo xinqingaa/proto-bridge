@@ -1,13 +1,17 @@
+import { runtimeThemeSources } from "@/design-system/theme/runtime-theme";
 import { describe, expect, it } from "vitest";
 import { SEMANTIC_ROLES, TOKEN_BINDING_LITERALS } from "@proto-bridge/core/v2";
 import { validateRegistries } from "@/design-system/validateRegistries";
-import { BIND_TOKEN_SPECIAL_VALUES } from "@/design-system/bindTokens";
+import { BIND_TOKEN_SPECIAL_VALUES } from "@/design-system/theme/bindings";
 import componentSchema from "@/design-system/schemas/component.schema.json";
-import { loadTokens, loadThemes } from "@/design-system/loaders";
 import {
-  resolveThemeTokens,
-  tokensToCssVars,
-} from "@/design-system/resolveThemeTokens";
+  loadTokenPresentations,
+  loadModePresentations,
+} from "@/design-system/loaders";
+import {
+  themeCssValues,
+  valuesToCssVars,
+} from "@/design-system/theme/presentation";
 import { componentRecords } from "@/design-system/components/registry";
 import { prototypes, prototypeScreens } from "@/prototypes/registry";
 
@@ -33,7 +37,7 @@ describe("registries", () => {
   });
 
   it("rejects unknown theme token overrides", () => {
-    const themes = loadThemes().map((theme) =>
+    const themes = loadModePresentations().map((theme) =>
       theme.id === "light"
         ? {
             ...theme,
@@ -126,22 +130,17 @@ describe("registries", () => {
   });
 
   it("resolves theme tokens with overrides", () => {
-    const light = resolveThemeTokens("light");
-    const dark = resolveThemeTokens("dark");
+    const light = themeCssValues("light");
+    const dark = themeCssValues("dark");
     expect(light["color.primary"]).toBe("#2f73d2");
     expect(dark["color.primary"]).toBe("#83b2f2");
-    expect(Object.keys(light).length).toBe(loadTokens().length);
+    expect(loadTokenPresentations().every((key) => key.id in light)).toBe(true);
   });
 
-  it("keeps unitless tokens unitless while converting dimensions to px", () => {
-    const vars = tokensToCssVars({
-      "opacity.disabled": 0.38,
-      "radius.md": 12,
-      "spacing.4": 16,
-    });
-    expect(vars["--pb-opacity-disabled"]).toBe("0.38");
-    expect(vars["--pb-radius-md"]).toBe("12px");
-    expect(vars["--pb-spacing-4"]).toBe("16px");
+  it("renders typed dimensions and unitless values for the Workbench", () => {
+    const values = themeCssValues("light");
+    expect(values["size.control"]).toBe("40px");
+    expect(values["opacity.disabled"]).toBe("0.38");
   });
 });
 
@@ -176,8 +175,10 @@ describe("design contracts", () => {
   });
 
   it("ships the expanded semantic token set", () => {
-    expect(loadTokens()).toHaveLength(154);
-    expect(new Set(loadTokens().map((item) => item.category))).toEqual(
+    expect(loadTokenPresentations()).toHaveLength(133);
+    expect(
+      new Set(loadTokenPresentations().map((item) => item.category)),
+    ).toEqual(
       new Set([
         "color",
         "typography",
@@ -189,7 +190,6 @@ describe("design contracts", () => {
         "opacity",
         "motion",
         "layout",
-        "layer",
         "effect",
       ]),
     );
@@ -250,14 +250,14 @@ describe("resolveLiveTokenBindings", () => {
     const live = resolveLiveTokenBindings(
       {
         background: "color.primary",
-        radius: "radius.md",
-        elevation: "elevation.card",
+        radius: "radius.control",
+        elevation: "elevation.surface",
         typography: "typography.content",
       },
       { tone: "error", radius: "lg", elevated: false },
     );
     expect(live.background).toBe("color.error");
-    expect(live.radius).toBe("radius.lg");
+    expect(live.radius).toBe("radius.surface");
     expect(live.elevation).toBe("none");
     expect(live.typography).toBe("typography.content");
   });
@@ -269,7 +269,7 @@ describe("resolveLiveTokenBindings", () => {
       {
         background: "color.primary-soft",
         color: "color.primary",
-        radius: "radius.full",
+        radius: "radius.pill",
       },
       { tone: "success" },
     );
@@ -321,12 +321,12 @@ describe("resolveLiveTokenBindings", () => {
       await import("@/design-system/resolveLiveTokenBindings");
     const live = resolveLiveTokenBindings(
       {
-        height: "sizing.control-md",
+        height: "size.control",
         paddingX: "spacing.md",
       },
       { size: "sm" },
     );
-    expect(live.height).toBe("sizing.control-sm");
+    expect(live.height).toBe("size.control-compact");
     expect(live.paddingX).toBe("spacing.sm");
   });
 
@@ -336,45 +336,49 @@ describe("resolveLiveTokenBindings", () => {
     const pill = resolveLiveTokenBindings(
       {
         activeBackground: "color.primary-soft",
-        radius: "radius.full",
+        radius: "radius.pill",
         border: "border.hairline",
       },
       { showDivider: true },
     );
     expect(pill.activeBackground).toBe("color.primary-soft");
-    expect(pill.radius).toBe("radius.full");
+    expect(pill.radius).toBe("radius.pill");
     expect(pill.border).toBe("border.hairline");
 
     const underline = resolveLiveTokenBindings(
       {
         activeBackground: "color.primary-soft",
-        radius: "radius.full",
+        radius: "radius.pill",
         border: "border.hairline",
       },
       { variant: "underline", showDivider: false },
     );
     expect(underline.activeBackground).toBe("transparent");
-    expect(underline.radius).toBe("radius.md");
+    expect(underline.radius).toBe("radius.control");
     expect(underline.border).toBe("transparent");
 
     const minimal = resolveLiveTokenBindings(
       {
         activeBackground: "color.primary-soft",
-        radius: "radius.full",
+        radius: "radius.pill",
         border: "border.hairline",
       },
       { variant: "minimal", showDivider: true },
     );
     expect(minimal.activeBackground).toBe("transparent");
-    expect(minimal.radius).toBe("radius.md");
+    expect(minimal.radius).toBe("radius.control");
     expect(minimal.border).toBe("border.hairline");
   });
 });
 
 describe("bind tokens", () => {
   it("lists only registered token ids", async () => {
-    const { BIND_TOKEN_IDS } = await import("@/design-system/bindTokens");
-    const ids = new Set(loadTokens().map((token) => token.id));
+    const { BIND_TOKEN_IDS } = await import("@/design-system/theme/bindings");
+    const ids = new Set(
+      runtimeThemeSources.keyCatalog.keys
+        .filter((key) => key.bindable)
+        .map((key) => key.id),
+    );
     for (const id of BIND_TOKEN_IDS) {
       expect(ids.has(id), id).toBe(true);
     }
@@ -383,7 +387,7 @@ describe("bind tokens", () => {
   it("requires component tokenBindings to use the bind pool", async () => {
     const { loadComponentContracts } = await import("@/design-system/loaders");
     const { isAllowedTokenBindingValue } =
-      await import("@/design-system/bindTokens");
+      await import("@/design-system/theme/bindings");
     for (const contract of loadComponentContracts()) {
       for (const [slot, tokenId] of Object.entries(contract.tokenBindings)) {
         expect(

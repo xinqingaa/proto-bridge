@@ -79,21 +79,16 @@ usePbInspect({
     description: "color.on-surface-muted",
     inactiveIndicator: "color.outline",
     activeIndicator: "color.primary",
-    radius: "radius.lg",
+    radius: "radius.surface",
     elevation: "elevation.raised",
     title: "typography.subtitle",
     body: "typography.content",
     stepLabel: "typography.micro",
     headerGap: "spacing.sm-plus",
-    headerControl: "sizing.touch",
-    dotGap: "spacing.xs-plus",
-    dotSize: "sizing.step-dot",
-    fill: "layout.fill",
-    flexFill: "layout.flex-fill",
-    trackTranslation: "layout.translate-full-negative",
-    maxHeight: "layout.sheet-max-height",
-    reducedDuration: "motion.duration-instant",
-    duration: "motion.duration-sheet",
+    headerControl: "size.touch",
+    dotGap: "flow-sheet.gap",
+    dotSize: "size.marker",
+    duration: "flow-sheet.duration",
     easing: "motion.easing-gentle",
   }),
   getTokens: () => [
@@ -102,25 +97,20 @@ usePbInspect({
     "color.on-surface-muted",
     "color.outline",
     "color.primary",
-    "radius.lg",
+    "radius.surface",
     "elevation.raised",
     "typography.subtitle",
     "typography.content",
     "typography.micro",
     "spacing.xxs",
-    "spacing.xs-plus",
+    "flow-sheet.gap",
     "spacing.sm",
     "spacing.sm-plus",
     "spacing.md",
-    "sizing.touch",
-    "sizing.step-dot",
-    "sizing.icon-sm",
-    "layout.fill",
-    "layout.flex-fill",
-    "layout.translate-full-negative",
-    "layout.sheet-max-height",
-    "motion.duration-instant",
-    "motion.duration-sheet",
+    "size.touch",
+    "size.marker",
+    "size.icon-inline",
+    "flow-sheet.duration",
     "motion.easing-gentle",
   ],
 });
@@ -197,8 +187,8 @@ watch(stepCount, (count) => {
 
 <style scoped>
 .pb-flow-sheet {
-  border-radius: var(--pb-radius-lg) var(--pb-radius-lg) var(--pb-radius-none)
-    var(--pb-radius-none);
+  border-radius: var(--pb-radius-surface) var(--pb-radius-surface)
+    var(--pb-layout-zero) var(--pb-layout-zero);
   background: var(--pb-color-surface);
   color: var(--pb-color-on-surface);
   box-shadow: var(--pb-elevation-raised);
@@ -206,22 +196,22 @@ watch(stepCount, (count) => {
 .pb-flow-sheet-dots {
   display: flex;
   justify-content: center;
-  gap: var(--pb-spacing-xs-plus);
-  padding: var(--pb-spacing-sm) var(--pb-spacing-none) var(--pb-spacing-none);
+  gap: var(--pb-flow-sheet-gap);
+  padding: var(--pb-spacing-sm) var(--pb-layout-zero) var(--pb-layout-zero);
 }
 .pb-flow-sheet-dots span {
-  width: var(--pb-sizing-step-dot);
-  height: var(--pb-sizing-step-dot);
-  border-radius: var(--pb-radius-full);
+  width: var(--pb-size-marker);
+  height: var(--pb-size-marker);
+  border-radius: var(--pb-radius-pill);
   background: var(--pb-color-outline);
 }
 .pb-flow-sheet-dots span.active {
-  width: var(--pb-sizing-icon-sm);
+  width: var(--pb-size-icon-inline);
   background: var(--pb-color-primary);
 }
 .pb-flow-sheet-body {
   overflow: hidden;
-  padding: var(--pb-spacing-none);
+  padding: var(--pb-layout-zero);
   touch-action: pan-y;
 }
 .pb-flow-sheet-body.allows-swipe {
@@ -233,7 +223,7 @@ watch(stepCount, (count) => {
 .pb-flow-sheet-track {
   display: flex;
   width: var(--pb-layout-fill);
-  transition: transform var(--pb-motion-duration-sheet)
+  transition: transform var(--pb-flow-sheet-duration)
     var(--pb-motion-easing-gentle);
 }
 .pb-flow-sheet-track.is-dragging {
@@ -258,7 +248,7 @@ watch(stepCount, (count) => {
 .pb-flow-sheet-actions > * {
   flex: var(--pb-layout-flex-fill);
   width: var(--pb-layout-fill);
-  min-width: var(--pb-spacing-none);
+  min-width: var(--pb-layout-zero);
 }
 </style>
 
@@ -267,26 +257,26 @@ watch(stepCount, (count) => {
 .pb-flow-sheet-host.v-bottom-sheet > .v-bottom-sheet__content {
   width: var(--pb-layout-fill) !important;
   max-width: var(--pb-layout-fill) !important;
-  margin-inline: var(--pb-spacing-none) !important;
+  margin-inline: var(--pb-layout-zero) !important;
 }
 .pb-flow-sheet-host.v-bottom-sheet
   > .v-bottom-sheet__content.v-overlay__content {
   transition-property: transform !important;
-  transition-duration: var(--pb-motion-duration-sheet) !important;
+  transition-duration: var(--pb-flow-sheet-duration) !important;
   transition-timing-function: var(--pb-motion-easing-gentle) !important;
 }
 .pb-flow-sheet-host.v-bottom-sheet
   > .v-bottom-sheet__content.v-overlay__content
   > .pb-flow-sheet {
-  border-radius: var(--pb-radius-lg) var(--pb-radius-lg) var(--pb-radius-none)
-    var(--pb-radius-none) !important;
+  border-radius: var(--pb-radius-surface) var(--pb-radius-surface)
+    var(--pb-layout-zero) var(--pb-layout-zero) !important;
 }
 .pb-flow-sheet-host.v-bottom-sheet
   > .v-bottom-sheet__content.v-overlay__content
   > .pb-flow-sheet
   > .pb-flow-sheet-body {
-  min-width: var(--pb-spacing-none);
+  min-width: var(--pb-layout-zero);
   overflow: hidden;
-  padding: var(--pb-spacing-none) !important;
+  padding: var(--pb-layout-zero) !important;
 }
 </style>

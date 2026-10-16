@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import { useTokenNumber } from "@/design-system/theme/runtime-theme";
+
 import { computed, nextTick, toRefs, watch } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
-import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
-
 const props = defineProps<{
   modelValue?: boolean;
   label?: string;
@@ -19,8 +19,8 @@ const rootRef = usePbInspectRef();
 const { modelValue, label, contained, attach, inspectId } = toRefs(props);
 
 const attachTarget = computed(() => attach.value ?? ".runtime-app");
-const sizePx = tokenDefaultNumber("sizing.icon-lg");
-const strokePx = tokenDefaultNumber("sizing.indicator-thickness");
+const sizePx = useTokenNumber("size.icon-prominent");
+const strokePx = useTokenNumber("size.indicator");
 
 const { resync } = usePbInspect({
   element: rootRef,
@@ -37,18 +37,18 @@ const { resync } = usePbInspect({
     "color.scrim",
     "color.primary",
     "color.on-surface",
-    "sizing.icon-lg",
-    "sizing.indicator-thickness",
-    "motion.duration-slow",
+    "size.icon-prominent",
+    "size.indicator",
+    "motion.duration-long",
     "typography.caption",
   ],
   getTokenBindings: () => ({
     scrim: "color.scrim",
     active: "color.primary",
     text: "color.on-surface",
-    size: "sizing.icon-lg",
-    stroke: "sizing.indicator-thickness",
-    motion: "motion.duration-slow",
+    size: "size.icon-prominent",
+    stroke: "size.indicator",
+    motion: "motion.duration-long",
     label: "typography.caption",
   }),
 });

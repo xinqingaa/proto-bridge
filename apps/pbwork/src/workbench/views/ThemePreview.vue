@@ -2,17 +2,21 @@
 import { computed, ref } from "vue";
 import ResourcePageShell from "@/workbench/views/ResourcePageShell.vue";
 import WorkbenchStatChip from "@/workbench/ui/WorkbenchStatChip.vue";
-import { loadThemes, loadTokens } from "@/design-system/loaders";
-import { resolveThemeTokens } from "@/design-system/resolveThemeTokens";
+import { loadModePresentations, loadTokenPresentations } from "@/design-system/loaders";
+import {
+  reviewThemePackOptions,
+  themeCssValues,
+  themePackCssValues,
+} from "@/design-system/theme/presentation";
 
 const props = defineProps<{ themeId: string }>();
 const onlyDifferences = ref(false);
-const theme = computed(() => loadThemes().find((item) => item.id === props.themeId));
-const themes = computed(() => loadThemes());
-const lightValues = computed(() => resolveThemeTokens("light"));
-const darkValues = computed(() => resolveThemeTokens("dark"));
+const theme = computed(() => loadModePresentations().find((item) => item.id === props.themeId));
+const themes = computed(() => loadModePresentations());
+const lightValues = computed(() => themeCssValues("light"));
+const darkValues = computed(() => themeCssValues("dark"));
 const colorTokens = computed(() =>
-  loadTokens().filter((token) => token.category === "color"),
+  loadTokenPresentations().filter((token) => token.category === "color"),
 );
 
 const groups = [
@@ -73,6 +77,19 @@ function contrast(foreground: unknown, background: unknown) {
   return `${((Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05)).toFixed(2)}:1`;
 }
 
+const sample = reviewThemePackOptions().find((pack) => pack.id === "pbwork-sample");
+const sampleValues = computed(() =>
+  sample
+    ? themePackCssValues(sample.id, sample.defaultTheme, props.themeId)
+    : null,
+);
+const personality = [
+  ["density", "密度"],
+  ["surface.treatment", "表面"],
+  ["radius.control", "控件圆角"],
+  ["radius.surface", "表面圆角"],
+  ["motion.personality", "动效"],
+] as const;
 const contrastPairs = [
   ["color.on-background", "color.background", "页面正文"],
   ["color.on-surface", "color.surface", "表面正文"],
@@ -87,12 +104,12 @@ const contrastPairs = [
     v-if="theme"
     eyebrow="主题"
     :title="theme.label"
-    description="主题页专门比较浅色与深色的语义颜色、覆盖关系和前景对比度。"
+    description="这一页比较基础包当前模式与另一模式的颜色。样例包对照放在下方，用来确认换包后的性格差异。"
   >
     <template #stats>
       <WorkbenchStatChip :value="colorTokens.length" label="个语义色" />
       <WorkbenchStatChip :value="differenceCount" label="个深色覆盖" />
-      <WorkbenchStatChip :value="themes.length" label="个主题" />
+      <WorkbenchStatChip :value="themes.length" label="种模式" />
     </template>
 
     <template #toolbar>
@@ -141,6 +158,21 @@ const contrastPairs = [
           <code>{{ pair[0] }} / {{ pair[1] }}</code>
           <div><span>浅色</span><b>{{ contrast(lightValues[pair[0]], lightValues[pair[1]]) }}</b></div>
           <div><span>深色</span><b>{{ contrast(darkValues[pair[0]], darkValues[pair[1]]) }}</b></div>
+        </article>
+      </div>
+    </section>
+
+    <section v-if="sample && sampleValues" class="contrast-section">
+      <header>
+        <h2>样例包对照</h2>
+        <span>{{ sample.label }} · {{ sample.defaultTheme }} · {{ themeId }}</span>
+      </header>
+      <div class="contrast-grid">
+        <article v-for="item in personality" :key="item[0]">
+          <strong>{{ item[1] }}</strong>
+          <code>{{ item[0] }}</code>
+          <div><span>基础包</span><b>{{ themeId === "dark" ? darkValues[item[0]] : lightValues[item[0]] }}</b></div>
+          <div><span>样例包</span><b>{{ sampleValues[item[0]] }}</b></div>
         </article>
       </div>
     </section>

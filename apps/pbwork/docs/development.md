@@ -80,7 +80,7 @@ Screen 变更必须同步 Prototype Registry、required boundary、Action/Scenar
 ## 6. Token 与 Theme
 
 - Token 使用语义命名，不使用业务名或具体色名表达用途。
-- 组件只能绑定 `bindTokens.ts` 允许的 Token。
+- 组件只能绑定 `theme/bindings.ts` 允许的 Token。
 - Theme 只覆盖值，不改变 Token 语义和组件绑定。
 - 不在组件实例、页面 style 或 Playground 中引入自由换绑。
 - 新 Token 先证明跨组件/页面价值，再决定是否进入 Bind 池。

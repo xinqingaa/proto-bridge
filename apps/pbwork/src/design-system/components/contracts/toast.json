@@ -21,8 +21,12 @@
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "modelValue": { "type": "boolean" },
-      "message": { "type": "string" }
+      "modelValue": {
+        "type": "boolean"
+      },
+      "message": {
+        "type": "string"
+      }
     },
     "required": ["message"]
   },
@@ -35,27 +39,46 @@
       "id": "visible",
       "label": "显示",
       "kind": "content",
-      "props": { "modelValue": true, "message": "工单已保存" }
+      "props": {
+        "modelValue": true,
+        "message": "工单已保存"
+      }
     },
     {
       "id": "hidden",
       "label": "隐藏",
       "kind": "content",
-      "props": { "modelValue": false }
+      "props": {
+        "modelValue": false
+      }
     }
   ],
   "slots": [],
   "events": ["update:modelValue"],
   "tokenBindings": {
-    "surface": "color.toast",
-    "text": "color.on-toast",
-    "radius": "radius.lg",
+    "surface": "color.inverse-surface",
+    "text": "color.on-inverse-surface",
+    "radius": "radius.surface",
     "paddingX": "spacing.sm",
-    "paddingY": "spacing.xs-plus",
+    "paddingY": "toast.gap",
     "message": "typography.content",
-    "duration": "motion.duration-toast"
+    "duration": "toast.duration"
   },
   "playground": {
     "presentation": "trigger"
+  },
+  "componentTokens": {
+    "gap": {
+      "valueType": "length",
+      "default": "{space.6}",
+      "modeVariant": false,
+      "bindable": true
+    },
+    "duration": {
+      "valueType": "duration",
+      "default": 4000,
+      "modeVariant": false,
+      "bindable": true
+    }
   }
 }

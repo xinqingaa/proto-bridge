@@ -5,11 +5,7 @@
   "semantic": {
     "policy": "contextual",
     "defaultRole": "section",
-    "allowedRoles": [
-      "section",
-      "card",
-      "summary"
-    ]
+    "allowedRoles": ["section", "card", "summary"]
   },
   "summary": "只提供背景、边框、圆角与可选抬升的 surface；业务内容全部来自默认 slot。",
   "behavior": [
@@ -31,11 +27,7 @@
       },
       "semanticRole": {
         "type": "string",
-        "enum": [
-          "section",
-          "card",
-          "summary"
-        ]
+        "enum": ["section", "card", "summary"]
       }
     }
   },
@@ -61,15 +53,13 @@
       }
     }
   ],
-  "slots": [
-    "default"
-  ],
+  "slots": ["default"],
   "events": [],
   "tokenBindings": {
     "surface": "color.surface",
     "border": "color.border",
-    "radius": "radius.lg",
-    "elevation": "elevation.card"
+    "radius": "radius.surface",
+    "elevation": "elevation.surface"
   },
   "playground": {
     "presentation": "interactive"

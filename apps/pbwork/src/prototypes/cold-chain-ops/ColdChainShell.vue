@@ -51,8 +51,8 @@ function goBack() {
 }
 main {
   flex: var(--pb-layout-flex-fill);
-  min-width: var(--pb-spacing-none);
-  min-height: var(--pb-spacing-none);
+  min-width: var(--pb-layout-zero);
+  min-height: var(--pb-layout-zero);
   overflow: hidden;
 }
 :global(html.pbwork-runtime-embedded) .cold-chain-shell {

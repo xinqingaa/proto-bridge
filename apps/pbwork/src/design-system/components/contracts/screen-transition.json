@@ -79,19 +79,9 @@
   "events": [],
   "tokenBindings": {
     "surface": "color.background",
-    "fill": "layout.fill",
-    "enterTranslation": "layout.fill",
-    "leaveTranslation": "layout.translate-full-negative",
-    "origin": "spacing.none",
-    "duration": "motion.duration-slow",
+    "duration": "motion.duration-long",
     "easing": "motion.easing-standard",
-    "reducedDuration": "motion.duration-instant",
-    "hidden": "opacity.hidden",
-    "visible": "opacity.visible",
-    "incomingScale": "motion.scale-pressed",
-    "restingLayer": "layer.base",
-    "incomingLayer": "layer.content",
-    "grow": "layout.flex-grow"
+    "incomingScale": "motion.press-scale"
   },
   "playground": {
     "presentation": "interactive"

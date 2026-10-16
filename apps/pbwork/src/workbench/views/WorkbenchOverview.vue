@@ -18,8 +18,8 @@ import {
   loadPrototypeScreens,
   loadPrototypes,
   loadPrototypeThemePack,
-  loadThemes,
-  loadTokens,
+  loadModePresentations,
+  loadTokenPresentations,
 } from "@/design-system/loaders";
 import { componentRecords } from "@/design-system/components/registry";
 import {
@@ -193,7 +193,7 @@ const totalVariants = computed(() =>
   screens.reduce((sum, screen) => sum + screen.variants.length, 0),
 );
 const tokenCategories = computed(
-  () => new Set(loadTokens().map((token) => token.category)).size,
+  () => new Set(loadTokenPresentations().map((token) => token.category)).size,
 );
 const componentCategories = computed(
   () => new Set(componentRecords.map((component) => component.category)).size,
@@ -294,6 +294,7 @@ onMounted(() => {
             {{
               selectedScreenVariant?.label ?? selectedScreen.defaultVariantId
             }}
+            · 主题包 {{ selectedPrototype.themePackId }}
           </p>
           <p v-else>这个原型还没有可预览页面。</p>
 
@@ -490,9 +491,10 @@ onMounted(() => {
           <span class="resource-icon"><Palette :size="19" /></span>
           <div>
             <small>设计基础</small>
-            <h3>{{ loadTokens().length }} 个设计令牌</h3>
+            <h3>{{ loadTokenPresentations().length }} 个设计令牌</h3>
             <p>
-              {{ loadThemes().length }} 套主题 ·
+              {{ loadModePresentations().length }} 种模式 ·
+              主题包 {{ selectedPrototype?.themePackId ?? "—" }} ·
               {{ tokenCategories }} 个语义分类
             </p>
           </div>
@@ -533,7 +535,7 @@ onMounted(() => {
         <RouterLink to="/workbench/foundations/themes/light">
           <SwatchBook :size="15" />
           <span
-            ><b>{{ loadThemes().length }}</b> 主题</span
+            ><b>{{ loadModePresentations().length }}</b> 模式</span
           >
         </RouterLink>
         <RouterLink v-if="openComments.length" to="/workbench/prototypes/all">

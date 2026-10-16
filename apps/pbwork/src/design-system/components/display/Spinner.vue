@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import { iconSizeToken } from "@/design-system/components/_shared/appearance";
+import { useTokenNumber } from "@/design-system/theme/runtime-theme";
+
 import { computed, toRefs } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
-import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
-
 const props = defineProps<{
   label?: string;
   size?: "sm" | "md" | "lg";
@@ -13,9 +14,9 @@ const props = defineProps<{
 const rootRef = usePbInspectRef();
 const { label, size, inspectId } = toRefs(props);
 
-const sizeTokenId = computed(() => `sizing.icon-${size.value ?? "md"}`);
-const sizePx = computed(() => tokenDefaultNumber(sizeTokenId.value));
-const strokePx = tokenDefaultNumber("sizing.indicator-thickness");
+const sizeTokenId = computed(() => iconSizeToken(size.value ?? "md"));
+const sizePx = useTokenNumber(() => sizeTokenId.value);
+const strokePx = useTokenNumber("size.indicator");
 
 usePbInspect({
   element: rootRef,
@@ -31,16 +32,16 @@ usePbInspect({
     "color.primary",
     "color.on-surface-muted",
     sizeTokenId.value,
-    "sizing.indicator-thickness",
-    "motion.duration-slow",
+    "size.indicator",
+    "motion.duration-long",
     "typography.caption",
   ],
   getTokenBindings: () => ({
     active: "color.primary",
     text: "color.on-surface-muted",
     size: sizeTokenId.value,
-    stroke: "sizing.indicator-thickness",
-    motion: "motion.duration-slow",
+    stroke: "size.indicator",
+    motion: "motion.duration-long",
     label: "typography.caption",
   }),
 });

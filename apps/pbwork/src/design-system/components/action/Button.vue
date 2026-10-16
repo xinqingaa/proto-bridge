@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useTokenNumber } from "@/design-system/theme/runtime-theme";
+import { themeConstantNumber } from "@/design-system/theme/constants";
+
 import { computed, toRefs, useSlots } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import { radiusStyle } from "@/design-system/components/_shared/radius";
@@ -15,11 +18,9 @@ import {
   resolveButtonKind,
   type ButtonKind,
 } from "@/design-system/components/_shared/colorTokens";
-import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
-
-const NO_ELEVATION = tokenDefaultNumber("layer.base");
-const LOADER_SIZE = tokenDefaultNumber("sizing.icon-sm");
-const LOADER_STROKE = tokenDefaultNumber("sizing.progress-stroke");
+const NO_ELEVATION = themeConstantNumber("layer.base");
+const LOADER_SIZE = useTokenNumber("size.icon-inline");
+const LOADER_STROKE = useTokenNumber("size.stroke");
 
 const props = defineProps<{
   label: string;
@@ -77,20 +78,18 @@ usePbInspect({
       background: colors.value.bgColor,
       border: colors.value.borderColor,
       onBackground: colors.value.textColor,
-      radius: "radius.md",
-      elevation: "elevation.none",
+      radius: "radius.control",
+      elevation: "none",
       height: sizeToken(s),
       paddingX: controlPaddingToken(s),
       typography: "typography.label",
       disabledOpacity: "opacity.disabled",
-      overlayOpacity: "opacity.hidden",
-      loadingOpacity: "opacity.visible",
-      borderWidth: "border.width-hairline",
-      duration: "motion.duration-fast",
+      borderWidth: "border.width",
+      duration: "motion.duration-short",
       easing: "motion.easing-standard",
-      pressedScale: "motion.scale-pressed",
-      loaderSize: "sizing.icon-sm",
-      loaderStroke: "sizing.progress-stroke",
+      pressedScale: "motion.press-scale",
+      loaderSize: "size.icon-inline",
+      loaderStroke: "size.stroke",
     };
   },
   getTokens: () => {
@@ -99,20 +98,17 @@ usePbInspect({
       colors.value.bgColor,
       colors.value.borderColor,
       colors.value.textColor,
-      "radius.md",
-      "elevation.none",
+      "radius.control",
       sizeToken(s),
       controlPaddingToken(s),
       "typography.label",
       "opacity.disabled",
-      "opacity.hidden",
-      "opacity.visible",
-      "border.width-hairline",
-      "motion.duration-fast",
+      "border.width",
+      "motion.duration-short",
       "motion.easing-standard",
-      "motion.scale-pressed",
-      "sizing.icon-sm",
-      "sizing.progress-stroke",
+      "motion.press-scale",
+      "size.icon-inline",
+      "size.stroke",
     ];
   },
 });
@@ -151,16 +147,13 @@ usePbInspect({
 
 <style scoped>
 .pb-button {
-  height: var(--pb-component-height, var(--pb-sizing-control-md)) !important;
-  min-height: var(
-    --pb-component-height,
-    var(--pb-sizing-control-md)
-  ) !important;
+  height: var(--pb-component-height, var(--pb-size-control)) !important;
+  min-height: var(--pb-component-height, var(--pb-size-control)) !important;
   padding-inline: var(
     --pb-component-padding-x,
     var(--pb-spacing-md)
   ) !important;
-  border: var(--pb-border-width-hairline) solid var(--pb-btn-border) !important;
+  border: var(--pb-border-width) solid var(--pb-btn-border) !important;
   background: var(--pb-btn-bg) !important;
   color: var(--pb-btn-fg) !important;
   font: var(--pb-typography-label);
@@ -168,9 +161,9 @@ usePbInspect({
   letter-spacing: normal;
   box-shadow: var(--pb-component-shadow, var(--pb-elevation-none)) !important;
   transition:
-    box-shadow var(--pb-motion-duration-fast) var(--pb-motion-easing-standard),
-    transform var(--pb-motion-duration-fast) var(--pb-motion-easing-standard),
-    opacity var(--pb-motion-duration-fast) var(--pb-motion-easing-standard);
+    box-shadow var(--pb-motion-duration-short) var(--pb-motion-easing-standard),
+    transform var(--pb-motion-duration-short) var(--pb-motion-easing-standard),
+    opacity var(--pb-motion-duration-short) var(--pb-motion-easing-standard);
 }
 .pb-button :deep(.v-btn__overlay),
 .pb-button :deep(.v-btn__underlay) {
@@ -190,7 +183,7 @@ usePbInspect({
   color: currentColor;
 }
 .pb-button:active:not(.v-btn--disabled) {
-  transform: scale(var(--pb-motion-scale-pressed));
+  transform: scale(var(--pb-motion-press-scale));
 }
 .pb-button.v-btn--disabled {
   opacity: var(--pb-opacity-disabled) !important;

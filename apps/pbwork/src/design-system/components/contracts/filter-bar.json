@@ -28,11 +28,7 @@
     }
   },
   "defaultProps": {
-    "items": [
-      "全部",
-      "进行中",
-      "已超时"
-    ],
+    "items": ["全部", "进行中", "已超时"],
     "modelValue": "进行中"
   },
   "states": [
@@ -46,18 +42,14 @@
     }
   ],
   "slots": [],
-  "events": [
-    "update:modelValue"
-  ],
+  "events": ["update:modelValue"],
   "tokenBindings": {
     "active": "color.on-surface",
     "activeSurface": "color.surface-variant",
     "inactive": "color.on-surface-muted",
     "inactiveSurface": "transparent",
-    "radius": "radius.sm",
+    "radius": "radius.control-compact",
     "gap": "spacing.sm",
-    "minWidth": "spacing.none",
-    "grow": "layout.flex-grow",
     "label": "typography.label"
   },
   "playground": {

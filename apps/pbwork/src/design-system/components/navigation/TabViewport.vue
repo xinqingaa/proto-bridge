@@ -1,12 +1,5 @@
-<script lang="ts">
-import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
-
-export const DEFAULT_TRANSITION_DURATION = tokenDefaultNumber(
-  "motion.duration-tab-viewport",
-);
-</script>
-
 <script setup lang="ts">
+import { useTokenNumber } from "@/design-system/theme/runtime-theme";
 import { computed, toRefs } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import { usePointerSwipe } from "@/design-system/components/_shared/usePointerSwipe";
@@ -25,7 +18,6 @@ const props = withDefaults(
     swipe: true,
     mouseSwipe: true,
     keepMounted: true,
-    transitionDuration: DEFAULT_TRANSITION_DURATION,
   },
 );
 
@@ -37,9 +29,13 @@ const {
   swipe,
   mouseSwipe,
   keepMounted,
-  transitionDuration,
+  transitionDuration: suppliedTransitionDuration,
   inspectId,
 } = toRefs(props);
+const defaultTransitionDuration = useTokenNumber("tab-viewport.duration");
+const transitionDuration = computed(
+  () => suppliedTransitionDuration.value ?? defaultTransitionDuration.value,
+);
 const active = computed({
   get: () => modelValue.value,
   set: (value: string) => emit("update:modelValue", value),
@@ -68,14 +64,12 @@ usePbInspect({
   }),
   getTokenBindings: () => ({
     background: "color.background",
-    fill: "layout.fill",
-    duration: "motion.duration-tab-viewport",
+    duration: "tab-viewport.duration",
     easing: "motion.easing-standard",
   }),
   getTokens: () => [
     "color.background",
-    "layout.fill",
-    "motion.duration-tab-viewport",
+    "tab-viewport.duration",
     "motion.easing-standard",
   ],
 });
@@ -119,8 +113,8 @@ usePbInspect({
 
 <style scoped>
 .pb-tab-viewport {
-  min-width: var(--pb-spacing-none);
-  min-height: var(--pb-spacing-none);
+  min-width: var(--pb-layout-zero);
+  min-height: var(--pb-layout-zero);
   height: var(--pb-layout-fill);
   background: var(--pb-color-background);
   touch-action: pan-y;
@@ -135,7 +129,7 @@ usePbInspect({
 .pb-tab-viewport :deep(.v-window__container),
 .pb-tab-viewport :deep(.v-window-item),
 .pb-tab-viewport-panel {
-  min-height: var(--pb-spacing-none);
+  min-height: var(--pb-layout-zero);
   height: var(--pb-layout-fill);
 }
 </style>

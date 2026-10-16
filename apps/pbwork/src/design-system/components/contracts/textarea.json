@@ -16,11 +16,21 @@
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "label": { "type": "string" },
-      "showLabel": { "type": "boolean" },
-      "modelValue": { "type": "string" },
-      "placeholder": { "type": "string" },
-      "disabled": { "type": "boolean" }
+      "label": {
+        "type": "string"
+      },
+      "showLabel": {
+        "type": "boolean"
+      },
+      "modelValue": {
+        "type": "string"
+      },
+      "placeholder": {
+        "type": "string"
+      },
+      "disabled": {
+        "type": "boolean"
+      }
     }
   },
   "defaultProps": {
@@ -45,7 +55,9 @@
       "id": "disabled",
       "label": "禁用",
       "kind": "interaction",
-      "props": { "disabled": true }
+      "props": {
+        "disabled": true
+      }
     }
   ],
   "slots": [],
@@ -54,12 +66,20 @@
     "surface": "color.surface-recessed",
     "border": "color.border",
     "focus": "color.primary",
-    "radius": "radius.md",
+    "radius": "radius.control",
     "text": "typography.content",
     "disabledOpacity": "opacity.disabled",
-    "rows": "sizing.textarea-rows"
+    "rows": "textarea.rows"
   },
   "playground": {
     "presentation": "interactive"
+  },
+  "componentTokens": {
+    "rows": {
+      "valueType": "number",
+      "default": 3,
+      "modeVariant": false,
+      "bindable": true
+    }
   }
 }

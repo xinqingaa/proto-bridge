@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import { sizeToken } from "@/design-system/components/_shared/appearance";
+import { useTokenNumber } from "@/design-system/theme/runtime-theme";
+
 import { computed, toRefs } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import { usePointerSwipe } from "@/design-system/components/_shared/usePointerSwipe";
-import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
-
-const SLIDE_DURATION_MS = tokenDefaultNumber("motion.duration-slow");
+const SLIDE_DURATION_MS = useTokenNumber("motion.duration-long");
 
 const props = withDefaults(
   defineProps<{
@@ -44,11 +45,11 @@ const {
 
 const tabStyle = computed(() => ({
   "--pb-tabs-active-background": "transparent",
-  "--pb-tabs-active-color": "var(--pb-color-section-tab-active)",
+  "--pb-tabs-active-color": "var(--pb-secondary-tabs-active-color)",
   "--pb-tabs-inactive-color": "var(--pb-color-on-surface-muted)",
   "--pb-tabs-typography": "var(--pb-typography-label)",
-  "--pb-tabs-radius": "var(--pb-radius-md)",
-  "--pb-tabs-height": `var(--pb-sizing-control-${size.value ?? "md"})`,
+  "--pb-tabs-radius": "var(--pb-radius-control)",
+  "--pb-tabs-height": `var(--pb-${sizeToken(size.value ?? "md").replaceAll(".", "-")})`,
 }));
 
 const tab = computed({
@@ -85,43 +86,33 @@ usePbInspect({
   }),
   getState: () => ({ selected: tab.value }),
   getTokenBindings: () => ({
-    indicator: "color.section-tab-active",
+    indicator: "secondary-tabs.active-color",
     activeBackground: "transparent",
-    activeColor: "color.section-tab-active",
+    activeColor: "secondary-tabs.active-color",
     inactiveColor: "color.on-surface-muted",
     border: showDivider.value ? "border.hairline" : "transparent",
-    radius: "radius.md",
-    height: `sizing.control-${size.value ?? "md"}`,
-    target: "sizing.touch",
+    radius: "radius.control",
+    height: sizeToken(size.value ?? "md"),
+    target: "size.touch",
     typography: "typography.label",
     panel: "typography.caption",
     trackGap: "spacing.sm-plus",
-    caretOffset: "layout.inset-sm-negative",
-    caretSize: "sizing.caret",
-    caretAnchor: "layout.half",
-    caretTranslation: "layout.half-negative",
-    fill: "layout.fill",
-    reducedDuration: "motion.duration-instant",
-    duration: "motion.duration-slow",
+    caretSize: "size.caret",
+    duration: "motion.duration-long",
     easing: "motion.easing-standard",
   }),
   getTokens: () => [
-    "color.section-tab-active",
+    "secondary-tabs.active-color",
     "color.on-surface-muted",
     "border.hairline",
-    "radius.md",
-    `sizing.control-${size.value ?? "md"}`,
-    "sizing.touch",
+    "radius.control",
+    sizeToken(size.value ?? "md"),
+    "size.touch",
     "typography.label",
     "typography.caption",
-    "layout.inset-sm-negative",
     "spacing.sm-plus",
-    "sizing.caret",
-    "layout.fill",
-    "layout.half",
-    "layout.half-negative",
-    "motion.duration-instant",
-    "motion.duration-slow",
+    "size.caret",
+    "motion.duration-long",
     "motion.easing-standard",
   ],
 });
@@ -205,11 +196,11 @@ usePbInspect({
   display: flex;
   flex-direction: column;
   gap: var(--pb-spacing-sm-plus);
-  min-width: var(--pb-spacing-none);
+  min-width: var(--pb-layout-zero);
   background: transparent;
 }
 .pb-tab-bar {
-  --v-tabs-height: var(--pb-tabs-height, var(--pb-sizing-control-md));
+  --v-tabs-height: var(--pb-tabs-height, var(--pb-size-control));
   flex: none;
   height: var(--v-tabs-height);
   background: transparent;
@@ -225,22 +216,22 @@ usePbInspect({
 .pb-tab-bar :deep(.v-tab) {
   height: var(--v-tabs-height);
   min-height: var(--v-tabs-height);
-  padding: var(--pb-spacing-none) var(--pb-spacing-md);
-  border-radius: var(--pb-tabs-radius, var(--pb-radius-md));
+  padding: var(--pb-layout-zero) var(--pb-spacing-md);
+  border-radius: var(--pb-tabs-radius, var(--pb-radius-control));
   color: var(--pb-tabs-inactive-color, var(--pb-color-on-surface-muted));
   font: var(--pb-tabs-typography, var(--pb-typography-label));
   letter-spacing: normal;
   text-transform: none;
 }
 .pb-tab-bar.v-tabs--grow :deep(.v-tab) {
-  min-width: var(--pb-spacing-none);
+  min-width: var(--pb-layout-zero);
   flex: var(--pb-layout-flex-fill);
   padding-inline: var(--pb-spacing-xs);
 }
 .pb-tab-bar :deep(.v-tab--selected) {
   color: var(
     --pb-tabs-active-color,
-    var(--pb-color-section-tab-active)
+    var(--pb-secondary-tabs-active-color)
   ) !important;
 }
 .pb-tab-bar :deep(.v-tabs-slider),
@@ -257,20 +248,20 @@ usePbInspect({
   position: absolute;
   bottom: var(--pb-layout-inset-sm-negative);
   left: var(--pb-layout-half);
-  width: var(--pb-spacing-none);
-  height: var(--pb-spacing-none);
-  border-bottom: var(--pb-sizing-caret) solid
-    var(--pb-tabs-active-color, var(--pb-color-section-tab-active));
-  border-right: var(--pb-sizing-caret) solid transparent;
-  border-left: var(--pb-sizing-caret) solid transparent;
-  border-top: var(--pb-spacing-none) solid transparent;
+  width: var(--pb-layout-zero);
+  height: var(--pb-layout-zero);
+  border-bottom: var(--pb-size-caret) solid
+    var(--pb-tabs-active-color, var(--pb-secondary-tabs-active-color));
+  border-right: var(--pb-size-caret) solid transparent;
+  border-left: var(--pb-size-caret) solid transparent;
+  border-top: var(--pb-layout-zero) solid transparent;
   content: "";
   transform: translateX(var(--pb-layout-half-negative));
 }
 .pb-tab-window {
-  min-width: var(--pb-spacing-none);
+  min-width: var(--pb-layout-zero);
   touch-action: pan-y;
-  --v-window-transition-duration: var(--pb-motion-duration-slow);
+  --v-window-transition-duration: var(--pb-motion-duration-long);
 }
 .pb-tab-window.allows-mouse-swipe {
   cursor: grab;
@@ -281,14 +272,14 @@ usePbInspect({
 }
 .pb-tabs.is-fill {
   height: var(--pb-layout-fill);
-  min-height: var(--pb-spacing-none);
+  min-height: var(--pb-layout-zero);
 }
 .pb-tabs.is-fill .pb-tab-window,
 .pb-tabs.is-fill .pb-tab-window :deep(.v-window__container),
 .pb-tabs.is-fill .pb-tab-window :deep(.v-window-item),
 .pb-tabs.is-fill .pb-tab-panel {
   height: var(--pb-layout-fill);
-  min-height: var(--pb-spacing-none);
+  min-height: var(--pb-layout-zero);
 }
 .pb-tabs.is-fill .pb-tab-window {
   flex: var(--pb-layout-flex-fill);
@@ -301,18 +292,18 @@ usePbInspect({
 .pb-tab-window :deep(.v-window-x-transition-leave-active),
 .pb-tab-window :deep(.v-window-x-reverse-transition-enter-active),
 .pb-tab-window :deep(.v-window-x-reverse-transition-leave-active) {
-  transition-duration: var(--pb-motion-duration-slow);
+  transition-duration: var(--pb-motion-duration-long);
   transition-timing-function: var(--pb-motion-easing-standard);
 }
 .pb-tab-panel {
   display: flex;
   flex-direction: column;
   gap: var(--pb-spacing-sm-plus);
-  min-width: var(--pb-spacing-none);
+  min-width: var(--pb-layout-zero);
 }
 .pb-tab-panel-empty {
-  margin: var(--pb-spacing-none);
-  padding: var(--pb-spacing-sm) var(--pb-spacing-none);
+  margin: var(--pb-layout-zero);
+  padding: var(--pb-spacing-sm) var(--pb-layout-zero);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
 }

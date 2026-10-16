@@ -1511,7 +1511,7 @@ onMounted(() => {
 }
 
 .content-canvas.is-draft-canvas {
-  padding: var(--pb-spacing-none);
+  padding: 0;
 }
 
 .content-canvas.is-phone-canvas > * {

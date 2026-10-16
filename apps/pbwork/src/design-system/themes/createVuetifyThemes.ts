@@ -1,41 +1,14 @@
-import { loadThemes } from "@/design-system/loaders";
-import { resolveThemeTokens } from "@/design-system/resolveThemeTokens";
-import { vuetifyThemeBindings } from "@/design-system/themes/vuetify-bindings";
-import type { TokenValue } from "@/design-system/types";
-import { workbenchThemes } from "@/design-system/themes/workbench-themes";
-
-function colorsFromResolved(
-  resolved: Record<string, TokenValue>,
-): Record<string, string> {
-  const colors: Record<string, string> = {};
-  for (const [semantic, tokenId] of Object.entries(vuetifyThemeBindings)) {
-    const value = resolved[tokenId];
-    if (value === undefined) {
-      throw new Error(`MISSING_VUETIFY_TOKEN:${tokenId}`);
-    }
-    colors[semantic] = String(value);
-  }
-  return colors;
-}
-
-/** Build Vuetify ThemeDefinitions from Token + Theme overrides (single source). */
+import { resolveRuntimeTheme } from "@/design-system/theme/runtime-theme";
+import { runtimeVuetifyTheme } from "@/design-system/theme/vuetify-theme";
+import { workbenchThemes } from "./workbench-themes";
 export function createVuetifyThemes() {
-  const themes = loadThemes();
-  const lightTheme = themes.find((item) => item.id === "light");
-  const darkTheme = themes.find((item) => item.id === "dark");
-  if (!lightTheme || !darkTheme) {
-    throw new Error("MISSING_LIGHT_OR_DARK_THEME");
-  }
-
   return {
     ...workbenchThemes,
-    pbworkLight: {
-      dark: lightTheme.dark,
-      colors: colorsFromResolved(resolveThemeTokens("light")),
-    },
-    pbworkDark: {
-      dark: darkTheme.dark,
-      colors: colorsFromResolved(resolveThemeTokens("dark")),
-    },
+    pbworkLight: runtimeVuetifyTheme(
+      resolveRuntimeTheme("pbwork-base", "default", "light"),
+    ),
+    pbworkDark: runtimeVuetifyTheme(
+      resolveRuntimeTheme("pbwork-base", "default", "dark"),
+    ),
   };
 }

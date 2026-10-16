@@ -29,9 +29,7 @@
         "type": "boolean"
       }
     },
-    "required": [
-      "label"
-    ]
+    "required": ["label"]
   },
   "defaultProps": {
     "label": "接收进度通知",
@@ -58,15 +56,13 @@
     }
   ],
   "slots": [],
-  "events": [
-    "update:modelValue"
-  ],
+  "events": ["update:modelValue"],
   "tokenBindings": {
     "active": "color.primary",
     "track": "color.surface-variant",
     "thumb": "color.surface",
     "text": "color.on-surface",
-    "target": "sizing.touch",
+    "target": "size.touch",
     "label": "typography.content",
     "disabledOpacity": "opacity.disabled"
   },

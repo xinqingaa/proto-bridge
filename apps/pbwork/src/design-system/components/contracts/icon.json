@@ -328,7 +328,7 @@
   "slots": [],
   "events": [],
   "tokenBindings": {
-    "size": "sizing.icon-md",
+    "size": "size.icon",
     "color": "color.on-surface"
   },
   "playground": {

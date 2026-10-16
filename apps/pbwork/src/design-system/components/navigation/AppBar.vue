@@ -1,13 +1,16 @@
 <script setup lang="ts">
+import SurfaceMaterial from "@/design-system/components/_shared/SurfaceMaterial.vue";
+import { useToken } from "@/design-system/theme/runtime-theme";
+import { useTokenNumber } from "@/design-system/theme/runtime-theme";
+import { themeConstantNumber } from "@/design-system/theme/constants";
+
 import { computed, toRefs, useSlots } from "vue";
 import { ArrowLeft } from "lucide-vue-next";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import IconButton from "@/design-system/components/action/IconButton.vue";
 import { elevationStyle } from "@/design-system/components/_shared/appearance";
-import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
-
-const NO_ELEVATION = tokenDefaultNumber("layer.base");
-const BACK_ICON_SIZE = tokenDefaultNumber("sizing.icon-md");
+const NO_ELEVATION = themeConstantNumber("layer.base");
+const BACK_ICON_SIZE = useTokenNumber("size.icon");
 
 type ActionIcon = "more" | "plus" | "search" | "settings";
 
@@ -18,6 +21,7 @@ const ACTION_ARIA_LABELS: Record<ActionIcon, string> = {
   settings: "设置",
 };
 
+const surfaceTreatment = useToken("app-bar.surface-treatment");
 const props = defineProps<{
   title: string;
   dense?: boolean;
@@ -74,27 +78,27 @@ usePbInspect({
     inspectId: inspectId.value,
   }),
   getTokenBindings: () => ({
+    materialOpacity: "opacity.translucent",
+    materialBackdrop: "surface.glass-backdrop",
+    materialBorder: "border.default",
     surface: "color.surface",
     border: "color.border",
     text: "color.on-surface",
-    elevation: "elevation.card",
+    elevation: "elevation.surface",
     title: "typography.subtitle",
     padding: "spacing.md",
-    safeInsetFallback: "spacing.none",
-    restingElevation: "elevation.none",
-    iconSize: "sizing.icon-md",
+    restingElevation: "none",
+    iconSize: "size.icon",
   }),
   getTokens: () => [
     "color.surface",
     "color.border",
     "color.on-surface",
-    "elevation.card",
+    "elevation.surface",
     "typography.subtitle",
     "spacing.sm",
     "spacing.md",
-    "spacing.none",
-    "elevation.none",
-    "sizing.icon-md",
+    "size.icon",
   ],
 });
 </script>
@@ -110,8 +114,15 @@ usePbInspect({
     :density="dense ? 'compact' : 'default'"
     :elevation="NO_ELEVATION"
     :style="elevationStyle(elevated ? 'card' : 'none')"
-    :class="{ 'is-elevated': elevated }"
+    :class="{
+      'is-elevated': elevated,
+      'is-material': surfaceTreatment !== 'solid',
+    }"
   >
+    <SurfaceMaterial
+      v-if="surfaceTreatment !== 'solid'"
+      treatment-key="app-bar.surface-treatment"
+    />
     <template v-if="showBack" #prepend>
       <v-btn
         class="pb-app-bar-back"
@@ -146,19 +157,29 @@ usePbInspect({
 .pb-app-bar {
   position: relative !important;
   flex: none;
-  padding-top: var(--pb-safe-top, var(--pb-spacing-none));
+  padding-top: var(--pb-safe-top, var(--pb-layout-zero));
   border-bottom: var(--pb-border-hairline);
   box-shadow: var(--pb-component-shadow, var(--pb-elevation-none)) !important;
 }
+.pb-app-bar.is-material {
+  background: transparent !important;
+}
+.pb-app-bar.is-material :deep(.v-toolbar__content) {
+  position: relative;
+  z-index: var(--pb-layer-content);
+}
 .pb-app-bar.is-elevated {
-  box-shadow: var(--pb-component-shadow, var(--pb-elevation-card)) !important;
+  box-shadow: var(
+    --pb-component-shadow,
+    var(--pb-elevation-surface)
+  ) !important;
 }
 .pb-app-bar :deep(.v-toolbar__content) {
   padding-inline: var(--pb-spacing-md);
 }
 .pb-app-bar-title,
 .pb-app-bar-heading {
-  margin: var(--pb-spacing-none);
+  margin: var(--pb-layout-zero);
   font: var(--pb-typography-subtitle);
 }
 .pb-app-bar-actions {

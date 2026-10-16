@@ -1,7 +1,9 @@
 export type RadiusSize = "none" | "sm" | "md" | "lg" | "full" | "xs" | "xl";
 
 export function radiusVar(size: RadiusSize = "md"): string {
-  return `var(--pb-radius-${size})`;
+  return size === "none"
+    ? "var(--pb-layout-zero)"
+    : `var(--pb-${radiusToken(size).replaceAll(".", "-")})`;
 }
 
 export function radiusStyle(size: RadiusSize = "md"): Record<string, string> {
@@ -9,4 +11,16 @@ export function radiusStyle(size: RadiusSize = "md"): Record<string, string> {
     "--pb-component-radius": radiusVar(size),
     borderRadius: radiusVar(size),
   };
+}
+
+export function radiusToken(size: RadiusSize = "md") {
+  return {
+    none: "none",
+    xs: "radius.mark",
+    sm: "radius.control-compact",
+    md: "radius.control",
+    lg: "radius.surface",
+    xl: "radius.overlay",
+    full: "radius.pill",
+  }[size];
 }

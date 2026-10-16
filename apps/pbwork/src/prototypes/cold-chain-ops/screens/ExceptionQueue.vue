@@ -26,7 +26,10 @@ const severityTabs = [
 ] satisfies Array<{ value: string; label: string }>;
 type SeverityTab = (typeof severityTabs)[number]["value"];
 
-const severityByTab: Record<SeverityTab, ColdChainException["severity"] | undefined> = {
+const severityByTab: Record<
+  SeverityTab,
+  ColdChainException["severity"] | undefined
+> = {
   all: undefined,
   critical: "严重",
   warning: "警告",
@@ -158,7 +161,7 @@ function refresh(tab: string) {
           data-pb-role="error-state"
           data-pb-token-background="color.error-soft"
           data-pb-token-color="color.error"
-          data-pb-token-radius="radius.lg"
+          data-pb-token-radius="radius.surface"
           data-pb-token-spacing="spacing.md"
         >
           <Icon name="alert-triangle" size="lg" tone="error" />
@@ -218,48 +221,48 @@ function refresh(tab: string) {
                 </div>
               </header>
               <div class="metric-grid">
-              <div
-                class="metric is-critical"
-                data-pb-id="cold-chain-ops.exception-queue.summary.metric"
-                data-pb-key="critical"
-                data-pb-role="status"
-                data-pb-token-background="color.error-soft"
-                data-pb-token-color="color.error"
-                data-pb-token-radius="radius.md"
-                data-pb-token-spacing="spacing.sm"
-              >
-                <Icon name="alert-triangle" size="md" />
-                <strong>{{ severityCounts.严重 }}</strong>
-                <span>严重异常</span>
-              </div>
-              <div
-                class="metric"
-                data-pb-id="cold-chain-ops.exception-queue.summary.metric"
-                data-pb-key="unassigned"
-                data-pb-role="status"
-                data-pb-token-background="color.warning-soft"
-                data-pb-token-color="color.warning"
-                data-pb-token-radius="radius.md"
-                data-pb-token-spacing="spacing.sm"
-              >
-                <Icon name="snowflake" size="md" />
-                <strong>{{ severityCounts.待接手 }}</strong>
-                <span>等待接手</span>
-              </div>
-              <div
-                class="metric"
-                data-pb-id="cold-chain-ops.exception-queue.summary.metric"
-                data-pb-key="longest"
-                data-pb-role="status"
-                data-pb-token-background="color.surface-variant"
-                data-pb-token-color="color.on-surface"
-                data-pb-token-radius="radius.md"
-                data-pb-token-spacing="spacing.sm"
-              >
-                <Icon name="clock" size="md" />
-                <strong>{{ severityCounts.最长超温 }}m</strong>
-                <span>最长超温</span>
-              </div>
+                <div
+                  class="metric is-critical"
+                  data-pb-id="cold-chain-ops.exception-queue.summary.metric"
+                  data-pb-key="critical"
+                  data-pb-role="status"
+                  data-pb-token-background="color.error-soft"
+                  data-pb-token-color="color.error"
+                  data-pb-token-radius="radius.control"
+                  data-pb-token-spacing="spacing.sm"
+                >
+                  <Icon name="alert-triangle" size="md" />
+                  <strong>{{ severityCounts.严重 }}</strong>
+                  <span>严重异常</span>
+                </div>
+                <div
+                  class="metric"
+                  data-pb-id="cold-chain-ops.exception-queue.summary.metric"
+                  data-pb-key="unassigned"
+                  data-pb-role="status"
+                  data-pb-token-background="color.warning-soft"
+                  data-pb-token-color="color.warning"
+                  data-pb-token-radius="radius.control"
+                  data-pb-token-spacing="spacing.sm"
+                >
+                  <Icon name="snowflake" size="md" />
+                  <strong>{{ severityCounts.待接手 }}</strong>
+                  <span>等待接手</span>
+                </div>
+                <div
+                  class="metric"
+                  data-pb-id="cold-chain-ops.exception-queue.summary.metric"
+                  data-pb-key="longest"
+                  data-pb-role="status"
+                  data-pb-token-background="color.surface-variant"
+                  data-pb-token-color="color.on-surface"
+                  data-pb-token-radius="radius.control"
+                  data-pb-token-spacing="spacing.sm"
+                >
+                  <Icon name="clock" size="md" />
+                  <strong>{{ severityCounts.最长超温 }}m</strong>
+                  <span>最长超温</span>
+                </div>
               </div>
               <Button
                 label="仅看严重异常"
@@ -287,11 +290,7 @@ function refresh(tab: string) {
           inspect-id="cold-chain-ops.exception-queue.severity-tabs"
           @update:model-value="selectSeverity"
         >
-          <template
-            v-for="tab in severityTabs"
-            :key="tab.value"
-            #[tab.value]
-          >
+          <template v-for="tab in severityTabs" :key="tab.value" #[tab.value]>
             <ScrollableDataList
               class="queue-tab-scroll"
               :pull-refresh="{
@@ -328,7 +327,7 @@ function refresh(tab: string) {
                     :data-pb-key="tab.value + '-' + item.id"
                     data-pb-role="list-item"
                     data-pb-token-background="color.surface"
-                    data-pb-token-radius="radius.lg"
+                    data-pb-token-radius="radius.surface"
                     data-pb-token-spacing="spacing.md"
                     :data-pb-action="
                       tab.value === filter && item.id === 'ex-017'
@@ -344,7 +343,8 @@ function refresh(tab: string) {
                         data-pb-role="text"
                         data-pb-token-typography="typography.caption-strong"
                         data-pb-token-color="color.on-surface-muted"
-                        >{{ item.id.toUpperCase() }} · {{ item.shipmentId }}</span
+                        >{{ item.id.toUpperCase() }} ·
+                        {{ item.shipmentId }}</span
                       >
                       <Badge
                         :label="item.severity"
@@ -385,7 +385,9 @@ function refresh(tab: string) {
                         data-pb-role="status"
                         data-pb-token-typography="typography.title-sm"
                         :data-pb-token-color="
-                          item.severity === '严重' ? 'color.error' : 'color.warning'
+                          item.severity === '严重'
+                            ? 'color.error'
+                            : 'color.warning'
                         "
                         >{{ item.currentTemperature.toFixed(1) }}°C</strong
                       >
@@ -410,7 +412,7 @@ function refresh(tab: string) {
 .queue-page,
 .queue-content,
 .queue-tabs {
-  min-height: var(--pb-spacing-none);
+  min-height: var(--pb-layout-zero);
   overflow: hidden;
 }
 .queue-page,
@@ -434,14 +436,14 @@ function refresh(tab: string) {
   gap: var(--pb-spacing-sm-plus);
 }
 .queue-header {
-  padding: var(--pb-spacing-md) var(--pb-spacing-md) var(--pb-spacing-none);
+  padding: var(--pb-spacing-md) var(--pb-spacing-md) var(--pb-layout-zero);
 }
 .queue-tabs {
-  padding: var(--pb-spacing-none) var(--pb-spacing-md);
+  padding: var(--pb-layout-zero) var(--pb-spacing-md);
 }
 .queue-tab-scroll {
   height: var(--pb-layout-fill);
-  min-height: var(--pb-spacing-none);
+  min-height: var(--pb-layout-zero);
 }
 .queue-tab-content {
   padding-bottom: var(--pb-spacing-md);
@@ -460,7 +462,7 @@ function refresh(tab: string) {
 }
 .card-heading h2,
 .card-heading p {
-  margin: var(--pb-spacing-none);
+  margin: var(--pb-layout-zero);
 }
 .card-heading h2 {
   color: var(--pb-color-on-surface);
@@ -482,9 +484,9 @@ function refresh(tab: string) {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--pb-spacing-xs);
-  min-width: var(--pb-sizing-control-lg);
+  min-width: var(--pb-size-control-large);
   padding: var(--pb-spacing-sm);
-  border-radius: var(--pb-radius-md);
+  border-radius: var(--pb-radius-control);
   background: var(--pb-color-surface-variant);
   color: var(--pb-color-on-surface);
 }
@@ -512,7 +514,7 @@ function refresh(tab: string) {
   width: var(--pb-layout-fill);
   padding: var(--pb-spacing-md);
   border: var(--pb-border-default);
-  border-radius: var(--pb-radius-lg);
+  border-radius: var(--pb-radius-surface);
   background: var(--pb-color-surface);
   color: var(--pb-color-on-surface);
   text-align: left;
@@ -538,7 +540,7 @@ function refresh(tab: string) {
   font: var(--pb-typography-caption);
 }
 .temperature-line span {
-  min-width: var(--pb-spacing-none);
+  min-width: var(--pb-layout-zero);
 }
 .temperature-line strong {
   color: var(--pb-color-error);
@@ -560,12 +562,12 @@ function refresh(tab: string) {
 .error-state {
   height: auto;
   margin: var(--pb-spacing-md);
-  border-radius: var(--pb-radius-lg);
+  border-radius: var(--pb-radius-surface);
   background: var(--pb-color-error-soft);
   color: var(--pb-color-error);
 }
 .error-state strong,
 .error-state p {
-  margin: var(--pb-spacing-none);
+  margin: var(--pb-layout-zero);
 }
 </style>

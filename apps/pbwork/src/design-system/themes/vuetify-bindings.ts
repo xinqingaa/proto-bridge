@@ -23,6 +23,6 @@ export const vuetifyThemeBindings = {
   "on-success": "color.on-success",
   "on-warning": "color.on-warning",
   "on-info": "color.on-info",
-  tooltip: "color.action",
-  "on-tooltip": "color.on-action",
+  tooltip: "color.inverse-surface",
+  "on-tooltip": "color.on-inverse-surface",
 } as const satisfies VuetifyThemeBindings;

@@ -29,13 +29,13 @@ usePbInspect({
   getTokens: () => [
     `color.${tone.value ?? "error"}`,
     `color.on-${tone.value ?? "error"}`,
-    "radius.full",
+    "radius.pill",
     "typography.caption-strong",
   ],
   getTokenBindings: () => ({
     background: `color.${tone.value ?? "error"}`,
     text: `color.on-${tone.value ?? "error"}`,
-    radius: "radius.full",
+    radius: "radius.pill",
     label: "typography.caption-strong",
   }),
 });
@@ -58,7 +58,7 @@ usePbInspect({
 
 <style scoped>
 .pb-badge {
-  border-radius: var(--pb-radius-full);
+  border-radius: var(--pb-radius-pill);
   font: var(--pb-typography-caption-strong);
   text-transform: none;
   letter-spacing: normal;

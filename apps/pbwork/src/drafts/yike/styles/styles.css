@@ -12,7 +12,7 @@
   flex-direction: column;
   align-self: center;
   gap: 44px;
-  padding-bottom: var(--pb-spacing-xl);
+  padding-bottom: calc(var(--pb-spacing-lg) + var(--pb-spacing-sm));
 }
 
 .yk-suite .yk-lab-column-head {

@@ -3,9 +3,9 @@ import { computed, onBeforeUnmount, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { FastForward, Moon, RotateCcw, Sun } from "lucide-vue-next";
 import {
-  resolveThemeTokens,
-  tokensToCssVars,
-} from "@/design-system/resolveThemeTokens";
+  themeCssValues,
+  valuesToCssVars,
+} from "@/design-system/theme/presentation";
 import FreeDirection from "./free/FreeDirection.vue";
 import {
   FREE_ACCENTS,
@@ -64,7 +64,7 @@ const freeDark = computed(() =>
 );
 
 const labStyle = computed(() =>
-  tokensToCssVars(resolveThemeTokens(dark.value ? "dark" : "light")),
+  valuesToCssVars(themeCssValues(dark.value ? "dark" : "light")),
 );
 
 const freeNote = DIRECTION_NOTES.find((note) => note.id === "free")!;

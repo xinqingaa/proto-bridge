@@ -29,20 +29,11 @@
       },
       "surface": {
         "type": "string",
-        "enum": [
-          "none",
-          "default",
-          "raised"
-        ]
+        "enum": ["none", "default", "raised"]
       },
       "rounded": {
         "type": "string",
-        "enum": [
-          "none",
-          "sm",
-          "md",
-          "lg"
-        ]
+        "enum": ["none", "sm", "md", "lg"]
       },
       "elevated": {
         "type": "boolean"
@@ -76,19 +67,17 @@
       }
     }
   ],
-  "slots": [
-    "default"
-  ],
+  "slots": ["default"],
   "events": [],
   "tokenBindings": {
     "surface": "color.surface",
     "divider": "color.border",
-    "radius": "radius.md",
-    "elevation": "elevation.card",
+    "radius": "radius.control",
+    "elevation": "elevation.surface",
     "content": "typography.content",
     "inset": "spacing.md",
     "dividerBorder": "border.default",
-    "restingElevation": "elevation.none"
+    "restingElevation": "none"
   },
   "playground": {
     "presentation": "interactive"

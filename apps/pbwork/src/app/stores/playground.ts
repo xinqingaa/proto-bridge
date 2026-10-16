@@ -63,6 +63,8 @@ export const usePlaygroundStore = defineStore("playground", {
     componentId: null as string | null,
     scenarioId: "" as string,
     themeId: "light" as PlaygroundThemeId,
+    packId: "pbwork-base",
+    themeName: "default",
     overrides: {} as Record<string, unknown>,
   }),
   getters: {
@@ -159,6 +161,11 @@ export const usePlaygroundStore = defineStore("playground", {
 
     setTheme(themeId: PlaygroundThemeId) {
       this.themeId = themeId;
+    },
+
+    setPack(packId: string, themeName: string) {
+      this.packId = packId;
+      this.themeName = themeName;
     },
 
     setOverride(key: string, value: unknown) {

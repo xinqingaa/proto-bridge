@@ -1,220 +1,141 @@
-# Token 全量目录
+# 主题键目录
 
-> 权威源：`apps/pbwork/src/design-system/tokens/tokens.json`（共 154 项）
-> Bind 池：`apps/pbwork/src/design-system/bindTokens.ts`（128 项可进组件 `tokenBindings`）
+共 133 项：113 个语义键与 20 个组件键；127 项可绑定，6 项 enum 不可绑定。字阶另派生 64 个不可绑定部件；31 项实现常量不属于 Catalog。
 
-未进 Bind 池的 Token 仍可在 Foundations 浏览，但**不得**写入通用组件契约。`transparent` / `none` 是 Core 定义的绑定字面量，不属于本目录的 154 个 Token，也不要求 Target accessor。
+权威源为 `src/design-system/theme/key-catalog.json` 和各组件 Contract 的 `componentTokens`，由 `loadThemeKeyCatalog()` 汇总；取值由主题包解析，本文不复制基础值。模型见[主题包解析模型](../../../../docs/architecture/theme-packs.md)，154 个旧键的去向保存在 `theme/legacy-migration.json` 并由等价测试覆盖。
 
-## 颜色（`color` · 36）
-
-| ID                         | 标签          | 默认值      | Bind | 说明                                                          |
-| -------------------------- | ------------- | ----------- | ---- | ------------------------------------------------------------- |
-| `color.background`         | 背景          | `#f7f8fa`   | 是   | 页面背景色                                                    |
-| `color.surface`            | 表面          | `#ffffff`   | 是   | 卡片与面板表面色                                              |
-| `color.primary`            | 主色          | `#2f73d2`   | 是   | 克制强调色，仅用于选择、焦点、链接与进度                      |
-| `color.navigation-active`  | 导航激活      | `#2f73d2`   | 是   | 应用导航和页签的当前定位色；默认与主色一致，但不复用主操作色  |
-| `color.section-tab-active` | 页内 Tab 激活 | `#1d1f23`   | 是   | 一级、二级页内 Tab 的中性当前定位色；不复用应用导航或主操作色 |
-| `color.primary-soft`       | 主色软底      | `#eaf2fd`   | 是   | 主色混合实色软底（非 alpha），用于 Chip / tonal               |
-| `color.on-primary`         | 主色上文字    | `#ffffff`   | 是   |                                                               |
-| `color.action`             | 主操作        | `#202124`   | 是   | 实心主按钮使用的中性色，不复用强调色                          |
-| `color.action-soft`        | 主操作软底    | `#e8e9ea`   | 是   | 主操作混合实色软底，用于次要类型按钮                          |
-| `color.on-action`          | 主操作上文字  | `#ffffff`   | 是   |                                                               |
-| `color.secondary`          | 次色          | `#66707a`   | 是   |                                                               |
-| `color.secondary-soft`     | 次色软底      | `#f0f2f4`   | 是   | 次色混合实色软底                                              |
-| `color.border`             | 边框          | `#dde1e6`   | 是   |                                                               |
-| `color.error`              | 错误          | `#b44a42`   | 是   |                                                               |
-| `color.error-soft`         | 错误软底      | `#f7ecea`   | 是   | 错误色混合实色软底                                            |
-| `color.info`               | 信息          | `#397bc1`   | 是   | 信息色：比主色更冷、更灰，避免与品牌色撞车                    |
-| `color.success`            | 成功          | `#39715a`   | 是   |                                                               |
-| `color.success-soft`       | 成功软底      | `#eaf2ee`   | 是   | 成功色混合实色软底                                            |
-| `color.warning`            | 警告          | `#87651c`   | 是   |                                                               |
-| `color.warning-soft`       | 警告软底      | `#f5f0e4`   | 是   | 警告色混合实色软底                                            |
-| `color.on-surface`         | 表面上文字    | `#1d1f23`   | 是   |                                                               |
-| `color.on-surface-muted`   | 表面弱化文字  | `#666b73`   | 是   | 表面上文字约 62% 透明度，用于副标题与提示                     |
-| `color.surface-variant`    | 次级表面      | `#f0f2f4`   | 是   | 弱分区、表格表头与次级容器                                    |
-| `color.surface-recessed`   | 内凹表面      | `#eef0f3`   | 是   | 承托页内选择态与最简输入的中性内凹背景；浅色须明显低于页面背景 |
-| `color.surface-selected`   | 选中表面      | `#fbfcfd`   | 是   | 分段、Tab 等非主色选择态的中性浅灰层                          |
-| `color.surface-raised`     | 浮层表面      | `#ffffff`   | 是   | 菜单、Dialog 与悬浮工具栏                                     |
-| `color.on-background`      | 背景上文字    | `#1d1f23`   | 是   |                                                               |
-| `color.on-secondary`       | 次色上文字    | `#ffffff`   | 是   |                                                               |
-| `color.outline`            | 轮廓          | `#aeb4bc`   | 是   |                                                               |
-| `color.divider`            | 分割线        | `#e5e7ea`   | 是   |                                                               |
-| `color.disabled`           | 禁用内容      | `#9aa0a8`   | 是   |                                                               |
-| `color.scrim`              | 遮罩          | `#0f172a99` | 是   | Dialog / Loading 等蒙层                                     |
-| `color.toast`              | Toast 背景    | `#000000cc` | 是   | 短提示半透明纯黑底                                          |
-| `color.on-toast`           | Toast 文字    | `#ffffff`   | 是   | Toast 上文字                                                |
-| `color.on-error`           | 错误色上文字  | `#ffffff`   | 是   |                                                               |
-| `color.on-success`         | 成功色上文字  | `#ffffff`   | 是   |                                                               |
-| `color.on-warning`         | 警告色上文字  | `#251a00`   | 是   |                                                               |
-| `color.on-info`            | 信息色上文字  | `#ffffff`   | 是   |                                                               |
-
-## 字体（`typography` · 13）
-
-| ID                          | 标签     | 默认值                                         | Bind | 说明                           |
-| --------------------------- | -------- | ---------------------------------------------- | ---- | ------------------------------ |
-| `typography.title`          | 标题     | `650 20px/1.3 Inter, system-ui, sans-serif`    | 是   | fontWeight 650 · fontSize 20px |
-| `typography.subtitle`       | 副标题   | `600 16px/1.4 Inter, system-ui, sans-serif`    | 是   | fontWeight 600 · fontSize 16px |
-| `typography.content`        | 正文     | `400 14px/1.5 Inter, system-ui, sans-serif`    | 是   | fontWeight 400 · fontSize 14px |
-| `typography.caption`        | 辅助说明 | `400 12px/1.4 Inter, system-ui, sans-serif`    | 是   | fontWeight 400 · fontSize 12px |
-| `typography.display`        | 展示标题 | `700 40px/1.15 Inter, system-ui, sans-serif`   | 否   |                                |
-| `typography.headline`       | 页面标题 | `700 28px/1.2 Inter, system-ui, sans-serif`    | 否   |                                |
-| `typography.title-sm`       | 小标题   | `650 18px/1.35 Inter, system-ui, sans-serif`   | 否   |                                |
-| `typography.title-lg`       | 大标题   | `700 24px/1.25 Inter, system-ui, sans-serif`   | 否   |                                |
-| `typography.body-sm`        | 小正文   | `400 13px/1.5 Inter, system-ui, sans-serif`    | 否   |                                |
-| `typography.body-lg`        | 大正文   | `400 16px/1.55 Inter, system-ui, sans-serif`   | 否   |                                |
-| `typography.label`          | 控件标签 | `600 14px/1.4 Inter, system-ui, sans-serif`    | 是   |                                |
-| `typography.caption-strong` | 强调说明 | `600 12px/1.4 Inter, system-ui, sans-serif`    | 是   |                                |
-| `typography.micro`          | 微型标签 | `500 0.72rem/1.2 Inter, system-ui, sans-serif` | 是   | 流程步骤等空间受限的状态标签   |
-
-## 间距（`spacing` · 12）
-
-| ID                | 标签       | 默认值 | Bind | 说明               |
-| ----------------- | ---------- | ------ | ---- | ------------------ |
-| `spacing.xs`      | 超小间距   | `4`    | 是   |                    |
-| `spacing.sm`      | 小间距     | `8`    | 是   |                    |
-| `spacing.md`      | 中间距     | `16`   | 是   |                    |
-| `spacing.lg`      | 大间距     | `24`   | 是   |                    |
-| `spacing.xl`      | 超大间距   | `32`   | 否   |                    |
-| `spacing.none`    | 无间距     | `0`    | 是   |                    |
-| `spacing.xxs`     | 极小间距   | `2`    | 是   |                    |
-| `spacing.xs-plus` | 紧凑间距   | `6`    | 是   | 密集状态和进度提示 |
-| `spacing.sm-plus` | 中小间距   | `12`   | 是   |                    |
-| `spacing.lg-plus` | 大间距     | `40`   | 否   |                    |
-| `spacing.2xl`     | 二倍大间距 | `48`   | 否   |                    |
-| `spacing.3xl`     | 三倍大间距 | `64`   | 否   |                    |
-
-## 尺寸（`sizing` · 22）
-
-| ID                                | 标签             | 默认值 | Bind | 说明                           |
-| --------------------------------- | ---------------- | ------ | ---- | ------------------------------ |
-| `sizing.control-sm`               | 小控件高度       | `32`   | 是   |                                |
-| `sizing.control-md`               | 标准控件高度     | `40`   | 是   |                                |
-| `sizing.control-lg`               | 大控件高度       | `48`   | 是   |                                |
-| `sizing.icon-sm`                  | 小图标           | `16`   | 是   |                                |
-| `sizing.icon-md`                  | 标准图标         | `20`   | 是   |                                |
-| `sizing.icon-lg`                  | 大图标           | `24`   | 是   |                                |
-| `sizing.icon-compact`             | 紧凑图标         | `18`   | 是   | 表单尾部、搜索等紧凑控件内图标 |
-| `sizing.avatar-sm`                | 小头像           | `28`   | 否   |                                |
-| `sizing.avatar-md`                | 标准头像         | `40`   | 是   |                                |
-| `sizing.avatar-lg`                | 大头像           | `56`   | 是   |                                |
-| `sizing.touch`                    | 最小触控目标     | `44`   | 是   |                                |
-| `sizing.menu-item`                | 菜单项高度       | `48`   | 是   |                                |
-| `sizing.tab`                      | 页签高度         | `44`   | 否   |                                |
-| `sizing.bottom-navigation`        | 底部导航高度     | `64`   | 是   |                                |
-| `sizing.indicator-thickness`      | 指示器厚度       | `3`    | 是   | 页签等线性定位指示器           |
-| `sizing.caret`                    | 小三角尺寸       | `5`    | 是   | 页签与菜单的小三角             |
-| `sizing.step-dot`                 | 步骤圆点         | `6`    | 是   | 流程等紧凑圆点                 |
-| `sizing.refresh-action-min-width` | 刷新操作最小宽度 | `96`   | 是   | 列表刷新操作                   |
-| `sizing.refresh-action-height`    | 刷新操作高度     | `36`   | 是   | 刷新辅助操作                   |
-| `sizing.progress-stroke`          | 进度描边         | `2`    | 是   | 环形加载与进度反馈描边         |
-| `sizing.progress-track`           | 进度轨道         | `6`    | 是   | 线性进度反馈轨道高度           |
-| `sizing.textarea-rows`            | 多行输入默认行数 | `3`    | 是   | Textarea 的统一默认可见行数    |
-
-## 圆角（`radius` · 7）
-
-| ID            | 标签     | 默认值 | Bind | 说明 |
-| ------------- | -------- | ------ | ---- | ---- |
-| `radius.none` | 无圆角   | `0`    | 是   |      |
-| `radius.sm`   | 小圆角   | `8`    | 是   |      |
-| `radius.md`   | 中圆角   | `12`   | 是   |      |
-| `radius.lg`   | 大圆角   | `16`   | 是   |      |
-| `radius.full` | 全圆角   | `999`  | 是   |      |
-| `radius.xs`   | 极小圆角 | `4`    | 是   |      |
-| `radius.xl`   | 超大圆角 | `24`   | 是   |      |
-
-## 边框（`border` · 6）
-
-| ID                      | 标签     | 默认值                              | Bind | 说明                       |
-| ----------------------- | -------- | ----------------------------------- | ---- | -------------------------- |
-| `border.hairline`       | 细线     | `1px solid var(--pb-color-divider)` | 是   |                            |
-| `border.default`        | 标准边框 | `1px solid var(--pb-color-border)`  | 是   |                            |
-| `border.strong`         | 强调边框 | `2px solid var(--pb-color-outline)` | 否   |                            |
-| `border.focus`          | 焦点边框 | `2px solid var(--pb-color-primary)` | 是   |                            |
-| `border.width-hairline` | 细线宽度 | `1px`                               | 是   | 仅宽度；需与线型、颜色组合 |
-| `border.accent-width`   | 强调边宽 | `4px`                               | 是   | 仅宽度；需与线型、颜色组合 |
-
-## 阴影（`elevation` · 9）
-
-| ID                  | 标签     | 默认值                                                         | Bind | 说明                     |
-| ------------------- | -------- | -------------------------------------------------------------- | ---- | ------------------------ |
-| `elevation.none`    | 无阴影   | `none`                                                         | 是   |                          |
-| `elevation.card`    | 卡片阴影 | `0 1px 2px rgba(15, 23, 42, 0.08), 0 8px 24px rgba(15, 23,...` | 是   |                          |
-| `elevation.raised`  | 浮起阴影 | `0 4px 12px rgba(15, 23, 42, 0.12), 0 16px 32px rgba(15, 2...` | 是   |                          |
-| `elevation.glass`   | 玻璃阴影 | `0 6px 18px rgba(15, 23, 42, 0.08)`                            | 是   | 低浓度、宽扩散的单层阴影 |
-| `elevation.level-1` | 阴影一级 | `0 1px 3px rgba(15, 23, 42, 0.12)`                             | 是   |                          |
-| `elevation.level-2` | 阴影二级 | `0 4px 10px rgba(15, 23, 42, 0.12)`                            | 否   |                          |
-| `elevation.level-3` | 阴影三级 | `0 8px 20px rgba(15, 23, 42, 0.14)`                            | 是   |                          |
-| `elevation.level-4` | 阴影四级 | `0 14px 32px rgba(15, 23, 42, 0.16)`                           | 是   |                          |
-| `elevation.level-5` | 阴影五级 | `0 22px 48px rgba(15, 23, 42, 0.2)`                            | 是   |                          |
-
-## 透明度（`opacity` · 8）
-
-| ID                 | 标签           | 默认值 | Bind | 说明                           |
-| ------------------ | -------------- | ------ | ---- | ------------------------------ |
-| `opacity.disabled` | 禁用透明度     | `0.38` | 是   | 所有 disabled 状态的统一透明度 |
-| `opacity.muted`    | 弱化透明度     | `0.62` | 否   |                                |
-| `opacity.glass`    | 玻璃表面透明度 | `0.76` | 是   | Tab 等半透明中性选择表面       |
-| `opacity.hover`    | 悬停叠加       | `0.08` | 否   |                                |
-| `opacity.pressed`  | 按下叠加       | `0.14` | 否   |                                |
-| `opacity.overlay`  | 遮罩透明度     | `0.6`  | 否   |                                |
-| `opacity.hidden`   | 隐藏透明度     | `0`    | 是   |                                |
-| `opacity.visible`  | 完全可见透明度 | `1`    | 是   |                                |
-
-## 动效（`motion` · 14）
-
-| ID                                  | 标签               | 默认值                           | Bind | 说明                          |
-| ----------------------------------- | ------------------ | -------------------------------- | ---- | ----------------------------- |
-| `motion.duration-fast`              | 快速时长           | `120ms`                          | 是   |                               |
-| `motion.duration-normal`            | 标准时长           | `200ms`                          | 是   |                               |
-| `motion.duration-slow`              | 缓慢时长           | `320ms`                          | 是   |                               |
-| `motion.easing-standard`            | 标准缓动           | `cubic-bezier(0.2, 0, 0, 1)`     | 是   |                               |
-| `motion.easing-emphasized`          | 强调缓动           | `cubic-bezier(0.2, 0.8, 0.2, 1)` | 否   |                               |
-| `motion.duration-instant`           | 即时时长           | `0ms`                            | 是   |                               |
-| `motion.easing-gentle`              | 柔和缓动           | `ease`                           | 是   |                               |
-| `motion.scale-pressed`              | 常规按下缩放       | `0.98`                           | 是   |                               |
-| `motion.scale-pressed-strong`       | 明显按下缩放       | `0.96`                           | 是   |                               |
-| `motion.rotate-half-turn`           | 半周旋转           | `180deg`                         | 是   |                               |
-| `motion.duration-sheet`             | Sheet 切换时长     | `220ms`                          | 是   | 流程 Sheet 视图切换           |
-| `motion.duration-tab-viewport`      | 视图区切换时长     | `240ms`                          | 是   | 独立 Tab Viewport 水平切换    |
-| `motion.duration-toast`             | 短提示停留时长     | `4000ms`                         | 是   | Toast 等短反馈默认可见时长 |
-| `motion.duration-click-suppression` | 拖动后点击抑制时长 | `450ms`                          | 否   | 共享拖动完成后阻止合成 click  |
-
-## 布局（`layout` · 22）
-
-| ID                                 | 标签             | 默认值              | Bind | 说明                           |
-| ---------------------------------- | ---------------- | ------------------- | ---- | ------------------------------ |
-| `layout.fill`                      | 填满容器         | `100%`              | 是   |                                |
-| `layout.half`                      | 容器半宽         | `50%`               | 是   |                                |
-| `layout.half-negative`             | 反向容器半宽     | `-50%`              | 是   |                                |
-| `layout.translate-full-negative`   | 反向满幅平移     | `-100%`             | 是   |                                |
-| `layout.focus-inset`               | 焦点内缩         | `-4px`              | 是   |                                |
-| `layout.sheet-max-height`          | Sheet 最大高度   | `min(62vh, 560px)`  | 是   | 流程 Sheet 高度上限            |
-| `layout.load-more-root-margin`     | 触底加载观察边距 | `0px 0px 120px 0px` | 是   | 列表触底加载的观察器边距       |
-| `layout.menu-max-height`           | 菜单最大高度     | `304px`             | 是   | 紧凑浮层的最大高度             |
-| `layout.dialog-max-width`          | 对话框最大宽度   | `320px`             | 是   | 确认与短内容对话框的最大宽度   |
-| `layout.form-max-width`            | 表单最大宽度     | `480px`             | 是   | 宽视口下独立表单的阅读宽度上限 |
-| `layout.pull-refresh-threshold`    | 下拉刷新阈值     | `64px`              | 是   | 进入可释放状态的标准距离       |
-| `layout.pull-refresh-max-distance` | 下拉刷新最大距离 | `112px`             | 是   | 内容位移的标准上限             |
-| `layout.inset-xs-negative`         | 反向超小内缩     | `-4px`              | 是   | 与 `spacing.xs` 对应的反向偏移 |
-| `layout.inset-sm-negative`         | 反向小内缩       | `-8px`              | 是   | 与 `spacing.sm` 对应的反向偏移 |
-| `layout.flex-fill`                 | Flex 填充        | `1 1 0px`           | 是   | 等分剩余空间的完整 Flex 值     |
-| `layout.flex-grow`                 | Flex 伸展        | `1`                 | 是   | 只开启伸展能力的 Flex 值       |
-| `layout.gesture-axis-lock`         | 手势锁轴阈值     | `8px`               | 否   | 共享手势判断横纵方向的最小位移 |
-| `layout.gesture-drag-limit`        | 手势拖动预览上限 | `72px`              | 否   | 共享分页拖动预览的最大绝对位移 |
-| `layout.gesture-swipe-threshold`   | 手势翻页阈值     | `44px`              | 否   | 共享分页切换的最小位移         |
-| `layout.viewport-height`           | 运行时视口高度   | `100dvh`            | 否   | 独立运行时壳的动态视口高度     |
-| `layout.chart-min-height`          | 图表最小高度     | `154px`             | 否   | 紧凑业务图表的统一最小展示高度 |
-| `layout.chart-plot-height`         | 图表绘图区高度   | `124px`             | 否   | 紧凑柱状图的统一绘图区高度     |
-
-## 层级（`layer` · 2）
-
-| ID              | 标签     | 默认值 | Bind | 说明 |
-| --------------- | -------- | ------ | ---- | ---- |
-| `layer.base`    | 基础层级 | `0`    | 是   |      |
-| `layer.content` | 内容层级 | `1`    | 是   |      |
-
-## 效果（`effect` · 1）
-
-| ID                      | 标签         | 默认值                      | Bind | 说明                 |
-| ----------------------- | ------------ | --------------------------- | ---- | -------------------- |
-| `effect.glass-backdrop` | 玻璃背景滤镜 | `blur(12px) saturate(1.06)` | 是   | 半透明玻璃的背景效果 |
+| 键 | 类型 | 层级 | 可绑定 | 来源/说明 |
+| --- | --- | --- | --- | --- |
+| `color.background` | color | semantic | 是 | 页面背景色 |
+| `color.on-background` | color | semantic | 是 | 页面背景上的文字与图标 |
+| `color.surface` | color | semantic | 是 | 卡片与面板表面色 |
+| `color.on-surface` | color | semantic | 是 | 表面上的文字与图标 |
+| `color.on-surface-muted` | color | semantic | 是 | 表面上文字约 62% 透明度，用于副标题与提示 |
+| `color.surface-variant` | color | semantic | 是 | 弱分区、表格表头与次级容器 |
+| `color.surface-recessed` | color | semantic | 是 | 承托页内选择态与最简输入的中性内凹背景；浅色须明显低于页面背景 |
+| `color.surface-selected` | color | semantic | 是 | 中性浅灰选中层，用于分段、Tab 等非主色选择态 |
+| `color.surface-raised` | color | semantic | 是 | 菜单、Dialog 与悬浮工具栏 |
+| `color.inverse-surface` | color | semantic | 是 | 半透明纯黑，用于 Toast 等短提示浮层背景（原 color.toast） |
+| `color.on-inverse-surface` | color | semantic | 是 | 反色表面上的文字与图标（原 color.on-toast） |
+| `color.primary` | color | semantic | 是 | 克制强调色，仅用于选择、焦点、链接与进度 |
+| `color.primary-soft` | color | semantic | 是 | 主色混合实色软底（非 alpha），用于 Chip / tonal |
+| `color.on-primary` | color | semantic | 是 | 主色上的文字与图标 |
+| `color.action` | color | semantic | 是 | 实心主按钮使用的中性色，不复用强调色 |
+| `color.action-soft` | color | semantic | 是 | 主操作混合实色软底，用于次要类型按钮 |
+| `color.on-action` | color | semantic | 是 | 主操作色上的文字与图标 |
+| `color.secondary` | color | semantic | 是 | 次要强调色，用于次级操作与辅助图标 |
+| `color.secondary-soft` | color | semantic | 是 | 次色混合实色软底 |
+| `color.on-secondary` | color | semantic | 是 | 次色上的文字与图标 |
+| `color.error` | color | semantic | 是 | 错误与危险状态色 |
+| `color.error-soft` | color | semantic | 是 | 错误色混合实色软底 |
+| `color.on-error` | color | semantic | 是 | 错误色上的文字与图标 |
+| `color.success` | color | semantic | 是 | 成功状态色 |
+| `color.success-soft` | color | semantic | 是 | 成功色混合实色软底 |
+| `color.on-success` | color | semantic | 是 | 成功色上的文字与图标 |
+| `color.warning` | color | semantic | 是 | 警告状态色 |
+| `color.warning-soft` | color | semantic | 是 | 警告色混合实色软底 |
+| `color.on-warning` | color | semantic | 是 | 警告色上的文字与图标 |
+| `color.info` | color | semantic | 是 | 信息色：比主色更冷、更灰，避免与品牌色撞车 |
+| `color.on-info` | color | semantic | 是 | 信息色上的文字与图标 |
+| `color.border` | color | semantic | 是 | 标准边框与分隔描边色 |
+| `color.outline` | color | semantic | 是 | 控件轮廓与未选中描边色 |
+| `color.divider` | color | semantic | 是 | 列表与区块分割线色 |
+| `color.disabled` | color | semantic | 是 | 禁用状态下的内容色 |
+| `color.scrim` | color | semantic | 是 | 模态遮罩色 |
+| `typography.display` | typography | semantic | 是 | 展示标题字阶角色（字体、字重、字号、行高） |
+| `typography.headline` | typography | semantic | 是 | 页面标题字阶角色（字体、字重、字号、行高） |
+| `typography.title-lg` | typography | semantic | 是 | 大标题字阶角色（字体、字重、字号、行高） |
+| `typography.title` | typography | semantic | 是 | 标题字阶角色（字体、字重、字号、行高） |
+| `typography.title-sm` | typography | semantic | 是 | 小标题字阶角色（字体、字重、字号、行高） |
+| `typography.subtitle` | typography | semantic | 是 | 副标题字阶角色（字体、字重、字号、行高） |
+| `typography.body-lg` | typography | semantic | 是 | 大正文字阶角色（字体、字重、字号、行高） |
+| `typography.content` | typography | semantic | 是 | 正文字阶角色（字体、字重、字号、行高） |
+| `typography.body-sm` | typography | semantic | 是 | 小正文字阶角色（字体、字重、字号、行高） |
+| `typography.label` | typography | semantic | 是 | 控件标签字阶角色（字体、字重、字号、行高） |
+| `typography.caption` | typography | semantic | 是 | 辅助说明字阶角色（字体、字重、字号、行高） |
+| `typography.caption-strong` | typography | semantic | 是 | 强调说明字阶角色（字体、字重、字号、行高） |
+| `typography.micro` | typography | semantic | 是 | 流程步骤等空间受限的状态标签 |
+| `typography.numeric-display` | typography | semantic | 是 | 大号展示数字字阶，沿用展示标题的字重、字号与行高 |
+| `typography.numeric-title` | typography | semantic | 是 | 标题级数字字阶，沿用标题的字重、字号与行高 |
+| `typography.numeric-content` | typography | semantic | 是 | 正文级数字字阶，沿用正文的字重、字号与行高 |
+| `radius.mark` | length | semantic | 是 | 徽标、小标记 |
+| `radius.control-compact` | length | semantic | 是 | 紧凑控件、标签 |
+| `radius.control` | length | semantic | 是 | 按钮、输入框、Tab |
+| `radius.surface` | length | semantic | 是 | 卡片、列表容器 |
+| `radius.overlay` | length | semantic | 是 | Sheet、Dialog |
+| `radius.pill` | length | semantic | 是 | 胶囊形状 |
+| `size.control-compact` | length | semantic | 是 | 紧凑控件高度（原 sizing.control-sm，随 density 取值） |
+| `size.control` | length | semantic | 是 | 标准控件高度（原 sizing.control-md，随 density 取值） |
+| `size.control-large` | length | semantic | 是 | 大控件高度（原 sizing.control-lg，随 density 取值） |
+| `size.touch` | length | semantic | 是 | 最小触控目标尺寸 |
+| `size.icon-inline` | length | semantic | 是 | 小图标（原 sizing.icon-sm） |
+| `size.icon-compact` | length | semantic | 是 | 表单尾部、搜索等紧凑控件内的图标尺寸 |
+| `size.icon` | length | semantic | 是 | 标准图标（原 sizing.icon-md） |
+| `size.icon-prominent` | length | semantic | 是 | 大图标（原 sizing.icon-lg） |
+| `size.avatar-compact` | length | semantic | 是 | 小头像（原 sizing.avatar-sm） |
+| `size.avatar` | length | semantic | 是 | 标准头像（原 sizing.avatar-md） |
+| `size.avatar-large` | length | semantic | 是 | 大头像（原 sizing.avatar-lg） |
+| `size.navigation-bar` | length | semantic | 是 | 底部导航栏高度（原 sizing.bottom-navigation） |
+| `size.stroke` | length | semantic | 是 | 环形加载与进度反馈的标准描边宽度 |
+| `size.indicator` | length | semantic | 是 | 页签等线性定位指示器的标准厚度 |
+| `size.caret` | length | semantic | 是 | 页签与菜单的小三角指示器尺寸 |
+| `size.marker` | length | semantic | 是 | 步骤、流程等紧凑圆点的标准尺寸（原 sizing.step-dot） |
+| `border.width` | length | semantic | 是 | 细线宽度（原 border.width-hairline），不含线型与颜色 |
+| `border.width-strong` | length | semantic | 是 | 较粗描边宽度（焦点边框等），不含线型与颜色 |
+| `border.width-accent` | length | semantic | 是 | 强调边宽度（原 border.accent-width），用于状态消息等动态组合边框 |
+| `border.hairline` | border | semantic | 是 | 分割线描边：宽度、线型与颜色的复合值 |
+| `border.default` | border | semantic | 是 | 标准边框：宽度、线型与颜色的复合值 |
+| `border.focus` | border | semantic | 是 | 焦点环：宽度、线型与颜色的复合值 |
+| `elevation.surface` | shadow | semantic | 是 | 卡片阴影（原 elevation.card） |
+| `elevation.raised` | shadow | semantic | 是 | 浮起阴影（原 elevation.raised） |
+| `elevation.floating` | shadow | semantic | 是 | 低浓度、宽扩散的单层悬浮阴影，用于半透明中性表面（原 elevation.glass） |
+| `elevation.menu` | shadow | semantic | 是 | 菜单与弹出层阴影（原 elevation.level-3） |
+| `elevation.overlay` | shadow | semantic | 是 | Dialog 与最高层浮层阴影（原 elevation.level-5） |
+| `opacity.disabled` | number | semantic | 是 | 禁用状态的内容透明度 |
+| `opacity.translucent` | number | semantic | 是 | 半透明中性表面的填充强度，用于 Tab 等玻璃质感选择态（原 opacity.glass） |
+| `opacity.hover` | number | semantic | 是 | 悬停状态的叠加透明度 |
+| `opacity.pressed` | number | semantic | 是 | 按下状态的叠加透明度 |
+| `motion.personality` | enum | semantic | 否 | 动效性格：calm 舒缓、standard 标准、lively 活泼；时长与按压缩放由主题包按此键取值 |
+| `motion.duration-short` | duration | semantic | 是 | 快速反馈时长（原 motion.duration-fast） |
+| `motion.duration-medium` | duration | semantic | 是 | 标准过渡时长（原 motion.duration-normal） |
+| `motion.duration-long` | duration | semantic | 是 | 缓慢过渡时长（原 motion.duration-slow） |
+| `motion.easing-standard` | easing | semantic | 是 | 标准缓动曲线 |
+| `motion.easing-emphasized` | easing | semantic | 是 | 强调缓动曲线 |
+| `motion.easing-gentle` | easing | semantic | 是 | 柔和缓动曲线 |
+| `motion.press-scale` | number | semantic | 是 | 常规按下缩放比例（原 motion.scale-pressed） |
+| `motion.press-scale-strong` | number | semantic | 是 | 明显按下缩放比例（原 motion.scale-pressed-strong） |
+| `surface.treatment` | enum | semantic | 否 | 表面材质处理：solid 实色、outlined 描边、glass 玻璃；由组件层 *-treatment 键默认引用 |
+| `surface.glass-backdrop` | filter | semantic | 是 | 半透明玻璃表面的背景模糊与饱和度（原 effect.glass-backdrop） |
+| `density` | enum | semantic | 否 | 界面密度：compact 紧凑、regular 常规、comfortable 宽松；间距与控件高度由主题包按此键取值 |
+| `asset.brand-mark` | asset | semantic | 是 | 品牌标记图形资产，none 表示不提供 |
+| `asset.brand-wordmark` | asset | semantic | 是 | 品牌字标资产，none 表示不提供 |
+| `asset.launch-image` | asset | semantic | 是 | 启动与欢迎页图像资产，none 表示不提供 |
+| `asset.empty-illustration` | asset | semantic | 是 | 空状态插画资产，none 表示不提供 |
+| `spacing.xs` | length | semantic | 是 | 通用间距刻度；按布局所需档位选用，基础值沿用现有刻度。 |
+| `spacing.sm` | length | semantic | 是 | 通用间距刻度；按布局所需档位选用，基础值沿用现有刻度。 |
+| `spacing.md` | length | semantic | 是 | 通用间距刻度；按布局所需档位选用，基础值沿用现有刻度。 |
+| `spacing.lg` | length | semantic | 是 | 通用间距刻度；按布局所需档位选用，基础值沿用现有刻度。 |
+| `spacing.xxs` | length | semantic | 是 | 通用间距刻度；按布局所需档位选用，基础值沿用现有刻度。 |
+| `spacing.sm-plus` | length | semantic | 是 | 通用间距刻度；按布局所需档位选用，基础值沿用现有刻度。 |
+| `spacing.lg-plus` | length | semantic | 是 | 通用间距刻度；按布局所需档位选用，基础值沿用现有刻度。 |
+| `spacing.2xl` | length | semantic | 是 | 通用间距刻度；按布局所需档位选用，基础值沿用现有刻度。 |
+| `app-bar.surface-treatment` | enum | component | 否 | app-bar |
+| `bottom-sheet.duration` | duration | component | 是 | bottom-sheet |
+| `flow-sheet.gap` | length | component | 是 | flow-sheet |
+| `flow-sheet.duration` | duration | component | 是 | flow-sheet |
+| `menu.menu-item-height` | length | component | 是 | menu |
+| `menu.offset` | length | component | 是 | menu |
+| `primary-tabs.active-color` | color | component | 是 | primary-tabs |
+| `primary-tabs.selection-treatment` | enum | component | 否 | primary-tabs |
+| `progress.gap` | length | component | 是 | progress |
+| `progress.track-height` | length | component | 是 | progress |
+| `scrollable-data-list.action-min-width` | length | component | 是 | scrollable-data-list |
+| `scrollable-data-list.action-height` | length | component | 是 | scrollable-data-list |
+| `secondary-tabs.active-color` | color | component | 是 | secondary-tabs |
+| `secondary-tabs.indicator` | color | component | 是 | secondary-tabs |
+| `tab-viewport.duration` | duration | component | 是 | tab-viewport |
+| `tabbar.active` | color | component | 是 | tabbar |
+| `tabbar.surface-treatment` | enum | component | 否 | tabbar |
+| `textarea.rows` | number | component | 是 | textarea |
+| `toast.gap` | length | component | 是 | toast |
+| `toast.duration` | duration | component | 是 | toast |

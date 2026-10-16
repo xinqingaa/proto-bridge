@@ -11,6 +11,30 @@ import baseSemanticJson from "@/design-system/theme-packs/base/semantic.json";
 import baseComponentJson from "@/design-system/theme-packs/base/component.json";
 import assetHashes from "virtual:pbwork-theme-assets";
 
+const componentContracts = import.meta.glob(
+  "/src/design-system/components/contracts/*.json",
+  { eager: true, import: "default" },
+) as Record<string, { id: string; componentTokens?: Record<string, unknown> }>;
+
+export function loadThemeKeyCatalog(
+  contracts = Object.values(componentContracts),
+): ThemeKeyCatalog {
+  const componentKeys = contracts.flatMap((contract) =>
+    Object.entries(contract.componentTokens ?? {}).map(
+      ([name, definition]) => ({
+        ...(definition as Record<string, unknown>),
+        id: `${contract.id}.${name}`,
+        tier: "component",
+        source: contract.id,
+      }),
+    ),
+  );
+  return ThemeKeyCatalog.parse({
+    ...keyCatalogJson,
+    keys: [...keyCatalogJson.keys, ...componentKeys],
+  });
+}
+
 export type BaseThemeSources = {
   keyCatalog: ThemeKeyCatalog;
   constants: ThemeConstantTable;
@@ -29,7 +53,7 @@ export function loadBaseThemeSources(): BaseThemeSources {
     component: baseComponentJson,
   };
   return {
-    keyCatalog: ThemeKeyCatalog.parse(keyCatalogJson),
+    keyCatalog: loadThemeKeyCatalog(),
     constants: ThemeConstantTable.parse(constantsJson),
     packs: new Map<string, ThemePackSource>([
       [basePackJson.id, ThemePackSource.parse(basePack)],

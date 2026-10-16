@@ -1,3 +1,24 @@
 {
-  "values": {}
+  "values": {
+    "tabbar.active": "{color.primary}",
+    "primary-tabs.active-color": "{color.on-surface}",
+    "secondary-tabs.active-color": "{color.on-surface}",
+    "secondary-tabs.indicator": "{color.on-surface}",
+    "menu.menu-item-height": "{size.control-large}",
+    "menu.offset": "{space.6}",
+    "toast.gap": "{space.6}",
+    "flow-sheet.gap": "{space.6}",
+    "progress.gap": "{space.6}",
+    "scrollable-data-list.action-min-width": 96,
+    "scrollable-data-list.action-height": 36,
+    "progress.track-height": 6,
+    "textarea.rows": 3,
+    "flow-sheet.duration": 220,
+    "bottom-sheet.duration": 220,
+    "tab-viewport.duration": 240,
+    "toast.duration": 4000,
+    "primary-tabs.selection-treatment": "glass",
+    "tabbar.surface-treatment": "{surface.treatment}",
+    "app-bar.surface-treatment": "{surface.treatment}"
+  }
 }

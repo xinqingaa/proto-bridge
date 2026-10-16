@@ -119,13 +119,13 @@
   "tokenBindings": {
     "color": "color.secondary",
     "background": "color.secondary-soft",
-    "radius": "radius.full",
-    "elevation": "elevation.none",
-    "size": "sizing.control-md",
-    "target": "sizing.touch",
-    "duration": "motion.duration-fast",
+    "radius": "radius.pill",
+    "elevation": "none",
+    "size": "size.control",
+    "target": "size.touch",
+    "duration": "motion.duration-short",
     "easing": "motion.easing-standard",
-    "pressedScale": "motion.scale-pressed-strong",
+    "pressedScale": "motion.press-scale-strong",
     "disabledOpacity": "opacity.disabled"
   },
   "playground": {

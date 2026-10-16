@@ -41,8 +41,8 @@ Token / Theme
 ```text
 apps/pbwork/src/
 ├── design-system/
-│   ├── tokens/tokens.json
-│   ├── bindTokens.ts
+│   ├── theme/key-catalog.json
+│   ├── theme/bindings.ts
 │   ├── themes/
 │   ├── components/
 │   │   ├── contracts/
@@ -65,7 +65,7 @@ apps/pbwork/src/
 
 | 改动             | 同一任务中必须同步                                                                                                                                                                                             |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Token            | `tokens.json`、按需 `bindTokens.ts`、Theme、Token 文档和测试                                                                                                                                                   |
+| Token            | `theme/key-catalog.json`、按需 `theme/bindings.ts`、Theme、Token 文档和测试                                                                                                                                                   |
 | Component        | 按[分级同步义务](./components/alignment-protocol.md#分级同步义务)更新：纯实现修只改 Vue / 必要测试；语义、布局、视觉层级、状态或 Playground 能力变化才同步 Contract、Registry、场景、文档；Flutter 映射属 P1.5 |
 | Shared gesture   | `_shared`/组件实现、手势文档、相关组件页和浏览器测试                                                                                                                                                           |
 | Prototype Screen | Registry、页面、Authoring Contract 检查和 Runtime 测试                                                                                                                                                         |

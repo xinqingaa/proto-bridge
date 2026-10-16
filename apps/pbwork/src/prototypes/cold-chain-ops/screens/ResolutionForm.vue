@@ -143,7 +143,7 @@ function confirm() {
           data-pb-role="summary"
           data-pb-token-background="color.error-soft"
           data-pb-token-color="color.on-surface"
-          data-pb-token-radius="radius.lg"
+          data-pb-token-radius="radius.surface"
           data-pb-token-spacing="spacing.md"
         >
           <Icon name="shield-check" size="lg" />
@@ -173,7 +173,7 @@ function confirm() {
           data-pb-role="error-state"
           data-pb-token-background="color.error-soft"
           data-pb-token-color="color.error"
-          data-pb-token-radius="radius.md"
+          data-pb-token-radius="radius.control"
           data-pb-token-spacing="spacing.sm-plus"
         >
           <Icon name="alert-circle" size="md" />
@@ -186,7 +186,7 @@ function confirm() {
           data-pb-role="form"
           data-pb-token-background="color.surface"
           data-pb-token-border="color.border"
-          data-pb-token-radius="radius.lg"
+          data-pb-token-radius="radius.surface"
           data-pb-token-spacing="spacing.sm-plus"
         >
           <header class="resolution-section-header">
@@ -251,7 +251,7 @@ function confirm() {
           data-pb-role="section"
           data-pb-token-background="color.surface"
           data-pb-token-border="color.border"
-          data-pb-token-radius="radius.lg"
+          data-pb-token-radius="radius.surface"
           data-pb-token-spacing="spacing.sm-plus"
         >
           <header class="resolution-section-header">
@@ -309,7 +309,7 @@ function confirm() {
           data-pb-role="section"
           data-pb-token-background="color.surface"
           data-pb-token-border="color.border"
-          data-pb-token-radius="radius.lg"
+          data-pb-token-radius="radius.surface"
           data-pb-token-spacing="spacing.sm-plus"
         >
           <header class="resolution-section-header">
@@ -354,7 +354,7 @@ function confirm() {
           data-pb-role="form"
           data-pb-token-background="color.surface"
           data-pb-token-border="color.border"
-          data-pb-token-radius="radius.lg"
+          data-pb-token-radius="radius.surface"
           data-pb-token-spacing="spacing.sm-plus"
         >
           <header class="resolution-section-header">
@@ -448,7 +448,7 @@ function confirm() {
 <style scoped>
 .resolution-page {
   height: var(--pb-layout-fill);
-  min-height: var(--pb-spacing-none);
+  min-height: var(--pb-layout-zero);
   overflow: auto;
 }
 .resolution-form {
@@ -464,7 +464,7 @@ function confirm() {
   align-items: center;
   gap: var(--pb-spacing-sm-plus);
   padding: var(--pb-spacing-md);
-  border-radius: var(--pb-radius-lg);
+  border-radius: var(--pb-radius-surface);
   background: var(--pb-color-error-soft);
   color: var(--pb-color-error);
 }
@@ -472,7 +472,7 @@ function confirm() {
   display: flex;
   flex-direction: column;
   gap: var(--pb-spacing-xs);
-  min-width: var(--pb-spacing-none);
+  min-width: var(--pb-layout-zero);
 }
 .case-summary strong {
   color: var(--pb-color-on-surface);
@@ -483,7 +483,7 @@ function confirm() {
   font: var(--pb-typography-caption);
 }
 .validation-error {
-  border-radius: var(--pb-radius-md);
+  border-radius: var(--pb-radius-control);
   font: var(--pb-typography-content);
 }
 .submit-area {
@@ -500,23 +500,23 @@ function confirm() {
   font: var(--pb-typography-caption);
 }
 .approval-policy {
-  margin: var(--pb-spacing-none);
+  margin: var(--pb-layout-zero);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
 }
 .resolution-section {
   padding: var(--pb-spacing-md);
   border: var(--pb-border-hairline);
-  border-radius: var(--pb-radius-lg);
+  border-radius: var(--pb-radius-surface);
   background: var(--pb-color-surface);
   color: var(--pb-color-on-surface);
 }
 .resolution-section-header h2 {
-  margin: var(--pb-spacing-none);
+  margin: var(--pb-layout-zero);
   font: var(--pb-typography-subtitle);
 }
 .resolution-section-header p {
-  margin: var(--pb-spacing-xxs) var(--pb-spacing-none) var(--pb-spacing-none);
+  margin: var(--pb-spacing-xxs) var(--pb-layout-zero) var(--pb-layout-zero);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
 }

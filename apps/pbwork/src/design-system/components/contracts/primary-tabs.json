@@ -55,18 +55,11 @@
       },
       "align": {
         "type": "string",
-        "enum": [
-          "start",
-          "center"
-        ]
+        "enum": ["start", "center"]
       },
       "size": {
         "type": "string",
-        "enum": [
-          "sm",
-          "md",
-          "lg"
-        ]
+        "enum": ["sm", "md", "lg"]
       },
       "swipe": {
         "type": "boolean"
@@ -82,10 +75,7 @@
         "items": {
           "type": "object",
           "additionalProperties": false,
-          "required": [
-            "value",
-            "label"
-          ],
+          "required": ["value", "label"],
           "properties": {
             "value": {
               "type": "string"
@@ -97,9 +87,7 @@
         }
       }
     },
-    "required": [
-      "items"
-    ]
+    "required": ["items"]
   },
   "defaultProps": {
     "modelValue": "overview",
@@ -140,45 +128,50 @@
       }
     }
   ],
-  "slots": [
-    "overview",
-    "activity",
-    "data",
-    "settings"
-  ],
-  "events": [
-    "update:modelValue"
-  ],
+  "slots": ["overview", "activity", "data", "settings"],
+  "events": ["update:modelValue"],
   "tokenBindings": {
     "trackSurface": "color.surface-recessed",
     "selectionSurface": "color.surface-selected",
-    "selectionOpacity": "opacity.glass",
-    "selectionElevation": "elevation.glass",
-    "activeColor": "color.section-tab-active",
+    "selectionOpacity": "opacity.translucent",
+    "selectionElevation": "elevation.floating",
+    "activeColor": "primary-tabs.active-color",
     "inactiveColor": "color.on-surface-muted",
     "border": "border.hairline",
-    "trackRadius": "radius.lg",
-    "radius": "radius.full",
-    "height": "sizing.control-md",
-    "target": "sizing.touch",
+    "trackRadius": "radius.surface",
+    "radius": "radius.pill",
+    "height": "size.control",
+    "target": "size.touch",
     "typography": "typography.label",
     "panel": "typography.caption",
     "trackInset": "spacing.xs",
     "panelGap": "spacing.sm-plus",
     "indicatorInset": "spacing.sm-plus",
     "indicatorOffset": "spacing.xxs",
-    "indicatorThickness": "sizing.indicator-thickness",
-    "fill": "layout.fill",
-    "selectionLayer": "layer.content",
-    "glassBackdrop": "effect.glass-backdrop",
-    "reducedDuration": "motion.duration-instant",
-    "duration": "motion.duration-slow",
+    "indicatorThickness": "size.indicator",
+    "glassBackdrop": "surface.glass-backdrop",
+    "duration": "motion.duration-long",
     "easing": "motion.easing-standard",
-    "bridgeOffset": "layout.inset-xs-negative",
-    "hiddenOpacity": "opacity.hidden",
-    "visibleOpacity": "opacity.visible"
+    "materialOpacity": "opacity.translucent",
+    "materialBackdrop": "surface.glass-backdrop",
+    "materialBorder": "border.default"
   },
   "playground": {
     "presentation": "interactive"
+  },
+  "componentTokens": {
+    "active-color": {
+      "valueType": "color",
+      "default": "{color.on-surface}",
+      "modeVariant": true,
+      "bindable": true
+    },
+    "selection-treatment": {
+      "valueType": "enum",
+      "default": "{surface.treatment}",
+      "modeVariant": false,
+      "enumValues": ["solid", "outlined", "glass"],
+      "bindable": false
+    }
   }
 }

@@ -3,7 +3,7 @@ import { draftLabels, draftRecords } from "@/drafts/registry";
 import {
   loadPrototypes,
   loadPrototypeScreens,
-  loadThemes,
+  loadModePresentations,
 } from "@/design-system/loaders";
 import {
   LIFECYCLE_LABELS,
@@ -96,10 +96,10 @@ export function buildFoundationsNavigation(): WorkbenchNavigationItem[] {
     group: "令牌",
     to: `/workbench/foundations/tokens/${category}`,
   }));
-  const themeItems = loadThemes().map((theme) => ({
+  const themeItems = loadModePresentations().map((theme) => ({
     id: `theme-${theme.id}`,
     label: theme.label,
-    group: "主题",
+    group: "模式",
     to: `/workbench/foundations/themes/${theme.id}`,
   }));
   return [...tokenItems, ...themeItems];

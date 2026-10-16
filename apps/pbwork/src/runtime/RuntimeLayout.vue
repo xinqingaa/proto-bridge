@@ -17,10 +17,6 @@ import {
   screenViewModules,
 } from "@/design-system/loaders";
 import {
-  resolveThemeTokens,
-  tokensToCssVars,
-} from "@/design-system/resolveThemeTokens";
-import {
   isBridgeMessage,
   type BridgeContext,
   type RuntimeBridgeMessage,
@@ -143,12 +139,7 @@ const activeTheme = useRuntimeTheme(() => ({
   mode: effectiveThemeId.value,
 }));
 provide(ThemeTableKey, activeTheme.table);
-// Legacy-only component variables remain until the atomic DS migration (batch 3).
-// Shared variables already take their value from the Core-resolved table.
-const themeStyle = computed(() => ({
-  ...tokensToCssVars(resolveThemeTokens(effectiveThemeId.value)),
-  ...activeTheme.cssVars.value,
-}));
+const themeStyle = activeTheme.cssVars;
 const runtimeTheme = useRuntimeVuetifyTheme(activeTheme.table);
 const runtimeDefaults = computed(() =>
   Object.fromEntries(

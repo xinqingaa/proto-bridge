@@ -3,7 +3,7 @@ import {
   loadPrototypeScreens,
   loadPrototypes,
   loadPrototypeThemePack,
-  loadTokens,
+  loadTokenPresentations,
 } from "@/design-system/loaders";
 import {
   LIFECYCLE_LABELS,
@@ -150,7 +150,7 @@ export const comments = [
 ];
 
 export const assetStats = [
-  { label: "设计令牌", value: loadTokens().length },
+  { label: "设计令牌", value: loadTokenPresentations().length },
   { label: "组件", value: componentRecords.length },
   { label: "页面", value: screens.length },
   {

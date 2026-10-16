@@ -3,13 +3,13 @@
 ## 权威链
 
 ```text
-Token.defaultValue + Theme.overrides
+键目录 + Contract.componentTokens + 主题包
   → CSS 变量 --pb-*
   → 组件与原型只读 var(--pb-*)
 ```
 
-- 权威数据：`apps/pbwork/src/design-system/tokens/tokens.json`
-- 主题覆盖：`themes/light.json`、`themes/dark.json`
+- 语义键：`src/design-system/theme/key-catalog.json`；组件键由各 Contract 的 `componentTokens` 声明并汇总
+- 取值：`theme-packs/*/` 与 `prototypes/*/theme/`；Core 负责继承、表达式、主题/模式、类型与对比度校验
 - 组件契约里的 `tokenBindings`：语义槽 → Token ID（只从 Bind 池选取）
 
 **禁止**：在页面或组件实例上改绑 Token；用内联色值覆盖语义色；在 DS 或原型的 style、template、script/TS helper、生成样式或视觉组件 props 中书写任何固定设计值（含设计意义的 `0`），或通过 `var(--pb-*, literal)` 加入 literal fallback。
@@ -31,13 +31,13 @@ Token.defaultValue + Theme.overrides
 
 | 集合       | 文件                  | 用途                                       |
 | ---------- | --------------------- | ------------------------------------------ |
-| 全量 Token | `tokens.json`         | Foundations 浏览；主题可覆盖               |
-| Bind 池    | `bindTokens.ts`       | 通用组件 `tokenBindings` **允许**引用的 ID |
-| 绑定字面量 | `transparent`、`none` | 可出现在 bindings；不是 Token，不进入 Target token mapping/obligation |
+| 全量主题键 | key-catalog + Contract.componentTokens | 133 项定义，由 Core 解析取值 |
+| Bind 池 | theme/bindings.ts | 自动选择 bindable=true 的 127 项 |
+| 不可绑定控制项 | density、motion.personality、surface.treatment 与三个组件材质控制 | 影响包内表达式或共享材质分支 |
+| 实现常量 | theme/constants.json | 31 项；CSS 可消费，JS 经 themeConstantNumber/Css 读取；不进入 Catalog/绑定/Target |
+| 绑定字面量 | transparent、none | 由 Core 声明；不是 Token，不生成 Target obligation |
 
-契约校验会拒绝 Bind 池外的绑定（绑定字面量除外）。扩展 Token 可先只进 Foundations；确认多组件需要后再加入 Bind 池。字面量闭集由 Core 提供，PBWork 不复制第二套枚举。
-
-当前 Bind 池主要覆盖：表面与文本色、品牌/反馈色、常用字阶、常用间距/尺寸/圆角、`border.hairline`、常用 elevation、motion 时长与标准缓动。组件若实际消费任何 Foundation Token，必须在 Contract 与 Inspector 中列出；完整对照见 [catalog.md](./catalog.md)。
+组件内 JS 读取主题键使用 useToken/useTokenNumber 的 computed；禁止模块级缓存主题默认值。字阶部件只读且不可绑定。Contract 与 Inspector 只列可绑定的主题键，不把布局比例、层级或手势阈值等常量伪装成主题证据。
 
 ## tokenBindings 怎么用
 
@@ -54,17 +54,16 @@ DS 组件由 Contract/运行时 registration 提供 bindings，不在每个业�
 
 ## 换肤
 
-- 改 Theme `overrides` 中的值。
+- 改主题包 values/themes/modes/themeModes 中的值，保持组件绑定不变。
 - 不改组件 bindings，不在 Playground 编辑 Token。
 - 原型内主题会话与 history 规则见 [themes.md](./themes.md)。
 
 ## 新增 Token 流程
 
-1. 确认语义，写入 `tokens.json`（符合 `schemas/token.schema.json`）。
-2. 若需进组件契约 → 加入 `bindTokens.ts`。
-3. 按需在 light/dark `overrides` 给深色值。
-4. 更新 [catalog.md](./catalog.md)（或重新生成对照表）。
-5. 跑 pbwork 校验 / 相关测试。
+1. 通用语义键写入 key-catalog.json；仅旧值等价与通用材质需要的组件键写入所属 Contract.componentTokens，不为每个槽复制组件键。
+2. 在基础包提供取值或明确的组件默认表达式，声明 valueType、modeVariant 与 bindable；单位只由 valueType 决定。
+3. 更新 Contract/Vue/Inspector、目录、等价测试与 Target 漂移状态；新常量写 constants.json，不进入绑定。
+4. 按范围运行组件校验与主题检查，运行 docs:verify 和 ds:target-sync:verify。
 
 ## 语义要点（易混）
 
@@ -72,4 +71,4 @@ DS 组件由 Contract/运行时 registration 提供 bindings，不在每个业�
 - **`color.action`**：实心主按钮中性主操作色。
 - **`*-soft`**：混合实色软底（非 alpha），用于 tonal / Chip。
 - **`on-*`**：落在对应底色上的前景。
-- **sizing.touch**：触控目标下限相关尺寸，优先保证可点区域。
+- **size.touch**：触控目标下限相关尺寸，优先保证可点区域。

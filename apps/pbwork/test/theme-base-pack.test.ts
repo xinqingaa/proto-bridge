@@ -67,16 +67,23 @@ function resolveWith(overrides: Record<string, string>) {
 describe("基础主题包（pbwork-base）", () => {
   const sources = loadBaseThemeSources();
 
-  it("键目录规模：可绑定 110、不可绑定 3、派生部件 64", () => {
+  it("键目录规模：可绑定 127、不可绑定 6、派生部件 64", () => {
     const keys = sources.keyCatalog.keys;
-    expect(keys.filter((key) => key.bindable)).toHaveLength(110);
-    expect(keys.filter((key) => !key.bindable)).toHaveLength(3);
+    expect(keys.filter((key) => key.bindable)).toHaveLength(127);
+    expect(keys.filter((key) => !key.bindable)).toHaveLength(6);
     expect(
       keys
         .filter((key) => !key.bindable)
         .map((key) => key.id)
         .sort(),
-    ).toEqual(["density", "motion.personality", "surface.treatment"]);
+    ).toEqual([
+      "app-bar.surface-treatment",
+      "density",
+      "motion.personality",
+      "primary-tabs.selection-treatment",
+      "surface.treatment",
+      "tabbar.surface-treatment",
+    ]);
     const index = buildThemeKeyIndex(sources.keyCatalog);
     expect([...index.values()].filter((info) => info.part)).toHaveLength(64);
     expect(keys.filter((key) => key.valueType === "typography")).toHaveLength(
@@ -176,7 +183,7 @@ describe("基础主题包（pbwork-base）", () => {
     ).toEqual(["dark/default", "light/default"]);
     for (const table of first.tables) {
       // 113 个目录键 + 64 个字体部件
-      expect(Object.keys(table.values)).toHaveLength(113 + 64);
+      expect(Object.keys(table.values)).toHaveLength(133 + 64);
       expect(Object.keys(table.constants)).toHaveLength(31);
     }
   });

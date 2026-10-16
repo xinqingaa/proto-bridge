@@ -64,8 +64,8 @@ usePbInspect({
     onSelected.value,
     uncheckedBorder.value,
     "color.on-surface",
-    "sizing.touch",
-    "radius.xs",
+    "size.touch",
+    "radius.mark",
     "typography.content",
     "opacity.disabled",
   ],
@@ -74,8 +74,8 @@ usePbInspect({
     onSelected: onSelected.value,
     uncheckedBorder: uncheckedBorder.value,
     text: "color.on-surface",
-    target: "sizing.touch",
-    radius: "radius.xs",
+    target: "size.touch",
+    radius: "radius.mark",
     label: "typography.content",
     disabledOpacity: "opacity.disabled",
   }),
@@ -100,7 +100,7 @@ usePbInspect({
 
 <style scoped>
 .pb-check {
-  min-height: var(--pb-sizing-touch);
+  min-height: var(--pb-size-touch);
   color: var(--pb-color-on-surface);
   font: var(--pb-typography-content);
 }
@@ -109,14 +109,14 @@ usePbInspect({
 }
 .pb-check :deep(.v-selection-control__input > .v-icon) {
   opacity: var(--pb-opacity-visible);
-  border-radius: var(--pb-radius-xs);
+  border-radius: var(--pb-radius-mark);
   color: var(--pb-check-selected, var(--pb-color-primary));
 }
 .pb-check :deep(.v-selection-control__wrapper) {
-  border-radius: var(--pb-radius-xs);
+  border-radius: var(--pb-radius-mark);
 }
 .pb-check :deep(.v-selection-control__input) {
-  border-radius: var(--pb-radius-xs);
+  border-radius: var(--pb-radius-mark);
 }
 .pb-check
   :deep(

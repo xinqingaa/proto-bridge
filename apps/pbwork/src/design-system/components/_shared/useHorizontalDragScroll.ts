@@ -1,8 +1,7 @@
+import { themeConstantNumber } from "@/design-system/theme/constants";
 import { ref, type Ref } from "vue";
-import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
-
-const AXIS_LOCK_DISTANCE = tokenDefaultNumber("layout.gesture-axis-lock");
-const CLICK_SUPPRESSION_DURATION = tokenDefaultNumber(
+const AXIS_LOCK_DISTANCE = themeConstantNumber("layout.gesture-axis-lock");
+const CLICK_SUPPRESSION_DURATION = themeConstantNumber(
   "motion.duration-click-suppression",
 );
 

@@ -44,7 +44,7 @@ usePbInspect({
     active.value,
     "color.surface-variant",
     "color.surface",
-    "sizing.touch",
+    "size.touch",
     "typography.content",
     "opacity.disabled",
   ],
@@ -53,7 +53,7 @@ usePbInspect({
     track: "color.surface-variant",
     thumb: "color.surface",
     text: "color.on-surface",
-    target: "sizing.touch",
+    target: "size.touch",
     label: "typography.content",
     disabledOpacity: "opacity.disabled",
   }),
@@ -78,7 +78,7 @@ usePbInspect({
 
 <style scoped>
 .pb-switch {
-  min-height: var(--pb-sizing-touch);
+  min-height: var(--pb-size-touch);
   color: var(--pb-color-on-surface);
   font: var(--pb-typography-content);
 }

@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { themeConstantNumber } from "@/design-system/theme/constants";
+
 import { computed, nextTick, toRefs, watch } from "vue";
 import Button from "@/design-system/components/action/Button.vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
-import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
-
-const DIALOG_MAX_WIDTH = tokenDefaultNumber("layout.dialog-max-width");
+const DIALOG_MAX_WIDTH = themeConstantNumber("layout.dialog-max-width");
 
 const props = defineProps<{
   modelValue?: boolean;
@@ -60,26 +60,20 @@ const { resync } = usePbInspect({
     "color.surface-raised",
     "color.border",
     "color.on-surface",
-    "radius.xl",
-    "elevation.level-5",
+    "radius.overlay",
+    "elevation.overlay",
     "typography.title",
     "typography.content",
-    "layout.dialog-max-width",
-    "layout.fill",
-    "layout.flex-fill",
   ],
   getTokenBindings: () => ({
     scrim: "color.scrim",
     surface: "color.surface-raised",
     border: "color.border",
     text: "color.on-surface",
-    radius: "radius.xl",
-    elevation: "elevation.level-5",
+    radius: "radius.overlay",
+    elevation: "elevation.overlay",
     title: "typography.title",
     body: "typography.content",
-    maxWidth: "layout.dialog-max-width",
-    fill: "layout.fill",
-    flexFill: "layout.flex-fill",
   }),
 });
 
@@ -141,12 +135,12 @@ watch(modelValue, async (value) => {
   display: contents;
 }
 .pb-dialog {
-  border-radius: var(--pb-radius-xl) !important;
+  border-radius: var(--pb-radius-overlay) !important;
   border: var(--pb-border-hairline);
   /* surface-raised is not a Vuetify semantic; keep Token var for raised panel. */
   background: var(--pb-color-surface-raised) !important;
   color: var(--pb-color-on-surface);
-  box-shadow: var(--pb-elevation-level-5);
+  box-shadow: var(--pb-elevation-overlay);
 }
 .pb-dialog :deep(.v-card-title) {
   color: inherit;
@@ -165,6 +159,6 @@ watch(modelValue, async (value) => {
 .pb-dialog-actions > * {
   flex: var(--pb-layout-flex-fill);
   width: var(--pb-layout-fill);
-  min-width: var(--pb-spacing-none);
+  min-width: var(--pb-layout-zero);
 }
 </style>

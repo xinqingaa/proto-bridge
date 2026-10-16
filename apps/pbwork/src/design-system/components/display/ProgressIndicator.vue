@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import { useTokenNumber } from "@/design-system/theme/runtime-theme";
+import { themeConstantNumber } from "@/design-system/theme/constants";
+
 import { toRefs } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
-import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
-
-const TRACK_HEIGHT = tokenDefaultNumber("sizing.progress-track");
-const TRACK_OPACITY = tokenDefaultNumber("opacity.visible");
+const TRACK_HEIGHT = useTokenNumber("progress.track-height");
+const TRACK_OPACITY = themeConstantNumber("opacity.visible");
 
 const props = defineProps<{
   label?: string;
@@ -32,23 +33,21 @@ usePbInspect({
     "color.primary",
     "color.primary-soft",
     "color.on-surface",
-    "radius.full",
+    "radius.pill",
     "typography.caption",
-    "motion.duration-normal",
-    "spacing.xs-plus",
-    "sizing.progress-track",
-    "opacity.visible",
+    "motion.duration-medium",
+    "progress.gap",
+    "progress.track-height",
   ],
   getTokenBindings: () => ({
     fill: "color.primary",
     track: "color.primary-soft",
-    radius: "radius.full",
-    motion: "motion.duration-normal",
-    gap: "spacing.xs-plus",
+    radius: "radius.pill",
+    motion: "motion.duration-medium",
+    gap: "progress.gap",
     text: "color.on-surface",
     label: "typography.caption",
-    trackHeight: "sizing.progress-track",
-    trackOpacity: "opacity.visible",
+    trackHeight: "progress.track-height",
   }),
 });
 </script>
@@ -78,12 +77,12 @@ usePbInspect({
 .pb-progress-wrap {
   display: flex;
   flex-direction: column;
-  gap: var(--pb-spacing-xs-plus);
+  gap: var(--pb-progress-gap);
   color: var(--pb-color-on-surface);
   font: var(--pb-typography-caption);
 }
 .pb-progress {
-  border-radius: var(--pb-radius-full);
+  border-radius: var(--pb-radius-pill);
   overflow: hidden;
 }
 </style>

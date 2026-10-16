@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import { useTokenNumber } from "@/design-system/theme/runtime-theme";
+
 import { computed, nextTick, toRefs, watch } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
-import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
-
-const TOAST_DURATION = tokenDefaultNumber("motion.duration-toast");
+const TOAST_DURATION = useTokenNumber("toast.duration");
 
 const props = defineProps<{
   modelValue?: boolean;
@@ -31,22 +31,22 @@ const { resync } = usePbInspect({
     inspectId: inspectId.value,
   }),
   getTokens: () => [
-    "color.toast",
-    "color.on-toast",
-    "radius.lg",
+    "color.inverse-surface",
+    "color.on-inverse-surface",
+    "radius.surface",
     "spacing.sm",
-    "spacing.xs-plus",
+    "toast.gap",
     "typography.content",
-    "motion.duration-toast",
+    "toast.duration",
   ],
   getTokenBindings: () => ({
-    surface: "color.toast",
-    text: "color.on-toast",
-    radius: "radius.lg",
+    surface: "color.inverse-surface",
+    text: "color.on-inverse-surface",
+    radius: "radius.surface",
     paddingX: "spacing.sm",
-    paddingY: "spacing.xs-plus",
+    paddingY: "toast.gap",
     message: "typography.content",
-    duration: "motion.duration-toast",
+    duration: "toast.duration",
   }),
 });
 
@@ -85,7 +85,7 @@ watch(modelValue, async (value) => {
 .pb-toast-content {
   display: flex;
   align-items: center;
-  padding: var(--pb-spacing-xs-plus) var(--pb-spacing-sm);
+  padding: var(--pb-toast-gap) var(--pb-spacing-sm);
   font: var(--pb-typography-content);
 }
 </style>
@@ -93,9 +93,9 @@ watch(modelValue, async (value) => {
 <style>
 /* Teleported overlay content; keep classes unscoped so attach target still styles. */
 .pb-toast-surface {
-  border-radius: var(--pb-radius-lg) !important;
-  background: var(--pb-color-toast) !important;
-  color: var(--pb-color-on-toast) !important;
+  border-radius: var(--pb-radius-surface) !important;
+  background: var(--pb-color-inverse-surface) !important;
+  color: var(--pb-color-on-inverse-surface) !important;
   box-shadow: none !important;
   font: var(--pb-typography-content);
 }

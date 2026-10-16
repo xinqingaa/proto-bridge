@@ -1,4 +1,10 @@
 <script setup lang="ts">
+import { useTokenNumber } from "@/design-system/theme/runtime-theme";
+import {
+  themeConstantCss,
+  themeConstantNumber,
+} from "@/design-system/theme/constants";
+
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Badge from "@/design-system/components/display/Badge.vue";
@@ -11,14 +17,12 @@ import ScrollableDataList from "@/design-system/components/data/ScrollableDataLi
 import ColdChainShell from "../ColdChainShell.vue";
 import { shipmentEvents, temperatureReadings } from "../mock";
 import { openColdChainScreen, replaceColdChainVariant } from "../nav";
-import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
-
 const CHART_MIN = 4;
 const CHART_MAX = 12;
 const CHART_LIMIT = 8;
 const ROUTE_PROGRESS = 68;
-const CHART_BAR_MIN_HEIGHT = tokenDefaultNumber("sizing.icon-compact");
-const CHART_PLOT_HEIGHT = tokenDefaultNumber("layout.chart-plot-height");
+const CHART_BAR_MIN_HEIGHT = useTokenNumber("size.icon-compact");
+const CHART_PLOT_HEIGHT = themeConstantNumber("layout.chart-plot-height");
 
 const routeStyle = {
   "--pb-route-progress": `${ROUTE_PROGRESS}%`,
@@ -33,7 +37,7 @@ function chartBarStyle(value: number) {
     Math.min(1, (value - CHART_MIN) / (CHART_MAX - CHART_MIN)),
   );
   return {
-    "--pb-chart-bar-height": `${Math.max(CHART_BAR_MIN_HEIGHT, ratio * CHART_PLOT_HEIGHT)}px`,
+    "--pb-chart-bar-height": `${Math.max(CHART_BAR_MIN_HEIGHT.value, ratio * CHART_PLOT_HEIGHT)}px`,
   };
 }
 
@@ -125,7 +129,7 @@ function closeOverlay() {
             data-pb-role="status"
             data-pb-token-background="color.error-soft"
             data-pb-token-color="color.error"
-            data-pb-token-radius="radius.lg"
+            data-pb-token-radius="radius.surface"
             data-pb-token-spacing="spacing.md"
           >
             <Icon name="alert-triangle" size="lg" tone="error" />
@@ -160,7 +164,7 @@ function closeOverlay() {
             data-pb-role="error-state"
             data-pb-token-background="color.warning-soft"
             data-pb-token-color="color.warning"
-            data-pb-token-radius="radius.lg"
+            data-pb-token-radius="radius.surface"
             data-pb-token-spacing="spacing.md"
           >
             <Icon name="radio" size="lg" tone="warning" />
@@ -239,7 +243,7 @@ function closeOverlay() {
                 data-pb-role="chart"
                 data-pb-token-background="color.surface-variant"
                 data-pb-token-color="color.on-surface"
-                data-pb-token-radius="radius.md"
+                data-pb-token-radius="radius.control"
                 data-pb-token-spacing="spacing.sm"
               >
                 <div class="chart-scale">
@@ -404,7 +408,7 @@ function closeOverlay() {
 .detail-page,
 .detail-scroll {
   height: var(--pb-layout-fill);
-  min-height: var(--pb-spacing-none);
+  min-height: var(--pb-layout-zero);
 }
 .detail-content {
   display: flex;
@@ -427,7 +431,7 @@ function closeOverlay() {
 }
 .card-heading h2,
 .card-heading p {
-  margin: var(--pb-spacing-none);
+  margin: var(--pb-layout-zero);
 }
 .card-heading h2 {
   color: var(--pb-color-on-surface);
@@ -444,7 +448,7 @@ function closeOverlay() {
   align-items: center;
   gap: var(--pb-spacing-sm-plus);
   padding: var(--pb-spacing-md);
-  border-radius: var(--pb-radius-lg);
+  border-radius: var(--pb-radius-surface);
   background: var(--pb-color-error-soft);
   color: var(--pb-color-error);
 }
@@ -475,13 +479,13 @@ function closeOverlay() {
   flex: var(--pb-layout-flex-fill);
   align-items: center;
   gap: var(--pb-spacing-sm);
-  min-width: var(--pb-spacing-none);
+  min-width: var(--pb-layout-zero);
   font: var(--pb-typography-content);
 }
 .route-progress {
   flex: none;
-  width: var(--pb-sizing-control-lg);
-  height: var(--pb-sizing-progress-stroke);
+  width: var(--pb-size-control-large);
+  height: var(--pb-size-stroke);
   background: var(--pb-color-border);
 }
 .route-progress i {
@@ -494,21 +498,21 @@ function closeOverlay() {
   display: flex;
   flex-wrap: wrap;
   gap: var(--pb-spacing-md);
-  margin: var(--pb-spacing-md) var(--pb-spacing-none) var(--pb-spacing-none);
+  margin: var(--pb-spacing-md) var(--pb-layout-zero) var(--pb-layout-zero);
 }
 .shipment-facts div {
   display: flex;
   flex: var(--pb-layout-flex-fill);
   flex-direction: column;
   gap: var(--pb-spacing-xs);
-  min-width: var(--pb-spacing-none);
+  min-width: var(--pb-layout-zero);
 }
 .shipment-facts dt {
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
 }
 .shipment-facts dd {
-  margin: var(--pb-spacing-none);
+  margin: var(--pb-layout-zero);
   font: var(--pb-typography-content);
 }
 .temperature-chart {
@@ -516,7 +520,7 @@ function closeOverlay() {
   display: flex;
   min-height: var(--pb-layout-chart-min-height);
   padding: var(--pb-spacing-sm);
-  border-radius: var(--pb-radius-md);
+  border-radius: var(--pb-radius-control);
   background: var(--pb-color-surface-variant);
 }
 .chart-scale {
@@ -524,7 +528,7 @@ function closeOverlay() {
   flex: none;
   flex-direction: column;
   justify-content: space-between;
-  width: var(--pb-sizing-avatar-sm);
+  width: var(--pb-size-avatar-compact);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
 }
@@ -533,7 +537,7 @@ function closeOverlay() {
   flex: var(--pb-layout-flex-fill);
   align-items: end;
   gap: var(--pb-spacing-xs);
-  min-width: var(--pb-spacing-none);
+  min-width: var(--pb-layout-zero);
   border-bottom: var(--pb-border-default);
 }
 .reading {
@@ -546,11 +550,11 @@ function closeOverlay() {
   height: var(--pb-layout-chart-plot-height);
 }
 .reading i {
-  width: var(--pb-sizing-icon-compact);
+  width: var(--pb-size-icon-compact);
   max-width: var(--pb-layout-fill);
   height: var(--pb-chart-bar-height);
-  border-radius: var(--pb-radius-sm) var(--pb-radius-sm) var(--pb-radius-none)
-    var(--pb-radius-none);
+  border-radius: var(--pb-radius-control-compact)
+    var(--pb-radius-control-compact) var(--pb-layout-zero) var(--pb-layout-zero);
   background: var(--pb-color-primary);
 }
 .reading.is-over i {
@@ -565,12 +569,12 @@ function closeOverlay() {
   position: absolute;
   top: var(--pb-chart-limit-position);
   right: var(--pb-spacing-sm);
-  left: calc(var(--pb-sizing-avatar-sm) + var(--pb-spacing-sm));
-  border-top: var(--pb-border-width-hairline) dashed var(--pb-color-error);
+  left: calc(var(--pb-size-avatar-compact) + var(--pb-spacing-sm));
+  border-top: var(--pb-border-width) dashed var(--pb-color-error);
 }
 .limit-line span {
   position: absolute;
-  right: var(--pb-spacing-none);
+  right: var(--pb-layout-zero);
   bottom: var(--pb-spacing-xs);
   color: var(--pb-color-error);
   font: var(--pb-typography-caption);
@@ -608,10 +612,10 @@ function closeOverlay() {
 }
 .event-row > i {
   flex: none;
-  width: var(--pb-sizing-caret);
-  height: var(--pb-sizing-caret);
+  width: var(--pb-size-caret);
+  height: var(--pb-size-caret);
   margin-top: var(--pb-spacing-xs);
-  border-radius: var(--pb-radius-full);
+  border-radius: var(--pb-radius-pill);
   background: var(--pb-color-primary);
 }
 .event-row > i.tone-error {
@@ -645,7 +649,7 @@ function closeOverlay() {
   gap: var(--pb-spacing-sm-plus);
 }
 .sheet-actions p {
-  margin: var(--pb-spacing-none);
+  margin: var(--pb-layout-zero);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
 }

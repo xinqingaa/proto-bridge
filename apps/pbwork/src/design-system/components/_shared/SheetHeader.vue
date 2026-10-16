@@ -21,9 +21,7 @@ defineEmits<{
         ariaLabel="返回"
         icon="chevron-left"
         size="sm"
-        v-bind="
-          props.inspectId ? { inspectId: `${props.inspectId}.back` } : {}
-        "
+        v-bind="props.inspectId ? { inspectId: `${props.inspectId}.back` } : {}"
         @click="$emit('back')"
       />
     </div>
@@ -53,7 +51,7 @@ defineEmits<{
   display: flex;
   flex: var(--pb-layout-flex-fill);
   align-items: center;
-  min-width: var(--pb-sizing-touch);
+  min-width: var(--pb-size-touch);
 }
 .pb-sheet-header-start {
   justify-content: flex-start;
@@ -63,8 +61,8 @@ defineEmits<{
 }
 .pb-sheet-header-title {
   flex: var(--pb-layout-flex-fill);
-  min-width: var(--pb-spacing-none);
-  margin: var(--pb-spacing-none);
+  min-width: var(--pb-layout-zero);
+  margin: var(--pb-layout-zero);
   overflow: hidden;
   font: var(--pb-typography-subtitle);
   text-align: center;

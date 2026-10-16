@@ -32,29 +32,25 @@ const { resync } = usePbInspect({
   getTokenBindings: () => ({
     surface: "color.surface",
     border: "color.border",
-    radius: "radius.lg",
+    radius: "radius.surface",
     elevation: "elevation.raised",
     title: "typography.subtitle",
     body: "typography.content",
     padding: "spacing.md",
-    headerControl: "sizing.touch",
-    fill: "layout.fill",
-    flexFill: "layout.flex-fill",
-    duration: "motion.duration-sheet",
+    headerControl: "size.touch",
+    duration: "bottom-sheet.duration",
     easing: "motion.easing-gentle",
   }),
   getTokens: () => [
     "color.surface",
     "color.border",
-    "radius.lg",
+    "radius.surface",
     "elevation.raised",
     "typography.subtitle",
     "typography.content",
     "spacing.md",
-    "sizing.touch",
-    "layout.fill",
-    "layout.flex-fill",
-    "motion.duration-sheet",
+    "size.touch",
+    "bottom-sheet.duration",
     "motion.easing-gentle",
   ],
 });
@@ -104,8 +100,8 @@ watch(modelValue, async (value) => {
 <style scoped>
 .pb-sheet {
   overflow: hidden;
-  border-radius: var(--pb-radius-lg) var(--pb-radius-lg) var(--pb-radius-none)
-    var(--pb-radius-none);
+  border-radius: var(--pb-radius-surface) var(--pb-radius-surface)
+    var(--pb-layout-zero) var(--pb-layout-zero);
   background: var(--pb-color-surface);
   color: var(--pb-color-on-surface);
   box-shadow: var(--pb-elevation-raised);
@@ -126,7 +122,7 @@ watch(modelValue, async (value) => {
 .pb-sheet-actions > * {
   flex: var(--pb-layout-flex-fill);
   width: var(--pb-layout-fill);
-  min-width: var(--pb-spacing-none);
+  min-width: var(--pb-layout-zero);
 }
 </style>
 
@@ -136,19 +132,18 @@ watch(modelValue, async (value) => {
 .pb-sheet-host.v-bottom-sheet > .v-bottom-sheet__content {
   width: var(--pb-layout-fill) !important;
   max-width: var(--pb-layout-fill) !important;
-  margin-inline: var(--pb-spacing-none) !important;
+  margin-inline: var(--pb-layout-zero) !important;
 }
-.pb-sheet-host.v-bottom-sheet
-  > .v-bottom-sheet__content.v-overlay__content {
+.pb-sheet-host.v-bottom-sheet > .v-bottom-sheet__content.v-overlay__content {
   transition-property: transform !important;
-  transition-duration: var(--pb-motion-duration-sheet) !important;
+  transition-duration: var(--pb-bottom-sheet-duration) !important;
   transition-timing-function: var(--pb-motion-easing-gentle) !important;
 }
 .pb-sheet-host.v-bottom-sheet
   > .v-bottom-sheet__content.v-overlay__content
   > .pb-sheet {
-  border-radius: var(--pb-radius-lg) var(--pb-radius-lg) var(--pb-radius-none)
-    var(--pb-radius-none) !important;
+  border-radius: var(--pb-radius-surface) var(--pb-radius-surface)
+    var(--pb-layout-zero) var(--pb-layout-zero) !important;
 }
 .pb-sheet-host.v-bottom-sheet
   > .v-bottom-sheet__content.v-overlay__content

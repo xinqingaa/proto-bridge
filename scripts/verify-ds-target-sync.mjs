@@ -4,6 +4,8 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { ThemeKeyCatalog, ThemeConstantTable, ThemePackSource, validateThemePacks } from "../packages/core/dist/v2/theme/index.js";
+
 import {
   SEMANTIC_ROLES,
   TOKEN_BINDING_LITERALS,
@@ -26,23 +28,21 @@ const errors = [];
 const pendingEntries = [];
 
 const contracts = await readContracts();
-const tokens = await readJson(
-  "apps/pbwork/src/design-system/tokens/tokens.json",
-);
-const themes = {
-  light: await readJson("apps/pbwork/src/design-system/themes/light.json"),
-  dark: await readJson("apps/pbwork/src/design-system/themes/dark.json"),
-};
-const componentSchema = await readJson(
-  "apps/pbwork/src/design-system/schemas/component.schema.json",
-);
-const tokenSchema = await readJson(
-  "apps/pbwork/src/design-system/schemas/token.schema.json",
-);
-const themeSchema = await readJson(
-  "apps/pbwork/src/design-system/schemas/theme.schema.json",
-);
-const bindTokenIds = await readBindTokenIds();
+const rawCatalog = await readJson("apps/pbwork/src/design-system/theme/key-catalog.json");
+const catalog = ThemeKeyCatalog.parse({ ...rawCatalog, keys: [
+  ...rawCatalog.keys,
+  ...contracts.flatMap((contract) => Object.entries(contract.componentTokens ?? {}).map(([name, definition]) => ({ ...definition, id: `${contract.id}.${name}`, tier: "component", source: contract.id }))),
+] });
+const tokens = catalog.keys.filter((key) => key.bindable);
+const constants = ThemeConstantTable.parse(await readJson("apps/pbwork/src/design-system/theme/constants.json"));
+const packs = await readThemePacks();
+const themes = { constants, packs: [...packs.values()] };
+for (const diagnostic of validateThemePacks({ keyCatalog: catalog, constants, packs })) {
+  if (diagnostic.severity === "block") errors.push(`${diagnostic.packId}: ${diagnostic.message}`);
+}
+const componentSchema = await readJson("apps/pbwork/src/design-system/schemas/component.schema.json");
+const themeProtocolSchema = await readFile(path.join(repoRoot, "packages/core/src/v2/theme/schema.ts"), "utf8");
+const bindTokenIds = tokens.map((key) => key.id).sort();
 const targetMapping = await readJson("apps/flutter_pb_app/proto-bridge.target.json");
 const tokenIds = new Set(tokens.map((token) => token.id));
 const literalIds = new Set(TOKEN_BINDING_LITERALS);
@@ -59,8 +59,8 @@ const componentDigests = Object.fromEntries(
 const sectionDigests = {
   components: digest(contracts),
   roles: digest(SEMANTIC_ROLES),
-  protocolSchemas: digest({ componentSchema, tokenSchema, themeSchema }),
-  tokenCatalog: digest(tokens),
+  protocolSchemas: digest({ componentSchema, themeProtocolSchema }),
+  tokenCatalog: digest(catalog),
   themes: digest(themes),
   bindPool: digest({ bindTokenIds, literals: TOKEN_BINDING_LITERALS }),
 };
@@ -75,7 +75,7 @@ const baseline = {
   componentDigests,
   counts: {
     components: contracts.length,
-    catalogTokens: tokens.length,
+    catalogTokens: catalog.keys.length,
     bindTokens: bindTokenIds.length,
     mappedTokens: tokenIds.size,
     semanticRoles: SEMANTIC_ROLES.length - 1,
@@ -96,7 +96,7 @@ if (errors.length > 0) {
   process.stdout.write(`${JSON.stringify(baseline, null, 2)}\n`);
 } else {
   process.stdout.write(
-    `DS → Target sync verified: ${contracts.length}/${declaredTargetComponentIds.length} current components, ${tokenIds.size}/${tokens.length} Catalog tokens mapped, surface ${surfaceDigest}${pendingSummary()}\n`,
+    `DS → Target sync verified: ${contracts.length}/${declaredTargetComponentIds.length} current components, ${tokenIds.size}/${tokens.length} bindable theme keys mapped, surface ${surfaceDigest}${pendingSummary()}\n`,
   );
 }
 
@@ -124,19 +124,28 @@ async function readJson(relativePath) {
   return JSON.parse(await readFile(path.join(repoRoot, relativePath), "utf8"));
 }
 
-async function readBindTokenIds() {
-  const source = await readFile(
-    path.join(repoRoot, "apps/pbwork/src/design-system/bindTokens.ts"),
-    "utf8",
-  );
-  const body = source.match(/BIND_TOKEN_IDS\s*=\s*\[([\s\S]*?)\]\s*as const/u)?.[1];
-  if (!body) {
-    errors.push("Unable to read BIND_TOKEN_IDS from bindTokens.ts.");
-    return [];
+async function readThemePacks() {
+  const directories = [];
+  for (const [parent, suffix] of [["apps/pbwork/src/design-system/theme-packs", ""], ["apps/pbwork/src/prototypes", "/theme"]]) {
+    for (const dir of await readdir(path.join(repoRoot, parent), {withFileTypes:true})) if (dir.isDirectory()) directories.push(`${parent}/${dir.name}${suffix}`);
   }
-  return [...body.matchAll(/"([a-z][a-z0-9]*(?:[.-][a-z0-9]+)*)"/gu)]
-    .map((match) => match[1])
-    .sort();
+  const packs = new Map();
+  for (const dir of directories) {
+    const optional = async (file) => { try { return await readJson(`${dir}/${file}.json`); } catch (error) { if (error.code === "ENOENT") return undefined; throw error; } };
+    const manifest = await optional("pack");
+    if (!manifest) continue;
+    const files = {};
+    const assets = async (relative) => {
+      let entries; try { entries = await readdir(path.join(repoRoot, dir, relative), {withFileTypes:true}); } catch(error) { if(error.code === "ENOENT") return; throw error; }
+      for (const entry of entries) { const file = `${relative}/${entry.name}`; if(entry.isDirectory()) await assets(file); else files[file] = createHash("sha1").update(await readFile(path.join(repoRoot,dir,file))).digest("hex"); }
+    };
+    await assets("assets");
+    const ownerPrototypeId = /prototypes\/([^/]+)\/theme$/.exec(dir)?.[1];
+    const pack = ThemePackSource.parse({ manifest, primitives: await optional("primitives"), semantic: await optional("semantic"), component: await optional("component"), files, ...(ownerPrototypeId ? { ownerPrototypeId } : {}) });
+    if(packs.has(manifest.id)) errors.push(`Duplicate theme pack ${manifest.id}.`);
+    packs.set(manifest.id,pack);
+  }
+  return packs;
 }
 
 function verifyProducerContracts() {

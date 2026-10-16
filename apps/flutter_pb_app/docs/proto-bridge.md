@@ -6,46 +6,13 @@
 
 优先按 `componentId` 映射；role 只在没有可靠 `componentId` 时提供通用语义回退。比如 `flow-sheet` 的身份是 `componentId=flow-sheet`，role 仍是通用的 `sheet`，不需要创建 `flow-sheet` role。
 
-| Evidence 组件 id | 本工程目标组件 | import |
-| --- | --- | --- |
-| `app-bar` | `CommonAppBar` | `common/widgets.dart` |
-| `avatar` | `CommonAvatar` | `common/widgets.dart` |
-| `badge` | `CommonBadge` | `common/widgets.dart` |
-| `bottom-sheet` | `AppPop.sheet` | `common/overlay/app_pop.dart` |
-| `button` | `CommonButton` | `common/widgets.dart` |
-| `card` | `CommonCard` | `common/widgets.dart` |
-| `checkbox` | `CommonCheckbox` | `common/widgets.dart` |
-| `chip` | `CommonChip` | `common/widgets.dart` |
-| `confirm` | `AppPop.confirm` | `common/overlay/app_pop.dart` |
-| `data-list` | `CommonDataList` | `common/widgets.dart` |
-| `divider` | `CommonDivider` | `common/widgets.dart` |
-| `empty-state` | `CommonEmptyState` | `common/widgets.dart` |
-| `filter-bar` | `CommonFilterBar` | `common/widgets.dart` |
-| `flow-sheet` | `AppPop.flowSheet` | `common/overlay/app_pop.dart` |
-| `icon` | `CommonIcon` | `common/widgets.dart` |
-| `icon-button` | `CommonIconButton` | `common/widgets.dart` |
-| `loading` | `AppPop.loading` | `common/overlay/app_pop.dart` |
-| `menu` | `AppPop.dropMenu` | `common/overlay/app_pop.dart` |
-| `primary-tabs` | `CommonPrimaryTabs` | `common/widgets.dart` |
-| `progress` | `CommonProgress` | `common/widgets.dart` |
-| `radio-group` | `CommonRadioGroup` | `common/widgets.dart` |
-| `scrollable-data-list` | `CommonScrollableDataList` | `common/widgets.dart` |
-| `screen-transition` | `PbPageTransitions.theme` | `common/widgets.dart` |
-| `search-bar` | `CommonSearchBar` | `common/widgets.dart` |
-| `secondary-tabs` | `CommonSecondaryTabs` | `common/widgets.dart` |
-| `spinner` | `CommonSpinner` | `common/widgets.dart` |
-| `switch` | `CommonSwitch` | `common/widgets.dart` |
-| `tab-viewport` | `CommonTabView` | `common/widgets.dart` |
-| `tabbar` | `CommonBottomNav` | `common/widgets.dart` |
-| `text-field` | `CommonTextField` | `common/widgets.dart` |
-| `textarea` | `CommonTextArea` | `common/widgets.dart` |
-| `toast` | `AppPop.toast` | `common/overlay/app_pop.dart` |
+当前 32 个组件均在 `proto-bridge.target.json` 标为条目 pending：Producer 已完成主题包与绑定目录迁移，Flutter 尚未按新 Contract 适配。旧具体映射表已移除，避免与 pending 同 ID 并存造成 resolver conflict；现有 Dart 组件仍保留，但不能宣称已匹配新 Producer。
 
 `page`、`section`、`summary`、`list`、`field` 等 role 要结合 Fragment 上下文选择本地容器，不能覆盖一个已存在且更精确的 `componentId`。
 
 ## Token mapping
 
-完整 Token id → `TS.*` accessor 映射只维护在根目录 `proto-bridge.target.json`，当前覆盖 PBWork 全部 154 个 Token，而不只覆盖组件已绑定的 128 个。`lib/theme/proto_bridge_tokens.dart` 提供同一映射的可执行使用点，让 resolver 同时验证“声明存在”和“当前 Dart API 可访问”。这份 Target 映射不等于恢复 MCP 完整 Catalog 读取；Agent 仍按当前任务读取必要的 Producer Contract、文档和源码。
+新目录的 127 个可绑定主题键均在根目录 `proto-bridge.target.json` 声明为 pending；不可绑定 enum、字阶派生部件与实现常量不建立 Target 映射。`lib/theme/proto_bridge_tokens.dart` 仍是迁移前的可执行使用点；待本轮适配完成后，再由 resolver 同时验证“声明存在”和“当前 Dart API 可访问”。这份 Target 映射不等于恢复 MCP 完整 Catalog 读取；Agent 仍按当前任务读取必要的 Producer Contract、文档和源码。
 
 `transparent` 与 `none` 是绑定字面量，不是 Foundation Token，也不得生成 `TS.*` accessor 或 Target token obligation。
 
@@ -67,7 +34,7 @@ Target 只翻译语义，不复制 Web 表达：例如百分比映射为 Flutter
 
 条目 `pending` 必须带非空 `reason`；缺失或为空是清单错误（resolver 对该键返回 `conflict`，同步脚本失败）。`pending` 与同一 ID 的具体映射（含本文表格）并存同样返回 `conflict`。未声明又缺失的键仍然失败，不能用 `pending` 以外的方式暂缓。`readiness` 把 `pending` 计为未就绪项并单独列出，`validate_target_changes` 对绑定到 `pending` 键的变更只给「Target 待实现」提示。Agent 遇到条目 `pending` 必须披露，不得自行替换实现。Core 语义见 [Target 适配器](../../../docs/architecture/proto-bridge.md)。
 
-## 当前适配边界
+## Flutter 当前实现（尚未适配主题包）
 
 - `data-list` 使用 Flutter `ListView.builder/separated`；`scrollable-data-list` 使用 `pull_to_refresh_flutter3`，并在公共壳内固定 Clamping physics、有限越界和高阻尼 spring，避免刷新完成后的二次回弹。
 - `CommonPrimaryTabs` 和 `CommonSecondaryTabs` 分文件维护，均基于官方 `TabBar`；一级轨道是无阴影的 `surface-recessed` 普通表面，选中面使用 Target 自有 `LiquidGlassDecoration` 并由官方 indicator 直接跟随 `TabController.animation`，内容切换使用 `CommonTabView` / `TabBarView`。Flutter 将 `sizing.control-md` 用作 40 高的选中面，并在其外叠加上下 `spacing.xs` 轨道内缩，形成 48 高点击轨道。

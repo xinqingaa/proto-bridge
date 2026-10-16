@@ -1,16 +1,21 @@
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, existsSync } from "node:fs";
 import { resolve, relative } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { Plugin } from "vite";
+
+function isThemeAsset(file: string): boolean {
+  return (
+    file.includes("/assets/") &&
+    (file.includes("/theme-packs/") || file.includes("/prototypes/"))
+  );
+}
 
 /** Asset digests use original bytes, independent of Vite's emitted URL. */
 export function themeAssetsPlugin(): Plugin {
-  let root = "";
+  const root = fileURLToPath(new URL("..", import.meta.url));
   return {
     name: "pbwork-theme-assets",
-    configResolved(config) {
-      root = config.root;
-    },
     resolveId(id) {
       if (id === "virtual:pbwork-theme-assets") return "\0pbwork-theme-assets";
     },
@@ -22,19 +27,12 @@ export function themeAssetsPlugin(): Plugin {
       return `export default ${JSON.stringify(hashes)};`;
     },
     handleHotUpdate(ctx) {
-      if (
-        ctx.file.includes("/assets/") &&
-        (ctx.file.includes("/theme-packs/") ||
-          ctx.file.includes("/prototypes/"))
-      ) {
-        const module = ctx.server.moduleGraph.getModuleById(
-          "\0pbwork-theme-assets",
-        );
-        if (module) {
-          ctx.server.moduleGraph.invalidateModule(module);
-          return [...ctx.modules, module];
-        }
-      }
+      if (!isThemeAsset(ctx.file)) return;
+      const modules = [...ctx.server.moduleGraph.idToModuleMap.values()].filter(
+        (mod) => mod.id.includes("pbwork-theme-assets"),
+      );
+      for (const mod of modules) ctx.server.moduleGraph.invalidateModule(mod);
+      return [...ctx.modules, ...modules];
     },
   };
 }

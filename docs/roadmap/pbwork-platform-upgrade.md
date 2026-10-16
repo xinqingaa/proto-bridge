@@ -1,6 +1,6 @@
 # PBWork 与 PB 平台升级
 
-> 状态：执行中。第 1 步实现与验收已完成；第 2 步前两批已完成：底层模型、基础包与 Runtime/画布接入；继续等待第三批组件迁移与第四批预览验收。代码位于 `dev-platform`。本次提交已获用户明确授权；后续提交或合入 `main` 仍需另行授权。第 2 步继续实施。核实日期：2026-10-16。本文是计划，不代表现行 Contract。
+> 状态：执行中。第 1 步与第 2 步的实现和退出标准均已满足，均未合入 `main`。第 3 步尚未开始。代码位于 `dev-platform`。合入 `main` 仍需另行授权。核实日期：2026-10-16。本文是计划，不代表现行 Contract。
 >
 > 实施设计见[原型主题包与授权设计](./prototype-theme-and-authoring-design.md)。「一刻」原型见[下一份计划](./yike-prototype.md)，以本计划的第 2、3、4、5 步交付的能力为前置条件。
 
@@ -42,7 +42,7 @@ PBWork 现在能产出可采集的原型，但三处明显不足：
 | 步骤 | 状态 | 证据 / 剩余缺口 |
 | --- | --- | --- |
 | 第 1 步 采集可靠性收口 | 实现与验收已完成（未合入 main） | 2026-10-16 收尾：Issue 按内容摘要存储并固定 Fact 引用（不改公共 Schema 字段）、`pb:clean` 共用 Core 启动配置、三份提示模板与 pending claim 专项测试、[ADR 0013](../decisions/0013-capture-reliability.md)。修复 6 个过期断言，并修复 Runtime 返回退出工作台的缺陷、生命周期 E2E 共享 sidecar 与漏 mock Job 的问题、主题包定义被旧颜色门禁误报的问题。验证：build/typecheck、core 435、local-service 39、cli 20、pbwork 198 个单测通过（另 11 个主题迁移 todo 保留给第 2 步）；PBWork Playwright 41 个用例均已有通过记录（最后全量 40 通过，唯一失败的 lifecycle-persistence 修复后单独通过）；runtime/mcp/consumer/evidence-slice/finalization/lifecycle 均覆盖通过。冷链真实定稿与固定引用见下方验收记录。 |
-| 第 2 步 主题包 | 进行中（底层模型与基础包已按收敛范围调整） | 第一批：Core 已删除字体声明/文件/许可证与独立主题色轴；包内声明多套主题，身份为 `packId@digest/theme/mode`，按 `themeModes → themes → modes → values → 继承链` 解析。基础数据移除 `font.*`，公共语义键 113 个（110 可绑定），原有语义间距保留 `spacing.*` 刻度 ID 与基础值；按 valueType 生成 CSS，Runtime/画布已接入主题包、模式与 v2 偏好。当前行为见[主题包解析模型](../architecture/theme-packs.md)。本批验证记录见下方；剩余：组件层少量性格/等价键、DS 与冷链消费者迁移、样例包、Gallery/Playground 接入。11 个组件层旧键的等价测试仍为 todo。 |
+| 第 2 步 主题包 | 实现与退出标准已满足（未合入 main） | 2026-10-16：用户确认冷链三个 default 屏与迁移前没有视觉差别。验证：`pnpm docs:verify`；PBWork `vitest run` 223 项；Core `vitest run` 433 项；`pnpm typecheck`（Core、Local Service、CLI、MCP）；`pnpm ds:target-sync:verify` 通过，32/32 组件与 127/127 可绑定键已列入映射，159 项 Flutter 适配保持 pending。样例包与 Gallery/Playground 选择器已落地。Capture 仍不固定完整取值表，属第 3 步。 |
 | 第 3 步 采集质量 | 未开始 | 依赖第 2 步。含主题身份接入 Core、Handoff 固定取值表、MCP 读取、主题一致性探针、可声明时钟。 |
 | 第 4 步 制作效率 | 未开始 | 依赖第 2 步的键名。含 `v-pb` 与 `pbStyle()`、键类型生成、就近声明与自动汇总、共享原型运行套件、脚手架、实时门禁。 |
 | 第 5 步 DS 通用组件与收口 | 未开始 | 依赖第 4 步的写法与第 2 步的键名。组件清单见该步。 |
@@ -128,6 +128,13 @@ flowchart LR
 - Runtime/画布使用原型隔离的 v2 主题/模式偏好。主题、浅色/深色/跟随系统分别选择；系统变化写具体 mode，保留 system 偏好。返回盖章、强制导航与 history state 已接线。URL 改用 theme（包内主题）与 mode（具体模式）；Core Case URL、环境核验与 routeQuery 保留键同步，当前 Capture themeId 字段不变，完整主题协议与 Evidence 取值固定仍留在平台第 3 步。
 - 过渡边界：第三批迁移前，Runtime 暂保留原有组件 CSS 生成结果，再叠加新键目录变量；没有新增新旧键别名。组件 JS 模块级默认值、Contract/Evidence 键绑定与旧文件删除仍属第三批；Gallery/Playground 静态双主题与样例包属第四批。因此第二批接入已完成，不代表整个第 2 步完成。三个 default Screen 的迁移前截图已保存于 `/tmp/pbwork-theme-migration/before-*.png`。
 - 必要验证：PBWork 51 项相关单测、Core URL/协议 7 项通过；Runtime/画布 12 项浏览器检查通过，Manifest describe 与真实 Core Case Capture 各 1 项通过。Capture 专项发现内部 bridge 的 themeName 泄漏到严格响应，修复后只重跑该失败用例并通过。构建、PBWork 类型、文档与 Target 同步检查通过；Target 检查仍如实针对迁移前的 154 个 Catalog 键。未重复第 1 步全链路验收。
+
+### 第 2 步第三、四批进度（2026-10-16）
+
+- DS 与冷链已改用新键和响应式读取；旧生产 Token 文件已删除，154 个旧键的等价断言已落地。Runtime 只生成新表变量。
+- 工作台草稿画布不再引用已删除的 `spacing.none`。一刻草稿壳层和组件 Playground 中失效的圆角、尺寸、间距变量已改到现行键；草稿里的三套表盘样式本身不走主题包。
+- `pbwork-sample` 为 Playground 范围，继承基础包，含园色与柑色、浅色与深色。它改变品牌色、圆角、`density: compact`、`surface.treatment: glass`、`motion.personality: lively` 和 `asset.brand-mark`。正式原型不能绑定它。
+- Gallery 与 Playground 可选择包、主题和模式，并对照另一包的解析值。主题页增加样例包性格对照。用户于 2026-10-16 确认冷链三个 default 屏与迁移前没有视觉差别。同日退出检查通过，见进度表。
 
 ### 退出标准
 

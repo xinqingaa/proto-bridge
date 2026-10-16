@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import { themeConstantNumber } from "@/design-system/theme/constants";
+
 import { toRefs } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import { radiusStyle } from "@/design-system/components/_shared/radius";
 import { elevationStyle } from "@/design-system/components/_shared/appearance";
-import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
-
-const NO_ELEVATION = tokenDefaultNumber("layer.base");
+const NO_ELEVATION = themeConstantNumber("layer.base");
 
 const props = defineProps<{
   elevated?: boolean;
@@ -30,14 +30,14 @@ usePbInspect({
   getTokenBindings: () => ({
     surface: "color.surface",
     border: "color.border",
-    radius: "radius.lg",
-    elevation: "elevation.card",
+    radius: "radius.surface",
+    elevation: "elevation.surface",
   }),
   getTokens: () => [
     "color.surface",
     "color.border",
-    "radius.lg",
-    "elevation.card",
+    "radius.surface",
+    "elevation.surface",
   ],
 });
 </script>

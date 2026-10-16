@@ -9,596 +9,642 @@
   ],
   "components": {
     "app-bar": {
-      "symbol": "CommonAppBar",
-      "import": "common/widgets.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "avatar": {
-      "symbol": "CommonAvatar",
-      "import": "common/widgets.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "badge": {
-      "symbol": "CommonBadge",
-      "import": "common/widgets.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "bottom-sheet": {
-      "symbol": "AppPop.sheet",
-      "import": "common/overlay/app_pop.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "button": {
-      "symbol": "CommonButton",
-      "import": "common/widgets.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "card": {
-      "symbol": "CommonCard",
-      "import": "common/widgets.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "checkbox": {
-      "symbol": "CommonCheckbox",
-      "import": "common/widgets.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "chip": {
-      "symbol": "CommonChip",
-      "import": "common/widgets.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "confirm": {
-      "symbol": "AppPop.confirm",
-      "import": "common/overlay/app_pop.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "data-list": {
-      "symbol": "CommonDataList",
-      "import": "common/widgets.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "divider": {
-      "symbol": "CommonDivider",
-      "import": "common/widgets.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "empty-state": {
-      "symbol": "CommonEmptyState",
-      "import": "common/widgets.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "filter-bar": {
-      "symbol": "CommonFilterBar",
-      "import": "common/widgets.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "flow-sheet": {
-      "symbol": "AppPop.flowSheet",
-      "import": "common/overlay/app_pop.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "icon": {
-      "symbol": "CommonIcon",
-      "import": "common/widgets.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "icon-button": {
-      "symbol": "CommonIconButton",
-      "import": "common/widgets.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "loading": {
-      "symbol": "AppPop.loading",
-      "import": "common/overlay/app_pop.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "menu": {
-      "symbol": "AppPop.dropMenu",
-      "import": "common/overlay/app_pop.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "primary-tabs": {
-      "symbol": "CommonPrimaryTabs",
-      "import": "common/widgets.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "progress": {
-      "symbol": "CommonProgress",
-      "import": "common/widgets.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "radio-group": {
-      "symbol": "CommonRadioGroup",
-      "import": "common/widgets.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "scrollable-data-list": {
-      "symbol": "CommonScrollableDataList",
-      "import": "common/widgets.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "screen-transition": {
-      "symbol": "PbPageTransitions.theme",
-      "import": "common/widgets.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "search-bar": {
-      "symbol": "CommonSearchBar",
-      "import": "common/widgets.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "secondary-tabs": {
-      "symbol": "CommonSecondaryTabs",
-      "import": "common/widgets.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "spinner": {
-      "symbol": "CommonSpinner",
-      "import": "common/widgets.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "switch": {
-      "symbol": "CommonSwitch",
-      "import": "common/widgets.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "tab-viewport": {
-      "symbol": "CommonTabView",
-      "import": "common/widgets.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "tabbar": {
-      "symbol": "CommonBottomNav",
-      "import": "common/widgets.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "text-field": {
-      "symbol": "CommonTextField",
-      "import": "common/widgets.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "textarea": {
-      "symbol": "CommonTextArea",
-      "import": "common/widgets.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "toast": {
-      "symbol": "AppPop.toast",
-      "import": "common/overlay/app_pop.dart"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     }
   },
   "tokens": {
-    "border.accent-width": {
-      "accessor": "TS.border.accentWidth"
-    },
-    "border.default": {
-      "accessor": "TS.border.defaultBorder"
-    },
-    "border.focus": {
-      "accessor": "TS.border.focus"
-    },
-    "border.hairline": {
-      "accessor": "TS.border.hairline"
-    },
-    "border.strong": {
-      "accessor": "TS.border.strong"
-    },
-    "border.width-hairline": {
-      "accessor": "TS.border.widthHairline"
-    },
-    "color.action": {
-      "accessor": "TS.colors.action"
-    },
-    "color.action-soft": {
-      "accessor": "TS.colors.actionSoft"
-    },
     "color.background": {
-      "accessor": "TS.colors.background"
-    },
-    "color.border": {
-      "accessor": "TS.colors.border"
-    },
-    "color.disabled": {
-      "accessor": "TS.colors.disabled"
-    },
-    "color.divider": {
-      "accessor": "TS.colors.divider"
-    },
-    "color.error": {
-      "accessor": "TS.colors.error"
-    },
-    "color.error-soft": {
-      "accessor": "TS.colors.errorSoft"
-    },
-    "color.info": {
-      "accessor": "TS.colors.info"
-    },
-    "color.navigation-active": {
-      "accessor": "TS.colors.navigationActive"
-    },
-    "color.on-action": {
-      "accessor": "TS.colors.onAction"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "color.on-background": {
-      "accessor": "TS.colors.onBackground"
-    },
-    "color.on-error": {
-      "accessor": "TS.colors.onError"
-    },
-    "color.on-info": {
-      "accessor": "TS.colors.onInfo"
-    },
-    "color.on-primary": {
-      "accessor": "TS.colors.onPrimary"
-    },
-    "color.on-secondary": {
-      "accessor": "TS.colors.onSecondary"
-    },
-    "color.on-success": {
-      "accessor": "TS.colors.onSuccess"
-    },
-    "color.on-surface": {
-      "accessor": "TS.colors.onSurface"
-    },
-    "color.on-surface-muted": {
-      "accessor": "TS.colors.onSurfaceMuted"
-    },
-    "color.on-toast": {
-      "accessor": "TS.colors.onToast"
-    },
-    "color.on-warning": {
-      "accessor": "TS.colors.onWarning"
-    },
-    "color.outline": {
-      "accessor": "TS.colors.outline"
-    },
-    "color.primary": {
-      "accessor": "TS.colors.primary"
-    },
-    "color.primary-soft": {
-      "accessor": "TS.colors.primarySoft"
-    },
-    "color.scrim": {
-      "accessor": "TS.colors.scrim"
-    },
-    "color.secondary": {
-      "accessor": "TS.colors.secondary"
-    },
-    "color.secondary-soft": {
-      "accessor": "TS.colors.secondarySoft"
-    },
-    "color.section-tab-active": {
-      "accessor": "TS.colors.sectionTabActive"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "color.surface": {
-      "accessor": "TS.colors.surface"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
-    "color.surface-raised": {
-      "accessor": "TS.colors.surfaceRaised"
+    "color.on-surface": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
-    "color.surface-recessed": {
-      "accessor": "TS.colors.surfaceRecessed"
-    },
-    "color.surface-selected": {
-      "accessor": "TS.colors.surfaceSelected"
+    "color.on-surface-muted": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "color.surface-variant": {
-      "accessor": "TS.colors.surfaceVariant"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "color.surface-recessed": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "color.surface-selected": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "color.surface-raised": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "color.inverse-surface": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "color.on-inverse-surface": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "color.primary": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "color.primary-soft": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "color.on-primary": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "color.action": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "color.action-soft": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "color.on-action": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "color.secondary": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "color.secondary-soft": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "color.on-secondary": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "color.error": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "color.error-soft": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "color.on-error": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "color.success": {
-      "accessor": "TS.colors.success"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "color.success-soft": {
-      "accessor": "TS.colors.successSoft"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
-    "color.toast": {
-      "accessor": "TS.colors.toast"
+    "color.on-success": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "color.warning": {
-      "accessor": "TS.colors.warning"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "color.warning-soft": {
-      "accessor": "TS.colors.warningSoft"
-    },
-    "effect.glass-backdrop": {
-      "accessor": "TS.effect.glassBackdropBlur"
-    },
-    "elevation.card": {
-      "accessor": "TS.elevation.card"
-    },
-    "elevation.glass": {
-      "accessor": "TS.elevation.glass"
-    },
-    "elevation.level-1": {
-      "accessor": "TS.elevation.level1"
-    },
-    "elevation.level-2": {
-      "accessor": "TS.elevation.level2"
-    },
-    "elevation.level-3": {
-      "accessor": "TS.elevation.level3"
-    },
-    "elevation.level-4": {
-      "accessor": "TS.elevation.level4"
-    },
-    "elevation.level-5": {
-      "accessor": "TS.elevation.level5"
-    },
-    "elevation.none": {
-      "accessor": "TS.elevation.none"
-    },
-    "elevation.raised": {
-      "accessor": "TS.elevation.raised"
-    },
-    "layer.base": {
-      "accessor": "TS.layer.base"
-    },
-    "layer.content": {
-      "accessor": "TS.layer.content"
-    },
-    "layout.chart-min-height": {
-      "accessor": "TS.layout.chartMinHeight"
-    },
-    "layout.chart-plot-height": {
-      "accessor": "TS.layout.chartPlotHeight"
-    },
-    "layout.dialog-max-width": {
-      "accessor": "TS.layout.dialogMaxWidth"
-    },
-    "layout.form-max-width": {
-      "accessor": "TS.layout.formMaxWidth"
-    },
-    "layout.fill": {
-      "accessor": "TS.layout.fill"
-    },
-    "layout.flex-fill": {
-      "accessor": "TS.layout.flexFill"
-    },
-    "layout.flex-grow": {
-      "accessor": "TS.layout.flexGrow"
-    },
-    "layout.focus-inset": {
-      "accessor": "TS.layout.focusInset"
-    },
-    "layout.gesture-axis-lock": {
-      "accessor": "TS.layout.gestureAxisLock"
-    },
-    "layout.gesture-drag-limit": {
-      "accessor": "TS.layout.gestureDragLimit"
-    },
-    "layout.gesture-swipe-threshold": {
-      "accessor": "TS.layout.gestureSwipeThreshold"
-    },
-    "layout.half": {
-      "accessor": "TS.layout.half"
-    },
-    "layout.half-negative": {
-      "accessor": "TS.layout.halfNegative"
-    },
-    "layout.inset-sm-negative": {
-      "accessor": "TS.layout.insetSmNegative"
-    },
-    "layout.inset-xs-negative": {
-      "accessor": "TS.layout.insetXsNegative"
-    },
-    "layout.load-more-root-margin": {
-      "accessor": "TS.layout.loadMoreRootMargin"
-    },
-    "layout.menu-max-height": {
-      "accessor": "TS.layout.menuMaxHeight"
-    },
-    "layout.pull-refresh-max-distance": {
-      "accessor": "TS.layout.pullRefreshMaxDistance"
-    },
-    "layout.pull-refresh-threshold": {
-      "accessor": "TS.layout.pullRefreshThreshold"
-    },
-    "layout.sheet-max-height": {
-      "accessor": "TS.layout.sheetMaxHeight"
-    },
-    "layout.translate-full-negative": {
-      "accessor": "TS.layout.translateFullNegative"
-    },
-    "layout.viewport-height": {
-      "accessor": "TS.layout.viewportHeight"
-    },
-    "motion.duration-click-suppression": {
-      "accessor": "TS.motion.durationClickSuppression"
-    },
-    "motion.duration-fast": {
-      "accessor": "TS.motion.durationFast"
-    },
-    "motion.duration-instant": {
-      "accessor": "TS.motion.durationInstant"
-    },
-    "motion.duration-normal": {
-      "accessor": "TS.motion.durationNormal"
-    },
-    "motion.duration-sheet": {
-      "accessor": "TS.motion.durationSheet"
-    },
-    "motion.duration-slow": {
-      "accessor": "TS.motion.durationSlow"
-    },
-    "motion.duration-tab-viewport": {
-      "accessor": "TS.motion.durationTabViewport"
-    },
-    "motion.duration-toast": {
-      "accessor": "TS.motion.durationToast"
-    },
-    "motion.easing-gentle": {
-      "accessor": "TS.motion.easingGentle"
-    },
-    "motion.easing-emphasized": {
-      "accessor": "TS.motion.easingEmphasized"
-    },
-    "motion.easing-standard": {
-      "accessor": "TS.motion.easingStandard"
-    },
-    "motion.rotate-half-turn": {
-      "accessor": "TS.motion.rotateHalfTurn"
-    },
-    "motion.scale-pressed": {
-      "accessor": "TS.motion.scalePressed"
-    },
-    "motion.scale-pressed-strong": {
-      "accessor": "TS.motion.scalePressedStrong"
-    },
-    "opacity.disabled": {
-      "accessor": "TS.opacity.disabled"
-    },
-    "opacity.glass": {
-      "accessor": "TS.opacity.glass"
-    },
-    "opacity.hidden": {
-      "accessor": "TS.opacity.hidden"
-    },
-    "opacity.hover": {
-      "accessor": "TS.opacity.hover"
-    },
-    "opacity.muted": {
-      "accessor": "TS.opacity.muted"
-    },
-    "opacity.overlay": {
-      "accessor": "TS.opacity.overlay"
-    },
-    "opacity.pressed": {
-      "accessor": "TS.opacity.pressed"
-    },
-    "opacity.visible": {
-      "accessor": "TS.opacity.visible"
-    },
-    "radius.full": {
-      "accessor": "TS.radius.full"
-    },
-    "radius.lg": {
-      "accessor": "TS.radius.lg"
-    },
-    "radius.md": {
-      "accessor": "TS.radius.md"
-    },
-    "radius.none": {
-      "accessor": "TS.radius.none"
-    },
-    "radius.sm": {
-      "accessor": "TS.radius.sm"
-    },
-    "radius.xl": {
-      "accessor": "TS.radius.xl"
-    },
-    "radius.xs": {
-      "accessor": "TS.radius.xs"
-    },
-    "sizing.avatar-lg": {
-      "accessor": "TS.sizing.avatarLg"
-    },
-    "sizing.avatar-md": {
-      "accessor": "TS.sizing.avatarMd"
-    },
-    "sizing.avatar-sm": {
-      "accessor": "TS.sizing.avatarSm"
-    },
-    "sizing.bottom-navigation": {
-      "accessor": "TS.sizing.bottomNavigation"
-    },
-    "sizing.caret": {
-      "accessor": "TS.sizing.caret"
-    },
-    "sizing.control-lg": {
-      "accessor": "TS.sizing.controlLg"
-    },
-    "sizing.control-md": {
-      "accessor": "TS.sizing.controlMd"
-    },
-    "sizing.control-sm": {
-      "accessor": "TS.sizing.controlSm"
-    },
-    "sizing.icon-compact": {
-      "accessor": "TS.sizing.iconCompact"
-    },
-    "sizing.icon-lg": {
-      "accessor": "TS.sizing.iconLg"
-    },
-    "sizing.icon-md": {
-      "accessor": "TS.sizing.iconMd"
-    },
-    "sizing.icon-sm": {
-      "accessor": "TS.sizing.iconSm"
-    },
-    "sizing.indicator-thickness": {
-      "accessor": "TS.sizing.indicatorThickness"
-    },
-    "sizing.menu-item": {
-      "accessor": "TS.sizing.menuItem"
-    },
-    "sizing.progress-stroke": {
-      "accessor": "TS.sizing.progressStroke"
-    },
-    "sizing.progress-track": {
-      "accessor": "TS.sizing.progressTrack"
-    },
-    "sizing.refresh-action-height": {
-      "accessor": "TS.sizing.refreshActionHeight"
-    },
-    "sizing.refresh-action-min-width": {
-      "accessor": "TS.sizing.refreshActionMinWidth"
-    },
-    "sizing.step-dot": {
-      "accessor": "TS.sizing.stepDot"
-    },
-    "sizing.tab": {
-      "accessor": "TS.sizing.tab"
-    },
-    "sizing.textarea-rows": {
-      "accessor": "TS.sizing.textareaRows"
-    },
-    "sizing.touch": {
-      "accessor": "TS.sizing.touch"
-    },
-    "spacing.lg": {
-      "accessor": "TS.spacing.lg"
-    },
-    "spacing.lg-plus": {
-      "accessor": "TS.spacing.lgPlus"
-    },
-    "spacing.md": {
-      "accessor": "TS.spacing.md"
-    },
-    "spacing.none": {
-      "accessor": "TS.spacing.none"
-    },
-    "spacing.sm": {
-      "accessor": "TS.spacing.sm"
-    },
-    "spacing.sm-plus": {
-      "accessor": "TS.spacing.smPlus"
-    },
-    "spacing.xl": {
-      "accessor": "TS.spacing.xl"
-    },
-    "spacing.2xl": {
-      "accessor": "TS.spacing.xxl"
-    },
-    "spacing.3xl": {
-      "accessor": "TS.spacing.xxxl"
-    },
-    "spacing.xs": {
-      "accessor": "TS.spacing.xs"
-    },
-    "spacing.xs-plus": {
-      "accessor": "TS.spacing.xsPlus"
-    },
-    "spacing.xxs": {
-      "accessor": "TS.spacing.xxs"
-    },
-    "typography.caption": {
-      "accessor": "TS.textStyle.caption"
-    },
-    "typography.caption-strong": {
-      "accessor": "TS.textStyle.captionStrong"
-    },
-    "typography.body-lg": {
-      "accessor": "TS.textStyle.bodyLg"
-    },
-    "typography.body-sm": {
-      "accessor": "TS.textStyle.bodySm"
-    },
-    "typography.content": {
-      "accessor": "TS.textStyle.content"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "color.on-warning": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "color.info": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "color.on-info": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "color.border": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "color.outline": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "color.divider": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "color.disabled": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "color.scrim": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "typography.display": {
-      "accessor": "TS.textStyle.display"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "typography.headline": {
-      "accessor": "TS.textStyle.headline"
-    },
-    "typography.label": {
-      "accessor": "TS.textStyle.label"
-    },
-    "typography.micro": {
-      "accessor": "TS.textStyle.micro"
-    },
-    "typography.subtitle": {
-      "accessor": "TS.textStyle.subtitle"
-    },
-    "typography.title": {
-      "accessor": "TS.textStyle.title"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "typography.title-lg": {
-      "accessor": "TS.textStyle.titleLg"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "typography.title": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     },
     "typography.title-sm": {
-      "accessor": "TS.textStyle.titleSm"
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "typography.subtitle": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "typography.body-lg": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "typography.content": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "typography.body-sm": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "typography.label": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "typography.caption": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "typography.caption-strong": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "typography.micro": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "typography.numeric-display": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "typography.numeric-title": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "typography.numeric-content": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "radius.mark": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "radius.control-compact": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "radius.control": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "radius.surface": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "radius.overlay": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "radius.pill": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "size.control-compact": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "size.control": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "size.control-large": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "size.touch": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "size.icon-inline": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "size.icon-compact": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "size.icon": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "size.icon-prominent": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "size.avatar-compact": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "size.avatar": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "size.avatar-large": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "size.navigation-bar": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "size.stroke": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "size.indicator": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "size.caret": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "size.marker": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "border.width": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "border.width-strong": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "border.width-accent": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "border.hairline": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "border.default": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "border.focus": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "elevation.surface": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "elevation.raised": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "elevation.floating": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "elevation.menu": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "elevation.overlay": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "opacity.disabled": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "opacity.translucent": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "opacity.hover": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "opacity.pressed": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "motion.duration-short": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "motion.duration-medium": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "motion.duration-long": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "motion.easing-standard": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "motion.easing-emphasized": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "motion.easing-gentle": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "motion.press-scale": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "motion.press-scale-strong": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "surface.glass-backdrop": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "asset.brand-mark": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "asset.brand-wordmark": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "asset.launch-image": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "asset.empty-illustration": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "spacing.xs": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "spacing.sm": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "spacing.md": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "spacing.lg": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "spacing.xxs": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "spacing.sm-plus": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "spacing.lg-plus": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "spacing.2xl": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "bottom-sheet.duration": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "flow-sheet.gap": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "flow-sheet.duration": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "menu.menu-item-height": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "menu.offset": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "primary-tabs.active-color": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "progress.gap": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "progress.track-height": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "scrollable-data-list.action-min-width": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "scrollable-data-list.action-height": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "secondary-tabs.active-color": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "secondary-tabs.indicator": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "tab-viewport.duration": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "tabbar.active": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "textarea.rows": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "toast.gap": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+    },
+    "toast.duration": {
+      "status": "pending",
+      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
     }
   },
   "queryExclusions": []

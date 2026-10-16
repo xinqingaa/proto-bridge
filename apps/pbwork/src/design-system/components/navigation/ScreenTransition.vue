@@ -62,34 +62,15 @@ usePbInspect({
   }),
   getTokenBindings: () => ({
     surface: "color.background",
-    fill: "layout.fill",
-    enterTranslation: "layout.fill",
-    leaveTranslation: "layout.translate-full-negative",
-    origin: "spacing.none",
-    duration: "motion.duration-slow",
+    duration: "motion.duration-long",
     easing: "motion.easing-standard",
-    reducedDuration: "motion.duration-instant",
-    hidden: "opacity.hidden",
-    visible: "opacity.visible",
-    incomingScale: "motion.scale-pressed",
-    restingLayer: "layer.base",
-    incomingLayer: "layer.content",
-    grow: "layout.flex-grow",
+    incomingScale: "motion.press-scale",
   }),
   getTokens: () => [
     "color.background",
-    "layout.fill",
-    "layout.translate-full-negative",
-    "spacing.none",
-    "motion.duration-slow",
+    "motion.duration-long",
     "motion.easing-standard",
-    "motion.duration-instant",
-    "opacity.hidden",
-    "opacity.visible",
-    "motion.scale-pressed",
-    "layer.base",
-    "layer.content",
-    "layout.flex-grow",
+    "motion.press-scale",
   ],
 });
 </script>
@@ -111,16 +92,16 @@ usePbInspect({
   flex-grow: var(--pb-layout-flex-grow);
   width: var(--pb-layout-fill);
   height: var(--pb-layout-fill);
-  min-width: var(--pb-spacing-none);
-  min-height: var(--pb-spacing-none);
+  min-width: var(--pb-layout-zero);
+  min-height: var(--pb-layout-zero);
   background: var(--pb-color-background);
 }
 
 .pb-screen-transition-frame {
   width: var(--pb-layout-fill);
   height: var(--pb-layout-fill);
-  min-width: var(--pb-spacing-none);
-  min-height: var(--pb-spacing-none);
+  min-width: var(--pb-layout-zero);
+  min-height: var(--pb-layout-zero);
 }
 
 .pb-route-ios-push-enter-active,
@@ -132,11 +113,11 @@ usePbInspect({
 .pb-route-android-back-enter-active,
 .pb-route-android-back-leave-active {
   position: absolute;
-  top: var(--pb-spacing-none);
-  right: var(--pb-spacing-none);
-  bottom: var(--pb-spacing-none);
-  left: var(--pb-spacing-none);
-  transition-duration: var(--pb-motion-duration-slow);
+  top: var(--pb-layout-zero);
+  right: var(--pb-layout-zero);
+  bottom: var(--pb-layout-zero);
+  left: var(--pb-layout-zero);
+  transition-duration: var(--pb-motion-duration-long);
   transition-timing-function: var(--pb-motion-easing-standard);
 }
 
@@ -181,7 +162,7 @@ usePbInspect({
 .pb-route-android-push-enter-from,
 .pb-route-android-back-leave-to {
   opacity: var(--pb-opacity-hidden);
-  transform: scale(var(--pb-motion-scale-pressed));
+  transform: scale(var(--pb-motion-press-scale));
 }
 
 .pb-route-android-push-leave-to,

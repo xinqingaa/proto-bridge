@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { iconSizeToken } from "@/design-system/components/_shared/appearance";
+import { useTokenNumber } from "@/design-system/theme/runtime-theme";
+
 import { computed, toRefs } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import {
@@ -6,8 +9,6 @@ import {
   type PbIconName,
 } from "@/design-system/components/_shared/icons";
 import type { ComponentSize } from "@/design-system/components/_shared/appearance";
-import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
-
 const props = withDefaults(
   defineProps<{
     name: PbIconName;
@@ -37,11 +38,10 @@ const { name, size, tone, label, inspectId } = toRefs(props);
 
 const iconComponent = computed(() => resolvePbIcon(name.value));
 
-const sizeTokenId = computed(
-  () =>
-    `sizing.icon-${size.value === "sm" ? "sm" : size.value === "lg" ? "lg" : "md"}`,
+const sizeTokenId = computed(() =>
+  iconSizeToken(size.value === "sm" ? "sm" : size.value === "lg" ? "lg" : "md"),
 );
-const pixelSize = computed(() => tokenDefaultNumber(sizeTokenId.value));
+const pixelSize = useTokenNumber(() => sizeTokenId.value);
 
 const colorVar = computed(() => {
   switch (tone.value) {
@@ -122,7 +122,7 @@ usePbInspect({
   justify-content: center;
   width: var(--pb-icon-size);
   height: var(--pb-icon-size);
-  line-height: var(--pb-spacing-none);
+  line-height: var(--pb-layout-zero);
 }
 .pb-icon :deep(svg) {
   display: block;

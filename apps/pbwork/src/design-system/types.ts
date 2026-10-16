@@ -78,12 +78,7 @@ export type ComponentRecord = {
 };
 
 export type ComponentCategory =
-  | "action"
-  | "input"
-  | "display"
-  | "navigation"
-  | "data"
-  | "feedback";
+  "action" | "input" | "display" | "navigation" | "data" | "feedback";
 
 export type ComponentStateKind = "variant" | "interaction" | "content";
 
@@ -151,6 +146,16 @@ export type ComponentContract = {
   states: ComponentStateContract[];
   slots: string[];
   events: string[];
+  componentTokens?: Record<
+    string,
+    {
+      valueType: import("@proto-bridge/core/v2").ThemeValueType;
+      default: import("@proto-bridge/core/v2").ThemeExpression;
+      modeVariant: boolean;
+      bindable: boolean;
+      enumValues?: string[];
+    }
+  >;
   tokenBindings: Record<string, string>;
   playground?: {
     presentation: PlaygroundPresentation;

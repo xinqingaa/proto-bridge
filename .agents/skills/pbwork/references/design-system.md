@@ -24,9 +24,9 @@ leave business-specific shapes in the prototype.
 
 For theme-pack parser, preparation data, reactive Runtime helpers, or typed CSS generation, also read
 `docs/architecture/theme-packs.md`. Runtime now provides the Core-resolved table, CSS variables, local Vuetify themes
-and per-prototype v2 preferences. Legacy-only component CSS and module-level
-Token defaults remain until the coordinated DS migration. Do not claim that all
-components already respond to the pack or that Capture/Handoff pins its table.
+and per-prototype v2 preferences. DS/prototype consumers now use the new keys and reactive Token readers.
+Gallery and Playground can preview `pbwork-base` and `pbwork-sample`. Constants never enter bindings, the token Catalog, or Target mapping.
+Do not claim that Capture/Handoff already pins the complete theme table.
 See the architecture document for the current activation boundary.
 
 ## Component atomicity
@@ -47,8 +47,8 @@ Check `apps/pbwork/docs/components/audit-large-types.md` for suspiciously large 
 
 ## Token and Theme atomicity
 
-- Modify `tokens.json` and, when component binding changes, `bindTokens.ts`.
-- Update light/dark Theme values, Token docs, and catalog as applicable.
+- Modify semantic key-catalog.json or the owning Contract.componentTokens; bindings.ts derives its pool automatically.
+- Update theme packs, Token docs, catalog, reactive JS readers and constant consumers as applicable.
 - Verify that component bindings remain in the allowed pool.
 - Run the DS-to-Target fingerprint gate. Iteration may defer Flutter polish but
   must expose drift; a stable batch updates Target mapping/API and sync baseline.

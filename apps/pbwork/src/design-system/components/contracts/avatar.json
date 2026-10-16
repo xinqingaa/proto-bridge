@@ -19,23 +19,14 @@
       },
       "size": {
         "type": "string",
-        "enum": [
-          "sm",
-          "md",
-          "lg"
-        ]
+        "enum": ["sm", "md", "lg"]
       },
       "tone": {
         "type": "string",
-        "enum": [
-          "primary",
-          "secondary"
-        ]
+        "enum": ["primary", "secondary"]
       }
     },
-    "required": [
-      "name"
-    ]
+    "required": ["name"]
   },
   "defaultProps": {
     "name": "李明",
@@ -65,8 +56,8 @@
   "tokenBindings": {
     "background": "color.primary",
     "text": "color.on-primary",
-    "size": "sizing.avatar-md",
-    "radius": "radius.full",
+    "size": "size.avatar",
+    "radius": "radius.pill",
     "initials": "typography.label"
   },
   "playground": {

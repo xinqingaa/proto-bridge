@@ -3,7 +3,11 @@ import type {
   TokenRecord,
   TokenValue,
 } from "@/design-system/types";
-import { loadThemes, loadTokens } from "@/design-system/loaders";
+import tokensJson from "./legacy-theme/tokens.json";
+import light from "./legacy-theme/light.json";
+import dark from "./legacy-theme/dark.json";
+const loadTokens = () => tokensJson as TokenRecord[];
+const loadThemes = () => [light, dark] as ThemeRecord[];
 
 export function normalizeTokenCssVarName(tokenId: string): string {
   return `--pb-${tokenId.replaceAll(".", "-")}`;

@@ -35,10 +35,7 @@
         "items": {
           "type": "object",
           "additionalProperties": false,
-          "required": [
-            "value",
-            "label"
-          ],
+          "required": ["value", "label"],
           "properties": {
             "value": {
               "type": "string"
@@ -50,9 +47,7 @@
         }
       }
     },
-    "required": [
-      "items"
-    ]
+    "required": ["items"]
   },
   "defaultProps": {
     "modelValue": "home",
@@ -91,35 +86,42 @@
     }
   ],
   "slots": [],
-  "events": [
-    "update:modelValue"
-  ],
+  "events": ["update:modelValue"],
   "tokenBindings": {
     "surface": "color.surface-raised",
-    "active": "color.navigation-active",
+    "active": "tabbar.active",
     "inactive": "color.on-surface-muted",
     "border": "border.hairline",
-    "target": "sizing.touch",
-    "height": "sizing.bottom-navigation",
+    "target": "size.touch",
+    "height": "size.navigation-bar",
     "label": "typography.caption",
     "selectedLabel": "typography.caption-strong",
-    "fill": "layout.fill",
-    "focusInset": "layout.focus-inset",
-    "contentLayer": "layer.content",
-    "safeInsetFallback": "spacing.none",
-    "overlayOpacity": "opacity.hidden",
     "focusOutline": "border.focus",
-    "iconSize": "sizing.icon-md"
+    "iconSize": "size.icon",
+    "materialOpacity": "opacity.translucent",
+    "materialBackdrop": "surface.glass-backdrop",
+    "materialBorder": "border.default"
   },
   "playground": {
     "presentation": "interactive"
   },
   "icons": {
     "pack": "lucide",
-    "defaults": [
-      "home",
-      "list",
-      "user"
-    ]
+    "defaults": ["home", "list", "user"]
+  },
+  "componentTokens": {
+    "active": {
+      "valueType": "color",
+      "default": "{color.primary}",
+      "modeVariant": true,
+      "bindable": true
+    },
+    "surface-treatment": {
+      "valueType": "enum",
+      "default": "{surface.treatment}",
+      "modeVariant": false,
+      "enumValues": ["solid", "outlined", "glass"],
+      "bindable": false
+    }
   }
 }

@@ -28,9 +28,7 @@
         "type": "boolean"
       }
     },
-    "required": [
-      "title"
-    ]
+    "required": ["title"]
   },
   "defaultProps": {
     "title": "操作面板",
@@ -54,28 +52,29 @@
       }
     }
   ],
-  "slots": [
-    "default",
-    "actions"
-  ],
-  "events": [
-    "update:modelValue"
-  ],
+  "slots": ["default", "actions"],
+  "events": ["update:modelValue"],
   "tokenBindings": {
     "surface": "color.surface",
     "border": "color.border",
-    "radius": "radius.lg",
+    "radius": "radius.surface",
     "elevation": "elevation.raised",
     "title": "typography.subtitle",
     "body": "typography.content",
     "padding": "spacing.md",
-    "headerControl": "sizing.touch",
-    "fill": "layout.fill",
-    "flexFill": "layout.flex-fill",
-    "duration": "motion.duration-sheet",
+    "headerControl": "size.touch",
+    "duration": "bottom-sheet.duration",
     "easing": "motion.easing-gentle"
   },
   "playground": {
     "presentation": "trigger"
+  },
+  "componentTokens": {
+    "duration": {
+      "valueType": "duration",
+      "default": 220,
+      "modeVariant": false,
+      "bindable": true
+    }
   }
 }

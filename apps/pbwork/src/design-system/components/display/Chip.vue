@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import { themeConstantNumber } from "@/design-system/theme/constants";
+
 import { toRefs } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import { radiusStyle } from "@/design-system/components/_shared/radius";
 import { elevationStyle } from "@/design-system/components/_shared/appearance";
-import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
-
-const NO_ELEVATION = tokenDefaultNumber("layer.base");
+const NO_ELEVATION = themeConstantNumber("layer.base");
 
 const props = defineProps<{
   label: string;
@@ -41,15 +41,15 @@ usePbInspect({
   getTokenBindings: () => ({
     background: softTokenForTone(tone.value),
     color: `color.${tone.value ?? "primary"}`,
-    radius: "radius.sm",
-    elevation: "elevation.card",
+    radius: "radius.control-compact",
+    elevation: "elevation.surface",
     typography: "typography.caption",
   }),
   getTokens: () => [
     softTokenForTone(tone.value),
     `color.${tone.value ?? "primary"}`,
-    "radius.sm",
-    "elevation.card",
+    "radius.control-compact",
+    "elevation.surface",
     "typography.caption",
     "spacing.sm",
   ],

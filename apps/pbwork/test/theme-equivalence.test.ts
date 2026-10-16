@@ -9,15 +9,15 @@ import {
 import {
   resolveThemeTokens,
   tokenValueToCssValue,
-} from "@/design-system/resolveThemeTokens";
+} from "./fixtures/legacy-theme";
 import type {
   ThemeRecord,
   TokenRecord,
   TokenValue,
 } from "@/design-system/types";
-import tokensJson from "@/design-system/tokens/tokens.json";
-import lightThemeJson from "@/design-system/themes/light.json";
-import darkThemeJson from "@/design-system/themes/dark.json";
+import tokensJson from "./fixtures/legacy-theme/tokens.json";
+import lightThemeJson from "./fixtures/legacy-theme/light.json";
+import darkThemeJson from "./fixtures/legacy-theme/dark.json";
 import migrationJson from "@/design-system/theme/legacy-migration.json";
 import { loadBaseThemeSources } from "@/design-system/theme/sources";
 
@@ -187,15 +187,20 @@ describe("legacy-migration 覆盖性", () => {
     }
   });
 
-  it("目录中未被旧键映射到的键恰为 11 个新增键", () => {
+  it("目录中未被旧键映射到的键恰为 14 个新增键", () => {
     const targeted = new Set(
-      entriesOfTier("semantic").flatMap(([, entry]) => entry.targets),
+      [...entriesOfTier("semantic"), ...entriesOfTier("component")].flatMap(
+        ([, entry]) => entry.targets,
+      ),
     );
     const untouched = [...catalogTypes.keys()]
       .filter((id) => !targeted.has(id))
       .sort();
     expect(untouched).toEqual(
       [
+        "app-bar.surface-treatment",
+        "primary-tabs.selection-treatment",
+        "tabbar.surface-treatment",
         "asset.brand-mark",
         "asset.brand-wordmark",
         "asset.empty-illustration",
@@ -322,6 +327,18 @@ describe("组件层（第 2 步组件迁移批次）", () => {
   });
 
   for (const [oldId, entry] of rows) {
-    it.todo(`组件迁移：${oldId} → ${entry.targets.join(", ")} 的组件层取值等价`);
+    it(`组件迁移：${oldId} → ${entry.targets.join(", ")} 的组件层取值等价`, () => {
+      for (const mode of MODES)
+        for (const target of entry.targets) {
+          expect(
+            sameCss(
+              toCss(catalogTypes.get(target)!, tables[mode].values[target]),
+              catalogTypes.get(target) === "number"
+                ? String(Number.parseFloat(oldCssFor(mode)[oldId]!))
+                : oldCssFor(mode)[oldId]!,
+            ),
+          ).toBe(true);
+        }
+    });
   }
 });

@@ -53,15 +53,28 @@
   "tokenBindings": {
     "fill": "color.primary",
     "track": "color.primary-soft",
-    "radius": "radius.full",
-    "motion": "motion.duration-normal",
-    "gap": "spacing.xs-plus",
+    "radius": "radius.pill",
+    "motion": "motion.duration-medium",
+    "gap": "progress.gap",
     "text": "color.on-surface",
     "label": "typography.caption",
-    "trackHeight": "sizing.progress-track",
-    "trackOpacity": "opacity.visible"
+    "trackHeight": "progress.track-height"
   },
   "playground": {
     "presentation": "interactive"
+  },
+  "componentTokens": {
+    "gap": {
+      "valueType": "length",
+      "default": "{space.6}",
+      "modeVariant": false,
+      "bindable": true
+    },
+    "track-height": {
+      "valueType": "length",
+      "default": 6,
+      "modeVariant": false,
+      "bindable": true
+    }
   }
 }

@@ -18,19 +18,38 @@
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "label": { "type": "string" },
-      "showLabel": { "type": "boolean" },
-      "modelValue": { "type": "string" },
-      "placeholder": { "type": "string" },
-      "disabled": { "type": "boolean" },
-      "clearable": { "type": "boolean" },
-      "type": { "type": "string", "enum": ["text", "password"] },
+      "label": {
+        "type": "string"
+      },
+      "showLabel": {
+        "type": "boolean"
+      },
+      "modelValue": {
+        "type": "string"
+      },
+      "placeholder": {
+        "type": "string"
+      },
+      "disabled": {
+        "type": "boolean"
+      },
+      "clearable": {
+        "type": "boolean"
+      },
+      "type": {
+        "type": "string",
+        "enum": ["text", "password"]
+      },
       "autocomplete": {
         "type": "string",
         "enum": ["name", "username", "current-password", "new-password", "off"]
       },
-      "errorMessage": { "type": "string" },
-      "revealable": { "type": "boolean" }
+      "errorMessage": {
+        "type": "string"
+      },
+      "revealable": {
+        "type": "boolean"
+      }
     }
   },
   "defaultProps": {
@@ -50,7 +69,11 @@
       "id": "labeled",
       "label": "显示标题",
       "kind": "variant",
-      "props": { "showLabel": true, "label": "联系人", "modelValue": "李明" }
+      "props": {
+        "showLabel": true,
+        "label": "联系人",
+        "modelValue": "李明"
+      }
     },
     {
       "id": "password",
@@ -79,7 +102,10 @@
       "id": "disabled",
       "label": "禁用",
       "kind": "interaction",
-      "props": { "disabled": true, "modelValue": "不可编辑" }
+      "props": {
+        "disabled": true,
+        "modelValue": "不可编辑"
+      }
     }
   ],
   "slots": ["prepend-inner", "append-inner"],
@@ -87,15 +113,15 @@
   "tokenBindings": {
     "border": "color.border",
     "surface": "color.surface-recessed",
-    "radius": "radius.md",
-    "height": "sizing.control-md",
+    "radius": "radius.control",
+    "height": "size.control",
     "label": "typography.caption",
     "input": "typography.content",
     "errorColor": "color.error",
     "errorText": "typography.caption",
     "revealColor": "color.on-surface-muted",
-    "revealSize": "sizing.icon-md",
-    "revealTarget": "sizing.touch",
+    "revealSize": "size.icon",
+    "revealTarget": "size.touch",
     "disabledOpacity": "opacity.disabled"
   },
   "playground": {

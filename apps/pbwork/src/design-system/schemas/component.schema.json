@@ -19,21 +19,16 @@
     "playground"
   ],
   "properties": {
-    "schemaVersion": { "const": 1 },
+    "schemaVersion": {
+      "const": 1
+    },
     "id": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
     },
     "category": {
       "type": "string",
-      "enum": [
-        "action",
-        "input",
-        "display",
-        "navigation",
-        "data",
-        "feedback"
-      ]
+      "enum": ["action", "input", "display", "navigation", "data", "feedback"]
     },
     "semantic": {
       "oneOf": [
@@ -42,8 +37,12 @@
           "additionalProperties": false,
           "required": ["policy", "defaultRole"],
           "properties": {
-            "policy": { "const": "fixed" },
-            "defaultRole": { "$ref": "#/$defs/semanticRole" }
+            "policy": {
+              "const": "fixed"
+            },
+            "defaultRole": {
+              "$ref": "#/$defs/semanticRole"
+            }
           }
         },
         {
@@ -51,11 +50,17 @@
           "additionalProperties": false,
           "required": ["policy", "defaultRole", "allowedRoles"],
           "properties": {
-            "policy": { "const": "contextual" },
-            "defaultRole": { "$ref": "#/$defs/semanticRole" },
+            "policy": {
+              "const": "contextual"
+            },
+            "defaultRole": {
+              "$ref": "#/$defs/semanticRole"
+            },
             "allowedRoles": {
               "type": "array",
-              "items": { "$ref": "#/$defs/semanticRole" },
+              "items": {
+                "$ref": "#/$defs/semanticRole"
+              },
               "minItems": 1,
               "uniqueItems": true
             }
@@ -65,7 +70,11 @@
           "type": "object",
           "additionalProperties": false,
           "required": ["policy"],
-          "properties": { "policy": { "const": "decorative" } }
+          "properties": {
+            "policy": {
+              "const": "decorative"
+            }
+          }
         }
       ]
     },
@@ -73,7 +82,9 @@
       "type": "object",
       "required": ["type"],
       "properties": {
-        "type": { "const": "object" }
+        "type": {
+          "const": "object"
+        }
       }
     },
     "summary": {
@@ -83,7 +94,10 @@
     },
     "behavior": {
       "type": "array",
-      "items": { "type": "string", "minLength": 1 },
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
       "minItems": 1,
       "uniqueItems": true,
       "description": "Short interaction / empty / disabled commitments for cross-stack alignment."
@@ -93,7 +107,10 @@
       "additionalProperties": false,
       "description": "Cross-stack layout intent; never a CSS implementation recipe.",
       "properties": {
-        "summary": { "type": "string", "minLength": 1 },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
         "containerWidth": {
           "type": "string",
           "enum": ["fill-parent", "content"]
@@ -107,8 +124,14 @@
               "type": "string",
               "enum": ["fill-container", "content"]
             },
-            "itemSizing": { "type": "string", "enum": ["content", "equal"] },
-            "equalState": { "type": "string", "minLength": 1 },
+            "itemSizing": {
+              "type": "string",
+              "enum": ["content", "equal"]
+            },
+            "equalState": {
+              "type": "string",
+              "minLength": 1
+            },
             "overflow": {
               "type": "string",
               "enum": ["horizontal-scroll", "none"]
@@ -120,8 +143,14 @@
           "additionalProperties": false,
           "required": ["ownership"],
           "properties": {
-            "ownership": { "type": "string", "enum": ["component", "none"] },
-            "transition": { "type": "string", "enum": ["horizontal"] }
+            "ownership": {
+              "type": "string",
+              "enum": ["component", "none"]
+            },
+            "transition": {
+              "type": "string",
+              "enum": ["horizontal"]
+            }
           }
         }
       }
@@ -131,21 +160,34 @@
       "additionalProperties": false,
       "description": "Cross-stack material and layer anatomy; never a CSS implementation recipe.",
       "properties": {
-        "summary": { "type": "string", "minLength": 1 },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
         "selection": {
           "type": "object",
           "additionalProperties": false,
           "required": ["material", "border", "layering"],
           "properties": {
-            "material": { "const": "translucent-glass" },
-            "border": { "const": "none" },
-            "layering": { "const": "floating" },
-            "contour": { "const": "top-transition-arc" }
+            "material": {
+              "const": "translucent-glass"
+            },
+            "border": {
+              "const": "none"
+            },
+            "layering": {
+              "const": "floating"
+            },
+            "contour": {
+              "const": "top-transition-arc"
+            }
           }
         }
       }
     },
-    "defaultProps": { "type": "object" },
+    "defaultProps": {
+      "type": "object"
+    },
     "states": {
       "type": "array",
       "items": {
@@ -157,25 +199,38 @@
             "type": "string",
             "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
           },
-          "label": { "type": "string", "minLength": 1 },
-          "description": { "type": "string" },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string"
+          },
           "kind": {
             "type": "string",
             "enum": ["variant", "interaction", "content"],
             "description": "variant=appearance enum; interaction=loading/disabled; content=empty/closed."
           },
-          "props": { "type": "object" }
+          "props": {
+            "type": "object"
+          }
         }
       }
     },
     "slots": {
       "type": "array",
-      "items": { "type": "string", "minLength": 1 },
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
       "uniqueItems": true
     },
     "events": {
       "type": "array",
-      "items": { "type": "string", "minLength": 1 },
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
       "uniqueItems": true
     },
     "tokenBindings": {
@@ -202,11 +257,54 @@
       "additionalProperties": false,
       "required": ["pack"],
       "properties": {
-        "pack": { "const": "lucide" },
+        "pack": {
+          "const": "lucide"
+        },
         "defaults": {
           "type": "array",
-          "items": { "type": "string", "minLength": 1 },
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
           "uniqueItems": true
+        }
+      }
+    },
+    "componentTokens": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["valueType", "default", "modeVariant", "bindable"],
+        "properties": {
+          "valueType": {
+            "enum": [
+              "color",
+              "length",
+              "number",
+              "duration",
+              "easing",
+              "shadow",
+              "border",
+              "filter",
+              "enum",
+              "asset",
+              "typography"
+            ]
+          },
+          "default": {},
+          "modeVariant": {
+            "type": "boolean"
+          },
+          "bindable": {
+            "type": "boolean"
+          },
+          "enumValues": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
         }
       }
     }

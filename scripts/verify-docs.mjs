@@ -364,19 +364,25 @@ async function verifyComponentReferences() {
 }
 
 async function verifyTokenCatalog() {
-  const tokens = JSON.parse(
+  const rawTokens = JSON.parse(
     await readFile(
-      path.join(repoRoot, "apps/pbwork/src/design-system/tokens/tokens.json"),
+      path.join(repoRoot, "apps/pbwork/src/design-system/theme/key-catalog.json"),
       "utf8",
     ),
   );
+  const tokens = [...rawTokens.keys];
+  const componentRoot = path.join(repoRoot, "apps/pbwork/src/design-system/components/contracts");
+  for (const file of await readdir(componentRoot)) if (file.endsWith(".json")) {
+    const contract = JSON.parse(await readFile(path.join(componentRoot,file), "utf8"));
+    tokens.push(...Object.keys(contract.componentTokens ?? {}).map((name) => ({id:`${contract.id}.${name}`})));
+  }
   const catalog = await readFile(
     path.join(repoRoot, "apps/pbwork/docs/tokens/catalog.md"),
     "utf8",
   );
   if (!catalog.includes(`共 ${tokens.length} 项`)) {
     errors.push(
-      `Token catalog count does not match tokens.json (${tokens.length})`,
+      `Token catalog count does not match assembled theme keys (${tokens.length})`,
     );
   }
   const catalogTokenIds = new Set(
@@ -418,6 +424,7 @@ async function verifyTargetMappingReference() {
 
   for (const contract of contracts) {
     const target = mapping.components?.[contract.id];
+    if (target?.status === "pending" && typeof target.reason === "string" && target.reason.trim() && reference.includes("pending")) continue;
     if (!target?.symbol || !target?.import) {
       errors.push(`Flutter target mapping is missing documented component ${contract.id}`);
       continue;
@@ -430,6 +437,7 @@ async function verifyTargetMappingReference() {
     }
   }
   for (const id of Object.keys(mapping.components ?? {})) {
+    if (mapping.components[id]?.status === "pending" && mapping.components[id]?.reason?.trim()) continue;
     if (!reference.includes(`\`${id}\``)) {
       errors.push(`Flutter legacy component mapping ${id} is undocumented`);
     }

@@ -6,9 +6,6 @@ import type {
   ThemeRecord,
   TokenRecord,
 } from "@/design-system/types";
-import tokensJson from "@/design-system/tokens/tokens.json";
-import lightTheme from "@/design-system/themes/light.json";
-import darkTheme from "@/design-system/themes/dark.json";
 import { componentRecords } from "@/design-system/components/registry";
 import { prototypes, prototypeScreens } from "@/prototypes/registry";
 
@@ -26,13 +23,10 @@ const contractModules = import.meta.glob(
   { eager: true, import: "default" },
 ) as Record<string, ComponentContract>;
 
-export function loadTokens(): TokenRecord[] {
-  return tokensJson as TokenRecord[];
-}
-
-export function loadThemes(): ThemeRecord[] {
-  return [lightTheme, darkTheme] as ThemeRecord[];
-}
+export {
+  loadTokenPresentations,
+  loadModePresentations,
+} from "@/design-system/theme/presentation";
 
 export function loadComponentRecords(): ComponentRecord[] {
   return componentRecords;

@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed, toRefs } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
-import { radiusStyle } from "@/design-system/components/_shared/radius";
+import {
+  radiusStyle,
+  radiusToken,
+} from "@/design-system/components/_shared/radius";
 import { elevationStyle } from "@/design-system/components/_shared/appearance";
 
 const props = withDefaults(
@@ -46,27 +49,25 @@ usePbInspect({
     surface:
       surface.value === "raised" ? "color.surface-raised" : "color.surface",
     divider: "color.border",
-    radius:
-      rounded.value === "none" ? "radius.none" : `radius.${rounded.value}`,
-    elevation: "elevation.card",
+    radius: radiusToken(rounded.value),
+    elevation: "elevation.surface",
     content: "typography.content",
     inset: "spacing.md",
     dividerBorder: "border.default",
-    restingElevation: "elevation.none",
+    restingElevation: "none",
   }),
   getTokens: () => [
     "color.surface",
     "color.surface-raised",
     "color.border",
     "color.on-surface",
-    "radius.sm",
-    "radius.md",
-    "radius.lg",
-    "elevation.card",
+    "radius.control-compact",
+    "radius.control",
+    "radius.surface",
+    "elevation.surface",
     "typography.content",
     "spacing.md",
     "border.default",
-    "elevation.none",
   ],
 });
 </script>
@@ -98,7 +99,7 @@ usePbInspect({
 <style scoped>
 .pb-data-list {
   box-sizing: border-box;
-  min-width: var(--pb-spacing-none);
+  min-width: var(--pb-layout-zero);
   overflow: hidden;
   color: var(--pb-color-on-surface);
   box-shadow: var(--pb-component-shadow, var(--pb-elevation-none)) !important;
@@ -116,7 +117,7 @@ usePbInspect({
   padding-inline: var(--pb-spacing-md);
 }
 .pb-data-list.is-square {
-  border-radius: var(--pb-radius-none);
+  border-radius: var(--pb-layout-zero);
 }
 .pb-data-list.is-divided :deep(> * + *) {
   border-top: var(--pb-border-default);

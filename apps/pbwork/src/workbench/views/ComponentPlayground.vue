@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   computed,
+  provide,
   defineAsyncComponent,
   onBeforeUnmount,
   reactive,
@@ -15,16 +16,13 @@ import type {
   ScreenTransitionMode,
   ScreenTransitionNavigation,
 } from "@/design-system/components/navigation/screenTransition";
-import {
-  DEFAULT_DEVICE_ID,
-  getDevicePreset,
-} from "@/workbench/canvas/devices";
+import { DEFAULT_DEVICE_ID, getDevicePreset } from "@/workbench/canvas/devices";
 import ResourcePageShell from "@/workbench/views/ResourcePageShell.vue";
 import WorkbenchStatChip from "@/workbench/ui/WorkbenchStatChip.vue";
 import {
   componentViewModules,
   loadComponentContract,
-  loadTokens,
+  loadTokenPresentations,
 } from "@/design-system/loaders";
 import { componentRecords } from "@/design-system/components/registry";
 import {
@@ -32,11 +30,11 @@ import {
   type PlaygroundThemeId,
 } from "@/app/stores/playground";
 import {
-  resolveThemeTokens,
-  tokensToCssVars,
-  tokenValueToCssValue,
+  themePackCssValues,
+  reviewThemePackOptions,
   normalizeTokenCssVarName,
-} from "@/design-system/resolveThemeTokens";
+  coercePackSelection,
+} from "@/design-system/theme/presentation";
 import { resolveLiveTokenBindings } from "@/design-system/resolveLiveTokenBindings";
 import {
   componentScenarios,
@@ -44,10 +42,34 @@ import {
 } from "@/design-system/components/scenarios";
 import { storeToRefs } from "pinia";
 
+import {
+  ThemeTableKey,
+  useRuntimeTheme,
+} from "@/design-system/theme/runtime-theme";
+import { useRuntimeVuetifyTheme } from "@/design-system/theme/vuetify-theme";
+
 const props = defineProps<{ componentId: string }>();
 const playground = usePlaygroundStore();
-const { scenarioId, themeId, resolvedProps } = storeToRefs(playground);
+const { scenarioId, themeId, packId, themeName, resolvedProps } =
+  storeToRefs(playground);
+const packs = reviewThemePackOptions();
+const selectedPack = computed(
+  () => packs.find((pack) => pack.id === packId.value) ?? packs[0],
+);
 
+const activeTheme = useRuntimeTheme(() =>
+  coercePackSelection(packId.value, themeName.value, themeId.value),
+);
+provide(ThemeTableKey, activeTheme.table);
+const runtimeTheme = useRuntimeVuetifyTheme(activeTheme.table);
+const runtimeDefaults = computed(() =>
+  Object.fromEntries(
+    ["VTextField", "VTextarea", "VSelect"].map((component) => [
+      component,
+      { density: activeTheme.density.value },
+    ]),
+  ),
+);
 const record = computed(() =>
   componentRecords.find((item) => item.id === props.componentId),
 );
@@ -64,13 +86,15 @@ const tokenBindings = computed(() =>
     ),
   ),
 );
-const resolvedPreviewTokens = computed(() => resolveThemeTokens(themeId.value));
-const previewStyle = computed(() =>
-  tokensToCssVars(resolvedPreviewTokens.value),
-);
-const vuetifyPreviewTheme = computed(() =>
-  themeId.value === "dark" ? "pbworkDark" : "pbworkLight",
-);
+const resolvedPreviewTokens = computed(() => {
+  const selection = coercePackSelection(
+    packId.value,
+    themeName.value,
+    themeId.value,
+  );
+  return themePackCssValues(selection.packId, selection.theme, selection.mode);
+});
+const previewStyle = computed(() => activeTheme.cssVars.value);
 const presentation = computed(
   () => contract.value?.playground?.presentation ?? "interactive",
 );
@@ -176,7 +200,10 @@ const typeExhibits = computed((): ExhibitItem[] => {
     }));
 });
 
-function isLoadingState(state: { id: string; props?: Record<string, unknown> }) {
+function isLoadingState(state: {
+  id: string;
+  props?: Record<string, unknown>;
+}) {
   return (
     state.id === "loading" ||
     state.props?.loading === true ||
@@ -635,15 +662,26 @@ function setPreviewTheme(value: unknown) {
     playground.setTheme(value as PlaygroundThemeId);
   }
 }
+function setPreviewPack(value: unknown) {
+  const pack = packs.find((item) => item.id === value);
+  if (!pack) return;
+  const theme = pack.themes.some((item) => item.id === themeName.value)
+    ? themeName.value
+    : pack.defaultTheme;
+  playground.setPack(pack.id, theme);
+}
+function setPreviewThemeName(value: unknown) {
+  if (typeof value === "string" && value) playground.setPack(packId.value, value);
+}
 function bindingResolvedValue(tokenId: string) {
   const value = resolvedPreviewTokens.value[tokenId];
   if (value === undefined) return "—";
-  return tokenValueToCssValue(tokenId, value);
+  return String(value);
 }
 
 const tokenCategoryById = computed(() => {
   const map = new Map<string, string>();
-  for (const token of loadTokens()) {
+  for (const token of loadTokenPresentations()) {
     map.set(token.id, token.category);
   }
   return map;
@@ -674,6 +712,30 @@ const categoryEyebrow: Record<string, string> = {
 
     <template #toolbar>
       <span class="preset-hint">{{ toolbarHint }}</span>
+      <v-select
+        :model-value="packId"
+        :items="packs"
+        item-title="label"
+        item-value="id"
+        label="主题包"
+        density="compact"
+        variant="outlined"
+        hide-details
+        class="pack-field"
+        @update:model-value="setPreviewPack"
+      />
+      <v-select
+        :model-value="themeName"
+        :items="selectedPack?.themes ?? []"
+        item-title="label"
+        item-value="id"
+        label="主题"
+        density="compact"
+        variant="outlined"
+        hide-details
+        class="pack-field"
+        @update:model-value="setPreviewThemeName"
+      />
       <v-btn-toggle
         :model-value="themeId"
         density="compact"
@@ -681,7 +743,7 @@ const categoryEyebrow: Record<string, string> = {
         variant="outlined"
         divided
         mandatory
-        aria-label="预览主题"
+        aria-label="预览模式"
         @update:model-value="setPreviewTheme"
       >
         <v-btn value="light" size="small">浅色</v-btn>
@@ -690,16 +752,21 @@ const categoryEyebrow: Record<string, string> = {
     </template>
 
     <div class="playground-stage">
-      <article class="preview-wrap" :style="previewStyle">
+      <article
+        class="preview-wrap"
+        :style="previewStyle"
+        v-bind="activeTheme.attributes.value"
+      >
         <header class="scenario-header">
           <div>
             <strong>{{ stageTitle }}</strong>
             <span>{{ stageDescription }}</span>
           </div>
-          <code>{{ `theme.${themeId}` }}</code>
+          <code>{{ `${packId}/${themeName}/${themeId}` }}</code>
         </header>
 
-        <v-theme-provider :theme="vuetifyPreviewTheme">
+        <v-theme-provider :theme="runtimeTheme">
+          <v-defaults-provider :defaults="runtimeDefaults">
           <div
             v-if="isGalleryPresentation"
             class="preview gallery-matrix"
@@ -812,61 +879,61 @@ const categoryEyebrow: Record<string, string> = {
 
             <template v-else-if="isScreenTransitionDemo">
               <div class="route-transition-demo-row">
-              <section
-                v-for="pane in screenTransitionDemoPanes"
-                :key="pane.mode"
-                class="tab-comparison route-transition-demo"
-                :data-transition-mode="pane.mode"
-              >
-                <header>
-                  <strong>{{ pane.label }}</strong>
-                  <span>{{ pane.hint }}</span>
-                </header>
-                <div class="route-transition-demo-actions">
-                  <v-btn
-                    color="primary"
-                    variant="tonal"
-                    size="small"
-                    :disabled="
-                      screenTransitionDemo[pane.mode].screenKey === 'detail'
-                    "
-                    @click="playScreenTransitionDemo(pane.mode, 'push')"
-                    >进入</v-btn
-                  >
-                  <v-btn
-                    color="primary"
-                    variant="tonal"
-                    size="small"
-                    :disabled="
-                      screenTransitionDemo[pane.mode].screenKey === 'home'
-                    "
-                    @click="playScreenTransitionDemo(pane.mode, 'back')"
-                    >返回</v-btn
-                  >
-                </div>
-                <div
-                  class="route-transition-demo-frame"
-                  :style="{
-                    width: `${screenTransitionDemoViewport.width}px`,
-                    height: `${screenTransitionDemoViewport.height}px`,
-                  }"
+                <section
+                  v-for="pane in screenTransitionDemoPanes"
+                  :key="pane.mode"
+                  class="tab-comparison route-transition-demo"
+                  :data-transition-mode="pane.mode"
                 >
-                  <ScreenTransition
-                    :mode="pane.mode"
-                    :navigation="screenTransitionDemo[pane.mode].navigation"
-                    :screen-key="screenTransitionDemo[pane.mode].screenKey"
+                  <header>
+                    <strong>{{ pane.label }}</strong>
+                    <span>{{ pane.hint }}</span>
+                  </header>
+                  <div class="route-transition-demo-actions">
+                    <v-btn
+                      color="primary"
+                      variant="tonal"
+                      size="small"
+                      :disabled="
+                        screenTransitionDemo[pane.mode].screenKey === 'detail'
+                      "
+                      @click="playScreenTransitionDemo(pane.mode, 'push')"
+                      >进入</v-btn
+                    >
+                    <v-btn
+                      color="primary"
+                      variant="tonal"
+                      size="small"
+                      :disabled="
+                        screenTransitionDemo[pane.mode].screenKey === 'home'
+                      "
+                      @click="playScreenTransitionDemo(pane.mode, 'back')"
+                      >返回</v-btn
+                    >
+                  </div>
+                  <div
+                    class="route-transition-demo-frame"
+                    :style="{
+                      width: `${screenTransitionDemoViewport.width}px`,
+                      height: `${screenTransitionDemoViewport.height}px`,
+                    }"
                   >
-                    <div class="panel-slot-demo">
-                      <strong>{{
-                        screenTransitionDemoTitle(
-                          screenTransitionDemo[pane.mode].screenKey,
-                        )
-                      }}</strong>
-                      <span>{{ pane.label }}示意页</span>
-                    </div>
-                  </ScreenTransition>
-                </div>
-              </section>
+                    <ScreenTransition
+                      :mode="pane.mode"
+                      :navigation="screenTransitionDemo[pane.mode].navigation"
+                      :screen-key="screenTransitionDemo[pane.mode].screenKey"
+                    >
+                      <div class="panel-slot-demo">
+                        <strong>{{
+                          screenTransitionDemoTitle(
+                            screenTransitionDemo[pane.mode].screenKey,
+                          )
+                        }}</strong>
+                        <span>{{ pane.label }}示意页</span>
+                      </div>
+                    </ScreenTransition>
+                  </div>
+                </section>
               </div>
             </template>
 
@@ -1024,10 +1091,9 @@ const categoryEyebrow: Record<string, string> = {
                       class="exhibit-item"
                       :data-exhibit="`${section.id === 'type' ? 'type' : 'state'}.${item.id}`"
                     >
-                      <span
-                        v-if="!group.title || item.label !== group.title"
-                        >{{ item.label }}</span
-                      >
+                      <span v-if="!group.title || item.label !== group.title">{{
+                        item.label
+                      }}</span>
                       <component
                         :is="previewComponent"
                         v-bind="exhibitBind(item.props, group.scope, item.id)"
@@ -1039,7 +1105,10 @@ const categoryEyebrow: Record<string, string> = {
                           </div>
                         </template>
                         <template v-else-if="record.id === 'data-list'">
-                          <div role="listitem" class="list-slot-demo is-heading">
+                          <div
+                            role="listitem"
+                            class="list-slot-demo is-heading"
+                          >
                             <strong>仅标题行</strong>
                           </div>
                           <div role="listitem" class="list-slot-demo is-record">
@@ -1066,6 +1135,7 @@ const categoryEyebrow: Record<string, string> = {
               </div>
             </section>
           </div>
+          </v-defaults-provider>
         </v-theme-provider>
       </article>
 
@@ -1090,9 +1160,15 @@ const categoryEyebrow: Record<string, string> = {
           <tbody>
             <tr v-for="[slot, tokenId] in tokenBindings" :key="slot">
               <td>{{ slot }}</td>
-              <td><code>{{ tokenId }}</code></td>
-              <td><code>{{ bindingResolvedValue(tokenId) }}</code></td>
-              <td><code>{{ normalizeTokenCssVarName(tokenId) }}</code></td>
+              <td>
+                <code>{{ tokenId }}</code>
+              </td>
+              <td>
+                <code>{{ bindingResolvedValue(tokenId) }}</code>
+              </td>
+              <td>
+                <code>{{ normalizeTokenCssVarName(tokenId) }}</code>
+              </td>
               <td>{{ tokenCategoryById.get(tokenId) ?? "—" }}</td>
             </tr>
           </tbody>
@@ -1246,7 +1322,7 @@ const categoryEyebrow: Record<string, string> = {
   padding: var(--pb-spacing-md, 16px);
   overflow: hidden;
   border: var(--pb-border-hairline, 1px solid #d7dee8);
-  border-radius: var(--pb-radius-lg, 16px);
+  border-radius: var(--pb-radius-surface, 16px);
   background: var(--pb-color-surface, #fff);
 }
 .route-transition-demo-row {
@@ -1268,7 +1344,7 @@ const categoryEyebrow: Record<string, string> = {
   flex: none;
   overflow: hidden;
   border: var(--pb-border-hairline, 1px solid #d7dee8);
-  border-radius: var(--pb-radius-lg, 16px);
+  border-radius: var(--pb-radius-surface, 16px);
   background: var(--pb-color-surface, #fff);
 }
 .route-transition-demo-frame :deep(.panel-slot-demo) {
@@ -1357,7 +1433,7 @@ const categoryEyebrow: Record<string, string> = {
 .scrollable-list-demo-viewport {
   height: 320px;
   overflow: hidden;
-  border-radius: var(--pb-radius-lg);
+  border-radius: var(--pb-radius-surface);
 }
 .action-feedback {
   margin: 16px 0 0;
@@ -1382,7 +1458,7 @@ const categoryEyebrow: Record<string, string> = {
   display: flex;
   flex-direction: column;
   gap: var(--pb-spacing-lg);
-  margin-top: var(--pb-spacing-xl);
+  margin-top: calc(var(--pb-spacing-lg) + var(--pb-spacing-sm));
   padding-top: var(--pb-spacing-lg);
   border-top: var(--pb-border-hairline);
 }
@@ -1392,7 +1468,7 @@ const categoryEyebrow: Record<string, string> = {
   gap: var(--pb-spacing-md);
 }
 .exhibit-section h2 {
-  margin: var(--pb-spacing-none);
+  margin: var(--pb-layout-zero);
   color: var(--pb-color-on-surface);
   font: var(--pb-typography-label);
 }
@@ -1404,11 +1480,11 @@ const categoryEyebrow: Record<string, string> = {
 .exhibit-subgroup.has-title {
   padding: var(--pb-spacing-sm);
   border: var(--pb-border-hairline);
-  border-radius: var(--pb-radius-md);
+  border-radius: var(--pb-radius-control);
   background: var(--pb-color-surface-recessed);
 }
 .exhibit-subgroup h3 {
-  margin: var(--pb-spacing-none);
+  margin: var(--pb-layout-zero);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption-strong);
 }
@@ -1441,7 +1517,7 @@ const categoryEyebrow: Record<string, string> = {
   border-bottom: var(--pb-border-hairline);
 }
 .exhibit-row.is-wide .exhibit-item:last-child {
-  padding-bottom: var(--pb-spacing-none);
+  padding-bottom: var(--pb-layout-zero);
   border-bottom: none;
 }
 .exhibit-row.is-wide .exhibit-item > :deep(*) {

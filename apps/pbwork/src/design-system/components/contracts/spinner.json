@@ -19,11 +19,7 @@
       },
       "size": {
         "type": "string",
-        "enum": [
-          "sm",
-          "md",
-          "lg"
-        ]
+        "enum": ["sm", "md", "lg"]
       }
     }
   },
@@ -54,10 +50,10 @@
   "tokenBindings": {
     "active": "color.primary",
     "text": "color.on-surface-muted",
-    "size": "sizing.icon-md",
-    "motion": "motion.duration-slow",
+    "size": "size.icon",
+    "motion": "motion.duration-long",
     "label": "typography.caption",
-    "stroke": "sizing.indicator-thickness"
+    "stroke": "size.indicator"
   },
   "playground": {
     "presentation": "interactive"

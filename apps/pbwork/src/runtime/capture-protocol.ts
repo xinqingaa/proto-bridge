@@ -1,3 +1,5 @@
+import { computeKeyCatalogDigest } from "@proto-bridge/core/v2";
+import { runtimeThemeSources } from "@/design-system/theme/runtime-theme";
 import {
   RUNTIME_CAPTURE_GLOBAL,
   RUNTIME_CAPTURE_PROTOCOL_VERSION,
@@ -21,8 +23,7 @@ import {
   loadComponentContracts,
   loadPrototypes,
   loadPrototypeScreens,
-  loadThemes,
-  loadTokens,
+  loadModePresentations,
 } from "@/design-system/loaders";
 import { validateRegistries } from "@/design-system/validateRegistries";
 import {
@@ -59,7 +60,11 @@ const CAPTURE_PROP_KEYS = [
 function readDatasetTokenBindings(
   element: HTMLElement,
 ): Record<string, string> | undefined {
-  const knownTokenIds = new Set(loadTokens().map((token) => token.id));
+  const knownTokenIds = new Set(
+    runtimeThemeSources.keyCatalog.keys
+      .filter((key) => key.bindable)
+      .map((key) => key.id),
+  );
   const allowedLiterals = new Set<string>(TOKEN_BINDING_LITERALS);
   const bindings: Record<string, string> = {};
   for (const [key, value] of Object.entries(element.dataset)) {
@@ -317,10 +322,7 @@ export function buildRuntimeCaptureManifest(
     },
     {
       kind: "token" as const,
-      values: [
-        ...loadTokens(),
-        ...loadThemes().map((theme) => ({ ...theme, catalogObject: "theme" })),
-      ],
+      values: [...runtimeThemeSources.keyCatalog.keys],
       id: (value: { id: string }) => value.id,
     },
     {
@@ -352,19 +354,19 @@ export function buildRuntimeCaptureManifest(
   });
   const authoringDiagnostics: RuntimeCaptureManifest["authoringDiagnostics"] =
     validateRegistries().map((error, index) => ({
-    diagnosticId: `registry-${error.resourceType}-${error.resourceId ?? "unknown"}-${index}`,
-    code: `registry.${error.keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "invalid"}`,
-    severity: "block" as const,
-    message: `${error.resourceType} ${error.resourceId ?? "unknown"}: ${error.message}`,
-    caseIds: [],
-    source: {
-      kind: "registry" as const,
-      locator: `${error.resourceType}:${error.resourceId ?? "unknown"}${error.instancePath}`,
-      ...(error.resourceType === "screen" && error.resourceId
-        ? { screenId: error.resourceId }
-        : {}),
-    },
-    nextAction: "Fix the Registry/Contract validation error before Capture.",
+      diagnosticId: `registry-${error.resourceType}-${error.resourceId ?? "unknown"}-${index}`,
+      code: `registry.${error.keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "invalid"}`,
+      severity: "block" as const,
+      message: `${error.resourceType} ${error.resourceId ?? "unknown"}: ${error.message}`,
+      caseIds: [],
+      source: {
+        kind: "registry" as const,
+        locator: `${error.resourceType}:${error.resourceId ?? "unknown"}${error.instancePath}`,
+        ...(error.resourceType === "screen" && error.resourceId
+          ? { screenId: error.resourceId }
+          : {}),
+      },
+      nextAction: "Fix the Registry/Contract validation error before Capture.",
     }));
   authoringDiagnostics.push(
     ...screens
@@ -391,7 +393,14 @@ export function buildRuntimeCaptureManifest(
   );
   return {
     protocolVersion: RUNTIME_CAPTURE_PROTOCOL_VERSION,
-    inputVersion: digestText(JSON.stringify(versionInput)),
+    inputVersion: digestText(
+      JSON.stringify({
+        screens: versionInput,
+        keyCatalogDigest: computeKeyCatalogDigest(
+          runtimeThemeSources.keyCatalog,
+        ),
+      }),
+    ),
     capabilities: [
       "describe",
       "prepare",
@@ -759,7 +768,10 @@ function visibleClientRect(element: HTMLElement): DOMRect | null {
   let right = Math.min(rect.right, window.innerWidth);
   let bottom = Math.min(rect.bottom, window.innerHeight);
   let node: HTMLElement = element;
-  while (window.getComputedStyle(node).position !== "fixed" && node.parentElement) {
+  while (
+    window.getComputedStyle(node).position !== "fixed" &&
+    node.parentElement
+  ) {
     node = node.parentElement;
     const style = window.getComputedStyle(node);
     const clip = node.getBoundingClientRect();
@@ -905,7 +917,8 @@ export function installRuntimeCaptureProtocol(
   ): Promise<unknown> {
     const context = options.getContext();
     if (payload.kind === "describe") {
-      const prototypeId = context?.prototypeId ?? options.getManifestPrototypeId?.();
+      const prototypeId =
+        context?.prototypeId ?? options.getManifestPrototypeId?.();
       if (!prototypeId) {
         throw new ProtocolFailure(
           "runtime-not-ready",

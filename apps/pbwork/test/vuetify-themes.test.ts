@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { createVuetifyThemes } from "@/design-system/themes/createVuetifyThemes";
-import { resolveThemeTokens } from "@/design-system/resolveThemeTokens";
+import { themeCssValues } from "@/design-system/theme/presentation";
 import { vuetifyThemeBindings } from "@/design-system/themes/vuetify-bindings";
 import { workbenchThemes } from "@/design-system/themes/workbench-themes";
 
 describe("createVuetifyThemes", () => {
   it("maps Vuetify semantic colors from resolved tokens", () => {
     const themes = createVuetifyThemes();
-    const light = resolveThemeTokens("light");
-    const dark = resolveThemeTokens("dark");
+    const light = themeCssValues("light");
+    const dark = themeCssValues("dark");
 
     for (const [semantic, tokenId] of Object.entries(vuetifyThemeBindings)) {
-      expect(themes.pbworkLight.colors[semantic]).toBe(String(light[tokenId]));
-      expect(themes.pbworkDark.colors[semantic]).toBe(String(dark[tokenId]));
+      expect(themes.pbworkLight.colors![semantic]).toBe(String(light[tokenId]));
+      expect(themes.pbworkDark.colors![semantic]).toBe(String(dark[tokenId]));
     }
     expect(themes.pbworkLight.dark).toBe(false);
     expect(themes.pbworkDark.dark).toBe(true);
@@ -29,11 +29,11 @@ describe("createVuetifyThemes", () => {
     expect(workbenchThemes.workbenchDark!.colors!["on-tooltip"]).toBe(
       "#202124",
     );
-    expect(themes.pbworkLight.colors.tooltip).toBe(
-      themes.pbworkLight.colors.action,
+    expect(themes.pbworkLight.colors!.tooltip).toBe(
+      themeCssValues("light")["color.inverse-surface"],
     );
-    expect(themes.pbworkDark.colors["on-tooltip"]).toBe(
-      themes.pbworkDark.colors["on-action"],
+    expect(themes.pbworkDark.colors!["on-tooltip"]).toBe(
+      themeCssValues("dark")["color.on-inverse-surface"],
     );
   });
 });

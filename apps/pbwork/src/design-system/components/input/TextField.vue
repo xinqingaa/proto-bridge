@@ -12,11 +12,7 @@ const props = defineProps<{
   clearable?: boolean;
   type?: "text" | "password";
   autocomplete?:
-    | "name"
-    | "username"
-    | "current-password"
-    | "new-password"
-    | "off";
+    "name" | "username" | "current-password" | "new-password" | "off";
   errorMessage?: string;
   revealable?: boolean;
   /** Page-unique inspect / comment anchor; falls back to `ds.text-field`. */
@@ -75,29 +71,29 @@ usePbInspect({
   getTokenBindings: () => ({
     border: "color.border",
     surface: labeled.value ? "color.surface" : "color.surface-recessed",
-    radius: "radius.md",
-    height: "sizing.control-md",
+    radius: "radius.control",
+    height: "size.control",
     label: "typography.caption",
     input: "typography.content",
     errorColor: "color.error",
     errorText: "typography.caption",
     revealColor: "color.on-surface-muted",
-    revealSize: "sizing.icon-md",
-    revealTarget: "sizing.touch",
+    revealSize: "size.icon",
+    revealTarget: "size.touch",
     disabledOpacity: "opacity.disabled",
   }),
   getTokens: () => [
     "color.border",
     labeled.value ? "color.surface" : "color.surface-recessed",
     "color.on-surface",
-    "radius.md",
-    "sizing.control-md",
+    "radius.control",
+    "size.control",
     "typography.caption",
     "typography.content",
     "color.error",
     "color.on-surface-muted",
-    "sizing.icon-md",
-    "sizing.touch",
+    "size.icon",
+    "size.touch",
     "spacing.xs",
     "spacing.md",
     "opacity.disabled",
@@ -156,14 +152,14 @@ usePbInspect({
   font: var(--pb-typography-content);
 }
 .pb-field :deep(.v-field) {
-  min-height: var(--pb-sizing-control-md);
+  min-height: var(--pb-size-control);
   background: var(--pb-color-surface-recessed);
 }
 .pb-field.is-labeled :deep(.v-field) {
   background: var(--pb-color-surface);
 }
 .pb-field :deep(.v-field__input) {
-  min-height: var(--pb-sizing-control-md);
+  min-height: var(--pb-size-control);
 }
 .pb-field.is-plain :deep(.v-field) {
   box-shadow: none;
@@ -172,16 +168,16 @@ usePbInspect({
   display: none;
 }
 .pb-field.radius-sm :deep(.v-field) {
-  --v-field-border-radius: var(--pb-radius-sm);
-  border-radius: var(--pb-radius-sm);
+  --v-field-border-radius: var(--pb-radius-control-compact);
+  border-radius: var(--pb-radius-control-compact);
 }
 .pb-field.radius-md :deep(.v-field) {
-  --v-field-border-radius: var(--pb-radius-md);
-  border-radius: var(--pb-radius-md);
+  --v-field-border-radius: var(--pb-radius-control);
+  border-radius: var(--pb-radius-control);
 }
 .pb-field.radius-lg :deep(.v-field) {
-  --v-field-border-radius: var(--pb-radius-lg);
-  border-radius: var(--pb-radius-lg);
+  --v-field-border-radius: var(--pb-radius-surface);
+  border-radius: var(--pb-radius-surface);
 }
 .pb-field.v-input--disabled {
   opacity: var(--pb-opacity-disabled);
@@ -192,11 +188,11 @@ usePbInspect({
 }
 .pb-field__reveal {
   display: inline-flex;
-  min-width: var(--pb-sizing-touch);
-  min-height: var(--pb-sizing-touch);
+  min-width: var(--pb-size-touch);
+  min-height: var(--pb-size-touch);
   align-items: center;
   justify-content: center;
-  padding: var(--pb-spacing-none);
+  padding: var(--pb-layout-zero);
   border: none;
   background: transparent;
   color: var(--pb-color-on-surface-muted);

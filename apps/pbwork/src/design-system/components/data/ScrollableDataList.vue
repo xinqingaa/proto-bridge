@@ -1,4 +1,10 @@
 <script setup lang="ts">
+import { useTokenNumber } from "@/design-system/theme/runtime-theme";
+import {
+  themeConstantCss,
+  themeConstantNumber,
+} from "@/design-system/theme/constants";
+
 import {
   computed,
   nextTick,
@@ -11,23 +17,18 @@ import {
 import Spinner from "@/design-system/components/display/Spinner.vue";
 import Icon from "@/design-system/components/action/Icon.vue";
 import { usePbInspect } from "@/runtime/inspect/usePbInspect";
-import {
-  tokenDefaultCssValue,
-  tokenDefaultNumber,
-} from "@/design-system/tokenDefaults";
-
-const DEFAULT_LOAD_MORE_ROOT_MARGIN = tokenDefaultCssValue(
+const DEFAULT_LOAD_MORE_ROOT_MARGIN = themeConstantCss(
   "layout.load-more-root-margin",
 );
-const DEFAULT_PULL_THRESHOLD = tokenDefaultNumber(
+const DEFAULT_PULL_THRESHOLD = themeConstantNumber(
   "layout.pull-refresh-threshold",
 );
-const DEFAULT_PULL_MAX_DISTANCE = tokenDefaultNumber(
+const DEFAULT_PULL_MAX_DISTANCE = themeConstantNumber(
   "layout.pull-refresh-max-distance",
 );
-const REFRESH_RESTING_DISTANCE = tokenDefaultNumber("sizing.control-lg");
-const AXIS_LOCK_DISTANCE = tokenDefaultNumber("layout.gesture-axis-lock");
-const CLICK_SUPPRESSION_DURATION = tokenDefaultNumber(
+const REFRESH_RESTING_DISTANCE = useTokenNumber("size.control-large");
+const AXIS_LOCK_DISTANCE = themeConstantNumber("layout.gesture-axis-lock");
+const CLICK_SUPPRESSION_DURATION = themeConstantNumber(
   "motion.duration-click-suppression",
 );
 
@@ -162,7 +163,7 @@ const pullProgress = computed(() =>
 const contentStyle = computed<
   CSSProperties & Record<"--pb-pull-offset", string>
 >(() => ({
-  "--pb-pull-offset": `${props.refreshing ? REFRESH_RESTING_DISTANCE : pullDistance.value}px`,
+  "--pb-pull-offset": `${props.refreshing ? REFRESH_RESTING_DISTANCE.value : pullDistance.value}px`,
 }));
 
 function canRefresh(event?: PointerEvent, atTop = true) {
@@ -479,43 +480,29 @@ usePbInspect({
     primary: "color.primary",
     muted: "color.on-surface-muted",
     footer: "typography.caption",
-    duration: "motion.duration-normal",
+    duration: "motion.duration-medium",
     easing: "motion.easing-gentle",
     disabledOpacity: "opacity.disabled",
-    hiddenOpacity: "opacity.hidden",
-    visibleOpacity: "opacity.visible",
-    refreshTarget: "sizing.touch",
-    footerHeight: "sizing.control-lg",
-    actionMinWidth: "sizing.refresh-action-min-width",
-    actionHeight: "sizing.refresh-action-height",
-    fill: "layout.fill",
-    refreshTranslation: "layout.translate-full-negative",
-    refreshThreshold: "layout.pull-refresh-threshold",
-    refreshMaxDistance: "layout.pull-refresh-max-distance",
-    refreshRestingDistance: "sizing.control-lg",
-    loadMoreRootMargin: "layout.load-more-root-margin",
-    sentinel: "border.width-hairline",
+    refreshTarget: "size.touch",
+    footerHeight: "size.control-large",
+    actionMinWidth: "scrollable-data-list.action-min-width",
+    actionHeight: "scrollable-data-list.action-height",
+    refreshRestingDistance: "size.control-large",
+    sentinel: "border.width",
   }),
   getTokens: () => [
     "color.background",
     "color.primary",
     "color.on-surface-muted",
     "typography.caption",
-    "motion.duration-normal",
+    "motion.duration-medium",
     "motion.easing-gentle",
     "opacity.disabled",
-    "opacity.hidden",
-    "opacity.visible",
-    "sizing.touch",
-    "sizing.control-lg",
-    "sizing.refresh-action-min-width",
-    "sizing.refresh-action-height",
-    "layout.fill",
-    "layout.translate-full-negative",
-    "layout.pull-refresh-threshold",
-    "layout.pull-refresh-max-distance",
-    "layout.load-more-root-margin",
-    "border.width-hairline",
+    "size.touch",
+    "size.control-large",
+    "scrollable-data-list.action-min-width",
+    "scrollable-data-list.action-height",
+    "border.width",
   ],
 });
 
@@ -608,8 +595,8 @@ onBeforeUnmount(() => {
 <style scoped>
 .pb-scrollable-data-list {
   position: relative;
-  min-width: var(--pb-spacing-none);
-  min-height: var(--pb-spacing-none);
+  min-width: var(--pb-layout-zero);
+  min-height: var(--pb-layout-zero);
   height: var(--pb-layout-fill);
   overflow: auto;
   overscroll-behavior-y: contain;
@@ -632,23 +619,23 @@ onBeforeUnmount(() => {
 }
 .pb-scrollable-data-list-refresh {
   position: absolute;
-  top: var(--pb-spacing-none);
-  left: var(--pb-spacing-none);
-  right: var(--pb-spacing-none);
+  top: var(--pb-layout-zero);
+  left: var(--pb-layout-zero);
+  right: var(--pb-layout-zero);
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: var(--pb-sizing-touch);
+  min-height: var(--pb-size-touch);
   opacity: var(--pb-opacity-hidden);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
   transform: translateY(var(--pb-layout-translate-full-negative));
-  transition: opacity var(--pb-motion-duration-normal)
+  transition: opacity var(--pb-motion-duration-medium)
     var(--pb-motion-easing-gentle);
 }
 .pb-scrollable-data-list-refresh.is-visible {
   opacity: var(--pb-opacity-visible);
-  transform: translateY(var(--pb-spacing-none));
+  transform: translateY(var(--pb-layout-zero));
 }
 .pb-scrollable-data-list-refresh.is-ready {
   color: var(--pb-color-primary);
@@ -663,30 +650,30 @@ onBeforeUnmount(() => {
   flex-direction: column;
   min-height: var(--pb-layout-fill);
   transform: translate3d(
-    var(--pb-spacing-none),
+    var(--pb-layout-zero),
     var(--pb-pull-offset),
-    var(--pb-spacing-none)
+    var(--pb-layout-zero)
   );
-  transition: transform var(--pb-motion-duration-normal)
+  transition: transform var(--pb-motion-duration-medium)
     var(--pb-motion-easing-gentle);
   will-change: transform;
 }
 .pb-scrollable-data-list-sentinel {
-  height: var(--pb-border-width-hairline);
+  height: var(--pb-border-width);
 }
 .pb-scrollable-data-list-footer {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: var(--pb-sizing-control-lg);
+  min-height: var(--pb-size-control-large);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
 }
 .pb-scrollable-data-list-more {
-  min-width: var(--pb-sizing-refresh-action-min-width);
-  min-height: var(--pb-sizing-refresh-action-height);
+  min-width: var(--pb-scrollable-data-list-action-min-width);
+  min-height: var(--pb-scrollable-data-list-action-height);
   border: none;
-  border-radius: var(--pb-radius-full);
+  border-radius: var(--pb-radius-pill);
   background: var(--pb-color-primary-soft);
   color: var(--pb-color-primary);
   font: var(--pb-typography-label);

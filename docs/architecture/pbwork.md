@@ -45,8 +45,8 @@ Token + Theme
 
 权威来源：
 
-- Token：`design-system/tokens/tokens.json`
-- 可绑定 Token：`design-system/bindTokens.ts`
+- Token：`design-system/theme/key-catalog.json`
+- 可绑定 Token：`design-system/theme/bindings.ts`
 - Theme：`design-system/themes/*.json`
 - Component Contract：`design-system/components/contracts/*.json`
 - Component Registry：`design-system/components/registry.ts`

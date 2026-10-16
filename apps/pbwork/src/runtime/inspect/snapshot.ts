@@ -14,8 +14,11 @@ import {
   getInspectRegistration,
   getOrCreateHandle,
 } from "@/runtime/inspect/registry";
-import { loadTokens } from "@/design-system/loaders";
-import { normalizeTokenCssVarName } from "@/design-system/resolveThemeTokens";
+import { runtimeThemeSources } from "@/design-system/theme/runtime-theme";
+import {
+  themeKeyCategory,
+  normalizeTokenCssVarName,
+} from "@/design-system/theme/presentation";
 import type { TokenRecord } from "@/design-system/types";
 
 const STYLE_KEYS = [
@@ -170,22 +173,35 @@ type TokenVarEntry = {
   cssVar: string;
   value: string;
   category: TokenRecord["category"];
+  parts?: Record<string, string>;
 };
 
 let cachedTokenMeta: Omit<TokenVarEntry, "value">[] | null = null;
 
 function tokenVarCatalog(scope: Element): TokenVarEntry[] {
   if (!cachedTokenMeta) {
-    cachedTokenMeta = loadTokens().map((token) => ({
-      tokenId: token.id,
-      cssVar: normalizeTokenCssVarName(token.id),
-      category: token.category,
-    }));
+    cachedTokenMeta = runtimeThemeSources.keyCatalog.keys
+      .filter((key) => key.bindable)
+      .map((token) => ({
+        tokenId: token.id,
+        cssVar: normalizeTokenCssVarName(token.id),
+        category: themeKeyCategory(token),
+      }));
   }
   const cs = getComputedStyle(scope);
   return cachedTokenMeta.map((entry) => ({
     ...entry,
     value: cs.getPropertyValue(entry.cssVar).trim(),
+    ...(entry.category === "typography"
+      ? {
+          parts: Object.fromEntries(
+            ["family", "weight", "size", "line-height"].map((field) => [
+              field,
+              cs.getPropertyValue(`${entry.cssVar}-${field}`).trim(),
+            ]),
+          ),
+        }
+      : {}),
   }));
 }
 
@@ -232,12 +248,23 @@ function typographyLonghandMatches(
   property: (typeof STYLE_KEYS)[number],
   value: string,
   tokenValue: string,
+  parts?: Record<string, string>,
 ): boolean {
   if (!TYPOGRAPHY_LONGHANDS.has(property)) return false;
   const probe = document.createElement("span");
   document.documentElement.appendChild(probe);
-  probe.style.font = tokenValue;
-  const accepted = Boolean(probe.style.font);
+  if (
+    parts &&
+    ["family", "weight", "size", "line-height"].every((field) => parts[field])
+  ) {
+    probe.style.fontFamily = parts.family!;
+    probe.style.fontWeight = parts.weight!;
+    probe.style.fontSize = parts.size!;
+    probe.style.lineHeight = parts["line-height"]!;
+  } else probe.style.font = tokenValue;
+  const accepted = Boolean(
+    probe.style.font || (probe.style.fontSize && probe.style.fontFamily),
+  );
   const expected = accepted
     ? getComputedStyle(probe).getPropertyValue(property).trim()
     : "";
@@ -308,7 +335,7 @@ function matchFullTypographyToken(
     for (const item of pool) {
       if (!item.value) continue;
       const allMatch = longhands.every((key) =>
-        typographyLonghandMatches(key, actual[key], item.value),
+        typographyLonghandMatches(key, actual[key], item.value, item.parts),
       );
       if (!allMatch) continue;
       return {

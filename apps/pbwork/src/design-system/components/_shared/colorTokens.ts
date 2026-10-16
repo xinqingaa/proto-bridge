@@ -3,7 +3,7 @@ import {
   BIND_TOKEN_SPECIAL_VALUES,
   isAllowedTokenBindingValue,
   type BindTokenId,
-} from "@/design-system/bindTokens";
+} from "@/design-system/theme/bindings";
 
 /** Color tokens from the Bind pool (plus special values for slots). */
 export const BIND_COLOR_TOKEN_IDS = BIND_TOKEN_IDS.filter((id) =>

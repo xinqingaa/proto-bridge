@@ -8,13 +8,13 @@ import {
   loadComponentRecords,
   loadPrototypeScreens,
   loadPrototypes,
-  loadThemes,
-  loadTokens,
+  loadModePresentations,
+  loadTokenPresentations,
   componentViewModules,
   screenViewModules,
 } from "@/design-system/loaders";
-import { normalizeTokenCssVarName } from "@/design-system/resolveThemeTokens";
-import { isAllowedTokenBindingValue } from "@/design-system/bindTokens";
+import { normalizeTokenCssVarName } from "@/design-system/theme/presentation";
+import { isAllowedTokenBindingValue } from "@/design-system/theme/bindings";
 import { vuetifyThemeBindings } from "@/design-system/themes/vuetify-bindings";
 import type {
   ComponentContract,
@@ -32,6 +32,7 @@ import {
   RESOURCE_ID_PATTERN,
   SLUG_ID_PATTERN,
 } from "@/design-system/types";
+import { loadThemeKeyCatalog } from "@/design-system/theme/sources";
 import { runtimeThemeSources } from "@/design-system/theme/runtime-theme";
 import {
   validateThemePacks,
@@ -278,7 +279,7 @@ function validateComponentContractPair(
   ajv: Ajv2020,
   record: ComponentRecord,
   contract: ComponentContract,
-  tokens: TokenRecord[],
+  themeKeys: typeof runtimeThemeSources.keyCatalog.keys,
   errors: RegistryValidationError[],
 ) {
   if (contract.id !== record.id) {
@@ -372,7 +373,9 @@ function validateComponentContractPair(
     }
   }
 
-  const tokenIds = new Set(tokens.map((token) => token.id));
+  const tokenIds = new Set(
+    themeKeys.filter((key) => key.bindable).map((key) => key.id),
+  );
   if (
     contract.semantic.policy === "contextual" &&
     !contract.semantic.allowedRoles.includes(contract.semantic.defaultRole)
@@ -430,13 +433,24 @@ export function validateRegistries(input?: {
   prototypes?: ReturnType<typeof loadPrototypes>;
   screens?: ScreenRecord[];
 }): RegistryValidationError[] {
-  const tokens = input?.tokens ?? loadTokens();
-  const themes = input?.themes ?? loadThemes();
+  const tokens = input?.tokens ?? loadTokenPresentations();
+  const themes = input?.themes ?? loadModePresentations();
   const components = input?.components ?? loadComponentRecords();
   const contracts = input?.contracts ?? loadComponentContracts();
   const prototypes = input?.prototypes ?? loadPrototypes();
   const screens = input?.screens ?? loadPrototypeScreens();
   const errors: RegistryValidationError[] = [];
+  let themeCatalog = runtimeThemeSources.keyCatalog;
+  try {
+    themeCatalog = loadThemeKeyCatalog(contracts);
+  } catch (error) {
+    errors.push({
+      resourceType: "component",
+      instancePath: "/componentTokens",
+      keyword: "componentTokens",
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
   const ajv = createAjv();
   const validateToken = ajv.compile(tokenSchema);
   const validateTheme = ajv.compile(themeSchema);
@@ -578,7 +592,7 @@ export function validateRegistries(input?: {
     componentIds.add(record.id);
 
     const contract =
-      loadComponentContract(record.contract) ?? contractById.get(record.id);
+      contractById.get(record.id) ?? loadComponentContract(record.contract);
     if (!contract) {
       pushError(errors, {
         resourceType: "component",
@@ -588,7 +602,13 @@ export function validateRegistries(input?: {
         message: `missing contract ${record.contract}`,
       });
     } else {
-      validateComponentContractPair(ajv, record, contract, tokens, errors);
+      validateComponentContractPair(
+        ajv,
+        record,
+        contract,
+        themeCatalog.keys,
+        errors,
+      );
     }
 
     const { matches } = findViewModule(componentViewModules, record.view);
@@ -636,6 +656,7 @@ export function validateRegistries(input?: {
 
   for (const diagnostic of validateThemePacks({
     ...runtimeThemeSources,
+    keyCatalog: themeCatalog,
     prototypeBindings: prototypes.map((prototype) => ({
       prototypeId: prototype.id,
       packId: prototype.themePackId,

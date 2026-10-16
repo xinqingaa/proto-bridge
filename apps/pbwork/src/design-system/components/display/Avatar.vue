@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { avatarSizeToken } from "@/design-system/components/_shared/appearance";
 import { computed, toRefs } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 
@@ -16,7 +17,7 @@ const { name, size, tone, inspectId } = toRefs(props);
 const initials = computed(() => name.value.trim().slice(0, 2).toUpperCase());
 
 const sizePx = computed(() => {
-  return `var(--pb-sizing-avatar-${size.value ?? "md"})`;
+  return `var(--pb-${avatarSizeToken(size.value ?? "md").replaceAll(".", "-")})`;
 });
 
 usePbInspect({
@@ -33,15 +34,15 @@ usePbInspect({
   getTokens: () => [
     `color.${tone.value ?? "primary"}`,
     `color.on-${tone.value ?? "primary"}`,
-    `sizing.avatar-${size.value ?? "md"}`,
-    "radius.full",
+    avatarSizeToken(size.value ?? "md"),
+    "radius.pill",
     "typography.label",
   ],
   getTokenBindings: () => ({
     background: `color.${tone.value ?? "primary"}`,
     text: `color.on-${tone.value ?? "primary"}`,
-    size: `sizing.avatar-${size.value ?? "md"}`,
-    radius: "radius.full",
+    size: avatarSizeToken(size.value ?? "md"),
+    radius: "radius.pill",
     initials: "typography.label",
   }),
 });
@@ -62,7 +63,7 @@ usePbInspect({
 
 <style scoped>
 .pb-avatar {
-  border-radius: var(--pb-radius-full);
+  border-radius: var(--pb-radius-pill);
 }
 .pb-avatar-text {
   color: currentColor;

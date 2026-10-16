@@ -35,9 +35,7 @@
         "type": "boolean"
       }
     },
-    "required": [
-      "label"
-    ]
+    "required": ["label"]
   },
   "defaultProps": {
     "label": "仅查看高优先级",
@@ -65,16 +63,14 @@
     }
   ],
   "slots": [],
-  "events": [
-    "update:modelValue"
-  ],
+  "events": ["update:modelValue"],
   "tokenBindings": {
     "selected": "color.primary",
     "onSelected": "color.on-primary",
     "uncheckedBorder": "color.outline",
     "text": "color.on-surface",
-    "target": "sizing.touch",
-    "radius": "radius.xs",
+    "target": "size.touch",
+    "radius": "radius.mark",
     "label": "typography.content",
     "disabledOpacity": "opacity.disabled"
   },

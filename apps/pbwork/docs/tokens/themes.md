@@ -15,17 +15,11 @@
 5. Capture prepare 与强制导航固定默认主题和指定模式，禁止偏好覆盖。当前 Capture 协议仍通过 themeId 传具体模式，包摘要与完整主题身份进入 Evidence/Handoff 属于平台升级第 3 步。
 6. iframe 与 Workbench 使用 bridge 和原型级偏好同步。切换原型不得沿用上一个原型的主题会话。
 
-## 组件迁移边界
+## 组件与预览
 
-Runtime 输出新键目录的 CSS，重名变量以主题表为准。尚未迁移的 DS/冷链组件仍消费原有 Token 变量，Runtime 暂时保留原有生成结果；没有建立新旧键别名映射。组件 JS 的模块级默认值读取也尚待替换。上述旧链路在第 2 步第三批按组件、Contract 和 Evidence 绑定一并移除，届时才能宣称所有组件完整响应主题包。
+DS 与冷链已使用新键、响应式 JS 读取和不可变常量，Runtime 不再叠加旧 CSS。共享 SurfaceMaterial 由 surface.treatment 与组件材质控制驱动；基础包保留一级 Tab 的 glass 覆盖，AppBar/Tabbar 跟随全局材质。
 
-Token Gallery、Component Playground 与旧 ThemePreview 仍使用以下旧数据；主题包选择器在第四批接入，不能将这里的旧 light/dark 目录理解为包内主题列表。
-
-| 旧数据 | 文件 |
-| --- | --- |
-| Token | `src/design-system/tokens/tokens.json` |
-| 浅色模式值 | `src/design-system/themes/light.json` |
-| 深色模式值 | `src/design-system/themes/dark.json` |
+旧 Token/Theme JSON、resolveThemeTokens、bindTokens 与 tokenDefaults 已从生产代码移除；旧值仅留在 test/fixtures/legacy-theme 用于等价断言。Gallery 与 Playground 可以选择基础包或样例包、包内主题和浅色/深色，并对照解析值。样例包不绑定正式原型。
 
 ## 检查
 

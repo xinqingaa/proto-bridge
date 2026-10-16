@@ -24,9 +24,7 @@
         "type": "string"
       }
     },
-    "required": [
-      "title"
-    ]
+    "required": ["title"]
   },
   "defaultProps": {
     "title": "暂无工单",
@@ -44,30 +42,26 @@
     }
   ],
   "slots": [],
-  "events": [
-    "action"
-  ],
+  "events": ["action"],
   "tokenBindings": {
     "iconSurface": "color.primary-soft",
     "icon": "color.primary",
     "title": "color.on-surface",
     "description": "color.on-surface-muted",
-    "radius": "radius.full",
+    "radius": "radius.pill",
     "spacing": "spacing.lg",
-    "iconSize": "sizing.icon-lg",
+    "iconSize": "size.icon-prominent",
     "typography": "typography.subtitle",
     "body": "typography.content",
     "titleOffset": "spacing.xs",
     "descriptionOffset": "spacing.sm",
-    "iconSurfaceSize": "sizing.avatar-lg"
+    "iconSurfaceSize": "size.avatar-large"
   },
   "playground": {
     "presentation": "interactive"
   },
   "icons": {
     "pack": "lucide",
-    "defaults": [
-      "inbox"
-    ]
+    "defaults": ["inbox"]
   }
 }

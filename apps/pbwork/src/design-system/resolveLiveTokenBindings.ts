@@ -2,6 +2,11 @@
  * Resolve contract tokenBindings against live playground props
  * so the inspector reflects the current size / tone / elevation / selection.
  */
+import { sizeToken } from "@/design-system/components/_shared/appearance";
+import {
+  radiusToken,
+  type RadiusSize,
+} from "@/design-system/components/_shared/radius";
 import { resolveButtonColorsFromKind } from "@/design-system/components/_shared/colorTokens";
 
 export function resolveLiveTokenBindings(
@@ -13,7 +18,7 @@ export function resolveLiveTokenBindings(
   if (typeof props.radius === "string" && props.radius.length > 0) {
     for (const [key, value] of Object.entries(result)) {
       if (key === "radius" || value.startsWith("radius.")) {
-        result[key] = `radius.${props.radius}`;
+        result[key] = radiusToken(props.radius as RadiusSize);
       }
     }
   }
@@ -98,9 +103,9 @@ export function resolveLiveTokenBindings(
       if (
         key === "height" ||
         key === "size" ||
-        value.startsWith("sizing.control-")
+        value.startsWith("size.control")
       ) {
-        result[key] = `sizing.control-${props.size}`;
+        result[key] = sizeToken(props.size as "sm" | "md" | "lg");
       }
       if (key === "paddingX") {
         result[key] =
@@ -114,7 +119,12 @@ export function resolveLiveTokenBindings(
   }
 
   if (typeof props.elevation === "string" && "elevation" in result) {
-    result.elevation = `elevation.${props.elevation}`;
+    result.elevation =
+      props.elevation === "none"
+        ? "none"
+        : props.elevation === "card"
+          ? "elevation.surface"
+          : "elevation.raised";
   }
 
   const tabVariant =
@@ -132,7 +142,7 @@ export function resolveLiveTokenBindings(
       result.activeBackground = "transparent";
     }
     if ("radius" in result) {
-      result.radius = "radius.md";
+      result.radius = "radius.control";
     }
   } else if (props.selectionStyle === "pill") {
     if ("activeBackground" in result) {
@@ -140,7 +150,7 @@ export function resolveLiveTokenBindings(
         staticBindings.activeBackground ?? "color.primary-soft";
     }
     if ("radius" in result) {
-      result.radius = "radius.full";
+      result.radius = "radius.pill";
     }
   }
 
@@ -163,7 +173,7 @@ export function resolveLiveTokenBindings(
         const elevatedToken =
           staticBindings[key]?.startsWith("elevation.") === true
             ? staticBindings[key]!
-            : "elevation.card";
+            : "elevation.surface";
         result[key] = props.elevated ? elevatedToken : "none";
       }
     }

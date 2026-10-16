@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { sizeToken } from "@/design-system/components/_shared/appearance";
+import { useTokenNumber } from "@/design-system/theme/runtime-theme";
+import { themeConstantNumber } from "@/design-system/theme/constants";
+
 import { computed, toRefs } from "vue";
 import Icon from "@/design-system/components/action/Icon.vue";
 import type { PbIconName } from "@/design-system/components/_shared/icons";
@@ -8,9 +12,7 @@ import {
   type ComponentSize,
 } from "@/design-system/components/_shared/appearance";
 import { radiusStyle } from "@/design-system/components/_shared/radius";
-import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
-
-const NO_ELEVATION = tokenDefaultNumber("layer.base");
+const NO_ELEVATION = themeConstantNumber("layer.base");
 
 const props = defineProps<{
   ariaLabel: string;
@@ -33,9 +35,7 @@ const resolvedVariant = computed(() => variant.value ?? "tonal");
 const resolvedTone = computed(() => tone.value ?? "secondary");
 const iconName = computed((): PbIconName => icon.value ?? "more");
 
-const visualSize = computed(() => {
-  return tokenDefaultNumber(`sizing.control-${size.value ?? "md"}`);
-});
+const visualSize = useTokenNumber(() => sizeToken(size.value ?? "md"));
 const iconSize = computed((): ComponentSize => {
   if (size.value === "sm") return "sm";
   if (size.value === "lg") return "lg";
@@ -63,13 +63,13 @@ usePbInspect({
     return {
       color: `color.${t}`,
       background: v === "tonal" ? `color.${t}-soft` : `color.${t}`,
-      radius: "radius.full",
-      elevation: "elevation.none",
-      size: `sizing.control-${size.value ?? "md"}`,
-      target: "sizing.touch",
-      duration: "motion.duration-fast",
+      radius: "radius.pill",
+      elevation: "none",
+      size: sizeToken(size.value ?? "md"),
+      target: "size.touch",
+      duration: "motion.duration-short",
       easing: "motion.easing-standard",
-      pressedScale: "motion.scale-pressed-strong",
+      pressedScale: "motion.press-scale-strong",
       disabledOpacity: "opacity.disabled",
     };
   },
@@ -79,13 +79,12 @@ usePbInspect({
     return [
       `color.${t}`,
       `color.${t}-soft`,
-      "radius.full",
-      "elevation.none",
-      `sizing.control-${size.value ?? "md"}`,
-      "sizing.touch",
-      "motion.duration-fast",
+      "radius.pill",
+      sizeToken(size.value ?? "md"),
+      "size.touch",
+      "motion.duration-short",
       "motion.easing-standard",
-      "motion.scale-pressed-strong",
+      "motion.press-scale-strong",
       "opacity.disabled",
       ...(v === "flat" ? [`color.on-${t}`] : []),
     ];
@@ -118,15 +117,15 @@ usePbInspect({
 
 <style scoped>
 .pb-icon-button {
-  min-width: var(--pb-sizing-touch) !important;
-  min-height: var(--pb-sizing-touch) !important;
+  min-width: var(--pb-size-touch) !important;
+  min-height: var(--pb-size-touch) !important;
   box-shadow: var(--pb-component-shadow, var(--pb-elevation-none)) !important;
   transition:
-    box-shadow var(--pb-motion-duration-fast) var(--pb-motion-easing-standard),
-    transform var(--pb-motion-duration-fast) var(--pb-motion-easing-standard);
+    box-shadow var(--pb-motion-duration-short) var(--pb-motion-easing-standard),
+    transform var(--pb-motion-duration-short) var(--pb-motion-easing-standard);
 }
 .pb-icon-button:active:not(.v-btn--disabled) {
-  transform: scale(var(--pb-motion-scale-pressed-strong));
+  transform: scale(var(--pb-motion-press-scale-strong));
 }
 .pb-icon-button.v-btn--disabled {
   opacity: var(--pb-opacity-disabled) !important;

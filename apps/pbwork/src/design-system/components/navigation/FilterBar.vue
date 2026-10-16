@@ -27,10 +27,8 @@ usePbInspect({
     "color.surface-variant",
     "color.on-surface",
     "color.on-surface-muted",
-    "radius.sm",
+    "radius.control-compact",
     "spacing.sm",
-    "spacing.none",
-    "layout.flex-grow",
     "typography.label",
   ],
   getTokenBindings: () => ({
@@ -38,10 +36,8 @@ usePbInspect({
     activeSurface: "color.surface-variant",
     inactive: "color.on-surface-muted",
     inactiveSurface: "transparent",
-    radius: "radius.sm",
+    radius: "radius.control-compact",
     gap: "spacing.sm",
-    minWidth: "spacing.none",
-    grow: "layout.flex-grow",
     label: "typography.label",
   }),
 });
@@ -84,11 +80,11 @@ usePbInspect({
 }
 .pb-filter-chips {
   flex: var(--pb-layout-flex-grow);
-  min-width: var(--pb-spacing-none);
+  min-width: var(--pb-layout-zero);
 }
 .pb-filter-chips :deep(.v-chip) {
   border-color: transparent !important;
-  border-radius: var(--pb-radius-sm);
+  border-radius: var(--pb-radius-control-compact);
   background: transparent;
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-label);

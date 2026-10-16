@@ -7,9 +7,7 @@
     "defaultRole": "search"
   },
   "summary": "上下文内搜索；disabled 阻止输入并使用 opacity.disabled。",
-  "behavior": [
-    "disabled 时不可输入、清除或提交，整体使用 opacity.disabled"
-  ],
+  "behavior": ["disabled 时不可输入、清除或提交，整体使用 opacity.disabled"],
   "propsSchema": {
     "type": "object",
     "properties": {
@@ -48,20 +46,16 @@
     }
   ],
   "slots": [],
-  "events": [
-    "update:modelValue",
-    "submit"
-  ],
+  "events": ["update:modelValue", "submit"],
   "tokenBindings": {
     "surface": "color.surface-variant",
     "text": "color.on-surface",
     "placeholder": "color.on-surface-muted",
-    "radius": "radius.md",
-    "height": "sizing.control-lg",
+    "radius": "radius.control",
+    "height": "size.control-large",
     "typography": "typography.content",
     "disabledOpacity": "opacity.disabled",
-    "fill": "layout.fill",
-    "icon": "sizing.icon-compact"
+    "icon": "size.icon-compact"
   },
   "playground": {
     "presentation": "interactive"

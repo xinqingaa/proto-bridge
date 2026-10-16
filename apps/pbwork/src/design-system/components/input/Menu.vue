@@ -1,13 +1,14 @@
 <script setup lang="ts">
+import { useTokenNumber } from "@/design-system/theme/runtime-theme";
+import { themeConstantNumber } from "@/design-system/theme/constants";
+
 import { computed, ref, toRefs, watch } from "vue";
 import { Check, ChevronDown } from "lucide-vue-next";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import { radiusStyle } from "@/design-system/components/_shared/radius";
-import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
-
-const MENU_MAX_HEIGHT = tokenDefaultNumber("layout.menu-max-height");
-const MENU_OFFSET = tokenDefaultNumber("spacing.xs-plus");
-const COMPACT_ICON_SIZE = tokenDefaultNumber("sizing.icon-compact");
+const MENU_MAX_HEIGHT = themeConstantNumber("layout.menu-max-height");
+const MENU_OFFSET = useTokenNumber("menu.offset");
+const COMPACT_ICON_SIZE = useTokenNumber("size.icon-compact");
 
 const props = defineProps<{
   label: string;
@@ -78,41 +79,37 @@ usePbInspect({
     "color.primary-soft",
     "color.surface-raised",
     "border.hairline",
-    "radius.md",
-    "radius.lg",
-    "sizing.control-md",
-    "sizing.menu-item",
+    "radius.control",
+    "radius.surface",
+    "size.control",
+    "menu.menu-item-height",
     "typography.content",
-    "elevation.level-3",
-    "motion.duration-normal",
+    "elevation.menu",
+    "motion.duration-medium",
     "motion.easing-standard",
-    "motion.rotate-half-turn",
     "opacity.disabled",
-    "layout.menu-max-height",
-    "spacing.xs-plus",
-    "sizing.icon-compact",
+    "menu.offset",
+    "size.icon-compact",
   ],
   getTokenBindings: () => ({
     surface: "color.surface",
     border: "color.border",
     focus: "color.primary",
-    radius: "radius.md",
-    height: "sizing.control-md",
+    radius: "radius.control",
+    height: "size.control",
     text: "typography.content",
     muted: "color.on-surface-muted",
     menuSurface: "color.surface-raised",
     menuBorder: "border.hairline",
-    menuRadius: "radius.lg",
-    menuElevation: "elevation.level-3",
-    menuItemHeight: "sizing.menu-item",
+    menuRadius: "radius.surface",
+    menuElevation: "elevation.menu",
+    menuItemHeight: "menu.menu-item-height",
     selectedBackground: "color.primary-soft",
-    duration: "motion.duration-normal",
+    duration: "motion.duration-medium",
     easing: "motion.easing-standard",
-    openRotation: "motion.rotate-half-turn",
     disabledOpacity: "opacity.disabled",
-    menuMaxHeight: "layout.menu-max-height",
-    menuOffset: "spacing.xs-plus",
-    iconSize: "sizing.icon-compact",
+    menuOffset: "menu.offset",
+    iconSize: "size.icon-compact",
   }),
 });
 </script>
@@ -164,23 +161,26 @@ usePbInspect({
 
 <style scoped>
 .pb-select :deep(.v-field) {
-  --v-field-border-radius: var(--pb-component-radius, var(--pb-radius-md));
-  border-radius: var(--pb-component-radius, var(--pb-radius-md)) !important;
-  min-height: var(--pb-sizing-control-md);
+  --v-field-border-radius: var(--pb-component-radius, var(--pb-radius-control));
+  border-radius: var(
+    --pb-component-radius,
+    var(--pb-radius-control)
+  ) !important;
+  min-height: var(--pb-size-control);
   background: var(--pb-color-surface);
 }
 .pb-select :deep(.v-field__outline__start) {
-  border-radius: var(--pb-component-radius, var(--pb-radius-md))
-    var(--pb-radius-none) var(--pb-radius-none)
-    var(--pb-component-radius, var(--pb-radius-md)) !important;
+  border-radius: var(--pb-component-radius, var(--pb-radius-control))
+    var(--pb-layout-zero) var(--pb-layout-zero)
+    var(--pb-component-radius, var(--pb-radius-control)) !important;
 }
 .pb-select :deep(.v-field__outline__end) {
-  border-radius: var(--pb-radius-none)
-    var(--pb-component-radius, var(--pb-radius-md))
-    var(--pb-component-radius, var(--pb-radius-md)) var(--pb-radius-none) !important;
+  border-radius: var(--pb-layout-zero)
+    var(--pb-component-radius, var(--pb-radius-control))
+    var(--pb-component-radius, var(--pb-radius-control)) var(--pb-layout-zero) !important;
 }
 .pb-select :deep(.v-field__input) {
-  min-height: var(--pb-sizing-control-md);
+  min-height: var(--pb-size-control);
   font: var(--pb-typography-content);
 }
 .pb-select :deep(.v-field__append-inner > .v-icon) {
@@ -188,7 +188,7 @@ usePbInspect({
 }
 .pb-select-chevron {
   color: var(--pb-color-on-surface-muted);
-  transition: transform var(--pb-motion-duration-normal)
+  transition: transform var(--pb-motion-duration-medium)
     var(--pb-motion-easing-standard);
 }
 .pb-select-chevron.is-open {
@@ -202,9 +202,9 @@ usePbInspect({
 <style>
 .pb-select-menu {
   border: var(--pb-border-hairline);
-  border-radius: var(--pb-radius-lg) !important;
+  border-radius: var(--pb-radius-surface) !important;
   background: var(--pb-color-surface-raised) !important;
-  box-shadow: var(--pb-elevation-level-3) !important;
+  box-shadow: var(--pb-elevation-menu) !important;
   overflow: hidden;
 }
 .pb-select-menu .v-list {
@@ -212,8 +212,8 @@ usePbInspect({
   background: transparent !important;
 }
 .pb-select-menu .pb-select-option {
-  min-height: var(--pb-sizing-menu-item);
-  border-radius: var(--pb-radius-md);
+  min-height: var(--pb-menu-menu-item-height);
+  border-radius: var(--pb-radius-control);
   color: var(--pb-color-on-surface);
   font: var(--pb-typography-content);
 }

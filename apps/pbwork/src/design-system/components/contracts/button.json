@@ -77,20 +77,18 @@
     "background": "color.action",
     "border": "color.action",
     "onBackground": "color.on-action",
-    "radius": "radius.md",
-    "elevation": "elevation.none",
-    "height": "sizing.control-md",
+    "radius": "radius.control",
+    "elevation": "none",
+    "height": "size.control",
     "paddingX": "spacing.md",
     "typography": "typography.label",
     "disabledOpacity": "opacity.disabled",
-    "overlayOpacity": "opacity.hidden",
-    "loadingOpacity": "opacity.visible",
-    "borderWidth": "border.width-hairline",
-    "duration": "motion.duration-fast",
+    "borderWidth": "border.width",
+    "duration": "motion.duration-short",
     "easing": "motion.easing-standard",
-    "pressedScale": "motion.scale-pressed",
-    "loaderSize": "sizing.icon-sm",
-    "loaderStroke": "sizing.progress-stroke"
+    "pressedScale": "motion.press-scale",
+    "loaderSize": "size.icon-inline",
+    "loaderStroke": "size.stroke"
   },
   "playground": {
     "presentation": "interactive"

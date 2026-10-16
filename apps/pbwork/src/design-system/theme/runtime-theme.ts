@@ -115,17 +115,19 @@ export function runtimeThemeAttributes(table: ResolvedThemeTable) {
   };
 }
 
-export function useToken(key: string) {
+export function useToken(key: MaybeRefOrGetter<string>) {
   const table = inject(ThemeTableKey);
   if (!table) throw new Error("MISSING_THEME_TABLE_PROVIDER");
   return computed(() => {
-    const value = table.value.values[key];
+    const id = toValue(key);
+    if (!Object.hasOwn(table.value.values, id)) throw new Error(`UNKNOWN_THEME_KEY:${id}`);
+    const value = table.value.values[id];
     if (value === undefined) throw new Error(`UNKNOWN_THEME_KEY:${key}`);
     return value;
   });
 }
 
-export function useTokenNumber(key: string) {
+export function useTokenNumber(key: MaybeRefOrGetter<string>) {
   const token = useToken(key);
   return computed(() => {
     if (typeof token.value !== "number")

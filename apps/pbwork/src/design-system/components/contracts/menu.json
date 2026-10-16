@@ -52,18 +52,12 @@
         "type": "boolean"
       }
     },
-    "required": [
-      "label"
-    ]
+    "required": ["label"]
   },
   "defaultProps": {
     "label": "服务类型",
     "modelValue": "维修",
-    "options": [
-      "维修",
-      "巡检",
-      "安装"
-    ],
+    "options": ["维修", "巡检", "安装"],
     "placeholder": "请选择服务类型",
     "clearable": true,
     "loading": false,
@@ -106,36 +100,43 @@
       }
     }
   ],
-  "slots": [
-    "item"
-  ],
-  "events": [
-    "update:modelValue",
-    "update:open"
-  ],
+  "slots": ["item"],
+  "events": ["update:modelValue", "update:open"],
   "tokenBindings": {
     "surface": "color.surface",
     "border": "color.border",
     "focus": "color.primary",
-    "radius": "radius.md",
-    "height": "sizing.control-md",
+    "radius": "radius.control",
+    "height": "size.control",
     "text": "typography.content",
     "muted": "color.on-surface-muted",
     "menuSurface": "color.surface-raised",
     "menuBorder": "border.hairline",
-    "menuRadius": "radius.lg",
-    "menuElevation": "elevation.level-3",
-    "menuItemHeight": "sizing.menu-item",
+    "menuRadius": "radius.surface",
+    "menuElevation": "elevation.menu",
+    "menuItemHeight": "menu.menu-item-height",
     "selectedBackground": "color.primary-soft",
-    "duration": "motion.duration-normal",
+    "duration": "motion.duration-medium",
     "easing": "motion.easing-standard",
-    "openRotation": "motion.rotate-half-turn",
     "disabledOpacity": "opacity.disabled",
-    "menuMaxHeight": "layout.menu-max-height",
-    "menuOffset": "spacing.xs-plus",
-    "iconSize": "sizing.icon-compact"
+    "menuOffset": "menu.offset",
+    "iconSize": "size.icon-compact"
   },
   "playground": {
     "presentation": "interactive"
+  },
+  "componentTokens": {
+    "menu-item-height": {
+      "valueType": "length",
+      "default": "{size.control-large}",
+      "modeVariant": false,
+      "bindable": true
+    },
+    "offset": {
+      "valueType": "length",
+      "default": "{space.6}",
+      "modeVariant": false,
+      "bindable": true
+    }
   }
 }

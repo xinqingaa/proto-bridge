@@ -30,9 +30,7 @@
         "items": {
           "type": "object",
           "additionalProperties": false,
-          "required": [
-            "value"
-          ],
+          "required": ["value"],
           "properties": {
             "value": {
               "type": "string"
@@ -54,10 +52,7 @@
         "minimum": 0
       }
     },
-    "required": [
-      "modelValue",
-      "items"
-    ]
+    "required": ["modelValue", "items"]
   },
   "defaultProps": {
     "modelValue": "one",
@@ -96,19 +91,22 @@
       }
     }
   ],
-  "slots": [
-    "item"
-  ],
-  "events": [
-    "update:modelValue"
-  ],
+  "slots": ["item"],
+  "events": ["update:modelValue"],
   "tokenBindings": {
     "background": "color.background",
-    "fill": "layout.fill",
-    "duration": "motion.duration-tab-viewport",
+    "duration": "tab-viewport.duration",
     "easing": "motion.easing-standard"
   },
   "playground": {
     "presentation": "interactive"
+  },
+  "componentTokens": {
+    "duration": {
+      "valueType": "duration",
+      "default": 240,
+      "modeVariant": false,
+      "bindable": true
+    }
   }
 }

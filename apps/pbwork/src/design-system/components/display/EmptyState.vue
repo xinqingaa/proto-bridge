@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import { useTokenNumber } from "@/design-system/theme/runtime-theme";
+
 import { toRefs } from "vue";
 import Button from "@/design-system/components/action/Button.vue";
 import Icon from "@/design-system/components/action/Icon.vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
-import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
-
-const ICON_SURFACE_SIZE = tokenDefaultNumber("sizing.avatar-lg");
+const ICON_SURFACE_SIZE = useTokenNumber("size.avatar-large");
 
 const props = defineProps<{
   title: string;
@@ -35,9 +35,9 @@ usePbInspect({
     "color.primary",
     "color.on-surface",
     "color.on-surface-muted",
-    "radius.full",
-    "sizing.icon-lg",
-    "sizing.avatar-lg",
+    "radius.pill",
+    "size.icon-prominent",
+    "size.avatar-large",
     "spacing.lg",
     "spacing.xs",
     "spacing.sm",
@@ -49,10 +49,10 @@ usePbInspect({
     icon: "color.primary",
     title: "color.on-surface",
     description: "color.on-surface-muted",
-    radius: "radius.full",
+    radius: "radius.pill",
     spacing: "spacing.lg",
-    iconSize: "sizing.icon-lg",
-    iconSurfaceSize: "sizing.avatar-lg",
+    iconSize: "size.icon-prominent",
+    iconSurfaceSize: "size.avatar-large",
     typography: "typography.subtitle",
     body: "typography.content",
     titleOffset: "spacing.xs",
@@ -100,16 +100,16 @@ usePbInspect({
   text-align: center;
 }
 .pb-empty-icon {
-  border-radius: var(--pb-radius-full);
+  border-radius: var(--pb-radius-pill);
   background: var(--pb-color-primary-soft) !important;
   color: var(--pb-color-primary) !important;
 }
 h3 {
-  margin: var(--pb-spacing-xs) var(--pb-spacing-none) var(--pb-spacing-none);
+  margin: var(--pb-spacing-xs) var(--pb-layout-zero) var(--pb-layout-zero);
   font: var(--pb-typography-subtitle);
 }
 p {
-  margin: var(--pb-spacing-none) var(--pb-spacing-none) var(--pb-spacing-sm);
+  margin: var(--pb-layout-zero) var(--pb-layout-zero) var(--pb-spacing-sm);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-content);
 }

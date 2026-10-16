@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { useTokenNumber } from "@/design-system/theme/runtime-theme";
+
 import { computed, toRefs } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import { radiusStyle } from "@/design-system/components/_shared/radius";
-import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
-
-const TEXTAREA_ROWS = tokenDefaultNumber("sizing.textarea-rows");
+const TEXTAREA_ROWS = useTokenNumber("textarea.rows");
 
 const props = defineProps<{
   label?: string;
@@ -44,19 +44,19 @@ usePbInspect({
     "color.border",
     "color.on-surface",
     "color.primary",
-    "radius.md",
+    "radius.control",
     "typography.content",
     "opacity.disabled",
-    "sizing.textarea-rows",
+    "textarea.rows",
   ],
   getTokenBindings: () => ({
     surface: labeled.value ? "color.surface" : "color.surface-recessed",
     border: "color.border",
     focus: "color.primary",
-    radius: "radius.md",
+    radius: "radius.control",
     text: "typography.content",
     disabledOpacity: "opacity.disabled",
-    rows: "sizing.textarea-rows",
+    rows: "textarea.rows",
   }),
 });
 </script>
@@ -83,8 +83,11 @@ usePbInspect({
 
 <style scoped>
 .pb-textarea :deep(.v-field) {
-  --v-field-border-radius: var(--pb-component-radius, var(--pb-radius-md));
-  border-radius: var(--pb-component-radius, var(--pb-radius-md)) !important;
+  --v-field-border-radius: var(--pb-component-radius, var(--pb-radius-control));
+  border-radius: var(
+    --pb-component-radius,
+    var(--pb-radius-control)
+  ) !important;
   background: var(--pb-color-surface-recessed);
 }
 .pb-textarea.is-labeled :deep(.v-field) {
@@ -97,14 +100,14 @@ usePbInspect({
   display: none;
 }
 .pb-textarea.is-labeled :deep(.v-field__outline__start) {
-  border-radius: var(--pb-component-radius, var(--pb-radius-md))
-    var(--pb-radius-none) var(--pb-radius-none)
-    var(--pb-component-radius, var(--pb-radius-md)) !important;
+  border-radius: var(--pb-component-radius, var(--pb-radius-control))
+    var(--pb-layout-zero) var(--pb-layout-zero)
+    var(--pb-component-radius, var(--pb-radius-control)) !important;
 }
 .pb-textarea.is-labeled :deep(.v-field__outline__end) {
-  border-radius: var(--pb-radius-none)
-    var(--pb-component-radius, var(--pb-radius-md))
-    var(--pb-component-radius, var(--pb-radius-md)) var(--pb-radius-none) !important;
+  border-radius: var(--pb-layout-zero)
+    var(--pb-component-radius, var(--pb-radius-control))
+    var(--pb-component-radius, var(--pb-radius-control)) var(--pb-layout-zero) !important;
 }
 .pb-textarea.v-input--disabled {
   opacity: var(--pb-opacity-disabled);

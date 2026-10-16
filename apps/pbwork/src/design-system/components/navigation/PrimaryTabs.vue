@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { sizeToken } from "@/design-system/components/_shared/appearance";
+import { useTokenNumber } from "@/design-system/theme/runtime-theme";
+
 import {
   computed,
   nextTick,
@@ -10,10 +13,8 @@ import {
 } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import { usePointerSwipe } from "@/design-system/components/_shared/usePointerSwipe";
-import LiquidGlass from "@/design-system/components/_shared/LiquidGlass.vue";
-import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
-
-const SLIDE_DURATION_MS = tokenDefaultNumber("motion.duration-slow");
+import SurfaceMaterial from "@/design-system/components/_shared/SurfaceMaterial.vue";
+const SLIDE_DURATION_MS = useTokenNumber("motion.duration-long");
 
 const props = withDefaults(
   defineProps<{
@@ -59,21 +60,21 @@ const indicatorVisible = computed(() => showIndicator.value ?? false);
 const tabStyle = computed(() => ({
   "--pb-tabs-track-background": "var(--pb-color-surface-recessed)",
   "--pb-tabs-selection-surface": "var(--pb-color-surface-selected)",
-  "--pb-tabs-selection-opacity": "var(--pb-opacity-glass)",
-  "--pb-tabs-selection-elevation": "var(--pb-elevation-glass)",
-  "--pb-tabs-selection-radius": "var(--pb-radius-full)",
+  "--pb-tabs-selection-opacity": "var(--pb-opacity-translucent)",
+  "--pb-tabs-selection-elevation": "var(--pb-elevation-floating)",
+  "--pb-tabs-selection-radius": "var(--pb-radius-pill)",
   "--pb-tabs-selection-bridge-height": "var(--pb-spacing-xs)",
   "--pb-tabs-selection-bridge-offset": "var(--pb-layout-inset-xs-negative)",
   "--pb-tabs-selection-arc-inset": "var(--pb-spacing-xs)",
   "--pb-tabs-selection-arc-offset": "var(--pb-layout-inset-xs-negative)",
-  "--pb-tabs-selection-arc-radius": "var(--pb-radius-full)",
-  "--pb-tabs-track-radius": "var(--pb-radius-lg)",
-  "--pb-tabs-active-color": "var(--pb-color-section-tab-active)",
+  "--pb-tabs-selection-arc-radius": "var(--pb-radius-pill)",
+  "--pb-tabs-track-radius": "var(--pb-radius-surface)",
+  "--pb-tabs-active-color": "var(--pb-primary-tabs-active-color)",
   "--pb-tabs-inactive-color": "var(--pb-color-on-surface-muted)",
   "--pb-tabs-typography": "var(--pb-typography-label)",
-  "--pb-tabs-radius": "var(--pb-radius-full)",
-  "--pb-tabs-height": `var(--pb-sizing-control-${size.value ?? "md"})`,
-  "--pb-tabs-pill-duration": "var(--pb-motion-duration-slow)",
+  "--pb-tabs-radius": "var(--pb-radius-pill)",
+  "--pb-tabs-height": `var(--pb-${sizeToken(size.value ?? "md").replaceAll(".", "-")})`,
+  "--pb-tabs-pill-duration": "var(--pb-motion-duration-long)",
   "--pb-tabs-pill-easing": "var(--pb-motion-easing-standard)",
 }));
 
@@ -171,63 +172,53 @@ usePbInspect({
   }),
   getState: () => ({ selected: tab.value }),
   getTokenBindings: () => ({
+    materialOpacity: "opacity.translucent",
+    materialBackdrop: "surface.glass-backdrop",
+    materialBorder: "border.default",
     trackSurface: "color.surface-recessed",
     selectionSurface: "color.surface-selected",
-    selectionOpacity: "opacity.glass",
-    selectionElevation: "elevation.glass",
-    activeColor: "color.section-tab-active",
+    selectionOpacity: "opacity.translucent",
+    selectionElevation: "elevation.floating",
+    activeColor: "primary-tabs.active-color",
     inactiveColor: "color.on-surface-muted",
     border: showDivider.value ? "border.hairline" : "transparent",
-    trackRadius: "radius.lg",
-    radius: "radius.full",
-    height: `sizing.control-${size.value ?? "md"}`,
-    target: "sizing.touch",
+    trackRadius: "radius.surface",
+    radius: "radius.pill",
+    height: sizeToken(size.value ?? "md"),
+    target: "size.touch",
     typography: "typography.label",
     panel: "typography.caption",
     trackInset: "spacing.xs",
     panelGap: "spacing.sm-plus",
     indicatorInset: "spacing.sm-plus",
     indicatorOffset: "spacing.xxs",
-    indicatorThickness: "sizing.indicator-thickness",
-    fill: "layout.fill",
-    selectionLayer: "layer.content",
-    glassBackdrop: "effect.glass-backdrop",
-    bridgeOffset: "layout.inset-xs-negative",
-    hiddenOpacity: "opacity.hidden",
-    visibleOpacity: "opacity.visible",
-    reducedDuration: "motion.duration-instant",
-    duration: "motion.duration-slow",
+    indicatorThickness: "size.indicator",
+    glassBackdrop: "surface.glass-backdrop",
+    duration: "motion.duration-long",
     easing: "motion.easing-standard",
   }),
   getTokens: () => [
     "color.surface-recessed",
     "color.surface-selected",
-    "opacity.glass",
-    "color.section-tab-active",
+    "opacity.translucent",
+    "primary-tabs.active-color",
     "color.on-surface-muted",
     "border.hairline",
-    "elevation.glass",
-    "radius.lg",
-    "radius.full",
-    `sizing.control-${size.value ?? "md"}`,
-    "sizing.touch",
+    "elevation.floating",
+    "radius.surface",
+    "radius.pill",
+    sizeToken(size.value ?? "md"),
+    "size.touch",
     "typography.label",
     "typography.caption",
     "spacing.xxs",
     "spacing.xs",
     "spacing.sm",
     "spacing.sm-plus",
-    "sizing.indicator-thickness",
-    "layout.fill",
-    "layer.base",
-    "layer.content",
-    "effect.glass-backdrop",
-    "layout.inset-xs-negative",
-    "opacity.hidden",
-    "opacity.visible",
-    "motion.duration-fast",
-    "motion.duration-instant",
-    "motion.duration-slow",
+    "size.indicator",
+    "surface.glass-backdrop",
+    "motion.duration-short",
+    "motion.duration-long",
     "motion.easing-standard",
   ],
 });
@@ -255,7 +246,11 @@ usePbInspect({
         aria-hidden="true"
         :style="pillStyle"
       >
-        <LiquidGlass :active="true" />
+        <SurfaceMaterial
+          :active="true"
+          selection
+          treatment-key="primary-tabs.selection-treatment"
+        />
       </div>
       <button
         v-for="item in items"
@@ -322,7 +317,7 @@ usePbInspect({
   display: flex;
   flex-direction: column;
   gap: var(--pb-spacing-sm-plus);
-  min-width: var(--pb-spacing-none);
+  min-width: var(--pb-layout-zero);
   background: transparent;
 }
 .pb-tabs-track {
@@ -330,11 +325,11 @@ usePbInspect({
   display: inline-flex;
   max-width: var(--pb-layout-fill);
   align-items: stretch;
-  gap: var(--pb-spacing-none);
-  min-height: var(--pb-tabs-height, var(--pb-sizing-control-md));
+  gap: var(--pb-layout-zero);
+  min-height: var(--pb-tabs-height, var(--pb-size-control));
   padding: var(--pb-spacing-xs);
   overflow: auto;
-  border-radius: var(--pb-tabs-track-radius, var(--pb-radius-lg));
+  border-radius: var(--pb-tabs-track-radius, var(--pb-radius-surface));
   background: var(--pb-tabs-track-background);
   scrollbar-width: none;
 }
@@ -355,7 +350,7 @@ usePbInspect({
   position: absolute;
   top: var(--pb-spacing-xs);
   bottom: var(--pb-spacing-xs);
-  left: var(--pb-spacing-none);
+  left: var(--pb-layout-zero);
   z-index: var(--pb-layer-base);
   border-radius: var(--pb-tabs-selection-radius);
   overflow: visible;
@@ -372,7 +367,7 @@ usePbInspect({
   transition:
     transform var(--pb-tabs-pill-duration) var(--pb-tabs-pill-easing),
     width var(--pb-tabs-pill-duration) var(--pb-tabs-pill-easing),
-    opacity var(--pb-motion-duration-fast) var(--pb-motion-easing-standard);
+    opacity var(--pb-motion-duration-short) var(--pb-motion-easing-standard);
 }
 .pb-tab {
   position: relative;
@@ -382,12 +377,12 @@ usePbInspect({
   align-items: center;
   justify-content: center;
   min-height: calc(
-    var(--pb-tabs-height, var(--pb-sizing-control-md)) - var(--pb-spacing-xs) -
+    var(--pb-tabs-height, var(--pb-size-control)) - var(--pb-spacing-xs) -
       var(--pb-spacing-xs)
   );
-  padding: var(--pb-spacing-none) var(--pb-spacing-md);
+  padding: var(--pb-layout-zero) var(--pb-spacing-md);
   border: none;
-  border-radius: var(--pb-tabs-radius, var(--pb-radius-full));
+  border-radius: var(--pb-tabs-radius, var(--pb-radius-pill));
   background: transparent;
   color: var(--pb-tabs-inactive-color, var(--pb-color-on-surface-muted));
   font: var(--pb-tabs-typography, var(--pb-typography-label));
@@ -395,7 +390,7 @@ usePbInspect({
   text-transform: none;
   white-space: nowrap;
   cursor: pointer;
-  transition: color var(--pb-motion-duration-fast)
+  transition: color var(--pb-motion-duration-short)
     var(--pb-motion-easing-standard);
 }
 .pb-tabs.is-grow .pb-tab {
@@ -410,15 +405,15 @@ usePbInspect({
   right: var(--pb-spacing-sm-plus);
   bottom: var(--pb-spacing-xxs);
   left: var(--pb-spacing-sm-plus);
-  height: var(--pb-sizing-indicator-thickness);
-  border-radius: var(--pb-radius-full) var(--pb-radius-full)
-    var(--pb-radius-none) var(--pb-radius-none);
+  height: var(--pb-size-indicator);
+  border-radius: var(--pb-radius-pill) var(--pb-radius-pill)
+    var(--pb-layout-zero) var(--pb-layout-zero);
   background: var(--pb-tabs-active-color, var(--pb-color-primary));
 }
 .pb-tab-window {
-  min-width: var(--pb-spacing-none);
+  min-width: var(--pb-layout-zero);
   touch-action: pan-y;
-  --v-window-transition-duration: var(--pb-motion-duration-slow);
+  --v-window-transition-duration: var(--pb-motion-duration-long);
 }
 .pb-tab-window.allows-mouse-swipe {
   cursor: grab;
@@ -429,14 +424,14 @@ usePbInspect({
 }
 .pb-tabs.is-fill {
   height: var(--pb-layout-fill);
-  min-height: var(--pb-spacing-none);
+  min-height: var(--pb-layout-zero);
 }
 .pb-tabs.is-fill .pb-tab-window,
 .pb-tabs.is-fill .pb-tab-window :deep(.v-window__container),
 .pb-tabs.is-fill .pb-tab-window :deep(.v-window-item),
 .pb-tabs.is-fill .pb-tab-panel {
   height: var(--pb-layout-fill);
-  min-height: var(--pb-spacing-none);
+  min-height: var(--pb-layout-zero);
 }
 .pb-tabs.is-fill .pb-tab-window {
   flex: var(--pb-layout-flex-fill);
@@ -449,18 +444,18 @@ usePbInspect({
 .pb-tab-window :deep(.v-window-x-transition-leave-active),
 .pb-tab-window :deep(.v-window-x-reverse-transition-enter-active),
 .pb-tab-window :deep(.v-window-x-reverse-transition-leave-active) {
-  transition-duration: var(--pb-motion-duration-slow);
+  transition-duration: var(--pb-motion-duration-long);
   transition-timing-function: var(--pb-motion-easing-standard);
 }
 .pb-tab-panel {
   display: flex;
   flex-direction: column;
   gap: var(--pb-spacing-sm-plus);
-  min-width: var(--pb-spacing-none);
+  min-width: var(--pb-layout-zero);
 }
 .pb-tab-panel-empty {
-  margin: var(--pb-spacing-none);
-  padding: var(--pb-spacing-sm) var(--pb-spacing-none);
+  margin: var(--pb-layout-zero);
+  padding: var(--pb-spacing-sm) var(--pb-layout-zero);
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
 }

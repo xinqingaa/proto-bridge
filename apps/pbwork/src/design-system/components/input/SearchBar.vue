@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import { useTokenNumber } from "@/design-system/theme/runtime-theme";
+
 import { toRefs } from "vue";
 import { Search } from "lucide-vue-next";
 import TextField from "@/design-system/components/input/TextField.vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
-import { tokenDefaultNumber } from "@/design-system/tokenDefaults";
-
-const SEARCH_ICON_SIZE = tokenDefaultNumber("sizing.icon-compact");
+const SEARCH_ICON_SIZE = useTokenNumber("size.icon-compact");
 
 const props = defineProps<{
   modelValue?: string;
@@ -34,23 +34,21 @@ usePbInspect({
     "color.surface-variant",
     "color.on-surface",
     "color.on-surface-muted",
-    "radius.md",
-    "sizing.control-lg",
-    "sizing.icon-compact",
+    "radius.control",
+    "size.control-large",
+    "size.icon-compact",
     "typography.content",
     "opacity.disabled",
-    "layout.fill",
   ],
   getTokenBindings: () => ({
     surface: "color.surface-variant",
     text: "color.on-surface",
     placeholder: "color.on-surface-muted",
-    radius: "radius.md",
-    height: "sizing.control-lg",
-    icon: "sizing.icon-compact",
+    radius: "radius.control",
+    height: "size.control-large",
+    icon: "size.icon-compact",
     typography: "typography.content",
     disabledOpacity: "opacity.disabled",
-    fill: "layout.fill",
   }),
 });
 </script>
@@ -86,11 +84,11 @@ usePbInspect({
   width: var(--pb-layout-fill);
 }
 .pb-search-field {
-  border-radius: var(--pb-radius-md);
+  border-radius: var(--pb-radius-control);
 }
 .pb-search-field :deep(.v-field) {
-  min-height: var(--pb-sizing-control-lg);
-  border-radius: var(--pb-radius-md);
+  min-height: var(--pb-size-control-large);
+  border-radius: var(--pb-radius-control);
   background: var(--pb-color-surface-variant) !important;
   color: var(--pb-color-on-surface);
   font: var(--pb-typography-content);

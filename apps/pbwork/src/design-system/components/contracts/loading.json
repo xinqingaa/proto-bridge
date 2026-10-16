@@ -22,9 +22,15 @@
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "modelValue": { "type": "boolean" },
-      "label": { "type": "string" },
-      "contained": { "type": "boolean" }
+      "modelValue": {
+        "type": "boolean"
+      },
+      "label": {
+        "type": "string"
+      },
+      "contained": {
+        "type": "boolean"
+      }
     }
   },
   "defaultProps": {
@@ -37,7 +43,9 @@
       "id": "open",
       "label": "打开",
       "kind": "content",
-      "props": { "modelValue": true }
+      "props": {
+        "modelValue": true
+      }
     }
   ],
   "slots": [],
@@ -46,9 +54,9 @@
     "scrim": "color.scrim",
     "active": "color.primary",
     "text": "color.on-surface",
-    "size": "sizing.icon-lg",
-    "stroke": "sizing.indicator-thickness",
-    "motion": "motion.duration-slow",
+    "size": "size.icon-prominent",
+    "stroke": "size.indicator",
+    "motion": "motion.duration-long",
     "label": "typography.caption"
   },
   "playground": {

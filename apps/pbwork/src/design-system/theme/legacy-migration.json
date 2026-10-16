@@ -3,27 +3,19 @@
   "keys": {
     "color.background": {
       "tier": "semantic",
-      "targets": [
-        "color.background"
-      ]
+      "targets": ["color.background"]
     },
     "color.surface": {
       "tier": "semantic",
-      "targets": [
-        "color.surface"
-      ]
+      "targets": ["color.surface"]
     },
     "color.primary": {
       "tier": "semantic",
-      "targets": [
-        "color.primary"
-      ]
+      "targets": ["color.primary"]
     },
     "color.navigation-active": {
       "tier": "component",
-      "targets": [
-        "tabbar.active"
-      ],
+      "targets": ["tabbar.active"],
       "note": "默认 {color.primary}，两态取值与 primary 相同；组件键由 第 2 步组件迁移批次 定义"
     },
     "color.section-tab-active": {
@@ -37,955 +29,652 @@
     },
     "color.primary-soft": {
       "tier": "semantic",
-      "targets": [
-        "color.primary-soft"
-      ]
+      "targets": ["color.primary-soft"]
     },
     "color.on-primary": {
       "tier": "semantic",
-      "targets": [
-        "color.on-primary"
-      ]
+      "targets": ["color.on-primary"]
     },
     "color.action": {
       "tier": "semantic",
-      "targets": [
-        "color.action"
-      ]
+      "targets": ["color.action"]
     },
     "color.action-soft": {
       "tier": "semantic",
-      "targets": [
-        "color.action-soft"
-      ]
+      "targets": ["color.action-soft"]
     },
     "color.on-action": {
       "tier": "semantic",
-      "targets": [
-        "color.on-action"
-      ]
+      "targets": ["color.on-action"]
     },
     "color.secondary": {
       "tier": "semantic",
-      "targets": [
-        "color.secondary"
-      ]
+      "targets": ["color.secondary"]
     },
     "color.secondary-soft": {
       "tier": "semantic",
-      "targets": [
-        "color.secondary-soft"
-      ]
+      "targets": ["color.secondary-soft"]
     },
     "color.border": {
       "tier": "semantic",
-      "targets": [
-        "color.border"
-      ]
+      "targets": ["color.border"]
     },
     "color.error": {
       "tier": "semantic",
-      "targets": [
-        "color.error"
-      ]
+      "targets": ["color.error"]
     },
     "color.error-soft": {
       "tier": "semantic",
-      "targets": [
-        "color.error-soft"
-      ]
+      "targets": ["color.error-soft"]
     },
     "color.info": {
       "tier": "semantic",
-      "targets": [
-        "color.info"
-      ]
+      "targets": ["color.info"]
     },
     "color.success": {
       "tier": "semantic",
-      "targets": [
-        "color.success"
-      ]
+      "targets": ["color.success"]
     },
     "color.success-soft": {
       "tier": "semantic",
-      "targets": [
-        "color.success-soft"
-      ]
+      "targets": ["color.success-soft"]
     },
     "color.warning": {
       "tier": "semantic",
-      "targets": [
-        "color.warning"
-      ]
+      "targets": ["color.warning"]
     },
     "color.warning-soft": {
       "tier": "semantic",
-      "targets": [
-        "color.warning-soft"
-      ]
+      "targets": ["color.warning-soft"]
     },
     "color.on-surface": {
       "tier": "semantic",
-      "targets": [
-        "color.on-surface"
-      ]
+      "targets": ["color.on-surface"]
     },
     "color.on-surface-muted": {
       "tier": "semantic",
-      "targets": [
-        "color.on-surface-muted"
-      ]
+      "targets": ["color.on-surface-muted"]
     },
     "typography.title": {
       "tier": "semantic",
-      "targets": [
-        "typography.title"
-      ],
+      "targets": ["typography.title"],
       "note": "拆分为角色复合值；字族使用固定系统字体栈"
     },
     "typography.subtitle": {
       "tier": "semantic",
-      "targets": [
-        "typography.subtitle"
-      ],
+      "targets": ["typography.subtitle"],
       "note": "拆分为角色复合值；字族使用固定系统字体栈"
     },
     "typography.content": {
       "tier": "semantic",
-      "targets": [
-        "typography.content"
-      ],
+      "targets": ["typography.content"],
       "note": "拆分为角色复合值；字族使用固定系统字体栈"
     },
     "typography.caption": {
       "tier": "semantic",
-      "targets": [
-        "typography.caption"
-      ],
+      "targets": ["typography.caption"],
       "note": "拆分为角色复合值；字族使用固定系统字体栈"
     },
     "spacing.xs": {
       "tier": "semantic",
-      "targets": [
-        "spacing.xs"
-      ],
+      "targets": ["spacing.xs"],
       "note": "保留现有刻度 ID 与基础值；不逐消费位置重新判定用途。"
     },
     "spacing.sm": {
       "tier": "semantic",
-      "targets": [
-        "spacing.sm"
-      ],
+      "targets": ["spacing.sm"],
       "note": "保留现有刻度 ID 与基础值；不逐消费位置重新判定用途。"
     },
     "spacing.md": {
       "tier": "semantic",
-      "targets": [
-        "spacing.md"
-      ],
+      "targets": ["spacing.md"],
       "note": "保留现有刻度 ID 与基础值；不逐消费位置重新判定用途。"
     },
     "spacing.lg": {
       "tier": "semantic",
-      "targets": [
-        "spacing.lg"
-      ],
+      "targets": ["spacing.lg"],
       "note": "保留现有刻度 ID 与基础值；不逐消费位置重新判定用途。"
     },
     "spacing.xl": {
       "tier": "primitive",
-      "targets": [
-        "space.32"
-      ],
+      "targets": ["space.32"],
       "note": "仅 Workbench 使用，改用工作台自有样式"
     },
     "radius.none": {
       "tier": "constant",
-      "targets": [
-        "layout.zero"
-      ]
+      "targets": ["layout.zero"]
     },
     "radius.sm": {
       "tier": "semantic",
-      "targets": [
-        "radius.control-compact"
-      ]
+      "targets": ["radius.control-compact"]
     },
     "radius.md": {
       "tier": "semantic",
-      "targets": [
-        "radius.control"
-      ]
+      "targets": ["radius.control"]
     },
     "radius.lg": {
       "tier": "semantic",
-      "targets": [
-        "radius.surface"
-      ]
+      "targets": ["radius.surface"]
     },
     "radius.full": {
       "tier": "semantic",
-      "targets": [
-        "radius.pill"
-      ]
+      "targets": ["radius.pill"]
     },
     "elevation.none": {
       "tier": "constant",
-      "targets": [
-        "elevation.none"
-      ],
+      "targets": ["elevation.none"],
       "note": "绑定处改用字面量 none"
     },
     "elevation.card": {
       "tier": "semantic",
-      "targets": [
-        "elevation.surface"
-      ]
+      "targets": ["elevation.surface"]
     },
     "elevation.raised": {
       "tier": "semantic",
-      "targets": [
-        "elevation.raised"
-      ]
+      "targets": ["elevation.raised"]
     },
     "elevation.glass": {
       "tier": "semantic",
-      "targets": [
-        "elevation.floating"
-      ]
+      "targets": ["elevation.floating"]
     },
     "color.surface-variant": {
       "tier": "semantic",
-      "targets": [
-        "color.surface-variant"
-      ]
+      "targets": ["color.surface-variant"]
     },
     "color.surface-recessed": {
       "tier": "semantic",
-      "targets": [
-        "color.surface-recessed"
-      ]
+      "targets": ["color.surface-recessed"]
     },
     "color.surface-selected": {
       "tier": "semantic",
-      "targets": [
-        "color.surface-selected"
-      ]
+      "targets": ["color.surface-selected"]
     },
     "color.surface-raised": {
       "tier": "semantic",
-      "targets": [
-        "color.surface-raised"
-      ]
+      "targets": ["color.surface-raised"]
     },
     "color.on-background": {
       "tier": "semantic",
-      "targets": [
-        "color.on-background"
-      ]
+      "targets": ["color.on-background"]
     },
     "color.on-secondary": {
       "tier": "semantic",
-      "targets": [
-        "color.on-secondary"
-      ]
+      "targets": ["color.on-secondary"]
     },
     "color.outline": {
       "tier": "semantic",
-      "targets": [
-        "color.outline"
-      ]
+      "targets": ["color.outline"]
     },
     "color.divider": {
       "tier": "semantic",
-      "targets": [
-        "color.divider"
-      ]
+      "targets": ["color.divider"]
     },
     "color.disabled": {
       "tier": "semantic",
-      "targets": [
-        "color.disabled"
-      ]
+      "targets": ["color.disabled"]
     },
     "color.scrim": {
       "tier": "semantic",
-      "targets": [
-        "color.scrim"
-      ]
+      "targets": ["color.scrim"]
     },
     "color.toast": {
       "tier": "semantic",
-      "targets": [
-        "color.inverse-surface"
-      ],
+      "targets": ["color.inverse-surface"],
       "note": "更名，两态取值相同"
     },
     "color.on-toast": {
       "tier": "semantic",
-      "targets": [
-        "color.on-inverse-surface"
-      ],
+      "targets": ["color.on-inverse-surface"],
       "note": "更名，两态取值相同"
     },
     "color.on-error": {
       "tier": "semantic",
-      "targets": [
-        "color.on-error"
-      ]
+      "targets": ["color.on-error"]
     },
     "color.on-success": {
       "tier": "semantic",
-      "targets": [
-        "color.on-success"
-      ]
+      "targets": ["color.on-success"]
     },
     "color.on-warning": {
       "tier": "semantic",
-      "targets": [
-        "color.on-warning"
-      ]
+      "targets": ["color.on-warning"]
     },
     "color.on-info": {
       "tier": "semantic",
-      "targets": [
-        "color.on-info"
-      ]
+      "targets": ["color.on-info"]
     },
     "typography.display": {
       "tier": "semantic",
-      "targets": [
-        "typography.display"
-      ],
+      "targets": ["typography.display"],
       "note": "拆分为角色复合值；字族使用固定系统字体栈"
     },
     "typography.headline": {
       "tier": "semantic",
-      "targets": [
-        "typography.headline"
-      ],
+      "targets": ["typography.headline"],
       "note": "拆分为角色复合值；字族使用固定系统字体栈"
     },
     "typography.title-sm": {
       "tier": "semantic",
-      "targets": [
-        "typography.title-sm"
-      ],
+      "targets": ["typography.title-sm"],
       "note": "拆分为角色复合值；字族使用固定系统字体栈"
     },
     "typography.title-lg": {
       "tier": "semantic",
-      "targets": [
-        "typography.title-lg"
-      ],
+      "targets": ["typography.title-lg"],
       "note": "拆分为角色复合值；字族使用固定系统字体栈"
     },
     "typography.body-sm": {
       "tier": "semantic",
-      "targets": [
-        "typography.body-sm"
-      ],
+      "targets": ["typography.body-sm"],
       "note": "拆分为角色复合值；字族使用固定系统字体栈"
     },
     "typography.body-lg": {
       "tier": "semantic",
-      "targets": [
-        "typography.body-lg"
-      ],
+      "targets": ["typography.body-lg"],
       "note": "拆分为角色复合值；字族使用固定系统字体栈"
     },
     "typography.label": {
       "tier": "semantic",
-      "targets": [
-        "typography.label"
-      ],
+      "targets": ["typography.label"],
       "note": "拆分为角色复合值；字族使用固定系统字体栈"
     },
     "typography.caption-strong": {
       "tier": "semantic",
-      "targets": [
-        "typography.caption-strong"
-      ],
+      "targets": ["typography.caption-strong"],
       "note": "拆分为角色复合值；字族使用固定系统字体栈"
     },
     "spacing.none": {
       "tier": "constant",
-      "targets": [
-        "layout.zero"
-      ]
+      "targets": ["layout.zero"]
     },
     "spacing.xxs": {
       "tier": "semantic",
-      "targets": [
-        "spacing.xxs"
-      ],
+      "targets": ["spacing.xxs"],
       "note": "保留现有刻度 ID 与基础值；不逐消费位置重新判定用途。"
     },
     "spacing.sm-plus": {
       "tier": "semantic",
-      "targets": [
-        "spacing.sm-plus"
-      ],
+      "targets": ["spacing.sm-plus"],
       "note": "保留现有刻度 ID 与基础值；不逐消费位置重新判定用途。"
     },
     "spacing.lg-plus": {
       "tier": "semantic",
-      "targets": [
-        "spacing.lg-plus"
-      ],
+      "targets": ["spacing.lg-plus"],
       "note": "保留现有刻度 ID 与基础值；不逐消费位置重新判定用途。"
     },
     "spacing.2xl": {
       "tier": "semantic",
-      "targets": [
-        "spacing.2xl"
-      ],
+      "targets": ["spacing.2xl"],
       "note": "保留现有刻度 ID 与基础值；不逐消费位置重新判定用途。"
     },
     "spacing.3xl": {
       "tier": "primitive",
-      "targets": [
-        "space.64"
-      ],
+      "targets": ["space.64"],
       "note": "无消费"
     },
     "sizing.control-sm": {
       "tier": "semantic",
-      "targets": [
-        "size.control-compact"
-      ]
+      "targets": ["size.control-compact"]
     },
     "sizing.control-md": {
       "tier": "semantic",
-      "targets": [
-        "size.control"
-      ]
+      "targets": ["size.control"]
     },
     "sizing.control-lg": {
       "tier": "semantic",
-      "targets": [
-        "size.control-large"
-      ]
+      "targets": ["size.control-large"]
     },
     "sizing.icon-sm": {
       "tier": "semantic",
-      "targets": [
-        "size.icon-inline"
-      ]
+      "targets": ["size.icon-inline"]
     },
     "sizing.icon-md": {
       "tier": "semantic",
-      "targets": [
-        "size.icon"
-      ]
+      "targets": ["size.icon"]
     },
     "sizing.icon-lg": {
       "tier": "semantic",
-      "targets": [
-        "size.icon-prominent"
-      ]
+      "targets": ["size.icon-prominent"]
     },
     "sizing.icon-compact": {
       "tier": "semantic",
-      "targets": [
-        "size.icon-compact"
-      ]
+      "targets": ["size.icon-compact"]
     },
     "sizing.avatar-sm": {
       "tier": "semantic",
-      "targets": [
-        "size.avatar-compact"
-      ]
+      "targets": ["size.avatar-compact"]
     },
     "sizing.avatar-md": {
       "tier": "semantic",
-      "targets": [
-        "size.avatar"
-      ]
+      "targets": ["size.avatar"]
     },
     "sizing.avatar-lg": {
       "tier": "semantic",
-      "targets": [
-        "size.avatar-large"
-      ]
+      "targets": ["size.avatar-large"]
     },
     "sizing.touch": {
       "tier": "semantic",
-      "targets": [
-        "size.touch"
-      ]
+      "targets": ["size.touch"]
     },
     "sizing.menu-item": {
       "tier": "component",
-      "targets": [
-        "menu.menu-item-height"
-      ],
+      "targets": ["menu.menu-item-height"],
       "note": "默认 {size.control-large}；组件键由 第 2 步组件迁移批次 定义"
     },
     "sizing.tab": {
       "tier": "primitive",
-      "targets": [
-        "size.44"
-      ],
+      "targets": ["size.44"],
       "note": "无消费"
     },
     "sizing.bottom-navigation": {
       "tier": "semantic",
-      "targets": [
-        "size.navigation-bar"
-      ]
+      "targets": ["size.navigation-bar"]
     },
     "radius.xs": {
       "tier": "semantic",
-      "targets": [
-        "radius.mark"
-      ]
+      "targets": ["radius.mark"]
     },
     "radius.xl": {
       "tier": "semantic",
-      "targets": [
-        "radius.overlay"
-      ]
+      "targets": ["radius.overlay"]
     },
     "border.hairline": {
       "tier": "semantic",
-      "targets": [
-        "border.hairline"
-      ],
+      "targets": ["border.hairline"],
       "note": "改为复合值"
     },
     "border.default": {
       "tier": "semantic",
-      "targets": [
-        "border.default"
-      ],
+      "targets": ["border.default"],
       "note": "改为复合值"
     },
     "border.strong": {
       "tier": "primitive",
-      "targets": [
-        "border.strong-light",
-        "border.strong-dark"
-      ],
+      "targets": ["border.strong-light", "border.strong-dark"],
       "note": "无消费；描边色随模式变化，Primitive 不分模式，故拆为 light/dark 两个"
     },
     "border.focus": {
       "tier": "semantic",
-      "targets": [
-        "border.focus"
-      ],
+      "targets": ["border.focus"],
       "note": "改为复合值"
     },
     "elevation.level-1": {
       "tier": "primitive",
-      "targets": [
-        "shadow.level-1-light",
-        "shadow.level-1-dark"
-      ],
+      "targets": ["shadow.level-1-light", "shadow.level-1-dark"],
       "note": "无消费；Primitive 不分模式，故拆为 light/dark 两个"
     },
     "elevation.level-2": {
       "tier": "primitive",
-      "targets": [
-        "shadow.level-2-light",
-        "shadow.level-2-dark"
-      ],
+      "targets": ["shadow.level-2-light", "shadow.level-2-dark"],
       "note": "无消费；Primitive 不分模式，故拆为 light/dark 两个"
     },
     "elevation.level-3": {
       "tier": "semantic",
-      "targets": [
-        "elevation.menu"
-      ]
+      "targets": ["elevation.menu"]
     },
     "elevation.level-4": {
       "tier": "primitive",
-      "targets": [
-        "shadow.level-4-light",
-        "shadow.level-4-dark"
-      ],
+      "targets": ["shadow.level-4-light", "shadow.level-4-dark"],
       "note": "无消费；Primitive 不分模式，故拆为 light/dark 两个"
     },
     "elevation.level-5": {
       "tier": "semantic",
-      "targets": [
-        "elevation.overlay"
-      ]
+      "targets": ["elevation.overlay"]
     },
     "opacity.disabled": {
       "tier": "semantic",
-      "targets": [
-        "opacity.disabled"
-      ]
+      "targets": ["opacity.disabled"]
     },
     "opacity.muted": {
       "tier": "primitive",
-      "targets": [
-        "opacity.62"
-      ],
+      "targets": ["opacity.62"],
       "note": "无组件消费"
     },
     "opacity.glass": {
       "tier": "semantic",
-      "targets": [
-        "opacity.translucent"
-      ],
+      "targets": ["opacity.translucent"],
       "note": "更名；dark 取 0.8"
     },
     "opacity.hover": {
       "tier": "semantic",
-      "targets": [
-        "opacity.hover"
-      ]
+      "targets": ["opacity.hover"]
     },
     "opacity.pressed": {
       "tier": "semantic",
-      "targets": [
-        "opacity.pressed"
-      ]
+      "targets": ["opacity.pressed"]
     },
     "opacity.overlay": {
       "tier": "primitive",
-      "targets": [
-        "opacity.60"
-      ],
+      "targets": ["opacity.60"],
       "note": "无组件消费（仅 TokenGallery 预览）"
     },
     "motion.duration-fast": {
       "tier": "semantic",
-      "targets": [
-        "motion.duration-short"
-      ],
+      "targets": ["motion.duration-short"],
       "note": "standard 性格取值"
     },
     "motion.duration-normal": {
       "tier": "semantic",
-      "targets": [
-        "motion.duration-medium"
-      ],
+      "targets": ["motion.duration-medium"],
       "note": "standard 性格取值"
     },
     "motion.duration-slow": {
       "tier": "semantic",
-      "targets": [
-        "motion.duration-long"
-      ],
+      "targets": ["motion.duration-long"],
       "note": "standard 性格取值"
     },
     "motion.easing-standard": {
       "tier": "semantic",
-      "targets": [
-        "motion.easing-standard"
-      ]
+      "targets": ["motion.easing-standard"]
     },
     "motion.easing-emphasized": {
       "tier": "semantic",
-      "targets": [
-        "motion.easing-emphasized"
-      ]
+      "targets": ["motion.easing-emphasized"]
     },
     "spacing.xs-plus": {
       "tier": "component",
-      "targets": [
-        "space.6"
-      ],
+      "targets": ["menu.offset", "toast.gap", "flow-sheet.gap", "progress.gap"],
       "note": "仅组件层使用；组件键由 第 2 步组件迁移批次 确定，此处 targets 记录承载该值的 Primitive（基础包 component.json 将引用 space.6）"
     },
     "sizing.indicator-thickness": {
       "tier": "semantic",
-      "targets": [
-        "size.indicator"
-      ]
+      "targets": ["size.indicator"]
     },
     "sizing.caret": {
       "tier": "semantic",
-      "targets": [
-        "size.caret"
-      ]
+      "targets": ["size.caret"]
     },
     "sizing.step-dot": {
       "tier": "semantic",
-      "targets": [
-        "size.marker"
-      ]
+      "targets": ["size.marker"]
     },
     "sizing.refresh-action-min-width": {
       "tier": "component",
-      "targets": [
-        "scrollable-data-list.action-min-width"
-      ],
+      "targets": ["scrollable-data-list.action-min-width"],
       "note": "基础包字面量；组件键由 第 2 步组件迁移批次 定义"
     },
     "sizing.refresh-action-height": {
       "tier": "component",
-      "targets": [
-        "scrollable-data-list.action-height"
-      ],
+      "targets": ["scrollable-data-list.action-height"],
       "note": "基础包字面量；组件键由 第 2 步组件迁移批次 定义"
     },
     "sizing.progress-stroke": {
       "tier": "semantic",
-      "targets": [
-        "size.stroke"
-      ]
+      "targets": ["size.stroke"]
     },
     "sizing.progress-track": {
       "tier": "component",
-      "targets": [
-        "progress.track-height"
-      ],
+      "targets": ["progress.track-height"],
       "note": "基础包字面量；组件键由 第 2 步组件迁移批次 定义"
     },
     "sizing.textarea-rows": {
       "tier": "component",
-      "targets": [
-        "textarea.rows"
-      ],
+      "targets": ["textarea.rows"],
       "note": "基础包字面量；组件键由 第 2 步组件迁移批次 定义"
     },
     "border.width-hairline": {
       "tier": "semantic",
-      "targets": [
-        "border.width"
-      ]
+      "targets": ["border.width"]
     },
     "border.accent-width": {
       "tier": "semantic",
-      "targets": [
-        "border.width-accent"
-      ]
+      "targets": ["border.width-accent"]
     },
     "opacity.hidden": {
       "tier": "constant",
-      "targets": [
-        "opacity.hidden"
-      ]
+      "targets": ["opacity.hidden"]
     },
     "opacity.visible": {
       "tier": "constant",
-      "targets": [
-        "opacity.visible"
-      ]
+      "targets": ["opacity.visible"]
     },
     "motion.duration-instant": {
       "tier": "constant",
-      "targets": [
-        "motion.duration-instant"
-      ]
+      "targets": ["motion.duration-instant"]
     },
     "motion.easing-gentle": {
       "tier": "semantic",
-      "targets": [
-        "motion.easing-gentle"
-      ]
+      "targets": ["motion.easing-gentle"]
     },
     "motion.scale-pressed": {
       "tier": "semantic",
-      "targets": [
-        "motion.press-scale"
-      ],
+      "targets": ["motion.press-scale"],
       "note": "standard 性格取值"
     },
     "motion.scale-pressed-strong": {
       "tier": "semantic",
-      "targets": [
-        "motion.press-scale-strong"
-      ],
+      "targets": ["motion.press-scale-strong"],
       "note": "standard 性格取值"
     },
     "motion.rotate-half-turn": {
       "tier": "constant",
-      "targets": [
-        "motion.rotate-half-turn"
-      ]
+      "targets": ["motion.rotate-half-turn"]
     },
     "typography.micro": {
       "tier": "semantic",
-      "targets": [
-        "typography.micro"
-      ],
+      "targets": ["typography.micro"],
       "note": "拆分为角色复合值；字族使用固定系统字体栈"
     },
     "layout.fill": {
       "tier": "constant",
-      "targets": [
-        "layout.fill"
-      ]
+      "targets": ["layout.fill"]
     },
     "layout.half": {
       "tier": "constant",
-      "targets": [
-        "layout.half"
-      ]
+      "targets": ["layout.half"]
     },
     "layout.half-negative": {
       "tier": "constant",
-      "targets": [
-        "layout.half-negative"
-      ]
+      "targets": ["layout.half-negative"]
     },
     "layout.translate-full-negative": {
       "tier": "constant",
-      "targets": [
-        "layout.translate-full-negative"
-      ]
+      "targets": ["layout.translate-full-negative"]
     },
     "layout.focus-inset": {
       "tier": "constant",
-      "targets": [
-        "layout.focus-inset"
-      ]
+      "targets": ["layout.focus-inset"]
     },
     "layout.sheet-max-height": {
       "tier": "constant",
-      "targets": [
-        "layout.sheet-max-height"
-      ]
+      "targets": ["layout.sheet-max-height"]
     },
     "layout.load-more-root-margin": {
       "tier": "constant",
-      "targets": [
-        "layout.load-more-root-margin"
-      ]
+      "targets": ["layout.load-more-root-margin"]
     },
     "layout.menu-max-height": {
       "tier": "constant",
-      "targets": [
-        "layout.menu-max-height"
-      ]
+      "targets": ["layout.menu-max-height"]
     },
     "layout.dialog-max-width": {
       "tier": "constant",
-      "targets": [
-        "layout.dialog-max-width"
-      ]
+      "targets": ["layout.dialog-max-width"]
     },
     "layout.form-max-width": {
       "tier": "constant",
-      "targets": [
-        "layout.form-max-width"
-      ]
+      "targets": ["layout.form-max-width"]
     },
     "layout.pull-refresh-threshold": {
       "tier": "constant",
-      "targets": [
-        "layout.pull-refresh-threshold"
-      ]
+      "targets": ["layout.pull-refresh-threshold"]
     },
     "layout.pull-refresh-max-distance": {
       "tier": "constant",
-      "targets": [
-        "layout.pull-refresh-max-distance"
-      ]
+      "targets": ["layout.pull-refresh-max-distance"]
     },
     "layout.inset-xs-negative": {
       "tier": "constant",
-      "targets": [
-        "layout.inset-xs-negative"
-      ],
+      "targets": ["layout.inset-xs-negative"],
       "note": "本期保留，S7 删除（消费处改为 calc(-1 * var(--pb-space-…))）"
     },
     "layout.inset-sm-negative": {
       "tier": "constant",
-      "targets": [
-        "layout.inset-sm-negative"
-      ],
+      "targets": ["layout.inset-sm-negative"],
       "note": "本期保留，S7 删除（消费处改为 calc(-1 * var(--pb-space-…))）"
     },
     "layout.flex-fill": {
       "tier": "constant",
-      "targets": [
-        "layout.flex-fill"
-      ]
+      "targets": ["layout.flex-fill"]
     },
     "layout.flex-grow": {
       "tier": "constant",
-      "targets": [
-        "layout.flex-grow"
-      ]
+      "targets": ["layout.flex-grow"]
     },
     "layout.gesture-axis-lock": {
       "tier": "constant",
-      "targets": [
-        "layout.gesture-axis-lock"
-      ]
+      "targets": ["layout.gesture-axis-lock"]
     },
     "layout.gesture-drag-limit": {
       "tier": "constant",
-      "targets": [
-        "layout.gesture-drag-limit"
-      ]
+      "targets": ["layout.gesture-drag-limit"]
     },
     "layout.gesture-swipe-threshold": {
       "tier": "constant",
-      "targets": [
-        "layout.gesture-swipe-threshold"
-      ]
+      "targets": ["layout.gesture-swipe-threshold"]
     },
     "layout.viewport-height": {
       "tier": "constant",
-      "targets": [
-        "layout.viewport-height"
-      ]
+      "targets": ["layout.viewport-height"]
     },
     "layout.chart-min-height": {
       "tier": "constant",
-      "targets": [
-        "layout.chart-min-height"
-      ]
+      "targets": ["layout.chart-min-height"]
     },
     "layout.chart-plot-height": {
       "tier": "constant",
-      "targets": [
-        "layout.chart-plot-height"
-      ]
+      "targets": ["layout.chart-plot-height"]
     },
     "layer.base": {
       "tier": "constant",
-      "targets": [
-        "layer.base"
-      ]
+      "targets": ["layer.base"]
     },
     "layer.content": {
       "tier": "constant",
-      "targets": [
-        "layer.content"
-      ]
+      "targets": ["layer.content"]
     },
     "effect.glass-backdrop": {
       "tier": "semantic",
-      "targets": [
-        "surface.glass-backdrop"
-      ]
+      "targets": ["surface.glass-backdrop"]
     },
     "motion.duration-sheet": {
       "tier": "component",
-      "targets": [
-        "flow-sheet.duration",
-        "bottom-sheet.duration"
-      ],
+      "targets": ["flow-sheet.duration", "bottom-sheet.duration"],
       "note": "基础包字面量 220ms；组件键由 第 2 步组件迁移批次 定义"
     },
     "motion.duration-tab-viewport": {
       "tier": "component",
-      "targets": [
-        "tab-viewport.duration"
-      ],
+      "targets": ["tab-viewport.duration"],
       "note": "基础包字面量 240ms；组件键由 第 2 步组件迁移批次 定义"
     },
     "motion.duration-toast": {
       "tier": "component",
-      "targets": [
-        "toast.duration"
-      ],
+      "targets": ["toast.duration"],
       "note": "基础包字面量 4000ms；组件键由 第 2 步组件迁移批次 定义"
     },
     "motion.duration-click-suppression": {
       "tier": "constant",
-      "targets": [
-        "motion.duration-click-suppression"
-      ]
+      "targets": ["motion.duration-click-suppression"]
     }
   }
 }
