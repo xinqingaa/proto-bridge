@@ -154,8 +154,8 @@ flowchart TD
 
 | 步骤 | 状态 | 证据 / 剩余缺口 |
 | --- | --- | --- |
-| 前置条件检查 | 未开始 | — |
-| 1. 视觉方向 | 未开始 | — |
+| 前置条件检查 | 未满足 | 平台升级未开始：缺原型主题包与主题色轴、`font.numeric`、可声明时钟，以及 RingProgress、SegmentedControl、Heatmap、MonthCalendar、MiniBars、带撤销 Snackbar 等 DS 组件；Core 采集时钟仍写死为 2026-07-28 |
+| 1. 视觉方向 | 进行中 | `apps/pbwork/src/drafts/yike/` 并排两版：A 不依赖 PBWork DS 与主题（番茄扇面表盘），B 只用现有 DS 与主题；两版差距清单列在草稿页内。待用户选定方向 |
 | 2. 产品基线 | 未开始 | — |
 | 3. 页面契约 | 未开始 | — |
 | 4. 主题包 | 未开始 | — |

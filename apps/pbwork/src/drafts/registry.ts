@@ -7,6 +7,7 @@ const draftModules = import.meta.glob<DraftModule>("./*/DraftPage.vue");
 export const draftLabels: Record<string, string> = {
   "workbench-overview": "工作台概览",
   "workbench-prototypes": "全部原型 / 详情",
+  yike: "一刻 · 专注与打卡",
 };
 
 export const draftRecords = Object.entries(draftModules)
