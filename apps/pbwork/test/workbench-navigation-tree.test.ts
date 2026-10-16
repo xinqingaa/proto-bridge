@@ -51,6 +51,12 @@ describe("workbench navigation tree", () => {
         kind: "item",
         to: "/workbench/drafts/workbench-prototypes",
       },
+      {
+        id: "draft-yike",
+        label: "一刻 · 专注与打卡",
+        kind: "item",
+        to: "/workbench/drafts/yike",
+      },
     ]);
     expect(prototypes.children?.some((node) => node.kind === "lifecycle")).toBe(
       false,

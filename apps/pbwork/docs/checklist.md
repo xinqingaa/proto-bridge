@@ -4,7 +4,8 @@
 
 ## 设计系统
 
-- [ ] 形状匹配时优先 DS 组件；局部 UI 已论证且走 Token
+- [ ] 组件按 Promotion Mapping 选用：形状与风格都匹配时使用 DS 组件或公开变体；原型自有组件与 DS 扩展已记录 DS 缺口，且走 Token、Flex 与显式 Evidence
+- [ ] 未通过私有 class 覆盖 DS 内部样式；手势、滚动、Overlay 与导航机制未页内复制
 - [ ] FilterBar / Card 未滥用（自定义 Chip 行须 `data-no-swipe`；列表行默认非 Card）
 - [ ] style/template/script/TS helper、生成样式与 vendor 视觉 props 无固定设计值（含设计意义的 `0`）；所有设计量仅消费 `var(--pb-*)`，不存在 literal fallback
 - [ ] DS 与现役原型没有 CSS Grid / `place-*` Grid 简写，只使用 Flex 或常规文档流
@@ -32,10 +33,13 @@
 
 ## 导航与 Variant
 
+- [ ] 新原型或新视觉方向已完成需求采访：brief 七个字段均已由用户确认或写明假设，并记录在 `docs/design.md`
+- [ ] 定方向时已应用 `frontend-design`，向用户呈现过两到三个方向并由用户选定
 - [ ] 新原型或结构性改动存在 `docs/design.md` 且状态为 `approved`
 - [ ] 本次调整的页面设计增量已批准；其它待定页面未被当作可以任意发挥的空白
 - [ ] 探索草稿位于 `src/drafts`，未注册为正式 Prototype，也未被当作 Capture/Handoff 输入
-- [ ] `docs/implementation.md` 的 Promotion Mapping 已将视觉元素分为现有 DS、通用 DS 缺口、业务局部 UI、外部资产或降级项
+- [ ] 草稿已在页面上声明为风格草稿或旅程草稿；旅程草稿已在浏览器中走通 brief 的必做旅程并列出缺口
+- [ ] `docs/implementation.md` 的 Promotion Mapping 已将视觉元素分为 DS 原样、DS 公开变体、通用 DS 扩展、原型自有组件、外部资产或降级项，并列出 DS 缺口与品牌层缺口
 - [ ] 导航职责、关键交互效果与视觉编排不存在影响实现的未决问题
 - [ ] 根目的地各注册 Screen、共用壳 `view`；切 Tab 用 `replace` 更新 slug；栈页 `push`；跨 Tab 进栈 parent 正确
 - [ ] 返回与完成流符合 shell-and-nav（含嵌入 Runtime）

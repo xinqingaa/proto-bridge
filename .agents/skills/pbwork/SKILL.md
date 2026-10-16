@@ -4,8 +4,10 @@ description: >-
   Design, build, or maintain PBWork business prototypes, visual explorations,
   Runtime/Evidence authoring, tokens, themes, design-system components,
   shared gestures, Workbench, Canvas, Inspector, Capture, and finalization UI.
-  Use for any task under apps/pbwork. For visual direction, coordinate the
-  repository-local frontend-design skill; do not use for ProtoBridge Core,
+  Use for any task under apps/pbwork. A new prototype or visual direction
+  starts with a brief intake that asks the user for missing positioning,
+  audience, and style, and must apply the repository-local frontend-design
+  skill; do not use for ProtoBridge Core,
   Store, CLI, MCP, or Target implementation outside PBWork.
 ---
 
@@ -18,7 +20,7 @@ Do not read every reference by default.
 
 | Task                                                                                             | Required reference                                          |
 | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
-| New prototype, product structure, navigation, visual direction, exploration, or `docs/design.md` | [prototype-design.md](references/prototype-design.md)       |
+| New prototype, brief intake, product structure, navigation, visual direction, exploration, or `docs/design.md` | [prototype-design.md](references/prototype-design.md) |
 | Approved Screen, Variant, fixture, action, scenario, Runtime, or Evidence implementation         | [prototype-authoring.md](references/prototype-authoring.md) |
 | Token, Theme, component, Contract, Registry, Playground, or shared gesture                       | [design-system.md](references/design-system.md)             |
 | Workbench shell, Canvas, Inspector, Capture Console, finalization sheet, task center, or Evidence Review    | [workbench.md](references/workbench.md)                     |
@@ -33,13 +35,22 @@ then design-system work, then formal authoring.
   product and experience baseline.
 - Keep exploratory code under `apps/pbwork/src/drafts/{prototypeId}/`;
   it is not PB-compliant Evidence and must not enter Capture/Handoff.
-- Use the repository-local `frontend-design` Skill for visual identity,
-  composition, typography, or aesthetic exploration. For a new or materially
-  reshaped business Screen, apply it once while setting direction and run at
-  least the Quick Experience Check on the formal PBWork implementation. Escalate
-  to the Focused Experience Gate or Full Experience Audit by risk, user feedback,
-  or explicit instruction. Do not use it by default for routine Token,
-  component, Contract, Workbench, copy, or established defect maintenance.
+- A new prototype, new visual direction, or whole-page redesign starts with the
+  brief intake in `prototype-design.md`. When the prompt is sparse, ask; do not
+  fill the gaps with the current PBWork look.
+- Reading and applying the repository-local `frontend-design` Skill is
+  mandatory when setting or changing visual direction: a new prototype, a style
+  draft, a whole-page redesign, or visual dissatisfaction. Follow the PBWork
+  overrides in `prototype-design.md`. After formal authoring of a new or
+  materially reshaped business Screen, run at least the Quick Experience Check.
+  Escalate to the Focused Experience Gate or Full Experience Audit by risk, user
+  feedback, or explicit instruction. Do not use it by default for routine
+  Token, component, Contract, Workbench, copy, or established defect
+  maintenance.
+- PBWork DS is the foundation, not the ceiling. Use a DS component when both
+  shape and style match, its public variants when they suffice, and a shared DS
+  extension or prototype-local component when the approved style conflicts.
+  The style wins; record the DS gap. Interaction mechanics are never copied.
 - Keep product logic and PBWork delivery constraints in this Skill. Do not
   modify the vendored `frontend-design` Skill with PBWork-specific rules.
 - Prototype Runtime components and Workbench UI are separate component

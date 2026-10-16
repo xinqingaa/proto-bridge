@@ -18,13 +18,13 @@ ProtoBridge 的闭环按时间走完：人确认关键节点，系统固定页�
 
 ## 1. 设计并晋级原型
 
-新业务原型、结构性产品改动和视觉语言改变先按 [PBWork 原型设计工作流](../pbwork/prototypes/design-workflow.md)完成产品设计、按需视觉探索、用户确认和 Promotion Gate。正式原型使用 `prototypes/{id}/docs/design.md` 作为唯一产品与体验基线；只有 `status: approved` 才进入结构性 Authoring。
+新业务原型、结构性产品改动和视觉语言改变先按 [PBWork 原型设计工作流](../pbwork/prototypes/design-workflow.md)完成需求采访、产品设计、视觉方向（按需制作草稿）、用户确认和 Promotion Gate。正式原型使用 `prototypes/{id}/docs/design.md` 作为唯一产品与体验基线；只有 `status: approved` 才进入结构性 Authoring。
 
-视觉探索草稿位于 `apps/pbwork/src/drafts/{prototypeId}`，不进入 Prototype Registry、Capture 或 Handoff。草稿中的硬编码构图、自定义控制和动画不能直接升格为可交付事实；必须分别映射到现有 DS、通用 DS 缺口、Token 驱动的业务 UI、外部资产契约或降级项。
+视觉探索草稿位于 `apps/pbwork/src/drafts/{prototypeId}`，不进入 Prototype Registry、Capture 或 Handoff。草稿中的硬编码构图、自定义控制和动画不能直接升格为可交付事实；必须分别映射到 DS 组件或其公开变体、通用 DS 扩展、Token 驱动的原型自有组件、外部资产契约或降级项。
 
 ## 2. 制作可采集原型
 
-原型作者只能从 PBWork 的 Token、Theme、基础组件、复杂组件和共享手势中组装页面。没有对口组件时可以实现业务局部 UI，但设计量仍必须使用现有 Token，且不得复制已有组件职责。
+PBWork 的 Token、Theme、基础组件、复杂组件和共享手势是原型的基础而不是上限。形状与风格都匹配时使用 DS 组件或其公开变体；与已批准风格冲突时以风格为准，使用 DS 扩展或原型自有组件并记录 DS 缺口。原型自有组件的设计量仍必须使用现有 Token，手势、滚动、Overlay 和导航机制不得复制。
 
 所有作者角色均通过 Coding Agent 修改同一套代码资产。DS 组件用业务 `inspectId` 进入 Evidence；需要独立实现或验收的业务局部节点必须显式提供 `data-pb-id`、`data-pb-role`、按需 `data-pb-key` 和 `data-pb-token-*`。只在 CSS 中使用 `--pb-*` 不会形成 Token binding Fact。
 

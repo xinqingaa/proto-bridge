@@ -35,7 +35,12 @@ rewriting the baseline.
 
 ## Constraints
 
-- Use PBWork Design System components whenever the shape matches.
+- Build on the PBWork Design System and follow the Promotion Mapping in
+  `docs/implementation.md`: a DS component where shape and style match, its
+  public variants, props, or slots next, and a recorded prototype-local
+  component or DS extension where the approved style conflicts. Never restyle
+  DS internals through private classes, and never copy gesture, scrolling,
+  overlay, or navigation mechanics.
 - Use only Flex or normal document flow in business prototypes. Do not use
   CSS Grid, `grid-*`, or `place-*`.
 - Express all visible or measurable authored design values through existing
@@ -101,7 +106,9 @@ Record one Experience result in `docs/implementation.md`:
 
 ### PBWork Delivery Gate
 
-- Token-only, DS-first, Flex-only, and documented compositions pass.
+- Token-only, Flex-only, the recorded Promotion Mapping, and documented
+  compositions pass. Prototype-local components meet the same rules as DS
+  components.
 - Required Fragments, business Evidence nodes, Actions, Scenarios, Checkpoints,
   Variant fixtures, readiness, and reset are deterministic.
 - Typecheck, scoped tests, Runtime verification, and docs verification pass.

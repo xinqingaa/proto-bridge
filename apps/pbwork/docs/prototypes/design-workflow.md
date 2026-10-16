@@ -6,8 +6,9 @@
 
 ```text
 需求与参考
+  → 需求采访
   → 产品设计
-  → 视觉探索（按需）
+  → 视觉方向（新原型与视觉改变必做，按需制作草稿）
   → 产品基线确认
   → 页面设计增量确认
   → Promotion Mapping
@@ -16,13 +17,48 @@
   → Runtime / Evidence / Handoff
 ```
 
-### 1. 产品设计
+### 1. 需求采访
 
-在 PBWork 原型设计阶段闭合用户、范围、对象、信息架构、流程、状态和验收信号。页面数量和功能清单不是产品设计。
+新原型、新视觉方向、整页重构，以及用户对视觉不满意但没有给出方向时，先做需求采访。局部修正、文案、Token、Evidence、Runtime 和已定缺陷不需要。
 
-### 2. 视觉设计与探索
+采访的字段固定，问法不固定。每份 brief 必须明确：
 
-视觉语言不明确、现有页面缺少焦点或需要比较方向时，由 PBWork 原型设计流程调用仓库内 `frontend-design`。视觉方案必须与业务主体、页面任务和真实内容相关，不能只给出“高级、极简”等形容词。
+| 字段 | 内容 |
+| --- | --- |
+| 产品定位与核心场景 | 产品解决什么问题，用户在什么时刻打开它 |
+| 用户群体 | 谁在用，使用情境与熟练度 |
+| 风格 | 约三个气质词，加上用户喜欢或排斥的参照 App 及具体原因 |
+| 平台与视口 | iOS、Android 或双端；手机或平板 |
+| 功能范围 | 必做、可选和明确不做 |
+| 品牌起点 | 全新品牌、沿用已有原型，或沿用客户既有品牌、Flutter App 主题 |
+| Flutter 交付约束 | 目标 App 是否已有需要沿用的主题或组件库 |
+
+交付目标始终是 Flutter Target；“只看效果”不构成跳过正式约束的理由。
+
+采访方式：
+
+- 先从提示词、附件、现有文档和记忆中提取已经回答的字段，只问缺失或互相矛盾的字段。
+- 使用结构化提问，每轮不超过五个问题，提供具体选项和自由输入，最多三轮。
+- 风格无法用文字确定时（用户还没想好、回答“你定”，或两个方向都成立），询问用户是否先做两到三个风格草稿再定。不要未经询问直接制作，也不要静默选定一个。
+- 用户明确授权 Agent 决定的字段记为假设，写明而不是静默取默认值。
+- 设计开始前把 brief 写成简短摘要请用户确认，并写入 `design.md` 的产品定义与视觉部分。
+
+`docs/roadmap` 等计划文档中的产品草案只是输入，仍须经采访确认；计划中未经用户选择的视觉方向或组件归属不继承。
+
+PBWork 的 Token、Theme 和 DS 是正式交付的基础，不是风格答案。brief 缺失时不能用 PBWork 现有外观填补。
+
+### 2. 产品设计
+
+在 PBWork 原型设计阶段闭合用户、范围、对象、信息架构、流程、状态和验收信号。页面数量和功能清单不是产品设计。brief 确认后，低风险细节由 Agent 推断并写明假设；只有备选方案会实质改变产品方向、核心流程或信息架构时才再次暂停提问。
+
+### 3. 视觉方向与探索
+
+新原型、风格草稿、整页重构和用户对视觉不满意时，必须由 PBWork 原型设计流程读取并应用仓库内 `frontend-design`。视觉方案必须与业务主体、页面任务和真实内容相关，不能只给出“高级、极简”等形容词。PBWork 对该 Skill 的两条默认做法有覆盖：
+
+- 产品主体与用户群体取自已确认的 brief，不由 Agent 自行设定；缺字段时回到需求采访。
+- 先向用户呈现两到三个不同方向（色板、字体角色、签名元素、布局草图），由用户选定后再制作草稿或正式页面。
+
+`frontend-design` 面向网页。App 还须明确导航外壳、签名组件与其它组件的变体、字体角色（数字承担主角时包括数字字体）、图标与插画、动效性格与声音/触感意图、文案语气，以及浅色与深色表现。
 
 需要真实页面比较时，探索代码只放在：
 
@@ -30,13 +66,20 @@
 apps/pbwork/src/drafts/{prototypeId}/
 ```
 
-探索页允许快速验证构图，但不进入 Prototype Registry，不受正式 Authoring 完整性门禁，不得用于 Capture/Handoff，也不得声称可以直接交付目标端。
+探索页允许快速验证构图，但不进入 Prototype Registry，不受正式 Authoring 完整性门禁，不得用于 Capture/Handoff，也不得声称可以直接交付目标端。每个草稿在页面上声明类型：
 
-### 3. 设计确认
+| 类型 | 回答的问题 | 完成要求 |
+| --- | --- | --- |
+| 风格草稿 | 长什么样 | 一到两个关键页面，静态或轻交互即可 |
+| 旅程草稿 | 能不能用 | 交付前在真实浏览器中走通 brief 的每条必做旅程，并列出缺口 |
+
+品牌起点为全新品牌时，草稿不注入 PBWork Theme 或 `--pb-*` 变量，使用由所选方向推导的色板、字体和组件形态。只有 brief 指定从 PBWork DS 起步或需要对比时，草稿才使用 DS。
+
+### 4. 设计确认
 
 新原型、结构性改动和视觉语言改变必须在正式实现前获得用户确认，或获得范围明确的 Agent 自主设计授权。确认前可以继续分析和探索，但不能覆盖正式 Screen。自主设计仍须先形成可审阅的页面契约，不能把授权理解为跳过产品闭合。
 
-### 4. 设计基线
+### 5. 设计基线
 
 正式业务 Prototype 必须提供：
 
@@ -64,7 +107,7 @@ approvedAt: 2026-08-13 # 仅 approved 时必需
 
 `design.md` 是产品与体验唯一基线，至少覆盖：
 
-- 产品定义、用户、承诺、范围与非目标；
+- 产品定义、用户、承诺、范围与非目标，以及已确认的 brief（风格气质与参照、平台视口、品牌起点、Flutter 交付约束）；
 - 核心对象、关系和状态；
 - 信息架构、页面地图和导航职责；
 - 核心旅程、交互结果、失败与恢复；
@@ -86,21 +129,29 @@ approvedAt: 2026-08-13 # 仅 approved 时必需
 
 ## Promotion Mapping
 
-探索方向进入正式 Authoring 前，每个重要视觉元素必须归类，并记录在 `docs/implementation.md`：
+PBWork DS 是原型的基础，不是上限。探索方向进入正式 Authoring 前，每个重要视觉元素按下表自上而下归类，停在第一个能完整保留已批准方向的分类，并记录在 `docs/implementation.md`：
 
-| 分类           | 处理                                                  |
-| -------------- | ----------------------------------------------------- |
-| 现有 PBWork DS | 直接使用公开 Contract                                 |
-| 通用 DS 缺口   | 先按 PBWork Design System 规则完成 Token/组件原子变更 |
-| 业务局部 UI    | 使用现有 Token，并声明独立 Evidence 节点              |
-| 外部资产/动效  | 定义资产 ID、状态、触发、时长、降级和跨端契约         |
-| 放弃或降级     | 在设计文档记录原因，不把不可交付创意静默带入正式实现  |
+| 分类 | 处理 |
+| --- | --- |
+| DS 组件原样使用 | 形状与风格都匹配，直接使用公开 Contract |
+| DS 组件公开变体 | 通过公开 variant、props 或 slots 满足方向 |
+| 通用 DS 扩展 | 需求通用且可复用时，先按 PBWork Design System 规则完成变体、Token 或组件原子变更 |
+| 原型自有组件 | 形状属于本业务，或已批准风格与所有 DS 选项冲突；使用现有 Token，并声明独立 Evidence 节点 |
+| 外部资产/动效 | 定义资产 ID、状态、触发、时长、降级和跨端契约 |
+| 放弃或降级 | 在设计文档记录原因，不把不可交付创意静默带入正式实现 |
 
-视觉独特不等于必须新增 DS。只有跨页面或跨业务稳定复用的能力才进入共享层。
+已批准风格与 DS 组件冲突时以风格为准：不为套用 DS 而降级方向，改用通用 DS 扩展或原型自有组件，并把冲突记为 DS 缺口，作为后续 DS 演进的输入。两条边界不变：
+
+- 手势仲裁、滚动、Overlay 焦点与关闭、导航等交互机制不复制，外观差异通过公开 props、slots 或 DS 扩展实现；
+- 原型自有组件与 DS 组件遵守同样的 Token-only、Flex-only 和 Evidence 规则。
+
+品牌取值是另一类缺口。正式页面只能使用已注册的 Foundation 与 Theme Token，而 Theme 目前只有全局的 `light` 与 `dark`，现有 Token 无法表达的品牌色或字体在正式实现中还没有归属。进入正式 Authoring 前把它记为品牌层缺口，由用户决定：等待原型主题包能力（[平台升级计划 W2](../../../../docs/roadmap/pbwork-platform-upgrade.md)），或映射到现有 Token 并在 `design.md` 写明降级。不得为此新增业务命名的共享 Token 或页内色板。
+
+只有跨页面或跨业务稳定复用的能力才进入共享层；业务专属形状留在原型内。
 
 ## 正式 Authoring
 
-正式 Authoring 只消费 `status: approved` 的产品基线和已批准的页面设计增量。正式页面遵守 Token-only、DS-first、Flex-only、Registry、semantic authoring、Action/Scenario/Checkpoint 和 Runtime 确定性约束。
+正式 Authoring 只消费 `status: approved` 的产品基线和已批准的页面设计增量。正式页面遵守 Token-only、以 DS 为基础并按 Promotion Mapping 选用组件、Flex-only、Registry、semantic authoring、Action/Scenario/Checkpoint 和 Runtime 确定性约束。
 
 新页面或整页重构必须通过 Delivery Gate，并在正式实现稳定后执行分级 Experience Review：
 
@@ -117,4 +168,4 @@ approvedAt: 2026-08-13 # 仅 approved 时必需
 
 PBWork 任务统一由仓库 `pbwork` Skill 路由。该 Skill 按任务读取原型设计、正式 Authoring、Design System 或 Workbench reference，跨边界任务可以按阶段组合，但不需要在多个 PBWork Skill 之间切换。
 
-`frontend-design` 只负责通用视觉发散、构图、字体和审美批评，不负责 PB Token/DS、Evidence 或 Flutter 映射。普通 Token、组件、Contract、Workbench、文案或已定缺陷维护不默认调用它；新页面和整页重构则必须在定方向时和正式 Authoring 后各应用一次，由 PBWork 负责 Delivery Gate 与分级 Experience Review 的协调。
+需求采访、产品闭合和 Promotion Mapping 由 `pbwork` 负责。`frontend-design` 只负责通用视觉发散、构图、字体和审美批评，不负责 PB Token/DS、Evidence 或 Flutter 映射。普通 Token、组件、Contract、Workbench、文案或已定缺陷维护不默认调用它；新原型、风格草稿、整页重构和用户对视觉不满意时必须在定方向时应用，新页面和整页重构在正式 Authoring 后再应用一次，由 PBWork 负责 Delivery Gate 与分级 Experience Review 的协调。

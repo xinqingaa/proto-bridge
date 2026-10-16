@@ -1,6 +1,6 @@
 # ADR 0005：PBWork 使用一套严格的设计基础和组件边界
 
-- 状态：Accepted
+- 状态：Accepted；“形状匹配时必须使用对口 PBWork 组件”由 [ADR 0012](./0012-pbwork-ds-is-foundation-not-ceiling.md) 细化替代
 
 ## 决策
 

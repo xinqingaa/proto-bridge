@@ -9,6 +9,11 @@ Routine maintenance does not require `frontend-design`. Use it only when the
 request introduces a new visual identity, cross-page visual primitive, or
 broad component-language redesign.
 
+The DS is the shared foundation that prototypes extend. DS gaps recorded in a
+prototype's `docs/implementation.md` (style conflicts, missing variants) are
+input for DS work: add a variant or component when the need is generic, and
+leave business-specific shapes in the prototype.
+
 ## Read first
 
 1. `apps/pbwork/docs/development.md` and `principles.md`.

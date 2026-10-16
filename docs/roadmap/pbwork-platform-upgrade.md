@@ -139,6 +139,8 @@ W3 与 W4 都依赖 W2 的主题包身份，二者可以并行。W5 的组件要
      fonts/            本地 woff2 字体与许可证，保证离线可用
    ```
 
+   一个原型可能需要多套完整主题，而不只是换主题色：「一刻」的机械、水位、日影三种表盘各自切换配色、字体和组件形态，由用户在设置中选择。主题包格式要能在同一原型下声明多套主题（每套都有 light / dark 两种模式），主题身份随之包含所选主题；具体格式在 W2 设计时决定。
+
 4. **主题包校验器（Core 定义规则，PBWork 与脚本调用）。** 检查：语义层与组件层键名覆盖完整（缺省项从基础包继承并在 Workbench 标出“沿用基础值”）、引用可解析、无循环引用、各组前景/背景配对满足 WCAG AA、主题色只覆盖声明子集、字体文件有许可证说明。不允许新增 PBWork 未定义的键名。
 5. **主题身份与 Runtime。** 主题身份记作 `packId@digest / mode / accent`，`mode` 取 `light`、`dark` 或跟随系统。改造 `runtime/theme-preference.ts`、`RuntimeLayout.vue`、`resolveThemeTokens.ts`、`createVuetifyThemes.ts`，按当前原型的主题包生成 CSS 变量与 Vuetify 主题；Capture 的 `colorScheme` 从 mode 推导。Workbench 的工作台主题仍是独立通道。
 6. **Workbench 预览。** Token Gallery 与 Component Playground 可选择主题包、模式和主题色，用该包渲染全部 DS 组件，便于评审“这个原型像不像它自己”。
@@ -270,7 +272,7 @@ SwipeActions、LargeTitleHeader、Timeline、DatePicker、ColorSwatchPicker、Ba
 - [语义标记与证据门禁](../reference/semantic-authoring.md)、[原型 Authoring Contract](../reference/prototype-authoring.md)、PBWork Skill 的 references、`apps/pbwork/docs/checklist.md`、Token 与 Theme 手册、组件总论。
 - [Evidence 模型](../architecture/evidence-model.md)与[采集链路](../architecture/capture-pipeline.md)：主题包身份、时钟声明、逐 Case staging 与崩溃恢复。
 - [配置参考](../reference/configuration.md)与[本地操作脚本](../guides/operator-scripts.md)：`pb:up` 配置来源、`pb:new-prototype`。
-- 新增 ADR 0012（三层 Token 与原型主题包）与 ADR 0013（以主题一致性探针替代多主题采集）。
+- 新增 ADR 0013（三层 Token 与原型主题包）与 ADR 0014（以主题一致性探针替代多主题采集）。ADR 0012 已确立“DS 是基础而不是上限”与组件选用阶梯，W2 交付后把其中的品牌层缺口改为由原型主题包承接。
 
 ---
 
