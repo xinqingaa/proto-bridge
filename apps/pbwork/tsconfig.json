@@ -10,6 +10,7 @@
     }
   },
   "include": [
+    "build/**/*.ts",
     "src/**/*.ts",
     "src/**/*.vue",
     "test/**/*.ts",

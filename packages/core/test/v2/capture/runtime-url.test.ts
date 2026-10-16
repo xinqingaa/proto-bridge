@@ -13,7 +13,7 @@ describe('buildRuntimeCaseUrl', () => {
         routeQuery: { zed: '1', record: 'task-claimable' },
       }),
     ).toBe(
-      'http://127.0.0.1:3977/prototype/sample/task-list?variant=claimable&theme=dark&record=task-claimable&zed=1',
+      'http://127.0.0.1:3977/prototype/sample/task-list?variant=claimable&mode=dark&record=task-claimable&zed=1',
     );
   });
 
@@ -26,6 +26,13 @@ describe('buildRuntimeCaseUrl', () => {
         themeId: 'light',
       }),
     ).toThrow(V2ContractError);
+    for (const key of ['theme', 'mode']) {
+      expect(() => buildRuntimeCaseUrl({
+        runtimeBaseUrl: 'http://127.0.0.1:3977',
+        path: '/prototype/sample/task-list',
+        variantId: 'default', themeId: 'light', routeQuery: { [key]: 'override' },
+      })).toThrow(V2ContractError);
+    }
     expect(() =>
       buildRuntimeCaseUrl({
         runtimeBaseUrl: 'http://127.0.0.1:3977',

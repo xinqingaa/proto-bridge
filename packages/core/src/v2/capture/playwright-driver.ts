@@ -760,7 +760,7 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
         deviceScaleFactor: window.devicePixelRatio,
         pathname: window.location.pathname,
         variantId: new URL(window.location.href).searchParams.get('variant'),
-        themeId: new URL(window.location.href).searchParams.get('theme'),
+        themeId: new URL(window.location.href).searchParams.get('mode'),
       }));
       if (
         actualEnvironment.width !== profile.viewport.width ||

@@ -16,9 +16,9 @@ test("the fixed three-page regression baseline still resolves", async ({
   page,
 }) => {
   for (const path of [
-    "/prototype/cold-chain-ops/exception-queue?variant=default&theme=light",
-    "/prototype/cold-chain-ops/shipment-detail?variant=default&theme=light&shipment=SH-2048",
-    "/prototype/cold-chain-ops/resolution-form?variant=default&theme=light&shipment=SH-2048",
+    "/prototype/cold-chain-ops/exception-queue?variant=default&theme=default&mode=light",
+    "/prototype/cold-chain-ops/shipment-detail?variant=default&theme=default&mode=light&shipment=SH-2048",
+    "/prototype/cold-chain-ops/resolution-form?variant=default&theme=default&mode=light&shipment=SH-2048",
   ]) {
     await page.goto(path);
     await expect(page.getByTestId("runtime-root")).toBeVisible();
@@ -60,7 +60,7 @@ test("Core Capture opens a cold-chain Variant with its authored Screen route and
   page,
 }) => {
   await page.goto(
-    "/prototype/cold-chain-ops/shipment-detail?variant=default&theme=light&shipment=SH-2048",
+    "/prototype/cold-chain-ops/shipment-detail?variant=default&theme=default&mode=light&shipment=SH-2048",
   );
   await page.waitForFunction(() =>
     Boolean(
@@ -128,7 +128,7 @@ test("cold-chain sequential Sheet actions resolve at their actual scenario step"
   page,
 }) => {
   await page.goto(
-    "/prototype/cold-chain-ops/shipment-detail?variant=default&theme=light&shipment=SH-2048",
+    "/prototype/cold-chain-ops/shipment-detail?variant=default&theme=default&mode=light&shipment=SH-2048",
   );
   await page.waitForFunction(() =>
     Boolean(
@@ -201,7 +201,7 @@ test("Runtime occlusion blocks painted overlays but not scrolled or hit-test-exe
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(
-    "/prototype/cold-chain-ops/exception-queue?variant=default&theme=light",
+    "/prototype/cold-chain-ops/exception-queue?variant=default&theme=default&mode=light",
   );
   await page.waitForFunction(() =>
     Boolean(
@@ -319,7 +319,7 @@ test("cold-chain-ops satisfies every authored Variant and required Scenario boun
   }
 
   await page.goto(
-    "/prototype/cold-chain-ops/exception-queue?variant=default&theme=light",
+    "/prototype/cold-chain-ops/exception-queue?variant=default&theme=default&mode=light",
   );
   await page.waitForFunction(() =>
     Boolean(
@@ -355,7 +355,7 @@ test("cold-chain-ops satisfies every authored Variant and required Scenario boun
         (item.requiredFragments?.length ?? 0) > 0,
     )) {
       await page.goto(
-        `/prototype/cold-chain-ops/${screen.screenSlug}?variant=${variant.variantId}&theme=light&shipment=SH-2048`,
+        `/prototype/cold-chain-ops/${screen.screenSlug}?variant=${variant.variantId}&theme=default&mode=light&shipment=SH-2048`,
       );
       await page.waitForFunction(() =>
         Boolean(
@@ -458,7 +458,7 @@ test("cold-chain-ops satisfies every authored Variant and required Scenario boun
           candidate.scenarioId === scenarioId,
       );
       await page.goto(
-        `/prototype/cold-chain-ops/${screen.screenSlug}?variant=${scenario.initialVariantId}&theme=light&shipment=SH-2048`,
+        `/prototype/cold-chain-ops/${screen.screenSlug}?variant=${scenario.initialVariantId}&theme=default&mode=light&shipment=SH-2048`,
       );
       await page.waitForFunction(() =>
         Boolean(
@@ -531,7 +531,7 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(
-    "/prototype/cold-chain-ops/exception-queue?variant=default&theme=light",
+    "/prototype/cold-chain-ops/exception-queue?variant=default&theme=default&mode=light",
   );
   await page.waitForFunction(() =>
     Boolean(

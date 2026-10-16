@@ -18,7 +18,7 @@ import {
   LocalServiceClientError,
 } from "@/capture/service-client";
 import { formatCaptureError } from "@/capture/presentation";
-import { loadPrototypes, loadPrototypeScreens } from "@/design-system/loaders";
+import { loadPrototypes, loadPrototypeScreens, loadPrototypeThemePack } from "@/design-system/loaders";
 
 const TERMINAL_JOB_STATUSES = [
   "completed",
@@ -74,7 +74,7 @@ export function createPrototypeCaptureDraft(prototypeId: string): SelectionDraft
     .map((screen) => ({
       screenId: screen.screenId,
       ...allSelections(screen.screenId),
-      themeIds: [prototype.defaultThemeId],
+      themeIds: [loadPrototypeThemePack(prototype.id).defaultMode],
       deviceIds: ["iphone-14"],
       captureScope: defaultScope(),
     }));

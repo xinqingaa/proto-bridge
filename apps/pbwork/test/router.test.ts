@@ -32,7 +32,7 @@ describe("PBWork routes", () => {
     ).toBe("prototype-screen");
     expect(
       router.resolve(
-        "/prototype/cold-chain-ops/exception-queue?variant=default&theme=light",
+        "/prototype/cold-chain-ops/exception-queue?variant=default&theme=default&mode=light",
       ).name,
     ).toBe("prototype-runtime");
   });

@@ -1,89 +1,68 @@
 import type { RouteNavigationIntent } from "@/runtime/navigation-intent";
-
-const STORAGE_KEY = "pbwork.runtime.theme.v1";
+import type { ThemePackPreference } from "./theme-pack-preference";
+import { concreteThemeMode } from "./theme-pack-preference";
 
 export type ThemeSyncInput = {
   intent: RouteNavigationIntent;
-  urlThemeId: string;
-  preference: string | null;
+  url: { theme: string; mode: "light" | "dark" };
+  preference: ThemePackPreference | null;
   forced: boolean;
   themeExplicit: boolean;
+  modeExplicit: boolean;
+  systemMode: "light" | "dark";
 };
-
 export type ThemeSyncResult = {
   action: "write-preference" | "stamp-url" | "keep";
-  themeId: string;
+  preference: ThemePackPreference;
+  theme: string;
+  mode: "light" | "dark";
 };
 
-function runtimeStorage(): Storage | null {
-  if (typeof window === "undefined") return null;
-  try {
-    return window.localStorage;
-  } catch {
-    return null;
-  }
-}
-
-export function readRuntimeThemePreference(): string | null {
-  const value = runtimeStorage()?.getItem(STORAGE_KEY);
-  return value && value.length > 0 ? value : null;
-}
-
-export function writeRuntimeThemePreference(themeId: string): void {
-  runtimeStorage()?.setItem(STORAGE_KEY, themeId);
+/** URL pins explicit dimensions; history restores the current prototype preference. */
+export function resolveThemeSync(input: ThemeSyncInput): ThemeSyncResult {
+  const saved = input.preference;
+  const useSaved = saved && !input.forced && input.intent === "back";
+  const theme =
+    useSaved || (saved && !input.forced && !input.themeExplicit)
+      ? saved!.theme
+      : input.url.theme;
+  const mode =
+    useSaved || (saved && !input.forced && !input.modeExplicit)
+      ? saved!.mode
+      : saved?.mode === "system" &&
+          !input.forced &&
+          input.url.mode === concreteThemeMode("system", input.systemMode)
+        ? "system"
+        : input.url.mode;
+  const preference: ThemePackPreference = { theme, mode };
+  const concreteMode = concreteThemeMode(mode, input.systemMode);
+  const changedUrl =
+    theme !== input.url.theme || concreteMode !== input.url.mode;
+  return {
+    action: changedUrl
+      ? "stamp-url"
+      : saved?.theme === theme && saved.mode === mode
+        ? "keep"
+        : "write-preference",
+    preference,
+    theme,
+    mode: concreteMode,
+  };
 }
 
 export function routeHasExplicitTheme(fullPath: string): boolean {
-  const search = fullPath.includes("?")
-    ? fullPath.slice(fullPath.indexOf("?") + 1)
-    : "";
-  return new URLSearchParams(search).has("theme");
+  return new URL(fullPath, "http://runtime.local").searchParams.has("theme");
 }
-
-export function stampThemeOnHref(href: string, themeId: string): string {
-  const hashIndex = href.indexOf("#");
-  const hash = hashIndex >= 0 ? href.slice(hashIndex) : "";
-  const withoutHash = hashIndex >= 0 ? href.slice(0, hashIndex) : href;
-  const queryIndex = withoutHash.indexOf("?");
-  const path = queryIndex >= 0 ? withoutHash.slice(0, queryIndex) : withoutHash;
-  const search = queryIndex >= 0 ? withoutHash.slice(queryIndex + 1) : "";
-  const params = new URLSearchParams(search);
-  params.set("theme", themeId);
-  return `${path}?${params.toString()}${hash}`;
+export function routeHasExplicitMode(fullPath: string): boolean {
+  return new URL(fullPath, "http://runtime.local").searchParams.has("mode");
 }
-
-/**
- * Capture-safe theme policy:
- * - Forced / explicit URL (goto, prepare, share, toolbar) writes preference from URL.
- * - Back/forward stamps the destination URL to the session preference.
- * - Omitted theme on a non-back navigation keeps an existing preference.
- */
-export function resolveThemeSync(input: ThemeSyncInput): ThemeSyncResult {
-  if (input.forced) {
-    return { action: "write-preference", themeId: input.urlThemeId };
-  }
-  if (input.intent === "back") {
-    if (input.preference && input.preference !== input.urlThemeId) {
-      return { action: "stamp-url", themeId: input.preference };
-    }
-    return { action: "keep", themeId: input.preference ?? input.urlThemeId };
-  }
-  if (!input.themeExplicit && input.preference) {
-    if (input.preference !== input.urlThemeId) {
-      return { action: "stamp-url", themeId: input.preference };
-    }
-    return { action: "keep", themeId: input.preference };
-  }
-  return { action: "write-preference", themeId: input.urlThemeId };
-}
-
-export function resolveWorkbenchSessionTheme(input: {
-  navigation: RouteNavigationIntent;
-  destinationThemeId: string;
-  sessionThemeId: string | null;
-}): string {
-  if (input.navigation === "back") {
-    return input.sessionThemeId ?? input.destinationThemeId;
-  }
-  return input.destinationThemeId;
+export function stampThemeOnHref(
+  href: string,
+  theme: string,
+  mode: "light" | "dark",
+): string {
+  const url = new URL(href, "http://runtime.local");
+  url.searchParams.set("theme", theme);
+  url.searchParams.set("mode", mode);
+  return `${url.pathname}${url.search}${url.hash}`;
 }

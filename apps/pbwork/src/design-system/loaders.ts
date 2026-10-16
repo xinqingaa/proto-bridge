@@ -12,6 +12,15 @@ import darkTheme from "@/design-system/themes/dark.json";
 import { componentRecords } from "@/design-system/components/registry";
 import { prototypes, prototypeScreens } from "@/prototypes/registry";
 
+import { runtimeThemeSources } from "@/design-system/theme/runtime-theme";
+
+export function loadPrototypeThemePack(prototypeId: string) {
+  const prototype = prototypes.find((item) => item.id === prototypeId);
+  const source = runtimeThemeSources.packs.get(prototype?.themePackId ?? "");
+  if (!source) throw new Error(`UNKNOWN_PROTOTYPE_THEME_PACK:${prototypeId}`);
+  return source.manifest;
+}
+
 const contractModules = import.meta.glob(
   "@/design-system/components/contracts/*.json",
   { eager: true, import: "default" },
@@ -58,3 +67,5 @@ export const screenViewModules = import.meta.glob(
 export const componentViewModules = import.meta.glob(
   "@/design-system/components/{action,input,display,navigation,data,feedback}/*.vue",
 );
+
+export { loadThemeSources, themeAssetUrl } from "@/design-system/theme/sources";

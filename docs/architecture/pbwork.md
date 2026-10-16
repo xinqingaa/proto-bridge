@@ -72,7 +72,7 @@ Component Contract 还应固定组件的 semantic role policy；业务局部证�
 
 ## Runtime
 
-`/prototype/:prototypeId/:screenSlug` 只渲染原型，不渲染 Workbench。URL 的 `variant`、`theme` 和 fixture 表达可复现 Runtime 维度。
+`/prototype/:prototypeId/:screenSlug` 只渲染原型，不渲染 Workbench。URL 的 `variant`、包内主题 `theme`、具体模式 `mode` 和 fixture 表达可复现 Runtime 维度。
 
 Runtime 提供：
 

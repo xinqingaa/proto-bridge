@@ -34,7 +34,7 @@ export function buildRuntimeCaseUrl(input: {
 
   url.search = '';
   url.searchParams.set('variant', input.variantId);
-  url.searchParams.set('theme', input.themeId);
+  url.searchParams.set('mode', input.themeId);
   const parsedRouteQuery = RuntimeRouteQuery.safeParse(input.routeQuery ?? {});
   if (!parsedRouteQuery.success) {
     throw new V2ContractError(

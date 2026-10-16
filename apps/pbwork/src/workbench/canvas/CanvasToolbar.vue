@@ -14,14 +14,16 @@ import {
 import { useCanvasStore } from "@/app/stores/canvas";
 import { useSelectionStore } from "@/app/stores/selection";
 import { DEVICE_PRESETS, ZOOM_PRESETS } from "@/workbench/canvas/devices";
-import type { PrototypeVariant, ThemeRecord } from "@/design-system/types";
+import type { PrototypeVariant } from "@/design-system/types";
 import WorkbenchSelect from "@/workbench/ui/WorkbenchSelect.vue";
 
 const props = defineProps<{
   variants: PrototypeVariant[];
-  themes: ThemeRecord[];
+  themes: { id: string; label: string }[];
   variantId: string;
   themeId: string;
+  themeName: string;
+  namedThemes: { id: string; label: string }[];
   isDark: boolean;
   fullscreen: boolean;
   copyFeedback?: string | null;
@@ -30,6 +32,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   "update:variantId": [string];
   "update:themeId": [string];
+  "update:themeName": [string];
   "toggle-inspect": [];
   refresh: [];
   fullscreen: [];
@@ -50,9 +53,10 @@ const deviceItems = DEVICE_PRESETS.map((item) => ({
   label: item.label,
   value: item.id,
 }));
-const themeItems = computed(() =>
-  props.themes.map((item) => ({ label: item.label, value: item.id })),
-);
+const themeItems = computed(() => [
+  ...props.themes.map((item) => ({ label: item.label, value: item.id })),
+  { label: "跟随系统", value: "system" },
+]);
 const variantItems = computed(() =>
   props.variants.map((item) => ({ label: item.label, value: item.id })),
 );
@@ -223,9 +227,23 @@ function onTogglePan() {
         <label class="settings-field">
           <span class="settings-label">主题</span>
           <WorkbenchSelect
+            :model-value="themeName"
+            :items="
+              namedThemes.map((theme) => ({
+                label: theme.label,
+                value: theme.id,
+              }))
+            "
+            aria-label="原型主题"
+            @update:model-value="emit('update:themeName', $event)"
+          />
+        </label>
+        <label class="settings-field">
+          <span class="settings-label">模式</span>
+          <WorkbenchSelect
             :model-value="themeId"
             :items="themeItems"
-            aria-label="原型主题"
+            aria-label="原型模式"
             @update:model-value="emit('update:themeId', $event)"
           />
         </label>

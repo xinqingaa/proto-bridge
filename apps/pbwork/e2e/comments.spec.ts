@@ -8,7 +8,7 @@ test("adds, persists, resolves and deletes a local element comment", async ({
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await page.goto(
-    "/workbench/prototypes/cold-chain-ops/screens/exception-queue?variant=default&theme=light",
+    "/workbench/prototypes/cold-chain-ops/screens/exception-queue?variant=default&theme=default&mode=light",
   );
   await page.evaluate(() => localStorage.removeItem("pbwork.comments.v1"));
   await page.reload();
@@ -74,7 +74,7 @@ test("reports a missing comment anchor without an unhandled page error", async (
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await page.goto(
-    "/workbench/prototypes/cold-chain-ops/screens/exception-queue?variant=default&theme=light",
+    "/workbench/prototypes/cold-chain-ops/screens/exception-queue?variant=default&theme=default&mode=light",
   );
   await page.evaluate(() => {
     localStorage.setItem(

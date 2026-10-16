@@ -103,6 +103,7 @@ export type BridgeEnvelope<TType extends string, TPayload> = {
   screenId: string;
   variantId?: string;
   themeId: string;
+  themeName?: string;
   payload: TPayload;
 };
 
@@ -181,6 +182,7 @@ export type BridgeContext = {
   screenId: string;
   variantId?: string;
   themeId: string;
+  themeName?: string;
 };
 
 export function isBridgeMessage(value: unknown): value is BridgeMessage {
@@ -194,6 +196,7 @@ export function isBridgeMessage(value: unknown): value is BridgeMessage {
     typeof msg.prototypeId === "string" &&
     typeof msg.screenId === "string" &&
     typeof msg.themeId === "string" &&
+    (msg.themeName === undefined || typeof msg.themeName === "string") &&
     typeof msg.payload === "object" &&
     msg.payload !== null
   );
@@ -207,6 +210,8 @@ export function contextMatches(
   if (msg.prototypeId !== ctx.prototypeId) return false;
   if (msg.screenId !== ctx.screenId) return false;
   if (msg.themeId !== ctx.themeId) return false;
+  if (ctx.themeName !== undefined && msg.themeName !== ctx.themeName)
+    return false;
   if (
     ctx.variantId !== undefined &&
     msg.variantId !== undefined &&
@@ -235,6 +240,7 @@ export function createWorkbenchEnvelope<
     themeId: ctx.themeId,
     payload,
   };
+  if (ctx.themeName !== undefined) envelope.themeName = ctx.themeName;
   if (ctx.variantId !== undefined) envelope.variantId = ctx.variantId;
   if (requestId) envelope.requestId = requestId;
   return envelope as unknown as Extract<WorkbenchBridgeMessage, { type: T }>;

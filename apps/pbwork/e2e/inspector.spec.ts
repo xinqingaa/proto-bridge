@@ -4,7 +4,7 @@ test("selected components expose the Token to CSS value chain", async ({
   page,
 }) => {
   await page.goto(
-    "/workbench/prototypes/cold-chain-ops/screens/exception-queue?variant=default&theme=light",
+    "/workbench/prototypes/cold-chain-ops/screens/exception-queue?variant=default&theme=default&mode=light",
   );
   await expect(page.getByTestId("prototype-iframe")).toBeVisible();
 

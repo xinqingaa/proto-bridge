@@ -2,6 +2,7 @@ import { componentRecords } from "@/design-system/components/registry";
 import {
   loadPrototypeScreens,
   loadPrototypes,
+  loadPrototypeThemePack,
   loadTokens,
 } from "@/design-system/loaders";
 import {
@@ -31,9 +32,9 @@ export function runtimePath(prototypeId: string, screenSlug: string) {
   const screen = screens.find(
     (item) => item.prototypeId === prototypeId && item.screenSlug === screenSlug,
   );
-  const theme = prototypeById(prototypeId)?.defaultThemeId ?? "light";
   if (!screen) return "";
-  return `${screen.path}?variant=${screen.defaultVariantId}&theme=${theme}`;
+  const pack = loadPrototypeThemePack(prototypeId);
+  return `${screen.path}?variant=${screen.defaultVariantId}&theme=${pack.defaultTheme}&mode=${pack.defaultMode}`;
 }
 
 export function screenLabel(prototypeId: string, screenSlug: string) {

@@ -32,13 +32,19 @@ import {
   RESOURCE_ID_PATTERN,
   SLUG_ID_PATTERN,
 } from "@/design-system/types";
-import { PbId, PbKey, ScreenId } from "@proto-bridge/core/v2";
+import { runtimeThemeSources } from "@/design-system/theme/runtime-theme";
+import {
+  validateThemePacks,
+  PbId,
+  PbKey,
+  ScreenId,
+} from "@proto-bridge/core/v2";
 import {
   LEGACY_EVIDENCE_SCREEN_IDS,
   requiresStrictEvidence,
 } from "@/prototypes/evidence-policy";
 
-const RESERVED_QUERY_KEYS = new Set(["variant", "theme"]);
+const RESERVED_QUERY_KEYS = new Set(["variant", "theme", "mode"]);
 
 function createAjv() {
   const ajv = new Ajv2020({ allErrors: true, strict: true });
@@ -87,7 +93,9 @@ function mapAjvErrors(
   });
 }
 
-function firstIssueMessage(result: { error: { issues: Array<{ message: string }> } }) {
+function firstIssueMessage(result: {
+  error: { issues: Array<{ message: string }> };
+}) {
   return result.error.issues[0]?.message ?? "invalid stable identity";
 }
 
@@ -140,7 +148,8 @@ function fragmentsFromAssertion(
       ? [assertion.fragment, assertion.owner.fragment]
       : [assertion.fragment];
   }
-  if (assertion.kind === "order") return [assertion.parent, ...assertion.children];
+  if (assertion.kind === "order")
+    return [assertion.parent, ...assertion.children];
   return [assertion.fragment];
 }
 
@@ -623,15 +632,23 @@ export function validateRegistries(input?: {
       });
     }
     prototypeIds.add(prototype.id);
-    if (!themeIds.has(prototype.defaultThemeId)) {
-      pushError(errors, {
-        resourceType: "prototype",
-        resourceId: prototype.id,
-        instancePath: "/defaultThemeId",
-        keyword: "enum",
-        message: `unknown theme ${prototype.defaultThemeId}`,
-      });
-    }
+  }
+
+  for (const diagnostic of validateThemePacks({
+    ...runtimeThemeSources,
+    prototypeBindings: prototypes.map((prototype) => ({
+      prototypeId: prototype.id,
+      packId: prototype.themePackId,
+    })),
+  })) {
+    if (diagnostic.severity !== "block") continue;
+    errors.push({
+      resourceType: "theme",
+      resourceId: diagnostic.packId,
+      instancePath: "/themePackId",
+      keyword: diagnostic.code,
+      message: diagnostic.message,
+    });
   }
 
   const screenIds = new Set<string>();
@@ -707,7 +724,9 @@ export function validateRegistries(input?: {
         `/shellFragments/${index}`,
       );
     }
-    for (const [index, assertion] of (screen.structureAssertions ?? []).entries()) {
+    for (const [index, assertion] of (
+      screen.structureAssertions ?? []
+    ).entries()) {
       for (const fragment of fragmentsFromAssertion(assertion)) {
         validateFragmentIdentity(
           errors,
@@ -804,7 +823,7 @@ export function validateRegistries(input?: {
             resourceId: `${screen.screenId}.${variant.id}`,
             instancePath: `/query/${key}`,
             keyword: "not",
-            message: "variant/theme are reserved query keys",
+            message: "variant/theme/mode are reserved query keys",
           });
         }
         if (!QUERY_KEY_PATTERN.test(key)) {
@@ -841,7 +860,9 @@ export function validateRegistries(input?: {
             "PB-compliant default Variant requires an authored Evidence completeness boundary",
         });
       }
-      for (const [index, fragment] of (variant.requiredFragments ?? []).entries()) {
+      for (const [index, fragment] of (
+        variant.requiredFragments ?? []
+      ).entries()) {
         validateFragmentIdentity(
           errors,
           fragment,

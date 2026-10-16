@@ -175,7 +175,7 @@ export type PrototypeRecord = {
   lifecycle: PrototypeLifecycle;
   owners?: string[];
   roles?: string[];
-  defaultThemeId: string;
+  themePackId: string;
   /** Optional Tab / module groupings for the overview flow rail. */
   screenGroups?: PrototypeScreenGroup[];
 };

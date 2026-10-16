@@ -16,6 +16,22 @@ describe("registries", () => {
     expect(validateRegistries()).toEqual([]);
   });
 
+  it("blocks unknown prototype theme packs through the Core validator", () => {
+    const errors = validateRegistries({
+      prototypes: prototypes.map((prototype) => ({
+        ...prototype,
+        themePackId: "missing-pack",
+      })),
+    });
+    expect(
+      errors.some(
+        (error) =>
+          error.keyword === "theme.unresolved-reference" &&
+          error.instancePath === "/themePackId",
+      ),
+    ).toBe(true);
+  });
+
   it("rejects unknown theme token overrides", () => {
     const themes = loadThemes().map((theme) =>
       theme.id === "light"

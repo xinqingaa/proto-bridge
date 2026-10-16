@@ -7,7 +7,7 @@ async function selectPreviewSetting(page: Page, label: string, option: string) {
 
 test.beforeEach(async ({ page }) => {
   await page.goto(
-    "/workbench/prototypes/cold-chain-ops/screens/exception-queue?variant=default&theme=light",
+    "/workbench/prototypes/cold-chain-ops/screens/exception-queue?variant=default&theme=default&mode=light",
   );
   await expect(page.getByTestId("prototype-iframe")).toBeVisible();
 });
@@ -16,7 +16,7 @@ test("renders the phone canvas iframe for a screen", async ({ page }) => {
   const iframe = page.getByTestId("prototype-iframe");
   await expect(iframe).toHaveAttribute(
     "src",
-    /\/prototype\/cold-chain-ops\/exception-queue\?variant=default&theme=light/,
+    /\/prototype\/cold-chain-ops\/exception-queue\?variant=default&theme=default&mode=light/,
   );
   await expect(iframe).toHaveAttribute("width", "390");
   await expect(iframe).toHaveAttribute("height", "844");
@@ -48,7 +48,7 @@ test("dark shell styles stay scoped to the workbench chrome", async ({
   expect(styles.stageBackgroundImage).toBe("none");
   await expect(page.getByTestId("prototype-iframe")).toHaveAttribute(
     "src",
-    /theme=light/,
+    /theme=default&mode=light/,
   );
 });
 
@@ -61,7 +61,7 @@ test("switching variant and theme updates the live iframe without remounting it"
   await expect(page).toHaveURL(/variant=empty/);
   await expect(page.getByTestId("prototype-iframe")).toHaveAttribute(
     "src",
-    /variant=default&theme=light/,
+    /variant=default&theme=default&mode=light/,
   );
   await expect(frame.getByText("没有待处理异常")).toBeVisible();
 
@@ -72,15 +72,15 @@ test("switching variant and theme updates the live iframe without remounting it"
   ).toHaveCount(4);
   await expect(frame.getByText("没有待处理异常")).toHaveCount(0);
 
-  await selectPreviewSetting(page, "原型主题", "深色主题");
-  await expect(page).toHaveURL(/theme=dark/);
+  await selectPreviewSetting(page, "原型模式", "深色");
+  await expect(page).toHaveURL(/theme=default&mode=dark/);
   await expect(page.getByTestId("prototype-iframe")).toHaveAttribute(
     "src",
-    /\/prototype\/cold-chain-ops\/exception-queue\?variant=default&theme=light/,
+    /\/prototype\/cold-chain-ops\/exception-queue\?variant=default&theme=default&mode=light/,
   );
 
   await expect(frame.getByTestId("runtime-root")).toHaveClass(
-    /v-theme--pbworkDark/,
+    /v-theme--pb-pbwork-base-default-dark-/,
   );
 });
 
@@ -88,14 +88,14 @@ test("preview Variant setting opens Variants on the Runtime route and keeps the 
   page,
 }) => {
   await page.goto(
-    "/workbench/prototypes/cold-chain-ops/screens/shipment-detail?variant=default&theme=light",
+    "/workbench/prototypes/cold-chain-ops/screens/shipment-detail?variant=default&theme=default&mode=light",
   );
   const frame = page.frameLocator('[data-testid="prototype-iframe"]');
   await page.getByRole("button", { name: "预览设置" }).click();
 
   await selectPreviewSetting(page, "Variant", "处置操作打开");
   await expect(page).toHaveURL(
-    /\/screens\/shipment-detail\?variant=action-sheet-open&theme=light/,
+    /\/screens\/shipment-detail\?variant=action-sheet-open&theme=default&mode=light/,
   );
   await expect(frame.locator('[data-pb-role="sheet"]')).toBeVisible();
   await expect(frame.locator(".runtime-error")).toHaveCount(0);
@@ -105,7 +105,7 @@ test("preview Variant setting opens Variants on the Runtime route and keeps the 
 
   await selectPreviewSetting(page, "Variant", "持续超温");
   await expect(page).toHaveURL(
-    /\/screens\/shipment-detail\?variant=active-excursion&theme=light/,
+    /\/screens\/shipment-detail\?variant=active-excursion&theme=default&mode=light/,
   );
   await expect(
     frame.locator('[data-pb-id="cold-chain-ops.shipment-detail.root"]'),
@@ -145,7 +145,9 @@ test("screen navigation swaps lazy views without blanking or remounting the ifra
       '[data-pb-id="cold-chain-ops.exception-queue.list.row"][data-pb-key="all-ex-017"]',
     )
     .click();
-  await expect(page).toHaveURL(/\/screens\/shipment-detail\?variant=active-excursion/);
+  await expect(page).toHaveURL(
+    /\/screens\/shipment-detail\?variant=active-excursion/,
+  );
   await expect(frame.getByRole("heading", { name: "运输详情" })).toBeVisible();
   await frame.getByRole("button", { name: "返回" }).click();
   await expect(page).toHaveURL(/\/screens\/exception-queue\?variant=default/);

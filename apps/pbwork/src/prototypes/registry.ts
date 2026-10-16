@@ -7,7 +7,7 @@ export const prototypes = [
     lifecycle: "active",
     owners: ["冷链运营"],
     roles: ["值守专员", "调度主管"],
-    defaultThemeId: "light",
+    themePackId: "pbwork-base",
     screenGroups: [
       {
         id: "exception-response",

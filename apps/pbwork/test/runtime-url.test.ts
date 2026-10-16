@@ -20,7 +20,7 @@ describe("buildCanonicalRuntimeUrl", () => {
       query: { zed: "1", alpha: "2" },
     });
     expect(href).toBe(
-      "/prototype/cold-chain-ops/exception-queue?variant=empty&theme=dark&alpha=2&zed=1",
+      "/prototype/cold-chain-ops/exception-queue?variant=empty&theme=default&mode=dark&alpha=2&zed=1",
     );
   });
 });
@@ -30,14 +30,14 @@ describe("resolveRuntimeRoute", () => {
     const withExplicit = resolveRuntimeRoute({
       prototypeId: "cold-chain-ops",
       screenSlug: "exception-queue",
-      searchParams: new URLSearchParams("variant=empty&theme=dark"),
+      searchParams: new URLSearchParams("variant=empty&theme=default&mode=dark"),
     });
     expect(withExplicit.ok).toBe(true);
     if (withExplicit.ok) {
       expect(withExplicit.variant.id).toBe("empty");
       expect(withExplicit.theme.id).toBe("dark");
       expect(withExplicit.canonicalPath).toBe("/prototype/cold-chain-ops/exception-queue");
-      expect(withExplicit.canonicalSearch).toBe("variant=empty&theme=dark");
+      expect(withExplicit.canonicalSearch).toBe("variant=empty&theme=default&mode=dark");
     }
 
     const withDefaults = resolveRuntimeRoute({
@@ -49,7 +49,7 @@ describe("resolveRuntimeRoute", () => {
     if (withDefaults.ok) {
       expect(withDefaults.variant.id).toBe("default");
       expect(withDefaults.theme.id).toBe("light");
-      expect(withDefaults.canonicalSearch).toBe("variant=default&theme=light");
+      expect(withDefaults.canonicalSearch).toBe("variant=default&theme=default&mode=light");
     }
   });
 
@@ -58,7 +58,7 @@ describe("resolveRuntimeRoute", () => {
       resolveRuntimeRoute({
         prototypeId: "missing",
         screenSlug: "exception-queue",
-        searchParams: new URLSearchParams("theme=light"),
+        searchParams: new URLSearchParams("theme=default&mode=light"),
       }),
     ).toMatchObject({ ok: false, code: "UNKNOWN_PROTOTYPE" });
 
@@ -66,7 +66,7 @@ describe("resolveRuntimeRoute", () => {
       resolveRuntimeRoute({
         prototypeId: "cold-chain-ops",
         screenSlug: "missing",
-        searchParams: new URLSearchParams("theme=light"),
+        searchParams: new URLSearchParams("theme=default&mode=light"),
       }),
     ).toMatchObject({ ok: false, code: "UNKNOWN_SCREEN" });
 
@@ -74,7 +74,7 @@ describe("resolveRuntimeRoute", () => {
       resolveRuntimeRoute({
         prototypeId: "cold-chain-ops",
         screenSlug: "exception-queue",
-        searchParams: new URLSearchParams("variant=nope&theme=light"),
+        searchParams: new URLSearchParams("variant=nope&theme=default&mode=light"),
       }),
     ).toMatchObject({ ok: false, code: "UNKNOWN_VARIANT" });
 
@@ -106,7 +106,7 @@ describe("resolveRuntimeRoute", () => {
         prototypeId: "cold-chain-ops",
         screenSlug: "exception-queue",
         searchParams: new URLSearchParams(
-          "variant=default&theme=light&extra=1",
+          "variant=default&theme=default&mode=light&extra=1",
         ),
       }),
     ).toMatchObject({ ok: false, code: "INVALID_QUERY" });
@@ -117,7 +117,7 @@ describe("resolveRuntimeRoute", () => {
       prototypeId: "cold-chain-ops",
       screenSlug: "shipment-detail",
       searchParams: new URLSearchParams(
-        "variant=default&theme=light&shipment=SH-2048",
+        "variant=default&theme=default&mode=light&shipment=SH-2048",
       ),
     });
 

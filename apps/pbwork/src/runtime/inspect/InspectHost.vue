@@ -44,6 +44,7 @@ function envelope<T extends RuntimeBridgeMessage["type"]>(
     screenId: ctx.screenId,
     variantId: ctx.variantId,
     themeId: ctx.themeId,
+    ...(ctx.themeName ? { themeName: ctx.themeName } : {}),
     payload,
   } as Extract<RuntimeBridgeMessage, { type: T }>;
 }

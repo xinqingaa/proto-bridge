@@ -49,7 +49,7 @@ test("primary and secondary navigation update the URL and resource view", async 
 
 test("collapsing side panels expands the content track", async ({ page }) => {
   await page.goto(
-    "/workbench/prototypes/cold-chain-ops/screens/exception-queue?variant=default&theme=light",
+    "/workbench/prototypes/cold-chain-ops/screens/exception-queue?variant=default&theme=default&mode=light",
   );
   const content = page.getByTestId("content-canvas");
   const initialBox = await content.boundingBox();
@@ -98,7 +98,7 @@ test("element inspector is hidden outside the canvas", async ({ page }) => {
   await expect(page.getByTestId("resource-page-shell")).toBeVisible();
 
   await page.goto(
-    "/workbench/prototypes/cold-chain-ops/screens/exception-queue?variant=default&theme=light",
+    "/workbench/prototypes/cold-chain-ops/screens/exception-queue?variant=default&theme=default&mode=light",
   );
   await expect(page.getByTestId("inspector-panel")).toBeVisible();
   await expect(page.locator(".inspector-panel .panel-title")).toHaveText(
@@ -110,7 +110,7 @@ test("cold-chain variants update the live Runtime in place", async ({
   page,
 }) => {
   await page.goto(
-    "/workbench/prototypes/cold-chain-ops/screens/shipment-detail?variant=default&theme=light",
+    "/workbench/prototypes/cold-chain-ops/screens/shipment-detail?variant=default&theme=default&mode=light",
   );
   const runtime = page.frameLocator("iframe");
   const runtimeUrl = () =>
@@ -160,7 +160,7 @@ test("Workbench screen tree bypasses in-app confirmations", async ({
   page,
 }) => {
   await page.goto(
-    "/workbench/prototypes/cold-chain-ops/screens/resolution-form?variant=confirm-dialog-open&theme=light",
+    "/workbench/prototypes/cold-chain-ops/screens/resolution-form?variant=confirm-dialog-open&theme=default&mode=light",
   );
   const runtime = page.frameLocator("iframe");
   const runtimeUrl = () =>

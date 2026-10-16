@@ -32,7 +32,7 @@ Draft 表达用户意图，不表达执行结果。状态和场景均使用 auth
 
 Preflight 固定 manifest/input version、规范化 Selection、warning、risk 和 Case Matrix。Preflight 有有效期；Runtime 输入变化或过期后必须重新执行。
 
-Matrix 展开顺序必须稳定。Case ID 与 Scope key 在 PBWork 和 CLI 间一致，不能包含数组位置、生成时间或 authored route query；route query 是执行 baseline 输入，不是新的 Case identity 维度。
+Matrix 展开顺序必须稳定。Case ID 与 Scope key 在 PBWork 和 CLI 间一致，不能包含数组位置、生成时间或 authored route query；route query 是执行 baseline 输入，不是新的 Case identity 维度。Core Case URL 固定 variant 和具体 mode，业务 routeQuery 不能覆盖 variant/theme/mode；当前 CaseKey.themeId 字段继续传模式值，PBWork prepare 使用原型包默认主题。主题包摘要与取值表进入 Evidence 属于后续协议升级，当前边界见[主题包解析模型](./theme-packs.md#原型绑定与-capture-边界)。
 
 ## 4. 浏览器隔离
 

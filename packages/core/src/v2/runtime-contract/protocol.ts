@@ -19,7 +19,7 @@ const StableId = z.string().regex(STABLE_ID_PATTERN, STABLE_ID_RULE);
 const RuntimeRouteQueryKey = z
   .string()
   .regex(/^[a-z][a-z0-9_-]*$/)
-  .refine((key) => key !== 'variant' && key !== 'theme');
+  .refine((key) => key !== 'variant' && key !== 'theme' && key !== 'mode');
 export const RuntimeRouteQuery = z.record(
   RuntimeRouteQueryKey,
   z.string().max(512),

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   computed,
+  provide,
   onBeforeUnmount,
   onMounted,
   nextTick,
@@ -35,11 +36,21 @@ import {
   installNavigationIntentTracking,
 } from "@/runtime/navigation-intent";
 import {
-  readRuntimeThemePreference,
   resolveThemeSync,
   routeHasExplicitTheme,
-  writeRuntimeThemePreference,
+  routeHasExplicitMode,
 } from "@/runtime/theme-preference";
+import {
+  useThemePackPreference,
+  useSystemThemeMode,
+  writeThemePackPreference,
+} from "@/runtime/theme-pack-preference";
+import {
+  ThemeTableKey,
+  useRuntimeTheme,
+} from "@/design-system/theme/runtime-theme";
+import { useRuntimeVuetifyTheme } from "@/design-system/theme/vuetify-theme";
+import { loadPrototypeThemePack } from "@/design-system/loaders";
 import { buildCanonicalRuntimeUrl, resolveRuntimeRoute } from "@/runtime/url";
 import InspectHost from "@/runtime/inspect/InspectHost.vue";
 import { installRuntimeCaptureProtocol } from "@/runtime/capture-protocol";
@@ -80,45 +91,90 @@ const resolved = computed(() =>
   }),
 );
 
-function themeSync() {
-  if (!resolved.value.ok) {
-    return { action: "keep" as const, themeId: "light" };
-  }
+const savedPreference = useThemePackPreference(() =>
+  String(route.params.prototypeId),
+);
+const systemMode = useSystemThemeMode();
+function themeSync(preferSaved = false) {
+  const result = resolved.value;
+  const fallback = { theme: "default", mode: "light" as const };
+  const pack = result.ok ? loadPrototypeThemePack(result.prototype.id) : null;
+  const saved = savedPreference.value;
+  const validSaved =
+    saved &&
+    pack?.themes.some((theme) => theme.id === saved.theme) &&
+    (saved.mode === "system" || pack.modes.includes(saved.mode))
+      ? saved
+      : null;
   return resolveThemeSync({
-    intent: getRouteNavigationIntent(),
-    urlThemeId: resolved.value.theme.id,
-    preference: readRuntimeThemePreference(),
-    forced: isForcedRuntimeNavigation(),
+    intent: preferSaved ? "back" : getRouteNavigationIntent(),
+    url: result.ok
+      ? { theme: result.themeName, mode: result.theme.id as "light" | "dark" }
+      : fallback,
+    preference: validSaved,
+    forced: isForcedRuntimeNavigation() && window.parent === window,
     themeExplicit: routeHasExplicitTheme(route.fullPath),
+    modeExplicit: routeHasExplicitMode(route.fullPath),
+    systemMode: systemMode.value,
   });
 }
-
-const effectiveThemeId = computed(() => themeSync().themeId);
-
-function applyThemePreference() {
-  const result = themeSync();
-  if (result.action === "write-preference") {
-    writeRuntimeThemePreference(result.themeId);
-    return result;
-  }
+const syncedTheme = computed(() => themeSync());
+const effectiveThemeId = computed(() => syncedTheme.value.mode);
+const effectiveThemeName = computed(() => syncedTheme.value.theme);
+function applyThemePreference(preferSaved = false) {
+  const result = themeSync(preferSaved);
+  if (!resolved.value.ok) return result;
+  if (result.action === "write-preference")
+    writeThemePackPreference(resolved.value.prototype.id, result.preference);
   if (result.action === "stamp-url") {
     announceBackNavigation();
-    void router.replace({ query: { ...route.query, theme: result.themeId } });
+    void router.replace({
+      query: { ...route.query, theme: result.theme, mode: result.mode },
+      state: window.history.state,
+    });
   }
   return result;
 }
-
-const themeStyle = computed(() => {
-  if (!resolved.value.ok) return {};
-  try {
-    return tokensToCssVars(resolveThemeTokens(effectiveThemeId.value));
-  } catch {
-    return {};
-  }
-});
-
-const runtimeTheme = computed(() =>
-  effectiveThemeId.value === "dark" ? "pbworkDark" : "pbworkLight",
+const activeTheme = useRuntimeTheme(() => ({
+  packId: resolved.value.ok
+    ? resolved.value.prototype.themePackId
+    : "pbwork-base",
+  theme: effectiveThemeName.value,
+  mode: effectiveThemeId.value,
+}));
+provide(ThemeTableKey, activeTheme.table);
+// Legacy-only component variables remain until the atomic DS migration (batch 3).
+// Shared variables already take their value from the Core-resolved table.
+const themeStyle = computed(() => ({
+  ...tokensToCssVars(resolveThemeTokens(effectiveThemeId.value)),
+  ...activeTheme.cssVars.value,
+}));
+const runtimeTheme = useRuntimeVuetifyTheme(activeTheme.table);
+const runtimeDefaults = computed(() =>
+  Object.fromEntries(
+    ["VTextField", "VTextarea", "VSelect"].map((component) => [
+      component,
+      { density: activeTheme.density.value },
+    ]),
+  ),
+);
+watch(
+  savedPreference,
+  () => {
+    applyThemePreference(true);
+  },
+  { flush: "post" },
+);
+watch(
+  systemMode,
+  (mode) => {
+    if (savedPreference.value?.mode !== "system" || !resolved.value.ok) return;
+    void router.replace({
+      query: { ...route.query, theme: effectiveThemeName.value, mode },
+      state: window.history.state,
+    });
+  },
+  { flush: "sync" },
 );
 
 const canonicalRuntimeUrl = computed(() => {
@@ -128,6 +184,7 @@ const canonicalRuntimeUrl = computed(() => {
     screenSlug: resolved.value.screen.screenSlug,
     variantId: resolved.value.variant.id,
     themeId: effectiveThemeId.value,
+    themeName: effectiveThemeName.value,
     query: resolved.value.query,
   });
   return `${window.location.origin}${path}`;
@@ -141,6 +198,7 @@ const bridgeContext = computed((): BridgeContext | null => {
     screenId: resolved.value.screen.screenId,
     variantId: resolved.value.variant.id,
     themeId: effectiveThemeId.value,
+    themeName: effectiveThemeName.value,
   };
 });
 
@@ -164,6 +222,7 @@ function buildEnvelope<TType extends RuntimeBridgeMessage["type"]>(
     screenId: ctx.screenId,
     variantId: ctx.variantId,
     themeId: ctx.themeId,
+    ...(ctx.themeName ? { themeName: ctx.themeName } : {}),
     payload,
   } as Extract<RuntimeBridgeMessage, { type: TType }>;
 }
@@ -230,8 +289,7 @@ function onMessage(event: MessageEvent) {
       return;
     const destination = `${target.pathname}${target.search}${target.hash}`;
     lastPostedRoute.value = `${window.location.origin}${destination}`;
-    const pinnedTheme = target.searchParams.get("theme");
-    if (pinnedTheme) writeRuntimeThemePreference(pinnedTheme);
+
     void runForcedRuntimeNavigation(() => router.replace(destination));
     return;
   }
@@ -334,7 +392,7 @@ onMounted(() => {
         themeId: effectiveThemeId.value,
         ...(resolved.value.variant.fixture
           ? { fixtureId: resolved.value.variant.fixture }
-        : {}),
+          : {}),
       };
     },
     getManifestPrototypeId: () => {
@@ -354,7 +412,11 @@ onMounted(() => {
         (candidate) => candidate.id === target.variantId,
       );
       if (!variant) throw new Error(`UNKNOWN_VARIANT：${target.variantId}`);
-      writeRuntimeThemePreference(target.themeId);
+      const pack = loadPrototypeThemePack(target.prototypeId);
+      writeThemePackPreference(target.prototypeId, {
+        theme: pack.defaultTheme,
+        mode: target.themeId as "light" | "dark",
+      });
       await runForcedRuntimeNavigation(() =>
         router.replace(
           buildCanonicalRuntimeUrl({
@@ -362,6 +424,7 @@ onMounted(() => {
             screenSlug: screen.screenSlug,
             variantId: target.variantId,
             themeId: target.themeId,
+            themeName: pack.defaultTheme,
             ...(variant.query ? { query: variant.query } : {}),
           }),
         ),
@@ -400,7 +463,6 @@ watch(
   },
   { immediate: true },
 );
-
 </script>
 
 <template>
@@ -409,31 +471,39 @@ watch(
     class="runtime-app"
     :class="{ 'is-embedded': isEmbedded }"
     :style="themeStyle"
+    v-bind="activeTheme.attributes.value"
     data-testid="runtime-root"
   >
-    <v-main class="runtime-main">
-      <ScreenTransition
-        v-if="resolved.ok && screenComponent && !loadError && loadedView"
-        :screen-key="loadedView"
-        :navigation="screenTransitionIntent"
-      >
-        <component :is="screenComponent" />
-      </ScreenTransition>
-      <section
-        v-else-if="resolved.ok && !loadError"
-        class="runtime-loading"
-        aria-busy="true"
-      />
-      <section v-else class="runtime-error" role="alert" aria-live="assertive">
-        <p class="runtime-kicker">PBWork Runtime</p>
-        <h1>无法打开原型</h1>
-        <p>
-          {{
-            loadError ?? (!resolved.ok ? resolved.message : "UNKNOWN_SCREEN")
-          }}
-        </p>
-      </section>
-    </v-main>
+    <v-defaults-provider :defaults="runtimeDefaults">
+      <v-main class="runtime-main">
+        <ScreenTransition
+          v-if="resolved.ok && screenComponent && !loadError && loadedView"
+          :screen-key="loadedView"
+          :navigation="screenTransitionIntent"
+        >
+          <component :is="screenComponent" />
+        </ScreenTransition>
+        <section
+          v-else-if="resolved.ok && !loadError"
+          class="runtime-loading"
+          aria-busy="true"
+        />
+        <section
+          v-else
+          class="runtime-error"
+          role="alert"
+          aria-live="assertive"
+        >
+          <p class="runtime-kicker">PBWork Runtime</p>
+          <h1>无法打开原型</h1>
+          <p>
+            {{
+              loadError ?? (!resolved.ok ? resolved.message : "UNKNOWN_SCREEN")
+            }}
+          </p>
+        </section>
+      </v-main>
+    </v-defaults-provider>
 
     <InspectHost
       v-if="isEmbedded && bridgeContext"

@@ -1,7 +1,7 @@
 import type { RouteLocationNormalizedLoaded, Router } from "vue-router";
 
 function themeOf(route: RouteLocationNormalizedLoaded) {
-  return typeof route.query.theme === "string" ? route.query.theme : "light";
+  return typeof route.query.theme === "string" ? route.query.theme : "default";
 }
 
 export function coldChainPath(
@@ -12,7 +12,7 @@ export function coldChainPath(
 ) {
   return {
     path: `/prototype/cold-chain-ops/${slug}`,
-    query: { variant, theme: themeOf(route), shipment },
+    query: { variant, theme: themeOf(route), mode: typeof route.query.mode === "string" ? route.query.mode : "light", shipment },
   };
 }
 

@@ -17,6 +17,7 @@ import {
 import {
   loadPrototypeScreens,
   loadPrototypes,
+  loadPrototypeThemePack,
   loadThemes,
   loadTokens,
 } from "@/design-system/loaders";
@@ -93,7 +94,8 @@ const runtimePreviewPath = computed(() => {
   if (!prototype || !screen) return "";
   const query = new URLSearchParams({
     variant: selectedScreenVariant.value?.id ?? screen.defaultVariantId,
-    theme: prototype.defaultThemeId,
+    theme: loadPrototypeThemePack(prototype.id).defaultTheme,
+    mode: loadPrototypeThemePack(prototype.id).defaultMode,
   });
   return `${screen.path}?${query.toString()}`;
 });

@@ -4,14 +4,17 @@ import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router";
 import {
   loadPrototypes,
   loadPrototypeScreens,
-  loadThemes,
+  loadPrototypeThemePack,
 } from "@/design-system/loaders";
 import { buildCanonicalRuntimeUrl, resolveRuntimeRoute } from "@/runtime/url";
 import {
-  readRuntimeThemePreference,
-  resolveWorkbenchSessionTheme,
-  writeRuntimeThemePreference,
-} from "@/runtime/theme-preference";
+  writeThemePackPreference,
+  useThemePackPreference,
+  useSystemThemeMode,
+  concreteThemeMode,
+  type ThemeModePreference,
+} from "@/runtime/theme-pack-preference";
+import { resolveThemeSync } from "@/runtime/theme-preference";
 import {
   HANDSHAKE_TIMEOUT_MS,
   contextMatches,
@@ -59,7 +62,12 @@ const screen = computed(() =>
       item.screenSlug === props.screenSlug,
   ),
 );
-const themes = computed(() => loadThemes());
+const themes = computed(() =>
+  loadPrototypeThemePack(props.prototypeId).modes.map((id) => ({
+    id,
+    label: id === "dark" ? "深色" : "浅色",
+  })),
+);
 
 const searchParams = computed(
   () =>
@@ -84,18 +92,63 @@ const selectedVariantId = computed(() => {
 });
 
 const sessionThemeId = ref<string | null>(null);
-
-const selectedThemeId = computed(() => {
-  if (sessionThemeId.value) return sessionThemeId.value;
-  if (resolved.value.ok) return resolved.value.theme.id;
-  if (typeof route.query.theme === "string") return route.query.theme;
-  return prototype.value?.defaultThemeId ?? "light";
+const sessionThemeName = ref<string | null>(null);
+const storedPreference = useThemePackPreference(() => props.prototypeId);
+const savedPreference = computed(() => {
+  const saved = storedPreference.value;
+  return saved &&
+    pack.value.themes.some((theme) => theme.id === saved.theme) &&
+    (saved.mode === "system" || pack.value.modes.includes(saved.mode))
+    ? saved
+    : null;
 });
+const systemMode = useSystemThemeMode();
+const pack = computed(() => loadPrototypeThemePack(props.prototypeId));
+const selectedThemeName = computed(
+  () =>
+    sessionThemeName.value ??
+    (resolved.value.ok ? resolved.value.themeName : pack.value.defaultTheme),
+);
+const selectedModePreference = computed(
+  () =>
+    savedPreference.value?.mode ??
+    ((sessionThemeId.value ?? pack.value.defaultMode) as ThemeModePreference),
+);
+const selectedThemeId = computed(() =>
+  selectedModePreference.value === "system"
+    ? systemMode.value
+    : (sessionThemeId.value ??
+      (resolved.value.ok ? resolved.value.theme.id : pack.value.defaultMode)),
+);
 const isDark = computed(() => selectedThemeId.value === "dark");
-
-function adoptCanvasTheme(themeId: string) {
-  sessionThemeId.value = themeId;
-  writeRuntimeThemePreference(themeId);
+function adoptCanvasTheme(mode: string, theme = selectedThemeName.value) {
+  if (!["light", "dark", "system"].includes(mode)) return;
+  sessionThemeName.value = theme;
+  sessionThemeId.value = concreteThemeMode(
+    mode as ThemeModePreference,
+    systemMode.value,
+  );
+  writeThemePackPreference(props.prototypeId, {
+    theme,
+    mode: mode as ThemeModePreference,
+  });
+}
+watch(
+  () => props.prototypeId,
+  () => {
+    sessionThemeId.value = null;
+    sessionThemeName.value = null;
+    const saved = savedPreference.value;
+    if (saved) adoptCanvasTheme(saved.mode, saved.theme);
+  },
+  { flush: "sync" },
+);
+function onThemeName(theme: string) {
+  adoptCanvasTheme(selectedModePreference.value, theme);
+  replaceWorkbenchQuery({
+    variantId: selectedVariantId.value,
+    themeId: selectedThemeId.value,
+  });
 }
 
 function workbenchQuery(): Record<string, string> {
@@ -114,6 +167,7 @@ const canonicalRuntimePath = computed(() => {
       screenSlug: screen.value.screenSlug,
       variantId: resolved.value.variant.id,
       themeId: selectedThemeId.value,
+      themeName: selectedThemeName.value,
       query: resolved.value.query,
     });
   }
@@ -128,6 +182,7 @@ const canonicalRuntimePath = computed(() => {
     screenSlug: screen.value.screenSlug,
     variantId: variant.id,
     themeId: selectedThemeId.value,
+    themeName: selectedThemeName.value,
     ...(variant.query ? { query: variant.query } : {}),
   });
 });
@@ -157,10 +212,15 @@ const bridgeContext = computed((): BridgeContext | null => {
     screenId: resolved.value.screen.screenId,
     variantId: resolved.value.variant.id,
     themeId: selectedThemeId.value,
+    themeName: selectedThemeName.value,
   };
 });
 
-function replaceWorkbenchQuery(next: { variantId: string; themeId: string }) {
+function replaceWorkbenchQuery(next: {
+  variantId: string;
+  themeId: string;
+  themeName?: string;
+}) {
   if (!screen.value || !prototype.value) return;
   const variant =
     screen.value.variants.find((item) => item.id === next.variantId) ??
@@ -170,7 +230,8 @@ function replaceWorkbenchQuery(next: { variantId: string; themeId: string }) {
   if (!variant) return;
   const query: Record<string, string> = {
     variant: variant.id,
-    theme: next.themeId,
+    theme: selectedThemeName.value,
+    mode: next.themeId,
     ...(variant.query ?? {}),
   };
   void router.replace({
@@ -183,6 +244,7 @@ function onVariantId(variantId: string) {
   replaceWorkbenchQuery({
     variantId,
     themeId: selectedThemeId.value,
+    themeName: selectedThemeName.value,
   });
 }
 
@@ -190,7 +252,10 @@ function onThemeId(themeId: string) {
   adoptCanvasTheme(themeId);
   replaceWorkbenchQuery({
     variantId: selectedVariantId.value,
-    themeId,
+    themeId: concreteThemeMode(
+      themeId as ThemeModePreference,
+      systemMode.value,
+    ),
   });
 }
 
@@ -311,6 +376,7 @@ function sendInit(contentWindow: Window | null) {
         screenId: resolved.value.screen.screenId,
         variantId: resolved.value.variant.id,
         themeId: selectedThemeId.value,
+        themeName: selectedThemeName.value,
       },
       { canonicalRuntimeUrl: absoluteRuntimeUrl.value },
     ),
@@ -379,22 +445,24 @@ function applyRuntimeNavigation(
     return;
   }
 
-  const nextTheme = resolveWorkbenchSessionTheme({
-    navigation,
-    destinationThemeId: check.theme.id,
-    sessionThemeId: sessionThemeId.value,
+  const synced = resolveThemeSync({
+    intent: navigation,
+    url: { theme: check.themeName, mode: check.theme.id as "light" | "dark" },
+    preference: savedPreference.value,
+    forced: false,
+    themeExplicit: parsed.searchParams.has("theme"),
+    modeExplicit: parsed.searchParams.has("mode"),
+    systemMode: systemMode.value,
   });
-  if (navigation !== "back") {
-    adoptCanvasTheme(nextTheme);
-  } else if (!sessionThemeId.value) {
-    adoptCanvasTheme(nextTheme);
-  }
+  const nextTheme = synced.mode;
+  adoptCanvasTheme(synced.preference.mode, synced.theme);
 
   const canonical = buildCanonicalRuntimeUrl({
     prototypeId: check.prototype.id,
     screenSlug: check.screen.screenSlug,
     variantId: check.variant.id,
     themeId: nextTheme,
+    themeName: synced.theme,
     query: check.query,
   });
   const workbenchPath = workbenchPathFromRuntimeUrl(canonical);
@@ -547,12 +615,22 @@ function onShellKeydown(event: KeyboardEvent) {
 }
 
 watch(
-  () => [route.fullPath, selectedThemeId.value] as const,
+  () =>
+    [route.fullPath, selectedThemeId.value, selectedThemeName.value] as const,
   () => {
     if (!prototype.value || !screen.value || !selectedThemeId.value) return;
-    if (route.query.theme === selectedThemeId.value) return;
+    if (
+      route.query.mode === selectedThemeId.value &&
+      route.query.theme === selectedThemeName.value
+    )
+      return;
     void router.replace({
-      query: { ...workbenchQuery(), theme: selectedThemeId.value },
+      query: {
+        ...workbenchQuery(),
+        theme: selectedThemeName.value,
+        mode: selectedThemeId.value,
+      },
+      state: window.history.state,
     });
   },
 );
@@ -610,15 +688,21 @@ onBeforeRouteLeave(() => {
 });
 
 onBeforeMount(() => {
-  if (typeof route.query.theme === "string") {
-    adoptCanvasTheme(route.query.theme);
-  } else {
-    adoptCanvasTheme(
-      readRuntimeThemePreference() ??
-        (resolved.value.ok
-          ? resolved.value.theme.id
-          : (prototype.value?.defaultThemeId ?? "light")),
-    );
+  if (resolved.value.ok) {
+    const current = resolved.value;
+    const synced = resolveThemeSync({
+      intent: "replace",
+      url: {
+        theme: current.themeName,
+        mode: current.theme.id as "light" | "dark",
+      },
+      preference: savedPreference.value,
+      forced: false,
+      themeExplicit: typeof route.query.theme === "string",
+      modeExplicit: typeof route.query.mode === "string",
+      systemMode: systemMode.value,
+    });
+    adoptCanvasTheme(synced.preference.mode, synced.theme);
   }
   if (resolved.value.ok && prototype.value && screen.value) {
     const canonicalWorkbenchPath = workbenchPathFromRuntimeUrl(
@@ -627,12 +711,14 @@ onBeforeMount(() => {
         screenSlug: screen.value.screenSlug,
         variantId: resolved.value.variant.id,
         themeId: selectedThemeId.value,
+        themeName: selectedThemeName.value,
         query: resolved.value.query,
       }),
     );
     const lacksCanonicalDimensions =
       typeof route.query.variant !== "string" ||
-      typeof route.query.theme !== "string";
+      typeof route.query.theme !== "string" ||
+      typeof route.query.mode !== "string";
     if (
       canonicalWorkbenchPath &&
       lacksCanonicalDimensions &&
@@ -711,12 +797,15 @@ onBeforeUnmount(() => {
       :variants="screen.variants"
       :themes="themes"
       :variant-id="selectedVariantId"
-      :theme-id="selectedThemeId"
+      :theme-id="selectedModePreference"
+      :theme-name="selectedThemeName"
+      :named-themes="pack.themes"
       :is-dark="isDark"
       :fullscreen="canvasFullscreen"
       :copy-feedback="copyFeedback"
       @update:variant-id="onVariantId"
       @update:theme-id="onThemeId"
+      @update:theme-name="onThemeName"
       @toggle-inspect="toggleInspect"
       @refresh="refresh"
       @fullscreen="fullscreen"

@@ -1,7 +1,7 @@
 import {
   loadPrototypes,
   loadPrototypeScreens,
-  loadThemes,
+  loadPrototypeThemePack,
 } from "@/design-system/loaders";
 import type {
   PrototypeRecord,
@@ -15,6 +15,7 @@ export type RuntimeResolveError =
   | "UNKNOWN_SCREEN"
   | "UNKNOWN_VARIANT"
   | "UNKNOWN_THEME"
+  | "UNKNOWN_MODE"
   | "INVALID_QUERY";
 
 export type RuntimeResolveResult =
@@ -24,25 +25,32 @@ export type RuntimeResolveResult =
       screen: ScreenRecord;
       variant: PrototypeVariant;
       theme: ThemeRecord;
+      themeName: string;
       query: Record<string, string>;
       canonicalPath: string;
       canonicalSearch: string;
     }
   | { ok: false; code: RuntimeResolveError; message: string };
 
-const RESERVED = new Set(["variant", "theme"]);
+const RESERVED = new Set(["variant", "theme", "mode"]);
 
 export function buildCanonicalRuntimeUrl(input: {
   prototypeId: string;
   screenSlug: string;
   variantId: string;
   themeId: string;
+  themeName?: string;
   query?: Record<string, string>;
 }): string {
   const params = new URLSearchParams();
   params.set("variant", input.variantId);
-  params.set("theme", input.themeId);
+  params.set(
+    "theme",
+    input.themeName ?? loadPrototypeThemePack(input.prototypeId).defaultTheme,
+  );
+  params.set("mode", input.themeId);
   for (const key of Object.keys(input.query ?? {}).sort()) {
+    if (RESERVED.has(key)) throw new Error(`RESERVED_RUNTIME_QUERY:${key}`);
     params.set(key, input.query![key]!);
   }
   return `/prototype/${input.prototypeId}/${input.screenSlug}?${params.toString()}`;
@@ -92,7 +100,16 @@ export function resolveRuntimeRoute(input: {
 
   const variantId =
     input.searchParams.get("variant") ?? screen.defaultVariantId;
-  const themeId = input.searchParams.get("theme") ?? prototype.defaultThemeId;
+  const pack = loadPrototypeThemePack(prototype.id);
+  const themeId = input.searchParams.get("mode") ?? pack.defaultMode;
+  const themeName = input.searchParams.get("theme") ?? pack.defaultTheme;
+  if (!pack.themes.some((theme) => theme.id === themeName)) {
+    return {
+      ok: false,
+      code: "UNKNOWN_THEME",
+      message: `UNKNOWN_THEME：${themeName}`,
+    };
+  }
 
   const variant = screen.variants.find((item) => item.id === variantId);
   if (!variant) {
@@ -103,14 +120,21 @@ export function resolveRuntimeRoute(input: {
     };
   }
 
-  const theme = loadThemes().find((item) => item.id === themeId);
-  if (!theme) {
+  if (!["light", "dark"].includes(themeId) || !pack.modes.includes(themeId)) {
     return {
       ok: false,
-      code: "UNKNOWN_THEME",
-      message: `UNKNOWN_THEME：${themeId}`,
+      code: "UNKNOWN_MODE",
+      message: `UNKNOWN_MODE：${themeId}`,
     };
   }
+
+  const theme: ThemeRecord = {
+    schemaVersion: 1,
+    id: themeId,
+    label: themeId === "dark" ? "深色模式" : "浅色模式",
+    dark: themeId === "dark",
+    overrides: {},
+  };
 
   const declared = variant.query ?? {};
   const optionalQueryKeys = new Set(screen.queryKeys ?? []);
@@ -149,6 +173,7 @@ export function resolveRuntimeRoute(input: {
     screenSlug: screen.screenSlug,
     variantId: variant.id,
     themeId: theme.id,
+    themeName,
     query: business,
   }).split("?")[1]!;
 
@@ -158,6 +183,7 @@ export function resolveRuntimeRoute(input: {
     screen,
     variant,
     theme,
+    themeName,
     query: business,
     canonicalPath,
     canonicalSearch,

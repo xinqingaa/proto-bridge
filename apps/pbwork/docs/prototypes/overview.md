@@ -4,7 +4,7 @@
 
 `apps/pbwork/src/prototypes/registry.ts`：
 
-- `prototypes[]`：id、label、lifecycle、owners、roles、`defaultThemeId`
+- `prototypes[]`：id、label、lifecycle、owners、roles、`themePackId`
 - `prototypeScreens[]`：screenId、screenSlug、path、view、variants、defaultVariantId
 
 工作台导航与 Runtime 路由都读这份注册表，不要在别处再维护平行清单。工作台侧边栏只导航 Prototype 和 Screen；Variant 由画布顶栏展开，不作为侧边栏子节点。
@@ -32,7 +32,7 @@ prototypes/{prototypeId}/
 
 | 用途       | 形态                                                         |
 | ---------- | ------------------------------------------------------------ |
-| Runtime    | `/prototype/:prototypeId/:screenSlug?variant=&theme=`        |
+| Runtime    | `/prototype/:prototypeId/:screenSlug?variant=&theme=&mode=`        |
 | 工作台预览 | `/workbench/prototypes/:prototypeId/screens/:screenSlug?...` |
 
 - `variant`：业务态（空/错/Sheet 开等）
