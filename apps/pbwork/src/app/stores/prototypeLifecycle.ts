@@ -281,9 +281,9 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
         state.acceptedWarnings[prototypeId] ?? [],
     warningsAcceptedFor: (state) =>
       (prototypeId: string): boolean => {
-        const required = state.preflights[prototypeId]?.result.warnings.map(
-          (warning) => warning.warningId,
-        ) ?? [];
+        const preflight = state.preflights[prototypeId];
+        if (!preflight) return false;
+        const required = preflight.result.warnings.map((warning) => warning.warningId);
         const accepted = new Set(state.acceptedWarnings[prototypeId] ?? []);
         return required.every((warningId) => accepted.has(warningId));
       },
@@ -298,11 +298,10 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
         state.acknowledgedRisks[prototypeId] ?? [],
     risksAcceptedFor: (state) =>
       (prototypeId: string): boolean => {
-        const required = state.handoffPreviews[prototypeId]?.risks.map(
-          (risk) => risk.kind,
-        ) ?? [];
+        const preview = state.handoffPreviews[prototypeId];
+        if (!preview) return false;
         const accepted = new Set(state.acknowledgedRisks[prototypeId] ?? []);
-        return required.every((kind) => accepted.has(kind));
+        return preview.risks.every((risk) => accepted.has(risk.kind));
       },
   },
   actions: {
@@ -730,6 +729,10 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
         }
         if (latest.operation.kind === "finalizing" && latest.operation.phase === "awaiting-risks") {
           await this.loadRiskReview(prototype, latest.operation);
+          const preview = this.handoffPreviews[prototype.id];
+          if (preview && preview.risks.length === 0) {
+            await this.completeFinalization(prototype);
+          }
         }
         await capture.refreshConsole();
       } catch (error) {
@@ -793,14 +796,13 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
         !current.operation.bundleId ||
         !current.operation.snapshotId
       ) {
-        throw new Error("定稿 Evidence 尚未准备完成。");
+        return false;
       }
       const preview = this.handoffPreviews[prototype.id];
       const acknowledgedRiskKinds = this.acknowledgedRisks[prototype.id] ?? [];
-      const requiredRiskKinds = preview?.risks.map((risk) => risk.kind) ?? [];
       const acknowledged = new Set(acknowledgedRiskKinds);
-      if (!preview || !requiredRiskKinds.every((kind) => acknowledged.has(kind))) {
-        throw new Error("请逐项确认 Handoff risk。");
+      if (!preview || !preview.risks.every((risk) => acknowledged.has(risk.kind))) {
+        return false;
       }
       this.replaceRecord({
         ...current,

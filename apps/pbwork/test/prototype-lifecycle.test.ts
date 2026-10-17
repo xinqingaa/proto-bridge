@@ -229,6 +229,64 @@ describe("Workspace-persisted prototype lifecycle", () => {
     expect(lifecycle.warningsAcceptedFor(second.id)).toBe(false);
     expect(lifecycle.risksAcceptedFor(first.id)).toBe(true);
     expect(lifecycle.risksAcceptedFor(second.id)).toBe(false);
+    expect(lifecycle.risksAcceptedFor("missing-preview")).toBe(false);
+    expect(lifecycle.warningsAcceptedFor("missing-preflight")).toBe(false);
+  });
+
+  it("does not confirm risks or continue finalization before the preview exists", async () => {
+    const prototype = prototypes[0]!;
+    const lifecycle = usePrototypeLifecycleStore();
+    lifecycle.replaceRecord({
+      ...capturingRecord(prototype.id),
+      operation: {
+        ...capturingRecord(prototype.id).operation,
+        phase: "awaiting-risks",
+        snapshotId: "snapshot-1",
+      },
+    });
+
+    await expect(lifecycle.completeFinalization(prototype)).resolves.toBe(false);
+    expect(lifecycle.recordFor(prototype.id)?.operation).toMatchObject({
+      phase: "awaiting-risks",
+    });
+  });
+
+  it("continues finalization when the loaded preview has no risks to confirm", async () => {
+    const prototype = prototypes[0]!;
+    const lifecycle = usePrototypeLifecycleStore();
+    const capture = useCaptureStore();
+    capture.session = {} as never;
+    const record = {
+      ...capturingRecord(prototype.id),
+      operation: {
+        ...capturingRecord(prototype.id).operation,
+        phase: "awaiting-risks" as const,
+        snapshotId: "snapshot-1",
+      },
+    };
+    lifecycle.replaceRecord(record);
+    vi.spyOn(captureServiceClient, "prototypeLifecycle").mockResolvedValue(
+      lifecycleDocument(prototype.id, record),
+    );
+    vi.spyOn(captureServiceClient, "getJob").mockResolvedValue(null as never);
+    vi.spyOn(captureServiceClient, "snapshotDetails").mockResolvedValue({
+      activeRevisions: [],
+    } as never);
+    vi.spyOn(captureServiceClient, "previewHandoff").mockResolvedValue({
+      risks: [],
+    } as never);
+    vi.spyOn(captureServiceClient, "updatePrototypeLifecycle").mockImplementation(
+      async ({ document }) => document,
+    );
+    vi.spyOn(capture, "refreshConsole").mockResolvedValue(true);
+
+    await lifecycle.pollFinalization(prototype);
+
+    expect(lifecycle.risksAcceptedFor(prototype.id)).toBe(true);
+    expect(lifecycle.recordFor(prototype.id)?.operation).toMatchObject({
+      phase: "building-prompt",
+      acknowledgedRiskKinds: [],
+    });
   });
 
   it("keeps the operation visible during a Service connection interruption", async () => {

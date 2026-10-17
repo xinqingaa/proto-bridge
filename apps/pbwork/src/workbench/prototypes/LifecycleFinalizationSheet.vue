@@ -48,7 +48,8 @@ const record = computed(() => lifecycle.recordFor(props.prototype.id));
 const operation = computed(() => record.value?.operation ?? { kind: "idle" as const });
 const warnings = computed(() => lifecycle.preflightFor(props.prototype.id)?.result.warnings ?? []);
 const warningChecks = computed(() => warnings.value.map((warning) => presentWarning(warning)));
-const risks = computed(() => lifecycle.handoffPreviewFor(props.prototype.id)?.risks ?? []);
+const riskPreview = computed(() => lifecycle.handoffPreviewFor(props.prototype.id));
+const risks = computed(() => riskPreview.value?.risks ?? []);
 const riskChecks = computed(() => {
   const names = new Map(
     (lifecycle.evidenceFor(props.prototype.id)?.activeRevisions ?? []).map((revision) => [
@@ -122,6 +123,10 @@ const statusText = computed(() => {
   if (current.phase === "preflighting") return "正在检查整个原型的正式范围。";
   if (current.phase === "awaiting-confirmation") return "预检完成，等待确认候选方案已经收敛。";
   if (current.phase === "capturing") return `正在采集整个原型 · ${completedCases.value}/${totalCases.value}`;
+  if (current.phase === "awaiting-risks" && !riskPreview.value) return "正在读取这次定稿的风险。";
+  if (current.phase === "awaiting-risks" && risks.value.length === 0) {
+    return "没有必须确认的提醒，正在继续定稿。";
+  }
   if (current.phase === "awaiting-risks") return "采集已经完成，请逐项确认下面这些提醒。";
   return "正在固定交付结果和给 Agent 的提示词。";
 });
@@ -360,7 +365,11 @@ onBeforeUnmount(() => {
           v-else-if="operation.kind === 'finalizing' && operation.phase === 'awaiting-risks'"
           class="flow-section"
         >
-          <div class="section-lead">
+          <p v-if="!riskPreview" class="quiet-result">正在读取这次定稿的风险。</p>
+          <p v-else-if="riskChecks.length === 0" class="quiet-result">
+            没有必须确认的提醒。定稿会继续写入 Handoff 和提示词。
+          </p>
+          <div v-if="riskChecks.length" class="section-lead">
             <strong>{{ successfulCases }} 个页面状态已经采到</strong>
             <p>勾选不会改采集结果。这些提醒会原样写进给 Agent 的提示词。</p>
           </div>
@@ -386,7 +395,6 @@ onBeforeUnmount(() => {
               />
             </article>
           </div>
-          <p v-else class="quiet-result">当前没有必须确认的提醒。</p>
         </section>
 
         <section
@@ -436,7 +444,7 @@ onBeforeUnmount(() => {
           <ScanLine :size="15" />开始完整采集
         </WorkbenchButton>
         <WorkbenchButton
-          v-else-if="operation.kind === 'finalizing' && operation.phase === 'awaiting-risks'"
+          v-else-if="operation.kind === 'finalizing' && operation.phase === 'awaiting-risks' && riskChecks.length > 0"
           tone="primary"
           :loading="submitting"
           :disabled="!lifecycle.risksAcceptedFor(props.prototype.id)"
