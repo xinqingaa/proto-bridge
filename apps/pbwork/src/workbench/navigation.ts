@@ -132,6 +132,14 @@ export function buildComponentsNavigation(): WorkbenchNavigationItem[] {
     "tab-viewport",
     "screen-transition",
   ];
+  const feedbackOrder = [
+    "toast",
+    "loading",
+    "confirm",
+    "bottom-sheet",
+    "flow-sheet",
+    "action-sheet",
+  ];
   const orderedRecords = [...componentRecords].sort((left, right) => {
     const leftCat = categoryOrder.indexOf(
       left.category as (typeof categoryOrder)[number],
@@ -149,6 +157,14 @@ export function buildComponentsNavigation(): WorkbenchNavigationItem[] {
           (rightOrder < 0 ? tabOrder.length : rightOrder)
         );
       }
+    }
+    if (left.category === "feedback") {
+      const leftOrder = feedbackOrder.indexOf(left.id);
+      const rightOrder = feedbackOrder.indexOf(right.id);
+      return (
+        (leftOrder < 0 ? feedbackOrder.length : leftOrder) -
+        (rightOrder < 0 ? feedbackOrder.length : rightOrder)
+      );
     }
     return 0;
   });

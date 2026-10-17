@@ -4,20 +4,18 @@
 > 实现：[Toast.vue](../../../src/design-system/components/feedback/Toast.vue)
 > 契约：[toast.json](../../../src/design-system/components/contracts/toast.json)
 
-轻量短提示；半透明黑底纯文本，自动关闭且不阻断页面操作。
-
-带撤销动作的短提示使用 [Snackbar](./snackbar.md)，二者共用临时通知生命周期。Toast 保持只读提示职责。
+轻量短提示。可以只显示文本，也可以在同一条提示上放一个动作，例如撤销。到时自动关闭，不阻断页面。
 
 ## 职责与边界
 
 - 固定使用 `role=toast`，悬浮于内容上方，不占页面流也不阻断下层交互。
-- 视觉只有单层半透明黑色 surface 和纯文本，不包含 tone 色条、图标、标题或关闭按钮。
+- 视觉是反色表面加文本。有 `actionLabel` 时末尾是一个文本按钮。不包含 tone 色条、图标或标题。
 - 需要确认或持续处理的反馈分别使用 Confirm、Bottom Sheet/Flow Sheet 或页面内状态。
 
 ## 行为要点
 
-- visible 后按 `motion.duration-toast` 自动关闭。
-- 只展示 message；成功/失败含义由文案与业务上下文说明，不创建多套 tone 外观。
+- 打开后按 `toast.duration` 自动关闭。
+- 无动作时只展示 message。有动作时，每次打开最多触发一次 `undo`，事件先于关闭；数据恢复由业务处理。
 - 关闭只更新可见状态，不决定业务导航或重试。
 
 ## States

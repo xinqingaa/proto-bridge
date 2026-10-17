@@ -40,6 +40,18 @@ describe("workbench navigation tree", () => {
     expect(components.children).toHaveLength(6);
     expect(drafts.children).toEqual([
       {
+        id: "draft-component-studio",
+        label: "组件手机舞台",
+        kind: "item",
+        to: "/workbench/drafts/component-studio",
+      },
+      {
+        id: "draft-theme-studio",
+        label: "主题与设计基础",
+        kind: "item",
+        to: "/workbench/drafts/theme-studio",
+      },
+      {
         id: "draft-workbench-overview",
         label: "工作台概览",
         kind: "item",

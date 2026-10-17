@@ -33,6 +33,7 @@ import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
 import { useCaptureStore } from "@/app/stores/capture";
 import { buildCaptureTaskPresentations } from "@/capture/presentation";
 import { listClassifiedCaptureResults } from "@/capture/result-classification";
+import PhoneShell from "@/workbench/PhoneShell.vue";
 import WorkbenchBadge from "@/workbench/ui/WorkbenchBadge.vue";
 import {
   atmosphereStyle,
@@ -327,21 +328,24 @@ onMounted(() => {
             :aria-label="`打开画布：${selectedScreen?.label ?? selectedPrototype.label}`"
             data-testid="overview-phone"
           >
-            <iframe
-              v-for="path in previewPaths"
-              :key="path"
-              :class="{
-                'is-shown':
-                  path === shownPreviewPath ||
-                  (!shownPreviewPath && path === incomingPreviewPath),
-              }"
-              :src="path"
-              :title="`${selectedPrototype.label} · ${selectedScreen?.label ?? '页面预览'}`"
-              width="390"
-              height="844"
-              tabindex="-1"
-              @load="onPreviewLoad(path)"
-            />
+            <PhoneShell class="overview-phone" chrome="overlay" :width="390" :height="844">
+              <iframe
+                v-for="path in previewPaths"
+                :key="path"
+                class="overview-iframe"
+                :class="{
+                  'is-shown':
+                    path === shownPreviewPath ||
+                    (!shownPreviewPath && path === incomingPreviewPath),
+                }"
+                :src="path"
+                :title="`${selectedPrototype.label} · ${selectedScreen?.label ?? '页面预览'}`"
+                width="390"
+                height="844"
+                tabindex="-1"
+                @load="onPreviewLoad(path)"
+              />
+            </PhoneShell>
             <span class="runtime-hint">打开画布</span>
           </RouterLink>
           <div v-else class="runtime-empty">
@@ -721,43 +725,34 @@ onMounted(() => {
   bottom: -80px;
   width: 304px;
   height: 658px;
-  overflow: hidden;
+  overflow: visible;
   pointer-events: auto;
-  border-radius: 24px;
-  background: #ffffff;
-  box-shadow:
-    0 0 0 7px #111419,
-    0 0 0 8px color-mix(in srgb, var(--stage-ink) 12%, transparent),
-    0 28px 64px rgba(3, 6, 12, 0.42);
+  background: transparent;
   transform: rotate(6.5deg);
-  transition:
-    transform 220ms ease,
-    box-shadow 220ms ease;
+  transition: transform 220ms ease;
 }
 
 .runtime-frame:hover,
 .runtime-frame:focus-visible {
   transform: rotate(6.5deg) translateY(-8px);
-  box-shadow:
-    0 0 0 7px #111419,
-    0 0 0 8px color-mix(in srgb, var(--stage-ink) 18%, transparent),
-    0 34px 70px rgba(3, 6, 12, 0.48);
   outline: none;
 }
 
-.runtime-frame iframe {
+.overview-phone {
+  transform: scale(0.78);
+  transform-origin: top left;
+}
+
+.overview-iframe {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   display: block;
-  width: 390px;
-  height: 844px;
+  width: 100%;
+  height: 100%;
   border: 0;
   background: #ffffff;
   pointer-events: none;
   opacity: 0;
-  transform: scale(0.78);
-  transform-origin: top left;
   transition: opacity 280ms ease;
 }
 

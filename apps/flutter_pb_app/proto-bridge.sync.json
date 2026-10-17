@@ -3,9 +3,9 @@
   "producer": "apps/pbwork",
   "target": "apps/flutter_pb_app",
   "status": "synced",
-  "surfaceDigest": "sha256:ce73c631eb1c8aad47fbc1831f42399a0cc7da724c85b28740075291ed1f94dd",
+  "surfaceDigest": "sha256:04bae6a8ae6b10222460740059c12dd81db444ca54dfea48241b084b473939bb",
   "sectionDigests": {
-    "components": "sha256:b3d7db6ab7e2052fb60f6fe437de4ed90665d433c1a43169d568e04d36c616d7",
+    "components": "sha256:266361b5bb7c2eeecb9608e7c7a5e437e1adbef025eb60ea95c94b42ea830a3d",
     "roles": "sha256:7d60fc91350acf9551c7865b79d084ce278945a8c2c8c5856be8d5540ba19a93",
     "protocolSchemas": "sha256:9cc0ace91181e18c8772aa0b70fff4f551cf0eabfabdd427ba276215150f455f",
     "tokenCatalog": "sha256:d4e32ac21bb57c0ebff6a3a776739ed2d4563485b2956b927ce00c7515d0f288",
@@ -50,7 +50,6 @@
     "search-bar": "sha256:1bbfc6f57bd0be329836aa44a59e719b93fc3809d176dc89ce71bdf109b68420",
     "secondary-tabs": "sha256:99f966b925d1a65c0a23ab5e16f878ca1f1a5677d3510d3b25958de995792e72",
     "segmented-control": "sha256:da1ecf2efdfb555f777692ad5ce8ca1e724a4b33e63f5668e902fc03b8b80d82",
-    "snackbar": "sha256:3f1c8998bb0191946f4aab4cd39218894aea14940071e8dee5e626a394467a14",
     "spinner": "sha256:3c4bfb6157227985c7a8e5f1d72a79fe93243a79cf8c342d4ce67915176d28ca",
     "stepper": "sha256:d407acd283b491aad1380b623f497506369225a29acec6e583c8f163c9463500",
     "switch": "sha256:7bf996c4c47fb3a42f8c326b4de9011e129c9badb9c3ac2d7688390fd41a4e63",
@@ -59,10 +58,10 @@
     "tag": "sha256:56b655da4c67f5562e75c5bb76d1b609a5d4bc7882ab67f8170ebe8904ac1c51",
     "text-field": "sha256:7f1fb8c0a0a84e76b180292cd95668a82fd6064cde86bb52abce51a22f366daa",
     "textarea": "sha256:1f87b93bacda64c797f57672bd8e035bb31a49c8039dc14ce0a5dbfde337e0dd",
-    "toast": "sha256:fec8968633a5cfa7e5f48522c7f21561816ebb21fdef111d3ca587608d8cbdc8"
+    "toast": "sha256:aae96281e7febd67c12aae39818225f88e7185a4481fc5ced282ad80802f775b"
   },
   "counts": {
-    "components": 47,
+    "components": 46,
     "catalogTokens": 136,
     "bindTokens": 130,
     "mappedTokens": 130,

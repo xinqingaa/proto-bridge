@@ -1,6 +1,6 @@
 # 组件总论
 
-当前共 47 个组件；全部以基础包与样例包分别验证浅色和深色。样例包仅用于 Gallery / Playground，正式原型使用自己的绑定主题包。
+当前共 46 个组件；全部以基础包与样例包分别验证浅色和深色。样例包仅用于 Gallery / Playground，正式原型使用自己的绑定主题包。短提示只有 Toast，撤销是它的可选动作。
 
 ## 唯一注册源
 
@@ -88,4 +88,4 @@ Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`summary`�
 
 ### 反馈（feedback）
 
-[toast](./feedback/toast.md) · [confirm](./feedback/confirm.md) · [bottom-sheet](./feedback/bottom-sheet.md) · [flow-sheet](./feedback/flow-sheet.md) · [loading](./feedback/loading.md) · [Snackbar](./feedback/snackbar.md) · [ActionSheet](./feedback/action-sheet.md)
+[toast](./feedback/toast.md) · [loading](./feedback/loading.md) · [confirm](./feedback/confirm.md) · [bottom-sheet](./feedback/bottom-sheet.md) · [flow-sheet](./feedback/flow-sheet.md) · [ActionSheet](./feedback/action-sheet.md)

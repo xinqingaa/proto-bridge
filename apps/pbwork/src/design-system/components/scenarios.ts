@@ -598,6 +598,16 @@ const scenarios: Record<string, ComponentScenario[]> = {
         modelValue: true,
       },
     },
+    {
+      id: "undo",
+      label: "可撤销",
+      description: "同一条短提示带一个动作，撤销由业务处理。",
+      props: {
+        message: "记录已删除",
+        actionLabel: "撤销",
+        modelValue: true,
+      },
+    },
   ],
   loading: [
     {

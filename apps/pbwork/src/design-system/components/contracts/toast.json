@@ -6,16 +6,17 @@
     "policy": "fixed",
     "defaultRole": "toast"
   },
-  "summary": "轻量短提示；半透明黑底纯文本，timeout 后自动关闭，不阻断页面操作。",
+  "summary": "轻量短提示。可只显示文本，也可带一个可选动作（如撤销）。到时自动关闭，不阻断页面。",
   "behavior": [
-    "打开后按 motion.duration-toast 自动关闭",
-    "仅展示 message 文本，无 tone 色条、图标或关闭按钮"
+    "打开后按 toast.duration 自动关闭",
+    "无动作时只展示 message",
+    "有 actionLabel 时每次打开最多触发一次 undo，撤销事件先于关闭；数据恢复由业务处理"
   ],
   "layout": {
     "summary": "短提示悬浮于内容上方并保持内容宽度；不占据页面流，不阻断下层布局与交互。"
   },
   "visualAnatomy": {
-    "summary": "单层半透明黑色 surface 包含纯文本，无 tone 色条、图标、标题或关闭按钮。"
+    "summary": "反色表面包含文本；有动作时在同一行末尾放一个文本按钮。无 tone 色条、图标或标题。"
   },
   "propsSchema": {
     "type": "object",
@@ -26,13 +27,17 @@
       },
       "message": {
         "type": "string"
+      },
+      "actionLabel": {
+        "type": "string"
       }
     },
     "required": ["message"]
   },
   "defaultProps": {
     "modelValue": false,
-    "message": "工单已创建"
+    "message": "工单已创建",
+    "actionLabel": ""
   },
   "states": [
     {
@@ -54,7 +59,7 @@
     }
   ],
   "slots": [],
-  "events": ["update:modelValue"],
+  "events": ["update:modelValue", "undo"],
   "tokenBindings": {
     "surface": "color.inverse-surface",
     "text": "color.on-inverse-surface",
@@ -62,7 +67,11 @@
     "paddingX": "spacing.sm",
     "paddingY": "toast.gap",
     "message": "typography.content",
-    "duration": "toast.duration"
+    "duration": "toast.duration",
+    "gap": "spacing.sm",
+    "target": "size.touch",
+    "focus": "border.focus",
+    "actionPadding": "spacing.xs"
   },
   "playground": {
     "presentation": "trigger"

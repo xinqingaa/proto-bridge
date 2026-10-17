@@ -81,4 +81,4 @@ Chrome 设备模拟与真机常在原生平移开始后取消 Pointer Events：
 
 ## 滚轮与有档位面板
 
-DurationPicker 使用原生纵滚与 scroll-snap，容器声明 `data-no-swipe`、`overscroll-behavior: contain`，键盘可选择小时与分钟。它不复制横滑仲裁或读取系统时钟。BottomSheet 档位通过受控按钮切换，ActionSheet 组合 BottomSheet，Snackbar 与 Toast 共用通知生命周期；焦点、scrim 与关闭继续交由现有 Overlay 机制。
+DurationPicker 使用原生纵滚与 scroll-snap，容器声明 `data-no-swipe`、`overscroll-behavior: contain`，键盘可选择小时与分钟。它不复制横滑仲裁或读取系统时钟。BottomSheet 档位通过受控按钮切换，ActionSheet 与 FlowSheet 组合 BottomSheet。Toast 是唯一短提示，动作可选。焦点、scrim 与关闭继续交由现有 Overlay 机制。

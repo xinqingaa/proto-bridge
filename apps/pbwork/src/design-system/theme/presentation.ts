@@ -22,6 +22,34 @@ export type ThemePackOption = {
   defaultMode: string;
 };
 
+const APPEARANCE_LABELS: Record<string, string> = {
+  "pbwork-base:default": "默认",
+  "pbwork-sample:garden": "绿色",
+  "pbwork-sample:citrus": "橙色",
+};
+
+export type AppearanceChoice = {
+  id: string;
+  label: string;
+  packId: string;
+  themeId: string;
+};
+
+/** Reviewer-facing appearances. Pack and theme ids stay internal. */
+export function reviewAppearanceChoices(): AppearanceChoice[] {
+  return reviewThemePackOptions().flatMap((pack) =>
+    pack.themes.map((theme) => {
+      const id = `${pack.id}:${theme.id}`;
+      return {
+        id,
+        label: APPEARANCE_LABELS[id] ?? theme.label,
+        packId: pack.id,
+        themeId: theme.id,
+      };
+    }),
+  );
+}
+
 /** Packs a reviewer can switch in Gallery and Playground. Prototype packs stay on their prototype. */
 export function reviewThemePackOptions(): ThemePackOption[] {
   return [...runtimeThemeSources.packs.values()]

@@ -93,7 +93,7 @@ pnpm ds:target-sync:verify
 Add relevant Playwright specs for gestures, overlays, navigation, or Playground.
 Test new components with both `pbwork-base/default` and `pbwork-sample/garden`,
 in light and dark. Sample packs remain preview-only. Reuse BottomSheet for
-action overlays and TransientNotice for Toast/Snackbar lifecycles; keep business
+action overlays and TransientNotice for Toast, including an optional action; keep business
 undo, navigation and declared-clock state in the caller. Update Target pending
 entries truthfully rather than implying a Flutter implementation.
 

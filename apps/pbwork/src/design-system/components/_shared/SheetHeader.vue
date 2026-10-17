@@ -14,6 +14,8 @@ defineEmits<{
 </script>
 
 <template>
+  <div class="pb-sheet-top">
+  <div class="pb-sheet-grip" aria-hidden="true" />
   <header class="pb-sheet-header">
     <div class="pb-sheet-header-side pb-sheet-header-start">
       <IconButton
@@ -38,14 +40,27 @@ defineEmits<{
       />
     </div>
   </header>
+  </div>
 </template>
 
 <style scoped>
+.pb-sheet-top {
+  display: flex;
+  flex-direction: column;
+}
+.pb-sheet-grip {
+  width: var(--pb-spacing-2xl);
+  height: var(--pb-size-indicator);
+  align-self: center;
+  margin-top: var(--pb-spacing-sm);
+  border-radius: var(--pb-radius-pill);
+  background: var(--pb-color-outline);
+}
 .pb-sheet-header {
   display: flex;
   align-items: center;
   gap: var(--pb-spacing-sm);
-  padding: var(--pb-spacing-md);
+  padding: var(--pb-spacing-sm) var(--pb-spacing-md) var(--pb-spacing-md);
 }
 .pb-sheet-header-side {
   display: flex;

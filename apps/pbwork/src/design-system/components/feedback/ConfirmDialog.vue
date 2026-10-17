@@ -87,6 +87,7 @@ watch(modelValue, async (value) => {
 <template>
   <span class="dialog-host">
     <v-dialog
+      class="pb-confirm-overlay"
       :model-value="modelValue ?? false"
       :attach="attachTarget"
       :absolute="contained ?? true"
@@ -160,5 +161,15 @@ watch(modelValue, async (value) => {
   flex: var(--pb-layout-flex-fill);
   width: var(--pb-layout-fill);
   min-width: var(--pb-layout-zero);
+}
+</style>
+
+<style>
+.pb-confirm-overlay .v-overlay__scrim {
+  position: absolute !important;
+  inset: var(--pb-layout-zero) !important;
+}
+.pb-confirm-overlay > .v-overlay__content {
+  position: absolute !important;
 }
 </style>

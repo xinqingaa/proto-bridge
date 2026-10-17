@@ -11,7 +11,7 @@ import MiniBars from "@/design-system/components/display/MiniBars.vue";
 import MonthCalendar from "@/design-system/components/display/MonthCalendar.vue";
 import ListCell from "@/design-system/components/data/ListCell.vue";
 import GroupedList from "@/design-system/components/data/GroupedList.vue";
-import Snackbar from "@/design-system/components/feedback/Snackbar.vue";
+import Toast from "@/design-system/components/feedback/Toast.vue";
 import ActionSheet from "@/design-system/components/feedback/ActionSheet.vue";
 import BrandMark from "@/design-system/components/navigation/BrandMark.vue";
 import LaunchScreen from "@/design-system/components/navigation/LaunchScreen.vue";
@@ -41,7 +41,7 @@ const ids = [
   "month-calendar",
   "list-cell",
   "grouped-list",
-  "snackbar",
+  "toast",
   "action-sheet",
   "brand-mark",
   "launch-screen",
@@ -99,7 +99,7 @@ for (const [pack, theme] of [
             component,
             {
               ...contract.defaultProps,
-              ...(["snackbar", "action-sheet"].includes(id)
+              ...(["toast", "action-sheet"].includes(id)
                 ? { modelValue: true }
                 : {}),
               inspectId: `test.home.${id}`,
@@ -229,8 +229,12 @@ it("GroupedList forwards stable group/item identities", async () => {
     { groupId: "settings", itemId: "reminder" },
   ]);
 });
-it("Snackbar undo fires once per opening and closes after the business event", async () => {
-  const wrapper = render(Snackbar, { modelValue: true });
+it("Toast undo fires once per opening and closes after the business event", async () => {
+  const wrapper = render(Toast, {
+    modelValue: true,
+    message: "记录已删除",
+    actionLabel: "撤销",
+  });
   await wrapper.get("button").trigger("click");
   await wrapper.get("button").trigger("click");
   expect(wrapper.emitted("undo")).toHaveLength(1);

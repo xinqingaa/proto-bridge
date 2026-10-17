@@ -445,29 +445,6 @@ export const platformScenarios = {
       },
     },
   ],
-  snackbar: [
-    {
-      id: "default",
-      label: "默认示例",
-      description: "可撤销的短提示，撤销语义由业务处理。",
-      props: {
-        modelValue: false,
-        message: "记录已删除",
-        actionLabel: "撤销",
-      },
-    },
-    {
-      id: "visible",
-      label: "可撤销",
-      description:
-        "复用 Vuetify snackbar 的超时和 Overlay 机制；不阻断页面操作",
-      props: {
-        modelValue: true,
-        message: "记录已删除",
-        actionLabel: "撤销",
-      },
-    },
-  ],
   "action-sheet": [
     {
       id: "default",

@@ -12,7 +12,7 @@ const ids = [
   "month-calendar",
   "grouped-list",
   "list-cell",
-  "snackbar",
+  "toast",
   "bottom-sheet",
   "action-sheet",
   "brand-mark",
@@ -29,26 +29,24 @@ for (const pack of ["base", "sample"] as const) {
       await page.setViewportSize({ width: 1440, height: 1100 });
       for (const id of ids) {
         await page.goto(`/workbench/components/${id}`);
-        await page
-          .getByRole("combobox", { name: "主题包", exact: true })
-          .press("Space");
-        await page
-          .getByRole("option", {
-            name: pack === "base" ? "PBWork 基础包" : "样例主题包",
+        const toolbar = page.locator(".resource-toolbar");
+        await toolbar
+          .getByRole("button", {
+            name: pack === "base" ? "默认" : "绿色",
             exact: true,
           })
           .click();
-        await page
+        await toolbar
           .getByRole("button", {
             name: mode === "light" ? "浅色" : "深色",
             exact: true,
           })
           .click();
         const stage = page.locator(".preview-wrap");
-        await expect(stage.locator(".scenario-header code")).toHaveText(
-          `pbwork-${pack}/${pack === "base" ? "default" : "garden"}/${mode}`,
+        await expect(stage.locator(".scenario-header")).toContainText(
+          `${pack === "base" ? "默认" : "绿色"} · ${mode === "light" ? "浅色" : "深色"}`,
         );
-        if (["snackbar", "bottom-sheet", "action-sheet"].includes(id)) {
+        if (["toast", "bottom-sheet", "action-sheet"].includes(id)) {
           await stage
             .getByRole("button", {
               name:
@@ -106,7 +104,7 @@ for (const pack of ["base", "sample"] as const) {
           path: info.outputPath(`${id}.png`),
           animations: "disabled",
         });
-        if (id === "snackbar") {
+        if (id === "toast") {
           await root.getByRole("button", { name: "撤销" }).click();
           await expect(root).toBeHidden();
           await expect(stage.getByRole("status")).toContainText("已撤销");

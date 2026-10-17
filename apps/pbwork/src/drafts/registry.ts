@@ -5,6 +5,8 @@ type DraftModule = { default: Component };
 const draftModules = import.meta.glob<DraftModule>("./*/DraftPage.vue");
 
 export const draftLabels: Record<string, string> = {
+  "theme-studio": "主题与设计基础",
+  "component-studio": "组件手机舞台",
   "workbench-overview": "工作台概览",
   "workbench-prototypes": "全部原型 / 详情",
   yike: "一刻 · 专注与打卡",

@@ -182,6 +182,7 @@ watch(modelValue, async (value) => {
 .pb-sheet-body {
   overflow-y: auto;
   padding: var(--pb-spacing-md);
+  padding-bottom: var(--pb-spacing-2xl);
   color: inherit;
   font: var(--pb-typography-content);
 }
@@ -207,8 +208,16 @@ watch(modelValue, async (value) => {
 .pb-sheet-host[data-detent="expanded"] > .v-overlay__content {
   height: var(--pb-size-panel-large);
 }
+.pb-sheet-host.v-bottom-sheet > .v-overlay__scrim {
+  position: absolute !important;
+  inset: var(--pb-layout-zero) !important;
+}
 .pb-sheet-host.v-bottom-sheet > .v-overlay__content,
 .pb-sheet-host.v-bottom-sheet > .v-bottom-sheet__content {
+  position: absolute !important;
+  right: var(--pb-layout-zero) !important;
+  bottom: var(--pb-layout-zero) !important;
+  left: var(--pb-layout-zero) !important;
   width: var(--pb-layout-fill) !important;
   max-width: var(--pb-layout-fill) !important;
   margin-inline: var(--pb-layout-zero) !important;
@@ -229,5 +238,6 @@ watch(modelValue, async (value) => {
   > .pb-sheet
   > .pb-sheet-body {
   padding: var(--pb-spacing-md) !important;
+  padding-bottom: var(--pb-spacing-2xl) !important;
 }
 </style>

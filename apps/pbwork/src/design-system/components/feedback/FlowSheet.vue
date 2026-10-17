@@ -242,7 +242,7 @@ watch(stepCount, (count) => {
   display: flex;
   align-items: center;
   gap: var(--pb-spacing-sm);
-  padding: var(--pb-spacing-sm-plus) var(--pb-spacing-md) var(--pb-spacing-md);
+  padding: var(--pb-spacing-sm-plus) var(--pb-spacing-md) var(--pb-spacing-2xl);
   border-top: var(--pb-border-hairline);
 }
 .pb-flow-sheet-actions > * {
@@ -253,8 +253,16 @@ watch(stepCount, (count) => {
 </style>
 
 <style>
+.pb-flow-sheet-host.v-bottom-sheet > .v-overlay__scrim {
+  position: absolute !important;
+  inset: var(--pb-layout-zero) !important;
+}
 .pb-flow-sheet-host.v-bottom-sheet > .v-overlay__content,
 .pb-flow-sheet-host.v-bottom-sheet > .v-bottom-sheet__content {
+  position: absolute !important;
+  right: var(--pb-layout-zero) !important;
+  bottom: var(--pb-layout-zero) !important;
+  left: var(--pb-layout-zero) !important;
   width: var(--pb-layout-fill) !important;
   max-width: var(--pb-layout-fill) !important;
   margin-inline: var(--pb-layout-zero) !important;

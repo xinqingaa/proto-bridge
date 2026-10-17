@@ -180,10 +180,6 @@
       "status": "pending",
       "reason": "PBWork 平台升级新增通用组件；本轮未实现 Flutter，需按 Producer Contract 与主题表适配。"
     },
-    "snackbar": {
-      "status": "pending",
-      "reason": "PBWork 平台升级新增通用组件；本轮未实现 Flutter，需按 Producer Contract 与主题表适配。"
-    },
     "action-sheet": {
       "status": "pending",
       "reason": "PBWork 平台升级新增通用组件；本轮未实现 Flutter，需按 Producer Contract 与主题表适配。"

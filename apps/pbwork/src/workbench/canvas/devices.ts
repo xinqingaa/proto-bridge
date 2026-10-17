@@ -13,8 +13,11 @@ export type DevicePreset = {
 export const SAFE_TOP = 44;
 export const SAFE_BOTTOM = 20;
 
-/** Physical bezel thickness around the screen (CSS px). */
-export const FRAME_BEZEL = 12;
+/**
+ * Visual bezel is a box-shadow on PhoneShell and does not change layout size.
+ * Kept so older measurements can still name the retired chassis thickness.
+ */
+export const FRAME_BEZEL = 0;
 
 export const DEVICE_PRESETS: DevicePreset[] = [
   {
@@ -59,13 +62,13 @@ export function getDevicePreset(id: string): DevicePreset {
   return DEVICE_PRESETS.find((item) => item.id === id) ?? DEVICE_PRESETS[0]!;
 }
 
-/** Outer chassis size = viewport + bezel only (preserves device aspect ratio). */
+/** Layout size of the phone shell. The bezel is a shadow, so it matches the viewport. */
 export function getFrameOuterSize(device: DevicePreset): {
   width: number;
   height: number;
 } {
   return {
-    width: device.width + FRAME_BEZEL * 2,
-    height: device.height + FRAME_BEZEL * 2,
+    width: device.width,
+    height: device.height,
   };
 }

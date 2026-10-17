@@ -129,13 +129,14 @@ describe("resolveRuntimeRoute", () => {
 });
 
 describe("device viewport presets", () => {
-  it("keeps outer frame aspect equal to viewport plus bezel only", () => {
+  it("keeps the phone shell layout equal to the viewport", () => {
     expect(DEVICE_PRESETS).toHaveLength(4);
     const iphone = getDevicePreset("iphone-14");
     expect(iphone.width).toBe(390);
     expect(iphone.height).toBe(844);
     const outer = getFrameOuterSize(iphone);
-    expect(outer.width).toBe(390 + FRAME_BEZEL * 2);
-    expect(outer.height).toBe(844 + FRAME_BEZEL * 2);
+    expect(outer.width).toBe(390);
+    expect(outer.height).toBe(844);
+    expect(FRAME_BEZEL).toBe(0);
   });
 });

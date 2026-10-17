@@ -50,7 +50,7 @@
 | ------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------- |
 | **`interactive`（默认）** | 主互动预览 + Contract state 真实实例；有限类型可直接并置，**无场景下拉与常驻右侧调整栏** | 绝大多数组件                           |
 | **`gallery`**             | 平铺 default + states；无场景下拉；只留主题切换                                          | **仅 `icon`、`icon-button`**           |
-| **`trigger`**             | 触发按钮打开后挂载                                                                       | confirm / sheet / toast / snackbar / action-sheet / flow-sheet / loading |
+| **`trigger`**             | 触发按钮打开后挂载                                                                       | confirm / sheet / toast / action-sheet / flow-sheet / loading |
 
 禁止把 `gallery` 扩大到列表、Tabs、表单、AppBar 等大块组件。
 

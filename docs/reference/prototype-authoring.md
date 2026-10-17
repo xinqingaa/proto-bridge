@@ -22,7 +22,7 @@ PBWork Token / Theme
 强制规则：
 
 - 形状与风格都匹配的 PBWork 组件存在时必须使用，含其公开变体；与已批准风格冲突时按[原型设计工作流](../pbwork/prototypes/design-workflow.md#promotion-mapping)使用 DS 扩展或原型自有组件，并在 `docs/implementation.md` 记录 DS 缺口。
-- 禁止在页面内复制 Dialog、Sheet、Snackbar、Navigation 或滚动/手势组件的交互机制，也不得通过私有 class 覆盖 DS 组件内部样式。
+- 禁止在页面内复制 Dialog、Sheet、Toast、Navigation 或滚动/手势组件的交互机制，也不得通过私有 class 覆盖 DS 组件内部样式。
 - 允许原型自有组件与业务局部 UI，但颜色、字体、间距、尺寸、比例尺寸、圆角、边框、阴影、透明度、层级、动效、滤镜和变换距离必须使用 `--pb-*` Token；具有设计含义的 `0` 也必须走 Token。
 - 原型只使用 Flex 或常规文档流；禁止 `grid` / `inline-grid`、所有 `grid-*` 和 `place-*`。约束同时覆盖 style、template、script/TS 生成样式与 vendor 视觉 props，不能把固定数值转移到组件参数中。
 - `calc()` 只能组合 Token 或运行时派生变量；DOM 测量/交互状态的派生几何值可经 custom property 传入，但不得形成固定默认设计值或公开样式逃生口。
@@ -198,7 +198,7 @@ Runtime 在 readiness 成功前必须完成：
 - 一级主体面板内禁止再嵌套带 window 的 `Tabs`。
 - 列表外观使用 `DataList`，滚动/刷新/分页使用 `ScrollableDataList`。
 - 状态页关闭不适用的刷新和分页手势。
-- Dialog、Sheet、Snackbar 等 Overlay 与主内容保持清晰语义边界。
+- Dialog、Sheet、Toast 等 Overlay 与主内容保持清晰语义边界。
 - 多 Tab 与栈页使用统一导航辅助，确保深链、返回和跨 Tab 进栈可复现。
 - 产品离开拦截写在 `onBeforeRouteLeave` 时先认 `isForcedRuntimeNavigation()`；Workbench 树、画布顶栏和 Capture 换页由 Runtime 强制导航打开目标页。
 

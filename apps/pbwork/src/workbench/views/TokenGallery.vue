@@ -1,12 +1,17 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import ResourcePageShell from "@/workbench/views/ResourcePageShell.vue";
+import WorkbenchSegmented from "@/workbench/ui/WorkbenchSegmented.vue";
 import WorkbenchStatChip from "@/workbench/ui/WorkbenchStatChip.vue";
+import ResourceScopeSelect, {
+  type ResourceScope,
+} from "@/workbench/ui/ResourceScopeSelect.vue";
+import ThemeLineage from "@/workbench/ui/ThemeLineage.vue";
 import { loadTokenPresentations } from "@/design-system/loaders";
+import { runtimeThemeSources } from "@/design-system/theme/runtime-theme";
 import {
   normalizeTokenCssVarName,
   resolvePackTheme,
-  reviewThemePackOptions,
   themePackCssValues,
   themePackDiagnostics,
   valuesToCssVars,
@@ -23,29 +28,22 @@ const props = defineProps<{
 }>();
 
 const query = ref("");
-const packs = reviewThemePackOptions();
-const packId = ref(
-  packs.find((pack) => pack.id === "pbwork-base")?.id ?? packs[0]?.id ?? "",
-);
-const themeName = ref(
-  packs.find((pack) => pack.id === packId.value)?.defaultTheme ?? "default",
-);
-const mode = ref<"light" | "dark">("light");
-const comparePackId = ref("");
-const onlyDifferences = ref(false);
-const displayMode = ref<"grid" | "table">("grid");
-const selectedId = ref<string | null>(null);
-
-const selectedPack = computed(
-  () => packs.find((pack) => pack.id === packId.value) ?? packs[0],
-);
-const packThemes = computed(() => selectedPack.value?.themes ?? []);
-watch(packId, (id) => {
-  const pack = packs.find((item) => item.id === id);
-  if (!pack?.themes.some((theme) => theme.id === themeName.value)) {
-    themeName.value = pack?.defaultTheme ?? "default";
-  }
+const scope = ref<ResourceScope>({ kind: "foundation" });
+const packId = computed(() => {
+  if (scope.value.kind === "foundation") return "pbwork-base";
+  if (scope.value.kind === "sample") return scope.value.packId;
+  return scope.value.packId;
 });
+const themeName = ref(
+  runtimeThemeSources.packs.get(packId.value)?.manifest.defaultTheme ?? "default",
+);
+watch(packId, () => {
+  themeName.value =
+    runtimeThemeSources.packs.get(packId.value)?.manifest.defaultTheme ??
+    "default";
+});
+const mode = ref<"light" | "dark">("light");
+const selectedId = ref<string | null>(null);
 
 type SizingKind = "control" | "icon" | "avatar" | "other";
 
@@ -78,9 +76,33 @@ const tokenListHint = computed(() =>
     : `通过工具栏切换 ${themeLabel.value}主题`,
 );
 
-const categoryTokens = computed(() =>
-  allTokens.value.filter((token) => token.category === props.category),
-);
+function catalogKey(id: string) {
+  return runtimeThemeSources.keyCatalog.keys.find((key) => key.id === id);
+}
+
+function constantRecords(category: TokenCategory): TokenRecord[] {
+  return runtimeThemeSources.constants.constants
+    .filter((item) => item.id.startsWith(`${category}.`))
+    .map((item) => ({
+      schemaVersion: 1 as const,
+      id: item.id,
+      label: item.label ?? item.id,
+      category,
+      defaultValue: String(item.value),
+      ...(item.description ? { description: item.description } : {}),
+    }));
+}
+
+const categoryTokens = computed(() => {
+  const listed = allTokens.value.filter(
+    (token) => token.category === props.category,
+  );
+  if (props.category !== "layout" && props.category !== "layer") return listed;
+  const extras = constantRecords(props.category).filter(
+    (token) => !listed.some((item) => item.id === token.id),
+  );
+  return [...listed, ...extras];
+});
 const categoryTotal = computed(() => categoryTokens.value.length);
 const bindCount = computed(
   () => categoryTokens.value.filter((token) => isBindTokenId(token.id)).length,
@@ -92,24 +114,6 @@ const activeTable = computed(() =>
 );
 const resolved = computed(() =>
   themePackCssValues(packId.value, themeName.value, mode.value),
-);
-const compareTable = computed(() => {
-  if (!comparePackId.value) return null;
-  const pack = packs.find((item) => item.id === comparePackId.value);
-  if (!pack) return null;
-  const theme = pack.themes.some((item) => item.id === themeName.value)
-    ? themeName.value
-    : pack.defaultTheme;
-  return resolvePackTheme(pack.id, theme, mode.value);
-});
-const compareValues = computed(() =>
-  compareTable.value
-    ? themePackCssValues(
-        compareTable.value.identity.packId,
-        compareTable.value.identity.theme,
-        compareTable.value.identity.mode,
-      )
-    : null,
 );
 const diagnostics = computed(() => themePackDiagnostics(packId.value));
 const previewCssVars = computed(() => valuesToCssVars(resolved.value));
@@ -140,13 +144,50 @@ const tokens = computed(() => {
           token.label.toLowerCase().includes(q) ||
           (token.description ?? "").toLowerCase().includes(q),
       );
-  const differed =
-    onlyDifferences.value && compareValues.value
-      ? filtered.filter(
-          (token) => compareValues.value![token.id] !== resolved.value[token.id],
-        )
-      : filtered;
-  return sortTokens(differed);
+  return sortTokens(filtered);
+});
+
+const colorGroupMeta = [
+  { id: "surface", label: "背景与表面", note: "" },
+  { id: "content", label: "文字与前景", note: "" },
+  { id: "brand", label: "品牌与强调", note: "" },
+  { id: "feedback", label: "反馈状态", note: "" },
+  { id: "structure", label: "边框与结构", note: "" },
+  {
+    id: "component",
+    label: "组件色",
+    note: "只给对应组件使用，取值引用上面的语义色。",
+  },
+] as const;
+
+function colorGroupId(tokenId: string): (typeof colorGroupMeta)[number]["id"] {
+  if (catalogKey(tokenId)?.tier === "component") return "component";
+  const name = tokenId.replace(/^color\./, "");
+  if (name.startsWith("on-")) return "content";
+  if (["border", "outline", "divider"].includes(name)) return "structure";
+  if (
+    ["success", "success-soft", "warning", "warning-soft", "error", "error-soft", "disabled"].includes(name)
+  ) {
+    return "feedback";
+  }
+  if (["primary", "primary-soft", "secondary", "secondary-soft", "action", "action-soft", "info"].includes(name)) {
+    return "brand";
+  }
+  return "surface";
+}
+
+const colorGroups = computed(() =>
+  colorGroupMeta
+    .map((group) => ({
+      ...group,
+      tokens: tokens.value.filter((token) => colorGroupId(token.id) === group.id),
+    }))
+    .filter((group) => group.tokens.length > 0),
+);
+
+const cardGroups = computed(() => {
+  if (props.category === "color") return colorGroups.value;
+  return [{ id: "all", label: "", note: "", tokens: tokens.value }];
 });
 
 function sizingKind(tokenId: string): SizingKind {
@@ -196,12 +237,25 @@ function tokenCssVar(token: TokenRecord): string {
   return normalizeTokenCssVarName(token.id);
 }
 
+function readableId(id: string): string {
+  return id.replaceAll(".", ".\u200b");
+}
+
 function selectToken(id: string) {
   selectedId.value = id;
 }
 
-function formatValue(tokenId: string): string {
+function rawValue(tokenId: string): string | number | undefined {
   const value = resolved.value[tokenId];
+  if (value != null) return value;
+  const constant = runtimeThemeSources.constants.constants.find(
+    (item) => item.id === tokenId,
+  );
+  return constant?.value;
+}
+
+function formatValue(tokenId: string): string {
+  const value = rawValue(tokenId);
   if (value == null) return "—";
   if (props.category === "opacity" && typeof value === "number") {
     return `${Math.round(value * 100)}% · ${value}`;
@@ -218,21 +272,28 @@ function formatValue(tokenId: string): string {
   return String(value);
 }
 
+function isTimingToken(tokenId: string): boolean {
+  return tokenId.includes("easing") || tokenId.includes("duration");
+}
+
+function isAssetToken(tokenId: string): boolean {
+  return tokenId.startsWith("asset.");
+}
+
+function layoutWidth(tokenId: string): string {
+  const value = String(rawValue(tokenId) ?? "");
+  if (value.endsWith("%")) return value;
+  return "100%";
+}
+
 function px(tokenId: string): string {
-  const value = resolved.value[tokenId];
+  const value = rawValue(tokenId);
   if (typeof value === "number") return `${value}px`;
   return String(value ?? "0");
 }
 
 function isBorderWidthToken(tokenId: string): boolean {
   return tokenId.startsWith("border.width");
-}
-
-function valuesDiffer(tokenId: string): boolean {
-  return Boolean(
-    compareValues.value &&
-      compareValues.value[tokenId] !== resolved.value[tokenId],
-  );
 }
 </script>
 
@@ -249,83 +310,37 @@ function valuesDiffer(tokenId: string): boolean {
     </template>
 
     <template #toolbar>
+      <ResourceScopeSelect v-model="scope" />
+      <WorkbenchSegmented
+        :model-value="mode"
+        :items="[
+          { value: 'light', label: '浅色' },
+          { value: 'dark', label: '深色' },
+        ]"
+        label="深浅"
+        @update:model-value="
+          (value) => {
+            if (value === 'light' || value === 'dark') mode = value;
+          }
+        "
+      />
       <v-text-field
         v-model="query"
-        label="搜索 Token"
+        label="搜索"
         density="compact"
         variant="outlined"
         hide-details
         clearable
         class="search-field"
       />
-      <div class="toolbar-actions">
-        <v-select
-          v-model="packId"
-          :items="packs"
-          item-title="label"
-          item-value="id"
-          label="主题包"
-          density="compact"
-          variant="outlined"
-          hide-details
-          class="pack-field"
-        />
-        <v-select
-          v-model="themeName"
-          :items="packThemes"
-          item-title="label"
-          item-value="id"
-          label="主题"
-          density="compact"
-          variant="outlined"
-          hide-details
-          class="pack-field"
-        />
-        <v-btn-toggle
-          v-model="mode"
-          density="compact"
-          color="primary"
-          variant="outlined"
-          divided
-          mandatory
-          aria-label="模式"
-        >
-          <v-btn value="light" size="small">浅色</v-btn>
-          <v-btn value="dark" size="small">深色</v-btn>
-        </v-btn-toggle>
-        <v-select
-          v-model="comparePackId"
-          :items="[{ id: '', label: '不对照' }, ...packs]"
-          item-title="label"
-          item-value="id"
-          label="对照包"
-          density="compact"
-          variant="outlined"
-          hide-details
-          class="pack-field"
-        />
-        <v-switch
-          v-model="onlyDifferences"
-          label="只看差异"
-          color="primary"
-          hide-details
-          density="compact"
-          :disabled="!comparePackId"
-        />
-        <v-btn-toggle
-          v-model="displayMode"
-          density="compact"
-          color="primary"
-          variant="outlined"
-          divided
-          mandatory
-        >
-          <v-btn value="grid" size="small">网格</v-btn>
-          <v-btn value="table" size="small">表格</v-btn>
-        </v-btn-toggle>
-        <span class="toolbar-meta">{{ tokens.length }} 项</span>
-      </div>
     </template>
+
+    <ThemeLineage
+      :pack-id="packId"
+      :theme-name="themeName"
+      :mode="mode"
+      class="lineage-banner"
+    />
 
     <section
       class="token-section"
@@ -334,73 +349,80 @@ function valuesDiffer(tokenId: string): boolean {
     >
       <div class="section-heading compact-heading">
         <div>
-          <p class="section-kicker">Token 对照</p>
+          <p class="section-kicker">Token 列表</p>
           <h2 id="token-list-title">
             {{ tokenListTitle }}
           </h2>
         </div>
-        <span>{{ tokenListHint }}</span>
+        <span>{{ tokens.length }} 项 · {{ themeLabel }}</span>
       </div>
 
-      <template v-if="displayMode === 'grid'">
-        <template v-if="category === 'sizing'">
-          <div
-            v-for="group in sizingGroups"
-            :key="group.kind"
-            class="token-group"
-          >
-            <h3 class="group-title">{{ group.label }}</h3>
-            <div class="token-grid">
-              <button
-                v-for="token in group.tokens"
-                :key="token.id"
-                type="button"
-                class="token-card"
-                :class="{ 'is-selected': selected?.id === token.id }"
-                @click="selectToken(token.id)"
-              >
-                <div class="preview-frame">
-                  <div
-                    v-if="sizingKind(token.id) === 'control'"
-                    class="height-bar"
-                    :style="{ height: px(token.id) }"
-                  />
-                  <div
-                    v-else-if="sizingKind(token.id) === 'icon'"
-                    class="square-sample is-icon"
-                    :style="{ width: px(token.id), height: px(token.id) }"
-                  />
-                  <div
-                    v-else-if="sizingKind(token.id) === 'avatar'"
-                    class="square-sample is-avatar"
-                    :style="{ width: px(token.id), height: px(token.id) }"
-                  />
-                  <div
-                    v-else
-                    class="square-sample is-touch"
-                    :style="{ width: px(token.id), height: px(token.id) }"
-                  />
-                </div>
-                <strong>{{ token.label }}</strong>
-                <span class="value-chip">{{ formatValue(token.id) }}</span>
-                <code>{{ token.id }}</code>
-              </button>
-            </div>
+      <template v-if="category === 'sizing'">
+        <div
+          v-for="group in sizingGroups"
+          :key="group.kind"
+          class="token-group"
+        >
+          <h3 class="group-title">{{ group.label }}</h3>
+          <div class="token-grid">
+            <button
+              v-for="token in group.tokens"
+              :key="token.id"
+              type="button"
+              class="token-card"
+              :class="{ 'is-selected': selected?.id === token.id }"
+              @click="selectToken(token.id)"
+            >
+              <div class="preview-frame">
+                <div
+                  v-if="sizingKind(token.id) === 'control'"
+                  class="height-bar"
+                  :style="{ height: px(token.id) }"
+                />
+                <div
+                  v-else-if="sizingKind(token.id) === 'icon'"
+                  class="square-sample is-icon"
+                  :style="{ width: px(token.id), height: px(token.id) }"
+                />
+                <div
+                  v-else-if="sizingKind(token.id) === 'avatar'"
+                  class="square-sample is-avatar"
+                  :style="{ width: px(token.id), height: px(token.id) }"
+                />
+                <div
+                  v-else
+                  class="square-sample is-touch"
+                  :style="{ width: px(token.id), height: px(token.id) }"
+                />
+              </div>
+              <strong>{{ token.label }}</strong>
+              <span class="value-chip">{{ formatValue(token.id) }}</span>
+              <code>{{ readableId(token.id) }}</code>
+            </button>
           </div>
-        </template>
+        </div>
+      </template>
 
-        <div v-else class="token-grid">
-          <button
-            v-for="token in tokens"
-            :key="token.id"
-            type="button"
-            class="token-card"
-            :class="{ 'is-selected': selected?.id === token.id }"
-            @click="selectToken(token.id)"
-          >
-            <div v-if="category === 'color'" class="single-swatch">
-              <span :style="{ background: String(resolved[token.id]) }" />
-            </div>
+      <template v-else>
+        <div
+          v-for="group in cardGroups"
+          :key="group.id"
+          class="token-group"
+        >
+          <h3 v-if="group.label" class="group-title">{{ group.label }}</h3>
+          <p v-if="group.note" class="group-note">{{ group.note }}</p>
+          <div class="token-grid">
+        <button
+          v-for="token in group.tokens"
+          :key="token.id"
+          type="button"
+          class="token-card"
+          :class="{ 'is-selected': selected?.id === token.id }"
+          @click="selectToken(token.id)"
+        >
+          <div v-if="category === 'color'" class="single-swatch">
+            <span :style="{ background: String(resolved[token.id]) }" />
+          </div>
 
             <div
               v-else-if="category === 'elevation'"
@@ -448,7 +470,7 @@ function valuesDiffer(tokenId: string): boolean {
             </div>
 
             <div
-              v-else-if="category === 'motion'"
+              v-else-if="category === 'motion' && isTimingToken(token.id)"
               class="preview-frame motion-frame"
             >
               <span
@@ -471,10 +493,43 @@ function valuesDiffer(tokenId: string): boolean {
             <p
               v-else-if="category === 'typography'"
               class="typo-sample"
-              :style="{ font: String(resolved[token.id]) }"
+              :style="{ font: String(resolved[token.id] ?? '') }"
             >
               Aa
             </p>
+
+            <div v-else-if="category === 'layout'" class="preview-frame">
+              <div class="layout-track">
+                <span
+                  class="layout-fill"
+                  :style="{ width: layoutWidth(token.id) }"
+                />
+              </div>
+            </div>
+
+            <div v-else-if="category === 'layer'" class="preview-frame layer-stack">
+              <span class="layer-plane is-back" />
+              <span class="layer-plane">{{ formatValue(token.id) }}</span>
+            </div>
+
+            <div v-else-if="category === 'effect'" class="preview-frame">
+              <div
+                v-if="token.id.includes('glass') || token.id.includes('backdrop')"
+                class="glass-sample"
+                :style="{ backdropFilter: String(rawValue(token.id) ?? 'none') }"
+              />
+              <img
+                v-else-if="isAssetToken(token.id) && String(rawValue(token.id) ?? '').startsWith('/')"
+                class="asset-sample"
+                :src="String(rawValue(token.id))"
+                alt=""
+              />
+              <div v-else class="enum-sample">{{ formatValue(token.id) }}</div>
+            </div>
+
+            <div v-else-if="category === 'motion'" class="enum-sample">
+              {{ formatValue(token.id) }}
+            </div>
 
             <div v-else class="abstract-sample">
               <span>{{ formatValue(token.id) }}</span>
@@ -487,7 +542,10 @@ function valuesDiffer(tokenId: string): boolean {
                 category === 'radius' ||
                 category === 'border' ||
                 category === 'opacity' ||
-                category === 'motion'
+                category === 'motion' ||
+                category === 'layout' ||
+                category === 'layer' ||
+                category === 'effect'
               "
               class="value-chip"
               >{{ formatValue(token.id) }}</span
@@ -497,38 +555,11 @@ function valuesDiffer(tokenId: string): boolean {
               class="token-kind-note"
               >仅宽度 · 需与线型、颜色组合</small
             >
-            <code>{{ token.id }}</code>
+            <code>{{ readableId(token.id) }}</code>
           </button>
-        </div>
+            </div>
+          </div>
       </template>
-
-      <div v-else class="token-table" role="table">
-        <div class="token-table-head" role="row">
-          <span>名称</span>
-          <span>Token ID</span>
-          <span>{{ themeLabel }}值</span>
-        </div>
-        <button
-          v-for="token in tokens"
-          :key="token.id"
-          type="button"
-          class="token-table-row"
-          :class="{ 'is-selected': selected?.id === token.id }"
-          role="row"
-          @click="selectToken(token.id)"
-        >
-          <strong>{{ token.label }}</strong>
-          <code>{{ token.id }}</code>
-          <span class="value-with-swatch">
-            <code>{{ formatValue(token.id) }}</code>
-            <span
-              v-if="category === 'color'"
-              class="inline-swatch"
-              :style="{ background: String(resolved[token.id]) }"
-            />
-          </span>
-        </button>
-      </div>
 
       <p v-if="tokens.length === 0" class="empty">没有匹配的 Token。</p>
     </section>
@@ -538,10 +569,6 @@ function valuesDiffer(tokenId: string): boolean {
         <p class="aside-label">当前选择 · {{ themeLabel }}</p>
         <h2>{{ selected.label }}</h2>
         <p class="aside-desc">{{ selected.description || "暂无用途说明" }}</p>
-        <p class="aside-css">
-          <span>CSS</span>
-          <code>{{ tokenCssVar(selected) }}</code>
-        </p>
 
         <div class="theme-row">
           <dl>
@@ -572,6 +599,17 @@ function valuesDiffer(tokenId: string): boolean {
                 }}
               </dd>
             </div>
+          </dl>
+        </div>
+        <details class="token-details">
+          <summary>技术细节</summary>
+          <dl class="detail-list">
+            <div>
+              <dt>CSS</dt>
+              <dd>
+                <code>{{ tokenCssVar(selected) }}</code>
+              </dd>
+            </div>
             <div>
               <dt>引用链</dt>
               <dd>
@@ -580,20 +618,16 @@ function valuesDiffer(tokenId: string): boolean {
                 }}</code>
               </dd>
             </div>
-            <div v-if="compareValues">
-              <dt>对照值</dt>
-              <dd>
-                <code>{{ compareValues[selected.id] ?? "—" }}</code>
-                <span v-if="valuesDiffer(selected.id)">与当前包不同</span>
-              </dd>
-            </div>
           </dl>
-        </div>
-        <ul v-if="diagnostics.length" class="token-diagnostics">
-          <li v-for="item in diagnostics" :key="`${item.code}-${item.key ?? ''}-${item.mode ?? ''}`">
-            {{ item.severity }} · {{ item.message }}
-          </li>
-        </ul>
+        </details>
+        <details v-if="diagnostics.length" class="token-diagnostics">
+          <summary>{{ diagnostics.length }} 条包级对比度说明</summary>
+          <ul>
+            <li v-for="item in diagnostics" :key="`${item.code}-${item.key ?? ''}-${item.mode ?? ''}`">
+              {{ item.message }}
+            </li>
+          </ul>
+        </details>
       </div>
       <p v-else class="empty">选择一个 Token 查看详情。</p>
     </template>
@@ -601,23 +635,98 @@ function valuesDiffer(tokenId: string): boolean {
 </template>
 
 <style scoped>
+.lineage-banner {
+  margin-bottom: 16px;
+}
 .search-field {
   flex: 1 1 220px;
   max-width: 320px;
 }
 .pack-field {
-  flex: 0 1 160px;
-  max-width: 180px;
+  flex: 0 0 188px;
+  width: 188px;
 }
 .token-diagnostics {
-  margin: 12px 0 0;
-  padding-left: 18px;
+  margin: 16px 0 0;
   color: rgba(var(--v-theme-on-surface), 0.72);
   font-size: 0.72rem;
+}
+.token-diagnostics summary {
+  cursor: pointer;
+  font-weight: 650;
+}
+.token-diagnostics ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+.group-note {
+  margin: 0;
+  color: rgba(var(--v-theme-on-surface), 0.62);
+  font-size: 0.75rem;
+}
+.token-card code {
+  line-height: 1.35;
+}
+.compare-note {
+  color: rgb(var(--v-theme-primary));
+  font-size: 0.68rem;
+}
+.layout-track {
+  width: 100%;
+  height: 16px;
+  border-radius: 999px;
+  background: rgba(var(--v-theme-on-surface), 0.08);
+  overflow: hidden;
+}
+.layout-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: rgb(var(--v-theme-primary));
+}
+.layer-stack {
+  position: relative;
+  height: 56px;
+}
+.layer-plane {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: rgb(var(--v-theme-surface));
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  font-size: 0.75rem;
+}
+.layer-plane.is-back {
+  inset: 8px 18px 0 0;
+  background: rgba(var(--v-theme-primary), 0.16);
+}
+.layer-plane:not(.is-back) {
+  inset: 0 0 8px 18px;
+}
+.glass-sample {
+  width: 100%;
+  height: 44px;
+  border-radius: 8px;
+  background: rgba(var(--v-theme-primary), 0.2);
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+.asset-sample {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+.enum-sample {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 0.84rem;
+  font-weight: 700;
 }
 .toolbar-actions {
   margin-left: auto;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
 }
@@ -851,7 +960,8 @@ function valuesDiffer(tokenId: string): boolean {
 .token-aside code {
   color: rgba(var(--v-theme-on-surface), 0.62);
   font-size: 0.75rem;
-  word-break: break-all;
+  word-break: normal;
+  overflow-wrap: break-word;
 }
 .token-table {
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
@@ -975,5 +1085,38 @@ function valuesDiffer(tokenId: string): boolean {
     left: 50%;
     margin-left: -7px;
   }
+}
+
+/* Batch 1 additions */
+.lineage-banner {
+  margin-bottom: 16px;
+}
+.token-details {
+  margin: 12px 0 0;
+  padding: 10px 0 0;
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+.token-details summary {
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 650;
+  color: rgba(var(--v-theme-on-surface), 0.62);
+}
+.detail-list {
+  margin: 8px 0 0;
+  display: grid;
+  gap: 8px;
+}
+.detail-list dt {
+  margin: 0 0 2px;
+  color: rgba(var(--v-theme-on-surface), 0.5);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.detail-list dd {
+  margin: 0;
+  font-size: 0.75rem;
+  word-break: break-word;
 }
 </style>

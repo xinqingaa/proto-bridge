@@ -17,7 +17,9 @@ import type {
   ScreenTransitionNavigation,
 } from "@/design-system/components/navigation/screenTransition";
 import { DEFAULT_DEVICE_ID, getDevicePreset } from "@/workbench/canvas/devices";
+import PhoneShell from "@/workbench/PhoneShell.vue";
 import ResourcePageShell from "@/workbench/views/ResourcePageShell.vue";
+import WorkbenchSegmented from "@/workbench/ui/WorkbenchSegmented.vue";
 import WorkbenchStatChip from "@/workbench/ui/WorkbenchStatChip.vue";
 import {
   componentViewModules,
@@ -31,7 +33,7 @@ import {
 } from "@/app/stores/playground";
 import {
   themePackCssValues,
-  reviewThemePackOptions,
+  reviewAppearanceChoices,
   normalizeTokenCssVarName,
   coercePackSelection,
 } from "@/design-system/theme/presentation";
@@ -52,10 +54,24 @@ const props = defineProps<{ componentId: string }>();
 const playground = usePlaygroundStore();
 const { scenarioId, themeId, packId, themeName, resolvedProps } =
   storeToRefs(playground);
-const packs = reviewThemePackOptions();
-const selectedPack = computed(
-  () => packs.find((pack) => pack.id === packId.value) ?? packs[0],
+const appearanceChoices = reviewAppearanceChoices();
+const appearanceItems = appearanceChoices.map((item) => ({
+  value: item.id,
+  label: item.label,
+}));
+const appearanceId = computed(
+  () =>
+    appearanceChoices.find(
+      (item) =>
+        item.packId === packId.value && item.themeId === themeName.value,
+    )?.id ?? appearanceChoices[0]?.id ?? "",
 );
+const appearanceLabel = computed(
+  () =>
+    appearanceChoices.find((item) => item.id === appearanceId.value)?.label ??
+    "默认",
+);
+const modeLabel = computed(() => (themeId.value === "dark" ? "深色" : "浅色"));
 
 const activeTheme = useRuntimeTheme(() =>
   coercePackSelection(packId.value, themeName.value, themeId.value),
@@ -106,17 +122,12 @@ const presentationLabel = computed(() => {
   if (isTriggerPresentation.value) return "触发";
   return "互动";
 });
-const toolbarHint = computed(() => {
-  if (isGalleryPresentation.value) return "状态平铺；只切换主题";
-  if (isTriggerPresentation.value) return "点击触发，观察打开与关闭";
-  if (isScreenTransitionDemo.value)
-    return "进入/返回对照 iOS 与 Android；两侧共用同一手机视口";
-  return "直接使用组件；状态在画布内反馈";
-});
+const isBleedPreview = computed(() =>
+  ["app-bar", "launch-screen"].includes(props.componentId),
+);
 const tallPreview = computed(() =>
   [
     "action-sheet",
-    "snackbar",
     "launch-screen",
     "month-calendar",
     "bottom-sheet",
@@ -350,12 +361,16 @@ const stageDescription = computed(() => {
   if (isGalleryPresentation.value) return "默认与 Contract 状态并置";
   if (isSplitTabPresentation.value) return "自适应与等宽两种稳定布局并置";
   if (isScreenTransitionDemo.value)
-    return "iOS 侧滑与 Android 淡入并置，共用同一视口；用进入、返回切换示意页";
-  if (isTriggerPresentation.value) return "通过明确操作观察组件打开与关闭";
+    return "两台手机并排。进入和返回在各自的屏幕里";
+  if (isTriggerPresentation.value) return "在手机屏幕里打开、关闭和选择";
   if (isFilterBar.value) return "直接切换筛选项并观察结果";
   return "直接操作组件并观察状态反馈";
 });
-const previewAttach = "[data-pb-scenario-preview]";
+const previewAttach = "[data-pb-phone-stage]";
+const tabModes = [
+  { id: "adaptive", label: "自适应", grow: false, hint: "按内容宽度排列" },
+  { id: "equal", label: "等宽", grow: true, hint: "平分可用宽度" },
+];
 
 type GalleryEntry = {
   id: string;
@@ -403,6 +418,12 @@ type ScreenTransitionDemoPane = {
   navigation: ScreenTransitionNavigation;
 };
 const screenTransitionDemoViewport = getDevicePreset(DEFAULT_DEVICE_ID);
+const PLAYGROUND_PHONE_SCALE = 0.72;
+const PHONE_BEZEL_PAD = 12;
+const phoneFitStyle = {
+  width: `${screenTransitionDemoViewport.width * PLAYGROUND_PHONE_SCALE + PHONE_BEZEL_PAD * 2}px`,
+  height: `${screenTransitionDemoViewport.height * PLAYGROUND_PHONE_SCALE + PHONE_BEZEL_PAD * 2}px`,
+};
 const screenTransitionDemoPanes = [
   {
     mode: "ios" as ScreenTransitionMode,
@@ -535,7 +556,7 @@ function tabComparisonBind(modeId: string, grow: boolean) {
     modelValue:
       tabComparisonValues.value[modeId] ?? resolvedProps.value.modelValue,
     grow,
-    fill: false,
+    fill: !isTabbar.value,
   });
 }
 function onTabComparisonUpdate(modeId: string, value: unknown) {
@@ -550,6 +571,13 @@ function galleryBind(entry: GalleryEntry) {
 }
 function openTriggeredPreview(scenarioId?: string) {
   const id = scenarioId ?? scenarios.value[0]?.id ?? "";
+  if (
+    triggeredPreviewOpen.value &&
+    id === activeTriggerScenarioId.value
+  ) {
+    triggeredPreviewOpen.value = false;
+    return;
+  }
   activeTriggerScenarioId.value = id;
   const scenario = scenarios.value.find((item) => item.id === id);
   triggeredPreviewStep.value =
@@ -670,6 +698,7 @@ watch(
     if (buttonActionTimer) clearTimeout(buttonActionTimer);
     if (listActionTimer) clearTimeout(listActionTimer);
     resetScreenTransitionDemo();
+    lastComponentAction.value = "";
     buttonActionBusy.value = false;
     buttonActionFinished.value = false;
     triggeredPreviewOpen.value = false;
@@ -707,17 +736,10 @@ function setPreviewTheme(value: unknown) {
     playground.setTheme(value as PlaygroundThemeId);
   }
 }
-function setPreviewPack(value: unknown) {
-  const pack = packs.find((item) => item.id === value);
-  if (!pack) return;
-  const theme = pack.themes.some((item) => item.id === themeName.value)
-    ? themeName.value
-    : pack.defaultTheme;
-  playground.setPack(pack.id, theme);
-}
-function setPreviewThemeName(value: unknown) {
-  if (typeof value === "string" && value)
-    playground.setPack(packId.value, value);
+function setAppearance(value: unknown) {
+  const choice = appearanceChoices.find((item) => item.id === value);
+  if (!choice) return;
+  playground.setPack(choice.packId, choice.themeId);
 }
 function bindingResolvedValue(tokenId: string) {
   const value = resolvedPreviewTokens.value[tokenId];
@@ -757,44 +779,21 @@ const categoryEyebrow: Record<string, string> = {
     </template>
 
     <template #toolbar>
-      <span class="preset-hint">{{ toolbarHint }}</span>
-      <v-select
-        :model-value="packId"
-        :items="packs"
-        item-title="label"
-        item-value="id"
-        label="主题包"
-        density="compact"
-        variant="outlined"
-        hide-details
-        class="pack-field"
-        @update:model-value="setPreviewPack"
+      <WorkbenchSegmented
+        :model-value="appearanceId"
+        :items="appearanceItems"
+        label="外观"
+        @update:model-value="setAppearance"
       />
-      <v-select
-        :model-value="themeName"
-        :items="selectedPack?.themes ?? []"
-        item-title="label"
-        item-value="id"
-        label="主题"
-        density="compact"
-        variant="outlined"
-        hide-details
-        class="pack-field"
-        @update:model-value="setPreviewThemeName"
-      />
-      <v-btn-toggle
+      <WorkbenchSegmented
         :model-value="themeId"
-        density="compact"
-        color="primary"
-        variant="outlined"
-        divided
-        mandatory
-        aria-label="预览模式"
+        :items="[
+          { value: 'light', label: '浅色' },
+          { value: 'dark', label: '深色' },
+        ]"
+        label="深浅"
         @update:model-value="setPreviewTheme"
-      >
-        <v-btn value="light" size="small">浅色</v-btn>
-        <v-btn value="dark" size="small">深色</v-btn>
-      </v-btn-toggle>
+      />
     </template>
 
     <div class="playground-stage">
@@ -808,14 +807,181 @@ const categoryEyebrow: Record<string, string> = {
             <strong>{{ stageTitle }}</strong>
             <span>{{ stageDescription }}</span>
           </div>
-          <code>{{ `${packId}/${themeName}/${themeId}` }}</code>
+          <span>{{ appearanceLabel }} · {{ modeLabel }}</span>
         </header>
 
         <v-theme-provider :theme="runtimeTheme">
           <v-defaults-provider :defaults="runtimeDefaults">
+            <div v-if="isSplitTabPresentation" class="phone-row">
+              <section
+                v-for="mode in tabModes"
+                :key="mode.id"
+                class="phone-column"
+                :data-tab-layout="mode.id"
+              >
+                <header>
+                  <strong>{{ mode.label }}</strong>
+                  <span>{{ mode.hint }}</span>
+                </header>
+                <div class="phone-fit" :style="phoneFitStyle">
+                  <PhoneShell
+                    class="playground-phone"
+                    chrome="inset"
+                    :dark="themeId === 'dark'"
+                    :width="screenTransitionDemoViewport.width"
+                    :height="screenTransitionDemoViewport.height"
+                  >
+                    <div
+                      class="tab-screen"
+                      :class="{ 'is-tabbar': isTabbar }"
+                    >
+                      <div v-if="isTabbar" class="tab-screen-body">
+                        <strong>{{ tabbarSelectedLabel(mode.id) }}</strong>
+                        <span>当前目的地</span>
+                      </div>
+                      <component
+                        :is="previewComponent"
+                        v-bind="tabComparisonBind(mode.id, mode.grow)"
+                        @update:model-value="
+                          onTabComparisonUpdate(mode.id, $event)
+                        "
+                      >
+                        <template
+                          v-for="slotName in panelPreviewSlots"
+                          :key="slotName"
+                          #[slotName]
+                          ><div class="panel-slot-demo">
+                            <strong>{{
+                              slotName === "overview"
+                                ? "概览"
+                                : slotName === "activity"
+                                  ? "活动"
+                                  : slotName
+                            }}</strong
+                            ><span>{{ panelSlotLabel(slotName) }}</span>
+                          </div></template
+                        >
+                      </component>
+                    </div>
+                  </PhoneShell>
+                </div>
+              </section>
+            </div>
+
+            <div v-else-if="isScreenTransitionDemo" class="phone-row">
+              <section
+                v-for="pane in screenTransitionDemoPanes"
+                :key="pane.mode"
+                class="phone-column"
+                :data-transition-mode="pane.mode"
+              >
+                <header>
+                  <strong>{{ pane.label }}</strong>
+                  <span>{{ pane.hint }}</span>
+                </header>
+                <div class="phone-fit" :style="phoneFitStyle">
+                  <PhoneShell
+                    class="playground-phone"
+                    chrome="inset"
+                    :dark="themeId === 'dark'"
+                    :width="screenTransitionDemoViewport.width"
+                    :height="screenTransitionDemoViewport.height"
+                  >
+                    <div class="phone-canvas">
+                      <div class="in-phone-actions">
+                        <v-btn
+                          color="primary"
+                          variant="flat"
+                          size="small"
+                          :disabled="
+                            screenTransitionDemo[pane.mode].screenKey ===
+                            'detail'
+                          "
+                          @click="playScreenTransitionDemo(pane.mode, 'push')"
+                          >进入</v-btn
+                        >
+                        <v-btn
+                          color="primary"
+                          variant="tonal"
+                          size="small"
+                          :disabled="
+                            screenTransitionDemo[pane.mode].screenKey === 'home'
+                          "
+                          @click="playScreenTransitionDemo(pane.mode, 'back')"
+                          >返回</v-btn
+                        >
+                      </div>
+                      <div class="phone-stage is-transition">
+                        <ScreenTransition
+                          :mode="pane.mode"
+                          :navigation="
+                            screenTransitionDemo[pane.mode].navigation
+                          "
+                          :screen-key="
+                            screenTransitionDemo[pane.mode].screenKey
+                          "
+                        >
+                          <div class="panel-slot-demo">
+                            <strong>{{
+                              screenTransitionDemoTitle(
+                                screenTransitionDemo[pane.mode].screenKey,
+                              )
+                            }}</strong>
+                            <span>{{ pane.label }}</span>
+                          </div>
+                        </ScreenTransition>
+                      </div>
+                    </div>
+                  </PhoneShell>
+                </div>
+              </section>
+            </div>
+
+            <div v-else class="phone-fit" :style="phoneFitStyle">
+            <PhoneShell
+              class="playground-phone"
+              chrome="inset"
+              :dark="themeId === 'dark'"
+              :width="screenTransitionDemoViewport.width"
+              :height="screenTransitionDemoViewport.height"
+            >
+            <div class="phone-canvas">
+              <div v-if="isTriggerPresentation" class="in-phone-actions">
+                <template
+                  v-if="['toast', 'bottom-sheet'].includes(record.id)"
+                >
+                  <v-btn
+                    v-for="(scenario, index) in scenarios"
+                    :key="scenario.id"
+                    color="primary"
+                    variant="flat"
+                    size="small"
+                    @click="openTriggeredPreview(scenario.id)"
+                    >{{
+                      triggeredPreviewOpen &&
+                      scenario.id === activeTriggerScenarioId
+                        ? "关闭"
+                        : record.id === "bottom-sheet" && index === 0
+                          ? "打开Bottom Sheet"
+                          : "显示" + scenario.label
+                    }}</v-btn
+                  >
+                </template>
+                <v-btn
+                  v-else
+                  color="primary"
+                  variant="flat"
+                  size="small"
+                  @click="openTriggeredPreview()"
+                  >{{
+                    triggeredPreviewOpen ? "关闭" : "打开" + record.label
+                  }}</v-btn
+                >
+              </div>
+              <div class="phone-stage" data-pb-phone-stage>
             <div
               v-if="isGalleryPresentation"
-              class="preview gallery-matrix"
+              class="preview gallery-matrix is-inset"
               :style="previewStyle"
             >
               <section
@@ -839,36 +1005,6 @@ const categoryEyebrow: Record<string, string> = {
               data-pb-scenario-preview
               :style="previewStyle"
             >
-              <div class="trigger-bar">
-                <template
-                  v-if="
-                    ['toast', 'snackbar', 'bottom-sheet'].includes(record.id)
-                  "
-                >
-                  <v-btn
-                    v-for="(scenario, index) in scenarios"
-                    :key="scenario.id"
-                    color="primary"
-                    variant="flat"
-                    size="small"
-                    @click="openTriggeredPreview(scenario.id)"
-                    >{{
-                      record.id === "bottom-sheet" && index === 0
-                        ? "打开Bottom Sheet"
-                        : "显示" + scenario.label
-                    }}</v-btn
-                  >
-                </template>
-                <v-btn
-                  v-else
-                  color="primary"
-                  variant="flat"
-                  size="small"
-                  @click="openTriggeredPreview()"
-                  >打开{{ record.label }}</v-btn
-                >
-                <span>关闭后可再次打开</span>
-              </div>
               <component
                 :is="previewComponent"
                 v-bind="triggerPreviewBind()"
@@ -888,7 +1024,7 @@ const categoryEyebrow: Record<string, string> = {
                   </div>
                 </template>
               </component>
-              <p v-if="lastComponentAction" role="status">
+              <p v-if="lastComponentAction" class="screen-note" role="status">
                 {{ lastComponentAction }}
               </p>
             </div>
@@ -896,113 +1032,15 @@ const categoryEyebrow: Record<string, string> = {
             <div
               v-else
               class="preview"
-              :class="{ 'is-tall': tallPreview }"
+              :class="{
+                'is-tall': tallPreview,
+                'is-bleed': isBleedPreview,
+                'is-inset': !isBleedPreview,
+              }"
               data-pb-scenario-preview
               :style="previewStyle"
             >
-              <template v-if="isSplitTabPresentation">
-                <section
-                  v-for="mode in [
-                    { id: 'adaptive', label: '自适应', grow: false },
-                    { id: 'equal', label: '等宽', grow: true },
-                  ]"
-                  :key="mode.id"
-                  class="tab-comparison"
-                  :data-tab-layout="mode.id"
-                >
-                  <header>
-                    <strong>{{ mode.label }}</strong>
-                    <span>{{
-                      mode.grow ? "各项平分可用宽度" : "各项按内容宽度排列"
-                    }}</span>
-                  </header>
-                  <div class="tab-comparison-frame">
-                    <div v-if="isTabbar" class="tabbar-demo-viewport">
-                      <strong>{{ tabbarSelectedLabel(mode.id) }}</strong>
-                      <span>根目的地视图区；导航本身不拥有横滑手势。</span>
-                    </div>
-                    <component
-                      :is="previewComponent"
-                      v-bind="tabComparisonBind(mode.id, mode.grow)"
-                      @update:model-value="
-                        onTabComparisonUpdate(mode.id, $event)
-                      "
-                    >
-                      <template
-                        v-for="slotName in panelPreviewSlots"
-                        :key="slotName"
-                        #[slotName]
-                        ><div class="panel-slot-demo">
-                          <strong>{{ slotName }}</strong
-                          ><span>{{ panelSlotLabel(slotName) }}</span>
-                        </div></template
-                      >
-                    </component>
-                  </div>
-                </section>
-              </template>
-
-              <template v-else-if="isScreenTransitionDemo">
-                <div class="route-transition-demo-row">
-                  <section
-                    v-for="pane in screenTransitionDemoPanes"
-                    :key="pane.mode"
-                    class="tab-comparison route-transition-demo"
-                    :data-transition-mode="pane.mode"
-                  >
-                    <header>
-                      <strong>{{ pane.label }}</strong>
-                      <span>{{ pane.hint }}</span>
-                    </header>
-                    <div class="route-transition-demo-actions">
-                      <v-btn
-                        color="primary"
-                        variant="tonal"
-                        size="small"
-                        :disabled="
-                          screenTransitionDemo[pane.mode].screenKey === 'detail'
-                        "
-                        @click="playScreenTransitionDemo(pane.mode, 'push')"
-                        >进入</v-btn
-                      >
-                      <v-btn
-                        color="primary"
-                        variant="tonal"
-                        size="small"
-                        :disabled="
-                          screenTransitionDemo[pane.mode].screenKey === 'home'
-                        "
-                        @click="playScreenTransitionDemo(pane.mode, 'back')"
-                        >返回</v-btn
-                      >
-                    </div>
-                    <div
-                      class="route-transition-demo-frame"
-                      :style="{
-                        width: `${screenTransitionDemoViewport.width}px`,
-                        height: `${screenTransitionDemoViewport.height}px`,
-                      }"
-                    >
-                      <ScreenTransition
-                        :mode="pane.mode"
-                        :navigation="screenTransitionDemo[pane.mode].navigation"
-                        :screen-key="screenTransitionDemo[pane.mode].screenKey"
-                      >
-                        <div class="panel-slot-demo">
-                          <strong>{{
-                            screenTransitionDemoTitle(
-                              screenTransitionDemo[pane.mode].screenKey,
-                            )
-                          }}</strong>
-                          <span>{{ pane.label }}示意页</span>
-                        </div>
-                      </ScreenTransition>
-                    </div>
-                  </section>
-                </div>
-              </template>
-
-              <template v-else-if="isFilterBar">
+              <template v-if="isFilterBar">
                 <component
                   :is="previewComponent"
                   v-bind="previewBind()"
@@ -1133,7 +1171,11 @@ const categoryEyebrow: Record<string, string> = {
                 </component>
               </div>
 
-              <p v-if="lastComponentAction && !isOverlayPreview" role="status">
+              <p
+                v-if="lastComponentAction && !isOverlayPreview"
+                class="screen-note"
+                role="status"
+              >
                 {{ lastComponentAction }}
               </p>
               <p
@@ -1144,6 +1186,11 @@ const categoryEyebrow: Record<string, string> = {
                 已完成；按钮已恢复可继续操作。
               </p>
 
+            </div>
+              </div>
+            </div>
+            </PhoneShell>
+            </div>
               <section v-if="hasExhibits" class="exhibit-stack">
                 <div
                   v-for="section in exhibitSections"
@@ -1217,7 +1264,6 @@ const categoryEyebrow: Record<string, string> = {
                   </div>
                 </div>
               </section>
-            </div>
           </v-defaults-provider>
         </v-theme-provider>
       </article>
@@ -1244,7 +1290,7 @@ const categoryEyebrow: Record<string, string> = {
             <tr v-for="[slot, tokenId] in tokenBindings" :key="slot">
               <td>{{ slot }}</td>
               <td>
-                <code>{{ tokenId }}</code>
+                <code>{{ tokenId.replaceAll(".", ".\u200b") }}</code>
               </td>
               <td>
                 <code>{{ bindingResolvedValue(tokenId) }}</code>
@@ -1285,6 +1331,10 @@ const categoryEyebrow: Record<string, string> = {
   background: rgb(var(--v-theme-surface));
   overflow: hidden;
 }
+.preview-wrap {
+  overflow: visible;
+  padding-bottom: 8px;
+}
 .scenario-header {
   display: flex;
   align-items: flex-start;
@@ -1317,15 +1367,132 @@ const categoryEyebrow: Record<string, string> = {
   min-height: 320px;
 }
 .preview.is-overlay {
-  min-height: 480px;
-  overflow: visible;
+  min-height: 100%;
+  overflow: hidden;
 }
-.preview-wrap:has(.is-overlay) {
-  overflow: visible;
+.stage-frame {
+  display: flex;
+  justify-content: center;
 }
-.preview :deep(.v-overlay-container),
-.preview :deep(.v-overlay) {
-  position: absolute !important;
+.phone-fit {
+  position: relative;
+  margin: 0 auto 28px;
+}
+.phone-fit > .playground-phone {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: block;
+  transform: scale(0.72);
+  transform-origin: top left;
+}
+.playground-phone :deep(.phone-body) > .phone-canvas,
+.playground-phone :deep(.phone-body) > .tab-screen {
+  height: 100%;
+  min-height: 0;
+}
+.phone-canvas {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.in-phone-actions {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px 0;
+}
+.phone-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.phone-stage > .preview {
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  box-sizing: border-box;
+}
+.preview.is-inset {
+  padding: 16px;
+}
+.preview.is-bleed,
+.preview.is-overlay {
+  padding: 0;
+  overflow: hidden;
+}
+.screen-note {
+  margin: 12px 16px;
+  color: var(--pb-color-on-surface, #1f2937);
+  font: var(--pb-typography-content);
+}
+.phone-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 28px;
+}
+.phone-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.phone-column > header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: rgba(var(--v-theme-on-surface), 0.62);
+  font-size: 0.75rem;
+}
+.phone-column > header strong {
+  color: rgba(var(--v-theme-on-surface), 0.92);
+  font-size: 0.875rem;
+}
+.tab-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.tab-screen-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  min-height: 0;
+  padding: 24px 20px;
+  color: var(--pb-color-on-surface-muted, #64748b);
+  text-align: center;
+}
+.tab-screen-body strong {
+  color: var(--pb-color-on-surface, #1f2937);
+  font: var(--pb-typography-title);
+}
+.tab-screen > :deep(.pb-tabs) {
+  flex: 1;
+  min-height: 0;
+  padding: 16px;
+  box-sizing: border-box;
+}
+.tab-screen.is-tabbar > :deep(.pb-tabbar-shell) {
+  flex: none;
+  width: 100%;
+}
+.phone-stage.is-transition {
+  display: flex;
+  flex-direction: column;
+}
+.phone-stage.is-transition > :deep(.pb-screen-transition) {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
 }
 .gallery-matrix {
   display: grid;
@@ -1640,7 +1807,8 @@ const categoryEyebrow: Record<string, string> = {
   font-weight: 600;
 }
 .binding-table code {
-  word-break: break-word;
+  word-break: normal;
+  overflow-wrap: break-word;
   color: rgba(var(--v-theme-on-surface), 0.78);
 }
 .empty {

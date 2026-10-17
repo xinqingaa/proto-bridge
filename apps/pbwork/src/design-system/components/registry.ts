@@ -670,7 +670,7 @@ export const componentRecords = [
   {
     id: "toast",
     label: "Toast",
-    description: "轻量成败反馈，不打断当前页面上下文。",
+    description: "短提示。可只显示文本，也可带一个撤销之类的动作，不打断当前页面。",
     category: "feedback",
     view: "feedback/Toast.vue",
     contract: "contracts/toast.json",
@@ -678,6 +678,7 @@ export const componentRecords = [
     controls: [
       { key: "modelValue", label: "显示", control: "boolean" },
       { key: "message", label: "提示内容", control: "text" },
+      { key: "actionLabel", label: "动作", control: "text" },
     ],
   },
   {
@@ -1079,32 +1080,6 @@ export const componentRecords = [
     contract: "contracts/grouped-list.json",
     example: {},
     controls: [],
-  },
-  {
-    id: "snackbar",
-    label: "Snackbar",
-    description: "可撤销的短提示，撤销语义由业务处理。",
-    category: "feedback",
-    view: "feedback/Snackbar.vue",
-    contract: "contracts/snackbar.json",
-    example: {},
-    controls: [
-      {
-        key: "modelValue",
-        label: "modelValue",
-        control: "boolean",
-      },
-      {
-        key: "message",
-        label: "message",
-        control: "text",
-      },
-      {
-        key: "actionLabel",
-        label: "actionLabel",
-        control: "text",
-      },
-    ],
   },
   {
     id: "action-sheet",
