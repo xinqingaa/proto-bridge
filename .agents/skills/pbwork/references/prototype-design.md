@@ -4,6 +4,11 @@ Use this workflow before formal authoring for a new prototype, structural
 product change, navigation change, visual-language change, independent visual
 exploration, or revision of a prototype design baseline.
 
+Before promotion, read
+[Workbench presentation](../../../../apps/pbwork/docs/workbench-presentation.md).
+Include theme ownership and component extension classification in Promotion Mapping;
+record implementation and preview gaps in implementation.md, not the product baseline.
+
 ## Read first
 
 1. Existing `apps/pbwork/src/prototypes/{prototypeId}/docs/design.md`, pages,

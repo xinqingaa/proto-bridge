@@ -14,6 +14,12 @@ prototype's `docs/implementation.md` (style conflicts, missing variants) are
 input for DS work: add a variant or component when the need is generic, and
 leave business-specific shapes in the prototype.
 
+For Theme, Registry or Playground changes, read
+[Workbench presentation](../../../../apps/pbwork/docs/workbench-presentation.md).
+Synchronize resource ownership, base relationships and previews with the change;
+ordinary use of a DS public variant is not a prototype extension. Report missing
+registration/preview support rather than claiming it exists.
+
 ## Read first
 
 1. `apps/pbwork/docs/development.md` and `principles.md`.

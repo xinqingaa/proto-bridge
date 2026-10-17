@@ -5,6 +5,11 @@ Inspector, prototype lifecycle management, finalized Capture, task center,
 Evidence Review, and Workbench-only UI primitives. It does not govern business
 Prototype Screens or their Design System.
 
+For design-foundation and component resource navigation or preview work, read
+[Workbench presentation](../../../../apps/pbwork/docs/workbench-presentation.md).
+Use its resource-directory/detail model and manual acceptance rules; distinguish
+target presentation requirements from currently implemented routes and registration.
+
 ## Read first
 
 1. `docs/architecture/pbwork.md`.

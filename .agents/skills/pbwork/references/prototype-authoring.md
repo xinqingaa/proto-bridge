@@ -3,6 +3,12 @@
 Use this workflow for formal business Prototype and Runtime implementation
 after product structure and visual direction are approved.
 
+For a new prototype or added Theme/component extension, read
+[Workbench presentation](../../../../apps/pbwork/docs/workbench-presentation.md).
+Complete its resource declaration, preview and formal Evidence manual checks in
+implementation.md. Missing registration support remains an explicit gap; preview
+registration never substitutes for Runtime/Evidence authoring.
+
 ## Design precondition
 
 Determine whether the request changes product definition, root navigation,

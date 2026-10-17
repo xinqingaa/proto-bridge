@@ -21,7 +21,8 @@ PBWork 原型既要表达产品设计，也要作为 ProtoBridge Runtime 提供�
    - [Screen 与 Variant](./prototypes/screens-and-variants.md)
    - [页面配方](./prototypes/recipes.md)
 9. 新页面或整页调整在正式 Authoring 后再次应用 `frontend-design`；默认用 1–2 张真实截图完成 Quick Experience Check，按风险、反馈或明确指令升级
-10. 提交前执行 [交付检查单](./checklist.md)
+10. Workbench 主题和组件展示实现时阅读 [Workbench 主题与组件展示规范](./workbench-presentation.md)
+11. 提交前执行 [交付检查单](./checklist.md)
 
 ## 设计基础
 

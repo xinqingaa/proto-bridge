@@ -149,6 +149,8 @@ PBWork DS 是原型的基础，不是上限。探索方向进入正式 Authoring
 
 只有跨页面或跨业务稳定复用的能力才进入共享层；业务专属形状留在原型内。
 
+进入正式制作时，按[Workbench 展示规范](../workbench-presentation.md#原型制作与人工交付检查)在 `implementation.md` 记录主题绑定、基础来源、原型新增变体与自有组件，并核对登记、预览和正式 Evidence。DS 公开变体的普通采用不算原型扩展；未实现的登记能力或尚未验证的证据链作为缺口记录。
+
 ## 正式 Authoring
 
 正式 Authoring 只消费 `status: approved` 的产品基线和已批准的页面设计增量。正式页面遵守 Token-only、以 DS 为基础并按 Promotion Mapping 选用组件、Flex-only、Registry、semantic authoring、Action/Scenario/Checkpoint 和 Runtime 确定性约束。

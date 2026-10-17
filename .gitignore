@@ -45,3 +45,6 @@ proto-bridge.config.json
 
 # FVM Version Cache
 .fvm/
+
+# Playwright MCP
+.playwright-mcp/
