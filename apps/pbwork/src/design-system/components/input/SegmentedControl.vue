@@ -1,0 +1,165 @@
+<script setup lang="ts">
+import { computed, ref, nextTick } from "vue";
+import { usePbInspect } from "@/runtime/inspect/usePbInspect";
+import { vPb } from "@/authoring/pb-style";
+import { useComponentParts } from "../_shared/componentParts";
+
+const props = withDefaults(
+  defineProps<{
+    label?: string;
+    items?: Array<{ id: string; label: string; disabled?: boolean }>;
+    modelValue?: string;
+    disabled?: boolean;
+    inspectId?: string;
+    pbKey?: string;
+  }>(),
+  {
+    label: "统计范围",
+    items: () => [
+      { id: "week", label: "周" },
+      { id: "month", label: "月" },
+      { id: "year", label: "年" },
+    ],
+    modelValue: "week",
+    disabled: false,
+  },
+);
+const emit = defineEmits<{ "update:modelValue": [value: string] }>();
+const rootRef = ref<HTMLElement | null>(null);
+const part = useComponentParts(
+  () => props.inspectId ?? "ds.segmented-control",
+  () => props.pbKey,
+);
+
+function choose(id: string) {
+  if (
+    !props.disabled &&
+    props.items.some((item) => item.id === id && !item.disabled) &&
+    id !== props.modelValue
+  )
+    emit("update:modelValue", id);
+}
+const available = computed(() => props.items.filter((item) => !item.disabled));
+const focusId = computed(() =>
+  available.value.some((item) => item.id === props.modelValue)
+    ? props.modelValue
+    : available.value[0]?.id,
+);
+function key(event: KeyboardEvent) {
+  if (
+    props.disabled ||
+    !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)
+  )
+    return;
+  const items = available.value;
+  if (!items.length) return;
+  event.preventDefault();
+  const current = items.findIndex(
+    (item) => item.id === (event.target as HTMLElement).dataset.value,
+  );
+  const index =
+    event.key === "Home"
+      ? 0
+      : event.key === "End"
+        ? items.length - 1
+        : (current + (event.key === "ArrowRight" ? 1 : -1) + items.length) %
+          items.length;
+  const item = items[index]!;
+  choose(item.id);
+  void nextTick(() =>
+    Array.from(
+      rootRef.value?.querySelectorAll<HTMLElement>("[data-value]") ?? [],
+    )
+      .find((element) => element.dataset.value === item.id)
+      ?.focus(),
+  );
+}
+
+usePbInspect({
+  element: rootRef,
+  pbId: "ds.segmented-control",
+  componentId: "segmented-control",
+  instanceId: () => props.inspectId,
+  pbKey: () => props.pbKey,
+  getProps: () => ({ ...props }),
+  getTokenBindings: () => ({
+    color: "color.on-surface",
+    gap: "spacing.sm",
+    typography: "typography.content",
+    selection: "color.surface-selected",
+    track: "color.surface-recessed",
+    radius: "radius.control",
+    padding: "spacing.xs",
+    target: "size.touch",
+    focus: "border.focus",
+    disabledOpacity: "opacity.disabled",
+    focusOffset: "spacing.xxs",
+  }),
+});
+</script>
+<template>
+  <div
+    ref="rootRef"
+    class="segments"
+    role="radiogroup"
+    data-pb-role="filter"
+    data-no-swipe
+    :aria-label="label"
+    :aria-disabled="disabled"
+    @keydown="key"
+  >
+    <button
+      v-for="item in items"
+      :key="item.id"
+      :data-value="item.id"
+      type="button"
+      role="radio"
+      :aria-checked="modelValue === item.id"
+      :disabled="disabled || item.disabled"
+      :tabindex="!disabled && focusId === item.id ? 0 : -1"
+      :class="{ selected: modelValue === item.id }"
+      v-pb="
+        part(
+          'option',
+          'button',
+          { typography: 'typography.content', color: 'color.on-surface' },
+          item.id,
+        )
+      "
+      @click="choose(item.id)"
+    >
+      {{ item.label }}
+    </button>
+  </div>
+</template>
+<style scoped>
+.segments {
+  display: flex;
+  gap: var(--pb-spacing-xs);
+  padding: var(--pb-spacing-xs);
+  border-radius: var(--pb-radius-control);
+  background: var(--pb-color-surface-recessed);
+}
+button {
+  flex: var(--pb-layout-flex-fill);
+  min-height: var(--pb-size-touch);
+  padding: var(--pb-spacing-xs) var(--pb-spacing-sm);
+  border: none;
+  border-radius: var(--pb-radius-control);
+  background: transparent;
+  cursor: pointer;
+}
+button.selected {
+  background: var(--pb-color-surface-selected);
+}
+button:focus-visible,
+input:focus-visible {
+  outline: var(--pb-border-focus);
+  outline-offset: var(--pb-spacing-xxs);
+}
+button:disabled,
+input:disabled {
+  opacity: var(--pb-opacity-disabled);
+  cursor: default;
+}
+</style>

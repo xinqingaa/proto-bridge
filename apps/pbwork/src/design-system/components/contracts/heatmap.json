@@ -1,0 +1,205 @@
+{
+  "schemaVersion": 1,
+  "id": "heatmap",
+  "category": "display",
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "chart"
+  },
+  "summary": "按周分列的日强度图，以日期保持稳定身份。",
+  "behavior": [
+    "以 UTC 日期补齐中间日期并按周一到周日排列，单次最多展示 366 天",
+    "缺失日期不伪装为观测到的零值；日期与原始值用可访问名称说明",
+    "点击或键盘选择日期只发出受控值，颜色之外保留数值文本"
+  ],
+  "layout": {
+    "summary": "Monday-first seven-cell columns, chronological weeks in one contained horizontal scroll area; missing days occupy cells."
+  },
+  "visualAnatomy": {
+    "summary": "Three finite intensity colors, observed zero neutral surface, missing recessed surface; selected cell has focus outline and date text."
+  },
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "label": {
+        "type": "string"
+      },
+      "days": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "date": {
+              "type": "string"
+            },
+            "value": {
+              "type": "number"
+            }
+          },
+          "required": ["date", "value"]
+        }
+      },
+      "modelValue": {
+        "type": "string"
+      }
+    }
+  },
+  "defaultProps": {
+    "label": "每日完成记录",
+    "days": [
+      {
+        "date": "2026-07-01",
+        "value": 1
+      },
+      {
+        "date": "2026-07-02",
+        "value": 2
+      },
+      {
+        "date": "2026-07-03",
+        "value": 3
+      },
+      {
+        "date": "2026-07-04",
+        "value": 4
+      },
+      {
+        "date": "2026-07-05",
+        "value": 0
+      },
+      {
+        "date": "2026-07-06",
+        "value": 1
+      },
+      {
+        "date": "2026-07-07",
+        "value": 2
+      },
+      {
+        "date": "2026-07-08",
+        "value": 3
+      },
+      {
+        "date": "2026-07-09",
+        "value": 4
+      },
+      {
+        "date": "2026-07-10",
+        "value": 0
+      },
+      {
+        "date": "2026-07-11",
+        "value": 1
+      },
+      {
+        "date": "2026-07-12",
+        "value": 2
+      },
+      {
+        "date": "2026-07-13",
+        "value": 3
+      },
+      {
+        "date": "2026-07-14",
+        "value": 4
+      },
+      {
+        "date": "2026-07-15",
+        "value": 0
+      },
+      {
+        "date": "2026-07-16",
+        "value": 1
+      },
+      {
+        "date": "2026-07-17",
+        "value": 2
+      },
+      {
+        "date": "2026-07-18",
+        "value": 3
+      },
+      {
+        "date": "2026-07-19",
+        "value": 4
+      },
+      {
+        "date": "2026-07-20",
+        "value": 0
+      },
+      {
+        "date": "2026-07-21",
+        "value": 1
+      },
+      {
+        "date": "2026-07-22",
+        "value": 2
+      },
+      {
+        "date": "2026-07-23",
+        "value": 3
+      },
+      {
+        "date": "2026-07-24",
+        "value": 4
+      },
+      {
+        "date": "2026-07-25",
+        "value": 0
+      },
+      {
+        "date": "2026-07-26",
+        "value": 1
+      },
+      {
+        "date": "2026-07-27",
+        "value": 2
+      },
+      {
+        "date": "2026-07-28",
+        "value": 3
+      }
+    ],
+    "modelValue": "2026-07-12"
+  },
+  "states": [
+    {
+      "id": "empty",
+      "label": "无数据",
+      "kind": "content",
+      "props": {
+        "days": []
+      }
+    },
+    {
+      "id": "selected",
+      "label": "已选择",
+      "kind": "content",
+      "props": {
+        "modelValue": "2026-07-20"
+      }
+    }
+  ],
+  "slots": [],
+  "events": ["update:modelValue"],
+  "tokenBindings": {
+    "color": "color.on-surface",
+    "muted": "color.on-surface-muted",
+    "gap": "spacing.sm",
+    "typography": "typography.content",
+    "empty": "color.surface-variant",
+    "low": "color.primary-soft",
+    "high": "color.primary",
+    "selected": "border.focus",
+    "cell": "size.icon",
+    "radius": "radius.mark",
+    "caption": "typography.caption",
+    "missing": "color.surface-recessed",
+    "cellGap": "spacing.xs",
+    "focusOffset": "spacing.xxs"
+  },
+  "playground": {
+    "presentation": "interactive"
+  }
+}

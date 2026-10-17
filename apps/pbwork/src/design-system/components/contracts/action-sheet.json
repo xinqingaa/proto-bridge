@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "id": "action-sheet",
+  "category": "feedback",
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "section"
+  },
+  "summary": "BottomSheet 内的动作列表组合，危险操作显式区分。",
+  "behavior": [
+    "Overlay、焦点、scrim 和关闭复用 BottomSheet；本组件 section 只拥有动作内容，shell 单独登记",
+    "选择可用动作先发出稳定 id，再关闭；取消和 scrim 关闭不触发 select"
+  ],
+  "layout": {
+    "summary": "Shared BottomSheet owns modal boundary; section contains vertical command buttons and actions slot contains separate cancel button."
+  },
+  "visualAnatomy": {
+    "summary": "Shared Sheet surface and header, destructive command text uses error color; no second overlay implementation."
+  },
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "title": {
+        "type": "string"
+      },
+      "modelValue": {
+        "type": "boolean"
+      },
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
+            },
+            "label": {
+              "type": "string"
+            },
+            "destructive": {
+              "type": "boolean"
+            },
+            "disabled": {
+              "type": "boolean"
+            }
+          },
+          "required": ["id", "label"]
+        }
+      },
+      "cancelLabel": {
+        "type": "string"
+      }
+    }
+  },
+  "defaultProps": {
+    "title": "记录操作",
+    "modelValue": false,
+    "items": [
+      {
+        "id": "edit",
+        "label": "编辑记录"
+      },
+      {
+        "id": "share",
+        "label": "分享记录"
+      },
+      {
+        "id": "delete",
+        "label": "删除记录",
+        "destructive": true
+      }
+    ],
+    "cancelLabel": "取消"
+  },
+  "states": [
+    {
+      "id": "open",
+      "label": "打开",
+      "kind": "content",
+      "props": {
+        "modelValue": true
+      }
+    },
+    {
+      "id": "disabled",
+      "label": "不可用操作",
+      "kind": "interaction",
+      "props": {
+        "modelValue": true,
+        "items": [
+          {
+            "id": "export",
+            "label": "导出暂不可用",
+            "disabled": true
+          }
+        ]
+      }
+    }
+  ],
+  "slots": [],
+  "events": ["update:modelValue", "select"],
+  "tokenBindings": {
+    "color": "color.on-surface",
+    "gap": "spacing.sm",
+    "typography": "typography.content",
+    "danger": "color.error",
+    "target": "size.touch",
+    "focus": "border.focus",
+    "disabledOpacity": "opacity.disabled",
+    "focusOffset": "spacing.xxs"
+  },
+  "playground": {
+    "presentation": "trigger"
+  }
+}

@@ -1,5 +1,7 @@
 # 组件总论
 
+当前共 47 个组件；全部以基础包与样例包分别验证浅色和深色。样例包仅用于 Gallery / Playground，正式原型使用自己的绑定主题包。
+
 ## 唯一注册源
 
 同一组件必须在下列位置一致，禁止平行维护第二份列表：
@@ -9,7 +11,7 @@
 | 实现 | `components/{action\|input\|display\|navigation\|data\|feedback}/*.vue` |
 | 契约 | `components/contracts/{id}.json`                      |
 | 注册 | `components/registry.ts`（Playground controls、描述） |
-| 场景 | `components/scenarios.ts`（可选组合示例）             |
+| 场景 | `components/scenarios.ts`（汇总 `platform-scenarios.ts` 等组合示例）             |
 | 文档 | `apps/pbwork/docs/components/**`                      |
 
 Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`summary`、`behavior`、`propsSchema`、`defaultProps`、`states`、`slots`、`events`、`tokenBindings`、`playground`（含 `presentation: interactive|gallery|trigger`）；每个 state 必须声明 `kind`。
@@ -46,7 +48,7 @@ Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`summary`�
 ## 新增组件清单
 
 1. 写 `contracts/{id}.json`（Ajv / schema 通过）
-2. 实现 Vue，只读 `--pb-*`，并提供 semantic role policy 与 Inspect registration
+2. 组件局部节点使用 `v-pb` / `pbStyle()` 与共用槽字典；实例绑定仍由 Registry 提供。实现 Vue，只读 `--pb-*`，并提供 semantic role policy 与 Inspect registration
 3. 登记 `registry.ts` controls
 4. 需要时补 `scenarios.ts`
 5. 写本文档对应页
@@ -70,20 +72,20 @@ Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`summary`�
 
 ### 输入（input）
 
-[text-field](./input/text-field.md) · [textarea](./input/textarea.md) · [search-bar](./input/search-bar.md) · [checkbox](./input/checkbox.md) · [radio-group](./input/radio-group.md) · [switch](./input/switch.md) · [menu](./input/menu.md)
+[text-field](./input/text-field.md) · [textarea](./input/textarea.md) · [search-bar](./input/search-bar.md) · [checkbox](./input/checkbox.md) · [radio-group](./input/radio-group.md) · [switch](./input/switch.md) · [menu](./input/menu.md) · [SegmentedControl](./input/segmented-control.md) · [Stepper](./input/stepper.md) · [DurationPicker](./input/duration-picker.md)
 
 ### 展示（display）
 
-[chip](./display/chip.md) · [badge](./display/badge.md) · [avatar](./display/avatar.md) · [divider](./display/divider.md) · [card](./display/card.md) · [progress](./display/progress.md) · [empty-state](./display/empty-state.md) · [spinner](./display/spinner.md)
+[chip](./display/chip.md) · [badge](./display/badge.md) · [avatar](./display/avatar.md) · [divider](./display/divider.md) · [card](./display/card.md) · [progress](./display/progress.md) · [empty-state](./display/empty-state.md) · [spinner](./display/spinner.md) · [RingProgress](./display/ring-progress.md) · [Metric](./display/metric.md) · [Tag](./display/tag.md) · [MiniBars](./display/mini-bars.md) · [Heatmap](./display/heatmap.md) · [MonthCalendar](./display/month-calendar.md)
 
 ### 导航（navigation）
 
-[tabbar](./navigation/tabbar.md) · [一级 Tab](./navigation/primary-tabs.md) · [二级 Tab](./navigation/secondary-tabs.md) · [三级 Tab（局部 Filter Bar）](./navigation/filter-bar.md) · [tab-viewport](./navigation/tab-viewport.md) · [页面转场](./navigation/screen-transition.md) · [app-bar](./navigation/app-bar.md)
+[tabbar](./navigation/tabbar.md) · [一级 Tab](./navigation/primary-tabs.md) · [二级 Tab](./navigation/secondary-tabs.md) · [三级 Tab（局部 Filter Bar）](./navigation/filter-bar.md) · [tab-viewport](./navigation/tab-viewport.md) · [页面转场](./navigation/screen-transition.md) · [app-bar](./navigation/app-bar.md) · [BrandMark](./navigation/brand-mark.md) · [LaunchScreen](./navigation/launch-screen.md)
 
 ### 数据（data）
 
-[data-list](./data/data-list.md) · [scrollable-data-list](./data/scrollable-data-list.md)
+[data-list](./data/data-list.md) · [scrollable-data-list](./data/scrollable-data-list.md) · [ListCell](./data/list-cell.md) · [GroupedList](./data/grouped-list.md)
 
 ### 反馈（feedback）
 
-[toast](./feedback/toast.md) · [confirm](./feedback/confirm.md) · [bottom-sheet](./feedback/bottom-sheet.md) · [flow-sheet](./feedback/flow-sheet.md) · [loading](./feedback/loading.md)
+[toast](./feedback/toast.md) · [confirm](./feedback/confirm.md) · [bottom-sheet](./feedback/bottom-sheet.md) · [flow-sheet](./feedback/flow-sheet.md) · [loading](./feedback/loading.md) · [Snackbar](./feedback/snackbar.md) · [ActionSheet](./feedback/action-sheet.md)

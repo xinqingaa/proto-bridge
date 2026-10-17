@@ -100,7 +100,7 @@ PBWork 的数据位于 `src/design-system/theme/` 与 `theme-packs/base/`。`loa
 - `createRuntimeThemeRegistry(sources, assetUrl?)` 为一组来源建立解析缓存；`resolve(packId, theme, mode)` 经 Core 解析全部组合并保留阻断诊断，未知组合直接报错，不回退默认主题。来源更新时创建新 registry。`cssVars(table)` 缓存按类型生成的 CSS。
 - `resolveRuntimeTheme(packId, theme, mode)` 使用当前加载的全部包。`loadThemeSources()` 通过 Vite glob 读取 `theme-packs/*/` 与 `prototypes/*/theme/` 的 pack/primitives/semantic/component JSON；原型目录提供 ownerPrototypeId，重复包 ID 报错。Vite 插件按资产原始字节计算 sha1，经虚拟模块提供 files；`?url` 导入构建后的 URL，`themeAssetUrl` 按拥有资产的 packId 与相对路径查找。
 - `useRuntimeTheme(selection, registry?)` 接受响应式包/主题/模式选择，返回 computed 的 table、CSS 变量、根节点 enum 属性、Vuetify 主题与密度。CSS 与 Vuetify 消费同一张表；不会修改 Workbench 主题。
-- `ThemeTableKey` 用于根节点 provide 响应式表；组件内 `useToken(key)` 和 `useTokenNumber(key)` 返回 computed，缺失 provider、未知键或数字读取类型不符时抛错。当前键参数仍为 string，生成键类型属于后续创作工具步骤。
+- `ThemeTableKey` 用于根节点 provide 响应式表；组件内 `useToken(key)` 和 `useTokenNumber(key)` 返回 computed，缺失 provider、未知键或数字读取类型不符时抛错。JS 响应式读取器在运行时校验键；`v-pb` / `pbStyle()` 的槽键使用生成的键族类型，生成命令与新鲜度检查见 [制作工具](../../apps/pbwork/docs/prototypes/authoring-tools.md)。
 
 `theme/vuetify-theme.ts` 将表转换成 Vuetify ThemeDefinition。模式只接受 light/dark；tooltip 使用 inverse-surface 配对。密度 compact/regular/comfortable 分别映射为 Vuetify compact/comfortable/default。Runtime 按包/主题/模式/摘要动态注册名称，通过 VApp 局部选择主题并通过 VDefaultsProvider 提供表单密度；不修改 Workbench 全局主题。Playground 的静态名称目前也从 Core 表生成，并按包、主题与模式动态注册。`pbwork-sample` 只出现在 Gallery 与 Playground。
 
@@ -115,7 +115,7 @@ Runtime URL 使用 variant/theme/mode；缺省主题/模式取 manifest 默认�
 
 DS 与冷链消费者已完成迁移，Runtime 仅生成新表的变量。原有 154 项值作为测试夹具保留：102 项迁入语义层、11 项进入组件层、9 项成为包私有 Primitive、32 项对应 31 个实现常量。所有等价断言均已落地，不再保留 todo。
 
-组件键由 Contract.componentTokens 声明 id 后缀、valueType/default/modeVariant/bindable/enumValues；loadThemeKeyCatalog 汇总为完整的 Core ThemeKeyCatalog。当前 113 个语义键 + 20 个组件键，其中 127 可绑定，6 个 enum 不可绑定；另有 64 个字阶派生部件和 31 个实现常量。Registry 同时校验组件声明与基础包默认值。SurfaceMaterial 负责共享材质；primary-tabs.selection-treatment 在基础包为 glass，AppBar/Tabbar 跟随 surface.treatment。组件 CSS 与 Inspector 绑定使用新键，常量不进入 Evidence/Target；JS 用 computed 读取主题值，以纯常量读取器读取手势阈值等不变值。
+组件键由 Contract.componentTokens 声明 id 后缀、valueType/default/modeVariant/bindable/enumValues；loadThemeKeyCatalog 汇总为完整的 Core ThemeKeyCatalog。当前 115 个语义键 + 21 个组件键，其中 130 可绑定，6 个 enum 不可绑定；另有 64 个字阶派生部件和 36 个实现常量。Registry 同时校验组件声明与基础包默认值。SurfaceMaterial 负责共享材质；primary-tabs.selection-treatment 在基础包为 glass，AppBar/Tabbar 跟随 surface.treatment。组件 CSS 与 Inspector 绑定使用新键，常量不进入 Evidence/Target；JS 用 computed 读取主题值，以纯常量读取器读取手势阈值等不变值。
 
 Capture 的 token Catalog 只含键定义（类型、是否可绑定、是否随模式变化、说明与来源），不含取值，常量不进入 Catalog。theme-pack Catalog 的 `inputDigest` 等于包摘要：一条包清单，外加每个「主题 × 模式」的解析值与 provenance。清单列出的资产在采集时按 sha1 校验后存为 `theme-asset` Blob。Workbench 展示记录只是主题表生成的展示数据，不是第二份 Token 语义源。Gallery 与 Playground 可以选择基础包或样例包、包内主题和模式，并对照解析值。样例包改变品牌色、圆角、紧凑密度、玻璃表面、活泼动效和一个品牌标记，另有柑色主题。
 

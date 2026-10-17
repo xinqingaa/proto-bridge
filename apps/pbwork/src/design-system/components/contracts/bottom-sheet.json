@@ -9,7 +9,8 @@
   "summary": "从底部覆盖当前页面的半屏操作容器；保持独立 Sheet 外壳与关闭边界。",
   "behavior": [
     "打开时挂载 scrim、dialog 语义和顶部关闭 Icon Button",
-    "modelValue 关闭后恢复下层交互；决策按钮放在 actions 槽，一颗主要类型占满，两颗时左次要右主要并等分撑满"
+    "modelValue 关闭后恢复下层交互；决策按钮放在 actions 槽，一颗主要类型占满，两颗时左次要右主要并等分撑满",
+    "默认 content 保持既有内容高度；可声明 medium/expanded 档位并由父级接收 update:detent，档位不接管拖动手势。"
   ],
   "layout": {
     "summary": "Sheet 从视口底部抬起，内容高度受上限约束；标题区与内容区由同一滚动边界承载。"
@@ -26,13 +27,27 @@
       },
       "modelValue": {
         "type": "boolean"
+      },
+      "detent": {
+        "type": "string",
+        "enum": ["content", "medium", "expanded"]
+      },
+      "detents": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": ["content", "medium", "expanded"]
+        },
+        "uniqueItems": true
       }
     },
     "required": ["title"]
   },
   "defaultProps": {
     "title": "操作面板",
-    "modelValue": false
+    "modelValue": false,
+    "detent": "content",
+    "detents": []
   },
   "states": [
     {
@@ -50,10 +65,30 @@
       "props": {
         "modelValue": false
       }
+    },
+    {
+      "id": "medium",
+      "label": "半屏",
+      "kind": "variant",
+      "props": {
+        "modelValue": true,
+        "detent": "medium",
+        "detents": ["content", "medium", "expanded"]
+      }
+    },
+    {
+      "id": "expanded",
+      "label": "展开",
+      "kind": "variant",
+      "props": {
+        "modelValue": true,
+        "detent": "expanded",
+        "detents": ["content", "medium", "expanded"]
+      }
     }
   ],
   "slots": ["default", "actions"],
-  "events": ["update:modelValue"],
+  "events": ["update:modelValue", "update:detent"],
   "tokenBindings": {
     "surface": "color.surface",
     "border": "color.border",
@@ -64,7 +99,14 @@
     "padding": "spacing.md",
     "headerControl": "size.touch",
     "duration": "bottom-sheet.duration",
-    "easing": "motion.easing-gentle"
+    "easing": "motion.easing-gentle",
+    "mediumHeight": "size.panel-medium",
+    "expandedHeight": "size.panel-large",
+    "detentGap": "spacing.sm",
+    "detentPadding": "spacing.xs",
+    "detentBorder": "border.hairline",
+    "detentSelected": "color.surface-selected",
+    "detentFocus": "border.focus"
   },
   "playground": {
     "presentation": "trigger"

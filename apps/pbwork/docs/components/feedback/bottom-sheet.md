@@ -4,13 +4,13 @@
 > 实现：[BottomSheet.vue](../../../src/design-system/components/feedback/BottomSheet.vue)
 > 契约：[bottom-sheet.json](../../../src/design-system/components/contracts/bottom-sheet.json)
 
-从底部覆盖当前页面的半屏操作容器。
+从底部覆盖当前页面的操作容器，支持内容自适应、半屏和展开档位。
 
 ## 职责与边界
 
 - 固定使用 `role=sheet`，保持独立 scrim、Sheet surface、关闭入口和焦点边界。
 - 顶栏与 Flow Sheet 共用：居中标题、右侧关闭 Icon Button；无返回。
-- 内容高度受统一上限约束；决策按钮放在 `actions` 槽。
+- 默认 `detent=content` 保持内容自适应；`medium` / `expanded` 从主题包读取面板高度。只在提供 `detents` 时展示档位按钮，调用方处理 `update:detent` 回写。档位切换不另造拖拽机制。决策按钮放在 `actions` 槽。
 - 默认 slot 完全拥有业务内容；连续多步流程使用 Flow Sheet。
 
 ## 行为要点
@@ -27,6 +27,8 @@
 | --- | --- | --- |
 | `open` | 打开 | `content` |
 | `closed` | 关闭 | `content` |
+| `medium` | 半屏 | `variant` |
+| `expanded` | 展开 | `variant` |
 
 ## 用法与反例
 

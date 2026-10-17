@@ -265,7 +265,9 @@
     "spacing.xxs": 2,
     "spacing.sm-plus": 12,
     "spacing.lg-plus": 40,
-    "spacing.2xl": 48
+    "spacing.2xl": 48,
+    "size.panel-medium": "50dvh",
+    "size.panel-large": "86dvh"
   },
   "modes": {
     "dark": {

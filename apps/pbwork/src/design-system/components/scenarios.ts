@@ -1,3 +1,4 @@
+import { platformScenarios } from "./platform-scenarios";
 export type ComponentScenario = {
   id: string;
   label: string;
@@ -6,6 +7,7 @@ export type ComponentScenario = {
 };
 
 const scenarios: Record<string, ComponentScenario[]> = {
+  ...platformScenarios,
   button: [
     {
       id: "primary",
@@ -479,6 +481,18 @@ const scenarios: Record<string, ComponentScenario[]> = {
       label: "筛选面板",
       description: "从底部展开，用于筛选工单条件。",
       props: { title: "筛选工单", modelValue: true },
+    },
+    {
+      id: "medium",
+      label: "半屏",
+      description: "受控的半屏档位，可切换到展开或内容高度。",
+      props: { detent: "medium", detents: ["content", "medium", "expanded"] },
+    },
+    {
+      id: "expanded",
+      label: "展开",
+      description: "面板高度来自主题，不接管拖动手势。",
+      props: { detent: "expanded", detents: ["content", "medium", "expanded"] },
     },
     {
       id: "actions",

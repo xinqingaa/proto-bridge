@@ -78,9 +78,13 @@ usePbInspect({
 
 <style scoped>
 .pb-switch {
+  display: flex;
   min-height: var(--pb-size-touch);
   color: var(--pb-color-on-surface);
   font: var(--pb-typography-content);
+}
+.pb-switch :deep(.v-input__control) {
+  flex: var(--pb-layout-flex-fill);
 }
 .pb-switch.v-input--disabled {
   opacity: var(--pb-opacity-disabled);

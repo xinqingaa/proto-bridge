@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "id": "month-calendar",
+  "category": "display",
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "section"
+  },
+  "summary": "按月选择日期，使用固定星期顺序与受控月份。",
+  "behavior": [
+    "月份和日期来自 props，不使用系统当前时间；非法月份不渲染错误日历",
+    "一周从周一开始，前后月切换正确跨年；禁用日期不可选",
+    "方向键和 Home/End 在当前月可用日期间移动焦点，Enter/Space 选择"
+  ],
+  "layout": {
+    "summary": "Header with previous/month/next; weekday row then seven equal cells per row using normal flow; no internal scroll owner."
+  },
+  "visualAnatomy": {
+    "summary": "Current selection uses primary surface and on-primary content, disabled dates retain readable labels with disabled opacity."
+  },
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "label": {
+        "type": "string"
+      },
+      "month": {
+        "type": "string"
+      },
+      "modelValue": {
+        "type": "string"
+      },
+      "disabledDates": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "defaultProps": {
+    "label": "选择日期",
+    "month": "2026-07",
+    "modelValue": "2026-07-28",
+    "disabledDates": ["2026-07-15"]
+  },
+  "states": [
+    {
+      "id": "next-month",
+      "label": "八月",
+      "kind": "content",
+      "props": {
+        "month": "2026-08",
+        "modelValue": "2026-08-01"
+      }
+    },
+    {
+      "id": "empty-selection",
+      "label": "未选择",
+      "kind": "content",
+      "props": {
+        "modelValue": ""
+      }
+    }
+  ],
+  "slots": [],
+  "events": ["update:modelValue", "update:month"],
+  "tokenBindings": {
+    "color": "color.on-surface",
+    "muted": "color.on-surface-muted",
+    "gap": "spacing.sm",
+    "typography": "typography.content",
+    "radius": "radius.control",
+    "padding": "spacing.xs",
+    "target": "size.touch",
+    "focus": "border.focus",
+    "disabledOpacity": "opacity.disabled",
+    "caption": "typography.caption",
+    "selectedColor": "color.on-primary",
+    "selectedSurface": "color.primary",
+    "cellGap": "spacing.xs",
+    "focusOffset": "spacing.xxs",
+    "weekdayHeight": "size.control-compact"
+  },
+  "playground": {
+    "presentation": "interactive"
+  }
+}

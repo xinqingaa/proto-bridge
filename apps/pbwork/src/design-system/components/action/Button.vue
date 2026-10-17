@@ -147,6 +147,9 @@ usePbInspect({
 
 <style scoped>
 .pb-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   height: var(--pb-component-height, var(--pb-size-control)) !important;
   min-height: var(--pb-component-height, var(--pb-size-control)) !important;
   padding-inline: var(

@@ -111,7 +111,7 @@ AppBar（showBack）
 └─ 主内容（普通布局，或 ScrollableDataList）
 ```
 
-- Screen 写入 `prototypes/registry.ts`。
+- Screen 就近写入 `screens/{slug}/screen.ts`，由 `prototypes/registry.ts` glob 汇总。
 - 优先 DS 组件；局部 UI 仍走 Token。
 - 返回走统一 nav（见 shell-and-nav）。
 - 进栈/返回动画由 Runtime `ScreenTransition` 播放，页面不要再包一层平行转场。

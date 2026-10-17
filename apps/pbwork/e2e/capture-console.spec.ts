@@ -1,6 +1,11 @@
 import { expect, test } from "@playwright/test";
 import { isolateLifecycleDocument } from "./support/lifecycle";
 
+// Complete intercepted responses before Playwright disposes the page request context.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: "wait" });
+});
+
 test.beforeEach(async ({ page }) => {
   await isolateLifecycleDocument(page);
 });

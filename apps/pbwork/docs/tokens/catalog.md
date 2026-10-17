@@ -1,6 +1,6 @@
 # 主题键目录
 
-共 133 项：113 个语义键与 20 个组件键；127 项可绑定，6 项 enum 不可绑定。字阶另派生 64 个不可绑定部件；31 项实现常量不属于 Catalog。
+共 136 项：115 个语义键与 21 个组件键；130 项可绑定，6 项 enum 不可绑定。字阶另派生 64 个不可绑定部件；36 项实现常量不属于 Catalog。
 
 权威源为 `src/design-system/theme/key-catalog.json` 和各组件 Contract 的 `componentTokens`，由 `loadThemeKeyCatalog()` 汇总；取值由主题包解析，本文不复制基础值。模型见[主题包解析模型](../../../../docs/architecture/theme-packs.md)，154 个旧键的去向保存在 `theme/legacy-migration.json` 并由等价测试覆盖。
 
@@ -80,6 +80,8 @@
 | `size.indicator` | length | semantic | 是 | 页签等线性定位指示器的标准厚度 |
 | `size.caret` | length | semantic | 是 | 页签与菜单的小三角指示器尺寸 |
 | `size.marker` | length | semantic | 是 | 步骤、流程等紧凑圆点的标准尺寸（原 sizing.step-dot） |
+| `size.panel-medium` | length | semantic | 是 | 临时面板中等高度 |
+| `size.panel-large` | length | semantic | 是 | 临时面板展开高度 |
 | `border.width` | length | semantic | 是 | 细线宽度（原 border.width-hairline），不含线型与颜色 |
 | `border.width-strong` | length | semantic | 是 | 较粗描边宽度（焦点边框等），不含线型与颜色 |
 | `border.width-accent` | length | semantic | 是 | 强调边宽度（原 border.accent-width），用于状态消息等动态组合边框 |
@@ -120,6 +122,7 @@
 | `spacing.lg-plus` | length | semantic | 是 | 通用间距刻度；按布局所需档位选用，基础值沿用现有刻度。 |
 | `spacing.2xl` | length | semantic | 是 | 通用间距刻度；按布局所需档位选用，基础值沿用现有刻度。 |
 | `app-bar.surface-treatment` | enum | component | 否 | app-bar |
+| `badge.label-size` | length | component | 是 | 紧凑徽标字号；保持既有默认外观，不受依赖样式加载顺序影响 |
 | `bottom-sheet.duration` | duration | component | 是 | bottom-sheet |
 | `flow-sheet.gap` | length | component | 是 | flow-sheet |
 | `flow-sheet.duration` | duration | component | 是 | flow-sheet |

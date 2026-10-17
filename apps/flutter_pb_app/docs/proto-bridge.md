@@ -6,13 +6,13 @@
 
 优先按 `componentId` 映射；role 只在没有可靠 `componentId` 时提供通用语义回退。比如 `flow-sheet` 的身份是 `componentId=flow-sheet`，role 仍是通用的 `sheet`，不需要创建 `flow-sheet` role。
 
-当前 32 个组件均在 `proto-bridge.target.json` 标为条目 pending：Producer 已完成主题包与绑定目录迁移，Flutter 尚未按新 Contract 适配。旧具体映射表已移除，避免与 pending 同 ID 并存造成 resolver conflict；现有 Dart 组件仍保留，但不能宣称已匹配新 Producer。
+当前 47 个组件均在 `proto-bridge.target.json` 标为条目 pending：Producer 已完成主题包与绑定目录迁移，Flutter 尚未按新 Contract 适配。旧具体映射表已移除，避免与 pending 同 ID 并存造成 resolver conflict；现有 Dart 组件仍保留，但不能宣称已匹配新 Producer。
 
 `page`、`section`、`summary`、`list`、`field` 等 role 要结合 Fragment 上下文选择本地容器，不能覆盖一个已存在且更精确的 `componentId`。
 
 ## Token mapping
 
-新目录的 127 个可绑定主题键均在根目录 `proto-bridge.target.json` 声明为 pending；不可绑定 enum、字阶派生部件与实现常量不建立 Target 映射。`lib/theme/proto_bridge_tokens.dart` 仍是迁移前的可执行使用点；待本轮适配完成后，再由 resolver 同时验证“声明存在”和“当前 Dart API 可访问”。这份 Target 映射不等于恢复 MCP 完整 Catalog 读取；Agent 仍按当前任务读取必要的 Producer Contract、文档和源码。
+新目录的 130 个可绑定主题键均在根目录 `proto-bridge.target.json` 声明为 pending；不可绑定 enum、字阶派生部件与实现常量不建立 Target 映射。`lib/theme/proto_bridge_tokens.dart` 仍是迁移前的可执行使用点；待本轮适配完成后，再由 resolver 同时验证“声明存在”和“当前 Dart API 可访问”。这份 Target 映射不等于恢复 MCP 完整 Catalog 读取；Agent 仍按当前任务读取必要的 Producer Contract、文档和源码。
 
 `transparent` 与 `none` 是绑定字面量，不是 Foundation Token，也不得生成 `TS.*` accessor 或 Target token obligation。
 
@@ -48,7 +48,7 @@ Target 只翻译语义，不复制 Web 表达：例如百分比映射为 Flutter
 - `CommonTextField` / `CommonTextArea` 在 `showLabel=false` 时无描边并填充 `color.surface-recessed`；`showLabel=true` 时显示标题、边框并填充 `color.surface`。
 - `screen-transition` 映射为 `PbPageTransitions.theme`：默认全部平台使用 iOS 侧滑（`CupertinoPageTransitionsBuilder`）；Android Fade Through 近似为 `ZoomPageTransitionsBuilder`，经 `PbPageTransitions.theme(mode: android)` 选择。不提供包住页面的容器，也不暴露 `screenKey` / `navigation`。
 - Flutter elevation、glass blur、布局比例和交互曲线属于平台语义翻译，不要求与 Web 数据结构同构。
-- 本工程只维护 32 个当前 componentId，不保留历史组件别名或旧 Dart API。公共 Widget 按 `action/input/display/navigation/data` 五类放在 `lib/common/widgets/`；`feedback` 由 `AppPop` 适配层承接，目标侧组合壳单列 `composition/`，统一从 `lib/common/widgets.dart` 导入。
+- 本工程现有 Dart 实现覆盖先前的 32 个 componentId；Producer 当前声明 47 个，全部仍 pending，新增 15 个尚未实现，不保留历史组件别名或旧 Dart API。公共 Widget 按 `action/input/display/navigation/data` 五类放在 `lib/common/widgets/`；`feedback` 由 `AppPop` 适配层承接，目标侧组合壳单列 `composition/`，统一从 `lib/common/widgets.dart` 导入。
 
 ## Flutter 实现暂不需要
 

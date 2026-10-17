@@ -41,10 +41,10 @@ test("primary and secondary navigation update the URL and resource view", async 
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/workbench\/foundations\/tokens\/color$/);
 
-  await page.getByRole("button", { name: "展开 主题" }).click();
-  await page.getByRole("link", { name: "浅色主题", exact: true }).click();
+  await page.getByRole("button", { name: "展开 模式" }).click();
+  await page.getByRole("link", { name: "浅色模式", exact: true }).click();
   await expect(page).toHaveURL(/\/workbench\/foundations\/themes\/light$/);
-  await expect(page.getByRole("heading", { name: "浅色主题" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "浅色模式" })).toBeVisible();
 });
 
 test("collapsing side panels expands the content track", async ({ page }) => {
@@ -207,7 +207,7 @@ test("search and settings controls have usable behavior", async ({ page }) => {
   await page.getByRole("textbox", { name: "名称", exact: true }).fill("浅色");
   await page
     .getByRole("dialog")
-    .getByRole("link", { name: "浅色主题", exact: true })
+    .getByRole("link", { name: "浅色模式", exact: true })
     .click();
   await expect(page).toHaveURL(/\/workbench\/foundations\/themes\/light$/);
 

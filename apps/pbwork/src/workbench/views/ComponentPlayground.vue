@@ -83,6 +83,7 @@ const tokenBindings = computed(() =>
     resolveLiveTokenBindings(
       contract.value?.tokenBindings ?? {},
       resolvedProps.value,
+      record.value?.id,
     ),
   ),
 );
@@ -114,6 +115,10 @@ const toolbarHint = computed(() => {
 });
 const tallPreview = computed(() =>
   [
+    "action-sheet",
+    "snackbar",
+    "launch-screen",
+    "month-calendar",
     "bottom-sheet",
     "flow-sheet",
     "data-list",
@@ -159,6 +164,14 @@ const isWideExhibit = computed(() =>
     "textarea",
     "search-bar",
     "menu",
+    "month-calendar",
+    "grouped-list",
+    "list-cell",
+    "launch-screen",
+    "duration-picker",
+    "segmented-control",
+    "mini-bars",
+    "heatmap",
   ].includes(record.value?.id ?? ""),
 );
 
@@ -381,6 +394,8 @@ const playgroundNavIcons = [Home, List, User];
 const triggeredPreviewOpen = ref(false);
 const activeTriggerScenarioId = ref("");
 const triggeredPreviewStep = ref(0);
+const triggeredDetent = ref<"content" | "medium" | "expanded">("content");
+const lastComponentAction = ref("");
 
 type ScreenTransitionDemoPage = "home" | "detail";
 type ScreenTransitionDemoPane = {
@@ -498,6 +513,7 @@ function triggerPreviewBind() {
     ...(contract.value?.defaultProps ?? {}),
     ...(activeScenario?.props ?? {}),
   };
+  if (props.componentId === "bottom-sheet") next.detent = triggeredDetent.value;
   if (props.componentId === "flow-sheet")
     next.step = triggeredPreviewStep.value;
   return enrichBind(next);
@@ -538,6 +554,9 @@ function openTriggeredPreview(scenarioId?: string) {
   const scenario = scenarios.value.find((item) => item.id === id);
   triggeredPreviewStep.value =
     typeof scenario?.props?.step === "number" ? scenario.props.step : 0;
+  triggeredDetent.value =
+    (scenario?.props?.detent as "content" | "medium" | "expanded") ?? "content";
+  lastComponentAction.value = "";
   triggeredPreviewOpen.value = true;
 }
 function onPreviewUpdate(value: unknown) {
@@ -546,6 +565,32 @@ function onPreviewUpdate(value: unknown) {
     return;
   }
   playground.setOverride("modelValue", value);
+}
+function onGroupedToggle(event: {
+  groupId: string;
+  itemId: string;
+  value: boolean;
+}) {
+  const groups = resolvedProps.value.groups as Array<{
+    id: string;
+    items: Array<{ id: string; modelValue?: boolean }>;
+  }>;
+  playground.setOverride(
+    "groups",
+    groups.map((group) =>
+      group.id === event.groupId
+        ? {
+            ...group,
+            items: group.items.map((item) =>
+              item.id === event.itemId
+                ? { ...item, modelValue: event.value }
+                : item,
+            ),
+          }
+        : group,
+    ),
+  );
+  lastComponentAction.value = "已更新列表开关";
 }
 function onPreviewStep(value: unknown) {
   if (isOverlayPreview.value && props.componentId === "flow-sheet") {
@@ -671,7 +716,8 @@ function setPreviewPack(value: unknown) {
   playground.setPack(pack.id, theme);
 }
 function setPreviewThemeName(value: unknown) {
-  if (typeof value === "string" && value) playground.setPack(packId.value, value);
+  if (typeof value === "string" && value)
+    playground.setPack(packId.value, value);
 }
 function bindingResolvedValue(tokenId: string) {
   const value = resolvedPreviewTokens.value[tokenId];
@@ -767,374 +813,411 @@ const categoryEyebrow: Record<string, string> = {
 
         <v-theme-provider :theme="runtimeTheme">
           <v-defaults-provider :defaults="runtimeDefaults">
-          <div
-            v-if="isGalleryPresentation"
-            class="preview gallery-matrix"
-            :style="previewStyle"
-          >
-            <section
-              v-for="entry in galleryEntries"
-              :key="entry.id"
-              class="gallery-cell"
+            <div
+              v-if="isGalleryPresentation"
+              class="preview gallery-matrix"
+              :style="previewStyle"
             >
-              <header>{{ entry.label }}</header>
-              <div>
-                <component :is="previewComponent" v-bind="galleryBind(entry)" />
-              </div>
-            </section>
-          </div>
+              <section
+                v-for="entry in galleryEntries"
+                :key="entry.id"
+                class="gallery-cell"
+              >
+                <header>{{ entry.label }}</header>
+                <div>
+                  <component
+                    :is="previewComponent"
+                    v-bind="galleryBind(entry)"
+                  />
+                </div>
+              </section>
+            </div>
 
-          <div
-            v-else-if="isTriggerPresentation"
-            class="preview is-tall is-overlay"
-            data-pb-scenario-preview
-            :style="previewStyle"
-          >
-            <div class="trigger-bar">
-              <template v-if="record.id === 'toast'">
+            <div
+              v-else-if="isTriggerPresentation"
+              class="preview is-tall is-overlay"
+              data-pb-scenario-preview
+              :style="previewStyle"
+            >
+              <div class="trigger-bar">
+                <template
+                  v-if="
+                    ['toast', 'snackbar', 'bottom-sheet'].includes(record.id)
+                  "
+                >
+                  <v-btn
+                    v-for="(scenario, index) in scenarios"
+                    :key="scenario.id"
+                    color="primary"
+                    variant="flat"
+                    size="small"
+                    @click="openTriggeredPreview(scenario.id)"
+                    >{{
+                      record.id === "bottom-sheet" && index === 0
+                        ? "打开Bottom Sheet"
+                        : "显示" + scenario.label
+                    }}</v-btn
+                  >
+                </template>
                 <v-btn
-                  v-for="scenario in scenarios"
-                  :key="scenario.id"
+                  v-else
                   color="primary"
                   variant="flat"
                   size="small"
-                  @click="openTriggeredPreview(scenario.id)"
-                  >显示{{ scenario.label }}</v-btn
+                  @click="openTriggeredPreview()"
+                  >打开{{ record.label }}</v-btn
                 >
-              </template>
-              <v-btn
-                v-else
-                color="primary"
-                variant="flat"
-                size="small"
-                @click="openTriggeredPreview()"
-                >打开{{ record.label }}</v-btn
-              >
-              <span>关闭后可再次打开</span>
-            </div>
-            <component
-              :is="previewComponent"
-              v-bind="triggerPreviewBind()"
-              @update:model-value="onPreviewUpdate"
-              @update:step="onPreviewStep"
-            >
-              <template v-if="record.id === 'bottom-sheet'"
-                >选择状态、优先级和时间范围后应用筛选。</template
-              >
-              <template v-else-if="record.id === 'flow-sheet'">
-                <div v-for="step in 4" :key="step">
-                  <strong>步骤 {{ step }}</strong>
-                  <p>观察当前步骤的上下文与进度。</p>
-                </div>
-              </template>
-            </component>
-          </div>
-
-          <div
-            v-else
-            class="preview"
-            :class="{ 'is-tall': tallPreview }"
-            data-pb-scenario-preview
-            :style="previewStyle"
-          >
-            <template v-if="isSplitTabPresentation">
-              <section
-                v-for="mode in [
-                  { id: 'adaptive', label: '自适应', grow: false },
-                  { id: 'equal', label: '等宽', grow: true },
-                ]"
-                :key="mode.id"
-                class="tab-comparison"
-                :data-tab-layout="mode.id"
-              >
-                <header>
-                  <strong>{{ mode.label }}</strong>
-                  <span>{{
-                    mode.grow ? "各项平分可用宽度" : "各项按内容宽度排列"
-                  }}</span>
-                </header>
-                <div class="tab-comparison-frame">
-                  <div v-if="isTabbar" class="tabbar-demo-viewport">
-                    <strong>{{ tabbarSelectedLabel(mode.id) }}</strong>
-                    <span>根目的地视图区；导航本身不拥有横滑手势。</span>
-                  </div>
-                  <component
-                    :is="previewComponent"
-                    v-bind="tabComparisonBind(mode.id, mode.grow)"
-                    @update:model-value="onTabComparisonUpdate(mode.id, $event)"
-                  >
-                    <template
-                      v-for="slotName in panelPreviewSlots"
-                      :key="slotName"
-                      #[slotName]
-                      ><div class="panel-slot-demo">
-                        <strong>{{ slotName }}</strong
-                        ><span>{{ panelSlotLabel(slotName) }}</span>
-                      </div></template
-                    >
-                  </component>
-                </div>
-              </section>
-            </template>
-
-            <template v-else-if="isScreenTransitionDemo">
-              <div class="route-transition-demo-row">
-                <section
-                  v-for="pane in screenTransitionDemoPanes"
-                  :key="pane.mode"
-                  class="tab-comparison route-transition-demo"
-                  :data-transition-mode="pane.mode"
-                >
-                  <header>
-                    <strong>{{ pane.label }}</strong>
-                    <span>{{ pane.hint }}</span>
-                  </header>
-                  <div class="route-transition-demo-actions">
-                    <v-btn
-                      color="primary"
-                      variant="tonal"
-                      size="small"
-                      :disabled="
-                        screenTransitionDemo[pane.mode].screenKey === 'detail'
-                      "
-                      @click="playScreenTransitionDemo(pane.mode, 'push')"
-                      >进入</v-btn
-                    >
-                    <v-btn
-                      color="primary"
-                      variant="tonal"
-                      size="small"
-                      :disabled="
-                        screenTransitionDemo[pane.mode].screenKey === 'home'
-                      "
-                      @click="playScreenTransitionDemo(pane.mode, 'back')"
-                      >返回</v-btn
-                    >
-                  </div>
-                  <div
-                    class="route-transition-demo-frame"
-                    :style="{
-                      width: `${screenTransitionDemoViewport.width}px`,
-                      height: `${screenTransitionDemoViewport.height}px`,
-                    }"
-                  >
-                    <ScreenTransition
-                      :mode="pane.mode"
-                      :navigation="screenTransitionDemo[pane.mode].navigation"
-                      :screen-key="screenTransitionDemo[pane.mode].screenKey"
-                    >
-                      <div class="panel-slot-demo">
-                        <strong>{{
-                          screenTransitionDemoTitle(
-                            screenTransitionDemo[pane.mode].screenKey,
-                          )
-                        }}</strong>
-                        <span>{{ pane.label }}示意页</span>
-                      </div>
-                    </ScreenTransition>
-                  </div>
-                </section>
+                <span>关闭后可再次打开</span>
               </div>
-            </template>
-
-            <template v-else-if="isFilterBar">
               <component
                 :is="previewComponent"
-                v-bind="previewBind()"
-                @update:model-value="onPreviewUpdate"
-              />
-              <div class="filter-results" aria-live="polite">
-                <p>当前筛选结果</p>
-                <div
-                  v-for="row in filterRows"
-                  :key="row.title"
-                  class="list-slot-demo"
-                >
-                  <strong>{{ row.title }}</strong
-                  ><span>{{ row.state }}</span>
-                </div>
-                <p v-if="!filterRows.length" class="empty">
-                  当前筛选没有匹配项。
-                </p>
-              </div>
-            </template>
-
-            <div v-else-if="isScrollableDataList" class="scrollable-list-demo">
-              <div class="scrollable-list-demo-toolbar">
-                <div>
-                  <strong>桌面端交互辅助</strong>
-                  <span>也可在列表内鼠标下拉、拖拽滚动或加载更多</span>
-                </div>
-                <div class="scrollable-list-demo-actions">
-                  <v-btn
-                    color="primary"
-                    variant="tonal"
-                    size="small"
-                    :loading="listRefreshing"
-                    :disabled="listLoadingMore"
-                    @click="onListRefresh"
-                    >刷新</v-btn
-                  >
-                  <v-btn
-                    color="primary"
-                    variant="tonal"
-                    size="small"
-                    :loading="listLoadingMore"
-                    :disabled="listRefreshing || listRowCount >= 12"
-                    @click="onListLoadMore"
-                    >加载更多</v-btn
-                  >
-                </div>
-              </div>
-              <div class="scrollable-list-demo-viewport">
-                <component
-                  :is="previewComponent"
-                  v-bind="scrollablePreviewBind()"
-                  @refresh="onListRefresh"
-                  @load-more="onListLoadMore"
-                >
-                  <DataList surface="default" rounded="md" divided>
-                    <div
-                      v-for="row in listRows"
-                      :key="row.id"
-                      role="listitem"
-                      class="list-slot-demo is-record"
-                    >
-                      <div>
-                        <strong>{{ row.title }}</strong>
-                        <span>{{ row.detail }}</span>
-                      </div>
-                      <span class="list-state">{{ row.state }}</span>
-                    </div>
-                  </DataList>
-                </component>
-              </div>
-            </div>
-
-            <div v-else data-primary-preview>
-              <component
-                :is="previewComponent"
-                v-bind="previewBind()"
-                v-on="isButton ? { click: onPreviewClick } : {}"
+                v-bind="triggerPreviewBind()"
                 @update:model-value="onPreviewUpdate"
                 @update:step="onPreviewStep"
+                @update:detent="triggeredDetent = $event"
+                @undo="lastComponentAction = '已撤销；实际数据恢复由业务处理'"
+                @select="lastComponentAction = '已选择操作：' + $event"
               >
-                <template v-if="record.id === 'card'">
-                  <div class="card-slot-demo">
-                    <strong>外部内容</strong>
-                    <span>Card 只提供 surface；内容由调用方定义。</span>
+                <template v-if="record.id === 'bottom-sheet'"
+                  >选择状态、优先级和时间范围后应用筛选。</template
+                >
+                <template v-else-if="record.id === 'flow-sheet'">
+                  <div v-for="step in 4" :key="step">
+                    <strong>步骤 {{ step }}</strong>
+                    <p>观察当前步骤的上下文与进度。</p>
                   </div>
                 </template>
-                <template v-else-if="record.id === 'data-list'">
-                  <div role="listitem" class="list-slot-demo is-heading">
-                    <strong>仅标题行</strong>
-                  </div>
-                  <div role="listitem" class="list-slot-demo is-record">
-                    <div>
-                      <strong>双行业务记录</strong>
-                      <span>副标题、状态与密度均由调用方决定</span>
-                    </div>
-                    <span class="list-state">进行中</span>
-                  </div>
-                  <div role="listitem" class="list-slot-demo is-metric">
-                    <span>自定义指标</span>
-                    <strong>86%</strong>
-                  </div>
-                </template>
-                <template v-if="record.id === 'tab-viewport'" #item="{ value }"
-                  ><div class="panel-slot-demo">
-                    <strong>{{ value }}</strong
-                    ><span>由外部导航控制的保活内容视图</span>
-                  </div></template
-                >
-                <template
-                  v-for="slotName in panelPreviewSlots"
-                  :key="slotName"
-                  #[slotName]
-                  ><div class="panel-slot-demo">
-                    <strong>{{ slotName }}</strong
-                    ><span>{{ panelSlotLabel(slotName) }}</span>
-                  </div></template
-                >
               </component>
+              <p v-if="lastComponentAction" role="status">
+                {{ lastComponentAction }}
+              </p>
             </div>
 
-            <p
-              v-if="isButton && buttonActionFinished"
-              class="action-feedback"
-              role="status"
+            <div
+              v-else
+              class="preview"
+              :class="{ 'is-tall': tallPreview }"
+              data-pb-scenario-preview
+              :style="previewStyle"
             >
-              已完成；按钮已恢复可继续操作。
-            </p>
-
-            <section v-if="hasExhibits" class="exhibit-stack">
-              <div
-                v-for="section in exhibitSections"
-                :key="section.id"
-                class="exhibit-section"
-              >
-                <h2>{{ section.title }}</h2>
-                <div
-                  v-for="group in section.groups"
-                  :key="group.id"
-                  class="exhibit-subgroup"
-                  :class="{ 'has-title': Boolean(group.title) }"
+              <template v-if="isSplitTabPresentation">
+                <section
+                  v-for="mode in [
+                    { id: 'adaptive', label: '自适应', grow: false },
+                    { id: 'equal', label: '等宽', grow: true },
+                  ]"
+                  :key="mode.id"
+                  class="tab-comparison"
+                  :data-tab-layout="mode.id"
                 >
-                  <h3 v-if="group.title">{{ group.title }}</h3>
-                  <div
-                    class="exhibit-row"
-                    :class="{ 'is-wide': isWideExhibit }"
-                  >
-                    <div
-                      v-for="item in group.items"
-                      :key="item.id"
-                      class="exhibit-item"
-                      :data-exhibit="`${section.id === 'type' ? 'type' : 'state'}.${item.id}`"
+                  <header>
+                    <strong>{{ mode.label }}</strong>
+                    <span>{{
+                      mode.grow ? "各项平分可用宽度" : "各项按内容宽度排列"
+                    }}</span>
+                  </header>
+                  <div class="tab-comparison-frame">
+                    <div v-if="isTabbar" class="tabbar-demo-viewport">
+                      <strong>{{ tabbarSelectedLabel(mode.id) }}</strong>
+                      <span>根目的地视图区；导航本身不拥有横滑手势。</span>
+                    </div>
+                    <component
+                      :is="previewComponent"
+                      v-bind="tabComparisonBind(mode.id, mode.grow)"
+                      @update:model-value="
+                        onTabComparisonUpdate(mode.id, $event)
+                      "
                     >
-                      <span v-if="!group.title || item.label !== group.title">{{
-                        item.label
-                      }}</span>
-                      <component
-                        :is="previewComponent"
-                        v-bind="exhibitBind(item.props, group.scope, item.id)"
+                      <template
+                        v-for="slotName in panelPreviewSlots"
+                        :key="slotName"
+                        #[slotName]
+                        ><div class="panel-slot-demo">
+                          <strong>{{ slotName }}</strong
+                          ><span>{{ panelSlotLabel(slotName) }}</span>
+                        </div></template
                       >
-                        <template v-if="record.id === 'card'">
-                          <div class="card-slot-demo">
-                            <strong>外部内容</strong>
-                            <span>Card 只提供 surface；内容由调用方定义。</span>
-                          </div>
-                        </template>
-                        <template v-else-if="record.id === 'data-list'">
-                          <div
-                            role="listitem"
-                            class="list-slot-demo is-heading"
-                          >
-                            <strong>仅标题行</strong>
-                          </div>
-                          <div role="listitem" class="list-slot-demo is-record">
-                            <div>
-                              <strong>双行业务记录</strong>
-                              <span>副标题、状态与密度由调用方决定</span>
-                            </div>
-                            <span class="list-state">进行中</span>
-                          </div>
-                        </template>
-                        <template
-                          v-if="record.id === 'tab-viewport'"
-                          #item="{ value }"
+                    </component>
+                  </div>
+                </section>
+              </template>
+
+              <template v-else-if="isScreenTransitionDemo">
+                <div class="route-transition-demo-row">
+                  <section
+                    v-for="pane in screenTransitionDemoPanes"
+                    :key="pane.mode"
+                    class="tab-comparison route-transition-demo"
+                    :data-transition-mode="pane.mode"
+                  >
+                    <header>
+                      <strong>{{ pane.label }}</strong>
+                      <span>{{ pane.hint }}</span>
+                    </header>
+                    <div class="route-transition-demo-actions">
+                      <v-btn
+                        color="primary"
+                        variant="tonal"
+                        size="small"
+                        :disabled="
+                          screenTransitionDemo[pane.mode].screenKey === 'detail'
+                        "
+                        @click="playScreenTransitionDemo(pane.mode, 'push')"
+                        >进入</v-btn
+                      >
+                      <v-btn
+                        color="primary"
+                        variant="tonal"
+                        size="small"
+                        :disabled="
+                          screenTransitionDemo[pane.mode].screenKey === 'home'
+                        "
+                        @click="playScreenTransitionDemo(pane.mode, 'back')"
+                        >返回</v-btn
+                      >
+                    </div>
+                    <div
+                      class="route-transition-demo-frame"
+                      :style="{
+                        width: `${screenTransitionDemoViewport.width}px`,
+                        height: `${screenTransitionDemoViewport.height}px`,
+                      }"
+                    >
+                      <ScreenTransition
+                        :mode="pane.mode"
+                        :navigation="screenTransitionDemo[pane.mode].navigation"
+                        :screen-key="screenTransitionDemo[pane.mode].screenKey"
+                      >
+                        <div class="panel-slot-demo">
+                          <strong>{{
+                            screenTransitionDemoTitle(
+                              screenTransitionDemo[pane.mode].screenKey,
+                            )
+                          }}</strong>
+                          <span>{{ pane.label }}示意页</span>
+                        </div>
+                      </ScreenTransition>
+                    </div>
+                  </section>
+                </div>
+              </template>
+
+              <template v-else-if="isFilterBar">
+                <component
+                  :is="previewComponent"
+                  v-bind="previewBind()"
+                  @update:model-value="onPreviewUpdate"
+                />
+                <div class="filter-results" aria-live="polite">
+                  <p>当前筛选结果</p>
+                  <div
+                    v-for="row in filterRows"
+                    :key="row.title"
+                    class="list-slot-demo"
+                  >
+                    <strong>{{ row.title }}</strong
+                    ><span>{{ row.state }}</span>
+                  </div>
+                  <p v-if="!filterRows.length" class="empty">
+                    当前筛选没有匹配项。
+                  </p>
+                </div>
+              </template>
+
+              <div
+                v-else-if="isScrollableDataList"
+                class="scrollable-list-demo"
+              >
+                <div class="scrollable-list-demo-toolbar">
+                  <div>
+                    <strong>桌面端交互辅助</strong>
+                    <span>也可在列表内鼠标下拉、拖拽滚动或加载更多</span>
+                  </div>
+                  <div class="scrollable-list-demo-actions">
+                    <v-btn
+                      color="primary"
+                      variant="tonal"
+                      size="small"
+                      :loading="listRefreshing"
+                      :disabled="listLoadingMore"
+                      @click="onListRefresh"
+                      >刷新</v-btn
+                    >
+                    <v-btn
+                      color="primary"
+                      variant="tonal"
+                      size="small"
+                      :loading="listLoadingMore"
+                      :disabled="listRefreshing || listRowCount >= 12"
+                      @click="onListLoadMore"
+                      >加载更多</v-btn
+                    >
+                  </div>
+                </div>
+                <div class="scrollable-list-demo-viewport">
+                  <component
+                    :is="previewComponent"
+                    v-bind="scrollablePreviewBind()"
+                    @refresh="onListRefresh"
+                    @load-more="onListLoadMore"
+                  >
+                    <DataList surface="default" rounded="md" divided>
+                      <div
+                        v-for="row in listRows"
+                        :key="row.id"
+                        role="listitem"
+                        class="list-slot-demo is-record"
+                      >
+                        <div>
+                          <strong>{{ row.title }}</strong>
+                          <span>{{ row.detail }}</span>
+                        </div>
+                        <span class="list-state">{{ row.state }}</span>
+                      </div>
+                    </DataList>
+                  </component>
+                </div>
+              </div>
+
+              <div v-else data-primary-preview>
+                <component
+                  :is="previewComponent"
+                  v-bind="previewBind()"
+                  v-on="isButton ? { click: onPreviewClick } : {}"
+                  @update:model-value="onPreviewUpdate"
+                  @update:step="onPreviewStep"
+                  @update:month="playground.setOverride('month', $event)"
+                  @start="lastComponentAction = '已触发开始；路由由业务决定'"
+                  @select="lastComponentAction = '已选择列表项'"
+                  @toggle="onGroupedToggle"
+                >
+                  <template v-if="record.id === 'card'">
+                    <div class="card-slot-demo">
+                      <strong>外部内容</strong>
+                      <span>Card 只提供 surface；内容由调用方定义。</span>
+                    </div>
+                  </template>
+                  <template v-else-if="record.id === 'data-list'">
+                    <div role="listitem" class="list-slot-demo is-heading">
+                      <strong>仅标题行</strong>
+                    </div>
+                    <div role="listitem" class="list-slot-demo is-record">
+                      <div>
+                        <strong>双行业务记录</strong>
+                        <span>副标题、状态与密度均由调用方决定</span>
+                      </div>
+                      <span class="list-state">进行中</span>
+                    </div>
+                    <div role="listitem" class="list-slot-demo is-metric">
+                      <span>自定义指标</span>
+                      <strong>86%</strong>
+                    </div>
+                  </template>
+                  <template
+                    v-if="record.id === 'tab-viewport'"
+                    #item="{ value }"
+                    ><div class="panel-slot-demo">
+                      <strong>{{ value }}</strong
+                      ><span>由外部导航控制的保活内容视图</span>
+                    </div></template
+                  >
+                  <template
+                    v-for="slotName in panelPreviewSlots"
+                    :key="slotName"
+                    #[slotName]
+                    ><div class="panel-slot-demo">
+                      <strong>{{ slotName }}</strong
+                      ><span>{{ panelSlotLabel(slotName) }}</span>
+                    </div></template
+                  >
+                </component>
+              </div>
+
+              <p v-if="lastComponentAction && !isOverlayPreview" role="status">
+                {{ lastComponentAction }}
+              </p>
+              <p
+                v-if="isButton && buttonActionFinished"
+                class="action-feedback"
+                role="status"
+              >
+                已完成；按钮已恢复可继续操作。
+              </p>
+
+              <section v-if="hasExhibits" class="exhibit-stack">
+                <div
+                  v-for="section in exhibitSections"
+                  :key="section.id"
+                  class="exhibit-section"
+                >
+                  <h2>{{ section.title }}</h2>
+                  <div
+                    v-for="group in section.groups"
+                    :key="group.id"
+                    class="exhibit-subgroup"
+                    :class="{ 'has-title': Boolean(group.title) }"
+                  >
+                    <h3 v-if="group.title">{{ group.title }}</h3>
+                    <div
+                      class="exhibit-row"
+                      :class="{ 'is-wide': isWideExhibit }"
+                    >
+                      <div
+                        v-for="item in group.items"
+                        :key="item.id"
+                        class="exhibit-item"
+                        :data-exhibit="`${section.id === 'type' ? 'type' : 'state'}.${item.id}`"
+                      >
+                        <span
+                          v-if="!group.title || item.label !== group.title"
+                          >{{ item.label }}</span
                         >
-                          <div class="panel-slot-demo">
-                            <strong>{{ value }}</strong>
-                            <span>由外部导航控制的保活内容视图</span>
-                          </div>
-                        </template>
-                      </component>
+                        <component
+                          :is="previewComponent"
+                          v-bind="exhibitBind(item.props, group.scope, item.id)"
+                        >
+                          <template v-if="record.id === 'card'">
+                            <div class="card-slot-demo">
+                              <strong>外部内容</strong>
+                              <span
+                                >Card 只提供 surface；内容由调用方定义。</span
+                              >
+                            </div>
+                          </template>
+                          <template v-else-if="record.id === 'data-list'">
+                            <div
+                              role="listitem"
+                              class="list-slot-demo is-heading"
+                            >
+                              <strong>仅标题行</strong>
+                            </div>
+                            <div
+                              role="listitem"
+                              class="list-slot-demo is-record"
+                            >
+                              <div>
+                                <strong>双行业务记录</strong>
+                                <span>副标题、状态与密度由调用方决定</span>
+                              </div>
+                              <span class="list-state">进行中</span>
+                            </div>
+                          </template>
+                          <template
+                            v-if="record.id === 'tab-viewport'"
+                            #item="{ value }"
+                          >
+                            <div class="panel-slot-demo">
+                              <strong>{{ value }}</strong>
+                              <span>由外部导航控制的保活内容视图</span>
+                            </div>
+                          </template>
+                        </component>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </section>
-          </div>
+              </section>
+            </div>
           </v-defaults-provider>
         </v-theme-provider>
       </article>

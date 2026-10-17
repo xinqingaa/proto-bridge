@@ -78,3 +78,7 @@ Chrome 设备模拟与真机常在原生平移开始后取消 Pointer Events：
 - 一级/二级 Tab `fill` 时父级高度链完整（见 recipes R3）
 
 更短的实现笔记若写在业务原型目录，不得与本手册冲突；冲突以本手册与 contract 为准。
+
+## 滚轮与有档位面板
+
+DurationPicker 使用原生纵滚与 scroll-snap，容器声明 `data-no-swipe`、`overscroll-behavior: contain`，键盘可选择小时与分钟。它不复制横滑仲裁或读取系统时钟。BottomSheet 档位通过受控按钮切换，ActionSheet 组合 BottomSheet，Snackbar 与 Toast 共用通知生命周期；焦点、scrim 与关闭继续交由现有 Overlay 机制。

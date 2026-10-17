@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import TransientNotice from "../_shared/TransientNotice.vue";
 import { useTokenNumber } from "@/design-system/theme/runtime-theme";
 
 import { computed, nextTick, toRefs, watch } from "vue";
@@ -58,7 +59,7 @@ watch(modelValue, async (value) => {
 </script>
 
 <template>
-  <v-snackbar
+  <TransientNotice
     class="pb-toast"
     :model-value="modelValue ?? true"
     :content-class="'pb-toast-surface'"
@@ -78,7 +79,7 @@ watch(modelValue, async (value) => {
     >
       <span>{{ message }}</span>
     </div>
-  </v-snackbar>
+  </TransientNotice>
 </template>
 
 <style scoped>

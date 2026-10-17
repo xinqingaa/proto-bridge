@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "id": "segmented-control",
+  "category": "input",
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "filter"
+  },
+  "summary": "互斥的局部模式选择，不创建视图区或导航历史。",
+  "behavior": [
+    "只有未禁用的选项可以被选中；方向键、Home 与 End 支持跳过禁用项",
+    "选中项使用 roving tabindex；不拥有 viewport，data-no-swipe 防止父级横滑误触"
+  ],
+  "layout": {
+    "summary": "互斥的局部模式选择，不创建视图区或导航历史。"
+  },
+  "visualAnatomy": {
+    "summary": "使用当前主题的语义色、字阶、间距和受控形状，不在实例上换绑。"
+  },
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "label": {
+        "type": "string"
+      },
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
+            },
+            "label": {
+              "type": "string"
+            }
+          },
+          "required": ["id", "label"]
+        }
+      },
+      "modelValue": {
+        "type": "string"
+      },
+      "disabled": {
+        "type": "boolean"
+      }
+    }
+  },
+  "defaultProps": {
+    "label": "统计范围",
+    "items": [
+      {
+        "id": "week",
+        "label": "周"
+      },
+      {
+        "id": "month",
+        "label": "月"
+      },
+      {
+        "id": "year",
+        "label": "年"
+      }
+    ],
+    "modelValue": "week",
+    "disabled": false
+  },
+  "states": [
+    {
+      "id": "month",
+      "label": "按月",
+      "kind": "content",
+      "props": {
+        "modelValue": "month"
+      }
+    },
+    {
+      "id": "disabled",
+      "label": "禁用",
+      "kind": "interaction",
+      "props": {
+        "disabled": true
+      }
+    }
+  ],
+  "slots": [],
+  "events": ["update:modelValue"],
+  "tokenBindings": {
+    "color": "color.on-surface",
+    "gap": "spacing.sm",
+    "typography": "typography.content",
+    "selection": "color.surface-selected",
+    "track": "color.surface-recessed",
+    "radius": "radius.control",
+    "padding": "spacing.xs",
+    "target": "size.touch",
+    "focus": "border.focus",
+    "disabledOpacity": "opacity.disabled",
+    "focusOffset": "spacing.xxs"
+  },
+  "playground": {
+    "presentation": "interactive"
+  }
+}

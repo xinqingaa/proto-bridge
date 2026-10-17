@@ -153,29 +153,29 @@ describe("design contracts", () => {
   });
 
   it("ships the fixed component sample set", () => {
-    expect(componentRecords).toHaveLength(32);
+    expect(componentRecords).toHaveLength(47);
     expect(
       componentRecords.filter((item) => item.category === "action"),
     ).toHaveLength(3);
     expect(
       componentRecords.filter((item) => item.category === "input"),
-    ).toHaveLength(7);
+    ).toHaveLength(10);
     expect(
       componentRecords.filter((item) => item.category === "display"),
-    ).toHaveLength(8);
+    ).toHaveLength(14);
     expect(
       componentRecords.filter((item) => item.category === "navigation"),
-    ).toHaveLength(7);
+    ).toHaveLength(9);
     expect(
       componentRecords.filter((item) => item.category === "data"),
-    ).toHaveLength(2);
+    ).toHaveLength(4);
     expect(
       componentRecords.filter((item) => item.category === "feedback"),
-    ).toHaveLength(5);
+    ).toHaveLength(7);
   });
 
   it("ships the expanded semantic token set", () => {
-    expect(loadTokenPresentations()).toHaveLength(133);
+    expect(loadTokenPresentations()).toHaveLength(136);
     expect(
       new Set(loadTokenPresentations().map((item) => item.category)),
     ).toEqual(

@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "id": "mini-bars",
+  "category": "display",
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "chart"
+  },
+  "summary": "紧凑柱形对比，零值、空集合与数值标签均可辨识。",
+  "behavior": [
+    "按非负有限值归一，负值和非法值按零；不把零画成正值",
+    "每项使用稳定 id，原始数值保留在可访问文本中；不承担复杂图表交互"
+  ],
+  "layout": {
+    "summary": "紧凑柱形对比，零值、空集合与数值标签均可辨识。"
+  },
+  "visualAnatomy": {
+    "summary": "使用当前主题的语义色、字阶、间距和受控形状，不在实例上换绑。"
+  },
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "label": {
+        "type": "string"
+      },
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
+            },
+            "label": {
+              "type": "string"
+            },
+            "value": {
+              "type": "number"
+            }
+          },
+          "required": ["id", "label", "value"]
+        }
+      }
+    }
+  },
+  "defaultProps": {
+    "label": "近七日完成次数",
+    "items": [
+      {
+        "id": "mon",
+        "label": "一",
+        "value": 3
+      },
+      {
+        "id": "tue",
+        "label": "二",
+        "value": 5
+      },
+      {
+        "id": "wed",
+        "label": "三",
+        "value": 0
+      },
+      {
+        "id": "thu",
+        "label": "四",
+        "value": 4
+      }
+    ]
+  },
+  "states": [
+    {
+      "id": "empty",
+      "label": "无数据",
+      "kind": "content",
+      "props": {
+        "items": []
+      }
+    },
+    {
+      "id": "zero",
+      "label": "零值",
+      "kind": "content",
+      "props": {
+        "items": [
+          {
+            "id": "mon",
+            "label": "一",
+            "value": 0
+          }
+        ]
+      }
+    }
+  ],
+  "slots": [],
+  "events": [],
+  "tokenBindings": {
+    "color": "color.on-surface",
+    "muted": "color.on-surface-muted",
+    "gap": "spacing.sm",
+    "typography": "typography.content",
+    "fill": "color.primary",
+    "track": "color.surface-variant",
+    "radius": "radius.mark",
+    "plot": "size.avatar-large",
+    "caption": "typography.caption"
+  },
+  "playground": {
+    "presentation": "interactive"
+  }
+}

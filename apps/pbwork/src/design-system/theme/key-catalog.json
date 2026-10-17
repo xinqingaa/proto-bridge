@@ -808,7 +808,11 @@
       "valueType": "enum",
       "bindable": false,
       "modeVariant": false,
-      "enumValues": ["calm", "standard", "lively"],
+      "enumValues": [
+        "calm",
+        "standard",
+        "lively"
+      ],
       "label": "动效性格",
       "description": "动效性格：calm 舒缓、standard 标准、lively 活泼；时长与按压缩放由主题包按此键取值"
     },
@@ -890,7 +894,11 @@
       "valueType": "enum",
       "bindable": false,
       "modeVariant": false,
-      "enumValues": ["solid", "outlined", "glass"],
+      "enumValues": [
+        "solid",
+        "outlined",
+        "glass"
+      ],
       "label": "表面处理",
       "description": "表面材质处理：solid 实色、outlined 描边、glass 玻璃；由组件层 *-treatment 键默认引用"
     },
@@ -909,7 +917,11 @@
       "valueType": "enum",
       "bindable": false,
       "modeVariant": false,
-      "enumValues": ["compact", "regular", "comfortable"],
+      "enumValues": [
+        "compact",
+        "regular",
+        "comfortable"
+      ],
       "label": "密度",
       "description": "界面密度：compact 紧凑、regular 常规、comfortable 宽松；间距与控件高度由主题包按此键取值"
     },
@@ -1020,6 +1032,24 @@
       "modeVariant": false,
       "label": "二倍大间距",
       "description": "通用间距刻度；按布局所需档位选用，基础值沿用现有刻度。"
+    },
+    {
+      "id": "size.panel-medium",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "label": "中档面板高度",
+      "description": "浮层面板的受控高度档位"
+    },
+    {
+      "id": "size.panel-large",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "label": "展开面板高度",
+      "description": "浮层面板的受控高度档位"
     }
   ],
   "contrastPairs": [

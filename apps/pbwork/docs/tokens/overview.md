@@ -16,7 +16,7 @@
 
 ## 样式值消费
 
-- 所有可见或可测量的设计量都必须来自 Token：颜色、间距、尺寸、比例尺寸、圆角、边框、排版数值、阴影、透明度、层级、动效、滤镜与变换距离。
+- 所有可见或可测量的设计量都必须来自主题键或不可覆盖的 PBWork 实现常量：颜色、间距、尺寸、比例尺寸、圆角、边框、排版数值、阴影、透明度、层级、动效、滤镜与变换距离。
 - CSS 只允许通过 `var(--pb-*)` 消费这些值；`calc()` 只能组合 Token 变量，不得加入裸数值。
 - DOM 测量、索引或指针状态产生的几何值是唯一运行时派生例外：通过 custom property 传入，不进入 Token Catalog，也不得作为组件的固定默认值或自由样式 prop。
 - Grid 不属于 PBWork DS / 现役原型的布局能力：使用 Flex 或常规文档流。完整的作用域和结构语法白名单见 [开发规范](../development.md#样式实现铁律)。
@@ -31,10 +31,10 @@
 
 | 集合       | 文件                  | 用途                                       |
 | ---------- | --------------------- | ------------------------------------------ |
-| 全量主题键 | key-catalog + Contract.componentTokens | 133 项定义，由 Core 解析取值 |
-| Bind 池 | theme/bindings.ts | 自动选择 bindable=true 的 127 项 |
+| 全量主题键 | key-catalog + Contract.componentTokens | 136 项定义，由 Core 解析取值 |
+| Bind 池 | theme/bindings.ts | 自动选择 bindable=true 的 130 项 |
 | 不可绑定控制项 | density、motion.personality、surface.treatment 与三个组件材质控制 | 影响包内表达式或共享材质分支 |
-| 实现常量 | theme/constants.json | 31 项；CSS 可消费，JS 经 themeConstantNumber/Css 读取；不进入 Catalog/绑定/Target |
+| 实现常量 | theme/constants.json | 36 项；CSS 可消费，JS 经 themeConstantNumber/Css 读取；不进入 Catalog/绑定/Target |
 | 绑定字面量 | transparent、none | 由 Core 声明；不是 Token，不生成 Target obligation |
 
 组件内 JS 读取主题键使用 useToken/useTokenNumber 的 computed；禁止模块级缓存主题默认值。字阶部件只读且不可绑定。Contract 与 Inspector 只列可绑定的主题键，不把布局比例、层级或手势阈值等常量伪装成主题证据。

@@ -58,7 +58,8 @@ Check `apps/pbwork/docs/components/audit-large-types.md` for suspiciously large 
 
 - DS implementation uses Flex or normal document flow only. Do not use CSS
   Grid, `grid-*`, or `place-*`.
-- Consume Foundation/Theme Tokens for every visible or measurable design value.
+- Consume theme keys or PBWork constants for every visible or measurable design value.
+  Concrete values belong only in theme packs or the constant table.
   Do not write fixed colors, units, visual numbers, generated fixed CSS, or
   literal fallbacks. `calc()` may combine Tokens and derived runtime variables.
 - DOM-derived geometry may pass through a custom property but cannot become a
@@ -90,6 +91,11 @@ pnpm ds:target-sync:verify
 ```
 
 Add relevant Playwright specs for gestures, overlays, navigation, or Playground.
+Test new components with both `pbwork-base/default` and `pbwork-sample/garden`,
+in light and dark. Sample packs remain preview-only. Reuse BottomSheet for
+action overlays and TransientNotice for Toast/Snackbar lifecycles; keep business
+undo, navigation and declared-clock state in the caller. Update Target pending
+entries truthfully rather than implying a Flutter implementation.
 
 ## Typed local authoring
 

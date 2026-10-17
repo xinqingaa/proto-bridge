@@ -54,7 +54,7 @@ DS 维护颜色、字体、间距等 Foundation 和基础组件；每个原型�
 ## 6. Registry
 
 - Component Contract、Vue、Registry、Scenario、文档和测试保持一致。
-- Prototype/Screen/Variant/Action/Scenario 只在 `prototypes/registry.ts` 注册。
+- Prototype 在就近 `prototype.ts` 声明；Screen/Variant/Action/Scenario 在 `screens/{slug}/screen.ts` 用 `defineScreen()` 声明，由 `prototypes/registry.ts` glob 汇总。
 - Runtime 路由、工作台导航和 Capture manifest 不维护平行清单。
 
 ## 7. Semantic Evidence

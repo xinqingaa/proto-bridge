@@ -708,6 +708,16 @@ export const componentRecords = [
     controls: [
       { key: "title", label: "标题", control: "text" },
       { key: "modelValue", label: "打开", control: "boolean" },
+      {
+        key: "detent",
+        label: "面板高度",
+        control: "select",
+        options: [
+          { label: "适应内容", value: "content" },
+          { label: "半屏", value: "medium" },
+          { label: "展开", value: "expanded" },
+        ],
+      },
     ],
   },
   {
@@ -739,4 +749,434 @@ export const componentRecords = [
       { key: "label", label: "说明", control: "text" },
     ],
   },
-] satisfies ComponentRecord[];
+
+  {
+    id: "segmented-control",
+    label: "SegmentedControl",
+    description: "互斥的局部模式选择，不创建视图区或导航历史。",
+    category: "input",
+    view: "input/SegmentedControl.vue",
+    contract: "contracts/segmented-control.json",
+    example: {},
+    controls: [
+      {
+        key: "label",
+        label: "label",
+        control: "text",
+      },
+      {
+        key: "modelValue",
+        label: "modelValue",
+        control: "text",
+      },
+      {
+        key: "disabled",
+        label: "disabled",
+        control: "boolean",
+      },
+    ],
+  },
+  {
+    id: "stepper",
+    label: "Stepper",
+    description: "有限范围内增减数值，按钮与数值输入使用同一边界。",
+    category: "input",
+    view: "input/Stepper.vue",
+    contract: "contracts/stepper.json",
+    example: {},
+    controls: [
+      {
+        key: "label",
+        label: "label",
+        control: "text",
+      },
+      {
+        key: "modelValue",
+        label: "modelValue",
+        control: "number",
+      },
+      {
+        key: "min",
+        label: "min",
+        control: "number",
+      },
+      {
+        key: "max",
+        label: "max",
+        control: "number",
+      },
+      {
+        key: "step",
+        label: "step",
+        control: "number",
+      },
+      {
+        key: "disabled",
+        label: "disabled",
+        control: "boolean",
+      },
+    ],
+  },
+  {
+    id: "duration-picker",
+    label: "DurationPicker",
+    description: "小时与分钟双滚轮，值为总分钟数。",
+    category: "input",
+    view: "input/DurationPicker.vue",
+    contract: "contracts/duration-picker.json",
+    example: {},
+    controls: [
+      {
+        key: "label",
+        label: "label",
+        control: "text",
+      },
+      {
+        key: "modelValue",
+        label: "modelValue",
+        control: "number",
+      },
+      {
+        key: "minuteStep",
+        label: "minuteStep",
+        control: "number",
+        options: [
+          {
+            label: "1",
+            value: 1,
+          },
+          {
+            label: "5",
+            value: 5,
+          },
+          {
+            label: "15",
+            value: 15,
+          },
+          {
+            label: "30",
+            value: 30,
+          },
+        ],
+      },
+      {
+        key: "disabled",
+        label: "disabled",
+        control: "boolean",
+      },
+    ],
+  },
+  {
+    id: "ring-progress",
+    label: "RingProgress",
+    description: "确定进度环，展示完成比例与可访问数值。",
+    category: "display",
+    view: "display/RingProgress.vue",
+    contract: "contracts/ring-progress.json",
+    example: {},
+    controls: [
+      {
+        key: "label",
+        label: "label",
+        control: "text",
+      },
+      {
+        key: "value",
+        label: "value",
+        control: "number",
+      },
+      {
+        key: "max",
+        label: "max",
+        control: "number",
+      },
+    ],
+  },
+  {
+    id: "metric",
+    label: "Metric",
+    description: "数字、单位、说明与变化量的只读指标。",
+    category: "display",
+    view: "display/Metric.vue",
+    contract: "contracts/metric.json",
+    example: {},
+    controls: [
+      {
+        key: "label",
+        label: "label",
+        control: "text",
+      },
+      {
+        key: "unit",
+        label: "unit",
+        control: "text",
+      },
+      {
+        key: "change",
+        label: "change",
+        control: "number",
+      },
+    ],
+  },
+  {
+    id: "tag",
+    label: "Tag",
+    description: "紧凑只读分类或状态标签，不承担选择交互。",
+    category: "display",
+    view: "display/Tag.vue",
+    contract: "contracts/tag.json",
+    example: {},
+    controls: [
+      {
+        key: "label",
+        label: "label",
+        control: "text",
+      },
+      {
+        key: "tone",
+        label: "tone",
+        control: "select",
+        options: [
+          {
+            label: "neutral",
+            value: "neutral",
+          },
+          {
+            label: "primary",
+            value: "primary",
+          },
+          {
+            label: "success",
+            value: "success",
+          },
+          {
+            label: "warning",
+            value: "warning",
+          },
+          {
+            label: "error",
+            value: "error",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "mini-bars",
+    label: "MiniBars",
+    description: "紧凑柱形对比，零值、空集合与数值标签均可辨识。",
+    category: "display",
+    view: "display/MiniBars.vue",
+    contract: "contracts/mini-bars.json",
+    example: {},
+    controls: [
+      {
+        key: "label",
+        label: "label",
+        control: "text",
+      },
+    ],
+  },
+  {
+    id: "heatmap",
+    label: "Heatmap",
+    description: "按周分列的日强度图，以日期保持稳定身份。",
+    category: "display",
+    view: "display/Heatmap.vue",
+    contract: "contracts/heatmap.json",
+    example: {},
+    controls: [
+      {
+        key: "label",
+        label: "label",
+        control: "text",
+      },
+      {
+        key: "modelValue",
+        label: "modelValue",
+        control: "text",
+      },
+    ],
+  },
+  {
+    id: "month-calendar",
+    label: "MonthCalendar",
+    description: "按月选择日期，使用固定星期顺序与受控月份。",
+    category: "display",
+    view: "display/MonthCalendar.vue",
+    contract: "contracts/month-calendar.json",
+    example: {},
+    controls: [
+      {
+        key: "label",
+        label: "label",
+        control: "text",
+      },
+      {
+        key: "month",
+        label: "month",
+        control: "text",
+      },
+      {
+        key: "modelValue",
+        label: "modelValue",
+        control: "text",
+      },
+    ],
+  },
+  {
+    id: "list-cell",
+    label: "ListCell",
+    description: "列表单元：前置图标、主副标题、尾部值与导航或开关。",
+    category: "data",
+    view: "data/ListCell.vue",
+    contract: "contracts/list-cell.json",
+    example: {},
+    controls: [
+      {
+        key: "title",
+        label: "title",
+        control: "text",
+      },
+      {
+        key: "description",
+        label: "description",
+        control: "text",
+      },
+      {
+        key: "value",
+        label: "value",
+        control: "text",
+      },
+      {
+        key: "icon",
+        label: "icon",
+        control: "text",
+      },
+      {
+        key: "navigation",
+        label: "navigation",
+        control: "boolean",
+      },
+      {
+        key: "modelValue",
+        label: "modelValue",
+        control: "boolean",
+      },
+      {
+        key: "disabled",
+        label: "disabled",
+        control: "boolean",
+      },
+    ],
+  },
+  {
+    id: "grouped-list",
+    label: "GroupedList",
+    description: "带组标题的列表组合，复用 DataList 与 ListCell。",
+    category: "data",
+    view: "data/GroupedList.vue",
+    contract: "contracts/grouped-list.json",
+    example: {},
+    controls: [],
+  },
+  {
+    id: "snackbar",
+    label: "Snackbar",
+    description: "可撤销的短提示，撤销语义由业务处理。",
+    category: "feedback",
+    view: "feedback/Snackbar.vue",
+    contract: "contracts/snackbar.json",
+    example: {},
+    controls: [
+      {
+        key: "modelValue",
+        label: "modelValue",
+        control: "boolean",
+      },
+      {
+        key: "message",
+        label: "message",
+        control: "text",
+      },
+      {
+        key: "actionLabel",
+        label: "actionLabel",
+        control: "text",
+      },
+    ],
+  },
+  {
+    id: "action-sheet",
+    label: "ActionSheet",
+    description: "BottomSheet 内的动作列表组合，危险操作显式区分。",
+    category: "feedback",
+    view: "feedback/ActionSheet.vue",
+    contract: "contracts/action-sheet.json",
+    example: {},
+    controls: [
+      {
+        key: "title",
+        label: "title",
+        control: "text",
+      },
+      {
+        key: "modelValue",
+        label: "modelValue",
+        control: "boolean",
+      },
+      {
+        key: "cancelLabel",
+        label: "cancelLabel",
+        control: "text",
+      },
+    ],
+  },
+  {
+    id: "brand-mark",
+    label: "BrandMark",
+    description: "主题品牌图形与可替换品牌插槽，无资源时退回名称。",
+    category: "navigation",
+    view: "navigation/BrandMark.vue",
+    contract: "contracts/brand-mark.json",
+    example: {},
+    controls: [
+      {
+        key: "name",
+        label: "name",
+        control: "text",
+      },
+    ],
+  },
+  {
+    id: "launch-screen",
+    label: "LaunchScreen",
+    description: "启动与欢迎页的内容模式，进入行为由业务决定。",
+    category: "navigation",
+    view: "navigation/LaunchScreen.vue",
+    contract: "contracts/launch-screen.json",
+    example: {},
+    controls: [
+      {
+        key: "title",
+        label: "title",
+        control: "text",
+      },
+      {
+        key: "description",
+        label: "description",
+        control: "text",
+      },
+      {
+        key: "actionLabel",
+        label: "actionLabel",
+        control: "text",
+      },
+      {
+        key: "busy",
+        label: "busy",
+        control: "boolean",
+      },
+    ],
+  },
+] satisfies ComponentRecord[] satisfies ComponentRecord[];

@@ -1,6 +1,6 @@
 # ADR 0012：PBWork DS 是原型的基础而不是上限
 
-- 状态：Accepted
+- 状态：Accepted；第 6 项的阶段性限制已由 [ADR 0014](./0014-prototype-theme-packs.md) 替代。原文保留为当时的设计背景。
 - 细化并部分替代：[ADR 0005](./0005-pbwork-foundation-and-component-boundary.md) 中“形状匹配时必须使用对口 PBWork 组件”
 
 ## 背景
@@ -27,3 +27,7 @@
 - 原型可以拥有与 PBWork 不同的组件形态与构图，同时 Evidence 结构、Token 绑定与 Flutter 交付约束保持不变。
 - DS 缺口在各原型的 `docs/implementation.md` 中可见，DS 扩展有了需求来源。
 - 品牌取值的完整支持依赖[平台升级计划](../roadmap/pbwork-platform-upgrade.md)第 2 步的原型主题包；在此之前，品牌值只能在草稿中完整表达。字体不属于品牌层，统一使用默认字体栈。
+
+## 后续落地
+
+2026-10-17：品牌取值已由原型自有主题包承接，可继承基础包并声明包内多套主题与 light/dark 模式。第 6 项及结果中的等待/降级描述不再是当前限制。组件形态继续遵守本 ADR；解析与固定边界见 [ADR 0014](./0014-prototype-theme-packs.md)，字体仍使用默认字体栈。

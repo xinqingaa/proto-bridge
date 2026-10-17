@@ -54,9 +54,18 @@
     "background": "color.error",
     "text": "color.on-error",
     "radius": "radius.pill",
-    "label": "typography.caption-strong"
+    "label": "typography.caption-strong",
+    "labelSize": "badge.label-size"
   },
   "playground": {
     "presentation": "interactive"
+  },
+  "componentTokens": {
+    "label-size": {
+      "valueType": "length",
+      "default": 10,
+      "modeVariant": false,
+      "bindable": true
+    }
   }
 }

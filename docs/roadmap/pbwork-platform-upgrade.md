@@ -1,6 +1,6 @@
 # PBWork 与 PB 平台升级
 
-> 状态：执行中。第 1、2、3 步的实现和退出标准均已满足，均未合入 `main`。代码位于 `dev-platform`。合入 `main` 仍需另行授权。核实日期：2026-10-17。本文是计划，不代表现行 Contract。
+> 状态：执行中。第 1–5 步各自的退出标准均已满足，均未合入 `main`。总退出标准尚未作为一批重跑。代码位于 `dev-platform`。合入 `main` 仍需另行授权。核实日期：2026-10-17。本文是计划，不代表现行 Contract。
 >
 > 实施设计见[原型主题包与授权设计](./prototype-theme-and-authoring-design.md)。「一刻」原型见[下一份计划](./yike-prototype.md)，以本计划的第 2、3、4、5 步交付的能力为前置条件。
 
@@ -45,7 +45,7 @@ PBWork 现在能产出可采集的原型，但三处明显不足：
 | 第 2 步 主题包 | 实现与退出标准已满足（未合入 main） | 2026-10-16：用户确认冷链三个 default 屏与迁移前没有视觉差别。验证：`pnpm docs:verify`；PBWork `vitest run` 223 项；Core `vitest run` 433 项；`pnpm typecheck`（Core、Local Service、CLI、MCP）；`pnpm ds:target-sync:verify` 通过，32/32 组件与 127/127 可绑定键已列入映射，159 项 Flutter 适配保持 pending。样例包与 Gallery/Playground 选择器已落地。取值表的采集固定见第 3 步。 |
 | 第 3 步 采集质量 | 实现与退出标准已满足（未合入 main） | 2026-10-17：协议 3。Case 身份只保留模式，Selection/Handoff 固定主题包，取值表进 theme-pack Catalog。冷链定稿 Handoff 经 MCP `read_theme_pack` 读到 `pbwork-base` 摘要和完整取值表，深色组合标注未采集。探针在预检中打开每个主题与模式；隐藏节点的夹具会阻断。声明时钟两次读取一致。验证：`pnpm docs:verify`；Core `vitest run` 437 项；`test:e2e:runtime` 8 项、`test:e2e:mcp`、`test:e2e:evidence-slice`、`test:e2e:finalization` 3 项、`test:e2e:lifecycle`；`pnpm ds:target-sync:verify` 通过，159 项 Flutter 适配保持 pending。 |
 | 第 4 步 制作效率 | 实现与退出标准已满足（未提交、未合入 main） | 2026-10-17：`v-pb` / `pbStyle()`、生成键类型与显式 default 边界、Screen 就近声明 / glob 汇总、共享运行套件、脚手架与当前 Screen 实时诊断均已落地。冷链三屏默认截图迁移前后字节一致；原样脚手架通过 Preflight、同 Case 双采集及 Workbench 定稿。PBWork 236 项单测、build、Runtime 9 项、`docs:verify`、`ds:target-sync:verify` 通过；159 项 Flutter pending 保持。见本步验收记录。 |
-| 第 5 步 DS 通用组件与收口 | 未开始 | 依赖第 4 步的写法与第 2 步的键名。组件清单见该步。 |
+| 第 5 步 DS 通用组件与收口 | 实现与退出标准已满足（未合入 main） | 2026-10-17：清单内 15 个通用组件与带档位的 BottomSheet 已进入 Contract、Registry、Playground 与手册。基础包与样例包的浅色、深色均可渲染。`pnpm docs:verify`、`pnpm typecheck`、PBWork 326 项单测与 build、`ds:target-sync:verify` 通过；47/47 组件与 130/130 可绑定键已映射，177 项 Flutter 适配保持 pending。见本步验收记录。 |
 
 ```mermaid
 flowchart LR
@@ -276,6 +276,13 @@ Screen 代码按 SFC 的 script + template（不含 style）计，CSS 按 scoped
 
 - 清单内全部组件在 Playground 中可用基础包与样例主题包分别渲染，覆盖浅色与深色。
 - `pnpm docs:verify`、`pnpm typecheck`、PBWork 单测与 build、`ds:target-sync:verify` 通过，pending 清单如实列出。
+
+### 本步验收记录（2026-10-17）
+
+- 已交付 SegmentedControl、Stepper、DurationPicker、RingProgress、Metric、Tag、MiniBars、Heatmap、MonthCalendar、GroupedList、ListCell、带撤销的 Snackbar、带档位的 BottomSheet、ActionSheet、LaunchScreen、BrandMark。局部证据使用 `v-pb` / `pbStyle()`；实例绑定仍由 Registry 提供。手势、滚动与 Overlay 复用既有机制。
+- Playground 对上述组件及 BottomSheet 在 `pbwork-base/default` 与 `pbwork-sample/garden` 的 light、dark 下各渲染一次：根节点可见、有 role 与绑定表、局部节点有显式 Token Evidence、没有 CSS Grid。另覆盖分段键盘、步进、时长滚轮、月历、档位 Sheet 的 Escape、启动页不自行导航、ListCell 开关不嵌套按钮、GroupedList 受控回写。
+- 文档收口包括组件页与总论、检查单、Skill references、AGENTS 红线、[ADR 0012](../decisions/0012-pbwork-ds-is-foundation-not-ceiling.md) 的品牌层说明，以及此前未入库的 [ADR 0014](../decisions/0014-prototype-theme-packs.md)、[ADR 0015](../decisions/0015-theme-probes-and-declared-clock.md)。Flutter 代码未改；Target 对新组件与新增面板高度键显式 pending。
+- 验证：`pnpm docs:verify`（147 份）；`pnpm typecheck`；PBWork 44 个单测文件、326 项；PBWork build（含 vue-tsc）；`pnpm ds:target-sync:verify` 为 47/47 组件、130/130 可绑定键，177 项 pending 全量列出。Playwright：`platform-components`、`design-system-closure`、`workbench-navigation` 共 21 项通过。未重跑总退出标准中的全量 Playwright 与冷链定稿。工作在 `dev-platform`，未合入 main。
 
 ---
 

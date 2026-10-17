@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "id": "stepper",
+  "category": "input",
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "field"
+  },
+  "summary": "有限范围内增减数值，按钮与数值输入使用同一边界。",
+  "behavior": [
+    "输入和增减统一钳制 min/max，并按 step 对齐；非有限输入恢复原值",
+    "到达边界或整体禁用时阻止相应操作；原生数字输入提供键盘路径"
+  ],
+  "layout": {
+    "summary": "有限范围内增减数值，按钮与数值输入使用同一边界。"
+  },
+  "visualAnatomy": {
+    "summary": "使用当前主题的语义色、字阶、间距和受控形状，不在实例上换绑。"
+  },
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "label": {
+        "type": "string"
+      },
+      "modelValue": {
+        "type": "number"
+      },
+      "min": {
+        "type": "number"
+      },
+      "max": {
+        "type": "number"
+      },
+      "step": {
+        "type": "number"
+      },
+      "disabled": {
+        "type": "boolean"
+      }
+    }
+  },
+  "defaultProps": {
+    "label": "每日目标",
+    "modelValue": 3,
+    "min": 0,
+    "max": 10,
+    "step": 1,
+    "disabled": false
+  },
+  "states": [
+    {
+      "id": "minimum",
+      "label": "最小值",
+      "kind": "content",
+      "props": {
+        "modelValue": 0
+      }
+    },
+    {
+      "id": "maximum",
+      "label": "最大值",
+      "kind": "content",
+      "props": {
+        "modelValue": 10
+      }
+    },
+    {
+      "id": "disabled",
+      "label": "禁用",
+      "kind": "interaction",
+      "props": {
+        "disabled": true
+      }
+    }
+  ],
+  "slots": [],
+  "events": ["update:modelValue"],
+  "tokenBindings": {
+    "surface": "color.surface",
+    "color": "color.on-surface",
+    "gap": "spacing.sm",
+    "typography": "typography.content",
+    "radius": "radius.control",
+    "padding": "spacing.xs",
+    "target": "size.touch",
+    "focus": "border.focus",
+    "disabledOpacity": "opacity.disabled",
+    "border": "border.hairline",
+    "number": "typography.numeric-content",
+    "focusOffset": "spacing.xxs",
+    "contentExtent": "size.avatar-large"
+  },
+  "playground": {
+    "presentation": "interactive"
+  }
+}

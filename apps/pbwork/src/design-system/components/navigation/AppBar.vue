@@ -87,6 +87,7 @@ usePbInspect({
     elevation: "elevation.surface",
     title: "typography.subtitle",
     padding: "spacing.md",
+    titleInset: "spacing.xs",
     restingElevation: "none",
     iconSize: "size.icon",
   }),
@@ -186,5 +187,12 @@ usePbInspect({
   display: flex;
   align-items: center;
   gap: var(--pb-spacing-xs);
+}
+</style>
+
+<style scoped>
+/* Preserve the established title inset independently of lazy vendor CSS order. */
+.pb-app-bar .pb-app-bar-title {
+  margin-inline-start: calc(var(--pb-spacing-md) + var(--pb-spacing-xs));
 }
 </style>

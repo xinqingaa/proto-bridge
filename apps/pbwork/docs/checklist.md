@@ -12,6 +12,7 @@
 - [ ] `calc()` 只组合 Token/运行时派生变量；DOM 测量值仅经 custom property 传入，未形成固定默认值或自由样式入口
 - [ ] 新增或实际消费的 Token 已同步 Foundation、Theme、Bind 池（如需）、Contract 与 Inspector
 - [ ] 浅色 / 深色主题下关键表面可读；theme 切换不堆业务 history、不占用 variant
+- [ ] 新组件在基础包与样例包的浅/深色均可用；样例包不绑定正式原型；Target pending 原因与未实现状态如实保留
 - [ ] 新增或改动的 props 已进 contract + registry；触达文档已更新叙事（不以 props 表为权威）
 - [ ] Contract 含 `playground.presentation`；语义变更已补 `summary`/`behavior`/`states[].kind`（适用时）
 - [ ] Contract ↔ Vue ↔ Registry 经校验一致，Inspector 与 JSON Contract 的 token binding 槽位集合完全一致；文档与 Contract 语义不冲突

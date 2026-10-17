@@ -6,7 +6,7 @@ test("foundation previews expose width tokens and distinct semantic icons", asyn
   await page.goto("/workbench/foundations/tokens/border");
 
   const widthSamples = page.locator(".border-sample.is-width-only");
-  await expect(widthSamples).toHaveCount(2);
+  await expect(widthSamples).toHaveCount(3);
   await expect
     .poll(() =>
       widthSamples.evaluateAll((samples) =>
@@ -18,6 +18,7 @@ test("foundation previews expose width tokens and distinct semantic icons", asyn
     )
     .toEqual([
       { style: "solid", width: "1px" },
+      { style: "solid", width: "2px" },
       { style: "solid", width: "4px" },
     ]);
 

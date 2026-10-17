@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "id": "duration-picker",
+  "category": "input",
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "field"
+  },
+  "summary": "小时与分钟双滚轮，值为总分钟数。",
+  "behavior": [
+    "范围为 0 至 23 小时 59 分钟，分钟按 minuteStep 向下对齐",
+    "使用原生纵滚与 scroll snap，不复制横滑或拖动仲裁；点击、上下键与 Home/End 等价",
+    "外部更新会同步滚轮位置；禁用时阻止滚动提交与点击提交"
+  ],
+  "layout": {
+    "summary": "Two equal vertical columns, each showing three snap rows; selected row centered, contained vertical scroll, no horizontal swipe ownership."
+  },
+  "visualAnatomy": {
+    "summary": "Hour/minute labels above neutral recessed wheels; selected row uses the selected surface and numeric content typography."
+  },
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "label": {
+        "type": "string"
+      },
+      "modelValue": {
+        "type": "number"
+      },
+      "minuteStep": {
+        "type": "integer",
+        "enum": [1, 5, 15, 30]
+      },
+      "disabled": {
+        "type": "boolean"
+      }
+    }
+  },
+  "defaultProps": {
+    "label": "提醒间隔",
+    "modelValue": 90,
+    "minuteStep": 5,
+    "disabled": false
+  },
+  "states": [
+    {
+      "id": "short",
+      "label": "短时长",
+      "kind": "content",
+      "props": {
+        "modelValue": 15
+      }
+    },
+    {
+      "id": "disabled",
+      "label": "禁用",
+      "kind": "interaction",
+      "props": {
+        "disabled": true
+      }
+    }
+  ],
+  "slots": [],
+  "events": ["update:modelValue"],
+  "tokenBindings": {
+    "color": "color.on-surface",
+    "muted": "color.on-surface-muted",
+    "gap": "spacing.sm",
+    "typography": "typography.content",
+    "selection": "color.surface-selected",
+    "track": "color.surface-recessed",
+    "radius": "radius.control",
+    "padding": "spacing.xs",
+    "focus": "border.focus",
+    "disabledOpacity": "opacity.disabled",
+    "number": "typography.numeric-content",
+    "row": "size.control",
+    "settleDuration": "motion.duration-short"
+  },
+  "playground": {
+    "presentation": "interactive"
+  }
+}

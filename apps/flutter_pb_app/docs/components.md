@@ -2,7 +2,7 @@
 
 公共组件按 Producer 的职责分类位于 `lib/common/widgets/{action,input,display,navigation,data}/`，Target 自己拥有的组合壳位于 `lib/common/widgets/composition/`，业务与测试统一从 `lib/common/widgets.dart` 导入。组件负责稳定的交互语义、尺寸和 Theme 映射；业务页面只传入数据、状态和回调。弹层统一走 `lib/common/overlay/app_pop.dart` 的 `AppPop`。
 
-目录分类只组织源码，不改变 `componentId` 或 role。`CommonFormSection` 等 Target 组合壳不得进入 32 项 Producer 组件映射；`AppPop` 仍保持独立弹层边界，不由 Widget barrel 隐式导出。`PbPageTransitions` 承接 `screen-transition`，由 Theme 应用，不是页面可组合的业务 Widget。
+目录分类只组织源码，不改变 `componentId` 或 role。`CommonFormSection` 等 Target 组合壳不得冒充 Producer 组件映射；当前 Producer 共 47 项，Target 均明确 pending，现有 Dart 目录仍对应先前的 32 项；`AppPop` 仍保持独立弹层边界，不由 Widget barrel 隐式导出。`PbPageTransitions` 承接 `screen-transition`，由 Theme 应用，不是页面可组合的业务 Widget。
 
 ## 组件职责
 

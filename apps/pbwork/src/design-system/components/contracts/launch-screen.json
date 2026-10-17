@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "id": "launch-screen",
+  "category": "navigation",
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "page"
+  },
+  "summary": "启动与欢迎页的内容模式，进入行为由业务决定。",
+  "behavior": [
+    "品牌、插画、内容和 actions 提供插槽，默认动作发出 start；不写路由或定时跳转",
+    "busy 由已有 Button 的 loading 行为处理，不伪装为 disabled",
+    "原型可放入 PrototypeShell 的 launch 插槽；主题资源仅随 Token 解析变化"
+  ],
+  "layout": {
+    "summary": "Centered vertical document flow: brand, optional illustration, heading, description/content, actions; host owns viewport and navigation."
+  },
+  "visualAnatomy": {
+    "summary": "Brand assets resolve from current pack; title/content typography and semantic spacing; loading belongs to shared Button."
+  },
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "title": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "actionLabel": {
+        "type": "string"
+      },
+      "busy": {
+        "type": "boolean"
+      }
+    }
+  },
+  "defaultProps": {
+    "title": "开始新的一天",
+    "description": "留一点时间给重要的事",
+    "actionLabel": "开始",
+    "busy": false
+  },
+  "states": [
+    {
+      "id": "busy",
+      "label": "准备中",
+      "kind": "interaction",
+      "props": {
+        "busy": true
+      }
+    },
+    {
+      "id": "welcome",
+      "label": "欢迎",
+      "kind": "content",
+      "props": {
+        "title": "欢迎回来",
+        "actionLabel": "继续"
+      }
+    }
+  ],
+  "slots": ["brand", "illustration", "default", "actions"],
+  "events": ["start"],
+  "tokenBindings": {
+    "surface": "color.surface",
+    "color": "color.on-surface",
+    "muted": "color.on-surface-muted",
+    "gap": "spacing.sm",
+    "typography": "typography.content",
+    "padding": "spacing.lg",
+    "title": "typography.title",
+    "description": "typography.content",
+    "illustration": "asset.launch-image",
+    "contentExtent": "size.avatar-large"
+  },
+  "playground": {
+    "presentation": "interactive"
+  }
+}

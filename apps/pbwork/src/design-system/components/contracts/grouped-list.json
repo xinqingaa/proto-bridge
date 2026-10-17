@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "id": "grouped-list",
+  "category": "data",
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "list"
+  },
+  "summary": "带组标题的列表组合，复用 DataList 与 ListCell。",
+  "behavior": [
+    "不创建滚动所有者，长列表由外层 ScrollableDataList 承担",
+    "group.id 与 item.id 是稳定业务身份，选择与开关事件携带 groupId 和 itemId"
+  ],
+  "layout": {
+    "summary": "Groups stack in normal flow; each has heading then DataList of ListCell; no independent scrolling."
+  },
+  "visualAnatomy": {
+    "summary": "Caption-strong group headings and shared list surfaces; child components own their exact bindings."
+  },
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "groups": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
+            },
+            "title": {
+              "type": "string"
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          },
+          "required": ["id", "title", "items"]
+        }
+      }
+    }
+  },
+  "defaultProps": {
+    "groups": [
+      {
+        "id": "notifications",
+        "title": "通知",
+        "items": [
+          {
+            "id": "daily",
+            "title": "每日提醒",
+            "description": "默认提醒时间",
+            "value": "08:00",
+            "navigation": true
+          }
+        ]
+      },
+      {
+        "id": "privacy",
+        "title": "隐私",
+        "items": [
+          {
+            "id": "sync",
+            "title": "云端同步",
+            "modelValue": true
+          }
+        ]
+      }
+    ]
+  },
+  "states": [
+    {
+      "id": "empty",
+      "label": "无分组",
+      "kind": "content",
+      "props": {
+        "groups": []
+      }
+    },
+    {
+      "id": "single",
+      "label": "单分组",
+      "kind": "content",
+      "props": {
+        "groups": [
+          {
+            "id": "account",
+            "title": "账户",
+            "items": [
+              {
+                "id": "profile",
+                "title": "个人资料",
+                "navigation": true
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "slots": [],
+  "events": ["select", "toggle"],
+  "tokenBindings": {
+    "color": "color.on-surface",
+    "muted": "color.on-surface-muted",
+    "gap": "spacing.sm",
+    "typography": "typography.content",
+    "heading": "typography.caption-strong"
+  },
+  "playground": {
+    "presentation": "interactive"
+  }
+}

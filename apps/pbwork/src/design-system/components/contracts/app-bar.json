@@ -78,7 +78,8 @@
     "iconSize": "size.icon",
     "materialOpacity": "opacity.translucent",
     "materialBackdrop": "surface.glass-backdrop",
-    "materialBorder": "border.default"
+    "materialBorder": "border.default",
+    "titleInset": "spacing.xs"
   },
   "playground": {
     "presentation": "interactive"

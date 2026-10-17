@@ -1,4 +1,3 @@
-import { isolateLifecycleDocument } from "./support/lifecycle";
 import { expect, test, type Page } from "@playwright/test";
 import {
   Bundle,
@@ -10,6 +9,12 @@ import {
   computeScopeKey,
   normalizeCaptureScope,
 } from "@proto-bridge/core/v2";
+import { isolateLifecycleDocument } from "./support/lifecycle";
+
+// Complete intercepted responses before Playwright disposes the page request context.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: "wait" });
+});
 
 test.use({ viewport: { width: 1440, height: 1050 } });
 

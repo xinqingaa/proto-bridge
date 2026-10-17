@@ -206,6 +206,36 @@
       "valueType": "shadow",
       "value": "none",
       "label": "无阴影"
+    },
+    {
+      "id": "layout.wheel-visible-rows",
+      "valueType": "number",
+      "value": 3,
+      "label": "滚轮可见行数"
+    },
+    {
+      "id": "layout.ring-coordinate-size",
+      "valueType": "number",
+      "value": 100,
+      "label": "圆环逻辑坐标边长"
+    },
+    {
+      "id": "layout.ring-center",
+      "valueType": "number",
+      "value": 50,
+      "label": "圆环逻辑中心"
+    },
+    {
+      "id": "layout.ring-radius",
+      "valueType": "number",
+      "value": 44,
+      "label": "圆环逻辑半径"
+    },
+    {
+      "id": "motion.ring-start-angle",
+      "valueType": "number",
+      "value": -90,
+      "label": "圆环起始角度"
     }
   ]
 }

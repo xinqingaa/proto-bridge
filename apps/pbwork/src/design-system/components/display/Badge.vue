@@ -37,6 +37,7 @@ usePbInspect({
     text: `color.on-${tone.value ?? "error"}`,
     radius: "radius.pill",
     label: "typography.caption-strong",
+    labelSize: "badge.label-size",
   }),
 });
 </script>
@@ -62,5 +63,12 @@ usePbInspect({
   font: var(--pb-typography-caption-strong);
   text-transform: none;
   letter-spacing: normal;
+}
+</style>
+
+<style scoped>
+/* Keep the established compact label independent of lazy vendor CSS order. */
+.pb-badge.v-chip {
+  font-size: var(--pb-badge-label-size);
 }
 </style>

@@ -117,6 +117,9 @@ usePbInspect({
 
 <style scoped>
 .pb-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: var(--pb-size-touch) !important;
   min-height: var(--pb-size-touch) !important;
   box-shadow: var(--pb-component-shadow, var(--pb-elevation-none)) !important;

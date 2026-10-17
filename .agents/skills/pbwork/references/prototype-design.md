@@ -203,13 +203,13 @@ as a DS gap. Two limits stay:
 - A prototype-local component obeys the same Token-only, Flex-only, and
   Evidence rules as a DS component.
 
-Brand values are a separate gap. Formal pages can only use registered
-Foundation and Theme Tokens, and Themes are global (`light`, `dark`), so a
-brand color that no existing Token expresses has no formal home yet. Record it
-as a brand-layer gap and let the user decide before formal authoring: wait for
-prototype theme packs (platform upgrade plan, step 2), or map to existing
-Tokens with the degradation written in `design.md`. Never add a
-business-named shared Token or a page-local palette to work around it.
+Brand values belong to the prototype's own theme pack (same ID as the
+prototype). It may inherit the base pack and declare multiple named themes
+with light/dark modes. Keep existing semantic and component key meanings;
+put concrete values in the pack, never a business-named shared Token or a
+page-local palette. Record a Token gap only when the existing key semantics
+cannot express the need. Sample packs are Gallery/Playground only. See the
+Theme manual and ADR 0014 for ownership and resolution.
 Typefaces are not part of a prototype's brand layer: use the default PBWork
 font stack and do not switch typefaces per prototype, theme, or style direction.
 

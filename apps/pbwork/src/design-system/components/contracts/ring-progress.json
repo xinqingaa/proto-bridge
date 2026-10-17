@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "id": "ring-progress",
+  "category": "display",
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "status"
+  },
+  "summary": "确定进度环，展示完成比例与可访问数值。",
+  "behavior": [
+    "比例钳制在 0 与 max 之间；max 无效时按空进度处理",
+    "SVG 坐标系来自常量表，圆环描边来自主题；不宣称不确定进度"
+  ],
+  "layout": {
+    "summary": "确定进度环，展示完成比例与可访问数值。"
+  },
+  "visualAnatomy": {
+    "summary": "使用当前主题的语义色、字阶、间距和受控形状，不在实例上换绑。"
+  },
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "label": {
+        "type": "string"
+      },
+      "value": {
+        "type": "number"
+      },
+      "max": {
+        "type": "number"
+      }
+    }
+  },
+  "defaultProps": {
+    "label": "今日目标",
+    "value": 68,
+    "max": 100
+  },
+  "states": [
+    {
+      "id": "empty",
+      "label": "未开始",
+      "kind": "content",
+      "props": {
+        "value": 0
+      }
+    },
+    {
+      "id": "complete",
+      "label": "已完成",
+      "kind": "content",
+      "props": {
+        "value": 100
+      }
+    }
+  ],
+  "slots": [],
+  "events": [],
+  "tokenBindings": {
+    "fill": "color.primary",
+    "track": "color.primary-soft",
+    "color": "color.on-surface",
+    "typography": "typography.numeric-content",
+    "diameter": "size.avatar-large",
+    "stroke": "size.stroke"
+  },
+  "playground": {
+    "presentation": "interactive"
+  }
+}

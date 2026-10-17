@@ -54,7 +54,7 @@ PBWork 有三个 UI 分区：
 Design System 与现役业务原型的样式遵循同一套基础规则：
 
 - **只用 Flex 或常规文档流布局**。禁止 `grid` / `inline-grid`、所有 `grid-*` 属性与 `place-items` / `place-content` / `place-self`；Workbench 壳不属于该约束范围。
-- **所有设计量必须消费语义 Token**。颜色、间距、尺寸、比例尺寸、圆角、边框、排版数值、阴影、透明度、层级、动效、滤镜和变换距离只能经 `var(--pb-*)` 使用；Token 的具体值只能定义在 Foundation 与 Theme。具有设计含义的 `0` 也不是例外。
+- **所有设计量必须消费主题键或 PBWork 常量**。颜色、间距、尺寸、比例尺寸、圆角、边框、排版数值、阴影、透明度、层级、动效、滤镜和变换距离只能经 `var(--pb-*)` 使用；具体值只能定义在主题包或 PBWork 常量表；常量不可被主题覆盖，也不进入 Evidence 绑定。具有设计含义的 `0` 也不是例外。
 - 约束覆盖 `.vue` 的 style/template/script、共享 TS helper、内联/生成样式与 Vuetify 等 vendor 视觉 props；不能把固定数字从 CSS 搬到 `:size`、`:height`、`:elevation`、`:timeout` 或 JS style object 规避审计。
 - 组件和原型样式不得用 `var(--pb-*, 4px)` 一类 literal fallback 绕过 Token。缺少值时先补 Token，再消费 Token。
 - `calc()` 只能组合 Token 变量或运行时派生变量，不能带裸数值。

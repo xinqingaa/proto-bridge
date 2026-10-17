@@ -10,11 +10,23 @@ const props = defineProps<{
   attach?: string;
   /** Page-unique inspect / comment anchor; falls back to `ds.bottom-sheet`. */
   inspectId?: string;
+  detent?: "content" | "medium" | "expanded";
+  detents?: Array<"content" | "medium" | "expanded">;
 }>();
-defineEmits<{ "update:modelValue": [value: boolean] }>();
+const emit = defineEmits<{
+  "update:modelValue": [value: boolean];
+  "update:detent": [value: "content" | "medium" | "expanded"];
+}>();
 
 const sheetRef = usePbInspectRef();
 const { title, modelValue, attach, inspectId } = toRefs(props);
+
+const currentDetent = computed(() => props.detent ?? "content");
+const detentLabels = { content: "适应内容", medium: "半屏", expanded: "展开" };
+const availableDetents = computed(() => [...new Set(props.detents ?? [])]);
+function selectDetent(detent: "content" | "medium" | "expanded") {
+  emit("update:detent", detent);
+}
 
 const attachTarget = computed(() => attach.value ?? ".runtime-app");
 
@@ -27,6 +39,8 @@ const { resync } = usePbInspect({
     title: title.value,
     modelValue: modelValue.value ?? false,
     inspectId: inspectId.value,
+    detent: currentDetent.value,
+    detents: availableDetents.value,
   }),
   getState: () => ({ open: Boolean(modelValue.value) }),
   getTokenBindings: () => ({
@@ -38,6 +52,13 @@ const { resync } = usePbInspect({
     body: "typography.content",
     padding: "spacing.md",
     headerControl: "size.touch",
+    detentGap: "spacing.sm",
+    detentPadding: "spacing.xs",
+    detentBorder: "border.hairline",
+    detentSelected: "color.surface-selected",
+    detentFocus: "border.focus",
+    mediumHeight: "size.panel-medium",
+    expandedHeight: "size.panel-large",
     duration: "bottom-sheet.duration",
     easing: "motion.easing-gentle",
   }),
@@ -50,6 +71,13 @@ const { resync } = usePbInspect({
     "typography.content",
     "spacing.md",
     "size.touch",
+    "spacing.sm",
+    "spacing.xs",
+    "border.hairline",
+    "color.surface-selected",
+    "border.focus",
+    "size.panel-medium",
+    "size.panel-large",
     "bottom-sheet.duration",
     "motion.easing-gentle",
   ],
@@ -66,6 +94,7 @@ watch(modelValue, async (value) => {
   <v-bottom-sheet
     :model-value="modelValue ?? false"
     class="pb-sheet-host"
+    :data-detent="currentDetent"
     scrim
     :attach="attachTarget"
     absolute
@@ -74,6 +103,7 @@ watch(modelValue, async (value) => {
     <v-card
       ref="sheetRef"
       class="pb-sheet sheet"
+      :data-detent="currentDetent"
       data-pb-id="ds.bottom-sheet"
       data-pb-role="sheet"
       data-pb-shell="sheet"
@@ -87,6 +117,22 @@ watch(modelValue, async (value) => {
         :inspect-id="inspectId ?? 'ds.bottom-sheet'"
         @close="$emit('update:modelValue', false)"
       />
+      <div
+        v-if="availableDetents.length"
+        class="pb-sheet-detents"
+        role="group"
+        aria-label="面板高度"
+      >
+        <button
+          v-for="detent in availableDetents"
+          :key="detent"
+          type="button"
+          :aria-pressed="currentDetent === detent"
+          @click="selectDetent(detent)"
+        >
+          {{ detentLabels[detent] }}
+        </button>
+      </div>
       <v-card-text class="pb-sheet-body">
         <slot />
       </v-card-text>
@@ -105,6 +151,33 @@ watch(modelValue, async (value) => {
   background: var(--pb-color-surface);
   color: var(--pb-color-on-surface);
   box-shadow: var(--pb-elevation-raised);
+}
+.pb-sheet[data-detent="medium"] {
+  height: var(--pb-size-panel-medium);
+}
+.pb-sheet[data-detent="expanded"] {
+  height: var(--pb-size-panel-large);
+}
+.pb-sheet-detents {
+  display: flex;
+  gap: var(--pb-spacing-sm);
+  padding-inline: var(--pb-spacing-md);
+}
+.pb-sheet-detents button {
+  min-height: var(--pb-size-touch);
+  padding: var(--pb-spacing-xs) var(--pb-spacing-sm);
+  border: var(--pb-border-hairline);
+  border-radius: var(--pb-radius-control);
+  background: var(--pb-color-surface);
+  color: var(--pb-color-on-surface);
+  font: var(--pb-typography-content);
+  cursor: pointer;
+}
+.pb-sheet-detents button[aria-pressed="true"] {
+  background: var(--pb-color-surface-selected);
+}
+.pb-sheet-detents button:focus-visible {
+  outline: var(--pb-border-focus);
 }
 .pb-sheet-body {
   overflow-y: auto;
@@ -128,6 +201,12 @@ watch(modelValue, async (value) => {
 
 <!-- Overlay attaches outside scoped tree; keep full-bleed width in phone shell. -->
 <style>
+.pb-sheet-host[data-detent="medium"] > .v-overlay__content {
+  height: var(--pb-size-panel-medium);
+}
+.pb-sheet-host[data-detent="expanded"] > .v-overlay__content {
+  height: var(--pb-size-panel-large);
+}
 .pb-sheet-host.v-bottom-sheet > .v-overlay__content,
 .pb-sheet-host.v-bottom-sheet > .v-bottom-sheet__content {
   width: var(--pb-layout-fill) !important;

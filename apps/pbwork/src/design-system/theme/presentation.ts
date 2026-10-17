@@ -51,7 +51,9 @@ export function coercePackSelection(
     theme: manifest?.themes.some((item) => item.id === theme)
       ? theme
       : (manifest?.defaultTheme ?? theme),
-    mode: manifest?.modes.includes(mode) ? mode : (manifest?.defaultMode ?? mode),
+    mode: manifest?.modes.includes(mode)
+      ? mode
+      : (manifest?.defaultMode ?? mode),
   };
 }
 
@@ -80,7 +82,7 @@ export function themeKeyCategory(key: {
   valueType: string;
 }): TokenCategory {
   const family = key.id.split(".")[0]!;
-  if (["spacing", "radius", "opacity", "motion"].includes(family))
+  if (["spacing", "radius", "opacity", "motion", "border"].includes(family))
     return family as TokenCategory;
   if (
     key.valueType === "typography" ||

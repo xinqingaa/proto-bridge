@@ -2,6 +2,10 @@
  * Resolve contract tokenBindings against live playground props
  * so the inspector reflects the current size / tone / elevation / selection.
  */
+import {
+  tagColors,
+  type TagTone,
+} from "@/design-system/components/_shared/tagColors";
 import { sizeToken } from "@/design-system/components/_shared/appearance";
 import {
   radiusToken,
@@ -12,6 +16,7 @@ import { resolveButtonColorsFromKind } from "@/design-system/components/_shared/
 export function resolveLiveTokenBindings(
   staticBindings: Record<string, string>,
   props: Record<string, unknown>,
+  componentId?: string,
 ): Record<string, string> {
   const result: Record<string, string> = { ...staticBindings };
 
@@ -61,7 +66,9 @@ export function resolveLiveTokenBindings(
     if ("color" in result) result.color = props.color;
   }
 
-  if (typeof props.tone === "string" && props.tone.length > 0) {
+  if (componentId === "tag") {
+    Object.assign(result, tagColors((props.tone ?? "neutral") as TagTone));
+  } else if (typeof props.tone === "string" && props.tone.length > 0) {
     const tone = props.tone;
     for (const key of Object.keys(result)) {
       if (

@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "brand-mark",
+  "category": "navigation",
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "image"
+  },
+  "summary": "主题品牌图形与可替换品牌插槽，无资源时退回名称。",
+  "behavior": [
+    "资产按解析后的拥有包查找 URL，不按模式分支隐藏语义节点",
+    "无资源时显示 name；公开 mark / wordmark 插槽允许原型自有品牌形态"
+  ],
+  "layout": {
+    "summary": "主题品牌图形与可替换品牌插槽，无资源时退回名称。"
+  },
+  "visualAnatomy": {
+    "summary": "使用当前主题的语义色、字阶、间距和受控形状，不在实例上换绑。"
+  },
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "name": {
+        "type": "string"
+      }
+    }
+  },
+  "defaultProps": {
+    "name": "品牌"
+  },
+  "states": [
+    {
+      "id": "named",
+      "label": "名称",
+      "kind": "content",
+      "props": {
+        "name": "专注每一刻"
+      }
+    },
+    {
+      "id": "compact",
+      "label": "短名称",
+      "kind": "content",
+      "props": {
+        "name": "PB"
+      }
+    }
+  ],
+  "slots": ["mark", "wordmark"],
+  "events": [],
+  "tokenBindings": {
+    "color": "color.on-surface",
+    "gap": "spacing.sm",
+    "typography": "typography.subtitle",
+    "mark": "asset.brand-mark",
+    "wordmark": "asset.brand-wordmark",
+    "size": "size.avatar"
+  },
+  "playground": {
+    "presentation": "interactive"
+  }
+}
